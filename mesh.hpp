@@ -1,0 +1,338 @@
+#ifndef MESH
+#define MESH
+
+
+#include "dccrg.hpp"
+#include "dccrg_cartesian_geometry.hpp"
+#include "cell.hpp"
+#include "init.hpp"
+
+#include <Eigen/Dense>
+
+using namespace std;
+using namespace boost::mpi;
+using namespace dccrg;
+using namespace Eigen;
+
+typedef Array<double, 4, 1> vec4;
+
+
+// class to handle neighborhood cells
+class Neighborhood_Cube
+{
+public:
+
+    std::array<vec4, 27> fields;
+
+    vec4& operator [](const std::size_t i){return this->fields[i];}
+    const vec4& operator [](const std::size_t i) const {return this->fields[i];}
+
+    void init_currents() 
+    {
+        for(int ijk=0; ijk<27; ijk++) {
+            fields[ijk] = vec4::Zero();
+        }
+        return;
+    };
+
+
+    int index(int i, int j, int k) {
+        return (i+1) + (j+1)*3 + (k+1)*3*3;
+    };
+
+    void add_J(int i, int j, int k, vec4 dJ)
+    {
+        int ijk = this->index(i,j,k);
+
+        #ifdef DEBUG
+        cout << "  addJ: " << i << j << k << " -> " << ijk 
+        << " A" << dJ << " B " << fields[ijk] << endl;
+        #endif
+
+        fields[ijk] += dJ;
+    };
+
+    vec4 J(int i, int j, int k) {
+        return this->fields[index(i,j,k)];
+    };
+
+
+	template<
+		class CellData,
+		class Geometry
+	> void distribute(
+		dccrg::Dccrg<CellData, Geometry>& grid,
+        uint64_t cell
+	) {
+
+        if (grid.is_local(cell)) {
+
+            // First distribute into the cell itself
+            auto* const center_cell_data = grid[cell];
+            if (center_cell_data == NULL) {
+                cerr << __FILE__ << ":" << __LINE__ << " No data for cell " << cell << endl;
+                abort();
+            }
+
+            center_cell_data->J += this->J(0,0,0);
+
+            #ifdef DEBUG
+                cout << " DIS: 000 " << cell
+                << " : " << center_cell_data->J(0) << " | " << fields[13](0)
+                << " / " << center_cell_data->J(1) << " | " << fields[13](1)
+                << " / " << center_cell_data->J(2) << " | " << fields[13](2)
+                << " / " << center_cell_data->J(3) << " | " << fields[13](3)
+                << endl;
+            #endif
+
+
+            // next distribute to neighbors
+            // TODO work is wasted going from -1 -> 0 indices; optimize
+
+            const auto* const neighbors = grid.get_neighbors_of(cell);
+            int ijk = 0;
+            for (const auto neigh: *neighbors) {
+
+                if(ijk == 13){ijk++;}; // skip (0,0,0)
+
+                if (neigh == dccrg::error_cell){
+                    // TODO deal with boundary conditions
+                } else if (grid.is_local(neigh)) {
+
+                    auto* const cell_data = grid[neigh];
+                    if (cell_data == NULL) {
+                        cerr << __FILE__ << ":" << __LINE__ << " No data for cell " << cell << endl;
+                        abort();
+                    }
+
+                    cell_data->J += fields[ijk];
+
+                    #ifdef DEBUG
+                    cout << " DIS: " << cell
+                        << " => loc " << neigh << " ijk: " << ijk 
+                        << "   J= " << center_cell_data->J(0)
+                        << " / "    << center_cell_data->J(1) 
+                        << " / "    << center_cell_data->J(2) 
+                        << " / "    << center_cell_data->J(3) 
+                        << endl;
+                    #endif
+
+                // else the neighbor is not local and we have to send it
+                } else {
+                    #ifdef DEBUG
+                    cout << "DIS: " << cell <<  " => rem " << neigh << " : "
+                    << fields[ijk](0) << " / " << fields[ijk](1) << " / "
+                    << fields[ijk](2) << " / " << fields[ijk](2) << endl;
+                    #endif
+
+                    center_cell_data->remote_neighbor_list[ijk] = neigh;
+
+                    // parse vec4 into std::array
+                    center_cell_data->incoming_currents[ijk*4+0] += fields[ijk](0);
+                    center_cell_data->incoming_currents[ijk*4+1] += fields[ijk](1);
+                    center_cell_data->incoming_currents[ijk*4+2] += fields[ijk](2);
+                    center_cell_data->incoming_currents[ijk*4+3] += fields[ijk](3);
+
+                }
+            ijk++;
+            }
+
+        // centering cell is not local but remote
+        } else { 
+            cerr << __FILE__ << ":" << __LINE__ << " Non local cell " << cell << endl;
+        }
+
+
+        return;
+    };
+
+};
+
+
+
+class Mesh
+{
+public:
+
+    // Mesh() {};
+
+    // MPI parameters
+    int 
+        rank = 0;
+
+    // Deposit currents into the mesh
+	template<
+		class CellData,
+		class Geometry
+	> void deposit_currents(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+        
+
+        // get local and neighboring cells
+        auto all_cells = grid.get_cells();
+        for (const uint64_t cell: all_cells) {
+            #ifdef DEBUG
+            cout << this->rank << ": mesh.deposit: my all cells are:"
+            << cell << endl;
+            #endif
+
+            auto* const cell_data = grid[cell];
+            if (cell_data == NULL) {
+                cerr << __FILE__ << ":" << __LINE__ << " No data for cell " << cell << endl;
+                abort();
+            }
+            // wipe out previous charge and currents from mesh
+            // this is done to ensure proper summation
+            cell_data->J = vec4::Zero();
+
+            // cout << this->rank << " mesh.deposit: J=" << cell_data->J << endl;
+        }
+
+
+        const std::vector<uint64_t>& remote_neighbors
+            = grid.get_remote_cells_on_process_boundary();
+        #ifdef DEBUG
+        for (const uint64_t& cell: remote_neighbors) {
+            cout << this->rank << ": mesh.deposit: my remote cells on boundary are:"
+            << cell << endl;
+            
+        }
+        #endif
+
+        const std::vector<uint64_t>& local_cells_on_boundary
+            = grid.get_local_cells_on_process_boundary();
+        for (const uint64_t& cell: local_cells_on_boundary) {
+            #ifdef DEBUG
+            cout << this->rank << ": mesh.deposit: my local cells on boundary are:"
+            << cell << endl;
+            #endif
+
+            auto* const cell_data = grid[cell];
+            if (cell_data == NULL) {
+                cerr << __FILE__ << ":" << __LINE__ << " No data for cell " << cell << endl;
+                abort();
+            }
+
+            for (int ijk=0; ijk<=108; ijk++) {
+                cell_data->incoming_currents[ijk] = 0.0;
+            }
+
+            // undo remote neighbors
+            cell_data->remote_neighbor_list = {{0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                0, 0, 0, 0, 0, 0, 0, 0, 0
+                                               }};
+
+        }
+
+        const std::vector<uint64_t>& local_cells_not_boundary
+            = grid.get_local_cells_not_on_process_boundary();
+        #ifdef DEBUG
+        for (const uint64_t& cell: local_cells_not_boundary) {
+            cout << this->rank << ": mesh.deposit: my local cells NOT on boundary are:"
+            << cell << endl;
+        }
+        #endif
+
+
+
+        auto local_cells = grid.get_cells();
+        for (const uint64_t& cell: local_cells) {
+
+            auto* const cell_data = grid[cell];
+            if (cell_data == NULL) {
+                cerr << __FILE__ << ":" << __LINE__ << " No data for cell " << cell << endl;
+                abort();
+            }
+
+            // neighborhood cube
+            Neighborhood_Cube cube;
+            cube.init_currents();
+
+
+            // grid geometry
+            std::array<double, 3> start_coords = grid.geometry.get_min(cell);
+            std::array<double, 3> ds = grid.geometry.get_length(cell);
+
+            // charge 
+            double rhop = q*e/(ds[0]*ds[1]*ds[2]);
+
+
+            for (auto& particle: cell_data->particles) {
+
+                double 
+                    x = particle[0],
+                    y = particle[1],
+                    z = particle[2],
+                    ux = particle[3],
+                    uy = particle[4],
+                    uz = particle[5];
+
+                // Lorentz transform
+                double gamma = sqrt(1.0 + ux*ux + uy*uy + uz*uz);
+                ux *= c/gamma;
+                uy *= c/gamma;
+                uz *= c/gamma;
+
+                double 
+                    fp = (x-start_coords[0])/ds[0],
+                    fq = (y-start_coords[1])/ds[1],
+                    fr = (z-start_coords[2])/ds[2];
+
+                // basis for the current vector
+                vec4 dJ0, dJ;
+                dJ0 << 1.0, 0.5*ux, 0.5*uy, 0.5*uz;
+                dJ0 *= rhop;
+
+                #ifdef DEBUG
+                    cout << rank << " MD: " << cell 
+                        << " dJ0= " << dJ0(0) << " / " << dJ0(1)
+                        << dJ0(2) << " / " << dJ0(3)
+                        << " ||| " << rhop << " / " << fp 
+                        << " / " << fq << " / " << fr << endl;
+                #endif
+
+                /* now add weight functions:
+                    1st order cloud-in-the-cell model 
+
+                    TODO think about AMR; is it done in Cube?
+                */
+                double wx, wy, wz;
+                for(int xdir=0; xdir<2; xdir++) {
+                    wx = xdir == 0 ? 1.0-fp : fp;
+
+                    for(int ydir=0; ydir<2; ydir++) {
+                        wy = ydir == 0 ? 1.0-fq : fq;
+
+                        for(int zdir=0; zdir<2; zdir++) {
+                            wz = zdir == 0 ? 1.0-fr : fr;
+    
+                            dJ = dJ0*wx*wy*wz;
+                            cube.add_J(xdir, ydir, zdir, dJ);
+                        }
+                    }
+                }
+
+            } // end of particle loop
+
+            // now deposit neighborhood cube into mesh
+            cube.distribute(grid, cell);
+        }
+
+
+
+
+        return;
+    };
+
+
+
+
+
+
+};
+
+
+
+#endif
