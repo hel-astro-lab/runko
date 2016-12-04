@@ -138,8 +138,28 @@ public:
             }
         }
 
+        // finally update current vectors
+        Cell::transfer_mode = Cell::CURRENT;
+        grid.update_copies_of_remote_neighbors();
+
+
         return;
     };
+
+
+    // Updating JY
+	template<
+		class CellData,
+		class Geometry
+	> void update_ghost_zone_yee_currents(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+        Cell::transfer_mode = Cell::YEE_CURRENT;
+        grid.update_copies_of_remote_neighbors();
+
+        return;
+    };
+
 
     /* Multi stage load balancing:
         First we balance the load with Zoltan

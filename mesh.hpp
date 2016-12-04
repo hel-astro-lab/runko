@@ -319,16 +319,95 @@ public:
             // now deposit neighborhood cube into mesh
             cube.distribute(grid, cell);
         }
+    };
+
+    // Deposit currents into the mesh
+	template<
+		class CellData,
+		class Geometry
+	> void yee_currents(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+
+        // get local cells
+        auto cells = grid.get_cells();
+	    for (const uint64_t& cell: cells) {
+
+            // read Cell data
+            auto* const cell_data = grid[cell];
+
+            // into this we build the current in the other edge of the cell
+            vec4 Jp1 = vec4::Zero();
+
+            // this returns the face neighbors 100,010,001
+            const auto* const neighbors = 
+                grid.get_neighbors_of(cell, yee_current_shift);
+
+
+            int dir = 1; // skip rho and start from Jx
+            for (const auto neigh: *neighbors) {
+
+                if (neigh == dccrg::error_cell){
+
+                    // TODO deal with boundary conditions
+                    continue;
+                } else if(neigh == 0) {
+                    // TODO implement boundary condition switch
+                    // now we assume metals because Jp1 has zeros by default
+                    continue;
+                } else {
+                    auto* const neigh_data = grid[neigh];
+                    Jp1(dir) = neigh_data->J(dir); 
+                }
+                dir++;
+            }  // end of neighbors
+
+
+            // now shift currents to cell faces
+            cell_data->JY = (cell_data->J + Jp1)/2.0;
+
+
+            // copy nodal rho also to Yee vector
+            cell_data->JY(0) = cell_data->J(0);
+
+        }
+
+        return;
+    };
+
+    /* Shift fields from staggered Yee to nodal lattice
+       in practice we interpolate linearly between neighboring Yee values
+    */
+	template<
+		class CellData,
+		class Geometry
+	> void nodal_fields(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+
+        // get local cells
+        auto cells = grid.get_cells();
+	    for (const uint64_t& cell: cells) {
+            // XXX
+            /*
+            const auto* const neighbors = grid.get_neighbors_of(cell, Yee_shift);
+            if (neigh == dccrg::error_cell){
+               // TODO deal with boundary conditions 
+            } else {
+                auto* const cell_data = grid[neigh];
+            }
+            */
+
+
+
+
+        }
 
 
 
 
         return;
     };
-
-
-
-
 
 
 };

@@ -30,6 +30,7 @@
 #include "comm.hpp" // Domain decomposition communications
 #include "inject.hpp" // Particle initializer & injector
 #include "mesh.hpp" // Mesh and field related functions
+#include "field.hpp" // actual field propagators
 
 
 // name spaces
@@ -201,7 +202,34 @@ int main(int argc, char* argv[])
 	}
 
 
-    // TODO define neighborhoods for CUBE
+    // Neighborhoods
+    //-------------------------------------------------- 
+    typedef dccrg::Types<3>::neighborhood_item_t neigh_t;
+
+    // Yee current shift with +1/+1/+1 elements
+    std::vector<neigh_t> neighborhood = {
+                                         {1,0,0},
+                                         {0,1,0},
+                                         {0,0,1}
+                                        };
+    if (!grid.add_neighborhood(yee_current_shift, neighborhood)) {
+        std::cerr << __FILE__ << ":" << __LINE__
+            << " add_neighborhood failed"
+            << std::endl;
+        abort();
+    }
+
+
+    // Full negative cube (in z-ordering for efficiency)
+    // TODO: currently this is done via default -1/0/+1 neighborhood;
+    //       use this instead; so we can skip +1 cells
+    // std::vector<neigh_t> neighborhood2 = {{ {{1,0,0}},
+    //                                        {{0,1,0}},
+    //                                        {{0,0,1}}
+    //                                      }};
+
+
+
 
     cout << rank << ": Initialized grid..." << endl;
 
@@ -237,8 +265,13 @@ int main(int argc, char* argv[])
 
     comm.update_ghost_zone_currents(grid);
 
+    mesh.yee_currents(grid);
+    comm.update_ghost_zone_yee_currents(grid);
 
 
+
+
+    mesh.nodal_fields(grid);
 
 
 

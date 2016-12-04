@@ -16,6 +16,7 @@ using namespace Eigen;
 
 // FIXME multiple definitions of the same type also in pic.cpp
 typedef Array<double, 4, 1> vec4;
+typedef Array<double, 4, 4> mat4;
 
 
 class Cell
@@ -30,11 +31,25 @@ public:
     // 4-current vector containing (rho, Jx, Jy, Jz)
     vec4 J;
 
+    // standard 3-vector for currents at Yee lattice
+    // Vector3d JY;
+    // TODO currently we just use four-vector and carry rho with us
+    vec4 JY;
+
+    /* Yee staggered field tensor 
+        note that E and B elements are defined in different locations
+        due to the staggering
+    */
+    mat4 FY = mat4::Zero();
+    
+
+
+
 
     /* Yee lattice/mesh stuff
         0 - charge density rho
-        1 2 3    - current vector on nodal points Jx, Jy, Jz
-        4 5 6    - current vector on Yee lattice  JxY, JyY, JzY
+        DONE 1 2 3    - current vector on nodal points Jx, Jy, Jz
+        DONE 4 5 6    - current vector on Yee lattice  JxY, JyY, JzY
         7 8 9    - E field on Yee lattice ExY, EyY, EzY
         10 11 12 - B field on Yee lattice BxY, ByY, BzY
 
@@ -164,8 +179,12 @@ public:
 		REMOTE_NEIGHBOR_LIST             = 4,
 		// data of incoming currents
 		INCOMING_CURRENTS                = 5,
+        // current four vector
+        CURRENT                          = 6,
+        // current four vector
+        YEE_CURRENT                      = 7,
 		// cell type data
-		TYPE                             = 6;
+		TYPE                             = 8;
 
 
 	std::tuple<void*, int, MPI_Datatype> get_mpi_datatype()
@@ -210,6 +229,16 @@ public:
 		case Cell::TYPE:
 			address = &(this->cell_type);
 			count = 1;
+			datatype = MPI_DOUBLE;
+			break;
+		case Cell::CURRENT:
+			address = this->J.data();
+			count = 4;
+			datatype = MPI_DOUBLE;
+			break;
+		case Cell::YEE_CURRENT:
+			address = this->JY.data();
+			count = 4;
 			datatype = MPI_DOUBLE;
 			break;
 		default:

@@ -39,6 +39,11 @@ const bool Nz_wrap = false;
 const uint64_t N_neighb = 1;
 const uint64_t max_ref_lvl = 0;
 
+// Neighborhoods
+//-------------------------------------------------- 
+const int yee_current_shift  = 10;
+// const int four_current_shift = 11; // not implemented
+const int nodal_field_shift  = 12;
 
 
 // physical stuff
