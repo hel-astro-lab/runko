@@ -164,6 +164,81 @@ public:
 	template<
 		class CellData,
 		class Geometry
+	> void sort_particles_into_cells(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+
+        auto cells = grid.get_cells();
+        const std::vector<uint64_t>& remote_neighbors
+            = grid.get_remote_cells_on_process_boundary();
+        cells.insert(cells.begin(), remote_neighbors.begin(), remote_neighbors.end());
+        // move particles to the particle list of the cell the particles are currently inside of
+        for (const auto& previous_cell: cells) {
+
+            auto* const previous_data = grid[previous_cell];
+            if (previous_data == NULL) {
+                cerr << __FILE__ << ":" << __LINE__
+                    << " No data for cell " << previous_cell
+                    << endl;
+                abort();
+            }
+
+            std::array<double, 3> grid_coords;
+            std::array<double, 6> particle_coords_vel;
+            vector<std::array<double, 6>>::size_type i = 0;
+            while (i < previous_data->particles.size()) {
+
+                // handle grid wrap around
+                // FIXME beautiful (not working) oneliner
+                // previous_data->particles[i] = grid.geometry.get_real_coordinate(previous_data->particles[i]);
+            
+                particle_coords_vel = previous_data->particles[i];
+                std::array<double, 3> particle_coords = {{particle_coords_vel[0],
+                                                          particle_coords_vel[1],
+                                                          particle_coords_vel[2]}};
+                grid_coords = grid.geometry.get_real_coordinate(particle_coords);
+
+                particle_coords_vel[0] = grid_coords[0];
+                particle_coords_vel[1] = grid_coords[1];
+                particle_coords_vel[2] = grid_coords[2];
+
+                previous_data->particles[i] = particle_coords_vel;
+
+                // const uint64_t current_cell = grid.get_existing_cell(previous_data->particles[i]);
+                const uint64_t current_cell = grid.get_existing_cell(particle_coords);
+
+                // do nothing if particle hasn't changed cell
+                if (current_cell == previous_cell) {
+                    i++;
+                    continue;
+                }
+
+                // change only local cell data because remote data will be overwritten anyway
+                // add particle to the current cell's list
+                if (grid.is_local(current_cell)) {
+                    auto* const current_data = grid[current_cell];
+                    current_data->particles.push_back(previous_data->particles[i]);
+                    current_data->number_of_particles = current_data->particles.size();
+                }
+
+                // remove particle from its previous cell
+                if (grid.is_local(previous_cell)) {
+                    previous_data->particles.erase(previous_data->particles.begin() + i);
+                    previous_data->number_of_particles = previous_data->particles.size();
+                } else {
+                    i++;
+                }
+            }
+        }
+
+
+        return;
+    };
+
+    // Deposit currents into the mesh
+	template<
+		class CellData,
+		class Geometry
 	> void deposit_currents(
 		dccrg::Dccrg<CellData, Geometry>& grid
 	) {
@@ -297,6 +372,7 @@ public:
                     1st order cloud-in-the-cell model 
 
                     TODO think about AMR; is it done in Cube?
+                    TODO add directly to Yee lattice
                 */
                 double wx, wy, wz;
                 for(int xdir=0; xdir<2; xdir++) {
@@ -337,14 +413,16 @@ public:
             auto* const cell_data = grid[cell];
 
             // into this we build the current in the other edge of the cell
-            vec4 Jp1 = vec4::Zero();
+            // XXX vec4 Jp1 = vec4::Zero();
+            Vector3d Jp1 = Vector3d::Zero();
 
             // this returns the face neighbors 100,010,001
             const auto* const neighbors = 
-                grid.get_neighbors_of(cell, yee_current_shift);
+                grid.get_neighbors_of(cell, Cp1_shift);
 
 
-            int dir = 1; // skip rho and start from Jx
+            // XXX int dir = 1; // skip rho and start from Jx
+            int dir = 0; 
             for (const auto neigh: *neighbors) {
 
                 if (neigh == dccrg::error_cell){
@@ -364,11 +442,14 @@ public:
 
 
             // now shift currents to cell faces
-            cell_data->JY = (cell_data->J + Jp1)/2.0;
+            // FIXME avoid this array->vector copy
+            Vector3d J0(cell_data->J.tail(3).data());
 
+            cell_data->JY = (J0 + Jp1)/2.0;
 
-            // copy nodal rho also to Yee vector
-            cell_data->JY(0) = cell_data->J(0);
+            // XXX copy nodal rho also to Yee vector
+            // cell_data->JY(0) = cell_data->J(0);
+
 
         }
 

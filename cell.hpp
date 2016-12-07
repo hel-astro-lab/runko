@@ -16,6 +16,7 @@ using namespace Eigen;
 
 // FIXME multiple definitions of the same type also in pic.cpp
 typedef Array<double, 4, 1> vec4;
+// typedef Array<double, 3, 1> vec3;
 typedef Array<double, 4, 4> mat4;
 
 
@@ -31,17 +32,20 @@ public:
     // 4-current vector containing (rho, Jx, Jy, Jz)
     vec4 J;
 
-    // standard 3-vector for currents at Yee lattice
-    // Vector3d JY;
-    // TODO currently we just use four-vector and carry rho with us
-    vec4 JY;
+    /* standard 3-vector for currents & field vectors
+       at Yee lattice staggeration
+
+        XXX Here we use 3+1 formalism which is more easily
+        expressed via E and B, not F tensor
+    */
+    Vector3d JY, BY, EY;
+
 
     /* Yee staggered field tensor 
         note that E and B elements are defined in different locations
         due to the staggering
+     mat4 FY = mat4::Zero();
     */
-    mat4 FY = mat4::Zero();
-    
 
 
 
@@ -56,7 +60,6 @@ public:
         13 14 15 - E field on nodal lattice Ex, Ey, Ez
         16 17 18 - B field on nodal lattice Bx, By, Bz
 
-    */
     std::array<double, 19> field = {{0.0, 
                                      0.0, 0.0, 0.0,
                                      0.0, 0.0, 0.0,
@@ -64,12 +67,12 @@ public:
                                      0.0, 0.0, 0.0,
                                      0.0, 0.0, 0.0,
                                      0.0, 0.0, 0.0}};
+    */
 
 
     // incoming currents from other processes
     //  3x3x3 cube with four-vector elements = 108 values
     std::array<double, 108> incoming_currents;
-
 
 
 
@@ -79,6 +82,8 @@ public:
     // this makes sure the variable pointed to by the returned 
     // pointer & won't be alterable and that the method does not 
     // alter the variable pointed to by the given pointer. (phew!)
+
+    /*
 
     double& operator [](const std::size_t i){return this->field[i];}
     const double& operator [](const std::size_t i) const {return this->field[i];}
@@ -148,6 +153,7 @@ public:
 
     double& Bz(){ return this->field[18]; }
     const double& Bz() const { return this->field[18]; }
+    */
 
     // XXX: use me!
     double cell_type = 0;
@@ -183,8 +189,12 @@ public:
         CURRENT                          = 6,
         // current four vector
         YEE_CURRENT                      = 7,
+        // current four vector
+        YEE_B                            = 8,
+        // current four vector
+        YEE_E                            = 9,
 		// cell type data
-		TYPE                             = 8;
+		TYPE                             = 10;
 
 
 	std::tuple<void*, int, MPI_Datatype> get_mpi_datatype()
@@ -210,11 +220,12 @@ public:
 			count = 1;
 			datatype = MPI_UNSIGNED;
 			break;
-		case Cell::FIELDS:
-			address = &(this->field[0]);
-			count = 19;
-			datatype = MPI_DOUBLE;
-			break;
+        // FIXME
+		// case Cell::FIELDS:
+		// 	address = &(this->field[0]);
+		// 	count = 19;
+		// 	datatype = MPI_DOUBLE;
+		// 	break;
 		case Cell::REMOTE_NEIGHBOR_LIST:
 			address = &(this->remote_neighbor_list[0]);
 			count = 27;
@@ -238,7 +249,18 @@ public:
 			break;
 		case Cell::YEE_CURRENT:
 			address = this->JY.data();
-			count = 4;
+			// FIXME count = 4;
+			count = 3;
+			datatype = MPI_DOUBLE;
+			break;
+		case Cell::YEE_B:
+			address = this->BY.data();
+			count = 3;
+			datatype = MPI_DOUBLE;
+			break;
+		case Cell::YEE_E:
+			address = this->EY.data();
+			count = 3;
 			datatype = MPI_DOUBLE;
 			break;
 		default:

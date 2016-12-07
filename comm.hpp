@@ -160,6 +160,36 @@ public:
         return;
     };
 
+    // Updating BY
+	template<
+		class CellData,
+		class Geometry
+	> void update_ghost_zone_B(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+        // FIXME update correct neighborhood
+        Cell::transfer_mode = Cell::YEE_B;;
+        grid.update_copies_of_remote_neighbors();
+
+        return;
+    };
+
+    // Updating EY
+	template<
+		class CellData,
+		class Geometry
+	> void update_ghost_zone_E(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+
+        // FIXME update correct neighborhood
+        Cell::transfer_mode = Cell::YEE_E;
+        grid.update_copies_of_remote_neighbors();
+
+        return;
+    };
+
+
 
     /* Multi stage load balancing:
         First we balance the load with Zoltan

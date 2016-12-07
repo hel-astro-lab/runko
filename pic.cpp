@@ -31,6 +31,7 @@
 #include "inject.hpp" // Particle initializer & injector
 #include "mesh.hpp" // Mesh and field related functions
 #include "field.hpp" // actual field propagators
+#include "particles.hpp" // particle spatial & momentum pushers
 
 
 // name spaces
@@ -206,18 +207,33 @@ int main(int argc, char* argv[])
     //-------------------------------------------------- 
     typedef dccrg::Types<3>::neighborhood_item_t neigh_t;
 
-    // Yee current shift with +1/+1/+1 elements
+    // shift with +1/+1/+1 elements
     std::vector<neigh_t> neighborhood = {
                                          {1,0,0},
                                          {0,1,0},
                                          {0,0,1}
                                         };
-    if (!grid.add_neighborhood(yee_current_shift, neighborhood)) {
+    if (!grid.add_neighborhood(Cp1_shift, neighborhood)) {
         std::cerr << __FILE__ << ":" << __LINE__
             << " add_neighborhood failed"
             << std::endl;
         abort();
     }
+
+    // shift with -1/-1/-1 elements
+    std::vector<neigh_t> neighborhood2 = {
+                                         {-1, 0, 0},
+                                         { 0,-1, 0},
+                                         { 0, 0,-1}
+                                        };
+    if (!grid.add_neighborhood(Cm1_shift, neighborhood2)) {
+        std::cerr << __FILE__ << ":" << __LINE__
+            << " add_neighborhood failed"
+            << std::endl;
+        abort();
+    }
+
+
 
 
     // Full negative cube (in z-ordering for efficiency)
@@ -262,18 +278,32 @@ int main(int argc, char* argv[])
     mesh.rank = rank;
 
     mesh.deposit_currents(grid);
-
     comm.update_ghost_zone_currents(grid);
 
     mesh.yee_currents(grid);
     comm.update_ghost_zone_yee_currents(grid);
 
+    // initialize field solver 
+    Field_Solver field;
 
+    field.push_half_B(grid);
+    comm.update_ghost_zone_B(grid);
 
+    field.push_E(grid);
+    comm.update_ghost_zone_E(grid);
 
-    mesh.nodal_fields(grid);
+    field.push_half_B(grid);
+    comm.update_ghost_zone_B(grid);
 
+    // TODO
+    // mesh.nodal_fields(grid);
 
+    Particle_Mover particles;
+
+    particles.update_velocities(grid); // XXX done
+    comm.update_ghost_zone_particles(grid); // XXX done
+    particles.propagate(grid); // XXX done
+    mesh.sort_particles_into_cells(grid); // XXX done
 
 
 

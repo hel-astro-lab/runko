@@ -41,9 +41,10 @@ const uint64_t max_ref_lvl = 0;
 
 // Neighborhoods
 //-------------------------------------------------- 
-const int yee_current_shift  = 10;
+const int Cp1_shift  = 10;
+const int Cm1_shift  = 11;
 // const int four_current_shift = 11; // not implemented
-const int nodal_field_shift  = 12;
+// const int nodal_field_shift  = 13;
 
 
 // physical stuff

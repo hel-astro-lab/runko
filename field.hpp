@@ -15,6 +15,7 @@ using namespace dccrg;
 using namespace Eigen;
 
 typedef Array<double, 4, 1> vec4;
+// typedef Array<double, 3, 1> vec3;
 typedef Array<double, 4, 4> mat4;
 
 
@@ -151,7 +152,7 @@ public:
 
 
 
-class Field
+class Field_Solver
 {
 public:
 
@@ -161,7 +162,7 @@ public:
     int 
         rank = 0;
 
-    // Deposit currents into the mesh
+    // Advance half of the B field
 	template<
 		class CellData,
 		class Geometry
@@ -173,33 +174,116 @@ public:
         // get local
         auto all_cells = grid.get_cells();
         for (const uint64_t cell: all_cells) {
-            std::array<double, 3> ds = grid.geometry.get_length(cell);
-            double dx = ds[0], dy = ds[1], dz = ds[2];
+            std::array<double, 3> dxyz = grid.geometry.get_length(cell);
+            Vector3d ds; 
+            ds << 1.0/dxyz[0], 1.0/dxyz[1], 1.0/dxyz[2];
+
+            // vector containing shifted +1/+1/+1 elements
+            Vector3d EYp1 = Vector3d::Zero();
 
             auto* const cell_data = grid[cell];
 
+            // collect +1 E elements
+            const auto* const neighbors = 
+                grid.get_neighbors_of(cell, Cp1_shift);
 
+            int dir = 0; 
+            for (const auto neigh: *neighbors) {
 
+                if (neigh == dccrg::error_cell){
+                    // TODO deal with boundary conditions
+                    continue;
+                } else if(neigh == 0) {
+                    // TODO implement boundary condition switch
+                    // now we assume metals because EYp1 has zeros by default
+                    continue;
+                } else {
+                    auto* const neigh_data = grid[neigh];
+                    EYp1(dir) = neigh_data->EY(dir); 
+                }
+                dir++;
+            }  // end of neighbors
 
+            /*
+            Theory:
+            E = En - E
+            d = c*dt/2*(dx, dy, dz)
+            B = BY_n-1
 
-            // advance B field by taking the curl
-            cell_data->BxY() = Bx - c*dt/(2.0*dy)*(Ez_j1 - Ez) +
-                c*dt/(2.0*dz)*(Ey_k1 - Ey);
+            curl E = nabla x E
+                             =+i(dy*Ez - dz*Ey)
+                              -j(dx*Ez - dz*Ex)
+                              +k(dx*Ey - dy*Ex)
 
-            cell_data->ByY() = By - c*dt/(2.0*dz)*(Ex_k1 - Ex) +
-                c*dt/(2.0*dx)*(Ez_i1 - Ez);
+            B_n+1 = B_n1 -curl E
+            */
 
-            cell_data->BzY() = Bz - c*dt/(2.0*dx)*(Ey_i1 - Ey) +
-                c*dt/(2.0*dy)*(Ex_j1 - Ex);
+            // vec3 dE = cell_data->EY - EYp1;
+            cell_data->BY -= c*dt/(2.0) * ds.cross(cell_data->EY - EYp1); 
+
         }
 
+        return; 
+    }; // end of push_half_B
 
+
+
+    // Advance E field
+	template<
+		class CellData,
+		class Geometry
+	> void push_E(
+		dccrg::Dccrg<CellData, Geometry>& grid
+	) {
+        
+
+        // get local
+        auto all_cells = grid.get_cells();
+        for (const uint64_t cell: all_cells) {
+            std::array<double, 3> dxyz = grid.geometry.get_length(cell);
+            Vector3d ds;
+            ds << 1.0/dxyz[0], 1.0/dxyz[1], 1.0/dxyz[2];
+
+            // vector containing shifted -1/-1/-1 elements
+            Vector3d BYm1 = Vector3d::Zero();
+
+            auto* const cell_data = grid[cell];
+
+            // collect -1 B elements
+            const auto* const neighbors = 
+                grid.get_neighbors_of(cell, Cm1_shift);
+
+            int dir = 0; 
+            for (const auto neigh: *neighbors) {
+
+                if (neigh == dccrg::error_cell){
+                    // TODO deal with boundary conditions
+                    continue;
+                } else if(neigh == 0) {
+                    // TODO implement boundary condition switch
+                    // now we assume metals because EYp1 has zeros by default
+                    continue;
+                } else {
+                    auto* const neigh_data = grid[neigh];
+                    BYm1(dir) = neigh_data->BY(dir); 
+                }
+                dir++;
+            }  // end of neighbors
+
+
+            /*
+            E_n+1 = E_n + dt*[ curl B - 4pi J ]
+            */
+
+            cell_data->EY += c*dt * ds.cross(cell_data->BY - BYm1)
+                             -4.0*pi*dt*cell_data->JY;
+
+        }
 
         return; 
     }; // end of push_half_B
 
 };
-
 
 
 #endif
