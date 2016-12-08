@@ -32,6 +32,7 @@
 #include "mesh.hpp" // Mesh and field related functions
 #include "field.hpp" // actual field propagators
 #include "particles.hpp" // particle spatial & momentum pushers
+#include "io_ascii.hpp" // Simple simulation saver with ASCII (vtk)
 
 
 // name spaces
@@ -300,10 +301,29 @@ int main(int argc, char* argv[])
 
     Particle_Mover particles;
 
-    particles.update_velocities(grid); // XXX done
-    comm.update_ghost_zone_particles(grid); // XXX done
-    particles.propagate(grid); // XXX done
-    mesh.sort_particles_into_cells(grid); // XXX done
+    particles.update_velocities(grid); 
+    comm.update_ghost_zone_particles(grid); 
+
+    particles.propagate(grid); 
+    mesh.sort_particles_into_cells(grid); 
+
+    // Simulation save
+    //--------------------------------------------------
+    Save io;
+    io.rank = rank;
+    io.save_dir = "out/";
+    io.filename = "pic";
+    io.init();
+
+    io.save_grid(grid);
+    io.save_particles(grid);
+    io.save_fields(grid);
+    io.update_master_list();
+    io.step++;
+
+
+    cout << "Initialized save file" << endl;
+
 
 
 
