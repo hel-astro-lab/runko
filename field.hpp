@@ -261,7 +261,7 @@ public:
                     continue;
                 } else if(neigh == 0) {
                     // TODO implement boundary condition switch
-                    // now we assume metals because EYp1 has zeros by default
+                    // now we assume metals because BYm1 has zeros by default
                     continue;
                 } else {
                     auto* const neigh_data = grid[neigh];

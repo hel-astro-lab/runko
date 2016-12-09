@@ -54,20 +54,34 @@ public:
 
     // Initialize files and streams for writing
     void init(){
-        
-        this->visit_particles.open(this->save_dir + this->filename +"_prtcls.visit");
-        this->visit_grid.open(this->save_dir + this->filename +"_grid.visit");
-        this->visit_fields.open(this->save_dir + this->filename +"_fields.visit");
+
+       if(this->rank == 0) { 
+           this->visit_particles.open(this->save_dir + this->filename +"_prtcls.visit");
+           this->visit_grid.open(this->save_dir + this->filename +"_grid.visit");
+           this->visit_fields.open(this->save_dir + this->filename +"_fields.visit");
 
 
-        this->visit_particles << "!NBLOCKS " << this->comm_size << "\n";
-        this->visit_grid      << "!NBLOCKS " << this->comm_size << "\n";
-        this->visit_fields    << "!NBLOCKS " << this->comm_size << "\n";
+           this->visit_particles << "!NBLOCKS " << this->comm_size << "\n";
+           this->visit_grid      << "!NBLOCKS " << this->comm_size << "\n";
+           this->visit_fields    << "!NBLOCKS " << this->comm_size << "\n";
+        }
 
         this->init_flag = true;
 
         return;
     };
+
+    void finalize(){
+
+        // close streams
+        if (this->rank == 0) {
+            this->visit_particles.close();
+            this->visit_grid.close();
+            this->visit_fields.close();
+        }
+
+        return;
+    }
 
     /*
         Write grid to file using internal dccrg functions
@@ -81,7 +95,7 @@ public:
 
         // write the grid
         const string grid_file_name(
-                this->save_dir + this->filename 
+                this->save_dir + this->filename + "_"
                 + std::to_string(this->rank) + "_" 
                 + std::to_string(this->step) + "_grid.vtk"
                 ); 
@@ -103,7 +117,7 @@ public:
 
         // write the grid
         const string outname(
-                this->save_dir + this->filename 
+                this->save_dir + this->filename + "_"
                 + std::to_string(this->rank) + "_" 
                 + std::to_string(this->step) + "_prtcls.vtk"
                 ); 
@@ -206,7 +220,7 @@ public:
 
         // write the grid
         const string outname(
-                this->save_dir + this->filename 
+                this->save_dir + this->filename + "_"
                 + std::to_string(this->rank) + "_" 
                 + std::to_string(this->step) + "_fields.vtk"
                 ); 
@@ -348,19 +362,20 @@ public:
             this->init();
         }
 
-        // now actually append lists
-        for (int i = 0; i < this->comm_size; i++) {
-            this->visit_particles << "pic_"
-                << i << "_"
-                << this->step << "_prtcls.vtk\n";
-            this->visit_grid << "pic_"
-                << i << "_"
-                << this->step << "_grid.vtk\n";
-            this->visit_fields << "pic_"
-                << i << "_"
-                << this->step << "_fields.vtk\n";
+        // now actually append lists (if rank0)
+        if(this->rank == 0) {
+            for (int i = 0; i < this->comm_size; i++) {
+                this->visit_particles << this->filename << "_"
+                    << i << "_"
+                    << this->step << "_prtcls.vtk\n";
+                this->visit_grid << this->filename << "_"
+                    << i << "_"
+                    << this->step << "_grid.vtk\n";
+                this->visit_fields << this->filename << "_"
+                    << i << "_"
+                    << this->step << "_fields.vtk\n";
+            }
         }
-
 
         return;
     };

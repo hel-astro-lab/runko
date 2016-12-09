@@ -39,13 +39,13 @@ public:
 		auto* const cell_data = grid[cell];
     
         // TODO FIXME update to Yee staggeration
-        fields[13](0,0) = cell_data->BY(0);
-        fields[13](1,0) = cell_data->BY(1);
-        fields[13](2,0) = cell_data->BY(2);
+        fields[13](0,0) = cell_data->EY(0);
+        fields[13](1,0) = cell_data->EY(1);
+        fields[13](2,0) = cell_data->EY(2);
 
-        fields[13](0,1) = cell_data->EY(0);
-        fields[13](1,1) = cell_data->EY(1);
-        fields[13](2,1) = cell_data->EY(2);
+        fields[13](0,1) = cell_data->BY(0);
+        fields[13](1,1) = cell_data->BY(1);
+        fields[13](2,1) = cell_data->BY(2);
 
 
         // then neighboring cells
@@ -70,13 +70,13 @@ public:
             } else {
                 auto* const cell_data = grid[neigh];
 
-                fields[ijk](0,0) = cell_data->BY(0);
-                fields[ijk](1,0) = cell_data->BY(1);
-                fields[ijk](2,0) = cell_data->BY(2);
+                fields[ijk](0,0) = cell_data->EY(0);
+                fields[ijk](1,0) = cell_data->EY(1);
+                fields[ijk](2,0) = cell_data->EY(2);
 
-                fields[ijk](0,1) = cell_data->EY(0);
-                fields[ijk](1,1) = cell_data->EY(1);
-                fields[ijk](2,1) = cell_data->EY(2);
+                fields[ijk](0,1) = cell_data->BY(0);
+                fields[ijk](1,1) = cell_data->BY(1);
+                fields[ijk](2,1) = cell_data->BY(2);
             }
 
             ijk++;
@@ -94,20 +94,147 @@ public:
         int ijk = (i+1) + (j+1)*3 + (k+1)*3*3;
         return this->fields[ijk];
     }
+    
+    double exY(int i, int j, int k)
+    {
+        return this->F(i,j,k)(0,0);
+    }
+    double eyY(int i, int j, int k)
+    {
+        return this->F(i,j,k)(1,0);
+    }
+    double ezY(int i, int j, int k)
+    {
+        return this->F(i,j,k)(2,0);
+    }
+    double bxY(int i, int j, int k)
+    {
+        return this->F(i,j,k)(0,1);
+    }
+    double byY(int i, int j, int k)
+    {
+        return this->F(i,j,k)(1,1);
+    }
+    double bzY(int i, int j, int k)
+    {
+        return this->F(i,j,k)(2,1);
+    }
+
 
     /* basic trilinear interpolation (i.e. 3x linear interpolations) with the cube class
         x,y,z weights within the cells (0 means at i/j/k and 1 means i+1/j+1/k+1
     
         TODO: optimize this; now we call f000... elements each time whereas one time is enough
           only xd, yd, zd change
+        TODO: staggered version is slooooow! And ugly.
     */
+
+    /* XXX From TRISTAN-MP
+        l=i+iy*(j-1)+iz*(k-1)
+
+        f=ex(l,1,1)+ex(l-ix,1,1)+dx*(ex(l+ix,1,1)-ex(l-ix,1,1))
+
+		f=f+dy*(ex(l+iy,1,1)+ex(l-ix+iy,1,1)+dx*(ex(l+ix+iy,1,1)-ex(l-ix &
+		+iy,1,1))-f)
+
+		g=ex(l+iz,1,1)+ex(l-ix+iz,1,1)+dx*(ex(l+ix+iz,1,1)-ex(l-ix+iz,1 &
+		,1))
+
+		g=g+dy* &
+		(ex(l+iy+iz,1,1)+ex(l-ix+iy+iz,1,1)+dx*(ex(l+ix+iy+iz,1,1) &
+		-ex(l-ix+iy+iz,1,1))-g)
+		
+		ex0=(f+dz*(g-f))*(.25*qm)
+
+        -------------------------------------------------- 
+        f=bx(l-iy,1,1)+bx(l-iy-iz,1,1)+dz*(bx(l-iy+iz,1,1)-bx(l-iy-iz,1 &
+		,1))
+		f=bx(l,1,1)+bx(l-iz,1,1)+dz*(bx(l+iz,1,1)-bx(l-iz,1,1))+f+dy &
+		* (bx(l+iy,1,1)+bx(l+iy-iz,1,1)+dz*(bx(l+iy+iz,1,1)-bx(l+iy &
+		-iz,1,1))-f)
+		g=bx(l+ix-iy,1,1)+bx(l+ix-iy-iz,1,1)+dz*(bx(l+ix-iy+iz,1,1) &
+		-bx(l+ix-iy-iz,1,1))
+		g=bx(l+ix,1,1)+bx(l+ix-iz,1,1)+dz*(bx(l+ix+iz,1,1)-bx(l+ix-iz,1 &
+		,1))+g+dy*(bx(l+ix+iy,1,1)+bx(l+ix+iy-iz,1,1)+dz*(bx(l+ix &
+		+iy+iz,1,1)-bx(l+ix+iy-iz,1,1))-g)
+		
+		bx0=(f+dx*(g-f))*(.125*qm*cinv)
+    */
+
+    Matrixd32 trilinear_staggered( double xd, double yd, double zd) 
+    {
+        /*
+        from nodal points
+            f(i+dx) = f(i) + dx * (f(i+1)-f(i))
+        to staggered grid stored at midpoints
+            f at location i+dx  = half of f(i)+f(i-1) + dx*(f(i+1)-f(i-1))
+		where now f(i) means f at location i+1/2.
+
+        Then we apply the normal linear volume interpolation
+        Note that E and B differ in staggered grid locations
+        */
+
+        // using cube class to play in +1/+1/+1 regime
+        Matrixd32 c;
+
+
+        // ex
+        c(0,0) = (1 - zd)*((1 - yd)*((0.5 - 0.5*xd)*this->exY(-1,0,0) + 0.5*this->exY(0,0,0) + 0.5*xd*this->exY(1,0,0)) + 
+      yd*((0.5 - 0.5*xd)*this->exY(-1,1,0) + 0.5*this->exY(0,1,0) + 0.5*xd*this->exY(1,1,0))) + 
+   zd*((1 - yd)*((0.5 - 0.5*xd)*this->exY(-1,0,1) + 0.5*this->exY(0,0,1) + 0.5*xd*this->exY(1,0,1)) + 
+      yd*((0.5 - 0.5*xd)*this->exY(-1,1,1) + 0.5*this->exY(0,1,1) + 0.5*xd*this->exY(1,1,1)));
+
+        // ey
+        c(1,0) =(1 - zd)*((1 - yd)*(-0.5*(-1. + xd)*(this->eyY(0,-1,0) + this->eyY(0,0,0)) + 0.5*xd*(this->eyY(1,-1,0) + this->eyY(1,0,0))) + 
+      yd*(-0.5*(-1. + xd)*(this->eyY(0,0,0) + this->eyY(0,1,0)) + 0.5*xd*(this->eyY(1,0,0) + this->eyY(1,1,0)))) + 
+   zd*((1 - yd)*(-0.5*(-1. + xd)*(this->eyY(0,-1,1) + this->eyY(0,0,1)) + 0.5*xd*(this->eyY(1,-1,1) + this->eyY(1,0,1))) + 
+      yd*(-0.5*(-1. + xd)*(this->eyY(0,0,1) + this->eyY(0,1,1)) + 0.5*xd*(this->eyY(1,0,1) + this->eyY(1,1,1))));
+
+        // ez
+        c(2,0) = (1 - zd)*((1 - yd)*(-0.5*(-1. + xd)*(this->ezY(0,0,-1) + this->ezY(0,0,0)) + 0.5*xd*(this->ezY(1,0,-1) + this->ezY(1,0,0))) + 
+      yd*(-0.5*(-1. + xd)*(this->ezY(0,1,-1) + this->ezY(0,1,0)) + 0.5*xd*(this->ezY(1,1,-1) + this->ezY(1,1,0)))) + 
+   zd*((1 - yd)*(-0.5*(-1. + xd)*(this->ezY(0,0,0) + this->ezY(0,0,1)) + 0.5*xd*(this->ezY(1,0,0) + this->ezY(1,0,1))) + 
+      yd*(-0.5*(-1. + xd)*(this->ezY(0,1,0) + this->ezY(0,1,1)) + 0.5*xd*(this->ezY(1,1,0) + this->ezY(1,1,1))));
+
+        // bx
+        c(0,1) =(1 - zd)*((1 - yd)*(-0.25*(-1. + xd)*(this->bxY(0,-1,-1) + this->bxY(0,-1,0) + this->bxY(0,0,-1) + this->bxY(0,0,0)) + 
+         0.25*xd*(this->bxY(1,-1,-1) + this->bxY(1,-1,0) + this->bxY(1,0,-1) + this->bxY(1,0,0))) + 
+      yd*(-0.25*(-1. + xd)*(this->bxY(0,0,-1) + this->bxY(0,0,0) + this->bxY(0,1,-1) + this->bxY(0,1,0)) + 
+         0.25*xd*(this->bxY(1,0,-1) + this->bxY(1,0,0) + this->bxY(1,1,-1) + this->bxY(1,1,0)))) + 
+   zd*((1 - yd)*(-0.25*(-1. + xd)*(this->bxY(0,-1,0) + this->bxY(0,-1,1) + this->bxY(0,0,0) + this->bxY(0,0,1)) + 
+         0.25*xd*(this->bxY(1,-1,0) + this->bxY(1,-1,1) + this->bxY(1,0,0) + this->bxY(1,0,1))) + 
+      yd*(-0.25*(-1. + xd)*(this->bxY(0,0,0) + this->bxY(0,0,1) + this->bxY(0,1,0) + this->bxY(0,1,1)) + 
+         0.25*xd*(this->bxY(1,0,0) + this->bxY(1,0,1) + this->bxY(1,1,0) + this->bxY(1,1,1))));
+
+        // by
+        c(1,1) = (1 - zd)*((1 - yd)*(-0.25*(-1. + xd)*(this->byY(-1,0,-1) + this->byY(-1,0,0) + this->byY(0,0,-1) + this->byY(0,0,0)) + 
+         0.25*xd*(this->byY(0,0,-1) + this->byY(0,0,0) + this->byY(1,0,-1) + this->byY(1,0,0))) + 
+      yd*(-0.25*(-1. + xd)*(this->byY(-1,1,-1) + this->byY(-1,1,0) + this->byY(0,1,-1) + this->byY(0,1,0)) + 
+         0.25*xd*(this->byY(0,1,-1) + this->byY(0,1,0) + this->byY(1,1,-1) + this->byY(1,1,0)))) + 
+   zd*((1 - yd)*(-0.25*(-1. + xd)*(this->byY(-1,0,0) + this->byY(-1,0,1) + this->byY(0,0,0) + this->byY(0,0,1)) + 
+         0.25*xd*(this->byY(0,0,0) + this->byY(0,0,1) + this->byY(1,0,0) + this->byY(1,0,1))) + 
+      yd*(-0.25*(-1. + xd)*(this->byY(-1,1,0) + this->byY(-1,1,1) + this->byY(0,1,0) + this->byY(0,1,1)) + 
+         0.25*xd*(this->byY(0,1,0) + this->byY(0,1,1) + this->byY(1,1,0) + this->byY(1,1,1))));
+
+        // bz
+        c(2,1) = (1 - zd)*((1 - yd)*(-0.25*(-1. + xd)*(this->bzY(-1,-1,0) + this->bzY(-1,0,0) + this->bzY(0,-1,0) + this->bzY(0,0,0)) + 
+         0.25*xd*(this->bzY(0,-1,0) + this->bzY(0,0,0) + this->bzY(1,-1,0) + this->bzY(1,0,0))) + 
+      yd*(-0.25*(-1. + xd)*(this->bzY(-1,0,0) + this->bzY(-1,1,0) + this->bzY(0,0,0) + this->bzY(0,1,0)) + 
+         0.25*xd*(this->bzY(0,0,0) + this->bzY(0,1,0) + this->bzY(1,0,0) + this->bzY(1,1,0)))) + 
+   zd*((1 - yd)*(-0.25*(-1. + xd)*(this->bzY(-1,-1,1) + this->bzY(-1,0,1) + this->bzY(0,-1,1) + this->bzY(0,0,1)) + 
+         0.25*xd*(this->bzY(0,-1,1) + this->bzY(0,0,1) + this->bzY(1,-1,1) + this->bzY(1,0,1))) + 
+      yd*(-0.25*(-1. + xd)*(this->bzY(-1,0,1) + this->bzY(-1,1,1) + this->bzY(0,0,1) + this->bzY(0,1,1)) + 
+         0.25*xd*(this->bzY(0,0,1) + this->bzY(0,1,1) + this->bzY(1,0,1) + this->bzY(1,1,1))));
+
+
+        return c;
+    };
+
 
     Matrixd32 trilinear( double xd, double yd, double zd) 
     {
-
         // using cube class to play in +1/+1/+1 regime
         Matrixd32 c00, c01, c10, c11, c0, c1, c; 
-
 
         c00 = this->F(0,0,0)*(1-xd) + this->F(1,0,0)*xd;
         c01 = this->F(0,0,1)*(1-xd) + this->F(1,0,1)*xd;
@@ -188,15 +315,15 @@ public:
                     yd = (y - start_coords[1])/ds[1],
                     zd = (z - start_coords[2])/ds[2];
 
-                Matrixd32 F = n.trilinear(xd, yd, zd);
+                Matrixd32 F = n.trilinear_staggered(xd, yd, zd);
 
                 double 
-                    Bxi = F(0,0),
-                    Byi = F(1,0),
-                    Bzi = F(2,0),
-                    Exi = F(0,1),
-                    Eyi = F(1,1),
-                    Ezi = F(2,1);
+                    Exi = F(0,0),
+                    Eyi = F(1,0),
+                    Ezi = F(2,0),
+                    Bxi = F(0,1),
+                    Byi = F(1,1),
+                    Bzi = F(2,1);
 
                 double
                     uxm = ux + q*e*Exi*dt/(2.0*me*c),
@@ -233,6 +360,20 @@ public:
                 particle[3] = uxp + q*e*Exi*dt/(2.0*me*c);
                 particle[4] = uyp + q*e*Eyi*dt/(2.0*me*c);
                 particle[5] = uzp + q*e*Ezi*dt/(2.0*me*c);
+
+                // TODO FIXME add particle propagate here
+                /*
+                double 
+                    uxn = particle[3],
+                    uyn = particle[4],
+                    uzn = particle[5];
+
+                    gamma = sqrt(1.0 + uxn*uxn + uyn*uyn + uzn*uzn);
+
+                    particle[0] += (c*dt/gamma)*uxn;
+                    particle[1] += (c*dt/gamma)*uyn;
+                    particle[2] += (c*dt/gamma)*uzn;
+                */
 
             }
 

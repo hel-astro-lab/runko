@@ -305,12 +305,15 @@ int main(int argc, char* argv[])
     comm.update_ghost_zone_particles(grid); 
 
     particles.propagate(grid); 
+
     mesh.sort_particles_into_cells(grid); 
+
 
     // Simulation save
     //--------------------------------------------------
     Save io;
     io.rank = rank;
+    io.comm_size = comm_size;
     io.save_dir = "out/";
     io.filename = "pic";
     io.init();
@@ -324,8 +327,60 @@ int main(int argc, char* argv[])
 
     cout << "Initialized save file" << endl;
 
+    //-------------------------------------------------- 
+    // Initialized everything; now starting main loop
 
 
+    #ifdef DEBUG
+	const unsigned int max_steps = 2;
+    #else
+	const unsigned int max_steps = 50;
+    #endif
+
+    cout << "Starting particle propagation" << endl;
+	for (unsigned int step = 1; step < max_steps; step++) 
+    {
+        cout << " step: " << step << endl;
+
+        
+        field.push_half_B(grid);
+        comm.update_ghost_zone_B(grid);
+    
+        // update particle velocities and locations
+        particles.update_velocities(grid); 
+        particles.propagate(grid); 
+        comm.update_ghost_zone_particles(grid); 
+
+        mesh.sort_particles_into_cells(grid); 
+    
+        field.push_half_B(grid);
+        comm.update_ghost_zone_B(grid);
+
+        field.push_E(grid);
+        comm.update_ghost_zone_E(grid);
+
+        mesh.deposit_currents(grid);
+        comm.update_ghost_zone_currents(grid);
+
+        mesh.yee_currents(grid);
+        comm.update_ghost_zone_yee_currents(grid);
+
+
+        // apply filters
+
+
+
+        // save state
+        io.save_grid(grid);
+        io.save_particles(grid);
+        io.save_fields(grid);
+        io.update_master_list();
+        io.step++;
+
+    }
+
+
+    io.finalize();
 
 	MPI_Finalize();
 

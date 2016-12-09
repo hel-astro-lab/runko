@@ -458,6 +458,8 @@ public:
 
     /* Shift fields from staggered Yee to nodal lattice
        in practice we interpolate linearly between neighboring Yee values
+        
+       TODO FIXME
     */
 	template<
 		class CellData,
