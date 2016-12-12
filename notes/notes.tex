@@ -1,0 +1,226 @@
+%\documentclass[referee]{aa}
+\documentclass{aa}
+
+\usepackage[utf8]{inputenc} 
+\usepackage[varg]{txfonts}
+\usepackage{amssymb}
+\usepackage{epsfig}
+\usepackage{graphics}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{natbib}
+
+%landscape figures
+%\usepackage{wrapfig}
+%\usepackage{lscape}
+%\usepackage{rotating}
+
+\bibpunct{(}{)}{;}{a}{}{,} % to follow the A&A style
+
+%Debug addition for collaborators
+%\usepackage[switch, modulo]{lineno}
+%\linenumbers
+%\renewcommand\linenumberfont{\color{red}\normalfont\tiny\sffamily}
+%\renewcommand\linenumberfont{\normalfont\tiny\sffamily}
+
+\DeclareUnicodeCharacter{00A0}{ }
+
+%Commands
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+\newcommand{\bea}{\begin{align}\begin{split}}
+\newcommand{\eea}{\end{split}\end{align}}
+
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+\newcommand{\green}[1]{\textcolor{green}{#1}}
+
+\newcommand{\Msun}{\ensuremath{\mathrm{M}_{\sun}}}
+
+
+%normal 3-vectors
+%\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
+\renewcommand{\vec}[1]{\ensuremath{\boldsymbol{#1}}}
+
+%four-vectors
+\makeatletter
+\def\fvec#1{\underline{\sbox\tw@{$#1$}\dp\tw@\z@\box\tw@}}
+\makeatother
+
+\newcommand{\dt}{\ensuremath{\Delta t}}
+
+%________________________________________________________________
+\begin{document}
+
+\title{Solving Vlasov-Maxwell equations with PiC}
+
+\author{J.\,N\"attil\"a\inst{1,2} }
+
+\institute{Tuorla Observatory, Department of Physics and Astronomy, University of Turku, V\"ais\"al\"antie 20, FI-21500 Piikki\"o, Finland \email{joonas.a.nattila@utu.fi}
+  \and Nordita, KTH Royal Institute of Technology and Stockholm University, Roslagstullsbacken 23, SE-10691 Stockholm, Sweden
+}
+
+\date{Received XXX / Accepted XXX}
+
+\abstract{
+Blaa
+}
+
+
+\keywords{numerical}
+\titlerunning{PiC notes}
+
+\maketitle
+
+%________________________________________________________________
+\section{Introduction}\label{sec:intro}
+Blaa blaa!
+
+\section{Theory}\label{sect:theory}
+
+Solving Vlasov-Maxwell equations.
+
+
+\subsection{Particle-in-Cell method}
+
+Collisionality of a plasma comprising of point particles is modeled by finite-sized particle clouds (or macro particles) with radius $\epsilon$.
+Typical cloud size is usually orders of magnitude larger compared to real plasma so that number of particles in Debye sphere $N_{\mathrm{D}} = \frac{4 \pi}{3}n\lambda_{\mathrm{D}}^3$ is effectively replaced by the parameter $N_{\mathrm{C}} = \frac{4 \pi}{3}n\epsilon^3$, where $n$, and $\lambda_{\mathrm{D}}$ are the number density and Debye length, respectively.
+In PIC codes the particle size is typically equivalent to grid spacing $\Delta$, which must be kept $\le \lambda_{\mathrm{d}}$ to avoid aliasing instabilities that usually manifest themselves as numerical heating.
+To map the particle densities smoothly into to the mesh it is also favorable to have as many particles as possible in the simulations.
+
+
+
+\subsection{Maxwell's equations}
+
+Shape of the fields are given by the curls
+\be
+\nabla \times \vec{E} = \frac{1}{c} \frac{\partial \vec{B}} {\partial t}
+\ee
+\be
+\nabla \times \vec{B} = \frac{4 \pi \vec{J}}{c} + \frac{1}{c} \frac{\partial \vec{E}} {\partial t}
+\ee
+whereas initial conditions from
+\be
+\nabla \cdot \vec{E} = 4\pi\vec{J},
+\ee
+\be
+\nabla \cdot \vec{B} = 0,
+\ee
+which are taken care by charge conserving particle mover and Yee lattice configuration.
+
+From here we solve
+\be
+\frac{\partial \vec{E}}{\partial t} = c [ \nabla \times \vec{B}] - 4\pi \vec{J}
+\ee
+
+\be
+\frac{\partial \vec{B}}{\partial t} = -c[ \nabla \times \vec{E}]
+\ee
+
+And in finite difference terms one obtains 
+\be
+\vec{B}^{n+1} = \vec{B}^n - \dt c [\nabla \times \vec{E}]
+\ee
+
+\be
+\vec{E}^{n+1/2} = \vec{E}^{n-1/2} + \dt [c(\nabla \times \vec{E}) - 4\pi \vec{J}^n]
+\ee
+
+Curls can be computed from Stokes theorem
+\be
+\iint \nabla \times \vec{E} d\vec{S} = \oint \vec{E} \cdot d\vec{l}
+\ee
+that in finite differencing scheme reduces to 
+\begin{align}\begin{split}
+\iint_{S}& \left[  \left( \frac{\partial E_z}{\partial y} - \frac{\partial E_x}{\partial x} \right) \vec{\hat{i}} + 
+\left( \frac{\partial E_x}{\partial z} - \frac{\partial E_z}{\partial x} \right) \vec{\hat{j}} + 
+\left( \frac{\partial E_y}{\partial x} - \frac{\partial E_x}{\partial y} \right) \vec{\hat{k}} \right] ~d\vec{S} \\
+&= \oint_{\partial S} E_x dx \vec{\hat{i}} +  E_y dy \vec{\hat{j}} + E_z dz \vec{\hat{k}} \\
+\end{split}\end{align}
+
+\subsection{General relativistic Maxwell equations}
+Next we can cast this into $3+1$ formalism following \citealt{P15}.
+For this, we split the four dimensional space-time into a foliation where 
+\be
+ds^2 = \alpha^2 c^2 dt^2 - \gamma_{ab}(dx^a + \beta^a c~dt)(dx^b + \beta^b c~dt),
+\ee
+where $x^i = (c~t, x^a)$, $t$ is the time coordinate or the universal time and $x^a$ some associated space coordinate.
+Here the general relativistic corrections are introduced via the lapse function $\alpha$, shift vector $\beta^a$, and spatial metric of absolute space $\gamma_{ab}$.
+By convention Latin letters from $a$ to $h$ are used for components of vectors in absolute space (in range ${1,2,3}$) whereas Latin letters starting from $i$ correspond to the four-dimensional vectors and tensors (${0,1,2,3}$).
+Note that Landau-Lifschitz signature of $(+,-,-,-)$ is used.
+
+In some dispersive media we, on the other hand, have
+\be
+\epsilon_0 \vec{E} = \vec{\alpha} \vec{D} + \epsilon_0 c \beta \times \vec{B}
+\ee
+\be
+\mu_0 \vec{H} = \vec{\alpha} \vec{B} - \frac{\beta \times \vec{D}}{\epsilon_0 c}
+\ee
+where $\epsilon_0$ is the vacuum permettivity and $\mu_0$ is the vacuum permeability.
+Auxiliary vector fields denoted by $\vec{F}$ and $\vec{G}$ can be introduced as
+\be
+\vec{F} = \zeta_1 \vec{D} + \frac{\zeta_2}{c} \vec{B}
+\ee
+\be
+\vec{G} = \zeta_1 \vec{H} - \frac{\zeta_2}{c} \vec{E}.
+\ee
+
+The inhomogeneous Maxwell equations are
+\be
+\nabla \cdot \vec{F} = \rho
+\ee
+\be
+\nabla \times \vec{G} = \vec{J} + \frac{1}{\sqrt{\gamma}} \partial_t (\sqrt{\gamma} \vec{F}),
+\ee
+where xxx
+
+The homogeneous equations are
+\be
+\nabla \times \vec{E} = -\frac{1}{\sqrt{\gamma}} \partial_t (\sqrt{\gamma} \vec{B})\ee
+\be
+\nabla \cdot \vec{B} = 0.
+\ee
+
+Hence, when neglecting QED corrections we can set $\zeta_1=1$ and $\zeta_2=0$.
+Similarly, when working in vacuum $\vec{D}$ and $\vec{H}$ reduce to normal $\vec{E}$ and $\vec{B}$.
+
+
+
+\subsection{Radiation reaction}
+
+The radiation reaction (RR) force appears as a friction term with a nonlinear and anisotropic friction coefficient. 
+When electron crosses an EM field it feels a viscous force opposite to its velocity.
+
+The friction effect of the RR physically corresponds to the incoherent emission of high-frequency radiation by ultra-relativistic electrons.
+When the RR is included, it is typically not feasible to resolve electromagnetic waves at such high frequencies.
+Thus, it is assumed that such radiation escapes from the system without re-interacting with other electrons.
+From the point of view of the energy balance then, the energy radiated at high frequencies appear as a loss term or dissipation.
+
+Hence, the force must be added because such a high frequency is not resolved by the grid, and hence the back reaction can not be captured.
+
+
+
+
+
+
+\section*{Acknowledgments}
+This research was supported by the V\"ais\"al\"a Foundation and by the University of Turku Graduate School in Physical and Chemical Sciences (JN).
+This research was undertaken on Finnish Grid Infrastructure (FGI) resources.
+
+
+\bibliographystyle{aa}
+\bibliography{allbib}
+
+%\begin{thebibliography}{62}
+%\end{thebibliography}
+
+
+
+\clearpage
+\begin{appendix}
+\section{Appendix}
+
+
+\end{appendix}
+\end{document}
