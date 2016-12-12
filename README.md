@@ -21,6 +21,7 @@ General relativistic radiative hybridly parallelized particle-in-cell code with 
 To compile one typically just needs to run `make`. However, be sure to first set up a proper environment in the `Makefile` (there are options for osx, osx-mpi, gnu...).
 
 Dependencies are 
+
     * boost (c++ extensions)
     * Eigen (vector calculus)
     * dccrg (adaptive mesh)
@@ -81,22 +82,6 @@ make install
 ```
 
 
-### Additional info about MPI + OSX
-```
-./configure --prefix=/usr/local/openmpi
-make
-sudo make install
-```
-
-#MPI stuff (compiled from source)
-```
-export MPI_DIR=/usr/local/openmpi
-export PATH=/usr/local/openmpi/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
-export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
-```
-
-
 ### HDF5
 
 ```
@@ -107,6 +92,21 @@ http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.16.tar.gz
 make
 make check
 make install
+```
+
+### Additional info about MPI + OSX
+```
+./configure --prefix=/usr/local/openmpi
+make
+sudo make install
+```
+
+MPI stuff (compiled from source)
+```
+export MPI_DIR=/usr/local/openmpi
+export PATH=/usr/local/openmpi/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 ```
 
 
