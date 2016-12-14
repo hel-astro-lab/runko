@@ -9,6 +9,7 @@
 \usepackage{amsmath}
 \usepackage{color}
 \usepackage{natbib}
+\usepackage{hyperref}
 
 %landscape figures
 %\usepackage{wrapfig}
@@ -201,6 +202,45 @@ Hence, the force must be added because such a high frequency is not resolved by 
 
 
 
+
+\section{Possible projects and set up}
+
+\subsection{MRI and particle energization in accretion flows around AGN} 
+
+The X-ray spectra of Seyfert 1 galaxies can be modelled with Comptonization continuum with Thomson optical depth 
+$\tau \sim 1$, from which we deduce the number density of electrons $n_{\rm e}\sim 10^{11}$~cm$^{-3}$, relevant 
+length-scales where the energy is liberated are about $10R_{\rm S}=2.95\times10^{13}$~cm.
+The electron temperatures are about 100~keV, similar to those found in black hole binaries.
+We assume that the magnetic energy density is of the order of the radiation energy density, say, $U_{\rm B}=U_{\rm rad}/3$. 
+For $L=10^{-2}L_{\rm Edd}\sim10^{39}M/M_{\odot}$~erg~s$^{-1}$ and for $M=10^7M_{\odot}$ we have 
+$B^2 = \frac {1}{3} 8\pi \frac {L}{(4\pi/3) R^2 c}\sim 10^6$, so $B=10^3$~G.
+
+From these we get the relevant time- and length-scales:
+\begin{itemize}
+\item Electron plasma frequency 
+$\omega_{\rm pe} = \sqrt{ \frac{4\pi n_{\rm e} e^2}{m_{\rm e}} } 
+                 = 5.64 \times 10^4 \sqrt{n_{\rm e}}=1.78\times10^{10}$~rad~s${-1}$
+\item Electron Larmor frequency (for electron Lorentz factor $\gamma=1$)
+$\omega_{\rm ce} = \frac {eB}{m_{\rm e}c} = 1.76 \times 10^7 B = 1.76\times10^{10}$~~rad~s${-1}$
+\item Electron skin depth
+$\lambda_{\rm skin,e} = \frac {c}{\omega_{\rm pe}} = 5.31\times10^5 n_{\rm e}^{-1/2} = 1.7$~cm
+\item Debye radius
+$\lambda_{\rm D} = \sqrt{ \frac {k T_{\rm e}}{4\pi n_{\rm e} e^2} } 
+                 = 7.43\times10^2 \sqrt{ \frac {T_{\rm e} {\rm[eV]}}{n_{\rm e}}} = 0.74$~cm
+\item Mean free path for electrons ($T_{\rm e}$ in eV)
+$\lambda_{\rm free,e} = \frac {\overline{v}}{\nu_{\rm ee}} \sim 1.43\times 10^{13} \frac {T_{\rm e}^2}{n_{\rm e} ln\Lambda} 
+                      \sim 10^{11}$~cm.
+\end{itemize}
+So the system is collisionless.
+
+
+
+Relevant references: 
+\begin{enumerate}
+\item \href{http://adsabs.harvard.edu/abs/2016arXiv160807911K}{Kunz et al. 2016} - found that the angular momentum transport  is enchanced and the particles (protons) aquire non-thermal distribution in the collisionless system
+\item \href{http://adsabs.harvard.edu/abs/2015ApJ...800...89S}{Sironi 2015} 
+and \href{http://adsabs.harvard.edu/abs/2015ApJ...800...88S}{Sironi \& Narayan 2015} - electron heating (acceleration) mechanisms in two-temperature collisionless compressing flows.
+\end{enumerate}
 
 
 
