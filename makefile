@@ -31,12 +31,12 @@ endif
 
 # define any directories containing header files other than /usr/include
 #
-INCLUDES = -I/Users/natj/Documents/rndm/Zoltan/include -I/Users/natj/Documents/rndm/dccrg -I/Users/natj/Documents/rndm/eigen-3.3
+INCLUDES = -I/usr/local/opt/zoltan/include -I${HOME}/libs/dccrg -I/usr/local/include/eigen3
 
 # define library paths in addition to /usr/lib
 #   if I wanted to include libraries not in /usr/lib I'd specify
 #   their path using -Lpath, something like:
-LFLAGS = -L/Users/natj/Documents/rndm/Zoltan/lib
+LFLAGS = -L/usr/local/opt/zoltan/lib
 
 
 # define any libraries to link into executable:
