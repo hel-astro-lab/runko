@@ -128,4 +128,35 @@ export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
 
 
+### vlsv+VisIt+silo
+```
+brew install homebrew/science/silo
+git clone https://github.com/fmihpc/vlsv.git
+```
+Copy `tools/vlsv/Makefile.macos` to the vlsv folder.
+then compile with
+```
+make "ARCH=macos"
+```
+
+### VisIt
+Install visit.app bundle
+go to /Applications/Visit/.../
+update -L and -I paths to /Users/XXX/libs/vlsv
+
+
+
+sudo xcode-select -switch /Library/Developer/CommandLineTools
+
+build_visit2_12_0.sh:19270
+    export VTK_VERSION=${VTK_VERSION:-"7.1.0"}
+    export VTK_SHORT_VERSION=${VTK_SHORT_VERSION:-"7.1"}
+
+sudo ln -s /usr/local/Cellar/qt5/5.7.1_1/mkspecs /usr/loc
+al/mkspecs
+
+sudo ln -s /usr/local/Cellar/qt5/5.7.1_1/plugins /usr/loc
+al/plugins
+
+
 

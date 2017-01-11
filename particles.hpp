@@ -386,6 +386,7 @@ public:
 
 
     /*
+        -------------------------------------------------------------------------------- 
         Particle propagator that pushes particles in space
 
          We basically just compute x_n+1 = x_n + v_x,n * dt/gamma

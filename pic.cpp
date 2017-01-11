@@ -32,7 +32,7 @@
 #include "mesh.hpp" // Mesh and field related functions
 #include "field.hpp" // actual field propagators
 #include "particles.hpp" // particle spatial & momentum pushers
-#include "io_ascii.hpp" // Simple simulation saver with ASCII (vtk)
+#include "io_ascii.hpp" // Simple simulation saver with ASCII
 
 
 // name spaces
@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
 
 
 
-        // save state
+        // save step
         io.save_grid(grid);
         io.save_particles(grid);
         io.save_fields(grid);
