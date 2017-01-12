@@ -39,3 +39,5 @@ double P::dt = 0.99/std::sqrt(1.0/P::grid_dx/P::grid_dx + 1.0/P::grid_dy/P::grid
 uint64_t P::N_neighb = 1;
 uint64_t P::max_ref_lvl = 0;
 
+std::vector<CellID> P::localCells;
+

@@ -15,12 +15,11 @@
 
 #include "cell.hpp"
 #include "parameters.hpp"
-
+#include "common.h"
 
 #include <Eigen/Dense>
 
 using namespace std;
-// using namespace boost::mpi;
 using namespace dccrg;
 using namespace Eigen;
 

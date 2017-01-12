@@ -1,7 +1,10 @@
 #ifndef PARAMS_H
 #define PARAMS_H
 
+#include "vector"
+
 #include "definitions.hpp"
+#include "common.h"
 
 struct Parameters {
 
@@ -28,15 +31,17 @@ struct Parameters {
     static double grid_dz;
 
     // periodicity
-    static bool Nx_wrap;
-    static bool Ny_wrap;
-    static bool Nz_wrap;
+    static bool Nx_wrap;    ///< wrap grid in X dir
+    static bool Ny_wrap;    ///< wrap grid in y dir
+    static bool Nz_wrap;    ///< wrap grid in z dir
 
     // AMR info
-    static uint64_t N_neighb;
-    static uint64_t max_ref_lvl;
+    static uint64_t N_neighb; ///<  size of the ghost cell neighborhood
+    static uint64_t max_ref_lvl; ///< maximum AMR refinement level
 
-    static double dt;
+    static double dt; ///< Current time-step
+
+    static std::vector<CellID> localCells; ///< Cached copy of spatial cell IDs on this process.
 
 };
 

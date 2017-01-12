@@ -13,6 +13,8 @@
 #pragma clang diagnostic pop
 
 #include "cell.hpp"
+#include "common.h"
+
 
 using namespace std;
 using namespace boost::mpi;

@@ -14,6 +14,7 @@
 
 #include "cell.hpp"
 #include "parameters.hpp"
+#include "common.h"
 
 #include <Eigen/Dense>
 

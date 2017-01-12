@@ -5,18 +5,6 @@
 #include "cmath"
 
 
-// physical stuff
-//-------------------------------------------------- 
-const double c = 10.0;
-const double q = 1.0;
-const double e = 1.0;
-const double pi = 3.14159265359;
-
-
-const double me = 1.0;
-const double mp = 16.0;
-
-
 // Neighborhoods
 //-------------------------------------------------- 
 #define CP1_SHIFT 10
@@ -28,6 +16,8 @@ const double mp = 16.0;
 
 // Types
 //-------------------------------------------------- 
+
+typedef uint64_t CellID;
 
 
 

@@ -1,4 +1,6 @@
 #include "particles.hpp"
+#include "common.h"
+
 
 typedef Parameters P;
 
