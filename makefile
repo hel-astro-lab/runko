@@ -45,8 +45,9 @@ LFLAGS = -L/usr/local/opt/zoltan/lib
 #LIBS = -lgsl -lhdf5 -lgslcblas -lzoltan
 LIBS = -lhdf5 -lzoltan
 
+
 # define the C source files
-SRCS =  cell.cpp comm.cpp pic.cpp
+SRCS =  parameters.cpp cell.cpp comm.cpp inject.cpp mesh.cpp field.cpp particles.cpp io_ascii.cpp pic.cpp
 
 # define the C object files 
 #
