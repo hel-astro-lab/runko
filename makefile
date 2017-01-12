@@ -85,6 +85,9 @@ $(MAIN): $(OBJS)
 clean:
 	$(RM) *.o *~ $(MAIN)
 
+doxy:
+	doxygen Doxyfile
+
 depend: $(SRCS)
 	makedepend $(INCLUDES) $^
 

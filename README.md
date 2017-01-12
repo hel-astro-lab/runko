@@ -2,15 +2,11 @@
 
 General relativistic radiative hybridly parallelized particle-in-cell code with adaptive mesh and dynamic load balancing.
 
-### TODO
-    * typedefs and defines to define.h
+### Running TODO list
+    * migrate all typedefs and defines to define.h
     * vlsv file format
-    * refactor
-    * Doxygen
+    * improve documentation
 
-### Physical notes (and also TODO)
-    * (general) relativistic
-    * radiation 
 
 
 ### Computational notes
