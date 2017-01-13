@@ -108,7 +108,6 @@ int main(int argc, char* argv[])
         cout << "--------------------------------------------------" << endl;
         cout << " Simulation parameters "<< endl;
         cout << "    c: " << c << endl;
-        cout << "    q: " << q << endl;
         cout << "    e: " << e << endl;
         cout << "   dt: " << P::dt << endl;
         cout << "   me: " << me << endl;
@@ -227,16 +226,16 @@ int main(int argc, char* argv[])
     // inject into cylindrical shape
     // inject.cylinder(mpiGrid, P::Np, vb);
 
-    // inject background plasma first
+    // inject uniform background plasma first
     uint64_t Nbkg = (uint64_t)(P::Np*0.1);
     double vb_bkg = 1.0;
     inject.uniform(mpiGrid, Nbkg, vb_bkg);
 
-    // then current sheets
+    // inject thin current sheets
     uint64_t Nsheets = (uint64_t)(P::Np*0.9);
     double delta = 0.005; ///< Sheet thickness
     const double vb = 1.0; ///< Maxwellian temperature
-    inject.two_sheets(mpiGrid, Nsheets, vb, delta);
+    // inject.two_sheets(mpiGrid, Nsheets, vb, delta);
 
 
 

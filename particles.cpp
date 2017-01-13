@@ -184,96 +184,123 @@ void Particle_Mover::update_velocities(
     // get local cells
     auto cells = grid.get_cells();
 
+    double q = 0.0;
+    double m = 0.0;
+
     // loop over cells
     for (const uint64_t& cell: cells) {
 
         auto* const cell_data = grid[cell];
-        if (cell_data->number_of_particles == 0){continue; }
 
-        std::array<double, 3> start_coords = grid.geometry.get_min(cell);
-        std::array<double, 3> ds = grid.geometry.get_length(cell);
+        for (int ipops=Population::ELECTRONS; ipops < Population::N_POPULATIONS; ipops++)
+        {
+            Population ptype = (Population) ipops; ///< type cast into Population type for later usage
 
-        // create cell neighborhood; 
-        // TODO improve
-        EB_Cube n(grid, cell);
+            if (cell_data->number_of(ptype) == 0){continue; }
 
-        for (auto& particle: cell_data->particles) {
-            double 
-                x = particle[0],
-                y = particle[1],
-                z = particle[2],
-                ux = particle[3],
-                uy = particle[4],
-                uz = particle[5];
+            switch(ptype)
+            {
+                case Population::ELECTRONS:
+                    q = 1.0; // note that minus is already in the formulas
+                    m = me;
+                    break;
+                case Population::POSITRONS:
+                    q = -1.0;
+                    m = mp;
+                    break;
+                default:
+                    std::cerr << __FILE__ << ":" << __LINE__
+                    << " Invalid population switch: " << ptype
+                    << std::endl;
+                    abort();
+                    break;
+            }
 
-                // interpolate fields
+
+            std::array<double, 3> start_coords = grid.geometry.get_min(cell);
+            std::array<double, 3> ds = grid.geometry.get_length(cell);
+
+            // create cell neighborhood; 
+            // TODO improve
+            EB_Cube n(grid, cell);
+
+            for (auto& particle: cell_data->particles(ptype)) {
                 double 
-                    xd = (x - start_coords[0])/ds[0],
-                    yd = (y - start_coords[1])/ds[1],
-                    zd = (z - start_coords[2])/ds[2];
+                    x = particle[0],
+                    y = particle[1],
+                    z = particle[2],
+                    ux = particle[3],
+                    uy = particle[4],
+                    uz = particle[5];
 
-                    Matrixd32 F = n.trilinear_staggered(xd, yd, zd);
-
+                    // interpolate fields
                     double 
-                        Exi = F(0,0),
-                            Eyi = F(1,0),
-                            Ezi = F(2,0),
-                            Bxi = F(0,1),
-                            Byi = F(1,1),
-                            Bzi = F(2,1);
+                        xd = (x - start_coords[0])/ds[0],
+                        yd = (y - start_coords[1])/ds[1],
+                        zd = (z - start_coords[2])/ds[2];
 
-                    double
-                        uxm = ux + q*e*Exi*P::dt/(2.0*me*c),
-                            uym = uy + q*e*Eyi*P::dt/(2.0*me*c),
-                            uzm = uz + q*e*Ezi*P::dt/(2.0*me*c); 
+                        Matrixd32 F = n.trilinear_staggered(xd, yd, zd);
 
-                    // Lorentz transform
-                    double
-                        gamma = sqrt(1.0 + uxm*uxm + uym*uym + uzm*uzm);
+                        double 
+                            Exi = F(0,0),
+                                Eyi = F(1,0),
+                                Ezi = F(2,0),
+                                Bxi = F(0,1),
+                                Byi = F(1,1),
+                                Bzi = F(2,1);
 
-                    // calculate u'
-                    double
-                        tx = q*e*Bxi*P::dt/(2.0*gamma*me*c),
-                           ty = q*e*Byi*P::dt/(2.0*gamma*me*c),
-                           tz = q*e*Bzi*P::dt/(2.0*gamma*me*c);
+                        double
+                            uxm = ux + q*e*Exi*P::dt/(2.0*m*c),
+                                uym = uy + q*e*Eyi*P::dt/(2.0*m*c),
+                                uzm = uz + q*e*Ezi*P::dt/(2.0*m*c); 
 
-                    double
-                        ux0 = uxm + uym*tz - uzm*ty,
-                            uy0 = uym + uzm*tx - uxm*tz,
-                            uz0 = uzm + uxm*ty - uym*tx;
+                        // Lorentz transform
+                        double
+                            gamma = sqrt(1.0 + uxm*uxm + uym*uym + uzm*uzm);
 
-                    // calculate u+
-                    double 
-                        sx = 2.0*tx/(1.0 + tx*tx + ty*ty + tz*tz),
-                           sy = 2.0*ty/(1.0 + tx*tx + ty*ty + tz*tz),
-                           sz = 2.0*tz/(1.0 + tx*tx + ty*ty + tz*tz);
+                        // calculate u'
+                        double
+                            tx = q*e*Bxi*P::dt/(2.0*gamma*m*c),
+                               ty = q*e*Byi*P::dt/(2.0*gamma*m*c),
+                               tz = q*e*Bzi*P::dt/(2.0*gamma*m*c);
 
-                    double
-                        uxp = uxm + uy0*sz - uz0*sy,
-                            uyp = uym + uz0*sx - ux0*sz,
-                            uzp = uzm + ux0*sy - uy0*sx;
+                        double
+                            ux0 = uxm + uym*tz - uzm*ty,
+                                uy0 = uym + uzm*tx - uxm*tz,
+                                uz0 = uzm + uxm*ty - uym*tx;
 
-                    // t-dt/2 -> t + dt/2
-                    particle[3] = uxp + q*e*Exi*P::dt/(2.0*me*c);
-                    particle[4] = uyp + q*e*Eyi*P::dt/(2.0*me*c);
-                    particle[5] = uzp + q*e*Ezi*P::dt/(2.0*me*c);
+                        // calculate u+
+                        double 
+                            sx = 2.0*tx/(1.0 + tx*tx + ty*ty + tz*tz),
+                               sy = 2.0*ty/(1.0 + tx*tx + ty*ty + tz*tz),
+                               sz = 2.0*tz/(1.0 + tx*tx + ty*ty + tz*tz);
 
-                    // TODO FIXME add particle propagate here
-                    /*
-                       double 
-                       uxn = particle[3],
-                       uyn = particle[4],
-                       uzn = particle[5];
+                        double
+                            uxp = uxm + uy0*sz - uz0*sy,
+                                uyp = uym + uz0*sx - ux0*sz,
+                                uzp = uzm + ux0*sy - uy0*sx;
 
-                       gamma = sqrt(1.0 + uxn*uxn + uyn*uyn + uzn*uzn);
+                        // t-dt/2 -> t + dt/2
+                        particle[3] = uxp + q*e*Exi*P::dt/(2.0*m*c);
+                        particle[4] = uyp + q*e*Eyi*P::dt/(2.0*m*c);
+                        particle[5] = uzp + q*e*Ezi*P::dt/(2.0*m*c);
 
-                       particle[0] += (c*dt/gamma)*uxn;
-                       particle[1] += (c*dt/gamma)*uyn;
-                       particle[2] += (c*dt/gamma)*uzn;
-                       */
+                        // TODO FIXME add particle propagate here
+                        /*
+                           double 
+                           uxn = particle[3],
+                           uyn = particle[4],
+                           uzn = particle[5];
 
-        }
+                           gamma = sqrt(1.0 + uxn*uxn + uyn*uyn + uzn*uzn);
 
+                           particle[0] += (c*dt/gamma)*uxn;
+                           particle[1] += (c*dt/gamma)*uyn;
+                           particle[2] += (c*dt/gamma)*uzn;
+                           */
+
+            }
+        } // end of loop over populations
 
     } // end of loop over cells
 
@@ -305,7 +332,7 @@ void Particle_Mover::propagate(
             abort();
         }
 
-        for (auto& particle: cell_data->particles) {
+        for (auto& particle: cell_data->electrons) {
 
             double 
                 ux = particle[3],

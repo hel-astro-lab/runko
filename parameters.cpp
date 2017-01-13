@@ -3,7 +3,7 @@
 typedef Parameters P;
 
 
-uint64_t P::Np = 1e4;
+uint64_t P::Np = 1e6;
 
 uint64_t P::Nx = 10;
 uint64_t P::Ny = 10;

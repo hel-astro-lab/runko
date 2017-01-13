@@ -10,28 +10,40 @@ std::tuple<void*, int, MPI_Datatype> Cell::get_mpi_datatype()
     MPI_Datatype datatype = MPI_DATATYPE_NULL;
 
     switch(Cell::transfer_mode) {
-        case Cell::PARTICLES:
-            if (this->particles.size() > 0) {
-                address = &(this->particles[0]);
+        case Cell::INIT:
+            break;
+        case Cell::ELECTRONS:
+            if (this->electrons.size() > 0) {
+                address = &(this->electrons[0]);
             } else {
                 // return a sane address just in case
-                address = &(this->number_of_particles);
+                address = &(this->number_of(Population::ELECTRONS));
             }
 
-            count = this->particles.size() * 6;
+            count = this->electrons.size() * 6;
             datatype = MPI_DOUBLE;
             break;
-        case Cell::PARTICLE_NUMBER:
-            address = &(this->number_of_particles);
+        case Cell::POSITRONS:
+            if (this->positrons.size() > 0) {
+                address = &(this->positrons[0]);
+            } else {
+                // return a sane address just in case
+                address = &(this->number_of(Population::POSITRONS));
+            }
+
+            count = this->positrons.size() * 6;
+            datatype = MPI_DOUBLE;
+            break;
+        case Cell::NUMBER_OF_ELECTRONS:
+            address = &(this->number_of(Population::ELECTRONS));
             count = 1;
             datatype = MPI_UNSIGNED;
             break;
-            // FIXME
-            // case Cell::FIELDS:
-            // 	address = &(this->field[0]);
-            // 	count = 19;
-            // 	datatype = MPI_DOUBLE;
-            // 	break;
+        case Cell::NUMBER_OF_POSITRONS:
+            address = &(this->number_of(Population::POSITRONS));
+            count = 1;
+            datatype = MPI_UNSIGNED;
+            break;
         case Cell::REMOTE_NEIGHBOR_LIST:
             address = &(this->remote_neighbor_list[0]);
             count = 27;

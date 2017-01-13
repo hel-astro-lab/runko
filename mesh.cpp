@@ -97,6 +97,8 @@ void Mesh::sort_particles_into_cells(
     const std::vector<uint64_t>& remote_neighbors
         = grid.get_remote_cells_on_process_boundary();
     cells.insert(cells.begin(), remote_neighbors.begin(), remote_neighbors.end());
+
+    
     // move particles to the particle list of the cell the particles are currently inside of
     for (const auto& previous_cell: cells) {
 
@@ -111,47 +113,53 @@ void Mesh::sort_particles_into_cells(
         std::array<double, 3> grid_coords;
         std::array<double, 6> particle_coords_vel;
         vector<std::array<double, 6>>::size_type i = 0;
-        while (i < previous_data->particles.size()) {
 
-            // handle grid wrap around
-            // FIXME beautiful (not working) oneliner
-            // previous_data->particles[i] = grid.geometry.get_real_coordinate(previous_data->particles[i]);
+        for (int ipops=Population::ELECTRONS; ipops < Population::N_POPULATIONS; ipops++)
+        {
+            Population ptype = (Population) ipops; ///< type cast into Population type for later usage
 
-            particle_coords_vel = previous_data->particles[i];
-            std::array<double, 3> particle_coords = {{particle_coords_vel[0],
-                particle_coords_vel[1],
-                particle_coords_vel[2]}};
-            grid_coords = grid.geometry.get_real_coordinate(particle_coords);
+            while (i < previous_data->particles(ptype).size()) {
 
-            particle_coords_vel[0] = grid_coords[0];
-            particle_coords_vel[1] = grid_coords[1];
-            particle_coords_vel[2] = grid_coords[2];
+                // handle grid wrap around
+                // FIXME beautiful (not working) oneliner
+                // previous_data->particles[i] = grid.geometry.get_real_coordinate(previous_data->electrons[i]);
 
-            previous_data->particles[i] = particle_coords_vel;
+                particle_coords_vel = previous_data->particles(ptype)[i];
+                std::array<double, 3> particle_coords = {{particle_coords_vel[0],
+                    particle_coords_vel[1],
+                    particle_coords_vel[2]}};
+                grid_coords = grid.geometry.get_real_coordinate(particle_coords);
 
-            // const uint64_t current_cell = grid.get_existing_cell(previous_data->particles[i]);
-            const uint64_t current_cell = grid.get_existing_cell(particle_coords);
+                particle_coords_vel[0] = grid_coords[0];
+                particle_coords_vel[1] = grid_coords[1];
+                particle_coords_vel[2] = grid_coords[2];
 
-            // do nothing if particle hasn't changed cell
-            if (current_cell == previous_cell) {
-                i++;
-                continue;
-            }
+                previous_data->particles(ptype)[i] = particle_coords_vel;
 
-            // change only local cell data because remote data will be overwritten anyway
-            // add particle to the current cell's list
-            if (grid.is_local(current_cell)) {
-                auto* const current_data = grid[current_cell];
-                current_data->particles.push_back(previous_data->particles[i]);
-                current_data->number_of_particles = current_data->particles.size();
-            }
+                // const uint64_t current_cell = grid.get_existing_cell(previous_data->particles[i]);
+                const uint64_t current_cell = grid.get_existing_cell(particle_coords);
 
-            // remove particle from its previous cell
-            if (grid.is_local(previous_cell)) {
-                previous_data->particles.erase(previous_data->particles.begin() + i);
-                previous_data->number_of_particles = previous_data->particles.size();
-            } else {
-                i++;
+                // do nothing if particle hasn't changed cell
+                if (current_cell == previous_cell) {
+                    i++;
+                    continue;
+                }
+
+                // change only local cell data because remote data will be overwritten anyway
+                // add particle to the current cell's list
+                if (grid.is_local(current_cell)) {
+                    auto* const current_data = grid[current_cell];
+                    current_data->particles(ptype).push_back(previous_data->particles(ptype)[i]);
+                    current_data->number_of(ptype) = current_data->particles(ptype).size();
+                }
+
+                // remove particle from its previous cell
+                if (grid.is_local(previous_cell)) {
+                    previous_data->particles(ptype).erase(previous_data->particles(ptype).begin() + i);
+                    previous_data->number_of(ptype) = previous_data->particles(ptype).size();
+                } else {
+                    i++;
+                }
             }
         }
     }
@@ -232,6 +240,9 @@ void Mesh::deposit_currents(
 #endif
 
 
+    double q = 0.0;
+    double m = 0.0;
+
 
     auto local_cells = grid.get_cells();
     for (const uint64_t& cell: local_cells) {
@@ -252,66 +263,88 @@ void Mesh::deposit_currents(
         std::array<double, 3> ds = grid.geometry.get_length(cell);
 
         // charge 
-        double rhop = q*e/(ds[0]*ds[1]*ds[2]);
+        double rhop = e/(ds[0]*ds[1]*ds[2]);
 
+        for (int ipops=Population::ELECTRONS; ipops < Population::N_POPULATIONS; ipops++)
+        {
+            Population ptype = (Population) ipops; ///< type cast into Population type for later usage
 
-        for (auto& particle: cell_data->particles) {
+            switch(ptype)
+            {
+                case Population::ELECTRONS:
+                    q = 1.0; // note that minus is already in the formulas
+                    m = me;
+                    break;
+                case Population::POSITRONS:
+                    q = -1.0;
+                    m = mp;
+                    break;
+                default:
+                    std::cerr << __FILE__ << ":" << __LINE__
+                        << " Invalid population switch: " << ptype
+                        << std::endl;
+                    abort();
+                    break;
+            }
 
-            double 
-                x = particle[0],
-                y = particle[1],
-                z = particle[2],
-                ux = particle[3],
-                uy = particle[4],
-                uz = particle[5];
-
-                // Lorentz transform
-                double gamma = sqrt(1.0 + ux*ux + uy*uy + uz*uz);
-                ux *= c/gamma;
-                uy *= c/gamma;
-                uz *= c/gamma;
+            for (auto& particle: cell_data->particles(ptype)) {
 
                 double 
-                    fp = (x-start_coords[0])/ds[0],
-                    fq = (y-start_coords[1])/ds[1],
-                    fr = (z-start_coords[2])/ds[2];
+                    x = particle[0],
+                    y = particle[1],
+                    z = particle[2],
+                    ux = particle[3],
+                    uy = particle[4],
+                    uz = particle[5];
 
-                    // basis for the current vector
-                    vec4 dJ0, dJ;
-                    dJ0 << 1.0, 0.5*ux, 0.5*uy, 0.5*uz;
-                    dJ0 *= rhop;
+                    // Lorentz transform
+                    double gamma = sqrt(1.0 + ux*ux + uy*uy + uz*uz);
+                    ux *= c/gamma;
+                    uy *= c/gamma;
+                    uz *= c/gamma;
+
+                    double 
+                        fp = (x-start_coords[0])/ds[0],
+                        fq = (y-start_coords[1])/ds[1],
+                        fr = (z-start_coords[2])/ds[2];
+
+                        // basis for the current vector
+                        vec4 dJ0, dJ;
+                        dJ0 << 1.0, 0.5*ux, 0.5*uy, 0.5*uz;
+                        dJ0 *= q*rhop;
 
 #ifdef DEBUG
-                    cout << rank << " MD: " << cell 
-                        << " dJ0= " << dJ0(0) << " / " << dJ0(1)
-                        << dJ0(2) << " / " << dJ0(3)
-                        << " ||| " << rhop << " / " << fp 
-                        << " / " << fq << " / " << fr << endl;
+                        cout << rank << " MD: " << cell 
+                            << " dJ0= " << dJ0(0) << " / " << dJ0(1)
+                            << dJ0(2) << " / " << dJ0(3)
+                            << " ||| " << rhop << " / " << fp 
+                            << " / " << fq << " / " << fr << endl;
 #endif
 
-                    /* now add weight functions:
-                       1st order cloud-in-the-cell model 
+                        /* now add weight functions:
+                           1st order cloud-in-the-cell model 
 
-                       TODO think about AMR; is it done in Cube?
-                       TODO add directly to Yee lattice
-                       */
-                    double wx, wy, wz;
-                    for(int xdir=0; xdir<2; xdir++) {
-                        wx = xdir == 0 ? 1.0-fp : fp;
+                           TODO think about AMR; is it done in Cube?
+                           TODO add directly to Yee lattice
+                           */
+                        double wx, wy, wz;
+                        for(int xdir=0; xdir<2; xdir++) {
+                            wx = xdir == 0 ? 1.0-fp : fp;
 
-                        for(int ydir=0; ydir<2; ydir++) {
-                            wy = ydir == 0 ? 1.0-fq : fq;
+                            for(int ydir=0; ydir<2; ydir++) {
+                                wy = ydir == 0 ? 1.0-fq : fq;
 
-                            for(int zdir=0; zdir<2; zdir++) {
-                                wz = zdir == 0 ? 1.0-fr : fr;
+                                for(int zdir=0; zdir<2; zdir++) {
+                                    wz = zdir == 0 ? 1.0-fr : fr;
 
-                                dJ = dJ0*wx*wy*wz;
-                                cube.add_J(xdir, ydir, zdir, dJ);
+                                    dJ = dJ0*wx*wy*wz;
+                                    cube.add_J(xdir, ydir, zdir, dJ);
+                                }
                             }
                         }
-                    }
 
-        } // end of particle loop
+            } // end of particle loop
+        } // end of population loop
 
         // now deposit neighborhood cube into mesh
         cube.distribute(grid, cell);

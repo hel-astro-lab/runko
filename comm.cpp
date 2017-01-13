@@ -22,7 +22,7 @@ void Comm::move_all_to_master(
         grid.pin(cell, 0);
     }
     // TODO: set proper INIT mpi_datatype that sends nothing
-    Cell::transfer_mode = Cell::PARTICLE_NUMBER;
+    Cell::transfer_mode = Cell::NUMBER_OF_ELECTRONS;
 
     grid.balance_load(false); // send everything to rank 0; do not use Zoltan
 
@@ -35,19 +35,26 @@ void Comm::update_ghost_zone_particles(
 ) {
 
     // reserve space for incoming particles in copies of remote neighbors
-    Cell::transfer_mode = Cell::PARTICLE_NUMBER;
+    Cell::transfer_mode = Cell::NUMBER_OF_ELECTRONS;
     grid.update_copies_of_remote_neighbors();
+
+    Cell::transfer_mode = Cell::NUMBER_OF_POSITRONS;
+    grid.update_copies_of_remote_neighbors();
+
 
     const std::vector<uint64_t>& remote_neighbors
         = grid.get_remote_cells_on_process_boundary();
 
     for (const auto& remote_neighbor: remote_neighbors) {
         auto* const data = grid[remote_neighbor];
-        data->resize();
+        data->resize_population(Population::ELECTRONS);
+        data->resize_population(Population::POSITRONS);
     }
 
     // update particle data between neighboring cells on different processes
-    Cell::transfer_mode = Cell::PARTICLES;
+    Cell::transfer_mode = Cell::ELECTRONS;
+    grid.update_copies_of_remote_neighbors();
+    Cell::transfer_mode = Cell::POSITRONS;
     grid.update_copies_of_remote_neighbors();
 
 
@@ -171,7 +178,9 @@ void Comm::load_balance(
             removed_cells.end());
 
     // transfer in parts
-    Cell::transfer_mode = Cell::PARTICLE_NUMBER;
+    Cell::transfer_mode = Cell::NUMBER_OF_ELECTRONS;
+    grid.continue_balance_load();
+    Cell::transfer_mode = Cell::NUMBER_OF_POSITRONS;
     grid.continue_balance_load();
 
     // resize according to incoming number of particles
@@ -185,11 +194,15 @@ void Comm::load_balance(
                 << endl;
             abort();
         }
-        cell_data->resize();
+        cell_data->resize_population(Population::ELECTRONS);
+        cell_data->resize_population(Population::POSITRONS);
     }
 
     // Transfer actual particles
-    Cell::transfer_mode = Cell::PARTICLES;
+    Cell::transfer_mode = Cell::ELECTRONS;
+    grid.continue_balance_load();
+
+    Cell::transfer_mode = Cell::POSITRONS;
     grid.continue_balance_load();
 
     grid.finish_balance_load();

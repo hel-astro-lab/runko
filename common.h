@@ -7,7 +7,7 @@
 // physical stuff
 //-------------------------------------------------- 
 const double c = 10.0; ///< Speed of light
-const double q = 1.0; ///< charge of ions
+// const double q = 1.0; ///< charge of ions
 const double e = 1.0;  ///< elementary charge
 const double pi = 3.14159265359;  ///<  mathematical pi
 

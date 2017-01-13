@@ -76,7 +76,7 @@ void Save::save_particles(
             abort();
         }
 
-        total_particles += cell_data->number_of_particles;
+        total_particles += cell_data->number_of(Population::ELECTRONS);
     }
     outfile << "POINTS " << total_particles << " float\n";
 
@@ -86,8 +86,8 @@ void Save::save_particles(
 
         auto* const cell_data = grid[cell];
         for (vector<std::array<double, 6> >::const_iterator
-                coordinates = cell_data->particles.begin();
-                coordinates != cell_data->particles.end();
+                coordinates = cell_data->particles(Population::ELECTRONS).begin();
+                coordinates != cell_data->particles(Population::ELECTRONS).end();
                 coordinates++, written_particles++
             ) {
             outfile << (*coordinates)[0] << "\t"
@@ -129,8 +129,8 @@ void Save::save_particles(
     for (const auto& cell: cells) {
         auto* const cell_data = grid[cell];
         for (vector<std::array<double, 6> >::const_iterator
-                coordinates = cell_data->particles.begin();
-                coordinates != cell_data->particles.end();
+                coordinates = cell_data->particles(Population::ELECTRONS).begin();
+                coordinates != cell_data->particles(Population::ELECTRONS).end();
                 coordinates++, written_particles++
             ) {
             outfile << cell << " ";

@@ -24,6 +24,15 @@ typedef Array<double, 4, 4> mat4;
 #define METAL_BOUNDARY_Y_CELL 2     ///< Cell with a conducting Y boundary
 
 
+// Enumarete particle populations
+enum Population
+{
+    ELECTRONS, ///< Electron particle population
+    POSITRONS,  ///< positron particle population
+    N_POPULATIONS
+};
+
+
 
 /// Modular Cell class for mpiGrid
 /**
@@ -34,11 +43,50 @@ class Cell
 {
 public:
         
-    /// current number of particles inside the Cell
-	unsigned int number_of_particles = 0;
 
-	/// coordinates of particles in this cell
-	std::vector<std::array<double, 6> > particles;
+    /// current number of electrons inside the Cell
+	// unsigned int number_of_electrons = 0;
+    
+    /// current number of positrons inside the Cell
+	// unsigned int number_of_positrons = 0;
+
+    std::array<uint64_t , Population::N_POPULATIONS> particles_in_population;
+
+    uint64_t& number_of(Population particle_population)
+    {
+        return particles_in_population[particle_population];
+    };
+
+    /// Particle 6D phase space populations
+    ///@{
+	/// 6D phase space coordinates of electrons in this cell
+	std::vector<std::array<double, 6> > electrons;
+    
+	/// 6D phase space coordinates of positrons in this cell
+	std::vector<std::array<double, 6> > positrons;
+    ///@}
+
+
+    /// Particle population switcher TODO fix/check performance
+    std::vector<std::array<double, 6> >& particles(Population particle_population)
+    {
+        switch(particle_population) {
+            case Population::ELECTRONS:
+                return this->electrons;
+                break; 
+            case Population::POSITRONS:
+                return this->positrons;
+                break; 
+            default:
+                    std::cerr << __FILE__ << ":" << __LINE__
+                    << " Invalid population switch: " << particle_population
+                    << std::endl;
+                abort();
+                break;
+        }
+    };
+
+
 
     /// 4-current vector containing (rho, Jx, Jy, Jz)
     vec4 J;
@@ -195,41 +243,50 @@ public:
 	*/
 	static int transfer_mode;
 
-    /// Define transfer modes
-	static const int
-		// data related to initialization
-		INIT                             = 0,
-		// number of particles to expect
-		PARTICLES                        = 1,
-		// number of particles to expect
-		PARTICLE_NUMBER                  = 2,
-		// data of fields
-		FIELDS                           = 3,
-		// neighborhood data
-		REMOTE_NEIGHBOR_LIST             = 4,
-		// data of incoming currents
-		INCOMING_CURRENTS                = 5,
-        // current four vector
-        CURRENT                          = 6,
-        // current four vector
-        YEE_CURRENT                      = 7,
-        // current four vector
-        YEE_B                            = 8,
-        // current four vector
-        YEE_E                            = 9,
-		// cell type data
-		TYPE                             = 10;
+    // Enumarete data types
+    enum {
+        INIT,                 /// < data related to initialization
+        NUMBER_OF_ELECTRONS,  /// < Number of electrons to expect
+        NUMBER_OF_POSITRONS,  /// < Number of positrons to expect
+        ELECTRONS,            /// < 6D electron phase phases
+        POSITRONS,            /// < 6D positron phase phases
+        FIELDS,               /// < data of EM fields
+		REMOTE_NEIGHBOR_LIST, /// < List of remote neighbors sending to me
+		INCOMING_CURRENTS,    /// < data of incoming currents
+        CURRENT,              /// < current four vector
+        YEE_CURRENT,          /// < staggered current four vector
+        YEE_B,                /// < Staggered B field
+        YEE_E,                /// < Staggered E field
+		TYPE                  /// < Cell type
+    };
 
 
     /// handle the MPI calls depending on cell state
 	std::tuple<void*, int, MPI_Datatype> get_mpi_datatype();
 
 
-	/// reserves space for particle data coming over MPI
-	void resize()
-	{
-		this->particles.resize(this->number_of_particles);
-	}
+	/// reserves space for electron phase space data coming over MPI
+    /// TODO make ambigious of population
+    void resize_population(Population particle_population)
+    {
+        switch(particle_population) {
+            case Population::ELECTRONS:
+                this->electrons.resize(this->number_of(Population::ELECTRONS));
+                break; 
+            case Population::POSITRONS:
+                this->positrons.resize(this->number_of(Population::POSITRONS));
+                break; 
+            default:
+                    std::cerr << __FILE__ << ":" << __LINE__
+                    << " Invalid population switch: " << particle_population
+                    << std::endl;
+                abort();
+                break;
+        }
+    };
+
+
+
 
 };
 

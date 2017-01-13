@@ -138,8 +138,10 @@ void Injector::cylinder(
             }};
 
             // insert particle to the cell
-            cell_data->particles.push_back(loc_vel);
-            cell_data->number_of_particles = cell_data->particles.size();
+            cell_data->electrons.push_back(loc_vel);
+            cell_data->number_of(Population::ELECTRONS) = cell_data->electrons.size();
+
+
 
         } 
 
@@ -194,8 +196,8 @@ void Injector::two_sheets(
             }};
 
             // insert particle to the cell
-            cell_data->particles.push_back(loc_vel);
-            cell_data->number_of_particles = cell_data->particles.size();
+            cell_data->electrons.push_back(loc_vel);
+            cell_data->number_of(Population::ELECTRONS) = cell_data->electrons.size();
 
         } 
 
@@ -216,41 +218,47 @@ void Injector::uniform(
 
     RNDM<double> rng;
 
-    uint64_t p=0;
-    while(p < Np){
-        // cout << rank << ": inserting particle " << p << endl;
+    // Uniform electron-positron plasma injection, i.e. we inject equal amount of both
+    for (int ipops=Population::ELECTRONS; ipops <= Population::POSITRONS; ipops++)
+    {
+        Population ptype = (Population) ipops; ///< type cast into Population type for later usage
 
-        double 
-            inj_x = rng.dunif(this->grid_xmin, this->grid_xmax),
-            inj_y = rng.dunif(this->grid_ymin, this->grid_ymax),
-            inj_z = rng.dunif(this->grid_zmin, this->grid_zmax);
+             
+        uint64_t p=0;
+        while(p < Np){
+            // cout << rank << ": inserting particle " << p << endl;
+
+            double 
+                inj_x = rng.dunif(this->grid_xmin, this->grid_xmax),
+                inj_y = rng.dunif(this->grid_ymin, this->grid_ymax),
+                inj_z = rng.dunif(this->grid_zmin, this->grid_zmax);
 
 
-        std::array<double, 3> coords = {{inj_x, inj_y, inj_z}};
+            std::array<double, 3> coords = {{inj_x, inj_y, inj_z}};
 
-        uint64_t cell = grid.geometry.get_cell(0, coords);
+            uint64_t cell = grid.geometry.get_cell(0, coords);
 
-        if(grid.is_local(cell)) {
+            if(grid.is_local(cell)) {
 
-            // cout << rank << ": is local!" << endl;
-            auto* const cell_data = grid[cell];
+                // cout << rank << ": is local!" << endl;
+                auto* const cell_data = grid[cell];
 
-            std::array<double, 6> loc_vel = {{
-                inj_x,
-                inj_y,
-                inj_z,
-                maxwellian(vb),
-                maxwellian(vb),
-                maxwellian(vb)
-            }};
+                std::array<double, 6> loc_vel = {{
+                        inj_x,
+                        inj_y,
+                        inj_z,
+                        maxwellian(vb),
+                        0.5*maxwellian(vb),
+                        maxwellian(vb)
+                }};
 
-            // insert particle to the cell
-            cell_data->particles.push_back(loc_vel);
-            cell_data->number_of_particles = cell_data->particles.size();
+                // insert particle to the cell
+                cell_data->particles(ptype).push_back(loc_vel);
+                cell_data->number_of(ptype) = cell_data->particles(ptype).size();
+            } 
 
-        } 
-
-        p++;
+            p++;
+        }
     };
 
 
