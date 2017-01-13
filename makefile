@@ -9,7 +9,8 @@ endif
 
 ifeq ($(COMP),osx_mpi)
 CXX = mpic++
-CFLAGS = -Wall -Wextra -g -std=c++11 -O2 -DDEBUG
+#CFLAGS = -Wall -Wextra -g -std=c++11 -O2 -DDEBUG
+CFLAGS = -Wall -Wextra -g -std=c++11 -O2
 endif
 
 ifeq ($(COMP),linux_mpi)

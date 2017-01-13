@@ -40,6 +40,34 @@ double double_maxwellian(double vb)
     return vf;
 }
 
+/// Draw y location from cosh distribution using rejection sampling
+double cosh_distribution(
+        double delta,
+        double ymin,
+        double ymax,
+        double Ly
+){
+    RNDM<double> rng;
+
+    double fmax = 1.0;
+    double y = rng.dunif(ymin, ymax);
+
+    double f = 0.0;
+    if(y < Ly/2)
+    {
+        f = pow(cosh((y - Ly/4.0)/delta),-2);
+    } else {
+        f = pow(cosh((y - 3.0*Ly/4.0)/delta),-2);
+    }
+
+    double x = rng.dunif(0.0, fmax);
+
+    if(x > f){
+        return cosh_distribution(delta, ymin, ymax, Ly);
+    } 
+
+    return y;
+}
         
 Injector::Injector(double given_xmin,
         double given_xmax,
@@ -60,7 +88,9 @@ Injector::Injector(double given_xmin,
 
 }
 
-    // cylinder shape injection
+
+
+
 void Injector::cylinder(
         dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, 
         uint64_t Np, 
@@ -121,3 +151,108 @@ void Injector::cylinder(
 }
 
 
+void Injector::two_sheets(
+        dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, 
+        uint64_t Np, 
+        double vb,
+        double delta
+) {
+
+    RNDM<double> rng;
+
+    double ymin = this->grid_ymin;
+    double ymax = this->grid_ymax;
+    double Ly = ymax - ymin;
+
+
+    uint64_t p=0;
+    while(p < Np){
+        // cout << rank << ": inserting particle " << p << endl;
+
+        double 
+            inj_x = rng.dunif(this->grid_xmin, this->grid_xmax),
+            inj_y = cosh_distribution(delta, ymin, ymax, Ly),
+            inj_z = rng.dunif(this->grid_zmin, this->grid_zmax);
+
+
+        std::array<double, 3> coords = {{inj_x, inj_y, inj_z}};
+
+        uint64_t cell = grid.geometry.get_cell(0, coords);
+
+        if(grid.is_local(cell)) {
+
+            // cout << rank << ": is local!" << endl;
+            auto* const cell_data = grid[cell];
+
+            std::array<double, 6> loc_vel = {{
+                inj_x,
+                inj_y,
+                inj_z,
+                maxwellian(vb),
+                0.0,
+                maxwellian(vb)
+            }};
+
+            // insert particle to the cell
+            cell_data->particles.push_back(loc_vel);
+            cell_data->number_of_particles = cell_data->particles.size();
+
+        } 
+
+        p++;
+    };
+
+
+    return;
+}
+
+
+
+void Injector::uniform(
+        dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, 
+        uint64_t Np, 
+        double vb
+) {
+
+    RNDM<double> rng;
+
+    uint64_t p=0;
+    while(p < Np){
+        // cout << rank << ": inserting particle " << p << endl;
+
+        double 
+            inj_x = rng.dunif(this->grid_xmin, this->grid_xmax),
+            inj_y = rng.dunif(this->grid_ymin, this->grid_ymax),
+            inj_z = rng.dunif(this->grid_zmin, this->grid_zmax);
+
+
+        std::array<double, 3> coords = {{inj_x, inj_y, inj_z}};
+
+        uint64_t cell = grid.geometry.get_cell(0, coords);
+
+        if(grid.is_local(cell)) {
+
+            // cout << rank << ": is local!" << endl;
+            auto* const cell_data = grid[cell];
+
+            std::array<double, 6> loc_vel = {{
+                inj_x,
+                inj_y,
+                inj_z,
+                maxwellian(vb),
+                maxwellian(vb),
+                maxwellian(vb)
+            }};
+
+            // insert particle to the cell
+            cell_data->particles.push_back(loc_vel);
+            cell_data->number_of_particles = cell_data->particles.size();
+
+        } 
+
+        p++;
+    };
+
+
+    return;
+}

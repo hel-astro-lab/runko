@@ -51,8 +51,14 @@ public:
              );
 
 
-    // cylinder shape injection
-	void cylinder( dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, uint64_t Np, double vb);
+    /// cylinder shape injection
+	void cylinder(dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, uint64_t Np, double vb);
+    
+    /// Sheet distribution
+	void two_sheets(dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, uint64_t Np, double vb, double delta);
+    
+    /// Uniform background plasma 
+	void uniform(dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, uint64_t Np, double vb);
 
 };
 

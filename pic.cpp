@@ -224,11 +224,21 @@ int main(int argc, char* argv[])
 
     comm.move_all_to_master(mpiGrid);
 
-    // Maxwellian temperature
-    const double vb = 2.0;
-
     // inject into cylindrical shape
-    inject.cylinder(mpiGrid, P::Np, vb);
+    // inject.cylinder(mpiGrid, P::Np, vb);
+
+    // inject background plasma first
+    uint64_t Nbkg = (uint64_t)(P::Np*0.1);
+    double vb_bkg = 1.0;
+    inject.uniform(mpiGrid, Nbkg, vb_bkg);
+
+    // then current sheets
+    uint64_t Nsheets = (uint64_t)(P::Np*0.9);
+    double delta = 0.005; ///< Sheet thickness
+    const double vb = 1.0; ///< Maxwellian temperature
+    inject.two_sheets(mpiGrid, Nsheets, vb, delta);
+
+
 
     comm.load_balance(mpiGrid);
     cout << rank << ": load balanced..." << endl;
@@ -291,11 +301,7 @@ int main(int argc, char* argv[])
     // Initialized everything; now starting main loop
 
 
-    #ifdef DEBUG
-	const unsigned int max_steps = 2;
-    #else
-	const unsigned int max_steps = 50;
-    #endif
+	const unsigned int max_steps = 5;
 
     cout << "Starting particle propagation" << endl;
 	for (unsigned int step = 1; step < max_steps; step++) 
