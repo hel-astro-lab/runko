@@ -3,11 +3,11 @@
 typedef Parameters P;
 
 
-uint64_t P::Np = 1e6;
+uint64_t P::Np = 1e5;
 
-uint64_t P::Nx = 10;
-uint64_t P::Ny = 10;
-uint64_t P::Nz = 10;
+uint64_t P::Nx = 5;
+uint64_t P::Ny = 5;
+uint64_t P::Nz = 5;
 
 
 // real spatial dimensions

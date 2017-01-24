@@ -92,14 +92,20 @@ doxy:
 depend: $(SRCS)
 	makedepend $(INCLUDES) $^
 
-test:
+test2:
 	mpirun -np 2 radpic
+
+test3:
+	mpirun -np 3 radpic
+
+test4:
+	mpirun -np 4 radpic
 
 test_omp:
 	export OMP_NUM_THREADS=2 && ./radpic
 
 debug:
-	gdb --args ./radpic
+	mpirun -np 3 /Applications/iTerm.app/Contents/MacOS/iTerm2 gdb
 
 
 

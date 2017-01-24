@@ -206,7 +206,7 @@ void Particle_Mover::update_velocities(
                     break;
                 case Population::POSITRONS:
                     q = -1.0;
-                    m = mp;
+                    m = me;
                     break;
                 default:
                     std::cerr << __FILE__ << ":" << __LINE__

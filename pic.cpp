@@ -128,6 +128,13 @@ int main(int argc, char* argv[])
     } 
 
 
+    // print rank, PID, and hostname
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    cout << rank << ": PID:" << ::getpid() << " host:" << hostname << endl;
+
+
+
 	// initialize Zoltan
 	float zoltan_version;
 	if (Zoltan_Initialize(argc, argv, &zoltan_version) != ZOLTAN_OK) {
@@ -238,7 +245,6 @@ int main(int argc, char* argv[])
     // inject.two_sheets(mpiGrid, Nsheets, vb, delta);
 
 
-
     comm.load_balance(mpiGrid);
     cout << rank << ": load balanced..." << endl;
 
@@ -246,6 +252,11 @@ int main(int argc, char* argv[])
     //-------------------------------------------------- 
     Mesh mesh;
     mesh.rank = rank;
+
+    // int debugWait = 0;
+    // while (0 == debugWait)
+    //     sleep(5);
+
 
     mesh.deposit_currents(mpiGrid);
     comm.update_ghost_zone_currents(mpiGrid);

@@ -277,7 +277,7 @@ void Mesh::deposit_currents(
                     break;
                 case Population::POSITRONS:
                     q = -1.0;
-                    m = mp;
+                    m = me;
                     break;
                 default:
                     std::cerr << __FILE__ << ":" << __LINE__
@@ -346,7 +346,9 @@ void Mesh::deposit_currents(
             } // end of particle loop
         } // end of population loop
 
+
         // now deposit neighborhood cube into mesh
+        // cout << this->rank << ": mesh.deposit: cube.distribute:" << endl;
         cube.distribute(grid, cell);
     }
 }

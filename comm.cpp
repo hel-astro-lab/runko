@@ -54,6 +54,7 @@ void Comm::update_ghost_zone_particles(
     // update particle data between neighboring cells on different processes
     Cell::transfer_mode = Cell::ELECTRONS;
     grid.update_copies_of_remote_neighbors();
+
     Cell::transfer_mode = Cell::POSITRONS;
     grid.update_copies_of_remote_neighbors();
 
@@ -65,6 +66,7 @@ void Comm::update_ghost_zone_particles(
 void Comm::update_ghost_zone_currents(
     dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid
 ) {
+
     Cell::transfer_mode = Cell::REMOTE_NEIGHBOR_LIST;
     grid.update_copies_of_remote_neighbors();
 
@@ -74,13 +76,14 @@ void Comm::update_ghost_zone_currents(
     const std::vector<uint64_t> remote_neighbors
         = grid.get_remote_cells_on_process_boundary();
 
+
     for (const auto& remote_neighbor: remote_neighbors) {
 
         auto* const cell_data = grid[remote_neighbor];
 
         int ijk = 0; 
         for (uint64_t receive_neigh: cell_data->remote_neighbor_list) {
-            if(receive_neigh != 0) {
+            if(receive_neigh != 0 && grid.is_local(receive_neigh)) {
 
 #ifdef DEBUG
                 cout << rank << " UC: " << remote_neighbor 
@@ -100,14 +103,19 @@ void Comm::update_ghost_zone_currents(
                 cell_data->incoming_currents[ijk*4+2],
                 cell_data->incoming_currents[ijk*4+3];
 
+                // cout << this->rank << ": " << receive_neigh << " from " << remote_neighbor << endl;
+                // cout << this->rank << ": " << dJ << endl;
+
                 auto* const receive_cell_data = grid[receive_neigh];
+                // cout << this->rank << ": " <<  receive_cell_data->J << endl;
+
                 receive_cell_data->J += dJ;
             }
-
             ijk++;
         }
     }
 
+    // cout << rank << " : distribute: update CURRENTS " << endl;
     // finally update current vectors
     Cell::transfer_mode = Cell::CURRENT;
     grid.update_copies_of_remote_neighbors();
@@ -180,6 +188,7 @@ void Comm::load_balance(
     // transfer in parts
     Cell::transfer_mode = Cell::NUMBER_OF_ELECTRONS;
     grid.continue_balance_load();
+
     Cell::transfer_mode = Cell::NUMBER_OF_POSITRONS;
     grid.continue_balance_load();
 
