@@ -248,7 +248,7 @@ void Injector::uniform(
                         inj_y,
                         inj_z,
                         maxwellian(vb),
-                        0.5*maxwellian(vb),
+                        maxwellian(vb),
                         maxwellian(vb)
                 }};
 
@@ -264,3 +264,60 @@ void Injector::uniform(
 
     return;
 }
+
+
+void Injector::Harris_sheet(
+        dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid,
+        double B0,
+        double alpha,
+        double delta
+) {
+
+
+    double ymin = this->grid_ymin;
+    double ymax = this->grid_ymax;
+    double Ly = ymax - ymin;
+
+
+    // get local
+    auto all_cells = grid.get_cells();
+    for (const uint64_t cell: all_cells) {
+        //
+        // grid geometry
+        std::array<double, 3> dxyz = grid.geometry.get_length(cell);
+        std::array<double, 3> start_coords = grid.geometry.get_min(cell);
+        
+
+
+        auto* const cell_data = grid[cell];
+
+        Vector3d B = Vector3d::Zero();
+
+        // Location of Yee grid points
+        double x,y,z;
+        x = start_coords[0] + dxyz[0];
+        y = start_coords[1] + dxyz[1];
+        z = start_coords[2] + dxyz[2];
+        
+        // Bx, By, Bz
+        double Bx, By, Bz;
+
+        if(y < Ly/2)
+        {
+            Bx = -B0*tanh((y - Ly/4.0)/delta);
+        } else 
+        {
+            Bx = B0*tanh((y- 3.0* Ly/4.0)/delta);
+        }
+
+        B(0) = Bx;
+        B(1) = 0.0;
+        B(2) = alpha*B0;
+
+        cell_data->BY = B;
+    }
+
+
+    return;
+}
+

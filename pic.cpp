@@ -242,11 +242,17 @@ int main(int argc, char* argv[])
     uint64_t Nsheets = (uint64_t)(P::Np*0.9);
     double delta = 0.005; ///< Sheet thickness
     const double vb = 1.0; ///< Maxwellian temperature
-    // inject.two_sheets(mpiGrid, Nsheets, vb, delta);
+    inject.two_sheets(mpiGrid, Nsheets, vb, delta);
 
 
     comm.load_balance(mpiGrid);
     cout << rank << ": load balanced..." << endl;
+
+    // Initialize B field
+    double B0 = 10000.0;
+    double alpha = 0.0;
+    inject.Harris_sheet(mpiGrid, B0, alpha, delta);
+
 
     // Initialize mesh and create fields
     //-------------------------------------------------- 
@@ -311,7 +317,7 @@ int main(int argc, char* argv[])
     // Initialized everything; now starting main loop
 
 
-	const unsigned int max_steps = 5;
+	const unsigned int max_steps = 50;
 
     cout << "Starting particle propagation" << endl;
 	for (unsigned int step = 1; step < max_steps; step++) 

@@ -149,6 +149,7 @@ void Mesh::sort_particles_into_cells(
                 // add particle to the current cell's list
                 if (grid.is_local(current_cell)) {
                     auto* const current_data = grid[current_cell];
+                    // XXX Bug here? with wrap coordinates???
                     current_data->particles(ptype).push_back(previous_data->particles(ptype)[i]);
                     current_data->number_of(ptype) = current_data->particles(ptype).size();
                 }

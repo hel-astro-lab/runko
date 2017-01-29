@@ -60,6 +60,9 @@ public:
     /// Uniform background plasma 
 	void uniform(dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, uint64_t Np, double vb);
 
+    /// Harris sheet magnetic field
+	void Harris_sheet(dccrg::Dccrg<Cell, dccrg::Cartesian_Geometry>& grid, double B0, double alpha, double delta);
+
 };
 
 
