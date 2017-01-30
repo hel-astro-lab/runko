@@ -1,19 +1,6 @@
 import numpy as np
 import math
 from pylab import *
-from mpl_toolkits.mplot3d import Axes3D
-
-
-
-#set up figure
-fig = figure(figsize=(10, 8), dpi=200)
-rc('font', family='serif')
-rc('xtick', labelsize='xx-small')
-rc('ytick', labelsize='xx-small')
-
-gs = GridSpec(2, 2)
-gs.update(hspace = 0.2)
-gs.update(wspace = 0.2)
 
 
 #physical parameters
@@ -24,42 +11,34 @@ c = 1.0
 #pick one operating mode
 oneD = False
 twoD = False
-threeD = True
+threeD = False
 
 
 #grid dimensions
-Nx = 10
-Ny = 10
-Nz = 10
+Nx = 1
+Ny = 1
+Nz = 1
 
-Nx_wrap = True
-Ny_wrap = True
-Nz_wrap = True
+Nx_wrap = False
+Ny_wrap = False
+Nz_wrap = False
 
 
 grid_xmin=0.0
-grid_xmax=10.0
+grid_xmax=1.0
 
 grid_ymin=0.0
-grid_ymax=10.0
+grid_ymax=1.0
 
 grid_zmin=0.0
-grid_zmax=10.0
-
-Np = 10000 #total number of particles
+grid_zmax=1.0
+Np = 0 #total number of particles
 
 
 #derived values
 xgrid = np.linspace(grid_xmin, grid_xmax, Nx+1)
 ygrid = np.linspace(grid_ymin, grid_ymax, Ny+1)
 zgrid = np.linspace(grid_zmin, grid_zmax, Nz+1)
-
-#Mesh grid for plotting
-XX, YY, ZZ = np.meshgrid(np.linspace(grid_xmin, grid_xmax, Nx),
-                         np.linspace(grid_ymin, grid_ymax, Ny),
-                         np.linspace(grid_zmin, grid_zmax, Nz)
-                        )
-
 
 Ncells = Nx*Ny*Nz
 
@@ -68,15 +47,7 @@ dy = diff(ygrid)[0]
 dz = diff(zgrid)[0]
 
 
-dt = 0.99/sqrt(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz)
-
-#correct grid sizes
-if oneD:
-    Ny = 1
-    Nz = 1
-if twoD:
-    Nz = 1
-
+dt = 0.0
 
 #initialize B, E, and J fields (in global scope)
 Bx = np.zeros((Nx,Ny,Nz))
@@ -96,17 +67,107 @@ JYy = np.zeros((Nx,Ny,Nz))
 JYz = np.zeros((Nx,Ny,Nz))
 
 
+
+#create grid
+mpiGrid = np.empty((Nx,Ny,Nz), dtype=np.object)
+
+def init():
+
+    #fix dimensionality
+    global oneD
+    global twoD
+    global threeD
+    global Nx
+    global Ny
+    global Nz
+
+    if oneD:
+        twoD = False
+        threeD = False
+    elif twoD:
+        oneD = False
+        threeD = False
+    elif threeD:
+        oneD = False
+        twoD = False
+
+
+    #correct grid sizes
+    if oneD:
+        Ny = 1
+        Nz = 1
+    if twoD:
+        Nz = 1
+
+    global Ncells
+    Ncells = Nx*Ny*Nz
+
+
+    global xgrid
+    global ygrid
+    global zgrid
+    xgrid = np.linspace(grid_xmin, grid_xmax, Nx+1)
+    ygrid = np.linspace(grid_ymin, grid_ymax, Ny+1)
+    zgrid = np.linspace(grid_zmin, grid_zmax, Nz+1)
+
+    
+    global dx
+    global dy
+    global dz
+    dx = diff(xgrid)[0]
+    dy = diff(ygrid)[0]
+    dz = diff(zgrid)[0]
+
+    global dt 
+    dt = 0.99/sqrt(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz)
+
+
+    #initialize B, E, and J fields (in global scope)
+    global Bx
+    global By
+    global Bz
+    global Ex
+    global Ey
+    global Ez
+    global Jx
+    global Jy
+    global Jz
+    global JYx
+    global JYy
+    global JYz
+    Bx = np.zeros((Nx,  Ny, Nz))
+    By = np.zeros((Nx,  Ny, Nz))
+    Bz = np.zeros((Nx,  Ny, Nz))
+    
+    Ex = np.zeros((Nx,  Ny, Nz))
+    Ey = np.zeros((Nx,  Ny, Nz))
+    Ez = np.zeros((Nx,  Ny, Nz))
+    
+    Jx = np.zeros((Nx,  Ny, Nz))
+    Jy = np.zeros((Nx,  Ny, Nz))
+    Jz = np.zeros((Nx,  Ny, Nz))
+    
+    JYx = np.zeros((Nx, Ny, Nz))
+    JYy = np.zeros((Nx, Ny, Nz))
+    JYz = np.zeros((Nx, Ny, Nz))
+
+
+    #create grid
+    global mpiGrid
+    mpiGrid = np.empty((Nx, Ny, Nz), dtype=np.object)
+
+
+    return
+
+##################################################
+
+
 class CellClass(object):
     def __init__(self):
         self.Npe = 0
         self.electrons = np.empty((0,6), dtype=float64)        
 
-        #self.xmin = 0
-        #self.xmax = 0
-        #self.ymin = 0
-        #self.ymax = 0
-        #self.zmin = 0
-        #self.zmax = 0
+
 
 def grid_limits(i,j,k):
     xmin = xgrid[i]
@@ -143,53 +204,6 @@ def Maxwellian(vb):
         return Maxwellian(vb)
 
     return vf
-
-
-
-
-#create grid
-mpiGrid = np.empty((Nx,Ny,Nz), dtype=np.object)
-
-
-
-#inject particles
-for i in range(Nx):
-    for j in range(Ny):
-        for k in range(Nz):
-            cell = CellClass() 
-
-            #cell limits
-            xmin,xmax, ymin,ymax, zmin,zmax = grid_limits(i,j,k)
-            
-
-            for n in range(Np/Ncells):
-                #random uniform location inside cell
-                x = xmin + (xmax-xmin)*np.random.rand()
-                y = ymin + (ymax-ymin)*np.random.rand()
-                z = zmin + (zmax-zmin)*np.random.rand()
-
-                #Temperature
-                if (n % 2 == 0):
-                    vb = 2.0
-                else:
-                    vb = -2.0
-
-                vx = Maxwellian(vb)
-                vy = Maxwellian(vb)
-                vz = Maxwellian(vb)
-
-                cell.electrons = np.concatenate((cell.electrons, [[x, y, z, vx, vy, vz]]), axis=0) #add 6D phase space 
-
-                cell.Npe += 1
-
-            mpiGrid[i,j,k] = cell
-
-
-
-#create E field
-#Ex[:,:,:] = 0.1
-#Ey[:,:,:] = 0.1
-#Ez[:,:,:] = 0.1
 
 
 
@@ -289,7 +303,6 @@ def deposit_current(grid):
 
 
     #print "    TOTAL=", np1, "/", np2
-
     return
 
 #Yee shift current vector into staggered grid
@@ -477,9 +490,6 @@ def trilinear_staggered(xd,yd,zd):
 #Vay pusher and particle propagator
 # note: we update every particle at once in vector format
 def update_velocities(grid):
-    global e
-    global me
-    global dt
 
     for k in range(Nz):
         for j in range(Ny):
@@ -507,14 +517,6 @@ def update_velocities(grid):
                 #interpolate E and B
                 EB_cube(i,j,k)
                 Exi, Eyi, Ezi, Bxi, Byi, Bzi = trilinear_staggered(xd,yd,zd)
-
-                # now we just pick the grid value directly
-                #Exi = Ex[i,j,k]
-                #Eyi = Ey[i,j,k]
-                #Ezi = Ez[i,j,k]
-                #Bxi = Bx[i,j,k]
-                #Byi = By[i,j,k] 
-                #Bzi = Bz[i,j,k] 
 
                 uxm = ux + q*e*Exi*dt/(2.0*m*c)
                 uym = uy + q*e*Eyi*dt/(2.0*m*c)
@@ -777,62 +779,6 @@ def collect_grid(grid):
     return electrons
 
 
-#####
-
-
-deposit_current(mpiGrid)
-Yee_currents()
-
-
-if oneD:
-    ax1 = subplot(gs[0,0])
-    ax1.set_ylim((-5, 5))
-    ax1.set_ylabel(r'velocity $v$')
-
-    ax2 = subplot(gs[1,0])
-    ax2.set_ylim((-15, 15))
-    ax2.set_ylabel(r'$E_x$')
-
-    ax3 = subplot(gs[1,1])
-    ax3.set_ylabel(r'$B_y$, $B_z$')
-
-    ax4 = subplot(gs[0,1])
-    ax4.set_ylim((-5, 5))
-    ax4.set_ylabel(r'Current $J_x$')
-
-    
-    for ax in [ax1, ax2, ax3, ax4]:
-        ax.set_xlim((grid_xmin,grid_xmax))
-        ax.set_xlabel(r'$x$')
-
-if twoD:
-    ax1 = subplot(gs[0,0])
-    ax1.set_xlim((grid_xmin,grid_xmax))
-    ax1.set_ylim((grid_ymin,grid_ymax))
-
-
-
-if threeD:
-    fig = plt.figure()
-    
-    ax1 = fig.add_subplot(224, projection='3d')
-    ax2 = fig.add_subplot(221, projection='3d')
-    ax3 = fig.add_subplot(222, projection='3d')
-    ax4 = fig.add_subplot(223, projection='3d')
-
-    ax2.set_title(r'$\bar{E}$')
-    ax3.set_title(r'$\bar{B}$')
-    ax4.set_title(r'Current $\bar{J}$')
-
-    for ax in [ax1,ax2,ax3,ax4]:
-        ax.set_xlim((grid_xmin,grid_xmax))
-        ax.set_ylim((grid_ymin,grid_ymax))
-        ax.set_zlim((grid_zmin,grid_zmax))
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
-        ax.set_zlabel(r'$z$')
-
-
 
 
 ##################################################
@@ -870,90 +816,5 @@ def test_interp(grid):
 
     return
     
-#Ex[:,:,:] = 1
-#Ex[:,0,0] = np.linspace(0.0, 1.0, 10)
-#Ey[:,:,:] = 1
-#Ez[:,:,:] = 1
-#Bx[:,:,:] = 1
-#By[:,:,:] = 1
-#Bz[:,:,:] = 1
-#test_interp(mpiGrid)
-
-max_steps = 2
-
-for step in range(1, max_steps):
-    print " step: ",step
-
-    #push_half_B()
-
-    update_velocities(mpiGrid)
-    
-    sort_particles_between_cells(mpiGrid)
-
-    #push_half_B()
-
-    push_E()
-
-    deposit_current(mpiGrid)
-
-    Yee_currents()
-
-    #apply filters
-
-    #I/O
-    electrons = collect_grid(mpiGrid)
-    x = electrons[:,0]
-    y = electrons[:,1]
-    z = electrons[:,2]
-    vx = electrons[:,3]
-    vy = electrons[:,4]
-    vz = electrons[:,5]
-
-    if oneD:
-        res1 = ax1.plot(x, vx, "k.")
-
-        res2 = ax2.plot(XX[0,:,0], Ex[:,0,0], "b-")
-        res3 = ax3.plot(XX[0,:,0], By[:,0,0], "b-")
-        res3 = ax3.plot(XX[0,:,0], Bz[:,0,0], "r-")
-        res4 = ax4.plot(XX[0,:,0], Jx[:,0,0], "b-")
-
-        savefig('pic1d_'+str(step)+'.png')
-        res1.pop(0).remove()
-        res2.pop(0).remove()
-
-        res3.pop(0).remove()
-
-        res4.pop(0).remove()
-
-    if twoD:
-        res1 = ax1.plot(x, y, "k.")
-
-
-        savefig('pic2d_'+str(step)+'.png')
-        res1.pop(0).remove()
-
-    if threeD:
-        res1  = ax1.plot(x, y, z, "k.", markersize=0.5)
-
-        res2 =  ax2.quiver(XX, YY, ZZ, Ex, Ey, Ez, pivot='tail')
-        res3 =  ax3.quiver(XX, YY, ZZ, Bx, By, Bz, pivot='tail')
-        res4 =  ax4.quiver(XX, YY, ZZ, Jx, Jy, Jz, pivot='tail')
-
-        savefig('pic3d_'+str(step)+'.png')
-
-        #clear figure
-        res1.pop(0).remove()
-        ax2.collections.remove(res2)
-        ax3.collections.remove(res3)
-        ax4.collections.remove(res4)
-
-
-#end of loop
-
-
-
-
-
-
 
 
