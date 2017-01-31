@@ -1,8 +1,8 @@
 import numpy as np
 import math
 from pylab import *
+import os, sys
 
-#from radpic import *
 import radpic as rpic
 
 
@@ -50,6 +50,12 @@ XX, YY, ZZ = np.meshgrid(np.linspace(rpic.grid_xmin, rpic.grid_xmax, rpic.Nx),
 
 
 ##################################################
+# Path to be created
+path = "out"
+if not os.path.exists(path):
+    os.makedirs(path)
+
+
 #set up figure
 fig = figure(figsize=(10, 8), dpi=200)
 rc('font', family='serif')
@@ -163,7 +169,8 @@ for step in range(1, max_steps):
     res3 = ax3.plot(XX[0,:,0], rpic.Bz[:,0,0], "r-")
     res4 = ax4.plot(XX[0,:,0], rpic.Jx[:,0,0], "b-")
 
-    savefig('out_1d/pic1d_'+str(step)+'.png')
+    fname = path+'/oneD_'+str(step)+'.png'
+    savefig(fname)
 
     #clean figure
     res1.pop(0).remove()

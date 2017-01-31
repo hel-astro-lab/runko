@@ -2,8 +2,8 @@ import numpy as np
 import math
 from pylab import *
 from mpl_toolkits.mplot3d import Axes3D
+import os, sys
 
-#from radpic import *
 import radpic as rpic
 
 
@@ -48,6 +48,12 @@ XX, YY, ZZ = np.meshgrid(np.linspace(rpic.grid_xmin, rpic.grid_xmax, rpic.Nx),
 
 
 ##################################################
+# Path to be created
+path = "out"
+if not os.path.exists(path):
+    os.makedirs(path)
+
+
 #set up figure
 #fig = figure(figsize=(10, 8), dpi=200)
 fig = plt.figure()
@@ -119,17 +125,17 @@ rpic.deposit_current(rpic.mpiGrid)
 rpic.Yee_currents()
 
 
-max_steps = 3
+max_steps = 10
 for step in range(1, max_steps):
     print " step: ",step
 
-    #push_half_B()
+    rpic.push_half_B()
 
     rpic.update_velocities(rpic.mpiGrid)
     
     rpic.sort_particles_between_cells(rpic.mpiGrid)
 
-    #push_half_B()
+    rpic.push_half_B()
 
     rpic.push_E()
 
@@ -157,7 +163,7 @@ for step in range(1, max_steps):
 
 
 
-    fname = 'out_3d/pic3d_'+str(step)+'.png'
+    fname = path+'/threeD_'+str(step)+'.png'
     savefig(fname)
 
     #clear figure
