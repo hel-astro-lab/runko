@@ -2,6 +2,9 @@ import numpy as np
 import math
 from pylab import *
 import os, sys
+from scipy.stats import gaussian_kde
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 
 import radpic as rpic
 
@@ -57,12 +60,12 @@ if not os.path.exists(path):
 
 
 #set up figure
-fig = figure(figsize=(10, 8), dpi=200)
+fig = figure(figsize=(10, 12), dpi=200)
 rc('font', family='serif')
 rc('xtick', labelsize='xx-small')
 rc('ytick', labelsize='xx-small')
 
-gs = GridSpec(2, 2)
+gs = GridSpec(3, 2)
 gs.update(hspace = 0.2)
 gs.update(wspace = 0.2)
 
@@ -80,6 +83,12 @@ ax3.set_ylabel(r'$B_y$, $B_z$')
 ax4 = subplot(gs[0,1])
 ax4.set_ylim((-5, 5))
 ax4.set_ylabel(r'Current $J_x$')
+
+ax5 = subplot(gs[2,0])
+
+ax6 = fig.add_subplot(gs[2,1], projection='3d')
+#ax6 = subplot(gs[2,1])
+
 
 
 for ax in [ax1, ax2, ax3, ax4]:
@@ -122,6 +131,102 @@ for i in range(rpic.Nx):
             rpic.mpiGrid[i,j,k] = cell
 
 
+def kde_scipy(x, x_grid, bandwidth=0.2, **kwargs):
+    """Kernel Density Estimation with Scipy"""
+    # Note that scipy weights its bandwidth by the covariance of the
+    # input data.  To make the results comparable to the other methods,
+    # we divide the bandwidth by the sample standard deviation here.
+    #kde = gaussian_kde(x, bw_method=bandwidth / x.std(ddof=1), **kwargs)
+    #
+    # normal scott kernel bandwidth estimator
+    kde = gaussian_kde(x, bw_method='scott', **kwargs)
+    return kde.evaluate(x_grid)
+
+
+def slice_pdf(ax, particles):
+
+    N_slices = 10
+    cm_subsection = np.linspace(0.0, 1.0, N_slices) 
+    colors = [cm.Dark2(x) for x in cm_subsection ]
+
+    ax.cla()
+    ax.set_ylabel(r'pdf slices')
+    ax.set_xlabel(r'$v_x$')
+
+    
+    xlims = np.linspace(rpic.grid_xmin, rpic.grid_xmax, N_slices+1)
+    for i in range(len(xlims)-1):
+        #print "slice lims", xlims[i], xlims[i+1]
+        indx1 = np.where(particles[:,0] > xlims[i])
+        indx2 = np.where(particles[:,0] < xlims[i+1])
+        indx = np.intersect1d(indx1, indx2)
+
+        vx_sample = particles[indx, 3]
+        ax = plot_pdf(ax, vx_sample, color=colors[i])
+
+    return ax
+
+
+def plot_pdf(ax, sample, color='blue'):
+    edges = np.linspace(-7, 7, 100)
+    
+    #kernel density estimator
+    pdf1 = kde_scipy(sample, edges, bandwidth=0.2)
+    ax.plot(edges, pdf1, color=color, alpha=0.8)
+
+    return ax
+
+
+def plot_pdf2d(ax, xs, ys):
+
+    ax.cla()
+    ax.set_ylabel(r'$v_x$')
+    ax.set_xlabel(r'$v_y$')
+    #ax.set_zlabel(r'pdf')
+
+    xmin = -6.0
+    xmax = 6.0
+    ymin = -6.0
+    ymax = 6.0
+    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+    positions = np.vstack([X.ravel(), Y.ravel()])
+    values = np.vstack([xs, ys])
+
+    kernel = gaussian_kde(values, bw_method='scott')
+    #kernel = stats.gaussian_kde(values)
+
+    Z = np.reshape(kernel(positions).T, X.shape)
+
+    #ax.plot_surface(X, Y, Z)
+    cfset = ax.contourf(X,Y,Z, cmap='Blues')
+    cset = ax.contour(X,Y,Z, colors='k')
+    #ax.clabel(cset, inline=1)
+
+    return ax
+
+
+def plot_pdf3d(ax, xs, ys):
+
+    ax.cla()
+    ax.set_ylabel(r'$v_x$')
+    ax.set_xlabel(r'$v_y$')
+    ax.set_zlabel(r'pdf')
+
+    xmin = -6.0
+    xmax = 6.0
+    ymin = -6.0
+    ymax = 6.0
+    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+    positions = np.vstack([X.ravel(), Y.ravel()])
+    values = np.vstack([xs, ys])
+
+    kernel = gaussian_kde(values, bw_method='scott')
+
+    Z = np.reshape(kernel(positions).T, X.shape)
+
+    ax.plot_surface(X, Y, Z, cmap='Blues')
+
+    return ax
 
 ##################################################
 ##################################################
@@ -169,6 +274,11 @@ for step in range(1, max_steps):
     res3 = ax3.plot(XX[0,:,0], rpic.Bz[:,0,0], "r-")
     res4 = ax4.plot(XX[0,:,0], rpic.Jx[:,0,0], "b-")
 
+    ax5 = slice_pdf(ax5, electrons)
+
+    #ax6 = plot_pdf2d(ax6, vx, vy)
+    ax6 = plot_pdf3d(ax6, vx, vy)
+
     fname = path+'/oneD_'+str(step)+'.png'
     savefig(fname)
 
@@ -177,6 +287,7 @@ for step in range(1, max_steps):
     res2.pop(0).remove()
     res3.pop(0).remove()
     res4.pop(0).remove()
+
 
 #end of loop
 
