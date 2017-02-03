@@ -228,6 +228,36 @@ def plot_pdf3d(ax, xs, ys):
 
     return ax
 
+
+def plot_pdf3d_isosurf(ax, xs, ys):
+
+    ax.cla()
+    ax.set_ylabel(r'$v_x$')
+    ax.set_xlabel(r'$v_y$')
+    ax.set_zlabel(r'$v_z$')
+
+    xmin = -6.0
+    xmax = 6.0
+    ymin = -6.0
+    ymax = 6.0
+
+    zmin = -6.0
+    zmax = 6.0
+
+    kde = gaussian_kde(values, bw_method='scott')
+    xi, yi, zi = np.mgrid[xmin:xmax:50j, ymin:ymax:50j, zmin:zmax:50j]
+
+    # Evaluate the KDE on a regular grid...
+    coords = np.vstack([item.ravel() for item in [xi, yi, zi]])
+    density = kde(coords).reshape(xi.shape)
+
+    # Visualize the density estimate as isosurfaces
+    mlab.contour3d(xi, yi, zi, density, opacity=0.5)
+    mlab.axes()
+    mlab.show()
+
+
+    return ax
 ##################################################
 ##################################################
 ##################################################
@@ -278,6 +308,7 @@ for step in range(1, max_steps):
 
     #ax6 = plot_pdf2d(ax6, vx, vy)
     ax6 = plot_pdf3d(ax6, vx, vy)
+    #ax6 = plot_pdf3d_isosurf(ax6, vx, vy)
 
     fname = path+'/oneD_'+str(step)+'.png'
     savefig(fname)

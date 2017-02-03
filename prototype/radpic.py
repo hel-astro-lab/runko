@@ -9,6 +9,7 @@ me = 1.0
 c = 1.0
 
 #pick one operating mode
+zeroD = False
 oneD = False
 twoD = False
 threeD = False
@@ -74,6 +75,7 @@ mpiGrid = np.empty((Nx,Ny,Nz), dtype=np.object)
 def init():
 
     #fix dimensionality
+    global zeroD
     global oneD
     global twoD
     global threeD
@@ -81,7 +83,11 @@ def init():
     global Ny
     global Nz
 
-    if oneD:
+    if zeroD:
+        oneD = False
+        twoD = False
+        threeD = False
+    elif oneD:
         twoD = False
         threeD = False
     elif twoD:
@@ -93,6 +99,10 @@ def init():
 
 
     #correct grid sizes
+    if zeroD:
+        Nx = 1
+        Ny = 1
+        Nz = 1
     if oneD:
         Ny = 1
         Nz = 1
@@ -248,10 +258,15 @@ def deposit_current(grid):
                 fq = (y - ymin)/dy
                 fr = (z - zmin)/dz
 
-                dJx = 0.5*sum(ux)*q*rhop
-                dJy = 0.5*sum(uy)*q*rhop
-                dJz = 0.5*sum(uz)*q*rhop
             
+                #just get current to center cell; 0th order model
+                if zeroD:
+                    dJx = 0.5*sum(ux)*q*rhop
+                    dJy = 0.5*sum(uy)*q*rhop
+                    dJz = 0.5*sum(uz)*q*rhop
+                    Jx[i,j,k] += dJx
+                    Jy[i,j,k] += dJy
+                    Jz[i,j,k] += dJz
 
                 #cloud-in-the-cell model
                 if oneD:
@@ -260,6 +275,9 @@ def deposit_current(grid):
                         ii = i+xdir
                         if ii >= Nx:
                             ii -= Nx
+                        dJx = 0.5*sum(ux*wx)*q*rhop
+                        dJy = 0.5*sum(uy*wx)*q*rhop
+                        dJz = 0.5*sum(uz*wx)*q*rhop
                         Jx[ii,j,k] += dJx
                         Jy[ii,j,k] += dJy
                         Jz[ii,j,k] += dJz
@@ -276,6 +294,9 @@ def deposit_current(grid):
                             if jj >= Ny:
                                 jj -= Ny
 
+                            dJx = 0.5*sum(ux*wx*wy)*q*rhop
+                            dJy = 0.5*sum(uy*wx*wy)*q*rhop
+                            dJz = 0.5*sum(uz*wx*wy)*q*rhop
                             Jx[ii,jj,k] += dJx
                             Jy[ii,jj,k] += dJy
                             Jz[ii,jj,k] += dJz
@@ -297,6 +318,9 @@ def deposit_current(grid):
                                 if kk >= Nz:
                                     kk -= Nz
 
+                                dJx = 0.5*sum(ux*wx*wy*wz)*q*rhop
+                                dJy = 0.5*sum(uy*wx*wy*wz)*q*rhop
+                                dJz = 0.5*sum(uz*wx*wy*wz)*q*rhop
                                 Jx[ii,jj,kk] += dJx
                                 Jy[ii,jj,kk] += dJy
                                 Jz[ii,jj,kk] += dJz
@@ -515,8 +539,16 @@ def update_velocities(grid):
                 zd = (z - xmin)/dz
 
                 #interpolate E and B
-                EB_cube(i,j,k)
-                Exi, Eyi, Ezi, Bxi, Byi, Bzi = trilinear_staggered(xd,yd,zd)
+                if zeroD:
+                    Exi = Ex[i,j,k]
+                    Eyi = Ey[i,j,k]
+                    Ezi = Ez[i,j,k]
+                    Bxi = Bx[i,j,k]
+                    Byi = By[i,j,k]
+                    Bzi = Bz[i,j,k]
+                else:
+                    EB_cube(i,j,k)
+                    Exi, Eyi, Ezi, Bxi, Byi, Bzi = trilinear_staggered(xd,yd,zd)
 
                 uxm = ux + q*e*Exi*dt/(2.0*m*c)
                 uym = uy + q*e*Eyi*dt/(2.0*m*c)
