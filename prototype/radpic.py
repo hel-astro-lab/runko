@@ -68,6 +68,78 @@ JYy = np.zeros((Nx,Ny,Nz))
 JYz = np.zeros((Nx,Ny,Nz))
 
 
+#radiation fields
+
+#From Zeltron
+Uph=0.0 #external photon energy density
+
+#synchrotron energy losses
+Esyned=0.0 
+Esynpd=0.0 
+Esyneb=0.0 
+Esynpb=0.0 
+Esyn_electrons=0.0 
+Esyn_ions=0.0 
+
+#inverse Compton energy losses
+Eicsed=0.0 
+Eicspd=0.0 
+Eicseb=0.0 
+Eicspb=0.0 
+Eics_electrons=0.0 
+Eics_ions=0.0 
+
+#external radiation field energy density
+B0 = 0.0
+udens_ratio = 1.0
+Uph = udens_ratio*(B0*B0/(8.0*pi))
+
+#em_energy
+#synchrotrhon
+#rad_energy(esyneb, esyned, esyn_electrons, electrons, syn)
+#rad_energy(esynpb, esynpd, esyn_ions, ions, syn)
+
+#inverse compton
+#rad_energy(eicseb, eicsed, eics_electrons, electrons, syn)
+#rad_energy(eicspb, eicspd, eics_ions, ions, syn)
+
+#spectrum and angular distribution
+#this subroutine computes particles spectrum and angular distribution
+#input 
+#pcl #particel distribution function
+#it timestep
+#spec particle spectrum
+#name of particle
+#output:
+# u, phi, lmabda, dN/dOmega/du, dNdu
+
+
+#spectrum_angular(pcl_ed, electrons, drift #drift electrons
+#spectrum_angular(pcl_pd, ions, drift #drift ions
+
+#spectrum_angular(pcl_ed, electrons, bg #bkg electrons
+#spectrum_angular(pcl_pd, ions, bg #bkg ions
+
+#analyze radiation
+# Computes total sync. radiatin spectrum and angular disteibution
+# input: 
+#  pcl particle distribution
+#  Bxg x-component of B at nodes at t
+#  Byg y-component of B at nodes at t
+#  Bzg z-component of B at nodes at t
+#  it timestep
+#  spec particle species
+#  sym name of the particles
+# output nu(Hz), nuFnu(erg/s)o
+#analysis_sync(mi, pclpb, Bxg, Byg, Bzg...
+
+#Zeltron Boris pusher
+# #Esyn total sync. energy losses between t and t+dt
+# #Eics total inverse Compton energy losses between t and t+dt
+# #external photon energy density
+
+
+
 
 #create grid
 mpiGrid = np.empty((Nx,Ny,Nz), dtype=np.object)
