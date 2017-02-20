@@ -78,6 +78,31 @@ Blaa
 \section{Introduction}\label{sec:intro}
 Blaa blaa!
 
+\section{Code outline}
+
+\subsection{Current minimal working example}
+We have implemented a simple minimal working example with following technical details 
+\begin{itemize}
+    \item Relativistic Vay particle pusher
+    \item Yee lattice splitting of $E$ and $B$ fields
+    \item trilinear staggered EM-field grid interpolation
+    \item Charge conserving current deposit with zigzag-method (Umeda et al)
+    \item First-order, cloud-in-the-cell particle shapes
+\end{itemize}
+
+\subsection{Technical details}
+Technically our implementation has
+\begin{itemize}
+    \item C++ framework 
+    \item Domain decomposition with \textsc{MPI}
+    \item Grid communication with non-blocking methods 
+    \item Threading with \textsc{openmp}
+    \item Adaptive modular grid \textsc{dccrg} (by FMI)
+    \item Dynamic load balancing with hypergrap slicing via \textsc{Zoltan}
+    \item AVX/SSE vectorization for simple loops
+\end{itemize}
+
+
 \section{Theory}\label{sect:theory}
 
 Solving Vlasov-Maxwell equations.
@@ -186,7 +211,28 @@ The homogeneous equations are
 Hence, when neglecting QED corrections we can set $\zeta_1=1$ and $\zeta_2=0$.
 Similarly, when working in vacuum $\vec{D}$ and $\vec{H}$ reduce to normal $\vec{E}$ and $\vec{B}$.
 
+\subsection{Relativistic Vay pusher}
 
+
+We start with velocities at a time $i$ given as $u = \gamma v$. 
+In addition we can compactify the notation by introducing $h = \frac{q \Delta t}{2 m c}$.
+Then we update the first half as
+\begin{enumerate}
+    \item $\gamma^i = \sqrt{1 + {u^i)^2}}$
+    \item $u^{i+1/2} = u^i + \frac{q \Delta t}{2 m c} (E^{i+1/2} + v^i \times B^{i+1/2}) = u^i + h (E^{i+1/2} + v^i \times B^{i + 1/2})$
+\end{enumerate}
+Second half is done by computing the auxiliary steps $1-8$ and combining them in step $9$ as
+\begin{enumerate}
+    \item $u' = u^{i+1/2} + \frac{q \Delta t}{2 m c} E^{i+1/2} = u^{i+1/2} + h E^{i+1/2}$
+    \item $\tau = \frac{q \Delta t}{2 m c} B^{i+1/2} = h B^{i + 1/2}$
+    \item $\gamma' = \sqrt{1 + {u'}^2}$
+    \item $\sigma = {\gamma'}^2 - \tau^2$
+    \item $u^{*} = u' \cdot \tau^2$
+    \item $\gamma^{i+1} = \sqrt{ \frac{\sigma + \sqrt{\sigma^2 + 4(\tau^2 + {u^{*}}^2)}}{2}}$
+    \item $t = \tau / \gamma^{i+1}$
+    \item $s = \frac{1}{1+(\tau/\gamma^{i+1})^2}$
+    \item $u^{i+1} = s[u' + (u' \cdot t) t + u' \times t]$
+\end{enumerate}
 
 \subsection{Radiation reaction}
 
