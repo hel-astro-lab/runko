@@ -38,7 +38,7 @@ rpic.grid_ymax=10.0
 rpic.grid_zmin=0.0
 rpic.grid_zmax=10.0
 
-rpic.Np = 10000 #total number of particles
+rpic.Np = 1000 #total number of particles
 
 
 #Initialize the grid
@@ -120,11 +120,13 @@ for i in range(rpic.Nx):
                 else:
                     vb = -2.0
 
-                vx = rpic.Maxwellian(vb)
-                vy = rpic.Maxwellian(vb)
-                vz = rpic.Maxwellian(vb)
+                vx = rpic.Maxwellian(vb, 0.2)
+                #vy = rpic.Maxwellian(vb, 0.2)
+                #vz = rpic.Maxwellian(vb, 0.2)
+                vy = 0.001
+                vz = 0.001
 
-                cell.electrons = np.concatenate((cell.electrons, [[x, y, z, vx, vy, vz]]), axis=0) #add 6D phase space 
+                cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, 1.0]]), axis=0) #add 6D phase space 
 
                 cell.Npe += 1
 
@@ -271,18 +273,17 @@ max_steps = 10
 for step in range(1, max_steps):
     print " step: ",step
 
-    #push_half_B()
+    #rpic.push_half_B()
 
-    rpic.update_velocities(rpic.mpiGrid)
+    rpic.Vay_update_velocities(rpic.mpiGrid)
     
     rpic.sort_particles_between_cells(rpic.mpiGrid)
 
-    #push_half_B()
+    #rpic.push_half_B()
 
-    rpic.push_E()
+    #rpic.push_E()
 
     rpic.deposit_current(rpic.mpiGrid)
-
     rpic.Yee_currents()
 
     #apply filters

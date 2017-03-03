@@ -108,7 +108,7 @@ for i in range(rpic.Nx):
                 vy = rpic.Maxwellian(vb)
                 vz = rpic.Maxwellian(vb)
 
-                cell.electrons = np.concatenate((cell.electrons, [[x, y, z, vx, vy, vz]]), axis=0) #add 6D phase space 
+                cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, 1.0]]), axis=0) #add 6D phase space 
 
                 cell.Npe += 1
 
@@ -125,13 +125,13 @@ rpic.deposit_current(rpic.mpiGrid)
 rpic.Yee_currents()
 
 
-max_steps = 10
+max_steps = 2
 for step in range(1, max_steps):
     print " step: ",step
 
     rpic.push_half_B()
 
-    rpic.update_velocities(rpic.mpiGrid)
+    rpic.Vay_update_velocities(rpic.mpiGrid)
     
     rpic.sort_particles_between_cells(rpic.mpiGrid)
 
@@ -142,6 +142,8 @@ for step in range(1, max_steps):
     rpic.deposit_current(rpic.mpiGrid)
 
     rpic.Yee_currents()
+
+
 
     #apply filters
 

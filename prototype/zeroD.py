@@ -110,7 +110,7 @@ for n in range(rpic.Np):
     vy = rpic.Maxwellian(vb)
     vz = rpic.Maxwellian(vb)
 
-    cell.electrons = np.concatenate((cell.electrons, [[x, y, z, vx, vy, vz]]), axis=0) #add 6D phase space 
+    cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, 1.0]]), axis=0) #add 6D phase space 
     cell.Npe += 1
 
 rpic.mpiGrid[0,0,0] = cell

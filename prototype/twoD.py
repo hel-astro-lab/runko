@@ -109,7 +109,7 @@ for i in range(rpic.Nx):
                 vy = rpic.Maxwellian(vb)
                 vz = rpic.Maxwellian(vb)
 
-                cell.electrons = np.concatenate((cell.electrons, [[x, y, z, vx, vy, vz]]), axis=0) #add 6D phase space 
+                cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz]]), axis=0) #add 6D phase space 
 
                 cell.Npe += 1
 
