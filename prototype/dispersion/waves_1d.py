@@ -5,43 +5,55 @@ import os, sys
 from scipy.stats import gaussian_kde
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.special import kn
 
+#set seed to get reproducible errors & results
+np.random.seed(0)
 
 #update system path as we are on the subdirectory
 sys.path.append('/Users/natj/projects/radpic/prototype')
 import radpic as rpic
 
 
-#physical parameters
-rpic.e = 1.0
-rpic.me = 2.0
-rpic.c = 0.5
+#new dimensionless inputs
+##################################################
+rpic.Nppc = 64 #particles per cell
+#rpic.Nppc = 2 #particles per cell
+rpic.delgamma = 0.2 #(k T/m c^2, T electron/ion temperature
+#rpic.delgamma = 2.0e-5 #(k T/m c^2, T electron/ion temperature
+
+rpic.qe = 1.0 #electron charge
+rpic.qe = 1.0 #electron
+
+rpic.me = 1.0 #electron mass
+rpic.mi = 1.0 #ion mass (or actually mass to charge ratio)
+rpic.gamma = 3.0 #flow drift gamma (gamma0)
+rpic.delta = 10.0 #plasma skin depth
+rpic.Te_Ti = 1.0 #T_e / T_i
+rpic.c = 1.0 #Computational speed of light
 
 
-rpic.oneD = True #dimensionality
-rpic.twoD = False
+rpic.oneD = False #dimensionality
+rpic.twoD = True
 rpic.threeD = False
 
 
 #grid dimensions
-rpic.Nx = 1000
-rpic.Ny = 1
+rpic.Nx = 128
+#rpic.Nx = 10
+rpic.Ny = 2
 rpic.Nz = 1
+
 
 rpic.Nx_wrap = True
 rpic.Ny_wrap = True
 rpic.Nz_wrap = True
 
-rpic.grid_xmin=0.0
-rpic.grid_xmax=100.0
+rpic.Np = rpic.Nx * rpic.Nppc #total number of particles
 
-rpic.grid_ymin=0.0
-rpic.grid_ymax=10.0
 
-rpic.grid_zmin=0.0
-rpic.grid_zmax=10.0
-
-rpic.Np = 10000 #total number of particles
+#initialize according to skin depth/cell
+rpic.grid_scale_skindepth(rpic.delta)
 
 
 #Initialize the grid
@@ -80,14 +92,14 @@ ax1.set_ylim((-5, 5))
 ax1.set_ylabel(r'velocity $v$')
 
 ax2 = subplot(gs[1,0])
-ax2.set_ylim((-15, 15))
+#ax2.set_ylim((-15, 15))
 ax2.set_ylabel(r'$E_x$')
 
 ax3 = subplot(gs[1,1])
 ax3.set_ylabel(r'$B_y$, $B_z$')
 
 ax4 = subplot(gs[0,1])
-ax4.set_ylim((-5, 5))
+#ax4.set_ylim((-5, 5))
 ax4.set_ylabel(r'Current $J_x$')
 
 ax5 = subplot(gs[2,0])
@@ -115,7 +127,73 @@ def thermal_plasma(theta):
     if x > f:
         return thermal_plasma(theta)
 
+    #now we have valid u = abs(u_i)
+    x1 = np.random.rand()
+    x2 = np.random.rand()
+    #x3 = np.random.rand()
+
+    vx = vf*(2*x1 -1)
+    vy = 2*vf*sqrt(x1*(1-x1))
+
+    #3d treatment
+    #vy = 2*u*sqrt(x1*(1-x1))*cos(2*pi*x2)
+    #vz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
+    vz = 0.0
+
+    return vx,vy,vz
+
+
+#relativistic maxwell-Juttner distribution
+# theta is dimensionless temperature
+def thermal_rel_plasma(theta):
+
+    fmax = 1.0/kn(2,1.0/theta)
+    vmin = -20.0*theta
+    vmax = 20.0*theta
+    vf = vmin + (vmax-vmin)*np.random.rand()
+    
+    f = exp(-sqrt(1+vf*vf)/theta)*vf*vf
+
+    x = fmax*np.random.rand()
+
+    if x > f:
+        return thermal_rel_plasma(theta)
+
     return vf
+
+def sobol_method(T):
+
+
+    x4 = np.random.rand()
+    x5 = np.random.rand()
+    x6 = np.random.rand()
+    x7 = np.random.rand()
+
+    u = -T*log(x4*x5*x6)
+    n = -T*log(x4*x5*x6*x7)
+
+    if n*n - u*u < 1:
+        return sobol_method(T)
+
+    #now we have valid u = abs(u_i)
+    x1 = np.random.rand()
+    x2 = np.random.rand()
+    #x3 = np.random.rand()
+
+    vx = u*(2*x1 -1)
+    vy = 2*u*sqrt(x1*(1-x1))
+
+    #3d treatment
+    #vy = 2*u*sqrt(x1*(1-x1))*cos(2*pi*x2)
+    #vz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
+    vz = 0.0
+
+    return vx,vy,vz
+
+
+#initialize particles
+delgamma_i = rpic.delgamma
+delgamma_e = rpic.delgamma *(rpic.mi/rpic.me)*rpic.Te_Ti
 
 
 
@@ -130,34 +208,54 @@ for i in range(rpic.Nx):
             xmin,xmax, ymin,ymax, zmin,zmax = rpic.grid_limits(i,j,k)
             
 
-            for n in range(rpic.Np/rpic.Ncells):
+            for n in range(rpic.Nppc/2):
+
                 #random uniform location inside cell
                 x = xmin + (xmax-xmin)*np.random.rand()
                 y = ymin + (ymax-ymin)*np.random.rand()
                 z = zmin + (zmax-zmin)*np.random.rand()
 
                 #thermal plasma without any bulk motion
-                #vx = rpic.Maxwellian(4.0, 1.0)
-                vx = thermal_plasma(1.0)
+                #vx = rpic.Maxwellian(rpic.gamma_drift, rpic.delgamma)
+                #vx = thermal_rel_plasma(delgamma_e)
+
+                #vx, vy, vz = sobol_method(delgamma_e)
+                #vx, vy, vz = thermal_plasma(delgamma_e)
+                vx = rpic.Maxwellian(rpic.gamma, delgamma_e)
                 vy = 0.0
                 vz = 0.0
 
                 #weight = q*M_macro)
                 w = rpic.qe * 1.0
 
-                #make half into positrons
-                if n % 2 == 1:
-                    w *= -1.0
-                    #vx *= -1.0
+                #print x,y,z,vx,vy,vz,w
 
-                #if (i > 450) and (i < 550):
-                #    vx = thermal_plasma(0.1)
+                #make half into positrons
+                #if n % 2 == 1:
+                #    w *= -1.0
+                #    #vx *= -1.0
 
                 cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, w]]), axis=0) #add 6D phase space 
 
-                cell.Npe += 1
+                #Add ion/positron to exact same place
+                #thermal plasma without any bulk motion
+                #vxi, vyi, vzi = sobol_method(delgamma_i)
+                #vxi, vyi, vzi = thermal_plasma(delgamma_i)
+                vxi = -rpic.Maxwellian(rpic.gamma, delgamma_i)
+                vyi = 0.0
+                vzi = 0.0
+
+                #wi = rpic.qe * (-1.0)
+                wi = rpic.qe
+
+                cell.particles = np.concatenate((cell.particles, [[x, y, z, vxi, vyi, vzi, wi]]), axis=0) #add 6D phase space 
+
+
+
+                cell.Npe += 2
 
             rpic.mpiGrid[i,j,k] = cell
+
 
 
 def kde_scipy(x, x_grid, bandwidth=0.2, **kwargs):
@@ -325,8 +423,8 @@ A_xt[:,0] = rpic.Ex[:,0,0]
 #A_xt[:,0] = rpic.JYx[:,0,0]
 
 
-#for step in range(1, max_steps):
-for step in range(1, 50):
+for step in range(1, max_steps):
+#for step in range(1, 10):
     print " step: ",step
     print "t:", t
 
@@ -342,10 +440,17 @@ for step in range(1, 50):
 
     print "avg E=", mean(rpic.Ex)
     print "avg J=", mean(rpic.Jx)
+    print "total avg J=", sum(sum(sqrt(rpic.Jx * rpic.Jx + rpic.Jy*rpic.Jy)))
+
+    print "avg JY=", mean(rpic.JYx)
+    print "total avg JY=", sum(sum(sqrt(rpic.JYx * rpic.JYx + rpic.JYy*rpic.JYy)))
+
     print " Etot=", mean(rpic.Ex_ext)+mean(rpic.Ex)
 
     rpic.deposit_current(rpic.mpiGrid)
-    rpic.Yee_currents()
+    #rpic.Yee_currents()
+
+    rpic.conserving_deposit_current(rpic.mpiGrid)
 
     #apply filters
     #rpic.filter_current(0.5)
@@ -444,7 +549,7 @@ print "FFT done."
 
 # Partial plotting
 k_start = 1
-k_end = 999
+k_end = 127
 w_start = 0
 w_end = 49
 
@@ -461,6 +566,10 @@ dt = rpic.dt
 ne = rpic.Np/(rpic.grid_xmax - rpic.grid_xmin)
 w_pe = sqrt(ne*rpic.e**2/rpic.me)
 print "w_pe=", w_pe
+
+#electron plasma skin depth
+c_omp = rpic.c/w_pe
+print "c_omp=", c_omp
 
 
 #Debye length
