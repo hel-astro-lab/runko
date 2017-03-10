@@ -2,16 +2,26 @@ import numpy as np
 import math
 from pylab import *
 
+#set seed to get reproducible errors & results
+np.random.seed(0)
 
-#physical parameters
-e = 1.0
+#Computational units
+Nppc = 0
+gamma = 0.0
+delgamma = 0.0
+me = 1.0
+mi = 1.0
+qe = 1.0
+qi = 1.0
+qme = 1.0
+qmi = 1.0
+delta = 0.0
+wpe = 0.0
 c = 1.0
 
-qe = 1.0 #electron charge
-me = 1.0 #electron mass
 
-qi = -1.0 #ion charge
-mi = 8.0  #ion mass
+#plasmaFreq = 0.0
+#skinDepth = 0.0
 
 
 #pick one operating mode
@@ -52,7 +62,6 @@ Ncells = Nx*Ny*Nz
 dx = diff(xgrid)[0]
 dy = diff(ygrid)[0]
 dz = diff(zgrid)[0]
-
 
 dt = 0.0
 
@@ -156,9 +165,34 @@ Uph = udens_ratio*(B0*B0/(8.0*pi))
 
 
 
-
 #create grid
 mpiGrid = np.empty((Nx,Ny,Nz), dtype=np.object)
+
+#get lengths from skin depths
+def grid_scale_skindepth(delta):
+    global grid_xmin, grid_xmax, Nx
+    global grid_ymin, grid_ymax, Ny
+    global grid_zmin, grid_zmax, Nx
+    global dx, dy, dz
+    
+    #start from origo
+    grid_xmin = 0.0
+    grid_ymin = 0.0
+    grid_zmin = 0.0
+
+    dx = (delta**2) *(e*e/(c*c*me)) * Nppc
+    
+    grid_xmax = Nx*dx
+    grid_ymax = Ny*dx
+    grid_zmax = Nz*dx
+
+    # try setting d elements instead
+    dy = dx
+    dz = dx
+
+    return
+
+
 
 def init():
 
@@ -201,24 +235,91 @@ def init():
     Ncells = Nx*Ny*Nz
 
 
+
+    #plasma frequency
+    #global wpe, c, delta
+    #wpe = c/delta
+    #print "Plasma frequency w_pe:", wpe
+    
+    #if gamma < 1 it is interpreted as v/c
+    #global gamma
+    #if gamma < 1.0:
+    #    print "non rel. v/c:", gamma 
+    #    gamma = sqrt(1.0/(1.0 - gamma**2))
+    #print "rel. gamma:", gamma
+
+    #drift velocity
+    #global beta
+    #beta = sqrt(1.0 - 1.0/gamma**2)
+    #print "Drift velocity:", beta
+
+    #electron charge in computational units
+    #global qe, me, mi, Nppc
+    #qe = -(gamma*wpe**2)/((Nppc*0.5) * (1.0 + me/mi))
+    #print "electron charge in computational units:", qe
+
+    #ion/positron charge in computational units
+    #global qi
+    #qi = - qe
+    #print "ion charge in computational units:", qi
+
+    #electron mass
+    #me = me*abs(qi)
+    #print "electron mass:", me
+
+    #ion/positron mass
+    #mi = mi*abs(qi)
+    #print "ion mass:", mi
+    
+
+    #charge to mass ratios
+    #global qme, qmi
+    #qme = qe/me #equals -1/me in input
+    #qmi = qi/mi #equals -1/me in input
+    #print "electron/ion charge to mass ratios:", qme, qmi
+    
+    
+    #Binit
+    #Binit = sqrt(gamma*ppc0*0.5*c**2*(me*(1.0+me/mi))*sigma)
+    
+
+    #computational units
+    #global dx
+    #global dy
+    #global dz
+    #dx = 1.0
+    #dy = 1.0
+    #dz = 1.0
+
+    #global xgrid
+    #global ygrid
+    #global zgrid
+    #xgrid = np.linspace(grid_xmin, grid_xmax, Nx+1)
+    #ygrid = np.linspace(grid_ymin, grid_ymax, Ny+1)
+    #zgrid = np.linspace(grid_zmin, grid_zmax, Nz+1)
+
+
     global xgrid
     global ygrid
     global zgrid
-    xgrid = np.linspace(grid_xmin, grid_xmax, Nx+1)
-    ygrid = np.linspace(grid_ymin, grid_ymax, Ny+1)
-    zgrid = np.linspace(grid_zmin, grid_zmax, Nz+1)
-
     
     global dx
     global dy
     global dz
+
+    xgrid = np.linspace(grid_xmin, grid_xmax, Nx+1)
+    ygrid = np.linspace(grid_ymin, grid_ymax, Ny+1)
+    zgrid = np.linspace(grid_zmin, grid_zmax, Nz+1)
+    #xgrid = np.arange(grid_xmin, grid_xmax, dx)
+    #ygrid = np.arange(grid_ymin, grid_ymax, dy)
+    #zgrid = np.arange(grid_zmin, grid_zmax + dz, dz)
+
     dx = diff(xgrid)[0]
     dy = diff(ygrid)[0]
     dz = diff(zgrid)[0]
 
     global dt 
-    dt = 0.99/sqrt(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz)
-    #dt = 0.1
+    dt = 0.45/sqrt(1.0/dx/dx + 1.0/dy/dy + 1.0/dz/dz)
 
 
     #initialize B, E, and J fields (in global scope)
@@ -271,12 +372,48 @@ def init():
     global mpiGrid
     mpiGrid = np.empty((Nx, Ny, Nz), dtype=np.object)
 
-    print "##################################################"
+    #print "##################################################"
     print "Nx Ny Nz", Nx, Ny, Nz 
     print "xmin xmax", grid_xmin, grid_xmax
     print "ymin ymax", grid_ymin, grid_ymax
     print "zmin zmax", grid_zmin, grid_zmax
-    print "dt", dt
+    #print "dt", dt
+
+
+    global ne, wpe, kT, r_deb, v_eth
+
+    #number density
+    ne_x = Np/(grid_xmax - grid_xmin)
+    ne_xy = Np/(grid_xmax - grid_xmin)/(grid_ymax - grid_ymin)
+    ne   = Np/(grid_xmax - grid_xmin)/(grid_ymax - grid_ymin)/(grid_zmax - grid_zmin)
+
+    ##plasma frequency
+    wpe = sqrt((ne*e**2)/me)
+    #wpe = sqrt((ne*e**2)/me)
+
+    ##plasma skin depth
+    delta = c/wpe
+
+    ##Debye length
+    r_deb = sqrt(delgamma/ne_xy)
+
+    ##electron thermal velocity
+    v_eth = sqrt(delgamma/me)
+
+    print "ne (1d):", ne_x
+    print "ne (2d):", ne_xy
+    print "ne (3d):", ne
+    print "wpe:", wpe, "tpw=", 1.0/wpe
+    print "dt/tpw =", dt*wpe
+
+    print "delta x:", delta, delta/dx
+    print "delta y:", delta, delta/dy
+    print "delta z:", delta, delta/dz
+
+    print "r_deb x:", r_deb, r_deb/dx
+    print "r_deb y:", r_deb, r_deb/dy
+
+    print "v_eth:", v_eth
 
 
     return
@@ -309,6 +446,27 @@ def grid_lengths(i,j,k):
     dz = zgrid[k+1]-zgrid[k]
 
     return dx,dy,dz
+
+def xbc(i):
+    if i < 0:
+        return int(i + Nx)
+    if i >= Nx:
+        return int(i - Nx)
+    return int(i)
+
+def ybc(j):
+    if j < 0:
+        return int(j + Ny)
+    if j >= Ny:
+        return int(j - Ny)
+    return int(j)
+
+def zbc(k):
+    if k < 0:
+        return int(k + Nz)
+    if k >= Ny:
+        return int(k - Nz)
+    return int(k)
 
 
 #draw samples from Maxwellian distribution using rejection sampling
@@ -350,20 +508,19 @@ def deposit_current(grid):
                 xmin,xmax, ymin,ymax, zmin,zmax = grid_limits(i,j,k)
                 dx,dy,dz = grid_lengths(i,j,k)
 
-
-
                 x = particles[:,0]
                 y = particles[:,1]
                 z = particles[:,2]
                 ux = particles[:,3]
                 uy = particles[:,4]
                 uz = particles[:,5]
-
             
                 #rhop = qe/(dx*dy*dz)
                 #q = 1.0
                 #full particle weight vector, i.e. we push all of the particles at the same time
-                rhop = particles[:,6]/(dx*dy*dz) #w contains q*m
+                #rhop = particles[:,6]/(dx*dy*dz) #w contains q*m
+                rhop = particles[:,6]/(dx*dy) #w contains q*m
+                #rhop = particles[:,6] #charge density assuming dx=dy=dz = 1
 
                 gamma = sqrt(1.0 + ux*ux + uy*uy + uz*uz)
                 ux = ux*c/gamma
@@ -442,8 +599,182 @@ def deposit_current(grid):
                                 Jz[ii,jj,kk] += dJz
 
 
+
     #print "    TOTAL=", np1, "/", np2
     return
+
+#deposit particle currents into the mesh
+def conserving_deposit_current(grid):
+    global qe
+    global me
+
+    global JYx, JYy, JYz
+    
+    #clean currents
+    JYx[:,:,:] = 0.0
+    JYy[:,:,:] = 0.0
+    JYz[:,:,:] = 0.0
+
+    np1 = 0
+    np2 = 0
+    for k in range(Nz):
+        for j in range(Ny):
+            for i in range(Nx):
+                cell = grid[i,j,k]
+                particles = cell.particles
+                
+                #print "cell:",i,j,k, " N=", len(particles), "/", cell.Npe
+                np1 += len(particles)
+                np2 += cell.Npe
+
+
+                xmin,xmax, ymin,ymax, zmin,zmax = grid_limits(i,j,k)
+                dx,dy,dz = grid_lengths(i,j,k)
+
+                x2 = particles[:,0]
+                y2 = particles[:,1]
+                z2 = particles[:,2]
+                ux = particles[:,3]
+                uy = particles[:,4]
+                uz = particles[:,5]
+            
+                #charge density vector
+                #i.e. we push all of the particles at the same time
+                #rhop = particles[:,6]/(dx*dy*dz) #w contains q*m
+
+                #go back in time -dt and see what was the starting position
+                #FIXME could we not just save this?
+                invgamma = 1.0/sqrt(1.0 + ux*ux + uy*uy + uz*uz)
+                x1 = x2 - ux*invgamma*c*dt
+                y1 = y2 - uy*invgamma*c*dt
+                z1 = z2 - uz*invgamma*c*dt
+
+                q = particles[:,6]*qe 
+
+                #x1sp = x0
+                #x2sp = x
+                #y1sp = y0
+                #y2sp = y
+                #z1=z0 #FIXME what is this?
+                #z2=z
+
+                #fp = (x - xmin)/dx
+                #fq = (y - ymin)/dy
+                #fr = (z - zmin)/dz
+
+                #i1 = np.floor(x1sp/dx)
+                i1 = np.floor((x1 - xmin)/dx) + i
+                #i2 = np.floor(x2sp/dx)
+                #i2 = np.ones(cell.Npe)*i
+                i2 = i
+                #j1 = np.floor(y1sp/dy)
+                j1 = np.floor((y1 - ymin)/dy) + j
+                #j2 = np.floor(y2sp/dy)
+                #j2 = np.ones(cell.Npe)*j
+                j2 = j
+                #k1 = int(z1)
+                #k2 = int(z2)
+
+                xrr = np.empty_like(x1)
+                yrr = np.empty_like(y1)
+
+                for ppp in range(cell.Npe):
+                    #print "---:", ppp,"  / ",i,j,k
+                    #print "x1=", x1[ppp], " y1=", y1[ppp], " z1=",z1[ppp]
+                    #print "x2=", x2[ppp], " y2=", y2[ppp], " z2=",z2[ppp]
+                    #print "i1 / i2", i1[ppp], i2
+                    #print "j1 / j2", j1[ppp], j2
+
+                    #xr = 0.0
+                    #if i1[ppp] == i2:
+                    #    print "i1 = i2;",
+                    #    xr = 0.5*(x1[ppp] + x2[ppp])
+                    #else:
+                    #    print " != ", max(i1[ppp], i2)
+                    #    xri = max(i1[ppp], i2)
+                    #    xr = xgrid[xri]
+                    #print "xr=", xr
+
+                    i1p = int(i1[ppp])
+                    xr2 = min(
+                            min(xgrid[i1p], xgrid[i2]) + dx,
+                            max(max(xgrid[i1p], xgrid[i2]), 0.5*(x1[ppp] + x2[ppp]))
+                            )
+                    #print "xr minmax=", xr2
+                    xrr[ppp] = xr2
+
+                    j1p = int(j1[ppp])
+                    yr2 = min(
+                            min(ygrid[j1p], ygrid[j2]) + dy,
+                            max(max(ygrid[j1p], ygrid[j2]), 0.5*(y1[ppp] + y2[ppp]))
+                            )
+                    #print "yr minmax=", yr2
+                    yrr[ppp] = yr2
+                #print "end of cell"
+            
+                #build currents; 
+                # not including -q to be consistent with notation
+                Fx1 = q*(xrr - x1)/dt
+                Fy1 = q*(yrr - y1)/dt
+
+                Fx2 = q*(x2 - xrr)/dt
+                Fy2 = q*(y2 - yrr)/dt
+
+                Wx1 = 0.5*(x1 + xrr)/dx -i1
+                Wy1 = 0.5*(y1 + yrr)/dy -j1
+
+                Wx2 = 0.5*(xrr + x2)/dx -i2
+                Wy2 = 0.5*(yrr + y2)/dy -j2
+
+                #print "Fx1", Fx1
+                #print "Fy1", Fy1
+                #print "Fx2", Fx2
+                #print "Fy2", Fy2
+                #print "Wx1", Wx1
+                #print "Wy1", Wy1
+                #print "Wx2", Wx2
+                #print "Wy2", Wy2
+
+                Jx1a = Fx1*(1.0 - Wy1)/dx/dy
+                Jx1b = Fx1*Wy1/dx/dy
+
+                Jx2a = Fx2*(1.0 - Wy2)/dx/dy
+                Jx2b = Fx2*Wy2/dx/dy
+                
+                #y dir
+                Jy1a = Fy1*(1.0 - Wx1)/dx/dy
+                Jy1b = Fy1*Wx1/dx/dy
+
+                Jy2a = Fy2*(1.0 - Wx2)/dx/dy
+                Jy2b = Fy2*Wx2/dx/dy
+                
+                for ppp in range(cell.Npe):
+
+                    i1p = xbc(i1[ppp])
+                    j1p = ybc(j1[ppp])
+                    
+                    i1p1 = xbc(i1p + 1)
+                    j1p1 = ybc(j1p + 1)
+
+                    i2p1 = xbc(i2 + 1)
+                    j2p1 = ybc(j2 + 1)
+
+
+                    JYx[i1p, j1p, k] += Jx1a[ppp]
+                    JYx[i1p, j1p1, k] += Jx1b[ppp]
+
+                    JYx[i2,  j2,  k]   += Jx2a[ppp]
+                    JYx[i2,  j2p1,  k] += Jx2b[ppp]
+                
+                    JYy[i1p, j1p, k] += Jy1a[ppp] 
+                    JYy[i1p1, j1p, k] += Jy1b[ppp]
+
+                    JYy[i2, j2, k] += Jy2a[ppp]
+                    JYy[i2p1, j2, k] += Jy2b[ppp]
+
+
+    return
+
 
 #Yee shift current vector into staggered grid
 def Yee_currents():
@@ -828,7 +1159,7 @@ def Vay_update_velocities(grid):
                     EB_cube(i,j,k)
                     Exi, Eyi, Ezi, Bxi, Byi, Bzi = trilinear_staggered(xd,yd,zd)
 
-                #Correct for Tristan units
+                #Calculate auxiliary quantities
                 cinv = 1.0/c
                 #qm = qe/me #electron charge/mass
                 q = np.sign(qwe) #extract sign and dispose numerical weight
@@ -890,20 +1221,20 @@ def Vay_update_velocities(grid):
                 particles[:,4] = w0*cinv
 
 
-                #Advance position
-                gamma = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0)
-                #gamma = 1.0
+                #Advance position (this is in fact c/gamma)
+                # where the extra c takes into account that u=u/c in the position update
+                gamma = c*c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0)
+                #gamma = c
 
                 if oneD:
-                    #particles[:,0] = particles[:,0] + particles[:,3]*gamma*c*dt
                     particles[:,0] += particles[:,3]*gamma*dt
                 if twoD:                                                    
-                    particles[:,0] = particles[:,0] + particles[:,3]*gamma*c*dt
-                    particles[:,1] = particles[:,1] + particles[:,4]*gamma*c*dt
+                    particles[:,0] += particles[:,3]*gamma*dt
+                    particles[:,1] += particles[:,4]*gamma*dt
                 if threeD:                                                 
-                    particles[:,0] = particles[:,0] + particles[:,3]*gamma*c*dt
-                    particles[:,1] = particles[:,1] + particles[:,4]*gamma*c*dt
-                    particles[:,2] = particles[:,2] + particles[:,5]*gamma*c*dt
+                    particles[:,0] += particles[:,3]*gamma*dt
+                    particles[:,1] += particles[:,4]*gamma*dt
+                    particles[:,2] += particles[:,5]*gamma*dt
 
 
 
@@ -944,12 +1275,14 @@ def sort_particles_between_cells(grid):
                         #periodic boundary conditions
                         remove_particle = False
 
-                        if newi < 0:
+                        #if newi < 0:
+                        while newi < 0:
                             if Nx_wrap:
                                 newi += Nx
                                 particle[0] += grid_xmax
                             else:
                                 remove_particle = True
+                                break
                         if newj < 0:
                             if Ny_wrap:
                                 newj += Ny
@@ -1038,12 +1371,13 @@ def push_half_B():
                 EYp1[2] = Ez[ii,jj,kk]                
 
                 #BY = (c*dt/2.0) * np.cross(ds, EY - EYp1)
-                BY = (dt/2.0) * np.cross(ds, EY - EYp1)
+                #we update this as b = c B
+                BY = (c*dt/2.0) * np.cross(ds, EY - EYp1)
 
-                #add to the field
-                Bx[i,j,k] -= BY[0]
-                By[i,j,k] -= BY[1]
-                Bz[i,j,k] -= BY[2]
+                #add to the field (and transform B=b/c)
+                Bx[i,j,k] -= BY[0]/c
+                By[i,j,k] -= BY[1]/c
+                Bz[i,j,k] -= BY[2]/c
 
 
     return
@@ -1097,7 +1431,7 @@ def push_E():
 
                 #E_n+1 = E_n + dt*[ curl B - 4pi J ]
                 #EY = (c*dt) * np.cross(ds, BY - BYm1) - 4.0*pi*dt*JY
-                EY = (c*c*dt) * (np.cross(ds, BY - BYm1) - JY)
+                EY = (c*c*dt) * (np.cross(ds, BY - BYm1))  - dt*JY
 
                 #add to the field
                 Ex[i,j,k] += EY[0]
