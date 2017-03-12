@@ -18,7 +18,7 @@ import radpic as rpic
 #new dimensionless inputs
 ##################################################
 rpic.Nppc = 64 #particles per cell
-#rpic.Nppc = 2 #particles per cell
+#rpic.Nppc = 10 #particles per cell
 rpic.delgamma = 0.2 #(k T/m c^2, T electron/ion temperature
 #rpic.delgamma = 2.0e-5 #(k T/m c^2, T electron/ion temperature
 
@@ -27,7 +27,7 @@ rpic.qe = 1.0 #electron
 
 rpic.me = 1.0 #electron mass
 rpic.mi = 1.0 #ion mass (or actually mass to charge ratio)
-rpic.gamma = 3.0 #flow drift gamma (gamma0)
+rpic.gamma = 0.5 #flow drift gamma (gamma0)
 rpic.delta = 10.0 #plasma skin depth
 rpic.Te_Ti = 1.0 #T_e / T_i
 rpic.c = 1.0 #Computational speed of light
@@ -40,7 +40,7 @@ rpic.threeD = False
 
 #grid dimensions
 rpic.Nx = 128
-#rpic.Nx = 10
+#rpic.Nx = 6
 rpic.Ny = 2
 rpic.Nz = 1
 
@@ -64,10 +64,15 @@ rpic.init()
 
 
 #Mesh grid for plotting
-XX, YY, ZZ = np.meshgrid(np.linspace(rpic.grid_xmin, rpic.grid_xmax, rpic.Nx),
-                         np.linspace(rpic.grid_ymin, rpic.grid_ymax, rpic.Ny),
-                         np.linspace(rpic.grid_zmin, rpic.grid_zmax, rpic.Nz)
+#XX, YY, ZZ = np.meshgrid(np.linspace(rpic.grid_xmin, rpic.grid_xmax, rpic.Nx),
+#                         np.linspace(rpic.grid_ymin, rpic.grid_ymax, rpic.Ny),
+#                         np.linspace(rpic.grid_zmin, rpic.grid_zmax, rpic.Nz)
+#                        )
+XX, YY, ZZ = np.meshgrid(np.linspace(0.0, rpic.Nx-1, rpic.Nx),
+                         np.linspace(0.0, rpic.Nx-1, rpic.Ny),
+                         np.linspace(0.0, rpic.Nx-1, rpic.Nz)
                         )
+
 
 
 ##################################################
@@ -111,6 +116,11 @@ ax6 = fig.add_subplot(gs[2,1], projection='3d')
 
 for ax in [ax1, ax2, ax3, ax4]:
     ax.set_xlim((rpic.grid_xmin, rpic.grid_xmax))
+    ax.set_xlabel(r'$x$')
+    ax.minorticks_on()
+
+for ax in [ax2, ax3, ax4]:
+    ax.set_xlim((-1.0, rpic.Nx))
     ax.set_xlabel(r'$x$')
 
 
@@ -188,7 +198,34 @@ def sobol_method(T):
     #vz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
     vz = 0.0
 
-    return vx,vy,vz
+    return vx,vy,vz,u
+
+
+#cumulative distribution loading
+def drifting_maxw(beta, theta):
+    gamd = 1.0/sqrt(1.0-beta*beta)
+    pu = gamd*beta #drift 4-velocity
+    g1 = sqrt(1.0 + up*up)
+
+    #f(p||) 
+    fg1 = (1.0 + gamd*g1/theta)*exp(-(up-pu)**2/(g1*gamd + up*pu + 1.0)/theta)
+
+
+def drift_boost_maxwell(beta, Gamma, theta):
+    vx, vy, vz, u = sobol_method(theta)
+    
+    X8 = np.random.rand()
+    #if 0.5*(1.0 + beta*vx) < X8:
+    #    return drift_boost_maxwell(beta, theta)
+    if -beta*vx > X8:
+        vx = -vx
+    else:
+        return drift_boost_maxwell(beta, Gamma, theta)
+
+    vx = Gamma*vx + beta*sqrt(1.0 + u*u)
+
+    return vx, vy, vz, u
+
 
 
 #initialize particles
@@ -207,7 +244,7 @@ for i in range(rpic.Nx):
             #cell limits
             xmin,xmax, ymin,ymax, zmin,zmax = rpic.grid_limits(i,j,k)
             
-
+            xarr = np.linspace(xmin, xmax, rpic.Nppc/2)
             for n in range(rpic.Nppc/2):
 
                 #random uniform location inside cell
@@ -219,11 +256,22 @@ for i in range(rpic.Nx):
                 #vx = rpic.Maxwellian(rpic.gamma_drift, rpic.delgamma)
                 #vx = thermal_rel_plasma(delgamma_e)
 
-                #vx, vy, vz = sobol_method(delgamma_e)
+
+                #debug
+                #x = xmin + (xmax-xmin)*0.5
+                #x = xarr[n]
+                #y = ymin + (ymax-ymin)*0.5
+                #z = zmin + (zmax-zmin)*0.5
+                #vx = 1.0
+                #vy = 0.0
+                #vz = 0.0
+
+                vx, vy, vz, u = sobol_method(delgamma_e)
+                #vx, vy, vz, u = drift_boost_maxwell(1.0, rpic.gamma, delgamma_e)
                 #vx, vy, vz = thermal_plasma(delgamma_e)
-                vx = rpic.Maxwellian(rpic.gamma, delgamma_e)
-                vy = 0.0
-                vz = 0.0
+                #vx = rpic.Maxwellian(rpic.gamma, delgamma_e)
+                #vy = 0.0
+                #vz = 0.0
 
                 #weight = q*M_macro)
                 w = rpic.qe * 1.0
@@ -236,17 +284,28 @@ for i in range(rpic.Nx):
                 #    #vx *= -1.0
 
                 cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, w]]), axis=0) #add 6D phase space 
+                #cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, w]]), axis=0) #add 6D phase space 
+
+
+                #cell.particles = np.concatenate((cell.particles, [[x, y, z, -vx, vy, vz, w]]), axis=0) #add 6D phase space 
 
                 #Add ion/positron to exact same place
                 #thermal plasma without any bulk motion
-                #vxi, vyi, vzi = sobol_method(delgamma_i)
+                #vxi, vyi, vzi, ui = sobol_method(delgamma_i)
+                #vxi, vyi, vzi, ui = drift_boost_maxwell(-1.0, rpic.gamma, delgamma_i)
                 #vxi, vyi, vzi = thermal_plasma(delgamma_i)
-                vxi = -rpic.Maxwellian(rpic.gamma, delgamma_i)
-                vyi = 0.0
-                vzi = 0.0
+                #vxi = -rpic.Maxwellian(rpic.gamma, delgamma_i)
+                #vyi = 0.0
+                #vzi = 0.0
+
+
+                vxi = vx
+                vyi = vy
+                vzi = vz
 
                 #wi = rpic.qe * (-1.0)
                 wi = rpic.qe
+                vxi *= -1.0
 
                 cell.particles = np.concatenate((cell.particles, [[x, y, z, vxi, vyi, vzi, wi]]), axis=0) #add 6D phase space 
 
@@ -424,7 +483,7 @@ A_xt[:,0] = rpic.Ex[:,0,0]
 
 
 for step in range(1, max_steps):
-#for step in range(1, 10):
+#for step in range(1, 2):
     print " step: ",step
     print "t:", t
 
@@ -432,13 +491,14 @@ for step in range(1, max_steps):
 
     rpic.Vay_update_velocities(rpic.mpiGrid)
     
-    rpic.sort_particles_between_cells(rpic.mpiGrid)
+    #rpic.sort_particles_between_cells(rpic.mpiGrid)
 
     #rpic.push_half_B()
 
     rpic.push_E()
 
     print "avg E=", mean(rpic.Ex)
+
     print "avg J=", mean(rpic.Jx)
     print "total avg J=", sum(sum(sqrt(rpic.Jx * rpic.Jx + rpic.Jy*rpic.Jy)))
 
@@ -451,6 +511,16 @@ for step in range(1, max_steps):
     #rpic.Yee_currents()
 
     rpic.conserving_deposit_current(rpic.mpiGrid)
+    rpic.sort_particles_between_cells(rpic.mpiGrid)
+
+    #rpic.JYx[0, :,:] = 0.0
+    #rpic.JYy[0, :,:] = 0.0
+
+    #rpic.JYx[-1,:,:] = 0.0
+    #rpic.JYy[-1,:,:] = 0.0
+
+    #rpic.sort_particles_between_cells(rpic.mpiGrid)
+
 
     #apply filters
     #rpic.filter_current(0.5)
@@ -487,8 +557,10 @@ for step in range(1, max_steps):
     res3 = ax3.plot(XX[0,:,0], rpic.By[:,0,0], "b-")
     res3 = ax3.plot(XX[0,:,0], rpic.Bz[:,0,0], "r-")
 
-    res4a = ax4.plot(XX[0,:,0], rpic.Jx[:,0,0], "b-")
-    res4b = ax4.plot(XX[0,:,0], rpic.JYx[:,0,0], "r-")
+    #res4a = ax4.plot(XX[0,:,0], rpic.Jx[:,0,0], "b-")
+    #res4b = ax4.plot(XX[0,:,0], rpic.Jx[:,1,0], "g-")
+    res4c = ax4.plot(XX[0,:,0], rpic.JYx[:,0,0], "r-")
+    res4d = ax4.plot(XX[0,:,0], rpic.JYx[:,1,0], "m-")
 
     #ax5 = slice_pdf(ax5, electrons)
 
@@ -504,8 +576,10 @@ for step in range(1, max_steps):
     res1b.pop(0).remove()
     res2.pop(0).remove()
     res3.pop(0).remove()
-    res4a.pop(0).remove()
-    res4b.pop(0).remove()
+    #res4a.pop(0).remove()
+    #res4b.pop(0).remove()
+    res4c.pop(0).remove()
+    res4d.pop(0).remove()
 
 
     t += rpic.dt

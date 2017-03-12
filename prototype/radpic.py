@@ -78,6 +78,10 @@ Jx = np.zeros((Nx,Ny,Nz))
 Jy = np.zeros((Nx,Ny,Nz))
 Jz = np.zeros((Nx,Ny,Nz))
 
+JYxt = np.zeros((Nx+2,Ny+2,Nz+2))
+JYyt = np.zeros((Nx+2,Ny+2,Nz+2))
+JYzt = np.zeros((Nx+2,Ny+2,Nz+2))
+
 JYx = np.zeros((Nx,Ny,Nz))
 JYy = np.zeros((Nx,Ny,Nz))
 JYz = np.zeros((Nx,Ny,Nz))
@@ -366,7 +370,11 @@ def init():
     JYx = np.zeros((Nx, Ny, Nz))
     JYy = np.zeros((Nx, Ny, Nz))
     JYz = np.zeros((Nx, Ny, Nz))
-
+    
+    global JYxt, JYyt, JYzt
+    JYxt = np.zeros((Nx+2,Ny+2,Nz+2))
+    JYyt = np.zeros((Nx+2,Ny+2,Nz+2))
+    JYzt = np.zeros((Nx+2,Ny+2,Nz+2))
 
     #create grid
     global mpiGrid
@@ -448,6 +456,7 @@ def grid_lengths(i,j,k):
     return dx,dy,dz
 
 def xbc(i):
+    #return i+1
     if i < 0:
         return int(i + Nx)
     if i >= Nx:
@@ -455,6 +464,7 @@ def xbc(i):
     return int(i)
 
 def ybc(j):
+    #return j+1
     if j < 0:
         return int(j + Ny)
     if j >= Ny:
@@ -464,7 +474,7 @@ def ybc(j):
 def zbc(k):
     if k < 0:
         return int(k + Nz)
-    if k >= Ny:
+    if k >= Nz:
         return int(k - Nz)
     return int(k)
 
@@ -609,11 +619,17 @@ def conserving_deposit_current(grid):
     global me
 
     global JYx, JYy, JYz
+
+    global JYxt, JYyt, JYzt
     
     #clean currents
     JYx[:,:,:] = 0.0
     JYy[:,:,:] = 0.0
     JYz[:,:,:] = 0.0
+
+    JYxt[:,:,:] = 0.0
+    JYyt[:,:,:] = 0.0
+    JYzt[:,:,:] = 0.0
 
     np1 = 0
     np2 = 0
@@ -664,12 +680,12 @@ def conserving_deposit_current(grid):
 
                 #i1 = np.floor(x1sp/dx)
                 i1 = np.floor((x1 - xmin)/dx) + i
-                #i2 = np.floor(x2sp/dx)
+                #i2tmp = np.floor(x2/dx)
                 #i2 = np.ones(cell.Npe)*i
                 i2 = i
                 #j1 = np.floor(y1sp/dy)
                 j1 = np.floor((y1 - ymin)/dy) + j
-                #j2 = np.floor(y2sp/dy)
+                #j2tmp = np.floor(y2/dy)
                 #j2 = np.ones(cell.Npe)*j
                 j2 = j
                 #k1 = int(z1)
@@ -685,6 +701,11 @@ def conserving_deposit_current(grid):
                     #print "i1 / i2", i1[ppp], i2
                     #print "j1 / j2", j1[ppp], j2
 
+                    #if i2tmp[ppp] != i2:
+                    #    print "ERRRRRRRR", i2tmp[ppp], i2
+                    #if j2tmp[ppp] != j2:
+                    #    print "ERRRRRRRR", j2tmp[ppp], j2
+
                     #xr = 0.0
                     #if i1[ppp] == i2:
                     #    print "i1 = i2;",
@@ -699,7 +720,7 @@ def conserving_deposit_current(grid):
                     xr2 = min(
                             min(xgrid[i1p], xgrid[i2]) + dx,
                             max(max(xgrid[i1p], xgrid[i2]), 0.5*(x1[ppp] + x2[ppp]))
-                            )
+                             )
                     #print "xr minmax=", xr2
                     xrr[ppp] = xr2
 
@@ -707,18 +728,18 @@ def conserving_deposit_current(grid):
                     yr2 = min(
                             min(ygrid[j1p], ygrid[j2]) + dy,
                             max(max(ygrid[j1p], ygrid[j2]), 0.5*(y1[ppp] + y2[ppp]))
-                            )
+                             )
                     #print "yr minmax=", yr2
                     yrr[ppp] = yr2
                 #print "end of cell"
             
                 #build currents; 
                 # not including -q to be consistent with notation
-                Fx1 = q*(xrr - x1)/dt
-                Fy1 = q*(yrr - y1)/dt
+                Fx1 = -q*(xrr - x1)/dt
+                Fy1 = -q*(yrr - y1)/dt
 
-                Fx2 = q*(x2 - xrr)/dt
-                Fy2 = q*(y2 - yrr)/dt
+                Fx2 = -q*(x2 - xrr)/dt
+                Fy2 = -q*(y2 - yrr)/dt
 
                 Wx1 = 0.5*(x1 + xrr)/dx -i1
                 Wy1 = 0.5*(y1 + yrr)/dy -j1
@@ -735,13 +756,14 @@ def conserving_deposit_current(grid):
                 #print "Wx2", Wx2
                 #print "Wy2", Wy2
 
+                #x-dir
                 Jx1a = Fx1*(1.0 - Wy1)/dx/dy
                 Jx1b = Fx1*Wy1/dx/dy
 
                 Jx2a = Fx2*(1.0 - Wy2)/dx/dy
                 Jx2b = Fx2*Wy2/dx/dy
                 
-                #y dir
+                #y-dir
                 Jy1a = Fy1*(1.0 - Wx1)/dx/dy
                 Jy1b = Fy1*Wx1/dx/dy
 
@@ -749,6 +771,10 @@ def conserving_deposit_current(grid):
                 Jy2b = Fy2*Wx2/dx/dy
                 
                 for ppp in range(cell.Npe):
+                    #printflag=False
+                    #if xbc(i1[ppp]) == 5:
+                    #    printflag=True
+                    #    print "--- i1", i1[ppp], "j1", j1[ppp] 
 
                     i1p = xbc(i1[ppp])
                     j1p = ybc(j1[ppp])
@@ -759,19 +785,36 @@ def conserving_deposit_current(grid):
                     i2p1 = xbc(i2 + 1)
                     j2p1 = ybc(j2 + 1)
 
+                    #if i1p == 0 or i1p1 == 0 or i2p1 == 0 or i2 == 0:
+
+                    #if i1p == Nx-1:
+                    #    print "i1p 0"
+                    #if i1p1 == Nx-1:
+                    #    print "i1p1 0"
+                    #if i2 == Nx-1:
+                    #    print "i2 0"
+                    #print "i",i1p, " j", j1p1, "k",k
+
+                    #if printflag:
+                    #    print "   i1p", i1p, "j1p", j1p, "J", Jx1a[ppp]
 
                     JYx[i1p, j1p, k] += Jx1a[ppp]
-                    JYx[i1p, j1p1, k] += Jx1b[ppp]
+                    #JYx[i1p, j1p, k] += 1.0
+                    JYx[i1p, j1p1,k] += Jx1b[ppp]
+                    JYx[i2,  j2,  k] += Jx2a[ppp]
+                    JYx[i2,  j2p1,k] += Jx2b[ppp]
 
-                    JYx[i2,  j2,  k]   += Jx2a[ppp]
-                    JYx[i2,  j2p1,  k] += Jx2b[ppp]
-                
                     JYy[i1p, j1p, k] += Jy1a[ppp] 
-                    JYy[i1p1, j1p, k] += Jy1b[ppp]
+                    JYy[i1p1,j1p, k] += Jy1b[ppp]
+                    JYy[i2,  j2,  k] += Jy2a[ppp]
+                    JYy[i2p1,j2,  k] += Jy2b[ppp]
 
-                    JYy[i2, j2, k] += Jy2a[ppp]
-                    JYy[i2p1, j2, k] += Jy2b[ppp]
-
+    #for k in range(Nz):
+    #    for j in range(Ny):
+    #        for i in range(Nx):
+    #            JYx[i,j,k] = JYxt[i+1, j+1, k+1]
+    #            JYy[i,j,k] = JYyt[i+1, j+1, k+1]
+             
 
     return
 
