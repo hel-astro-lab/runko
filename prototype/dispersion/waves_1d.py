@@ -40,7 +40,7 @@ rpic.threeD = False
 
 #grid dimensions
 rpic.Nx = 128
-#rpic.Nx = 6
+#rpic.Nx = 20
 rpic.Ny = 2
 rpic.Nz = 1
 
@@ -490,7 +490,6 @@ for step in range(1, max_steps):
     #rpic.push_half_B()
 
     rpic.Vay_update_velocities(rpic.mpiGrid)
-    
     #rpic.sort_particles_between_cells(rpic.mpiGrid)
 
     #rpic.push_half_B()
@@ -523,10 +522,12 @@ for step in range(1, max_steps):
 
 
     #apply filters
-    #rpic.filter_current(0.5)
-    #rpic.filter_current(0.5)
-    #rpic.filter_current(0.5)
-    #rpic.filter_current(-1.0/6.0)
+    for sweeps in range(5):
+        rpic.filter_current(0.5,1) #x sweep
+        rpic.filter_current(0.5,2) #y sweep
+
+    rpic.filter_current(-1.0/6.0, 1) #put some power back with negative sweeps
+    rpic.filter_current(-1.0/6.0, 2)
 
 
     #I/O

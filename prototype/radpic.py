@@ -680,14 +680,17 @@ def conserving_deposit_current(grid):
 
                 #i1 = np.floor(x1sp/dx)
                 i1 = np.floor((x1 - xmin)/dx) + i
-                #i2tmp = np.floor(x2/dx)
-                #i2 = np.ones(cell.Npe)*i
-                i2 = i
+                #i1 = np.ones(cell.Npe)*i
+                #i2 = np.floor((x2)/dx)
+                i2 = np.ones(cell.Npe)*i
+                #i2 = i
                 #j1 = np.floor(y1sp/dy)
                 j1 = np.floor((y1 - ymin)/dy) + j
+                #j1 = np.ones(cell.Npe)*j
+                #j2 = np.floor((y2)/dy)
                 #j2tmp = np.floor(y2/dy)
-                #j2 = np.ones(cell.Npe)*j
-                j2 = j
+                j2 = np.ones(cell.Npe)*j
+                #j2 = j
                 #k1 = int(z1)
                 #k2 = int(z2)
 
@@ -698,13 +701,13 @@ def conserving_deposit_current(grid):
                     #print "---:", ppp,"  / ",i,j,k
                     #print "x1=", x1[ppp], " y1=", y1[ppp], " z1=",z1[ppp]
                     #print "x2=", x2[ppp], " y2=", y2[ppp], " z2=",z2[ppp]
-                    #print "i1 / i2", i1[ppp], i2
-                    #print "j1 / j2", j1[ppp], j2
+                    #print "i1 / i2", i1[ppp], i2[ppp]
+                    #print "j1 / j2", j1[ppp], j2[ppp]
 
-                    #if i2tmp[ppp] != i2:
-                    #    print "ERRRRRRRR", i2tmp[ppp], i2
-                    #if j2tmp[ppp] != j2:
-                    #    print "ERRRRRRRR", j2tmp[ppp], j2
+                    #if i1[ppp] != i:
+                    #    print "ERRRRRRRR X", i1[ppp], i
+                    #if j1[ppp] != j:
+                    #    print "ERRRRRRRR Y", j1[ppp], j
 
                     #xr = 0.0
                     #if i1[ppp] == i2:
@@ -717,17 +720,19 @@ def conserving_deposit_current(grid):
                     #print "xr=", xr
 
                     i1p = int(i1[ppp])
+                    i2p = int(i2[ppp])
                     xr2 = min(
-                            min(xgrid[i1p], xgrid[i2]) + dx,
-                            max(max(xgrid[i1p], xgrid[i2]), 0.5*(x1[ppp] + x2[ppp]))
+                            min(xgrid[i1p], xgrid[i2p]) + dx,
+                            max(max(xgrid[i1p], xgrid[i2p]), 0.5*(x1[ppp] + x2[ppp]))
                              )
                     #print "xr minmax=", xr2
                     xrr[ppp] = xr2
 
                     j1p = int(j1[ppp])
+                    j2p = int(j2[ppp])
                     yr2 = min(
-                            min(ygrid[j1p], ygrid[j2]) + dy,
-                            max(max(ygrid[j1p], ygrid[j2]), 0.5*(y1[ppp] + y2[ppp]))
+                            min(ygrid[j1p], ygrid[j2p]) + dy,
+                            max(max(ygrid[j1p], ygrid[j2p]), 0.5*(y1[ppp] + y2[ppp]))
                              )
                     #print "yr minmax=", yr2
                     yrr[ppp] = yr2
@@ -778,12 +783,15 @@ def conserving_deposit_current(grid):
 
                     i1p = xbc(i1[ppp])
                     j1p = ybc(j1[ppp])
+
+                    i2p = xbc(i2[ppp])
+                    j2p = ybc(j2[ppp])
                     
                     i1p1 = xbc(i1p + 1)
                     j1p1 = ybc(j1p + 1)
 
-                    i2p1 = xbc(i2 + 1)
-                    j2p1 = ybc(j2 + 1)
+                    i2p1 = xbc(i2p + 1)
+                    j2p1 = ybc(j2p + 1)
 
                     #if i1p == 0 or i1p1 == 0 or i2p1 == 0 or i2 == 0:
 
@@ -801,13 +809,13 @@ def conserving_deposit_current(grid):
                     JYx[i1p, j1p, k] += Jx1a[ppp]
                     #JYx[i1p, j1p, k] += 1.0
                     JYx[i1p, j1p1,k] += Jx1b[ppp]
-                    JYx[i2,  j2,  k] += Jx2a[ppp]
-                    JYx[i2,  j2p1,k] += Jx2b[ppp]
+                    JYx[i2p, j2p,  k] += Jx2a[ppp]
+                    JYx[i2p, j2p1,k] += Jx2b[ppp]
 
                     JYy[i1p, j1p, k] += Jy1a[ppp] 
                     JYy[i1p1,j1p, k] += Jy1b[ppp]
-                    JYy[i2,  j2,  k] += Jy2a[ppp]
-                    JYy[i2p1,j2,  k] += Jy2b[ppp]
+                    JYy[i2p, j2p, k] += Jy2a[ppp]
+                    JYy[i2p1,j2p, k] += Jy2b[ppp]
 
     #for k in range(Nz):
     #    for j in range(Ny):
@@ -864,11 +872,23 @@ def Yee_currents():
     return
 
 
-def filter_current(W):
+def filter_current(W, axis):
 
     Jp1 = np.zeros(3)
     Jm1 = np.zeros(3)
     J0 = np.zeros(3)
+    
+    xsweep = False
+    ysweep = False
+    zsweep = False
+
+    if axis == 0:
+        xsweep = True
+    if axis == 1:
+        ysweep = True
+    if axis == 2:
+        zsweep = True
+     
 
     for k in range(Nz):
         for j in range(Ny):
@@ -883,19 +903,26 @@ def filter_current(W):
                 #Boundary  conditions and wrapping
                 # TODO wrapping in every dimension done automatically here
                 # correct this to check for Nx/y/z_wrap
+                ii = i
+                jj = j
+                kk = k
+                if xsweep:
+                    ii = xbc(i+1)
+                if ysweep:
+                    jj = ybc(j+1)
 
-                if oneD:
-                    ii = i+1 if i < Nx-1 else 0
-                    jj = j
-                    kk = k
-                elif twoD:
-                    ii = i+1 if i < Nx-1 else 0
-                    jj = j+1 if j < Ny-1 else 0
-                    kk = k
-                elif threeD:
-                    ii = i+1 if i < Nx-1 else 0
-                    jj = j+1 if j < Ny-1 else 0
-                    kk = k+1 if k < Nz-1 else 0
+                #if oneD:
+                #    ii = i+1 if i < Nx-1 else 0
+                #    jj = j
+                #    kk = k
+                #elif twoD:
+                #    ii = i+1 if i < Nx-1 else 0
+                #    jj = j+1 if j < Ny-1 else 0
+                #    kk = k
+                #elif threeD:
+                #    ii = i+1 if i < Nx-1 else 0
+                #    jj = j+1 if j < Ny-1 else 0
+                #    kk = k+1 if k < Nz-1 else 0
 
 
                 Jp1[0] = JYx[ii,jj,kk]                
@@ -903,10 +930,13 @@ def filter_current(W):
                 Jp1[2] = JYz[ii,jj,kk]                
 
                 #now get the latter i-1 neighbor
-                if oneD:
-                    iii = i-1 if i > 0 else Nx-1
-                    jjj = j
-                    kkk = k
+                iii = i
+                jjj = j
+                kkk = k
+                if xsweep:
+                    iii = xbc(i-1)
+                if ysweep:
+                    jjj = ybc(j-1)
 
                 Jm1[0] = JYx[iii,jjj,kkk]                
                 Jm1[1] = JYy[iii,jjj,kkk]                
