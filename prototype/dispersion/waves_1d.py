@@ -19,15 +19,14 @@ import radpic as rpic
 ##################################################
 rpic.Nppc = 64 #particles per cell
 #rpic.Nppc = 10 #particles per cell
-rpic.delgamma = 0.2 #(k T/m c^2, T electron/ion temperature
-#rpic.delgamma = 2.0e-5 #(k T/m c^2, T electron/ion temperature
+rpic.delgamma = 2.0e-5 #(k T/m c^2, T electron/ion temperature
 
 rpic.qe = 1.0 #electron charge
 rpic.qe = 1.0 #electron
 
 rpic.me = 1.0 #electron mass
 rpic.mi = 1.0 #ion mass (or actually mass to charge ratio)
-rpic.gamma = 0.5 #flow drift gamma (gamma0)
+rpic.gamma = 0.5 #flow drift gamma (gamma0) #now sets beta = v/c  because < 1
 rpic.delta = 10.0 #plasma skin depth
 rpic.Te_Ti = 1.0 #T_e / T_i
 rpic.c = 1.0 #Computational speed of light
@@ -124,109 +123,6 @@ for ax in [ax2, ax3, ax4]:
     ax.set_xlabel(r'$x$')
 
 
-def thermal_plasma(theta):
-    fmax = 1.0
-    vmin = -5.0*theta
-    vmax = 5.0*theta
-    
-    vf = vmin + (vmax-vmin)*np.random.rand()
-    f = 0.5*(exp(-(vf*vf)/(2.0*theta*theta)))
-
-    x = fmax*np.random.rand()
-
-    if x > f:
-        return thermal_plasma(theta)
-
-    #now we have valid u = abs(u_i)
-    x1 = np.random.rand()
-    x2 = np.random.rand()
-    #x3 = np.random.rand()
-
-    vx = vf*(2*x1 -1)
-    vy = 2*vf*sqrt(x1*(1-x1))
-
-    #3d treatment
-    #vy = 2*u*sqrt(x1*(1-x1))*cos(2*pi*x2)
-    #vz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
-    vz = 0.0
-
-    return vx,vy,vz
-
-
-#relativistic maxwell-Juttner distribution
-# theta is dimensionless temperature
-def thermal_rel_plasma(theta):
-
-    fmax = 1.0/kn(2,1.0/theta)
-    vmin = -20.0*theta
-    vmax = 20.0*theta
-    vf = vmin + (vmax-vmin)*np.random.rand()
-    
-    f = exp(-sqrt(1+vf*vf)/theta)*vf*vf
-
-    x = fmax*np.random.rand()
-
-    if x > f:
-        return thermal_rel_plasma(theta)
-
-    return vf
-
-def sobol_method(T):
-
-
-    x4 = np.random.rand()
-    x5 = np.random.rand()
-    x6 = np.random.rand()
-    x7 = np.random.rand()
-
-    u = -T*log(x4*x5*x6)
-    n = -T*log(x4*x5*x6*x7)
-
-    if n*n - u*u < 1:
-        return sobol_method(T)
-
-    #now we have valid u = abs(u_i)
-    x1 = np.random.rand()
-    x2 = np.random.rand()
-    #x3 = np.random.rand()
-
-    vx = u*(2*x1 -1)
-    vy = 2*u*sqrt(x1*(1-x1))
-
-    #3d treatment
-    #vy = 2*u*sqrt(x1*(1-x1))*cos(2*pi*x2)
-    #vz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
-    vz = 0.0
-
-    return vx,vy,vz,u
-
-
-#cumulative distribution loading
-def drifting_maxw(beta, theta):
-    gamd = 1.0/sqrt(1.0-beta*beta)
-    pu = gamd*beta #drift 4-velocity
-    g1 = sqrt(1.0 + up*up)
-
-    #f(p||) 
-    fg1 = (1.0 + gamd*g1/theta)*exp(-(up-pu)**2/(g1*gamd + up*pu + 1.0)/theta)
-
-
-def drift_boost_maxwell(beta, Gamma, theta):
-    vx, vy, vz, u = sobol_method(theta)
-    
-    X8 = np.random.rand()
-    #if 0.5*(1.0 + beta*vx) < X8:
-    #    return drift_boost_maxwell(beta, theta)
-    if -beta*vx > X8:
-        vx = -vx
-    else:
-        return drift_boost_maxwell(beta, Gamma, theta)
-
-    vx = Gamma*vx + beta*sqrt(1.0 + u*u)
-
-    return vx, vy, vz, u
-
-
 
 #initialize particles
 delgamma_i = rpic.delgamma
@@ -252,56 +148,19 @@ for i in range(rpic.Nx):
                 y = ymin + (ymax-ymin)*np.random.rand()
                 z = zmin + (zmax-zmin)*np.random.rand()
 
-                #thermal plasma without any bulk motion
-                #vx = rpic.Maxwellian(rpic.gamma_drift, rpic.delgamma)
-                #vx = thermal_rel_plasma(delgamma_e)
 
-
-                #debug
-                #x = xmin + (xmax-xmin)*0.5
-                #x = xarr[n]
-                #y = ymin + (ymax-ymin)*0.5
-                #z = zmin + (zmax-zmin)*0.5
-                #vx = 1.0
-                #vy = 0.0
-                #vz = 0.0
-
-                vx, vy, vz, u = sobol_method(delgamma_e)
-                #vx, vy, vz, u = drift_boost_maxwell(1.0, rpic.gamma, delgamma_e)
-                #vx, vy, vz = thermal_plasma(delgamma_e)
-                #vx = rpic.Maxwellian(rpic.gamma, delgamma_e)
-                #vy = 0.0
-                #vz = 0.0
+                vx, vy, vz, u = rpic.boosted_maxwellian(delgamma_e, rpic.gamma)
 
                 #weight = q*M_macro)
                 w = rpic.qe * 1.0
 
-                #print x,y,z,vx,vy,vz,w
-
-                #make half into positrons
-                #if n % 2 == 1:
-                #    w *= -1.0
-                #    #vx *= -1.0
 
                 cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, w]]), axis=0) #add 6D phase space 
-                #cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, w]]), axis=0) #add 6D phase space 
 
 
-                #cell.particles = np.concatenate((cell.particles, [[x, y, z, -vx, vy, vz, w]]), axis=0) #add 6D phase space 
 
                 #Add ion/positron to exact same place
-                #thermal plasma without any bulk motion
-                #vxi, vyi, vzi, ui = sobol_method(delgamma_i)
-                #vxi, vyi, vzi, ui = drift_boost_maxwell(-1.0, rpic.gamma, delgamma_i)
-                #vxi, vyi, vzi = thermal_plasma(delgamma_i)
-                #vxi = -rpic.Maxwellian(rpic.gamma, delgamma_i)
-                #vyi = 0.0
-                #vzi = 0.0
-
-
-                vxi = vx
-                vyi = vy
-                vzi = vz
+                vxi, vyi, vzi, ui = rpic.boosted_maxwellian(delgamma_i, rpic.gamma)
 
                 #wi = rpic.qe * (-1.0)
                 wi = rpic.qe
@@ -482,8 +341,11 @@ A_xt[:,0] = rpic.Ex[:,0,0]
 #A_xt[:,0] = rpic.JYx[:,0,0]
 
 
+
+
+
 for step in range(1, max_steps):
-#for step in range(1, 2):
+#for step in range(1, 1):
     print " step: ",step
     print "t:", t
 
@@ -522,12 +384,11 @@ for step in range(1, max_steps):
 
 
     #apply filters
-    for sweeps in range(5):
-        rpic.filter_current(0.5,1) #x sweep
-        rpic.filter_current(0.5,2) #y sweep
-
-    rpic.filter_current(-1.0/6.0, 1) #put some power back with negative sweeps
-    rpic.filter_current(-1.0/6.0, 2)
+    #for sweeps in range(5):
+    #    rpic.filter_current(0.5,1) #x sweep
+    #    rpic.filter_current(0.5,2) #y sweep
+    #rpic.filter_current(-1.0/6.0, 1) #put some power back with negative sweeps
+    #rpic.filter_current(-1.0/6.0, 2)
 
 
     #I/O

@@ -30,6 +30,142 @@ ax1.set_xlabel(r'velocity $v$')
 
 
 
+#def thermal_plasma(theta):
+#    fmax = 1.0
+#    vmin = -5.0*theta
+#    vmax = 5.0*theta
+#    
+#    vf = vmin + (vmax-vmin)*np.random.rand()
+#    f = 0.5*(exp(-(vf*vf)/(2.0*theta*theta)))
+#
+#    x = fmax*np.random.rand()
+#
+#    if x > f:
+#        return thermal_plasma(theta)
+#
+#    #now we have valid u = abs(u_i)
+#    x1 = np.random.rand()
+#    x2 = np.random.rand()
+#    #x3 = np.random.rand()
+#
+#    vx = vf*(2*x1 -1)
+#    vy = 2*vf*sqrt(x1*(1-x1))
+#
+#    #3d treatment
+#    #vy = 2*u*sqrt(x1*(1-x1))*cos(2*pi*x2)
+#    #vz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
+#    vz = 0.0
+#
+#    return vx,vy,vz
+#
+#
+##relativistic maxwell-Juttner distribution
+## theta is dimensionless temperature
+#def thermal_rel_plasma(theta):
+#
+#    fmax = 1.0/kn(2,1.0/theta)
+#    vmin = -20.0*theta
+#    vmax = 20.0*theta
+#    vf = vmin + (vmax-vmin)*np.random.rand()
+#    
+#    f = exp(-sqrt(1+vf*vf)/theta)*vf*vf
+#
+#    x = fmax*np.random.rand()
+#
+#    if x > f:
+#        return thermal_rel_plasma(theta)
+#
+#    return vf
+#
+#def sobol_method(T):
+#
+#
+#    x4 = np.random.rand()
+#    x5 = np.random.rand()
+#    x6 = np.random.rand()
+#    x7 = np.random.rand()
+#
+#    u = -T*log(x4*x5*x6)
+#    n = -T*log(x4*x5*x6*x7)
+#
+#    if n*n - u*u < 1:
+#        return sobol_method(T)
+#
+#    #now we have valid u = abs(u_i)
+#    x1 = np.random.rand()
+#    x2 = np.random.rand()
+#    #x3 = np.random.rand()
+#
+#    vx = u*(2*x1 -1)
+#    vy = 2*u*sqrt(x1*(1-x1))
+#
+#    #3d treatment
+#    #vy = 2*u*sqrt(x1*(1-x1))*cos(2*pi*x2)
+#    #vz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
+#    vz = 0.0
+#
+#    return vx,vy,vz,u
+#
+##equation 6 from Swisdak
+#def f1(p, A):
+#    return p*p*exp(-A*p*p/(1+sqrt(1+p*p)))
+#
+##Derivative
+##def f1p(p, A):
+#
+##Mode
+#def f1m(A):
+#    return sqrt((2.0/A/A)*(1+sqrt(1+A*A)))
+#
+#
+#
+##Rejection sampling from Swisdak 2013
+#def rejection_sampling(A):
+#    pm = f1m(A) #mode
+#
+#    #root finding
+#    pg = np.linspace(0, 5, 20)
+#    for p in pg:
+#        print log(f1(p, A)/pm) + 1
+#
+#    
+#    return 1.0
+#
+#
+#
+#
+#
+#
+##cumulative distribution loading
+#def drifting_maxwellian(beta, theta):
+#    gamd = 1.0/sqrt(1.0-beta*beta)
+#    pu = gamd*beta #drift 4-velocity
+#    g1 = sqrt(1.0 + up*up)
+#
+#    #f(p||) 
+#    fg1 = (1.0 + gamd*g1/theta)*exp(-(up-pu)**2/(g1*gamd + up*pu + 1.0)/theta)
+#
+#
+#def boosted_maxwellian(beta, Gamma, theta):
+#    
+#    #For relativistic case we use Sobol method, inverse method otherwise
+#    if theta > 0.1:
+#        vx, vy, vz, u = sobol_method(theta)
+#    else 
+#        vx, vy, vz, u = inverse_method(theta)
+#    
+#    X8 = np.random.rand()
+#    if -beta*vx > X8:
+#        vx = -vx
+#    else:
+#        return drift_boost_maxwell(beta, Gamma, theta)
+#
+#    Gamma = 1.0/sqrt(1.0 - beta*beta) #XXX is this so?
+#    vx = Gamma*vx + beta*sqrt(1.0 + u*u)
+#
+#    return vx, vy, vz, u
+
+
 
 
 def thermal_plasma(theta):
