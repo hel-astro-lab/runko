@@ -5,41 +5,51 @@ import os, sys
 from scipy.stats import gaussian_kde
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-#from mayavi import mlab
+from scipy.special import kn
 
+#set seed to get reproducible errors & results
+np.random.seed(1)
+
+#update system path as we are on the subdirectory
+sys.path.append('/Users/natj/projects/radpic/prototype')
 import radpic as rpic
 
 
-#physical parameters
-rpic.e = 1.0
-rpic.me = 1.0
-rpic.c = 1.0
+#dimensionless inputs
+##################################################
+rpic.Nppc = 200 #particles per cell
+rpic.delgamma = 0.5 #(k T/m c^2, T electron/ion temperature
+
+rpic.qe = 1.0 #electron charge
+rpic.qi = -1.0 #positron 
+
+rpic.me = 1.0 #electron mass
+rpic.mi = 1.0 #ion mass (or actually mass to charge ratio)
+rpic.gamma = 0.0 #flow drift gamma (gamma0) #now sets beta = v/c  because < 1
+rpic.delta = 10.0 #plasma skin depth
+rpic.Te_Ti = 1.0 #T_e / T_i
+rpic.c = 1.0 #Computational speed of light
 
 
-rpic.zeroD = True
-rpic.twoD = False
-rpic.threeD = False
+#two or three D
+rpic.twoD = True
 
 
 #grid dimensions
-rpic.Nx = 1
-rpic.Ny = 1
+rpic.Nx = 2
+rpic.Ny = 2
 rpic.Nz = 1
+
 
 rpic.Nx_wrap = True
 rpic.Ny_wrap = True
 rpic.Nz_wrap = True
 
-rpic.grid_xmin=0.0
-rpic.grid_xmax=1.0
+rpic.Np = rpic.Nx * rpic.Nppc #total number of particles
 
-rpic.grid_ymin=0.0
-rpic.grid_ymax=1.0
 
-rpic.grid_zmin=0.0
-rpic.grid_zmax=1.0
-
-rpic.Np = 100 #total number of particles
+#initialize according to skin depth/cell
+rpic.grid_scale_skindepth(rpic.delta)
 
 
 #Initialize the grid
@@ -47,10 +57,15 @@ rpic.init()
 
 
 #Mesh grid for plotting
-XX, YY, ZZ = np.meshgrid(np.linspace(rpic.grid_xmin, rpic.grid_xmax, rpic.Nx),
-                         np.linspace(rpic.grid_ymin, rpic.grid_ymax, rpic.Ny),
-                         np.linspace(rpic.grid_zmin, rpic.grid_zmax, rpic.Nz)
+#XX, YY, ZZ = np.meshgrid(np.linspace(rpic.grid_xmin, rpic.grid_xmax, rpic.Nx),
+#                         np.linspace(rpic.grid_ymin, rpic.grid_ymax, rpic.Ny),
+#                         np.linspace(rpic.grid_zmin, rpic.grid_zmax, rpic.Nz)
+#                        )
+XX, YY, ZZ = np.meshgrid(np.linspace(0.0, rpic.Nx-1, rpic.Nx),
+                         np.linspace(0.0, rpic.Nx-1, rpic.Ny),
+                         np.linspace(0.0, rpic.Nx-1, rpic.Nz)
                         )
+
 
 
 ##################################################
@@ -60,6 +75,8 @@ if not os.path.exists(path):
     os.makedirs(path)
 
 
+
+##################################################
 #set up figure
 fig = figure(figsize=(10, 12), dpi=200)
 rc('font', family='serif')
@@ -89,31 +106,46 @@ ax9 = fig.add_subplot(gs[2,2], projection='3d')
 ##################################################
 #inject particles
 
+#initialize particles
+delgamma_i = rpic.delgamma
+delgamma_e = rpic.delgamma *(rpic.mi/rpic.me)*rpic.Te_Ti
+
+for i in range(rpic.Nx):
+    for j in range(rpic.Ny):
+        for k in range(rpic.Nz):
+            cell = rpic.CellClass(i,j,k) 
+
+            #cell limits
+            xmin,xmax, ymin,ymax, zmin,zmax = rpic.grid_limits(i,j,k)
+            
+            xarr = np.linspace(xmin, xmax, rpic.Nppc/2)
+            for n in range(rpic.Nppc/2):
+
+                #random uniform location inside cell
+                x = xmin + (xmax-xmin)*np.random.rand()
+                y = ymin + (ymax-ymin)*np.random.rand()
+                z = zmin + (zmax-zmin)*np.random.rand()
+
+                vx, vy, vz, u = rpic.boosted_maxwellian(delgamma_e, rpic.gamma, dims=3)
+
+                w = rpic.qe * 1.0
+
+                cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, w]]), axis=0) #add 6D phase space 
 
 
-#cell limits
-cell = rpic.CellClass() 
+                #Add ion/positron to exact same place
+                vxi, vyi, vzi, ui = rpic.boosted_maxwellian(delgamma_i, rpic.gamma, dims=3)
 
-#add particles  one by one, drawing from distribution
-for n in range(rpic.Np):
+                wi = rpic.qi*1.0
 
-    #center of the cell; does not actually matter where they are?
-    x = rpic.grid_xmin + (rpic.grid_xmax - rpic.grid_xmin)/2.0
-    y = rpic.grid_ymin + (rpic.grid_ymax - rpic.grid_ymin)/2.0
-    z = rpic.grid_zmin + (rpic.grid_zmax - rpic.grid_zmin)/2.0
 
-    #Temperature
-    vb = 2.0
+                cell.particles = np.concatenate((cell.particles, [[x, y, z, vxi, vyi, vzi, wi]]), axis=0) #add 6D phase space 
 
-    #Isotropic Maxwellian
-    vx = rpic.Maxwellian(vb)
-    vy = rpic.Maxwellian(vb)
-    vz = rpic.Maxwellian(vb)
 
-    cell.particles = np.concatenate((cell.particles, [[x, y, z, vx, vy, vz, 1.0]]), axis=0) #add 6D phase space 
-    cell.Npe += 1
+                cell.Npe += 2
+            rpic.mpiGrid[i,j,k] = cell
 
-rpic.mpiGrid[0,0,0] = cell
+
 
 
 
@@ -230,16 +262,15 @@ def plot_pdf3d_isosurf(ax, xs, ys):
 ##################################################
 
 #initialize fields and currents
-rpic.deposit_current(rpic.mpiGrid)
 
 #x-dir electric field to accelerate particles
-rpic.Ex[0,0,0] = -1.0
+rpic.Ex[0,0,0] = 0.0
 rpic.Ey[0,0,0] = 0.0
 rpic.Ez[0,0,0] = 0.0
 
 #Non-zero y-dir B-field
 rpic.Bx[0,0,0] = 0.0
-rpic.By[0,0,0] = 1.0
+rpic.By[0,0,0] = 0.0
 rpic.Bz[0,0,0] = 0.0
 
 
@@ -247,15 +278,31 @@ max_steps = 10
 for step in range(1, max_steps):
     print " step: ",step
 
-    rpic.update_velocities(rpic.mpiGrid)
-    
-    rpic.deposit_current(rpic.mpiGrid)
+
+    rpic.Vay_update_velocities(rpic.mpiGrid)
+
+    #do not update E or J
+    #rpic.push_E()
+    #rpic.conserving_deposit_current(rpic.mpiGrid)
+
+    rpic.sort_particles_between_cells(rpic.mpiGrid)
+
+
+    #apply filters
+    for sweeps in range(32):
+        rpic.filter_current(0.5,1) #x sweep
+        rpic.filter_current(0.5,2) #y sweep
+    #rpic.filter_current(-1.0/6.0, 1) #put some power back with negative sweeps
+    #rpic.filter_current(-1.0/6.0, 2)
+
 
     #I/O
     ################################################## 
 
     #collect particles and dissect into elements
-    electrons = rpic.collect_grid(rpic.mpiGrid)
+    particles = rpic.collect_grid(rpic.mpiGrid)
+    electrons, positrons = rpic.divide_species(particles)
+
     x = electrons[:,0]
     y = electrons[:,1]
     z = electrons[:,2]
@@ -268,11 +315,11 @@ for step in range(1, max_steps):
     ax3 = plot_pdf(ax3, vz, r'$v_z$')
 
     ax4 = plot_pdf2d(ax4, vx, vy, r'$v_x$', r'$v_y$')
-    ax5 = plot_pdf2d(ax5, vy, vz, r'$v_y$', r'$v_z$')
+    #ax5 = plot_pdf2d(ax5, vy, vz, r'$v_y$', r'$v_z$')
     ax6 = plot_pdf2d(ax6, vx, vz, r'$v_x$', r'$v_z$')
 
     ax7 = plot_pdf3d(ax7, vx, vy, r'$v_x$', r'$v_y$')
-    ax8 = plot_pdf3d(ax8, vy, vz, r'$v_y$', r'$v_z$')
+    #ax8 = plot_pdf3d(ax8, vy, vz, r'$v_y$', r'$v_z$')
     ax9 = plot_pdf3d(ax9, vx, vz, r'$v_x$', r'$v_z$')
 
     #ax6 = plot_pdf2d(ax6, vx, vy)

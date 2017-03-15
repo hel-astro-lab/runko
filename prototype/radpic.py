@@ -649,10 +649,25 @@ def velxy(u):
 
     return ux, uy, uz
 
+def velxyz(u):
+
+    #now we have valid u = abs(u_i)
+    x1 = np.random.rand()
+    x2 = np.random.rand()
+    x3 = np.random.rand()
+
+    #3d treatment
+    ux = u*(2*x1 -1)
+    uy = 2*u*sqrt(x1*(1-x1))*cos(2*pi*x2)
+    uz = 2*u*sqrt(x1*(1-x1))*sin(2*pi*x2)
+
+    return ux, uy, uz
 
 
 
-def boosted_maxwellian(theta, Gamma):
+
+
+def boosted_maxwellian(theta, Gamma, dims=2):
 
     #For relativistic case we use Sobol method, inverse method otherwise
     if theta > 0.2:
@@ -663,7 +678,11 @@ def boosted_maxwellian(theta, Gamma):
         u = rejection_sampling(theta)
 
     #now get components
-    ux, uy, uz = velxy(u)
+    if dims == 2:
+        ux, uy, uz = velxy(u)
+    if dims == 3:
+        ux, uy, uz = velxyz(u)
+
 
     #if no drift, we just return the non-boosted distribution
     if Gamma == 0:
