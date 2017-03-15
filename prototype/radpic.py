@@ -373,9 +373,9 @@ def init():
     JYz = np.zeros((Nx, Ny, Nz))
     
     global JYxt, JYyt, JYzt
-    JYxt = np.zeros((Nx+2,Ny+2,Nz+2))
-    JYyt = np.zeros((Nx+2,Ny+2,Nz+2))
-    JYzt = np.zeros((Nx+2,Ny+2,Nz+2))
+    JYxt = np.zeros((Nx+5,Ny+5,Nz+5))
+    JYyt = np.zeros((Nx+5,Ny+5,Nz+5))
+    JYzt = np.zeros((Nx+5,Ny+5,Nz+5))
 
     #create grid
     global mpiGrid
@@ -431,9 +431,20 @@ def init():
 
 
 class CellClass(object):
-    def __init__(self):
+    def __init__(self, i, j, k):
+
+        #number of particles in cell
         self.Npe = 0
+
+        #particle array
         self.particles = np.empty((0,7), dtype=float64)        
+
+        #my id (stored with tuples)
+        #self.ijk = np.array([i,j,k], dtype=int64)
+        self.ijk = (i,j,k)
+
+        
+
 
 
 
@@ -457,7 +468,7 @@ def grid_lengths(i,j,k):
     return dx,dy,dz
 
 def xbc(i):
-    #return i+1
+    #return int(i+2)
     if i < 0:
         return int(i + Nx)
     if i >= Nx:
@@ -465,7 +476,7 @@ def xbc(i):
     return int(i)
 
 def ybc(j):
-    #return j+1
+    #return int(j+2)
     if j < 0:
         return int(j + Ny)
     if j >= Ny:
@@ -473,6 +484,7 @@ def ybc(j):
     return int(j)
 
 def zbc(k):
+    #return int(k)
     if k < 0:
         return int(k + Nz)
     if k >= Nz:
@@ -832,9 +844,12 @@ def conserving_deposit_current(grid):
                 xmin,xmax, ymin,ymax, zmin,zmax = grid_limits(i,j,k)
                 dx,dy,dz = grid_lengths(i,j,k)
 
-                x2 = particles[:,0]
-                y2 = particles[:,1]
-                z2 = particles[:,2]
+                #print "xminmax =", xmin,xmax ," yminmax=",ymin,ymax
+
+                #relative particle positions (in respect to cell)
+                x2 = (particles[:,0] - xmin)/dx
+                y2 = (particles[:,1] - ymin)/dy
+                z2 = (particles[:,2] - zmin)/dz
                 ux = particles[:,3]
                 uy = particles[:,4]
                 uz = particles[:,5]
@@ -845,10 +860,11 @@ def conserving_deposit_current(grid):
 
                 #go back in time -dt and see what was the starting position
                 #FIXME could we not just save this?
-                invgamma = 1.0/sqrt(1.0 + ux*ux + uy*uy + uz*uz)
-                x1 = x2 - ux*invgamma*c*dt
-                y1 = y2 - uy*invgamma*c*dt
-                z1 = z2 - uz*invgamma*c*dt
+                #invgamma = 1.0/sqrt(1.0 + ux*ux + uy*uy + uz*uz)
+                gamma = c*c/sqrt(c*c + ux*ux + uy*uy + uz*uz)
+                x1 = x2 - ux*gamma*dt/dx
+                y1 = y2 - uy*gamma*dt/dy
+                z1 = z2 - uz*gamma*dt/dz
 
                 q = particles[:,6]*qe 
 
@@ -864,23 +880,50 @@ def conserving_deposit_current(grid):
                 #fr = (z - zmin)/dz
 
                 #i1 = np.floor(x1sp/dx)
-                i1 = np.floor((x1 - xmin)/dx) + i
+                #i1 = np.floor((x1- xmin)/dx) #+ i #XXX
                 #i1 = np.ones(cell.Npe)*i
-                #i2 = np.floor((x2)/dx)
-                i2 = np.ones(cell.Npe)*i
+                #i2 = np.floor((x2 - xmin)/dx) #XXX 2
+                #i2 = np.ones(cell.Npe)*i #XXX
                 #i2 = i
                 #j1 = np.floor(y1sp/dy)
-                j1 = np.floor((y1 - ymin)/dy) + j
+                #j1 = np.floor((y1 - ymin)/dy) #+ j #XXX
                 #j1 = np.ones(cell.Npe)*j
-                #j2 = np.floor((y2)/dy)
+                #j2 = np.floor((y2 - ymin)/dy) #XXX 2
                 #j2tmp = np.floor(y2/dy)
-                j2 = np.ones(cell.Npe)*j
+                #j2 = np.ones(cell.Npe)*j #XXX
                 #j2 = j
                 #k1 = int(z1)
                 #k2 = int(z2)
 
+                #i1 = np.ones(cell.Npe)*i
+                #j1 = np.ones(cell.Npe)*j
+                #i2 = np.floor((x2-xmin)/dx)
+                #j2 = np.floor((y2-ymin)/dy)
+
+                #tristan like indexing
+                #(x - xmin)/dx
+
+                #relative indexing
+                #i1 = np.floor(x1)
+                i1 = np.zeros(cell.Npe) #original cell should always be 0
+                i2 = np.floor(x2)
+
+                #j1 = np.floor(y1)
+                j1 = np.zeros(cell.Npe)
+                j2 = np.floor(y2)
+
+                #k1 = np.floor(z1)
+                if threeD:
+                    k1 = np.zeros(cell.Npe)
+                    k2 = np.floor(z2)
+                else:
+                    k1 = np.zeros(cell.Npe)
+                    k2 = np.zeros(cell.Npe)
+
+
                 xrr = np.empty_like(x1)
                 yrr = np.empty_like(y1)
+                zrr = np.empty_like(z1)
 
                 for ppp in range(cell.Npe):
                     #print "---:", ppp,"  / ",i,j,k
@@ -889,9 +932,9 @@ def conserving_deposit_current(grid):
                     #print "i1 / i2", i1[ppp], i2[ppp]
                     #print "j1 / j2", j1[ppp], j2[ppp]
 
-                    #if i1[ppp] != i:
+                    #if i1[ppp] + i != i:
                     #    print "ERRRRRRRR X", i1[ppp], i
-                    #if j1[ppp] != j:
+                    #if j1[ppp] + j != j:
                     #    print "ERRRRRRRR Y", j1[ppp], j
 
                     #xr = 0.0
@@ -906,59 +949,109 @@ def conserving_deposit_current(grid):
 
                     i1p = int(i1[ppp])
                     i2p = int(i2[ppp])
+                    #xr2 = min(
+                    #        min(xgrid[i1p], xgrid[i2p]) + dx,
+                    #        max(max(xgrid[i1p], xgrid[i2p]), 0.5*(x1[ppp] + x2[ppp]))
+                    #         )
+                    #xr2 = min(
+                    #        min(i1p*dx, i2p*dx) + dx,
+                    #        max(max(i1p*dx, i2p*dx), 0.5*(x1[ppp] + x2[ppp]))
+                    #         )
                     xr2 = min(
-                            min(xgrid[i1p], xgrid[i2p]) + dx,
-                            max(max(xgrid[i1p], xgrid[i2p]), 0.5*(x1[ppp] + x2[ppp]))
+                            min(i1p, i2p) + 1,
+                            max(max(i1p, i2p), 0.5*(x1[ppp] + x2[ppp]))
                              )
+                    
+
                     #print "xr minmax=", xr2
                     xrr[ppp] = xr2
 
                     j1p = int(j1[ppp])
                     j2p = int(j2[ppp])
+                    #yr2 = min(
+                    #        min(ygrid[j1p], ygrid[j2p]) + dy,
+                    #        max(max(ygrid[j1p], ygrid[j2p]), 0.5*(y1[ppp] + y2[ppp]))
+                    #         )
+                    #yr2 = min(
+                    #        min(j1p*dy, j2p*dy) + dy,
+                    #        max(max(j1p*dy, j2p*dy), 0.5*(y1[ppp] + y2[ppp]))
+                    #         )
                     yr2 = min(
-                            min(ygrid[j1p], ygrid[j2p]) + dy,
-                            max(max(ygrid[j1p], ygrid[j2p]), 0.5*(y1[ppp] + y2[ppp]))
+                            min(j1p, j2p) + 1,
+                            max(max(j1p, j2p), 0.5*(y1[ppp] + y2[ppp]))
                              )
                     #print "yr minmax=", yr2
                     yrr[ppp] = yr2
+
+                    k1p = int(k1[ppp])
+                    k2p = int(k2[ppp])
+                    zr2 = min(
+                            min(k1p, k2p) + 1,
+                            max(max(k1p, k2p), 0.5*(z1[ppp] + z2[ppp]))
+                             )
+                    #print "zr minmax=", zr2
+                    zrr[ppp] = zr2
                 #print "end of cell"
             
                 #build currents; 
                 # not including -q to be consistent with notation
                 Fx1 = -q*(xrr - x1)/dt
                 Fy1 = -q*(yrr - y1)/dt
+                Fz1 = -q*(zrr - z1)/dt
 
                 Fx2 = -q*(x2 - xrr)/dt
                 Fy2 = -q*(y2 - yrr)/dt
+                Fz2 = -q*(z2 - zrr)/dt
 
-                Wx1 = 0.5*(x1 + xrr)/dx -i1
-                Wy1 = 0.5*(y1 + yrr)/dy -j1
+                #Wx1 = 0.5*(x1 + xrr)/dx -i1
+                #Wy1 = 0.5*(y1 + yrr)/dy -j1
 
-                Wx2 = 0.5*(xrr + x2)/dx -i2
-                Wy2 = 0.5*(yrr + y2)/dy -j2
+                #Wx2 = 0.5*(xrr + x2)/dx -i2
+                #Wy2 = 0.5*(yrr + y2)/dy -j2
+
+                #weight with relative location 
+                Wx1 = 0.5*(x1 + xrr) 
+                Wy1 = 0.5*(y1 + yrr)
+
+                Wx2 = 0.5*(xrr + x2) - i2
+                Wy2 = 0.5*(yrr + y2) - j2
+
+                #deal with 3rd dimension
+                if threeD:
+                    Wz1 = 0.5*(z1 + zrr)
+                    Wz2 = 0.5*(zrr + z2) - k2
+                else:
+                    Wz1 = 0.0
+                    Wz2 = 0.0
+
+
 
                 #print "Fx1", Fx1
                 #print "Fy1", Fy1
+                #print "Fz1", Fz1
                 #print "Fx2", Fx2
                 #print "Fy2", Fy2
+                #print "Fz2", Fz2
                 #print "Wx1", Wx1
                 #print "Wy1", Wy1
+                #print "Wz1", Wz1
                 #print "Wx2", Wx2
                 #print "Wy2", Wy2
+                #print "Wz2", Wz2
 
-                #x-dir
-                Jx1a = Fx1*(1.0 - Wy1)/dx/dy
-                Jx1b = Fx1*Wy1/dx/dy
+                #x-dir (relative locs, hence relative currents)
+                Jx1a = Fx1*(1.0 - Wy1)*(1.0 - Wz1)
+                Jx1b = Fx1*Wy1*(1.0 - Wz1)
 
-                Jx2a = Fx2*(1.0 - Wy2)/dx/dy
-                Jx2b = Fx2*Wy2/dx/dy
+                Jx2a = Fx2*(1.0 - Wy2)
+                Jx2b = Fx2*Wy2
                 
                 #y-dir
-                Jy1a = Fy1*(1.0 - Wx1)/dx/dy
-                Jy1b = Fy1*Wx1/dx/dy
+                Jy1a = Fy1*(1.0 - Wx1)
+                Jy1b = Fy1*Wx1
 
-                Jy2a = Fy2*(1.0 - Wx2)/dx/dy
-                Jy2b = Fy2*Wx2/dx/dy
+                Jy2a = Fy2*(1.0 - Wx2)
+                Jy2b = Fy2*Wx2
                 
                 for ppp in range(cell.Npe):
                     #printflag=False
@@ -966,17 +1059,17 @@ def conserving_deposit_current(grid):
                     #    printflag=True
                     #    print "--- i1", i1[ppp], "j1", j1[ppp] 
 
-                    i1p = xbc(i1[ppp])
-                    j1p = ybc(j1[ppp])
+                    i1p = xbc(i1[ppp] + i)
+                    j1p = ybc(j1[ppp] + j)
 
-                    i2p = xbc(i2[ppp])
-                    j2p = ybc(j2[ppp])
+                    i2p = xbc(i2[ppp] + i)
+                    j2p = ybc(j2[ppp] + j)
                     
-                    i1p1 = xbc(i1p + 1)
-                    j1p1 = ybc(j1p + 1)
+                    i1p1 = xbc(i1[ppp] + 1 + i)
+                    j1p1 = ybc(j1[ppp] + 1 + j)
 
-                    i2p1 = xbc(i2p + 1)
-                    j2p1 = ybc(j2p + 1)
+                    i2p1 = xbc(i2[ppp] + 1 + i)
+                    j2p1 = ybc(j2[ppp] + 1 + j)
 
                     #if i1p == 0 or i1p1 == 0 or i2p1 == 0 or i2 == 0:
 
@@ -992,9 +1085,8 @@ def conserving_deposit_current(grid):
                     #    print "   i1p", i1p, "j1p", j1p, "J", Jx1a[ppp]
 
                     JYx[i1p, j1p, k] += Jx1a[ppp]
-                    #JYx[i1p, j1p, k] += 1.0
                     JYx[i1p, j1p1,k] += Jx1b[ppp]
-                    JYx[i2p, j2p,  k] += Jx2a[ppp]
+                    JYx[i2p, j2p, k] += Jx2a[ppp]
                     JYx[i2p, j2p1,k] += Jx2b[ppp]
 
                     JYy[i1p, j1p, k] += Jy1a[ppp] 
@@ -1002,12 +1094,27 @@ def conserving_deposit_current(grid):
                     JYy[i2p, j2p, k] += Jy2a[ppp]
                     JYy[i2p1,j2p, k] += Jy2b[ppp]
 
+
+    #now normalize 
+    JYx[:,:,:] *= 1.0/dz
+    JYy[:,:,:] *= 1.0/dz
+    JYz[:,:,:] *= 1.0/dz
+
+
     #for k in range(Nz):
     #    for j in range(Ny):
     #        for i in range(Nx):
-    #            JYx[i,j,k] = JYxt[i+1, j+1, k+1]
-    #            JYy[i,j,k] = JYyt[i+1, j+1, k+1]
-             
+    #            JYx[i,j,k] += JYxt[i+2, j+2, k]
+    #            JYy[i,j,k] += JYyt[i+2, j+2, k]
+    
+    #for j in range(2,Nx):
+    #    JYx[ 
+
+
+    #add ghost zones 
+    #print JYxt
+
+
 
     return
 
@@ -1686,6 +1793,9 @@ def push_E():
                 JY[0] = JYx[i,j,k]
                 JY[1] = JYy[i,j,k]
                 JY[2] = JYz[i,j,k]
+                #JY[0] = JYx[ii,jj,kk]
+                #JY[1] = JYy[ii,jj,kk]
+                #JY[2] = JYz[ii,jj,kk]
 
                 #E_n+1 = E_n + dt*[ curl B - 4pi J ]
                 #EY = (c*dt) * np.cross(ds, BY - BYm1) - 4.0*pi*dt*JY

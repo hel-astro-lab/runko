@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.special import kn
 
 #set seed to get reproducible errors & results
-np.random.seed(0)
+np.random.seed(1)
 
 #update system path as we are on the subdirectory
 sys.path.append('/Users/natj/projects/radpic/prototype')
@@ -113,12 +113,12 @@ ax6 = fig.add_subplot(gs[2,1], projection='3d')
 
 
 
-for ax in [ax1, ax2, ax3, ax4]:
+for ax in [ax1, ax2, ax4]:
     ax.set_xlim((rpic.grid_xmin, rpic.grid_xmax))
     ax.set_xlabel(r'$x$')
     ax.minorticks_on()
 
-for ax in [ax2, ax3, ax4]:
+for ax in [ax2, ax4]:
     ax.set_xlim((-1.0, rpic.Nx))
     ax.set_xlabel(r'$x$')
 
@@ -135,7 +135,7 @@ delgamma_e = rpic.delgamma *(rpic.mi/rpic.me)*rpic.Te_Ti
 for i in range(rpic.Nx):
     for j in range(rpic.Ny):
         for k in range(rpic.Nz):
-            cell = rpic.CellClass() 
+            cell = rpic.CellClass(i,j,k) 
 
             #cell limits
             xmin,xmax, ymin,ymax, zmin,zmax = rpic.grid_limits(i,j,k)
@@ -148,8 +148,11 @@ for i in range(rpic.Nx):
                 y = ymin + (ymax-ymin)*np.random.rand()
                 z = zmin + (zmax-zmin)*np.random.rand()
 
-
-                vx, vy, vz, u = rpic.boosted_maxwellian(delgamma_e, rpic.gamma)
+                modulate = 0.05*np.sin(2.0*pi*x/rpic.grid_xmax)+1.0
+                #modulate = 1.0
+                vx, vy, vz, u = rpic.boosted_maxwellian(delgamma_e, modulate*rpic.gamma)
+                #vx = 0.5
+                #vy = 0.0
 
                 #weight = q*M_macro)
                 w = rpic.qe * 1.0
@@ -160,11 +163,17 @@ for i in range(rpic.Nx):
 
 
                 #Add ion/positron to exact same place
-                vxi, vyi, vzi, ui = rpic.boosted_maxwellian(delgamma_i, rpic.gamma)
+                vxi, vyi, vzi, ui = rpic.boosted_maxwellian(delgamma_i, modulate*rpic.gamma)
+                #vxi = 0.5
+                #vyi = 0.0
 
                 #wi = rpic.qe * (-1.0)
                 wi = rpic.qe
                 vxi *= -1.0
+
+                #x = xmin + (xmax-xmin)*np.random.rand()
+                #y = ymin + (ymax-ymin)*np.random.rand()
+                #z = zmin + (zmax-zmin)*np.random.rand()
 
                 cell.particles = np.concatenate((cell.particles, [[x, y, z, vxi, vyi, vzi, wi]]), axis=0) #add 6D phase space 
 
@@ -332,7 +341,7 @@ print "E:", 4*pi*J
 rpic.Ex_ext[:,:,:] = 0.0
 
 
-max_steps = 50
+max_steps = 500
 t = 0.0
 
 #Store x-t array of a quantity
@@ -341,16 +350,21 @@ A_xt[:,0] = rpic.Ex[:,0,0]
 #A_xt[:,0] = rpic.JYx[:,0,0]
 
 
+Nt = 50
+ti = 1
+tgrid = np.linspace(0.0, 24, Nt)
+print tgrid
 
-
-
-for step in range(1, max_steps):
-#for step in range(1, 1):
-    print " step: ",step
-    print "t:", t
+#for step in range(1, max_steps):
+step = 1
+while ti <= Nt:
+#for step in range(1, 2):
+    print " step: ",step, "/", ti-1
+    print "t:", t, "/", tgrid[ti-1]
 
     #rpic.push_half_B()
 
+    #rpic.conserving_deposit_current(rpic.mpiGrid)
     rpic.Vay_update_velocities(rpic.mpiGrid)
     #rpic.sort_particles_between_cells(rpic.mpiGrid)
 
@@ -358,21 +372,23 @@ for step in range(1, max_steps):
 
     rpic.push_E()
 
-    print "avg E=", mean(rpic.Ex)
+    #print "avg E=", mean(rpic.Ex)
 
-    print "avg J=", mean(rpic.Jx)
-    print "total avg J=", sum(sum(sqrt(rpic.Jx * rpic.Jx + rpic.Jy*rpic.Jy)))
 
-    print "avg JY=", mean(rpic.JYx)
-    print "total avg JY=", sum(sum(sqrt(rpic.JYx * rpic.JYx + rpic.JYy*rpic.JYy)))
+    #print " Etot=", mean(rpic.Ex_ext)+mean(rpic.Ex)
 
-    print " Etot=", mean(rpic.Ex_ext)+mean(rpic.Ex)
-
-    rpic.deposit_current(rpic.mpiGrid)
+    #rpic.deposit_current(rpic.mpiGrid)
     #rpic.Yee_currents()
 
     rpic.conserving_deposit_current(rpic.mpiGrid)
     rpic.sort_particles_between_cells(rpic.mpiGrid)
+
+
+    #print "avg J=", mean(rpic.Jx)
+    #print "total avg J=", sum(sum(sqrt(rpic.Jx * rpic.Jx + rpic.Jy*rpic.Jy)))
+
+    #print "avg JY=", mean(rpic.JYx)
+    #print "total avg JY=", sum(sum(sqrt(rpic.JYx * rpic.JYx + rpic.JYy*rpic.JYy)))
 
     #rpic.JYx[0, :,:] = 0.0
     #rpic.JYy[0, :,:] = 0.0
@@ -384,67 +400,75 @@ for step in range(1, max_steps):
 
 
     #apply filters
-    #for sweeps in range(5):
-    #    rpic.filter_current(0.5,1) #x sweep
-    #    rpic.filter_current(0.5,2) #y sweep
+    for sweeps in range(64):
+        rpic.filter_current(0.5,1) #x sweep
+        rpic.filter_current(0.5,2) #y sweep
     #rpic.filter_current(-1.0/6.0, 1) #put some power back with negative sweeps
     #rpic.filter_current(-1.0/6.0, 2)
 
 
     #I/O
     ################################################## 
-    A_xt[:,step] = rpic.Ex[:,0,0]
-    #A_xt[:,step] = rpic.JYx[:,0,0]
+    if t > tgrid[ti]:
+        A_xt[:,ti] = rpic.Ex[:,0,0]
+        #A_xt[:,ti] = rpic.JYx[:,0,0]
 
 
-    particles = rpic.collect_grid(rpic.mpiGrid)
+        particles = rpic.collect_grid(rpic.mpiGrid)
 
-    electrons, positrons = rpic.divide_species(particles)
+        electrons, positrons = rpic.divide_species(particles)
 
-    print "shape", shape(electrons)
-    x = electrons[:,0]
-    y = electrons[:,1]
-    z = electrons[:,2]
-    vx = electrons[:,3]
-    vy = electrons[:,4]
-    vz = electrons[:,5]
-    res1a = ax1.plot(x, vx, "k.", alpha=0.8)
+        print "shape", shape(electrons)
+        x = electrons[:,0]
+        y = electrons[:,1]
+        z = electrons[:,2]
+        vx = electrons[:,3]
+        vy = electrons[:,4]
+        vz = electrons[:,5]
+        res1a = ax1.plot(x, vx, "k.", alpha=0.8)
 
-    x2 = positrons[:,0]
-    vx2= positrons[:,3]
-    res1b = ax1.plot(x2, vx2, "b.", alpha=0.8)
-
-
-    res2 = ax2.plot(XX[0,:,0], rpic.Ex[:,0,0], "b-")
-    res3 = ax3.plot(XX[0,:,0], rpic.By[:,0,0], "b-")
-    res3 = ax3.plot(XX[0,:,0], rpic.Bz[:,0,0], "r-")
-
-    #res4a = ax4.plot(XX[0,:,0], rpic.Jx[:,0,0], "b-")
-    #res4b = ax4.plot(XX[0,:,0], rpic.Jx[:,1,0], "g-")
-    res4c = ax4.plot(XX[0,:,0], rpic.JYx[:,0,0], "r-")
-    res4d = ax4.plot(XX[0,:,0], rpic.JYx[:,1,0], "m-")
-
-    #ax5 = slice_pdf(ax5, electrons)
-
-    #ax6 = plot_pdf2d(ax6, vx, vy)
-    #ax6 = plot_pdf3d(ax6, vx, vy)
-    #ax6 = plot_pdf3d_isosurf(ax6, vx, vy)
-
-    fname = path+'/oneD_'+str(step)+'.png'
-    savefig(fname)
-
-    #clean figure
-    res1a.pop(0).remove()
-    res1b.pop(0).remove()
-    res2.pop(0).remove()
-    res3.pop(0).remove()
-    #res4a.pop(0).remove()
-    #res4b.pop(0).remove()
-    res4c.pop(0).remove()
-    res4d.pop(0).remove()
+        x2 = positrons[:,0]
+        vx2= positrons[:,3]
+        res1b = ax1.plot(x2, vx2, "b.", alpha=0.8)
 
 
-    t += rpic.dt
+        res2 = ax2.plot(XX[0,:,0], rpic.Ex[:,0,0], "b-")
+        #res3 = ax3.plot(XX[0,:,0], rpic.By[:,0,0], "b-")
+        #res3 = ax3.plot(XX[0,:,0], rpic.Bz[:,0,0], "r-")
+        res3a = ax3.plot(rpic.JYxt[:,2,0])
+        res3b = ax3.plot(rpic.JYxt[:,2,1])
+
+        #res4a = ax4.plot(XX[0,:,0], rpic.Jx[:,0,0], "b--")
+        #res4b = ax4.plot(XX[0,:,0], rpic.Jx[:,1,0], "g--")
+        res4c = ax4.plot(XX[0,:,0], rpic.JYx[:,0,0], "r-")
+        res4d = ax4.plot(XX[0,:,0], rpic.JYx[:,1,0], "m--")
+
+        #ax5 = slice_pdf(ax5, electrons)
+
+        #ax6 = plot_pdf2d(ax6, vx, vy)
+        #ax6 = plot_pdf3d(ax6, vx, vy)
+        #ax6 = plot_pdf3d_isosurf(ax6, vx, vy)
+
+        fname = path+'/oneD_'+str(ti)+'.png'
+        savefig(fname)
+
+        #clean figure
+        res1a.pop(0).remove()
+        res1b.pop(0).remove()
+        res2.pop(0).remove()
+        res3a.pop(0).remove()
+        res3b.pop(0).remove()
+        #res4a.pop(0).remove()
+        #res4b.pop(0).remove()
+        res4c.pop(0).remove()
+        res4d.pop(0).remove()
+
+
+        ti += 1
+
+
+    t += rpic.dt*rpic.wpe
+    step += 1
 #end of loop
 
 
