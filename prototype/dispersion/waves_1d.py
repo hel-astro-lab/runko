@@ -19,14 +19,14 @@ import radpic as rpic
 ##################################################
 rpic.Nppc = 64 #particles per cell
 #rpic.Nppc = 10 #particles per cell
-rpic.delgamma = 2.0e-5 #(k T/m c^2, T electron/ion temperature
+rpic.delgamma = 0.2 #(k T/m c^2, T electron/ion temperature
 
 rpic.qe = 1.0 #electron charge
-rpic.qe = 1.0 #electron
+rpic.qi = -1.0 #positron 
 
 rpic.me = 1.0 #electron mass
 rpic.mi = 1.0 #ion mass (or actually mass to charge ratio)
-rpic.gamma = 0.5 #flow drift gamma (gamma0) #now sets beta = v/c  because < 1
+rpic.gamma = 0.0 #flow drift gamma (gamma0) #now sets beta = v/c  because < 1
 rpic.delta = 10.0 #plasma skin depth
 rpic.Te_Ti = 1.0 #T_e / T_i
 rpic.c = 1.0 #Computational speed of light
@@ -38,7 +38,7 @@ rpic.threeD = False
 
 
 #grid dimensions
-rpic.Nx = 128
+rpic.Nx = 256
 #rpic.Nx = 20
 rpic.Ny = 2
 rpic.Nz = 1
@@ -148,11 +148,10 @@ for i in range(rpic.Nx):
                 y = ymin + (ymax-ymin)*np.random.rand()
                 z = zmin + (zmax-zmin)*np.random.rand()
 
-                modulate = 0.05*np.sin(2.0*pi*x/rpic.grid_xmax)+1.0
+                fm = 4.0
+                modulate = 0.1*np.sin(fm*2.0*pi*x/rpic.grid_xmax)+1
                 #modulate = 1.0
-                vx, vy, vz, u = rpic.boosted_maxwellian(delgamma_e, modulate*rpic.gamma)
-                #vx = 0.5
-                #vy = 0.0
+                vx, vy, vz, u = rpic.boosted_maxwellian(modulate*delgamma_e, rpic.gamma)
 
                 #weight = q*M_macro)
                 w = rpic.qe * 1.0
@@ -163,13 +162,10 @@ for i in range(rpic.Nx):
 
 
                 #Add ion/positron to exact same place
-                vxi, vyi, vzi, ui = rpic.boosted_maxwellian(delgamma_i, modulate*rpic.gamma)
-                #vxi = 0.5
-                #vyi = 0.0
+                vxi, vyi, vzi, ui = rpic.boosted_maxwellian(modulate*delgamma_i, rpic.gamma)
 
                 #wi = rpic.qe * (-1.0)
-                wi = rpic.qe
-                vxi *= -1.0
+                wi = rpic.qi*10.0
 
                 #x = xmin + (xmax-xmin)*np.random.rand()
                 #y = ymin + (ymax-ymin)*np.random.rand()
@@ -346,36 +342,29 @@ t = 0.0
 
 #Store x-t array of a quantity
 A_xt = np.zeros((rpic.Nx, max_steps))
-A_xt[:,0] = rpic.Ex[:,0,0]
+#A_xt[:,0] = rpic.Ex[:,0,0]
 #A_xt[:,0] = rpic.JYx[:,0,0]
 
 
-Nt = 50
-ti = 1
+Nt = 400
+ti = 0
 tgrid = np.linspace(0.0, 24, Nt)
-print tgrid
+#print tgrid
 
 #for step in range(1, max_steps):
 step = 1
-while ti <= Nt:
-#for step in range(1, 2):
+while ti < Nt:
+#while ti <= 10:
     print " step: ",step, "/", ti-1
     print "t:", t, "/", tgrid[ti-1]
 
     #rpic.push_half_B()
 
-    #rpic.conserving_deposit_current(rpic.mpiGrid)
     rpic.Vay_update_velocities(rpic.mpiGrid)
-    #rpic.sort_particles_between_cells(rpic.mpiGrid)
 
     #rpic.push_half_B()
 
     rpic.push_E()
-
-    #print "avg E=", mean(rpic.Ex)
-
-
-    #print " Etot=", mean(rpic.Ex_ext)+mean(rpic.Ex)
 
     #rpic.deposit_current(rpic.mpiGrid)
     #rpic.Yee_currents()
@@ -384,23 +373,8 @@ while ti <= Nt:
     rpic.sort_particles_between_cells(rpic.mpiGrid)
 
 
-    #print "avg J=", mean(rpic.Jx)
-    #print "total avg J=", sum(sum(sqrt(rpic.Jx * rpic.Jx + rpic.Jy*rpic.Jy)))
-
-    #print "avg JY=", mean(rpic.JYx)
-    #print "total avg JY=", sum(sum(sqrt(rpic.JYx * rpic.JYx + rpic.JYy*rpic.JYy)))
-
-    #rpic.JYx[0, :,:] = 0.0
-    #rpic.JYy[0, :,:] = 0.0
-
-    #rpic.JYx[-1,:,:] = 0.0
-    #rpic.JYy[-1,:,:] = 0.0
-
-    #rpic.sort_particles_between_cells(rpic.mpiGrid)
-
-
     #apply filters
-    for sweeps in range(64):
+    for sweeps in range(32):
         rpic.filter_current(0.5,1) #x sweep
         rpic.filter_current(0.5,2) #y sweep
     #rpic.filter_current(-1.0/6.0, 1) #put some power back with negative sweeps
@@ -409,16 +383,19 @@ while ti <= Nt:
 
     #I/O
     ################################################## 
-    if t > tgrid[ti]:
-        A_xt[:,ti] = rpic.Ex[:,0,0]
-        #A_xt[:,ti] = rpic.JYx[:,0,0]
+    if step % 1 == 0:
+        print "    snapshot at t=",ti
+        A_xt[:,ti] += rpic.Ex[:,0,0]
+        ti += 1
 
+    #if t > tgrid[ti]:
+    if step % 10 == 0:
+    #    #A_xt[:,ti] = rpic.JYx[:,0,0]
 
         particles = rpic.collect_grid(rpic.mpiGrid)
 
         electrons, positrons = rpic.divide_species(particles)
 
-        print "shape", shape(electrons)
         x = electrons[:,0]
         y = electrons[:,1]
         z = electrons[:,2]
@@ -464,9 +441,9 @@ while ti <= Nt:
         res4d.pop(0).remove()
 
 
-        ti += 1
+    #    ti += 1
 
-
+    #ti += 1
     t += rpic.dt*rpic.wpe
     step += 1
 #end of loop
@@ -508,52 +485,39 @@ print "FFT done."
 
 
 # Partial plotting
-k_start = 1
-k_end = 127
+k_start = 0
+k_end = rpic.Nx-1
 w_start = 0
-w_end = 49
-
-
-
-r_Larmor = 1.0
-w_ci = 1.0
+w_end = Nt-1
 
 dx = rpic.dx
-dt = rpic.dt
-
+dt = rpic.dt*2
 
 #electron plasma frequency
-ne = rpic.Np/(rpic.grid_xmax - rpic.grid_xmin)
-w_pe = sqrt(ne*rpic.e**2/rpic.me)
+w_pe = rpic.wpe
 print "w_pe=", w_pe
 
 #electron plasma skin depth
-c_omp = rpic.c/w_pe
-print "c_omp=", c_omp
+delta = rpic.delta
+print "c_omp=", delta
 
 
 #Debye length
-kT = 1.0
-r_deb = sqrt(kT/ne)
+r_deb = rpic.r_deb
 print "Debye length=", r_deb, "(", r_deb/dx, ")"
 print "dx =", dx
 
 
 # Electron thermal temperature
-v_eth = sqrt(kT/rpic.me)
+v_eth = rpic.v_eth
 print "v_thermal=", v_eth
 
 
+dk = 2.0*pi / (cols * dx) *(rpic.c/rpic.wpe)
+kaxis = dk * np.arange(cols)
 
-
-dk = 2.0*pi / (cols * dx)
-kaxis = dk * np.arange(cols) * r_deb
-
-dw = 2.0*pi / (lines * dt)
-waxis= dw * np.arange(lines) / w_pe
-
-
-
+dw = 2.0*pi / (lines * dt) /rpic.wpe #normalize to plasma frequency
+waxis= dw * np.arange(lines)
 
 
 
@@ -567,31 +531,34 @@ matplotlib.pyplot.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.95)
 matplotlib.pyplot.imshow(np.log10(np.abs(Fourier[w_start:w_end, k_start:k_end])), 
         extent=[kaxis[k_start], kaxis[k_end], waxis[w_start], waxis[w_end]], 
         origin='lower', 
-        #aspect=0.1, 
+        aspect='auto', 
         interpolation='Nearest')
 matplotlib.pyplot.colorbar(shrink=0.9)
 
 
 
-matplotlib.pyplot.xlabel('$k\cdot r_{\mathrm{D}}$', fontsize=30)
+#matplotlib.pyplot.xlabel('$k\cdot r_{\mathrm{S}}$', fontsize=30)
+matplotlib.pyplot.xlabel('$k\cdot c/\omega_{pe}$', fontsize=30)
 matplotlib.pyplot.ylabel('$\omega/\omega_{pe}$', fontsize=30)
 
 axes.xaxis.set_major_locator(matplotlib.pyplot.MaxNLocator(4))
 
-matplotlib.pyplot.xlim([kaxis[k_start], kaxis[k_end]])
-matplotlib.pyplot.ylim([waxis[w_start], waxis[w_end]])
+#matplotlib.pyplot.xlim([kaxis[k_start], kaxis[k_end]])
+#matplotlib.pyplot.ylim([waxis[w_start], waxis[w_end]])
+matplotlib.pyplot.xlim((0.0, 60.0))
+matplotlib.pyplot.ylim((0.0, 20.0))
 
 
 # Numerical propagation
 V = dx/dt
-axes.plot(kaxis[k_start:k_end], kaxis[k_start:k_end] * V / r_Larmor / w_ci, scalex=False, scaley=False, color='r')
+axes.plot(kaxis[k_start:k_end], kaxis[k_start:k_end] * V, scalex=False, scaley=False, color='r')
 
 # Light
 c = rpic.c
 axes.plot(kaxis, kaxis * dw * c, "y-")
 
 #electron plasma frequency
-wpearr = np.ones(len(kaxis))*w_pe
+wpearr = np.ones(len(kaxis))
 axes.plot(kaxis, wpearr, "k--")
 
 
