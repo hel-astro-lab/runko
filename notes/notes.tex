@@ -39,6 +39,9 @@
 
 \newcommand{\Msun}{\ensuremath{\mathrm{M}_{\sun}}}
 
+\newcommand{\D}[2]{\ensuremath{\frac{\partial {#1} }{\partial {#2} }}}
+%\newcommand{\f}[1]{\ensuremath{f^{\mathrm{ {#1} }}}}
+\newcommand{\f}[1]{\ensuremath{f_{\mathrm{ {#1} }}}}
 
 %normal 3-vectors
 %\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
@@ -54,9 +57,9 @@
 %________________________________________________________________
 \begin{document}
 
-\title{Solving Vlasov-Maxwell equations with PiC}
+\title{Solving Vlasov-Maxwell equations}
 
-\author{J.\,N\"attil\"a\inst{1,2} }
+\author{J.\,N\"attil\"a\inst{1,2}, A.\,Veledina\inst{2}}
 
 \institute{Tuorla Observatory, Department of Physics and Astronomy, University of Turku, V\"ais\"al\"antie 20, FI-21500 Piikki\"o, Finland \email{joonas.a.nattila@utu.fi}
   \and Nordita, KTH Royal Institute of Technology and Stockholm University, Roslagstullsbacken 23, SE-10691 Stockholm, Sweden
@@ -105,20 +108,42 @@ Technically our implementation has
 
 \section{Theory}\label{sect:theory}
 
-Solving Vlasov-Maxwell equations.
+\subsection{Relativistic Vlasov equation}
+Spatial coordinate locations are given by $\vec{x} := (x,y,z)$ and coordinate time is measured with $t$.
+From here it follows that the coordinate velocity is given by $\vec{v} := d_t \vec{x}$ and the individual $(x,y,z)$ components of the velocity are denoted as $\vec{v} = (v_x, v_y, v_z)$.
+Proper time (measured with a co-moving clock) is $\tau$ and it is connected to the coordinate time with the Lorentz factor $\gamma := d_{\tau} t$.
+Similarly, the proper velocity is then $\vec{u} := d_{\tau} \vec{x} = \gamma \vec{v}$.
+Lorentz factor and the (proper) velocity are connected by the expression
+\be
+\gamma^2 = 1 + (u/c)^2 = (1-(v/c)^2)^{-1},
+\ee
+where $u = |\vec{u}|$ and $v = |\vec{v}|$.
+Acceleration is denoted with $\vec{a} := d_t \vec{u}$.
+
+Six dimensional phase-space density distribution for species particle s is given by $\f{s} := \f{s}(t, \vec{x}, \vec{u})$.
+Evolution of $\f{s}$ is governed by the relativistic Vlasov equation
+\be
+\D{f{s}}{t} + \nabla_{\vec{x}} \cdot (\vec{v} \f{s}) + \nabla_{\vec{u}} \cdot (\vec{a}_{\mathrm{s}} \f{s} ) = \mathcal{C},
+\ee
+where $\mathcal{C} := \partial_t \f{s} ~|_{\mathrm{coll}}$ is the collision operator.
+When studying plasma, we can provide a closure for the acceleration with the Lorentz force as 
+\be
+\vec{a}_{\mathrm{s}} = d_t \vec{u} = (q_{\mathrm{s}} / m_{\mathrm{s}} )(\vec{E} + \vec{v} \times \vec{B}),
+\ee
+where $\vec{E}$ and $\vec{B}$ are the electric and magnetic fields, $q_{\mathrm{s}}$ is the charge of particles in species s, and $m_{\mathrm{s}}$ is the particle mass.
+First moment of the distribution function $\f{s}$ gives us the charge density
+\be
+\rho := \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} d\vec{u} = \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} \, \gamma \, \frac{ ~d\vec{u}}{\gamma}.
+\ee
+Similarly, the second moment defines the current
+\be
+\vec{J} := \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} \vec{v} d\vec{u} = \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} \, \vec{u} ~\frac{ d\vec{u}}{\gamma}.
+\ee
 
 
-\subsection{Particle-in-Cell method}
 
-Collisionality of a plasma comprising of point particles is modeled by finite-sized particle clouds (or macro particles) with radius $\epsilon$.
-Typical cloud size is usually orders of magnitude larger compared to real plasma so that number of particles in Debye sphere $N_{\mathrm{D}} = \frac{4 \pi}{3}n\lambda_{\mathrm{D}}^3$ is effectively replaced by the parameter $N_{\mathrm{C}} = \frac{4 \pi}{3}n\epsilon^3$, where $n$, and $\lambda_{\mathrm{D}}$ are the number density and Debye length, respectively.
-In PIC codes the particle size is typically equivalent to grid spacing $\Delta$, which must be kept $\le \lambda_{\mathrm{d}}$ to avoid aliasing instabilities that usually manifest themselves as numerical heating.
-To map the particle densities smoothly into to the mesh it is also favorable to have as many particles as possible in the simulations.
-
-
-
-\subsection{Maxwell's equations}
-
+\subsection{General relativistic Maxwell equations}
+The electric field $E$ and magnetic field $B$ are described by the Maxwell's equations.
 Shape of the fields are given by the curls
 \be
 \nabla \times \vec{E} = \frac{1}{c} \frac{\partial \vec{B}} {\partial t}
@@ -126,46 +151,23 @@ Shape of the fields are given by the curls
 \be
 \nabla \times \vec{B} = \frac{4 \pi \vec{J}}{c} + \frac{1}{c} \frac{\partial \vec{E}} {\partial t}
 \ee
-whereas initial conditions from
+whereas initial conditions come from
 \be
 \nabla \cdot \vec{E} = 4\pi\vec{J},
 \ee
 \be
-\nabla \cdot \vec{B} = 0,
+\nabla \cdot \vec{B} = 0.
 \ee
-which are taken care by charge conserving particle mover and Yee lattice configuration.
-
-From here we solve
+As we will later on see, a charge conserving current deposition and Yee lattice staggering of the fields will take care of the last two equations.
+Then we are left with updating the fields from the curls.
+We solve
 \be
 \frac{\partial \vec{E}}{\partial t} = c [ \nabla \times \vec{B}] - 4\pi \vec{J}
 \ee
-
 \be
 \frac{\partial \vec{B}}{\partial t} = -c[ \nabla \times \vec{E}]
 \ee
 
-And in finite difference terms one obtains 
-\be
-\vec{B}^{n+1} = \vec{B}^n - \dt c [\nabla \times \vec{E}]
-\ee
-
-\be
-\vec{E}^{n+1/2} = \vec{E}^{n-1/2} + \dt [c(\nabla \times \vec{E}) - 4\pi \vec{J}^n]
-\ee
-
-Curls can be computed from Stokes theorem
-\be
-\iint \nabla \times \vec{E} d\vec{S} = \oint \vec{E} \cdot d\vec{l}
-\ee
-that in finite differencing scheme reduces to 
-\begin{align}\begin{split}
-\iint_{S}& \left[  \left( \frac{\partial E_z}{\partial y} - \frac{\partial E_x}{\partial x} \right) \vec{\hat{i}} + 
-\left( \frac{\partial E_x}{\partial z} - \frac{\partial E_z}{\partial x} \right) \vec{\hat{j}} + 
-\left( \frac{\partial E_y}{\partial x} - \frac{\partial E_x}{\partial y} \right) \vec{\hat{k}} \right] ~d\vec{S} \\
-&= \oint_{\partial S} E_x dx \vec{\hat{i}} +  E_y dy \vec{\hat{j}} + E_z dz \vec{\hat{k}} \\
-\end{split}\end{align}
-
-\subsection{General relativistic Maxwell equations}
 Next we can cast this into $3+1$ formalism following \citealt{P15}.
 For this, we split the four dimensional space-time into a foliation where 
 \be
@@ -176,7 +178,7 @@ Here the general relativistic corrections are introduced via the lapse function 
 By convention Latin letters from $a$ to $h$ are used for components of vectors in absolute space (in range ${1,2,3}$) whereas Latin letters starting from $i$ correspond to the four-dimensional vectors and tensors (${0,1,2,3}$).
 Note that Landau-Lifschitz signature of $(+,-,-,-)$ is used.
 
-In some dispersive media we, on the other hand, have
+In some dispersive media we have
 \be
 \epsilon_0 \vec{E} = \vec{\alpha} \vec{D} + \epsilon_0 c \beta \times \vec{B}
 \ee
@@ -208,8 +210,106 @@ The homogeneous equations are
 \nabla \cdot \vec{B} = 0.
 \ee
 
-Hence, when neglecting QED corrections we can set $\zeta_1=1$ and $\zeta_2=0$.
+When neglecting QED corrections we can set $\zeta_1=1$ and $\zeta_2=0$.
 Similarly, when working in vacuum $\vec{D}$ and $\vec{H}$ reduce to normal $\vec{E}$ and $\vec{B}$.
+
+\subsection{Nondimensionalization}
+Let us next make our set of equations non-dimensional to help numerical calculations.
+Physical constants that define an ion-electron plasma are the magnitude of an electron charge $e$, the ion and electron masses $m_{\mathrm{i}}$ and $m_{\mathrm{e}}$, and the speed of light $c$.
+Additionally, three fundamental parameters charaterize the plasma states: a typical particle density $n_0$, a typical temperature $T_0$ (per species s), and a typical magnetic field strength $B_0$.
+For a quasineutral plasma we have $n_0 = n_{\mathrm{i}} = n_{\mathrm{e}}$ and $T_0 = T_{\mathrm{i}} = T_{\mathrm{e}}$.
+Thermal pressure is $P_0 := n_0 T_0$ and magnetic pressure is $P_B := \frac{B_0^2}{2 \mu_0}$.
+
+Auxiliary space, time and velocity scale parameters derived from these fundamental parameters are the gyrofrequency
+\be
+\omega_{\mathrm{g,s}} = \frac{e B_0}{m_{\mathrm{s}}},
+\ee
+the plasma frequency
+\be
+\omega_{\mathrm{p,s}} = \sqrt{ \frac{n_0 e^2}{\epsilon_0 m_{\mathrm{s}}}},
+\ee
+thermal velocity
+\be
+v_{\mathrm{T,s}} = \sqrt{ \frac{T_{\mathrm{s}} }{m_{\mathrm{s}}} },
+\ee
+for which the average velocity is easily defined as $\tilde{v}_{\mathrm{T,s}}^2 = 2 v_{\mathrm{T,s}}^2$, and 
+Alfvén velocity
+\be
+v_{\mathrm{A, s}} = \sqrt{ \frac{B_0^2}{\mu_0 m_{\mathrm{s}} n_0} }.
+\ee
+From a combination of the above we obtain the gyroradii
+\be
+r_{\mathrm{g,s}} = \frac{v_{\mathrm{T,s}} }{ \omega_{\mathrm{g, s}} }  = \frac{ m_{\mathrm{s}} v_{\mathrm{T,s}} }{e B_0},
+\ee
+the Debye length
+\be
+\lambda_{\mathrm{D}} = \frac{ v_{\mathrm{T,s}} }{\omega_{\mathrm{p,s}}} = \sqrt{ \frac{ \epsilon_0 T_0 }{n_0 e^2} },
+\ee
+and the skin depth
+\be
+\delta_{\mathrm{s}} = \frac{c}{\omega_{\mathrm{p,s}} } = \frac{v_{\mathrm{A,s}} }{\omega_{\mathrm{g,s}}} = \sqrt{ \frac{m_{\mathrm{s}}}{\mu_0 n_{\mathrm{s}} e^2}}.
+\ee
+Important nondimensional ratios are the plasma beta $\beta := \frac{P_0}{P_B}$ and the ratio of the speed of light to the the Alvén speed.
+These two imply
+\be
+\beta = \frac{P_0}{P_B} = \left( \frac{\tilde{v}_{\mathrm{T,s}} }{v_{\mathrm{A,s}} } \right)^2 = \left( \frac{\tilde{r}_{\mathrm{g,s}} }{\delta_{\mathrm{s}} } \right)^2,
+\ee
+and
+\be
+\frac{c}{v_{\mathrm{A,s}}} = \frac{r_{\mathrm{g,s}} }{\lambda_{\mathrm{D}} } = \frac{\omega_{\mathrm{p,s}}}{\omega_{\mathrm{g,s}}}.
+\ee
+
+
+These give us the almost identical nondimensionalized system
+\begin{align}\begin{split}
+    \partial_{\tilde{t}} \tilde{\vec{B}} &= -\nabla_{\tilde{x}} \tilde{\vec{E}}, \\
+    \partial_{\tilde{t}} \tilde{\vec{E}} &=  \tilde{c}^2 \, \nabla_{\tilde{x}} \tilde{\vec{B}} - \frac{\tilde{\vec{J}}}{ \red{\epsilon} } \\ 
+    \nabla_{\tilde{\vec{x}}} \cdot \tilde{\vec{B}} &= 0 \\
+    \nabla_{\tilde{\vec{x}}} \cdot \tilde{\vec{E}} &= \frac{ \tilde{\rho} }{\red{\epsilon}} \\
+    \tilde{\rho} &= \sum_{\mathrm{s}} \tilde{S}(\tilde{\vec{x}}) \tilde{q}_{\mathrm{s}} \\
+    \tilde{\vec{J}} &= \sum_{\mathrm{s}} \tilde{S}(\tilde{\vec{x}}) \tilde{q}_{\mathrm{s}} \tilde{\vec{v}} \\
+    d_{\tilde{t}}(\gamma \tilde{\vec{v}} ) &= \red{(t_0 \omega_{\mathrm{g}})} \frac{\tilde{q}_{\mathrm{s}}}{\tilde{m_{\mathrm{s}}}} \left( \tilde{\vec{E}}(\tilde{\vec{x}}) + \tilde{\vec{v}} \times \tilde{\vec{B}}(\tilde{\vec{x}}) \right) \\
+d_{\tilde{t}} \tilde{\vec{x}} &= \tilde{\vec{v}} \\
+\end{split}\end{align}
+
+\be
+t_0 \omega_{\mathrm{g}} = t_0 \frac{q_0 B_0}{m_0}
+\ee
+and
+\be
+\frac{1}{\epsilon} = \frac{x_0 n_0 e}{v_0 B_0 \epsilon_0} = t_0 \frac{e B_0}{m_0} \frac{\mu_0 m_0 n_0}{B_0^2} = (t_0 \omega_{\mathrm{g}})\left( \frac{c}{v_{\mathrm{A}}} \right)^2.
+\ee
+
+\subsection{Particle-in-Cell method}
+
+Collisionality of a plasma comprising of point particles is modeled by finite-sized particle clouds (or macro particles) with radius $\epsilon$.
+Typical cloud size is usually orders of magnitude larger compared to real plasma so that number of particles in Debye sphere $N_{\mathrm{D}} = \frac{4 \pi}{3}n\lambda_{\mathrm{D}}^3$ is effectively replaced by the parameter $N_{\mathrm{C}} = \frac{4 \pi}{3}n\epsilon^3$, where $n$, and $\lambda_{\mathrm{D}}$ are the number density and Debye length, respectively.
+In PIC codes the particle size is typically equivalent to grid spacing $\Delta$, which must be kept $\le \lambda_{\mathrm{d}}$ to avoid aliasing instabilities that usually manifest themselves as numerical heating.
+To map the particle densities smoothly into to the mesh it is also favorable to have as many particles as possible in the simulations.
+
+\subsection{Field updates}
+In finite difference terms one obtains 
+\be
+\vec{E}^{n+1/2} = \vec{E}^{n-1/2} + \dt [c(\nabla \times \vec{E}) - 4\pi \vec{J}^n]
+\ee
+and
+\be
+\vec{B}^{n+1} = \vec{B}^n - c \dt [\nabla \times \vec{E}].
+\ee
+
+Curls can be computed from Stokes theorem
+\be
+\iint \nabla \times \vec{E} ~d\vec{S} = \oint \vec{E} \cdot d\vec{l}
+\ee
+that in finite differencing scheme reduces to 
+\begin{align}\begin{split}
+\iint_{S}& \left[  \left( \frac{\partial E_z}{\partial y} - \frac{\partial E_x}{\partial x} \right) \vec{\hat{i}} + 
+\left( \frac{\partial E_x}{\partial z} - \frac{\partial E_z}{\partial x} \right) \vec{\hat{j}} + 
+\left( \frac{\partial E_y}{\partial x} - \frac{\partial E_x}{\partial y} \right) \vec{\hat{k}} \right] ~d\vec{S} \\
+&= \oint_{\partial S} E_x dx \vec{\hat{i}} +  E_y dy \vec{\hat{j}} + E_z dz \vec{\hat{k}} \\
+\end{split}\end{align}
+
+
 
 \subsection{Relativistic Vay pusher}
 
