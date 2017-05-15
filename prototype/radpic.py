@@ -1578,6 +1578,12 @@ def Vay_update_velocities(grid):
                 vy0 = c*v*gamma
                 vz0 = c*w*gamma
 
+
+                # Split second half into two parts, draw distribution, radiative cooling,
+                # return new u1/2_r and continue second half
+
+                # Second half 
+
                 #u', where cinv is already incorporated
                 u1 = c*u + 2.0*ex0*qm + vy0*bz0*qm - vz0*by0*qm
                 v1 = c*v + 2.0*ey0*qm + vz0*bx0*qm - vx0*bz0*qm
