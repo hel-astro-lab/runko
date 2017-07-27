@@ -25,6 +25,7 @@
 *.la
 *.a
 *.lib
+*.pyc
 
 # Executables
 *.exe
@@ -34,3 +35,5 @@ radpic
 
 # debug folders
 *.dSYM
+
+#
