@@ -1,42 +1,28 @@
 import numpy as np
+
 from initial import initial
-from charge import charge
-from poisson import poisson
-
-from position import position_linear
-from velocity import velocity_linear
-from current import current
-from efield import efield
-
-
-
-#initialize
-#-------------------------------------------------- 
-#load configuration
 import twostream as prm
+import visualize as visz
 
-#hdiag = diagnostics_init(prm)
+    
+#set up figure
+#from pylab import *
+import pylab as mlab
 
-
-
-#initial(prm)
-#ff, gx, gv, ex, fex, ajx, xx, vx, kx, kv, ifdiag = initial(prm)
-ff, gx, gv, ex, fex, ajx, xx, vx, kx, kv = initial(prm)
-
-#initial step
-rho = charge(ff, prm)
-ex,fex = poisson(ex, rho, prm)
-ff = position_linear(ff, vx, prm)
-ajx = current(ff, vx, prm)
+fig = mlab.figure(figsize=(10, 12))
+mlab.rc('font', family='serif')
+mlab.rc('xtick', labelsize='xx-small')
+mlab.rc('ytick', labelsize='xx-small')
 
 
+#--------------------------------------------------
+# Random info 
+#--------------------------------------------------
 #conservative schemes 
 # 0 linear
 # 1 2nd order
 # 2 4th order
 # 6 CPIC4
-ex, fex = efield(ex, ajx, prm)
-
 #non-conservative
 # 3 - cubic spline
 # 5 - CIP3 
@@ -45,98 +31,152 @@ ex, fex = efield(ex, ajx, prm)
 
 #3rd possible case ???
 #fex = efield_f(fex, ajx, prm)
+#ex, fex = efield(ex, ajx, prm)
+#--------------------------------------------------
 
+
+#charge density
+def charge(ff, prm):
+    rhos = np.zeros( (prm.nx + 6, prm.ns) )
+    
+    #sum over velocity dimension
+    for kk in range(prm.ns):
+        for ii in range(prm.nx + 6):
+            rhos[ii, kk] = np.sum( ff[:, ii, kk] ) * prm.qn[kk]
+
+    #sum over spatial dimension
+    rho = np.sum(rhos, 1)
+
+    # XXX nx+3 or nx+2?
+    rho0 = np.mean( rho[3:prm.nx+3] )
+    rho = rho - rho0
+
+    return rho
+
+def poisson(ex, rho, prm):
+
+    #XXX +3 or +2
+    for ii in range(3, prm.nx+3):
+        ex[ii] = ex[ii-1] + rho[ii]
+
+    #wrap boundaries
+    ex[0:2]               = ex[prm.nx:prm.nx+2]
+    ex[prm.nx+3:prm.nx+4] = ex[3:4]
+
+    ex0 = np.sum( ex[3:prm.nx+3] ) / prm.nx
+    ex -= ex0
+
+    #relocate
+    fex = np.zeros(prm.nx+6) #already defined
+    for ii in range(3, prm.nx+2):
+        fex[ii] = ( ex[ii] + ex[ii-1] )/2.0
+
+    fex[0:2]               = fex[prm.nx:prm.nx+2]
+    fex[prm.nx+3:prm.nx+6] = fex[3:6]
+
+    return ex, fex
+
+def position_linear(ff, vx, prm):
+    ajxs = np.zeros( (prm.nx+6, prm.ns) )
+    flux = np.zeros( (prm.nv+6, prm.nx+6) )
+
+    for kk in range(prm.ns):
+        aa = vx[:, kk] / prm.dx * prm.dt
+        fa = np.floor(aa)
+
+        for ii in range(2, prm.nx+3):
+            iss = np.ones(prm.nv+6)*ii - fa
+            flux[:, ii] = aa[:] * np.diag(ff[:, iss.astype(int), kk])
+
+        ff[:, 3:prm.nx+3, kk] = ff[:, 3:prm.nx+3, kk] \
+                - (flux[:, 3:prm.nx+3] - flux[:, 2:prm.nx+2])
+                
+    #wrap
+    ff[:, 0:2, :]               = ff[:, prm.nx:prm.nx+2, :]
+    ff[:, prm.nx+3:prm.nx+6, :] = ff[:, 3:6, :]
+                    
+    return ff
+
+def velocity_linear(ff, ex, prm):
+    flux = np.zeros( (prm.nv+6, prm.nx+6) )
+
+    jj = np.arange(prm.nv+6)
+    for kk in range(prm.ns):
+        aa = ex[:] * prm.qm[kk]/prm.dv[kk]*prm.dt
+        fa = np.floor(aa).astype(int)
+
+        for ii in range(prm.nx+5):
+            js = jj - fa[ii] - 1
+            flux[jj, ii] = aa[ii] * ff[js, ii, kk]
+
+        ff[1:prm.nv+5, :, kk] = ff[1:prm.nv+5, :, kk] \
+                - (flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :])
+
+    return ff
+
+def current(ff, vx, prm):
+
+    ajxs = np.zeros( (prm.nx+6, prm.ns) )
+    for kk in range(prm.ns):
+        aa = vx[:, kk] / prm.dx * prm.dt
+
+        for ii in range(prm.nx+6):
+            ajxs[ii, kk] = np.sum( ff[:, ii, kk] ) * prm.qn[kk]
+
+    ajx = np.sum(ajxs, 1)
+    ajx -= np.mean( ajx[3:prm.nx+3] ) # XXX check bounds
+
+    return ajx
+
+def efield(ex, ajx, prm):
+
+    #amperes law E_n+1 = E_n - J
+    ex[3:prm.nx+3] = ex[3:prm.nx+3] - ajx[3:prm.nx+3]
+
+    #wrap
+    ex[0:2]               = ex[prm.nx:prm.nx+2]
+    ex[prm.nx+3:prm.nx+4] = ex[3:4]
+
+    #shift
+    fex = np.zeros(prm.nx + 6)
+    for ii in range(3, prm.nx+3):
+        fex[ii] = (ex[ii] + ex[ii-1])/2.0
+
+    #wrap
+    fex[0:2]               = fex[prm.nx:prm.nx+2]
+    fex[prm.nx+3:prm.nx+4] = fex[3:4]
+
+    return ex, fex
+
+
+
+def efield_f(fex, ajx, prm):
+    fex[3:prm.nx+3] = fex[3:prm.nx] - ajx[3:prm.nx+3]
+
+    #wrap
+    fex[0:2]               = fex[prm.nx:prm.nx+2]
+    fex[prm.nx+3:prm.nx+4] = fex[3:4]
+
+    return fex
+
+
+
+
+
+
+
+
+#initialize
 #-------------------------------------------------- 
-# visualization
-from pylab import *
-from matplotlib import cm
-import os, sys
+#load configuration
+ff, gx, gv, ex, fex, ajx, xx, vx, kx, kv = initial(prm)
 
-
-
-
-def plot_phasespace(ax, xxi, vxi, ffi, kk):
-
-    #pick kth species
-    xx = xxi
-    vx = vxi[:,kk]
-    ff = ffi[:,:,kk]
-
-    # xx vx[:, kk], ff[:,:,kk] ff[vx:, x:, species]
-    ax.set_xlim(xx[0], xx[-1])
-    ax.set_ylim(vx[0], vx[-1])
-    ax.set_xlabel(r'$x$')
-    ax.set_ylabel(r'$v_{x}$')
-    
-    X, Y = np.meshgrid(xx, vx)
-    ax.pcolor(X, Y, ff, 
-            cmap='Reds', 
-            vmin=ff.min(),
-            vmax=ff.max(),
-            )
-
-def plot_mean_velocity_pdf(ax, vx, ff, kk):
-
-    ax.set_xlim(-6, 6)
-    #ax.set_ylim(
-
-    ax.set_xlabel(r'$v_{x}$')
-    #ax.set_ylabel(r'pdf')
-
-    fv = np.mean(ff[:,3:prm.nx+3, kk], 1)
-    ax.plot(vx, fv, "k-")
-
-
-def plot_field(ax, xx, f, quantity):
-    ax.set_xlim(xx[0], xx[-1])
-    #ax.set_ylim(vx[0], vx[-1])
-    ax.set_xlabel(r'$x$')
-    ax.set_ylabel(quantity)
-
-    ax.plot(xx, f, "b-")
-
-
-def visualize(step):
-
-    path = "out"
-    if not os.path.exists(path):
-        os.makedirs(path)
-    
-    fname = path+'/vlasov'+str(step)+'.png'
-    
-    #set up figure
-    fig = figure(figsize=(10, 12))
-    rc('font', family='serif')
-    rc('xtick', labelsize='xx-small')
-    rc('ytick', labelsize='xx-small')
-    
-    gs = GridSpec(3, 3)
-    gs.update(hspace = 0.2)
-    gs.update(wspace = 0.2)
-    
-    ax1a = subplot(gs[0, 0:2])
-    ax1b = subplot(gs[0, 2])
-    
-    ax2a = subplot(gs[1, 0:2])
-    ax2b = subplot(gs[1, 2])
-    
-    ax3a = subplot(gs[2, 0])
-    ax3b = subplot(gs[2, 1])
-    ax3c = subplot(gs[2, 2])
-
-    #phase spaces
-    plot_phasespace(ax1a, xx, vx, ff, 0)
-    plot_mean_velocity_pdf(ax1b, vx, ff, 0)
-    
-    plot_phasespace(ax2a, xx, vx, ff, 1)
-    plot_mean_velocity_pdf(ax2b, vx, ff, 1)
-    
-    #plot fields
-    plot_field(ax3a, xx, fex, "fex")
-    plot_field(ax3b, xx, rho, "rho")
-    plot_field(ax3c, xx, ajx, "ajx")
-    
-    savefig(fname)
+#initial step
+rho = charge(ff, prm)
+ex,fex = poisson(ex, rho, prm)
+ff = position_linear(ff, vx, prm)
+ajx = current(ff, vx, prm)
+ex, fex = efield(ex, ajx, prm)
 
 
 
@@ -147,7 +187,7 @@ def visualize(step):
 jtime = 0
 for jtime in range(prm.ntime):
     print "-----------", jtime, "----------"
-    visualize(jtime)
+    visz.visualize(fig, jtime, xx, vx, ff, fex, rho, ajx)
 
     ff  = velocity_linear(ff, fex, prm)
     ff  = position_linear(ff, vx, prm)
