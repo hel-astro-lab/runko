@@ -16,16 +16,37 @@ vmax = np.array([ 9.999990,  9.999900, ])
 vmin = np.array([-5.000000, -5.000000])
 
 
-#originally in the initial() function
 dv = np.zeros(ns)
 qn = np.zeros(ns)
 
 
+#spatial array sections
+nxHalo = 3 #width of halo region
+nxfull = nx + 2*nxHalo
+
+xLb   = np.arange(0, nxHalo) #left boundary halo region
+xLe   = np.arange(nxHalo, nxHalo + nxHalo) #left edge of computational regime
+
+xRb   = np.arange(-nxHalo, 0) #right boundary halo region
+xRe   = np.arange(-2*nxHalo, -nxHalo) #right edge of computational regime
+
+xmid  = np.arange(nxHalo, nxfull - nxHalo) #mid computational regime
+xfull = np.arange(0, nxfull) #full x array range
+
+
+#velocity array sections
+nvHalo = 3
+nvfull = nv + 2*nvHalo
+vfull = np.arange(0, nvfull) 
+
+
+
+#--------------------------------------------------
 #noise  3 - white noise
 #noise = 3 
 
 
-nmode = 1.000000;
+nmode = 1.0;
 pamp = 0.01
 namp = 0.00
 #pphs = 0.00

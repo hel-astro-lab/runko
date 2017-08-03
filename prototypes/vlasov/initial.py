@@ -3,11 +3,25 @@ import numpy as np
 def initial(prm):
 
     #coordinates
-    xx = np.arange(-3, prm.nx+3) * prm.dx
-    vx = np.zeros((prm.nv+6, prm.ns))
+    xx = np.arange(-prm.nxHalo, prm.nx+prm.nxHalo) * prm.dx
+    vx = np.zeros((prm.nvfull, prm.ns))
     for kk in range(prm.ns):
-        vx[:, kk] = np.linspace(prm.vmin[kk], prm.vmax[kk], prm.nv+6)
+        vx[:, kk] = np.linspace(prm.vmin[kk], prm.vmax[kk], prm.nvfull)
     #print xx,vx
+
+    print "full      :", xx[prm.xfull]
+    print "---"
+    print "left  HALO:", xx[prm.xLb]
+    print "right HALO:", xx[prm.xRb]
+    print "---"
+    print "left  EDGE:", xx[prm.xLe]
+    print "right EDGE:", xx[prm.xRe]
+    print "---"
+    print "mid       :", xx[prm.xmid]
+    print "---"
+    print "len xmid =", len(xx[prm.xmid])
+    print "---"
+    print "mid+1       :", xx[prm.xmid + 1]
 
 
     for kk in range(prm.ns):
@@ -15,34 +29,35 @@ def initial(prm):
         prm.qn[kk] = prm.dv[kk]/( prm.qm[kk] * prm.wp[kk]**2 * prm.dx ) 
 
     kx = np.zeros(prm.nx)
-    kv = np.zeros(prm.nv + 6)
+    kv = np.zeros(prm.nvfull)
 
 
     nkx = np.int( np.floor(prm.nx*0.5) )
-    nkv = np.int( np.floor(prm.nv*0.5) + 3 )
+    nkv = np.int( np.floor(prm.nv*0.5) + prm.nvHalo )
 
     kx[0:nkx] = np.arange(0, nkx)/(prm.nx * prm.dx)*2.0*np.pi
-    kv[0:nkv] = np.arange(0, nkv)/(prm.nv + 6)*2.0*np.pi
+    kv[0:nkv] = np.arange(0, nkv)/(prm.nvfull)*2.0*np.pi
     for ii in range(nkx, prm.nx):
         kx[ii] = -kx[2*nkx + 2 - ii]
 
-    for jj in range(nkv, prm.nv+6):
+    for jj in range(nkv, prm.nvfull):
         kv[jj] = -kv[2*nkv +2 - jj]
     
 
     #field initialization
-    fex = np.zeros(prm.nx + 6) #full integer grid
-    ajx = np.zeros(prm.nx + 6)
+    fex = np.zeros(prm.nxfull) #full integer grid
+    ajx = np.zeros(prm.nxfull)
     #ex  = (fex[0:prm.nx+5] + fex[1:prm.nx+6])/2.0 #half integer grid
-    ex = np.zeros(prm.nx + 5)
+    ex = np.zeros(prm.nxfull) #half-integer grid (Yee?)
     for ii in range(0, prm.nx+5):
         ex[ii] = (fex[ii] + fex[ii+1])/2.0
+    ex[-1] = ex[-2] #fill array even though len does not match
 
 
     #particle initialization
-    ff = np.zeros( (prm.nv+6, prm.nx+6, prm.ns) )
-    gx = np.zeros( (prm.nv+6, prm.nx+6, prm.ns) )
-    gv = np.zeros( (prm.nv+6, prm.nx+6, prm.ns) )
+    ff = np.zeros( (prm.nvfull, prm.nxfull, prm.ns) )
+    gx = np.zeros( (prm.nvfull, prm.nxfull, prm.ns) )
+    gv = np.zeros( (prm.nvfull, prm.nxfull, prm.ns) )
 
     gam = 3
     wpe = np.sqrt( np.sum( prm.wp**2 * (-prm.qm) ) )
@@ -63,10 +78,10 @@ def initial(prm):
         pphs = np.random.rand(prm.nmode)*360.0
         nphs = np.random.rand(prm.nmode)*360.0
 
-        dn_noise = np.ones(prm.nx+6) #full integer grids
-        dd_noise = np.zeros(prm.nx+6)
-        vd_noise = np.ones(prm.nx+6) * prm.vd[kk]
-        vt_noise = np.ones(prm.nx+6) * prm.vt[kk]
+        dn_noise = np.ones(prm.nxfull) #full integer grids
+        dd_noise = np.zeros(prm.nxfull)
+        vd_noise = np.ones(prm.nxfull) * prm.vd[kk]
+        vt_noise = np.ones(prm.nxfull) * prm.vt[kk]
 
         for ll in range(prm.nmode):
             dn_noise = dn_noise - prm.pamp * np.sin(-kx[1 + ll]*xx + pphs[ll]/180*np.pi) * kx[1 + ll] \
@@ -80,8 +95,8 @@ def initial(prm):
                                 - prm.namp * np.sin(-kx[1 + ll]*xx + nphs[ll]/180*np.pi)*(ww[ll] + prm.vd[kk]*kx[1 + ll])
 
 
-        for ii in range(prm.nx+6):
-            for jj in range(prm.nv+6):
+        for ii in prm.xfull:
+            for jj in range(prm.nvfull):
                 ff[jj, ii, kk] = np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 / (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii]
 
