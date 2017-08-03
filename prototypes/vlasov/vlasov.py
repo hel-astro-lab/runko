@@ -67,7 +67,7 @@ def wrap(x, prm):
     return x
 
 
-def poisson(ex, rho, fex, prm):
+def poisson(ex, rho, prm):
 
     for ii in prm.xmid:
         ex[ii] = ex[ii-1] + rho[ii]
@@ -78,12 +78,12 @@ def poisson(ex, rho, fex, prm):
     ex -= ex0
 
     #relocate
-    for ii in prm.xmid:
-        fex[ii] = ( ex[ii] + ex[ii-1] )/2.0
+    #for ii in prm.xmid:
+    #    fex[ii] = ( ex[ii] + ex[ii-1] )/2.0
 
-    fex = wrap(fex, prm)
+    #fex = wrap(fex, prm)
 
-    return ex, fex
+    return ex
 
 
 
@@ -112,11 +112,19 @@ def position_linear(ff, vx, prm):
 
 
 def velocity_linear(ff, ex, prm):
+
+    #interpolate half-integer staggered Ex to full integer grid fex
+    fex = np.zeros(prm.nxfull)
+    for ii in range(1,prm.nxfull):
+        fex[ii] = (ex[ii-1] + ex[ii])/2.0
+    fex[0] = (ex[-1] + ex[0])/2.0
+
+
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
 
     jj = np.arange(prm.nvfull)
     for kk in range(prm.ns):
-        aa = ex[:] * prm.qm[kk]/prm.dv[kk]*prm.dt
+        aa = fex[:] * prm.qm[kk]/prm.dv[kk]*prm.dt
         fa = np.floor(aa).astype(int)
 
         for ii in range(prm.nx+5):
@@ -145,7 +153,7 @@ def current(ff, vx, prm):
 
 
 
-def efield(ex, fex, ajx, prm):
+def efield(ex, ajx, prm):
 
     #amperes law E_n+1 = E_n - J
     #ex[3:prm.nx+3] = ex[3:prm.nx+3] - ajx[3:prm.nx+3]
@@ -158,27 +166,27 @@ def efield(ex, fex, ajx, prm):
 
     #shift
     #fex = np.zeros(prm.nxfull)
-    for ii in prm.xmid:
-        fex[ii] = (ex[ii] + ex[ii-1])/2.0
+    #for ii in prm.xmid:
+    #    fex[ii] = (ex[ii] + ex[ii-1])/2.0
 
     #wrap
     #fex[0:2]               = fex[prm.nx:prm.nx+2]
     #fex[prm.nx+3:prm.nx+4] = fex[3:4]
-    fex = wrap(fex, prm)
+    #fex = wrap(fex, prm)
 
-    return ex, fex
+    return ex
 
 
-def efield_f(fex, ajx, prm):
-    #fex[3:prm.nx+3] = fex[3:prm.nx] - ajx[3:prm.nx+3]
-    fex[prm.xmid] = fex[prm.xmid] - ajx[prm.xmid]
-
-    #wrap
-    #fex[0:2]               = fex[prm.nx:prm.nx+2]
-    #fex[prm.nx+3:prm.nx+4] = fex[3:4]
-    fex = wrap(fex, prm)
-
-    return fex
+#def efield_f(fex, ajx, prm):
+#    #fex[3:prm.nx+3] = fex[3:prm.nx] - ajx[3:prm.nx+3]
+#    fex[prm.xmid] = fex[prm.xmid] - ajx[prm.xmid]
+#
+#    #wrap
+#    #fex[0:2]               = fex[prm.nx:prm.nx+2]
+#    #fex[prm.nx+3:prm.nx+4] = fex[3:4]
+#    fex = wrap(fex, prm)
+#
+#    return fex
 
 
 
@@ -186,15 +194,15 @@ def efield_f(fex, ajx, prm):
 #initialize
 #-------------------------------------------------- 
 #load configuration
-ff, gx, gv, ex, fex, ajx, xx, vx, kx, kv = initial(prm)
+ff, gx, gv, ex, ajx, xx, vx, kx, kv = initial(prm)
 
 
 #initial step
 rho = charge(ff, prm)
-ex, fex = poisson(ex, rho, fex, prm)
+ex = poisson(ex, rho, prm)
 ff = position_linear(ff, vx, prm)
 ajx = current(ff, vx, prm)
-ex, fex = efield(ex, fex, ajx, prm)
+ex = efield(ex, ajx, prm)
 
 
 
@@ -205,15 +213,15 @@ ex, fex = efield(ex, fex, ajx, prm)
 jtime = 0
 for jtime in range(prm.ntime):
     print "-----------", jtime, "----------"
-    visz.visualize(fig, jtime, xx, vx, ff, fex, rho, ajx)
+    visz.visualize(fig, jtime, xx, vx, ff, ex, rho, ajx)
 
-    ff  = velocity_linear(ff, fex, prm)
+    ff  = velocity_linear(ff, ex, prm)
     ff  = position_linear(ff, vx, prm)
 
     ajx = current(ff, vx, prm)
     rho = charge(ff, prm)
 
-    ex, fex = efield(ex, fex, ajx, prm)
+    ex = efield(ex, ajx, prm)
     
 
 

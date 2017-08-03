@@ -45,7 +45,7 @@ def plot_field(ax, xx, f, quantity):
     ax.plot(xx, f, "b-")
 
 
-def visualize(fig, step, xx, vx, ff, fex, rho, ajx):
+def visualize(fig, step, xx, vx, ff, ex, rho, ajx):
 
     path = "out"
     if not os.path.exists(path):
@@ -54,7 +54,7 @@ def visualize(fig, step, xx, vx, ff, fex, rho, ajx):
     
     gs = GridSpec(3, 3)
     gs.update(hspace = 0.2)
-    gs.update(wspace = 0.2)
+    gs.update(wspace = 0.4)
     
     ax1a = subplot(gs[0, 0:2])
     ax1b = subplot(gs[0, 2])
@@ -74,9 +74,9 @@ def visualize(fig, step, xx, vx, ff, fex, rho, ajx):
     plot_mean_velocity_pdf(ax2b, vx, ff, 1)
     
     #plot fields
-    plot_field(ax3a, xx, fex, "fex")
-    plot_field(ax3b, xx, rho, "rho")
-    plot_field(ax3c, xx, ajx, "ajx")
+    plot_field(ax3a, xx, ex, r'$E_x$')
+    plot_field(ax3b, xx, rho, r'$\rho_q$')
+    plot_field(ax3c, xx, ajx, r'$J_x$')
     
     savefig(fname)
 

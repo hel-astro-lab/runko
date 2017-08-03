@@ -45,13 +45,13 @@ def initial(prm):
     
 
     #field initialization
-    fex = np.zeros(prm.nxfull) #full integer grid
+    #fex = np.zeros(prm.nxfull) #full integer grid
     ajx = np.zeros(prm.nxfull)
     #ex  = (fex[0:prm.nx+5] + fex[1:prm.nx+6])/2.0 #half integer grid
     ex = np.zeros(prm.nxfull) #half-integer grid (Yee?)
-    for ii in range(0, prm.nx+5):
-        ex[ii] = (fex[ii] + fex[ii+1])/2.0
-    ex[-1] = ex[-2] #fill array even though len does not match
+    #for ii in range(0, prm.nx+5):
+    #    ex[ii] = (fex[ii] + fex[ii+1])/2.0
+    #ex[-1] = ex[-2] #fill array even though len does not match
 
 
     #particle initialization
@@ -108,7 +108,7 @@ def initial(prm):
                 * (vx[jj, kk] - vd_noise[ii])/(vt_noise[ii]**2) * prm.dv[kk]
 
 
-    return ff, gx, gv, ex, fex, ajx, xx, vx, kx, kv
+    return ff, gx, gv, ex, ajx, xx, vx, kx, kv
 
 
 
