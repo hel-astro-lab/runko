@@ -3,6 +3,7 @@ import numpy as np
 from initial import initial
 import twostream as prm
 import visualize as visz
+import os, sys
 
     
 #set up figure
@@ -41,7 +42,6 @@ def charge(ff, prm):
     rhos = np.zeros( (prm.nxfull, prm.ns) )
     
     #sum over velocity dimension
-    # wp = sqrt(1/2) ???
     # qn = dv/(q * wp^2 * dx)
     for kk in range(prm.ns):
         for ii in prm.xfull:
@@ -50,9 +50,6 @@ def charge(ff, prm):
     #sum over spatial dimension
     rho = np.sum(rhos, 1)
 
-    # XXX why remove the mean?
-    rho0 = np.mean( rho[prm.xmid] )
-    rho = rho - rho0
 
     return rho
 
@@ -69,124 +66,96 @@ def wrap(x, prm):
 
 def poisson(ex, rho, prm):
 
+    # XXX why remove the mean?
+    rho -= np.mean( rho[prm.xmid] )
+
     for ii in prm.xmid:
-        ex[ii] = ex[ii-1] + rho[ii]
+        ex[ii+1] = ex[ii] + rho[ii+1]
 
     ex = wrap(ex, prm)
-
-    ex0 = np.sum( ex[prm.xmid] ) / prm.nx
-    ex -= ex0
-
-    #relocate
-    #for ii in prm.xmid:
-    #    fex[ii] = ( ex[ii] + ex[ii-1] )/2.0
-
-    #fex = wrap(fex, prm)
+    ex -= np.sum( ex[prm.xmid] )/ prm.nx
 
     return ex
 
 
 
-def position_linear(ff, vx, prm):
+def position_linear(ff, vx, ajx, prm):
     ajxs = np.zeros( (prm.nxfull, prm.ns) )
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
 
     for kk in range(prm.ns):
+
+        #compute shift of flux in units of cells
         aa = vx[:, kk] / prm.dx * prm.dt
         fa = np.floor(aa)
 
-        #XXX fixme
-        for ii in prm.xmid:
-            iss = np.ones(prm.nvfull)*ii - fa
-            flux[:, ii] = aa[:] * np.diag(ff[:, iss.astype(int), kk])
+        #Collect flux from the distribution function
+        #for ii in prm.xmid: #XXX HERE
+        for ii in range(2, prm.nx+3):
+            ss = np.ones(prm.nvfull)*ii - fa
+            iss = ss.astype(int)  # index array needs to be type casted into int 
+                                  # before we can use it
+            flux[:, ii] = aa[:] * np.diag(ff[:, iss, kk])
 
-        ff[:, prm.xmid, kk] -= (flux[:, prm.xmid+1] - flux[:, prm.xmid])
+        ff[:, prm.xmid, kk] -= (flux[:, prm.xmid] - flux[:, prm.xmid-1])
+
+        #upwind flux
+        ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid], 0) * prm.qn[kk]
                 
     #wrap boundaries
-    #ff[:, 0:2, :]               = ff[:, prm.nx:prm.nx+2, :]
-    #ff[:, prm.nx+3:prm.nx+6, :] = ff[:, 3:6, :]
     ff[:, prm.xLb, :] = ff[:, prm.xRe, :]
     ff[:, prm.xRb, :] = ff[:, prm.xLe, :]
                     
-    return ff
+
+    #reduce flux
+    ajx[:] = np.sum( ajxs, 1 )
+    ajx = wrap(ajx, prm)
+
+    return ff, ajx
 
 
 def velocity_linear(ff, ex, prm):
 
     #interpolate half-integer staggered Ex to full integer grid fex
     fex = np.zeros(prm.nxfull)
-    for ii in range(1,prm.nxfull):
-        fex[ii] = (ex[ii-1] + ex[ii])/2.0
-    fex[0] = (ex[-1] + ex[0])/2.0
+    for ii in prm.xmid:
+        fex[ii] = (ex[ii] + ex[ii-1])/2.0
+    fex = wrap(fex, prm)
 
 
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
 
-    jj = np.arange(prm.nvfull)
+    jj = np.arange(prm.nvfull-1)
     for kk in range(prm.ns):
-        aa = fex[:] * prm.qm[kk]/prm.dv[kk]*prm.dt
+
+        #compute shift in units of phase space cells
+        aa = fex[:] * prm.qm[kk]/prm.dv[kk] * prm.dt
         fa = np.floor(aa).astype(int)
 
-        for ii in range(prm.nx+5):
-            js = jj - fa[ii] - 1
+        for ii in prm.xfull:
+            js = jj - fa[ii]
             flux[jj, ii] = aa[ii] * ff[js, ii, kk]
 
-        ff[1:prm.nv+5, :, kk] = ff[1:prm.nv+5, :, kk] \
-                - (flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :])
+        #ff[1:prm.nv+5, :, kk] = ff[1:prm.nv+5, :, kk] \
+        #        - (flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :])
+
+        #add flux
+        ff[1:prm.nv+5, :, kk] -= ( flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :] )
 
     return ff
-
-
-def current(ff, vx, prm):
-
-    ajxs = np.zeros( (prm.nxfull, prm.ns) )
-    for kk in range(prm.ns):
-        aa = vx[:, kk] / prm.dx * prm.dt
-
-        for ii in prm.xfull:
-            ajxs[ii, kk] = np.sum( ff[:, ii, kk] ) * prm.qn[kk]
-
-    ajx = np.sum(ajxs, 1)
-    ajx -= np.mean( ajx[prm.xmid] ) 
-
-    return ajx
 
 
 
 def efield(ex, ajx, prm):
 
-    #amperes law E_n+1 = E_n - J
-    #ex[3:prm.nx+3] = ex[3:prm.nx+3] - ajx[3:prm.nx+3]
-    ex[prm.xmid] = ex[prm.xmid] - ajx[prm.xmid]
+    #remove mean
+    ajx -= np.mean( ajx[prm.xmid] )
 
-    #wrap
-    #ex[0:2]               = ex[prm.nx:prm.nx+2]
-    #ex[prm.nx+3:prm.nx+4] = ex[3:4]
+    #amperes law E_n+1 = E_n - J
+    ex[prm.xmid] = ex[prm.xmid] - ajx[prm.xmid]
     ex = wrap(ex, prm)
 
-    #shift
-    #fex = np.zeros(prm.nxfull)
-    #for ii in prm.xmid:
-    #    fex[ii] = (ex[ii] + ex[ii-1])/2.0
-
-    #wrap
-    #fex[0:2]               = fex[prm.nx:prm.nx+2]
-    #fex[prm.nx+3:prm.nx+4] = fex[3:4]
-    #fex = wrap(fex, prm)
-
     return ex
-
-
-#def efield_f(fex, ajx, prm):
-#    #fex[3:prm.nx+3] = fex[3:prm.nx] - ajx[3:prm.nx+3]
-#    fex[prm.xmid] = fex[prm.xmid] - ajx[prm.xmid]
-#
-#    #wrap
-#    #fex[0:2]               = fex[prm.nx:prm.nx+2]
-#    #fex[prm.nx+3:prm.nx+4] = fex[3:4]
-#    fex = wrap(fex, prm)
-#
-#    return fex
 
 
 
@@ -194,34 +163,32 @@ def efield(ex, ajx, prm):
 #initialize
 #-------------------------------------------------- 
 #load configuration
-ff, gx, gv, ex, ajx, xx, vx, kx, kv = initial(prm)
-
+ff, ex, ajx, xx, vx = initial(prm)
 
 #initial step
 rho = charge(ff, prm)
 ex = poisson(ex, rho, prm)
-ff = position_linear(ff, vx, prm)
-ajx = current(ff, vx, prm)
+ff, ajx = position_linear(ff, vx, ajx, prm)
 ex = efield(ex, ajx, prm)
-
-
 
 
 #-------------------------------------------------- 
 # main loop
 
 jtime = 0
+time = 0.0
 for jtime in range(prm.ntime):
-    print "-----------", jtime, "----------"
-    visz.visualize(fig, jtime, xx, vx, ff, ex, rho, ajx)
+    print "-----------", jtime, "/", time, "----------"
 
-    ff  = velocity_linear(ff, ex, prm)
-    ff  = position_linear(ff, vx, prm)
+    if (jtime % 10 == 0):
+        visz.visualize(fig, jtime, xx, vx, ff, ex, rho, ajx)
 
-    ajx = current(ff, vx, prm)
+    ff      = velocity_linear(ff, ex, prm)
+    ff, ajx = position_linear(ff, vx, ajx, prm)
     rho = charge(ff, prm)
-
     ex = efield(ex, ajx, prm)
+    
+    time += prm.dt
     
 
 

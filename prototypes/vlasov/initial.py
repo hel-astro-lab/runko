@@ -9,19 +9,20 @@ def initial(prm):
         vx[:, kk] = np.linspace(prm.vmin[kk], prm.vmax[kk], prm.nvfull)
     #print xx,vx
 
-    print "full      :", xx[prm.xfull]
-    print "---"
-    print "left  HALO:", xx[prm.xLb]
-    print "right HALO:", xx[prm.xRb]
-    print "---"
-    print "left  EDGE:", xx[prm.xLe]
-    print "right EDGE:", xx[prm.xRe]
-    print "---"
-    print "mid       :", xx[prm.xmid]
-    print "---"
-    print "len xmid =", len(xx[prm.xmid])
-    print "---"
-    print "mid+1       :", xx[prm.xmid + 1]
+    #debugging of array halo regions
+    #print "full      :", xx[prm.xfull]
+    #print "---"
+    #print "left  HALO:", xx[prm.xLb]
+    #print "right HALO:", xx[prm.xRb]
+    #print "---"
+    #print "left  EDGE:", xx[prm.xLe]
+    #print "right EDGE:", xx[prm.xRe]
+    #print "---"
+    #print "mid       :", xx[prm.xmid]
+    #print "---"
+    #print "len xmid =", len(xx[prm.xmid])
+    #print "---"
+    #print "mid+1       :", xx[prm.xmid + 1]
 
 
     for kk in range(prm.ns):
@@ -35,13 +36,17 @@ def initial(prm):
     nkx = np.int( np.floor(prm.nx*0.5) )
     nkv = np.int( np.floor(prm.nv*0.5) + prm.nvHalo )
 
-    kx[0:nkx] = np.arange(0, nkx)/(prm.nx * prm.dx)*2.0*np.pi
-    kv[0:nkv] = np.arange(0, nkv)/(prm.nvfull)*2.0*np.pi
-    for ii in range(nkx, prm.nx):
-        kx[ii] = -kx[2*nkx + 2 - ii]
 
+    print "nkx:", nkx
+    print "nkv:", nkv
+
+    kx[0:nkx] = np.arange(0.0, nkx)/(prm.nx * prm.dx)*2.0*np.pi
+    for ii in range(nkx, prm.nx):
+        kx[ii] = -kx[2*nkx - ii]
+
+    kv[0:nkv] = np.arange(0.0, nkv)/(prm.nvfull)*2.0*np.pi
     for jj in range(nkv, prm.nvfull):
-        kv[jj] = -kv[2*nkv +2 - jj]
+        kv[jj] = -kv[2*nkv - jj]
     
 
     #field initialization
@@ -63,13 +68,16 @@ def initial(prm):
     wpe = np.sqrt( np.sum( prm.wp**2 * (-prm.qm) ) )
 
     for kk in range(prm.ns):
-        if prm.qm[kk] < 0:
+        
+        if prm.qm[kk] < 0.0: #electrons
+            #determine noise level from linear dispersion relation of Langmuir waves
             ww = np.sqrt( wpe**2 + gam*prm.vt[kk]**2 * kx**2 )
-        else:
+        else:                #ions
+            #white noise
             ww = prm.vd[kk]*kx
-            prm.noise = 3
 
-        #noise 
+
+        #white noise 
         prm.nmode = nkx
         amp = max( prm.pamp, prm.namp )
         prm.pamp = amp/prm.nx
@@ -100,15 +108,15 @@ def initial(prm):
                 ff[jj, ii, kk] = np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 / (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii]
 
-                gx[jj, ii, kk] = np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
-                / (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] * prm.dx
-                
-                gv[jj, ii, kk] = -np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
-                / (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] \
-                * (vx[jj, kk] - vd_noise[ii])/(vt_noise[ii]**2) * prm.dv[kk]
+                #gx[jj, ii, kk] = np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
+                #/ (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] * prm.dx
+                #
+                #gv[jj, ii, kk] = -np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
+                #/ (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] \
+                #* (vx[jj, kk] - vd_noise[ii])/(vt_noise[ii]**2) * prm.dv[kk]
 
 
-    return ff, gx, gv, ex, ajx, xx, vx, kx, kv
+    return ff, ex, ajx, xx, vx
 
 
 

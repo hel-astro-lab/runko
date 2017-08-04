@@ -8,11 +8,12 @@ ntime = 2000
 
 #species
 ns = 2
-wp   = np.array([ 0.707107,  0.707107  ])
-qm   = np.array([-1.000000, -1.000000])
-vt   = np.array([ 1.000000,  1.000000, ])
-vd   = np.array([ 0.000000,  4.000000, ])
-vmax = np.array([ 9.999990,  9.999900, ])
+wp   = np.array([ 0.707107,  0.707107]) #plasma frequency
+qm   = np.array([-1.000000, -1.000000]) #charge-to-mass ratio
+vt   = np.array([ 1.000000,  1.000000]) #thermal velocity
+vd   = np.array([ 2.000000,  -2.000000]) #drift velocity
+
+vmax = np.array([ 9.999990,  9.999990])
 vmin = np.array([-5.000000, -5.000000])
 
 
@@ -46,9 +47,9 @@ vfull = np.arange(0, nvfull)
 #noise = 3 
 
 
-nmode = 1.0;
-pamp = 0.01
-namp = 0.00
+nmode = 1.0 #number of noise modes
+pamp = 0.01 #positive noise amplitude
+namp = 0.00 #negative noise amplitude
 #pphs = 0.00
 #nphs = 0.00
 
