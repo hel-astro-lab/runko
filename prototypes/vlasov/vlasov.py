@@ -2,12 +2,11 @@ import numpy as np
 
 from initial import initial
 import twostream as prm
-import visualize as visz
+from visualize import visualize
 import os, sys
 
     
 #set up figure
-#from pylab import *
 import pylab as mlab
 
 fig = mlab.figure(figsize=(10, 12))
@@ -15,25 +14,6 @@ mlab.rc('font', family='serif')
 mlab.rc('xtick', labelsize='xx-small')
 mlab.rc('ytick', labelsize='xx-small')
 
-
-#--------------------------------------------------
-# Random info 
-#--------------------------------------------------
-#conservative schemes 
-# 0 linear
-# 1 2nd order
-# 2 4th order
-# 6 CPIC4
-#non-conservative
-# 3 - cubic spline
-# 5 - CIP3 
-#rho = charge(ff, prm)
-#ex, fex = poisson(ex, rho, prm)
-
-#3rd possible case ???
-#fex = efield_f(fex, ajx, prm)
-#ex, fex = efield(ex, ajx, prm)
-#--------------------------------------------------
 
 
 
@@ -136,9 +116,6 @@ def velocity_linear(ff, ex, prm):
             js = jj - fa[ii]
             flux[jj, ii] = aa[ii] * ff[js, ii, kk]
 
-        #ff[1:prm.nv+5, :, kk] = ff[1:prm.nv+5, :, kk] \
-        #        - (flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :])
-
         #add flux
         ff[1:prm.nv+5, :, kk] -= ( flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :] )
 
@@ -174,6 +151,9 @@ ex = efield(ex, ajx, prm)
 
 #-------------------------------------------------- 
 # main loop
+visz = visualize("out", xx, vx)
+visz.plot(0, ff, ex, ajx, rho) #plot once to create figures
+
 
 jtime = 0
 time = 0.0
@@ -181,7 +161,8 @@ for jtime in range(prm.ntime):
     print "-----------", jtime, "/", time, "----------"
 
     if (jtime % 10 == 0):
-        visz.visualize(fig, jtime, xx, vx, ff, ex, rho, ajx)
+        visz.plot(jtime, ff, ex, ajx, rho)
+
 
     ff      = velocity_linear(ff, ex, prm)
     ff, ajx = position_linear(ff, vx, ajx, prm)
