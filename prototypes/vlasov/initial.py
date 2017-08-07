@@ -36,10 +36,6 @@ def initial(prm):
     nkx = np.int( np.floor(prm.nx*0.5) )
     nkv = np.int( np.floor(prm.nv*0.5) + prm.nvHalo )
 
-
-    print "nkx:", nkx
-    print "nkv:", nkv
-
     kx[0:nkx] = np.arange(0.0, nkx)/(prm.nx * prm.dx)*2.0*np.pi
     for ii in range(nkx, prm.nx):
         kx[ii] = -kx[2*nkx - ii]
@@ -50,14 +46,8 @@ def initial(prm):
     
 
     #field initialization
-    #fex = np.zeros(prm.nxfull) #full integer grid
     ajx = np.zeros(prm.nxfull)
-    #ex  = (fex[0:prm.nx+5] + fex[1:prm.nx+6])/2.0 #half integer grid
-    ex = np.zeros(prm.nxfull) #half-integer grid (Yee?)
-    #for ii in range(0, prm.nx+5):
-    #    ex[ii] = (fex[ii] + fex[ii+1])/2.0
-    #ex[-1] = ex[-2] #fill array even though len does not match
-
+    ex = np.zeros(prm.nxfull) #half-integer grid Yee staggered
 
     #particle initialization
     ff = np.zeros( (prm.nvfull, prm.nxfull, prm.ns) )
@@ -92,15 +82,15 @@ def initial(prm):
         vt_noise = np.ones(prm.nxfull) * prm.vt[kk]
 
         for ll in range(prm.nmode):
-            dn_noise = dn_noise - prm.pamp * np.sin(-kx[1 + ll]*xx + pphs[ll]/180*np.pi) * kx[1 + ll] \
-                                + prm.namp * np.sin( kx[1 + ll]*xx + nphs[ll]/180*np.pi) * kx[1 + ll]
+            dn_noise[:] += -prm.pamp * np.sin(-kx[1 + ll]*xx + pphs[ll]/180*np.pi) * kx[1 + ll] \
+                       + prm.namp * np.sin( kx[1 + ll]*xx + nphs[ll]/180*np.pi) * kx[1 + ll]
         
-            dd_noise = dd_noise - prm.pamp * np.cos(-kx[1 + ll]*xx + pphs[ll]/180*np.pi) * kx[1 + ll]**2 \
-                                + prm.namp * np.cos( kx[1 + ll]*xx + nphs[ll]/180*np.pi) * kx[1 + ll]**2
+            dd_noise[:] += -prm.pamp * np.cos(-kx[1 + ll]*xx + pphs[ll]/180*np.pi) * kx[1 + ll]**2 \
+                       + prm.namp * np.cos( kx[1 + ll]*xx + nphs[ll]/180*np.pi) * kx[1 + ll]**2
 
 
-            vd_noise = vd_noise - prm.pamp * np.sin(-kx[1 + ll]*xx + pphs[ll]/180*np.pi)*(ww[ll] - prm.vd[kk]*kx[1 + ll]) \
-                                - prm.namp * np.sin(-kx[1 + ll]*xx + nphs[ll]/180*np.pi)*(ww[ll] + prm.vd[kk]*kx[1 + ll])
+            vd_noise[:] += -prm.pamp * np.sin(-kx[1 + ll]*xx + pphs[ll]/180*np.pi)*(ww[ll] - prm.vd[kk]*kx[1 + ll]) \
+                       - prm.namp * np.sin(-kx[1 + ll]*xx + nphs[ll]/180*np.pi)*(ww[ll] + prm.vd[kk]*kx[1 + ll])
 
 
         for ii in prm.xfull:
@@ -117,8 +107,5 @@ def initial(prm):
 
 
     return ff, ex, ajx, xx, vx
-
-
-
 
 

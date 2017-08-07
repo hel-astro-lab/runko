@@ -1,9 +1,10 @@
 import numpy as np
 
 from initial import initial
-import twostream as prm
+import conf as prm
 from visualize import visualize
 import os, sys
+from timer import Timer
 
     
 #set up figure
@@ -30,8 +31,8 @@ def charge(ff, prm):
     #sum over spatial dimension
     rho = np.sum(rhos, 1)
 
-
     return rho
+
 
 def wrap(x, prm):
 
@@ -177,14 +178,29 @@ ex = efield(ex, ajx, prm)
 visz = visualize("out", xx, vx)
 visz.plot(0, ff, ex, ajx, rho) #plot once to create figures
 
+simulation = np.zeros( (prm.nx, prm.ntime+1, 1) )
+
+#-------------------------------------------------- 
+#Save to file
+import h5py
+f = h5py.File("out/vlasov.hdf5", "w")
+dset_Ex = f.create_dataset("Ex", (prm.nx, prm.ntime+1), dtype='f')
+
+
+timer = Timer(["total", "lap"])
+timer.start("total")
 
 jtime = 0
 time = 0.0
-for jtime in range(prm.ntime):
-    print "-----------", jtime, "/", time, "----------"
+for jtime in range(prm.ntime+1):
+    #print "-----------", jtime, "/", time, "----------"
 
-    if (jtime % 10 == 0):
+    if (jtime % 100 == 0):
+        timer.stats("lap")
+
         visz.plot(jtime, ff, ex, ajx, rho)
+
+        timer.start("lap")
 
 
     ff      = velocity(ff, ex, prm)
@@ -193,15 +209,15 @@ for jtime in range(prm.ntime):
     ex = efield(ex, ajx, prm)
     
     time += prm.dt
+
+    #simulation[:, jtime, 0] = ex[prm.xmid]
+    dset_Ex[:,jtime] = ex[prm.xmid]
     
+    timer.lap("lap")
 
 
 
 
+timer.stop("total")
 
-
-
-
-
-
-
+timer.stats("total")
