@@ -71,21 +71,29 @@ def position_linear(ff, vx, ajx, prm):
 
         for ii in range(2, prm.nx+3):
 
-            #linear flux
+            #1st order linear upwind flux
             #ss = np.ones(prm.nvfull)*ii - fa
             #iss = ss.astype(int)  # index array needs to be type casted into int 
             #                      # before we can use it
             #flux[:, ii] = aa[:] * np.diag(ff[:, iss, kk])
 
-            #second order
-            flux[:, ii] = aa[:] * ( ff[:, ii+1, kk] + ff[:, ii, kk] )*0.5 \
-                  - aa[:]*aa[:] * ( ff[:, ii+1, kk] - ff[:, ii, kk] )*0.5
+            #second order conservative scheme
+            #flux[:, ii] = aa * ( ff[:, ii+1, kk] + ff[:, ii, kk] )*0.5 \
+            #      - aa[:]*aa * ( ff[:, ii+1, kk] - ff[:, ii, kk] )*0.5
+
+            #4th order conservative
+            flux[:, ii] = aa    * (-ff[:,ii+2,kk]+ 7.0*ff[:,ii+1,kk]+ 7.0*ff[:,ii,kk]-ff[:,ii-1,kk])/12.0 \
+                        + aa**2 * ( ff[:,ii+2,kk]-15.0*ff[:,ii+1,kk]+15.0*ff[:,ii,kk]-ff[:,ii-1,kk])/24.0 \
+                        + aa**3 * ( ff[:,ii+2,kk]-     ff[:,ii+1,kk]-     ff[:,ii,kk]+ff[:,ii-1,kk])/12.0 \
+                        + aa**4 * (-ff[:,ii+2,kk]+ 3.0*ff[:,ii+1,kk]- 3.0*ff[:,ii,kk]+ff[:,ii-1,kk])/24.0 \
 
 
 
+
+        #add flux as f_i^t+dt = f_i^t - (U_i+1/2 - U_i-1/2)
         ff[:, prm.xmid, kk] -= (flux[:, prm.xmid] - flux[:, prm.xmid-1])
 
-        #upwind flux
+        #flux
         ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid], 0) * prm.qn[kk]
                 
     #wrap boundaries
@@ -111,7 +119,8 @@ def velocity_linear(ff, ex, prm):
 
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
 
-    jj = np.arange(prm.nvfull-1)
+    #jj = np.arange(prm.nvfull-1) #full grid for 1st/2nd order schemes
+    jj = np.arange(2,prm.nv+3)
     for kk in range(prm.ns):
 
         #compute shift in units of phase space cells
@@ -119,17 +128,24 @@ def velocity_linear(ff, ex, prm):
         #fa = np.floor(aa).astype(int) #upwind direction
 
         for ii in prm.xfull:
-
-            #1st order linear scheme
+            #1st order linear upwind scheme
             #js = jj - fa[ii]
             #flux[jj, ii] = aa[ii] * ff[js, ii, kk]
 
-            #2nd order
-            flux[jj, ii] = aa[ii] * ( ff[jj+1, ii, kk] + ff[jj, ii, kk] )*0.5 \
-                  - aa[ii]*aa[ii] * ( ff[jj+1, ii, kk] - ff[jj, ii, kk] )*0.5
+            #2nd order conservative
+            #flux[jj, ii] = aa[ii] * ( ff[jj+1, ii, kk] + ff[jj, ii, kk] )*0.5 \
+            #      - aa[ii]*aa[ii] * ( ff[jj+1, ii, kk] - ff[jj, ii, kk] )*0.5
+
+            #4th order conservative 
+            flux[jj, ii] = aa[ii]    * (-ff[jj+2,ii,kk]+ 7.0*ff[jj+1,ii,kk]+ 7.0*ff[jj,ii,kk]-ff[jj-1,ii,kk])/12.0 \
+                         + aa[ii]**2 * ( ff[jj+2,ii,kk]-15.0*ff[jj+1,ii,kk]+15.0*ff[jj,ii,kk]-ff[jj-1,ii,kk])/24.0 \
+                         + aa[ii]**3 * ( ff[jj+2,ii,kk]-     ff[jj+1,ii,kk]-     ff[jj,ii,kk]+ff[jj-1,ii,kk])/12.0 \
+                         + aa[ii]**4 * (-ff[jj+2,ii,kk]+ 3.0*ff[jj+1,ii,kk]- 3.0*ff[jj,ii,kk]+ff[jj-1,ii,kk])/24.0 \
 
 
-        #add flux
+
+
+        #add flux as f_i^t+dt = f_i^t - (U_i+1/2 - U_i-1/2)
         ff[1:prm.nv+5, :, kk] -= ( flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :] )
 
     return ff
