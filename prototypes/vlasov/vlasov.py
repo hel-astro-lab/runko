@@ -67,15 +67,21 @@ def position_linear(ff, vx, ajx, prm):
 
         #compute shift of flux in units of cells
         aa = vx[:, kk] / prm.dx * prm.dt
-        fa = np.floor(aa)
+        #fa = np.floor(aa) # upwind direction
 
-        #Collect flux from the distribution function
-        #for ii in prm.xmid: #XXX HERE
         for ii in range(2, prm.nx+3):
-            ss = np.ones(prm.nvfull)*ii - fa
-            iss = ss.astype(int)  # index array needs to be type casted into int 
-                                  # before we can use it
-            flux[:, ii] = aa[:] * np.diag(ff[:, iss, kk])
+
+            #linear flux
+            #ss = np.ones(prm.nvfull)*ii - fa
+            #iss = ss.astype(int)  # index array needs to be type casted into int 
+            #                      # before we can use it
+            #flux[:, ii] = aa[:] * np.diag(ff[:, iss, kk])
+
+            #second order
+            flux[:, ii] = aa[:] * ( ff[:, ii+1, kk] + ff[:, ii, kk] )*0.5 \
+                  - aa[:]*aa[:] * ( ff[:, ii+1, kk] - ff[:, ii, kk] )*0.5
+
+
 
         ff[:, prm.xmid, kk] -= (flux[:, prm.xmid] - flux[:, prm.xmid-1])
 
@@ -110,11 +116,18 @@ def velocity_linear(ff, ex, prm):
 
         #compute shift in units of phase space cells
         aa = fex[:] * prm.qm[kk]/prm.dv[kk] * prm.dt
-        fa = np.floor(aa).astype(int)
+        #fa = np.floor(aa).astype(int) #upwind direction
 
         for ii in prm.xfull:
-            js = jj - fa[ii]
-            flux[jj, ii] = aa[ii] * ff[js, ii, kk]
+
+            #1st order linear scheme
+            #js = jj - fa[ii]
+            #flux[jj, ii] = aa[ii] * ff[js, ii, kk]
+
+            #2nd order
+            flux[jj, ii] = aa[ii] * ( ff[jj+1, ii, kk] + ff[jj, ii, kk] )*0.5 \
+                  - aa[ii]*aa[ii] * ( ff[jj+1, ii, kk] - ff[jj, ii, kk] )*0.5
+
 
         #add flux
         ff[1:prm.nv+5, :, kk] -= ( flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :] )

@@ -4,6 +4,7 @@ from matplotlib import cm
 import os, sys
 
 
+
 def plot_phasespace(ax, xxi, vxi, ffi, kk):
 
     #pick kth species
@@ -11,7 +12,6 @@ def plot_phasespace(ax, xxi, vxi, ffi, kk):
     vx = vxi[:,kk]
     ff = ffi[:,:,kk]
 
-    # xx vx[:, kk], ff[:,:,kk] ff[vx:, x:, species]
     ax.set_xlim(xx[0], xx[-1])
     ax.set_ylim(vx[0], vx[-1])
     ax.set_xlabel(r'$x$')
@@ -19,6 +19,27 @@ def plot_phasespace(ax, xxi, vxi, ffi, kk):
     
     X, Y = np.meshgrid(xx, vx)
     ax.pcolormesh(X, Y, ff, 
+            cmap='Reds', 
+            vmin=ff.min(),
+            vmax=ff.max(),
+            )
+
+
+def plot_double_phasespace(ax, xxi, vxi, ff):
+
+    #pick kth species
+    kk = 0
+    xx = xxi
+    vx = vxi[:,kk]
+
+    ax.set_xlim(xx[0], xx[-1])
+    ax.set_ylim(vx[0], vx[-1])
+    ax.set_xlabel(r'$x$')
+    ax.set_ylabel(r'$v_{x}$')
+    
+
+    X, Y = np.meshgrid(xx, vx)
+    ax.pcolormesh(X, Y, ff[:,:,0], 
             cmap='Reds', 
             vmin=ff.min(),
             vmax=ff.max(),
@@ -86,6 +107,9 @@ class visualize:
 
         sstep = str(step).rjust(4, '0')
         fname = self.path+'/vlasov'+sstep+'.png'
+
+        #experiment with visualizing both species
+        #plot_double_phasespace(self.ax1a, self.xx, self.vx, ff)
 
         #phase spaces // species 0
         plot_phasespace(self.ax1a, self.xx, self.vx, ff, 0)
