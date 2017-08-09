@@ -1,5 +1,6 @@
 import numpy as np
 
+# default values (sometimes modified below)
 dx = 0.5
 dt = 0.05
 nx = 100
@@ -11,6 +12,8 @@ ntime = 1000
 ###################################################
 # two-stream instability
 #ns = 2 #number of species
+#dx = 1.0
+#dt = 0.1
 #wp   = np.array([ 0.707107,  0.707107]) #plasma frequency
 #qm   = np.array([-1.0, -1.0]) #charge-to-mass ratio
 #vt   = np.array([ 1.0,  1.0]) #thermal velocity
@@ -32,24 +35,44 @@ ntime = 1000
 
 ##################################################
 # Harmonic Langmuir waves
-#ns = 2 #number of species
-#wp   = np.array([ 0.994487,  0.1]) #plasma frequency
-#qm   = np.array([-1.0, -1.0]) #charge-to-mass ratio
-#vt   = np.array([ 1.0,  0.1]) #thermal velocity
-#vd   = np.array([ 0.0,  8.0]) #drift velocity
-#vmax = np.array([ 10.0, 15.0])
-#vmin = np.array([-5,     0.0])
+ns = 2 #number of species
+dx = 1.0
+dt = 0.05
+nx = 200
+ntime = 500
+wp   = np.array([ 0.994487,  0.1]) #plasma frequency
+qm   = np.array([-1.0, -1.0]) #charge-to-mass ratio
+vt   = np.array([ 1.0,  1.0]) #thermal velocity
+vd   = np.array([ 0.0,  8.0]) #drift velocity
+vmax = np.array([ 10.0, 15.0])
+vmin = np.array([-5,     0.0])
 
 
 ##################################################
 # Electrostatic dispersion relation
-ns = 2 #number of species
-wp   = np.array([ 1.0,  0.2]) #plasma frequency
-qm   = np.array([-1.0,  0.04]) #charge-to-mass ratio
-vt   = np.array([ 1.0,  0.02]) #thermal velocity
-vd   = np.array([ 0.0,  0.0]) #drift velocity
-vmax = np.array([ 10.0, 0.2])
-vmin = np.array([-10.0,-0.2])
+#ns = 2 #number of species
+#wp   = np.array([ 1.0,  0.2]) #plasma frequency
+#qm   = np.array([-1.0,  0.04]) #charge-to-mass ratio
+#vt   = np.array([ 1.0,  0.02]) #thermal velocity
+#vd   = np.array([ 0.0,  0.0]) #drift velocity
+#vmax = np.array([ 10.0, 0.2])
+#vmin = np.array([-10.0,-0.2])
+
+
+##################################################
+# Wave propagation
+#dx = 0.5
+#dt = 0.05
+#nx = 400
+#nv = 100
+#ntime = 4000
+#ns = 1 #number of species
+#wp   = np.array([ 1.0, ]) #plasma frequency
+#qm   = np.array([ 1.0, ]) #charge-to-mass ratio
+#vt   = np.array([ 1.0, ]) #thermal velocity
+#vd   = np.array([ 0.0, ]) #drift velocity
+#vmax = np.array([ 10.0,])
+#vmin = np.array([-10.0,])
 
 
 
@@ -80,6 +103,6 @@ vfull = np.arange(0, nvfull)
 
 #--------------------------------------------------
 # Noise
-nmode = 1.0 #number of noise modes
+nmode = 8.0 #number of noise modes
 pamp = 0.01 #positive noise amplitude
 namp = 0.00 #negative noise amplitude

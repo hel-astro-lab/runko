@@ -67,7 +67,7 @@ def position(ff, vx, ajx, prm):
     for kk in range(prm.ns):
 
         aa = vx[:, kk] / prm.dx * prm.dt #compute shift in units of cells
-        #fa = np.floor(aa) # upwind direction
+        fa = np.floor(aa) # upwind direction
 
         for ii in range(2, prm.nx+3):
 
@@ -123,6 +123,7 @@ def velocity(f, ex, prm):
         #1st order linear upwind scheme
         #fa = np.floor(aa).astype(int) #upwind direction
         #for ii in prm.xfull:
+        #for ii in range(2, prm.nx+3):
         #    js = jj - fa[ii]
         #    flux[jj, ii] = aa[ii] * ff[js, ii, kk]
 
@@ -183,8 +184,20 @@ simulation = np.zeros( (prm.nx, prm.ntime+1, 1) )
 #-------------------------------------------------- 
 #Save to file
 import h5py
-f = h5py.File("out/vlasov.hdf5", "w")
-dset_Ex = f.create_dataset("Ex", (prm.nx, prm.ntime+1), dtype='f')
+f = h5py.File("out/run.hdf5", "w")
+grp0 = f.create_group("params")
+grp0.attrs['dx']    = prm.dx
+grp0.attrs['dt']    = prm.dt
+grp0.attrs['nx']    = prm.nx
+grp0.attrs['nv']    = prm.nv
+grp0.attrs['ns']    = prm.ns
+grp0.attrs['ntime'] = prm.ntime
+
+
+
+grp = f.create_group("fields")
+dset_ex = grp.create_dataset("Ex", (prm.nx, prm.ntime+1), dtype='f')
+
 
 
 timer = Timer(["total", "lap"])
@@ -195,26 +208,23 @@ time = 0.0
 for jtime in range(prm.ntime+1):
     #print "-----------", jtime, "/", time, "----------"
 
-    if (jtime % 100 == 0):
+    if (jtime % 20 == 0):
         timer.stats("lap")
-
         visz.plot(jtime, ff, ex, ajx, rho)
-
         timer.start("lap")
-
 
     ff      = velocity(ff, ex, prm)
     ff, ajx = position(ff, vx, ajx, prm)
     rho = charge(ff, prm)
     ex = efield(ex, ajx, prm)
+    #ex = poisson(ex, rho, prm)
     
     time += prm.dt
 
     #simulation[:, jtime, 0] = ex[prm.xmid]
-    dset_Ex[:,jtime] = ex[prm.xmid]
+    dset_ex[:,jtime] = ex[prm.xmid]
     
     timer.lap("lap")
-
 
 
 
