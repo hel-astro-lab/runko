@@ -97,7 +97,7 @@ def position(ff, vx, ajx, prm):
     ff[:, prm.xLb, :] = ff[:, prm.xRe, :]
     ff[:, prm.xRb, :] = ff[:, prm.xLe, :]
                     
-    #monotonize flux
+    #limit flux
     np.clip(ff, 0.0, None, out=ff)
 
     #reduce flux
@@ -140,7 +140,7 @@ def velocity(f, ex, prm):
         #add flux as f_i^t+dt = f_i^t - (U_i+1/2 - U_i-1/2)
         ff[1:prm.nv+5, :, kk] -= ( flux[1:prm.nv+5, :] - flux[0:prm.nv+4, :] )
 
-        #monotonize flux
+        #limit flux
         np.clip(ff, 0.0, None, out=ff)
 
 
@@ -206,9 +206,9 @@ timer.start("total")
 jtime = 0
 time = 0.0
 for jtime in range(prm.ntime+1):
-    #print "-----------", jtime, "/", time, "----------"
 
-    if (jtime % 20 == 0):
+    if (jtime % 100 == 0):
+        print "-----------", jtime, "/", time, "----------"
         timer.stats("lap")
         visz.plot(jtime, ff, ex, ajx, rho)
         timer.start("lap")

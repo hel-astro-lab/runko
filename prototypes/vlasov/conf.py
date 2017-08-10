@@ -39,13 +39,14 @@ ns = 2 #number of species
 dx = 1.0
 dt = 0.05
 nx = 200
-ntime = 500
-wp   = np.array([ 0.994487,  0.1]) #plasma frequency
+nv = 200
+ntime = 4000
+wp   = np.array([ 1.0,  1.0]) #plasma frequency
 qm   = np.array([-1.0, -1.0]) #charge-to-mass ratio
 vt   = np.array([ 1.0,  1.0]) #thermal velocity
-vd   = np.array([ 0.0,  8.0]) #drift velocity
-vmax = np.array([ 10.0, 15.0])
-vmin = np.array([-5,     0.0])
+vd   = np.array([ 0.0,  5.0]) #drift velocity
+vmax = np.array([ 10.0, 10.0])
+vmin = np.array([-8.0,-8.0])
 
 
 ##################################################

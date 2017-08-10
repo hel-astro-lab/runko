@@ -55,7 +55,7 @@ def initial(prm):
     gv = np.zeros( (prm.nvfull, prm.nxfull, prm.ns) )
 
     gam = 3
-    wpe = np.sqrt( np.sum( prm.wp**2 * (-prm.qm) ) )
+    wpe = np.sqrt( np.sum( prm.wp**2 *np.abs(prm.qm) ) )
 
     for kk in range(prm.ns):
         

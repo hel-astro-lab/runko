@@ -33,7 +33,9 @@ f = h5py.File('out/run.hdf5','r')
 
 #Read field
 ex = f['fields/Ex']
+ex = ex[:, 1500:4000]
 print "Ex shape:", np.shape(ex)
+
 
 
 #Read simulation values
@@ -41,7 +43,6 @@ dt = f['params'].attrs['dt']
 dx = f['params'].attrs['dx']
 print dt, dx
 
-sys.exit()
 
 #-------------------------------------------------- 
 # create test data
@@ -212,4 +213,4 @@ ax.plot(k, w_warmPlasma(k, wp, vth),
 
 
 plt.subplots_adjust(left=0.12, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
-plt.savefig('electrostatic/wk.pdf')
+plt.savefig('out/wk.pdf')
