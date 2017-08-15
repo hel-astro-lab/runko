@@ -122,8 +122,8 @@ Acceleration is denoted with $\vec{a} := d_t \vec{u}$.
 
 Six dimensional phase-space density distribution for species particle s is given by $\f{s} := \f{s}(t, \vec{x}, \vec{u})$.
 Evolution of $\f{s}$ is governed by the relativistic Vlasov equation
-\be
-\D{f{s}}{t} + \nabla_{\vec{x}} \cdot (\vec{v} \f{s}) + \nabla_{\vec{u}} \cdot (\vec{a}_{\mathrm{s}} \f{s} ) = \mathcal{C},
+\be\label{eq:vlasov}
+\D{\f{s}}{t} + \nabla_{\vec{x}} \cdot (\vec{v} \f{s}) + \nabla_{\vec{u}} \cdot (\vec{a}_{\mathrm{s}} \f{s} ) = \mathcal{C},
 \ee
 where $\mathcal{C} := \partial_t \f{s} ~|_{\mathrm{coll}}$ is the collision operator.
 When studying plasma, we can provide a closure for the acceleration with the Lorentz force as 
@@ -136,8 +136,24 @@ First moment of the distribution function $\f{s}$ gives us the charge density
 \rho := \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} d\vec{u} = \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} \, \gamma \, \frac{ ~d\vec{u}}{\gamma}.
 \ee
 Similarly, the second moment defines the current
-\be
+\be\label{eq:J}
 \vec{J} := \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} \vec{v} d\vec{u} = \sum_{\mathrm{s}} q_{\mathrm{s}} \int \f{s} \, \vec{u} ~\frac{ d\vec{u}}{\gamma}.
+\ee
+
+To solve \eqref{eq:vlasov} numerically we will use first-order splitting by Cheng \& Knorr to decouple spatial and momentum space as
+\be
+\D{\f{s}}{t} + \nabla_{\vec{x}} \cdot (\vec{v} \f{s} ) = 0
+\ee
+\be
+\D{\f{s}}{t} +\frac{q_{\mathrm{s}}}{m_{\mathrm{s}}} \nabla_{\vec{a}} \cdot ( \vec{E} + \vec{v} \times \vec{B} ) \f{s} = 0
+\ee
+Conservative update in one dimension (labeld with $i$ and $x$) is then applied as
+\be
+f_{i}^{t+\Delta t} = f_{i}^{t} + \frac{q_{\mathrm{s}}}{m_{\mathrm{s}}}  \frac{\Delta x}{\Delta t}( U_{x, i+\frac{1}{2}}^t - U_{x, i-\frac{1}{2}}^t ),
+\ee
+from which we also get the charge conserved current \eqref{eq:J}
+\be
+J_x = \sum_{\mathrm{s}} U_{x, i+\frac{1}{2}}.
 \ee
 
 

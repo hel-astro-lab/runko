@@ -238,6 +238,7 @@ def El_evolve(fx,fze,lnx,lnz,i_m,i_m_ph,dt,Bfield,CSmh):
                 if  lnx[j] >= lxstar and lnx[j-1] <= lxstar: 
                     jmin = j-1         # xmin is between the first and second integration point
         
+        #integral over synchrotron emissivity times photon distribution
         Hint = 0.0
         for j in range(jmin, i_m_ph):
             x = exp(lnx[j])
@@ -370,7 +371,6 @@ def Ph_evolve(fx,fz,lnx,lnz,i_m,i_m_ph,dt,Bfield,CSmh,d):
         gu = (zu*zu + 1.0)**0.5
         d_g[i] = (zu - z)*(zu + z)/(gu + g)
 
-
     M_ph = np.zeros((i_m_ph, i_m_ph))
     B_ph = np.zeros(i_m_ph)
 
@@ -456,6 +456,8 @@ def plot_pdf_el(ax, lnz, fz, fz_init, xlabel='', color='blue'):
     ax.set_yscale('log')
     ax.set_xscale('log')
 
+    #ax.set_xlim(0.0, 20.0)
+
 
     ax.plot(exp(lnz), fz, color=color, alpha=0.8)
     ax.plot(exp(lnz), fz_init, color='red', alpha=0.8)
@@ -470,6 +472,10 @@ def plot_pdf_ph(ax, lnx, fx, fx_init, xlabel='', color='blue'):
     ax.set_ylim(1e6, 5e35)
     ax.set_yscale('log')
     ax.set_xscale('log')
+
+
+    #ax.set_ylim(1e30, 1e35)
+    #ax.set_xlim(0.0, 1.0)
 
     ax.plot(exp(lnx), fx, linestyle='solid', marker='.',  color=color, alpha=0.8)
     ax.plot(exp(lnx), fx_init, "r-", alpha=0.8)
@@ -554,9 +560,10 @@ ax2 = subplot(gs[0,1])
 
 z=exp(lnz)
 gamma=sqrt(z**2 + 1.0)
-fze=gamma**(-4.0)*exp(lnz)**2  # df/d\gamma = gamma^-3; df/dlnz = df/d\gamma * z^2/gamma
-
+#fze=gamma**(-4.0)*exp(lnz)**2  # df/d\gamma = gamma^-3; df/dlnz = df/d\gamma * z^2/gamma
+fze=gamma**(-3.0)*exp(lnz)**2  # df/d\gamma = gamma^-3; df/dlnz = df/d\gamma * z^2/gamma
 #fze = z**3.0*exp(-z**2/(0.1*(gamma+1.0))) # initial electron distribution
+
 fz_int=np.trapz(fze, dx=d_lnz)
 
 # Setting init. Th. opt. thickness eq. to the equil. value. 
@@ -623,7 +630,7 @@ for step in range(nsteps+1):
     fze=fze_new
     fx=fx_new
 
-    if (step % 1) == 0: 
+    if (step % 20) == 0: 
         Lx=fx_new*exp(lnx)*4*pi*R**3/(3*t_esc)/1.22e6
         #print "Ph Luminosity", np.trapz(fze_new*exp(lnx)*4*pi*R**3/(3*t_esc)/1.22e6, dx=d_lnx)
 

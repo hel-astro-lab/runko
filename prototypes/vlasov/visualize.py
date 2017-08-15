@@ -26,6 +26,40 @@ def plot_phasespace(ax, xxi, vxi, ffi, kk):
             )
 
 
+def plot_rad(ax, xx, px, fp, iang):
+
+    #pick kth species
+
+    ax.set_xlim(xx[0], xx[-1])
+    ax.set_ylim(px[0], px[-1])
+    ax.set_xlabel(r'$x$')
+    ax.set_ylabel(r'$p_{h}$')
+    ax.set_yscale('log')
+    #ax.set_yscale('symlog', linthreshy=5.0)
+    
+
+    X, Y = np.meshgrid(xx, px)
+    ax.pcolormesh(X, Y, np.log10( fp[iang, :, :] ),
+            cmap='plasma', 
+            vmin=-10.0,
+            vmax= -5.0,
+            )
+
+def plot_spec(ax, px, fp, iang):
+    ax.cla()
+
+    ax.set_xlim(px[0], px[-1])
+    ax.set_ylim(1.0e-10, 1.0e-5)
+    ax.set_xlabel(r'$p_{h}$')
+    #ax.set_ylabel(r'$f_p$')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+
+    f = np.sum( fp[:, :, iang], 0) 
+    ax.plot(px, f, "k-")
+
+
+
 def plot_double_phasespace(ax, xxi, vxi, ff):
 
     #pick kth species
@@ -81,7 +115,7 @@ class visualize:
 
     initialized = False
 
-    def __init__(self, path, xx, vx):
+    def __init__(self, path, xx, vx, px):
 
         self.path = path
         if not os.path.exists(path):
@@ -89,9 +123,10 @@ class visualize:
 
         self.xx = xx
         self.vx = vx
+        self.px = px
 
 
-        self.gs = GridSpec(3, 3)
+        self.gs = GridSpec(5, 3)
         self.gs.update(hspace = 0.2)
         self.gs.update(wspace = 0.4)
 
@@ -105,8 +140,13 @@ class visualize:
         self.ax3b = subplot(self.gs[2, 1])
         self.ax3c = subplot(self.gs[2, 2])
 
+        self.ax4  = subplot(self.gs[3, 0:2])
+        self.ax5  = subplot(self.gs[4, 0:2])
+        self.ax4b = subplot(self.gs[3, 2])
+        self.ax5b = subplot(self.gs[4, 2])
 
-    def plot(self, step, ff, ex, ajx, rho):
+
+    def plot(self, step, ff, ex, ajx, rho, fp):
 
         sstep = str(step).rjust(4, '0')
         fname = self.path+'/vlasov'+sstep+'.png'
@@ -127,6 +167,13 @@ class visualize:
         plot_field(self.ax3b, self.xx, rho, r'$\rho_q$')
         plot_field(self.ax3c, self.xx, ajx, r'$J_x$')
         
+        #plot radiation
+        plot_rad(self.ax4,   self.xx, self.px, fp, 0) #+x
+        plot_spec(self.ax4b, self.px, fp, 0) #+x
+
+        plot_rad(self.ax5, self.xx, self.px, fp, 1) #-x
+        plot_spec(self.ax5b, self.px, fp, 1) #+x
+
 
         savefig(fname)
 

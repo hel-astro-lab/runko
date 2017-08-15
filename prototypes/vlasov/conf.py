@@ -1,11 +1,14 @@
 import numpy as np
 
 # default values (sometimes modified below)
-dx = 0.5
-dt = 0.05
-nx = 100
-nv = 100
-ntime = 1000
+dx = 0.5 #grid spacing
+dt = 0.05 #time step
+nx = 100 #spatial grid size
+nv = 100 #velocity grid size
+ntime = 1000 #time steps
+nph = 200 #number of radiation energy bins
+nangs = 2 #number of radiation angles
+
 
 
 
