@@ -651,12 +651,15 @@ for step in range(nsteps+1):
     # Crank-Nicolson coefficient, if set to vary, then i is the timestep
     c_CN=0.5*(1.0 - exp(-1.0*(step+1)**4/1.0e5))   
 
+
     # Evolving electron distribution
     fze_new, d = El_evolve(fx,fze,lnx,lnz,i_m,i_m_ph,dt,Bfield,CSmh)        
 
     # Evolving positron/ion distribution
     # fzp, d = El_evolve(fx,fzp,lnx,lnz,i_m,i_m_ph,dt,Bfield)    
 
+    print c_CN
+    print d
 
     #fz=fze # + fzp    # Sum up over all emitting particle species
 

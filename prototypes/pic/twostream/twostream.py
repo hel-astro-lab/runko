@@ -11,7 +11,7 @@ from scipy.special import kn
 np.random.seed(1)
 
 #update system path as we are on the subdirectory
-sys.path.append('/Users/natj/projects/radpic/prototype')
+sys.path.append('/Users/natj/projects/plasma/prototypes/pic')
 import radpic as rpic
 
 
