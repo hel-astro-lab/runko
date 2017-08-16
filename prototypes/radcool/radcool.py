@@ -425,10 +425,13 @@ def Ph_evolve(fx,fz,lnx,lnz,i_m,i_m_ph,dt,Bfield,CSmh,d):
     for k in range(i_m_ph):
         M_ph[k,k] = M_ph[k,k]*(1.0 - c_CN) + 1.0/dt  #+ (1.0 - c_CN)/t_esc
     fx_new=linalg.tensorsolve(M_ph, B_ph)
-    
+
+
+    #clip
     for i in range(i_m_ph):
         if fx[i] < 0.0: fx[i]=0.0
     
+    #energy gains
     Engain_ph = 0.0
     for i in range(i_m_ph):
         x = exp(lnx[i])
