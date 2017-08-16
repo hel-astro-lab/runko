@@ -25,6 +25,11 @@ def initial(prm):
     #print "mid+1       :", xx[prm.xmid + 1]
 
 
+    #photon grid
+    px = np.logspace(-11, 3, prm.nph)
+    fp = np.zeros( (prm.nangs, prm.nph, prm.nxfull) )
+
+
     for kk in range(prm.ns):
         prm.dv[kk] = vx[1, kk] - vx[0, kk]
         prm.qn[kk] = prm.dv[kk]/( prm.qm[kk] * prm.wp[kk]**2 * prm.dx ) 
@@ -106,6 +111,6 @@ def initial(prm):
                 #* (vx[jj, kk] - vd_noise[ii])/(vt_noise[ii]**2) * prm.dv[kk]
 
 
-    return ff, ex, ajx, xx, vx
+    return ff, ex, ajx, xx, vx, px, fp
 
 

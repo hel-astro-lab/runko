@@ -160,24 +160,81 @@ def efield(ex, ajx, prm):
     return ex
 
 
+#def el_evolve(ffi, vxi, fp, prm):
+
+    #ffi electron distribution
+    #vxi velocity grid of electrons
+
+    #full photon distribution f(z, phi)
+
+    # do nothing
+    #return ffi
+
+
+def ph_evolve(ffi, vxi, fp, px, prm):
+
+    wc = 1.0e0 #cyclotron frequency
+    x = px / wc #dimensionless energy
+
+    #mean velocity
+    rho = np.trapz(ffi, x=vxi)
+    g = np.mean(np.abs( ffi ))
+    #rho = 1.0
+    fp = g**4.0 * rho*(4.0/3.0)*x**(1.0/3.0) *np.exp(-x)
+    
+    #integrate over full distribution of velocities
+    #fps = np.zeros(len(px))
+    #for ie in range(len(ffi)):
+    #    vxx = np.abs(vxi[ie])**4.0
+    #    fps += vxx * ffi[ie]*x**(1.0/3.0)*np.exp(-x)
+
+
+    return fp
+
+
+
+
+def collisions(vx, ff, px, fp, prm):
+
+    #loop over spatial cells
+    for ix in prm.xfull:
+
+        iss = 0
+        #radiation reactions
+        for dirs in range(2):
+            if   dirs == 0:
+                vpos = vx[:,iss] > 0 #+x going electrons
+            elif dirs == 1:
+                vpos = vx[:,iss] < 0 #-x going electrons
+
+            ffi = ff[vpos, ix, 0] #slice correct velocities
+            vxi = vx[vpos, iss]
+            fp[dirs, :, ix] = ph_evolve( ffi, vxi, fp[dirs, :, ix], px, prm)  #evolve photons
+
+
+    return ff, fp
+
 
 
 #initialize
 #-------------------------------------------------- 
 #load configuration
-ff, ex, ajx, xx, vx = initial(prm)
+ff, ex, ajx, xx, vx, px, fp = initial(prm)
+
 
 #initial step
 rho = charge(ff, prm)
 ex = poisson(ex, rho, prm)
+ff, fp = collisions(vx, ff, px, fp, prm)
+
 ff, ajx = position(ff, vx, ajx, prm)
 ex = efield(ex, ajx, prm)
 
 
 #-------------------------------------------------- 
 # main loop
-visz = visualize("out", xx, vx)
-visz.plot(0, ff, ex, ajx, rho) #plot once to create figures
+visz = visualize("out", xx, vx, px)
+visz.plot(0, ff, ex, ajx, rho, fp) #plot once to create figures
 
 simulation = np.zeros( (prm.nx, prm.ntime+1, 1) )
 
@@ -210,10 +267,13 @@ for jtime in range(prm.ntime+1):
     if (jtime % 100 == 0):
         print "-----------", jtime, "/", time, "----------"
         timer.stats("lap")
-        visz.plot(jtime, ff, ex, ajx, rho)
+        visz.plot(jtime, ff, ex, ajx, rho, fp)
         timer.start("lap")
 
     ff      = velocity(ff, ex, prm)
+
+    ff, fp = collisions(vx, ff, px, fp, prm)
+
     ff, ajx = position(ff, vx, ajx, prm)
     rho = charge(ff, prm)
     ex = efield(ex, ajx, prm)
