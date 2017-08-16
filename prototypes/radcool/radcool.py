@@ -193,6 +193,63 @@ def Synch_emis(lnx,lnz,Bfield):
     return CSmh
 
 
+# Calculates electron radiative cooling only, 
+# averaged over pitch-angles and integrated over photon directions
+# Needs electron distribution function and magnetic field
+def El_synch_cool(fze,lnz,i_m,dt,Bfield):
+    
+    eps=1.0e-14
+
+    # photon and electron grids (both are logarithmic)
+    d_lnz = (lnz[i_m-1] - lnz[0])/(i_m - 1)
+    
+
+    d_g=np.zeros(i_m-1)
+    for i in xrange(i_m-1):
+        z = exp(lnz[i])
+        g = (z*z + 1.0)**0.5
+        zu = exp(lnz[i] + d_lnz)
+        gu = (zu*zu + 1.0)**0.5
+        d_g[i] = (zu - z)*(zu + z)/(gu + g)
+
+    xb = qe*Bfield/(2.0*pi*me*c)*h_pc/(me*c**2)    # Cyclotron energy
+
+    ################################################## 
+    # Focker-Planck for cooling (equal to \dot\gamma_s)
+    A_half = np.zeros(i_m-1)
+    A_half = - 4.0*sigma_T*(Bfield**2/8.0/pi)*zvec**2*d_lnz/(3.0*me*c)/d_g
+
+
+    ################################################## 
+    # Calculating the matrix of the linear system
+    M_el = np.zeros((i_m, i_m))
+    for i in range(i_m):
+        for i_pr in range(i-1,i+2):
+            # tridiagnoal terms
+            if i == 0:
+                if i_pr == 0:         M_el[i,i_pr] += A_half[i]
+            elif i == i_m-1:
+                if i_pr == (i - 1):   M_el[i,i_pr] += - A_half[i-1]
+            else:
+                if i_pr == (i - 1):   M_el[i,i_pr] += - A_half[i-1]
+                elif i_pr == i:       M_el[i,i_pr] += A_half[i]
+                    
+
+    # calculating matrices entering electron equation
+    Mf_el=np.zeros(i_m)
+    Mf_el=np.matmul(M_el,fze)
+
+    B_el=fze/dt - c_CN*Mf_el # - c_CN*fze/t_esc 
+    M_el[:,:] = (1.0 - c_CN)*M_el[:,:]
+    for k in range(i_m):
+        M_el[k,k] += 1.0/dt
+    fz=np.linalg.tensorsolve(M_el, B_el)
+
+    return fz
+
+
+
+
 
 # Calculates electron cooling, radiative spectra. Used every timestep
 # Needs electron distribution function, B-field
