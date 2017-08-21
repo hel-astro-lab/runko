@@ -19,16 +19,17 @@ mlab.rc('ytick', labelsize='xx-small')
 
 
 #charge density
-def charge(ff, prm):
+def charge(ff, ux, prm):
     rhos = np.zeros( (prm.nxfull, prm.ns) )
-    
-    #sum over velocity dimension
-    # qn = dv/(q * wp^2 * dx)
+
+    #integrate over the velocity distribution
+    # qm = q/m, i.e. charge-to-mass ratio
     for kk in range(prm.ns):
         for ii in prm.xfull:
-            rhos[ii, kk] = np.sum( ff[:, ii, kk] ) * prm.qn[kk]
+            gamma = np.sqrt( 1.0 + ux[:, kk]**2 )
+            rhos[ii, kk] = np.sum( prm.q[kk] * prm.du[kk] * ff[:, ii, kk] / gamma )
 
-    #sum over spatial dimension
+    #sum over species
     rho = np.sum(rhos, 1)
 
     return rho
@@ -60,13 +61,13 @@ def poisson(ex, rho, prm):
 
 
 
-def position(ff, vx, ajx, prm):
+def position(ff, ux, ajx, prm):
     ajxs = np.zeros( (prm.nxfull, prm.ns) )
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
 
     for kk in range(prm.ns):
 
-        aa = vx[:, kk] / prm.dx * prm.dt #compute shift in units of cells
+        aa = ux[:, kk] * prm.dt/prm.dx #compute shift in units of cells
         fa = np.floor(aa) # upwind direction
 
         for ii in range(2, prm.nx+3):
@@ -86,13 +87,14 @@ def position(ff, vx, ajx, prm):
                         + aa[:]**3 * ( ff[:,ii+2,kk]-     ff[:,ii+1,kk]-     ff[:,ii,kk]+ff[:,ii-1,kk])/12.0 \
                         + aa[:]**4 * (-ff[:,ii+2,kk]+ 3.0*ff[:,ii+1,kk]- 3.0*ff[:,ii,kk]+ff[:,ii-1,kk])/24.0
 
-
         #add flux as f_i^t+dt = f_i^t - (U_i+1/2 - U_i-1/2)
         ff[:, prm.xmid, kk] -= (flux[:, prm.xmid] - flux[:, prm.xmid-1])
 
-        #flux
-        ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid], 0) * prm.qn[kk]
+        #numerical flux integration over velocity, i.e., U = int q*U(u) du/gamma 
+        gamma = np.sqrt( 1.0 + ux[:,kk]**2 )
+        ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid]/gamma[:,np.newaxis], 0) * prm.du[kk] * prm.q[kk]
                 
+
     #wrap boundaries
     ff[:, prm.xLb, :] = ff[:, prm.xRe, :]
     ff[:, prm.xRb, :] = ff[:, prm.xLe, :]
@@ -107,6 +109,7 @@ def position(ff, vx, ajx, prm):
     return ff, ajx
 
 
+
 def velocity(f, ex, prm):
 
     #interpolate half-integer staggered Ex to full integer grid fex
@@ -118,7 +121,7 @@ def velocity(f, ex, prm):
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
     jj = np.arange(2,prm.nv+3)
     for kk in range(prm.ns):
-        aa = fex[:] * prm.qm[kk]/prm.dv[kk] * prm.dt #shift in units of phase space cells
+        aa = fex[:] * prm.qm[kk] * prm.dt/prm.du[kk] #shift in units of phase space cells
         
         #1st order linear upwind scheme
         #fa = np.floor(aa).astype(int) #upwind direction
@@ -143,8 +146,8 @@ def velocity(f, ex, prm):
         #limit flux
         np.clip(ff, 0.0, None, out=ff)
 
-
     return ff
+
 
 
 
@@ -181,19 +184,13 @@ def ph_evolve(ffi, vxi, fp, px, prm):
     g = np.mean(np.abs( ffi ))
     #rho = 1.0
     fp = g**4.0 * rho*(4.0/3.0)*x**(1.0/3.0) *np.exp(-x)
-    
-    #integrate over full distribution of velocities
-    #fps = np.zeros(len(px))
-    #for ie in range(len(ffi)):
-    #    vxx = np.abs(vxi[ie])**4.0
-    #    fps += vxx * ffi[ie]*x**(1.0/3.0)*np.exp(-x)
 
     return fp
 
 
 
 
-def collisions(vx, ff, px, fp, prm):
+def collisions(ux, ff, px, fp, prm):
 
     #loop over spatial cells
     for ix in prm.xfull:
@@ -202,37 +199,37 @@ def collisions(vx, ff, px, fp, prm):
         #radiation reactions
         for dirs in range(2):
             if   dirs == 0:
-                vpos = vx[:,iss] > 0 #+x going electrons
+                vpos = ux[:,iss] > 0 #+x going electrons
             elif dirs == 1:
-                vpos = vx[:,iss] < 0 #-x going electrons
+                vpos = ux[:,iss] < 0 #-x going electrons
 
             ffi = ff[vpos, ix, 0] #slice correct velocities
-            vxi = vx[vpos, iss]
+            vxi = ux[vpos, iss]
             fp[dirs, :, ix] = ph_evolve( ffi, vxi, fp[dirs, :, ix], px, prm)  #evolve photons
 
-
     return ff, fp
+
 
 
 
 #initialize
 #-------------------------------------------------- 
 #load configuration
-ff, ex, ajx, xx, vx, px, fp = initial(prm)
+ff, ex, ajx, xx, ux, px, fp = initial(prm)
 
 
 #initial step
-rho = charge(ff, prm)
+rho = charge(ff, ux, prm)
 ex = poisson(ex, rho, prm)
-ff, fp = collisions(vx, ff, px, fp, prm)
+ff, fp = collisions(ux, ff, px, fp, prm)
 
-ff, ajx = position(ff, vx, ajx, prm)
+ff, ajx = position(ff, ux, ajx, prm)
 ex = efield(ex, ajx, prm)
 
 
 #-------------------------------------------------- 
 # main loop
-visz = visualize("out", xx, vx, px)
+visz = visualize("out", xx, ux, px)
 visz.plot(0, ff, ex, ajx, rho, fp) #plot once to create figures
 
 simulation = np.zeros( (prm.nx, prm.ntime+1, 1) )
@@ -263,7 +260,7 @@ jtime = 0
 time = 0.0
 for jtime in range(prm.ntime+1):
 
-    if (jtime % 100 == 0):
+    if (jtime % 10 == 0):
         print "-----------", jtime, "/", time, "----------"
         timer.stats("lap")
         visz.plot(jtime, ff, ex, ajx, rho, fp)
@@ -271,10 +268,10 @@ for jtime in range(prm.ntime+1):
 
     ff      = velocity(ff, ex, prm)
 
-    ff, fp = collisions(vx, ff, px, fp, prm)
+    ff, fp = collisions(ux, ff, px, fp, prm)
 
-    ff, ajx = position(ff, vx, ajx, prm)
-    rho = charge(ff, prm)
+    ff, ajx = position(ff, ux, ajx, prm)
+    rho = charge(ff, ux, prm)
     ex = efield(ex, ajx, prm)
     #ex = poisson(ex, rho, prm)
     
@@ -287,6 +284,6 @@ for jtime in range(prm.ntime+1):
 
 
 
-timer.stop("total")
 
+timer.stop("total")
 timer.stats("total")

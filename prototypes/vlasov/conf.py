@@ -1,14 +1,13 @@
 import numpy as np
 
 # default values (sometimes modified below)
-dx = 0.5 #grid spacing
-dt = 0.05 #time step
-nx = 100 #spatial grid size
-nv = 100 #velocity grid size
-ntime = 1000 #time steps
-nph = 200 #number of radiation energy bins
-nangs = 2 #number of radiation angles
-
+#dx = 0.5 #grid spacing
+#dt = 0.05 #time step
+#nx = 100 #spatial grid size
+#nv = 100 #velocity grid size
+#ntime = 1000 #time steps
+#nph = 200 #number of radiation energy bins
+#nangs = 2 #number of radiation angles
 
 
 
@@ -40,16 +39,21 @@ nangs = 2 #number of radiation angles
 # Harmonic Langmuir waves
 ns = 2 #number of species
 dx = 1.0
-dt = 0.05
+dt = 0.01
 nx = 200
 nv = 200
 ntime = 4000
+nph = 200 #number of radiation energy bins
+nangs = 2 #number of radiation angles
 wp   = np.array([ 1.0,  1.0]) #plasma frequency
-qm   = np.array([-1.0, -1.0]) #charge-to-mass ratio
-vt   = np.array([ 1.0,  1.0]) #thermal velocity
-vd   = np.array([ 0.0,  5.0]) #drift velocity
-vmax = np.array([ 10.0, 10.0])
-vmin = np.array([-8.0,-8.0])
+q    = np.array([-1.0, -1.0]) #charges
+m    = np.array([ 1.0,  1.0]) #masses (in m_e)
+qm   = q/m                    #charge-to-mass ratio
+#qm   = np.array([-1.0, -1.0]) #charge-to-mass ratio
+vt   = np.array([ 0.1,  0.1]) #thermal velocity
+vd   = np.array([-0.5,  0.5]) #drift velocity
+vmax = np.array([ 1.0,  1.0])
+vmin = np.array([-1.0, -1.0])
 
 
 ##################################################
@@ -82,7 +86,7 @@ vmin = np.array([-8.0,-8.0])
 
 
 ##################################################
-dv = np.zeros(ns)
+du = np.zeros(ns)
 qn = np.zeros(ns)
 
 #spatial array sections

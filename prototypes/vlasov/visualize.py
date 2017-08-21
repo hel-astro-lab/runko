@@ -16,7 +16,7 @@ def plot_phasespace(ax, xxi, vxi, ffi, kk):
     ax.set_ylim(vx[0], vx[-1])
     ax.set_xlabel(r'$x$')
     ax.set_ylabel(r'$v_{x}$')
-    ax.set_yscale('symlog', linthreshy=5.0)
+    ax.set_yscale('symlog', linthreshy=0.5)
     
     X, Y = np.meshgrid(xx, vx)
     ax.pcolormesh(X, Y, ff, 
@@ -85,14 +85,14 @@ def plot_double_phasespace(ax, xxi, vxi, ff):
 def plot_mean_velocity_pdf(ax, vx, ff, kk):
     ax.cla()
 
-    ax.set_xlim(-20, 20)
-    ax.set_ylim(0.01, 1.0)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(0.01, 10.0)
 
     ax.set_xlabel(r'$v_{x}$')
     #ax.set_ylabel(r'pdf')
 
     ax.set_yscale("log") #, nonposy='clip')
-    ax.set_xscale('symlog', linthreshx=5.0)
+    ax.set_xscale('symlog', linthreshx=0.5)
 
     fv = np.mean(ff[:,3:-3, kk], 1)
     ax.plot(vx, fv, "k-", marker='.')

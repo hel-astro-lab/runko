@@ -4,10 +4,10 @@ def initial(prm):
 
     #coordinates
     xx = np.arange(-prm.nxHalo, prm.nx+prm.nxHalo) * prm.dx
-    vx = np.zeros((prm.nvfull, prm.ns))
+    ux = np.zeros((prm.nvfull, prm.ns))
     for kk in range(prm.ns):
-        vx[:, kk] = np.linspace(prm.vmin[kk], prm.vmax[kk], prm.nvfull)
-    #print xx,vx
+        ux[:, kk] = np.linspace(prm.vmin[kk], prm.vmax[kk], prm.nvfull)
+    #print xx,ux
 
     #debugging of array halo regions
     #print "full      :", xx[prm.xfull]
@@ -31,8 +31,9 @@ def initial(prm):
 
 
     for kk in range(prm.ns):
-        prm.dv[kk] = vx[1, kk] - vx[0, kk]
-        prm.qn[kk] = prm.dv[kk]/( prm.qm[kk] * prm.wp[kk]**2 * prm.dx ) 
+        prm.du[kk] = ux[1, kk] - ux[0, kk]
+        #prm.qn[kk] = prm.du[kk]/( prm.qm[kk] * prm.wp[kk]**2 * prm.dx ) 
+
 
     kx = np.zeros(prm.nx)
     kv = np.zeros(prm.nvfull)
@@ -100,17 +101,17 @@ def initial(prm):
 
         for ii in prm.xfull:
             for jj in range(prm.nvfull):
-                ff[jj, ii, kk] = np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
+                ff[jj, ii, kk] = np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 / (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii]
 
-                #gx[jj, ii, kk] = np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
+                #gx[jj, ii, kk] = np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 #/ (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] * prm.dx
                 #
-                #gv[jj, ii, kk] = -np.exp(-(vx[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
+                #gv[jj, ii, kk] = -np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 #/ (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] \
-                #* (vx[jj, kk] - vd_noise[ii])/(vt_noise[ii]**2) * prm.dv[kk]
+                #* (ux[jj, kk] - vd_noise[ii])/(vt_noise[ii]**2) * prm.dv[kk]
 
 
-    return ff, ex, ajx, xx, vx, px, fp
+    return ff, ex, ajx, xx, ux, px, fp
 
 

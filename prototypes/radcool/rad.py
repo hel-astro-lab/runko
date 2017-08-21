@@ -95,7 +95,7 @@ def ph_evolve(fe, vx, fp, px, dt):
     M_ph = np.zeros( (nph, nph) )
     B_ph = np.zeros( (nph) )
 
-    d = 0.5 #make it central scheme
+    d = 1.0
 
     #determine absorption and emission terms
     for i in range(nph):
