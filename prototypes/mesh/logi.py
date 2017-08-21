@@ -1,106 +1,55 @@
 import numpy as np
 import math
-from pylab import *
-import scipy
 import copy
 
-import palettable as pal
-from matplotlib import cm
-
-#cmap = cm.get_cmap('inferno_r')
-cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
-
-
-
+import conf 
 
 
 ##################################################
-#Auxiliary functions to help with the grid
-
-def imshow(ax, grid):
-
-    ax.clear()
-    ax.minorticks_on()
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(xmin, xmax)
-
-    extent = [xmin, xmax, ymin, ymax]
-
-    mgrid = np.ma.masked_where(grid == -1.0, grid)
-    ax.imshow(mgrid,
-              extent=extent,
-              origin='lower',
-              interpolation='nearest',
-              cmap = cmap,
-              vmin = 0.0,
-              vmax = Nrank-1,
-              #vmax = Nrank,
-              #alpha=0.2
-              )
-
-
+# Auxiliary functions
 def xwrap(i):
     while i < 0:
-        i += Nx
-    while i >= Nx:
-        i -= Nx
+        i += conf.Nx
+    while i >= conf.Nx:
+        i -= conf.Nx
     return i
 
 def ywrap(j):
     while j < 0:
-        j += Ny
-    while j >= Ny:
-        j -= Ny
+        j += conf.Ny
+    while j >= conf.Ny:
+        j -= conf.Ny
     return j
 
 
-
-def plot_grid(ax, nodes):
-    tmp_grid = np.ones( (Nx, Ny) ) * -1.0
-
-    for n in nodes:
-        for c in n.cells:
-            (i, j) = c.index()
-            tmp_grid[i,j] = n.rank
-            #tmp_grid[i,j] += 1
-
-    imshow(ax, tmp_grid)
-
-
-
-
-def plot_node(ax, n):
-    tmp_grid = np.ones( (Nx, Ny) ) * -1.0
-
-    for c in n.cells:
-        (i, j) = c.index()
-        #tmp_grid[i,j] = 1.0
-        tmp_grid[i,j] = c.owner
+#hard boundaries
+#def xwrap(i):
+#    while i < 0:
+#        return None
+#    while i >= conf.Nx:
+#        return None
+#    return i
+#
+#def ywrap(j):
+#    while j < 0:
+#        return None
+#    while j >= conf.Ny:
+#        return None
+#    return j
 
 
-    #virtuals = n.get_all_virtuals()
-    #for (i,j) in virtuals:
-    #    tmp_grid[i,j] += 0.5
+# Copy & append
+def cappend(arr, x):
+    tmpa = copy.deepcopy( arr )
+    tmpx = copy.deepcopy( x )
+    tmpa.append( tmpx )
+    return tmpa
 
-    for c in n.virtuals:
-        (i,j) = c.index()
-    #    #tmp_grid[i,j] += 0.5
-        tmp_grid[i,j] = c.owner
-
-
-    imshow(ax, tmp_grid)
-
-    for c in n.cells:
-        (i, j) = c.index()
-        ix = xmin + xmax*(i+0.5)/Nx
-        jy = ymin + ymax*(j+0.5)/Ny
-
-        Nv = n.number_of_virtual_neighbors(c)
-        label = str(Nv)
-        ax.text(jy, ix, label, ha='center',va='center')
-
-
-
+# copy delete
+def cdel(arr, i):
+    tmp = copy.deepcopy( arr )
+    del tmp[i]
+    return tmp
 
 
 ##################################################
@@ -127,7 +76,6 @@ class cell:
     def index(self):
         return ( self.i, self.j )
 
-
     #relative neighbors
     def neighs(self, ir, jr):
         i = xwrap(self.i + ir)
@@ -143,16 +91,13 @@ class cell:
         return nb
 
 
-
+##################################################
 #Main computational node holding cells and 
 # dealing with inter-cell communications 
 class node:
 
-    #cells    = np.array([], dtype=np.object) #, copy=True)
-    #virtuals = np.array([], dtype=np.object) #, copy=True)
     cells    = []
     virtuals = []
-
 
     send_queue = 'building'
     send_queue_cells   = []
@@ -162,11 +107,11 @@ class node:
     adopted_parent = []
 
     purged = []
-    #purged = np.array([])
 
 
-    def __init__(self, rank):
+    def __init__(self, rank, Nx, Ny):
         self.rank = rank
+        self.mpiGrid = np.zeros( (Nx, Ny) )
         
 
     #Purge previous id list and re-create it
@@ -211,6 +156,10 @@ class node:
             neighbors.extend( c.full_neighborhood() )
 
         for (i, j) in neighbors:
+            if i == None or j == None:
+                #boundary value that does not exist, i.e., edge 
+                break
+
             for (il, jl) in locals:
                 if (i == il) and (j == jl):
                     #neighbor is local so we omit it
@@ -251,6 +200,8 @@ class node:
         neigs = c.full_neighborhood()
         N = 0
         for indx in neigs:
+            if (indx[0] == None or indx[1] == None):
+                continue
             if not( self.is_local(indx) ):
                 N += 1
         return N
@@ -260,37 +211,48 @@ class node:
         neigs = c.full_neighborhood()
         owners = []
         for indx in neigs:
+            if (indx[0] == None or indx[1] == None):
+                continue
             if not( self.is_local(indx) ):
-                owners.append( int(grid[indx]) )
+                owners.append( int(self.mpiGrid[indx]) )
         return np.unique(owners).tolist()
 
     def clear_virtuals(self):
         self.virtuals = []
 
     # pack boundary cells to be communicated to neighbors
-    def pack_virtuals(self):
+    def pack_all_virtuals(self):
         self.send_queue         = 'building'
         self.send_queue_cells   = []
         self.send_queue_address = []
 
         packed = []
         for c in self.cells:
+            #if self.rank == 1:
+            #    print self.rank, " c:", c.index()
             N = self.number_of_virtual_neighbors(c)
             if N > 0:
                 owners = self.virtual_neighborhood(c)
+                #if self.rank == 1:
+                #    print self.rank, " packing", c.index(), " for ", owners
 
                 c.communications = len(owners)
                 c.number_of_virtual_neighbors = N
 
-                #self.send_queue_cells.append(c)
-                #self.send_queue_address.append(owners)
                 if not(c.index() in packed):
                     self.send_queue_cells = cappend(self.send_queue_cells, c)
                     self.send_queue_address = cappend(self.send_queue_address, owners)
                     packed = cappend( packed, c.index() )
-
+                #else:
+                    #if self.rank == 1:
+                    #    print "not packing", c.index()," to ", packed
 
         self.send_queue = 'ready'
+
+        #if self.rank == 1:
+        #    for i, c in enumerate(self.send_queue_cells):
+        #        print "in queue: ", c.index(), " for ",self.send_queue_address[i]
+
 
     def clear_queue(self):
         self.send_queue         = 'cleared'
@@ -391,207 +353,3 @@ class node:
         self.purged = []
         #self.purged = np.array([])
 
-
-def cappend(arr, x):
-    #arr.append(x)
-    #return arr
-
-    tmpa = copy.deepcopy( arr )
-    tmpx = copy.deepcopy( x )
-
-    #tmpa = np.append(tmpa, tmpx)
-    #return tmpa
-
-    #return tmpa.append( tmpx )
-    #return arr.append(x)
-
-    tmpa.append( tmpx )
-    return tmpa
-
-    #return np.append(arr, x)
-
-def cdel(arr, i):
-    #del arr[i]
-    #return arr
-
-    tmp = copy.deepcopy( arr )
-
-    #tmp = np.delete(tmp, i)
-    del tmp[i]
-    return tmp
-
-    #del arr[i]
-    #return arr
-
-    #del tmp[i]
-    #return tmp
-
-    #return np.delete(arr, i)
-
-
-#General communication routines for inter-cell needs
-def communicate(nodes):
-
-    #pack for sending
-    for node in nodes:
-        node.pack_virtuals()
-
-    for node in nodes:
-        node.clear_virtuals()
-    
-    #receive
-    for node in nodes:
-        for k, c in enumerate(node.send_queue_cells):
-            for o in node.send_queue_address[k]:
-                #print "sending {} to {}".format(k, o)
-                nodes[o].virtuals = cappend( nodes[o].virtuals, c )
-
-    #clear queue lists
-    for node in nodes:
-        node.clear_queue()
-
-
-def adopt(nodes):
-
-    #rank virtuals for adoption
-    #for node in nodes:
-    #    node.rank_virtuals()
-
-    #randomly pick who gets to adopt
-    nodes[ np.random.randint(Nrank) ].rank_virtuals()
-    #nodes[0].rank_virtuals()
-
-
-    #communicate adoptions and judge if they are good
-    adopted = []
-    for node in nodes:
-        print node.rank, " has purgelist of ", node.purged
-        for (indx, parent) in zip( node.adopted_index, node.adopted_parent):
-            if not(indx in adopted):
-                print "{} adopting ({},{}) from {}".format(node.rank, indx[1], indx[0], parent)
-
-                node.adopt(indx)
-
-                #print "     0", nodes[0].purged
-                #print "     1", nodes[1].purged
-                #print "     2", nodes[2].purged
-
-                #nodes[parent].purged.append( indx )
-                nodes[parent].purged = cappend(nodes[parent].purged, indx)
-
-                #print "   parent = ", parent, " purgelist:", nodes[parent].purged
-                #print "    +0", nodes[0].purged
-                #print "    +1", nodes[1].purged
-                #print "    +2", nodes[2].purged
-
-                grid[indx] = node.rank
-                adopted.append( indx )
-        #print node.rank, " after has purgelist of ", node.purged
-
-    #print " "
-
-    #purge adopted children
-    for node in nodes:
-        print "purging...", node.rank, " cells:", node.purged
-        node.purge()
-
-
-
-
-
-
-##################################################    
-# setup configuration
-xmin = ymin = 0.0
-xmax = ymax = 1.0
-
-Nrank = 3
-Nx = 10
-Ny = 10
-
-grid = np.zeros( (Nx, Ny) )
-
-
-
-
-##################################################
-# main program loop
-def main():
-
-    ## Plot and figure set-up
-    fig = figure(figsize=(8,8))
-    rc('font', family='serif', size=12)
-    rc('xtick')
-    rc('ytick')
-    
-    gs = GridSpec(2, 2)
-    gs.update(hspace = 0.5)
-    
-    
-    axs = []
-    axs.append( subplot(gs[0]) )
-    axs.append( subplot(gs[1]) )
-    axs.append( subplot(gs[2]) )
-    axs.append( subplot(gs[3]) )
-
-    
-    ##################################################
-    # Initialize ranks (this is done behind the scenes 
-    # like in real MPI startup
-    np.random.seed(3)
-
-    nodes = []
-    #nodes = np.array([], dtype=np.object)
-
-    for i in range(Nx):
-        for j in range(Ny):
-            val = np.random.randint(Nrank)
-            grid[i,j] = np.float(val)
-
-    # load nodes
-    for rank in range(Nrank):
-        n = node(rank)
-    
-        for i in range(Nx):
-            for j in range(Ny):
-                if grid[i,j] == rank:
-                    c = cell(i, j, rank)
-                    #n.cells = np.append(n.cells, c)
-                    n.cells = cappend(n.cells, c)
-                    #n.cells.append( c )
-        nodes.append(n)
-        #nodes = cappend(nodes, n)
-        #nodes = np.append(nodes, n)
-
-    #communicate(nodes)
-    ################################################## 
-
-
-    for t in range(100):
-    #for t in [0]:
-    #for t in [0,1]:
-        print "t=",t
-
-        for s in range(10):
-            communicate(nodes)
-            adopt(nodes)
-
-        plot_grid(axs[0], nodes)
-        plot_node(axs[1], nodes[0])
-        plot_node(axs[2], nodes[1])
-        plot_node(axs[3], nodes[2])
-
-        pause(1.0)
-
-
-
-    show()
-    #draw()
-    #pause(10.0)
-
-
-
-
-
-if __name__ == "__main__":
-    main()
