@@ -106,7 +106,8 @@ def plot_node(ax, n, lap):
     ax.set_title(str(len(n.virtuals))+"/"+str(len(n.cells)))
 
     #save
-    fname = conf.path + '/node_{}_{}.png'.format(rank, lap)
+    slap = str(lap).rjust(4, '0')
+    fname = conf.path + '/node_{}_{}.png'.format(rank, slap)
     plt.savefig(fname)
 
 
@@ -151,24 +152,20 @@ for i in range(conf.Nx):
 
 
 
-# open memory slot for put/get for cell transfer
-Nqueue = 200
+#Basic message for cell transmission
+Nqueue = 50
 Ncellp = 7
-# holds information of (id, i, j, owner, Nvir, Ncom)
-virtual_indices = np.zeros( (Nqueue, Ncellp), dtype=int) 
-win_virtual_indices = MPI.Win.Create( virtual_indices, comm=comm)
 
 
 
-def transfer_cells(indexes, dest):
+def send_virtual_cells(indexes, dest):
 
     #print rank, " transferring..."
 
     #fundamental cell building blocks
-    #send_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
-    #send_buffer[:,0] = -1
-
-    virtual_indices[:,0] = -1
+    # holds information of (id, i, j, owner, Nvir, Ncom, top_owner)
+    send_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
+    send_buffer[:,0] = -1
 
     for k, indx in enumerate(indexes):
         c = n.send_queue_cells[indx]
@@ -177,21 +174,20 @@ def transfer_cells(indexes, dest):
         Nvir   = c.number_of_virtual_neighbors
         Ncom   = c.communications
         topown = c.top_owner
-        virtual_indices[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
-        #send_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
-    #win_virtual_indices.Put( [send_buffer, MPI.INT], dest)
-    win_virtual_indices.Put( [virtual_indices, MPI.INT], dest)
-    #comm.Isend(send_buffer, dest=dest)
+        send_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
+    comm.Isend(send_buffer, dest=dest)
 
 
 
 
-def unpack_incoming_cells():
+def unpack_incoming_cells(msg):
+
     k = 0
-    for (cid, i, j, owner, Nvir, Ncom, topown) in virtual_indices:
-        #print "reading: ", virtual_indices[k,:]
+    for (cid, i, j, owner, Nvir, Ncom, topown) in msg:
+        #print "reading: ", msg[k,:]
         if cid != -1:
-            print "reading: ", virtual_indices[k,:]
+            #print "reading: ", msg[k,:]
+
 
             #check if incoming virtual is actually our own cell
             # this means that adoption has occured and we need to 
@@ -205,6 +201,7 @@ def unpack_incoming_cells():
 
 
             if to_be_purged:
+                #TODO: choose incoming or current cell?
                 n.virtuals = cappend( n.virtuals, n.cells[q] )
                 n.cells = cdel( n.cells, q ) #remove from real cells
 
@@ -218,34 +215,52 @@ def unpack_incoming_cells():
 
                 n.virtuals = cappend( n.virtuals, c)
 
-            virtual_indices[k, 0] = -1 #clean the list
+            #msg[k, 0] = -1 #clean the list; not necessary
         k += 1
     
 
 # Routine to communicate cells between nodes.
 # For now, a simple loop over all senders to all destinations
-# is done with WIN.Fence synchronizing the calls.
-def communicate():
-    for myid in range(Nrank):
-        win_virtual_indices.Fence()
+def communicate_send():
 
-        #send
-        if myid == rank:
-            for dest in range(Nrank):
-                if dest == rank:
-                    continue
+    for dest in range(Nrank):
+        if dest == rank:
+            continue
 
-                indx = []
-                for i, address in enumerate(n.send_queue_address):
-                    #print i, "address", address
-                    if dest in address:
-                        indx.append( i ) 
-                transfer_cells( indx, dest )
+        indx = []
+        for i, address in enumerate(n.send_queue_address):
+            #print i, "address", address
+            if dest in address:
+                indx.append( i ) 
 
-        #unpack and clean afterwards
-        win_virtual_indices.Fence()
-        unpack_incoming_cells()
+        print "{}: sending to {}".format(rank, dest)
+        send_virtual_cells( indx, dest )
+
     n.clear_queue()
+    return
+
+
+def communicate_receive():
+    for source in range(Nrank):
+        if source == rank:
+            continue
+
+        recv_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
+        req = comm.Irecv(recv_buffer, source=source)
+
+        req.Wait()
+        print "{} received message from {}".format(rank, source)
+
+        #unpack
+        unpack_incoming_cells(recv_buffer)
+
+    return 
+
+#blocking version of communicate
+def communicate():
+    communicate_send()
+    communicate_receive()
+
 
 
 
@@ -288,8 +303,8 @@ def adoption_council():
         #       owners[i]
         #       )
 
-    print "winner is:"
-    print "virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
+
+    print "winner is virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
                index_list[i][0],
                index_list[i][1],
                Nvirs[i], 
@@ -299,8 +314,8 @@ def adoption_council():
                )
 
 
-    #return adopted_indices, 
-    #inform parents that their child is taken; sorry!
+    # we inform parents of their kidnapped child only
+    # when they receive it as virtual.
 
 
 
@@ -310,40 +325,36 @@ def adoption_council():
 plot_node(axs[0], n, 0)
 n.pack_all_virtuals() 
 n.clear_virtuals()
-communicate()
+communicate_send()
+communicate_receive()
 plot_node(axs[0], n, 1)
 
 
 #second round with adoption
-#adoption_council()
-#n.adopt()
-#n.pack_all_virtuals() 
-#n.clear_virtuals()
-#communicate()
-#
-#
-#plot_node(axs[0], n, 2)
-
-#print n.mpiGrid
+adoption_council()
+n.adopt()
+n.pack_all_virtuals() 
+n.clear_virtuals()
+communicate()
+plot_node(axs[0], n, 2)
 
 
-# initial load balance
-#for t in range(1,2):
-#    plot_node(axs[0], n, t)
-#
-#
-#
-#    n.pack_virtuals()  
-#    n.clear_virtuals()
+# initial load balance burn-in
+for t in range(3,100):
+    adoption_council()
+    n.adopt()
+    n.pack_all_virtuals() 
+    n.clear_virtuals()
+    communicate()
 
+    if master:
+        plot_node(axs[0], n, t)
 
 
 # now start simulation
 
 
 
-# Free MPI processes and memory windows
-#win_virtual_indices.Free()
 
 
 
