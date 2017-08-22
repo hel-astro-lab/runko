@@ -63,10 +63,13 @@ class cell:
     cid   = 0
     owner = 0
 
-    communications = 0
+    communications              = None
+    number_of_virtual_neighbors = None
+    top_owner                   = None
 
-    i = 0
-    j = 0
+
+    i = None
+    j = None
 
     def __init__(self, i, j, owner):
         self.i = i
@@ -103,10 +106,14 @@ class node:
     send_queue_cells   = []
     send_queue_address = []
 
-    adopted_index = []
+    adopted_index  = []
     adopted_parent = []
 
     purged = []
+
+    total_work = None
+    work_goal  = None
+
 
 
     def __init__(self, rank, Nx, Ny):
@@ -215,7 +222,11 @@ class node:
                 continue
             if not( self.is_local(indx) ):
                 owners.append( int(self.mpiGrid[indx]) )
-        return np.unique(owners).tolist()
+
+        #return unique list of owners, and the mode of the array
+        return np.unique(owners).tolist(), np.argmax(np.bincount(owners))
+
+
 
     def clear_virtuals(self):
         self.virtuals = []
@@ -232,10 +243,11 @@ class node:
             #    print self.rank, " c:", c.index()
             N = self.number_of_virtual_neighbors(c)
             if N > 0:
-                owners = self.virtual_neighborhood(c)
+                owners, top_owner = self.virtual_neighborhood(c)
                 #if self.rank == 1:
                 #    print self.rank, " packing", c.index(), " for ", owners
 
+                c.top_owner      = top_owner 
                 c.communications = len(owners)
                 c.number_of_virtual_neighbors = N
 
@@ -261,21 +273,28 @@ class node:
 
 
     def rank_virtuals(self):
-        Nvir = []
-        Ncom = []
-        owners = []
+        Nvirs      = []
+        Ncoms      = []
+        Tvirs      = []
+        owners     = []
         index_list = []
 
-        self.adopted_index = []
+        self.adopted_index  = []
         self.adopted_parent = []
 
         for c in self.virtuals:
-            Nvir.append( c.number_of_virtual_neighbors )
-            Ncom.append( c.communications )
+            Nvirs.append( c.number_of_virtual_neighbors )
+            Ncoms.append( c.communications )
+            Tvirs.append( c.top_owner )
             owners.append( c.owner )
             index_list.append( c.index() )
-        indx_sorted = np.argsort(Nvir).tolist()
-        
+
+
+        return Nvirs, Ncoms, Tvirs, owners, index_list
+
+        #printing
+        #indx_sorted = np.argsort(Nvirs).tolist()
+
         #for i in indx_sorted:
             #print "virtual cell ({},{}): {} with # neighborhood {} and owner {}".format(
             #        index_list[i][1],
@@ -285,11 +304,12 @@ class node:
             #        owners[i]
             #        )
 
+        #adoption
         #adopt last from virtual to real cells
-        last_indx = indx_sorted[-1]
+        #last_indx = indx_sorted[-1]
 
-        self.adopted_index.append( self.virtuals[last_indx].index() )
-        self.adopted_parent.append( self.virtuals[last_indx].owner )
+        #self.adopted_index.append( self.virtuals[last_indx].index() )
+        #self.adopted_parent.append( self.virtuals[last_indx].owner )
 
 
 
@@ -312,32 +332,28 @@ class node:
 
 
 
-    def adopt(self, rindx):
+    def adopt(self):
+        for indx in self.adopted_index:
+            print "node {} got adopt command for ({},{})".format(self.rank, indx[0],indx[1])
 
-        print "node {} got adopt command for ({},{})".format(self.rank, rindx[0],rindx[1])
+            for c in self.virtuals:
+                if c.index() == indx:
+                    c_tmp       = copy.deepcopy( c )
+                    c_tmp.owner = self.rank
 
-        #print "to be loopped:", self.adopted_index
-        for c in self.virtuals:
-            #print "...virc:", c.index()
-            for indx in self.adopted_index:
-                #print ".... indx", indx
-                if (indx == rindx):
-                    if c.index() == indx:
-                        c_tmp       = copy.deepcopy( c )
-                        c_tmp.owner = self.rank
+                    print "   ...adopting ({},{})".format(c_tmp.index()[0],c_tmp.index()[1])
+                    self.cells  = cappend( self.cells, c_tmp )
+                    break
 
-                        print "   ...adopting ({},{})".format(c_tmp.index()[0],c_tmp.index()[1])
-                        self.cells  = cappend( self.cells, c_tmp )
+            for i, c in enumerate( self.virtuals ):
+                if c.index() == indx:
+                    self.virtuals = cdel( self.virtuals, i )
 
-        for i, c in enumerate( self.virtuals ):
-            if c.index() == rindx:
-                #self.virtuals = np.delete( self.virtuals, i )
-                self.virtuals = cdel( self.virtuals, i )
-                break
+                    (i,j) = indx
+                    self.mpiGrid[i,j] = self.rank
+                    #break
 
 
-        #self.adopted_index = []
-        #self.adopted_parent = []
 
 
 

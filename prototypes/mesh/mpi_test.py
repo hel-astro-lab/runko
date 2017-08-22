@@ -91,17 +91,17 @@ def plot_node(ax, n, lap):
         jy = conf.ymin + conf.ymax*(j+0.5)/conf.Ny
 
         Nv = n.number_of_virtual_neighbors(c)
-        #label = str(Nv)
-        label = "({},{})/{}".format(i,j,Nv)
+        label = str(Nv)
+        #label = "({},{})/{}".format(i,j,Nv)
         ax.text(jy, ix, label, ha='center',va='center')
 
 
-    for c in n.virtuals:
-        (i, j) = c.index()
-        ix = conf.xmin + conf.xmax*(i+0.5)/conf.Nx
-        jy = conf.ymin + conf.ymax*(j+0.5)/conf.Ny
-        label = "Vir"
-        ax.text(jy, ix, label, ha='center',va='center')
+    #for c in n.virtuals:
+    #    (i, j) = c.index()
+    #    ix = conf.xmin + conf.xmax*(i+0.5)/conf.Nx
+    #    jy = conf.ymin + conf.ymax*(j+0.5)/conf.Ny
+    #    label = "Vir"
+    #    ax.text(jy, ix, label, ha='center',va='center')
 
     ax.set_title(str(len(n.virtuals))+"/"+str(len(n.cells)))
 
@@ -123,6 +123,15 @@ conf.Ny = 10
 n = node(rank, conf.Nx, conf.Ny)
 np.random.seed(4)
 
+# Compute (initial) total work to balance and my personal effort needed
+n.total_work = conf.Nx * conf.Ny
+n.work_goal  = n.total_work / Nrank
+
+
+if master:
+    print "Average work load is {} cells of {}".format(n.work_goal, n.total_work)
+
+
 
 # initialize grid ownership (master does this, for now)
 if master:
@@ -142,9 +151,11 @@ for i in range(conf.Nx):
 
 
 
-# open memory slot for put/get
+# open memory slot for put/get for cell transfer
 Nqueue = 200
-virtual_indices = -1*np.ones( (Nqueue, 4), dtype=int) #(id, i, j, owner)
+Ncellp = 7
+# holds information of (id, i, j, owner, Nvir, Ncom)
+virtual_indices = -1*np.ones( (Nqueue, Ncellp), dtype=int) 
 win_virtual_indices = MPI.Win.Create( virtual_indices, comm=comm)
 
 
@@ -153,57 +164,55 @@ def transfer_cells(cells, indexes, dest):
 
     #print rank, " transferring..."
 
-    recv_buffer = -1*np.ones( (Nqueue, 4), dtype=int)
+    #fundamental cell building blocks
+    recv_buffer = -1*np.ones( (Nqueue, Ncellp), dtype=int)
     for k, indx in enumerate(indexes):
         c = cells[indx]
-        (i,j) = c.index()
-        owner = c.owner
-        recv_buffer[k, :] = [rank, i, j, owner]
-
+        (i,j)  = c.index()
+        owner  = c.owner
+        Nvir   = c.number_of_virtual_neighbors
+        Ncom   = c.communications
+        topown = c.top_owner
+        recv_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
     win_virtual_indices.Put( [recv_buffer, MPI.INT], dest)
 
 
 def unpack_incoming_cells():
     k = 0
-    for (cid, i, j, owner) in virtual_indices:
+    for (cid, i, j, owner, Nvir, Ncom, topown) in virtual_indices:
         if cid != -1:
             #print "{}:   {}, ({},{}) {}".format(rank, cid, i, j, owner)
-            c = cell(i, j, owner)
+
+            c                             = cell(i, j, owner)
+            c.number_of_virtual_neighbors = Nvir
+            c.communications              = Ncom
+            c.top_owner                   = topown
+
             n.virtuals = cappend( n.virtuals, c)
 
             virtual_indices[k, :] = -1 #clean the list
         k += 1
     
 
+# Routine to communicate cells between nodes.
+# For now, a simple loop over all senders to all destinations
+# is done with WIN.Fence synchronizing the calls.
 def communicate():
-
     for myid in range(Nrank):
-    #for myid in [1]:
-        #print "-------sender is {}".format(myid)
-        #print myid, " queue:", n.send_queue_address
-
-        #if rank == 1:
-        #    for i, c in enumerate(n.send_queue_cells):
-        #        #print "in queue: ", c.index(), " for ",n.send_queue_address[i]
-
         win_virtual_indices.Fence()
 
         #send
         if myid == rank:
             for dest in range(Nrank):
-            #for dest in [0]:
                 if dest == rank:
                     continue
 
-                #print "-------to : {}".format(dest)
                 indx = []
                 for i, address in enumerate(n.send_queue_address):
                     #print i, "address", address
                     if dest in address:
                         indx.append( i ) 
-                #print indx
                 transfer_cells( n.send_queue_cells, indx, dest )
-
 
         #unpack and clean afterwards
         win_virtual_indices.Fence()
@@ -211,56 +220,90 @@ def communicate():
     n.clear_queue()
 
 
+# Decide who to adopt
+# Every node has their own council, although they should come
+# to same conclusion (hopefully)
+def adoption_council():
+
+    # count how many I can adopt; based on my 
+    # occupance AND general work level of the society
+    print "Current workload: {} / ideal: {}".format( len(n.cells), n.work_goal)
+    quota = n.work_goal - len(n.cells)
+    print "  => adoption quota: {}".format(quota)
+
+    #if we are overworking, do not allow adoption
+    if quota < 0.0:
+        return
+
+
+    #quota is positive, now lets adopt!
+    Nvirs, Ncoms, Tvirs, owners, index_list = n.rank_virtuals()
+    indx_sorted = np.argsort(Nvirs).tolist()
+
+    #pick virtual cell that has largest number of
+    # virtual neighbors AND shares values mostly with me
+
+    #adopted_indices = []
+    for i in list(reversed(indx_sorted)):
+        if Tvirs[i] == rank:
+            n.adopted_index.append( index_list[i] )
+            n.adopted_parent.append( index_list[i] )
+
+            break
+        #print "virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
+        #       index_list[i][1],
+        #       index_list[i][0],
+        #       Nvirs[i], 
+        #       Ncoms[i],
+        #       Tvirs[i],
+        #       owners[i]
+        #       )
+
+    print "winner is:"
+    print "virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
+               index_list[i][0],
+               index_list[i][1],
+               Nvirs[i], 
+               Ncoms[i],
+               Tvirs[i],
+               owners[i]
+               )
+
+
+    #return adopted_indices, 
+    #inform parents that their child is taken; sorry!
+
+
+
 
 ##################################################
 # first communication
 plot_node(axs[0], n, 0)
-n.pack_all_virtuals()  
+n.pack_all_virtuals() 
 n.clear_virtuals()
 communicate()
-
-
-
-#win_virtual_indices.Fence()
-#if master:
-#
-#    print n.send_queue_address
-#
-#    for dest in range(Nrank):
-#        if dest == rank:
-#            continue
-#
-#        indx = []
-#        for i, address in enumerate(n.send_queue_address):
-#            if dest in address:
-#                indx.append( i ) 
-#        print "indices to be sent: ", indx
-#        print "len:", len(indx)
-#
-#    #print "sending: ", n.send_queue_cells[0].index()
-#    #print " to :", n.send_queue_address[0]
-#        
-#        transfer_cells( n.send_queue_cells, indx, dest )
-#
-#    #for dest in n.send_queue_address[0]:
-#    #    print "    to->", dest
-#    #    transfer_cell( n.send_queue_cells[0], dest)
-#win_virtual_indices.Fence()
-#
-#print "{}: virtual_indices is: ({},{},{})".format(rank, 
-#        virtual_indices[0,1], 
-#        virtual_indices[0,2], 
-#        virtual_indices[0,3])
-#unpack_incoming_cells()
-
-
-
-
 plot_node(axs[0], n, 1)
 
+
+#if master:
+#    adoption_council()
+#    plot_node(axs[0], n, 2)
+
+adoption_council()
+n.adopt()
+
+plot_node(axs[0], n, 2)
+
+
+
+print n.mpiGrid
+
+
 # initial load balance
-#for t in range(10):
+#for t in range(1,2):
 #    plot_node(axs[0], n, t)
+#
+#
 #
 #    n.pack_virtuals()  
 #    n.clear_virtuals()
@@ -271,7 +314,7 @@ plot_node(axs[0], n, 1)
 
 
 
-
+# Free MPI processes and memory windows
 win_virtual_indices.Free()
 
 
