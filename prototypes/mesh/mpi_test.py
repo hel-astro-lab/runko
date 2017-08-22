@@ -155,42 +155,70 @@ for i in range(conf.Nx):
 Nqueue = 200
 Ncellp = 7
 # holds information of (id, i, j, owner, Nvir, Ncom)
-virtual_indices = -1*np.ones( (Nqueue, Ncellp), dtype=int) 
+virtual_indices = np.zeros( (Nqueue, Ncellp), dtype=int) 
 win_virtual_indices = MPI.Win.Create( virtual_indices, comm=comm)
 
 
 
-def transfer_cells(cells, indexes, dest):
+def transfer_cells(indexes, dest):
 
     #print rank, " transferring..."
 
     #fundamental cell building blocks
-    recv_buffer = -1*np.ones( (Nqueue, Ncellp), dtype=int)
+    #send_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
+    #send_buffer[:,0] = -1
+
+    virtual_indices[:,0] = -1
+
     for k, indx in enumerate(indexes):
-        c = cells[indx]
+        c = n.send_queue_cells[indx]
         (i,j)  = c.index()
         owner  = c.owner
         Nvir   = c.number_of_virtual_neighbors
         Ncom   = c.communications
         topown = c.top_owner
-        recv_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
-    win_virtual_indices.Put( [recv_buffer, MPI.INT], dest)
+        virtual_indices[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
+        #send_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
+    #win_virtual_indices.Put( [send_buffer, MPI.INT], dest)
+    win_virtual_indices.Put( [virtual_indices, MPI.INT], dest)
+    #comm.Isend(send_buffer, dest=dest)
+
+
 
 
 def unpack_incoming_cells():
     k = 0
     for (cid, i, j, owner, Nvir, Ncom, topown) in virtual_indices:
+        #print "reading: ", virtual_indices[k,:]
         if cid != -1:
-            #print "{}:   {}, ({},{}) {}".format(rank, cid, i, j, owner)
+            print "reading: ", virtual_indices[k,:]
 
-            c                             = cell(i, j, owner)
-            c.number_of_virtual_neighbors = Nvir
-            c.communications              = Ncom
-            c.top_owner                   = topown
+            #check if incoming virtual is actually our own cell
+            # this means that adoption has occured and we need to 
+            # change this cell into virtual
+            to_be_purged = False
+            for q, c in enumerate(n.cells):
+                if (i,j) == c.index():
+                    print "cell ({},{}) seems to be kidnapped from me {}!".format(i,j, rank)
 
-            n.virtuals = cappend( n.virtuals, c)
+                    to_be_purged = True
 
-            virtual_indices[k, :] = -1 #clean the list
+
+            if to_be_purged:
+                n.virtuals = cappend( n.virtuals, n.cells[q] )
+                n.cells = cdel( n.cells, q ) #remove from real cells
+
+            else:
+                #print "{}:   {}, ({},{}) {}".format(rank, cid, i, j, owner)
+
+                c                             = cell(i, j, owner)
+                c.number_of_virtual_neighbors = Nvir
+                c.communications              = Ncom
+                c.top_owner                   = topown
+
+                n.virtuals = cappend( n.virtuals, c)
+
+            virtual_indices[k, 0] = -1 #clean the list
         k += 1
     
 
@@ -212,12 +240,13 @@ def communicate():
                     #print i, "address", address
                     if dest in address:
                         indx.append( i ) 
-                transfer_cells( n.send_queue_cells, indx, dest )
+                transfer_cells( indx, dest )
 
         #unpack and clean afterwards
         win_virtual_indices.Fence()
         unpack_incoming_cells()
     n.clear_queue()
+
 
 
 # Decide who to adopt
@@ -285,18 +314,17 @@ communicate()
 plot_node(axs[0], n, 1)
 
 
-#if master:
-#    adoption_council()
-#    plot_node(axs[0], n, 2)
+#second round with adoption
+#adoption_council()
+#n.adopt()
+#n.pack_all_virtuals() 
+#n.clear_virtuals()
+#communicate()
+#
+#
+#plot_node(axs[0], n, 2)
 
-adoption_council()
-n.adopt()
-
-plot_node(axs[0], n, 2)
-
-
-
-print n.mpiGrid
+#print n.mpiGrid
 
 
 # initial load balance
@@ -315,7 +343,7 @@ print n.mpiGrid
 
 
 # Free MPI processes and memory windows
-win_virtual_indices.Free()
+#win_virtual_indices.Free()
 
 
 
