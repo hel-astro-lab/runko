@@ -7,6 +7,10 @@ from logi import cappend, cdel
 from logi import cell, node
 
 
+import pickle
+
+
+
 ##################################################    
 # MPI start-up
 comm = MPI.COMM_WORLD
@@ -112,7 +116,6 @@ def plot_node(ax, n, lap):
 
 
 
-
 ##################################################    
 # mpiGrid setup and configuration
 conf.xmin = conf.ymin = 0.0
@@ -153,13 +156,11 @@ for i in range(conf.Nx):
 
 
 #Basic message for cell transmission
-Nqueue = 50
+Nqueue = 100
 Ncellp = 7
 
 
-
 def send_virtual_cells(indexes, dest):
-
     #print rank, " transferring..."
 
     #fundamental cell building blocks
@@ -174,9 +175,79 @@ def send_virtual_cells(indexes, dest):
         Nvir   = c.number_of_virtual_neighbors
         Ncom   = c.communications
         topown = c.top_owner
-        send_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
-    comm.Isend(send_buffer, dest=dest)
 
+        print [rank, i, j, owner, Nvir, Ncom, topown]
+        send_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
+    comm.Isend( [send_buffer, MPI.INT], dest=dest) #numpy version
+
+
+def send_virtual_cells_pickle(indexes, dest):
+
+    #use normal python array and Cell class 
+    # pickle will turn this into bytestream for sending
+    # send_buffer = []
+    for k, indx in enumerate(indexes):
+        #send_buffer.append( n.send_queue_cells[indx] )
+        comm.isend( n.send_queue_cells[indx], dest=dest, tag=data_tag)
+
+
+    #print "len of buffer:", len(send_buffer)
+    #print "memory footprint of send:", len( pickle.dumps(send_buffer) )
+
+    #if len(send_buffer) == 0:
+    #    print "nothing to send..."
+    #    return 
+
+    #comm.isend(send_buffer, dest=dest, tag=2) #pickle version
+
+
+def unpack_incoming_cell(inc_cell):
+
+    #check if incoming virtual is actually our own cell
+    # this means that adoption has occured and we need to 
+    # change this cell into virtual
+    to_be_purged = False
+    for q, c in enumerate(n.cells):
+        if inc_cell.index() == c.index():
+            print "cell ({},{}) seems to be kidnapped from me {}!".format(inc_cell.i, inc_cell.j, rank)
+
+            to_be_purged = True
+            break
+
+
+    if to_be_purged:
+        #TODO: choose incoming or current cell?
+        n.virtuals = cappend( n.virtuals, inc_cell)
+        #n.virtuals = cappend( n.virtuals, n.cells[q] )
+
+        n.cells = cdel( n.cells, q ) #remove from real cells
+    else:
+        #this should be update, not replace
+        n.virtuals = cappend( n.virtuals, inc_cell)
+
+
+
+def unpack_incoming_cells_pickle(cells):
+
+    k = 0
+    for inc_c in cells:
+
+        #check if incoming virtual is actually our own cell
+        # this means that adoption has occured and we need to 
+        # change this cell into virtual
+        to_be_purged = False
+        for q, c in enumerate(n.cells):
+            if inc_c.index() == c.index():
+                print "cell ({},{}) seems to be kidnapped from me {}!".format(inc_c.i, inc_c.j, rank)
+                to_be_purged = True
+
+        if to_be_purged:
+            #TODO: choose incoming or current cell?
+            n.virtuals = cappend( n.virtuals, n.cells[q] )
+            n.cells = cdel( n.cells, q ) #remove from real cells
+        else:
+            n.virtuals = cappend( n.virtuals, inc_c)
+        k += 1
 
 
 
@@ -217,7 +288,11 @@ def unpack_incoming_cells(msg):
 
             #msg[k, 0] = -1 #clean the list; not necessary
         k += 1
-    
+        
+   
+comm_tag = 0
+data_tag = 1
+
 
 # Routine to communicate cells between nodes.
 # For now, a simple loop over all senders to all destinations
@@ -233,10 +308,19 @@ def communicate_send():
             if dest in address:
                 indx.append( i ) 
 
-        print "{}: sending to {}".format(rank, dest)
-        send_virtual_cells( indx, dest )
+        print "{}: sending {} cells to {} ".format(rank, len(indx), dest)
 
-    n.clear_queue()
+
+        #initial message informing how many cells are coming
+        Nincoming_cells = len(indx)
+        comm.isend(Nincoming_cells, dest=dest, tag=comm_tag)
+
+
+        #send_virtual_cells( indx, dest ) #numpy
+        send_virtual_cells_pickle( indx, dest ) #pickle
+
+
+    #n.clear_queue()
     return
 
 
@@ -245,22 +329,60 @@ def communicate_receive():
         if source == rank:
             continue
 
-        recv_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
-        req = comm.Irecv(recv_buffer, source=source)
+        #recv_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
+        #req = comm.Irecv([recv_buffer, MPI.INT], source=source)
+        #req.Wait()
 
-        req.Wait()
-        print "{} received message from {}".format(rank, source)
+        #buffer pickle version
+        #buf = bytearray(1<<21)
+        #req = comm.irecv(buf, source=source) 
 
-        #unpack
-        unpack_incoming_cells(recv_buffer)
+        req = comm.irecv(source=source, tag=comm_tag)
+        Nincoming_cells = req.wait()
+        print " First contact: we are expecting {} cells from {}".format(Nincoming_cells, source)
+
+
+        # create a list pending receives
+        reqs = [] 
+        for irecvs in range(Nincoming_cells):
+            req = comm.irecv(source=source, tag=data_tag)
+            reqs.append( req )
+
+
+        #process the queue
+        Nrecs = 0
+        while Nrecs < Nincoming_cells:
+
+            for irecvs in range( len(reqs) ):
+                req = reqs[ irecvs ]
+                inc_cell = req.wait() #XXX remove this barrier
+
+                #print "   received 1 cell ({},{})".format(inc_cell.i, inc_cell.j)
+                unpack_incoming_cell( inc_cell )
+
+                Nrecs += 1
+
+        print "{} successfully received and unpacked everything".format(rank)
+
+        #Nrecv = 0
+        #while Nrecv < Nincoming_cells:
+        #    req = comm.irecv(source=source, tag=data_tag)
+        #    Nrecv += 1
+        #req = comm.irecv(source=source, tag=data_tag) 
+        #recv_buffer = req.wait()
+        #print "receiving done...", recv_buffer[0].index()
+        #print "{} received message from {}".format(rank, source)
+        ##unpack the message and load to node
+        ##unpack_incoming_cells(recv_buffer) #numpy 
+        #unpack_incoming_cells_pickle(recv_buffer) #pickle
 
     return 
+
 
 #blocking version of communicate
 def communicate():
     communicate_send()
     communicate_receive()
-
 
 
 
@@ -287,12 +409,20 @@ def adoption_council():
     #pick virtual cell that has largest number of
     # virtual neighbors AND shares values mostly with me
 
-    #adopted_indices = []
+    #limit the quota
+    #if quota > 3:
+    #    quota = 3
+
+
+    Nadopts = 0
     for i in list(reversed(indx_sorted)):
         if Tvirs[i] == rank:
             n.adopted_index.append( index_list[i] )
             n.adopted_parent.append( index_list[i] )
+            
+            Nadopts += 1
 
+        if Nadopts >= quota:
             break
         #print "virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
         #       index_list[i][1],
@@ -304,14 +434,14 @@ def adoption_council():
         #       )
 
 
-    print "winner is virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
-               index_list[i][0],
-               index_list[i][1],
-               Nvirs[i], 
-               Ncoms[i],
-               Tvirs[i],
-               owners[i]
-               )
+    #print "winner is virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
+    #           index_list[i][0],
+    #           index_list[i][1],
+    #           Nvirs[i], 
+    #           Ncoms[i],
+    #           Tvirs[i],
+    #           owners[i]
+    #           )
 
 
     # we inform parents of their kidnapped child only
@@ -325,8 +455,9 @@ def adoption_council():
 plot_node(axs[0], n, 0)
 n.pack_all_virtuals() 
 n.clear_virtuals()
-communicate_send()
-communicate_receive()
+#communicate_send()
+#communicate_receive()
+communicate()
 plot_node(axs[0], n, 1)
 
 
@@ -339,6 +470,7 @@ communicate()
 plot_node(axs[0], n, 2)
 
 
+
 # initial load balance burn-in
 for t in range(3,100):
     adoption_council()
@@ -349,6 +481,8 @@ for t in range(3,100):
 
     if master:
         plot_node(axs[0], n, t)
+
+
 
 
 # now start simulation
