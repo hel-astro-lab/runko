@@ -154,51 +154,12 @@ for i in range(conf.Nx):
             n.cells = cappend(n.cells, c)
 
 
-
-#Basic message for cell transmission
-Nqueue = 100
-Ncellp = 7
-
-
-def send_virtual_cells(indexes, dest):
-    #print rank, " transferring..."
-
-    #fundamental cell building blocks
-    # holds information of (id, i, j, owner, Nvir, Ncom, top_owner)
-    send_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
-    send_buffer[:,0] = -1
-
-    for k, indx in enumerate(indexes):
-        c = n.send_queue_cells[indx]
-        (i,j)  = c.index()
-        owner  = c.owner
-        Nvir   = c.number_of_virtual_neighbors
-        Ncom   = c.communications
-        topown = c.top_owner
-
-        print [rank, i, j, owner, Nvir, Ncom, topown]
-        send_buffer[k, :] = [rank, i, j, owner, Nvir, Ncom, topown]
-    comm.Isend( [send_buffer, MPI.INT], dest=dest) #numpy version
-
-
 def send_virtual_cells_pickle(indexes, dest):
-
     #use normal python array and Cell class 
     # pickle will turn this into bytestream for sending
-    # send_buffer = []
     for k, indx in enumerate(indexes):
-        #send_buffer.append( n.send_queue_cells[indx] )
         comm.isend( n.send_queue_cells[indx], dest=dest, tag=data_tag)
 
-
-    #print "len of buffer:", len(send_buffer)
-    #print "memory footprint of send:", len( pickle.dumps(send_buffer) )
-
-    #if len(send_buffer) == 0:
-    #    print "nothing to send..."
-    #    return 
-
-    #comm.isend(send_buffer, dest=dest, tag=2) #pickle version
 
 
 def unpack_incoming_cell(inc_cell):
@@ -225,69 +186,6 @@ def unpack_incoming_cell(inc_cell):
         #this should be update, not replace
         n.virtuals = cappend( n.virtuals, inc_cell)
 
-
-
-def unpack_incoming_cells_pickle(cells):
-
-    k = 0
-    for inc_c in cells:
-
-        #check if incoming virtual is actually our own cell
-        # this means that adoption has occured and we need to 
-        # change this cell into virtual
-        to_be_purged = False
-        for q, c in enumerate(n.cells):
-            if inc_c.index() == c.index():
-                print "cell ({},{}) seems to be kidnapped from me {}!".format(inc_c.i, inc_c.j, rank)
-                to_be_purged = True
-
-        if to_be_purged:
-            #TODO: choose incoming or current cell?
-            n.virtuals = cappend( n.virtuals, n.cells[q] )
-            n.cells = cdel( n.cells, q ) #remove from real cells
-        else:
-            n.virtuals = cappend( n.virtuals, inc_c)
-        k += 1
-
-
-
-def unpack_incoming_cells(msg):
-
-    k = 0
-    for (cid, i, j, owner, Nvir, Ncom, topown) in msg:
-        #print "reading: ", msg[k,:]
-        if cid != -1:
-            #print "reading: ", msg[k,:]
-
-
-            #check if incoming virtual is actually our own cell
-            # this means that adoption has occured and we need to 
-            # change this cell into virtual
-            to_be_purged = False
-            for q, c in enumerate(n.cells):
-                if (i,j) == c.index():
-                    print "cell ({},{}) seems to be kidnapped from me {}!".format(i,j, rank)
-
-                    to_be_purged = True
-
-
-            if to_be_purged:
-                #TODO: choose incoming or current cell?
-                n.virtuals = cappend( n.virtuals, n.cells[q] )
-                n.cells = cdel( n.cells, q ) #remove from real cells
-
-            else:
-                #print "{}:   {}, ({},{}) {}".format(rank, cid, i, j, owner)
-
-                c                             = cell(i, j, owner)
-                c.number_of_virtual_neighbors = Nvir
-                c.communications              = Ncom
-                c.top_owner                   = topown
-
-                n.virtuals = cappend( n.virtuals, c)
-
-            #msg[k, 0] = -1 #clean the list; not necessary
-        k += 1
         
    
 comm_tag = 0
@@ -329,14 +227,6 @@ def communicate_receive():
         if source == rank:
             continue
 
-        #recv_buffer = np.zeros( (Nqueue, Ncellp), dtype=int)
-        #req = comm.Irecv([recv_buffer, MPI.INT], source=source)
-        #req.Wait()
-
-        #buffer pickle version
-        #buf = bytearray(1<<21)
-        #req = comm.irecv(buf, source=source) 
-
         req = comm.irecv(source=source, tag=comm_tag)
         Nincoming_cells = req.wait()
         print " First contact: we are expecting {} cells from {}".format(Nincoming_cells, source)
@@ -364,17 +254,6 @@ def communicate_receive():
 
         print "{} successfully received and unpacked everything".format(rank)
 
-        #Nrecv = 0
-        #while Nrecv < Nincoming_cells:
-        #    req = comm.irecv(source=source, tag=data_tag)
-        #    Nrecv += 1
-        #req = comm.irecv(source=source, tag=data_tag) 
-        #recv_buffer = req.wait()
-        #print "receiving done...", recv_buffer[0].index()
-        #print "{} received message from {}".format(rank, source)
-        ##unpack the message and load to node
-        ##unpack_incoming_cells(recv_buffer) #numpy 
-        #unpack_incoming_cells_pickle(recv_buffer) #pickle
 
     return 
 
@@ -383,7 +262,6 @@ def communicate_receive():
 def communicate():
     communicate_send()
     communicate_receive()
-
 
 
 # Decide who to adopt
