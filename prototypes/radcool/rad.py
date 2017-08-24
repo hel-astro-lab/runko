@@ -48,9 +48,21 @@ Bfield=1e5  # Magnetic field, [G]
 
 
 
+def symlog_grid(x1, x2, xthr, N1, N2):
+    vx = np.zeros(N1 + N2)
+    vx1 = np.linspace(x1,   xthr, N1)
+    vx2 = np.logspace(np.log10(xthr), np.log10(x2),   N2)
+    vx[:N1] = vx1
+    vx[N1:] = vx2
+    return vx
+
 
 #electron grid
-vx = np.linspace(0.1, 15.0, 100)
+#vx = np.linspace(0.1, 100.0, 190)
+#vx = symlog_grid(0.1, 1.0e2, 5.0, 50, 50)
+vx = np.logspace(-1, 2, 100)
+
+
 gamma = np.sqrt( vx**2.0 + 1.0 )
 ff = gamma**(-3.0) * vx**2.0
 
@@ -68,8 +80,8 @@ def CS(x, gamma):
     Bc = me**2*c**3/qe/(h_pc/2.0/pi)
     b = Bfield/Bc
     Ub = Bfield**2/8.0/pi
-    #const = 3.0*np.sqrt(3)/pi * (sigma_T/me/c) * Ub * b * h_pc
-    const = 3.0*np.sqrt(3)/pi * (sigma_T*c) * Ub * b * h_pc
+    const = 3.0*np.sqrt(3)/pi * (sigma_T/me/c) * Ub * b * h_pc
+    #const = 3.0*np.sqrt(3)/pi * (sigma_T*c) * Ub * b * h_pc
     xb = x/(3.0*b*gamma**2)
 
 
@@ -80,17 +92,29 @@ def CS(x, gamma):
 
 
 
+#Cyclotron energy
+# just constants of nature here
+def cyclotron_energy():
+    return qe*Bfield/(2.0*pi*me*c)*h_pc/(me*c**2) # Cyclotron energy
 
+
+#transform linear grid to logarithmic; and shift by half
+def log_midpoints(arr):
+    larr = np.log( arr )
+    larr[:-1] += np.diff(larr)*0.5
+    return larr
+
+
+# Compute synchrotron spectra 
 def ph_evolve(fe, vx, fp, px, dt):
 
     nvx = len(vx)
     nph = len(px)
 
-    xb = qe*Bfield/(2.0*pi*me*c)*h_pc/(me*c**2) # Cyclotron energy
+    xb = cyclotron_energy()
 
     #logarithmic middle points of the grid 
-    lvx = np.log(vx)
-    lvx[:-1] += np.diff(lvx)*0.5
+    lvx = log_midpoints(vx)
 
     M_ph = np.zeros( (nph, nph) )
     B_ph = np.zeros( (nph) )
@@ -145,21 +169,90 @@ def ph_evolve(fe, vx, fp, px, dt):
     return fpn
 
 
+#Electron synchrotron cooling
+def el_synch_cool(fe, vx, fp, px, dt):
+
+    nvx = len(vx)
+    nph = len(px)
+
+    xb = cyclotron_energy()     #cyclotron energy
+    bdens = Bfield**2/8.0/np.pi #magnetic energy density
+
+    #Auxiliary stuff for the matrices
+    dg = np.zeros(nvx - 1)
+    for i in range(nvx-1):
+        z     = vx[i]
+        zu    = vx[i+1] #originally exp(lnz[i] + d_lnz) = (?) lnz[i+1]
+        g     = (z**2  + 1.0)**0.5
+        gu    = (zu**2 + 1.0)**0.5
+        dg[i] = (zu - z)*(zu + z)/(gu + g)
+
+
+    #vector of electron momenta in between logarithmic grid points
+    zvec = np.exp( log_midpoints(vx) )[:-1]
+
+
+    #Focker-Planck constants for cooling (equal to \dot\gamma_s)
+    lvx  = np.log(vx)
+    dlvx = np.diff(lvx) #logarithmic grid cell width
+    A_half = np.zeros(nvx - 1)
+    A_half = -4.0*sigma_T*bdens*zvec**2 * dlvx /(3.0*me*c) /dg
+
+
+    M_el = np.zeros( (nvx, nvx) )
+    for i in range( nvx ):
+        for i_pr in range(i-1, i+2):
+            #tridiagonal terms
+            if i == 0:
+                if i_pr == 0:         M_el[i,i_pr] += A_half[i]
+            elif i == nvx-1:
+                if i_pr == (i - 1):   M_el[i,i_pr] -= A_half[i-1]
+            else:
+                if i_pr == (i - 1):   M_el[i,i_pr] -= A_half[i-1]
+                elif i_pr == i:       M_el[i,i_pr] += A_half[i]
+
+
+    #Crank-Nicolson coefficient; now 1/2, i.e., no relaxation
+    c_CN = 0.5
+
+    # calculating matrices entering electron equation
+    #Mf_el = np.zeros(nvx)
+    Mf_el = np.matmul(M_el,fe)
+
+    B_el = fe/dt - c_CN*Mf_el
+    M_el = (1.0 - c_CN)*M_el
+    for k in range(nvx):
+        M_el[k,k] += 1.0/dt
+
+    fzn = np.linalg.tensorsolve(M_el, B_el)
+    
+    return fzn
+
+
 
 
 
 ##################################################
 dt = 1.0e-4
 
+#plot starting electron distribution
 ax1.plot(vx, ff, linestyle='solid', marker='.')
 
+
+
+#step photon distribution
 fp = ph_evolve(ff, vx, fp, px, dt)
+
+
+#step electron distribution
+for i in range(100):
+    ff = el_synch_cool(ff, vx, fp, px, dt)
+#ax1.plot(vx, ff, color='red', linestyle='dashed', marker='.')
+ax1.plot(vx, ff, color='red', linestyle='dashed')
+
 
 #energy flux
 Lp = fp * px * 4.0*pi*R**3/(3.0*t_esc)/1.22e6
-
 ax2.plot(px, Lp, linestyle='solid', marker='.')
-
-
 
 savefig("simpl_rad.pdf")
