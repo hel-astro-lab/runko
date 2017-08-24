@@ -214,6 +214,11 @@ def El_synch_cool(fze,lnz,i_m,dt,Bfield):
 
     xb = qe*Bfield/(2.0*pi*me*c)*h_pc/(me*c**2)    # Cyclotron energy
 
+    # Vector of el. momenta in between gridpoints
+    zvec=np.zeros(i_m-1)
+    zvec[0:i_m-1] = exp(lnz[0:i_m-1] + 0.5*d_lnz)            
+
+
     ################################################## 
     # Focker-Planck for cooling (equal to \dot\gamma_s)
     A_half = np.zeros(i_m-1)
@@ -624,21 +629,27 @@ gamma=sqrt(z**2 + 1.0)
 fze=gamma**(-3.0)*exp(lnz)**2  # df/d\gamma = gamma^-3; df/dlnz = df/d\gamma * z^2/gamma
 #fze = z**3.0*exp(-z**2/(0.1*(gamma+1.0))) # initial electron distribution
 
+
+fze = np.zeros(i_m)
+fze[100] = 1.0
+
 fz_int=np.trapz(fze, dx=d_lnz)
+
+print "integral:", fz_int
 
 # Setting init. Th. opt. thickness eq. to the equil. value. 
 # Also needed to account for background el. for comparing with Coppi
 fze = fze*tau/(fz_int*sigma_T*R)		
 
 # initial photon distribution
-#fx[:]=0.0            
-x=exp(lnx)
-fx=8.0*pi*(me*c*x)**3.0/(h_pc**3.0*(exp(x/2.0e-5) - 1.0))
+fx[:]=0.0            
+#x=exp(lnx)
+#fx=8.0*pi*(me*c*x)**3.0/(h_pc**3.0*(exp(x/2.0e-5) - 1.0))
 
 
 
 
-nsteps=100
+nsteps=20
 
 #starting distributions
 fz_init=fze
@@ -650,10 +661,15 @@ for step in range(nsteps+1):
     
     # Crank-Nicolson coefficient, if set to vary, then i is the timestep
     c_CN=0.5*(1.0 - exp(-1.0*(step+1)**4/1.0e5))   
+    #c_CN=0.5
 
 
     # Evolving electron distribution
-    fze_new, d = El_evolve(fx,fze,lnx,lnz,i_m,i_m_ph,dt,Bfield,CSmh)        
+    #fze_new, d = El_evolve(fx,fze,lnx,lnz,i_m,i_m_ph,dt,Bfield,CSmh)        
+
+    #with cooling only
+    d=np.ones(i_m-1)
+    fze_new = El_synch_cool(fze,lnz,i_m,dt,Bfield)        
 
     # Evolving positron/ion distribution
     # fzp, d = El_evolve(fx,fzp,lnx,lnz,i_m,i_m_ph,dt,Bfield)    

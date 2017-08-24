@@ -30,6 +30,8 @@ ax1.set_xscale('log')
 #ax2.set_ylim(1e6, 5e35)
 ax2.set_yscale('log')
 ax2.set_xscale('log')
+ax2.set_xlim(1e-11, 1e4)
+ax2.set_ylim(1e7, 1e36)
 
 
 # Computational constants
@@ -41,7 +43,7 @@ h_pc = 6.6260693e-27        # Planck constant
 sigma_T=6.65245873e-25        # Thomson cross-section
 
 
-R=1e7       # Size of the medium
+R=1.0e7       # Size of the medium
 t_esc=R/c   # Escape (light-crossing) time
 tau=1.0     # initial Thomson optical depth
 Bfield=1e5  # Magnetic field, [G]
@@ -58,19 +60,35 @@ def symlog_grid(x1, x2, xthr, N1, N2):
 
 
 #electron grid
-#vx = np.linspace(0.1, 100.0, 190)
+vx = np.linspace(0.1, 100.0, 300)
 #vx = symlog_grid(0.1, 1.0e2, 5.0, 50, 50)
-vx = np.logspace(-1, 2, 100)
-
+#vx = np.logspace(-4, 4, 100)
+#vx = np.logspace(-4, 4, 100)
 
 gamma = np.sqrt( vx**2.0 + 1.0 )
 ff = gamma**(-3.0) * vx**2.0
 
+#ff = np.zeros( len(vx) )
+#ff[70] = 1.0
+
+#normalize
+#fz_int=np.trapz(ff, x=vx)
+fz_int = 1.0
+
+
+print "integral:", fz_int
+ff *= tau/(fz_int * sigma_T*R)
+
 
 
 #photon grid
+#x=exp(lnx)
+#fx=8.0*pi*(me*c*x)**3.0/(h_pc**3.0*(exp(x/2.0e-5) - 1.0))
+
 px = np.logspace(-11, 3, 200)
 fp = np.zeros(200)
+
+
 
 #angle-averaged relativistic synchrotron spectrum
 #from Ghisellini et al 1988 
@@ -150,8 +168,6 @@ def ph_evolve(fe, vx, fp, px, dt):
     #self absorption term c*k
     M_ph *= h_pc**2.0/(8.0*pi*(me*c)**3.0)
 
-    #Crank-Nicolson coefficient; now 1/2, i.e., no relaxation
-    c_CN = 0.5
 
     #define matrix of the linear system
     Mf_ph = np.zeros(nph)
@@ -196,7 +212,7 @@ def el_synch_cool(fe, vx, fp, px, dt):
     lvx  = np.log(vx)
     dlvx = np.diff(lvx) #logarithmic grid cell width
     A_half = np.zeros(nvx - 1)
-    A_half = -4.0*sigma_T*bdens*zvec**2 * dlvx /(3.0*me*c) /dg
+    A_half = -4.0*sigma_T*bdens*zvec**2 /(3.0*me*c) /dg
 
 
     M_el = np.zeros( (nvx, nvx) )
@@ -204,16 +220,13 @@ def el_synch_cool(fe, vx, fp, px, dt):
         for i_pr in range(i-1, i+2):
             #tridiagonal terms
             if i == 0:
-                if i_pr == 0:         M_el[i,i_pr] += A_half[i]
+                if i_pr == (i + 1): M_el[i,i_pr] += A_half[i]
             elif i == nvx-1:
-                if i_pr == (i - 1):   M_el[i,i_pr] -= A_half[i-1]
+                if i_pr == i:       M_el[i,i_pr] -= A_half[i-1]
             else:
-                if i_pr == (i - 1):   M_el[i,i_pr] -= A_half[i-1]
-                elif i_pr == i:       M_el[i,i_pr] += A_half[i]
+                if i_pr == i:       M_el[i,i_pr] -= A_half[i-1]
+                elif i_pr == (i + 1): M_el[i,i_pr] += A_half[i]
 
-
-    #Crank-Nicolson coefficient; now 1/2, i.e., no relaxation
-    c_CN = 0.5
 
     # calculating matrices entering electron equation
     #Mf_el = np.zeros(nvx)
@@ -229,15 +242,72 @@ def el_synch_cool(fe, vx, fp, px, dt):
     return fzn
 
 
+# Compute electron cooling coupled to radiative spectra
+def el_evolve(fe, vx, fp, px, dt):
+
+    nvx = len(vx)
+    nph = len(px)
+
+
+    #Auxiliary stuff for the matrices
+    dg = np.zeros(nvx - 1)
+    for i in range(nvx-1):
+        z     = vx[i]
+        #TODO fix non-uniform grid bug here
+        zu    = vx[i+1] #originally exp(lnz[i] + d_lnz) = (?) lnz[i+1]
+        g     = (z**2  + 1.0)**0.5
+        gu    = (zu**2 + 1.0)**0.5
+        dg[i] = (zu - z)*(zu + z)/(gu + g)
+
+
+    xb = cyclotron_energy()     #cyclotron energy
+    bdens = Bfield**2/8.0/np.pi #magnetic energy density
+
+    B_s_diff = np.zeros(nvx)
+
+    lvx = log_midpoints(vx)
+    lpx = log_midpoints(px)
+
+    for i in range(nvx-1):
+        z = exp(lvx[i])
+        gamma = np.sqrt(1.0 + z*z)
+
+        
+        #integral over synchrotron emissivity times photon distribution
+        Hint = 0.0
+        for j in range(0, nph):
+            x = px
+            Hint += fp[j] * CS(px, gamma)*dlnx/x
+
+
+    # TODO: implement the rest
+
+    return
+
+
+
+
+
+
 
 
 
 ##################################################
 dt = 1.0e-4
 
-#plot starting electron distribution
-ax1.plot(vx, ff, linestyle='solid', marker='.')
+#Crank-Nicolson coefficient; now 1/2, i.e., no relaxation
+c_CN = 0.5
+#c_CN = 5.0e-6
 
+
+el_const = sigma_T * R
+print "electron normalization: ", el_const
+print ff.max()
+
+
+
+#plot starting electron distribution
+ax1.plot(vx, ff*el_const, linestyle='solid', marker='.')
 
 
 #step photon distribution
@@ -245,14 +315,25 @@ fp = ph_evolve(ff, vx, fp, px, dt)
 
 
 #step electron distribution
-for i in range(100):
+for i in range(20):
     ff = el_synch_cool(ff, vx, fp, px, dt)
-#ax1.plot(vx, ff, color='red', linestyle='dashed', marker='.')
-ax1.plot(vx, ff, color='red', linestyle='dashed')
+#ax1.plot(vx, ff*el_const, color='red', linestyle='dashed', marker='.')
+ax1.plot(vx, ff*el_const, color='red', linestyle='dashed')
 
 
-#energy flux
+#energy flux #mc^2 eV to ergs
 Lp = fp * px * 4.0*pi*R**3/(3.0*t_esc)/1.22e6
 ax2.plot(px, Lp, linestyle='solid', marker='.')
+
+
+#plot -5/2 powerlaw
+xx = np.logspace(-10, -5, 10)
+yy = xx**(4.0/3.0)
+yy /= yy[0]/1.0e15 
+
+ax2.plot( xx, yy, "k--")
+
+
+
 
 savefig("simpl_rad.pdf")
