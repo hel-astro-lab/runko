@@ -41,7 +41,7 @@ ns = 2 #number of species
 dx = 1.0
 dt = 0.01
 nx = 200
-nv = 200
+nv = 400
 ntime = 4000
 nph = 200 #number of radiation energy bins
 nangs = 2 #number of radiation angles
@@ -49,11 +49,10 @@ wp   = np.array([ 1.0,  1.0]) #plasma frequency
 q    = np.array([-1.0, -1.0]) #charges
 m    = np.array([ 1.0,  1.0]) #masses (in m_e)
 qm   = q/m                    #charge-to-mass ratio
-#qm   = np.array([-1.0, -1.0]) #charge-to-mass ratio
-vt   = np.array([ 0.1,  0.1]) #thermal velocity
-vd   = np.array([-0.5,  0.5]) #drift velocity
-vmax = np.array([ 1.0,  1.0])
-vmin = np.array([-1.0, -1.0])
+vt   = np.array([ 1.0,  1.0]) #thermal velocity
+vd   = np.array([ 0.0,  5.0]) #drift velocity
+vmax = np.array([ 10.0, 10.0])
+vmin = np.array([-10.0,-10.0])
 
 
 ##################################################
@@ -114,3 +113,20 @@ vfull = np.arange(0, nvfull)
 nmode = 8.0 #number of noise modes
 pamp = 0.01 #positive noise amplitude
 namp = 0.00 #negative noise amplitude
+
+
+
+#-------------------------------------------------- 
+# radiation parameters
+R=1.0e7                  # Size of the medium
+#t_esc=R/c               # Escape (light-crossing) time
+t_esc=R/3.0e10           # Escape (light-crossing) time
+tau=1.0                  # initial Thomson optical depth
+Bfield=1.0e5             # Magnetic field, [G]
+sigma_T=6.65245873e-25   # Thomson cross-section
+
+
+
+
+
+

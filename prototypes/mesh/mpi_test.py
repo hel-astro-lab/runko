@@ -180,7 +180,9 @@ def unpack_incoming_cell(inc_cell):
         #TODO: choose incoming or current cell?
         n.virtuals = cappend( n.virtuals, inc_cell)
         #n.virtuals = cappend( n.virtuals, n.cells[q] )
+        n.mpiGrid[inc_cell.i, inc_cell.j] = inc_cell.owner
 
+        #and remove from; 
         n.cells = cdel( n.cells, q ) #remove from real cells
     else:
         #this should be update, not replace
@@ -302,6 +304,7 @@ def adoption_council():
 
         if Nadopts >= quota:
             break
+
         #print "virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
         #       index_list[i][1],
         #       index_list[i][0],
@@ -311,19 +314,7 @@ def adoption_council():
         #       owners[i]
         #       )
 
-
-    #print "winner is virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
-    #           index_list[i][0],
-    #           index_list[i][1],
-    #           Nvirs[i], 
-    #           Ncoms[i],
-    #           Tvirs[i],
-    #           owners[i]
-    #           )
-
-
-    # we inform parents of their kidnapped child only
-    # when they receive it as virtual.
+    return
 
 
 
@@ -333,9 +324,8 @@ def adoption_council():
 plot_node(axs[0], n, 0)
 n.pack_all_virtuals() 
 n.clear_virtuals()
-#communicate_send()
-#communicate_receive()
-communicate()
+communicate_send()
+communicate_receive()
 plot_node(axs[0], n, 1)
 
 
@@ -350,15 +340,16 @@ plot_node(axs[0], n, 2)
 
 
 # initial load balance burn-in
-for t in range(3,100):
-    adoption_council()
-    n.adopt()
-    n.pack_all_virtuals() 
-    n.clear_virtuals()
-    communicate()
-
-    if master:
-        plot_node(axs[0], n, t)
+#for t in range(3,10):
+#    adoption_council()
+#    n.adopt()
+#    n.pack_all_virtuals() 
+#    n.clear_virtuals()
+#    communicate()
+#
+#    plot_node(axs[0], n, t)
+#    #if master:
+#    #    plot_node(axs[0], n, t)
 
 
 

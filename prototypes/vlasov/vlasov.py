@@ -6,6 +6,13 @@ from visualize import visualize
 import os, sys
 from timer import Timer
 
+
+sys.path.insert(0, '../radcool')
+from rad import ph_evolve
+from rad import el_synch_cool
+from rad import CSapprox
+
+
     
 #set up figure
 import pylab as mlab
@@ -26,7 +33,8 @@ def charge(ff, ux, prm):
     # qm = q/m, i.e. charge-to-mass ratio
     for kk in range(prm.ns):
         for ii in prm.xfull:
-            gamma = np.sqrt( 1.0 + ux[:, kk]**2 )
+            #gamma = np.sqrt( 1.0 + ux[:, kk]**2 )
+            gamma = 1.0
             rhos[ii, kk] = np.sum( prm.q[kk] * prm.du[kk] * ff[:, ii, kk] / gamma )
 
     #sum over species
@@ -92,7 +100,10 @@ def position(ff, ux, ajx, prm):
 
         #numerical flux integration over velocity, i.e., U = int q*U(u) du/gamma 
         gamma = np.sqrt( 1.0 + ux[:,kk]**2 )
-        ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid]/gamma[:,np.newaxis], 0) * prm.du[kk] * prm.q[kk]
+        #ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid]/gamma[:,np.newaxis], 0) * prm.du[kk] * prm.q[kk]
+
+        gamma = 1.0
+        ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid]/gamma, 0) * prm.du[kk] * prm.q[kk]
                 
 
     #wrap boundaries
@@ -173,24 +184,23 @@ def efield(ex, ajx, prm):
     # do nothing
     #return ffi
 
-
-def ph_evolve(ffi, vxi, fp, px, prm):
-
-    wc = 1.0e0 #cyclotron frequency
-    x = px / wc #dimensionless energy
-
-    #mean velocity
-    rho = np.trapz(ffi, x=vxi)
-    g = np.mean(np.abs( ffi ))
-    #rho = 1.0
-    fp = g**4.0 * rho*(4.0/3.0)*x**(1.0/3.0) *np.exp(-x)
-
-    return fp
+#def ph_evolve(ffi, vxi, fp, px, prm):
+#
+#    wc = 1.0e0 #cyclotron frequency
+#    x = px / wc #dimensionless energy
+#
+#    #mean velocity
+#    rho = np.trapz(ffi, x=vxi)
+#    g = np.mean(np.abs( ffi ))
+#    #rho = 1.0
+#    fp = g**4.0 * rho*(4.0/3.0)*x**(1.0/3.0) *np.exp(-x)
+#    return fp
 
 
+def radiative_reactions(ux, ff, px, fp, prm):
 
-
-def collisions(ux, ff, px, fp, prm):
+    #erase old stuff; i.e., do not accumulate
+    fp[:,:,:] = 0.0
 
     #loop over spatial cells
     for ix in prm.xfull:
@@ -199,13 +209,76 @@ def collisions(ux, ff, px, fp, prm):
         #radiation reactions
         for dirs in range(2):
             if   dirs == 0:
-                vpos = ux[:,iss] > 0 #+x going electrons
+                vpos = ux[:,iss] > 0 #+x going particles
             elif dirs == 1:
-                vpos = ux[:,iss] < 0 #-x going electrons
+                vpos = ux[:,iss] < 0 #-x going particles
 
-            ffi = ff[vpos, ix, 0] #slice correct velocities
-            vxi = ux[vpos, iss]
-            fp[dirs, :, ix] = ph_evolve( ffi, vxi, fp[dirs, :, ix], px, prm)  #evolve photons
+            for kk in range(prm.ns):
+                ffi = ff[vpos, ix, kk] #slice correct velocities
+                vxi = np.abs( ux[vpos, iss] )
+
+                if dirs == 1:
+                    vxi = np.flipud( vxi )
+                    ffi = np.flipud( ffi )
+                #fp[dirs, :, ix] += radiate( ffi, vxi, fp[dirs, :, ix], px, prm)  #evolve photons
+
+                #compute radiation per bin
+                for i, ivx in enumerate( vxi ):
+
+                    if ivx > 1.0e-2:
+                        gamma = np.sqrt(1.0 + ivx**2)
+                        S = CSapprox(px, gamma) #spectrum from one bundle of electrons with velocity of gamma
+                        #normalize
+                        S *= ffi[i] * prm.tau/(prm.sigma_T * prm.R) * 3.0e10 * 1.0e9
+
+                        fp[dirs, :, ix] += S
+
+
+
+    return ff, fp
+
+
+
+
+def radiate(ffi, vxi, fp, px, prm):
+
+    #time scaling 
+    dt_rad = prm.dt/1.0e2
+
+    #number density scaling
+    ffi *= prm.tau/(prm.sigma_T * prm.R)
+    fp = ph_evolve(ffi, vxi, fp, px, dt_rad)
+
+    return fp
+
+
+def collisions(ux, ff, px, fp, prm):
+
+    #erase old stuff; i.e., do not accumulate
+    fp[:,:,:] = 0.0
+
+    #loop over spatial cells
+    for ix in prm.xfull:
+
+        iss = 0
+        #radiation reactions
+        for dirs in range(2):
+            if   dirs == 0:
+                vpos = ux[:,iss] > 0 #+x going particles
+            elif dirs == 1:
+                vpos = ux[:,iss] < 0 #-x going particles
+
+            for kk in range(prm.ns):
+                ffi = ff[vpos, ix, kk] #slice correct velocities
+                vxi = np.abs( ux[vpos, iss] )
+
+                if dirs == 1:
+                    vxi = np.flipud( vxi )
+                    ffi = np.flipud( ffi )
+
+                fp[dirs, :, ix] += radiate( ffi, vxi, fp[dirs, :, ix], px, prm)  #evolve photons
+
+                print np.max( fp[dirs, :, ix] )
 
     return ff, fp
 
@@ -221,7 +294,8 @@ ff, ex, ajx, xx, ux, px, fp = initial(prm)
 #initial step
 rho = charge(ff, ux, prm)
 ex = poisson(ex, rho, prm)
-ff, fp = collisions(ux, ff, px, fp, prm)
+#ff, fp = collisions(ux, ff, px, fp, prm)
+ff, fp = radiative_reactions(ux, ff, px, fp, prm)
 
 ff, ajx = position(ff, ux, ajx, prm)
 ex = efield(ex, ajx, prm)
@@ -260,7 +334,8 @@ jtime = 0
 time = 0.0
 for jtime in range(prm.ntime+1):
 
-    if (jtime % 10 == 0):
+    if (jtime % 100 == 0):
+        ff, fp = radiative_reactions(ux, ff, px, fp, prm)
         print "-----------", jtime, "/", time, "----------"
         timer.stats("lap")
         visz.plot(jtime, ff, ex, ajx, rho, fp)
@@ -268,9 +343,11 @@ for jtime in range(prm.ntime+1):
 
     ff      = velocity(ff, ex, prm)
 
-    ff, fp = collisions(ux, ff, px, fp, prm)
+    #ff, fp = collisions(ux, ff, px, fp, prm)
+    #ff, fp = radiative_reactions(ux, ff, px, fp, prm)
 
     ff, ajx = position(ff, ux, ajx, prm)
+
     rho = charge(ff, ux, prm)
     ex = efield(ex, ajx, prm)
     #ex = poisson(ex, rho, prm)

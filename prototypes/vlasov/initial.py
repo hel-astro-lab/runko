@@ -26,7 +26,7 @@ def initial(prm):
 
 
     #photon grid
-    px = np.logspace(-11, 3, prm.nph)
+    px = np.logspace(-11, -3, prm.nph)
     fp = np.zeros( (prm.nangs, prm.nph, prm.nxfull) )
 
 
