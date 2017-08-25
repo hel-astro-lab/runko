@@ -225,13 +225,13 @@ def radiative_reactions(ux, ff, px, fp, prm):
                 #compute radiation per bin
                 for i, ivx in enumerate( vxi ):
 
-                    if ivx > 1.0e-2:
-                        gamma = np.sqrt(1.0 + ivx**2)
-                        S = CSapprox(px, gamma) #spectrum from one bundle of electrons with velocity of gamma
-                        #normalize
-                        S *= ffi[i] * prm.tau/(prm.sigma_T * prm.R) * 3.0e10 * 1.0e9
+                    #if ivx > 1.0e-2:
+                    gamma = np.sqrt(1.0 + ivx**2)
+                    S = CSapprox(px, gamma) #spectrum from one bundle of electrons with velocity of gamma
+                    #normalize
+                    S *= ffi[i] * prm.tau/(prm.sigma_T * prm.R) * 3.0e10 * 1.0e9
+                    fp[dirs, :, ix] += S
 
-                        fp[dirs, :, ix] += S
 
 
 

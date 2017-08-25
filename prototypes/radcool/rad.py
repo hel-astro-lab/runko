@@ -78,7 +78,6 @@ def CSapprox(x, gamma):
 
 
 
-
 #Cyclotron energy
 # just constants of nature here
 def cyclotron_energy():
