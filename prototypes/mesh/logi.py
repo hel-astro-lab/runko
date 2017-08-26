@@ -108,6 +108,7 @@ class node:
 
     adopted_index  = []
     adopted_parent = []
+    kidnap_index   = []
 
     purged = []
 
@@ -341,19 +342,23 @@ class node:
                     c_tmp       = copy.deepcopy( c )
                     c_tmp.owner = self.rank
 
-                    print "   ...adopting ({},{})".format(c_tmp.index()[0],c_tmp.index()[1])
+                    (i,j) = indx
+                    self.mpiGrid[i,j] = self.rank
+
+                    print "   ...adopting ({},{}) to be {}".format(c_tmp.index()[0],c_tmp.index()[1], c_tmp.owner)
                     self.cells  = cappend( self.cells, c_tmp )
                     break
 
+
+            #loop over whole virtual list in case we have multiples
+            to_be_purged = []
             for i, c in enumerate( self.virtuals ):
                 if c.index() == indx:
+                    to_be_purged.append( i )
+
+            print "Now I'll remove these virtuals", to_be_purged
+            for i in reversed( to_be_purged ):
                     self.virtuals = cdel( self.virtuals, i )
-
-                    (i,j) = indx
-                    self.mpiGrid[i,j] = self.rank
-                    #break
-
-
 
 
 

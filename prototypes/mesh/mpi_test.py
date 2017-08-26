@@ -121,8 +121,8 @@ def plot_node(ax, n, lap):
 conf.xmin = conf.ymin = 0.0
 conf.xmax = conf.ymax = 1.0
 
-conf.Nx = 10
-conf.Ny = 10
+conf.Nx = 20
+conf.Ny = 20
 
 n = node(rank, conf.Nx, conf.Ny)
 np.random.seed(4)
@@ -161,42 +161,44 @@ def send_virtual_cells_pickle(indexes, dest):
         comm.isend( n.send_queue_cells[indx], dest=dest, tag=data_tag)
 
 
+# Purge here actually means shifting from real to virtual state
+def purge_kidnapped_cells():
+
+    for indx in n.kidnap_index:
+        print "inside purge... ",rank,indx
+        for q, c in enumerate(n.cells):
+            if c.index() == indx:
+                print "{}: cell ({},{}) seems to be kidnapped from me by {}!".format(rank, indx[0], indx[1], c.owner)
+
+                n.virtuals = cappend( n.virtuals, c)
+                n.mpiGrid[c.i, c.j] = 5
+
+                #and remove from; 
+                n.cells = cdel( n.cells, q ) #remove from real cells
+
+                break
+
+
 
 def unpack_incoming_cell(inc_cell):
 
-    #check if incoming virtual is actually our own cell
-    # this means that adoption has occured and we need to 
-    # change this cell into virtual
-    to_be_purged = False
     for q, c in enumerate(n.cells):
         if inc_cell.index() == c.index():
-            print "cell ({},{}) seems to be kidnapped from me {}!".format(inc_cell.i, inc_cell.j, rank)
+            print "{}: ERROR: I already have cell ({},{}) from {}!".format(rank, inc_cell.i, inc_cell.j, inc_cell.owner)
+            #XXX this is where we could compare cells and pick the newest
+            
+    #this should be update, not replace
+    n.virtuals = cappend( n.virtuals, inc_cell)
 
-            to_be_purged = True
-            break
-
-
-    if to_be_purged:
-        #TODO: choose incoming or current cell?
-        n.virtuals = cappend( n.virtuals, inc_cell)
-        #n.virtuals = cappend( n.virtuals, n.cells[q] )
-        n.mpiGrid[inc_cell.i, inc_cell.j] = inc_cell.owner
-
-        #and remove from; 
-        n.cells = cdel( n.cells, q ) #remove from real cells
-    else:
-        #this should be update, not replace
-        n.virtuals = cappend( n.virtuals, inc_cell)
-
-        
    
-comm_tag = 0
-data_tag = 1
+comm_tag  = 0
+data_tag  = 1
+adopt_tag = 2
 
 
 # Routine to communicate cells between nodes.
 # For now, a simple loop over all senders to all destinations
-def communicate_send():
+def communicate_send_cells():
 
     for dest in range(Nrank):
         if dest == rank:
@@ -208,7 +210,7 @@ def communicate_send():
             if dest in address:
                 indx.append( i ) 
 
-        print "{}: sending {} cells to {} ".format(rank, len(indx), dest)
+        #print "{}: sending {} cells to {} ".format(rank, len(indx), dest)
 
 
         #initial message informing how many cells are coming
@@ -224,17 +226,17 @@ def communicate_send():
     return
 
 
-def communicate_receive():
+def communicate_recv_cells():
     for source in range(Nrank):
         if source == rank:
             continue
 
+        #Communicate with how many cells there are incoming
         req = comm.irecv(source=source, tag=comm_tag)
         Nincoming_cells = req.wait()
-        print " First contact: we are expecting {} cells from {}".format(Nincoming_cells, source)
+        #print " First contact: we are expecting {} cells from {}".format(Nincoming_cells, source)
 
-
-        # create a list pending receives
+        # create a list of pending receives
         reqs = [] 
         for irecvs in range(Nincoming_cells):
             req = comm.irecv(source=source, tag=data_tag)
@@ -254,16 +256,16 @@ def communicate_receive():
 
                 Nrecs += 1
 
-        print "{} successfully received and unpacked everything".format(rank)
+        #print "{} successfully received and unpacked everything".format(rank)
 
 
     return 
 
 
 #blocking version of communicate
-def communicate():
-    communicate_send()
-    communicate_receive()
+def communicate_cells():
+    communicate_send_cells()
+    communicate_recv_cells()
 
 
 # Decide who to adopt
@@ -273,13 +275,15 @@ def adoption_council():
 
     # count how many I can adopt; based on my 
     # occupance AND general work level of the society
-    print "Current workload: {} / ideal: {}".format( len(n.cells), n.work_goal)
+    print "{}: Current workload: {} / ideal: {}".format( rank, len(n.cells), n.work_goal)
     quota = n.work_goal - len(n.cells)
-    print "  => adoption quota: {}".format(quota)
+    print "  => {}: adoption quota: {}".format(rank, quota)
 
     #if we are overworking, do not allow adoption
-    if quota < 0.0:
-        return
+    #if quota < 0:
+    #    return
+
+    quota = np.clip(quota, 1, None)
 
 
     #quota is positive, now lets adopt!
@@ -292,29 +296,72 @@ def adoption_council():
     #limit the quota
     #if quota > 3:
     #    quota = 3
+    #quota = 1
 
 
     Nadopts = 0
     for i in list(reversed(indx_sorted)):
         if Tvirs[i] == rank:
             n.adopted_index.append( index_list[i] )
-            n.adopted_parent.append( index_list[i] )
+            n.adopted_parent.append( owners[i] )
             
             Nadopts += 1
+
+            print "{}: got adoption command for ({},{}) of {}".format(rank, index_list[i][0], index_list[i][1], owners[i])
+
+
+        print "virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
+               index_list[i][0],
+               index_list[i][1],
+               Nvirs[i], 
+               Ncoms[i],
+               Tvirs[i],
+               owners[i]
+               )
 
         if Nadopts >= quota:
             break
 
-        #print "virtual cell ({},{}): Nvirs: {} | Ncoms: {} | TopO: {} (parent: {})".format(
-        #       index_list[i][1],
-        #       index_list[i][0],
-        #       Nvirs[i], 
-        #       Ncoms[i],
-        #       Tvirs[i],
-        #       owners[i]
-        #       )
-
     return
+
+
+def communicate_send_adoptions():
+    for dest in range(Nrank):
+        if dest == rank:
+            continue
+
+        kidnaps = []
+        for q, address in enumerate( n.adopted_parent ):
+            if address == dest:
+                print "{}: sending info about my kidnap to {}".format(rank, dest)
+
+                kidnaps.extend( (n.adopted_index[q]) )
+
+        print "sending this: ", kidnaps
+        comm.isend(kidnaps, dest=dest, tag=adopt_tag)
+
+
+def communicate_recv_adoptions():
+    n.kidnap_index = []
+    for source in range(Nrank):
+        if source == rank:
+            continue
+        
+        adopt_req = comm.irecv(source=source, tag=adopt_tag)
+        kidnaps = adopt_req.wait()
+        print "receiving this:", kidnaps
+
+        for i in range(0,len(kidnaps), 2):
+            indx = ( kidnaps[i], kidnaps[i+1] )  #tuplify
+            print "{}: oh gosh, my child ({},{}), has been kidnapped".format(rank, indx[0], indx[1])
+            n.kidnap_index.append( indx )
+
+
+#blocking version of adoption communicate
+def communicate_adoptions():
+    communicate_send_adoptions()
+    communicate_recv_adoptions()
+
 
 
 
@@ -324,30 +371,39 @@ def adoption_council():
 plot_node(axs[0], n, 0)
 n.pack_all_virtuals() 
 n.clear_virtuals()
-communicate_send()
-communicate_receive()
+communicate_send_cells()
+communicate_recv_cells()
 plot_node(axs[0], n, 1)
 
 
 #second round with adoption
 adoption_council()
 n.adopt()
+communicate_adoptions()
+purge_kidnapped_cells()
 n.pack_all_virtuals() 
 n.clear_virtuals()
-communicate()
+communicate_cells()
 plot_node(axs[0], n, 2)
 
 
 
 # initial load balance burn-in
-#for t in range(3,10):
-#    adoption_council()
-#    n.adopt()
-#    n.pack_all_virtuals() 
-#    n.clear_virtuals()
-#    communicate()
-#
-#    plot_node(axs[0], n, t)
+for t in range(3,100):
+
+    adoption_council()
+    n.adopt()
+    communicate_adoptions()
+    purge_kidnapped_cells()
+
+    n.pack_all_virtuals() 
+    n.clear_virtuals()
+
+    communicate_cells()
+
+    plot_node(axs[0], n, t)
+
+
 #    #if master:
 #    #    plot_node(axs[0], n, t)
 
