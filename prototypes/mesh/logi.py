@@ -7,35 +7,35 @@ import conf
 
 ##################################################
 # Auxiliary functions
-def xwrap(i):
-    while i < 0:
-        i += conf.Nx
-    while i >= conf.Nx:
-        i -= conf.Nx
-    return i
-
-def ywrap(j):
-    while j < 0:
-        j += conf.Ny
-    while j >= conf.Ny:
-        j -= conf.Ny
-    return j
-
-
-#hard boundaries
 #def xwrap(i):
 #    while i < 0:
-#        return None
+#        i += conf.Nx
 #    while i >= conf.Nx:
-#        return None
+#        i -= conf.Nx
 #    return i
 #
 #def ywrap(j):
 #    while j < 0:
-#        return None
+#        j += conf.Ny
 #    while j >= conf.Ny:
-#        return None
+#        j -= conf.Ny
 #    return j
+
+
+#hard boundaries
+def xwrap(i):
+    while i < 0:
+        return None
+    while i >= conf.Nx:
+        return None
+    return i
+
+def ywrap(j):
+    while j < 0:
+        return None
+    while j >= conf.Ny:
+        return None
+    return j
 
 
 # Copy & append

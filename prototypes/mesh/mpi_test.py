@@ -78,14 +78,21 @@ def plot_node(ax, n, lap):
 
     for c in n.cells:
         (i, j) = c.index()
+        #check dublicates
+        if tmp_grid[i,j] != -1.0:
+            print "{}: ERROR in real cells at ({},{})".format(rank, i,j)
+            sys.exit()
         tmp_grid[i,j] = c.owner
 
     for c in n.virtuals:
         (i,j) = c.index()
+        if tmp_grid[i,j] != -1.0:
+            print "{}: ERROR in virtual cells at ({},{})".format(rank, i,j)
+            sys.exit()
+            
         tmp_grid[i,j] = c.owner
 
     imshow(ax, tmp_grid)
-
     #imshow(ax, n.mpiGrid)
 
     # add text label about number of neighbors
@@ -171,7 +178,7 @@ def purge_kidnapped_cells():
                 print "{}: cell ({},{}) seems to be kidnapped from me by {}!".format(rank, indx[0], indx[1], c.owner)
 
                 n.virtuals = cappend( n.virtuals, c)
-                n.mpiGrid[c.i, c.j] = 5
+                n.mpiGrid[c.i, c.j] = 0
 
                 #and remove from; 
                 n.cells = cdel( n.cells, q ) #remove from real cells
@@ -332,10 +339,11 @@ def communicate_send_adoptions():
 
         kidnaps = []
         for q, address in enumerate( n.adopted_parent ):
-            if address == dest:
-                print "{}: sending info about my kidnap to {}".format(rank, dest)
+            #if address == dest:
+            print "{}: sending info about my kidnap to {}".format(rank, dest)
+            kidnaps.extend( (n.adopted_index[q]) )
 
-                kidnaps.extend( (n.adopted_index[q]) )
+
 
         print "sending this: ", kidnaps
         comm.isend(kidnaps, dest=dest, tag=adopt_tag)
@@ -353,8 +361,15 @@ def communicate_recv_adoptions():
 
         for i in range(0,len(kidnaps), 2):
             indx = ( kidnaps[i], kidnaps[i+1] )  #tuplify
-            print "{}: oh gosh, my child ({},{}), has been kidnapped".format(rank, indx[0], indx[1])
-            n.kidnap_index.append( indx )
+
+            #check if it is mine
+            if n.is_local( indx ):
+                print "{}: oh gosh, my child ({},{}), has been kidnapped".format(rank, indx[0], indx[1])
+                n.kidnap_index.append( indx )
+            else:
+                print "{}: BUU!, {} kidnapped ({},{})".format(rank, source, indx[0], indx[1])
+                n.mpiGrid[ indx[0], indx[1] ] = source
+
 
 
 #blocking version of adoption communicate
