@@ -109,6 +109,7 @@ class node:
     adopted_index  = []
     adopted_parent = []
     kidnap_index   = []
+    kidnapper      = []
 
     purged = []
 

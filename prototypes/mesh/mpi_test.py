@@ -171,14 +171,14 @@ def send_virtual_cells_pickle(indexes, dest):
 # Purge here actually means shifting from real to virtual state
 def purge_kidnapped_cells():
 
-    for indx in n.kidnap_index:
-        print "inside purge... ",rank,indx
+    for (indx,kidnapper) in zip( n.kidnap_index, n.kidnapper ):
+        #print "inside purge... ",rank,indx
         for q, c in enumerate(n.cells):
             if c.index() == indx:
-                print "{}: cell ({},{}) seems to be kidnapped from me by {}!".format(rank, indx[0], indx[1], c.owner)
+                print "{}: cell ({},{}) seems to be kidnapped from me by {}!".format(rank, indx[0], indx[1], kidnapper)
 
                 n.virtuals = cappend( n.virtuals, c)
-                n.mpiGrid[c.i, c.j] = 0
+                n.mpiGrid[c.i, c.j] = kidnapper
 
                 #and remove from; 
                 n.cells = cdel( n.cells, q ) #remove from real cells
@@ -290,7 +290,7 @@ def adoption_council():
     #if quota < 0:
     #    return
 
-    quota = np.clip(quota, 1, None)
+    quota = np.clip(quota, 2, None)
 
 
     #quota is positive, now lets adopt!
@@ -351,6 +351,7 @@ def communicate_send_adoptions():
 
 def communicate_recv_adoptions():
     n.kidnap_index = []
+    n.kidnapper    = []
     for source in range(Nrank):
         if source == rank:
             continue
@@ -364,8 +365,9 @@ def communicate_recv_adoptions():
 
             #check if it is mine
             if n.is_local( indx ):
-                print "{}: oh gosh, my child ({},{}), has been kidnapped".format(rank, indx[0], indx[1])
+                print "{}: oh gosh, my child ({},{}), has been kidnapped by evil {}".format(rank, indx[0], indx[1], source)
                 n.kidnap_index.append( indx )
+                n.kidnapper.append( source )
             else:
                 print "{}: BUU!, {} kidnapped ({},{})".format(rank, source, indx[0], indx[1])
                 n.mpiGrid[ indx[0], indx[1] ] = source
@@ -417,7 +419,6 @@ for t in range(3,100):
     communicate_cells()
 
     plot_node(axs[0], n, t)
-
 
 #    #if master:
 #    #    plot_node(axs[0], n, t)
