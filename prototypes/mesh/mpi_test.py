@@ -73,6 +73,17 @@ def imshow(ax, grid):
               #alpha=0.5
               )
 
+def plot_grid(ax, n, lap):
+    imshow(ax, n.mpiGrid)
+
+    #save
+    slap = str(lap).rjust(4, '0')
+    fname = conf.path + '/grid_{}.png'.format(slap)
+    plt.savefig(fname)
+
+
+
+
 def plot_node(ax, n, lap):
     tmp_grid = np.ones( (conf.Nx, conf.Ny) ) * -1.0
 
@@ -390,7 +401,11 @@ n.pack_all_virtuals()
 n.clear_virtuals()
 communicate_send_cells()
 communicate_recv_cells()
-plot_node(axs[0], n, 1)
+
+
+#plot_node(axs[0], n, 1)
+if master:
+    plot_grid(axs[0], n, 1)
 
 
 #second round with adoption
@@ -401,8 +416,10 @@ purge_kidnapped_cells()
 n.pack_all_virtuals() 
 n.clear_virtuals()
 communicate_cells()
-plot_node(axs[0], n, 2)
 
+#plot_node(axs[0], n, 2)
+if master:
+    plot_grid(axs[0], n, 2)
 
 
 # initial load balance burn-in
@@ -418,10 +435,10 @@ for t in range(3,100):
 
     communicate_cells()
 
-    plot_node(axs[0], n, t)
+    #plot_node(axs[0], n, t)
 
-#    #if master:
-#    #    plot_node(axs[0], n, t)
+    if master:
+        plot_grid(axs[0], n, t)
 
 
 
