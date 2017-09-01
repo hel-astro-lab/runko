@@ -5,6 +5,7 @@ from mpi4py import MPI
 import conf
 from logi import cappend, cdel 
 from logi import cell, node
+from logi import Grid
 
 
 import pickle
@@ -13,8 +14,8 @@ import pickle
 
 ##################################################    
 # MPI start-up
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+comm  = MPI.COMM_WORLD
+rank  = comm.Get_rank()
 Nrank = comm.Get_size()
 
 master_rank = 0
@@ -37,17 +38,20 @@ import palettable as pal
 from matplotlib import cm
 cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
 
+
+
 # set up plotting and figure
-plt.fig = plt.figure(1, figsize=(8,8))
+plt.fig = plt.figure(1, figsize=(8,4))
 plt.rc('font', family='serif', size=12)
 plt.rc('xtick')
 plt.rc('ytick')
 
-gs = plt.GridSpec(1, 1)
+gs = plt.GridSpec(2, 1)
 gs.update(hspace = 0.5)
 
 axs = []
 axs.append( plt.subplot(gs[0]) )
+axs.append( plt.subplot(gs[1]) )
 
 
 
@@ -69,6 +73,7 @@ def imshow(ax, grid):
               cmap = cmap,
               vmin = 0.0,
               vmax = Nrank-1,
+              aspect='auto',
               #vmax = Nrank,
               #alpha=0.5
               )
@@ -127,6 +132,7 @@ def plot_node(ax, n, lap):
 
     ax.set_title(str(len(n.virtuals))+"/"+str(len(n.cells)))
 
+
     #save
     slap = str(lap).rjust(4, '0')
     fname = conf.path + '/node_{}_{}.png'.format(rank, slap)
@@ -134,18 +140,72 @@ def plot_node(ax, n, lap):
 
 
 
+def plot_node_data(ax, n, lap):
+
+    NxFull   = conf.Nx * conf.NxCell
+    NyFull   = conf.Ny * conf.NyCell
+    fullMesh = np.zeros( (NxFull, NyFull) )
+
+    
+    #loop over everything and collect the data
+    for c in n.cells:
+        (i, j) = c.index()
+        i1 = i * conf.NxCell
+        j1 = j * conf.NyCell
+
+        mesh = c.grid.mesh
+        for ix in range(conf.NxCell):
+            for iy in range(conf.NyCell):
+                fullMesh[i1 + ix, j1 + iy] = mesh[ix, iy]
+
+
+
+    #imshow(ax, fullMesh)
+    ax.clear()
+    ax.minorticks_on()
+    ax.set_xlim(conf.xmin, conf.xmax)
+    ax.set_ylim(conf.xmin, conf.xmax)
+
+    extent = [conf.xmin, conf.xmax, conf.ymin, conf.ymax]
+
+    mgrid = np.ma.masked_where(fullMesh == 0.0, fullMesh)
+    ax.imshow(mgrid,
+              extent=extent,
+              origin='lower',
+              interpolation='nearest',
+              cmap = cm.get_cmap('plasma'),
+              vmin = 0.0,
+              vmax = 1.0,
+              aspect='auto',
+              #alpha=0.5
+              )
+    #save
+    slap = str(lap).rjust(4, '0')
+    #fname = conf.path + '/data_{}_{}.png'.format(rank, slap)
+    #plt.savefig(fname)
+
+
+
+
+
 ##################################################    
 # mpiGrid setup and configuration
 conf.xmin = conf.ymin = 0.0
-conf.xmax = conf.ymax = 1.0
+conf.xmax = 1.0
+conf.ymax = 1.0
 
-conf.Nx = 20
-conf.Ny = 20
+conf.Nx = 10
+conf.Ny = 40
+
+
+conf.NxCell = 2
+conf.NyCell = 2
+
 
 n = node(rank, conf.Nx, conf.Ny)
 np.random.seed(4)
 
-# Compute (initial) total work to balance and my personal effort needed
+# Compute (initial) total work in order to balance and my personal effort needed
 n.total_work = conf.Nx * conf.Ny
 n.work_goal  = n.total_work / Nrank
 
@@ -169,7 +229,45 @@ for i in range(conf.Nx):
     for j in range(conf.Ny):
         if n.mpiGrid[i,j] == rank:
             c = cell(i, j, rank)
+
+            #load data into cell
+            grid = Grid(0.0, 1.0, 0.0, 1.0, conf.NxCell, conf.NyCell)
+            c.grid = grid
+
+
             n.cells = cappend(n.cells, c)
+
+
+#from subgrid index (i,j) to global coordinates
+def ij2xy(i,j):
+    dx = (conf.xmax - conf.xmin)/(conf.Nx * conf.NxCell)
+    dy = (conf.ymax - conf.ymin)/(conf.Ny * conf.NyCell)
+
+    x = conf.xmin + i*dx
+    y = conf.ymin + j*dy
+
+    return x,y
+
+def gauss(x,y):
+    g = np.exp(-((y - 0.25)/0.2 )**2)
+
+    return g
+
+    
+
+#insert some data
+for c in n.cells:
+    (i,j) = c.index()
+
+    for ii in range(conf.NxCell):
+        for jj in range(conf.NyCell):
+            yi, xi = ij2xy(i+ii, j+jj) #we flip the coordinates here
+
+            c.grid.mesh[ii, jj] = xi
+            #c.grid.mesh[ii, jj] = gauss(xi, yi)
+    
+
+
 
 
 def send_virtual_cells_pickle(indexes, dest):
@@ -396,7 +494,9 @@ def communicate_adoptions():
 
 ##################################################
 # first communication
+plot_node_data(axs[1], n, 0)
 plot_node(axs[0], n, 0)
+
 n.pack_all_virtuals() 
 n.clear_virtuals()
 communicate_send_cells()
@@ -417,13 +517,17 @@ n.pack_all_virtuals()
 n.clear_virtuals()
 communicate_cells()
 
+
+
 #plot_node(axs[0], n, 2)
 if master:
     plot_grid(axs[0], n, 2)
 
 
+#sys.exit()
+
 # initial load balance burn-in
-for t in range(3,100):
+for t in range(3,25):
 
     adoption_council()
     n.adopt()
@@ -435,7 +539,8 @@ for t in range(3,100):
 
     communicate_cells()
 
-    #plot_node(axs[0], n, t)
+    plot_node(axs[0], n, t)
+    plot_node_data(axs[1], n, 1)
 
     if master:
         plot_grid(axs[0], n, t)

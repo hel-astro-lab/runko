@@ -7,35 +7,35 @@ import conf
 
 ##################################################
 # Auxiliary functions
-#def xwrap(i):
-#    while i < 0:
-#        i += conf.Nx
-#    while i >= conf.Nx:
-#        i -= conf.Nx
-#    return i
-#
-#def ywrap(j):
-#    while j < 0:
-#        j += conf.Ny
-#    while j >= conf.Ny:
-#        j -= conf.Ny
-#    return j
-
-
-#hard boundaries
 def xwrap(i):
     while i < 0:
-        return None
+        i += conf.Nx
     while i >= conf.Nx:
-        return None
+        i -= conf.Nx
     return i
 
 def ywrap(j):
     while j < 0:
-        return None
+        j += conf.Ny
     while j >= conf.Ny:
-        return None
+        j -= conf.Ny
     return j
+
+
+#hard boundaries
+#def xwrap(i):
+#    while i < 0:
+#        return None
+#    while i >= conf.Nx:
+#        return None
+#    return i
+#
+#def ywrap(j):
+#    while j < 0:
+#        return None
+#    while j >= conf.Ny:
+#        return None
+#    return j
 
 
 # Copy & append
@@ -54,10 +54,35 @@ def cdel(arr, i):
 
 ##################################################
 
+# spatial grid located inside one cell
+class Grid:
+    xmin = 0.0
+    xmin = 1.0
+    ymin = 0.0
+    ymax = 1.0
+
+    def __init__(self, xmin, xmax, ymin, ymax, NxCell, NyCell):
+        self.xmin = xmin
+        self.ymin = ymin
+        self.xmax = xmax
+        self.ymax = ymax
+        self.mesh = np.zeros( (NxCell, NyCell) )
+
+        #self.mesh[0,0] = 1.0
+        #self.mesh[1,0] = 2.0
+        #self.mesh[0,1] = 3.0
+        #self.mesh[1,1] = 4.0
+
+
+    
+
+
+
 #Main computational cell 
 class cell:
 
-    data=0
+
+    grid = None
 
     state = 'active'
     cid   = 0
