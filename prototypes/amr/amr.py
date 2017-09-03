@@ -90,55 +90,7 @@ class vMesh:
 
 
 
-# 3D adaptive momentum mesh
-class amr:
 
-    meshx = []
-    vx    = []
-
-    meshDx = []
-
-    def __init__(self):
-
-        self.vmin = (-10.0, 0.0, 0.0)
-        self.vmax = (+10.0, 0.0, 0.0)
-        self.nvMin = 10
-
-        #create initial guiding grid
-        dx = (self.vmax[0] - self.vmin[0])/(self.nvMin -1)
-        x = self.vmin[0]
-        for i in range(self.nvMin):
-            self.vx.append( x )
-
-            y = physical_vel(x, 0.0, 0.0)
-            self.meshx.append( y )
-
-            x += dx
-
-            self.meshDx.append( 0.0 )
-
-
-    def update_deriv(self):
-        for i in range(self.nvMin-1):
-            dx = self.vx[i+1] - self.vx[i]
-            dy = self.meshx[i+1] - self.meshx[i]
-
-            self.meshDx[i] = dy/dx
-
-
-
-    def visualize_grid(self, ax):
-
-        #ax.cla()
-        ax.plot(self.vx, self.meshx, "k-", marker='.')
-
-
-    def visualize_deriv(self, ax):
-
-        self.update_deriv()
-
-        #ax.cla()
-        ax.plot(self.vx, self.meshDx, "k-", marker='.')
 
 
 
@@ -250,39 +202,3 @@ if __name__ == "__main__":
     plt.savefig("amr.png")
 
 
-if __name__ == "old":
-
-    # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,4))
-    plt.rc('font', family='serif', size=12)
-    plt.rc('xtick')
-    plt.rc('ytick')
-    
-    gs = plt.GridSpec(2, 1)
-    gs.update(hspace = 0.5)
-    
-    axs = []
-    axs.append( plt.subplot(gs[0]) )
-    axs.append( plt.subplot(gs[1]) )
-
-
-    xmin = -12.0
-    xmax =  12.0
-    ymin = 0.0
-    ymax = 1.0
-
-    for ax in axs:
-        ax.minorticks_on()
-        ax.set_xlim(xmin, xmax)
-        ax.set_ylim(ymin, ymax)
-    
-    axs[1].set_ylim(-0.3, 0.3)
-
-    
-    velgrid = amr()
-
-    velgrid.visualize_grid(axs[0])
-    velgrid.visualize_deriv(axs[1])
-
-
-    plt.savefig("amr.png")
