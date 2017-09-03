@@ -8,19 +8,7 @@ from matplotlib import cm
 
 from visualize import *
 
-
-# Copy & append
-def cappend(arr, x):
-    tmpa = copy.deepcopy( arr )
-    tmpx = copy.deepcopy( x )
-    tmpa.append( tmpx )
-    return tmpa
-
-# copy delete
-def cdel(arr, i):
-    tmp = copy.deepcopy( arr )
-    del tmp[i]
-    return tmp
+import vmesh
 
 
 
@@ -41,6 +29,7 @@ def physical_vel(x,y,z):
     return vx*vy*vz
 
 
+""""
 # velocity block with data and pointers to neighbors
 class vBlock:
 
@@ -55,8 +44,10 @@ class vBlock:
         self.loc = (vx, vy, vz)
         self.dls = (dx, dy, dz)
 
+"""
 
 
+"""
 class vMesh:
 
     mesh = []
@@ -87,7 +78,7 @@ class vMesh:
                 yi += dvs[1]
             zi += dvs[2]
 
-
+"""
 
 
 
@@ -110,18 +101,23 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[1]) )
 
 
+    vb = vmesh.vBlock( 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 )
+    plot_center(axs[0], vb)
+    plot_edges(axs[0], vb)
+    print vb.data
+
+
 
     ################################################## 
     # set-up grid
     mins = np.array([ -10.0, -10.0, -1.0 ])
     maxs = np.array([  10.0,  10.0,  1.0 ])
     dvs  = np.array([  4.0,    4.0,  2.0 ])
-    mesh = vMesh( mins, maxs, dvs )
+    #mesh = vMesh( mins, maxs, dvs )
 
 
-    visualize_mesh(axs[0], mesh)
+    #visualize_mesh(axs[0], mesh)
 
-
-    plt.savefig("amr.png")
+    plt.savefig("vmesh.png")
 
 

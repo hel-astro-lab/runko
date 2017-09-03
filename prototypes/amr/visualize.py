@@ -5,19 +5,13 @@ import numpy as np
 
 
 def plot_center(ax, vb):
-    x = vb.loc[0]
-    y = vb.loc[1]
-    z = vb.loc[2]
+    (x,y,z) = vb.loc()
     ax.plot(x, y, marker='.', color='black')
 
 
 def get_vertex(vb):
-    x = vb.loc[0]
-    y = vb.loc[1]
-    z = vb.loc[2]
-    dx = vb.dls[0]
-    dy = vb.dls[1]
-    dz = vb.dls[2]
+    (x,y,z) = vb.loc()
+    (dx, dy, dz) = vb.dls()
    
     vrtx = np.zeros((2))
     vrty = np.zeros((2))
