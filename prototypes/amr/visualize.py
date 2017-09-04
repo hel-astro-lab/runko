@@ -3,6 +3,8 @@ import palettable as pal
 from matplotlib import cm
 import numpy as np
 
+import vmesh
+
 
 def plot_center(ax, vb):
     (x,y,z) = vb.loc()
@@ -65,7 +67,8 @@ def visualize_mesh(ax, mesh):
     ax.set_xlim(-10.0, 10.0)
     ax.set_ylim(-10.0, 10.0)
 
-    for vb in mesh.mesh:
+    for cellID in range(mesh.nBlocks):
+        vb = mesh.get_vBlock_from_ID( cellID )
         plot_center(ax, vb)
 
         plot_edges(ax, vb)

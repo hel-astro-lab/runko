@@ -101,22 +101,24 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[1]) )
 
 
-    vb = vmesh.vBlock( 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 )
-    plot_center(axs[0], vb)
-    plot_edges(axs[0], vb)
-    print vb.data
-
+    #vb = vmesh.vBlock( 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 )
+    #plot_center(axs[0], vb)
+    #plot_edges(axs[0], vb)
+    #print vb.data
 
 
     ################################################## 
     # set-up grid
-    mins = np.array([ -10.0, -10.0, -1.0 ])
-    maxs = np.array([  10.0,  10.0,  1.0 ])
-    dvs  = np.array([  4.0,    4.0,  2.0 ])
-    #mesh = vMesh( mins, maxs, dvs )
+    mins = [ -10.0, -10.0, -1.0 ]
+    maxs = [  10.0,  10.0,  1.0 ]
+    dvs  = [  4.0,    4.0,  2.0 ]
+
+    mesh = vmesh.vMesh()
+    mesh.zFill(mins, maxs, dvs)
+
+    visualize_mesh(axs[0], mesh)
 
 
-    #visualize_mesh(axs[0], mesh)
 
     plt.savefig("vmesh.png")
 
