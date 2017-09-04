@@ -81,6 +81,17 @@ class vMesh:
 """
 
 
+def cellID2index(cellID, dvs):
+
+    cellID -= 1
+
+    k = np.int(  ( cellID / (dvs[0] * dvs[1]) ) )
+    j = np.int(  ( cellID / dvs[0] ) % dvs[1] )
+    i = np.int(  cellID % dvs[0] )
+
+    return (i,j,k)
+
+
 
 
 if __name__ == "__main__":
@@ -101,12 +112,6 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[1]) )
 
 
-    #vb = vmesh.vBlock( 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 )
-    #plot_center(axs[0], vb)
-    #plot_edges(axs[0], vb)
-    #print vb.data
-
-
     ################################################## 
     # set-up grid
     mins = [ -10.0, -10.0, -1.0 ]
@@ -116,9 +121,17 @@ if __name__ == "__main__":
     mesh = vmesh.vMesh()
     mesh.zFill(mins, maxs, dvs)
 
+    print mesh.nCells
+
+    tests = [ [1,1,0], [2,2,0], [5,3,0] ]
+    for test in tests:
+        print "testing for...", test
+        cid = mesh.get_block_ID( test )
+        print cid
+        print cellID2index( cid , mesh.nCells)
+        print mesh.get_indices( cid )
+
     visualize_mesh(axs[0], mesh)
-
-
 
     plt.savefig("vmesh.png")
 
