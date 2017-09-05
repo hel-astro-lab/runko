@@ -92,10 +92,13 @@ namespace vmesh {
                 blockContainer[cellID] = vals;
             };
 
-
             std::array<double, 3> mins, maxs, dvs; // Geometry parameters
 
             indices_t nCells;
+
+            /// Clipping threshold
+            Real threshold = 1.0e-2;
+
 
             void zFill( std::array<double, 3> mins_,
                         std::array<double, 3> maxs_,
@@ -293,10 +296,16 @@ namespace vmesh {
 
         for (const uint64_t block: this->all_blocks() ){
             vblock_t& blockData = blockContainer.at( block );
-            fmt::print("block: {} with data {} (len {})\n", block, blockData[0], blockData.size() );
+            // fmt::print("block: {} with data {} (len {})\n", block, blockData[0], blockData.size() );
 
+            if (blockData[0] < threshold) { below_threshold.push_back( block ); }
+        };
 
-
+        // TODO collect / bookkeep how much was lost
+        for (uint64_t block: below_threshold) { 
+            // fmt::print("Erasing {}\n", block);
+            blockContainer.erase( block ); 
+            nBlocks -= 1;
         };
 
 

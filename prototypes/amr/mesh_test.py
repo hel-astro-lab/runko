@@ -19,8 +19,8 @@ def physical_vel(x,y,z):
     muy = 0.0
     muz = 0.0
     sigmax = 5.0
-    sigmay = 5.0
-    sigmaz = 5.0
+    sigmay = 4.0
+    sigmaz = 9.0
 
     vx = np.exp(-(x-mux)**2 / sigmax**2 )
     vy = np.exp(-(y-muy)**2 / sigmay**2 )
@@ -91,6 +91,19 @@ def cellID2index(cellID, dvs):
 
     return (i,j,k)
 
+def populate_mesh( mesh ):
+
+    for k in range(mesh.nCells[2]):
+        for j in range(mesh.nCells[1]):
+            for i in range(mesh.nCells[0]):
+                cid = mesh.get_block_ID([i,j,k])
+                (x,y,z) = mesh.get_center( cid )
+
+                fval = physical_vel(x,y,z)
+                mesh[cid] = [fval, fval, fval, fval]
+
+                #print "({},{},{}) = {}".format(i,j,k,fval)
+
 
 
 
@@ -114,9 +127,16 @@ if __name__ == "__main__":
 
     ################################################## 
     # set-up grid
+    # xy
     mins = [ -10.0, -10.0, -1.0 ]
     maxs = [  10.0,  10.0,  1.0 ]
-    dvs  = [  2.0,    2.0,  2.0 ]
+    dvs  = [  1.0,    1.0,  2.0 ]
+
+    #yz
+    #mins = [  -1.0, -10.0, -10.0 ]
+    #maxs = [   1.0,  10.0,  10.0 ]
+    #dvs  = [   2.0,   1.0,   1.0 ]
+
 
     mesh = vmesh.vMesh()
     mesh.zFill(mins, maxs, dvs)
@@ -125,30 +145,37 @@ if __name__ == "__main__":
     print "received {} blocks vs {} ".format(len(blocks), mesh.nBlocks)
     print "mesh dimensions: {}".format( mesh.nCells)
 
-    print "Begin testing indices..."
-    tests = [ [1,1,0], [2,2,0], [5,3,0] ]
-    for test in tests:
-        print "    testing for...", test
-        cid = mesh.get_block_ID( test )
-        print "    ", cid
-        print "    ", cellID2index( cid , mesh.nCells )
-        print "    ", mesh.get_indices( cid )
+    if 0:
+        print "Begin testing indices..."
+        tests = [ [1,1,0], [2,2,0], [3,3,0] ]
+        for test in tests:
+            print "    testing for...", test
+            cid = mesh.get_block_ID( test )
+            print "    ", cid
+            print "    ", cellID2index( cid , mesh.nCells )
+            print "    ", mesh.get_indices( cid )
 
-    print "next test mesh indexing..."
-    print mesh[1]
-    mesh[1] = [1.0, 2.0, 3.0, 4.5]
-    print mesh[1]
 
-    print mesh[2,2,0]
-    mesh[2,2,0] = [3.0, 2.0, 1.0, 0.5]
-    print mesh[2,2,0]
+        print "next test mesh indexing..."
+        print "    data for 1 is:", mesh[1]
+        mesh[1] = [1.0, 2.0, 3.0, 4.5]
+        print "    data for 1 is:", mesh[1], "should be 1,2,3,4.5"
 
+        print "    data for 2,2,0 is:", mesh[2,2,0]
+        mesh[2,2,0] = [3.0, 2.0, 1.0, 0.5]
+        print "    data for 2,2,0 is:", mesh[2,2,0], "should be 3,2,1,0.5"
+
+    populate_mesh( mesh )
+
+
+    print "next clipping..."
+    mesh.clip()
 
 
     visualize_mesh(axs[0], mesh)
+    visualize_data(axs[1], mesh)
 
-    print "next clipping..."
-    #mesh.clip()
+
 
 
 

@@ -52,14 +52,14 @@ def get_xy_bounding_curve(mesh, cid):
     return vrtxs, vrtys
 
 
-def plot_edges(ax, mesh, cid):
+def plot_edges(ax, mesh, cid, alpha=0.3):
     vrtxs, vrtys = get_xy_bounding_curve(mesh, cid)
 
     #if vb.refLevel == 0:
     #    col = 'black'
     col = 'black'
 
-    ax.plot(vrtxs, vrtys, linestyle='solid', color=col)
+    ax.plot(vrtxs, vrtys, linestyle='solid', color=col, alpha=alpha)
 
 
 
@@ -70,11 +70,42 @@ def visualize_mesh(ax, mesh):
     ax.set_xlim(-11.0, 11.0)
     ax.set_ylim(-11.0, 11.0)
 
-    #for cellID in range(1, mesh.nBlocks+1):
     for cellID in mesh.all_blocks(True):
         plot_center(ax, mesh, cellID)
-
         plot_edges(ax, mesh, cellID)
 
 
+
+def visualize_data(ax, mesh):
+    ax.cla()
+    ax.minorticks_on()
+    ax.set_xlim(-11.0, 11.0)
+    ax.set_ylim(-11.0, 11.0)
+
+    (Nx, Ny, Nz) = mesh.nCells
+    data = np.zeros( (Nx, Ny) ) #xy
+    #data = np.zeros( (Nz, Ny) ) #zy
+
+
+    for cid in mesh.all_blocks(True):
+        (i,j,k) = mesh.get_indices( cid )
+        val = mesh[cid]
+
+        data[i,j] = val[0] #xy
+        #data[j,k] = val[0] #zy
+
+        #print "({},{},{}) = {}".format(i,j,k,val[0])
+        #plot_edges(ax, mesh, cid)
+
+    extent = [-10.0, 10.0, -10.0, 10.0]
+    mgrid = np.ma.masked_where(data == 0.0, data)
+    ax.imshow(mgrid.T,
+              extent=extent,
+              origin='lower',
+              interpolation='nearest',
+              cmap = cm.get_cmap('plasma'),
+              vmin = 0.0,
+              vmax = 1.0,
+              aspect='auto',
+              )
 
