@@ -118,6 +118,10 @@ namespace vmesh {
 
             bool clip( );
 
+            size_t sizeInBytes() const;
+            size_t capacityInBytes() const;
+
+
 
     }; // end of vMesh class header
 
@@ -312,6 +316,18 @@ namespace vmesh {
         return true;
     };
 
+    /// Bytes actually used by the container
+    size_t vmesh::vMesh::sizeInBytes() const {
+        return blockContainer.size()*sizeof(vblock_t);
+    };
+
+    // Capacity of the container because of hash map complexity and bucket division
+    size_t vmesh::vMesh::capacityInBytes() const {
+        return blockContainer.bucket_count() * (sizeof(vblock_t));
+    };
+
+
+
 
 }
 
@@ -411,6 +427,8 @@ PYBIND11_MODULE(vmesh, m) {
         // })
 
         // other more advanced mesh manipulation functions
+        .def("sizeInBytes", &vmesh::vMesh::sizeInBytes)
+        .def("capacityInBytes", &vmesh::vMesh::capacityInBytes)
         .def("clip", &vmesh::vMesh::clip);
 
 
