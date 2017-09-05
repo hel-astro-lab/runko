@@ -70,7 +70,8 @@ def visualize_mesh(ax, mesh):
     ax.set_xlim(-11.0, 11.0)
     ax.set_ylim(-11.0, 11.0)
 
-    for cellID in range(1, mesh.nBlocks+1):
+    #for cellID in range(1, mesh.nBlocks+1):
+    for cellID in mesh.all_blocks(True):
         plot_center(ax, mesh, cellID)
 
         plot_edges(ax, mesh, cellID)

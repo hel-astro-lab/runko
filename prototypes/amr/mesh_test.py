@@ -116,22 +116,41 @@ if __name__ == "__main__":
     # set-up grid
     mins = [ -10.0, -10.0, -1.0 ]
     maxs = [  10.0,  10.0,  1.0 ]
-    dvs  = [  4.0,    4.0,  2.0 ]
+    dvs  = [  2.0,    2.0,  2.0 ]
 
     mesh = vmesh.vMesh()
     mesh.zFill(mins, maxs, dvs)
 
-    print mesh.nCells
+    blocks = mesh.all_blocks(True)
+    print "received {} blocks vs {} ".format(len(blocks), mesh.nBlocks)
+    print "mesh dimensions: {}".format( mesh.nCells)
 
+    print "Begin testing indices..."
     tests = [ [1,1,0], [2,2,0], [5,3,0] ]
     for test in tests:
-        print "testing for...", test
+        print "    testing for...", test
         cid = mesh.get_block_ID( test )
-        print cid
-        print cellID2index( cid , mesh.nCells)
-        print mesh.get_indices( cid )
+        print "    ", cid
+        print "    ", cellID2index( cid , mesh.nCells )
+        print "    ", mesh.get_indices( cid )
+
+    print "next test mesh indexing..."
+    print mesh[1]
+    mesh[1] = [1.0, 2.0, 3.0, 4.5]
+    print mesh[1]
+
+    print mesh[2,2,0]
+    mesh[2,2,0] = [3.0, 2.0, 1.0, 0.5]
+    print mesh[2,2,0]
+
+
 
     visualize_mesh(axs[0], mesh)
+
+    print "next clipping..."
+    #mesh.clip()
+
+
 
     plt.savefig("vmesh.png")
 

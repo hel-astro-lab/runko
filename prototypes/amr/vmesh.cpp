@@ -19,9 +19,8 @@ namespace py = pybind11;
 namespace vmesh {
 
 
-    const uint64_t error_block = 0;
-    const uint64_t error_index = 0;
-
+    static const uint64_t error_block = 0;
+    static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
 
     class vBlock {
         public:
@@ -61,6 +60,38 @@ namespace vmesh {
     
             std::unordered_map<uint64_t, vmesh::vBlock> meshBlocks; // XXX soon obsolete
             std::unordered_map<uint64_t, vblock_t> blockContainer;
+              
+            /// returns a pointer to the data of given block
+            vblock_t* operator [] (const uint64_t cellID) const
+	        {
+                if (this->blockContainer.count(cellID) > 0) {
+	        		return (vblock_t*) &(this->blockContainer.at(cellID));
+	        	} else {
+	        		return NULL;
+	        	}
+	        }
+
+            /* For python interface we need to define __getitem__ and __setitem__
+               float operator[](size_t index) const { return m_data[index]; }
+               float &operator[](size_t index) { return m_data[index]; }
+            */
+            vblock_t __getitem__(const uint64_t cellID) const {
+                return this->blockContainer.at( cellID );
+            };
+            vblock_t __getitem2__(const size_t i, const size_t j, const size_t k) const {
+                uint64_t cellID = this->get_block_ID( {{i,j,k}} );
+                // fmt::print("({},{},{}) = {}\n",i,j,k,cellID);
+                return this->__getitem__(cellID);
+            };
+
+            void __setitem__(const uint64_t cellID, const vblock_t vals) {
+                blockContainer[cellID] = vals;
+            }
+            void __setitem2__(const size_t i, const size_t j, const size_t k, vblock_t vals) {
+                uint64_t cellID = this->get_block_ID( {{i,j,k}} );
+                blockContainer[cellID] = vals;
+            };
+
 
             std::array<double, 3> mins, maxs, dvs; // Geometry parameters
 
@@ -70,17 +101,19 @@ namespace vmesh {
                         std::array<double, 3> maxs_,
                         std::array<double, 3> dvs_ );
 
-            vblock_t get_block( uint64_t cellID );
+            vblock_t get_block( const uint64_t cellID ) const;
 
-            uint64_t get_block_ID( indices_t index );
+            uint64_t get_block_ID( const indices_t index ) const;
 
             indices_t get_indices( uint64_t cellID );
 
-            std::array<double, 3> get_size( uint64_t cellID );
+            std::array<double, 3> get_size( const uint64_t cellID );
 
-            std::array<double, 3> get_center( uint64_t cellID );
+            std::array<double, 3> get_center( const uint64_t cellID );
 
+            std::vector<uint64_t> all_blocks( bool sorted = false);
 
+            bool clip( );
 
 
     }; // end of vMesh class header
@@ -99,8 +132,8 @@ namespace vmesh {
         dvs    = {{  dvs_[0],  dvs_[1],  dvs_[2] }};
 
 
-
-        fmt::print("z-filling vel-space from x:{} {} | y:{} {} | z:{} {}\n",mins[0], maxs[0], mins[1], maxs[1], mins[2], maxs[2]);
+        
+        // fmt::print("z-filling vel-space from x:{} {} | y:{} {} | z:{} {}\n",mins[0], maxs[0], mins[1], maxs[1], mins[2], maxs[2]);
 
         // fill mesh in Morton z-order
         uint64_t indx   = 0;
@@ -117,7 +150,7 @@ namespace vmesh {
 
                 uint64_t nx = 0;
                 while( xi <= maxs[0] - dvs[0]/2.0 ){
-                    fmt::print("({},{},{})\n", xi, yi, zi);
+                    // fmt::print("({},{},{})\n", xi, yi, zi);
 
                     vblock_t vblock = {{0.0, 0.0, 0.0, 0.0}};
                     blockContainer.insert( std::make_pair(cellID, vblock ) );
@@ -147,13 +180,13 @@ namespace vmesh {
     // --------------------------------------------------
 
     // Get block of cell id based on the global cellID
-    vblock_t vmesh::vMesh::get_block( uint64_t cellID ) {
+    vblock_t vmesh::vMesh::get_block( const uint64_t cellID ) const {
         typename std::unordered_map<uint64_t, vblock_t>::const_iterator it = blockContainer.find(cellID);
         return it->second;
     };
 
     // Transform (i,j,k) indices (in z-ordering) to unique global IDs on top level of refinement
-    uint64_t vmesh::vMesh::get_block_ID( indices_t index ) {
+    uint64_t vmesh::vMesh::get_block_ID( const indices_t index ) const {
 
         // check for bad input
         // if (index[0] < 0)          {return vmesh::error_block;};
@@ -204,7 +237,7 @@ namespace vmesh {
     };
 
 
-    std::array<double, 3> vmesh::vMesh::get_size( uint64_t cellID ) {
+    std::array<double, 3> vmesh::vMesh::get_size( const uint64_t cellID ) {
         // TODO: check which refinement level we are on
         int refLevel = 0; 
 
@@ -215,7 +248,7 @@ namespace vmesh {
     };
 
 
-    std::array<double, 3> vmesh::vMesh::get_center( uint64_t cellID ) {
+    std::array<double, 3> vmesh::vMesh::get_center( const uint64_t cellID ) {
         // TODO check for out-of-bounds ID
         indices_t indx = get_indices( cellID );
 
@@ -232,6 +265,43 @@ namespace vmesh {
     };
     
 
+    /// return a list of all blocks
+    std::vector<uint64_t> vmesh::vMesh::all_blocks( bool sorted ) {
+
+        std::vector<uint64_t> ret_val;
+
+        for (auto item: blockContainer) {
+            uint64_t cellID = item.first;
+
+            ret_val.push_back( cellID );
+        };
+            
+
+        if (sorted && ret_val.size() > 0) {
+			std::sort(ret_val.begin(), ret_val.end());
+		}
+
+        return ret_val;
+    };
+
+
+
+    /// Clip all the blocks below threshold
+    bool vmesh::vMesh::clip() {
+
+        std::vector<uint64_t> below_threshold;
+
+        for (const uint64_t block: this->all_blocks() ){
+            vblock_t& blockData = blockContainer.at( block );
+            fmt::print("block: {} with data {} (len {})\n", block, blockData[0], blockData.size() );
+
+
+
+        };
+
+
+        return true;
+    };
 
 
 }
@@ -273,11 +343,66 @@ PYBIND11_MODULE(vmesh, m) {
         .def("get_block", &vmesh::vMesh::get_block)
         .def("get_block_ID", &vmesh::vMesh::get_block_ID)
         .def("get_indices", &vmesh::vMesh::get_indices)
+        .def("all_blocks", &vmesh::vMesh::all_blocks)
         .def("get_size", &vmesh::vMesh::get_size)
-        .def("get_center", &vmesh::vMesh::get_center);
+        .def("get_center", &vmesh::vMesh::get_center)
+        // Bare bones array interface
+        /*
+        .def("__getitem__", [](const Sequence &s, size_t i) {
+            if (i >= s.size()) throw py::index_error();
+            return s[i];
+        })
+        .def("__setitem__", [](Sequence &s, size_t i, float v) {
+            if (i >= s.size()) throw py::index_error();
+            s[i] = v;
+        })
+        // Slices [optional]
+        .def("__getitem__", [](const Sequence &s, py::slice slice) -> Sequence* {
+            size_t start, stop, step, slicelength;
+            if (!slice.compute(s.size(), &start, &stop, &step, &slicelength))
+                throw py::error_already_set();
+            Sequence *seq = new Sequence(slicelength);
+            for (size_t i = 0; i < slicelength; ++i) {
+                (*seq)[i] = s[start]; start += step;
+            }
+            return seq;
+        })
+        .def("__setitem__", [](Sequence &s, py::slice slice, const Sequence &value) {
+            size_t start, stop, step, slicelength;
+            if (!slice.compute(s.size(), &start, &stop, &step, &slicelength))
+                throw py::error_already_set();
+            if (slicelength != value.size())
+                throw std::runtime_error("Left and right hand size of slice assignment have different sizes!");
+            for (size_t i = 0; i < slicelength; ++i) {
+                s[start] = value[i]; start += step;
+            }
+        })        */
+        .def("__getitem__", [](const vmesh::vMesh &s, uint64_t i) {
+                return s.__getitem__(i);
+        })
+        .def("__setitem__", [](vmesh::vMesh &s, uint64_t i, vblock_t v) {
+                s.__setitem__(i, v);
+        })
+        // i,j,k indexing based interface
+        .def("__getitem__", [](const vmesh::vMesh &s, py::tuple indx) {
+                size_t i = indx[0].cast<size_t>();
+                size_t j = indx[1].cast<size_t>();
+                size_t k = indx[2].cast<size_t>();
+                return s.__getitem2__( i,j,k );
+        })
+        .def("__setitem__", [](vmesh::vMesh &s, py::tuple indx, vblock_t v) {
+                size_t i = indx[0].cast<size_t>();
+                size_t j = indx[1].cast<size_t>();
+                size_t k = indx[2].cast<size_t>();
+                return s.__setitem2__( i,j,k, v);
+        })
 
-        // .def("get_vBlock_from_ID", &vmesh::vMesh::get_vBlock_from_ID)
-        // .def("get_vBlock_from_index", &vmesh::vMesh::get_vBlock_from_index);
+        // .def("__setitem__", [](vmesh::vMesh &s, uint64_t i, vblock_t v) {
+        //         s.__setitem__(i, v);
+        // })
+
+        // other more advanced mesh manipulation functions
+        .def("clip", &vmesh::vMesh::clip);
 
 
 }
