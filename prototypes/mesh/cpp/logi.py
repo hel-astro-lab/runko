@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import palettable as pal
 from matplotlib import cm
 
-from logi import Cell
-from logi import Node
+import logi
 
 
 
@@ -32,17 +31,43 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[1]) )
 
 
-    c = Cell( 0, 0, 0 )
+    c = logi.Cell( 0, 0, 0 )
     print "cid:", c.index()
     print "owner", c.owner
     print "neigs", c.neighs(-1, -1)
     print "nhood:", c.nhood()
 
+    print "--------------------------------------------------"
+    print "testing node..."
 
-    n = Node()
+    n = logi.Node()
+    n.init_mpi()
 
-    n.initMPI()
+    #make random starting order
+    np.random.seed(4)
+    if n.master:
+        for i in range(logi.Nx):
+            for j in range(logi.Ny):
+                val = np.random.randint(n.Nrank)
+                n.set_mpiGrid(i, j, val)
+    n.bcast_mpiGrid()
+
+
+    #load cells into local node
+    for i in range(logi.Nx):
+        for j in range(logi.Ny):
+            if n.mpiGrid(i,j) == n.rank:
+                c = logi.Cell(i, j, n.rank)
+
+                #TODO load data to cell
+
+                n.add_cell(c)
 
 
 
-    n.finalizeMPI()
+
+
+
+
+
+    n.finalize_mpi()
