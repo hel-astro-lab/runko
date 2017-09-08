@@ -4,6 +4,7 @@ import palettable as pal
 from matplotlib import cm
 
 from logi import Cell
+from logi import Node
 
 
 
@@ -38,11 +39,10 @@ if __name__ == "__main__":
     print "nhood:", c.nhood()
 
 
+    n = Node()
+
+    n.initMPI()
 
 
 
-
-
-
-
-
+    n.finalizeMPI()

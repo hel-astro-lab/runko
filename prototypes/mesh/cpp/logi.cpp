@@ -10,69 +10,22 @@ namespace py = pybind11;
 #include <vector>
 #include <cmath>
 
+#include "mpi.h"
+
 // #include "definitions.h"
+#include "common.h"
 
 
-/*
-    path = 'out'
-    Nx = 20
-    Ny = 20
-    NxCell = 2
-    NyCell = 2
-    xmin = ymin = 0.0
-    xmax = ymax = 1.0
-*/
 
 
-namespace conf {
-
-    /// Grid dimensions
-    const size_t Nx = 10;
-    const size_t Ny = 10;
-
-    /// block size inside spatial cell
-    const size_t NxCell = 2;
-    const size_t NyCell = 2;
-
-    /// physical grid dimensions
-    const double xmin = 0.0;
-    const double xmax = 1.0;
-
-    const double ymin = 0.0;
-    const double ymax = 1.0;
-
-};
 
 
-namespace BC {
 
-    /// Periodic x boundary condition
-    size_t xwrap( int i ) {
-        while (i < 0) {
-            i += conf::Nx;
-        }
-        while (i >= conf::Nx) {
-            i -= conf::Nx;
-        };
-        return size_t(i);
-    };
 
-    /// Periodic y boundary condition
-    size_t ywrap( int j ) {
-        while (j < 0) {
-            j += conf::Ny;
-        }
-        while (j >= conf::Ny) {
-            j -= conf::Ny;
-        };
-        return size_t(j);
-    };
 
-};
 
 namespace logi {
 
-    
 
     class Cell {
 
@@ -88,6 +41,7 @@ namespace logi {
             size_t i, j;
 
 
+            /// initalize cell according to its location (i,j) and owner (o)
             Cell(size_t i, size_t j, size_t o) {
                 this->i     = i;
                 this->j     = j;
@@ -100,7 +54,7 @@ namespace logi {
             };
 
 
-            // return index of cells in relative to my position
+            /// return index of cells in relative to my position
             const std::tuple<size_t, size_t> neighs(int ir, int jr) {
                 size_t ii = BC::xwrap( int(this->i) + ir );
                 size_t jj = BC::ywrap( int(this->j) + jr );
@@ -121,16 +75,60 @@ namespace logi {
                 return nh;
             };
 
-
-    };
-
+    }; // end of Cell class
 
 
 
+    class Node {
+
+        public:
+
+            /// MPI stuff
+            int rank  = 0;
+            int Nrank = 0;
+            MPI_Comm comm;
+
+            //TODO double definition for python debugging
+            bool master = false;
+
+
+            Node() {
+                fmt::print("initializing node...");
+
+            };
+
+
+            /// Initialize MPI and related auxiliary variables
+            void initMPI() {
+
+                // TODO do this in main program arg and argv
+                MPI_Init(NULL, NULL);
+
+                comm = MPI_COMM_WORLD;
+                MPI_Comm_rank(comm, &rank);
+                MPI_Comm_size(comm, &Nrank);
+
+                // detect master
+                if (rank == MASTER_RANK) { master = true; };
+
+                fmt::print("Hi from rank {}\n", rank);
+                if (master) { fmt::print("master is {}\n", rank); };
+            };
+
+
+            /// Finalize MPI environment 
+            void finalizeMPI() {
+                MPI_Finalize();
+            };
 
 
 
-}
+    }; // end of Node class
+
+
+
+
+} // end of logi namespace
 
 
 
@@ -149,6 +147,12 @@ PYBIND11_MODULE(logi, m) {
         .def("neighs", &logi::Cell::neighs)
         .def("nhood",  &logi::Cell::nhood);
 
+    py::class_<logi::Node>(m, "Node" )
+        .def(py::init<>())
+        .def_readwrite("rank",   &logi::Node::rank)
+        .def_readwrite("Nrank",  &logi::Node::Nrank)
+        .def("initMPI",          &logi::Node::initMPI)
+        .def("finalizeMPI",          &logi::Node::finalizeMPI);
 
 
 
