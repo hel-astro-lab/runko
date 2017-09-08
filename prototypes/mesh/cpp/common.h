@@ -35,7 +35,7 @@ namespace conf {
     const double ymin = 0.0;
     const double ymax = 1.0;
 
-};
+}
 
 
 namespace BC {
@@ -47,9 +47,9 @@ namespace BC {
         }
         while (i >= conf::Nx) {
             i -= conf::Nx;
-        };
+        }
         return size_t(i);
-    };
+    }
 
     /// Periodic y boundary condition
     size_t ywrap( int j ) {
@@ -58,11 +58,28 @@ namespace BC {
         }
         while (j >= conf::Ny) {
             j -= conf::Ny;
-        };
+        }
         return size_t(j);
+    }
+
+}
+
+
+/*! Contains different cell boundary types. Type of computation will depend on 
+ * what this type is.
+ */
+namespace cellType {
+    enum {
+        LOCAL,    //! Default type indicating that cell is owned by the current process
+        VIRTUAL,  //! virtual cell (owned by other process)
+        OUTFLOW,  //! outflow cell
+        N_CELLTYPES
     };
 
-};
+
+}
+
+
 
 
 #endif
