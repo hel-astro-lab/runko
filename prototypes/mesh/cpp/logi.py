@@ -55,15 +55,14 @@ def plot_node(ax, n, lap):
         tmp_grid[i,j] = c.owner
 
     print "virs:", n.get_virtuals()
-    #for cid in n.get_virtuals():
-    #    print "virtual cid:",cid
-    #    c = n.get_cell( cid )
-    #    (i,j) = c.index()
-    #    if tmp_grid[i,j] != -1.0:
-    #        print "{}: ERROR in virtual cells at ({},{})".format(n.rank, i,j)
-    #        sys.exit()
-    #        
-    #    tmp_grid[i,j] = c.owner
+    for cid in n.get_virtuals():
+        print "virtual cid:",cid
+        c = n.get_cell( cid )
+        (i,j) = c.index()
+        if tmp_grid[i,j] != -1.0:
+            print "{}: ERROR in virtual cells at ({},{})".format(n.rank, i,j)
+            sys.exit()
+        tmp_grid[i,j] = c.owner
 
     imshow(ax, tmp_grid)
 
@@ -76,9 +75,10 @@ def plot_node(ax, n, lap):
         jy = logi.ymin + logi.ymax*(j+0.5)/logi.Ny
 
         #Nv = n.number_of_virtual_neighbors(c)
-        #label = str(Nv)
+        Nv = c.number_of_virtual_neighbors
+        label = str(Nv)
         #label = "({},{})/{}".format(i,j,Nv)
-        label = "({},{})".format(i,j)
+        #label = "({},{})".format(i,j)
         ax.text(jy, ix, label, ha='center',va='center', size=8)
 
 
@@ -163,7 +163,9 @@ if __name__ == "__main__":
 
     plot_node(axs[0], n, 0)
 
+    n.pack_all_virtuals()
 
+    plot_node(axs[0], n, 1)
 
 
 

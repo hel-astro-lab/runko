@@ -44,6 +44,15 @@ namespace logi {
             /// Cell type listing
             std::vector<int> types = { cellType::LOCAL };
 
+            /// If I am a virtual cell, who do I share the values the most.
+            int top_virtual_owner;
+
+            /// how many times do I have to be sent to others
+            size_t communications;
+
+            /// How many virtual neighbors do I have
+            size_t number_of_virtual_neighbors = 0;
+
 
             /// initalize cell according to its location (i,j) and owner (o)
             Cell(size_t i, size_t j, size_t o) {
@@ -110,6 +119,14 @@ namespace logi {
     }; // end of Cell class
 
 
+    /* Temporary neighborhood data structure; 
+     * holds all the neighboring cells and their owners
+    struct nbors {
+        int neigs[8];
+        int owner[8];
+    }
+    */
+
 
     class Node {
 
@@ -120,6 +137,12 @@ namespace logi {
 
         /// Map with cellID & cell data
         std::unordered_map<uint64_t, logi::Cell> cells;
+
+        /// list of cell id's that are to be sent to others
+        std::vector<uint64_t> send_queue;
+
+        /// list containing lists to where the aforementioned send_queue cells are to be sent
+        std::vector< std::vector<int> > send_queue_address;
 
 
         public:
@@ -140,6 +163,11 @@ namespace logi {
                 return uint64_t( j*conf::Nx + i );
             }
             
+            uint64_t cell_id( std::tuple<size_t, size_t> indx ) {
+                size_t i = std::get<0>(indx);
+                size_t j = std::get<1>(indx);
+                return uint64_t(i * conf::Nx) + uint64_t(j);
+            }
 
             /// Add local cell to the node
             void add_cell( logi::Cell c ) {
@@ -200,6 +228,128 @@ namespace logi {
                 return get_cells(new_criteria, sorted);
             }
             
+
+            /// Check if we have a cell with the given index
+            bool is_local(std::tuple<int, int> indx) {
+                bool local = false;
+                uint64_t cid = cell_id(indx);
+                if (cells.count( cid ) > 0) {
+                    local = true;
+                }
+                return local;
+            }
+
+            // TODO: relative indexing w.r.t. given cell
+            // std::tuple<size_t, size_t> get_neighbor_index(logi::Cell, int i, int j) {
+            //     return c.neighs( std::make_tuple(i,j) );
+            // }
+
+            // TODO: get_neighbor_cell(c, i, j)
+
+
+
+            std::vector<int> virtual_neighborhood(logi::Cell c) {
+                std::vector< std::tuple<size_t, size_t> > neigs = c.nhood();
+                std::vector<int> virtual_owners;
+                for (auto indx: neigs) {
+
+                    /* TODO: check boundary cells here; 
+                     * now we assume periodicity in x and y
+                    if (std::get<0>(indx) == ERROR_INDEX ||
+                        std::get<1>(indx) == ERROR_INDEX) {
+                        continue;
+                    }
+                    */
+                    if (!is_local(indx)) {
+                        int whoami = _mpiGrid[std::get<0>(indx)][std::get<1>(indx)]; 
+                        virtual_owners.push_back( whoami );
+                    }
+                }
+
+                return virtual_owners;
+            }
+              
+              
+            // Number of virtual neighbors that the cell might have.
+            /*
+            size_t number_of_virtual_neighborhood(logi::Cell c) {
+                return virtual_neighborhood(c).size();
+            }
+            */
+
+
+            /*! Pack my local boundary cells that will be later on
+             * send to the neighbors as virtual cells. 
+             *
+             * This is where the magic happens and we select what and who to send.
+             * These rules *must* be same for everybody, this is why we use
+             * mode of the owner list and in case of conflict pick the smaller value.
+             * This way everybody knows what to expect and avoid creating conflicts of
+             * what to send to who.
+             * */
+            void pack_all_virtuals() {
+                // std::vector<uint64_t> packed; // keep track of what is packed independent 
+                                                 // of send_queue
+                                                 
+                for (auto cid: get_cells()) {
+
+                    auto c = cells.at(cid);
+                    std::vector<int> virtual_owners = virtual_neighborhood(c);
+                    size_t N = virtual_owners.size();
+                    if (N > 0) {
+
+                        /* Now we analyze `owner` vector as:
+                         * - sort the vector
+                         * - compute mode of the list to see who owns most of the
+                         * - remove repeating elements creating a unique list. */
+                         
+                        // sort
+                        std::sort( virtual_owners.begin(), virtual_owners.end() );
+
+                        // compute mode by creating a frequency array
+                        // NOTE: in case of same frequency we implicitly pick smaller rank
+                        int max=0, top_owner = virtual_owners[0];
+                        for(int i=0;i<virtual_owners.size();i++) {
+                            int co = (int)count(virtual_owners.begin(), 
+                                            virtual_owners.end(), 
+                                            virtual_owners[i]);
+                            if(co > max) {      
+                                max = co;
+                                top_owner = virtual_owners[i];
+                            }
+                        } 
+
+                        // remove duplicates
+                        virtual_owners.erase( unique( virtual_owners.begin(), 
+                                              virtual_owners.end() 
+                                            ), virtual_owners.end() );
+
+
+                        // update cell values
+                        c.top_virtual_owner = top_owner;
+                        c.communications = virtual_owners.size();
+                        c.number_of_virtual_neighbors = N;
+
+                        if (std::find( send_queue.begin(),
+                                       send_queue.end(),
+                                       cid) != send_queue.end()
+                           ) {
+                            send_queue.push_back( cid );
+                            send_queue_address.push_back( virtual_owners );
+                            // packed.push_back( cid );
+                        }
+                    }
+                }
+            }
+            
+
+            /// Clear send queue, issue this only after the send has been successfully done
+            void clear_send_queue() {
+                send_queue.clear();
+                send_queue_address.clear();
+            }
+
+
 
 
         public:
@@ -288,6 +438,9 @@ PYBIND11_MODULE(logi, m) {
         .def(py::init<size_t, size_t, size_t >())
         .def_readwrite("cid",   &logi::Cell::cid)
         .def_readwrite("owner", &logi::Cell::owner)
+        .def_readwrite("top_virtual_owner", &logi::Cell::top_virtual_owner)
+        .def_readwrite("number_of_virtual_neighbors", &logi::Cell::number_of_virtual_neighbors)
+        .def_readwrite("communications",  &logi::Cell::communications)
         .def_readwrite("i",     &logi::Cell::i)
         .def_readwrite("j",     &logi::Cell::j)
         .def("index",  &logi::Cell::index)
@@ -308,6 +461,7 @@ PYBIND11_MODULE(logi, m) {
         .def("get_virtuals",      &logi::Node::get_virtuals,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
+        .def("pack_all_virtuals", &logi::Node::pack_all_virtuals)
 
         // communication wrappers
         .def("set_mpiGrid",       &logi::Node::set_mpiGrid)
