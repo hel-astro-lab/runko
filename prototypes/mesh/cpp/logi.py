@@ -163,7 +163,10 @@ if __name__ == "__main__":
 
     plot_node(axs[0], n, 0)
 
-    n.pack_all_virtuals()
+    n.analyze_boundary_cells()
+
+    n.communicate_send_cells()
+    n.communicate_recv_cells()
 
     plot_node(axs[0], n, 1)
 

@@ -281,13 +281,15 @@ namespace logi {
             /*! Pack my local boundary cells that will be later on
              * send to the neighbors as virtual cells. 
              *
-             * This is where the magic happens and we select what and who to send.
-             * These rules *must* be same for everybody, this is why we use
+             * This is where the magic happens and we analyze what and who to send to.
+             * These values *must* be same for everybody, this is why we use
              * mode of the owner list and in case of conflict pick the smaller value.
-             * This way everybody knows what to expect and avoid creating conflicts of
-             * what to send to who.
+             * This way everybody knows what to expect and we avoid creating conflicts 
+             * in communication. This information is then being sent to other processes 
+             * together with the cells and is analyzed there by others inside the
+             * `rank_virtuals` function.
              * */
-            void pack_all_virtuals() {
+            void analyze_boundary_cells() {
                 // std::vector<uint64_t> packed; // keep track of what is packed independent 
                                                  // of send_queue
                                                  
@@ -461,7 +463,7 @@ PYBIND11_MODULE(logi, m) {
         .def("get_virtuals",      &logi::Node::get_virtuals,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("pack_all_virtuals", &logi::Node::pack_all_virtuals)
+        .def("analyze_boundary_cells", &logi::Node::analyze_boundary_cells)
 
         // communication wrappers
         .def("set_mpiGrid",       &logi::Node::set_mpiGrid)
