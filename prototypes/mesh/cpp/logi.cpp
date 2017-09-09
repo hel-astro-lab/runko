@@ -138,14 +138,15 @@ namespace logi {
         /// Map with cellID & cell data
         std::unordered_map<uint64_t, logi::Cell> cells;
 
-        /// list of cell id's that are to be sent to others
-        std::vector<uint64_t> send_queue;
-
-        /// list containing lists to where the aforementioned send_queue cells are to be sent
-        std::vector< std::vector<int> > send_queue_address;
-
 
         public:
+
+            /// list of cell id's that are to be sent to others
+            std::vector<uint64_t> send_queue;
+
+            /// list containing lists to where the aforementioned send_queue cells are to be sent
+            std::vector< std::vector<int> > send_queue_address;
+
 
             /// get mpi process for whatever location
             const int mpiGrid(const int i, const int j) {
@@ -278,7 +279,7 @@ namespace logi {
             */
 
 
-            /*! Pack my local boundary cells that will be later on
+            /*! Analyze my local boundary cells that will be later on
              * send to the neighbors as virtual cells. 
              *
              * This is where the magic happens and we analyze what and who to send to.
@@ -298,6 +299,10 @@ namespace logi {
                     auto c = cells.at(cid);
                     std::vector<int> virtual_owners = virtual_neighborhood(c);
                     size_t N = virtual_owners.size();
+
+                    // If N > 0 then this is a boundary cell.
+                    // other criteria could also apply but here we assume
+                    // neighborhood according to spatial distance.
                     if (N > 0) {
 
                         /* Now we analyze `owner` vector as:
@@ -334,7 +339,7 @@ namespace logi {
 
                         if (std::find( send_queue.begin(),
                                        send_queue.end(),
-                                       cid) != send_queue.end()
+                                       cid) == send_queue.end()
                            ) {
                             send_queue.push_back( cid );
                             send_queue_address.push_back( virtual_owners );
@@ -364,6 +369,11 @@ namespace logi {
             //TODO double definition for python debugging
             bool master = false;
 
+            std::vector<MPI_Request> sent_info_messages;
+            std::vector<MPI_Request> sent_cell_messages;
+
+            std::vector<MPI_Request> recv_info_messages;
+            std::vector<MPI_Request> recv_cell_messages;
 
             Node() {
                 fmt::print("initializing node...");
@@ -406,6 +416,118 @@ namespace logi {
 
             }
 
+            /// Issue isends to everywhere
+            // First we send a warning message of how many cells to expect.
+            // Based on this the receiving side can prepare accordingly.
+            void communicate_send_cells() {
+
+                sent_info_messages.clear();
+                sent_cell_messages.clear();
+                int j = 0;
+                
+                for (int dest = 0; dest<Nrank; dest++) {
+                    if(dest == rank) { continue; } // do not send to myself
+                    // fmt::print("{}: sending to dest={}\n",rank, dest);
+                    
+                    int i = 0;
+                    std::vector<int> to_be_sent;
+                    for (std::vector<int> address: send_queue_address) {
+                        if( std::find( address.begin(),
+                                       address.end(),
+                                       dest) != address.end()) {
+                            to_be_sent.push_back( i );
+
+                            // fmt::print("{}: packing {}\n",rank, i);
+                        }
+                        i++;
+                    }
+
+                    // initial message informing how many cells are coming
+                    // TODO: this whole thing could be avoided by using 
+                    // MPI_Iprobe in the receiving end. Maybe.
+                    uint64_t Nincoming_cells = uint64_t(to_be_sent.size());
+
+                    MPI_Request req;
+                    sent_info_messages.push_back( req );
+
+                    MPI_Isend(
+                            &Nincoming_cells, 
+                            1,
+                            MPI_UNSIGNED_LONG_LONG,
+                            dest,
+                            commType::NCELLS,
+                            comm,
+                            &sent_info_messages[j] 
+                            );
+                    j++;
+                }
+
+
+                // send the real cell data now
+                // We optimize this by only packing the cell data
+                // once, and then sending the same thing to everybody who needs it.
+                int i = 0;
+                for (auto cid: send_queue) {
+                    send_cell_data( cid, send_queue_address[i] );
+                    i++;
+                }
+
+            }
+
+
+            /// Pack cell and send to everybody on the dests list
+            void send_cell_data(uint64_t cid, std::vector<int> dests) {
+                fmt::print("{}: packing data of {}\n", rank, cid);
+                // TODO: pack cell with CID here
+                for (auto dest: dests) {
+                    fmt::print("  {}: Sending cell: {} to {}\n",
+                                 rank, cid, dest);
+                }
+
+            }
+
+            /// Receive incoming stuff
+            void communicate_recv_cells() {
+
+                recv_info_messages.clear();
+                recv_cell_messages.clear();
+
+                size_t i = 0;
+                for (int source=0; source<rank; source++) {
+                    if (source == rank) { continue; } // do not receive from myself
+
+                    // communicate with how many cells there are incoming
+
+                    // TODO: use MPI_IProbe to check if there are 
+                    // any messages for me instead of assuming that there is
+
+                    MPI_Request req;
+                    recv_info_messages.push_back( req );
+
+                    uint64_t Nincoming_cells;
+                    MPI_Irecv(
+                            &Nincoming_cells,
+                            1,
+                            MPI_UNSIGNED_LONG_LONG,
+                            source,
+                            commType::NCELLS,
+                            comm,
+                            &recv_info_messages[i]
+                            );
+
+                    // TODO: Remove this block and do in background instead
+                    MPI_Wait(&recv_info_messages[i], MPI_STATUS_IGNORE);
+                    
+                    fmt::print("{}: I got a message! Waiting {} cells from {}\n",
+                            rank, Nincoming_cells, source);
+
+
+
+                    i++;
+                }
+            }
+
+
 
             // -------------------------------------------------- 
             
@@ -438,16 +560,17 @@ PYBIND11_MODULE(logi, m) {
 
     py::class_<logi::Cell>(m, "Cell" )
         .def(py::init<size_t, size_t, size_t >())
-        .def_readwrite("cid",   &logi::Cell::cid)
-        .def_readwrite("owner", &logi::Cell::owner)
-        .def_readwrite("top_virtual_owner", &logi::Cell::top_virtual_owner)
+        .def_readwrite("cid",                         &logi::Cell::cid)
+        .def_readwrite("owner",                       &logi::Cell::owner)
+        .def_readwrite("top_virtual_owner",           &logi::Cell::top_virtual_owner)
         .def_readwrite("number_of_virtual_neighbors", &logi::Cell::number_of_virtual_neighbors)
-        .def_readwrite("communications",  &logi::Cell::communications)
-        .def_readwrite("i",     &logi::Cell::i)
-        .def_readwrite("j",     &logi::Cell::j)
-        .def("index",  &logi::Cell::index)
-        .def("neighs", &logi::Cell::neighs)
-        .def("nhood",  &logi::Cell::nhood);
+        .def_readwrite("communications",              &logi::Cell::communications)
+        .def_readwrite("i",                           &logi::Cell::i)
+        .def_readwrite("j",                           &logi::Cell::j)
+        .def("index",                                 &logi::Cell::index)
+        .def("neighs",                                &logi::Cell::neighs)
+        .def("nhood",                                 &logi::Cell::nhood);
+
 
     py::class_<logi::Node>(m, "Node" )
         .def(py::init<>())
@@ -466,10 +589,14 @@ PYBIND11_MODULE(logi, m) {
         .def("analyze_boundary_cells", &logi::Node::analyze_boundary_cells)
 
         // communication wrappers
-        .def("set_mpiGrid",       &logi::Node::set_mpiGrid)
-        .def("init_mpi",          &logi::Node::init_mpi)
-        .def("bcast_mpiGrid",     &logi::Node::bcast_mpiGrid)
-        .def("finalize_mpi",      &logi::Node::finalize_mpi);
+        .def_readwrite("send_queue",         &logi::Node::send_queue)
+        .def_readwrite("send_queue_address", &logi::Node::send_queue_address)
+        .def("set_mpiGrid",                  &logi::Node::set_mpiGrid)
+        .def("init_mpi",                     &logi::Node::init_mpi)
+        .def("bcast_mpiGrid",                &logi::Node::bcast_mpiGrid)
+        .def("communicate_send_cells",       &logi::Node::communicate_send_cells)
+        .def("communicate_recv_cells",       &logi::Node::communicate_recv_cells)
+        .def("finalize_mpi",                 &logi::Node::finalize_mpi);
 
 
 

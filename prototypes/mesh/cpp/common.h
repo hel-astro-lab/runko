@@ -21,8 +21,8 @@
 namespace conf {
 
     /// Grid dimensions
-    const size_t Nx = 10;
-    const size_t Ny = 10;
+    const size_t Nx = 5;
+    const size_t Ny = 3;
 
     /// block size inside spatial cell
     const size_t NxCell = 2;
@@ -75,8 +75,14 @@ namespace cellType {
         OUTFLOW,  //! outflow cell
         N_CELLTYPES
     };
+}
 
-
+namespace commType {
+    enum {
+        NCELLS,   //! Number of incoming cells,
+        CELLDATA, //! Cell data array
+        N_COMMTYPES
+    };
 }
 
 

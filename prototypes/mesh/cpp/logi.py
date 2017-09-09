@@ -164,9 +164,12 @@ if __name__ == "__main__":
     plot_node(axs[0], n, 0)
 
     n.analyze_boundary_cells()
+    print n.rank, ": send queue address: ", n.send_queue_address
 
     n.communicate_send_cells()
     n.communicate_recv_cells()
+
+
 
     plot_node(axs[0], n, 1)
 
