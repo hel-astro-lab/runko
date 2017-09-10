@@ -12,6 +12,27 @@
 #define MASTER_RANK 0
 
 
+// Define uint64_t for MPI
+#ifndef MPI_UINT64_T
+#define MPI_UINT64_T MPI_UNSIGNED_LONG_LONG
+#endif
+
+// Define size_t for MPI
+#if SIZE_MAX == UCHAR_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_CHAR
+#elif SIZE_MAX == USHRT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_SHORT
+#elif SIZE_MAX == UINT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED
+#elif SIZE_MAX == ULONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG
+#elif SIZE_MAX == ULLONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+#else
+   #error "Error while initializing size_t type for MPI"
+#endif
+
+
 // TODO remove double definition in Node (done for python bindings)
 // struct globalflags {
 //     static bool master;
