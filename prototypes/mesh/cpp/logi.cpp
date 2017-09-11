@@ -28,22 +28,10 @@ namespace py = pybind11;
 
 namespace logi {
 
-
-    /// General struct for MPI containing only the bare basics to build a cell
-    struct PackedCell {
-        uint64_t cid;
-        int owner;
-        size_t i;
-        size_t j;
-        int top_virtual_owner;
-        size_t communications;
-        size_t number_of_virtual_neighbors;
-    };
-
-
     class Cell {
 
         public:
+            // Order here is fixed for mpi_cell_t
 
             /// unique cell ID
             uint64_t cid;
@@ -64,7 +52,10 @@ namespace logi {
             size_t number_of_virtual_neighbors = 0;
 
             /// Cell type listing
-            std::vector<int> types = { cellType::LOCAL };
+            bool local;
+
+            std::vector<int> types;
+
 
             /// initalize cell according to its location (i,j) and owner (o)
             Cell(size_t i, size_t j, int o) {
@@ -81,8 +72,8 @@ namespace logi {
 
             /// return index of cells in relative to my position
             const std::tuple<size_t, size_t> neighs(int ir, int jr) {
-                size_t ii = BC::xwrap( int(this->i) + ir );
-                size_t jj = BC::ywrap( int(this->j) + jr );
+                size_t ii = BC::xwrap( (int)this->i + ir );
+                size_t jj = BC::ywrap( (int)this->j + jr );
                 return std::make_tuple( ii, jj );
             }
 
@@ -92,7 +83,7 @@ namespace logi {
                 std::vector< std::tuple<size_t, size_t> > nh;
                 for (int ir=-1; ir<=1; ir++) {
                     for (int jr=-1; jr<=1; jr++) {
-                        if (ir != 0 && jr != 0) {
+                        if (!( ir == 0 && jr == 0 )) {
                             nh.push_back( neighs(ir, jr) );
                         }
                     }
@@ -168,14 +159,16 @@ namespace logi {
                 return uint64_t( j*conf::Nx + i );
             }
             
+            /*
             uint64_t cell_id( std::tuple<size_t, size_t> indx ) {
                 size_t i = std::get<0>(indx);
                 size_t j = std::get<1>(indx);
                 return uint64_t(i * conf::Nx) + uint64_t(j);
             }
+            */
 
             /// Add local cell to the node
-            void add_cell( logi::Cell c ) {
+            void add_local_cell( logi::Cell c ) {
 
                 // calculate unique global cell ID
                 uint64_t cid = cell_id(c.i, c.j);
@@ -183,22 +176,14 @@ namespace logi {
                 //TODO Catch error if cell is not already mine?
                 c.cid   = cid;
                 c.owner = rank;
-
+                c.local = true;
+                // c.types.push_back( cellType::LOCAL );
+                
                 cells.insert( std::make_pair(cid, c) );
             }
 
-            logi::Cell* operator [] (const uint64_t cid) const {
-            	if (this->cells.count(cid) > 0) {
-            		return (logi::Cell*) &(this->cells.at(cid));
-            	} else {
-            		return NULL;
-            	}
-            }
 
-            logi::Cell get_cell( uint64_t cid ) {
-                return cells.at(cid);
-            }
-
+            /// Return pointer to the actual cell data
             logi::Cell* get_cell_data(const uint64_t cid) const {
             	if (this->cells.count(cid) > 0) {
             		return (logi::Cell*) &(this->cells.at(cid));
@@ -207,20 +192,19 @@ namespace logi {
             	}
             }
 
-
-            /*
-            logi::Cell const& get_cell(uint64_t cid) const {
-                auto find=cells.find(cid);
-                if(find==cells.end())
-                    throw std::runtime_error("unknown cell requested");
-                return find->second;
+            /// Same as get_cell_data but with additional syntax sugar 
+            logi::Cell* operator [] (const uint64_t cid) const {
+                return get_cell_data(cid);
             }
-            */
 
-            /*! Return a vector of cell indices that fulfill a given criteria.
-             *  By default all local cells are returned.
-             */
-            std::vector<uint64_t> get_cells(
+            /// Get a *copy* of the full cell; this is not what one usually wants
+            logi::Cell get_cell( uint64_t cid ) {
+                return cells.at(cid);
+            }
+
+
+            /*! Return a vector of cell indices that fulfill a given criteria.  */
+            std::vector<uint64_t> get_all_cells(
                     const std::vector<int>& criteria = std::vector<int>(),
                     const bool sorted=false ) {
                 std::vector<uint64_t> ret;
@@ -249,24 +233,63 @@ namespace logi {
                 return ret;
             }
 
+
+            /// Return all local cells
+            std::vector<uint64_t> get_cells(
+                    const std::vector<int>& criteria = std::vector<int>(),
+                    const bool sorted=false ) {
+
+                std::vector<uint64_t> cell_list = get_all_cells(criteria, sorted);
+
+                size_t i = 0, len = cell_list.size();
+                while (i < len) {
+                    if (!cells.at( cell_list[i] ).local) {
+                        std::swap(cell_list[i], cell_list.back());
+                        cell_list.pop_back();
+                        len -= 1;
+                    } else {
+                        i++;
+                    }
+                }
+
+                return cell_list;
+            }
+
+
             /// Return all cells that are of VIRTUAL type.
             std::vector<uint64_t> get_virtuals(
                     const std::vector<int>& criteria = std::vector<int>(),
                     const bool sorted=false ) {
+                std::vector<uint64_t> cell_list = get_all_cells(criteria, sorted);
 
-                std::vector<int> new_criteria = criteria;
-                new_criteria.push_back( cellType::VIRTUAL );
-                return get_cells(new_criteria, sorted);
+                size_t i = 0, len = cell_list.size();
+                while (i < len) {
+                    if (cells.at( cell_list[i] ).local) {
+                        std::swap(cell_list[i], cell_list.back());
+                        cell_list.pop_back();
+                        len -= 1;
+                    } else {
+                        i++;
+                    }
+                }
+
+                return cell_list;
             }
             
 
             /// Check if we have a cell with the given index
-            bool is_local(std::tuple<int, int> indx) {
+            // bool is_local(std::tuple<int, int> indx) {
+            bool is_local(uint64_t cid) {
                 bool local = false;
-                uint64_t cid = cell_id(indx);
+
+                // Do we have it on the list=
                 if (cells.count( cid ) > 0) {
-                    local = true;
+                    // is it local (i.e., not virtual)
+                    if ( cells.at(cid).local ) {
+                        local = true;
+                    }
                 }
+
                 return local;
             }
 
@@ -293,8 +316,14 @@ namespace logi {
                         continue;
                     }
                     */
-                    if (!is_local(indx)) {
-                        int whoami = _mpiGrid[std::get<0>(indx)][std::get<1>(indx)]; 
+
+                    // Get cell id from index notation
+                    size_t i = std::get<0>(indx);
+                    size_t j = std::get<1>(indx);
+                    uint64_t cid = cell_id(i, j);
+
+                    if (!is_local( cid )) {
+                        int whoami = _mpiGrid[ std::get<0>(indx) ][ std::get<1>(indx) ]; 
                         virtual_owners.push_back( whoami );
                     }
                 }
@@ -323,9 +352,7 @@ namespace logi {
              * `rank_virtuals` function.
              * */
             void analyze_boundary_cells() {
-                // std::vector<uint64_t> packed; // keep track of what is packed independent 
-                                                 // of send_queue
-                                                 
+
                 for (auto cid: get_cells()) {
                     std::vector<int> virtual_owners = virtual_neighborhood(cid);
                     size_t N = virtual_owners.size();
@@ -368,17 +395,12 @@ namespace logi {
                         c->communications    = virtual_owners.size();
                         c->number_of_virtual_neighbors = N;
 
-                        fmt::print("{}: analyzing cid: {} putting Nvir = {} {}\n",
-                                rank, cid, c->number_of_virtual_neighbors, N);
-
-
                         if (std::find( send_queue.begin(),
                                        send_queue.end(),
                                        cid) == send_queue.end()
                            ) {
                             send_queue.push_back( cid );
                             send_queue_address.push_back( virtual_owners );
-                            // packed.push_back( cid );
                         }
                     }
                 }
@@ -390,35 +412,6 @@ namespace logi {
                 send_queue.clear();
                 send_queue_address.clear();
             }
-
-
-            /// Pack/Serialize cell into a struct
-            // TODO: clean this up as there is redundant info (i,j,owner,...)
-            PackedCell pack_cell(uint64_t cid) {
-                auto c = get_cell(cid);
-
-                PackedCell pcell;
-
-                pcell.cid                         = c.cid;
-                pcell.owner                       = c.owner;
-                pcell.i                           = c.i;
-                pcell.j                           = c.j;
-                pcell.top_virtual_owner           = c.top_virtual_owner;
-                pcell.communications              = c.communications;
-                pcell.number_of_virtual_neighbors = c.number_of_virtual_neighbors;
-
-
-                fmt::print("{}: packing cid {} to {} /O: {} ?= {} /Nvir: {} ?= {}\n", 
-                        rank, 
-                        c.cid, pcell.cid,
-                        c.top_virtual_owner, pcell.top_virtual_owner,
-                        // c.communications, pcell.communications,
-                        c.number_of_virtual_neighbors, pcell.number_of_virtual_neighbors
-                        );
-
-                return pcell;
-            }
-
 
 
         public:
@@ -448,6 +441,9 @@ namespace logi {
             /// Initialize MPI and related auxiliary variables
             void init_mpi() {
 
+                //--------------------------------------------------
+                // Start MPI
+                //
                 // TODO do this in main program with arg and argv
                 MPI_Init(NULL, NULL);
 
@@ -462,17 +458,18 @@ namespace logi {
                 if (master) { fmt::print("master is {}\n", rank); };
 
 
+                //--------------------------------------------------
                 // Initialize the cell frame type
                 int count = 7;
                 int blocklens[] = { 1, 1, 1, 1, 1, 1, 1 };
                 MPI_Aint indices[7];
-                indices[0] = (MPI_Aint)offsetof(PackedCell, cid);
-                indices[1] = (MPI_Aint)offsetof(PackedCell, owner);
-                indices[2] = (MPI_Aint)offsetof(PackedCell, i);
-                indices[3] = (MPI_Aint)offsetof(PackedCell, j);
-                indices[4] = (MPI_Aint)offsetof(PackedCell, top_virtual_owner);
-                indices[5] = (MPI_Aint)offsetof(PackedCell, communications);
-                indices[6] = (MPI_Aint)offsetof(PackedCell, number_of_virtual_neighbors);
+                indices[0] = (MPI_Aint)offsetof( Cell, cid);
+                indices[1] = (MPI_Aint)offsetof( Cell, owner);
+                indices[2] = (MPI_Aint)offsetof( Cell, i);
+                indices[3] = (MPI_Aint)offsetof( Cell, j);
+                indices[4] = (MPI_Aint)offsetof( Cell, top_virtual_owner);
+                indices[5] = (MPI_Aint)offsetof( Cell, communications);
+                indices[6] = (MPI_Aint)offsetof( Cell, number_of_virtual_neighbors);
                 
                 MPI_Datatype types[] = {
                                       MPI_UINT64_T,  // cid
@@ -483,15 +480,17 @@ namespace logi {
                                       MPI_SIZE_T,    // communications
                                       MPI_SIZE_T     // num. of virt. owners.
                                        };
-
                 MPI_Type_create_struct(count, blocklens, indices, types, &mpi_cell_t);
                 MPI_Type_commit(&mpi_cell_t);
+                
+                //--------------------------------------------------
 
             }
 
 
             /// Finalize MPI environment 
             void finalize_mpi() {
+                MPI_Type_free(&mpi_cell_t);
                 MPI_Finalize();
             }
 
@@ -518,7 +517,6 @@ namespace logi {
                 
                 for (int dest = 0; dest<Nrank; dest++) {
                     if(dest == rank) { continue; } // do not send to myself
-                    // fmt::print("{}: sending to dest={}\n",rank, dest);
                     
                     int i = 0;
                     std::vector<int> to_be_sent;
@@ -527,8 +525,6 @@ namespace logi {
                                        address.end(),
                                        dest) != address.end()) {
                             to_be_sent.push_back( i );
-
-                            // fmt::print("{}: packing {}\n",rank, i);
                         }
                         i++;
                     }
@@ -568,19 +564,16 @@ namespace logi {
 
             /// Pack cell and send to everybody on the dests list
             void send_cell_data(uint64_t cid, std::vector<int> dests) {
-                fmt::print("{}: packing data of {}\n", rank, cid);
-
-                PackedCell c = pack_cell(cid);
+                auto c = get_cell_data(cid);
+                
                 size_t j = sent_cell_messages.size();
                 
                 for (auto dest: dests) {
-                    fmt::print("  {}: Sending cell: {} to {}\n",
-                                 rank, cid, dest);
                     MPI_Request req;
                     sent_cell_messages.push_back( req );
 
                     MPI_Isend(
-                            &c,
+                            c,
                             1,
                             mpi_cell_t,
                             dest,
@@ -625,16 +618,16 @@ namespace logi {
                     // TODO: Remove this code block and do in background instead
                     MPI_Wait(&recv_info_messages[i], MPI_STATUS_IGNORE);
                     
+                    /*
                     fmt::print("{}: I got a message! Waiting {} cells from {}\n",
                             rank, Nincoming_cells, source);
+                    */
 
 
                     // Now receive the cells themselves
                     size_t j = recv_cell_messages.size();
-                    fmt::print("{}:   wait j = {}\n", rank, j);
                     for (size_t ic=0; ic<Nincoming_cells; ic++) {
-
-                        PackedCell inc_c;
+                        Cell inc_c(0,0,0); // TODO: initialize with better default values
 
                         MPI_Request reqc;
                         recv_cell_messages.push_back( reqc );
@@ -649,25 +642,41 @@ namespace logi {
                                 );
 
                         MPI_Wait(&recv_cell_messages[j], MPI_STATUS_IGNORE);
-
-                        fmt::print("{}:   loop j = {}\n", rank, j);
-                        fmt::print("{}: Wow, got a new cell\n    cid={}, ({},{}), owner={}, top_v_o={}, Ncoms={}, Nvir={}\n", 
-                                rank, 
-                                inc_c.cid, 
-                                inc_c.i, 
-                                inc_c.j, 
-                                inc_c.owner, 
-                                inc_c.top_virtual_owner, 
-                                inc_c.communications, 
-                                inc_c.number_of_virtual_neighbors);
-
-
                         j++;
 
+                        uint64_t cid = inc_c.cid;
+            	        if (this->cells.count(cid) == 0) {
+                            // Cell does not exist yet; create it
+                            // TODO: Check validity of the cell better
+                            // TODO: Use add_cell() instead of directly 
+                            //       probing the class interiors
+                            
+                            inc_c.local = false;
+                            // inc_c.types.push_back( cellType::VIRTUAL );
+                            cells.insert( std::make_pair(cid, inc_c) );
+
+                        } else {
+                            // Cell is already on my virtual list; update
+                            // TODO: use = operator instead.
+                            auto c = get_cell_data(cid);
+
+                            if (c->local) {
+                                // TODO: better error handling; i.e. resolve the conflict
+                                fmt::print("{}: ERROR trying to add virtual cell that is already local\n", rank);
+                                exit(1);
+                            }
+
+                            c->owner             = inc_c.owner;
+                            c->i                 = inc_c.i;
+                            c->j                 = inc_c.j;
+                            c->top_virtual_owner = inc_c.top_virtual_owner;
+                            c->communications    = inc_c.communications;
+                            c->number_of_virtual_neighbors = inc_c.number_of_virtual_neighbors;
+
+
+                        };
+
                     }
-
-
-
                     i++;
                 }
             }
@@ -712,6 +721,7 @@ PYBIND11_MODULE(logi, m) {
         .def_readwrite("communications",              &logi::Cell::communications)
         .def_readwrite("i",                           &logi::Cell::i)
         .def_readwrite("j",                           &logi::Cell::j)
+        .def_readwrite("local",                       &logi::Cell::local)
         .def("index",                                 &logi::Cell::index)
         .def("neighs",                                &logi::Cell::neighs)
         .def("nhood",                                 &logi::Cell::nhood);
@@ -723,7 +733,9 @@ PYBIND11_MODULE(logi, m) {
         .def_readwrite("Nrank",   &logi::Node::Nrank)
         .def_readwrite("master",  &logi::Node::master)
         .def("mpiGrid",           &logi::Node::mpiGrid)
-        .def("add_cell",          &logi::Node::add_cell)
+        .def("is_local",          &logi::Node::is_local)
+        .def("cell_id",           &logi::Node::cell_id)
+        .def("add_local_cell",    &logi::Node::add_local_cell)
         .def("get_cell",          &logi::Node::get_cell)
         .def("get_cells",         &logi::Node::get_cells,
                 py::arg("criteria") = std::vector<int>(),

@@ -42,8 +42,8 @@
 namespace conf {
 
     /// Grid dimensions
-    const size_t Nx = 5;
-    const size_t Ny = 3;
+    const size_t Nx = 10;
+    const size_t Ny = 10;
 
     /// block size inside spatial cell
     const size_t NxCell = 2;
