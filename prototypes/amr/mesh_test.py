@@ -5,9 +5,7 @@ import matplotlib.pyplot as plt
 import palettable as pal
 from matplotlib import cm
 
-
 from visualize import *
-
 import vmesh
 
 
@@ -105,6 +103,11 @@ def populate_mesh( mesh ):
                 #print "({},{},{}) = {}".format(i,j,k,fval)
 
 
+class Params:
+    mins = None
+    maxs = None
+    lens = None
+
 
 
 if __name__ == "__main__":
@@ -127,20 +130,11 @@ if __name__ == "__main__":
 
     ################################################## 
     # set-up grid
-    # xy
-    #mins = [ -10.0, -10.0, -1.0 ]
-    #maxs = [  10.0,  10.0,  1.0 ]
-    #dvs  = [  1.0,    1.0,  2.0 ]
-
-    #yz
-    #mins = [  -1.0, -10.0, -10.0 ]
-    #maxs = [   1.0,  10.0,  10.0 ]
-    #dvs  = [   2.0,   1.0,   1.0 ]
-
     #xyz
-    mins = [ -10.0, -10.0, -10.0 ]
-    maxs = [  10.0,  10.0,  10.0 ]
-    dvs  = [  1.0,    1.0,   1.0 ]
+    params = Params()
+    params.mins = [ -10.0, -10.0, -10.0 ]
+    params.maxs = [  10.0,  10.0,  10.0 ]
+    params.lens = [  1.0,    1.0,  1.0 ]
 
     mesh = vmesh.vMesh()
     mesh.zFill(mins, maxs, dvs)
@@ -176,12 +170,15 @@ if __name__ == "__main__":
     print "Size  in Mbytes: {}".format( mesh.sizeInBytes()/ 1e6 )
     print "Capa. in Mbytes: {}".format( mesh.capacityInBytes() /1e6 )
     print "next clipping..."
+
     mesh.clip()
+
     print "After clipping..."
     compress = 100.0 * float(mesh.nBlocks)/float(old_nBlocks)
     print "Blocks after {} with a compression of {}%".format( mesh.nBlocks, compress )
     print "Size  in Mbytes: {}".format( mesh.sizeInBytes() /1e6)
     print "Capa. in Mbytes: {}".format( mesh.capacityInBytes() /1e6)
+
 
 
     visualize_mesh(axs[0], mesh)

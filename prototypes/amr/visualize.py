@@ -6,6 +6,7 @@ import numpy as np
 import vmesh
 
 
+
 def plot_center(ax, mesh, cid):
     (x,y,z) = mesh.get_center(cid)
     ax.plot(x, y, marker='.', color='black')
@@ -63,12 +64,12 @@ def plot_edges(ax, mesh, cid, alpha=0.3):
 
 
 
-def visualize_mesh(ax, mesh):
+def visualize_mesh(ax, mesh, params):
 
     ax.cla()
     ax.minorticks_on()
-    ax.set_xlim(-11.0, 11.0)
-    ax.set_ylim(-11.0, 11.0)
+    ax.set_xlim(params.mins[0], params.maxs[0])
+    ax.set_ylim(params.mins[1], params.maxs[1])
 
     for cellID in mesh.all_blocks(True):
         plot_center(ax, mesh, cellID)
@@ -76,29 +77,32 @@ def visualize_mesh(ax, mesh):
 
 
 
-def visualize_data(ax, mesh):
+def visualize_data(ax, mesh, params):
     ax.cla()
     ax.minorticks_on()
-    ax.set_xlim(-11.0, 11.0)
-    ax.set_ylim(-11.0, 11.0)
+    ax.set_xlim(params.mins[0], params.maxs[0])
+    ax.set_ylim(params.mins[1], params.maxs[1])
 
-    (Nx, Ny, Nz) = mesh.nCells
-    data = np.zeros( (Nx, Ny) ) #xy
+    (Nx, Ny, Nz) = mesh.Nblocks
+    #data = np.zeros( (Nx, Ny) ) #xy
     #data = np.zeros( (Nz, Ny) ) #zy
 
+    data = np.zeros((Nx,Ny,Nx))
+
+    print "len: {}".format( len(mesh.all_blocks(True)) )
 
     for cid in mesh.all_blocks(True):
         (i,j,k) = mesh.get_indices( cid )
         val = mesh[cid]
-
-        data[i,j] = val[0] #xy
-        #data[j,k] = val[0] #zy
+        data[i,j,k] = val[0]
 
         #print "({},{},{}) = {}".format(i,j,k,val[0])
         #plot_edges(ax, mesh, cid)
 
-    extent = [-10.0, 10.0, -10.0, 10.0]
-    mgrid = np.ma.masked_where(data == 0.0, data)
+    data_slice = data[:,:,20]
+
+    extent = [ params.mins[0], params.maxs[0], params.mins[1], params.maxs[1] ]
+    mgrid = np.ma.masked_where(data_slice == 0.0, data_slice)
     ax.imshow(mgrid.T,
               extent=extent,
               origin='lower',

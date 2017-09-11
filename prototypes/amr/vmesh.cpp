@@ -56,9 +56,8 @@ namespace vmesh {
     class vMesh {
 
         public:
-            uint64_t nBlocks = 0;
+            size_t number_of_blocks = 0;
     
-            std::unordered_map<uint64_t, vmesh::vBlock> meshBlocks; // XXX soon obsolete
             std::unordered_map<uint64_t, vblock_t> blockContainer;
               
             /// returns a pointer to the data of given block
@@ -92,17 +91,15 @@ namespace vmesh {
                 blockContainer[cellID] = vals;
             };
 
-            std::array<double, 3> mins, maxs, dvs; // Geometry parameters
-
-            indices_t nCells;
+            std::array<double, 3> mins, maxs, lens; // Geometry parameters
+            indices_t Nblocks = {{ NBLOCKS, NBLOCKS, NBLOCKS }};
 
             /// Clipping threshold
             Real threshold = 1.0e-2;
 
 
             void zFill( std::array<double, 3> mins_,
-                        std::array<double, 3> maxs_,
-                        std::array<double, 3> dvs_ );
+                        std::array<double, 3> maxs_);
 
             vblock_t get_block( const uint64_t cellID ) const;
 
@@ -116,6 +113,12 @@ namespace vmesh {
 
             std::vector<uint64_t> all_blocks( bool sorted = false);
 
+
+            std::array<Real, PENCIL_WID> get_x_pencil(size_t j, size_t k);
+            std::array<Real, PENCIL_WID> get_y_pencil(size_t i, size_t k);
+            std::array<Real, PENCIL_WID> get_z_pencil(size_t i, size_t j);
+
+
             bool clip( );
 
             size_t sizeInBytes() const;
@@ -128,60 +131,36 @@ namespace vmesh {
 
     void vmesh::vMesh::zFill( 
             std::array<double, 3> mins_,
-            std::array<double, 3> maxs_,
-            std::array<double, 3> dvs_ ) {
+            std::array<double, 3> maxs_){
 
-        double xi, yi, zi;
-
-        // fix grid geometry
+        // Compute grid geometry
         mins   = {{ mins_[0], mins_[1], mins_[2] }};
         maxs   = {{ maxs_[0], maxs_[1], maxs_[2] }};
-        dvs    = {{  dvs_[0],  dvs_[1],  dvs_[2] }};
 
+        for (size_t i=0; i<3; i++) {
+            lens[i] = (maxs[i] - mins[i])/( (double)Nblocks[i] - 1.0);
+        }
 
         
-        // fmt::print("z-filling vel-space from x:{} {} | y:{} {} | z:{} {}\n",mins[0], maxs[0], mins[1], maxs[1], mins[2], maxs[2]);
+       fmt::print("z-filling vel-space from x:{} {} d: {}| y:{} {} d:{}| z:{} {} d:{}\n",mins[0], maxs[0], lens[0], mins[1], maxs[1], lens[1], mins[2], maxs[2], lens[2]);
 
         // fill mesh in Morton z-order
-        uint64_t indx   = 0;
         uint64_t cellID = 1;
-
-        zi = mins[2] + dvs[2]/2.0;
-        uint64_t nz = 0;
-        while( zi <= maxs[2] - dvs[2]/2.0 ){
-            yi = mins[1] + dvs[1]/2.0;
-
-            uint64_t ny = 0;
-            while( yi <= maxs[1] - dvs[1]/2.0 ){
-                xi = mins[0] + dvs[0]/2.0;
-
-                uint64_t nx = 0;
-                while( xi <= maxs[0] - dvs[0]/2.0 ){
-                    // fmt::print("({},{},{})\n", xi, yi, zi);
-
-                    vblock_t vblock = {{0.0, 0.0, 0.0, 0.0}};
+        for(size_t zi=0; zi<Nblocks[2]; zi++) {
+            for(size_t yi=0; yi<Nblocks[1]; yi++) {
+                for(size_t xi=0; xi<Nblocks[0]; xi++) {
+                    // fmt::print("({},{},{}\n",xi,yi,zi);
+                    vblock_t vblock;
                     blockContainer.insert( std::make_pair(cellID, vblock ) );
 
-                    nBlocks++;
+                    number_of_blocks++;
                     cellID++;
-                    indx++;
-
-                    xi += dvs[0];
-                    nx++;
-                };
-                yi += dvs[1];
-                ny++;
-
-                nCells[0] = nx;
-            };
-            zi += dvs[2];
-            nz++;
-
-            nCells[1] = ny;
-        };
-        nCells[2] = nz;
+                }
+            }
+        }
         
-    };
+
+    }
 
 
     // --------------------------------------------------
@@ -199,13 +178,13 @@ namespace vmesh {
         // if (index[0] < 0)          {return vmesh::error_block;};
         // if (index[1] < 0)          {return vmesh::error_block;};
         // if (index[2] < 0)          {return vmesh::error_block;};
-        if (index[0] >= nCells[0]) {return vmesh::error_block;};
-        if (index[1] >= nCells[1]) {return vmesh::error_block;};
-        if (index[2] >= nCells[2]) {return vmesh::error_block;};
+        if (index[0] >= Nblocks[0]) {return vmesh::error_block;};
+        if (index[1] >= Nblocks[1]) {return vmesh::error_block;};
+        if (index[2] >= Nblocks[2]) {return vmesh::error_block;};
 
         uint64_t GID = 1; // we start cell order from 1; 0 is error cell
-        GID += index[2] * nCells[1];
-        GID += index[1] * nCells[0];
+        GID += index[2] * Nblocks[1]*Nblocks[0];
+        GID += index[1] * Nblocks[0];
         GID += index[0];
 
         return GID;
@@ -223,9 +202,9 @@ namespace vmesh {
         cellID -= 1; // numbering starts from zero
 
         indices_t indx = {{ 
-             cellID % nCells[0], 
-            (cellID /  nCells[0]) % nCells[1] ,
-             cellID / (nCells[0] * nCells[1] )
+             cellID %  Nblocks[0], 
+            (cellID /  Nblocks[0]) % Nblocks[1] ,
+             cellID / (Nblocks[0]  * Nblocks[1] )
              }};
 
 
@@ -248,10 +227,10 @@ namespace vmesh {
         // TODO: check which refinement level we are on
         int refLevel = 0; 
 
-        std::array<double, 3> len;
-        for (int i=0; i<3; i++) { len[i] = dvs[i] / std::pow(2.0, refLevel); };
+        std::array<double, 3> wid;
+        for (int i=0; i<3; i++) { wid[i] = wid[i] / std::pow(2.0, refLevel); };
 
-        return len;
+        return wid;
     };
 
 
@@ -262,11 +241,10 @@ namespace vmesh {
         std::array<double, 3> center = {{0.0, 0.0, 0.0}};
 
         // TODO add refinement
-        center = {{
-				mins[0] + dvs[0]/2.0 + double(indx[0]) * dvs[0],
-				mins[1] + dvs[1]/2.0 + double(indx[1]) * dvs[1],
-				mins[2] + dvs[2]/2.0 + double(indx[2]) * dvs[2]
-			    }};
+        center[0] = mins[0] + lens[0]/2.0 + (double)indx[0] * lens[0];
+        center[1] = mins[1] + lens[1]/2.0 + (double)indx[1] * lens[1];
+        center[2] = mins[2] + lens[2]/2.0 + (double)indx[2] * lens[2];
+        // fmt::print("mins {} lens {} indx {}\n", mins[0], lens[0], indx[0]);
 
     return center;
     };
@@ -309,7 +287,7 @@ namespace vmesh {
         for (uint64_t block: below_threshold) { 
             // fmt::print("Erasing {}\n", block);
             blockContainer.erase( block ); 
-            nBlocks -= 1;
+            number_of_blocks -= 1;
         };
 
 
@@ -358,12 +336,11 @@ PYBIND11_MODULE(vmesh, m) {
 
     py::class_<vmesh::vMesh>(m, "vMesh" )
         .def(py::init<>())
-        .def_readwrite("nBlocks", &vmesh::vMesh::nBlocks)
+        .def_readwrite("number_of_blocks", &vmesh::vMesh::number_of_blocks)
         .def_readwrite("mins", &vmesh::vMesh::mins)
         .def_readwrite("maxs", &vmesh::vMesh::maxs)
-        .def_readwrite("dvs", &vmesh::vMesh::dvs)
-        .def_readwrite("nCells", &vmesh::vMesh::nCells)
-        .def_readwrite("meshBlocks", &vmesh::vMesh::meshBlocks)
+        .def_readwrite("lens", &vmesh::vMesh::lens)
+        .def_readwrite("Nblocks", &vmesh::vMesh::Nblocks)
         .def("zFill", &vmesh::vMesh::zFill)
         .def("get_block", &vmesh::vMesh::get_block)
         .def("get_block_ID", &vmesh::vMesh::get_block_ID)
