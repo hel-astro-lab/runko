@@ -67,7 +67,6 @@ def unitVecY(vec):
 def unitVecZ(vec):
     return np.array([ 0.0, vec[2] ])
 
-
 def norm(vec):
     return np.sqrt( vec[0]**2 + vec[1]**2 + vec[2]**2 )
 
@@ -184,17 +183,28 @@ def comptonScatter(e, p, ax, plot=True):
 
 
 
-def visualize(ax, slab, params):
+def visualize(ax, slab, params, lap):
+    ax.cla()
+
+    # Normalize 3d plot to make aspect ratio unity
+    MAX = 1.0
+    for direction in (-1, 1):
+        for point in np.diag(direction * MAX * np.array([1,1,1])):
+            axs[0].plot([point[0]], [point[1]], [point[2]], 'w')
 
     xs = slab.xloc
     ys = slab.yloc
     zs = slab.zloc
 
-    ax.plot(xs, ys, zs, 
+    ax.scatter(xs, ys, zs, 
             color='black',
             marker='.'
             )
             
+
+    slap = str(lap).rjust(4, '0')
+    fname = 'slab_'+slap+'.png'
+    plt.savefig(fname)
 
     return 
 
@@ -220,12 +230,6 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[0], projection='3d') )
     
 
-    ################################################## 
-    # Normalize 3d plot to make aspect ratio unity
-    MAX = 1.0
-    for direction in (-1, 1):
-        for point in np.diag(direction * MAX * np.array([1,1,1])):
-            axs[0].plot([point[0]], [point[1]], [point[2]], 'w')
 
     ################################################## 
     # set-up grid
@@ -258,14 +262,26 @@ if __name__ == "__main__":
     ##################################################
     #Lets create a simulation slab
     slab = mcmc.Slab( bucket )
+    slab.set_dimensions(
+            params.mins[0], params.maxs[0],
+            params.mins[1], params.maxs[1],
+            params.mins[2], params.maxs[2]
+                       )
+    slab.set_numberDensity(0.1)
+
     slab.floor() # put everything to the bottom of the slab
 
+    #flux from the bottom
+    flux = 100.0 #TODO units
 
     timer.start("step")
 
-    for laps in range(10):
-        slab.step()
+    for lap in range(20):
+        slab.push()
+        slab.inject(flux)
+
         timer.lap("step")
+        visualize(axs[0], slab, params, lap)
     timer.stop("step")
     timer.stats("step")
 
@@ -273,7 +289,6 @@ if __name__ == "__main__":
 
 
 
-    visualize(axs[0], slab, params)
 
 
     plt.savefig("slab.png")

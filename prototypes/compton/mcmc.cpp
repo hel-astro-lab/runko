@@ -9,14 +9,18 @@ namespace py = pybind11;
 
 #include <vector>
 #include <cmath>
+#include <random>
 
+#include <math.h>
 
 // #include "definitions.h"
+const double pi = M_PI;
 
-
+typedef std::array<double, 3> vec;
 
 
 namespace mcmc {
+
 
     class photon {
 
@@ -97,6 +101,8 @@ namespace mcmc {
             
             std::array<double, 4> get_data( const size_t indx );
 
+            void resize(const size_t N);
+
     };
 
     void photonBucket::push_back( photon ph ) {
@@ -119,18 +125,69 @@ namespace mcmc {
         return bucket[indx];
     };
 
+    void photonBucket::resize(const size_t N) {
+        // TODO error check if N < N
+        bucket.resize(N);
+        nPhotons = N;
+
+        return;
+    };
+
+
 
     class Slab {
 
         /// photon container
         photonBucket bucket;
 
+        /// Box sizes
+        double xmin, xmax, ymin, ymax, zmin, zmax;
 
-        /// Simulation time step (in units of c)
-        double dt = 0.1;
+        /// RNG seed
+        uint32_t rngSeed = 1; 
+
+        /// RNG engine (Mersenne twister)
+        std::mt19937 rng;
+
+        std::uniform_real_distribution<double> randPhi{0.0, 2.0*pi};
+        std::uniform_real_distribution<double> randmu{0.0, 1.0};
+
+        /// Random spherical direction (r, theta, phi)
+        vec randSph() {
+            return {{ 1.0, randmu(rng), randPhi(rng) }};
+        };
+
+        /// Random direction in cartesian (vx, vy, vx) coordinates
+        // done via spherical coordinates (r, theta, phi) and then transforming back
+        vec randHalfSphere() {
+            vec sphDirs = randSph();
+            vec ret = 
+            {{
+                sphDirs[0] * std::sin(sphDirs[1]) * std::cos(sphDirs[2]),
+                sphDirs[0] * std::sin(sphDirs[1]) * std::sin(sphDirs[2]),
+                sphDirs[0] * std::cos(sphDirs[1])
+            }};
+
+            return ret;
+        };
+
 
 
         public:
+
+            /// Simulation time step (in units of c)
+            double dt = 0.1;
+
+            /// Slab height
+            double height = 1.0;
+
+            /// electron number density
+            double ne = 0.0;
+
+            /// Thomson optical depth
+            double tau = 0.0;
+
+
             /// location containers
             std::vector<double> xloc, yloc, zloc;
 
@@ -143,34 +200,65 @@ namespace mcmc {
                 xloc.resize( bucket.size() );
                 yloc.resize( bucket.size() );
                 zloc.resize( bucket.size() );
+
+                // Finally seed the rng
+                rng.seed( rngSeed );
             };
-
-            /// inject everything from point in bottom
-            void floor() {
-                for (size_t i=0; i<xloc.size(); i++) {
-                    zloc[i] = 0.0;
-
-                    // center of floor
-                    xloc[i] = 0.0;
-                    yloc[i] = 0.0;
-                }
-            };
-
-
+              
             /// Number of photons in the slab
             const size_t size( ) {return this->bucket.size(); };
 
 
-            /// Step in time
+            /// Set slab dimensions; z is implicitly assumed as the height
+            void set_dimensions(double _xmin, double _xmax,
+                                double _ymin, double _ymax,
+                                double _zmin, double _zmax) {
+
+                this->xmin = _xmin;
+                this->xmax = _xmax;
+                this->ymin = _ymin;
+                this->ymax = _ymax;
+                this->zmin = _zmin;
+                this->zmax = _zmax;
+
+                this->height = zmax - zmin;
+            };
+
+
+            /// Set number density and compute Thomson optical depth based on it
+            void set_numberDensity(double _ne) {
+                this->ne = _ne;
+
+                // compute Thomson tau = sigma_T * n_e * H
+                tau = 1.0 * ne * height;
+            };
+
+
+            /// Step in time performing the full radiation interactions
             void step() {
+
+                push();
+                // wrap();
+                // emergingFlux();
+                
+                // check_scatter();
+                // scatter();
+                // inject();
+
+
+            };
+
+
+            /// Push photons
+            // TODO: Properly vectorize although this probably implicitly works 
+            // already on compiler level
+            void push() {
 
                 size_t N = this->size();
                 std::vector<double> vx, vy, vz;
                 vx.resize(N);
                 vy.resize(N);
                 vz.resize(N);
-
-
 
                 // get velocities from bucket
                 for (size_t i=0; i<N; i++) {
@@ -186,8 +274,57 @@ namespace mcmc {
                     yloc[i] += vy[i]*dt;
                     zloc[i] += vz[i]*dt;
                 }
+            };
+
+
+            /// Inject more from the floor
+            void inject(double flux) {
+
+                // size of the floor
+                double area = (xmax-xmin)*(ymax-ymin);
+
+                // how many to inject based on the flux
+                size_t Ninj = (size_t)flux*area*dt;
+
+                // fmt::print("Injecting {} photons...\n", Ninj);
+
+                // resize beforehand 
+                size_t Ns = size();
+                bucket.resize(Ns + Ninj);
+                xloc.resize(Ns + Ninj);
+                yloc.resize(Ns + Ninj);
+                zloc.resize(Ns + Ninj);
+
+
+                for (size_t i=0; i<Ninj; i++) {
+
+                    // create random photon
+                    double E = 0.01;
+                    vec dir = randHalfSphere();
+                    photon ph(E, dir[0], dir[1], dir[2]);
+
+                    bucket.replace( Ns + i, ph );
+
+                    // set location
+                    xloc[Ns + i] = 0.0; // TODO random loc
+                    yloc[Ns + i] = 0.0; // TODO random loc
+                    zloc[Ns + i] = 0.0; // bottom
+                }
 
             };
+
+
+            /// inject everything from point in bottom
+            void floor() {
+                for (size_t i=0; i<xloc.size(); i++) {
+                    zloc[i] = zmin;
+
+                    // center of floor
+                    xloc[i] = 0.0;
+                    yloc[i] = 0.0;
+                }
+            };
+
 
     };
 
@@ -234,12 +371,18 @@ PYBIND11_MODULE(mcmc, m) {
 
     py::class_<mcmc::Slab>(m, "Slab" )
         .def(py::init< mcmc::photonBucket >())
-        .def_readwrite("xloc",      &mcmc::Slab::xloc)
-        .def_readwrite("yloc",      &mcmc::Slab::yloc)
-        .def_readwrite("zloc",      &mcmc::Slab::zloc)
-        .def("size",        &mcmc::Slab::size)
-        .def("step",        &mcmc::Slab::step)
-        .def("floor", &mcmc::Slab::floor);
+        .def_readwrite("xloc",    &mcmc::Slab::xloc)
+        .def_readwrite("yloc",    &mcmc::Slab::yloc)
+        .def_readwrite("zloc",    &mcmc::Slab::zloc)
+        .def_readwrite("tau",     &mcmc::Slab::tau)
+        .def_readwrite("height",  &mcmc::Slab::height)
+        .def_readwrite("ne",      &mcmc::Slab::ne)
+        .def("size",              &mcmc::Slab::size)
+        .def("push",              &mcmc::Slab::push)
+        .def("inject",            &mcmc::Slab::inject)
+        .def("set_dimensions",    &mcmc::Slab::set_dimensions)
+        .def("set_numberDensity", &mcmc::Slab::set_numberDensity)
+        .def("floor",             &mcmc::Slab::floor);
 
 
 
