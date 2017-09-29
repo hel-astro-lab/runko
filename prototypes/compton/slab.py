@@ -279,6 +279,7 @@ if __name__ == "__main__":
     for lap in range(20):
         slab.push()
         slab.inject(flux)
+        slab.scrape()
 
         timer.lap("step")
         visualize(axs[0], slab, params, lap)

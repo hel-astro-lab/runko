@@ -103,6 +103,8 @@ namespace mcmc {
 
             void resize(const size_t N);
 
+            void swap(const size_t i1, const size_t i2);
+
     };
 
     void photonBucket::push_back( photon ph ) {
@@ -112,6 +114,10 @@ namespace mcmc {
 
     void photonBucket::replace( const size_t indx, photon ph ) {
         bucket[indx] = ph.data;
+    };
+
+    void photonBucket::swap(const size_t i1, const size_t i2) {
+        std::swap( bucket[i1], bucket[i2] );
     };
 
     photon photonBucket::get( const size_t indx ) {
@@ -154,7 +160,7 @@ namespace mcmc {
 
         /// Random spherical direction (r, theta, phi)
         vec randSph() {
-            return {{ 1.0, randmu(rng), randPhi(rng) }};
+            return {{ 1.0, std::acos( randmu(rng) ), randPhi(rng) }};
         };
 
         /// Random direction in cartesian (vx, vy, vx) coordinates
@@ -245,7 +251,6 @@ namespace mcmc {
                 // scatter();
                 // inject();
 
-
             };
 
 
@@ -313,6 +318,42 @@ namespace mcmc {
 
             };
 
+
+            /// Scrape photons that are overflowing from the slab
+            void scrape() {
+
+                size_t i = 0;
+                size_t Nspills = 0;
+
+                while ( i<size()-Nspills) {
+
+                    if (zloc[i] >= height) {
+                        // swamp everything to the end and remove later
+                        std::swap( xloc[i], xloc[size() - Nspills] );
+                        std::swap( yloc[i], yloc[size() - Nspills] );
+                        std::swap( zloc[i], zloc[size() - Nspills] );
+                        bucket.swap( i, size()-Nspills );
+
+                        Nspills++;
+                    } else { 
+                        i++;
+                    }
+                }
+
+                // collecting spills
+                fmt::print("Scraping spills: {}\n", Nspills);
+                for (size_t i=size()-Nspills; i<size(); i++) {
+                    photon ph = bucket.get(i);
+                    fmt::print("  spill {}\n", ph.hv() );
+                }
+
+                // and finally remove 
+                xloc.resize(size() - Nspills); 
+                yloc.resize(size() - Nspills); 
+                zloc.resize(size() - Nspills); 
+                bucket.resize(size() - Nspills);
+
+            };
 
             /// inject everything from point in bottom
             void floor() {
@@ -382,6 +423,7 @@ PYBIND11_MODULE(mcmc, m) {
         .def("inject",            &mcmc::Slab::inject)
         .def("set_dimensions",    &mcmc::Slab::set_dimensions)
         .def("set_numberDensity", &mcmc::Slab::set_numberDensity)
+        .def("scrape",            &mcmc::Slab::scrape)
         .def("floor",             &mcmc::Slab::floor);
 
 
