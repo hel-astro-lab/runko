@@ -208,18 +208,16 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,4))
+    plt.fig = plt.figure(1, figsize=(4,4))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(1, 2)
+    gs = plt.GridSpec(1, 1)
     gs.update(hspace = 0.5)
     
     axs = []
-    axs.append( plt.subplot(gs[0]) )
-    axs.append( plt.subplot(gs[1], projection='3d') )
-    #axs.append( plt.subplot(gs[0], projection='3d') )
+    axs.append( plt.subplot(gs[0], projection='3d') )
     
 
     ################################################## 
@@ -227,9 +225,6 @@ if __name__ == "__main__":
     MAX = 1.0
     for direction in (-1, 1):
         for point in np.diag(direction * MAX * np.array([1,1,1])):
-            #axs[1].plot([point[0]], [point[1]], [point[2]], 'w')
-            #axs[2].plot([point[0]], [point[1]], [point[2]], 'w')
-
             axs[0].plot([point[0]], [point[1]], [point[2]], 'w')
 
     ################################################## 
@@ -241,46 +236,10 @@ if __name__ == "__main__":
     params.lens = [ 1.0, 1.0, 1.0 ]
 
 
+    timer = Timer(["bucket", "step"])
+
     ################################################### 
-    #test scattering for single case
-    print "Compton scatter single interaction..."
-
-    #create electron
-    (vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
-    e = mcmc.electron(1.0, vx, vy, vz)
-    print "target electron with beta: {} gamma: {}".format(e.v(), e.gamma() )
-
-
-    #create photon
-    (vx, vy, vz) = randVel(1.0) #direction on unit sphere
-    ph = mcmc.photon( 1.0, vx, vy, vz )
-
-
-    #visualize starting point of collision
-    beta = np.array([ e.vx(), e.vy(), e.vz() ]) / e.v() #electron unit vector
-    omeg = np.array([ ph.vx(), ph.vy(), ph.vz() ])      #photon unit vector
-    axs[1].plot( unitVecX(-beta), unitVecY(-beta), unitVecZ(-beta), linestyle='dashed', color='black', linewidth=3.0)
-    axs[1].plot( unitVecX(-omeg), unitVecY(-omeg), unitVecZ(-omeg), linestyle='dotted', color='black', linewidth=4.0)
-
-
-    #es, ps = comptonScatter(e, ph, axs[1], plot=True)
-
-    timer = Timer(["scatter", "bucket"])
-    timer.start("scatter")
-
-    for sc in range(500):
-        es, ps = comptonScatter(e, ph, axs[1], plot=True)
-        timer.lap("scatter")
-    timer.stats("scatter")
-
-
-
-    plt.savefig("comptonFan.png")
-    #plt.show()
-    #sys.exit()
-
-    ################################################## 
-    # now Monte Carlo scatter the whole bucket
+    # Create bucket
     bucket = mcmc.photonBucket()
     print "created bucket ({})".format( bucket.size() )
 
@@ -288,65 +247,33 @@ if __name__ == "__main__":
     timer.start("bucket")
     for i in range(20):
         (vx, vy, vz) = randVel(1.0) #direction on unit sphere
-        #(vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
         E = 0.01 # E = h\nu 
 
         ph = mcmc.photon( E, vx, vy, vz )
         bucket.push_back( ph )
-    timer.stop("bucket")
     print "loaded bucket with {} photons".format( bucket.size() )
     timer.stats("bucket")
-
 
 
     ##################################################
     #Lets create a simulation slab
     slab = mcmc.Slab( bucket )
-    slab.injectFloor()
+    slab.floor() # put everything to the bottom of the slab
 
 
-    print slab.xloc
+    timer.start("step")
+
+    for laps in range(10):
+        slab.step()
+        timer.lap("step")
+    timer.stop("step")
+    timer.stats("step")
+
     
-    visualize(axs[2], slab, params)
+
+
+
+    visualize(axs[0], slab, params)
 
 
     plt.savefig("slab.png")
-    sys.exit()
-    ##################################################
-
-    xmin = 0.5
-    xmax = 100.0
-    axs[0].set_xscale('log')
-    axs[0].set_yscale('log')
-
-    axs[0].set_xlim(xmin, xmax)
-    axs[0].set_ylim(0.2, 1.1)
-    axs[0].minorticks_on()
-
-
-    #step in time
-    xs = np.zeros( bucket.size() )
-    for lap in range(1):
-        print("lap : {}").format(lap)
-        for i in range(bucket.size() ):
-            
-            #(vx, vy, vz) = randVel( 0.9 ) #draw random electron
-            (vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
-            e = mcmc.electron(1.0, vx, vy, vz)
-
-            p = bucket.get(i)
-
-            es, ps = comptonScatter(e, p, axs[1], plot=False)
-
-            xs[i] = p.hv()
-            bucket.replace(i, ps)
-
-            
-        #hist, edges = np.histogram(xs, np.linspace(xmin, xmax, 20))
-        hist, edges = np.histogram(xs, np.logspace(np.log10(xmin), np.log10(xmax), 20))
-        hist = 1.0 * hist / hist.max()
-        axs[0].plot(edges[:-1], hist )#, "k-")
-
-
-    #visualize_data(axs[0], mesh, params)
-    plt.savefig("compton.png")

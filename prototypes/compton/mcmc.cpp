@@ -15,6 +15,7 @@ namespace py = pybind11;
 
 
 
+
 namespace mcmc {
 
     class photon {
@@ -28,6 +29,11 @@ namespace mcmc {
             const double vx(){ return data[1]; };
             const double vy(){ return data[2]; };
             const double vz(){ return data[3]; };
+
+            /// Location 
+            // const double x(){ return data[4]; };
+            // const double y(){ return data[5]; };
+            // const double z(){ return data[6]; };
 
     };
 
@@ -82,11 +88,14 @@ namespace mcmc {
 
         public:
             void push_back( photon ph );
+
             const size_t size( ) { return this->nPhotons; };
 
-            void replace( size_t indx, photon ph );
+            void replace( const size_t indx, photon ph );
 
-            photon get( size_t indx );
+            photon get( const size_t indx );
+            
+            std::array<double, 4> get_data( const size_t indx );
 
     };
 
@@ -95,17 +104,95 @@ namespace mcmc {
         nPhotons++;
     };
 
-    void photonBucket::replace( size_t indx, photon ph ) {
+    void photonBucket::replace( const size_t indx, photon ph ) {
         bucket[indx] = ph.data;
     };
 
-    photon photonBucket::get( size_t indx ) {
+    photon photonBucket::get( const size_t indx ) {
         std::array<double, 4> data = bucket[indx];
         photon ph(data[0], data[1], data[2], data[3]);
 
         return ph;
     };
 
+    std::array<double, 4> photonBucket::get_data( const size_t indx ) {
+        return bucket[indx];
+    };
+
+
+    class Slab {
+
+        /// photon container
+        photonBucket bucket;
+
+
+        /// Simulation time step (in units of c)
+        double dt = 0.1;
+
+
+        public:
+            /// location containers
+            std::vector<double> xloc, yloc, zloc;
+
+
+            /// Constructor
+            Slab(photonBucket b) {
+                this->bucket = b;
+
+                // prepare location containers
+                xloc.resize( bucket.size() );
+                yloc.resize( bucket.size() );
+                zloc.resize( bucket.size() );
+            };
+
+            /// inject everything from point in bottom
+            void floor() {
+                for (size_t i=0; i<xloc.size(); i++) {
+                    zloc[i] = 0.0;
+
+                    // center of floor
+                    xloc[i] = 0.0;
+                    yloc[i] = 0.0;
+                }
+            };
+
+
+            /// Number of photons in the slab
+            const size_t size( ) {return this->bucket.size(); };
+
+
+            /// Step in time
+            void step() {
+
+                size_t N = this->size();
+                std::vector<double> vx, vy, vz;
+                vx.resize(N);
+                vy.resize(N);
+                vz.resize(N);
+
+
+
+                // get velocities from bucket
+                for (size_t i=0; i<N; i++) {
+                    auto vel = this->bucket.get_data(i);
+                    vx[i] = vel[1];
+                    vy[i] = vel[2];
+                    vz[i] = vel[3];
+                }
+
+                // step forward in time
+                for (size_t i=0; i<N; i++) {
+                    xloc[i] += vx[i]*dt;
+                    yloc[i] += vy[i]*dt;
+                    zloc[i] += vz[i]*dt;
+                }
+
+            };
+
+    };
+
+
+    
 
 
 }
@@ -130,19 +217,29 @@ PYBIND11_MODULE(mcmc, m) {
     py::class_<mcmc::electron>(m, "electron" )
         .def(py::init<double, double, double, double >())
         .def_readwrite("data",      &mcmc::electron::data)
-        .def("v0",  &mcmc::electron::v0)
-        .def("vx",  &mcmc::electron::vx)
-        .def("vy",  &mcmc::electron::vy)
-        .def("vz",  &mcmc::electron::vz)
-        .def("v",  &mcmc::electron::v)
+        .def("v0",    &mcmc::electron::v0)
+        .def("vx",    &mcmc::electron::vx)
+        .def("vy",    &mcmc::electron::vy)
+        .def("vz",    &mcmc::electron::vz)
+        .def("v",     &mcmc::electron::v)
         .def("gamma", &mcmc::electron::gamma);
 
     py::class_<mcmc::photonBucket>(m, "photonBucket" )
         .def(py::init<>())
-        .def("size", &mcmc::photonBucket::size)
-        .def("replace", &mcmc::photonBucket::replace)
-        .def("get", &mcmc::photonBucket::get)
+        .def("size",      &mcmc::photonBucket::size)
+        .def("replace",   &mcmc::photonBucket::replace)
+        .def("get",       &mcmc::photonBucket::get)
         .def("push_back", &mcmc::photonBucket::push_back);
+
+
+    py::class_<mcmc::Slab>(m, "Slab" )
+        .def(py::init< mcmc::photonBucket >())
+        .def_readwrite("xloc",      &mcmc::Slab::xloc)
+        .def_readwrite("yloc",      &mcmc::Slab::yloc)
+        .def_readwrite("zloc",      &mcmc::Slab::zloc)
+        .def("size",        &mcmc::Slab::size)
+        .def("step",        &mcmc::Slab::step)
+        .def("floor", &mcmc::Slab::floor);
 
 
 
