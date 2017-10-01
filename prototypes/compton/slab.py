@@ -212,6 +212,55 @@ def visualize(ax, slab, params, lap):
 
     return 
 
+def angle_histogram(ax, slab):
+    ax.cla()
+
+    xmin = 0.0
+    xmax = 1.0
+    #ax.set_xscale('log')
+    #ax.set_yscale('log')
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(0.0, 1.1)
+    ax.minorticks_on()
+    ax.set_xlabel(r'$\mu$')
+    ax.set_ylabel(r'I')
+    
+    vz = slab.overflow.vecZ() #z component of velocity (|v| = 1.0, i.e., normalized)
+
+    #theta = np.cos(vz)
+    #mu = np.acos(theta)
+    mu = vz
+
+    hist, edges = np.histogram(mu, np.linspace(xmin, xmax, 20))
+    hist = 1.0 * hist / hist.max() #normalize
+    ax.plot(edges[:-1], hist )
+
+
+
+
+def energy_histogram(ax, slab):
+
+    #prepare axis
+    ax.cla()
+
+    xmin = 0.5
+    xmax = 100.0
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(0.2, 1.1)
+    ax.minorticks_on()
+
+    #histogram
+    xs = slab.vecE()
+    hist, edges = np.histogram(xs, np.logspace(np.log10(xmin), np.log10(xmax), 20))
+    hist = 1.0 * hist / hist.max() #normalize
+    ax.plot(edges[:-1], hist )
+
+
+
 
 
 if __name__ == "__main__":
@@ -222,17 +271,17 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(4,4))
+    plt.fig = plt.figure(1, figsize=(4,7))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(1, 1)
+    gs = plt.GridSpec(2, 1)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0], projection='3d') )
-    
+    axs.append( plt.subplot(gs[1]) )
 
 
     ################################################## 
@@ -280,21 +329,25 @@ if __name__ == "__main__":
 
     timer.start("step")
 
-    for lap in range(20):
+    for lap in range(50):
+        print "----lap: {}".format(lap)
         slab.push()
         slab.inject(flux)
         slab.scrape()
         slab.wrap()
 
         timer.lap("step")
+
+        angle_histogram(axs[1], slab)
         visualize(axs[0], slab, params, lap)
     print "overflow size: {}".format(slab.overflow.size())
 
     timer.stop("step")
     timer.stats("step")
 
+    angle_histogram(axs[1], slab)
+    visualize(axs[0], slab, params, 20)
     
-
 
 
     plt.savefig("slab.png")

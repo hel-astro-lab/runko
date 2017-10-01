@@ -106,21 +106,27 @@ namespace mcmc {
 
             void swap(const size_t i1, const size_t i2);
 
+            std::vector<double> vecE();  
+            std::vector<double> vecZ();  
     };
 
+    /// Append photon into bucket
     void photonBucket::push_back( photon ph ) {
         bucket.push_back( ph.data );
         nPhotons++;
     };
 
+    /// Replace i:th photon with the given one
     void photonBucket::replace( const size_t indx, photon ph ) {
         bucket[indx] = ph.data;
     };
 
+    /// Swap i1 and i2 photons in the bucket
     void photonBucket::swap(const size_t i1, const size_t i2) {
         std::swap( bucket[i1], bucket[i2] );
     };
 
+    /// return i:th photon data
     photon photonBucket::get( const size_t indx ) {
         std::array<double, 4> data = bucket[indx];
         photon ph(data[0], data[1], data[2], data[3]);
@@ -128,10 +134,12 @@ namespace mcmc {
         return ph;
     };
 
+    /// return i:th photon raw data
     std::array<double, 4> photonBucket::get_data( const size_t indx ) {
         return bucket[indx];
     };
 
+    /// Resize bucket
     void photonBucket::resize(const size_t N) {
         // TODO error check if N < N
         bucket.resize(N);
@@ -139,6 +147,32 @@ namespace mcmc {
 
         return;
     };
+
+    /// collect energy components of velocity
+    std::vector<double> photonBucket::vecE() {
+        std::vector<double> ve;
+        ve.resize( size() );
+
+        for (size_t i=0; i<size(); i++) {
+            auto d = bucket[i];
+            ve[i] = d[0];
+        }
+        return ve;
+    };
+
+    /// collect z components of velocity
+    std::vector<double> photonBucket::vecZ() {
+        std::vector<double> vz;
+        vz.resize( size() );
+
+        for (size_t i=0; i<size(); i++) {
+            auto d = bucket[i];
+            vz[i] = d[3];
+        }
+        return vz;
+    };
+
+
 
 
     //-------------------------------------------------- 
@@ -157,9 +191,9 @@ namespace mcmc {
         std::uniform_real_distribution<double> randPhi{0.0, 2.0*pi};
         std::uniform_real_distribution<double> randmu{0.0, 1.0};
 
-        /// Random spherical direction (r, theta, phi)
+        /// Random spherical direction (r, theta, phi) with Lamberts law
         vec randSph() {
-            return {{ 1.0, std::acos( randmu(rng) ), randPhi(rng) }};
+            return {{ 1.0, std::acos(std::pow(randmu(rng),0.5)), randPhi(rng) }};
         };
 
         /// Random direction in cartesian (vx, vy, vx) coordinates
@@ -362,7 +396,7 @@ namespace mcmc {
                 zloc.resize(size() - Nspills); 
                 bucket.resize(size() - Nspills);
 
-                fmt::print("after size {}\n", size());
+                //fmt::print("after size {}\n", size());
             };
 
 
@@ -432,6 +466,8 @@ PYBIND11_MODULE(mcmc, m) {
         .def("size",      &mcmc::photonBucket::size)
         .def("replace",   &mcmc::photonBucket::replace)
         .def("get",       &mcmc::photonBucket::get)
+        .def("vecE",      &mcmc::photonBucket::vecE)
+        .def("vecZ",      &mcmc::photonBucket::vecZ)
         .def("push_back", &mcmc::photonBucket::push_back);
 
 
