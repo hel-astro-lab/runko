@@ -93,7 +93,8 @@ namespace mcmc {
         public:
             void push_back( photon ph );
 
-            const size_t size( ) { return this->nPhotons; };
+            //const size_t size( ) { return this->nPhotons; };
+            const size_t size( ) { return bucket.size(); };
 
             void replace( const size_t indx, photon ph );
 
@@ -140,11 +141,9 @@ namespace mcmc {
     };
 
 
-
+    //-------------------------------------------------- 
     class Slab {
 
-        /// photon container
-        photonBucket bucket;
 
         /// Box sizes
         double xmin, xmax, ymin, ymax, zmin, zmax;
@@ -180,6 +179,13 @@ namespace mcmc {
 
 
         public:
+         
+            /// photon container
+            photonBucket bucket;
+
+            /// Overflow bucket 
+            photonBucket overflow;
+
 
             /// Simulation time step (in units of c)
             double dt = 0.1;
@@ -326,13 +332,14 @@ namespace mcmc {
                 size_t Nspills = 0;
 
                 while ( i<size()-Nspills) {
-
                     if (zloc[i] >= height) {
                         // swamp everything to the end and remove later
-                        std::swap( xloc[i], xloc[size() - Nspills] );
-                        std::swap( yloc[i], yloc[size() - Nspills] );
-                        std::swap( zloc[i], zloc[size() - Nspills] );
-                        bucket.swap( i, size()-Nspills );
+                        // fmt::print("{} swapping {} to {} \n", i, yloc[i], yloc[size()-Nspills-1]);
+
+                        std::swap( xloc[i], xloc[size() - Nspills - 1] );
+                        std::swap( yloc[i], yloc[size() - Nspills - 1] );
+                        std::swap( zloc[i], zloc[size() - Nspills - 1] );
+                        bucket.swap( i, size()-Nspills - 1 );
 
                         Nspills++;
                     } else { 
@@ -341,10 +348,12 @@ namespace mcmc {
                 }
 
                 // collecting spills
-                fmt::print("Scraping spills: {}\n", Nspills);
+                // fmt::print("Scraping spills: {} // total size: {}\n", Nspills, size());
                 for (size_t i=size()-Nspills; i<size(); i++) {
                     photon ph = bucket.get(i);
-                    fmt::print("  spill {}\n", ph.hv() );
+                    // fmt::print("  spill {}\n", ph.hv() );
+
+                    overflow.push_back(ph);
                 }
 
                 // and finally remove 
@@ -353,17 +362,33 @@ namespace mcmc {
                 zloc.resize(size() - Nspills); 
                 bucket.resize(size() - Nspills);
 
+                fmt::print("after size {}\n", size());
             };
+
 
             /// inject everything from point in bottom
             void floor() {
-                for (size_t i=0; i<xloc.size(); i++) {
+                for (size_t i=0; i<size(); i++) {
                     zloc[i] = zmin;
 
                     // center of floor
                     xloc[i] = 0.0;
                     yloc[i] = 0.0;
                 }
+            };
+
+
+            /// Wrap into xy box
+            void wrap() {
+
+                for (size_t i=0; i<size(); i++) {
+                    if (xloc[i] < xmin) { xloc[i] += xmax; }
+                    if (xloc[i] > xmax) { xloc[i] -= xmax; }
+
+                    if (yloc[i] < ymin) { yloc[i] += ymax; }
+                    if (yloc[i] > ymax) { yloc[i] -= ymax; }
+                }
+
             };
 
 
@@ -418,12 +443,15 @@ PYBIND11_MODULE(mcmc, m) {
         .def_readwrite("tau",     &mcmc::Slab::tau)
         .def_readwrite("height",  &mcmc::Slab::height)
         .def_readwrite("ne",      &mcmc::Slab::ne)
+        .def_readonly("bucket",   &mcmc::Slab::bucket)
+        .def_readonly("overflow", &mcmc::Slab::overflow)
         .def("size",              &mcmc::Slab::size)
         .def("push",              &mcmc::Slab::push)
         .def("inject",            &mcmc::Slab::inject)
         .def("set_dimensions",    &mcmc::Slab::set_dimensions)
         .def("set_numberDensity", &mcmc::Slab::set_numberDensity)
         .def("scrape",            &mcmc::Slab::scrape)
+        .def("wrap",              &mcmc::Slab::wrap)
         .def("floor",             &mcmc::Slab::floor);
 
 

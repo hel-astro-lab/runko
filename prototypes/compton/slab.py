@@ -187,10 +187,14 @@ def visualize(ax, slab, params, lap):
     ax.cla()
 
     # Normalize 3d plot to make aspect ratio unity
-    MAX = 1.0
-    for direction in (-1, 1):
-        for point in np.diag(direction * MAX * np.array([1,1,1])):
-            axs[0].plot([point[0]], [point[1]], [point[2]], 'w')
+    #MAX = 1.0
+    #for direction in (-1, 1):
+    #    for point in np.diag(direction * MAX * np.array([1,1,1])):
+    #        axs[0].plot([point[0]], [point[1]], [point[2]], 'w')
+
+    ax.set_xlim(-1.5, 1.5)
+    ax.set_ylim(-1.5, 1.5)
+    ax.set_zlim( 0.0, 1.0)
 
     xs = slab.xloc
     ys = slab.yloc
@@ -235,7 +239,7 @@ if __name__ == "__main__":
     # set-up grid
     # xy
     params = Params()
-    params.mins = [ 0.0, 0.0, 0.0 ]
+    params.mins = [-1.0,-1.0, 0.0 ]
     params.maxs = [ 1.0, 1.0, 1.0 ]
     params.lens = [ 1.0, 1.0, 1.0 ]
 
@@ -249,7 +253,7 @@ if __name__ == "__main__":
 
     #pour isotropic photons to the bucket
     timer.start("bucket")
-    for i in range(20):
+    for i in range(10):
         (vx, vy, vz) = randVel(1.0) #direction on unit sphere
         E = 0.01 # E = h\nu 
 
@@ -280,15 +284,16 @@ if __name__ == "__main__":
         slab.push()
         slab.inject(flux)
         slab.scrape()
+        slab.wrap()
 
         timer.lap("step")
         visualize(axs[0], slab, params, lap)
+    print "overflow size: {}".format(slab.overflow.size())
+
     timer.stop("step")
     timer.stats("step")
 
     
-
-
 
 
 
