@@ -212,6 +212,58 @@ namespace mcmc {
 
 
 
+        /// Draw samples from Planck function using series sampling
+        double Planck(double kT) {
+
+            /*
+            double z0 = randmu(rng);
+
+            double j = 1, un = 0.0;
+
+            while (true) {
+                // 90/pi^4
+                un += 1.0/std::pow(j, 4.0);
+
+                if (1.08232*z0 <= un) { 
+                    break;
+                } else { 
+                    j += 1.0;
+                }
+            }
+
+            // return z0;
+
+            double z1 = randmu(rng);
+            double z2 = randmu(rng);
+            double z3 = randmu(rng);
+            double z4 = randmu(rng);
+            
+            return -kT * std::log(z1*z2*z3*z4)/j;
+            */
+
+            double z1 = randmu(rng);
+            double z2 = randmu(rng);
+            double z3 = randmu(rng);
+            double x = -1.0*std::log(z1*z2*z3);
+
+            double j = 1.0;
+            double a = 1.0;
+            z1 = randmu(rng);
+            
+            while (true) {
+                // 90/pi^4 (rounded down to get finite loop)
+                if(1.08232*z1 <= a) {
+                    break;
+                } else {
+                    j += 1.0;
+                    a += 1.0 / std::pow(j, -4);
+                }
+            }
+            return kT * x/j;
+        };
+
+
+
         public:
          
             /// photon container
@@ -322,6 +374,7 @@ namespace mcmc {
             };
 
 
+
             /// Inject more from the floor
             void inject(double flux) {
 
@@ -344,7 +397,8 @@ namespace mcmc {
                 for (size_t i=0; i<Ninj; i++) {
 
                     // create random photon
-                    double E = 0.01;
+                    double E = Planck(10.0);
+
                     vec dir = randHalfSphere();
                     photon ph(E, dir[0], dir[1], dir[2]);
 

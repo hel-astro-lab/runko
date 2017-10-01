@@ -212,7 +212,7 @@ def visualize(ax, slab, params, lap):
 
     return 
 
-def angle_histogram(ax, slab):
+def angleHist(ax, slab):
     ax.cla()
 
     xmin = 0.0
@@ -238,8 +238,11 @@ def angle_histogram(ax, slab):
 
 
 
+def bbodyrad(x, kT):
+    return (15.0/np.pi**4) * ((x/kT)**3)/(np.exp(x/kT) - 1)
 
-def energy_histogram(ax, slab):
+
+def energyHist(ax, slab):
 
     #prepare axis
     ax.cla()
@@ -254,12 +257,19 @@ def energy_histogram(ax, slab):
     ax.minorticks_on()
 
     #histogram
-    xs = slab.vecE()
-    hist, edges = np.histogram(xs, np.logspace(np.log10(xmin), np.log10(xmax), 20))
+    xs = slab.overflow.vecE()
+    hist, edges = np.histogram(xs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
     hist = 1.0 * hist / hist.max() #normalize
     ax.plot(edges[:-1], hist )
 
+    #test against real Planck
+    kT = 10.0
+    xx = np.logspace(np.log10(xmin), np.log10(xmax), 50)
+    yy = bbodyrad(xx, kT)
+    yy = yy / yy.max()
+    ax.plot(xx, yy, "r-")
 
+    ax.plot([2.95*kT, 2.95*kT], [0.0, 1.0], "g--")
 
 
 
@@ -276,12 +286,13 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(2, 1)
+    gs = plt.GridSpec(3, 1)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0], projection='3d') )
     axs.append( plt.subplot(gs[1]) )
+    axs.append( plt.subplot(gs[2]) )
 
 
     ################################################## 
@@ -325,28 +336,30 @@ if __name__ == "__main__":
     slab.floor() # put everything to the bottom of the slab
 
     #flux from the bottom
-    flux = 100.0 #TODO units
+    flux = 1000.0 #TODO units
 
     timer.start("step")
 
-    for lap in range(50):
+    for lap in range(20):
         print "----lap: {}".format(lap)
-        slab.push()
+
         slab.inject(flux)
-        slab.scrape()
+        slab.push()
         slab.wrap()
+        slab.scrape()
 
         timer.lap("step")
 
-        angle_histogram(axs[1], slab)
-        visualize(axs[0], slab, params, lap)
+        #angle_histogram(axs[1], slab)
+        #visualize(axs[0], slab, params, lap)
     print "overflow size: {}".format(slab.overflow.size())
 
     timer.stop("step")
     timer.stats("step")
 
-    angle_histogram(axs[1], slab)
-    visualize(axs[0], slab, params, 20)
+    angleHist(axs[1], slab)
+    energyHist(axs[2], slab)
+    visualize(axs[0], slab, params, 100)
     
 
 
