@@ -188,7 +188,10 @@ namespace mcmc {
         /// RNG engine (Mersenne twister)
         std::mt19937 rng;
 
+        /// Ready-made distribution for flat variables in [0, 2pi[
         std::uniform_real_distribution<double> randPhi{0.0, 2.0*pi};
+          
+        /// Ready-made distribution for flat variables in [0,1[
         std::uniform_real_distribution<double> randmu{0.0, 1.0};
 
         /// Random spherical direction (r, theta, phi) with Lamberts law
@@ -196,7 +199,7 @@ namespace mcmc {
             return {{ 1.0, std::acos(std::pow(randmu(rng),0.5)), randPhi(rng) }};
         };
 
-        /// Random direction in cartesian (vx, vy, vx) coordinates
+        /// Random direction in Cartesian (vx, vy, vx) coordinates
         // done via spherical coordinates (r, theta, phi) and then transforming back
         vec randHalfSphere() {
             vec sphDirs = randSph();
@@ -215,32 +218,6 @@ namespace mcmc {
         /// Draw samples from Planck function using series sampling
         double Planck(double kT) {
 
-            /*
-            double z0 = randmu(rng);
-
-            double j = 1, un = 0.0;
-
-            while (true) {
-                // 90/pi^4
-                un += 1.0/std::pow(j, 4.0);
-
-                if (1.08232*z0 <= un) { 
-                    break;
-                } else { 
-                    j += 1.0;
-                }
-            }
-
-            // return z0;
-
-            double z1 = randmu(rng);
-            double z2 = randmu(rng);
-            double z3 = randmu(rng);
-            double z4 = randmu(rng);
-            
-            return -kT * std::log(z1*z2*z3*z4)/j;
-            */
-
             double z1 = randmu(rng);
             double z2 = randmu(rng);
             double z3 = randmu(rng);
@@ -250,16 +227,102 @@ namespace mcmc {
             double a = 1.0;
             z1 = randmu(rng);
             
-            while (true) {
-                // 90/pi^4 (rounded down to get finite loop)
-                if(1.08232*z1 <= a) {
-                    break;
-                } else {
-                    j += 1.0;
-                    a += 1.0 / std::pow(j, -4);
-                }
+            // 90/pi^4 (rounded down to get finite loop)
+            while (1.08232*z1 > a) {
+                j += 1.0;
+                a += 1.0 / std::pow(j, 4.0);
             }
             return kT * x/j;
+        };
+
+
+        /// Sampling relativistic Maxwellian using the Sobol method
+        // u = v*gamma
+        double relMaxwellianVel(double Te) {
+            double x4 = randmu(rng);
+            double x5 = randmu(rng);
+            double x6 = randmu(rng);
+            double x7 = randmu(rng);
+
+            double u = -Te*std::log(x4*x5*x6);
+            double n = -Te*std::log(x4*x5*x6*x7);
+
+            if (n*n - u*u < 1.0) { return relMaxwellianVel(Te); };
+
+            return u;
+        };
+
+        /// Sampling from non-relativistic Maxwellian with rejection sampling
+        double MaxwellianVel(double Te) {
+            double vmin = -5.0*Te; 
+            double vmax =  5.0*Te; 
+            double vf = vmin + (vmax-vmin)*randmu(rng);
+
+            double f = vf*vf*std::exp(-(vf*vf)/(2.0*Te));
+            double x = randmu(rng);
+
+            if (x > f) { return MaxwellianVel(Te); };
+
+            // u = v * gamma
+            return vf / std::sqrt(1.0 - vf*vf);
+        };
+
+
+        /// Isotropic velocity components
+        // using u = abs(u_i) to get cartesian (ux, uy, uz)
+        vec velXYZ(double u ) {
+            double x1 = randmu(rng);
+            double x2 = randmu(rng);
+
+            vec ret = 
+            {{
+                    u*(2.0*x1 - 1.0),
+                    2.0*u*std::sqrt(x1*(1.0-x1))*std::cos(2.0*pi*x2),
+                    2.0*u*std::sqrt(x1*(1.0-x1))*std::sin(2.0*pi*x2)
+            }};
+
+            return ret;
+        };
+        
+
+        public:
+        /// General boosted non-rel/rel Maxwellian
+        // Te: electron temperature in m_e c^2
+        // G:  Bulk Lorentz vector
+        //
+        // Ref: Zenitani 2015
+        vec boostedMaxwellian(double Te, vec G) {
+
+            double u;
+            if (Te > 0.2) { // relativistic
+                u = relMaxwellianVel(Te);
+            } else { // non-relativistic
+                u = MaxwellianVel(Te);
+            }
+                
+            // get isotropic velocity components
+            vec ui = velXYZ(u);
+
+            // check if bulk velocity
+            if (G[0] == 0.0 && G[1] == 0.0 && G[2] == 0.0) {
+                return ui;
+            }
+
+            // next boost in X dir; TODO generalize
+            vec beta = 
+            {{ 
+                1.0/std::sqrt(1.0 + G[0]*G[0]),
+                1.0/std::sqrt(1.0 + G[1]*G[1]),
+                1.0/std::sqrt(1.0 + G[2]*G[2])
+            }};
+
+
+            double x8 = randmu(rng);
+            if (-beta[0]*ui[0] > x8) { ui[0] = -ui[0]; };
+            ui[0] = G[0]*(ui[0] + beta[0]*std::sqrt(1.0 + u*u));
+            // u = std::sqrt(ui[0]*ui[0] + ui[1]*ui[1] + ui[2]*ui[2]);
+
+            return ui;
         };
 
 
@@ -466,7 +529,7 @@ namespace mcmc {
             };
 
 
-            /// Wrap into xy box
+            /// Wrap into xy box bounded by [xmin, xmax] x [ymin, ymax]
             void wrap() {
 
                 for (size_t i=0; i<size(); i++) {
@@ -475,6 +538,24 @@ namespace mcmc {
 
                     if (yloc[i] < ymin) { yloc[i] += ymax; }
                     if (yloc[i] > ymax) { yloc[i] -= ymax; }
+                }
+
+            };
+
+            // Check the optical distance and then scatter
+            void scatter() {
+
+                double x, y, z;
+                for (size_t i=0; i<size(); i++) {
+                    z = zloc[i];
+
+                    photon ph   = bucket.get(i);
+
+                    // isotropic mono-energetic electron
+                    vec ve = velXYZ(0.8); // (beta)
+                    electron el(1.0, ve[0], ve[1], ve[2]);
+
+
                 }
 
             };
@@ -542,6 +623,8 @@ PYBIND11_MODULE(mcmc, m) {
         .def("set_numberDensity", &mcmc::Slab::set_numberDensity)
         .def("scrape",            &mcmc::Slab::scrape)
         .def("wrap",              &mcmc::Slab::wrap)
+        .def("scatter",           &mcmc::Slab::scatter)
+        .def("boostedMaxwellian", &mcmc::Slab::boostedMaxwellian)
         .def("floor",             &mcmc::Slab::floor);
 
 

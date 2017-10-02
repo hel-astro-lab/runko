@@ -272,6 +272,36 @@ def energyHist(ax, slab):
     ax.plot([2.95*kT, 2.95*kT], [0.0, 1.0], "g--")
 
 
+def electronHist(ax, slab):
+    #prepare axis
+    ax.cla()
+
+    xmin = 0.0
+    xmax = 1.0
+    #ax.set_xscale('log')
+    #ax.set_yscale('log')
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(0.2, 1.1)
+    ax.minorticks_on()
+
+    #draw samples from electron distribution
+    zs = np.zeros(100000)
+    for i in range(len(zs)):
+        evel = slab.boostedMaxwellian(0.21, [0.0, 0.0, 0.0])
+        #zs[i] = np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
+        #zs[i] = 1.0/np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
+        zs[i] = evel[0]
+
+
+    #histogram
+    #hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
+    hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
+    hist = 1.0 * hist / hist.max() #normalize
+    ax.plot(edges[:-1], hist )
+
+
+
 
 if __name__ == "__main__":
 
@@ -340,13 +370,14 @@ if __name__ == "__main__":
 
     timer.start("step")
 
-    for lap in range(20):
+    for lap in range(200):
         print "----lap: {}".format(lap)
 
         slab.inject(flux)
         slab.push()
         slab.wrap()
         slab.scrape()
+        slab.scatter()
 
         timer.lap("step")
 
@@ -358,7 +389,8 @@ if __name__ == "__main__":
     timer.stats("step")
 
     angleHist(axs[1], slab)
-    energyHist(axs[2], slab)
+    #energyHist(axs[2], slab)
+    electronHist(axs[2], slab)
     visualize(axs[0], slab, params, 100)
     
 
