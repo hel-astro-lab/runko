@@ -10,15 +10,20 @@ namespace py = pybind11;
 #include <vector>
 #include <cmath>
 #include <random>
-
 #include <math.h>
 
+#include <Eigen/Dense>
+using namespace Eigen;
+
+
+// --------------------------------------------------
 // #include "definitions.h"
 const double pi = M_PI;
-
 typedef std::array<double, 3> vec;
 
 
+
+// --------------------------------------------------
 namespace mcmc {
 
 
@@ -263,8 +268,9 @@ namespace mcmc {
 
             if (x > f) { return MaxwellianVel(Te); };
 
+            return vf;
             // u = v * gamma
-            return vf / std::sqrt(1.0 - vf*vf);
+            // return vf / std::sqrt(1.0 - vf*vf);
         };
 
 
@@ -291,6 +297,7 @@ namespace mcmc {
         // G:  Bulk Lorentz vector
         //
         // Ref: Zenitani 2015
+        // NOTE: these are proper velocities and gamma = sqrt(1+u^2)
         vec boostedMaxwellian(double Te, vec G) {
 
             double u;
@@ -325,6 +332,88 @@ namespace mcmc {
             return ui;
         };
 
+
+        /// Compton scattering using Sobol's algorithm
+        std::tuple<photon, electron> comptonScatter(photon ph, electron el) {
+
+            // fmt::print("v: {}\n", el.v());
+            // fmt::print("E: {}\n", ph.hv());
+
+            Vector3d ve( el.vx(), el.vy(), el.vz() );
+            Vector3d beta = ve/el.v();
+            Vector3d omeg(ph.vx(), ph.vy(), ph.vz());
+
+            double theta = std::acos( beta.dot(omeg) );
+
+            // Create base vectors and matrix
+            //-------------------------------------------------- 
+            // k
+            Vector3d kvec(0.0, -1.0, 0.0);
+
+            // j
+            Vector3d jvec = beta.cross(omeg);
+            jvec = jvec/jvec.norm();
+
+            // i
+            Vector3d ivec = kvec.cross(jvec);
+            ivec = ivec/ivec.norm();
+
+            Matrix3d M;
+            M << ivec, jvec, kvec;
+
+            // --------------------------------------------------
+            
+            // unit vector of electron in scattering coordinates
+            Vector3d v0 = M.transpose() * ve; // rotate electron velocity to scattering plane (i,k)
+            double mu = v0(0)*std::sin(theta) + v0(2)*std::cos(theta);
+            double rho = std::sqrt( std::pow(v0(0),2.0) + std::pow(v0(1),2.0) );
+
+            // Compton parameters
+            double x = 2.0 * ph.hv() * el.gamma() * (1.0 - mu*el.v() );
+            double y = x/2.0;
+            
+            // Additional scattering angles (v0, w0, t0) that define a frame of reference
+            Vector3d w0(v0(1)/rho,      -v0(0)/rho,        0.0);
+            Vector3d t0(v0(0)*v0(2)/rho, v0(1)*v0(2)/rho, -rho);
+
+
+            // --------------------------------------------------
+            // scatter
+            double OOp, z1, z2, z3, mup, phip, yp, Y; // scattering angle
+            while (true) {
+                z1 = randmu(rng);
+                z2 = randmu(rng);
+                z3 = randmu(rng);
+
+                mup  = (el.v() + 2.0*z1 - 1.0)/(1.0 + el.v()*(2.0*z1 - 1.0));
+                phip = 2.0*pi*z2;
+
+                OOp = mu*mup - std::sqrt(1.0-mup*mup) * (rho*std::sin(phip)*std::cos(theta) 
+                      - (1.0/rho)*(v0(1)*std::cos(phip) + v0(0)*v0(2)*std::sin(phip))*std::sin(theta));
+
+                yp = y/(1.0 + ph.hv()*(1.0 - OOp))/(el.gamma() * (1.0-mup*el.v()));
+                Y = yp/y + std::pow(yp/y,3) + std::pow(yp/y,2)*
+                    ( std::pow(1.0/yp - 1.0/y, 2) - 2.0*( 1.0/yp - 1.0/y) );
+
+                if (Y>2.0*z3) { break; };
+            }
+
+            // --------------------------------------------------
+            // now we have scattered successfully
+            double hvp = yp/( el.gamma()*(1.0 - mup*el.v()) );
+
+            // new direction
+            Vector3d Op_ijk = mup*v0 
+                          + std::sqrt(1.0-mup*mup)*( w0*std::cos(phip)
+                                                   + t0*std::sin(phip) );
+            Vector3d Op = (M.transpose()).inverse() * Op_ijk;
+            Op = Op / Op.norm();
+
+            photon phs(hvp, Op(0), Op(1), Op(2));
+
+
+            return std::make_tuple(phs, el);
+        };
 
 
         public:
@@ -549,12 +638,13 @@ namespace mcmc {
                 for (size_t i=0; i<size(); i++) {
                     z = zloc[i];
 
-                    photon ph   = bucket.get(i);
+                    photon ph = bucket.get(i);
 
                     // isotropic mono-energetic electron
                     vec ve = velXYZ(0.8); // (beta)
                     electron el(1.0, ve[0], ve[1], ve[2]);
 
+                    comptonScatter(ph, el);
 
                 }
 
@@ -625,6 +715,7 @@ PYBIND11_MODULE(mcmc, m) {
         .def("wrap",              &mcmc::Slab::wrap)
         .def("scatter",           &mcmc::Slab::scatter)
         .def("boostedMaxwellian", &mcmc::Slab::boostedMaxwellian)
+        .def("comptonScatter",    &mcmc::Slab::comptonScatter)
         .def("floor",             &mcmc::Slab::floor);
 
 

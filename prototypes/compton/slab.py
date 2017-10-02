@@ -272,14 +272,16 @@ def energyHist(ax, slab):
     ax.plot([2.95*kT, 2.95*kT], [0.0, 1.0], "g--")
 
 
+
+
 def electronHist(ax, slab):
     #prepare axis
     ax.cla()
 
-    xmin = 0.0
-    xmax = 1.0
-    #ax.set_xscale('log')
-    #ax.set_yscale('log')
+    xmin = 1.0
+    xmax = 15.0
+    ax.set_xscale('log')
+    ax.set_yscale('log')
 
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(0.2, 1.1)
@@ -290,13 +292,16 @@ def electronHist(ax, slab):
     for i in range(len(zs)):
         evel = slab.boostedMaxwellian(0.21, [0.0, 0.0, 0.0])
         #zs[i] = np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
-        #zs[i] = 1.0/np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
-        zs[i] = evel[0]
+
+        beta = np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
+        zs[i] = beta
+        zs[i] = np.sqrt(1.0 + beta**2)
+
 
 
     #histogram
-    #hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
-    hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
+    hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
+    #hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
     hist = 1.0 * hist / hist.max() #normalize
     ax.plot(edges[:-1], hist )
 

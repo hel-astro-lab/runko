@@ -224,13 +224,12 @@ if __name__ == "__main__":
 
     ################################################## 
     # Normalize 3d plot to make aspect ratio unity
-    MAX = 1.0
-    for direction in (-1, 1):
-        for point in np.diag(direction * MAX * np.array([1,1,1])):
-            #axs[1].plot([point[0]], [point[1]], [point[2]], 'w')
-            #axs[2].plot([point[0]], [point[1]], [point[2]], 'w')
-
-            axs[0].plot([point[0]], [point[1]], [point[2]], 'w')
+    #MAX = 1.0
+    #for direction in (-1, 1):
+    #    for point in np.diag(direction * MAX * np.array([1,1,1])):
+    #        #axs[1].plot([point[0]], [point[1]], [point[2]], 'w')
+    #        #axs[2].plot([point[0]], [point[1]], [point[2]], 'w')
+    #        #axs[0].plot([point[0]], [point[1]], [point[2]], 'w')
 
     ################################################## 
     # set-up grid
@@ -265,17 +264,27 @@ if __name__ == "__main__":
 
     #es, ps = comptonScatter(e, ph, axs[1], plot=True)
 
-    timer = Timer(["scatter", "bucket"])
+    timer = Timer(["scatter", "cppCS", "bucket"])
     timer.start("scatter")
 
     for sc in range(500):
-        es, ps = comptonScatter(e, ph, axs[1], plot=True)
+        es, ps = comptonScatter(e, ph, axs[1], plot=False)
         timer.lap("scatter")
     timer.stats("scatter")
 
+    
+    btmp = mcmc.photonBucket()
+    slab = mcmc.Slab( btmp )
 
 
-    plt.savefig("comptonFan.png")
+    timer.start("cppCS")
+    for sc in range(500):
+        (ph2, el2) = slab.comptonScatter(ph, e)
+        timer.lap("cppCS")
+    timer.stats("cppCS")
+
+
+    #plt.savefig("comptonFan.png")
     #plt.show()
     #sys.exit()
 
@@ -286,7 +295,7 @@ if __name__ == "__main__":
 
     #pour isotropic photons to the bucket
     timer.start("bucket")
-    for i in range(20):
+    for i in range(1000000):
         (vx, vy, vz) = randVel(1.0) #direction on unit sphere
         #(vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
         E = 0.01 # E = h\nu 
@@ -297,23 +306,8 @@ if __name__ == "__main__":
     print "loaded bucket with {} photons".format( bucket.size() )
     timer.stats("bucket")
 
-
-
-    ##################################################
-    #Lets create a simulation slab
-    slab = mcmc.Slab( bucket )
-    slab.injectFloor()
-
-
-    print slab.xloc
     
-    visualize(axs[2], slab, params)
-
-
-    plt.savefig("slab.png")
-    sys.exit()
     ##################################################
-
     xmin = 0.5
     xmax = 100.0
     axs[0].set_xscale('log')
@@ -326,20 +320,21 @@ if __name__ == "__main__":
 
     #step in time
     xs = np.zeros( bucket.size() )
-    for lap in range(1):
+    for lap in range(3):
         print("lap : {}").format(lap)
         for i in range(bucket.size() ):
             
-            #(vx, vy, vz) = randVel( 0.9 ) #draw random electron
-            (vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
+            (vx, vy, vz) = randVel( 0.8 ) #draw random electron
+            #(vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
             e = mcmc.electron(1.0, vx, vy, vz)
-
             p = bucket.get(i)
 
-            es, ps = comptonScatter(e, p, axs[1], plot=False)
+            #el2, ph2 = comptonScatter(e, p, axs[1], plot=False)
+            (ph2, el2) = slab.comptonScatter(p, e)
 
-            xs[i] = p.hv()
-            bucket.replace(i, ps)
+            #print p.hv()
+            xs[i] = ph2.hv()
+            bucket.replace(i, ph2)
 
             
         #hist, edges = np.histogram(xs, np.linspace(xmin, xmax, 20))

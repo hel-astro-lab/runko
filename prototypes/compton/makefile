@@ -1,2 +1,6 @@
+INCLUDES= -I/usr/local/include/eigen3
+CFLAGS= -O2 -Wall -std=c++14
+CXX=c++
+
 all:
-	c++ -O3 -Wall -shared -std=c++14 -fPIC -undefined dynamic_lookup `python2 -m pybind11 --includes` mcmc.cpp -o mcmc.so
+	$(CXX) $(CFLAGS) -shared -fPIC $(INCLUDES) -undefined dynamic_lookup `python2 -m pybind11 --includes` mcmc.cpp -o mcmc.so
