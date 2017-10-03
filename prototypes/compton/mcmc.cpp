@@ -21,6 +21,15 @@ using namespace Eigen;
 const double pi = M_PI;
 typedef std::array<double, 3> vec;
 
+using std::sin;
+using std::cos;
+using std::exp;
+using std::acos;
+using std::asin;
+using std::pow;
+using std::sqrt;
+using std::log;
+
 
 
 // --------------------------------------------------
@@ -67,9 +76,9 @@ namespace mcmc {
             /// 3-velocity in units of c, i.e. v/c
             const double v() {
                 return std::sqrt(
-                          std::pow(vx(), 2.0) 
-                        + std::pow(vy(), 2.0) 
-                        + std::pow(vz(), 2.0) 
+                          pow(vx(), 2.0) 
+                        + pow(vy(), 2.0) 
+                        + pow(vz(), 2.0) 
                                 ); };
 
             /// gamma factor
@@ -226,7 +235,7 @@ namespace mcmc {
             double z1 = randmu(rng);
             double z2 = randmu(rng);
             double z3 = randmu(rng);
-            double x = -1.0*std::log(z1*z2*z3);
+            double x = -1.0*log(z1*z2*z3);
 
             double j = 1.0;
             double a = 1.0;
@@ -249,8 +258,8 @@ namespace mcmc {
             double x6 = randmu(rng);
             double x7 = randmu(rng);
 
-            double u = -Te*std::log(x4*x5*x6);
-            double n = -Te*std::log(x4*x5*x6*x7);
+            double u = -Te*log(x4*x5*x6);
+            double n = -Te*log(x4*x5*x6*x7);
 
             if (n*n - u*u < 1.0) { return relMaxwellianVel(Te); };
 
@@ -258,6 +267,7 @@ namespace mcmc {
         };
 
         /// Sampling from non-relativistic Maxwellian with rejection sampling
+        // NOTE: these are coordinate velocities
         double MaxwellianVel(double Te) {
             double vmin = -5.0*Te; 
             double vmax =  5.0*Te; 
@@ -269,8 +279,6 @@ namespace mcmc {
             if (x > f) { return MaxwellianVel(Te); };
 
             return vf;
-            // u = v * gamma
-            // return vf / std::sqrt(1.0 - vf*vf);
         };
 
 
@@ -283,8 +291,8 @@ namespace mcmc {
             vec ret = 
             {{
                     u*(2.0*x1 - 1.0),
-                    2.0*u*std::sqrt(x1*(1.0-x1))*std::cos(2.0*pi*x2),
-                    2.0*u*std::sqrt(x1*(1.0-x1))*std::sin(2.0*pi*x2)
+                    2.0*u*sqrt(x1*(1.0-x1))*cos(2.0*pi*x2),
+                    2.0*u*sqrt(x1*(1.0-x1))*sin(2.0*pi*x2)
             }};
 
             return ret;
@@ -318,9 +326,9 @@ namespace mcmc {
             // next boost in X dir; TODO generalize
             vec beta = 
             {{ 
-                1.0/std::sqrt(1.0 + G[0]*G[0]),
-                1.0/std::sqrt(1.0 + G[1]*G[1]),
-                1.0/std::sqrt(1.0 + G[2]*G[2])
+                1.0/sqrt(1.0 + G[0]*G[0]),
+                1.0/sqrt(1.0 + G[1]*G[1]),
+                1.0/sqrt(1.0 + G[2]*G[2])
             }};
 
 
@@ -334,16 +342,16 @@ namespace mcmc {
 
 
         /// Compton scattering using Sobol's algorithm
-        std::tuple<photon, electron> comptonScatter(photon ph, electron el) {
+        std::pair<photon, electron> comptonScatter(photon ph, electron el) {
 
             // fmt::print("v: {}\n", el.v());
             // fmt::print("E: {}\n", ph.hv());
 
             Vector3d ve( el.vx(), el.vy(), el.vz() );
-            Vector3d beta = ve/el.v();
+            Vector3d beta = ve.normalized();
             Vector3d omeg(ph.vx(), ph.vy(), ph.vz());
 
-            double theta = std::acos( beta.dot(omeg) );
+            double theta = acos( beta.dot(omeg) );
 
             // Create base vectors and matrix
             //-------------------------------------------------- 
@@ -365,13 +373,13 @@ namespace mcmc {
             
             // unit vector of electron in scattering coordinates
             Vector3d v0 = M.transpose() * ve; // rotate electron velocity to scattering plane (i,k)
-            double mu = v0(0)*std::sin(theta) + v0(2)*std::cos(theta);
-            double rho = std::sqrt( std::pow(v0(0),2.0) + std::pow(v0(1),2.0) );
+            double mu = v0(0)*sin(theta) + v0(2)*cos(theta);
+            double rho = sqrt( pow(v0(0),2.0) + pow(v0(1),2.0) );
 
-            // Compton parameters
-            double x = 2.0 * ph.hv() * el.gamma() * (1.0 - mu*el.v() );
-            double y = x/2.0;
+            // Compton parameter
+            double y = ph.hv() * el.gamma() * (1.0 - mu*el.v() );
             
+
             // Additional scattering angles (v0, w0, t0) that define a frame of reference
             Vector3d w0(v0(1)/rho,      -v0(0)/rho,        0.0);
             Vector3d t0(v0(0)*v0(2)/rho, v0(1)*v0(2)/rho, -rho);
@@ -379,7 +387,7 @@ namespace mcmc {
 
             // --------------------------------------------------
             // scatter
-            double OOp, z1, z2, z3, mup, phip, yp, Y; // scattering angle
+            double OOp, z1, z2, z3, mup, phip, yp, Y; 
             while (true) {
                 z1 = randmu(rng);
                 z2 = randmu(rng);
@@ -388,31 +396,32 @@ namespace mcmc {
                 mup  = (el.v() + 2.0*z1 - 1.0)/(1.0 + el.v()*(2.0*z1 - 1.0));
                 phip = 2.0*pi*z2;
 
-                OOp = mu*mup - std::sqrt(1.0-mup*mup) * (rho*std::sin(phip)*std::cos(theta) 
-                      - (1.0/rho)*(v0(1)*std::cos(phip) + v0(0)*v0(2)*std::sin(phip))*std::sin(theta));
+                OOp = mu*mup - sqrt(1.0-mup*mup) * (rho*sin(phip)*cos(theta) 
+                      - (1.0/rho)*(v0(1)*cos(phip) + v0(0)*v0(2)*sin(phip))*sin(theta));
 
                 yp = y/(1.0 + ph.hv()*(1.0 - OOp))/(el.gamma() * (1.0-mup*el.v()));
-                Y = yp/y + std::pow(yp/y,3) + std::pow(yp/y,2)*
-                    ( std::pow(1.0/yp - 1.0/y, 2) - 2.0*( 1.0/yp - 1.0/y) );
+                Y = yp/y + pow(yp/y,3) + pow(yp/y,2)*
+                    ( pow(1.0/yp - 1.0/y, 2) - 2.0*( 1.0/yp - 1.0/y) );
 
                 if (Y>2.0*z3) { break; };
             }
 
             // --------------------------------------------------
-            // now we have scattered successfully
+            // we have now scattered successfully
+              
+            // new energy
             double hvp = yp/( el.gamma()*(1.0 - mup*el.v()) );
 
-            // new direction
+            // new direction from ijk base to xyz base
             Vector3d Op_ijk = mup*v0 
-                          + std::sqrt(1.0-mup*mup)*( w0*std::cos(phip)
-                                                   + t0*std::sin(phip) );
-            Vector3d Op = (M.transpose()).inverse() * Op_ijk;
-            Op = Op / Op.norm();
+                          + sqrt(1.0-mup*mup)*( w0*cos(phip) + t0*sin(phip) );
+            Vector3d Op = (M.transpose().inverse() * Op_ijk).normalized();
 
+
+            // pack everything to classes and return
             photon phs(hvp, Op(0), Op(1), Op(2));
 
-
-            return std::make_tuple(phs, el);
+            return std::make_pair(phs, el);
         };
 
 
@@ -549,7 +558,7 @@ namespace mcmc {
                 for (size_t i=0; i<Ninj; i++) {
 
                     // create random photon
-                    double E = Planck(10.0);
+                    double E = Planck(1.0);
 
                     vec dir = randHalfSphere();
                     photon ph(E, dir[0], dir[1], dir[2]);
@@ -632,19 +641,37 @@ namespace mcmc {
             };
 
             // Check the optical distance and then scatter
-            void scatter() {
+            void scatter(double Te) {
 
-                double x, y, z;
+                double x, y, z, z0;
+
+                double etau = std::exp(-dt/ne);
+
                 for (size_t i=0; i<size(); i++) {
                     z = zloc[i];
 
-                    photon ph = bucket.get(i);
+                    // scatter if e^-d\tau < rand()
+                    z0 = randmu(rng);
+                    if (etau < z0) {
+                        photon ph = bucket.get(i);
 
-                    // isotropic mono-energetic electron
-                    vec ve = velXYZ(0.8); // (beta)
-                    electron el(1.0, ve[0], ve[1], ve[2]);
+                        // isotropic mono-energetic electron
+                        // vec ve = velXYZ(0.8); // (beta)
+                        // electron el(1.0, ve[0], ve[1], ve[2]);
 
-                    comptonScatter(ph, el);
+                        // isotropic Maxwellian electrons
+                        fmt::print("sampling from Maxwellian...\n");
+                        vec ve = boostedMaxwellian(Te, {{0.0, 0.0, 0.0}});
+                        electron el(1.0, ve[0], ve[1], ve[2]);
+
+                        fmt::print("vx {} / vy {} / vz {}", el.vx(), el.vy(), el.vz());
+                        fmt::print("target electron gamma: {} \n", el.gamma() );
+                        fmt::print("target electron beta: {} \n", el.v() );
+
+
+                        auto ret = comptonScatter(ph, el);
+                        bucket.replace(i, ret.first );
+                    }
 
                 }
 

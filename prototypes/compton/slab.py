@@ -263,7 +263,7 @@ def energyHist(ax, slab):
     ax.plot(edges[:-1], hist )
 
     #test against real Planck
-    kT = 10.0
+    kT = 1.0
     xx = np.logspace(np.log10(xmin), np.log10(xmax), 50)
     yy = bbodyrad(xx, kT)
     yy = yy / yy.max()
@@ -278,9 +278,9 @@ def electronHist(ax, slab):
     #prepare axis
     ax.cla()
 
-    xmin = 1.0
-    xmax = 15.0
-    ax.set_xscale('log')
+    xmin = 0.0
+    xmax = 1.0
+    #ax.set_xscale('log')
     ax.set_yscale('log')
 
     ax.set_xlim(xmin, xmax)
@@ -290,18 +290,18 @@ def electronHist(ax, slab):
     #draw samples from electron distribution
     zs = np.zeros(100000)
     for i in range(len(zs)):
-        evel = slab.boostedMaxwellian(0.21, [0.0, 0.0, 0.0])
+        evel = slab.boostedMaxwellian(0.1, [0.0, 0.0, 0.0])
         #zs[i] = np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
 
         beta = np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
-        zs[i] = beta
-        zs[i] = np.sqrt(1.0 + beta**2)
-
+        #zs[i] = beta
+        #zs[i] = np.sqrt(1.0 + beta**2)
+        zs[i] = beta/np.sqrt(1.0 + beta**2)
 
 
     #histogram
-    hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
-    #hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
+    #hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
+    hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
     hist = 1.0 * hist / hist.max() #normalize
     ax.plot(edges[:-1], hist )
 
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     bucket = mcmc.photonBucket()
     print "created bucket ({})".format( bucket.size() )
 
-    #pour isotropic photons to the bucket
+    #pour isotropic photons to the bucket for testing
     timer.start("bucket")
     for i in range(10):
         (vx, vy, vz) = randVel(1.0) #direction on unit sphere
@@ -366,27 +366,29 @@ if __name__ == "__main__":
             params.mins[1], params.maxs[1],
             params.mins[2], params.maxs[2]
                        )
-    slab.set_numberDensity(0.1)
+    slab.set_numberDensity(0.5)
 
     slab.floor() # put everything to the bottom of the slab
 
     #flux from the bottom
-    flux = 1000.0 #TODO units
+    flux = 100.0 #TODO units
 
     timer.start("step")
+    #slab.inject(1000.0)
 
-    for lap in range(200):
+    for lap in range(50):
         print "----lap: {}".format(lap)
 
-        slab.inject(flux)
+        #slab.inject(flux)
         slab.push()
         slab.wrap()
         slab.scrape()
-        slab.scatter()
+        slab.scatter(0.21)
 
         timer.lap("step")
 
-        #angle_histogram(axs[1], slab)
+        #angleHist(axs[1], slab)
+        #energyHist(axs[2], slab)
         #visualize(axs[0], slab, params, lap)
     print "overflow size: {}".format(slab.overflow.size())
 
@@ -394,8 +396,8 @@ if __name__ == "__main__":
     timer.stats("step")
 
     angleHist(axs[1], slab)
-    #energyHist(axs[2], slab)
-    electronHist(axs[2], slab)
+    energyHist(axs[2], slab)
+    #electronHist(axs[2], slab)
     visualize(axs[0], slab, params, 100)
     
 
