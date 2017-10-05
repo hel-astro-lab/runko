@@ -89,7 +89,7 @@ def comptonScatter(e, p, ax, plot=True):
     # p.hv = hv/m_e c^2
     # e.v = v/c 
 
-    beta = np.array([ e.vx(), e.vy(), e.vz() ]) / e.v() #electron unit vector
+    beta = np.array([ e.vx(), e.vy(), e.vz() ]) / e.beta() #electron unit vector
     omeg = np.array([ p.vx(), p.vy(), p.vz() ])         #photon unit vector
     theta = np.arccos( np.dot(beta, omeg) ) #angle between electron and photon
 
@@ -126,7 +126,7 @@ def comptonScatter(e, p, ax, plot=True):
     #printVec(v0, "v0")
     
     #Compton parameters
-    x = 2.0 * p.hv() * e.gamma() * (1.0 - mu*e.v() )
+    x = 2.0 * p.hv() * e.gamma() * (1.0 - mu*e.beta() )
     y = x/2.0
 
     #print "Compton x: {}".format(x)
@@ -151,13 +151,13 @@ def comptonScatter(e, p, ax, plot=True):
         z2 = np.random.rand()
         z3 = np.random.rand()
 
-        mup  = (e.v() + 2.0*z1 - 1.0)/(1.0 + e.v()*(2.0*z1 - 1.0))
+        mup  = (e.beta() + 2.0*z1 - 1.0)/(1.0 + e.beta()*(2.0*z1 - 1.0))
         phip = 2.0*np.pi*z2
 
         OmegaOmegap = mu*mup - np.sqrt( 1.0 - mup**2) * ( rho*np.sin(phip)*np.cos(theta) 
                 - (1.0/rho)*(v0[1]*np.cos(phip) + v0[0]*v0[2]*np.sin(phip))*np.sin(theta))
 
-        yp = y / (1.0 + p.hv()*(1.0 - OmegaOmegap))/(e.gamma() * (1.0 - mup*e.v())) 
+        yp = y / (1.0 + p.hv()*(1.0 - OmegaOmegap))/(e.gamma() * (1.0 - mup*e.beta())) 
 
         Y = yp/y + (yp/y)**3 + (yp/y)**2 *( (1.0/yp - 1.0/y)**2 - 2.0*( 1.0/yp - 1.0/y) )
 
@@ -166,7 +166,7 @@ def comptonScatter(e, p, ax, plot=True):
     #now we have scattered successfully
 
     #new energy
-    hvp = yp / ( e.gamma()*(1.0 - mup*e.v()) ) 
+    hvp = yp / ( e.gamma()*(1.0 - mup*e.beta()) ) 
     #print " energy shift: {}".format( hvp/p.hv() )
 
     #new direction
@@ -246,8 +246,9 @@ if __name__ == "__main__":
 
     #create electron
     (vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
-    e = mcmc.electron(1.0, vx, vy, vz)
-    print "target electron with beta: {} gamma: {}".format(e.v(), e.gamma() )
+    e = mcmc.electron()
+    e.loadVelComponents(vx, vy, vz)
+    print "target electron with beta: {} gamma: {}".format(e.beta(), e.gamma() )
 
 
     #create photon
@@ -256,7 +257,8 @@ if __name__ == "__main__":
 
 
     #visualize starting point of collision
-    beta = np.array([ e.vx(), e.vy(), e.vz() ]) / e.v() #electron unit vector
+    beta = np.array( [e.vx(), e.vy(), e.vz()]) / e.beta()  #electron unit vector
+    print e.vx(), e.beta(), beta
     omeg = np.array([ ph.vx(), ph.vy(), ph.vz() ])      #photon unit vector
     axs[1].plot( unitVecX(-beta), unitVecY(-beta), unitVecZ(-beta), linestyle='dashed', color='black', linewidth=3.0)
     axs[1].plot( unitVecX(-omeg), unitVecY(-omeg), unitVecZ(-omeg), linestyle='dotted', color='black', linewidth=4.0)
@@ -317,6 +319,8 @@ if __name__ == "__main__":
     axs[0].set_ylim(0.2, 1.1)
     axs[0].minorticks_on()
 
+    e = mcmc.electron() # target electron
+
 
     #step in time
     xs = np.zeros( bucket.size() )
@@ -326,7 +330,8 @@ if __name__ == "__main__":
             
             (vx, vy, vz) = randVel( 0.8 ) #draw random electron
             #(vx, vy, vz) = (0.8, 0.0, 0.0) #x-dir electron
-            e = mcmc.electron(1.0, vx, vy, vz)
+
+            e.loadVelComponents(vx, vy, vz)
             p = bucket.get(i)
 
             #el2, ph2 = comptonScatter(e, p, axs[1], plot=False)

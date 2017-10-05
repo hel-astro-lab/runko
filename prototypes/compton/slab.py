@@ -88,7 +88,7 @@ def comptonScatter(e, p, ax, plot=True):
     # p.hv = hv/m_e c^2
     # e.v = v/c 
 
-    beta = np.array([ e.vx(), e.vy(), e.vz() ]) / e.v() #electron unit vector
+    beta = np.array([ e.vx(), e.vy(), e.vz() ]) / e.beta() #electron unit vector
     omeg = np.array([ p.vx(), p.vy(), p.vz() ])         #photon unit vector
     theta = np.arccos( np.dot(beta, omeg) ) #angle between electron and photon
 
@@ -125,7 +125,7 @@ def comptonScatter(e, p, ax, plot=True):
     #printVec(v0, "v0")
     
     #Compton parameters
-    x = 2.0 * p.hv() * e.gamma() * (1.0 - mu*e.v() )
+    x = 2.0 * p.hv() * e.gamma() * (1.0 - mu*e.beta() )
     y = x/2.0
 
     #print "Compton x: {}".format(x)
@@ -150,13 +150,13 @@ def comptonScatter(e, p, ax, plot=True):
         z2 = np.random.rand()
         z3 = np.random.rand()
 
-        mup  = (e.v() + 2.0*z1 - 1.0)/(1.0 + e.v()*(2.0*z1 - 1.0))
+        mup  = (e.beta() + 2.0*z1 - 1.0)/(1.0 + e.beta()*(2.0*z1 - 1.0))
         phip = 2.0*np.pi*z2
 
         OmegaOmegap = mu*mup - np.sqrt( 1.0 - mup**2) * ( rho*np.sin(phip)*np.cos(theta) 
                 - (1.0/rho)*(v0[1]*np.cos(phip) + v0[0]*v0[2]*np.sin(phip))*np.sin(theta))
 
-        yp = y / (1.0 + p.hv()*(1.0 - OmegaOmegap))/(e.gamma() * (1.0 - mup*e.v())) 
+        yp = y / (1.0 + p.hv()*(1.0 - OmegaOmegap))/(e.gamma() * (1.0 - mup*e.beta())) 
 
         Y = yp/y + (yp/y)**3 + (yp/y)**2 *( (1.0/yp - 1.0/y)**2 - 2.0*( 1.0/yp - 1.0/y) )
 
@@ -165,7 +165,7 @@ def comptonScatter(e, p, ax, plot=True):
     #now we have scattered successfully
 
     #new energy
-    hvp = yp / ( e.gamma()*(1.0 - mup*e.v()) ) 
+    hvp = yp / ( e.gamma()*(1.0 - mup*e.beta()) ) 
     #print " energy shift: {}".format( hvp/p.hv() )
 
     #new direction
@@ -275,35 +275,102 @@ def energyHist(ax, slab):
 
 
 def electronHist(ax, slab):
+
     #prepare axis
     ax.cla()
 
-    xmin = 0.0
-    xmax = 1.0
-    #ax.set_xscale('log')
-    ax.set_yscale('log')
 
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(0.2, 1.1)
-    ax.minorticks_on()
+    if True:
+        xmin = 0.8
+        xmax = 10.0
+        ax.set_xscale('log')
+        ax.set_yscale('log')
 
-    #draw samples from electron distribution
-    zs = np.zeros(100000)
-    for i in range(len(zs)):
-        evel = slab.boostedMaxwellian(0.1, [0.0, 0.0, 0.0])
-        #zs[i] = np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
-
-        beta = np.sqrt(evel[0]**2 + evel[1]**2 + evel[2]**2)
-        #zs[i] = beta
-        #zs[i] = np.sqrt(1.0 + beta**2)
-        zs[i] = beta/np.sqrt(1.0 + beta**2)
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(0.00001, 1.1)
+        ax.minorticks_on()
+        ax.set_xlabel(r'$\gamma$')
+        ax.set_ylabel(r'$f(\gamma)$')
 
 
-    #histogram
-    #hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
-    hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
-    hist = 1.0 * hist / hist.max() #normalize
-    ax.plot(edges[:-1], hist )
+        #draw samples from electron distribution
+        zs = np.zeros(100000)
+        for i in range(len(zs)):
+            el = slab.sampleBoostedMaxw(0.201, [0.0, 0.0, 0.0])
+            zs[i] = el.gamma()
+            #print el.gamma()
+
+
+        #histogram
+        hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
+        #hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
+        hist = 1.0 * hist / hist.max() #normalize
+        ax.plot(edges[:-1], hist )
+
+
+        if False:
+            zs = np.zeros(100000)
+            for i in range(len(zs)):
+                el = slab.sampleBoostedMaxw(0.20, [0.0, 0.0, 0.0])
+                zs[i] = el.gamma()
+
+            #histogram
+            hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
+            hist = 1.0 * hist / hist.max() #normalize
+            ax.plot(edges[:-1], hist, "r-")
+
+
+    # beta
+    if False:
+        xmin = 0.0
+        xmax = 1.0
+        #ax.set_xscale('log')
+        #ax.set_yscale('log')
+
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(0.0, 1.1)
+        ax.minorticks_on()
+        ax.set_xlabel(r'$\beta$')
+        ax.set_ylabel(r'$f(\beta)$')
+
+
+        #draw samples from electron distribution
+        zs = np.zeros(100000)
+        for i in range(len(zs)):
+            el = slab.sampleBoostedMaxw(0.101, [0.0, 0.0, 0.0])
+            #zs[i] = el.beta()
+            zs[i] = el.vx()
+            #zs[i] = np.sqrt(el.vx()**2 + el.vy()**2 + el.vz()**2)
+
+        #histogram
+        #hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
+        hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
+        hist = 1.0 * hist / hist.max() #normalize
+        ax.plot(edges[:-1], hist )
+
+        print "rel std: {}".format(np.std(zs))
+
+        zs = np.zeros(100000)
+        for i in range(len(zs)):
+            el = slab.sampleBoostedMaxw(0.10, [0.0, 0.0, 0.0])
+            #zs[i] = el.beta()
+            zs[i] = el.vx()
+            #zs[i] = np.sqrt(el.vx()**2 + el.vy()**2 + el.vz()**2)
+
+
+        #hist, edges = np.histogram(zs, np.logspace(np.log10(xmin), np.log10(xmax), 50))
+        hist, edges = np.histogram(zs, np.linspace(xmin, xmax, 50))
+        hist = 1.0 * hist / hist.max() #normalize
+        ax.plot(edges[:-1], hist, "r-")
+
+        print "non-rel std: {}".format(np.std(zs))
+
+        kT = 0.1
+
+        xx = np.linspace(0.0, 1.0, 100)
+        yy = np.exp(-xx**2/(kT**2))
+
+        ax.plot(xx, yy, "k-")
 
 
 
@@ -379,11 +446,11 @@ if __name__ == "__main__":
     for lap in range(50):
         print "----lap: {}".format(lap)
 
-        #slab.inject(flux)
+        slab.inject(flux)
         slab.push()
         slab.wrap()
         slab.scrape()
-        slab.scatter(0.21)
+        #slab.scatter(0.21)
 
         timer.lap("step")
 
@@ -396,8 +463,8 @@ if __name__ == "__main__":
     timer.stats("step")
 
     angleHist(axs[1], slab)
-    energyHist(axs[2], slab)
-    #electronHist(axs[2], slab)
+    #energyHist(axs[2], slab)
+    electronHist(axs[2], slab)
     visualize(axs[0], slab, params, 100)
     
 

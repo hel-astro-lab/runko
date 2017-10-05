@@ -61,6 +61,7 @@ namespace mcmc {
     };
 
 
+    /*
     class electron {
 
         public:
@@ -91,6 +92,49 @@ namespace mcmc {
 
     electron::electron(double v0, double vx, double vy, double vz) {
         this->data = {{v0, vx, vy, vz}};
+    };
+    */
+
+
+    /// Electron with all velocity transformations build-in
+    // Uses Eigen vectors internally for performance
+    class electron {
+
+        public:
+
+        /// spatial components of the four-velocity
+        Vector3d fvel;
+
+        /// load from vector
+        void loadFvel(Vector3d u) { fvel = u; };
+
+        /// Load from components
+        void loadFvelComponents(double ux, double uy, double uz) { 
+                fvel(0) = ux;
+                fvel(1) = uy;
+                fvel(2) = uz;
+        };
+
+        /// Load from velocity
+        // u = v*gamma = v/sqrt(1-v^2)
+        void loadVel(Vector3d v) {
+            fvel = v / sqrt(1.0 - v.dot(v));
+        };
+
+        void loadVelComponents(double vx, double vy, double vz) {
+            Vector3d v(vx, vy, vz);
+            loadVel(v);    
+        };
+
+        /// gamma factor
+        const double gamma() { return sqrt(1.0 + fvel.dot(fvel) ); };
+            
+        /// beta = v/c = sqrt(1-1/gamma^2)
+        const double beta() { return sqrt(1.0 - 1.0/(gamma()*gamma())); };
+
+        /// coordinate velocity vector v = u/gamma
+        Vector3d vel() { return fvel/gamma(); };
+
     };
 
 
@@ -252,6 +296,7 @@ namespace mcmc {
 
         /// Sampling relativistic Maxwellian using the Sobol method
         // u = v*gamma
+        // Ref: Sobol 1976, Pozdnyakov+ 1977
         double relMaxwellianVel(double Te) {
             double x4 = randmu(rng);
             double x5 = randmu(rng);
@@ -267,7 +312,8 @@ namespace mcmc {
         };
 
         /// Sampling from non-relativistic Maxwellian with rejection sampling
-        // NOTE: these are coordinate velocities
+        // NOTE: these are coordinate velocities originally
+        /*
         double MaxwellianVel(double Te) {
             double vmin = -5.0*Te; 
             double vmax =  5.0*Te; 
@@ -280,21 +326,41 @@ namespace mcmc {
 
             return vf;
         };
+        */
+
+        double MaxwellianVel(double Te) {
+            double z1 = randmu(rng);
+            double z2 = randmu(rng);
+            double y = -2.0*log(z1);
+
+            const double g = 1.647;
+
+            if ( g*g*y < (z1/z2)*(z1/z2) ) {
+                return MaxwellianVel(Te);
+            }
+            
+            return sqrt(Te*y/2.0);
+        };
+
+
+        // Standard distribution sample using Box-Muller algorithm
+        double BoxMuller(double Te) {
+            return sqrt(-2.0*Te*log( randmu(rng) ));
+        };
+
 
 
         /// Isotropic velocity components
         // using u = abs(u_i) to get cartesian (ux, uy, uz)
-        vec velXYZ(double u ) {
+        Vector3d velXYZ(double u ) {
             double x1 = randmu(rng);
             double x2 = randmu(rng);
 
-            vec ret = 
-            {{
+            Vector3d ret( 
                     u*(2.0*x1 - 1.0),
                     2.0*u*sqrt(x1*(1.0-x1))*cos(2.0*pi*x2),
                     2.0*u*sqrt(x1*(1.0-x1))*sin(2.0*pi*x2)
-            }};
-
+                        );
             return ret;
         };
         
@@ -306,18 +372,40 @@ namespace mcmc {
         //
         // Ref: Zenitani 2015
         // NOTE: these are proper velocities and gamma = sqrt(1+u^2)
-        vec boostedMaxwellian(double Te, vec G) {
+        Vector3d boostedMaxwellian(double Te, vec G) {
 
             double u;
             if (Te > 0.2) { // relativistic
-                u = relMaxwellianVel(Te);
+                double u = relMaxwellianVel(Te);
+                  
+                // get isotropic velocity components
+                Vector3d ui = velXYZ(u);
+
+                return ui;
+
             } else { // non-relativistic
-                u = MaxwellianVel(Te);
+                double v1 = BoxMuller(Te);
+                double v2 = BoxMuller(Te);
+
+                double x1 = randPhi(rng);
+                double x2 = randPhi(rng);
+
+                Vector3d vi(
+                        v1*sin(x1),
+                        v1*cos(x1),
+                        v2*sin(x2)
+                           );
+
+                // add bulk motion
+                // vx += V0
+
+                // double gamma = 1.0/sqrt(1.0 + vi.dot(vi));
+
+                return vi;
             }
                 
-            // get isotropic velocity components
-            vec ui = velXYZ(u);
 
+            /* TODO add general bulk transformation
             // check if bulk velocity
             if (G[0] == 0.0 && G[1] == 0.0 && G[2] == 0.0) {
                 return ui;
@@ -338,6 +426,16 @@ namespace mcmc {
             // u = std::sqrt(ui[0]*ui[0] + ui[1]*ui[1] + ui[2]*ui[2]);
 
             return ui;
+            */
+        };
+
+
+        /// Draw electron sample from boosted Maxwellian distribution
+        electron sampleBoostedMaxw(double Te, vec G) {
+            Vector3d ui = boostedMaxwellian(Te, G);
+            electron el;
+            el.loadFvel(ui);
+            return el;
         };
 
 
@@ -347,24 +445,18 @@ namespace mcmc {
             // fmt::print("v: {}\n", el.v());
             // fmt::print("E: {}\n", ph.hv());
 
-            Vector3d ve( el.vx(), el.vy(), el.vz() );
-            Vector3d beta = ve.normalized();
+            // Vector3d ve( el.vx(), el.vy(), el.vz() );
+            // Vector3d beta = ve.normalized();
+
             Vector3d omeg(ph.vx(), ph.vy(), ph.vz());
 
-            double theta = acos( beta.dot(omeg) );
+            double theta = acos( el.vel().dot(omeg) );
 
             // Create base vectors and matrix
             //-------------------------------------------------- 
-            // k
-            Vector3d kvec(0.0, -1.0, 0.0);
-
-            // j
-            Vector3d jvec = beta.cross(omeg);
-            jvec = jvec/jvec.norm();
-
-            // i
-            Vector3d ivec = kvec.cross(jvec);
-            ivec = ivec/ivec.norm();
+            Vector3d kvec(0.0, -1.0, 0.0);                         // k
+            Vector3d jvec = ( el.vel().cross(omeg) ).normalized(); // j
+            Vector3d ivec = ( kvec.cross(jvec) ).normalized();     // i
 
             Matrix3d M;
             M << ivec, jvec, kvec;
@@ -372,12 +464,14 @@ namespace mcmc {
             // --------------------------------------------------
             
             // unit vector of electron in scattering coordinates
-            Vector3d v0 = M.transpose() * ve; // rotate electron velocity to scattering plane (i,k)
+            Vector3d v0 = M.transpose() * el.vel(); // rotating electron velocity 
+                                                    // to scattering plane (i,k)
             double mu = v0(0)*sin(theta) + v0(2)*cos(theta);
-            double rho = sqrt( pow(v0(0),2.0) + pow(v0(1),2.0) );
+            double rho = sqrt( pow(v0(0),2) + pow(v0(1),2) );
 
             // Compton parameter
-            double y = ph.hv() * el.gamma() * (1.0 - mu*el.v() );
+            // here hv = hv/m_e c^2
+            double y = ph.hv() * el.gamma() * (1.0 - mu*el.beta() );
             
 
             // Additional scattering angles (v0, w0, t0) that define a frame of reference
@@ -393,13 +487,13 @@ namespace mcmc {
                 z2 = randmu(rng);
                 z3 = randmu(rng);
 
-                mup  = (el.v() + 2.0*z1 - 1.0)/(1.0 + el.v()*(2.0*z1 - 1.0));
+                mup  = (el.beta() + 2.0*z1 - 1.0)/(1.0 + el.beta()*(2.0*z1 - 1.0));
                 phip = 2.0*pi*z2;
 
                 OOp = mu*mup - sqrt(1.0-mup*mup) * (rho*sin(phip)*cos(theta) 
                       - (1.0/rho)*(v0(1)*cos(phip) + v0(0)*v0(2)*sin(phip))*sin(theta));
 
-                yp = y/(1.0 + ph.hv()*(1.0 - OOp))/(el.gamma() * (1.0-mup*el.v()));
+                yp = y/(1.0 + ph.hv()*(1.0 - OOp))/(el.gamma() * (1.0-mup*el.beta()));
                 Y = yp/y + pow(yp/y,3) + pow(yp/y,2)*
                     ( pow(1.0/yp - 1.0/y, 2) - 2.0*( 1.0/yp - 1.0/y) );
 
@@ -410,7 +504,7 @@ namespace mcmc {
             // we have now scattered successfully
               
             // new energy
-            double hvp = yp/( el.gamma()*(1.0 - mup*el.v()) );
+            double hvp = yp/( el.gamma()*(1.0 - mup*el.beta()) );
 
             // new direction from ijk base to xyz base
             Vector3d Op_ijk = mup*v0 
@@ -645,7 +739,8 @@ namespace mcmc {
 
                 double x, y, z, z0;
 
-                double etau = std::exp(-dt/ne);
+                double etau = std::exp(-dt/ne); // optical distance
+                electron el; // target electron
 
                 for (size_t i=0; i<size(); i++) {
                     z = zloc[i];
@@ -661,13 +756,12 @@ namespace mcmc {
 
                         // isotropic Maxwellian electrons
                         fmt::print("sampling from Maxwellian...\n");
-                        vec ve = boostedMaxwellian(Te, {{0.0, 0.0, 0.0}});
-                        electron el(1.0, ve[0], ve[1], ve[2]);
+                        Vector3d ve = boostedMaxwellian(Te, {{0.0, 0.0, 0.0}});
+                        el.loadFvel(ve);
 
-                        fmt::print("vx {} / vy {} / vz {}", el.vx(), el.vy(), el.vz());
+                        fmt::print("vx {} / vy {} / vz {}\n", el.vel()(0), el.vel()(1), el.vel()(2));
                         fmt::print("target electron gamma: {} \n", el.gamma() );
-                        fmt::print("target electron beta: {} \n", el.v() );
-
+                        fmt::print("target electron beta: {} \n", el.beta() );
 
                         auto ret = comptonScatter(ph, el);
                         bucket.replace(i, ret.first );
@@ -704,13 +798,13 @@ PYBIND11_MODULE(mcmc, m) {
         .def("vz",  &mcmc::photon::vz);
 
     py::class_<mcmc::electron>(m, "electron" )
-        .def(py::init<double, double, double, double >())
-        .def_readwrite("data",      &mcmc::electron::data)
-        .def("v0",    &mcmc::electron::v0)
-        .def("vx",    &mcmc::electron::vx)
-        .def("vy",    &mcmc::electron::vy)
-        .def("vz",    &mcmc::electron::vz)
-        .def("v",     &mcmc::electron::v)
+        .def(py::init<>())
+        .def("vx",   [](mcmc::electron &e){return e.vel()(0);})
+        .def("vy",   [](mcmc::electron &e){return e.vel()(1);})
+        .def("vz",   [](mcmc::electron &e){return e.vel()(2);})
+        .def("loadVelComponents",  &mcmc::electron::loadVelComponents)
+        .def("loadFvelComponents", &mcmc::electron::loadFvelComponents)
+        .def("beta",  &mcmc::electron::beta)
         .def("gamma", &mcmc::electron::gamma);
 
     py::class_<mcmc::photonBucket>(m, "photonBucket" )
@@ -742,6 +836,7 @@ PYBIND11_MODULE(mcmc, m) {
         .def("wrap",              &mcmc::Slab::wrap)
         .def("scatter",           &mcmc::Slab::scatter)
         .def("boostedMaxwellian", &mcmc::Slab::boostedMaxwellian)
+        .def("sampleBoostedMaxw", &mcmc::Slab::sampleBoostedMaxw)
         .def("comptonScatter",    &mcmc::Slab::comptonScatter)
         .def("floor",             &mcmc::Slab::floor);
 
