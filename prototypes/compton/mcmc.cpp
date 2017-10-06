@@ -747,6 +747,7 @@ namespace mcmc {
 
                     // scatter if e^-d\tau < rand()
                     z0 = randmu(rng);
+
                     if (etau < z0) {
                         photon ph = bucket.get(i);
 
@@ -755,13 +756,13 @@ namespace mcmc {
                         // electron el(1.0, ve[0], ve[1], ve[2]);
 
                         // isotropic Maxwellian electrons
-                        fmt::print("sampling from Maxwellian...\n");
+                        // fmt::print("sampling from Maxwellian...\n");
                         Vector3d ve = boostedMaxwellian(Te, {{0.0, 0.0, 0.0}});
                         el.loadFvel(ve);
 
-                        fmt::print("vx {} / vy {} / vz {}\n", el.vel()(0), el.vel()(1), el.vel()(2));
-                        fmt::print("target electron gamma: {} \n", el.gamma() );
-                        fmt::print("target electron beta: {} \n", el.beta() );
+                        // fmt::print("vx {} / vy {} / vz {}\n", el.vel()(0), el.vel()(1), el.vel()(2));
+                        // fmt::print("target electron gamma: {} \n", el.gamma() );
+                        // fmt::print("target electron beta: {} \n", el.beta() );
 
                         auto ret = comptonScatter(ph, el);
                         bucket.replace(i, ret.first );

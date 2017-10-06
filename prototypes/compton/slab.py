@@ -247,7 +247,7 @@ def energyHist(ax, slab):
     #prepare axis
     ax.cla()
 
-    xmin = 0.5
+    xmin = 0.01
     xmax = 100.0
     ax.set_xscale('log')
     ax.set_yscale('log')
@@ -416,8 +416,8 @@ if __name__ == "__main__":
     #pour isotropic photons to the bucket for testing
     timer.start("bucket")
     for i in range(10):
-        (vx, vy, vz) = randVel(1.0) #direction on unit sphere
-        E = 0.01 # E = h\nu 
+        (vx, vy, vz) = (1.0, 0.0, 0.0)
+        E = 0.1 # E = h\nu 
 
         ph = mcmc.photon( E, vx, vy, vz )
         bucket.push_back( ph )
@@ -437,20 +437,57 @@ if __name__ == "__main__":
 
     slab.floor() # put everything to the bottom of the slab
 
+
+    #beam study
+    if False:
+        timer.start("step")
+        slab.scatter(0.1)
+
+        #animate
+        for lap in range(2000):
+            if (lap % 100 == 0):
+                print "----lap: {}".format(lap)
+
+            slab.push()
+            slab.wrap()
+            slab.scrape()
+            timer.lap("step")
+
+            #angleHist(axs[1], slab)
+            #energyHist(axs[2], slab)
+            #electronHist(axs[2], slab)
+            #visualize(axs[0], slab, params, lap)
+
+        #loop over
+        timer.stop("step")
+        timer.stats("step")
+
+        print "overflow size: {}".format(slab.overflow.size())
+
+        angleHist(axs[1], slab)
+        energyHist(axs[2], slab)
+        #electronHist(axs[2], slab)
+        visualize(axs[0], slab, params, 100)
+        sys.exit()
+
+
+
     #flux from the bottom
     flux = 100.0 #TODO units
 
     timer.start("step")
-    #slab.inject(1000.0)
+    slab.inject(200000.0)
 
-    for lap in range(50):
-        print "----lap: {}".format(lap)
 
-        slab.inject(flux)
+    for lap in range(2000):
+        if (lap % 100 == 0):
+            print "----lap: {}".format(lap)
+
+        #slab.inject(flux)
         slab.push()
         slab.wrap()
         slab.scrape()
-        #slab.scatter(0.21)
+        slab.scatter(0.1)
 
         timer.lap("step")
 
@@ -463,8 +500,8 @@ if __name__ == "__main__":
     timer.stats("step")
 
     angleHist(axs[1], slab)
-    #energyHist(axs[2], slab)
-    electronHist(axs[2], slab)
+    energyHist(axs[2], slab)
+    #electronHist(axs[2], slab)
     visualize(axs[0], slab, params, 100)
     
 
