@@ -7,6 +7,26 @@ import conf as prm
 
 
 
+def plot_logphasespace(ax, xxi, vxi, ffi, kk):
+
+    #pick kth species
+    xx = xxi
+    vx = vxi[:,kk]
+    ff = np.log10( ffi[:,:,kk] )
+
+    ax.set_xlim(xx[0], xx[-1])
+    ax.set_ylim(vx[0], vx[-1])
+    ax.set_xlabel(r'$x$')
+    ax.set_ylabel(r'$v_{x}$')
+    ax.set_yscale('symlog', linthreshy=5.0)
+    
+    X, Y = np.meshgrid(xx, vx)
+    ax.pcolormesh(X, Y, ff, 
+            cmap='plasma', 
+            vmin=-8.0,
+            vmax=1.0,
+            )
+
 def plot_phasespace(ax, xxi, vxi, ffi, kk):
 
     #pick kth species
@@ -97,7 +117,8 @@ def plot_mean_velocity_pdf(ax, vx, ff, kk):
     ax.cla()
 
     ax.set_xlim(prm.vmin[kk], prm.vmax[kk])
-    ax.set_ylim(0.01, 10.0)
+    #ax.set_ylim(0.01, 10.0)
+    ax.set_ylim(1.0e-5, 10.0)
 
     ax.set_xlabel(r'$v_{x}$')
     #ax.set_ylabel(r'pdf')
@@ -151,10 +172,10 @@ class visualize:
         self.ax3b = subplot(self.gs[2, 1])
         self.ax3c = subplot(self.gs[2, 2])
 
-        self.ax4  = subplot(self.gs[3, 0:2])
-        self.ax5  = subplot(self.gs[4, 0:2])
-        self.ax4b = subplot(self.gs[3, 2])
-        self.ax5b = subplot(self.gs[4, 2])
+        #self.ax4  = subplot(self.gs[3, 0:2])
+        #self.ax5  = subplot(self.gs[4, 0:2])
+        #self.ax4b = subplot(self.gs[3, 2])
+        #self.ax5b = subplot(self.gs[4, 2])
 
 
     def plot(self, step, ff, ex, ajx, rho, fp):
@@ -166,11 +187,11 @@ class visualize:
         #plot_double_phasespace(self.ax1a, self.xx, self.vx, ff)
 
         #phase spaces // species 0
-        plot_phasespace(self.ax1a, self.xx, self.vx, ff, 0)
+        plot_logphasespace(self.ax1a, self.xx, self.vx, ff, 0)
         plot_mean_velocity_pdf(self.ax1b, self.vx, ff, 0)
             
         #phase spaces // species 1
-        plot_phasespace(self.ax2a, self.xx, self.vx, ff, 1)
+        plot_logphasespace(self.ax2a, self.xx, self.vx, ff, 1)
         plot_mean_velocity_pdf(self.ax2b, self.vx, ff, 1)
             
         #fields
@@ -179,12 +200,11 @@ class visualize:
         plot_field(self.ax3c, self.xx, ajx, r'$J_x$')
         
         #plot radiation
-        plot_rad(self.ax4,   self.xx, self.px, fp, 0) #+x
-        plot_spec(self.ax4b, self.px, fp, 0) #+x
+        #plot_rad(self.ax4,   self.xx, self.px, fp, 0) #+x
+        #plot_spec(self.ax4b, self.px, fp, 0) #+x
 
-        plot_rad(self.ax5, self.xx, self.px, fp, 1) #-x
-        plot_spec(self.ax5b, self.px, fp, 1) #+x
-
+        #plot_rad(self.ax5, self.xx, self.px, fp, 1) #-x
+        #plot_spec(self.ax5b, self.px, fp, 1) #+x
 
         savefig(fname)
 

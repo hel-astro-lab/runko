@@ -95,13 +95,13 @@ def initial(prm):
                        + prm.namp * np.cos( kx[1 + ll]*xx + nphs[ll]/180*np.pi) * kx[1 + ll]**2
 
 
-            vd_noise[:] += -prm.pamp * np.sin(-kx[1 + ll]*xx + pphs[ll]/180*np.pi)*(ww[ll] - prm.vd[kk]*kx[1 + ll]) \
+            vd_noise[:] += -prm.famp[kk] * prm.pamp * np.sin(-kx[1 + ll]*xx + pphs[ll]/180*np.pi)*(ww[ll] - prm.vd[kk]*kx[1 + ll]) \
                        - prm.namp * np.sin(-kx[1 + ll]*xx + nphs[ll]/180*np.pi)*(ww[ll] + prm.vd[kk]*kx[1 + ll])
 
 
         for ii in prm.xfull:
             for jj in range(prm.nvfull):
-                ff[jj, ii, kk] = np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
+                ff[jj, ii, kk] = prm.famp[kk] * np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 / (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii]
 
                 #gx[jj, ii, kk] = np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
@@ -110,6 +110,7 @@ def initial(prm):
                 #gv[jj, ii, kk] = -np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 #/ (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] \
                 #* (ux[jj, kk] - vd_noise[ii])/(vt_noise[ii]**2) * prm.dv[kk]
+
 
 
     return ff, ex, ajx, xx, ux, px, fp

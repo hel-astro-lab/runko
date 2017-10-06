@@ -234,7 +234,6 @@ def radiative_reactions(ux, ff, px, fp, prm):
 
 
 
-
     return ff, fp
 
 
@@ -295,7 +294,7 @@ ff, ex, ajx, xx, ux, px, fp = initial(prm)
 rho = charge(ff, ux, prm)
 ex = poisson(ex, rho, prm)
 #ff, fp = collisions(ux, ff, px, fp, prm)
-ff, fp = radiative_reactions(ux, ff, px, fp, prm)
+#ff, fp = radiative_reactions(ux, ff, px, fp, prm)
 
 ff, ajx = position(ff, ux, ajx, prm)
 ex = efield(ex, ajx, prm)
@@ -335,7 +334,7 @@ time = 0.0
 for jtime in range(prm.ntime+1):
 
     if (jtime % 100 == 0):
-        ff, fp = radiative_reactions(ux, ff, px, fp, prm)
+        #ff, fp = radiative_reactions(ux, ff, px, fp, prm)
         print "-----------", jtime, "/", time, "----------"
         timer.stats("lap")
         visz.plot(jtime, ff, ex, ajx, rho, fp)
