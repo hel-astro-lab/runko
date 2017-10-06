@@ -147,6 +147,9 @@ To solve \eqref{eq:vlasov} numerically we will use first-order splitting by Chen
 \be
 \D{\f{s}}{t} +\frac{q_{\mathrm{s}}}{m_{\mathrm{s}}} \nabla_{\vec{a}} \cdot ( \vec{E} + \vec{v} \times \vec{B} ) \f{s} = 0
 \ee
+\be
+\D{\f{s}}{t} = \mathcal{C}
+\ee
 Conservative update in one dimension (labeld with $i$ and $x$) is then applied as
 \be
 f_{i}^{t+\Delta t} = f_{i}^{t} + \frac{q_{\mathrm{s}}}{m_{\mathrm{s}}}  \frac{\Delta x}{\Delta t}( U_{x, i+\frac{1}{2}}^t - U_{x, i-\frac{1}{2}}^t ),
