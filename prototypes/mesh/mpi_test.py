@@ -509,6 +509,7 @@ if master:
 
 
 #second round with adoption
+# load balancing scheme starts here
 adoption_council()
 n.adopt()
 communicate_adoptions()

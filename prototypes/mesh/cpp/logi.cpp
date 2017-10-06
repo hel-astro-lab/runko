@@ -652,7 +652,6 @@ namespace logi {
                             //       probing the class interiors
                             
                             inc_c.local = false;
-                            // inc_c.types.push_back( cellType::VIRTUAL );
                             cells.insert( std::make_pair(cid, inc_c) );
 
                         } else {
