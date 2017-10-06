@@ -1,4 +1,6 @@
 import numpy as np
+np.random.seed(0)
+
 
 def initial(prm):
 

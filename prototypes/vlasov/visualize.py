@@ -135,12 +135,13 @@ def plot_mean_velocity_pdf(ax, vx, ff, kk):
 def plot_field(ax, xx, f, quantity):
     ax.cla()
 
-    ax.set_xlim(xx[0], xx[-1])
+    xmid = xx[prm.xmid]
+    ax.set_xlim(xmid[0], xmid[-1])
     #ax.set_ylim(vx[0], vx[-1])
     ax.set_xlabel(r'$x$')
     ax.set_ylabel(quantity)
 
-    ax.plot(xx, f, "b-")
+    ax.plot(xmid, f[prm.xmid], "b-")
 
 
 

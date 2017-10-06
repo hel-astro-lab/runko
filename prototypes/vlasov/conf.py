@@ -36,7 +36,29 @@ import numpy as np
 
 
 ##################################################
-# Harmonic Langmuir waves
+# Cold beam
+#ns = 2 #number of species
+#dx = 0.1
+#dt = 0.01 
+#nx = 400
+#nv = 400
+#ntime = 10000
+#nph = 200 #number of radiation energy bins
+#nangs = 2 #number of radiation angles
+#wp   = np.array([ 1.0,  1.0]) #plasma frequency
+#q    = np.array([-1.0, -1.0]) #charges
+#m    = np.array([ 1.0,  1.0]) #masses (in m_e)
+#qm   = q/m                    #charge-to-mass ratio
+#vt   = np.array([ 0.5,  0.5]) #thermal velocity
+#vd   = np.array([ 0.0,  5.0]) #drift velocity
+#vmax = np.array([  5.0, 20.0])
+#vmin = np.array([ -5.0,  0.0])
+#
+#famp = np.array([1.0, 0.001])
+
+
+##################################################
+# Atmosphere
 ns = 2 #number of species
 dx = 0.1
 dt = 0.01 
@@ -46,15 +68,17 @@ ntime = 10000
 nph = 200 #number of radiation energy bins
 nangs = 2 #number of radiation angles
 wp   = np.array([ 1.0,  1.0]) #plasma frequency
-q    = np.array([-1.0, -1.0]) #charges
+q    = np.array([-1.0,  1.0]) #charges
 m    = np.array([ 1.0,  1.0]) #masses (in m_e)
 qm   = q/m                    #charge-to-mass ratio
-vt   = np.array([ 0.5,  0.1]) #thermal velocity
-vd   = np.array([ 0.0,  5.0]) #drift velocity
-vmax = np.array([  5.0, 15.0])
-vmin = np.array([ -5.0,  0.0])
+vt   = np.array([ 0.2,  0.2]) #thermal velocity
+vd   = np.array([ 0.0,  0.0]) #drift velocity
+vmax = np.array([  20.0,  20.0])
+vmin = np.array([ -20.0, -20.0])
+famp = np.array([1.0, 1.0])
 
-famp = np.array([1.0, 0.001])
+periodic = False
+finite = True
 
 
 ##################################################

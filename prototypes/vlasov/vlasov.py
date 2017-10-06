@@ -54,6 +54,20 @@ def wrap(x, prm):
     return x
 
 
+def damp(x, prm):
+
+    #left halo 
+    bval = x[prm.xLb[-1]+1]
+    x[prm.xLb] = bval*np.exp(-np.linspace(0.0, 10.0, prm.nxHalo) )
+
+    #right halo
+    bval = x[prm.xRb[0]-1]
+    x[prm.xRb] = bval*np.exp(-np.linspace(10.0, 0.0, prm.nxHalo) )
+
+    return x
+
+
+
 def poisson(ex, rho, prm):
 
     # XXX why remove the mean?
@@ -62,8 +76,15 @@ def poisson(ex, rho, prm):
     for ii in prm.xmid:
         ex[ii+1] = ex[ii] + rho[ii+1]
 
-    ex = wrap(ex, prm)
+    if prm.periodic:
+        ex = wrap(ex, prm)
+
     ex -= np.sum( ex[prm.xmid] )/ prm.nx
+
+    #damp E field
+    if prm.finite:
+        damp(ex, prm)
+
 
     return ex
 
@@ -106,16 +127,32 @@ def position(ff, ux, ajx, prm):
         ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid]/gamma, 0) * prm.du[kk] * prm.q[kk]
                 
 
-    #wrap boundaries
-    ff[:, prm.xLb, :] = ff[:, prm.xRe, :]
-    ff[:, prm.xRb, :] = ff[:, prm.xLe, :]
+    if prm.periodic:
+        #wrap boundaries
+        ff[:, prm.xLb, :] = ff[:, prm.xRe, :]
+        ff[:, prm.xRb, :] = ff[:, prm.xLe, :]
+
+    if prm.finite:
+        bvalL = ff[:, prm.xLb[-1]+1, :]
+        for ir in prm.xLb:
+            ff[:, ir, :] = bvalL
+
+        bvalR = ff[:, prm.xRb[0]-1, :]
+        for ir in prm.xRb:
+            ff[:, ir, :] = bvalR
                     
+
     #limit flux
     np.clip(ff, 0.0, None, out=ff)
 
     #reduce flux
     ajx[:] = np.sum( ajxs, 1 )
-    ajx = wrap(ajx, prm)
+
+    if prm.periodic:
+        ajx = wrap(ajx, prm)
+
+    if prm.finite:
+        ajx = damp(ajx, prm)
 
     return ff, ajx
 
@@ -127,7 +164,11 @@ def velocity(f, ex, prm):
     fex = np.zeros(prm.nxfull)
     for ii in prm.xmid:
         fex[ii] = (ex[ii] + ex[ii-1])/2.0
-    fex = wrap(fex, prm)
+
+    if prm.periodic:
+        fex = wrap(fex, prm)
+    if prm.finite:
+        fex = damp(fex, prm)
 
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
     jj = np.arange(2,prm.nv+3)
@@ -169,7 +210,14 @@ def efield(ex, ajx, prm):
 
     #amperes law E_n+1 = E_n - J
     ex[prm.xmid] = ex[prm.xmid] - ajx[prm.xmid]
-    ex = wrap(ex, prm)
+
+    if prm.periodic:
+        ex = wrap(ex, prm)
+
+    if prm.finite:
+        damp(ex, prm)
+
+    np.clip(ex, -10.0, 10.0, out=ex)
 
     return ex
 
@@ -282,6 +330,21 @@ def collisions(ux, ff, px, fp, prm):
     return ff, fp
 
 
+def inject(ff, prm):
+
+    vd  = -5.0
+    vt  = 0.1
+    amp = 0.001
+
+    for kk in range(prm.ns):
+        ii = prm.xmid[-1]
+        ux = np.linspace(prm.vmin[kk], prm.vmax[kk], prm.nvfull)
+
+        for jj in range(prm.nvfull):
+            ff[jj, ii, kk] += amp * np.exp( -(ux[jj] - vd)**2/(2.0*vt)**2)
+
+
+    return ff
 
 
 #initialize
@@ -331,6 +394,7 @@ timer.start("total")
 
 jtime = 0
 time = 0.0
+
 for jtime in range(prm.ntime+1):
 
     if (jtime % 100 == 0):
@@ -340,6 +404,7 @@ for jtime in range(prm.ntime+1):
         visz.plot(jtime, ff, ex, ajx, rho, fp)
         timer.start("lap")
 
+    ff      = inject(ff, prm)
     ff      = velocity(ff, ex, prm)
 
     #ff, fp = collisions(ux, ff, px, fp, prm)
