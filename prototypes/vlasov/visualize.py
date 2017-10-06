@@ -126,8 +126,9 @@ def plot_mean_velocity_pdf(ax, vx, ff, kk):
     ax.set_yscale("log") #, nonposy='clip')
     ax.set_xscale('symlog', linthreshx=5.0)
 
-    fv = np.mean(ff[:,3:-3, kk], 1)
-    ax.plot(vx, fv, "k-", marker='.')
+    ffi = ff[:,:, kk]
+    fv = np.mean(ffi[:,3:-3], 1)
+    ax.plot(vx[:,kk], fv, "k-", marker='.')
 
 
 

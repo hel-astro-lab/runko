@@ -40,7 +40,7 @@ import numpy as np
 ns = 2 #number of species
 dx = 0.1
 dt = 0.01 
-nx = 200
+nx = 400
 nv = 400
 ntime = 10000
 nph = 200 #number of radiation energy bins
@@ -49,10 +49,10 @@ wp   = np.array([ 1.0,  1.0]) #plasma frequency
 q    = np.array([-1.0, -1.0]) #charges
 m    = np.array([ 1.0,  1.0]) #masses (in m_e)
 qm   = q/m                    #charge-to-mass ratio
-vt   = np.array([ 0.5,  0.5]) #thermal velocity
+vt   = np.array([ 0.5,  0.1]) #thermal velocity
 vd   = np.array([ 0.0,  5.0]) #drift velocity
-vmax = np.array([ 10.0, 10.0])
-vmin = np.array([-10.0,-10.0])
+vmax = np.array([  5.0, 15.0])
+vmin = np.array([ -5.0,  0.0])
 
 famp = np.array([1.0, 0.001])
 

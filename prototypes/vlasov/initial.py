@@ -104,6 +104,7 @@ def initial(prm):
                 ff[jj, ii, kk] = prm.famp[kk] * np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 / (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii]
 
+
                 #gx[jj, ii, kk] = np.exp(-(ux[jj, kk] - vd_noise[ii])**2/(2*vt_noise[ii]**2)) \
                 #/ (np.sqrt(2*np.pi)*vt_noise[ii])*dn_noise[ii] * prm.dx
                 #
