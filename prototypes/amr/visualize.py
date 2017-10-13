@@ -111,3 +111,38 @@ def visualize_data(ax, mesh, params):
               aspect='auto',
               )
 
+
+#collect data from mesh using bundles
+def visualize_data2(ax, mesh, params):
+    ax.cla()
+    ax.minorticks_on()
+    ax.set_xlim(params.mins[0], params.maxs[0])
+    ax.set_ylim(params.mins[1], params.maxs[1])
+
+    (Nx, Ny, Nz) = mesh.Nblocks
+
+    data_slice = np.zeros((Nx,Ny)) #xy slice
+    zi = 0
+    for i in range(Ny):
+        vbundle = mesh.get_bundle(0, i, zi)
+        data_slice[:, i] = vbundle.get_pencil()
+
+    extent = [ params.mins[0], params.maxs[0], params.mins[1], params.maxs[1] ]
+    mgrid = np.ma.masked_where(data_slice == 0.0, data_slice)
+    ax.imshow(mgrid.T,
+              extent=extent,
+              origin='lower',
+              interpolation='nearest',
+              cmap = cm.get_cmap('plasma'),
+              vmin = 0.0,
+              vmax = 1.0,
+              aspect='auto',
+              )
+
+
+
+
+
+
+
+

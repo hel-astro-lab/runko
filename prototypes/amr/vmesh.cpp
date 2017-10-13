@@ -97,6 +97,21 @@ namespace vmesh {
             return pencil;
         };
 
+        /// If current bundle slice non-zero
+        bool isNonZero(size_t q) {
+            if ( pencil[q] == 0.0 ) { return false; };
+            
+            return true;
+        };
+
+        /// return q:th slice of the pencil
+        vblock_t getSlice(size_t q) {
+            vblock_t ret;
+            ret[0] = pencil[q];
+
+            return ret;
+        };
+
 
     }; // end of Bundle class
 
@@ -165,6 +180,8 @@ namespace vmesh {
             std::vector<uint64_t> all_blocks( bool sorted = false);
 
             vmesh::Bundle get_bundle(size_t, size_t, size_t);
+
+            void add_bundle(size_t, size_t, size_t, vmesh::Bundle);
 
 
             bool clip( );
@@ -356,24 +373,6 @@ namespace vmesh {
     /// return full bundle of pencils penetrating the box at i1 & i2 coordinates along dim
     vmesh::Bundle vmesh::vMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
 
-        /*
-        size_t Nb=0;
-        switch(dim) {
-            case 0:  { // x
-                         Nb = Nblocks[0];
-                     }
-            case 1:  { // y
-                         Nb = Nblocks[1];
-                     }
-            case 2:  { // z
-                         Nb = Nblocks[2];
-                     }
-            default: {
-                         // error; unknown dimension
-                     }
-        }
-        */
-
         size_t Nb = Nblocks[dim];
 
         // target bundle
@@ -414,6 +413,54 @@ namespace vmesh {
         return vbundle;
     };
 
+
+    /// Add given bundle to the right blocks along the corresponding dimension
+    void vmesh::vMesh::add_bundle(size_t dim, size_t i1, size_t i2, vmesh::Bundle vbundle) {
+
+        size_t Nb = Nblocks[dim];
+
+        uint64_t cid=0;
+        for (size_t q=0; q<Nb; q++) {
+
+            // check if there is something coming to this block
+            if ( !vbundle.isNonZero(q) ){ continue; };
+
+            // non-zero bundle; lets add it
+            switch(dim) {
+                case 0: cid = get_block_ID( {{q, i1, i2}} ); // x pencil
+                        break;
+                case 1: cid = get_block_ID( {{i1, q, i2}} ); // y pencil
+                        break;
+                case 2: cid = get_block_ID( {{i1, i2, q}} ); // z pencil
+                        break;
+            }
+
+            // get data
+            // TODO rotate the block to correct dimensions
+            vblock_t vblock = vbundle.getSlice(q);
+
+
+            // next lets get correct block
+            auto it = blockContainer.find(cid);
+            
+            // if block does not exist, create it 
+            if( it == blockContainer.end() ) {
+
+                blockContainer.insert( std::make_pair(cid, vblock ) );
+                continue;
+            }
+
+            // non-zero address block
+            // TODO: real, full block, addition
+            vblock_t targetBlock = it->second;
+              
+            targetBlock[0] += vblock[0];
+
+            it->second = targetBlock;
+        }
+
+
+    };
 
 
 }
@@ -463,6 +510,7 @@ PYBIND11_MODULE(vmesh, m) {
         .def("get_size", &vmesh::vMesh::get_size)
         .def("get_center", &vmesh::vMesh::get_center)
         .def("get_bundle", &vmesh::vMesh::get_bundle)
+        .def("add_bundle", &vmesh::vMesh::add_bundle)
         // Bare bones array interface
         /*
         .def("__getitem__", [](const Sequence &s, size_t i) {

@@ -87,6 +87,7 @@ if __name__ == "__main__":
     params.maxs = [  20.0,  20.0,  20.0 ]
 
     mesh = vmesh.vMesh()
+    mesh.Nblocks = [50, 40, 2]
     mesh.zFill(params.mins, params.maxs)
 
     populate_mesh( mesh )
@@ -96,6 +97,8 @@ if __name__ == "__main__":
     #print "cid:",cid
     #print "cen:",mesh.get_center(cid)
     #print "val:",mesh[5,5,5]
+    print "Memory usage: {} Mb ({} cells)".format(mesh.sizeInBytes()/1e6, mesh.number_of_blocks)
+
 
     mesh.clip()
     print "num of blocks:", mesh.number_of_blocks
@@ -105,7 +108,25 @@ if __name__ == "__main__":
 
 
     print "Memory usage: {} Mb ({} cells)".format(mesh.sizeInBytes()/1e6, mesh.number_of_blocks)
+
+
+    ##################################################
+    # begin propagation tests
+    print "testing bundle..."
+    vbundle = mesh.get_bundle(0, 20, 0)
+    print vbundle.get_grid()
+    print vbundle.get_pencil()
+
+    mesh.add_bundle(0, 7, 0, vbundle)
+    vbundle = mesh.get_bundle(0, 20, 0)
+
+
+    visualize_data2(axs[0], mesh, params)
     plt.savefig("vlasov_0001.png")
+
+
+
+
 
 
 
