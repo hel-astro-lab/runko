@@ -84,10 +84,8 @@ def visualize_data(ax, mesh, params):
     ax.set_ylim(params.mins[1], params.maxs[1])
 
     (Nx, Ny, Nz) = mesh.Nblocks
-    #data = np.zeros( (Nx, Ny) ) #xy
-    #data = np.zeros( (Nz, Ny) ) #zy
 
-    data = np.zeros((Nx,Ny,Nx))
+    data = np.zeros((Nx,Ny,Nz))
 
     print "len: {}".format( len(mesh.all_blocks(True)) )
 
@@ -99,7 +97,7 @@ def visualize_data(ax, mesh, params):
         #print "({},{},{}) = {}".format(i,j,k,val[0])
         #plot_edges(ax, mesh, cid)
 
-    data_slice = data[:,:,20]
+    data_slice = data[:,:,0]
 
     extent = [ params.mins[0], params.maxs[0], params.mins[1], params.maxs[1] ]
     mgrid = np.ma.masked_where(data_slice == 0.0, data_slice)

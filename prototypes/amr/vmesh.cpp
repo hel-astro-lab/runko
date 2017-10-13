@@ -22,6 +22,8 @@ namespace vmesh {
     static const uint64_t error_block = 0;
     static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
 
+
+    //-------------------------------------------------- 
     class vBlock {
         public:
             Real data = 0.0;
@@ -51,6 +53,54 @@ namespace vmesh {
         dls[2] = dz;
     };
 
+    //-------------------------------------------------- 
+    /// Bundle of pencils
+    class Bundle {
+
+        /// values along the pencil
+        std::vector<Realf> pencil;
+
+        /// guiding grid for the pencil
+        std::vector<double> grid;
+
+
+        public:
+
+        /// resize the container 
+        void resize( size_t N) { 
+            pencil.resize(N);
+            grid.resize(N);
+        };
+
+        /// load bundle full of zeros
+        void loadZeroBlock(size_t q) {
+            pencil[q] = 0.0;
+        };
+
+        /// load block in x/y/z order 
+        void loadBlock(size_t q, vblock_t block) {
+            pencil[q] = block[0]; 
+        };
+
+        /// load values to the grid and transform the incoming cube according to dim
+        void loadGrid(size_t q, double val) {
+            grid[q] = val;
+        };
+
+        /// return the guiding grid
+        std::vector<double> get_grid() {
+            return grid;
+        };
+
+        /// return the pencil values
+        std::vector<Realf> get_pencil() {
+            return pencil;
+        };
+
+
+    }; // end of Bundle class
+
+
 
    // -------------------------------------------------- 
     class vMesh {
@@ -58,6 +108,7 @@ namespace vmesh {
         public:
             size_t number_of_blocks = 0;
     
+            /// main Hashmap block container
             std::unordered_map<uint64_t, vblock_t> blockContainer;
               
             /// returns a pointer to the data of given block
@@ -113,10 +164,7 @@ namespace vmesh {
 
             std::vector<uint64_t> all_blocks( bool sorted = false);
 
-
-            std::array<Real, PENCIL_WID> get_x_pencil(size_t j, size_t k);
-            std::array<Real, PENCIL_WID> get_y_pencil(size_t i, size_t k);
-            std::array<Real, PENCIL_WID> get_z_pencil(size_t i, size_t j);
+            vmesh::Bundle get_bundle(size_t, size_t, size_t);
 
 
             bool clip( );
@@ -238,7 +286,7 @@ namespace vmesh {
         // TODO check for out-of-bounds ID
         indices_t indx = get_indices( cellID );
 
-        std::array<double, 3> center = {{0.0, 0.0, 0.0}};
+        std::array<double, 3> center;
 
         // TODO add refinement
         center[0] = mins[0] + lens[0]/2.0 + (double)indx[0] * lens[0];
@@ -305,6 +353,67 @@ namespace vmesh {
     };
 
 
+    /// return full bundle of pencils penetrating the box at i1 & i2 coordinates along dim
+    vmesh::Bundle vmesh::vMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
+
+        /*
+        size_t Nb=0;
+        switch(dim) {
+            case 0:  { // x
+                         Nb = Nblocks[0];
+                     }
+            case 1:  { // y
+                         Nb = Nblocks[1];
+                     }
+            case 2:  { // z
+                         Nb = Nblocks[2];
+                     }
+            default: {
+                         // error; unknown dimension
+                     }
+        }
+        */
+
+        size_t Nb = Nblocks[dim];
+
+        // target bundle
+        Bundle vbundle;
+        vbundle.resize( Nb );
+
+        uint64_t cid;
+        for (size_t q=0; q<Nb; q++) {
+
+            switch(dim) {
+                case 0: cid = get_block_ID( {{q, i1, i2}} ); // x pencil
+                        break;
+                case 1: cid = get_block_ID( {{i1, q, i2}} ); // y pencil
+                        break;
+                case 2: cid = get_block_ID( {{i1, i2, q}} ); // z pencil
+                        break;
+            }
+
+            // add guiding grid
+            auto center = get_center(cid);
+            vbundle.loadGrid(q, center[dim] );
+
+            // next lets get actual values 
+            auto it = blockContainer.find(cid);
+
+            // if block does not exist, fill with zero
+            if( it == blockContainer.end() ) {
+                vbundle.loadZeroBlock(q);
+                continue;
+            }
+
+            // TODO transform block to correct order
+            vblock_t block = it->second;
+
+            vbundle.loadBlock(q, block);
+        }
+
+        return vbundle;
+    };
+
 
 
 }
@@ -333,6 +442,11 @@ PYBIND11_MODULE(vmesh, m) {
             std::array<double, 3> get_center( uint64_t cellID );
     */
 
+    py::class_<vmesh::Bundle>(m, "Bundle" )
+        .def(py::init<>())
+        .def("get_grid",   &vmesh::Bundle::get_grid)
+        .def("get_pencil", &vmesh::Bundle::get_pencil);
+
 
     py::class_<vmesh::vMesh>(m, "vMesh" )
         .def(py::init<>())
@@ -348,6 +462,7 @@ PYBIND11_MODULE(vmesh, m) {
         .def("all_blocks", &vmesh::vMesh::all_blocks)
         .def("get_size", &vmesh::vMesh::get_size)
         .def("get_center", &vmesh::vMesh::get_center)
+        .def("get_bundle", &vmesh::vMesh::get_bundle)
         // Bare bones array interface
         /*
         .def("__getitem__", [](const Sequence &s, size_t i) {
