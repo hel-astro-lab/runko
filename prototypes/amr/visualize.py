@@ -127,6 +127,8 @@ def visualize_data2(ax, mesh, params):
         vbundle = mesh.get_bundle(0, i, zi)
         data_slice[:, i] = vbundle.get_pencil()
 
+    #print np.shape( data_slice )
+
     extent = [ params.mins[0], params.maxs[0], params.mins[1], params.maxs[1] ]
     mgrid = np.ma.masked_where(data_slice == 0.0, data_slice)
     ax.imshow(mgrid.T,
@@ -137,7 +139,7 @@ def visualize_data2(ax, mesh, params):
               vmin = 0.0,
               vmax = 1.0,
               aspect='auto',
-              )
+             )
 
 
 

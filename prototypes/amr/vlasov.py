@@ -14,7 +14,7 @@ import vmesh
 def physical_vel(x,y,z):
 
     mux = 2.0
-    muy = 0.0
+    muy = 1.0
     muz = 0.0
     sigmax = 4.0
     sigmay = 6.0
@@ -88,6 +88,7 @@ if __name__ == "__main__":
 
     mesh = vmesh.vMesh()
     mesh.Nblocks = [50, 40, 2]
+    #mesh.Nblocks = [100, 6, 2]
     mesh.zFill(params.mins, params.maxs)
 
     populate_mesh( mesh )
@@ -111,19 +112,27 @@ if __name__ == "__main__":
 
 
     ##################################################
-    # begin propagation tests
+    # test bundle math
     print "testing bundle..."
-    vbundle = mesh.get_bundle(0, 20, 0)
+    vbundle = mesh.get_bundle(0, 0, 0)
     print vbundle.get_grid()
     print vbundle.get_pencil()
 
-    mesh.add_bundle(0, 7, 0, vbundle)
-    vbundle = mesh.get_bundle(0, 20, 0)
-
+    #mesh.add_bundle(0, 7, 0, vbundle)
+    #vbundle = mesh.get_bundle(0, 20, 0)
 
     visualize_data2(axs[0], mesh, params)
     plt.savefig("vlasov_0001.png")
 
+
+    ##################################################
+    #test propagation
+    vbundle = mesh.get_bundle(0, 20, 0)
+    intp = vmesh.BundleInterpolator2nd()
+    intp.setBundle(vbundle)
+
+    vsol = vmesh.vSolver()
+    vsol.setMesh(mesh)
 
 
 

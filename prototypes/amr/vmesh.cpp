@@ -97,14 +97,14 @@ namespace vmesh {
             return pencil;
         };
 
-        /// If current bundle slice non-zero
+        /// If current bundle slice is non-zero
         bool isNonZero(size_t q) {
             if ( pencil[q] == 0.0 ) { return false; };
             
             return true;
         };
 
-        /// return q:th slice of the pencil
+        /// return q:th slice of the bundle
         vblock_t getSlice(size_t q) {
             vblock_t ret;
             ret[0] = pencil[q];
@@ -113,7 +113,17 @@ namespace vmesh {
         };
 
 
+
+
+
     }; // end of Bundle class
+
+   // -------------------------------------------------- 
+
+
+
+
+
 
 
 
@@ -463,6 +473,92 @@ namespace vmesh {
     };
 
 
+    /// Abstract base class for bundle interpolator
+    class BundleInterpolator {
+
+        Bundle bundle;
+
+        public:
+            virtual ~BundleInterpolator() { };
+
+            void   setBundle(Bundle _bundle) {
+                bundle = _bundle;
+            };
+
+            Bundle getBundle( ) {
+                return bundle;
+            };
+
+            virtual Bundle interpolate( double shift ) = 0;
+    };
+
+
+    /// Second order Lagrangian interpolator
+    class BundleInterpolator2nd : public BundleInterpolator {
+        public:
+            Bundle interpolate( double shift ) {
+                Bundle ret;
+
+                // compute
+
+                return ret;
+            };
+    };
+
+
+
+
+
+    /// General Vlasov velocity solver
+    class vSolver {
+
+        /// Velocity class to sovle
+        vmesh::vMesh vmesh;
+
+        /// Bundle interpolator pointer
+        BundleInterpolator *intp;
+
+        public:
+
+            // vSolver( vmesh::vMesh _vmesh ){ vmesh = _vmesh; };
+
+            /// Set internal mesh
+            void setMesh(vmesh::vMesh _vmesh) { vmesh = _vmesh; };
+
+            /// Set internal interpolator
+            void setInterpolator( BundleInterpolator &_intp ) { intp = &_intp; };
+
+            /// actual solver
+            void solve( ) {
+
+                // x direction solve
+                // TODO generalize
+                for(size_t zi=0; zi<vmesh.Nblocks[2]; zi++) {
+                    for(size_t yi=0; yi<vmesh.Nblocks[1]; yi++) {
+
+                        Bundle vbundle = vmesh.get_bundle(0, yi, zi);
+                        intp->setBundle(vbundle);
+
+                        double shift = 1.0;
+
+                        Bundle UI = intp->interpolate(shift);
+
+                    }
+                }
+
+            };
+
+
+
+    }; // end of vSolver
+
+
+
+
+
+
+
+
 }
 
 
@@ -482,17 +578,36 @@ PYBIND11_MODULE(vmesh, m) {
         .def("dls", &vmesh::vBlock::get_dls);
 
 
-    /*
-            block_t get_block( uint64_t cellID );
-            indices_t get_indices( uint64_t cellID );
-            std::array<double, 3> get_size( uint64_t cellID );
-            std::array<double, 3> get_center( uint64_t cellID );
-    */
-
     py::class_<vmesh::Bundle>(m, "Bundle" )
         .def(py::init<>())
         .def("get_grid",   &vmesh::Bundle::get_grid)
         .def("get_pencil", &vmesh::Bundle::get_pencil);
+
+
+
+    // Trampoline class for BundleInterpolator (because of inheritance from Base class)
+    class PyBundleInterpolator : public vmesh::BundleInterpolator {
+    public:
+        using vmesh::BundleInterpolator::BundleInterpolator;
+        using vmesh::BundleInterpolator::setBundle;
+        using vmesh::BundleInterpolator::getBundle;
+        vmesh::Bundle interpolate(double s) override {
+            PYBIND11_OVERLOAD_PURE(vmesh::Bundle, vmesh::BundleInterpolator, interpolate, s);
+        }
+    };
+
+    py::class_<vmesh::BundleInterpolator, PyBundleInterpolator> bintp(m, "BundleInterpolator" );
+    bintp
+        .def(py::init<>())
+        .def("setBundle",   &vmesh::BundleInterpolator::setBundle)
+        .def("getBundle",   &vmesh::BundleInterpolator::getBundle)
+        .def("interpolate", &vmesh::BundleInterpolator::interpolate);
+
+    py::class_<vmesh::BundleInterpolator2nd>(m, "BundleInterpolator2nd", bintp)
+        .def(py::init<>());
+
+
+
 
 
     py::class_<vmesh::vMesh>(m, "vMesh" )
@@ -570,6 +685,15 @@ PYBIND11_MODULE(vmesh, m) {
         .def("sizeInBytes", &vmesh::vMesh::sizeInBytes)
         .def("capacityInBytes", &vmesh::vMesh::capacityInBytes)
         .def("clip", &vmesh::vMesh::clip);
+
+
+    py::class_<vmesh::vSolver>(m, "vSolver" )
+        .def(py::init<>())
+        .def("setMesh" ,         &vmesh::vSolver::setMesh)
+        .def("setInterpolator",  &vmesh::vSolver::setInterpolator)
+        .def("solve",            &vmesh::vSolver::solve);
+
+
 
 
 }
