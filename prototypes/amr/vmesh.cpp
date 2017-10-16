@@ -61,7 +61,7 @@ namespace vmesh {
         std::vector<Realf> pencil;
 
         /// guiding grid for the pencil
-        std::vector<double> grid;
+        std::vector<Realf> grid;
 
 
         public:
@@ -70,6 +70,10 @@ namespace vmesh {
         void resize( size_t N) { 
             pencil.resize(N);
             grid.resize(N);
+        };
+
+        size_t size() {
+            return grid.size();
         };
 
         /// load bundle full of zeros
@@ -83,17 +87,17 @@ namespace vmesh {
         };
 
         /// load values to the grid and transform the incoming cube according to dim
-        void loadGrid(size_t q, double val) {
+        void loadGrid(size_t q, Realf val) {
             grid[q] = val;
         };
 
         /// return the guiding grid
-        std::vector<double> get_grid() {
+        std::vector<Realf> getGrid() {
             return grid;
         };
 
         /// return the pencil values
-        std::vector<Realf> get_pencil() {
+        std::vector<Realf> getPencil() {
             return pencil;
         };
 
@@ -112,6 +116,10 @@ namespace vmesh {
             return ret;
         };
 
+        /// get grid size
+        Realf getDx(size_t q) {
+            return std::abs( grid[q+1] - grid[q] );
+        };
 
 
 
@@ -430,10 +438,10 @@ namespace vmesh {
         size_t Nb = Nblocks[dim];
 
         uint64_t cid=0;
-        for (size_t q=0; q<Nb; q++) {
+        for (size_t q=1; q<Nb; q++) {
 
             // check if there is something coming to this block
-            if ( !vbundle.isNonZero(q) ){ continue; };
+            if (!vbundle.isNonZero(q-1) && !vbundle.isNonZero(q) ){ continue; };
 
             // non-zero bundle; lets add it
             switch(dim) {
@@ -445,9 +453,13 @@ namespace vmesh {
                         break;
             }
 
-            // get data
+            // get slice and compute flux *difference*
             // TODO rotate the block to correct dimensions
-            vblock_t vblock = vbundle.getSlice(q);
+            vblock_t vb0  = vbundle.getSlice(q);
+            vblock_t vbm1 = vbundle.getSlice(q-1);
+            vblock_t vb;
+            vb[0] = vbm1[0] - vb0[0];
+
 
 
             // next lets get correct block
@@ -456,7 +468,7 @@ namespace vmesh {
             // if block does not exist, create it 
             if( it == blockContainer.end() ) {
 
-                blockContainer.insert( std::make_pair(cid, vblock ) );
+                blockContainer.insert( std::make_pair(cid, vb ) );
                 continue;
             }
 
@@ -464,7 +476,7 @@ namespace vmesh {
             // TODO: real, full block, addition
             vblock_t targetBlock = it->second;
               
-            targetBlock[0] += vblock[0];
+            targetBlock[0] += vb[0];
 
             it->second = targetBlock;
         }
@@ -475,13 +487,19 @@ namespace vmesh {
 
     /// Abstract base class for bundle interpolator
     class BundleInterpolator {
-
-        Bundle bundle;
-
         public:
+            /// internal bundle that we interpolate
+            Bundle bundle;
+
+            /// force acting on the fluid
+            Bundle delta;
+
+            /// time step
+            Realf dt = 0.0;
+
             virtual ~BundleInterpolator() { };
 
-            void   setBundle(Bundle _bundle) {
+            void setBundle(Bundle _bundle) {
                 bundle = _bundle;
             };
 
@@ -489,17 +507,43 @@ namespace vmesh {
                 return bundle;
             };
 
-            virtual Bundle interpolate( double shift ) = 0;
+            void setDelta( Bundle _delta ) {
+                delta = _delta;
+            };
+
+            vblock_t getDeltaSlice(size_t i) {
+                return delta.getSlice(i);
+            };
+
+            virtual Bundle interpolate() = 0;
     };
 
 
     /// Second order Lagrangian interpolator
     class BundleInterpolator2nd : public BundleInterpolator {
         public:
-            Bundle interpolate( double shift ) {
-                Bundle ret;
+            Bundle interpolate( ) {
 
-                // compute
+                // prepare target bundle
+                Bundle ret;
+                ret.resize( bundle.size() );
+
+                // compute flux (inner region)
+                vblock_t block, fp1, f0, Delta;
+                for(size_t i=1; i<bundle.size()-1; i++) {
+                    fp1     = bundle.getSlice(i+1);
+                    f0      = bundle.getSlice(i  );
+
+                    // get shift 
+                    Delta     = getDeltaSlice(i);
+                    Delta[0] *= dt / bundle.getDx(i);
+
+                    // 2nd order conservative Lagrangian interpolation
+                    block[0] = Delta[0]          * ( fp1[0] + f0[0] )*0.5 
+                             - Delta[0]*Delta[0] * ( fp1[0] - f0[0] )*0.5;
+
+                    ret.loadBlock(i, block);
+                }
 
                 return ret;
             };
@@ -512,13 +556,13 @@ namespace vmesh {
     /// General Vlasov velocity solver
     class vSolver {
 
-        /// Velocity class to sovle
-        vmesh::vMesh vmesh;
 
         /// Bundle interpolator pointer
         BundleInterpolator *intp;
 
         public:
+            /// Velocity mesh to solve
+            vmesh::vMesh vmesh;
 
             // vSolver( vmesh::vMesh _vmesh ){ vmesh = _vmesh; };
 
@@ -532,17 +576,34 @@ namespace vmesh {
             void solve( ) {
 
                 // x direction solve
-                // TODO generalize
+                //--------------------------------------------------
+                
+                // setup force
+                Bundle delta; 
+                delta.resize(vmesh.Nblocks[0]); 
+                for (size_t q=0; q<vmesh.Nblocks[0]; q++) {
+                    vblock_t block;
+                    
+                    block[0] = 0.2;
+                    delta.loadBlock(q, block);
+                }
+                intp->setDelta( delta );
+                intp->dt = 1.0;
+
+
+                // loop over x directions
                 for(size_t zi=0; zi<vmesh.Nblocks[2]; zi++) {
                     for(size_t yi=0; yi<vmesh.Nblocks[1]; yi++) {
 
+                        // get bundle at the location
                         Bundle vbundle = vmesh.get_bundle(0, yi, zi);
+
+                        // interpolate numerical flux
                         intp->setBundle(vbundle);
+                        Bundle U0 = intp->interpolate();
 
-                        double shift = 1.0;
-
-                        Bundle UI = intp->interpolate(shift);
-
+                        // apply flux to the mesh
+                        vmesh.add_bundle(0, yi, zi, U0);
                     }
                 }
 
@@ -580,8 +641,8 @@ PYBIND11_MODULE(vmesh, m) {
 
     py::class_<vmesh::Bundle>(m, "Bundle" )
         .def(py::init<>())
-        .def("get_grid",   &vmesh::Bundle::get_grid)
-        .def("get_pencil", &vmesh::Bundle::get_pencil);
+        .def("getGrid",   &vmesh::Bundle::getGrid)
+        .def("getPencil", &vmesh::Bundle::getPencil);
 
 
 
@@ -591,8 +652,8 @@ PYBIND11_MODULE(vmesh, m) {
         using vmesh::BundleInterpolator::BundleInterpolator;
         using vmesh::BundleInterpolator::setBundle;
         using vmesh::BundleInterpolator::getBundle;
-        vmesh::Bundle interpolate(double s) override {
-            PYBIND11_OVERLOAD_PURE(vmesh::Bundle, vmesh::BundleInterpolator, interpolate, s);
+        vmesh::Bundle interpolate() override {
+            PYBIND11_OVERLOAD_PURE(vmesh::Bundle, vmesh::BundleInterpolator, interpolate, );
         }
     };
 
@@ -689,6 +750,7 @@ PYBIND11_MODULE(vmesh, m) {
 
     py::class_<vmesh::vSolver>(m, "vSolver" )
         .def(py::init<>())
+        .def_readwrite("vmesh",  &vmesh::vSolver::vmesh)
         .def("setMesh" ,         &vmesh::vSolver::setMesh)
         .def("setInterpolator",  &vmesh::vSolver::setInterpolator)
         .def("solve",            &vmesh::vSolver::solve);

@@ -125,7 +125,7 @@ def visualize_data2(ax, mesh, params):
     zi = 0
     for i in range(Ny):
         vbundle = mesh.get_bundle(0, i, zi)
-        data_slice[:, i] = vbundle.get_pencil()
+        data_slice[:, i] = vbundle.getPencil()
 
     #print np.shape( data_slice )
 

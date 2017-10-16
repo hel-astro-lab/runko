@@ -9,6 +9,10 @@ from visualize import *
 import vmesh
 
 
+#Profiling / Timing
+sys.path.insert(0, '../tools')
+from timer import Timer
+
 
 #physical "real" distribution to compare against
 def physical_vel(x,y,z):
@@ -115,26 +119,43 @@ if __name__ == "__main__":
     # test bundle math
     print "testing bundle..."
     vbundle = mesh.get_bundle(0, 0, 0)
-    print vbundle.get_grid()
-    print vbundle.get_pencil()
+    print vbundle.getGrid()
+    print vbundle.getPencil()
 
     #mesh.add_bundle(0, 7, 0, vbundle)
     #vbundle = mesh.get_bundle(0, 20, 0)
 
-    visualize_data2(axs[0], mesh, params)
-    plt.savefig("vlasov_0001.png")
+    #visualize_data2(axs[0], mesh, params)
+    #plt.savefig("vlasov_0001.png")
 
 
     ##################################################
     #test propagation
-    vbundle = mesh.get_bundle(0, 20, 0)
-    intp = vmesh.BundleInterpolator2nd()
-    intp.setBundle(vbundle)
+    #vbundle = mesh.get_bundle(0, 20, 0)
+    #intp = vmesh.BundleInterpolator2nd()
+    #intp.setBundle(vbundle)
 
     vsol = vmesh.vSolver()
     vsol.setMesh(mesh)
+    intp = vmesh.BundleInterpolator2nd()
+    vsol.setInterpolator(intp)
 
 
+    timer = Timer(["vsol"])
+    timer.start("vsol")
+
+    for lap in range(120):
+        vsol.solve()
+        vsol.vmesh.clip()
+        timer.lap("vsol")
+
+        if (lap % 10 == 0): 
+            print("lap : {}").format(lap)
+            visualize_data2(axs[0], vsol.vmesh, params)
+            stri = str(lap).rjust(4, '0')
+            plt.savefig("vlasov_"+stri+".png")
+
+    timer.stats("vsol")
 
 
 
