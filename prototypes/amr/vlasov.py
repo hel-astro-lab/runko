@@ -17,8 +17,8 @@ from timer import Timer
 #physical "real" distribution to compare against
 def physical_vel(x,y,z):
 
-    mux = 2.0
-    muy = 1.0
+    mux = 0.0
+    muy = 0.0
     muz = 0.0
     sigmax = 4.0
     sigmay = 6.0
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     params.maxs = [  20.0,  20.0,  20.0 ]
 
     mesh = vmesh.vMesh()
-    mesh.Nblocks = [50, 40, 2]
+    mesh.Nblocks = [50, 40, 5]
     #mesh.Nblocks = [100, 6, 2]
     mesh.zFill(params.mins, params.maxs)
 
@@ -131,9 +131,23 @@ if __name__ == "__main__":
 
     ##################################################
     #test propagation
-    #vbundle = mesh.get_bundle(0, 20, 0)
+    vbundle = mesh.get_bundle(0, 20, 0)
     #intp = vmesh.BundleInterpolator2nd()
     #intp.setBundle(vbundle)
+
+
+
+    vbundle = mesh.get_bundle(2, 20, 0)
+    mesh.add_bundle(2, 10, 0, vbundle)
+
+
+    visualize_data2(axs[0], mesh, params)
+    plt.savefig("vlasov0.png")
+    #sys.exit()
+    ##################################################
+
+
+
 
     vsol = vmesh.vSolver()
     vsol.setMesh(mesh)
@@ -144,16 +158,16 @@ if __name__ == "__main__":
     timer = Timer(["vsol"])
     timer.start("vsol")
 
-    for lap in range(120):
+    for lap in range(10000):
         vsol.solve()
-        vsol.vmesh.clip()
+        #vsol.vmesh.clip()
         timer.lap("vsol")
 
-        if (lap % 10 == 0): 
+        if (lap % 100 == 0): 
             print("lap : {}").format(lap)
             visualize_data2(axs[0], vsol.vmesh, params)
             stri = str(lap).rjust(4, '0')
-            plt.savefig("vlasov_"+stri+".png")
+            plt.savefig("out/vlasov_"+stri+".png")
 
     timer.stats("vsol")
 

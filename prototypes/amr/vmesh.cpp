@@ -194,6 +194,7 @@ namespace vmesh {
             std::array<double, 3> get_size( const uint64_t cellID );
 
             std::array<double, 3> get_center( const uint64_t cellID );
+            std::array<double, 3> get_center_indx( const indices_t indx );
 
             std::vector<uint64_t> all_blocks( bool sorted = false);
 
@@ -333,6 +334,20 @@ namespace vmesh {
     };
     
 
+    std::array<double, 3> vmesh::vMesh::get_center_indx( const indices_t indx ) {
+        std::array<double, 3> center;
+
+        // TODO add refinement
+        center[0] = mins[0] + lens[0]/2.0 + (double)indx[0] * lens[0];
+        center[1] = mins[1] + lens[1]/2.0 + (double)indx[1] * lens[1];
+        center[2] = mins[2] + lens[2]/2.0 + (double)indx[2] * lens[2];
+        // fmt::print("mins {} lens {} indx {}\n", mins[0], lens[0], indx[0]);
+
+    return center;
+    };
+
+    
+
     /// return a list of all blocks
     std::vector<uint64_t> vmesh::vMesh::all_blocks( bool sorted ) {
 
@@ -467,7 +482,6 @@ namespace vmesh {
             
             // if block does not exist, create it 
             if( it == blockContainer.end() ) {
-
                 blockContainer.insert( std::make_pair(cid, vb ) );
                 continue;
             }
@@ -572,39 +586,100 @@ namespace vmesh {
             /// Set internal interpolator
             void setInterpolator( BundleInterpolator &_intp ) { intp = &_intp; };
 
+
             /// actual solver
             void solve( ) {
 
-                // x direction solve
                 //--------------------------------------------------
+                // splitted x/y/z direction solve
+
+                //std::array<Realf, 3> force = {{0.2, 0.2, 0.2}};
                 
                 // setup force
-                Bundle delta; 
-                delta.resize(vmesh.Nblocks[0]); 
-                for (size_t q=0; q<vmesh.Nblocks[0]; q++) {
-                    vblock_t block;
-                    
-                    block[0] = 0.2;
-                    delta.loadBlock(q, block);
-                }
-                intp->setDelta( delta );
-                intp->dt = 1.0;
+                for (size_t dim=0; dim<3; dim++) {
 
-
-                // loop over x directions
-                for(size_t zi=0; zi<vmesh.Nblocks[2]; zi++) {
-                    for(size_t yi=0; yi<vmesh.Nblocks[1]; yi++) {
-
-                        // get bundle at the location
-                        Bundle vbundle = vmesh.get_bundle(0, yi, zi);
-
-                        // interpolate numerical flux
-                        intp->setBundle(vbundle);
-                        Bundle U0 = intp->interpolate();
-
-                        // apply flux to the mesh
-                        vmesh.add_bundle(0, yi, zi, U0);
+                    size_t Nb1, Nb2;
+                    switch(dim) {
+                        case 0: Nb1 = vmesh.Nblocks[1];
+                                Nb2 = vmesh.Nblocks[2];
+                                break;
+                        case 1: Nb1 = vmesh.Nblocks[0];
+                                Nb2 = vmesh.Nblocks[2];
+                                break;
+                        case 2: Nb1 = vmesh.Nblocks[0];
+                                Nb2 = vmesh.Nblocks[1];
+                                break;
                     }
+
+                    // fmt::print("Solving for dim {} with {} {}\n", dim, Nb1, Nb2);
+
+                    Bundle delta; 
+                    delta.resize(vmesh.Nblocks[dim]); 
+                    vblock_t block;
+
+                    /*
+                    for (size_t q=0; q<vmesh.Nblocks[dim]; q++) {
+                        block[0] = force[dim];
+                        delta.loadBlock(q, block);
+                    }
+                    intp->setDelta( delta );
+                    */
+
+                    double Bx = 0.0;
+                    double By = 0.0;
+                    double Bz = 0.001;
+
+                    intp->dt = 1.0;
+
+                    // loop over other directions
+                    double vx, vy, vz;
+                    double force;
+
+                    std::array<double, 3> vel; 
+
+                    for(size_t i2=0; i2<Nb2; i2++) {
+                        for(size_t i1=0; i1<Nb1; i1++) {
+
+                            // compute cross product against B field
+                            switch(dim) {
+                                case 0: vel = vmesh.get_center_indx( {{0, i1, i2}} );
+                                        vy = vel[1];
+                                        vz = vel[2];
+                                        force = (vy*Bz - vz*By);
+                                        break;
+                                case 1: vel = vmesh.get_center_indx( {{i1, 0, i2}} );
+                                        vx = vel[0];
+                                        vz = vel[2];
+                                        force = (vz*Bx - vx*Bz);
+                                        break;
+                                case 2: vel = vmesh.get_center_indx( {{i1, i2, 0}} );
+                                        vx = vel[0];
+                                        vy = vel[1];
+                                        force = (vx*By - vy*Bx);
+                                        break;
+                            }
+
+                            // create force bundle to act on the distribution
+                            for (size_t q=0; q<vmesh.Nblocks[dim]; q++) {
+                                block[0] = force;
+                                delta.loadBlock(q, block);
+                            }
+
+
+                            intp->setDelta( delta );
+
+                            // get bundle at the location
+                            Bundle vbundle = vmesh.get_bundle(dim, i1, i2);
+
+                            // interpolate numerical flux
+                            intp->setBundle(vbundle);
+                            Bundle U0 = intp->interpolate();
+
+                            // apply flux to the mesh
+                            vmesh.add_bundle(dim, i1, i2, U0);
+                        }
+                    }
+
                 }
 
             };
