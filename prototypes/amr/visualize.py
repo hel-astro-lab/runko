@@ -131,16 +131,26 @@ def visualize_data2(ax, mesh, params):
 
     extent = [ params.mins[0], params.maxs[0], params.mins[1], params.maxs[1] ]
     mgrid = np.ma.masked_where(data_slice == 0.0, data_slice)
+
+    mgrid = np.log10(mgrid)
+
     ax.imshow(mgrid.T,
               extent=extent,
               origin='lower',
               interpolation='nearest',
               cmap = cm.get_cmap('plasma_r'),
-              vmin = 0.0,
+              vmin = -5.0,
               vmax = 1.0,
               aspect='auto',
              )
 
+    ax.contour(mgrid.T,
+              extent=extent,
+              origin='lower',
+              levels=[-3, -2, -1],
+              aspect='auto',
+              )
+               
 
 
 

@@ -21,8 +21,8 @@ def physical_vel(x,y,z):
     muy = 0.0
     muz = 0.0
     sigmax = 4.0
-    sigmay = 6.0
-    sigmaz = 9.0
+    sigmay = 4.0
+    sigmaz = 4.0
 
     vx = np.exp(-(x-mux)**2 / sigmax**2 )
     vy = np.exp(-(y-muy)**2 / sigmay**2 )
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     params.maxs = [  20.0,  20.0,  20.0 ]
 
     mesh = vmesh.vMesh()
-    mesh.Nblocks = [50, 40, 5]
+    mesh.Nblocks = [50, 50, 5]
     #mesh.Nblocks = [100, 6, 2]
     mesh.zFill(params.mins, params.maxs)
 
@@ -105,11 +105,11 @@ if __name__ == "__main__":
     print "Memory usage: {} Mb ({} cells)".format(mesh.sizeInBytes()/1e6, mesh.number_of_blocks)
 
 
-    mesh.clip()
+    #mesh.clip()
     print "num of blocks:", mesh.number_of_blocks
 
     #visualize_mesh(axs[0], mesh, params)
-    visualize_data(axs[1], mesh, params)
+    #visualize_data(axs[1], mesh, params)
 
 
     print "Memory usage: {} Mb ({} cells)".format(mesh.sizeInBytes()/1e6, mesh.number_of_blocks)
@@ -151,7 +151,8 @@ if __name__ == "__main__":
 
     vsol = vmesh.vSolver()
     vsol.setMesh(mesh)
-    intp = vmesh.BundleInterpolator2nd()
+    #intp = vmesh.BundleInterpolator2nd()
+    intp = vmesh.BundleInterpolator4th()
     vsol.setInterpolator(intp)
 
 
@@ -167,6 +168,12 @@ if __name__ == "__main__":
             print("lap : {}").format(lap)
             visualize_data2(axs[0], vsol.vmesh, params)
             stri = str(lap).rjust(4, '0')
+
+            #measure temperature
+            bundle = mesh.get_bundle(0, 25, 2)
+            axs[1].plot( bundle.getGrid(), bundle.getPencil() )
+
+
             plt.savefig("out/vlasov_"+stri+".png")
 
     timer.stats("vsol")

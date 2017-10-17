@@ -63,7 +63,6 @@ namespace vmesh {
         /// guiding grid for the pencil
         std::vector<Realf> grid;
 
-
         public:
 
         /// resize the container 
@@ -179,7 +178,7 @@ namespace vmesh {
             indices_t Nblocks = {{ NBLOCKS, NBLOCKS, NBLOCKS }};
 
             /// Clipping threshold
-            Real threshold = 1.0e-2;
+            Real threshold = 1.0e-3;
 
 
             void zFill( std::array<double, 3> mins_,
@@ -511,6 +510,10 @@ namespace vmesh {
             /// time step
             Realf dt = 0.0;
 
+            /// numerical zero
+            Realf nzero = 1.0e-4;
+
+
             virtual ~BundleInterpolator() { };
 
             void setBundle(Bundle _bundle) {
@@ -544,6 +547,8 @@ namespace vmesh {
 
                 // compute flux (inner region)
                 vblock_t block, fp1, f0, Delta;
+
+                ret.loadZeroBlock(0);
                 for(size_t i=1; i<bundle.size()-1; i++) {
                     fp1     = bundle.getSlice(i+1);
                     f0      = bundle.getSlice(i  );
@@ -558,11 +563,51 @@ namespace vmesh {
 
                     ret.loadBlock(i, block);
                 }
+                ret.loadZeroBlock( bundle.size()-1 );
 
                 return ret;
             };
     };
 
+
+    /// Fourth order Lagrangian interpolator
+    class BundleInterpolator4th : public BundleInterpolator {
+        public:
+            Bundle interpolate( ) {
+
+                // prepare target bundle
+                Bundle ret;
+                ret.resize( bundle.size() );
+
+                // compute flux (inner region)
+                vblock_t block, fp2, fp1, f0, fm1, Delta;
+
+                ret.loadZeroBlock(0);
+                ret.loadZeroBlock(1);
+                for(size_t i=2; i<bundle.size()-2; i++) {
+                    fm1     = bundle.getSlice(i-1);
+                    f0      = bundle.getSlice(i  );
+                    fp1     = bundle.getSlice(i+1);
+                    fp2     = bundle.getSlice(i+2);
+
+                    // get shift 
+                    Delta     = getDeltaSlice(i);
+                    Delta[0] *= dt / bundle.getDx(i);
+
+                    // 4th order conservative Lagrangian interpolation
+                    block[0] = Delta[0]        * (-fp2[0] + 7.0*fp1[0] + 7.0*f0[0] - fm1[0] )/12.0
+                              +pow(Delta[0],2) * ( fp2[0] -15.0*fp1[0] +15.0*f0[0] - fm1[0] )/24.0
+                              +pow(Delta[0],3) * ( fp2[0] -     fp1[0] -     f0[0] + fm1[0] )/12.0
+                              +pow(Delta[0],4) * (-fp2[0] + 3.0*fp1[0] - 3.0*f0[0] + fm1[0] )/24.0;
+
+                    ret.loadBlock(i, block);
+                }
+                ret.loadZeroBlock( bundle.size()-2 );
+                ret.loadZeroBlock( bundle.size()-1 );
+
+                return ret;
+            };
+    };
 
 
 
@@ -742,6 +787,8 @@ PYBIND11_MODULE(vmesh, m) {
     py::class_<vmesh::BundleInterpolator2nd>(m, "BundleInterpolator2nd", bintp)
         .def(py::init<>());
 
+    py::class_<vmesh::BundleInterpolator4th>(m, "BundleInterpolator4th", bintp)
+        .def(py::init<>());
 
 
 
