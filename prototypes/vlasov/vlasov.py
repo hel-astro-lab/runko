@@ -1,6 +1,6 @@
 import numpy as np
 
-from initial import initial
+from initial import *
 import conf as prm
 from visualize import visualize
 import os, sys
@@ -33,11 +33,11 @@ def charge(ff, ux, prm):
     # qm = q/m, i.e. charge-to-mass ratio
     for kk in range(prm.ns):
         for ii in prm.xfull:
-            #gamma = np.sqrt( 1.0 + ux[:, kk]**2 )
-            gamma = 1.0
-            rhos[ii, kk] = np.sum( prm.q[kk] * prm.du[kk] * ff[:, ii, kk] / gamma )
+            gamma = np.sqrt( 1.0 + (prm.m[kk] * ux[:, kk])**2 )
+            #gamma = 1.0
+            rhos[ii, kk] = prm.q[kk] * prm.du[kk] * np.sum( ff[:, ii, kk]  ) # charge density for certain species
 
-    #sum over species
+    #sum over species 
     rho = np.sum(rhos, 1)
 
     return rho
@@ -74,7 +74,7 @@ def poisson(ex, rho, prm):
     rho -= np.mean( rho[prm.xmid] )
 
     for ii in prm.xmid:
-        ex[ii+1] = ex[ii] + rho[ii+1]
+        ex[ii+1] = ex[ii] + 4.0 * np.pi * rho[ii+1]  # Gaussian units, c=1
 
     if prm.periodic:
         ex = wrap(ex, prm)
@@ -89,7 +89,7 @@ def poisson(ex, rho, prm):
     return ex
 
 
-
+# advection of the distribution function
 def position(ff, ux, ajx, prm):
     ajxs = np.zeros( (prm.nxfull, prm.ns) )
     flux = np.zeros( (prm.nvfull, prm.nxfull) )
@@ -120,11 +120,11 @@ def position(ff, ux, ajx, prm):
         ff[:, prm.xmid, kk] -= (flux[:, prm.xmid] - flux[:, prm.xmid-1])
 
         #numerical flux integration over velocity, i.e., U = int q*U(u) du/gamma 
-        gamma = np.sqrt( 1.0 + ux[:,kk]**2 )
-        #ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid]/gamma[:,np.newaxis], 0) * prm.du[kk] * prm.q[kk]
+        gamma = np.sqrt( 1.0 + (prm.m[kk] * ux[:,kk])**2 )
+        ajxs[prm.xmid, kk] = prm.q[kk] * prm.du[kk] * np.sum( flux[:, prm.xmid]/gamma[:,np.newaxis], 0)
 
-        gamma = 1.0
-        ajxs[prm.xmid, kk] = np.sum( flux[:, prm.xmid]/gamma, 0) * prm.du[kk] * prm.q[kk]
+        #gamma = 1.0
+        #ajxs[prm.xmid, kk] = prm.q[kk] * prm.du[kk] * np.sum( flux[:, prm.xmid]/gamma, 0)
                 
 
     if prm.periodic:
@@ -209,7 +209,7 @@ def efield(ex, ajx, prm):
     ajx -= np.mean( ajx[prm.xmid] )
 
     #amperes law E_n+1 = E_n - J
-    ex[prm.xmid] = ex[prm.xmid] - ajx[prm.xmid]
+    ex[prm.xmid] = ex[prm.xmid] - 4.0 * np.pi * ajx[prm.xmid]   ## 4\pi or epsilon factor?
 
     if prm.periodic:
         ex = wrap(ex, prm)
@@ -217,7 +217,7 @@ def efield(ex, ajx, prm):
     if prm.finite:
         damp(ex, prm)
 
-    np.clip(ex, -10.0, 10.0, out=ex)
+    np.clip(ex, -100.0, 100.0, out=ex)
 
     return ex
 
@@ -350,7 +350,9 @@ def inject(ff, prm):
 #initialize
 #-------------------------------------------------- 
 #load configuration
-ff, ex, ajx, xx, ux, px, fp = initial(prm)
+#ff, ex, ajx, xx, ux, px, fp = initial(prm)
+ff, ex, ajx, xx, ux, px, fp = initial_test(prm)
+
 
 
 #initial step
@@ -359,9 +361,19 @@ ex = poisson(ex, rho, prm)
 #ff, fp = collisions(ux, ff, px, fp, prm)
 #ff, fp = radiative_reactions(ux, ff, px, fp, prm)
 
+# calculate plasma frequency for every species and every coordinate cell
+for kk in range(prm.ns):
+    print"q = {}, m = {}".format(prm.q[kk],prm.m[kk])
+    for ii in prm.xfull:
+        rhos = prm.q[kk] * prm.du[kk] * np.sum( ff[:, ii, kk] )
+        wpe_calc = np.sqrt( 4.0 * np.pi * prm.q[kk] * rhos / prm.m[kk])
+        #print wpe_calc
+    #print ff[:,37,kk]
+
 ff, ajx = position(ff, ux, ajx, prm)
 ex = efield(ex, ajx, prm)
 
+#sys.exit()
 
 #-------------------------------------------------- 
 # main loop
@@ -398,14 +410,15 @@ time = 0.0
 
 for jtime in range(prm.ntime+1):
 
-    if (jtime % 100 == 0):
+    if (jtime % 20 == 0):
         #ff, fp = radiative_reactions(ux, ff, px, fp, prm)
-        print "-----------", jtime, "/", time, "----------"
-        timer.stats("lap")
+        print"{}  {}".format(time, np.amax( np.absolute(ex) ))
+#        print "-----------", jtime, "/", time, "----------"
+#        timer.stats("lap")
         visz.plot(jtime, ff, ex, ajx, rho, fp)
-        timer.start("lap")
+#        timer.start("lap")
 
-    ff      = inject(ff, prm)
+    #ff      = inject(ff, prm)
     ff      = velocity(ff, ex, prm)
 
     #ff, fp = collisions(ux, ff, px, fp, prm)
