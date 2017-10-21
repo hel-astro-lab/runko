@@ -87,7 +87,7 @@ def visualize_data(ax, mesh, params):
 
     data = np.zeros((Nx,Ny,Nz))
 
-    print "len: {}".format( len(mesh.all_blocks(True)) )
+    #print "len: {}".format( len(mesh.all_blocks(True)) )
 
     for cid in mesh.all_blocks(True):
         (i,j,k) = mesh.get_indices( cid )

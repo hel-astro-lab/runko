@@ -16,6 +16,53 @@ namespace py = pybind11;
 
 
 
+// --------------------------------------------------
+namespace conf {
+
+    /// Grid dimensions
+    const size_t Nx = 10;
+    const size_t Ny = 10;
+
+    /// block size inside spatial cell
+    const size_t NxCell = 2;
+    const size_t NyCell = 2;
+
+    /// physical grid dimensions
+    const double xmin = 0.0;
+    const double xmax = 1.0;
+
+    const double ymin = 0.0;
+    const double ymax = 1.0;
+
+}
+
+namespace BC {
+
+    /// Periodic x boundary condition
+    size_t xwrap( int i ) {
+        while (i < 0) {
+            i += conf::Nx;
+        }
+        while (i >= conf::Nx) {
+            i -= conf::Nx;
+        }
+        return size_t(i);
+    }
+
+    /// Periodic y boundary condition
+    size_t ywrap( int j ) {
+        while (j < 0) {
+            j += conf::Ny;
+        }
+        while (j >= conf::Ny) {
+            j -= conf::Ny;
+        }
+        return size_t(j);
+    }
+
+}
+// --------------------------------------------------
+
 namespace vmesh {
 
 
@@ -632,11 +679,10 @@ namespace vmesh {
             void setInterpolator( BundleInterpolator &_intp ) { intp = &_intp; };
 
 
+            //--------------------------------------------------
             /// actual solver
+            // splitted x/y/z direction solve with static dimension rotation
             void solve( ) {
-
-                //--------------------------------------------------
-                // splitted x/y/z direction solve
 
                 //std::array<Realf, 3> force = {{0.2, 0.2, 0.2}};
                 
@@ -732,6 +778,94 @@ namespace vmesh {
 
 
     }; // end of vSolver
+
+
+    /// XXX this is just a simplified hollow copy from LoGi
+    class Cell {
+        public:
+
+            uint64_t cid;
+            size_t i, j;
+            int owner;
+
+            /// Data container
+            std::vector<vmesh::vMesh> dataContainer;
+
+
+            //-------------------------------------------------- 
+            // initalize cell according to its location (i,j) and owner (o)
+            Cell(size_t i, size_t j, int o) {
+                this->i     = i;
+                this->j     = j;
+                this->owner = o;
+            }
+
+            const std::tuple<size_t, size_t> index() {
+                return std::make_tuple( i, j );
+            }
+
+            const std::tuple<size_t, size_t> neighs(int ir, int jr) {
+                size_t ii = BC::xwrap( (int)this->i + ir );
+                size_t jj = BC::ywrap( (int)this->j + jr );
+                return std::make_tuple( ii, jj );
+            }
+
+            void addData(vmesh::vMesh m) {
+                dataContainer.push_back(m);
+            };
+
+    };
+
+    // Dummy class for temporarily handling Cells
+    // XXX this is just a hollow copy of the Node class in LoGi
+    class Node {
+        public:
+
+            //-------------------------------------------------- 
+            //-------------------------------------------------- 
+            // old inherited stuff from LoGi
+            std::unordered_map<uint64_t, vmesh::Cell> cells;
+
+            /// Create unique cell ids based on Morton z ordering
+            uint64_t cell_id(size_t i, size_t j) {
+                return uint64_t( j*conf::Nx + i );
+            }
+              
+            void add_local_cell( vmesh::Cell c ) {
+                c.cid   = cell_id(c.i, c.j);
+                c.owner = 0;
+                
+                cells.insert( std::make_pair(c.cid, c) );
+            }
+
+            vmesh::Cell* get_cell_data(const uint64_t cid) const {
+            	if (this->cells.count(cid) > 0) {
+            		return (vmesh::Cell*) &(this->cells.at(cid));
+            	} else {
+            		return NULL;
+            	}
+            }
+              
+
+            vmesh::Cell get_cell( uint64_t cid ) {
+                return cells.at(cid);
+            }
+
+            vmesh::Cell get_cell_index(size_t i, size_t j) {
+                uint64_t cid = cell_id(i,j);
+                return cells.at(cid);
+            }
+
+            //-------------------------------------------------- 
+            //-------------------------------------------------- 
+            // XXX new sugar on top of the logi interface
+
+
+    };
+
+
+
+
 
 
 
@@ -878,6 +1012,22 @@ PYBIND11_MODULE(vmesh, m) {
         .def("solve",            &vmesh::vSolver::solve);
 
 
+    py::class_<vmesh::Cell>(m, "Cell" )
+        .def(py::init<size_t, size_t, int >())
+        .def_readwrite("owner",                       &vmesh::Cell::owner)
+        .def_readwrite("i",                           &vmesh::Cell::i)
+        .def_readwrite("j",                           &vmesh::Cell::j)
+        .def_readwrite("dataContainer",               &vmesh::Cell::dataContainer)
+        .def("addData",                               &vmesh::Cell::addData)
+        .def("index",                                 &vmesh::Cell::index)
+        .def("neighs",                                &vmesh::Cell::neighs);
+
+    py::class_<vmesh::Node>(m, "Node" )
+        .def(py::init<>())
+        .def("cell_id",           &vmesh::Node::cell_id)
+        .def("get_cell",          &vmesh::Node::get_cell)
+        .def("get_cell_index",    &vmesh::Node::get_cell_index)
+        .def("add_local_cell",    &vmesh::Node::add_local_cell);
 
 
 }

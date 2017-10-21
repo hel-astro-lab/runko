@@ -17,11 +17,11 @@ from timer import Timer
 #physical "real" distribution to compare against
 def physical_vel(x,y,z):
 
-    mux = 0.0
+    mux = 5.0
     muy = 0.0
     muz = 0.0
     sigmax = 4.0
-    sigmay = 4.0
+    sigmay = 6.0
     sigmaz = 4.0
 
     vx = np.exp(-(x-mux)**2 / sigmax**2 )
@@ -31,8 +31,6 @@ def physical_vel(x,y,z):
 
     return vx*vy*vz
     #return 0.5
-
-
 
 
 def populate_mesh( mesh ):
@@ -159,21 +157,22 @@ if __name__ == "__main__":
     timer = Timer(["vsol"])
     timer.start("vsol")
 
-    for lap in range(10000):
+    for lap in range(100000):
         vsol.solve()
         #vsol.vmesh.clip()
         timer.lap("vsol")
 
-        if (lap % 100 == 0): 
+        if (lap % 200 == 0): 
             print("lap : {}").format(lap)
             visualize_data2(axs[0], vsol.vmesh, params)
             stri = str(lap).rjust(4, '0')
 
             #measure temperature
-            bundle = mesh.get_bundle(0, 25, 2)
-            axs[1].plot( bundle.getGrid(), bundle.getPencil() )
+            #bundle = mesh.get_bundle(0, 25, 2)
 
+            #axs[1].plot( bundle.getGrid(), bundle.getPencil() )
 
+            visualize_data(axs[1], vsol.vmesh, params)
             plt.savefig("out/vlasov_"+stri+".png")
 
     timer.stats("vsol")
