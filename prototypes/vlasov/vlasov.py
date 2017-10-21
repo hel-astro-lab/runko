@@ -99,6 +99,7 @@ def position(ff, ux, ajx, prm):
         aa = ux[:, kk] * prm.dt/prm.dx #compute shift in units of cells
         fa = np.floor(aa) # upwind direction
 
+        #vectorized over velocity space
         for ii in range(2, prm.nx+3):
 
             #1st order linear upwind flux
