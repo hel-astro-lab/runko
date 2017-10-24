@@ -168,12 +168,86 @@ namespace vmesh {
         };
 
 
-
-
     }; // end of Bundle class
 
-   // -------------------------------------------------- 
 
+    // -------------------------------------------------- 
+    /// Sheet of velocities from vmesh
+    // These are always slices of the full mesh along some dimension at some location
+    class Sheet {
+
+        public:
+
+        /// guiding grid along horizontal dimensions of the sheet (i.e., x)
+        std::vector<Realf> iGrid;
+
+        // sheet size in horizontal dim
+        size_t Ni = 0;
+
+        /// guiding grid along vertical dimensions of the sheet (i.e., y)
+        std::vector<Realf> jGrid;
+
+        // sheet size in horizontal dim
+        size_t Nj = 0;
+
+        /// coordinate of the sheet in the slicing dimension
+        double sliceVal;
+
+        /// Value storage of the sheet
+        std::vector<Realf> values;
+
+        /// Resize the sheet into correct size
+        void resize(size_t Ni_, size_t Nj_) {
+            iGrid.resize(Ni_);
+            jGrid.resize(Nj_);
+            values.resize(Ni_*Nj_);
+
+            Ni = Ni_;
+            Nj = Nj_;
+        }
+
+        /// internal function to get general id from sheet indices
+        size_t getIndex(size_t i, size_t j) {
+            return Ni*j + i;
+        }
+
+        /// Load scalar to the sheet
+        void loadValue(size_t i, size_t j, Realf val) {
+            size_t indx = getIndex(i, j);
+            values[indx] = val;
+        }
+
+        void loadZeroBlock(size_t i, size_t j) {
+            size_t indx = getIndex(i, j);
+
+            // FIXME add block instead of scalar
+            values[indx] = 0.0;
+        }
+
+        void loadBlock(size_t i, size_t j, vblock_t block) {
+            size_t indx = getIndex(i, j);
+
+            // FIXME add block instead of scalar
+            values[indx] = block[0];
+        }
+
+        // return block at location (i,j)
+        vblock_t getBlock(size_t i, size_t j) {
+            vblock_t ret;
+            size_t indx = getIndex(i, j);
+            ret[0] = values[indx]; //FIXME return block instead element
+
+            return ret;
+        }
+
+        bool isNonZero(size_t i, size_t j) {
+            size_t indx = getIndex(i, j);
+            if ( values[indx] == 0.0 ) { return false; };
+            return true;
+        };
+
+
+    };
 
 
 
@@ -242,12 +316,18 @@ namespace vmesh {
             std::array<double, 3> get_center( const uint64_t cellID );
             std::array<double, 3> get_center_indx( const indices_t indx );
 
+            std::vector<double> getXGrid();
+            std::vector<double> getYGrid();
+            std::vector<double> getZGrid();
+
             std::vector<uint64_t> all_blocks( bool sorted = false);
 
             vmesh::Bundle get_bundle(size_t, size_t, size_t);
 
             void add_bundle(size_t, size_t, size_t, vmesh::Bundle);
 
+            vmesh::Sheet getSheet(size_t, size_t);
+            void addSheet(size_t, size_t, vmesh::Sheet);
 
             bool clip( );
 
@@ -392,7 +472,41 @@ namespace vmesh {
     return center;
     };
 
+    /// grid along x dir
+    std::vector<double> vmesh::vMesh::getXGrid() {
+        std::vector<double> ret;
+        ret.resize(Nblocks[0]);
+        for(size_t i=0; i<Nblocks[0]; i++) {
+            auto ceni = get_center_indx( {{i, 0, 0}} );
+            ret[i] = ceni[0];
+        }
+        return ret;
+    };
+
+    /// grid along y dir
+    std::vector<double> vmesh::vMesh::getYGrid() {
+        std::vector<double> ret;
+        ret.resize(Nblocks[1]);
+        for(size_t i=0; i<Nblocks[1]; i++) {
+            auto ceni = get_center_indx( {{0, i, 0}} );
+            ret[i] = ceni[1];
+        }
+        return ret;
+    };
+
+    /// grid along z dir
+    std::vector<double> vmesh::vMesh::getZGrid() {
+        std::vector<double> ret;
+        ret.resize(Nblocks[2]);
+        for(size_t i=0; i<Nblocks[2]; i++) {
+            auto ceni = get_center_indx( {{0, 0, i}} );
+            ret[i] = ceni[2];
+        }
+        return ret;
+    };
     
+
+
 
     /// return a list of all blocks
     std::vector<uint64_t> vmesh::vMesh::all_blocks( bool sorted ) {
@@ -449,6 +563,82 @@ namespace vmesh {
     };
 
 
+    /// returns a sheet from the mesh that is oriented perpendicular to dim at location i
+    vmesh::Sheet vmesh::vMesh::getSheet(size_t dim, size_t i) {
+
+        // get i,j,k elements rotated along the correct dimension
+        size_t x,y,z;
+        std::vector<double> horz, vert;
+        double sliceVal;
+        switch(dim) {
+            case 0:  // x
+                x = 0;
+                y = 1;
+                z = 2;
+                horz = getYGrid();
+                vert = getZGrid();
+                sliceVal = get_center_indx({{i, 0, 0}})[0];
+                break;
+            case 1:  // y
+                x = 1;
+                y = 0;
+                z = 2;
+                horz = getXGrid();
+                vert = getZGrid();
+                sliceVal = get_center_indx({{0, i, 0}})[1];
+                break;
+            case 2:  // z
+                z = 2;
+                y = 0;
+                z = 1;
+                horz = getXGrid();
+                vert = getYGrid();
+                sliceVal = get_center_indx({{0, 0, i}})[2];
+                break;
+        }
+
+        // create & initialize sheet
+        Sheet sheet;
+        sheet.resize(Nblocks[y], Nblocks[z]);
+        for(size_t q=0; q<horz.size(); q++) sheet.iGrid[q] = horz[q];
+        for(size_t q=0; q<vert.size(); q++) sheet.jGrid[q] = vert[q]; 
+        sheet.sliceVal = sliceVal;
+
+
+        // get values
+        uint64_t cid;
+        for(size_t k=0; k<Nblocks[z]; k++) {
+            for(size_t j=0; j<Nblocks[y]; j++) {
+                switch(dim) {
+                    case 0: cid = get_block_ID( {{i, j, k}} ); // x
+                            break;
+                    case 1: cid = get_block_ID( {{j, i, k}} ); // y 
+                            break;
+                    case 2: cid = get_block_ID( {{j, k, i}} ); // z
+                            break;
+                }
+
+                // lets get actual values 
+                auto it = blockContainer.find(cid);
+
+                // if block does not exist, fill with zero
+                if( it == blockContainer.end() ) {
+                    sheet.loadZeroBlock(j,k);
+                    continue;
+                }
+
+                // TODO transform block to correct order
+                vblock_t block = it->second;
+                sheet.loadBlock(j, k, block);
+            }
+        }
+
+
+        return sheet;
+    };
+
+
+
     /// return full bundle of pencils penetrating the box at i1 & i2 coordinates along dim
     vmesh::Bundle vmesh::vMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
 
@@ -490,6 +680,69 @@ namespace vmesh {
         }
 
         return vbundle;
+    };
+
+    /// Add given sheet to the mesh
+    void vmesh::vMesh::addSheet(size_t dim, size_t i, vmesh::Sheet sheet) {
+
+        // rotate dimensions to match incoming sheet
+        size_t x,y,z;
+        switch(dim) {
+            case 0:  // x
+                x = 0;
+                y = 1;
+                z = 2;
+                break;
+            case 1:  // y
+                x = 1;
+                y = 0;
+                z = 2;
+                break;
+            case 2:  // z
+                z = 2;
+                y = 0;
+                z = 1;
+                break;
+        }
+
+
+        uint64_t cid;
+        for(size_t k=0; k<Nblocks[z]; k++) {
+            for(size_t j=0; j<Nblocks[y]; j++) {
+
+                // check if there is something coming to this block
+                if(!sheet.isNonZero(j,k) ) continue; 
+
+                // non-zero block; lets add it
+                switch(dim) {
+                    case 0: cid = get_block_ID( {{i, j, k}} ); // x
+                            break;
+                    case 1: cid = get_block_ID( {{j, i, k}} ); // y 
+                            break;
+                    case 2: cid = get_block_ID( {{j, k, i}} ); // z
+                            break;
+                }
+
+                vblock_t vb = sheet.getBlock(j, k);
+
+                // next lets get correct block
+                auto it = blockContainer.find(cid);
+
+                // if block does not exist, create it 
+                if( it == blockContainer.end() ) {
+                    blockContainer.insert( std::make_pair(cid, vb ) );
+                    continue;
+                }
+
+                // non-zero address block
+                // TODO: real, full block, addition
+                vblock_t targetBlock = it->second;
+                targetBlock[0] = vb[0];
+
+                it->second = targetBlock;
+            } // end of loop over sheet dimensions
+        }
+
     };
 
 
@@ -780,6 +1033,34 @@ namespace vmesh {
     }; // end of vSolver
 
 
+    /// Container class for dealing with *actual* simulation data
+    class DataContainer {
+        std::vector<vmesh::vMesh> container;
+
+        size_t currentStep = 0;
+
+        public:
+              
+            /// method to add data into the container
+            void push_back(vmesh::vMesh vm) {
+                container.push_back(vm);
+            }
+
+            /// Get current element
+            vmesh::vMesh get() {
+                return container[ currentStep ];
+            }
+
+            // FIXME raw cycling for time step index
+            void cycle() {
+                if(currentStep == 0) currentStep = 1;
+                if(currentStep == 1) currentStep = 0;
+            }
+
+    };
+
+     
+
     /// XXX this is just a simplified hollow copy from LoGi
     class Cell {
         public:
@@ -789,7 +1070,7 @@ namespace vmesh {
             int owner;
 
             /// Data container
-            std::vector<vmesh::vMesh> dataContainer;
+            vmesh::DataContainer data;
 
 
             //-------------------------------------------------- 
@@ -810,9 +1091,21 @@ namespace vmesh {
                 return std::make_tuple( ii, jj );
             }
 
+
+            //-------------------------------------------------- 
+            // XXX new sugar on top of the logi interface
+              
             void addData(vmesh::vMesh m) {
-                dataContainer.push_back(m);
-            };
+                data.push_back(m);
+            }
+
+            std::vector<vmesh::vMesh> getData() {
+                std::vector<vmesh::vMesh> ret;
+                ret.push_back( data.get() );
+                return ret;
+            }
+              
+
 
     };
 
@@ -861,14 +1154,101 @@ namespace vmesh {
             // XXX new sugar on top of the logi interface
 
 
+
     };
 
 
 
+    /// General Vlasov spatial solver
+    class sSolver {
+        // NOTES:
+        // gets pointed to a focus cell;
+        // fetches neighbors using cells interface
+        // solves locally
+
+        /// Bundle interpolator pointer
+        BundleInterpolator *intp;
 
 
+        public:
+            /// Spatial cell to solve
+            // vmesh::Cell cell;
+
+            vmesh::Node* node;
+
+            /// Target cell 
+            // uint64_t cid; 
+            size_t targeti, targetj;
 
 
+            /// Set node address so we can probe neighbors for halo data
+            void setNode(vmesh::Node &n) {
+                node = &n;
+            };
+
+            /// set internal cell that is solved
+            void setTargetCell(size_t i, size_t j) {
+                targeti = i;
+                targetj = j;
+            };
+
+            /// Set internal interpolator
+            // void setInterpolator( BundleInterpolator &_intp ) { intp = &_intp; };
+
+
+            //--------------------------------------------------
+            /// actual solver
+            // splitted x/y/z direction solve with static dimension rotation
+            // loop over y and z and solve for each x
+            //
+            // get interpolator minimum pencil width
+            // create minimum pencil for each x value
+            // put into bundle 
+            // apply interpolator to these bundles
+            // unload from return bundle and apply to *current* cell 
+            void solve( ) {
+
+                // size_t Nintp = 4;
+
+                // get target cell that we operate on
+                uint64_t cid = node->cell_id(targeti, targetj);
+                Cell* cell = node->get_cell_data(cid);
+
+                auto vmeshes = cell->getData();
+                vMesh v0 = vmeshes[0]; //FIXME assuming only 1 element now
+
+                // for (size_t dim=0; dim<3; dim++) {
+                // XXX only x dir update is done here
+                for (size_t dim=0; dim<1; dim++) {
+                    size_t Nb = v0.Nblocks[dim]; // number of slices to loop over
+
+                    // get neighbors for interpolation
+                    auto nindx     = cell->neighs(+1, 0); // i+1 neighbor
+                    uint64_t cidp1 = node->cell_id( std::get<0>(nindx), std::get<1>(nindx) );
+                    Cell* cp1      = node->get_cell_data(cidp1);
+
+                    // then look inside the cell and get individual meshes
+                    // FIXME loop over internal cell meshes should start here
+                    auto vmsR = cp1->getData();
+                    vMesh vp1 = vmsR[0]; //FIXME assuming only 1 element now
+
+                    // loop over every sheet in the mesh
+                    Sheet s0, sp1;
+                    for (size_t i=0; i<Nb; i++) {
+                        s0  = v0.getSheet(dim, i);
+                        sp1 = vp1.getSheet(dim, i);
+
+                        v0.addSheet(dim, i, sp1);
+                    }
+                } // end of dimension cycle
+
+                // add new timestep solution
+                cell->addData(v0);
+
+            }
+
+
+    }; // end of sSolver
 
 
 
@@ -897,6 +1277,15 @@ PYBIND11_MODULE(vmesh, m) {
         .def(py::init<>())
         .def("getGrid",   &vmesh::Bundle::getGrid)
         .def("getPencil", &vmesh::Bundle::getPencil);
+
+
+    py::class_<vmesh::Sheet>(m, "Sheet" )
+        .def(py::init<>())
+        .def_readwrite("iGrid",      &vmesh::Sheet::iGrid)
+        .def_readwrite("jGrid",      &vmesh::Sheet::jGrid)
+        .def_readwrite("Ni",         &vmesh::Sheet::Ni)
+        .def_readwrite("Nj",         &vmesh::Sheet::Nj)
+        .def_readwrite("values",     &vmesh::Sheet::values);
 
 
 
@@ -943,6 +1332,7 @@ PYBIND11_MODULE(vmesh, m) {
         .def("get_center", &vmesh::vMesh::get_center)
         .def("get_bundle", &vmesh::vMesh::get_bundle)
         .def("add_bundle", &vmesh::vMesh::add_bundle)
+        .def("getSheet",   &vmesh::vMesh::getSheet)
         // Bare bones array interface
         /*
         .def("__getitem__", [](const Sequence &s, size_t i) {
@@ -1011,14 +1401,20 @@ PYBIND11_MODULE(vmesh, m) {
         .def("setInterpolator",  &vmesh::vSolver::setInterpolator)
         .def("solve",            &vmesh::vSolver::solve);
 
+    py::class_<vmesh::sSolver>(m, "sSolver" )
+        .def(py::init<>())
+        .def("setNode" ,         &vmesh::sSolver::setNode)
+        .def("setTargetCell" ,   &vmesh::sSolver::setTargetCell)
+        .def("solve",            &vmesh::sSolver::solve);
+
 
     py::class_<vmesh::Cell>(m, "Cell" )
         .def(py::init<size_t, size_t, int >())
         .def_readwrite("owner",                       &vmesh::Cell::owner)
         .def_readwrite("i",                           &vmesh::Cell::i)
         .def_readwrite("j",                           &vmesh::Cell::j)
-        .def_readwrite("dataContainer",               &vmesh::Cell::dataContainer)
         .def("addData",                               &vmesh::Cell::addData)
+        .def("getData",                               &vmesh::Cell::getData)
         .def("index",                                 &vmesh::Cell::index)
         .def("neighs",                                &vmesh::Cell::neighs);
 

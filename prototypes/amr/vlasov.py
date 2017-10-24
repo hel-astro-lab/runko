@@ -17,11 +17,11 @@ from timer import Timer
 #physical "real" distribution to compare against
 def physical_vel(x,y,z):
 
-    mux = 5.0
-    muy = 0.0
-    muz = 0.0
-    sigmax = 4.0
-    sigmay = 6.0
+    mux = 1.0
+    muy = 2.0
+    muz = 3.0
+    sigmax = 2.0
+    sigmay = 3.0
     sigmaz = 4.0
 
     vx = np.exp(-(x-mux)**2 / sigmax**2 )
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     params.maxs = [  20.0,  20.0,  20.0 ]
 
     mesh = vmesh.vMesh()
-    mesh.Nblocks = [50, 50, 5]
+    mesh.Nblocks = [50, 30, 5]
     #mesh.Nblocks = [100, 6, 2]
     mesh.zFill(params.mins, params.maxs)
 
@@ -140,8 +140,9 @@ if __name__ == "__main__":
 
 
     visualize_data2(axs[0], mesh, params)
+    visualize_data3(axs[1], mesh, params)
     plt.savefig("vlasov0.png")
-    #sys.exit()
+    sys.exit()
     ##################################################
 
 

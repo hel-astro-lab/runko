@@ -153,6 +153,50 @@ def visualize_data2(ax, mesh, params):
                
 
 
+#collect data from mesh using bundles
+def visualize_data3(ax, mesh, params):
+    ax.cla()
+    ax.minorticks_on()
+    ax.set_xlim(params.mins[0], params.maxs[0])
+    ax.set_ylim(params.mins[1], params.maxs[1])
+
+
+    #sheet = mesh.getSheet(2, 0)
+    sheet = mesh.getSheet(1, 0)
+    print sheet.Ni 
+    print sheet.Nj
+    #print sheet.iGrid
+    #print sheet.jGrid
+    #print sheet.values
+
+    #print np.shape( data_slice )
+
+    data_slice = np.array( sheet.values ).reshape(sheet.Nj, sheet.Ni)
+
+    extent = [ params.mins[0], params.maxs[0], params.mins[1], params.maxs[1] ]
+    mgrid = np.ma.masked_where(data_slice == 0.0, data_slice)
+
+    mgrid = np.log10(mgrid)
+
+    ax.imshow(mgrid.T,
+              extent=extent,
+              origin='lower',
+              interpolation='nearest',
+              cmap = cm.get_cmap('plasma_r'),
+              vmin = -5.0,
+              vmax = 1.0,
+              aspect='auto',
+             )
+
+    ax.contour(mgrid.T,
+              extent=extent,
+              origin='lower',
+              levels=[-3, -2, -1],
+              aspect='auto',
+              )
+               
+
+
 
 
 
