@@ -45,7 +45,7 @@ def populate_mesh( mesh ):
                 cid = mesh.get_block_ID([i,j,k])
                 (x,y,z) = mesh.get_center( cid )
 
-                ampl = randab(0.9, 1.0)
+                ampl = randab(0.5, 1.0)
                 fval = physical_vel(x,y,z, ampl)
                 mesh[i,j,k] = [fval, fval, fval, fval]
                 #print "({},{},{}) = {}".format(i,j,k,fval)
@@ -78,7 +78,7 @@ def createVelMesh():
 
 #struct holding all node parameters
 class NodeParams:
-    Nx = 8
+    Nx = 10
     Ny = 1
 
 
@@ -113,11 +113,11 @@ def visualizeNode(ax, n, nParams, vParams):
         i = cell.i
         j = cell.j
 
-        print i,j
-        for vm in cell.getData():
+        #print i,j
+        for vm in [cell.getData()]:
             vbundle = vm.get_bundle(0, 2, 2) #xdir (dir = 0) @ j = 0, z = 0
 
-            print vbundle.getPencil()
+            #print vbundle.getPencil()
             data[i, :] = vbundle.getPencil()
 
     #print data
@@ -160,6 +160,7 @@ if __name__ == "__main__":
             mesh = createVelMesh()
             #mesh.clip()
             c.addData(mesh)
+            c.addData(mesh)
 
             #push to Node
             n.add_local_cell(c)
@@ -176,22 +177,28 @@ if __name__ == "__main__":
 
 
     #now loop over solving the node content
-    vsol = sSolver()
-    vsol.setNode(n)
+    #vsol = vmesh.sSolver()
+    #vsol.setNode(n)
+
+    vsol = vmesh.sSolver(n)
     
-    for lap in range(5):
+    for lap in range(1,5):
 
         #solve each cell in the full 2D grid
         for i in range(nParams.Nx):
             for j in range(nParams.Ny):
+                print "({},{})".format(i,j)
+
                 vsol.setTargetCell(i,j)
                 vsol.solve()
-
+        #vsol.update()
+        n.cycle()
 
         visualizeNode(axs[0], n, nParams, vParams)
         stri = str(lap).rjust(4, '0')
         plt.savefig("out/sSolve_"+stri+".png")
 
 
-
+def printNode(n):
+    print
 

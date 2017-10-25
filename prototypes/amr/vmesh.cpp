@@ -21,7 +21,7 @@ namespace conf {
 
     /// Grid dimensions
     const size_t Nx = 10;
-    const size_t Ny = 10;
+    const size_t Ny = 1;
 
     /// block size inside spatial cell
     const size_t NxCell = 2;
@@ -1037,24 +1037,39 @@ namespace vmesh {
     class DataContainer {
         std::vector<vmesh::vMesh> container;
 
-        size_t currentStep = 0;
-
         public:
               
+            size_t currentStep = 0;
+
             /// method to add data into the container
             void push_back(vmesh::vMesh vm) {
                 container.push_back(vm);
             }
 
             /// Get current element
-            vmesh::vMesh get() {
-                return container[ currentStep ];
+            vmesh::vMesh* get() {
+                fmt::print("getting from DataContainer with {}\n", currentStep);
+                return (vmesh::vMesh*) &(container[ currentStep ]);
             }
+
+            vmesh::vMesh* getNew() {
+                if (currentStep == 0) return (vmesh::vMesh*) &(container[1]);
+                if (currentStep == 1) return (vmesh::vMesh*) &(container[0]);
+            }
+
+            vmesh::vMesh* getAll(size_t cs) {
+                fmt::print("pulling from DataContainer with {}\n", cs);
+                return (vmesh::vMesh*) &(container[cs]);
+            }
+                
 
             // FIXME raw cycling for time step index
             void cycle() {
-                if(currentStep == 0) currentStep = 1;
-                if(currentStep == 1) currentStep = 0;
+                fmt::print(" calling cycle (originally {})\n", currentStep);
+                currentStep++;
+
+                // check bounds and cycle back
+                if (currentStep > 1) currentStep = 0;
             }
 
     };
@@ -1099,12 +1114,21 @@ namespace vmesh {
                 data.push_back(m);
             }
 
+            /*
             std::vector<vmesh::vMesh> getData() {
                 std::vector<vmesh::vMesh> ret;
                 ret.push_back( data.get() );
                 return ret;
             }
+            */
+
+            // XXX defined only for python API
+            vmesh::vMesh getData() {
+                return *data.get();
+                // return *data.getAll(cstep);
+            };
               
+
 
 
     };
@@ -1153,6 +1177,17 @@ namespace vmesh {
             //-------------------------------------------------- 
             // XXX new sugar on top of the logi interface
 
+            void cycle() {
+                // for (auto it: cells) it.second.data.cycle();
+
+                std::unordered_map<uint64_t, vmesh::Cell>::iterator it = cells.begin();
+                while (it != cells.end()) {
+                    it->second.data.cycle();
+                    it++;
+                }
+
+            }
+            
 
 
     };
@@ -1167,24 +1202,28 @@ namespace vmesh {
         // solves locally
 
         /// Bundle interpolator pointer
-        BundleInterpolator *intp;
+        // BundleInterpolator *intp;
 
 
         public:
             /// Spatial cell to solve
             // vmesh::Cell cell;
 
-            vmesh::Node* node;
+            // reference to the node
+            vmesh::Node& node;
+            
+            /// Construct solver always with information of the node
+            sSolver(vmesh::Node& node) : node(node) {}
 
             /// Target cell 
-            // uint64_t cid; 
             size_t targeti, targetj;
 
-
             /// Set node address so we can probe neighbors for halo data
-            void setNode(vmesh::Node &n) {
-                node = &n;
+            /*
+            void setNode(vmesh::Node n) {
+                node = n;
             };
+            */
 
             /// set internal cell that is solved
             void setTargetCell(size_t i, size_t j) {
@@ -1211,41 +1250,48 @@ namespace vmesh {
                 // size_t Nintp = 4;
 
                 // get target cell that we operate on
-                uint64_t cid = node->cell_id(targeti, targetj);
-                Cell* cell = node->get_cell_data(cid);
+                uint64_t cid = node.cell_id(targeti, targetj);
+                Cell* cellPtr = node.get_cell_data(cid);
+                  
+                // Get pointer to the velocity mesh we are solving
+                vMesh* v0 = cellPtr->data.get();
+                // v0->clip();
 
-                auto vmeshes = cell->getData();
-                vMesh v0 = vmeshes[0]; //FIXME assuming only 1 element now
+                // get pointer to a new mesh 
+                vMesh* vnew = cellPtr->data.getNew();
+
 
                 // for (size_t dim=0; dim<3; dim++) {
                 // XXX only x dir update is done here
                 for (size_t dim=0; dim<1; dim++) {
-                    size_t Nb = v0.Nblocks[dim]; // number of slices to loop over
+                    fmt::print("Solving for dim {}\n", dim);
 
+                    size_t Nb = v0->Nblocks[dim]; // number of slices to loop over
+                  
                     // get neighbors for interpolation
-                    auto nindx     = cell->neighs(+1, 0); // i+1 neighbor
-                    uint64_t cidp1 = node->cell_id( std::get<0>(nindx), std::get<1>(nindx) );
-                    Cell* cp1      = node->get_cell_data(cidp1);
+                    auto nindx       = cellPtr->neighs(+1, 0); // i+1 neighbor
+                    uint64_t cid_p1  = node.cell_id( std::get<0>(nindx), std::get<1>(nindx) );
+                    Cell* cellPtr_p1 = node.get_cell_data( cid_p1 );
 
-                    // then look inside the cell and get individual meshes
-                    // FIXME loop over internal cell meshes should start here
-                    auto vmsR = cp1->getData();
-                    vMesh vp1 = vmsR[0]; //FIXME assuming only 1 element now
+                    vMesh* vp1 = cellPtr_p1->data.get();
 
                     // loop over every sheet in the mesh
                     Sheet s0, sp1;
-                    for (size_t i=0; i<Nb; i++) {
-                        s0  = v0.getSheet(dim, i);
-                        sp1 = vp1.getSheet(dim, i);
+                    for(size_t i=0; i<Nb; i++) {
+                        s0  = v0 ->getSheet(dim, i);
+                        sp1 = vp1->getSheet(dim, i);
 
-                        v0.addSheet(dim, i, sp1);
+                        vnew->addSheet(dim, i, sp1);
                     }
                 } // end of dimension cycle
 
-                // add new timestep solution
-                cell->addData(v0);
-
             }
+
+            /*
+            void update() {
+                for (auto it: node.cells) it->second.data.cycle();
+            }
+            */
 
 
     }; // end of sSolver
@@ -1402,10 +1448,12 @@ PYBIND11_MODULE(vmesh, m) {
         .def("solve",            &vmesh::vSolver::solve);
 
     py::class_<vmesh::sSolver>(m, "sSolver" )
-        .def(py::init<>())
-        .def("setNode" ,         &vmesh::sSolver::setNode)
+        .def(py::init<vmesh::Node&>())
+        // .def_readwrite("node",   &vmesh::sSolver::node)
+        // .def("setNode" ,         &vmesh::sSolver::setNode)
         .def("setTargetCell" ,   &vmesh::sSolver::setTargetCell)
         .def("solve",            &vmesh::sSolver::solve);
+        // .def("update",           &vmesh::sSolver::update);
 
 
     py::class_<vmesh::Cell>(m, "Cell" )
@@ -1423,7 +1471,8 @@ PYBIND11_MODULE(vmesh, m) {
         .def("cell_id",           &vmesh::Node::cell_id)
         .def("get_cell",          &vmesh::Node::get_cell)
         .def("get_cell_index",    &vmesh::Node::get_cell_index)
-        .def("add_local_cell",    &vmesh::Node::add_local_cell);
+        .def("add_local_cell",    &vmesh::Node::add_local_cell)
+        .def("cycle",             &vmesh::Node::cycle);
 
 
 }
