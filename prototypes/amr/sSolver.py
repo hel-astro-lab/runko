@@ -18,10 +18,10 @@ from timer import Timer
 #physical "real" distribution to compare against
 def physical_vel(x,y,z, amp=1.0):
 
-    mux = 2.0
+    mux = 5.0
     muy = 0.0
     muz = 0.0
-    sigmax = 4.0
+    sigmax = 5.0
     sigmay = 6.0
     sigmaz = 4.0
 
@@ -37,7 +37,7 @@ def randab(a, b):
     return a + (b-a)*np.random.rand()
 
 
-def populate_mesh( mesh ):
+def populate_mesh( mesh, amp):
 
     for k in range(mesh.Nblocks[2]):
         for j in range(mesh.Nblocks[1]):
@@ -45,8 +45,7 @@ def populate_mesh( mesh ):
                 cid = mesh.get_block_ID([i,j,k])
                 (x,y,z) = mesh.get_center( cid )
 
-                ampl = randab(0.5, 1.0)
-                fval = physical_vel(x,y,z, ampl)
+                fval = physical_vel(x,y,z, amp)
                 mesh[i,j,k] = [fval, fval, fval, fval]
                 #print "({},{},{}) = {}".format(i,j,k,fval)
 
@@ -59,11 +58,11 @@ class velParams:
     lens = None
 
     Nx = 50
-    Ny = 5
-    Nz = 5
+    Ny = 2
+    Nz = 2
 
 
-def createVelMesh():
+def createVelMesh(amp):
     ################################################## 
     # set-up grid
     params = velParams()
@@ -71,14 +70,14 @@ def createVelMesh():
     mesh = vmesh.vMesh()
     mesh.Nblocks = [velParams.Nx, velParams.Ny, velParams.Nz] 
     mesh.zFill(params.mins, params.maxs)
-    populate_mesh( mesh )
+    populate_mesh( mesh, amp)
 
     return mesh
 
 
 #struct holding all node parameters
 class NodeParams:
-    Nx = 10
+    Nx = 50
     Ny = 1
 
 
@@ -115,7 +114,8 @@ def visualizeNode(ax, n, nParams, vParams):
 
         #print i,j
         for vm in [cell.getData()]:
-            vbundle = vm.get_bundle(0, 2, 2) #xdir (dir = 0) @ j = 0, z = 0
+            #vbundle = vm.get_bundle(0, 2, 2) #xdir (dir = 0) @ j = 0, z = 0
+            vbundle = vm.get_bundle(0, 0, 0) #xdir (dir = 0) @ j = 0, z = 0
 
             #print vbundle.getPencil()
             data[i, :] = vbundle.getPencil()
@@ -157,8 +157,13 @@ if __name__ == "__main__":
             c = vmesh.Cell(i, j, 0)
 
             #create velocity mesh
-            mesh = createVelMesh()
-            #mesh.clip()
+
+            if i == 25:
+                mesh = createVelMesh(1.0)
+            else:
+                mesh = createVelMesh(0.0)
+
+            mesh.clip()
             c.addData(mesh)
             c.addData(mesh)
 
@@ -182,17 +187,19 @@ if __name__ == "__main__":
 
     vsol = vmesh.sSolver(n)
     
-    for lap in range(1,5):
+    for lap in range(1,50):
+        print "---lap: {}".format(lap)
 
         #solve each cell in the full 2D grid
         for i in range(nParams.Nx):
             for j in range(nParams.Ny):
-                print "({},{})".format(i,j)
+                #print "({},{})".format(i,j)
 
                 vsol.setTargetCell(i,j)
                 vsol.solve()
         #vsol.update()
         n.cycle()
+        
 
         visualizeNode(axs[0], n, nParams, vParams)
         stri = str(lap).rjust(4, '0')

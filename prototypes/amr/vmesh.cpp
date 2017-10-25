@@ -20,7 +20,7 @@ namespace py = pybind11;
 namespace conf {
 
     /// Grid dimensions
-    const size_t Nx = 10;
+    const size_t Nx = 50;
     const size_t Ny = 1;
 
     /// block size inside spatial cell
@@ -246,10 +246,37 @@ namespace vmesh {
             return true;
         };
 
+        // Sheet arithmetics
+        Sheet& operator+=(const Sheet& rhs) {
+            for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] += rhs.values[q];
+            return *this;
+        }
 
+        Sheet& operator-=(const Sheet& rhs) {
+            for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] -= rhs.values[q];
+            return *this;
+        }
+
+        Sheet& operator*=(const Realf rhs) {
+            for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] *= rhs;
+            return *this;
+        }
     };
 
+    inline Sheet operator+(Sheet lhs, const Sheet& rhs) {
+        lhs += rhs;
+        return lhs;
+    };
 
+    inline Sheet operator-(Sheet lhs, const Sheet& rhs) {
+        lhs -= rhs;
+        return lhs;
+    };
+
+    inline Sheet operator*(Sheet lhs, const Realf rhs) {
+        lhs *= rhs;
+        return lhs;
+    };
 
 
 
@@ -1048,7 +1075,7 @@ namespace vmesh {
 
             /// Get current element
             vmesh::vMesh* get() {
-                fmt::print("getting from DataContainer with {}\n", currentStep);
+                // fmt::print("getting from DataContainer with {}\n", currentStep);
                 return (vmesh::vMesh*) &(container[ currentStep ]);
             }
 
@@ -1058,14 +1085,14 @@ namespace vmesh {
             }
 
             vmesh::vMesh* getAll(size_t cs) {
-                fmt::print("pulling from DataContainer with {}\n", cs);
+                // fmt::print("pulling from DataContainer with {}\n", cs);
                 return (vmesh::vMesh*) &(container[cs]);
             }
                 
 
             // FIXME raw cycling for time step index
             void cycle() {
-                fmt::print(" calling cycle (originally {})\n", currentStep);
+                // fmt::print(" calling cycle (originally {})\n", currentStep);
                 currentStep++;
 
                 // check bounds and cycle back
@@ -1258,33 +1285,57 @@ namespace vmesh {
                 // v0->clip();
 
                 // get pointer to a new mesh 
-                vMesh* vnew = cellPtr->data.getNew();
+                vMesh* v0new = cellPtr->data.getNew();
+
+
+                Realf dt = 1.0e-2;
+                Realf dx = 1.0;
 
 
                 // for (size_t dim=0; dim<3; dim++) {
                 // XXX only x dir update is done here
                 for (size_t dim=0; dim<1; dim++) {
-                    fmt::print("Solving for dim {}\n", dim);
+                    // fmt::print("Solving for dim {}\n", dim);
 
                     size_t Nb = v0->Nblocks[dim]; // number of slices to loop over
                   
                     // get neighbors for interpolation
-                    auto nindx       = cellPtr->neighs(+1, 0); // i+1 neighbor
-                    uint64_t cid_p1  = node.cell_id( std::get<0>(nindx), std::get<1>(nindx) );
+                    auto nindx_p1    = cellPtr->neighs(+1, 0); // i+1 neighbor
+                    uint64_t cid_p1  = node.cell_id( std::get<0>(nindx_p1), std::get<1>(nindx_p1) );
                     Cell* cellPtr_p1 = node.get_cell_data( cid_p1 );
+                    vMesh* vp1       = cellPtr_p1->data.get();
 
-                    vMesh* vp1 = cellPtr_p1->data.get();
+
+                    auto nindx_m1    = cellPtr->neighs(-1, 0); // i-1 neighbor
+                    uint64_t cid_m1  = node.cell_id( std::get<0>(nindx_m1), std::get<1>(nindx_m1) );
+                    Cell* cellPtr_m1 = node.get_cell_data( cid_m1 );
+                    vMesh* vm1       = cellPtr_m1->data.get();
 
                     // loop over every sheet in the mesh
-                    Sheet s0, sp1;
+                    Sheet Up, Um, flux;
+                    Sheet s0, sp1, sm1;
+                    Realf aa;
                     for(size_t i=0; i<Nb; i++) {
+                        sm1 = vm1->getSheet(dim, i);
                         s0  = v0 ->getSheet(dim, i);
                         sp1 = vp1->getSheet(dim, i);
 
-                        vnew->addSheet(dim, i, sp1);
+                        aa = (Realf) s0.sliceVal * (dt/dx);
+
+                        // U_+1/2
+                        Up = (sp1 + s0)*0.5* aa + 
+                             (sp1 - s0)*0.5* aa*aa;
+
+                        // U_-1/2
+                        Um = (s0 + sm1)*0.5* aa + 
+                             (s0 - sm1)*0.5* aa*aa;
+
+                        // dF = U_-1/2 - U_+1/2
+                        flux = s0 + (Um - Up);
+
+                        v0new ->addSheet(dim, i,  flux);
                     }
                 } // end of dimension cycle
-
             }
 
             /*
