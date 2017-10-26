@@ -21,7 +21,7 @@ def physical_vel(x,y,z, amp=1.0):
     mux = 5.0
     muy = 0.0
     muz = 0.0
-    sigmax = 5.0
+    sigmax = 3.0
     sigmay = 6.0
     sigmaz = 4.0
 
@@ -158,12 +158,13 @@ if __name__ == "__main__":
 
             #create velocity mesh
 
-            if i == 25:
-                mesh = createVelMesh(1.0)
-            else:
-                mesh = createVelMesh(0.0)
+            #if i == 25:
+            #    mesh = createVelMesh(1.0)
+            #else:
+            #    mesh = createVelMesh(0.1)
+            mesh = createVelMesh( randab(0.8,1.0) )
 
-            mesh.clip()
+            #mesh.clip()
             c.addData(mesh)
             c.addData(mesh)
 
@@ -187,7 +188,7 @@ if __name__ == "__main__":
 
     vsol = vmesh.sSolver(n)
     
-    for lap in range(1,50):
+    for lap in range(1,500):
         print "---lap: {}".format(lap)
 
         #solve each cell in the full 2D grid
@@ -201,9 +202,10 @@ if __name__ == "__main__":
         n.cycle()
         
 
-        visualizeNode(axs[0], n, nParams, vParams)
-        stri = str(lap).rjust(4, '0')
-        plt.savefig("out/sSolve_"+stri+".png")
+        if (lap % 10 == 0):
+            visualizeNode(axs[0], n, nParams, vParams)
+            stri = str(lap).rjust(4, '0')
+            plt.savefig("out/sSolve_"+stri+".png")
 
 
 def printNode(n):

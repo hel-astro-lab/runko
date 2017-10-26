@@ -1323,12 +1323,12 @@ namespace vmesh {
                         aa = (Realf) s0.sliceVal * (dt/dx);
 
                         // U_+1/2
-                        Up = (sp1 + s0)*0.5* aa + 
-                             (sp1 - s0)*0.5* aa*aa;
+                        Up = (sp1 + s0)*0.5* aa   
+                            -(sp1 - s0)*0.5* aa*aa;
 
                         // U_-1/2
-                        Um = (s0 + sm1)*0.5* aa + 
-                             (s0 - sm1)*0.5* aa*aa;
+                        Um = (s0 + sm1)*0.5* aa
+                            -(s0 - sm1)*0.5* aa*aa;
 
                         // dF = U_-1/2 - U_+1/2
                         flux = s0 + (Um - Up);
