@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 
+#include "bundle.h"
 #include "velocity-mesh.h"
 
 using namespace vmesh;
@@ -29,7 +30,11 @@ void VMesh::zFill(
     }
 
     
-   fmt::print("z-filling vel-space from x:{} {} d: {}| y:{} {} d:{}| z:{} {} d:{}\n",mins[0], maxs[0], lens[0], mins[1], maxs[1], lens[1], mins[2], maxs[2], lens[2]);
+   fmt::print("z-filling from x:{} {} d: {}| y:{} {} d:{}| z:{} {} d:{}\n",
+       mins[0], maxs[0], lens[0], 
+       mins[1], maxs[1], lens[1], 
+       mins[2], maxs[2], lens[2]);
+
 
     // fill mesh in Morton z-order
     uint64_t cellID = 1;
@@ -51,14 +56,18 @@ void VMesh::zFill(
 
 
 
-// Get block of cell id based on the global cellID
+/// Get block of cell id based on the global cellID
 vblock_t VMesh::get_block( const uint64_t cellID ) const {
-    typename std::unordered_map<uint64_t, vblock_t>::const_iterator it = blockContainer.find(cellID);
+    typename std::unordered_map<uint64_t, vblock_t>::const_iterator it 
+      = blockContainer.find(cellID);
+
     return it->second;
 };
 
 
-// Transform (i,j,k) indices (in z-ordering) to unique global IDs on top level of refinement
+/*! Transform (i,j,k) indices (in z-ordering) to unique global IDs on top level 
+ *  of refinement.
+ */
 uint64_t VMesh::get_block_ID( const indices_t index ) const {
 
     // check for bad input
@@ -102,7 +111,8 @@ indices_t VMesh::get_indices( uint64_t cellID ) {
        ((cell / (this->length.get()[0] * (uint64_t(1) << refinement_level)))
 			% (this->length.get()[1] * (uint64_t(1) << refinement_level)))
 		* (uint64_t(1) << (max_refinement_level - refinement_level)),
-       (cell / ( this->length.get()[0] this->length.get()[1] (uint64_t(1) << (2 * refinement_level))
+       (cell / ( this->length.get()[0] this->length.get()[1] (uint64_t(1) << 
+       (2 * refinement_level))
 		)) * (uint64_t(1) << (max_refinement_level - refinement_level))
     */
 
@@ -217,7 +227,8 @@ bool VMesh::clip() {
 
     for (const uint64_t block: this->all_blocks() ){
         vblock_t& blockData = blockContainer.at( block );
-        // fmt::print("block: {} with data {} (len {})\n", block, blockData[0], blockData.size() );
+        // fmt::print("block: {} with data {} (len {})\n", 
+        // block, blockData[0], blockData.size() );
 
         if (blockData[0] < threshold) { below_threshold.push_back( block ); }
     };
@@ -246,7 +257,9 @@ size_t VMesh::capacityInBytes() const {
 };
 
 
-/// returns a sheet from the mesh that is oriented perpendicular to dim at location i
+/*! returns a sheet from the mesh that is oriented perpendicular to dim at 
+ * location i
+ */
 Sheet VMesh::getSheet(size_t dim, size_t i) {
 
     // get i,j,k elements rotated along the correct dimension
@@ -322,7 +335,9 @@ Sheet VMesh::getSheet(size_t dim, size_t i) {
 
 
 
-/// return full bundle of pencils penetrating the box at i1 & i2 coordinates along dim
+/*! return full bundle of pencils penetrating the box at i1 & i2 coordinates 
+ * along dim
+ */
 Bundle VMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
 
     size_t Nb = Nblocks[dim];

@@ -2,9 +2,7 @@
 #include <array>
 #include <vector>
 
-
 #include "bundle.h"
-
 
 
 using namespace bundles;
