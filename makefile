@@ -26,18 +26,20 @@ COMPFLAGS+= -D${FP_PRECISION}
 
 ##################################################
 
-default: plasma
+default: py
 
 #tools: sheets bundles
 
 #tests: plasma
 
 
-all: plasma pytools
-
+all: plasma py
 
 # Compile directory:
 #INSTALL=build
+
+# full python interface
+py: pyplasmatools
 
 
 # Executable:
@@ -51,20 +53,26 @@ DEPS_COMMON=definitions.h
 
 
 
-
 sheets.o: ${DEPS_COMMON} sheets.h sheets.c++
 	${CMP} ${CXXFLAGS} -c sheets.c++
 
 
 #link into python module with pybind11
-python/pytools.o: ${DEPS_COMMON} python/pytools.c++
-	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pytools.o -c python/pytools.c++
+python/pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pyplasmatools.o -c python/pyplasmatools.c++
 
 #link into python module with pybind11
-pytools: python/pytools.o sheets.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pytools.o sheets.o
+pyplasmatools: sheets.o python/pyplasmatools.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o sheets.o
 
 
+
+.PHONY: tests
+tests: 
+	python2 -m unittest discover -s tests/
+
+
+.PHONY: clean
 clean: 
 	rm *.o
 	rm python/*.o
