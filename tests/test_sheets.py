@@ -47,30 +47,40 @@ class Arithmetics(unittest.TestCase):
                 self.s2.loadValue(i, j, 2.0)
 
 
-    def test_iadd1(self):
-        self.s1 += self.s2
-
+    # require that every element in sheet is equal to the val
+    # this also unpacks the blocks
+    def assertAll(self, s1, val):
         for i in range(self.Ni):
             for j in range(self.Nj):
-                block1 = self.s1.getBlock(i,j)
-                self.assertEqual( block1[0], 3.0 )
+                block = s1.getBlock(i,j)
+                self.assertEqual( block[0], val )
+
+
+    def test_iadd1(self):
+        self.s1 += self.s2
+        self.assertAll(self.s1, 3.0)
 
 
     def test_iadd2(self):
         self.s2 += self.s1
+        self.assertAll(self.s2, 3.0)
 
-        for i in range(self.Ni):
-            for j in range(self.Nj):
-                block2 = self.s2.getBlock(i,j)
-                self.assertEqual( block2[0], 3.0 )
 
     def test_add(self):
         s3 = self.s1 + self.s2
+        self.assertAll(s3, 3.0)
 
-        for i in range(self.Ni):
-            for j in range(self.Nj):
-                block = s3.getBlock(i,j)
-                self.assertEqual( block[0], 3.0 )
+
+    def test_sub(self):
+        s3 = self.s2 - self.s1
+        self.assertAll(s3, 1.0)
+
+
+    def test_mul(self):
+        s3 = self.s2 * 2.0
+        self.assertAll(s3, 4.0)
+
+
 
 
 

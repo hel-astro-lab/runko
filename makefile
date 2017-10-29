@@ -26,7 +26,7 @@ COMPFLAGS+= -D${FP_PRECISION}
 
 ##################################################
 
-default: py
+default: py tests
 
 #tools: sheets bundles
 
@@ -69,7 +69,7 @@ pyplasmatools: sheets.o python/pyplasmatools.o
 
 .PHONY: tests
 tests: 
-	python2 -m unittest discover -s tests/
+	python2 -m unittest discover -s tests/ -v
 
 
 .PHONY: clean
