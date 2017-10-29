@@ -8,8 +8,8 @@
 #include <unordered_map>
 
 
-#include "bundle.h"
-#include "velocity-mesh.h"
+#include "bundles.h"
+#include "velomesh.h"
 
 using namespace vmesh;
 using namespace sheets;
@@ -17,7 +17,7 @@ using namespace bundles;
 
 
 /// Morton Z-fill velocity mesh with blocks
-void VMesh::zFill( 
+void VeloMesh::zFill( 
         std::array<double, 3> mins_,
         std::array<double, 3> maxs_){
 
@@ -57,7 +57,7 @@ void VMesh::zFill(
 
 
 /// Get block of cell id based on the global cellID
-vblock_t VMesh::get_block( const uint64_t cellID ) const {
+vblock_t VeloMesh::get_block( const uint64_t cellID ) const {
     typename std::unordered_map<uint64_t, vblock_t>::const_iterator it 
       = blockContainer.find(cellID);
 
@@ -68,7 +68,7 @@ vblock_t VMesh::get_block( const uint64_t cellID ) const {
 /*! Transform (i,j,k) indices (in z-ordering) to unique global IDs on top level 
  *  of refinement.
  */
-uint64_t VMesh::get_block_ID( const indices_t index ) const {
+uint64_t VeloMesh::get_block_ID( const indices_t index ) const {
 
     // check for bad input
     // if (index[0] < 0)          {return error_block;};
@@ -87,7 +87,7 @@ uint64_t VMesh::get_block_ID( const indices_t index ) const {
 };
 
 /// Get indices from cellid number
-indices_t VMesh::get_indices( uint64_t cellID ) {
+indices_t VeloMesh::get_indices( uint64_t cellID ) {
     if (cellID == error_block) { 
         indices_t indx = {{ error_index, error_index, error_index }};
         return indx; 
@@ -121,7 +121,7 @@ indices_t VMesh::get_indices( uint64_t cellID ) {
 };
 
 /// get cell size from cell id
-std::array<double, 3> VMesh::get_size( const uint64_t cellID ) {
+std::array<double, 3> VeloMesh::get_size( const uint64_t cellID ) {
     // TODO: check which refinement level we are on
     int refLevel = 0; 
 
@@ -133,7 +133,7 @@ std::array<double, 3> VMesh::get_size( const uint64_t cellID ) {
 
 
 /// get cell center from cell id
-std::array<double, 3> VMesh::get_center( const uint64_t cellID ) {
+std::array<double, 3> VeloMesh::get_center( const uint64_t cellID ) {
     // TODO check for out-of-bounds ID
     indices_t indx = get_indices( cellID );
 
@@ -150,7 +150,7 @@ return center;
 
 
 // get cell center from cell index
-std::array<double, 3> VMesh::get_center_indx( const indices_t indx ) {
+std::array<double, 3> VeloMesh::get_center_indx( const indices_t indx ) {
     std::array<double, 3> center;
 
     // TODO add refinement
@@ -164,7 +164,7 @@ return center;
 
 
 /// grid along x dir
-std::vector<double> VMesh::getXGrid() {
+std::vector<double> VeloMesh::getXGrid() {
     std::vector<double> ret;
     ret.resize(Nblocks[0]);
     for(size_t i=0; i<Nblocks[0]; i++) {
@@ -176,7 +176,7 @@ std::vector<double> VMesh::getXGrid() {
 
 
 /// grid along y dir
-std::vector<double> VMesh::getYGrid() {
+std::vector<double> VeloMesh::getYGrid() {
     std::vector<double> ret;
     ret.resize(Nblocks[1]);
     for(size_t i=0; i<Nblocks[1]; i++) {
@@ -188,7 +188,7 @@ std::vector<double> VMesh::getYGrid() {
 
 
 /// grid along z dir
-std::vector<double> VMesh::getZGrid() {
+std::vector<double> VeloMesh::getZGrid() {
     std::vector<double> ret;
     ret.resize(Nblocks[2]);
     for(size_t i=0; i<Nblocks[2]; i++) {
@@ -200,7 +200,7 @@ std::vector<double> VMesh::getZGrid() {
 
 
 /// return a list of all blocks
-std::vector<uint64_t> VMesh::all_blocks( bool sorted ) {
+std::vector<uint64_t> VeloMesh::all_blocks( bool sorted ) {
 
     std::vector<uint64_t> ret_val;
 
@@ -221,7 +221,7 @@ std::vector<uint64_t> VMesh::all_blocks( bool sorted ) {
 
 
 /// Clip all the blocks below threshold
-bool VMesh::clip() {
+bool VeloMesh::clip() {
 
     std::vector<uint64_t> below_threshold;
 
@@ -246,13 +246,13 @@ bool VMesh::clip() {
 
 
 /// Bytes actually used by the container
-size_t VMesh::sizeInBytes() const {
+size_t VeloMesh::sizeInBytes() const {
     return blockContainer.size()*sizeof(vblock_t);
 };
 
 
 // Capacity of the container because of hash map complexity and bucket division
-size_t VMesh::capacityInBytes() const {
+size_t VeloMesh::capacityInBytes() const {
     return blockContainer.bucket_count() * (sizeof(vblock_t));
 };
 
@@ -260,7 +260,7 @@ size_t VMesh::capacityInBytes() const {
 /*! returns a sheet from the mesh that is oriented perpendicular to dim at 
  * location i
  */
-Sheet VMesh::getSheet(size_t dim, size_t i) {
+Sheet VeloMesh::getSheet(size_t dim, size_t i) {
 
     // get i,j,k elements rotated along the correct dimension
     size_t x,y,z;
@@ -338,7 +338,7 @@ Sheet VMesh::getSheet(size_t dim, size_t i) {
 /*! return full bundle of pencils penetrating the box at i1 & i2 coordinates 
  * along dim
  */
-Bundle VMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
+Bundle VeloMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
 
     size_t Nb = Nblocks[dim];
 
@@ -381,7 +381,7 @@ Bundle VMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
 };
 
 /// Add given sheet to the mesh
-void VMesh::addSheet(size_t dim, size_t i, Sheet sheet) {
+void VeloMesh::addSheet(size_t dim, size_t i, Sheet sheet) {
 
     // rotate dimensions to match incoming sheet
     size_t x,y,z;
@@ -445,7 +445,7 @@ void VMesh::addSheet(size_t dim, size_t i, Sheet sheet) {
 
 
 /// Add given bundle to the right blocks along the corresponding dimension
-void VMesh::add_bundle(size_t dim, size_t i1, size_t i2, Bundle vbundle) {
+void VeloMesh::add_bundle(size_t dim, size_t i1, size_t i2, Bundle vbundle) {
 
     size_t Nb = Nblocks[dim];
 

@@ -7,7 +7,7 @@
 
 
 #include "definitions.h"
-#include "bundle.h"
+#include "bundles.h"
 #include "sheets.h"
 
 
@@ -27,7 +27,7 @@ namespace vmesh {
    *
    *
    */
-  class VMesh {
+  class VeloMesh {
 
     public:
       size_t number_of_blocks = 0;
@@ -116,7 +116,7 @@ namespace vmesh {
         blockContainer[cellID] = vals;
       };
 
-  }; // end of VMesh class header
+  }; // end of VeloMesh class header
 
 } // end of vmesh namespace
 
