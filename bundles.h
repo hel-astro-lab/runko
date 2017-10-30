@@ -43,4 +43,52 @@ namespace bundles {
 
   }; // end of Bundle class
 
+
+
+  /// Abstract base class for bundle interpolator
+  class BundleInterpolator {
+    public:
+      /// internal bundle that we interpolate
+      Bundle bundle;
+
+      /// force acting on the fluid
+      Bundle delta;
+
+      /// time step
+      Realf dt = 0.0;
+
+      /// numerical zero
+      Realf nzero = 1.0e-4;
+
+
+      virtual ~BundleInterpolator() { };
+
+      void setBundle(Bundle _bundle);
+
+      Bundle getBundle( );
+
+      void setDelta( Bundle _delta );
+
+      vblock_t getDeltaSlice(size_t i);
+
+      virtual Bundle interpolate() = 0;
+  };
+
+
+
+  /// Second order Lagrangian interpolator
+  class BundleInterpolator2nd : public BundleInterpolator {
+    public:
+      Bundle interpolate( );
+  };
+
+
+  /// Fourth order Lagrangian interpolator
+  class BundleInterpolator4th : public BundleInterpolator {
+    public:
+      Bundle interpolate( );
+  };
+
+
+
 } // end of bundles namespace

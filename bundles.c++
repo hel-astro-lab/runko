@@ -64,3 +64,92 @@ vblock_t Bundle::getSlice(size_t q) {
 Realf Bundle::getDx(size_t q) {
     return std::abs( grid[q+1] - grid[q] );
 };
+
+
+
+
+// --------------------------------------------------
+void BundleInterpolator::setBundle(Bundle _bundle) {
+  bundle = _bundle;
+};
+
+Bundle BundleInterpolator::getBundle( ) {
+  return bundle;
+};
+
+void BundleInterpolator::setDelta( Bundle _delta ) {
+  delta = _delta;
+};
+
+vblock_t BundleInterpolator::getDeltaSlice(size_t i) {
+  return delta.getSlice(i);
+};
+
+
+
+Bundle BundleInterpolator2nd::interpolate( ) {
+
+  // prepare target bundle
+  Bundle ret;
+  ret.resize( bundle.size() );
+
+  // compute flux (inner region)
+  vblock_t block, fp1, f0, Delta;
+
+  ret.loadZeroBlock(0);
+  for(size_t i=1; i<bundle.size()-1; i++) {
+    fp1     = bundle.getSlice(i+1);
+    f0      = bundle.getSlice(i  );
+
+    // get shift 
+    Delta     = getDeltaSlice(i);
+    Delta[0] *= dt / bundle.getDx(i);
+
+    // 2nd order conservative Lagrangian interpolation
+    block[0] = Delta[0]          * ( fp1[0] + f0[0] )*0.5 
+             - Delta[0]*Delta[0] * ( fp1[0] - f0[0] )*0.5;
+
+    ret.loadBlock(i, block);
+  }
+  ret.loadZeroBlock( bundle.size()-1 );
+
+  return ret;
+};
+
+
+Bundle BundleInterpolator4th::interpolate( ) {
+
+  // prepare target bundle
+  Bundle ret;
+  ret.resize( bundle.size() );
+
+  // compute flux (inner region)
+  vblock_t block, fp2, fp1, f0, fm1, Delta;
+
+  ret.loadZeroBlock(0);
+  ret.loadZeroBlock(1);
+  for(size_t i=2; i<bundle.size()-2; i++) {
+    fm1     = bundle.getSlice(i-1);
+    f0      = bundle.getSlice(i  );
+    fp1     = bundle.getSlice(i+1);
+    fp2     = bundle.getSlice(i+2);
+
+    // get shift 
+    Delta     = getDeltaSlice(i);
+    Delta[0] *= dt / bundle.getDx(i);
+
+    // 4th order conservative Lagrangian interpolation
+    block[0] = Delta[0]        * (-fp2[0] + 7.0*fp1[0] + 7.0*f0[0] - fm1[0] )/12.0
+              +pow(Delta[0],2) * ( fp2[0] -15.0*fp1[0] +15.0*f0[0] - fm1[0] )/24.0
+              +pow(Delta[0],3) * ( fp2[0] -     fp1[0] -     f0[0] + fm1[0] )/12.0
+              +pow(Delta[0],4) * (-fp2[0] + 3.0*fp1[0] - 3.0*f0[0] + fm1[0] )/24.0;
+
+    ret.loadBlock(i, block);
+  }
+  ret.loadZeroBlock( bundle.size()-2 );
+  ret.loadZeroBlock( bundle.size()-1 );
+
+  return ret;
+};
+
+
