@@ -39,7 +39,7 @@ all: plasma py
 #INSTALL=build
 
 # full python interface
-py: pyplasmatools
+py: pyplasma pyplasmatools
 
 
 # Executable:
@@ -62,14 +62,25 @@ bundles.o: ${DEPS_COMMON} bundles.h bundles.c++
 velomesh.o: ${DEPS_COMMON} velomesh.h velomesh.c++
 	${CMP} ${CXXFLAGS} -c velomesh.c++
 
+solvers/SplittedLagrangian.o: ${DEPS_COMMON} solvers.h solvers/SplittedLagrangian.c++
+	${CMP} ${CXXFLAGS} -c solvers/SplittedLagrangian.c++ -o solvers/SplittedLagrangian.o
 
-#link into python module with pybind11
+
+#compile python binaries
 python/pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pyplasmatools.o -c python/pyplasmatools.c++
+
+python/pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pyplasma.o -c python/pyplasma.c++
+
 
 #link into python module with pybind11
 pyplasmatools: python/pyplasmatools.o sheets.o bundles.o velomesh.o 
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o sheets.o bundles.o velomesh.o
+
+pyplasma: python/pyplasma.o solvers/SplittedLagrangian.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/SplittedLagrangian.o 
+
 
 
 
@@ -83,5 +94,6 @@ clean:
 	rm *.o
 	rm python/*.o
 	rm python/*.so
+	rm solvers/*.o
 
 

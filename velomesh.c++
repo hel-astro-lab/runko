@@ -30,10 +30,10 @@ void VeloMesh::zFill(
     }
 
     
-   fmt::print("z-filling from x:{} {} d: {}| y:{} {} d:{}| z:{} {} d:{}\n",
-       mins[0], maxs[0], lens[0], 
-       mins[1], maxs[1], lens[1], 
-       mins[2], maxs[2], lens[2]);
+   // fmt::print("z-filling from x:{} {} d: {}| y:{} {} d:{}| z:{} {} d:{}\n",
+   //     mins[0], maxs[0], lens[0], 
+   //     mins[1], maxs[1], lens[1], 
+   //     mins[2], maxs[2], lens[2]);
 
 
     // fill mesh in Morton z-order
