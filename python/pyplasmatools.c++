@@ -9,8 +9,24 @@ namespace py = pybind11;
 #include "../velomesh.h"
 
 
-using namespace sheets;
-using namespace vmesh;
+// using namespace sheets;
+// using namespace bundles;
+// using namespace vmesh;
+
+
+
+
+// trampoline class for BundleInterpolator (because of inheritance from Base class)
+class PyBundleInterpolator : public bundles::BundleInterpolator {
+  public:
+    using bundles::BundleInterpolator::BundleInterpolator;
+    using bundles::BundleInterpolator::setBundle;
+    using bundles::BundleInterpolator::getBundle;
+    bundles::Bundle interpolate() override {
+      PYBIND11_OVERLOAD_PURE(bundles::Bundle, bundles::BundleInterpolator, interpolate, );
+    }
+};
+
 
 
 // python bindings for various helper classes 
@@ -18,26 +34,26 @@ PYBIND11_MODULE(plasmatools, m) {
 
   // --------------------------------------------------
   // Python bindings for sheet class
-  py::class_<Sheet>(m, "Sheet" )
+  py::class_<sheets::Sheet>(m, "Sheet" )
     .def(py::init<>())
-    .def_readwrite("iGrid",      &Sheet::iGrid)
-    .def_readwrite("jGrid",      &Sheet::jGrid)
-    .def_readwrite("Ni",         &Sheet::Ni)
-    .def_readwrite("Nj",         &Sheet::Nj)
-    .def_readwrite("values",     &Sheet::values)
-    .def("__iadd__",             &Sheet::operator+= )
-    .def("__add__",              [](Sheet const & self, Sheet const other) 
+    .def_readwrite("iGrid",      &sheets::Sheet::iGrid)
+    .def_readwrite("jGrid",      &sheets::Sheet::jGrid)
+    .def_readwrite("Ni",         &sheets::Sheet::Ni)
+    .def_readwrite("Nj",         &sheets::Sheet::Nj)
+    .def_readwrite("values",     &sheets::Sheet::values)
+    .def("__iadd__",             &sheets::Sheet::operator+= )
+    .def("__add__",              [](sheets::Sheet const & self, sheets::Sheet const other) 
         { return self + other; }, py::is_operator())
-  .def("__isub__",             &Sheet::operator-= )
-    .def("__sub__",              [](Sheet const & self, Sheet const other) 
+  .def("__isub__",               &sheets::Sheet::operator-= )
+    .def("__sub__",              [](sheets::Sheet const & self, sheets::Sheet const other) 
         { return self - other; }, py::is_operator())
-  .def("__imul__",             &Sheet::operator*= )
-    .def("__mul__",              [](Sheet const & self, Realf const other) 
+  .def("__imul__",               &sheets::Sheet::operator*= )
+    .def("__mul__",              [](sheets::Sheet const & self, Realf const other) 
         { return self * other; }, py::is_operator())
-  .def("resize",               &Sheet::resize)
-    .def("loadValue",            &Sheet::loadValue)
-    .def("getBlock",             &Sheet::getBlock)
-    .def("isNonZero",            &Sheet::isNonZero);
+  .def("resize",                 &sheets::Sheet::resize)
+    .def("loadValue",            &sheets::Sheet::loadValue)
+    .def("getBlock",             &sheets::Sheet::getBlock)
+    .def("isNonZero",            &sheets::Sheet::isNonZero);
 
 
   // --------------------------------------------------
@@ -47,6 +63,20 @@ PYBIND11_MODULE(plasmatools, m) {
     .def(py::init<>())
     .def("getGrid",   &bundles::Bundle::getGrid)
     .def("getPencil", &bundles::Bundle::getPencil);
+
+
+  py::class_<bundles::BundleInterpolator, PyBundleInterpolator> bintp(m, "BundleInterpolator" );
+  bintp
+    .def(py::init<>())
+    .def("setBundle",   &bundles::BundleInterpolator::setBundle)
+    .def("getBundle",   &bundles::BundleInterpolator::getBundle)
+    .def("interpolate", &bundles::BundleInterpolator::interpolate);
+
+  py::class_<bundles::BundleInterpolator2nd>(m, "BundleInterpolator2nd", bintp)
+    .def(py::init<>());
+
+  py::class_<bundles::BundleInterpolator4th>(m, "BundleInterpolator4th", bintp)
+    .def(py::init<>());
 
 
 
@@ -60,14 +90,14 @@ PYBIND11_MODULE(plasmatools, m) {
     .def_readwrite("lens",             &vmesh::VeloMesh::lens)
     .def_readwrite("Nblocks",          &vmesh::VeloMesh::Nblocks)
     .def("zFill",                      &vmesh::VeloMesh::zFill)
-    .def("get_block",                  &vmesh::VeloMesh::get_block)
-    .def("get_block_ID",               &vmesh::VeloMesh::get_block_ID)
-    .def("get_indices",                &vmesh::VeloMesh::get_indices)
-    .def("all_blocks",                 &vmesh::VeloMesh::all_blocks)
-    .def("get_size",                   &vmesh::VeloMesh::get_size)
-    .def("get_center",                 &vmesh::VeloMesh::get_center)
-    .def("get_bundle",                 &vmesh::VeloMesh::get_bundle)
-    .def("add_bundle",                 &vmesh::VeloMesh::add_bundle)
+    .def("getBlock",                   &vmesh::VeloMesh::getBlock)
+    .def("getBlockID",                 &vmesh::VeloMesh::getBlockID)
+    .def("getIndices",                 &vmesh::VeloMesh::getIndices)
+    .def("allBlocks",                  &vmesh::VeloMesh::allBlocks)
+    .def("getSize",                    &vmesh::VeloMesh::getSize)
+    .def("getCenter",                  &vmesh::VeloMesh::getCenter)
+    .def("getBundle",                  &vmesh::VeloMesh::getBundle)
+    .def("addBundle",                  &vmesh::VeloMesh::addBundle)
     .def("getSheet",                   &vmesh::VeloMesh::getSheet)
 
     .def("__getitem__", [](const vmesh::VeloMesh &s, uint64_t i) {
@@ -97,35 +127,35 @@ PYBIND11_MODULE(plasmatools, m) {
 
   // Example of bare bones array interface
   /*
-  .def("__getitem__", [](const Sequence &s, size_t i) {
-      if (i >= s.size()) throw py::index_error();
-      return s[i];
-      })
-  .def("__setitem__", [](Sequence &s, size_t i, float v) {
-      if (i >= s.size()) throw py::index_error();
-      s[i] = v;
-      })
+     .def("__getitem__", [](const Sequence &s, size_t i) {
+     if (i >= s.size()) throw py::index_error();
+     return s[i];
+     })
+     .def("__setitem__", [](Sequence &s, size_t i, float v) {
+     if (i >= s.size()) throw py::index_error();
+     s[i] = v;
+     })
   // Slices [optional]
   .def("__getitem__", [](const Sequence &s, py::slice slice) -> Sequence* {
-      size_t start, stop, step, slicelength;
-      if (!slice.compute(s.size(), &start, &stop, &step, &slicelength))
-      throw py::error_already_set();
-      Sequence *seq = new Sequence(slicelength);
-      for (size_t i = 0; i < slicelength; ++i) {
-      (*seq)[i] = s[start]; start += step;
-      }
-      return seq;
-      })
+  size_t start, stop, step, slicelength;
+  if (!slice.compute(s.size(), &start, &stop, &step, &slicelength))
+  throw py::error_already_set();
+  Sequence *seq = new Sequence(slicelength);
+  for (size_t i = 0; i < slicelength; ++i) {
+  (*seq)[i] = s[start]; start += step;
+  }
+  return seq;
+  })
   .def("__setitem__", [](Sequence &s, py::slice slice, const Sequence &value) {
-      size_t start, stop, step, slicelength;
-      if (!slice.compute(s.size(), &start, &stop, &step, &slicelength))
-      throw py::error_already_set();
-      if (slicelength != value.size())
-      throw std::runtime_error("Left and right hand size of slice assignment have different sizes!");
-      for (size_t i = 0; i < slicelength; ++i) {
-      s[start] = value[i]; start += step;
-      }
-      })        
+  size_t start, stop, step, slicelength;
+  if (!slice.compute(s.size(), &start, &stop, &step, &slicelength))
+  throw py::error_already_set();
+  if (slicelength != value.size())
+  throw std::runtime_error("Left and right hand size of slice assignment have different sizes!");
+  for (size_t i = 0; i < slicelength; ++i) {
+  s[start] = value[i]; start += step;
+  }
+  })        
   */
 
 

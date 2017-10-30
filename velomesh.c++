@@ -57,7 +57,7 @@ void VeloMesh::zFill(
 
 
 /// Get block of cell id based on the global cellID
-vblock_t VeloMesh::get_block( const uint64_t cellID ) const {
+vblock_t VeloMesh::getBlock( const uint64_t cellID ) const {
     typename std::unordered_map<uint64_t, vblock_t>::const_iterator it 
       = blockContainer.find(cellID);
 
@@ -68,7 +68,7 @@ vblock_t VeloMesh::get_block( const uint64_t cellID ) const {
 /*! Transform (i,j,k) indices (in z-ordering) to unique global IDs on top level 
  *  of refinement.
  */
-uint64_t VeloMesh::get_block_ID( const indices_t index ) const {
+uint64_t VeloMesh::getBlockID( const indices_t index ) const {
 
     // check for bad input
     // if (index[0] < 0)          {return error_block;};
@@ -87,7 +87,7 @@ uint64_t VeloMesh::get_block_ID( const indices_t index ) const {
 };
 
 /// Get indices from cellid number
-indices_t VeloMesh::get_indices( uint64_t cellID ) {
+indices_t VeloMesh::getIndices( uint64_t cellID ) {
     if (cellID == error_block) { 
         indices_t indx = {{ error_index, error_index, error_index }};
         return indx; 
@@ -121,7 +121,7 @@ indices_t VeloMesh::get_indices( uint64_t cellID ) {
 };
 
 /// get cell size from cell id
-std::array<double, 3> VeloMesh::get_size( const uint64_t cellID ) {
+std::array<double, 3> VeloMesh::getSize( const uint64_t cellID ) {
     // TODO: check which refinement level we are on
     int refLevel = 0; 
 
@@ -133,9 +133,9 @@ std::array<double, 3> VeloMesh::get_size( const uint64_t cellID ) {
 
 
 /// get cell center from cell id
-std::array<double, 3> VeloMesh::get_center( const uint64_t cellID ) {
+std::array<double, 3> VeloMesh::getCenter( const uint64_t cellID ) {
     // TODO check for out-of-bounds ID
-    indices_t indx = get_indices( cellID );
+    indices_t indx = getIndices( cellID );
 
     std::array<double, 3> center;
 
@@ -150,7 +150,7 @@ return center;
 
 
 // get cell center from cell index
-std::array<double, 3> VeloMesh::get_center_indx( const indices_t indx ) {
+std::array<double, 3> VeloMesh::getCenterIndx( const indices_t indx ) {
     std::array<double, 3> center;
 
     // TODO add refinement
@@ -168,7 +168,7 @@ std::vector<double> VeloMesh::getXGrid() {
     std::vector<double> ret;
     ret.resize(Nblocks[0]);
     for(size_t i=0; i<Nblocks[0]; i++) {
-        auto ceni = get_center_indx( {{i, 0, 0}} );
+        auto ceni = getCenterIndx( {{i, 0, 0}} );
         ret[i] = ceni[0];
     }
     return ret;
@@ -180,7 +180,7 @@ std::vector<double> VeloMesh::getYGrid() {
     std::vector<double> ret;
     ret.resize(Nblocks[1]);
     for(size_t i=0; i<Nblocks[1]; i++) {
-        auto ceni = get_center_indx( {{0, i, 0}} );
+        auto ceni = getCenterIndx( {{0, i, 0}} );
         ret[i] = ceni[1];
     }
     return ret;
@@ -192,7 +192,7 @@ std::vector<double> VeloMesh::getZGrid() {
     std::vector<double> ret;
     ret.resize(Nblocks[2]);
     for(size_t i=0; i<Nblocks[2]; i++) {
-        auto ceni = get_center_indx( {{0, 0, i}} );
+        auto ceni = getCenterIndx( {{0, 0, i}} );
         ret[i] = ceni[2];
     }
     return ret;
@@ -200,7 +200,7 @@ std::vector<double> VeloMesh::getZGrid() {
 
 
 /// return a list of all blocks
-std::vector<uint64_t> VeloMesh::all_blocks( bool sorted ) {
+std::vector<uint64_t> VeloMesh::allBlocks( bool sorted ) {
 
     std::vector<uint64_t> ret_val;
 
@@ -225,7 +225,7 @@ bool VeloMesh::clip() {
 
     std::vector<uint64_t> below_threshold;
 
-    for (const uint64_t block: this->all_blocks() ){
+    for (const uint64_t block: this->allBlocks() ){
         vblock_t& blockData = blockContainer.at( block );
         // fmt::print("block: {} with data {} (len {})\n", 
         // block, blockData[0], blockData.size() );
@@ -273,7 +273,7 @@ Sheet VeloMesh::getSheet(size_t dim, size_t i) {
             z = 2;
             horz = getYGrid();
             vert = getZGrid();
-            sliceVal = get_center_indx({{i, 0, 0}})[0];
+            sliceVal = getCenterIndx({{i, 0, 0}})[0];
             break;
         case 1:  // y
             x = 1;
@@ -281,7 +281,7 @@ Sheet VeloMesh::getSheet(size_t dim, size_t i) {
             z = 2;
             horz = getXGrid();
             vert = getZGrid();
-            sliceVal = get_center_indx({{0, i, 0}})[1];
+            sliceVal = getCenterIndx({{0, i, 0}})[1];
             break;
         case 2:  // z
             z = 2;
@@ -289,7 +289,7 @@ Sheet VeloMesh::getSheet(size_t dim, size_t i) {
             z = 1;
             horz = getXGrid();
             vert = getYGrid();
-            sliceVal = get_center_indx({{0, 0, i}})[2];
+            sliceVal = getCenterIndx({{0, 0, i}})[2];
             break;
     }
 
@@ -306,11 +306,11 @@ Sheet VeloMesh::getSheet(size_t dim, size_t i) {
     for(size_t k=0; k<Nblocks[z]; k++) {
         for(size_t j=0; j<Nblocks[y]; j++) {
             switch(dim) {
-                case 0: cid = get_block_ID( {{i, j, k}} ); // x
+                case 0: cid = getBlockID( {{i, j, k}} ); // x
                         break;
-                case 1: cid = get_block_ID( {{j, i, k}} ); // y 
+                case 1: cid = getBlockID( {{j, i, k}} ); // y 
                         break;
-                case 2: cid = get_block_ID( {{j, k, i}} ); // z
+                case 2: cid = getBlockID( {{j, k, i}} ); // z
                         break;
             }
 
@@ -338,7 +338,7 @@ Sheet VeloMesh::getSheet(size_t dim, size_t i) {
 /*! return full bundle of pencils penetrating the box at i1 & i2 coordinates 
  * along dim
  */
-Bundle VeloMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
+Bundle VeloMesh::getBundle(size_t dim, size_t i1, size_t i2) {
 
     size_t Nb = Nblocks[dim];
 
@@ -350,16 +350,16 @@ Bundle VeloMesh::get_bundle(size_t dim, size_t i1, size_t i2) {
     for (size_t q=0; q<Nb; q++) {
 
         switch(dim) {
-            case 0: cid = get_block_ID( {{q, i1, i2}} ); // x pencil
+            case 0: cid = getBlockID( {{q, i1, i2}} ); // x pencil
                     break;
-            case 1: cid = get_block_ID( {{i1, q, i2}} ); // y pencil
+            case 1: cid = getBlockID( {{i1, q, i2}} ); // y pencil
                     break;
-            case 2: cid = get_block_ID( {{i1, i2, q}} ); // z pencil
+            case 2: cid = getBlockID( {{i1, i2, q}} ); // z pencil
                     break;
         }
 
         // add guiding grid
-        auto center = get_center(cid);
+        auto center = getCenter(cid);
         vbundle.loadGrid(q, center[dim] );
 
         // next lets get actual values 
@@ -413,11 +413,11 @@ void VeloMesh::addSheet(size_t dim, size_t i, Sheet sheet) {
 
             // non-zero block; lets add it
             switch(dim) {
-                case 0: cid = get_block_ID( {{i, j, k}} ); // x
+                case 0: cid = getBlockID( {{i, j, k}} ); // x
                         break;
-                case 1: cid = get_block_ID( {{j, i, k}} ); // y 
+                case 1: cid = getBlockID( {{j, i, k}} ); // y 
                         break;
-                case 2: cid = get_block_ID( {{j, k, i}} ); // z
+                case 2: cid = getBlockID( {{j, k, i}} ); // z
                         break;
             }
 
@@ -445,7 +445,7 @@ void VeloMesh::addSheet(size_t dim, size_t i, Sheet sheet) {
 
 
 /// Add given bundle to the right blocks along the corresponding dimension
-void VeloMesh::add_bundle(size_t dim, size_t i1, size_t i2, Bundle vbundle) {
+void VeloMesh::addBundle(size_t dim, size_t i1, size_t i2, Bundle vbundle) {
 
     size_t Nb = Nblocks[dim];
 
@@ -457,11 +457,11 @@ void VeloMesh::add_bundle(size_t dim, size_t i1, size_t i2, Bundle vbundle) {
 
         // non-zero bundle; lets add it
         switch(dim) {
-            case 0: cid = get_block_ID( {{q, i1, i2}} ); // x pencil
+            case 0: cid = getBlockID( {{q, i1, i2}} ); // x pencil
                     break;
-            case 1: cid = get_block_ID( {{i1, q, i2}} ); // y pencil
+            case 1: cid = getBlockID( {{i1, q, i2}} ); // y pencil
                     break;
-            case 2: cid = get_block_ID( {{i1, i2, q}} ); // z pencil
+            case 2: cid = getBlockID( {{i1, i2, q}} ); // z pencil
                     break;
         }
 

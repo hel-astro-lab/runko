@@ -29,8 +29,8 @@ def populate_mesh( mesh ):
     for k in range(mesh.Nblocks[2]):
         for j in range(mesh.Nblocks[1]):
             for i in range(mesh.Nblocks[0]):
-                cid = mesh.get_block_ID([i,j,k])
-                (x,y,z) = mesh.get_center( cid )
+                cid = mesh.getBlockID([i,j,k])
+                (x,y,z) = mesh.getCenter( cid )
 
                 fval = physical_vel(x,y,z)
                 mesh[i,j,k] = [fval, fval, fval, fval]
@@ -84,9 +84,9 @@ class Basics(unittest.TestCase):
         for test in tests:
 
             #get cell id and compare to internal python formula
-            cid = self.mesh.get_block_ID( test )
+            cid = self.mesh.getBlockID( test )
             indx = cellID2index( cid , self.mesh.Nblocks )
-            ref_indx = self.mesh.get_indices( cid )
+            ref_indx = self.mesh.getIndices( cid )
 
             #check i, j, k indices
             self.assertEqual(indx[0], ref_indx[0])

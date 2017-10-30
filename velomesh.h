@@ -56,26 +56,26 @@ namespace vmesh {
       void zFill( std::array<double, 3> mins_,
           std::array<double, 3> maxs_);
 
-      vblock_t get_block( const uint64_t cellID ) const;
+      vblock_t getBlock( const uint64_t cellID ) const;
 
-      uint64_t get_block_ID( const indices_t index ) const;
+      uint64_t getBlockID( const indices_t index ) const;
 
-      indices_t get_indices( uint64_t cellID );
+      indices_t getIndices( uint64_t cellID );
 
-      std::array<double, 3> get_size( const uint64_t cellID );
+      std::array<double, 3> getSize( const uint64_t cellID );
 
-      std::array<double, 3> get_center( const uint64_t cellID );
-      std::array<double, 3> get_center_indx( const indices_t indx );
+      std::array<double, 3> getCenter( const uint64_t cellID );
+      std::array<double, 3> getCenterIndx( const indices_t indx );
 
       std::vector<double> getXGrid();
       std::vector<double> getYGrid();
       std::vector<double> getZGrid();
 
-      std::vector<uint64_t> all_blocks( bool sorted = false);
+      std::vector<uint64_t> allBlocks( bool sorted = false);
 
-      Bundle get_bundle(size_t, size_t, size_t);
+      Bundle getBundle(size_t, size_t, size_t);
 
-      void add_bundle(size_t, size_t, size_t, Bundle);
+      void addBundle(size_t, size_t, size_t, Bundle);
 
       Sheet getSheet(size_t, size_t);
       void addSheet(size_t, size_t, Sheet);
@@ -99,7 +99,7 @@ namespace vmesh {
       vblock_t __getitem2__(const size_t i, 
                             const size_t j, 
                             const size_t k) const {
-        uint64_t cellID = this->get_block_ID( {{i,j,k}} );
+        uint64_t cellID = this->getBlockID( {{i,j,k}} );
         // fmt::print("({},{},{}) = {}\n",i,j,k,cellID);
         return this->__getitem__(cellID);
       };
@@ -112,7 +112,7 @@ namespace vmesh {
                         const size_t j, 
                         const size_t k, 
                         vblock_t vals) {
-        uint64_t cellID = this->get_block_ID( {{i,j,k}} );
+        uint64_t cellID = this->getBlockID( {{i,j,k}} );
         blockContainer[cellID] = vals;
       };
 
