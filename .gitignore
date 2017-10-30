@@ -39,3 +39,10 @@ radpic
 #
 *.png
 *.pdf
+
+
+*/*/runs
+*.zip
+out/
+*/*/out/
+*.mp4
