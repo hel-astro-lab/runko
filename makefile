@@ -69,6 +69,8 @@ solvers/SplittedLagrangian.o: ${DEPS_COMMON} solvers.h solvers/SplittedLagrangia
 #cell.o: ${DEPS_COMMON} cell.h cell.c++
 #	${CMP} ${CXXFLAGS} -c cell.c++
 
+#grid.o: ${DEPS_COMMON} grid.h grid.c++
+#	${CMP} ${CXXFLAGS} -c grid.c++
 
 
 #compile python binaries
@@ -93,7 +95,7 @@ pyplasmatools: sheets.o bundles.o velomesh.o python/pyplasmatools.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o sheets.o bundles.o velomesh.o
 
 
-pyplasma: solvers/SplittedLagrangian.o python/pyplasma.o 
+pyplasma: grid.h cell.h solvers/SplittedLagrangian.o python/pyplasma.o 
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/SplittedLagrangian.o
 
 

@@ -14,7 +14,7 @@ sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
 
 import corgi
 import plasmatools as ptools
-import plasma as plasma
+import pyplasma as plasma
 
 
 Nrank = 4
@@ -65,8 +65,10 @@ def loadCells(n):
         for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i]))
             if n.mpiGrid(i,j) == n.rank:
-                c = corgi.Cell(i, j, n.rank)
+                #c = corgi.Cell(i, j, n.rank)
+                c = plasma.VCell(i, j, n.rank)
                 n.addLocalCell(c) #TODO load data to cell
+
 
 
 
@@ -204,7 +206,8 @@ if __name__ == "__main__":
 
     ################################################## 
     #init node
-    node = corgi.Node()
+    #node = corgi.Node()
+    node = plasma.Grid()
     node.initMpi()
     loadMpiXStrides(node)
     loadCells(node)
@@ -233,6 +236,7 @@ if __name__ == "__main__":
 
 
 
+    node.howl()
 
 
 

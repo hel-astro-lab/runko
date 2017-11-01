@@ -6,6 +6,7 @@ namespace py = pybind11;
 #include "../solvers.h"
 #include "../solvers/SplittedLagrangian.c++"
 #include "../cell.h"
+#include "../grid.h"
 
 
 
@@ -32,6 +33,14 @@ PYBIND11_MODULE(pyplasma, m) {
   py::class_<vlasov::VCell>(m, "VCell", corgiCell)
     .def(py::init<size_t, size_t, int >())
     .def("bark",     &vlasov::VCell::bark);
+
+
+  // Loading node bindings from corgi library
+  py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
+  py::class_<vlasov::Grid>(m, "Grid", corgiNode)
+    .def(py::init<>())
+    .def("howl",     &vlasov::Grid::howl);
+
 
 
   // trampoline base class followed by the actual solver implementations

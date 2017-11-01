@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "corgi/corgi.h"
 
 
@@ -28,7 +29,3 @@ class VCell : public corgi::Cell {
 
 
 } // end of namespace vlasov
-
-
-
-
