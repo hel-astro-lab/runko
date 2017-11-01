@@ -26,20 +26,21 @@ COMPFLAGS+= -D${FP_PRECISION}
 
 ##################################################
 
-default: py tests
+#default: py tests
+default: py
 
 #tools: sheets bundles
 
 #tests: plasma
 
 
-all: plasma py
+all: plasma py tests
 
 # Compile directory:
 #INSTALL=build
 
 # full python interface
-py: pyplasma pyplasmatools
+py: pycorgi pyplasmatools pyplasma 
 
 
 # Executable:
@@ -65,6 +66,10 @@ velomesh.o: ${DEPS_COMMON} velomesh.h velomesh.c++
 solvers/SplittedLagrangian.o: ${DEPS_COMMON} solvers.h solvers/SplittedLagrangian.c++
 	${CMP} ${CXXFLAGS} -c solvers/SplittedLagrangian.c++ -o solvers/SplittedLagrangian.o
 
+#cell.o: ${DEPS_COMMON} cell.h cell.c++
+#	${CMP} ${CXXFLAGS} -c cell.c++
+
+
 
 #compile python binaries
 python/pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
@@ -74,12 +79,22 @@ python/pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pyplasma.o -c python/pyplasma.c++
 
 
+
+#reference to pycorgi's own make; then copy the compiled library because python does not support
+#non-local referencing of modules
+pycorgi:
+	+${MAKE} -C corgi/pycorgi
+	cp corgi/pycorgi/corgi.so python/
+
+
+
 #link into python module with pybind11
-pyplasmatools: python/pyplasmatools.o sheets.o bundles.o velomesh.o 
+pyplasmatools: sheets.o bundles.o velomesh.o python/pyplasmatools.o 
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o sheets.o bundles.o velomesh.o
 
-pyplasma: python/pyplasma.o solvers/SplittedLagrangian.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/SplittedLagrangian.o 
+
+pyplasma: solvers/SplittedLagrangian.o python/pyplasma.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/SplittedLagrangian.o
 
 
 

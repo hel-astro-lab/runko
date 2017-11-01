@@ -5,6 +5,7 @@ namespace py = pybind11;
 // #include "../definitions.h"
 #include "../solvers.h"
 #include "../solvers/SplittedLagrangian.c++"
+#include "../cell.h"
 
 
 
@@ -20,8 +21,18 @@ class PyVlasovVelocitySolver : public vlasov::VlasovVelocitySolver {
 
 
 
-// python bindings for plasma classes & function
+
+
+// python bindings for plasma classes & functions
 PYBIND11_MODULE(pyplasma, m) {
+
+
+  // Loading cell bindings from corgi library
+  py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
+  py::class_<vlasov::VCell>(m, "VCell", corgiCell)
+    .def(py::init<size_t, size_t, int >())
+    .def("bark",     &vlasov::VCell::bark);
+
 
   // trampoline base class followed by the actual solver implementations
   py::class_<vlasov::VlasovVelocitySolver, PyVlasovVelocitySolver> vsol(m, "VlasovVelocitySolver" );

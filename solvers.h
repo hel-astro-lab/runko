@@ -16,8 +16,6 @@ namespace vlasov {
  */
 
 
-
-
 /*! \brief General Vlasov velocity solver
  *
  * Defines the general interface for VELOCITY Vlasov solvers.
@@ -43,6 +41,7 @@ class VlasovVelocitySolver {
 
 
 };
+
 
 
 

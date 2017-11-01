@@ -29,8 +29,8 @@ def loadMpiRandomly(n):
                 n.setMpiGrid(i, j, val)
 
 
-#load nodes to be in stripe formation
-def loadMpiStrides(n):
+#load nodes to be in stripe formation (splitted in Y=vertical direction)
+def loadMpiYStrides(n):
     if n.master: #only master initializes; then sends
         stride = np.zeros( (n.getNy()), np.int64)
         dy = np.float(n.getNy()) / np.float(n.Nrank) 
@@ -44,6 +44,20 @@ def loadMpiStrides(n):
                 n.setMpiGrid(i, j, val)
     n.bcastMpiGrid()
 
+#load nodes to be in stripe formation (splitted in X=horizontal direction)
+def loadMpiXStrides(n):
+    if n.master: #only master initializes; then sends
+        stride = np.zeros( (n.getNx()), np.int64)
+        dx = np.float(n.getNx()) / np.float(n.Nrank) 
+        for i in range(n.getNx()):
+            val = np.int( i/dx )
+            stride[i] = val
+
+        for j in range(n.getNy()):
+            for i in range(n.getNx()):
+                val = stride[i]
+                n.setMpiGrid(i, j, val)
+    n.bcastMpiGrid()
 
 #load cells into each node
 def loadCells(n):
@@ -72,6 +86,8 @@ def imshow(ax, grid, xmin, xmax, ymin, ymax):
     extent = [ xmin, xmax, ymin, ymax ]
 
     mgrid = np.ma.masked_where(grid == -1.0, grid)
+    
+    mgrid = mgrid.T
     ax.imshow(mgrid,
               extent=extent,
               origin='lower',
@@ -121,12 +137,12 @@ def plot_node(ax, n, lap):
     # add text label about number of neighbors
     for cid in n.getCells():
         c = n.getCell( cid )
-        (j, i) = c.index()
+        (i, j) = c.index()
         dx = n.getXmax() - n.getXmin()
         dy = n.getYmax() - n.getYmin()
 
-        ix = n.getXmin() + dx*(i+0.5)/n.getNy()
-        jy = n.getYmin() + dy*(j+0.5)/n.getNx()
+        ix = n.getXmin() + dx*(i+0.5)/n.getNx()
+        jy = n.getYmin() + dy*(j+0.5)/n.getNy()
 
         #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.number_of_virtual_neighbors
@@ -160,12 +176,14 @@ if __name__ == "__main__":
 
     ################################################## 
     # setup environment
-    xmin = -1.0
-    xmax =  2.0
-    ymin = -2.0
-    ymax =  3.0
+    xmin =  0.0
+    xmax = 10.0
+    ymin =  0.0
+    ymax =  1.0
 
-    corgi.setSize(10, 15)
+    Nx = 20
+    Ny = 1
+    corgi.setSize(Nx, Ny)
     corgi.setGridLims(xmin, xmax, ymin, ymax)
 
     ################################################## 
@@ -188,7 +206,7 @@ if __name__ == "__main__":
     #init node
     node = corgi.Node()
     node.initMpi()
-    loadMpiStrides(node)
+    loadMpiXStrides(node)
     loadCells(node)
 
     # Path to be created 
