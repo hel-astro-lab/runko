@@ -1,8 +1,3 @@
-#include <fmt/format.h>
-#include <fmt/format.cc>
-#include <fmt/string.h>
-#include <fmt/ostream.h>
-
 #include <vector>
 #include <cmath>
 #include <unordered_map>
@@ -10,6 +5,7 @@
 
 #include "bundles.h"
 #include "velomesh.h"
+#include "definitions.h"
 
 using namespace vmesh;
 using namespace sheets;

@@ -25,7 +25,7 @@ class VlasovVelocitySolver {
 
   public:
     /// Bundle interpolator pointer
-    BundleInterpolator *intp;
+    bundles::BundleInterpolator *intp;
 
     /// Velocity mesh to solve
     vmesh::VeloMesh vmesh;
@@ -34,7 +34,7 @@ class VlasovVelocitySolver {
     void setMesh(vmesh::VeloMesh _vmesh) { vmesh = _vmesh; };
 
     /// Set internal interpolator
-    void setInterpolator( BundleInterpolator &_intp ) { intp = &_intp; };
+    void setInterpolator( bundles::BundleInterpolator &_intp ) { intp = &_intp; };
 
     /// actual solver implementation
     virtual void solve() = 0;

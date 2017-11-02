@@ -11,10 +11,6 @@
 #include "sheets.h"
 
 
-using namespace sheets;
-using namespace bundles;
-
-
 
 namespace vmesh {
 
@@ -73,12 +69,12 @@ namespace vmesh {
 
       std::vector<uint64_t> allBlocks( bool sorted = false);
 
-      Bundle getBundle(size_t, size_t, size_t);
+      bundles::Bundle getBundle(size_t, size_t, size_t);
 
-      void addBundle(size_t, size_t, size_t, Bundle);
+      void addBundle(size_t, size_t, size_t, bundles::Bundle);
 
-      Sheet getSheet(size_t, size_t);
-      void addSheet(size_t, size_t, Sheet);
+      sheets::Sheet getSheet(size_t, size_t);
+      void addSheet(size_t, size_t, sheets::Sheet);
 
       bool clip( );
 

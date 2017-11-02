@@ -66,6 +66,10 @@ velomesh.o: ${DEPS_COMMON} velomesh.h velomesh.c++
 solvers/SplittedLagrangian.o: ${DEPS_COMMON} solvers.h solvers/SplittedLagrangian.c++
 	${CMP} ${CXXFLAGS} -c solvers/SplittedLagrangian.c++ -o solvers/SplittedLagrangian.o
 
+dataContainer.o: ${DEPS_COMMON} dataContainer.h dataContainer.c++
+	${CMP} ${CXXFLAGS} -c dataContainer.c++
+
+
 #cell.o: ${DEPS_COMMON} cell.h cell.c++
 #	${CMP} ${CXXFLAGS} -c cell.c++
 
@@ -95,8 +99,8 @@ pyplasmatools: sheets.o bundles.o velomesh.o python/pyplasmatools.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o sheets.o bundles.o velomesh.o
 
 
-pyplasma: grid.h cell.h solvers/SplittedLagrangian.o python/pyplasma.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/SplittedLagrangian.o
+pyplasma: grid.h cell.h dataContainer.o velomesh.o solvers/SplittedLagrangian.o python/pyplasma.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/SplittedLagrangian.o dataContainer.o velomesh.o
 
 
 

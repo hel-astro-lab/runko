@@ -45,7 +45,7 @@ class SplittedLagrangian : public VlasovVelocitySolver {
 
         // fmt::print("Solving for dim {} with {} {}\n", dim, Nb1, Nb2);
 
-        Bundle delta; 
+        bundles::Bundle delta; 
         delta.resize(vmesh.Nblocks[dim]); 
         vblock_t block;
 
@@ -101,11 +101,11 @@ class SplittedLagrangian : public VlasovVelocitySolver {
             intp->setDelta( delta );
 
             // get bundle at the location
-            Bundle vbundle = vmesh.getBundle(dim, i1, i2);
+            bundles::Bundle vbundle = vmesh.getBundle(dim, i1, i2);
 
             // interpolate numerical flux
             intp->setBundle(vbundle);
-            Bundle U0 = intp->interpolate();
+            bundles::Bundle U0 = intp->interpolate();
 
             // apply flux to the mesh
             vmesh.addBundle(dim, i1, i2, U0);

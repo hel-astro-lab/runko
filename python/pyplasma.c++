@@ -32,6 +32,8 @@ PYBIND11_MODULE(pyplasma, m) {
   py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
   py::class_<vlasov::VCell>(m, "VCell", corgiCell)
     .def(py::init<size_t, size_t, int >())
+    .def("addData",  &vlasov::VCell::addData)
+    .def("getData",  &vlasov::VCell::getData)
     .def("bark",     &vlasov::VCell::bark);
 
 
@@ -39,6 +41,7 @@ PYBIND11_MODULE(pyplasma, m) {
   py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
   py::class_<vlasov::Grid>(m, "Grid", corgiNode)
     .def(py::init<>())
+    .def("cycle",    &vlasov::Grid::cycle)
     .def("howl",     &vlasov::Grid::howl);
 
 
