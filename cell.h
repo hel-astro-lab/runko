@@ -1,6 +1,8 @@
 #pragma once
 
-#include "corgi/corgi.h"
+#include <string>
+
+#include "corgi/cell.h"
 #include "velomesh.h"
 #include "dataContainer.h"
 #include "dataContainer.c++"
@@ -13,13 +15,23 @@ namespace vlasov {
  *
  * Cell infrastructure methods are inherited from corgi::Cell
  */
-class VCell : public corgi::Cell {
+class VlasovCell : public corgi::Cell {
   public:
-    VCell(size_t i, size_t j, int o) : corgi::Cell(i, j, o) { }
+
+    /// constructor
+    VlasovCell(size_t i, size_t j, 
+               int o, 
+               size_t nx, size_t ny
+               ) : corgi::Cell(i, j, o, nx, ny) { }
+
+
+    /// destructor
+    ~VlasovCell() { };
+
 
     // Purely for testing class expansion
     // void bark();
-    void bark() { fmt::print("Woof!\n"); };
+    std::string bark() { return std::string("Wuff!"); };
 
     /// Simulation data container
     datarotators::DataContainer<vmesh::VeloMesh> data;

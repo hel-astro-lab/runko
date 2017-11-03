@@ -59,15 +59,17 @@ def loadMpiXStrides(n):
                 n.setMpiGrid(i, j, val)
     n.bcastMpiGrid()
 
+
 #load cells into each node
 def loadCells(n):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
-            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i]))
-            if n.mpiGrid(i,j) == n.rank:
+            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
+
+            if n.getMpiGrid(i,j) == n.rank:
                 #c = corgi.Cell(i, j, n.rank)
-                c = plasma.VCell(i, j, n.rank)
-                n.addLocalCell(c) #TODO load data to cell
+                c = plasma.VlasovCell(i, j, n.rank, n.getNx(), n.getNy())
+                n.addCell(c) #TODO load data to cell
 
 
 
@@ -106,7 +108,6 @@ def imshow(ax, grid, xmin, xmax, ymin, ymax):
 # Visualize current cell ownership on node
 def plot_node(ax, n, lap):
     tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
-
     
     #for i in range(n.getNx()):
     #    for j in range(n.getNy()):
@@ -115,7 +116,7 @@ def plot_node(ax, n, lap):
     #            tmp_grid[i,j] = 0.5
 
 
-    for cid in n.getCells():
+    for cid in n.getCellIds():
         c = n.getCell( cid )
         (i, j) = c.index()
         #check dublicates
@@ -124,20 +125,20 @@ def plot_node(ax, n, lap):
             sys.exit()
         tmp_grid[i,j] = c.owner
 
-
-    for cid in n.getVirtuals():
-        c = n.getCell( cid )
-        (i,j) = c.index()
-        if tmp_grid[i,j] != -1.0:
-            print("{}: ERROR in virtual cells at ({},{})".format(n.rank, i,j))
-            sys.exit()
-        tmp_grid[i,j] = c.owner
+    #XXX add back
+    #for cid in n.getVirtuals():
+    #    c = n.getCell( cid )
+    #    (i,j) = c.index()
+    #    if tmp_grid[i,j] != -1.0:
+    #        print("{}: ERROR in virtual cells at ({},{})".format(n.rank, i,j))
+    #        sys.exit()
+    #    tmp_grid[i,j] = c.owner
 
     imshow(ax, tmp_grid, n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax() )
 
 
     # add text label about number of neighbors
-    for cid in n.getCells():
+    for cid in n.getCellIds():
         c = n.getCell( cid )
         (i, j) = c.index()
         dx = n.getXmax() - n.getXmin()
@@ -153,7 +154,6 @@ def plot_node(ax, n, lap):
         #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
-
     #for cid in n.getVirtuals():
     #    c = n.getCell( cid )
     #    (i,j) = c.index()
@@ -162,7 +162,8 @@ def plot_node(ax, n, lap):
     #    label = "Vir"
     #    ax.text(jy, ix, label, ha='center',va='center')
 
-    ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCells() )))
+    #XXX add back
+    #ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCellIds() )))
 
     #save
     slap = str(lap).rjust(4, '0')
@@ -185,8 +186,6 @@ if __name__ == "__main__":
 
     Nx = 20
     Ny = 1
-    corgi.setSize(Nx, Ny)
-    corgi.setGridLims(xmin, xmax, ymin, ymax)
 
     ################################################## 
     # set up plotting and figure
@@ -206,10 +205,12 @@ if __name__ == "__main__":
 
     ################################################## 
     #init node
-    #node = corgi.Node()
-    node = plasma.Grid()
-    node.initMpi()
-    loadMpiXStrides(node)
+    node = plasma.Grid(Nx, Ny)
+    node.setGridLims(xmin, xmax, ymin, ymax)
+
+    #node.initMpi()
+    #loadMpiXStrides(node)
+
     loadCells(node)
 
     # Path to be created 
@@ -226,26 +227,26 @@ if __name__ == "__main__":
 
     ################################################## 
     # test step
-    node.analyzeBoundaryCells()
-    print("{}: send queue        : {}".format(node.rank, node.send_queue))
-    print("{}: send queue address: {}".format(node.rank, node.send_queue_address))
+    #node.analyzeBoundaryCells()
+    #print("{}: send queue        : {}".format(node.rank, node.send_queue))
+    #print("{}: send queue address: {}".format(node.rank, node.send_queue_address))
 
-    node.communicateSendCells()
-    node.communicateRecvCells()
-    plot_node(axs[0], node, 1)
-
-
-
-    node.howl()
+    #node.communicateSendCells()
+    #node.communicateRecvCells()
+    #plot_node(axs[0], node, 1)
 
 
+    ################################################## 
+    print(" Node howling: {}".format(node.howl()))
+
+    c = node.getCell(1) 
+    print(" Cell barking: {}".format(c.bark()))
+
+    node.cycle()
 
 
 
 
-
-
-
-    node.finalizeMpi()
+    #node.finalizeMpi()
 
 

@@ -1,7 +1,10 @@
 #pragma once
 
-#include "corgi/corgi.h"
+#include <string>
+#include <memory>
+
 #include "cell.h"
+#include "corgi/corgi.h"
 #include "dataContainer.h"
 
 
@@ -13,27 +16,25 @@ namespace vlasov {
  */
 class Grid : public corgi::Node {
   public:
-    std::unordered_map< uint64_t, std::shared_ptr<vlasov::VCell> > cells;
 
-    Grid() : corgi::Node() { }
+    typedef std::shared_ptr<VlasovCell> CellPtr;
+
+
+    // copy default constructor
+    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
   
-    void howl() { fmt::print("Auuuuuu!\n"); };
+    // default destructor
+    ~Grid() { };
 
+    /// simple method class extension
+    std::string howl() { return std::string("Auuu!"); };
 
+    /// Cycle data containers of each cell forward
     void cycle() {
-
-      // std::unordered_map<uint64_t, std::shared_ptr<corgi::Cell>>::iterator it = cells.begin();
-      // while (it != cells.end()) {
-      //   vlasov::VCell c = it->second;
-      //     
-      //   c->data.cycle();
-      //   it++;
-      // }
-
-      for (auto it: cells) {
-        it.second->data.cycle();
+      for (auto& it: cells) {
+        CellPtr cellptr = std::dynamic_pointer_cast<VlasovCell>( it.second );
+        cellptr->data.cycle();
       }
-
     }
 
 

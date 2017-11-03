@@ -30,17 +30,20 @@ PYBIND11_MODULE(pyplasma, m) {
 
   // Loading cell bindings from corgi library
   py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
-  py::class_<vlasov::VCell>(m, "VCell", corgiCell)
-    .def(py::init<size_t, size_t, int >())
-    .def("addData",  &vlasov::VCell::addData)
-    .def("getData",  &vlasov::VCell::getData)
-    .def("bark",     &vlasov::VCell::bark);
+  py::class_<vlasov::VlasovCell, 
+             corgi::Cell, 
+             std::shared_ptr<vlasov::VlasovCell>
+             >(m, "VlasovCell")
+    .def(py::init<size_t, size_t, int, size_t, size_t>())
+    .def("addData",  &vlasov::VlasovCell::addData)
+    .def("getData",  &vlasov::VlasovCell::getData)
+    .def("bark",     &vlasov::VlasovCell::bark);
 
 
   // Loading node bindings from corgi library
   py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
   py::class_<vlasov::Grid>(m, "Grid", corgiNode)
-    .def(py::init<>())
+    .def(py::init<size_t, size_t>())
     .def("cycle",    &vlasov::Grid::cycle)
     .def("howl",     &vlasov::Grid::howl);
 

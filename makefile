@@ -89,7 +89,7 @@ python/pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 #reference to pycorgi's own make; then copy the compiled library because python does not support
 #non-local referencing of modules
 pycorgi:
-	+${MAKE} -C corgi/pycorgi
+	+${MAKE} -C corgi
 	cp corgi/pycorgi/corgi.so python/
 
 
