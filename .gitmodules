@@ -1,3 +1,6 @@
 [submodule "corgi"]
 	path = corgi
 	url = https://github.com/natj/corgi.git
+[submodule "tools/inih"]
+	path = tools/inih
+	url = https://github.com/benhoyt/inih.git
