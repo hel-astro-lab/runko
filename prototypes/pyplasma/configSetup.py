@@ -1,9 +1,8 @@
-#from ConfigParser import SafeConfigParser
-import ConfigParser
+from ConfigParser import SafeConfigParser
 import ast
 
 
-section_names = 'grid', 'vmesh'
+section_names = 'io', 'grid', 'vmesh'
 
 # Class for parsing and holding all configuration files
 #
@@ -13,8 +12,7 @@ section_names = 'grid', 'vmesh'
 class Configuration(object):
 
     def __init__(self, *file_names):
-        #parser = SafeConfigParser()
-        parser = ConfigParser.ConfigParser()
+        parser = SafeConfigParser()
         parser.optionxform = str  # make option names case sensitive
 
         found = parser.read(file_names)

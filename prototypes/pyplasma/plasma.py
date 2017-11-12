@@ -6,73 +6,21 @@ from matplotlib import cm
 import palettable as pal
 cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
 
-
 import sys, os
 sys.path.append('../../python')        #plasma, plasmatools
 sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
-from configSetup import Configuration
-
 
 import corgi
 import plasmatools as ptools
 import pyplasma as plasma
 
 
+from configSetup import Configuration
+import initialize as init
+
+
+
 Nrank = 4
-
-#make random starting order
-def loadMpiRandomly(n):
-    np.random.seed(4)
-    if n.master:
-        for i in range(n.getNx()):
-            for j in range(n.getNy()):
-                val = np.random.randint(n.Nrank)
-                n.setMpiGrid(i, j, val)
-
-
-#load nodes to be in stripe formation (splitted in Y=vertical direction)
-def loadMpiYStrides(n):
-    if n.master: #only master initializes; then sends
-        stride = np.zeros( (n.getNy()), np.int64)
-        dy = np.float(n.getNy()) / np.float(n.Nrank) 
-        for j in range(n.getNy()):
-            val = np.int( j/dy )
-            stride[j] = val
-
-        for i in range(n.getNx()):
-            for j in range(n.getNy()):
-                val = stride[j]
-                n.setMpiGrid(i, j, val)
-    n.bcastMpiGrid()
-
-#load nodes to be in stripe formation (splitted in X=horizontal direction)
-def loadMpiXStrides(n):
-    if n.master: #only master initializes; then sends
-        stride = np.zeros( (n.getNx()), np.int64)
-        dx = np.float(n.getNx()) / np.float(n.Nrank) 
-        for i in range(n.getNx()):
-            val = np.int( i/dx )
-            stride[i] = val
-
-        for j in range(n.getNy()):
-            for i in range(n.getNx()):
-                val = stride[i]
-                n.setMpiGrid(i, j, val)
-    n.bcastMpiGrid()
-
-
-#load cells into each node
-def loadCells(n):
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
-            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
-
-            if n.getMpiGrid(i,j) == n.rank:
-                #c = corgi.Cell(i, j, n.rank)
-                c = plasma.VlasovCell(i, j, n.rank, n.getNx(), n.getNy())
-                n.addCell(c) #TODO load data to cell
-
-
 
 
 ##################################################
@@ -168,7 +116,7 @@ def plot_node(ax, n, lap):
 
     #save
     slap = str(lap).rjust(4, '0')
-    fname = fpath + '/node_{}_{}.png'.format(n.rank, slap)
+    fname = conf.outdir + '/node_{}_{}.png'.format(n.rank, slap)
     plt.savefig(fname)
 
 
@@ -177,18 +125,6 @@ def plot_node(ax, n, lap):
 
 
 if __name__ == "__main__":
-
-    ################################################## 
-    # setup environment
-    conf = Configuration('config.ini') 
-
-    #xmin =  0.0
-    #xmax = 10.0
-    #ymin =  0.0
-    #ymax =  1.0
-
-    #Nx = 20
-    #Ny = 1
 
     ################################################## 
     # set up plotting and figure
@@ -207,20 +143,27 @@ if __name__ == "__main__":
 
 
     ################################################## 
-    #init node
+    #initialize node
+    conf = Configuration('config.ini') 
+
     node = plasma.Grid(conf.Nx, conf.Ny)
     node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
     #node.initMpi()
     #loadMpiXStrides(node)
 
-    loadCells(node)
+    init.loadCells(node)
 
+
+
+
+
+
+    ################################################## 
     # Path to be created 
-    fpath = "out/"
     if node.master:
-        if not os.path.exists(fpath):
-            os.makedirs(fpath)
+        if not os.path.exists( conf.outdir ):
+            os.makedirs(conf.outdir)
 
 
     ################################################## 
