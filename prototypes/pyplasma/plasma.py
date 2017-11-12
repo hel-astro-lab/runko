@@ -10,6 +10,7 @@ cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
 import sys, os
 sys.path.append('../../python')        #plasma, plasmatools
 sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
+from configSetup import Configuration
 
 
 import corgi
@@ -179,13 +180,15 @@ if __name__ == "__main__":
 
     ################################################## 
     # setup environment
-    xmin =  0.0
-    xmax = 10.0
-    ymin =  0.0
-    ymax =  1.0
+    conf = Configuration('config.ini') 
 
-    Nx = 20
-    Ny = 1
+    #xmin =  0.0
+    #xmax = 10.0
+    #ymin =  0.0
+    #ymax =  1.0
+
+    #Nx = 20
+    #Ny = 1
 
     ################################################## 
     # set up plotting and figure
@@ -205,8 +208,8 @@ if __name__ == "__main__":
 
     ################################################## 
     #init node
-    node = plasma.Grid(Nx, Ny)
-    node.setGridLims(xmin, xmax, ymin, ymax)
+    node = plasma.Grid(conf.Nx, conf.Ny)
+    node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
     #node.initMpi()
     #loadMpiXStrides(node)
@@ -242,11 +245,23 @@ if __name__ == "__main__":
     c = node.getCell(1) 
     print(" Cell barking: {}".format(c.bark()))
 
+
+
+    ################################################## 
+    # initialize
+
+
+    #velocity space solver
+    intp = ptools.BundleInterpolator4th()
+    vsol = plasma.SplittedLagrangian()
+    #vsol.setMesh(mesh)
+    vsol.setInterpolator(intp)
+
+    # vsol.solve()
+
     node.cycle()
 
 
 
 
     #node.finalizeMpi()
-
-
