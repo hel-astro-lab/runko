@@ -64,6 +64,22 @@ def loadCells(n):
 
 
 
+# create empty vmesh object according to conf specifications
+def createEmptyVelocityMesh(conf):
+    mesh = ptools.VeloMesh()
+    mesh.Nblocks = [conf.Nvx, conf.Nvy, conf.Nvz]
+
+    pmins = [conf.vxmin, conf.vymin, conf.vzmin]
+    pmaxs = [conf.vxmax, conf.vymax, conf.vzmax]
+    mesh.zFill( pmins, pmaxs )
+
+    return mesh
+
+
+
+
+
+
 
 
 

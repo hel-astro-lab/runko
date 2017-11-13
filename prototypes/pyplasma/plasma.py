@@ -15,8 +15,11 @@ import pyplasma as plasma
 from configSetup import Configuration
 import initialize as init
 
-from visualize import plot_node
+from visualize import plotNode
+from visualize import plotXmesh
+from visualize import saveVisz
 
+import injector
 
 
 
@@ -51,10 +54,6 @@ if __name__ == "__main__":
     init.loadCells(node)
 
 
-
-
-
-
     ################################################## 
     # Path to be created 
     if node.master:
@@ -64,7 +63,7 @@ if __name__ == "__main__":
 
     ################################################## 
     #visualize as a test
-    plot_node(axs[0], node, 0, conf)
+    plotNode(axs[0], node, conf)
 
 
     ################################################## 
@@ -88,6 +87,14 @@ if __name__ == "__main__":
 
     ################################################## 
     # initialize
+
+    injector.inject(node, conf) #injecting plasma
+
+    plotXmesh(axs[1], node, conf)
+
+    saveVisz(0, node, conf)
+
+
 
 
     #velocity space solver

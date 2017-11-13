@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import palettable as pal
-cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
+palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 import numpy as np
 
@@ -13,7 +13,13 @@ Nrank = 4
 # plotting tools
 
 # visualize matrix
-def imshow(ax, grid, xmin, xmax, ymin, ymax):
+def imshow(ax, 
+           grid, xmin, xmax, ymin, ymax,
+           cmap='plasma',
+           vmin = 0.0,
+           vmax = 1.0,
+           clip = -1.0,
+          ):
 
     ax.clear()
     ax.minorticks_on()
@@ -24,7 +30,7 @@ def imshow(ax, grid, xmin, xmax, ymin, ymax):
 
     extent = [ xmin, xmax, ymin, ymax ]
 
-    mgrid = np.ma.masked_where(grid == -1.0, grid)
+    mgrid = np.ma.masked_where(grid == clip, grid)
     
     mgrid = mgrid.T
     ax.imshow(mgrid,
@@ -32,8 +38,8 @@ def imshow(ax, grid, xmin, xmax, ymin, ymax):
               origin='lower',
               interpolation='nearest',
               cmap = cmap,
-              vmin = 0.0,
-              vmax = Nrank-1,
+              vmin = vmin,
+              vmax = vmax,
               aspect='auto',
               #vmax = Nrank,
               #alpha=0.5
@@ -41,7 +47,7 @@ def imshow(ax, grid, xmin, xmax, ymin, ymax):
 
 
 # Visualize current cell ownership on node
-def plot_node(ax, n, lap, conf):
+def plotNode(ax, n, conf):
     tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
     
     #for i in range(n.getNx()):
@@ -69,7 +75,12 @@ def plot_node(ax, n, lap, conf):
     #        sys.exit()
     #    tmp_grid[i,j] = c.owner
 
-    imshow(ax, tmp_grid, n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax() )
+    imshow(ax, tmp_grid, 
+            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+            cmap = palette,
+            vmin = 0.0,
+            vmax = Nrank-1
+            )
 
 
     # add text label about number of neighbors
@@ -100,12 +111,39 @@ def plot_node(ax, n, lap, conf):
     #XXX add back
     #ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCellIds() )))
 
-    #save
+
+
+def saveVisz(lap, n, conf):
+
     slap = str(lap).rjust(4, '0')
     fname = conf.outdir + '/node_{}_{}.png'.format(n.rank, slap)
     plt.savefig(fname)
 
 
+
+
+# visualize vmesh content in x-dir
+def plotXmesh(ax, n, conf):
+    data = -1.0 * np.ones( (conf.Nx, conf.Nvx) )
+
+    for i in range(conf.Nx):
+
+        cid = n.cellId(i,0)
+        c = n.getCell(cid)
+
+        vm = c.getData()
+        vbundle = vm.getBundle(0, 0, 0) #xdir (dir = 0) @ j = 0, z = 0
+
+        data[i, :] = vbundle.getPencil()
+
+
+    imshow(ax, data,
+           n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
+           cmap = 'plasma_r',
+           vmin = 0.0,
+           vmax = 1.0,
+           clip = 0.0,
+           )
 
 
 
