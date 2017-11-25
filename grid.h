@@ -20,7 +20,7 @@ class Grid : public corgi::Node {
     typedef std::shared_ptr<VlasovCell> CellPtr;
 
 
-    // copy default constructor
+    // copy constructor
     Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
   
     // default destructor

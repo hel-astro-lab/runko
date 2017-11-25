@@ -4,6 +4,7 @@
 #include "sheets.h"
 #include "velomesh.h"
 #include "cell.h"
+#include "grid.h"
 
 
 namespace vlasov {
@@ -51,45 +52,43 @@ class VlasovVelocitySolver {
 
 /*! \brief General Vlasov location solver
  *
- * Defines the general interface for LOCATION Vlasov solvers.
+ * Defines the general interface for SPATIAL Vlasov solvers.
  * Actual solver should be implemented in solve()
  *
  * Notes: Gets pointed to a focus cell
  *        Fetches neighbors using cells own interface
  *        Solves the advection equation locally
  */
+class VlasovSpatialSolver {
 
-// class VlasovLocationSolver {
-// 
-//   public:
-// 
-//     // reference to the node
-//     vmesh::Node& node;
-// 
-//     /// Construct solver always with information of the node
-//     VlasovLocationSolver(vmesh::Node& node) : node(node) {}
-// 
-//     /// Target cell 
-//     size_t targeti, targetj;
-// 
-// 
-//     /// Set node address so we can probe neighbors for halo data
-//     /*
-//        void setNode(vmesh::Node n) {
-//        node = n;
-//        };
-//        */
-// 
-//     /// set internal cell that is solved
-//     void setTargetCell(size_t i, size_t j) {
-//       targeti = i;
-//       targetj = j;
-//     };
-// 
-//     /// actual solver implementation
-//     virtual void solve() = 0;
-// 
-// };
+  public:
+
+    // reference to the node
+    vlasov::Grid& grid;
+
+    /// Construct solver always with information of the node
+    VlasovSpatialSolver(vlasov::Grid& grid) : grid(grid) {}
+
+    /// Target cell 
+    size_t targeti, targetj;
+
+    /// Set node address so we can probe neighbors for halo data
+    /*
+       void setNode(vmesh::Node n) {
+       node = n;
+       };
+       */
+
+    /// set internal cell that is solved
+    void setTargetCell(size_t i, size_t j) {
+      targeti = i;
+      targetj = j;
+    };
+
+    /// actual solver implementation
+    virtual void solve() = 0;
+
+};
 
 
 } // end of namespace vlasov

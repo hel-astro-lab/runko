@@ -5,9 +5,9 @@ namespace py = pybind11;
 // #include "../definitions.h"
 #include "../solvers.h"
 #include "../solvers/SplittedLagrangian.c++"
+#include "../solvers/spatialLagrangianSolver.c++"
 #include "../cell.h"
 #include "../grid.h"
-
 
 
 /// trampoline class for VlasovVelocitySolver
@@ -20,6 +20,15 @@ class PyVlasovVelocitySolver : public vlasov::VlasovVelocitySolver {
     }
 };
 
+
+/// trampoline class for VlasovSpatialSolver
+class PyVlasovSpatialSolver : public vlasov::VlasovSpatialSolver {
+  public:
+    using vlasov::VlasovSpatialSolver::setTargetCell;
+    void solve() override {
+      PYBIND11_OVERLOAD_PURE(void, vlasov::VlasovSpatialSolver, solve, );
+    }
+};
 
 
 
@@ -50,25 +59,28 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   // trampoline base class followed by the actual solver implementations
-  py::class_<vlasov::VlasovVelocitySolver, PyVlasovVelocitySolver> vsol(m, "VlasovVelocitySolver" );
-  vsol
+  // Momentum dimension solvers
+  py::class_<vlasov::VlasovVelocitySolver, PyVlasovVelocitySolver> vvsol(m, "VlasovVelocitySolver" );
+  vvsol
     .def(py::init<>())
     .def("setCell",         &vlasov::VlasovVelocitySolver::setCell)
     .def("setInterpolator", &vlasov::VlasovVelocitySolver::setInterpolator)
     .def("solve",           &vlasov::VlasovVelocitySolver::solve);
 
-  py::class_<vlasov::SplittedLagrangian>(m, "SplittedLagrangian", vsol)
+  py::class_<vlasov::SplittedLagrangian>(m, "SplittedLagrangian", vvsol)
     .def(py::init<>());
 
 
+  // trampoline base class followed by the actual solver implementations
+  // Spatial dimension solvers
+  py::class_<vlasov::VlasovSpatialSolver, PyVlasovSpatialSolver> vssol(m, "VlasovSpatialSolver" );
+  vssol
+    .def(py::init<>())
+    .def("setTargetCell" ,  &vlasov::VlasovSpatialSolver::setTargetCell)
+    .def("solve",           &vlasov::VlasovSpatialSolver::solve);
 
-  // py::class_<vmesh::sSolver>(m, "sSolver" )
-  //   .def(py::init<vmesh::Node&>())
-  //   // .def_readwrite("node",   &vmesh::sSolver::node)
-  //   // .def("setNode" ,         &vmesh::sSolver::setNode)
-  //   .def("setTargetCell" ,   &vmesh::sSolver::setTargetCell)
-  //   .def("solve",            &vmesh::sSolver::solve);
-  // // .def("update",           &vmesh::sSolver::update);
+  py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vvsol)
+    .def(py::init<>());
 
 
 
