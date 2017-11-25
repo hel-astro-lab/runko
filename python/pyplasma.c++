@@ -13,13 +13,12 @@ namespace py = pybind11;
 /// trampoline class for VlasovVelocitySolver
 class PyVlasovVelocitySolver : public vlasov::VlasovVelocitySolver {
   public:
-    using vlasov::VlasovVelocitySolver::setMesh;
+    using vlasov::VlasovVelocitySolver::setCell;
     using vlasov::VlasovVelocitySolver::setInterpolator;
     void solve() override {
       PYBIND11_OVERLOAD_PURE(void, vlasov::VlasovVelocitySolver, solve, );
     }
 };
-
 
 
 
@@ -37,6 +36,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<size_t, size_t, int, size_t, size_t>())
     .def("addData",  &vlasov::VlasovCell::addData)
     .def("getData",  &vlasov::VlasovCell::getData)
+    // .def("getDataPtr",  &vlasov::VlasovCell::getDataPtr) // TODO needs to be shared_ptr 
     .def("bark",     &vlasov::VlasovCell::bark);
 
 
@@ -53,7 +53,7 @@ PYBIND11_MODULE(pyplasma, m) {
   py::class_<vlasov::VlasovVelocitySolver, PyVlasovVelocitySolver> vsol(m, "VlasovVelocitySolver" );
   vsol
     .def(py::init<>())
-    .def("setMesh",         &vlasov::VlasovVelocitySolver::setMesh)
+    .def("setCell",         &vlasov::VlasovVelocitySolver::setCell)
     .def("setInterpolator", &vlasov::VlasovVelocitySolver::setInterpolator)
     .def("solve",           &vlasov::VlasovVelocitySolver::solve);
 

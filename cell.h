@@ -42,15 +42,21 @@ class VlasovCell : public corgi::Cell {
     }
 
     // XXX defined only for python API
-    vmesh::VeloMesh getData() {
+    // vmesh::VeloMesh getData() {
+    //   return *data.get();
+    // };
+
+    vmesh::VeloMesh& getData() {
       return *data.get();
     };
 
+    // get pointer to the data
+    // TODO: should be shared_ptr explicitly to make it memory save
+    vmesh::VeloMesh* getDataPtr() {
+      return data.get();
+    };
+
 };
-
-
-
-
 
 
 

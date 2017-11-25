@@ -3,7 +3,7 @@
 #include "bundles.h"
 #include "sheets.h"
 #include "velomesh.h"
-
+#include "cell.h"
 
 
 namespace vlasov {
@@ -28,10 +28,14 @@ class VlasovVelocitySolver {
     bundles::BundleInterpolator *intp;
 
     /// Velocity mesh to solve
-    vmesh::VeloMesh vmesh;
+    vlasov::VlasovCell* cell;
+
+    // construct solver with a strict reference to the cell
+    // VlasovVelocitySolver(vlasov::VlasovCell& cell) : cell(cell) {}
 
     /// Set internal mesh
-    void setMesh(vmesh::VeloMesh _vmesh) { vmesh = _vmesh; };
+    // void setMesh(vmesh::VeloMesh _vmesh) { vmesh = &_vmesh; };
+    void setCell(vlasov::VlasovCell& c) { cell = &c; };
 
     /// Set internal interpolator
     void setInterpolator( bundles::BundleInterpolator &_intp ) { intp = &_intp; };

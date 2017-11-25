@@ -32,7 +32,7 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(1, 2)
+    gs = plt.GridSpec(2, 1)
     gs.update(hspace = 0.5)
     
     axs = []
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     ################################################## 
     print(" Node howling: {}".format(node.howl()))
 
-    c = node.getCell(1) 
+    c = node.getCellPtr(1) 
     print(" Cell barking: {}".format(c.bark()))
 
 
@@ -91,21 +91,47 @@ if __name__ == "__main__":
     injector.inject(node, conf) #injecting plasma
 
     plotXmesh(axs[1], node, conf)
-
     saveVisz(0, node, conf)
 
 
 
 
-    #velocity space solver
-    intp = ptools.BundleInterpolator4th()
+    #setup velocity space solver
     vsol = plasma.SplittedLagrangian()
-    #vsol.setMesh(mesh)
+
+    #intp = vmesh.BundleInterpolator2nd()
+    intp = ptools.BundleInterpolator4th()
     vsol.setInterpolator(intp)
 
-    # vsol.solve()
+    #velocity step
+    for j in range(node.getNy()):
+        for i in range(node.getNx()):
+            cid = node.cellId(i,j)
+            cell = node.getCellPtr(cid)
+            vsol.setCell(cell)
 
-    node.cycle()
+            for lap in range(10):
+                vsol.solve()
+
+
+    plotXmesh(axs[1], node, conf)
+    saveVisz(1, node, conf)
+
+
+    #setup spatial space solver
+    #ssol = plasma.sSolver(n)
+
+    ##spatial step 
+    #for j in range(node.getNy()):
+    #    for i in range(node.getNx()):
+    #        ssol.setTargetCell(i,j)
+    #        ssol.solve()
+    #node.cycle()
+
+
+
+    plotXmesh(axs[1], node, conf)
+    saveVisz(2, node, conf)
 
 
 

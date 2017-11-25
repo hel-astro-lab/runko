@@ -58,7 +58,7 @@ def plotNode(ax, n, conf):
 
 
     for cid in n.getCellIds():
-        c = n.getCell( cid )
+        c = n.getCellPtr( cid )
         (i, j) = c.index()
         #check dublicates
         if tmp_grid[i,j] != -1.0:
@@ -85,7 +85,7 @@ def plotNode(ax, n, conf):
 
     # add text label about number of neighbors
     for cid in n.getCellIds():
-        c = n.getCell( cid )
+        c = n.getCellPtr( cid )
         (i, j) = c.index()
         dx = n.getXmax() - n.getXmin()
         dy = n.getYmax() - n.getYmin()
@@ -129,7 +129,7 @@ def plotXmesh(ax, n, conf):
     for i in range(conf.Nx):
 
         cid = n.cellId(i,0)
-        c = n.getCell(cid)
+        c = n.getCellPtr(cid)
 
         vm = c.getData()
         vbundle = vm.getBundle(0, 0, 0) #xdir (dir = 0) @ j = 0, z = 0

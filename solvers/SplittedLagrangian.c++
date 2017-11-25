@@ -7,7 +7,7 @@
 
 namespace vlasov {
 
-/* \brief Splitted Lagrangian Velocity solver for Vlasov fluids.
+/* \brief Splitted Lagrangian Velocity solver for Vlasov fluids
  *
  * Full solution is obtained by splitting each velocity dimension
  * vx/vy/vz into separate solutions that are then cycled over to
@@ -27,26 +27,29 @@ class SplittedLagrangian : public VlasovVelocitySolver {
   public:
     void solve() {
 
+      // operate on a pointer to the velomesh
+      vmesh::VeloMesh* vmesh = cell->getDataPtr();
+
       // setup force
       for (size_t dim=0; dim<3; dim++) {
 
         size_t Nb1, Nb2;
         switch(dim) {
-          case 0: Nb1 = vmesh.Nblocks[1];
-                  Nb2 = vmesh.Nblocks[2];
+          case 0: Nb1 = vmesh->Nblocks[1];
+                  Nb2 = vmesh->Nblocks[2];
                   break;
-          case 1: Nb1 = vmesh.Nblocks[0];
-                  Nb2 = vmesh.Nblocks[2];
+          case 1: Nb1 = vmesh->Nblocks[0];
+                  Nb2 = vmesh->Nblocks[2];
                   break;
-          case 2: Nb1 = vmesh.Nblocks[0];
-                  Nb2 = vmesh.Nblocks[1];
+          case 2: Nb1 = vmesh->Nblocks[0];
+                  Nb2 = vmesh->Nblocks[1];
                   break;
         }
 
         // fmt::print("Solving for dim {} with {} {}\n", dim, Nb1, Nb2);
 
         bundles::Bundle delta; 
-        delta.resize(vmesh.Nblocks[dim]); 
+        delta.resize(vmesh->Nblocks[dim]); 
         vblock_t block;
 
         /*
@@ -74,25 +77,28 @@ class SplittedLagrangian : public VlasovVelocitySolver {
 
             // compute cross product against B field
             switch(dim) {
-              case 0: vel = vmesh.getCenterIndx( {{0, i1, i2}} );
+              case 0: vel = vmesh->getCenterIndx( {{0, i1, i2}} );
                       vy = vel[1];
                       vz = vel[2];
                       force = (vy*Bz - vz*By);
                       break;
-              case 1: vel = vmesh.getCenterIndx( {{i1, 0, i2}} );
+              case 1: vel = vmesh->getCenterIndx( {{i1, 0, i2}} );
                       vx = vel[0];
                       vz = vel[2];
                       force = (vz*Bx - vx*Bz);
                       break;
-              case 2: vel = vmesh.getCenterIndx( {{i1, i2, 0}} );
+              case 2: vel = vmesh->getCenterIndx( {{i1, i2, 0}} );
                       vx = vel[0];
                       vy = vel[1];
                       force = (vx*By - vy*Bx);
                       break;
             }
 
+            // add some extra force from E field
+            force += 0.01;
+
             // create force bundle to act on the distribution
-            for (size_t q=0; q<vmesh.Nblocks[dim]; q++) {
+            for (size_t q=0; q<vmesh->Nblocks[dim]; q++) {
               block[0] = force;
               delta.loadBlock(q, block);
             }
@@ -101,14 +107,14 @@ class SplittedLagrangian : public VlasovVelocitySolver {
             intp->setDelta( delta );
 
             // get bundle at the location
-            bundles::Bundle vbundle = vmesh.getBundle(dim, i1, i2);
+            bundles::Bundle vbundle = vmesh->getBundle(dim, i1, i2);
 
             // interpolate numerical flux
             intp->setBundle(vbundle);
             bundles::Bundle U0 = intp->interpolate();
 
             // apply flux to the mesh
-            vmesh.addBundle(dim, i1, i2, U0);
+            vmesh->addBundle(dim, i1, i2, U0);
           }
         }
 

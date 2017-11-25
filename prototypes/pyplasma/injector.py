@@ -18,10 +18,10 @@ def thermalPlasma(vx, vy, vz,
                   ):
 
     #Brownian noise
-    sigma = 0.01
-    z1 = np.random.standard_normal()
-    z2 = np.random.standard_normal()
-    z3 = np.random.standard_normal()
+    sigma = 0.1
+    z1 = np.random.standard_normal() 
+    z2 = np.random.standard_normal() 
+    z3 = np.random.standard_normal() 
 
     f  = 1.0
     f *= np.exp(-(vx - Gx)**2 / Tx + sigma*z1)
@@ -64,7 +64,7 @@ def inject(n, conf):
                 fillMesh(mesh)
 
                 cid = n.cellId(i,j)
-                c = n.getCell(cid) #get cell ptr
+                c = n.getCellPtr(cid) #get cell ptr
 
                 mesh.clip()
 
