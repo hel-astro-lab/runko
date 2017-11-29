@@ -22,7 +22,7 @@ namespace vlasov {
  *       to get 2nd order accuracy.
  *
  */
-class SplittedLagrangian : public VlasovVelocitySolver {
+class MomentumLagrangianSolver : public VlasovVelocitySolver {
 
   public:
     void solve() {

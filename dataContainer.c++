@@ -23,6 +23,8 @@ template <class T>
 T* datarotators::DataContainer<T>::getNew() {
   if (currentStep == 0) return (T*) &(container[1]);
   if (currentStep == 1) return (T*) &(container[0]);
+
+  return NULL;
 }
 
 

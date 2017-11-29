@@ -4,7 +4,7 @@ namespace py = pybind11;
 
 // #include "../definitions.h"
 #include "../solvers.h"
-#include "../solvers/SplittedLagrangian.c++"
+#include "../solvers/momentumLagrangianSolver.c++"
 #include "../solvers/spatialLagrangianSolver.c++"
 #include "../cell.h"
 #include "../grid.h"
@@ -67,12 +67,13 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("setInterpolator", &vlasov::VlasovVelocitySolver::setInterpolator)
     .def("solve",           &vlasov::VlasovVelocitySolver::solve);
 
-  py::class_<vlasov::SplittedLagrangian>(m, "SplittedLagrangian", vvsol)
+  py::class_<vlasov::MomentumLagrangianSolver>(m, "MomentumLagrangianSolver", vvsol)
     .def(py::init<>());
 
 
   // trampoline base class followed by the actual solver implementations
   // Spatial dimension solvers
+  /*
   py::class_<vlasov::VlasovSpatialSolver, PyVlasovSpatialSolver> vssol(m, "VlasovSpatialSolver" );
   vssol
     .def(py::init<>())
@@ -82,6 +83,7 @@ PYBIND11_MODULE(pyplasma, m) {
   py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vvsol)
     .def(py::init<>());
 
+   */
 
 
 }
