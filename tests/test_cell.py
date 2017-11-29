@@ -20,9 +20,11 @@ class Initialization(unittest.TestCase):
     i = 10
     j = 11
     o = 1
+    Nx = 10
+    Ny = 5
 
     def setUp(self):
-        self.cell = plasma.VCell(self.i, self.j, self.o)
+        self.cell = plasma.VlasovCell(self.i, self.j, self.o, self.Nx, self.Ny)
 
     # test that we can inherit from the corgi::Cell base class
     def test_inheritance(self):
