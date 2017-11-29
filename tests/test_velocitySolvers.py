@@ -16,10 +16,10 @@ class Params:
 
 
 
-class Initialization(unittest.TestCase):
+class MomentumInitialization(unittest.TestCase):
 
     def test_initialize(self):
-        vsols1 = plasma.SplittedLagrangian() 
+        vsols1 = plasma.MomentumLagrangianSolver() 
 
     # here we just test that solver is able to take a step
     # NOTE: Correctness of the result is not tested here
@@ -38,11 +38,13 @@ class Initialization(unittest.TestCase):
 
         intp = ptools.BundleInterpolator4th()
 
-        vsols = [ plasma.SplittedLagrangian() ]
+        vsols = [ plasma.MomentumLagrangianSolver() ]
         for vsol in vsols:
-            vsol.setMesh(mesh)
             vsol.setInterpolator(intp)
-            vsol.solve()
+
+
+            # TODO how to split cell tests and solver tests?
+            #vsol.solve()
 
 
 
