@@ -56,6 +56,12 @@ class VlasovCell : public corgi::Cell {
       return data.get();
     };
 
+
+    /// Clip all the meshes inside cell
+    void clip() {
+      data.get()->clip();
+    };
+
 };
 
 

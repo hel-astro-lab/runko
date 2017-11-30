@@ -102,38 +102,46 @@ if __name__ == "__main__":
     intp = ptools.BundleInterpolator4th()
     vsol.setInterpolator(intp)
 
-    #velocity step
-    for j in range(node.getNy()):
-        for i in range(node.getNx()):
-            cid = node.cellId(i,j)
-            cell = node.getCellPtr(cid)
-            vsol.setCell(cell)
-
-            for lap in range(10):
-                vsol.solve()
-
-
-    plotXmesh(axs[1], node, conf)
-    saveVisz(1, node, conf)
-
 
     #setup spatial space solver
     ssol = plasma.SpatialLagrangianSolver2nd()
     ssol.setGrid(node)
 
-    ##spatial step 
-    for lap in range(10):
+
+
+
+    #simulation loop
+    for lap in range(1,100):
+
+        #momentum step
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                vsol.setCell(cell)
+                vsol.solve()
+
+        #spatial step
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 ssol.setTargetCell(i,j)
                 ssol.solve()
-            node.cycle()
 
 
-    plotXmesh(axs[1], node, conf)
-    saveVisz(2, node, conf)
+        #cycle to the new fresh snapshot
+        node.cycle()
+
+        #clip every cell
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.clip()
 
 
+        #I/O
+        if (lap % 10 == 0):
+            print("--- lap {}".format(lap))
+            plotXmesh(axs[1], node, conf)
+            saveVisz(lap, node, conf)
 
 
     #node.finalizeMpi()

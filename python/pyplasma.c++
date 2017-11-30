@@ -47,6 +47,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("addData",  &vlasov::VlasovCell::addData)
     .def("getData",  &vlasov::VlasovCell::getData)
     // .def("getDataPtr",  &vlasov::VlasovCell::getDataPtr) // TODO needs to be shared_ptr 
+    .def("clip",     &vlasov::VlasovCell::clip)
     .def("bark",     &vlasov::VlasovCell::bark);
 
 
