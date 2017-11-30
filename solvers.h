@@ -58,26 +58,30 @@ class VlasovVelocitySolver {
  * Notes: Gets pointed to a focus cell
  *        Fetches neighbors using cells own interface
  *        Solves the advection equation locally
+ *
+ * TODO check and ensure correct initialization
  */
 class VlasovSpatialSolver {
 
   public:
 
     // reference to the node
-    vlasov::Grid& grid;
+    vlasov::Grid* grid;
 
     /// Construct solver always with information of the node
-    VlasovSpatialSolver(vlasov::Grid& grid) : grid(grid) {}
+    VlasovSpatialSolver(vlasov::Grid& grid) : grid(&grid) {}
+
+    /// default construct 
+    VlasovSpatialSolver() : grid(nullptr) {}
 
     /// Target cell 
-    size_t targeti, targetj;
+    size_t targeti = -1;
+    size_t targetj = -1;
 
-    /// Set node address so we can probe neighbors for halo data
-    /*
-       void setNode(vmesh::Node n) {
-       node = n;
-       };
-       */
+    /// Set grid address so we can probe neighbors for halo data
+    void setGrid(vlasov::Grid& newGrid) {
+      grid = &newGrid;
+    };
 
     /// set internal cell that is solved
     void setTargetCell(size_t i, size_t j) {

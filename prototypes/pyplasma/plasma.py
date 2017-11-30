@@ -95,9 +95,8 @@ if __name__ == "__main__":
 
 
 
-
     #setup velocity space solver
-    vsol = plasma.SplittedLagrangian()
+    vsol = plasma.MomentumLagrangianSolver()
 
     #intp = vmesh.BundleInterpolator2nd()
     intp = ptools.BundleInterpolator4th()
@@ -119,15 +118,16 @@ if __name__ == "__main__":
 
 
     #setup spatial space solver
-    #ssol = plasma.sSolver(n)
+    ssol = plasma.SpatialLagrangianSolver2nd()
+    ssol.setGrid(node)
 
     ##spatial step 
-    #for j in range(node.getNy()):
-    #    for i in range(node.getNx()):
-    #        ssol.setTargetCell(i,j)
-    #        ssol.solve()
-    #node.cycle()
-
+    for lap in range(10):
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                ssol.setTargetCell(i,j)
+                ssol.solve()
+            node.cycle()
 
 
     plotXmesh(axs[1], node, conf)

@@ -24,6 +24,7 @@ class PyVlasovVelocitySolver : public vlasov::VlasovVelocitySolver {
 /// trampoline class for VlasovSpatialSolver
 class PyVlasovSpatialSolver : public vlasov::VlasovSpatialSolver {
   public:
+    using vlasov::VlasovSpatialSolver::setGrid;
     using vlasov::VlasovSpatialSolver::setTargetCell;
     void solve() override {
       PYBIND11_OVERLOAD_PURE(void, vlasov::VlasovSpatialSolver, solve, );
@@ -73,17 +74,16 @@ PYBIND11_MODULE(pyplasma, m) {
 
   // trampoline base class followed by the actual solver implementations
   // Spatial dimension solvers
-  /*
   py::class_<vlasov::VlasovSpatialSolver, PyVlasovSpatialSolver> vssol(m, "VlasovSpatialSolver" );
   vssol
     .def(py::init<>())
     .def("setTargetCell" ,  &vlasov::VlasovSpatialSolver::setTargetCell)
+    .def("setGrid",         &vlasov::VlasovSpatialSolver::setGrid)
     .def("solve",           &vlasov::VlasovSpatialSolver::solve);
 
-  py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vvsol)
+  py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vssol)
     .def(py::init<>());
 
-   */
 
 
 }

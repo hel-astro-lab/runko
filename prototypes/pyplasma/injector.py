@@ -39,14 +39,14 @@ def thermalXPlasma(vx, T, G):
 
 
 
-def fillMesh(mesh):
+def fillMesh(mesh, pl):
     for k in range(mesh.Nblocks[2]):
         for j in range(mesh.Nblocks[1]):
             for i in range(mesh.Nblocks[0]):
                 cid = mesh.getBlockID([i,j,k])
                 (vx,vy,vz) = mesh.getCenter( cid )
 
-                fval = thermalXPlasma(vx, 4.0, 5.0)
+                fval = thermalXPlasma(vx, pl["T"], pl["bulkVelo"])
                 mesh[i,j,k] = [fval, fval, fval, fval]
 
 
@@ -61,7 +61,13 @@ def inject(n, conf):
             if True:
                 mesh = createEmptyVelocityMesh(conf)
 
-                fillMesh(mesh)
+                if i == 10:
+                    pl = { "T": 4.0, "bulkVelo" : 5.0, }
+                else:
+                    pl = { "T": 2.0, "bulkVelo" : 2.0, }
+
+
+                fillMesh(mesh, pl)
 
                 cid = n.cellId(i,j)
                 c = n.getCellPtr(cid) #get cell ptr

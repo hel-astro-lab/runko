@@ -46,3 +46,9 @@ radpic
 out/
 */*/out/
 *.mp4
+
+
+docs
+workshop
+refs
+.ycm_extra_conf.py

@@ -25,9 +25,9 @@ namespace vlasov {
         // size_t Nintp = 4;
 
         // get target cell that we operate on
-        uint64_t cid = grid.cellId(targeti, targetj);
+        uint64_t cid = grid->cellId(targeti, targetj);
         Grid::CellPtr cellPtr = 
-          std::dynamic_pointer_cast<VlasovCell>( grid.getCellPtr(cid));
+          std::dynamic_pointer_cast<VlasovCell>( grid->getCellPtr(cid));
 
 
         // Get pointer to the velocity mesh we are solving
@@ -51,15 +51,15 @@ namespace vlasov {
 
           // get neighbors for interpolation
           auto nindx_p1    = cellPtr->neighs(+1, 0); // i+1 neighbor
-          uint64_t cid_p1  = grid.cellId( std::get<0>(nindx_p1), std::get<1>(nindx_p1) );
+          uint64_t cid_p1  = grid->cellId( std::get<0>(nindx_p1), std::get<1>(nindx_p1) );
           Grid::CellPtr cellPtr_p1 = 
-          std::dynamic_pointer_cast<VlasovCell>( grid.getCellPtr(cid_p1));
+          std::dynamic_pointer_cast<VlasovCell>( grid->getCellPtr(cid_p1));
           vmesh::VeloMesh* vp1       = cellPtr_p1->data.get();
 
           auto nindx_m1    = cellPtr->neighs(-1, 0); // i+1 neighbor
-          uint64_t cid_m1  = grid.cellId( std::get<0>(nindx_m1), std::get<1>(nindx_m1) );
+          uint64_t cid_m1  = grid->cellId( std::get<0>(nindx_m1), std::get<1>(nindx_m1) );
           Grid::CellPtr cellPtr_m1 = 
-          std::dynamic_pointer_cast<VlasovCell>( grid.getCellPtr(cid_m1));
+          std::dynamic_pointer_cast<VlasovCell>( grid->getCellPtr(cid_m1));
           vmesh::VeloMesh* vm1       = cellPtr_m1->data.get();
 
 
@@ -88,8 +88,14 @@ namespace vlasov {
             v0new ->addSheet(dim, i,  flux);
           }
         } // end of dimension cycle
+
+        return;
       }
-      };
+
+    };
+
+
+
 
 } // end of namespace vlasov
 
