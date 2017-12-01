@@ -8,6 +8,7 @@ namespace py = pybind11;
 #include "../solvers/spatialLagrangianSolver.c++"
 #include "../cell.h"
 #include "../grid.h"
+#include "../maxwell.h"
 
 
 /// trampoline class for VlasovVelocitySolver
@@ -84,6 +85,14 @@ PYBIND11_MODULE(pyplasma, m) {
 
   py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vssol)
     .def(py::init<>());
+
+
+  /// General class for handling Maxwell's equations
+  py::class_<maxwell::PlasmaCell>(m, "PlasmaCell")
+    .def(py::init<size_t, size_t, size_t>())
+    .def("pushE",    &maxwell::PlasmaCell::pushE)
+    .def("pushHalfB",    &maxwell::PlasmaCell::pushHalfB);
+
 
 
 

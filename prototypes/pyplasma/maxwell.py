@@ -13,13 +13,25 @@ import pyplasma as plasma
 
 
 from configSetup import Configuration
-import initialize as init
+
+#import initialize as init #lets redo this ourselves and add maxwell cells
 
 from visualize import plotNode
-from visualize import plotXmesh
 from visualize import saveVisz
 
 import injector
+
+
+
+
+#load cells into each node
+def loadCells(n):
+    for i in range(n.getNx()):
+        for j in range(n.getNy()):
+            if n.getMpiGrid(i,j) == n.rank:
+                c = plasma.PlasmaCell(i, j, n.rank, n.getNx(), n.getNy())
+                n.addCell(c) #TODO load data to cell
+
 
 
 
@@ -50,53 +62,28 @@ if __name__ == "__main__":
 
     #node.initMpi()
     #loadMpiXStrides(node)
-
-    init.loadCells(node)
-
-
-    ################################################## 
-    # Path to be created 
-    if node.master:
-        if not os.path.exists( conf.outdir ):
-            os.makedirs(conf.outdir)
+    #loadCells(node)
 
 
-    ################################################## 
+
+    c = plasma.PlasmaCell(10, 10, 10)
+    c.pushE()
+    c.pushHalfB()
+
+
+
+
     #visualize as a test
-    plotNode(axs[0], node, conf)
-
-
-    ################################################## 
-    # test step
-    #node.analyzeBoundaryCells()
-    #print("{}: send queue        : {}".format(node.rank, node.send_queue))
-    #print("{}: send queue address: {}".format(node.rank, node.send_queue_address))
-
-    #node.communicateSendCells()
-    #node.communicateRecvCells()
-    #plot_node(axs[0], node, 1)
-
+    #plotNode(axs[0], node, conf)
 
     ################################################## 
-    print(" Node howling: {}".format(node.howl()))
+    #print(" Node howling: {}".format(node.howl()))
+    #c = node.getCellPtr(1) 
+    #c.pushE()
+    #c.pushHalfB()
 
-    c = node.getCellPtr(1) 
-    print(" Cell barking: {}".format(c.bark()))
-
-
-
-    ################################################## 
-    # initialize
-    injector.inject(node, conf) #injecting plasma
-
-    plotXmesh(axs[1], node, conf)
-    saveVisz(0, node, conf)
-
-
-
-
-
-
+    #plotXmesh(axs[1], node, conf)
+    #saveVisz(0, node, conf)
 
 
     #node.finalizeMpi()
