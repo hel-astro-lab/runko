@@ -31,7 +31,7 @@ class Mesh {
 
 
     /// Internal indexing with halo region padding of width H
-    size_t indx(int i, int j, int k) {
+    size_t indx(int i, int j, int k) const {
       int indx = (i + H) + (Ny + 2*H)*( (j + H) + (Nz + 2*H)*(k + H));
       return indx;
     }

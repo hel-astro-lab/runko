@@ -46,16 +46,14 @@ PYBIND11_MODULE(pyplasma, m) {
              corgi::Cell, 
              std::shared_ptr<maxwell::PlasmaCell>
             >(m, "PlasmaCell")
-    .def(py::init<size_t, size_t, int, size_t, size_t>())
+    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
     .def("pushE",            &maxwell::PlasmaCell::pushE)
     .def("pushHalfB",        &maxwell::PlasmaCell::pushHalfB)
-    .def("getYee",           &maxwell::PlasmaCell::getYee)
-    .def("getNewYee",        &maxwell::PlasmaCell::getNewYee)
+    .def("getYee",           &maxwell::PlasmaCell::getYee,    py::return_value_policy::reference)
+    .def("getNewYee",        &maxwell::PlasmaCell::getNewYee, py::return_value_policy::reference)
     .def("updateBoundaries", &maxwell::PlasmaCell::updateBoundaries);
-    // .def("updateBoundaries", py::overload_cast<corgi::Node&>(&maxwell::PlasmaCell::updateBoundaries))
-    //.def("updateBoundaries", 
-    //    [](maxwell::PlasmaCell& c, vlasov::Grid& n) { c.updateBoundaries(n); });
   
+
 
 
   py::class_<vlasov::VlasovCell, 
@@ -63,7 +61,7 @@ PYBIND11_MODULE(pyplasma, m) {
              corgi::Cell, 
              std::shared_ptr<vlasov::VlasovCell>
              >(m, "VlasovCell")
-    .def(py::init<size_t, size_t, int, size_t, size_t>())
+    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
     .def("addData",  &vlasov::VlasovCell::addData)
     .def("getData",  &vlasov::VlasovCell::getData)
     // .def("getDataPtr",  &vlasov::VlasovCell::getDataPtr) // TODO needs to be shared_ptr 
@@ -104,6 +102,61 @@ PYBIND11_MODULE(pyplasma, m) {
 
   py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vssol)
     .def(py::init<>());
+
+  py::class_<toolbox::Mesh<double,1>>(m, "Mesh")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("Nx", &toolbox::Mesh<double,1>::Nx)
+    .def_readwrite("Ny", &toolbox::Mesh<double,1>::Ny)
+    .def_readwrite("Nz", &toolbox::Mesh<double,1>::Nz)
+    .def("indx",         &toolbox::Mesh<double,1>::indx)
+    .def("__getitem__", [](const toolbox::Mesh<double,1> &s, py::tuple indx) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < -1) throw py::index_error();
+        if (j < -1) throw py::index_error();
+        if (k < -1) throw py::index_error();
+
+        if (i > (int)s.Nx+1) throw py::index_error();
+        if (j > (int)s.Ny+1) throw py::index_error();
+        if (k > (int)s.Nz+1) throw py::index_error();
+
+        return s(i,j,k);
+      })
+    .def("__setitem__", [](toolbox::Mesh<double,1> &s, py::tuple indx, double val) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < -1) throw py::index_error();
+        if (j < -1) throw py::index_error();
+        if (k < -1) throw py::index_error();
+
+        if (i > (int)s.Nx+1) throw py::index_error();
+        if (j > (int)s.Ny+1) throw py::index_error();
+        if (k > (int)s.Nz+1) throw py::index_error();
+
+        s(i,j,k) = val;
+        })
+    .def("clear",        &toolbox::Mesh<double,1>::clear);
+
+  py::class_<maxwell::YeeLattice>(m, "YeeLattice")
+    .def(py::init<size_t, size_t, size_t>())
+    // .def("ex", &maxwell::YeeLattice::getEx, py::return_value_policy::reference)
+    .def_readwrite("ex", &maxwell::YeeLattice::ex)
+    .def_readwrite("ey", &maxwell::YeeLattice::ey)
+    .def_readwrite("ez", &maxwell::YeeLattice::ez)
+    .def_readwrite("bx", &maxwell::YeeLattice::bx)
+    .def_readwrite("by", &maxwell::YeeLattice::by)
+    .def_readwrite("bz", &maxwell::YeeLattice::bz)
+    .def_readwrite("jx", &maxwell::YeeLattice::jx)
+    .def_readwrite("jy", &maxwell::YeeLattice::jy)
+    .def_readwrite("jz", &maxwell::YeeLattice::jz)
+    .def_readwrite("rh", &maxwell::YeeLattice::rh);
+
 
 
 

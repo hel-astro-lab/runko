@@ -21,10 +21,11 @@ class VlasovCell : virtual public maxwell::PlasmaCell, virtual public corgi::Cel
     /// constructor
     VlasovCell(size_t i, size_t j, 
                int o, 
-               size_t nx, size_t ny
+               size_t NxG, size_t NyG,
+               size_t NxMesh, size_t NyMesh
                ) : 
-      corgi::Cell(i, j, o, nx, ny),
-      maxwell::PlasmaCell(i,j,o,nx,ny)
+      corgi::Cell(i, j, o, NxG, NyG),
+      maxwell::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh)
       { }
 
 

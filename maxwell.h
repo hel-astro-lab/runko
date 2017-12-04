@@ -53,6 +53,9 @@ class YeeLattice {
     jz(Nx, Ny, Nz),
     rh(Nx, Ny, Nz) { }
 
+
+  toolbox::Mesh<double,1>& getEx() { return ex; };
+
 };
 
 
@@ -79,7 +82,8 @@ class PlasmaCell : virtual public corgi::Cell {
   PlasmaCell(
       size_t i, size_t j, 
       int o,
-      size_t Nx, size_t Ny);
+      size_t NxG, size_t NyG,
+      size_t NxMesh, size_t NyMesh);
 
   /// destructor
   ~PlasmaCell() { };

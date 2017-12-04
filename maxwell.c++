@@ -7,9 +7,11 @@
 maxwell::PlasmaCell::PlasmaCell(
     size_t i, size_t j,
     int o,
-    size_t Nx, size_t Ny) :
-  corgi::Cell(i, j, o, Nx, Ny),
-  Nx(Nx), Ny(Ny), Nz(1)
+    size_t NxG, size_t NyG,
+    size_t NxMesh, size_t NyMesh
+    ) :
+  corgi::Cell(i, j, o, NxG, NyG),
+  Nx(NxMesh), Ny(NyMesh), Nz(1)
 {
 
   // append fresh Yee lattices into data container
