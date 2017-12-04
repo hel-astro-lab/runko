@@ -30,7 +30,9 @@ def loadCells(n):
         for j in range(n.getNy()):
             if n.getMpiGrid(i,j) == n.rank:
                 c = plasma.PlasmaCell(i, j, n.rank, n.getNx(), n.getNy())
+                #c = plasma.VlasovCell(i, j, n.rank, n.getNx(), n.getNy())
                 n.addCell(c) #TODO load data to cell
+
 
 
 
@@ -62,13 +64,23 @@ if __name__ == "__main__":
 
     #node.initMpi()
     #loadMpiXStrides(node)
-    #loadCells(node)
+    loadCells(node)
 
+    for i in range(node.getNx()):
+        for j in range(node.getNy()):
+            #if n.getMpiGrid(i,j) == n.rank:
+            if True:
+                print("ij ({},{})".format(i,j))
+                c = node.getCellPtr(i,j)
+                c.pushE()
+                c.updateBoundaries(node)
 
+                
 
-    c = plasma.PlasmaCell(10, 10, 10)
-    c.pushE()
-    c.pushHalfB()
+    #c = plasma.PlasmaCell(0, 0, 0, 10, 10)
+    #c.pushE()
+    #c.pushHalfB()
+    #c.updateBoundaries(node)
 
 
 

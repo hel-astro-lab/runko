@@ -1,17 +1,21 @@
 #pragma once
 
-#include "DenseGrid.h"
+#include "corgi/cell.h"
+#include "corgi/corgi.h"
+
+#include "tools/Mesh.h"
+
+#include "dataContainer.h"
 
 
 
 namespace maxwell {
 
-/*! \brief General Plasma cell for solving Maxwell's equations
- *
- * Internally everything is stored in staggered Yee lattice.
- *
- */
-class PlasmaCell {
+
+
+
+/// Yee lattice of plasma quantities
+class YeeLattice {
 
   public:
 
@@ -19,31 +23,25 @@ class PlasmaCell {
   size_t Ny;
   size_t Nz;
 
-
-  // Yee lattice of plasma quantities
-  //--------------------------------------------------
-  
   /// Electric field 
-  toolbox::DenseGrid<double> ex;
-  toolbox::DenseGrid<double> ey;
-  toolbox::DenseGrid<double> ez;
+  toolbox::Mesh<double, 1> ex;
+  toolbox::Mesh<double, 1> ey;
+  toolbox::Mesh<double, 1> ez;
   
   /// Magnetic field 
-  toolbox::DenseGrid<double> bx;
-  toolbox::DenseGrid<double> by;
-  toolbox::DenseGrid<double> bz;
+  toolbox::Mesh<double, 1> bx;
+  toolbox::Mesh<double, 1> by;
+  toolbox::Mesh<double, 1> bz;
 
   /// Current vector 
-  toolbox::DenseGrid<double> jx;
-  toolbox::DenseGrid<double> jy;
-  toolbox::DenseGrid<double> jz;
+  toolbox::Mesh<double, 1> jx;
+  toolbox::Mesh<double, 1> jy;
+  toolbox::Mesh<double, 1> jz;
 
   /// Charge density
-  toolbox::DenseGrid<double> rho;
+  toolbox::Mesh<double, 1> rh;
 
-  //--------------------------------------------------
-
-  PlasmaCell(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz),
+  YeeLattice(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz),
     ex(Nx, Ny, Nz),
     ey(Nx, Ny, Nz),
     ez(Nx, Ny, Nz),
@@ -53,14 +51,49 @@ class PlasmaCell {
     jx(Nx, Ny, Nz),
     jy(Nx, Ny, Nz),
     jz(Nx, Ny, Nz),
-    rho(Nx, Ny, Nz) { }
+    rh(Nx, Ny, Nz) { }
+
+};
 
 
-  /// Update B field with a half step
+/*! \brief General Plasma cell for solving Maxwell's equations
+ *
+ * Internally everything is stored in staggered Yee lattice.
+ *
+ */
+class PlasmaCell : virtual public corgi::Cell {
+
+  public:
+
+  size_t Nx;
+  size_t Ny;
+  size_t Nz;
+
+
+  // Yee lattice of plasma quantities
+  datarotators::DataContainer<YeeLattice> yee;
+
+
+  //--------------------------------------------------
+
+  PlasmaCell(
+      size_t i, size_t j, 
+      int o,
+      size_t Nx, size_t Ny);
+
+  /// destructor
+  ~PlasmaCell() { };
+
+
+  void updateBoundaries(corgi::Node& node);
+
   void pushHalfB();
 
-  /// Update E field with full step
   void pushE();
+
+  YeeLattice& getYee();
+
+  YeeLattice& getNewYee();
 
 
 };

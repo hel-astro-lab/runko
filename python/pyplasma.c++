@@ -36,11 +36,30 @@ class PyVlasovSpatialSolver : public vlasov::VlasovSpatialSolver {
 
 // python bindings for plasma classes & functions
 PYBIND11_MODULE(pyplasma, m) {
-
-
   // Loading cell bindings from corgi library
   py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
+
+
+
+  /// General class for handling Maxwell's equations
+  py::class_<maxwell::PlasmaCell,
+             corgi::Cell, 
+             std::shared_ptr<maxwell::PlasmaCell>
+            >(m, "PlasmaCell")
+    .def(py::init<size_t, size_t, int, size_t, size_t>())
+    .def("pushE",            &maxwell::PlasmaCell::pushE)
+    .def("pushHalfB",        &maxwell::PlasmaCell::pushHalfB)
+    .def("getYee",           &maxwell::PlasmaCell::getYee)
+    .def("getNewYee",        &maxwell::PlasmaCell::getNewYee)
+    .def("updateBoundaries", &maxwell::PlasmaCell::updateBoundaries);
+    // .def("updateBoundaries", py::overload_cast<corgi::Node&>(&maxwell::PlasmaCell::updateBoundaries))
+    //.def("updateBoundaries", 
+    //    [](maxwell::PlasmaCell& c, vlasov::Grid& n) { c.updateBoundaries(n); });
+  
+
+
   py::class_<vlasov::VlasovCell, 
+             maxwell::PlasmaCell,
              corgi::Cell, 
              std::shared_ptr<vlasov::VlasovCell>
              >(m, "VlasovCell")
@@ -85,14 +104,6 @@ PYBIND11_MODULE(pyplasma, m) {
 
   py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vssol)
     .def(py::init<>());
-
-
-  /// General class for handling Maxwell's equations
-  py::class_<maxwell::PlasmaCell>(m, "PlasmaCell")
-    .def(py::init<size_t, size_t, size_t>())
-    .def("pushE",    &maxwell::PlasmaCell::pushE)
-    .def("pushHalfB",    &maxwell::PlasmaCell::pushHalfB);
-
 
 
 

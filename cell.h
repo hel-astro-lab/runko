@@ -5,6 +5,7 @@
 #include "corgi/cell.h"
 #include "velomesh.h"
 #include "dataContainer.h"
+#include "maxwell.h"
 
 
 namespace vlasov {
@@ -14,14 +15,17 @@ namespace vlasov {
  *
  * Cell infrastructure methods are inherited from corgi::Cell
  */
-class VlasovCell : public corgi::Cell {
+class VlasovCell : virtual public maxwell::PlasmaCell, virtual public corgi::Cell {
   public:
 
     /// constructor
     VlasovCell(size_t i, size_t j, 
                int o, 
                size_t nx, size_t ny
-               ) : corgi::Cell(i, j, o, nx, ny) { }
+               ) : 
+      corgi::Cell(i, j, o, nx, ny),
+      maxwell::PlasmaCell(i,j,o,nx,ny)
+      { }
 
 
     /// destructor
