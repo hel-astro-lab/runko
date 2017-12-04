@@ -5,7 +5,6 @@
 #include "corgi/cell.h"
 #include "velomesh.h"
 #include "dataContainer.h"
-#include "dataContainer.c++"
 
 
 namespace vlasov {
@@ -34,11 +33,12 @@ class VlasovCell : public corgi::Cell {
     std::string bark() { return std::string("Wuff!"); };
 
     /// Simulation data container
-    datarotators::DataContainer<vmesh::VeloMesh> data;
+    datarotators::DataContainer<vmesh::VeloMesh> vmeshes;
+
 
     /// Add data to the container
     void addData(vmesh::VeloMesh m) {
-      data.push_back(m);
+      vmeshes.push_back(m);
     }
 
     // XXX defined only for python API
@@ -47,19 +47,19 @@ class VlasovCell : public corgi::Cell {
     // };
 
     vmesh::VeloMesh& getData() {
-      return *data.get();
+      return *vmeshes.get();
     };
 
     // get pointer to the data
     // TODO: should be shared_ptr explicitly to make it memory save
     vmesh::VeloMesh* getDataPtr() {
-      return data.get();
+      return vmeshes.get();
     };
 
 
     /// Clip all the meshes inside cell
     void clip() {
-      data.get()->clip();
+      vmeshes.get()->clip();
     };
 
 };

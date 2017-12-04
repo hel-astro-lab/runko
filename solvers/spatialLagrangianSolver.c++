@@ -31,11 +31,11 @@ namespace vlasov {
 
 
         // Get pointer to the velocity mesh we are solving
-        vmesh::VeloMesh* v0 = cellPtr->data.get();
+        vmesh::VeloMesh* v0 = cellPtr->vmeshes.get();
         // v0->clip();
 
         // get pointer to a new mesh 
-        vmesh::VeloMesh* v0new = cellPtr->data.getNew();
+        vmesh::VeloMesh* v0new = cellPtr->vmeshes.getNew();
 
 
         Realf dt = 1.0e-2;
@@ -54,13 +54,13 @@ namespace vlasov {
           uint64_t cid_p1  = grid->cellId( std::get<0>(nindx_p1), std::get<1>(nindx_p1) );
           Grid::CellPtr cellPtr_p1 = 
           std::dynamic_pointer_cast<VlasovCell>( grid->getCellPtr(cid_p1));
-          vmesh::VeloMesh* vp1       = cellPtr_p1->data.get();
+          vmesh::VeloMesh* vp1       = cellPtr_p1->vmeshes.get();
 
           auto nindx_m1    = cellPtr->neighs(-1, 0); // i+1 neighbor
           uint64_t cid_m1  = grid->cellId( std::get<0>(nindx_m1), std::get<1>(nindx_m1) );
           Grid::CellPtr cellPtr_m1 = 
           std::dynamic_pointer_cast<VlasovCell>( grid->getCellPtr(cid_m1));
-          vmesh::VeloMesh* vm1       = cellPtr_m1->data.get();
+          vmesh::VeloMesh* vm1       = cellPtr_m1->vmeshes.get();
 
 
           // loop over every sheet in the mesh

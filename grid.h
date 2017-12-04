@@ -33,7 +33,7 @@ class Grid : public corgi::Node {
     void cycle() {
       for (auto& it: cells) {
         CellPtr cellptr = std::dynamic_pointer_cast<VlasovCell>( it.second );
-        cellptr->data.cycle();
+        cellptr->vmeshes.cycle();
       }
     }
 

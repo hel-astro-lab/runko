@@ -69,9 +69,6 @@ solvers/momentumLagrangianSolver.o: ${DEPS_COMMON} solvers.h solvers/momentumLag
 solvers/spatialLagrangianSolver.o: ${DEPS_COMMON} solvers.h solvers/spatialLagrangianSolver.c++
 	${CMP} ${CXXFLAGS} -c solvers/spatialLagrangianSolver.c++ -o solvers/spatialLagrangianSolver.o
 
-dataContainer.o: ${DEPS_COMMON} dataContainer.h dataContainer.c++
-	${CMP} ${CXXFLAGS} -c dataContainer.c++
-
 maxwell.o: ${DEPS_COMMON} maxwell.h maxwell.c++
 	${CMP} ${CXXFLAGS} -c maxwell.c++
 
@@ -106,8 +103,8 @@ pyplasmatools: sheets.o bundles.o velomesh.o python/pyplasmatools.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o sheets.o bundles.o velomesh.o
 
 
-pyplasma: grid.h cell.h dataContainer.o velomesh.o solvers/momentumLagrangianSolver.o solvers/spatialLagrangianSolver.o maxwell.o python/pyplasma.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/momentumLagrangianSolver.o solvers/spatialLagrangianSolver.o dataContainer.o velomesh.o maxwell.o
+pyplasma: grid.h cell.h velomesh.o solvers/momentumLagrangianSolver.o solvers/spatialLagrangianSolver.o maxwell.o python/pyplasma.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/momentumLagrangianSolver.o solvers/spatialLagrangianSolver.o velomesh.o maxwell.o
 
 
 #make documentation usign Doxygen
