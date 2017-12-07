@@ -21,10 +21,10 @@ class Conf:
 
     outdir = "out"
 
-    Nx = 4
-    Ny = 4
-    NxMesh = 50
-    NyMesh = 50
+    Nx = 8
+    Ny = 8
+    NxMesh = 25
+    NyMesh = 25
 
     #Nx = 1
     #Ny = 1
@@ -117,11 +117,11 @@ def plotQuiver(ax, data, conf):
     iy = np.int(0.5*node.getNy())
 
     #filter middle out
-    fi = 10
+    #fi = 10
     #datax[ix-fi:ix+fi, ix-fi:iy+fi] = 0.0
     #datay[ix-fi:ix+fi, ix-fi:iy+fi] = 0.0
-    datax[ix-fi:ix+fi, :] = 0.0
-    datay[ix-fi:ix+fi, :] = 0.0
+    #datax[ix-fi:ix+fi, :] = 0.0
+    #datay[ix-fi:ix+fi, :] = 0.0
 
     #normalize
     lmax = np.max( np.sqrt(datax**2 + datay**2) )
@@ -155,7 +155,7 @@ def plotEfield(ax, n, conf):
             #vmin = magn.min(),
             #vmax = magn.max(),
             vmin = -10.0,
-            vmax =   5.0,
+            vmax =   1.0,
             clip = -10.0,
             )
 
@@ -179,7 +179,7 @@ def plotBfield(ax, n, conf):
             #vmax = magn.max(),
             #clip = 0.01,
             vmin = -10.0,
-            vmax =   5.0,
+            vmax =   1.0,
             clip = -10.0,
             )
 
@@ -202,7 +202,7 @@ def injectRingCurrent(node, conf):
             if True:
                 c = node.getCellPtr(i,j)
                 yee1 = c.getYee()
-                yee2 = c.getNewYee()
+                #yee2 = c.getNewYee()
 
                 for q in range(conf.NxMesh):
                     for r in range(conf.NyMesh):
@@ -210,6 +210,8 @@ def injectRingCurrent(node, conf):
                         x = xx[i*conf.NxMesh + q]
                         y = yy[j*conf.NyMesh + r]
 
+                        #current wire
+                        #val = gauss(y, 0.0, 0.05)
 
                         #ring current
                         if x < 0.0:
@@ -217,14 +219,13 @@ def injectRingCurrent(node, conf):
                         else:
                             val = -(gauss(x, 0.2, 0.05)*gauss(y, 0.0, 0.05))
 
+                        #oriented along Y
                         #if y < 0.0:
                         #    val = +(gauss(x, 0.0, 0.05)*gauss(y,-0.2, 0.05))
                         #else:
                         #    val = -(gauss(x, 0.0, 0.05)*gauss(y, 0.2, 0.05))
 
-                        #yee1.jz[q,r,-1] += val*0.001
                         yee1.jz[q,r, 0] += val*0.001
-                        #yee1.jz[q,r, 1] += val*0.001
 
 
 
@@ -283,31 +284,32 @@ if __name__ == "__main__":
 
 
     #main loop
-    for lap in range(1,31):
+    for lap in range(1,51):
         print("---lap: {}".format(lap))
 
         #B field
+        updateBoundaries(node)
         for cid in node.getCellIds():
             c = node.getCellPtr( cid )
             c.pushHalfB()
             c.pushHalfB()
-        updateBoundaries(node)
 
         #E field
+        updateBoundaries(node)
         for cid in node.getCellIds():
             c = node.getCellPtr( cid )
             c.pushE()
 
         #currents
+        updateBoundaries(node)
         for cid in node.getCellIds():
             c = node.getCellPtr( cid )
             c.depositCurrent()
 
         #inject
         injectRingCurrent(node, conf)
-        updateBoundaries(node)
 
-        if (lap % 10 == 0):
+        if (lap % 50 == 0):
             #plotNode(axs[0], node, conf)
             plotBfield(axs[0], node, conf)
             plotEfield(axs[1], node, conf)

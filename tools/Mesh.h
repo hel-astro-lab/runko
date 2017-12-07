@@ -78,7 +78,7 @@ class Mesh {
       if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
     };
 
-    void copyVert(Mesh& rhs, int lhsI, int rhsI);
+    void copyVert(Mesh& rhs, int lhsJ, int rhsJ);
 
     void copyHorz(Mesh& rhs, int lhsI, int rhsI);
 
@@ -181,10 +181,18 @@ void Mesh<T,H>::copyVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
-  // for(int k=-H; k<this->Nz+H; k++) {
   for(int j=0; j<this->Ny; j++) { 
     this->operator()(lhsI, j, 0) = rhs(rhsI, j, 0);
   }
+
+  /*
+  for(int k=-H; k<this->Nz+H; k++) {
+    for(int j=0; j<this->Ny; j++) { 
+      this->operator()(lhsI, j, k) = rhs(rhsI, j, k);
+    }
+  }
+  */
+
 }
 
 
@@ -198,6 +206,14 @@ void Mesh<T,H>::copyHorz(Mesh<T,H>& rhs, int lhsJ, int rhsJ) {
   for(int i=0; i<this->Nx; i++) { 
     this->operator()(i, lhsJ, 0) = rhs(i, rhsJ, 0);
   }
+
+  /*
+  for(int k=-H; k<this->Nz+H; k++) {
+    for(int i=0; i<this->Nx; i++) { 
+      this->operator()(i, lhsJ, k) = rhs(i, rhsJ, k);
+    }
+  }
+  */
 }
 
 

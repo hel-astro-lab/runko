@@ -21,6 +21,12 @@ maxwell::PlasmaCell::PlasmaCell(
 
 }
 
+/* 2D version
+  ex(i,j,k)=ex(i,j,k)+const*(-bz(i,jm1,k)+bz(i,j,k))
+  ey(i,j,k)=ey(i,j,k)+const*(bz(im1,j,k)-bz(i,j,k))
+	ez(i,j,k)=ez(i,j,k)+const*(bx(i,jm1,k)-bx(i,j,k)-  by(im1,j,k)+by(i,j,k))
+*/
+
 /// Update E field with full step
 void maxwell::PlasmaCell::pushE() {
 
@@ -32,13 +38,13 @@ void maxwell::PlasmaCell::pushE() {
 
         // Ex
         mesh.ex(i,j,k) += 
-         + dt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / dy
+         // + dt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / dy
          + dt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / dz;
 
         // Ey
         mesh.ey(i,j,k) += 
-         + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz
-         + dt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / dx;
+         + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz;
+         //+ dt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / dx;
 
         // Ez
         mesh.ez(i,j,k) += 
@@ -64,6 +70,12 @@ void maxwell::PlasmaCell::depositCurrent() {
 
 
 
+/*
+  2D version:
+	bx(i,j,k)=bx(i,j,k)+const*(-ez(i,jp1,k)+ez(i,j,k))
+	by(i,j,k)=by(i,j,k)+const*(ez(ip1,j,k)-ez(i,j,k))
+	bz(i,j,k)=bz(i,j,k)+const*(ex(i,jp1,k)-ex(i,j,k) -ey(ip1,j,k)+ey(i,j,k))
+*/
 
 /// Update B field with a half step
 void maxwell::PlasmaCell::pushHalfB() {
@@ -76,13 +88,13 @@ void maxwell::PlasmaCell::pushHalfB() {
 
         // Bx
         mesh.bx(i,j,k) += 
-         + dt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / dy
+         // + dt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / dy
          + dt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / dz;
 
         // By
         mesh.by(i,j,k) += 
-         + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz
-         + dt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / dx;
+         + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz;
+         // + dt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / dx;
 
         // Bz
         mesh.bz(i,j,k) += 
