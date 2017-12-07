@@ -30,7 +30,10 @@ def imshow(ax,
 
     extent = [ xmin, xmax, ymin, ymax ]
 
-    mgrid = np.ma.masked_where(grid == clip, grid)
+    if clip == None:
+        mgrid = grid
+    else:
+        mgrid = np.ma.masked_where(grid <= clip, grid)
     
     mgrid = mgrid.T
     ax.imshow(mgrid,

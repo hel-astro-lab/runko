@@ -68,9 +68,9 @@ class PlasmaCell : virtual public corgi::Cell {
 
   public:
 
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
+  size_t NxMesh;
+  size_t NyMesh;
+  size_t NzMesh;
 
 
   // Yee lattice of plasma quantities
@@ -95,9 +95,21 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void pushE();
 
+  void depositCurrent();
+
+
   YeeLattice& getYee();
 
   YeeLattice& getNewYee();
+
+
+  void cycleYee();
+
+
+  double dt = 0.5;
+  double dx = 1.0;
+  double dy = 1.0;
+  double dz = 1.0;
 
 
 };

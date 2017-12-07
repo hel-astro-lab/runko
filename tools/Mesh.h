@@ -181,6 +181,7 @@ void Mesh<T,H>::copyVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
+  // for(int k=-H; k<this->Nz+H; k++) {
   for(int j=0; j<this->Ny; j++) { 
     this->operator()(lhsI, j, 0) = rhs(rhsI, j, 0);
   }

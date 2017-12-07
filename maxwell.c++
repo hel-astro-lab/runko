@@ -11,24 +11,88 @@ maxwell::PlasmaCell::PlasmaCell(
     size_t NxMesh, size_t NyMesh
     ) :
   corgi::Cell(i, j, o, NxG, NyG),
-  Nx(NxMesh), Ny(NyMesh), Nz(1)
+  NxMesh(NxMesh), NyMesh(NyMesh), NzMesh(1)
 {
 
   // append fresh Yee lattices into data container
-  yee.push_back( maxwell::YeeLattice(Nx, Ny, Nz) );
-  yee.push_back( maxwell::YeeLattice(Nx, Ny, Nz) );
+  yee.push_back( maxwell::YeeLattice(NxMesh, NyMesh, NzMesh) );
+  // yee.push_back( maxwell::YeeLattice(NxMesh, NyMesh, NzMesh) );
 
 
 }
 
 /// Update E field with full step
 void maxwell::PlasmaCell::pushE() {
-  std::cout << "push E\n";
+
+  maxwell::YeeLattice& mesh = getYee();
+
+  for(int k=0; k<(int)NzMesh; k++) {
+    for(int j=0; j<(int)NyMesh; j++) {
+      for(int i=0; i<(int)NxMesh; i++) {
+
+        // Ex
+        mesh.ex(i,j,k) += 
+         + dt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / dy
+         + dt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / dz;
+
+        // Ey
+        mesh.ey(i,j,k) += 
+         + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz
+         + dt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / dx;
+
+        // Ez
+        mesh.ez(i,j,k) += 
+         + dt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / dx
+         + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
+
+      }
+    }
+  }
+
 }
+
+
+/// Deposit current into electric field
+void maxwell::PlasmaCell::depositCurrent() {
+  maxwell::YeeLattice& mesh = getYee();
+
+  mesh.ex -= mesh.jx * dt* (dx*dy*dz);
+  mesh.ey -= mesh.jy * dt* (dx*dy*dz);
+  mesh.ez -= mesh.jz * dt* (dx*dy*dz);
+
+}
+
+
+
 
 /// Update B field with a half step
 void maxwell::PlasmaCell::pushHalfB() {
-  std::cout << "push B\n";
+
+  maxwell::YeeLattice& mesh = getYee();
+
+  for(int k=0; k<(int)NzMesh; k++) {
+    for(int j=0; j<(int)NyMesh; j++) {
+      for(int i=0; i<(int)NxMesh; i++) {
+
+        // Bx
+        mesh.bx(i,j,k) += 
+         + dt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / dy
+         + dt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / dz;
+
+        // By
+        mesh.by(i,j,k) += 
+         + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz
+         + dt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / dx;
+
+        // Bz
+        mesh.bz(i,j,k) += 
+         + dt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / dx
+         + dt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / dy;
+
+      }
+    }
+  }
+
 }
 
 
@@ -93,8 +157,6 @@ void copyHorzYee(
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
 void maxwell::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
-  std::cout << "updating boundaries...\n";
-
   // target
   maxwell::YeeLattice& mesh = getYee();
 
@@ -147,6 +209,10 @@ void maxwell::PlasmaCell::updateBoundaries(corgi::Node& node) {
 }
 
 
+
+void maxwell::PlasmaCell::cycleYee() {
+  yee.cycle();
+}
 
 
 

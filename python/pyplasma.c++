@@ -47,8 +47,10 @@ PYBIND11_MODULE(pyplasma, m) {
              std::shared_ptr<maxwell::PlasmaCell>
             >(m, "PlasmaCell")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
+    .def("cycleYee",         &maxwell::PlasmaCell::cycleYee)
     .def("pushE",            &maxwell::PlasmaCell::pushE)
     .def("pushHalfB",        &maxwell::PlasmaCell::pushHalfB)
+    .def("depositCurrent",   &maxwell::PlasmaCell::depositCurrent)
     .def("getYee",           &maxwell::PlasmaCell::getYee,    py::return_value_policy::reference)
     .def("getNewYee",        &maxwell::PlasmaCell::getNewYee, py::return_value_policy::reference)
     .def("updateBoundaries", &maxwell::PlasmaCell::updateBoundaries);
