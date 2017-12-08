@@ -21,10 +21,15 @@ maxwell::PlasmaCell::PlasmaCell(
 
 }
 
-/* 2D version
-  ex(i,j,k)=ex(i,j,k)+const*(-bz(i,jm1,k)+bz(i,j,k))
-  ey(i,j,k)=ey(i,j,k)+const*(bz(im1,j,k)-bz(i,j,k))
-	ez(i,j,k)=ez(i,j,k)+const*(bx(i,jm1,k)-bx(i,j,k)-  by(im1,j,k)+by(i,j,k))
+/* 
+ * 1D version:
+ *	ey(i,j,k)=ey(i,j,k) + c *(bz(im1,j,k)-bz(i,j,k))  
+ *	ez(i,j,k)=ez(i,j,k) + c *(by(i,j,k)-by(im1,j,k)) 
+ *
+ * 2D version
+ * ex(i,j,k)=ex(i,j,k)+const*(-bz(i,jm1,k)+bz(i,j,k))
+ * ey(i,j,k)=ey(i,j,k)+const*(bz(im1,j,k)-bz(i,j,k))
+ * ez(i,j,k)=ez(i,j,k)+const*(bx(i,jm1,k)-bx(i,j,k)-  by(im1,j,k)+by(i,j,k))
 */
 
 /// Update E field with full step
@@ -71,10 +76,14 @@ void maxwell::PlasmaCell::depositCurrent() {
 
 
 /*
-  2D version:
-	bx(i,j,k)=bx(i,j,k)+const*(-ez(i,jp1,k)+ez(i,j,k))
-	by(i,j,k)=by(i,j,k)+const*(ez(ip1,j,k)-ez(i,j,k))
-	bz(i,j,k)=bz(i,j,k)+const*(ex(i,jp1,k)-ex(i,j,k) -ey(ip1,j,k)+ey(i,j,k))
+ * 1D version:
+  by(i,j,k)=by(i,j,k)+const*(ez(ip1,j,k)-ez(i,j,k)) !-0*ex(i,j,k+1)+0*ex(i,j,k))
+	bz(i,j,k)=bz(i,j,k)+const*(ey(i,j,k)-ey(ip1,j,k)) !+0*ex(i,j+1,k)-0*ex(i,j,k))
+  
+ * 2D version:
+ * bx(i,j,k)=bx(i,j,k)+const*(-ez(i,jp1,k)+ez(i,j,k))
+ * by(i,j,k)=by(i,j,k)+const*(ez(ip1,j,k)-ez(i,j,k))
+ * bz(i,j,k)=bz(i,j,k)+const*(ex(i,jp1,k)-ex(i,j,k) -ey(ip1,j,k)+ey(i,j,k))
 */
 
 /// Update B field with a half step
@@ -106,6 +115,10 @@ void maxwell::PlasmaCell::pushHalfB() {
   }
 
 }
+
+
+
+
 
 
 /// Get current time snapshot of Yee lattice
