@@ -31,11 +31,11 @@ class Conf:
     #NxMesh = 200
     #NyMesh = 200
 
-    xmin =-1.0
-    xmax = 1.0
+    xmin =-0.5
+    xmax = 0.5
 
-    ymin =-1.0
-    ymax = 1.0
+    ymin =-0.5
+    ymax = 0.5
 
     def __init__(self):
         print("initialized...")
@@ -149,14 +149,16 @@ def plotEfield(ax, n, conf):
     print("maximum E: {}".format(np.max(magn)))
 
     imshow(ax, 
-            np.log10(magn),
+            #np.log10(magn),
+            magn,
             n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
             cmap = 'inferno_r',
-            #vmin = magn.min(),
-            #vmax = magn.max(),
-            vmin = -10.0,
-            vmax =   1.0,
-            clip = -10.0,
+            vmin = magn.min(),
+            vmax = magn.max(),
+            clip = 0.001,
+            #vmin = -10.0,
+            #vmax =   1.0,
+            #clip = -10.0,
             )
 
     plotQuiver(ax, data, conf)
@@ -172,15 +174,16 @@ def plotBfield(ax, n, conf):
     print("maximum B: {}".format(np.max(magn)))
 
     imshow(ax, 
-            np.log10(magn),
+            #np.log10(magn),
+            magn,
             n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
             cmap = 'inferno_r',
-            #vmin = magn.min(),
-            #vmax = magn.max(),
-            #clip = 0.01,
-            vmin = -10.0,
-            vmax =   1.0,
-            clip = -10.0,
+            vmin = magn.min(),
+            vmax = magn.max(),
+            clip = 0.001,
+            #vmin = -10.0,
+            #vmax =   1.0,
+            #clip = -10.0,
             )
 
     plotQuiver(ax, data, conf)
@@ -188,7 +191,10 @@ def plotBfield(ax, n, conf):
 
 
 def gauss(x, xmid, sig):
-    return np.exp(-((x-xmid)/sig)**2)
+    val = np.exp(-((x-xmid)/sig)**2)
+    if val < 0.1:
+        return 0.0
+    return val
 
 
 def injectRingCurrent(node, conf):
@@ -210,22 +216,14 @@ def injectRingCurrent(node, conf):
                         x = xx[i*conf.NxMesh + q]
                         y = yy[j*conf.NyMesh + r]
 
-                        #current wire
-                        #val = gauss(y, 0.0, 0.05)
-
                         #ring current
+                        sep = 0.1 #radius of the ring
                         if x < 0.0:
-                            val = +(gauss(x,-0.2, 0.05)*gauss(y, 0.0, 0.05))
+                            val = +(gauss(x,-sep, 0.05)*gauss(y, 0.0, 0.05))
                         else:
-                            val = -(gauss(x, 0.2, 0.05)*gauss(y, 0.0, 0.05))
+                            val = -(gauss(x, sep, 0.05)*gauss(y, 0.0, 0.05))
 
-                        #oriented along Y
-                        #if y < 0.0:
-                        #    val = +(gauss(x, 0.0, 0.05)*gauss(y,-0.2, 0.05))
-                        #else:
-                        #    val = -(gauss(x, 0.0, 0.05)*gauss(y, 0.2, 0.05))
-
-                        yee1.jz[q,r, 0] += val*0.001
+                        yee1.jz[q,r, 0] += val
 
 
 
@@ -309,7 +307,7 @@ if __name__ == "__main__":
         #inject
         injectRingCurrent(node, conf)
 
-        if (lap % 50 == 0):
+        if (lap % 10 == 0):
             #plotNode(axs[0], node, conf)
             plotBfield(axs[0], node, conf)
             plotEfield(axs[1], node, conf)
