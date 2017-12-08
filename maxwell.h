@@ -53,9 +53,6 @@ class YeeLattice {
     jz(Nx, Ny, Nz),
     rh(Nx, Ny, Nz) { }
 
-
-  toolbox::Mesh<double,1>& getEx() { return ex; };
-
 };
 
 
@@ -92,8 +89,14 @@ class PlasmaCell : virtual public corgi::Cell {
   void updateBoundaries(corgi::Node& node);
 
   void pushHalfB();
+  void pushHalfB1d();
+  void pushHalfB2d();
+  void pushHalfB3d();
 
   void pushE();
+  void pushE1d();
+  void pushE2d();
+  void pushE3d();
 
   void depositCurrent();
 

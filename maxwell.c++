@@ -19,6 +19,7 @@ maxwell::PlasmaCell::PlasmaCell(
   // yee.push_back( maxwell::YeeLattice(NxMesh, NyMesh, NzMesh) );
 
 
+
 }
 
 /* 
@@ -32,8 +33,72 @@ maxwell::PlasmaCell::PlasmaCell(
  * ez(i,j,k)=ez(i,j,k)+const*(bx(i,jm1,k)-bx(i,j,k)-  by(im1,j,k)+by(i,j,k))
 */
 
-/// Update E field with full step
+/*! \brief Update E field with full step
+ *
+ * Contains a dimension switch for solvers depending on internal mesh dimensions
+ */
 void maxwell::PlasmaCell::pushE() {
+
+  // this->pushE1d();
+  this->pushE2d();
+  // this->pushE3d();
+}
+
+/// 1D E pusher
+void maxwell::PlasmaCell::pushE1d() {
+
+  maxwell::YeeLattice& mesh = getYee();
+
+  int k = 0;
+  int j = 0;
+  for(int i=0; i<(int)NxMesh; i++) {
+
+    // Ex
+    // NONE
+
+    // Ey
+    mesh.ey(i,j,k) += 
+      + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz;
+
+    // Ez
+    mesh.ez(i,j,k) += 
+      + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
+
+  }
+
+}
+
+/// 2D E pusher
+void maxwell::PlasmaCell::pushE2d() {
+
+  maxwell::YeeLattice& mesh = getYee();
+
+
+  int k = 0;
+  for(int j=0; j<(int)NyMesh; j++) {
+    for(int i=0; i<(int)NxMesh; i++) {
+
+      // Ex
+      mesh.ex(i,j,k) += 
+        + dt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / dz;
+
+      // Ey
+      mesh.ey(i,j,k) += 
+        + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz;
+
+      // Ez
+      mesh.ez(i,j,k) += 
+        + dt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / dx
+        + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
+
+    }
+  }
+
+}
+
+
+/// 3D E pusher
+void maxwell::PlasmaCell::pushE3d() {
 
   maxwell::YeeLattice& mesh = getYee();
 
@@ -43,24 +108,26 @@ void maxwell::PlasmaCell::pushE() {
 
         // Ex
         mesh.ex(i,j,k) += 
-         // + dt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / dy
-         + dt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / dz;
+          + dt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / dy
+          + dt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / dz;
 
         // Ey
         mesh.ey(i,j,k) += 
-         + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz;
-         //+ dt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / dx;
+          + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz
+          + dt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / dx;
 
         // Ez
         mesh.ez(i,j,k) += 
-         + dt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / dx
-         + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
+          + dt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / dx
+          + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
 
       }
     }
   }
 
 }
+
+
 
 
 /// Deposit current into electric field
@@ -89,6 +156,62 @@ void maxwell::PlasmaCell::depositCurrent() {
 /// Update B field with a half step
 void maxwell::PlasmaCell::pushHalfB() {
 
+  // this->pushHalfB1d();
+  this->pushHalfB2d();
+  // this->pushHalfB3d();
+}
+
+/// 1D B pusher
+void maxwell::PlasmaCell::pushHalfB1d() {
+  maxwell::YeeLattice& mesh = getYee();
+
+  int k = 0;
+  int j = 0;
+  for(int i=0; i<(int)NxMesh; i++) {
+
+    // Bx
+    // NONE
+
+    // By
+    mesh.by(i,j,k) += 
+      + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz;
+
+    // Bz
+    mesh.bz(i,j,k) += 
+      + dt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / dy;
+  }
+
+}
+
+/// 2D B pusher
+void maxwell::PlasmaCell::pushHalfB2d() {
+  maxwell::YeeLattice& mesh = getYee();
+
+  int k = 0;
+  for(int j=0; j<(int)NyMesh; j++) {
+    for(int i=0; i<(int)NxMesh; i++) {
+
+      // Bx
+      mesh.bx(i,j,k) += 
+        + dt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / dz;
+
+      // By
+      mesh.by(i,j,k) += 
+        + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz;
+
+      // Bz
+      mesh.bz(i,j,k) += 
+        + dt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / dx
+        + dt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / dy;
+
+    }
+  }
+
+}
+
+
+/// 3D B pusher
+void maxwell::PlasmaCell::pushHalfB3d() {
   maxwell::YeeLattice& mesh = getYee();
 
   for(int k=0; k<(int)NzMesh; k++) {
@@ -97,13 +220,13 @@ void maxwell::PlasmaCell::pushHalfB() {
 
         // Bx
         mesh.bx(i,j,k) += 
-         // + dt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / dy
+         + dt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / dy
          + dt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / dz;
 
         // By
         mesh.by(i,j,k) += 
-         + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz;
-         // + dt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / dx;
+         + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz
+         + dt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / dx;
 
         // Bz
         mesh.bz(i,j,k) += 
@@ -115,8 +238,6 @@ void maxwell::PlasmaCell::pushHalfB() {
   }
 
 }
-
-
 
 
 
