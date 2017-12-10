@@ -16,8 +16,11 @@ class DataContainer {
   void push_back(T vm);
 
   T* get();
+  T& getRef();
+
 
   T* getNew();
+  T& getNewRef();
 
   T* getAll(size_t cs);
 
@@ -44,6 +47,13 @@ T* datarotators::DataContainer<T>::get() {
   return (T*) &(container[ currentStep ]);
 }
 
+/// Return reference to current element
+template <class T>
+T& datarotators::DataContainer<T>::getRef() {
+  return &(container[ currentStep ]);
+}
+
+
 /// get a fresh container that we can update into
 template <class T>
 T* datarotators::DataContainer<T>::getNew() {
@@ -52,6 +62,14 @@ T* datarotators::DataContainer<T>::getNew() {
 
   return NULL;
 }
+
+/// Get reference to a new element
+template <class T>
+T& datarotators::DataContainer<T>::getNewRef() {
+  if (currentStep == 0) return &(container[1]);
+  if (currentStep == 1) return &(container[0]);
+}
+
 
 
 /// Get any arbitrary snapshot from the container
