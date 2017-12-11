@@ -42,7 +42,6 @@ class MomentumInitialization(unittest.TestCase):
         for vsol in vsols:
             vsol.setInterpolator(intp)
 
-
             # TODO how to split cell tests and solver tests?
             #vsol.solve()
 

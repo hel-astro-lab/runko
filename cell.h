@@ -95,6 +95,10 @@ class VlasovCell : virtual public maxwell::PlasmaCell, virtual public corgi::Cel
       return plasma.getRef();
     };
 
+    VlasovFluid& getNewPlasmaGrid() {
+      return plasma.getNewRef();
+    };
+
 
     // get pointer to the data
     // TODO: should be shared_ptr explicitly to make it memory save
