@@ -118,10 +118,16 @@ class VlasovCell : virtual public maxwell::PlasmaCell, virtual public corgi::Cel
         }
       }
 
-    };
+    }
+
+    /// Cycle internal plasma container to another solution step
+    void cycle() {
+      plasma.cycle();
+    }
+
+
 
 };
-
 
 
 } // end of namespace vlasov

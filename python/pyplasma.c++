@@ -67,6 +67,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("getPlasmaGrid",  &vlasov::VlasovCell::getPlasmaGrid, py::return_value_policy::reference)
     // .def("getDataPtr",  &vlasov::VlasovCell::getDataPtr) // TODO needs to be shared_ptr 
     .def("clip",     &vlasov::VlasovCell::clip)
+    .def("cycle",    &vlasov::VlasovCell::cycle)
     .def("bark",     &vlasov::VlasovCell::bark);
 
 
@@ -74,7 +75,7 @@ PYBIND11_MODULE(pyplasma, m) {
   py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
   py::class_<vlasov::Grid>(m, "Grid", corgiNode)
     .def(py::init<size_t, size_t>())
-    .def("cycle",    &vlasov::Grid::cycle)
+    //.def("cycle",    &vlasov::Grid::cycle)
     .def("howl",     &vlasov::Grid::howl);
 
 
