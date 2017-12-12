@@ -69,6 +69,12 @@ class VlasovCell : virtual public maxwell::PlasmaCell, virtual public corgi::Cel
     /// destructor
     ~VlasovCell() { };
 
+    // NOTE overwrites PlasmaCell values
+    double dt = 0.1;
+    double dx = 1.0;
+    double dy = 1.0;
+    double dz = 1.0;
+
 
     // Purely for testing class expansion
     // void bark();

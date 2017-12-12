@@ -101,7 +101,9 @@ namespace vlasov {
 
             v1.addSheet(dim, i,  flux);
           }
+
           //-------------------------------------------------- 
+          // TODO collect and deposit flux from the sheets to the Yee lattice
             
             
         } // end of dimension cycle

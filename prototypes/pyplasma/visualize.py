@@ -134,7 +134,11 @@ def plotXmesh(ax, n, conf):
         cid = n.cellId(i,0)
         c = n.getCellPtr(cid)
 
-        vm = c.getData()
+        #dig electron population out
+        pgrid = c.getPlasmaGrid()
+        vm = pgrid.electrons[0,0,0] #electron population
+
+
         vbundle = vm.getBundle(0, 0, 0) #xdir (dir = 0) @ j = 0, z = 0
 
         data[i, :] = vbundle.getPencil()

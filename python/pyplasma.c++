@@ -63,12 +63,12 @@ PYBIND11_MODULE(pyplasma, m) {
              std::shared_ptr<vlasov::VlasovCell>
              >(m, "VlasovCell")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
-    // .def("addData",  &vlasov::VlasovCell::addData)
-    .def("getPlasmaGrid",  &vlasov::VlasovCell::getPlasmaGrid, py::return_value_policy::reference)
-    // .def("getDataPtr",  &vlasov::VlasovCell::getDataPtr) // TODO needs to be shared_ptr 
-    .def("clip",     &vlasov::VlasovCell::clip)
-    .def("cycle",    &vlasov::VlasovCell::cycle)
-    .def("bark",     &vlasov::VlasovCell::bark);
+    .def("getPlasmaGrid",     &vlasov::VlasovCell::getPlasmaGrid, py::return_value_policy::reference)
+    .def("getNewPlasmaGrid",  &vlasov::VlasovCell::getNewPlasmaGrid, py::return_value_policy::reference)
+    .def("clip",        &vlasov::VlasovCell::clip)
+    .def("cyclePlasma", &vlasov::VlasovCell::cycle)
+    .def("bark",        &vlasov::VlasovCell::bark);
+
 
 
   // Loading node bindings from corgi library

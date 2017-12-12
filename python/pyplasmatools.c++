@@ -222,9 +222,8 @@ PYBIND11_MODULE(plasmatools, m) {
         if (k > (int)s.Nz) throw py::index_error();
 
         return s(i,j,k);
-      })
-  /*
-    .def("__setitem__", [](toolbox::Mesh<vmesh::VeloMesh,0> &s, py::tuple indx, double val) 
+      }, py::return_value_policy::reference)
+    .def("__setitem__", [](toolbox::Mesh<vmesh::VeloMesh,0> &s, py::tuple indx, vmesh::VeloMesh val) 
       {
         int i = indx[0].cast<int>();
         int j = indx[1].cast<int>();
@@ -240,7 +239,6 @@ PYBIND11_MODULE(plasmatools, m) {
 
         s(i,j,k) = val;
         })
-  */
     .def("clear",        &toolbox::Mesh<vmesh::VeloMesh,0>::clear);
 
 }

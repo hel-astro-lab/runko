@@ -52,7 +52,7 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
           double Ey = yee.ey(q,r,0);
           double Ez = yee.ez(q,r,0);
 
-          intp->dt = 1.0;
+          intp->dt = cell->dt;
 
 
           double vx, vy, vz;
@@ -135,13 +135,6 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
 
                 // apply flux to the mesh
                 vmesh.addBundle(dim, i1, i2, U0);
-
-
-
-
-                // Add numerical flux to current
-                // TODO implement
-                  
 
 
               }
