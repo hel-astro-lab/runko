@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
 
     #simulation loop
-    for lap in range(1,1000):
+    for lap in range(1,200):
 
         #momentum step
         for j in range(node.getNy()):

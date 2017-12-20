@@ -28,7 +28,7 @@ class VlasovVelocitySolver {
     /// Bundle interpolator pointer
     bundles::BundleInterpolator *intp;
 
-    /// Velocity mesh to solve
+    /// Cell to solve
     vlasov::VlasovCell* cell;
 
     // construct solver with a strict reference to the cell
