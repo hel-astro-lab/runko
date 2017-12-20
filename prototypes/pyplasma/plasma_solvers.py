@@ -51,7 +51,7 @@ if __name__ == "__main__":
     #node.initMpi()
     #loadMpiXStrides(node)
 
-    init.loadCells(node)
+    init.loadCells(node, conf)
 
 
     ################################################## 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
 
     #simulation loop
-    for lap in range(1,1000):
+    for lap in range(1,200):
 
         #momentum step
         for j in range(node.getNy()):
@@ -121,9 +121,11 @@ if __name__ == "__main__":
                 ssol.setTargetCell(i,j)
                 ssol.solve()
 
-
         #cycle to the new fresh snapshot
-        node.cycle()
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cyclePlasma()
 
         #clip every cell
         for j in range(node.getNy()):
@@ -132,7 +134,7 @@ if __name__ == "__main__":
                 cell.clip()
 
         #I/O
-        if (lap % 50 == 0):
+        if (lap % 1 == 0):
             print("--- lap {}".format(lap))
             plotXmesh(axs[1], node, conf)
             saveVisz(lap, node, conf)

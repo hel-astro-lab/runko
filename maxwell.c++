@@ -244,12 +244,12 @@ void maxwell::PlasmaCell::pushHalfB3d() {
 
 /// Get current time snapshot of Yee lattice
 maxwell::YeeLattice& maxwell::PlasmaCell::getYee() {
-  return *yee.get();
+  return yee.getRef();
 }
 
 /// Get new time snapshot of Yee lattice
 maxwell::YeeLattice& maxwell::PlasmaCell::getNewYee() {
-  return *yee.getNew();
+  return yee.getNewRef();
 };
 
 

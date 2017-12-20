@@ -59,24 +59,35 @@ def inject(n, conf):
         for j in range(n.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
-                mesh = createEmptyVelocityMesh(conf)
 
-                if i == 10:
-                    pl = { "T": 4.0, "bulkVelo" : 5.0, }
-                else:
-                    pl = { "T": 2.0, "bulkVelo" : 2.0, }
-
-
-                fillMesh(mesh, pl)
-
+                #get cell & its content
                 cid = n.cellId(i,j)
                 c = n.getCellPtr(cid) #get cell ptr
 
-                mesh.clip()
+                pgrid0 = c.getPlasmaGrid()
+                pgrid1 = c.getNewPlasmaGrid()
 
-                c.addData(mesh)
-                c.addData(mesh)
+                for q in range(conf.NzMesh):
+                    for r in range(conf.NyMesh):
+                        for s in range(conf.NxMesh):
 
+                            #next create mesh for electron population
+                            mesh = createEmptyVelocityMesh(conf)
+
+                            #electrons
+                            if (i*conf.NxMesh + s) == 20:
+                                pl = { "T": 4.0, "bulkVelo" : 5.0, }
+                            else:
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
+                            fillMesh(mesh, pl)
+                            mesh.clip()
+
+                            pgrid0.electrons[s,r,q] = mesh
+                            pgrid1.electrons[s,r,q] = mesh
+
+                            #just copy the same for positrons
+                            pgrid0.positrons[s,r,q] = mesh
+                            pgrid1.positrons[s,r,q] = mesh
 
 
 

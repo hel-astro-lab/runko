@@ -87,6 +87,7 @@ namespace vmesh {
 
       // --------------------------------------------------
       /* For python interface we need to define __getitem__ and __setitem__
+       * TODO: implement with lambda operator instead in pyplasmatools.c++
       */
       vblock_t __getitem__(const uint64_t cellID) const {
         return this->blockContainer.at( cellID );

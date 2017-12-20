@@ -30,6 +30,7 @@ class Grid : public corgi::Node {
     std::string howl() { return std::string("Auuu!"); };
 
     /// Cycle data containers of each cell forward
+    /*
     void cycle() {
       for (auto& it: cells) {
         CellPtr cellptr = std::dynamic_pointer_cast<VlasovCell>( it.second );
@@ -37,6 +38,7 @@ class Grid : public corgi::Node {
         cellptr->yee.cycle();
       }
     }
+    */
 
 
 

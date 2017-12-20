@@ -51,31 +51,34 @@ def loadMpiXStrides(n):
 
 
 #load cells into each node
-def loadCells(n):
+def loadCells(n, conf):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
                 #c = corgi.Cell(i, j, n.rank)
-                c = plasma.VlasovCell(i, j, n.rank, n.getNx(), n.getNy())
+                c = plasma.VlasovCell(i, j, n.rank, 
+                                      n.getNx(), n.getNy(),
+                                      conf.NxMesh, conf.NyMesh
+                                      )
                 n.addCell(c) #TODO load data to cell
 
 
-
-
-# create empty vmesh object according to conf specifications
-def createEmptyVelocityMesh(conf):
-    mesh = ptools.VeloMesh()
+def initializeEmptyVelocityMesh(mesh, conf):
     mesh.Nblocks = [conf.Nvx, conf.Nvy, conf.Nvz]
 
     pmins = [conf.vxmin, conf.vymin, conf.vzmin]
     pmaxs = [conf.vxmax, conf.vymax, conf.vzmax]
     mesh.zFill( pmins, pmaxs )
 
+
+# create empty vmesh object according to conf specifications
+def createEmptyVelocityMesh(conf):
+    mesh = ptools.VeloMesh()
+    initializeEmptyVelocityMesh(mesh, conf)
+
     return mesh
-
-
 
 
 

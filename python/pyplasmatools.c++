@@ -7,6 +7,7 @@ namespace py = pybind11;
 #include "../sheets.h"
 #include "../bundles.h"
 #include "../velomesh.h"
+#include "../tools/Mesh.h"
 
 
 // using namespace sheets;
@@ -158,6 +159,87 @@ PYBIND11_MODULE(plasmatools, m) {
   })        
   */
 
+
+  py::class_<toolbox::Mesh<double,1>>(m, "Mesh")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("Nx", &toolbox::Mesh<double,1>::Nx)
+    .def_readwrite("Ny", &toolbox::Mesh<double,1>::Ny)
+    .def_readwrite("Nz", &toolbox::Mesh<double,1>::Nz)
+    .def("indx",         &toolbox::Mesh<double,1>::indx)
+    .def("__getitem__", [](const toolbox::Mesh<double,1> &s, py::tuple indx) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < -1) throw py::index_error();
+        if (j < -1) throw py::index_error();
+        if (k < -1) throw py::index_error();
+
+        if (i > (int)s.Nx+1) throw py::index_error();
+        if (j > (int)s.Ny+1) throw py::index_error();
+        if (k > (int)s.Nz+1) throw py::index_error();
+
+        return s(i,j,k);
+      })
+    .def("__setitem__", [](toolbox::Mesh<double,1> &s, py::tuple indx, double val) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < -1) throw py::index_error();
+        if (j < -1) throw py::index_error();
+        if (k < -1) throw py::index_error();
+
+        if (i > (int)s.Nx+1) throw py::index_error();
+        if (j > (int)s.Ny+1) throw py::index_error();
+        if (k > (int)s.Nz+1) throw py::index_error();
+
+        s(i,j,k) = val;
+        })
+    .def("clear",        &toolbox::Mesh<double,1>::clear);
+
+
+  py::class_<toolbox::Mesh<vmesh::VeloMesh,0>>(m, "VMesh")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("Nx", &toolbox::Mesh<vmesh::VeloMesh,0>::Nx)
+    .def_readwrite("Ny", &toolbox::Mesh<vmesh::VeloMesh,0>::Ny)
+    .def_readwrite("Nz", &toolbox::Mesh<vmesh::VeloMesh,0>::Nz)
+    .def("indx",         &toolbox::Mesh<vmesh::VeloMesh,0>::indx)
+    .def("__getitem__", [](const toolbox::Mesh<vmesh::VeloMesh,0> &s, py::tuple indx) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < 0) throw py::index_error();
+        if (j < 0) throw py::index_error();
+        if (k < 0) throw py::index_error();
+
+        if (i > (int)s.Nx) throw py::index_error();
+        if (j > (int)s.Ny) throw py::index_error();
+        if (k > (int)s.Nz) throw py::index_error();
+
+        return s(i,j,k);
+      }, py::return_value_policy::reference)
+    .def("__setitem__", [](toolbox::Mesh<vmesh::VeloMesh,0> &s, py::tuple indx, vmesh::VeloMesh val) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < 0) throw py::index_error();
+        if (j < 0) throw py::index_error();
+        if (k < 0) throw py::index_error();
+
+        if (i > (int)s.Nx) throw py::index_error();
+        if (j > (int)s.Ny) throw py::index_error();
+        if (k > (int)s.Nz) throw py::index_error();
+
+        s(i,j,k) = val;
+        })
+    .def("clear",        &toolbox::Mesh<vmesh::VeloMesh,0>::clear);
 
 }
 

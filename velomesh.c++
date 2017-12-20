@@ -67,6 +67,8 @@ vblock_t VeloMesh::getBlock( const uint64_t cellID ) const {
 uint64_t VeloMesh::getBlockID( const indices_t index ) const {
 
     // check for bad input
+    //
+    // these are ignored because we use size_t type that cant be negative
     // if (index[0] < 0)          {return error_block;};
     // if (index[1] < 0)          {return error_block;};
     // if (index[2] < 0)          {return error_block;};
@@ -90,7 +92,7 @@ indices_t VeloMesh::getIndices( uint64_t cellID ) {
     };
 
     // TODO get refinement level
-    // TODO substract larger cells
+    // TODO subtract larger cells
 
     cellID -= 1; // numbering starts from zero
 
@@ -146,6 +148,7 @@ return center;
 
 
 // get cell center from cell index
+// TODO use operator overloading instead (in pybind section)
 std::array<double, 3> VeloMesh::getCenterIndx( const indices_t indx ) {
     std::array<double, 3> center;
 
