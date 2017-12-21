@@ -8,7 +8,9 @@
 
 namespace vlasov {
 
-  /* \brief Splitted Lagrangian spatial solver for Vlasov fluids
+
+
+  /*! \brief Splitted Lagrangian spatial solver for Vlasov fluids
    *
    * Full solution is obtained by splitting each spatial dimension
    * x/y/z into separate solutions that are then cycled over to
@@ -19,6 +21,25 @@ namespace vlasov {
    *
    */
   class SpatialLagrangianSolver2nd : public VlasovSpatialSolver {
+
+    private:
+      /*! \brief Volume of sheet
+       * reduces sheet into volume weighted sum
+       */
+      Realf volWeightedSum(sheets::Sheet s) {
+        Realf ret = 0.0;
+
+        // TODO: for 2/3D we need to multiply with s.diff()
+        // sheets::Sheet volWeighted = s * s.diff();
+        sheets::Sheet volWeighted = s;  
+
+        /// now reduce into sum
+        ret = volWeighted.sum();
+
+        return ret;
+      };
+
+
 
     public:
       void solve() {
@@ -41,14 +62,15 @@ namespace vlasov {
 
 
         // numerical flux from moving the Vlasov fluid around
-        Realf fluxX, fluxY, fluxZ;
-        fluxX = fluxY = fluxZ = 0.0;
+        maxwell::YeeLattice& yee = cellPtr->getYee();
+        yee.jx.clear();
+        yee.jy.clear();
+        yee.jz.clear();
 
 
         // TODO only x dir update is done here; multidimensionalize
         for (size_t dim=0; dim<1; dim++) {
           // fmt::print("Solving for dim {}\n", dim);
-
 
           // get neighbors for interpolation
           auto nindx_p1    = cellPtr->neighs(+1, 0); // i+1 neighbor
@@ -69,7 +91,7 @@ namespace vlasov {
           if (gr0.Nx == 1 && gr0.Ny == 1 && gr0.Nz == 1) {
 
             // No-block formatting at all
-            throw std::range_error("not implemented");
+            // throw std::range_error("not implemented");
 
             vmesh::VeloMesh& v0 = gr0.electrons(0,0,0);
             vmesh::VeloMesh& v1 = gr1.electrons(0,0,0);
@@ -77,7 +99,7 @@ namespace vlasov {
             vmesh::VeloMesh& vp1 = gr_p1.electrons(0, 0, 0); // xxx | 0, 1, 2, 
             vmesh::VeloMesh& vm1 = gr_m1.electrons(0, 0, 0); // 0, 1, 2, .. | xxx
 
-            fluxX += solve1d(v0, vm1, vp1, v1, dim, cellPtr);
+            yee.jx(0,0,0) += solve1d(v0, vm1, vp1, v1, dim, cellPtr);
 
           } else {
 
@@ -89,7 +111,7 @@ namespace vlasov {
               for(size_t j = 0; j<gr0.Ny; j++) {
 
                 // leftmost side blocks (-1 value from left neighbor)
-                fluxX += solve1d(
+                yee.jx(0,j,k) += solve1d(
                     gr0.  electrons(first,   j,k),
                     gr_m1.electrons(last,    j,k),
                     gr0.  electrons(first+1, j,k),
@@ -99,7 +121,7 @@ namespace vlasov {
                 // inner blocks
                 for(size_t i=1; i<gr0.Nx-1; i++) {
                   
-                  fluxX += solve1d(
+                  yee.jx(i,j,k) += solve1d(
                       gr0.electrons(i,   j,k),
                       gr0.electrons(i-1, j,k),
                       gr0.electrons(i+1, j,k),
@@ -109,12 +131,13 @@ namespace vlasov {
                 }
 
                 // rightmost side blocks (+1 value from right neighbor)
-                fluxX += solve1d(
+                yee.jx(last,j,k) += solve1d(
                     gr0.  electrons(last,   j,k),
-                    gr0.  electrons(last-1, j, k),
-                    gr_p1.electrons(first,  j, k),
+                    gr0.  electrons(last-1, j,k),
+                    gr_p1.electrons(first,  j,k),
                     gr1.  electrons(last,   j,k),
                     dim, cellPtr);
+
 
               }
             }
@@ -122,14 +145,20 @@ namespace vlasov {
           }
 
 
-
-          //-------------------------------------------------- 
-          // TODO collect and deposit flux from the sheets to the Yee lattice
-            
-
-
-
         } // end of dimension cycle
+
+        // normalize current with momentum cell size
+        for(size_t k = 0; k<gr0.Nz; k++) {
+          for(size_t j = 0; j<gr0.Ny; j++) {
+            for(size_t i = 0; i<gr0.Nx; i++) {
+              auto lens = gr0.electrons(i,j,k).lens;
+              double dv = lens[0];
+
+              yee.jx(i,j,k) *= dv;
+            }
+          }
+        }
+        
 
         return;
       }
@@ -141,11 +170,11 @@ namespace vlasov {
        */
 
       Realf solve1d(vmesh::VeloMesh& v0,
-                   vmesh::VeloMesh& vm1,
-                   vmesh::VeloMesh& vp1,
-                   vmesh::VeloMesh& v1,
-                   size_t dim,
-                   Grid::CellPtr cellPtr) {
+                    vmesh::VeloMesh& vm1,
+                    vmesh::VeloMesh& vp1,
+                    vmesh::VeloMesh& v1,
+                    size_t dim,
+                    Grid::CellPtr cellPtr) {
 
         Realf numerical_flux = 0.0;
 
@@ -169,16 +198,23 @@ namespace vlasov {
 
           // U_+1/2
           Up = (sp1 + s0)*0.5* aa   
-            -(sp1 - s0)*0.5* aa*aa;
+              -(sp1 - s0)*0.5* aa*aa;
 
           // U_-1/2
           Um = (s0 + sm1)*0.5* aa
-            -(s0 - sm1)*0.5* aa*aa;
+              -(s0 - sm1)*0.5* aa*aa;
 
           // dF = U_-1/2 - U_+1/2
           flux = s0 + (Um - Up);
 
           v1.addSheet(dim, i,  flux);
+
+          // collect numerical volume flux that is leaking from cube to another
+          // Size of elementary cell is dvx*dvy*dvz velocity cube.
+          // For relativitys gamma we need sliceval vx + changing vy & vz 
+          // from guide grids
+          numerical_flux += volWeightedSum(flux);
+
         }
 
         return numerical_flux;

@@ -124,7 +124,7 @@ std::array<double, 3> VeloMesh::getSize( const uint64_t cellID ) {
     int refLevel = 0; 
 
     std::array<double, 3> wid;
-    for (int i=0; i<3; i++) { wid[i] = wid[i] / std::pow(2.0, refLevel); };
+    for (int i=0; i<3; i++) { wid[i] = lens[i] / std::pow(2.0, refLevel); };
 
     return wid;
 };

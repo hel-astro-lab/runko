@@ -129,6 +129,7 @@ def saveVisz(lap, n, conf):
 def plotXmesh(ax, n, conf):
     data = -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Nvx) )
 
+
     for i in range(conf.Nx):
 
         cid = n.cellId(i,0)
@@ -151,6 +152,55 @@ def plotXmesh(ax, n, conf):
            vmax = 1.0,
            clip = 0.0,
            )
+
+
+def getYee(n, conf):
+
+    data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
+            'ex': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ey': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ez': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ez': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'bx': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'by': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'bz': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'jx': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'jy': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'jz': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'rh': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           }
+
+
+    for i in range(conf.Nx):
+        cid = n.cellId(i,0)
+        c = n.getCellPtr(cid)
+
+        yee = c.getYee()
+        for s in range(conf.NxMesh):
+            indx = i*conf.NxMesh + s
+            data['jx'][indx] = yee.jx[s, 0, 0]
+            data['jy'][indx] = yee.jy[s, 0, 0]
+            data['jz'][indx] = yee.jz[s, 0, 0]
+
+    return data
+
+
+
+def plotJ(ax, n, conf):
+    yee = getYee(n, conf)
+
+    ax.clear()
+    ax.minorticks_on()
+    ax.set_xlim(conf.xmin, conf.xmax)
+    #ax.set_xlim(-3.0, 3.0)
+    ax.set_ylim(-20.0, 20.0)
+
+    ax.plot(yee['x'], yee['jx'], "b-")
+    ax.plot(yee['x'], yee['jy'], "r--")
+    ax.plot(yee['x'], yee['jz'], "g--")
+    
+
+
 
 
 

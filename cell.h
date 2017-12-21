@@ -38,7 +38,9 @@ class VlasovFluid {
  * Cell infrastructure methods are inherited from corgi::Cell
  * Maxwell field equation solver is inherited from maxwell::PlasmaCell
  */
-class VlasovCell : virtual public maxwell::PlasmaCell, virtual public corgi::Cell {
+class VlasovCell : 
+                   virtual public maxwell::PlasmaCell, 
+                   virtual public corgi::Cell {
 
   public:
     

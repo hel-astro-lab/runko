@@ -50,12 +50,19 @@ namespace sheets {
 
       bool isNonZero(size_t i, size_t j);
 
+      void checkSizes(const Sheet& s);
+
+      Realf sum();
+
+      // Sheet diff();
 
 
       // Sheet arithmetics
       Sheet& operator+=(const Sheet& rhs);
 
       Sheet& operator-=(const Sheet& rhs);
+
+      Sheet& operator*=(const Sheet& rhs);
 
       Sheet& operator*=(const Realf rhs);
   };
@@ -67,6 +74,11 @@ namespace sheets {
 
   inline Sheet operator-(Sheet lhs, const Sheet& rhs) {
     lhs -= rhs;
+    return lhs;
+  };
+
+  inline Sheet operator*(Sheet lhs, const Sheet& rhs) {
+    lhs *= rhs;
     return lhs;
   };
 

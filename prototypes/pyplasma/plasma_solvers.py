@@ -17,6 +17,7 @@ import initialize as init
 
 from visualize import plotNode
 from visualize import plotXmesh
+from visualize import plotJ
 from visualize import saveVisz
 
 import injector
@@ -27,17 +28,18 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,4))
+    plt.fig = plt.figure(1, figsize=(8,6))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(2, 1)
+    gs = plt.GridSpec(3, 1)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0]) )
     axs.append( plt.subplot(gs[1]) )
+    axs.append( plt.subplot(gs[2]) )
 
 
 
@@ -137,6 +139,9 @@ if __name__ == "__main__":
         if (lap % 1 == 0):
             print("--- lap {}".format(lap))
             plotXmesh(axs[1], node, conf)
+
+            plotJ(axs[2], node, conf)
+
             saveVisz(lap, node, conf)
 
 
