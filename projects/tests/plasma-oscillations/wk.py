@@ -41,6 +41,8 @@ print "Ex shape:", np.shape(ex)
 #Read simulation values
 dt = f['params'].attrs['dt']
 dx = f['params'].attrs['dx']
+
+
 print dt, dx
 
 
@@ -142,7 +144,7 @@ dw = 2.0*np.pi/(ny * dt)
 w = np.arange(ny)*dw
 print "w:"
 print w
-w1 = 0
+w1 = 1
 w2 = ny/2
 
 
@@ -173,10 +175,10 @@ im = ax.imshow(F[w1:w2, k1:k2],
         aspect='auto',
         interpolation='nearest',
         cmap='plasma',
-        #vmin=np.min(F),
-        #vmax=np.max(F)
-        vmin=-0,
-        vmax=2.0
+        vmin=np.min(F),
+        vmax=np.max(F)
+        #vmin=-0,
+        #vmax=2.0
         )
 
 cax = fig.add_axes([0.12, 0.86, 0.86, 0.03]) 
