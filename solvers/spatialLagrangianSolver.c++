@@ -194,7 +194,9 @@ namespace vlasov {
           s0  = v0 .getSheet(dim, i);
           sp1 = vp1.getSheet(dim, i);
 
-          aa = (Realf) s0.sliceVal * (dt/dx);
+          Realf u0 = s0.sliceVal;
+
+          aa = (Realf) u0 * (dt/dx);
 
           // U_+1/2
           Up = (sp1 + s0)*0.5* aa   
@@ -213,7 +215,7 @@ namespace vlasov {
           // Size of elementary cell is dvx*dvy*dvz velocity cube.
           // For relativitys gamma we need sliceval vx + changing vy & vz 
           // from guide grids
-          numerical_flux += volWeightedSum(flux);
+          numerical_flux += u0 * volWeightedSum(flux);
 
         }
 

@@ -10,6 +10,8 @@ import pyplasma as plasma
 
 from initialize import createEmptyVelocityMesh
 
+np.random.seed(0)
+
 
 # Thermal (Gaussian) plasma with some bulk velocity
 def thermalPlasma(vx, vy, vz,
@@ -76,9 +78,9 @@ def inject(n, conf):
 
                             #electrons
                             if (i*conf.NxMesh + s) == 20:
-                                pl = { "T": 4.0, "bulkVelo" : 5.0, }
+                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
                             else:
-                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
+                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
                             fillMesh(mesh, pl)
                             mesh.clip()
 

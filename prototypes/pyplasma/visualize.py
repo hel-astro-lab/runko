@@ -178,9 +178,20 @@ def getYee(n, conf):
         yee = c.getYee()
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
+
+            data['ex'][indx] = yee.ex[s, 0, 0]
+            data['ey'][indx] = yee.ey[s, 0, 0]
+            data['ez'][indx] = yee.ez[s, 0, 0]
+
+            data['bx'][indx] = yee.bx[s, 0, 0]
+            data['by'][indx] = yee.by[s, 0, 0]
+            data['bz'][indx] = yee.bz[s, 0, 0]
+
             data['jx'][indx] = yee.jx[s, 0, 0]
             data['jy'][indx] = yee.jy[s, 0, 0]
             data['jz'][indx] = yee.jz[s, 0, 0]
+
+            data['rh'][indx] = yee.rh[s, 0, 0]
 
     return data
 
@@ -193,11 +204,25 @@ def plotJ(ax, n, conf):
     ax.minorticks_on()
     ax.set_xlim(conf.xmin, conf.xmax)
     #ax.set_xlim(-3.0, 3.0)
-    ax.set_ylim(-20.0, 20.0)
+    #ax.set_ylim(-20.0, 20.0)
 
     ax.plot(yee['x'], yee['jx'], "b-")
     ax.plot(yee['x'], yee['jy'], "r--")
     ax.plot(yee['x'], yee['jz'], "g--")
+    
+
+def plotE(ax, n, conf):
+    yee = getYee(n, conf)
+
+    ax.clear()
+    ax.minorticks_on()
+    ax.set_xlim(conf.xmin, conf.xmax)
+    #ax.set_xlim(-3.0, 3.0)
+    #ax.set_ylim(-20.0, 20.0)
+
+    ax.plot(yee['x'], yee['ex'], "b-")
+    ax.plot(yee['x'], yee['ey'], "r--")
+    ax.plot(yee['x'], yee['ez'], "g--")
     
 
 
