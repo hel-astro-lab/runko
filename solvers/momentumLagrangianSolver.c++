@@ -38,6 +38,15 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
       for(size_t q=0; q<gr.Nx; q++) {
         for(size_t r=0; r<gr.Ny; r++) {
 
+
+          for(auto& scps = it.begin(),
+                           it.end(),
+                           it++) {
+
+          for(auto&& spcs : gr.species() ) {
+
+            vmesh::VeloMesh& vmesh = spcs(q,r,0);
+
           //--------------------------------------------------
           // Initialize
           vmesh::VeloMesh& vmesh = gr.electrons(q,r,0);

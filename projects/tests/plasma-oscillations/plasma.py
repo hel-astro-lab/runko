@@ -104,18 +104,18 @@ if __name__ == "__main__":
     f = h5py.File("out/run.hdf5", "w")
 
     grp0 = f.create_group("params")
-    grp0.attrs['dx']    = 1.0
-    grp0.attrs['dt']    = 0.1
+    grp0.attrs['dx']    = 0.1
+    grp0.attrs['dt']    = 0.01
 
 
 
     grp = f.create_group("fields")
-    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, 1000), dtype='f')
+    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, 500), dtype='f')
 
 
 
     #simulation loop
-    for lap in range(1,1000):
+    for lap in range(1,500):
 
         #E field
         #updateBoundaries(node)
@@ -158,14 +158,16 @@ if __name__ == "__main__":
         #I/O
         if (lap % 1 == 0):
             print("--- lap {}".format(lap))
-            #plotXmesh(axs[1], node, conf)
-            #plotJ(axs[2], node, conf)
-            #plotE(axs[3], node, conf)
-            #saveVisz(lap, node, conf)
 
             #save temporarily to file
             save(node, conf, lap, dset)
 
+
+        if (lap % 20 == 0):
+            plotXmesh(axs[1], node, conf)
+            plotJ(axs[2], node, conf)
+            plotE(axs[3], node, conf)
+            saveVisz(lap, node, conf)
 
 
     #node.finalizeMpi()

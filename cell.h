@@ -11,26 +11,98 @@
 
 namespace vlasov {
 
+
+template<typename M, typename T>
+class PairPlasmaIterator {
+
+  private:
+
+    /// internal pointer to the parent object/container (Mother object)
+    M* ptr;
+
+    /// Iterators own internal counting system
+    size_t spcs = 0; 
+
+  public:
+
+    PairPlasmaIterator(M* & ptr) : ptr(ptr) {}
+
+    // Returns an iterator pointing to the first element in the sequence:
+    begin();
+
+    // Returns an iterator pointing to the past-the-end element in the sequence:
+    end();
+
+    iterator& operator++();
+
+    bool operator==( );
+
+
+    PairPlasmaIterator(pointer_type& pointer) : pointer_(pointer) {}
+    PairPlasmaIterator(const iter_input& other) : pointer_(other.pointer_) {}
+
+    PairPlasmaIterator& operator= (const iter_input& rhs) {
+      this->pointer_ = rhs.pointer_;
+      return (*this);
+    }
+
+    PairPlasmaIterator& operator++ (void) {
+      ++this->pointer_;
+      return (*this);
+    }
+
+    PairPlasmaIterator operator++ (int) {
+      iter_input temp(*this->pointer_);
+      ++*this;
+      return (temp);
+    }
+
+    bool operator== (const_reference_type rhs) {
+      return (this->pointer_ == rhs.pointer_);
+    }
+
+    bool operator!= (const_reference_type rhs) {
+      return (this->pointer_ != rhs.pointer_);
+    }
+
+
+  // OLD
+  private:
+    T* pointer_;
+};
+
+
+
+
 /*! \brief Vlasov fluid inside the cell
  *
  * Container to hold different plasma species.
  */
 class VlasovFluid {
+
+  private:
+    typedef toolbox::Mesh<vmesh::VeloMesh, 0> T;
+
   public:
 
   size_t Nx;
   size_t Ny;
   size_t Nz;
 
-  toolbox::Mesh<vmesh::VeloMesh, 0> electrons;
-  toolbox::Mesh<vmesh::VeloMesh, 0> positrons;
+  T electrons;
+  T positrons;
 
   VlasovFluid(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz),
     electrons(Nx, Ny, Nz),
     positrons(Nx, Ny, Nz) { }
 
 
+  PairPlasmaIterator<T> species() {
+    return PairPlasmaIterator<VlasovFluid, T>(*this);
+  };
+
 };
+
 
 
 /*! \brief Vlasov cell 
@@ -72,8 +144,8 @@ class VlasovCell :
     ~VlasovCell() { };
 
     // NOTE overwrites PlasmaCell values
-    double dt = 0.1;
-    double dx = 1.0;
+    double dt = 0.01;
+    double dx = 0.1;
     double dy = 1.0;
     double dz = 1.0;
 

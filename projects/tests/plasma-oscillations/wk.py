@@ -18,8 +18,8 @@ gs = plt.GridSpec(1, 1, wspace=0.0)
 
 ax = plt.subplot(gs[0, 0])
 ax.minorticks_on()
-ax.set_xlim(0.0, 6.0)
-ax.set_ylim(0.0, 6.0)
+ax.set_xlim(0.0, 60.0)
+ax.set_ylim(0.0, 60.0)
 
 ax.set_xlabel(r'$k_x$')
 ax.set_ylabel(r'$\omega$')
