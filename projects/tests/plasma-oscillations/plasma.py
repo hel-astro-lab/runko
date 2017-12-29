@@ -42,12 +42,12 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,7))
+    plt.fig = plt.figure(1, figsize=(8,9))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(4, 1)
+    gs = plt.GridSpec(5, 1)
     gs.update(hspace = 0.5)
     
     axs = []
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[1]) )
     axs.append( plt.subplot(gs[2]) )
     axs.append( plt.subplot(gs[3]) )
+    axs.append( plt.subplot(gs[4]) )
 
 
 
@@ -84,7 +85,9 @@ if __name__ == "__main__":
     # initialize
     injector.inject(node, conf) #injecting plasma
 
-    plotXmesh(axs[1], node, conf)
+    plotNode(axs[0], node, conf)
+    plotXmesh(axs[1], node, conf, 0)
+    plotXmesh(axs[2], node, conf, 1)
     saveVisz(0, node, conf)
 
 
@@ -108,14 +111,15 @@ if __name__ == "__main__":
     grp0.attrs['dt']    = 0.01
 
 
+    Nt = 50 
 
     grp = f.create_group("fields")
-    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, 500), dtype='f')
+    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nt), dtype='f')
 
 
 
     #simulation loop
-    for lap in range(1,500):
+    for lap in range(1,Nt):
 
         #E field
         #updateBoundaries(node)
@@ -163,10 +167,13 @@ if __name__ == "__main__":
             save(node, conf, lap, dset)
 
 
-        if (lap % 20 == 0):
-            plotXmesh(axs[1], node, conf)
-            plotJ(axs[2], node, conf)
-            plotE(axs[3], node, conf)
+        if (lap % 1 == 0):
+            plotNode(axs[0], node, conf)
+            plotXmesh(axs[1], node, conf, 0) #electrons
+            plotXmesh(axs[2], node, conf, 1) #positrons
+
+            plotJ(axs[3], node, conf)
+            plotE(axs[4], node, conf)
             saveVisz(lap, node, conf)
 
 

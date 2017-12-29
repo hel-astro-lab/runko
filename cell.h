@@ -17,58 +17,76 @@ class PairPlasmaIterator {
 
   private:
 
+    /// First species 
+    size_t _beginning = 0;
+
+    /// beyond last species 
+    size_t _ending    = 2;
+
     /// internal pointer to the parent object/container (Mother object)
     M* ptr;
 
     /// Iterators own internal counting system
     size_t spcs = 0; 
 
+
   public:
 
-    PairPlasmaIterator(M* & ptr) : ptr(ptr) {}
+    PairPlasmaIterator(M& rhs) : ptr(&rhs) {}
+    PairPlasmaIterator(const M& rhs) : ptr(&rhs) {}
 
-    // Returns an iterator pointing to the first element in the sequence:
-    begin();
-
-    // Returns an iterator pointing to the past-the-end element in the sequence:
-    end();
-
-    iterator& operator++();
-
-    bool operator==( );
+    PairPlasmaIterator(const PairPlasmaIterator& rhs) : ptr(rhs.ptr) {}
 
 
-    PairPlasmaIterator(pointer_type& pointer) : pointer_(pointer) {}
-    PairPlasmaIterator(const iter_input& other) : pointer_(other.pointer_) {}
+    /// Assignment
+    PairPlasmaIterator& operator= (const PairPlasmaIterator& rhs) = default;
 
-    PairPlasmaIterator& operator= (const iter_input& rhs) {
-      this->pointer_ = rhs.pointer_;
-      return (*this);
+    /// iterate
+    PairPlasmaIterator& operator++ () {
+      ++this->spcs;
+      return *this;
     }
 
-    PairPlasmaIterator& operator++ (void) {
-      ++this->pointer_;
-      return (*this);
-    }
-
-    PairPlasmaIterator operator++ (int) {
-      iter_input temp(*this->pointer_);
-      ++*this;
-      return (temp);
-    }
-
-    bool operator== (const_reference_type rhs) {
-      return (this->pointer_ == rhs.pointer_);
-    }
-
-    bool operator!= (const_reference_type rhs) {
-      return (this->pointer_ != rhs.pointer_);
+    /// Referencing cell interiors
+    T& operator *() {
+      if(spcs == 0) return (T&) (ptr->electrons);
+      else if(spcs == 1) return (T&) (ptr->positrons);
+      else throw std::range_error("iterator goes beyond electrons (0) or positrons (1)");
     }
 
 
-  // OLD
-  private:
-    T* pointer_;
+    /// iterate with steps
+    // PairPlasmaIterator operator++ (int) {
+    //   PairPlasmaIterator temp(*ptr);
+    //   ++*this;
+    //   return (temp);
+    // }
+
+    /// equal comparison done by comparing internal spcs value
+    bool operator== (PairPlasmaIterator& rhs) const {
+      return (ptr == rhs.ptr) && (spcs == rhs.spcs);
+    }
+
+    /// unequal comparison done by comparing internal spcs value
+    bool operator!= (PairPlasmaIterator& rhs) const {
+      return (ptr != rhs.ptr) || (spcs != rhs.spcs);
+    }
+
+    /// Returns an iterator pointing to the first element in the sequence
+    PairPlasmaIterator begin() {
+      PairPlasmaIterator temp(*ptr);
+      temp.spcs = _beginning;
+      return temp;
+    }
+
+    /// Returns an iterator pointing to the past-the-end element in the sequence
+    PairPlasmaIterator end() {
+      PairPlasmaIterator temp(*ptr);
+      temp.spcs = _ending;
+      return temp ;
+    }
+
+
 };
 
 
@@ -97,8 +115,9 @@ class VlasovFluid {
     positrons(Nx, Ny, Nz) { }
 
 
-  PairPlasmaIterator<T> species() {
-    return PairPlasmaIterator<VlasovFluid, T>(*this);
+  PairPlasmaIterator<VlasovFluid, T> species() {
+    PairPlasmaIterator<VlasovFluid, T> ret(*this);
+    return ret;
   };
 
 };
