@@ -91,15 +91,28 @@ namespace vlasov {
           if (gr0.Nx == 1 && gr0.Ny == 1 && gr0.Nz == 1) {
 
             // No-block formatting at all
-            // throw std::range_error("not implemented");
+            // TODO make this into a loop
 
-            vmesh::VeloMesh& v0 = gr0.electrons(0,0,0);
-            vmesh::VeloMesh& v1 = gr1.electrons(0,0,0);
+            //-------------------------------------------------- 
+            // electrons
+            vmesh::VeloMesh& v0e = gr0.electrons(0,0,0);
+            vmesh::VeloMesh& v1e = gr1.electrons(0,0,0);
 
-            vmesh::VeloMesh& vp1 = gr_p1.electrons(0, 0, 0); // xxx | 0, 1, 2, 
-            vmesh::VeloMesh& vm1 = gr_m1.electrons(0, 0, 0); // 0, 1, 2, .. | xxx
+            vmesh::VeloMesh& vp1e = gr_p1.electrons(0, 0, 0); // xxx | 0, 1, 2, 
+            vmesh::VeloMesh& vm1e = gr_m1.electrons(0, 0, 0); // 0, 1, 2, .. | xxx
 
-            yee.jx(0,0,0) += solve1d(v0, vm1, vp1, v1, dim, cellPtr);
+            yee.jx(0,0,0) += solve1d(v0e, vm1e, vp1e, v1e, dim, cellPtr);
+
+
+            //-------------------------------------------------- 
+            // positrons
+            vmesh::VeloMesh& v0p = gr0.positrons(0,0,0);
+            vmesh::VeloMesh& v1p = gr1.positrons(0,0,0);
+
+            vmesh::VeloMesh& vp1p = gr_p1.positrons(0, 0, 0); // xxx | 0, 1, 2, 
+            vmesh::VeloMesh& vm1p = gr_m1.positrons(0, 0, 0); // 0, 1, 2, .. | xxx
+
+            yee.jx(0,0,0) -= solve1d(v0p, vm1p, vp1p, v1p, dim, cellPtr);
 
           } else {
 
@@ -109,6 +122,11 @@ namespace vlasov {
             // Block structured cells
             for(size_t k = 0; k<gr0.Nz; k++) {
               for(size_t j = 0; j<gr0.Ny; j++) {
+
+                // TODO make this into a loop
+                //--------------------------------------------------
+                // electrons
+                  
 
                 // leftmost side blocks (-1 value from left neighbor)
                 yee.jx(0,j,k) += solve1d(
@@ -139,6 +157,38 @@ namespace vlasov {
                     dim, cellPtr);
 
 
+
+                //--------------------------------------------------
+                // positrons
+                  
+                // leftmost side blocks (-1 value from left neighbor)
+                yee.jx(0,j,k) -= solve1d(
+                    gr0.  positrons(first,   j,k),
+                    gr_m1.positrons(last,    j,k),
+                    gr0.  positrons(first+1, j,k),
+                    gr1.  positrons(first,   j,k),
+                    dim, cellPtr);
+
+                // inner blocks
+                for(size_t i=1; i<gr0.Nx-1; i++) {
+                  
+                  yee.jx(i,j,k) -= solve1d(
+                      gr0.positrons(i,   j,k),
+                      gr0.positrons(i-1, j,k),
+                      gr0.positrons(i+1, j,k),
+                      gr1.positrons(i,   j,k),
+                      dim, cellPtr);
+
+                }
+
+                // rightmost side blocks (+1 value from right neighbor)
+                yee.jx(last,j,k) -= solve1d(
+                    gr0.  positrons(last,   j,k),
+                    gr0.  positrons(last-1, j,k),
+                    gr_p1.positrons(first,  j,k),
+                    gr1.  positrons(last,   j,k),
+                    dim, cellPtr);
+
               }
             }
           
@@ -151,6 +201,8 @@ namespace vlasov {
         for(size_t k = 0; k<gr0.Nz; k++) {
           for(size_t j = 0; j<gr0.Ny; j++) {
             for(size_t i = 0; i<gr0.Nx; i++) {
+
+              // TODO now this assumes that electrons == positrons in grid size
               auto lens = gr0.electrons(i,j,k).lens;
               double dv = lens[0];
 
