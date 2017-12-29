@@ -37,7 +37,15 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
       // loop over the cell's internal grid
       for(size_t q=0; q<gr.Nx; q++) {
         for(size_t r=0; r<gr.Ny; r++) {
+
+          size_t ispcs = 0;
+          double qm = 0.0;
           for(auto&& spcs : gr.species() ) {
+
+            // charge switch
+            if(ispcs == 0) { qm = 1.0; };
+            if(ispcs == 1) { qm =-1.0; };
+
 
             //--------------------------------------------------
             // Initialize
@@ -120,7 +128,7 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
 
                   // create force bundle to act on the distribution
                   for (size_t q=0; q<vmesh.Nblocks[dim]; q++) {
-                    block[0] = force;
+                    block[0] = qm * force;
                     delta.loadBlock(q, block);
                   }
 
@@ -138,6 +146,7 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
                   vmesh.addBundle(dim, i1, i2, U0);
 
 
+                  ispcs++;
                 }
               }
             }

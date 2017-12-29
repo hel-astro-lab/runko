@@ -163,8 +163,8 @@ class VlasovCell :
     ~VlasovCell() { };
 
     // NOTE overwrites PlasmaCell values
-    double dt = 0.01;
-    double dx = 0.1;
+    double dt = 0.1;
+    double dx = 0.5;
     double dy = 1.0;
     double dz = 1.0;
 

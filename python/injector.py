@@ -78,9 +78,9 @@ def inject(n, conf):
 
                             #electrons
                             if (i*conf.NxMesh + s) == 20:
-                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
                             else:
-                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
                             fillMesh(mesh0, pl)
                             mesh0.clip()
 
@@ -94,9 +94,9 @@ def inject(n, conf):
 
                             #electrons
                             if (i*conf.NxMesh + s) == 20:
-                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
                             else:
-                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
                             fillMesh(mesh1, pl)
                             mesh1.clip()
 
