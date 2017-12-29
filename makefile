@@ -94,7 +94,6 @@ python/pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 #non-local referencing of modules
 pycorgi:
 	+${MAKE} -C corgi
-	cp corgi/pycorgi/corgi.so python/
 
 
 

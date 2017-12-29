@@ -74,22 +74,34 @@ def inject(n, conf):
                         for s in range(conf.NxMesh):
 
                             #next create mesh for electron population
-                            mesh = createEmptyVelocityMesh(conf)
+                            mesh0 = createEmptyVelocityMesh(conf)
 
                             #electrons
                             if (i*conf.NxMesh + s) == 20:
-                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
                             else:
-                                pl = { "T": 2.0, "bulkVelo" : 0.0, }
-                            fillMesh(mesh, pl)
-                            mesh.clip()
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
+                            fillMesh(mesh0, pl)
+                            mesh0.clip()
 
-                            pgrid0.electrons[s,r,q] = mesh
-                            pgrid1.electrons[s,r,q] = mesh
+                            pgrid0.electrons[s,r,q] = mesh0
+                            pgrid1.electrons[s,r,q] = mesh0
 
-                            #just copy the same for positrons
-                            pgrid0.positrons[s,r,q] = mesh
-                            pgrid1.positrons[s,r,q] = mesh
+
+                            ################################################## 
+                            #And another for positrons
+                            mesh1 = createEmptyVelocityMesh(conf)
+
+                            #electrons
+                            if (i*conf.NxMesh + s) == 20:
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
+                            else:
+                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
+                            fillMesh(mesh1, pl)
+                            mesh1.clip()
+
+                            pgrid0.positrons[s,r,q] = mesh1
+                            pgrid1.positrons[s,r,q] = mesh1
 
 
 

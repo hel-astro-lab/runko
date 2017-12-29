@@ -126,7 +126,7 @@ def saveVisz(lap, n, conf):
 
 
 # visualize vmesh content in x-dir
-def plotXmesh(ax, n, conf):
+def plotXmesh(ax, n, conf, spcs):
     data = -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Nvx) )
 
 
@@ -139,7 +139,15 @@ def plotXmesh(ax, n, conf):
         pgrid = c.getPlasmaGrid()
 
         for s in range(conf.NxMesh):
-            vm = pgrid.electrons[s,0,0] #electron population
+
+            if spcs == 0:
+                vm = pgrid.electrons[s,0,0] #electron population
+            elif spcs == 1:
+                vm = pgrid.positrons[s,0,0] #electron population
+            else:
+                raise IndexError
+
+
             vbundle = vm.getBundle(0, 0, 0) #xdir (dir = 0) @ j = 0, z = 0
 
             data[ i*conf.NxMesh + s, :] = vbundle.getPencil()

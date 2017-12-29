@@ -24,7 +24,7 @@ ax.set_ylabel(r'$t$')
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('out/run1.hdf5','r')
+f = h5py.File('out/run.hdf5','r')
 
 
 #Read field
@@ -44,7 +44,7 @@ print dt, dx
 A = np.transpose( ex )
 (lines, cols) = np.shape(A)
 window = np.hamming(lines).reshape(lines, 1)
-A *= window
+#A *= window
 
 Ny, Nx = np.shape(A)
 
@@ -112,8 +112,8 @@ im = ax.imshow(F[t1:t2, k1:k2],
         cmap='plasma_r',
         vmin=np.min(F),
         vmax=np.max(F)
-        #vmin=-0.0,
-        #vmax= 0.2
+        #vmin=-0.4,
+        #vmax=-0.3
         )
 
 cax = fig.add_axes([0.12, 0.86, 0.86, 0.03]) 

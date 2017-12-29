@@ -11,26 +11,117 @@
 
 namespace vlasov {
 
+
+template<typename M, typename T>
+class PairPlasmaIterator {
+
+  private:
+
+    /// First species 
+    size_t _beginning = 0;
+
+    /// beyond last species 
+    size_t _ending    = 2;
+
+    /// internal pointer to the parent object/container (Mother object)
+    M* ptr;
+
+    /// Iterators own internal counting system
+    size_t spcs = 0; 
+
+
+  public:
+
+    PairPlasmaIterator(M& rhs) : ptr(&rhs) {}
+    PairPlasmaIterator(const M& rhs) : ptr(&rhs) {}
+
+    PairPlasmaIterator(const PairPlasmaIterator& rhs) : ptr(rhs.ptr) {}
+
+
+    /// Assignment
+    PairPlasmaIterator& operator= (const PairPlasmaIterator& rhs) = default;
+
+    /// iterate
+    PairPlasmaIterator& operator++ () {
+      ++this->spcs;
+      return *this;
+    }
+
+    /// Referencing cell interiors
+    T& operator *() {
+      if(spcs == 0) return (T&) (ptr->electrons);
+      else if(spcs == 1) return (T&) (ptr->positrons);
+      else throw std::range_error("iterator goes beyond electrons (0) or positrons (1)");
+    }
+
+
+    /// iterate with steps
+    // PairPlasmaIterator operator++ (int) {
+    //   PairPlasmaIterator temp(*ptr);
+    //   ++*this;
+    //   return (temp);
+    // }
+
+    /// equal comparison done by comparing internal spcs value
+    bool operator== (PairPlasmaIterator& rhs) const {
+      return (ptr == rhs.ptr) && (spcs == rhs.spcs);
+    }
+
+    /// unequal comparison done by comparing internal spcs value
+    bool operator!= (PairPlasmaIterator& rhs) const {
+      return (ptr != rhs.ptr) || (spcs != rhs.spcs);
+    }
+
+    /// Returns an iterator pointing to the first element in the sequence
+    PairPlasmaIterator begin() {
+      PairPlasmaIterator temp(*ptr);
+      temp.spcs = _beginning;
+      return temp;
+    }
+
+    /// Returns an iterator pointing to the past-the-end element in the sequence
+    PairPlasmaIterator end() {
+      PairPlasmaIterator temp(*ptr);
+      temp.spcs = _ending;
+      return temp ;
+    }
+
+
+};
+
+
+
+
 /*! \brief Vlasov fluid inside the cell
  *
  * Container to hold different plasma species.
  */
 class VlasovFluid {
+
+  private:
+    typedef toolbox::Mesh<vmesh::VeloMesh, 0> T;
+
   public:
 
   size_t Nx;
   size_t Ny;
   size_t Nz;
 
-  toolbox::Mesh<vmesh::VeloMesh, 0> electrons;
-  toolbox::Mesh<vmesh::VeloMesh, 0> positrons;
+  T electrons;
+  T positrons;
 
   VlasovFluid(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz),
     electrons(Nx, Ny, Nz),
     positrons(Nx, Ny, Nz) { }
 
 
+  PairPlasmaIterator<VlasovFluid, T> species() {
+    PairPlasmaIterator<VlasovFluid, T> ret(*this);
+    return ret;
+  };
+
 };
+
 
 
 /*! \brief Vlasov cell 
@@ -73,7 +164,7 @@ class VlasovCell :
 
     // NOTE overwrites PlasmaCell values
     double dt = 0.1;
-    double dx = 1.0;
+    double dx = 0.5;
     double dy = 1.0;
     double dz = 1.0;
 
