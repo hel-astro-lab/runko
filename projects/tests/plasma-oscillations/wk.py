@@ -18,8 +18,6 @@ gs = plt.GridSpec(1, 1, wspace=0.0)
 
 ax = plt.subplot(gs[0, 0])
 ax.minorticks_on()
-ax.set_xlim(0.0, 60.0)
-ax.set_ylim(0.0, 60.0)
 
 ax.set_xlabel(r'$k_x$')
 ax.set_ylabel(r'$\omega$')
@@ -28,7 +26,7 @@ ax.set_ylabel(r'$\omega$')
 # read simulation data from file
 #f = h5py.File('electrostatic/run_hires.hdf5','r')
 #f = h5py.File('electrostatic/run_hires_2nd.hdf5','r')
-f = h5py.File('out/run.hdf5','r')
+f = h5py.File('out/run1.hdf5','r')
 
 
 #Read field
@@ -148,6 +146,25 @@ w1 = 1
 w2 = ny/2
 
 
+#compute minimum and maximum values
+Lx = dx*nx
+T  = ny*dt
+
+kmin = 2.0*np.pi/Lx
+kmax = 2.0*np.pi/dx
+
+wmin = 2.0*np.pi/T
+wmax = 2.0*np.pi/dt
+
+print "x min/max:", dx, Lx
+print "t min/max:", dt, T
+print "k min/max:", kmin, kmax
+print "w min/max:", wmin, wmax
+
+ax.set_xlim(0.0, 3.0)
+ax.set_ylim(0.0, 3.0)
+
+
 # Change to spectra by considering |F] 
 F = np.log10( np.abs(Fourier) )
 #print "min/max:", np.min(Fourier), np.max(Fourier)
@@ -191,7 +208,7 @@ cax.xaxis.set_ticks_position('top')
 #analytical relations
 
 wp = 1.0 #plasma frequency XXX why x2? 
-vth = 1.0 #thermal velocity XXX why /2?
+vth = 0.5 #thermal velocity XXX why /2?
 
 #numerical propagation speed
 def w_num(k):
