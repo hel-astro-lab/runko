@@ -204,9 +204,9 @@ namespace vlasov {
 
               // TODO now this assumes that electrons == positrons in grid size
               auto lens = gr0.electrons(i,j,k).lens;
-              double dv = lens[0];
+              double du = lens[0];
 
-              yee.jx(i,j,k) *= dv;
+              yee.jx(i,j,k) *= du;
             }
           }
         }
@@ -247,6 +247,10 @@ namespace vlasov {
           sp1 = vp1.getSheet(dim, i);
 
           Realf u0 = s0.sliceVal;
+
+          // take 1D relativity into account
+          // TODO in 2/3D this needs to deal with varying sheet guide grids too
+          u0 = u0 / sqrt(1.0 + u0*u0);
 
           aa = (Realf) u0 * (dt/dx);
 
