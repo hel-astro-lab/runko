@@ -72,7 +72,7 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
 
             // Roll over all dimensions
             //--------------------------------------------------
-            for (size_t dim=0; dim<3; dim++) {
+            for (size_t dim=0; dim<1; dim++) {
 
               size_t Nb1, Nb2;
               switch(dim) {
