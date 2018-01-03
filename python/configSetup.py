@@ -2,13 +2,13 @@ from ConfigParser import SafeConfigParser
 import ast
 
 
-section_names = 'io', 'grid', 'vmesh'
+section_names = 'io', 'simulation', 'grid', 'vmesh'
+
 
 # Class for parsing and holding all configuration files
 #
 # see https://stackoverflow.com/questions/12620602/creating-a-class-with-all-the-elements-specified-in-a-file-using-configparser
-# after this it is modified to automatically typecast into 
-# safe python datatypes
+# after this it is modified to automatically typecast into safe python datatypes
 class Configuration(object):
 
     def __init__(self, *file_names):

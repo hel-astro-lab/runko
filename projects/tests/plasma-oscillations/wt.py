@@ -110,10 +110,10 @@ im = ax.imshow(F[t1:t2, k1:k2],
         aspect='auto',
         interpolation='nearest',
         cmap='plasma_r',
-        vmin=np.min(F),
-        vmax=np.max(F)
-        #vmin=-0.4,
-        #vmax=-0.3
+        #vmin=np.min(F),
+        #vmax=np.max(F)
+        vmin=-5.0,
+        vmax=-0.5
         )
 
 cax = fig.add_axes([0.12, 0.86, 0.86, 0.03]) 

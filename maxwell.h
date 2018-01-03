@@ -108,10 +108,10 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void cycleYee();
 
-  double dt = 0.1;
-  double dx = 0.5;
-  double dy = 1.0;
-  double dz = 1.0;
+  double yeeDt = 0.0;
+  double yeeDx = 0.0;
+  double yeeDy = 0.0;
+  double yeeDz = 0.0;
 
 
 };

@@ -57,12 +57,37 @@ def loadCells(n, conf):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
-                #c = corgi.Cell(i, j, n.rank)
                 c = plasma.VlasovCell(i, j, n.rank, 
                                       n.getNx(), n.getNy(),
                                       conf.NxMesh, conf.NyMesh
                                       )
-                n.addCell(c) #TODO load data to cell
+
+                #initialize cell dimensions
+                c.dt = conf.dt
+                c.dx = conf.dx
+                c.dy = conf.dy
+                c.dz = conf.dz
+                #c.setDt( conf.dt )
+                #c.setDs( conf.dx, conf.dy, conf.dz )
+
+                c.yeeDt = conf.dt
+                c.yeeDx = conf.dx
+                c.yeeDy = conf.dy
+                c.yeeDz = conf.dz
+
+                print("dt:", c.dt )
+                print("dx:", c.dx )
+                print("dy:", c.dy )
+                print("dz:", c.dz )
+
+                print("Yee dt:", c.yeeDt )
+                print("Yee dx:", c.yeeDx )
+                print("Yee dy:", c.yeeDy )
+                print("Yee dz:", c.yeeDz )
+                #add it to the node
+                n.addCell(c) 
+
+
 
 
 def initializeEmptyVelocityMesh(mesh, conf):
@@ -71,6 +96,7 @@ def initializeEmptyVelocityMesh(mesh, conf):
     pmins = [conf.vxmin, conf.vymin, conf.vzmin]
     pmaxs = [conf.vxmax, conf.vymax, conf.vzmax]
     mesh.zFill( pmins, pmaxs )
+
 
 
 # create empty vmesh object according to conf specifications

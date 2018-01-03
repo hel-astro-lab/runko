@@ -26,7 +26,7 @@ ax.set_ylabel(r'$\omega$')
 # read simulation data from file
 #f = h5py.File('electrostatic/run_hires.hdf5','r')
 #f = h5py.File('electrostatic/run_hires_2nd.hdf5','r')
-f = h5py.File('out/run1.hdf5','r')
+f = h5py.File('out/run.hdf5','r')
 
 
 #Read field
@@ -161,8 +161,8 @@ print "t min/max:", dt, T
 print "k min/max:", kmin, kmax
 print "w min/max:", wmin, wmax
 
-ax.set_xlim(0.0, 3.0)
-ax.set_ylim(0.0, 3.0)
+ax.set_xlim(0.0, 40.0)
+ax.set_ylim(0.0, 40.0)
 
 
 # Change to spectra by considering |F] 
@@ -208,7 +208,7 @@ cax.xaxis.set_ticks_position('top')
 #analytical relations
 
 wp = 1.0 #plasma frequency XXX why x2? 
-vth = 0.5 #thermal velocity XXX why /2?
+vth = 0.25 #thermal velocity XXX why /2?
 
 #numerical propagation speed
 def w_num(k):

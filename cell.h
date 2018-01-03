@@ -162,11 +162,26 @@ class VlasovCell :
     /// destructor
     ~VlasovCell() { };
 
-    // NOTE overwrites PlasmaCell values
-    double dt = 0.1;
-    double dx = 0.5;
-    double dy = 1.0;
-    double dz = 1.0;
+    double dt = 0.0;
+    double dx = 0.0;
+    double dy = 0.0;
+    double dz = 0.0;
+
+    /*
+    void setDt(double dt_) { dt = dt_; }
+
+    void setDs(double dx_, double dy_, double dz_) {
+      dx = dx_;
+      dy = dy_;
+      dz = dz_;
+    }
+
+    double getDt() { return dt; }
+    double getDx() { return dx; }
+    double getDy() { return dy; }
+    double getDz() { return dz; }
+    */
+
 
 
     // Purely for testing class expansion

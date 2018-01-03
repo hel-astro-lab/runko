@@ -22,12 +22,33 @@ from visualize import getYee
 import injector
 
 
-def updateBoundaries(node):
-    for cid in node.getCellIds():
-        c = node.getCellPtr( cid )
-        c.updateBoundaries(node)
+
+# Generic function to fill the velocity mesh
+#
+# Maxwellian plasma with Brownian noise
+def filler(x, y, z, ux, uy, uz, conf):
+
+    #temperature
+    kT  = conf.kT
+    vth = kT
+
+    # bulk velocities
+    mux = conf.Gamma
+    muy = 0.0
+    muz = 0.0
 
 
+    #Classical Maxwellian distribution
+    z1 = 0.1*np.random.standard_normal() # Brownian noise
+
+    f  = 1.0
+    f *= np.exp(-((ux - mux)/vth)**2 + z1)
+
+    return f
+
+
+
+# Get Yee grid components from node and save to hdf5 file
 def save(n, conf, lap, dset):
 
     #get E field
@@ -64,7 +85,14 @@ if __name__ == "__main__":
     conf = Configuration('config.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
-    node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+    xmin = 0.0
+    xmax = conf.dx*conf.Nx*conf.NxMesh
+    ymin = 0.0
+    ymax = conf.dy*conf.Ny*conf.NyMesh
+
+    node.setGridLims(xmin, xmax, ymin, ymax)
+
 
     #node.initMpi()
     #loadMpiXStrides(node)
@@ -83,8 +111,11 @@ if __name__ == "__main__":
 
     ################################################## 
     # initialize
-    injector.inject(node, conf) #injecting plasma
+    injector.inject(node, filler, conf) #injecting plasma
 
+
+
+    # visualize initial condition
     plotNode(axs[0], node, conf)
     plotXmesh(axs[1], node, conf, 0)
     plotXmesh(axs[2], node, conf, 1)
@@ -103,23 +134,28 @@ if __name__ == "__main__":
     ssol.setGrid(node)
 
 
+    #setup output file
     import h5py
     f = h5py.File("out/run.hdf5", "w")
 
     grp0 = f.create_group("params")
-    grp0.attrs['dx']    = 0.1
-    grp0.attrs['dt']    = 0.01
-
-
-    Nt = 50 
-
+    grp0.attrs['dx']    = conf.dx
+    grp0.attrs['dt']    = conf.sample
     grp = f.create_group("fields")
-    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nt), dtype='f')
+
+
+    #number of samples
+    Nsamples    = int(conf.dt*conf.Nt/conf.sample)
+    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
 
     #simulation loop
-    for lap in range(1,Nt):
+    time = 0.0
+
+    lapIO  = 0
+    for lap in range(1, conf.Nt):
+        print("--- lap {}".format(lap))
 
         #E field
         #updateBoundaries(node)
@@ -158,23 +194,25 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 cell.clip()
 
-
         #I/O
-        if (lap % 1 == 0):
-            print("--- lap {}".format(lap))
+        if (time - lapIO*conf.sample >= conf.sample):
 
             #save temporarily to file
-            save(node, conf, lap, dset)
+            save(node, conf, lapIO, dset)
 
-
-        if (lap % 1 == 0):
             plotNode(axs[0], node, conf)
             plotXmesh(axs[1], node, conf, 0) #electrons
             plotXmesh(axs[2], node, conf, 1) #positrons
 
             plotJ(axs[3], node, conf)
             plotE(axs[4], node, conf)
-            saveVisz(lap, node, conf)
+            saveVisz(lapIO, node, conf)
+
+            lapIO += 1
+
+
+
+        time += conf.dt
 
 
     #node.finalizeMpi()

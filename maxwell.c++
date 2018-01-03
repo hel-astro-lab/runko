@@ -58,11 +58,11 @@ void maxwell::PlasmaCell::pushE1d() {
 
     // Ey
     mesh.ey(i,j,k) += 
-      + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz;
+      + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDz;
 
     // Ez
     mesh.ez(i,j,k) += 
-      + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
+      + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDy;
 
   }
 
@@ -80,16 +80,16 @@ void maxwell::PlasmaCell::pushE2d() {
 
       // Ex
       mesh.ex(i,j,k) += 
-        + dt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / dz;
+        + yeeDt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / yeeDz;
 
       // Ey
       mesh.ey(i,j,k) += 
-        + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz;
+        + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDz;
 
       // Ez
       mesh.ez(i,j,k) += 
-        + dt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / dx
-        + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
+        + yeeDt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / yeeDx
+        + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDy;
 
     }
   }
@@ -108,18 +108,18 @@ void maxwell::PlasmaCell::pushE3d() {
 
         // Ex
         mesh.ex(i,j,k) += 
-          + dt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / dy
-          + dt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / dz;
+          + yeeDt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / yeeDy
+          + yeeDt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / yeeDz;
 
         // Ey
         mesh.ey(i,j,k) += 
-          + dt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / dz
-          + dt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / dx;
+          + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDz
+          + yeeDt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / yeeDx;
 
         // Ez
         mesh.ez(i,j,k) += 
-          + dt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / dx
-          + dt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / dy;
+          + yeeDt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / yeeDx
+          + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDy;
 
       }
     }
@@ -134,9 +134,9 @@ void maxwell::PlasmaCell::pushE3d() {
 void maxwell::PlasmaCell::depositCurrent() {
   maxwell::YeeLattice& mesh = getYee();
 
-  mesh.ex -= mesh.jx * dt* (dx*dy*dz);
-  mesh.ey -= mesh.jy * dt* (dx*dy*dz);
-  mesh.ez -= mesh.jz * dt* (dx*dy*dz);
+  mesh.ex -= mesh.jx * yeeDt* (yeeDx*yeeDy*yeeDz);
+  mesh.ey -= mesh.jy * yeeDt* (yeeDx*yeeDy*yeeDz);
+  mesh.ez -= mesh.jz * yeeDt* (yeeDx*yeeDy*yeeDz);
 
 }
 
@@ -174,11 +174,11 @@ void maxwell::PlasmaCell::pushHalfB1d() {
 
     // By
     mesh.by(i,j,k) += 
-      + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz;
+      + yeeDt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / yeeDz;
 
     // Bz
     mesh.bz(i,j,k) += 
-      + dt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / dy;
+      + yeeDt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / yeeDy;
   }
 
 }
@@ -193,16 +193,16 @@ void maxwell::PlasmaCell::pushHalfB2d() {
 
       // Bx
       mesh.bx(i,j,k) += 
-        + dt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / dz;
+        + yeeDt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / yeeDz;
 
       // By
       mesh.by(i,j,k) += 
-        + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz;
+        + yeeDt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / yeeDz;
 
       // Bz
       mesh.bz(i,j,k) += 
-        + dt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / dx
-        + dt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / dy;
+        + yeeDt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / yeeDx
+        + yeeDt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / yeeDy;
 
     }
   }
@@ -220,18 +220,18 @@ void maxwell::PlasmaCell::pushHalfB3d() {
 
         // Bx
         mesh.bx(i,j,k) += 
-         + dt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / dy
-         + dt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / dz;
+         + yeeDt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / yeeDy
+         + yeeDt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / yeeDz;
 
         // By
         mesh.by(i,j,k) += 
-         + dt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / dz
-         + dt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / dx;
+         + yeeDt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / yeeDz
+         + yeeDt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / yeeDx;
 
         // Bz
         mesh.bz(i,j,k) += 
-         + dt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / dx
-         + dt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / dy;
+         + yeeDt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / yeeDx
+         + yeeDt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / yeeDy;
 
       }
     }

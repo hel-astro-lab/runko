@@ -13,48 +13,52 @@ from initialize import createEmptyVelocityMesh
 np.random.seed(0)
 
 
-# Thermal (Gaussian) plasma with some bulk velocity
-def thermalPlasma(vx, vy, vz,
-                  Tx, Ty, Tz,
-                  Gx, Gy, Gz
-                  ):
-
-    #Brownian noise
-    sigma = 0.1
-    z1 = np.random.standard_normal() 
-    z2 = np.random.standard_normal() 
-    z3 = np.random.standard_normal() 
-
-    f  = 1.0
-    f *= np.exp(-(vx - Gx)**2 / Tx + sigma*z1)
-    f *= np.exp(-(vy - Gy)**2 / Ty + sigma*z2)
-    f *= np.exp(-(vz - Gz)**2 / Tz + sigma*z3)
-
-    return f
-
-
-# isotropic 1D (x-dir) thermal plasma
-def thermalXPlasma(vx, T, G):
-    return thermalPlasma(vx, 0.0, 0.0,
-                         T,  T,   T,
-                         G,  0.0, 0.0)
-
-
-
-def fillMesh(mesh, pl):
+def fillMesh(mesh, x, y, z, fill_function, conf):
     for k in range(mesh.Nblocks[2]):
         for j in range(mesh.Nblocks[1]):
             for i in range(mesh.Nblocks[0]):
                 cid = mesh.getBlockID([i,j,k])
-                (vx,vy,vz) = mesh.getCenter( cid )
+                (ux, uy, uz) = mesh.getCenter( cid )
 
-                fval = thermalXPlasma(vx, pl["T"], pl["bulkVelo"])
+                fval = fill_function(x, y, z, ux, uy, uz, conf)
+
                 mesh[i,j,k] = [fval, fval, fval, fval]
 
 
 
+def spatialLoc(n, Ncoords, Mcoords, conf):
+
+    #node coordinates
+    i, j    = Ncoords 
+    Nx      = conf.Nx
+    Ny      = conf.Ny
+
+    #mesh coordinates
+    s, r, q = Mcoords 
+    NxMesh = conf.NxMesh
+    NyMesh = conf.NyMesh
+    NzMesh = conf.NzMesh
+
+    #grid spacing
+    xmin = n.getXmin()
+    ymin = n.getYmin()
+
+    dx = conf.dx
+    dy = conf.dy
+    dz = conf.dz
+
+
+    #calculate coordinate extent
+    x = xmin + i*NxMesh*dx + s*dx
+    y = ymin + j*NyMesh*dy + r*dy
+    z = 0.0                + q*dz
+
+    return (x, y, z)
+
+
+
 #inject plasma into cells
-def inject(n, conf):
+def inject(n, fill_function, conf):
 
     #loop over all *local* cells
     for i in range(n.getNx()):
@@ -73,15 +77,13 @@ def inject(n, conf):
                     for r in range(conf.NyMesh):
                         for s in range(conf.NxMesh):
 
+                            (x, y, z) = spatialLoc(n, (i,j), (s,r,q), conf)
+
+
                             #next create mesh for electron population
                             mesh0 = createEmptyVelocityMesh(conf)
+                            fillMesh(mesh0, x, y, z, fill_function, conf)
 
-                            #electrons
-                            if (i*conf.NxMesh + s) == 20:
-                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
-                            else:
-                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
-                            fillMesh(mesh0, pl)
                             mesh0.clip()
 
                             pgrid0.electrons[s,r,q] = mesh0
@@ -91,13 +93,8 @@ def inject(n, conf):
                             ################################################## 
                             #And another for positrons
                             mesh1 = createEmptyVelocityMesh(conf)
+                            fillMesh(mesh1, x, y, z, fill_function, conf)
 
-                            #electrons
-                            if (i*conf.NxMesh + s) == 20:
-                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
-                            else:
-                                pl = { "T": 2.0, "bulkVelo" : 2.0, }
-                            fillMesh(mesh1, pl)
                             mesh1.clip()
 
                             pgrid0.positrons[s,r,q] = mesh1
