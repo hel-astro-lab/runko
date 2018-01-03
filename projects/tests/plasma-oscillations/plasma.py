@@ -140,12 +140,12 @@ if __name__ == "__main__":
 
     grp0 = f.create_group("params")
     grp0.attrs['dx']    = conf.dx
-    grp0.attrs['dt']    = conf.sample
+    grp0.attrs['dt']    = conf.sampleDt
     grp = f.create_group("fields")
 
 
     #number of samples
-    Nsamples    = int(conf.dt*conf.Nt/conf.sample)
+    Nsamples    = int(conf.dt*conf.Nt/conf.sampleDt)
     dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     #simulation loop
     time = 0.0
 
-    lapIO  = 0
+    lapIO  = 1
     for lap in range(1, conf.Nt):
         print("--- lap {}".format(lap))
 
@@ -195,7 +195,7 @@ if __name__ == "__main__":
                 cell.clip()
 
         #I/O
-        if (time - lapIO*conf.sample >= conf.sample):
+        if (time - lapIO*conf.sampleDt >= conf.sampleDt):
 
             #save temporarily to file
             save(node, conf, lapIO, dset)

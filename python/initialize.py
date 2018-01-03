@@ -62,28 +62,18 @@ def loadCells(n, conf):
                                       conf.NxMesh, conf.NyMesh
                                       )
 
-                #initialize cell dimensions
+                #initialize cell dimensions 
                 c.dt = conf.dt
                 c.dx = conf.dx
                 c.dy = conf.dy
                 c.dz = conf.dz
-                #c.setDt( conf.dt )
-                #c.setDs( conf.dx, conf.dy, conf.dz )
 
+                # use same scale for Maxwell solver
                 c.yeeDt = conf.dt
                 c.yeeDx = conf.dx
                 c.yeeDy = conf.dy
                 c.yeeDz = conf.dz
 
-                print("dt:", c.dt )
-                print("dx:", c.dx )
-                print("dy:", c.dy )
-                print("dz:", c.dz )
-
-                print("Yee dt:", c.yeeDt )
-                print("Yee dx:", c.yeeDx )
-                print("Yee dy:", c.yeeDy )
-                print("Yee dz:", c.yeeDz )
                 #add it to the node
                 n.addCell(c) 
 
