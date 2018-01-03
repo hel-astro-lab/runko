@@ -210,7 +210,7 @@ def plotJ(ax, n, conf):
 
     ax.clear()
     ax.minorticks_on()
-    ax.set_xlim(conf.xmin, conf.xmax)
+    ax.set_xlim(n.getXmin(), n.getXmax())
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
 
@@ -224,7 +224,7 @@ def plotE(ax, n, conf):
 
     ax.clear()
     ax.minorticks_on()
-    ax.set_xlim(conf.xmin, conf.xmax)
+    ax.set_xlim(n.getXmin(), n.getXmax())
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
 
