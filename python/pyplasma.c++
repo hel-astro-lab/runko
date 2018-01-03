@@ -135,7 +135,8 @@ PYBIND11_MODULE(pyplasma, m) {
   py::class_<vlasov::VlasovFluid>(m, "VlasovFluid")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("electrons", &vlasov::VlasovFluid::electrons)
-    .def_readwrite("positrons", &vlasov::VlasovFluid::positrons);
+    .def_readwrite("positrons", &vlasov::VlasovFluid::positrons)
+    .def_readwrite("qms",       &vlasov::VlasovFluid::qms);
 
 
 }

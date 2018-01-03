@@ -120,6 +120,13 @@ class VlasovFluid {
     return ret;
   };
 
+  std::vector<double> qms;
+
+  double getQ(size_t i) {
+    return qms[i];
+  }
+
+
 };
 
 

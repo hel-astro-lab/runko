@@ -24,7 +24,7 @@ ax.set_ylabel(r'$t$')
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('out/run.hdf5','r')
+f = h5py.File('run2/run.hdf5','r')
 
 
 #Read field
@@ -157,4 +157,4 @@ def w_warmPlasma(k, wp, vth):
 
 
 plt.subplots_adjust(left=0.12, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
-plt.savefig('out/wt.pdf')
+plt.savefig('wt.pdf')

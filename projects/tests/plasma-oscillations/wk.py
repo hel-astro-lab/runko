@@ -161,8 +161,8 @@ print "t min/max:", dt, T
 print "k min/max:", kmin, kmax
 print "w min/max:", wmin, wmax
 
-ax.set_xlim(0.0, 40.0)
-ax.set_ylim(0.0, 40.0)
+#ax.set_xlim(0.0, 40.0)
+#ax.set_ylim(0.0, 40.0)
 
 
 # Change to spectra by considering |F] 

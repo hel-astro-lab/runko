@@ -27,16 +27,25 @@ from timer import Timer
 # Generic function to fill the velocity mesh
 #
 # Maxwellian plasma with Brownian noise
-def filler(x, y, z, ux, uy, uz, conf):
+def filler(x, y, z, ux, uy, uz, conf, ispcs):
 
     #temperature
-    kT  = conf.kT
-    vth = kT
+    if ispcs == 0:
+        kT  = conf.kTE
+        vth = kT
 
-    # bulk velocities
-    mux = conf.Gamma
-    muy = 0.0
-    muz = 0.0
+        # bulk velocities
+        mux = conf.GammaE
+        muy = 0.0
+        muz = 0.0
+    elif ispcs == 1:
+        kT  = conf.kTP
+        vth = kT
+
+        # bulk velocities
+        mux = conf.GammaP
+        muy = 0.0
+        muz = 0.0
 
 
     #Classical Maxwellian distribution
@@ -118,7 +127,7 @@ if __name__ == "__main__":
 
     ################################################## 
     # initialize
-    injector.inject(node, filler, conf) #injecting plasma
+    injector.inject(node, filler, conf, clip=False) #injecting plasma
 
 
 
@@ -203,10 +212,10 @@ if __name__ == "__main__":
 
 
         #clip every cell
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.clip()
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.clip()
 
         timer.lap("step")
 
@@ -244,3 +253,4 @@ if __name__ == "__main__":
     #node.finalizeMpi()
 
     timer.stop("total")
+    timer.stats("total")

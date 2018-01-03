@@ -42,9 +42,8 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
           double qm = 0.0;
           for(auto&& spcs : gr.species() ) {
 
-            // charge switch
-            if(ispcs == 0) { qm = 1.0; };
-            if(ispcs == 1) { qm =-1.0; };
+            // charge to mass ratio
+            qm = gr.getQ(ispcs);
 
 
             //--------------------------------------------------

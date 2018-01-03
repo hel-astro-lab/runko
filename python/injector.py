@@ -13,14 +13,14 @@ from initialize import createEmptyVelocityMesh
 np.random.seed(0)
 
 
-def fillMesh(mesh, x, y, z, fill_function, conf):
+def fillMesh(mesh, ispcs, x, y, z, fill_function, conf):
     for k in range(mesh.Nblocks[2]):
         for j in range(mesh.Nblocks[1]):
             for i in range(mesh.Nblocks[0]):
                 cid = mesh.getBlockID([i,j,k])
                 (ux, uy, uz) = mesh.getCenter( cid )
 
-                fval = fill_function(x, y, z, ux, uy, uz, conf)
+                fval = fill_function(x, y, z, ux, uy, uz, conf, ispcs)
 
                 mesh[i,j,k] = [fval, fval, fval, fval]
 
@@ -58,7 +58,7 @@ def spatialLoc(n, Ncoords, Mcoords, conf):
 
 
 #inject plasma into cells
-def inject(n, fill_function, conf):
+def inject(n, fill_function, conf, clip=True):
 
     #loop over all *local* cells
     for i in range(n.getNx()):
@@ -73,6 +73,9 @@ def inject(n, fill_function, conf):
                 pgrid0 = c.getPlasmaGrid()
                 pgrid1 = c.getNewPlasmaGrid()
 
+                pgrid0.qms = [conf.qmE, conf.qmP]
+                pgrid1.qms = [conf.qmE, conf.qmP]
+
                 for q in range(conf.NzMesh):
                     for r in range(conf.NyMesh):
                         for s in range(conf.NxMesh):
@@ -82,9 +85,10 @@ def inject(n, fill_function, conf):
 
                             #next create mesh for electron population
                             mesh0 = createEmptyVelocityMesh(conf)
-                            fillMesh(mesh0, x, y, z, fill_function, conf)
+                            fillMesh(mesh0, 0, x, y, z, fill_function, conf)
 
-                            mesh0.clip()
+                            if clip:
+                                mesh0.clip()
 
                             pgrid0.electrons[s,r,q] = mesh0
                             pgrid1.electrons[s,r,q] = mesh0
@@ -93,9 +97,10 @@ def inject(n, fill_function, conf):
                             ################################################## 
                             #And another for positrons
                             mesh1 = createEmptyVelocityMesh(conf)
-                            fillMesh(mesh1, x, y, z, fill_function, conf)
+                            fillMesh(mesh1, 1, x, y, z, fill_function, conf)
 
-                            mesh1.clip()
+                            if clip:
+                                mesh1.clip()
 
                             pgrid0.positrons[s,r,q] = mesh1
                             pgrid1.positrons[s,r,q] = mesh1
