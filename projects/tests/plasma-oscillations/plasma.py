@@ -21,6 +21,7 @@ from visualize import getYee
 
 import injector
 
+from timer import Timer
 
 
 # Generic function to fill the velocity mesh
@@ -61,6 +62,7 @@ def save(n, conf, lap, dset):
 
 if __name__ == "__main__":
 
+
     ################################################## 
     # set up plotting and figure
     plt.fig = plt.figure(1, figsize=(8,9))
@@ -78,6 +80,11 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[3]) )
     axs.append( plt.subplot(gs[4]) )
 
+
+    # Timer for profiling
+    timer = Timer(["total", "init", "step", "io"])
+    timer.start("total")
+    timer.start("init")
 
 
     ################################################## 
@@ -119,7 +126,7 @@ if __name__ == "__main__":
     plotNode(axs[0], node, conf)
     plotXmesh(axs[1], node, conf, 0)
     plotXmesh(axs[2], node, conf, 1)
-    saveVisz(0, node, conf)
+    saveVisz(-1, node, conf)
 
 
 
@@ -132,6 +139,14 @@ if __name__ == "__main__":
     #setup spatial space solver
     ssol = plasma.SpatialLagrangianSolver2nd()
     ssol.setGrid(node)
+    
+
+
+    timer.stop("init") 
+    timer.stats("init") 
+    # end of initialization
+    ################################################## 
+
 
 
     #setup output file
@@ -153,9 +168,8 @@ if __name__ == "__main__":
     #simulation loop
     time = 0.0
 
-    lapIO  = 1
-    for lap in range(1, conf.Nt):
-        print("--- lap {}".format(lap))
+    lapIO  = 0
+    for lap in range(0, conf.Nt):
 
         #E field
         #updateBoundaries(node)
@@ -194,8 +208,16 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 cell.clip()
 
+        timer.lap("step")
+
         #I/O
         if (time - lapIO*conf.sampleDt >= conf.sampleDt):
+            print("--------------------------------------------------")
+            print("------ lap: {} / t: {}".format(lap, time)) 
+            timer.stats("step")
+
+
+            timer.start("io")
 
             #save temporarily to file
             save(node, conf, lapIO, dset)
@@ -210,9 +232,15 @@ if __name__ == "__main__":
 
             lapIO += 1
 
+            timer.stop("io")
+            timer.stats("io")
+
+            timer.start("step") #refresh lap counter (avoids IO profiling)
 
 
         time += conf.dt
-
+    
 
     #node.finalizeMpi()
+
+    timer.stop("total")
