@@ -7,8 +7,8 @@
 #include "definitions.h"
 
 
-
 namespace sheets {
+
   // -------------------------------------------------- 
   /// Sheet of velocities from vmesh
   // These are always slices of the full mesh along some dimension at some 
@@ -64,7 +64,13 @@ namespace sheets {
 
       Sheet& operator*=(const Sheet& rhs);
 
-      Sheet& operator*=(const Realf rhs);
+      Sheet& operator/=(const Sheet& rhs);
+
+      template<typename T>
+      Sheet& operator*=(const T rhs);
+
+      template<typename T>
+      Sheet& operator/=(const T rhs);
   };
 
   inline Sheet operator+(Sheet lhs, const Sheet& rhs) {
@@ -82,9 +88,150 @@ namespace sheets {
     return lhs;
   };
 
-  inline Sheet operator*(Sheet lhs, const Realf rhs) {
-    lhs *= rhs;
+  template<typename T>
+  inline Sheet operator*(Sheet lhs, const T rhs) {
+    lhs *= (Realf) rhs;
     return lhs;
   };
 
+  template<typename T>
+  inline Sheet operator*(const T rhs, Sheet lhs)  {
+    lhs *= (Realf) rhs;
+    return lhs;
+  };
+
+  template<typename T>
+  inline Sheet operator/(Sheet lhs, const T rhs) {
+    lhs /= (Realf) rhs;
+    return lhs;
+  };
+
+  template<typename T>
+  inline Sheet operator/(const T rhs, Sheet lhs)  {
+    lhs /= (Realf) rhs;
+    return lhs;
+  };
+
+
+};
+
+
+// --------------------------------------------------
+// Implementations
+
+
+/// Resize the sheet into correct size
+inline void sheets::Sheet::resize(size_t Ni_, size_t Nj_) {
+  iGrid.resize(Ni_);
+  jGrid.resize(Nj_);
+  values.resize(Ni_*Nj_);
+
+  Ni = Ni_;
+  Nj = Nj_;
 }
+
+/// internal function to get general id from sheet indices
+inline size_t sheets::Sheet::getIndex(size_t i, size_t j) {
+  return Ni*j + i;
+}
+
+/// Load scalar to the sheet
+inline void sheets::Sheet::loadValue(size_t i, size_t j, Realf val) {
+  size_t indx = getIndex(i, j);
+  values[indx] = val;
+}
+
+/// load zeros to location (i,j)
+inline void sheets::Sheet::loadZeroBlock(size_t i, size_t j) {
+  size_t indx = getIndex(i, j);
+
+  // TODO add block instead of scalar
+  values[indx] = 0.0;
+}
+
+inline void sheets::Sheet::loadBlock(size_t i, size_t j, vblock_t block) {
+  size_t indx = getIndex(i, j);
+
+  // TODO add block instead of scalar
+  values[indx] = block[0];
+}
+
+/// return block at location (i,j)
+inline vblock_t sheets::Sheet::getBlock(size_t i, size_t j) {
+  vblock_t ret;
+  size_t indx = getIndex(i, j);
+  ret[0] = values[indx]; //TODO return block instead element
+
+  return ret;
+}
+
+/// check if block at location (i,j) is zero
+inline bool sheets::Sheet::isNonZero(size_t i, size_t j) {
+  size_t indx = getIndex(i, j);
+  if ( values[indx] == 0.0 ) { return false; };
+  return true;
+}
+
+/// differential volume elements of sheet cells
+/* TODO implement; is this even needed?
+Sheet Sheet::diff() {
+
+  // initialize new return sheet
+  Sheet ret;
+  ret.resize(Ni, Nj);
+
+  // compute lengths
+
+
+  return ret;
+}
+*/
+
+/// 
+inline Realf sheets::Sheet::sum() {
+  Realf sum = 0.0;
+  for(auto v : values) { sum += v; }
+
+  return sum;
+}
+
+/// Check that another sheet conforms to my size & dimensions
+inline void sheets::Sheet::checkSizes(const Sheet& s) {
+  if(this->Ni != s.Ni) throw std::range_error ("i dimensions do not match"); 
+  if(this->Nj != s.Nj) throw std::range_error ("j dimensions do not match"); 
+}
+
+// Sheet arithmetics
+inline sheets::Sheet& sheets::Sheet::operator+=(const Sheet& rhs) {
+  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] += rhs.values[q];
+  return *this;
+}
+
+inline sheets::Sheet& sheets::Sheet::operator-=(const Sheet& rhs) {
+  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] -= rhs.values[q];
+  return *this;
+}
+
+template<typename T>
+inline sheets::Sheet& sheets::Sheet::operator*=(const T rhs) {
+  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] *= (Realf) rhs;
+  return *this;
+}
+
+template<typename T>
+inline sheets::Sheet& sheets::Sheet::operator/=(const T rhs) {
+  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] /= (Realf) rhs;
+  return *this;
+}
+
+inline sheets::Sheet& sheets::Sheet::operator*=(const Sheet& rhs) {
+  this->checkSizes(rhs);
+
+  for(size_t q=0; q<(this->Ni*this->Nj); q++) { 
+    this->values[q] *= rhs.values[q];
+  }
+  return *this;
+}
+
+
+

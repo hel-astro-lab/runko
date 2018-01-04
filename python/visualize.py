@@ -143,7 +143,7 @@ def plotXmesh(ax, n, conf, spcs):
             if spcs == 0:
                 vm = pgrid.electrons[s,0,0] #electron population
             elif spcs == 1:
-                vm = pgrid.positrons[s,0,0] #electron population
+                vm = pgrid.positrons[s,0,0] #positron population
             else:
                 raise IndexError
 
@@ -152,13 +152,21 @@ def plotXmesh(ax, n, conf, spcs):
 
             data[ i*conf.NxMesh + s, :] = vbundle.getPencil()
 
+    #data = np.log10(data)
+    #imshow(ax, data,
+    #       n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
+    #       cmap = 'plasma_r',
+    #       vmin = -10.0,
+    #       vmax =  2.0,
+    #       clip = -10.0,
+    #       )
 
     imshow(ax, data,
            n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
            cmap = 'plasma_r',
-           vmin = 0.0,
-           vmax = 1.0,
-           clip = 0.0,
+           vmin =  0.0,
+           vmax =  1.0,
+           clip =  0.0,
            )
 
 

@@ -54,8 +54,8 @@ DEPS_COMMON=definitions.h
 
 
 
-sheets.o: ${DEPS_COMMON} sheets.h sheets.c++
-	${CMP} ${CXXFLAGS} -c sheets.c++
+#sheets.o: ${DEPS_COMMON} sheets.h sheets.c++
+#	${CMP} ${CXXFLAGS} -c sheets.c++
 
 bundles.o: ${DEPS_COMMON} bundles.h bundles.c++
 	${CMP} ${CXXFLAGS} -c bundles.c++
@@ -98,8 +98,8 @@ pycorgi:
 
 
 #link into python module with pybind11
-pyplasmatools: sheets.o bundles.o velomesh.o python/pyplasmatools.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o sheets.o bundles.o velomesh.o
+pyplasmatools: bundles.o velomesh.o python/pyplasmatools.o sheets.h
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o bundles.o velomesh.o
 
 
 pyplasma: grid.h cell.h velomesh.o solvers/momentumLagrangianSolver.o solvers/spatialLagrangianSolver.o maxwell.o python/pyplasma.o 

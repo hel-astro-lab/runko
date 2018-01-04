@@ -113,6 +113,8 @@ PYBIND11_MODULE(pyplasma, m) {
   py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vssol)
     .def(py::init<>());
 
+  py::class_<vlasov::SpatialLagrangianSolver4th>(m, "SpatialLagrangianSolver4th", vssol)
+    .def(py::init<>());
 
 
   py::class_<maxwell::YeeLattice>(m, "YeeLattice")

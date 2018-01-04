@@ -24,7 +24,7 @@ ax.set_ylabel(r'$t$')
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('run2/run.hdf5','r')
+f = h5py.File('out/run.hdf5','r')
 
 
 #Read field

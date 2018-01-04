@@ -4,7 +4,7 @@ namespace py = pybind11;
 
 
 #include "../definitions.h"
-#include "../sheets.h"
+// #include "../sheets.h"
 #include "../bundles.h"
 #include "../velomesh.h"
 #include "../tools/Mesh.h"
@@ -35,6 +35,7 @@ PYBIND11_MODULE(plasmatools, m) {
 
   // --------------------------------------------------
   // Python bindings for sheet class
+  /* TODO There is a template magick hiccup with these now
   py::class_<sheets::Sheet>(m, "Sheet" )
     .def(py::init<>())
     .def_readwrite("iGrid",      &sheets::Sheet::iGrid)
@@ -57,6 +58,8 @@ PYBIND11_MODULE(plasmatools, m) {
     .def("loadValue",            &sheets::Sheet::loadValue)
     .def("getBlock",             &sheets::Sheet::getBlock)
     .def("isNonZero",            &sheets::Sheet::isNonZero);
+  */
+
 
 
   // --------------------------------------------------
@@ -81,6 +84,8 @@ PYBIND11_MODULE(plasmatools, m) {
   py::class_<bundles::BundleInterpolator4th>(m, "BundleInterpolator4th", bintp)
     .def(py::init<>());
 
+  py::class_<bundles::BundleInterpolator4PIC>(m, "BundleInterpolator4PIC", bintp)
+    .def(py::init<>());
 
 
   // --------------------------------------------------

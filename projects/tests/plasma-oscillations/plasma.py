@@ -141,12 +141,15 @@ if __name__ == "__main__":
 
     #setup momentum space solver
     vsol = plasma.MomentumLagrangianSolver()
-    intp = ptools.BundleInterpolator4th()
+    #intp = ptools.BundleInterpolator2nd()
+    #intp = ptools.BundleInterpolator4th()
+    intp = ptools.BundleInterpolator4PIC()
     vsol.setInterpolator(intp)
 
 
     #setup spatial space solver
-    ssol = plasma.SpatialLagrangianSolver2nd()
+    #ssol = plasma.SpatialLagrangianSolver2nd()
+    ssol = plasma.SpatialLagrangianSolver4th()
     ssol.setGrid(node)
     
 
