@@ -89,6 +89,11 @@ namespace bundles {
       Bundle interpolate( );
   };
 
+  /// Fourth order Lagrangian positive non-oscillatory scheme
+  class BundleInterpolator4PIC : public BundleInterpolator {
+    public:
+      Bundle interpolate( );
+  };
 
 
 } // end of bundles namespace

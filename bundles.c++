@@ -2,11 +2,23 @@
 #include <array>
 #include <vector>
 #include <cmath>
+#include <algorithm>
+
+#include <iostream>
 
 #include "bundles.h"
 
+using std::min;
+using std::max;
+
 
 using namespace bundles;
+
+
+/// Signum of value
+template <typename T> int sign(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 
 
@@ -138,8 +150,12 @@ Bundle BundleInterpolator4th::interpolate( ) {
     Delta     = getDeltaSlice(i);
     Delta[0] *= dt / bundle.getDx(i);
 
+    // flux limiter
+    if (Delta[0] > 0.90) { Delta[0] = 0.90; }
+
+
     // 4th order conservative Lagrangian interpolation
-    block[0] = Delta[0]        * (-fp2[0] + 7.0*fp1[0] + 7.0*f0[0] - fm1[0] )/12.0
+    block[0] =     Delta[0]    * (-fp2[0] + 7.0*fp1[0] + 7.0*f0[0] - fm1[0] )/12.0
               +pow(Delta[0],2) * ( fp2[0] -15.0*fp1[0] +15.0*f0[0] - fm1[0] )/24.0
               +pow(Delta[0],3) * ( fp2[0] -     fp1[0] -     f0[0] + fm1[0] )/12.0
               +pow(Delta[0],4) * (-fp2[0] + 3.0*fp1[0] - 3.0*f0[0] + fm1[0] )/24.0;
@@ -153,3 +169,84 @@ Bundle BundleInterpolator4th::interpolate( ) {
 };
 
 
+Bundle BundleInterpolator4PIC::interpolate( ) {
+
+  // prepare target bundle
+  Bundle ret;
+  ret.resize( bundle.size() );
+
+  // compute flux (inner region)
+  vblock_t block;
+  Realf fp2, fp1, fp0, fm1, fm2;
+
+
+  // temporary variables for loop
+  Realf aa, as, aa1, aa2, aa3;
+  int fa, ss, j1;
+
+  Realf hmax1, hmax2, hmin1, hmin2;
+  Realf hmax, hmin;
+  Realf ep1, ep2, ep3;
+  Realf flux;
+
+
+  ret.loadZeroBlock(0);
+  ret.loadZeroBlock(1);
+  for(int i=2; i<(int)bundle.size()-2; i++) {
+
+    // get shift (CFL number) and its sign (for detecting upwind)
+    aa = getDeltaSlice(i)[0] * dt/bundle.getDx(i);
+    fa = (int) floor(aa);
+    ss = sign(aa);
+    as = aa * ss;
+
+    // compute how many grid indices do we advect
+    j1 = i - fa;
+    if (j1 < 2) {
+      ret.loadZeroBlock(i);
+      continue;
+    }
+    if (j1 > (int)bundle.size()-2) {
+      ret.loadZeroBlock(i);
+      continue;
+    }
+
+    // cfl shifts for interpolation formula
+    aa1= -(as+1) * (as-1) * (as-2);
+    aa2=2*(as+3) * (as-1) * (as-2);
+    aa3= -(as+2) * (as+1) * (as-1);
+
+    // elements (shifted for upwind)
+    fm2     = bundle.getSlice(j1-ss-ss)[0];
+    fm1     = bundle.getSlice(j1-ss   )[0];
+    fp0     = bundle.getSlice(j1      )[0];
+    fp1     = bundle.getSlice(j1+ss   )[0];
+    fp2     = bundle.getSlice(j1+ss+ss)[0];
+
+    hmax1 = max( max(fm1,fp0), min(fm1*2-fm2,fp0*2-fp1) );
+    hmin1 = min( min(fm1,fp0), max(fm1*2-fm2,fp0*2-fp1) );
+    hmax2 = max( max(fp1,fp0), min(fp0*2-fm1,fp1*2-fp2) );
+    hmin2 = min( min(fp1,fp0), max(fp0*2-fm1,fp1*2-fp2) );
+        
+    hmax = max(hmax1,hmax2);
+    hmin = max( (Realf)0.0, min(hmin1,hmin2));
+
+    ep3=-min(fm1-fp0, (Realf) 2.4*(fp0-hmin))*(fp0<=fm1)
+        +min(fp0-fm1, (Realf) 4.0*(hmax-fp0))*(fp0> fm1);
+    ep2= min(fp1-fp0, (Realf) 1.6*(fp0-hmin))*(fp1>=fp0)
+        -min(fp0-fp1, (Realf) 1.6*(hmax-fp0))*(fp1< fp0);
+    ep1= min(fp2-fp1, (Realf) 2.0*(fp0-hmin))*(fp2>=fp1)*(ep2>=ep3) 
+        -min(fp1-fp2, (Realf) 1.1*(fp0-hmin))*(fp2< fp1)*(ep2>=ep3) 
+        +min(fp2-fp1, (Realf) 0.8*(hmax-fp0))*(fp2>=fp1)*(ep2< ep3) 
+        -min(fp1-fp2, (Realf) 1.9*(hmax-fp0))*(fp2< fp1)*(ep2< ep3);
+
+    flux = aa*((ep1*aa1 + ep2*aa2 + ep3*aa3)/24+fp0);
+    block[0] = flux;
+
+    ret.loadBlock(i, block);
+  }
+  ret.loadZeroBlock( bundle.size()-2 );
+  ret.loadZeroBlock( bundle.size()-1 );
+
+  return ret;
+};
