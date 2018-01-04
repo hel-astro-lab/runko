@@ -51,8 +51,8 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
     #Classical Maxwellian distribution
     z1 = 0.1*np.random.standard_normal() # Brownian noise
 
-    f  = 1.0
-    f *= np.exp(-((ux - mux)/vth)**2 + z1)
+    f  = 1.0/np.sqrt(2.0*np.pi)/vth
+    f *= np.exp(-0.5*((ux - mux)/vth)**2 + z1)
 
     return f
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     ################################################## 
     # initialize
-    injector.inject(node, filler, conf, clip=True) #injecting plasma
+    injector.inject(node, filler, conf, clip=False) #injecting plasma
 
 
 
@@ -148,8 +148,8 @@ if __name__ == "__main__":
 
 
     #setup spatial space solver
-    #ssol = plasma.SpatialLagrangianSolver2nd()
-    ssol = plasma.SpatialLagrangianSolver4th()
+    ssol = plasma.SpatialLagrangianSolver2nd()
+    #ssol = plasma.SpatialLagrangianSolver4th()
     ssol.setGrid(node)
     
 

@@ -161,11 +161,13 @@ def plotXmesh(ax, n, conf, spcs):
     #       clip = -10.0,
     #       )
 
+    dmax = np.max(data)
+
     imshow(ax, data,
            n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
            cmap = 'plasma_r',
            vmin =  0.0,
-           vmax =  1.0,
+           vmax =  5.0,
            clip =  0.0,
            )
 
