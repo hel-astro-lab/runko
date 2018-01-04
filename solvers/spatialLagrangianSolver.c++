@@ -270,7 +270,7 @@ namespace vlasov {
           // dF = U_-1/2 - U_+1/2
           flux = s0 + (Um - Up);
 
-          v1.addSheet(dim, i,  flux);
+          v1.setSheet(dim, i,  flux);
 
           // collect numerical volume flux that is leaking from cube to another
           // Size of elementary cell is dvx*dvy*dvz velocity cube.
@@ -360,7 +360,7 @@ namespace vlasov {
             std::dynamic_pointer_cast<VlasovCell>( grid->getCellPtr(cid_m1));
           VlasovFluid& gr_m1 = cellPtr_m1->getPlasmaGrid();
 
-          // auto nindx_m2    = cellPtr->neighs(-2, 0); // i-1 neighbor
+          // auto nindx_m2    = cellPtr->neighs(-2, 0); // i-2 neighbor
           // uint64_t cid_m2  = grid->cellId( std::get<0>(nindx_m2), std::get<1>(nindx_m2) );
           // Grid::CellPtr cellPtr_m2 = 
           //   std::dynamic_pointer_cast<VlasovCell>( grid->getCellPtr(cid_m2));
@@ -369,7 +369,7 @@ namespace vlasov {
 
 
 
-          double qmE, qmP;
+          double qm;
 
           if (gr0.Nx < 3) {
 
@@ -377,7 +377,7 @@ namespace vlasov {
 
           } else {
 
-            size_t first = 0;
+            // size_t first = 0;
             size_t last  = gr0.Nx-1;
 
             // Block structured cells
@@ -387,20 +387,20 @@ namespace vlasov {
                 // TODO make this into a loop
                 //--------------------------------------------------
                 // electrons
-                qmE = gr0.getQ(0); // electron mass-to-charge
+                qm = gr0.getQ(0); // electron mass-to-charge
 
                 // leftmost side blocks (-2 and -1 value from left neighbor)
-                yee.jx(0,j,k) -= qmE*solve1d(
+                yee.jx(0,j,k) -= qm*solve1d(
                     gr_m1.electrons(last-1,  j,k),
                     gr_m1.electrons(last,    j,k),
-                    gr0.  electrons(first,   j,k),
-                    gr0.  electrons(first+1, j,k),
-                    gr0.  electrons(first+2, j,k),
-                    gr1.  electrons(first,   j,k),
+                    gr0.  electrons(0,       j,k),
+                    gr0.  electrons(1,       j,k),
+                    gr0.  electrons(2,       j,k),
+                    gr1.  electrons(0,       j,k),
                     dim, cellPtr);
 
                 // second leftmost
-                yee.jx(0,j,k) -= qmE*solve1d(
+                yee.jx(1,j,k) -= qm*solve1d(
                     gr_m1.electrons(last,    j,k),
                     gr0.  electrons(0,       j,k),
                     gr0.  electrons(1,       j,k),
@@ -413,7 +413,7 @@ namespace vlasov {
                 // inner blocks
                 for(size_t i=2; i<gr0.Nx-2; i++) {
                   
-                  yee.jx(i,j,k) -= qmE*solve1d(
+                  yee.jx(i,j,k) -= qm*solve1d(
                       gr0.electrons(i-2, j,k),
                       gr0.electrons(i-1, j,k),
                       gr0.electrons(i,   j,k),
@@ -425,42 +425,43 @@ namespace vlasov {
                 }
 
                 // second rightmost
-                yee.jx(last,j,k) -= qmE*solve1d(
+                yee.jx(last-1,j,k) -= qm*solve1d(
                     gr0.  electrons(last-3, j,k),
                     gr0.  electrons(last-2, j,k),
                     gr0.  electrons(last-1, j,k),
                     gr0.  electrons(last,   j,k),
-                    gr_p1.electrons(first,  j,k),
+                    gr_p1.electrons(0,      j,k),
                     gr1.  electrons(last-1, j,k),
                     dim, cellPtr);
 
                 // rightmost side blocks (+1 value from right neighbor)
-                yee.jx(last,j,k) -= qmE*solve1d(
+                yee.jx(last,j,k) -= qm*solve1d(
                     gr0.  electrons(last-2, j,k),
                     gr0.  electrons(last-1, j,k),
                     gr0.  electrons(last,   j,k),
-                    gr_p1.electrons(first,  j,k),
-                    gr_p1.electrons(first+1,j,k),
+                    gr_p1.electrons(0,      j,k),
+                    gr_p1.electrons(1,      j,k),
                     gr1.  electrons(last,   j,k),
                     dim, cellPtr);
 
 
+
                 //--------------------------------------------------
                 // positrons
-                qmP = gr0.getQ(1); // positron mass-to-charge
+                qm = gr0.getQ(1); // positron mass-to-charge
 
                 // leftmost side blocks (-2 and -1 value from left neighbor)
-                yee.jx(0,j,k) -= qmP*solve1d(
+                yee.jx(0,j,k) -= qm*solve1d(
                     gr_m1.positrons(last-1,  j,k),
                     gr_m1.positrons(last,    j,k),
-                    gr0.  positrons(first,   j,k),
-                    gr0.  positrons(first+1, j,k),
-                    gr0.  positrons(first+2, j,k),
-                    gr1.  positrons(first,   j,k),
+                    gr0.  positrons(0,       j,k),
+                    gr0.  positrons(1,       j,k),
+                    gr0.  positrons(2,       j,k),
+                    gr1.  positrons(0,       j,k),
                     dim, cellPtr);
 
                 // second leftmost
-                yee.jx(0,j,k) -= qmP*solve1d(
+                yee.jx(1,j,k) -= qm*solve1d(
                     gr_m1.positrons(last,    j,k),
                     gr0.  positrons(0,       j,k),
                     gr0.  positrons(1,       j,k),
@@ -473,7 +474,7 @@ namespace vlasov {
                 // inner blocks
                 for(size_t i=2; i<gr0.Nx-2; i++) {
                   
-                  yee.jx(i,j,k) -= qmP*solve1d(
+                  yee.jx(i,j,k) -= qm*solve1d(
                       gr0.positrons(i-2, j,k),
                       gr0.positrons(i-1, j,k),
                       gr0.positrons(i,   j,k),
@@ -484,24 +485,26 @@ namespace vlasov {
 
                 }
 
-                yee.jx(last,j,k) -= qmP*solve1d(
+                // second rightmost
+                yee.jx(last-1,j,k) -= qm*solve1d(
                     gr0.  positrons(last-3, j,k),
                     gr0.  positrons(last-2, j,k),
                     gr0.  positrons(last-1, j,k),
                     gr0.  positrons(last,   j,k),
-                    gr_p1.positrons(first,  j,k),
+                    gr_p1.positrons(0,      j,k),
                     gr1.  positrons(last-1, j,k),
                     dim, cellPtr);
 
                 // rightmost side blocks (+1 value from right neighbor)
-                yee.jx(last,j,k) -= qmP*solve1d(
+                yee.jx(last,j,k) -= qm*solve1d(
                     gr0.  positrons(last-2, j,k),
                     gr0.  positrons(last-1, j,k),
                     gr0.  positrons(last,   j,k),
-                    gr_p1.positrons(first,  j,k),
-                    gr_p1.positrons(first+1,j,k),
+                    gr_p1.positrons(0,      j,k),
+                    gr_p1.positrons(1,      j,k),
                     gr1.  positrons(last,   j,k),
                     dim, cellPtr);
+
                   
 
               }
@@ -556,6 +559,7 @@ namespace vlasov {
 
         // loop over every sheet in the mesh
         sheets::Sheet Up, Um, flux;
+
         sheets::Sheet sp0, sp1, sp2, sm1, sm2;
         Realf aa;
         for(size_t i=0; i<Nb; i++) {
@@ -588,8 +592,14 @@ namespace vlasov {
 
           // dF = U_-1/2 - U_+1/2
           flux = sp0 + (Um - Up);
+          v1.setSheet(dim, i,  flux);
 
-          v1.addSheet(dim, i,  flux);
+
+          /*
+          v1m.setSheet(dim, i,sp0 + Up);
+          v1. addSheet(dim, i, -1 * Up);
+          */
+
 
           // collect numerical volume flux that is leaking from cube to another
           // Size of elementary cell is dvx*dvy*dvz velocity cube.

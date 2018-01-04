@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     ################################################## 
     # initialize
-    injector.inject(node, filler, conf, clip=False) #injecting plasma
+    injector.inject(node, filler, conf, clip=True) #injecting plasma
 
 
 
@@ -215,10 +215,10 @@ if __name__ == "__main__":
 
 
         #clip every cell
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        cell.clip()
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.clip()
 
         timer.lap("step")
 

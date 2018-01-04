@@ -75,6 +75,7 @@ namespace vmesh {
 
       sheets::Sheet getSheet(size_t, size_t);
       void addSheet(size_t, size_t, sheets::Sheet);
+      void setSheet(size_t, size_t, sheets::Sheet);
 
       bool clip( );
 

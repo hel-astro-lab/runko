@@ -438,6 +438,70 @@ void VeloMesh::addSheet(size_t dim, size_t i, Sheet sheet) {
       // non-zero address block
       // TODO: real, full block, addition
       vblock_t targetBlock = it->second;
+      targetBlock[0] += vb[0];
+
+      it->second = targetBlock;
+    } // end of loop over sheet dimensions
+  }
+
+};
+
+
+/// Add given sheet to the mesh
+void VeloMesh::setSheet(size_t dim, size_t i, Sheet sheet) {
+
+  // rotate dimensions to match incoming sheet
+  size_t x,y,z;
+  switch(dim) {
+    case 0:  // x
+      x = 0;
+      y = 1;
+      z = 2;
+      break;
+    case 1:  // y
+      x = 1;
+      y = 0;
+      z = 2;
+      break;
+    case 2:  // z
+      z = 2;
+      y = 0;
+      z = 1;
+      break;
+  }
+
+
+  uint64_t cid;
+  for(size_t k=0; k<Nblocks[z]; k++) {
+    for(size_t j=0; j<Nblocks[y]; j++) {
+
+      // check if there is something coming to this block
+      if(!sheet.isNonZero(j,k) ) continue; 
+
+      // non-zero block; lets add it
+      switch(dim) {
+        case 0: cid = getBlockID( {{i, j, k}} ); // x
+                break;
+        case 1: cid = getBlockID( {{j, i, k}} ); // y 
+                break;
+        case 2: cid = getBlockID( {{j, k, i}} ); // z
+                break;
+      }
+
+      vblock_t vb = sheet.getBlock(j, k);
+
+      // next lets get correct block
+      auto it = blockContainer.find(cid);
+
+      // if block does not exist, create it 
+      if( it == blockContainer.end() ) {
+        blockContainer.insert( std::make_pair(cid, vb ) );
+        continue;
+      }
+
+      // non-zero address block
+      // TODO: real, full block, addition
+      vblock_t targetBlock = it->second;
       targetBlock[0] = vb[0];
 
       it->second = targetBlock;
@@ -445,6 +509,8 @@ void VeloMesh::addSheet(size_t dim, size_t i, Sheet sheet) {
   }
 
 };
+
+
 
 
 /// Add given bundle to the right blocks along the corresponding dimension
