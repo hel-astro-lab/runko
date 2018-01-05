@@ -84,8 +84,9 @@ t2 = ny
 
 
 # Change to spectra by considering |F] 
-F = np.log10( np.abs(Fourier) )
+F = np.log10( np.abs(Fourier) ).transpose()
 print "min/max:", np.min(F), np.max(F)
+
 
 
 K, T = np.meshgrid(k, t)
@@ -154,6 +155,7 @@ def w_warmPlasma(k, wp, vth):
 #        color='black', 
 #        linestyle='dashed', 
 #        linewidth=0.8)
+
 
 
 plt.subplots_adjust(left=0.12, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)

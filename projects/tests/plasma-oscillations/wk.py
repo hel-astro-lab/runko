@@ -27,13 +27,14 @@ ax.set_ylabel(r'$\omega$')
 #f = h5py.File('electrostatic/run_hires.hdf5','r')
 #f = h5py.File('electrostatic/run_hires_2nd.hdf5','r')
 f = h5py.File('out/run.hdf5','r')
+#f = h5py.File('plasma-osc/run.hdf5','r')
 
 
 #Read field
-ex = f['fields/Ex']
-#ex = ex[:, 1500:4000]
-print "Ex shape:", np.shape(ex)
+ex = np.transpose( f['fields/Ex'] )  #load as arr[spatial, temporal]
+ex = ex[50:, :] #skim off some warm-up phase
 
+print "Ex shape:", np.shape(ex)
 
 
 #Read simulation values
@@ -41,22 +42,24 @@ dt = f['params'].attrs['dt']
 dx = f['params'].attrs['dx']
 
 
-print dt, dx
+print "simulation sampling step:    ", dt
+print "simulation spatial step size:", dx
 
 
 #-------------------------------------------------- 
 # create test data
 #A = np.zeros( (100, 1001) )
+#ny, nx = np.shape(ex)
+#A = np.zeros((ny,nx))
 #print "simulated data shape:", np.shape(A)
-#dx = 0.5
-#k1 = 5.0
-#w1 = 50.0
-#t = np.arange(0.0, 1001)*0.05
-#x = np.arange(0.0, 100.0)*dx
-#
-##for i in range(1001):
-##    A[:,i] = np.sin(k1*x - w1*t[i]) +  np.random.rand(len(x))*0.001
-##    A[:,i] = np.sin(2.0*np.pi*0.15*x + 1.0*t[i]) + np.sin(2.0*np.pi*0.4*x + 3.0*t[i]) + np.random.rand(len(x))*0.001
+#k1 = 100.0
+#w1 = 20.0
+#t = np.arange(0.0, ny)*dt
+#x = np.arange(0.0, nx)*dx
+##
+#for i in range(ny):
+#    A[i,:] = np.sin(k1*x - w1*t[i]) +  np.random.rand(len(x))*0.001
+#    #A[i,:] = np.sin(2.0*np.pi*0.15*x + 1.0*t[i]) + np.sin(2.0*np.pi*0.4*x + 3.0*t[i]) + np.random.rand(len(x))*0.001
 #
 ##for j in range(100):
 ##    A[j,:] += np.sin(- w1*t)
@@ -78,11 +81,15 @@ print dt, dx
 #A = np.transpose(A)
 
 #--------------------------------------------------
-# filter data with hamming windowing
-A = np.transpose( ex )
+# filter data with windowing
+A = ex
 (lines, cols) = np.shape(A)
-window = np.hamming(lines).reshape(lines, 1)
+#window = np.hamming(lines).reshape(lines, 1)
+#window = np.bartlett(lines).reshape(lines, 1)
+#window = np.blackman(lines).reshape(lines, 1)
+window = np.kaiser(lines, 14.0).reshape(lines, 1)
 A *= window
+
 
 
 #--------------------------------------------------
@@ -132,16 +139,16 @@ print "shape after transform:", np.shape(Fourier)
 # spatial wave vector x component k_x (only half is considered due to Nqyust frequency cut)
 dk = 2.0*np.pi/(nx * dx)
 k = np.arange(nx)*dk
-print "k:"
-print k
+#print "k:"
+#print k
 k1 = 1
 k2 = nx
 
 # temporal angular frequency \omega
 dw = 2.0*np.pi/(ny * dt)
 w = np.arange(ny)*dw
-print "w:"
-print w
+#print "w:"
+#print w
 w1 = 1
 w2 = ny/2
 
@@ -161,9 +168,11 @@ print "t min/max:", dt, T
 print "k min/max:", kmin, kmax
 print "w min/max:", wmin, wmax
 
-#ax.set_xlim(0.0, 40.0)
-#ax.set_ylim(0.0, 40.0)
+ax.set_xlim(0.0, 20.0)
+ax.set_ylim(0.0, 20.0)
 
+#ax.set_xlim(0.0, kmax)
+#ax.set_ylim(0.0, wmax*0.5)
 
 # Change to spectra by considering |F] 
 F = np.log10( np.abs(Fourier) )
@@ -208,7 +217,7 @@ cax.xaxis.set_ticks_position('top')
 #analytical relations
 
 wp = 1.0 #plasma frequency XXX why x2? 
-vth = 0.25 #thermal velocity XXX why /2?
+vth = 0.01 #thermal velocity XXX why /2?
 
 #numerical propagation speed
 def w_num(k):
@@ -236,4 +245,4 @@ ax.plot(k, w_warmPlasma(k, wp, vth),
 
 
 plt.subplots_adjust(left=0.12, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
-plt.savefig('out/wk.pdf')
+plt.savefig('wk.pdf')

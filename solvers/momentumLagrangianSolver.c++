@@ -39,11 +39,11 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
         for(size_t r=0; r<gr.Ny; r++) {
 
           size_t ispcs = 0;
-          double qm = 0.0;
+          double mq = 0.0;
           for(auto&& spcs : gr.species() ) {
 
-            // charge to mass ratio
-            qm = gr.getQ(ispcs);
+            // mass to charge ratio
+            mq = 1.0 / gr.getQ(ispcs);
 
 
             //--------------------------------------------------
@@ -127,7 +127,7 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
 
                   // create force bundle to act on the distribution
                   for (size_t q=0; q<vmesh.Nblocks[dim]; q++) {
-                    block[0] = qm * force;
+                    block[0] = mq * force;
                     delta.loadBlock(q, block);
                   }
 

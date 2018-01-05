@@ -46,7 +46,7 @@ namespace vmesh {
       indices_t Nblocks = {{ NBLOCKS, NBLOCKS, NBLOCKS }};
 
       /// Clipping threshold
-      Real threshold = 1.0e-3;
+      Real threshold = 1.0e-4;
 
 
       void zFill( std::array<double, 3> mins_,

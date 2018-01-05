@@ -8,6 +8,10 @@
 
 namespace vlasov {
 
+/// Signum of value
+template <typename T> int sign(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 
   /*! \brief Splitted Lagrangian spatial solver for Vlasov fluids
@@ -88,7 +92,7 @@ namespace vlasov {
 
           VlasovFluid&     gr_m1 = cellPtr_m1->getPlasmaGrid();
 
-          double qmE, qmP;
+          double qm;
 
           if (gr0.Nx == 1 && gr0.Ny == 1 && gr0.Nz == 1) {
 
@@ -97,7 +101,7 @@ namespace vlasov {
 
             //-------------------------------------------------- 
             // electrons
-            qmE = gr0.getQ(0); // electron mass-to-charge
+            qm = sign( gr0.getQ(0) ); // charge sign
 
             vmesh::VeloMesh& v0e = gr0.electrons(0,0,0);
             vmesh::VeloMesh& v1e = gr1.electrons(0,0,0);
@@ -105,19 +109,19 @@ namespace vlasov {
             vmesh::VeloMesh& vp1e = gr_p1.electrons(0, 0, 0); // xxx | 0, 1, 2, 
             vmesh::VeloMesh& vm1e = gr_m1.electrons(0, 0, 0); // 0, 1, 2, .. | xxx
 
-            yee.jx(0,0,0) += qmE*solve1d(v0e, vm1e, vp1e, v1e, dim, cellPtr);
+            yee.jx(0,0,0) += qm*solve1d(v0e, vm1e, vp1e, v1e, dim, cellPtr);
 
 
             //-------------------------------------------------- 
             // positrons
-            qmP = gr0.getQ(1); // positron mass-to-charge
+            qm = sign( gr0.getQ(1) ); // charge sign
             vmesh::VeloMesh& v0p = gr0.positrons(0,0,0);
             vmesh::VeloMesh& v1p = gr1.positrons(0,0,0);
 
             vmesh::VeloMesh& vp1p = gr_p1.positrons(0, 0, 0); // xxx | 0, 1, 2, 
             vmesh::VeloMesh& vm1p = gr_m1.positrons(0, 0, 0); // 0, 1, 2, .. | xxx
 
-            yee.jx(0,0,0) += qmP*solve1d(v0p, vm1p, vp1p, v1p, dim, cellPtr);
+            yee.jx(0,0,0) += qm*solve1d(v0p, vm1p, vp1p, v1p, dim, cellPtr);
 
           } else {
 
@@ -131,10 +135,10 @@ namespace vlasov {
                 // TODO make this into a loop
                 //--------------------------------------------------
                 // electrons
-                qmE = gr0.getQ(0); // electron mass-to-charge
+                qm = sign( gr0.getQ(0) ); // electron charge sign
 
                 // leftmost side blocks (-1 value from left neighbor)
-                yee.jx(0,j,k) += qmE*solve1d(
+                yee.jx(0,j,k) += qm*solve1d(
                     gr0.  electrons(first,   j,k),
                     gr_m1.electrons(last,    j,k),
                     gr0.  electrons(first+1, j,k),
@@ -144,7 +148,7 @@ namespace vlasov {
                 // inner blocks
                 for(size_t i=1; i<gr0.Nx-1; i++) {
                   
-                  yee.jx(i,j,k) += qmE*solve1d(
+                  yee.jx(i,j,k) += qm*solve1d(
                       gr0.electrons(i,   j,k),
                       gr0.electrons(i-1, j,k),
                       gr0.electrons(i+1, j,k),
@@ -154,7 +158,7 @@ namespace vlasov {
                 }
 
                 // rightmost side blocks (+1 value from right neighbor)
-                yee.jx(last,j,k) += qmE*solve1d(
+                yee.jx(last,j,k) += qm*solve1d(
                     gr0.  electrons(last,   j,k),
                     gr0.  electrons(last-1, j,k),
                     gr_p1.electrons(first,  j,k),
@@ -165,10 +169,10 @@ namespace vlasov {
 
                 //--------------------------------------------------
                 // positrons
-                qmP = gr0.getQ(1); // positron mass-to-charge
+                qm = sign( gr0.getQ(1) ); // positron charge sign
                   
                 // leftmost side blocks (-1 value from left neighbor)
-                yee.jx(0,j,k) += qmP*solve1d(
+                yee.jx(0,j,k) += qm*solve1d(
                     gr0.  positrons(first,   j,k),
                     gr_m1.positrons(last,    j,k),
                     gr0.  positrons(first+1, j,k),
@@ -178,7 +182,7 @@ namespace vlasov {
                 // inner blocks
                 for(size_t i=1; i<gr0.Nx-1; i++) {
                   
-                  yee.jx(i,j,k) += qmP*solve1d(
+                  yee.jx(i,j,k) += qm*solve1d(
                       gr0.positrons(i,   j,k),
                       gr0.positrons(i-1, j,k),
                       gr0.positrons(i+1, j,k),
@@ -188,7 +192,7 @@ namespace vlasov {
                 }
 
                 // rightmost side blocks (+1 value from right neighbor)
-                yee.jx(last,j,k) += qmP*solve1d(
+                yee.jx(last,j,k) += qm*solve1d(
                     gr0.  positrons(last,   j,k),
                     gr0.  positrons(last-1, j,k),
                     gr_p1.positrons(first,  j,k),
@@ -387,7 +391,7 @@ namespace vlasov {
                 // TODO make this into a loop
                 //--------------------------------------------------
                 // electrons
-                qm = gr0.getQ(0); // electron mass-to-charge
+                qm = sign( gr0.getQ(0) ); // electron charge sign
 
                 // leftmost side blocks (-2 and -1 value from left neighbor)
                 yee.jx(0,j,k) += qm*solve1d(
@@ -448,7 +452,7 @@ namespace vlasov {
 
                 //--------------------------------------------------
                 // positrons
-                qm = gr0.getQ(1); // positron mass-to-charge
+                qm = sign( gr0.getQ(1) ); // positron charge sign
 
                 // leftmost side blocks (-2 and -1 value from left neighbor)
                 yee.jx(0,j,k) += qm*solve1d(

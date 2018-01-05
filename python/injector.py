@@ -73,8 +73,8 @@ def inject(n, fill_function, conf, clip=True):
                 pgrid0 = c.getPlasmaGrid()
                 pgrid1 = c.getNewPlasmaGrid()
 
-                pgrid0.qms = [conf.qmE, conf.qmP]
-                pgrid1.qms = [conf.qmE, conf.qmP]
+                pgrid0.qms = [conf.me, conf.mi]
+                pgrid1.qms = [conf.me, conf.mi]
 
                 for q in range(conf.NzMesh):
                     for r in range(conf.NyMesh):

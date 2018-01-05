@@ -27,32 +27,41 @@ from timer import Timer
 # Generic function to fill the velocity mesh
 #
 # Maxwellian plasma with Brownian noise
+# where delgam = kT/m_i c^2
+#
 def filler(x, y, z, ux, uy, uz, conf, ispcs):
 
-    #temperature
+    #electrons
     if ispcs == 0:
-        kT  = conf.kTE
-        vth = kT
+        delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
 
         # bulk velocities
-        mux = conf.GammaE
+        mux = conf.gamma_e
         muy = 0.0
         muz = 0.0
+
+
+        #give electrons a nudge 
+        Lx  = conf.Nx*conf.NxMesh*conf.dx
+        mux += conf.beta*np.sin( 2.0*np.pi * x / Lx)
+
+
+    #ions/positrons
     elif ispcs == 1:
-        kT  = conf.kTP
-        vth = kT
+        delgam  = conf.delgam
 
         # bulk velocities
-        mux = conf.GammaP
+        mux = conf.gamma_i
         muy = 0.0
         muz = 0.0
 
 
     #Classical Maxwellian distribution
-    z1 = 0.1*np.random.standard_normal() # Brownian noise
+    z1 = 0.05*np.random.standard_normal() # Brownian noise
+    #z1 = 0.0
 
-    f  = 1.0/np.sqrt(2.0*np.pi)/vth
-    f *= np.exp(-0.5*((ux - mux)/vth)**2 + z1)
+    f  = 1.0/np.sqrt(2.0*np.pi*delgam)
+    f *= np.exp(-0.5*((ux - mux)**2)/delgam + z1)
 
     return f
 
@@ -167,20 +176,19 @@ if __name__ == "__main__":
 
     grp0 = f.create_group("params")
     grp0.attrs['dx']    = conf.dx
-    grp0.attrs['dt']    = conf.sampleDt
+    grp0.attrs['dt']    = conf.interval*conf.dt
     grp = f.create_group("fields")
 
 
     #number of samples
-    Nsamples    = int(conf.dt*conf.Nt/conf.sampleDt)
+    Nsamples    = int(conf.Nt/conf.interval)
     dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
 
     #simulation loop
     time = 0.0
-
-    lapIO  = 0
+    ifile = 0
     for lap in range(0, conf.Nt):
 
         #E field
@@ -223,7 +231,7 @@ if __name__ == "__main__":
         timer.lap("step")
 
         #I/O
-        if (time - lapIO*conf.sampleDt >= conf.sampleDt):
+        if (lap % conf.interval == 0):
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
             timer.stats("step")
@@ -232,7 +240,8 @@ if __name__ == "__main__":
             timer.start("io")
 
             #save temporarily to file
-            save(node, conf, lapIO, dset)
+            save(node, conf, ifile, dset)
+            ifile += 1
 
             plotNode(axs[0], node, conf)
             plotXmesh(axs[1], node, conf, 0) #electrons
@@ -240,9 +249,8 @@ if __name__ == "__main__":
 
             plotJ(axs[3], node, conf)
             plotE(axs[4], node, conf)
-            saveVisz(lapIO, node, conf)
+            saveVisz(lap, node, conf)
 
-            lapIO += 1
 
             timer.stop("io")
             timer.stats("io")
@@ -250,10 +258,13 @@ if __name__ == "__main__":
             timer.start("step") #refresh lap counter (avoids IO profiling)
 
 
+
+
         time += conf.dt
     
-
+    f.close()
     #node.finalizeMpi()
+
 
     timer.stop("total")
     timer.stats("total")
