@@ -25,7 +25,11 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         uint64_t i = indx[1].cast<uint64_t>();
         uint64_t j = indx[2].cast<uint64_t>();
         uint64_t k = indx[3].cast<uint64_t>();
-        uint64_t cid = s.get_cell({{i,j,k}}, rfl);
+
+        AM3d::indices_t cindx = {{i,j,k}};
+        uint64_t cid = s.get_cell_from_indices(cindx, rfl);
+
+        if(cid == AM3d::error_cid) {throw py::index_error();}
 
         return s.get(cid);
         })
@@ -35,12 +39,19 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         uint64_t i = indx[1].cast<uint64_t>();
         uint64_t j = indx[2].cast<uint64_t>();
         uint64_t k = indx[3].cast<uint64_t>();
-        uint64_t cid = s.get_cell({{i,j,k}}, rfl);
+        AM3d::indices_t cindx = {{i,j,k}};
+
+        uint64_t cid = s.get_cell_from_indices(cindx, rfl);
+
+        if(cid == AM3d::error_cid) {throw py::index_error();}
 
         s.set(cid, v);
-        });
-
-
+        })
+    .def("set_min",    &AM3d::set_min)
+    .def("set_max",    &AM3d::set_max)
+    .def("get_length", &AM3d::get_length)
+    .def("get_center", &AM3d::get_center)
+    .def("get_level_0_cell_length", &AM3d::get_level_0_cell_length);
 
 
 
