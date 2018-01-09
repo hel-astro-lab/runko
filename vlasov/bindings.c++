@@ -17,29 +17,33 @@ PYBIND11_MODULE(pyplasmaDev, m) {
 
   py::class_<AM3d >(m, "AdaptiveMesh3D")
     .def(py::init<>())
-    .def_readwrite("length", &AM3d::length)
-    .def("resize",  &AM3d::resize)
+    .def_readwrite("length",                     &AM3d::length)
+    .def_readwrite("maximum_refinement_level",   &AM3d::maximum_refinement_level)
+    .def("get_maximum_possible_refinement_level",&AM3d::get_maximum_possible_refinement_level)
+    .def("resize",           &AM3d::resize)
+    .def("get_cell",         &AM3d::get_cell_from_indices)
     .def("__getitem__", [](const AM3d &s, py::tuple indx) 
         { 
-        int rfl    = indx[0].cast<int>();
-        uint64_t i = indx[1].cast<uint64_t>();
-        uint64_t j = indx[2].cast<uint64_t>();
-        uint64_t k = indx[3].cast<uint64_t>();
+        uint64_t i = indx[0].cast<uint64_t>();
+        uint64_t j = indx[1].cast<uint64_t>();
+        uint64_t k = indx[2].cast<uint64_t>();
+        int    rfl = indx[3].cast<int>();
 
-        AM3d::indices_t cindx = {{i,j,k}};
+        const AM3d::indices_t cindx = {{i,j,k}};
         uint64_t cid = s.get_cell_from_indices(cindx, rfl);
 
         if(cid == AM3d::error_cid) {throw py::index_error();}
 
         return s.get(cid);
         })
-    .def("__setitem__", [](AM3d &s, py::tuple indx, const Realf v) 
+    .def("__setitem__", [](AM3d &s, py::tuple indx, Realf v) 
         { 
-        int rfl    = indx[0].cast<int>();
-        uint64_t i = indx[1].cast<uint64_t>();
-        uint64_t j = indx[2].cast<uint64_t>();
-        uint64_t k = indx[3].cast<uint64_t>();
-        AM3d::indices_t cindx = {{i,j,k}};
+        uint64_t i = indx[0].cast<uint64_t>();
+        uint64_t j = indx[1].cast<uint64_t>();
+        uint64_t k = indx[2].cast<uint64_t>();
+        int    rfl = indx[3].cast<int>();
+
+        const AM3d::indices_t cindx = {{i,j,k}};
 
         uint64_t cid = s.get_cell_from_indices(cindx, rfl);
 

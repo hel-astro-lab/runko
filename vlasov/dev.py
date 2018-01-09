@@ -13,25 +13,25 @@ class conf:
 
     outdir = "out"
 
-    Nxv = 3
-    Nyv = 3
-    Nzv = 3
+    Nxv = 11
+    Nyv = 21
+    Nzv = 31
 
     xmin = -1.0
-    ymin = -1.0
-    zmin = -1.0
+    ymin = -2.0
+    zmin = -3.0
 
     xmax =  1.0
-    ymax =  1.0
-    zmax =  1.0
+    ymax =  2.0
+    zmax =  3.0
 
 
 
 def gauss(ux,uy,uz):
 
-    return ux + uy + uz
+    #return ux + uy + uz
 
-    delgam = np.sqrt(2.0)
+    delgam = np.sqrt(1.0)
     mux = 0.0
     muy = 0.0
     muz = 0.0
@@ -39,8 +39,8 @@ def gauss(ux,uy,uz):
     #f  = 1.0/np.sqrt(2.0*np.pi*delgam)
     f = 1.0
     f *= np.exp(-0.5*((ux - mux)**2)/delgam)
-    #f *= np.exp(-0.5*((uy - muy)**2)/delgam)
-    #f *= np.exp(-0.5*((uz - muz)**2)/delgam)
+    f *= np.exp(-0.5*((uy - muy)**2)/delgam)
+    f *= np.exp(-0.5*((uz - muz)**2)/delgam)
 
     return f
     #return 1.0
@@ -49,52 +49,75 @@ def gauss(ux,uy,uz):
 
 def fill(m):
 
-    rfl = 0 #refinement level
+    #rfl = 1 #refinement level
+    #for rfl in range(m.maximum_refinement_level):
+    for rfl in range(3):
+        nx, ny, nz = m.get_length(rfl)
+
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    x,y,z = m.get_center([i,j,k], rfl)
+                    val = gauss(x,y,z)
+                    m[i,j,k, rfl] =  val
+
+
+
+def plotSlices(axs, m, rfl):
+
+
     nx, ny, nz = m.get_length(rfl)
 
-    print("setting:")
-    #for i in range(nx-1):
-    #    for j in range(ny-1):
-    #        for k in range(nz-1):
-    #            x,y,z = m.get_center([i,j,k], rfl)
-    #            m[rfl,i,j,k] = gauss(x,y,z)
-    #            #m[rfl,i,j,k] = np.random.rand()
+    xmid = nx/2
+    ymid = ny/2
+    zmid = nz/2
 
-    #            print(m[0,i,j,k])
-    m[0,1,1,1] = -1.0
-
-
-    print("getting:")
-    for i in range(nx):
-        for j in range(ny):
-            for k in range(nz):
-                print(m[0,i,j,k])
-
-
-
-def plotXslice(ax, m, j, k):
-
-    rfl = 0 #refinement level
-    nx, ny, nz = m.get_length(rfl)
+    print("xmid: ", xmid)
+    print("ymid: ", ymid)
+    print("zmid: ", zmid)
 
     xx = np.zeros((nx))
-    yy = np.zeros((nx))
+    yy = np.zeros((ny))
+    zz = np.zeros((nz))
+
+    fx = np.zeros((nx))
+    fy = np.zeros((ny))
+    fz = np.zeros((nz))
 
     for i in range(nx):
-        x,y,z = m.get_center([i,0,0], rfl)
-        val   = m[rfl, i, 0, 0]
-        #val = gauss(x,y,z)
+        x,y,z = m.get_center([i,ymid,zmid], rfl)
+        val   = m[i, ymid, zmid, rfl]
 
         xx[i] = x
-        yy[i] = val
+        fx[i] = val
 
-    print("xx:")
-    print(xx)
+    for j in range(ny):
+        x,y,z = m.get_center([xmid,j,zmid], rfl)
+        val   = m[xmid, j, zmid, rfl]
 
-    print("yy:")
-    print(yy)
+        yy[j] = y
+        fy[j] = val
 
-    ax.plot(xx, yy)
+    for k in range(nz):
+        x,y,z = m.get_center([xmid,ymid,k], rfl)
+        val   = m[xmid, ymid, k, rfl]
+
+        zz[k] = z
+        fz[k] = val
+
+    cols = ["k", "b", "r", "g"]
+
+    #axs[0].step(xx, fx, ".-", color=cols[rfl])
+
+    axs[0].step(xx, fx, where="mid", color=cols[rfl])
+    axs[1].step(yy, fy, where="mid", color=cols[rfl])
+    axs[2].step(zz, fz, where="mid", color=cols[rfl])
+
+
+    print(np.diff(xx))
+    print(np.diff(yy))
+    print(np.diff(zz))
+
 
 
     
@@ -115,15 +138,50 @@ if __name__ == "__main__":
     m.set_min([conf.xmin, conf.ymin, conf.zmin])
     m.set_max([conf.xmax, conf.ymax, conf.zmax])
 
+    print("max. possible refinmenet:", m.get_maximum_possible_refinement_level())
+
     fill(m)
 
-    print("get_level_0_cell_length")
-    print(m.get_level_0_cell_length())
 
-    print("beginning of the grid:")
-    print(m.get_center([0,0,0], 0))
-    print(m.get_center([1,1,1], 0))
-    print(m.get_center([2,2,2], 0))
+    #print(m.length)
+
+    print("getting cids")
+    print(m.get_length(0))
+    print(m.get_cell([0,0,0], 0))
+    print(m.get_cell([1,0,0], 0))
+    print(m.get_cell([2,0,0], 0))
+
+    print(m.get_length(1))
+    print(m.get_cell([0,0,0], 1))
+    print(m.get_cell([1,0,0], 1))
+    print(m.get_cell([2,0,0], 1))
+
+
+    print(m.get_length(2))
+    print(m.get_cell([0,0,0], 2))
+    print(m.get_cell([1,0,0], 2))
+    print(m.get_cell([2,0,0], 2))
+    print(m.get_cell([3,0,0], 2))
+    print(m.get_cell([4,0,0], 2))
+
+    #sys.exit()
+
+    #m[0,0,0] = 1.0
+    #print("000 = 1", m[0,0,0])
+    #m[1,2,3] = 123.0
+    #print("123 = 123", m[1,2,3])
+    #print("000 = 1",   m[0,0,0])
+
+    #print("get_level_0_cell_length")
+    #print(m.get_level_0_cell_length())
+
+    #print("beginning of the grid:")
+    #print(m.get_center([0,0,0], 0))
+    #print(m.get_center([1,1,1], 0))
+    #print(m.get_center([2,2,2], 0))
+
+    #print("end of the grid:")
+    #print(m.get_center([conf.Nxv-1,conf.Nyv-1,conf.Nzv-1], 0))
 
 
     ################################################## 
@@ -133,13 +191,20 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(5, 1)
+    gs = plt.GridSpec(3, 1)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0]) )
+    axs.append( plt.subplot(gs[1]) )
+    axs.append( plt.subplot(gs[2]) )
 
-    plotXslice(axs[0], m, 0, 0)
+    plotSlices(axs, m, 0)
+    plotSlices(axs, m, 1)
+    plotSlices(axs, m, 2)
+    #plotSlices(axs, m, 3)
+
+
     saveVisz(0, conf)
 
 
