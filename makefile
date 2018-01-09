@@ -40,8 +40,7 @@ all: plasma py tests
 #INSTALL=build
 
 # full python interface
-py: pycorgi pyplasmatools pyplasma 
-
+py: pycorgi pyplasmatools pyplasma pyplasmaDev
 
 # Executable:
 EXE=plasma
@@ -88,10 +87,10 @@ python/pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
 python/pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pyplasma.o -c python/pyplasma.c++
 
+python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/dev-bindings.o -c vlasov/bindings.c++
 
-
-#reference to pycorgi's own make; then copy the compiled library because python does not support
-#non-local referencing of modules
+#reference to pycorgi's own make
 pycorgi:
 	+${MAKE} -C corgi
 
@@ -101,9 +100,14 @@ pycorgi:
 pyplasmatools: bundles.o velomesh.o python/pyplasmatools.o sheets.h
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so python/pyplasmatools.o bundles.o velomesh.o
 
-
 pyplasma: grid.h cell.h velomesh.o solvers/momentumLagrangianSolver.o solvers/spatialLagrangianSolver.o maxwell.o python/pyplasma.o 
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so python/pyplasma.o solvers/momentumLagrangianSolver.o solvers/spatialLagrangianSolver.o velomesh.o maxwell.o
+
+pyplasmaDev: vlasov/mesh.h python/dev-bindings.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasmaDev.so python/dev-bindings.o
+
+
+
 
 
 #make documentation usign Doxygen
@@ -123,5 +127,6 @@ clean:
 	rm python/*.o
 	rm python/*.so
 	rm solvers/*.o
+	rm vlasov/*.o
 
 
