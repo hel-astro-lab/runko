@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 
 #include <algorithm>
 #include <array>
@@ -26,13 +27,13 @@ class AdaptiveMesh {
 
   static const uint64_t error_cid = 0;
   static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
-  int max_refinement_level = 10;
+  int maximum_refinement_level = 10;
 	uint64_t last_cid;
   size_t number_of_blocks = 0;
   
   std::unordered_map<uint64_t, T> data;
 
-  std::array<uint64_t, D> length;
+  indices_t length;
 
 
   /*
@@ -46,9 +47,11 @@ class AdaptiveMesh {
 
   AdaptiveMesh() {}
 
-  void resize(indices_t& given_length)
+  void resize(indices_t given_length)
   {
-    length = given_length;
+    length[0] = given_length[0];
+    length[1] = given_length[1];
+    length[2] = given_length[2];
   }
 
   void set(uint64_t key, T val)
@@ -58,6 +61,7 @@ class AdaptiveMesh {
 
   T get(uint64_t key) const 
   {
+    // return data.at(key);
     const_iterator it = data.find(key);
     return it == data.end() ? T(0) : it->second;
   }
@@ -66,7 +70,7 @@ class AdaptiveMesh {
   // set item
   T operator() (indices_t indx, int refinement_level) 
   {
-    uint64_t cid = get_cell(indx, refinement_level);
+    uint64_t cid = get_cell_from_indices(indx, refinement_level);
     return data[cid];
   }
 
@@ -74,7 +78,7 @@ class AdaptiveMesh {
   // get item
   const T operator() (indices_t indx, int refinement_level) const
   {
-    uint64_t cid = get_cell(indx, refinement_level);
+    uint64_t cid = get_cell_from_indices(indx, refinement_level);
     const_iterator it = data.find(cid);
     return it == data.end() ? T(0) : it->second;
   }
@@ -93,7 +97,7 @@ class AdaptiveMesh {
 			= length[0] * length[1] * length[2];
 
 		last_cid = 0;
-		for (int i = 0; i <= max_refinement_level; i++) {
+		for (int i = 0; i <= maximum_refinement_level; i++) {
 			last_cid += grid_length * (uint64_t(1) << (i * 3));
 		}
 	}
@@ -111,7 +115,7 @@ class AdaptiveMesh {
     const int refinement_level = get_refinement_level(cid);
     for (int i = 0; i < refinement_level; i++) {
       cid -=
-        length[0]
+          length[0]
         * length[1]
         * length[2]
         * (uint64_t(1) << (i * 3));
@@ -121,40 +125,39 @@ class AdaptiveMesh {
     const indices_t indices = {{
 
       (cid % (length[0] * (uint64_t(1) << refinement_level)))
-        * (uint64_t(1) << (max_refinement_level - refinement_level)),
+        * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
 
         ((cid / (length[0] * (uint64_t(1) << refinement_level)))
          % (length[1] * (uint64_t(1) << refinement_level)))
-          * (uint64_t(1) << (max_refinement_level - refinement_level)),
+          * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
 
         (cid / (
                  length[0]
                  * length[1]
                  * (uint64_t(1) << (2 * refinement_level))
                 ))
-          * (uint64_t(1) << (max_refinement_level - refinement_level))
+          * (uint64_t(1) << (maximum_refinement_level - refinement_level))
     }};
 
     return indices;
   }
 
 
-
-  uint64_t get_cell(
+  uint64_t get_cell_from_indices(
       const indices_t& indices,
       const int refinement_level
   ) const 
   { 
 
-    if (indices[0] >= length[0] * (uint64_t(1) << max_refinement_level)) {
+    if (indices[0] >= length[0] * (uint64_t(1) << maximum_refinement_level)) {
       return error_cid;
     }
 
-    if (indices[1] >= length[1] * (uint64_t(1) << max_refinement_level)) {
+    if (indices[1] >= length[1] * (uint64_t(1) << maximum_refinement_level)) {
       return error_cid;
     }
 
-    if (indices[2] >= length[2] * (uint64_t(1) << max_refinement_level)) {
+    if (indices[2] >= length[2] * (uint64_t(1) << maximum_refinement_level)) {
       return error_cid;
     }
 
@@ -162,7 +165,7 @@ class AdaptiveMesh {
       return error_cid;
     }
 
-    if (refinement_level > max_refinement_level) {
+    if (refinement_level > maximum_refinement_level) {
       return error_cid;
     }
 
@@ -181,9 +184,9 @@ class AdaptiveMesh {
     // convert to indices of this cell's refinement level
     const indices_t this_level_indices = 
     {{
-        indices[0] / (uint64_t(1) << (max_refinement_level - refinement_level)),
-        indices[1] / (uint64_t(1) << (max_refinement_level - refinement_level)),
-        indices[2] / (uint64_t(1) << (max_refinement_level - refinement_level))
+        indices[0] / (uint64_t(1) << (maximum_refinement_level - refinement_level)),
+        indices[1] / (uint64_t(1) << (maximum_refinement_level - refinement_level)),
+        indices[2] / (uint64_t(1) << (maximum_refinement_level - refinement_level))
     }};
 
     // get the length of the grid in terms of cells of this refinement level
@@ -195,8 +198,8 @@ class AdaptiveMesh {
 
     cid
       += this_level_indices[0]
-      + this_level_indices[1] * this_level_length[0]
-      + this_level_indices[2] * this_level_length[0] * this_level_length[1];
+      +  this_level_indices[1] * this_level_length[0]
+      +  this_level_indices[2] * this_level_length[0] * this_level_length[1];
 
     return cid;
 
@@ -214,7 +217,7 @@ class AdaptiveMesh {
 		int refinement_level = 0;
 		uint64_t current_last = 0;
 
-		while (refinement_level <= max_refinement_level) {
+		while (refinement_level <= maximum_refinement_level) {
 			current_last +=
 				  length[0]
 				* length[1]
@@ -228,7 +231,7 @@ class AdaptiveMesh {
 			refinement_level++;
 		}
 
-		if (refinement_level > max_refinement_level) {
+		if (refinement_level > maximum_refinement_level) {
 			return -1;
 		}
 
@@ -236,7 +239,7 @@ class AdaptiveMesh {
 	}
 
 
-  int get_maximum_refinement_level() 
+  int get_maximum_possible_refinement_level() const
 	{
 		const uint64_t grid_length
 			= length[0] * length[1] * length[2];
@@ -253,17 +256,18 @@ class AdaptiveMesh {
 	}
 
 
+
   bool set_maximum_refinement_level(const int given_refinement_level)
   {
     if(given_refinement_level < 0) return false;
 
-    max_refinement_level = given_refinement_level;
+    maximum_refinement_level = given_refinement_level;
 
     return true;
   }
 
 
-
+  /*
   uint64_t get_parent(const uint64_t cid) const
 	{
 		const int refinement_level = get_refinement_level(cid);
@@ -279,8 +283,10 @@ class AdaptiveMesh {
 
 		return get_cell_from_indices(get_indices(cid), refinement_level - 1);
 	}
+  */
 
 
+  /*
   uint64_t get_level_0_parent(const uint64_t cid) const
 	{
 		const int refinement_level = get_refinement_level(cid);
@@ -296,8 +302,10 @@ class AdaptiveMesh {
 
 		return get_cell_from_indices(get_indices(cid), 0);
 	}
+  */
 
 
+  /*
   std::vector<uint64_t> et_all_children(const uint64_t cid) const 
 	{
 		std::vector<uint64_t> children;
@@ -354,6 +362,141 @@ class AdaptiveMesh {
 		return children;
 	}
 
+  */
+
+
+  indices_t get_length(int refinement_level) 
+  {
+    indices_t lens = 
+    {{
+        length[0] * uint64_t( std::pow(2, refinement_level)),
+        length[1] * uint64_t( std::pow(2, refinement_level)),
+        length[2] * uint64_t( std::pow(2, refinement_level))
+     }};
+
+    return lens;
+  }
+
+
+
+  //-------------------------------------------------- 
+  // Geometry
+  
+  value_array_t mins;
+  value_array_t maxs;
+  
+  void set_min(value_array_t& given_mins)
+  {
+    mins = given_mins;
+  }
+
+  void set_max(value_array_t& given_maxs)
+  {
+    maxs = given_maxs;
+  }
+
+  value_array_t get_min() const
+  {
+    return mins;
+  }
+
+  value_array_t get_max() const
+  {
+    return maxs;
+  }
+
+
+  value_array_t get_level_0_cell_length() const 
+  {
+    value_array_t 
+      grid_start = get_min(),
+
+      grid_stop  = get_max(),
+
+      grid_length = 
+      {{ 
+         std::max(T(1), T(length[0]-1)),
+         std::max(T(1), T(length[1]-1)),
+         std::max(T(1), T(length[2]-1))
+      }},
+
+      ret = 
+      {{
+        (grid_stop[0] - grid_start[0]) / grid_length[0],
+        (grid_stop[1] - grid_start[1]) / grid_length[1],
+        (grid_stop[2] - grid_start[2]) / grid_length[2]
+      }};
+
+    return ret;
+  }
+
+
+
+  value_array_t get_center(
+      const indices_t& index,
+      const int refinement_level) const
+  {
+
+    const value_array_t error_val = {{
+			std::numeric_limits<T>::quiet_NaN(),
+			std::numeric_limits<T>::quiet_NaN(),
+			std::numeric_limits<T>::quiet_NaN()
+		}};
+
+		if (refinement_level < 0
+		|| refinement_level > maximum_refinement_level) {
+			return error_val;
+		}
+
+		const uint64_t index_scaling_factor
+			= uint64_t(1) << refinement_level;
+
+		const indices_t max_index = {{
+			length[0] * index_scaling_factor,
+			length[1] * index_scaling_factor,
+			length[2] * index_scaling_factor
+		}};
+
+		if (
+			   index[0] > max_index[0]
+			|| index[1] > max_index[1]
+			|| index[2] > max_index[2]
+		) {
+			return error_val;
+		}
+
+		const T
+			coordinate_scaling_factor  = 1.0 / T(index_scaling_factor),
+			cell_offset_scaling_factor = 1.0 / T( uint64_t(1) << refinement_level) / 2;
+
+
+		const value_array_t 
+			grid_start          = get_min(),
+      level_0_cell_length = get_level_0_cell_length(),
+			ret_val = {{
+				grid_start[0]
+				+ T(index[0])
+					* level_0_cell_length[0]
+					* coordinate_scaling_factor
+				+ level_0_cell_length[0]
+					* cell_offset_scaling_factor,
+				grid_start[1]
+				+ T(index[1])
+					* level_0_cell_length[1]
+					* coordinate_scaling_factor
+				+ level_0_cell_length[1]
+					* cell_offset_scaling_factor,
+				grid_start[2]
+				+ T(index[2])
+					* level_0_cell_length[2]
+					* coordinate_scaling_factor
+				+ level_0_cell_length[2]
+					* cell_offset_scaling_factor
+			}};
+
+		return ret_val;
+
+  }
 
 
 
@@ -367,13 +510,9 @@ class AdaptiveMesh {
 	value_array_t get_min(const uint64_t cid) const {}
 
 	value_array_t get_max(const uint64_t cid) const {}
-
-	value_array_t get_center(
-		const int refinement_level,
-		const indices_t index
-	) const {}
-
   */
+
+
 
 
 

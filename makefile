@@ -9,8 +9,6 @@ FP_PRECISION=DP
 
 #load the real platform dependent makefile
 include archs/makefile.${ARCH}
-
-
 #set vector class
 COMPFLAGS+= -D${VECTORCLASS}
 
@@ -87,7 +85,7 @@ python/pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
 python/pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pyplasma.o -c python/pyplasma.c++
 
-python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++
+python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/mesh.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/dev-bindings.o -c vlasov/bindings.c++
 
 #reference to pycorgi's own make
