@@ -52,6 +52,8 @@ class AdaptiveMesh {
     length[0] = given_length[0];
     length[1] = given_length[1];
     length[2] = given_length[2];
+
+    update_last_cid();
   }
 
   void set(uint64_t key, T& val)
@@ -87,7 +89,6 @@ class AdaptiveMesh {
 
 	uint64_t get_last_cid() const
 	{
-    update_last_cid();
 		return last_cid;
 	}
 
@@ -123,21 +124,15 @@ class AdaptiveMesh {
     }
 
     cid -= 1;	// cell numbering starts from 1
-    const indices_t indices = {{
-
+    const indices_t indices = 
+    {{
       (cid % (length[0] * (uint64_t(1) << refinement_level)))
-        * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-
-        ((cid / (length[0] * (uint64_t(1) << refinement_level)))
-         % (length[1] * (uint64_t(1) << refinement_level)))
-          * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-
-        (cid / (
-                 length[0]
-                 * length[1]
-                 * (uint64_t(1) << (2 * refinement_level))
-                ))
-          * (uint64_t(1) << (maximum_refinement_level - refinement_level))
+      / (uint64_t(1) << refinement_level),
+     ((cid / (length[0] * (uint64_t(1) << refinement_level)))
+           % (length[1] * (uint64_t(1) << refinement_level)))
+      / (uint64_t(1) << refinement_level),
+      (cid / (length[0] * length[1] * (uint64_t(1) << (2 * refinement_level)) ))
+      / (uint64_t(1) << refinement_level),
     }};
 
     return indices;
@@ -184,9 +179,9 @@ class AdaptiveMesh {
 
 		// convert to indices of this cell's refinement level
 		const indices_t this_level_indices = {{
-			indices[0] * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-			indices[1] * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-			indices[2] * (uint64_t(1) << (maximum_refinement_level - refinement_level))
+			indices[0] * (uint64_t(1) << (refinement_level)),
+			indices[1] * (uint64_t(1) << (refinement_level)),
+			indices[2] * (uint64_t(1) << (refinement_level))
 		}};
 
 		// get the length of the grid in terms of cells of this refinement level
@@ -231,8 +226,8 @@ class AdaptiveMesh {
 
   int get_refinement_level(const uint64_t cid) const 
   {
-		if (cid == error_cid || cid > last_cid) {
-			return -1;
+		if (cid == error_cid || cid > get_last_cid() ) {
+			return -2;
 		}
 
 		int refinement_level = 0;
@@ -244,6 +239,11 @@ class AdaptiveMesh {
 				* length[1]
 				* length[2]
 				* (uint64_t(1) << 3 * refinement_level);
+
+      std::cout << "curr_l:" << current_last 
+                << " ref:" << refinement_level 
+                << " max:" << maximum_refinement_level 
+                << "\n";
 
 			if (cid <= current_last) {
 				break;

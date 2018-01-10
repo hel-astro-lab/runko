@@ -135,18 +135,25 @@ if __name__ == "__main__":
     m.set_max([conf.xmax, conf.ymax, conf.zmax])
 
 
-    indx1 = [0,0,0]
-    rfl1  = 1
-    cid   = m.get_cell(indx1, rfl1)
-    print("indx: ", indx1, rfl1, " cid:", cid)
+    indices = [ [0,0,0], [1,1,1], [1,2,3] ]
 
-    indx2 = m.get_indices(cid)
-    rfl2  = m.get_refinement_level(cid)
-    print("indx: ", indx2, rfl2, " cid:", cid)
+    for indx1 in indices:
+        print(" ")
+        print("testing with: ", indx1)
+        rfl1  = 4
+        cid   = m.get_cell(indx1, rfl1)
+        print("indx: ", indx1, rfl1, " cid:", cid)
+
+        rfl2  = m.get_refinement_level(cid)
+        print(" ")
+        indx2 = m.get_indices(cid)
+        print("indx: ", indx2, rfl2, " cid:", cid)
 
 
     
     print("max. possible refinement:", m.get_maximum_possible_refinement_level())
+
+    sys.exit()
 
     level_fill(m, 0)
     level_fill(m, 1)
