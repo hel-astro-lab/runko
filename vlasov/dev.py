@@ -50,7 +50,6 @@ def gauss(ux,uy,uz):
 def level_fill(m, rfl):
 
     nx, ny, nz = m.get_length(rfl)
-
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
@@ -131,10 +130,22 @@ if __name__ == "__main__":
     # set up the grid
     ################################################## 
     m = pdev.AdaptiveMesh3D()
-    m.resize( [conf.Nxv,  conf.Nyv,  conf.Nzv])
+    m.resize( [conf.Nxv,  conf.Nyv,  conf.Nzv ])
     m.set_min([conf.xmin, conf.ymin, conf.zmin])
     m.set_max([conf.xmax, conf.ymax, conf.zmax])
 
+
+    indx1 = [0,0,0]
+    rfl1  = 1
+    cid   = m.get_cell(indx1, rfl1)
+    print("indx: ", indx1, rfl1, " cid:", cid)
+
+    indx2 = m.get_indices(cid)
+    rfl2  = m.get_refinement_level(cid)
+    print("indx: ", indx2, rfl2, " cid:", cid)
+
+
+    
     print("max. possible refinement:", m.get_maximum_possible_refinement_level())
 
     level_fill(m, 0)
@@ -165,12 +176,5 @@ if __name__ == "__main__":
 
 
     saveVisz(0, conf)
-
-
-
-
-
-
-
 
 
