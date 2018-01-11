@@ -135,30 +135,50 @@ def plotHierarchy(ax, m):
         ax.step(xx, fx, where="mid", color=cols[rfl])
 
 
-    #next level connection
-    
-    q = 0
-    for rfl in range(3,4):
+    #children-wise lookup
+    for rfl in [1]:
         nx, ny, nz = m.get_length(rfl)
         xmid = nx/2
         ymid = ny/2
         zmid = nz/2
 
         for i in range(nx):
-            indc  = [i,ymid,zmid]
-            x,y,z = m.get_center(indc, rfl)
+            indp  = [i,ymid,zmid]
+            x,y,z = m.get_center(indp, rfl)
             f     = m[i, ymid, zmid, rfl]
+            cidp  = m.get_cell(indp, rfl)
 
-            #indp    = m.get_parent_indices(indc)
-            #xp,yp,zp = m.get_center(indp, rfl-1)
-            #fp       = m[ indp[0], indp[1], indp[2], rfl-1]
+            childrens = m.get_children(cidp)
+            for cidc in childrens:
+                indc = m.get_indices(cidc)
+                xc,yc,zc = m.get_center(indc, rfl+1)
 
-            # zero level parent
-            indp    = m.get_level_0_parent_indices(indc, rfl)
-            xp,yp,zp = m.get_center(indp, 0)
-            fp       = m[ indp[0], indp[1], indp[2], 0]
+                ax.plot([x, xc], [0.0, f], "r")
 
-            ax.plot( [x, xp], [f, 0.0], "r-" )
+
+
+    #parent-wise lookup
+    #for rfl in range(3,4):
+    #    nx, ny, nz = m.get_length(rfl)
+    #    xmid = nx/2
+    #    ymid = ny/2
+    #    zmid = nz/2
+
+    #    for i in range(nx):
+    #        indc  = [i,ymid,zmid]
+    #        x,y,z = m.get_center(indc, rfl)
+    #        f     = m[i, ymid, zmid, rfl]
+
+    #        #indp    = m.get_parent_indices(indc)
+    #        #xp,yp,zp = m.get_center(indp, rfl-1)
+    #        #fp       = m[ indp[0], indp[1], indp[2], rfl-1]
+
+    #        # zero level parent
+    #        indp     = m.get_level_0_parent_indices(indc, rfl)
+    #        xp,yp,zp = m.get_center(indp, 0)
+    #        fp       = m[ indp[0], indp[1], indp[2], 0]
+
+    #        ax.plot( [x, xp], [f, 0.0], "r-" )
 
 
 

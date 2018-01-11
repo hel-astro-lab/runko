@@ -326,95 +326,58 @@ class AdaptiveMesh {
 
 
 
-  /*
-  uint64_t get_level_0_parent(const uint64_t cid) const
-	{
-		const int refinement_level = get_refinement_level(cid);
-
-		if (refinement_level < 0
-		|| refinement_level > max_refinement_level) {
-			return error_cid;
-		}
-
-		if (refinement_level == 0) {
-			return cid;
-		}
-
-		return get_cell_from_indices(get_indices(cid), 0);
-	}
-  */
-
-
-  /*
-  std::vector<uint64_t> et_all_children(const uint64_t cid) const 
+  std::vector<uint64_t> get_children(const uint64_t cid) const 
 	{
 		std::vector<uint64_t> children;
 
-		if (cid == error_cid) {
-			return children;
-		}
+		if (cid == error_cid) return children; 
 
-		if (this->cell_process.count(cid) == 0) {
-			return children;
-		}
+		// if (this->cell_process.count(cid) == 0) return children;
 
-		// given cell cannot have children
+		// check if given cell cannot have children
 		int refinement_level = get_refinement_level(cid);
-		if (refinement_level >= get_maximum_refinement_level()) {
-			return children;
-		}
+		if (refinement_level >= maximum_refinement_level) return children;
+
 
 		children.reserve(8);
 
 		indices_t indices = get_indices(cid);
 
 		// get indices of next refinement level within this cell
-		refinement_level++;
-		const uint64_t index_offset
-			= (uint64_t(1) << (get_maximum_refinement_level() - refinement_level));
-
 		for (uint64_t
-			z_index_offset = 0;
-			z_index_offset < 2 * index_offset;
-			z_index_offset += index_offset
+			z_shift = 0;
+			z_shift < 2;
+			z_shift++
 		)
 		for (uint64_t
-			y_index_offset = 0;
-			y_index_offset < 2 * index_offset;
-			y_index_offset += index_offset
+			y_shift = 0;
+			y_shift < 2;
+			y_shift++
 		)
 		for (uint64_t
-			x_index_offset = 0;
-			x_index_offset < 2 * index_offset;
-			x_index_offset += index_offset
+			x_shift = 0;
+			x_shift < 2;
+			x_shift++
 		) {
-			const indices_t index = {{
-				indices[0] + x_index_offset,
-				indices[1] + y_index_offset,
-				indices[2] + z_index_offset,
-			}};
+      const indices_t index = 
+      {{ 
+         indices[0]*2 + x_shift,
+         indices[1]*2 + y_shift,
+         indices[2]*2 + z_shift
+      }};
 
 			children.push_back(
-				get_cell_from_indices(index, refinement_level)
+				get_cell_from_indices(index, refinement_level + 1)
 			);
 		}
 
 		return children;
 	}
 
-  */
 
 
   indices_t get_length(int refinement_level) const
   {
-    /*
-    indices_t lens = 
-    {{
-        length[0] * uint64_t( std::pow(2, refinement_level)),
-        length[1] * uint64_t( std::pow(2, refinement_level)),
-        length[2] * uint64_t( std::pow(2, refinement_level))
-     }};
-     */
 
     indices_t lens = 
     {{
@@ -547,22 +510,6 @@ class AdaptiveMesh {
 		return ret_val;
 
   }
-
-
-
-  /*
-  value_array_t get_level_0_cell_lenght() const {}
-
-	value_array_t get_length(const uint64_t cid) const {}
-
-	value_array_t get_center(const uint64_t cid) const {}
-
-	value_array_t get_min(const uint64_t cid) const {}
-
-	value_array_t get_max(const uint64_t cid) const {}
-  */
-
-
 
 
 
