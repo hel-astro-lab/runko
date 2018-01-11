@@ -78,8 +78,34 @@ class Basics(unittest.TestCase):
                         self.assertAlmostEqual(val1, val2)
 
 
+    def test_indexing(self):
+
+        for rfl in range(4):
+            nx, ny, nz = self.m.get_length(rfl)
+
+            #for i in range(nx):
+            #    for j in range(ny):
+            #        for k in range(nz):
+            for k in range(nz):
+                for j in range(ny):
+                    for i in range(nx):
+
+                        print(" ")
+
+                        #set this in
+                        indx1 = [i,j,k]
+                        rfl1  = rfl
+                        cid   = self.m.get_cell(indx1, rfl1)
+                        print("indx: ", indx1, rfl1, " cid:", cid)
 
 
+                        #and get this out
+                        rfl2  = self.m.get_refinement_level(cid)
+                        indx2 = self.m.get_indices(cid)
+                        print("indx: ", indx2, rfl2, " cid:", cid)
+
+                        self.assertEqual(rfl1,  rfl2)
+                        self.assertEqual(indx1, indx2)
 
 
 

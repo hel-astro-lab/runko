@@ -126,13 +126,10 @@ class AdaptiveMesh {
     cid -= 1;	// cell numbering starts from 1
     const indices_t indices = 
     {{
-      (cid % (length[0] * (uint64_t(1) << refinement_level)))
-      / (uint64_t(1) << refinement_level),
+      (cid % (length[0] * (uint64_t(1) << refinement_level))),
      ((cid / (length[0] * (uint64_t(1) << refinement_level)))
-           % (length[1] * (uint64_t(1) << refinement_level)))
-      / (uint64_t(1) << refinement_level),
+           % (length[1] * (uint64_t(1) << refinement_level))),
       (cid / (length[0] * length[1] * (uint64_t(1) << (2 * refinement_level)) ))
-      / (uint64_t(1) << refinement_level),
     }};
 
     return indices;
@@ -178,10 +175,11 @@ class AdaptiveMesh {
 		}
 
 		// convert to indices of this cell's refinement level
-		const indices_t this_level_indices = {{
-			indices[0] * (uint64_t(1) << (refinement_level)),
-			indices[1] * (uint64_t(1) << (refinement_level)),
-			indices[2] * (uint64_t(1) << (refinement_level))
+		const indices_t this_level_indices = 
+    {{
+			indices[0], // * (uint64_t(1) << (refinement_level)),
+			indices[1], // * (uint64_t(1) << (refinement_level)),
+			indices[2]  // * (uint64_t(1) << (refinement_level))
 		}};
 
 		// get the length of the grid in terms of cells of this refinement level
@@ -199,7 +197,6 @@ class AdaptiveMesh {
     // std::cout << "len:" << indices[0]/mult << std::endl;
 
     const indices_t this_level_length = get_length(refinement_level);
-
 
 		cid
 			+= this_level_indices[0] 
