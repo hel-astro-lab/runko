@@ -245,13 +245,51 @@ class AdaptiveMesh {
   }
 
 
-  /*
+  indices_t get_parent_indices(const indices_t& indices) const
+  {
+
+    uint64_t shift = (uint64_t(1) << int(1));
+    std::cout << "shift:" << shift << "\n";
+    std::cout << "i0: " << indices[0]/2 <<
+                 "i1: " << indices[1]/2 <<
+                 "i2: " << indices[2]/2 <<
+                "\n";
+
+    // NOTE: implicit int casting does the flooring of this value
+    indices_t parent_indices = 
+    {{
+       indices[0] / 2,
+       indices[1] / 2,
+       indices[2] / 2 
+    }};
+
+    return parent_indices;
+  }
+
+  indices_t get_level_0_parent_indices(indices_t& indices, int refinement_level) const
+  {
+    // uint64_t cid = get_cell_from_indices(indices);
+    // int refinement_level = get_refinement_level(cid);
+      
+    if(refinement_level < 2) return get_parent_indices(indices);
+
+
+    indices_t parent_indices = 
+    {{
+       indices[0] / (uint64_t(1) << (refinement_level)),
+       indices[1] / (uint64_t(1) << (refinement_level)),
+       indices[2] / (uint64_t(1) << (refinement_level)) 
+    }};
+    
+    return parent_indices;
+  }
+
+
   uint64_t get_parent(const uint64_t cid) const
 	{
 		const int refinement_level = get_refinement_level(cid);
 
-		if (refinement_level < 0
-		|| refinement_level > max_refinement_level) {
+		if (refinement_level < 0 || refinement_level > maximum_refinement_level) {
 			return error_cid;
 		}
 
@@ -259,9 +297,34 @@ class AdaptiveMesh {
 			return cid;
 		}
 
-		return get_cell_from_indices(get_indices(cid), refinement_level - 1);
+    // get my current indices
+    indices_t 
+      indices = get_indices(cid),
+		  parent_indices = get_parent_indices(indices);
+
+    return get_cell_from_indices(parent_indices);
 	}
-  */
+
+
+  uint64_t get_level_0_parent(const uint64_t cid) const 
+  {
+		const int refinement_level = get_refinement_level(cid);
+
+		if (refinement_level < 0 || refinement_level > maximum_refinement_level) {
+			return error_cid;
+		}
+
+		if (refinement_level == 0) {
+			return cid;
+		}
+
+    indices_t 
+      indices = get_indices(cid),
+		  parent0_indices = get_level_0_parent_indices(indices, refinement_level);
+
+    return get_cell_from_indices(parent0_indices);
+  }
+
 
 
   /*

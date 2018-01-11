@@ -13,7 +13,7 @@ class conf:
 
     outdir = "out"
 
-    Nxv = 5
+    Nxv = 10
     Nyv = 10
     Nzv = 23
 
@@ -115,6 +115,54 @@ def plotSlices(axs, m, rfl):
     #print(np.diff(zz))
 
 
+def plotHierarchy(ax, m):
+
+    cols = ["black", "blue", "green"]
+    for rfl in range(0,3):
+        nx, ny, nz = m.get_length(rfl)
+        xmid = nx/2
+        ymid = ny/2
+        zmid = nz/2
+        xx = np.zeros((nx))
+        fx = np.zeros((nx))
+        for i in range(nx):
+            indc = [i,ymid,zmid]
+            x,y,z = m.get_center(indc, rfl)
+            val   = m[i, ymid, zmid, rfl]
+
+            xx[i] = x
+            fx[i] = val
+        ax.step(xx, fx, where="mid", color=cols[rfl])
+
+
+    #next level connection
+    
+    q = 0
+    for rfl in range(2,3):
+        nx, ny, nz = m.get_length(rfl)
+        xmid = nx/2
+        ymid = ny/2
+        zmid = nz/2
+
+        for i in range(nx):
+            indc  = [i,ymid,zmid]
+            x,y,z = m.get_center(indc, rfl)
+            f     = m[i, ymid, zmid, rfl]
+
+            #indp    = m.get_parent_indices(indc)
+            #xp,yp,zp = m.get_center(indp, rfl-1)
+            #fp       = m[ indp[0], indp[1], indp[2], rfl-1]
+
+            # zero level parent
+            indp    = m.get_level_0_parent_indices(indc, rfl)
+            xp,yp,zp = m.get_center(indp, 0)
+            fp       = m[ indp[0], indp[1], indp[2], 0]
+
+            ax.plot( [x, xp], [f, 0.0], "r-" )
+
+
+
+
 
     
 def saveVisz(lap, conf):
@@ -134,31 +182,21 @@ if __name__ == "__main__":
     m.set_min([conf.xmin, conf.ymin, conf.zmin])
     m.set_max([conf.xmax, conf.ymax, conf.zmax])
 
+    cidc = m.get_cell([2,1,1],1)
+    indc = m.get_indices(cidc)
+    indp = m.get_parent_indices(indc)
+    cidp = m.get_parent(cidc)
 
-    indices = [ [0,0,0], [1,1,1], [1,2,3] ]
-
-    for indx1 in indices:
-        print(" ")
-        print("testing with: ", indx1)
-        rfl1  = 4
-        cid   = m.get_cell(indx1, rfl1)
-        print("indx: ", indx1, rfl1, " cid:", cid)
-
-        rfl2  = m.get_refinement_level(cid)
-        print(" ")
-        indx2 = m.get_indices(cid)
-        print("indx: ", indx2, rfl2, " cid:", cid)
-
+    print(cidc, " ", indc)
+    print(cidp, " ", indp)
 
     
     print("max. possible refinement:", m.get_maximum_possible_refinement_level())
 
-    sys.exit()
-
     level_fill(m, 0)
     level_fill(m, 1)
     level_fill(m, 2)
-    level_fill(m, 3)
+    #level_fill(m, 3)
 
 
 
@@ -169,17 +207,20 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(3, 1)
+    gs = plt.GridSpec(4, 1)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0]) )
     axs.append( plt.subplot(gs[1]) )
     axs.append( plt.subplot(gs[2]) )
+    axs.append( plt.subplot(gs[3]) )
 
     plotSlices(axs, m, 0)
     plotSlices(axs, m, 1)
-    plotSlices(axs, m, 3)
+    #plotSlices(axs, m, 3)
+
+    plotHierarchy(axs[3], m)
 
 
     saveVisz(0, conf)
