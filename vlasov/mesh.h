@@ -174,47 +174,13 @@ class AdaptiveMesh {
 				* (uint64_t(1) << (i * 3));
 		}
 
-		// convert to indices of this cell's refinement level
-		const indices_t this_level_indices = 
-    {{
-			indices[0], // * (uint64_t(1) << (refinement_level)),
-			indices[1], // * (uint64_t(1) << (refinement_level)),
-			indices[2]  // * (uint64_t(1) << (refinement_level))
-		}};
-
-		// get the length of the grid in terms of cells of this refinement level
-    /*
-		const std::array<uint64_t, 2> this_level_length = 
-    {{
-			length[0] * (uint64_t(1) << refinement_level),
-			length[1] * (uint64_t(1) << refinement_level)
-		}};
-    */
-
-    // uint64_t mult = (uint64_t(1) << refinement_level);
-    // uint64_t mult = (uint64_t(1) << (maximum_refinement_level - refinement_level));
-    // std::cout << "ll0:" << mult << std::endl;
-    // std::cout << "len:" << indices[0]/mult << std::endl;
-
     const indices_t this_level_length = get_length(refinement_level);
 
 		cid
-			+= this_level_indices[0] 
-			+  this_level_indices[1] * this_level_length[0]
-			+  this_level_indices[2] * this_level_length[0] * this_level_length[1];
+			+= indices[0] 
+			+  indices[1] * this_level_length[0]
+			+  indices[2] * this_level_length[0] * this_level_length[1];
 
-    // std::cout << "ind0: " << indices[0] << std::endl;
-    // std::cout << "ind1: " << indices[1] << std::endl;
-    // std::cout << "ind2: " << indices[2] << std::endl;
-
-    // std::cout << "t ind0: " << this_level_indices[0] << std::endl;
-    // std::cout << "t ind1: " << this_level_indices[1] << std::endl;
-    // std::cout << "t ind2: " << this_level_indices[2] << std::endl;
-    // 
-    // std::cout << "tll0: " << this_level_length[0] << std::endl;
-    // std::cout << "tll1: " << this_level_length[1] << std::endl;
-    // 
-    // std::cout << "cid: " << cid << std::endl;
       
 		return cid;
 	}
@@ -236,11 +202,6 @@ class AdaptiveMesh {
 				* length[1]
 				* length[2]
 				* (uint64_t(1) << 3 * refinement_level);
-
-      std::cout << "curr_l:" << current_last 
-                << " ref:" << refinement_level 
-                << " max:" << maximum_refinement_level 
-                << "\n";
 
 			if (cid <= current_last) {
 				break;
