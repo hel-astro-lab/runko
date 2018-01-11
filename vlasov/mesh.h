@@ -45,18 +45,6 @@ class AdaptiveMesh {
   int current_refinement_level = 0;
 
 
-<<<<<<< HEAD
-=======
-  /*
-  AdaptiveMesh(indices_t length) : length(length) 
-  {
-    static_assert(sizeof(length) == D, "number of given array lengths must match dimension");
-
-  }
-  */
-
-
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
   AdaptiveMesh() {}
 
   void resize(indices_t given_length)
@@ -64,11 +52,8 @@ class AdaptiveMesh {
     length[0] = given_length[0];
     length[1] = given_length[1];
     length[2] = given_length[2];
-<<<<<<< HEAD
 
     update_last_cid();
-=======
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
   }
 
   void set(uint64_t key, T& val)
@@ -139,120 +124,18 @@ class AdaptiveMesh {
     }
 
     cid -= 1;	// cell numbering starts from 1
-<<<<<<< HEAD
     const indices_t indices = 
     {{
       (cid % (length[0] * (uint64_t(1) << refinement_level))),
      ((cid / (length[0] * (uint64_t(1) << refinement_level)))
            % (length[1] * (uint64_t(1) << refinement_level))),
       (cid / (length[0] * length[1] * (uint64_t(1) << (2 * refinement_level)) ))
-=======
-    const indices_t indices = {{
-
-      (cid % (length[0] * (uint64_t(1) << refinement_level)))
-        * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-
-        ((cid / (length[0] * (uint64_t(1) << refinement_level)))
-         % (length[1] * (uint64_t(1) << refinement_level)))
-          * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-
-        (cid / (
-                 length[0]
-                 * length[1]
-                 * (uint64_t(1) << (2 * refinement_level))
-                ))
-          * (uint64_t(1) << (maximum_refinement_level - refinement_level))
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
     }};
 
     return indices;
   }
 
-<<<<<<< HEAD
-    
 
-=======
-
-  /*
-  uint64_t get_cell_from_indices(
-      const indices_t& indices,
-      const int refinement_level = 0
-  ) const 
-  { 
-
-    if (indices[0] >= length[0] * (uint64_t(1) << maximum_refinement_level)) {
-      return error_cid;
-    }
-
-    if (indices[1] >= length[1] * (uint64_t(1) << maximum_refinement_level)) {
-      return error_cid;
-    }
-
-    if (indices[2] >= length[2] * (uint64_t(1) << maximum_refinement_level)) {
-      return error_cid;
-    }
-
-    if (refinement_level < 0) {
-      return error_cid;
-    }
-
-    if (refinement_level > maximum_refinement_level) {
-      return error_cid;
-    }
-
-    // cell numbering starts at 1
-    uint64_t cid = 1;
-
-    // add ids of larger cells
-    for (int i = 0; i < refinement_level; i++) {
-      cid +=
-          length[0]
-        * length[1]
-        * length[2]
-        * (uint64_t(1) << (i * 3));
-    }
-
-    // convert to indices of this cell's refinement level
-    const indices_t this_level_indices = 
-    {{
-        indices[0] / (uint64_t(1) << (refinement_level)),
-        indices[1] / (uint64_t(1) << (refinement_level)),
-        indices[2] / (uint64_t(1) << (refinement_level))
-    }};
-
-
-    
-    // std::cout << "ind0: " << indices[0] << std::endl;
-    // std::cout << "ind1: " << indices[1] << std::endl;
-    // std::cout << "ind2: " << indices[2] << std::endl;
-
-    // std::cout << "t ind0: " << this_level_indices[0] << std::endl;
-    // std::cout << "t ind1: " << this_level_indices[1] << std::endl;
-    // std::cout << "t ind2: " << this_level_indices[2] << std::endl;
-
-    // get the length of the grid in terms of cells of this refinement level
-    const std::array<uint64_t, 2> this_level_length = 
-    {{
-        length[0] * (uint64_t(1) << refinement_level),
-        length[1] * (uint64_t(1) << refinement_level)
-    }};
-
-    // std::cout << "tll0: " << this_level_length[0] << std::endl;
-    // std::cout << "tll1: " << this_level_length[1] << std::endl;
-
-    cid += this_level_indices[0]
-        +  this_level_indices[1] * this_level_length[0]
-        +  this_level_indices[2] * this_level_length[0] * this_level_length[1];
-
-
-    // std::cout << "cid: " << cid << std::endl;
-
-    return cid;
-  
-  }
-  */
-    
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
   uint64_t get_cell_from_indices(
       const indices_t& indices,
       const int refinement_level = 0
@@ -290,7 +173,6 @@ class AdaptiveMesh {
 				* (uint64_t(1) << (i * 3));
 		}
 
-<<<<<<< HEAD
     const indices_t this_level_length = get_length(refinement_level);
 
 		cid
@@ -298,49 +180,6 @@ class AdaptiveMesh {
 			+  indices[1] * this_level_length[0]
 			+  indices[2] * this_level_length[0] * this_level_length[1];
 
-=======
-		// convert to indices of this cell's refinement level
-		const indices_t this_level_indices = {{
-			indices[0] * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-			indices[1] * (uint64_t(1) << (maximum_refinement_level - refinement_level)),
-			indices[2] * (uint64_t(1) << (maximum_refinement_level - refinement_level))
-		}};
-
-		// get the length of the grid in terms of cells of this refinement level
-    /*
-		const std::array<uint64_t, 2> this_level_length = 
-    {{
-			length[0] * (uint64_t(1) << refinement_level),
-			length[1] * (uint64_t(1) << refinement_level)
-		}};
-    */
-
-    // uint64_t mult = (uint64_t(1) << refinement_level);
-    // uint64_t mult = (uint64_t(1) << (maximum_refinement_level - refinement_level));
-    // std::cout << "ll0:" << mult << std::endl;
-    // std::cout << "len:" << indices[0]/mult << std::endl;
-
-    const indices_t this_level_length = get_length(refinement_level);
-
-
-		cid
-			+= this_level_indices[0] 
-			+  this_level_indices[1] * this_level_length[0]
-			+  this_level_indices[2] * this_level_length[0] * this_level_length[1];
-
-    // std::cout << "ind0: " << indices[0] << std::endl;
-    // std::cout << "ind1: " << indices[1] << std::endl;
-    // std::cout << "ind2: " << indices[2] << std::endl;
-
-    // std::cout << "t ind0: " << this_level_indices[0] << std::endl;
-    // std::cout << "t ind1: " << this_level_indices[1] << std::endl;
-    // std::cout << "t ind2: " << this_level_indices[2] << std::endl;
-    // 
-    // std::cout << "tll0: " << this_level_length[0] << std::endl;
-    // std::cout << "tll1: " << this_level_length[1] << std::endl;
-    // 
-    // std::cout << "cid: " << cid << std::endl;
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
       
 		return cid;
 	}
@@ -349,13 +188,8 @@ class AdaptiveMesh {
 
   int get_refinement_level(const uint64_t cid) const 
   {
-<<<<<<< HEAD
 		if (cid == error_cid || cid > get_last_cid() ) {
 			return -2;
-=======
-		if (cid == error_cid || cid > last_cid) {
-			return -1;
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
 		}
 
 		int refinement_level = 0;
@@ -410,7 +244,6 @@ class AdaptiveMesh {
   }
 
 
-<<<<<<< HEAD
   indices_t get_parent_indices(const indices_t& indices) const
   {
 
@@ -451,19 +284,11 @@ class AdaptiveMesh {
   }
 
 
-=======
-  /*
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
   uint64_t get_parent(const uint64_t cid) const
 	{
 		const int refinement_level = get_refinement_level(cid);
 
-<<<<<<< HEAD
 		if (refinement_level < 0 || refinement_level > maximum_refinement_level) {
-=======
-		if (refinement_level < 0
-		|| refinement_level > max_refinement_level) {
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
 			return error_cid;
 		}
 
@@ -471,7 +296,6 @@ class AdaptiveMesh {
 			return cid;
 		}
 
-<<<<<<< HEAD
     // get my current indices
     indices_t 
       indices = get_indices(cid),
@@ -500,11 +324,6 @@ class AdaptiveMesh {
     return get_cell_from_indices(parent0_indices);
   }
 
-=======
-		return get_cell_from_indices(get_indices(cid), refinement_level - 1);
-	}
-  */
->>>>>>> f95db85d43cd3af0fca5e6845b028da5228cc754
 
 
   /*
