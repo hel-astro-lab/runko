@@ -29,14 +29,17 @@ T deriv(
 
 
   // get relevant neighbor in my refinement level
-  typename AdaptiveMesh<T,D>::indices_t indices_neighbor( indices );
+  typename AdaptiveMesh<T,D>::indices_t 
+    indices_neighbor( indices ),
+    length;
 
+  length = mesh.get_length(refinement_level);
   size_t i = 0;
   for(auto dir: directions) {
 
     // silently return zero if derivative beyond array range is asked
-    if( (indices[i] <= 0) & (dir < 0))                 return T(0);
-    if( (indices[i] >= mesh.length[i]-1) & (dir > 0) ) return T(0);
+    if( (indices[i] <= 0) && (dir < 0))            return T(0);
+    if( (indices[i] >= length[i]-1) && (dir > 0) ) return T(0);
 
     indices_neighbor[i] += dir;
     i++;
@@ -62,7 +65,7 @@ T deriv(
     x1 = mesh.get_center(indices_neighbor, refinement_level);
 
   T dx = T(0);
-  for(size_t i=0; i<D; i++) dx += std::pow( x1[i] - x0[i], 2);
+  for(size_t i=0; i<D; i++) dx += std::pow( x1[i] - x0[i], 2.0);
   dx = std::sqrt(dx);
 
 

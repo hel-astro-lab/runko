@@ -85,7 +85,7 @@ python/pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
 python/pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/pyplasma.o -c python/pyplasma.c++
 
-python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/mesh.h
+python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/mesh.h vlasov/amr_numerics.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/dev-bindings.o -c vlasov/bindings.c++
 
 #reference to pycorgi's own make

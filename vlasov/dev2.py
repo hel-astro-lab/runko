@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
+from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
@@ -48,10 +49,20 @@ def gauss(ux,uy,uz):
     muz = 0.0
 
     #f  = 1.0/np.sqrt(2.0*np.pi*delgam)
-    f = 1.0
-    f *= np.exp(-0.5*((ux - mux)**2)/delgam)
-    f *= np.exp(-0.5*((uy - muy)**2)/delgam)
-    f *= np.exp(-0.5*((uz - muz)**2)/delgam)
+    #f = 1.0
+    #f *= np.exp(-0.5*((ux - mux)**2)/delgam)
+    #f *= np.exp(-0.5*((uy - muy)**2)/delgam)
+    #f *= np.exp(-0.5*((uz - muz)**2)/delgam)
+
+    mean = [0.0, 0.0, 0.0]
+    cov  = np.zeros((3,3))
+    cov[0,0] = 1.0
+    cov[1,1] = 2.0
+    cov[2,2] = 3.0
+
+    xxx = [ux, uy, uz]
+
+    f = multivariate_normal.pdf(xxx, mean, cov)
 
     return f
 
@@ -113,8 +124,18 @@ def get_mesh(m, args):
             yy[j] = z
 
 
+    if args["q"] == "mid":
+        if args["dir"] == "xy":
+            q = n3/2
+        elif args["dir"] == "xz":
+            q = n2/2
+        elif args["dir"] == "yz":
+            q = n1/2
+    else:
+        q = args["q"]
+
+
     # collect values from mesh
-    q = args["q"]
     for i in range(nx):
         for j in range(ny):
             if  args["dir"] == "xy" :
@@ -137,6 +158,9 @@ def plot2DSlice(ax, m, args):
 
     mesh = get_mesh(m, args)
 
+    #normalize
+    mesh.ff = mesh.ff / np.max(mesh.ff)
+
     imshow(ax,
            mesh.ff,
            mesh.xx[0], mesh.xx[-1],
@@ -146,7 +170,6 @@ def plot2DSlice(ax, m, args):
            cmap = "plasma_r",
            clip = 0.001
            )
-
     return
 
 
@@ -214,17 +237,20 @@ def plotGradientSlice(ax, m, args):
     U     = gg[:,:,0]
     V     = gg[:,:,1]
     speed = np.sqrt(U*U + V*V)
+    #speed = np.sqrt(U*U)
+    #speed = np.sqrt(V*V)
         
     lw = 5*speed / speed.max()
-    #ax.streamplot(X, Y, U, V, density=0.9, color="k", linewidth=lw)
+    ax.streamplot(X, Y, U, V, density=0.9, color="k", linewidth=lw)
 
+    #ax.quiver(X, Y, U, V, units='x', pivot='tip', width=0.022) #, scale=1/0.15)
 
     imshow(ax,
-           speed,
+           speed / speed.max(),
            xx[0], xx[-1],
            yy[0], yy[-1],
            vmin = 0.0,
-           vmax = 0.5,
+           vmax = 1.0,
            cmap = "plasma_r",
            clip = 0.0
            )
@@ -279,13 +305,13 @@ if __name__ == "__main__":
     plotGradientSlice(axs[0], m, args)
 
     args = {"dir":"xz", 
-            "q":   20,
+            "q":   "mid",
             "rfl": 2 }
     plot2DSlice(axs[1], m, args)
 
 
     args = {"dir":"yz", 
-            "q":   20,
+            "q":   "mid",
             "rfl": 2 }
     plot2DSlice(axs[2], m, args)
 
