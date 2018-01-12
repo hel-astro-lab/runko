@@ -34,7 +34,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         uint64_t i = indx[0].cast<uint64_t>();
         uint64_t j = indx[1].cast<uint64_t>();
         uint64_t k = indx[2].cast<uint64_t>();
-        int    rfl = indx[3].cast<int>();
+        int   rfl = indx[3].cast<int>();
 
         // const AM3d::indices_t cindx = {{i,j,k}};
         // uint64_t cid = s.get_cell_from_indices(cindx, rfl);
@@ -49,7 +49,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         uint64_t i = indx[0].cast<uint64_t>();
         uint64_t j = indx[1].cast<uint64_t>();
         uint64_t k = indx[2].cast<uint64_t>();
-        int    rfl = indx[3].cast<int>();
+        int   rfl = indx[3].cast<int>();
 
         // const AM3d::indices_t cindx = {{i,j,k}};
         // uint64_t cid = s.get_cell_from_indices(cindx, rfl);

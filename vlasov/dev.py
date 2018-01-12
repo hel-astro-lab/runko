@@ -43,7 +43,6 @@ def gauss(ux,uy,uz):
     f *= np.exp(-0.5*((uz - muz)**2)/delgam)
 
     return f
-    #return 1.0
 
 
 
@@ -215,7 +214,7 @@ if __name__ == "__main__":
     level_fill(m, 0)
     level_fill(m, 1)
     level_fill(m, 2)
-    level_fill(m, 3)
+    #level_fill(m, 3)
 
 
 
@@ -236,10 +235,13 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[3]) )
 
     plotSlices(axs, m, 0)
-    #plotSlices(axs, m, 1)
-    plotSlices(axs, m, 3)
+    plotSlices(axs, m, 1)
+    plotSlices(axs, m, 2)
 
     plotHierarchy(axs[3], m)
+
+
+
 
 
     saveVisz(0, conf)

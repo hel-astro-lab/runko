@@ -6,16 +6,23 @@
 #include <algorithm>
 #include <array>
 #include <vector>
-// #include <unordered_map>
-#include <map>
-
-
+#include <unordered_map>
+// #include <map>
 
 
 namespace toolbox {
 
 
 
+/* \brief n-dimensional adaptive mesh 
+ *
+ * Template for n-dimensional adaptive mesh class.
+ * Internally the class uses unordered_map (i.e., hash map)
+ * to store the data. Indexing is done via unique keys that follow
+ * Morton Z-ordering.
+ *
+ * TODO: Dimension specialization does not work (giving D has no effect as it is D=3)
+ */
 template<typename T, int D>
 class AdaptiveMesh {
 
@@ -24,13 +31,13 @@ class AdaptiveMesh {
   typedef std::array<uint64_t, D> indices_t;
   typedef std::array<T, D> value_array_t;
 
-  // using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
-  // using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
-  // std::unordered_map<uint64_t, T> data;
+  using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
+  using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
+  std::unordered_map<uint64_t, T> data;
 
-  using iterator       = typename std::map<uint64_t, T>::iterator;
-  using const_iterator = typename std::map<uint64_t, T>::const_iterator;
-  std::map<uint64_t, T> data;
+  // using iterator       = typename std::map<uint64_t, T>::iterator;
+  // using const_iterator = typename std::map<uint64_t, T>::const_iterator;
+  // std::map<uint64_t, T> data;
 
 
   static const uint64_t error_cid = 0;
@@ -247,12 +254,12 @@ class AdaptiveMesh {
   indices_t get_parent_indices(const indices_t& indices) const
   {
 
-    uint64_t shift = (uint64_t(1) << int(1));
-    std::cout << "shift:" << shift << "\n";
-    std::cout << "i0: " << indices[0]/2 <<
-                 "i1: " << indices[1]/2 <<
-                 "i2: " << indices[2]/2 <<
-                "\n";
+    // uint64_t shift = (uint64_t(1) << int(1));
+    // std::cout << "shift:" << shift << "\n";
+    // std::cout << "i0: " << indices[0]/2 <<
+    //              "i1: " << indices[1]/2 <<
+    //              "i2: " << indices[2]/2 <<
+    //             "\n";
 
     // NOTE: implicit int casting does the flooring of this value
     indices_t parent_indices = 
@@ -375,6 +382,29 @@ class AdaptiveMesh {
 	}
 
 
+  /*
+  std::vector<uint64_t> get_leafs(const uint64_t cid) const 
+  {
+		std::vector<uint64_t> children;
+
+    int refinement_level = get_refinement_level(cid);
+		if (refinement_level >= maximum_refinement_level) {
+      children.push_back(cid);
+      return children;
+    }
+
+    // TODO implement
+
+
+  }
+  */
+  
+
+
+
+
+  //-------------------------------------------------- 
+  // Geometry
 
   indices_t get_length(int refinement_level) const
   {
@@ -390,10 +420,6 @@ class AdaptiveMesh {
     return lens;
   }
 
-
-
-  //-------------------------------------------------- 
-  // Geometry
   
   value_array_t mins;
   value_array_t maxs;
@@ -512,6 +538,9 @@ class AdaptiveMesh {
   }
 
 
+  // mathematical operators
+  // dx = m.deriv([i,j,k],[+1,0,0])
+  // dx = deriv(m, [i,j,k], [+1,0,0])
 
 };
 
