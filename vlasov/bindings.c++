@@ -4,6 +4,7 @@ namespace py = pybind11;
 
 
 #include "mesh.h"
+#include "amr_numerics.h"
 
 
 
@@ -65,6 +66,13 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def("get_length", &AM3d::get_length)
     .def("get_center", &AM3d::get_center)
     .def("get_level_0_cell_length", &AM3d::get_level_0_cell_length);
+
+
+    m.def("deriv", &toolbox::deriv<Realf, 3>);
+    m.def("grad",  &toolbox::grad<Realf, 3>);
+
+
+
 
 
 

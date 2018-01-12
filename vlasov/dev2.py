@@ -20,12 +20,12 @@ class conf:
     Nyv = 10
     Nzv = 10
 
-    xmin = -2.0
-    ymin = -3.0
+    xmin = -4.0
+    ymin = -5.0
     zmin = -4.0
 
-    xmax =  2.0
-    ymax =  3.0
+    xmax =  4.0
+    ymax =  5.0
     zmax =  4.0
 
 
@@ -66,6 +66,7 @@ def level_fill(m, rfl):
                 x,y,z = m.get_center([i,j,k], rfl)
                 val = gauss(x,y,z)
                 m[i,j,k, rfl] =  val
+
 
 
 def get_mesh(m, args):
@@ -142,15 +143,91 @@ def plot2DSlice(ax, m, args):
            mesh.yy[0], mesh.yy[-1],
            vmin = 0.0,
            vmax = 1.0,
-           cmap = "plasma",
-           clip = 0.0
+           cmap = "plasma_r",
+           clip = 0.001
            )
 
     return
 
 
+def get_guide_grid(m, rfl):
+    nx, ny, nz = m.get_length(rfl)
+    xx = np.zeros((nx))
+    yy = np.zeros((ny))
+    zz = np.zeros((nz))
+
+    #get guide grids
+    for i in range(nx):
+        x,y,z = m.get_center([i,0,0], rfl)
+        xx[i] = x
+    for i in range(ny):
+        x,y,z = m.get_center([0,i,0], rfl)
+        yy[i] = y
+    for i in range(nz):
+        x,y,z = m.get_center([0,0,i], rfl)
+        zz[i] = z
+
+    return xx, yy, zz
+    
 
 
+def get_gradient(m, rfl):
+    nx, ny, nz = m.get_length(rfl)
+
+    #empty arrays ready
+    ggg = np.zeros((nx, ny, nz, 3))
+
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                indx = [i,j,k]
+
+                gr = pdev.grad(m, indx, rfl)
+                ggg[i,j,k,:] = gr
+
+    return ggg
+
+
+
+def plotGradientSlice(ax, m, args):
+    rfl = args["rfl"]
+
+    nx, ny, nz = m.get_length(rfl)
+    xx, yy, zz = get_guide_grid(m, rfl)
+    gg = np.zeros((nx, ny, 2))
+
+    #get 3D gradient cube and flatten into 2D
+    ggg = get_gradient(m, rfl)
+
+    if args["q"] == "mid":
+        q = nz/2
+        print(q)
+    else:
+        q = args["q"]
+    for i in range(nx):
+        for j in range(ny):
+            gg[i,j,0] = ggg[i,j,q,0] #vx
+            gg[i,j,1] = ggg[i,j,q,1] #vy
+
+
+    X, Y  = np.meshgrid(xx, yy)
+    U     = gg[:,:,0]
+    V     = gg[:,:,1]
+    speed = np.sqrt(U*U + V*V)
+        
+    lw = 5*speed / speed.max()
+    #ax.streamplot(X, Y, U, V, density=0.9, color="k", linewidth=lw)
+
+
+    imshow(ax,
+           speed,
+           xx[0], xx[-1],
+           yy[0], yy[-1],
+           vmin = 0.0,
+           vmax = 0.5,
+           cmap = "plasma_r",
+           clip = 0.0
+           )
 
     
 def saveVisz(lap, conf):
@@ -196,10 +273,10 @@ if __name__ == "__main__":
 
 
     args = {"dir":"xy", 
-            "q":   20,
+            "q":  "mid",
             "rfl": 2 }
-    plot2DSlice(axs[0], m, args)
-
+    #plot2DSlice(axs[0], m, args)
+    plotGradientSlice(axs[0], m, args)
 
     args = {"dir":"xz", 
             "q":   20,
@@ -211,6 +288,9 @@ if __name__ == "__main__":
             "q":   20,
             "rfl": 2 }
     plot2DSlice(axs[2], m, args)
+
+
+    
 
 
 
