@@ -61,6 +61,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
 
         s.set(cid, v);
         })
+    .def("clip",       &AM3d::clip)
     .def("set_min",    &AM3d::set_min)
     .def("set_max",    &AM3d::set_max)
     .def("get_length", &AM3d::get_length)

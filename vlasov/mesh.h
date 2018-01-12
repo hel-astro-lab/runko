@@ -44,7 +44,7 @@ class AdaptiveMesh {
   static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
   int maximum_refinement_level = 10;
 	uint64_t last_cid;
-  size_t number_of_blocks = 0;
+  size_t number_of_cells = 0;
   
 
   indices_t length;
@@ -538,9 +538,46 @@ class AdaptiveMesh {
   }
 
 
-  // mathematical operators
-  // dx = m.deriv([i,j,k],[+1,0,0])
-  // dx = deriv(m, [i,j,k], [+1,0,0])
+  std::vector<uint64_t> get_all_cells(bool sorted)
+  {
+    std::vector<uint64_t> all_cells;
+
+    for (auto item: data) {
+      uint64_t cid = item.first;
+
+      all_cells.push_back( cid );
+    };
+
+    if (sorted && all_cells.size() > 0) {
+      std::sort(all_cells.begin(), all_cells.end());
+    }
+
+    return all_cells;
+  }
+
+
+  //-------------------------------------------------- 
+  // Adaptivity
+
+  // clip every cell below threshold
+  void clip(T threshold) {
+
+    std::vector<uint64_t> below_threshold;
+    for(const uint64_t cid: get_all_cells(false)) {
+      if( data.at(cid) < threshold ) below_threshold.push_back(cid);
+    }
+
+    for(const uint64_t cid: below_threshold) {
+      data.erase(cid);
+      number_of_cells -= 1;
+    }
+
+  }
+
+
+
+
+
 
 };
 
