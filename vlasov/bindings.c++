@@ -24,7 +24,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def_readwrite("length",                     &AM3d::length)
     .def_readwrite("maximum_refinement_level",   &AM3d::maximum_refinement_level)
     .def("resize",               &AM3d::resize)
-    .def("get_cell",             &AM3d::get_cell_from_indices)
+    .def("get_cell_from_indices", &AM3d::get_cell_from_indices)
     .def("get_indices",          &AM3d::get_indices)
     .def("get_refinement_level", &AM3d::get_refinement_level)
     .def("get_parent_indices",   &AM3d::get_parent_indices)
@@ -60,14 +60,14 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         })
     .def("clip_cells",       &AM3d::clip_cells)
     //.def("cut_roots",        &AM3d::cut_roots)
-    .def("split",                   &AM3d::split)
-    .def("update_from_children",    &AM3d::update_from_children)
-    .def("update_from_leafs",       &AM3d::update_from_leafs)
-    .def("get_from_leafs",          &AM3d::get_from_leafs)
+    // .def("split",                   &AM3d::split)
+    // .def("update_from_children",    &AM3d::update_from_children)
+    // .def("update_from_leafs",       &AM3d::update_from_leafs)
+    // .def("get_from_leafs",          &AM3d::get_from_leafs)
     .def("is_leaf",                 &AM3d::is_leaf)
     .def("set_min",                 &AM3d::set_min)
     .def("set_max",                 &AM3d::set_max)
-    .def("get_length",              &AM3d::get_length)
+    .def("get_size",                &AM3d::get_size)
     .def("get_center",              &AM3d::get_center)
     .def("get_level_0_cell_length", &AM3d::get_level_0_cell_length);
 
@@ -88,8 +88,11 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def_readwrite("cells_to_refine",   &Adapter3d::cells_to_refine)
     .def_readwrite("cells_to_unrefine", &Adapter3d::cells_to_unrefine)
     .def_readwrite("cells_created",     &Adapter3d::cells_created)
-    .def("check",     &Adapter3d::check)
-    .def("refine",    &Adapter3d::refine);
+    .def("set_maximum_data_value",     &Adapter3d::set_maximum_data_value)
+    .def("maximum_value",          &Adapter3d::maximum_value)
+    .def("maximum_gradient",       &Adapter3d::maximum_gradient)
+    .def("check",                  &Adapter3d::check)
+    .def("refine",                 &Adapter3d::refine);
 
 
 

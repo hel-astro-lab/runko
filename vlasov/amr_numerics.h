@@ -17,8 +17,8 @@ namespace toolbox {
  */
 template<typename T, int D>
 T deriv(
-    AdaptiveMesh<T,D>& mesh, 
-    typename AdaptiveMesh<T,D>::indices_t& indices,
+    const AdaptiveMesh<T,D>& mesh, 
+    const typename AdaptiveMesh<T,D>::indices_t& indices,
     int refinement_level,
     std::array<int, D>& directions
       ) 
@@ -33,7 +33,7 @@ T deriv(
     indices_neighbor( indices ),
     length;
 
-  length = mesh.get_length(refinement_level);
+  length = mesh.get_size(refinement_level);
   size_t i = 0;
   for(auto dir: directions) {
 
@@ -54,7 +54,7 @@ T deriv(
   // instead we (for now) simplify and assume same refinement level
   // function values; then look below for roots
   T 
-    f0 = mesh.get(cid),
+    f0 = mesh.get_from_roots(cid),
     f1 = mesh.get_from_roots(cid_neighbor);
 
 
@@ -71,6 +71,8 @@ T deriv(
 
   // finally the actual derivative
   T dfdx = (f1 - f0) / dx;
+  // T dfdx = (f1 - f0) / (f0 + 0.001);
+  // T dfdx = (f1 - f0 + 1.0e-4);
 
 
   return dfdx;
@@ -85,8 +87,8 @@ T deriv(
  */
 template<typename T, int D>
 typename AdaptiveMesh<T,D>::value_array_t grad(
-    AdaptiveMesh<T,D>& mesh,
-    typename AdaptiveMesh<T,D>::indices_t& indices,
+    const AdaptiveMesh<T,D>& mesh,
+    const typename AdaptiveMesh<T,D>::indices_t& indices,
     int refinement_level) 
 {
   typename AdaptiveMesh<T,D>::value_array_t gradient;

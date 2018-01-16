@@ -30,33 +30,77 @@ class Adapter {
 
 
   /// General tolerance for refinement
-  T tolerance = 0.001;
+  T tolerance = 1.0e-4;
+  T maximum_data_value = T(1.0);
+
+
+  void set_maximum_data_value(T val) {
+    maximum_data_value = val;
+  }
+
+
+  // T relative_difference(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const { }
+
+
+
+  T maximum_value(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const 
+  {
+    int rfl = mesh.get_refinement_level(cid);
+
+    T val = mesh.get_from_roots(cid);
+
+    value_array_t lens = mesh.get_length(rfl);
+
+    // compute volume 
+    T vol = T(1);
+    for(auto x : lens) vol *= x;
+
+    return val * vol / maximum_data_value;
+  }
+
+
+
+  // error norm is max{ |grad(f)| }
+  T maximum_gradient(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const
+  {
+    int rfl = mesh.get_refinement_level(cid);
+    indices_t ind = mesh.get_indices(cid);
+
+    value_array_t gradient = grad<T,D>(mesh, ind, rfl);
+
+    return *std::max_element(std::begin( gradient) , std::end(gradient),
+        [](T a, T b){return std::abs(a) < std::abs(b);});
+  }
+
 
 
   void check( AdaptiveMesh<T,D>& mesh )
   {
+    cells_to_refine.clear();
+
+    T error_indicator = T(0);
     
     for(const auto& cid : mesh.get_cells(true)) {
 
-      int rfl = mesh.get_refinement_level(cid);
-      indices_t ind = mesh.get_indices(cid);
+      if (!mesh.is_leaf(cid)) continue;
 
-      // error norm is max{ |grad(f)| }
-      value_array_t gradient = grad<T,D>(mesh, ind, rfl);
-      T error_indicator = *std::max_element(std::begin( gradient) , std::end(gradient),
-          [](T a, T b){return std::abs(a) < std::abs(b);});
+      // error_indicator = maximum_gradient(mesh, cid);
+      error_indicator = maximum_value(mesh, cid);
 
-      if( error_indicator < tolerance ) continue;
+      // error_indicator = relative_difference(mesh, cid);
+
+
+      if( error_indicator > tolerance ) cells_to_refine.push_back(cid);
 
       // fmt::print("Checking cell {} ({},{},{}): E: {} \n", cid, ind[0], ind[1], ind[2], error_indicator);
-
-      cells_to_refine.push_back(cid);
     }
   }
 
 
+
   void refine( AdaptiveMesh<T,D>& mesh )
   {
+    cells_created.clear();
 
     for(const auto& cid : cells_to_refine) {
 

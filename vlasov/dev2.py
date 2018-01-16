@@ -56,8 +56,8 @@ def gauss(ux,uy,uz):
 
     mean = [0.0, 0.0, 0.0]
     cov  = np.zeros((3,3))
-    cov[0,0] = 1.0
-    cov[1,1] = 2.0
+    cov[0,0] = 0.1
+    cov[1,1] = 1.0
     cov[2,2] = 3.0
 
     xxx = [ux, uy, uz]
@@ -70,7 +70,7 @@ def gauss(ux,uy,uz):
 
 def level_fill(m, rfl):
 
-    nx, ny, nz = m.get_length(rfl)
+    nx, ny, nz = m.get_size(rfl)
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
@@ -81,7 +81,7 @@ def level_fill(m, rfl):
 
 def adaptive_fill(m, tol=0.001):
 
-    nx, ny, nz = m.get_length(0)
+    nx, ny, nz = m.get_size(0)
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
@@ -90,24 +90,32 @@ def adaptive_fill(m, tol=0.001):
                 m[i,j,k, 0] =  val
 
     adapter = pdev.Adapter();
+    
+    sweeps = 1
+    while(True):
+        print("-------round {}-----------".format(sweeps))
 
+        adapter.check(m)
+        adapter.refine(m)
 
-    adapter.check(m)
-    adapter.refine(m)
-    for cid in adapter.cells_created:
-        rfl = m.get_refinement_level(cid)
-        indx = m.get_indices(cid)
-        x,y,z = m.get_center(indx, rfl)
+        print("cells to refine: {}", len(adapter.cells_to_refine))
+        for cid in adapter.cells_created:
+            rfl = m.get_refinement_level(cid)
+            indx = m.get_indices(cid)
+            x,y,z = m.get_center(indx, rfl)
 
-        print("new cell {} at ({},{},{})/{}".format(cid,
-            indx[0],
-            indx[1],
-            indx[2],
-            rfl))
+            #print("new cell {} at ({},{},{})/{}".format(cid,
+            #    indx[0],
+            #    indx[1],
+            #    indx[2],
+            #    rfl))
 
-        val = gauss(x,y,z)
-        m[indx[0], indx[1], indx[2], rfl] = val
-        
+            val = gauss(x,y,z)
+            m[indx[0], indx[1], indx[2], rfl] = val
+            
+
+        sweeps += 1
+        if sweeps > 3: break
 
 
 
@@ -149,7 +157,7 @@ def adaptive_fill(m, tol=0.001):
 
 def get_mesh(m, args):
     rfl = args["rfl"]
-    n1, n2, n3 = m.get_length(rfl)
+    n1, n2, n3 = m.get_size(rfl)
 
     #flip dimensions to right-handed coordinate system
     if   args["dir"] == "xy" :
@@ -243,7 +251,7 @@ def plot2DSlice(ax, m, args):
 def plotAdaptiveSlice(ax, m, args):
 
     rfl_max = args["rfl"]
-    nx, ny, nz = m.get_length(rfl_max)
+    nx, ny, nz = m.get_size(rfl_max)
 
     #empty arrays ready
     xx = np.zeros((nx))
@@ -307,7 +315,7 @@ def plotAdaptiveSlice(ax, m, args):
 
 
 def get_guide_grid(m, rfl):
-    nx, ny, nz = m.get_length(rfl)
+    nx, ny, nz = m.get_size(rfl)
     xx = np.zeros((nx))
     yy = np.zeros((ny))
     zz = np.zeros((nz))
@@ -328,7 +336,7 @@ def get_guide_grid(m, rfl):
 
 
 def get_gradient(m, rfl):
-    nx, ny, nz = m.get_length(rfl)
+    nx, ny, nz = m.get_size(rfl)
 
     #empty arrays ready
     ggg = np.zeros((nx, ny, nz, 3))
@@ -348,7 +356,7 @@ def get_gradient(m, rfl):
 def plotGradientSlice(ax, m, args):
     rfl = args["rfl"]
 
-    nx, ny, nz = m.get_length(rfl)
+    nx, ny, nz = m.get_size(rfl)
     xx, yy, zz = get_guide_grid(m, rfl)
     gg = np.zeros((nx, ny, 2))
 
@@ -369,18 +377,12 @@ def plotGradientSlice(ax, m, args):
     X, Y  = np.meshgrid(xx, yy)
     U     = gg[:,:,0]
     V     = gg[:,:,1]
-    #speed = np.sqrt(U*U + V*V)
-    #speed = np.sqrt(U*U)
-    #speed = np.sqrt(V*V)
 
     speed = np.zeros((nx, ny))
     for i in range(nx):
         for j in range(ny):
             speed[i,j] = np.maximum( np.abs(U[i,j]), np.abs(V[i,j]) )
-
         
-    #errs = np.max( np.abs(speed) )
- 
     imshow(ax,
            speed / speed.max(),
            xx[0], xx[-1],
@@ -397,6 +399,83 @@ def plotGradientSlice(ax, m, args):
 
     #ax.quiver(X, Y, U, V, units='x', pivot='tip', width=0.022) #, scale=1/0.15)
     
+
+
+
+
+
+def get_indicator(m, rfl):
+    nx, ny, nz = m.get_size(rfl)
+
+    #empty arrays ready
+    ggg = np.zeros((nx, ny, nz))
+
+    adapter = pdev.Adapter()
+    adapter.set_maximum_data_value(1.0)
+
+
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                indx = [i,j,k]
+
+                cid = m.get_cell_from_indices(indx, rfl)
+
+                gr = adapter.maximum_gradient(m, cid)
+                #gr = adapter.maximum_value(m, cid)
+                ggg[i,j,k] = gr
+
+    return ggg
+
+
+
+def plotIndicator(ax, m, args):
+    rfl = args["rfl"]
+
+    nx, ny, nz = m.get_size(rfl)
+    xx, yy, zz = get_guide_grid(m, rfl)
+    gg         = np.zeros((nx, ny))
+
+    #get 3D gradient cube and flatten into 2D
+    ggg = get_indicator(m, rfl)
+
+
+    if args["q"] == "mid":
+        q = nz/2
+        print(q)
+    else:
+        q = args["q"]
+
+    for i in range(nx):
+        for j in range(ny):
+            gg[i,j] = ggg[i,j,q]
+
+
+
+    X, Y  = np.meshgrid(xx, yy)
+        
+    print("maximum of refining indicator: {}", gg.max() )
+
+    gg = np.log10(gg)
+    #gg =/ gg.max(),
+
+    imshow(ax,
+           gg,
+           xx[0], xx[-1],
+           yy[0], yy[-1],
+           #vmin = 0.0,
+           #vmax = 1.0,
+           vmin =-8.0,
+           vmax = 1.0,
+           cmap = "plasma_r",
+           #clip = 0.0
+           clip =-9.0
+           )
+
+
+
+
+
 def saveVisz(lap, conf):
     slap = str(lap).rjust(4, '0')
     fname = conf.outdir + '/amr2_{}.png'.format(slap)
@@ -427,57 +506,49 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,20))
+    plt.fig = plt.figure(1, figsize=(12,20))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(3, 1)
+    gs = plt.GridSpec(3, 2)
     gs.update(hspace = 0.5)
     
     axs = []
-    axs.append( plt.subplot(gs[0]) )
-    axs.append( plt.subplot(gs[1]) )
-    axs.append( plt.subplot(gs[2]) )
+    axs.append( plt.subplot(gs[0,0]) )
+    axs.append( plt.subplot(gs[1,0]) )
+    axs.append( plt.subplot(gs[2,0]) )
+
+    axsE = []
+    axsE.append( plt.subplot(gs[0,1]) )
+    axsE.append( plt.subplot(gs[1,1]) )
+    axsE.append( plt.subplot(gs[2,1]) )
+
 
 
     args = {"dir":"xy", 
             "q":  "mid",
-            "rfl": 2 }
-    #plot2DSlice(axs[0], m, args)
+            "rfl": 3 }
+    plot2DSlice(axs[0], m, args)
     #plotAdaptiveSlice(axs[0], m, args)
-    plotGradientSlice(axs[0], m, args)
+    #plotGradientSlice(axsE[0], m, args)
+    plotIndicator(axsE[0], m, args)
+
 
     args = {"dir":"xz", 
             "q":   "mid",
-            "rfl": 2 }
+            "rfl": 3 }
     plot2DSlice(axs[1], m, args)
+    plotIndicator(axsE[1], m, args)
 
 
     args = {"dir":"yz", 
             "q":   "mid",
-            "rfl": 2 }
+            "rfl": 3 }
     plot2DSlice(axs[2], m, args)
+    plotIndicator(axsE[2], m, args)
 
 
-
-
-
-    indx = [5,29,3]
-    print(indx) 
-    pindx1 = m.get_parent_indices(indx)
-    print(pindx1)
-    pindx2 = m.get_parent_indices(pindx1)
-    print("1:", pindx2)
-
-    print("2:",m.get_level_0_parent_indices(indx, 2))
-    
-
-    print(indx) 
-    indx= m.get_parent_indices(indx)
-    print(indx)
-    indx = m.get_parent_indices(indx)
-    print("3:", indx)
     
     #m.cut()
 

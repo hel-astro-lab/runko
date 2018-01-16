@@ -191,7 +191,7 @@ class AdaptiveMesh {
 				* (uint64_t(1) << (i * 3));
 		}
 
-    const indices_t this_level_length = get_length(refinement_level);
+    const indices_t this_level_length = get_size(refinement_level);
 
 		cid
 			+= indices[0] 
@@ -410,7 +410,7 @@ class AdaptiveMesh {
    *
    * TODO: make full search / or add option to do this
    */
-  bool is_leaf(uint64_t cid) const
+  bool is_leaf(const uint64_t cid) const
   {
 
     // get cells directly above me 
@@ -442,7 +442,7 @@ class AdaptiveMesh {
   //-------------------------------------------------- 
   // Geometry
 
-  indices_t get_length(int refinement_level) const
+  indices_t get_size(int refinement_level) const
   {
 
     indices_t lens = 
@@ -503,6 +503,19 @@ class AdaptiveMesh {
       }};
 
     return ret;
+  }
+
+
+  // get physical length of the box at refinement level
+  value_array_t get_length(const int refinement_level) const {
+    value_array_t length = get_level_0_cell_length();
+
+    for(int rfl=1; rfl<=refinement_level; rfl++) {
+      for(size_t i=0; i<D; i++)  length[i] /= T(2.0);
+    }
+
+
+    return length;
   }
 
 
@@ -624,47 +637,40 @@ class AdaptiveMesh {
    * NOTE: This is the safe and primary method to split cells as this 
    * cleans up parents.
    */
-  void split(const uint64_t cid) {
 
-    auto children = get_children(cid);
-    for(auto cidc : children) data[cidc] = T(0);
+  // void split(const uint64_t cid) {
 
-    data.erase(cid); 
-  }
+  //   auto children = get_children(cid);
+  //   for(auto cidc : children) data[cidc] = T(0);
 
-
-  // Update parent cell's value to be mean of its children cells' value
-  void update_from_children(const uint64_t cid)
-  {
-    T mean = T(0);
-    for(auto cidc : get_children(cid)) mean += get(cidc);
-    data[cid] = mean / std::pow(2, D);
-  }
+  //   data.erase(cid); 
+  // }
 
 
-  /// Recursive get from the tip of the tree
-  T get_from_leafs(const uint64_t cid) 
-  {
-    if( is_leaf(cid) ) return data[cid]; 
-
-    T mean = T(0);
-    for(auto cidc : get_children(cid)) mean += get_from_leafs(cidc);
-    return mean / std::pow(2, D);
-  }
+  // // Update parent cell's value to be mean of its children cells' value
+  // void update_from_children(const uint64_t cid)
+  // {
+  //   T mean = T(0);
+  //   for(auto cidc : get_children(cid)) mean += get(cidc);
+  //   data[cid] = mean / std::pow(2, D);
+  // }
 
 
-  void update_from_leafs(const uint64_t cid)
-  {
-    data[cid] = get_from_leafs(cid);
-  }
+  // /// Recursive get from the tip of the tree
+  // T get_from_leafs(const uint64_t cid) 
+  // {
+  //   if( is_leaf(cid) ) return data[cid]; 
+
+  //   T mean = T(0);
+  //   for(auto cidc : get_children(cid)) mean += get_from_leafs(cidc);
+  //   return mean / std::pow(2, D);
+  // }
 
 
-
-  bool exists(const uint64_t cid) const
-  {
-    return data.count(cid) == data.end() ? false : true;
-  }
-
+  // void update_from_leafs(const uint64_t cid)
+  // {
+  //   data[cid] = get_from_leafs(cid);
+  // }
 
 
   // get value from map. If it foes not exist, recursively check until parent is found
@@ -716,6 +722,14 @@ class AdaptiveMesh {
     return it->second;
   }
   */
+
+
+  bool exists(const uint64_t cid) const
+  {
+    return data.count(cid) == data.end() ? false : true;
+  }
+
+
 
 
 
