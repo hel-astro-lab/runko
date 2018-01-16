@@ -49,23 +49,23 @@ T deriv(
 
   // TODO: implement usage of most refined neighbors; not current refinement level
   // then work on the most refined relevant neighbors 
-  // std::vector<uint64_t> children = m.get_most_refined_children(cid_neighbor);
+  // std::vector<uint64_t> children = m.get_most_refined_children(cid_neighbor); = leafs
   //
   // instead we (for now) simplify and assume same refinement level
-  // function values
+  // function values; then look below for roots
   T 
     f0 = mesh.get(cid),
-    f1 = mesh.get(cid_neighbor);
+    f1 = mesh.get_from_roots(cid_neighbor);
 
 
-  // then compute distance between cells
+  // compute distance between cells
   // NOTE: this operation can be done even if the cell at this ref. lvl. does not exist
   typename AdaptiveMesh<T,D>::value_array_t 
     x0 = mesh.get_center(indices,          refinement_level),
     x1 = mesh.get_center(indices_neighbor, refinement_level);
 
   T dx = T(0);
-  for(size_t i=0; i<D; i++) dx += std::pow( x1[i] - x0[i], 2.0);
+  for(size_t i=0; i<D; i++) dx += std::pow( x1[i] - x0[i], 2);
   dx = std::sqrt(dx);
 
 

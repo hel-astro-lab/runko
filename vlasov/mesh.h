@@ -9,6 +9,15 @@
 #include <unordered_map>
 // #include <map>
 
+// #include "reversed_iterator.h"
+
+
+#include <fmt/format.h>
+#include <fmt/format.cc>
+#include <fmt/string.h>
+#include <fmt/ostream.h>
+
+
 
 namespace toolbox {
 
@@ -63,10 +72,11 @@ class AdaptiveMesh {
     update_last_cid();
   }
 
-  void set(uint64_t key, T& val)
+  void set(uint64_t key, T val)
   {
     data[key] = val;
   }
+
 
   T get(const uint64_t key) const
   {
@@ -76,13 +86,13 @@ class AdaptiveMesh {
   }
 
 
+  /*
   // set item
   T operator() (indices_t indx, int refinement_level) 
   {
     uint64_t cid = get_cell_from_indices(indx, refinement_level);
     return data[cid];
   }
-
 
   // get item
   const T operator() (indices_t indx, int refinement_level) const
@@ -91,6 +101,7 @@ class AdaptiveMesh {
     const_iterator it = data.find(cid);
     return it == data.end() ? T(0) : it->second;
   }
+  */
 
 
 
@@ -254,19 +265,30 @@ class AdaptiveMesh {
   indices_t get_parent_indices(const indices_t& indices) const
   {
 
-    // uint64_t shift = (uint64_t(1) << int(1));
-    // std::cout << "shift:" << shift << "\n";
-    // std::cout << "i0: " << indices[0]/2 <<
-    //              "i1: " << indices[1]/2 <<
-    //              "i2: " << indices[2]/2 <<
-    //             "\n";
+    /*
+    uint64_t shift = (uint64_t(1) << int(1));
+    std::cout << "shift:" << shift << "\n";
+    std::cout << "i0: " << indices[0]/2 <<
+                 "i1: " << indices[1]/2 <<
+                 "i2: " << indices[2]/2 <<
+                 "\n";
+    */
 
     // NOTE: implicit int casting does the flooring of this value
+    /*
     indices_t parent_indices = 
     {{
-       indices[0] / 2,
-       indices[1] / 2,
-       indices[2] / 2 
+       indices[0] / uint64_t(2),
+       indices[1] / uint64_t(2),
+       indices[2] / uint64_t(2) 
+    }};
+    */
+
+    indices_t parent_indices = 
+    {{
+       indices[0] / (uint64_t(1) << 1),
+       indices[1] / (uint64_t(1) << 1),
+       indices[2] / (uint64_t(1) << 1) 
     }};
 
     return parent_indices;
@@ -277,7 +299,7 @@ class AdaptiveMesh {
     // uint64_t cid = get_cell_from_indices(indices);
     // int refinement_level = get_refinement_level(cid);
       
-    if(refinement_level < 2) return get_parent_indices(indices);
+    if(refinement_level <= 1) return get_parent_indices(indices);
 
 
     indices_t parent_indices = 
@@ -304,9 +326,8 @@ class AdaptiveMesh {
 		}
 
     // get my current indices
-    indices_t 
-      indices = get_indices(cid),
-		  parent_indices = get_parent_indices(indices);
+    const indices_t indices = get_indices(cid);
+		const indices_t parent_indices = get_parent_indices(indices);
 
     return get_cell_from_indices(parent_indices);
 	}
@@ -381,26 +402,41 @@ class AdaptiveMesh {
 		return children;
 	}
 
+  
+
+  /*! \brief Is current cell at the tip of the graph tree?
+   * Does only shallow search by considering one cell above.
+   * This means that we implicitly assume connected graphs.
+   *
+   * TODO: make full search / or add option to do this
+   */
+  bool is_leaf(uint64_t cid) const
+  {
+
+    // get cells directly above me 
+    auto children = get_children(cid);
+    for(auto cidc : children) if(data.count(cidc) > 0) return false;
+
+    // as there is no children above, then this is a leaf
+    return true;
+  }
+
 
   /*
   std::vector<uint64_t> get_leafs(const uint64_t cid) const 
   {
 		std::vector<uint64_t> children;
 
+    // TODO implement
     int refinement_level = get_refinement_level(cid);
 		if (refinement_level >= maximum_refinement_level) {
       children.push_back(cid);
       return children;
     }
 
-    // TODO implement
-
 
   }
   */
-  
-
-
 
 
   //-------------------------------------------------- 
@@ -538,7 +574,7 @@ class AdaptiveMesh {
   }
 
 
-  std::vector<uint64_t> get_all_cells(bool sorted)
+  std::vector<uint64_t> get_cells(bool sorted)
   {
     std::vector<uint64_t> all_cells;
 
@@ -560,19 +596,126 @@ class AdaptiveMesh {
   // Adaptivity
 
   // clip every cell below threshold
-  void clip(T threshold) {
-
+  void clip_cells(const T threshold) {
     std::vector<uint64_t> below_threshold;
-    for(const uint64_t cid: get_all_cells(false)) {
+
+    for(const uint64_t cid: get_cells(false)) {
       if( data.at(cid) < threshold ) below_threshold.push_back(cid);
     }
 
-    for(const uint64_t cid: below_threshold) {
-      data.erase(cid);
-      number_of_cells -= 1;
+    for(const uint64_t cid: below_threshold) data.erase(cid);
+  }
+
+
+
+  // EXPERIMENTAL: THIS MIGHT NOT BE NEEDED AFTER ALL
+  // Cut parent cell that has children; only leaf cells should remain
+  // void cut_roots() {
+  //   auto all_cells = get_cells(true); // sorted=true
+  //   // iterate in reverse, starting from the cell with highest refinement level
+  //   // then collect all roots that can be cut
+  //   // for(auto& cid : reverse(all_cells)) {
+  //   //   std::cout << cid << "\n";
+  //   // }
+  // }
+
+
+  /*! \brief split the given cell into 2^D children and remove the parent
+   * NOTE: This is the safe and primary method to split cells as this 
+   * cleans up parents.
+   */
+  void split(const uint64_t cid) {
+
+    auto children = get_children(cid);
+    for(auto cidc : children) data[cidc] = T(0);
+
+    data.erase(cid); 
+  }
+
+
+  // Update parent cell's value to be mean of its children cells' value
+  void update_from_children(const uint64_t cid)
+  {
+    T mean = T(0);
+    for(auto cidc : get_children(cid)) mean += get(cidc);
+    data[cid] = mean / std::pow(2, D);
+  }
+
+
+  /// Recursive get from the tip of the tree
+  T get_from_leafs(const uint64_t cid) 
+  {
+    if( is_leaf(cid) ) return data[cid]; 
+
+    T mean = T(0);
+    for(auto cidc : get_children(cid)) mean += get_from_leafs(cidc);
+    return mean / std::pow(2, D);
+  }
+
+
+  void update_from_leafs(const uint64_t cid)
+  {
+    data[cid] = get_from_leafs(cid);
+  }
+
+
+
+  bool exists(const uint64_t cid) const
+  {
+    return data.count(cid) == data.end() ? false : true;
+  }
+
+
+
+  // get value from map. If it foes not exist, recursively check until parent is found
+  T get_from_roots(uint64_t cid) const
+  {
+    int refinement_level = get_refinement_level(cid);
+    indices_t ind = get_indices(cid);
+
+    for(int rfl=refinement_level; rfl >= 0; rfl--) {
+      cid = get_cell_from_indices(ind, rfl);
+
+      auto it = data.find(cid);
+      if( it != data.end() ) return it->second;
+
+      for(size_t i=0; i<D; i++) {
+        ind[i] /= 2;
+      }
     }
 
+    // we went through the tree and did not find any existing cell
+    return T(0);
   }
+
+  // Optimized? version of the above
+  /*
+  T get_from_roots_optimized(uint64_t cid) const
+  {
+    const_iterator it = data.find(cid);
+    if (it == data.end()) {
+
+      int refinement_level = get_refinement_level(cid);
+      indices_t ind = get_indices(cid);
+
+      for(int rfl=refinement_level-1; rfl >= 0; rfl--) {
+
+        for(size_t i=0; i<D; i++) {
+          ind[i] /= 2;
+        }
+        cid = get_cell_from_indices(ind, rfl);
+
+        it = data.find(cid);
+        if( it != data.end() ) return it->second;
+      }
+
+      // we went through the tree and did not find any existing cell
+      return T(0);
+    }
+
+    return it->second;
+  }
+  */
 
 
 
