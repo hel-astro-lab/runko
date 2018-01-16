@@ -545,11 +545,9 @@ class AdaptiveMesh {
 			length[2] * index_scaling_factor
 		}};
 
-		if (
-			   index[0] > max_index[0]
+		if ( index[0] > max_index[0]
 			|| index[1] > max_index[1]
-			|| index[2] > max_index[2]
-		) {
+			|| index[2] > max_index[2]) {
 			return error_val;
 		}
 

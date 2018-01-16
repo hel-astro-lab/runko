@@ -17,9 +17,9 @@ class conf:
 
     outdir = "out"
 
-    Nxv = 10
-    Nyv = 10
-    Nzv = 10
+    Nxv = 20
+    Nyv = 20
+    Nzv = 20
 
     xmin = -4.0
     ymin = -5.0
@@ -54,15 +54,17 @@ def gauss(ux,uy,uz):
     #f *= np.exp(-0.5*((uy - muy)**2)/delgam)
     #f *= np.exp(-0.5*((uz - muz)**2)/delgam)
 
-    mean = [0.0, 0.0, 0.0]
+    mean = [0.0, 0.0, 1.0]
     cov  = np.zeros((3,3))
     cov[0,0] = 0.1
-    cov[1,1] = 1.0
-    cov[2,2] = 3.0
+    cov[1,1] = 3.0
+    cov[2,2] = 5.0
+
 
     xxx = [ux, uy, uz]
 
     f = multivariate_normal.pdf(xxx, mean, cov)
+
 
     return f
 
@@ -98,7 +100,7 @@ def adaptive_fill(m, tol=0.001):
         adapter.check(m)
         adapter.refine(m)
 
-        print("cells to refine: {}", len(adapter.cells_to_refine))
+        print("cells to refine: {}".format( len(adapter.cells_to_refine)))
         for cid in adapter.cells_created:
             rfl = m.get_refinement_level(cid)
             indx = m.get_indices(cid)
@@ -115,7 +117,7 @@ def adaptive_fill(m, tol=0.001):
             
 
         sweeps += 1
-        if sweeps > 3: break
+        if sweeps > 4: break
 
 
 
@@ -144,13 +146,14 @@ def adaptive_fill(m, tol=0.001):
                     indxc    = m.get_indices(cidc)
                     xc,yc,zc = m.get_center(indxc, rfl+1)
 
-                    val = 0.8*gauss(xc,yc,zc)
+                    val = gauss(xc,yc,zc)
                     m[indxc[0], indxc[1], indxc[2], rfl+1] = val
 
                 #m.update_from_children(cid)
 
         #induced refining goes here
 
+    m.clip_cells(1.0e-4)
 
 
 
@@ -228,9 +231,114 @@ def get_mesh(m, args):
     return m
 
 
+
+def get_leaf_mesh(m, args):
+
+    rfl_max = args["rfl"]
+    nx, ny, nz = m.get_size(rfl_max)
+    lvlm = 2**rfl_max
+
+    #empty arrays ready
+    xx = np.zeros((nx))
+    yy = np.zeros((ny))
+    zz = np.zeros((nz))
+
+    for i in range(nx):
+        x,y,z = m.get_center([i,0,0], rfl_max)
+        xx[i] = x
+    for j in range(ny):
+        x,y,z = m.get_center([0,j,0], rfl_max)
+        yy[j] = y
+    for k in range(nz):
+        x,y,z = m.get_center([0,0,k], rfl_max)
+        zz[j] = z
+
+
+    if args["q"] == "mid":
+        if args["dir"] == "xy":
+            q = nz/2
+        elif args["dir"] == "xz":
+            q = ny/2
+        elif args["dir"] == "yz":
+            q = nx/2
+    else:
+        q = args["q"]
+
+    if args["dir"] == "xy":
+        ff = np.zeros((nx, ny))
+    elif args["dir"] == "xz":
+        ff = np.zeros((nx, nz))
+    elif args["dir"] == "yz":
+        ff = np.zeros((ny, nz))
+
+
+    cells = m.get_cells(True)
+    leafs = 0
+    for cid in cells:
+
+        if(not m.is_leaf(cid) ):
+            continue
+
+        leafs += 1
+
+        rfl = m.get_refinement_level(cid)
+        lvl = 2**rfl
+
+        [i,j,k] = m.get_indices(cid)
+
+        st = lvlm/lvl #stretch factor for ref lvl
+
+        if args["dir"] == "xy" and k*st != q:
+            continue
+        if args["dir"] == "xz" and j*st != q:
+            continue
+        if args["dir"] == "yz" and i*st != q:
+            continue
+
+        val = m[i,j,k, rfl]
+
+        i *= st
+        j *= st
+        k *= st
+
+        if args["dir"] == "xy":
+            for ii in range(st):
+                for jj in range(st):
+                    ff[i+ii, j+jj] = val
+        if args["dir"] == "xz":
+            for ii in range(st):
+                for jj in range(st):
+                    ff[i+ii, k+jj] = val
+        if args["dir"] == "yz":
+            for ii in range(st):
+                for jj in range(st):
+                    ff[j+ii, k+jj] = val
+
+
+    Nc = len(cells)
+    print("cells: {} / leafs {} (ratio: {}) / full {} (compression {})".format(
+        Nc,
+        leafs, 
+        1.0*Nc/(1.0*leafs),
+        nx*ny*nz, 
+        1.0* Nc /(1.0*nx*ny*nz) 
+        ))
+
+
+    m = Mesh()
+    m.xx = xx
+    m.yy = yy
+    m.ff = ff
+
+    return m
+
+
+
+
 def plot2DSlice(ax, m, args):
 
-    mesh = get_mesh(m, args)
+    #mesh = get_mesh(m, args)
+    mesh = get_leaf_mesh(m, args)
 
 
     #normalize
@@ -421,8 +529,8 @@ def get_indicator(m, rfl):
 
                 cid = m.get_cell_from_indices(indx, rfl)
 
-                gr = adapter.maximum_gradient(m, cid)
-                #gr = adapter.maximum_value(m, cid)
+                #gr = adapter.maximum_gradient(m, cid)
+                gr = adapter.maximum_value(m, cid)
                 ggg[i,j,k] = gr
 
     return ggg
@@ -528,25 +636,25 @@ if __name__ == "__main__":
 
     args = {"dir":"xy", 
             "q":  "mid",
-            "rfl": 3 }
+            "rfl": 4 }
     plot2DSlice(axs[0], m, args)
     #plotAdaptiveSlice(axs[0], m, args)
     #plotGradientSlice(axsE[0], m, args)
+
+    args["rfl"] = 2
     plotIndicator(axsE[0], m, args)
 
 
     args = {"dir":"xz", 
             "q":   "mid",
-            "rfl": 3 }
+            "rfl": 4 }
     plot2DSlice(axs[1], m, args)
-    plotIndicator(axsE[1], m, args)
 
 
     args = {"dir":"yz", 
             "q":   "mid",
-            "rfl": 3 }
+            "rfl": 4 }
     plot2DSlice(axs[2], m, args)
-    plotIndicator(axsE[2], m, args)
 
 
     
