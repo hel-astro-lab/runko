@@ -17,9 +17,9 @@ class conf:
 
     outdir = "out"
 
-    Nxv = 20
-    Nyv = 20
-    Nzv = 20
+    Nxv = 40
+    Nyv = 40
+    Nzv = 40
 
     xmin = -4.0
     ymin = -5.0
@@ -116,8 +116,12 @@ def adaptive_fill(m, tol=0.001):
             m[indx[0], indx[1], indx[2], rfl] = val
             
 
+        adapter.unrefine(m)
+        print("cells to be removed: {}".format( len(adapter.cells_removed)))
+
         sweeps += 1
-        if sweeps > 4: break
+        if sweeps > 5: break
+    m.clip_cells(1.0e-5)
 
 
 
@@ -153,7 +157,6 @@ def adaptive_fill(m, tol=0.001):
 
         #induced refining goes here
 
-    m.clip_cells(1.0e-4)
 
 
 
@@ -531,6 +534,10 @@ def get_indicator(m, rfl):
 
                 #gr = adapter.maximum_gradient(m, cid)
                 gr = adapter.maximum_value(m, cid)
+
+                gr = 1.0e-4 / (gr + 1.0e-10)
+
+
                 ggg[i,j,k] = gr
 
     return ggg
@@ -564,20 +571,20 @@ def plotIndicator(ax, m, args):
         
     print("maximum of refining indicator: {}", gg.max() )
 
-    gg = np.log10(gg)
-    #gg =/ gg.max(),
+    #gg = np.log10(gg)
+    gg /= gg.max()
 
     imshow(ax,
            gg,
            xx[0], xx[-1],
            yy[0], yy[-1],
-           #vmin = 0.0,
-           #vmax = 1.0,
-           vmin =-8.0,
+           vmin = 0.0,
            vmax = 1.0,
+           #vmin =-8.0,
+           #vmax = 2.0,
            cmap = "plasma_r",
-           #clip = 0.0
-           clip =-9.0
+           clip = 0.0
+           #clip =-9.0
            )
 
 
@@ -603,13 +610,23 @@ if __name__ == "__main__":
 
     print("max. possible refinement:", m.get_maximum_possible_refinement_level())
 
-    #level_fill(m, 0)
-    #level_fill(m, 1)
-    #level_fill(m, 2)
-    #level_fill(m, 3)
+    if False:
+        level_fill(m, 0)
+        level_fill(m, 1)
+        #level_fill(m, 2)
+        #level_fill(m, 3)
+
+        #m.clip_cells(1.0e-4)
+
+        adapter = pdev.Adapter();
+        adapter.check(m)
+        adapter.unrefine(m)
+        print("cells to be removed: {}".format( len(adapter.cells_removed)))
 
     adaptive_fill(m)
 
+
+    print( m.get_siblings(7532) )
 
 
     ################################################## 
@@ -636,7 +653,7 @@ if __name__ == "__main__":
 
     args = {"dir":"xy", 
             "q":  "mid",
-            "rfl": 4 }
+            "rfl": 5 }
     plot2DSlice(axs[0], m, args)
     #plotAdaptiveSlice(axs[0], m, args)
     #plotGradientSlice(axsE[0], m, args)
@@ -647,13 +664,13 @@ if __name__ == "__main__":
 
     args = {"dir":"xz", 
             "q":   "mid",
-            "rfl": 4 }
+            "rfl": 5 }
     plot2DSlice(axs[1], m, args)
 
 
     args = {"dir":"yz", 
             "q":   "mid",
-            "rfl": 4 }
+            "rfl": 5 }
     plot2DSlice(axs[2], m, args)
 
 

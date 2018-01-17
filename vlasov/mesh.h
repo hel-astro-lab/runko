@@ -367,6 +367,7 @@ class AdaptiveMesh {
 		if (refinement_level >= maximum_refinement_level) return children;
 
 
+
 		children.reserve(8);
 
 		indices_t indices = get_indices(cid);
@@ -402,7 +403,16 @@ class AdaptiveMesh {
 		return children;
 	}
 
+
+  std::vector<uint64_t> get_siblings(const uint64_t cid) const
+  {
+    uint64_t cid_parent = get_parent(cid);
+    std::vector<uint64_t> siblings = get_children(cid_parent);
+
+    return siblings;
+  }
   
+
 
   /*! \brief Is current cell at the tip of the graph tree?
    * Does only shallow search by considering one cell above.

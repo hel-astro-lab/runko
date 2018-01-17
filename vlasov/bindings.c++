@@ -33,6 +33,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def("get_level_0_parent_indices", &AM3d::get_level_0_parent_indices)
     .def("get_level_0_parent",   &AM3d::get_level_0_parent)
     .def("get_children",         &AM3d::get_children)
+    .def("get_siblings",         &AM3d::get_siblings)
     .def("get_cells",            &AM3d::get_cells)
     .def("__getitem__", [](const AM3d &s, py::tuple indx) 
         { 
@@ -88,11 +89,13 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def_readwrite("cells_to_refine",   &Adapter3d::cells_to_refine)
     .def_readwrite("cells_to_unrefine", &Adapter3d::cells_to_unrefine)
     .def_readwrite("cells_created",     &Adapter3d::cells_created)
+    .def_readwrite("cells_removed",     &Adapter3d::cells_removed)
     .def("set_maximum_data_value",     &Adapter3d::set_maximum_data_value)
     .def("maximum_value",          &Adapter3d::maximum_value)
     .def("maximum_gradient",       &Adapter3d::maximum_gradient)
     .def("check",                  &Adapter3d::check)
-    .def("refine",                 &Adapter3d::refine);
+    .def("refine",                 &Adapter3d::refine)
+    .def("unrefine",               &Adapter3d::unrefine);
 
 
 
