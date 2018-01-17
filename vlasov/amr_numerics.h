@@ -112,7 +112,58 @@ typename AdaptiveMesh<T,D>::value_array_t grad(
 }
 
 
+/// simple lerp function (= linear interpolation)
+template<typename T>
+static inline T lerp(T t, T v1, T v2) {return (T(1) - t)*v1 + t*v2;}
 
+
+/// inlined value getter from the AMR mesh
+template<typename T, int D>
+static inline T _getv(
+    const AdaptiveMesh<T,D>& mesh,
+    const typename AdaptiveMesh<T,D>::indices_t& indices,
+    int rfl)
+{
+  const uint64_t cid = mesh.get_cell_from_indices(indices, rfl);
+  return mesh.get_from_roots(cid);
+}
+
+
+
+/// \brief Trilinear interpolation
+// 
+// Transforms from cell-centered values to vertex-centered,
+// then uses the normal lerp routine.
+//
+// Partially based on:
+// https://svn.blender.org/svnroot/bf-blender/
+// branches/volume25/source/blender/blenlib/intern/voxel.c  
+template<typename T>
+T trilinear_interp(
+    const AdaptiveMesh<T,3>& mesh,
+    typename AdaptiveMesh<T,3>::indices_t& indices,
+    typename AdaptiveMesh<T,3>::value_array_t coordinates,
+    int rfl)
+{
+  uint64_t 
+    i = indices[0],
+    j = indices[1],
+    k = indices[2];
+	
+	T dx = coordinates[0];// - T(0.5); 
+  T dy = coordinates[1];// - T(0.5); 
+  T dz = coordinates[2];// - T(0.5);
+	
+	T d00 = lerp(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+	T d10 = lerp(dx, _getv(mesh, {{i, j+1, k  }}, rfl),	_getv(mesh, {{i+1, j+1, k  }}, rfl) );
+	T d01 = lerp(dx, _getv(mesh, {{i, j,   k+1}}, rfl),	_getv(mesh, {{i+1, j,   k+1}}, rfl) );
+	T d11 = lerp(dx, _getv(mesh, {{i, j+1, k+1}}, rfl),	_getv(mesh, {{i+1, j+1, k+1}}, rfl) );
+	T d0  = lerp(dy, d00, d10);
+	T d1  = lerp(dy, d01, d11);
+	T d   = lerp(dz, d0, d1);
+	
+	return d;
+}
 
 
 

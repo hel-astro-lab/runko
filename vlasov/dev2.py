@@ -17,9 +17,9 @@ class conf:
 
     outdir = "out"
 
-    Nxv = 40
-    Nyv = 40
-    Nzv = 40
+    Nxv = 15
+    Nyv = 15
+    Nzv = 15
 
     xmin = -4.0
     ymin = -5.0
@@ -56,8 +56,8 @@ def gauss(ux,uy,uz):
 
     mean = [0.0, 0.0, 1.0]
     cov  = np.zeros((3,3))
-    cov[0,0] = 0.1
-    cov[1,1] = 3.0
+    cov[0,0] = 1.0 
+    cov[1,1] = 2.0 
     cov[2,2] = 5.0
 
 
@@ -81,7 +81,7 @@ def level_fill(m, rfl):
                 m[i,j,k, rfl] =  val
 
 
-def adaptive_fill(m, tol=0.001):
+def adaptive_fill(m, tol=0.001, sweeps=4):
 
     nx, ny, nz = m.get_size(0)
     for i in range(nx):
@@ -93,9 +93,9 @@ def adaptive_fill(m, tol=0.001):
 
     adapter = pdev.Adapter();
     
-    sweeps = 1
+    sweep = 1
     while(True):
-        print("-------round {}-----------".format(sweeps))
+        print("-------round {}-----------".format(sweep))
 
         adapter.check(m)
         adapter.refine(m)
@@ -119,8 +119,8 @@ def adaptive_fill(m, tol=0.001):
         adapter.unrefine(m)
         print("cells to be removed: {}".format( len(adapter.cells_removed)))
 
-        sweeps += 1
-        if sweeps > 5: break
+        sweep += 1
+        if sweep > sweeps: break
     m.clip_cells(1.0e-5)
 
 
@@ -234,6 +234,110 @@ def get_mesh(m, args):
     return m
 
 
+def get_interpolated_mesh(m, args):
+
+    rfl_max = args["rfl"]
+    reso = 10
+
+    nx, ny, nz = m.get_size(rfl_max)
+    lvlm = 2**rfl_max
+
+    #empty arrays ready
+    xx = np.zeros((nx))
+    yy = np.zeros((ny))
+    zz = np.zeros((nz))
+
+
+    x,y,z = m.get_center([0,0,0], rfl_max)
+    xx[0] = x
+    yy[0] = y
+    zz[0] = z
+
+    x,y,z = m.get_center([nx,0,0], rfl_max)
+    xx[-1]= x
+    x,y,z = m.get_center([0,ny,0], rfl_max)
+    yy[-1]= y
+    x,y,z = m.get_center([0,0,nz], rfl_max)
+    zz[-1]= z
+
+
+    if args["q"] == "mid":
+        if args["dir"] == "xy":
+            q = nz/2
+        elif args["dir"] == "xz":
+            q = ny/2
+        elif args["dir"] == "yz":
+            q = nx/2
+    else:
+        q = args["q"]
+
+    if args["dir"] == "xy":
+        ff = np.zeros((nx*reso, ny*reso))
+    elif args["dir"] == "xz":
+        ff = np.zeros((nx*reso, nz*reso))
+    elif args["dir"] == "yz":
+        ff = np.zeros((ny*reso, nz*reso))
+
+
+    cells = m.get_cells(True)
+    leafs = 0
+    for cid in cells:
+
+        if(not m.is_leaf(cid) ):
+            continue
+
+        leafs += 1
+
+        rfl = m.get_refinement_level(cid)
+        lvl = 2**rfl
+
+        [i,j,k] = m.get_indices(cid)
+
+        st = lvlm/lvl #stretch factor for ref lvl
+
+        if args["dir"] == "xy" and k*st != q:
+            continue
+        if args["dir"] == "xz" and j*st != q:
+            continue
+        if args["dir"] == "yz" and i*st != q:
+            continue
+
+        val = m[i,j,k, rfl]
+
+        i1 = i * st*reso
+        j1 = j * st*reso
+        k1 = k * st*reso
+
+        arr = np.linspace(0.0, 1.0, st*reso)
+
+        if args["dir"] == "xy":
+            for ii in range(st*reso):
+                for jj in range(st*reso):
+                    val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], arr[jj],0.0], rfl)
+                    ff[i1+ii, j1+jj] = val
+
+        if args["dir"] == "xz":
+            for ii in range(st*reso):
+                for jj in range(st*reso):
+                    val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], 0.0, arr[jj]], rfl)
+                    ff[i1+ii, k1+jj] = val
+
+        if args["dir"] == "yz":
+            for ii in range(st*reso):
+                for jj in range(st*reso):
+                    val = pdev.trilinear_interp(m, [i,j,k], [0.0, arr[ii], arr[jj]], rfl)
+                    ff[j1+ii, k1+jj] = val
+
+
+    m = Mesh()
+    m.xx = xx
+    m.yy = yy
+    m.ff = ff
+
+    return m
+
+
+
 
 def get_leaf_mesh(m, args):
 
@@ -341,7 +445,8 @@ def get_leaf_mesh(m, args):
 def plot2DSlice(ax, m, args):
 
     #mesh = get_mesh(m, args)
-    mesh = get_leaf_mesh(m, args)
+    #mesh = get_leaf_mesh(m, args)
+    mesh = get_interpolated_mesh(m, args)
 
 
     #normalize
@@ -532,10 +637,10 @@ def get_indicator(m, rfl):
 
                 cid = m.get_cell_from_indices(indx, rfl)
 
-                #gr = adapter.maximum_gradient(m, cid)
-                gr = adapter.maximum_value(m, cid)
+                gr = adapter.maximum_gradient(m, cid)
+                #gr = adapter.maximum_value(m, cid)
 
-                gr = 1.0e-4 / (gr + 1.0e-10)
+                #gr = 1.0e-4 / (gr + 1.0e-10)
 
 
                 ggg[i,j,k] = gr
@@ -571,20 +676,20 @@ def plotIndicator(ax, m, args):
         
     print("maximum of refining indicator: {}", gg.max() )
 
-    #gg = np.log10(gg)
-    gg /= gg.max()
+    gg = np.log10(gg)
+    #gg /= gg.max()
 
     imshow(ax,
            gg,
            xx[0], xx[-1],
            yy[0], yy[-1],
-           vmin = 0.0,
-           vmax = 1.0,
-           #vmin =-8.0,
-           #vmax = 2.0,
+           #vmin = 0.0,
+           #vmax = 1.0,
+           vmin =-8.0,
+           vmax = 2.0,
            cmap = "plasma_r",
-           clip = 0.0
-           #clip =-9.0
+           #clip = 0.0
+           clip =-9.0
            )
 
 
@@ -612,21 +717,20 @@ if __name__ == "__main__":
 
     if False:
         level_fill(m, 0)
-        level_fill(m, 1)
+        #level_fill(m, 1)
         #level_fill(m, 2)
         #level_fill(m, 3)
 
         #m.clip_cells(1.0e-4)
 
-        adapter = pdev.Adapter();
-        adapter.check(m)
-        adapter.unrefine(m)
-        print("cells to be removed: {}".format( len(adapter.cells_removed)))
+        #adapter = pdev.Adapter();
+        #adapter.check(m)
+        #adapter.unrefine(m)
+        #print("cells to be removed: {}".format( len(adapter.cells_removed)))
 
-    adaptive_fill(m)
+    else:
+        adaptive_fill(m, sweeps=1)
 
-
-    print( m.get_siblings(7532) )
 
 
     ################################################## 
@@ -650,10 +754,9 @@ if __name__ == "__main__":
     axsE.append( plt.subplot(gs[2,1]) )
 
 
-
     args = {"dir":"xy", 
             "q":  "mid",
-            "rfl": 5 }
+            "rfl": 1 }
     plot2DSlice(axs[0], m, args)
     #plotAdaptiveSlice(axs[0], m, args)
     #plotGradientSlice(axsE[0], m, args)
@@ -664,19 +767,31 @@ if __name__ == "__main__":
 
     args = {"dir":"xz", 
             "q":   "mid",
-            "rfl": 5 }
+            "rfl": 1 }
     plot2DSlice(axs[1], m, args)
 
 
     args = {"dir":"yz", 
             "q":   "mid",
-            "rfl": 5 }
+            "rfl": 1 }
     plot2DSlice(axs[2], m, args)
 
 
     
-    #m.cut()
 
+    for ax in axs:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
+    for ax in axs:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
+    for ax in axsE:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
+
+    for ax in axsE:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
 
 
     saveVisz(0, conf)

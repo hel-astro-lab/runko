@@ -183,10 +183,6 @@ class Adapter {
   }
 
 
-
-
-
-
 };
 
 

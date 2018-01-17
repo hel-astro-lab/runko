@@ -81,6 +81,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
 
   m.def("grad",  &toolbox::grad<Realf, 3>);
 
+  m.def("trilinear_interp", &toolbox::trilinear_interp<Realf>);
 
 
   py::class_<Adapter3d>(m, "Adapter")
