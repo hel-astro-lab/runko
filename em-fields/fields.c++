@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "fields.h"
-#include "tools/Mesh.h"
 
 
 fields::PlasmaCell::PlasmaCell(

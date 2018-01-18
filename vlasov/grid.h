@@ -4,11 +4,11 @@
 #include <memory>
 
 #include "cell.h"
-#include "corgi/corgi.h"
-#include "tools/rotator.h"
+#include "../corgi/corgi.h"
+#include "../tools/rotator.h"
 
 
-namespace plasma {
+namespace vlasov {
 
 /*! \brief Plasma grid
  *

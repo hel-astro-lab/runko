@@ -35,28 +35,28 @@ class Rotator {
 
 /// method to add data into the container
 template <class T>
-void toolbox::Rotator<T>::push_back(T vm) {
+inline void toolbox::Rotator<T>::push_back(T vm) {
   container.push_back(vm);
 }
 
 
 /// Get current element
 template <class T>
-T* toolbox::Rotator<T>::getPtr() {
+inline T* toolbox::Rotator<T>::getPtr() {
   // fmt::print("getting from Rotator with {}\n", currentStep);
   return (T*) &(container[ currentStep ]);
 }
 
 /// Return reference to current element
 template <class T>
-T& toolbox::Rotator<T>::getRef() {
+inline T& toolbox::Rotator<T>::getRef() {
   return container[ currentStep ];
 }
 
 
 /// get a fresh container that we can update into
 template <class T>
-T* toolbox::Rotator<T>::getNewPtr() {
+inline T* toolbox::Rotator<T>::getNewPtr() {
   if (currentStep == 0) return (T*) &(container[1]);
   if (currentStep == 1) return (T*) &(container[0]);
 
@@ -65,16 +65,15 @@ T* toolbox::Rotator<T>::getNewPtr() {
 
 /// Get reference to a new element
 template <class T>
-T& toolbox::Rotator<T>::getNewRef() {
-  if (currentStep == 0) return container[1];
-  if (currentStep == 1) return container[0];
+inline T& toolbox::Rotator<T>::getNewRef() {
+  return currentStep == 0 ? container[1] : container[0];
 }
 
 
 
 /// Get any arbitrary snapshot from the container
 template <class T>
-T* toolbox::Rotator<T>::getAll(size_t cs) {
+inline T* toolbox::Rotator<T>::getAll(size_t cs) {
   // fmt::print("pulling from Rotator with {}\n", cs);
   return (T*) &(container[cs]);
 }

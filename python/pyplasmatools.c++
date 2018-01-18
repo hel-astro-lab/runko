@@ -4,27 +4,20 @@ namespace py = pybind11;
 
 
 #include "../definitions.h"
-// #include "../sheets.h"
-#include "../bundles.h"
-#include "../velomesh.h"
-#include "../tools/Mesh.h"
-
-
-// using namespace sheets;
-// using namespace bundles;
-// using namespace vmesh;
-
+#include "../tools/bundles.h"
+#include "../vlasov/velomesh.h"
+#include "../tools/mesh.h"
 
 
 
 // trampoline class for BundleInterpolator (because of inheritance from Base class)
-class PyBundleInterpolator : public bundles::BundleInterpolator {
+class PyBundleInterpolator : public toolbox::BundleInterpolator {
   public:
-    using bundles::BundleInterpolator::BundleInterpolator;
-    using bundles::BundleInterpolator::setBundle;
-    using bundles::BundleInterpolator::getBundle;
-    bundles::Bundle interpolate() override {
-      PYBIND11_OVERLOAD_PURE(bundles::Bundle, bundles::BundleInterpolator, interpolate, );
+    using toolbox::BundleInterpolator::BundleInterpolator;
+    using toolbox::BundleInterpolator::setBundle;
+    using toolbox::BundleInterpolator::getBundle;
+    toolbox::Bundle interpolate() override {
+      PYBIND11_OVERLOAD_PURE(toolbox::Bundle, toolbox::BundleInterpolator, interpolate, );
     }
 };
 
@@ -65,26 +58,26 @@ PYBIND11_MODULE(plasmatools, m) {
   // --------------------------------------------------
   // Bundle bindings
   // TODO expand
-  py::class_<bundles::Bundle>(m, "Bundle" )
+  py::class_<toolbox::Bundle>(m, "Bundle" )
     .def(py::init<>())
-    .def("getGrid",   &bundles::Bundle::getGrid)
-    .def("getPencil", &bundles::Bundle::getPencil);
+    .def("getGrid",   &toolbox::Bundle::getGrid)
+    .def("getPencil", &toolbox::Bundle::getPencil);
 
 
-  py::class_<bundles::BundleInterpolator, PyBundleInterpolator> bintp(m, "BundleInterpolator" );
+  py::class_<toolbox::BundleInterpolator, PyBundleInterpolator> bintp(m, "BundleInterpolator" );
   bintp
     .def(py::init<>())
-    .def("setBundle",   &bundles::BundleInterpolator::setBundle)
-    .def("getBundle",   &bundles::BundleInterpolator::getBundle)
-    .def("interpolate", &bundles::BundleInterpolator::interpolate);
+    .def("setBundle",   &toolbox::BundleInterpolator::setBundle)
+    .def("getBundle",   &toolbox::BundleInterpolator::getBundle)
+    .def("interpolate", &toolbox::BundleInterpolator::interpolate);
 
-  py::class_<bundles::BundleInterpolator2nd>(m, "BundleInterpolator2nd", bintp)
+  py::class_<toolbox::BundleInterpolator2nd>(m, "BundleInterpolator2nd", bintp)
     .def(py::init<>());
 
-  py::class_<bundles::BundleInterpolator4th>(m, "BundleInterpolator4th", bintp)
+  py::class_<toolbox::BundleInterpolator4th>(m, "BundleInterpolator4th", bintp)
     .def(py::init<>());
 
-  py::class_<bundles::BundleInterpolator4PIC>(m, "BundleInterpolator4PIC", bintp)
+  py::class_<toolbox::BundleInterpolator4PIC>(m, "BundleInterpolator4PIC", bintp)
     .def(py::init<>());
 
 

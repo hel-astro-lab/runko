@@ -2,11 +2,11 @@
 
 #include <string>
 
-#include "corgi/cell.h"
+#include "../corgi/cell.h"
 #include "velomesh.h"
-#include "tools/Mesh.h"
-#include "tools/rotator.h"
-#include "em-fields/fields.h"
+#include "../tools/mesh.h"
+#include "../tools/rotator.h"
+#include "../em-fields/fields.h"
 
 
 namespace vlasov {
