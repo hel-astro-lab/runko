@@ -2,7 +2,7 @@
 #include <cmath>
 
 #include "../solvers.h"
-#include "../bundles.h"
+#include "../../tools/bundles.h"
 
 
 namespace vlasov {
@@ -31,7 +31,7 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
       VlasovFluid& gr          = cell->getPlasmaGrid();
 
       // get reference to the Yee grid 
-      maxwell::YeeLattice& yee = cell->getYee();
+      fields::YeeLattice& yee = cell->getYee();
 
 
       // loop over the cell's internal grid
@@ -88,7 +88,7 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
 
               // fmt::print("Solving for dim {} with {} {}\n", dim, Nb1, Nb2);
 
-              bundles::Bundle delta; 
+              toolbox::Bundle delta; 
               delta.resize(vmesh.Nblocks[dim]); 
               vblock_t block;
 
@@ -135,11 +135,11 @@ class MomentumLagrangianSolver : public VlasovVelocitySolver {
                   intp->setDelta( delta );
 
                   // get bundle at the location
-                  bundles::Bundle vbundle = vmesh.getBundle(dim, i1, i2);
+                  toolbox::Bundle vbundle = vmesh.getBundle(dim, i1, i2);
 
                   // interpolate numerical flux
                   intp->setBundle(vbundle);
-                  bundles::Bundle U0 = intp->interpolate();
+                  toolbox::Bundle U0 = intp->interpolate();
 
                   // apply flux to the mesh
                   vmesh.addBundle(dim, i1, i2, U0);

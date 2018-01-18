@@ -6,9 +6,9 @@
 #include <unordered_map>
 
 
-#include "definitions.h"
-#include "bundles.h"
-#include "sheets.h"
+#include "../definitions.h"
+#include "../tools/bundles.h"
+#include "../tools/sheets.h"
 
 
 
@@ -69,13 +69,13 @@ namespace vmesh {
 
       std::vector<uint64_t> allBlocks( bool sorted = false);
 
-      bundles::Bundle getBundle(size_t, size_t, size_t);
+      toolbox::Bundle getBundle(size_t, size_t, size_t);
 
-      void addBundle(size_t, size_t, size_t, bundles::Bundle);
+      void addBundle(size_t, size_t, size_t, toolbox::Bundle);
 
-      sheets::Sheet getSheet(size_t, size_t);
-      void addSheet(size_t, size_t, sheets::Sheet);
-      void setSheet(size_t, size_t, sheets::Sheet);
+      toolbox::Sheet getSheet(size_t, size_t);
+      void addSheet(size_t, size_t, toolbox::Sheet);
+      void setSheet(size_t, size_t, toolbox::Sheet);
 
       bool clip( );
 

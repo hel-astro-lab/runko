@@ -3,10 +3,10 @@
 #include <array>
 #include <vector>
 
-#include "definitions.h"
+#include "../definitions.h"
 
 
-namespace bundles {
+namespace toolbox {
   /* \brief Bundle of pencils
    *
    *
@@ -96,4 +96,4 @@ namespace bundles {
   };
 
 
-} // end of bundles namespace
+} // end of toolbox namespace

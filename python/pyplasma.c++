@@ -3,12 +3,12 @@
 namespace py = pybind11;
 
 // #include "../definitions.h"
-#include "../solvers.h"
-#include "../solvers/momentumLagrangianSolver.c++"
-#include "../solvers/spatialLagrangianSolver.c++"
-#include "../cell.h"
-#include "../grid.h"
-#include "../maxwell.h"
+#include "../vlasov/solvers.h"
+#include "../vlasov/solvers/momentumLagrangianSolver.c++"
+#include "../vlasov/solvers/spatialLagrangianSolver.c++"
+#include "../vlasov/cell.h"
+#include "../vlasov/grid.h"
+#include "../em-fields/fields.h"
 
 
 /// trampoline class for VlasovVelocitySolver
@@ -42,27 +42,27 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   /// General class for handling Maxwell's equations
-  py::class_<maxwell::PlasmaCell,
+  py::class_<fields::PlasmaCell,
              corgi::Cell, 
-             std::shared_ptr<maxwell::PlasmaCell>
+             std::shared_ptr<fields::PlasmaCell>
             >(m, "PlasmaCell")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
-    .def_readwrite("yeeDt",  &maxwell::PlasmaCell::yeeDt)
-    .def_readwrite("yeeDx",  &maxwell::PlasmaCell::yeeDx)
-    .def_readwrite("yeeDy",  &maxwell::PlasmaCell::yeeDy)
-    .def_readwrite("yeeDz",  &maxwell::PlasmaCell::yeeDz)
-    .def("cycleYee",         &maxwell::PlasmaCell::cycleYee)
-    .def("pushE",            &maxwell::PlasmaCell::pushE)
-    .def("pushHalfB",        &maxwell::PlasmaCell::pushHalfB)
-    .def("depositCurrent",   &maxwell::PlasmaCell::depositCurrent)
-    .def("getYee",           &maxwell::PlasmaCell::getYee,    py::return_value_policy::reference)
-    .def("getNewYee",        &maxwell::PlasmaCell::getNewYee, py::return_value_policy::reference)
-    .def("updateBoundaries", &maxwell::PlasmaCell::updateBoundaries);
+    .def_readwrite("yeeDt",  &fields::PlasmaCell::yeeDt)
+    .def_readwrite("yeeDx",  &fields::PlasmaCell::yeeDx)
+    .def_readwrite("yeeDy",  &fields::PlasmaCell::yeeDy)
+    .def_readwrite("yeeDz",  &fields::PlasmaCell::yeeDz)
+    .def("cycleYee",         &fields::PlasmaCell::cycleYee)
+    .def("pushE",            &fields::PlasmaCell::pushE)
+    .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
+    .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
+    .def("getYee",           &fields::PlasmaCell::getYee,    py::return_value_policy::reference)
+    .def("getNewYee",        &fields::PlasmaCell::getNewYee, py::return_value_policy::reference)
+    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries);
 
 
 
   py::class_<vlasov::VlasovCell, 
-             maxwell::PlasmaCell,
+             fields::PlasmaCell,
              corgi::Cell, 
              std::shared_ptr<vlasov::VlasovCell>
              >(m, "VlasovCell")
@@ -117,18 +117,18 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<>());
 
 
-  py::class_<maxwell::YeeLattice>(m, "YeeLattice")
+  py::class_<fields::YeeLattice>(m, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("ex", &maxwell::YeeLattice::ex)
-    .def_readwrite("ey", &maxwell::YeeLattice::ey)
-    .def_readwrite("ez", &maxwell::YeeLattice::ez)
-    .def_readwrite("bx", &maxwell::YeeLattice::bx)
-    .def_readwrite("by", &maxwell::YeeLattice::by)
-    .def_readwrite("bz", &maxwell::YeeLattice::bz)
-    .def_readwrite("jx", &maxwell::YeeLattice::jx)
-    .def_readwrite("jy", &maxwell::YeeLattice::jy)
-    .def_readwrite("jz", &maxwell::YeeLattice::jz)
-    .def_readwrite("rh", &maxwell::YeeLattice::rh);
+    .def_readwrite("ex", &fields::YeeLattice::ex)
+    .def_readwrite("ey", &fields::YeeLattice::ey)
+    .def_readwrite("ez", &fields::YeeLattice::ez)
+    .def_readwrite("bx", &fields::YeeLattice::bx)
+    .def_readwrite("by", &fields::YeeLattice::by)
+    .def_readwrite("bz", &fields::YeeLattice::bz)
+    .def_readwrite("jx", &fields::YeeLattice::jx)
+    .def_readwrite("jy", &fields::YeeLattice::jy)
+    .def_readwrite("jz", &fields::YeeLattice::jz)
+    .def_readwrite("rh", &fields::YeeLattice::rh);
 
 
   // --------------------------------------------------

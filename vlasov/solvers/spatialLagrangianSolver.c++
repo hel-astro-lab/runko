@@ -3,15 +3,15 @@
 #include <stdexcept>
 
 #include "../solvers.h"
-#include "../sheets.h"
+#include "../../tools/sheets.h"
+#include "../../tools/signum.h"
+
+using toolbox::sign;
 
 
 namespace vlasov {
 
-/// Signum of value
-template <typename T> int sign(T val) {
-    return (T(0) < val) - (val < T(0));
-}
+
 
 
   /*! \brief Splitted Lagrangian spatial solver for Vlasov fluids
@@ -30,12 +30,12 @@ template <typename T> int sign(T val) {
       /*! \brief Volume of sheet
        * reduces sheet into volume weighted sum
        */
-      Realf volWeightedSum(sheets::Sheet s) {
+      Realf volWeightedSum(toolbox::Sheet s) {
         Realf ret = 0.0;
 
         // TODO: for 2/3D we need to multiply with s.diff()
-        // sheets::Sheet volWeighted = s * s.diff();
-        sheets::Sheet volWeighted = s;  
+        // toolbox::Sheet volWeighted = s * s.diff();
+        toolbox::Sheet volWeighted = s;  
 
         /// now reduce into sum
         ret = volWeighted.sum();
@@ -66,7 +66,7 @@ template <typename T> int sign(T val) {
 
 
         // numerical flux from moving the Vlasov fluid around
-        maxwell::YeeLattice& yee = cellPtr->getYee();
+        fields::YeeLattice& yee = cellPtr->getYee();
         yee.jx.clear();
         yee.jy.clear();
         yee.jz.clear();
@@ -247,8 +247,8 @@ template <typename T> int sign(T val) {
         size_t Nb = v0.Nblocks[dim]; // number of slices to loop over
 
         // loop over every sheet in the mesh
-        sheets::Sheet Up, Um, flux;
-        sheets::Sheet s0, sp1, sm1;
+        toolbox::Sheet Up, Um, flux;
+        toolbox::Sheet s0, sp1, sm1;
         Realf aa;
         for(size_t i=0; i<Nb; i++) {
           sm1 = vm1.getSheet(dim, i);
@@ -301,12 +301,12 @@ template <typename T> int sign(T val) {
       /*! \brief Volume of sheet
        * reduces sheet into volume weighted sum
        */
-      Realf volWeightedSum(sheets::Sheet s) {
+      Realf volWeightedSum(toolbox::Sheet s) {
         Realf ret = 0.0;
 
         // TODO: for 2/3D we need to multiply with s.diff()
         // sheets::Sheet volWeighted = s * s.diff();
-        sheets::Sheet volWeighted = s;  
+        toolbox::Sheet volWeighted = s;  
 
         /// now reduce into sum
         ret = volWeighted.sum();
@@ -335,7 +335,7 @@ template <typename T> int sign(T val) {
 
 
         // numerical flux from moving the Vlasov fluid around
-        maxwell::YeeLattice& yee = cellPtr->getYee();
+        fields::YeeLattice& yee = cellPtr->getYee();
         yee.jx.clear();
         yee.jy.clear();
         yee.jz.clear();
@@ -562,9 +562,9 @@ template <typename T> int sign(T val) {
         size_t Nb = vp0.Nblocks[dim]; // number of slices to loop over
 
         // loop over every sheet in the mesh
-        sheets::Sheet Up, Um, flux;
+        toolbox::Sheet Up, Um, flux;
 
-        sheets::Sheet sp0, sp1, sp2, sm1, sm2;
+        toolbox::Sheet sp0, sp1, sp2, sm1, sm2;
         Realf aa;
         for(size_t i=0; i<Nb; i++) {
           sm2 = vm2.getSheet(dim, i);
