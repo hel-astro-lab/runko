@@ -69,6 +69,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def("set_min",                 &AM3d::set_min)
     .def("set_max",                 &AM3d::set_max)
     .def("get_size",                &AM3d::get_size)
+    .def("get_length",              &AM3d::get_length)
     .def("get_center",              &AM3d::get_center)
     .def("get_level_0_cell_length", &AM3d::get_level_0_cell_length);
 

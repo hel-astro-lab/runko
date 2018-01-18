@@ -702,6 +702,29 @@ class AdaptiveMesh {
     return T(0);
   }
 
+
+  std::pair<T,int> get_value_and_level(uint64_t cid) const
+  {
+    int refinement_level = get_refinement_level(cid);
+    indices_t ind = get_indices(cid);
+
+    int lvl = 0;
+    for(int rfl=refinement_level; rfl >= 0; rfl--) {
+      cid = get_cell_from_indices(ind, rfl);
+
+      auto it = data.find(cid);
+      if( it != data.end() ) return std::make_pair(it->second, lvl);
+
+      for(size_t i=0; i<D; i++) {
+        ind[i] /= 2;
+      }
+      lvl++;
+    }
+
+    // we went through the tree and did not find any existing cell
+    return std::make_pair(T(0), -1);
+  }
+
   // Optimized? version of the above
   /*
   T get_from_roots_optimized(uint64_t cid) const

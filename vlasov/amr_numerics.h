@@ -129,6 +129,37 @@ static inline T _getv(
 }
 
 
+/// inlined value getter from the AMR mesh with specialized weighting
+// TODO: does not work
+//--------------------------------------------------
+// template<typename T, int D>
+// static inline T _getvD(
+//     const AdaptiveMesh<T,D>& mesh,
+//     const typename AdaptiveMesh<T,D>::indices_t& indices,
+//     int rfl)
+// {
+//   const uint64_t cid = mesh.get_cell_from_indices(indices, rfl);
+//   std::pair<T,int> val = mesh.get_value_and_level(cid);
+// 
+//   return val.first;
+//   //return val.second == 0 ? val.first : val.first * (2.0/3.0)*val.second;
+// }
+// 
+// template<typename T, int D>
+// static inline T _getvU(
+//     const AdaptiveMesh<T,D>& mesh,
+//     const typename AdaptiveMesh<T,D>::indices_t& indices,
+//     int rfl)
+// {
+//   const uint64_t cid = mesh.get_cell_from_indices(indices, rfl);
+//   std::pair<T,int> val = mesh.get_value_and_level(cid);
+// 
+//   return val.first;
+//   //return val.second == 0 ? val.first : val.first * (1.0/3.0)*val.second;
+// }
+//--------------------------------------------------
+  
+
 
 /// \brief Trilinear interpolation
 // 
@@ -146,21 +177,25 @@ T trilinear_interp(
     int rfl)
 {
   uint64_t 
-    i = indices[0],
-    j = indices[1],
-    k = indices[2];
+    i = indices[0], // + uint64_t(coordinates[0] - 1.5),
+    j = indices[1], // + uint64_t(coordinates[1] - 1.5),
+    k = indices[2]; // + uint64_t(coordinates[2] - 1.5);
 	
-	T dx = coordinates[0];// - T(0.5); 
-  T dy = coordinates[1];// - T(0.5); 
-  T dz = coordinates[2];// - T(0.5);
+	T dx = coordinates[0] - T(0.5); 
+  T dy = coordinates[1] - T(0.5); 
+  T dz = coordinates[2] - T(0.5);
+
 	
 	T d00 = lerp(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
-	T d10 = lerp(dx, _getv(mesh, {{i, j+1, k  }}, rfl),	_getv(mesh, {{i+1, j+1, k  }}, rfl) );
-	T d01 = lerp(dx, _getv(mesh, {{i, j,   k+1}}, rfl),	_getv(mesh, {{i+1, j,   k+1}}, rfl) );
-	T d11 = lerp(dx, _getv(mesh, {{i, j+1, k+1}}, rfl),	_getv(mesh, {{i+1, j+1, k+1}}, rfl) );
+	T d10 = lerp(dx, _getv(mesh, {{i, j+1, k  }}, rfl), _getv(mesh, {{i+1, j+1, k  }}, rfl) );
+
+	T d01 = lerp(dx, _getv(mesh, {{i, j,   k+1}}, rfl), _getv(mesh, {{i+1, j,   k+1}}, rfl) );
+	T d11 = lerp(dx, _getv(mesh, {{i, j+1, k+1}}, rfl), _getv(mesh, {{i+1, j+1, k+1}}, rfl) );
+
 	T d0  = lerp(dy, d00, d10);
 	T d1  = lerp(dy, d01, d11);
-	T d   = lerp(dz, d0, d1);
+
+	T d   = lerp(dz, d0,  d1);
 	
 	return d;
 }

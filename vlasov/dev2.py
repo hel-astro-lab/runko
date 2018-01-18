@@ -43,6 +43,10 @@ def gauss(ux,uy,uz):
 
     #return ux + uy + uz
 
+    return 10.0 + 1.0*ux + 2.0*uy + 3.0*uz
+    #return np.abs( 0.1 + 0.1*ux*uy + 0.3*ux*uz + 0.9*uy*ux + 2.0*ux*uy*uz ) + 0.1
+    #return 0.1 + 0.2*ux + 0.3*uy + 0.4*uz + 0.5*ux*uy + 0.6*ux*uz + 0.7*uy*ux + 0.8*ux*uy*uz
+
     delgam = np.sqrt(1.0)
     mux = 0.0
     muy = 0.0
@@ -121,7 +125,7 @@ def adaptive_fill(m, tol=0.001, sweeps=4):
 
         sweep += 1
         if sweep > sweeps: break
-    m.clip_cells(1.0e-5)
+    #m.clip_cells(1.0e-5)
 
 
 
@@ -234,6 +238,19 @@ def get_mesh(m, args):
     return m
 
 
+
+def get_real_coords(m, indx, bvals, rfl):
+    x,y,z = m.get_center(indx, rfl)
+    xl,yl,zl = m.get_length(rfl)
+
+    xval = (x - xl*0.5) + bvals[0]*xl
+    yval = (y - yl*0.5) + bvals[1]*yl
+    zval = (z - zl*0.5) + bvals[2]*zl
+
+    return xval, yval, zval
+
+
+
 def get_interpolated_mesh(m, args):
 
     rfl_max = args["rfl"]
@@ -313,19 +330,24 @@ def get_interpolated_mesh(m, args):
         if args["dir"] == "xy":
             for ii in range(st*reso):
                 for jj in range(st*reso):
-                    val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], arr[jj],0.0], rfl)
-                    ff[i1+ii, j1+jj] = val
+                    val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], arr[jj],0.5], rfl)
+
+                    xval, yval, zval = get_real_coords(m, [i,j,k], [arr[ii], arr[jj],0.5], rfl)
+                    val2 = gauss(xval, yval, zval)
+
+                    ff[i1+ii, j1+jj] = val/val2
+
 
         if args["dir"] == "xz":
             for ii in range(st*reso):
                 for jj in range(st*reso):
-                    val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], 0.0, arr[jj]], rfl)
+                    val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], 0.5, arr[jj]], rfl)
                     ff[i1+ii, k1+jj] = val
 
         if args["dir"] == "yz":
             for ii in range(st*reso):
                 for jj in range(st*reso):
-                    val = pdev.trilinear_interp(m, [i,j,k], [0.0, arr[ii], arr[jj]], rfl)
+                    val = pdev.trilinear_interp(m, [i,j,k], [0.5, arr[ii], arr[jj]], rfl)
                     ff[j1+ii, k1+jj] = val
 
 
@@ -448,20 +470,34 @@ def plot2DSlice(ax, m, args):
     #mesh = get_leaf_mesh(m, args)
     mesh = get_interpolated_mesh(m, args)
 
+    if True:
+        imshow(ax,
+               mesh.ff,
+               mesh.xx[0], mesh.xx[-1],
+               mesh.yy[0], mesh.yy[-1],
+               vmin = 0.8,
+               vmax = 1.2,
+               cmap = "RdYlBu",
+               clip = 0.0
+               )
 
-    #normalize
-    mesh.ff = mesh.ff / np.max(mesh.ff)
+        return
 
-    imshow(ax,
-           mesh.ff,
-           mesh.xx[0], mesh.xx[-1],
-           mesh.yy[0], mesh.yy[-1],
-           vmin = 0.0,
-           vmax = 1.0,
-           cmap = "plasma_r",
-           clip = 0.0
-           )
-    return
+    else:
+
+        #normalize
+        mesh.ff = mesh.ff / np.max(mesh.ff)
+
+        imshow(ax,
+               mesh.ff,
+               mesh.xx[0], mesh.xx[-1],
+               mesh.yy[0], mesh.yy[-1],
+               vmin = 0.0,
+               vmax = 1.0,
+               cmap = "plasma_r",
+               clip = 0.0
+               )
+        return
 
 
 def plotAdaptiveSlice(ax, m, args):
@@ -717,7 +753,7 @@ if __name__ == "__main__":
 
     if False:
         level_fill(m, 0)
-        #level_fill(m, 1)
+        level_fill(m, 1)
         #level_fill(m, 2)
         #level_fill(m, 3)
 
@@ -729,7 +765,7 @@ if __name__ == "__main__":
         #print("cells to be removed: {}".format( len(adapter.cells_removed)))
 
     else:
-        adaptive_fill(m, sweeps=1)
+        adaptive_fill(m, sweeps=2)
 
 
 
@@ -756,24 +792,24 @@ if __name__ == "__main__":
 
     args = {"dir":"xy", 
             "q":  "mid",
-            "rfl": 1 }
+            "rfl": 2 }
     plot2DSlice(axs[0], m, args)
     #plotAdaptiveSlice(axs[0], m, args)
     #plotGradientSlice(axsE[0], m, args)
 
-    args["rfl"] = 2
+    args["rfl"] = 1
     plotIndicator(axsE[0], m, args)
 
 
     args = {"dir":"xz", 
             "q":   "mid",
-            "rfl": 1 }
+            "rfl": 2 }
     plot2DSlice(axs[1], m, args)
 
 
     args = {"dir":"yz", 
             "q":   "mid",
-            "rfl": 1 }
+            "rfl": 2 }
     plot2DSlice(axs[2], m, args)
 
 
