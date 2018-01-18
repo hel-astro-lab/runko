@@ -9,7 +9,7 @@
 
 
 
-namespace maxwell {
+namespace fields {
 
 
 
@@ -118,7 +118,7 @@ class PlasmaCell : virtual public corgi::Cell {
 
 
 
-} // end of namespace maxwell
+} // end of namespace fields
 
 
 

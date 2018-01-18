@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include "maxwell.h"
+#include "fields.h"
 #include "tools/Mesh.h"
 
 
-maxwell::PlasmaCell::PlasmaCell(
+fields::PlasmaCell::PlasmaCell(
     size_t i, size_t j,
     int o,
     size_t NxG, size_t NyG,
@@ -15,8 +15,8 @@ maxwell::PlasmaCell::PlasmaCell(
 {
 
   // append fresh Yee lattices into data container
-  yee.push_back( maxwell::YeeLattice(NxMesh, NyMesh, NzMesh) );
-  // yee.push_back( maxwell::YeeLattice(NxMesh, NyMesh, NzMesh) );
+  yee.push_back( fields::YeeLattice(NxMesh, NyMesh, NzMesh) );
+  // yee.push_back( fields::YeeLattice(NxMesh, NyMesh, NzMesh) );
 
 
 
@@ -37,7 +37,7 @@ maxwell::PlasmaCell::PlasmaCell(
  *
  * Contains a dimension switch for solvers depending on internal mesh dimensions
  */
-void maxwell::PlasmaCell::pushE() {
+void fields::PlasmaCell::pushE() {
 
   // this->pushE1d();
   this->pushE2d();
@@ -45,9 +45,9 @@ void maxwell::PlasmaCell::pushE() {
 }
 
 /// 1D E pusher
-void maxwell::PlasmaCell::pushE1d() {
+void fields::PlasmaCell::pushE1d() {
 
-  maxwell::YeeLattice& mesh = getYee();
+  fields::YeeLattice& mesh = getYee();
 
   int k = 0;
   int j = 0;
@@ -69,9 +69,9 @@ void maxwell::PlasmaCell::pushE1d() {
 }
 
 /// 2D E pusher
-void maxwell::PlasmaCell::pushE2d() {
+void fields::PlasmaCell::pushE2d() {
 
-  maxwell::YeeLattice& mesh = getYee();
+  fields::YeeLattice& mesh = getYee();
 
 
   int k = 0;
@@ -98,9 +98,9 @@ void maxwell::PlasmaCell::pushE2d() {
 
 
 /// 3D E pusher
-void maxwell::PlasmaCell::pushE3d() {
+void fields::PlasmaCell::pushE3d() {
 
-  maxwell::YeeLattice& mesh = getYee();
+  fields::YeeLattice& mesh = getYee();
 
   for(int k=0; k<(int)NzMesh; k++) {
     for(int j=0; j<(int)NyMesh; j++) {
@@ -131,8 +131,8 @@ void maxwell::PlasmaCell::pushE3d() {
 
 
 /// Deposit current into electric field
-void maxwell::PlasmaCell::depositCurrent() {
-  maxwell::YeeLattice& mesh = getYee();
+void fields::PlasmaCell::depositCurrent() {
+  fields::YeeLattice& mesh = getYee();
 
   mesh.ex -= mesh.jx * yeeDt* (yeeDx*yeeDy*yeeDz);
   mesh.ey -= mesh.jy * yeeDt* (yeeDx*yeeDy*yeeDz);
@@ -154,7 +154,7 @@ void maxwell::PlasmaCell::depositCurrent() {
 */
 
 /// Update B field with a half step
-void maxwell::PlasmaCell::pushHalfB() {
+void fields::PlasmaCell::pushHalfB() {
 
   // this->pushHalfB1d();
   this->pushHalfB2d();
@@ -162,8 +162,8 @@ void maxwell::PlasmaCell::pushHalfB() {
 }
 
 /// 1D B pusher
-void maxwell::PlasmaCell::pushHalfB1d() {
-  maxwell::YeeLattice& mesh = getYee();
+void fields::PlasmaCell::pushHalfB1d() {
+  fields::YeeLattice& mesh = getYee();
 
   int k = 0;
   int j = 0;
@@ -184,8 +184,8 @@ void maxwell::PlasmaCell::pushHalfB1d() {
 }
 
 /// 2D B pusher
-void maxwell::PlasmaCell::pushHalfB2d() {
-  maxwell::YeeLattice& mesh = getYee();
+void fields::PlasmaCell::pushHalfB2d() {
+  fields::YeeLattice& mesh = getYee();
 
   int k = 0;
   for(int j=0; j<(int)NyMesh; j++) {
@@ -211,8 +211,8 @@ void maxwell::PlasmaCell::pushHalfB2d() {
 
 
 /// 3D B pusher
-void maxwell::PlasmaCell::pushHalfB3d() {
-  maxwell::YeeLattice& mesh = getYee();
+void fields::PlasmaCell::pushHalfB3d() {
+  fields::YeeLattice& mesh = getYee();
 
   for(int k=0; k<(int)NzMesh; k++) {
     for(int j=0; j<(int)NyMesh; j++) {
@@ -243,20 +243,20 @@ void maxwell::PlasmaCell::pushHalfB3d() {
 
 
 /// Get current time snapshot of Yee lattice
-maxwell::YeeLattice& maxwell::PlasmaCell::getYee() {
+fields::YeeLattice& fields::PlasmaCell::getYee() {
   return yee.getRef();
 }
 
 /// Get new time snapshot of Yee lattice
-maxwell::YeeLattice& maxwell::PlasmaCell::getNewYee() {
+fields::YeeLattice& fields::PlasmaCell::getNewYee() {
   return yee.getNewRef();
 };
 
 
 /// Quick helper function to copy everything inside Yee lattice 
 void copyVertYee(
-    maxwell::YeeLattice& lhs, 
-    maxwell::YeeLattice& rhs, 
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
     int lhsI, int rhsI) {
 
   lhs.ex.copyVert(rhs.ex, lhsI, rhsI); 
@@ -277,8 +277,8 @@ void copyVertYee(
 
 /// Quick helper function to copy everything inside Yee lattice 
 void copyHorzYee(
-    maxwell::YeeLattice& lhs, 
-    maxwell::YeeLattice& rhs, 
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
     int lhsJ, int rhsJ) {
 
   lhs.ex.copyHorz(rhs.ex, lhsJ, rhsJ); 
@@ -301,16 +301,16 @@ void copyHorzYee(
 
 /// Update Yee grid boundaries
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
-void maxwell::PlasmaCell::updateBoundaries(corgi::Node& node) {
+void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
   // target
-  maxwell::YeeLattice& mesh = getYee();
+  fields::YeeLattice& mesh = getYee();
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<maxwell::PlasmaCell>(
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
         node.getCellPtr( neighs(-1, 0) ));
-  maxwell::YeeLattice& mleft = cleft->getYee();
+  fields::YeeLattice& mleft = cleft->getYee();
 
   // copy from right side to left
   copyVertYee(mesh, mleft, -1, mleft.Nx-1); 
@@ -318,9 +318,9 @@ void maxwell::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<maxwell::PlasmaCell>(
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
         node.getCellPtr( neighs(+1, 0) ));
-  maxwell::YeeLattice& mright = cright->getYee();
+  fields::YeeLattice& mright = cright->getYee();
     
   // copy from left side to right
   copyVertYee(mesh, mright, mesh.Nx, 0); 
@@ -328,9 +328,9 @@ void maxwell::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
   // top 
   auto ctop = 
-    std::dynamic_pointer_cast<maxwell::PlasmaCell>(
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
         node.getCellPtr( neighs(0, +1) ));
-  maxwell::YeeLattice& mtop = ctop->getYee();
+  fields::YeeLattice& mtop = ctop->getYee();
 
   // copy from bottom side to top
   copyHorzYee(mesh, mtop, mesh.Ny, 0); 
@@ -338,9 +338,9 @@ void maxwell::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
   // bottom
   auto cbot = 
-    std::dynamic_pointer_cast<maxwell::PlasmaCell>(
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
         node.getCellPtr( neighs(0, -1) ));
-  maxwell::YeeLattice& mbot = cbot->getYee();
+  fields::YeeLattice& mbot = cbot->getYee();
     
   // copy from top side to bottom
   copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
@@ -356,7 +356,7 @@ void maxwell::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
 
 
-void maxwell::PlasmaCell::cycleYee() {
+void fields::PlasmaCell::cycleYee() {
   yee.cycle();
 }
 

@@ -5,8 +5,8 @@
 #include "corgi/cell.h"
 #include "velomesh.h"
 #include "tools/Mesh.h"
-#include "dataContainer.h"
-#include "maxwell.h"
+#include "tools/rotator.h"
+#include "em-fields/fields.h"
 
 
 namespace vlasov {
@@ -137,7 +137,7 @@ class VlasovFluid {
  * Maxwell field equation solver is inherited from maxwell::PlasmaCell
  */
 class VlasovCell : 
-                   virtual public maxwell::PlasmaCell, 
+                   virtual public fields::PlasmaCell, 
                    virtual public corgi::Cell {
 
   public:
@@ -155,7 +155,7 @@ class VlasovCell :
                size_t NxMesh, size_t NyMesh
                ) : 
       corgi::Cell(i, j, o, NxG, NyG),
-      maxwell::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh),
+      fields::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh),
       NxGrid(NxMesh),
       NyGrid(NyMesh),
       NzGrid(1)
@@ -182,7 +182,7 @@ class VlasovCell :
 
 
     /// Simulation data container
-    datarotators::DataContainer<VlasovFluid> plasma;
+    toolbox::Rotator<VlasovFluid> plasma;
 
 
     /// Add data to the container

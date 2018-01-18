@@ -5,10 +5,10 @@
 
 #include "cell.h"
 #include "corgi/corgi.h"
-#include "dataContainer.h"
+#include "tools/rotator.h"
 
 
-namespace vlasov {
+namespace plasma {
 
 /*! \brief Plasma grid
  *
@@ -17,7 +17,7 @@ namespace vlasov {
 class Grid : public corgi::Node {
   public:
 
-    typedef std::shared_ptr<VlasovCell> CellPtr;
+    typedef std::shared_ptr<vlasov::VlasovCell> CellPtr;
 
 
     // copy constructor
@@ -33,7 +33,7 @@ class Grid : public corgi::Node {
     /*
     void cycle() {
       for (auto& it: cells) {
-        CellPtr cellptr = std::dynamic_pointer_cast<VlasovCell>( it.second );
+        CellPtr cellptr = std::dynamic_pointer_cast<vlasov::VlasovCell>( it.second );
         cellptr->vmeshes.cycle();
         cellptr->yee.cycle();
       }
