@@ -184,17 +184,13 @@ T trilinear_interp(
 	T dx = coordinates[0] - T(0.5); 
   T dy = coordinates[1] - T(0.5); 
   T dz = coordinates[2] - T(0.5);
-
 	
 	T d00 = lerp(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
 	T d10 = lerp(dx, _getv(mesh, {{i, j+1, k  }}, rfl), _getv(mesh, {{i+1, j+1, k  }}, rfl) );
-
 	T d01 = lerp(dx, _getv(mesh, {{i, j,   k+1}}, rfl), _getv(mesh, {{i+1, j,   k+1}}, rfl) );
 	T d11 = lerp(dx, _getv(mesh, {{i, j+1, k+1}}, rfl), _getv(mesh, {{i+1, j+1, k+1}}, rfl) );
-
 	T d0  = lerp(dy, d00, d10);
 	T d1  = lerp(dy, d01, d11);
-
 	T d   = lerp(dz, d0,  d1);
 	
 	return d;
@@ -202,10 +198,133 @@ T trilinear_interp(
 
 
 
+/// \brief Tricubic interpolation
+//
+// This is heavily optimized with all the element positioning and looping.
+// 
+// Transforms from cell-centered values to vertex-centered,
+// then uses the normal lerp routine.
+//
+// Partially based on:
+// https://svn.blender.org/svnroot/bf-blender/
+// branches/volume25/source/blender/blenlib/intern/voxel.c  
+//
+// and here:
+//
+// https://github.com/igmhub/likely/blob/master/likely/TriCubicInterpolator.cc
+//
+template<typename T>
+T tricubic_interp(
+    const AdaptiveMesh<T,3>& mesh,
+    typename AdaptiveMesh<T,3>::indices_t& indices,
+    typename AdaptiveMesh<T,3>::value_array_t coordinates,
+    int rfl)
+{
+  uint64_t 
+    i = indices[0], // + uint64_t(coordinates[0] - 1.5),
+    j = indices[1], // + uint64_t(coordinates[1] - 1.5),
+    k = indices[2]; // + uint64_t(coordinates[2] - 1.5);
+	
+	T dx = coordinates[0] - T(0.5); 
+  T dy = coordinates[1] - T(0.5); 
+  T dz = coordinates[2] - T(0.5);
+
+  // Extract the local vocal values and calculate partial derivatives.
+	double x[64] = {
+
+		    // values of f(x,y,z) at each corner.
+		    _data[_index(xi,yi,zi)],
+        _data[_index(xi+1,yi,zi)],
+        _data[_index(xi,yi+1,zi)],
+		    _data[_index(xi+1,yi+1,zi)],
+        _data[_index(xi,yi,zi+1)],
+        _data[_index(xi+1,yi,zi+1)],
+		    _data[_index(xi,yi+1,zi+1)],
+        _data[_index(xi+1,yi+1,zi+1)],
+
+        // values of df/dx at each corner.
+		    0.5*(_data[_index(xi+1,yi,zi)]     - _data[_index(xi-1,yi,zi)]),
+		    0.5*(_data[_index(xi+2,yi,zi)]     - _data[_index(xi,yi,zi)]),
+			  0.5*(_data[_index(xi+1,yi+1,zi)]   - _data[_index(xi-1,yi+1,zi)]),
+			  0.5*(_data[_index(xi+2,yi+1,zi)]   - _data[_index(xi,yi+1,zi)]),
+			  0.5*(_data[_index(xi+1,yi,zi+1)]   - _data[_index(xi-1,yi,zi+1)]),
+			  0.5*(_data[_index(xi+2,yi,zi+1)]   - _data[_index(xi,yi,zi+1)]),
+			  0.5*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)]),
+			  0.5*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]),
+
+        // values of df/dy at each corner.
+		    0.5*(_data[_index(xi,yi+1,zi)]     - _data[_index(xi,yi-1,zi)]),
+		    0.5*(_data[_index(xi+1,yi+1,zi)]   - _data[_index(xi+1,yi-1,zi)]),
+			  0.5*(_data[_index(xi,yi+2,zi)]     - _data[_index(xi,yi,zi)]),
+			  0.5*(_data[_index(xi+1,yi+2,zi)]   - _data[_index(xi+1,yi,zi)]),
+			  0.5*(_data[_index(xi,yi+1,zi+1)]   - _data[_index(xi,yi-1,zi+1)]),
+			  0.5*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)]),
+			  0.5*(_data[_index(xi,yi+2,zi+1)]   - _data[_index(xi,yi,zi+1)]),
+			  0.5*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]),
+
+        // values of df/dz at each corner.
+		    0.5*(_data[_index(xi,yi,zi+1)]     -_data[_index(xi,yi,zi-1)]),
+		    0.5*(_data[_index(xi+1,yi,zi+1)]   -_data[_index(xi+1,yi,zi-1)]),
+			  0.5*(_data[_index(xi,yi+1,zi+1)]   -_data[_index(xi,yi+1,zi-1)]),
+			  0.5*(_data[_index(xi+1,yi+1,zi+1)] -_data[_index(xi+1,yi+1,zi-1)]),
+			  0.5*(_data[_index(xi,yi,zi+2)]     -_data[_index(xi,yi,zi)]),
+			  0.5*(_data[_index(xi+1,yi,zi+2)]   -_data[_index(xi+1,yi,zi)]),
+			  0.5*(_data[_index(xi,yi+1,zi+2)]   -_data[_index(xi,yi+1,zi)]),
+			  0.5*(_data[_index(xi+1,yi+1,zi+2)] -_data[_index(xi+1,yi+1,zi)]),
+
+        // values of d2f/dxdy at each corner.
+		    0.25*(_data[_index(xi+1,yi+1,zi)]   - _data[_index(xi-1,yi+1,zi)]   - _data[_index(xi+1,yi-1,zi)]   + _data[_index(xi-1,yi-1,zi)]),
+			  0.25*(_data[_index(xi+2,yi+1,zi)]   - _data[_index(xi,yi+1,zi)]     - _data[_index(xi+2,yi-1,zi)]   + _data[_index(xi,yi-1,zi)]),
+			  0.25*(_data[_index(xi+1,yi+2,zi)]   - _data[_index(xi-1,yi+2,zi)]   - _data[_index(xi+1,yi,zi)]     + _data[_index(xi-1,yi,zi)]),
+			  0.25*(_data[_index(xi+2,yi+2,zi)]   - _data[_index(xi,yi+2,zi)]     - _data[_index(xi+2,yi,zi)]     + _data[_index(xi,yi,zi)]),
+			  0.25*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)] + _data[_index(xi-1,yi-1,zi+1)]),
+			  0.25*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]   - _data[_index(xi+2,yi-1,zi+1)] + _data[_index(xi,yi-1,zi+1)]),
+			  0.25*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi-1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]   + _data[_index(xi-1,yi,zi+1)]),
+			  0.25*(_data[_index(xi+2,yi+2,zi+1)] - _data[_index(xi,yi+2,zi+1)]   - _data[_index(xi+2,yi,zi+1)]   + _data[_index(xi,yi,zi+1)]),
+
+        // values of d2f/dxdz at each corner.
+		    0.25*(_data[_index(xi+1,yi,zi+1)]   - _data[_index(xi-1,yi,zi+1)]  - _data[_index(xi+1,yi,zi-1)]   + _data[_index(xi-1,yi,zi-1)]),
+			  0.25*(_data[_index(xi+2,yi,zi+1)]   - _data[_index(xi,yi,zi+1)]    - _data[_index(xi+2,yi,zi-1)]   + _data[_index(xi,yi,zi-1)]),
+			  0.25*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)]- _data[_index(xi+1,yi+1,zi-1)] + _data[_index(xi-1,yi+1,zi-1)]),
+			  0.25*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]  - _data[_index(xi+2,yi+1,zi-1)] + _data[_index(xi,yi+1,zi-1)]),
+			  0.25*(_data[_index(xi+1,yi,zi+2)]   - _data[_index(xi-1,yi,zi+2)]  - _data[_index(xi+1,yi,zi)]     + _data[_index(xi-1,yi,zi)]),
+			  0.25*(_data[_index(xi+2,yi,zi+2)]   - _data[_index(xi,yi,zi+2)]    - _data[_index(xi+2,yi,zi)]     + _data[_index(xi,yi,zi)]),
+			  0.25*(_data[_index(xi+1,yi+1,zi+2)] - _data[_index(xi-1,yi+1,zi+2)]- _data[_index(xi+1,yi+1,zi)]   + _data[_index(xi-1,yi+1,zi)]),
+			  0.25*(_data[_index(xi+2,yi+1,zi+2)] - _data[_index(xi,yi+1,zi+2)]  - _data[_index(xi+2,yi+1,zi)]   + _data[_index(xi,yi+1,zi)]),
+
+        // values of d2f/dydz at each corner.
+		    0.25*(_data[_index(xi,yi+1,zi+1)]   - _data[_index(xi,yi-1,zi+1)]  - _data[_index(xi,yi+1,zi-1)]   + _data[_index(xi,yi-1,zi-1)]),
+			  0.25*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)]- _data[_index(xi+1,yi+1,zi-1)] + _data[_index(xi+1,yi-1,zi-1)]),
+			  0.25*(_data[_index(xi,yi+2,zi+1)]   - _data[_index(xi,yi,zi+1)]    - _data[_index(xi,yi+2,zi-1)]   + _data[_index(xi,yi,zi-1)]),
+			  0.25*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]  - _data[_index(xi+1,yi+2,zi-1)] + _data[_index(xi+1,yi,zi-1)]),
+			  0.25*(_data[_index(xi,yi+1,zi+2)]   - _data[_index(xi,yi-1,zi+2)]  - _data[_index(xi,yi+1,zi)]     + _data[_index(xi,yi-1,zi)]),
+			  0.25*(_data[_index(xi+1,yi+1,zi+2)] - _data[_index(xi+1,yi-1,zi+2)]- _data[_index(xi+1,yi+1,zi)]   + _data[_index(xi+1,yi-1,zi)]),
+			  0.25*(_data[_index(xi,yi+2,zi+2)]   - _data[_index(xi,yi,zi+2)]    - _data[_index(xi,yi+2,zi)]     + _data[_index(xi,yi,zi)]),
+			  0.25*(_data[_index(xi+1,yi+2,zi+2)] - _data[_index(xi+1,yi,zi+2)]  - _data[_index(xi+1,yi+2,zi)]   + _data[_index(xi+1,yi,zi)]),
+
+			  // values of d3f/dxdydz at each corner.
+		    0.125*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)] + _data[_index(xi-1,yi-1,zi+1)] 
+              -_data[_index(xi+1,yi+1,zi-1)] + _data[_index(xi-1,yi+1,zi-1)] + _data[_index(xi+1,yi-1,zi-1)] - _data[_index(xi-1,yi-1,zi-1)]),
+			  0.125*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]   - _data[_index(xi+2,yi-1,zi+1)] + _data[_index(xi,yi-1,zi+1)]
+              -_data[_index(xi+2,yi+1,zi-1)] + _data[_index(xi,yi+1,zi-1)]   + _data[_index(xi+2,yi-1,zi-1)] - _data[_index(xi,yi-1,zi-1)]),
+			  0.125*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi-1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]   + _data[_index(xi-1,yi,zi+1)]
+              -_data[_index(xi+1,yi+2,zi-1)] + _data[_index(xi-1,yi+2,zi-1)] + _data[_index(xi+1,yi,zi-1)]   - _data[_index(xi-1,yi,zi-1)]),
+			  0.125*(_data[_index(xi+2,yi+2,zi+1)] - _data[_index(xi,yi+2,zi+1)]   - _data[_index(xi+2,yi,zi+1)]   + _data[_index(xi,yi,zi+1)]
+              -_data[_index(xi+2,yi+2,zi-1)] + _data[_index(xi,yi+2,zi-1)]   + _data[_index(xi+2,yi,zi-1)]   - _data[_index(xi,yi,zi-1)]),
+			  0.125*(_data[_index(xi+1,yi+1,zi+2)] - _data[_index(xi-1,yi+1,zi+2)] - _data[_index(xi+1,yi-1,zi+2)] + _data[_index(xi-1,yi-1,zi+2)]
+              -_data[_index(xi+1,yi+1,zi)]   + _data[_index(xi-1,yi+1,zi)]   + _data[_index(xi+1,yi-1,zi)]   - _data[_index(xi-1,yi-1,zi)]),
+			  0.125*(_data[_index(xi+2,yi+1,zi+2)] - _data[_index(xi,yi+1,zi+2)]   - _data[_index(xi+2,yi-1,zi+2)] + _data[_index(xi,yi-1,zi+2)]
+              -_data[_index(xi+2,yi+1,zi)]   + _data[_index(xi,yi+1,zi)]     + _data[_index(xi+2,yi-1,zi)]   - _data[_index(xi,yi-1,zi)]),
+			  0.125*(_data[_index(xi+1,yi+2,zi+2)] - _data[_index(xi-1,yi+2,zi+2)] - _data[_index(xi+1,yi,zi+2)]   + _data[_index(xi-1,yi,zi+2)]
+              -_data[_index(xi+1,yi+2,zi)]   + _data[_index(xi-1,yi+2,zi)]   + _data[_index(xi+1,yi,zi)]     - _data[_index(xi-1,yi,zi)]),
+			  0.125*(_data[_index(xi+2,yi+2,zi+2)] - _data[_index(xi,yi+2,zi+2)]   - _data[_index(xi+2,yi,zi+2)]   + _data[_index(xi,yi,zi+2)]
+              -_data[_index(xi+2,yi+2,zi)]   + _data[_index(xi,yi+2,zi)]     + _data[_index(xi+2,yi,zi)]     - _data[_index(xi,yi,zi)])
+		};
 
 
 
 
+}
 
 
 
