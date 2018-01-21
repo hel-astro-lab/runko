@@ -3,13 +3,12 @@
 #include <unordered_map>
 
 
-#include "bundles.h"
 #include "velomesh.h"
-#include "definitions.h"
+//#include "bundles.h"
+//#include "definitions.h"
 
 using namespace vmesh;
-using namespace sheets;
-using namespace bundles;
+using namespace toolbox;
 
 
 /// Morton Z-fill velocity mesh with blocks
@@ -262,7 +261,7 @@ size_t VeloMesh::capacityInBytes() const {
 /*! returns a sheet from the mesh that is oriented perpendicular to dim at 
  * location i
  */
-Sheet VeloMesh::getSheet(size_t dim, size_t i) {
+toolbox::Sheet VeloMesh::getSheet(size_t dim, size_t i) {
 
   // get i,j,k elements rotated along the correct dimension
   size_t x,y,z;

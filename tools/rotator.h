@@ -2,11 +2,11 @@
 
 #include <vector>
 
-namespace datarotators {
+namespace toolbox {
 
 /// \brief Container for storing multiple time steps of the simulation
 template <class T>
-class DataContainer {
+class Rotator {
   std::vector<T> container;
 
   public:
@@ -30,33 +30,33 @@ class DataContainer {
 };
 
 
-} // end of namespace datarotators
+} // end of namespace toolbox
 
 
 /// method to add data into the container
 template <class T>
-void datarotators::DataContainer<T>::push_back(T vm) {
+inline void toolbox::Rotator<T>::push_back(T vm) {
   container.push_back(vm);
 }
 
 
 /// Get current element
 template <class T>
-T* datarotators::DataContainer<T>::getPtr() {
-  // fmt::print("getting from DataContainer with {}\n", currentStep);
+inline T* toolbox::Rotator<T>::getPtr() {
+  // fmt::print("getting from Rotator with {}\n", currentStep);
   return (T*) &(container[ currentStep ]);
 }
 
 /// Return reference to current element
 template <class T>
-T& datarotators::DataContainer<T>::getRef() {
+inline T& toolbox::Rotator<T>::getRef() {
   return container[ currentStep ];
 }
 
 
 /// get a fresh container that we can update into
 template <class T>
-T* datarotators::DataContainer<T>::getNewPtr() {
+inline T* toolbox::Rotator<T>::getNewPtr() {
   if (currentStep == 0) return (T*) &(container[1]);
   if (currentStep == 1) return (T*) &(container[0]);
 
@@ -65,17 +65,16 @@ T* datarotators::DataContainer<T>::getNewPtr() {
 
 /// Get reference to a new element
 template <class T>
-T& datarotators::DataContainer<T>::getNewRef() {
-  if (currentStep == 0) return container[1];
-  if (currentStep == 1) return container[0];
+inline T& toolbox::Rotator<T>::getNewRef() {
+  return currentStep == 0 ? container[1] : container[0];
 }
 
 
 
 /// Get any arbitrary snapshot from the container
 template <class T>
-T* datarotators::DataContainer<T>::getAll(size_t cs) {
-  // fmt::print("pulling from DataContainer with {}\n", cs);
+inline T* toolbox::Rotator<T>::getAll(size_t cs) {
+  // fmt::print("pulling from Rotator with {}\n", cs);
   return (T*) &(container[cs]);
 }
 
@@ -83,7 +82,7 @@ T* datarotators::DataContainer<T>::getAll(size_t cs) {
 /// raw cycling for time step index
 // NOTE: could be done better
 template <class T>
-void datarotators::DataContainer<T>::cycle() {
+void toolbox::Rotator<T>::cycle() {
   // fmt::print(" calling cycle (originally {})\n", currentStep);
   currentStep++;
 

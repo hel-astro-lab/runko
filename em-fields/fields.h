@@ -1,15 +1,14 @@
 #pragma once
 
-#include "corgi/cell.h"
-#include "corgi/corgi.h"
+#include "../corgi/cell.h"
+#include "../corgi/corgi.h"
 
-#include "tools/Mesh.h"
-
-#include "dataContainer.h"
-
+#include "../tools/mesh.h"
+#include "../tools/rotator.h"
 
 
-namespace maxwell {
+
+namespace fields {
 
 
 
@@ -71,7 +70,7 @@ class PlasmaCell : virtual public corgi::Cell {
 
 
   // Yee lattice of plasma quantities
-  datarotators::DataContainer<YeeLattice> yee;
+  toolbox::Rotator<YeeLattice> yee;
 
 
   //--------------------------------------------------
@@ -118,7 +117,7 @@ class PlasmaCell : virtual public corgi::Cell {
 
 
 
-} // end of namespace maxwell
+} // end of namespace fields
 
 
 

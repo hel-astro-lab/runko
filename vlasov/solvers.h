@@ -1,7 +1,7 @@
 #pragma once
 
-#include "bundles.h"
-#include "sheets.h"
+#include "../tools/bundles.h"
+#include "../tools/sheets.h"
 #include "velomesh.h"
 #include "cell.h"
 #include "grid.h"
@@ -26,7 +26,7 @@ class VlasovVelocitySolver {
 
   public:
     /// Bundle interpolator pointer
-    bundles::BundleInterpolator *intp;
+    toolbox::BundleInterpolator *intp;
 
     /// Cell to solve
     vlasov::VlasovCell* cell;
@@ -39,7 +39,7 @@ class VlasovVelocitySolver {
     void setCell(vlasov::VlasovCell& c) { cell = &c; };
 
     /// Set internal interpolator
-    void setInterpolator( bundles::BundleInterpolator &_intp ) { intp = &_intp; };
+    void setInterpolator( toolbox::BundleInterpolator &_intp ) { intp = &_intp; };
 
     /// actual solver implementation
     virtual void solve() = 0;
