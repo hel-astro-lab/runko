@@ -79,7 +79,7 @@ pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
 pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pyplasma.o -c python/pyplasma.c++
 
-python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/mesh.h vlasov/amr_numerics.h vlasov/amr_refiner.h
+python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr_mesh.h vlasov/amr_numerics.h vlasov/amr_refiner.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/dev-bindings.o -c vlasov/bindings.c++
 
 #reference to pycorgi's own make
@@ -96,7 +96,7 @@ pyplasmatools: bundles.o velomesh.o pyplasmatools.o
 pyplasma: vlasov/grid.h vlasov/cell.h velomesh.o momentumLagrangianSolver.o spatialLagrangianSolver.o fields.o pyplasma.o 
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so pyplasma.o momentumLagrangianSolver.o spatialLagrangianSolver.o velomesh.o fields.o
 
-pyplasmaDev: vlasov/mesh.h python/dev-bindings.o
+pyplasmaDev: vlasov/amr_mesh.h vlasov/amr_numerics.h vlasov/amr_refiner.h python/dev-bindings.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasmaDev.so python/dev-bindings.o
 
 

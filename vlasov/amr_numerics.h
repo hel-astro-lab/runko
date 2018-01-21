@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "mesh.h"
+#include "amr_mesh.h"
 
 
 namespace toolbox {
@@ -200,7 +200,8 @@ T trilinear_interp(
 
 /// \brief Tricubic interpolation
 //
-// This is heavily optimized with all the element positioning and looping.
+// Local B-spline implementation that estimates derivatives (and second derivs)
+// from neighboring grid points using finite difference.
 // 
 // Transforms from cell-centered values to vertex-centered,
 // then uses the normal lerp routine.
@@ -209,7 +210,7 @@ T trilinear_interp(
 // https://svn.blender.org/svnroot/bf-blender/
 // branches/volume25/source/blender/blenlib/intern/voxel.c  
 //
-// and here:
+// and on:
 //
 // https://github.com/igmhub/likely/blob/master/likely/TriCubicInterpolator.cc
 //
@@ -230,100 +231,189 @@ T tricubic_interp(
   T dz = coordinates[2] - T(0.5);
 
   // Extract the local vocal values and calculate partial derivatives.
-	double x[64] = {
+	T x[64] = {
 
 		    // values of f(x,y,z) at each corner.
-		    _data[_index(xi,yi,zi)],
-        _data[_index(xi+1,yi,zi)],
-        _data[_index(xi,yi+1,zi)],
-		    _data[_index(xi+1,yi+1,zi)],
-        _data[_index(xi,yi,zi+1)],
-        _data[_index(xi+1,yi,zi+1)],
-		    _data[_index(xi,yi+1,zi+1)],
-        _data[_index(xi+1,yi+1,zi+1)],
+		    _getv(mesh, {{i  , j  , k}}  , rfl),
+        _getv(mesh, {{i+1, j  , k}}  , rfl),
+        _getv(mesh, {{i  , j+1, k}}  , rfl),
+		    _getv(mesh, {{i+1, j+1, k}}  , rfl),
+        _getv(mesh, {{i  , j  , k+1}}, rfl),
+        _getv(mesh, {{i+1, j  , k+1}}, rfl),
+		    _getv(mesh, {{i  , j+1, k+1}}, rfl),
+        _getv(mesh, {{i+1, j+1, k+1}}, rfl),
 
         // values of df/dx at each corner.
-		    0.5*(_data[_index(xi+1,yi,zi)]     - _data[_index(xi-1,yi,zi)]),
-		    0.5*(_data[_index(xi+2,yi,zi)]     - _data[_index(xi,yi,zi)]),
-			  0.5*(_data[_index(xi+1,yi+1,zi)]   - _data[_index(xi-1,yi+1,zi)]),
-			  0.5*(_data[_index(xi+2,yi+1,zi)]   - _data[_index(xi,yi+1,zi)]),
-			  0.5*(_data[_index(xi+1,yi,zi+1)]   - _data[_index(xi-1,yi,zi+1)]),
-			  0.5*(_data[_index(xi+2,yi,zi+1)]   - _data[_index(xi,yi,zi+1)]),
-			  0.5*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)]),
-			  0.5*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]),
-
+		    T(0.5)*(_getv(mesh, {{i+1, j  , k   }}, rfl) - _getv(mesh, {{i-1, j  , k   }}, rfl)),
+		    T(0.5)*(_getv(mesh, {{i+2, j  , k   }}, rfl) - _getv(mesh, {{i  , j  , k   }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+1, j+1, k   }}, rfl) - _getv(mesh, {{i-1, j+1, k   }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+2, j+1, k   }}, rfl) - _getv(mesh, {{i  , j+1, k   }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+1, j  , k+1 }}, rfl) - _getv(mesh, {{i-1, j  , k+1 }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+2, j  , k+1 }}, rfl) - _getv(mesh, {{i  , j  , k+1 }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+1, j+1, k+1 }}, rfl) - _getv(mesh, {{i-1, j+1, k+1 }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+2, j+1, k+1 }}, rfl) - _getv(mesh, {{i  , j+1, k+1 }}, rfl)),
+  
         // values of df/dy at each corner.
-		    0.5*(_data[_index(xi,yi+1,zi)]     - _data[_index(xi,yi-1,zi)]),
-		    0.5*(_data[_index(xi+1,yi+1,zi)]   - _data[_index(xi+1,yi-1,zi)]),
-			  0.5*(_data[_index(xi,yi+2,zi)]     - _data[_index(xi,yi,zi)]),
-			  0.5*(_data[_index(xi+1,yi+2,zi)]   - _data[_index(xi+1,yi,zi)]),
-			  0.5*(_data[_index(xi,yi+1,zi+1)]   - _data[_index(xi,yi-1,zi+1)]),
-			  0.5*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)]),
-			  0.5*(_data[_index(xi,yi+2,zi+1)]   - _data[_index(xi,yi,zi+1)]),
-			  0.5*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]),
+		    T(0.5)*(_getv(mesh, {{i  , j+1 , k  }}, rfl) - _getv(mesh, {{i  , j-1,  k  }}, rfl)),
+		    T(0.5)*(_getv(mesh, {{i+1, j+1 , k  }}, rfl) - _getv(mesh, {{i+1, j-1,  k  }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i  , j+2 , k  }}, rfl) - _getv(mesh, {{i  , j,    k  }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+1, j+2 , k  }}, rfl) - _getv(mesh, {{i+1, j,    k  }}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i  , j+1 , k+1}}, rfl) - _getv(mesh, {{i  , j- 1, k+1}}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+1, j+1 , k+1}}, rfl) - _getv(mesh, {{i+1, j- 1, k+1}}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i  , j+2 , k+1}}, rfl) - _getv(mesh, {{i  , j,    k+1}}, rfl)),
+			  T(0.5)*(_getv(mesh, {{i+1, j+2 , k+1}}, rfl) - _getv(mesh, {{i+1, j,    k+1}}, rfl)),
 
         // values of df/dz at each corner.
-		    0.5*(_data[_index(xi,yi,zi+1)]     -_data[_index(xi,yi,zi-1)]),
-		    0.5*(_data[_index(xi+1,yi,zi+1)]   -_data[_index(xi+1,yi,zi-1)]),
-			  0.5*(_data[_index(xi,yi+1,zi+1)]   -_data[_index(xi,yi+1,zi-1)]),
-			  0.5*(_data[_index(xi+1,yi+1,zi+1)] -_data[_index(xi+1,yi+1,zi-1)]),
-			  0.5*(_data[_index(xi,yi,zi+2)]     -_data[_index(xi,yi,zi)]),
-			  0.5*(_data[_index(xi+1,yi,zi+2)]   -_data[_index(xi+1,yi,zi)]),
-			  0.5*(_data[_index(xi,yi+1,zi+2)]   -_data[_index(xi,yi+1,zi)]),
-			  0.5*(_data[_index(xi+1,yi+1,zi+2)] -_data[_index(xi+1,yi+1,zi)]),
+		    T(0.5)*(_getv(mesh , {{i   , j   , k+1}} , rfl) - _getv(mesh , {{i  , j  , k- 1}}, rfl)),
+		    T(0.5)*(_getv(mesh , {{i+1 , j   , k+1}} , rfl) - _getv(mesh , {{i+1, j  , k- 1}}, rfl)),
+			  T(0.5)*(_getv(mesh , {{i   , j+1 , k+1}} , rfl) - _getv(mesh , {{i  , j+1, k- 1}}, rfl)),
+			  T(0.5)*(_getv(mesh , {{i+1 , j+1 , k+1}} , rfl) - _getv(mesh , {{i+1, j+1, k- 1}}, rfl)),
+			  T(0.5)*(_getv(mesh , {{i   , j   , k+2}} , rfl) - _getv(mesh , {{i  , j  , k   }}, rfl)),
+			  T(0.5)*(_getv(mesh , {{i+1 , j   , k+2}} , rfl) - _getv(mesh , {{i+1, j  , k   }}, rfl)),
+			  T(0.5)*(_getv(mesh , {{i   , j+1 , k+2}} , rfl) - _getv(mesh , {{i  , j+1, k   }}, rfl)),
+			  T(0.5)*(_getv(mesh , {{i+1 , j+1 , k+2}} , rfl) - _getv(mesh , {{i+1, j+1, k   }}, rfl)),
 
         // values of d2f/dxdy at each corner.
-		    0.25*(_data[_index(xi+1,yi+1,zi)]   - _data[_index(xi-1,yi+1,zi)]   - _data[_index(xi+1,yi-1,zi)]   + _data[_index(xi-1,yi-1,zi)]),
-			  0.25*(_data[_index(xi+2,yi+1,zi)]   - _data[_index(xi,yi+1,zi)]     - _data[_index(xi+2,yi-1,zi)]   + _data[_index(xi,yi-1,zi)]),
-			  0.25*(_data[_index(xi+1,yi+2,zi)]   - _data[_index(xi-1,yi+2,zi)]   - _data[_index(xi+1,yi,zi)]     + _data[_index(xi-1,yi,zi)]),
-			  0.25*(_data[_index(xi+2,yi+2,zi)]   - _data[_index(xi,yi+2,zi)]     - _data[_index(xi+2,yi,zi)]     + _data[_index(xi,yi,zi)]),
-			  0.25*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)] + _data[_index(xi-1,yi-1,zi+1)]),
-			  0.25*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]   - _data[_index(xi+2,yi-1,zi+1)] + _data[_index(xi,yi-1,zi+1)]),
-			  0.25*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi-1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]   + _data[_index(xi-1,yi,zi+1)]),
-			  0.25*(_data[_index(xi+2,yi+2,zi+1)] - _data[_index(xi,yi+2,zi+1)]   - _data[_index(xi+2,yi,zi+1)]   + _data[_index(xi,yi,zi+1)]),
+		    T(0.25)*(_getv(mesh, {{i+1,j+1,k}},   rfl) - _getv(mesh, {{i-1,j+1,k}}, rfl)   - _getv(mesh, {{i+1,j-1,k}}, rfl)   + _getv(mesh, {{i-1,j-1,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j+1,k}},   rfl) - _getv(mesh, {{i,j+1,k}}, rfl)     - _getv(mesh, {{i+2,j-1,k}}, rfl)   + _getv(mesh, {{i,j-1,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+2,k}},   rfl) - _getv(mesh, {{i-1,j+2,k}}, rfl)   - _getv(mesh, {{i+1,j,k}}, rfl)     + _getv(mesh, {{i-1,j,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j+2,k}},   rfl) - _getv(mesh, {{i,j+2,k}}, rfl)     - _getv(mesh, {{i+2,j,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl) + _getv(mesh, {{i-1,j-1,k+1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i+2,j-1,k+1}}, rfl) + _getv(mesh, {{i,j-1,k+1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i-1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)   + _getv(mesh, {{i-1,j,k+1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j+2,k+1}}, rfl) - _getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i+2,j,k+1}}, rfl)   + _getv(mesh, {{i,j,k+1}}, rfl)),
 
         // values of d2f/dxdz at each corner.
-		    0.25*(_data[_index(xi+1,yi,zi+1)]   - _data[_index(xi-1,yi,zi+1)]  - _data[_index(xi+1,yi,zi-1)]   + _data[_index(xi-1,yi,zi-1)]),
-			  0.25*(_data[_index(xi+2,yi,zi+1)]   - _data[_index(xi,yi,zi+1)]    - _data[_index(xi+2,yi,zi-1)]   + _data[_index(xi,yi,zi-1)]),
-			  0.25*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)]- _data[_index(xi+1,yi+1,zi-1)] + _data[_index(xi-1,yi+1,zi-1)]),
-			  0.25*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]  - _data[_index(xi+2,yi+1,zi-1)] + _data[_index(xi,yi+1,zi-1)]),
-			  0.25*(_data[_index(xi+1,yi,zi+2)]   - _data[_index(xi-1,yi,zi+2)]  - _data[_index(xi+1,yi,zi)]     + _data[_index(xi-1,yi,zi)]),
-			  0.25*(_data[_index(xi+2,yi,zi+2)]   - _data[_index(xi,yi,zi+2)]    - _data[_index(xi+2,yi,zi)]     + _data[_index(xi,yi,zi)]),
-			  0.25*(_data[_index(xi+1,yi+1,zi+2)] - _data[_index(xi-1,yi+1,zi+2)]- _data[_index(xi+1,yi+1,zi)]   + _data[_index(xi-1,yi+1,zi)]),
-			  0.25*(_data[_index(xi+2,yi+1,zi+2)] - _data[_index(xi,yi+1,zi+2)]  - _data[_index(xi+2,yi+1,zi)]   + _data[_index(xi,yi+1,zi)]),
+		    T(0.25)*(_getv(mesh, {{i+1,j,k+1}}, rfl)   - _getv(mesh, {{i-1,j,k+1}}, rfl)  - _getv(mesh, {{i+1,j,k-1}}, rfl)   + _getv(mesh, {{i-1,j,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j,k+1}}, rfl)   - _getv(mesh, {{i,j,k+1}}, rfl)    - _getv(mesh, {{i+2,j,k-1}}, rfl)   + _getv(mesh, {{i,j,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl)- _getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i-1,j+1,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)  - _getv(mesh, {{i+2,j+1,k-1}}, rfl) + _getv(mesh, {{i,j+1,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j,k+2}}, rfl)   - _getv(mesh, {{i-1,j,k+2}}, rfl)  - _getv(mesh, {{i+1,j,k}}, rfl)     + _getv(mesh, {{i-1,j,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j,k+2}}, rfl)   - _getv(mesh, {{i,j,k+2}}, rfl)    - _getv(mesh, {{i+2,j,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i-1,j+1,k+2}}, rfl)- _getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i-1,j+1,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+2,j+1,k+2}}, rfl) - _getv(mesh, {{i,j+1,k+2}}, rfl)  - _getv(mesh, {{i+2,j+1,k}}, rfl)   + _getv(mesh, {{i,j+1,k}}, rfl)),
 
         // values of d2f/dydz at each corner.
-		    0.25*(_data[_index(xi,yi+1,zi+1)]   - _data[_index(xi,yi-1,zi+1)]  - _data[_index(xi,yi+1,zi-1)]   + _data[_index(xi,yi-1,zi-1)]),
-			  0.25*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)]- _data[_index(xi+1,yi+1,zi-1)] + _data[_index(xi+1,yi-1,zi-1)]),
-			  0.25*(_data[_index(xi,yi+2,zi+1)]   - _data[_index(xi,yi,zi+1)]    - _data[_index(xi,yi+2,zi-1)]   + _data[_index(xi,yi,zi-1)]),
-			  0.25*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]  - _data[_index(xi+1,yi+2,zi-1)] + _data[_index(xi+1,yi,zi-1)]),
-			  0.25*(_data[_index(xi,yi+1,zi+2)]   - _data[_index(xi,yi-1,zi+2)]  - _data[_index(xi,yi+1,zi)]     + _data[_index(xi,yi-1,zi)]),
-			  0.25*(_data[_index(xi+1,yi+1,zi+2)] - _data[_index(xi+1,yi-1,zi+2)]- _data[_index(xi+1,yi+1,zi)]   + _data[_index(xi+1,yi-1,zi)]),
-			  0.25*(_data[_index(xi,yi+2,zi+2)]   - _data[_index(xi,yi,zi+2)]    - _data[_index(xi,yi+2,zi)]     + _data[_index(xi,yi,zi)]),
-			  0.25*(_data[_index(xi+1,yi+2,zi+2)] - _data[_index(xi+1,yi,zi+2)]  - _data[_index(xi+1,yi+2,zi)]   + _data[_index(xi+1,yi,zi)]),
+		    T(0.25)*(_getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i,j-1,k+1}}, rfl)  - _getv(mesh, {{i,j+1,k-1}}, rfl)   + _getv(mesh, {{i,j-1,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl)- _getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i+1,j-1,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i,j,k+1}}, rfl)    - _getv(mesh, {{i,j+2,k-1}}, rfl)   + _getv(mesh, {{i,j,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)  - _getv(mesh, {{i+1,j+2,k-1}}, rfl) + _getv(mesh, {{i+1,j,k-1}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i,j+1,k+2}}, rfl)   - _getv(mesh, {{i,j-1,k+2}}, rfl)  - _getv(mesh, {{i,j+1,k}}, rfl)     + _getv(mesh, {{i,j-1,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i+1,j-1,k+2}}, rfl)- _getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i+1,j-1,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i,j+2,k+2}}, rfl)   - _getv(mesh, {{i,j,k+2}}, rfl)    - _getv(mesh, {{i,j+2,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
+			  T(0.25)*(_getv(mesh, {{i+1,j+2,k+2}}, rfl) - _getv(mesh, {{i+1,j,k+2}}, rfl)  - _getv(mesh, {{i+1,j+2,k}}, rfl)   + _getv(mesh, {{i+1,j,k}}, rfl)),
 
 			  // values of d3f/dxdydz at each corner.
-		    0.125*(_data[_index(xi+1,yi+1,zi+1)] - _data[_index(xi-1,yi+1,zi+1)] - _data[_index(xi+1,yi-1,zi+1)] + _data[_index(xi-1,yi-1,zi+1)] 
-              -_data[_index(xi+1,yi+1,zi-1)] + _data[_index(xi-1,yi+1,zi-1)] + _data[_index(xi+1,yi-1,zi-1)] - _data[_index(xi-1,yi-1,zi-1)]),
-			  0.125*(_data[_index(xi+2,yi+1,zi+1)] - _data[_index(xi,yi+1,zi+1)]   - _data[_index(xi+2,yi-1,zi+1)] + _data[_index(xi,yi-1,zi+1)]
-              -_data[_index(xi+2,yi+1,zi-1)] + _data[_index(xi,yi+1,zi-1)]   + _data[_index(xi+2,yi-1,zi-1)] - _data[_index(xi,yi-1,zi-1)]),
-			  0.125*(_data[_index(xi+1,yi+2,zi+1)] - _data[_index(xi-1,yi+2,zi+1)] - _data[_index(xi+1,yi,zi+1)]   + _data[_index(xi-1,yi,zi+1)]
-              -_data[_index(xi+1,yi+2,zi-1)] + _data[_index(xi-1,yi+2,zi-1)] + _data[_index(xi+1,yi,zi-1)]   - _data[_index(xi-1,yi,zi-1)]),
-			  0.125*(_data[_index(xi+2,yi+2,zi+1)] - _data[_index(xi,yi+2,zi+1)]   - _data[_index(xi+2,yi,zi+1)]   + _data[_index(xi,yi,zi+1)]
-              -_data[_index(xi+2,yi+2,zi-1)] + _data[_index(xi,yi+2,zi-1)]   + _data[_index(xi+2,yi,zi-1)]   - _data[_index(xi,yi,zi-1)]),
-			  0.125*(_data[_index(xi+1,yi+1,zi+2)] - _data[_index(xi-1,yi+1,zi+2)] - _data[_index(xi+1,yi-1,zi+2)] + _data[_index(xi-1,yi-1,zi+2)]
-              -_data[_index(xi+1,yi+1,zi)]   + _data[_index(xi-1,yi+1,zi)]   + _data[_index(xi+1,yi-1,zi)]   - _data[_index(xi-1,yi-1,zi)]),
-			  0.125*(_data[_index(xi+2,yi+1,zi+2)] - _data[_index(xi,yi+1,zi+2)]   - _data[_index(xi+2,yi-1,zi+2)] + _data[_index(xi,yi-1,zi+2)]
-              -_data[_index(xi+2,yi+1,zi)]   + _data[_index(xi,yi+1,zi)]     + _data[_index(xi+2,yi-1,zi)]   - _data[_index(xi,yi-1,zi)]),
-			  0.125*(_data[_index(xi+1,yi+2,zi+2)] - _data[_index(xi-1,yi+2,zi+2)] - _data[_index(xi+1,yi,zi+2)]   + _data[_index(xi-1,yi,zi+2)]
-              -_data[_index(xi+1,yi+2,zi)]   + _data[_index(xi-1,yi+2,zi)]   + _data[_index(xi+1,yi,zi)]     - _data[_index(xi-1,yi,zi)]),
-			  0.125*(_data[_index(xi+2,yi+2,zi+2)] - _data[_index(xi,yi+2,zi+2)]   - _data[_index(xi+2,yi,zi+2)]   + _data[_index(xi,yi,zi+2)]
-              -_data[_index(xi+2,yi+2,zi)]   + _data[_index(xi,yi+2,zi)]     + _data[_index(xi+2,yi,zi)]     - _data[_index(xi,yi,zi)])
+		    T(0.125)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl) + _getv(mesh, {{i-1,j-1,k+1}}, rfl) 
+                 -_getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i-1,j+1,k-1}}, rfl) + _getv(mesh, {{i+1,j-1,k-1}}, rfl) - _getv(mesh, {{i-1,j-1,k-1}}, rfl)),
+			  T(0.125)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i+2,j-1,k+1}}, rfl) + _getv(mesh, {{i,j-1,k+1}}, rfl)
+                 -_getv(mesh, {{i+2,j+1,k-1}}, rfl) + _getv(mesh, {{i,j+1,k-1}}, rfl)   + _getv(mesh, {{i+2,j-1,k-1}}, rfl) - _getv(mesh, {{i,j-1,k-1}}, rfl)),
+			  T(0.125)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i-1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)   + _getv(mesh, {{i-1,j,k+1}}, rfl)
+                 -_getv(mesh, {{i+1,j+2,k-1}}, rfl) + _getv(mesh, {{i-1,j+2,k-1}}, rfl) + _getv(mesh, {{i+1,j,k-1}}, rfl)   - _getv(mesh, {{i-1,j,k-1}}, rfl)),
+			  T(0.125)*(_getv(mesh, {{i+2,j+2,k+1}}, rfl) - _getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i+2,j,k+1}}, rfl)   + _getv(mesh, {{i,j,k+1}}, rfl)
+                 -_getv(mesh, {{i+2,j+2,k-1}}, rfl) + _getv(mesh, {{i,j+2,k-1}}, rfl)   + _getv(mesh, {{i+2,j,k-1}}, rfl)   - _getv(mesh, {{i,j,k-1}}, rfl)),
+			  T(0.125)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i-1,j+1,k+2}}, rfl) - _getv(mesh, {{i+1,j-1,k+2}}, rfl) + _getv(mesh, {{i-1,j-1,k+2}}, rfl)
+                 -_getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i-1,j+1,k}}, rfl)   + _getv(mesh, {{i+1,j-1,k}}, rfl)   - _getv(mesh, {{i-1,j-1,k}}, rfl)),
+			  T(0.125)*(_getv(mesh, {{i+2,j+1,k+2}}, rfl) - _getv(mesh, {{i,j+1,k+2}}, rfl)   - _getv(mesh, {{i+2,j-1,k+2}}, rfl) + _getv(mesh, {{i,j-1,k+2}}, rfl)
+                 -_getv(mesh, {{i+2,j+1,k}}, rfl)   + _getv(mesh, {{i,j+1,k}}, rfl)     + _getv(mesh, {{i+2,j-1,k}}, rfl)   - _getv(mesh, {{i,j-1,k}}, rfl)),
+			  T(0.125)*(_getv(mesh, {{i+1,j+2,k+2}}, rfl) - _getv(mesh, {{i-1,j+2,k+2}}, rfl) - _getv(mesh, {{i+1,j,k+2}}, rfl)   + _getv(mesh, {{i-1,j,k+2}}, rfl)
+                 -_getv(mesh, {{i+1,j+2,k}}, rfl)   + _getv(mesh, {{i-1,j+2,k}}, rfl)   + _getv(mesh, {{i+1,j,k}}, rfl)     - _getv(mesh, {{i-1,j,k}}, rfl)),
+			  T(0.125)*(_getv(mesh, {{i+2,j+2,k+2}}, rfl) - _getv(mesh, {{i,j+2,k+2}}, rfl)   - _getv(mesh, {{i+2,j,k+2}}, rfl)   + _getv(mesh, {{i,j,k+2}}, rfl)
+              -_getv(mesh, {{i+2,j+2,k}}, rfl)   + _getv(mesh, {{i,j+2,k}}, rfl)     + _getv(mesh, {{i+2,j,k}}, rfl)     - _getv(mesh, {{i,j,k}}, rfl))
 		};
 
+    int _C[64][64] = {
+    { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {-3, 3, 0, 0, 0, 0, 0, 0,-2,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 2,-2, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {-3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0,-3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 9,-9,-9, 9, 0, 0, 0, 0, 6, 3,-6,-3, 0, 0, 0, 0, 6,-6, 3,-3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {-6, 6, 6,-6, 0, 0, 0, 0,-3,-3, 3, 3, 0, 0, 0, 0,-4, 4,-2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2,-2,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 2, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 2, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {-6, 6, 6,-6, 0, 0, 0, 0,-4,-2, 4, 2, 0, 0, 0, 0,-3, 3,-3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2,-1,-2,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 4,-4,-4, 4, 0, 0, 0, 0, 2, 2,-2,-2, 0, 0, 0, 0, 2,-2, 2,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 3, 0, 0, 0, 0, 0, 0,-2,-1, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,-2, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-1, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,-9,-9, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3,-6,-3, 0, 0, 0, 0, 6,-6, 3,-3, 0, 0, 0, 0, 4, 2, 2, 1, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-6, 6, 6,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3,-3, 3, 3, 0, 0, 0, 0,-4, 4,-2, 2, 0, 0, 0, 0,-2,-2,-1,-1, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-6, 6, 6,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-2, 4, 2, 0, 0, 0, 0,-3, 3,-3, 3, 0, 0, 0, 0,-2,-1,-2,-1, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,-4,-4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2,-2,-2, 0, 0, 0, 0, 2,-2, 2,-2, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0},
+    {-3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0, 0, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0,-3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0, 0, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 9,-9, 0, 0,-9, 9, 0, 0, 6, 3, 0, 0,-6,-3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,-6, 0, 0, 3,-3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {-6, 6, 0, 0, 6,-6, 0, 0,-3,-3, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4, 4, 0, 0,-2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2,-2, 0, 0,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0, 0, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0, 0, 0,-1, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,-9, 0, 0,-9, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 0, 0,-6,-3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,-6, 0, 0, 3,-3, 0, 0, 4, 2, 0, 0, 2, 1, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-6, 6, 0, 0, 6,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3,-3, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4, 4, 0, 0,-2, 2, 0, 0,-2,-2, 0, 0,-1,-1, 0, 0},
+    { 9, 0,-9, 0,-9, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 3, 0,-6, 0,-3, 0, 6, 0,-6, 0, 3, 0,-3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 2, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 9, 0,-9, 0,-9, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 3, 0,-6, 0,-3, 0, 6, 0,-6, 0, 3, 0,-3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 2, 0, 2, 0, 1, 0},
+    {-27,27,27,-27,27,-27,-27,27,-18,-9,18, 9,18, 9,-18,-9,-18,18,-9, 9,18,-18, 9,-9,-18,18,18,-18,-9, 9, 9,-9,-12,-6,-6,-3,12, 6, 6, 3,-12,-6,12, 6,-6,-3, 6, 3,-12,12,-6, 6,-6, 6,-3, 3,-8,-4,-4,-2,-4,-2,-2,-1},
+    {18,-18,-18,18,-18,18,18,-18, 9, 9,-9,-9,-9,-9, 9, 9,12,-12, 6,-6,-12,12,-6, 6,12,-12,-12,12, 6,-6,-6, 6, 6, 6, 3, 3,-6,-6,-3,-3, 6, 6,-6,-6, 3, 3,-3,-3, 8,-8, 4,-4, 4,-4, 2,-2, 4, 4, 2, 2, 2, 2, 1, 1},
+    {-6, 0, 6, 0, 6, 0,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 0,-3, 0, 3, 0, 3, 0,-4, 0, 4, 0,-2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-2, 0,-1, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0,-6, 0, 6, 0, 6, 0,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 0,-3, 0, 3, 0, 3, 0,-4, 0, 4, 0,-2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-2, 0,-1, 0,-1, 0},
+    {18,-18,-18,18,-18,18,18,-18,12, 6,-12,-6,-12,-6,12, 6, 9,-9, 9,-9,-9, 9,-9, 9,12,-12,-12,12, 6,-6,-6, 6, 6, 3, 6, 3,-6,-3,-6,-3, 8, 4,-8,-4, 4, 2,-4,-2, 6,-6, 6,-6, 3,-3, 3,-3, 4, 2, 4, 2, 2, 1, 2, 1},
+    {-12,12,12,-12,12,-12,-12,12,-6,-6, 6, 6, 6, 6,-6,-6,-6, 6,-6, 6, 6,-6, 6,-6,-8, 8, 8,-8,-4, 4, 4,-4,-3,-3,-3,-3, 3, 3, 3, 3,-4,-4, 4, 4,-2,-2, 2, 2,-4, 4,-4, 4,-2, 2,-2, 2,-2,-2,-2,-2,-1,-1,-1,-1},
+    { 2, 0, 0, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {-6, 6, 0, 0, 6,-6, 0, 0,-4,-2, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 3, 0, 0,-3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2,-1, 0, 0,-2,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 4,-4, 0, 0,-4, 4, 0, 0, 2, 2, 0, 0,-2,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,-2, 0, 0, 2,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-6, 6, 0, 0, 6,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-2, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-3, 3, 0, 0,-3, 3, 0, 0,-2,-1, 0, 0,-2,-1, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,-4, 0, 0,-4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0,-2,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,-2, 0, 0, 2,-2, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0},
+    {-6, 0, 6, 0, 6, 0,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4, 0,-2, 0, 4, 0, 2, 0,-3, 0, 3, 0,-3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-1, 0,-2, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0,-6, 0, 6, 0, 6, 0,-6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4, 0,-2, 0, 4, 0, 2, 0,-3, 0, 3, 0,-3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0,-2, 0,-1, 0,-2, 0,-1, 0},
+    {18,-18,-18,18,-18,18,18,-18,12, 6,-12,-6,-12,-6,12, 6,12,-12, 6,-6,-12,12,-6, 6, 9,-9,-9, 9, 9,-9,-9, 9, 8, 4, 4, 2,-8,-4,-4,-2, 6, 3,-6,-3, 6, 3,-6,-3, 6,-6, 3,-3, 6,-6, 3,-3, 4, 2, 2, 1, 4, 2, 2, 1},
+    {-12,12,12,-12,12,-12,-12,12,-6,-6, 6, 6, 6, 6,-6,-6,-8, 8,-4, 4, 8,-8, 4,-4,-6, 6, 6,-6,-6, 6, 6,-6,-4,-4,-2,-2, 4, 4, 2, 2,-3,-3, 3, 3,-3,-3, 3, 3,-4, 4,-2, 2,-4, 4,-2, 2,-2,-2,-1,-1,-2,-2,-1,-1},
+    { 4, 0,-4, 0,-4, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0,-2, 0,-2, 0, 2, 0,-2, 0, 2, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 0, 0, 0, 0, 0, 0, 0, 4, 0,-4, 0,-4, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0,-2, 0,-2, 0, 2, 0,-2, 0, 2, 0,-2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0},
+    {-12,12,12,-12,12,-12,-12,12,-8,-4, 8, 4, 8, 4,-8,-4,-6, 6,-6, 6, 6,-6, 6,-6,-6, 6, 6,-6,-6, 6, 6,-6,-4,-2,-4,-2, 4, 2, 4, 2,-4,-2, 4, 2,-4,-2, 4, 2,-3, 3,-3, 3,-3, 3,-3, 3,-2,-1,-2,-1,-2,-1,-2,-1},
+    { 8,-8,-8, 8,-8, 8, 8,-8, 4, 4,-4,-4,-4,-4, 4, 4, 4,-4, 4,-4,-4, 4,-4, 4, 4,-4,-4, 4, 4,-4,-4, 4, 2, 2, 2, 2,-2,-2,-2,-2, 2, 2,-2,-2, 2, 2,-2,-2, 2,-2, 2,-2, 2,-2, 2,-2, 1, 1, 1, 1, 1, 1, 1, 1}
+};
 
+  // Convert voxel values and partial derivatives to interpolation coefficients.
+  T _coefs[64];
+  for (int i=0;i<64;++i) {
+    _coefs[i] = 0.0;
+    for (int j=0;j<64;++j) {
+      _coefs[i] += _C[i][j]*x[j];
+    }
+  }
 
+  int ijkn(0);
+  T dzpow(1);
+  T result(0);
 
+  for(int k = 0; k < 4; ++k) {
+    T dypow(1);
+    for(int j = 0; j < 4; ++j) {
+      result += dypow*dzpow*
+        (_coefs[ijkn] + dx*(_coefs[ijkn+1] + dx*(_coefs[ijkn+2] + dx*_coefs[ijkn+3])));
+      ijkn += 4;
+      dypow *= dy;
+    }
+    dzpow *= dz;
+  }
+
+  return result;
 }
 
 

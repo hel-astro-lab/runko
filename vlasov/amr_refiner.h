@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <unordered_set>
 
-#include "mesh.h"
+#include "amr_mesh.h"
 #include "amr_numerics.h"
 
 

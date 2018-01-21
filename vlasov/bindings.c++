@@ -3,7 +3,7 @@
 namespace py = pybind11;
 
 
-#include "mesh.h"
+#include "amr_mesh.h"
 #include "amr_numerics.h"
 #include "amr_refiner.h"
 
@@ -83,6 +83,8 @@ PYBIND11_MODULE(pyplasmaDev, m) {
   m.def("grad",  &toolbox::grad<Realf, 3>);
 
   m.def("trilinear_interp", &toolbox::trilinear_interp<Realf>);
+
+  m.def("tricubic_interp", &toolbox::tricubic_interp<Realf>);
 
 
   py::class_<Adapter3d>(m, "Adapter")

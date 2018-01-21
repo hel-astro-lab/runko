@@ -43,7 +43,7 @@ def gauss(ux,uy,uz):
 
     #return ux + uy + uz
 
-    return 10.0 + 1.0*ux + 2.0*uy + 3.0*uz
+    #return 10.0 + 1.0*ux + 2.0*uy + 3.0*uz
     #return np.abs( 0.1 + 0.1*ux*uy + 0.3*ux*uz + 0.9*uy*ux + 2.0*ux*uy*uz ) + 0.1
     #return 0.1 + 0.2*ux + 0.3*uy + 0.4*uz + 0.5*ux*uy + 0.6*ux*uz + 0.7*uy*ux + 0.8*ux*uy*uz
 
@@ -330,7 +330,8 @@ def get_interpolated_mesh(m, args):
         if args["dir"] == "xy":
             for ii in range(st*reso):
                 for jj in range(st*reso):
-                    val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], arr[jj],0.5], rfl)
+                    #val = pdev.trilinear_interp(m, [i,j,k], [arr[ii], arr[jj],0.5], rfl)
+                    val = pdev.tricubic_interp(m, [i,j,k], [arr[ii], arr[jj],0.5], rfl)
 
                     xval, yval, zval = get_real_coords(m, [i,j,k], [arr[ii], arr[jj],0.5], rfl)
                     val2 = gauss(xval, yval, zval)
