@@ -43,7 +43,8 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
 
         #give electrons a nudge 
         Lx  = conf.Nx*conf.NxMesh*conf.dx
-        mux += conf.beta*np.sin( 2.0*np.pi * x / Lx)
+        kx = 1
+        mux += conf.beta*np.sin( 2.0*np.pi*kx*x/Lx)
 
 
     #ions/positrons
@@ -55,13 +56,17 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
         muy = 0.0
         muz = 0.0
 
+        Lx  = conf.Nx*conf.NxMesh*conf.dx
+        kx = 1
+        mux += conf.beta*np.sin( 2.0*np.pi*kx*x/Lx)
+
 
     #Classical Maxwellian distribution
-    z1 = 0.05*np.random.standard_normal() # Brownian noise
+    z1 = 0.01*np.random.standard_normal() # Brownian noise
     #z1 = 0.0
 
     f  = 1.0/np.sqrt(2.0*np.pi*delgam)
-    f *= np.exp(-0.5*((ux - mux)**2)/delgam + z1)
+    f *= np.exp(-0.5*((ux - mux)**2)/delgam + z1*delgam)
 
     return f
 
@@ -181,7 +186,7 @@ if __name__ == "__main__":
 
 
     #number of samples
-    Nsamples    = int(conf.Nt/conf.interval)
+    Nsamples    = int(conf.Nt/conf.interval) + 1
     dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 

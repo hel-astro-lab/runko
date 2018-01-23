@@ -152,13 +152,15 @@ def plotXmesh(ax, n, conf, spcs):
 
             data[ i*conf.NxMesh + s, :] = vbundle.getPencil()
 
-    data = np.log10(data)
+    #data = np.log10(data)
     imshow(ax, data,
            n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
            cmap = 'plasma_r',
-           vmin = -10.0,
-           vmax =  2.0,
-           clip = -16.0,
+           #vmin = -10.0,
+           #vmax =  2.0,
+           vmin =   0.0,
+           vmax =  10.0,
+           clip =   0.0,
            )
 
     dmax = np.max(data)
