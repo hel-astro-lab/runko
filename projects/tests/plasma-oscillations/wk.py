@@ -33,6 +33,8 @@ f = h5py.File('out/run.hdf5','r')
 #Read field
 ex = np.transpose( f['fields/Ex'] )  #load as arr[spatial, temporal]
 #ex = ex[300:, :] #skim off some warm-up phase
+#ex = ex[:, 8:340]
+ex = ex[:, :340]
 
 print "Ex shape:", np.shape(ex)
 
@@ -138,7 +140,7 @@ Fourier = np.fft.rfft2(A)
 print "shape after transform:", np.shape(Fourier)
 
 # spatial wave vector x component k_x (only half is considered due to Nqyust frequency cut)
-dk = np.pi/(nx * dx)
+dk = 2*np.pi/(nx * dx)
 #dk = 1.0/(nx*dx)
 k = np.arange(nx)*dk
 #print "k:"
@@ -147,7 +149,7 @@ k1 = 1
 k2 = nx
 
 # temporal angular frequency \omega
-dw = np.pi/(ny * dt)
+dw = 2*np.pi/(ny * dt/2)
 #dw = 1.0/(ny * dt)
 w = np.arange(ny)*dw
 #print "w:"
@@ -171,11 +173,11 @@ print "t min/max:", dt, T
 print "k min/max:", kmin, kmax
 print "w min/max:", wmin, wmax
 
-#ax.set_xlim(0.0, 20.0)
-#ax.set_ylim(0.0, 20.0)
+ax.set_xlim(0.0, 20.0)
+ax.set_ylim(0.0, 4.0)
 
-ax.set_xlim(0.0, kmax)
-ax.set_ylim(0.0, wmax/2)
+#ax.set_xlim(0.0, kmax)
+#ax.set_ylim(0.0, wmax/2)
 
 # Change to spectra by considering |F] 
 F = np.log10( np.abs(Fourier) )
@@ -221,7 +223,7 @@ cax.xaxis.set_ticks_position('top')
 
 wp = 1.0 #plasma frequency XXX why x2? 
 #vth = np.sqrt(1.0e-5) #thermal velocity XXX why /2?
-vth = 1.0e-5 #thermal velocity XXX why /2?
+vth = 1.0e-1 #thermal velocity XXX why /2?
 
 
 #numerical propagation speed

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import h5py
 import sys, os
+import matplotlib.ticker as ticker
 
 
 #--------------------------------------------------
@@ -30,6 +31,7 @@ f = h5py.File('out/run.hdf5','r')
 
 #Read field
 ex = f['fields/Ex']
+ex = ex[:, :340]
 print "Ex shape:", np.shape(ex)
 
 
@@ -87,6 +89,7 @@ print np.shape(T)
 #            )
 
 
+vminmax = np.maximum( np.abs(np.min(F)), np.abs(np.max(F)) )
 
 #faster plotting with imshow
 im = ax.imshow(F[t1:t2, x1:x2],
@@ -95,16 +98,26 @@ im = ax.imshow(F[t1:t2, x1:x2],
         aspect='auto',
         interpolation='nearest',
         cmap='RdYlGn',
-        vmin=-1.0e-5,
-        vmax= 1.0e-5
+        vmin=-vminmax,
+        vmax= vminmax
         )
 
 
+def fmt(x, pos):
+    a, b = '{:.1e}'.format(x).split('e')
+    b = int(b)
+    return r'${} \times 10^{{{}}}$'.format(a, b)
+
+
+
 cax = fig.add_axes([0.12, 0.86, 0.86, 0.03]) 
-plt.colorbar(im, cax=cax, orientation='horizontal', label=r'$E_x$')
+cbar = plt.colorbar(im, cax=cax, orientation='horizontal', label=r'$E_x$', format=ticker.FuncFormatter(fmt))
 #plt.colorbar(im, cax=cax, orientation='horizontal', label=r'log$_{10} | \mathcal{F}( E_x ) |$')
 cax.xaxis.set_label_position('top')
 cax.xaxis.set_ticks_position('top')
+
+cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation=0)
+cbar.ax.tick_params(labelsize=5)
 
 #ax.set_xlim(0.0, 6.0)
 #ax.set_ylim(0.0, 6.0)

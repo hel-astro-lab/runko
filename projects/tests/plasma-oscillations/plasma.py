@@ -29,7 +29,13 @@ from timer import Timer
 # Maxwellian plasma with Brownian noise
 # where delgam = kT/m_i c^2
 #
+
+
 def filler(x, y, z, ux, uy, uz, conf, ispcs):
+
+    mux_noise      = 0.0
+    delgam_noise   = 0.0
+    brownian_noise = 0.0
 
     #electrons
     if ispcs == 0:
@@ -39,12 +45,6 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
         mux = conf.gamma_e
         muy = 0.0
         muz = 0.0
-
-
-        #give electrons a nudge 
-        Lx  = conf.Nx*conf.NxMesh*conf.dx
-        kx = 1
-        mux += conf.beta*np.sin( 2.0*np.pi*kx*x/Lx)
 
 
     #ions/positrons
@@ -57,16 +57,20 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
         muz = 0.0
 
         Lx  = conf.Nx*conf.NxMesh*conf.dx
-        kx = 1
-        mux += conf.beta*np.sin( 2.0*np.pi*kx*x/Lx)
+        for l, kx in enumerate(modes):
+            mux_noise += conf.beta*np.sin( 2*np.pi*(-kx*x/Lx + random_phase[l] ))
+
+
+    #Brownian noise
+    #brownian_noise = 0.01*np.random.standard_normal() 
+    #brownian_noise *= delgam
 
 
     #Classical Maxwellian distribution
-    z1 = 0.01*np.random.standard_normal() # Brownian noise
-    #z1 = 0.0
-
     f  = 1.0/np.sqrt(2.0*np.pi*delgam)
-    f *= np.exp(-0.5*((ux - mux)**2)/delgam + z1*delgam)
+    #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
+    f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam))
+
 
     return f
 
@@ -141,8 +145,11 @@ if __name__ == "__main__":
 
     ################################################## 
     # initialize
-    injector.inject(node, filler, conf, clip=False) #injecting plasma
+    Nx           = conf.Nx*conf.NxMesh
+    modes        = np.arange(1280) + 1
+    random_phase = np.random.rand(len(modes))
 
+    injector.inject(node, filler, conf, clip=False) #injecting plasma
 
 
     # visualize initial condition

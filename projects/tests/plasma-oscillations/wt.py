@@ -31,6 +31,7 @@ f = h5py.File('out/run.hdf5','r')
 #Read field
 ex = f['fields/Ex']
 #ex = ex[150:, :] #skim off some warm-up phase
+ex = ex[:, 8:340]
 print "Ex shape:", np.shape(ex)
 
 
@@ -62,7 +63,6 @@ Fourier = np.zeros((nxx, Ny))
 for j in range(Ny):
     print j
     Fourier[:,j] = np.fft.rfft(A[j,:])
-Fourier = np.fliplr(Fourier)
 
 
 (nx, ny) = np.shape(Fourier)
@@ -115,10 +115,10 @@ im = ax.imshow(F[t1:t2, k1:k2],
         aspect='auto',
         interpolation='nearest',
         cmap='plasma_r',
-        #vmin=np.min(F),
-        #vmax=np.max(F)
-        vmin= -8.0,
-        vmax= -3.5
+        vmin=np.min(F),
+        vmax=np.max(F)
+        #vmin= -8.0,
+        #vmax= -3.5
         )
 
 cax = fig.add_axes([0.12, 0.86, 0.86, 0.03]) 

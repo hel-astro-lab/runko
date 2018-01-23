@@ -11,7 +11,6 @@ Nrank = 4
 
 ##################################################
 # plotting tools
-
 # visualize matrix
 def imshow(ax, 
            grid, xmin, xmax, ymin, ymax,
