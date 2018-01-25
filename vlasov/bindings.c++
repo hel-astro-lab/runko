@@ -3,19 +3,48 @@
 namespace py = pybind11;
 
 
+#include "../definitions.h"
+#include "../tools/mesh.h"
 #include "amr_mesh.h"
 #include "amr_numerics.h"
 #include "amr_refiner.h"
+#include "amr_momentum_solver.h"
+
+
+typedef float Realf;
+// typedef toolbox::AdaptiveMesh<Realf, 1> AM1d;
+typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
+typedef toolbox::Adapter<Realf, 3> Adapter3d;
+
+
+
+
+/// trampoline class for VlasovVelocitySolver
+class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
+  public:
+    using vlasov::MomentumSolver<Realf>::MomentumSolver;
+    using vlasov::MomentumSolver<Realf>::solve;
+
+    void solveMesh( 
+        AM3d& mesh, 
+        std::array<Realf, 3>& E,
+        std::array<Realf, 3>& B,
+        Realf qm
+        ) override {
+      PYBIND11_OVERLOAD_PURE(
+          void, 
+          vlasov::MomentumSolver<Realf>, 
+          solveMesh, 
+          mesh, E, B, qm 
+          );
+    }
+};
+
+
 
 
 
 PYBIND11_MODULE(pyplasmaDev, m) {
-
-  typedef float Realf;
-  // typedef toolbox::AdaptiveMesh<Realf, 1> AM1d;
-    
-  typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
-  typedef toolbox::Adapter<Realf, 3> Adapter3d;
 
 
 
@@ -89,17 +118,112 @@ PYBIND11_MODULE(pyplasmaDev, m) {
 
   py::class_<Adapter3d>(m, "Adapter")
     .def(py::init<>())
-    .def_readwrite("tolerance", &Adapter3d::tolerance)
+    .def_readwrite("tolerance",         &Adapter3d::tolerance)
     .def_readwrite("cells_to_refine",   &Adapter3d::cells_to_refine)
     .def_readwrite("cells_to_unrefine", &Adapter3d::cells_to_unrefine)
     .def_readwrite("cells_created",     &Adapter3d::cells_created)
     .def_readwrite("cells_removed",     &Adapter3d::cells_removed)
-    .def("set_maximum_data_value",     &Adapter3d::set_maximum_data_value)
-    .def("maximum_value",          &Adapter3d::maximum_value)
-    .def("maximum_gradient",       &Adapter3d::maximum_gradient)
-    .def("check",                  &Adapter3d::check)
-    .def("refine",                 &Adapter3d::refine)
-    .def("unrefine",               &Adapter3d::unrefine);
+    .def("set_maximum_data_value",      &Adapter3d::set_maximum_data_value)
+    .def("maximum_value",               &Adapter3d::maximum_value)
+    .def("maximum_gradient",            &Adapter3d::maximum_gradient)
+    .def("check",                       &Adapter3d::check)
+    .def("refine",                      &Adapter3d::refine)
+    .def("unrefine",                    &Adapter3d::unrefine);
+
+
+  py::class_<vlasov::MomentumSolver<Realf>, PyMomentumSolver> vvsol(m, "MomentumSolver");
+  vvsol
+    .def(py::init<>())
+    .def("solve",     &vlasov::MomentumSolver<Realf>::solve)
+    .def("solveMesh", &vlasov::MomentumSolver<Realf>::solveMesh);
+
+  py::class_<vlasov::AmrMomentumLagrangianSolver<Realf>>(m, "AmrMomentumLagrangianSolver", vvsol)
+     .def(py::init<>());
+
+
+  py::class_<toolbox::Mesh<double,1>>(m, "Mesh")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("Nx", &toolbox::Mesh<double,1>::Nx)
+    .def_readwrite("Ny", &toolbox::Mesh<double,1>::Ny)
+    .def_readwrite("Nz", &toolbox::Mesh<double,1>::Nz)
+    .def("indx",         &toolbox::Mesh<double,1>::indx)
+    .def("__getitem__", [](const toolbox::Mesh<double,1> &s, py::tuple indx) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < -1) throw py::index_error();
+        if (j < -1) throw py::index_error();
+        if (k < -1) throw py::index_error();
+
+        if (i > (int)s.Nx+1) throw py::index_error();
+        if (j > (int)s.Ny+1) throw py::index_error();
+        if (k > (int)s.Nz+1) throw py::index_error();
+
+        return s(i,j,k);
+      })
+    .def("__setitem__", [](toolbox::Mesh<double,1> &s, py::tuple indx, double val) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < -1) throw py::index_error();
+        if (j < -1) throw py::index_error();
+        if (k < -1) throw py::index_error();
+
+        if (i > (int)s.Nx+1) throw py::index_error();
+        if (j > (int)s.Ny+1) throw py::index_error();
+        if (k > (int)s.Nz+1) throw py::index_error();
+
+        s(i,j,k) = val;
+        })
+    .def("clear",        &toolbox::Mesh<double,1>::clear);
+
+
+
+
+  typedef toolbox::Mesh<toolbox::AdaptiveMesh<Realf,3>,0> vmeshBlock;
+  py::class_<vmeshBlock>(m, "VMesh")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("Nx", &vmeshBlock::Nx)
+    .def_readwrite("Ny", &vmeshBlock::Ny)
+    .def_readwrite("Nz", &vmeshBlock::Nz)
+    .def("indx",         &vmeshBlock::indx)
+    .def("__getitem__", [](const vmeshBlock &s, py::tuple indx) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < 0) throw py::index_error();
+        if (j < 0) throw py::index_error();
+        if (k < 0) throw py::index_error();
+
+        if (i > (int)s.Nx) throw py::index_error();
+        if (j > (int)s.Ny) throw py::index_error();
+        if (k > (int)s.Nz) throw py::index_error();
+
+        return s(i,j,k);
+      }, py::return_value_policy::reference)
+    .def("__setitem__", [](vmeshBlock &s, py::tuple indx, AM3d val) 
+      {
+        int i = indx[0].cast<int>();
+        int j = indx[1].cast<int>();
+        int k = indx[2].cast<int>();
+
+        if (i < 0) throw py::index_error();
+        if (j < 0) throw py::index_error();
+        if (k < 0) throw py::index_error();
+
+        if (i > (int)s.Nx) throw py::index_error();
+        if (j > (int)s.Ny) throw py::index_error();
+        if (k > (int)s.Nz) throw py::index_error();
+
+        s(i,j,k) = val;
+        })
+    .def("clear",        &vmeshBlock::clear);
 
 
 

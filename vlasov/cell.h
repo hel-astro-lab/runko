@@ -2,8 +2,9 @@
 
 #include <string>
 
+#include "../definitions.h"
 #include "../corgi/cell.h"
-#include "velomesh.h"
+#include "amr_mesh.h"
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
 #include "../em-fields/fields.h"
@@ -99,7 +100,7 @@ class PairPlasmaIterator {
 class VlasovFluid {
 
   private:
-    typedef toolbox::Mesh<vmesh::VeloMesh, 0> T;
+    typedef toolbox::Mesh<toolbox::AdaptiveMesh<Realf, 3>, 3> T;
 
   public:
 
@@ -120,9 +121,9 @@ class VlasovFluid {
     return ret;
   };
 
-  std::vector<double> qms;
+  std::vector<Realf> qms;
 
-  double getQ(size_t i) {
+  Realf getQ(size_t i) {
     return qms[i];
   }
 
@@ -170,11 +171,14 @@ class VlasovCell :
     ~VlasovCell() { };
 
     /// cell temporal and spatial scales
-    double dt = 0.0;
-    double dx = 0.0;
-    double dy = 0.0;
-    double dz = 0.0;
+    Realf dt = 0.0;
+    Realf dx = 0.0;
+    Realf dy = 0.0;
+    Realf dz = 0.0;
 
+
+    /// General clipping threshold
+    Realf threshold = 1.0e-5;
 
     // Purely for testing class expansion
     // void bark();
@@ -222,8 +226,8 @@ class VlasovCell :
       for (size_t k=0; k<NzGrid; k++) {
         for (size_t j=0; j<NyGrid; j++) {
           for (size_t i=0; i<NxGrid; i++) {
-            gr.electrons(i,j,k).clip();
-            gr.positrons(i,j,k).clip();
+            gr.electrons(i,j,k).clip_cells(threshold);
+            gr.positrons(i,j,k).clip_cells(threshold);
           }
         }
       }

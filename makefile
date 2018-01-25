@@ -38,7 +38,7 @@ all: plasma py tests
 #INSTALL=build
 
 # full python interface
-py: pycorgi pyplasmatools pyplasma pyplasmaDev
+py: pyplasmaDev pyplasma
 
 # Executable:
 EXE=plasma
@@ -54,17 +54,17 @@ DEPS_COMMON=definitions.h
 #sheets.o: ${DEPS_COMMON} sheets.h sheets.c++
 #	${CMP} ${CXXFLAGS} -c sheets.c++
 
-bundles.o: ${DEPS_COMMON} tools/bundles.h tools/bundles.c++
-	${CMP} ${CXXFLAGS} -c tools/bundles.c++
+#bundles.o: ${DEPS_COMMON} tools/bundles.h tools/bundles.c++
+#	${CMP} ${CXXFLAGS} -c tools/bundles.c++
 
-velomesh.o: ${DEPS_COMMON} vlasov/velomesh.h vlasov/velomesh.c++
-	${CMP} ${CXXFLAGS} -c vlasov/velomesh.c++
+#velomesh.o: ${DEPS_COMMON} vlasov/velomesh.h vlasov/velomesh.c++
+#	${CMP} ${CXXFLAGS} -c vlasov/velomesh.c++
 
-momentumLagrangianSolver.o: ${DEPS_COMMON} vlasov/solvers.h vlasov/solvers/momentumLagrangianSolver.c++
-	${CMP} ${CXXFLAGS} -c vlasov/solvers/momentumLagrangianSolver.c++ -o momentumLagrangianSolver.o
+#momentumLagrangianSolver.o: ${DEPS_COMMON} vlasov/solvers.h vlasov/solvers/momentumLagrangianSolver.c++
+#	${CMP} ${CXXFLAGS} -c vlasov/solvers/momentumLagrangianSolver.c++ -o momentumLagrangianSolver.o
 
-spatialLagrangianSolver.o: ${DEPS_COMMON} vlasov/solvers.h vlasov/solvers/spatialLagrangianSolver.c++
-	${CMP} ${CXXFLAGS} -c vlasov/solvers/spatialLagrangianSolver.c++ -o spatialLagrangianSolver.o
+#spatialLagrangianSolver.o: ${DEPS_COMMON} vlasov/solvers.h vlasov/solvers/spatialLagrangianSolver.c++
+#	${CMP} ${CXXFLAGS} -c vlasov/solvers/spatialLagrangianSolver.c++ -o spatialLagrangianSolver.o
 
 fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++
 	${CMP} ${CXXFLAGS} -c em-fields/fields.c++
@@ -73,14 +73,14 @@ fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++
 
 
 #compile python binaries
-pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
-	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pyplasmatools.o -c python/pyplasmatools.c++
+#pyplasmatools.o: ${DEPS_COMMON} python/pyplasmatools.c++
+#	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pyplasmatools.o -c python/pyplasmatools.c++
 
 pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pyplasma.o -c python/pyplasma.c++
 
-python/dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr_mesh.h vlasov/amr_numerics.h vlasov/amr_refiner.h
-	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o python/dev-bindings.o -c vlasov/bindings.c++
+dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr_mesh.h vlasov/amr_numerics.h vlasov/amr_refiner.h vlasov/amr_momentum_solver.h
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o dev-bindings.o -c vlasov/bindings.c++
 
 #reference to pycorgi's own make
 pycorgi:
@@ -89,15 +89,15 @@ pycorgi:
 
 
 #link into python module with pybind11
-pyplasmatools: bundles.o velomesh.o pyplasmatools.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so pyplasmatools.o bundles.o velomesh.o
+#pyplasmatools: bundles.o velomesh.o pyplasmatools.o
+#	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/plasmatools.so pyplasmatools.o bundles.o velomesh.o
 
 
-pyplasma: vlasov/grid.h vlasov/cell.h velomesh.o momentumLagrangianSolver.o spatialLagrangianSolver.o fields.o pyplasma.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so pyplasma.o momentumLagrangianSolver.o spatialLagrangianSolver.o velomesh.o fields.o
+pyplasma: vlasov/grid.h vlasov/cell.h fields.o pyplasma.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so pyplasma.o fields.o
 
-pyplasmaDev: vlasov/amr_mesh.h vlasov/amr_numerics.h vlasov/amr_refiner.h python/dev-bindings.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasmaDev.so python/dev-bindings.o
+pyplasmaDev: vlasov/amr_mesh.h vlasov/amr_numerics.h vlasov/amr_refiner.h tools/mesh.h dev-bindings.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasmaDev.so dev-bindings.o
 
 
 

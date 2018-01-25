@@ -4,6 +4,7 @@ import numpy as np
 import sys
 #sys.path.append('python')
 
+import pyplasma
 import pyplasmaDev as pdev
 
 
@@ -57,7 +58,7 @@ class Basics(unittest.TestCase):
 
         for rfl in range(3):
 
-            nx, ny, nz = self.m.get_length(rfl)
+            nx, ny, nz = self.m.get_size(rfl)
             comparison = np.zeros((nx,ny,nz))
             for i in range(nx):
                 for j in range(ny):
@@ -81,7 +82,7 @@ class Basics(unittest.TestCase):
     def test_indexing(self):
 
         for rfl in range(3):
-            nx, ny, nz = self.m.get_length(rfl)
+            nx, ny, nz = self.m.get_size(rfl)
 
             for k in range(nz):
                 for j in range(ny):
@@ -92,7 +93,7 @@ class Basics(unittest.TestCase):
                         #set this in
                         indx1 = [i,j,k]
                         rfl1  = rfl
-                        cid   = self.m.get_cell(indx1, rfl1)
+                        cid   = self.m.get_cell_from_indices(indx1, rfl1)
                         #print("indx: ", indx1, rfl1, " cid:", cid)
 
 

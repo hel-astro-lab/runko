@@ -5,13 +5,11 @@
 
 #include "cell.h"
 #include "../em-fields/fields.h"
-
 #include "amr_mesh.h"
 #include "amr_numerics.h"
 
 
 namespace vlasov {
-
 
 
 
@@ -22,16 +20,13 @@ class MomentumSolver {
   public:
     typedef std::array<T, 3> vec;
 
-    virtual void solveMesh( toolbox::AdaptiveMesh<T, 3>& mesh ) = 0;
-
-
 
     /*! \brief Solve Vlasov cell contents
      *
      * Exposes the actual momentum mesh from the Vlasov Cell containers
      * and feeds those to the actual solver.
      */
-    virtual void solve( vlasov::VlasovCell& cell ) 
+    void solve( vlasov::VlasovCell& cell ) 
     {
         
       // get reference to the Vlasov fluid that we are solving
@@ -55,21 +50,22 @@ class MomentumSolver {
             vec 
               B = 
             {{
-              yee.bx(q,r,0),
-              yee.by(q,r,0),
-              yee.bz(q,r,0)
+              (T) yee.bx(q,r,0),
+              (T) yee.by(q,r,0),
+              (T) yee.bz(q,r,0)
             }},
               
               E = 
             {{
-              yee.ex(q,r,0),
-              yee.ey(q,r,0),
-              yee.ez(q,r,0) 
+              (T) yee.ex(q,r,0),
+              (T) yee.ey(q,r,0),
+              (T) yee.ez(q,r,0) 
             }};
 
 
             // and finally the mesh we are working on
             toolbox::AdaptiveMesh<T, 3>& mesh = spcs(q,r,0);
+
 
             // and then the final call to the actual mesh solver
             solveMesh( mesh, E, B, qm);
@@ -83,29 +79,37 @@ class MomentumSolver {
     }
 
 
+    virtual void solveMesh( 
+        toolbox::AdaptiveMesh<T, 3>& mesh,
+        vec& E,
+        vec& B,
+        T qm) = 0;
+
 };
 
 
 
 /// \brief Trilinear semi-Lagrangian adaptive advection solver
 template<typename T>
-class MomentumLagrangianSolver : public MomentumSolver<T> {
+class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
   public:
 
     typedef std::array<T, 3> vec;
 
-    void solveMesh( 
+    virtual void solveMesh( 
         toolbox::AdaptiveMesh<T, 3>& mesh,
         vec& E,
         vec& B,
         T qm)
     {
 
+      for(auto&& cid : mesh.get_cells(false) ) {
+        if(! mesh.is_leaf(cid)) continue;
 
-      for(auto&& cell : mesh.get_cells() ) {
-
-
+        //mesh.set(cid) *= 0.8;
+          
+          
 
       }
 

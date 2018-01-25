@@ -7,6 +7,8 @@ from matplotlib import cm
 
 import sys, os
 
+import plasma
+import plasmatools
 import pyplasmaDev as pdev
 
 from visualize import imshow
@@ -832,6 +834,13 @@ if __name__ == "__main__":
 
 
     saveVisz(0, conf)
+
+
+    #use solver
+    vsol = pdev.AmrMomentumLagrangianSolver()
+
+
+
 
 
 

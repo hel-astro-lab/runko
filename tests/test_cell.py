@@ -4,7 +4,7 @@ import sys
 sys.path.append('python')
 import numpy as np
 
-import plasmatools as ptools
+import pyplasmaDev
 import pyplasma as plasma
 
 
