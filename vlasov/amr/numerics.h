@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "amr_mesh.h"
+#include "mesh.h"
 
 
 namespace toolbox {

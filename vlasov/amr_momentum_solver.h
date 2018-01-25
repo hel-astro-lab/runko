@@ -5,8 +5,8 @@
 
 #include "cell.h"
 #include "../em-fields/fields.h"
-#include "amr_mesh.h"
-#include "amr_numerics.h"
+#include "amr/mesh.h"
+#include "amr/numerics.h"
 
 
 namespace vlasov {

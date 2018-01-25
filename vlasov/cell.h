@@ -4,7 +4,7 @@
 
 #include "../definitions.h"
 #include "../corgi/cell.h"
-#include "amr_mesh.h"
+#include "amr/mesh.h"
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
 #include "../em-fields/fields.h"

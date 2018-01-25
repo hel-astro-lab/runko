@@ -5,9 +5,9 @@ namespace py = pybind11;
 
 #include "../definitions.h"
 #include "../tools/mesh.h"
-#include "amr_mesh.h"
-#include "amr_numerics.h"
-#include "amr_refiner.h"
+#include "amr/mesh.h"
+#include "amr/numerics.h"
+#include "amr/refiner.h"
 #include "amr_momentum_solver.h"
 
 
