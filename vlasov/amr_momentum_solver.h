@@ -107,7 +107,9 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
       for(auto&& cid : mesh.get_cells(false) ) {
         if(! mesh.is_leaf(cid)) continue;
 
-        //mesh.set(cid) *= 0.8;
+        T val = mesh.get(cid);
+        val = 1.0;
+        mesh.set(cid, val);
           
           
 

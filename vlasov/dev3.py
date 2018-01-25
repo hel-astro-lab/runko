@@ -42,12 +42,6 @@ class Mesh:
 
 def gauss(ux,uy,uz):
 
-    #return ux + uy + uz
-
-    #return 10.0 + 1.0*ux + 2.0*uy + 3.0*uz
-    #return np.abs( 0.1 + 0.1*ux*uy + 0.3*ux*uz + 0.9*uy*ux + 2.0*ux*uy*uz ) + 0.1
-    #return 0.1 + 0.2*ux + 0.3*uy + 0.4*uz + 0.5*ux*uy + 0.6*ux*uz + 0.7*uy*ux + 0.8*ux*uy*uz
-
     delgam = np.sqrt(1.0)
     mux = 0.0
     muy = 0.0
@@ -69,7 +63,6 @@ def gauss(ux,uy,uz):
     xxx = [ux, uy, uz]
 
     f = multivariate_normal.pdf(xxx, mean, cov)
-
 
     return f
 
@@ -469,10 +462,10 @@ def get_leaf_mesh(m, args):
 def plot2DSlice(ax, m, args):
 
     #mesh = get_mesh(m, args)
-    #mesh = get_leaf_mesh(m, args)
-    mesh = get_interpolated_mesh(m, args)
+    #mesh = get_interpolated_mesh(m, args)
+    mesh = get_leaf_mesh(m, args)
 
-    if True:
+    if False:
         imshow(ax,
                mesh.ff,
                mesh.xx[0], mesh.xx[-1],
@@ -548,10 +541,6 @@ def plotAdaptiveSlice(ax, m, args):
             val = m[i,j,q,rfl_max]
 
             ff[i,j] = val
-
-
-
-
 
     imshow(ax,
            ff,
@@ -732,13 +721,54 @@ def plotIndicator(ax, m, args):
 
 
 
+def set_xylims(axs):
+
+    for ax in axs:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
+    for ax in axs:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
+    for ax in axsE:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
+    for ax in axsE:
+        ax.set_xlim(-4.0, 4.0)
+        ax.set_ylim(-4.0, 4.0)
+
 
 
 def saveVisz(lap, conf):
+
     slap = str(lap).rjust(4, '0')
     fname = conf.outdir + '/amr2_{}.png'.format(slap)
     plt.savefig(fname)
 
+
+def plotAll(axs, m, conf, lap):
+
+    args = {"dir":"xy", 
+            "q":  "mid",
+            "rfl": 2 }
+    plot2DSlice(axs[0], m, args)
+
+    args["rfl"] = 2
+    plotIndicator(axsE[0], m, args)
+
+
+    args = {"dir":"xz", 
+            "q":   "mid",
+            "rfl": 2 }
+    plot2DSlice(axs[1], m, args)
+
+
+    args = {"dir":"yz", 
+            "q":   "mid",
+            "rfl": 2 }
+    plot2DSlice(axs[2], m, args)
+
+    set_xylims(axs)
+    saveVisz(lap, conf)
 
 
 
@@ -792,55 +822,16 @@ if __name__ == "__main__":
     axsE.append( plt.subplot(gs[2,1]) )
 
 
-    args = {"dir":"xy", 
-            "q":  "mid",
-            "rfl": 2 }
-    plot2DSlice(axs[0], m, args)
-    #plotAdaptiveSlice(axs[0], m, args)
-    #plotGradientSlice(axsE[0], m, args)
-
-    args["rfl"] = 1
-    plotIndicator(axsE[0], m, args)
-
-
-    args = {"dir":"xz", 
-            "q":   "mid",
-            "rfl": 2 }
-    plot2DSlice(axs[1], m, args)
-
-
-    args = {"dir":"yz", 
-            "q":   "mid",
-            "rfl": 2 }
-    plot2DSlice(axs[2], m, args)
-
-
-    
-
-    for ax in axs:
-        ax.set_xlim(-4.0, 4.0)
-        ax.set_ylim(-4.0, 4.0)
-    for ax in axs:
-        ax.set_xlim(-4.0, 4.0)
-        ax.set_ylim(-4.0, 4.0)
-    for ax in axsE:
-        ax.set_xlim(-4.0, 4.0)
-        ax.set_ylim(-4.0, 4.0)
-
-    for ax in axsE:
-        ax.set_xlim(-4.0, 4.0)
-        ax.set_ylim(-4.0, 4.0)
-
-
-    saveVisz(0, conf)
-
+    plotAll(axs, m, conf, 0)
 
     #use solver
+    B  = [0.0, 0.0, 0.0]
+    E  = [0.1, 0.0, 0.0]
+    qm = -1.0
     vsol = pdev.AmrMomentumLagrangianSolver()
+    vsol.solveMesh(m, E, B, qm)
 
-
-
-
+    plotAll(axs, m, conf, 1)
 
 
 
