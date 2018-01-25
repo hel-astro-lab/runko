@@ -242,14 +242,10 @@ void fields::PlasmaCell::pushHalfB3d() {
 
 
 /// Get current time snapshot of Yee lattice
-fields::YeeLattice& fields::PlasmaCell::getYee() {
-  return yee.getRef();
+fields::YeeLattice& fields::PlasmaCell::getYee(size_t i) {
+  return yee.get(i);
 }
 
-/// Get new time snapshot of Yee lattice
-fields::YeeLattice& fields::PlasmaCell::getNewYee() {
-  return yee.getNewRef();
-};
 
 
 /// Quick helper function to copy everything inside Yee lattice 
@@ -350,9 +346,7 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
   // TODO get corners also; for now they are not needed
 
 
-
 }
-
 
 
 void fields::PlasmaCell::cycleYee() {

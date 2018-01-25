@@ -61,8 +61,6 @@ class AdaptiveMesh {
   int current_refinement_level = 0;
 
 
-  AdaptiveMesh() {}
-
   void resize(indices_t given_length)
   {
     length[0] = given_length[0];

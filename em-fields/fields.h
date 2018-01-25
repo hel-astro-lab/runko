@@ -69,8 +69,8 @@ class PlasmaCell : virtual public corgi::Cell {
   size_t NzMesh;
 
 
-  // Yee lattice of plasma quantities
-  toolbox::Rotator<YeeLattice> yee;
+  // Yee lattice of plasma quantities (with 2 timesteps)
+  toolbox::Rotator<YeeLattice, 1> yee;
 
 
   //--------------------------------------------------
@@ -99,11 +99,7 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void depositCurrent();
 
-
-  YeeLattice& getYee();
-
-  YeeLattice& getNewYee();
-
+  YeeLattice& getYee(size_t i=0);
 
   void cycleYee();
 

@@ -36,6 +36,7 @@ namespace py = pybind11;
 
 // python bindings for plasma classes & functions
 PYBIND11_MODULE(pyplasma, m) {
+
   // Loading cell bindings from corgi library
   py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
 
@@ -54,8 +55,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("pushE",            &fields::PlasmaCell::pushE)
     .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
-    .def("getYee",           &fields::PlasmaCell::getYee,    py::return_value_policy::reference)
-    .def("getNewYee",        &fields::PlasmaCell::getNewYee, py::return_value_policy::reference)
+    .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
     .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries);
 
 
@@ -70,20 +70,17 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("dx",     &vlasov::VlasovCell::dx)
     .def_readwrite("dy",     &vlasov::VlasovCell::dy)
     .def_readwrite("dz",     &vlasov::VlasovCell::dz)
-    .def("getPlasmaGrid",    &vlasov::VlasovCell::getPlasmaGrid, py::return_value_policy::reference)
-    .def("getNewPlasmaGrid", &vlasov::VlasovCell::getNewPlasmaGrid, py::return_value_policy::reference)
-    .def("clip",        &vlasov::VlasovCell::clip)
-    .def("cyclePlasma", &vlasov::VlasovCell::cycle)
-    .def("bark",        &vlasov::VlasovCell::bark);
-
+    .def("getPlasma",     [](vlasov::VlasovCell& cell, size_t i) 
+        { return cell.steps.get(i); }, py::return_value_policy::reference)
+    .def("clip",         &vlasov::VlasovCell::clip)
+    .def("cycle",        &vlasov::VlasovCell::cycle);
 
 
   // Loading node bindings from corgi library
   py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
   py::class_<vlasov::Grid>(m, "Grid", corgiNode)
-    .def(py::init<size_t, size_t>())
+    .def(py::init<size_t, size_t>());
     //.def("cycle",    &vlasov::Grid::cycle)
-    .def("howl",     &vlasov::Grid::howl);
 
 
 
@@ -133,11 +130,10 @@ PYBIND11_MODULE(pyplasma, m) {
   // --------------------------------------------------
 
 
-  py::class_<vlasov::VlasovFluid>(m, "VlasovFluid")
+  py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("electrons", &vlasov::VlasovFluid::electrons)
-    .def_readwrite("positrons", &vlasov::VlasovFluid::positrons)
-    .def_readwrite("qms",       &vlasov::VlasovFluid::qms);
+    .def_readwrite("block", &vlasov::PlasmaBlock::block)
+    .def_readwrite("qm",    &vlasov::PlasmaBlock::qm);
 
 
 }

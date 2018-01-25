@@ -7,6 +7,11 @@
 #include "../em-fields/fields.h"
 #include "amr/mesh.h"
 #include "amr/numerics.h"
+#include "../tools/cppitertools/zip.hpp"
+#include "../tools/cppitertools/enumerate.hpp"
+
+
+using iter::zip;
 
 
 namespace vlasov {
@@ -24,53 +29,57 @@ class MomentumSolver {
     /*! \brief Solve Vlasov cell contents
      *
      * Exposes the actual momentum mesh from the Vlasov Cell containers
-     * and feeds those to the actual solver.
+     * and feeds those to the mesh solver.
      */
     void solve( vlasov::VlasovCell& cell ) 
     {
         
       // get reference to the Vlasov fluid that we are solving
-      VlasovFluid& gr          = cell.getPlasmaGrid();
+      auto& step0 = cell.steps.get(0);
+      auto& step1 = cell.steps.get(1);
+
 
       // get reference to the Yee grid 
       fields::YeeLattice& yee = cell.getYee();
 
-      // loop over the cell's internal grid
-      for(size_t q=0; q<gr.Nx; q++) {
-        for(size_t r=0; r<gr.Ny; r++) {
 
-          // loop over species
-          size_t ispcs = 0;
-          for(auto&& spcs : gr.species() ) {
+      // loop over different particle species
+      for(auto&& blocks : zip(step0, step1) ) {
+          
+        // loop over the cell's internal grid
+        auto block  = std::get<0>(blocks);
+        auto block1 = std::get<1>(blocks);
+         
+          
+        for(size_t q=0; q<block.Nx; q++) {
+          for(size_t r=0; r<block.Ny; r++) {
+            for (size_t s=0; s<block.Nz; s++) {
 
-            // mass to charge ratio
-            T qm = 1.0 / gr.getQ(ispcs);
+              T mq = 1.0 / block.qm;  // mass to charge ratio
 
-            // Get local field components
-            vec 
-              B = 
-            {{
-              (T) yee.bx(q,r,0),
-              (T) yee.by(q,r,0),
-              (T) yee.bz(q,r,0)
-            }},
-              
-              E = 
-            {{
-              (T) yee.ex(q,r,0),
-              (T) yee.ey(q,r,0),
-              (T) yee.ez(q,r,0) 
-            }};
+              // Get local field components
+              vec 
+                B = 
+                {{
+                   (T) yee.bx(q,r,s),
+                   (T) yee.by(q,r,s),
+                   (T) yee.bz(q,r,s)
+                 }},               
+                                   
+                E =                
+                {{                 
+                   (T) yee.ex(q,r,s),
+                   (T) yee.ey(q,r,s),
+                   (T) yee.ez(q,r,s) 
+                 }};
 
-
-            // and finally the mesh we are working on
-            toolbox::AdaptiveMesh<T, 3>& mesh = spcs(q,r,0);
+              auto& mesh0 = block.block(q,r,s);
+              auto& mesh1 = block1.block(q,r,s);
 
 
-            // and then the final call to the actual mesh solver
-            solveMesh( mesh, E, B, qm);
-
-            ispcs++;
+              // then the final call to the actual mesh solver
+              solveMesh( mesh0, mesh1, E, B, mq);
+            }
           }
         }
       }
@@ -80,7 +89,8 @@ class MomentumSolver {
 
 
     virtual void solveMesh( 
-        toolbox::AdaptiveMesh<T, 3>& mesh,
+        toolbox::AdaptiveMesh<T, 3>& mesh0,
+        toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& E,
         vec& B,
         T qm) = 0;
@@ -98,21 +108,25 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
     typedef std::array<T, 3> vec;
 
     virtual void solveMesh( 
-        toolbox::AdaptiveMesh<T, 3>& mesh,
+        toolbox::AdaptiveMesh<T, 3>& mesh0,
+        toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& E,
         vec& B,
-        T qm)
+        T mq)
     {
 
-      for(auto&& cid : mesh.get_cells(false) ) {
-        if(! mesh.is_leaf(cid)) continue;
+      // empty the target mesh
+      // TODO: is this efficient; should we recycle instead?
+      mesh1.data.clear();
 
-        T val = mesh.get(cid);
+
+      for(auto&& cid : mesh0.get_cells(false) ) {
+        if(! mesh0.is_leaf(cid)) continue;
+
+        T val = mesh0.get(cid);
         val = 1.0;
-        mesh.set(cid, val);
-          
-          
 
+        mesh1.set(cid, val);
       }
 
       return;

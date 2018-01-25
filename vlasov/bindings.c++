@@ -26,7 +26,8 @@ class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
     using vlasov::MomentumSolver<Realf>::solve;
 
     void solveMesh( 
-        AM3d& mesh, 
+        AM3d& mesh0, 
+        AM3d& mesh1, 
         std::array<Realf, 3>& E,
         std::array<Realf, 3>& B,
         Realf qm
@@ -35,7 +36,7 @@ class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
           void, 
           vlasov::MomentumSolver<Realf>, 
           solveMesh, 
-          mesh, E, B, qm 
+          mesh0, mesh1, E, B, qm 
           );
     }
 };

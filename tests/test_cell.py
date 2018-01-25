@@ -38,7 +38,6 @@ class Initialization(unittest.TestCase):
         self.assertEqual(i, 10)
         self.assertEqual(j, 11)
 
-        self.cell.bark()
         
 
 
