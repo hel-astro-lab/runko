@@ -1,10 +1,10 @@
-import sys, os
-sys.path.append('../../python')        #plasma, plasmatools
-sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
+#import sys, os
+#sys.path.append('../../python')        #plasma, plasmatools
+#sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
 
 
 import corgi
-import plasmatools as ptools
+#import plasmatools as ptools
 import pyplasma as plasma
 
 
@@ -80,22 +80,22 @@ def loadCells(n, conf):
 
 
 
-def initializeEmptyVelocityMesh(mesh, conf):
-    mesh.Nblocks = [conf.Nvx, conf.Nvy, conf.Nvz]
-
-    pmins = [conf.vxmin, conf.vymin, conf.vzmin]
-    pmaxs = [conf.vxmax, conf.vymax, conf.vzmax]
-    mesh.zFill( pmins, pmaxs )
-
-
-
-# create empty vmesh object according to conf specifications
-def createEmptyVelocityMesh(conf):
-    mesh = ptools.VeloMesh()
-    initializeEmptyVelocityMesh(mesh, conf)
-
-    return mesh
-
+#def initializeEmptyVelocityMesh(mesh, conf):
+#    mesh.Nblocks = [conf.Nvx, conf.Nvy, conf.Nvz]
+#
+#    pmins = [conf.vxmin, conf.vymin, conf.vzmin]
+#    pmaxs = [conf.vxmax, conf.vymax, conf.vzmax]
+#    mesh.zFill( pmins, pmaxs )
+#
+#
+#
+## create empty vmesh object according to conf specifications
+#def createEmptyVelocityMesh(conf):
+#    mesh = ptools.VeloMesh()
+#    initializeEmptyVelocityMesh(mesh, conf)
+#
+#    return mesh
+#
 
 
 

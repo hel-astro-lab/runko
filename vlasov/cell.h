@@ -10,6 +10,7 @@
 #include "../em-fields/fields.h"
 
 
+
 namespace vlasov {
 
 
@@ -80,10 +81,12 @@ class VlasovCell :
       NyGrid(NyMesh),
       NzGrid(1)
       { 
-        for(size_t t=0; t<Nspecies; t++) {
+        for(size_t t=0; t<Nsteps; t++) {
           std::vector< PlasmaBlock > particles;
 
-          for(size_t p=0; p<particles.size(); p++) {
+          fmt::print("pushing step {}\n",t);
+          for(size_t p=0; p<Nspecies; p++) {
+            fmt::print("pushing species {}\n",p);
             PlasmaBlock bl(NxGrid, NyGrid, 1);
             particles.push_back( bl );
           }

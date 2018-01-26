@@ -5,28 +5,14 @@ sys.path.append('../../python')        #plasma, plasmatools
 sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
 
 import corgi
-import plasmatools as ptools
+import pyplasmaDev as pdev
 import pyplasma as plasma
-
-from initialize import createEmptyVelocityMesh
 
 np.random.seed(0)
 
 
-def fillMesh(mesh, ispcs, x, y, z, fill_function, conf):
-    for k in range(mesh.Nblocks[2]):
-        for j in range(mesh.Nblocks[1]):
-            for i in range(mesh.Nblocks[0]):
-                cid = mesh.getBlockID([i,j,k])
-                (ux, uy, uz) = mesh.getCenter( cid )
 
-                fval = fill_function(x, y, z, ux, uy, uz, conf, ispcs)
-
-                mesh[i,j,k] = [fval, fval, fval, fval]
-
-
-
-def spatialLoc(n, Ncoords, Mcoords, conf):
+def spatialLoc(node, Ncoords, Mcoords, conf):
 
     #node coordinates
     i, j    = Ncoords 
@@ -34,14 +20,14 @@ def spatialLoc(n, Ncoords, Mcoords, conf):
     Ny      = conf.Ny
 
     #mesh coordinates
-    s, r, q = Mcoords 
+    l, m, n = Mcoords 
     NxMesh = conf.NxMesh
     NyMesh = conf.NyMesh
     NzMesh = conf.NzMesh
 
     #grid spacing
-    xmin = n.getXmin()
-    ymin = n.getYmin()
+    xmin = node.getXmin()
+    ymin = node.getYmin()
 
     dx = conf.dx
     dy = conf.dy
@@ -49,61 +35,107 @@ def spatialLoc(n, Ncoords, Mcoords, conf):
 
 
     #calculate coordinate extent
-    x = xmin + i*NxMesh*dx + s*dx
-    y = ymin + j*NyMesh*dy + r*dy
-    z = 0.0                + q*dz
+    x = xmin + i*NxMesh*dx + l*dx
+    y = ymin + j*NyMesh*dy + m*dy
+    z = 0.0                + n*dz
 
     return (x, y, z)
 
 
 
+def createEmptyVelocityMesh(conf):
+    vmesh = pdev.AdaptiveMesh3D()
+    vmesh.resize( [conf.Nxv,  conf.Nyv,  conf.Nzv ])
+    vmesh.set_min([conf.vxmin, conf.vymin, conf.vzmin])
+    vmesh.set_max([conf.vxmax, conf.vymax, conf.vzmax])
+
+    return vmesh
+
+
+def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
+
+    # standard flat fill on 0th rfl level
+    nx, ny, nz = vmesh.get_size(0)
+    for r in range(nx):
+        for s in range(ny):
+            for t in range(nz):
+                uloc = vmesh.get_center([r,s,t], 0)
+
+                val = ffunc(xloc, uloc, ispcs, conf)
+                vmesh[r,s,t, 0] =  val #ref lvl 0
+
+    if conf.refinement_level < 1:
+        return 
+
+
+    ###################################################
+    # adaptivity
+
+    adapter = pdev.Adapter();
+
+    sweep = 1
+    while(True):
+        #print("-------round {}-----------".format(sweep))
+        adapter.check(m)
+        adapter.refine(m)
+
+        print("cells to refine: {}".format( len(adapter.cells_to_refine)))
+        for cid in adapter.cells_created:
+            rfl = m.get_refinement_level(cid)
+            indx = m.get_indices(cid)
+            uloc = m.get_center(indx, rfl)
+
+            val = ffunc(xloc, uloc, ispcs, conf)
+            m[indx[0], indx[1], indx[2], rfl] = val
+
+        adapter.unrefine(m)
+        print("cells to be removed: {}".format( len(adapter.cells_removed)))
+
+        sweep += 1
+        if sweep > conf.refinement_level: break
+
+    if conf.clip:
+        vmesh.clip_cells(conf.clipThreshold)
+
+    return 
+
+
+
 #inject plasma into cells
-def inject(n, fill_function, conf, clip=True):
+def inject(node, ffunc, conf):
 
     #loop over all *local* cells
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
+    for i in range(node.getNx()):
+        for j in range(node.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
 
                 #get cell & its content
-                cid = n.cellId(i,j)
-                c = n.getCellPtr(cid) #get cell ptr
+                cid    = node.cellId(i,j)
+                c      = node.getCellPtr(cid) #get cell ptr
+                blocks = c.getPlasma(0)       # timestep 0
+                
+                print(len(blocks))
+                print(type(blocks))
 
-                pgrid0 = c.getPlasmaGrid()
-                pgrid1 = c.getNewPlasmaGrid()
+                # loop over species
+                for ispcs, block in enumerate(blocks):
+                    print(type(block))
 
-                pgrid0.qms = [conf.me, conf.mi]
-                pgrid1.qms = [conf.me, conf.mi]
+                    block.qm = conf.qm #set q/m
 
-                for q in range(conf.NzMesh):
-                    for r in range(conf.NyMesh):
-                        for s in range(conf.NxMesh):
+                    for n in range(conf.NzMesh):
+                        for l in range(conf.NyMesh):
+                            for m in range(conf.NxMesh):
+                                xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+                                vmesh = createEmptyVelocityMesh(conf)
 
-                            (x, y, z) = spatialLoc(n, (i,j), (s,r,q), conf)
-
-
-                            #next create mesh for electron population
-                            mesh0 = createEmptyVelocityMesh(conf)
-                            fillMesh(mesh0, 0, x, y, z, fill_function, conf)
-
-                            if clip:
-                                mesh0.clip()
-
-                            pgrid0.electrons[s,r,q] = mesh0
-                            pgrid1.electrons[s,r,q] = mesh0
-
-
-                            ################################################## 
-                            #And another for positrons
-                            mesh1 = createEmptyVelocityMesh(conf)
-                            fillMesh(mesh1, 1, x, y, z, fill_function, conf)
-
-                            if clip:
-                                mesh1.clip()
-
-                            pgrid0.positrons[s,r,q] = mesh1
-                            pgrid1.positrons[s,r,q] = mesh1
+                                fillMesh(vmesh, 
+                                         ffunc,
+                                         xloc,
+                                         ispcs,
+                                         conf)
+                                block[l,m,n] = vmesh
 
 
 

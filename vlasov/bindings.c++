@@ -142,13 +142,15 @@ PYBIND11_MODULE(pyplasmaDev, m) {
      .def(py::init<>());
 
 
-  py::class_<toolbox::Mesh<double,1>>(m, "Mesh")
+
+
+  py::class_<toolbox::Mesh<Realf,1>>(m, "Mesh")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("Nx", &toolbox::Mesh<double,1>::Nx)
-    .def_readwrite("Ny", &toolbox::Mesh<double,1>::Ny)
-    .def_readwrite("Nz", &toolbox::Mesh<double,1>::Nz)
-    .def("indx",         &toolbox::Mesh<double,1>::indx)
-    .def("__getitem__", [](const toolbox::Mesh<double,1> &s, py::tuple indx) 
+    .def_readwrite("Nx", &toolbox::Mesh<Realf,1>::Nx)
+    .def_readwrite("Ny", &toolbox::Mesh<Realf,1>::Ny)
+    .def_readwrite("Nz", &toolbox::Mesh<Realf,1>::Nz)
+    .def("indx",         &toolbox::Mesh<Realf,1>::indx)
+    .def("__getitem__", [](const toolbox::Mesh<Realf,1> &s, py::tuple indx) 
       {
         int i = indx[0].cast<int>();
         int j = indx[1].cast<int>();
@@ -164,7 +166,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
 
         return s(i,j,k);
       })
-    .def("__setitem__", [](toolbox::Mesh<double,1> &s, py::tuple indx, double val) 
+    .def("__setitem__", [](toolbox::Mesh<Realf,1> &s, py::tuple indx, Realf val) 
       {
         int i = indx[0].cast<int>();
         int j = indx[1].cast<int>();
@@ -180,19 +182,19 @@ PYBIND11_MODULE(pyplasmaDev, m) {
 
         s(i,j,k) = val;
         })
-    .def("clear",        &toolbox::Mesh<double,1>::clear);
+    .def("clear",        &toolbox::Mesh<Realf,1>::clear);
 
 
 
 
-  typedef toolbox::Mesh<toolbox::AdaptiveMesh<Realf,3>,0> vmeshBlock;
-  py::class_<vmeshBlock>(m, "VMesh")
+  //typedef toolbox::Mesh<toolbox::AdaptiveMesh<Realf,3>,0> vmeshBlock;
+  py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("Nx", &vmeshBlock::Nx)
-    .def_readwrite("Ny", &vmeshBlock::Ny)
-    .def_readwrite("Nz", &vmeshBlock::Nz)
-    .def("indx",         &vmeshBlock::indx)
-    .def("__getitem__", [](const vmeshBlock &s, py::tuple indx) 
+    .def_readwrite("Nx", &vlasov::PlasmaBlock::Nx)
+    .def_readwrite("Ny", &vlasov::PlasmaBlock::Ny)
+    .def_readwrite("Nz", &vlasov::PlasmaBlock::Nz)
+    .def_readwrite("qm", &vlasov::PlasmaBlock::qm)
+    .def("__getitem__", [](const vlasov::PlasmaBlock &s, py::tuple indx) 
       {
         int i = indx[0].cast<int>();
         int j = indx[1].cast<int>();
@@ -206,9 +208,9 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         if (j > (int)s.Ny) throw py::index_error();
         if (k > (int)s.Nz) throw py::index_error();
 
-        return s(i,j,k);
+        return s.block(i,j,k);
       }, py::return_value_policy::reference)
-    .def("__setitem__", [](vmeshBlock &s, py::tuple indx, AM3d val) 
+    .def("__setitem__", [](vlasov::PlasmaBlock &s, py::tuple indx, AM3d val) 
       {
         int i = indx[0].cast<int>();
         int j = indx[1].cast<int>();
@@ -222,9 +224,9 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         if (j > (int)s.Ny) throw py::index_error();
         if (k > (int)s.Nz) throw py::index_error();
 
-        s(i,j,k) = val;
+        s.block(i,j,k) = val;
         })
-    .def("clear",        &vmeshBlock::clear);
+    .def("clear",       [](vlasov::PlasmaBlock &s){s.block.clear();});
 
 
 

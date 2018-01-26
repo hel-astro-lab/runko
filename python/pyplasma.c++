@@ -130,10 +130,10 @@ PYBIND11_MODULE(pyplasma, m) {
   // --------------------------------------------------
 
 
-  py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")
-    .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("block", &vlasov::PlasmaBlock::block)
-    .def_readwrite("qm",    &vlasov::PlasmaBlock::qm);
+  //py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")
+  //  .def(py::init<size_t, size_t, size_t>())
+  //  .def_readwrite("block", &vlasov::PlasmaBlock::block)
+  //  .def_readwrite("qm",    &vlasov::PlasmaBlock::qm);
 
 
 }
