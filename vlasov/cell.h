@@ -82,6 +82,7 @@ class VlasovCell :
       NzGrid(1)
       { 
 
+        // XXX pre-initialize; now done via python
         /*
         for(size_t t=0; t<Nsteps; t++) {
           std::vector< PlasmaBlock > particles;

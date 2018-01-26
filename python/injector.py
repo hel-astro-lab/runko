@@ -112,21 +112,13 @@ def inject(node, ffunc, conf):
 
                 #get cell & its content
                 cid    = node.cellId(i,j)
-                print(i,j,cid)
                 c      = node.getCellPtr(cid) #get cell ptr
-
-                print(type(c))
-                #blocks = c.getPlasma(0)       # timestep 0
-                #print(type(blocks))
 
                 # loop over species
                 species = []
                 for ispcs in range(2):
-                    #block = c.getPlasmaSpecies(0, ispcs) #zeroth step & zeroth species
-
                     block = pdev.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                     block.qm = conf.qm #set q/m
-                    print(type(block))
 
                     for n in range(conf.NzMesh):
                         for m in range(conf.NyMesh):
@@ -141,25 +133,8 @@ def inject(node, ffunc, conf):
                                          conf)
 
                                 block[l,m,n] = vmesh
-                                #c.getPlasmaSpecies(0,ispcs,(l,m,n)) = vmesh
-
                     species.append(block)
 
-                    vmesh  = block[0,0,0]
-                    print("0:",len(vmesh.get_cells(True)))
-
-                    c.insertInitialSpecies(species)
-
-
-                block = c.getPlasmaSpecies(0,0)
-                vmesh = block[0,0,0]
-                print("1:",len(vmesh.get_cells(True)))
-
-    cid    = node.cellId(0,0)
-    c      = node.getCellPtr(cid) #get cell ptr
-    block  = c.getPlasmaSpecies(0,0)       # timestep 0
-    vmesh  = block[0,0,0]
-    print("2:",len(vmesh.get_cells(True)))
-
+                c.insertInitialSpecies(species)
 
 

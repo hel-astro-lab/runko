@@ -2,42 +2,11 @@
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
-// #include "../definitions.h"
-//#include "../vlasov/solvers.h"
-//#include "../vlasov/solvers/momentumLagrangianSolver.c++"
-//#include "../vlasov/solvers/spatialLagrangianSolver.c++"
+#include "../definitions.h"
 #include "../vlasov/cell.h"
 #include "../vlasov/grid.h"
 #include "../em-fields/fields.h"
 
-
-//typedef std::vector<vlasov::PlasmaBlock> PlasmaBlockVector;
-//PYBIND11_MAKE_OPAQUE(PlasmaBlockVector);
-
-typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
-
-
-
-/// trampoline class for VlasovVelocitySolver
-// class PyVlasovVelocitySolver : public vlasov::VlasovVelocitySolver {
-//   public:
-//     using vlasov::VlasovVelocitySolver::setCell;
-//     using vlasov::VlasovVelocitySolver::setInterpolator;
-//     void solve() override {
-//       PYBIND11_OVERLOAD_PURE(void, vlasov::VlasovVelocitySolver, solve, );
-//     }
-// };
-// 
-// 
-// /// trampoline class for VlasovSpatialSolver
-// class PyVlasovSpatialSolver : public vlasov::VlasovSpatialSolver {
-//   public:
-//     using vlasov::VlasovSpatialSolver::setGrid;
-//     using vlasov::VlasovSpatialSolver::setTargetCell;
-//     void solve() override {
-//       PYBIND11_OVERLOAD_PURE(void, vlasov::VlasovSpatialSolver, solve, );
-//     }
-// };
 
 
 
@@ -81,63 +50,20 @@ PYBIND11_MODULE(pyplasma, m) {
         { return cell.steps.get(i).at(s); }, py::return_value_policy::reference)
     .def("insertInitialSpecies", [](vlasov::VlasovCell& c, 
                                   std::vector<vlasov::PlasmaBlock> species){
-        c.steps.push_back(species);})
+        c.steps.push_back(species);
+        c.steps.push_back(species);
+        })
+
     .def("clip",         &vlasov::VlasovCell::clip)
     .def("cycle",        &vlasov::VlasovCell::cycle);
 
-
-  //py::bind_vector<PlasmaBlockVector>(m, "PlasmaBlockVector");
-  /*
-  py::class_<PlasmaBlockVector>(m, "PlasmaBlockVector")
-    .def(py::init<>())
-    .def("clear",    &PlasmaBlockVector::clear)
-    .def("pop_back", &PlasmaBlockVector::pop_back, py::return_value_policy::reference)
-    .def("__len__",  [](const PlasmaBlockVector& v){ return v.size(); })
-    .def("__iter__", [](PlasmaBlockVector& v){
-        return py::make_iterator(v.begin(), v.end());
-        }, py::keep_alive<0,1>(), py::return_value_policy::reference)
-    .def("__getitem__", [](const PlasmaBlockVector& s, size_t i) {
-        return s[i];}, py::return_value_policy::reference)
-    .def("__setitem__", [](PlasmaBlockVector& s, size_t i, vlasov::PlasmaBlock val){
-      s[i] = val;});
-  */
 
 
   // Loading node bindings from corgi library
   py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
   py::class_<vlasov::Grid>(m, "Grid", corgiNode)
     .def(py::init<size_t, size_t>());
-    //.def("cycle",    &vlasov::Grid::cycle)
 
-
-
-  // trampoline base class followed by the actual solver implementations
-  // Momentum dimension solvers
-  // py::class_<vlasov::VlasovVelocitySolver, PyVlasovVelocitySolver> vvsol(m, "VlasovVelocitySolver" );
-  // vvsol
-  //   .def(py::init<>())
-  //   .def("setCell",         &vlasov::VlasovVelocitySolver::setCell)
-  //   .def("setInterpolator", &vlasov::VlasovVelocitySolver::setInterpolator)
-  //   .def("solve",           &vlasov::VlasovVelocitySolver::solve);
-
-  // py::class_<vlasov::MomentumLagrangianSolver>(m, "MomentumLagrangianSolver", vvsol)
-  //   .def(py::init<>());
-
-
-  // trampoline base class followed by the actual solver implementations
-  // Spatial dimension solvers
-  //py::class_<vlasov::VlasovSpatialSolver, PyVlasovSpatialSolver> vssol(m, "VlasovSpatialSolver" );
-  //vssol
-  //  .def(py::init<>())
-  //  .def("setTargetCell" ,  &vlasov::VlasovSpatialSolver::setTargetCell)
-  //  .def("setGrid",         &vlasov::VlasovSpatialSolver::setGrid)
-  //  .def("solve",           &vlasov::VlasovSpatialSolver::solve);
-
-  //py::class_<vlasov::SpatialLagrangianSolver2nd>(m, "SpatialLagrangianSolver2nd", vssol)
-  //  .def(py::init<>());
-
-  //py::class_<vlasov::SpatialLagrangianSolver4th>(m, "SpatialLagrangianSolver4th", vssol)
-  //  .def(py::init<>());
 
 
   py::class_<fields::YeeLattice>(m, "YeeLattice")
@@ -152,15 +78,6 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("jy", &fields::YeeLattice::jy)
     .def_readwrite("jz", &fields::YeeLattice::jz)
     .def_readwrite("rh", &fields::YeeLattice::rh);
-
-
-  // --------------------------------------------------
-
-
-  //py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")
-  //  .def(py::init<size_t, size_t, size_t>())
-  //  .def_readwrite("block", &vlasov::PlasmaBlock::block)
-  //  .def_readwrite("qm",    &vlasov::PlasmaBlock::qm);
 
 
 }

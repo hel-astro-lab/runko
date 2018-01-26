@@ -35,27 +35,24 @@ class MomentumSolver {
     {
         
       // get reference to the Vlasov fluid that we are solving
-      auto& step0 = cell.steps.get(0);
+      std::vector<PlasmaBlock>& step0 = cell.steps.get(0);
       auto& step1 = cell.steps.get(1);
 
 
       // get reference to the Yee grid 
       fields::YeeLattice& yee = cell.getYee();
 
-
       // loop over different particle species
       for(auto&& blocks : zip(step0, step1) ) {
           
         // loop over the cell's internal grid
-        auto block  = std::get<0>(blocks);
-        auto block1 = std::get<1>(blocks);
-         
+        auto& block0 = std::get<0>(blocks);
+        auto& block1 = std::get<1>(blocks);
           
-        for(size_t q=0; q<block.Nx; q++) {
-          for(size_t r=0; r<block.Ny; r++) {
-            for (size_t s=0; s<block.Nz; s++) {
-
-              T mq = 1.0 / block.qm;  // mass to charge ratio
+        for(size_t q=0; q<block0.Nx; q++) {
+          for(size_t r=0; r<block0.Ny; r++) {
+            for (size_t s=0; s<block0.Nz; s++) {
+              T mq = 1.0 / block0.qm;  // mass to charge ratio
 
               // Get local field components
               vec 
@@ -73,9 +70,8 @@ class MomentumSolver {
                    (T) yee.ez(q,r,s) 
                  }};
 
-              auto& mesh0 = block.block(q,r,s);
-              auto& mesh1 = block1.block(q,r,s);
-
+              toolbox::AdaptiveMesh<Realf, 3>& mesh0 = block0.block(q,r,s);
+              toolbox::AdaptiveMesh<Realf, 3>& mesh1 = block1.block(q,r,s);
 
               // then the final call to the actual mesh solver
               solveMesh( mesh0, mesh1, E, B, mq);
@@ -118,7 +114,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
       // empty the target mesh
       // TODO: is this efficient; should we recycle instead?
       mesh1.data.clear();
-
 
       for(auto&& cid : mesh0.get_cells(false) ) {
         if(! mesh0.is_leaf(cid)) continue;

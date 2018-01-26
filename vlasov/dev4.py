@@ -101,9 +101,7 @@ def plotAll(axs, node, conf, lap):
     c     = node.getCellPtr(cid) #get cell ptr
     block = c.getPlasmaSpecies(0,0)       # timestep 0
     vmesh = block[0,0,0]
-    print("xx", vmesh.get_cells(True))
-
-
+    #print("xx", vmesh.get_cells(True))
 
 
     rfl = 0
@@ -169,11 +167,17 @@ if __name__ == "__main__":
     # load values into cells
     injector.inject(node, filler, conf)
 
-
     #visualize initial condition
     plotAll(axs, node, conf, 0)
 
+    vsol = pdev.AmrMomentumLagrangianSolver()
+    
+    print("solving momentum space push")
+    cid  = node.cellId(0,0)
+    cell = node.getCellPtr(cid)
+    vsol.solve(cell)
+    cell.cycle()
 
 
-
+    plotAll(axs, node, conf, 1)
 

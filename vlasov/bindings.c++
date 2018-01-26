@@ -17,10 +17,6 @@ typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
 typedef toolbox::Adapter<Realf, 3> Adapter3d;
 
 
-//typedef std::vector<vlasov::PlasmaBlock> PlasmaBlockVector;
-//PYBIND11_MAKE_OPAQUE(PlasmaBlockVector);
-
-
 
 
 /// trampoline class for VlasovVelocitySolver
@@ -94,11 +90,6 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         s.set(cid, v);
         })
     .def("clip_cells",       &AM3d::clip_cells)
-    //.def("cut_roots",        &AM3d::cut_roots)
-    // .def("split",                   &AM3d::split)
-    // .def("update_from_children",    &AM3d::update_from_children)
-    // .def("update_from_leafs",       &AM3d::update_from_leafs)
-    // .def("get_from_leafs",          &AM3d::get_from_leafs)
     .def("is_leaf",                 &AM3d::is_leaf)
     .def("set_min",                 &AM3d::set_min)
     .def("set_max",                 &AM3d::set_max)
@@ -190,8 +181,6 @@ PYBIND11_MODULE(pyplasmaDev, m) {
 
 
 
-
-  //typedef toolbox::Mesh<toolbox::AdaptiveMesh<Realf,3>,0> vmeshBlock;
   py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("Nx", &vlasov::PlasmaBlock::Nx)
