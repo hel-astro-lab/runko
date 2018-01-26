@@ -11,6 +11,13 @@ namespace py = pybind11;
 #include "../em-fields/fields.h"
 
 
+//typedef std::vector<vlasov::PlasmaBlock> PlasmaBlockVector;
+//PYBIND11_MAKE_OPAQUE(PlasmaBlockVector);
+
+typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
+
+
+
 /// trampoline class for VlasovVelocitySolver
 // class PyVlasovVelocitySolver : public vlasov::VlasovVelocitySolver {
 //   public:
@@ -70,10 +77,30 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("dx",     &vlasov::VlasovCell::dx)
     .def_readwrite("dy",     &vlasov::VlasovCell::dy)
     .def_readwrite("dz",     &vlasov::VlasovCell::dz)
-    .def("getPlasma",     [](vlasov::VlasovCell& cell, size_t i) 
-        { return cell.steps.get(i); }, py::return_value_policy::reference)
+    .def("getPlasmaSpecies", [](vlasov::VlasovCell& cell, size_t i, size_t s) 
+        { return cell.steps.get(i).at(s); }, py::return_value_policy::reference)
+    .def("insertInitialSpecies", [](vlasov::VlasovCell& c, 
+                                  std::vector<vlasov::PlasmaBlock> species){
+        c.steps.push_back(species);})
     .def("clip",         &vlasov::VlasovCell::clip)
     .def("cycle",        &vlasov::VlasovCell::cycle);
+
+
+  //py::bind_vector<PlasmaBlockVector>(m, "PlasmaBlockVector");
+  /*
+  py::class_<PlasmaBlockVector>(m, "PlasmaBlockVector")
+    .def(py::init<>())
+    .def("clear",    &PlasmaBlockVector::clear)
+    .def("pop_back", &PlasmaBlockVector::pop_back, py::return_value_policy::reference)
+    .def("__len__",  [](const PlasmaBlockVector& v){ return v.size(); })
+    .def("__iter__", [](PlasmaBlockVector& v){
+        return py::make_iterator(v.begin(), v.end());
+        }, py::keep_alive<0,1>(), py::return_value_policy::reference)
+    .def("__getitem__", [](const PlasmaBlockVector& s, size_t i) {
+        return s[i];}, py::return_value_policy::reference)
+    .def("__setitem__", [](PlasmaBlockVector& s, size_t i, vlasov::PlasmaBlock val){
+      s[i] = val;});
+  */
 
 
   // Loading node bindings from corgi library

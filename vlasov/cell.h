@@ -81,6 +81,8 @@ class VlasovCell :
       NyGrid(NyMesh),
       NzGrid(1)
       { 
+
+        /*
         for(size_t t=0; t<Nsteps; t++) {
           std::vector< PlasmaBlock > particles;
 
@@ -90,9 +92,10 @@ class VlasovCell :
             PlasmaBlock bl(NxGrid, NyGrid, 1);
             particles.push_back( bl );
           }
-
           steps.push_back( particles );
         }
+        */
+
       }
 
 

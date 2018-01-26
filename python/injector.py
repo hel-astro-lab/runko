@@ -112,30 +112,54 @@ def inject(node, ffunc, conf):
 
                 #get cell & its content
                 cid    = node.cellId(i,j)
+                print(i,j,cid)
                 c      = node.getCellPtr(cid) #get cell ptr
-                blocks = c.getPlasma(0)       # timestep 0
-                
-                print(len(blocks))
-                print(type(blocks))
+
+                print(type(c))
+                #blocks = c.getPlasma(0)       # timestep 0
+                #print(type(blocks))
 
                 # loop over species
-                for ispcs, block in enumerate(blocks):
+                species = []
+                for ispcs in range(2):
+                    #block = c.getPlasmaSpecies(0, ispcs) #zeroth step & zeroth species
+
+                    block = pdev.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    block.qm = conf.qm #set q/m
                     print(type(block))
 
-                    block.qm = conf.qm #set q/m
-
                     for n in range(conf.NzMesh):
-                        for l in range(conf.NyMesh):
-                            for m in range(conf.NxMesh):
+                        for m in range(conf.NyMesh):
+                            for l in range(conf.NxMesh):
                                 xloc = spatialLoc(node, (i,j), (l,m,n), conf)
-                                vmesh = createEmptyVelocityMesh(conf)
 
-                                fillMesh(vmesh, 
+                                vmesh = createEmptyVelocityMesh(conf)
+                                fillMesh(vmesh,
                                          ffunc,
                                          xloc,
                                          ispcs,
                                          conf)
+
                                 block[l,m,n] = vmesh
+                                #c.getPlasmaSpecies(0,ispcs,(l,m,n)) = vmesh
+
+                    species.append(block)
+
+                    vmesh  = block[0,0,0]
+                    print("0:",len(vmesh.get_cells(True)))
+
+                    c.insertInitialSpecies(species)
+
+
+                block = c.getPlasmaSpecies(0,0)
+                vmesh = block[0,0,0]
+                print("1:",len(vmesh.get_cells(True)))
+
+    cid    = node.cellId(0,0)
+    c      = node.getCellPtr(cid) #get cell ptr
+    block  = c.getPlasmaSpecies(0,0)       # timestep 0
+    vmesh  = block[0,0,0]
+    print("2:",len(vmesh.get_cells(True)))
 
 
 

@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.stats import multivariate_normal
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 
 import pyplasma as plasma
@@ -11,7 +13,7 @@ import pyplasmaDev as pdev
 
 import initialize as init
 import injector
-
+from visualize_amr import plot2DSlice
 
 
 def filler(xloc, uloc, ispcs, conf):
@@ -76,17 +78,81 @@ class Conf:
     clipThreshold = 1.0e-5
 
 
+def saveVisz(lap, conf):
+
+    slap = str(lap).rjust(4, '0')
+    fname = conf.outdir + '/amr2_{}.png'.format(slap)
+    plt.savefig(fname)
+
+
+def plotAll(axs, node, conf, lap):
+
+    #for i in range(node.getNx()):
+    #    for j in range(node.getNy()):
+    #        cid = node.cellId(i,j)
+    #        c = node.getCellPtr(cid) 
+    #        blocks = c.getPlasma(0,0)
+    #        vmesh = block[0,0,0]
+    #        print("xx", vmesh.get_cells(True))
+
+    
+    #get first of first velomesh from cell
+    cid   = node.cellId(0,0)
+    c     = node.getCellPtr(cid) #get cell ptr
+    block = c.getPlasmaSpecies(0,0)       # timestep 0
+    vmesh = block[0,0,0]
+    print("xx", vmesh.get_cells(True))
+
+
+
+
+    rfl = 0
+    args = {"dir":"xy", 
+            "q":  "mid",
+            "rfl": rfl }
+    plot2DSlice(axs[0], vmesh, args)
+
+    args = {"dir":"xz", 
+            "q":   "mid",
+            "rfl": rfl }
+    plot2DSlice(axs[1], vmesh, args)
+
+    args = {"dir":"yz", 
+            "q":   "mid",
+            "rfl": rfl }
+    plot2DSlice(axs[2], vmesh, args)
+
+    #set_xylims(axs)
+    saveVisz(lap, conf)
+
+
 
 
 
 
 if __name__ == "__main__":
 
+    ################################################## 
+    # set up plotting and figure
+    plt.fig = plt.figure(1, figsize=(12,20))
+    plt.rc('font', family='serif', size=12)
+    plt.rc('xtick')
+    plt.rc('ytick')
+    
+    gs = plt.GridSpec(3, 1)
+    gs.update(hspace = 0.5)
+    
+    axs = []
+    axs.append( plt.subplot(gs[0,0]) )
+    axs.append( plt.subplot(gs[1,0]) )
+    axs.append( plt.subplot(gs[2,0]) )
 
-    conf = Conf()
+
 
     ################################################## 
     # node configuration
+    conf = Conf()
+
     node = plasma.Grid(conf.Nx, conf.Ny)
     xmin = 0.0
     xmax = conf.dx*conf.Nx*conf.NxMesh
@@ -104,11 +170,8 @@ if __name__ == "__main__":
     injector.inject(node, filler, conf)
 
 
-
-
-
-
-
+    #visualize initial condition
+    plotAll(axs, node, conf, 0)
 
 
 

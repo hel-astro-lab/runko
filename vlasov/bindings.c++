@@ -17,6 +17,10 @@ typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
 typedef toolbox::Adapter<Realf, 3> Adapter3d;
 
 
+//typedef std::vector<vlasov::PlasmaBlock> PlasmaBlockVector;
+//PYBIND11_MAKE_OPAQUE(PlasmaBlockVector);
+
+
 
 
 /// trampoline class for VlasovVelocitySolver
