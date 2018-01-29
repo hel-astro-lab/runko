@@ -181,9 +181,9 @@ T trilinear_interp(
     j = indices[1], // + uint64_t(coordinates[1] - 1.5),
     k = indices[2]; // + uint64_t(coordinates[2] - 1.5);
 	
-	T dx = coordinates[0] - T(0.5); 
-  T dy = coordinates[1] - T(0.5); 
-  T dz = coordinates[2] - T(0.5);
+	T dx = coordinates[0]; // - T(0.5); 
+  T dy = coordinates[1]; // - T(0.5); 
+  T dz = coordinates[2]; // - T(0.5);
 	
 	T d00 = lerp(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
 	T d10 = lerp(dx, _getv(mesh, {{i, j+1, k  }}, rfl), _getv(mesh, {{i+1, j+1, k  }}, rfl) );

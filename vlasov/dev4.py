@@ -34,6 +34,20 @@ def filler(xloc, uloc, ispcs, conf):
     return f
 
 
+def insert_em(node, conf):
+
+    for i in range(node.getNx()):
+        for j in range(node.getNy()):
+            c = node.getCellPtr(i,j)
+            yee = c.getYee(0)
+
+            for q in range(conf.NxMesh):
+                for k in range(conf.NyMesh):
+                    yee.ex[q,k,0] = 0.2
+                    yee.ey[q,k,0] = 0.0
+                    yee.ez[q,k,0] = 0.0
+
+
 
 
 
@@ -60,17 +74,17 @@ class Conf:
 
     #-------------------------------------------------- 
     # velocity space parameters
-    vxmin = -4.0
-    vymin = -5.0
-    vzmin = -4.0
+    vxmin = -10.0
+    vymin = -10.0
+    vzmin = -10.0
 
-    vxmax =  4.0
-    vymax =  5.0
-    vzmax =  4.0
+    vxmax =  10.0
+    vymax =  10.0
+    vzmax =  10.0
 
-    Nxv = 15
-    Nyv = 15
-    Nzv = 15
+    Nxv = 40
+    Nyv = 40
+    Nzv = 10
 
     #vmesh refinement
     refinement_level = 0
@@ -167,6 +181,9 @@ if __name__ == "__main__":
     # load values into cells
     injector.inject(node, filler, conf)
 
+    insert_em(node, conf)
+
+
     #visualize initial condition
     plotAll(axs, node, conf, 0)
 
@@ -175,9 +192,12 @@ if __name__ == "__main__":
     print("solving momentum space push")
     cid  = node.cellId(0,0)
     cell = node.getCellPtr(cid)
-    vsol.solve(cell)
-    cell.cycle()
+
+    for lap in range(10):
+        print("-------lap {} -------".format(lap))
+        vsol.solve(cell)
+        cell.cycle()
+        plotAll(axs, node, conf, lap)
 
 
-    plotAll(axs, node, conf, 1)
 

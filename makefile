@@ -45,6 +45,9 @@ EXE=plasma
 
 #collect libraries
 LIBS += ${LIB_MPI}
+LIBS += ${EIGEN}
+
+CXXFLAGS += ${LIBS}
 
 #define common dependencies
 DEPS_COMMON=definitions.h

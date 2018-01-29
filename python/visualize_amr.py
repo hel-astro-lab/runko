@@ -32,7 +32,7 @@ def get_leaf_mesh(m, args):
         yy[j] = y
     for k in range(nz):
         x,y,z = m.get_center([0,0,k], rfl_max)
-        zz[j] = z
+        zz[k] = z
 
 
     if args["q"] == "mid":

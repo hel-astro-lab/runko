@@ -30,13 +30,14 @@ class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
         AM3d& mesh1, 
         std::array<Realf, 3>& E,
         std::array<Realf, 3>& B,
-        Realf qm
+        Realf qm,
+        Realf dt
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
           vlasov::MomentumSolver<Realf>, 
           solveMesh, 
-          mesh0, mesh1, E, B, qm 
+          mesh0, mesh1, E, B, qm, dt
           );
     }
 };

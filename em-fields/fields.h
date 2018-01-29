@@ -6,6 +6,7 @@
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
 
+#include "../definitions.h"
 
 
 namespace fields {
@@ -23,22 +24,22 @@ class YeeLattice {
   size_t Nz;
 
   /// Electric field 
-  toolbox::Mesh<double, 1> ex;
-  toolbox::Mesh<double, 1> ey;
-  toolbox::Mesh<double, 1> ez;
+  toolbox::Mesh<Realf, 1> ex;
+  toolbox::Mesh<Realf, 1> ey;
+  toolbox::Mesh<Realf, 1> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<double, 1> bx;
-  toolbox::Mesh<double, 1> by;
-  toolbox::Mesh<double, 1> bz;
+  toolbox::Mesh<Realf, 1> bx;
+  toolbox::Mesh<Realf, 1> by;
+  toolbox::Mesh<Realf, 1> bz;
 
   /// Current vector 
-  toolbox::Mesh<double, 1> jx;
-  toolbox::Mesh<double, 1> jy;
-  toolbox::Mesh<double, 1> jz;
+  toolbox::Mesh<Realf, 1> jx;
+  toolbox::Mesh<Realf, 1> jy;
+  toolbox::Mesh<Realf, 1> jz;
 
   /// Charge density
-  toolbox::Mesh<double, 1> rh;
+  toolbox::Mesh<Realf, 1> rh;
 
   YeeLattice(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz),
     ex(Nx, Ny, Nz),
@@ -103,10 +104,10 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void cycleYee();
 
-  double yeeDt = 0.0;
-  double yeeDx = 0.0;
-  double yeeDy = 0.0;
-  double yeeDz = 0.0;
+  Realf yeeDt = 0.0;
+  Realf yeeDx = 0.0;
+  Realf yeeDy = 0.0;
+  Realf yeeDz = 0.0;
 
 
 };
