@@ -76,19 +76,19 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
     sweep = 1
     while(True):
         #print("-------round {}-----------".format(sweep))
-        adapter.check(m)
-        adapter.refine(m)
+        adapter.check(vmesh)
+        adapter.refine(vmesh)
 
         print("cells to refine: {}".format( len(adapter.cells_to_refine)))
         for cid in adapter.cells_created:
-            rfl = m.get_refinement_level(cid)
-            indx = m.get_indices(cid)
-            uloc = m.get_center(indx, rfl)
+            rfl = vmesh.get_refinement_level(cid)
+            indx = vmesh.get_indices(cid)
+            uloc = vmesh.get_center(indx, rfl)
 
             val = ffunc(xloc, uloc, ispcs, conf)
-            m[indx[0], indx[1], indx[2], rfl] = val
+            vmesh[indx[0], indx[1], indx[2], rfl] = val
 
-        adapter.unrefine(m)
+        adapter.unrefine(vmesh)
         print("cells to be removed: {}".format( len(adapter.cells_removed)))
 
         sweep += 1

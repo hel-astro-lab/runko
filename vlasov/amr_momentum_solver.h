@@ -169,19 +169,25 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
 
         // compute how many grid indices did we advect
-        int r1 = index[0] - CFLr,
-            s1 = index[1] - CFLs,
-            t1 = index[2] - CFLt;
+        // int r1 = index[0] - CFLr,
+        //     s1 = index[1] - CFLs,
+        //     t1 = index[2] - CFLt;
 
+        std::array<uint64_t, 3> index1 = 
+        {{
+          (uint64_t) index[0] - CFLr,
+          (uint64_t) index[1] - CFLs,
+          (uint64_t) index[2] - CFLt
+        }};
 
 
         // set boundary conditions (zero outside the grid limits)
-        if(    r1 < 2  
-            || s1 < 2       
-            || t1 < 2 
-            || r1 > len[0]-1 
-            || s1 > len[1]-1 
-            || t1 > len[2]-1 ) 
+        if(    index1[0] < 2  
+            || index1[1] < 2       
+            || index1[2] < 2 
+            || index1[0] > len[0]-1 
+            || index1[1] > len[1]-1 
+            || index1[2] > len[2]-1 ) 
         { 
           val = T(0); 
         } else {
@@ -195,19 +201,25 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
             P(2)*(dt/du[2]) - (T) CFLt
           }};
 
-        fmt::print("index: ({},{},{}); shift: ({},{},{}); newind ({},{},{}) dv: ({},{},{}) \n",
+          /*
+          fmt::print("index: ({},{},{}); shift: ({},{},{}); newind ({},{},{}) dv: ({},{},{}) \n",
             index[0], index[1], index[2],
             CFLr, CFLs, CFLt,
             r1, s1, t1,
             deltau[0], deltau[1], deltau[2]);
+           */
 
 
-          val = trilinear_interp(mesh0, index, deltau, rfl);
+          //val = trilinear_interp(mesh0, index, deltau, rfl);
+          val = tricubic_interp(mesh0, index, deltau, rfl);
         }
 
+        uint64_t cid1 = mesh0.get_cell_from_indices(index1, rfl);
 
-        mesh1.set(cid, val);
+        mesh1.set_recursively(cid1, val);
       }
+
+
 
       return;
     }

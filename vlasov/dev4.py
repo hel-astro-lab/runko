@@ -45,7 +45,7 @@ def insert_em(node, conf):
                 for k in range(conf.NyMesh):
                     yee.ex[q,k,0] = 0.2
                     yee.ey[q,k,0] = 0.0
-                    yee.ez[q,k,0] = 0.0
+                    yee.ez[q,k,0] = 0.2
 
 
 
@@ -84,10 +84,10 @@ class Conf:
 
     Nxv = 40
     Nyv = 40
-    Nzv = 10
+    Nzv = 40
 
     #vmesh refinement
-    refinement_level = 0
+    refinement_level = 2
     clip = False
     clipThreshold = 1.0e-5
 
@@ -118,7 +118,7 @@ def plotAll(axs, node, conf, lap):
     #print("xx", vmesh.get_cells(True))
 
 
-    rfl = 0
+    rfl = conf.refinement_level
     args = {"dir":"xy", 
             "q":  "mid",
             "rfl": rfl }
@@ -138,7 +138,45 @@ def plotAll(axs, node, conf, lap):
     saveVisz(lap, conf)
 
 
+# dig out velocity meshes from containers and feed to actual adapter
+def adapt(node):
+    cid  = node.cellId(0,0)
+    cell = node.getCellPtr(cid)
+    block = cell.getPlasmaSpecies(0,0)
+    vmesh = block[0,0,0]
+    
+    adaptVmesh(vmesh)
 
+
+
+def adaptVmesh(vmesh):
+    adapter = pdev.Adapter();
+
+    sweep = 1
+    while(True):
+        adapter.check(vmesh)
+        adapter.refine(vmesh)
+
+        print("cells to refine: {}".format( len(adapter.cells_to_refine)))
+        for cid in adapter.cells_created:
+            rfl = vmesh.get_refinement_level(cid)
+            indx = vmesh.get_indices(cid)
+            uloc = vmesh.get_center(indx, rfl)
+
+            val = pdev.tricubic_interp(vmesh, indx, [0.5,0.5,0.5], rfl)
+            vmesh[indx[0], indx[1], indx[2], rfl] = val
+
+
+
+        adapter.unrefine(vmesh)
+        print("cells to be removed: {}".format( len(adapter.cells_removed)))
+
+        sweep += 1
+        if sweep > conf.refinement_level: break
+
+    if conf.clip:
+        print("clipping...")
+        vmesh.clip_cells(conf.clipThreshold)
 
 
 
@@ -193,11 +231,16 @@ if __name__ == "__main__":
     cid  = node.cellId(0,0)
     cell = node.getCellPtr(cid)
 
-    for lap in range(10):
+    for lap in range(1,10):
         print("-------lap {} -------".format(lap))
-        vsol.solve(cell)
-        cell.cycle()
         plotAll(axs, node, conf, lap)
 
+        vsol.solve(cell)
+        cell.cycle()
+
+        #adapt(node)
+
+        if conf.clip:
+            cell.clip()
 
 

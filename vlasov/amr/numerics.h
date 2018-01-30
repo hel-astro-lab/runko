@@ -226,9 +226,9 @@ T tricubic_interp(
     j = indices[1], // + uint64_t(coordinates[1] - 1.5),
     k = indices[2]; // + uint64_t(coordinates[2] - 1.5);
 	
-	T dx = coordinates[0] - T(0.5); 
-  T dy = coordinates[1] - T(0.5); 
-  T dz = coordinates[2] - T(0.5);
+	T dx = coordinates[0]; // - T(0.5); 
+  T dy = coordinates[1]; // - T(0.5); 
+  T dz = coordinates[2]; // - T(0.5);
 
   // Extract the local vocal values and calculate partial derivatives.
 	T x[64] = {

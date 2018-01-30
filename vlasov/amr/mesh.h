@@ -430,6 +430,7 @@ class AdaptiveMesh {
   }
 
 
+
   /*
   std::vector<uint64_t> get_leafs(const uint64_t cid) const 
   {
@@ -627,7 +628,8 @@ class AdaptiveMesh {
 
 
 
-  // EXPERIMENTAL: THIS MIGHT NOT BE NEEDED AFTER ALL
+  // EXPERIMENTAL: THESE THINGS MIGHT NOT BE NEEDED AFTER ALL
+  //
   // Cut parent cell that has children; only leaf cells should remain
   // void cut_roots() {
   //   auto all_cells = get_cells(true); // sorted=true
@@ -759,8 +761,18 @@ class AdaptiveMesh {
   }
 
 
+  // update every value and divide until we hit the bottom
+  void set_recursively(uint64_t cid, T val)
+  {
+    const int refinement_level = get_refinement_level(cid);
 
+    T divisor = T(1);
+    for(int rfl = refinement_level; rfl >= 0; rfl--){
+      data[cid] += val/divisor;
 
+      divisor *= std::pow(2.0, D);
+    }
+  }
 
 
 
