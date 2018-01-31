@@ -271,6 +271,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
       std::array<int,3> index_shifted;
       for(size_t i=0; i<3; i++) index_shifted[i] = static_cast<int>( trunc(shift[i]) );
 
+
       // advection inside cell
       T tmp;
       for(size_t i=0; i<3; i++) cell_shift[i] = modf(shift[i], &tmp);

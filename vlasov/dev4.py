@@ -43,7 +43,7 @@ def insert_em(node, conf):
 
             for q in range(conf.NxMesh):
                 for k in range(conf.NyMesh):
-                    yee.ex[q,k,0] = -0.1
+                    yee.ex[q,k,0] =  1.1
                     yee.ey[q,k,0] =  0.0
                     yee.ez[q,k,0] =  0.0
 
