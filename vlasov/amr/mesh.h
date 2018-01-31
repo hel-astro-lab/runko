@@ -520,9 +520,8 @@ class AdaptiveMesh {
     value_array_t length = get_level_0_cell_length();
 
     for(int rfl=1; rfl<=refinement_level; rfl++) {
-      for(size_t i=0; i<D; i++)  length[i] /= T(2.0);
+      for(size_t i=0; i<D; i++)  length[i] /= T(2);
     }
-
 
     return length;
   }

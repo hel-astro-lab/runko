@@ -11,13 +11,14 @@
 #include "amr/refiner.h"
 #include "../tools/cppitertools/zip.hpp"
 #include "../tools/cppitertools/enumerate.hpp"
+#include "../tools/signum.h"
 
 
 using namespace Eigen;
 
 using std::floor;
 using iter::zip;
-
+using toolbox::sign;
 
 namespace vlasov {
 
@@ -262,54 +263,36 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
       // get shift of the characteristic solution
       Vector3f P = qm*(Fhalf + Fhalf);
 
-      std::array<T, 3> CFL, deltaU;
-      for(size_t i=0; i<3; i++) deltaU[i] = modf( P(i)*(dt/du[i]), &CFL[i] );
+      // advection in units of cells
+      std::array<T,3> shift, cell_shift;
+      for(size_t i=0; i<3; i++) shift[i] = P(i)*(dt/du[i]);
 
+      // advected cells
+      std::array<int,3> index_shifted;
+      for(size_t i=0; i<3; i++) index_shifted[i] = static_cast<int>( trunc(shift[i]) );
 
-      /*
-      // shift in units of cell (i.e., CFL number)
-      // h
-      int CFLr = (int) P(0)*(dt/du[0]),
-          CFLs = (int) P(1)*(dt/du[1]),
-          CFLt = (int) P(2)*(dt/du[2]);
+      // advection inside cell
+      T tmp;
+      for(size_t i=0; i<3; i++) cell_shift[i] = modf(shift[i], &tmp);
 
-      std::array<uint64_t, 3> index0 = 
-      {{
-         (uint64_t) (index[0] - CFLr),
-         (uint64_t) (index[1] - CFLs),
-         (uint64_t) (index[2] - CFLt)
-       }};
-       */
+      // new grid indices
+      std::array<uint64_t, 3> index_new;
+      for(size_t i=0; i<3; i++) index_new[i] = index[i] + index_shifted[i];
+
 
 
       // set boundary conditions (zero outside the grid limits)
-      if(    index0[0] < 2
-          || index0[1] < 2
-          || index0[2] < 2
-          || index0[0] >= len[0]-2 
-          || index0[1] >= len[1]-2 
-          || index0[2] >= len[2]-2 ) 
+      if(    index_new[0] < 2
+          || index_new[1] < 2
+          || index_new[2] < 2
+          || index_new[0] >= len[0]-2 
+          || index_new[1] >= len[1]-2 
+          || index_new[2] >= len[2]-2 ) 
       { 
         val = T(0); 
       } else {
         // interpolation branch
-
-        // internal shift in units of cell's length
-        std::array<T, 3> deltau = {{
-            P(0)*(dt/du[0]) - (T) CFLr,
-            P(1)*(dt/du[1]) - (T) CFLs,
-            P(2)*(dt/du[2]) - (T) CFLt
-        }};
-
-        /*
-           fmt::print("index: ({},{},{}); newind ({},{},{}) dv: ({},{},{}) rfl: {}\n",
-           index[0], index[1], index[2],
-           CFLr, CFLs, CFLt,
-           deltau[0], deltau[1], deltau[2], rfl);
-        */
-
-        val = tricubic_interp(mesh0, index0, deltau, rfl);
-        // val = trilinear_interp(mesh0, index0, deltau, rfl);
+        val = tricubic_interp(mesh0, index_new, cell_shift, rfl);
       }
 
       return val;
@@ -370,8 +353,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
 
       // create new leafs
-      
-      for(size_t sweep=1; sweep<=3; sweep++){
+      for(size_t sweep=1; sweep<=2; sweep++){
       
         adapter.refine(mesh1);
 
@@ -400,7 +382,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
         adapter.unrefine(mesh1);
 
       }
-
 
       return;
     }
