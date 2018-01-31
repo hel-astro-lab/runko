@@ -8,6 +8,7 @@
 #include "../em-fields/fields.h"
 #include "amr/mesh.h"
 #include "amr/numerics.h"
+#include "amr/refiner.h"
 #include "../tools/cppitertools/zip.hpp"
 #include "../tools/cppitertools/enumerate.hpp"
 
@@ -90,6 +91,8 @@ class MomentumSolver {
               auto& mesh0 = block0.block(q,r,s);
               auto& mesh1 = block1.block(q,r,s);
 
+              fmt::print("solving for srq ({},{},{})\n",s,r,q);
+
               // then the final call to the actual mesh solver
               solveMesh( mesh0, mesh1, E, B, qm, dt);
             }
@@ -114,11 +117,9 @@ class MomentumSolver {
 
 
 
-
-
-/// \brief Trilinear semi-Lagrangian adaptive advection solver
+/// \brief Forward semi-Lagrangian adaptive advection solver
 template<typename T>
-class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
+class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T> {
 
   public:
 
@@ -165,8 +166,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
         int CFLr = (int) floor(P(0)*(dt/du[0])),
             CFLs = (int) floor(P(1)*(dt/du[1])),
             CFLt = (int) floor(P(2)*(dt/du[2]));
-
-
 
         // compute how many grid indices did we advect
         // int r1 = index[0] - CFLr,
@@ -227,6 +226,186 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 };
 
 
+
+/// \brief Backward semi-Lagrangian adaptive advection solver
+template<typename T>
+class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
+
+  public:
+
+    typedef std::array<T, 3> vec;
+
+
+    // backward advected Lorentz force
+    T backward_advect(
+        const std::array<uint64_t, 3>& index,
+        const int rfl,
+        const toolbox::AdaptiveMesh<T, 3>& mesh0,
+        const toolbox::AdaptiveMesh<T, 3>& mesh1,
+        const Vector3f& E,
+        const Vector3f& B,
+        const T qm,
+        T dt) const
+    {
+      T val; // return value
+
+
+      Vector3f Fhalf = E/2.0; // construct (1/2) force
+
+      // fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
+
+      vec uvel = mesh1.get_center(index, rfl);  // velocity
+      vec du   = mesh1.get_length(rfl);         // box size, i.e., \Delta u
+      auto len = mesh1.get_size(rfl);
+
+
+      // get shift of the characteristic solution
+      Vector3f P = qm*(Fhalf + Fhalf);
+
+      std::array<T, 3> CFL, deltaU;
+      for(size_t i=0; i<3; i++) deltaU[i] = modf( P(i)*(dt/du[i]), &CFL[i] );
+
+
+      /*
+      // shift in units of cell (i.e., CFL number)
+      // h
+      int CFLr = (int) P(0)*(dt/du[0]),
+          CFLs = (int) P(1)*(dt/du[1]),
+          CFLt = (int) P(2)*(dt/du[2]);
+
+      std::array<uint64_t, 3> index0 = 
+      {{
+         (uint64_t) (index[0] - CFLr),
+         (uint64_t) (index[1] - CFLs),
+         (uint64_t) (index[2] - CFLt)
+       }};
+       */
+
+
+      // set boundary conditions (zero outside the grid limits)
+      if(    index0[0] < 2
+          || index0[1] < 2
+          || index0[2] < 2
+          || index0[0] >= len[0]-2 
+          || index0[1] >= len[1]-2 
+          || index0[2] >= len[2]-2 ) 
+      { 
+        val = T(0); 
+      } else {
+        // interpolation branch
+
+        // internal shift in units of cell's length
+        std::array<T, 3> deltau = {{
+            P(0)*(dt/du[0]) - (T) CFLr,
+            P(1)*(dt/du[1]) - (T) CFLs,
+            P(2)*(dt/du[2]) - (T) CFLt
+        }};
+
+        /*
+           fmt::print("index: ({},{},{}); newind ({},{},{}) dv: ({},{},{}) rfl: {}\n",
+           index[0], index[1], index[2],
+           CFLr, CFLs, CFLt,
+           deltau[0], deltau[1], deltau[2], rfl);
+        */
+
+        val = tricubic_interp(mesh0, index0, deltau, rfl);
+        // val = trilinear_interp(mesh0, index0, deltau, rfl);
+      }
+
+      return val;
+    }
+
+
+    virtual void solveMesh( 
+        toolbox::AdaptiveMesh<T, 3>& mesh0,
+        toolbox::AdaptiveMesh<T, 3>& mesh1,
+        vec& Einc,
+        vec& Binc,
+        T qm,
+        T dt)
+    {
+
+      toolbox::Adapter<T,3> adapter;
+      adapter.cells_to_refine.clear();
+      adapter.cells_to_unrefine.clear();
+
+
+
+      // empty the target mesh
+      // TODO: is this efficient; should we recycle instead?
+      mesh1.data.clear();
+
+
+      std::array<uint64_t, 3> index;
+      // std::array<T, 3> grad;
+
+      Vector3f B(Binc.data());  
+      Vector3f E(Einc.data());  
+
+
+      // level zero fill
+      T val = T(0);
+      T refine_indicator, unrefine_indicator;
+      auto len = mesh1.get_size(0);
+      for(uint64_t r=0; r<len[0]; r++) {
+        index[0] = r;
+        for(uint64_t s=0; s<len[1]; s++) {
+          index[1] = s;
+          for(uint64_t t=0; t<len[2]; t++) {
+            index[2] = t;
+
+            uint64_t cid = mesh1.get_cell_from_indices(index, 0);
+            val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, dt);
+
+            // refinement
+            // TODO specialize to value & gradient instead of just value
+            refine_indicator   = val;
+            unrefine_indicator = val;
+            adapter.checkCell(mesh1, cid, refine_indicator, unrefine_indicator);
+
+            mesh1.set(cid, val);
+          }
+        }
+      }
+
+
+      // create new leafs
+      
+      for(size_t sweep=1; sweep<=3; sweep++){
+      
+        adapter.refine(mesh1);
+
+        fmt::print(" sol: cells created {}\n", adapter.cells_to_refine.size());
+        fmt::print(" sol: cells removed {}\n", adapter.cells_removed.size());
+
+        adapter.cells_to_refine.clear();
+        adapter.cells_to_unrefine.clear();
+
+        // next we refine
+        for(auto&& cid : adapter.cells_created) {
+          int rfl = mesh1.get_refinement_level(cid);
+          auto index2 = mesh1.get_indices(cid);
+
+          // fmt::print("creating {} at {}\n", cid, rfl);
+
+          val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, dt);
+          mesh1.set(cid, val);
+
+          refine_indicator   = val;
+          unrefine_indicator = val;
+          adapter.checkCell(mesh1, cid, refine_indicator, unrefine_indicator);
+        }
+
+        // now unrefine 
+        adapter.unrefine(mesh1);
+
+      }
+
+
+      return;
+    }
+
+};
 
 
 } // end of namespace vlasov

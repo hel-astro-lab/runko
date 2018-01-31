@@ -43,9 +43,9 @@ def insert_em(node, conf):
 
             for q in range(conf.NxMesh):
                 for k in range(conf.NyMesh):
-                    yee.ex[q,k,0] = 0.2
-                    yee.ey[q,k,0] = 0.0
-                    yee.ez[q,k,0] = 0.2
+                    yee.ex[q,k,0] = 0.0
+                    yee.ey[q,k,0] = 0.5
+                    yee.ez[q,k,0] = 0.0
 
 
 
@@ -82,13 +82,13 @@ class Conf:
     vymax =  10.0
     vzmax =  10.0
 
-    Nxv = 40
-    Nyv = 40
-    Nzv = 40
+    Nxv = 10
+    Nyv = 10
+    Nzv = 10
 
     #vmesh refinement
-    refinement_level = 2
-    clip = False
+    refinement_level = 3
+    clip = True
     clipThreshold = 1.0e-5
 
 
@@ -231,16 +231,22 @@ if __name__ == "__main__":
     cid  = node.cellId(0,0)
     cell = node.getCellPtr(cid)
 
-    for lap in range(1,10):
+
+    for lap in range(1,4):
         print("-------lap {} -------".format(lap))
-        plotAll(axs, node, conf, lap)
 
         vsol.solve(cell)
-        cell.cycle()
 
-        #adapt(node)
+        cell.cycle()
 
         if conf.clip:
             cell.clip()
+
+        plotAll(axs, node, conf, lap)
+
+
+
+
+
 
 

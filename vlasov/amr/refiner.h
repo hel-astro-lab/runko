@@ -80,7 +80,47 @@ class Adapter {
   }
 
 
+  /// Check given cell for possible refinement; if positive then it is appended to internal lists
+  void checkCell(
+      AdaptiveMesh<T,D>& mesh,
+      uint64_t cid, 
+      T refine_indicator, 
+      T unrefine_indicator)
+  {
 
+    // to be refined
+    if( refine_indicator > tolerance ) {
+      cells_to_refine.insert(cid);
+      return;
+    }
+
+    // if we are at the bottom, no need to unrefine
+    if (mesh.get_refinement_level(cid) < 1) return;
+
+
+    // to be possibly unrefined
+    if ( unrefine_indicator < 0.1*tolerance ) {
+      bool to_be_unrefined = true;
+
+      auto siblings = mesh.get_siblings(cid);
+
+      // check if any siblings are marked for refining
+      for(auto cids : siblings) {
+        if( cells_to_refine.count(cids) > 0) {
+          to_be_unrefined = false;
+          break;
+        }
+      }
+
+      if(to_be_unrefined) {
+        cells_to_unrefine.insert( mesh.get_parent(cid) );
+      }
+    }
+
+  }
+
+
+  /// Check full mesh for refinement
   void check( AdaptiveMesh<T,D>& mesh )
   {
     cells_to_refine.clear();
@@ -103,42 +143,12 @@ class Adapter {
 
       unrefine_indicator = refine_indicator;
 
-
-      // to be refined
-      if( refine_indicator > tolerance ) {
-        cells_to_refine.insert(cid);
-        continue;
-      }
-
-      // if we are at the bottom, no need to unrefine
-      if (mesh.get_refinement_level(cid) < 1) continue;
-
-
-      // to be possibly unrefined
-      if ( unrefine_indicator < 0.1*tolerance ) {
-        bool to_be_unrefined = true;
-
-        auto siblings = mesh.get_siblings(cid);
-
-        // check if any siblings are marked for refining
-        for(auto cids : siblings) {
-          if( cells_to_refine.count(cids) > 0) {
-            to_be_unrefined = false;
-            break;
-          }
-        }
-
-        if(to_be_unrefined) {
-          cells_to_unrefine.insert( mesh.get_parent(cid) );
-        }
-      }
-
-
+      checkCell(mesh, cid, refine_indicator, unrefine_indicator);
     }
   }
 
 
-
+  // create empty new leafs 
   void refine( AdaptiveMesh<T,D>& mesh )
   {
     cells_created.clear();
@@ -146,14 +156,12 @@ class Adapter {
     for(auto cid : cells_to_refine) {
 
       T parent_value = mesh.get(cid);
-
+        
       // creating empty cells 
       for(auto cidc : mesh.get_children(cid)) {
         mesh.set(cidc, parent_value);
-
         cells_created.push_back(cidc);
       }
-
     }
   }
 
