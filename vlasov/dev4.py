@@ -19,11 +19,8 @@ from visualize_amr import plot2DSlice
 def filler(xloc, uloc, ispcs, conf):
 
     delgam = np.sqrt(1.0)
-    mux = 0.0
-    muy = 0.0
-    muz = 0.0
 
-    mean = [0.0, 0.0, 1.0]
+    mean = [3.0, 0.0, 0.0]
     cov  = np.zeros((3,3))
     cov[0,0] = 1.0 
     cov[1,1] = 2.0 
@@ -43,10 +40,13 @@ def insert_em(node, conf):
 
             for q in range(conf.NxMesh):
                 for k in range(conf.NyMesh):
-                    yee.ex[q,k,0] =  1.1
+                    yee.ex[q,k,0] =  0.0
                     yee.ey[q,k,0] =  0.0
                     yee.ez[q,k,0] =  0.0
 
+                    yee.bx[q,k,0] =  0.0
+                    yee.by[q,k,0] =  0.0
+                    yee.bz[q,k,0] =  0.1
 
 
 
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     cell = node.getCellPtr(cid)
 
 
-    for lap in range(1,6):
+    for lap in range(1,20):
         print("-------lap {} -------".format(lap))
 
         vsol.solve(cell)

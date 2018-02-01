@@ -155,11 +155,11 @@ class Adapter {
 
     for(auto cid : cells_to_refine) {
 
-      T parent_value = mesh.get(cid);
+      // T parent_value = mesh.get(cid);
         
       // creating empty cells 
       for(auto cidc : mesh.get_children(cid)) {
-        mesh.set(cidc, parent_value);
+        //mesh.set(cidc, parent_value);
         cells_created.push_back(cidc);
       }
     }

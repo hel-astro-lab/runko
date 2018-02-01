@@ -237,40 +237,63 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
     typedef std::array<T, 3> vec;
 
 
+    /// Relativistic Lorentz force
+    inline Vector3f lorentz_force(
+        Vector3f& uvel,
+        Vector3f& E,
+        Vector3f& B,
+        T qm,
+        T dt)
+    {
+
+      Vector3f Ehalf = dt*E/2; // half step in E
+      Vector3f us = uvel - Ehalf; // P^*, i.e., velocity in the middle of the step
+
+      // B-field rotation matrix
+      Vector3f b = B.normalized();
+      T gamma = sqrt(1.0 + us.transpose()*us );
+      T wt = dt*(qm*B.norm() / gamma); // relativistic cyclotron frequency
+
+      Matrix3f Rot;
+      Rot <<
+        b(0)*b(0)+(1-b(0)*b(0))*cos(wt),    b(0)*b(1)*(1-cos(wt))-b(2)*sin(wt), b(0)*b(2)*(1-cos(wt))+b(1)*sin(wt),
+        b(0)*b(1)*(1-cos(wt))+b(2)*sin(wt), b(1)*b(1)+(1-b(1)*b(1))*cos(wt),    b(1)*b(2)*(1-cos(wt))-b(0)*sin(wt),
+        b(0)*b(2)*(1-cos(wt))-b(1)*sin(wt), b(1)*b(2)*(1-cos(wt))+b(0)*sin(wt), b(2)*b(2)+(1-b(2)*b(2))*cos(wt);
+
+      return qm*( -Ehalf + Rot*us - uvel )*dt;
+    }
+
+
+
     // backward advected Lorentz force
     T backward_advect(
-        const std::array<uint64_t, 3>& index,
-        const int rfl,
+        std::array<uint64_t, 3>& index,
+        int rfl,
         const toolbox::AdaptiveMesh<T, 3>& mesh0,
-        const toolbox::AdaptiveMesh<T, 3>& mesh1,
-        const Vector3f& E,
-        const Vector3f& B,
-        const T qm,
-        T dt) const
+        toolbox::AdaptiveMesh<T, 3>& mesh1,
+        Vector3f& E,
+        Vector3f& B,
+        T qm,
+        T dt) 
     {
       T val; // return value
-
-
-      Vector3f Fhalf = E/2.0; // construct (1/2) force
-
-      // fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
-
-      vec uvel = mesh1.get_center(index, rfl);  // velocity
+      vec u    = mesh1.get_center(index, rfl);  // velocity
       vec du   = mesh1.get_length(rfl);         // box size, i.e., \Delta u
       auto len = mesh1.get_size(rfl);
 
 
-      // get shift of the characteristic solution
-      Vector3f P = qm*(Fhalf + Fhalf);
+      // get shift of the characteristic solution from Lorentz force
+      Vector3f uvel( u.data() );
+      Vector3f F = lorentz_force(uvel, E, B, qm, dt);
+
 
       // advection in units of cells
       std::array<T,3> shift, cell_shift;
-      for(size_t i=0; i<3; i++) shift[i] = P(i)*(dt/du[i]);
+      for(size_t i=0; i<3; i++) shift[i] = F(i)/du[i];
 
       // advected cells
-      std::array<int,3> index_shifted;
-      for(size_t i=0; i<3; i++) index_shifted[i] = static_cast<int>( trunc(shift[i]) );
-
+      std::array<int,3> index_shift;
+      for(size_t i=0; i<3; i++) index_shift[i] = static_cast<int>( trunc(shift[i]) );
 
       // advection inside cell
       T tmp;
@@ -278,8 +301,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
       // new grid indices
       std::array<uint64_t, 3> index_new;
-      for(size_t i=0; i<3; i++) index_new[i] = index[i] + index_shifted[i];
-
+      for(size_t i=0; i<3; i++) index_new[i] = index[i] + index_shift[i];
 
 
       // set boundary conditions (zero outside the grid limits)
