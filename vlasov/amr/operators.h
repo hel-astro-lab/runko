@@ -14,6 +14,17 @@ namespace toolbox {
 
 // addition +
 //--------------------------------------------------
+
+template<typename T,int D>
+inline AdaptiveMesh<T,D> operator +(
+    AdaptiveMesh<T,D>& lhs,
+    AdaptiveMesh<T,D>& rhs)
+{
+  lhs += rhs;
+
+  return lhs;
+}
+
   
 template<typename T,int D>
 inline AdaptiveMesh<T,D> operator +(
@@ -49,6 +60,15 @@ inline AdaptiveMesh<T,D>& operator +(
 
 // subtraction -
 //--------------------------------------------------
+template<typename T,int D>
+inline AdaptiveMesh<T,D> operator -(
+    AdaptiveMesh<T,D>& lhs,
+    AdaptiveMesh<T,D>& rhs)
+{
+  lhs -= rhs;
+
+  return lhs;
+}
 
 template<typename T,int D>
 inline AdaptiveMesh<T,D> operator -(

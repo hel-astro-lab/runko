@@ -59,10 +59,10 @@ class SpatialSolver {
 
 /// Relativistic gamma from velocity
 template<typename T, int D>
-inline T gammafac(std::array<T,D>& uvel) 
+inline T gamma(std::array<T,D>& uvel) 
 {
   T gammasq = 1.0;
-  for(size_t i=0; i<3; i++) gammasq += uvel[i]*uvel[i];
+  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
   return std::sqrt(gammasq);
 }
 
@@ -85,7 +85,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
     /// velocity tensor product
     toolbox::AdaptiveMesh<T,3>& velocityTensorProduct(
         toolbox::AdaptiveMesh<T,3>&  lhs,
-        size_t rank)
+        size_t rank,
+        T Const)
     {
 
       for(auto&& cid : lhs.get_cells(false)) {
@@ -95,13 +96,14 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
         // compute (u_x/gamma)^R factor
         T vvel = T(1);
-        T gam  = gamma(uvel);
+        T gam  = gamma<T,3>(uvel);
         for(size_t i=0; i<rank; i++) {
           vvel *= (uvel[0]/gam);
         }
 
-        // finally compute flux: (u_x dt/dx)^R f(x,v,t)
-        lhs.data.at(cid) *= vvel;
+
+        // finally compute flux: C*(u_x dt/dx)^R f(x,v,t)
+        lhs.data.at(cid) *= vvel*Const;
       }
 
 
@@ -126,10 +128,12 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         T dt,
         T dx) {
 
-      return   0.5*(dt/dx)*        velocityTensorProduct(Mp1 + M, 1) 
-             - 0.5*(dt/dx)*(dt/dx)*velocityTensorProduct(Mp1 - M, 2); 
-    }
+      auto Mp = Mp1 + M; // explicitly allocate tmp variables
+      auto Mn = Mp1 - M;    
 
+      return   velocityTensorProduct(Mp, 1, 0.5*(dt/dx) ) 
+             - velocityTensorProduct(Mn, 2, 0.5*(dt/dx)*(dt/dx) ); 
+    }
 
 
     /// sweep and solve internal blocks in X direction
@@ -161,18 +165,15 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             auto& Nm1 = block1.block(q-1,r,s); // f_i-1^t+dt
 
 
-            // debugging test
-            N = Mm1 + Mp1;
-
-
             // flux calculation, i.e., U_i+1/2
-            // auto flux = flux2nd(M, Mp1, dt, dx);
+            auto flux = flux2nd(M, Mp1, dt, dx);
+
+            N = flux;
 
             // N   -= flux; // - U_i+1/2
             // Nm1 += flux; // + U_i-1/2
 
             // calculate current
-
 
 
           }

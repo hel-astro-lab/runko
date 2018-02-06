@@ -791,48 +791,59 @@ class AdaptiveMesh {
     */
 
 
+  /// in-place addition
   inline AdaptiveMesh<T,D>& operator += (const AdaptiveMesh<T,D>& rhs)
   {
+    return apply_elementwise(rhs, [](T a, T b) -> T { return a + b; } );
+  }
 
-    for(auto&& cid_rhs : rhs.get_cells()) {
+
+  /// in-place subtraction
+  inline AdaptiveMesh<T,D>& operator -= (const AdaptiveMesh<T,D>& rhs)
+  {
+    return apply_elementwise(rhs, [](T a, T b) -> T { return a - b; } );
+  }
+
+
+  /// General elementwise operator for applying f(A_i, B_i) to mesh A and B 
+  template<typename Lambda>
+  inline AdaptiveMesh<T,D>& apply_elementwise(
+      const AdaptiveMesh<T,D>& rhs,
+      Lambda&& func)
+  {
+
+    // loop over sorted cells so that sizes of incoming cells is decreasing
+    for(auto&& cid_rhs : rhs.get_cells(true)) {
       auto it = data.find(cid_rhs);
-      T val_rhs = rhs.data.at(cid_rhs);
+      T val_rhs = rhs.data.at(cid_rhs); // cell guaranteed to exists in rhs.data so we can use .at()
 
       if (it != data.end()) {
-        it->second += val_rhs; // cell exists so we simply add
+        it->second = func(it->second, val_rhs); // cell exists so we simply add
       } else {
+        // tree creation branch
 
-        // else loop until something is found
         int refinement_level = get_refinement_level(cid_rhs);
-        indices_t ind = get_indices(cid_rhs);
-        T val_tree = T(0);
+        if(refinement_level == 0) {
+          T val = func(0, val_rhs);
+          data.insert(std::make_pair(cid_rhs, val));
+        } else {
 
-        int rfl;
-        std::vector<uint64_t> tree;
-        tree.push_back(cid_rhs);
+          uint64_t cid_parent = rhs.get_parent(cid_rhs);
 
-        for(rfl=refinement_level-1; rfl >= 0; rfl--) {
-          for(size_t i=0; i<D; i++) ind[i] /= 2; // get parent index
-          uint64_t cid_tree = get_cell_from_indices(ind, rfl);
+          T val_parent = T(0);
+          const auto itp = rhs.data.find(cid_parent);
+          if (itp != rhs.data.end()) val_parent = itp->second;
 
-          for(auto& sibling : get_siblings(cid_tree)) tree.push_back(sibling);
+          T val_tree = T(0);
+          const auto itt = data.find(cid_parent);
+          if (itt != data.end()) val_tree = itt->second;
 
-          it = data.find(cid_tree);
-          if( it != data.end() ) {
-            val_tree = it->second;  
-            break;
-          }
+          T val_inv = func(val_tree, -val_parent); // inverse of func; gives old value of 
+                                                   // cell before func was applied. NOTE: Works only for + and -
+          T val = func(val_inv, val_rhs);
+
+          data.insert( std::make_pair(cid_rhs, val) );
         }
-
-        // now we know the rfl level where there exists something in the mesh
-        // and the index of that parent together with a value of that cell. 
-        // In worst case, this is the bottom and nothing actually exists in this 
-        // location of the mesh. Then val_tree = 0, too.
-
-
-        // reconstruct the full tree with the sum
-        for(uint64_t cid_tree : tree) data[cid_tree] = val_rhs + val_tree;
-
       }
     }
 

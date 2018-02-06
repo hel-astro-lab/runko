@@ -21,11 +21,11 @@ def filler(xloc, uloc, ispcs, conf):
     delgam = np.sqrt(1.0)
 
     if xloc[0]   == 0.0:
-        mean = [-5.0, 0.0, 0.0]
+        mean = [-3.0, 0.0, 0.0]
     elif xloc[0] == 1.0:
         mean = [ 0.0, 0.0, 0.0]
     elif xloc[0] == 2.0:
-        mean = [ 5.0, 0.0, 0.0]
+        mean = [ 3.0, 0.0, 0.0]
 
     cov  = np.zeros((3,3))
     cov[0,0] = 1.0 
@@ -92,7 +92,7 @@ class Conf:
     Nzv = 20
 
     #vmesh refinement
-    refinement_level = 1
+    refinement_level = 2
     clip = True
     clipThreshold = 1.0e-5
 
