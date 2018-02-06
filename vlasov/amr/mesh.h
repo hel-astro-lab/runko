@@ -805,11 +805,10 @@ class AdaptiveMesh {
         // else loop until something is found
         int refinement_level = get_refinement_level(cid_rhs);
         indices_t ind = get_indices(cid_rhs);
-        T val_parent = T(0);
+        T val_tree = T(0);
 
         int rfl;
         std::vector<uint64_t> tree;
-        //for(auto& sibling : get_siblings(cid_rhs)) tree.push_back(sibling);
         tree.push_back(cid_rhs);
 
         for(rfl=refinement_level-1; rfl >= 0; rfl--) {
@@ -820,22 +819,19 @@ class AdaptiveMesh {
 
           it = data.find(cid_tree);
           if( it != data.end() ) {
-            val_parent = it->second;  
+            val_tree = it->second;  
             break;
           }
         }
 
-
         // now we know the rfl level where there exists something in the mesh
         // and the index of that parent together with a value of that cell. 
         // In worst case, this is the bottom and nothing actually exists in this 
-        // location of the mesh. Then val_parent = 0, too.
+        // location of the mesh. Then val_tree = 0, too.
 
-        // create tree from bottom (=rfl) to top (=refinement_level)
-        // for(int rfl_tree=rfl; rfl_tree<= refinement_level; rfl_tree++) {
-        //   for(auto& cid_children: get_children(cid_tree) {
-        //   }
-          
+
+        // reconstruct the full tree with the sum
+        for(uint64_t cid_tree : tree) data[cid_tree] = val_rhs + val_tree;
 
       }
     }

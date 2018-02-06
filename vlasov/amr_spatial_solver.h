@@ -151,7 +151,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
           for(size_t q=0+H; q<block0.Nx-H; q++) {
 
             // dig out velomeshes from blocks (M's; constants)
-            // const auto& Mm1 = block0.block(q-1,r,s); // f_i-1
+            const auto& Mm1 = block0.block(q-1,r,s); // f_i-1
             const auto& M   = block0.block(q,  r,s); // f_i
             const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
 
@@ -162,7 +162,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
             // debugging test
-            N = M + Mp1;
+            N = Mm1 + Mp1;
 
 
             // flux calculation, i.e., U_i+1/2
