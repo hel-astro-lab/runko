@@ -8,7 +8,10 @@ namespace py = pybind11;
 #include "amr/mesh.h"
 #include "amr/numerics.h"
 #include "amr/refiner.h"
+#include "amr/operators.h"
 #include "amr_momentum_solver.h"
+#include "amr_spatial_solver.h"
+
 
 
 typedef float Realf;
@@ -40,6 +43,26 @@ class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
           mesh0, mesh1, E, B, qm, dt
           );
     }
+};
+
+
+/// trampoline class for VlasovSpatialSolver
+class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
+  public:
+    using vlasov::SpatialSolver<Realf>::get_external_data;
+
+    void solve(
+      vlasov::VlasovCell& cell,
+      vlasov::Grid& grid
+      ) override {
+      PYBIND11_OVERLOAD_PURE(
+          void,
+          vlasov::SpatialSolver<Realf>,
+          solve,
+          cell, grid
+          );
+    }
+
 };
 
 
@@ -128,15 +151,28 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def("unrefine",                    &Adapter3d::unrefine);
 
 
+  // general interface for momentum solvers
   py::class_<vlasov::MomentumSolver<Realf>, PyMomentumSolver> vvsol(m, "MomentumSolver");
   vvsol
     .def(py::init<>())
     .def("solve",     &vlasov::MomentumSolver<Realf>::solve)
     .def("solveMesh", &vlasov::MomentumSolver<Realf>::solveMesh);
 
+  // AMR Lagrangian solver
   py::class_<vlasov::AmrMomentumLagrangianSolver<Realf>>(m, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
+
+  // general interface for spatial solvers
+  py::class_<vlasov::SpatialSolver<Realf>, PySpatialSolver> vssol(m, "SpatialSolver");
+  vssol
+    .def(py::init<>())
+    .def("solve", &vlasov::SpatialSolver<Realf>::solve);
+
+
+  // AMR Lagrangian solver
+  py::class_<vlasov::AmrSpatialLagrangianSolver<Realf>>(m, "AmrSpatialLagrangianSolver", vssol)
+    .def(py::init<>());
 
 
 

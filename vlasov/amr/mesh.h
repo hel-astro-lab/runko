@@ -593,7 +593,7 @@ class AdaptiveMesh {
   }
 
 
-  std::vector<uint64_t> get_cells(bool sorted)
+  std::vector<uint64_t> get_cells(bool sorted=false) const
   {
     std::vector<uint64_t> all_cells;
 
@@ -774,6 +774,74 @@ class AdaptiveMesh {
   }
 
 
+  /*
+    int refinement_level = get_refinement_level(cid);
+    indices_t ind = get_indices(cid);
+
+    for(int rfl=refinement_level; rfl >= 0; rfl--) {
+      cid = get_cell_from_indices(ind, rfl);
+
+      auto it = data.find(cid);
+      if( it != data.end() ) return it->second;
+
+      for(size_t i=0; i<D; i++) {
+        ind[i] /= 2;
+      }
+    }
+    */
+
+
+  inline AdaptiveMesh<T,D>& operator += (const AdaptiveMesh<T,D>& rhs)
+  {
+
+    for(auto&& cid_rhs : rhs.get_cells()) {
+      auto it = data.find(cid_rhs);
+      T val_rhs = rhs.data.at(cid_rhs);
+
+      if (it != data.end()) {
+        it->second += val_rhs; // cell exists so we simply add
+      } else {
+
+        // else loop until something is found
+        int refinement_level = get_refinement_level(cid_rhs);
+        indices_t ind = get_indices(cid_rhs);
+        T val_parent = T(0);
+
+        int rfl;
+        std::vector<uint64_t> tree;
+        //for(auto& sibling : get_siblings(cid_rhs)) tree.push_back(sibling);
+        tree.push_back(cid_rhs);
+
+        for(rfl=refinement_level-1; rfl >= 0; rfl--) {
+          for(size_t i=0; i<D; i++) ind[i] /= 2; // get parent index
+          uint64_t cid_tree = get_cell_from_indices(ind, rfl);
+
+          for(auto& sibling : get_siblings(cid_tree)) tree.push_back(sibling);
+
+          it = data.find(cid_tree);
+          if( it != data.end() ) {
+            val_parent = it->second;  
+            break;
+          }
+        }
+
+
+        // now we know the rfl level where there exists something in the mesh
+        // and the index of that parent together with a value of that cell. 
+        // In worst case, this is the bottom and nothing actually exists in this 
+        // location of the mesh. Then val_parent = 0, too.
+
+        // create tree from bottom (=rfl) to top (=refinement_level)
+        // for(int rfl_tree=rfl; rfl_tree<= refinement_level; rfl_tree++) {
+        //   for(auto& cid_children: get_children(cid_tree) {
+        //   }
+          
+
+      }
+    }
+
+    return *this;
+  }
 
 
 };
