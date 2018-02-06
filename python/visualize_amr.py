@@ -100,9 +100,9 @@ def get_leaf_mesh(m, args):
     print("cells: {} / leafs {} (ratio: {}) / full {} (compression {})".format(
         Nc,
         leafs, 
-        Nc/leafs,
+        1.0*Nc/(1.0*leafs),
         nx*ny*nz, 
-        Nc /(nx*ny*nz) 
+        Nc /(1.0*nx*ny*nz) 
         ))
 
 
@@ -132,6 +132,29 @@ def plot2DSlice(ax, vmesh, args):
             vmax = 1.0,
             cmap = "plasma_r",
             clip = 0.0
+            )
+    return
+
+
+
+def plot2DSliceFlux(ax, vmesh, args):
+
+    mesh = get_leaf_mesh(vmesh, args)
+
+    #normalize
+    fmax = np.max(np.abs(mesh.ff))
+    mesh.ff = mesh.ff / fmax
+
+
+
+    imshow(ax,
+            mesh.ff,
+            mesh.xx[0], mesh.xx[-1],
+            mesh.yy[0], mesh.yy[-1],
+            vmin =-1.0,
+            vmax = 1.0,
+            cmap = "RdBu",
+            clip = None
             )
     return
 

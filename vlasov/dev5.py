@@ -14,6 +14,7 @@ import pyplasmaDev as pdev
 import initialize as init
 import injector
 from visualize_amr import plot2DSlice
+from visualize_amr import plot2DSliceFlux
 
 
 def filler(xloc, uloc, ispcs, conf):
@@ -21,16 +22,16 @@ def filler(xloc, uloc, ispcs, conf):
     delgam = np.sqrt(1.0)
 
     if xloc[0]   == 0.0:
-        mean = [-3.0, 0.0, 0.0]
+        mean = [ 0.0,-3.0, 0.0]
     elif xloc[0] == 1.0:
-        mean = [ 0.0, 0.0, 0.0]
+        mean = [ 0.0, 0.0, 3.0]
     elif xloc[0] == 2.0:
-        mean = [ 3.0, 0.0, 0.0]
+        mean = [ 0.0, 3.0, 0.0]
 
     cov  = np.zeros((3,3))
-    cov[0,0] = 1.0 
-    cov[1,1] = 2.0 
-    cov[2,2] = 5.0
+    cov[0,0] = 15.0 
+    cov[1,1] = 1.0 
+    cov[2,2] = 6.0
 
     f = multivariate_normal.pdf(uloc, mean, cov)
 
@@ -131,16 +132,19 @@ def plotAll(axs, node, conf, lap):
                 "q":  "mid",
                 "rfl": rfl }
         plot2DSlice(axs[0+ix*len(bl)], vmesh, args)
+        #plot2DSliceFlux(axs[0+ix*len(bl)], vmesh, args)
 
         args = {"dir":"xz", 
                 "q":   "mid",
                 "rfl": rfl }
         plot2DSlice(axs[1+ix*len(bl)], vmesh, args)
+        #plot2DSliceFlux(axs[1+ix*len(bl)], vmesh, args)
 
         args = {"dir":"yz", 
                 "q":   "mid",
                 "rfl": rfl }
         plot2DSlice(axs[2+ix*len(bl)], vmesh, args)
+        #plot2DSliceFlux(axs[2+ix*len(bl)], vmesh, args)
 
 
     #set_xylims(axs)
@@ -211,15 +215,15 @@ if __name__ == "__main__":
 
 
 
-    for lap in range(1,2):
+    for lap in range(1,10):
         print("-------lap {} -------".format(lap))
 
         ssol.solve(cell, node)
 
         cell.cycle()
 
-        #if conf.clip:
-        #    cell.clip()
+        if conf.clip:
+            cell.clip()
 
         plotAll(axs, node, conf, lap)
 

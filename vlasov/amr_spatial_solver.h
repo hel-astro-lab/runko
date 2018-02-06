@@ -101,11 +101,9 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
           vvel *= (uvel[0]/gam);
         }
 
-
         // finally compute flux: C*(u_x dt/dx)^R f(x,v,t)
         lhs.data.at(cid) *= vvel*Const;
       }
-
 
       return lhs;
     }
@@ -147,55 +145,70 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         T dx)
     {
 
-      size_t H=1; // width of halo region
+
+      // initialize new step
       for (size_t s=0; s<block0.Nz; s++) {
         for(size_t r=0; r<block0.Ny; r++) {
-
-
-          for(size_t q=0+H; q<block0.Nx-H; q++) {
-
-            // dig out velomeshes from blocks (M's; constants)
-            const auto& Mm1 = block0.block(q-1,r,s); // f_i-1
-            const auto& M   = block0.block(q,  r,s); // f_i
-            const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
-
-
-            // new time step targets to update into (N's)
-            auto& N   = block1.block(q,  r,s); // f_i  ^t+dt
-            auto& Nm1 = block1.block(q-1,r,s); // f_i-1^t+dt
-
-
-            // flux calculation, i.e., U_i+1/2
-            auto flux = flux2nd(M, Mp1, dt, dx);
-
-            N = flux;
-
-            // N   -= flux; // - U_i+1/2
-            // Nm1 += flux; // + U_i-1/2
-
-            // calculate current
-
-
+          for(size_t q=0; q<block0.Nx; q++) {
+            const auto& M = block0.block(q,r,s); // f_i
+            auto& N       = block1.block(q,r,s); // f_i  ^t+dt
+            N = M;
           }
-
-
-          /*
-          const auto& M   = block0.block(block0.Nx-1,  r,s); // f_i
-          const auto& Mp1 = block0_right.block(0,r,s); // f_i-1
-          auto& N   = block1.block(,  r,s); // f_i  ^t+dt
-
-          auto flux = flux2nd(Mm1, M, dt, dx);
-          N += flux; // + U_i-1/2
-          */
-
-
-
         }
       }
 
 
+      // local flows
+      toolbox::AdaptiveMesh<T,3> flux;
+      int Nx = int(block0.Nx);
+
+      for (size_t s=0; s<block0.Nz; s++) {
+        for(size_t r=0; r<block0.Ny; r++) {
+          for(int q=-1; q<Nx; q++) {
+
+            // dig out velomeshes from blocks (M's; constants)
+            // and calculate flux, i.e., U_i+1/2
+            //
+            // NOTE: flux has to be calculated inside every if-clause
+            //       because we can not pre-initialize references 
+            //       (these are there to save memory by avoiding 
+            //       copy of consts)
+              
+            if (q < 0) { //left halo
+              const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
+              const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
+
+              flux = flux2nd(M, Mp1, dt, dx);
+            } else if ( (q >= 0) && (q <= Nx-2) ) { // inside
+              const auto& M   = block0.block(q,r,s);   // f_i
+              const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
+
+              flux = flux2nd(M, Mp1, dt, dx);
+            } else if (q >= Nx-1) { //right halo
+              const auto& M   = block0.block(q,r,s);       // f_i
+              const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
+
+              flux = flux2nd(M, Mp1, dt, dx);
+            }
 
 
+            // new local time step targets to update into (N's)
+            auto& N   = block1.block(q,  r,s); // f_i  ^t+dt
+            auto& Np1 = block1.block(q+1,r,s); // f_i+1^t+dt
+
+
+            // now flow to neighbors; only local flows are allowed
+            if(q >= 0)    N   -= flux; // - U_i+1/2 (outflowing from cell)
+            if(q <= Nx-2) Np1 += flux; // + U_i-1/2 (inflowing to neighbor)
+
+
+            // calculate current
+            // XXX
+
+
+          }
+        }
+      }
     }
 
 

@@ -64,7 +64,7 @@ fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++
 pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pyplasma.o -c python/pyplasma.c++
 
-dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr_momentum_solver.h
+dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o dev-bindings.o -c vlasov/bindings.c++
 
 #reference to pycorgi's own make
