@@ -67,7 +67,40 @@ inline T gamma(std::array<T,D>& uvel)
 }
 
 
+/// Simple (relativistic) box integration of a mesh flux
+template<typename T>
+T integrate_current(
+    toolbox::AdaptiveMesh<T,3>& m)
+{
 
+  int rfl; // current refinement level
+  T gam; // differential element (box size)
+
+  // pre-create size of the elements
+  std::vector<T> du;
+  du.resize( m.maximum_refinement_level );
+
+  for(rfl=0; rfl<=m.maximum_refinement_level; rfl++) {
+    auto lens = m.get_length(rfl);
+    T len = lens[0]*lens[1]*lens[2];
+    du[rfl] = len;
+  }
+
+  // integrate leafs; j = int{ U du/gamma}
+  T integ = T(0);
+  for(auto cid : m.get_cells(true) ) {
+    if( !m.is_leaf(cid) ) continue;
+
+    auto index = m.get_indices(cid);
+    rfl = m.get_refinement_level(cid);
+    auto uvel  = m.get_center(index, rfl);
+    gam = gamma<T,3>(uvel);
+
+    integ += m.data[cid]*du[rfl]/gam;
+  }
+
+  return integ;
+}
 
 
 
@@ -119,7 +152,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
     // }
  
 
-    /// Second order centralized flux; U_+
+    /// Second order flux; U_+
     inline toolbox::AdaptiveMesh<T,3> flux2nd(
         const toolbox::AdaptiveMesh<T,3>& M ,
         const toolbox::AdaptiveMesh<T,3>& Mp1,
@@ -134,6 +167,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
     }
 
 
+
+
     /// sweep and solve internal blocks in X direction
     void xsweep(
         vlasov::PlasmaBlock& block0,
@@ -142,7 +177,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         vlasov::PlasmaBlock& block0_right,
         T qm,
         T dt,
-        T dx)
+        T dx,
+        fields::YeeLattice& yee)
     {
 
 
@@ -151,7 +187,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         for(size_t r=0; r<block0.Ny; r++) {
           for(size_t q=0; q<block0.Nx; q++) {
             const auto& M = block0.block(q,r,s); // f_i
-            auto& N       = block1.block(q,r,s); // f_i  ^t+dt
+            auto& N       = block1.block(q,r,s); // f_i^t+dt
             N = M;
           }
         }
@@ -160,10 +196,12 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
       // local flows
       toolbox::AdaptiveMesh<T,3> flux;
-      int Nx = int(block0.Nx);
+      int Nx = int(block0.Nx),
+          Ny = int(block0.Ny),
+          Nz = int(block0.Nz);
 
-      for (size_t s=0; s<block0.Nz; s++) {
-        for(size_t r=0; r<block0.Ny; r++) {
+      for (int s=0; s<Nz; s++) {
+        for(int r=0; r<Ny; r++) {
           for(int q=-1; q<Nx; q++) {
 
             // dig out velomeshes from blocks (M's; constants)
@@ -191,25 +229,22 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
               flux = flux2nd(M, Mp1, dt, dx);
             }
 
-
             // new local time step targets to update into (N's)
             auto& N   = block1.block(q,  r,s); // f_i  ^t+dt
             auto& Np1 = block1.block(q+1,r,s); // f_i+1^t+dt
-
 
             // now flow to neighbors; only local flows are allowed
             if(q >= 0)    N   -= flux; // - U_i+1/2 (outflowing from cell)
             if(q <= Nx-2) Np1 += flux; // + U_i-1/2 (inflowing to neighbor)
 
-
             // calculate current
-            // XXX
-
+            if( (q >= 0) && (q < Nx) ) yee.jx(q,r,s) += sign(qm)*integrate_current(flux);
 
           }
         }
       }
     }
+
 
 
     // Strang splitted rotating (X/2 Y X/2) solver 
@@ -249,17 +284,15 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         //auto& block0_top    = get_external_data( 0,+1, ispc, cell, grid);
 
         // sweep in X
-        xsweep(block0, block1, block0_left, block0_right, qm, dt, dx);
-
-
+        xsweep(block0, block1, block0_left, block0_right, qm, dt, dx, yee);
         // ysweep(block0, block1, block0_bottom, block0_top,   qm, dt, dx);
         // xsweep(block0, block1, block0_left,   block0_right, qm, dt/2, dx);
+
 
         ispc++;
       }
 
       // done
-
     }
 
 

@@ -22,18 +22,23 @@ def filler(xloc, uloc, ispcs, conf):
     delgam = np.sqrt(1.0)
 
     if xloc[0]   == 0.0:
-        mean = [ 0.0,-3.0, 0.0]
+        mean = [ 1.0,-3.0, 0.0]
     elif xloc[0] == 1.0:
-        mean = [ 0.0, 0.0, 3.0]
+        mean = [ 1.0, 0.0, 3.0]
     elif xloc[0] == 2.0:
-        mean = [ 0.0, 3.0, 0.0]
+        mean = [ 1.0, 3.0, 0.0]
+
+    if ispcs == 1:
+        mean = [ 0.0, 0.0, 0.0]
+
 
     cov  = np.zeros((3,3))
-    cov[0,0] = 15.0 
+    cov[0,0] = 1.0 
     cov[1,1] = 1.0 
     cov[2,2] = 6.0
 
     f = multivariate_normal.pdf(uloc, mean, cov)
+
 
     return f
 
@@ -93,7 +98,7 @@ class Conf:
     Nzv = 20
 
     #vmesh refinement
-    refinement_level = 2
+    refinement_level = 1
     clip = True
     clipThreshold = 1.0e-5
 
@@ -219,6 +224,12 @@ if __name__ == "__main__":
         print("-------lap {} -------".format(lap))
 
         ssol.solve(cell, node)
+
+        yee = cell.getYee(0)
+
+        for ix in [0,1,2]:
+            print("  {}: {}".format(ix, yee.jx[ix,0,0]))
+        print("\n")
 
         cell.cycle()
 
