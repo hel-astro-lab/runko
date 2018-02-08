@@ -28,17 +28,13 @@ def filler(xloc, uloc, ispcs, conf):
     elif xloc[0] == 2.0:
         mean = [ 1.0, 3.0, 0.0]
 
-    if ispcs == 1:
-        mean = [ 0.0, 0.0, 0.0]
 
 
     cov  = np.zeros((3,3))
     cov[0,0] = 1.0 
     cov[1,1] = 1.0 
     cov[2,2] = 6.0
-
     f = multivariate_normal.pdf(uloc, mean, cov)
-
 
     return f
 
@@ -93,9 +89,9 @@ class Conf:
     vymax =  10.0
     vzmax =  10.0
 
-    Nxv = 20
-    Nyv = 20
-    Nzv = 20
+    Nxv = 25
+    Nyv = 25
+    Nzv = 25
 
     #vmesh refinement
     refinement_level = 1

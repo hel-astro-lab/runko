@@ -64,7 +64,10 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
                 val = ffunc(xloc, uloc, ispcs, conf)
                 vmesh[r,s,t, 0] =  val #ref lvl 0
 
+
     if conf.refinement_level < 1:
+        if conf.clip:
+            vmesh.clip_cells(conf.clipThreshold)
         return 
 
 
