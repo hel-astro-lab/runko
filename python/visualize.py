@@ -195,7 +195,7 @@ def getYee(n, conf):
         cid = n.cellId(i,0)
         c = n.getCellPtr(cid)
 
-        yee = c.getYee()
+        yee = c.getYee(0)
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
 

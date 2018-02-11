@@ -6,15 +6,15 @@ import matplotlib.pyplot as plt
 import sys, os
 
 import corgi
-import plasmatools as ptools
 import pyplasma as plasma
+import pyplasmaDev as pdev
 
 
 from configSetup import Configuration
 import initialize as init
 
-from visualize import plotNode
-from visualize import plotXmesh
+#from visualize import plotNode
+#from visualize import plotXmesh
 from visualize import plotJ, plotE
 from visualize import saveVisz
 from visualize import getYee
@@ -29,13 +29,19 @@ from timer import Timer
 # Maxwellian plasma with Brownian noise
 # where delgam = kT/m_i c^2
 #
-
-
-def filler(x, y, z, ux, uy, uz, conf, ispcs):
+def filler(xloc, uloc, ispcs, conf):
 
     mux_noise      = 0.0
     delgam_noise   = 0.0
     brownian_noise = 0.0
+
+    x = xloc[0]
+    y = xloc[1]
+    z = xloc[2] 
+
+    ux = uloc[0]
+    uy = uloc[1]
+    uz = uloc[2] 
 
     #electrons
     if ispcs == 0:
@@ -59,17 +65,17 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
         Lx  = conf.Nx*conf.NxMesh*conf.dx
         for l, kx in enumerate(modes):
             mux_noise += conf.beta*np.sin( 2*np.pi*(-kx*x/Lx + random_phase[l] ))
-
+    
 
     #Brownian noise
     #brownian_noise = 0.01*np.random.standard_normal() 
     #brownian_noise *= delgam
 
-
     #Classical Maxwellian distribution
-    f  = 1.0/np.sqrt(2.0*np.pi*delgam)
+    f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
+
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
-    f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam))
+    f *= np.exp(-0.5*(( (ux - mux) + (uy - muy) + (uz - muz) - mux_noise)**2)/(delgam))
 
 
     return f
@@ -142,37 +148,28 @@ if __name__ == "__main__":
             os.makedirs(conf.outdir)
 
 
-
     ################################################## 
     # initialize
     Nx           = conf.Nx*conf.NxMesh
-    modes        = np.arange(1280) + 1
+    modes        = np.arange(64) + 1
     random_phase = np.random.rand(len(modes))
 
-    injector.inject(node, filler, conf, clip=False) #injecting plasma
+    injector.inject(node, filler, conf) #injecting plasma
 
 
     # visualize initial condition
-    plotNode(axs[0], node, conf)
-    plotXmesh(axs[1], node, conf, 0)
-    plotXmesh(axs[2], node, conf, 1)
-    saveVisz(-1, node, conf)
+    #plotNode(axs[0], node, conf)
+    #plotXmesh(axs[1], node, conf, 0)
+    #plotXmesh(axs[2], node, conf, 1)
+    #saveVisz(-1, node, conf)
 
 
 
     #setup momentum space solver
-    vsol = plasma.MomentumLagrangianSolver()
-    #intp = ptools.BundleInterpolator2nd()
-    #intp = ptools.BundleInterpolator4th()
-    intp = ptools.BundleInterpolator4PIC()
-    vsol.setInterpolator(intp)
-
+    vsol = pdev.AmrMomentumLagrangianSolver()
 
     #setup spatial space solver
-    ssol = plasma.SpatialLagrangianSolver2nd()
-    #ssol = plasma.SpatialLagrangianSolver4th()
-    ssol.setGrid(node)
-    
+    ssol = pdev.AmrSpatialLagrangianSolver()
 
 
     timer.stop("init") 
@@ -203,7 +200,7 @@ if __name__ == "__main__":
     ifile = 0
     for lap in range(0, conf.Nt):
 
-        #E field
+        #E field (Ampere's law)
         #updateBoundaries(node)
         #for cid in node.getCellIds():
         #    c = node.getCellPtr( cid )
@@ -213,26 +210,25 @@ if __name__ == "__main__":
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                vsol.setCell(cell)
-                vsol.solve()
+                vsol.solve(cell)
 
         #spatial step
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                ssol.setTargetCell(i,j)
-                ssol.solve()
+                cell = node.getCellPtr(i,j)
+                ssol.solve(cell, node)
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                cell.cyclePlasma()
+                cell.cycle()
 
         #currents
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
-            c.depositCurrent()
-
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.depositCurrent()
 
         #clip every cell
         for j in range(node.getNy()):
@@ -255,9 +251,9 @@ if __name__ == "__main__":
             save(node, conf, ifile, dset)
             ifile += 1
 
-            plotNode(axs[0], node, conf)
-            plotXmesh(axs[1], node, conf, 0) #electrons
-            plotXmesh(axs[2], node, conf, 1) #positrons
+            #plotNode(axs[0], node, conf)
+            #plotXmesh(axs[1], node, conf, 0) #electrons
+            #plotXmesh(axs[2], node, conf, 1) #positrons
 
             plotJ(axs[3], node, conf)
             plotE(axs[4], node, conf)
@@ -268,8 +264,6 @@ if __name__ == "__main__":
             timer.stats("io")
 
             timer.start("step") #refresh lap counter (avoids IO profiling)
-
-
 
 
         time += conf.dt

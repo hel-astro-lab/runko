@@ -45,7 +45,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
 
 def createEmptyVelocityMesh(conf):
     vmesh = pdev.AdaptiveMesh3D()
-    vmesh.resize( [conf.Nxv,  conf.Nyv,  conf.Nzv ])
+    vmesh.resize( [conf.Nvx,  conf.Nvy,  conf.Nvz ])
     vmesh.set_min([conf.vxmin, conf.vymin, conf.vzmin])
     vmesh.set_max([conf.vxmax, conf.vymax, conf.vzmax])
 
@@ -109,6 +109,7 @@ def inject(node, ffunc, conf):
         for j in range(node.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
+                print("creating ({},{})".format(i,j))
 
                 #get cell & its content
                 cid    = node.cellId(i,j)
@@ -118,11 +119,19 @@ def inject(node, ffunc, conf):
                 species = []
                 for ispcs in range(2):
                     block = pdev.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                    block.qm = conf.qm #set q/m
+                    
+                    #set q/m
+                    if ispcs == 0:
+                        block.qm = 1.0/conf.me
+                    elif ispcs == 1:
+                        block.qm = 1.0/conf.mi
+
 
                     for n in range(conf.NzMesh):
                         for m in range(conf.NyMesh):
                             for l in range(conf.NxMesh):
+                                #print(" sub mesh: ({},{},{})".format(l,m,n))
+
                                 xloc = spatialLoc(node, (i,j), (l,m,n), conf)
 
                                 vmesh = createEmptyVelocityMesh(conf)
@@ -131,10 +140,11 @@ def inject(node, ffunc, conf):
                                          xloc,
                                          ispcs,
                                          conf)
+                                #vmesh.maximum_refinement_level = conf.refinement_level
+
 
                                 block[l,m,n] = vmesh
                     species.append(block)
 
                 c.insertInitialSpecies(species)
-
 

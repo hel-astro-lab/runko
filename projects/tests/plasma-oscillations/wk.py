@@ -34,7 +34,7 @@ f = h5py.File('out/run.hdf5','r')
 ex = np.transpose( f['fields/Ex'] )  #load as arr[spatial, temporal]
 #ex = ex[300:, :] #skim off some warm-up phase
 #ex = ex[:, 8:340]
-ex = ex[:, :340]
+#ex = ex[:, :340]
 
 print "Ex shape:", np.shape(ex)
 

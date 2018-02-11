@@ -84,6 +84,7 @@ PYBIND11_MODULE(pyplasmaDev, m) {
     .def("get_parent_indices",   &AM3d::get_parent_indices)
     .def("get_parent",           &AM3d::get_parent)
     .def("get_maximum_possible_refinement_level",&AM3d::get_maximum_possible_refinement_level)
+    .def("set_maximum_refinement_level", &AM3d::set_maximum_refinement_level)
     .def("get_level_0_parent_indices", &AM3d::get_level_0_parent_indices)
     .def("get_level_0_parent",   &AM3d::get_level_0_parent)
     .def("get_children",         &AM3d::get_children)

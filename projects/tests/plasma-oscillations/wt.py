@@ -31,7 +31,7 @@ f = h5py.File('out/run.hdf5','r')
 #Read field
 ex = f['fields/Ex']
 #ex = ex[150:, :] #skim off some warm-up phase
-ex = ex[:, 8:340]
+#ex = ex[:, 8:340]
 print "Ex shape:", np.shape(ex)
 
 

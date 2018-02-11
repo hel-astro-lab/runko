@@ -92,7 +92,7 @@ class MomentumSolver {
               auto& mesh0 = block0.block(q,r,s);
               auto& mesh1 = block1.block(q,r,s);
 
-              fmt::print("solving for srq ({},{},{})\n",s,r,q);
+              // fmt::print("solving for srq ({},{},{})\n",s,r,q);
 
               // then the final call to the actual mesh solver
               solveMesh( mesh0, mesh1, E, B, qm, dt);
@@ -145,7 +145,7 @@ class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T> {
 
       Vector3f Fhalf = E/2.0; // construct (1/2) force
 
-      fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
+      // fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
 
       T val = T(0);
       for(auto&& cid : mesh0.get_cells(false) ) {
@@ -376,12 +376,14 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
 
       // create new leafs
-      for(size_t sweep=1; sweep<=2; sweep++){
+      // TODO fixme
+      // for(size_t sweep=1; sweep<=mesh1.maximum_refinement_level; sweep++){
+      for(size_t sweep=1; sweep<=0; sweep++){
       
         adapter.refine(mesh1);
 
-        fmt::print(" sol: cells created {}\n", adapter.cells_to_refine.size());
-        fmt::print(" sol: cells removed {}\n", adapter.cells_removed.size());
+        // fmt::print(" sol: cells created {}\n", adapter.cells_to_refine.size());
+        // fmt::print(" sol: cells removed {}\n", adapter.cells_removed.size());
 
         adapter.cells_to_refine.clear();
         adapter.cells_to_unrefine.clear();
