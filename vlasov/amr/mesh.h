@@ -617,9 +617,10 @@ class AdaptiveMesh {
   // clip every cell below threshold
   void clip_cells(const T threshold) {
     std::vector<uint64_t> below_threshold;
+    T maxv = max_value();
 
     for(const uint64_t cid: get_cells(false)) {
-      if( data.at(cid) < threshold ) below_threshold.push_back(cid);
+      if( data.at(cid) < maxv*threshold ) below_threshold.push_back(cid);
     }
 
     for(const uint64_t cid: below_threshold) data.erase(cid);
@@ -805,7 +806,7 @@ class AdaptiveMesh {
   }
 
 
-  /// General elementwise operator for applying f(A_i, B_i) to mesh A and B 
+  /// General elementwise operator for applying fun(A_i, B_i) to mesh A and B 
   template<typename Lambda>
   inline AdaptiveMesh<T,D>& apply_elementwise(
       const AdaptiveMesh<T,D>& rhs,
@@ -849,6 +850,21 @@ class AdaptiveMesh {
 
     return *this;
   }
+
+  /// get absolute maximum value in the grid
+  // NOTE: lookup includes full mesh, not just leafs
+  T max_value() const
+  {
+    T ret = T(0),
+      val;
+    for(auto cid : get_cells(true) ) {
+      val = std::abs( data.at(cid) );
+      ret = val > ret ? val : ret;
+    };
+
+    return ret;
+  }
+
 
 
 };

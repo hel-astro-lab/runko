@@ -88,12 +88,12 @@ class MomentumSolver {
                    (T) (0.5*(yee.ey(q,r,s) + yee.ey(q,  r-1, s  ))),
                    (T) (0.5*(yee.ez(q,r,s) + yee.ez(q,  r,   s-1)))
                 }};
-                // E =                
-                // {{                 
-                //    (T) yee.ex(q,r,s),
-                //    (T) yee.ey(q,r,s),
-                //    (T) yee.ez(q,r,s)
-                // }};
+                //E =                
+                //{{                 
+                //   (T) yee.ex(q,r,s),
+                //   (T) yee.ey(q,r,s),
+                //   (T) yee.ez(q,r,s)
+                //}};
 
               // dig out velomeshes from blocks
               auto& mesh0 = block0.block(q,r,s);
@@ -350,7 +350,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
       adapter.cells_to_unrefine.clear();
 
 
-
       // empty the target mesh
       // TODO: is this efficient; should we recycle instead?
       mesh1.data.clear();
@@ -364,7 +363,9 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
 
       // level zero fill
-      T val = T(0);
+      T val     = T(0);
+      T max_val = mesh0.max_value();
+
       T refine_indicator, unrefine_indicator;
       auto len = mesh1.get_size(0);
       for(uint64_t r=0; r<len[0]; r++) {
@@ -379,8 +380,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
             // refinement
             // TODO specialize to value & gradient instead of just value
-            refine_indicator   = val;
-            unrefine_indicator = val;
+            refine_indicator   = val/max_val;
+            unrefine_indicator = val/max_val;
             adapter.checkCell(mesh1, cid, refine_indicator, unrefine_indicator);
 
             mesh1.set(cid, val);
@@ -412,8 +413,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
           val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, dt);
           mesh1.set(cid, val);
 
-          refine_indicator   = val;
-          unrefine_indicator = val;
+          refine_indicator   = val/max_val;
+          unrefine_indicator = val/max_val;
           adapter.checkCell(mesh1, cid, refine_indicator, unrefine_indicator);
         }
 
