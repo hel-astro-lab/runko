@@ -258,15 +258,15 @@ void copyVertYee(
   lhs.ey.copyVert(rhs.ey, lhsI, rhsI); 
   lhs.ez.copyVert(rhs.ez, lhsI, rhsI); 
 
-  lhs.bx.copyVert(rhs.bx, lhsI, rhsI); 
-  lhs.by.copyVert(rhs.by, lhsI, rhsI); 
-  lhs.bz.copyVert(rhs.bz, lhsI, rhsI); 
+  // lhs.bx.copyVert(rhs.bx, lhsI, rhsI); 
+  // lhs.by.copyVert(rhs.by, lhsI, rhsI); 
+  // lhs.bz.copyVert(rhs.bz, lhsI, rhsI); 
 
-  lhs.jx.copyVert(rhs.jx, lhsI, rhsI); 
-  lhs.jy.copyVert(rhs.jy, lhsI, rhsI); 
-  lhs.jz.copyVert(rhs.jz, lhsI, rhsI); 
+  // lhs.jx.copyVert(rhs.jx, lhsI, rhsI); 
+  // lhs.jy.copyVert(rhs.jy, lhsI, rhsI); 
+  // lhs.jz.copyVert(rhs.jz, lhsI, rhsI); 
 
-  lhs.rh.copyVert(rhs.rh, lhsI, rhsI); 
+  // lhs.rh.copyVert(rhs.rh, lhsI, rhsI); 
 
 }
 
@@ -280,15 +280,15 @@ void copyHorzYee(
   lhs.ey.copyHorz(rhs.ey, lhsJ, rhsJ); 
   lhs.ez.copyHorz(rhs.ez, lhsJ, rhsJ); 
                                     
-  lhs.bx.copyHorz(rhs.bx, lhsJ, rhsJ); 
-  lhs.by.copyHorz(rhs.by, lhsJ, rhsJ); 
-  lhs.bz.copyHorz(rhs.bz, lhsJ, rhsJ); 
+  // lhs.bx.copyHorz(rhs.bx, lhsJ, rhsJ); 
+  // lhs.by.copyHorz(rhs.by, lhsJ, rhsJ); 
+  // lhs.bz.copyHorz(rhs.bz, lhsJ, rhsJ); 
                                     
-  lhs.jx.copyHorz(rhs.jx, lhsJ, rhsJ); 
-  lhs.jy.copyHorz(rhs.jy, lhsJ, rhsJ); 
-  lhs.jz.copyHorz(rhs.jz, lhsJ, rhsJ); 
+  // lhs.jx.copyHorz(rhs.jx, lhsJ, rhsJ); 
+  // lhs.jy.copyHorz(rhs.jy, lhsJ, rhsJ); 
+  // lhs.jz.copyHorz(rhs.jz, lhsJ, rhsJ); 
                                     
-  lhs.rh.copyHorz(rhs.rh, lhsJ, rhsJ); 
+  // lhs.rh.copyHorz(rhs.rh, lhsJ, rhsJ); 
 
 }
 

@@ -154,7 +154,8 @@ if __name__ == "__main__":
     ################################################## 
     # initialize
     Nx           = conf.Nx*conf.NxMesh
-    modes        = np.arange(Nx/4) + 1
+    #modes        = np.arange(Nx/4) + 1
+    modes        = np.arange(Nx) 
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
@@ -203,15 +204,19 @@ if __name__ == "__main__":
 
 
     #simulation loop
-    time = 0.0
+    time  = 0.0
     ifile = 0
     for lap in range(0, conf.Nt):
 
-        #E field (Ampere's law)
-        #updateBoundaries(node)
-        #for cid in node.getCellIds():
-        #    c = node.getCellPtr( cid )
-        #    c.pushE()
+        #B field half update
+
+        ##move vlasov fluid
+
+        #update boundaries
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.updateBoundaries(node)
 
         #momentum step
         for j in range(node.getNy()):
@@ -225,13 +230,21 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 ssol.solve(cell, node)
 
+        #B field second half update
+
+        #E field (Ampere's law)
+        #for cid in node.getCellIds():
+        #    c = node.getCellPtr( cid )
+        #    c.pushE()
+
+
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.cycle()
 
-        #currents
+        #current deposition from moving flux
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)

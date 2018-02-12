@@ -81,12 +81,19 @@ class MomentumSolver {
                    (T) yee.bz(q,r,s)
                  }},               
                                    
+                // E-field interpolated to the middle of the cell
                 E =                
                 {{                 
-                   (T) yee.ex(q,r,s),
-                   (T) yee.ey(q,r,s),
-                   (T) yee.ez(q,r,s) 
-                 }};
+                   (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
+                   (T) (0.5*(yee.ey(q,r,s) + yee.ey(q,  r-1, s  ))),
+                   (T) (0.5*(yee.ez(q,r,s) + yee.ez(q,  r,   s-1)))
+                }};
+                // E =                
+                // {{                 
+                //    (T) yee.ex(q,r,s),
+                //    (T) yee.ey(q,r,s),
+                //    (T) yee.ez(q,r,s)
+                // }};
 
               // dig out velomeshes from blocks
               auto& mesh0 = block0.block(q,r,s);
@@ -119,116 +126,116 @@ class MomentumSolver {
 
 
 /// \brief Forward semi-Lagrangian adaptive advection solver
-template<typename T>
-class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T> {
+// template<typename T>
+// class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T> {
+// 
+//   public:
+// 
+//     typedef std::array<T, 3> vec;
+// 
+//     virtual void solveMesh( 
+//         toolbox::AdaptiveMesh<T, 3>& mesh0,
+//         toolbox::AdaptiveMesh<T, 3>& mesh1,
+//         vec& Einc,
+//         vec& Binc,
+//         T qm,
+//         T dt)
+//     {
+// 
+//       // empty the target mesh
+//       // TODO: is this efficient; should we recycle instead?
+//       mesh1.data.clear();
+// 
+//       // create vectors
+//       Vector3f B(Binc.data());  
+//       Vector3f E(Einc.data());  
+// 
+//       Vector3f Fhalf = E/2.0; // construct (1/2) force
+// 
+//       // fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
+// 
+//       T val = T(0);
+//       for(auto&& cid : mesh0.get_cells(false) ) {
+//         if(! mesh0.is_leaf(cid)) continue;
+// 
+//         auto index = mesh0.get_indices(cid);
+//         int rfl    = mesh0.get_refinement_level(cid);
+//         auto len   = mesh0.get_size(rfl);
+// 
+//         vec uvel   = mesh0.get_center(index, rfl);  // velocity
+//         vec du     = mesh0.get_length(rfl);         // box size, i.e., \Delta u
+// 
+// 
+//         // get shift of the characteristic solution
+//         Vector3f P = qm*(Fhalf + Fhalf);
+// 
+// 
+//         // shift in units of cell (i.e., CFL number)
+//         int CFLr = (int) floor(P(0)*(dt/du[0])),
+//             CFLs = (int) floor(P(1)*(dt/du[1])),
+//             CFLt = (int) floor(P(2)*(dt/du[2]));
+// 
+//         // compute how many grid indices did we advect
+//         // int r1 = index[0] - CFLr,
+//         //     s1 = index[1] - CFLs,
+//         //     t1 = index[2] - CFLt;
+// 
+//         std::array<uint64_t, 3> index1 = 
+//         {{
+//           (uint64_t) index[0] - CFLr,
+//           (uint64_t) index[1] - CFLs,
+//           (uint64_t) index[2] - CFLt
+//         }};
+// 
+// 
+//         // set boundary conditions (zero outside the grid limits)
+//         if(    index1[0] < 2  
+//             || index1[1] < 2       
+//             || index1[2] < 2 
+//             || index1[0] > len[0]-1 
+//             || index1[1] > len[1]-1 
+//             || index1[2] > len[2]-1 ) 
+//         { 
+//           val = T(0); 
+//         } else {
+//           // interpolation branch
+//             
+// 
+//           // internal shift in units of cell's length
+//           std::array<T, 3> deltau = {{
+//             P(0)*(dt/du[0]) - (T) CFLr,
+//             P(1)*(dt/du[1]) - (T) CFLs,
+//             P(2)*(dt/du[2]) - (T) CFLt
+//           }};
+// 
+//           /*
+//           fmt::print("index: ({},{},{}); shift: ({},{},{}); newind ({},{},{}) dv: ({},{},{}) \n",
+//             index[0], index[1], index[2],
+//             CFLr, CFLs, CFLt,
+//             r1, s1, t1,
+//             deltau[0], deltau[1], deltau[2]);
+//            */
+// 
+// 
+//           //val = trilinear_interp(mesh0, index, deltau, rfl);
+//           val = tricubic_interp(mesh0, index, deltau, rfl);
+//         }
+// 
+//         uint64_t cid1 = mesh0.get_cell_from_indices(index1, rfl);
+// 
+//         mesh1.set_recursively(cid1, val);
+//       }
+// 
+// 
+// 
+//       return;
+//     }
+// 
+// };
 
-  public:
-
-    typedef std::array<T, 3> vec;
-
-    virtual void solveMesh( 
-        toolbox::AdaptiveMesh<T, 3>& mesh0,
-        toolbox::AdaptiveMesh<T, 3>& mesh1,
-        vec& Einc,
-        vec& Binc,
-        T qm,
-        T dt)
-    {
-
-      // empty the target mesh
-      // TODO: is this efficient; should we recycle instead?
-      mesh1.data.clear();
-
-      // create vectors
-      Vector3f B(Binc.data());  
-      Vector3f E(Einc.data());  
-
-      Vector3f Fhalf = E/2.0; // construct (1/2) force
-
-      // fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
-
-      T val = T(0);
-      for(auto&& cid : mesh0.get_cells(false) ) {
-        if(! mesh0.is_leaf(cid)) continue;
-
-        auto index = mesh0.get_indices(cid);
-        int rfl    = mesh0.get_refinement_level(cid);
-        auto len   = mesh0.get_size(rfl);
-
-        vec uvel   = mesh0.get_center(index, rfl);  // velocity
-        vec du     = mesh0.get_length(rfl);         // box size, i.e., \Delta u
 
 
-        // get shift of the characteristic solution
-        Vector3f P = qm*(Fhalf + Fhalf);
-
-
-        // shift in units of cell (i.e., CFL number)
-        int CFLr = (int) floor(P(0)*(dt/du[0])),
-            CFLs = (int) floor(P(1)*(dt/du[1])),
-            CFLt = (int) floor(P(2)*(dt/du[2]));
-
-        // compute how many grid indices did we advect
-        // int r1 = index[0] - CFLr,
-        //     s1 = index[1] - CFLs,
-        //     t1 = index[2] - CFLt;
-
-        std::array<uint64_t, 3> index1 = 
-        {{
-          (uint64_t) index[0] - CFLr,
-          (uint64_t) index[1] - CFLs,
-          (uint64_t) index[2] - CFLt
-        }};
-
-
-        // set boundary conditions (zero outside the grid limits)
-        if(    index1[0] < 2  
-            || index1[1] < 2       
-            || index1[2] < 2 
-            || index1[0] > len[0]-1 
-            || index1[1] > len[1]-1 
-            || index1[2] > len[2]-1 ) 
-        { 
-          val = T(0); 
-        } else {
-          // interpolation branch
-            
-
-          // internal shift in units of cell's length
-          std::array<T, 3> deltau = {{
-            P(0)*(dt/du[0]) - (T) CFLr,
-            P(1)*(dt/du[1]) - (T) CFLs,
-            P(2)*(dt/du[2]) - (T) CFLt
-          }};
-
-          /*
-          fmt::print("index: ({},{},{}); shift: ({},{},{}); newind ({},{},{}) dv: ({},{},{}) \n",
-            index[0], index[1], index[2],
-            CFLr, CFLs, CFLt,
-            r1, s1, t1,
-            deltau[0], deltau[1], deltau[2]);
-           */
-
-
-          //val = trilinear_interp(mesh0, index, deltau, rfl);
-          val = tricubic_interp(mesh0, index, deltau, rfl);
-        }
-
-        uint64_t cid1 = mesh0.get_cell_from_indices(index1, rfl);
-
-        mesh1.set_recursively(cid1, val);
-      }
-
-
-
-      return;
-    }
-
-};
-
-
-
-/// \brief Backward semi-Lagrangian adaptive advection solver
+/// \brief back-substituting semi-Lagrangian adaptive advection solver
 template<typename T>
 class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
@@ -246,6 +253,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
         T dt)
     {
 
+      // electromagnetic combined push
+      /*
       Vector3f Ehalf = dt*E/2; // half step in E
       Vector3f us = uvel - Ehalf; // P^*, i.e., velocity in the middle of the step
 
@@ -261,6 +270,11 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
         b(0)*b(2)*(1-cos(wt))-b(1)*sin(wt), b(1)*b(2)*(1-cos(wt))+b(0)*sin(wt), b(2)*b(2)+(1-b(2)*b(2))*cos(wt);
 
       return qm*( -Ehalf + Rot*us - uvel )*dt;
+      */
+
+      // electrostatic push
+      Vector3f Ehalf = dt*E; // half step in E
+      return qm*(Ehalf);
     }
 
 
