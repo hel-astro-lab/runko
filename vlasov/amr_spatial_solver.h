@@ -92,9 +92,9 @@ T integrate_current(
     if( !m.is_leaf(cid) ) continue;
 
     auto index = m.get_indices(cid);
-    rfl = m.get_refinement_level(cid);
+    rfl        = m.get_refinement_level(cid);
     auto uvel  = m.get_center(index, rfl);
-    gam = gamma<T,3>(uvel);
+    gam        = gamma<T,3>(uvel);
 
     integ += m.data[cid]*du[rfl]/gam;
   }

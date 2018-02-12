@@ -13,8 +13,8 @@ import pyplasmaDev as pdev
 from configSetup import Configuration
 import initialize as init
 
-#from visualize import plotNode
-#from visualize import plotXmesh
+from visualize import plotNode
+from visualize_amr import plotXmesh
 from visualize import plotJ, plotE
 from visualize import saveVisz
 from visualize import getYee
@@ -71,8 +71,9 @@ def filler(xloc, uloc, ispcs, conf):
     #brownian_noise = 0.01*np.random.standard_normal() 
     #brownian_noise *= delgam
 
+
     #Classical Maxwellian distribution
-    f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
+    f  = 0.5 * (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
     f *= np.exp(-0.5*(( (ux - mux) + (uy - muy) + (uz - muz) - mux_noise)**2)/(delgam))
@@ -103,7 +104,7 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(5, 1)
+    gs = plt.GridSpec(7, 1)
     gs.update(hspace = 0.5)
     
     axs = []
@@ -112,6 +113,8 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[2]) )
     axs.append( plt.subplot(gs[3]) )
     axs.append( plt.subplot(gs[4]) )
+    axs.append( plt.subplot(gs[5]) )
+    axs.append( plt.subplot(gs[6]) )
 
 
     # Timer for profiling
@@ -151,17 +154,21 @@ if __name__ == "__main__":
     ################################################## 
     # initialize
     Nx           = conf.Nx*conf.NxMesh
-    modes        = np.arange(64) + 1
+    modes        = np.arange(Nx/4) + 1
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
 
 
     # visualize initial condition
-    #plotNode(axs[0], node, conf)
-    #plotXmesh(axs[1], node, conf, 0)
-    #plotXmesh(axs[2], node, conf, 1)
-    #saveVisz(-1, node, conf)
+    plotNode(axs[0], node, conf)
+    plotXmesh(axs[1], node, conf, 0, "x")
+    plotXmesh(axs[2], node, conf, 0, "y")
+    plotXmesh(axs[3], node, conf, 1, "x")
+    plotXmesh(axs[4], node, conf, 1, "y")
+    plotJ(axs[5], node, conf)
+    plotE(axs[6], node, conf)
+    saveVisz(-1, node, conf)
 
 
 
@@ -251,12 +258,16 @@ if __name__ == "__main__":
             save(node, conf, ifile, dset)
             ifile += 1
 
-            #plotNode(axs[0], node, conf)
-            #plotXmesh(axs[1], node, conf, 0) #electrons
-            #plotXmesh(axs[2], node, conf, 1) #positrons
+            plotNode(axs[0], node, conf)
 
-            plotJ(axs[3], node, conf)
-            plotE(axs[4], node, conf)
+            plotXmesh(axs[1], node, conf, 0, "x")
+            plotXmesh(axs[2], node, conf, 0, "y")
+            plotXmesh(axs[3], node, conf, 1, "x")
+            plotXmesh(axs[4], node, conf, 1, "y")
+
+            plotJ(axs[5], node, conf)
+            plotE(axs[6], node, conf)
+
             saveVisz(lap, node, conf)
 
 

@@ -113,6 +113,8 @@ def plotNode(ax, n, conf):
     #XXX add back
     #ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCellIds() )))
 
+    ax.set_ylabel('node')
+
 
 
 def saveVisz(lap, n, conf):
@@ -230,6 +232,8 @@ def plotJ(ax, n, conf):
     ax.plot(yee['x'], yee['jy'], "r--")
     ax.plot(yee['x'], yee['jz'], "g--")
     
+    ax.set_ylabel(r'$J_x$')
+
 
 def plotE(ax, n, conf):
     yee = getYee(n, conf)
@@ -244,6 +248,7 @@ def plotE(ax, n, conf):
     ax.plot(yee['x'], yee['ey'], "r--")
     ax.plot(yee['x'], yee['ez'], "g--")
     
+    ax.set_ylabel(r'$E_x$')
 
 
 
