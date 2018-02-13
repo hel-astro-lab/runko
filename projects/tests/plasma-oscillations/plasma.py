@@ -62,10 +62,12 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
+
         Lx  = conf.Nx*conf.NxMesh*conf.dx
-        for l, kx in enumerate(modes):
-            mux_noise += conf.beta*np.sin( 2*np.pi*(-kx*x/Lx + random_phase[l] ))
-    
+        #for l, kx in enumerate(modes):
+        #    mux_noise += conf.beta*np.sin( 2*np.pi*(-kx*x/Lx + random_phase[l] ))
+        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
+
 
     #Brownian noise
     #brownian_noise = 0.01*np.random.standard_normal() 
@@ -76,7 +78,7 @@ def filler(xloc, uloc, ispcs, conf):
     f  = 0.5 * (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
-    f *= np.exp(-0.5*(( (ux - mux) + (uy - muy) + (uz - muz) - mux_noise)**2)/(delgam))
+    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
 
 
     return f
@@ -213,10 +215,10 @@ if __name__ == "__main__":
         ##move vlasov fluid
 
         #update boundaries
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        cell.updateBoundaries(node)
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries(node)
 
         #momentum step
         for j in range(node.getNy()):
