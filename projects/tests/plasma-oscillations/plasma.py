@@ -147,7 +147,8 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
-    conf = Configuration('config.ini') 
+    #conf = Configuration('config-plasmaosc.ini') 
+    conf = Configuration('config-twostream.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
 
