@@ -240,8 +240,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             // calculate current
             // if( (q >= 0) && (q < Nx) ) yee.jx(q,r,s) += sign(qm)*integrate_current(flux);
             T jx = sign(qm)*integrate_current(flux);
-            if(q >= 0)    yee.jx(q,r,s)   -= jx;
-            if(q <= Nx-2) yee.jx(q+1,r,s) += jx;
+            if(q >= 0)    yee.jx(q,r,s)   += jx;
+            //if(q <= Nx-2) yee.jx(q+1,r,s) += jx;
 
           }
         }

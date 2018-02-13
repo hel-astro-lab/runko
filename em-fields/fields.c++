@@ -321,24 +321,25 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
   copyVertYee(mesh, mright, mesh.Nx, 0); 
 
 
+  // TODO: fix these: they produce saw-like oscillations
   // top 
-  auto ctop = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, +1) ));
-  fields::YeeLattice& mtop = ctop->getYee();
+  // auto ctop = 
+  //   std::dynamic_pointer_cast<fields::PlasmaCell>(
+  //       node.getCellPtr( neighs(0, +1) ));
+  // fields::YeeLattice& mtop = ctop->getYee();
 
   // copy from bottom side to top
-  copyHorzYee(mesh, mtop, mesh.Ny, 0); 
+  // copyHorzYee(mesh, mtop, mesh.Ny, 0); 
 
 
   // bottom
-  auto cbot = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, -1) ));
-  fields::YeeLattice& mbot = cbot->getYee();
+  //auto cbot = 
+  //  std::dynamic_pointer_cast<fields::PlasmaCell>(
+  //      node.getCellPtr( neighs(0, -1) ));
+  //fields::YeeLattice& mbot = cbot->getYee();
     
   // copy from top side to bottom
-  copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
+  // copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
 
 
   // diagonals/corners

@@ -79,21 +79,22 @@ class MomentumSolver {
                    (T) yee.bx(q,r,s),
                    (T) yee.by(q,r,s),
                    (T) yee.bz(q,r,s)
-                 }},               
+                }},               
                                    
                 // E-field interpolated to the middle of the cell
-                E =                
-                {{                 
-                   (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
-                   (T) (0.5*(yee.ey(q,r,s) + yee.ey(q,  r-1, s  ))),
-                   (T) (0.5*(yee.ez(q,r,s) + yee.ez(q,  r,   s-1)))
-                }};
+                // XXX
                 //E =                
                 //{{                 
-                //   (T) yee.ex(q,r,s),
+                //   (T) (0.5*(yee.ex(q,r,s) + yee.ex(q+1,r,   s  ))),
                 //   (T) yee.ey(q,r,s),
                 //   (T) yee.ez(q,r,s)
                 //}};
+                E =                
+                {{                 
+                   (T) yee.ex(q,r,s),
+                   (T) yee.ey(q,r,s),
+                   (T) yee.ez(q,r,s)
+                }};
 
               // dig out velomeshes from blocks
               auto& mesh0 = block0.block(q,r,s);
@@ -273,8 +274,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
       */
 
       // electrostatic push
-      Vector3f Ehalf = dt*E; // half step in E
-      return qm*(Ehalf);
+      return -qm*(dt*E);
     }
 
 
@@ -391,7 +391,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
 
       // create new leafs
-      // TODO fixme
+      // TODO fixme to use max ref. lvl of mesh
       // for(size_t sweep=1; sweep<=mesh1.maximum_refinement_level; sweep++){
       for(size_t sweep=1; sweep<=0; sweep++){
       

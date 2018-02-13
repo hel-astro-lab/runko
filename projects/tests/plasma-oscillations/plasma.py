@@ -52,6 +52,9 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
+        #if (10.0 < x < 10.2):
+        #    mux = 0.2
+
 
     #ions/positrons
     elif ispcs == 1:
@@ -62,10 +65,7 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-
         Lx  = conf.Nx*conf.NxMesh*conf.dx
-        #for l, kx in enumerate(modes):
-        #    mux_noise += conf.beta*np.sin( 2*np.pi*(-kx*x/Lx + random_phase[l] ))
         mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
 
@@ -93,6 +93,26 @@ def save(n, conf, lap, dset):
 
     dset[:, lap] = yee['ex']
 
+
+def insert_em(node, conf):
+
+    for i in range(node.getNx()):
+        for j in range(node.getNy()):
+            c = node.getCellPtr(i,j)
+            yee = c.getYee(0)
+
+            for q in range(conf.NxMesh):
+                for k in range(conf.NyMesh):
+                    if q == 32:
+                        yee.ex[q,k,0] =  0.5
+
+                    #yee.ex[q,k,0] =  0.0
+                    #yee.ey[q,k,0] =  0.0
+                    #yee.ez[q,k,0] =  0.0
+
+                    #yee.bx[q,k,0] =  0.0
+                    #yee.by[q,k,0] =  0.0
+                    #yee.bz[q,k,0] =  0.0
 
 
 
@@ -204,6 +224,9 @@ if __name__ == "__main__":
     dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
+    #XXX DEBUG
+    #insert_em(node, conf)
+
 
     #simulation loop
     time  = 0.0
@@ -226,11 +249,23 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 vsol.solve(cell)
 
+        #cycle to the new fresh snapshot
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycle()
+
         #spatial step
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 ssol.solve(cell, node)
+
+        #cycle to the new fresh snapshot
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycle()
 
         #B field second half update
 
@@ -239,12 +274,6 @@ if __name__ == "__main__":
         #    c = node.getCellPtr( cid )
         #    c.pushE()
 
-
-        #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycle()
 
         #current deposition from moving flux
         for j in range(node.getNy()):

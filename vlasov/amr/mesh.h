@@ -620,7 +620,7 @@ class AdaptiveMesh {
     T maxv = max_value();
 
     for(const uint64_t cid: get_cells(false)) {
-      if( data.at(cid) < maxv*threshold ) below_threshold.push_back(cid);
+      if( data.at(cid)/maxv < threshold ) below_threshold.push_back(cid);
     }
 
     for(const uint64_t cid: below_threshold) data.erase(cid);
