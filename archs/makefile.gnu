@@ -2,8 +2,11 @@ CMP = g++-7
 LNK = g++-7
 
 #general c++ flags
-#CXXFLAGS+=-Wall -O3 -std=c++14 -funroll-loops 
-CXXFLAGS+=-Wall -O3 -std=c++14 
+# optimization flags 
+# -march=native
+# -ftree-vectorize
+# -funroll-loops
+CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -std=gnu++14
 
 #pybind in macOS need to have additional flags
 PYBINDINCLS= `python2 -m pybind11 --includes`

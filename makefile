@@ -1,5 +1,6 @@
 #platform architecture
-ARCH=macOS
+#ARCH=macOS
+ARCH=gnu
 
 #set FP precision to SP (single) or DP (double)
 FP_PRECISION=DP
