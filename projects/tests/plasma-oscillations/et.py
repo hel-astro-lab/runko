@@ -25,8 +25,10 @@ ax.set_ylabel(r'$t$')
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('out/run.hdf5','r')
-#f = h5py.File('plasma-osc/run.hdf5','r')
+#f = h5py.File('out/run.hdf5','r')
+#f = h5py.File('plasma-osc21_nightrun_J2UpUd_E0Ep1/run.hdf5', 'r')
+f = h5py.File('plasma-osc/run.hdf5','r')
+
 
 
 #Read field
