@@ -83,18 +83,18 @@ class MomentumSolver {
                                    
                 // E-field interpolated to the middle of the cell
                 // XXX
-                //E =                
-                //{{                 
-                //   (T) (0.5*(yee.ex(q,r,s) + yee.ex(q+1,r,   s  ))),
-                //   (T) yee.ey(q,r,s),
-                //   (T) yee.ez(q,r,s)
-                //}};
                 E =                
                 {{                 
-                   (T) yee.ex(q,r,s),
+                   (T) (0.5*(yee.ex(q,r,s) + yee.ex(q+1,r,   s  ))),
                    (T) yee.ey(q,r,s),
                    (T) yee.ez(q,r,s)
                 }};
+                //E =                
+                //{{                 
+                //   (T) yee.ex(q,r,s),
+                //   (T) yee.ey(q,r,s),
+                //   (T) yee.ez(q,r,s)
+                //}};
 
               // dig out velomeshes from blocks
               auto& mesh0 = block0.block(q,r,s);

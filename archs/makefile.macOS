@@ -3,7 +3,7 @@ LNK = c++
 
 #general c++ flags
 #CXXFLAGS+=-Wall -O3 -std=c++14 -funroll-loops 
-CXXFLAGS+=-Wall -O3 -std=c++14 
+CXXFLAGS+=-Wall -O3 -std=c++14 -march=native
 
 #pybind in macOS need to have additional flags
 PYBINDINCLS= `python2 -m pybind11 --includes`

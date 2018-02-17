@@ -26,8 +26,12 @@ ax.set_ylabel(r'$\omega$')
 # read simulation data from file
 #f = h5py.File('electrostatic/run_hires.hdf5','r')
 #f = h5py.File('electrostatic/run_hires_2nd.hdf5','r')
-f = h5py.File('out/run.hdf5','r')
 #f = h5py.File('plasma-osc3/run.hdf5','r')
+#f = h5py.File('plasma-osc21_nightrun_J2UpUd_E0Ep1/run.hdf5', 'r')
+
+f = h5py.File('out/run.hdf5','r')
+
+
 
 
 #Read field
