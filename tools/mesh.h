@@ -40,6 +40,7 @@ class Mesh {
     T& operator()(int i, int j, int k) { 
       return mat[ indx(i,j,k) ];
     }
+
     const T& operator()(int i, int j, int k) const { 
       return mat[ indx(i,j,k) ];
     }
