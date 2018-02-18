@@ -12,6 +12,7 @@ namespace py = pybind11;
 #include "amr_momentum_solver.h"
 #include "amr_spatial_solver.h"
 
+#include "tasker.h"
 
 
 typedef float Realf;
@@ -259,6 +260,10 @@ PYBIND11_MODULE(pyplasmaDev, m) {
         })
     .def("clear",       [](vlasov::PlasmaBlock &s){s.block.clear();});
 
+
+    m.def("stepLocation", &vlasov::stepLocation);
+
+    m.def("stepVelocity", &vlasov::stepVelocity);
 
 
 };

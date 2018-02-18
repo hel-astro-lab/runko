@@ -245,10 +245,11 @@ if __name__ == "__main__":
                 cell.updateBoundaries(node)
 
         #momentum step
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                vsol.solve(cell)
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        vsol.solve(cell)
+        pdev.stepVelocity(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
@@ -257,10 +258,11 @@ if __name__ == "__main__":
                 cell.cycle()
 
         #spatial step
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                ssol.solve(cell, node)
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        ssol.solve(cell, node)
+        pdev.stepLocation(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):

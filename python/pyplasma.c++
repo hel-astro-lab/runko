@@ -65,7 +65,6 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<size_t, size_t>());
 
 
-
   py::class_<fields::YeeLattice>(m, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("ex", &fields::YeeLattice::ex)
