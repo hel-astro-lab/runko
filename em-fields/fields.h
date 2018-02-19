@@ -80,7 +80,7 @@ class PlasmaCell : virtual public corgi::Cell {
       size_t i, size_t j, 
       int o,
       size_t NxG, size_t NyG,
-      size_t NxMesh, size_t NyMesh);
+      size_t NxMesh, size_t NyMesh, size_t NzMesh);
 
   /// destructor
   ~PlasmaCell() { };
@@ -88,17 +88,17 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void updateBoundaries(corgi::Node& node);
 
-  void pushHalfB();
+  virtual void pushHalfB();
   void pushHalfB1d();
   void pushHalfB2d();
   void pushHalfB3d();
 
-  void pushE();
+  virtual void pushE();
   void pushE1d();
   void pushE2d();
   void pushE3d();
 
-  void depositCurrent();
+  virtual void depositCurrent();
 
   YeeLattice& getYee(size_t i=0);
 

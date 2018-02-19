@@ -58,6 +58,9 @@ DEPS_COMMON=definitions.h
 fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++
 	${CMP} ${CXXFLAGS} -c em-fields/fields.c++
 
+damping_fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++ em-fields/damping_fields.h em-fields/damping_fields.c++
+	${CMP} ${CXXFLAGS} -o damping_fields.o -c em-fields/damping_fields.c++
+
 
 
 #compile python binaries
@@ -75,8 +78,8 @@ pycorgi:
 
 
 #link into python module with pybind11
-pyplasma: fields.o pyplasma.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasma.so pyplasma.o fields.o
+pyplasma: fields.o damping_fields.o pyplasma.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasma.so pyplasma.o fields.o damping_fields.o
 
 #pyplasmaDev: vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h tools/mesh.h dev-bindings.o
 #	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasmaDev.so dev-bindings.o

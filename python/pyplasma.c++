@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "../vlasov/grid.h"
 
 #include "../em-fields/fields.h"
+#include "../em-fields/damping_fields.h"
 
 #include "../vlasov/amr/mesh.h"
 #include "../vlasov/amr/numerics.h"
@@ -88,7 +89,7 @@ PYBIND11_MODULE(pyplasma, m) {
              corgi::Cell, 
              std::shared_ptr<fields::PlasmaCell>
             >(m, "PlasmaCell")
-    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
+    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>())
     .def_readwrite("yeeDt",  &fields::PlasmaCell::yeeDt)
     .def_readwrite("yeeDx",  &fields::PlasmaCell::yeeDx)
     .def_readwrite("yeeDy",  &fields::PlasmaCell::yeeDy)
@@ -99,6 +100,15 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
     .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
     .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries);
+
+
+  py::class_<fields::PlasmaCellDamped,
+             corgi::Cell, 
+             fields::PlasmaCell,
+             std::shared_ptr<fields::PlasmaCellDamped>
+            >(m, "PlasmaCellDamped")
+    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>());
+
 
 
 
