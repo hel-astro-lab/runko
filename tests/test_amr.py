@@ -5,7 +5,6 @@ import sys
 #sys.path.append('python')
 
 import pyplasma
-import pyplasmaDev as pdev
 
 
 class conf:
@@ -48,7 +47,7 @@ class Basics(unittest.TestCase):
 
     def setUp(self):
 
-        self.m = pdev.AdaptiveMesh3D()
+        self.m = pyplasma.AdaptiveMesh3D()
         self.m.resize( [conf.Nxv,  conf.Nyv,  conf.Nzv])
         self.m.set_min([conf.xmin, conf.ymin, conf.zmin])
         self.m.set_max([conf.xmax, conf.ymax, conf.zmax])

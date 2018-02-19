@@ -7,7 +7,6 @@ import sys, os
 
 import corgi
 import pyplasma as plasma
-import pyplasmaDev as pdev
 
 
 from configSetup import Configuration
@@ -197,10 +196,10 @@ if __name__ == "__main__":
 
 
     #setup momentum space solver
-    vsol = pdev.AmrMomentumLagrangianSolver()
+    vsol = plasma.AmrMomentumLagrangianSolver()
 
     #setup spatial space solver
-    ssol = pdev.AmrSpatialLagrangianSolver()
+    ssol = plasma.AmrSpatialLagrangianSolver()
 
 
     timer.stop("init") 
@@ -249,7 +248,7 @@ if __name__ == "__main__":
         #    for i in range(node.getNx()):
         #        cell = node.getCellPtr(i,j)
         #        vsol.solve(cell)
-        pdev.stepVelocity(node)
+        plasma.stepVelocity(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
@@ -262,7 +261,7 @@ if __name__ == "__main__":
         #    for i in range(node.getNx()):
         #        cell = node.getCellPtr(i,j)
         #        ssol.solve(cell, node)
-        pdev.stepLocation(node)
+        plasma.stepLocation(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):

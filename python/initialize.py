@@ -1,10 +1,6 @@
-#import sys, os
-#sys.path.append('../../python')        #plasma, plasmatools
-#sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
 
 
 import corgi
-#import plasmatools as ptools
 import pyplasma as plasma
 
 
