@@ -11,7 +11,6 @@ Nrank = 4
 
 ##################################################
 # plotting tools
-
 # visualize matrix
 def imshow(ax, 
            grid, xmin, xmax, ymin, ymax,
@@ -114,6 +113,8 @@ def plotNode(ax, n, conf):
     #XXX add back
     #ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCellIds() )))
 
+    ax.set_ylabel('node')
+
 
 
 def saveVisz(lap, n, conf):
@@ -152,13 +153,15 @@ def plotXmesh(ax, n, conf, spcs):
 
             data[ i*conf.NxMesh + s, :] = vbundle.getPencil()
 
-    data = np.log10(data)
+    #data = np.log10(data)
     imshow(ax, data,
            n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
            cmap = 'plasma_r',
-           vmin = -10.0,
-           vmax =  2.0,
-           clip = -16.0,
+           #vmin = -10.0,
+           #vmax =  2.0,
+           vmin =   0.0,
+           vmax =  10.0,
+           clip =   0.0,
            )
 
     dmax = np.max(data)
@@ -194,7 +197,7 @@ def getYee(n, conf):
         cid = n.cellId(i,0)
         c = n.getCellPtr(cid)
 
-        yee = c.getYee()
+        yee = c.getYee(0)
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
 
@@ -229,6 +232,8 @@ def plotJ(ax, n, conf):
     ax.plot(yee['x'], yee['jy'], "r--")
     ax.plot(yee['x'], yee['jz'], "g--")
     
+    ax.set_ylabel(r'$J_x$')
+
 
 def plotE(ax, n, conf):
     yee = getYee(n, conf)
@@ -243,6 +248,7 @@ def plotE(ax, n, conf):
     ax.plot(yee['x'], yee['ey'], "r--")
     ax.plot(yee['x'], yee['ez'], "g--")
     
+    ax.set_ylabel(r'$E_x$')
 
 
 

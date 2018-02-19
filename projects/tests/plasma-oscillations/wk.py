@@ -26,13 +26,19 @@ ax.set_ylabel(r'$\omega$')
 # read simulation data from file
 #f = h5py.File('electrostatic/run_hires.hdf5','r')
 #f = h5py.File('electrostatic/run_hires_2nd.hdf5','r')
+#f = h5py.File('plasma-osc3/run.hdf5','r')
+#f = h5py.File('plasma-osc21_nightrun_J2UpUd_E0Ep1/run.hdf5', 'r')
+
 f = h5py.File('out/run.hdf5','r')
-#f = h5py.File('plasma-osc/run.hdf5','r')
+
+
 
 
 #Read field
 ex = np.transpose( f['fields/Ex'] )  #load as arr[spatial, temporal]
-ex = ex[50:, :] #skim off some warm-up phase
+#ex = ex[300:, :] #skim off some warm-up phase
+#ex = ex[:, 8:340]
+#ex = ex[:, :340]
 
 print "Ex shape:", np.shape(ex)
 
@@ -132,12 +138,14 @@ A *= window
 #--------------------------------------------------
 # Fourier transform in space and time
 Fourier = np.fft.rfft2(A)
+#Fourier = np.fliplr(Fourier)
 
 (ny, nx) = np.shape(Fourier)
 print "shape after transform:", np.shape(Fourier)
 
 # spatial wave vector x component k_x (only half is considered due to Nqyust frequency cut)
-dk = 2.0*np.pi/(nx * dx)
+dk = 2*np.pi/(nx * dx)
+#dk = 1.0/(nx*dx)
 k = np.arange(nx)*dk
 #print "k:"
 #print k
@@ -145,7 +153,8 @@ k1 = 1
 k2 = nx
 
 # temporal angular frequency \omega
-dw = 2.0*np.pi/(ny * dt)
+dw = 2*np.pi/(ny * dt/2)
+#dw = 1.0/(ny * dt)
 w = np.arange(ny)*dw
 #print "w:"
 #print w
@@ -157,11 +166,11 @@ w2 = ny/2
 Lx = dx*nx
 T  = ny*dt
 
-kmin = 2.0*np.pi/Lx
-kmax = 2.0*np.pi/dx
+kmin = 2*np.pi/Lx
+kmax = np.pi/dx
 
-wmin = 2.0*np.pi/T
-wmax = 2.0*np.pi/dt
+wmin = 2*np.pi/T
+wmax = np.pi/dt
 
 print "x min/max:", dx, Lx
 print "t min/max:", dt, T
@@ -169,10 +178,10 @@ print "k min/max:", kmin, kmax
 print "w min/max:", wmin, wmax
 
 ax.set_xlim(0.0, 20.0)
-ax.set_ylim(0.0, 20.0)
+ax.set_ylim(0.0, 4.0)
 
 #ax.set_xlim(0.0, kmax)
-#ax.set_ylim(0.0, wmax*0.5)
+#ax.set_ylim(0.0, wmax/2)
 
 # Change to spectra by considering |F] 
 F = np.log10( np.abs(Fourier) )
@@ -217,7 +226,9 @@ cax.xaxis.set_ticks_position('top')
 #analytical relations
 
 wp = 1.0 #plasma frequency XXX why x2? 
-vth = 0.01 #thermal velocity XXX why /2?
+#vth = np.sqrt(1.0e-5) #thermal velocity XXX why /2?
+vth = 1.0e-1 #thermal velocity XXX why /2?
+
 
 #numerical propagation speed
 def w_num(k):

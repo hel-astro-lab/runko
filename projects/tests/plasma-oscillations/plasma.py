@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import sys, os
 
 import corgi
-import plasmatools as ptools
 import pyplasma as plasma
 
 
@@ -14,7 +13,7 @@ from configSetup import Configuration
 import initialize as init
 
 from visualize import plotNode
-from visualize import plotXmesh
+from visualize_amr import plotXmesh
 from visualize import plotJ, plotE
 from visualize import saveVisz
 from visualize import getYee
@@ -29,7 +28,19 @@ from timer import Timer
 # Maxwellian plasma with Brownian noise
 # where delgam = kT/m_i c^2
 #
-def filler(x, y, z, ux, uy, uz, conf, ispcs):
+def filler(xloc, uloc, ispcs, conf):
+
+    mux_noise      = 0.0
+    delgam_noise   = 0.0
+    brownian_noise = 0.0
+
+    x = xloc[0]
+    y = xloc[1]
+    z = xloc[2] 
+
+    ux = uloc[0]
+    uy = uloc[1]
+    uz = uloc[2] 
 
     #electrons
     if ispcs == 0:
@@ -40,10 +51,8 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
         muy = 0.0
         muz = 0.0
 
-
-        #give electrons a nudge 
-        Lx  = conf.Nx*conf.NxMesh*conf.dx
-        mux += conf.beta*np.sin( 2.0*np.pi * x / Lx)
+        #if (10.0 < x < 10.2):
+        #    mux = 0.2
 
 
     #ions/positrons
@@ -55,13 +64,21 @@ def filler(x, y, z, ux, uy, uz, conf, ispcs):
         muy = 0.0
         muz = 0.0
 
+        Lx  = conf.Nx*conf.NxMesh*conf.dx
+        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
+
+
+    #Brownian noise
+    #brownian_noise = 0.01*np.random.standard_normal() 
+    #brownian_noise *= delgam
+
 
     #Classical Maxwellian distribution
-    z1 = 0.05*np.random.standard_normal() # Brownian noise
-    #z1 = 0.0
+    f  = 0.5 * (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
 
-    f  = 1.0/np.sqrt(2.0*np.pi*delgam)
-    f *= np.exp(-0.5*((ux - mux)**2)/delgam + z1)
+    #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
+    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
+
 
     return f
 
@@ -76,6 +93,26 @@ def save(n, conf, lap, dset):
     dset[:, lap] = yee['ex']
 
 
+def insert_em(node, conf):
+
+    for i in range(node.getNx()):
+        for j in range(node.getNy()):
+            c = node.getCellPtr(i,j)
+            yee = c.getYee(0)
+
+            for q in range(conf.NxMesh):
+                for k in range(conf.NyMesh):
+                    if q == 32:
+                        yee.ex[q,k,0] =  0.5
+
+                    #yee.ex[q,k,0] =  0.0
+                    #yee.ey[q,k,0] =  0.0
+                    #yee.ez[q,k,0] =  0.0
+
+                    #yee.bx[q,k,0] =  0.0
+                    #yee.by[q,k,0] =  0.0
+                    #yee.bz[q,k,0] =  0.0
+
 
 
 if __name__ == "__main__":
@@ -88,7 +125,7 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(5, 1)
+    gs = plt.GridSpec(7, 1)
     gs.update(hspace = 0.5)
     
     axs = []
@@ -97,6 +134,8 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[2]) )
     axs.append( plt.subplot(gs[3]) )
     axs.append( plt.subplot(gs[4]) )
+    axs.append( plt.subplot(gs[5]) )
+    axs.append( plt.subplot(gs[6]) )
 
 
     # Timer for profiling
@@ -107,7 +146,8 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
-    conf = Configuration('config.ini') 
+    conf = Configuration('config-plasmaosc.ini') 
+    #conf = Configuration('config-twostream.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
 
@@ -133,34 +173,33 @@ if __name__ == "__main__":
             os.makedirs(conf.outdir)
 
 
-
     ################################################## 
     # initialize
-    injector.inject(node, filler, conf, clip=False) #injecting plasma
+    Nx           = conf.Nx*conf.NxMesh
+    #modes        = np.arange(Nx/4) + 1
+    modes        = np.arange(Nx) 
+    random_phase = np.random.rand(len(modes))
 
+    injector.inject(node, filler, conf) #injecting plasma
 
 
     # visualize initial condition
     plotNode(axs[0], node, conf)
-    plotXmesh(axs[1], node, conf, 0)
-    plotXmesh(axs[2], node, conf, 1)
+    plotXmesh(axs[1], node, conf, 0, "x")
+    plotXmesh(axs[2], node, conf, 0, "y")
+    plotXmesh(axs[3], node, conf, 1, "x")
+    plotXmesh(axs[4], node, conf, 1, "y")
+    plotJ(axs[5], node, conf)
+    plotE(axs[6], node, conf)
     saveVisz(-1, node, conf)
 
 
 
     #setup momentum space solver
-    vsol = plasma.MomentumLagrangianSolver()
-    #intp = ptools.BundleInterpolator2nd()
-    #intp = ptools.BundleInterpolator4th()
-    intp = ptools.BundleInterpolator4PIC()
-    vsol.setInterpolator(intp)
-
+    vsol = plasma.AmrMomentumLagrangianSolver()
 
     #setup spatial space solver
-    ssol = plasma.SpatialLagrangianSolver2nd()
-    #ssol = plasma.SpatialLagrangianSolver4th()
-    ssol.setGrid(node)
-    
+    ssol = plasma.AmrSpatialLagrangianSolver()
 
 
     timer.stop("init") 
@@ -181,46 +220,68 @@ if __name__ == "__main__":
 
 
     #number of samples
-    Nsamples    = int(conf.Nt/conf.interval)
+    Nsamples    = int(conf.Nt/conf.interval) + 1
     dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
+    #XXX DEBUG
+    #insert_em(node, conf)
+
 
     #simulation loop
-    time = 0.0
+    time  = 0.0
     ifile = 0
     for lap in range(0, conf.Nt):
 
-        #E field
-        #updateBoundaries(node)
-        #for cid in node.getCellIds():
-        #    c = node.getCellPtr( cid )
-        #    c.pushE()
+        #B field half update
 
-        #momentum step
+        ##move vlasov fluid
+
+        #update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                vsol.setCell(cell)
-                vsol.solve()
+                cell.updateBoundaries(node)
 
-        #spatial step
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                ssol.setTargetCell(i,j)
-                ssol.solve()
+        #momentum step
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        vsol.solve(cell)
+        plasma.stepVelocity(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                cell.cyclePlasma()
+                cell.cycle()
 
-        #currents
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
-            c.depositCurrent()
+        #spatial step
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        ssol.solve(cell, node)
+        plasma.stepLocation(node)
 
+        #cycle to the new fresh snapshot
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycle()
+
+        #B field second half update
+
+        #E field (Ampere's law)
+        #for cid in node.getCellIds():
+        #    c = node.getCellPtr( cid )
+        #    c.pushE()
+
+
+        #current deposition from moving flux
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.depositCurrent()
 
         #clip every cell
         for j in range(node.getNy()):
@@ -244,11 +305,15 @@ if __name__ == "__main__":
             ifile += 1
 
             plotNode(axs[0], node, conf)
-            plotXmesh(axs[1], node, conf, 0) #electrons
-            plotXmesh(axs[2], node, conf, 1) #positrons
 
-            plotJ(axs[3], node, conf)
-            plotE(axs[4], node, conf)
+            plotXmesh(axs[1], node, conf, 0, "x")
+            plotXmesh(axs[2], node, conf, 0, "y")
+            plotXmesh(axs[3], node, conf, 1, "x")
+            plotXmesh(axs[4], node, conf, 1, "y")
+
+            plotJ(axs[5], node, conf)
+            plotE(axs[6], node, conf)
+
             saveVisz(lap, node, conf)
 
 
@@ -256,8 +321,6 @@ if __name__ == "__main__":
             timer.stats("io")
 
             timer.start("step") #refresh lap counter (avoids IO profiling)
-
-
 
 
         time += conf.dt

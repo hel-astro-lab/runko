@@ -1,5 +1,6 @@
 #platform architecture
-ARCH=macOS
+#ARCH=macOS
+ARCH=gnu
 
 #set FP precision to SP (single) or DP (double)
 FP_PRECISION=DP
@@ -38,7 +39,7 @@ all: plasma py tests
 #INSTALL=build
 
 # full python interface
-py: pyplasmaDev pyplasma
+py: pyplasma
 
 # Executable:
 EXE=plasma
@@ -60,26 +61,25 @@ fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++
 
 
 #compile python binaries
-
-pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++
+pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++ vlasov/grid.h vlasov/cell.h vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h vlasov/tasker.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pyplasma.o -c python/pyplasma.c++
 
-dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h
-	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o dev-bindings.o -c vlasov/bindings.c++
+#dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h
+#	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o dev-bindings.o -c vlasov/bindings.c++
+#
+
 
 #reference to pycorgi's own make
 pycorgi:
 	+${MAKE} -C corgi
 
 
-
 #link into python module with pybind11
+pyplasma: fields.o pyplasma.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasma.so pyplasma.o fields.o
 
-pyplasma: vlasov/grid.h vlasov/cell.h fields.o pyplasma.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so pyplasma.o fields.o
-
-pyplasmaDev: vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h tools/mesh.h dev-bindings.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasmaDev.so dev-bindings.o
+#pyplasmaDev: vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h tools/mesh.h dev-bindings.o
+#	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasmaDev.so dev-bindings.o
 
 
 
@@ -100,5 +100,4 @@ tests:
 clean: 
 	-rm *.o
 	-rm python/*.so
-
 
