@@ -66,7 +66,7 @@ class Communications(unittest.TestCase):
                 #if n.getMpiGrid(i,j) == n.rank:
                 if True:
                     c = node.getCellPtr(i,j)
-                    yee = c.getYee()
+                    yee = c.getYee(0)
 
                     for q in range(conf.NxMesh):
                         for k in range(conf.NyMesh):
@@ -79,7 +79,7 @@ class Communications(unittest.TestCase):
             c = node.getCellPtr( cid )
             (i, j) = c.index()
 
-            yee = c.getYee()
+            yee = c.getYee(0)
 
             for k in range(conf.NyMesh):
                 for q in range(conf.NxMesh):
@@ -97,7 +97,7 @@ class Communications(unittest.TestCase):
         for cid in node.getCellIds():
             c = node.getCellPtr( cid )
             (i, j) = c.index()
-            yee = c.getYee()
+            yee = c.getYee(0)
 
             for k in range(-1, conf.NyMesh+1, 1):
                 for q in range(-1, conf.NxMesh+1, 1):

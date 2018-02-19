@@ -4,3 +4,6 @@
 [submodule "tools/inih"]
 	path = tools/inih
 	url = https://github.com/benhoyt/inih.git
+[submodule "tools/cppitertools"]
+	path = tools/cppitertools
+	url = https://github.com/ryanhaining/cppitertools.git

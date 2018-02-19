@@ -242,14 +242,10 @@ void fields::PlasmaCell::pushHalfB3d() {
 
 
 /// Get current time snapshot of Yee lattice
-fields::YeeLattice& fields::PlasmaCell::getYee() {
-  return yee.getRef();
+fields::YeeLattice& fields::PlasmaCell::getYee(size_t i) {
+  return yee.get(i);
 }
 
-/// Get new time snapshot of Yee lattice
-fields::YeeLattice& fields::PlasmaCell::getNewYee() {
-  return yee.getNewRef();
-};
 
 
 /// Quick helper function to copy everything inside Yee lattice 
@@ -262,15 +258,15 @@ void copyVertYee(
   lhs.ey.copyVert(rhs.ey, lhsI, rhsI); 
   lhs.ez.copyVert(rhs.ez, lhsI, rhsI); 
 
-  lhs.bx.copyVert(rhs.bx, lhsI, rhsI); 
-  lhs.by.copyVert(rhs.by, lhsI, rhsI); 
-  lhs.bz.copyVert(rhs.bz, lhsI, rhsI); 
+  // lhs.bx.copyVert(rhs.bx, lhsI, rhsI); 
+  // lhs.by.copyVert(rhs.by, lhsI, rhsI); 
+  // lhs.bz.copyVert(rhs.bz, lhsI, rhsI); 
 
-  lhs.jx.copyVert(rhs.jx, lhsI, rhsI); 
-  lhs.jy.copyVert(rhs.jy, lhsI, rhsI); 
-  lhs.jz.copyVert(rhs.jz, lhsI, rhsI); 
+  // lhs.jx.copyVert(rhs.jx, lhsI, rhsI); 
+  // lhs.jy.copyVert(rhs.jy, lhsI, rhsI); 
+  // lhs.jz.copyVert(rhs.jz, lhsI, rhsI); 
 
-  lhs.rh.copyVert(rhs.rh, lhsI, rhsI); 
+  // lhs.rh.copyVert(rhs.rh, lhsI, rhsI); 
 
 }
 
@@ -284,15 +280,15 @@ void copyHorzYee(
   lhs.ey.copyHorz(rhs.ey, lhsJ, rhsJ); 
   lhs.ez.copyHorz(rhs.ez, lhsJ, rhsJ); 
                                     
-  lhs.bx.copyHorz(rhs.bx, lhsJ, rhsJ); 
-  lhs.by.copyHorz(rhs.by, lhsJ, rhsJ); 
-  lhs.bz.copyHorz(rhs.bz, lhsJ, rhsJ); 
+  // lhs.bx.copyHorz(rhs.bx, lhsJ, rhsJ); 
+  // lhs.by.copyHorz(rhs.by, lhsJ, rhsJ); 
+  // lhs.bz.copyHorz(rhs.bz, lhsJ, rhsJ); 
                                     
-  lhs.jx.copyHorz(rhs.jx, lhsJ, rhsJ); 
-  lhs.jy.copyHorz(rhs.jy, lhsJ, rhsJ); 
-  lhs.jz.copyHorz(rhs.jz, lhsJ, rhsJ); 
+  // lhs.jx.copyHorz(rhs.jx, lhsJ, rhsJ); 
+  // lhs.jy.copyHorz(rhs.jy, lhsJ, rhsJ); 
+  // lhs.jz.copyHorz(rhs.jz, lhsJ, rhsJ); 
                                     
-  lhs.rh.copyHorz(rhs.rh, lhsJ, rhsJ); 
+  // lhs.rh.copyHorz(rhs.rh, lhsJ, rhsJ); 
 
 }
 
@@ -325,24 +321,25 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
   copyVertYee(mesh, mright, mesh.Nx, 0); 
 
 
+  // TODO: fix these: they produce saw-like oscillations
   // top 
-  auto ctop = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, +1) ));
-  fields::YeeLattice& mtop = ctop->getYee();
+  // auto ctop = 
+  //   std::dynamic_pointer_cast<fields::PlasmaCell>(
+  //       node.getCellPtr( neighs(0, +1) ));
+  // fields::YeeLattice& mtop = ctop->getYee();
 
   // copy from bottom side to top
-  copyHorzYee(mesh, mtop, mesh.Ny, 0); 
+  // copyHorzYee(mesh, mtop, mesh.Ny, 0); 
 
 
   // bottom
-  auto cbot = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, -1) ));
-  fields::YeeLattice& mbot = cbot->getYee();
+  //auto cbot = 
+  //  std::dynamic_pointer_cast<fields::PlasmaCell>(
+  //      node.getCellPtr( neighs(0, -1) ));
+  //fields::YeeLattice& mbot = cbot->getYee();
     
   // copy from top side to bottom
-  copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
+  // copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
 
 
   // diagonals/corners
@@ -350,9 +347,7 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
   // TODO get corners also; for now they are not needed
 
 
-
 }
-
 
 
 void fields::PlasmaCell::cycleYee() {

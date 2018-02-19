@@ -4,7 +4,6 @@ import sys
 sys.path.append('python')
 import numpy as np
 
-import plasmatools as ptools
 import pyplasma as plasma
 
 
@@ -38,7 +37,6 @@ class Initialization(unittest.TestCase):
         self.assertEqual(i, 10)
         self.assertEqual(j, 11)
 
-        self.cell.bark()
         
 
 

@@ -1,32 +1,15 @@
 import numpy as np
 
 import sys, os
-sys.path.append('../../python')        #plasma, plasmatools
-sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
 
 import corgi
-import plasmatools as ptools
 import pyplasma as plasma
-
-from initialize import createEmptyVelocityMesh
 
 np.random.seed(0)
 
 
-def fillMesh(mesh, ispcs, x, y, z, fill_function, conf):
-    for k in range(mesh.Nblocks[2]):
-        for j in range(mesh.Nblocks[1]):
-            for i in range(mesh.Nblocks[0]):
-                cid = mesh.getBlockID([i,j,k])
-                (ux, uy, uz) = mesh.getCenter( cid )
 
-                fval = fill_function(x, y, z, ux, uy, uz, conf, ispcs)
-
-                mesh[i,j,k] = [fval, fval, fval, fval]
-
-
-
-def spatialLoc(n, Ncoords, Mcoords, conf):
+def spatialLoc(node, Ncoords, Mcoords, conf):
 
     #node coordinates
     i, j    = Ncoords 
@@ -34,14 +17,14 @@ def spatialLoc(n, Ncoords, Mcoords, conf):
     Ny      = conf.Ny
 
     #mesh coordinates
-    s, r, q = Mcoords 
+    l, m, n = Mcoords 
     NxMesh = conf.NxMesh
     NyMesh = conf.NyMesh
     NzMesh = conf.NzMesh
 
     #grid spacing
-    xmin = n.getXmin()
-    ymin = n.getYmin()
+    xmin = node.getXmin()
+    ymin = node.getYmin()
 
     dx = conf.dx
     dy = conf.dy
@@ -49,62 +32,116 @@ def spatialLoc(n, Ncoords, Mcoords, conf):
 
 
     #calculate coordinate extent
-    x = xmin + i*NxMesh*dx + s*dx
-    y = ymin + j*NyMesh*dy + r*dy
-    z = 0.0                + q*dz
+    x = xmin + i*NxMesh*dx + l*dx
+    y = ymin + j*NyMesh*dy + m*dy
+    z = 0.0                + n*dz
 
     return (x, y, z)
 
 
 
+def createEmptyVelocityMesh(conf):
+    vmesh = plasma.AdaptiveMesh3D()
+    vmesh.resize( [conf.Nvx,  conf.Nvy,  conf.Nvz ])
+    vmesh.set_min([conf.vxmin, conf.vymin, conf.vzmin])
+    vmesh.set_max([conf.vxmax, conf.vymax, conf.vzmax])
+
+    return vmesh
+
+
+def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
+
+    # standard flat fill on 0th rfl level
+    nx, ny, nz = vmesh.get_size(0)
+    for r in range(nx):
+        for s in range(ny):
+            for t in range(nz):
+                uloc = vmesh.get_center([r,s,t], 0)
+
+                val = ffunc(xloc, uloc, ispcs, conf)
+                vmesh[r,s,t, 0] =  val #ref lvl 0
+
+    if conf.refinement_level < 1:
+        return 
+
+
+    ###################################################
+    # adaptivity
+
+    adapter = plasma.Adapter();
+
+    sweep = 1
+    while(True):
+        #print("-------round {}-----------".format(sweep))
+        adapter.check(vmesh)
+        adapter.refine(vmesh)
+
+        print("cells to refine: {}".format( len(adapter.cells_to_refine)))
+        for cid in adapter.cells_created:
+            rfl = vmesh.get_refinement_level(cid)
+            indx = vmesh.get_indices(cid)
+            uloc = vmesh.get_center(indx, rfl)
+
+            val = ffunc(xloc, uloc, ispcs, conf)
+            vmesh[indx[0], indx[1], indx[2], rfl] = val
+
+        adapter.unrefine(vmesh)
+        print("cells to be removed: {}".format( len(adapter.cells_removed)))
+
+        sweep += 1
+        if sweep > conf.refinement_level: break
+
+    if conf.clip:
+        vmesh.clip_cells(conf.clipThreshold)
+
+    return 
+
+
 
 #inject plasma into cells
-def inject(n, fill_function, conf, clip=True):
+def inject(node, ffunc, conf):
 
     #loop over all *local* cells
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
+    for i in range(node.getNx()):
+        for j in range(node.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
+                print("creating ({},{})".format(i,j))
 
                 #get cell & its content
-                cid = n.cellId(i,j)
-                c = n.getCellPtr(cid) #get cell ptr
+                cid    = node.cellId(i,j)
+                c      = node.getCellPtr(cid) #get cell ptr
 
-                pgrid0 = c.getPlasmaGrid()
-                pgrid1 = c.getNewPlasmaGrid()
-
-                pgrid0.qms = [conf.me, conf.mi]
-                pgrid1.qms = [conf.me, conf.mi]
-
-                for q in range(conf.NzMesh):
-                    for r in range(conf.NyMesh):
-                        for s in range(conf.NxMesh):
-
-                            (x, y, z) = spatialLoc(n, (i,j), (s,r,q), conf)
-
-
-                            #next create mesh for electron population
-                            mesh0 = createEmptyVelocityMesh(conf)
-                            fillMesh(mesh0, 0, x, y, z, fill_function, conf)
-
-                            if clip:
-                                mesh0.clip()
-
-                            pgrid0.electrons[s,r,q] = mesh0
-                            pgrid1.electrons[s,r,q] = mesh0
+                # loop over species
+                species = []
+                for ispcs in range(2):
+                    block = plasma.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    
+                    #set q/m
+                    if ispcs == 0:
+                        block.qm = 1.0/conf.me
+                    elif ispcs == 1:
+                        block.qm = 1.0/conf.mi
 
 
-                            ################################################## 
-                            #And another for positrons
-                            mesh1 = createEmptyVelocityMesh(conf)
-                            fillMesh(mesh1, 1, x, y, z, fill_function, conf)
+                    for n in range(conf.NzMesh):
+                        for m in range(conf.NyMesh):
+                            for l in range(conf.NxMesh):
+                                #print(" sub mesh: ({},{},{})".format(l,m,n))
 
-                            if clip:
-                                mesh1.clip()
+                                xloc = spatialLoc(node, (i,j), (l,m,n), conf)
 
-                            pgrid0.positrons[s,r,q] = mesh1
-                            pgrid1.positrons[s,r,q] = mesh1
+                                vmesh = createEmptyVelocityMesh(conf)
+                                fillMesh(vmesh,
+                                         ffunc,
+                                         xloc,
+                                         ispcs,
+                                         conf)
+                                #vmesh.maximum_refinement_level = conf.refinement_level
 
 
+                                block[l,m,n] = vmesh
+                    species.append(block)
+
+                c.insertInitialSpecies(species)
 

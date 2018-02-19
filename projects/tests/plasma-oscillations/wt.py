@@ -25,13 +25,14 @@ ax.set_ylabel(r'$t$')
 #--------------------------------------------------
 # read simulation data from file
 f = h5py.File('out/run.hdf5','r')
-#f = h5py.File('plasma-osc/run.hdf5','r')
+
+
 
 
 #Read field
 ex = f['fields/Ex']
 #ex = ex[150:, :] #skim off some warm-up phase
-ex = ex[:, 8:340]
+#ex = ex[:, 8:340]
 print "Ex shape:", np.shape(ex)
 
 
@@ -61,7 +62,7 @@ else:
 
 Fourier = np.zeros((nxx, Ny))
 for j in range(Ny):
-    print j
+    #print j
     Fourier[:,j] = np.fft.rfft(A[j,:])
 
 
@@ -73,16 +74,16 @@ print "shape after transform:", np.shape(Fourier)
 #dk = 2.0*np.pi/(nx * dx)
 dk = 1.0/(nx*dx)
 k = np.arange(nx)*dk
-print "k:"
-print k
+#print "k:"
+#print k
 k1 = 1
 k2 = nx
 
 
 #temporal guiding vector 
 t = np.arange(ny)*dt
-print "t:"
-print t
+#print "t:"
+#print t
 t1 = 0
 t2 = ny
 
@@ -114,11 +115,11 @@ im = ax.imshow(F[t1:t2, k1:k2],
         origin='lower',
         aspect='auto',
         interpolation='nearest',
-        cmap='plasma_r',
-        vmin=np.min(F),
-        vmax=np.max(F)
-        #vmin= -8.0,
-        #vmax= -3.5
+        cmap='plasma',
+        #vmin=np.min(F),
+        #vmax=np.max(F)
+        vmin= -8.0,
+        vmax= -2.0
         )
 
 cax = fig.add_axes([0.12, 0.86, 0.86, 0.03]) 

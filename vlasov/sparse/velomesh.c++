@@ -212,7 +212,6 @@ std::vector<uint64_t> VeloMesh::allBlocks( bool sorted ) {
     ret_val.push_back( cellID );
   };
 
-
   if (sorted && ret_val.size() > 0) {
     std::sort(ret_val.begin(), ret_val.end());
   }
