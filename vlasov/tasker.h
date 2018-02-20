@@ -34,7 +34,7 @@ void stepLocation( vlasov::Grid& grid )
 }
 
 
-
+template<int D>
 void stepVelocity( vlasov::Grid& grid )
 {
 
@@ -46,7 +46,7 @@ void stepVelocity( vlasov::Grid& grid )
       for(auto cid : grid.getCellIds() ){
 #pragma omp task
         {
-          vlasov::AmrMomentumLagrangianSolver<Realf> vsol;
+          vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
           vlasov::VlasovCell& cell 
             = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
           vsol.solve(cell);

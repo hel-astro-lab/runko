@@ -51,8 +51,6 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-        #if (10.0 < x < 10.2):
-        #    mux = 0.2
 
 
     #ions/positrons
@@ -74,7 +72,7 @@ def filler(xloc, uloc, ispcs, conf):
 
 
     #Classical Maxwellian distribution
-    f  = 0.5 * (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
+    f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
     f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
@@ -147,6 +145,7 @@ if __name__ == "__main__":
     ################################################## 
     #initialize node
     conf = Configuration('config-plasmaosc.ini') 
+    #conf = Configuration('config-dispersion.ini') 
     #conf = Configuration('config-twostream.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
@@ -177,7 +176,8 @@ if __name__ == "__main__":
     # initialize
     Nx           = conf.Nx*conf.NxMesh
     #modes        = np.arange(Nx/4) + 1
-    modes        = np.arange(Nx) 
+    #modes        = np.arange(Nx) 
+    modes        = np.array([1])
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
@@ -284,10 +284,11 @@ if __name__ == "__main__":
                 cell.depositCurrent()
 
         #clip every cell
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.clip()
+        if conf.clip:
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    cell.clip()
 
         timer.lap("step")
 

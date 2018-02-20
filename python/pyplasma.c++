@@ -32,10 +32,12 @@ typedef toolbox::Adapter<Realf, 3> Adapter3d;
 
 
 /// trampoline class for VlasovVelocitySolver
-class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
+typedef vlasov::MomentumSolver<Realf,3> MomentumSolverRealf3; // PYBIND preprocessor macro freaks out 
+                                                              // of commas so we hide them with typedef
+class PyMomentumSolver : public MomentumSolverRealf3 {
   public:
-    using vlasov::MomentumSolver<Realf>::MomentumSolver;
-    using vlasov::MomentumSolver<Realf>::solve;
+    using MomentumSolverRealf3::MomentumSolver;
+    using MomentumSolverRealf3::solve;
 
     void solveMesh( 
         AM3d& mesh0, 
@@ -47,7 +49,7 @@ class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
-          vlasov::MomentumSolver<Realf>, 
+          MomentumSolverRealf3, 
           solveMesh, 
           mesh0, mesh1, E, B, qm, dt
           );
@@ -103,7 +105,6 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   py::class_<fields::PlasmaCellDamped,
-             corgi::Cell, 
              fields::PlasmaCell,
              std::shared_ptr<fields::PlasmaCellDamped>
             >(m, "PlasmaCellDamped")
@@ -214,9 +215,9 @@ PYBIND11_MODULE(pyplasma, m) {
 
   m.def("grad",  &toolbox::grad<Realf, 3>);
 
-  m.def("trilinear_interp", &toolbox::trilinear_interp<Realf>);
+  m.def("interp_linear", &toolbox::interp_linear<Realf,3>);
 
-  m.def("tricubic_interp", &toolbox::tricubic_interp<Realf>);
+  m.def("interp_cubic", &toolbox::interp_cubic<Realf,3>);
 
 
   py::class_<Adapter3d>(m, "Adapter")
@@ -235,14 +236,14 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   // general interface for momentum solvers
-  py::class_<vlasov::MomentumSolver<Realf>, PyMomentumSolver> vvsol(m, "MomentumSolver");
+  py::class_<vlasov::MomentumSolver<Realf,3>, PyMomentumSolver > vvsol(m, "MomentumSolver");
   vvsol
     .def(py::init<>())
-    .def("solve",     &vlasov::MomentumSolver<Realf>::solve)
-    .def("solveMesh", &vlasov::MomentumSolver<Realf>::solveMesh);
+    .def("solve",     &vlasov::MomentumSolver<Realf,3>::solve)
+    .def("solveMesh", &vlasov::MomentumSolver<Realf,3>::solveMesh);
 
   // AMR Lagrangian solver
-  py::class_<vlasov::AmrMomentumLagrangianSolver<Realf>>(m, "AmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlasov::AmrMomentumLagrangianSolver<Realf,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
 
@@ -344,7 +345,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
     m.def("stepLocation", &vlasov::stepLocation);
 
-    m.def("stepVelocity", &vlasov::stepVelocity);
+    m.def("stepVelocity", &vlasov::stepVelocity<3>);
 
 }
 
