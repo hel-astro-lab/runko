@@ -315,6 +315,36 @@ T interp_cubic(
     int rfl) = delete;
 
 
+/// Cubic interpolation (Catmull-Rom)
+template<>
+Realf interp_cubic<Realf,1>(
+    const AdaptiveMesh<Realf,3>& mesh,
+    typename AdaptiveMesh<Realf,3>::indices_t& indices,
+    typename AdaptiveMesh<Realf,3>::value_array_t& coordinates,
+    int rfl)
+{
+  uint64_t 
+    i = indices[0], 
+    j = indices[1], 
+    k = indices[2]; 
+	
+	Realf dx = coordinates[0]; // - T(0.5); 
+  //Realf dy = coordinates[1]; // - T(0.5); 
+  //Realf dz = coordinates[2]; // - T(0.5);
+
+	Realf pm1 = _getv(mesh, {{i-1, j  , k}}  , rfl),
+	      p0  = _getv(mesh, {{i  , j  , k}}  , rfl),
+	      pp1 = _getv(mesh, {{i+1, j  , k}}  , rfl),
+	      pp2 = _getv(mesh, {{i+1, j  , k}}  , rfl);
+
+  return 0.5*(
+      (dx*dx*(2.0-dx)-dx)*pm1 +
+      (dx*dx*(3.0*dx-5.0)+2.0)*p0 +
+      (dx*dx*(4.0-3.0*dx)+dx)*pp1 +
+       dx*dx*(dx-1.0)*pp2
+      );
+}
+
 /*
  * tricubic interpolator with gradient; 
  * TODO Needs to be optimized

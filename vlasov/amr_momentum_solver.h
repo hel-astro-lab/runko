@@ -324,7 +324,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
 
       // interpolation branch
-      val = toolbox::interp_cubic<T,D>(mesh0, index_new, cell_shift, rfl);
+      //val = toolbox::interp_cubic<T,D>(mesh0, index_new, cell_shift, rfl);
+      val = toolbox::interp_cubic<T,1>(mesh0, index_new, cell_shift, rfl);
 
       return val;
     }
