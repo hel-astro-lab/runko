@@ -122,9 +122,9 @@ def inject(node, ffunc, conf):
                     
                     #set q/m
                     if ispcs == 0:
-                        block.qm = 1.0/conf.me
+                        block.qm = conf.me
                     elif ispcs == 1:
-                        block.qm = 1.0/conf.mi
+                        block.qm = conf.mi
 
 
                     for n in range(conf.NzMesh):

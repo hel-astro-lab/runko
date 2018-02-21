@@ -227,7 +227,7 @@ cax.xaxis.set_ticks_position('top')
 
 wp = 1.0 #plasma frequency XXX why x2? 
 #vth = np.sqrt(1.0e-5) #thermal velocity XXX why /2?
-vth = 1.0e-1 #thermal velocity XXX why /2?
+vth = 0.25 #thermal velocity XXX why /2?
 
 
 #numerical propagation speed

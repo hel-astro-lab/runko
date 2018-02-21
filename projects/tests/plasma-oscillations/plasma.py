@@ -51,6 +51,8 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
+        Lx  = conf.Nx*conf.NxMesh*conf.dx
+        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
 
     #ions/positrons
@@ -62,8 +64,6 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-        Lx  = conf.Nx*conf.NxMesh*conf.dx
-        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
 
     #Brownian noise
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     Nx           = conf.Nx*conf.NxMesh
     #modes        = np.arange(Nx/4) + 1
     #modes        = np.arange(Nx) 
-    modes        = np.array([1])
+    modes        = np.array([4])
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
