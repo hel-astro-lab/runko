@@ -18,6 +18,7 @@ namespace py = pybind11;
 #include "../vlasov/amr/operators.h"
 #include "../vlasov/amr_momentum_solver.h"
 #include "../vlasov/amr_spatial_solver.h"
+#include "../vlasov/amr_analyzator.h"
 
 #include "../vlasov/tasker.h"
 
@@ -259,6 +260,11 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<>());
 
 
+  /// Vlasov cell analyzator
+  py::class_<vlasov::Analyzator<Realf> >(m, "Analyzator")
+    .def(py::init<>());
+
+
 
   py::class_<toolbox::Mesh<Realf,1>>(m, "Mesh")
     .def(py::init<size_t, size_t, size_t>())
@@ -346,6 +352,8 @@ PYBIND11_MODULE(pyplasma, m) {
     m.def("stepLocation", &vlasov::stepLocation);
 
     m.def("stepVelocity", &vlasov::stepVelocity<3>);
+
+    m.def("analyze",      &vlasov::analyze);
 
 }
 
