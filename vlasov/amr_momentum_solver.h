@@ -58,6 +58,7 @@ class MomentumSolver {
 
       // timestep
       T dt = (T) cell.dt;
+      T dx = (T) cell.dx;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -364,8 +365,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       T refine_indicator, unrefine_indicator;
       auto len = mesh1.get_size(0);
 
-      // remove higher-dimension updates (compresses inner loops away)
-      for(int i = 2; i>D-1; i--) len[i] = 1;
+      // XXX remove higher-dimension updates (compresses inner loops away)
+      // for(int i = 2; i>D-1; i--) len[i] = 1;
 
 
       for(uint64_t r=0; r<len[0]; r++) {

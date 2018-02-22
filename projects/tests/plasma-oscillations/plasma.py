@@ -14,7 +14,7 @@ import initialize as init
 
 from visualize import plotNode
 from visualize_amr import plotXmesh
-from visualize import plotJ, plotE
+from visualize import plotJ, plotE, plotDens
 from visualize import saveVisz
 from visualize import getYee
 
@@ -41,6 +41,12 @@ def filler(xloc, uloc, ispcs, conf):
     ux = uloc[0]
     uy = uloc[1]
     uz = uloc[2] 
+
+    #print("uy={} uz={}".format(uy,uz))
+
+    #1d filler
+    if not( (uy == 0.0) and (uz == 0.0) ):
+        return 0.0
 
     #electrons
     if ispcs == 0:
@@ -72,7 +78,8 @@ def filler(xloc, uloc, ispcs, conf):
 
 
     #Classical Maxwellian distribution
-    f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
+    #f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
+    f  = (2.0)*(1.0/(2.0*np.pi*delgam))**(1.0/2.0)
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
     f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
@@ -123,7 +130,7 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(7, 1)
+    gs = plt.GridSpec(8, 1)
     gs.update(hspace = 0.5)
     
     axs = []
@@ -134,6 +141,7 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[4]) )
     axs.append( plt.subplot(gs[5]) )
     axs.append( plt.subplot(gs[6]) )
+    axs.append( plt.subplot(gs[7]) )
 
 
     # Timer for profiling
@@ -175,7 +183,6 @@ if __name__ == "__main__":
     ################################################## 
     # initialize
     Nx           = conf.Nx*conf.NxMesh
-    #modes        = np.arange(Nx/4) + 1
     #modes        = np.arange(Nx) 
     modes        = np.array([4])
     random_phase = np.random.rand(len(modes))
@@ -191,6 +198,7 @@ if __name__ == "__main__":
     plotXmesh(axs[4], node, conf, 1, "y")
     plotJ(axs[5], node, conf)
     plotE(axs[6], node, conf)
+    plotDens(axs[7], node, conf)
     saveVisz(-1, node, conf)
 
 
@@ -290,6 +298,10 @@ if __name__ == "__main__":
                     cell = node.getCellPtr(i,j)
                     cell.clip()
 
+        # analyze
+        plasma.analyze(node)
+
+
         timer.lap("step")
 
         #I/O
@@ -314,6 +326,7 @@ if __name__ == "__main__":
 
             plotJ(axs[5], node, conf)
             plotE(axs[6], node, conf)
+            plotDens(axs[7], node, conf)
 
             saveVisz(lap, node, conf)
 

@@ -33,12 +33,14 @@ typedef toolbox::Adapter<Realf, 3> Adapter3d;
 
 
 /// trampoline class for VlasovVelocitySolver
-typedef vlasov::MomentumSolver<Realf,3> MomentumSolverRealf3; // PYBIND preprocessor macro freaks out 
-                                                              // of commas so we hide them with typedef
-class PyMomentumSolver : public MomentumSolverRealf3 {
+typedef vlasov::MomentumSolver<Realf,3> momsol; // PYBIND preprocessor macro freaks out 
+                                                // of commas so we hide them with typedef
+                                                  
+class PyMomentumSolver : public momsol {
+
   public:
-    using MomentumSolverRealf3::MomentumSolver;
-    using MomentumSolverRealf3::solve;
+    using momsol::MomentumSolver;
+    using momsol::solve;
 
     void solveMesh( 
         AM3d& mesh0, 
@@ -50,7 +52,7 @@ class PyMomentumSolver : public MomentumSolverRealf3 {
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
-          MomentumSolverRealf3, 
+          momsol, 
           solveMesh, 
           mesh0, mesh1, E, B, qm, dt
           );
@@ -351,7 +353,8 @@ PYBIND11_MODULE(pyplasma, m) {
 
     m.def("stepLocation", &vlasov::stepLocation);
 
-    m.def("stepVelocity", &vlasov::stepVelocity<3>);
+    m.def("stepVelocity1d", &vlasov::stepVelocity<1>);
+    m.def("stepVelocity",   &vlasov::stepVelocity<3>);
 
     m.def("analyze",      &vlasov::analyze);
 

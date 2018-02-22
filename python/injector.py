@@ -42,11 +42,23 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
 
 def createEmptyVelocityMesh(conf):
     vmesh = plasma.AdaptiveMesh3D()
-    vmesh.resize( [conf.Nvx,  conf.Nvy,  conf.Nvz ])
-    vmesh.set_min([conf.vxmin, conf.vymin, conf.vzmin])
-    vmesh.set_max([conf.vxmax, conf.vymax, conf.vzmax])
 
-    return vmesh
+    dx = (conf.vxmax - conf.vxmin)/(conf.Nvx)
+    dy = (conf.vymax - conf.vymin)/(conf.Nvy)
+    dz = (conf.vzmax - conf.vzmin)/(conf.Nvz)
+
+    if (conf.Nvy == 1) and (conf.Nvz == 1): #1D switch
+        vmesh.resize( [conf.Nvx,  2,  2 ])
+        vmesh.set_min([conf.vxmin,    -0.5, -0.5])
+        vmesh.set_max([conf.vxmax-dx,  0.5,  0.5])
+        return vmesh
+
+    else:
+        vmesh.resize( [conf.Nvx,      conf.Nvy,      conf.Nvz ])
+        vmesh.set_min([conf.vxmin,    conf.vymin,    conf.vzmin])
+        vmesh.set_max([conf.vxmax-dx, conf.vymax-dy, conf.vzmax-dz])
+
+        return vmesh
 
 
 def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
