@@ -315,7 +315,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // new grid indices
       std::array<uint64_t, 3> index_new;
-      for(int i=0; i<D; i++) index_new[i] = index[i] + index_shift[i];
+      for(int i=0; i<D; i++)     index_new[i] = index[i] + index_shift[i];
+      for(int i = 2; i>D-1; i--) index_new[i] = index[i];
 
 
       // set boundary conditions (zero outside the grid limits)
@@ -323,10 +324,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         if( (index_new[i] <2) || (index_new[i] >= len[i]-2) ) return T(0);
       }
 
-
       // interpolation branch
-      //val = toolbox::interp_cubic<T,D>(mesh0, index_new, cell_shift, rfl);
-      val = toolbox::interp_cubic<T,1>(mesh0, index_new, cell_shift, rfl);
+      val = toolbox::interp_cubic<T,D>(mesh0, index_new, cell_shift, rfl);
 
       return val;
     }
@@ -366,6 +365,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       auto len = mesh1.get_size(0);
 
       // XXX remove higher-dimension updates (compresses inner loops away)
+      // TODO does not work if the fill is not correctly done
       // for(int i = 2; i>D-1; i--) len[i] = 1;
 
 

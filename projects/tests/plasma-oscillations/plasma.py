@@ -45,8 +45,9 @@ def filler(xloc, uloc, ispcs, conf):
     #print("uy={} uz={}".format(uy,uz))
 
     #1d filler
-    if not( (uy == 0.0) and (uz == 0.0) ):
+    if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
         return 0.0
+
 
     #electrons
     if ispcs == 0:
@@ -79,10 +80,11 @@ def filler(xloc, uloc, ispcs, conf):
 
     #Classical Maxwellian distribution
     #f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
-    f  = (2.0)*(1.0/(2.0*np.pi*delgam))**(1.0/2.0)
+    f  = (1.0/(2.0*np.pi*delgam))**(1.0/2.0)
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
-    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
+    #f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
+    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))
 
 
     return f
@@ -184,7 +186,7 @@ if __name__ == "__main__":
     # initialize
     Nx           = conf.Nx*conf.NxMesh
     #modes        = np.arange(Nx) 
-    modes        = np.array([4])
+    modes        = np.array([1])
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
@@ -256,7 +258,8 @@ if __name__ == "__main__":
         #    for i in range(node.getNx()):
         #        cell = node.getCellPtr(i,j)
         #        vsol.solve(cell)
-        plasma.stepVelocity(node)
+        plasma.stepVelocity1d(node)
+
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
