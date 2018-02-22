@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "../vlasov/grid.h"
 
 #include "../em-fields/fields.h"
+#include "../em-fields/damping_fields.h"
 
 #include "../vlasov/amr/mesh.h"
 #include "../vlasov/amr/numerics.h"
@@ -17,6 +18,7 @@ namespace py = pybind11;
 #include "../vlasov/amr/operators.h"
 #include "../vlasov/amr_momentum_solver.h"
 #include "../vlasov/amr_spatial_solver.h"
+#include "../vlasov/amr_analyzator.h"
 
 #include "../vlasov/tasker.h"
 
@@ -31,10 +33,14 @@ typedef toolbox::Adapter<Realf, 3> Adapter3d;
 
 
 /// trampoline class for VlasovVelocitySolver
-class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
+typedef vlasov::MomentumSolver<Realf,3> momsol; // PYBIND preprocessor macro freaks out 
+                                                // of commas so we hide them with typedef
+                                                  
+class PyMomentumSolver : public momsol {
+
   public:
-    using vlasov::MomentumSolver<Realf>::MomentumSolver;
-    using vlasov::MomentumSolver<Realf>::solve;
+    using momsol::MomentumSolver;
+    using momsol::solve;
 
     void solveMesh( 
         AM3d& mesh0, 
@@ -46,7 +52,7 @@ class PyMomentumSolver : public vlasov::MomentumSolver<Realf> {
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
-          vlasov::MomentumSolver<Realf>, 
+          momsol, 
           solveMesh, 
           mesh0, mesh1, E, B, qm, dt
           );
@@ -88,7 +94,7 @@ PYBIND11_MODULE(pyplasma, m) {
              corgi::Cell, 
              std::shared_ptr<fields::PlasmaCell>
             >(m, "PlasmaCell")
-    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
+    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>())
     .def_readwrite("yeeDt",  &fields::PlasmaCell::yeeDt)
     .def_readwrite("yeeDx",  &fields::PlasmaCell::yeeDx)
     .def_readwrite("yeeDy",  &fields::PlasmaCell::yeeDy)
@@ -99,6 +105,14 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
     .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
     .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries);
+
+
+  py::class_<fields::PlasmaCellDamped,
+             fields::PlasmaCell,
+             std::shared_ptr<fields::PlasmaCellDamped>
+            >(m, "PlasmaCellDamped")
+    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>());
+
 
 
 
@@ -204,9 +218,9 @@ PYBIND11_MODULE(pyplasma, m) {
 
   m.def("grad",  &toolbox::grad<Realf, 3>);
 
-  m.def("trilinear_interp", &toolbox::trilinear_interp<Realf>);
+  m.def("interp_linear", &toolbox::interp_linear<Realf,3>);
 
-  m.def("tricubic_interp", &toolbox::tricubic_interp<Realf>);
+  m.def("interp_cubic", &toolbox::interp_cubic<Realf,3>);
 
 
   py::class_<Adapter3d>(m, "Adapter")
@@ -225,14 +239,14 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   // general interface for momentum solvers
-  py::class_<vlasov::MomentumSolver<Realf>, PyMomentumSolver> vvsol(m, "MomentumSolver");
+  py::class_<vlasov::MomentumSolver<Realf,3>, PyMomentumSolver > vvsol(m, "MomentumSolver");
   vvsol
     .def(py::init<>())
-    .def("solve",     &vlasov::MomentumSolver<Realf>::solve)
-    .def("solveMesh", &vlasov::MomentumSolver<Realf>::solveMesh);
+    .def("solve",     &vlasov::MomentumSolver<Realf,3>::solve)
+    .def("solveMesh", &vlasov::MomentumSolver<Realf,3>::solveMesh);
 
   // AMR Lagrangian solver
-  py::class_<vlasov::AmrMomentumLagrangianSolver<Realf>>(m, "AmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlasov::AmrMomentumLagrangianSolver<Realf,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
 
@@ -245,6 +259,11 @@ PYBIND11_MODULE(pyplasma, m) {
 
   // AMR Lagrangian solver
   py::class_<vlasov::AmrSpatialLagrangianSolver<Realf>>(m, "AmrSpatialLagrangianSolver", vssol)
+    .def(py::init<>());
+
+
+  /// Vlasov cell analyzator
+  py::class_<vlasov::Analyzator<Realf> >(m, "Analyzator")
     .def(py::init<>());
 
 
@@ -334,7 +353,10 @@ PYBIND11_MODULE(pyplasma, m) {
 
     m.def("stepLocation", &vlasov::stepLocation);
 
-    m.def("stepVelocity", &vlasov::stepVelocity);
+    m.def("stepVelocity1d", &vlasov::stepVelocity<1>);
+    m.def("stepVelocity",   &vlasov::stepVelocity<3>);
+
+    m.def("analyze",      &vlasov::analyze);
 
 }
 

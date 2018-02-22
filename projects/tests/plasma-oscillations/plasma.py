@@ -14,7 +14,7 @@ import initialize as init
 
 from visualize import plotNode
 from visualize_amr import plotXmesh
-from visualize import plotJ, plotE
+from visualize import plotJ, plotE, plotDens
 from visualize import saveVisz
 from visualize import getYee
 
@@ -42,6 +42,13 @@ def filler(xloc, uloc, ispcs, conf):
     uy = uloc[1]
     uz = uloc[2] 
 
+    #print("uy={} uz={}".format(uy,uz))
+
+    #1d filler
+    if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
+        return 0.0
+
+
     #electrons
     if ispcs == 0:
         delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
@@ -51,8 +58,8 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-        #if (10.0 < x < 10.2):
-        #    mux = 0.2
+        Lx  = conf.Nx*conf.NxMesh*conf.dx
+        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
 
     #ions/positrons
@@ -64,8 +71,6 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-        Lx  = conf.Nx*conf.NxMesh*conf.dx
-        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
 
     #Brownian noise
@@ -74,10 +79,12 @@ def filler(xloc, uloc, ispcs, conf):
 
 
     #Classical Maxwellian distribution
-    f  = 0.5 * (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
+    #f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
+    f  = 0.5*(1.0/(2.0*np.pi*delgam))**(0.5)
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
-    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
+    #f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
+    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))
 
 
     return f
@@ -125,7 +132,7 @@ if __name__ == "__main__":
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(7, 1)
+    gs = plt.GridSpec(8, 1)
     gs.update(hspace = 0.5)
     
     axs = []
@@ -136,6 +143,7 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[4]) )
     axs.append( plt.subplot(gs[5]) )
     axs.append( plt.subplot(gs[6]) )
+    axs.append( plt.subplot(gs[7]) )
 
 
     # Timer for profiling
@@ -147,6 +155,7 @@ if __name__ == "__main__":
     ################################################## 
     #initialize node
     conf = Configuration('config-plasmaosc.ini') 
+    #conf = Configuration('config-dispersion.ini') 
     #conf = Configuration('config-twostream.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
@@ -176,8 +185,8 @@ if __name__ == "__main__":
     ################################################## 
     # initialize
     Nx           = conf.Nx*conf.NxMesh
-    #modes        = np.arange(Nx/4) + 1
-    modes        = np.arange(Nx) 
+    #modes        = np.arange(Nx) 
+    modes        = np.array([1])
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
@@ -191,6 +200,7 @@ if __name__ == "__main__":
     plotXmesh(axs[4], node, conf, 1, "y")
     plotJ(axs[5], node, conf)
     plotE(axs[6], node, conf)
+    plotDens(axs[7], node, conf)
     saveVisz(-1, node, conf)
 
 
@@ -248,7 +258,8 @@ if __name__ == "__main__":
         #    for i in range(node.getNx()):
         #        cell = node.getCellPtr(i,j)
         #        vsol.solve(cell)
-        plasma.stepVelocity(node)
+        plasma.stepVelocity1d(node)
+
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
@@ -284,10 +295,15 @@ if __name__ == "__main__":
                 cell.depositCurrent()
 
         #clip every cell
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.clip()
+        if conf.clip:
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    cell.clip()
+
+        # analyze
+        plasma.analyze(node)
+
 
         timer.lap("step")
 
@@ -313,6 +329,7 @@ if __name__ == "__main__":
 
             plotJ(axs[5], node, conf)
             plotE(axs[6], node, conf)
+            plotDens(axs[7], node, conf)
 
             saveVisz(lap, node, conf)
 

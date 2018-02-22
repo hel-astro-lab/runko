@@ -4,8 +4,8 @@ import numpy as np
 from tvtk.api import tvtk
 from mayavi.scripts import mayavi2
 
-import pyplasma as plasma
-import pyplasmaDev as pdev
+#import pyplasma as plasma
+#import pyplasmaDev as pdev
 
 from injector import createEmptyVelocityMesh, fillMesh
 from scipy.stats import multivariate_normal
@@ -25,9 +25,9 @@ class Conf:
     vymax =  10.0
     vzmax =  10.0
 
-    Nxv = 25
-    Nyv = 25
-    Nzv = 25
+    Nvx = 25
+    Nvy = 25
+    Nvz = 25
 
     #vmesh refinement
     refinement_level = 0

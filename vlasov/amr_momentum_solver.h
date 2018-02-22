@@ -32,7 +32,7 @@ namespace vlasov {
  * correctly from the container.
  *
  */
-template<typename T>
+template<typename T, int D>
 class MomentumSolver {
 
 
@@ -58,6 +58,7 @@ class MomentumSolver {
 
       // timestep
       T dt = (T) cell.dt;
+      T dx = (T) cell.dx;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -237,8 +238,8 @@ class MomentumSolver {
 
 
 /// \brief back-substituting semi-Lagrangian adaptive advection solver
-template<typename T>
-class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
+template<typename T, int D>
+class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
   public:
 
@@ -278,7 +279,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
     }
 
 
-
     // backward advected Lorentz force
     T backward_advect(
         std::array<uint64_t, 3>& index,
@@ -303,34 +303,29 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
       // advection in units of cells
       std::array<T,3> shift, cell_shift;
-      for(size_t i=0; i<3; i++) shift[i] = F(i)/du[i];
+      for(int i=0; i<D; i++) shift[i] = F(i)/du[i];
 
       // advected cells
       std::array<int,3> index_shift;
-      for(size_t i=0; i<3; i++) index_shift[i] = static_cast<int>( trunc(shift[i]) );
+      for(int i=0; i<D; i++) index_shift[i] = static_cast<int>( trunc(shift[i]) );
 
       // advection inside cell
       T tmp;
-      for(size_t i=0; i<3; i++) cell_shift[i] = modf(shift[i], &tmp);
+      for(int i=0; i<D; i++) cell_shift[i] = modf(shift[i], &tmp);
 
       // new grid indices
       std::array<uint64_t, 3> index_new;
-      for(size_t i=0; i<3; i++) index_new[i] = index[i] + index_shift[i];
+      for(int i=0; i<D; i++)     index_new[i] = index[i] + index_shift[i];
+      for(int i = 2; i>D-1; i--) index_new[i] = index[i];
 
 
       // set boundary conditions (zero outside the grid limits)
-      if(    index_new[0] < 2
-          || index_new[1] < 2
-          || index_new[2] < 2
-          || index_new[0] >= len[0]-2 
-          || index_new[1] >= len[1]-2 
-          || index_new[2] >= len[2]-2 ) 
-      { 
-        val = T(0); 
-      } else {
-        // interpolation branch
-        val = tricubic_interp(mesh0, index_new, cell_shift, rfl);
+      for(int i=0; i<D; i++){
+        if( (index_new[i] <2) || (index_new[i] >= len[i]-2) ) return T(0);
       }
+
+      // interpolation branch
+      val = toolbox::interp_cubic<T,D>(mesh0, index_new, cell_shift, rfl);
 
       return val;
     }
@@ -368,6 +363,12 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T> {
 
       T refine_indicator, unrefine_indicator;
       auto len = mesh1.get_size(0);
+
+      // XXX remove higher-dimension updates (compresses inner loops away)
+      // TODO does not work if the fill is not correctly done
+      for(int i = 2; i>D-1; i--) len[i] = 1;
+
+
       for(uint64_t r=0; r<len[0]; r++) {
         index[0] = r;
         for(uint64_t s=0; s<len[1]; s++) {

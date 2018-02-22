@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import h5py
 import sys, os
 import matplotlib.ticker as ticker
-
+from scipy.stats import mstats
 
 #--------------------------------------------------
 #set up figure
@@ -88,7 +88,7 @@ print np.shape(T)
 #            #vmax=ff.max(),
 #            )
 
-
+F = mstats.winsorize(F, limits=[0.01, 0.01])
 vminmax = np.maximum( np.abs(np.min(F)), np.abs(np.max(F)) )
 
 #faster plotting with imshow

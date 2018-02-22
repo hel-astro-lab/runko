@@ -76,7 +76,7 @@ class VlasovCell :
                size_t NxMesh, size_t NyMesh
                ) : 
       corgi::Cell(i, j, o, NxG, NyG),
-      fields::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh),
+      fields::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
       NxGrid(NxMesh),
       NyGrid(NyMesh),
       NzGrid(1)

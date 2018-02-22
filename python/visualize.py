@@ -251,7 +251,16 @@ def plotE(ax, n, conf):
     ax.set_ylabel(r'$E_x$')
 
 
+def plotDens(ax, n, conf):
+    yee = getYee(n, conf)
 
+    ax.clear()
+    ax.minorticks_on()
+    ax.set_xlim(n.getXmin(), n.getXmax())
+    #ax.set_xlim(-3.0, 3.0)
+    #ax.set_ylim(-20.0, 20.0)
 
-
+    ax.plot(yee['x'], yee['rh'], "b-")
+    
+    ax.set_ylabel(r'$n$')
 

@@ -7,10 +7,10 @@ fields::PlasmaCell::PlasmaCell(
     size_t i, size_t j,
     int o,
     size_t NxG, size_t NyG,
-    size_t NxMesh, size_t NyMesh
+    size_t NxMesh, size_t NyMesh, size_t NzMesh
     ) :
   corgi::Cell(i, j, o, NxG, NyG),
-  NxMesh(NxMesh), NyMesh(NyMesh), NzMesh(1)
+  NxMesh(NxMesh), NyMesh(NyMesh), NzMesh(NzMesh)
 {
 
   // append fresh Yee lattices into data container
@@ -133,9 +133,11 @@ void fields::PlasmaCell::pushE3d() {
 void fields::PlasmaCell::depositCurrent() {
   fields::YeeLattice& mesh = getYee();
 
-  mesh.ex -= mesh.jx * yeeDt* (yeeDx*yeeDy*yeeDz);
-  mesh.ey -= mesh.jy * yeeDt* (yeeDx*yeeDy*yeeDz);
-  mesh.ez -= mesh.jz * yeeDt* (yeeDx*yeeDy*yeeDz);
+  //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDy*yeeDz) <<"\n";
+
+  mesh.ex -= mesh.jx * yeeDt / (yeeDx*yeeDy*yeeDz);
+  mesh.ey -= mesh.jy * yeeDt / (yeeDx*yeeDy*yeeDz);
+  mesh.ez -= mesh.jz * yeeDt / (yeeDx*yeeDy*yeeDz);
 
 }
 
