@@ -118,8 +118,8 @@ im = ax.imshow(F[t1:t2, k1:k2],
         cmap='plasma',
         #vmin=np.min(F),
         #vmax=np.max(F)
-        vmin= -8.0,
-        vmax= -2.0
+        vmin= -0.05,
+        vmax=  0.2
         )
 
 cax = fig.add_axes([0.12, 0.86, 0.86, 0.03]) 

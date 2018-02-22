@@ -185,8 +185,8 @@ if __name__ == "__main__":
     ################################################## 
     # initialize
     Nx           = conf.Nx*conf.NxMesh
-    #modes        = np.arange(Nx) 
-    modes        = np.array([1])
+    modes        = np.arange(Nx) 
+    #modes        = np.array([2])
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
