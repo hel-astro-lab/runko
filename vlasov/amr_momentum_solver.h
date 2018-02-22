@@ -366,7 +366,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // XXX remove higher-dimension updates (compresses inner loops away)
       // TODO does not work if the fill is not correctly done
-      // for(int i = 2; i>D-1; i--) len[i] = 1;
+      for(int i = 2; i>D-1; i--) len[i] = 1;
 
 
       for(uint64_t r=0; r<len[0]; r++) {

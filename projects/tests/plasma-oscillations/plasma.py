@@ -80,7 +80,7 @@ def filler(xloc, uloc, ispcs, conf):
 
     #Classical Maxwellian distribution
     #f  = (1.0/(2.0*np.pi*delgam))**(3.0/2.0)
-    f  = (1.0/(2.0*np.pi*delgam))**(1.0/2.0)
+    f  = 0.5*(1.0/(2.0*np.pi*delgam))**(0.5)
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
     #f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
