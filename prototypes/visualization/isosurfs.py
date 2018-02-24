@@ -25,9 +25,9 @@ class Conf:
     vymax =  10.0
     vzmax =  10.0
 
-    Nvx = 25
-    Nvy = 25
-    Nvz = 25
+    Nvx = 64
+    Nvy = 64
+    Nvz = 64
 
     #vmesh refinement
     refinement_level = 0
@@ -42,17 +42,17 @@ def filler(xloc, uloc, ispcs, conf):
 
     mean = [ 0.0, 0.0, 0.0]
     cov  = np.zeros((3,3))
-    cov[0,0] = 1.0 
-    cov[1,1] = 1.0 
-    cov[2,2] = 6.0
+    cov[0,0] = 2.0 
+    cov[1,1] = 2.0 
+    cov[2,2] = 4.0
 
     f = multivariate_normal.pdf(uloc, mean, cov)
 
-    mean = [ 1.0, 1.0, 1.0]
+    mean = [ 2.0, 2.0, 2.0]
     cov  = np.zeros((3,3))
-    cov[0,0] = 4.0 
-    cov[1,1] = 3.0 
-    cov[2,2] = 2.0
+    cov[0,0] = 1.0 
+    cov[1,1] = 1.0 
+    cov[2,2] = 1.0
     f += multivariate_normal.pdf(uloc, mean, cov)
 
     return f
@@ -99,6 +99,7 @@ def stripAmrMesh(vmesh):
 
 
 def denseMatrix(vmesh):
+
     cids = vmesh.get_cells(True)
     Ncells = len(cids)
     Nx, Ny, Nz = vmesh.get_size(0)
@@ -266,6 +267,7 @@ def view_mlab():
 
 @mayavi2.standalone
 def view():
+    from mayavi import mlab
 
     from mayavi.sources.vtk_data_source import VTKDataSource
     from mayavi.modules.outline import Outline
@@ -288,7 +290,7 @@ def view():
     #translucent isosurfaces
     iso = IsoSurface()
     mayavi.add_module(iso)
-    iso.module_manager.scalar_lut_manager.lut_mode = "hot"
+    iso.module_manager.scalar_lut_manager.lut_mode = "plasma"
 
     iso.contour.contours = np.linspace(0.0, 0.03, 30).tolist()
     iso.actor.property.opacity = 0.3
@@ -297,6 +299,35 @@ def view():
     #iso = mayavi.mlab.pipeline.iso_surface(ug, contours=[1e-15,1e-14,1e-12], opacity=0.3)
     #from mayavi import mlab
     #mlab.contour3d(ug, opacity=0.3)
+
+    #corned
+    outline = engine.scenes[0].children[0].children[0].children[0]
+    outline.outline_filter.reference_count = 2
+    outline.outline_filter.progress = 1.0
+    outline.actor.mapper.scalar_range = np.array([0., 1.])
+    outline.actor.mapper.progress = 1.0
+    outline.outline_mode = 'cornered'
+
+    #show the xyz arrow axis
+    scene.scene.show_axes = True
+
+    scene.scene.background = (0.0, 0.0, 0.0)
+    scene.scene.isometric_view()
+    #v = mlab.view()
+    (azimuth, elevation, distance, focalpoint) = mlab.view()
+    elevation += 20.0 #move cam a little lower
+    distance  *= 0.6
+
+    for i, ang in enumerate(np.linspace(0.0, 360, 100)):
+        si = str(i).rjust(4, '0')
+        scene.scene.save('out/snapshot{}.png'.format(si))
+
+        mlab.view(azimuth=azimuth+ang,
+                  elevation=elevation,
+                  distance=distance,
+                  focalpoint=focalpoint)
+        scene.scene.render()
+
 
 
 
