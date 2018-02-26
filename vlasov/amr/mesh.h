@@ -12,12 +12,6 @@
 // #include "reversed_iterator.h"
 
 
-#include <fmt/format.h>
-#include <fmt/format.cc>
-#include <fmt/string.h>
-#include <fmt/ostream.h>
-
-
 
 namespace toolbox {
 

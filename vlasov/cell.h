@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+#include <array>
+#include <vector>
+
 
 #include "../definitions.h"
 #include "../corgi/cell.h"
@@ -9,6 +12,7 @@
 #include "../tools/rotator.h"
 #include "../em-fields/fields.h"
 
+#include "grid.h"
 
 
 namespace vlasov {
@@ -132,7 +136,22 @@ class VlasovCell :
     /// Cycle internal plasma container to another solution step
     void cycle() { steps.cycle(); }
 
+
+    /// advance location 
+    virtual void stepLocation(vlasov::Grid& grid);
+    /*
+    {
+      vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
+      ssol.solve(*this, grid);
+    }
+    */
+
 };
+
+
+
+
+
 
 
 } // end of namespace vlasov

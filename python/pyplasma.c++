@@ -6,14 +6,14 @@ namespace py = pybind11;
 #include "../definitions.h"
 #include "../tools/mesh.h"
 
-#include "../vlasov/cell.h"
+//#include "../vlasov/cell.h"
 #include "../vlasov/grid.h"
 
 #include "../em-fields/fields.h"
 #include "../em-fields/damping_fields.h"
 
 #include "../vlasov/amr/mesh.h"
-#include "../vlasov/amr/numerics.h"
+//#include "../vlasov/amr/numerics.h"
 #include "../vlasov/amr/refiner.h"
 #include "../vlasov/amr/operators.h"
 #include "../vlasov/amr_momentum_solver.h"
@@ -214,13 +214,10 @@ PYBIND11_MODULE(pyplasma, m) {
     // -------------------------------------------------- 
     // AMR numerics
       
-  m.def("deriv", &toolbox::deriv<Realf, 3>);
-
-  m.def("grad",  &toolbox::grad<Realf, 3>);
-
-  m.def("interp_linear", &toolbox::interp_linear<Realf,3>);
-
-  m.def("interp_cubic", &toolbox::interp_cubic<Realf,3>);
+  //m.def("deriv", &toolbox::deriv<Realf, 3>);
+  //m.def("grad",  &toolbox::grad<Realf, 3>);
+  //m.def("interp_linear", &toolbox::interp_linear<Realf,3>);
+  //m.def("interp_cubic", &toolbox::interp_cubic<Realf,3>);
 
 
   py::class_<Adapter3d>(m, "Adapter")

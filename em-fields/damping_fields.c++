@@ -47,9 +47,24 @@ void fields::PlasmaCellDamped::pushE2d_damped() {
 
     }
   }
+}
 
+
+void fields::PlasmaCellDamped::depositCurrent() {
+  fields::YeeLattice& mesh = getYee();
+
+  std::cout << "Calling DAMPED J update\n";
+
+  //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDy*yeeDz) <<"\n";
+  
+  Realf resistivity = 10.0;
+
+  mesh.ex -= mesh.jx * yeeDt / (yeeDx*yeeDy*yeeDz) /resistivity;
+  mesh.ey -= mesh.jy * yeeDt / (yeeDx*yeeDy*yeeDz) /resistivity;
+  mesh.ez -= mesh.jz * yeeDt / (yeeDx*yeeDy*yeeDz) /resistivity;
 
 }
+
 
 
 

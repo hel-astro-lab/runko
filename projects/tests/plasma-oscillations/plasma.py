@@ -206,10 +206,10 @@ if __name__ == "__main__":
 
 
     #setup momentum space solver
-    vsol = plasma.AmrMomentumLagrangianSolver()
+    #vsol = plasma.AmrMomentumLagrangianSolver()
 
     #setup spatial space solver
-    ssol = plasma.AmrSpatialLagrangianSolver()
+    #ssol = plasma.AmrSpatialLagrangianSolver()
 
 
     timer.stop("init") 

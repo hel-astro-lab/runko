@@ -3,7 +3,6 @@
 #include <string>
 #include <memory>
 
-#include "cell.h"
 #include "../corgi/corgi.h"
 #include "../tools/rotator.h"
 
@@ -18,7 +17,7 @@ namespace vlasov {
 class Grid : public corgi::Node {
   public:
 
-    typedef std::shared_ptr<vlasov::VlasovCell> CellPtr;
+    //typedef std::shared_ptr<vlasov::VlasovCell> CellPtr;
 
 
     // copy constructor
@@ -40,8 +39,6 @@ class Grid : public corgi::Node {
       }
     }
     */
-
-
 
 
 

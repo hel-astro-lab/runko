@@ -9,9 +9,11 @@
 #include "amr/numerics.h"
 #include "amr/refiner.h"
 #include "amr/operators.h"
+#include "../tools/signum.h"
 
 #include "../tools/cppitertools/zip.hpp"
 using iter::zip;
+using toolbox::sign;
 
 
 #include <Eigen/Dense>

@@ -61,10 +61,15 @@ fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++
 damping_fields.o: ${DEPS_COMMON} em-fields/fields.h em-fields/fields.c++ em-fields/damping_fields.h em-fields/damping_fields.c++
 	${CMP} ${CXXFLAGS} -o damping_fields.o -c em-fields/damping_fields.c++
 
+vlasovCell.o: ${DEPS_COMMON} vlasov/cell.h vlasov/cell.c++ vlasov/grid.h
+	${CMP} ${CXXFLAGS} -o vlasovCell.o -c vlasov/cell.c++
+
+
 
 
 #compile python binaries
-pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++ vlasov/grid.h vlasov/cell.h vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h vlasov/tasker.h vlasov/amr_analyzator.h
+#pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++ vlasov/grid.h vlasov/cell.h vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h vlasov/tasker.h vlasov/amr_analyzator.h
+pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++ vlasov/grid.h vlasov/cell.h vlasov/cell.c++ vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h vlasov/tasker.h vlasov/amr_analyzator.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pyplasma.o -c python/pyplasma.c++
 
 #dev-bindings.o: ${DEPS_COMMON} vlasov/bindings.c++ vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h vlasov/amr/operators.h vlasov/amr_momentum_solver.h vlasov/amr_spatial_solver.h
@@ -78,8 +83,8 @@ pycorgi:
 
 
 #link into python module with pybind11
-pyplasma: fields.o damping_fields.o pyplasma.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasma.so pyplasma.o fields.o damping_fields.o
+pyplasma: fields.o damping_fields.o vlasovCell.o pyplasma.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasma.so pyplasma.o vlasovCell.o fields.o damping_fields.o
 
 #pyplasmaDev: vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h tools/mesh.h dev-bindings.o
 #	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasmaDev.so dev-bindings.o

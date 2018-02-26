@@ -163,7 +163,7 @@ static inline T _getv(
   
 
 template<typename T, int D>
-T interp_linear(
+inline T interp_linear(
     const AdaptiveMesh<T,3>& mesh,
     typename AdaptiveMesh<T,3>::indices_t& indices,
     typename AdaptiveMesh<T,3>::value_array_t coordinates,
@@ -180,7 +180,7 @@ T interp_linear(
 // https://svn.blender.org/svnroot/bf-blender/
 // branches/volume25/source/blender/blenlib/intern/voxel.c  
 template<>
-Realf interp_linear<Realf,3>(
+inline Realf interp_linear<Realf,3>(
     const AdaptiveMesh<Realf,3>& mesh,
     typename AdaptiveMesh<Realf,3>::indices_t& indices,
     typename AdaptiveMesh<Realf,3>::value_array_t coordinates,
@@ -308,7 +308,7 @@ inline void _get_cube(
 */
 
 template<typename T, int D>
-T interp_cubic(
+inline T interp_cubic(
     const AdaptiveMesh<T,3>& mesh,
     typename AdaptiveMesh<T,3>::indices_t& indices,
     typename AdaptiveMesh<T,3>::value_array_t& coordinates,
@@ -317,7 +317,7 @@ T interp_cubic(
 
 /// Cubic interpolation (Catmull-Rom)
 template<>
-Realf interp_cubic<Realf,1>(
+inline Realf interp_cubic<Realf,1>(
     const AdaptiveMesh<Realf,3>& mesh,
     typename AdaptiveMesh<Realf,3>::indices_t& indices,
     typename AdaptiveMesh<Realf,3>::value_array_t& coordinates,
@@ -360,7 +360,7 @@ T tricubic_interp(
 
 /// Tricubic interpolator (specialization to D=3)
 template<>
-Realf interp_cubic<Realf,3>(
+inline Realf interp_cubic<Realf,3>(
     const AdaptiveMesh<Realf,3>& mesh,
     typename AdaptiveMesh<Realf,3>::indices_t& indices,
     typename AdaptiveMesh<Realf,3>::value_array_t& coordinates,

@@ -21,10 +21,14 @@ void stepLocation( vlasov::Grid& grid )
       for(auto cid : grid.getCellIds() ){
 #pragma omp task
         {
-          vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
+            
           vlasov::VlasovCell& cell 
             = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          ssol.solve(cell, grid);
+
+          //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
+          //ssol.solve(cell, grid);
+            
+          cell.stepLocation(grid);
         }// end of omp task
       }
 

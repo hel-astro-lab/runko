@@ -25,9 +25,10 @@ class PlasmaCellDamped :
     ~PlasmaCellDamped() { };
 
 
-    void pushE();
+    void pushE() override;
     void pushE2d_damped();
 
+    void depositCurrent() override;
 
 };
 
