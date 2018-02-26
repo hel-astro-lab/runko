@@ -163,6 +163,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<>())
     .def_readwrite("length",                     &AM3d::length)
     .def_readwrite("maximum_refinement_level",   &AM3d::maximum_refinement_level)
+    .def_readwrite("top_refinement_level",       &AM3d::top_refinement_level)
     .def("resize",               &AM3d::resize)
     .def("get_cell_from_indices", &AM3d::get_cell_from_indices)
     .def("get_indices",          &AM3d::get_indices)

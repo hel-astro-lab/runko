@@ -112,15 +112,15 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
     if vdir == "x":
         fullNvx = np.int(conf.Nvx * (2.0**conf.refinement_level))
-        fullNvx = fullNvx if fullNvx > 1 else 2
+        fullNvx = fullNvx if conf.Nvx > 1 else 2*2**conf.refinement_level
         data = -1.0 * np.ones( (conf.Nx*conf.NxMesh, fullNvx) )
     elif vdir == "y":
         fullNvy = np.int(conf.Nvy * (2.0**conf.refinement_level))
-        fullNvy = fullNvy if fullNvy > 1 else 2
+        fullNvy = fullNvy if conf.Nvy > 1 else 2*2**conf.refinement_level
         data = -1.0 * np.ones( (conf.Nx*conf.NxMesh, fullNvy) )
     elif vdir == "z":
         fullNvz = np.int(conf.Nvz * (2.0**conf.refinement_level))
-        fullNvz = fullNvz if fullNvz > 1 else 2
+        fullNvz = fullNvz if conf.Nvz > 1 else 2*2**conf.refinement_level
         data = -1.0 * np.ones( (conf.Nx*conf.NxMesh, fullNvz) )
 
 

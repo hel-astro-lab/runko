@@ -46,6 +46,7 @@ class AdaptiveMesh {
   static const uint64_t error_cid = 0;
   static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
   int maximum_refinement_level = 10;
+  int top_refinement_level = 0;
 	uint64_t last_cid;
   size_t number_of_cells = 0;
   

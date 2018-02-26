@@ -394,7 +394,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       // create new leafs
       // TODO fixme to use max ref. lvl of mesh
       // for(size_t sweep=1; sweep<=mesh1.maximum_refinement_level; sweep++){
-      for(size_t sweep=1; sweep<=0; sweep++){
+      for(size_t sweep=1; sweep<=mesh1.top_refinement_level; sweep++){
       
         adapter.refine(mesh1);
 

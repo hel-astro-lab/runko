@@ -51,6 +51,8 @@ def createEmptyVelocityMesh(conf):
         vmesh.resize( [conf.Nvx,  2,  2 ])
         vmesh.set_min([conf.vxmin,    -0.5, -0.5])
         vmesh.set_max([conf.vxmax-dx,  0.5,  0.5])
+
+        vmesh.top_refinement_level = conf.refinement_level
         return vmesh
 
     else:
@@ -58,6 +60,7 @@ def createEmptyVelocityMesh(conf):
         vmesh.set_min([conf.vxmin,    conf.vymin,    conf.vzmin])
         vmesh.set_max([conf.vxmax-dx, conf.vymax-dy, conf.vzmax-dz])
 
+        vmesh.top_refinement_level = conf.refinement_level
         return vmesh
 
 
@@ -91,7 +94,7 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
         adapter.check(vmesh)
         adapter.refine(vmesh)
 
-        print("cells to refine: {}".format( len(adapter.cells_to_refine)))
+        #print("cells to refine: {}".format( len(adapter.cells_to_refine)))
         for cid in adapter.cells_created:
             rfl = vmesh.get_refinement_level(cid)
             indx = vmesh.get_indices(cid)
@@ -101,7 +104,7 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
             vmesh[indx[0], indx[1], indx[2], rfl] = val
 
         adapter.unrefine(vmesh)
-        print("cells to be removed: {}".format( len(adapter.cells_removed)))
+        #print("cells to be removed: {}".format( len(adapter.cells_removed)))
 
         sweep += 1
         if sweep > conf.refinement_level: break
