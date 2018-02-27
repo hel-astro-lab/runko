@@ -58,7 +58,7 @@ class MomentumSolver {
 
       // timestep
       T dt = (T) cell.dt;
-      T dx = (T) cell.dx;
+      // T dx = (T) cell.dx;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -394,7 +394,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       // create new leafs
       // TODO fixme to use max ref. lvl of mesh
       // for(size_t sweep=1; sweep<=mesh1.maximum_refinement_level; sweep++){
-      for(size_t sweep=1; sweep<=mesh1.top_refinement_level; sweep++){
+      for(int sweep=1; sweep<=mesh1.top_refinement_level; sweep++){
       
         adapter.refine(mesh1);
 

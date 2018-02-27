@@ -63,7 +63,7 @@ class Analyzator {
 
     // timestep
     // T dt = cell.dt;
-    T dx = cell.dx;
+    // T dx = cell.dx;
 
 
     // loop over different particle species 

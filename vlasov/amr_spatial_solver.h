@@ -25,40 +25,35 @@ namespace vlasov {
 
 
 
-
-
-/// get neighboring cell from grid
-// TODO: think about dynamic casting; something might be wrong in the design
-vlasov::PlasmaBlock& get_external_data(
-    int i, int j, int ispc,
-    vlasov::VlasovCell& cell, 
-    vlasov::Grid& grid)
-{
-  auto neigh_index               = cell.neighs(i, j); 
-  uint64_t neigh_cid             = grid.cellId( std::get<0>(neigh_index), std::get<1>(neigh_index) );
-  vlasov::VlasovCell& cell_neigh = dynamic_cast<vlasov::VlasovCell&>( grid.getCell(neigh_cid) );
-
-  auto& species = cell_neigh.steps.get();
-
-  return species[ispc];
-}
-
-
-
 /*! General interface for AMR spatial solvers
  *
  */
 template<typename T>
 class SpatialSolver {
+    
+  /// get neighboring cell from grid
+  // TODO: think about dynamic casting; something might be wrong in the design
+  // TODO: separate into own communication module/header
+  //vlasov::PlasmaBlock& get_external_data(
+  //    int i, int j, int ispc,
+  //    vlasov::VlasovCell& cell, 
+  //    vlasov::Grid& grid)
+  //{
+  //  auto neigh_index   = cell.neighs(i, j); 
+  //  uint64_t neigh_cid = grid.cellId( std::get<0>(neigh_index), std::get<1>(neigh_index) );
+  //  vlasov::VlasovCell& cell_neigh = dynamic_cast<vlasov::VlasovCell&>( grid.getCell(neigh_cid) );
+
+  //  auto& species = cell_neigh.steps.get();
+
+  //  return species[ispc];
+  //}
+
 
   public:
     typedef std::array<T, 3> vec;
 
-
-
     /// Actual solver implementation
     virtual void solve( vlasov::VlasovCell& cell, vlasov::Grid& grid) = 0;
-
 };
 
 
@@ -286,8 +281,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
         // external neighbors
-        auto& block0_left   = get_external_data(-1, 0, ispc, cell, grid);
-        auto& block0_right  = get_external_data(+1, 0, ispc, cell, grid);
+        auto& block0_left   = cell.get_external_data(-1, 0, ispc, grid);
+        auto& block0_right  = cell.get_external_data(+1, 0, ispc, grid);
         //auto& block0_bottom = get_external_data( 0,-1, ispc, cell, grid);
         //auto& block0_top    = get_external_data( 0,+1, ispc, cell, grid);
 
@@ -305,8 +300,6 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
 };
-
-
 
 
 

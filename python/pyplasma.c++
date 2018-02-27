@@ -63,7 +63,6 @@ class PyMomentumSolver : public momsol {
 /// trampoline class for VlasovSpatialSolver
 class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
   public:
-    using vlasov::SpatialSolver<Realf>::get_external_data;
 
     void solve(
       vlasov::VlasovCell& cell,
@@ -150,8 +149,12 @@ PYBIND11_MODULE(pyplasma, m) {
         { return cell.steps.get(i).at(s); }, py::return_value_policy::reference)
     .def("insertInitialSpecies", [](vlasov::VlasovCell& c, 
                                   std::vector<vlasov::PlasmaBlock> species){
+        // push twice to initialize both time steps (current and future)
         c.steps.push_back(species);
         c.steps.push_back(species);
+
+        c.Nspecies = species.size();
+
         })
 
     .def("clip",         &vlasov::VlasovCell::clip)

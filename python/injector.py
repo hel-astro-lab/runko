@@ -132,7 +132,7 @@ def inject(node, ffunc, conf):
 
                 # loop over species
                 species = []
-                for ispcs in range(2):
+                for ispcs in range(conf.Nspecies):
                     block = plasma.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                     
                     #set q/m

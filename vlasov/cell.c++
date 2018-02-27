@@ -10,6 +10,19 @@ void vlasov::VlasovCell::stepLocation(vlasov::Grid& grid)
 }
 
 
+// TODO: separate into own communication module/header
+vlasov::PlasmaBlock& vlasov::VlasovCell::get_external_data(
+    int i, int j, int ispc,
+    vlasov::Grid& grid)
+{
+  auto neigh_index   = neighs(i, j); 
+  uint64_t neigh_cid = grid.cellId( std::get<0>(neigh_index), std::get<1>(neigh_index) );
+  vlasov::VlasovCell& cell_neigh = dynamic_cast<vlasov::VlasovCell&>( grid.getCell(neigh_cid) );
+
+  auto& species = cell_neigh.steps.get();
+
+  return species[ispc];
+}
 
 
 

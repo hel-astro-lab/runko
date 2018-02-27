@@ -30,7 +30,7 @@ def loadCells(n):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             if n.getMpiGrid(i,j) == n.rank:
-                c = plasma.PlasmaCell(i, j, n.rank, n.getNx(), n.getNy(), 3, 3)
+                c = plasma.PlasmaCell(i, j, n.rank, n.getNx(), n.getNy(), 3, 3, 3)
                 #c = plasma.VlasovCell(i, j, n.rank, n.getNx(), n.getNy(), 3, 3)
                 n.addCell(c) #TODO load data to cell
 

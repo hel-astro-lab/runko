@@ -58,8 +58,8 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-        Lx  = conf.Nx*conf.NxMesh*conf.dx
-        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
+        #Lx  = conf.Nx*conf.NxMesh*conf.dx
+        #mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
 
     #ions/positrons
@@ -85,6 +85,12 @@ def filler(xloc, uloc, ispcs, conf):
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
     #f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
     f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))
+
+
+    #number density oscillations
+    Lx  = conf.Nx*conf.NxMesh*conf.dx
+    k  = 2.0*np.pi/0.568
+    f *= 1.0 + conf.beta*np.cos(k*x/conf.dx)
 
 
     return f
@@ -154,9 +160,10 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
-    conf = Configuration('config-plasmaosc.ini') 
+    #conf = Configuration('config-plasmaosc.ini') 
     #conf = Configuration('config-dispersion.ini') 
     #conf = Configuration('config-twostream.ini') 
+    conf = Configuration('config-landau.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
 
