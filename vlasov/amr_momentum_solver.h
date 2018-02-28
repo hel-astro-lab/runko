@@ -45,7 +45,9 @@ class MomentumSolver {
      * Exposes the actual momentum mesh from the Vlasov Cell containers
      * and feeds those to the mesh solver.
      */
-    void solve( vlasov::VlasovCell& cell ) 
+    void solve( 
+        vlasov::VlasovCell& cell,
+        T step_size = T(1))
     {
         
       // get reference to the Vlasov fluid that we are solving
@@ -57,8 +59,8 @@ class MomentumSolver {
       auto& yee = cell.getYee();
 
       // timestep
-      T dt = (T) cell.dt;
-      // T dx = (T) cell.dx;
+      T dt = (T) cell.dt*step_size;
+      T dx = (T) cell.dx;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -73,6 +75,9 @@ class MomentumSolver {
             for (size_t s=0; s<block0.Nz; s++) {
               T qm = 1.0 / block0.qm;  // charge to mass ratio
 
+              //qm /= dt;
+              //qm = qm*dx/dt;
+
               // Get local field components
               vec 
                 B = 
@@ -80,13 +85,13 @@ class MomentumSolver {
                    (T) yee.bx(q,r,s),
                    (T) yee.by(q,r,s),
                    (T) yee.bz(q,r,s)
-                }},               
-                                   
+                }},              
+
                 // E-field interpolated to the middle of the cell
                 // XXX
                 E =                
                 {{                 
-                   (T) (0.5*(yee.ex(q,r,s) + yee.ex(q+1,r,   s  ))),
+                   (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
                    (T) yee.ey(q,r,s),
                    (T) yee.ez(q,r,s)
                 }};

@@ -352,7 +352,11 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("clear",       [](vlasov::PlasmaBlock &s){s.block.clear();});
 
 
+    m.def("stepInitial1d", &vlasov::stepInitial<1>);
+    m.def("stepInitial", &vlasov::stepInitial<3>);
+
     m.def("stepLocation", &vlasov::stepLocation);
+
 
     m.def("stepVelocity1d", &vlasov::stepVelocity<1>);
     m.def("stepVelocity",   &vlasov::stepVelocity<3>);

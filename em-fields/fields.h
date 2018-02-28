@@ -104,10 +104,10 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void cycleYee();
 
-  Realf yeeDt = 0.0;
-  Realf yeeDx = 0.0;
-  Realf yeeDy = 0.0;
-  Realf yeeDz = 0.0;
+  Realf yeeDt = 1.0;
+  Realf yeeDx = 1.0;
+  Realf yeeDy = 1.0;
+  Realf yeeDz = 1.0;
 
 
 };

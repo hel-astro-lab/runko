@@ -38,6 +38,33 @@ void stepLocation( vlasov::Grid& grid )
 
 }
 
+template<int D>
+void stepInitial( vlasov::Grid& grid )
+{
+
+#pragma omp parallel
+  {
+#pragma omp single
+    {
+
+      for(auto cid : grid.getCellIds() ){
+#pragma omp task
+        {
+          vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
+          vlasov::VlasovCell& cell 
+            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
+          vsol.solve(cell, -0.5);
+        }// end of omp task
+      }
+
+
+    }// end of omp single
+  }// end of omp parallel
+
+}
+
+
+
 
 template<int D>
 void stepVelocity( vlasov::Grid& grid )

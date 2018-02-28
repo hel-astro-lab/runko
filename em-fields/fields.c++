@@ -135,9 +135,9 @@ void fields::PlasmaCell::depositCurrent() {
 
   //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDy*yeeDz) <<"\n";
 
-  mesh.ex -= mesh.jx * yeeDt / (yeeDx*yeeDy*yeeDz);
-  mesh.ey -= mesh.jy * yeeDt / (yeeDx*yeeDy*yeeDz);
-  mesh.ez -= mesh.jz * yeeDt / (yeeDx*yeeDy*yeeDz);
+  mesh.ex -= mesh.jx; // * yeeDt; // / (yeeDx*yeeDy*yeeDz);
+  mesh.ey -= mesh.jy; // * yeeDt; // / (yeeDx*yeeDy*yeeDz);
+  mesh.ez -= mesh.jz; // * yeeDt; // / (yeeDx*yeeDy*yeeDz);
 
 }
 
