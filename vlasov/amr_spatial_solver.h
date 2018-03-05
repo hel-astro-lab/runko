@@ -10,6 +10,7 @@
 #include "amr/refiner.h"
 #include "amr/operators.h"
 #include "../tools/signum.h"
+#include "amr_analyzator.h"
 
 #include "../tools/cppitertools/zip.hpp"
 using iter::zip;
@@ -61,13 +62,13 @@ class SpatialSolver {
 
 
 /// Relativistic gamma from velocity
-template<typename T, int D>
-inline T gamma(std::array<T,D>& uvel) 
-{
-  T gammasq = 1.0;
-  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
-  return std::sqrt(gammasq);
-}
+//template<typename T, int D>
+//inline T gamma(std::array<T,D>& uvel) 
+//{
+//  T gammasq = 1.0;
+//  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
+//  return std::sqrt(gammasq);
+//}
 
 
 /// Simple (relativistic) box integration of a mesh flux
@@ -91,7 +92,7 @@ T integrate_current(
 
   // integrate leafs; j = int{ U du/gamma}
   T integ = T(0);
-  for(auto cid : m.get_cells(true) ) {
+  for(auto cid : m.get_cells(false) ) {
     if( !m.is_leaf(cid) ) continue;
 
     auto index = m.get_indices(cid);
@@ -99,7 +100,7 @@ T integrate_current(
     auto uvel  = m.get_center(index, rfl);
     gam        = gamma<T,3>(uvel);
 
-    integ += m.data[cid]*du[rfl]/gam;
+    integ += m.data.at(cid)*du[rfl]/gam;
   }
 
   return integ;
@@ -239,8 +240,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
             // calculate current
             // if( (q >= 0) && (q < Nx) ) yee.jx(q,r,s) += sign(qm)*integrate_current(flux);
-            T jx = sign(qm)*integrate_current(flux); // *dx/dt;
-            if(q >= 0)    yee.jx(q,r,s)   += jx;   //U_i+1/2
+            T jx = sign(qm)*integrate_current(flux)*dx/dt;
+            if(q >= 0)    yee.jx(q,r,s)   += jx;       //U_i+1/2
             //if(q <= Nx-2) yee.jx(q+1,r,s) += jx; //U_i-1/2
           }
         }

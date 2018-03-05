@@ -88,33 +88,47 @@ def filler(xloc, uloc, ispcs, conf):
 
 
 # Get Yee grid components from node and save to hdf5 file
-def save(n, conf, lap, dset):
+def save(n, conf, lap, f5):
 
     #get E field
     yee = getYee(n, conf)
-    dset[:, lap] = yee['ex']
+
+    f5['fields/Ex'  ][:,lap] = yee['ex']
+    f5['fields/rho' ][:,lap] = yee['rho']
+    f5['fields/ekin'][:,lap] = yee['ekin']
+
+    return
 
 
-
+# insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(node, conf):
+
+    Lx  = conf.Nx*conf.NxMesh*conf.dx/2.0
+    k = 2.0*np.pi
 
     for i in range(node.getNx()):
         for j in range(node.getNy()):
             c = node.getCellPtr(i,j)
             yee = c.getYee(0)
 
-            for q in range(conf.NxMesh):
-                for k in range(conf.NyMesh):
-                    if q == 32:
-                        yee.ex[q,k,0] =  0.5
+            for l in range(conf.NxMesh):
+                for m in range(conf.NyMesh):
+                    for n in range(conf.NzMesh):
 
-                    #yee.ex[q,k,0] =  0.0
-                    #yee.ey[q,k,0] =  0.0
-                    #yee.ez[q,k,0] =  0.0
+                        #get x_i+1/2 (Yee lattice so rho_i)
+                        xloc0 = injector.spatialLoc(node, (i,j), (l,  m,n), conf)
+                        xloc1 = injector.spatialLoc(node, (i,j), (l+1,m,n), conf)
+                        xmid = 0.5*(xloc0[0] + xloc1[0])
 
-                    #yee.bx[q,k,0] =  0.0
-                    #yee.by[q,k,0] =  0.0
-                    #yee.bz[q,k,0] =  0.0
+                        yee.ex[l,m,n] = -np.abs(conf.me)*conf.beta*np.sin(k*xmid/Lx)/k
+
+
+
+def solvePoisson(ax, node, conf):
+    yee = getYee(n, conf)
+
+    x   = yee['x']
+    rho = yee['rho']
 
 
 
@@ -188,20 +202,20 @@ if __name__ == "__main__":
 
     injector.inject(node, filler, conf) #injecting plasma
 
+    #insert initial electric field
+    insert_em(node, conf)
+
+
     #Initial step backwards for velocity
     for j in range(node.getNy()):
         for i in range(node.getNx()):
             cell = node.getCellPtr(i,j)
             cell.updateBoundaries(node)
-
     plasma.stepInitial1d(node)
-
     for j in range(node.getNy()):
         for i in range(node.getNx()):
             cell = node.getCellPtr(i,j)
             cell.cycle()
-
-
 
 
     # visualize initial condition
@@ -227,23 +241,23 @@ if __name__ == "__main__":
 
     #setup output file
     import h5py
-    f = h5py.File("out/run.hdf5", "w")
+    f5 = h5py.File("out/run.hdf5", "w")
 
-    grp0 = f.create_group("params")
+    grp0 = f5.create_group("params")
     grp0.attrs['dx']    = conf.dx
     #grp0.attrs['dt']    = conf.interval*conf.dt
     grp0.attrs['dt']    = conf.dt
-    grp = f.create_group("fields")
+    grp = f5.create_group("fields")
 
 
     #number of samples (every step is saved)
     #Nsamples = int(conf.Nt/conf.interval) + 1
     Nsamples = conf.Nt
-    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
-    #XXX DEBUG
-    #insert_em(node, conf)
 
 
     #simulation loop
@@ -251,9 +265,10 @@ if __name__ == "__main__":
     ifile = 0
     for lap in range(0, conf.Nt):
 
-        #B field half update
+        #B1 u x B2 E J loop
 
-        ##move vlasov fluid
+        #B field half update
+        #move vlasov fluid
 
         #update boundaries
         for j in range(node.getNy()):
@@ -262,12 +277,7 @@ if __name__ == "__main__":
                 cell.updateBoundaries(node)
 
         #momentum step
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        vsol.solve(cell)
         plasma.stepVelocity1d(node)
-
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
@@ -276,10 +286,6 @@ if __name__ == "__main__":
                 cell.cycle()
 
         #spatial step
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        ssol.solve(cell, node)
         plasma.stepLocation(node)
 
         #cycle to the new fresh snapshot
@@ -295,12 +301,50 @@ if __name__ == "__main__":
         #    c = node.getCellPtr( cid )
         #    c.pushE()
 
-
         #current deposition from moving flux
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.depositCurrent()
+
+
+
+        #xJEu loop
+
+        #configuration space push
+        #plasma.stepLocation(node)
+
+        ###cycle to the new fresh snapshot
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.cycle()
+
+        ###current deposition from moving flux
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.depositCurrent()
+
+        ##update boundaries
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.updateBoundaries(node)
+
+        ###momentum step
+        #plasma.stepVelocity1d(node)
+
+        ###cycle to the new fresh snapshot
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.cycle()
+
+
+        ##################################################
+        #diagnostics
+
 
         #clip every cell
         if conf.clip:
@@ -316,7 +360,7 @@ if __name__ == "__main__":
         timer.lap("step")
 
         #save temporarily to file
-        save(node, conf, ifile, dset)
+        save(node, conf, ifile, f5)
         ifile += 1
 
 
@@ -325,6 +369,7 @@ if __name__ == "__main__":
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
             timer.stats("step")
+
 
 
             timer.start("io")
@@ -341,6 +386,11 @@ if __name__ == "__main__":
             plotE(axs[6], node, conf)
             plotDens(axs[7], node, conf)
 
+
+            #solve Poisson
+            #exP = solvePoisson(axs[6], node, conf)
+
+
             saveVisz(lap, node, conf)
 
 
@@ -352,7 +402,7 @@ if __name__ == "__main__":
 
         time += conf.dt
     
-    f.close()
+    f5.close()
     #node.finalizeMpi()
 
 

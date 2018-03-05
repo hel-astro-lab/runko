@@ -75,16 +75,19 @@ def filler(xloc, uloc, ispcs, conf):
 
 
     #Brownian noise
-    brownian_noise = 1.0 - conf.beta*np.random.standard_normal() 
+    #brownian_noise = 1.0 - conf.beta*np.random.standard_normal() 
 
     #Classical Maxwellian distribution
     f  = 0.5*(1.0/(2.0*np.pi*delgam))**(0.5)
-    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))*brownian_noise
+    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))
+
+
 
     #number density oscillations
-    #Lx  = conf.Nx*conf.NxMesh*conf.dx/2.0
-    #k = 2.0*np.pi
-    #f *= 1.0 + conf.beta*np.cos(k*x/Lx)
+    if ispcs == 0:
+        Lx  = conf.Nx*conf.NxMesh*conf.dx/5.0
+        k = 2.0*np.pi
+        f *= 1.0 + conf.beta*np.cos(k*x/Lx)
 
     return f
 
@@ -98,9 +101,9 @@ def save(n, conf, lap, f5):
     yee = getYee(n, conf)
 
     f5['fields/Ex' ][:,lap] = yee['ex']
-    f5['fields/rho'][:,lap] = yee['rh']
-    #dset[:, lap] = yee['ex']
+    f5['fields/rho'][:,lap] = yee['rho']
 
+    return
 
 
 def insert_em(node, conf):
@@ -157,7 +160,8 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
-    conf = Configuration('config-twostream.ini') 
+    #conf = Configuration('config-twostream.ini') 
+    conf = Configuration('config-twostream_rel.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
 
@@ -245,6 +249,7 @@ if __name__ == "__main__":
     Nsamples = conf.Nt
     dset1 = grp.create_dataset("Ex",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
     #XXX DEBUG
@@ -349,7 +354,7 @@ if __name__ == "__main__":
 
         time += conf.dt
     
-    f.close()
+    f5.close()
     #node.finalizeMpi()
 
 

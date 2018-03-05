@@ -7,45 +7,65 @@
 #include "../em-fields/fields.h"
 #include "amr/mesh.h"
 
+#include "../tools/signum.h"
+
+
+using toolbox::sign;
 
 
 namespace vlasov {
+
+/// Relativistic gamma from velocity
+template<typename T, int D>
+inline T gamma(std::array<T,D>& uvel) 
+{
+  T gammasq = 1.0;
+  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
+  return std::sqrt(gammasq);
+}
+
+
+/// integrate Adaptive Mesh phase space with function Chi(u)
+// TODO: think about merging with amr_spatial_solver auxiliary functions
+template<typename T, typename Lambda>
+T integrate_moment(
+    const toolbox::AdaptiveMesh<T,3>& m,
+    Lambda&& chi
+    ) {
+  T integ = T(0);
+
+  // pre-create size of the elements
+  std::vector<T> du;
+  du.resize( m.maximum_refinement_level );
+
+  // TODO optimize this depending on top_refinement_level
+  int rfl; // current refinement level
+  for(rfl=0; rfl<=m.maximum_refinement_level; rfl++) {
+    auto lens = m.get_length(rfl);
+    T len = lens[0]*lens[1]*lens[2];
+    du[rfl] = len;
+  }
+
+  // convolve with chi(u) function
+  for(auto cid : m.get_cells(false) ) {
+    if( !m.is_leaf(cid) ) continue;
+
+    auto index = m.get_indices(cid);
+    rfl        = m.get_refinement_level(cid);
+    auto uvel  = m.get_center(index, rfl);
+
+    integ += m.data.at(cid) * du[rfl] * chi(uvel);
+  }
+
+  return integ;
+}
+
+
 
 
 /// General analyzator that computes moments for the vlasov meshes inside the cells
 template<typename T>
 class Analyzator {
-
-
-  /// integrate Adaptive Mesh for number density
-  // TODO: think about merging with amr_spatial_solver auxiliary functions
-  T integrate(const toolbox::AdaptiveMesh<T,3>& m) const {
-    T integ = T(0);
-
-    // pre-create size of the elements
-    std::vector<T> du;
-    du.resize( m.maximum_refinement_level );
-
-    int rfl; // current refinement level
-    for(rfl=0; rfl<=m.maximum_refinement_level; rfl++) {
-      auto lens = m.get_length(rfl);
-      T len = lens[0]*lens[1]*lens[2];
-      du[rfl] = len;
-    }
-
-    for(auto cid : m.get_cells(true) ) {
-      if( !m.is_leaf(cid) ) continue;
-
-      //auto index = m.get_indices(cid);
-      rfl        = m.get_refinement_level(cid);
-      //auto uvel  = m.get_center(index, rfl);
-      //gam        = gamma<T,3>(uvel);
-
-      integ += m.data.at(cid) * du[rfl];
-    }
-
-    return integ;
-  }
 
 
   public:
@@ -55,7 +75,9 @@ class Analyzator {
 
     // Yee lattice reference
     auto& yee = cell.getYee();
-    yee.rh.clear();
+    yee.rho.clear();
+    yee.ekin.clear();
+    //yee.jx1.clear();
 
 
     // get reference to the Vlasov fluid that we are solving
@@ -64,7 +86,6 @@ class Analyzator {
     // timestep
     // T dt = cell.dt;
     // T dx = cell.dx;
-
 
     // loop over different particle species 
     //int ispc = 0; // ith particle species
@@ -79,9 +100,39 @@ class Analyzator {
         for(int r=0; r<Ny; r++) {
           for(int q=0; q<Nx; q++) {
             const auto& M   = block0.block(q,r,s);   // f_i
-            T dens = integrate(M);
 
-            yee.rh(q,r,s) += dens; // 
+            T qm = 1.0 / block0.qm;  // charge to mass ratio
+
+            // TODO there is a possibility to optimize this by putting everything 
+            // inside one loop. At the expense of code readability...
+
+            // number density; chi(u) = 1
+            yee.rho(q,r,s) += 
+              integrate_moment(
+                  M,
+                [](std::array<T,3>& uvel) -> T { return T(1);}
+                );
+
+
+            // Jx current; chi(u) = u/gamma = v
+            //yee.jx1(q,r,s) += sign(qm)*
+            //  integrate_moment(
+            //      M,
+            //    [](std::array<T,3> uvel) -> T 
+            //    { return uvel[0]/gamma<T,3>(uvel); }
+            //    );
+              
+
+            // kinetic energy; chi(u) = 1/2 u.u
+            yee.ekin(q,r,s) += 
+              integrate_moment(
+                  M,
+                [](std::array<T,3> uvel) -> T { 
+                return 0.5*uvel[0]*uvel[0]/(gamma<T,3>(uvel)*gamma<T,3>(uvel)); }
+                );
+
+
+
           }
         }
       }

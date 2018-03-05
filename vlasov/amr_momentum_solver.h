@@ -12,6 +12,8 @@
 #include "../tools/cppitertools/zip.hpp"
 #include "../tools/cppitertools/enumerate.hpp"
 #include "../tools/signum.h"
+#include "../units.h"
+#include "amr_analyzator.h"
 
 
 using namespace Eigen;
@@ -19,6 +21,7 @@ using namespace Eigen;
 using std::floor;
 using iter::zip;
 using toolbox::sign;
+using units::pi;
 
 namespace vlasov {
 
@@ -35,9 +38,48 @@ namespace vlasov {
 template<typename T, int D>
 class MomentumSolver {
 
-
   public:
     typedef std::array<T, 3> vec;
+
+
+    /// Get snapshot current J_i^n+1 from momentum distribution
+    void updateFutureCurrent(
+        vlasov::VlasovCell& cell)
+    {
+
+      auto& yee = cell.getYee();
+      yee.jx1.clear();
+
+      auto& step0 = cell.steps.get(0);
+      for(auto&& block0 : step0) {
+
+        int Nx = int(block0.Nx),
+            Ny = int(block0.Ny),
+            Nz = int(block0.Nz);
+
+        for (int s=0; s<Nz; s++) {
+          for(int r=0; r<Ny; r++) {
+            for(int q=0; q<Nx; q++) {
+              const auto& M   = block0.block(q,r,s);   // f_i
+
+              T qm = 1.0 / block0.qm;  // charge to mass ratio
+
+              // Jx current; chi(u) = u/gamma = v
+              yee.jx1(q,r,s) += sign(qm)*
+                integrate_moment(
+                    M,
+                    [](std::array<T,3> uvel) -> T 
+                    { return uvel[0]/gamma<T,3>(uvel); }
+                    );
+            }
+          }
+        }
+
+      }// end of loop over species
+
+      return;
+    }
+
 
 
     /*! \brief Solve Vlasov cell contents
@@ -63,6 +105,10 @@ class MomentumSolver {
       T dx = (T) cell.dx;
 
 
+      /// Now get future current
+      updateFutureCurrent(cell);
+
+
       // loop over different particle species (zips current [0] and new [1] solutions)
       for(auto&& blocks : zip(step0, step1) ) {
           
@@ -77,6 +123,9 @@ class MomentumSolver {
 
               //qm /= dt;
               //qm = qm*dx/dt;
+              
+              //qm *= 4.0*pi;
+              
 
               // Get local field components
               vec 
@@ -87,26 +136,27 @@ class MomentumSolver {
                    (T) yee.bz(q,r,s)
                 }},              
 
-                // E-field interpolated to the middle of the cell
                 // XXX
+                // E-field interpolated to the middle of the cell
+                // E_i = (E_i+1/2 + E_i-1/2)
                 E =                
                 {{                 
                    (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
                    (T) yee.ey(q,r,s),
                    (T) yee.ez(q,r,s)
                 }};
-                //E =                
-                //{{                 
-                //   (T) yee.ex(q,r,s),
-                //   (T) yee.ey(q,r,s),
-                //   (T) yee.ez(q,r,s)
-                //}};
+
+              // Now push E field to future temporarily
+              // TODO dt or dt/2
+              E[0] -= yee.jx1(q,r,s) * 0.5 * dt;
+
 
               // dig out velomeshes from blocks
               auto& mesh0 = block0.block(q,r,s);
               auto& mesh1 = block1.block(q,r,s);
 
               // fmt::print("solving for srq ({},{},{})\n",s,r,q);
+
 
               // then the final call to the actual mesh solver
               solveMesh( mesh0, mesh1, E, B, qm, dt);

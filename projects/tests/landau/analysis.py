@@ -48,7 +48,7 @@ plt.rc('axes', labelsize=7)
 
 fig = plt.figure(figsize=(3.54, 6.0)) #single column fig
 #fig = plt.figure(figsize=(7.48, 4.0))  #two column figure
-gs = plt.GridSpec(4, 1, wspace=0.0)
+gs = plt.GridSpec(5, 1, wspace=0.0)
 
 
 axs = []
@@ -56,6 +56,7 @@ axs.append( plt.subplot(gs[0,0]) )
 axs.append( plt.subplot(gs[1,0]) )
 axs.append( plt.subplot(gs[2,0]) )
 axs.append( plt.subplot(gs[3,0]) )
+axs.append( plt.subplot(gs[4,0]) )
 
 
 for ax in axs:
@@ -68,17 +69,22 @@ axs[0].set_ylabel(r'$\ln \delta E_x$')
 axs[1].set_ylabel(r'Energy $\epsilon$')
 axs[2].set_ylabel(r'$\Delta m$')
 axs[3].set_ylabel(r'$\epsilon_K$')
+axs[4].set_ylabel(r'$E_T$')
 
 
 #time *= 0.321003 #normalize with the growth rate
 ex_max = np.max( np.abs(ex),0 )
-axs[0].plot(time, np.log(ex_max))
+axs[0].plot(time, np.log10( ex_max ))
 axs[0].set_ylim((-20, 10))
+
+
+
+
 
 ##################################################
 
-wedens = np.log10( np.sum( ex*ex, 0 ) )
-axs[1].plot(time, wedens)
+wedens = np.sum( ex*ex, 0 ) #*2.0*np.pi
+axs[1].plot(time, np.log10(wedens))
 
 ##################################################
 
@@ -92,10 +98,26 @@ prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
 axs[2].plot(time, np.log10(prtcls))
 #axs[2].plot(time, prtcls)
 
+
 ##################################################
 
-axs[3].plot(time, np.log(ekin))
+ekintot = np.sum(ekin, 0)*dx
+axs[3].plot(time, np.log10(ekintot))
 
+
+##################################################
+#etot = np.sum(ex*ex/(8.0*np.pi) ,0) #+ np.sum(ekin,0)
+#etot = np.sum(ekin,0)/np.sum(rho, 0)
+#etot = np.sum(ekin,0)*dx
+#etot = etot/etot[0]
+
+print("ekin   max:", np.max(ekintot))
+print("efield max:", np.max(wedens))
+print("ratio:", np.mean(ekintot)/np.mean(wedens))
+
+
+etot = ekintot + wedens
+axs[4].plot(time, np.log10( etot) )
 
 
 
