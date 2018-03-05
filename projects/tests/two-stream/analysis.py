@@ -11,7 +11,7 @@ from scipy.stats import mstats
 # read simulation data from file
 f = h5py.File('out/run.hdf5','r')
 
-maxi = 700
+maxi = 600
 
 #Read field
 ex   = f['fields/Ex'][()]
@@ -30,7 +30,6 @@ print dt, dx
 nx, ny = np.shape(ex)
 
 time = np.arange(ny)*dt
-
 maxtime = time[maxi]
 
 #ex_max = np.zeros((ny))
@@ -62,7 +61,7 @@ for ax in axs:
     ax.minorticks_on()
     ax.set_xlabel(r'time $t\omega_{\mathrm{p}}$ ')
 
-    #ax.set_xlim((0.0, maxtime))
+    ax.set_xlim((0.0, maxtime))
 
 axs[0].set_ylabel(r'$\ln \delta E_x$')
 axs[1].set_ylabel(r'Energy $\epsilon$')
@@ -73,7 +72,7 @@ axs[3].set_ylabel(r'$\epsilon_K$')
 #time *= 0.321003 #normalize with the growth rate
 ex_max = np.max( np.abs(ex),0 )
 axs[0].plot(time, np.log(ex_max))
-axs[0].set_ylim((-20, 10))
+#axs[0].set_ylim((-20, 10))
 
 ##################################################
 
@@ -94,7 +93,8 @@ axs[2].plot(time, np.log10(prtcls))
 
 ##################################################
 
-axs[3].plot(time, np.log(ekin))
+ekintot = np.sum(ekin, 0)*dx
+axs[3].plot(time, np.log10(ekintot))
 
 
 

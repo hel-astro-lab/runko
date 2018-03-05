@@ -44,7 +44,9 @@ class MomentumSolver {
 
     /// Get snapshot current J_i^n+1 from momentum distribution
     void updateFutureCurrent(
-        vlasov::VlasovCell& cell)
+        vlasov::VlasovCell& cell,
+        T dx,
+        T dt)
     {
 
       auto& yee = cell.getYee();
@@ -106,7 +108,7 @@ class MomentumSolver {
 
 
       /// Now get future current
-      updateFutureCurrent(cell);
+      updateFutureCurrent(cell, dx, dt);
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
