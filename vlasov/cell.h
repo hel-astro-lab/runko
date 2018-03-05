@@ -108,10 +108,11 @@ public:
   ~VlasovCell() { };
 
   /// cell temporal and spatial scales
-  Realf dt = 0.0;
-  Realf dx = 0.0;
-  Realf dy = 0.0;
-  Realf dz = 0.0;
+  //Realf dt = 0.0;
+  //Realf dx = 0.0;
+  //Realf dy = 0.0;
+  //Realf dz = 0.0;
+  Realf cfl = 0.45;
 
 
   /// General clipping threshold

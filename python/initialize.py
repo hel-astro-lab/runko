@@ -59,16 +59,18 @@ def loadCells(n, conf):
                                       )
 
                 #initialize cell dimensions 
-                c.dt = conf.dt
-                c.dx = conf.dx
-                c.dy = conf.dy
-                c.dz = conf.dz
+                #c.dt = conf.dt
+                #c.dx = conf.dx
+                #c.dy = conf.dy
+                #c.dz = conf.dz
+                c.cfl = conf.cfl
 
                 # use same scale for Maxwell solver
-                c.yeeDt = conf.dt
-                c.yeeDx = conf.dx
-                c.yeeDy = conf.dy
-                c.yeeDz = conf.dz
+                #c.yeeDt = conf.dt
+                #c.yeeDx = conf.dx
+                #c.yeeDy = conf.dy
+                #c.yeeDz = conf.dz
+                
 
                 #add it to the node
                 n.addCell(c) 

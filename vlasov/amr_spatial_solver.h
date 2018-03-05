@@ -157,14 +157,13 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
     inline toolbox::AdaptiveMesh<T,3> flux2nd(
         const toolbox::AdaptiveMesh<T,3>& M ,
         const toolbox::AdaptiveMesh<T,3>& Mp1,
-        T dt,
-        T dx) {
+        T cfl) {
 
       auto Mp = Mp1 + M; // explicitly allocate tmp variables
       auto Mn = Mp1 - M;    
 
-      return   velocityTensorProduct(Mp, 1, 0.5*(dt/dx) ) 
-             - velocityTensorProduct(Mn, 2, 0.5*(dt/dx)*(dt/dx) ); 
+      return   velocityTensorProduct(Mp, 1, 0.5*cfl ) 
+             - velocityTensorProduct(Mn, 2, 0.5*cfl*cfl ); 
     }
 
 
@@ -177,8 +176,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         vlasov::PlasmaBlock& block0_left,
         vlasov::PlasmaBlock& block0_right,
         T qm,
-        T dt,
-        T dx,
+        T cfl,
         fields::YeeLattice& yee)
     {
 
@@ -217,17 +215,17 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
               const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
               const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
 
-              flux = flux2nd(M, Mp1, dt, dx);
+              flux = flux2nd(M, Mp1, cfl);
             } else if ( (q >= 0) && (q <= Nx-2) ) { // inside
               const auto& M   = block0.block(q,r,s);   // f_i
               const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
 
-              flux = flux2nd(M, Mp1, dt, dx);
+              flux = flux2nd(M, Mp1, cfl);
             } else if (q >= Nx-1) { //right halo
               const auto& M   = block0.block(q,r,s);       // f_i
               const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
 
-              flux = flux2nd(M, Mp1, dt, dx);
+              flux = flux2nd(M, Mp1, cfl);
             }
 
             // new local time step targets to update into (N's)
@@ -240,7 +238,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
             // calculate current
             // if( (q >= 0) && (q < Nx) ) yee.jx(q,r,s) += sign(qm)*integrate_current(flux);
-            T jx = sign(qm)*integrate_current(flux)*dx/dt;
+            T jx = sign(qm)*integrate_current(flux);
             if(q >= 0)    yee.jx(q,r,s)   += jx;       //U_i+1/2
             //if(q <= Nx-2) yee.jx(q+1,r,s) += jx; //U_i-1/2
           }
@@ -266,8 +264,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
       auto& step1 = cell.steps.get(1);
 
       // timestep
-      T dt = cell.dt;
-      T dx = cell.dx;
+      T cfl = cell.cfl;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -287,7 +284,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         //auto& block0_top    = get_external_data( 0,+1, ispc, cell, grid);
 
         // sweep in X
-        xsweep(block0, block1, block0_left, block0_right, qm, dt, dx, yee);
+        xsweep(block0, block1, block0_left, block0_right, qm, cfl, yee);
         // ysweep(block0, block1, block0_bottom, block0_top,   qm, dt, dx);
         // xsweep(block0, block1, block0_left,   block0_right, qm, dt/2, dx);
 

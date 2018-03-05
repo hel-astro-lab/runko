@@ -48,13 +48,13 @@ class PyMomentumSolver : public momsol {
         std::array<Realf, 3>& E,
         std::array<Realf, 3>& B,
         Realf qm,
-        Realf dt
+        Realf cfl
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
           momsol, 
           solveMesh, 
-          mesh0, mesh1, E, B, qm, dt
+          mesh0, mesh1, E, B, qm, cfl
           );
     }
 };
@@ -143,10 +143,7 @@ PYBIND11_MODULE(pyplasma, m) {
              std::shared_ptr<vlasov::VlasovCell>
              >(m, "VlasovCell")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
-    .def_readwrite("dt",     &vlasov::VlasovCell::dt)
-    .def_readwrite("dx",     &vlasov::VlasovCell::dx)
-    .def_readwrite("dy",     &vlasov::VlasovCell::dy)
-    .def_readwrite("dz",     &vlasov::VlasovCell::dz)
+    .def_readwrite("cfl",     &vlasov::VlasovCell::cfl)
     .def("getPlasmaSpecies", [](vlasov::VlasovCell& cell, size_t i, size_t s) 
         { return cell.steps.get(i).at(s); }, py::return_value_policy::reference)
     .def("insertInitialSpecies", [](vlasov::VlasovCell& c, 
