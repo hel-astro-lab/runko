@@ -62,6 +62,7 @@ def filler(xloc, uloc, ispcs, conf):
     #plasma frequency scale
     #n0 = conf.cfl**2
     n0 = 1.0
+    #n0 = conf.cfl * conf.dt**2
 
 
     #Brownian noise
@@ -112,6 +113,7 @@ def insert_em(node, conf):
 
     #n0 = conf.cfl**2
     n0 = 1.0
+    #n0 = conf.cfl * conf.dt**2
 
     for i in range(node.getNx()):
         for j in range(node.getNy()):

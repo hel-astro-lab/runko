@@ -264,7 +264,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
       auto& step1 = cell.steps.get(1);
 
       // timestep
-      T cfl = cell.cfl;
+      T cfl = cell.dt/cell.dx;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)

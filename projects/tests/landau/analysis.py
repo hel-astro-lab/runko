@@ -11,7 +11,7 @@ from scipy.stats import mstats
 # read simulation data from file
 f = h5py.File('out/run.hdf5','r')
 
-maxi = 700
+maxi = 100
 
 #Read field
 ex   = f['fields/Ex'][()]
@@ -65,6 +65,7 @@ for ax in axs:
 
     #ax.set_xlim((0.0, maxtime))
 
+
 axs[0].set_ylabel(r'$\ln \delta E_x$')
 axs[1].set_ylabel(r'Energy $\epsilon$')
 axs[2].set_ylabel(r'$\Delta m$')
@@ -75,7 +76,7 @@ axs[4].set_ylabel(r'$E_T$')
 #time *= 0.321003 #normalize with the growth rate
 ex_max = np.max( np.abs(ex),0 )
 axs[0].plot(time, np.log10( ex_max ))
-axs[0].set_ylim((-20, 10))
+#axs[0].set_ylim((-20, 10))
 
 
 
@@ -101,8 +102,13 @@ axs[2].plot(time, np.log10(prtcls))
 
 ##################################################
 
-ekintot = np.sum(ekin, 0)*dx
+#n0 = 0.45*dt*dt
+#n0 = 1.0
+n0 = dx
+ekintot = np.sum(ekin, 0)*n0
+
 axs[3].plot(time, np.log10(ekintot))
+#axs[3].plot(time, wedens, 'r-')
 
 
 ##################################################
@@ -116,9 +122,16 @@ print("efield max:", np.max(wedens))
 print("ratio:", np.mean(ekintot)/np.mean(wedens))
 
 
-etot = ekintot + wedens
-axs[4].plot(time, np.log10( etot) )
+#etot = ekintot + wedens
+#etot /= etot[0]
+#etot = np.abs(etot/etot[0] - 1.0)
+#axs[4].plot(time, np.log10( etot) )
 
+etot = ekintot + wedens
+axs[4].plot(time, etot)
+
+axs[4].plot(time, ekintot, "b--")
+axs[4].plot(time, wedens,  "r--")
 
 
 plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)

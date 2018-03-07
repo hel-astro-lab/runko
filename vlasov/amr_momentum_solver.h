@@ -44,8 +44,7 @@ class MomentumSolver {
 
     /// Get snapshot current J_i^n+1 from momentum distribution
     void updateFutureCurrent(
-        vlasov::VlasovCell& cell,
-        T cfl)
+        vlasov::VlasovCell& cell)
     {
 
       auto& yee = cell.getYee();
@@ -102,11 +101,13 @@ class MomentumSolver {
       auto& yee = cell.getYee();
 
       // timestep
-      T cfl  = (T) cell.cfl;
+      T dt   = (T) cell.dt;      
+      T dx   = (T) cell.dx;      
+      T cfl  = dt/dx;
 
 
       /// Now get future current
-      updateFutureCurrent(cell, cfl);
+      updateFutureCurrent(cell);
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -137,12 +138,12 @@ class MomentumSolver {
                 E =                
                 {{                 
                    (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
-                   (T) (0.5*(yee.ey(q,r,s) + yee.ey(q,  r-1, s))),
+                   (T) (0.5*(yee.ey(q,r,s) + yee.ey(q,  r-1, s  ))),
                    (T) (0.5*(yee.ez(q,r,s) + yee.ez(q,  r,   s-1)))
                 }};
 
               // Now push E field to future temporarily
-              E[0] -= yee.jx1(q,r,s) * 0.5;
+              E[0] -= yee.jx1(q,r,s) * 0.5*dt;
 
 
               // dig out velomeshes from blocks
@@ -153,7 +154,7 @@ class MomentumSolver {
 
 
               // then the final call to the actual mesh solver
-              solveMesh( mesh0, mesh1, E, B, qm, cfl);
+              solveMesh( mesh0, mesh1, E, B, qm, dt, cfl);
             }
           }
         }
@@ -169,6 +170,7 @@ class MomentumSolver {
         vec& E,
         vec& B,
         T qm,
+        T dt,
         T cfl) = 0;
 
 };
@@ -300,6 +302,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         Vector3f& E,
         Vector3f& B,
         T qm,
+        T dt,
         T cfl)
     {
 
@@ -323,7 +326,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       */
 
       // electrostatic push
-      return -qm*E;
+      return -qm*dt* E;
     }
 
 
@@ -336,6 +339,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         Vector3f& E,
         Vector3f& B,
         T qm,
+        T dt,
         T cfl) 
     {
       T val; // return value
@@ -346,7 +350,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // get shift of the characteristic solution from Lorentz force
       Vector3f uvel( u.data() );
-      Vector3f F = lorentz_force(uvel, E, B, qm, cfl);
+      Vector3f F = lorentz_force(uvel, E, B, qm, dt, cfl);
 
 
       // advection in units of cells
@@ -385,6 +389,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         vec& Einc,
         vec& Binc,
         T qm,
+        T dt,
         T cfl)
     {
 
@@ -425,7 +430,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
             index[2] = t;
 
             uint64_t cid = mesh1.get_cell_from_indices(index, 0);
-            val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, cfl);
+            val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, dt, cfl);
 
             // refinement
             // TODO specialize to value & gradient instead of just value
@@ -459,7 +464,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
           // fmt::print("creating {} at {}\n", cid, rfl);
 
-          val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, cfl);
+          val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, dt, cfl);
           mesh1.set(cid, val);
 
           refine_indicator   = val/max_val;

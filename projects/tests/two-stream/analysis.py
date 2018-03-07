@@ -11,7 +11,7 @@ from scipy.stats import mstats
 # read simulation data from file
 f = h5py.File('out/run.hdf5','r')
 
-maxi = 600
+maxi = 4000
 
 #Read field
 ex   = f['fields/Ex'][()]
@@ -60,8 +60,8 @@ axs.append( plt.subplot(gs[3,0]) )
 for ax in axs:
     ax.minorticks_on()
     ax.set_xlabel(r'time $t\omega_{\mathrm{p}}$ ')
-
     ax.set_xlim((0.0, maxtime))
+
 
 axs[0].set_ylabel(r'$\ln \delta E_x$')
 axs[1].set_ylabel(r'Energy $\epsilon$')

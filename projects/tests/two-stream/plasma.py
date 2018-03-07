@@ -77,8 +77,10 @@ def filler(xloc, uloc, ispcs, conf):
     #Brownian noise
     #brownian_noise = 1.0 - conf.beta*np.random.standard_normal() 
 
+    n0 = conf.cfl * conf.dt**2
+
     #Classical Maxwellian distribution
-    f  = 0.5*(1.0/(2.0*np.pi*delgam))**(0.5)
+    f  = 0.5*n0*(1.0/(2.0*np.pi*delgam))**(0.5)
     f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))
 
 

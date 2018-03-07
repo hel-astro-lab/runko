@@ -118,8 +118,9 @@ class PlasmaCell : virtual public corgi::Cell {
 
   Realf yeeDt = 1.0;
   Realf yeeDx = 1.0;
-  Realf yeeDy = 1.0;
-  Realf yeeDz = 1.0;
+
+  //Realf yeeDy = 1.0;
+  //Realf yeeDz = 1.0;
 
 
 };
