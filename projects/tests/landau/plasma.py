@@ -63,6 +63,7 @@ def filler(xloc, uloc, ispcs, conf):
     #n0 = conf.cfl**2
     n0 = 1.0
     #n0 = conf.cfl * conf.dt**2
+    #n0 = conf.dx*conf.dx
 
 
     #Brownian noise
@@ -112,8 +113,10 @@ def insert_em(node, conf):
     k = 2.0*np.pi
 
     #n0 = conf.cfl**2
-    n0 = 1.0
+    #n0 = conf.cfl
     #n0 = conf.cfl * conf.dt**2
+    n0 = 1.0
+    #n0 = conf.dx*conf.dx
 
     for i in range(node.getNx()):
         for j in range(node.getNy()):
@@ -127,8 +130,12 @@ def insert_em(node, conf):
                         #get x_i+1/2 (Yee lattice so rho_i)
                         xloc0 = injector.spatialLoc(node, (i,j), (l,  m,n), conf)
                         xloc1 = injector.spatialLoc(node, (i,j), (l+1,m,n), conf)
-                        xmid = 0.5*(xloc0[0] + xloc1[0])
 
+                        #get x_i-1/2 (Yee lattice so rho_i)
+                        #xloc0 = injector.spatialLoc(node, (i,j), (l,  m,n), conf)
+                        #xloc1 = injector.spatialLoc(node, (i,j), (l-1,m,n), conf)
+
+                        xmid = 0.5*(xloc0[0] + xloc1[0])
                         yee.ex[l,m,n] = -n0*np.abs(conf.me)*conf.beta*np.sin(k*xmid/Lx)/k
 
 
@@ -315,7 +322,6 @@ if __name__ == "__main__":
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.depositCurrent()
-
 
 
         #xJEu loop

@@ -160,6 +160,9 @@ class MomentumSolver {
         }
       }
 
+      // XXX update jx1 for debug
+      updateFutureCurrent(cell);
+
       return;
     }
 

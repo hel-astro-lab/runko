@@ -72,6 +72,7 @@ class SpatialSolver {
 
 
 /// Simple (relativistic) box integration of a mesh flux
+/*
 template<typename T>
 T integrate_current(
     toolbox::AdaptiveMesh<T,3>& m)
@@ -105,7 +106,7 @@ T integrate_current(
 
   return integ;
 }
-
+*/
 
 
 
@@ -238,8 +239,14 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
             // calculate current
             // if( (q >= 0) && (q < Nx) ) yee.jx(q,r,s) += sign(qm)*integrate_current(flux);
-            T jx = sign(qm)*integrate_current(flux)/cfl;
-            if(q >= 0)    yee.jx(q,r,s)   += jx;       //U_i+1/2
+            //T jx = sign(qm)*integrate_current(flux)/cfl;
+
+            T jx = (sign(qm)/cfl) * 
+              integrate_moment( flux,
+                [](std::array<T,3>& uvel) -> T { return 1.0/gamma<T,3>(uvel) ;}
+                );
+
+            if(q >= 0)    yee.jx(q,r,s)   += jx; //U_i+1/2
             //if(q <= Nx-2) yee.jx(q+1,r,s) += jx; //U_i-1/2
           }
         }

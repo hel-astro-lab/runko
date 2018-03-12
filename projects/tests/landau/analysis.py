@@ -87,14 +87,39 @@ axs[0].plot(time, np.log10( ex_max ))
 wedens = np.sum( ex*ex, 0 ) #*2.0*np.pi
 axs[1].plot(time, np.log10(wedens))
 
+
+
+#plot linear analysis results
+#omega=1.415661888604536 - 0.153359466909605j
+#omega=1.415 - 0.153j
+
+omega=1.05 - 0.08j
+
+#line 
+tskip = 0.3 #0.8
+lin_analysis  = 0.5*wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
+
+#with frequency
+lin_analysis2 = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(time-tskip)))**2.0
+
+
+#% linear analysis
+#plot(time,0.5*fieldenergy(1)*abs(exp(-1j*omega*(time-0.4))).^2);
+#% linear analysis with frequency
+#plot(time,0.5*fieldenergy(1)*real(exp(-1j*omega*(time-0.4))).^2);
+
+#axs[1].plot(time, np.log10( lin_analysis  ),  'r--')
+axs[1].plot(time, np.log10( lin_analysis2 ), 'r-')
+
+
 ##################################################
 
-prtcls = np.sum(rho, 0)*dx #integrate particle density
+prtcls = np.sum(rho, 0) #integrate particle density
 #prtcls /= prtcls[0]
 
 
 prtcls = np.abs(prtcls - prtcls[0] )/prtcls[0]
-prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
+#prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
 
 axs[2].plot(time, np.log10(prtcls))
 #axs[2].plot(time, prtcls)
@@ -104,8 +129,8 @@ axs[2].plot(time, np.log10(prtcls))
 
 #n0 = 0.45*dt*dt
 #n0 = 1.0
-n0 = dx
-ekintot = np.sum(ekin, 0)*n0
+#n0 = dx
+ekintot = np.sum(ekin, 0) #*n0
 
 axs[3].plot(time, np.log10(ekintot))
 #axs[3].plot(time, wedens, 'r-')
@@ -127,11 +152,14 @@ print("ratio:", np.mean(ekintot)/np.mean(wedens))
 #etot = np.abs(etot/etot[0] - 1.0)
 #axs[4].plot(time, np.log10( etot) )
 
-etot = ekintot + wedens
-axs[4].plot(time, etot)
+#ekintot = ekintot * dx*dx #try normalization
 
-axs[4].plot(time, ekintot, "b--")
-axs[4].plot(time, wedens,  "r--")
+ekintot = ekintot * dx
+
+etot = ekintot + wedens
+axs[4].plot(time, np.log10( etot),    "k-" )
+axs[4].plot(time, np.log10( ekintot), "b--")
+axs[4].plot(time, np.log10( wedens),  "r--")
 
 
 plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
