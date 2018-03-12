@@ -61,83 +61,6 @@ namespace mcmc {
     };
 
 
-    /*
-    class electron {
-
-        public:
-            std::array<double, 4> data; 
-            electron( double, double, double, double );
-           
-            // four-velocity of electron
-            const double v0(){ return data[0]; };
-            const double vx(){ return data[1]; };
-            const double vy(){ return data[2]; };
-            const double vz(){ return data[3]; };
-
-            /// 3-velocity in units of c, i.e. v/c
-            const double v() {
-                return std::sqrt(
-                          pow(vx(), 2.0) 
-                        + pow(vy(), 2.0) 
-                        + pow(vz(), 2.0) 
-                                ); };
-
-            /// gamma factor
-            const double gamma() { return 1.0 / std::sqrt( 1.0 - std::pow( v(), 2.0 ) ); };
-
-            /// proper momentum
-            const double p() { return gamma() * v(); };
-
-    };
-
-    electron::electron(double v0, double vx, double vy, double vz) {
-        this->data = {{v0, vx, vy, vz}};
-    };
-    */
-
-
-    /// Electron with all velocity transformations build-in
-    // Uses Eigen vectors internally for performance
-    class electron {
-
-        public:
-
-        /// spatial components of the four-velocity
-        Vector3d fvel;
-
-        /// load from vector
-        void loadFvel(Vector3d u) { fvel = u; };
-
-        /// Load from components
-        void loadFvelComponents(double ux, double uy, double uz) { 
-                fvel(0) = ux;
-                fvel(1) = uy;
-                fvel(2) = uz;
-        };
-
-        /// Load from velocity
-        // u = v*gamma = v/sqrt(1-v^2)
-        void loadVel(Vector3d v) {
-            fvel = v / sqrt(1.0 - v.dot(v));
-        };
-
-        void loadVelComponents(double vx, double vy, double vz) {
-            Vector3d v(vx, vy, vz);
-            loadVel(v);    
-        };
-
-        /// gamma factor
-        const double gamma() { return sqrt(1.0 + fvel.dot(fvel) ); };
-            
-        /// beta = v/c = sqrt(1-1/gamma^2)
-        const double beta() { return sqrt(1.0 - 1.0/(gamma()*gamma())); };
-
-        /// coordinate velocity vector v = u/gamma
-        Vector3d vel() { return fvel/gamma(); };
-
-    };
-
-
 
     // --------------------------------------------------
     class photonBucket {
@@ -229,6 +152,138 @@ namespace mcmc {
         }
         return vz;
     };
+
+
+
+
+    /*
+    class electron {
+
+        public:
+            std::array<double, 4> data; 
+            electron( double, double, double, double );
+           
+            // four-velocity of electron
+            const double v0(){ return data[0]; };
+            const double vx(){ return data[1]; };
+            const double vy(){ return data[2]; };
+            const double vz(){ return data[3]; };
+
+            /// 3-velocity in units of c, i.e. v/c
+            const double v() {
+                return std::sqrt(
+                          pow(vx(), 2.0) 
+                        + pow(vy(), 2.0) 
+                        + pow(vz(), 2.0) 
+                                ); };
+
+            /// gamma factor
+            const double gamma() { return 1.0 / std::sqrt( 1.0 - std::pow( v(), 2.0 ) ); };
+
+            /// proper momentum
+            const double p() { return gamma() * v(); };
+
+    };
+
+    electron::electron(double v0, double vx, double vy, double vz) {
+        this->data = {{v0, vx, vy, vz}};
+    };
+    */
+
+
+    /// Electron with all velocity transformations build-in
+    // Uses Eigen vectors internally for performance
+    class electron {
+
+        public:
+
+        /// spatial components of the four-velocity
+        Vector3d fvel;
+
+        /// load from vector
+        void loadFvel(Vector3d u) { fvel = u; };
+
+        /// Load from components
+        void loadFvelComponents(double ux, double uy, double uz) { 
+                fvel(0) = ux;
+                fvel(1) = uy;
+                fvel(2) = uz;
+        };
+
+        /// Load from velocity
+        // u = v*gamma = v/sqrt(1-v^2)
+        void loadVel(Vector3d v) {
+            fvel = v / sqrt(1.0 - v.dot(v));
+        };
+
+        void loadVelComponents(double vx, double vy, double vz) {
+            Vector3d v(vx, vy, vz);
+            loadVel(v);    
+        };
+
+/*        // return 3d components of the electron 4-velocity
+        const double vx(){ return fvel(0); };
+        const double vy(){ return fvel(1); };
+        const double vz(){ return fvel(2); };
+*/        
+
+        /// gamma factor
+        const double gamma() { return sqrt(1.0 + fvel.dot(fvel) ); };
+            
+        /// beta = v/c = sqrt(1-1/gamma^2)
+        const double beta() { return sqrt(1.0 - 1.0/(gamma()*gamma())); };
+
+        /// coordinate velocity vector v = u/gamma
+        Vector3d vel() { return fvel/gamma(); };
+
+        /// vmod = sqrt(vx^2 + vy^2 + vz^2)
+        const double vmod() { return sqrt(vel().dot(vel())); };
+        
+        // unit vector in the electron direction 
+        Vector3d beta0() { return vel()/beta(); };
+
+
+    };
+
+
+
+    // --------------------------------------------------
+    class electronBucket {
+
+        /// size of the bucket (number of electrons)
+        size_t nElectrons = 0;
+
+        /// Electron container
+//        std::vector<std::array<double, 3>> bucket;
+        std::vector<Vector3d> bucket;
+
+        public:
+            void push_back( electron e );
+            const size_t size( ) { return this->nElectrons; };
+
+            void replace( size_t indx, electron e );
+
+            electron get( size_t indx, electron e );
+
+    };
+
+    void electronBucket::push_back( electron e ) {
+        bucket.push_back( e.vel() );
+        nElectrons++;
+    };
+
+    void electronBucket::replace( size_t indx, electron e ) {
+        bucket[indx] = e.vel();
+    };
+
+    electron electronBucket::get( size_t indx, electron e) {
+        Vector3d vel = bucket[indx];
+        e.loadVel(vel);
+
+        return e;
+    };
+
+
 
 
 
@@ -806,7 +861,16 @@ PYBIND11_MODULE(mcmc, m) {
         .def("loadVelComponents",  &mcmc::electron::loadVelComponents)
         .def("loadFvelComponents", &mcmc::electron::loadFvelComponents)
         .def("beta",  &mcmc::electron::beta)
-        .def("gamma", &mcmc::electron::gamma);
+        .def("gamma", &mcmc::electron::gamma)
+        .def("vmod", &mcmc::electron::vmod)
+        .def("beta0", &mcmc::electron::beta0);
+
+    py::class_<mcmc::electronBucket>(m, "electronBucket" )
+        .def(py::init<>())
+        .def("size",      &mcmc::electronBucket::size)
+        .def("replace",   &mcmc::electronBucket::replace)
+        .def("get",       &mcmc::electronBucket::get)
+        .def("push_back", &mcmc::electronBucket::push_back);
 
     py::class_<mcmc::photonBucket>(m, "photonBucket" )
         .def(py::init<>())

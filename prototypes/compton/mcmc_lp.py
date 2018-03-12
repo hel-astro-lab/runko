@@ -103,7 +103,7 @@ def comptonScatter(e, p, ax, plot):
     # p.hv = hv/m_e c^2
     # e.v = v/c 
 
-    beta0 = np.array([ e.vx(), e.vy(), e.vz() ]) / e.v() # unit vector in direction of electron motion in lab frame
+    beta0 = np.array([ e.vx(), e.vy(), e.vz() ]) / e.vmod() # unit vector in direction of electron motion in lab frame
     omega = np.array([ p.vx(), p.vy(), p.vz() ])         # unit vector in photon direction in lab frame
 
     #choose scattering frame (i,j,k)
@@ -126,7 +126,7 @@ def comptonScatter(e, p, ax, plot):
 
     mu = cosalpha  # in ijk frame angle between e and ph equals to the angle between e and k vector
         
-    y = p.hv() * e.gamma() * (1.0 - mu*e.v() ) # initial photon and electron 4-product
+    y = p.hv() * e.gamma() * (1.0 - mu*e.vmod() ) # initial photon and electron 4-product
     
     #scatter
     done = False
@@ -137,13 +137,13 @@ def comptonScatter(e, p, ax, plot):
         z3 = np.random.rand()
         
         # draw new possible angles
-        mup  = (e.v() + 2.0*z1 - 1.0)/(1.0 + e.v()*(2.0*z1 - 1.0))  # cos(alpha') = k \dot Omega'
+        mup  = (e.vmod() + 2.0*z1 - 1.0)/(1.0 + e.vmod()*(2.0*z1 - 1.0))  # cos(alpha') = k \dot Omega'
         phip = 2.0*np.pi*z2               # azimuthal angle calculated from (-j)
         sinalphap = np.sqrt( 1.0 - mup**2 ) #
 
         OmegaOmegap = mu * mup - sinalphap *  np.sin(phip) * sinalpha  # angle between incoming and outgoing photons
         
-        yp = y / (1.0 + p.hv() * (1.0 - OmegaOmegap) / ( e.gamma() * (1.0 - mup*e.v()) ))
+        yp = y / (1.0 + p.hv() * (1.0 - OmegaOmegap) / ( e.gamma() * (1.0 - mup*e.vmod()) ))
 
         YY = yp/y + (yp/y)**3 + (yp/y)**2 *( (1.0/yp - 1.0/y)**2 - 2.0*( 1.0/yp - 1.0/y) )
  
@@ -152,7 +152,7 @@ def comptonScatter(e, p, ax, plot):
     #now we have scattered successfully
 
     #new energy
-    hvp = yp / ( e.gamma()*(1.0 - mup*e.v()) ) 
+    hvp = yp / ( e.gamma()*(1.0 - mup*e.vmod()) ) 
     
     #hvp2 = p.hv() * (1. - e.v() * mu) / (1. - e.v() * mup + p.hv() * (1. - OmegaOmegap)/ e.gamma()) # energy test
     
@@ -173,7 +173,9 @@ def comptonScatter(e, p, ax, plot):
     vxes = ( e.gamma() * e.vx() + p.hv() * omega[0] - hvp * Omegap[0] ) / gammaes
     vyes = ( e.gamma() * e.vy() + p.hv() * omega[1] - hvp * Omegap[1] ) / gammaes
     vzes = ( e.gamma() * e.vz() + p.hv() * omega[2] - hvp * Omegap[2] ) / gammaes
-    es = mcmc.electron( gammaes, vxes, vyes, vzes )
+    es = mcmc.electron()
+    
+    es.loadVelComponents( vxes, vyes, vzes )
     ves= np.array([ vxes, vyes, vzes ])
     
     if plot:
@@ -197,7 +199,7 @@ def lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, V):
     hv_sc = np.zeros(bucket_ph.size())
     
     
-    P_it_max = 2.0 * sigma_T / V
+    P_it_max = 2.0 * sigma_T / V  # V-space volume; sigma_T - Thomson cross-section 
     #print"P_max = {}, bucket size = {}".format(P_it_max,bucket_ph.size())
     
     
@@ -209,7 +211,7 @@ def lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, V):
         hv_sc[i] = p.hv()
 
         z1 = np.random.rand()
-        t_it = -np.log( z1 ) /  P_it_max / bucket_el.size()
+        t_it = -np.log( z1 ) /  P_it_max / bucket_el.size()   # 
 
         if deltat < t_it : continue   # if timestep is less than mean free path, leave this photon and go to next one
 
@@ -218,13 +220,14 @@ def lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, V):
         e = bucket_el.get(j)
         
         beta = np.array([ e.vx(), e.vy(), e.vz() ])  # beta in lab frame
-        beta0 = np.array([ e.vx(), e.vy(), e.vz() ]) / e.v() # unit vector in direction of electron motion in lab frame
+        beta0 = np.array([ e.vx(), e.vy(), e.vz() ]) / e.vmod() # unit vector in direction of electron motion in lab frame
         omega = np.array([ p.vx(), p.vy(), p.vz() ])         # unit vector in photon direction in lab frame
+#        mu = np.dot(beta0, omega)    # cosine of angle between incident photon and electron
         mu = np.dot(beta0, omega)    # cosine of angle between incident photon and electron
 
         #calculate real cross-section and real probability of interaction
 
-        xi = e.gamma() * p.hv() * (1.0 - e.v() * mu) # product of initial electron and photon 4-momenta
+        xi = e.gamma() * p.hv() * (1.0 - e.vmod() * mu) # product of initial electron and photon 4-momenta
         
         if xi < 0.01: # Approximate Taylor expansion for Compton total cross-section if xi<0.01, error about 5e-6
             s0 = 1.0 - 2.0 * xi + 5.2 * xi**2 - 9.1 * xi**3 
@@ -233,7 +236,7 @@ def lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, V):
             s0 = 3.0 / 8.0 / xi**2 * ( 4.0 + (xi - 2.0 - 2.0 / xi) * np.log(1.0 + 2.0 * xi) + 
                                        2.0 * xi**2 * (1.0 + xi) / (1.0 + 2.0 * xi)**2 )
         
-        vrel = 1.0 - e.v() * mu  # relative direction ("v_rel" in Stern et al. 1995)
+        vrel = 1.0 - e.vmod() * mu  # relative direction ("v_rel" in Stern et al. 1995)
         P_it_real = s0 * vrel / 2.0
         
         z2 = np.random.rand()
@@ -321,20 +324,19 @@ if __name__ == "__main__":
     #test scattering for single case
     print "Compton scatter single interaction..."
 
+    e = mcmc.electron()
     verand=0.8
     (vx, vy, vz) = [0.0, 0.95, 0.0] #randVel(verand) #(0.1, 0.0, 0.0) #randVel(0.5) 
-    e = mcmc.electron(1.0, vx, vy, vz)
-    print "target electron with beta: {} gamma: {}".format(e.v(), e.gamma() )
+    e.loadVelComponents(vx, vy, vz)
+    print "target electron with beta: {} gamma: {}".format(e.beta(), e.gamma() )
 
     (vx, vy, vz) = [1.0, 0.0, 0.0] #randVel(1.0) #direction on unit sphere (-1.0, 0.0, 0.0) 
     ph = mcmc.photon( 1.0e-4, vx, vy, vz )
 
-
     #visualize starting point of collision
-    beta = np.array([ e.vx(), e.vy(), e.vz() ]) / e.v() #electron unit vector
+    beta0 = np.array([ e.vx(), e.vy(), e.vz() ]) / e.vmod()  # unit vector in electron direction
     omeg = np.array([ ph.vx(), ph.vy(), ph.vz() ])         #photon unit vector
-#    axs[1].plot( unitVecX(-beta), unitVecY(-beta), unitVecZ(-beta), linestyle='dashed', color='black', linewidth=2.0)
-    axs[1].plot( scaleVecX(-beta), scaleVecY(-beta), scaleVecZ(-beta), linestyle='dashed', color='black', linewidth=2.0)
+    axs[1].plot( unitVecX(-beta0), unitVecY(-beta0), unitVecZ(-beta0), linestyle='dashed', color='black', linewidth=2.0)
     axs[1].plot( scaleVecX(-ph.hv()*omeg), scaleVecY(-ph.hv()*omeg), scaleVecZ(-ph.hv()*omeg), linestyle='solid', color='black', linewidth=4.0)
     
     
@@ -346,18 +348,19 @@ if __name__ == "__main__":
     #for sc in range(3):
     #    es, ps = comptonScatter(e, ph, axs[1], plot=True)
     plt.savefig("compton_single.png")
-    #sys.exit()
+    sys.exit()
 
 
     ##################################################
     # create bucket of electrons
     bucket_el = mcmc.electronBucket()
 #    print "created electron bucket ({})".format( bucket_el.size() )
+    e = mcmc.electron()
 
     #pour electrons to the bucket
     for i in range(100):
         (vx, vy, vz) = [0.0, 0.6, 0.0]#randVel(0.9) #direction on unit sphere #
-        e = mcmc.electron(1.0, vx, vy, vz)
+        e.loadVelComponents(vx, vy, vz)
         bucket_el.push_back( e )
     print "Created electron bucket and loaded with {} electrons".format( bucket_el.size() )
 
