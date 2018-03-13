@@ -46,7 +46,6 @@ def filler(xloc, uloc, ispcs, conf):
     if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
         return 0.0
 
-
     #electrons
     if ispcs == 0:
         delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
@@ -59,7 +58,7 @@ def filler(xloc, uloc, ispcs, conf):
         #Lx  = conf.Nx*conf.NxMesh*conf.dx
         #mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
-    #electrons
+    #positrons/ions/second species
     if ispcs == 1:
         delgam  = conf.delgam
 
@@ -68,31 +67,27 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-        #Lx  = conf.Nx*conf.NxMesh*conf.dx
-        #k = 5.0
-        #mux_noise += conf.beta*np.sin( 2*np.pi*k*x/Lx )
-        #mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
+    #plasma frequency scale
+    n0 = 1.0/conf.Nspecies
 
     #Brownian noise
-    #brownian_noise = 1.0 - conf.beta*np.random.standard_normal() 
+    #brownian_noise = 0.01*np.random.standard_normal() 
+    #brownian_noise *= delgam
 
-    n0 = conf.cfl * conf.dt**2
 
     #Classical Maxwellian distribution
-    f  = 0.5*n0*(1.0/(2.0*np.pi*delgam))**(0.5)
-    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))
-
+    f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
+    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(2.0*delgam))
 
 
     #number density oscillations
-    if ispcs == 0:
-        Lx  = conf.Nx*conf.NxMesh*conf.dx/5.0
-        k = 2.0*np.pi
-        f *= 1.0 + conf.beta*np.cos(k*x/Lx)
+    Lx = conf.Nx*conf.NxMesh*conf.dx/2.0
+    k = 2.0*np.pi
+    f *= 1.0 + conf.beta*np.cos(k*x/Lx)
+
 
     return f
-
 
 
 
@@ -102,31 +97,48 @@ def save(n, conf, lap, f5):
     #get E field
     yee = getYee(n, conf)
 
-    f5['fields/Ex' ][:,lap] = yee['ex']
-    f5['fields/rho'][:,lap] = yee['rho']
+    f5['fields/Ex'  ][:,lap] = yee['ex']
+    f5['fields/rho' ][:,lap] = yee['rho']
+    f5['fields/ekin'][:,lap] = yee['ekin']
 
     return
 
 
+# insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(node, conf):
+
+    Lx  = conf.Nx*conf.NxMesh*conf.dx/2.0
+    k = 2.0*np.pi
+
+    n0 = np.sqrt(2.0)
 
     for i in range(node.getNx()):
         for j in range(node.getNy()):
             c = node.getCellPtr(i,j)
             yee = c.getYee(0)
 
-            for q in range(conf.NxMesh):
-                for k in range(conf.NyMesh):
-                    if q == 32:
-                        yee.ex[q,k,0] =  0.5
+            for l in range(conf.NxMesh):
+                for m in range(conf.NyMesh):
+                    for n in range(conf.NzMesh):
 
-                    #yee.ex[q,k,0] =  0.0
-                    #yee.ey[q,k,0] =  0.0
-                    #yee.ez[q,k,0] =  0.0
+                        #get x_i+1/2 (Yee lattice so rho_i)
+                        xloc0 = injector.spatialLoc(node, (i,j), (l,  m,n), conf)
+                        xloc1 = injector.spatialLoc(node, (i,j), (l+1,m,n), conf)
 
-                    #yee.bx[q,k,0] =  0.0
-                    #yee.by[q,k,0] =  0.0
-                    #yee.bz[q,k,0] =  0.0
+                        #get x_i-1/2 (Yee lattice so rho_i)
+                        #xloc0 = injector.spatialLoc(node, (i,j), (l,  m,n), conf)
+                        #xloc1 = injector.spatialLoc(node, (i,j), (l-1,m,n), conf)
+
+                        xmid = 0.5*(xloc0[0] + xloc1[0])
+                        yee.ex[l,m,n] = -n0*np.abs(conf.me)*conf.beta*np.sin(k*xmid/Lx)/k
+
+
+
+def solvePoisson(ax, node, conf):
+    yee = getYee(n, conf)
+
+    x   = yee['x']
+    rho = yee['rho']
 
 
 
@@ -162,8 +174,11 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
+    #conf = Configuration('config-landau.ini') 
     #conf = Configuration('config-twostream.ini') 
-    conf = Configuration('config-twostream_rel.ini') 
+    conf = Configuration('config-twostream-relativistic.ini') 
+    #conf = Configuration('config-plasmaosc.ini') 
+    #conf = Configuration('config-dispersion.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
 
@@ -198,28 +213,29 @@ if __name__ == "__main__":
 
     injector.inject(node, filler, conf) #injecting plasma
 
+    #insert initial electric field
+    insert_em(node, conf)
+
+
     #Initial step backwards for velocity
     for j in range(node.getNy()):
         for i in range(node.getNx()):
             cell = node.getCellPtr(i,j)
             cell.updateBoundaries(node)
-
     plasma.stepInitial1d(node)
-
     for j in range(node.getNy()):
         for i in range(node.getNx()):
             cell = node.getCellPtr(i,j)
             cell.cycle()
 
 
-
-
     # visualize initial condition
     plotNode(axs[0], node, conf)
     plotXmesh(axs[1], node, conf, 0, "x")
     #plotXmesh(axs[2], node, conf, 0, "y")
-    plotXmesh(axs[3], node, conf, 1, "x")
-    #plotXmesh(axs[4], node, conf, 1, "y")
+    if conf.Nspecies == 2:
+        plotXmesh(axs[3], node, conf, 1, "x")
+        #plotXmesh(axs[4], node, conf, 1, "y")
     plotJ(axs[5], node, conf)
     plotE(axs[6], node, conf)
     plotDens(axs[7], node, conf)
@@ -237,7 +253,7 @@ if __name__ == "__main__":
 
     #setup output file
     import h5py
-    f5 = h5py.File("out/run.hdf5", "w")
+    f5 = h5py.File(conf.outdir+"/run.hdf5", "w")
 
     grp0 = f5.create_group("params")
     grp0.attrs['dx']    = conf.dx
@@ -249,13 +265,11 @@ if __name__ == "__main__":
     #number of samples (every step is saved)
     #Nsamples = int(conf.Nt/conf.interval) + 1
     Nsamples = conf.Nt
-    dset1 = grp.create_dataset("Ex",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    dset2 = grp.create_dataset("rho", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
-    #XXX DEBUG
-    #insert_em(node, conf)
 
 
     #simulation loop
@@ -263,48 +277,43 @@ if __name__ == "__main__":
     ifile = 0
     for lap in range(0, conf.Nt):
 
-        #B field half update
+        #xJEu loop (Umeda a la implicit FTDT)
 
-        ##move vlasov fluid
+        #configuration space push
+        plasma.stepLocation(node)
 
-        #update boundaries
+        ###cycle to the new fresh snapshot
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycle()
+
+        ###current deposition from moving flux
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.depositCurrent()
+
+        ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.updateBoundaries(node)
 
-        #momentum step
+        ###momentum step
         plasma.stepVelocity1d(node)
 
-
-        #cycle to the new fresh snapshot
+        ###cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.cycle()
 
-        #spatial step
-        plasma.stepLocation(node)
-
-        #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycle()
-
-        #B field second half update
-
-        #E field (Ampere's law)
-        #for cid in node.getCellIds():
-        #    c = node.getCellPtr( cid )
-        #    c.pushE()
 
 
-        #current deposition from moving flux
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.depositCurrent()
+
+        ##################################################
+        #diagnostics
 
         #clip every cell
         if conf.clip:
@@ -331,6 +340,7 @@ if __name__ == "__main__":
             timer.stats("step")
 
 
+
             timer.start("io")
 
 
@@ -338,12 +348,18 @@ if __name__ == "__main__":
 
             plotXmesh(axs[1], node, conf, 0, "x")
             #plotXmesh(axs[2], node, conf, 0, "y")
-            plotXmesh(axs[3], node, conf, 1, "x")
-            #plotXmesh(axs[4], node, conf, 1, "y")
+            if conf.Nspecies == 2:
+                plotXmesh(axs[3], node, conf, 1, "x")
+                #plotXmesh(axs[4], node, conf, 1, "y")
 
             plotJ(axs[5], node, conf)
             plotE(axs[6], node, conf)
             plotDens(axs[7], node, conf)
+
+
+            #solve Poisson
+            #exP = solvePoisson(axs[6], node, conf)
+
 
             saveVisz(lap, node, conf)
 

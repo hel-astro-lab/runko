@@ -32,13 +32,7 @@ print dt, dx
 nx, ny = np.shape(ex)
 
 time = np.arange(ny)*dt
-
 maxtime = time[maxi]
-
-#ex_max = np.zeros((ny))
-#for i in range(ny):
-#    exs     = ex[:,i]
-#    ex_max[i] = np.max(np.abs(exs))
 
 
 #--------------------------------------------------
@@ -192,11 +186,7 @@ axs[2].plot(time, np.log10(prtcls))
 
 ##################################################
 
-#n0 = 0.45*dt*dt
-#n0 = 1.0
-#n0 = dx
 ekintot = np.sum(ekin, 0) #*n0
-
 axs[3].plot(time, np.log10(ekintot))
 #axs[3].plot(time, wedens, 'r-')
 

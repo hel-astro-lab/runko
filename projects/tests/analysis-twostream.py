@@ -9,7 +9,7 @@ from scipy.stats import mstats
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('out/run.hdf5','r')
+f = h5py.File('twostream/out/run.hdf5','r')
 
 maxi = 4000
 
@@ -17,8 +17,6 @@ maxi = 4000
 ex   = f['fields/Ex'][()]
 rho  = f['fields/rho'][()]
 ekin = f['fields/ekin'][()]
-#ex  = f['fields/Ex' ][:,:maxi]
-#rho = f['fields/rho'][:,:maxi]
 
 print "Ex shape:", np.shape(ex)
 
@@ -47,7 +45,7 @@ plt.rc('axes', labelsize=7)
 
 fig = plt.figure(figsize=(3.54, 6.0)) #single column fig
 #fig = plt.figure(figsize=(7.48, 4.0))  #two column figure
-gs = plt.GridSpec(4, 1, wspace=0.0)
+gs = plt.GridSpec(5, 1, wspace=0.0)
 
 
 axs = []
@@ -55,47 +53,78 @@ axs.append( plt.subplot(gs[0,0]) )
 axs.append( plt.subplot(gs[1,0]) )
 axs.append( plt.subplot(gs[2,0]) )
 axs.append( plt.subplot(gs[3,0]) )
+axs.append( plt.subplot(gs[4,0]) )
 
 
 for ax in axs:
     ax.minorticks_on()
     ax.set_xlabel(r'time $t\omega_{\mathrm{p}}$ ')
-    ax.set_xlim((0.0, maxtime))
+
+    #ax.set_xlim((0.0, maxtime))
+    #ax.set_xlim((0.0, 41.0))
+    ax.set_xlim((0.0, 70.0))
 
 
 axs[0].set_ylabel(r'$\ln \delta E_x$')
 axs[1].set_ylabel(r'Energy $\epsilon$')
 axs[2].set_ylabel(r'$\Delta m$')
 axs[3].set_ylabel(r'$\epsilon_K$')
+axs[4].set_ylabel(r'$E_T$')
 
 
 #time *= 0.321003 #normalize with the growth rate
 ex_max = np.max( np.abs(ex),0 )
 axs[0].plot(time, np.log(ex_max))
-#axs[0].set_ylim((-20, 10))
+
+axs[0].set_ylim(-14.0, -2.0)
+
 
 ##################################################
+
 
 wedens = np.log10( np.sum( ex*ex, 0 ) )
 axs[1].plot(time, wedens)
 
+#model prediction
+#Gm = 0.243771 #vb = 0.025
+#Gm = 0.0 + 0.21j
+
+Gm = 0.21
+Gms = -6.5 + time*Gm*0.5 # 1/2 comes from compensation of E_x^2
+axs[1].plot(time, Gms, 'r--')
+
+
+axs[1].set_ylim(-10.0, 4.0)
+
 ##################################################
 
-prtcls = np.sum(rho, 0)*dx #integrate particle density
+prtcls = np.sum(rho, 0) #integrate particle density
 #prtcls /= prtcls[0]
 
 
 prtcls = np.abs(prtcls - prtcls[0] )/prtcls[0]
-prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
+#prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
 
 axs[2].plot(time, np.log10(prtcls))
 #axs[2].plot(time, prtcls)
 
 ##################################################
 
-ekintot = np.sum(ekin, 0)*dx
+ekintot = np.sum(ekin, 0)
 axs[3].plot(time, np.log10(ekintot))
 
+
+##################################################
+print("ekin   max:", np.max(ekintot))
+print("efield max:", np.max(wedens))
+print("ratio:", np.mean(ekintot)/np.mean(wedens))
+
+ekintot = ekintot * dx
+
+etot = ekintot + wedens
+axs[4].plot(time, np.log10( etot),    "k-" )
+axs[4].plot(time, np.log10( ekintot), "b--")
+axs[4].plot(time, np.log10( wedens),  "r--")
 
 
 
