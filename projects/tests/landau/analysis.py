@@ -4,12 +4,14 @@ import h5py
 import sys, os
 import matplotlib.ticker as ticker
 from scipy.stats import mstats
-
+from scipy.optimize import curve_fit
 
 
 #--------------------------------------------------
 # read simulation data from file
 f = h5py.File('out/run.hdf5','r')
+#f = h5py.File('out_khat045/run.hdf5','r')
+#f = h5py.File('out_khat014/run.hdf5','r')
 
 maxi = 100
 
@@ -64,6 +66,9 @@ for ax in axs:
     ax.set_xlabel(r'time $t\omega_{\mathrm{p}}$ ')
 
     #ax.set_xlim((0.0, maxtime))
+    #ax.set_xlim((0.0, 50.0))
+    #ax.set_xlim((0.0, 117.0))
+    ax.set_xlim((0.0, 50.0))
 
 
 axs[0].set_ylabel(r'$\ln \delta E_x$')
@@ -88,19 +93,79 @@ wedens = np.sum( ex*ex, 0 ) #*2.0*np.pi
 axs[1].plot(time, np.log10(wedens))
 
 
+#measure frequency
+#w = np.fft.fft(ex_max)
+#freqs = np.fft.fftfreq(len(time))
+#
+#idx = np.argmax(np.abs(w))
+#freq = freqs[idx]
+#print("max frq:", freq)
+#
+#axs[1].plot(freqs, np.log10(w*w) )
+
+
 
 #plot linear analysis results
 #omega=1.415661888604536 - 0.153359466909605j
 #omega=1.415 - 0.153j
 
-omega=1.05 - 0.08j
+#parameters
+delgam = 0.001
+Nw = 2.0
+khat = Nw * 2.0*np.pi*np.sqrt(delgam)/(nx*dx)
+khat = 0.14
+
+#real part
+wr = 1.0 + ((3.0/2.0)*khat**2 + (15.0/8.0)*khat**4 + (147/16.0)*khat**6
+           + 736.437*khat**8
+           - 14729.3*khat**10
+           + 105429*khat**12.0
+           - 370151*khat**14.0
+           + 645538*khat**16.0
+           - 448190*khat**18.0)
+
+#imaginary part
+wi = -0.5*np.sqrt(np.pi/2.0)*(
+        1.0/khat**3 - 6.0*khat 
+        - 40.7173*khat**3.0
+        - 3900.23*khat**5.0
+        - 2462.25*khat**7.0
+        - 274.99*khat**9.0)
+wi *= np.exp(-0.5/khat**2 - 3.0/2.0 
+        - 3.0*khat**2.0
+        - 12.0*khat**4.0
+        - 575.51*khat**6.0
+        + 3790.16*khat**8.0
+        - 8827.54*khat**10.0
+        + 7266.87*khat**12.0)
+#omega= wr + wi*1.0j
+
+print("khat:",khat)
+print("wr:",wr)
+print("wi:",wi)
+
+
+##################################################
+omega = 1.3 - 0.10j #khat=0.45
+#omega = 1.0004 #khat = 0.14
+#omega = 0.99
+
+def landau_osc(t, omega):
+    f = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(t-0.3)))**2.0
+    return f
+
+#popt, pcov = curve_fit(landau_osc, time, wedens, p0=omega, bounds=(0.5, 2.0))
+#omega = popt
+#print(popt)
+
+
 
 #line 
-tskip = 0.3 #0.8
-lin_analysis  = 0.5*wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
+tskip = 0.28 #0.8
+lin_analysis  = wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
 
 #with frequency
-lin_analysis2 = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(time-tskip)))**2.0
+lin_analysis2 = wedens[0]*np.real( np.exp(-1j*omega*(time-tskip)))**2.0
 
 
 #% linear analysis
@@ -108,8 +173,8 @@ lin_analysis2 = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(time-tskip)))**2.0
 #% linear analysis with frequency
 #plot(time,0.5*fieldenergy(1)*real(exp(-1j*omega*(time-0.4))).^2);
 
-#axs[1].plot(time, np.log10( lin_analysis  ),  'r--')
-axs[1].plot(time, np.log10( lin_analysis2 ), 'r-')
+axs[1].plot(time, np.log10( lin_analysis  ), 'g-', alpha=0.6)
+axs[1].plot(time, np.log10( lin_analysis2 ), 'r-', alpha=0.6)
 
 
 ##################################################

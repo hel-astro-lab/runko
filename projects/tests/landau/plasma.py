@@ -78,7 +78,7 @@ def filler(xloc, uloc, ispcs, conf):
 
     #f *= np.exp(-0.5*((ux - mux - mux_noise)**2)/(delgam + delgam_noise) + brownian_noise)
     #f *= np.exp(-0.5*( (ux - mux - mux_noise)**2 + (uy - muy)**2 + (uz - muz)**2)/(delgam))
-    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(delgam))
+    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(2.0*delgam))
 
 
     #number density oscillations
@@ -115,8 +115,8 @@ def insert_em(node, conf):
     #n0 = conf.cfl**2
     #n0 = conf.cfl
     #n0 = conf.cfl * conf.dt**2
-    n0 = 1.0
     #n0 = conf.dx*conf.dx
+    n0 = 1.0
 
     for i in range(node.getNx()):
         for j in range(node.getNy()):
@@ -287,74 +287,74 @@ if __name__ == "__main__":
         #move vlasov fluid
 
         #update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries(node)
-
-        #momentum step
-        plasma.stepVelocity1d(node)
-
-        #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycle()
-
-        #spatial step
-        plasma.stepLocation(node)
-
-        #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycle()
-
-        #B field second half update
-
-        #E field (Ampere's law)
-        #for cid in node.getCellIds():
-        #    c = node.getCellPtr( cid )
-        #    c.pushE()
-
-        #current deposition from moving flux
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.depositCurrent()
-
-
-        #xJEu loop
-
-        #configuration space push
-        #plasma.stepLocation(node)
-
-        ###cycle to the new fresh snapshot
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        cell.cycle()
-
-        ###current deposition from moving flux
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        cell.depositCurrent()
-
-        ##update boundaries
         #for j in range(node.getNy()):
         #    for i in range(node.getNx()):
         #        cell = node.getCellPtr(i,j)
         #        cell.updateBoundaries(node)
 
-        ###momentum step
+        ##momentum step
         #plasma.stepVelocity1d(node)
 
-        ###cycle to the new fresh snapshot
+        ##cycle to the new fresh snapshot
         #for j in range(node.getNy()):
         #    for i in range(node.getNx()):
         #        cell = node.getCellPtr(i,j)
         #        cell.cycle()
+
+        ##spatial step
+        #plasma.stepLocation(node)
+
+        ##cycle to the new fresh snapshot
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.cycle()
+
+        ##B field second half update
+
+        ##E field (Ampere's law)
+        ##for cid in node.getCellIds():
+        ##    c = node.getCellPtr( cid )
+        ##    c.pushE()
+
+        ##current deposition from moving flux
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.depositCurrent()
+
+
+        #xJEu loop (Umeda a la implicit FTDT)
+
+        #configuration space push
+        plasma.stepLocation(node)
+
+        ###cycle to the new fresh snapshot
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycle()
+
+        ###current deposition from moving flux
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.depositCurrent()
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries(node)
+
+        ###momentum step
+        plasma.stepVelocity1d(node)
+
+        ###cycle to the new fresh snapshot
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycle()
 
 
         ##################################################

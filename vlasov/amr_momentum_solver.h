@@ -143,7 +143,7 @@ class MomentumSolver {
                 }};
 
               // Now push E field to future temporarily
-              E[0] -= yee.jx1(q,r,s) * 0.5*dt;
+              //E[0] -= yee.jx1(q,r,s) * 0.5*dt;
 
 
               // dig out velomeshes from blocks
