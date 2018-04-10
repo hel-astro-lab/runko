@@ -9,12 +9,11 @@ from scipy.optimize import curve_fit
 
 #--------------------------------------------------
 # read simulation data from file
-#f = h5py.File('out/run.hdf5','r')
-#f = h5py.File('landau/out_khat045/run.hdf5','r')
-f = h5py.File('landau/out_khat0144/run.hdf5','r')
+f = h5py.File('out/run.hdf5','r')
+#f = h5py.File('out_khat045/run.hdf5','r')
+#f = h5py.File('out_khat014/run.hdf5','r')
 
 maxi = 100
-maxi = -1
 
 #Read field
 ex   = f['fields/Ex'][()]
@@ -33,7 +32,13 @@ print dt, dx
 nx, ny = np.shape(ex)
 
 time = np.arange(ny)*dt
+
 maxtime = time[maxi]
+
+#ex_max = np.zeros((ny))
+#for i in range(ny):
+#    exs     = ex[:,i]
+#    ex_max[i] = np.max(np.abs(exs))
 
 
 #--------------------------------------------------
@@ -63,7 +68,7 @@ for ax in axs:
     #ax.set_xlim((0.0, maxtime))
     #ax.set_xlim((0.0, 50.0))
     #ax.set_xlim((0.0, 117.0))
-    #ax.set_xlim((0.0, 25.0))
+    ax.set_xlim((0.0, 50.0))
 
 
 axs[0].set_ylabel(r'$\ln \delta E_x$')
@@ -84,7 +89,7 @@ axs[0].plot(time, np.log10( ex_max ))
 
 ##################################################
 
-wedens = np.sum( 0.5*ex*ex, 0 ) #*2.0*np.pi
+wedens = np.sum( ex*ex, 0 ) #*2.0*np.pi
 axs[1].plot(time, np.log10(wedens))
 
 
@@ -141,11 +146,9 @@ print("wi:",wi)
 
 
 ##################################################
-#omega = 1.3 - 0.10j #khat=0.45
-omega = 1.0004 #khat = 0.14
+omega = 1.3 - 0.10j #khat=0.45
+#omega = 1.0004 #khat = 0.14
 #omega = 0.99
-#omega = 1.34617 - 0.10629j #khat=0.45
-
 
 def landau_osc(t, omega):
     f = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(t-0.3)))**2.0
@@ -158,8 +161,7 @@ def landau_osc(t, omega):
 
 
 #line 
-#tskip = 0.28 #0.8
-tskip = 0.1
+tskip = 0.28 #0.8
 lin_analysis  = wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
 
 #with frequency
@@ -190,7 +192,11 @@ axs[2].plot(time, np.log10(prtcls))
 
 ##################################################
 
+#n0 = 0.45*dt*dt
+#n0 = 1.0
+#n0 = dx
 ekintot = np.sum(ekin, 0) #*n0
+
 axs[3].plot(time, np.log10(ekintot))
 #axs[3].plot(time, wedens, 'r-')
 
@@ -222,4 +228,4 @@ axs[4].plot(time, np.log10( wedens),  "r--")
 
 
 plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
-plt.savefig('landau.pdf')
+plt.savefig('simulation.pdf')

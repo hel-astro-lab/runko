@@ -329,7 +329,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       */
 
       // electrostatic push
-      return -qm*dt* E;
+      return -qm*dt*E;
     }
 
 

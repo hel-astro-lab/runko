@@ -9,9 +9,11 @@ from scipy.stats import mstats
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('twostream/out/run.hdf5','r')
+#f = h5py.File('twostream/out/run.hdf5','r')
+#f = h5py.File('twostream/out_limits_lowres128/run.hdf5','r')
+f = h5py.File('bump-on-tail/out/run.hdf5','r')
 
-maxi = 4000
+#maxi = 4000
 
 #Read field
 ex   = f['fields/Ex'][()]
@@ -28,7 +30,7 @@ print dt, dx
 nx, ny = np.shape(ex)
 
 time = np.arange(ny)*dt
-maxtime = time[maxi]
+#maxtime = time[maxi]
 
 #ex_max = np.zeros((ny))
 #for i in range(ny):
@@ -62,7 +64,11 @@ for ax in axs:
 
     #ax.set_xlim((0.0, maxtime))
     #ax.set_xlim((0.0, 41.0))
-    ax.set_xlim((0.0, 70.0))
+    #ax.set_xlim((0.0, 70.0))
+    #ax.set_xlim((0.0, 54.0))
+    #ax.set_xlim((0.0, 400.0))
+    #ax.set_xlim((250.0, 400.0))
+    ax.set_xlim((0.0, 1200.0))
 
 
 axs[0].set_ylabel(r'$\ln \delta E_x$')
@@ -76,8 +82,37 @@ axs[4].set_ylabel(r'$E_T$')
 ex_max = np.max( np.abs(ex),0 )
 axs[0].plot(time, np.log(ex_max))
 
-axs[0].set_ylim(-14.0, -2.0)
+#axs[0].set_ylim(-14.0, 1.0)
+axs[0].set_ylim(-20.0, 1.0)
 
+
+#relativistic (vb = 1.0)
+#Gm = 0.21
+#Gms = -8.0 + time*Gm
+
+#classical (vb = 0.025)
+#Gm = 0.24377
+#Gms = -8.0 + time*Gm
+
+#Gm = 0.35
+#Gms = -18.5 + time*Gm
+
+#Gm = 0.25 (vth 0.1)
+#Gm = 0.17
+#Gms = -21.0 + time*Gm
+
+
+#Gm = 0.32 #(vth=0.05)
+#Gms = -18.3 + time*Gm 
+
+
+#bump-on-tail
+#Gm = 0.12
+Gm = 0.040
+Gms = -22.7 + time*Gm
+
+
+axs[0].plot(time, Gms, 'r--')
 
 ##################################################
 
@@ -89,12 +124,15 @@ axs[1].plot(time, wedens)
 #Gm = 0.243771 #vb = 0.025
 #Gm = 0.0 + 0.21j
 
-Gm = 0.21
-Gms = -6.5 + time*Gm*0.5 # 1/2 comes from compensation of E_x^2
+#Gm = 0.21
+#Gms = -3.0 + time*Gm*2.0 # 1/2 comes from compensation of E_x^2
+
+Gms = -16.0 + time*Gm # 1/2 comes from compensation of E_x^2
 axs[1].plot(time, Gms, 'r--')
 
 
-axs[1].set_ylim(-10.0, 4.0)
+#axs[1].set_ylim(-10.0, 4.0)
+axs[1].set_ylim(-18.0, 4.0)
 
 ##################################################
 

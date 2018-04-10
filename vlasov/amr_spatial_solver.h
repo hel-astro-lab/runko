@@ -242,6 +242,9 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
               integrate_moment( flux,
                 [](std::array<T,3>& uvel) -> T { return 1.0;}
                 );
+
+            // XXX
+            //jx = jx/sqrt(cfl);
               
             if(q >= 0)    yee.jx(q,r,s)   += jx; //U_i+1/2
             //if(q <= Nx-2) yee.jx(q+1,r,s) += jx; //U_i-1/2

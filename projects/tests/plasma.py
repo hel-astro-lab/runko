@@ -42,6 +42,11 @@ def filler(xloc, uloc, ispcs, conf):
     uy = uloc[1]
     uz = uloc[2] 
 
+    mux = 0.0
+    muy = 0.0
+    muz = 0.0
+    delgam = conf.delgam
+
     #1d filler
     if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
         return 0.0
@@ -68,8 +73,16 @@ def filler(xloc, uloc, ispcs, conf):
         muz = 0.0
 
 
+    alpha = 1.0e-2
+    if ispcs < 2:
+        n0 = alpha*0.5
+    if ispcs >= 2:
+        n0 = (1.0-alpha)*0.5
+
     #plasma frequency scale
-    n0 = 1.0/conf.Nspecies
+    #n0 = 1.0/conf.Nspecies
+    #n0 = 1.0
+
 
     #Brownian noise
     #brownian_noise = 0.01*np.random.standard_normal() 
@@ -77,14 +90,17 @@ def filler(xloc, uloc, ispcs, conf):
 
 
     #Classical Maxwellian distribution
+    #f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
+    #f *= np.exp(-((ux - mux - mux_noise)**2.0)/(2.0*delgam))
+
     f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
-    f *= np.exp(-0.5*( (ux - mux - mux_noise)**2)/(2.0*delgam))
+    f *= np.exp(-((ux - mux - mux_noise)**2.0)/(2.0*delgam))
 
 
     #number density oscillations
-    Lx = conf.Nx*conf.NxMesh*conf.dx/2.0
-    k = 2.0*np.pi
-    f *= 1.0 + conf.beta*np.cos(k*x/Lx)
+    Lx = conf.Nx*conf.NxMesh*conf.dx
+    k = 2.0 #mode
+    f *= 1.0 + conf.beta*np.cos(2.0*np.pi*k*x/Lx)
 
 
     return f
@@ -107,10 +123,10 @@ def save(n, conf, lap, f5):
 # insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(node, conf):
 
-    Lx  = conf.Nx*conf.NxMesh*conf.dx/2.0
-    k = 2.0*np.pi
+    Lx  = conf.Nx*conf.NxMesh*conf.dx
+    k = 2.0 #mode
 
-    n0 = np.sqrt(2.0)
+    n0 = 1.0
 
     for i in range(node.getNx()):
         for j in range(node.getNy()):
@@ -130,7 +146,7 @@ def insert_em(node, conf):
                         #xloc1 = injector.spatialLoc(node, (i,j), (l-1,m,n), conf)
 
                         xmid = 0.5*(xloc0[0] + xloc1[0])
-                        yee.ex[l,m,n] = -n0*np.abs(conf.me)*conf.beta*np.sin(k*xmid/Lx)/k
+                        yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
 
 
 
@@ -176,7 +192,9 @@ if __name__ == "__main__":
     #initialize node
     #conf = Configuration('config-landau.ini') 
     #conf = Configuration('config-twostream.ini') 
-    conf = Configuration('config-twostream-relativistic.ini') 
+    #conf = Configuration('config-twostream-fast.ini') 
+    conf = Configuration('config-bump-on-tail.ini') 
+    #conf = Configuration('config-twostream-relativistic.ini') 
     #conf = Configuration('config-plasmaosc.ini') 
     #conf = Configuration('config-dispersion.ini') 
 
@@ -348,9 +366,15 @@ if __name__ == "__main__":
 
             plotXmesh(axs[1], node, conf, 0, "x")
             #plotXmesh(axs[2], node, conf, 0, "y")
+
             if conf.Nspecies == 2:
                 plotXmesh(axs[3], node, conf, 1, "x")
                 #plotXmesh(axs[4], node, conf, 1, "y")
+
+            if conf.Nspecies == 4:
+                plotXmesh(axs[2], node, conf, 1, "x")
+                plotXmesh(axs[3], node, conf, 2, "x")
+                plotXmesh(axs[4], node, conf, 3, "x")
 
             plotJ(axs[5], node, conf)
             plotE(axs[6], node, conf)
