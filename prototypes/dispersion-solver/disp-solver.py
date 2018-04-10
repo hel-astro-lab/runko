@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import sys, os
 from scipy.special import erf
 from scipy.optimize import minimize_scalar
+from math import isnan
+from math import isinf
 
 
 plt.rc('font', family='serif')
@@ -12,7 +14,7 @@ plt.rc('axes', labelsize=7)
 
 fig = plt.figure(figsize=(3.54, 5.0)) #single column fig
 #fig = plt.figure(figsize=(7.48, 4.0))  #two column figure
-gs = plt.GridSpec(3, 1, hspace=0.1)
+gs = plt.GridSpec(3, 1, hspace=0.15)
 
 
 axs = []
@@ -134,10 +136,9 @@ def Jpole8():
 
 
 
-
 # get J-pole expansion and check validity
-#bj, cj = Jpole12()
-bj, cj = Jpole8()
+bj, cj = Jpole12()
+#bj, cj = Jpole8()
 
 J = len(bj)  #number of pole expansion
 S = len(ns0) #number of species
@@ -147,8 +148,14 @@ print("sum bj*cj  : ", np.sum(bj*cj))
 print("sum bj*cj^2: ", np.sum(bj*cj**2.0))
 
 
+
 def ES1d(k, params):
     """ solve omega from plasma dispersion using matrix decomposition """
+
+    if k <= 0.0:
+        return np.zeros((2))
+    if k > 100.0:
+        return np.zeros((2))
 
     global bj, cj
     global J,S
@@ -181,13 +188,26 @@ def ES1d(k, params):
     indx = np.argsort(-np.imag(omega) ) #sort in descending order in place
     #omega[indx] #sort in descending order in place
 
+    #for sj in range(S*J):
+    #    M[sj,: ] = -sj
+    #    M[sj,sj] = sj
+
+    #print(M)
+
     return omega[indx]
 
 
 #return the fastest growing mode's growth rate
 def fastest_growing_mode(k, params):
     omega = ES1d(k, params) 
-    return -np.imag(omega[0])
+
+    omega1 = np.imag(omega[0])
+    if isnan(omega1):
+        omega1 = 0.0 + 0.0j
+    if isinf(omega1):
+        omega1 = 0.0 + 0.0j
+
+    return -omega1
 
 
 def find_max_growth(params):
@@ -196,10 +216,10 @@ def find_max_growth(params):
     res = minimize_scalar(
             fastest_growing_mode,
             args=params,
-            bounds=(0.001, 0.4),
-            method='bounded',
-            #bracket=(0.1, 0.4),
-            #method='brent',
+            #bounds=(0.01, 0.4),
+            #method='bounded',
+            bracket=(1.0e-3, 0.4),
+            method='brent',
             tol=1.0e-4
             )
 
@@ -215,6 +235,7 @@ print("test solution:", omega[:3])
 
 ##################################################
 #sys.exit()
+# visualize Langmuir wave dispersion relation
 
 #karr = np.linspace(0.01*lDeb[0], 1.0*lDeb[0], 100)
 karr = np.linspace(0.01, 1.0, 100)
@@ -223,16 +244,13 @@ warr = np.zeros((len(karr), 16), np.complex)
 
 for i,k in enumerate(karr):
     #print(k*kDeb)
-
     w = ES1d(k, params)
     warr[i,:] = w[:16]
-
 
 ms = 1.0
 Nsol = 4
 for nsol in range(Nsol):
     axs[0].plot(karr,  np.real(warr[:,nsol]), '.', markersize=ms)
-
 
 axs[1].plot(karr, np.zeros(len(karr)), "k--")
 for nsol in range(Nsol):
@@ -243,11 +261,14 @@ res = find_max_growth(params)
 print(res.x)
 print(-res.fun)
 
+sys.exit()
+
+
 
 
 ##################################################
 
-vbeam  = np.linspace(1.9, 15.0, 90)
+vbeam  = np.linspace(1.0, 15.0, 90)
 grates = np.zeros((len(vbeam)))
 kmodes = np.zeros((len(vbeam)))
 
@@ -255,14 +276,33 @@ Gmmax  = np.zeros((len(vbeam)))
 
 for i, x in enumerate(vbeam):
 
-    qs  = np.array([-1.0,  -1.0])
-    ms  = np.array([ 1.0,   1.0])
-    ns0 = np.array([ 0.5,  0.5])
-    Ts  = np.array([ 0.5,   0.5])
-    vs0 = np.array([ 0.0,   x])
+    #twostream
+    #qs  = np.array([-1.0,  -1.0])
+    #ms  = np.array([ 1.0,   1.0])
+    #ns0 = np.array([ 0.5,   0.5])
+    #Ts  = np.array([ 0.5,   0.5])
+    #vs0 = np.array([ 0.0,   np.sqrt(2)*x])
      
+    qs  = np.array([-1.0,  -1.0,  1.0,   1.0])
+    ms  = np.array([ 1.0,   1.0,  1.0,   1.0])
+    ns0 = np.array([ 1.0,   1.0,  1.0,   1.0 ])
+    Ts  = np.array([ 0.5,   0.5,  0.5,   0.5])
+    vs0 = np.array([ 0.0,   x, 0.0, x])
+    
+    #vs0 *= np.sqrt(2.0) #normalize
+
+    #bump-on-tail setup
+    #alpha = 1.0e-1
+    #ns0[0] = 1.0-alpha
+    #ns0[1] = alpha
+    #ns0[2] = 1.0-alpha
+    #ns0[3] = alpha
+    #ns0 /= 2.0
+    ns0 /= 4.0
+
     wps  = np.sqrt(ns0 * qs**2.0 / ms)   #plasma frequency
     vts  = np.sqrt(2.0*Ts/ms)            #thermal speed
+
     lDeb = np.sqrt(Ts / (ns0 * qs**2.0)) #Debye length
     kDeb = 1.0/lDeb                      #Debye length
     
@@ -273,7 +313,7 @@ for i, x in enumerate(vbeam):
     kmodes[i] = res.x
 
     #theoretical prediction
-    alpha = ns0[1]/ns0[1]
+    alpha = ns0[1]/ns0[0]
     vb = vs0[1]
     Vb = np.sqrt(Ts[1])
     Gmmax[i] = np.sqrt(np.pi/(2.0*np.exp(1.0))) * alpha * (vb/Vb)**2.0
@@ -284,6 +324,8 @@ axs[2].set_ylabel(r'$\omega$')
 
 axs[2].plot(vbeam, -grates, 'r-')
 axs[2].plot(vbeam,  kmodes, 'b-')
+
+axs[2].set_ylim((0.0, 0.4))
 
 #analytics for two-stream
 
@@ -296,5 +338,5 @@ axs[2].plot(vbeam, Gm*np.ones(len(vbeam)), 'k--')
 
 
 
-plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
+plt.subplots_adjust(left=0.18, bottom=0.07, right=0.98, top=0.95, wspace=0.0, hspace=0.0)
 plt.savefig('dispersion.pdf')
