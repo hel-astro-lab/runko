@@ -132,9 +132,9 @@ class MomentumSolver {
                    (T) yee.bz(q,r,s)
                 }},              
 
-                // XXX
                 // E-field interpolated to the middle of the cell
                 // E_i = (E_i+1/2 + E_i-1/2)
+                // XXX
                 E =                
                 {{                 
                    (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
@@ -143,7 +143,7 @@ class MomentumSolver {
                 }};
 
               // Now push E field to future temporarily
-              //E[0] -= yee.jx1(q,r,s) * 0.5*dt;
+              //E[0] -= yee.jx1(q,r,s) * 0.5;
 
 
               // dig out velomeshes from blocks
@@ -329,7 +329,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       */
 
       // electrostatic push
-      return -qm*dt*E;
+      return -qm*E;
     }
 
 
