@@ -73,15 +73,19 @@ def filler(xloc, uloc, ispcs, conf):
         muz = 0.0
 
 
-    alpha = 1.0e-2
-    if ispcs < 2:
-        n0 = alpha*0.5
-    if ispcs >= 2:
-        n0 = (1.0-alpha)*0.5
+    if False:
+        alpha = 1.0e-2
+        if ispcs < 2:
+            n0 = alpha*0.5
+        if ispcs >= 2:
+            n0 = (1.0-alpha)*0.5
 
     #plasma frequency scale
-    #n0 = 1.0/conf.Nspecies
+    n0 = 1.0/conf.Nspecies
     #n0 = 1.0
+
+    #n0 *= np.sqrt(2.0)
+    #n0 *= 1.0/np.sqrt(conf.cfl)
 
 
     #Brownian noise
@@ -93,14 +97,20 @@ def filler(xloc, uloc, ispcs, conf):
     #f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
     #f *= np.exp(-((ux - mux - mux_noise)**2.0)/(2.0*delgam))
 
-    f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
-    f *= np.exp(-((ux - mux - mux_noise)**2.0)/(2.0*delgam))
-
-
-    #number density oscillations
+    
+    #velocity perturbation
     Lx = conf.Nx*conf.NxMesh*conf.dx
-    k = 2.0 #mode
-    f *= 1.0 + conf.beta*np.cos(2.0*np.pi*k*x/Lx)
+    kmode = 2.0 #mode
+    mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*x/Lx) * (Lx/(2.0*np.pi*kmode))
+
+    f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
+    f *= np.exp(-0.5*((ux - mux - mux_noise)**2.0)/(delgam))
+
+
+    #number density perturbation
+    #Lx = conf.Nx*conf.NxMesh*conf.dx
+    #kmode = 2.0 #mode
+    #f *= 1.0 + conf.beta*np.cos(2.0*np.pi*kmode*x/Lx)
 
 
     return f
@@ -190,10 +200,10 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
-    #conf = Configuration('config-landau.ini') 
+    conf = Configuration('config-landau.ini') 
     #conf = Configuration('config-twostream.ini') 
     #conf = Configuration('config-twostream-fast.ini') 
-    conf = Configuration('config-bump-on-tail.ini') 
+    #conf = Configuration('config-bump-on-tail.ini') 
     #conf = Configuration('config-twostream-relativistic.ini') 
     #conf = Configuration('config-plasmaosc.ini') 
     #conf = Configuration('config-dispersion.ini') 
@@ -232,7 +242,7 @@ if __name__ == "__main__":
     injector.inject(node, filler, conf) #injecting plasma
 
     #insert initial electric field
-    insert_em(node, conf)
+    #insert_em(node, conf)
 
 
     #Initial step backwards for velocity

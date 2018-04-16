@@ -238,10 +238,12 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             if(q <= Nx-2) Np1 += flux; // + U_i-1/2 (inflowing to neighbor)
 
             // calculate current
+            //T jx = sign(qm) * 
             T jx = (sign(qm)/cfl) * 
               integrate_moment( flux,
                 [](std::array<T,3>& uvel) -> T { return 1.0;}
                 );
+
 
             // XXX
             //jx = jx/sqrt(cfl);

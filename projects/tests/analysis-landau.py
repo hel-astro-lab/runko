@@ -9,9 +9,9 @@ from scipy.optimize import curve_fit
 
 #--------------------------------------------------
 # read simulation data from file
-#f = h5py.File('out/run.hdf5','r')
+f = h5py.File('landau/out/run.hdf5','r')
 #f = h5py.File('landau/out_khat045/run.hdf5','r')
-f = h5py.File('landau/out_khat0144/run.hdf5','r')
+#f = h5py.File('landau/out_khat0144/run.hdf5','r')
 
 maxi = 100
 maxi = -1
@@ -63,7 +63,7 @@ for ax in axs:
     #ax.set_xlim((0.0, maxtime))
     #ax.set_xlim((0.0, 50.0))
     #ax.set_xlim((0.0, 117.0))
-    #ax.set_xlim((0.0, 25.0))
+    ax.set_xlim((0.0, 25.0))
 
 
 axs[0].set_ylabel(r'$\ln \delta E_x$')
@@ -79,6 +79,41 @@ axs[0].plot(time, np.log10( ex_max ))
 #axs[0].set_ylim((-20, 10))
 
 
+##################################################
+# fit with omega
+#def osc(t, x):
+#    omega = x[0] +x[1]*1.0j
+#    t0 = x[2]
+#    y0 = x[3]
+#    return y0*np.abs(np.real(np.exp( (t-t0)*omega*1.0j)))
+
+def osc(t, wr, wi, t0, y0):
+    omega = wr + wi*1.0j
+    return y0*np.abs(np.real(np.exp( (t-t0)*omega*1.0j)))
+
+def fitf(t, wr, wi, t0, y0):
+    return np.log10(osc(t, wr, wi, t0, y0))
+
+#params = (1.0, 0.0, 1.5, 1000.0*ex_max[0])
+#params = (1.02, 0.1, 1.8, 1000.0*ex_max[0])
+
+params = (1.15, 0.0, 1.6, 1000.0*ex_max[0])
+
+theor_vals = osc(time, *params)
+axs[0].plot(time, np.log10(theor_vals), "r-", alpha=0.8)
+
+
+#popt, pcov = curve_fit(fitf, time, np.log10(ex_max), p0=params) #, bounds=(0.5, 2.0))
+#print(popt)
+
+
+fourier = np.fft.fft(ex_max)
+frequencies = np.fft.fftfreq(len(time), dt)  # where dt is the inter-sample time difference
+positive_frequencies = frequencies[np.where(frequencies > 0)]  
+magnitudes = abs(fourier[np.where(frequencies > 0)])  # magnitude spectrum
+
+omega = np.pi*positive_frequencies[np.argmax(magnitudes)]
+print("fft omega", omega)
 
 
 
@@ -108,7 +143,8 @@ axs[1].plot(time, np.log10(wedens))
 delgam = 0.001
 Nw = 2.0
 khat = Nw * 2.0*np.pi*np.sqrt(delgam)/(nx*dx)
-khat = 0.14
+#khat = 0.14
+khat = 0.45
 
 #real part
 wr = 1.0 + ((3.0/2.0)*khat**2 + (15.0/8.0)*khat**4 + (147/16.0)*khat**6
@@ -142,14 +178,27 @@ print("wi:",wi)
 
 ##################################################
 #omega = 1.3 - 0.10j #khat=0.45
-omega = 1.0004 #khat = 0.14
+#omega = 1.0004 #khat = 0.14
 #omega = 0.99
-#omega = 1.34617 - 0.10629j #khat=0.45
 
 
-def landau_osc(t, omega):
-    f = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(t-0.3)))**2.0
-    return f
+##################################################
+#omega = 1.05 - 0.001j #khat = 0.22approx
+#omega = 1.35025 - 0.10629j #khat = 0.45
+
+omega = 0.95 - 0.0j #khat = whatever
+
+#def landau_osc(t, omega):
+#    f = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(t-0.3)))**2.0
+#    return f
+
+def landau_osc(x, params):
+    omega = params[0] + params[1]*1.0j
+    tskip = params[2]
+    val = wedens[0]*np.real( np.exp(-1j*omega*(time-tskip)))**2.0
+
+    return val
+
 
 #popt, pcov = curve_fit(landau_osc, time, wedens, p0=omega, bounds=(0.5, 2.0))
 #omega = popt
@@ -159,7 +208,8 @@ def landau_osc(t, omega):
 
 #line 
 #tskip = 0.28 #0.8
-tskip = 0.1
+#tskip = 0.1
+tskip = 1.0
 lin_analysis  = wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
 
 #with frequency
