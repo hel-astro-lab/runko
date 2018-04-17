@@ -146,12 +146,43 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
     
 
     /// Linear 1st order upwind-biased flux
-    // inline toolbox::AdaptiveMesh<T,3> flux1st(
-    //     const toolbox::AdaptiveMesh<T,3>& M0,
-    //     const toolbox::AdaptiveMesh<T,3>& Mm1) {
+    inline toolbox::AdaptiveMesh<T,3> flux1st(
+        const toolbox::AdaptiveMesh<T,3>& M0,
+        const toolbox::AdaptiveMesh<T,3>& Mm1,
+        T cfl) {
 
-    //   return M0.xx + Mm1.xx;
-    // }
+      // make a new fresh mesh for updating (based on M0)
+      // XXX shallow or deep copy?
+      toolbox::AdaptiveMesh<T,3> flux(M0);
+
+      //left side
+      for(auto&& cid : Mm1.get_cells(false)) {
+        auto index = Mm1.get_indices(cid);
+        int rfl    = Mm1.get_refinement_level(cid);
+        auto uvel  = Mm1.get_center(index, rfl);
+
+        if (uvel[0] <= 0.0) {
+          // compute (u_x/gamma)
+          T gam  = gamma<T,3>(uvel);
+          flux.data[cid] = cfl*(uvel[0]/gam)*Mm1.data.at(cid);
+        }
+      }
+
+      //right side
+      for(auto&& cid : M0.get_cells(false)) {
+        auto index = M0.get_indices(cid);
+        int rfl    = M0.get_refinement_level(cid);
+        auto uvel  = M0.get_center(index, rfl);
+
+        if (uvel[0] > 0.0) {
+          // compute (u_x/gamma)
+          T gam  = gamma<T,3>(uvel);
+          flux.data[cid] = cfl*(uvel[0]/gam)*M0.data.at(cid);
+        }
+      }
+
+      return flux; 
+    }
  
 
     /// Second order flux; U_+
@@ -160,7 +191,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         const toolbox::AdaptiveMesh<T,3>& Mp1,
         T cfl) {
 
-      auto Mp = Mp1 + M; // explicitly allocate tmp variables
+      // explicitly allocate tmp variables
+      auto Mp = Mp1 + M; 
       auto Mn = Mp1 - M;    
 
       return   velocityTensorProduct(Mp, 1, 0.5*cfl ) 
@@ -216,17 +248,20 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
               const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
               const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
 
-              flux = flux2nd(M, Mp1, cfl);
+              flux = flux1st(M, Mp1, cfl);
+              //flux = flux2nd(M, Mp1, cfl);
             } else if ( (q >= 0) && (q <= Nx-2) ) { // inside
               const auto& M   = block0.block(q,r,s);   // f_i
               const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
 
-              flux = flux2nd(M, Mp1, cfl);
+              flux = flux1st(M, Mp1, cfl);
+              //flux = flux2nd(M, Mp1, cfl);
             } else if (q >= Nx-1) { //right halo
               const auto& M   = block0.block(q,r,s);       // f_i
               const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
 
-              flux = flux2nd(M, Mp1, cfl);
+              flux = flux1st(M, Mp1, cfl);
+              //flux = flux2nd(M, Mp1, cfl);
             }
 
             // new local time step targets to update into (N's)
@@ -238,6 +273,12 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             if(q <= Nx-2) Np1 += flux; // + U_i-1/2 (inflowing to neighbor)
 
             // calculate current
+            // NOTE: Flux U is given in units of grid velocity; we must 
+            //       normalize to speed of light
+            // XXX: I think not. U should be in correct units. CHECK!
+            //T jx = (qm/cfl)*
+              
+            //this is the grid speed version:
             T jx = qm*integrate_moment( 
                 flux,
                 [](std::array<T,3>& uvel) -> T { return 1.0;}
