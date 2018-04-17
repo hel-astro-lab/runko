@@ -170,6 +170,28 @@ inline T interp_linear(
     int rfl) = delete;
 
 
+/// \brief Linear interpolation (specialization to D=1)
+//
+// XXX WARNING: not tested
+//
+template<>
+inline Realf interp_linear<Realf,1>(
+    const AdaptiveMesh<Realf,3>& mesh,
+    typename AdaptiveMesh<Realf,3>::indices_t& indices,
+    typename AdaptiveMesh<Realf,3>::value_array_t coordinates,
+    int rfl)
+{
+  uint64_t 
+    i = indices[0], // + uint64_t(coordinates[0] - 1.5),
+    j = indices[1], // + uint64_t(coordinates[1] - 1.5),
+    k = indices[2]; // + uint64_t(coordinates[2] - 1.5);
+	
+	Realf dx = coordinates[0]; // - T(0.5); 
+
+	Realf d00 = lerp(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+	
+	return d00;
+}
 
 /// \brief Trilinear interpolation (specialization to D=3)
 // 
@@ -315,7 +337,10 @@ inline T interp_cubic(
     int rfl) = delete;
 
 
-/// Cubic interpolation (Catmull-Rom)
+/// Cubic interpolation (Catmull-Rom) (specialization to D=1)
+// https://en.wikipedia.org/wiki/Cubic_Hermite_spline
+//   Interpolation on the unit interval
+//
 template<>
 inline Realf interp_cubic<Realf,1>(
     const AdaptiveMesh<Realf,3>& mesh,
@@ -335,7 +360,7 @@ inline Realf interp_cubic<Realf,1>(
 	Realf pm1 = _getv(mesh, {{i-1, j  , k}}  , rfl),
 	      p0  = _getv(mesh, {{i  , j  , k}}  , rfl),
 	      pp1 = _getv(mesh, {{i+1, j  , k}}  , rfl),
-	      pp2 = _getv(mesh, {{i+1, j  , k}}  , rfl);
+	      pp2 = _getv(mesh, {{i+2, j  , k}}  , rfl);
 
   return 0.5*(
       (dx*dx*(2.0-dx)-dx)*pm1 +
