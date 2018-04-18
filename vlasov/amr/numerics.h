@@ -114,9 +114,13 @@ typename AdaptiveMesh<T,D>::value_array_t grad(
 }
 
 
-/// simple lerp function (= linear interpolation)
+/// simple lerp function (= linear interpolation) for corner/vertex-centered values
 template<typename T>
-static inline T lerp(T t, T v1, T v2) {return (T(1) - t)*v1 + t*v2;}
+static inline T lerp_corner(T t, T v1, T v2) {return (T(1) - t)*v1 + t*v2;}
+
+/// simple lerp function (= linear interpolation) for cell-centered values
+template<typename T>
+static inline T lerp_center(T t, T v0, T v1, T v2) {return T(0.5)*(v1 + (T(1) - t)*v0 + t*v2);}
 
 
 /// inlined value getter from the AMR mesh
@@ -188,7 +192,12 @@ inline Realf interp_linear<Realf,1>(
 	
 	Realf dx = coordinates[0]; // - T(0.5); 
 
-	Realf d00 = lerp(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+	Realf d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+    
+	//Realf d00 = lerp_center(dx, 
+  //    _getv(mesh, {{i-1, j,   k  }}, rfl), 
+  //    _getv(mesh, {{i,   j,   k  }}, rfl), 
+  //    _getv(mesh, {{i+1, j,   k  }}, rfl));
 	
 	return d00;
 }
@@ -197,6 +206,7 @@ inline Realf interp_linear<Realf,1>(
 // 
 // Transforms from cell-centered values to vertex-centered,
 // then uses the normal lerp routine.
+// XXX WARNING: no it does not
 //
 // Partially based on:
 // https://svn.blender.org/svnroot/bf-blender/
@@ -217,13 +227,13 @@ inline Realf interp_linear<Realf,3>(
   Realf dy = coordinates[1]; // - T(0.5); 
   Realf dz = coordinates[2]; // - T(0.5);
 	
-	Realf d00 = lerp(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
-	Realf d10 = lerp(dx, _getv(mesh, {{i, j+1, k  }}, rfl), _getv(mesh, {{i+1, j+1, k  }}, rfl) );
-	Realf d01 = lerp(dx, _getv(mesh, {{i, j,   k+1}}, rfl), _getv(mesh, {{i+1, j,   k+1}}, rfl) );
-	Realf d11 = lerp(dx, _getv(mesh, {{i, j+1, k+1}}, rfl), _getv(mesh, {{i+1, j+1, k+1}}, rfl) );
-	Realf d0  = lerp(dy, d00, d10);
-	Realf d1  = lerp(dy, d01, d11);
-	Realf d   = lerp(dz, d0,  d1);
+	Realf d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+	Realf d10 = lerp_corner(dx, _getv(mesh, {{i, j+1, k  }}, rfl), _getv(mesh, {{i+1, j+1, k  }}, rfl) );
+	Realf d01 = lerp_corner(dx, _getv(mesh, {{i, j,   k+1}}, rfl), _getv(mesh, {{i+1, j,   k+1}}, rfl) );
+	Realf d11 = lerp_corner(dx, _getv(mesh, {{i, j+1, k+1}}, rfl), _getv(mesh, {{i+1, j+1, k+1}}, rfl) );
+	Realf d0  = lerp_corner(dy, d00, d10);
+	Realf d1  = lerp_corner(dy, d01, d11);
+	Realf d   = lerp_corner(dz, d0,  d1);
 	
 	return d;
 }
@@ -234,9 +244,6 @@ inline Realf interp_linear<Realf,3>(
 //
 // Local B-spline implementation that estimates derivatives (and second derivs)
 // from neighboring grid points using finite difference.
-// 
-// Transforms from cell-centered values to vertex-centered,
-// then uses the normal lerp routine.
 //
 // Partially based on:
 // https://svn.blender.org/svnroot/bf-blender/
@@ -341,6 +348,8 @@ inline T interp_cubic(
 // https://en.wikipedia.org/wiki/Cubic_Hermite_spline
 //   Interpolation on the unit interval
 //
+//   and https://arxiv.org/pdf/0905.3564.pdf
+//
 template<>
 inline Realf interp_cubic<Realf,1>(
     const AdaptiveMesh<Realf,3>& mesh,
@@ -363,11 +372,10 @@ inline Realf interp_cubic<Realf,1>(
 	      pp2 = _getv(mesh, {{i+2, j  , k}}  , rfl);
 
   return 0.5*(
-      (dx*dx*(2.0-dx)-dx)*pm1 +
+      (dx*dx*(2.0-dx)-dx)*     pm1 +
       (dx*dx*(3.0*dx-5.0)+2.0)*p0 +
-      (dx*dx*(4.0-3.0*dx)+dx)*pp1 +
-       dx*dx*(dx-1.0)*pp2
-      );
+      (dx*dx*(4.0-3.0*dx)+dx)* pp1 +
+       dx*dx*(dx-1.0)*         pp2);
 }
 
 /*

@@ -44,7 +44,8 @@ class MomentumSolver {
 
     /// Get snapshot current J_i^n+1 from momentum distribution
     void updateFutureCurrent(
-        vlasov::VlasovCell& cell)
+        vlasov::VlasovCell& cell,
+        T cfl)
     {
 
       auto& yee = cell.getYee();
@@ -65,7 +66,11 @@ class MomentumSolver {
               T qm = 1.0 / block0.qm;  // charge to mass ratio
 
               // Jx current; chi(u) = u/gamma = v
-              yee.jx1(q,r,s) += sign(qm)*
+              //
+              // NOTE: given in units of grid speed 
+              // XXX CHECK
+              //yee.jx1(q,r,s) += qm*
+              yee.jx1(q,r,s) += qm*cfl*
                 integrate_moment(
                     M,
                     [](std::array<T,3> uvel) -> T 
@@ -107,7 +112,7 @@ class MomentumSolver {
 
 
       /// Now get future current
-      updateFutureCurrent(cell);
+      updateFutureCurrent(cell, cfl);
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -161,7 +166,7 @@ class MomentumSolver {
       }
 
       // XXX update jx1 for debug
-      //updateFutureCurrent(cell);
+      //updateFutureCurrent(cell, cfl);
 
       return;
     }
@@ -329,7 +334,13 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       */
 
       // electrostatic push
-      return -qm*E;
+      //
+      // Boris scheme for b=0 translates to
+      // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
+      //
+      // with halving taken (hopefully) into account in definition
+      // of e
+      return -qm*E/cfl;
     }
 
 
@@ -356,9 +367,12 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       Vector3f F = lorentz_force(uvel, E, B, qm, dt, cfl);
 
 
-      // advection in units of cells
+      // advection in units of cells 
+      // NOTE: We normalize with CFL because velocities are in units 
+      // of c and we need them in units of grid speed.
+      // XXX: CHECK
       std::array<T,3> shift, cell_shift;
-      for(int i=0; i<D; i++) shift[i] = F(i)/du[i];
+      for(int i=0; i<D; i++) shift[i] = F(i) / du[i];
 
       // advected cells
       std::array<int,3> index_shift;
@@ -381,6 +395,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // interpolation branch
       val = toolbox::interp_cubic<T,D>(mesh0, index_new, cell_shift, rfl);
+      //val = toolbox::interp_linear<T,D>(mesh0, index_new, cell_shift, rfl);
 
       return val;
     }

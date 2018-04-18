@@ -81,21 +81,16 @@ def filler(xloc, uloc, ispcs, conf):
             n0 = (1.0-alpha)*0.5
 
     #plasma frequency scale
-    n0 = 1.0/conf.Nspecies
-    #n0 = 1.0
+    #n0 = 1.0/conf.Nspecies
 
-    #n0 *= np.sqrt(2.0)
-    #n0 *= 1.0/np.sqrt(conf.cfl)
+    #plasma reaction
+    omp = conf.cfl*conf.dx
+    n0 = omp**2.0
 
 
     #Brownian noise
     #brownian_noise = 0.01*np.random.standard_normal() 
     #brownian_noise *= delgam
-
-
-    #Classical Maxwellian distribution
-    #f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
-    #f *= np.exp(-((ux - mux - mux_noise)**2.0)/(2.0*delgam))
 
     
     #velocity perturbation
@@ -103,6 +98,7 @@ def filler(xloc, uloc, ispcs, conf):
     kmode = 2.0 #mode
     mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*x/Lx) * (Lx/(2.0*np.pi*kmode))
 
+    #Classical Maxwellian
     f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
     f *= np.exp(-0.5*((ux - mux - mux_noise)**2.0)/(delgam))
 

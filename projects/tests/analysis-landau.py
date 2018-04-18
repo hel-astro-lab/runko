@@ -96,8 +96,15 @@ def fitf(t, wr, wi, t0, y0):
 
 #params = (1.0, 0.0, 1.5, 1000.0*ex_max[0])
 #params = (1.02, 0.1, 1.8, 1000.0*ex_max[0])
+#params = (1.15, 0.0, 1.6, 1000.0*ex_max[0])
 
-params = (1.15, 0.0, 1.6, 1000.0*ex_max[0])
+#params = (1.32, 0.106, 1.6, 900.0*ex_max[0])
+#params = (1.0004, 0.0, 1.6, 600.0*ex_max[0]) #k=0.144
+params = (1.35, 0.106, 1.3, 600.0*ex_max[0]) #k=0.45
+
+#params = (1.25, 0.01318, 1.2, 900.0*ex_max[0]) #k=0.30
+#params = (1.1568, 0.01318, 1.3, 700.0*ex_max[0]) #k=0.30 REAL
+
 
 theor_vals = osc(time, *params)
 axs[0].plot(time, np.log10(theor_vals), "r-", alpha=0.8)
@@ -119,7 +126,7 @@ print("fft omega", omega)
 
 ##################################################
 
-wedens = np.sum( 0.5*ex*ex, 0 ) #*2.0*np.pi
+wedens = np.sum( 0.5*ex*ex, 0 ) 
 axs[1].plot(time, np.log10(wedens))
 
 
@@ -184,9 +191,13 @@ print("wi:",wi)
 
 ##################################################
 #omega = 1.05 - 0.001j #khat = 0.22approx
-#omega = 1.35025 - 0.10629j #khat = 0.45
+#omega = 0.95 - 0.0j #khat = whatever
 
-omega = 0.95 - 0.0j #khat = whatever
+omega = 1.35025 - 0.10629j #khat = 0.45
+#omega = 1.1568-0.01318j #khat=0.3
+#omega = 1.29-0.01318j #khat=0.3
+
+
 
 #def landau_osc(t, omega):
 #    f = 0.5*wedens[0]*np.real( np.exp(-1j*omega*(t-0.3)))**2.0
@@ -209,11 +220,12 @@ def landau_osc(x, params):
 #line 
 #tskip = 0.28 #0.8
 #tskip = 0.1
-tskip = 1.0
-lin_analysis  = wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
+tskip = 1.3
+Norm = 8.0e4
+lin_analysis  = Norm*wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
 
 #with frequency
-lin_analysis2 = wedens[0]*np.real( np.exp(-1j*omega*(time-tskip)))**2.0
+lin_analysis2 = Norm*wedens[0]*np.real( np.exp(-1j*omega*(time-tskip)))**2.0
 
 
 #% linear analysis
@@ -240,7 +252,7 @@ axs[2].plot(time, np.log10(prtcls))
 
 ##################################################
 
-ekintot = np.sum(ekin, 0) #*n0
+ekintot = np.sum(ekin, 0) 
 axs[3].plot(time, np.log10(ekintot))
 #axs[3].plot(time, wedens, 'r-')
 
@@ -262,13 +274,14 @@ print("ratio:", np.mean(ekintot)/np.mean(wedens))
 #axs[4].plot(time, np.log10( etot) )
 
 #ekintot = ekintot * dx*dx #try normalization
-
 ekintot = ekintot * dx
 
 etot = ekintot + wedens
 axs[4].plot(time, np.log10( etot),    "k-" )
 axs[4].plot(time, np.log10( ekintot), "b--")
 axs[4].plot(time, np.log10( wedens),  "r--")
+
+axs[4].set_ylim((-8, -2))
 
 
 plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)

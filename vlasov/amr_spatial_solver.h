@@ -155,6 +155,9 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
       // XXX shallow or deep copy?
       toolbox::AdaptiveMesh<T,3> flux(M0);
 
+      // Here we compute (u_x/gamma) and then
+      // switch to units of grid speed by multiplying with Cfl
+
       //left side
       for(auto&& cid : Mm1.get_cells(false)) {
         auto index = Mm1.get_indices(cid);
@@ -162,7 +165,6 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = Mm1.get_center(index, rfl);
 
         if (uvel[0] <= 0.0) {
-          // compute (u_x/gamma)
           T gam  = gamma<T,3>(uvel);
           flux.data[cid] = cfl*(uvel[0]/gam)*Mm1.data.at(cid);
         }
@@ -175,7 +177,6 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = M0.get_center(index, rfl);
 
         if (uvel[0] > 0.0) {
-          // compute (u_x/gamma)
           T gam  = gamma<T,3>(uvel);
           flux.data[cid] = cfl*(uvel[0]/gam)*M0.data.at(cid);
         }
@@ -184,6 +185,10 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
       return flux; 
     }
  
+
+
+
+
 
     /// Second order flux; U_+
     inline toolbox::AdaptiveMesh<T,3> flux2nd(
@@ -278,13 +283,28 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             // XXX: I think not. U should be in correct units. CHECK!
             //T jx = (qm/cfl)*
               
+
+            //this is the speed speed version
+            //T jx = (qm/cfl)*integrate_moment( 
+            //
             //this is the grid speed version:
+            //
+            //this is...what hell it is?
+            // T jx = (qm/cfl)*integrate_moment( 
+            // purely speed of light
+            //
+            // grid speed because flux is in grid speed
+            //
+            // yet another xxx
+            //T jx = qm*cfl*integrate_moment( 
+            //
+            // and another
             T jx = qm*integrate_moment( 
                 flux,
                 [](std::array<T,3>& uvel) -> T { return 1.0;}
                 );
               
-            if(q >= 0)    yee.jx(q,r,s)   += jx; //U_i+1/2
+            if(q >= 0)    yee.jx(q,r,s)   = jx; //U_i+1/2
             //if(q <= Nx-2) yee.jx(q+1,r,s) += jx; //U_i-1/2
           }
         }
