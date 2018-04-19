@@ -2,7 +2,7 @@ from ConfigParser import SafeConfigParser
 import ast
 
 
-section_names = 'io', 'simulation', 'grid', 'vmesh'
+section_names = 'io', 'simulation', 'grid', 'vmesh', 'particles'
 
 
 # Class for parsing and holding all configuration files

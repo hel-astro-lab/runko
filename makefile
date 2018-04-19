@@ -39,7 +39,8 @@ all: plasma py tests
 #INSTALL=build
 
 # full python interface
-py: pyplasma
+py: pyplasma pypic
+
 
 # Executable:
 EXE=plasma
@@ -76,6 +77,10 @@ pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++ vlasov/grid.h vlasov/cell.h vlaso
 #	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o dev-bindings.o -c vlasov/bindings.c++
 #
 
+pypic.o: ${DEPS_COMMON} python/pypic.c++ pic/cell.h pic/particle.h
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pypic.o -c python/pypic.c++
+
+
 
 #reference to pycorgi's own make
 pycorgi:
@@ -89,6 +94,9 @@ pyplasma: fields.o damping_fields.o vlasovCell.o pyplasma.o
 #pyplasmaDev: vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h tools/mesh.h dev-bindings.o
 #	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasmaDev.so dev-bindings.o
 
+
+pypic: pypic.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pypic.so pypic.o 
 
 
 
