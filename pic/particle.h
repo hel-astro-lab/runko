@@ -73,6 +73,8 @@ class ParticleBlock {
 
   }
 
+  /// size of the container (in terms of particles)
+  size_t size() { return locArr[0].size(); }
 
 
 

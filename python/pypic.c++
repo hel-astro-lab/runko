@@ -7,6 +7,7 @@ namespace py = pybind11;
 // experimental PIC module
   
 #include "../pic/cell.h"
+#include "../pic/pusher.h"
 
 
 
@@ -50,6 +51,12 @@ PYBIND11_MODULE(pypic, m) {
           return s.vel(idim); 
         }, py::return_value_policy::reference);
     
+
+    py::class_<pic::Pusher>(m, "Pusher")
+      .def(py::init<>())
+      .def("solve", &pic::Pusher::solve);
+
+
 
 
 }

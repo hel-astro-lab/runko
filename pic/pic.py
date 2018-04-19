@@ -95,8 +95,10 @@ def inject(node, ffunc, conf):
                                     c.container.add_particle(xloc, uloc)
 
 
-# visualize particle content in x-dir
+# visualize particle content in vx direction
 def plotXmesh(ax, n, conf, spcs, vdir):
+
+    ax.clear()
 
     for i in range(conf.Nx):
         cid = n.cellId(i,0)
@@ -117,6 +119,8 @@ def plotXmesh(ax, n, conf, spcs, vdir):
             ax.set_ylabel(r'$v_{x,e}$')
         if spcs == 1:
             ax.set_ylabel(r'$v_{x,p}$')
+
+    ax.minorticks_on()
 
     ax.set_xlim(n.getXmin(), n.getXmax())
     ax.set_ylim(-1.0, 1.0)
@@ -189,9 +193,48 @@ if __name__ == "__main__":
 
     saveVisz(-1, node, conf)
 
+    #TODO:
+
+    #field interpolator
+
+    #Vau/Boris vel pusher
+    #position update
+
+    #deposit particles (zigzag)
+    
+    #boundary wrapper
+
+    #filtering
+
+    pusher = pypic.Pusher()
 
 
+    #simulation loop
+    time  = 0.0
+    ifile = 0
+    for lap in range(0, conf.Nt):
+
+        #pusher
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                pusher.solve(cell)
 
 
+        #I/O
+        if (lap % conf.interval == 0):
+            print("--------------------------------------------------")
+            print("------ lap: {} / t: {}".format(lap, time)) 
+
+            plotNode(axs[0], node, conf)
+            plotXmesh(axs[1], node, conf, 0, "x")
+
+
+            saveVisz(lap, node, conf)
+
+        time += conf.dt
+    #end of loop
+
+    #node.finalizeMpi()
 
 
