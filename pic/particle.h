@@ -28,13 +28,16 @@ class ParticleBlock {
   std::vector< std::vector<double> > velArr;
   //std::vector< std::vector<double> > wgtArr;
 
+  public:
+
   //! particle specific electric field components
-  std::vector<double> Epart;
+  //std::vector<double> Epart;
+  std::vector< std::vector<double> > Epart;
 
   //! particle specific magnetic field components
-  std::vector<double> Bpart;
+  //std::vector<double> Bpart;
+  std::vector< std::vector<double> > Bpart;
 
-  public:
 
   // size of the internal mesh
   size_t Nx;
@@ -46,8 +49,8 @@ class ParticleBlock {
   ParticleBlock(size_t Nx, size_t Ny, size_t Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz)
   { 
-    locArr.resize(0);
-    velArr.resize(0);
+    locArr.resize(3);
+    velArr.resize(3);
   
   };
     
@@ -60,7 +63,7 @@ class ParticleBlock {
   /// reserve memory for particles
   void reserve(uint64_t N, uint64_t D) {
 
-    locArr.resize(D);
+    locArr.resize(3);
     for(uint64_t i=0; i<D; i++) locArr[i].reserve(N);
 
     velArr.resize(D);
@@ -68,10 +71,23 @@ class ParticleBlock {
 
     // reserve 1d N x D array for particle-specific fields
     // XXX is this needed since we can not push_back?
-    Epart.reserve(N*D);
-    Bpart.reserve(N*D);
+    //Epart.reserve(N*D);
+    //Bpart.reserve(N*D);
+  }
+
+
+  // resize arrays for fields
+  void resizeEM(uint64_t N, uint64_t D) {
+
+    Epart.resize(D);
+    for(uint64_t i=0; i<D; i++) Epart[i].resize(N);
+
+    Bpart.resize(D);
+    for(uint64_t i=0; i<D; i++) Bpart[i].resize(N);
 
   }
+
+
 
   /// size of the container (in terms of particles)
   size_t size() { return locArr[0].size(); }

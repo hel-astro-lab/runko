@@ -8,6 +8,7 @@ namespace py = pybind11;
   
 #include "../pic/cell.h"
 #include "../pic/pusher.h"
+#include "../pic/field_interpolator.h"
 
 
 
@@ -41,6 +42,7 @@ PYBIND11_MODULE(pypic, m) {
   py::class_<pic::ParticleBlock>(m, "ParticleBlock")
     .def(py::init<size_t, size_t, size_t>())
     .def("reserve",       &pic::ParticleBlock::reserve)
+    .def("resizeEM",      &pic::ParticleBlock::resizeEM)
     .def("add_particle",  &pic::ParticleBlock::add_particle)
     .def("loc",          [](pic::ParticleBlock& s, size_t idim) 
         {
@@ -49,12 +51,26 @@ PYBIND11_MODULE(pypic, m) {
     .def("vel",          [](pic::ParticleBlock& s, size_t idim) 
         {
           return s.vel(idim); 
+        }, py::return_value_policy::reference)
+    //temporary binding
+    .def("ex",          [](pic::ParticleBlock& s) 
+        {
+          return s.Epart[0];
         }, py::return_value_policy::reference);
     
+
 
     py::class_<pic::Pusher>(m, "Pusher")
       .def(py::init<>())
       .def("solve", &pic::Pusher::solve);
+
+    py::class_<pic::ParticleFieldInterpolator>(m, "ParticleFieldInterpolator")
+      .def(py::init<>())
+      .def("solve", &pic::ParticleFieldInterpolator::solve);
+
+
+
+
 
 
 

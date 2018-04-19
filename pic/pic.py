@@ -72,6 +72,7 @@ def inject(node, ffunc, conf):
                 #reserve memory for particles
                 Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
                 c.container.reserve(Nprtcls, 3)
+                c.container.resizeEM(Nprtcls, 3)
 
 
                 for ispcs in range(conf.Nspecies):
@@ -132,10 +133,43 @@ def filler(xloc, uloc, ispcs, conf):
     return x
 
 
+# insert initial electromagnetic setup (or solve Poisson eq)
+def insert_em(node, conf):
+
+    Lx  = conf.Nx*conf.NxMesh*conf.dx
+    k = 2.0 #mode
+
+    n0 = 1.0
+
+    for i in range(node.getNx()):
+        for j in range(node.getNy()):
+            c = node.getCellPtr(i,j)
+            yee = c.getYee(0)
+
+            for l in range(conf.NxMesh):
+                for m in range(conf.NyMesh):
+                    for n in range(conf.NzMesh):
+
+                        #get x_i+1/2 (Yee lattice so rho_i)
+                        xloc0 = spatialLoc(node, (i,j), (l,  m,n), conf)
+                        xloc1 = spatialLoc(node, (i,j), (l+1,m,n), conf)
+
+                        xmid = 0.5*(xloc0[0] + xloc1[0])
+                        yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
 
 
 
+def plotDebug(ax, n, conf):
 
+    for i in range(conf.Nx):
+        cid = n.cellId(i,0)
+        c = n.getCellPtr(cid)
+
+        x  = c.container.loc(0)
+        ux = c.container.vel(0)
+        ex = c.container.ex()
+
+        ax.plot(x, ex, "k.", markersize=2, alpha=0.8)
 
 
 
@@ -154,10 +188,8 @@ if __name__ == "__main__":
     gs.update(hspace = 0.5)
     
     axs = []
-    axs.append( plt.subplot(gs[0]) )
-    axs.append( plt.subplot(gs[1]) )
-    axs.append( plt.subplot(gs[2]) )
-
+    for ai in range(8):
+        axs.append( plt.subplot(gs[ai]) )
 
     conf = Configuration('config.ini') 
 
@@ -187,6 +219,9 @@ if __name__ == "__main__":
     inject(node, filler, conf) #injecting plasma particles
 
 
+    insert_em(node, conf)
+
+
     # visualize initial condition
     plotNode( axs[0], node, conf)
     plotXmesh(axs[1], node, conf, 0, "x")
@@ -195,18 +230,19 @@ if __name__ == "__main__":
 
     #TODO:
 
-    #field interpolator
-
-    #Vau/Boris vel pusher
-    #position update
-
+    #-DONE: field interpolator
+    #
+    #-DONE: Vau/Boris vel pusher
+    #   -position update
+    #
     #deposit particles (zigzag)
-    
+    # 
     #boundary wrapper
-
+    #
     #filtering
 
     pusher = pypic.Pusher()
+    fintp  = pypic.ParticleFieldInterpolator()
 
 
     #simulation loop
@@ -215,10 +251,24 @@ if __name__ == "__main__":
     for lap in range(0, conf.Nt):
 
         #pusher
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        pusher.solve(cell)
+
+        ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                pusher.solve(cell)
+                cell.updateBoundaries(node)
+
+        #interpolate fields
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                fintp.solve(cell)
+
+
 
 
         #I/O
@@ -226,8 +276,15 @@ if __name__ == "__main__":
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
 
-            plotNode(axs[0], node, conf)
+            plotNode( axs[0], node, conf)
             plotXmesh(axs[1], node, conf, 0, "x")
+
+            plotJ(    axs[5], node, conf)
+
+            plotE(    axs[6], node, conf)
+            plotDebug(axs[6], node, conf)
+
+            plotDens( axs[7], node, conf)
 
 
             saveVisz(lap, node, conf)
