@@ -13,9 +13,7 @@ import pypic
 from configSetup import Configuration
 import initialize as init
 
-from injector import spatialLoc
-
-
+#from injector import spatialLoc
 
 from visualize import plotNode
 from visualize import plotJ, plotE, plotDens
@@ -25,6 +23,37 @@ from visualize import saveVisz
 
 from timer import Timer
 
+
+
+def spatialLoc(node, Ncoords, Mcoords, conf):
+
+    #node coordinates
+    i, j    = Ncoords 
+    Nx      = conf.Nx
+    Ny      = conf.Ny
+
+    #mesh coordinates
+    l, m, n = Mcoords 
+    NxMesh = conf.NxMesh
+    NyMesh = conf.NyMesh
+    NzMesh = conf.NzMesh
+
+    #grid spacing
+    xmin = node.getXmin()
+    ymin = node.getYmin()
+
+    #dx = conf.dx
+    dx = 1.0 #XXX scaled length
+    dy = conf.dy
+    dz = conf.dz
+
+
+    #calculate coordinate extent
+    x = xmin + i*NxMesh*dx + l*dx
+    y = ymin + j*NyMesh*dy + m*dy
+    z = 0.0                + n*dz
+
+    return [x, y, z]
 
 
 
@@ -42,12 +71,25 @@ def loadCells(n, conf):
                                   )
 
                 #initialize cell dimensions 
-                c.dt = conf.dt
-                c.dx = conf.dx
+                #c.dt  = conf.dt
+                #c.dx  = conf.dx
+                c.dx  = 1.0
+                c.cfl = conf.cfl
+
+                #normalization factors
+                omp = conf.cfl/conf.c_omp #plasma reaction
+                gamma0 = 1.0      #relativistic dilatation
+                #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
+                qe = -(gamma0*omp**2.0)/((conf.ppc*0.5)*(1.0 + np.abs(conf.me/conf.mi)) )
+
+                c.container.qe = qe
+                c.container.qi = qe
+
 
                 # use same scale for Maxwell solver
-                c.yeeDt = conf.dt
-                c.yeeDx = conf.dx
+                #c.yeeDt = conf.dt
+                #c.yeeDx = conf.dx
+                c.yeeDx = 1.0
 
                 #add it to the node
                 n.addCell(c) 
@@ -78,24 +120,25 @@ def inject(node, ffunc, conf):
                 for ispcs in range(conf.Nspecies):
 
                     #set q/m
-                    if ispcs == 0:
-                        qm = conf.me
-                    elif ispcs == 1:
-                        qm = conf.mi
+                    #if ispcs == 0:
+                    #    qm = conf.me
+                    #elif ispcs == 1:
+                    #    qm = conf.mi
 
                     for n in range(conf.NzMesh):
                         for m in range(conf.NyMesh):
                             for l in range(conf.NxMesh):
                                 #print(" sub mesh: ({},{},{})".format(l,m,n))
                                 xloc = spatialLoc(node, (i,j), (l,m,n), conf)
-
-                                xloc[0] += conf.dx*0.5 + conf.dx*0.001
+                                #xloc[0] += 0.5
 
                                 for ip in range(conf.ppc):
                                     #xloc = [0.0, 0.0, 0.0]
-                                    uloc = [0.0, 0.0, 0.0]
+                                    #uloc = [0.1, 0.0, 0.0]
+                                    x0, u0 = ffunc(xloc, ispcs, conf)
 
-                                    c.container.add_particle(xloc, uloc)
+                                    c.container.add_particle(x0, u0)
+
 
 
 # visualize particle content in vx direction
@@ -126,19 +169,48 @@ def plotXmesh(ax, n, conf, spcs, vdir):
     ax.minorticks_on()
 
     ax.set_xlim(n.getXmin(), n.getXmax())
-    ax.set_ylim(-1.0, 1.0)
+    ax.set_ylim(-0.2, 0.2)
 
 
 
-def filler(xloc, uloc, ispcs, conf):
-    x = 10.0
-    return x
+def filler(xloc, ispcs, conf):
+
+    # perturb position between x0 + RUnif[0,1)
+    xx = xloc[0] + np.random.rand(1)
+
+    ux = 0.0
+    uy = 0.0
+    uz = 0.0
+
+    vth = np.sqrt(conf.delgam)
+    v0  = conf.gamma_e
+
+    #Box-Muller sampling
+    rr1 = np.random.rand()
+    rr2 = np.random.rand()
+    r1  = np.sqrt(-2.0*np.log(rr1))*np.cos(2.0*np.pi*rr2)
+    r2  = np.sqrt(-2.0*np.log(rr1))*np.sin(2.0*np.pi*rr2)
+    ux = r1*vth + v0
+
+    #print("injecting into {} ({})".format(xx, xloc[0]))
+
+    #perturb with wave
+    Lx = conf.Nx*conf.NxMesh
+    kmode = 2.0 #mode
+    mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*xx/Lx) * (Lx/(2.0*np.pi*kmode))
+    ux += vth*mux_noise
+
+
+    x0 = [xx, 0.0, 0.0]
+    u0 = [ux, uy, uz]
+    return x0, u0
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(node, conf):
 
-    Lx  = conf.Nx*conf.NxMesh*conf.dx
+    #Lx  = conf.Nx*conf.NxMesh*conf.dx
+    Lx  = conf.Nx*conf.NxMesh #XXX scaled length
     k = 2.0 #mode
 
     n0 = 1.0
@@ -200,7 +272,8 @@ if __name__ == "__main__":
     node = corgi.Node(conf.Nx, conf.Ny)
 
     xmin = 0.0
-    xmax = conf.dx*conf.Nx*conf.NxMesh
+    #xmax = conf.dx*conf.Nx*conf.NxMesh 
+    xmax = conf.Nx*conf.NxMesh #XXX scaled length
     ymin = 0.0
     ymax = conf.dy*conf.Ny*conf.NyMesh
 
@@ -233,12 +306,9 @@ if __name__ == "__main__":
     #TODO:
 
     #-DONE: field interpolator
-    #
     #-DONE: Vau/Boris vel pusher
     #   -position update
-    #
-    #deposit particles (zigzag)
-    # 
+    #-DONE:deposit particles (zigzag)
     #-DONE: boundary wrapper
     #
     #filtering

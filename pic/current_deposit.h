@@ -42,9 +42,12 @@ class Depositer {
 
 
     double invgam;
-    double c = 1.0; //cfl
+    double c = cell.cfl;
+    double q = cell.container.qe;
+
     double x0, y0, z0, x1sp, x2sp, y1sp, y2sp, z1sp, z2sp;
-    double q;
+
+
 
     //int i1,i2,j1,j2,k1,k2;
     double i1,i2,j1,j2,k1,k2;
@@ -72,7 +75,7 @@ class Depositer {
       z0 = loc[2][n] - vel[2][n]*invgam*c;
 
       //q = weight*qe;
-      q = 1.0;
+      //q = 1.0;
 
       x1sp = x0;
       x2sp = loc[0][n];
@@ -127,7 +130,7 @@ class Depositer {
       k1p1 = k1 + 1.0;
       k2p1 = k2 + 1.0;
 
-      fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
+      //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 
 
       // jx

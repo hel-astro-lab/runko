@@ -67,15 +67,18 @@ class Pusher
     double g, f;
 
 
-    double c = 1.0; // cfl
+    double c = cell.cfl;
     double cinv = 1.0/c;
+
+    // electrons
+    double qm = -1.0;
 
 
 
     #pragma omp simd
     for(int n=n1; n<n2; n++) {
-      ex0 = ex[n];
-      bx0 = bx[n];
+      ex0 = ex[n]*(0.5*qm);
+      bx0 = bx[n]*(0.5*qm*cinv);
 
       // first half electric acceleration
       u0 = c*vel[0][n] + ex0;

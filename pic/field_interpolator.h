@@ -57,7 +57,7 @@ class ParticleFieldInterpolator
 
     double c = 1.0; // cfl
     double cinv = 1.0/c;
-    double qm = 2.0;
+    //double qm = 2.0;
 
 
     int i=0, j=0, k=0;
@@ -74,7 +74,7 @@ class ParticleFieldInterpolator
 
       // particle location in the grid
 		  i  = trunc( (loc[0][n]-xmin)/lenx );
-		  dx = (loc[0][n]-xmin)/lenx - i;
+		  dx = (loc[0][n]-xmin)*lenx - i;
 
 		  //j  = aint( loc[1][n] );
 		  //dy = loc[1][n] - j;
@@ -93,7 +93,8 @@ class ParticleFieldInterpolator
 		  //ex0 = (f + dz*(g - f))*(.25*qm);
 
   		f = yee.ex(l,0,0) + yee.ex(l-1,0,0) + dx*(yee.ex(l+1,0,0) - yee.ex(l-1,0,0));
-      ex[n] = f*(0.25*qm);
+      //ex[n] = f*(0.25*qm); // normalize in pusher
+      ex[n] = f*0.5;
 
 
       // rest of the components TODO
