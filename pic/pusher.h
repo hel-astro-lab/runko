@@ -50,6 +50,13 @@ class Pusher
     double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
     double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
+    double *ex, *ey, *ez, *bx, *by, *bz;
+    ex = &( cell.container.Epart[0][0] );
+    ey = &( cell.container.Epart[1][0] );
+    ez = &( cell.container.Epart[2][0] );
+    bx = &( cell.container.Bpart[0][0] );
+    by = &( cell.container.Bpart[1][0] );
+    bz = &( cell.container.Bpart[2][0] );
 
     // loop over particles
     int n1 = 0;
@@ -67,6 +74,8 @@ class Pusher
 
     #pragma omp simd
     for(int n=n1; n<n2; n++) {
+      ex0 = ex[n];
+      bx0 = bx[n];
 
       // first half electric acceleration
       u0 = c*vel[0][n] + ex0;

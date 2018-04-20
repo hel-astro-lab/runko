@@ -91,7 +91,7 @@ def inject(node, ffunc, conf):
 
                                 for ip in range(conf.ppc):
                                     #xloc = [0.0, 0.0, 0.0]
-                                    uloc = [0.1, 0.0, 0.0]
+                                    uloc = [0.45, 0.0, 0.0]
 
                                     c.container.add_particle(xloc, uloc)
 
@@ -237,12 +237,13 @@ if __name__ == "__main__":
     #
     #deposit particles (zigzag)
     # 
-    #boundary wrapper
+    #-DONE: boundary wrapper
     #
     #filtering
 
     pusher = pypic.Pusher()
     fintp  = pypic.ParticleFieldInterpolator()
+    comm   = pypic.Communicator()
 
 
     #simulation loop
@@ -250,11 +251,26 @@ if __name__ == "__main__":
     ifile = 0
     for lap in range(0, conf.Nt):
 
+        #advance B half
+        #move particles
+        #advance B half
+        #advance E
+        #reset current (j=0)
+        #deposit
+        #exchange particles
+        #exchange current
+        #filter
+        #add current
+        #inject particles from other processors
+        #enlarge domain
+        #reorder particles
+        #pause simulation if pause file exists
+
         #pusher
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        pusher.solve(cell)
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                pusher.solve(cell)
 
         ##update boundaries
         for j in range(node.getNy()):
@@ -268,6 +284,11 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 fintp.solve(cell)
 
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                comm.transfer(cell, node)
 
 
 

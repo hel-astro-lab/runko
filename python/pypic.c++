@@ -9,6 +9,7 @@ namespace py = pybind11;
 #include "../pic/cell.h"
 #include "../pic/pusher.h"
 #include "../pic/field_interpolator.h"
+#include "../pic/communicate.h"
 
 
 
@@ -68,6 +69,9 @@ PYBIND11_MODULE(pypic, m) {
       .def(py::init<>())
       .def("solve", &pic::ParticleFieldInterpolator::solve);
 
+    py::class_<pic::Communicator>(m, "Communicator")
+      .def(py::init<>())
+      .def("transfer", &pic::Communicator::transfer);
 
 
 
