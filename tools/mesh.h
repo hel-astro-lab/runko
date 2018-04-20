@@ -80,8 +80,10 @@ class Mesh {
     };
 
     void copyVert(Mesh& rhs, int lhsJ, int rhsJ);
+    void addVert(Mesh& rhs, int lhsJ, int rhsJ);
 
     void copyHorz(Mesh& rhs, int lhsI, int rhsI);
+    void addHorz(Mesh& rhs, int lhsI, int rhsI);
 
 };
 
@@ -196,6 +198,18 @@ void Mesh<T,H>::copyVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
 
 }
 
+/// Add vertical slice
+// TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and ignoring it
+template <class T, int H>
+void Mesh<T,H>::addVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
+  if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
+  if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
+
+  for(int j=0; j<(int)this->Ny; j++) { 
+    this->operator()(lhsI, j, 0) += rhs(rhsI, j, 0);
+  }
+}
+
 
 /// Copy horizontal slice 
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and ignoring it
@@ -215,6 +229,18 @@ void Mesh<T,H>::copyHorz(Mesh<T,H>& rhs, int lhsJ, int rhsJ) {
     }
   }
   */
+}
+  
+/// Add horizontal slice 
+// TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and ignoring it
+template <class T, int H>
+void Mesh<T,H>::addHorz(Mesh<T,H>& rhs, int lhsJ, int rhsJ) {
+  if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
+  if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
+
+  for(int i=0; i<(int)this->Nx; i++) { 
+    this->operator()(i, lhsJ, 0) += rhs(i, rhsJ, 0);
+  }
 }
 
 

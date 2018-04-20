@@ -108,7 +108,8 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
     .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
-    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries);
+    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries)
+    .def("exchangeCurrents", &fields::PlasmaCell::exchangeCurrents);
 
 
   py::class_<fields::PlasmaCellDamped,

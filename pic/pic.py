@@ -89,9 +89,11 @@ def inject(node, ffunc, conf):
                                 #print(" sub mesh: ({},{},{})".format(l,m,n))
                                 xloc = spatialLoc(node, (i,j), (l,m,n), conf)
 
+                                xloc[0] += conf.dx*0.5 + conf.dx*0.001
+
                                 for ip in range(conf.ppc):
                                     #xloc = [0.0, 0.0, 0.0]
-                                    uloc = [0.45, 0.0, 0.0]
+                                    uloc = [0.0, 0.0, 0.0]
 
                                     c.container.add_particle(xloc, uloc)
 
@@ -219,7 +221,7 @@ if __name__ == "__main__":
     inject(node, filler, conf) #injecting plasma particles
 
 
-    insert_em(node, conf)
+    #insert_em(node, conf)
 
 
     # visualize initial condition
@@ -241,9 +243,10 @@ if __name__ == "__main__":
     #
     #filtering
 
-    pusher = pypic.Pusher()
-    fintp  = pypic.ParticleFieldInterpolator()
-    comm   = pypic.Communicator()
+    pusher  = pypic.Pusher()
+    fintp   = pypic.ParticleFieldInterpolator()
+    comm    = pypic.Communicator()
+    currint = pypic.Depositer()
 
 
     #simulation loop
@@ -266,11 +269,6 @@ if __name__ == "__main__":
         #reorder particles
         #pause simulation if pause file exists
 
-        #pusher
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                pusher.solve(cell)
 
         ##update boundaries
         for j in range(node.getNy()):
@@ -284,12 +282,37 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 fintp.solve(cell)
 
-        ##update boundaries
+        #pusher
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                pusher.solve(cell)
+
+        #deposit current
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                currint.deposit(cell)
+
+        ##update particle boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 comm.transfer(cell, node)
 
+        #exchange currents
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.exchangeCurrents(node)
+
+        #filter
+
+        #add current to E
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.depositCurrent()
 
 
         #I/O

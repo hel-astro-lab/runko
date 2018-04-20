@@ -36,7 +36,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     y = ymin + j*NyMesh*dy + m*dy
     z = 0.0                + n*dz
 
-    return (x, y, z)
+    return [x, y, z]
 
 
 

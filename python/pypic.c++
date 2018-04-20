@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "../pic/pusher.h"
 #include "../pic/field_interpolator.h"
 #include "../pic/communicate.h"
+#include "../pic/current_deposit.h"
 
 
 
@@ -73,6 +74,9 @@ PYBIND11_MODULE(pypic, m) {
       .def(py::init<>())
       .def("transfer", &pic::Communicator::transfer);
 
+    py::class_<pic::Depositer>(m, "Depositer")
+      .def(py::init<>())
+      .def("deposit", &pic::Depositer::deposit);
 
 
 

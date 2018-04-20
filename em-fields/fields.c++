@@ -272,6 +272,21 @@ void copyVertYee(
 
 }
 
+
+/// Quick helper function to add everything inside Yee lattice 
+void addVertYee(
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
+    int lhsI, int rhsI) {
+
+  lhs.jx.addVert(rhs.jx, lhsI, rhsI); 
+  lhs.jy.addVert(rhs.jy, lhsI, rhsI); 
+  lhs.jz.addVert(rhs.jz, lhsI, rhsI); 
+
+}
+
+
+
 /// Quick helper function to copy everything inside Yee lattice 
 void copyHorzYee(
     fields::YeeLattice& lhs, 
@@ -294,6 +309,17 @@ void copyHorzYee(
 
 }
 
+
+/// Quick helper function to add everything inside Yee lattice 
+void addHorzYee(
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
+    int lhsJ, int rhsJ) {
+                                    
+  lhs.jx.addHorz(rhs.jx, lhsJ, rhsJ); 
+  lhs.jy.addHorz(rhs.jy, lhsJ, rhsJ); 
+  lhs.jz.addHorz(rhs.jz, lhsJ, rhsJ); 
+}
 
 
 /// Update Yee grid boundaries
@@ -351,6 +377,33 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
 }
 
+/// Update currents on Yee grid boundaries
+// TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
+void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
+
+  // target
+  fields::YeeLattice& mesh = getYee();
+
+  // left 
+  auto cleft = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(-1, 0) ));
+  fields::YeeLattice& mleft = cleft->getYee();
+
+  // add from right side to left
+  addVertYee(mesh, mleft, -1, mleft.Nx-1); 
+
+
+  // right
+  auto cright = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(+1, 0) ));
+  fields::YeeLattice& mright = cright->getYee();
+    
+  // add from left side to right
+  addVertYee(mesh, mright, mesh.Nx, 0); 
+
+}
 
 void fields::PlasmaCell::cycleYee() {
   yee.cycle();
