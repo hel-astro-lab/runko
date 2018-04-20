@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import sys, os
+import h5py
 
 import corgi
 import pyplasma as plasma
@@ -80,7 +81,7 @@ def loadCells(n, conf):
                 omp = conf.cfl/conf.c_omp #plasma reaction
                 gamma0 = 1.0      #relativistic dilatation
                 #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
-                qe = -(gamma0*omp**2.0)/((conf.ppc*0.5)*(1.0 + np.abs(conf.me/conf.mi)) )
+                qe = (gamma0*omp**2.0)/((conf.ppc*0.5)*(1.0 + np.abs(conf.me/conf.mi)) )
 
                 c.container.qe = qe
                 c.container.qi = qe
@@ -231,6 +232,10 @@ def insert_em(node, conf):
                         xmid = 0.5*(xloc0[0] + xloc1[0])
                         yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
 
+def smooth(y, box_pts):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode='same')
+    return y_smooth
 
 
 def plotDebug(ax, n, conf):
@@ -245,6 +250,31 @@ def plotDebug(ax, n, conf):
 
         ax.plot(x, ex, "k.", markersize=2, alpha=0.8)
 
+    #smoothed ex
+    yee = getYee(n, conf)
+    ex = yee['ex']
+    xx = yee['x']
+
+    exS = smooth(ex, 10)
+    ax.plot(xx, exS, "r-")
+
+
+
+# Get Yee grid components from node and save to hdf5 file
+def save(n, conf, lap, f5):
+
+    #get E field
+    yee = getYee(n, conf)
+    ex = yee['ex']
+    exS = smooth(ex, 10)
+
+
+    #f5['fields/Ex'  ][:,lap] = yee['ex']
+    f5['fields/Ex'  ][:,lap] = exS
+    f5['fields/rho' ][:,lap] = yee['rho']
+    f5['fields/ekin'][:,lap] = yee['ekin']
+
+    return
 
 
 
@@ -302,6 +332,27 @@ if __name__ == "__main__":
     plotXmesh(axs[1], node, conf, 0, "x")
 
     saveVisz(-1, node, conf)
+
+    
+    #setup output file
+    f5 = h5py.File(conf.outdir+"/run.hdf5", "w")
+    grp0 = f5.create_group("params")
+    grp0.attrs['dx']    = 1.0/conf.c_omp
+    #grp0.attrs['dt']    = conf.interval*conf.dt
+    grp0.attrs['dt']    = conf.cfl*(1.0/conf.c_omp)
+    grp = f5.create_group("fields")
+
+
+    Nsamples = conf.Nt
+    dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+
+
+
+
+
+
 
     #TODO:
 
@@ -385,6 +436,11 @@ if __name__ == "__main__":
                 cell.depositCurrent()
 
 
+        #save temporarily to file
+        save(node, conf, ifile, f5)
+        ifile += 1
+
+
         #I/O
         if (lap % conf.interval == 0):
             print("--------------------------------------------------")
@@ -403,7 +459,7 @@ if __name__ == "__main__":
 
             saveVisz(lap, node, conf)
 
-        time += conf.dt
+        time += conf.cfl*(1.0/conf.c_omp)
     #end of loop
 
     #node.finalizeMpi()
