@@ -183,6 +183,19 @@ def filler(xloc, ispcs, conf):
     uy = 0.0
     uz = 0.0
 
+
+    #speedtest
+    #if 1.0 < xx < 2.0:
+    #    x0 = [xx, 0.0, 0.0]
+    #    u0 = [1.0, 0.0, 0.0]
+    #    return x0, u0
+    #else:
+    #    x0 = [xx, 0.0, 0.0]
+    #    u0 = [0.0, 0.0, 0.0]
+    #    return x0, u0
+
+
+
     vth = np.sqrt(conf.delgam)
     v0  = conf.gamma_e
 
@@ -197,7 +210,7 @@ def filler(xloc, ispcs, conf):
 
     #perturb with wave
     Lx = conf.Nx*conf.NxMesh
-    kmode = 2.0 #mode
+    kmode = conf.modes
     mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*xx/Lx) * (Lx/(2.0*np.pi*kmode))
     ux += vth*mux_noise
 
@@ -339,7 +352,7 @@ if __name__ == "__main__":
     grp0 = f5.create_group("params")
     grp0.attrs['dx']    = 1.0/conf.c_omp
     #grp0.attrs['dt']    = conf.interval*conf.dt
-    grp0.attrs['dt']    = conf.cfl*(1.0/conf.c_omp)
+    grp0.attrs['dt']    = conf.cfl/conf.c_omp
     grp = f5.create_group("fields")
 
 
@@ -459,7 +472,7 @@ if __name__ == "__main__":
 
             saveVisz(lap, node, conf)
 
-        time += conf.cfl*(1.0/conf.c_omp)
+        time += conf.cfl/conf.c_omp
     #end of loop
 
     #node.finalizeMpi()

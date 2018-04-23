@@ -2,6 +2,10 @@
 
 #include <cmath> 
 
+#include <fmt/format.h>
+#include <fmt/format.cc>
+#include <fmt/string.h>
+#include <fmt/ostream.h>
 
 
 #include "cell.h"
@@ -13,8 +17,6 @@ class Pusher
 {
 
   public:
-
-
 
   /*! \brief Push particles
    *
@@ -109,8 +111,13 @@ class Pusher
 
       // position advance
 		  g = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+      //g = 1.0;
       for(int i=0; i<3; i++)
         loc[i][n] += vel[i][n]*g*c;
+
+
+      //fmt::print("dx: {}\n",  vel[0][n]*g*c);
+
     }
 
   }

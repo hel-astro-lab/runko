@@ -74,7 +74,7 @@ class Communicator {
       }
 
       //right wrap
-      if(x0 >= xmin) {
+      if(x0 >= xmax) {
         dx = abs(x0 - xmax);
         loc[0][n] = xmin + dx;
       }

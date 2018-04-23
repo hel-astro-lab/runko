@@ -100,9 +100,10 @@ def fitf(t, wr, wi, t0, y0):
 
 #params = (1.32, 0.106, 1.6, 900.0*ex_max[0])
 #params = (1.0004, 0.0, 1.6, 600.0*ex_max[0]) #k=0.144
-params = (1.35, 0.106, 1.3, 600.0*ex_max[0]) #k=0.45
+#params = (1.35, 0.106, 1.3, 600.0*ex_max[0]) #k=0.45
+#params = (1.0, 0.0, 1.6, 600.0*ex_max[0]) #k=0.45
 
-#params = (1.25, 0.01318, 1.2, 900.0*ex_max[0]) #k=0.30
+params = (1.285, 0.066, 1.6, 200.0*ex_max[0]) #k=0.40
 #params = (1.1568, 0.01318, 1.3, 700.0*ex_max[0]) #k=0.30 REAL
 
 
@@ -145,6 +146,8 @@ axs[1].plot(time, np.log10(wedens))
 #plot linear analysis results
 #omega=1.415661888604536 - 0.153359466909605j
 #omega=1.415 - 0.153j
+
+omega = params[0] - 1.0j*params[1]
 
 #parameters
 delgam = 0.001
@@ -193,7 +196,7 @@ print("wi:",wi)
 #omega = 1.05 - 0.001j #khat = 0.22approx
 #omega = 0.95 - 0.0j #khat = whatever
 
-omega = 1.35025 - 0.10629j #khat = 0.45
+#omega = 1.35025 - 0.10629j #khat = 0.45
 #omega = 1.1568-0.01318j #khat=0.3
 #omega = 1.29-0.01318j #khat=0.3
 
@@ -220,8 +223,8 @@ def landau_osc(x, params):
 #line 
 #tskip = 0.28 #0.8
 #tskip = 0.1
-tskip = 1.3
-Norm = 8.0e4
+tskip = params[2]
+Norm = 4.0e4
 lin_analysis  = Norm*wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
 
 #with frequency
