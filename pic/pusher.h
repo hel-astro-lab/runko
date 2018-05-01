@@ -79,6 +79,8 @@ class Pusher
 
     #pragma omp simd
     for(int n=n1; n<n2; n++) {
+
+      // read particle-specific fields
       ex0 = ex[n]*(0.5*qm);
       bx0 = bx[n]*(0.5*qm*cinv);
 
@@ -117,7 +119,6 @@ class Pusher
 
 
       //fmt::print("dx: {}\n",  vel[0][n]*g*c);
-
     }
 
   }

@@ -103,8 +103,11 @@ def fitf(t, wr, wi, t0, y0):
 #params = (1.35, 0.106, 1.3, 600.0*ex_max[0]) #k=0.45
 #params = (1.0, 0.0, 1.6, 600.0*ex_max[0]) #k=0.45
 
-params = (1.285, 0.066, 1.6, 200.0*ex_max[0]) #k=0.40
+#params = (1.01, 0.0, 1.6, 200.0*ex_max[0]) #k=0.09
+#params = (1.285, 0.066, 1.6, 200.0*ex_max[0]) #k=0.40
 #params = (1.1568, 0.01318, 1.3, 700.0*ex_max[0]) #k=0.30 REAL
+params = (1.415660, 0.15336, 1.4, 200.0*ex_max[0]) #k=0.5
+
 
 
 theor_vals = osc(time, *params)

@@ -82,6 +82,8 @@ def loadCells(n, conf):
                 gamma0 = 1.0      #relativistic dilatation
                 #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
                 qe = (gamma0*omp**2.0)/((conf.ppc*0.5)*(1.0 + np.abs(conf.me/conf.mi)) )
+                
+                print("normalization factor: {}".format(qe))
 
                 c.container.qe = qe
                 c.container.qi = qe
@@ -170,7 +172,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
     ax.minorticks_on()
 
     ax.set_xlim(n.getXmin(), n.getXmax())
-    ax.set_ylim(-0.2, 0.2)
+    ax.set_ylim(-1.2, 1.2)
 
 
 
