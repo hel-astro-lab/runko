@@ -19,10 +19,14 @@ namespace vlasov {
 template<typename T, int D>
 inline T gamma(std::array<T,D>& uvel) 
 {
-  T gammasq = 1.0;
-  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
-  return std::sqrt(gammasq);
+  return 1.0;
 }
+//inline T gamma(std::array<T,D>& uvel) 
+//{
+//  T gammasq = 1.0;
+//  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
+//  return std::sqrt(gammasq);
+//}
 
 
 /// integrate Adaptive Mesh phase space with function Chi(u)

@@ -73,10 +73,15 @@ axs[3].set_ylabel(r'$\epsilon_K$')
 axs[4].set_ylabel(r'$E_T$')
 
 
-#time *= 0.321003 #normalize with the growth rate
+#XXX test same setup with flux2nd mode = 10 
+time = time * 0.75 #khat 0.5
+#time = time * 0.76 #khat 0.4
+#time = time * 0.79 #khat 0.09
 ex_max = np.max( np.abs(ex),0 )
 axs[0].plot(time, np.log10( ex_max ))
 #axs[0].set_ylim((-20, 10))
+
+
 
 
 ##################################################
@@ -92,26 +97,21 @@ def osc(t, wr, wi, t0, y0):
     return y0*np.abs(np.real(np.exp( (t-t0)*omega*1.0j)))
 
 def fitf(t, wr, wi, t0, y0):
-    return np.log10(osc(t, wr, wi, t0, y0))
+    return osc(t, wr, wi, t0, y0)
 
-#params = (1.0, 0.0, 1.5, 1000.0*ex_max[0])
-#params = (1.02, 0.1, 1.8, 1000.0*ex_max[0])
-#params = (1.15, 0.0, 1.6, 1000.0*ex_max[0])
 
-#params = (1.32, 0.106, 1.6, 900.0*ex_max[0])
-#params = (1.0004, 0.0, 1.6, 600.0*ex_max[0]) #k=0.144
-params = (1.35, 0.106, 1.3, 600.0*ex_max[0]) #k=0.45
 
-#params = (1.25, 0.01318, 1.2, 900.0*ex_max[0]) #k=0.30
-#params = (1.1568, 0.01318, 1.3, 700.0*ex_max[0]) #k=0.30 REAL
+#params = (1.014990, 0.0, 1.4, 200.0*ex_max[0])   #k=0.09
+#params = (1.28506, 0.066, 1.4, 200.0*ex_max[0])  #k=0.40
+params = (1.415660, 0.15336, 1.4, 200.0*ex_max[0]) #k=0.5
 
+
+
+print(params)
 
 theor_vals = osc(time, *params)
 axs[0].plot(time, np.log10(theor_vals), "r-", alpha=0.8)
 
-
-#popt, pcov = curve_fit(fitf, time, np.log10(ex_max), p0=params) #, bounds=(0.5, 2.0))
-#print(popt)
 
 
 fourier = np.fft.fft(ex_max)
@@ -121,6 +121,17 @@ magnitudes = abs(fourier[np.where(frequencies > 0)])  # magnitude spectrum
 
 omega = np.pi*positive_frequencies[np.argmax(magnitudes)]
 print("fft omega", omega)
+
+params_fft = (omega, 0.0, 1.7, 50.0*ex_max[0])
+fit_vals = osc(time, *params_fft)
+#axs[0].plot(time, np.log10(fit_vals), "g-", alpha=0.8)
+
+
+
+# fit
+#popt, pcov = curve_fit(fitf, time, ex_max, p0=params_fft) #, bounds=(0.5, 2.0))
+#print("curve_fit:")
+#print(popt)
 
 
 
@@ -193,10 +204,12 @@ print("wi:",wi)
 #omega = 1.05 - 0.001j #khat = 0.22approx
 #omega = 0.95 - 0.0j #khat = whatever
 
-omega = 1.35025 - 0.10629j #khat = 0.45
+#omega = 1.35025 - 0.10629j #khat = 0.45
 #omega = 1.1568-0.01318j #khat=0.3
 #omega = 1.29-0.01318j #khat=0.3
 
+#omega = 1.285 - 0.066 #khat = 0.4
+omega = params[0] - 1.0j*params[1]
 
 
 #def landau_osc(t, omega):
@@ -220,8 +233,8 @@ def landau_osc(x, params):
 #line 
 #tskip = 0.28 #0.8
 #tskip = 0.1
-tskip = 1.3
-Norm = 8.0e4
+tskip = params[2]
+Norm = 4.0e4
 lin_analysis  = Norm*wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
 
 #with frequency
