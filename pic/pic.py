@@ -288,6 +288,7 @@ def save(n, conf, lap, f5):
     f5['fields/Ex'  ][:,lap] = exS
     f5['fields/rho' ][:,lap] = yee['rho']
     f5['fields/ekin'][:,lap] = yee['ekin']
+    f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
 
@@ -310,7 +311,7 @@ if __name__ == "__main__":
     for ai in range(8):
         axs.append( plt.subplot(gs[ai]) )
 
-    conf = Configuration('config.ini') 
+    conf = Configuration('config-landau.ini') 
 
 
     #node = plasma.Grid(conf.Nx, conf.Ny)
@@ -362,6 +363,7 @@ if __name__ == "__main__":
     dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
 
@@ -379,10 +381,11 @@ if __name__ == "__main__":
     #
     #filtering
 
-    pusher  = pypic.Pusher()
-    fintp   = pypic.ParticleFieldInterpolator()
-    comm    = pypic.Communicator()
-    currint = pypic.Depositer()
+    pusher   = pypic.Pusher()
+    fintp    = pypic.ParticleFieldInterpolator()
+    comm     = pypic.Communicator()
+    currint  = pypic.Depositer()
+    analyzer = pypic.Analyzator()
 
 
     #simulation loop
@@ -390,6 +393,7 @@ if __name__ == "__main__":
     ifile = 0
     for lap in range(0, conf.Nt):
 
+        # Tristan loop
         #advance B half
         #move particles
         #advance B half
@@ -449,6 +453,13 @@ if __name__ == "__main__":
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.depositCurrent()
+
+
+        #analyze
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                analyzer.analyze(cell)
 
 
         #save temporarily to file

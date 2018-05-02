@@ -11,6 +11,7 @@ namespace py = pybind11;
 #include "../pic/field_interpolator.h"
 #include "../pic/communicate.h"
 #include "../pic/current_deposit.h"
+#include "../pic/analyzer.h"
 
 
 
@@ -82,6 +83,10 @@ PYBIND11_MODULE(pypic, m) {
       .def("deposit", &pic::Depositer::deposit);
 
 
+    /// Pic cell analyzator
+    py::class_<pic::Analyzator>(m, "Analyzator")
+      .def(py::init<>())
+      .def("analyze", &pic::Analyzator::analyze);
 
 
 
