@@ -165,8 +165,10 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = Mm1.get_center(index, rfl);
 
         if (uvel[0] <= 0.0) {
-          T gam  = gamma<T,3>(uvel);
+          //T gam  = gamma<T,3>(uvel);
+          T gam = 1.0;
           flux.data[cid] = cfl*(uvel[0]/gam)*Mm1.data.at(cid);
+          //if (M0.data.at(cid) > 9.0) std::cout << uvel[0] << std::endl;
         }
       }
 
@@ -176,9 +178,11 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         int rfl    = M0.get_refinement_level(cid);
         auto uvel  = M0.get_center(index, rfl);
 
-        if (uvel[0] > 0.0) {
-          T gam  = gamma<T,3>(uvel);
+        if (uvel[0] >= 0.0) {
+          //T gam  = gamma<T,3>(uvel);
+          T gam = 1.0;
           flux.data[cid] = cfl*(uvel[0]/gam)*M0.data.at(cid);
+          //if (M0.data.at(cid) > 0.0) std::cout << uvel[0] << std::endl;
         }
       }
 
@@ -274,38 +278,28 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             auto& Np1 = block1.block(q+1,r,s); // f_i+1^t+dt
 
             // now flow to neighbors; only local flows are allowed
-            if(q >= 0)    N   -= flux; // - U_i+1/2 (outflowing from cell)
-            if(q <= Nx-2) Np1 += flux; // + U_i-1/2 (inflowing to neighbor)
+            if(q >= 0)    N   -= flux; // - (dt/dx)U_i+1/2 (outflowing from cell)
+            if(q <= Nx-2) Np1 += flux; // + (dt/dx)U_i-1/2 (inflowing to neighbor)
+
 
             // calculate current
-            // NOTE: Flux U is given in units of grid velocity; we must 
-            //       normalize to speed of light
-            // XXX: I think not. U should be in correct units. CHECK!
-            //T jx = (qm/cfl)*
-              
-
-            //this is the speed speed version
-            //T jx = (qm/cfl)*integrate_moment( 
-            //
-            //this is the grid speed version:
-            //
-            //this is...what hell it is?
-            // T jx = (qm/cfl)*integrate_moment( 
-            // purely speed of light
-            //
-            // grid speed because flux is in grid speed
-            //
-            // yet another xxx
-            //T jx = qm*cfl*integrate_moment( 
-            //
-            // and another
+            // NOTE: Flux (dt/dx)U is given in units of grid velocity.
+            //       Since Maxwell's fields are also in the same 'units'
+            //       we do not scale back to speed of light with (qm/cfl)
+            //       factor as
+            //       T jx = (qm/cfl)*integrate_moment( 
             T jx = qm*integrate_moment( 
                 flux,
                 [](std::array<T,3>& uvel) -> T { return 1.0;}
                 );
               
-            if(q >= 0)    yee.jx(q,r,s)   = jx; //U_i+1/2
-            //if(q <= Nx-2) yee.jx(q+1,r,s) += jx; //U_i-1/2
+            // vertex centered
+            if(q >= 0)    yee.jx(q,r,s)   += jx; //U_i+1/2
+            
+            // cell centered
+            //if(q >= 0)    yee.jx(q,r,s)   += jx/2.0; //U_i+1/2
+            //if(q <= Nx-2) yee.jx(q+1,r,s) += jx/2.0; //U_i-1/2
+            
           }
         }
       }

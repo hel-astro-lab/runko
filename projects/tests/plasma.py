@@ -51,6 +51,12 @@ def filler(xloc, uloc, ispcs, conf):
     if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
         return 0.0
 
+    #speedtest
+    #if 0.0<x<0.1:
+    #    if 0.98 < ux < 1.02:
+    #        return 10.0
+    #return 0.0
+
     #electrons
     if ispcs == 0:
         delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
@@ -85,7 +91,7 @@ def filler(xloc, uloc, ispcs, conf):
 
     #plasma reaction
     omp = conf.cfl*conf.dx
-    n0 = omp**2.0
+    n0 = (omp**2.0)/conf.Nspecies
 
 
     #Brownian noise
@@ -95,7 +101,7 @@ def filler(xloc, uloc, ispcs, conf):
     
     #velocity perturbation
     Lx = conf.Nx*conf.NxMesh*conf.dx
-    kmode = 2.0 #mode
+    kmode = conf.modes
     mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*x/Lx) * (Lx/(2.0*np.pi*kmode))
 
     #Classical Maxwellian
@@ -279,6 +285,9 @@ if __name__ == "__main__":
     import h5py
     f5 = h5py.File(conf.outdir+"/run.hdf5", "w")
 
+    print(conf.dt)
+    print(conf.cfl*conf.dx)
+
     grp0 = f5.create_group("params")
     grp0.attrs['dx']    = conf.dx
     #grp0.attrs['dt']    = conf.interval*conf.dt
@@ -306,28 +315,28 @@ if __name__ == "__main__":
         #configuration space push
         plasma.stepLocation(node)
 
-        ###cycle to the new fresh snapshot
+        #cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.cycle()
 
-        ###current deposition from moving flux
+        #current deposition from moving flux
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.depositCurrent()
 
-        ##update boundaries
+        #update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.updateBoundaries(node)
 
-        ###momentum step
+        #momentum step
         plasma.stepVelocity1d(node)
 
-        ###cycle to the new fresh snapshot
+        #cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
@@ -400,7 +409,8 @@ if __name__ == "__main__":
             timer.start("step") #refresh lap counter (avoids IO profiling)
 
 
-        time += conf.dt
+        #time += conf.dt
+        time += conf.cfl*conf.dx
     
     f5.close()
     #node.finalizeMpi()

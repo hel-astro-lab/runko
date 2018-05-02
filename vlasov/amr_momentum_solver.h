@@ -67,8 +67,8 @@ class MomentumSolver {
 
               // Jx current; chi(u) = u/gamma = v
               //
-              // NOTE: given in units of grid speed 
-              // XXX CHECK
+              // NOTE: needs to be given in units of grid speed 
+              //       so we scale with dt/dx
               //yee.jx1(q,r,s) += qm*
               yee.jx1(q,r,s) += qm*cfl*
                 integrate_moment(
@@ -338,8 +338,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       // Boris scheme for b=0 translates to
       // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
       //
-      // with halving taken (hopefully) into account in definition
-      // of e
+      // with halving taken into account in definition of Ex
       return -qm*E/cfl;
     }
 
