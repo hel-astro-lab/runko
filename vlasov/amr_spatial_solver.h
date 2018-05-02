@@ -278,12 +278,16 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             auto& Np1 = block1.block(q+1,r,s); // f_i+1^t+dt
 
             // now flow to neighbors; only local flows are allowed
-            if(q >= 0)    N   -= flux; // - U_i+1/2 (outflowing from cell)
-            if(q <= Nx-2) Np1 += flux; // + U_i-1/2 (inflowing to neighbor)
+            if(q >= 0)    N   -= flux; // - (dt/dx)U_i+1/2 (outflowing from cell)
+            if(q <= Nx-2) Np1 += flux; // + (dt/dx)U_i-1/2 (inflowing to neighbor)
 
 
             // calculate current
-            // NOTE: Flux U is given in units of grid velocity
+            // NOTE: Flux (dt/dx)U is given in units of grid velocity.
+            //       Since Maxwell's fields are also in the same 'units'
+            //       we do not scale back to speed of light with (qm/cfl)
+            //       factor as
+            //       T jx = (qm/cfl)*integrate_moment( 
             T jx = qm*integrate_moment( 
                 flux,
                 [](std::array<T,3>& uvel) -> T { return 1.0;}
