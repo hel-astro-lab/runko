@@ -36,6 +36,15 @@ using std::log;
 namespace mcmc {
 
 
+
+    class LP {
+        
+        public: 
+            
+        
+    
+    };
+
     class photon {
 
         public:

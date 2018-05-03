@@ -17,7 +17,7 @@ from mpl_toolkits.mplot3d import Axes3D
 sys.path.insert(0, '../tools')
 from timer import Timer
 
-sigma_T = 8.0*3.14/3.0    # Thomson cross-section = 8 \pi r_e / 3
+sigma_T = 8.0/3.0    # Thomson cross-section = 8 \pi r_e^2 / 3, in units of \pi r_e^2
 
 
 class Params:
@@ -117,7 +117,7 @@ def comptonScatter(e, p, ax, plot):
 #   To add exception when beta || omega
 #
 #    if norm(jvec) == 0.0:
-#        jvec = uCross(kvec,beta)
+#        jvec = uCross(kvec,beta0) ## TO BE CHANGED!
 #        ivec = uCross(jvec, kvec)
     cosalpha = np.dot( kvec, beta0 )    # cosine of the angle between electron and k-vector
     sinalpha = np.sqrt( 1.0 - cosalpha**2 ) # sine of the same angle
@@ -182,7 +182,79 @@ def comptonScatter(e, p, ax, plot):
         ax.plot( scaleVecX(hvp*Omegap), scaleVecY(hvp*Omegap), scaleVecZ(hvp*Omegap), alpha=0.2, linestyle='solid', color='red')#, label='Omegap' )
         ax.plot( scaleVecX(ves), scaleVecY(ves), scaleVecZ(ves), alpha=0.2, linestyle='dashed', color='blue')#, label='Omegap' )
 
-    return es, phs	### ! returns scattered electron and photon
+    return es, phs	### ! return scattered electron and photon
+#   return e, phs # return scattered photon and initial electron
+
+
+
+# Lorentz transformation to electron rest frame (sign=1) or back to lab frame (sign=-1)
+# Lorentz transformation of 4-vector vec1 to the electron frame with 4-vector vec2
+def lorentz(vec1, vec2)
+    
+    gamma = vec2[0]
+    eph =  vec1[0]  
+    
+    vec1spacial = (vec1[1], vec1[2], vec1[3])
+    vec2spacial = (vec2[1], vec2[2], vec2[3])
+    
+    pv = matmul(np.transpose(vec1spacial),vec2spacial)
+    t = (gamma - 1.0) * pv - eph * np.sqrt(gamma**2 - 1.0)
+    
+    eph = gamma*eph + pv * np.sqrt(gamma**2 - 1.0)
+    vec1spacial = vec1spacial + t * vec2spacial
+    
+    vec1 = (eph, vec1spacial[0], vec1spacial[1], vec1spacial[2])
+
+    return vec1
+    
+    
+    
+    
+    
+# Transformation (rotation) of vec2 in the reference frame connected with vec1 to lab frame
+def transfToLab(vec1, vec2)
+    
+    t = np.sqrt( ve1[0]**2 + vec1[1]**2 )
+        
+    if t == 0.0:
+        mtransf = np.array([0., 0., -1.], [0., 1., 0.], [1., 0., 0.]) 
+    else:
+        a=vec[0]
+        b=vec[0]
+        c=vec[0]
+        mtransf = np.array(a, -a*c/t, b/t], [b, -b*c/p, -a/p], [c, p, 0.]) 
+        
+    vec2 = np.matmul(mtransf,vec2)
+                    
+    return vec2
+
+
+
+
+
+# Monte Carlo Compton scattering by Boris
+def comptonScatterBoris(e, p, ax, plot):
+        
+    lorentz(p,e,1) # transformation of the photon vector from lab to electron rest frame
+    
+    # perform Compton scattering in the electron rest frame
+    #    
+
+    omega0 # unit vector in the direction of the incoming photon
+    omegap # unit vector in the direction of the outgoing photon
+    vel= np.array( vxes, vyes, vzes )
+    
+    omegap=transfToLab(omega0,omegap) # transformation (rotation) of the scattered photon vector to lab frame
+    vel=transfToLab(omega0,vel) # transformation (rotation) of the scattered electron vector to the lab frame
+    
+    es.loadVel(vel)
+    phs = mcmc.photon( hvp, omegap[0], omegap[1], omegap[2] )
+
+    phs=lorentz(phs,e,-1) # transformation of the photon vector from the incoming electron rest frame to lab frame
+    es=lorentz(es,e,-1) # transformation of the scattered electron vector from incoming electron rest frame to lab frame
+    
+
+    return es, phs	### ! return scattered electron and photon
 #   return e, phs # return scattered photon and initial electron
 
 
@@ -192,14 +264,16 @@ def comptonScatter(e, p, ax, plot):
 ## Monte-Carlo Compton scattering for bucket of electrons and photons
 ## Choose photon, compute whether the scattering occurs at all using maximal (Thomson) cross-section, 
 ## choose electron to interact with, compute real cross-section, do scattering (by calling comptonScatter)
-def lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, V):
+def lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, cell_V):
     
     global sigma_T
     
-    hv_sc = np.zeros(bucket_ph.size())
+    hv_sc = np.zeros(bucket_ph.size()) # scattered photons storage
+    e = mcmc.electron()       # scattering electron
+    sum_el_weights = bucket_el.size()  # sum of electron weights, now equal to number of electrons
     
-    
-    P_it_max = 2.0 * sigma_T / V  # V-space volume; sigma_T - Thomson cross-section 
+    P_it_max = sum_el_weights * 2.0 * sigma_T / cell_V  # 1/P_it_max = minimal free length 
+                                                        # cell_V-space volume; sigma_T - Thomson cross-section 
     #print"P_max = {}, bucket size = {}".format(P_it_max,bucket_ph.size())
     
     
@@ -211,43 +285,52 @@ def lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, V):
         hv_sc[i] = p.hv()
 
         z1 = np.random.rand()
-        t_it = -np.log( z1 ) /  P_it_max / bucket_el.size()   # 
+        t_free = -np.log( z1 ) /  P_it_max  # mean free time spent between interactions
 
-        if deltat < t_it : continue   # if timestep is less than mean free path, leave this photon and go to next one
-
-        j = int(np.floor( np.random.rand() * bucket_el.size() ))
-        #print"j = {}".format(j)
-        e = bucket_el.get(j)
         
-        beta = np.array([ e.vx(), e.vy(), e.vz() ])  # beta in lab frame
-        beta0 = np.array([ e.vx(), e.vy(), e.vz() ]) / e.vmod() # unit vector in direction of electron motion in lab frame
-        omega = np.array([ p.vx(), p.vy(), p.vz() ])         # unit vector in photon direction in lab frame
-#        mu = np.dot(beta0, omega)    # cosine of angle between incident photon and electron
-        mu = np.dot(beta0, omega)    # cosine of angle between incident photon and electron
-
-        #calculate real cross-section and real probability of interaction
-
-        xi = e.gamma() * p.hv() * (1.0 - e.vmod() * mu) # product of initial electron and photon 4-momenta
+        if deltat <= t_free :  # if timestep is less than mean free path, propagate current photon and go to the next photon
+#            bucket_ph.propagate(i,t_free)  # update the position of photon
+            continue
+        else:
+            t_it = deltat-t_free
+#           
+            j = int(np.floor( np.random.rand() * bucket_el.size() ))  # choose the target electron 
+           #print"j = {}".format(j)
+#           e = bucket_el.get(j)
+            bucket_el.get(j, e)
         
-        if xi < 0.01: # Approximate Taylor expansion for Compton total cross-section if xi<0.01, error about 5e-6
-            s0 = 1.0 - 2.0 * xi + 5.2 * xi**2 - 9.1 * xi**3 
+            beta0 = np.array([ e.vx(), e.vy(), e.vz() ]) / e.vmod() # unit vector in direction of electron motion in lab frame
+            omega = np.array([ p.vx(), p.vy(), p.vz() ])         # unit vector in photon direction in lab frame
+#           mu = np.dot(beta0, omega)    # cosine of angle between incident photon and electron
+            mu = np.dot(beta0, omega)    # cosine of angle between incident photon and electron
+
+           #calculate real cross-section and real probability of interaction
+
+            xi = e.gamma() * p.hv() * (1.0 - e.vmod() * mu) # product of initial electron and photon 4-momenta
+           
+            if xi < 0.01: # Approximate Taylor expansion for Compton total cross-section if xi<0.01, error about 5e-6
+                s0 = 1.0 - 2.0 * xi + 5.2 * xi**2 - 9.1 * xi**3 
                 # + 1144.0 * xi**4 / 35.0  - 544.0 * xi**5 / 7. + 1892.0 * xi**6 / 21.0   # higher-order terms, not needed if xi<0.01 
-        else:    # Exact formula for Klein - Nishina cross section in units of sigma_T
-            s0 = 3.0 / 8.0 / xi**2 * ( 4.0 + (xi - 2.0 - 2.0 / xi) * np.log(1.0 + 2.0 * xi) + 
+            else:    # Exact formula for Klein - Nishina cross section in units of sigma_T
+                s0 = 3.0 / 8.0 / xi**2 * ( 4.0 + (xi - 2.0 - 2.0 / xi) * np.log(1.0 + 2.0 * xi) + 
                                        2.0 * xi**2 * (1.0 + xi) / (1.0 + 2.0 * xi)**2 )
         
-        vrel = 1.0 - e.vmod() * mu  # relative direction ("v_rel" in Stern et al. 1995)
-        P_it_real = s0 * vrel / 2.0
+            vrel = 1.0 - e.vmod() * mu  # relative velocity ("v_rel" in Stern et al. 1995), electron velocity in units of c
+            P_it_real = s0 * vrel / 2.0
         
-        z2 = np.random.rand()
-        if z2 < P_it_real: 
-            es, ps = comptonScatter(e, p, axs[1], False)
-            bucket_el.replace(j, es)
-            bucket_ph.replace(i, ps)
-            hv_sc[i] = ps.hv()
-            #print"# {} scattered successfully, new energy = {}".format(i, hv_sc[i])
-        else: 
-            continue
+            z2 = np.random.rand()
+            if z2 < P_it_real: 
+                es, ps = comptonScatter(e, p, axs[1], False)
+                bucket_el.replace(j, es)
+#               bucket_ph.propagate(i,t_free)  # update the position of photon for the path before interaction
+                bucket_ph.replace(i, ps)
+                hv_sc[i] = ps.hv()
+#               bucket_ph.propagate(i,t_it)  # update the position of the scattered photon
+#               bucket_el.propagate(j,t_it)  # update the position of the scattered photon
+               #print"# {} scattered successfully, new energy = {}".format(i, hv_sc[i])
+            else: 
+                i=i-1      # if the scattering did not succeed with the chosen electron,
+                continue   # try simulating scattering again with the same photon
                 
         
     hist, edges = np.histogram(hv_sc, np.logspace(np.log10(xmin), np.log10(xmax), 20))
@@ -326,7 +409,7 @@ if __name__ == "__main__":
 
     e = mcmc.electron()
     verand=0.8
-    (vx, vy, vz) = [0.0, 0.95, 0.0] #randVel(verand) #(0.1, 0.0, 0.0) #randVel(0.5) 
+    (vx, vy, vz) = [0.3, 0.1, 0.0] #randVel(verand) #(0.1, 0.0, 0.0) #randVel(0.5) 
     e.loadVelComponents(vx, vy, vz)
     print "target electron with beta: {} gamma: {}".format(e.beta(), e.gamma() )
 
@@ -348,8 +431,6 @@ if __name__ == "__main__":
     #for sc in range(3):
     #    es, ps = comptonScatter(e, ph, axs[1], plot=True)
     plt.savefig("compton_single.png")
-    sys.exit()
-
 
     ##################################################
     # create bucket of electrons
@@ -357,13 +438,14 @@ if __name__ == "__main__":
 #    print "created electron bucket ({})".format( bucket_el.size() )
     e = mcmc.electron()
 
+
     #pour electrons to the bucket
     for i in range(100):
         (vx, vy, vz) = [0.0, 0.6, 0.0]#randVel(0.9) #direction on unit sphere #
         e.loadVelComponents(vx, vy, vz)
         bucket_el.push_back( e )
     print "Created electron bucket and loaded with {} electrons".format( bucket_el.size() )
-
+    
 
     #Create photon bucket and pour photons to the bucket
     bucket_ph = mcmc.photonBucket()
@@ -376,6 +458,8 @@ if __name__ == "__main__":
     print "Created photon bucket and loaded with {} photons".format( bucket_ph.size() )
     
     
+    sys.exit()
+    
     xmin = 5.0e-5
     xmax =  5.0e-4
     axs[0].set_xlim(xmin, xmax)
@@ -386,11 +470,11 @@ if __name__ == "__main__":
 
     
     ## constants
-    deltat=1.0e5  		# timestep
-    V= 1.0 * sigma_T	# considered volume
+    deltat=1.0e-5  		# timestep
+    cell_V= 10.0 * sigma_T**1.5	# considered volume in units of ???
     
     for sc in range(5):
-        bucket_el, bucket_ph = lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, V)
+        bucket_el, bucket_ph = lp_ComptonScatter(bucket_el, bucket_ph, axs, deltat, cell_V)
         print "Scattering # {}".format( sc+1 )
         
 
