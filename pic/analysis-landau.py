@@ -9,7 +9,7 @@ from scipy.optimize import curve_fit
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('debug/out/run.hdf5','r')
+f = h5py.File('landau/out/run.hdf5','r')
 #f = h5py.File('landau/out_khat045/run.hdf5','r')
 #f = h5py.File('landau/out_khat0144/run.hdf5','r')
 
@@ -258,6 +258,7 @@ axs[2].plot(time, np.log10(prtcls))
 
 ##################################################
 
+print("minmax: ", np.min(ekin), np.max(ekin))
 ekintot = np.sum(ekin, 0) 
 axs[3].plot(time, np.log10(ekintot))
 #axs[3].plot(time, wedens, 'r-')
@@ -287,7 +288,7 @@ axs[4].plot(time, np.log10( etot),    "k-" )
 axs[4].plot(time, np.log10( ekintot), "b--")
 axs[4].plot(time, np.log10( wedens),  "r--")
 
-axs[4].set_ylim((-8, -2))
+#axs[4].set_ylim((-8, -2))
 
 
 plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)

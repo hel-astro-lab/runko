@@ -83,7 +83,7 @@ class Analyzator {
       yee.rho(i,j,k) += abs(q);
 
       // kinetic energy
-      yee.ekin(i,j,k) += abs(q)*u0*u0;
+      yee.ekin(i,j,k) += 0.5*abs(q)*u0*u0;
       //std::cout << abs(q)*u0*u0 << "ijk:" << i << " " << j << " " << k << '\n';
     }
 

@@ -84,12 +84,12 @@ class Depositer {
       z1sp = z0;
       z2sp = loc[2][n];
 
-      i1 = trunc(x1sp);
-      i2 = trunc(x2sp);
-      j1 = trunc(y1sp);
-      j2 = trunc(y2sp);
-      k1 = trunc(z1sp);
-      k2 = trunc(z2sp);
+      i1 = floor(x1sp);
+      i2 = floor(x2sp);
+      j1 = floor(y1sp);
+      j2 = floor(y2sp);
+      k1 = floor(z1sp);
+      k2 = floor(z2sp);
  
 	    xr = min( (min(i1,i2)+1), max(max(i1,i2), 0.5*(x1sp+x2sp)) );
 	    yr = min( (min(j1,j2)+1), max(max(j1,j2), 0.5*(y1sp+y2sp)) );
