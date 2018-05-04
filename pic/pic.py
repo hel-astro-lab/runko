@@ -140,6 +140,9 @@ def inject(node, ffunc, conf):
                                     #uloc = [0.1, 0.0, 0.0]
                                     x0, u0 = ffunc(xloc, ispcs, conf)
 
+                                    #if not((x0[0] >= 0.0) and (x0[0]<=1.0) ):
+                                    #    continue
+
                                     c.container.add_particle(x0, u0)
 
 
@@ -172,7 +175,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
     ax.minorticks_on()
 
     ax.set_xlim(n.getXmin(), n.getXmax())
-    ax.set_ylim(-1.2, 1.2)
+    ax.set_ylim(-0.2, 0.2)
 
 
 
@@ -185,6 +188,11 @@ def filler(xloc, ispcs, conf):
     uy = 0.0
     uz = 0.0
 
+    #if not((xx >= 200.0) and (xx<=300.0) ):
+    #    x0 = [xx, 0.0, 0.0]
+    #    u0 = [0.0, 0.0, 0.0]
+    #    return x0, u0
+
 
     #speedtest
     #if 1.0 < xx < 2.0:
@@ -196,6 +204,10 @@ def filler(xloc, ispcs, conf):
     #    u0 = [0.0, 0.0, 0.0]
     #    return x0, u0
 
+    # current test
+    #x0 = [xx, 0.0, 0.0]
+    #u0 = [0.1, 0.0, 0.0]
+    #return x0, u0
 
 
     vth = np.sqrt(conf.delgam)
@@ -245,7 +257,9 @@ def insert_em(node, conf):
                         xloc1 = spatialLoc(node, (i,j), (l+1,m,n), conf)
 
                         xmid = 0.5*(xloc0[0] + xloc1[0])
-                        yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
+                        #yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
+
+                        yee.ex[l,m,n] = 1.0e-5
 
 def smooth(y, box_pts):
     box = np.ones(box_pts)/box_pts
@@ -255,15 +269,15 @@ def smooth(y, box_pts):
 
 def plotDebug(ax, n, conf):
 
-    for i in range(conf.Nx):
-        cid = n.cellId(i,0)
-        c = n.getCellPtr(cid)
+    #for i in range(conf.Nx):
+    #    cid = n.cellId(i,0)
+    #    c = n.getCellPtr(cid)
 
-        x  = c.container.loc(0)
-        ux = c.container.vel(0)
-        ex = c.container.ex()
+    #    x  = c.container.loc(0)
+    #    ux = c.container.vel(0)
+    #    ex = c.container.ex()
 
-        ax.plot(x, ex, "k.", markersize=2, alpha=0.8)
+    #    ax.plot(x, ex, "k.", markersize=2, alpha=0.8)
 
     #smoothed ex
     yee = getYee(n, conf)
@@ -338,7 +352,6 @@ if __name__ == "__main__":
 
 
     inject(node, filler, conf) #injecting plasma particles
-
 
     #insert_em(node, conf)
 
