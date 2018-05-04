@@ -239,7 +239,11 @@ def plotJ(ax, n, conf):
     #ax.plot(yee['x'], yee['jy'], "r--")
     #ax.plot(yee['x'], yee['jz'], "g--")
 
-    ax.plot(yee['x'], yee['jx1'], "r-")
+    ax.plot(yee['x'], yee['jx1'], "r--")
+
+    #ratio
+    #ax.plot(yee['x'], yee['jx1']/yee['jx'], "k-")
+
     
     ax.set_ylabel(r'$J_x$')
 

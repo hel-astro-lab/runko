@@ -192,12 +192,15 @@ inline Realf interp_linear<Realf,1>(
 	
 	Realf dx = coordinates[0]; // - T(0.5); 
 
-	Realf d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
-    
+  Realf d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+
+
+  // Mesh is actually corner-stored so does not work:
 	//Realf d00 = lerp_center(dx, 
   //    _getv(mesh, {{i-1, j,   k  }}, rfl), 
   //    _getv(mesh, {{i,   j,   k  }}, rfl), 
-  //    _getv(mesh, {{i+1, j,   k  }}, rfl));
+  //    _getv(mesh, {{i+1, j,   k  }}, rfl) 
+  //    );
 	
 	return d00;
 }
