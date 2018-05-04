@@ -6,6 +6,9 @@ namespace py = pybind11;
 #include "../definitions.h"
 #include "../tools/mesh.h"
 
+//--------------------------------------------------
+// Vlasov module
+  
 //#include "../vlasov/cell.h"
 #include "../vlasov/grid.h"
 
@@ -23,13 +26,10 @@ namespace py = pybind11;
 #include "../vlasov/tasker.h"
 
 
-
-
 typedef float Realf;
 // typedef toolbox::AdaptiveMesh<Realf, 1> AM1d;
 typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
 typedef toolbox::Adapter<Realf, 3> Adapter3d;
-
 
 
 /// trampoline class for VlasovVelocitySolver
@@ -82,6 +82,12 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 
 
 
+
+
+
+
+//--------------------------------------------------
+
 // python bindings for plasma classes & functions
 PYBIND11_MODULE(pyplasma, m) {
 
@@ -102,7 +108,8 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
     .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
-    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries);
+    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries)
+    .def("exchangeCurrents", &fields::PlasmaCell::exchangeCurrents);
 
 
   py::class_<fields::PlasmaCellDamped,
@@ -361,6 +368,10 @@ PYBIND11_MODULE(pyplasma, m) {
     m.def("stepVelocity",   &vlasov::stepVelocity<3>);
 
     m.def("analyze",      &vlasov::analyze);
+
+
+
+
 
 }
 
