@@ -74,7 +74,7 @@ axs[4].set_ylabel(r'$E_T$')
 
 
 #XXX test same setup with flux2nd mode = 10 
-time = time * 0.75 #khat 0.5
+#time = time * 0.75 #khat 0.5
 #time = time * 0.76 #khat 0.4
 #time = time * 0.79 #khat 0.09
 ex_max = np.max( np.abs(ex),0 )
@@ -101,9 +101,9 @@ def fitf(t, wr, wi, t0, y0):
 
 
 
-#params = (1.014990, 0.0, 1.4, 200.0*ex_max[0])   #k=0.09
-#params = (1.28506, 0.066, 1.4, 200.0*ex_max[0])  #k=0.40
-params = (1.415660, 0.15336, 1.4, 200.0*ex_max[0]) #k=0.5
+params = (1.014990, 0.0, 1.4, 200.0*ex_max[0])   #k=0.09 /mode=2
+#params = (1.28506, 0.066, 1.2, 200.0*ex_max[0])  #k=0.40 /mode=8
+#params = (1.415660, 0.15336, 1.4, 100.0*ex_max[0]) #k=0.5 /mode=10
 
 
 

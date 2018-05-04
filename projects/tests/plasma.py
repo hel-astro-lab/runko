@@ -51,11 +51,44 @@ def filler(xloc, uloc, ispcs, conf):
     if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
         return 0.0
 
+
+    #box advection test
+    #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
+    #nn = 1.0/(dv)
+    #nn = 1.0
+
+    #if not((x >= 1.0) and (x<=1.01) ):
+    #    return 0.0
+    #    #if -0.005 < ux < 0.005:
+    #    #    return nn
+    #    #else:
+    #    #    return 0.0
+
+
+
     #speedtest
     #if 0.0<x<0.1:
     #    if 0.98 < ux < 1.02:
-    #        return 10.0
+    #        return 1.0
+
+
+    #current test
+    #if True: #positive
+    #    v = 0.1
+    #    dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
+    #    if (v-dv/2.0 <= ux <= v+dv/2.0):
+    #        return nn
+    #    else:
+    #        return 0.0
+    #else: #negative
+    #    if -0.0995 > ux > -0.105:
+    #        return nn
+    #    else:
+    #        return 0.0
+
+    #    #return n0
     #return 0.0
+
 
     #electrons
     if ispcs == 0:
@@ -93,6 +126,14 @@ def filler(xloc, uloc, ispcs, conf):
     omp = conf.cfl*conf.dx
     n0 = (omp**2.0)/conf.Nspecies
 
+    #phase space cell volume normalization
+    #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
+    #n0 *= conf.dx/dv 
+    #n0 *= 1.0/conf.dx
+
+    #print(n0)
+    #n0 = 1.0/conf.Nspecies
+
 
     #Brownian noise
     #brownian_noise = 0.01*np.random.standard_normal() 
@@ -103,6 +144,8 @@ def filler(xloc, uloc, ispcs, conf):
     Lx = conf.Nx*conf.NxMesh*conf.dx
     kmode = conf.modes
     mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*x/Lx) * (Lx/(2.0*np.pi*kmode))
+    #mux_noise *= np.sqrt(delgam)/conf.dx/np.sqrt(conf.cfl) #normalize 
+
 
     #Classical Maxwellian
     f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
@@ -128,6 +171,7 @@ def save(n, conf, lap, f5):
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
     f5['fields/ekin'][:,lap] = yee['ekin']
+    f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
 
@@ -160,6 +204,7 @@ def insert_em(node, conf):
                         xmid = 0.5*(xloc0[0] + xloc1[0])
                         yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
 
+                        #yee.ex[l,m,n] = 1.0e-5
 
 
 def solvePoisson(ax, node, conf):
@@ -285,10 +330,11 @@ if __name__ == "__main__":
     import h5py
     f5 = h5py.File(conf.outdir+"/run.hdf5", "w")
 
-    print(conf.dt)
-    print(conf.cfl*conf.dx)
+    #print(conf.dt)
+    #print(conf.cfl/conf.c_omp)
 
     grp0 = f5.create_group("params")
+    #grp0.attrs['c_omp'] = conf.c_omp
     grp0.attrs['dx']    = conf.dx
     #grp0.attrs['dt']    = conf.interval*conf.dt
     grp0.attrs['dt']    = conf.dt
@@ -301,6 +347,7 @@ if __name__ == "__main__":
     dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
 
@@ -408,9 +455,9 @@ if __name__ == "__main__":
 
             timer.start("step") #refresh lap counter (avoids IO profiling)
 
+        time += conf.dt
+        #time += conf.cfl/conf.c_omp
 
-        #time += conf.dt
-        time += conf.cfl*conf.dx
     
     f5.close()
     #node.finalizeMpi()
