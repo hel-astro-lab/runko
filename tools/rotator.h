@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 
 
 namespace toolbox {
@@ -30,7 +31,9 @@ class Rotator {
     currentStep++;
 
     // check bounds and cycle back
-    if (currentStep > L) currentStep = 0;
+    if (currentStep >= L) currentStep = 0;
+
+    //std::cout << "ROTATOR STEP IS " << currentStep << '\n';
   }
 
 

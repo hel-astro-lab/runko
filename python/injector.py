@@ -140,6 +140,10 @@ def inject(node, ffunc, conf):
                         block.qm = conf.me
                     elif ispcs == 1:
                         block.qm = conf.mi
+                    elif ispcs == 2:
+                        block.qm = conf.me
+                    elif ispcs == 3:
+                        block.qm = conf.mi
 
 
                     for n in range(conf.NzMesh):

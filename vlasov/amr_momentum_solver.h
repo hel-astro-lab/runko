@@ -12,6 +12,8 @@
 #include "../tools/cppitertools/zip.hpp"
 #include "../tools/cppitertools/enumerate.hpp"
 #include "../tools/signum.h"
+#include "../units.h"
+#include "amr_analyzator.h"
 
 
 using namespace Eigen;
@@ -19,6 +21,7 @@ using namespace Eigen;
 using std::floor;
 using iter::zip;
 using toolbox::sign;
+using units::pi;
 
 namespace vlasov {
 
@@ -35,9 +38,53 @@ namespace vlasov {
 template<typename T, int D>
 class MomentumSolver {
 
-
   public:
     typedef std::array<T, 3> vec;
+
+
+    /// Get snapshot current J_i^n+1 from momentum distribution
+    void updateFutureCurrent(
+        vlasov::VlasovCell& cell,
+        T cfl)
+    {
+
+      auto& yee = cell.getYee();
+      yee.jx1.clear();
+
+      auto& step0 = cell.steps.get(0);
+      for(auto&& block0 : step0) {
+
+        int Nx = int(block0.Nx),
+            Ny = int(block0.Ny),
+            Nz = int(block0.Nz);
+
+        for (int s=0; s<Nz; s++) {
+          for(int r=0; r<Ny; r++) {
+            for(int q=0; q<Nx; q++) {
+              const auto& M   = block0.block(q,r,s);   // f_i
+
+              T qm = 1.0 / block0.qm;  // charge to mass ratio
+
+              // Jx current; chi(u) = u/gamma = v
+              //
+              // NOTE: needs to be given in units of grid speed 
+              //       so we scale with dt/dx
+              //yee.jx1(q,r,s) += qm*
+              yee.jx1(q,r,s) += qm*cfl*
+                integrate_moment(
+                    M,
+                    [](std::array<T,3> uvel) -> T 
+                    { return uvel[0]/gamma<T,3>(uvel); }
+                    );
+            }
+          }
+        }
+
+      }// end of loop over species
+
+      return;
+    }
+
 
 
     /*! \brief Solve Vlasov cell contents
@@ -59,8 +106,13 @@ class MomentumSolver {
       auto& yee = cell.getYee();
 
       // timestep
-      T dt = (T) cell.dt*step_size;
-      T dx = (T) cell.dx;
+      T dt   = (T) cell.dt;      
+      T dx   = (T) cell.dx;      
+      T cfl  = dt/dx;
+
+
+      /// Now get future current
+      updateFutureCurrent(cell, cfl);
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -75,8 +127,6 @@ class MomentumSolver {
             for (size_t s=0; s<block0.Nz; s++) {
               T qm = 1.0 / block0.qm;  // charge to mass ratio
 
-              //qm /= dt;
-              //qm = qm*dx/dt;
 
               // Get local field components
               vec 
@@ -88,19 +138,18 @@ class MomentumSolver {
                 }},              
 
                 // E-field interpolated to the middle of the cell
+                // E_i = (E_i+1/2 + E_i-1/2)
                 // XXX
                 E =                
                 {{                 
                    (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
-                   (T) yee.ey(q,r,s),
-                   (T) yee.ez(q,r,s)
+                   (T) (0.5*(yee.ey(q,r,s) + yee.ey(q,  r-1, s  ))),
+                   (T) (0.5*(yee.ez(q,r,s) + yee.ez(q,  r,   s-1)))
                 }};
-                //E =                
-                //{{                 
-                //   (T) yee.ex(q,r,s),
-                //   (T) yee.ey(q,r,s),
-                //   (T) yee.ez(q,r,s)
-                //}};
+
+              // Now push E field to future temporarily
+              //E[0] -= yee.jx1(q,r,s) * 0.5;
+
 
               // dig out velomeshes from blocks
               auto& mesh0 = block0.block(q,r,s);
@@ -108,12 +157,16 @@ class MomentumSolver {
 
               // fmt::print("solving for srq ({},{},{})\n",s,r,q);
 
+
               // then the final call to the actual mesh solver
-              solveMesh( mesh0, mesh1, E, B, qm, dt);
+              solveMesh( mesh0, mesh1, E, B, qm, dt, cfl);
             }
           }
         }
       }
+
+      // XXX update jx1 for debug
+      //updateFutureCurrent(cell, cfl);
 
       return;
     }
@@ -125,7 +178,8 @@ class MomentumSolver {
         vec& E,
         vec& B,
         T qm,
-        T dt) = 0;
+        T dt,
+        T cfl) = 0;
 
 };
 
@@ -146,7 +200,6 @@ class MomentumSolver {
 //         vec& Einc,
 //         vec& Binc,
 //         T qm,
-//         T dt)
 //     {
 // 
 //       // empty the target mesh
@@ -257,7 +310,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         Vector3f& E,
         Vector3f& B,
         T qm,
-        T dt)
+        T dt,
+        T cfl)
     {
 
       // electromagnetic combined push
@@ -280,7 +334,12 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       */
 
       // electrostatic push
-      return -qm*(dt*E);
+      //
+      // Boris scheme for b=0 translates to
+      // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
+      //
+      // with halving taken into account in definition of Ex
+      return -qm*E/cfl;
     }
 
 
@@ -293,7 +352,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         Vector3f& E,
         Vector3f& B,
         T qm,
-        T dt) 
+        T dt,
+        T cfl) 
     {
       T val; // return value
       vec u    = mesh1.get_center(index, rfl);  // velocity
@@ -303,12 +363,15 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // get shift of the characteristic solution from Lorentz force
       Vector3f uvel( u.data() );
-      Vector3f F = lorentz_force(uvel, E, B, qm, dt);
+      Vector3f F = lorentz_force(uvel, E, B, qm, dt, cfl);
 
 
-      // advection in units of cells
+      // advection in units of cells 
+      // NOTE: We normalize with CFL because velocities are in units 
+      // of c and we need them in units of grid speed.
+      // XXX: CHECK
       std::array<T,3> shift, cell_shift;
-      for(int i=0; i<D; i++) shift[i] = F(i)/du[i];
+      for(int i=0; i<D; i++) shift[i] = F(i) / du[i];
 
       // advected cells
       std::array<int,3> index_shift;
@@ -331,6 +394,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // interpolation branch
       val = toolbox::interp_cubic<T,D>(mesh0, index_new, cell_shift, rfl);
+      //val = toolbox::interp_linear<T,D>(mesh0, index_new, cell_shift, rfl);
 
       return val;
     }
@@ -342,7 +406,8 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         vec& Einc,
         vec& Binc,
         T qm,
-        T dt)
+        T dt,
+        T cfl)
     {
 
       toolbox::Adapter<T,3> adapter;
@@ -382,7 +447,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
             index[2] = t;
 
             uint64_t cid = mesh1.get_cell_from_indices(index, 0);
-            val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, dt);
+            val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, dt, cfl);
 
             // refinement
             // TODO specialize to value & gradient instead of just value
@@ -416,7 +481,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
           // fmt::print("creating {} at {}\n", cid, rfl);
 
-          val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, dt);
+          val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, dt, cfl);
           mesh1.set(cid, val);
 
           refine_indicator   = val/max_val;
