@@ -272,7 +272,7 @@ namespace mcmc {
 
             void replace( size_t indx, electron e );
 
-            electron get( size_t indx, electron e );
+            electron get( size_t indx);
 
     };
 
@@ -285,13 +285,14 @@ namespace mcmc {
         bucket[indx] = e.vel();
     };
 
-    electron electronBucket::get( size_t indx, electron e) {
+    electron electronBucket::get( size_t indx ) {
+        //std::array<double, 3> data = bucket[indx];
+        electron e;
         Vector3d vel = bucket[indx];
         e.loadVel(vel);
 
         return e;
     };
-
 
 
 
