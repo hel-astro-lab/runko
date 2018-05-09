@@ -179,17 +179,19 @@ def plotXmesh(ax, n, conf, spcs):
 def getYee(n, conf):
 
     data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
-            'ex': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'ey': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'ez': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'ez': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'bx': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'by': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'bz': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'jx': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'jy': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'jz': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'rh': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ey':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'bx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'by':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'bz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'jx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'jy':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'jz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'jx1':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+            'ekin': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            }
 
 
@@ -213,7 +215,12 @@ def getYee(n, conf):
             data['jy'][indx] = yee.jy[s, 0, 0]
             data['jz'][indx] = yee.jz[s, 0, 0]
 
-            data['rh'][indx] = yee.rh[s, 0, 0]
+            data['jx1'][indx] = yee.jx1[s, 0, 0]
+
+            data['rho'][indx] = yee.rho[s, 0, 0]
+            data['ekin'][indx] = yee.ekin[s, 0, 0]
+
+
 
     return data
 
@@ -229,8 +236,14 @@ def plotJ(ax, n, conf):
     #ax.set_ylim(-20.0, 20.0)
 
     ax.plot(yee['x'], yee['jx'], "b-")
-    ax.plot(yee['x'], yee['jy'], "r--")
-    ax.plot(yee['x'], yee['jz'], "g--")
+    #ax.plot(yee['x'], yee['jy'], "r--")
+    #ax.plot(yee['x'], yee['jz'], "g--")
+
+    ax.plot(yee['x'], yee['jx1'], "r--")
+
+    #ratio
+    #ax.plot(yee['x'], yee['jx1']/yee['jx'], "k-")
+
     
     ax.set_ylabel(r'$J_x$')
 
@@ -260,7 +273,7 @@ def plotDens(ax, n, conf):
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
 
-    ax.plot(yee['x'], yee['rh'], "b-")
+    ax.plot(yee['x'], yee['rho'], "b-")
     
     ax.set_ylabel(r'$n$')
 

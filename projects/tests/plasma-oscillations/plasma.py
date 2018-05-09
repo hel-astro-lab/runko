@@ -58,8 +58,8 @@ def filler(xloc, uloc, ispcs, conf):
         muy = 0.0
         muz = 0.0
 
-        #Lx  = conf.Nx*conf.NxMesh*conf.dx
-        #mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
+        Lx  = conf.Nx*conf.NxMesh*conf.dx
+        mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
 
     #ions/positrons
@@ -88,43 +88,27 @@ def filler(xloc, uloc, ispcs, conf):
 
 
     #number density oscillations
-    Lx  = conf.Nx*conf.NxMesh*conf.dx
-    k  = 2.0*np.pi/0.568
-    f *= 1.0 + conf.beta*np.cos(k*x/conf.dx)
+    #Lx  = conf.Nx*conf.NxMesh*conf.dx
+    #k  = 2.0*np.pi/0.568
+    #f *= 1.0 + conf.beta*np.cos(k*x/conf.dx)
 
 
     return f
 
 
-
 # Get Yee grid components from node and save to hdf5 file
-def save(n, conf, lap, dset):
+def save(n, conf, lap, f5):
 
     #get E field
     yee = getYee(n, conf)
 
-    dset[:, lap] = yee['ex']
+    f5['fields/Ex'  ][:,lap] = yee['ex']
+    f5['fields/rho' ][:,lap] = yee['rho']
+    f5['fields/ekin'][:,lap] = yee['ekin']
+
+    return
 
 
-def insert_em(node, conf):
-
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            c = node.getCellPtr(i,j)
-            yee = c.getYee(0)
-
-            for q in range(conf.NxMesh):
-                for k in range(conf.NyMesh):
-                    if q == 32:
-                        yee.ex[q,k,0] =  0.5
-
-                    #yee.ex[q,k,0] =  0.0
-                    #yee.ey[q,k,0] =  0.0
-                    #yee.ez[q,k,0] =  0.0
-
-                    #yee.bx[q,k,0] =  0.0
-                    #yee.by[q,k,0] =  0.0
-                    #yee.bz[q,k,0] =  0.0
 
 
 
@@ -160,10 +144,8 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
-    #conf = Configuration('config-plasmaosc.ini') 
+    conf = Configuration('config-plasmaosc.ini') 
     #conf = Configuration('config-dispersion.ini') 
-    #conf = Configuration('config-twostream.ini') 
-    conf = Configuration('config-landau.ini') 
 
     node = plasma.Grid(conf.Nx, conf.Ny)
 
@@ -212,12 +194,6 @@ if __name__ == "__main__":
 
 
 
-    #setup momentum space solver
-    #vsol = plasma.AmrMomentumLagrangianSolver()
-
-    #setup spatial space solver
-    #ssol = plasma.AmrSpatialLagrangianSolver()
-
 
     timer.stop("init") 
     timer.stats("init") 
@@ -228,22 +204,23 @@ if __name__ == "__main__":
 
     #setup output file
     import h5py
-    f = h5py.File("out/run.hdf5", "w")
+    f5 = h5py.File("out/run.hdf5", "w")
 
-    grp0 = f.create_group("params")
+    grp0 = f5.create_group("params")
     grp0.attrs['dx']    = conf.dx
-    grp0.attrs['dt']    = conf.interval*conf.dt
-    grp = f.create_group("fields")
+    grp0.attrs['dt']    = conf.dt
+    grp = f5.create_group("fields")
+
+    #number of samples (every step is saved)
+    #Nsamples = int(conf.Nt/conf.interval) + 1
+    Nsamples = conf.Nt
+    dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
-    #number of samples
-    Nsamples    = int(conf.Nt/conf.interval) + 1
-    dset = grp.create_dataset("Ex", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
-
-    #XXX DEBUG
-    #insert_em(node, conf)
-
+    ##################################################
 
     #simulation loop
     time  = 0.0
@@ -311,6 +288,11 @@ if __name__ == "__main__":
         # analyze
         plasma.analyze(node)
 
+        #save temporarily to file
+        save(node, conf, ifile, f5)
+        ifile += 1
+
+
 
         timer.lap("step")
 
@@ -323,9 +305,6 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            #save temporarily to file
-            save(node, conf, ifile, dset)
-            ifile += 1
 
             plotNode(axs[0], node, conf)
 
@@ -349,7 +328,7 @@ if __name__ == "__main__":
 
         time += conf.dt
     
-    f.close()
+    f5.close()
     #node.finalizeMpi()
 
 

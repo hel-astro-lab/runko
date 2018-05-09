@@ -10,6 +10,7 @@
 #include "amr/refiner.h"
 #include "amr/operators.h"
 #include "../tools/signum.h"
+#include "amr_analyzator.h"
 
 #include "../tools/cppitertools/zip.hpp"
 using iter::zip;
@@ -18,6 +19,8 @@ using toolbox::sign;
 
 #include <Eigen/Dense>
 using namespace Eigen;
+using std::min;
+using std::max;
 
 
 namespace vlasov {
@@ -61,16 +64,17 @@ class SpatialSolver {
 
 
 /// Relativistic gamma from velocity
-template<typename T, int D>
-inline T gamma(std::array<T,D>& uvel) 
-{
-  T gammasq = 1.0;
-  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
-  return std::sqrt(gammasq);
-}
+//template<typename T, int D>
+//inline T gamma(std::array<T,D>& uvel) 
+//{
+//  T gammasq = 1.0;
+//  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
+//  return std::sqrt(gammasq);
+//}
 
 
 /// Simple (relativistic) box integration of a mesh flux
+/*
 template<typename T>
 T integrate_current(
     toolbox::AdaptiveMesh<T,3>& m)
@@ -91,7 +95,7 @@ T integrate_current(
 
   // integrate leafs; j = int{ U du/gamma}
   T integ = T(0);
-  for(auto cid : m.get_cells(true) ) {
+  for(auto cid : m.get_cells(false) ) {
     if( !m.is_leaf(cid) ) continue;
 
     auto index = m.get_indices(cid);
@@ -99,12 +103,12 @@ T integrate_current(
     auto uvel  = m.get_center(index, rfl);
     gam        = gamma<T,3>(uvel);
 
-    integ += m.data[cid]*du[rfl]/gam;
+    integ += m.data.at(cid)*du[rfl]/gam;
   }
 
   return integ;
 }
-
+*/
 
 
 
@@ -144,26 +148,194 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
     
 
     /// Linear 1st order upwind-biased flux
-    // inline toolbox::AdaptiveMesh<T,3> flux1st(
-    //     const toolbox::AdaptiveMesh<T,3>& M0,
-    //     const toolbox::AdaptiveMesh<T,3>& Mm1) {
+    inline toolbox::AdaptiveMesh<T,3> flux1st(
+        const toolbox::AdaptiveMesh<T,3>& M0,
+        const toolbox::AdaptiveMesh<T,3>& Mp1,
+        T cfl) {
 
-    //   return M0.xx + Mm1.xx;
-    // }
+      // make a new fresh mesh for updating (based on M0)
+      // XXX shallow or deep copy?
+      toolbox::AdaptiveMesh<T,3> flux(M0);
+      flux.data.clear();
+
+      // Here we compute (u_x/gamma) and then
+      // switch to units of grid speed by multiplying with Cfl
+
+      //left side
+      for(auto&& cid : M0.get_cells(false)) {
+        auto index = M0.get_indices(cid);
+        int rfl    = M0.get_refinement_level(cid);
+        auto uvel  = M0.get_center(index, rfl);
+
+        if (-uvel[0] < 0.0) {
+          //T gam  = gamma<T,3>(uvel);
+          T gam = 1.0;
+          flux.data[cid] = cfl*(uvel[0]/gam)*M0.data.at(cid);
+
+          //if (M0.data.at(cid) > 0.01) std::cout << "LL:" << flux.data[cid] << " / " << M0.data.at(cid) << std::endl;
+        } 
+
+      }
+
+      //right side
+      for(auto&& cid : Mp1.get_cells(false)) {
+        auto index = Mp1.get_indices(cid);
+        int rfl    = Mp1.get_refinement_level(cid);
+        auto uvel  = Mp1.get_center(index, rfl);
+
+        if (-uvel[0] > 0.0) {
+          //T gam  = gamma<T,3>(uvel);
+          T gam = 1.0;
+          flux.data[cid] = cfl*(uvel[0]/gam)*Mp1.data.at(cid);
+
+          //if (Mp1.data.at(cid) > 0.01) std::cout << "RR:" << uvel[0] << std::endl;
+        }
+      }
+
+      return flux; 
+    }
  
+
+
+    //--------------------------------------------------
+    //inline T fmaxf(T fm2, T fm1, T f0, T fp1, T fp2) { 
+    //  return T(100);
+    //}
+    //inline T fminf(T fm2, T fm1, T f0, T fp1, T fp2) { 
+    //  return T(0);
+    //}
+      
+    inline T fmaxf(T fm2, T fm1, T f0, T fp1, T fp2) { 
+      T fmax1 = max<T>( max<T>(fm1, f0), min<T>( T(2)*fm1 - fm2, T(2)*f0 - fp1) );
+      T fmax2 = max<T>( max<T>(fp1, f0), min<T>( T(2)*fp1 - fp2, T(2)*f0 - fm1) );
+      return max<T>(fmax1, fmax2);
+    }
+
+    inline T fminf(T fm2, T fm1, T f0, T fp1, T fp2) { 
+      T fmin1 = min<T>( min<T>(fm1, f0), max<T>(T(2)*fm1 - fm2, T(2)*f0 - fp1) );
+      T fmin2 = min<T>( min<T>(fp1, f0), max<T>(T(2)*fp1 - fp2, T(2)*f0 - fm1) );
+      return max<T>( T(0), min<T>(fmin1, fmin2) );
+    }
+
+    inline T Lpf(T fm2, T fm1, T f0, T fp1, T fp2) {
+      if (fp1 >= f0){ 
+        T fmin = fminf(fm2, fm1, f0, fp1, fp2);
+        return min<T>( T(2)*(f0 - fmin), fp1 - f0);
+      } else {
+        T fmax = fmaxf(fm2, fm1, f0, fp1, fp2);
+        return max<T>( T(2)*(f0 - fmax), fp1 - f0);
+      }
+    }
+
+    inline T Lmf(T fm2, T fm1, T f0, T fp1, T fp2) {
+      if (f0 >= fm1){ 
+        T fmax = fmaxf(fm2, fm1, f0, fp1, fp2);
+        return min<T>( T(2)*(fmax - f0), f0 - fm1);
+      } else {
+        T fmin = fminf(fm2, fm1, f0, fp1, fp2);
+        return max<T>( T(2)*(fmin - f0), f0 - fm1);
+      }
+    }
+
+
+
+    /// 2nd order upwind-biased flux
+    inline toolbox::AdaptiveMesh<T,3> flux3rdU(
+        const toolbox::AdaptiveMesh<T,3>& Mm2,
+        const toolbox::AdaptiveMesh<T,3>& Mm1,
+        const toolbox::AdaptiveMesh<T,3>& M0,
+        const toolbox::AdaptiveMesh<T,3>& Mp1,
+        const toolbox::AdaptiveMesh<T,3>& Mp2,
+        T cfl) {
+
+      // make a new fresh mesh for updating (based on M0)
+      // XXX shallow or deep copy?
+      toolbox::AdaptiveMesh<T,3> flux(M0);
+      flux.data.clear();
+
+      // Here we compute (u_x/gamma) and then
+      // switch to units of grid speed by multiplying with Cfl
+
+      //left side
+      for(auto&& cid : Mm1.get_cells(false)) {
+        auto index = Mm1.get_indices(cid);
+        int rfl    = Mm1.get_refinement_level(cid);
+        auto uvel  = Mm1.get_center(index, rfl);
+
+        if (uvel[0] >= 0.0) {
+          //T gam  = gamma<T,3>(uvel);
+          T gam = 1.0;
+
+          T v   = cfl*uvel[0]/gam; // CFL
+          T fm2 = Mm2.data.at(cid);
+          T fm1 = Mm1.data.at(cid);
+          T f0  =  M0.data.at(cid);
+          T fp1 = Mp1.data.at(cid);
+          T fp2 = Mp2.data.at(cid);
+
+          //T Lp = fp1 - f0;
+          //T Lm = f0  - fm1;
+            
+          //minmax limited values
+          T Lp = Lpf(fm2, fm1, f0, fp1, fp2);
+          T Lm = Lmf(fm2, fm1, f0, fp1, fp2);
+
+          flux.data[cid] = 
+            v*f0 + 
+            v*(1.0+v)*(2.0+v)*Lp/6.0 +
+            v*(1.0-v)*(1.0+v)*Lm/6.0;
+        }
+      }
+
+      //right side
+      for(auto&& cid : Mp1.get_cells(false)) {
+        auto index = M0.get_indices(cid);
+        int rfl    = M0.get_refinement_level(cid);
+        auto uvel  = M0.get_center(index, rfl);
+
+        if (uvel[0] < 0.0) {
+          //T gam  = gamma<T,3>(uvel);
+          T gam = 1.0;
+
+          // v = i - x
+          T v = cfl*uvel[0]/gam; // CFL
+          T fm2 = Mm2.data.at(cid);
+          T fm1 = Mm1.data.at(cid);
+          T f0   = M0.data.at(cid);
+          T fp1 = Mp1.data.at(cid);
+          T fp2 = Mp2.data.at(cid);
+            
+          //T Lp = f0  - fp1;
+          //T Lm = fp1 - fp2;
+          T fp3 = 0.0; // TODO FIXME
+          T Lp = Lpf(fp3, fp2, fp1, f0, fm1);
+          T Lm = Lmf(fp3, fp2, fp1, f0, fm1);
+
+          flux.data[cid] = 
+            v*fp1 + 
+            v*(1.0+v)*(2.0+v)*Lp/6.0 +
+            v*(1.0-v)*(1.0+v)*Lm/6.0;
+
+        }
+      }
+
+      return flux; 
+    }
+ 
+
 
     /// Second order flux; U_+
     inline toolbox::AdaptiveMesh<T,3> flux2nd(
         const toolbox::AdaptiveMesh<T,3>& M ,
         const toolbox::AdaptiveMesh<T,3>& Mp1,
-        T dt,
-        T dx) {
+        T cfl) {
 
-      auto Mp = Mp1 + M; // explicitly allocate tmp variables
+      // explicitly allocate tmp variables
+      auto Mp = Mp1 + M; 
       auto Mn = Mp1 - M;    
 
-      return   velocityTensorProduct(Mp, 1, 0.5*(dt/dx) ) 
-             - velocityTensorProduct(Mn, 2, 0.5*(dt/dx)*(dt/dx) ); 
+      return   velocityTensorProduct(Mp, 1, 0.5*cfl ) 
+             - velocityTensorProduct(Mn, 2, 0.5*cfl*cfl ); 
     }
 
 
@@ -176,8 +348,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         vlasov::PlasmaBlock& block0_left,
         vlasov::PlasmaBlock& block0_right,
         T qm,
-        T dt,
-        T dx,
+        T cfl,
         fields::YeeLattice& yee)
     {
 
@@ -189,6 +360,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             const auto& M = block0.block(q,r,s); // f_i
             auto& N       = block1.block(q,r,s); // f_i^t+dt
             N = M;
+            N.data = M.data;
           }
         }
       }
@@ -212,36 +384,126 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             //       (these are there to save memory by avoiding 
             //       copy of consts)
               
+            //if (q < 0) { //left halo
+            //  const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
+            //  const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
+
+            //  flux = flux2nd(M, Mp1, cfl);
+            //} else if ( (q >= 0) && (q <= Nx-2) ) { // inside
+            //  const auto& M   = block0.block(q,r,s);   // f_i
+            //  const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
+
+            //  flux = flux2nd(M, Mp1, cfl);
+            //} else if (q >= Nx-1) { //right halo
+            //  const auto& M   = block0.block(q,r,s);       // f_i
+            //  const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
+
+            //  flux = flux2nd(M, Mp1, cfl);
+            //}
+
             if (q < 0) { //left halo
               const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
               const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
 
-              flux = flux2nd(M, Mp1, dt, dx);
+              flux = flux1st(M, Mp1, cfl);
             } else if ( (q >= 0) && (q <= Nx-2) ) { // inside
               const auto& M   = block0.block(q,r,s);   // f_i
               const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
 
-              flux = flux2nd(M, Mp1, dt, dx);
+              flux = flux1st(M, Mp1, cfl);
             } else if (q >= Nx-1) { //right halo
               const auto& M   = block0.block(q,r,s);       // f_i
               const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
 
-              flux = flux2nd(M, Mp1, dt, dx);
+              flux = flux1st(M, Mp1, cfl);
             }
+
+            //if (q == -1) { //left halo
+            //  const auto& Mm2 = block0_left.block(block0_left.Nx-3,r,s); // f_i-2
+            //  const auto& Mm1 = block0_left.block(block0_left.Nx-2,r,s); // f_i-1
+            //  const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
+            //  const auto& Mp1 = block0.block(q+1,r,s);                     // f_i+1
+            //  const auto& Mp2 = block0.block(q+2,r,s);                     // f_i+2
+
+            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //} else if (q == 0) { // left halo / inside
+            //  const auto& Mm2 = block0_left.block(block0_left.Nx-2,r,s); // f_i-2
+            //  const auto& Mm1 = block0_left.block(block0_left.Nx-1,r,s); // f_i-1
+            //  const auto& M   = block0.block(q,r,s);                     // f_i
+            //  const auto& Mp1 = block0.block(q+1,r,s);                   // f_i+1
+            //  const auto& Mp2 = block0.block(q+2,r,s);                   // f_i+2
+
+            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //} else if (q == 1) { // left halo / inside
+            //  const auto& Mm2 = block0_left.block(block0_left.Nx-1,r,s); // f_i-2
+            //  const auto& Mm1 = block0.block(q-1,r,s);                   // f_i-1
+            //  const auto& M   = block0.block(q,r,s);                     // f_i
+            //  const auto& Mp1 = block0.block(q+1,r,s);                   // f_i+1
+            //  const auto& Mp2 = block0.block(q+2,r,s);                   // f_i+2
+
+            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //} else if ( (q >= 2) && (q <= Nx-3) ) { // inside
+            //  const auto& Mm2 = block0.block(q-2,r,s); // f_i-2
+            //  const auto& Mm1 = block0.block(q-1,r,s); // f_i-1
+            //  const auto& M   = block0.block(q,r,s);   // f_i
+            //  const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
+            //  const auto& Mp2 = block0.block(q+2,r,s); // f_i+2
+
+            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //} else if (q == Nx-2) { // left halo / inside
+            //  const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
+            //  const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
+            //  const auto& M   = block0.block(q,r,s);       // f_i
+            //  const auto& Mp1 = block0.block(q+1,r,s);     // f_i+1
+            //  const auto& Mp2 = block0_right.block(0,r,s); // f_i+2
+
+            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //} else if (q >= Nx-1) { //right halo
+            //  const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
+            //  const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
+            //  const auto& M   = block0.block(q,r,s);       // f_i
+            //  const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
+            //  const auto& Mp2 = block0_right.block(1,r,s); // f_i+2
+
+            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //}
+
+
+            //const auto& M   = block0.block(q,r,s);       // f_i
+            //const auto& Mp1 = block0.block(q+1,r,s);     // f_i+1
+
 
             // new local time step targets to update into (N's)
             auto& N   = block1.block(q,  r,s); // f_i  ^t+dt
             auto& Np1 = block1.block(q+1,r,s); // f_i+1^t+dt
 
+
             // now flow to neighbors; only local flows are allowed
-            if(q >= 0)    N   -= flux; // - U_i+1/2 (outflowing from cell)
-            if(q <= Nx-2) Np1 += flux; // + U_i-1/2 (inflowing to neighbor)
+            if(q >= 0)    N   -= flux; // - (dt/dx)U_i+1/2 (outflowing from cell)
+            if(q <= Nx-2) Np1 += flux; // + (dt/dx)U_i-1/2 (inflowing to neighbor)
+
+            //if(q >= 0)    N   = -1.0*flux + M;   // - (dt/dx)U_i+1/2 (outflowing from cell)
+            //if(q <= Nx-2) Np1 =      flux + Mp1; // + (dt/dx)U_i-1/2 (inflowing to neighbor)
+              
 
             // calculate current
-            // if( (q >= 0) && (q < Nx) ) yee.jx(q,r,s) += sign(qm)*integrate_current(flux);
-            T jx = sign(qm)*integrate_current(flux); // *dx/dt;
-            if(q >= 0)    yee.jx(q,r,s)   += jx;   //U_i+1/2
-            //if(q <= Nx-2) yee.jx(q+1,r,s) += jx; //U_i-1/2
+            // NOTE: Flux (dt/dx)U is given in units of grid velocity.
+            //       Since Maxwell's fields are also in the same 'units'
+            //       we do not scale back to speed of light with (qm/cfl)
+            //       factor as
+            T jx = qm*integrate_moment( 
+                flux,
+                [](std::array<T,3>& uvel) -> T { return 1.0;}
+                );
+              
+
+            // vertex centered
+            if(q >= 0)    yee.jx(q,r,s)   += jx; //U_i+1/2
+            
+            // cell centered
+            //if(q >= 0)    yee.jx(q,r,s)   += jx/2.0; //U_i+1/2
+            //if(q <= Nx-2) yee.jx(q+1,r,s) += jx/2.0; //U_i-1/2
+            
           }
         }
       }
@@ -265,8 +527,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
       auto& step1 = cell.steps.get(1);
 
       // timestep
-      T dt = cell.dt;
-      T dx = cell.dx;
+      T cfl = cell.dt/cell.dx;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -286,7 +547,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         //auto& block0_top    = get_external_data( 0,+1, ispc, cell, grid);
 
         // sweep in X
-        xsweep(block0, block1, block0_left, block0_right, qm, dt, dx, yee);
+        xsweep(block0, block1, block0_left, block0_right, qm, cfl, yee);
         // ysweep(block0, block1, block0_bottom, block0_top,   qm, dt, dx);
         // xsweep(block0, block1, block0_left,   block0_right, qm, dt/2, dx);
 

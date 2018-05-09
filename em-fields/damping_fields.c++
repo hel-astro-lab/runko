@@ -34,16 +34,16 @@ void fields::PlasmaCellDamped::pushE2d_damped() {
 
       // Ex
       mesh.ex(i,j,k) += 
-        + yeeDt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / yeeDz;
+        + yeeDt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / yeeDx;
 
       // Ey
       mesh.ey(i,j,k) += 
-        + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDz;
+        + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDx;
 
       // Ez
       mesh.ez(i,j,k) += 
         + yeeDt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / yeeDx
-        + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDy;
+        + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDx;
 
     }
   }
@@ -59,9 +59,9 @@ void fields::PlasmaCellDamped::depositCurrent() {
   
   Realf resistivity = 10.0;
 
-  mesh.ex -= mesh.jx * yeeDt / (yeeDx*yeeDy*yeeDz) /resistivity;
-  mesh.ey -= mesh.jy * yeeDt / (yeeDx*yeeDy*yeeDz) /resistivity;
-  mesh.ez -= mesh.jz * yeeDt / (yeeDx*yeeDy*yeeDz) /resistivity;
+  mesh.ex -= mesh.jx * yeeDt / resistivity;
+  mesh.ey -= mesh.jy * yeeDt / resistivity;
+  mesh.ez -= mesh.jz * yeeDt / resistivity;
 
 }
 

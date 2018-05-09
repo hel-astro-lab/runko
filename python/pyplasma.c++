@@ -6,6 +6,9 @@ namespace py = pybind11;
 #include "../definitions.h"
 #include "../tools/mesh.h"
 
+//--------------------------------------------------
+// Vlasov module
+  
 //#include "../vlasov/cell.h"
 #include "../vlasov/grid.h"
 
@@ -23,13 +26,10 @@ namespace py = pybind11;
 #include "../vlasov/tasker.h"
 
 
-
-
 typedef float Realf;
 // typedef toolbox::AdaptiveMesh<Realf, 1> AM1d;
 typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
 typedef toolbox::Adapter<Realf, 3> Adapter3d;
-
 
 
 /// trampoline class for VlasovVelocitySolver
@@ -48,13 +48,14 @@ class PyMomentumSolver : public momsol {
         std::array<Realf, 3>& E,
         std::array<Realf, 3>& B,
         Realf qm,
-        Realf dt
+        Realf dt,
+        Realf cfl
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
           momsol, 
           solveMesh, 
-          mesh0, mesh1, E, B, qm, dt
+          mesh0, mesh1, E, B, qm, dt, cfl
           );
     }
 };
@@ -81,6 +82,12 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 
 
 
+
+
+
+
+//--------------------------------------------------
+
 // python bindings for plasma classes & functions
 PYBIND11_MODULE(pyplasma, m) {
 
@@ -96,14 +103,13 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>())
     .def_readwrite("yeeDt",  &fields::PlasmaCell::yeeDt)
     .def_readwrite("yeeDx",  &fields::PlasmaCell::yeeDx)
-    .def_readwrite("yeeDy",  &fields::PlasmaCell::yeeDy)
-    .def_readwrite("yeeDz",  &fields::PlasmaCell::yeeDz)
     .def("cycleYee",         &fields::PlasmaCell::cycleYee)
     .def("pushE",            &fields::PlasmaCell::pushE)
     .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
     .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
-    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries);
+    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries)
+    .def("exchangeCurrents", &fields::PlasmaCell::exchangeCurrents);
 
 
   py::class_<fields::PlasmaCellDamped,
@@ -123,16 +129,18 @@ PYBIND11_MODULE(pyplasma, m) {
 
   py::class_<fields::YeeLattice>(m, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("ex", &fields::YeeLattice::ex)
-    .def_readwrite("ey", &fields::YeeLattice::ey)
-    .def_readwrite("ez", &fields::YeeLattice::ez)
-    .def_readwrite("bx", &fields::YeeLattice::bx)
-    .def_readwrite("by", &fields::YeeLattice::by)
-    .def_readwrite("bz", &fields::YeeLattice::bz)
-    .def_readwrite("jx", &fields::YeeLattice::jx)
-    .def_readwrite("jy", &fields::YeeLattice::jy)
-    .def_readwrite("jz", &fields::YeeLattice::jz)
-    .def_readwrite("rh", &fields::YeeLattice::rh);
+    .def_readwrite("ex",   &fields::YeeLattice::ex)
+    .def_readwrite("ey",   &fields::YeeLattice::ey)
+    .def_readwrite("ez",   &fields::YeeLattice::ez)
+    .def_readwrite("bx",   &fields::YeeLattice::bx)
+    .def_readwrite("by",   &fields::YeeLattice::by)
+    .def_readwrite("bz",   &fields::YeeLattice::bz)
+    .def_readwrite("jx",   &fields::YeeLattice::jx)
+    .def_readwrite("jy",   &fields::YeeLattice::jy)
+    .def_readwrite("jz",   &fields::YeeLattice::jz)
+    .def_readwrite("jx1",  &fields::YeeLattice::jx1)
+    .def_readwrite("ekin", &fields::YeeLattice::ekin)
+    .def_readwrite("rho",  &fields::YeeLattice::rho);
 
 
   py::class_<vlasov::VlasovCell, 
@@ -143,8 +151,6 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
     .def_readwrite("dt",     &vlasov::VlasovCell::dt)
     .def_readwrite("dx",     &vlasov::VlasovCell::dx)
-    .def_readwrite("dy",     &vlasov::VlasovCell::dy)
-    .def_readwrite("dz",     &vlasov::VlasovCell::dz)
     .def("getPlasmaSpecies", [](vlasov::VlasovCell& cell, size_t i, size_t s) 
         { return cell.steps.get(i).at(s); }, py::return_value_policy::reference)
     .def("insertInitialSpecies", [](vlasov::VlasovCell& c, 
@@ -362,6 +368,10 @@ PYBIND11_MODULE(pyplasma, m) {
     m.def("stepVelocity",   &vlasov::stepVelocity<3>);
 
     m.def("analyze",      &vlasov::analyze);
+
+
+
+
 
 }
 

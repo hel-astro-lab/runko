@@ -38,20 +38,32 @@ class YeeLattice {
   toolbox::Mesh<Realf, 1> jy;
   toolbox::Mesh<Realf, 1> jz;
 
+  toolbox::Mesh<Realf, 1> jx1;
+
+
+  /// Kinetic energy
+  toolbox::Mesh<Realf, 1> ekin;
+
   /// Charge density
-  toolbox::Mesh<Realf, 1> rh;
+  toolbox::Mesh<Realf, 1> rho;
 
   YeeLattice(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz),
     ex(Nx, Ny, Nz),
     ey(Nx, Ny, Nz),
     ez(Nx, Ny, Nz),
+
     bx(Nx, Ny, Nz),
     by(Nx, Ny, Nz),
     bz(Nx, Ny, Nz),
+
     jx(Nx, Ny, Nz),
     jy(Nx, Ny, Nz),
     jz(Nx, Ny, Nz),
-    rh(Nx, Ny, Nz) { }
+
+    jx1(Nx, Ny, Nz),
+
+    ekin(Nx,Ny,Nz),
+    rho(Nx, Ny, Nz) { }
 
 };
 
@@ -88,6 +100,8 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void updateBoundaries(corgi::Node& node);
 
+  void exchangeCurrents(corgi::Node& node);
+
   virtual void pushHalfB();
   void pushHalfB1d();
   void pushHalfB2d();
@@ -106,8 +120,9 @@ class PlasmaCell : virtual public corgi::Cell {
 
   Realf yeeDt = 1.0;
   Realf yeeDx = 1.0;
-  Realf yeeDy = 1.0;
-  Realf yeeDz = 1.0;
+
+  //Realf yeeDy = 1.0;
+  //Realf yeeDz = 1.0;
 
 
 };

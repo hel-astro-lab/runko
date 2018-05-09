@@ -36,7 +36,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     y = ymin + j*NyMesh*dy + m*dy
     z = 0.0                + n*dz
 
-    return (x, y, z)
+    return [x, y, z]
 
 
 
@@ -139,6 +139,10 @@ def inject(node, ffunc, conf):
                     if ispcs == 0:
                         block.qm = conf.me
                     elif ispcs == 1:
+                        block.qm = conf.mi
+                    elif ispcs == 2:
+                        block.qm = conf.me
+                    elif ispcs == 3:
                         block.qm = conf.mi
 
 
