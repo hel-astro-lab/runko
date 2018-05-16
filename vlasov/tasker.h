@@ -5,6 +5,8 @@
 #include "amr_momentum_solver.h"
 #include "amr_spatial_solver.h"
 #include "amr_analyzator.h"
+#include "../io/io.h"
+
 
 
 namespace vlasov{
@@ -129,6 +131,25 @@ void analyze( vlasov::Grid& grid )
   }// end of omp parallel
 
 }
+
+
+
+
+void write( vlasov::Grid& grid )
+{
+
+  h5io::Writer writer;
+
+  for(auto cid : grid.getCellIds() ){
+    fields::PlasmaCell& cell 
+      = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
+    writer.write(cell);
+  }
+
+
+}
+
+
 
 
 }// end of namespace

@@ -369,7 +369,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
     m.def("analyze",      &vlasov::analyze);
 
-
+    m.def("write", &vlasov::write);
 
 
 
