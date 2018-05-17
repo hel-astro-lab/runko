@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <omp.h>
 
 #include "amr_momentum_solver.h"
@@ -138,14 +140,16 @@ void analyze( vlasov::Grid& grid )
 void write( vlasov::Grid& grid )
 {
 
-  h5io::Writer writer;
+  std::string prefix("fields_"); 
+  prefix += std::to_string(grid.rank);
+  h5io::Writer writer(prefix);
+
 
   for(auto cid : grid.getCellIds() ){
     fields::PlasmaCell& cell 
       = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
     writer.write(cell);
   }
-
 
 }
 

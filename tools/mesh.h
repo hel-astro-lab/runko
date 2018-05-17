@@ -58,6 +58,38 @@ class Mesh {
     }
 
 
+    std::vector<T> serialize() const {
+      std::vector<T> ret;
+      ret.reserve(Nx*Ny*Nz);
+
+      for(int k=0; k<Nz; k++)
+      for(int j=0; j<Ny; j++)
+      for(int i=0; i<Nx; i++)
+        ret.push_back(mat[ indx(i,j,k) ] );
+
+      return ret;
+    }
+
+    void load_serial(
+        std::vector<T> vec, 
+        size_t Nx, size_t Ny, size_t Nz
+        ) {
+      mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
+
+      int q = 0;
+      for(int k=0; k<Nz; k++)
+      for(int j=0; j<Ny; j++)
+      for(int i=0; i<Nx; i++) 
+      {
+        mat[ indx(i,j,k) ] = vec[q];
+        q++;
+      }
+
+    }
+
+
+
+
     // Mesh arithmetics
     Mesh& operator=(const Mesh& rhs);
 

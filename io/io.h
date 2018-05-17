@@ -22,57 +22,85 @@ using std::string;
 using std::to_string;
 
 
-class Writer {
+class Namer {
 
   private:
     const string extension = ".h5";
 
 
   public:
+    string name;
 
-    bool write( fields::PlasmaCell& cell )
+    Namer(string& prefix) 
     {
-
-      // file naming
-      string prefix ("fields_");
-      string numbering = 
-                to_string(cell.my_i) 
-        + "_" + to_string(cell.my_j) 
-        + "-" + to_string(cell.owner);
-      string name = prefix + extension;
-
-      // open
-      File file (name, H5F_ACC_TRUNC);
+      name = prefix + extension;
+    }
+      
+    //standard numbering scheme
+    // TODO generalize to variable argument
+    string numbering(size_t i, size_t j, size_t k)
+    {
+      return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
+    }
 
 
-      //write
-      auto& yee = cell.getYee();
-      write(file, yee);
+};
 
 
-      return true;
+class Writer {
+
+  private:
+    
+    // Object to handle file names and extensions
+    Namer fname;
+
+    // actual iostream of hdf5 file
+    File file;
+
+  public:
+
+    // constructor that creates a name and opens the file handle
+    Writer(string& prefix) : 
+      fname(prefix),
+      file(fname.name, H5F_ACC_TRUNC) 
+    {};
+
+
+    // Destructor that explicitly closes the file handle
+    ~Writer() {
+      file.~File(); // call destructor explicitly
     }
 
 
 
-
-    bool write(
-        File& file, 
-        fields::YeeLattice& yee
-        )
+    bool write( fields::PlasmaCell& cell )
     {
-      auto gr = file["Yee"];
+      auto& yee = cell.getYee();
+
+      // internal cell numbering 
+      string numbering = fname.numbering(cell.my_i, cell.my_j, 0);
+
+      // open individual group for the data
+      auto gr = file["yee_"+numbering];
 
       //Nx, Ny, Nz
       gr["Nx"] = yee.Nx;
       gr["Ny"] = yee.Ny;
       gr["Nz"] = yee.Nz;
 
-      //ex,ey,ez
-      //bx,by,bz
-      //jx,jy,jz
-      //rho
+      gr["jx"] = yee.jx.serialize();
+      //gr["jy"] = yee.jy.serialize();
+      //gr["jz"] = yee.jz.serialize();
 
+      gr["ex"] = yee.ex.serialize();
+      //gr["ey"] = yee.ey.serialize();
+      //gr["ez"] = yee.ez.serialize();
+
+      gr["bx"] = yee.bx.serialize();
+      //gr["by"] = yee.by.serialize();
+      //gr["bz"] = yee.bz.serialize();
+
+      gr["rho"] = yee.rho.serialize();
 
 
       return true;
