@@ -144,7 +144,6 @@ void write( vlasov::Grid& grid )
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix);
 
-
   for(auto cid : grid.getCellIds() ){
     fields::PlasmaCell& cell 
       = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));

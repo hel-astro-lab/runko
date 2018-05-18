@@ -22,6 +22,7 @@ using std::string;
 using std::to_string;
 
 
+/// General class to do all the text and file name mangling 
 class Namer {
 
   private:
@@ -51,28 +52,29 @@ class Writer {
 
   private:
     
-    // Object to handle file names and extensions
+    /// Object to handle file names and extensions
     Namer fname;
 
-    // actual iostream of hdf5 file
+    /// actual iostream of hdf5 file
     File file;
 
   public:
 
-    // constructor that creates a name and opens the file handle
+    /// constructor that creates a name and opens the file handle
     Writer(string& prefix) : 
       fname(prefix),
       file(fname.name, H5F_ACC_TRUNC) 
     {};
 
 
-    // Destructor that explicitly closes the file handle
+    /// Destructor that explicitly closes the file handle
     ~Writer() {
       file.~File(); // call destructor explicitly
     }
 
 
 
+    /// Write PlasmaCell content into a hdf5 data group
     bool write( fields::PlasmaCell& cell )
     {
       auto& yee = cell.getYee();
@@ -83,10 +85,18 @@ class Writer {
       // open individual group for the data
       auto gr = file["yee_"+numbering];
 
-      //Nx, Ny, Nz
+      // cell location inside node
+      gr["i"] = cell.my_i;
+      gr["j"] = cell.my_j;
+      gr["k"] = 0;
+
+      // size
       gr["Nx"] = yee.Nx;
       gr["Ny"] = yee.Ny;
       gr["Nz"] = yee.Nz;
+
+      //--------------------------------------------------
+      // Yee lattice quantities
 
       gr["jx"] = yee.jx.serialize();
       //gr["jy"] = yee.jy.serialize();
@@ -101,6 +111,12 @@ class Writer {
       //gr["bz"] = yee.bz.serialize();
 
       gr["rho"] = yee.rho.serialize();
+
+      //--------------------------------------------------
+      // derived quantities
+      // gr["ekin"] = yee.ekin.serialize();
+      // gr["delgam"] = yee.delgam.serialize();
+
 
 
       return true;
