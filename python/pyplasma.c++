@@ -108,6 +108,8 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
     .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
+    .def("getAnalysis",      &fields::PlasmaCell::getAnalysis, py::return_value_policy::reference)
+    .def("addAnalysisSpecies", &fields::PlasmaCell::addAnalysisSpecies)
     .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries)
     .def("exchangeCurrents", &fields::PlasmaCell::exchangeCurrents);
 
@@ -139,8 +141,20 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("jy",   &fields::YeeLattice::jy)
     .def_readwrite("jz",   &fields::YeeLattice::jz)
     .def_readwrite("jx1",  &fields::YeeLattice::jx1)
-    .def_readwrite("ekin", &fields::YeeLattice::ekin)
     .def_readwrite("rho",  &fields::YeeLattice::rho);
+
+
+  py::class_<fields::PlasmaMomentLattice>(m, "PlasmaMomentLattice")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho)
+    .def_readwrite("mgamma",   &fields::PlasmaMomentLattice::mgamma)
+    .def_readwrite("Vx",       &fields::PlasmaMomentLattice::Vx)
+    .def_readwrite("Vy",       &fields::PlasmaMomentLattice::Vy)
+    .def_readwrite("Vz",       &fields::PlasmaMomentLattice::Vz)
+    .def_readwrite("Tx",       &fields::PlasmaMomentLattice::Tx)
+    .def_readwrite("Ty",       &fields::PlasmaMomentLattice::Ty)
+    .def_readwrite("Tz",       &fields::PlasmaMomentLattice::Tz)
+    .def_readwrite("ekin",     &fields::PlasmaMomentLattice::ekin);
 
 
   py::class_<vlasov::VlasovCell, 

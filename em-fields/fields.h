@@ -38,16 +38,16 @@ class YeeLattice {
   toolbox::Mesh<Realf, 1> jy;
   toolbox::Mesh<Realf, 1> jz;
 
+  /// temporary current
   toolbox::Mesh<Realf, 1> jx1;
-
-
-  /// Kinetic energy
-  toolbox::Mesh<Realf, 1> ekin;
 
   /// Charge density
   toolbox::Mesh<Realf, 1> rho;
 
-  YeeLattice(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz),
+
+  YeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
+    Nx(Nx), Ny(Ny), Nz(Nz),
+
     ex(Nx, Ny, Nz),
     ey(Nx, Ny, Nz),
     ez(Nx, Ny, Nz),
@@ -62,16 +62,68 @@ class YeeLattice {
 
     jx1(Nx, Ny, Nz),
 
-    ekin(Nx,Ny,Nz),
-    rho(Nx, Ny, Nz) { }
+    rho(Nx, Ny, Nz)
+    { }
 
 };
 
 
+/// Lattice to hold plasma moment values of separate species
+class PlasmaMomentLattice {
+
+  public:
+
+  size_t Nx;
+  size_t Ny;
+  size_t Nz;
+
+  // density
+  toolbox::Mesh<Realf, 0> rho;
+
+  /// mean gamma
+  toolbox::Mesh<Realf, 0> mgamma;
+
+  /// (mean) flow speed
+  toolbox::Mesh<Realf, 0> Vx;
+  toolbox::Mesh<Realf, 0> Vy;
+  toolbox::Mesh<Realf, 0> Vz;
+
+  /// Non-relativistic temperature
+  toolbox::Mesh<Realf, 0> Tx;
+  toolbox::Mesh<Realf, 0> Ty;
+  toolbox::Mesh<Realf, 0> Tz;
+
+  /// Kinetic energy
+  toolbox::Mesh<Realf, 0> ekin;
+
+
+  /// constructor; initializes Mesh objects at the same time
+  PlasmaMomentLattice(size_t Nx, size_t Ny, size_t Nz) : 
+    Nx(Nx), Ny(Ny), Nz(Nz),
+
+    rho(Nx, Ny, Nz),
+    mgamma(Nx, Ny, Nz),
+    Vx(Nx, Ny, Nz),
+    Vy(Nx, Ny, Nz),
+    Vz(Nx, Ny, Nz),
+    Tx(Nx, Ny, Nz),
+    Ty(Nx, Ny, Nz),
+    Tz(Nx, Ny, Nz),
+    ekin(Nx, Ny, Nz)
+  { }
+
+
+};
+
+
+
+
 /*! \brief General Plasma cell for solving Maxwell's equations
  *
- * Internally everything is stored in staggered Yee lattice.
+ * Internally everything for computations are stored in 
+ * staggered Yee lattice.
  *
+ * Analysis/reduced data is in PlasmaMomentLattice.
  */
 class PlasmaCell : virtual public corgi::Cell {
 
@@ -82,8 +134,11 @@ class PlasmaCell : virtual public corgi::Cell {
   size_t NzMesh;
 
 
-  // Yee lattice of plasma quantities (with 2 timesteps)
+  /// Yee lattice of plasma quantities (with 1 timestep)
   toolbox::Rotator<YeeLattice, 1> yee;
+
+  /// species specific analysis results
+  std::vector<PlasmaMomentLattice> analysis;
 
 
   //--------------------------------------------------
@@ -116,6 +171,8 @@ class PlasmaCell : virtual public corgi::Cell {
 
   YeeLattice& getYee(size_t i=0);
 
+  PlasmaMomentLattice& getAnalysis(size_t i);
+
   void cycleYee();
 
   Realf yeeDt = 1.0;
@@ -124,7 +181,7 @@ class PlasmaCell : virtual public corgi::Cell {
   //Realf yeeDy = 1.0;
   //Realf yeeDz = 1.0;
 
-
+  void addAnalysisSpecies();
 };
 
 

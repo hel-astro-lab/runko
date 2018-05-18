@@ -249,6 +249,15 @@ fields::YeeLattice& fields::PlasmaCell::getYee(size_t i) {
 }
 
 
+/// Get analysis lattice of i:th species
+fields::PlasmaMomentLattice& fields::PlasmaCell::getAnalysis(size_t i) {
+  return analysis[i];
+}
+
+void fields::PlasmaCell::addAnalysisSpecies() {
+  analysis.push_back( PlasmaMomentLattice(NxMesh, NyMesh, NzMesh) );
+}
+
 
 /// Quick helper function to copy everything inside Yee lattice 
 void copyVertYee(

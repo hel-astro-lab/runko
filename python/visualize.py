@@ -191,9 +191,7 @@ def getYee(n, conf):
             'jz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
             'jx1':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
             'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-            'ekin': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            }
-
 
     for i in range(conf.Nx):
         cid = n.cellId(i,0)
@@ -218,13 +216,48 @@ def getYee(n, conf):
             data['jx1'][indx] = yee.jx1[s, 0, 0]
 
             data['rho'][indx] = yee.rho[s, 0, 0]
-            data['ekin'][indx] = yee.ekin[s, 0, 0]
-
-
 
     return data
 
 
+# species-specific analysis meshes (plasma moments)
+def getAnalysis(n, conf, ispcs):
+
+    data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
+           'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'mgamma':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vx':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vy':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vz':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Tx':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Ty':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Tz':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'ekin':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           }
+
+    for i in range(conf.Nx):
+        cid = n.cellId(i,0)
+        c = n.getCellPtr(cid)
+
+        analysis = c.getAnalysis(ispcs)
+        for s in range(conf.NxMesh):
+            indx = i*conf.NxMesh + s
+
+            data['rho'][indx] = analysis.rho[s, 0, 0]
+
+            data['mgamma'][indx] = analysis.mgamma[s, 0, 0]
+
+            data['Vx'][indx] = analysis.Vx[s, 0, 0]
+            data['Vy'][indx] = analysis.Vy[s, 0, 0]
+            data['Vz'][indx] = analysis.Vz[s, 0, 0]
+
+            data['Tx'][indx] = analysis.Tx[s, 0, 0]
+            data['Ty'][indx] = analysis.Ty[s, 0, 0]
+            data['Tz'][indx] = analysis.Tz[s, 0, 0]
+
+            data['ekin'][indx] = analysis.ekin[s, 0, 0]
+
+    return data
 
 def plotJ(ax, n, conf):
     yee = getYee(n, conf)

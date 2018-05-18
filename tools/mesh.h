@@ -58,6 +58,7 @@ class Mesh {
     }
 
 
+    /// serialize 3D data cube into 1D vector
     std::vector<T> serialize() const {
       std::vector<T> ret;
       ret.reserve(Nx*Ny*Nz);
@@ -70,6 +71,7 @@ class Mesh {
       return ret;
     }
 
+    /// load 3D data cube from 1D serial vector
     void load_serial(
         std::vector<T> vec, 
         size_t Nx, size_t Ny, size_t Nz

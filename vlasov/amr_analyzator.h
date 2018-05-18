@@ -19,14 +19,14 @@ namespace vlasov {
 template<typename T, int D>
 inline T gamma(std::array<T,D>& uvel) 
 {
-  return 1.0;
+  T gammasq = 1.0;
+  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
+  return std::sqrt(gammasq);
 }
-//inline T gamma(std::array<T,D>& uvel) 
 //{
-//  T gammasq = 1.0;
-//  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
-//  return std::sqrt(gammasq);
+//  return 1.0;
 //}
+
 
 
 /// integrate Adaptive Mesh phase space with function Chi(u)
@@ -80,7 +80,7 @@ class Analyzator {
     // Yee lattice reference
     auto& yee = cell.getYee();
     yee.rho.clear();
-    yee.ekin.clear();
+    //yee.ekin.clear();
     //yee.jx1.clear();
 
 
@@ -91,10 +91,13 @@ class Analyzator {
     // T dt = cell.dt;
     // T dx = cell.dx;
 
+
     // loop over different particle species 
-    //int ispc = 0; // ith particle species
+    int ispc = 0; // ith particle species
     for(auto&& block0 : step0) {
-      //T qm = 1.0 / block0.qm;  // charge to mass ratio
+
+      // get reference to species-specific analysis mesh
+      auto& analysis = cell.analysis[ispc];
 
       int Nx = int(block0.Nx),
           Ny = int(block0.Ny),
@@ -108,7 +111,10 @@ class Analyzator {
             T qm = 1.0 / block0.qm;  // charge to mass ratio
 
             // TODO there is a possibility to optimize this by putting everything 
-            // inside one loop. At the expense of code readability...
+            // inside one loop at the expense of code readability... So it is not done.
+
+            //-------------------------------------------------- 
+            // Global quantities (sum over species)
 
             // number density; chi(u) = 1
             yee.rho(q,r,s) += 
@@ -117,8 +123,8 @@ class Analyzator {
                 [](std::array<T,3>& uvel) -> T { return T(1);}
                 );
 
-
             // Jx current; chi(u) = u/gamma = v
+            // NOTE: Current is already computed in the time loop so omit it here
             //yee.jx1(q,r,s) += sign(qm)*
             //  integrate_moment(
             //      M,
@@ -127,8 +133,57 @@ class Analyzator {
             //    );
               
 
-            // kinetic energy; chi(u) = 1/2 u.u
-            yee.ekin(q,r,s) += 
+            //-------------------------------------------------- 
+            // Species-specific quantities
+            // NOTE: different insert location
+
+            // number density; chi(u) = 1
+            T rho = 
+              integrate_moment(
+                  M,
+                [](std::array<T,3>& uvel) -> T { return T(1); }
+                );
+            analysis.rho(q,r,s) = rho;
+
+
+            // mean gamma (fluid energy density)
+            // chi(u) = \gamma / rho
+            analysis.mgamma(q,r,s) = 
+              integrate_moment(
+                  M,
+                [](std::array<T,3> uvel) -> T { return gamma<T,3>(uvel); }
+                );
+            analysis.mgamma(q,r,s) /= rho; // normalize
+
+
+            /// (mean) fluid/bulk velocity
+            // chi(u) = v = u/gamma
+            T Vx = 
+              integrate_moment(
+                  M,
+                [](std::array<T,3> uvel) -> T 
+                { return uvel[0]/gamma<T,3>(uvel); }
+                );
+            analysis.Vx(q,r,s) = Vx;
+
+            // TODO add Vy and Vz components
+
+              
+            /// (non-relativistic) temperature
+            // chi(u) = v - V
+            analysis.Vx(q,r,s) = 
+              integrate_moment(
+                  M,
+                [Vx](std::array<T,3> uvel) -> T 
+                { return uvel[0]/gamma<T,3>(uvel) - Vx; }
+                );
+
+            // TODO add Ty and Tz components
+
+
+            // Kinetic energy
+            // chi(u) = 1/2 u.u
+            analysis.ekin(q,r,s) = 
               integrate_moment(
                   M,
                 [](std::array<T,3> uvel) -> T { 
@@ -136,11 +191,11 @@ class Analyzator {
                 );
 
 
-
           }
         }
       }
 
+      ispc++;
     }// end of loop over species
 
 
