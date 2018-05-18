@@ -137,7 +137,7 @@ void analyze( vlasov::Grid& grid )
 
 
 
-void write( vlasov::Grid& grid )
+void writeYee( vlasov::Grid& grid )
 {
 
   std::string prefix("fields_"); 
@@ -147,11 +147,28 @@ void write( vlasov::Grid& grid )
   for(auto cid : grid.getCellIds() ){
     fields::PlasmaCell& cell 
       = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
-    writer.write(cell);
+    writer.writeYee(cell);
   }
+
 
 }
 
+
+void writeAnalysis( vlasov::Grid& grid )
+{
+
+  std::string prefix("analysis_"); 
+  prefix += std::to_string(grid.rank);
+  h5io::Writer writer(prefix);
+
+  for(auto cid : grid.getCellIds() ){
+    fields::PlasmaCell& cell 
+      = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
+    writer.writeAnalysis(cell);
+  }
+
+
+}
 
 
 

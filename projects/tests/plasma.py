@@ -412,7 +412,8 @@ if __name__ == "__main__":
         save(node, conf, ifile, f5)
         ifile += 1
 
-        plasma.write(node)
+        plasma.writeYee(node)
+        plasma.writeAnalysis(node)
         sys.exit()
 
         #I/O

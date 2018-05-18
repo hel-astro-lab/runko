@@ -75,7 +75,7 @@ class Writer {
 
 
     /// Write PlasmaCell content into a hdf5 data group
-    bool write( fields::PlasmaCell& cell )
+    bool writeYee( fields::PlasmaCell& cell )
     {
       auto& yee = cell.getYee();
 
@@ -112,10 +112,6 @@ class Writer {
 
       gr["rho"] = yee.rho.serialize();
 
-      //--------------------------------------------------
-      // derived quantities
-      // gr["ekin"] = yee.ekin.serialize();
-      // gr["delgam"] = yee.delgam.serialize();
 
 
 
@@ -124,8 +120,48 @@ class Writer {
 
 
 
+    /// Write PlasmaCell content into a hdf5 data group
+    bool writeAnalysis( fields::PlasmaCell& cell )
+    {
+
+      int Nspecies = cell.analysis.size();
+
+      for(int ispcs = 0; ispcs < Nspecies; ispcs++) {
+
+        auto& analysis = cell.getAnalysis(ispcs);
+
+        // internal cell numbering 
+        string numbering = fname.numbering(cell.my_i, cell.my_j, 0);
+
+        // open individual group for the data
+        auto gr = file["analysis_"+numbering+"-"+to_string(ispcs) ];
+
+        // cell location inside node
+        gr["i"] = cell.my_i;
+        gr["j"] = cell.my_j;
+        gr["k"] = 0;
+        gr["ispcs"] = ispcs;
+
+        // size
+        gr["Nx"] = analysis.Nx;
+        gr["Ny"] = analysis.Ny;
+        gr["Nz"] = analysis.Nz;
+
+        gr["rho"] = analysis.rho.serialize();
+
+        gr["mgamma"] = analysis.mgamma.serialize();
+
+        gr["Vx"] = analysis.Vx.serialize();
+
+        gr["Tx"] = analysis.Tx.serialize();
+
+        gr["ekin"] = analysis.ekin.serialize();
 
 
+      }
+
+      return true;
+    }
 
 
 };
