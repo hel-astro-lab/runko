@@ -7,9 +7,3 @@
 [submodule "tools/cppitertools"]
 	path = tools/cppitertools
 	url = https://github.com/ryanhaining/cppitertools.git
-[submodule "tools/HighFive"]
-	path = tools/HighFive
-	url = https://github.com/BlueBrain/HighFive.git
-[submodule "tools/ezh5"]
-	path = tools/ezh5
-	url = https://github.com/mileschen360/ezh5.git
