@@ -387,6 +387,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
     m.def("writeAnalysis", &vlasov::writeAnalysis);
 
+    m.def("writeMesh", &vlasov::writeMesh);
 
 }
 

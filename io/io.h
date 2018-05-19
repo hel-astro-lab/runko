@@ -6,6 +6,7 @@
 
 #include "../em-fields/fields.h"
 #include "../tools/mesh.h"
+#include "../vlasov/amr/mesh.h"
 
 //#include "../tools/HighFive/include/highfive/H5File.hpp"
 //#include "../tools/HighFive/include/highfive/H5DataSet.hpp"
@@ -162,6 +163,54 @@ class Writer {
 
       return true;
     }
+
+
+    /// Write 3D adaptive mesh into file
+    template<typename T>
+    bool write( 
+        const toolbox::AdaptiveMesh<T, 3>& mesh,
+        std::string& name
+        )
+    {
+
+      size_t len = mesh.data.size();
+
+      //--------------------------------------------------
+      // write meta info about grid
+      auto gr = file[name];
+
+      gr["maximum_refinement_level"] = mesh.maximum_refinement_level;
+      gr["error_cid"]   = mesh.error_cid;
+      gr["error_index"] = mesh.error_index;
+      gr["top_refinement_level"] = mesh.top_refinement_level;
+
+      gr["length"] = mesh.length;
+      gr["mins"] = mesh.mins;
+      gr["maxs"] = mesh.maxs;
+
+      gr["number_of_cells"] = len;
+
+      //--------------------------------------------------
+      // save actual mesh points
+      std::vector<uint64_t> cids;
+      std::vector<T       > vals;
+      cids.reserve( len );
+      vals.reserve( len );
+
+      // serialize into 1D containers
+      for(uint64_t cid : mesh.get_cells(true) ) {
+        cids.push_back(cid);
+        vals.push_back(mesh.data.at(cid));
+      }
+
+      gr["cids"] = cids;
+      gr["vals"] = vals;
+
+
+      return true;
+    }
+
+
 
 
 };

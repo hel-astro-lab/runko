@@ -10,7 +10,6 @@
 #include "../io/io.h"
 
 
-
 namespace vlasov{
 
 
@@ -166,6 +165,73 @@ void writeAnalysis( vlasov::Grid& grid )
       = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
     writer.writeAnalysis(cell);
   }
+
+
+}
+
+
+void writeMesh( vlasov::Grid& grid )
+{
+
+  std::string prefix("meshes"); 
+  prefix += std::to_string(grid.rank);
+  h5io::Writer writer(prefix);
+
+
+  for(auto cid : grid.getCellIds() ){
+
+    vlasov::VlasovCell& cell 
+      = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
+
+
+    // cell location index
+    int i = cell.my_i;
+    int j = cell.my_j;
+    int k = 0;
+
+    // get reference to the current time step 
+    auto& step0 = cell.steps.get(0);
+
+    // loop over different particle species 
+    int ispc = 0; // ith particle species
+    for(auto&& block0 : step0) {
+
+      int Nx = int(block0.Nx),
+          Ny = int(block0.Ny),
+          Nz = int(block0.Nz);
+
+      for(int s=0; s<Nz; s++) {
+        for(int r=0; r<Ny; r++) {
+          for(int q=0; q<Nx; q++) {
+            const auto& M   = block0.block(q,r,s);   // f_i
+
+            // information about location is encoded in:
+            // i j k | q r s | ispc
+            //
+            // that is formatted into:
+            // tile-i_j_k-loc-q_r_s-sp-ispc
+            std::string mesh_name("tile");
+            mesh_name +=
+                "-" + std::to_string(i) 
+              + "_" + std::to_string(j) 
+              + "_" + std::to_string(k)
+              + "-loc-" 
+              +       std::to_string(q)
+              + "_" + std::to_string(r)
+              + "_" + std::to_string(s)
+              + "-sp-"
+              +       std::to_string(ispc);
+              
+            writer.write(M, mesh_name);
+
+            break;
+
+            ispc++;
+          } // q
+        } // r
+      } // s
+    } // end of species
+  } // end of loop over tiles
 
 
 }

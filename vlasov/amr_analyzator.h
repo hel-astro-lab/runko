@@ -103,7 +103,7 @@ class Analyzator {
           Ny = int(block0.Ny),
           Nz = int(block0.Nz);
 
-      for (int s=0; s<Nz; s++) {
+      for(int s=0; s<Nz; s++) {
         for(int r=0; r<Ny; r++) {
           for(int q=0; q<Nx; q++) {
             const auto& M   = block0.block(q,r,s);   // f_i

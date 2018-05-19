@@ -414,6 +414,7 @@ if __name__ == "__main__":
 
         plasma.writeYee(node)
         plasma.writeAnalysis(node)
+        plasma.writeMesh(node)
         sys.exit()
 
         #I/O
