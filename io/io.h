@@ -37,6 +37,11 @@ class Namer {
     {
       name = prefix + extension;
     }
+
+    Namer(string& prefix, int lap) 
+    {
+      name = prefix + "_" + to_string(lap) + extension;
+    }
       
     //standard numbering scheme
     // TODO generalize to variable argument
@@ -81,6 +86,10 @@ class Writer {
       file(fname.name, H5F_ACC_TRUNC) 
     {};
 
+    Writer(string& prefix, int lap) : 
+      fname(prefix, lap),
+      file(fname.name, H5F_ACC_TRUNC) 
+    {};
 
     /// Destructor that explicitly closes the file handle
     ~Writer() {

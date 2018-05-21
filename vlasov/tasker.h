@@ -136,12 +136,12 @@ void analyze( vlasov::Grid& grid )
 
 
 
-void writeYee( vlasov::Grid& grid )
+void writeYee( vlasov::Grid& grid, int lap )
 {
 
-  std::string prefix("fields_"); 
+  std::string prefix("fields-"); 
   prefix += std::to_string(grid.rank);
-  h5io::Writer writer(prefix);
+  h5io::Writer writer(prefix, lap);
 
   for(auto cid : grid.getCellIds() ){
     fields::PlasmaCell& cell 
@@ -153,12 +153,12 @@ void writeYee( vlasov::Grid& grid )
 }
 
 
-void writeAnalysis( vlasov::Grid& grid )
+void writeAnalysis( vlasov::Grid& grid, int lap)
 {
 
-  std::string prefix("analysis_"); 
+  std::string prefix("analysis-"); 
   prefix += std::to_string(grid.rank);
-  h5io::Writer writer(prefix);
+  h5io::Writer writer(prefix, lap);
 
   for(auto cid : grid.getCellIds() ){
     fields::PlasmaCell& cell 
@@ -170,12 +170,12 @@ void writeAnalysis( vlasov::Grid& grid )
 }
 
 
-void writeMesh( vlasov::Grid& grid )
+void writeMesh( vlasov::Grid& grid, int lap)
 {
 
-  std::string prefix("meshes"); 
+  std::string prefix("meshes-"); 
   prefix += std::to_string(grid.rank);
-  h5io::Writer writer(prefix);
+  h5io::Writer writer(prefix, lap);
 
 
   for(auto cid : grid.getCellIds() ){

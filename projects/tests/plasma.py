@@ -412,10 +412,7 @@ if __name__ == "__main__":
         save(node, conf, ifile, f5)
         ifile += 1
 
-        plasma.writeYee(node)
-        plasma.writeAnalysis(node)
-        plasma.writeMesh(node)
-        sys.exit()
+        #sys.exit()
 
         #I/O
         if (lap % conf.interval == 0):
@@ -423,9 +420,12 @@ if __name__ == "__main__":
             print("------ lap: {} / t: {}".format(lap, time)) 
             timer.stats("step")
 
-
-
             timer.start("io")
+
+            plasma.writeYee(node,      lap)
+            plasma.writeAnalysis(node, lap)
+            plasma.writeMesh(node,     lap)
+
 
 
             plotNode(axs[0], node, conf)
