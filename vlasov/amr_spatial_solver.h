@@ -168,8 +168,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = M0.get_center(index, rfl);
 
         if (-uvel[0] < 0.0) {
-          //T gam  = gamma<T,3>(uvel);
-          T gam = 1.0;
+          T gam  = gamma<T,3>(uvel);
+          //T gam = 1.0;
           flux.data[cid] = cfl*(uvel[0]/gam)*M0.data.at(cid);
 
           //if (M0.data.at(cid) > 0.01) std::cout << "LL:" << flux.data[cid] << " / " << M0.data.at(cid) << std::endl;
@@ -184,8 +184,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = Mp1.get_center(index, rfl);
 
         if (-uvel[0] > 0.0) {
-          //T gam  = gamma<T,3>(uvel);
-          T gam = 1.0;
+          T gam  = gamma<T,3>(uvel);
+          //T gam = 1.0;
           flux.data[cid] = cfl*(uvel[0]/gam)*Mp1.data.at(cid);
 
           //if (Mp1.data.at(cid) > 0.01) std::cout << "RR:" << uvel[0] << std::endl;
@@ -263,10 +263,10 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = Mm1.get_center(index, rfl);
 
         if (uvel[0] >= 0.0) {
-          //T gam  = gamma<T,3>(uvel);
-          T gam = 1.0;
-
+          T gam  = gamma<T,3>(uvel);
+          //T gam = 1.0;
           T v   = cfl*uvel[0]/gam; // CFL
+
           T fm2 = Mm2.data.at(cid);
           T fm1 = Mm1.data.at(cid);
           T f0  =  M0.data.at(cid);
@@ -294,11 +294,11 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = M0.get_center(index, rfl);
 
         if (uvel[0] < 0.0) {
-          //T gam  = gamma<T,3>(uvel);
-          T gam = 1.0;
-
+          T gam  = gamma<T,3>(uvel);
+          //T gam = 1.0;
           // v = i - x
           T v = cfl*uvel[0]/gam; // CFL
+
           T fm2 = Mm2.data.at(cid);
           T fm1 = Mm1.data.at(cid);
           T f0   = M0.data.at(cid);
@@ -482,15 +482,11 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             if(q >= 0)    N   -= flux; // - (dt/dx)U_i+1/2 (outflowing from cell)
             if(q <= Nx-2) Np1 += flux; // + (dt/dx)U_i-1/2 (inflowing to neighbor)
 
-            //if(q >= 0)    N   = -1.0*flux + M;   // - (dt/dx)U_i+1/2 (outflowing from cell)
-            //if(q <= Nx-2) Np1 =      flux + Mp1; // + (dt/dx)U_i-1/2 (inflowing to neighbor)
-              
 
             // calculate current
             // NOTE: Flux (dt/dx)U is given in units of grid velocity.
             //       Since Maxwell's fields are also in the same 'units'
             //       we do not scale back to speed of light with (qm/cfl)
-            //       factor as
             T jx = qm*integrate_moment( 
                 flux,
                 [](std::array<T,3>& uvel) -> T { return 1.0;}

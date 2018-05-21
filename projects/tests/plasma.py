@@ -170,7 +170,7 @@ def save(n, conf, lap, f5):
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = yee['ekin']
+    #f5['fields/ekin'][:,lap] = yee['ekin']
     f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     Nsamples = conf.Nt
     dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    #dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
@@ -412,6 +412,7 @@ if __name__ == "__main__":
         save(node, conf, ifile, f5)
         ifile += 1
 
+        #sys.exit()
 
         #I/O
         if (lap % conf.interval == 0):
@@ -419,9 +420,12 @@ if __name__ == "__main__":
             print("------ lap: {} / t: {}".format(lap, time)) 
             timer.stats("step")
 
-
-
             timer.start("io")
+
+            plasma.writeYee(node,      lap)
+            plasma.writeAnalysis(node, lap)
+            plasma.writeMesh(node,     lap)
+
 
 
             plotNode(axs[0], node, conf)

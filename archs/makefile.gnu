@@ -9,7 +9,7 @@ LNK = g++-7
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -std=c++14
 
 CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fopenmp
-LDFLAGS= 
+LDFLAGS= -lhdf5
 
 
 #pybind in macOS need to have additional flags

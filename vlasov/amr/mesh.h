@@ -51,9 +51,19 @@ class AdaptiveMesh {
   size_t number_of_cells = 0;
   
 
+  /// current size (number of cells) in each dimension
   indices_t length;
 
   int current_refinement_level = 0;
+
+  
+  /// location of mesh start corners
+  value_array_t mins;
+
+  /// location of mesh ending corners
+  value_array_t maxs;
+
+
 
 
   void resize(indices_t given_length)
@@ -460,9 +470,6 @@ class AdaptiveMesh {
     return lens;
   }
 
-  
-  value_array_t mins;
-  value_array_t maxs;
   
   void set_min(value_array_t& given_mins)
   {
