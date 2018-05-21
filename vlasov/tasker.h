@@ -209,22 +209,23 @@ void writeMesh( vlasov::Grid& grid )
             // i j k | q r s | ispc
             //
             // that is formatted into:
-            // tile-i_j_k-loc-q_r_s-sp-ispc
-            std::string mesh_name("tile");
-            mesh_name +=
-                "-" + std::to_string(i) 
-              + "_" + std::to_string(j) 
-              + "_" + std::to_string(k)
-              + "-loc-" 
-              +       std::to_string(q)
-              + "_" + std::to_string(r)
-              + "_" + std::to_string(s)
-              + "-sp-"
-              +       std::to_string(ispc);
-              
-            writer.write(M, mesh_name);
+            // tile-i_j_k/loc-q_r_s/sp-ispc
 
-            break;
+            h5io::TileInfo tinfo;
+            tinfo.prefix = "tile";
+
+            tinfo.i = i;
+            tinfo.j = j;
+            tinfo.k = k;
+
+            tinfo.q = q;
+            tinfo.r = r;
+            tinfo.s = s;
+
+            tinfo.sp = ispc;
+
+              
+            writer.write(M, tinfo);
 
             ispc++;
           } // q

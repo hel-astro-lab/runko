@@ -45,8 +45,22 @@ class Namer {
       return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
     }
 
+};
+
+
+/// data struct for location information about tiles
+class TileInfo {
+
+  public:
+    int i, j, k;
+    int q, r, s;
+    int sp;
+
+    string prefix;
 
 };
+
+
 
 
 class Writer {
@@ -169,16 +183,42 @@ class Writer {
     template<typename T>
     bool write( 
         const toolbox::AdaptiveMesh<T, 3>& mesh,
-        std::string& name
+        TileInfo tinfo
         )
     {
 
+      //--------------------------------------------------
+      // write meta info about grid and create internal directory structure
       size_t len = mesh.data.size();
 
-      //--------------------------------------------------
-      // write meta info about grid
-      auto gr = file[name];
+      std::string name1 = "tile-"
+                  +       std::to_string(tinfo.i) 
+                  + "_" + std::to_string(tinfo.j) 
+                  + "_" + std::to_string(tinfo.k);
+      auto gr1 = file[name1];
 
+      std::string name2 = "loc-"
+                  +       std::to_string(tinfo.q) 
+                  + "_" + std::to_string(tinfo.r) 
+                  + "_" + std::to_string(tinfo.s);
+      auto gr2 = gr1[name2];
+
+      std::string name3 = "sp-"
+                  +       std::to_string(tinfo.sp);
+      auto gr = gr2[name3];
+
+      gr["i"] = tinfo.i;
+      gr["j"] = tinfo.j;
+      gr["k"] = tinfo.k;
+
+      gr["q"] = tinfo.q;
+      gr["r"] = tinfo.r;
+      gr["s"] = tinfo.s;
+
+      gr["sp"] = tinfo.sp;
+      
+
+      // mesh metadata
       gr["maximum_refinement_level"] = mesh.maximum_refinement_level;
       gr["error_cid"]   = mesh.error_cid;
       gr["error_index"] = mesh.error_index;
