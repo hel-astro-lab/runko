@@ -1,5 +1,7 @@
-CMP = g++
-LNK = g++
+#CMP = g++
+#LNK = g++
+CMP = mpic++
+LNK = mpic++
 
 #general c++ flags
 # optimization flags 
@@ -8,15 +10,18 @@ LNK = g++
 # -funroll-loops
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -std=c++14
 
-CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fopenmp -fPIC
-LDFLAGS= -lhdf5
+#CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fopenmp -fPIC
+CXXFLAGS=-Wall -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fPIC -fopenmp
+#CXXFLAGS=-Wall -g -std=c++14 -fPIC
+LDFLAGS= -lhdf5 -fopenmp
+#LDFLAGS= -lhdf5
 
 
-#pybind in macOS need to have additional flags
-PYBINDINCLS= `python2 -m pybind11 --includes` -I/home/n/natj/Public/pybind11/include/ -I/usr/include/python2.7/
+#pybind flags
+PYBINDINCLS= `python -m pybind11 --includes` -I/home/n/natj/Public/pybind11/include/ -I/usr/include/python2.7/
 PYBINDFLAGS=-shared -fPIC
 
-LIB=-I/home/n/natj/Public/fmt/include/
+FMT=-I/home/n/natj/Public/fmt/include/
 EIGEN=-I/home/n/natj/Public/eigen-git-mirror/
 
 

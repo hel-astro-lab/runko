@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
-from matplotlib import cm
-import palettable as pal
-palette = pal.wesanderson.Moonrise1_5.mpl_colormap
+#import matplotlib.pyplot as plt
+#from matplotlib import cm
+#import palettable as pal
+#palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 import numpy as np
 

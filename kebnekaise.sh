@@ -20,8 +20,7 @@ module load Python/2.7.14
 
 
 # make
-make -j4
-
+#make -j4
 
 
 # copy binaries to parallel file system
@@ -34,19 +33,22 @@ mkdir ${PFS_PLASMA_DIR}/python
 mkdir ${PFS_PLASMA_DIR}/tests
 mkdir ${PFS_PLASMA_DIR}/projects
 mkdir ${PFS_PLASMA_DIR}/projects/tests
+mkdir ${PFS_PLASMA_DIR}/pic
 mkdir ${PFS_PLASMA_DIR}/jobs
 
 #python modules
-cp ${PLASMA_DIR}/python/*.py ${PFS_PLASMA_DIR}/python/
+#cp ${PLASMA_DIR}/python/*.py ${PFS_PLASMA_DIR}/python/
 
 #unit tests
-cp ${PLASMA_DIR}/tests/*.py ${PFS_PLASMA_DIR}/tests/
+#cp ${PLASMA_DIR}/tests/*.py ${PFS_PLASMA_DIR}/tests/
 
 #projects/tests
-cp ${PLASMA_DIR}/projects/tests/*.py ${PFS_PLASMA_DIR}/projects/tests/
-cp ${PLASMA_DIR}/projects/tests/*.ini ${PFS_PLASMA_DIR}/projects/tests/
+#cp ${PLASMA_DIR}/projects/tests/*.py ${PFS_PLASMA_DIR}/projects/tests/
+#cp ${PLASMA_DIR}/projects/tests/*.ini ${PFS_PLASMA_DIR}/projects/tests/
 
 #copy slurm jobs
-cp ${PLASMA_DIR}/jobs/*.sh ${PFS_PLASMA_DIR}/jobs/
+#cp ${PLASMA_DIR}/jobs/*.sh ${PFS_PLASMA_DIR}/jobs/
 
-
+# particle-in-cell
+#cp ${PLASMA_DIR}/pic/*.py ${PFS_PLASMA_DIR}/pic/
+#cp ${PLASMA_DIR}/pic/*.ini ${PFS_PLASMA_DIR}/pic/
