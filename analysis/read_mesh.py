@@ -113,7 +113,7 @@ class TileInfo:
 
 
 # visualize mesh snapshot
-def plot_meshes(ax, prefix, lap, conf, spcs, vdir):
+def get_1d_meshes(ax, prefix, lap, conf, spcs, vdir):
 
     # initialize array
     if vdir == "x":
@@ -128,8 +128,6 @@ def plot_meshes(ax, prefix, lap, conf, spcs, vdir):
         fullNvz = np.int(conf.Nvz * (2.0**conf.refinement_level))
         fullNvz = fullNvz if conf.Nvz > 1 else 2*2**conf.refinement_level
         data = -1.0 * np.ones( (conf.Nx*conf.NxMesh, fullNvz) )
-
-
 
     # initialize tile info
     tinfo = TileInfo()
@@ -177,34 +175,8 @@ def plot_meshes(ax, prefix, lap, conf, spcs, vdir):
 
             data[ i*conf.NxMesh + s, :] = sl
 
-    #print(np.max(data))
-    data = data/data.max()
 
-    xmin = 0.0
-    ymin = 0.0
-    xmax = conf.dx*conf.Nx*conf.NxMesh
-    ymax = conf.dy*conf.Ny*conf.NyMesh
-
-    imshow(ax, data,
-           xmin, xmax,
-           vmin, vmax,
-           cmap = 'plasma_r',
-           vmin =   0.0,
-           vmax =   1.0,
-           clip =   0.0,
-           )
-
-    if vdir == "x":
-        if spcs == 0:
-            ax.set_ylabel(r'$v_{x,e}$')
-        if spcs == 1:
-            ax.set_ylabel(r'$v_{x,p}$')
-    if vdir == "y":
-        if spcs == 0:
-            ax.set_ylabel(r'$v_{y,e}$')
-        if spcs == 1:
-            ax.set_ylabel(r'$v_{y,p}$')
-
+    return data, vmin, vmax
 
 
 
@@ -258,11 +230,46 @@ if __name__ == "__main__":
 
         conf = Configuration(prefix + 'config-landau.ini') 
 
-        plot_meshes(axs[0], prefix, lap, conf, ispcs, vdir)
+        data, vmin, vmax = get_1d_meshes(axs[0], prefix, lap, conf, ispcs, vdir)
+
+
+
+        ##################################################
+        # visualize
+
+        #print(np.max(data))
+        data = data/data.max()
+
+        xmin = 0.0
+        ymin = 0.0
+        xmax = conf.dx*conf.Nx*conf.NxMesh
+        ymax = conf.dy*conf.Ny*conf.NyMesh
+
+        imshow(axs[0], data,
+               xmin, xmax,
+               vmin, vmax,
+               cmap = 'plasma_r',
+               vmin =   0.0,
+               vmax =   1.0,
+               clip =   0.0,
+               )
+
+        if vdir == "x":
+            if ispcs == 0:
+                axs[0].set_ylabel(r'$v_{x,e}$')
+            if ispcs == 1:
+                axs[0].set_ylabel(r'$v_{x,p}$')
+        if vdir == "y":
+            if ispcs == 0:
+                axs[0].set_ylabel(r'$v_{y,e}$')
+            if ispcs == 1:
+                axs[0].set_ylabel(r'$v_{y,p}$')
 
         slap = str(lap).rjust(4, '0')
         fname = 'mesh_{}_{}.png'.format(0, slap)
         plt.savefig(fname)
+
+
 
 
 
