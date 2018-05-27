@@ -227,10 +227,10 @@ void writeMesh( vlasov::Grid& grid, int lap)
               
             writer.write(M, tinfo);
 
-            ispc++;
           } // q
         } // r
       } // s
+      ispc++;
     } // end of species
   } // end of loop over tiles
 
