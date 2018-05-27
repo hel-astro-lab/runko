@@ -8,9 +8,11 @@ LNK = g++-7
 # -funroll-loops
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -std=c++14
 
-CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fopenmp
-LDFLAGS= -lhdf5
+#CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fopenmp
+#LDFLAGS= -lhdf5
 
+CXXFLAGS=-Wall -Wno-int-in-bool-context -g -std=c++14 -fopenmp
+LDFLAGS= -lhdf5 -fopenmp
 
 #pybind in macOS need to have additional flags
 PYBINDINCLS= `python2 -m pybind11 --includes`
