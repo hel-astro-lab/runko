@@ -1,7 +1,7 @@
-#import matplotlib.pyplot as plt
-#from matplotlib import cm
-#import palettable as pal
-#palette = pal.wesanderson.Moonrise1_5.mpl_colormap
+import matplotlib.pyplot as plt
+from matplotlib import cm
+import palettable as pal
+palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 import numpy as np
 
@@ -35,7 +35,7 @@ def imshow(ax,
         mgrid = np.ma.masked_where(grid <= clip, grid)
     
     mgrid = mgrid.T
-    ax.imshow(mgrid,
+    im = ax.imshow(mgrid,
               extent=extent,
               origin='lower',
               interpolation='nearest',
@@ -46,6 +46,8 @@ def imshow(ax,
               #vmax = Nrank,
               #alpha=0.5
               )
+    return im
+
 
 
 # Visualize current cell ownership on node

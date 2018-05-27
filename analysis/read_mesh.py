@@ -113,7 +113,7 @@ class TileInfo:
 
 
 # visualize mesh snapshot
-def get_1d_meshes(ax, prefix, lap, conf, spcs, vdir):
+def get_1d_meshes(prefix, lap, conf, spcs, vdir):
 
     # initialize array
     if vdir == "x":
@@ -175,8 +175,14 @@ def get_1d_meshes(ax, prefix, lap, conf, spcs, vdir):
 
             data[ i*conf.NxMesh + s, :] = sl
 
+    meshes = {
+            'data': data,
+            'vmin': vmin,
+            'vmax': vmax,
+             }
 
-    return data, vmin, vmax
+
+    return meshes
 
 
 
@@ -230,8 +236,10 @@ if __name__ == "__main__":
 
         conf = Configuration(prefix + 'config-landau.ini') 
 
-        data, vmin, vmax = get_1d_meshes(axs[0], prefix, lap, conf, ispcs, vdir)
-
+        meshes = get_1d_meshes(prefix, lap, conf, ispcs, vdir)
+        data = meshes['data']
+        vmin = meshes['vmin']
+        vmax = meshes['vmax']
 
 
         ##################################################
