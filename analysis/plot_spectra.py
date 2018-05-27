@@ -62,7 +62,6 @@ if __name__ == "__main__":
     axbottom  = 0.16
     axright   = 0.98
     axtop     = 0.80
-
     fig.subplots_adjust(left=axleft, bottom=axbottom, right=axright, top=axtop)
 
     for ax in axs:

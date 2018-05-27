@@ -28,14 +28,15 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-    fig = plt.figure(1, figsize=(8,1))
-    plt.rc('font', family='serif', size=12)
-    plt.rc('xtick')
-    plt.rc('ytick')
+    fig = plt.figure(1, figsize=(6.974, 1.4))
+    plt.rc('font', family='serif', size=8)
+    plt.rc('xtick', labelsize=8)
+    plt.rc('ytick', labelsize=8)
+    plt.rc('axes',  labelsize=8)
             
     gs = plt.GridSpec(1, 2)
     gs.update(hspace = 0.5)
-    gs.update(wspace = 0.05)
+    gs.update(wspace = 0.07)
     
     axs = []
     axs.append( plt.subplot(gs[0]) )
@@ -75,6 +76,13 @@ if __name__ == "__main__":
         for ax in axs:
             ax.clear()
 
+        if top:
+            axleft    = 0.10
+            axbottom  = 0.24
+            axright   = 0.96
+            axtop     = 0.80
+            fig.subplots_adjust(left=axleft, bottom=axbottom, right=axright, top=axtop)
+
 
         # read left
         ##################################################
@@ -89,7 +97,7 @@ if __name__ == "__main__":
                cmap = 'plasma_r',
                vmin =   0.0,
                vmax =   1.0,
-               clip =   0.0,
+               clip =   1.0e-5,
             )
 
 
@@ -106,7 +114,7 @@ if __name__ == "__main__":
                cmap = 'plasma_r',
                vmin =   0.0,
                vmax =   1.0,
-               clip =   0.0,
+               clip =   1.0e-5,
             )
 
         # remove ytick labels from second panel
@@ -118,8 +126,8 @@ if __name__ == "__main__":
 
         # header panel
         if top:
-            cbL = colorbar(imL, loc="top", orientation="horizontal", size="5%", pad=0.03, ticklocation='top')
-            cbR = colorbar(imR, loc="top", orientation="horizontal", size="5%", pad=0.03, ticklocation='top')
+            cbL = colorbar(imL, loc="top", orientation="horizontal", size="8%", pad=0.03, ticklocation='top')
+            cbR = colorbar(imR, loc="top", orientation="horizontal", size="8%", pad=0.03, ticklocation='top')
 
         # middle panels
         if not(bottom):
@@ -134,13 +142,13 @@ if __name__ == "__main__":
         # add timestamp
         
         tstamp = "$t = $" + str(lap) + " $\omega_p^{-1}$"
-        txt = fig.text(0.92, 0.5, tstamp, rotation=270, ha='center', va='center')
+        txt = fig.text(axright+0.02, 0.5, tstamp, rotation=270, ha='center', va='center')
 
 
 
         slap = str(lap).rjust(4, '0')
-        fname = 'mesh_{}_{}.png'.format(0, slap)
-        plt.savefig(fname)
+        fname = 'mesh_{}_{}.pdf'.format(0, slap)
+        plt.savefig(fname, bbox_inches='tight')
 
         ##################################################
         # hacks to clean up the figure so we can re-use the same Fig object
