@@ -52,3 +52,5 @@ docs
 workshop
 refs
 .ycm_extra_conf.py
+
+*.h5
