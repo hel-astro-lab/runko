@@ -1,6 +1,7 @@
 #platform architecture
 #ARCH=macOS
 ARCH=gnu
+#ARCH=kebnekaise
 
 #set FP precision to SP (single) or DP (double)
 FP_PRECISION=DP
@@ -48,6 +49,7 @@ EXE=plasma
 #collect libraries
 LIBS += ${LIB_MPI}
 LIBS += ${EIGEN}
+LIBS += ${FMT}
 
 CXXFLAGS += ${LIBS}
 
@@ -89,14 +91,14 @@ pycorgi:
 
 #link into python module with pybind11
 pyplasma: fields.o damping_fields.o vlasovCell.o pyplasma.o 
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasma.so pyplasma.o vlasovCell.o fields.o damping_fields.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o python/pyplasma.so pyplasma.o vlasovCell.o fields.o damping_fields.o
 
 #pyplasmaDev: vlasov/amr/mesh.h vlasov/amr/numerics.h vlasov/amr/refiner.h tools/mesh.h dev-bindings.o
 #	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasmaDev.so dev-bindings.o
 
 
 pypic: pypic.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pypic.so pypic.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} ${LIBS} -o python/pypic.so pypic.o 
 
 
 
