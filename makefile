@@ -97,8 +97,8 @@ pyplasma: fields.o damping_fields.o vlasovCell.o pyplasma.o
 #	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -fopenmp -o python/pyplasmaDev.so dev-bindings.o
 
 
-pypic: pypic.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} ${LIBS} -o python/pypic.so pypic.o 
+pypic: fields.o damping_fields.o pypic.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} ${LIBS} -o python/pypic.so pypic.o fields.o damping_fields.o
 
 
 

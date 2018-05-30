@@ -52,3 +52,11 @@ mkdir ${PFS_PLASMA_DIR}/jobs
 # particle-in-cell
 #cp ${PLASMA_DIR}/pic/*.py ${PFS_PLASMA_DIR}/pic/
 #cp ${PLASMA_DIR}/pic/*.ini ${PFS_PLASMA_DIR}/pic/
+
+
+mkdir ${PFS_PLASMA_DIR}/projects/shock-atmos
+cp ${PLASMA_DIR}/projects/shock-atmos/*.ini ${PFS_PLASMA_DIR}/projects/shock-atmos/
+#cp ${PLASMA_DIR}/projects/shock-atmos/*.py ${PFS_PLASMA_DIR}/projects/shock-atmos/
+cp ${PLASMA_DIR}/projects/shock-atmos/*.so ${PFS_PLASMA_DIR}/projects/shock-atmos/
+
+
