@@ -25,6 +25,7 @@ from timer import Timer
 # for on-the-fly visualization
 import matplotlib.pyplot as plt
 
+import argparse
 
 
 # Generic function to fill the velocity mesh
@@ -249,16 +250,26 @@ if __name__ == "__main__":
     timer.start("init")
 
 
+    # parse command line arguments
+    parser = argparse.ArgumentParser(description='Simple Vlasov-Maxwell simulations')
+    parser.add_argument('--conf', dest='conf_name', default=None,
+                       help='Name of the configuration file (default: None)')
+    args = parser.parse_args()
+    if args.conf_name == None:
+        conf = Configuration('config-landau.ini') 
+        #conf = Configuration('config-twostream.ini') 
+        #conf = Configuration('config-twostream-fast.ini') 
+        #conf = Configuration('config-bump-on-tail.ini') 
+        #conf = Configuration('config-twostream-relativistic.ini') 
+        #conf = Configuration('config-plasmaosc.ini') 
+        #conf = Configuration('config-dispersion.ini') 
+    else:
+        print("Reading configuration setup from ", args.conf_name)
+        conf = Configuration(args.conf_name)
+
+
     ################################################## 
     #initialize node
-    conf = Configuration('config-landau.ini') 
-    #conf = Configuration('config-twostream.ini') 
-    #conf = Configuration('config-twostream-fast.ini') 
-    #conf = Configuration('config-bump-on-tail.ini') 
-    #conf = Configuration('config-twostream-relativistic.ini') 
-    #conf = Configuration('config-plasmaosc.ini') 
-    #conf = Configuration('config-dispersion.ini') 
-
     node = plasma.Grid(conf.Nx, conf.Ny)
 
     xmin = 0.0
