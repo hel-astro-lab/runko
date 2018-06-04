@@ -161,7 +161,6 @@ def inject(node, ffunc, conf):
                                          conf)
                                 #vmesh.maximum_refinement_level = conf.refinement_level
 
-
                                 block[l,m,n] = vmesh
                     species.append(block)
 

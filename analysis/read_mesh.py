@@ -38,6 +38,9 @@ def get_mesh(f5, conf):
     locname  = "loc-" +str(q)+"_"+str(r)+"_"+str(s)
     ispname  = "sp-"  +str(ip)
 
+    #print(tilename)
+    #print(locname)
+    #print(ispname)
     dset_tile = f5[tilename]
     dset_loc  = dset_tile[locname]
     dset      = dset_loc[ispname]
@@ -143,9 +146,10 @@ def get_1d_meshes(prefix, lap, conf, spcs, vdir):
     rank = 0 #TODO remove hard coded rank
     fname = prefix + "meshes-" + str(rank) + "_" + str(lap) + ".h5"
     f5 = h5py.File(fname,'r')
-    print(fname)
+    #print(fname)
 
     for i in range(conf.Nx):
+        tinfo.i = i
         for s in range(conf.NxMesh):
             tinfo.q = s
 

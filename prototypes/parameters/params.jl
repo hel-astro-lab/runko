@@ -2,8 +2,8 @@ cfl = 0.45
 c_omp = 100.0 #skin depth in cell units
 delgam = 1.0e-3
 Nx = 400
-Rm = 2
-Nt = 50000
+Rm = 10
+Nt = 25000
 
 
 dx = 1/c_omp

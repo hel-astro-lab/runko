@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 import sys, os
 
@@ -21,6 +20,11 @@ from visualize import getYee
 import injector
 
 from timer import Timer
+
+
+# for on-the-fly visualization
+import matplotlib.pyplot as plt
+
 
 
 # Generic function to fill the velocity mesh

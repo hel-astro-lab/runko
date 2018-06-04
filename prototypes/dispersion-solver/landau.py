@@ -108,6 +108,27 @@ for nsol in range(Nsol):
     axs[1].plot(karr, np.imag(warr[:,nsol]), 'k-', markersize=ms)
 
 
+# for printing
+karrp = [0.0496729413289805, #mode1
+         0.099345882657961,  #2
+         0.1490188239869415, #3
+         0.198691765315922,  #4
+         0.2483647066449025, #5
+         0.298037647973883,  #6
+         0.3477105893028635, #7
+         0.397383530631844,  #8
+         0.4470564719608245, #9
+         0.496729413289805,  #10
+         ]
+
+for i,k in enumerate(karrp):
+    w = ES1d(k, params)
+
+    print("mode=",i+1)
+    print("khat=",k)
+    print("omeg=",w[1])
+    print()
+
 
 
 plt.subplots_adjust(left=0.18, bottom=0.09, right=0.98, top=0.95, wspace=0.0, hspace=0.0)

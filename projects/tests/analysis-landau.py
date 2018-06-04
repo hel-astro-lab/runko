@@ -19,7 +19,7 @@ maxi = -1
 #Read field
 ex   = f['fields/Ex'][()]
 rho  = f['fields/rho'][()]
-ekin = f['fields/ekin'][()]
+#ekin = f['fields/ekin'][()]
 #ex  = f['fields/Ex' ][:,:maxi]
 #rho = f['fields/rho'][:,:maxi]
 
@@ -101,8 +101,8 @@ def fitf(t, wr, wi, t0, y0):
 
 
 
-params = (1.014990, 0.0, 1.4, 200.0*ex_max[0])   #k=0.09 /mode=2
-#params = (1.28506, 0.066, 1.2, 200.0*ex_max[0])  #k=0.40 /mode=8
+#params = (1.014990, 0.0, 1.4, 200.0*ex_max[0])   #k=0.09 /mode=2
+params = (1.28166, 0.064241, 1.4, 160.0*ex_max[0])  #k=0.40 /mode=8
 #params = (1.415660, 0.15336, 1.4, 100.0*ex_max[0]) #k=0.5 /mode=10
 
 
@@ -234,7 +234,7 @@ def landau_osc(x, params):
 #tskip = 0.28 #0.8
 #tskip = 0.1
 tskip = params[2]
-Norm = 4.0e4
+Norm = 2.5e4
 lin_analysis  = Norm*wedens[0]*np.abs(  np.exp(-1j*omega*(time-tskip)))**2.0
 
 #with frequency
@@ -265,36 +265,36 @@ axs[2].plot(time, np.log10(prtcls))
 
 ##################################################
 
-ekintot = np.sum(ekin, 0) 
-axs[3].plot(time, np.log10(ekintot))
-#axs[3].plot(time, wedens, 'r-')
-
-
-##################################################
-#etot = np.sum(ex*ex/(8.0*np.pi) ,0) #+ np.sum(ekin,0)
-#etot = np.sum(ekin,0)/np.sum(rho, 0)
-#etot = np.sum(ekin,0)*dx
-#etot = etot/etot[0]
-
-print("ekin   max:", np.max(ekintot))
-print("efield max:", np.max(wedens))
-print("ratio:", np.mean(ekintot)/np.mean(wedens))
-
-
+#ekintot = np.sum(ekin, 0) 
+#axs[3].plot(time, np.log10(ekintot))
+##axs[3].plot(time, wedens, 'r-')
+#
+#
+###################################################
+##etot = np.sum(ex*ex/(8.0*np.pi) ,0) #+ np.sum(ekin,0)
+##etot = np.sum(ekin,0)/np.sum(rho, 0)
+##etot = np.sum(ekin,0)*dx
+##etot = etot/etot[0]
+#
+#print("ekin   max:", np.max(ekintot))
+#print("efield max:", np.max(wedens))
+#print("ratio:", np.mean(ekintot)/np.mean(wedens))
+#
+#
+##etot = ekintot + wedens
+##etot /= etot[0]
+##etot = np.abs(etot/etot[0] - 1.0)
+##axs[4].plot(time, np.log10( etot) )
+#
+##ekintot = ekintot * dx*dx #try normalization
+#ekintot = ekintot * dx
+#
 #etot = ekintot + wedens
-#etot /= etot[0]
-#etot = np.abs(etot/etot[0] - 1.0)
-#axs[4].plot(time, np.log10( etot) )
-
-#ekintot = ekintot * dx*dx #try normalization
-ekintot = ekintot * dx
-
-etot = ekintot + wedens
-axs[4].plot(time, np.log10( etot),    "k-" )
-axs[4].plot(time, np.log10( ekintot), "b--")
-axs[4].plot(time, np.log10( wedens),  "r--")
-
-axs[4].set_ylim((-8, -2))
+#axs[4].plot(time, np.log10( etot),    "k-" )
+#axs[4].plot(time, np.log10( ekintot), "b--")
+#axs[4].plot(time, np.log10( wedens),  "r--")
+#
+#axs[4].set_ylim((-8, -2))
 
 
 plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
