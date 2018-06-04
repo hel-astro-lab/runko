@@ -438,6 +438,10 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       // TODO does not work if the fill is not correctly done
       for(int i = 2; i>D-1; i--) len[i] = 1;
 
+      // normalize
+      T norm0 = integrate_moment( mesh0,
+                [](std::array<T,3>& uvel) -> T { return T(1);}
+                );
 
       for(uint64_t r=0; r<len[0]; r++) {
         index[0] = r;
@@ -493,6 +497,14 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         adapter.unrefine(mesh1);
 
       }
+
+
+      // normalize back to original weight
+      T norm1 = integrate_moment( mesh1,
+                [](std::array<T,3>& uvel) -> T { return T(1);}
+                );
+      mesh1 *= norm0/norm1;
+
 
       return;
     }
