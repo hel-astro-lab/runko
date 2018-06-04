@@ -868,6 +868,41 @@ class AdaptiveMesh {
   }
 
 
+  //--------------------------------------------------
+
+  // scalar operations to the grid
+  void operator *= (T val) 
+  {
+    for(auto&& cid: get_cells(false)) {
+      data.at(cid) *= val;
+    }
+  }
+
+  void operator /= (T val) 
+  {
+    for(auto&& cid: get_cells(false)) {
+      data.at(cid) /= val;
+    }
+  }
+
+  void operator += (T val) 
+  {
+    for(auto&& cid: get_cells(false)) {
+      data.at(cid) += val;
+    }
+  }
+
+  void operator -= (T val) 
+  {
+    for(auto&& cid: get_cells(false)) {
+      data.at(cid) -= val;
+    }
+  }
+
+
+
+
+
 
 };
 

@@ -17,8 +17,8 @@ using iter::zip;
 using toolbox::sign;
 
 
-#include <Eigen/Dense>
-using namespace Eigen;
+//#include <Eigen/Dense>
+//using namespace Eigen;
 using std::min;
 using std::max;
 
@@ -239,13 +239,14 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
 
-    /// 2nd order upwind-biased flux
+    /// 3rd order upwind-biased flux with flux limiters
     inline toolbox::AdaptiveMesh<T,3> flux3rdU(
         const toolbox::AdaptiveMesh<T,3>& Mm2,
         const toolbox::AdaptiveMesh<T,3>& Mm1,
         const toolbox::AdaptiveMesh<T,3>& M0,
         const toolbox::AdaptiveMesh<T,3>& Mp1,
         const toolbox::AdaptiveMesh<T,3>& Mp2,
+        const toolbox::AdaptiveMesh<T,3>& Mp3,
         T cfl) {
 
       // make a new fresh mesh for updating (based on M0)
@@ -299,15 +300,15 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
           // v = i - x
           T v = cfl*uvel[0]/gam; // CFL
 
-          T fm2 = Mm2.data.at(cid);
+          //T fm2 = Mm2.data.at(cid);
           T fm1 = Mm1.data.at(cid);
           T f0   = M0.data.at(cid);
           T fp1 = Mp1.data.at(cid);
           T fp2 = Mp2.data.at(cid);
+          T fp3 = Mp3.data.at(cid);
             
           //T Lp = f0  - fp1;
           //T Lm = fp1 - fp2;
-          T fp3 = 0.0; // TODO FIXME
           T Lp = Lpf(fp3, fp2, fp1, f0, fm1);
           T Lm = Lmf(fp3, fp2, fp1, f0, fm1);
 
@@ -401,72 +402,87 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             //  flux = flux2nd(M, Mp1, cfl);
             //}
 
-            if (q < 0) { //left halo
-              const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
-              const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
-
-              flux = flux1st(M, Mp1, cfl);
-            } else if ( (q >= 0) && (q <= Nx-2) ) { // inside
-              const auto& M   = block0.block(q,r,s);   // f_i
-              const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
-
-              flux = flux1st(M, Mp1, cfl);
-            } else if (q >= Nx-1) { //right halo
-              const auto& M   = block0.block(q,r,s);       // f_i
-              const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
-
-              flux = flux1st(M, Mp1, cfl);
-            }
-
-            //if (q == -1) { //left halo
-            //  const auto& Mm2 = block0_left.block(block0_left.Nx-3,r,s); // f_i-2
-            //  const auto& Mm1 = block0_left.block(block0_left.Nx-2,r,s); // f_i-1
+            //if (q < 0) { //left halo
             //  const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
-            //  const auto& Mp1 = block0.block(q+1,r,s);                     // f_i+1
-            //  const auto& Mp2 = block0.block(q+2,r,s);                     // f_i+2
+            //  const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
 
-            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
-            //} else if (q == 0) { // left halo / inside
-            //  const auto& Mm2 = block0_left.block(block0_left.Nx-2,r,s); // f_i-2
-            //  const auto& Mm1 = block0_left.block(block0_left.Nx-1,r,s); // f_i-1
-            //  const auto& M   = block0.block(q,r,s);                     // f_i
-            //  const auto& Mp1 = block0.block(q+1,r,s);                   // f_i+1
-            //  const auto& Mp2 = block0.block(q+2,r,s);                   // f_i+2
-
-            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
-            //} else if (q == 1) { // left halo / inside
-            //  const auto& Mm2 = block0_left.block(block0_left.Nx-1,r,s); // f_i-2
-            //  const auto& Mm1 = block0.block(q-1,r,s);                   // f_i-1
-            //  const auto& M   = block0.block(q,r,s);                     // f_i
-            //  const auto& Mp1 = block0.block(q+1,r,s);                   // f_i+1
-            //  const auto& Mp2 = block0.block(q+2,r,s);                   // f_i+2
-
-            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
-            //} else if ( (q >= 2) && (q <= Nx-3) ) { // inside
-            //  const auto& Mm2 = block0.block(q-2,r,s); // f_i-2
-            //  const auto& Mm1 = block0.block(q-1,r,s); // f_i-1
+            //  flux = flux1st(M, Mp1, cfl);
+            //} else if ( (q >= 0) && (q <= Nx-2) ) { // inside
             //  const auto& M   = block0.block(q,r,s);   // f_i
             //  const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
-            //  const auto& Mp2 = block0.block(q+2,r,s); // f_i+2
 
-            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
-            //} else if (q == Nx-2) { // left halo / inside
-            //  const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
-            //  const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
-            //  const auto& M   = block0.block(q,r,s);       // f_i
-            //  const auto& Mp1 = block0.block(q+1,r,s);     // f_i+1
-            //  const auto& Mp2 = block0_right.block(0,r,s); // f_i+2
-
-            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //  flux = flux1st(M, Mp1, cfl);
             //} else if (q >= Nx-1) { //right halo
-            //  const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
-            //  const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
             //  const auto& M   = block0.block(q,r,s);       // f_i
             //  const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
-            //  const auto& Mp2 = block0_right.block(1,r,s); // f_i+2
 
-            //  flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, cfl);
+            //  flux = flux1st(M, Mp1, cfl);
             //}
+
+            if (q == -1) { //left halo
+              const auto& Mm2 = block0_left.block(block0_left.Nx-3,r,s); // f_i-2
+              const auto& Mm1 = block0_left.block(block0_left.Nx-2,r,s); // f_i-1
+              const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
+              const auto& Mp1 = block0.block(q+1,r,s);                     // f_i+1
+              const auto& Mp2 = block0.block(q+2,r,s);                     // f_i+2
+              const auto& Mp3 = block0.block(q+3,r,s);                     // f_i+3
+
+              flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
+            } else if (q == 0) { // left halo / inside
+              const auto& Mm2 = block0_left.block(block0_left.Nx-2,r,s); // f_i-2
+              const auto& Mm1 = block0_left.block(block0_left.Nx-1,r,s); // f_i-1
+              const auto& M   = block0.block(q,r,s);                     // f_i
+              const auto& Mp1 = block0.block(q+1,r,s);                   // f_i+1
+              const auto& Mp2 = block0.block(q+2,r,s);                   // f_i+2
+              const auto& Mp3 = block0.block(q+3,r,s);                   // f_i+3
+
+              flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
+            } else if (q == 1) { // left halo / inside
+              const auto& Mm2 = block0_left.block(block0_left.Nx-1,r,s); // f_i-2
+              const auto& Mm1 = block0.block(q-1,r,s);                   // f_i-1
+              const auto& M   = block0.block(q,r,s);                     // f_i
+              const auto& Mp1 = block0.block(q+1,r,s);                   // f_i+1
+              const auto& Mp2 = block0.block(q+2,r,s);                   // f_i+2
+              const auto& Mp3 = block0.block(q+3,r,s);                   // f_i+3
+
+              flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
+            } else if ( (q >= 2) && (q <= Nx-4) ) { // inside
+              const auto& Mm2 = block0.block(q-2,r,s); // f_i-2
+              const auto& Mm1 = block0.block(q-1,r,s); // f_i-1
+              const auto& M   = block0.block(q,r,s);   // f_i
+              const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
+              const auto& Mp2 = block0.block(q+2,r,s); // f_i+2
+              const auto& Mp3 = block0.block(q+3,r,s); // f_i+3
+
+              flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
+            } else if (q == Nx-3) { // left halo / inside
+              const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
+              const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
+              const auto& M   = block0.block(q,r,s);       // f_i
+              const auto& Mp1 = block0.block(q+1,r,s);     // f_i+1
+              const auto& Mp2 = block0.block(q+2,r,s);     // f_i+2
+              const auto& Mp3 = block0_right.block(0,r,s); // f_i+3
+            
+              flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
+            } else if (q == Nx-2) { // left halo / inside
+              const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
+              const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
+              const auto& M   = block0.block(q,r,s);       // f_i
+              const auto& Mp1 = block0.block(q+1,r,s);     // f_i+1
+              const auto& Mp2 = block0_right.block(0,r,s); // f_i+2
+              const auto& Mp3 = block0_right.block(1,r,s); // f_i+3
+
+              flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
+            } else if (q >= Nx-1) { //right halo
+              const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
+              const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
+              const auto& M   = block0.block(q,r,s);       // f_i
+              const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
+              const auto& Mp2 = block0_right.block(1,r,s); // f_i+2
+              const auto& Mp3 = block0_right.block(2,r,s); // f_i+3
+
+              flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
+            }
 
 
             //const auto& M   = block0.block(q,r,s);       // f_i
