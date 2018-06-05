@@ -154,7 +154,8 @@ class ParticleBlock {
   // --------------------------------------------------
   //! Lorentz factor
   inline double gamma(unsigned int iprtcl) {
-    return sqrt(1.+pow(vel(0,iprtcl),2)
+    return sqrt(1.+
+         pow(vel(0,iprtcl),2)
         +pow(vel(1,iprtcl),2)
         +pow(vel(2,iprtcl),2));
   }
@@ -182,4 +183,4 @@ class ParticleBlock {
 
 
 
-} // end of namespace epic
+} // end of namespace pic

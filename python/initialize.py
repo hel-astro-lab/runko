@@ -71,7 +71,7 @@ def loadCells(n, conf):
                 #c.yeeDy = conf.dy
                 #c.yeeDz = conf.dz
                 
-                # initialize meshes ready for incoming simulation data
+                # initialize analysis tiles ready for incoming simulation data
                 for i in range(conf.Nspecies):
                     c.addAnalysisSpecies()
 

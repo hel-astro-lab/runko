@@ -29,9 +29,16 @@ class Analyzator {
     // Yee lattice reference
     auto& yee = cell.getYee();
     yee.rho.clear();
-    // yee.ekin.clear();
-    //yee.jx1.clear();
 
+
+    // analysis lattice reference
+    int ispc = 0;
+    auto& analysis = cell.analysis[ispc];
+    analysis.rho.clear();
+    analysis.mgamma.clear();
+    analysis.Vx.clear();
+    analysis.Tx.clear();
+    analysis.ekin.clear();
 
     // initialize pointers to particle arrays
     int nparts = cell.container.size();
@@ -46,8 +53,8 @@ class Analyzator {
 
 
     double gam;
-    double c = cell.cfl;
-    double q = cell.container.qe;
+    //double c = cell.cfl;
+    double q = cell.container.qe; // TODO: split into species
     double x0, y0, z0;
     double u0, v0, w0;
     double i,j,k;
@@ -73,19 +80,42 @@ class Analyzator {
       v0 = vel[1][n];
       w0 = vel[2][n];
 
-      gam = 1.0/sqrt(1.0 + 
+      gam = sqrt(1.0 + 
           vel[0][n]*vel[0][n] + 
           vel[1][n]*vel[1][n] + 
           vel[2][n]*vel[2][n]);
 
+      // --------------------------------------------------
+      // general quantities
+        
+      yee.rho(i,j,k) += abs(q); // number density
 
-      // number density
-      yee.rho(i,j,k) += abs(q);
+      // --------------------------------------------------
+      // particle-species quantities
 
+      analysis.rho(i,j,k) += abs(q); // number density
+
+      analysis.mgamma(i,j,k) += gam; // mean gamma
+
+      analysis.Vx(i,j,k) += u0/gam; // bulk velocity
+
+      // TODO Tx
+      
       // kinetic energy
-      // yee.ekin(i,j,k) += 0.5*abs(q)*u0*u0;
-      //std::cout << abs(q)*u0*u0 << "ijk:" << i << " " << j << " " << k << '\n';
+      // chi(u) = 1/2 m v.v
+      analysis.ekin(i,j,k) += 0.5*abs(q)*u0*u0/gam/gam;
+
+
     }
+
+
+    // normalize weight with number density
+    for (size_t k=0; k<cell.NzMesh; k++)
+    for (size_t j=0; j<cell.NyMesh; j++)
+    for (size_t i=0; i<cell.NxMesh; i++) {
+      analysis.mgamma(i,j,k) /= analysis.rho(i,j,k);
+    }
+
 
 
     return;

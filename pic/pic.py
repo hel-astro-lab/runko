@@ -12,6 +12,7 @@ import pypic
 
 
 from configSetup import Configuration
+import argparse
 import initialize as init
 
 #from injector import spatialLoc
@@ -145,6 +146,9 @@ def inject(node, ffunc, conf):
 
                                     c.container.add_particle(x0, u0)
 
+                # initialize analysis tiles ready for incoming simulation data
+                for i in range(conf.Nspecies):
+                    c.addAnalysisSpecies()
 
 
 # visualize particle content in vx direction
@@ -301,7 +305,7 @@ def save(n, conf, lap, f5):
     #f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/Ex'  ][:,lap] = exS
     f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = yee['ekin']
+    #f5['fields/ekin'][:,lap] = yee['ekin']
     f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
@@ -325,7 +329,22 @@ if __name__ == "__main__":
     for ai in range(8):
         axs.append( plt.subplot(gs[ai]) )
 
-    conf = Configuration('config-landau.ini') 
+
+    # Timer for profiling
+    timer = Timer(["total", "init", "step", "io"])
+    timer.start("total")
+    timer.start("init")
+
+    # parse command line arguments
+    parser = argparse.ArgumentParser(description='Simple PIC-Maxwell simulations')
+    parser.add_argument('--conf', dest='conf_filename', default=None,
+                       help='Name of the configuration file (default: None)')
+    args = parser.parse_args()
+    if args.conf_filename == None:
+        conf = Configuration('config-landau.ini') 
+    else:
+        print("Reading configuration setup from ", args.conf_filename)
+        conf = Configuration(args.conf_filename)
 
 
     #node = plasma.Grid(conf.Nx, conf.Ny)
@@ -356,6 +375,13 @@ if __name__ == "__main__":
     #insert_em(node, conf)
 
 
+    timer.stop("init") 
+    timer.stats("init") 
+    # end of initialization
+    ################################################## 
+
+
+
     # visualize initial condition
     plotNode( axs[0], node, conf)
     plotXmesh(axs[1], node, conf, 0, "x")
@@ -375,7 +401,7 @@ if __name__ == "__main__":
     Nsamples = conf.Nt
     dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    #dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
@@ -474,6 +500,7 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 analyzer.analyze(cell)
 
+        timer.lap("step")
 
         #save temporarily to file
         save(node, conf, ifile, f5)
@@ -484,6 +511,14 @@ if __name__ == "__main__":
         if (lap % conf.interval == 0):
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
+
+            timer.stats("step")
+            timer.start("io")
+
+
+            plasma.writeYee(node,      lap, conf.outdir + "/")
+            plasma.writeAnalysis(node, lap, conf.outdir + "/")
+            #plasma.writeMesh(node,     lap, conf.outdir + "/")
 
             plotNode( axs[0], node, conf)
             plotXmesh(axs[1], node, conf, 0, "x")
@@ -498,9 +533,17 @@ if __name__ == "__main__":
 
             saveVisz(lap, node, conf)
 
+
+
+            timer.stop("io")
+            timer.stats("io")
+            timer.start("step") #refresh lap counter (avoids IO profiling)
+
         time += conf.cfl/conf.c_omp
     #end of loop
 
     #node.finalizeMpi()
 
 
+    timer.stop("total")
+    timer.stats("total")

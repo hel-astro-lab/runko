@@ -137,7 +137,7 @@ void analyze( vlasov::Grid& grid )
 
 
 void writeYee( 
-    vlasov::Grid& grid, 
+    corgi::Node& grid, 
     int lap,
     std::string dir
     )
@@ -158,7 +158,7 @@ void writeYee(
 
 
 void writeAnalysis( 
-    vlasov::Grid& grid, 
+    corgi::Node& grid, 
     int lap,
     std::string dir
     )
