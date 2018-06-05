@@ -437,9 +437,9 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            plasma.writeYee(node,      lap)
-            plasma.writeAnalysis(node, lap)
-            plasma.writeMesh(node,     lap)
+            plasma.writeYee(node,      lap, conf.outdir + "/")
+            plasma.writeAnalysis(node, lap, conf.outdir + "/")
+            plasma.writeMesh(node,     lap, conf.outdir + "/")
 
 
 
