@@ -182,7 +182,7 @@ class Analyzator {
               
             /// (non-relativistic) temperature
             // chi(u) = v - V
-            analysis.Vx(q,r,s) = 
+            analysis.Tx(q,r,s) = 
               integrate_moment(
                   M,
                 [Vx](std::array<T,3> uvel) -> T 
