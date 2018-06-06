@@ -74,9 +74,13 @@ PYBIND11_MODULE(pypic, m) {
       .def(py::init<>())
       .def("solve", &pic::ParticleFieldInterpolator::solve);
 
+
     py::class_<pic::Communicator>(m, "Communicator")
       .def(py::init<>())
-      .def("transfer", &pic::Communicator::transfer);
+      .def("check_outgoing_particles",    &pic::Communicator::check_outgoing_particles)
+      .def("get_incoming_particles",      &pic::Communicator::get_incoming_particles)
+      .def("delete_transferred_particles",&pic::Communicator::delete_transferred_particles);
+
 
     py::class_<pic::Depositer>(m, "Depositer")
       .def(py::init<>())

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <cmath>
 
 
@@ -37,6 +38,10 @@ class ParticleBlock {
   //! particle specific magnetic field components
   //std::vector<double> Bpart;
   std::vector< std::vector<double> > Bpart;
+
+  //! multimap of particles going to other tiles
+  typedef std::multimap<std::string, int> mapType;
+  mapType to_other_tiles;
 
 
   // size of the internal mesh
@@ -81,6 +86,7 @@ class ParticleBlock {
 
   // resize arrays for fields
   void resizeEM(uint64_t N, uint64_t D) {
+    if (N <= 0) N = 1;
 
     Epart.resize(D);
     for(uint64_t i=0; i<D; i++) Epart[i].resize(N);

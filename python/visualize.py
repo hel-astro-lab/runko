@@ -121,6 +121,35 @@ def plotNode(ax, n, conf):
     ax.set_ylabel('node')
 
 
+# plot tile boundaries
+def plotTileBoundaries(ax, node, conf):
+
+    for i in range(conf.Nx):
+        for j in range(conf.Ny):
+            for k in range(conf.Nz):
+                cid = node.cellId(i,j)
+                c = node.getCellPtr(cid)
+
+                mins = np.array( c.mins ) 
+                maxs = np.array( c.maxs )
+                #lens = np.array( [conf.NxMesh+1, conf.NyMesh+1, conf.NzMesh+1] )
+                #ds = (maxs - mins)/lens
+                xx = np.linspace(mins[0], maxs[0], conf.NxMesh+1)
+                yy = np.linspace(mins[1], maxs[1], conf.NyMesh+1)
+                zz = np.linspace(mins[2], maxs[2], conf.NzMesh+1)
+                
+                # inner mesh
+                for y in yy:
+                    ax.plot( [xx[0], xx[-1]], [y, y], "k", linestyle='dotted')
+                for x in xx:
+                    ax.plot( [x, x], [yy[0], yy[-1]], "k", linestyle='dotted')
+
+                #and outer boundaries
+                ax.plot([mins[0], maxs[0]], [mins[1], mins[1]], "k-") #bottom
+                ax.plot([mins[0], maxs[0]], [maxs[1], maxs[1]], "k-") #top
+                ax.plot([mins[0], mins[0]], [mins[1], maxs[1]], "k-") #left
+                ax.plot([maxs[0], maxs[0]], [mins[1], maxs[1]], "k-") #right
+
 
 def saveVisz(lap, n, conf):
 

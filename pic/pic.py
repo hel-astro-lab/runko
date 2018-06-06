@@ -95,6 +95,12 @@ def loadCells(n, conf):
                 #c.yeeDx = conf.dx
                 c.yeeDx = 1.0
 
+                #set bounding box of the tile
+                mins = spatialLoc(n, [i,j], [0,0,0], conf)
+                maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
+                c.set_tile_mins(mins)
+                c.set_tile_maxs(maxs)
+
                 #add it to the node
                 n.addCell(c) 
 
@@ -120,6 +126,8 @@ def inject(node, ffunc, conf):
                 c.container.reserve(Nprtcls, 3)
                 c.container.resizeEM(Nprtcls, 3)
 
+                if not(i == 1 and j == 1):
+                    continue
 
                 for ispcs in range(conf.Nspecies):
 
@@ -147,8 +155,9 @@ def inject(node, ffunc, conf):
                                     c.container.add_particle(x0, u0)
 
                 # initialize analysis tiles ready for incoming simulation data
-                for i in range(conf.Nspecies):
+                for ip in range(conf.Nspecies):
                     c.addAnalysisSpecies()
+
 
 
 # visualize particle content in vx direction
