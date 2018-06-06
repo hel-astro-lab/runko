@@ -84,6 +84,12 @@ class Pusher
       ex0 = ex[n]*(0.5*qm);
       bx0 = bx[n]*(0.5*qm*cinv);
 
+      ey0 = ey[n]*(0.5*qm);
+      by0 = by[n]*(0.5*qm*cinv);
+
+      ez0 = ez[n]*(0.5*qm);
+      bz0 = bz[n]*(0.5*qm*cinv);
+
       // first half electric acceleration
       u0 = c*vel[0][n] + ex0;
       v0 = c*vel[1][n] + ey0;
