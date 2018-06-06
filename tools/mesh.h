@@ -63,9 +63,9 @@ class Mesh {
       std::vector<T> ret;
       ret.reserve(Nx*Ny*Nz);
 
-      for(int k=0; k<Nz; k++)
-      for(int j=0; j<Ny; j++)
-      for(int i=0; i<Nx; i++)
+      for(int k=0; k<int(Nz); k++)
+      for(int j=0; j<int(Ny); j++)
+      for(int i=0; i<int(Nx); i++)
         ret.push_back(mat[ indx(i,j,k) ] );
 
       return ret;
@@ -79,9 +79,9 @@ class Mesh {
       mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
 
       int q = 0;
-      for(int k=0; k<Nz; k++)
-      for(int j=0; j<Ny; j++)
-      for(int i=0; i<Nx; i++) 
+      for(int k=0; k<int(Nz); k++)
+      for(int j=0; j<int(Ny); j++)
+      for(int i=0; i<int(Nx); i++) 
       {
         mat[ indx(i,j,k) ] = vec[q];
         q++;
