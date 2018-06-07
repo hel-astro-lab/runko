@@ -84,7 +84,7 @@ def loadCells(n, conf):
                 #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
                 qe = (gamma0*omp**2.0)/((conf.ppc*0.5)*(1.0 + np.abs(conf.me/conf.mi)) )
                 
-                print("normalization factor: {}".format(qe))
+                #print("normalization factor: {}".format(qe))
 
                 c.container.qe = qe
                 c.container.qi = qe
@@ -115,7 +115,7 @@ def inject(node, ffunc, conf):
         for j in range(node.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
-                print("creating ({},{})".format(i,j))
+                #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
                 cid    = node.cellId(i,j)

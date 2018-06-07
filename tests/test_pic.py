@@ -100,8 +100,8 @@ class Conf:
     Ny = 1
     Nz = 1
 
-    NxMesh = 4
-    NyMesh = 4
+    NxMesh = 5
+    NyMesh = 5
     NzMesh = 1
 
     xmin = 0.0
@@ -143,16 +143,16 @@ class PIC(unittest.TestCase):
 
     def test_communication(self):
 
-        plt.fig = plt.figure(1, figsize=(3,3))
-        plt.rc('font', family='serif', size=12)
-        plt.rc('xtick')
-        plt.rc('ytick')
-        
-        gs = plt.GridSpec(1, 1)
-        
-        axs = []
-        for ai in range(1):
-            axs.append( plt.subplot(gs[ai]) )
+        #plt.fig = plt.figure(1, figsize=(3,3))
+        #plt.rc('font', family='serif', size=12)
+        #plt.rc('xtick')
+        #plt.rc('ytick')
+        #
+        #gs = plt.GridSpec(1, 1)
+        #
+        #axs = []
+        #for ai in range(1):
+        #    axs.append( plt.subplot(gs[ai]) )
 
 
 
@@ -173,22 +173,32 @@ class PIC(unittest.TestCase):
         comm     = pypic.Communicator()
 
 
-        for lap in range(1):
-            plot2dParticles(axs[0], node, conf)
-            saveVisz(lap, node, conf)
+        for lap in range(20):
+            #plot2dParticles(axs[0], node, conf)
+            #saveVisz(lap, node, conf)
 
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     cell = node.getCellPtr(i,j)
                     pusher.solve(cell)
 
-            ##update particle boundaries
+            #update particle boundaries
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     cell = node.getCellPtr(i,j)
                     comm.check_outgoing_particles(cell)
 
+            #copy particles
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    comm.get_incoming_particles(cell, node)
 
+            #delete transferred particles
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    comm.delete_transferred_particles(cell)
 
 
         # count how many particles we now have
@@ -199,11 +209,16 @@ class PIC(unittest.TestCase):
                     cid = node.cellId(i,j)
                     c = node.getCellPtr(cid)
 
+                    #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
                     n_particles += len(c.container.loc(0))
 
-        tot_particles = (conf.Nx*conf.NxMesh *
-                        conf.Ny*conf.NyMesh *
-                        conf.Nz*conf.NzMesh *
+        #tot_particles = (conf.Nx*conf.NxMesh *
+        #                conf.Ny*conf.NyMesh *
+        #                conf.Nz*conf.NzMesh *
+        #                conf.ppc)
+        tot_particles =(conf.NxMesh *
+                        conf.NyMesh *
+                        conf.NzMesh *
                         conf.ppc)
 
 

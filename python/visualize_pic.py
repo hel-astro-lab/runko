@@ -22,9 +22,18 @@ class Particles:
     uys = []
     uzs = []
 
+    def clear(self):
+        self.xs  = []
+        self.ys  = []
+        self.zs  = []
+
+        self.uxs = []
+        self.uys = []
+        self.uzs = []
 
 def get_particles(node, conf):
     prtcl = Particles()
+    prtcl.clear()
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
@@ -60,12 +69,14 @@ def get_particles_from_cell(cell):
 
 def plot2dParticles(ax, n, conf):
 
-    ax.clear()
+    #ax.clear()
+    ax.cla()
     plotNode(ax, n, conf)
     plotTileBoundaries(ax, n, conf)
 
     prtcl = get_particles(n, conf)
     Np = len(prtcl.xs)
+    #print("particles to plot: {}".format(Np))
 
     ax.plot(prtcl.xs, prtcl.ys, ".", color='black')
     

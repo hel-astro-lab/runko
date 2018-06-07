@@ -40,7 +40,7 @@ class ParticleBlock {
   std::vector< std::vector<double> > Bpart;
 
   //! multimap of particles going to other tiles
-  typedef std::multimap<std::string, int> mapType;
+  typedef std::multimap<std::tuple<int,int,int>, int> mapType;
   mapType to_other_tiles;
 
 
@@ -83,6 +83,16 @@ class ParticleBlock {
     //Bpart.reserve(N*D);
   }
 
+  // resize everything
+  void resize(uint64_t N) {
+
+    for(uint64_t i=0; i<3; i++) locArr[i].resize(N);
+    for(uint64_t i=0; i<3; i++) velArr[i].resize(N);
+
+    for(uint64_t i=0; i<3; i++) Epart[i].resize(N);
+    for(uint64_t i=0; i<3; i++) Bpart[i].resize(N);
+
+  }
 
   // resize arrays for fields
   void resizeEM(uint64_t N, uint64_t D) {
