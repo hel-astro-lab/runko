@@ -269,15 +269,9 @@ void copyVertYee(
   lhs.ey.copyVert(rhs.ey, lhsI, rhsI); 
   lhs.ez.copyVert(rhs.ez, lhsI, rhsI); 
 
-  // lhs.bx.copyVert(rhs.bx, lhsI, rhsI); 
-  // lhs.by.copyVert(rhs.by, lhsI, rhsI); 
-  // lhs.bz.copyVert(rhs.bz, lhsI, rhsI); 
-
-  // lhs.jx.copyVert(rhs.jx, lhsI, rhsI); 
-  // lhs.jy.copyVert(rhs.jy, lhsI, rhsI); 
-  // lhs.jz.copyVert(rhs.jz, lhsI, rhsI); 
-
-  // lhs.rh.copyVert(rhs.rh, lhsI, rhsI); 
+  lhs.bx.copyVert(rhs.bx, lhsI, rhsI); 
+  lhs.by.copyVert(rhs.by, lhsI, rhsI); 
+  lhs.bz.copyVert(rhs.bz, lhsI, rhsI); 
 
 }
 
@@ -306,15 +300,9 @@ void copyHorzYee(
   lhs.ey.copyHorz(rhs.ey, lhsJ, rhsJ); 
   lhs.ez.copyHorz(rhs.ez, lhsJ, rhsJ); 
                                     
-  // lhs.bx.copyHorz(rhs.bx, lhsJ, rhsJ); 
-  // lhs.by.copyHorz(rhs.by, lhsJ, rhsJ); 
-  // lhs.bz.copyHorz(rhs.bz, lhsJ, rhsJ); 
-                                    
-  // lhs.jx.copyHorz(rhs.jx, lhsJ, rhsJ); 
-  // lhs.jy.copyHorz(rhs.jy, lhsJ, rhsJ); 
-  // lhs.jz.copyHorz(rhs.jz, lhsJ, rhsJ); 
-                                    
-  // lhs.rh.copyHorz(rhs.rh, lhsJ, rhsJ); 
+  lhs.bx.copyHorz(rhs.bx, lhsJ, rhsJ); 
+  lhs.by.copyHorz(rhs.by, lhsJ, rhsJ); 
+  lhs.bz.copyHorz(rhs.bz, lhsJ, rhsJ); 
 
 }
 
@@ -330,9 +318,41 @@ void addHorzYee(
   lhs.jz.addHorz(rhs.jz, lhsJ, rhsJ); 
 }
 
+/// Quick helper function to copy everything inside Yee lattice 
+void copyFaceYee(
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
+    int lhsK, int rhsK) {
+
+  lhs.ex.copyFace(rhs.ex, lhsK, rhsK); 
+  lhs.ey.copyFace(rhs.ey, lhsK, rhsK); 
+  lhs.ez.copyFace(rhs.ez, lhsK, rhsK); 
+                                    
+  lhs.bx.copyFace(rhs.bx, lhsK, rhsK); 
+  lhs.by.copyFace(rhs.by, lhsK, rhsK); 
+  lhs.bz.copyFace(rhs.bz, lhsK, rhsK); 
+
+}
+
+
+/// Quick helper function to add everything inside Yee lattice 
+void addFaceYee(
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
+    int lhsK, int rhsK) {
+                                    
+  lhs.jx.addFace(rhs.jx, lhsK, rhsK); 
+  lhs.jy.addFace(rhs.jy, lhsK, rhsK); 
+  lhs.jz.addFace(rhs.jz, lhsK, rhsK); 
+}
+
+
+
+
+
+
 
 /// Update Yee grid boundaries
-// TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
 void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
   // target
@@ -360,23 +380,32 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
   // TODO: fix these: they produce saw-like oscillations
   // top 
-  // auto ctop = 
-  //   std::dynamic_pointer_cast<fields::PlasmaCell>(
-  //       node.getCellPtr( neighs(0, +1) ));
-  // fields::YeeLattice& mtop = ctop->getYee();
+  auto ctop = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(0, +1) ));
+  fields::YeeLattice& mtop = ctop->getYee();
 
-  // copy from bottom side to top
-  // copyHorzYee(mesh, mtop, mesh.Ny, 0); 
+  //copy from bottom side to top
+  copyHorzYee(mesh, mtop, mesh.Ny, 0); 
 
 
   // bottom
-  //auto cbot = 
-  //  std::dynamic_pointer_cast<fields::PlasmaCell>(
-  //      node.getCellPtr( neighs(0, -1) ));
-  //fields::YeeLattice& mbot = cbot->getYee();
+  auto cbot = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(0, -1) ));
+  fields::YeeLattice& mbot = cbot->getYee();
     
   // copy from top side to bottom
-  // copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
+  copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
+
+  // front
+  // TODO: hack to deal with 2D corgi tiles
+  copyFaceYee(mesh, mesh, -1, mesh.Nz-1);
+
+  // back
+  copyFaceYee(mesh, mesh, mesh.Nz, 0);
+
+
 
 
   // diagonals/corners
@@ -411,6 +440,36 @@ void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
     
   // add from left side to right
   addVertYee(mesh, mright, mesh.Nx, 0); 
+
+  // top 
+  auto ctop = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(0, +1) ));
+  fields::YeeLattice& mtop = ctop->getYee();
+
+  //copy from bottom side to top
+  addHorzYee(mesh, mtop, mesh.Ny, 0); 
+
+
+  // bottom
+  auto cbot = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(0, -1) ));
+  fields::YeeLattice& mbot = cbot->getYee();
+    
+  // copy from top side to bottom
+  addHorzYee(mesh, mbot, -1, mbot.Ny-1); 
+
+
+  // front
+  // TODO: hack to deal with 2D corgi tiles
+  addFaceYee(mesh, mesh, -1, mesh.Nz-1);
+
+  // back
+  addFaceYee(mesh, mesh, mesh.Nz, 0);
+
+
+
 
 }
 

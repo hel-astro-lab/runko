@@ -62,6 +62,26 @@ PYBIND11_MODULE(pypic, m) {
     .def("ex",          [](pic::ParticleBlock& s) 
         {
           return s.Epart[0];
+        }, py::return_value_policy::reference)
+    .def("ey",          [](pic::ParticleBlock& s) 
+        {
+          return s.Epart[1];
+        }, py::return_value_policy::reference)
+    .def("ez",          [](pic::ParticleBlock& s) 
+        {
+          return s.Epart[2];
+        }, py::return_value_policy::reference)
+    .def("bx",          [](pic::ParticleBlock& s) 
+        {
+          return s.Bpart[0];
+        }, py::return_value_policy::reference)
+    .def("by",          [](pic::ParticleBlock& s) 
+        {
+          return s.Bpart[1];
+        }, py::return_value_policy::reference)
+    .def("bz",          [](pic::ParticleBlock& s) 
+        {
+          return s.Bpart[2];
         }, py::return_value_policy::reference);
     
 
