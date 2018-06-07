@@ -123,12 +123,12 @@ class Depositer {
       onemWz1 = 1.0 - Wz1;
       onemWz2 = 1.0 - Wz2;
 
-      i1p1 = i1 + 1.0;
-      i2p1 = i2 + 1.0;
-      j1p1 = j1 + 1.0;
-      j2p1 = j2 + 1.0;
-      k1p1 = k1 + 1.0;
-      k2p1 = k2 + 1.0;
+      i1p1 = i1 + 1;
+      i2p1 = i2 + 1;
+      j1p1 = j1 + 1;
+      j2p1 = j2 + 1;
+      k1p1 = k1 + 1;
+      k2p1 = k2 + 1;
 
       //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 

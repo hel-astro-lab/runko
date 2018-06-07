@@ -29,7 +29,8 @@ def filler_no_velocity(xloc, ispcs, conf):
     # perturb position between x0 + RUnif[0,1)
     xx = xloc[0] + np.random.rand(1)
     yy = xloc[1] + np.random.rand(1)
-    zz = xloc[2] + np.random.rand(1)
+    #zz = xloc[2] + np.random.rand(1)
+    zz = 0.0
 
     x0 = [xx, yy, zz]
     u0 = [0.0, 0.0, 0.0]
@@ -46,11 +47,13 @@ def filler(xloc, ispcs, conf):
     # perturb position between x0 + RUnif[0,1)
     xx = xloc[0] + np.random.rand(1)
     yy = xloc[1] + np.random.rand(1)
-    zz = xloc[2] + np.random.rand(1)
+    #zz = xloc[2] + np.random.rand(1)
+    zz = 0.0
 
     ux = randab(-1.0, 1.0)
     uy = randab(-1.0, 1.0)
-    uz = randab(-1.0, 1.0)
+    #uz = randab(-1.0, 1.0)
+    uz = 0.0
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
@@ -112,7 +115,7 @@ class Conf:
 
     cfl = 0.45
     c_omp = 10.0
-    ppc = 2
+    ppc = 1
 
     dx = 1.0
     dy = 1.0
@@ -227,7 +230,7 @@ class PIC(unittest.TestCase):
 
 
 
-    def field_interpolation(self):
+    def test_field_interpolation(self):
 
         conf = Conf()
         node = plasma.Grid(conf.Nx, conf.Ny)
@@ -235,6 +238,12 @@ class PIC(unittest.TestCase):
         loadCells(node, conf)
         insert_em(node, conf, const_field)
         inject(node, filler_no_velocity, conf) #injecting plasma particles
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries(node)
 
         #interpolate fields
         fintp = pypic.ParticleFieldInterpolator()
@@ -246,6 +255,7 @@ class PIC(unittest.TestCase):
         #test results
         for i in range(conf.Nx):
             for j in range(conf.Ny):
+
                 cid = node.cellId(i,j)
                 c = node.getCellPtr(cid)
 
@@ -258,16 +268,27 @@ class PIC(unittest.TestCase):
                 uz = c.container.vel(2)
 
                 ex = c.container.ex()
-                #ey = c.container.ey()
-                #ez = c.container.ez()
+                ey = c.container.ey()
+                ez = c.container.ez()
 
-                #bx = c.container.bx()
-                #by = c.container.by()
-                #bz = c.container.bz()
+                bx = c.container.bx()
+                by = c.container.by()
+                bz = c.container.bz()
 
                 for i, x in enumerate(xx):
+                    print(i)
                     ex_ref = 1.0
+                    ey_ref = 1.0
+                    ez_ref = 1.0
                     self.assertEqual(ex[i], ex_ref)
+                    self.assertEqual(ey[i], ey_ref)
+                    self.assertEqual(ez[i], ez_ref)
 
+                    bx_ref = 1.0
+                    by_ref = 1.0
+                    bz_ref = 1.0
+                    self.assertEqual(bx[i], bx_ref)
+                    self.assertEqual(by[i], by_ref)
+                    self.assertEqual(bz[i], bz_ref)
 
 

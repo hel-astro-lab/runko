@@ -121,6 +121,9 @@ class Mesh {
 
     void copyFace(Mesh& rhs, int lhsK, int rhsK);
     void addFace(Mesh& rhs, int lhsK, int rhsK);
+
+    void copyZdirPencil(Mesh& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ);
+    void addZdirPencil(Mesh& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ);
 };
 
 
@@ -293,6 +296,27 @@ void Mesh<T,H>::addFace(Mesh<T,H>& rhs, int lhsK, int rhsK) {
     }
   }
 }
+
+// copy pencil pointing along Z
+template <class T, int H>
+void Mesh<T,H>::copyZdirPencil(Mesh<T,H>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ) {
+  if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
+
+  for(int k=0; k<(int)this->Nz; k++) { 
+    this->operator()(lhsI, lhsJ, k) = rhs(rhsI, rhsJ, k);
+  }
+}
+
+// add pencil pointing along Z
+template <class T, int H>
+void Mesh<T,H>::addZdirPencil(Mesh<T,H>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ) {
+  if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
+
+  for(int k=0; k<(int)this->Nz; k++) { 
+    this->operator()(lhsI, lhsJ, k) += rhs(rhsI, rhsJ, k);
+  }
+}
+
 
 
 } // end of namespace toolbox

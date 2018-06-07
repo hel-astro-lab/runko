@@ -100,12 +100,12 @@ class Communications(unittest.TestCase):
                         data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 4] = yee.by[q,k,r]
                         data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 5] = yee.bz[q,k,r]
 
-        print("r=0-------")
-        print(data[:,:,0,0])
-        print("r=1-------")
-        print(data[:,:,1,0])
-        print("r=2-------")
-        print(data[:,:,2,0])
+        #print("r=0-------")
+        #print(data[:,:,0,0])
+        #print("r=1-------")
+        #print(data[:,:,1,0])
+        #print("r=2-------")
+        #print(data[:,:,2,0])
 
         #update boundaries
         for cid in node.getCellIds():
@@ -129,11 +129,12 @@ class Communications(unittest.TestCase):
                         ref[m, qq, kk, rr] = yee.ex[q,k,r]
             m += 1
 
-        print("cid = 0")
-        print(ref[0,:,:,0])
-        print(ref[0,:,:,1])
-        print(ref[0,:,:,2])
+        #print("cid = 0")
+        #print(ref[0,:,:,0])
+        #print(ref[0,:,:,1])
+        #print(ref[0,:,:,2])
 
+        # check every tile separately
         for m in range(conf.Nx*conf.Ny):
             for i in range(conf.Nx*conf.NxMesh):
                 for j in range(conf.Ny*conf.NyMesh):

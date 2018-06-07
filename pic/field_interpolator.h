@@ -65,73 +65,82 @@ class ParticleFieldInterpolator
     double dx=0.0, dy=0.0, dz=0.0;
     double f,g;
 
-    double xmin = 0.0; // block starting location
-    double lenx = 1.0; // grid cell size in x dir
+    auto mins = cell.mins;
+    auto maxs = cell.maxs;
 
     #pragma omp simd
     for(int n=n1; n<n2; n++) {
 
       // particle location in the grid
-		  i  = trunc( (loc[0][n]-xmin)/lenx );
-		  dx = (loc[0][n]-xmin)*lenx - i;
+		  i  = trunc( cell.NxMesh*(loc[0][n]-mins[0])/(maxs[0]-mins[0]) );
+		  dx = (loc[0][n]-mins[0]) - i;
 
-		  j  = trunc( loc[1][n] );
-		  dy = loc[1][n] - j;
+		  j  = trunc( cell.NyMesh*(loc[1][n]-mins[1])/(maxs[1]-mins[1]) );
+		  dy = (loc[1][n]-mins[1]) - j;
 
-		  k  = trunc( loc[2][n] );
-		  dz = loc[2][n] - k;
+		  k  = trunc( cell.NzMesh*(loc[2][n]-mins[2])/(maxs[2]-mins[2]) );
+		  dz = (loc[2][n]-mins[2]) - k;
 
+      //std::cout << '\n';
+      //std::cout << "x: " << loc[0][n] << " y: " << loc[1][n] << " z:" << loc[2][n] << '\n';
+      //std::cout << " ijk " << i << "," << j << "," << k << '\n';
+      //std::cout << " ds " << dx << "," << dy << "," << dz << '\n';
 		  //l = i; // + iy*(j-1) + iz*(k-1);
 
-      // ex component
-  		//f = ex[l] + ex[l-ix] + dx*(ex[l+ix] - ex[l-ix]);
-		  //f = f + dy*(ex[l+iy] + ex[l-ix+iy] + dx*(ex[l+ix+iy] - ex[l-ix+iy]) - f);
-  		//g = ex[l+iz] + ex[l-ix+iz] + dx*(ex[l+ix+iz] - ex[l-ix+iz]);
-  		//g = g + dy*(ex[l+iy+iz] + ex[l-ix+iy+iz] + 
-      //        dx*(ex[l+ix+iy+iz] - ex[l-ix+iy+iz]) - g);
-		  //ex0 = (f + dz*(g - f))*(.25*qm);
 
-  		f = yee.ex(i,j,k) + yee.ex(i-1,j,k) + dx*(yee.ex(i+1,j,k) - yee.ex(i-1,j,k));
-      f += dy*( yee.ex(i,j+1,k) + yee.ex(i-1,j+1,k) + dx*(yee.ex(i+1, j+1, k) - yee.ex(i-1, j+1, k) ) - f);
-      g = yee.ex(i,j,k+1) + yee.ex(i-1,j,k+1) + dx*(yee.ex(i+1,j,k+1) - yee.ex(i-1,j,k+1));
-      g += dy*(yee.ex(i,j+1,k+1) + yee.ex(i-1,j+1,k+1) 
-         + dx*(yee.ex(i+1,j+1,k+1) - yee.ex(i-1,j+1,k+1)) - g);
-      ex[n] = (f + dz*(g-f))*0.5;
+      // TODO: 2D hack
+      k = 0;
+      dz = 0.0;
+      int iz = 0;
 
-      //ex[n] = f*(0.25*qm); // normalize in pusher
-      //ex[n] = f*0.5;
+      f = yee.ex(i,j,k) + yee.ex(i-1,j,k) +    dx*(yee.ex(i+1,j  ,k   ) - yee.ex(i-1,j  ,k  ));
+      f+=                                      dy*(yee.ex(i  ,j+1,k   ) + yee.ex(i-1,j+1,k  )+
+                                               dx*(yee.ex(i+1,j+1,k   ) - yee.ex(i-1,j+1,k  ))-f);
+      g = yee.ex(i,j,k+1)+yee.ex(i-1,j,k+iz)+  dx*(yee.ex(i+1,j  ,k+iz) - yee.ex(i-1,j  ,k+iz));
+      g+=                                      dy*(yee.ex(i  ,j+1,k+iz) + yee.ex(i-1,j+1,k+iz)
+                                           +   dx*(yee.ex(i+1,j+1,k+iz) - yee.ex(i-1,j+1,k+iz))-g);
+      ex[n] = (f+dz*(g-f))*0.5;
 
+      f = yee.ey(i,j,k)+yee.ey(i,j-1,k)+       dy*(yee.ey(i  ,j+1,k  ) - yee.ey(i  ,j-1,k  ));
+      f+=                                      dz*(yee.ey(i  ,j  ,k+iz) + yee.ey(i  ,j-1,k+iz)+      
+                                               dy*(yee.ey(i  ,j+1,k+iz) - yee.ey(i  ,j-1,k+iz))-f);
+      g = yee.ey(i+1,j,k)+yee.ey(i+1,j-1,k)+   dy*(yee.ey(i+1,j+1,k   ) - yee.ey(i+1,j-1,k   ));
+      g+=                                      dz*(yee.ey(i+1,j  ,k+iz) + yee.ey(i+1,j-1,k+iz)+ 
+                                               dy*(yee.ey(i+1,j+1,k+iz) - yee.ey(i+1,j-1,k+iz))-g);
+      ey[n]=(f+dx*(g-f))*0.5;
 
-      // rest of the components TODO
-      ey[n] = 0.0;
-      ez[n] = 0.0;
+      f = yee.ez(i,j,k)+yee.ez(i,j,k-iz)+      dz*(yee.ez(i  ,j  ,k+iz) - yee.ez(i  ,j  ,k-iz));
+      f+=                                      dx*(yee.ez(i+1,j  ,k   ) + yee.ez(i+1,j  ,k-iz)+
+                                               dz*(yee.ez(i+1,j  ,k+iz) - yee.ez(i+1,j  ,k-iz))-f);
+      g = yee.ez(i,j+1,k)+ yee.ez(i,j+1,k-iz)+ dz*(yee.ez(i  ,j+1,k+iz) - yee.ez(i  ,j+1,k-iz));
+      g+=                                      dx*(yee.ez(i+1,j+1,k   ) + yee.ez(i+1,j+1,k-iz)+
+                                               dz*(yee.ez(i+1,j+1,k+iz) - yee.ez(i+1,j+1,k-iz))-g);
+      ez[n]=(f+dy*(g-f))*0.5;
 
-      // bx component
-		  // f=bx(l-iy,1,1)+bx(l-iy-iz,1,1)+dz*(bx(l-iy+iz,1,1)-bx(l-iy-iz,1,1))
-		  // f=bx(l,1,1)+bx(l-iz,1,1)+dz*(bx(l+iz,1,1)-bx(l-iz,1,1))+f+dy &
-		  // * (bx(l+iy,1,1)+bx(l+iy-iz,1,1)+dz*(bx(l+iy+iz,1,1)-bx(l+iy &
-		  // -iz,1,1))-f)
-		  // g=bx(l+ix-iy,1,1)+bx(l+ix-iy-iz,1,1)+dz*(bx(l+ix-iy+iz,1,1) &
-		  // -bx(l+ix-iy-iz,1,1))
-		  // g=bx(l+ix,1,1)+bx(l+ix-iz,1,1)+dz*(bx(l+ix+iz,1,1)-bx(l+ix-iz,1 &
-		  // ,1))+g+dy*(bx(l+ix+iy,1,1)+bx(l+ix+iy-iz,1,1)+dz*(bx(l+ix &
-		  // +iy+iz,1,1)-bx(l+ix+iy-iz,1,1))-g)
-		  // 
-		  // bx0=(f+dx*(g-f))*(.125*qm*cinv)
+      f = yee.bx(i,j-1,k)  +yee.bx(i,j-1,k-iz ) +dz*(yee.bx(i,j-1,k+iz)-   yee.bx(i,j-1,k-iz));
+      f = yee.bx(i,j,k)    +yee.bx(i,j,k-iz)    +dz*(yee.bx(i,j,k+iz)-     yee.bx(i,j,k-iz))+f+dy 
+        *(yee.bx(i,j+1,k)  +yee.bx(i,j+1,k-iz)  +dz*(yee.bx(i,j+1,k+iz)-   yee.bx(i,j+1,k-iz))-f);
+      g = yee.bx(i+1,j-1,k)+yee.bx(i+1,j-1,k-iz)+dz*(yee.bx(i+1,j-1,k+iz) -yee.bx(i+1,j-1,k-iz));
+      g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)  +dz*(yee.bx(i+1,j,k+iz)-   yee.bx(i+1,j,k-iz))
+                                           +g   +dy*(yee.bx(i+1,j+1,k)   +yee.bx(i+1,j+1,k-iz)
+                                                +dz*(yee.bx(i+1,j+1,k+iz)- yee.bx(i+1,j+1,k-iz))-g);
+      bx[n]=(f+dx*(g-f))*(.25*cinv);
 
-      f = yee.bx(i,j-1,k) + yee.bx(i,j-1,k-1) + dz*(yee.bx(i,j-1,k+1) - yee.bx(i,j-1,k-1));
-      f = yee.bx(i,j,k) + yee.bx(i,j,k-1) + dz*(yee.bx(i,j,k+1) - yee.bx(i,j,k-1)) + f
-          + dy*(yee.bx(i,j+1,k) + yee.bx(i,j+1,k-1) + dz*(yee.bx(i,j+1,k+1) - yee.bx(i,j+1,k-1)) -f);
-      g = yee.bx(i+1,j-1,k) + yee.bx(i+1,j-1,k-1) + dz*(yee.bx(i+1,j-1,k+1) - yee.bx(i+1,j-1,k-1));
-      g = yee.bx(i+1,j,k) + yee.bx(i+1,j,k-1) + dz*(yee.bx(i+1,j,k+1) - yee.bx(i+1,j,k-1)) + g + 
-        dy*(yee.bx(i+1,j+1,k) + yee.bx(i+1,j+1,k-1) + dz*(yee.bx(i+1,j+1,k+1)-yee.bx(i+1,j+1,k-1))-g);
-      bx[n] = (f + dx*(g-f))*(0.25*cinv);
+      f = yee.by(i,j,k-iz)+yee.by(i-1,j,k-iz)+dx*(yee.by(i+1,j,k-iz)-yee.by(i-1,j,k-iz));
+      f = yee.by(i,j,k)+yee.by(i-1,j,k)+dx*(yee.by(i+1,j,k)-yee.by(i-1,j,k))+f+dz 
+        *(yee.by(i,j,k+iz)+yee.by(i-1,j,k+iz)+dx*(yee.by(i+1,j,k+iz)-yee.by(i-1,j,k+iz))-f);
+      g = yee.by(i,j+1,k-iz)+yee.by(i-1,j+1,k-iz)+dx*(yee.by(i+1,j+1,k-iz)-yee.by(i-1,j+1,k-iz));
+      g = yee.by(i,j+1,k)+yee.by(i-1,j+1,k)+dx*(yee.by(i+1,j+1,k)-yee.by(i-1,j+1,k))
+        +g+dz*(yee.by(i,j+1,k+iz)+yee.by(i-1,j+1,k+iz)+dx*(yee.by(i+1,j+1,k+iz)-yee.by(i-1,j+1,k+iz))-g);
+      by[n]=(f+dy*(g-f))*(.25*cinv);
 
-
-      // rest of the components TODO
-      by[n] = 0.0;
-      bz[n] = 0.0;
-
+      f = yee.bz(i-1,j,k)+yee.bz(i-1,j-1,k )+dy*(yee.bz(i-1,j+1,k)-yee.bz(i-1,j-1,k));
+      f = yee.bz(i,j,k)+yee.bz(i,j-1,k)+dy*(yee.bz(i,j+1,k)-yee.bz(i,j-1,k))+f+dx 
+        * (yee.bz(i+1,j,k)+yee.bz(i+1,j-1,k)+dy*(yee.bz(i+1,j+1,k)-yee.bz(i+1,j-1,k))-f);
+      g = yee.bz(i-1,j, k+iz)+yee.bz(i-1,j-1,k+iz)+dy*(yee.bz(i-1,j+1,k+iz)-yee.bz(i-1,j-1,k+iz));
+      g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )+dy*(yee.bz(i,j+1,k+iz)-yee.bz(i,j-1,k+iz))
+        +g+dx*(yee.bz(i+1,j,k+iz)+yee.bz(i+1,j-1,k+iz)+dy*(yee.bz(i+1,j+1,k+iz)-yee.bz(i+1,j-1,k+iz))-g);
+      bz[n]=(f+dz*(g-f))*(.25*cinv);
     }
 
     return;
@@ -139,8 +148,6 @@ class ParticleFieldInterpolator
 
 
 };
-
-
 
 
 

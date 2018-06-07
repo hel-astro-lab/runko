@@ -347,6 +347,33 @@ void addFaceYee(
 }
 
 
+void copyZdirPencilYee(
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
+    int lhsI, int lhsJ,
+    int rhsI, int rhsJ) {
+
+  lhs.ex.copyZdirPencil(rhs.ex, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.ey.copyZdirPencil(rhs.ey, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.ez.copyZdirPencil(rhs.ez, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.bx.copyZdirPencil(rhs.bx, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.by.copyZdirPencil(rhs.by, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.bz.copyZdirPencil(rhs.bz, lhsI, lhsJ, rhsI, rhsJ); 
+
+}
+
+void addZdirPencilYee(
+    fields::YeeLattice& lhs, 
+    fields::YeeLattice& rhs, 
+    int lhsI, int lhsJ,
+    int rhsI, int rhsJ) {
+
+  lhs.jx.addZdirPencil(rhs.ex, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jy.addZdirPencil(rhs.ey, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jz.addZdirPencil(rhs.ez, lhsI, lhsJ, rhsI, rhsJ); 
+
+}
+
 
 
 
@@ -398,19 +425,49 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
   // copy from top side to bottom
   copyHorzYee(mesh, mbot, -1, mbot.Ny-1); 
 
+
+  // --------------------------------------------------  
+  // diagonals
+  auto ctopleft = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(-1, +1) ));
+  fields::YeeLattice& mtopleft = ctopleft->getYee();
+  copyZdirPencilYee(mesh, mtopleft, -1, mesh.Ny,
+                                 mtopleft.Nx-1, 0);
+
+  auto ctopright = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(+1, +1) ));
+  fields::YeeLattice& mtopright = ctopright->getYee();
+  copyZdirPencilYee(mesh, mtopright, mesh.Nx, mesh.Ny,
+                                  0,0);
+
+  auto cbotleft = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(-1, -1) ));
+  fields::YeeLattice& mbotleft = cbotleft->getYee();
+  copyZdirPencilYee(mesh, mbotleft, -1, -1,
+                                  mbotleft.Nx-1, mbotleft.Ny-1);
+
+  auto cbotright = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(+1, -1) ));
+  fields::YeeLattice& mbotright = cbotright->getYee();
+  copyZdirPencilYee(mesh, mbotright, mesh.Nx, -1,
+                                  0, mbotright.Ny-1);
+
+
+  // --------------------------------------------------  
   // front
   // TODO: hack to deal with 2D corgi tiles
-  copyFaceYee(mesh, mesh, -1, mesh.Nz-1);
+  //copyFaceYee(mesh, mesh, -1, mesh.Nz-1);
 
   // back
-  copyFaceYee(mesh, mesh, mesh.Nz, 0);
-
-
-
-
-  // diagonals/corners
+  //copyFaceYee(mesh, mesh, mesh.Nz, 0);
   // --------------------------------------------------  
-  // TODO get corners also; for now they are not needed
+  // TODO: x-pencils
+  // TODO: y-pencils
+  // TODO: corners
 
 
 }
@@ -460,14 +517,43 @@ void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
   // copy from top side to bottom
   addHorzYee(mesh, mbot, -1, mbot.Ny-1); 
 
+  // --------------------------------------------------  
+  // diagonals
+  auto ctopleft = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(-1, +1) ));
+  fields::YeeLattice& mtopleft = ctopleft->getYee();
+  addZdirPencilYee(mesh, mtopleft, -1, mesh.Ny,
+                                 mtopleft.Nx-1, 0);
+
+  auto ctopright = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(+1, +1) ));
+  fields::YeeLattice& mtopright = ctopright->getYee();
+  addZdirPencilYee(mesh, mtopright, mesh.Nx, mesh.Ny,
+                                  0,0);
+
+  auto cbotleft = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(-1, -1) ));
+  fields::YeeLattice& mbotleft = cbotleft->getYee();
+  addZdirPencilYee(mesh, mbotleft, -1, -1,
+                                  mbotleft.Nx-1, mbotleft.Ny-1);
+
+  auto cbotright = 
+    std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( neighs(+1, -1) ));
+  fields::YeeLattice& mbotright = cbotright->getYee();
+  addZdirPencilYee(mesh, mbotright, mesh.Nx, -1,
+                                  0, mbotright.Ny-1);
+
 
   // front
   // TODO: hack to deal with 2D corgi tiles
-  addFaceYee(mesh, mesh, -1, mesh.Nz-1);
+  //addFaceYee(mesh, mesh, -1, mesh.Nz-1);
 
   // back
-  addFaceYee(mesh, mesh, mesh.Nz, 0);
-
+  //addFaceYee(mesh, mesh, mesh.Nz, 0);
 
 
 
