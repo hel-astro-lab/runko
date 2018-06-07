@@ -212,14 +212,14 @@ class PIC(unittest.TestCase):
                     #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
                     n_particles += len(c.container.loc(0))
 
-        #tot_particles = (conf.Nx*conf.NxMesh *
-        #                conf.Ny*conf.NyMesh *
-        #                conf.Nz*conf.NzMesh *
-        #                conf.ppc)
-        tot_particles =(conf.NxMesh *
-                        conf.NyMesh *
-                        conf.NzMesh *
+        tot_particles = (conf.Nx*conf.NxMesh *
+                        conf.Ny*conf.NyMesh *
+                        conf.Nz*conf.NzMesh *
                         conf.ppc)
+        #tot_particles =(conf.NxMesh *
+        #                conf.NyMesh *
+        #                conf.NzMesh *
+        #                conf.ppc)
 
 
         # assert that there is equal number of particles as we began with

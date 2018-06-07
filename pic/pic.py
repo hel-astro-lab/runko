@@ -126,8 +126,8 @@ def inject(node, ffunc, conf):
                 c.container.reserve(Nprtcls, 3)
                 c.container.resizeEM(Nprtcls, 3)
 
-                if not(i == 1 and j == 1):
-                    continue
+                #if not(i == 1 and j == 1):
+                #    continue
 
                 for ispcs in range(conf.Nspecies):
 
