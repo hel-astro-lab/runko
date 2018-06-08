@@ -101,7 +101,7 @@ class ParticleFieldInterpolator
                                            +   dx*(yee.ex(i+1,j+1,k+iz) - yee.ex(i-1,j+1,k+iz))-g);
       ex[n] = (f+dz*(g-f))*0.5;
 
-      f = yee.ey(i,j,k)+yee.ey(i,j-1,k)+       dy*(yee.ey(i  ,j+1,k  ) - yee.ey(i  ,j-1,k  ));
+      f = yee.ey(i,j,k)+yee.ey(i,j-1,k)+       dy*(yee.ey(i  ,j+1,k   ) - yee.ey(i  ,j-1,k  ));
       f+=                                      dz*(yee.ey(i  ,j  ,k+iz) + yee.ey(i  ,j-1,k+iz)+      
                                                dy*(yee.ey(i  ,j+1,k+iz) - yee.ey(i  ,j-1,k+iz))-f);
       g = yee.ey(i+1,j,k)+yee.ey(i+1,j-1,k)+   dy*(yee.ey(i+1,j+1,k   ) - yee.ey(i+1,j-1,k   ));
@@ -117,29 +117,31 @@ class ParticleFieldInterpolator
                                                dz*(yee.ez(i+1,j+1,k+iz) - yee.ez(i+1,j+1,k-iz))-g);
       ez[n]=(f+dy*(g-f))*0.5;
 
-      f = yee.bx(i,j-1,k)  +yee.bx(i,j-1,k-iz ) +dz*(yee.bx(i,j-1,k+iz)-   yee.bx(i,j-1,k-iz));
-      f = yee.bx(i,j,k)    +yee.bx(i,j,k-iz)    +dz*(yee.bx(i,j,k+iz)-     yee.bx(i,j,k-iz))+f+dy 
-        *(yee.bx(i,j+1,k)  +yee.bx(i,j+1,k-iz)  +dz*(yee.bx(i,j+1,k+iz)-   yee.bx(i,j+1,k-iz))-f);
-      g = yee.bx(i+1,j-1,k)+yee.bx(i+1,j-1,k-iz)+dz*(yee.bx(i+1,j-1,k+iz) -yee.bx(i+1,j-1,k-iz));
-      g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)  +dz*(yee.bx(i+1,j,k+iz)-   yee.bx(i+1,j,k-iz))
-                                           +g   +dy*(yee.bx(i+1,j+1,k)   +yee.bx(i+1,j+1,k-iz)
-                                                +dz*(yee.bx(i+1,j+1,k+iz)- yee.bx(i+1,j+1,k-iz))-g);
+      f = yee.bx(i,j-1,k)  +yee.bx(i,j-1,k-iz )   +dz*(yee.bx(i,j-1,k+iz)   - yee.bx(i,j-1,k-iz));
+      f = yee.bx(i,j,k)    +yee.bx(i,j,k-iz)      +dz*(yee.bx(i,j,k+iz)     - yee.bx(i,j,k-iz))+f+dy 
+        *(yee.bx(i,j+1,k)  +yee.bx(i,j+1,k-iz)    +dz*(yee.bx(i,j+1,k+iz)   - yee.bx(i,j+1,k-iz))-f);
+      g = yee.bx(i+1,j-1,k)+yee.bx(i+1,j-1,k-iz)  +dz*(yee.bx(i+1,j-1,k+iz) - yee.bx(i+1,j-1,k-iz));
+      g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)    +dz*(yee.bx(i+1,j,k+iz)   - yee.bx(i+1,j,k-iz))
+                                           +g     +dy*(yee.bx(i+1,j+1,k)    + yee.bx(i+1,j+1,k-iz)
+                                                  +dz*(yee.bx(i+1,j+1,k+iz) - yee.bx(i+1,j+1,k-iz))-g);
       bx[n]=(f+dx*(g-f))*(.25*cinv);
 
-      f = yee.by(i,j,k-iz)+yee.by(i-1,j,k-iz)+dx*(yee.by(i+1,j,k-iz)-yee.by(i-1,j,k-iz));
-      f = yee.by(i,j,k)+yee.by(i-1,j,k)+dx*(yee.by(i+1,j,k)-yee.by(i-1,j,k))+f+dz 
-        *(yee.by(i,j,k+iz)+yee.by(i-1,j,k+iz)+dx*(yee.by(i+1,j,k+iz)-yee.by(i-1,j,k+iz))-f);
-      g = yee.by(i,j+1,k-iz)+yee.by(i-1,j+1,k-iz)+dx*(yee.by(i+1,j+1,k-iz)-yee.by(i-1,j+1,k-iz));
-      g = yee.by(i,j+1,k)+yee.by(i-1,j+1,k)+dx*(yee.by(i+1,j+1,k)-yee.by(i-1,j+1,k))
-        +g+dz*(yee.by(i,j+1,k+iz)+yee.by(i-1,j+1,k+iz)+dx*(yee.by(i+1,j+1,k+iz)-yee.by(i-1,j+1,k+iz))-g);
+      f = yee.by(i,j,k-iz)+yee.by(i-1,j,k-iz)     +dx*(yee.by(i+1,j,k-iz)   - yee.by(i-1,j,k-iz));
+      f = yee.by(i,j,k)+yee.by(i-1,j,k)           +dx*(yee.by(i+1,j,k)      - yee.by(i-1,j,k))+f+dz 
+        *(yee.by(i,j,k+iz)+yee.by(i-1,j,k+iz)     +dx*(yee.by(i+1,j,k+iz)   - yee.by(i-1,j,k+iz))-f);
+      g = yee.by(i,j+1,k-iz)+yee.by(i-1,j+1,k-iz) +dx*(yee.by(i+1,j+1,k-iz) - yee.by(i-1,j+1,k-iz));
+      g = yee.by(i,j+1,k)+yee.by(i-1,j+1,k)       +dx*(yee.by(i+1,j+1,k)    - yee.by(i-1,j+1,k))
+                                               +g +dz*(yee.by(i,j+1,k+iz)   + yee.by(i-1,j+1,k+iz)
+                                                  +dx*(yee.by(i+1,j+1,k+iz) - yee.by(i-1,j+1,k+iz))-g);
       by[n]=(f+dy*(g-f))*(.25*cinv);
 
-      f = yee.bz(i-1,j,k)+yee.bz(i-1,j-1,k )+dy*(yee.bz(i-1,j+1,k)-yee.bz(i-1,j-1,k));
-      f = yee.bz(i,j,k)+yee.bz(i,j-1,k)+dy*(yee.bz(i,j+1,k)-yee.bz(i,j-1,k))+f+dx 
-        * (yee.bz(i+1,j,k)+yee.bz(i+1,j-1,k)+dy*(yee.bz(i+1,j+1,k)-yee.bz(i+1,j-1,k))-f);
-      g = yee.bz(i-1,j, k+iz)+yee.bz(i-1,j-1,k+iz)+dy*(yee.bz(i-1,j+1,k+iz)-yee.bz(i-1,j-1,k+iz));
-      g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )+dy*(yee.bz(i,j+1,k+iz)-yee.bz(i,j-1,k+iz))
-        +g+dx*(yee.bz(i+1,j,k+iz)+yee.bz(i+1,j-1,k+iz)+dy*(yee.bz(i+1,j+1,k+iz)-yee.bz(i+1,j-1,k+iz))-g);
+      f = yee.bz(i-1,j,k)+yee.bz(i-1,j-1,k )      +dy*(yee.bz(i-1,j+1,k)    - yee.bz(i-1,j-1,k));
+      f = yee.bz(i,j,k)+yee.bz(i,j-1,k)           +dy*(yee.bz(i,j+1,k)      - yee.bz(i,j-1,k))+f+dx 
+        * (yee.bz(i+1,j,k)+yee.bz(i+1,j-1,k)      +dy*(yee.bz(i+1,j+1,k)    - yee.bz(i+1,j-1,k))-f);
+      g = yee.bz(i-1,j, k+iz)+yee.bz(i-1,j-1,k+iz)+dy*(yee.bz(i-1,j+1,k+iz) - yee.bz(i-1,j-1,k+iz));
+      g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )+    dy*(yee.bz(i,j+1,k+iz)   - yee.bz(i,j-1,k+iz))
+                                                +g+dx*(yee.bz(i+1,j,k+iz)   + yee.bz(i+1,j-1,k+iz)
+                                                  +dy*(yee.bz(i+1,j+1,k+iz) - yee.bz(i+1,j-1,k+iz))-g);
       bz[n]=(f+dz*(g-f))*(.25*cinv);
     }
 
