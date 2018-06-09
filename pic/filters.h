@@ -94,27 +94,55 @@ class Filter {
   // -ceil(n/2)...floor(n/2), 
   // where 0 is -ceil(n/2) and n-1 is floor(n/2)
   //
-  inline virtual std::tuple<int,int> zero_padded_index(int i, int j) 
+  //NOTE: this is not how fftw3 does its indexing anymore!
+  //
+  //inline virtual std::tuple<int,int> zero_padded_index(int i, int j) 
+  //{
+  //  int iff = ceil(height/2);
+  //  int jff = ceil(width /2);
+  //  
+  //  return std::make_tuple(iff, jff);
+  //}
+
+  /// zero-wrapped index convention used by fftw3
+  inline virtual std::tuple<int,int> zero_wrapped_index(int i, int j) 
   {
-    int iff = i - ceil(height/2);
-    int jff = j - ceil(width /2);
-    
+    //int iff = (i - ceil(height/2) >= 0) ? i : height + i;
+    //int jff = (j - ceil(width /2) >= 0) ? i : width  + j;
+    int iff = i >= 0 ? i : height + i;
+    int jff = j >= 0 ? j : width  + j;
+
     return std::make_tuple(iff, jff);
   }
+
 
   /// initialize kernel given the rank
   virtual void init_kernel() 
   {
-
     double val;
-    auto zcenter = std::make_tuple(0,0); // zero-padded center
-    for(int i  = 0 ; i < height ; ++i) {
-      for(int j = 0 ; j < width ; ++j) {
-        auto zindx = zero_padded_index(i,j);
-        val = zindx == zcenter ? 1.0 : 0.0;
+    int h2 = floor(height/2);
+    int w2 = floor(width /2);
+    int wi,wj;
+
+    for(int i =-h2; i<h2 ; ++i) {
+      for(int j=-w2; j<w2 ; ++j) {
+        auto zindx = zero_wrapped_index(i,j);
+        wi = std::get<0>(zindx);
+        wj = std::get<1>(zindx);
+          
+        val = 0.0;
+        if ((i ==  0) && (j ==  0)) val = 1.0;
+        //if ((i ==  1) && (j ==  0)) val = 1.0;
+        //if ((i ==  0) && (j ==  1)) val = 1.0;
+        //if ((i ==  1) && (j ==  1)) val = 1.0;
+        //if ((i == -1) && (j ==  0)) val = 1.0;
+        //if ((i ==  0) && (j == -1)) val = 1.0;
+        //if ((i == -1) && (j == -1)) val = 1.0;
+        //if ((i == 1)  && (j == -1)) val = 1.0;
+        //if ((i ==-1)  && (j ==  1)) val = 1.0;
         
-        kernel[ index(i,j) ][0] = val; // real part
-        kernel[ index(i,j) ][1] = 0.0; // complex part
+        kernel[ index(wi,wj) ][0] = val; // real part
+        kernel[ index(wi,wj) ][1] = 0.0; // complex part
       }
     }
   }
@@ -129,14 +157,36 @@ class Filter {
   }
 
 
-  /// transformation
+  /// FFT kernel (once is enough)
   virtual void fft_kernel()         { fftw_execute(p_kernel); }
 
+  /// FFT image forward
   virtual void fft_image_forward()  { fftw_execute(p_forw);   }
 
+  /// FFT image backwards and normalize 
   virtual void fft_image_backward() { 
     fftw_execute(p_back);
     normalize();
+  }
+
+
+  void apply_kernel()
+  {
+    double x, y, u, v;
+    for(int i  = 0 ; i < height ; ++i) {
+      for(int j = 0 ; j < width ; ++j) {
+
+        x =     jx[ index(i,j) ][0];
+        y =     jx[ index(i,j) ][1];
+        u = kernel[ index(i,j) ][0];
+        v = kernel[ index(i,j) ][1];
+
+        jx[ index(i,j) ][0] = x*u - y*v;
+        jx[ index(i,j) ][1] = x*v - y*u;
+      }
+    }
+
+
   }
 
 

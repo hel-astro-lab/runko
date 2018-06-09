@@ -113,7 +113,39 @@ def flatten(arr):
 
 # 1d -> 2d
 def reshape(vec, nx, ny):
-    return np.reshape(vec, (nx, ny))
+    return np.reshape(vec, (ny, nx))
+
+
+#def fftshift1d(i, w):
+#    if i >= 0:
+#        return i
+#    else:
+#        return i - w
+
+def fftshift1d(i, w):
+    return i - np.int(np.ceil(w/2))
+
+
+
+# fft shift 2D array
+def fftshift(farr):
+    nx, ny = np.shape(farr)
+    arr = np.empty_like(farr)
+    xc = np.int( np.floor(nx/2) )
+    yc = np.int( np.floor(ny/2) )
+
+    for i in range(-xc, xc, 1):
+        for j in range(-yc, yc, 1):
+            iff = fftshift1d(i, nx)
+            jff = fftshift1d(j, ny)
+
+            #print("i={} j={} i2={} j2={}".format(i,j,iff,jff))
+
+            arr[iff,jff] = farr[i,j]
+    return arr
+
+
+
 
 class Filters(unittest.TestCase):
 
@@ -148,7 +180,7 @@ class Filters(unittest.TestCase):
                 self.assertEqual(image[i,j], img2[i,j])
                 
 
-    def skip_test_kernel_init(self):
+    def test_kernel_init(self):
 
         NxMesh = 3
         NyMesh = 3
@@ -160,8 +192,9 @@ class Filters(unittest.TestCase):
         flt = pypic.Filter(NxMesh, NyMesh)
 
         flt.init_kernel()
-        #kernel = np.random.rand(NxF, NyF)
-        #flt.set_kernel( flatten(kernel) )
+        kernel = np.zeros((NxF, NyF))
+        kernel[0,0] = 1.0
+        flt.set_kernel( flatten(kernel) )
 
         #image  = np.random.rand(NxF, NyF)
         #flt.set_image(  flatten(image) )
@@ -169,14 +202,14 @@ class Filters(unittest.TestCase):
         k2   = reshape( flt.get_kernel(), NxF, NyF)
         #img2 = reshape( flt.get_image() , NxF, NyF)
                 
-        print()
-        print(k2)
+        #print()
+        #print(k2)
 
         flt.fft_kernel()
         k3   = reshape( flt.get_kernel(), NxF, NyF)
 
-        print()
-        print(k3)
+        #print()
+        #print(k3)
 
 
 
@@ -185,7 +218,7 @@ class Filters(unittest.TestCase):
     def test_fft_backandforth(self):
 
         NxMesh = 3
-        NyMesh = 3
+        NyMesh = 4 #make Nx != Ny to catch additional index bugs
 
         #internal filter size is 3x Nx/y/zMesh
         NxF = NxMesh*3
@@ -214,9 +247,84 @@ class Filters(unittest.TestCase):
         #print("fft backward")
         #print(img3)
 
-        for i in range(NxF):
-            for j in range(NyF):
+        for i in range(NyF):
+            for j in range(NxF):
                 self.assertAlmostEqual(img1[i,j], img3[i,j], places=6) 
+
+
+
+    def test_smearing(self):
+
+        plt.fig = plt.figure(1, figsize=(4,4))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(3, 2)
+        
+        axs = []
+        for ai in range(6):
+            axs.append( plt.subplot(gs[ai]) )
+
+        NxMesh = 20
+        NyMesh = 20
+
+        #internal filter size is 3x Nx/y/zMesh
+        NxF = NxMesh*3
+        NyF = NyMesh*3
+
+        flt = pypic.Filter(NxMesh, NyMesh)
+
+        flt.init_kernel()
+        #kernel = np.zeros((NxF, NyF))
+        #kernel[0,0] = 1.0
+        #kernel[1,0] = 1.0
+        #kernel[0,1] = 1.0
+        #kernel[1,1] = 1.0
+        #kernel[-1,-1] = 1.0
+        #kernel[ 0,-1] = 1.0
+        #kernel[ 1,-1] = 1.0
+        #kernel[-1, 0] = 1.0
+        #kernel[-1, 1] = 1.0
+        #swap kernel
+        #(-1)^(i + j + ...)
+        #for i in range(NxF):
+        #    for j in range(NyF):
+        #        kernel[i,j] *= (-1.0)**(i+j)
+        #print()
+        #print(kernel)
+        #flt.set_kernel( flatten(kernel) )
+
+        image  = np.random.rand(NxF, NyF)
+        flt.set_image(  flatten(image) )
+
+        ker = reshape( flt.get_kernel(), NxF, NyF)
+        img = reshape( flt.get_image() , NxF, NyF)
+                
+        axs[0].imshow(ker)
+        axs[1].imshow(img)
+
+        flt.fft_kernel()
+        flt.fft_image_forward()
+        ker2 = reshape( flt.get_kernel(), NxF, NyF)
+        img2 = reshape( flt.get_image() , NxF, NyF)
+
+
+        axs[2].imshow(fftshift(ker2))
+        axs[3].imshow(fftshift(img2))
+
+        #apply kernel
+        flt.apply_kernel()
+        flt.fft_image_backward()
+        ker3 = reshape( flt.get_kernel(), NxF, NyF)
+        img3 = reshape( flt.get_image() , NxF, NyF)
+
+        axs[4].imshow(ker3)
+        axs[5].imshow(img3)
+
+        plt.savefig("filter.png")
+
+
 
 
 
