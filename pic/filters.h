@@ -119,13 +119,25 @@ class Filter {
     }
   }
 
-
-  /// transform kernel into frequency space
-  virtual void fft_kernel()
+  // normalize fft transformation
+  void normalize() 
   {
-    fftw_execute(p_kernel);
+    for(int i  = 0 ; i < height ; ++i)  
+      for(int j = 0 ; j < width ; ++j)  
+        jx[ index(i,j) ][0] /= width*height;
+
   }
 
+
+  /// transformation
+  virtual void fft_kernel()         { fftw_execute(p_kernel); }
+
+  virtual void fft_image_forward()  { fftw_execute(p_forw);   }
+
+  virtual void fft_image_backward() { 
+    fftw_execute(p_back);
+    normalize();
+  }
 
 
   /// Copy currents from neighbors into fftw array

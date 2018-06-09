@@ -133,13 +133,6 @@ class Filters(unittest.TestCase):
         kernel = np.random.rand(NxF, NyF)
         image  = np.random.rand(NxF, NyF)
 
-        print("k1:")
-        print(kernel)
-        print()
-        print("img1:")
-        print(image)
-
-
         flt.set_kernel( flatten(kernel) )
         flt.set_image(  flatten(image) )
 
@@ -149,17 +142,83 @@ class Filters(unittest.TestCase):
         k2   = reshape(k2,   NxF, NyF)
         img2 = reshape(img2, NxF, NyF)
 
-        print("k2")
-        print(k2)
-        print()
-        print("img2")
-        print(img2)
-
         for i in range(NxF):
             for j in range(NyF):
                 self.assertEqual(kernel[i,j], k2[i,j])
                 self.assertEqual(image[i,j], img2[i,j])
                 
+
+    def skip_test_kernel_init(self):
+
+        NxMesh = 3
+        NyMesh = 3
+
+        #internal filter size is 3x Nx/y/zMesh
+        NxF = NxMesh*3
+        NyF = NyMesh*3
+
+        flt = pypic.Filter(NxMesh, NyMesh)
+
+        flt.init_kernel()
+        #kernel = np.random.rand(NxF, NyF)
+        #flt.set_kernel( flatten(kernel) )
+
+        #image  = np.random.rand(NxF, NyF)
+        #flt.set_image(  flatten(image) )
+
+        k2   = reshape( flt.get_kernel(), NxF, NyF)
+        #img2 = reshape( flt.get_image() , NxF, NyF)
+                
+        print()
+        print(k2)
+
+        flt.fft_kernel()
+        k3   = reshape( flt.get_kernel(), NxF, NyF)
+
+        print()
+        print(k3)
+
+
+
+    # FFT transform image forward and then backward to see if we get the same result back
+    # NOTE: floating-point conversion if not exact so we need some error tolerance
+    def test_fft_backandforth(self):
+
+        NxMesh = 3
+        NyMesh = 3
+
+        #internal filter size is 3x Nx/y/zMesh
+        NxF = NxMesh*3
+        NyF = NyMesh*3
+
+        flt = pypic.Filter(NxMesh, NyMesh)
+
+        #flt.init_kernel()
+        #kernel = np.random.rand(NxF, NyF)
+        #flt.set_kernel( flatten(kernel) )
+
+        #create and set image
+        image  = np.random.rand(NxF, NyF)
+        flt.set_image(  flatten(image) )
+        img1 = reshape( flt.get_image() , NxF, NyF)
+        #print("orig")
+        #print(img1)
+
+        flt.fft_image_forward()
+        img2 = reshape( flt.get_image() , NxF, NyF)
+        #print("fft forward")
+        #print(img2)
+
+        flt.fft_image_backward()
+        img3 = reshape( flt.get_image() , NxF, NyF)
+        #print("fft backward")
+        #print(img3)
+
+        for i in range(NxF):
+            for j in range(NyF):
+                self.assertAlmostEqual(img1[i,j], img3[i,j], places=6) 
+
+
 
 
     def test_filters_in_action(self):
