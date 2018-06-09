@@ -275,7 +275,9 @@ class Filters(unittest.TestCase):
 
         flt = pypic.Filter(NxMesh, NyMesh)
 
-        flt.init_kernel()
+        #flt.init_kernel()
+        flt.init_gaussian_kernel(5.0)
+
         #kernel = np.zeros((NxF, NyF))
         #kernel[0,0] = 1.0
         #kernel[1,0] = 1.0

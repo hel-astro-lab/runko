@@ -115,16 +115,17 @@ PYBIND11_MODULE(pypic, m) {
 
     py::class_<pic::Filter>(m, "Filter")
       .def(py::init<int, int>())
-      .def("init_kernel",        &pic::Filter::init_kernel)
-      .def("fft_kernel",         &pic::Filter::fft_kernel)
-      .def("fft_image_forward",  &pic::Filter::fft_image_forward)
-      .def("fft_image_backward", &pic::Filter::fft_image_backward)
-      .def("apply_kernel",       &pic::Filter::apply_kernel)
-      .def("get_padded_current", &pic::Filter::get_padded_current)
-      .def("set_image",          &pic::Filter::set_image)
-      .def("set_kernel",         &pic::Filter::set_kernel)
-      .def("get_kernel",         &pic::Filter::get_kernel, py::return_value_policy::reference)
-      .def("get_image",          &pic::Filter::get_image,  py::return_value_policy::reference);
+      .def("init_kernel",         &pic::Filter::init_kernel)
+      .def("init_gaussian_kernel",&pic::Filter::init_gaussian_kernel)
+      .def("fft_kernel",          &pic::Filter::fft_kernel)
+      .def("fft_image_forward",   &pic::Filter::fft_image_forward)
+      .def("fft_image_backward",  &pic::Filter::fft_image_backward)
+      .def("apply_kernel",        &pic::Filter::apply_kernel)
+      .def("get_padded_current",  &pic::Filter::get_padded_current)
+      .def("set_image",           &pic::Filter::set_image)
+      .def("set_kernel",          &pic::Filter::set_kernel)
+      .def("get_kernel",          &pic::Filter::get_kernel, py::return_value_policy::reference)
+      .def("get_image",           &pic::Filter::get_image,  py::return_value_policy::reference);
 
 
 

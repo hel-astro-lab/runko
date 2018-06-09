@@ -147,6 +147,42 @@ class Filter {
     }
   }
 
+
+  /// initialize Gaussian kernel given the sigma
+  virtual void init_gaussian_kernel(double sigma) 
+  {
+    double val;
+    int h2 = floor(height/2);
+    int w2 = floor(width /2);
+    int wi,wj;
+
+    double sum = 0.0;
+    for(int i =-h2; i<h2 ; ++i) {
+      for(int j=-w2; j<w2 ; ++j) {
+        auto zindx = zero_wrapped_index(i,j);
+        wi = std::get<0>(zindx);
+        wj = std::get<1>(zindx);
+
+        val = 0.0;
+        if (i*i + j*j < 200.0) {
+          val = exp(- 0.5*((double)(i*i))/sigma/sigma)
+              * exp(- 0.5*((double)(j*j))/sigma/sigma);
+        }
+
+        kernel[ index(wi,wj) ][0] = val; // real part
+        kernel[ index(wi,wj) ][1] = 0.0; // complex part
+        sum += val;
+      }
+    }
+
+    // normalize 
+    for(int i =0; i<height ; ++i)
+    for(int j=0; j<width ; ++j)
+      kernel[ index(i,j) ][0] /= sum;
+
+  }
+
+
   // normalize fft transformation
   void normalize() 
   {
