@@ -86,14 +86,19 @@ def insert_em(node, conf, ffunc):
 
                         val = ffunc(xmid, ymid, zmid)
 
-                        yee.ex[l,m,n] = 1.0
-                        yee.ey[l,m,n] = 1.0
-                        yee.ez[l,m,n] = 1.0
+                        yee.ex[l,m,n] = val
+                        yee.ey[l,m,n] = val+1.0
+                        yee.ez[l,m,n] = val+2.0
 
-                        yee.bx[l,m,n] = 1.0
-                        yee.by[l,m,n] = 1.0
-                        yee.bz[l,m,n] = 1.0
+                        yee.bx[l,m,n] = val+3.0
+                        yee.by[l,m,n] = val+4.0
+                        yee.bz[l,m,n] = val+5.0
 
+                        yee.jx[l,m,n] = val
+                        yee.jy[l,m,n] = val
+                        yee.jz[l,m,n] = val
+
+    
 
 
 # basic Conf file/class for PiC simulation testing
@@ -276,19 +281,38 @@ class PIC(unittest.TestCase):
                 bz = c.container.bz()
 
                 for i, x in enumerate(xx):
-                    print(i)
+                    #print(i)
                     ex_ref = 1.0
-                    ey_ref = 1.0
-                    ez_ref = 1.0
+                    ey_ref = 2.0
+                    ez_ref = 3.0
                     self.assertEqual(ex[i], ex_ref)
                     self.assertEqual(ey[i], ey_ref)
                     self.assertEqual(ez[i], ez_ref)
 
-                    bx_ref = 1.0
-                    by_ref = 1.0
-                    bz_ref = 1.0
+                    bx_ref = 4.0
+                    by_ref = 5.0
+                    bz_ref = 6.0
                     self.assertEqual(bx[i], bx_ref)
                     self.assertEqual(by[i], by_ref)
                     self.assertEqual(bz[i], bz_ref)
+
+
+    def test_filters(self):
+
+        conf = Conf()
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 1
+        conf.NxMesh = 5
+        conf.NyMesh = 5
+        conf.NzMesh = 1
+
+        node = plasma.Grid(conf.Nx, conf.Ny)
+        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        loadCells(node, conf)
+        insert_em(node, conf, const_field)
+        #inject(node, filler_no_velocity, conf) #injecting plasma particles
+
+
 
 

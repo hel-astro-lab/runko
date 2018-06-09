@@ -12,7 +12,7 @@ LNK = g++-7
 #LDFLAGS= -lhdf5
 
 CXXFLAGS=-Wall -Wno-int-in-bool-context -g -std=c++14 -fopenmp
-LDFLAGS= -lhdf5 -fopenmp
+LDFLAGS= -lhdf5 -fopenmp -lfftw3 -lm
 
 #pybind in macOS need to have additional flags
 PYBINDINCLS= `python2 -m pybind11 --includes`

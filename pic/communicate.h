@@ -13,22 +13,24 @@ using iter::reversed;
 
 namespace pic {
 
+// expose particle memory of external neighbors
+pic::ParticleBlock& get_external_data(
+  int i, int j,
+  pic::PicCell& cell,
+  corgi::Node& grid)
+{ 
+  auto ind = cell.neighs(i, j); 
+  uint64_t cid = grid.cellId( std::get<0>(ind), std::get<1>(ind) );
+  pic::PicCell& external_cell = dynamic_cast<pic::PicCell&>( grid.getCell(cid) );
+
+  return external_cell.container;
+}
+
+//! General communicator dealing with inter-tile particle transfer
 class Communicator {
   public:
 
 
-  // expose particle memory of external neighbors
-  pic::ParticleBlock& get_external_data(
-    int i, int j,
-    pic::PicCell& cell,
-    corgi::Node& grid)
-  { 
-    auto ind = cell.neighs(i, j); 
-    uint64_t cid = grid.cellId( std::get<0>(ind), std::get<1>(ind) );
-    pic::PicCell& external_cell = dynamic_cast<pic::PicCell&>( grid.getCell(cid) );
-
-    return external_cell.container;
-  }
 
 
   void check_outgoing_particles( pic::PicCell& cell)
@@ -166,13 +168,8 @@ class Communicator {
 
           continue;
         }
-
       }
-
-
     }
-
-
   }
 
 
@@ -216,6 +213,8 @@ class Communicator {
       cell.container.resize(last);
     }
   }
+
+
 
 
 };

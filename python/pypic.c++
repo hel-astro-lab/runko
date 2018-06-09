@@ -12,7 +12,7 @@ namespace py = pybind11;
 #include "../pic/communicate.h"
 #include "../pic/current_deposit.h"
 #include "../pic/analyzer.h"
-
+#include "../pic/filters.h"
 
 
 
@@ -112,6 +112,15 @@ PYBIND11_MODULE(pypic, m) {
       .def(py::init<>())
       .def("analyze", &pic::Analyzator::analyze);
 
+
+    py::class_<pic::Filter>(m, "Filter")
+      .def(py::init<int, int>())
+      .def("fft_kernel",         &pic::Filter::fft_kernel)
+      .def("get_padded_current", &pic::Filter::get_padded_current)
+      .def("set_image",          &pic::Filter::set_image)
+      .def("set_kernel",         &pic::Filter::set_kernel)
+      .def("get_kernel",         &pic::Filter::get_kernel, py::return_value_policy::reference)
+      .def("get_image",          &pic::Filter::get_image,  py::return_value_policy::reference);
 
 
 
