@@ -11,19 +11,22 @@ import pyplasma as plasma
 from configSetup import Configuration
 import initialize as init
 
-from visualize import plotNode
-from visualize_amr import plotXmesh
-from visualize import plotJ, plotE, plotDens
-from visualize import saveVisz
-from visualize import getYee
+# for on-the-fly visualization
+try:
+    import matplotlib.pyplot as plt
+    from visualize import plotNode
+    from visualize_amr import plotXmesh
+    from visualize import plotJ, plotE, plotDens
+    from visualize import saveVisz
+except:
+    pass
 
+from visualize import getYee
 import injector
 
 from timer import Timer
 
 
-# for on-the-fly visualization
-import matplotlib.pyplot as plt
 
 import argparse
 
@@ -225,17 +228,20 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,9))
-    plt.rc('font', family='serif', size=12)
-    plt.rc('xtick')
-    plt.rc('ytick')
-    
-    gs = plt.GridSpec(8, 1)
-    gs.update(hspace = 0.5)
-    
-    axs = []
-    for ai in range(8):
-        axs.append( plt.subplot(gs[ai]) )
+    try:
+        plt.fig = plt.figure(1, figsize=(8,9))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(8, 1)
+        gs.update(hspace = 0.5)
+        
+        axs = []
+        for ai in range(8):
+            axs.append( plt.subplot(gs[ai]) )
+    except:
+        pass
 
     # Timer for profiling
     timer = Timer(["total", "init", "step", "io"])
@@ -312,16 +318,19 @@ if __name__ == "__main__":
 
 
     # visualize initial condition
-    plotNode(axs[0], node, conf)
-    plotXmesh(axs[1], node, conf, 0, "x")
-    #plotXmesh(axs[2], node, conf, 0, "y")
-    if conf.Nspecies == 2:
-        plotXmesh(axs[3], node, conf, 1, "x")
-        #plotXmesh(axs[4], node, conf, 1, "y")
-    plotJ(axs[5], node, conf)
-    plotE(axs[6], node, conf)
-    plotDens(axs[7], node, conf)
-    saveVisz(-1, node, conf)
+    try:
+        plotNode(axs[0], node, conf)
+        plotXmesh(axs[1], node, conf, 0, "x")
+        #plotXmesh(axs[2], node, conf, 0, "y")
+        if conf.Nspecies == 2:
+            plotXmesh(axs[3], node, conf, 1, "x")
+            #plotXmesh(axs[4], node, conf, 1, "y")
+        plotJ(axs[5], node, conf)
+        plotE(axs[6], node, conf)
+        plotDens(axs[7], node, conf)
+        saveVisz(-1, node, conf)
+    except:
+        pass
 
 
 
@@ -431,31 +440,28 @@ if __name__ == "__main__":
             plasma.writeMesh(node,     lap, conf.outdir + "/")
 
 
+	    try:
+                plotNode(axs[0], node, conf)
 
-            plotNode(axs[0], node, conf)
+                plotXmesh(axs[1], node, conf, 0, "x")
+                #plotXmesh(axs[2], node, conf, 0, "y")
 
-            plotXmesh(axs[1], node, conf, 0, "x")
-            #plotXmesh(axs[2], node, conf, 0, "y")
+                if conf.Nspecies == 2:
+                    plotXmesh(axs[3], node, conf, 1, "x")
+                    #plotXmesh(axs[4], node, conf, 1, "y")
 
-            if conf.Nspecies == 2:
-                plotXmesh(axs[3], node, conf, 1, "x")
-                #plotXmesh(axs[4], node, conf, 1, "y")
+                if conf.Nspecies == 4:
+                    plotXmesh(axs[2], node, conf, 1, "x")
+                    plotXmesh(axs[3], node, conf, 2, "x")
+                    plotXmesh(axs[4], node, conf, 3, "x")
 
-            if conf.Nspecies == 4:
-                plotXmesh(axs[2], node, conf, 1, "x")
-                plotXmesh(axs[3], node, conf, 2, "x")
-                plotXmesh(axs[4], node, conf, 3, "x")
+                plotJ(axs[5], node, conf)
+                plotE(axs[6], node, conf)
+                plotDens(axs[7], node, conf)
 
-            plotJ(axs[5], node, conf)
-            plotE(axs[6], node, conf)
-            plotDens(axs[7], node, conf)
-
-
-            #solve Poisson
-            #exP = solvePoisson(axs[6], node, conf)
-
-
-            saveVisz(lap, node, conf)
+                saveVisz(lap, node, conf)
+    	    except:
+    	        pass
 
 
             timer.stop("io")

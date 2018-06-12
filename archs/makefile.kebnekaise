@@ -13,7 +13,7 @@ LNK = mpic++
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fopenmp -fPIC
 CXXFLAGS=-Wall -O3 -march=native -funroll-loops -ftree-vectorize -std=c++14 -fPIC -fopenmp
 #CXXFLAGS=-Wall -g -std=c++14 -fPIC
-LDFLAGS= -lhdf5 -fopenmp
+LDFLAGS= -lhdf5 -fopenmp -lfftw3 -lm
 #LDFLAGS= -lhdf5
 
 

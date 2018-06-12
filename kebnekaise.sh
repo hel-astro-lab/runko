@@ -11,6 +11,7 @@ PLASMA_DIR="/home/n/natj/plasma-toolbox"
 
 # pfs 
 PFS_PLASMA_DIR="/pfs/nobackup/home/n/natj/plasma-toolbox"
+mkdir ${PFS_PLASMA_DIR}
 
 
 # setup environment
@@ -37,26 +38,26 @@ mkdir ${PFS_PLASMA_DIR}/pic
 mkdir ${PFS_PLASMA_DIR}/jobs
 
 #python modules
-#cp ${PLASMA_DIR}/python/*.py ${PFS_PLASMA_DIR}/python/
+cp ${PLASMA_DIR}/python/*.py ${PFS_PLASMA_DIR}/python/
 
 #unit tests
-#cp ${PLASMA_DIR}/tests/*.py ${PFS_PLASMA_DIR}/tests/
+cp ${PLASMA_DIR}/tests/*.py ${PFS_PLASMA_DIR}/tests/
 
 #projects/tests
-#cp ${PLASMA_DIR}/projects/tests/*.py ${PFS_PLASMA_DIR}/projects/tests/
-#cp ${PLASMA_DIR}/projects/tests/*.ini ${PFS_PLASMA_DIR}/projects/tests/
+cp ${PLASMA_DIR}/projects/tests/*.py ${PFS_PLASMA_DIR}/projects/tests/
+cp ${PLASMA_DIR}/projects/tests/*.ini ${PFS_PLASMA_DIR}/projects/tests/
 
 #copy slurm jobs
-#cp ${PLASMA_DIR}/jobs/*.sh ${PFS_PLASMA_DIR}/jobs/
+cp ${PLASMA_DIR}/jobs/*.sh ${PFS_PLASMA_DIR}/jobs/
 
 # particle-in-cell
-#cp ${PLASMA_DIR}/pic/*.py ${PFS_PLASMA_DIR}/pic/
-#cp ${PLASMA_DIR}/pic/*.ini ${PFS_PLASMA_DIR}/pic/
+cp ${PLASMA_DIR}/pic/*.py ${PFS_PLASMA_DIR}/pic/
+cp ${PLASMA_DIR}/pic/*.ini ${PFS_PLASMA_DIR}/pic/
 
 
 mkdir ${PFS_PLASMA_DIR}/projects/shock-atmos
 cp ${PLASMA_DIR}/projects/shock-atmos/*.ini ${PFS_PLASMA_DIR}/projects/shock-atmos/
-#cp ${PLASMA_DIR}/projects/shock-atmos/*.py ${PFS_PLASMA_DIR}/projects/shock-atmos/
+cp ${PLASMA_DIR}/projects/shock-atmos/*.py ${PFS_PLASMA_DIR}/projects/shock-atmos/
 cp ${PLASMA_DIR}/projects/shock-atmos/*.so ${PFS_PLASMA_DIR}/projects/shock-atmos/
 
 

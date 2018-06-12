@@ -1,7 +1,7 @@
 #platform architecture
 #ARCH=macOS
-ARCH=gnu
-#ARCH=kebnekaise
+#ARCH=gnu
+ARCH=kebnekaise
 
 #set FP precision to SP (single) or DP (double)
 FP_PRECISION=DP
@@ -118,4 +118,6 @@ tests:
 clean: 
 	-rm *.o
 	-rm python/*.so
+	-rm *.so
+
 

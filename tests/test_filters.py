@@ -267,7 +267,7 @@ class Filters(unittest.TestCase):
 
 
 
-    def test_smearing(self):
+    def skip_test_smearing(self):
 
         plt.fig = plt.figure(1, figsize=(4,4))
         plt.rc('font', family='serif', size=12)

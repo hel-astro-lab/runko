@@ -1,7 +1,10 @@
 import numpy as np
 
-import matplotlib.pyplot as plt
-from matplotlib import cm
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+except:
+    pass
 
 from visualize import imshow
 

@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 import sys, os
 import h5py
@@ -17,10 +16,15 @@ import initialize as init
 
 #from injector import spatialLoc
 
-from visualize import plotNode
-from visualize import plotJ, plotE, plotDens
-from visualize import getYee
-from visualize import saveVisz
+
+try:
+    import matplotlib.pyplot as plt
+    from visualize import plotNode
+    from visualize import plotJ, plotE, plotDens
+    from visualize import getYee
+    from visualize import saveVisz
+except:
+    pass
 
 
 from timer import Timer
@@ -326,17 +330,20 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,9))
-    plt.rc('font', family='serif', size=12)
-    plt.rc('xtick')
-    plt.rc('ytick')
-    
-    gs = plt.GridSpec(8, 1)
-    gs.update(hspace = 0.5)
-    
-    axs = []
-    for ai in range(8):
-        axs.append( plt.subplot(gs[ai]) )
+    try:
+        plt.fig = plt.figure(1, figsize=(8,9))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(8, 1)
+        gs.update(hspace = 0.5)
+        
+        axs = []
+        for ai in range(8):
+            axs.append( plt.subplot(gs[ai]) )
+    except:
+        pass
 
 
     # Timer for profiling
@@ -392,10 +399,12 @@ if __name__ == "__main__":
 
 
     # visualize initial condition
-    plotNode( axs[0], node, conf)
-    plotXmesh(axs[1], node, conf, 0, "x")
-
-    saveVisz(-1, node, conf)
+    try:
+        plotNode( axs[0], node, conf)
+        plotXmesh(axs[1], node, conf, 0, "x")
+        saveVisz(-1, node, conf)
+    except:
+        pass
 
     
     #setup output file
@@ -529,18 +538,21 @@ if __name__ == "__main__":
             plasma.writeAnalysis(node, lap, conf.outdir + "/")
             #plasma.writeMesh(node,     lap, conf.outdir + "/")
 
-            plotNode( axs[0], node, conf)
-            plotXmesh(axs[1], node, conf, 0, "x")
+            try:
+                plotNode( axs[0], node, conf)
+                plotXmesh(axs[1], node, conf, 0, "x")
 
-            plotJ(    axs[5], node, conf)
+                plotJ(    axs[5], node, conf)
 
-            plotE(    axs[6], node, conf)
-            plotDebug(axs[6], node, conf)
+                plotE(    axs[6], node, conf)
+                plotDebug(axs[6], node, conf)
 
-            plotDens( axs[7], node, conf)
+                plotDens( axs[7], node, conf)
 
 
-            saveVisz(lap, node, conf)
+                saveVisz(lap, node, conf)
+	    except:
+	        pass
 
 
 
