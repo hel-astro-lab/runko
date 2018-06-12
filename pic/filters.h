@@ -7,10 +7,14 @@
 #include "cell.h"
 #include "communicate.h"
 
+#include "../units.h"
 #include "fftw3.h"
 
 
+
 namespace pic {
+
+using units::pi;
 
 //! Spatial current filter using fftw
 //
@@ -124,8 +128,8 @@ class Filter {
     int w2 = floor(width /2);
     int wi,wj;
 
-    for(int i =-h2; i<h2 ; ++i) {
-      for(int j=-w2; j<w2 ; ++j) {
+    for(int i =-h2; i<=h2 ; ++i) {
+      for(int j=-w2; j<=w2 ; ++j) {
         auto zindx = zero_wrapped_index(i,j);
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
@@ -154,11 +158,11 @@ class Filter {
     double val;
     int h2 = floor(height/2);
     int w2 = floor(width /2);
-    int wi,wj;
+    int wi, wj;
 
     double sum = 0.0;
-    for(int i =-h2; i<h2 ; ++i) {
-      for(int j=-w2; j<w2 ; ++j) {
+    for(int i =-h2; i<=h2 ; ++i) {
+      for(int j=-w2; j<=w2 ; ++j) {
         auto zindx = zero_wrapped_index(i,j);
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
@@ -179,6 +183,114 @@ class Filter {
     for(int i =0; i<height ; ++i)
     for(int j=0; j<width ; ++j)
       kernel[ index(i,j) ][0] /= sum;
+
+  }
+
+
+  /// initialize 2d box sinc filter (in frequency space)
+  virtual void init_sinc_kernel(double X, double Y) 
+  {
+    double val, u,v;
+    int h2 = floor(height/2);
+    int w2 = floor(width /2);
+    int wi, wj;
+
+    double sum = 0.0;
+    for(int i =-h2; i<=h2 ; ++i) {
+      for(int j=-w2; j<=w2 ; ++j) {
+        auto zindx = zero_wrapped_index(i,j);
+        wi = std::get<0>(zindx);
+        wj = std::get<1>(zindx);
+
+        u = (double)i;
+        v = (double)j;
+
+        val = 0.0;
+        if ((abs(i) < height/3) || (abs(j) < width/3)){
+          val = X*sin(pi*X*u)/(pi*X*u) * 
+                Y*sin(pi*Y*v)/(pi*Y*v);
+        }
+        //val = (X*sin(pi*X*u)/(pi*X*u)) * (Y*sin(pi*Y*v)/(pi*Y*v));
+        if ((i == 0) && (j == 0)) val = 4.0*pi*pi*X*Y; // center to avoid 0/0
+        else if (i == 0) val = 2.0*pi*X*Y*sin(pi*Y*v)/(pi*Y*v);
+        else if (j == 0) val = 2.0*pi*X*Y*sin(pi*X*u)/(pi*X*u);
+
+        // windowing
+        val *= 0.42 - 0.5*cos(2*pi*3.0/height) + 0.08*cos(4.0*pi*3.0/height);
+        val *= 0.42 - 0.5*cos(2*pi*3.0/width ) + 0.08*cos(4.0*pi*3.0/width);
+
+        kernel[ index(wi,wj) ][0] = val; // real part
+        kernel[ index(wi,wj) ][1] = 0.0; // complex part
+        sum += val;
+      }
+    }
+
+    // normalize 
+    for(int i =0; i<height ; ++i)
+    for(int j=0; j<width ; ++j)
+      kernel[ index(i,j) ][0] /= sum;
+
+  }
+
+
+  /// Low-pass filter in frequency space
+  // uses cutoff to describe how many array elements are filtered
+  virtual void init_lowpass_fft_kernel(int cutoff) 
+  {
+    int h2min = (int)floor((double)height/2);
+    int w2min = (int)floor((double)width /2);
+    int h2max = (int)ceil( (double)height/2);
+    int w2max = (int)ceil( (double)width /2);
+
+    int h3 = height/3;
+    int w3 = width /3;
+    int wi, wj;
+
+    std::cout << "h2: " << h2min << " " << h2max << " w2: " << w2min << " " << w2max << '\n';
+    std::cout << "h3: " << h3 << " w3: " << w3 << '\n';
+
+    // initialize to zero
+    for(int i =-h2min; i<h2max; ++i) {
+      for(int j=-w2min; j<w2max; ++j) {
+        auto zindx = zero_wrapped_index(i,j);
+        wi = std::get<0>(zindx);
+        wj = std::get<1>(zindx);
+
+        kernel[ index(wi,wj) ][0] = 0.0; // real part
+        kernel[ index(wi,wj) ][1] = 0.0; // complex part
+      }
+    }
+
+    // make central bins 1.0
+    double sum = 0.0;
+    for(int i =-h2min+cutoff; i<h2max-cutoff; ++i) {
+      for(int j=-w2min+cutoff; j<w2max-cutoff; ++j) {
+        auto zindx = zero_wrapped_index(i,j);
+        wi = std::get<0>(zindx);
+        wj = std::get<1>(zindx);
+
+        kernel[ index(wi,wj) ][0] = 1.0; // real part
+        //kernel[ index(wi,wj) ][1] = 0.0; // complex part
+        sum += 1.0;
+      }
+    }
+
+    // filter out lowest waves to avoid cyclic boundaries
+    for(int i =-h3; i<h3; ++i) {
+      for(int j=-w3; j<w3; ++j) {
+        auto zindx = zero_wrapped_index(i,j);
+        wi = std::get<0>(zindx);
+        wj = std::get<1>(zindx);
+
+        kernel[ index(wi,wj) ][0] = 0.0; // real part
+        kernel[ index(wi,wj) ][1] = 0.0; // complex part
+      }
+    }
+
+    // normalize 
+    //for(int i =0; i<height ; ++i)
+    //for(int j=0; j<width ; ++j)
+    //  kernel[ index(i,j) ][0] /= sum;
 
   }
 

@@ -145,6 +145,20 @@ def fftshift(farr):
     return arr
 
 
+def sinc2d(kernel, X, Y):
+    nx, ny = np.shape(kernel)
+    xc = nx/3
+    yc = ny/3
+
+    for i in range(-xc, xc, 1):
+        for j in range(-yc, yc, 1):
+            iff = fftshift1d(i, nx)
+            jff = fftshift1d(j, ny)
+
+
+            arr[iff,jff] = val
+
+
 
 
 class Filters(unittest.TestCase):
@@ -266,17 +280,26 @@ class Filters(unittest.TestCase):
         for ai in range(6):
             axs.append( plt.subplot(gs[ai]) )
 
-        NxMesh = 20
-        NyMesh = 20
+        NxMesh = 3
+        NyMesh = 3
 
         #internal filter size is 3x Nx/y/zMesh
         NxF = NxMesh*3
         NyF = NyMesh*3
 
+        vmin = 0.0
+        vmax = 1.0
+
         flt = pypic.Filter(NxMesh, NyMesh)
 
         #flt.init_kernel()
-        flt.init_gaussian_kernel(5.0)
+        #flt.init_gaussian_kernel(5.0)
+
+        #f0 = 2.0/NxMesh/2.0/np.pi
+        #f0 = 0.1
+        #flt.init_sinc_kernel(f0, f0)
+
+        flt.init_lowpass_fft_kernel(0)
 
         #kernel = np.zeros((NxF, NyF))
         #kernel[0,0] = 1.0
@@ -297,23 +320,37 @@ class Filters(unittest.TestCase):
         #print(kernel)
         #flt.set_kernel( flatten(kernel) )
 
+        #kernel = np.zeros((NxF, NyF))
+        #kernel = sinc2d(kernel, X, Y)
+        #flt.set_kernel( flatten(kernel) )
+
         image  = np.random.rand(NxF, NyF)
         flt.set_image(  flatten(image) )
 
         ker = reshape( flt.get_kernel(), NxF, NyF)
         img = reshape( flt.get_image() , NxF, NyF)
-                
-        axs[0].imshow(ker)
-        axs[1].imshow(img)
 
-        flt.fft_kernel()
+        print()
+        print(ker)
+        print(ker.min(), ker.max())
+        print(img.min(), img.max())
+                
+        axs[0].imshow(ker, vmin=vmin, vmax=vmax)
+        axs[1].imshow(img, vmin=vmin, vmax=vmax)
+
+        #flt.fft_kernel()
         flt.fft_image_forward()
         ker2 = reshape( flt.get_kernel(), NxF, NyF)
         img2 = reshape( flt.get_image() , NxF, NyF)
 
+        print()
+        print(ker2)
 
-        axs[2].imshow(fftshift(ker2))
-        axs[3].imshow(fftshift(img2))
+        print(ker2.min(), ker2.max())
+        print(img2.min(), img2.max())
+
+        axs[2].imshow(fftshift(ker2) )#, vmin=vmin, vmax=vmax)
+        axs[3].imshow(fftshift(img2) )#, vmin=vmin, vmax=vmax)
 
         #apply kernel
         flt.apply_kernel()
@@ -321,8 +358,11 @@ class Filters(unittest.TestCase):
         ker3 = reshape( flt.get_kernel(), NxF, NyF)
         img3 = reshape( flt.get_image() , NxF, NyF)
 
-        axs[4].imshow(ker3)
-        axs[5].imshow(img3)
+        print(ker3.min(), ker3.max())
+        print(img3.min(), img3.max())
+
+        axs[4].imshow(ker3, vmin=vmin, vmax=vmax)
+        axs[5].imshow(img3, vmin=vmin, vmax=vmax)
 
         plt.savefig("filter.png")
 

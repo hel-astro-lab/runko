@@ -117,6 +117,8 @@ PYBIND11_MODULE(pypic, m) {
       .def(py::init<int, int>())
       .def("init_kernel",         &pic::Filter::init_kernel)
       .def("init_gaussian_kernel",&pic::Filter::init_gaussian_kernel)
+      .def("init_sinc_kernel",    &pic::Filter::init_sinc_kernel)
+      .def("init_lowpass_fft_kernel", &pic::Filter::init_lowpass_fft_kernel)
       .def("fft_kernel",          &pic::Filter::fft_kernel)
       .def("fft_image_forward",   &pic::Filter::fft_image_forward)
       .def("fft_image_backward",  &pic::Filter::fft_image_backward)
