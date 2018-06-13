@@ -385,6 +385,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             //       (these are there to save memory by avoiding 
             //       copy of consts)
               
+            // 2nd order central scheme
             //if (q < 0) { //left halo
             //  const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
             //  const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
@@ -402,23 +403,27 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             //  flux = flux2nd(M, Mp1, cfl);
             //}
 
-            //if (q < 0) { //left halo
-            //  const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
-            //  const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
+            // 1st order upwind scheme
+            /*
+            if (q < 0) { //left halo
+              const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
+              const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
 
-            //  flux = flux1st(M, Mp1, cfl);
-            //} else if ( (q >= 0) && (q <= Nx-2) ) { // inside
-            //  const auto& M   = block0.block(q,r,s);   // f_i
-            //  const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
+              flux = flux1st(M, Mp1, cfl);
+            } else if ( (q >= 0) && (q <= Nx-2) ) { // inside
+              const auto& M   = block0.block(q,r,s);   // f_i
+              const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
 
-            //  flux = flux1st(M, Mp1, cfl);
-            //} else if (q >= Nx-1) { //right halo
-            //  const auto& M   = block0.block(q,r,s);       // f_i
-            //  const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
+              flux = flux1st(M, Mp1, cfl);
+            } else if (q >= Nx-1) { //right halo
+              const auto& M   = block0.block(q,r,s);       // f_i
+              const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
 
-            //  flux = flux1st(M, Mp1, cfl);
-            //}
+              flux = flux1st(M, Mp1, cfl);
+            }
+            */
 
+            // 3rd order upwind scheme
             if (q == -1) { //left halo
               const auto& Mm2 = block0_left.block(block0_left.Nx-3,r,s);   // f_i-2
               const auto& Mm1 = block0_left.block(block0_left.Nx-2,r,s);   // f_i-1

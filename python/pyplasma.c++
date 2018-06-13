@@ -110,8 +110,10 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
     .def("getAnalysis",      &fields::PlasmaCell::getAnalysis, py::return_value_policy::reference)
     .def("addAnalysisSpecies", &fields::PlasmaCell::addAnalysisSpecies)
-    .def("updateBoundaries", &fields::PlasmaCell::updateBoundaries)
-    .def("exchangeCurrents", &fields::PlasmaCell::exchangeCurrents);
+    .def("updateBoundaries",  &fields::PlasmaCell::updateBoundaries)
+    .def("updateBoundaries2D",&fields::PlasmaCell::updateBoundaries2D)
+    .def("exchangeCurrents",  &fields::PlasmaCell::exchangeCurrents)
+    .def("exchangeCurrents2D",  &fields::PlasmaCell::exchangeCurrents2D);
 
 
   py::class_<fields::PlasmaCellDamped,

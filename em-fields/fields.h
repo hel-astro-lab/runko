@@ -154,8 +154,10 @@ class PlasmaCell : virtual public corgi::Cell {
 
 
   void updateBoundaries(corgi::Node& node);
+  void updateBoundaries2D(corgi::Node& node);
 
   void exchangeCurrents(corgi::Node& node);
+  void exchangeCurrents2D(corgi::Node& node);
 
   virtual void pushHalfB();
   void pushHalfB1d();
