@@ -47,14 +47,14 @@ class AdaptiveMesh {
   static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
   int maximum_refinement_level = 10;
   int top_refinement_level = 0;
-	uint64_t last_cid;
+	uint64_t last_cid = 0;
   size_t number_of_cells = 0;
+  int current_refinement_level = 0;
   
 
   /// current size (number of cells) in each dimension
   indices_t length;
 
-  int current_refinement_level = 0;
 
   
   /// location of mesh start corners
@@ -86,6 +86,49 @@ class AdaptiveMesh {
     // return data.at(key);
     const_iterator it = data.find(key);
     return it == data.end() ? T(0) : it->second;
+  }
+
+  //--------------------------------------------------
+  // explicit constructors
+  // TOOD: check if they make any sense
+
+  AdaptiveMesh() :
+    length({1,1,1}),
+    mins({0,0,0}),
+    maxs({1,1,1})
+  {
+    update_last_cid(); 
+  }
+
+  /// explicit copy constructor
+  //TODO: optimize for data array that is not always needed;
+  //      however, remember that mesh = func(xx) syntax uses this too
+  AdaptiveMesh(const AdaptiveMesh<T,D>& m) :
+    data(m.data),
+    maximum_refinement_level(m.maximum_refinement_level),
+    top_refinement_level(m.top_refinement_level),
+    last_cid(m.last_cid),
+    number_of_cells(m.number_of_cells),
+    current_refinement_level(m.current_refinement_level),
+    length(m.length),
+    mins(m.mins),
+    maxs(m.maxs)
+  {
+    update_last_cid(); 
+  }
+
+  AdaptiveMesh(AdaptiveMesh<T,D>& m) :
+    data(m.data),
+    maximum_refinement_level(m.maximum_refinement_level),
+    top_refinement_level(m.top_refinement_level),
+    last_cid(m.last_cid),
+    number_of_cells(m.number_of_cells),
+    current_refinement_level(m.current_refinement_level),
+    length(m.length),
+    mins(m.mins),
+    maxs(m.maxs)
+  {
+    update_last_cid(); 
   }
 
 
@@ -162,6 +205,14 @@ class AdaptiveMesh {
       const int refinement_level = 0
   ) const 
   { 
+
+    /*
+    std::cout << "indx " << indices[0] << " " << indices[1] << " " << indices[2] << " \n";
+    std::cout << "len "  << length[0] << " "  << length[1] << " "  << length[2] << "\n";
+    std::cout << "rfl "  << refinement_level << " " << maximum_refinement_level << "\n";
+    */
+
+
 		if (indices[0] >= this->length[0] * (uint64_t(1) << this->maximum_refinement_level)) {
 			return error_cid;
 		}
@@ -209,9 +260,8 @@ class AdaptiveMesh {
 
   int get_refinement_level(const uint64_t cid) const 
   {
-		if (cid == error_cid || cid > get_last_cid() ) {
-			return -2;
-		}
+		if (cid == error_cid)      return -2;
+		if (cid > get_last_cid() ) return -3;
 
 		int refinement_level = 0;
 		uint64_t current_last = 0;
@@ -816,7 +866,7 @@ class AdaptiveMesh {
   {
 
     // loop over sorted cells so that sizes of incoming cells is decreasing
-    for(auto&& cid_rhs : rhs.get_cells(true)) {
+    for(auto cid_rhs : rhs.get_cells(true)) {
       auto it = data.find(cid_rhs);
       T val_rhs = rhs.data.at(cid_rhs); // cell guaranteed to exists in rhs.data so we can use .at()
 
@@ -873,28 +923,28 @@ class AdaptiveMesh {
   // scalar operations to the grid
   void operator *= (T val) 
   {
-    for(auto&& cid: get_cells(false)) {
+    for(auto cid: get_cells(false)) {
       data.at(cid) *= val;
     }
   }
 
   void operator /= (T val) 
   {
-    for(auto&& cid: get_cells(false)) {
+    for(auto cid: get_cells(false)) {
       data.at(cid) /= val;
     }
   }
 
   void operator += (T val) 
   {
-    for(auto&& cid: get_cells(false)) {
+    for(auto cid: get_cells(false)) {
       data.at(cid) += val;
     }
   }
 
   void operator -= (T val) 
   {
-    for(auto&& cid: get_cells(false)) {
+    for(auto cid: get_cells(false)) {
       data.at(cid) -= val;
     }
   }

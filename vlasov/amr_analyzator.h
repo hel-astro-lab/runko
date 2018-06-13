@@ -57,8 +57,8 @@ T integrate_moment(
 
 
   // convolve with chi(u) function
-  for(auto&& cid : m.get_cells(false) ) {
-    if( !m.is_leaf(cid) ) continue;
+  for(auto cid : m.get_cells(false) ) {
+    if( !m.is_leaf(cid) ) continue; //TODO: fixme
 
     auto index = m.get_indices(cid);
     rfl        = m.get_refinement_level(cid);
