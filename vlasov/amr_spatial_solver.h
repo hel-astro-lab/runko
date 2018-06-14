@@ -283,7 +283,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
           flux.data[cid] = 
             v*f0 + 
-            v*(1.0+v)*(2.0+v)*Lp/6.0 +
+            v*(1.0-v)*(2.0-v)*Lp/6.0 +
             v*(1.0-v)*(1.0+v)*Lm/6.0;
         }
       }
@@ -302,13 +302,15 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
           //T fm2 = Mm2.get(cid);
           T fm1 = Mm1.get(cid);
-          T f0   = M0.get(cid);
+          T f0  = M0.get(cid);
           T fp1 = Mp1.get(cid);
           T fp2 = Mp2.get(cid);
           T fp3 = Mp3.get(cid);
             
           //T Lp = f0  - fp1;
           //T Lm = fp1 - fp2;
+            
+          //minmax limited values
           T Lp = Lpf(fp3, fp2, fp1, f0, fm1);
           T Lm = Lmf(fp3, fp2, fp1, f0, fm1);
 
@@ -488,7 +490,6 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
               flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
             }
-
 
             //const auto& M   = block0.block(q,r,s);       // f_i
             //const auto& Mp1 = block0.block(q+1,r,s);     // f_i+1

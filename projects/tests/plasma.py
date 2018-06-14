@@ -61,16 +61,18 @@ def filler(xloc, uloc, ispcs, conf):
 
 
     #box advection test
-    #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
+    dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
     #nn = 1.0/(dv)
-    #nn = 1.0
+    nn = 1.0
 
-    #if not((x >= 1.0) and (x<=1.01) ):
-    #    return 0.0
-    #    #if -0.005 < ux < 0.005:
-    #    #    return nn
-    #    #else:
-    #    #    return 0.0
+    if ((x >= 1.0) and (x<=1.02) ):
+        return 1.0
+        #if  0.016 < ux < 0.004:
+        #    return nn
+        #else:
+        #    return 0.0
+    else:
+        return 0.0
 
 
 
@@ -382,10 +384,10 @@ if __name__ == "__main__":
                 cell.cycle()
 
         #current deposition from moving flux
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.depositCurrent()
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.depositCurrent()
 
         #update boundaries
         for j in range(node.getNy()):
