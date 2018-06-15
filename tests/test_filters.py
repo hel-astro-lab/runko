@@ -3,6 +3,7 @@ import unittest
 import sys
 sys.path.append('python')
 import numpy as np
+from math import floor, ceil
 
 import corgi
 import pyplasma as plasma
@@ -110,10 +111,13 @@ class Conf:
 # 2d -> 1d
 def flatten(arr):
     return arr.flatten().tolist()
+    #return np.transpose(arr).flatten().tolist()
 
 # 1d -> 2d
 def reshape(vec, nx, ny):
-    return np.reshape(vec, (ny, nx))
+    return np.reshape(vec, (nx, ny))
+    #return np.transpose( np.reshape(vec, (nx, ny)) )
+    #return np.reshape(np.flipud(vec), (nx, ny)) 
 
 
 #def fftshift1d(i, w):
@@ -123,7 +127,9 @@ def reshape(vec, nx, ny):
 #        return i - w
 
 def fftshift1d(i, w):
-    return i - np.int(np.ceil(w/2))
+    #return i + np.int(np.ceil(1.0*w/2.0))
+    return i + np.int(np.floor(1.0*w/2.0))-1
+    #return i + w/2
 
 
 
@@ -131,16 +137,25 @@ def fftshift1d(i, w):
 def fftshift(farr):
     nx, ny = np.shape(farr)
     arr = np.empty_like(farr)
-    xc = np.int( np.floor(nx/2) )
-    yc = np.int( np.floor(ny/2) )
+    arr[:] = 0.2
+    xc1 = np.int( np.floor(1.0*nx/2.0))
+    yc1 = np.int( np.floor(1.0*ny/2.0))
+    xc2 = np.int( np.ceil(1.0*nx/2.0) )
+    yc2 = np.int( np.ceil(1.0*ny/2.0) )
+    print(xc1, yc1)
+    print(xc2, yc2)
 
-    for i in range(-xc, xc, 1):
-        for j in range(-yc, yc, 1):
+    print("center (0,0) = ({},{})".format(fftshift1d(0,nx), fftshift1d(0,ny)))
+
+    for i in np.arange(-xc1+1, xc2+1, 1):
+        for j in np.arange(-yc1+1, yc2+1, 1):
             iff = fftshift1d(i, nx)
             jff = fftshift1d(j, ny)
+            #print("ij=({},{}) i2j2=({},{})".format(i,j,iff,jff))
+            if (iff < 0 or jff < 0):
+                print("ERROR")
 
             #print("i={} j={} i2={} j2={}".format(i,j,iff,jff))
-
             arr[iff,jff] = farr[i,j]
     return arr
 
@@ -154,10 +169,73 @@ def sinc2d(kernel, X, Y):
         for j in range(-yc, yc, 1):
             iff = fftshift1d(i, nx)
             jff = fftshift1d(j, ny)
-
-
             arr[iff,jff] = val
 
+
+def const(i,j):
+    return 1.0
+
+#three point digital filter
+def digi3(i,j):
+    digi3a = np.array([[ 4., 2.],
+                       [ 2., 1.]])
+    i2 = abs(i)
+    j2 = abs(j)
+    if (i2 > 1) or (j2 > 1):
+        return 0.0
+    else:
+        return (0.25/3.0)*digi3a[i2,j2]
+
+#five point digital filter
+def digi5(i,j):
+    digi5a = np.array([[ 6., 4., 1],
+                       [ 4., 0., 0],
+                       [ 1., 0., 0]])
+    i2 = abs(i)
+    j2 = abs(j)
+    if (i2 > 2) or (j2 > 2):
+        return 0.0
+    else:
+        return (1.0/16.0)*digi5a[i2,j2]
+
+
+def init_center(kernel, dfilt=const):
+    nx, ny = np.shape(kernel)
+    knx = nx/3
+    kny = ny/3
+
+    khnx1 = int( floor(1.0*knx/2.0) )
+    khny1 = int( floor(1.0*kny/2.0) )
+    khnx2 = int(  ceil(1.0*knx/2.0) )
+    khny2 = int(  ceil(1.0*kny/2.0) )
+    print("size = {} {} ({} {})".format(khnx1, khny1, nx, ny))
+
+    #positive side
+    for i in range(0,khnx2+1):
+        for j in range(0,khny1+1):
+            kernel[i,j] = dfilt(i,j)
+
+    #corner
+    for i in range(-1, -khnx1, -1):
+        for j in range(-1, -khny1, -1):
+            i2 = nx+i
+            j2 = ny+j
+            #print("  ij=({},{}) i2j2=({},{})".format(i,j,i2,j2))
+            kernel[i2,j2] = dfilt(i,j)
+
+    #top
+    for i in range(0,khnx2+1):
+        for j in range(-1, -khny1, -1):
+            i2 = i
+            j2 = ny+j
+            kernel[i2,j2] = dfilt(i,j)
+
+    #bottom
+    for i in range(-1, -khnx1, -1):
+        for j in range(0,khny2+1):
+            i2 = nx+i
+            j2 = j
+            kernel[i2,j2] = dfilt(i,j)
 
 
 
@@ -191,7 +269,7 @@ class Filters(unittest.TestCase):
         for i in range(NxF):
             for j in range(NyF):
                 self.assertEqual(kernel[i,j], k2[i,j])
-                self.assertEqual(image[i,j], img2[i,j])
+                self.assertEqual( image[i,j],img2[i,j])
                 
 
     def test_kernel_init(self):
@@ -261,27 +339,27 @@ class Filters(unittest.TestCase):
         #print("fft backward")
         #print(img3)
 
-        for i in range(NyF):
-            for j in range(NxF):
+        for i in range(NxF):
+            for j in range(NyF):
                 self.assertAlmostEqual(img1[i,j], img3[i,j], places=6) 
 
 
 
-    def skip_test_smearing(self):
+    def test_smearing(self):
 
-        plt.fig = plt.figure(1, figsize=(4,4))
+        plt.fig = plt.figure(1, figsize=(6,4))
         plt.rc('font', family='serif', size=12)
         plt.rc('xtick')
         plt.rc('ytick')
         
-        gs = plt.GridSpec(3, 2)
+        gs = plt.GridSpec(4, 2)
         
         axs = []
-        for ai in range(6):
+        for ai in range(8):
             axs.append( plt.subplot(gs[ai]) )
 
-        NxMesh = 3
-        NyMesh = 3
+        NxMesh = 20
+        NyMesh = 20
 
         #internal filter size is 3x Nx/y/zMesh
         NxF = NxMesh*3
@@ -299,18 +377,40 @@ class Filters(unittest.TestCase):
         #f0 = 0.1
         #flt.init_sinc_kernel(f0, f0)
 
-        flt.init_lowpass_fft_kernel(0)
+        #flt.init_lowpass_fft_kernel(0)
 
-        #kernel = np.zeros((NxF, NyF))
-        #kernel[0,0] = 1.0
-        #kernel[1,0] = 1.0
-        #kernel[0,1] = 1.0
-        #kernel[1,1] = 1.0
+        kernel = np.zeros((NxF, NyF))
+        #kernel[ 0, 0] = 1.0
+        #kernel[ 1, 0] = 1.0
+        #kernel[ 0, 1] = 1.0
+        #kernel[ 1, 1] = 1.0
+        #kernel[ 2, 0] = 1.0
+        #kernel[ 2, 1] = 1.0
+        #kernel[ 1, 2] = 1.0
+        #kernel[ 2, 0] = 1.0
+        #kernel[ 2, 1] = 1.0
+        #kernel[ 2, 2] = 1.0
+
+
         #kernel[-1,-1] = 1.0
         #kernel[ 0,-1] = 1.0
         #kernel[ 1,-1] = 1.0
         #kernel[-1, 0] = 1.0
         #kernel[-1, 1] = 1.0
+
+        #kernel[ 2,-1] = 1.0
+        #kernel[-1, 2] = 1.0
+
+        #for i in range(0, NxMesh):
+        #    for j in range(0,NyMesh):
+        #        kernel[i,j] = 1
+
+        print("initing kernel.....")
+        #init_center(kernel)
+        init_center(kernel, digi3)
+        #init_center(kernel, digi5)
+        print(kernel)
+
         #swap kernel
         #(-1)^(i + j + ...)
         #for i in range(NxF):
@@ -318,17 +418,41 @@ class Filters(unittest.TestCase):
         #        kernel[i,j] *= (-1.0)**(i+j)
         #print()
         #print(kernel)
-        #flt.set_kernel( flatten(kernel) )
+        flt.set_kernel( flatten(kernel) )
 
         #kernel = np.zeros((NxF, NyF))
         #kernel = sinc2d(kernel, X, Y)
         #flt.set_kernel( flatten(kernel) )
 
-        image  = np.random.rand(NxF, NyF)
+        ##################################################
+        image = np.zeros((NxF, NyF))
+
+        #centered on middle
+        #image[NxMesh:NxMesh+NxMesh, NyMesh:NyMesh+NyMesh]  = np.random.rand(NxMesh, NyMesh)
+
+        #centered on corner
+        #image[0:NxMesh, 0:NyMesh]  = np.random.rand(NxMesh, NyMesh)
+
+        # fill image
+        if False:
+            for i in range(-2, 1, 1):
+                for j in range(-2, 1, 1):
+                    iff = fftshift1d(i, NxF)
+                    jff = fftshift1d(j, NyF)
+                    #print("i={} j={} i2={} j2={}".format(i,j,iff,jff))
+                    image[iff,jff] = np.random.rand(1)
+
+        if True:
+            for i in range(0, NxMesh):
+                for j in range(0, NyMesh):
+                    image[i,j] = np.random.rand(1)
+
         flt.set_image(  flatten(image) )
 
+        ##################################################
+
         ker = reshape( flt.get_kernel(), NxF, NyF)
-        img = reshape( flt.get_image() , NxF, NyF)
+        img = reshape( flt.get_image( ), NxF, NyF)
 
         print()
         print(ker)
@@ -338,7 +462,7 @@ class Filters(unittest.TestCase):
         axs[0].imshow(ker, vmin=vmin, vmax=vmax)
         axs[1].imshow(img, vmin=vmin, vmax=vmax)
 
-        #flt.fft_kernel()
+        flt.fft_kernel()
         flt.fft_image_forward()
         ker2 = reshape( flt.get_kernel(), NxF, NyF)
         img2 = reshape( flt.get_image() , NxF, NyF)
@@ -351,8 +475,11 @@ class Filters(unittest.TestCase):
 
         axs[2].imshow(fftshift(ker2) )#, vmin=vmin, vmax=vmax)
         axs[3].imshow(fftshift(img2) )#, vmin=vmin, vmax=vmax)
+        print(fftshift(ker2))
+        print(fftshift(img2))
 
         #apply kernel
+        flt.apply_kernel()
         flt.apply_kernel()
         flt.fft_image_backward()
         ker3 = reshape( flt.get_kernel(), NxF, NyF)
@@ -363,6 +490,10 @@ class Filters(unittest.TestCase):
 
         axs[4].imshow(ker3, vmin=vmin, vmax=vmax)
         axs[5].imshow(img3, vmin=vmin, vmax=vmax)
+
+
+        #python conv2d for comparison
+
 
         plt.savefig("filter.png")
 

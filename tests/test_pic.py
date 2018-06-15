@@ -248,7 +248,7 @@ class PIC(unittest.TestCase):
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                cell.updateBoundaries(node)
+                cell.updateBoundaries2D(node)
 
         #interpolate fields
         fintp = pypic.ParticleFieldInterpolator()
