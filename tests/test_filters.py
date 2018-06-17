@@ -4,6 +4,8 @@ import sys
 sys.path.append('python')
 import numpy as np
 from math import floor, ceil
+from scipy.signal import convolve2d
+from scipy.signal import convolve
 
 import corgi
 import pyplasma as plasma
@@ -119,6 +121,8 @@ def reshape(vec, nx, ny):
     #return np.transpose( np.reshape(vec, (nx, ny)) )
     #return np.reshape(np.flipud(vec), (nx, ny)) 
 
+def flip(arr):
+    return np.fliplr(np.flipud(arr))
 
 #def fftshift1d(i, w):
 #    if i >= 0:
@@ -347,7 +351,7 @@ class Filters(unittest.TestCase):
 
     def test_smearing(self):
 
-        plt.fig = plt.figure(1, figsize=(6,4))
+        plt.fig = plt.figure(1, figsize=(4,6))
         plt.rc('font', family='serif', size=12)
         plt.rc('xtick')
         plt.rc('ytick')
@@ -358,8 +362,8 @@ class Filters(unittest.TestCase):
         for ai in range(8):
             axs.append( plt.subplot(gs[ai]) )
 
-        NxMesh = 20
-        NyMesh = 20
+        NxMesh = 6
+        NyMesh = 6
 
         #internal filter size is 3x Nx/y/zMesh
         NxF = NxMesh*3
@@ -445,7 +449,8 @@ class Filters(unittest.TestCase):
         if True:
             for i in range(0, NxMesh):
                 for j in range(0, NyMesh):
-                    image[i,j] = np.random.rand(1)
+                    #image[i,j] = np.random.rand(1)
+                    image[i+NxMesh,j+NyMesh] = np.random.rand(1)
 
         flt.set_image(  flatten(image) )
 
@@ -480,7 +485,6 @@ class Filters(unittest.TestCase):
 
         #apply kernel
         flt.apply_kernel()
-        flt.apply_kernel()
         flt.fft_image_backward()
         ker3 = reshape( flt.get_kernel(), NxF, NyF)
         img3 = reshape( flt.get_image() , NxF, NyF)
@@ -490,16 +494,30 @@ class Filters(unittest.TestCase):
 
         axs[4].imshow(ker3, vmin=vmin, vmax=vmax)
         axs[5].imshow(img3, vmin=vmin, vmax=vmax)
+        #axs[5].imshow(fftshift(img3), vmin=vmin, vmax=vmax)
+        axs[5].imshow(flip(img3), vmin=vmin, vmax=vmax)
 
 
         #python conv2d for comparison
+        #pimg = img[
+        pyimg = convolve2d(img, ker, mode='same', boundary='wrap')
+        print(pyimg.min(), pyimg.max())
+        axs[6].imshow(fftshift(pyimg), vmin=vmin, vmax=vmax)
 
+
+        pyimg2 = convolve(img, ker, mode='same' )
+        pyimg2 /= pyimg2.max()
+        print(pyimg2.min(), pyimg2.max())
+        #axs[7].imshow(pyimg2, vmin=vmin, vmax=vmax)
+
+        err = fftshift(pyimg) - flip(img3)
+        print(err)
+        print("min = {}".format(err.min()))
+        print("max = {}".format(err.max()))
+
+        axs[7].imshow(err, vmin=-1.0, vmax=1.0)
 
         plt.savefig("filter.png")
-
-
-
-
 
 
     def test_filters_in_action(self):
