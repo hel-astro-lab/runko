@@ -182,31 +182,54 @@ class Filter {
   }
 
 
+  /// Apply 3-point digital filter 
+  virtual void direct_convolve_3point()
+  {
 
-  // in, out are m x n images (integer data)
-  // K is the kernel size (KxK) - currently needs to be an odd number, e.g. 3
-  // coeffs[K][K] is a 2D array of integer coefficients
-  // scale is a scaling factor to normalise the filter gain
+    // 3-point digital filter
+    std::vector<double> coeffs = {{ 1., 2., 1.,
+                                    2., 4., 2.,
+                                    1., 2., 1. }};
+    // normalize
+    double norm = 0.0;
+    for(double c : coeffs) norm += c;
+    for(size_t i=0; i<coeffs.size(); i++) coeffs[i] /= norm;
+
+    std::vector<double> image;
+    image.resize(height*width); 
+
+    for (int i=0; i < height; ++i)
+      for (int j=0; j < width;  ++j) 
+        image[ index(i,j) ] = jx[ index(i,j) ][0];
+
+    direct_convolve(image.data(), coeffs.data(), sqrt( coeffs.size() ) );
+
+    // normalize and copy back
+    norm = 1.0;
+    for (int i=0; i < height; ++i)
+      for (int j=0; j < width;  ++j) 
+        jx[ index(i,j) ][0] = image[ index(i,j) ]/norm;
+
+
+  }
+
+
+  /// initialize 3-point digital filter into kernel array
   virtual void init_3point_kernel(int times)
   {
 
     // kernel
-    int K = 3; // three point kernel
+    //int K = 3; // three point kernel
 
     // 3-point digital filter
     std::vector<double> coeffs = {{ 1., 2., 1.,
                                     2., 4., 2.,
                                     1., 2., 1. }};
 
-    // normalize
-    // double scale = 0.0;
-    // for (double c : coeffs) scale += c;
+    double norm = 0.0;
+    for(double c : coeffs) norm += c;
+    for(size_t i=0; i<coeffs.size(); i++) coeffs[i] /= norm;
 
-    // out array
-    //double data;
-    //std::vector<double> out;
-    //out.resize(width*height);
-      
 
     // create temporary Real number image array
     // NOTE: can not easily copy kernel into pure real part due to interleaved nature
@@ -217,55 +240,15 @@ class Filter {
       for (int j=0; j < width;  ++j) 
         image[ index(i,j) ] = kernel[ index(i,j) ][0];
 
-
-
     // perform convolution N times
-    for(int N=0; N < times; N++) {
-
-      /*
-      //for (int i = K/2; i < height - K/2; ++i) // iterate through image
-      for (int i=0; i < height; ++i) // iterate through circular image
-      {
-        //for (int j = K/2; j < width -K/2; ++j) // iterate through image
-        for (int j=0; j < width; ++j) // iterate through circular image
-        {
-          double sum = 0.0; // sum will be the sum of input data * coeff terms
-      
-          // convolution of single point
-          for (int ii = -K/2; ii <= K/2; ++ii) // iterate over kernel
-          {
-            for (int jj = -K/2; jj <= K/2; ++jj)
-            {
-              //int data = in[i + ii][j +jj];
-              data = kernel[ index(i+ii, j+jj) ][0]; // real part
-              //double coeff = coeffs[ii + K / 2][jj + K / 2];
-              double coeff = coeffs[ (ii + K/2)*K + (jj + K/2) ];
-      
-              sum += data * coeff;
-            }
-          }
-
-          //out[i][j] = sum / scale; // scale sum of convolution products and store in output
-          out[ index(i,j) ] = sum/scale; // scale sum of convolution products and store in output
-        }
-      } // end of conv
-
-      // copy (real part) back
-      for (int i=0; i < height; ++i)
-        for (int j=0; j < width;  ++j) 
-          kernel[ index(i,j) ][0] = out[ index(i,j) ];
-      */
-
-      direct_convolve(image.data(), coeffs.data(), K);
-
-    } // end of ntimes loop
-
+    for(int N=0; N < times; N++) direct_convolve(image.data(), coeffs.data(), sqrt( coeffs.size() ) );
     
     // normalize
-    double norm = 0.0;
-    for (int i=0; i < height; ++i)
-      for (int j=0; j < width;  ++j) 
-        norm += image[ index(i,j) ];
+    // norm = 0.0;
+    //for (int i=0; i < height; ++i)
+    //  for (int j=0; j < width;  ++j) 
+    //    norm += image[ index(i,j) ];
+    norm = 1.0;
 
     // normalize and copy back
     for (int i=0; i < height; ++i)
@@ -273,11 +256,16 @@ class Filter {
         kernel[ index(i,j) ][0] = image[ index(i,j) ]/norm;
 
   }
-  
 
 
   /// Direct circular convolve two arrays
   // NOTE: assumes height x width for image size
+  //
+  // in, out are m x n images (integer data)
+  // K is the kernel size (KxK) - currently needs to be an odd number, e.g. 3
+  // coeffs[K][K] is a 2D array of integer coefficients
+  // scale is a scaling factor to normalise the filter gain
+  //
   void direct_convolve(
       double* image,
       double* kernel,
@@ -302,7 +290,6 @@ class Filter {
         {
           for (int jj = -K/2; jj <= K/2; ++jj)
           {
-            //int data = in[i + ii][j +jj];
             data = image[ index(i+ii, j+jj) ]; 
             double coeff = kernel[ (ii + K/2)*K + (jj + K/2) ];
 

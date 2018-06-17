@@ -526,15 +526,15 @@ class Filters(unittest.TestCase):
 
     def test_smearing2(self):
 
-        plt.fig = plt.figure(1, figsize=(4,4))
+        plt.fig = plt.figure(1, figsize=(6,4))
         plt.rc('font', family='serif', size=12)
         plt.rc('xtick')
         plt.rc('ytick')
         
-        gs = plt.GridSpec(3, 2)
+        gs = plt.GridSpec(4, 2)
         
         axs = []
-        for ai in range(6):
+        for ai in range(8):
             axs.append( plt.subplot(gs[ai]) )
 
         NxMesh = 10
@@ -553,7 +553,7 @@ class Filters(unittest.TestCase):
         # init kernel
         print("initing kernel.....")
         flt.init_kernel()
-        flt.init_3point(1)
+        flt.init_3point(2)
 
         #kernel = np.zeros((NxF, NyF))
         #init_center(kernel, digi3)
@@ -616,8 +616,33 @@ class Filters(unittest.TestCase):
 
         axs[4].imshow(ker3, vmin=vmin, vmax=vmax)
         axs[5].imshow(img3, vmin=vmin, vmax=vmax)
-        #axs[5].imshow(fftshift(img3), vmin=vmin, vmax=vmax)
-        #axs[5].imshow(flip(img3), vmin=vmin, vmax=vmax)
+
+        cimg_fft = img3[NxMesh+1:2*NxMesh+1, NyMesh+1:2*NyMesh+1]
+        axs[5].imshow(cimg_fft, vmin=vmin, vmax=vmax)
+
+        ################################################### 
+        # digital filtering for comparison
+        flt.set_image( flatten(image) ) # set original image back
+        img4 = reshape( flt.get_image( ), NxF, NyF)
+        #axs[6].imshow(img4, vmin=vmin, vmax=vmax)
+
+        flt.direct_convolve_3point() # direct convolve
+        flt.direct_convolve_3point() # direct convolve
+
+        img5 = reshape( flt.get_image( ), NxF, NyF)
+
+        cimg_dc = img5[NxMesh:2*NxMesh, NyMesh:2*NyMesh]
+        axs[6].imshow(cimg_dc, vmin=vmin, vmax=vmax)
+        
+
+        err = cimg_dc - flip(cimg_fft)
+        print( err )
+        axs[7].imshow( err, vmin=-1.0, vmax=1.0)
+
+        print("max img orig: {}".format(img4.max() ))
+        print("max img fft : {}".format(img3.max() ))
+        print("max img conv: {}".format(img5.max() ))
+        print("max error   : {}".format( np.abs(err).max() ))
 
 
         plt.savefig("filter2.png")
