@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <tuple>
+#include <assert.h>
 
 #include "cell.h"
 #include "communicate.h"
@@ -21,11 +22,27 @@ using units::pi;
 // Because of the fftw3 usage this class is internally heavily relying on C code
 // instead of C++.
 class Filter {
+    
+  /// circular/wrap indexing
+  inline int circular(int x, int M)
+  {
+    if (x<0)
+      return x+M;
+    if(x >= M)
+      return x-M;
+    return x;
+  }
 
-  /// internal indexing, 
+  /// internal circular indexing, 
   // NOTE: this is different from the rest of the code but done like this
   // in order to appear consistent with the fttw examples.
   inline int index(int i, int j) {
+    i = circular(i, height);
+    j = circular(j, width);
+
+    assert(i >= 0 && i < height);
+    assert(j >= 0 && j < width);
+
     return i*width + j;
   }
 
@@ -120,30 +137,43 @@ class Filter {
   }
 
 
-  /// initialize kernel given the rank
+  /// initialize kernel 
+  //
+  // In practice this is just a complex way to set kernel[0,0] = 1,
+  // but we do it like this for clarity as the syntax is used later on.
   virtual void init_kernel() 
   {
     double val;
-    int h2 = floor(height/2);
-    int w2 = floor(width /2);
+
+    // kernel size (even number because of initialization)
+    int knx = height/3;
+    int kny = width /3;
+
+    // halo region size
+    int h1 = height/2; // division is floor(x/y) automatically
+    int w1 = width /2;
+    int h2 = (height + 2 - 1)/2; // ceil(x/y)
+    int w2 = (width  + 2 - 1)/2;
+
     int wi,wj;
 
-    for(int i =-h2; i<=h2 ; ++i) {
-      for(int j=-w2; j<=w2 ; ++j) {
+    for(int i =-h1; i<=h1 ; ++i) {
+      for(int j=-w1; j<=w1 ; ++j) {
         auto zindx = zero_wrapped_index(i,j);
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
           
         val = 0.0;
         if ((i ==  0) && (j ==  0)) val = 1.0;
+
         //if ((i ==  1) && (j ==  0)) val = 1.0;
         //if ((i ==  0) && (j ==  1)) val = 1.0;
         //if ((i ==  1) && (j ==  1)) val = 1.0;
         //if ((i == -1) && (j ==  0)) val = 1.0;
         //if ((i ==  0) && (j == -1)) val = 1.0;
         //if ((i == -1) && (j == -1)) val = 1.0;
-        //if ((i == 1)  && (j == -1)) val = 1.0;
-        //if ((i ==-1)  && (j ==  1)) val = 1.0;
+        //if ((i == 1 ) && (j == -1)) val = 1.0;
+        //if ((i ==-1 ) && (j ==  1)) val = 1.0;
         
         kernel[ index(wi,wj) ][0] = val; // real part
         kernel[ index(wi,wj) ][1] = 0.0; // complex part
@@ -152,7 +182,149 @@ class Filter {
   }
 
 
+
+  // in, out are m x n images (integer data)
+  // K is the kernel size (KxK) - currently needs to be an odd number, e.g. 3
+  // coeffs[K][K] is a 2D array of integer coefficients
+  // scale is a scaling factor to normalise the filter gain
+  virtual void init_3point_kernel(int times)
+  {
+
+    // kernel
+    int K = 3; // three point kernel
+
+    // 3-point digital filter
+    std::vector<double> coeffs = {{ 1., 2., 1.,
+                                    2., 4., 2.,
+                                    1., 2., 1. }};
+
+    // normalize
+    // double scale = 0.0;
+    // for (double c : coeffs) scale += c;
+
+    // out array
+    //double data;
+    //std::vector<double> out;
+    //out.resize(width*height);
+      
+
+    // create temporary Real number image array
+    // NOTE: can not easily copy kernel into pure real part due to interleaved nature
+    std::vector<double> image;
+    image.resize(height*width); 
+
+    for (int i=0; i < height; ++i)
+      for (int j=0; j < width;  ++j) 
+        image[ index(i,j) ] = kernel[ index(i,j) ][0];
+
+
+
+    // perform convolution N times
+    for(int N=0; N < times; N++) {
+
+      /*
+      //for (int i = K/2; i < height - K/2; ++i) // iterate through image
+      for (int i=0; i < height; ++i) // iterate through circular image
+      {
+        //for (int j = K/2; j < width -K/2; ++j) // iterate through image
+        for (int j=0; j < width; ++j) // iterate through circular image
+        {
+          double sum = 0.0; // sum will be the sum of input data * coeff terms
+      
+          // convolution of single point
+          for (int ii = -K/2; ii <= K/2; ++ii) // iterate over kernel
+          {
+            for (int jj = -K/2; jj <= K/2; ++jj)
+            {
+              //int data = in[i + ii][j +jj];
+              data = kernel[ index(i+ii, j+jj) ][0]; // real part
+              //double coeff = coeffs[ii + K / 2][jj + K / 2];
+              double coeff = coeffs[ (ii + K/2)*K + (jj + K/2) ];
+      
+              sum += data * coeff;
+            }
+          }
+
+          //out[i][j] = sum / scale; // scale sum of convolution products and store in output
+          out[ index(i,j) ] = sum/scale; // scale sum of convolution products and store in output
+        }
+      } // end of conv
+
+      // copy (real part) back
+      for (int i=0; i < height; ++i)
+        for (int j=0; j < width;  ++j) 
+          kernel[ index(i,j) ][0] = out[ index(i,j) ];
+      */
+
+      direct_convolve(image.data(), coeffs.data(), K);
+
+    } // end of ntimes loop
+
+    
+    // normalize
+    double norm = 0.0;
+    for (int i=0; i < height; ++i)
+      for (int j=0; j < width;  ++j) 
+        norm += image[ index(i,j) ];
+
+    // normalize and copy back
+    for (int i=0; i < height; ++i)
+      for (int j=0; j < width;  ++j) 
+        kernel[ index(i,j) ][0] = image[ index(i,j) ]/norm;
+
+  }
+  
+
+
+  /// Direct circular convolve two arrays
+  // NOTE: assumes height x width for image size
+  void direct_convolve(
+      double* image,
+      double* kernel,
+      int K)
+  {
+
+    // out array
+    double data;
+    std::vector<double> out;
+    out.resize(width*height);
+
+    //for (int i = K/2; i < height - K/2; ++i) // iterate through image
+    for (int i=0; i < height; ++i) // iterate through circular image
+    {
+      //for (int j = K/2; j < width -K/2; ++j) // iterate through image
+      for (int j=0; j < width; ++j) // iterate through circular image
+      {
+        double sum = 0.0; // sum will be the sum of input data * coeff terms
+
+        // convolution of single point
+        for (int ii = -K/2; ii <= K/2; ++ii) // iterate over kernel
+        {
+          for (int jj = -K/2; jj <= K/2; ++jj)
+          {
+            //int data = in[i + ii][j +jj];
+            data = image[ index(i+ii, j+jj) ]; 
+            double coeff = kernel[ (ii + K/2)*K + (jj + K/2) ];
+
+            sum += data * coeff;
+          }
+        }
+        out[ index(i,j) ] = sum; // sum of convolution products and store in output
+      }
+    } // end of conv
+
+    // copy (real part) back
+    for (int i=0; i < height; ++i)
+      for (int j=0; j < width;  ++j) 
+        image[ index(i,j) ] = out[ index(i,j) ];
+
+  } 
+
+
+
+
   /// initialize Gaussian kernel given the sigma
+  /*
   virtual void init_gaussian_kernel(double sigma) 
   {
     double val;
@@ -185,9 +357,11 @@ class Filter {
       kernel[ index(i,j) ][0] /= sum;
 
   }
+  */
 
 
   /// initialize 2d box sinc filter (in frequency space)
+  /*
   virtual void init_sinc_kernel(double X, double Y) 
   {
     double val, u,v;
@@ -231,10 +405,12 @@ class Filter {
       kernel[ index(i,j) ][0] /= sum;
 
   }
+  */
 
 
   /// Low-pass filter in frequency space
   // uses cutoff to describe how many array elements are filtered
+  /*
   virtual void init_lowpass_fft_kernel(int cutoff) 
   {
     int h2min = (int)floor((double)height/2);
@@ -293,6 +469,7 @@ class Filter {
     //  kernel[ index(i,j) ][0] /= sum;
 
   }
+  */
 
 
   // normalize fft transformation
@@ -318,6 +495,7 @@ class Filter {
   }
 
 
+  /// Multiply kernel and image
   void apply_kernel()
   {
     double x, y, u, v;

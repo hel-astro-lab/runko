@@ -248,6 +248,7 @@ class Filters(unittest.TestCase):
 
 
     def test_init(self):
+        """ write to kernel & image variables and read back"""
 
         NxMesh = 3
         NyMesh = 3
@@ -277,6 +278,7 @@ class Filters(unittest.TestCase):
                 
 
     def test_kernel_init(self):
+        """ TODO: transform with unitary transformation and get original back"""
 
         NxMesh = 3
         NyMesh = 3
@@ -309,9 +311,9 @@ class Filters(unittest.TestCase):
 
 
 
-    # FFT transform image forward and then backward to see if we get the same result back
-    # NOTE: floating-point conversion if not exact so we need some error tolerance
     def test_fft_backandforth(self):
+        """FFT transform image forward and then backward to see if we get the same result back
+         NOTE: floating-point conversion if not exact so we need some error tolerance"""
 
         NxMesh = 3
         NyMesh = 4 #make Nx != Ny to catch additional index bugs
@@ -350,6 +352,7 @@ class Filters(unittest.TestCase):
 
 
     def test_smearing(self):
+        """ put Gaussian filter in, convolve, and compare to scipy.conv2d"""
 
         plt.fig = plt.figure(1, figsize=(4,6))
         plt.rc('font', family='serif', size=12)
@@ -485,6 +488,7 @@ class Filters(unittest.TestCase):
 
         #apply kernel
         flt.apply_kernel()
+        flt.apply_kernel()
         flt.fft_image_backward()
         ker3 = reshape( flt.get_kernel(), NxF, NyF)
         img3 = reshape( flt.get_image() , NxF, NyF)
@@ -518,6 +522,106 @@ class Filters(unittest.TestCase):
         axs[7].imshow(err, vmin=-1.0, vmax=1.0)
 
         plt.savefig("filter.png")
+
+
+    def test_smearing2(self):
+
+        plt.fig = plt.figure(1, figsize=(4,4))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(3, 2)
+        
+        axs = []
+        for ai in range(6):
+            axs.append( plt.subplot(gs[ai]) )
+
+        NxMesh = 10
+        NyMesh = 10
+
+        #internal filter size is 3x Nx/y/zMesh
+        NxF = NxMesh*3
+        NyF = NyMesh*3
+
+        vmin = 0.0
+        vmax = 1.0
+
+        flt = pypic.Filter(NxMesh, NyMesh)
+
+        ###################################################
+        # init kernel
+        print("initing kernel.....")
+        flt.init_kernel()
+        flt.init_3point(1)
+
+        #kernel = np.zeros((NxF, NyF))
+        #init_center(kernel, digi3)
+        kernel = reshape( flt.get_kernel(), NxF, NyF)
+        print(kernel)
+        #flt.set_kernel( flatten(kernel) )
+
+
+        ##################################################
+        # create image
+
+        image = np.zeros((NxF, NyF))
+        for i in range(0, NxMesh):
+            for j in range(0, NyMesh):
+                #image[i,j] = np.random.rand(1)
+                image[i+NxMesh,j+NyMesh] = np.random.rand(1)
+                #image[i+NxMesh,j+NyMesh] = (i + j)/(NxMesh+NyMesh)
+
+        flt.set_image(  flatten(image) )
+
+        ##################################################
+        # visualize
+
+        ker = reshape( flt.get_kernel(), NxF, NyF)
+        img = reshape( flt.get_image( ), NxF, NyF)
+        print(ker)
+
+        axs[0].imshow(ker )#, vmin=vmin, vmax=vmax)
+        axs[1].imshow(img, vmin=vmin, vmax=vmax)
+
+        ##################################################
+        # fft
+
+        flt.fft_kernel()
+        flt.fft_image_forward()
+        ker2 = reshape( flt.get_kernel(), NxF, NyF)
+        img2 = reshape( flt.get_image() , NxF, NyF)
+
+        print()
+        print(ker2)
+
+        print(ker2.min(), ker2.max())
+        print(img2.min(), img2.max())
+
+        axs[2].imshow(fftshift(ker2) )#, vmin=vmin, vmax=vmax)
+        axs[3].imshow(fftshift(img2) )#, vmin=vmin, vmax=vmax)
+        #print(fftshift(ker2))
+        #print(fftshift(img2))
+
+        ##################################################
+        # apply kernel
+
+        flt.apply_kernel()
+        flt.fft_image_backward()
+        ker3 = reshape( flt.get_kernel(), NxF, NyF)
+        img3 = reshape( flt.get_image() , NxF, NyF)
+
+        print(ker3.min(), ker3.max())
+        print(img3.min(), img3.max())
+
+        axs[4].imshow(ker3, vmin=vmin, vmax=vmax)
+        axs[5].imshow(img3, vmin=vmin, vmax=vmax)
+        #axs[5].imshow(fftshift(img3), vmin=vmin, vmax=vmax)
+        #axs[5].imshow(flip(img3), vmin=vmin, vmax=vmax)
+
+
+        plt.savefig("filter2.png")
+
 
 
     def test_filters_in_action(self):
