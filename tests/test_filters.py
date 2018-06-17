@@ -351,7 +351,7 @@ class Filters(unittest.TestCase):
 
 
 
-    def test_smearing(self):
+    def skip_smearing_test0(self):
         """ put Gaussian filter in, convolve, and compare to scipy.conv2d"""
 
         plt.fig = plt.figure(1, figsize=(4,6))
@@ -526,19 +526,18 @@ class Filters(unittest.TestCase):
 
     def test_smearing2(self):
 
-        plt.fig = plt.figure(1, figsize=(6,4))
-        plt.rc('font', family='serif', size=12)
-        plt.rc('xtick')
-        plt.rc('ytick')
-        
-        gs = plt.GridSpec(4, 2)
-        
-        axs = []
-        for ai in range(8):
-            axs.append( plt.subplot(gs[ai]) )
+        #plt.fig = plt.figure(1, figsize=(4,6))
+        #plt.rc('font', family='serif', size=12)
+        #plt.rc('xtick')
+        #plt.rc('ytick')
+        #gs = plt.GridSpec(4, 2)
+        #
+        #axs = []
+        #for ai in range(8):
+        #    axs.append( plt.subplot(gs[ai]) )
 
-        NxMesh = 10
-        NyMesh = 10
+        NxMesh = 50
+        NyMesh = 50
 
         #internal filter size is 3x Nx/y/zMesh
         NxF = NxMesh*3
@@ -551,16 +550,12 @@ class Filters(unittest.TestCase):
 
         ###################################################
         # init kernel
-        print("initing kernel.....")
+        #print("initing kernel.....")
         flt.init_kernel()
-        flt.init_3point(2)
+        flt.init_3point(1) 
 
-        #kernel = np.zeros((NxF, NyF))
-        #init_center(kernel, digi3)
-        kernel = reshape( flt.get_kernel(), NxF, NyF)
-        print(kernel)
-        #flt.set_kernel( flatten(kernel) )
-
+        #kernel = reshape( flt.get_kernel(), NxF, NyF)
+        #print(kernel)
 
         ##################################################
         # create image
@@ -568,9 +563,7 @@ class Filters(unittest.TestCase):
         image = np.zeros((NxF, NyF))
         for i in range(0, NxMesh):
             for j in range(0, NyMesh):
-                #image[i,j] = np.random.rand(1)
                 image[i+NxMesh,j+NyMesh] = np.random.rand(1)
-                #image[i+NxMesh,j+NyMesh] = (i + j)/(NxMesh+NyMesh)
 
         flt.set_image(  flatten(image) )
 
@@ -579,10 +572,10 @@ class Filters(unittest.TestCase):
 
         ker = reshape( flt.get_kernel(), NxF, NyF)
         img = reshape( flt.get_image( ), NxF, NyF)
-        print(ker)
+        #print(ker)
 
-        axs[0].imshow(ker )#, vmin=vmin, vmax=vmax)
-        axs[1].imshow(img, vmin=vmin, vmax=vmax)
+        #axs[0].imshow(ker )#, vmin=vmin, vmax=vmax)
+        #axs[1].imshow(img, vmin=vmin, vmax=vmax)
 
         ##################################################
         # fft
@@ -592,16 +585,14 @@ class Filters(unittest.TestCase):
         ker2 = reshape( flt.get_kernel(), NxF, NyF)
         img2 = reshape( flt.get_image() , NxF, NyF)
 
-        print()
-        print(ker2)
+        #print()
+        #print(ker2)
 
-        print(ker2.min(), ker2.max())
-        print(img2.min(), img2.max())
+        #print(ker2.min(), ker2.max())
+        #print(img2.min(), img2.max())
 
-        axs[2].imshow(fftshift(ker2) )#, vmin=vmin, vmax=vmax)
-        axs[3].imshow(fftshift(img2) )#, vmin=vmin, vmax=vmax)
-        #print(fftshift(ker2))
-        #print(fftshift(img2))
+        #axs[2].imshow(fftshift(ker2) )#, vmin=vmin, vmax=vmax)
+        #axs[3].imshow(fftshift(img2) )#, vmin=vmin, vmax=vmax)
 
         ##################################################
         # apply kernel
@@ -611,14 +602,14 @@ class Filters(unittest.TestCase):
         ker3 = reshape( flt.get_kernel(), NxF, NyF)
         img3 = reshape( flt.get_image() , NxF, NyF)
 
-        print(ker3.min(), ker3.max())
-        print(img3.min(), img3.max())
+        #print(ker3.min(), ker3.max())
+        #print(img3.min(), img3.max())
 
-        axs[4].imshow(ker3, vmin=vmin, vmax=vmax)
-        axs[5].imshow(img3, vmin=vmin, vmax=vmax)
+        #axs[4].imshow(ker3, vmin=vmin, vmax=vmax)
+        #axs[5].imshow(img3, vmin=vmin, vmax=vmax)
 
-        cimg_fft = img3[NxMesh+1:2*NxMesh+1, NyMesh+1:2*NyMesh+1]
-        axs[5].imshow(cimg_fft, vmin=vmin, vmax=vmax)
+        cimg_fft = img3[NxMesh:2*NxMesh, NyMesh:2*NyMesh]
+        #axs[5].imshow(cimg_fft, vmin=vmin, vmax=vmax)
 
         ################################################### 
         # digital filtering for comparison
@@ -626,27 +617,31 @@ class Filters(unittest.TestCase):
         img4 = reshape( flt.get_image( ), NxF, NyF)
         #axs[6].imshow(img4, vmin=vmin, vmax=vmax)
 
-        flt.direct_convolve_3point() # direct convolve
-        flt.direct_convolve_3point() # direct convolve
+        for i in range(1):
+            flt.direct_convolve_3point() # direct convolve
 
         img5 = reshape( flt.get_image( ), NxF, NyF)
 
         cimg_dc = img5[NxMesh:2*NxMesh, NyMesh:2*NyMesh]
-        axs[6].imshow(cimg_dc, vmin=vmin, vmax=vmax)
+        #axs[6].imshow(cimg_dc, vmin=vmin, vmax=vmax)
         
 
-        err = cimg_dc - flip(cimg_fft)
-        print( err )
-        axs[7].imshow( err, vmin=-1.0, vmax=1.0)
+        ################################################### 
+        # compute error between the two methods
+        err = cimg_dc - cimg_fft
+        #print( err )
+        #axs[7].imshow( err, vmin=-1.0, vmax=1.0)
 
-        print("max img orig: {}".format(img4.max() ))
-        print("max img fft : {}".format(img3.max() ))
-        print("max img conv: {}".format(img5.max() ))
-        print("max error   : {}".format( np.abs(err).max() ))
+        #print("max img orig: {}".format(img4.max() ))
+        #print("max img fft : {}".format(img3.max() ))
+        #print("max img conv: {}".format(img5.max() ))
+        #print("max error   : {}".format( np.abs(err).max() ))
 
+        #plt.savefig("filter2.png")
 
-        plt.savefig("filter2.png")
-
+        for i in range(NxMesh):
+            for j in range(NyMesh):
+                self.assertAlmostEqual(cimg_dc[i,j], cimg_fft[i,j], places=10) 
 
 
     def test_filters_in_action(self):

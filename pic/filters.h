@@ -182,7 +182,7 @@ class Filter {
   }
 
 
-  /// Apply 3-point digital filter 
+  /// Apply 3-point digital filter directly
   virtual void direct_convolve_3point()
   {
 
@@ -214,7 +214,7 @@ class Filter {
   }
 
 
-  /// initialize 3-point digital filter into kernel array
+  /// initialize 3-point digital filter into kernel array for FFT transformations
   virtual void init_3point_kernel(int times)
   {
 
@@ -469,6 +469,8 @@ class Filter {
   }
 
 
+
+
   /// FFT kernel (once is enough)
   virtual void fft_kernel()         { fftw_execute(p_kernel); }
 
@@ -495,7 +497,7 @@ class Filter {
         v = kernel[ index(i,j) ][1];
 
         jx[ index(i,j) ][0] = x*u - y*v;
-        jx[ index(i,j) ][1] = x*v - y*u;
+        jx[ index(i,j) ][1] = x*v + y*u;
       }
     }
 
