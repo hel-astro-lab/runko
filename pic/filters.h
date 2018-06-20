@@ -15,6 +15,19 @@
 
 namespace pic {
 
+
+fields::YeeLattice& get_neighbor_yee(
+    int i, int j,
+    pic::PicCell& cell, 
+    corgi::Node& node)
+{
+  auto cneigh = std::dynamic_pointer_cast<fields::PlasmaCell>(
+        node.getCellPtr( cell.neighs(i, j) ));
+  return cneigh->getYee();
+}
+
+
+
 using units::pi;
 
 //! Spatial current filter using fftw
@@ -54,9 +67,9 @@ class Filter {
   fftw_complex *kernel;
 
   /// fftw3 transform plans
-  fftw_plan p_kernel, p_forw, p_back;
-
-
+  fftw_plan p_kernel, 
+            p_forw_jx, p_forw_jy, p_forw_jz, 
+            p_back_jx, p_back_jy, p_back_jz;
 
   public:
 
@@ -89,8 +102,13 @@ class Filter {
     // TODO: use fftw guru interface to apply same plan for all arrays (in same direction)
     p_kernel = fftw_plan_dft_2d(height, width, kernel, kernel, FFTW_FORWARD,  FFTW_MEASURE);
 
-    p_forw   = fftw_plan_dft_2d(height, width, jx, jx, FFTW_FORWARD,  FFTW_MEASURE);
-    p_back   = fftw_plan_dft_2d(height, width, jx, jx, FFTW_BACKWARD, FFTW_MEASURE);
+    p_forw_jx   = fftw_plan_dft_2d(height, width, jx, jx, FFTW_FORWARD,  FFTW_MEASURE);
+    p_forw_jy   = fftw_plan_dft_2d(height, width, jy, jy, FFTW_FORWARD,  FFTW_MEASURE);
+    p_forw_jz   = fftw_plan_dft_2d(height, width, jz, jz, FFTW_FORWARD,  FFTW_MEASURE);
+
+    p_back_jx   = fftw_plan_dft_2d(height, width, jx, jx, FFTW_BACKWARD, FFTW_MEASURE);
+    p_back_jy   = fftw_plan_dft_2d(height, width, jy, jy, FFTW_BACKWARD, FFTW_MEASURE);
+    p_back_jz   = fftw_plan_dft_2d(height, width, jz, jz, FFTW_BACKWARD, FFTW_MEASURE);
 
   }
 
@@ -102,8 +120,12 @@ class Filter {
     fftw_free(jz);
     fftw_free(kernel);
 
-    fftw_destroy_plan(p_forw);
-    fftw_destroy_plan(p_back);
+    fftw_destroy_plan(p_forw_jx);
+    fftw_destroy_plan(p_forw_jy);
+    fftw_destroy_plan(p_forw_jz);
+    fftw_destroy_plan(p_back_jx);
+    fftw_destroy_plan(p_back_jy);
+    fftw_destroy_plan(p_back_jz);
   }
 
 
@@ -195,20 +217,32 @@ class Filter {
     for(double c : coeffs) norm += c;
     for(size_t i=0; i<coeffs.size(); i++) coeffs[i] /= norm;
 
-    std::vector<double> image;
-    image.resize(height*width); 
+    std::vector<double> image1, image2, image3;
+    image1.resize(height*width); 
+    image2.resize(height*width); 
+    image3.resize(height*width); 
 
-    for (int i=0; i < height; ++i)
-      for (int j=0; j < width;  ++j) 
-        image[ index(i,j) ] = jx[ index(i,j) ][0];
+    for (int i=0; i < height; ++i) {
+      for (int j=0; j < width;  ++j) {
+        image1[ index(i,j) ] = jx[ index(i,j) ][0];
+        image2[ index(i,j) ] = jy[ index(i,j) ][0];
+        image3[ index(i,j) ] = jz[ index(i,j) ][0];
+      }
+    }
 
-    direct_convolve(image.data(), coeffs.data(), sqrt( coeffs.size() ) );
+    direct_convolve(image1.data(), coeffs.data(), sqrt( coeffs.size() ) );
+    direct_convolve(image2.data(), coeffs.data(), sqrt( coeffs.size() ) );
+    direct_convolve(image3.data(), coeffs.data(), sqrt( coeffs.size() ) );
 
     // normalize and copy back
     norm = 1.0;
-    for (int i=0; i < height; ++i)
-      for (int j=0; j < width;  ++j) 
-        jx[ index(i,j) ][0] = image[ index(i,j) ]/norm;
+    for (int i=0; i < height; ++i) {
+      for (int j=0; j < width;  ++j) {
+        jx[ index(i,j) ][0] = image1[ index(i,j) ]/norm;
+        jy[ index(i,j) ][0] = image2[ index(i,j) ]/norm;
+        jz[ index(i,j) ][0] = image3[ index(i,j) ]/norm;
+      }
+    }
 
 
   }
@@ -311,26 +345,34 @@ class Filter {
 
 
   /// initialize Gaussian kernel given the sigma
-  /*
-  virtual void init_gaussian_kernel(double sigma) 
+  virtual void init_gaussian_kernel(double sigx, double sigy) 
   {
+    // kernel size (even number because of initialization)
+    int knx = height/3;
+    int kny = width /3;
+
+    // halo region size
+    int h1 = height/2; // division is floor(x/y) automatically
+    int w1 = width /2;
+    int h2 = (height + 2 - 1)/2; // ceil(x/y)
+    int w2 = (width  + 2 - 1)/2;
+
+    int wi,wj;
     double val;
-    int h2 = floor(height/2);
-    int w2 = floor(width /2);
-    int wi, wj;
 
     double sum = 0.0;
-    for(int i =-h2; i<=h2 ; ++i) {
-      for(int j=-w2; j<=w2 ; ++j) {
+    for(int i =-h1; i<h2; ++i) {
+      for(int j=-w1; j<w2; ++j) {
         auto zindx = zero_wrapped_index(i,j);
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
 
-        val = 0.0;
-        if (i*i + j*j < 200.0) {
-          val = exp(- 0.5*((double)(i*i))/sigma/sigma)
-              * exp(- 0.5*((double)(j*j))/sigma/sigma);
-        }
+        assert(wi >= 0 && wi < height);
+        assert(wj >= 0 && wj < width);
+
+        val = 1.0;
+        val *= exp( -0.5*((double)(i*i))/sigx/sigx);
+        val *= exp( -0.5*((double)(j*j))/sigy/sigy);
 
         kernel[ index(wi,wj) ][0] = val; // real part
         kernel[ index(wi,wj) ][1] = 0.0; // complex part
@@ -339,12 +381,11 @@ class Filter {
     }
 
     // normalize 
-    for(int i =0; i<height ; ++i)
-    for(int j=0; j<width ; ++j)
-      kernel[ index(i,j) ][0] /= sum;
+    //for(int i=0; i<height; ++i)
+    //for(int j=0; j<width;  ++j)
+    //  kernel[ index(i,j) ][0] /= sum;
 
   }
-  */
 
 
   /// initialize 2d box sinc filter (in frequency space)
@@ -397,74 +438,54 @@ class Filter {
 
   /// Low-pass filter in frequency space
   // uses cutoff to describe how many array elements are filtered
-  /*
   virtual void init_lowpass_fft_kernel(int cutoff) 
   {
-    int h2min = (int)floor((double)height/2);
-    int w2min = (int)floor((double)width /2);
-    int h2max = (int)ceil( (double)height/2);
-    int w2max = (int)ceil( (double)width /2);
 
-    int h3 = height/3;
-    int w3 = width /3;
-    int wi, wj;
+    // kernel size (even number because of initialization)
+    int knx = height/3;
+    int kny = width /3;
 
-    std::cout << "h2: " << h2min << " " << h2max << " w2: " << w2min << " " << w2max << '\n';
-    std::cout << "h3: " << h3 << " w3: " << w3 << '\n';
+    // halo region size
+    int h1 = height/2; // division is floor(x/y) automatically
+    int w1 = width /2;
+    int h2 = (height + 2 - 1)/2; // ceil(x/y)
+    int w2 = (width  + 2 - 1)/2;
 
-    // initialize to zero
-    for(int i =-h2min; i<h2max; ++i) {
-      for(int j=-w2min; j<w2max; ++j) {
-        auto zindx = zero_wrapped_index(i,j);
-        wi = std::get<0>(zindx);
-        wj = std::get<1>(zindx);
+    int wi,wj;
+    double val;
 
-        kernel[ index(wi,wj) ][0] = 0.0; // real part
-        kernel[ index(wi,wj) ][1] = 0.0; // complex part
-      }
-    }
-
-    // make central bins 1.0
     double sum = 0.0;
-    for(int i =-h2min+cutoff; i<h2max-cutoff; ++i) {
-      for(int j=-w2min+cutoff; j<w2max-cutoff; ++j) {
+    for(int i =-h1; i<h2; ++i) {
+      for(int j=-w1; j<w2; ++j) {
         auto zindx = zero_wrapped_index(i,j);
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
 
-        kernel[ index(wi,wj) ][0] = 1.0; // real part
-        //kernel[ index(wi,wj) ][1] = 0.0; // complex part
-        sum += 1.0;
-      }
-    }
+        assert(wi >= 0 && wi < height);
+        assert(wj >= 0 && wj < width);
 
-    // filter out lowest waves to avoid cyclic boundaries
-    for(int i =-h3; i<h3; ++i) {
-      for(int j=-w3; j<w3; ++j) {
-        auto zindx = zero_wrapped_index(i,j);
-        wi = std::get<0>(zindx);
-        wj = std::get<1>(zindx);
+        val = 0.0;
+        if (sqrt(i*i + j*j) < cutoff) val = 1.0; // circle (Bessel)
+        //if ((sqrt(i*i) < cutoff) && (sqrt(j*j) < cutoff)) val = 1.0; // box (2D Sinc)
 
-        kernel[ index(wi,wj) ][0] = 0.0; // real part
+        kernel[ index(wi,wj) ][0] = val; // real part
         kernel[ index(wi,wj) ][1] = 0.0; // complex part
+        sum += val;
       }
     }
-
-    // normalize 
-    //for(int i =0; i<height ; ++i)
-    //for(int j=0; j<width ; ++j)
-    //  kernel[ index(i,j) ][0] /= sum;
-
   }
-  */
 
 
   // normalize fft transformation
   void normalize() 
   {
-    for(int i  = 0 ; i < height ; ++i)  
-      for(int j = 0 ; j < width ; ++j)  
+    for(int i  = 0 ; i < height ; ++i) {
+      for(int j = 0 ; j < width ; ++j) {
         jx[ index(i,j) ][0] /= width*height;
+        jy[ index(i,j) ][0] /= width*height;
+        jz[ index(i,j) ][0] /= width*height;
+      }
+    }
 
   }
 
@@ -475,11 +496,18 @@ class Filter {
   virtual void fft_kernel()         { fftw_execute(p_kernel); }
 
   /// FFT image forward
-  virtual void fft_image_forward()  { fftw_execute(p_forw);   }
+  virtual void fft_image_forward()  
+  { 
+    fftw_execute(p_forw_jx);   
+    fftw_execute(p_forw_jy);   
+    fftw_execute(p_forw_jz);   
+  }
 
   /// FFT image backwards and normalize 
   virtual void fft_image_backward() { 
-    fftw_execute(p_back);
+    fftw_execute(p_back_jx);
+    fftw_execute(p_back_jy);
+    fftw_execute(p_back_jz);
     normalize();
   }
 
@@ -487,17 +515,31 @@ class Filter {
   /// Multiply kernel and image
   void apply_kernel()
   {
-    double x, y, u, v;
+    double x1, y1, x2, y2, x3, y3;
+    double u, v;
     for(int i  = 0 ; i < height ; ++i) {
       for(int j = 0 ; j < width ; ++j) {
 
-        x =     jx[ index(i,j) ][0];
-        y =     jx[ index(i,j) ][1];
+        x1 =     jx[ index(i,j) ][0];
+        y1 =     jx[ index(i,j) ][1];
+
+        x2 =     jy[ index(i,j) ][0];
+        y2 =     jy[ index(i,j) ][1];
+
+        x3 =     jz[ index(i,j) ][0];
+        y3 =     jz[ index(i,j) ][1];
+
         u = kernel[ index(i,j) ][0];
         v = kernel[ index(i,j) ][1];
 
-        jx[ index(i,j) ][0] = x*u - y*v;
-        jx[ index(i,j) ][1] = x*v + y*u;
+        jx[ index(i,j) ][0] = x1*u - y1*v;
+        jx[ index(i,j) ][1] = x1*v + y1*u;
+
+        jy[ index(i,j) ][0] = x2*u - y2*v;
+        jy[ index(i,j) ][1] = x2*v + y2*u;
+
+        jz[ index(i,j) ][0] = x3*u - y3*v;
+        jz[ index(i,j) ][1] = x3*v + y3*u;
       }
     }
 
@@ -508,27 +550,41 @@ class Filter {
   /// Copy currents from neighbors into fftw array
   void get_padded_current(
       pic::PicCell& cell, 
-      corgi::Node& grid
+      corgi::Node& node
       )
   {
 
+    //int NxMesh = cell.Nx;
+    //int NyMesh = cell.Ny;
+    //int NzMesh = cell.Nz;
+    int indx;
 
     int k = 0;
     for (int i=-1; i<=1; i++)
     for (int j=-1; j<=1; j++) {
     //for (int k=-1; k<=1; k++) { // TODO: hack to get 2d tiles working
-      std::cout << "from: (" << i << "," << j << "," << k << ")" << '\n';
+      //std::cout << "from: (" << i << "," << j << "," << k << ")" << '\n';
       
-      if( (i == 0) & (j == 0) ){
-        pic::ParticleBlock& neigh = cell.container; // local cell
-      } else {
-        pic::ParticleBlock& neigh  = get_external_data(i, j, cell, grid); //external neighbor
+      fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? cell.getYee() : get_neighbor_yee(i,j,cell,node);
+
+      int s = 0;
+      for(int q=0; q<(int)mesh.Nx; q++) {
+        for(int r=0; r<(int)mesh.Ny; r++) {
+          //for(int s=0; r<Nz; s++) {
+          
+          indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
+          jx[ indx ][0] = mesh.jx(q,r,s);
+          jy[ indx ][0] = mesh.jy(q,r,s);
+          jz[ indx ][0] = mesh.jz(q,r,s);
+
+        }
       }
 
 
     }
   
   }
+
 
 
   // --------------------------------------------------

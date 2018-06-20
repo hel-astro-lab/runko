@@ -29,6 +29,9 @@ except:
 def const_field(x, y, z):
     return 1.0
 
+def linear_ramp(x,y,z):
+    return x + y + z
+
 
 # insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(node, conf, ffunc):
@@ -53,17 +56,9 @@ def insert_em(node, conf, ffunc):
 
                         val = ffunc(xmid, ymid, zmid)
 
-                        yee.ex[l,m,n] = val
-                        yee.ey[l,m,n] = val+1.0
-                        yee.ez[l,m,n] = val+2.0
-
-                        yee.bx[l,m,n] = val+3.0
-                        yee.by[l,m,n] = val+4.0
-                        yee.bz[l,m,n] = val+5.0
-
                         yee.jx[l,m,n] = val
-                        yee.jy[l,m,n] = val
-                        yee.jz[l,m,n] = val
+                        yee.jy[l,m,n] = val+1.0
+                        yee.jz[l,m,n] = val+2.0
 
 
 # basic Conf file/class for PiC simulation testing
@@ -643,23 +638,185 @@ class Filters(unittest.TestCase):
             for j in range(NyMesh):
                 self.assertAlmostEqual(cimg_dc[i,j], cimg_fft[i,j], places=10) 
 
+    def skip_test_gaussian(self):
+
+        plt.fig = plt.figure(1, figsize=(4,6))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        gs = plt.GridSpec(4, 2)
+        
+        axs = []
+        for ai in range(8):
+            axs.append( plt.subplot(gs[ai]) )
+
+        NxMesh = 100
+        NyMesh = 100
+
+        #internal filter size is 3x Nx/y/zMesh
+        NxF = NxMesh*3
+        NyF = NyMesh*3
+
+        vmin = 0.0
+        vmax = 1.0
+
+        flt = pypic.Filter(NxMesh, NyMesh)
+
+        ###################################################
+        # init kernel and create 3-point image
+        flt.init_kernel()
+        flt.init_3point(1) 
+
+        image = np.zeros((NxF, NyF))
+        for i in range(0, NxMesh):
+            for j in range(0, NyMesh):
+                image[i+NxMesh,j+NyMesh] = np.random.rand(1)
+        flt.set_image(  flatten(image) )
+
+        img = reshape( flt.get_image( ), NxF, NyF)
+        axs[0].imshow(img[NxMesh:2*NxMesh, NyMesh:2*NyMesh], vmin=vmin, vmax=vmax)
+
+        flt.fft_kernel()
+        flt.fft_image_forward()
+        flt.apply_kernel()
+        flt.fft_image_backward()
+
+        img2 = reshape( flt.get_image() , NxF, NyF)
+        #axs[1].imshow(img2, vmin=vmin, vmax=vmax)
+
+        cimg1 = img2[NxMesh:2*NxMesh, NyMesh:2*NyMesh]
+        axs[1].imshow(cimg1, vmin=vmin, vmax=vmax)
+
+
+
+
+        ##################################################
+        # Gaussian (in FFT space) for comparison
+
+        flt2 = pypic.Filter(NxMesh, NyMesh)
+        flt2.set_image(  flatten(image) )
+
+        sigx = 6.5
+        sigy = 6.5
+        #flt2.init_gaussian_kernel(sigx, sigy)
+        flt2.init_lowpass_fft_kernel(140)
+
+        #plot kernel in Fourier space
+        ker2 = reshape( flt.get_kernel(), NxF, NyF)
+        img3 = reshape( flt2.get_image() , NxF, NyF)
+
+        cker1 = reshape( flt.get_kernel(), NxF, NyF)
+
+        axs[2].imshow(img3[NxMesh:2*NxMesh, NyMesh:2*NyMesh])#, vmin=vmin, vmax=vmax)
+        axs[3].imshow(fftshift(ker2) )#, vmin=vmin, vmax=vmax)
+
+
+        flt2.fft_image_forward()
+        flt2.apply_kernel()
+        flt2.fft_image_backward()
+
+        # visualize
+        ker4 = reshape( flt2.get_kernel(), NxF, NyF)
+        img4 = reshape( flt2.get_image() , NxF, NyF)
+
+        cimg2 = img4[NxMesh:2*NxMesh, NyMesh:2*NyMesh]
+        cker2 = fftshift(ker4)
+        axs[4].imshow(cimg2, vmin=vmin, vmax=vmax)
+        axs[5].imshow(cker2 )#, vmin=vmin, vmax=vmax)
+
+
+
+        ################################################### 
+        # compute error between the two methods
+        ierr = (cimg1 - cimg2)/cimg1
+        #print( err )
+        axs[6].imshow( ierr, vmin=-1.0, vmax=1.0)
+
+        kerr = (cker1 - cker2)/cker1
+        axs[7].imshow( kerr, vmin=-1.0, vmax=1.0)
+
+        #print("max img orig: {}".format(img4.max() ))
+        #print("max img fft : {}".format(img3.max() ))
+        #print("max img conv: {}".format(img5.max() ))
+        #print("max error   : {}".format( np.abs(err).max() ))
+
+        #for i in range(NxMesh):
+        #    for j in range(NyMesh):
+        #        self.assertAlmostEqual(cimg_dc[i,j], cimg_fft[i,j], places=10) 
+
+
+        print("max img orig: {}".format(img.max() ))
+        print("max img fft : {}".format(img2.max() ))
+        print("max img gaus: {}".format(img4.max() ))
+        print("max error   : {}".format( np.abs(ierr).max() ))
+
+
+
+        plt.savefig("filter3.png")
 
     def test_filters_in_action(self):
+
+        #plt.fig = plt.figure(1, figsize=(4,6))
+        #plt.rc('font', family='serif', size=12)
+        #plt.rc('xtick')
+        #plt.rc('ytick')
+        #gs = plt.GridSpec(3, 1)
+        #
+        #axs = []
+        #for ai in range(3):
+        #    axs.append( plt.subplot(gs[ai]) )
+
 
         conf = Conf()
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 1
-        conf.NxMesh = 5
-        conf.NyMesh = 5
+        conf.NxMesh = 10
+        conf.NyMesh = 10
         conf.NzMesh = 1
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadCells(node, conf)
-        insert_em(node, conf, const_field)
+        insert_em(node, conf, linear_ramp)
         #inject(node, filler_no_velocity, conf) #injecting plasma particles
 
+        flt = pypic.Filter(conf.NxMesh, conf.NyMesh)
+        flt.init_gaussian_kernel(4.0, 4.0)
+
+        flt.get_padded_current( node.getCellPtr(1,1), node)
+
+        img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
+        #axs[0].imshow(img[conf.NxMesh:2*conf.NxMesh, conf.NyMesh:2*conf.NyMesh]) #, vmin=vmin, vmax=vmax)
+        #axs[0].imshow(img, vmin=0.0, vmax=100.0) #, vmin=vmin, vmax=vmax)
 
 
+        # reference array
+        data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
+        for cid in node.getCellIds():
+            c = node.getCellPtr( cid )
+            (i, j) = c.index()
 
+            yee = c.getYee(0)
+            for k in range(conf.NyMesh):
+                for q in range(conf.NxMesh):
+                    for r in range(conf.NzMesh):
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 0] = yee.jx[q,k,r]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 1] = yee.jy[q,k,r]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 2] = yee.jz[q,k,r]
+
+        #img2 = data[:,:,0,0]
+        #axs[1].imshow(img2, vmin=0.0, vmax=100.0) #, vmin=vmin, vmax=vmax)
+
+        for i in range(0,3*conf.NxMesh):
+            for j in range(0,3*conf.NyMesh):
+                self.assertEqual(data[i,j,0,0], img[i,j]) #jx
+
+        flt.fft_image_forward()
+        flt.apply_kernel()
+        flt.fft_image_backward()
+
+        #img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
+        #axs[2].imshow(img, vmin=0.0, vmax=100.0) #, vmin=vmin, vmax=vmax)
+
+        #plt.savefig("filter_getter.png")
