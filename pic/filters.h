@@ -559,7 +559,7 @@ class Filter {
     //int NzMesh = cell.Nz;
     int indx;
 
-    int k = 0;
+    //int k = 0;
     for (int i=-1; i<=1; i++)
     for (int j=-1; j<=1; j++) {
     //for (int k=-1; k<=1; k++) { // TODO: hack to get 2d tiles working
@@ -582,9 +582,34 @@ class Filter {
 
 
     }
-  
   }
 
+  /// set (filtered) current back to Yee lattice
+  // NOTE: we export the current to jx1/jy1/jz1 instead of jx/jy/jz to 
+  //       ensure thread safety
+  void set_current( pic::PicCell& cell)
+  {
+    fields::YeeLattice& mesh = cell.getYee();
+
+    int indx;
+
+    // set only "central" tile values
+    int i = 0;
+    int j = 0;
+
+    int s = 0; // TODO: third index for 3D case
+    for(int q=0; q<(int)mesh.Nx; q++) {
+      for(int r=0; r<(int)mesh.Ny; r++) {
+        //for(int s=0; r<Nz; s++) {
+
+        indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
+        mesh.jx1(q,r,s) = jx[ indx ][0];
+        mesh.jy1(q,r,s) = jy[ indx ][0];
+        mesh.jz1(q,r,s) = jz[ indx ][0];
+      }
+    }
+
+  }
 
 
   // --------------------------------------------------

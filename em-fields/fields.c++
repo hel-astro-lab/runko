@@ -617,6 +617,16 @@ void fields::PlasmaCell::cycleYee() {
   yee.cycle();
 }
 
+/// cycle temporary and true current arrays
+void fields::PlasmaCell::cycleCurrent() 
+{
+  YeeLattice& mesh = getYee();
+
+  std::swap( mesh.jx.mat, mesh.jx1.mat );
+  std::swap( mesh.jy.mat, mesh.jy1.mat );
+  std::swap( mesh.jz.mat, mesh.jz1.mat );
+
+}
 
 
 

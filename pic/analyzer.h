@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath> 
+#include <assert.h>
 
 #include "cell.h"
 #include "../em-fields/fields.h"
@@ -76,6 +77,12 @@ class Analyzator {
       j = floor(y0);
       k = floor(z0);
 
+      assert(i >= 0 && i < cell.Nx);
+      assert(j >= 0 && j < cell.Ny);
+      //assert(k >= 0 && k < cell.Nz);
+
+
+
       u0 = vel[0][n];
       v0 = vel[1][n];
       w0 = vel[2][n];
@@ -110,11 +117,10 @@ class Analyzator {
 
 
     // normalize weight with number density
-    for (size_t k=0; k<cell.NzMesh; k++)
+    for (size_t i=0; i<cell.NxMesh; i++)
     for (size_t j=0; j<cell.NyMesh; j++)
-    for (size_t i=0; i<cell.NxMesh; i++) {
+    for (size_t k=0; k<cell.NzMesh; k++)
       analysis.mgamma(i,j,k) /= analysis.rho(i,j,k);
-    }
 
 
 

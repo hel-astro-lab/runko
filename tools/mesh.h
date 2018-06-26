@@ -72,6 +72,7 @@ class Mesh {
     }
 
     /// load 3D data cube from 1D serial vector
+    // TODO: vec or vec& ?
     void load_serial(
         std::vector<T> vec, 
         size_t Nx, size_t Ny, size_t Nz
@@ -107,6 +108,7 @@ class Mesh {
 
 
     /// Validate that two grids match
+    // TODO: unify index testing; use assert() ?
     void validateDims(const Mesh& rhs) {
       if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
       if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");

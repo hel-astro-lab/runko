@@ -104,6 +104,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("yeeDt",  &fields::PlasmaCell::yeeDt)
     .def_readwrite("yeeDx",  &fields::PlasmaCell::yeeDx)
     .def("cycleYee",         &fields::PlasmaCell::cycleYee)
+    .def("cycleCurrent",     &fields::PlasmaCell::cycleCurrent)
     .def("pushE",            &fields::PlasmaCell::pushE)
     .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
     .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)

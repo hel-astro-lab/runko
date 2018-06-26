@@ -40,6 +40,8 @@ class YeeLattice {
 
   /// temporary current
   toolbox::Mesh<Realf, 1> jx1;
+  toolbox::Mesh<Realf, 1> jy1;
+  toolbox::Mesh<Realf, 1> jz1;
 
   /// Charge density
   toolbox::Mesh<Realf, 1> rho;
@@ -61,6 +63,8 @@ class YeeLattice {
     jz(Nx, Ny, Nz),
 
     jx1(Nx, Ny, Nz),
+    jy1(Nx, Ny, Nz),
+    jz1(Nx, Ny, Nz),
 
     rho(Nx, Ny, Nz)
     { }
@@ -176,6 +180,8 @@ class PlasmaCell : virtual public corgi::Cell {
   PlasmaMomentLattice& getAnalysis(size_t i);
 
   void cycleYee();
+
+  void cycleCurrent();
 
   Realf yeeDt = 1.0;
   Realf yeeDx = 1.0;

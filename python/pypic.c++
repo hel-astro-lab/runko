@@ -125,6 +125,7 @@ PYBIND11_MODULE(pypic, m) {
       .def("fft_image_backward",     &pic::Filter::fft_image_backward)
       .def("apply_kernel",           &pic::Filter::apply_kernel)
       .def("get_padded_current",     &pic::Filter::get_padded_current)
+      .def("set_current",            &pic::Filter::set_current)
       .def("direct_convolve_3point", &pic::Filter::direct_convolve_3point)
       .def("set_image",              &pic::Filter::set_image)
       .def("set_kernel",             &pic::Filter::set_kernel)

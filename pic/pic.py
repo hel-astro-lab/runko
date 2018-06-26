@@ -200,6 +200,8 @@ def filler(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
     xx = xloc[0] + np.random.rand(1)
+    yy = xloc[1] + np.random.rand(1)
+    zz = xloc[2] + np.random.rand(1)
 
     ux = 0.0
     uy = 0.0
@@ -246,7 +248,7 @@ def filler(xloc, ispcs, conf):
     ux += vth*mux_noise
 
 
-    x0 = [xx, 0.0, 0.0]
+    x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
     return x0, u0
 
@@ -443,7 +445,9 @@ if __name__ == "__main__":
     comm     = pypic.Communicator()
     currint  = pypic.Depositer()
     analyzer = pypic.Analyzator()
+    flt     =  pypic.Filter(conf.NxMesh, conf.NyMesh)
 
+    flt.init_gaussian_kernel(2.0, 2.0)
 
     #simulation loop
     time  = 0.0
@@ -471,7 +475,7 @@ if __name__ == "__main__":
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                cell.updateBoundaries(node)
+                cell.updateBoundaries2D(node)
 
         #interpolate fields
         for j in range(node.getNy()):
@@ -491,19 +495,52 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 currint.deposit(cell)
 
-        ##update particle boundaries
+
+        ##################################################
+        # particle communication 
+
+        #update particle boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                comm.transfer(cell, node)
+                comm.check_outgoing_particles(cell)
+
+        #copy particles
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                comm.get_incoming_particles(cell, node)
+
+        #delete transferred particles
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                comm.delete_transferred_particles(cell)
+
+        ##################################################
 
         #exchange currents
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                cell.exchangeCurrents(node)
+                cell.exchangeCurrents2D(node)
 
         #filter
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                flt.get_padded_current(cell, node)
+                flt.fft_image_forward()
+                flt.apply_kernel()
+                flt.fft_image_backward()
+
+                flt.set_current(cell)
+
+        #cycle new and temporary currents
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycleCurrent()
 
         #add current to E
         for j in range(node.getNy()):
