@@ -79,7 +79,7 @@ pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++ vlasov/grid.h vlasov/cell.h vlaso
 #	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o dev-bindings.o -c vlasov/bindings.c++
 #
 
-pypic.o: ${DEPS_COMMON} python/pypic.c++ pic/cell.h pic/particle.h pic/pusher.h pic/field_interpolator.h pic/communicate.h pic/current_deposit.h pic/filters.h
+pypic.o: ${DEPS_COMMON} python/pypic.c++ pic/cell.h pic/particle.h pic/pusher.h pic/field_interpolator.h pic/communicate.h pic/current_deposit.h pic/filters.h pic/analyzer.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pypic.o -c python/pypic.c++
 
 

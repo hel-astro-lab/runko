@@ -88,7 +88,7 @@ class Communicator {
       if(z0 <  zmin) k--; // back
       if(z0 >= zmax) k++; // front
 
-      if ((i == 0) & (j == 0)) continue; //TODO: hack to make this work with 2D corgi tiles
+      if ((i == 0) && (j == 0)) continue; //TODO: hack to make this work with 2D corgi tiles
 
       if (i != 0 | j != 0 | k != 0) {
         to_others.insert( std::make_pair( std::make_tuple(i,j,k), n) );
@@ -135,11 +135,11 @@ class Communicator {
 
         //}
         //TODO: collapsed z-dimension due to 2D corgi tiles
-        if ( std::get<0>(elem.first) == 0 &
+        if ( std::get<0>(elem.first) == 0 &&
              std::get<1>(elem.first) == 0 ) {
           continue;
         }
-        if ( std::get<0>(elem.first) == std::get<0>(nindx) &
+        if ( std::get<0>(elem.first) == std::get<0>(nindx) &&
              std::get<1>(elem.first) == std::get<1>(nindx) ) {
 
           //std::cout << " incoming particle in loop indices of: ";

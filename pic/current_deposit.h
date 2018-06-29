@@ -62,7 +62,8 @@ class Depositer {
     int n1 = 0;
     int n2 = nparts;
 
-    #pragma omp simd 
+
+    // TODO: think SIMD (not possibly due to ijk writing to yee
     for(int n=n1; n<n2; n++) {
 
       invgam = 1.0/sqrt(1.0 + 

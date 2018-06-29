@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath> 
+#include <assert.h>
 
 
 #include "cell.h"
@@ -68,7 +69,8 @@ class ParticleFieldInterpolator
     auto mins = cell.mins;
     auto maxs = cell.maxs;
 
-    #pragma omp simd
+
+    // TODO: think SIMD (not possibly due to ijk writing to yee
     for(int n=n1; n<n2; n++) {
 
       // particle location in the grid
@@ -80,6 +82,10 @@ class ParticleFieldInterpolator
 
 		  k  = trunc( cell.NzMesh*(loc[2][n]-mins[2])/(maxs[2]-mins[2]) );
 		  dz = (loc[2][n]-mins[2]) - k;
+
+      assert(i >= 0 && i < cell.NxMesh);
+      assert(j >= 0 && j < cell.NyMesh);
+      assert(k >= 0 && k < cell.NzMesh);
 
       //std::cout << '\n';
       //std::cout << "x: " << loc[0][n] << " y: " << loc[1][n] << " z:" << loc[2][n] << '\n';

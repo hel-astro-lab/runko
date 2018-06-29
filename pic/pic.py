@@ -16,6 +16,8 @@ import initialize as init
 
 #from injector import spatialLoc
 
+np.random.seed(1)
+
 
 try:
     import matplotlib.pyplot as plt
@@ -48,8 +50,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     xmin = node.getXmin()
     ymin = node.getYmin()
 
-    #dx = conf.dx
-    dx = 1.0 #XXX scaled length
+    dx = conf.dx
     dy = conf.dy
     dz = conf.dz
 
@@ -201,7 +202,8 @@ def filler(xloc, ispcs, conf):
     # perturb position between x0 + RUnif[0,1)
     xx = xloc[0] + np.random.rand(1)
     yy = xloc[1] + np.random.rand(1)
-    zz = xloc[2] + np.random.rand(1)
+    #zz = xloc[2] + np.random.rand(1)
+    zz = 0.0
 
     ux = 0.0
     uy = 0.0

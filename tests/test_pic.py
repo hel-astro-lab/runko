@@ -24,6 +24,11 @@ except:
     pass
 
 
+#make tests deterministic by fixing the RNG seed
+np.random.seed(0)
+
+
+
 def filler_no_velocity(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
@@ -118,6 +123,9 @@ class Conf:
     ymin = 0.0
     ymax = 10.0
 
+    zmin = 0.0
+    zmax = 10.0
+
     cfl = 0.45
     c_omp = 10.0
     ppc = 1
@@ -144,6 +152,8 @@ class Conf:
         self.ymin = 0.0
         self.ymax = self.Ny*self.NyMesh
 
+        self.zmin = 0.0
+        self.zmax = self.Nz*self.NzMesh
 
 
 class PIC(unittest.TestCase):
@@ -181,7 +191,7 @@ class PIC(unittest.TestCase):
         comm     = pypic.Communicator()
 
 
-        for lap in range(20):
+        for lap in range(100):
             #plot2dParticles(axs[0], node, conf)
             #saveVisz(lap, node, conf)
 
@@ -219,6 +229,17 @@ class PIC(unittest.TestCase):
 
                     #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
                     n_particles += len(c.container.loc(0))
+
+                    #self.assertTrue( 0.0 <= c.container.loc(0) <= conf.xmax )
+                    #self.assertTrue( 0.0 <= c.container.loc(1) <= conf.ymax )
+                    #self.assertTrue( 0.0 <= c.container.loc(2) <= conf.zmax )
+
+                    for prtcl in range(len(c.container.loc(0))):
+                        #print("{} {} {} maxs {} {} {}".format( c.container.loc(0)[prtcl], c.container.loc(1)[prtcl], c.container.loc(2)[prtcl], conf.xmax, conf.ymax, conf.zmax))
+
+                        self.assertTrue( 0.0 <= c.container.loc(0)[prtcl] <= conf.xmax )
+                        self.assertTrue( 0.0 <= c.container.loc(1)[prtcl] <= conf.ymax )
+                        self.assertTrue( 0.0 <= c.container.loc(2)[prtcl] <= conf.zmax )
 
         tot_particles = (conf.Nx*conf.NxMesh *
                         conf.Ny*conf.NyMesh *

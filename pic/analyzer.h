@@ -31,10 +31,14 @@ class Analyzator {
     auto& yee = cell.getYee();
     yee.rho.clear();
 
+    // cell limits
+    auto mins = cell.mins;
+    auto maxs = cell.maxs;
 
     // analysis lattice reference
     int ispc = 0;
     auto& analysis = cell.analysis[ispc];
+
     analysis.rho.clear();
     analysis.mgamma.clear();
     analysis.Vx.clear();
@@ -65,7 +69,7 @@ class Analyzator {
     int n1 = 0;
     int n2 = nparts;
 
-    #pragma omp simd 
+    // TODO: think SIMD (not possibly due to ijk writing to yee
     for(int n=n1; n<n2; n++) {
 
       x0 = loc[0][n];
@@ -73,14 +77,32 @@ class Analyzator {
       z0 = loc[2][n];
 
       // grid coordinate location
+      /*
       i = floor(x0);
       j = floor(y0);
       k = floor(z0);
+      //k = 0; // TODO: explicit 2D dimensionality enforcement
+      */
 
-      assert(i >= 0 && i < cell.Nx);
-      assert(j >= 0 && j < cell.Ny);
-      //assert(k >= 0 && k < cell.Nz);
+		  i  = trunc( cell.NxMesh*(x0-mins[0])/(maxs[0]-mins[0]) );
+		  j  = trunc( cell.NyMesh*(y0-mins[1])/(maxs[1]-mins[1]) );
+		  k  = trunc( cell.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
 
+      /*
+      std::cout << "----------------------\n";
+      std::cout << "cell ijk =( " << cell.my_i << "," << cell.my_j << ")\n";
+      std::cout << "nx ny nz "    << cell.Nx << " " << cell.Ny << "\n";
+      std::cout << "nxG nyG nzG " << cell.NxMesh << " " << cell.NyMesh << " " << cell.NzMesh << "\n";
+      std::cout << "ijk =(" << i << "," << j << "," << k << ")\n";
+      std::cout << "mins " << mins[0] << " " << mins[1] << " " << mins[2] << "\n";
+      std::cout << "maxs " << maxs[0] << " " << maxs[1] << " " << maxs[2] << "\n";
+      std::cout << "x "    << x0 << " " << y0 << " " << z0 << "\n";
+      std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
+      */
+
+      assert(i >= 0 && i < cell.NxMesh);
+      assert(j >= 0 && j < cell.NyMesh);
+      assert(k >= 0 && k < cell.NzMesh);
 
 
       u0 = vel[0][n];
