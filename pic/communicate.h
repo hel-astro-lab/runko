@@ -152,11 +152,16 @@ class Communicator {
 
           // get particle info and wrap location to tile coordinates
           //std::cout << "wrapping " <<
+            
+          //std::cout << " incoming particle in loop indices of: ";
           std::vector<double> loc = {
             wrap( neigh.loc(0, elem.second), mins[0], maxs[0] ),
             wrap( neigh.loc(1, elem.second), mins[1], maxs[1] ),
             wrap( neigh.loc(2, elem.second), mins[2], maxs[2] ),
           };
+          //std::cout << "x_old: " << neigh.loc(0, elem.second) << "x_new: " << loc[0] << "\n";
+          //std::cout << "y_old: " << neigh.loc(1, elem.second) << "y_new: " << loc[1] << "\n";
+          //std::cout << "z_old: " << neigh.loc(2, elem.second) << "z_new: " << loc[2] << "\n";
 
           std::vector<double> vel = {
             neigh.vel(0, elem.second),

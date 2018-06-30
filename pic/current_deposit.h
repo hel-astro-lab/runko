@@ -28,6 +28,7 @@ class Depositer {
     yee.jy.clear();
     yee.jz.clear();
 
+    auto mins = cell.mins;
 
     // initialize pointers to particle arrays
     int nparts = cell.container.size();
@@ -85,12 +86,21 @@ class Depositer {
       z1sp = z0;
       z2sp = loc[2][n];
 
+      /*
       i1 = floor(x1sp);
       i2 = floor(x2sp);
       j1 = floor(y1sp);
       j2 = floor(y2sp);
       k1 = floor(z1sp);
       k2 = floor(z2sp);
+      */
+
+		  i1  = floor( x1sp-mins[0] );
+		  i2  = floor( x2sp-mins[0] );
+		  j1  = floor( y1sp-mins[1] );
+		  j2  = floor( y2sp-mins[1] );
+		  k1  = floor( z1sp-mins[2] );
+		  k2  = floor( z2sp-mins[2] );
  
 	    xr = min( (min(i1,i2)+1), max(max(i1,i2), 0.5*(x1sp+x2sp)) );
 	    yr = min( (min(j1,j2)+1), max(max(j1,j2), 0.5*(y1sp+y2sp)) );
@@ -101,15 +111,15 @@ class Depositer {
 	    Fy1 = -q*(yr - y1sp);
 	    Fz1 = -q*(zr - z1sp);
 	    
-	    Wx1 = .5*(x1sp + xr) - i1;
-	    Wy1 = .5*(y1sp + yr) - j1;
-      Wz1 = .5*(z1sp + zr) - k1;
+	    Wx1 = 0.5*(x1sp + xr) - i1;
+	    Wy1 = 0.5*(y1sp + yr) - j1;
+      Wz1 = 0.5*(z1sp + zr) - k1;
 	    Wy1 = 0.0; //XXX: reduces to 1d
       Wz1 = 0.0; //XXX: reduces to 1d
 
-	    Wx2 = .5*(x2sp + xr) - i2;
-    	Wy2 = .5*(y2sp + yr) - j2;
-		  Wz2 = .5*(z2sp + zr) - k2;
+	    Wx2 = 0.5*(x2sp + xr) - i2;
+    	Wy2 = 0.5*(y2sp + yr) - j2;
+		  Wz2 = 0.5*(z2sp + zr) - k2;
     	Wy2 = 0.0; //XXX: reduces to 1d
 		  Wz2 = 0.0; //XXX: reduces to 1d
 

@@ -84,11 +84,15 @@ class Analyzator {
       //k = 0; // TODO: explicit 2D dimensionality enforcement
       */
 
-		  i  = trunc( cell.NxMesh*(x0-mins[0])/(maxs[0]-mins[0]) );
-		  j  = trunc( cell.NyMesh*(y0-mins[1])/(maxs[1]-mins[1]) );
-		  k  = trunc( cell.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
+		  //i  = trunc( cell.NxMesh*(x0-mins[0])/(maxs[0]-mins[0]) );
+		  //j  = trunc( cell.NyMesh*(y0-mins[1])/(maxs[1]-mins[1]) );
+		  //k  = trunc( cell.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
+        
+      // fixed grid form assuming dx = 1
+		  i  = floor( loc[0][n]-mins[0] );
+		  j  = floor( loc[1][n]-mins[1] );
+		  k  = floor( loc[2][n]-mins[2] );
 
-      /*
       std::cout << "----------------------\n";
       std::cout << "cell ijk =( " << cell.my_i << "," << cell.my_j << ")\n";
       std::cout << "nx ny nz "    << cell.Nx << " " << cell.Ny << "\n";
@@ -98,12 +102,14 @@ class Analyzator {
       std::cout << "maxs " << maxs[0] << " " << maxs[1] << " " << maxs[2] << "\n";
       std::cout << "x "    << x0 << " " << y0 << " " << z0 << "\n";
       std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
-      */
 
       assert(i >= 0 && i < cell.NxMesh);
       assert(j >= 0 && j < cell.NyMesh);
       assert(k >= 0 && k < cell.NzMesh);
 
+      assert( x0 >= mins[0] && i < maxs[0] );
+      assert( y0 >= mins[1] && j < maxs[1] );
+      assert( z0 >= mins[2] && k < maxs[2] );
 
       u0 = vel[0][n];
       v0 = vel[1][n];

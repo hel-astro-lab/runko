@@ -67,6 +67,14 @@ def filler(xloc, ispcs, conf):
 def const_field(x, y, z):
     return 1.0
 
+def linear_field(x, y, z):
+    #print("x = {} y = {} z = {}".format(x,y,z))
+    #return 1.0*x 
+    #return 10.0*y 
+    #return 100.0*z 
+    #return 1.0*x + 10.0*y 
+    return 1.0*x + 10.0*y + 100.0*z
+
 
 # insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(node, conf, ffunc):
@@ -81,27 +89,41 @@ def insert_em(node, conf, ffunc):
                 for m in range(conf.NyMesh):
                     for n in range(conf.NzMesh):
 
-                        #get x_i+1/2 (Yee lattice so rho_i)
+                        # get x_i,j,k
                         xloc0 = spatialLoc(node, (i,j), (l,  m,n), conf)
+
+                        #get x_i+1/2, x_j+1/2, x_k+1/2
                         xloc1 = spatialLoc(node, (i,j), (l+1,m,n), conf)
+                        yloc1 = spatialLoc(node, (i,j), (l,m+1,n), conf)
+                        zloc1 = spatialLoc(node, (i,j), (l,m,n+1), conf)
 
+                        # values in Yee lattice corners
+                        xcor = xloc0[0]
+                        ycor = xloc0[1]
+                        zcor = xloc0[2]
+
+                        # values in Yee lattice mids
                         xmid = 0.5*(xloc0[0] + xloc1[0])
-                        ymid = 0.5*(xloc0[1] + xloc1[1])
-                        zmid = 0.5*(xloc0[2] + xloc1[2])
+                        ymid = 0.5*(xloc0[1] + yloc1[1])
+                        zmid = 0.5*(xloc0[2] + zloc1[2])
 
-                        val = ffunc(xmid, ymid, zmid)
+                        #val = ffunc(xmid, ymid, zmid)
 
-                        yee.ex[l,m,n] = val
-                        yee.ey[l,m,n] = val+1.0
-                        yee.ez[l,m,n] = val+2.0
+                        # enforce Yee lattice structure
+                        yee.ex[l,m,n] = ffunc(xmid, ycor, zcor)
+                        yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)+1.0
+                        #yee.ez[l,m,n] = ffunc(xcor, ycor, zmid)+2.0
+                        yee.ez[l,m,n] = ffunc(xcor, ycor, zcor)+2.0  #2D hack
 
-                        yee.bx[l,m,n] = val+3.0
-                        yee.by[l,m,n] = val+4.0
-                        yee.bz[l,m,n] = val+5.0
+                        #yee.bx[l,m,n] = ffunc(xcor, ymid, zmid)+3.0
+                        yee.bx[l,m,n] = ffunc(xcor, ymid, zcor)+3.0  #2D hack
+                        #yee.by[l,m,n] = ffunc(xmid, ycor, zmid)+4.0 #2D hack
+                        yee.by[l,m,n] = ffunc(xmid, ycor, zcor)+4.0
+                        yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)+5.0
 
-                        yee.jx[l,m,n] = val
-                        yee.jy[l,m,n] = val
-                        yee.jz[l,m,n] = val
+                        yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
+                        yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
+                        yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
 
     
 
@@ -130,9 +152,9 @@ class Conf:
     c_omp = 10.0
     ppc = 1
 
-    dx = 1.0
-    dy = 1.0
-    dz = 1.0
+    #dx = 1.0
+    #dy = 1.0
+    #dz = 1.0
 
     me = 1
     mi = 1
@@ -145,15 +167,22 @@ class Conf:
     #    print("initialized...")
 
     #update bounding box sizes
+    #
+    # NOTE: NxMesh = 5 grid looks like this:
+    #
+    # xmin      xmax
+    #  |_|_[_[_[_
+    #  0 1 2 3 4 5
+    #
     def update_bbox(self):
         self.xmin = 0.0
-        self.xmax = self.Nx*self.NxMesh
+        self.xmax = self.Nx*self.NxMesh+1.0
 
         self.ymin = 0.0
-        self.ymax = self.Ny*self.NyMesh
+        self.ymax = self.Ny*self.NyMesh+1.0
 
         self.zmin = 0.0
-        self.zmax = self.Nz*self.NzMesh
+        self.zmax = self.Nz*self.NzMesh+1.0
 
 
 class PIC(unittest.TestCase):
@@ -235,7 +264,11 @@ class PIC(unittest.TestCase):
                     #self.assertTrue( 0.0 <= c.container.loc(2) <= conf.zmax )
 
                     for prtcl in range(len(c.container.loc(0))):
-                        #print("{} {} {} maxs {} {} {}".format( c.container.loc(0)[prtcl], c.container.loc(1)[prtcl], c.container.loc(2)[prtcl], conf.xmax, conf.ymax, conf.zmax))
+                        #print("{} {} {} maxs {} {} {}".format( 
+                        #c.container.loc(0)[prtcl], 
+                        #c.container.loc(1)[prtcl], 
+                        #c.container.loc(2)[prtcl], 
+                        #conf.xmax, conf.ymax, conf.zmax))
 
                         self.assertTrue( 0.0 <= c.container.loc(0)[prtcl] <= conf.xmax )
                         self.assertTrue( 0.0 <= c.container.loc(1)[prtcl] <= conf.ymax )
@@ -245,6 +278,7 @@ class PIC(unittest.TestCase):
                         conf.Ny*conf.NyMesh *
                         conf.Nz*conf.NzMesh *
                         conf.ppc)
+
         #tot_particles =(conf.NxMesh *
         #                conf.NyMesh *
         #                conf.NzMesh *
@@ -256,7 +290,7 @@ class PIC(unittest.TestCase):
 
 
 
-    def test_field_interpolation(self):
+    def test_const_field_interpolation(self):
 
         conf = Conf()
         node = plasma.Grid(conf.Nx, conf.Ny)
@@ -317,6 +351,71 @@ class PIC(unittest.TestCase):
                     self.assertEqual(by[i], by_ref)
                     self.assertEqual(bz[i], bz_ref)
 
+
+    def test_linear_field_interpolation(self):
+
+        conf = Conf()
+        conf.Nx = 3
+        conf.Ny = 3
+
+        node = plasma.Grid(conf.Nx, conf.Ny)
+        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        loadCells(node, conf)
+        insert_em(node, conf, linear_field)
+        inject(node, filler_no_velocity, conf) #injecting plasma particles
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #interpolate fields
+        fintp = pypic.ParticleFieldInterpolator()
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                fintp.solve(cell)
+
+
+        #test results; avoid boundaries because they are cyclic
+        for i in range(1,conf.Nx-1):
+            for j in range(1,conf.Ny-1):
+
+                cid = node.cellId(i,j)
+                c = node.getCellPtr(cid)
+
+                xx = c.container.loc(0)
+                yy = c.container.loc(1)
+                zz = c.container.loc(2)
+
+                ex = c.container.ex()
+                ey = c.container.ey()
+                ez = c.container.ez()
+
+                bx = c.container.bx()
+                by = c.container.by()
+                bz = c.container.bz()
+
+                for i, x in enumerate(xx):
+                    #print(i)
+
+                    ref = linear_field(xx[i], yy[i], zz[i]) #exact/true solution
+                    ex_ref = ref + 0.0
+                    ey_ref = ref + 1.0
+                    ez_ref = ref + 2.0
+
+                    #print("asserting {} {} {} vs {}".format(xx[i], yy[i], zz[i], ref))
+                    self.assertAlmostEqual(ex[i], ex_ref, places=3)
+                    self.assertAlmostEqual(ey[i], ey_ref, places=3)
+                    self.assertAlmostEqual(ez[i], ez_ref, places=3)
+
+                    bx_ref = ref + 3.0
+                    by_ref = ref + 4.0
+                    bz_ref = ref + 5.0
+                    self.assertAlmostEqual(bx[i], bx_ref, places=3)
+                    self.assertAlmostEqual(by[i], by_ref, places=3)
+                    self.assertAlmostEqual(bz[i], bz_ref, places=3)
 
     def test_filters(self):
 

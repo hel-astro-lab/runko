@@ -56,6 +56,7 @@ class Pusher
     ex = &( cell.container.Epart[0][0] );
     ey = &( cell.container.Epart[1][0] );
     ez = &( cell.container.Epart[2][0] );
+
     bx = &( cell.container.Bpart[0][0] );
     by = &( cell.container.Bpart[1][0] );
     bz = &( cell.container.Bpart[2][0] );
@@ -77,7 +78,7 @@ class Pusher
 
 
 
-    #pragma omp simd
+    //#pragma omp simd
     for(int n=n1; n<n2; n++) {
 
       // read particle-specific fields

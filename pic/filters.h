@@ -39,10 +39,8 @@ class Filter {
   /// circular/wrap indexing
   inline int circular(int x, int M)
   {
-    if (x<0)
-      return x+M;
-    if(x >= M)
-      return x-M;
+    if (x<0)   return x+M;
+    if(x >= M) return x-M;
     return x;
   }
 
@@ -168,8 +166,8 @@ class Filter {
     double val;
 
     // kernel size (even number because of initialization)
-    int knx = height/3;
-    int kny = width /3;
+    //int knx = height/3;
+    //int kny = width /3;
 
     // halo region size
     int h1 = height/2; // division is floor(x/y) automatically
@@ -348,8 +346,8 @@ class Filter {
   virtual void init_gaussian_kernel(double sigx, double sigy) 
   {
     // kernel size (even number because of initialization)
-    int knx = height/3;
-    int kny = width /3;
+    //int knx = height/3;
+    //int kny = width /3;
 
     // halo region size
     int h1 = height/2; // division is floor(x/y) automatically
@@ -442,8 +440,8 @@ class Filter {
   {
 
     // kernel size (even number because of initialization)
-    int knx = height/3;
-    int kny = width /3;
+    //int knx = height/3;
+    //int kny = width /3;
 
     // halo region size
     int h1 = height/2; // division is floor(x/y) automatically

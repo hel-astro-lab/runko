@@ -50,9 +50,9 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     xmin = node.getXmin()
     ymin = node.getYmin()
 
-    dx = conf.dx
-    dy = conf.dy
-    dz = conf.dz
+    dx = 1.0 #conf.dx
+    dy = 1.0 #conf.dy
+    dz = 1.0 #conf.dz
 
 
     #calculate coordinate extent
@@ -472,7 +472,6 @@ if __name__ == "__main__":
         #reorder particles
         #pause simulation if pause file exists
 
-
         ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
@@ -500,6 +499,7 @@ if __name__ == "__main__":
 
         ##################################################
         # particle communication 
+
 
         #update particle boundaries
         for j in range(node.getNy()):
@@ -556,6 +556,7 @@ if __name__ == "__main__":
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 analyzer.analyze(cell)
+
 
         timer.lap("step")
 

@@ -46,6 +46,7 @@ class ParticleFieldInterpolator
     ex = &( cell.container.Epart[0][0] );
     ey = &( cell.container.Epart[1][0] );
     ez = &( cell.container.Epart[2][0] );
+
     bx = &( cell.container.Bpart[0][0] );
     by = &( cell.container.Bpart[1][0] );
     bz = &( cell.container.Bpart[2][0] );
@@ -70,29 +71,34 @@ class ParticleFieldInterpolator
     auto maxs = cell.maxs;
 
 
-    // TODO: think SIMD (not possibly due to ijk writing to yee
+    // TODO: think SIMD (not possible due to ijk writing to yee)
     for(int n=n1; n<n2; n++) {
 
       // particle location in the grid
-		  i  = trunc( cell.NxMesh*(loc[0][n]-mins[0])/(maxs[0]-mins[0]) );
+		  //i  = trunc( (cell.NxMesh+1)*(loc[0][n]-mins[0])/(maxs[0]-mins[0]) );
+		  i  = floor( loc[0][n]-mins[0] );
 		  dx = (loc[0][n]-mins[0]) - i;
 
-		  j  = trunc( cell.NyMesh*(loc[1][n]-mins[1])/(maxs[1]-mins[1]) );
+		  //j  = trunc( (cell.NyMesh+1)*(loc[1][n]-mins[1])/(maxs[1]-mins[1]) );
+		  j  = floor( loc[1][n]-mins[1] );
 		  dy = (loc[1][n]-mins[1]) - j;
 
-		  k  = trunc( cell.NzMesh*(loc[2][n]-mins[2])/(maxs[2]-mins[2]) );
+		  //k  = trunc( (cell.NzMesh+1)*(loc[2][n]-mins[2])/(maxs[2]-mins[2]) );
+		  k  = floor( loc[2][n]-mins[2] );
 		  dz = (loc[2][n]-mins[2]) - k;
+
+
+      /*
+      std::cout << '\n';
+      std::cout << "x: " << loc[0][n] << " y: " << loc[1][n] << " z:" << loc[2][n] << '\n';
+      std::cout << " ijk " << i << "," << j << "," << k << '\n';
+      std::cout << " ds " << dx << "," << dy << "," << dz << '\n';
+      */
+		  //l = i; // + iy*(j-1) + iz*(k-1);
 
       assert(i >= 0 && i < cell.NxMesh);
       assert(j >= 0 && j < cell.NyMesh);
       assert(k >= 0 && k < cell.NzMesh);
-
-      //std::cout << '\n';
-      //std::cout << "x: " << loc[0][n] << " y: " << loc[1][n] << " z:" << loc[2][n] << '\n';
-      //std::cout << " ijk " << i << "," << j << "," << k << '\n';
-      //std::cout << " ds " << dx << "," << dy << "," << dz << '\n';
-		  //l = i; // + iy*(j-1) + iz*(k-1);
-
 
       // TODO: 2D hack
       k = 0;
@@ -145,8 +151,8 @@ class ParticleFieldInterpolator
       f = yee.bz(i,j,k)+yee.bz(i,j-1,k)           +dy*(yee.bz(i,j+1,k)      - yee.bz(i,j-1,k))+f+dx 
         * (yee.bz(i+1,j,k)+yee.bz(i+1,j-1,k)      +dy*(yee.bz(i+1,j+1,k)    - yee.bz(i+1,j-1,k))-f);
       g = yee.bz(i-1,j, k+iz)+yee.bz(i-1,j-1,k+iz)+dy*(yee.bz(i-1,j+1,k+iz) - yee.bz(i-1,j-1,k+iz));
-      g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )+    dy*(yee.bz(i,j+1,k+iz)   - yee.bz(i,j-1,k+iz))
-                                                +g+dx*(yee.bz(i+1,j,k+iz)   + yee.bz(i+1,j-1,k+iz)
+      g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )    +dy*(yee.bz(i,j+1,k+iz)   - yee.bz(i,j-1,k+iz))
+                                               +g +dx*(yee.bz(i+1,j,k+iz)   + yee.bz(i+1,j-1,k+iz)
                                                   +dy*(yee.bz(i+1,j+1,k+iz) - yee.bz(i+1,j-1,k+iz))-g);
       bz[n]=(f+dz*(g-f))*(.25*cinv);
     }
