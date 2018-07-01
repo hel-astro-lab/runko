@@ -16,6 +16,7 @@ from pic import spatialLoc
 
 from visualize_pic import Particles
 from visualize_pic import plot2dParticles
+from visualize import plot2dYee
 from visualize import saveVisz
 
 try:
@@ -59,12 +60,30 @@ def filler(xloc, ispcs, conf):
     uc = randab(0.0, 2.0*np.pi) 
     ux = ur*np.sin( uc )
     uy = ur*np.cos( uc ) 
-    #uz = randab(-1.0, 1.0)
     uz = 0.0
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
     return x0, u0
+
+def filler_xvel(xloc, ispcs, conf):
+
+    # perturb position between x0 + RUnif[0,1)
+    xx = xloc[0] + np.random.rand(1)
+    yy = xloc[1] + np.random.rand(1)
+    #zz = xloc[2] + np.random.rand(1)
+    zz = 0.0
+
+    ux = randab(-conf.vel, conf.vel)
+    uy = 0.0
+    uz = 0.0
+
+    x0 = [xx, yy, zz]
+    u0 = [ux, uy, uz]
+    return x0, u0
+
+def zero_field(x,y,z):
+    return 0.0
 
 def const_field(x, y, z):
     return 1.0
@@ -176,7 +195,7 @@ class Conf:
     # NOTE: NxMesh = 5 grid looks like this:
     #
     # xmin      xmax
-    #  |_|_[_[_[_
+    #  |_|_|_|_|_
     #  0 1 2 3 4 5
     #
     def update_bbox(self):
@@ -433,33 +452,114 @@ class PIC(unittest.TestCase):
                     ez_ref = ref + 2.0
 
                     #print("asserting {} {} {} vs {}".format(xx[i], yy[i], zz[i], ref))
-                    self.assertAlmostEqual(ex[i], ex_ref, places=3)
-                    self.assertAlmostEqual(ey[i], ey_ref, places=3)
-                    self.assertAlmostEqual(ez[i], ez_ref, places=3)
+                    self.assertAlmostEqual(ex[i], ex_ref, places=5)
+                    self.assertAlmostEqual(ey[i], ey_ref, places=5)
+                    self.assertAlmostEqual(ez[i], ez_ref, places=5)
 
                     bx_ref = ref + 3.0
                     by_ref = ref + 4.0
                     bz_ref = ref + 5.0
-                    self.assertAlmostEqual(bx[i], bx_ref, places=3)
-                    self.assertAlmostEqual(by[i], by_ref, places=3)
-                    self.assertAlmostEqual(bz[i], bz_ref, places=3)
+                    self.assertAlmostEqual(bx[i], bx_ref, places=5)
+                    self.assertAlmostEqual(by[i], by_ref, places=5)
+                    self.assertAlmostEqual(bz[i], bz_ref, places=5)
+
+
 
     def test_filters(self):
+        """ filter integration test with rest of the PIC functions"""
+
+
+        plt.fig = plt.figure(1, figsize=(5,7))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(6, 1)
+        
+        axs = []
+        for ai in range(6):
+            axs.append( plt.subplot(gs[ai]) )
+
 
         conf = Conf()
-        conf.Nx = 3
+        conf.Nx = 10
         conf.Ny = 3
         conf.Nz = 1
-        conf.NxMesh = 5
-        conf.NyMesh = 5
+        conf.NxMesh = 10
+        conf.NyMesh = 10
         conf.NzMesh = 1
+        conf.ppc = 10
+        conf.vel = 0.1
+        conf.update_bbox()
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadCells(node, conf)
-        insert_em(node, conf, const_field)
-        #inject(node, filler_no_velocity, conf) #injecting plasma particles
+        insert_em(node, conf, zero_field)
+        #inject(node, filler, conf) #injecting plasma particles
+        inject(node, filler_xvel, conf) #injecting plasma particles
 
 
+        #pusher   = pypic.Pusher()
+        #fintp    = pypic.ParticleFieldInterpolator()
+        #comm     = pypic.Communicator()
+        currint  = pypic.Depositer()
+        analyzer = pypic.Analyzator()
+        flt     =  pypic.Filter(conf.NxMesh, conf.NyMesh)
 
+        flt.init_gaussian_kernel(2.0, 2.0)
+
+        #for lap in range(0, conf.Nt):
+        for lap in [0]:
+
+            #analyze
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    analyzer.analyze(cell)
+
+            ##update boundaries
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    cell.updateBoundaries2D(node)
+
+            #deposit current
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    currint.deposit(cell)
+
+            #exchange currents
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    cell.exchangeCurrents2D(node)
+
+            plot2dParticles(axs[0], node, conf, downsample=0.01)
+            plot2dYee(axs[1], node, conf, 'rho')
+            plot2dYee(axs[2], node, conf, 'jx')
+            plot2dYee(axs[3], node, conf, 'jy')
+            plot2dYee(axs[4], node, conf, 'jz')
+
+            #filter
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    flt.get_padded_current(cell, node)
+                    flt.fft_image_forward()
+                    flt.apply_kernel()
+                    flt.fft_image_backward()
+                    flt.set_current(cell)
+
+            #cycle new and temporary currents
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    cell.cycleCurrent2D()
+
+            plot2dYee(axs[5], node, conf, 'jx')
+
+
+            saveVisz(lap, node, conf)
 

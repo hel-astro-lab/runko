@@ -77,8 +77,7 @@ class Pusher
     double qm = -1.0;
 
 
-
-    //#pragma omp simd
+    //TODO: SIMD
     for(int n=n1; n<n2; n++) {
 
       // read particle-specific fields
@@ -117,10 +116,28 @@ class Pusher
       vel[1][n] = v0*cinv;
       vel[2][n] = w0*cinv;
 
+      /*
+      std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+      std::cout << "n=" << n;
+      std::cout << "\n";
+
+      std::cout << " vx: " <<  vel[0][n];
+      std::cout << " vy: " <<  vel[1][n];
+      std::cout << " vz: " <<  vel[2][n];
+      std::cout << "\n";
+
+      std::cout << " ex: " <<  ex[n];
+      std::cout << " ey: " <<  ey[n];
+      std::cout << " ez: " <<  ez[n];
+      std::cout << " bx: " <<  bx[n];
+      std::cout << " by: " <<  by[n];
+      std::cout << " bz: " <<  bz[n];
+      std::cout << "\n";
+      */
+
 
       // position advance
 		  g = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
-      //
       //TODO: note the explicit 2D dimensionality enforcement
       for(int i=0; i<2; i++)
         loc[i][n] += vel[i][n]*g*c;

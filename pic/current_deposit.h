@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <assert.h>
 
 #include "cell.h"
 
@@ -64,7 +65,7 @@ class Depositer {
     int n2 = nparts;
 
 
-    // TODO: think SIMD (not possibly due to ijk writing to yee
+    // TODO: think SIMD (not possible due to ijk writing to yee
     for(int n=n1; n<n2; n++) {
 
       invgam = 1.0/sqrt(1.0 + 
@@ -114,13 +115,13 @@ class Depositer {
 	    Wx1 = 0.5*(x1sp + xr) - i1;
 	    Wy1 = 0.5*(y1sp + yr) - j1;
       Wz1 = 0.5*(z1sp + zr) - k1;
-	    Wy1 = 0.0; //XXX: reduces to 1d
+	    //Wy1 = 0.0; //XXX: reduces to 1d
       Wz1 = 0.0; //XXX: reduces to 1d
 
 	    Wx2 = 0.5*(x2sp + xr) - i2;
     	Wy2 = 0.5*(y2sp + yr) - j2;
 		  Wz2 = 0.5*(z2sp + zr) - k2;
-    	Wy2 = 0.0; //XXX: reduces to 1d
+    	//Wy2 = 0.0; //XXX: reduces to 1d
 		  Wz2 = 0.0; //XXX: reduces to 1d
 
 	    Fx2 = -q*(x2sp-xr);
@@ -134,15 +135,74 @@ class Depositer {
       onemWz1 = 1.0 - Wz1;
       onemWz2 = 1.0 - Wz2;
 
+      // zero-based indexing
+      /*
+      i1--;
+      i2--;
+      j1--;
+      j2--;
+      k1--;
+      k2--;
+      */
+
       i1p1 = i1 + 1;
       i2p1 = i2 + 1;
       j1p1 = j1 + 1;
       j2p1 = j2 + 1;
+
       k1p1 = k1 + 1;
       k2p1 = k2 + 1;
 
+
       //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 
+      std::cout << "--------------------------------------------------\n";
+      std::cout << "n=" << n;
+      std::cout << " i1: " << i1;
+      std::cout << " j1: " << j1;
+      std::cout << " k1: " << k1;
+      std::cout << " ||| ";
+      std::cout << " i2: " << i2;
+      std::cout << " j2: " << j2;
+      std::cout << " k2: " << k2;
+      std::cout << "\n";
+
+      std::cout << " x1sp: " << x1sp;
+      std::cout << " y1sp: " << y1sp;
+      std::cout << " z1sp: " << z1sp;
+      std::cout << " ||| ";
+      std::cout << " x2sp: " << x2sp;
+      std::cout << " y2sp: " << y2sp;
+      std::cout << " z2sp: " << z2sp;
+      std::cout << "\n";
+
+      std::cout << " vx: " <<  vel[0][n];
+      std::cout << " vy: " <<  vel[1][n];
+      std::cout << " vz: " <<  vel[2][n];
+      std::cout << " gam: "<<  invgam;
+      std::cout << "\n";
+
+      std::cout << " xr: " <<  xr;
+      std::cout << " yr: " <<  yr;
+      std::cout << " zr: " <<  zr;
+      std::cout << "\n";
+
+
+      assert(i1   >= -1 && i1   < cell.NxMesh+1);
+      assert(j1   >= -1 && j1   < cell.NyMesh+1);
+      assert(k1   >= -1 && k1   < cell.NzMesh+1);
+
+      assert(i1p1 >= -1 && i1p1 < cell.NxMesh+1);
+      assert(j1p1 >= -1 && j1p1 < cell.NyMesh+1);
+      assert(k1p1 >= -1 && k1p1 < cell.NzMesh+1);
+
+      assert(i2   >= -1 && i2   < cell.NxMesh+1);
+      assert(j2   >= -1 && j2   < cell.NyMesh+1);
+      assert(k2   >= -1 && k2   < cell.NzMesh+1);
+
+      assert(i2p1 >= -1 && i2p1 < cell.NxMesh+1);
+      assert(j2p1 >= -1 && j2p1 < cell.NyMesh+1);
+      assert(k2p1 >= -1 && k2p1 < cell.NzMesh+1);
 
       // jx
       yee.jx(i1,  j1,   k1)   += Fx1 * onemWy1 * onemWz1;

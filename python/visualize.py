@@ -254,6 +254,55 @@ def getYee(n, conf):
     return data
 
 
+def getYee2D(n, conf):
+
+    data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
+            'y' : np.linspace(n.getYmin(), n.getYmax(), conf.Ny*conf.NyMesh),
+            'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ey':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'by':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jy':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx1':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+           }
+
+    for i in range(conf.Nx):
+        for j in range(conf.Ny):
+            cid = n.cellId(i,j)
+            c = n.getCellPtr(cid)
+
+            yee = c.getYee(0)
+            for q in range(conf.NxMesh):
+                for r in range(conf.NyMesh):
+
+                    indx = i*conf.NxMesh + q
+                    jndx = j*conf.NyMesh + r
+
+                    data['ex'][indx, jndx] = yee.ex[q, r, 0]
+                    data['ey'][indx, jndx] = yee.ey[q, r, 0]
+                    data['ez'][indx, jndx] = yee.ez[q, r, 0]
+
+                    data['bx'][indx, jndx] = yee.bx[q, r, 0]
+                    data['by'][indx, jndx] = yee.by[q, r, 0]
+                    data['bz'][indx, jndx] = yee.bz[q, r, 0]
+                                                        
+                    data['jx'][indx, jndx] = yee.jx[q, r, 0]
+                    data['jy'][indx, jndx] = yee.jy[q, r, 0]
+                    data['jz'][indx, jndx] = yee.jz[q, r, 0]
+
+                    data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
+
+                    data['rho'][indx, jndx] = yee.rho[q, r, 0]
+
+    return data
+
+
 # species-specific analysis meshes (plasma moments)
 def getAnalysis(n, conf, ispcs):
 
@@ -343,4 +392,30 @@ def plotDens(ax, n, conf):
     ax.plot(yee['x'], yee['rho'], "b-")
     
     ax.set_ylabel(r'$n$')
+
+
+
+def plot2dYee(ax, n, conf, val = 'jx'):
+
+    #ax.clear()
+    ax.cla()
+    yee = getYee2D(n, conf)
+
+    vmin, vmax = np.min(yee[val]), np.max(yee[val])
+
+
+    print(vmin)
+    print(vmax)
+
+    imshow(ax, yee[val],
+           n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+           cmap = "plasma",
+           vmin = vmin,
+           vmax = vmax,
+           clip = 0.0
+          )
+
+
+
+
 

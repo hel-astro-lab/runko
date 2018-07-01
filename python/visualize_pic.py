@@ -7,6 +7,7 @@ except:
     pass
 
 import numpy as np
+import random
 
 
 from visualize import plotNode
@@ -67,7 +68,7 @@ def get_particles_from_cell(cell):
 
 
 
-def plot2dParticles(ax, n, conf):
+def plot2dParticles(ax, n, conf, downsample=0):
 
     #ax.clear()
     ax.cla()
@@ -77,6 +78,17 @@ def plot2dParticles(ax, n, conf):
     prtcl = get_particles(n, conf)
     Np = len(prtcl.xs)
     #print("particles to plot: {}".format(Np))
+
+    if downsample > 0:
+        rindxs = random.sample( range(0, Np-1), int(downsample*Np) )
+
+        prtcl.xs = np.array( prtcl.xs )
+        prtcl.ys = np.array( prtcl.ys ) 
+        prtcl.zs = np.array( prtcl.zs )
+
+        prtcl.xs = prtcl.xs[rindxs]
+        prtcl.ys = prtcl.ys[rindxs]
+        prtcl.zs = prtcl.zs[rindxs]
 
     ax.plot(prtcl.xs, prtcl.ys, ".", color='red')
     

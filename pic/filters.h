@@ -172,8 +172,8 @@ class Filter {
     // halo region size
     int h1 = height/2; // division is floor(x/y) automatically
     int w1 = width /2;
-    int h2 = (height + 2 - 1)/2; // ceil(x/y)
-    int w2 = (width  + 2 - 1)/2;
+    //int h2 = (height + 2 - 1)/2; // ceil(x/y)
+    //int w2 = (width  + 2 - 1)/2;
 
     int wi,wj;
 
