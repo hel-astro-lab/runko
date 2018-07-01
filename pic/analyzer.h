@@ -93,6 +93,7 @@ class Analyzator {
 		  j  = floor( loc[1][n]-mins[1] );
 		  k  = floor( loc[2][n]-mins[2] );
 
+      /*
       std::cout << "----------------------\n";
       std::cout << "cell ijk =( " << cell.my_i << "," << cell.my_j << ")\n";
       std::cout << "nx ny nz "    << cell.Nx << " " << cell.Ny << "\n";
@@ -102,6 +103,7 @@ class Analyzator {
       std::cout << "maxs " << maxs[0] << " " << maxs[1] << " " << maxs[2] << "\n";
       std::cout << "x "    << x0 << " " << y0 << " " << z0 << "\n";
       std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
+      */
 
       assert(i >= 0 && i < cell.NxMesh);
       assert(j >= 0 && j < cell.NyMesh);
@@ -139,7 +141,6 @@ class Analyzator {
       // kinetic energy
       // chi(u) = 1/2 m v.v
       analysis.ekin(i,j,k) += 0.5*abs(q)*u0*u0/gam/gam;
-
 
     }
 

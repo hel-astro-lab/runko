@@ -55,8 +55,10 @@ def filler(xloc, ispcs, conf):
     #zz = xloc[2] + np.random.rand(1)
     zz = 0.0
 
-    ux = randab(-1.0, 1.0)
-    uy = randab(-1.0, 1.0)
+    ur = conf.vel
+    uc = randab(0.0, 2.0*np.pi) 
+    ux = ur*np.sin( uc )
+    uy = ur*np.cos( uc ) 
     #uz = randab(-1.0, 1.0)
     uz = 0.0
 
@@ -152,6 +154,7 @@ class Conf:
     c_omp = 10.0
     ppc = 1
 
+
     #dx = 1.0
     #dy = 1.0
     #dz = 1.0
@@ -162,6 +165,8 @@ class Conf:
     Nspecies = 1
 
     outdir = "out"
+
+    vel = 0.1
 
     #def __init__(self):
     #    print("initialized...")
@@ -176,13 +181,13 @@ class Conf:
     #
     def update_bbox(self):
         self.xmin = 0.0
-        self.xmax = self.Nx*self.NxMesh+1.0
+        self.xmax = self.Nx*self.NxMesh
 
         self.ymin = 0.0
-        self.ymax = self.Ny*self.NyMesh+1.0
+        self.ymax = self.Ny*self.NyMesh
 
         self.zmin = 0.0
-        self.zmax = self.Nz*self.NzMesh+1.0
+        self.zmax = self.Nz*self.NzMesh
 
 
 class PIC(unittest.TestCase):
@@ -204,9 +209,14 @@ class PIC(unittest.TestCase):
 
 
         conf = Conf()
+        conf.NxMesh = 2
+        conf.NyMesh = 2
+
         conf.Nx = 3
         conf.Ny = 3
         conf.update_bbox()
+
+        conf.vel = 0.1
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
@@ -220,7 +230,7 @@ class PIC(unittest.TestCase):
         comm     = pypic.Communicator()
 
 
-        for lap in range(100):
+        for lap in range(40):
             #plot2dParticles(axs[0], node, conf)
             #saveVisz(lap, node, conf)
 
@@ -270,9 +280,26 @@ class PIC(unittest.TestCase):
                         #c.container.loc(2)[prtcl], 
                         #conf.xmax, conf.ymax, conf.zmax))
 
+                        #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
+                        #    prtcl, 
+                        #    c.container.loc(0)[prtcl],
+                        #    c.container.loc(1)[prtcl],
+                        #    c.container.loc(2)[prtcl],
+                        #    c.container.vel(0)[prtcl],
+                        #    c.container.vel(1)[prtcl],
+                        #    c.container.vel(2)[prtcl]))
+
+                        # check location
                         self.assertTrue( 0.0 <= c.container.loc(0)[prtcl] <= conf.xmax )
                         self.assertTrue( 0.0 <= c.container.loc(1)[prtcl] <= conf.ymax )
                         self.assertTrue( 0.0 <= c.container.loc(2)[prtcl] <= conf.zmax )
+
+                        # check velocity 
+                        velx = c.container.vel(0)[prtcl]
+                        vely = c.container.vel(1)[prtcl]
+                        velz = c.container.vel(2)[prtcl]
+                        vel = np.sqrt( velx*velx + vely*vely + velz*velz )
+                        self.assertAlmostEqual( vel, conf.vel, places=6 )
 
         tot_particles = (conf.Nx*conf.NxMesh *
                         conf.Ny*conf.NyMesh *

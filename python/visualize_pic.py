@@ -78,7 +78,7 @@ def plot2dParticles(ax, n, conf):
     Np = len(prtcl.xs)
     #print("particles to plot: {}".format(Np))
 
-    ax.plot(prtcl.xs, prtcl.ys, ".", color='black')
+    ax.plot(prtcl.xs, prtcl.ys, ".", color='red')
     
 
 

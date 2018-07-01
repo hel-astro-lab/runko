@@ -113,8 +113,22 @@ class Communicator {
   {
 
     // local tile limits
-    auto mins = cell.mins;
-    auto maxs = cell.maxs;
+    //auto mins = cell.mins;
+    //auto maxs = cell.maxs;
+
+    std::vector<double> mins = {
+      grid.getXmin(),
+      grid.getYmin(),
+      0.0
+    };
+
+    std::vector<double> maxs = {
+      grid.getXmax(),
+      grid.getYmax(),
+      1.0
+    };
+
+
 
     // fetch incoming particles from neighbors around me
     int k = 0;
@@ -170,8 +184,6 @@ class Communicator {
           };
 
           cell.container.add_particle(loc, vel);
-
-          continue;
         }
       }
     }
@@ -206,17 +218,20 @@ class Communicator {
     for( int i=0; i<3; i++)
       vel[i] = &( cell.container.vel(i,0) );
 
+    // overwrite particles with the last one on the array and then resize the array
     int last = cell.container.size();
     for(int indx : to_be_deleted) {
+      last--;
+
       //std::cout << "deleting " << indx << " by putting it to " << last << '\n';
       for(int i=0; i<3; i++) {
         loc[i][indx] = loc[i][last];
         vel[i][indx] = vel[i][last];
       }
 
-      last--;
-      cell.container.resize(last);
     }
+    cell.container.resize(last);
+
   }
 
 
