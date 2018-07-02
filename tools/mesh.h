@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <stdexcept>
+#include <cassert>
 
 
 namespace toolbox {
@@ -32,6 +33,10 @@ class Mesh {
 
     /// Internal indexing with halo region padding of width H
     size_t indx(int i, int j, int k) const {
+      assert( (i >= -H) && (i <  (int)Nx + H)  );
+      assert( (j >= -H) && (j <  (int)Ny + H)  );
+      assert( (k >= -H) && (k <  (int)Nz + H)  );
+
       int indx = (i + H) + (Ny + 2*H)*( (j + H) + (Nz + 2*H)*(k + H));
       return indx;
     }
@@ -94,13 +99,18 @@ class Mesh {
 
 
     // Mesh arithmetics
-    Mesh& operator=(const Mesh& rhs);
+    //Mesh& operator=(const Mesh& rhs);
+
+    template<int H2>
+    Mesh& operator=(const Mesh<T, H2>& rhs);
 
     Mesh& operator=(const T& rhs);
 
-    Mesh& operator+=(const Mesh& rhs);
+    template<int H2>
+    Mesh& operator+=(const Mesh<T, H2>& rhs);
 
-    Mesh& operator-=(const Mesh& rhs);
+    template<int H2>
+    Mesh& operator-=(const Mesh<T, H2>& rhs);
 
     Mesh& operator*=(const T& rhs);
 
@@ -109,26 +119,43 @@ class Mesh {
 
     /// Validate that two grids match
     // TODO: unify index testing; use assert() ?
-    void validateDims(const Mesh& rhs) {
+    template<int H2>
+    void validateDims(const Mesh<T,H2>& rhs) {
       if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
       if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
       if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
     };
 
-    void copyVert(Mesh& rhs, int lhsJ, int rhsJ);
-    void addVert(Mesh& rhs, int lhsJ, int rhsJ);
+    template<int H2>
+    void copyVert(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
 
-    void copyHorz(Mesh& rhs, int lhsI, int rhsI);
-    void addHorz(Mesh& rhs, int lhsI, int rhsI);
+    template<int H2>
+    void addVert(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
 
-    void copyFace(Mesh& rhs, int lhsK, int rhsK);
-    void addFace(Mesh& rhs, int lhsK, int rhsK);
 
-    void copyZdirPencil(Mesh& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ);
-    void addZdirPencil(Mesh& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ);
+    template<int H2>
+    void copyHorz(Mesh<T, H2>& rhs, int lhsI, int rhsI);
+
+    template<int H2>
+    void addHorz(Mesh<T, H2>& rhs, int lhsI, int rhsI);
+
+
+    template<int H2>
+    void copyFace(Mesh<T, H2>& rhs, int lhsK, int rhsK);
+
+    template<int H2>
+    void addFace(Mesh<T, H2>& rhs, int lhsK, int rhsK);
+
+
+    template<int H2>
+    void copyZdirPencil(Mesh<T, H2>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ);
+
+    template<int H2>
+    void addZdirPencil(Mesh<T, H2>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ);
 };
 
 
+/*
 template <class T, int H>
 Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
@@ -138,6 +165,26 @@ Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
   }
   return *this;
 }
+*/
+
+
+template<typename T, int H>
+template <int H2>
+Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
+  validateDims(rhs);
+
+  for(size_t k=0;  k<this->Nz; k++) {
+    for(size_t j=0;  j<this->Ny; j++) {
+      for(size_t i=0;  i<this->Nx; i++) {
+        this->operator()(i,j,k) = rhs(i,j,k);
+      }
+    }
+  }
+
+  return *this;
+}
+
+
 
 template <class T, int H>
 Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
@@ -147,6 +194,8 @@ Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
   return *this;
 }
 
+
+/*
 template <class T, int H>
 Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
@@ -156,7 +205,26 @@ Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H>& rhs) {
   }
   return *this;
 }
+*/
 
+template<typename T, int H>
+template <int H2>
+Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H2>& rhs) {
+  validateDims(rhs);
+
+  for(size_t k=0;  k<this->Nz; k++) {
+    for(size_t j=0;  j<this->Ny; j++) {
+      for(size_t i=0;  i<this->Nx; i++) {
+        this->operator()(i,j,k) += rhs(i,j,k);
+      }
+    }
+  }
+
+  return *this;
+}
+
+
+/*
 template <class T, int H>
 Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
@@ -164,6 +232,23 @@ Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] -= rhs.mat[i];
   }
+  return *this;
+}
+*/
+
+template<typename T, int H>
+template <int H2>
+Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H2>& rhs) {
+  validateDims(rhs);
+
+  for(size_t k=0;  k<this->Nz; k++) {
+    for(size_t j=0;  j<this->Ny; j++) {
+      for(size_t i=0;  i<this->Nx; i++) {
+        this->operator()(i,j,k) -= rhs(i,j,k);
+      }
+    }
+  }
+
   return *this;
 }
 
@@ -186,14 +271,31 @@ Mesh<T,H>& Mesh<T,H>::operator/=(const T& rhs) {
 
 // Array arithmetics 
 //-------------------------------------------------- 
+/*
 template <class T, int H>
 inline Mesh<T,H> operator+(Mesh<T,H> lhs, const Mesh<T,H>& rhs) {
   lhs += rhs;
   return lhs;
 }
+*/
 
+template <class T, int H, int H2>
+inline Mesh<T,H> operator+(Mesh<T,H> lhs, const Mesh<T,H2>& rhs) {
+  lhs += rhs;
+  return lhs;
+}
+
+
+/*
 template <class T, int H>
 inline Mesh<T,H> operator-(Mesh<T,H> lhs, const Mesh<T,H>& rhs) {
+  lhs -= rhs;
+  return lhs;
+}
+*/
+
+template <class T, int H, int H2>
+inline Mesh<T,H> operator-(Mesh<T,H> lhs, const Mesh<T,H2>& rhs) {
   lhs -= rhs;
   return lhs;
 }
@@ -221,7 +323,8 @@ inline Mesh<T,H> operator/(Mesh<T,H> lhs, const T& rhs) {
 /// Copy vertical slice
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and ignoring it
 template <class T, int H>
-void Mesh<T,H>::copyVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
+template <int H2>
+void Mesh<T,H>::copyVert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
@@ -234,7 +337,8 @@ void Mesh<T,H>::copyVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
 
 /// Add vertical slice
 template <class T, int H>
-void Mesh<T,H>::addVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
+template <int H2>
+void Mesh<T,H>::addVert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
@@ -248,7 +352,8 @@ void Mesh<T,H>::addVert(Mesh<T,H>& rhs, int lhsI, int rhsI) {
 
 /// Copy horizontal slice 
 template <class T, int H>
-void Mesh<T,H>::copyHorz(Mesh<T,H>& rhs, int lhsJ, int rhsJ) {
+template <int H2>
+void Mesh<T,H>::copyHorz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 
@@ -261,7 +366,8 @@ void Mesh<T,H>::copyHorz(Mesh<T,H>& rhs, int lhsJ, int rhsJ) {
   
 /// Add horizontal slice 
 template <class T, int H>
-void Mesh<T,H>::addHorz(Mesh<T,H>& rhs, int lhsJ, int rhsJ) {
+template <int H2>
+void Mesh<T,H>::addHorz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 
@@ -275,7 +381,8 @@ void Mesh<T,H>::addHorz(Mesh<T,H>& rhs, int lhsJ, int rhsJ) {
 
 /// Copy face slice 
 template <class T, int H>
-void Mesh<T,H>::copyFace(Mesh<T,H>& rhs, int lhsK, int rhsK) {
+template <int H2>
+void Mesh<T,H>::copyFace(Mesh<T,H2>& rhs, int lhsK, int rhsK) {
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
@@ -288,7 +395,8 @@ void Mesh<T,H>::copyFace(Mesh<T,H>& rhs, int lhsK, int rhsK) {
   
 /// Add face slice 
 template <class T, int H>
-void Mesh<T,H>::addFace(Mesh<T,H>& rhs, int lhsK, int rhsK) {
+template <int H2>
+void Mesh<T,H>::addFace(Mesh<T,H2>& rhs, int lhsK, int rhsK) {
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
@@ -301,7 +409,8 @@ void Mesh<T,H>::addFace(Mesh<T,H>& rhs, int lhsK, int rhsK) {
 
 // copy pencil pointing along Z
 template <class T, int H>
-void Mesh<T,H>::copyZdirPencil(Mesh<T,H>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ) {
+template <int H2>
+void Mesh<T,H>::copyZdirPencil(Mesh<T,H2>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
 
   for(int k=0; k<(int)this->Nz; k++) { 
@@ -311,7 +420,8 @@ void Mesh<T,H>::copyZdirPencil(Mesh<T,H>& rhs, int lhsI, int lhsJ, int rhsI, int
 
 // add pencil pointing along Z
 template <class T, int H>
-void Mesh<T,H>::addZdirPencil(Mesh<T,H>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ) {
+template <int H2>
+void Mesh<T,H>::addZdirPencil(Mesh<T,H2>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
 
   for(int k=0; k<(int)this->Nz; k++) { 
