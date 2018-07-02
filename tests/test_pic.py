@@ -485,10 +485,10 @@ class PIC(unittest.TestCase):
         conf.Nx = 10
         conf.Ny = 3
         conf.Nz = 1
-        conf.NxMesh = 10
-        conf.NyMesh = 10
+        conf.NxMesh = 5
+        conf.NyMesh = 5
         conf.NzMesh = 1
-        conf.ppc = 10
+        conf.ppc = 1
         conf.vel = 0.1
         conf.update_bbox()
 
@@ -496,8 +496,8 @@ class PIC(unittest.TestCase):
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadCells(node, conf)
         insert_em(node, conf, zero_field)
-        #inject(node, filler, conf) #injecting plasma particles
-        inject(node, filler_xvel, conf) #injecting plasma particles
+        inject(node, filler, conf) #injecting plasma particles
+        #inject(node, filler_xvel, conf) #injecting plasma particles
 
 
         #pusher   = pypic.Pusher()

@@ -90,7 +90,7 @@ class Communicator {
 
       if ((i == 0) && (j == 0)) continue; //TODO: hack to make this work with 2D corgi tiles
 
-      if (i != 0 | j != 0 | k != 0) {
+      if ( (i != 0) | (j != 0) | (k != 0) ) {
         to_others.insert( std::make_pair( std::make_tuple(i,j,k), n) );
       }
     }

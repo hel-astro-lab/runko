@@ -34,14 +34,14 @@ class YeeLattice {
   toolbox::Mesh<Realf, 1> bz;
 
   /// Current vector 
-  toolbox::Mesh<Realf, 1> jx;
-  toolbox::Mesh<Realf, 1> jy;
-  toolbox::Mesh<Realf, 1> jz;
+  toolbox::Mesh<Realf, 3> jx;
+  toolbox::Mesh<Realf, 3> jy;
+  toolbox::Mesh<Realf, 3> jz;
 
   /// temporary current
-  toolbox::Mesh<Realf, 1> jx1;
-  toolbox::Mesh<Realf, 1> jy1;
-  toolbox::Mesh<Realf, 1> jz1;
+  toolbox::Mesh<Realf, 3> jx1;
+  toolbox::Mesh<Realf, 3> jy1;
+  toolbox::Mesh<Realf, 3> jz1;
 
   /// Charge density
   toolbox::Mesh<Realf, 1> rho;

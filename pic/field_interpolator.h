@@ -96,9 +96,9 @@ class ParticleFieldInterpolator
       */
 		  //l = i; // + iy*(j-1) + iz*(k-1);
 
-      assert(i >= 0 && i < cell.NxMesh);
-      assert(j >= 0 && j < cell.NyMesh);
-      assert(k >= 0 && k < cell.NzMesh);
+      assert(i >= 0 && i < (int)cell.NxMesh);
+      assert(j >= 0 && j < (int)cell.NyMesh);
+      assert(k >= 0 && k < (int)cell.NzMesh);
 
       // TODO: 2D hack
       k = 0;
