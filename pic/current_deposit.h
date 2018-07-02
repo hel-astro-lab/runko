@@ -188,21 +188,28 @@ class Depositer {
       std::cout << "\n";
 
 
-      assert(i1   >= -1 && i1   < cell.NxMesh+1);
-      assert(j1   >= -1 && j1   < cell.NyMesh+1);
-      assert(k1   >= -1 && k1   < cell.NzMesh+1);
+      //--------------------------------------------------
+      // index checking
+      int halo = 3;
+      assert(i1   >= -halo && i1   < cell.NxMesh+halo);
+      assert(j1   >= -halo && j1   < cell.NyMesh+halo);
+      assert(k1   >= -halo && k1   < cell.NzMesh+halo);
 
-      assert(i1p1 >= -1 && i1p1 < cell.NxMesh+1);
-      assert(j1p1 >= -1 && j1p1 < cell.NyMesh+1);
-      assert(k1p1 >= -1 && k1p1 < cell.NzMesh+1);
+      assert(i1p1 >= -halo && i1p1 < cell.NxMesh+halo);
+      assert(j1p1 >= -halo && j1p1 < cell.NyMesh+halo);
+      assert(k1p1 >= -halo && k1p1 < cell.NzMesh+halo);
 
-      assert(i2   >= -1 && i2   < cell.NxMesh+1);
-      assert(j2   >= -1 && j2   < cell.NyMesh+1);
-      assert(k2   >= -1 && k2   < cell.NzMesh+1);
+      assert(i2   >= -halo && i2   < cell.NxMesh+halo);
+      assert(j2   >= -halo && j2   < cell.NyMesh+halo);
+      assert(k2   >= -halo && k2   < cell.NzMesh+halo);
 
-      assert(i2p1 >= -1 && i2p1 < cell.NxMesh+1);
-      assert(j2p1 >= -1 && j2p1 < cell.NyMesh+1);
-      assert(k2p1 >= -1 && k2p1 < cell.NzMesh+1);
+      assert(i2p1 >= -halo && i2p1 < cell.NxMesh+halo);
+      assert(j2p1 >= -halo && j2p1 < cell.NyMesh+halo);
+      assert(k2p1 >= -halo && k2p1 < cell.NzMesh+halo);
+
+      //--------------------------------------------------
+
+
 
       // jx
       yee.jx(i1,  j1,   k1)   += Fx1 * onemWy1 * onemWz1;

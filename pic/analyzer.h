@@ -117,10 +117,7 @@ class Analyzator {
       v0 = vel[1][n];
       w0 = vel[2][n];
 
-      gam = sqrt(1.0 + 
-          vel[0][n]*vel[0][n] + 
-          vel[1][n]*vel[1][n] + 
-          vel[2][n]*vel[2][n]);
+      gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
 
       // --------------------------------------------------
       // general quantities
