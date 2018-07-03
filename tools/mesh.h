@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <vector>
 #include <stdexcept>
 #include <cassert>
@@ -32,12 +34,24 @@ class Mesh {
 
 
     /// Internal indexing with halo region padding of width H
-    size_t indx(int i, int j, int k) const {
+    inline size_t indx(int i, int j, int k) const {
       assert( (i >= -H) && (i <  (int)Nx + H)  );
       assert( (j >= -H) && (j <  (int)Ny + H)  );
       assert( (k >= -H) && (k <  (int)Nz + H)  );
 
-      int indx = (i + H) + (Ny + 2*H)*( (j + H) + (Nz + 2*H)*(k + H));
+
+      int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+
+      /*
+      std::cout << "indx: " << indx;
+      std::cout << "i: " << i << " j " << j << " k " << k << "\n";
+      std::cout << "H: " << H << "\n";
+      std::cout << "size: " << mat.size() << "\n";
+      std::cout << "Nx: " << Nx << " Ny " << Ny << " Nz " << Nz << "\n";
+      */
+
+      assert( (indx >= 0) && (indx <  (int)mat.size() ) );
+
       return indx;
     }
 
@@ -52,7 +66,8 @@ class Mesh {
 
 
     /// Default initialization
-    Mesh(size_t Nx, size_t Ny, size_t Nz) : Nx(Nx), Ny(Ny), Nz(Nz) {
+    Mesh(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
+      Nx(Nx_in), Ny(Ny_in), Nz(Nz_in) {
       mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
       std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
     };
