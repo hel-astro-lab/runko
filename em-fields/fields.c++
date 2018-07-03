@@ -370,9 +370,9 @@ void addZdirPencilYee(
     int lhsI, int lhsJ,
     int rhsI, int rhsJ) {
 
-  lhs.jx.addZdirPencil(rhs.ex, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.jy.addZdirPencil(rhs.ey, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.jz.addZdirPencil(rhs.ez, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jx.addZdirPencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jy.addZdirPencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jz.addZdirPencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
 
 }
 
@@ -587,7 +587,7 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
         node.getCellPtr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
-  //copy from bottom side to top
+  //add from bottom side to top
   for(int h=1; h<= halo; h++)
   addHorzYee(mesh, mtop, mesh.Ny+h-1, h-1); 
 
@@ -598,7 +598,7 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
         node.getCellPtr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
-  // copy from top side to bottom
+  // add from top side to bottom
   for(int h=1; h<= halo; h++)
   addHorzYee(mesh, mbot, -h, mbot.Ny-h); 
 
