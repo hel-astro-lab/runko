@@ -25,6 +25,11 @@ try:
     from visualize import plotJ, plotE, plotDens
     from visualize import getYee
     from visualize import saveVisz
+
+    from visualize import plot2dYee
+    from visualize_pic import plot2dParticles
+
+
 except:
     pass
 
@@ -131,7 +136,11 @@ def inject(node, ffunc, conf):
                 c.container.reserve(Nprtcls, 3)
                 c.container.resizeEM(Nprtcls, 3)
 
-                #if not(i == 1 and j == 1):
+                # initialize analysis tiles ready for incoming simulation data
+                for ip in range(conf.Nspecies):
+                    c.addAnalysisSpecies()
+
+                #if not(1 <= i <= 2 and j == 1):
                 #    continue
 
                 for ispcs in range(conf.Nspecies):
@@ -159,9 +168,6 @@ def inject(node, ffunc, conf):
 
                                     c.container.add_particle(x0, u0)
 
-                # initialize analysis tiles ready for incoming simulation data
-                for ip in range(conf.Nspecies):
-                    c.addAnalysisSpecies()
 
 
 
@@ -335,16 +341,16 @@ if __name__ == "__main__":
     ################################################## 
     # set up plotting and figure
     try:
-        plt.fig = plt.figure(1, figsize=(8,9))
+        plt.fig = plt.figure(1, figsize=(8,10))
         plt.rc('font', family='serif', size=12)
         plt.rc('xtick')
         plt.rc('ytick')
         
-        gs = plt.GridSpec(8, 1)
+        gs = plt.GridSpec(4, 3)
         gs.update(hspace = 0.5)
         
         axs = []
-        for ai in range(8):
+        for ai in range(12):
             axs.append( plt.subplot(gs[ai]) )
     except:
         pass
@@ -519,7 +525,7 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 comm.delete_transferred_particles(cell)
 
-        ##################################################
+        # field communication
 
         #exchange currents
         for j in range(node.getNy()):
@@ -527,22 +533,30 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 cell.exchangeCurrents2D(node)
 
+        ##################################################
+
         #filter
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                flt.get_padded_current(cell, node)
-                flt.fft_image_forward()
-                flt.apply_kernel()
-                flt.fft_image_backward()
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        flt.get_padded_current(cell, node)
+        #        #flt.fft_image_forward()
+        #        #flt.apply_kernel()
+        #        #flt.fft_image_backward()
+        #
+        #        #for fj in range(1):
+        #        #    flt.direct_convolve_3point()
+        #
+        #        #flt.set_current(cell)
 
-                flt.set_current(cell)
+        ##cycle new and temporary currents
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #        cell = node.getCellPtr(i,j)
+        #        cell.cycleCurrent2D()
 
-        #cycle new and temporary currents
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycleCurrent()
+        ##################################################
+        
 
         #add current to E
         for j in range(node.getNy()):
@@ -550,6 +564,9 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 cell.depositCurrent()
 
+
+        ##################################################
+        # data reduction and I/O
 
         #analyze
         for j in range(node.getNy()):
@@ -578,21 +595,41 @@ if __name__ == "__main__":
             plasma.writeAnalysis(node, lap, conf.outdir + "/")
             #plasma.writeMesh(node,     lap, conf.outdir + "/")
 
-            try:
-                plotNode( axs[0], node, conf)
-                plotXmesh(axs[1], node, conf, 0, "x")
+            #try:
+            #    plotNode( axs[0], node, conf)
+            #    plotXmesh(axs[1], node, conf, 0, "x")
+            #    plotJ(    axs[5], node, conf)
+            #    plotE(    axs[6], node, conf)
+            #    plotDebug(axs[6], node, conf)
+            #    plotDens( axs[7], node, conf)
+            #    saveVisz(lap, node, conf)
 
-                plotJ(    axs[5], node, conf)
+            #--------------------------------------------------
+            #2D plots
+            #try:
+            plotNode(axs[0], node, conf)
 
-                plotE(    axs[6], node, conf)
-                plotDebug(axs[6], node, conf)
+            plot2dParticles(axs[1], node, conf, downsample=0.001)
 
-                plotDens( axs[7], node, conf)
+            plot2dYee(axs[2], node, conf, 'rho')
+
+            plot2dYee(axs[3], node, conf, 'jx')
+            plot2dYee(axs[4], node, conf, 'jy')
+            plot2dYee(axs[5], node, conf, 'jz')
+
+            plot2dYee(axs[6], node, conf, 'ex')
+            plot2dYee(axs[7], node, conf, 'ey')
+            plot2dYee(axs[8], node, conf, 'ez')
+
+            plot2dYee(axs[9], node, conf, 'bx')
+            plot2dYee(axs[10],node, conf, 'by')
+            plot2dYee(axs[11],node, conf, 'bz')
 
 
-                saveVisz(lap, node, conf)
-	    except:
-	        pass
+            saveVisz(lap, node, conf)
+
+	    #except:
+	    #    pass
 
 
 

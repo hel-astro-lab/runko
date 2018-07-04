@@ -278,8 +278,8 @@ def getYee2D(n, conf):
             c = n.getCellPtr(cid)
 
             yee = c.getYee(0)
-            for q in range(conf.NxMesh):
-                for r in range(conf.NyMesh):
+            for r in range(conf.NyMesh):
+                for q in range(conf.NxMesh):
 
                     indx = i*conf.NxMesh + q
                     jndx = j*conf.NyMesh + r
@@ -307,15 +307,15 @@ def getYee2D(n, conf):
 def getAnalysis(n, conf, ispcs):
 
     data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
-           'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'mgamma':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vx':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vy':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vz':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Tx':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Ty':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Tz':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'ekin':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'rho':    -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'mgamma': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Tx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Ty':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Tz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'ekin':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            }
 
     for i in range(conf.Nx):
@@ -402,18 +402,19 @@ def plot2dYee(ax, n, conf, val = 'jx'):
     yee = getYee2D(n, conf)
 
     vmin, vmax = np.min(yee[val]), np.max(yee[val])
-
-
-    print(vmin)
-    print(vmax)
+    #print(val)
+    #print(vmin)
+    #print(vmax)
+    vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
 
     imshow(ax, yee[val],
            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
-           cmap = "plasma",
-           vmin = vmin,
-           vmax = vmax,
+           cmap = "RdBu",
+           vmin = -vminmax,
+           vmax =  vminmax,
            clip = 0.0
           )
+    ax.set_title(val)
 
 
 
