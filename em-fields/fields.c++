@@ -566,9 +566,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
         node.getCellPtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
-  // add from right side to left
-  for(int h=1; h<= halo; h++)
-  addVertYee(mesh, mleft, -h, mleft.Nx-h); 
+  // add from left to right
+  for(int h=0; h< halo; h++) addVertYee(mesh, mleft, h, mleft.Nx+h); 
 
 
   // right
@@ -577,9 +576,9 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
         node.getCellPtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
-  // add from left side to right
-  for(int h=1; h<= halo; h++)
-  addVertYee(mesh, mright, mesh.Nx+h-1, h-1); 
+  // add from right to left
+  for(int h=1; h<= halo; h++) addVertYee(mesh, mright, mesh.Nx-h, -h); 
+
 
   // top 
   auto ctop = 
@@ -587,9 +586,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
         node.getCellPtr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
-  //add from bottom side to top
-  for(int h=1; h<= halo; h++)
-  addHorzYee(mesh, mtop, mesh.Ny+h-1, h-1); 
+  //add from top to bottom
+  for(int h=0; h< halo; h++) addHorzYee(mesh, mtop, h, mtop.Ny+h); 
 
 
   // bottom
@@ -598,9 +596,12 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
         node.getCellPtr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
-  // add from top side to bottom
-  for(int h=1; h<= halo; h++)
-  addHorzYee(mesh, mbot, -h, mbot.Ny-h); 
+  // add from bottom to top
+  for(int h=1; h<=halo; h++) addHorzYee(mesh, mbot, mesh.Ny-h, -h); 
+
+
+
+
 
   // --------------------------------------------------  
   // diagonals
@@ -609,10 +610,11 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
         node.getCellPtr( neighs(-1, +1) ));
   fields::YeeLattice& mtopleft = ctopleft->getYee();
 
-  for(int h=1; h<= halo; h++)
+  for(int h=0; h<  halo; h++)
   for(int g=1; g<= halo; g++)
-  addZdirPencilYee(mesh, mtopleft, -h,            mesh.Ny +g-1,
-                                   mtopleft.Nx-h, +g-1);
+  addZdirPencilYee(mesh, mtopleft, h, mesh.Ny-g,
+                                   mtopleft.Nx+h, -g);
+
 
   auto ctopright = 
     std::dynamic_pointer_cast<fields::PlasmaCell>(
@@ -621,18 +623,18 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
   for(int h=1; h<= halo; h++)
   for(int g=1; g<= halo; g++)
-  addZdirPencilYee(mesh, mtopright, mesh.Nx +h-1, mesh.Ny +g-1,
-                                    +h-1,         +g-1);
+  addZdirPencilYee(mesh, mtopright, mesh.Nx-h, mesh.Ny-g,
+                                    -h,         -g);
 
   auto cbotleft = 
     std::dynamic_pointer_cast<fields::PlasmaCell>(
         node.getCellPtr( neighs(-1, -1) ));
   fields::YeeLattice& mbotleft = cbotleft->getYee();
   
-  for(int h=1; h<= halo; h++)
-  for(int g=1; g<= halo; g++)
-  addZdirPencilYee(mesh, mbotleft, -h,            -g,
-                                   mbotleft.Nx-h, mbotleft.Ny-g);
+  for(int h=0; h<  halo; h++)
+  for(int g=0; g<  halo; g++)
+  addZdirPencilYee(mesh, mbotleft, h,            g,
+                                   mbotleft.Nx+h, mbotleft.Ny+g);
 
   auto cbotright = 
     std::dynamic_pointer_cast<fields::PlasmaCell>(
@@ -640,9 +642,9 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
   fields::YeeLattice& mbotright = cbotright->getYee();
 
   for(int h=1; h<= halo; h++)
-  for(int g=1; g<= halo; g++)
-  addZdirPencilYee(mesh, mbotright, mesh.Nx +h-1, -g,
-                                    +h-1,        mbotright.Ny-g);
+  for(int g=0; g<  halo; g++)
+  addZdirPencilYee(mesh, mbotright, mesh.Nx-h, g,
+                                    -h,      mbotright.Ny+g);
 
 
   // front

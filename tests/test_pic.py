@@ -58,12 +58,22 @@ def filler(xloc, ispcs, conf):
 
     ur = conf.vel
     uc = randab(0.0, 2.0*np.pi) 
+    us = randab(0.0, 1.0*np.pi) 
+
+    #3D
+    #ux = ur*np.sin( uc )*np.sin(us)
+    #uy = ur*np.cos( uc )*np.sin(us)
+    #uz = ur*np.cos(us)
+
+    #2D
     ux = ur*np.sin( uc )
-    uy = ur*np.cos( uc ) 
+    uy = ur*np.cos( uc )
     uz = 0.0
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
+
+
     return x0, u0
 
 def filler_xvel(xloc, ispcs, conf):
@@ -72,14 +82,25 @@ def filler_xvel(xloc, ispcs, conf):
     xx = xloc[0] + np.random.rand(1)
     yy = xloc[1] + np.random.rand(1)
     #zz = xloc[2] + np.random.rand(1)
+
+    xx = xloc[0] + 0.5
+    yy = xloc[1] + 0.5
     zz = 0.0
 
-    ux = randab(-conf.vel, conf.vel)
-    uy = 0.0
-    uz = 0.0
-
     x0 = [xx, yy, zz]
-    u0 = [ux, uy, uz]
+
+    if (conf.NyMesh < yy < 2.0*conf.NyMesh) and (conf.NxMesh < xx < 2.0*conf.NxMesh):
+        u0 = [0.0, 1.0, 0.0]
+    else:
+        u0 = [0.0, 0.0, 0.0]
+
+    u0 = [1.0, 0.0, 0.0]
+    #ux = randab(-conf.vel, conf.vel)
+    #ux = 0.1
+    #uy = 0.0
+    #uz = 0.0
+    #u0 = [ux, uy, uz]
+
     return x0, u0
 
 def zero_field(x,y,z):
@@ -90,7 +111,8 @@ def const_field(x, y, z):
 
 def linear_field(x, y, z):
     #print("x = {} y = {} z = {}".format(x,y,z))
-    #return 1.0*x 
+    #return 1.0*x  
+    return 1.0*x + 1.0*y
     #return 10.0*y 
     #return 100.0*z 
     #return 1.0*x + 10.0*y 
@@ -111,12 +133,12 @@ def insert_em(node, conf, ffunc):
                     for n in range(conf.NzMesh):
 
                         # get x_i,j,k
-                        xloc0 = spatialLoc(node, (i,j), (l,  m,n), conf)
+                        xloc0 = spatialLoc(node, (i,j), (l,m,n), conf)
 
                         #get x_i+1/2, x_j+1/2, x_k+1/2
-                        xloc1 = spatialLoc(node, (i,j), (l+1,m,n), conf)
-                        yloc1 = spatialLoc(node, (i,j), (l,m+1,n), conf)
-                        zloc1 = spatialLoc(node, (i,j), (l,m,n+1), conf)
+                        xloc1 = spatialLoc(node, (i,j), (l+1,m,  n),   conf)
+                        yloc1 = spatialLoc(node, (i,j), (l,  m+1,n),   conf)
+                        zloc1 = spatialLoc(node, (i,j), (l,  m,  n+1), conf)
 
                         # values in Yee lattice corners
                         xcor = xloc0[0]
@@ -174,9 +196,9 @@ class Conf:
     ppc = 1
 
 
-    #dx = 1.0
-    #dy = 1.0
-    #dz = 1.0
+    dx = 1.0
+    dy = 1.0
+    dz = 1.0
 
     me = 1
     mi = 1
@@ -228,8 +250,8 @@ class PIC(unittest.TestCase):
 
 
         conf = Conf()
-        conf.NxMesh = 2
-        conf.NyMesh = 2
+        conf.NxMesh = 3
+        conf.NyMesh = 3
 
         conf.Nx = 3
         conf.Ny = 3
@@ -482,23 +504,23 @@ class PIC(unittest.TestCase):
 
 
         conf = Conf()
-        conf.Nx = 10
+        conf.Nx = 4
         conf.Ny = 3
         conf.Nz = 1
         conf.NxMesh = 5
         conf.NyMesh = 5
         conf.NzMesh = 1
-        conf.ppc = 1
+        conf.ppc = 10
         conf.vel = 0.1
         conf.update_bbox()
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadCells(node, conf)
+        #insert_em(node, conf, linear_field)
         insert_em(node, conf, zero_field)
         inject(node, filler, conf) #injecting plasma particles
         #inject(node, filler_xvel, conf) #injecting plasma particles
-
 
         #pusher   = pypic.Pusher()
         #fintp    = pypic.ParticleFieldInterpolator()
@@ -510,7 +532,7 @@ class PIC(unittest.TestCase):
         flt.init_gaussian_kernel(2.0, 2.0)
 
         #for lap in range(0, conf.Nt):
-        for lap in [0]:
+        for lap in range(1):
 
             #analyze
             for j in range(node.getNy()):
@@ -518,7 +540,7 @@ class PIC(unittest.TestCase):
                     cell = node.getCellPtr(i,j)
                     analyzer.analyze(cell)
 
-            ##update boundaries
+            #update boundaries
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     cell = node.getCellPtr(i,j)
@@ -536,7 +558,7 @@ class PIC(unittest.TestCase):
                     cell = node.getCellPtr(i,j)
                     cell.exchangeCurrents2D(node)
 
-            plot2dParticles(axs[0], node, conf, downsample=0.01)
+            plot2dParticles(axs[0], node, conf, downsample=0.1)
             plot2dYee(axs[1], node, conf, 'rho')
             plot2dYee(axs[2], node, conf, 'jx')
             plot2dYee(axs[3], node, conf, 'jy')
@@ -547,9 +569,15 @@ class PIC(unittest.TestCase):
                 for i in range(node.getNx()):
                     cell = node.getCellPtr(i,j)
                     flt.get_padded_current(cell, node)
-                    flt.fft_image_forward()
-                    flt.apply_kernel()
-                    flt.fft_image_backward()
+
+                    # fourier space filtering
+                    #flt.fft_image_forward()
+                    #flt.apply_kernel()
+                    #flt.fft_image_backward()
+
+                    # direct filtering
+                    for fj in range(1):
+                        flt.direct_convolve_3point()
                     flt.set_current(cell)
 
             #cycle new and temporary currents

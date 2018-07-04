@@ -25,7 +25,7 @@ try:
     from visualize import plotJ, plotE, plotDens
     from visualize import getYee
     from visualize import saveVisz
-
+    
     from visualize import plot2dYee
     from visualize_pic import plot2dParticles
 
@@ -245,7 +245,8 @@ def filler(xloc, ispcs, conf):
     rr2 = np.random.rand()
     r1  = np.sqrt(-2.0*np.log(rr1))*np.cos(2.0*np.pi*rr2)
     r2  = np.sqrt(-2.0*np.log(rr1))*np.sin(2.0*np.pi*rr2)
-    ux = r1*vth + v0
+    ux = r1*vth  +v0
+    uy = r2*vth  +v0
 
     #print("injecting into {} ({})".format(xx, xloc[0]))
 
@@ -536,24 +537,25 @@ if __name__ == "__main__":
         ##################################################
 
         #filter
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        flt.get_padded_current(cell, node)
-        #        #flt.fft_image_forward()
-        #        #flt.apply_kernel()
-        #        #flt.fft_image_backward()
-        #
-        #        #for fj in range(1):
-        #        #    flt.direct_convolve_3point()
-        #
-        #        #flt.set_current(cell)
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                flt.get_padded_current(cell, node)
+
+                #flt.fft_image_forward()
+                #flt.apply_kernel()
+                #flt.fft_image_backward()
+        
+                for fj in range(5):
+                    flt.direct_convolve_3point()
+                flt.set_current(cell)
+
 
         ##cycle new and temporary currents
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        cell.cycleCurrent2D()
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycleCurrent2D()
 
         ##################################################
         

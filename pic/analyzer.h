@@ -62,7 +62,8 @@ class Analyzator {
     double q = cell.container.qe; // TODO: split into species
     double x0, y0, z0;
     double u0, v0, w0;
-    double i,j,k;
+    //double i,j,k;
+    int i,j,k;
 
 
     // loop and check particles
@@ -89,9 +90,9 @@ class Analyzator {
 		  //k  = trunc( cell.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
         
       // fixed grid form assuming dx = 1
-		  i  = floor( loc[0][n]-mins[0] );
-		  j  = floor( loc[1][n]-mins[1] );
-		  k  = floor( loc[2][n]-mins[2] );
+		  i  = (int)floor( loc[0][n]-mins[0] );
+		  j  = (int)floor( loc[1][n]-mins[1] );
+		  k  = (int)floor( loc[2][n]-mins[2] );
 
       /*
       std::cout << "----------------------\n";
@@ -105,13 +106,13 @@ class Analyzator {
       std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
       */
 
-      assert(i >= 0 && i < cell.NxMesh);
-      assert(j >= 0 && j < cell.NyMesh);
-      assert(k >= 0 && k < cell.NzMesh);
+      assert(i >= 0 && i < (int)cell.NxMesh);
+      assert(j >= 0 && j < (int)cell.NyMesh);
+      assert(k >= 0 && k < (int)cell.NzMesh);
 
-      assert( x0 >= mins[0] && i < maxs[0] );
-      assert( y0 >= mins[1] && j < maxs[1] );
-      assert( z0 >= mins[2] && k < maxs[2] );
+      assert( x0 >= mins[0] && x0 < maxs[0] );
+      assert( y0 >= mins[1] && y0 < maxs[1] );
+      assert( z0 >= mins[2] && z0 < maxs[2] );
 
       u0 = vel[0][n];
       v0 = vel[1][n];
@@ -121,13 +122,14 @@ class Analyzator {
 
       // --------------------------------------------------
       // general quantities
-        
+
       yee.rho(i,j,k) += abs(q); // number density
 
-      // --------------------------------------------------
-      // particle-species quantities
 
       analysis.rho(i,j,k) += abs(q); // number density
+        
+      // --------------------------------------------------
+      // particle-species quantities
 
       analysis.mgamma(i,j,k) += gam; // mean gamma
 

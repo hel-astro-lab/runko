@@ -402,10 +402,8 @@ def plot2dYee(ax, n, conf, val = 'jx'):
     yee = getYee2D(n, conf)
 
     vmin, vmax = np.min(yee[val]), np.max(yee[val])
-    #print(val)
-    #print(vmin)
-    #print(vmax)
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
+    print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 
     imshow(ax, yee[val],
            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),

@@ -99,6 +99,8 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
           int j = indx[1].cast<int>();
           int k = indx[2].cast<int>();
 
+
+          // NOTE: these are out-of-bounds; not inbound checks
           if (i < -H) throw py::index_error();
           if (j < -H) throw py::index_error();
           if (k < -H) throw py::index_error();
@@ -161,7 +163,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("updateBoundaries",  &fields::PlasmaCell::updateBoundaries)
     .def("updateBoundaries2D",&fields::PlasmaCell::updateBoundaries2D)
     .def("exchangeCurrents",  &fields::PlasmaCell::exchangeCurrents)
-    .def("exchangeCurrents2D",  &fields::PlasmaCell::exchangeCurrents2D);
+    .def("exchangeCurrents2D",&fields::PlasmaCell::exchangeCurrents2D);
 
 
   py::class_<fields::PlasmaCellDamped,
@@ -342,91 +344,6 @@ PYBIND11_MODULE(pyplasma, m) {
   declare_Mesh<Realf, 1>(m, 1, std::string("Mesh1") );
   declare_Mesh<Realf, 3>(m, 3, std::string("Mesh3") );
 
-
-
-  /*
-  py::class_<toolbox::Mesh<Realf,1>>(m, "Mesh")
-    .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("Nx", &toolbox::Mesh<Realf,1>::Nx)
-    .def_readwrite("Ny", &toolbox::Mesh<Realf,1>::Ny)
-    .def_readwrite("Nz", &toolbox::Mesh<Realf,1>::Nz)
-    .def("indx",         &toolbox::Mesh<Realf,1>::indx)
-    .def("__getitem__", [](const toolbox::Mesh<Realf,1> &s, py::tuple indx) 
-      {
-        int i = indx[0].cast<int>();
-        int j = indx[1].cast<int>();
-        int k = indx[2].cast<int>();
-
-        if (i < -1) throw py::index_error();
-        if (j < -1) throw py::index_error();
-        if (k < -1) throw py::index_error();
-
-        if (i > (int)s.Nx+1) throw py::index_error();
-        if (j > (int)s.Ny+1) throw py::index_error();
-        if (k > (int)s.Nz+1) throw py::index_error();
-
-        return s(i,j,k);
-      })
-    .def("__setitem__", [](toolbox::Mesh<Realf,1> &s, py::tuple indx, Realf val) 
-      {
-        int i = indx[0].cast<int>();
-        int j = indx[1].cast<int>();
-        int k = indx[2].cast<int>();
-
-        if (i < -1) throw py::index_error();
-        if (j < -1) throw py::index_error();
-        if (k < -1) throw py::index_error();
-
-        if (i > (int)s.Nx+1) throw py::index_error();
-        if (j > (int)s.Ny+1) throw py::index_error();
-        if (k > (int)s.Nz+1) throw py::index_error();
-
-        s(i,j,k) = val;
-        })
-    .def("clear",        &toolbox::Mesh<Realf,1>::clear);
-
-
-  // TODO: generalize Mesh(H=D) into interface template
-  py::class_<toolbox::Mesh<Realf,0>>(m, "Mesh0")
-    .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("Nx", &toolbox::Mesh<Realf,0>::Nx)
-    .def_readwrite("Ny", &toolbox::Mesh<Realf,0>::Ny)
-    .def_readwrite("Nz", &toolbox::Mesh<Realf,0>::Nz)
-    .def("indx",         &toolbox::Mesh<Realf,0>::indx)
-    .def("__getitem__", [](const toolbox::Mesh<Realf,0> &s, py::tuple indx) 
-      {
-        int i = indx[0].cast<int>();
-        int j = indx[1].cast<int>();
-        int k = indx[2].cast<int>();
-
-        if (i < 0) throw py::index_error();
-        if (j < 0) throw py::index_error();
-        if (k < 0) throw py::index_error();
-
-        if (i > (int)s.Nx) throw py::index_error();
-        if (j > (int)s.Ny) throw py::index_error();
-        if (k > (int)s.Nz) throw py::index_error();
-
-        return s(i,j,k);
-      })
-    .def("__setitem__", [](toolbox::Mesh<Realf,0> &s, py::tuple indx, Realf val) 
-      {
-        int i = indx[0].cast<int>();
-        int j = indx[1].cast<int>();
-        int k = indx[2].cast<int>();
-
-        if (i < 0) throw py::index_error();
-        if (j < 0) throw py::index_error();
-        if (k < 0) throw py::index_error();
-
-        if (i > (int)s.Nx) throw py::index_error();
-        if (j > (int)s.Ny) throw py::index_error();
-        if (k > (int)s.Nz) throw py::index_error();
-
-        s(i,j,k) = val;
-        })
-    .def("clear",        &toolbox::Mesh<Realf,0>::clear);
-  */
 
 
   py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")

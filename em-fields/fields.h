@@ -32,6 +32,9 @@ class YeeLattice {
   toolbox::Mesh<Realf, 1> bx;
   toolbox::Mesh<Realf, 1> by;
   toolbox::Mesh<Realf, 1> bz;
+    
+  /// Charge density
+  toolbox::Mesh<Realf, 1> rho;
 
   /// Current vector 
   toolbox::Mesh<Realf, 3> jx;
@@ -43,8 +46,6 @@ class YeeLattice {
   toolbox::Mesh<Realf, 3> jy1;
   toolbox::Mesh<Realf, 3> jz1;
 
-  /// Charge density
-  toolbox::Mesh<Realf, 1> rho;
 
 
   YeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
@@ -58,15 +59,15 @@ class YeeLattice {
     by(Nx, Ny, Nz),
     bz(Nx, Ny, Nz),
 
+    rho(Nx, Ny, Nz),
+
     jx(Nx, Ny, Nz),
     jy(Nx, Ny, Nz),
     jz(Nx, Ny, Nz),
 
     jx1(Nx, Ny, Nz),
     jy1(Nx, Ny, Nz),
-    jz1(Nx, Ny, Nz),
-
-    rho(Nx, Ny, Nz)
+    jz1(Nx, Ny, Nz)
     { }
 
 };
@@ -102,19 +103,19 @@ class PlasmaMomentLattice {
 
 
   /// constructor; initializes Mesh objects at the same time
-  PlasmaMomentLattice(size_t Nx, size_t Ny, size_t Nz) : 
-    Nx(Nx), Ny(Ny), Nz(Nz),
-
+  PlasmaMomentLattice(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
+    Nx(Nx_in), Ny(Ny_in), Nz(Nz_in),
     rho(Nx, Ny, Nz),
     mgamma(Nx, Ny, Nz),
-    Vx(Nx, Ny, Nz),
-    Vy(Nx, Ny, Nz),
-    Vz(Nx, Ny, Nz),
-    Tx(Nx, Ny, Nz),
-    Ty(Nx, Ny, Nz),
-    Tz(Nx, Ny, Nz),
+    Vx( Nx, Ny, Nz ),
+    Vy( Nx, Ny, Nz ),
+    Vz( Nx, Ny, Nz ),
+    Tx( Nx, Ny, Nz ),
+    Ty( Nx, Ny, Nz ),
+    Tz( Nx, Ny, Nz ),
     ekin(Nx, Ny, Nz)
   { }
+
 
 
 };

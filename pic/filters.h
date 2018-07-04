@@ -518,14 +518,14 @@ class Filter {
     for(int i  = 0 ; i < height ; ++i) {
       for(int j = 0 ; j < width ; ++j) {
 
-        x1 =     jx[ index(i,j) ][0];
-        y1 =     jx[ index(i,j) ][1];
+        x1 = jx[ index(i,j) ][0];
+        y1 = jx[ index(i,j) ][1];
 
-        x2 =     jy[ index(i,j) ][0];
-        y2 =     jy[ index(i,j) ][1];
+        x2 = jy[ index(i,j) ][0];
+        y2 = jy[ index(i,j) ][1];
 
-        x3 =     jz[ index(i,j) ][0];
-        y3 =     jz[ index(i,j) ][1];
+        x3 = jz[ index(i,j) ][0];
+        y3 = jz[ index(i,j) ][1];
 
         u = kernel[ index(i,j) ][0];
         v = kernel[ index(i,j) ][1];
@@ -595,9 +595,11 @@ class Filter {
     int i = 0;
     int j = 0;
 
+    int halo = 3;
     int s = 0; // TODO: third index for 3D case
-    for(int q=0; q<(int)mesh.Nx; q++) {
-      for(int r=0; r<(int)mesh.Ny; r++) {
+
+    for(int q=-halo; q<(int)mesh.Nx+halo; q++) {
+      for(int r=-halo; r<(int)mesh.Ny+halo; r++) {
         //for(int s=0; r<Nz; s++) {
 
         indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);

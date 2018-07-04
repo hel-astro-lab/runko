@@ -38,12 +38,13 @@ def loadCells(n, conf):
 
 
 def wrap(ii, N):
-    if ii < 0:
-        ii = N-1
-        return N-1
-    if ii == N:
-        return 0
-    return ii
+    return (N + ii % N) % N
+    #if ii < 0:
+    #    return N-1
+    #if ii > N:
+    #    return 0
+    #return ii
+
 
 
 class Communications(unittest.TestCase):
@@ -120,7 +121,10 @@ class Communications(unittest.TestCase):
             c = node.getCellPtr( cid )
             c.updateBoundaries(node)
 
-        ref = np.zeros((conf.Nx*conf.Ny*conf.Nz, conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
+        ref = np.zeros(( conf.Nx*conf.Ny*conf.Nz, 
+            conf.Nx*conf.NxMesh, 
+            conf.Ny*conf.NyMesh, 
+            conf.Nz*conf.NzMesh))
 
         m = 0
         for cid in node.getCellIds():
@@ -128,9 +132,10 @@ class Communications(unittest.TestCase):
             (i, j) = c.index()
             yee = c.getYee(0)
 
-            for k in range(-1, conf.NyMesh+1, 1):
-                for q in range(-1, conf.NxMesh+1, 1):
-                    for r in range(-1, conf.NzMesh+1, 1):
+            for r in range(-1, conf.NzMesh+1, 1):
+                for k in range(-1, conf.NyMesh+1, 1):
+                    for q in range(-1, conf.NxMesh+1, 1):
+                        #print("q k r ({},{},{})".format(q,k,r))
                         qq = wrap( i*conf.NxMesh + q, conf.Nx*conf.NxMesh )
                         kk = wrap( j*conf.NyMesh + k, conf.Ny*conf.NyMesh )
                         rr = wrap( 0*conf.NzMesh + r, conf.Nz*conf.NzMesh )
@@ -232,12 +237,16 @@ class Communications(unittest.TestCase):
             (i, j) = c.index()
             yee = c.getYee(0)
 
-            for k in range(-1, conf.NyMesh+1, 1):
-                for q in range(-1, conf.NxMesh+1, 1):
-                    for r in range(-1, conf.NzMesh+1, 1):
+            for r in range(-1, conf.NzMesh+1, 1):
+                for k in range(-1, conf.NyMesh+1, 1):
+                    for q in range(-1, conf.NxMesh+1, 1):
+                        #print("q k r ({},{},{})".format(q,k,r))
+
                         qq = wrap( i*conf.NxMesh + q, conf.Nx*conf.NxMesh )
                         kk = wrap( j*conf.NyMesh + k, conf.Ny*conf.NyMesh )
                         rr = wrap( 0*conf.NzMesh + r, conf.Nz*conf.NzMesh )
+                        #print( ref[m, qq, kk, rr]  )
+                        #print(  yee.ex[q,k,r] )
                         ref[m, qq, kk, rr] = yee.ex[q,k,r]
             m += 1
 

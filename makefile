@@ -34,7 +34,7 @@ default: py
 #tests: plasma
 
 
-all: plasma py tests
+all: clean pyplasma tests
 
 # Compile directory:
 #INSTALL=build
@@ -119,5 +119,8 @@ clean:
 	-rm *.o
 	-rm python/*.so
 	-rm *.so
+
+
+
 
 
