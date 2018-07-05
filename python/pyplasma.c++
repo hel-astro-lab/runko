@@ -149,8 +149,9 @@ PYBIND11_MODULE(pyplasma, m) {
              std::shared_ptr<fields::PlasmaCell>
             >(m, "PlasmaCell")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>())
-    .def_readwrite("yeeDt",  &fields::PlasmaCell::yeeDt)
-    .def_readwrite("yeeDx",  &fields::PlasmaCell::yeeDx)
+    .def_readwrite("dt",   &fields::PlasmaCell::dt)
+    .def_readwrite("dx",   &fields::PlasmaCell::dx)
+    .def_readwrite("cfl",  &fields::PlasmaCell::cfl)
     .def("cycleYee",         &fields::PlasmaCell::cycleYee)
     .def("cycleCurrent",     &fields::PlasmaCell::cycleCurrent)
     .def("cycleCurrent2D",   &fields::PlasmaCell::cycleCurrent2D)

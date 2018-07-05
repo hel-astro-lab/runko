@@ -100,11 +100,6 @@ def loadCells(n, conf):
                 c.container.qi = qe
 
 
-                # use same scale for Maxwell solver
-                #c.yeeDt = conf.dt
-                #c.yeeDx = conf.dx
-                c.yeeDx = 1.0
-
                 #set bounding box of the tile
                 mins = spatialLoc(n, [i,j], [0,0,0], conf)
                 maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
@@ -246,7 +241,7 @@ def filler(xloc, ispcs, conf):
     r1  = np.sqrt(-2.0*np.log(rr1))*np.cos(2.0*np.pi*rr2)
     r2  = np.sqrt(-2.0*np.log(rr1))*np.sin(2.0*np.pi*rr2)
     ux = r1*vth  +v0
-    uy = r2*vth  +v0
+    uy = r2*vth  #+v0
 
     #print("injecting into {} ({})".format(xx, xloc[0]))
 
@@ -479,11 +474,30 @@ if __name__ == "__main__":
         #reorder particles
         #pause simulation if pause file exists
 
+
+        #--------------------------------------------------
+        # advance Half B
+
         ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.updateBoundaries2D(node)
+
+        #push B half
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.pushHalfB()
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #--------------------------------------------------
+        # move particles
 
         #interpolate fields
         for j in range(node.getNy()):
@@ -496,6 +510,44 @@ if __name__ == "__main__":
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 pusher.solve(cell)
+
+        #--------------------------------------------------
+        # advance B half
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #push B half
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.pushHalfB()
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #--------------------------------------------------
+        # advance E 
+
+        #push B half
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.pushE()
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #--------------------------------------------------
 
         #deposit current
         for j in range(node.getNy()):
@@ -546,7 +598,7 @@ if __name__ == "__main__":
                 #flt.apply_kernel()
                 #flt.fft_image_backward()
         
-                for fj in range(5):
+                for fj in range(10):
                     flt.direct_convolve_3point()
                 flt.set_current(cell)
 

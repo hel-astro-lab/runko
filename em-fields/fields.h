@@ -185,9 +185,9 @@ class PlasmaCell : virtual public corgi::Cell {
   void cycleCurrent();
   void cycleCurrent2D();
 
-  Realf yeeDt = 1.0;
-  Realf yeeDx = 1.0;
-
+  Realf cfl;
+  Realf dt = 1.0;
+  Realf dx = 1.0;
   //Realf yeeDy = 1.0;
   //Realf yeeDz = 1.0;
 

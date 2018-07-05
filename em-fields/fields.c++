@@ -47,6 +47,7 @@ void fields::PlasmaCell::pushE() {
 void fields::PlasmaCell::pushE1d() {
 
   fields::YeeLattice& mesh = getYee();
+  Realf C = 1.0 * cfl;
 
   int k = 0;
   int j = 0;
@@ -57,11 +58,11 @@ void fields::PlasmaCell::pushE1d() {
 
     // Ey
     mesh.ey(i,j,k) += 
-      + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDx;
+      + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
 
     // Ez
     mesh.ez(i,j,k) += 
-      + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDx;
+      + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
   }
 
@@ -72,6 +73,8 @@ void fields::PlasmaCell::pushE2d() {
 
   fields::YeeLattice& mesh = getYee();
 
+  Realf C = 1.0 * cfl;
+
 
   int k = 0;
   for(int j=0; j<(int)NyMesh; j++) {
@@ -79,16 +82,16 @@ void fields::PlasmaCell::pushE2d() {
 
       // Ex
       mesh.ex(i,j,k) += 
-        + yeeDt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / yeeDx;
+        + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
 
       // Ey
       mesh.ey(i,j,k) += 
-        + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDx;
+        + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
 
       // Ez
       mesh.ez(i,j,k) += 
-        + yeeDt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / yeeDx
-        + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDx;
+        + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
+        + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
     }
   }
@@ -100,6 +103,7 @@ void fields::PlasmaCell::pushE2d() {
 void fields::PlasmaCell::pushE3d() {
 
   fields::YeeLattice& mesh = getYee();
+  Realf C = 1.0 * cfl;
 
   for(int k=0; k<(int)NzMesh; k++) {
     for(int j=0; j<(int)NyMesh; j++) {
@@ -107,18 +111,18 @@ void fields::PlasmaCell::pushE3d() {
 
         // Ex
         mesh.ex(i,j,k) += 
-          + yeeDt*( mesh.by(i,j,  k-1) - mesh.by(i,j,k)) / yeeDx
-          + yeeDt*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k)) / yeeDx;
+          + C*( mesh.by(i,j,  k-1) - mesh.by(i,j,k))
+          + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
 
         // Ey
         mesh.ey(i,j,k) += 
-          + yeeDt*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k)) / yeeDx
-          + yeeDt*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k)) / yeeDx;
+          + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k))
+          + C*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k));
 
         // Ez
         mesh.ez(i,j,k) += 
-          + yeeDt*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k)) / yeeDx
-          + yeeDt*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k)) / yeeDx;
+          + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
+          + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
       }
     }
@@ -132,8 +136,6 @@ void fields::PlasmaCell::pushE3d() {
 /// Deposit current into electric field
 void fields::PlasmaCell::depositCurrent() {
   fields::YeeLattice& mesh = getYee();
-
-  //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDx*yeeDx) <<"\n";
 
   mesh.ex -= mesh.jx;
   mesh.ey -= mesh.jy;
@@ -165,6 +167,7 @@ void fields::PlasmaCell::pushHalfB() {
 /// 1D B pusher
 void fields::PlasmaCell::pushHalfB1d() {
   fields::YeeLattice& mesh = getYee();
+  Realf C = 0.5 * cfl;
 
   int k = 0;
   int j = 0;
@@ -175,11 +178,11 @@ void fields::PlasmaCell::pushHalfB1d() {
 
     // By
     mesh.by(i,j,k) += 
-      + yeeDt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / yeeDx;
+      + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k));
 
     // Bz
     mesh.bz(i,j,k) += 
-      + yeeDt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / yeeDx;
+      + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
   }
 
 }
@@ -188,22 +191,24 @@ void fields::PlasmaCell::pushHalfB1d() {
 void fields::PlasmaCell::pushHalfB2d() {
   fields::YeeLattice& mesh = getYee();
 
+  Realf C = 0.5 * cfl;
+
   int k = 0;
   for(int j=0; j<(int)NyMesh; j++) {
     for(int i=0; i<(int)NxMesh; i++) {
 
       // Bx
       mesh.bx(i,j,k) += 
-        + yeeDt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / yeeDx;
+        + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
 
       // By
       mesh.by(i,j,k) += 
-        + yeeDt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / yeeDx;
+        + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k));
 
       // Bz
       mesh.bz(i,j,k) += 
-        + yeeDt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / yeeDx
-        + yeeDt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / yeeDx;
+        + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
+        + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
     }
   }
@@ -214,6 +219,7 @@ void fields::PlasmaCell::pushHalfB2d() {
 /// 3D B pusher
 void fields::PlasmaCell::pushHalfB3d() {
   fields::YeeLattice& mesh = getYee();
+  Realf C = 0.5 * cfl;
 
   for(int k=0; k<(int)NzMesh; k++) {
     for(int j=0; j<(int)NyMesh; j++) {
@@ -221,18 +227,18 @@ void fields::PlasmaCell::pushHalfB3d() {
 
         // Bx
         mesh.bx(i,j,k) += 
-         + yeeDt*0.5*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k)) / yeeDx
-         + yeeDt*0.5*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k)) / yeeDx;
+         + C*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k))
+         + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
 
         // By
         mesh.by(i,j,k) += 
-         + yeeDt*0.5*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k)) / yeeDx
-         + yeeDt*0.5*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k)) / yeeDx;
+         + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k))
+         + C*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k));
 
         // Bz
         mesh.bz(i,j,k) += 
-         + yeeDt*0.5*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)) / yeeDx
-         + yeeDt*0.5*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k)) / yeeDx;
+         + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
+         + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
       }
     }

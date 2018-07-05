@@ -35,11 +35,17 @@ using units::pi;
 // Because of the fftw3 usage this class is internally heavily relying on C code
 // instead of C++.
 class Filter {
+
+  private:
+
+  /// image size
+  int Nx, Ny, Nz;
+
     
   /// circular/wrap indexing
   inline int circular(int x, int M)
   {
-    if(x<0)   return x+M;
+    if(x<0)    return x+M;
     if(x >= M) return x-M;
     return x;
   }
@@ -71,28 +77,29 @@ class Filter {
 
   public:
 
-  /// image size
-  int Nx, Ny, Nz;
-
   /// Build filter assuming information from 3x3x1 tiles
   Filter(int NxMesh, int NyMesh) :
       Nx( 3*NxMesh ),
       Ny( 3*NyMesh ),
-      Nz(1) 
+      Nz( 1) 
   {
 
     // allocate
-    jx = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
-    jy = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
-    jz = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    //jx = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    //jy = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    //jz = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    jx = (fftw_complex*) fftw_alloc_complex(Nx*Ny*Nz);
+    jy = (fftw_complex*) fftw_alloc_complex(Nx*Ny*Nz);
+    jz = (fftw_complex*) fftw_alloc_complex(Nx*Ny*Nz);
 
-    kernel = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    //kernel = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    kernel = (fftw_complex*) fftw_alloc_complex(Nx*Ny*Nz);
 
 
     // in-place complex to complex transform
     // TODO: change to real2complex and complex2real plans
     // TODO: use fftw guru interface to apply same plan for all arrays (in same direction)
-    p_kernel = fftw_plan_dft_2d(Nx, Ny, kernel, kernel, FFTW_FORWARD,  FFTW_MEASURE);
+    p_kernel    = fftw_plan_dft_2d( Nx,Ny, kernel, kernel, FFTW_FORWARD,  FFTW_MEASURE);
 
     p_forw_jx   = fftw_plan_dft_2d( Nx,Ny, jx, jx, FFTW_FORWARD,  FFTW_MEASURE );
     p_forw_jy   = fftw_plan_dft_2d( Nx,Ny, jy, jy, FFTW_FORWARD,  FFTW_MEASURE );
@@ -102,6 +109,16 @@ class Filter {
     p_back_jy   = fftw_plan_dft_2d( Nx,Ny, jy, jy, FFTW_BACKWARD, FFTW_MEASURE );
     p_back_jz   = fftw_plan_dft_2d( Nx,Ny, jz, jz, FFTW_BACKWARD, FFTW_MEASURE );
 
+
+    /*
+    fftw_print_plan(p_forw_jx);
+    fftw_print_plan(p_forw_jy);
+    fftw_print_plan(p_forw_jy);
+
+    fftw_print_plan(p_back_jx);
+    fftw_print_plan(p_back_jy);
+    fftw_print_plan(p_back_jz);
+    */
   }
 
 
@@ -115,6 +132,7 @@ class Filter {
     fftw_destroy_plan(p_forw_jx);
     fftw_destroy_plan(p_forw_jy);
     fftw_destroy_plan(p_forw_jz);
+
     fftw_destroy_plan(p_back_jx);
     fftw_destroy_plan(p_back_jy);
     fftw_destroy_plan(p_back_jz);
@@ -261,7 +279,7 @@ class Filter {
     image.resize(Nx*Ny*Nz); 
 
     for (int j=0; j < Ny;  ++j) 
-      for (int i=0; i < Nx; ++i)
+    for (int i=0; i < Nx; ++i)
         image[ index(i,j) ] = kernel[ index(i,j) ][0];
 
     // perform convolution N times
@@ -558,6 +576,7 @@ class Filter {
       
       fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? cell.getYee() : get_neighbor_yee(i,j,cell,node);
 
+      /*
       std::cout << "--------------------------------------------------\n";
       std::cout << " Nx: " << mesh.Nx;
       std::cout << " Ny: " << mesh.Ny;
@@ -566,6 +585,7 @@ class Filter {
       std::cout << " j: " << j;
       std::cout << "\n";
       std::cout << "==============================\n";
+      */
 
       int s = 0;
       for(int r=0; r<(int)mesh.Ny; r++) {
@@ -574,6 +594,7 @@ class Filter {
           
           indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
 
+          /*
       std::cout << " q: " << q;
       std::cout << " r: " << r;
       std::cout << " s: " << s;
@@ -581,6 +602,7 @@ class Filter {
       std::cout << " ix: " << (i+1)*mesh.Nx + q;
       std::cout << " jy: " << (j+1)*mesh.Ny + r;
       std::cout << "\n";
+          */
 
           jx[ indx ][0] = mesh.jx(q,r,s);
           jy[ indx ][0] = mesh.jy(q,r,s);
@@ -606,7 +628,7 @@ class Filter {
     int i = 0;
     int j = 0;
 
-    int halo = 0;
+    int halo = 3;
     int s = 0; // TODO: third index for 3D case
 
     for(int q=-halo; q<(int)mesh.Nx+halo; q++) {

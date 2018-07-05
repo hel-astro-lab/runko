@@ -16,6 +16,7 @@ from pic import spatialLoc
 
 from visualize_pic import Particles
 from visualize_pic import plot2dParticles
+from visualize import plotNode
 from visualize import plot2dYee
 from visualize import getYee2D
 from visualize import saveVisz
@@ -497,19 +498,19 @@ class PIC(unittest.TestCase):
         plt.rc('xtick')
         plt.rc('ytick')
         
-        gs = plt.GridSpec(6, 1)
+        gs = plt.GridSpec(8, 1)
         
         axs = []
-        for ai in range(6):
+        for ai in range(8):
             axs.append( plt.subplot(gs[ai]) )
 
 
         conf = Conf()
-        conf.Nx = 6
-        conf.Ny = 6
+        conf.Nx = 3
+        conf.Ny = 3
         conf.Nz = 1
-        conf.NxMesh = 10
-        conf.NyMesh = 10
+        conf.NxMesh = 3
+        conf.NyMesh = 3
         conf.NzMesh = 1
         conf.ppc = 10
         conf.vel = 0.1
@@ -528,9 +529,10 @@ class PIC(unittest.TestCase):
         #comm     = pypic.Communicator()
         currint  = pypic.Depositer()
         analyzer = pypic.Analyzator()
-        flt     =  pypic.Filter(conf.NxMesh, conf.NyMesh)
 
-        flt.init_gaussian_kernel(2.0, 2.0)
+        flt =  pypic.Filter(conf.NxMesh, conf.NyMesh)
+        flt.init_gaussian_kernel(1.0, 1.0)
+
 
         #for lap in range(0, conf.Nt):
         for lap in range(1):
@@ -559,7 +561,8 @@ class PIC(unittest.TestCase):
                     cell = node.getCellPtr(i,j)
                     cell.exchangeCurrents2D(node)
 
-            plot2dParticles(axs[0], node, conf, downsample=0.1)
+            plotNode(axs[0], node, conf)
+            #plot2dParticles(axs[0], node, conf, downsample=0.1)
             plot2dYee(axs[1], node, conf, 'rho')
             plot2dYee(axs[2], node, conf, 'jx')
             plot2dYee(axs[3], node, conf, 'jy')
@@ -568,8 +571,8 @@ class PIC(unittest.TestCase):
             yee_ref = getYee2D(node, conf)
 
             #filter
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
+            for j in range(0,node.getNy()):
+                for i in range(0,node.getNx()):
                     cell = node.getCellPtr(i,j)
                     flt.get_padded_current(cell, node)
 
@@ -592,11 +595,13 @@ class PIC(unittest.TestCase):
             yee = getYee2D(node, conf)
 
             plot2dYee(axs[5], node, conf, 'jx')
+            plot2dYee(axs[6], node, conf, 'jy')
+            plot2dYee(axs[7], node, conf, 'jz')
             saveVisz(lap, node, conf)
 
             for j in range(conf.Ny*conf.NyMesh):
                 for i in range(conf.Nx*conf.NxMesh):
-                    print("({},{})".format(i,j))
+                    #print("({},{})".format(i,j))
                     self.assertAlmostEqual( yee_ref['jx'][i,j], yee['jx'][i,j], places=4 )
                     self.assertAlmostEqual( yee_ref['jy'][i,j], yee['jy'][i,j], places=4 )
                     self.assertAlmostEqual( yee_ref['jz'][i,j], yee['jz'][i,j], places=4 )
