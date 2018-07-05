@@ -17,6 +17,7 @@ from pic import spatialLoc
 from visualize_pic import Particles
 from visualize_pic import plot2dParticles
 from visualize import plot2dYee
+from visualize import getYee2D
 from visualize import saveVisz
 
 try:
@@ -89,12 +90,12 @@ def filler_xvel(xloc, ispcs, conf):
 
     x0 = [xx, yy, zz]
 
-    if (conf.NyMesh < yy < 2.0*conf.NyMesh) and (conf.NxMesh < xx < 2.0*conf.NxMesh):
-        u0 = [0.0, 1.0, 0.0]
-    else:
-        u0 = [0.0, 0.0, 0.0]
+    #if (conf.NyMesh < yy < 2.0*conf.NyMesh) and (conf.NxMesh < xx < 2.0*conf.NxMesh):
+    #    u0 = [0.0, 1.0, 0.0]
+    #else:
+    #    u0 = [0.0, 0.0, 0.0]
 
-    u0 = [1.0, 0.0, 0.0]
+    u0 = [1.0, 1.0, 1.0]
     #ux = randab(-conf.vel, conf.vel)
     #ux = 0.1
     #uy = 0.0
@@ -504,11 +505,11 @@ class PIC(unittest.TestCase):
 
 
         conf = Conf()
-        conf.Nx = 4
-        conf.Ny = 3
+        conf.Nx = 6
+        conf.Ny = 6
         conf.Nz = 1
-        conf.NxMesh = 5
-        conf.NyMesh = 5
+        conf.NxMesh = 10
+        conf.NyMesh = 10
         conf.NzMesh = 1
         conf.ppc = 10
         conf.vel = 0.1
@@ -564,6 +565,8 @@ class PIC(unittest.TestCase):
             plot2dYee(axs[3], node, conf, 'jy')
             plot2dYee(axs[4], node, conf, 'jz')
 
+            yee_ref = getYee2D(node, conf)
+
             #filter
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
@@ -571,13 +574,13 @@ class PIC(unittest.TestCase):
                     flt.get_padded_current(cell, node)
 
                     # fourier space filtering
-                    #flt.fft_image_forward()
+                    flt.fft_image_forward()
                     #flt.apply_kernel()
-                    #flt.fft_image_backward()
+                    flt.fft_image_backward()
 
                     # direct filtering
-                    for fj in range(1):
-                        flt.direct_convolve_3point()
+                    #for fj in range(5):
+                    #    flt.direct_convolve_3point()
                     flt.set_current(cell)
 
             #cycle new and temporary currents
@@ -586,8 +589,18 @@ class PIC(unittest.TestCase):
                     cell = node.getCellPtr(i,j)
                     cell.cycleCurrent2D()
 
+            yee = getYee2D(node, conf)
+
             plot2dYee(axs[5], node, conf, 'jx')
-
-
             saveVisz(lap, node, conf)
+
+            for j in range(conf.Ny*conf.NyMesh):
+                for i in range(conf.Nx*conf.NxMesh):
+                    print("({},{})".format(i,j))
+                    self.assertAlmostEqual( yee_ref['jx'][i,j], yee['jx'][i,j], places=4 )
+                    self.assertAlmostEqual( yee_ref['jy'][i,j], yee['jy'][i,j], places=4 )
+                    self.assertAlmostEqual( yee_ref['jz'][i,j], yee['jz'][i,j], places=4 )
+
+
+
 

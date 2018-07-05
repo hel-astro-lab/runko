@@ -553,6 +553,7 @@ void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
 
 /// Update currents on Yee grid boundaries
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
+// TODO: write unit test for this
 void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
   // target

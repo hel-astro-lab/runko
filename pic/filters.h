@@ -39,7 +39,7 @@ class Filter {
   /// circular/wrap indexing
   inline int circular(int x, int M)
   {
-    if (x<0)   return x+M;
+    if(x<0)   return x+M;
     if(x >= M) return x-M;
     return x;
   }
@@ -48,13 +48,13 @@ class Filter {
   // NOTE: this is different from the rest of the code but done like this
   // in order to appear consistent with the fttw examples.
   inline int index(int i, int j) {
-    i = circular(i, height);
-    j = circular(j, width);
+    i = circular(i, Nx);
+    j = circular(j, Ny);
 
-    assert(i >= 0 && i < height);
-    assert(j >= 0 && j < width);
+    assert(i >= 0 && i < Nx);
+    assert(j >= 0 && j < Ny);
 
-    return i*width + j;
+    return i + j*Nx;
   }
 
 
@@ -71,42 +71,36 @@ class Filter {
 
   public:
 
-  /// image width
-  int width;
-
-  /// image height
-  int height;
-
-  // image depth
-  int depth=0;
+  /// image size
+  int Nx, Ny, Nz;
 
   /// Build filter assuming information from 3x3x1 tiles
   Filter(int NxMesh, int NyMesh) :
-      width( 3*NxMesh),
-      height(3*NyMesh),
-      depth( 1) 
+      Nx( 3*NxMesh ),
+      Ny( 3*NyMesh ),
+      Nz(1) 
   {
 
     // allocate
-    jx = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * height * width);
-    jy = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * height * width);
-    jz = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * height * width);
+    jx = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    jy = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
+    jz = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
 
-    kernel = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * height * width);
+    kernel = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
 
 
     // in-place complex to complex transform
     // TODO: change to real2complex and complex2real plans
     // TODO: use fftw guru interface to apply same plan for all arrays (in same direction)
-    p_kernel = fftw_plan_dft_2d(height, width, kernel, kernel, FFTW_FORWARD,  FFTW_MEASURE);
+    p_kernel = fftw_plan_dft_2d(Nx, Ny, kernel, kernel, FFTW_FORWARD,  FFTW_MEASURE);
 
-    p_forw_jx   = fftw_plan_dft_2d(height, width, jx, jx, FFTW_FORWARD,  FFTW_MEASURE);
-    p_forw_jy   = fftw_plan_dft_2d(height, width, jy, jy, FFTW_FORWARD,  FFTW_MEASURE);
-    p_forw_jz   = fftw_plan_dft_2d(height, width, jz, jz, FFTW_FORWARD,  FFTW_MEASURE);
+    p_forw_jx   = fftw_plan_dft_2d( Nx,Ny, jx, jx, FFTW_FORWARD,  FFTW_MEASURE );
+    p_forw_jy   = fftw_plan_dft_2d( Nx,Ny, jy, jy, FFTW_FORWARD,  FFTW_MEASURE );
+    p_forw_jz   = fftw_plan_dft_2d( Nx,Ny, jz, jz, FFTW_FORWARD,  FFTW_MEASURE );
 
-    p_back_jx   = fftw_plan_dft_2d(height, width, jx, jx, FFTW_BACKWARD, FFTW_MEASURE);
-    p_back_jy   = fftw_plan_dft_2d(height, width, jy, jy, FFTW_BACKWARD, FFTW_MEASURE);
-    p_back_jz   = fftw_plan_dft_2d(height, width, jz, jz, FFTW_BACKWARD, FFTW_MEASURE);
+    p_back_jx   = fftw_plan_dft_2d( Nx,Ny, jx, jx, FFTW_BACKWARD, FFTW_MEASURE );
+    p_back_jy   = fftw_plan_dft_2d( Nx,Ny, jy, jy, FFTW_BACKWARD, FFTW_MEASURE );
+    p_back_jz   = fftw_plan_dft_2d( Nx,Ny, jz, jz, FFTW_BACKWARD, FFTW_MEASURE );
 
   }
 
@@ -148,10 +142,8 @@ class Filter {
   /// zero-wrapped index convention used by fftw3
   inline virtual std::tuple<int,int> zero_wrapped_index(int i, int j) 
   {
-    //int iff = (i - ceil(height/2) >= 0) ? i : height + i;
-    //int jff = (j - ceil(width /2) >= 0) ? i : width  + j;
-    int iff = i >= 0 ? i : height + i;
-    int jff = j >= 0 ? j : width  + j;
+    int iff = i >= 0 ? i : Nx + i;
+    int jff = j >= 0 ? j : Ny + j;
 
     return std::make_tuple(iff, jff);
   }
@@ -170,15 +162,15 @@ class Filter {
     //int kny = width /3;
 
     // halo region size
-    int h1 = height/2; // division is floor(x/y) automatically
-    int w1 = width /2;
+    int h1 = Nx/2; // division is floor(x/y) automatically
+    int w1 = Ny/2;
     //int h2 = (height + 2 - 1)/2; // ceil(x/y)
     //int w2 = (width  + 2 - 1)/2;
 
     int wi,wj;
 
-    for(int i =-h1; i<=h1 ; ++i) {
-      for(int j=-w1; j<=w1 ; ++j) {
+    for(int j=-w1; j<=w1 ; ++j) {
+      for(int i =-h1; i<=h1 ; ++i) {
         auto zindx = zero_wrapped_index(i,j);
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
@@ -216,12 +208,12 @@ class Filter {
     for(size_t i=0; i<coeffs.size(); i++) coeffs[i] /= norm;
 
     std::vector<double> image1, image2, image3;
-    image1.resize(height*width); 
-    image2.resize(height*width); 
-    image3.resize(height*width); 
+    image1.resize(Nx*Ny*Nz); 
+    image2.resize(Nx*Ny*Nz); 
+    image3.resize(Nx*Ny*Nz); 
 
-    for (int i=0; i < height; ++i) {
-      for (int j=0; j < width;  ++j) {
+    for (int j=0; j < Ny;  ++j) {
+      for (int i=0; i < Nx; ++i) {
         image1[ index(i,j) ] = jx[ index(i,j) ][0];
         image2[ index(i,j) ] = jy[ index(i,j) ][0];
         image3[ index(i,j) ] = jz[ index(i,j) ][0];
@@ -234,8 +226,8 @@ class Filter {
 
     // normalize and copy back
     norm = 1.0;
-    for (int i=0; i < height; ++i) {
-      for (int j=0; j < width;  ++j) {
+    for (int j=0; j < Ny;  ++j) {
+      for (int i=0; i < Nx; ++i) {
         jx[ index(i,j) ][0] = image1[ index(i,j) ]/norm;
         jy[ index(i,j) ][0] = image2[ index(i,j) ]/norm;
         jz[ index(i,j) ][0] = image3[ index(i,j) ]/norm;
@@ -266,10 +258,10 @@ class Filter {
     // create temporary Real number image array
     // NOTE: can not easily copy kernel into pure real part due to interleaved nature
     std::vector<double> image;
-    image.resize(height*width); 
+    image.resize(Nx*Ny*Nz); 
 
-    for (int i=0; i < height; ++i)
-      for (int j=0; j < width;  ++j) 
+    for (int j=0; j < Ny;  ++j) 
+      for (int i=0; i < Nx; ++i)
         image[ index(i,j) ] = kernel[ index(i,j) ][0];
 
     // perform convolution N times
@@ -283,8 +275,8 @@ class Filter {
     norm = 1.0;
 
     // normalize and copy back
-    for (int i=0; i < height; ++i)
-      for (int j=0; j < width;  ++j) 
+    for (int j=0; j < Ny;  ++j) 
+      for (int i=0; i < Nx; ++i)
         kernel[ index(i,j) ][0] = image[ index(i,j) ]/norm;
 
   }
@@ -307,20 +299,20 @@ class Filter {
     // out array
     double data;
     std::vector<double> out;
-    out.resize(width*height);
+    out.resize(Nx*Ny*Nz);
 
-    //for (int i = K/2; i < height - K/2; ++i) // iterate through image
-    for (int i=0; i < height; ++i) // iterate through circular image
+    //for (int j = K/2; j < width -K/2; ++j) // iterate through image
+    for (int j=0; j < Ny; ++j) // iterate through circular image
     {
-      //for (int j = K/2; j < width -K/2; ++j) // iterate through image
-      for (int j=0; j < width; ++j) // iterate through circular image
+      //for (int i = K/2; i < height - K/2; ++i) // iterate through image
+      for (int i=0; i < Nx; ++i) // iterate through circular image
       {
         double sum = 0.0; // sum will be the sum of input data * coeff terms
 
         // convolution of single point
-        for (int ii = -K/2; ii <= K/2; ++ii) // iterate over kernel
+        for (int jj = -K/2; jj <= K/2; ++jj)
         {
-          for (int jj = -K/2; jj <= K/2; ++jj)
+          for (int ii = -K/2; ii <= K/2; ++ii) // iterate over kernel
           {
             data = image[ index(i+ii, j+jj) ]; 
             double coeff = kernel[ (ii + K/2)*K + (jj + K/2) ];
@@ -333,8 +325,8 @@ class Filter {
     } // end of conv
 
     // copy (real part) back
-    for (int i=0; i < height; ++i)
-      for (int j=0; j < width;  ++j) 
+    for (int j=0; j < Ny;  ++j) 
+      for (int i=0; i < Nx; ++i)
         image[ index(i,j) ] = out[ index(i,j) ];
 
   } 
@@ -350,23 +342,23 @@ class Filter {
     //int kny = width /3;
 
     // halo region size
-    int h1 = height/2; // division is floor(x/y) automatically
-    int w1 = width /2;
-    int h2 = (height + 2 - 1)/2; // ceil(x/y)
-    int w2 = (width  + 2 - 1)/2;
+    int h1 = Nx/2; // division is floor(x/y) automatically
+    int w1 = Ny /2;
+    int h2 = (Nx + 2 - 1)/2; // ceil(x/y)
+    int w2 = (Ny  + 2 - 1)/2;
 
     int wi,wj;
     double val;
 
     double sum = 0.0;
-    for(int i =-h1; i<h2; ++i) {
-      for(int j=-w1; j<w2; ++j) {
+    for(int j=-w1; j<w2; ++j) {
+      for(int i =-h1; i<h2; ++i) {
         auto zindx = zero_wrapped_index(i,j);
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
 
-        assert(wi >= 0 && wi < height);
-        assert(wj >= 0 && wj < width);
+        assert(wi >= 0 && wi < Nx);
+        assert(wj >= 0 && wj < Ny);
 
         val = 1.0;
         val *= exp( -0.5*((double)(i*i))/sigx/sigx);
@@ -444,10 +436,10 @@ class Filter {
     //int kny = width /3;
 
     // halo region size
-    int h1 = height/2; // division is floor(x/y) automatically
-    int w1 = width /2;
-    int h2 = (height + 2 - 1)/2; // ceil(x/y)
-    int w2 = (width  + 2 - 1)/2;
+    int h1 = Nx/2; // division is floor(x/y) automatically
+    int w1 = Ny/2;
+    int h2 = (Nx + 2 - 1)/2; // ceil(x/y)
+    int w2 = (Ny + 2 - 1)/2;
 
     int wi,wj;
     double val;
@@ -459,8 +451,8 @@ class Filter {
         wi = std::get<0>(zindx);
         wj = std::get<1>(zindx);
 
-        assert(wi >= 0 && wi < height);
-        assert(wj >= 0 && wj < width);
+        assert(wi >= 0 && wi < Nx);
+        assert(wj >= 0 && wj < Ny);
 
         val = 0.0;
         if (sqrt(i*i + j*j) < cutoff) val = 1.0; // circle (Bessel)
@@ -477,14 +469,15 @@ class Filter {
   // normalize fft transformation
   void normalize() 
   {
-    for(int i  = 0 ; i < height ; ++i) {
-      for(int j = 0 ; j < width ; ++j) {
-        jx[ index(i,j) ][0] /= width*height;
-        jy[ index(i,j) ][0] /= width*height;
-        jz[ index(i,j) ][0] /= width*height;
+    for(int k = 0 ; k < Nz ; ++k) {
+      for(int j = 0 ; j < Ny ; ++j) {
+        for(int i  = 0 ; i < Nx ; ++i) {
+          jx[ index(i,j) ][0] /= Nx*Ny*Nz;
+          jy[ index(i,j) ][0] /= Nx*Ny*Nz;
+          jz[ index(i,j) ][0] /= Nx*Ny*Nz;
+        }
       }
     }
-
   }
 
 
@@ -515,8 +508,8 @@ class Filter {
   {
     double x1, y1, x2, y2, x3, y3;
     double u, v;
-    for(int i  = 0 ; i < height ; ++i) {
-      for(int j = 0 ; j < width ; ++j) {
+    for(int j = 0 ; j < Ny ; ++j) {
+      for(int i  = 0 ; i < Nx ; ++i) {
 
         x1 = jx[ index(i,j) ][0];
         y1 = jx[ index(i,j) ][1];
@@ -565,12 +558,30 @@ class Filter {
       
       fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? cell.getYee() : get_neighbor_yee(i,j,cell,node);
 
+      std::cout << "--------------------------------------------------\n";
+      std::cout << " Nx: " << mesh.Nx;
+      std::cout << " Ny: " << mesh.Ny;
+      std::cout << " Nz: " << mesh.Nz;
+      std::cout << " i: " << i;
+      std::cout << " j: " << j;
+      std::cout << "\n";
+      std::cout << "==============================\n";
+
       int s = 0;
-      for(int q=0; q<(int)mesh.Nx; q++) {
-        for(int r=0; r<(int)mesh.Ny; r++) {
+      for(int r=0; r<(int)mesh.Ny; r++) {
+        for(int q=0; q<(int)mesh.Nx; q++) {
           //for(int s=0; r<Nz; s++) {
           
           indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
+
+      std::cout << " q: " << q;
+      std::cout << " r: " << r;
+      std::cout << " s: " << s;
+      std::cout << " indx: " << indx;
+      std::cout << " ix: " << (i+1)*mesh.Nx + q;
+      std::cout << " jy: " << (j+1)*mesh.Ny + r;
+      std::cout << "\n";
+
           jx[ indx ][0] = mesh.jx(q,r,s);
           jy[ indx ][0] = mesh.jy(q,r,s);
           jz[ indx ][0] = mesh.jz(q,r,s);
@@ -595,7 +606,7 @@ class Filter {
     int i = 0;
     int j = 0;
 
-    int halo = 3;
+    int halo = 0;
     int s = 0; // TODO: third index for 3D case
 
     for(int q=-halo; q<(int)mesh.Nx+halo; q++) {
@@ -617,22 +628,22 @@ class Filter {
 
   void set_kernel(std::vector<double>& in)
   {
-    if(in.size() != (size_t)height*width) std::cout << "error in size!\n";
+    if(in.size() != (size_t)Nx*Ny*Nz) std::cout << "error in size!\n";
 
     int q = 0;
-    for(int i = 0 ; i < height ; ++i)  
-    for(int j = 0 ; j < width ; ++j, q++)  
+    for(int j = 0 ; j < Ny ; ++j)  
+    for(int i = 0 ; i < Nx ; ++i, q++)  
       kernel[ index(i,j) ][0] = in[q];
   }
 
 
   void set_image(std::vector<double>& in)
   {
-    if(in.size() != (size_t)height*width) std::cout << "error in size!\n";
+    if(in.size() != (size_t)Nx*Ny*Nz) std::cout << "error in size!\n";
 
     int q = 0;
-    for(int i = 0 ; i < height ; ++i)  
-    for(int j = 0 ; j < width ; ++j, q++)  
+    for(int j = 0 ; j < Ny ; ++j)  
+    for(int i = 0 ; i < Nx ; ++i, q++)  
       jx[ index(i,j) ][0] = in[q];
   }
 
@@ -641,8 +652,8 @@ class Filter {
   {
     std::vector<double> ret;
 
-    for(int i = 0 ; i < height ; ++i)  
-    for(int j = 0 ; j < width ; ++j)  
+    for(int j = 0 ; j < Ny ; ++j)  
+    for(int i = 0 ; i < Nx ; ++i)  
       ret.push_back( kernel[ index(i,j) ][0] );
 
     return ret;
@@ -653,8 +664,8 @@ class Filter {
   {
     std::vector<double> ret;
 
-    for(int i = 0 ; i < height ; ++i)  
-    for(int j = 0 ; j < width ; ++j)  
+    for(int j = 0 ; j < Ny ; ++j)  
+    for(int i = 0 ; i < Nx ; ++i)  
       ret.push_back( jx[ index(i,j) ][0] );
 
     return ret;
