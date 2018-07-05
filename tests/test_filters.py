@@ -268,8 +268,8 @@ class Filters(unittest.TestCase):
 
         for i in range(NxF):
             for j in range(NyF):
-                self.assertEqual(kernel[i,j], k2[i,j])
-                self.assertEqual( image[i,j],img2[i,j])
+                self.assertAlmostEqual(kernel[i,j], k2[i,j] , places=4)
+                self.assertAlmostEqual( image[i,j],img2[i,j], places=4)
                 
 
     def test_kernel_init(self):
@@ -342,7 +342,7 @@ class Filters(unittest.TestCase):
 
         for i in range(NxF):
             for j in range(NyF):
-                self.assertAlmostEqual(img1[i,j], img3[i,j], places=6) 
+                self.assertAlmostEqual(img1[i,j], img3[i,j], places=4) 
 
 
 
@@ -636,7 +636,7 @@ class Filters(unittest.TestCase):
 
         for i in range(NxMesh):
             for j in range(NyMesh):
-                self.assertAlmostEqual(cimg_dc[i,j], cimg_fft[i,j], places=10) 
+                self.assertAlmostEqual(cimg_dc[i,j], cimg_fft[i,j], places=4) 
 
     def skip_test_gaussian(self):
 
