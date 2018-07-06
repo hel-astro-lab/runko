@@ -55,14 +55,15 @@ def get_particles(node, conf):
     return prtcl
 
 
-def get_particles_from_cell(cell):
-    x  = cell.container.loc(0)
-    y  = cell.container.loc(1)
-    z  = cell.container.loc(2)
+def get_particles_from_cell(cell, ispcs=0):
+    container = cell.get_container(ispcs)
+    x  = container.loc(0)
+    y  = container.loc(1)
+    z  = container.loc(2)
 
-    ux = cell.container.vel(0)
-    uy = cell.container.vel(1)
-    uz = cell.container.vel(2)
+    ux = container.vel(0)
+    uy = container.vel(1)
+    uz = container.vel(2)
 
     return x, y, z, ux, uy, uz
 

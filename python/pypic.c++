@@ -39,14 +39,16 @@ PYBIND11_MODULE(pypic, m) {
     .def_readwrite("dt",        &pic::PicCell::dt)
     .def_readwrite("dx",        &pic::PicCell::dx)
     .def_readwrite("cfl",       &pic::PicCell::cfl)
-    .def_readwrite("container", &pic::PicCell::container);
+    //.def_readwrite("container", &pic::PicCell::container);
+    .def("get_container",       &pic::PicCell::get_container, 
+        py::return_value_policy::reference)
+    .def("set_container",       &pic::PicCell::set_container);
 
 
 
   py::class_<pic::ParticleBlock>(m, "ParticleBlock")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("qe",  &pic::ParticleBlock::qe)
-    .def_readwrite("qi",  &pic::ParticleBlock::qi)
+    .def_readwrite("q",  &pic::ParticleBlock::q)
     .def("reserve",       &pic::ParticleBlock::reserve)
     .def("resizeEM",      &pic::ParticleBlock::resizeEM)
     .def("add_particle",  &pic::ParticleBlock::add_particle)

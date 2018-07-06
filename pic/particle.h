@@ -49,8 +49,7 @@ class ParticleBlock {
   size_t Ny;
   size_t Nz;
 
-  double qe = 1.0; // normalization factor
-  double qi = 1.0; // normalization factor
+  double q = 1.0; // normalization factor
 
 
   /// Constructor 

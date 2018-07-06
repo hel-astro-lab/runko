@@ -36,118 +36,121 @@ class Analyzator {
     auto maxs = cell.maxs;
 
     // analysis lattice reference
-    int ispc = 0;
-    auto& analysis = cell.analysis[ispc];
+    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
+      ParticleBlock& container = cell.get_container(ispc);
+      auto& analysis = cell.analysis[ispc];
 
-    analysis.rho.clear();
-    analysis.mgamma.clear();
-    analysis.Vx.clear();
-    analysis.Tx.clear();
-    analysis.ekin.clear();
-
-    // initialize pointers to particle arrays
-    int nparts = cell.container.size();
-      
-    double* loc[3];
-    for( int i=0; i<3; i++)
-      loc[i] = &( cell.container.loc(i,0) );
-
-    double* vel[3];
-    for( int i=0; i<3; i++)
-      vel[i] = &( cell.container.vel(i,0) );
+      analysis.rho.clear();
+      analysis.mgamma.clear();
+      analysis.Vx.clear();
+      analysis.Tx.clear();
+      analysis.ekin.clear();
 
 
-    double gam;
-    //double c = cell.cfl;
-    double q = cell.container.qe; // TODO: split into species
-    double x0, y0, z0;
-    double u0, v0, w0;
-    //double i,j,k;
-    int i,j,k;
-
-
-    // loop and check particles
-    int n1 = 0;
-    int n2 = nparts;
-
-    // TODO: think SIMD (not possibly due to ijk writing to yee
-    for(int n=n1; n<n2; n++) {
-
-      x0 = loc[0][n];
-      y0 = loc[1][n];
-      z0 = loc[2][n];
-
-      // grid coordinate location
-      /*
-      i = floor(x0);
-      j = floor(y0);
-      k = floor(z0);
-      //k = 0; // TODO: explicit 2D dimensionality enforcement
-      */
-
-		  //i  = trunc( cell.NxMesh*(x0-mins[0])/(maxs[0]-mins[0]) );
-		  //j  = trunc( cell.NyMesh*(y0-mins[1])/(maxs[1]-mins[1]) );
-		  //k  = trunc( cell.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
+      // initialize pointers to particle arrays
+      int nparts = container.size();
         
-      // fixed grid form assuming dx = 1
-		  i  = (int)floor( loc[0][n]-mins[0] );
-		  j  = (int)floor( loc[1][n]-mins[1] );
-		  k  = (int)floor( loc[2][n]-mins[2] );
+      double* loc[3];
+      for( int i=0; i<3; i++)
+        loc[i] = &( container.loc(i,0) );
 
-      /*
-      std::cout << "----------------------\n";
-      std::cout << "cell ijk =( " << cell.my_i << "," << cell.my_j << ")\n";
-      std::cout << "nx ny nz "    << cell.Nx << " " << cell.Ny << "\n";
-      std::cout << "nxG nyG nzG " << cell.NxMesh << " " << cell.NyMesh << " " << cell.NzMesh << "\n";
-      std::cout << "ijk =(" << i << "," << j << "," << k << ")\n";
-      std::cout << "mins " << mins[0] << " " << mins[1] << " " << mins[2] << "\n";
-      std::cout << "maxs " << maxs[0] << " " << maxs[1] << " " << maxs[2] << "\n";
-      std::cout << "x "    << x0 << " " << y0 << " " << z0 << "\n";
-      std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
-      */
+      double* vel[3];
+      for( int i=0; i<3; i++)
+        vel[i] = &( container.vel(i,0) );
 
-      assert(i >= 0 && i < (int)cell.NxMesh);
-      assert(j >= 0 && j < (int)cell.NyMesh);
-      assert(k >= 0 && k < (int)cell.NzMesh);
 
-      assert( x0 >= mins[0] && x0 < maxs[0] );
-      assert( y0 >= mins[1] && y0 < maxs[1] );
-      assert( z0 >= mins[2] && z0 < maxs[2] );
+      double gam;
+      //double c = cell.cfl;
+      double q = container.q; // TODO: split into species
+      double x0, y0, z0;
+      double u0, v0, w0;
+      //double i,j,k;
+      int i,j,k;
 
-      u0 = vel[0][n];
-      v0 = vel[1][n];
-      w0 = vel[2][n];
 
-      gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
+      // loop and check particles
+      int n1 = 0;
+      int n2 = nparts;
 
-      // --------------------------------------------------
-      // general quantities
-      yee.rho(i,j,k) += abs(q); // total number density
+      // TODO: think SIMD (not possibly due to ijk writing to yee
+      for(int n=n1; n<n2; n++) {
 
-      analysis.rho(i,j,k) += abs(q); // number density per species
+        x0 = loc[0][n];
+        y0 = loc[1][n];
+        z0 = loc[2][n];
+
+        // grid coordinate location
+        /*
+        i = floor(x0);
+        j = floor(y0);
+        k = floor(z0);
+        //k = 0; // TODO: explicit 2D dimensionality enforcement
+        */
+
+		    //i  = trunc( cell.NxMesh*(x0-mins[0])/(maxs[0]-mins[0]) );
+		    //j  = trunc( cell.NyMesh*(y0-mins[1])/(maxs[1]-mins[1]) );
+		    //k  = trunc( cell.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
+          
+        // fixed grid form assuming dx = 1
+		    i  = (int)floor( loc[0][n]-mins[0] );
+		    j  = (int)floor( loc[1][n]-mins[1] );
+		    k  = (int)floor( loc[2][n]-mins[2] );
+
+        /*
+        std::cout << "----------------------\n";
+        std::cout << "cell ijk =( " << cell.my_i << "," << cell.my_j << ")\n";
+        std::cout << "nx ny nz "    << cell.Nx << " " << cell.Ny << "\n";
+        std::cout << "nxG nyG nzG " << cell.NxMesh << " " << cell.NyMesh << " " << cell.NzMesh << "\n";
+        std::cout << "ijk =(" << i << "," << j << "," << k << ")\n";
+        std::cout << "mins " << mins[0] << " " << mins[1] << " " << mins[2] << "\n";
+        std::cout << "maxs " << maxs[0] << " " << maxs[1] << " " << maxs[2] << "\n";
+        std::cout << "x "    << x0 << " " << y0 << " " << z0 << "\n";
+        std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
+        */
+
+        assert(i >= 0 && i < (int)cell.NxMesh);
+        assert(j >= 0 && j < (int)cell.NyMesh);
+        assert(k >= 0 && k < (int)cell.NzMesh);
+
+        assert( x0 >= mins[0] && x0 < maxs[0] );
+        assert( y0 >= mins[1] && y0 < maxs[1] );
+        assert( z0 >= mins[2] && z0 < maxs[2] );
+
+        u0 = vel[0][n];
+        v0 = vel[1][n];
+        w0 = vel[2][n];
+
+        gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
+
+        // --------------------------------------------------
+        // general quantities
+        yee.rho(i,j,k) += abs(q); // total number density
+
+        analysis.rho(i,j,k) += abs(q); // number density per species
+          
+
+        // --------------------------------------------------
+        // particle-species quantities
+        analysis.mgamma(i,j,k) += gam; // mean gamma
+
+        analysis.Vx(i,j,k) += u0/gam; // bulk velocity
+
+        // TODO Tx
         
+        // kinetic energy
+        // chi(u) = 1/2 m v.v
+        analysis.ekin(i,j,k) += 0.5*abs(q)*(u0*u0 + v0*v0 + w0*w0)/gam/gam;
 
-      // --------------------------------------------------
-      // particle-species quantities
-      analysis.mgamma(i,j,k) += gam; // mean gamma
+      }
 
-      analysis.Vx(i,j,k) += u0/gam; // bulk velocity
 
-      // TODO Tx
-      
-      // kinetic energy
-      // chi(u) = 1/2 m v.v
-      analysis.ekin(i,j,k) += 0.5*abs(q)*(u0*u0 + v0*v0 + w0*w0)/gam/gam;
+      // normalize weight with number density
+      for (size_t i=0; i<cell.NxMesh; i++)
+      for (size_t j=0; j<cell.NyMesh; j++)
+      for (size_t k=0; k<cell.NzMesh; k++)
+        analysis.mgamma(i,j,k) /= analysis.rho(i,j,k);
 
     }
-
-
-    // normalize weight with number density
-    for (size_t i=0; i<cell.NxMesh; i++)
-    for (size_t j=0; j<cell.NyMesh; j++)
-    for (size_t k=0; k<cell.NzMesh; k++)
-      analysis.mgamma(i,j,k) /= analysis.rho(i,j,k);
-
 
 
     return;

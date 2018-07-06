@@ -96,8 +96,20 @@ def loadCells(n, conf):
                 
                 #print("normalization factor: {}".format(qe))
 
-                c.container.qe = qe
-                c.container.qi = qe
+                # load particle containers
+                for sps in range(conf.Nspecies):
+                    container = pypic.ParticleBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    if sps % 2 == 0:
+                        container.q = conf.me
+                    else:
+                        container.q = conf.mi
+                    
+                    #reserve memory for particles
+                    Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
+                    container.reserve(Nprtcls, 3)
+                    container.resizeEM(Nprtcls, 3)
+
+                    c.set_container( container )
 
 
                 #set bounding box of the tile
@@ -126,10 +138,6 @@ def inject(node, ffunc, conf):
                 cid    = node.cellId(i,j)
                 c      = node.getCellPtr(cid) #get cell ptr
 
-                #reserve memory for particles
-                Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
-                c.container.reserve(Nprtcls, 3)
-                c.container.resizeEM(Nprtcls, 3)
 
                 # initialize analysis tiles ready for incoming simulation data
                 for ip in range(conf.Nspecies):
@@ -138,30 +146,33 @@ def inject(node, ffunc, conf):
                 #if not(1 <= i <= 2 and j == 1):
                 #    continue
 
+                # inject particles
+                # even species are on their own; odd species are located on 
+                # top of previous even ones
                 for ispcs in range(conf.Nspecies):
+                    container = c.get_container(ispcs)
 
-                    #set q/m
-                    #if ispcs == 0:
-                    #    qm = conf.me
-                    #elif ispcs == 1:
-                    #    qm = conf.mi
+                    if ispcs % 2 == 1:
+                        ref_container = c.get_container(ispcs-1)
+                        xxs = ref_container.loc(0)
+                        yys = ref_container.loc(1)
+                        zzs = ref_container.loc(2)
 
                     for n in range(conf.NzMesh):
                         for m in range(conf.NyMesh):
                             for l in range(conf.NxMesh):
                                 #print(" sub mesh: ({},{},{})".format(l,m,n))
                                 xloc = spatialLoc(node, (i,j), (l,m,n), conf)
-                                #xloc[0] += 0.5
 
                                 for ip in range(conf.ppc):
-                                    #xloc = [0.0, 0.0, 0.0]
-                                    #uloc = [0.1, 0.0, 0.0]
                                     x0, u0 = ffunc(xloc, ispcs, conf)
+                                    if ispcs % 2 == 1:
+                                        xx = xxs[ip]
+                                        yy = yys[ip]
+                                        zz = zzs[ip]
+                                        x0 = [xx, yy, zz] #overwrite location
 
-                                    #if not((x0[0] >= 0.0) and (x0[0]<=1.0) ):
-                                    #    continue
-
-                                    c.container.add_particle(x0, u0)
+                                    container.add_particle(x0, u0)
 
 
 
@@ -175,13 +186,15 @@ def plotXmesh(ax, n, conf, spcs, vdir):
         cid = n.cellId(i,0)
         c = n.getCellPtr(cid)
 
-        x = c.container.loc(0)
-        y = c.container.loc(1)
-        z = c.container.loc(2)
+        container = c.get_container(spcs)
 
-        ux = c.container.vel(0)
-        uy = c.container.vel(1)
-        uz = c.container.vel(2)
+        x = container.loc(0)
+        y = container.loc(1)
+        z = container.loc(2)
+
+        ux = container.vel(0)
+        uy = container.vel(1)
+        uz = container.vel(2)
 
         ax.plot(x, ux, "k.", markersize=2, alpha=0.8)
         

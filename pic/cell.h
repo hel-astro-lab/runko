@@ -26,11 +26,18 @@ public:
   size_t NyGrid;
   size_t NzGrid;
 
-  size_t Nspecies = 2;
-  size_t Nsteps   = 2;
 
 
-  ParticleBlock container;
+  //ParticleBlock container;
+  std::vector<ParticleBlock> containers;
+
+  /// get i:th container
+  ParticleBlock& get_container(size_t i) { return containers[i]; };
+
+  /// set i:th container
+  void set_container(ParticleBlock block) {containers.push_back(block);};
+
+  size_t Nspecies() { return containers.size(); };
 
 
   /// constructor
@@ -41,8 +48,7 @@ public:
              ) : 
     corgi::Cell(i, j, o, NxG, NyG),
     fields::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
-    NxGrid(NxMesh), NyGrid(NyMesh), NzGrid(1),
-    container(NxMesh, NyMesh, 1)
+    NxGrid(NxMesh), NyGrid(NyMesh), NzGrid(1)
   { }
 
 
