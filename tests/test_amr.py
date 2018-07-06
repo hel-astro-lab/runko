@@ -97,6 +97,7 @@ class Basics(unittest.TestCase):
 
 
                         #and get this out
+                        #print("test: ", indx1, " cid:", cid, " rfl1:", rfl1)
                         rfl2  = self.m.get_refinement_level(cid)
                         indx2 = self.m.get_indices(cid)
                         #print("indx: ", indx2, rfl2, " cid:", cid)

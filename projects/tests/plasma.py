@@ -11,19 +11,23 @@ import pyplasma as plasma
 from configSetup import Configuration
 import initialize as init
 
-from visualize import plotNode
-from visualize_amr import plotXmesh
-from visualize import plotJ, plotE, plotDens
-from visualize import saveVisz
-from visualize import getYee
+# for on-the-fly visualization
+try:
+    import matplotlib.pyplot as plt
+    from visualize import plotNode
+    from visualize_amr import plotXmesh
+    from visualize import plotJ, plotE, plotDens
+    from visualize import saveVisz
+except:
+    pass
 
+from visualize import getYee
+from visualize import getAnalysis
 import injector
 
 from timer import Timer
 
 
-# for on-the-fly visualization
-import matplotlib.pyplot as plt
 
 import argparse
 
@@ -56,26 +60,24 @@ def filler(xloc, uloc, ispcs, conf):
     if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
         return 0.0
 
-
     #box advection test
     #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
-    #nn = 1.0/(dv)
+    ##nn = 1.0/(dv)
     #nn = 1.0
 
-    #if not((x >= 1.0) and (x<=1.01) ):
-    #    return 0.0
-    #    #if -0.005 < ux < 0.005:
+    #if ((x >= 1.0) and (x<=1.02) ):
+    #    return 1.0
+    #    #if  0.016 < ux < 0.004:
     #    #    return nn
     #    #else:
     #    #    return 0.0
-
-
+    #else:
+    #    return 0.0
 
     #speedtest
     #if 0.0<x<0.1:
     #    if 0.98 < ux < 1.02:
     #        return 1.0
-
 
     #current test
     #if True: #positive
@@ -172,10 +174,11 @@ def save(n, conf, lap, f5):
 
     #get E field
     yee = getYee(n, conf)
+    analysis = getAnalysis(n, conf, 0)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
-    #f5['fields/ekin'][:,lap] = yee['ekin']
+    f5['fields/ekin'][:,lap] = analysis['ekin']
     f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
@@ -225,24 +228,20 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,9))
-    plt.rc('font', family='serif', size=12)
-    plt.rc('xtick')
-    plt.rc('ytick')
-    
-    gs = plt.GridSpec(8, 1)
-    gs.update(hspace = 0.5)
-    
-    axs = []
-    axs.append( plt.subplot(gs[0]) )
-    axs.append( plt.subplot(gs[1]) )
-    axs.append( plt.subplot(gs[2]) )
-    axs.append( plt.subplot(gs[3]) )
-    axs.append( plt.subplot(gs[4]) )
-    axs.append( plt.subplot(gs[5]) )
-    axs.append( plt.subplot(gs[6]) )
-    axs.append( plt.subplot(gs[7]) )
-
+    try:
+        plt.fig = plt.figure(1, figsize=(8,9))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(8, 1)
+        gs.update(hspace = 0.5)
+        
+        axs = []
+        for ai in range(8):
+            axs.append( plt.subplot(gs[ai]) )
+    except:
+        pass
 
     # Timer for profiling
     timer = Timer(["total", "init", "step", "io"])
@@ -252,10 +251,10 @@ if __name__ == "__main__":
 
     # parse command line arguments
     parser = argparse.ArgumentParser(description='Simple Vlasov-Maxwell simulations')
-    parser.add_argument('--conf', dest='conf_name', default=None,
+    parser.add_argument('--conf', dest='conf_filename', default=None,
                        help='Name of the configuration file (default: None)')
     args = parser.parse_args()
-    if args.conf_name == None:
+    if args.conf_filename == None:
         conf = Configuration('config-landau.ini') 
         #conf = Configuration('config-twostream.ini') 
         #conf = Configuration('config-twostream-fast.ini') 
@@ -264,8 +263,8 @@ if __name__ == "__main__":
         #conf = Configuration('config-plasmaosc.ini') 
         #conf = Configuration('config-dispersion.ini') 
     else:
-        print("Reading configuration setup from ", args.conf_name)
-        conf = Configuration(args.conf_name)
+        print("Reading configuration setup from ", args.conf_filename)
+        conf = Configuration(args.conf_filename)
 
 
     ################################################## 
@@ -298,7 +297,6 @@ if __name__ == "__main__":
     # initialize
     Nx           = conf.Nx*conf.NxMesh
     modes        = np.arange(Nx) 
-    #modes        = np.array([2])
     random_phase = np.random.rand(len(modes))
 
     injector.inject(node, filler, conf) #injecting plasma
@@ -320,16 +318,19 @@ if __name__ == "__main__":
 
 
     # visualize initial condition
-    plotNode(axs[0], node, conf)
-    plotXmesh(axs[1], node, conf, 0, "x")
-    #plotXmesh(axs[2], node, conf, 0, "y")
-    if conf.Nspecies == 2:
-        plotXmesh(axs[3], node, conf, 1, "x")
-        #plotXmesh(axs[4], node, conf, 1, "y")
-    plotJ(axs[5], node, conf)
-    plotE(axs[6], node, conf)
-    plotDens(axs[7], node, conf)
-    saveVisz(-1, node, conf)
+    try:
+        plotNode(axs[0], node, conf)
+        plotXmesh(axs[1], node, conf, 0, "x")
+        #plotXmesh(axs[2], node, conf, 0, "y")
+        if conf.Nspecies == 2:
+            plotXmesh(axs[3], node, conf, 1, "x")
+            #plotXmesh(axs[4], node, conf, 1, "y")
+        plotJ(axs[5], node, conf)
+        plotE(axs[6], node, conf)
+        plotDens(axs[7], node, conf)
+        saveVisz(-1, node, conf)
+    except:
+        pass
 
 
 
@@ -345,9 +346,6 @@ if __name__ == "__main__":
     import h5py
     f5 = h5py.File(conf.outdir+"/run.hdf5", "w")
 
-    #print(conf.dt)
-    #print(conf.cfl/conf.c_omp)
-
     grp0 = f5.create_group("params")
     #grp0.attrs['c_omp'] = conf.c_omp
     grp0.attrs['dx']    = conf.dx
@@ -361,7 +359,7 @@ if __name__ == "__main__":
     Nsamples = conf.Nt
     dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    #dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
@@ -437,36 +435,33 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            plasma.writeYee(node,      lap)
-            plasma.writeAnalysis(node, lap)
-            plasma.writeMesh(node,     lap)
+            plasma.writeYee(node,      lap, conf.outdir + "/")
+            plasma.writeAnalysis(node, lap, conf.outdir + "/")
+            plasma.writeMesh(node,     lap, conf.outdir + "/")
 
 
+	    try:
+                plotNode(axs[0], node, conf)
 
-            plotNode(axs[0], node, conf)
+                plotXmesh(axs[1], node, conf, 0, "x")
+                #plotXmesh(axs[2], node, conf, 0, "y")
 
-            plotXmesh(axs[1], node, conf, 0, "x")
-            #plotXmesh(axs[2], node, conf, 0, "y")
+                if conf.Nspecies == 2:
+                    plotXmesh(axs[3], node, conf, 1, "x")
+                    #plotXmesh(axs[4], node, conf, 1, "y")
 
-            if conf.Nspecies == 2:
-                plotXmesh(axs[3], node, conf, 1, "x")
-                #plotXmesh(axs[4], node, conf, 1, "y")
+                if conf.Nspecies == 4:
+                    plotXmesh(axs[2], node, conf, 1, "x")
+                    plotXmesh(axs[3], node, conf, 2, "x")
+                    plotXmesh(axs[4], node, conf, 3, "x")
 
-            if conf.Nspecies == 4:
-                plotXmesh(axs[2], node, conf, 1, "x")
-                plotXmesh(axs[3], node, conf, 2, "x")
-                plotXmesh(axs[4], node, conf, 3, "x")
+                plotJ(axs[5], node, conf)
+                plotE(axs[6], node, conf)
+                plotDens(axs[7], node, conf)
 
-            plotJ(axs[5], node, conf)
-            plotE(axs[6], node, conf)
-            plotDens(axs[7], node, conf)
-
-
-            #solve Poisson
-            #exP = solvePoisson(axs[6], node, conf)
-
-
-            saveVisz(lap, node, conf)
+                saveVisz(lap, node, conf)
+    	    except:
+    	        pass
 
 
             timer.stop("io")

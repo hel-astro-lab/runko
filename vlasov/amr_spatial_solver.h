@@ -126,7 +126,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         T Const)
     {
 
-      for(auto&& cid : lhs.get_cells(false)) {
+      for(auto cid : lhs.get_cells(false)) {
         auto index = lhs.get_indices(cid);
         int rfl    = lhs.get_refinement_level(cid);
         auto uvel  = lhs.get_center(index, rfl);
@@ -258,7 +258,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
       // switch to units of grid speed by multiplying with Cfl
 
       //left side
-      for(auto&& cid : Mm1.get_cells(false)) {
+      for(auto cid : Mm1.get_cells(false)) {
         auto index = Mm1.get_indices(cid);
         int rfl    = Mm1.get_refinement_level(cid);
         auto uvel  = Mm1.get_center(index, rfl);
@@ -268,11 +268,11 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
           //T gam = 1.0;
           T v   = cfl*uvel[0]/gam; // CFL
 
-          T fm2 = Mm2.data.at(cid);
-          T fm1 = Mm1.data.at(cid);
-          T f0  =  M0.data.at(cid);
-          T fp1 = Mp1.data.at(cid);
-          T fp2 = Mp2.data.at(cid);
+          T fm2 = Mm2.get(cid);
+          T fm1 = Mm1.get(cid);
+          T f0  =  M0.get(cid);
+          T fp1 = Mp1.get(cid);
+          T fp2 = Mp2.get(cid);
 
           //T Lp = fp1 - f0;
           //T Lm = f0  - fm1;
@@ -283,13 +283,13 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
           flux.data[cid] = 
             v*f0 + 
-            v*(1.0+v)*(2.0+v)*Lp/6.0 +
+            v*(1.0-v)*(2.0-v)*Lp/6.0 +
             v*(1.0-v)*(1.0+v)*Lm/6.0;
         }
       }
 
       //right side
-      for(auto&& cid : Mp1.get_cells(false)) {
+      for(auto cid : Mp1.get_cells(false)) {
         auto index = M0.get_indices(cid);
         int rfl    = M0.get_refinement_level(cid);
         auto uvel  = M0.get_center(index, rfl);
@@ -300,15 +300,17 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
           // v = i - x
           T v = cfl*uvel[0]/gam; // CFL
 
-          //T fm2 = Mm2.data.at(cid);
-          T fm1 = Mm1.data.at(cid);
-          T f0   = M0.data.at(cid);
-          T fp1 = Mp1.data.at(cid);
-          T fp2 = Mp2.data.at(cid);
-          T fp3 = Mp3.data.at(cid);
+          //T fm2 = Mm2.get(cid);
+          T fm1 = Mm1.get(cid);
+          T f0  = M0.get(cid);
+          T fp1 = Mp1.get(cid);
+          T fp2 = Mp2.get(cid);
+          T fp3 = Mp3.get(cid);
             
           //T Lp = f0  - fp1;
           //T Lm = fp1 - fp2;
+            
+          //minmax limited values
           T Lp = Lpf(fp3, fp2, fp1, f0, fm1);
           T Lm = Lmf(fp3, fp2, fp1, f0, fm1);
 
@@ -385,6 +387,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             //       (these are there to save memory by avoiding 
             //       copy of consts)
               
+            // 2nd order central scheme
             //if (q < 0) { //left halo
             //  const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
             //  const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
@@ -402,27 +405,31 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
             //  flux = flux2nd(M, Mp1, cfl);
             //}
 
-            //if (q < 0) { //left halo
-            //  const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
-            //  const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
-
-            //  flux = flux1st(M, Mp1, cfl);
-            //} else if ( (q >= 0) && (q <= Nx-2) ) { // inside
-            //  const auto& M   = block0.block(q,r,s);   // f_i
-            //  const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
-
-            //  flux = flux1st(M, Mp1, cfl);
-            //} else if (q >= Nx-1) { //right halo
-            //  const auto& M   = block0.block(q,r,s);       // f_i
-            //  const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
-
-            //  flux = flux1st(M, Mp1, cfl);
-            //}
-
-            if (q == -1) { //left halo
-              const auto& Mm2 = block0_left.block(block0_left.Nx-3,r,s); // f_i-2
-              const auto& Mm1 = block0_left.block(block0_left.Nx-2,r,s); // f_i-1
+            // 1st order upwind scheme
+            /*
+            if (q < 0) { //left halo
               const auto& M   = block0_left.block(block0_left.Nx-1,r,s); // f_i
+              const auto& Mp1 = block0.block(0,r,s);                     // f_i+1
+
+              flux = flux1st(M, Mp1, cfl);
+            } else if ( (q >= 0) && (q <= Nx-2) ) { // inside
+              const auto& M   = block0.block(q,r,s);   // f_i
+              const auto& Mp1 = block0.block(q+1,r,s); // f_i+1
+
+              flux = flux1st(M, Mp1, cfl);
+            } else if (q >= Nx-1) { //right halo
+              const auto& M   = block0.block(q,r,s);       // f_i
+              const auto& Mp1 = block0_right.block(0,r,s); // f_i+1
+
+              flux = flux1st(M, Mp1, cfl);
+            }
+            */
+
+            // 3rd order upwind scheme
+            if (q == -1) { //left halo
+              const auto& Mm2 = block0_left.block(block0_left.Nx-3,r,s);   // f_i-2
+              const auto& Mm1 = block0_left.block(block0_left.Nx-2,r,s);   // f_i-1
+              const auto& M   = block0_left.block(block0_left.Nx-1,r,s);   // f_i
               const auto& Mp1 = block0.block(q+1,r,s);                     // f_i+1
               const auto& Mp2 = block0.block(q+2,r,s);                     // f_i+2
               const auto& Mp3 = block0.block(q+3,r,s);                     // f_i+3
@@ -455,7 +462,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
               const auto& Mp3 = block0.block(q+3,r,s); // f_i+3
 
               flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
-            } else if (q == Nx-3) { // left halo / inside
+            } else if (q == Nx-3) { // right halo / inside
               const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
               const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
               const auto& M   = block0.block(q,r,s);       // f_i
@@ -464,7 +471,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
               const auto& Mp3 = block0_right.block(0,r,s); // f_i+3
             
               flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
-            } else if (q == Nx-2) { // left halo / inside
+            } else if (q == Nx-2) { // right halo / inside
               const auto& Mm2 = block0.block(q-2,r,s);     // f_i-2
               const auto& Mm1 = block0.block(q-1,r,s);     // f_i-1
               const auto& M   = block0.block(q,r,s);       // f_i
@@ -483,7 +490,6 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
               flux = flux3rdU(Mm2, Mm1, M, Mp1, Mp2, Mp3, cfl);
             }
-
 
             //const auto& M   = block0.block(q,r,s);       // f_i
             //const auto& Mp1 = block0.block(q+1,r,s);     // f_i+1

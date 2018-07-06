@@ -12,7 +12,7 @@ namespace py = pybind11;
 #include "../pic/communicate.h"
 #include "../pic/current_deposit.h"
 #include "../pic/analyzer.h"
-
+#include "../pic/filters.h"
 
 
 
@@ -62,6 +62,26 @@ PYBIND11_MODULE(pypic, m) {
     .def("ex",          [](pic::ParticleBlock& s) 
         {
           return s.Epart[0];
+        }, py::return_value_policy::reference)
+    .def("ey",          [](pic::ParticleBlock& s) 
+        {
+          return s.Epart[1];
+        }, py::return_value_policy::reference)
+    .def("ez",          [](pic::ParticleBlock& s) 
+        {
+          return s.Epart[2];
+        }, py::return_value_policy::reference)
+    .def("bx",          [](pic::ParticleBlock& s) 
+        {
+          return s.Bpart[0];
+        }, py::return_value_policy::reference)
+    .def("by",          [](pic::ParticleBlock& s) 
+        {
+          return s.Bpart[1];
+        }, py::return_value_policy::reference)
+    .def("bz",          [](pic::ParticleBlock& s) 
+        {
+          return s.Bpart[2];
         }, py::return_value_policy::reference);
     
 
@@ -74,9 +94,13 @@ PYBIND11_MODULE(pypic, m) {
       .def(py::init<>())
       .def("solve", &pic::ParticleFieldInterpolator::solve);
 
+
     py::class_<pic::Communicator>(m, "Communicator")
       .def(py::init<>())
-      .def("transfer", &pic::Communicator::transfer);
+      .def("check_outgoing_particles",    &pic::Communicator::check_outgoing_particles)
+      .def("get_incoming_particles",      &pic::Communicator::get_incoming_particles)
+      .def("delete_transferred_particles",&pic::Communicator::delete_transferred_particles);
+
 
     py::class_<pic::Depositer>(m, "Depositer")
       .def(py::init<>())
@@ -88,6 +112,25 @@ PYBIND11_MODULE(pypic, m) {
       .def(py::init<>())
       .def("analyze", &pic::Analyzator::analyze);
 
+
+    py::class_<pic::Filter>(m, "Filter")
+      .def(py::init<int, int>())
+      .def("init_kernel",         &pic::Filter::init_kernel)
+      .def("init_gaussian_kernel",&pic::Filter::init_gaussian_kernel)
+      //.def("init_sinc_kernel",    &pic::Filter::init_sinc_kernel)
+      .def("init_lowpass_fft_kernel",&pic::Filter::init_lowpass_fft_kernel)
+      .def("init_3point",            &pic::Filter::init_3point_kernel)
+      .def("fft_kernel",             &pic::Filter::fft_kernel)
+      .def("fft_image_forward",      &pic::Filter::fft_image_forward)
+      .def("fft_image_backward",     &pic::Filter::fft_image_backward)
+      .def("apply_kernel",           &pic::Filter::apply_kernel)
+      .def("get_padded_current",     &pic::Filter::get_padded_current)
+      .def("set_current",            &pic::Filter::set_current)
+      .def("direct_convolve_3point", &pic::Filter::direct_convolve_3point)
+      .def("set_image",              &pic::Filter::set_image)
+      .def("set_kernel",             &pic::Filter::set_kernel)
+      .def("get_kernel",             &pic::Filter::get_kernel, py::return_value_policy::reference)
+      .def("get_image",              &pic::Filter::get_image,  py::return_value_policy::reference);
 
 
 

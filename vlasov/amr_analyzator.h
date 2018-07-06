@@ -57,8 +57,8 @@ T integrate_moment(
 
 
   // convolve with chi(u) function
-  for(auto&& cid : m.get_cells(false) ) {
-    if( !m.is_leaf(cid) ) continue;
+  for(auto cid : m.get_cells(false) ) {
+    if( !m.is_leaf(cid) ) continue; //TODO: fixme
 
     auto index = m.get_indices(cid);
     rfl        = m.get_refinement_level(cid);
@@ -182,7 +182,7 @@ class Analyzator {
               
             /// (non-relativistic) temperature
             // chi(u) = v - V
-            analysis.Vx(q,r,s) = 
+            analysis.Tx(q,r,s) = 
               integrate_moment(
                   M,
                 [Vx](std::array<T,3> uvel) -> T 

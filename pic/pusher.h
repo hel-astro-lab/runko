@@ -56,6 +56,7 @@ class Pusher
     ex = &( cell.container.Epart[0][0] );
     ey = &( cell.container.Epart[1][0] );
     ez = &( cell.container.Epart[2][0] );
+
     bx = &( cell.container.Bpart[0][0] );
     by = &( cell.container.Bpart[1][0] );
     bz = &( cell.container.Bpart[2][0] );
@@ -76,13 +77,18 @@ class Pusher
     double qm = -1.0;
 
 
-
-    #pragma omp simd
+    //TODO: SIMD
     for(int n=n1; n<n2; n++) {
 
       // read particle-specific fields
       ex0 = ex[n]*(0.5*qm);
       bx0 = bx[n]*(0.5*qm*cinv);
+
+      ey0 = ey[n]*(0.5*qm);
+      by0 = by[n]*(0.5*qm*cinv);
+
+      ez0 = ez[n]*(0.5*qm);
+      bz0 = bz[n]*(0.5*qm*cinv);
 
       // first half electric acceleration
       u0 = c*vel[0][n] + ex0;
@@ -110,11 +116,30 @@ class Pusher
       vel[1][n] = v0*cinv;
       vel[2][n] = w0*cinv;
 
+      /*
+      std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+      std::cout << "n=" << n;
+      std::cout << "\n";
+
+      std::cout << " vx: " <<  vel[0][n];
+      std::cout << " vy: " <<  vel[1][n];
+      std::cout << " vz: " <<  vel[2][n];
+      std::cout << "\n";
+
+      std::cout << " ex: " <<  ex[n];
+      std::cout << " ey: " <<  ey[n];
+      std::cout << " ez: " <<  ez[n];
+      std::cout << " bx: " <<  bx[n];
+      std::cout << " by: " <<  by[n];
+      std::cout << " bz: " <<  bz[n];
+      std::cout << "\n";
+      */
+
 
       // position advance
-		  //g = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
-      g = 1.0;
-      for(int i=0; i<3; i++)
+		  g = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+      //TODO: note the explicit 2D dimensionality enforcement
+      for(int i=0; i<2; i++)
         loc[i][n] += vel[i][n]*g*c;
 
 

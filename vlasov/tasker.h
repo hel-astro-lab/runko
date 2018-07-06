@@ -136,10 +136,14 @@ void analyze( vlasov::Grid& grid )
 
 
 
-void writeYee( vlasov::Grid& grid, int lap )
+void writeYee( 
+    corgi::Node& grid, 
+    int lap,
+    std::string dir
+    )
 {
 
-  std::string prefix("fields-"); 
+  std::string prefix = dir + "fields-"; 
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix, lap);
 
@@ -153,10 +157,14 @@ void writeYee( vlasov::Grid& grid, int lap )
 }
 
 
-void writeAnalysis( vlasov::Grid& grid, int lap)
+void writeAnalysis( 
+    corgi::Node& grid, 
+    int lap,
+    std::string dir
+    )
 {
 
-  std::string prefix("analysis-"); 
+  std::string prefix = dir + "analysis-"; 
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix, lap);
 
@@ -170,10 +178,14 @@ void writeAnalysis( vlasov::Grid& grid, int lap)
 }
 
 
-void writeMesh( vlasov::Grid& grid, int lap)
+void writeMesh( 
+    vlasov::Grid& grid, 
+    int lap,
+    std::string dir 
+    )
 {
 
-  std::string prefix("meshes-"); 
+  std::string prefix = dir + "meshes-"; 
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix, lap);
 

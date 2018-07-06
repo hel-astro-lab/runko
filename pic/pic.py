@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 import sys, os
 import h5py
@@ -12,14 +11,27 @@ import pypic
 
 
 from configSetup import Configuration
+import argparse
 import initialize as init
 
 #from injector import spatialLoc
 
-from visualize import plotNode
-from visualize import plotJ, plotE, plotDens
-from visualize import getYee
-from visualize import saveVisz
+np.random.seed(1)
+
+
+try:
+    import matplotlib.pyplot as plt
+    from visualize import plotNode
+    from visualize import plotJ, plotE, plotDens
+    from visualize import getYee
+    from visualize import saveVisz
+    
+    from visualize import plot2dYee
+    from visualize_pic import plot2dParticles
+
+
+except:
+    pass
 
 
 from timer import Timer
@@ -43,10 +55,9 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     xmin = node.getXmin()
     ymin = node.getYmin()
 
-    #dx = conf.dx
-    dx = 1.0 #XXX scaled length
-    dy = conf.dy
-    dz = conf.dz
+    dx = 1.0 #conf.dx
+    dy = 1.0 #conf.dy
+    dz = 1.0 #conf.dz
 
 
     #calculate coordinate extent
@@ -83,16 +94,17 @@ def loadCells(n, conf):
                 #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
                 qe = (gamma0*omp**2.0)/((conf.ppc*0.5)*(1.0 + np.abs(conf.me/conf.mi)) )
                 
-                print("normalization factor: {}".format(qe))
+                #print("normalization factor: {}".format(qe))
 
                 c.container.qe = qe
                 c.container.qi = qe
 
 
-                # use same scale for Maxwell solver
-                #c.yeeDt = conf.dt
-                #c.yeeDx = conf.dx
-                c.yeeDx = 1.0
+                #set bounding box of the tile
+                mins = spatialLoc(n, [i,j], [0,0,0], conf)
+                maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
+                c.set_tile_mins(mins)
+                c.set_tile_maxs(maxs)
 
                 #add it to the node
                 n.addCell(c) 
@@ -108,7 +120,7 @@ def inject(node, ffunc, conf):
         for j in range(node.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
-                print("creating ({},{})".format(i,j))
+                #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
                 cid    = node.cellId(i,j)
@@ -119,6 +131,12 @@ def inject(node, ffunc, conf):
                 c.container.reserve(Nprtcls, 3)
                 c.container.resizeEM(Nprtcls, 3)
 
+                # initialize analysis tiles ready for incoming simulation data
+                for ip in range(conf.Nspecies):
+                    c.addAnalysisSpecies()
+
+                #if not(1 <= i <= 2 and j == 1):
+                #    continue
 
                 for ispcs in range(conf.Nspecies):
 
@@ -144,6 +162,7 @@ def inject(node, ffunc, conf):
                                     #    continue
 
                                     c.container.add_particle(x0, u0)
+
 
 
 
@@ -183,6 +202,9 @@ def filler(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
     xx = xloc[0] + np.random.rand(1)
+    yy = xloc[1] + np.random.rand(1)
+    #zz = xloc[2] + np.random.rand(1)
+    zz = 0.0
 
     ux = 0.0
     uy = 0.0
@@ -218,7 +240,8 @@ def filler(xloc, ispcs, conf):
     rr2 = np.random.rand()
     r1  = np.sqrt(-2.0*np.log(rr1))*np.cos(2.0*np.pi*rr2)
     r2  = np.sqrt(-2.0*np.log(rr1))*np.sin(2.0*np.pi*rr2)
-    ux = r1*vth + v0
+    ux = r1*vth  +v0
+    uy = r2*vth  #+v0
 
     #print("injecting into {} ({})".format(xx, xloc[0]))
 
@@ -229,7 +252,7 @@ def filler(xloc, ispcs, conf):
     ux += vth*mux_noise
 
 
-    x0 = [xx, 0.0, 0.0]
+    x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
     return x0, u0
 
@@ -301,7 +324,7 @@ def save(n, conf, lap, f5):
     #f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/Ex'  ][:,lap] = exS
     f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = yee['ekin']
+    #f5['fields/ekin'][:,lap] = yee['ekin']
     f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
@@ -313,19 +336,37 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,9))
-    plt.rc('font', family='serif', size=12)
-    plt.rc('xtick')
-    plt.rc('ytick')
-    
-    gs = plt.GridSpec(8, 1)
-    gs.update(hspace = 0.5)
-    
-    axs = []
-    for ai in range(8):
-        axs.append( plt.subplot(gs[ai]) )
+    try:
+        plt.fig = plt.figure(1, figsize=(8,10))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(4, 3)
+        gs.update(hspace = 0.5)
+        
+        axs = []
+        for ai in range(12):
+            axs.append( plt.subplot(gs[ai]) )
+    except:
+        pass
 
-    conf = Configuration('config-landau.ini') 
+
+    # Timer for profiling
+    timer = Timer(["total", "init", "step", "io"])
+    timer.start("total")
+    timer.start("init")
+
+    # parse command line arguments
+    parser = argparse.ArgumentParser(description='Simple PIC-Maxwell simulations')
+    parser.add_argument('--conf', dest='conf_filename', default=None,
+                       help='Name of the configuration file (default: None)')
+    args = parser.parse_args()
+    if args.conf_filename == None:
+        conf = Configuration('config-landau.ini') 
+    else:
+        print("Reading configuration setup from ", args.conf_filename)
+        conf = Configuration(args.conf_filename)
 
 
     #node = plasma.Grid(conf.Nx, conf.Ny)
@@ -356,11 +397,20 @@ if __name__ == "__main__":
     #insert_em(node, conf)
 
 
-    # visualize initial condition
-    plotNode( axs[0], node, conf)
-    plotXmesh(axs[1], node, conf, 0, "x")
+    timer.stop("init") 
+    timer.stats("init") 
+    # end of initialization
+    ################################################## 
 
-    saveVisz(-1, node, conf)
+
+
+    # visualize initial condition
+    try:
+        plotNode( axs[0], node, conf)
+        plotXmesh(axs[1], node, conf, 0, "x")
+        saveVisz(-1, node, conf)
+    except:
+        pass
 
     
     #setup output file
@@ -375,7 +425,7 @@ if __name__ == "__main__":
     Nsamples = conf.Nt
     dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    #dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
@@ -399,7 +449,9 @@ if __name__ == "__main__":
     comm     = pypic.Communicator()
     currint  = pypic.Depositer()
     analyzer = pypic.Analyzator()
+    flt     =  pypic.Filter(conf.NxMesh, conf.NyMesh)
 
+    flt.init_gaussian_kernel(2.0, 2.0)
 
     #simulation loop
     time  = 0.0
@@ -423,11 +475,29 @@ if __name__ == "__main__":
         #pause simulation if pause file exists
 
 
+        #--------------------------------------------------
+        # advance Half B
+
         ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                cell.updateBoundaries(node)
+                cell.updateBoundaries2D(node)
+
+        #push B half
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.pushHalfB()
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #--------------------------------------------------
+        # move particles
 
         #interpolate fields
         for j in range(node.getNy()):
@@ -441,25 +511,106 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 pusher.solve(cell)
 
+        #--------------------------------------------------
+        # advance B half
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #push B half
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.pushHalfB()
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #--------------------------------------------------
+        # advance E 
+
+        #push B half
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.pushE()
+
+        ##update boundaries
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.updateBoundaries2D(node)
+
+        #--------------------------------------------------
+
         #deposit current
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 currint.deposit(cell)
 
-        ##update particle boundaries
+
+        ##################################################
+        # particle communication 
+
+
+        #update particle boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                comm.transfer(cell, node)
+                comm.check_outgoing_particles(cell)
+
+        #copy particles
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                comm.get_incoming_particles(cell, node)
+
+        #delete transferred particles
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                comm.delete_transferred_particles(cell)
+
+        # field communication
 
         #exchange currents
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
-                cell.exchangeCurrents(node)
+                cell.exchangeCurrents2D(node)
+
+        ##################################################
 
         #filter
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                flt.get_padded_current(cell, node)
+
+                #flt.fft_image_forward()
+                #flt.apply_kernel()
+                #flt.fft_image_backward()
+        
+                for fj in range(10):
+                    flt.direct_convolve_3point()
+                flt.set_current(cell)
+
+
+        ##cycle new and temporary currents
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.cycleCurrent2D()
+
+        ##################################################
+        
 
         #add current to E
         for j in range(node.getNy()):
@@ -468,12 +619,17 @@ if __name__ == "__main__":
                 cell.depositCurrent()
 
 
+        ##################################################
+        # data reduction and I/O
+
         #analyze
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 analyzer.analyze(cell)
 
+
+        timer.lap("step")
 
         #save temporarily to file
         save(node, conf, ifile, f5)
@@ -485,18 +641,55 @@ if __name__ == "__main__":
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
 
-            plotNode( axs[0], node, conf)
-            plotXmesh(axs[1], node, conf, 0, "x")
+            timer.stats("step")
+            timer.start("io")
 
-            plotJ(    axs[5], node, conf)
 
-            plotE(    axs[6], node, conf)
-            plotDebug(axs[6], node, conf)
+            plasma.writeYee(node,      lap, conf.outdir + "/")
+            plasma.writeAnalysis(node, lap, conf.outdir + "/")
+            #plasma.writeMesh(node,     lap, conf.outdir + "/")
 
-            plotDens( axs[7], node, conf)
+            #try:
+            #    plotNode( axs[0], node, conf)
+            #    plotXmesh(axs[1], node, conf, 0, "x")
+            #    plotJ(    axs[5], node, conf)
+            #    plotE(    axs[6], node, conf)
+            #    plotDebug(axs[6], node, conf)
+            #    plotDens( axs[7], node, conf)
+            #    saveVisz(lap, node, conf)
+
+            #--------------------------------------------------
+            #2D plots
+            #try:
+            plotNode(axs[0], node, conf)
+
+            plot2dParticles(axs[1], node, conf, downsample=0.001)
+
+            plot2dYee(axs[2], node, conf, 'rho')
+
+            plot2dYee(axs[3], node, conf, 'jx')
+            plot2dYee(axs[4], node, conf, 'jy')
+            plot2dYee(axs[5], node, conf, 'jz')
+
+            plot2dYee(axs[6], node, conf, 'ex')
+            plot2dYee(axs[7], node, conf, 'ey')
+            plot2dYee(axs[8], node, conf, 'ez')
+
+            plot2dYee(axs[9], node, conf, 'bx')
+            plot2dYee(axs[10],node, conf, 'by')
+            plot2dYee(axs[11],node, conf, 'bz')
 
 
             saveVisz(lap, node, conf)
+
+	    #except:
+	    #    pass
+
+
+
+            timer.stop("io")
+            timer.stats("io")
+            timer.start("step") #refresh lap counter (avoids IO profiling)
 
         time += conf.cfl/conf.c_omp
     #end of loop
@@ -504,3 +697,5 @@ if __name__ == "__main__":
     #node.finalizeMpi()
 
 
+    timer.stop("total")
+    timer.stats("total")

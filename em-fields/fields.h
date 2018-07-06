@@ -32,17 +32,20 @@ class YeeLattice {
   toolbox::Mesh<Realf, 1> bx;
   toolbox::Mesh<Realf, 1> by;
   toolbox::Mesh<Realf, 1> bz;
-
-  /// Current vector 
-  toolbox::Mesh<Realf, 1> jx;
-  toolbox::Mesh<Realf, 1> jy;
-  toolbox::Mesh<Realf, 1> jz;
-
-  /// temporary current
-  toolbox::Mesh<Realf, 1> jx1;
-
+    
   /// Charge density
   toolbox::Mesh<Realf, 1> rho;
+
+  /// Current vector 
+  toolbox::Mesh<Realf, 3> jx;
+  toolbox::Mesh<Realf, 3> jy;
+  toolbox::Mesh<Realf, 3> jz;
+
+  /// temporary current
+  toolbox::Mesh<Realf, 3> jx1;
+  toolbox::Mesh<Realf, 3> jy1;
+  toolbox::Mesh<Realf, 3> jz1;
+
 
 
   YeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
@@ -56,13 +59,15 @@ class YeeLattice {
     by(Nx, Ny, Nz),
     bz(Nx, Ny, Nz),
 
+    rho(Nx, Ny, Nz),
+
     jx(Nx, Ny, Nz),
     jy(Nx, Ny, Nz),
     jz(Nx, Ny, Nz),
 
     jx1(Nx, Ny, Nz),
-
-    rho(Nx, Ny, Nz)
+    jy1(Nx, Ny, Nz),
+    jz1(Nx, Ny, Nz)
     { }
 
 };
@@ -98,19 +103,19 @@ class PlasmaMomentLattice {
 
 
   /// constructor; initializes Mesh objects at the same time
-  PlasmaMomentLattice(size_t Nx, size_t Ny, size_t Nz) : 
-    Nx(Nx), Ny(Ny), Nz(Nz),
-
+  PlasmaMomentLattice(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
+    Nx(Nx_in), Ny(Ny_in), Nz(Nz_in),
     rho(Nx, Ny, Nz),
     mgamma(Nx, Ny, Nz),
-    Vx(Nx, Ny, Nz),
-    Vy(Nx, Ny, Nz),
-    Vz(Nx, Ny, Nz),
-    Tx(Nx, Ny, Nz),
-    Ty(Nx, Ny, Nz),
-    Tz(Nx, Ny, Nz),
+    Vx( Nx, Ny, Nz ),
+    Vy( Nx, Ny, Nz ),
+    Vz( Nx, Ny, Nz ),
+    Tx( Nx, Ny, Nz ),
+    Ty( Nx, Ny, Nz ),
+    Tz( Nx, Ny, Nz ),
     ekin(Nx, Ny, Nz)
   { }
+
 
 
 };
@@ -154,8 +159,10 @@ class PlasmaCell : virtual public corgi::Cell {
 
 
   void updateBoundaries(corgi::Node& node);
+  void updateBoundaries2D(corgi::Node& node);
 
   void exchangeCurrents(corgi::Node& node);
+  void exchangeCurrents2D(corgi::Node& node);
 
   virtual void pushHalfB();
   void pushHalfB1d();
@@ -175,9 +182,12 @@ class PlasmaCell : virtual public corgi::Cell {
 
   void cycleYee();
 
-  Realf yeeDt = 1.0;
-  Realf yeeDx = 1.0;
+  void cycleCurrent();
+  void cycleCurrent2D();
 
+  Realf cfl;
+  Realf dt = 1.0;
+  Realf dx = 1.0;
   //Realf yeeDy = 1.0;
   //Realf yeeDz = 1.0;
 

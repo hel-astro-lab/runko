@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <cmath>
 
 
@@ -37,6 +38,10 @@ class ParticleBlock {
   //! particle specific magnetic field components
   //std::vector<double> Bpart;
   std::vector< std::vector<double> > Bpart;
+
+  //! multimap of particles going to other tiles
+  typedef std::multimap<std::tuple<int,int,int>, int> mapType;
+  mapType to_other_tiles;
 
 
   // size of the internal mesh
@@ -78,9 +83,20 @@ class ParticleBlock {
     //Bpart.reserve(N*D);
   }
 
+  // resize everything
+  void resize(uint64_t N) {
+
+    for(uint64_t i=0; i<3; i++) locArr[i].resize(N);
+    for(uint64_t i=0; i<3; i++) velArr[i].resize(N);
+
+    for(uint64_t i=0; i<3; i++) Epart[i].resize(N);
+    for(uint64_t i=0; i<3; i++) Bpart[i].resize(N);
+
+  }
 
   // resize arrays for fields
   void resizeEM(uint64_t N, uint64_t D) {
+    if (N <= 0) N = 1;
 
     Epart.resize(D);
     for(uint64_t i=0; i<D; i++) Epart[i].resize(N);
@@ -154,7 +170,8 @@ class ParticleBlock {
   // --------------------------------------------------
   //! Lorentz factor
   inline double gamma(unsigned int iprtcl) {
-    return sqrt(1.+pow(vel(0,iprtcl),2)
+    return sqrt(1.+
+         pow(vel(0,iprtcl),2)
         +pow(vel(1,iprtcl),2)
         +pow(vel(2,iprtcl),2));
   }
@@ -182,4 +199,4 @@ class ParticleBlock {
 
 
 
-} // end of namespace epic
+} // end of namespace pic

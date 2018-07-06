@@ -50,9 +50,9 @@ public:
   ~PicCell() { };
 
   /// cell temporal and spatial scales
-  Realf dt  = 0.0;
-  Realf dx  = 0.0;
-  Realf cfl = 0.0;
+  using fields::PlasmaCell::cfl;
+  using fields::PlasmaCell::dt;
+  using fields::PlasmaCell::dx;
 
 
 };

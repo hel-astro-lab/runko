@@ -121,6 +121,35 @@ def plotNode(ax, n, conf):
     ax.set_ylabel('node')
 
 
+# plot tile boundaries
+def plotTileBoundaries(ax, node, conf):
+
+    for i in range(conf.Nx):
+        for j in range(conf.Ny):
+            for k in range(conf.Nz):
+                cid = node.cellId(i,j)
+                c = node.getCellPtr(cid)
+
+                mins = np.array( c.mins ) 
+                maxs = np.array( c.maxs )
+                #lens = np.array( [conf.NxMesh+1, conf.NyMesh+1, conf.NzMesh+1] )
+                #ds = (maxs - mins)/lens
+                xx = np.linspace(mins[0], maxs[0], conf.NxMesh+1)
+                yy = np.linspace(mins[1], maxs[1], conf.NyMesh+1)
+                zz = np.linspace(mins[2], maxs[2], conf.NzMesh+1)
+                
+                # inner mesh
+                for y in yy:
+                    ax.plot( [xx[0], xx[-1]], [y, y], "k", linestyle='dotted')
+                for x in xx:
+                    ax.plot( [x, x], [yy[0], yy[-1]], "k", linestyle='dotted')
+
+                #and outer boundaries
+                ax.plot([mins[0], maxs[0]], [mins[1], mins[1]], "k-") #bottom
+                ax.plot([mins[0], maxs[0]], [maxs[1], maxs[1]], "k-") #top
+                ax.plot([mins[0], mins[0]], [mins[1], maxs[1]], "k-") #left
+                ax.plot([maxs[0], maxs[0]], [mins[1], maxs[1]], "k-") #right
+
 
 def saveVisz(lap, n, conf):
 
@@ -225,19 +254,68 @@ def getYee(n, conf):
     return data
 
 
+def getYee2D(n, conf):
+
+    data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
+            'y' : np.linspace(n.getYmin(), n.getYmax(), conf.Ny*conf.NyMesh),
+            'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ey':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'by':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jy':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx1':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+           }
+
+    for i in range(conf.Nx):
+        for j in range(conf.Ny):
+            cid = n.cellId(i,j)
+            c = n.getCellPtr(cid)
+
+            yee = c.getYee(0)
+            for r in range(conf.NyMesh):
+                for q in range(conf.NxMesh):
+
+                    indx = i*conf.NxMesh + q
+                    jndx = j*conf.NyMesh + r
+
+                    data['ex'][indx, jndx] = yee.ex[q, r, 0]
+                    data['ey'][indx, jndx] = yee.ey[q, r, 0]
+                    data['ez'][indx, jndx] = yee.ez[q, r, 0]
+
+                    data['bx'][indx, jndx] = yee.bx[q, r, 0]
+                    data['by'][indx, jndx] = yee.by[q, r, 0]
+                    data['bz'][indx, jndx] = yee.bz[q, r, 0]
+                                                        
+                    data['jx'][indx, jndx] = yee.jx[q, r, 0]
+                    data['jy'][indx, jndx] = yee.jy[q, r, 0]
+                    data['jz'][indx, jndx] = yee.jz[q, r, 0]
+
+                    data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
+
+                    data['rho'][indx, jndx] = yee.rho[q, r, 0]
+
+    return data
+
+
 # species-specific analysis meshes (plasma moments)
 def getAnalysis(n, conf, ispcs):
 
     data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
-           'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'mgamma':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vx':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vy':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vz':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Tx':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Ty':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Tz':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'ekin':  -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'rho':    -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'mgamma': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Tx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Ty':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'Tz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'ekin':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            }
 
     for i in range(conf.Nx):
@@ -314,4 +392,30 @@ def plotDens(ax, n, conf):
     ax.plot(yee['x'], yee['rho'], "b-")
     
     ax.set_ylabel(r'$n$')
+
+
+
+def plot2dYee(ax, n, conf, val = 'jx'):
+
+    #ax.clear()
+    ax.cla()
+    yee = getYee2D(n, conf)
+
+    vmin, vmax = np.min(yee[val]), np.max(yee[val])
+    vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
+    #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
+
+
+    imshow(ax, yee[val],
+           n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+           cmap = "RdBu",
+           vmin = -vminmax,
+           vmax =  vminmax,
+           #clip = 0.0
+          )
+    ax.set_title(val)
+
+
+
+
 

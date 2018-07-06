@@ -107,13 +107,11 @@ public:
   /// destructor
   ~VlasovCell() { };
 
-  /// cell temporal and spatial scales
-  Realf dt = 0.0;
-  Realf dx = 0.0;
 
-  //Realf dy = 0.0;
-  //Realf dz = 0.0;
-  //Realf cfl = 0.45;
+  /// cell temporal and spatial scales
+  using fields::PlasmaCell::cfl;
+  using fields::PlasmaCell::dt;
+  using fields::PlasmaCell::dx;
 
 
   /// General clipping threshold
