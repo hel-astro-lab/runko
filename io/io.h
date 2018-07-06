@@ -123,16 +123,16 @@ class Writer {
       // Yee lattice quantities
 
       gr["jx"] = yee.jx.serialize();
-      //gr["jy"] = yee.jy.serialize();
-      //gr["jz"] = yee.jz.serialize();
+      gr["jy"] = yee.jy.serialize();
+      gr["jz"] = yee.jz.serialize();
 
       gr["ex"] = yee.ex.serialize();
-      //gr["ey"] = yee.ey.serialize();
-      //gr["ez"] = yee.ez.serialize();
+      gr["ey"] = yee.ey.serialize();
+      gr["ez"] = yee.ez.serialize();
 
       gr["bx"] = yee.bx.serialize();
-      //gr["by"] = yee.by.serialize();
-      //gr["bz"] = yee.bz.serialize();
+      gr["by"] = yee.by.serialize();
+      gr["bz"] = yee.bz.serialize();
 
       gr["rho"] = yee.rho.serialize();
 
