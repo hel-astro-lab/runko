@@ -232,24 +232,47 @@ def filler(xloc, ispcs, conf):
     #return x0, u0
 
 
-    vth = np.sqrt(conf.delgam)
-    v0  = conf.gamma_e
+    #electrons
+    if ispcs == 0:
+        delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
+
+        # bulk velocities
+        mux = conf.gamma_e
+        muy = 0.0
+        muz = 0.0
+
+        #Lx  = conf.Nx*conf.NxMesh*conf.dx
+        #mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
+
+    #positrons/ions/second species
+    if ispcs == 1:
+        delgam  = conf.delgam
+
+        # bulk velocities
+        mux = conf.gamma_i
+        muy = 0.0
+        muz = 0.0
+
+
+
+    vth = np.sqrt(delgam)
 
     #Box-Muller sampling
     rr1 = np.random.rand()
     rr2 = np.random.rand()
     r1  = np.sqrt(-2.0*np.log(rr1))*np.cos(2.0*np.pi*rr2)
     r2  = np.sqrt(-2.0*np.log(rr1))*np.sin(2.0*np.pi*rr2)
-    ux = r1*vth  +v0
-    uy = r2*vth  #+v0
+    ux = r1*vth + mux
+    uy = r2*vth + muy
+
 
     #print("injecting into {} ({})".format(xx, xloc[0]))
 
     #perturb with wave
-    Lx = conf.Nx*conf.NxMesh
-    kmode = conf.modes
-    mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*xx/Lx) * (Lx/(2.0*np.pi*kmode))
-    ux += vth*mux_noise
+    #Lx = conf.Nx*conf.NxMesh
+    #kmode = conf.modes
+    #mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*xx/Lx) * (Lx/(2.0*np.pi*kmode))
+    #ux += vth*mux_noise
 
 
     x0 = [xx, yy, zz]
@@ -441,8 +464,7 @@ if __name__ == "__main__":
     #   -position update
     #-DONE:deposit particles (zigzag)
     #-DONE: boundary wrapper
-    #
-    #filtering
+    #-DONE:filtering
 
     pusher   = pypic.Pusher()
     fintp    = pypic.ParticleFieldInterpolator()
@@ -598,7 +620,7 @@ if __name__ == "__main__":
                 #flt.apply_kernel()
                 #flt.fft_image_backward()
         
-                for fj in range(10):
+                for fj in range(3):
                     flt.direct_convolve_3point()
                 flt.set_current(cell)
 
@@ -622,18 +644,12 @@ if __name__ == "__main__":
         ##################################################
         # data reduction and I/O
 
-        #analyze
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                analyzer.analyze(cell)
-
 
         timer.lap("step")
 
         #save temporarily to file
-        save(node, conf, ifile, f5)
-        ifile += 1
+        #save(node, conf, ifile, f5)
+        #ifile += 1
 
 
         #I/O
@@ -643,6 +659,12 @@ if __name__ == "__main__":
 
             timer.stats("step")
             timer.start("io")
+
+            #analyze
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    cell = node.getCellPtr(i,j)
+                    analyzer.analyze(cell)
 
 
             plasma.writeYee(node,      lap, conf.outdir + "/")
@@ -657,6 +679,7 @@ if __name__ == "__main__":
             #    plotDebug(axs[6], node, conf)
             #    plotDens( axs[7], node, conf)
             #    saveVisz(lap, node, conf)
+
 
             #--------------------------------------------------
             #2D plots
@@ -684,7 +707,6 @@ if __name__ == "__main__":
 
 	    #except:
 	    #    pass
-
 
 
             timer.stop("io")

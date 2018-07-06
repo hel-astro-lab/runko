@@ -3,7 +3,7 @@ c_omp = 100.0 #skin depth in cell units
 delgam = 1.0e-3
 Nx = 400
 Rm = 2
-Nt = 2500
+Nt = 10000
 gamma = 0.25
 
 

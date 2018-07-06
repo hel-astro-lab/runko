@@ -122,15 +122,13 @@ class Analyzator {
 
       // --------------------------------------------------
       // general quantities
+      yee.rho(i,j,k) += abs(q); // total number density
 
-      yee.rho(i,j,k) += abs(q); // number density
-
-
-      analysis.rho(i,j,k) += abs(q); // number density
+      analysis.rho(i,j,k) += abs(q); // number density per species
         
+
       // --------------------------------------------------
       // particle-species quantities
-
       analysis.mgamma(i,j,k) += gam; // mean gamma
 
       analysis.Vx(i,j,k) += u0/gam; // bulk velocity
@@ -139,7 +137,7 @@ class Analyzator {
       
       // kinetic energy
       // chi(u) = 1/2 m v.v
-      analysis.ekin(i,j,k) += 0.5*abs(q)*u0*u0/gam/gam;
+      analysis.ekin(i,j,k) += 0.5*abs(q)*(u0*u0 + v0*v0 + w0*w0)/gam/gam;
 
     }
 
