@@ -22,6 +22,7 @@ except:
     pass
 
 from visualize import getYee
+from visualize import getAnalysis
 import injector
 
 from timer import Timer
@@ -59,28 +60,24 @@ def filler(xloc, uloc, ispcs, conf):
     if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
         return 0.0
 
-
     #box advection test
-    dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
-    #nn = 1.0/(dv)
-    nn = 1.0
+    #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
+    ##nn = 1.0/(dv)
+    #nn = 1.0
 
-    if ((x >= 1.0) and (x<=1.02) ):
-        return 1.0
-        #if  0.016 < ux < 0.004:
-        #    return nn
-        #else:
-        #    return 0.0
-    else:
-        return 0.0
-
-
+    #if ((x >= 1.0) and (x<=1.02) ):
+    #    return 1.0
+    #    #if  0.016 < ux < 0.004:
+    #    #    return nn
+    #    #else:
+    #    #    return 0.0
+    #else:
+    #    return 0.0
 
     #speedtest
     #if 0.0<x<0.1:
     #    if 0.98 < ux < 1.02:
     #        return 1.0
-
 
     #current test
     #if True: #positive
@@ -177,10 +174,11 @@ def save(n, conf, lap, f5):
 
     #get E field
     yee = getYee(n, conf)
+    analysis = getAnalysis(n, conf, 0)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
-    #f5['fields/ekin'][:,lap] = yee['ekin']
+    f5['fields/ekin'][:,lap] = analysis['ekin']
     f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
@@ -361,7 +359,7 @@ if __name__ == "__main__":
     Nsamples = conf.Nt
     dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    #dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
+    dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
     dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
 
 
@@ -384,10 +382,10 @@ if __name__ == "__main__":
                 cell.cycle()
 
         #current deposition from moving flux
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
-        #        cell.depositCurrent()
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.depositCurrent()
 
         #update boundaries
         for j in range(node.getNy()):

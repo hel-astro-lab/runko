@@ -59,18 +59,13 @@ def loadCells(n, conf):
                                       )
 
                 #initialize cell dimensions 
+                c.cfl = conf.cfl
                 c.dt = conf.dt
                 c.dx = conf.dx
                 #c.dy = conf.dy
                 #c.dz = conf.dz
-                #c.cfl = conf.cfl
-
-                # use same scale for Maxwell solver
-                c.yeeDt = conf.dt
-                c.yeeDx = conf.dx
-                #c.yeeDy = conf.dy
-                #c.yeeDz = conf.dz
                 
+
                 # initialize analysis tiles ready for incoming simulation data
                 for i in range(conf.Nspecies):
                     c.addAnalysisSpecies()
