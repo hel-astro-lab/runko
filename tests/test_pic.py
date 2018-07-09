@@ -81,12 +81,12 @@ def filler(xloc, ispcs, conf):
 def filler_xvel(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
+    #xx = xloc[0] + np.random.rand(1)
+    #yy = xloc[1] + np.random.rand(1)
     #zz = xloc[2] + np.random.rand(1)
 
-    xx = xloc[0] + 0.5
-    yy = xloc[1] + 0.5
+    xx = xloc[0] #+ 0.5
+    yy = xloc[1] #+ 0.5
     zz = 0.0
 
     x0 = [xx, yy, zz]
@@ -96,7 +96,7 @@ def filler_xvel(xloc, ispcs, conf):
     #else:
     #    u0 = [0.0, 0.0, 0.0]
 
-    u0 = [1.0, 1.0, 1.0]
+    u0 = [-10.0, -10.0, -10.0]
     #ux = randab(-conf.vel, conf.vel)
     #ux = 0.1
     #uy = 0.0
@@ -608,6 +608,114 @@ class PIC(unittest.TestCase):
                     self.assertAlmostEqual( yee_ref['jx'][i,j], yee['jx'][i,j], places=4 )
                     self.assertAlmostEqual( yee_ref['jy'][i,j], yee['jy'][i,j], places=4 )
                     self.assertAlmostEqual( yee_ref['jz'][i,j], yee['jz'][i,j], places=4 )
+
+
+
+    def test_current_deposit(self):
+        """test that current deposit of + and - particles of same location and velocity
+            lead to zero current"""
+
+
+        #plt.fig = plt.figure(1, figsize=(5,7))
+        #plt.rc('font', family='serif', size=12)
+        #plt.rc('xtick')
+        #plt.rc('ytick')
+        #
+        #gs = plt.GridSpec(5, 1)
+        #
+        #axs = []
+        #for ai in range(5):
+        #    axs.append( plt.subplot(gs[ai]) )
+
+
+        conf = Conf()
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 1
+        conf.NxMesh = 10
+        conf.NyMesh = 10
+        conf.NzMesh = 1
+        conf.ppc = 10
+        conf.vel = 0.1
+        conf.Nspecies = 2
+        conf.me =-1.0        #electron mass-to-charge
+        conf.mi = 1.0        #ion mass-to-charge
+
+        conf.update_bbox()
+
+        node = plasma.Grid(conf.Nx, conf.Ny)
+        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        loadCells(node, conf)
+        #insert_em(node, conf, linear_field)
+        insert_em(node, conf, const_field)
+        inject(node, filler_xvel, conf) #injecting plasma particles
+
+        #pusher   = pypic.Pusher()
+        #fintp    = pypic.ParticleFieldInterpolator()
+        #comm     = pypic.Communicator()
+        currint  = pypic.Depositer()
+        analyzer = pypic.Analyzator()
+    
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                c = node.getCellPtr(i,j)
+                yee = c.getYee(0)
+                for l in range(-3, conf.NxMesh+3):
+                    for m in range(-3,conf.NyMesh+3):
+                        for n in range(-3,conf.NzMesh+3):
+                            yee.jx[l,m,n] = 1.0
+                            yee.jy[l,m,n] = 1.0
+                            yee.jz[l,m,n] = 1.0
+
+        #deposit current
+        #for j in range(node.getNy()):
+        #    for i in range(node.getNx()):
+        #for j in [1]:
+        #    for i in [1]:
+        #        cell = node.getCellPtr(i,j)
+        #        currint.deposit(cell)
+
+        #exchange currents for the middle one only
+        for j in [1]:
+            for i in [1]:
+                cell = node.getCellPtr(i,j)
+                cell.exchangeCurrents2D(node)
+
+
+        #plotNode(axs[0], node, conf)
+        ##plot2dParticles(axs[0], node, conf, downsample=0.1)
+        #plot2dYee(axs[1], node, conf, 'rho')
+        #plot2dYee(axs[2], node, conf, 'jx')
+        #plot2dYee(axs[3], node, conf, 'jy')
+        #plot2dYee(axs[4], node, conf, 'jz')
+        #saveVisz(-1, node, conf)
+
+        # create reference 3 halo width array by hand
+        ref = np.ones((conf.NxMesh, conf.NyMesh))
+        ref[0:3,  :]  = 2
+        ref[-3:10,:]  = 2
+        ref[:, 0:3, ] = 2
+        ref[:, -3:10] = 2
+
+        ref[0:3, 0:3]   = 4
+        ref[7:10, 7:10] = 4
+        ref[0:3,  7:10] = 4
+        ref[7:10,0:3]   = 4
+        #print(ref)
+        
+        for j in [1]:
+            for i in [1]:
+                c = node.getCellPtr(i,j)
+                yee = c.getYee(0)
+                for l in range(conf.NxMesh):
+                    for m in range(conf.NyMesh):
+                        yee.jx[l,m,n] = 1.0
+                        yee.jy[l,m,n] = 1.0
+                        yee.jz[l,m,n] = 1.0
+
+                        self.assertEqual(ref[l,m], yee.jx[l,m,0] )
+                        self.assertEqual(ref[l,m], yee.jy[l,m,0] )
+                        self.assertEqual(ref[l,m], yee.jz[l,m,0] )
 
 
 
