@@ -310,37 +310,38 @@ class PIC(unittest.TestCase):
                     c = node.getCellPtr(cid)
 
                     #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
-                    n_particles += len(c.container.loc(0))
+                    container = c.get_container(0)
+                    n_particles += len(container.loc(0))
 
-                    #self.assertTrue( 0.0 <= c.container.loc(0) <= conf.xmax )
-                    #self.assertTrue( 0.0 <= c.container.loc(1) <= conf.ymax )
-                    #self.assertTrue( 0.0 <= c.container.loc(2) <= conf.zmax )
+                    #self.assertTrue( 0.0 <= container.loc(0) <= conf.xmax )
+                    #self.assertTrue( 0.0 <= container.loc(1) <= conf.ymax )
+                    #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
 
-                    for prtcl in range(len(c.container.loc(0))):
+                    for prtcl in range(len(container.loc(0))):
                         #print("{} {} {} maxs {} {} {}".format( 
-                        #c.container.loc(0)[prtcl], 
-                        #c.container.loc(1)[prtcl], 
-                        #c.container.loc(2)[prtcl], 
+                        #container.loc(0)[prtcl], 
+                        #container.loc(1)[prtcl], 
+                        #container.loc(2)[prtcl], 
                         #conf.xmax, conf.ymax, conf.zmax))
 
                         #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
                         #    prtcl, 
-                        #    c.container.loc(0)[prtcl],
-                        #    c.container.loc(1)[prtcl],
-                        #    c.container.loc(2)[prtcl],
-                        #    c.container.vel(0)[prtcl],
-                        #    c.container.vel(1)[prtcl],
-                        #    c.container.vel(2)[prtcl]))
+                        #    container.loc(0)[prtcl],
+                        #    container.loc(1)[prtcl],
+                        #    container.loc(2)[prtcl],
+                        #    container.vel(0)[prtcl],
+                        #    container.vel(1)[prtcl],
+                        #    container.vel(2)[prtcl]))
 
                         # check location
-                        self.assertTrue( 0.0 <= c.container.loc(0)[prtcl] <= conf.xmax )
-                        self.assertTrue( 0.0 <= c.container.loc(1)[prtcl] <= conf.ymax )
-                        self.assertTrue( 0.0 <= c.container.loc(2)[prtcl] <= conf.zmax )
+                        self.assertTrue( 0.0 <= container.loc(0)[prtcl] <= conf.xmax )
+                        self.assertTrue( 0.0 <= container.loc(1)[prtcl] <= conf.ymax )
+                        self.assertTrue( 0.0 <= container.loc(2)[prtcl] <= conf.zmax )
 
                         # check velocity 
-                        velx = c.container.vel(0)[prtcl]
-                        vely = c.container.vel(1)[prtcl]
-                        velz = c.container.vel(2)[prtcl]
+                        velx = container.vel(0)[prtcl]
+                        vely = container.vel(1)[prtcl]
+                        velz = container.vel(2)[prtcl]
                         vel = np.sqrt( velx*velx + vely*vely + velz*velz )
                         self.assertAlmostEqual( vel, conf.vel, places=6 )
 
@@ -388,22 +389,23 @@ class PIC(unittest.TestCase):
 
                 cid = node.cellId(i,j)
                 c = node.getCellPtr(cid)
+                container = c.get_container(0)
 
-                xx = c.container.loc(0)
-                yy = c.container.loc(1)
-                zz = c.container.loc(2)
+                xx = container.loc(0)
+                yy = container.loc(1)
+                zz = container.loc(2)
 
-                ux = c.container.vel(0)
-                uy = c.container.vel(1)
-                uz = c.container.vel(2)
+                ux = container.vel(0)
+                uy = container.vel(1)
+                uz = container.vel(2)
 
-                ex = c.container.ex()
-                ey = c.container.ey()
-                ez = c.container.ez()
+                ex = container.ex()
+                ey = container.ey()
+                ez = container.ez()
 
-                bx = c.container.bx()
-                by = c.container.by()
-                bz = c.container.bz()
+                bx = container.bx()
+                by = container.by()
+                bz = container.bz()
 
                 for i, x in enumerate(xx):
                     #print(i)
@@ -454,18 +456,19 @@ class PIC(unittest.TestCase):
 
                 cid = node.cellId(i,j)
                 c = node.getCellPtr(cid)
+                container = c.get_container(0)
 
-                xx = c.container.loc(0)
-                yy = c.container.loc(1)
-                zz = c.container.loc(2)
+                xx = container.loc(0)
+                yy = container.loc(1)
+                zz = container.loc(2)
 
-                ex = c.container.ex()
-                ey = c.container.ey()
-                ez = c.container.ez()
+                ex = container.ex()
+                ey = container.ey()
+                ez = container.ez()
 
-                bx = c.container.bx()
-                by = c.container.by()
-                bz = c.container.bz()
+                bx = container.bx()
+                by = container.by()
+                bz = container.bz()
 
                 for i, x in enumerate(xx):
                     #print(i)
