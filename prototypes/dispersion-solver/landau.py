@@ -29,19 +29,20 @@ axs.append( plt.subplot(gs[1,0]) )
 
 for ax in axs:
     ax.minorticks_on()
-    ax.set_xlabel(r'$k \lambda_D$')
-    #ax.set_xlim((0.0, 100.0))
+    #ax.set_xlabel(r'$k \lambda_D$')
+    ax.set_xlabel(r'$\hat{k}$')
+    ax.set_xlim((0.0, 0.55))
 
 axs[0].set_ylabel(r'Re{ $\omega/\omega_p$ }')
-axs[1].set_ylabel(r'Im{ $\omega/\omega_p$ }')
+axs[1].set_ylabel(r'-Im{ $\omega/\omega_p$ }')
 
-axs[0].set_ylim((0.9,   1.5))
+axs[0].set_ylim((0.9,   1.50))
 #axs[1].set_ylim((0.02, -0.16))
-axs[1].set_ylim((-0.16, 0.02))
+#axs[1].set_ylim((-0.16, 0.02))
 
 #logscale growth rates
-#axs[1].set_ylim((1.0e-6, 1.0e0))
-#axs[1].set_yscale('log')
+axs[1].set_ylim((1.0e-6, 1.0e0))
+axs[1].set_yscale('log')
 
 
 #Langmuir wave Landau damping
@@ -91,7 +92,7 @@ params = {'vts': vts,
           'S':S, 
           'J':J}
 
-karr = np.linspace(0.01, 0.5, 100)
+karr = np.linspace(0.01, 0.55, 100)
 warr = np.zeros((len(karr), S*J), np.complex)
 
 for i,k in enumerate(karr):
@@ -105,7 +106,7 @@ for nsol in range(Nsol):
 
 #axs[1].plot(karr, np.zeros(len(karr)), "r--")
 for nsol in range(Nsol):
-    axs[1].plot(karr, np.imag(warr[:,nsol]), 'k-', markersize=ms)
+    axs[1].plot(karr, -np.imag(warr[:,nsol]), 'k-', markersize=ms)
 
 
 # for printing
@@ -129,6 +130,12 @@ for i,k in enumerate(karrp):
     print("omeg=",w[1])
     print()
 
+    wr =  np.abs(np.real(w[0]))
+    wi =  np.abs(np.imag(w[0]))
+    print(wi)
+
+    axs[0].plot( k, wr, "r.")
+    axs[1].plot( k, wi, "r.")
 
 
 plt.subplots_adjust(left=0.18, bottom=0.09, right=0.98, top=0.95, wspace=0.0, hspace=0.0)
