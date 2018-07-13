@@ -90,8 +90,8 @@ void fields::PlasmaCell::pushE2d() {
 
       // Ez
       mesh.ez(i,j,k) += 
-        + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
-        + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
+        + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k) 
+             -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
     }
   }
@@ -207,8 +207,8 @@ void fields::PlasmaCell::pushHalfB2d() {
 
       // Bz
       mesh.bz(i,j,k) += 
-        + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
-        + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
+        + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)
+             -mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
     }
   }
@@ -576,7 +576,6 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
   // add from left to right
   for(int h=0; h< halo; h++) addVertYee(mesh, mleft, h, mleft.Nx+h); 
 
-
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::PlasmaCell>(
@@ -675,8 +674,8 @@ void fields::PlasmaCell::cycleCurrent()
   YeeLattice& mesh = getYee();
 
   std::swap( mesh.jx.mat, mesh.jx1.mat );
-  //std::swap( mesh.jy.mat, mesh.jy1.mat );
-  //std::swap( mesh.jz.mat, mesh.jz1.mat );
+  std::swap( mesh.jy.mat, mesh.jy1.mat );
+  std::swap( mesh.jz.mat, mesh.jz1.mat );
 
 }
 
@@ -687,7 +686,7 @@ void fields::PlasmaCell::cycleCurrent2D()
 
   std::swap( mesh.jx.mat, mesh.jx1.mat );
   std::swap( mesh.jy.mat, mesh.jy1.mat );
-  //std::swap( mesh.jz.mat, mesh.jz1.mat );
+  std::swap( mesh.jz.mat, mesh.jz1.mat );
 
 }
 

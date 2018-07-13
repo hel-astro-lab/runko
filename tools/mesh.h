@@ -343,8 +343,8 @@ void Mesh<T,H>::copyVert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
-  for(int j=0; j<(int)this->Ny; j++) { 
-    for(int k=0; k<(int)this->Nz; k++) {
+  for(int k=0; k<(int)this->Nz; k++) {
+    for(int j=0; j<(int)this->Ny; j++) { 
       this->operator()(lhsI, j, k) = rhs(rhsI, j, k);
     }
   }
@@ -357,8 +357,8 @@ void Mesh<T,H>::addVert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
-  for(int j=0; j<(int)this->Ny; j++) { 
-    for(int k=0; k<(int)this->Nz; k++) {
+  for(int k=0; k<(int)this->Nz; k++) {
+    for(int j=0; j<(int)this->Ny; j++) { 
       this->operator()(lhsI, j, k) += rhs(rhsI, j, k);
     }
   }
@@ -372,8 +372,8 @@ void Mesh<T,H>::copyHorz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 
-  for(int i=0; i<(int)this->Nx; i++) { 
-    for(int k=0; k<(int)this->Nz; k++) {
+  for(int k=0; k<(int)this->Nz; k++) {
+    for(int i=0; i<(int)this->Nx; i++) { 
       this->operator()(i, lhsJ, k) = rhs(i, rhsJ, k);
     }
   }
@@ -386,8 +386,8 @@ void Mesh<T,H>::addHorz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 
-  for(int i=0; i<(int)this->Nx; i++) { 
-    for(int k=0; k<(int)this->Nz; k++) {
+  for(int k=0; k<(int)this->Nz; k++) {
+    for(int i=0; i<(int)this->Nx; i++) { 
       this->operator()(i, lhsJ, k) += rhs(i, rhsJ, k);
     }
   }
@@ -401,8 +401,8 @@ void Mesh<T,H>::copyFace(Mesh<T,H2>& rhs, int lhsK, int rhsK) {
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
-  for(int i=0; i<(int)this->Nx; i++) { 
-    for(int j=0; j<(int)this->Ny; j++) {
+  for(int j=0; j<(int)this->Ny; j++) {
+    for(int i=0; i<(int)this->Nx; i++) { 
       this->operator()(i, j, lhsK) = rhs(i, j, rhsK);
     }
   }
@@ -415,8 +415,8 @@ void Mesh<T,H>::addFace(Mesh<T,H2>& rhs, int lhsK, int rhsK) {
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
-  for(int i=0; i<(int)this->Nx; i++) { 
-    for(int j=0; j<(int)this->Ny; j++) {
+  for(int j=0; j<(int)this->Ny; j++) {
+    for(int i=0; i<(int)this->Nx; i++) { 
       this->operator()(i, j, lhsK) += rhs(i, j, rhsK);
     }
   }

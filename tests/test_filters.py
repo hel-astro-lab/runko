@@ -82,6 +82,9 @@ class Conf:
     c_omp = 10.0
     ppc = 1
 
+    gamma_e = 0.0
+    gamma_i = 0.0
+
     dx = 1.0
     dy = 1.0
     dz = 1.0

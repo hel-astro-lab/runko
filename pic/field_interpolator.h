@@ -60,14 +60,10 @@ class ParticleFieldInterpolator
       int n1 = 0;
       int n2 = nparts;
 
-
-      double c = 1.0; // cfl
-      double cinv = 1.0/c;
-      //double qm = 2.0;
-
+      //double c = cell.cfl;
+      //double cinv = 1.0/c;
 
       int i=0, j=0, k=0;
-      //int ix=0, iy=0, iz=0;
       double dx=0.0, dy=0.0, dz=0.0;
       double f,g;
 
@@ -140,7 +136,7 @@ class ParticleFieldInterpolator
         g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)    +dz*(yee.bx(i+1,j,k+iz)   - yee.bx(i+1,j,k-iz))
                                              +g     +dy*(yee.bx(i+1,j+1,k)    + yee.bx(i+1,j+1,k-iz)
                                                     +dz*(yee.bx(i+1,j+1,k+iz) - yee.bx(i+1,j+1,k-iz))-g);
-        bx[n]=(f+dx*(g-f))*(.25*cinv);
+        bx[n]=(f+dx*(g-f))*(.25);
 
         f = yee.by(i,j,k-iz)+yee.by(i-1,j,k-iz)     +dx*(yee.by(i+1,j,k-iz)   - yee.by(i-1,j,k-iz));
         f = yee.by(i,j,k)+yee.by(i-1,j,k)           +dx*(yee.by(i+1,j,k)      - yee.by(i-1,j,k))+f+dz 
@@ -149,7 +145,7 @@ class ParticleFieldInterpolator
         g = yee.by(i,j+1,k)+yee.by(i-1,j+1,k)       +dx*(yee.by(i+1,j+1,k)    - yee.by(i-1,j+1,k))
                                                  +g +dz*(yee.by(i,j+1,k+iz)   + yee.by(i-1,j+1,k+iz)
                                                     +dx*(yee.by(i+1,j+1,k+iz) - yee.by(i-1,j+1,k+iz))-g);
-        by[n]=(f+dy*(g-f))*(.25*cinv);
+        by[n]=(f+dy*(g-f))*(.25);
 
         f = yee.bz(i-1,j,k)+yee.bz(i-1,j-1,k )      +dy*(yee.bz(i-1,j+1,k)    - yee.bz(i-1,j-1,k));
         f = yee.bz(i,j,k)+yee.bz(i,j-1,k)           +dy*(yee.bz(i,j+1,k)      - yee.bz(i,j-1,k))+f+dx 
@@ -158,7 +154,7 @@ class ParticleFieldInterpolator
         g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )    +dy*(yee.bz(i,j+1,k+iz)   - yee.bz(i,j-1,k+iz))
                                                  +g +dx*(yee.bz(i+1,j,k+iz)   + yee.bz(i+1,j-1,k+iz)
                                                     +dy*(yee.bz(i+1,j+1,k+iz) - yee.bz(i+1,j-1,k+iz))-g);
-        bz[n]=(f+dz*(g-f))*(.25*cinv);
+        bz[n]=(f+dz*(g-f))*(.25);
       }
 
     } // end of loop over species

@@ -35,6 +35,13 @@ class Configuration(object):
         #    self.__dict__[key] = xx
 
 
+        ##################################################
+        # Default parameters; if not given
+
+        if not("gamma_e" in self.__dict__):
+            self.__dict__["gamma_e"] = 0.0
+        if not("gamma_i" in self.__dict__):
+            self.__dict__["gamma_i"] = 0.0
 
 
 #load default 

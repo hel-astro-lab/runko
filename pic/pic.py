@@ -88,21 +88,23 @@ def loadCells(n, conf):
                 c.dx  = 1.0
                 c.cfl = conf.cfl
 
+                ppc = conf.ppc #/ conf.Nspecies
+
                 #normalization factors
                 omp = conf.cfl/conf.c_omp #plasma reaction
-                gamma0 = 1.0      #relativistic dilatation
+                #gamma0 = 1.0      #relativistic dilatation
+                gamma0 = np.sqrt(1.0/(1.0-conf.gamma_e**2.0)) #relativistic dilatation
                 #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
-                qe = (gamma0*omp**2.0)/((conf.ppc*0.5)*(1.0 + np.abs(conf.me/conf.mi)) )
-                
-                #print("normalization factor: {}".format(qe))
+                q0 = -(gamma0*omp**2.0)/(ppc*(1.0 + np.abs(conf.me/conf.mi)) )
+                print("normalization factor: {}".format(q0))
 
                 # load particle containers
                 for sps in range(conf.Nspecies):
                     container = pypic.ParticleBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                     if sps % 2 == 0:
-                        container.q = conf.me
+                        container.q = conf.me*q0
                     else:
-                        container.q = conf.mi
+                        container.q = conf.mi*q0
                     
                     #reserve memory for particles
                     Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
@@ -158,6 +160,11 @@ def inject(node, ffunc, conf):
                         yys = ref_container.loc(1)
                         zzs = ref_container.loc(2)
 
+                        vxs = ref_container.vel(0)
+                        vys = ref_container.vel(1)
+                        vzs = ref_container.vel(2)
+
+                    ip_mesh = 0
                     for n in range(conf.NzMesh):
                         for m in range(conf.NyMesh):
                             for l in range(conf.NxMesh):
@@ -167,10 +174,20 @@ def inject(node, ffunc, conf):
                                 for ip in range(conf.ppc):
                                     x0, u0 = ffunc(xloc, ispcs, conf)
                                     if ispcs % 2 == 1:
-                                        xx = xxs[ip]
-                                        yy = yys[ip]
-                                        zz = zzs[ip]
+                                        xx = xxs[ip_mesh]
+                                        yy = yys[ip_mesh]
+                                        zz = zzs[ip_mesh]
                                         x0 = [xx, yy, zz] #overwrite location
+
+                                        #vx = vxs[ip_mesh]
+                                        #vy = vys[ip_mesh]
+                                        #vz = vzs[ip_mesh]
+                                        #u0 = [vx, vy, vz] #overwrite location
+
+                                    #print("injecting particle sps={} of # {}:th to ({},{},{})".format(
+                                    #        ispcs, ip_mesh, x0[0], x0[1], x0[2]))
+
+                                    ip_mesh += 1
 
                                     container.add_particle(x0, u0)
 
@@ -223,6 +240,10 @@ def filler(xloc, ispcs, conf):
     uy = 0.0
     uz = 0.0
 
+    mux = 0.0
+    muy = 0.0
+    muz = 0.0
+
     #if not((xx >= 200.0) and (xx<=300.0) ):
     #    x0 = [xx, 0.0, 0.0]
     #    u0 = [0.0, 0.0, 0.0]
@@ -251,8 +272,7 @@ def filler(xloc, ispcs, conf):
 
         # bulk velocities
         mux = conf.gamma_e
-        muy = 0.0
-        muz = 0.0
+        #mux = 0.0
 
         #Lx  = conf.Nx*conf.NxMesh*conf.dx
         #mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
@@ -263,8 +283,6 @@ def filler(xloc, ispcs, conf):
 
         # bulk velocities
         mux = conf.gamma_i
-        muy = 0.0
-        muz = 0.0
 
 
 
@@ -513,7 +531,7 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # advance Half B
 
-        ##update boundaries
+        #update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
@@ -525,7 +543,7 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 cell.pushHalfB()
 
-        ##update boundaries
+        #update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
@@ -549,12 +567,6 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # advance B half
 
-        ##update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries2D(node)
-
         #push B half
         for j in range(node.getNy()):
             for i in range(node.getNx()):
@@ -570,17 +582,11 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # advance E 
 
-        #push B half
+        #push E
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 cell = node.getCellPtr(i,j)
                 cell.pushE()
-
-        ##update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries2D(node)
 
         #--------------------------------------------------
 
@@ -590,6 +596,11 @@ if __name__ == "__main__":
                 cell = node.getCellPtr(i,j)
                 currint.deposit(cell)
 
+        #exchange currents
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                cell = node.getCellPtr(i,j)
+                cell.exchangeCurrents2D(node)
 
         ##################################################
         # particle communication 
@@ -615,11 +626,6 @@ if __name__ == "__main__":
 
         # field communication
 
-        #exchange currents
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.exchangeCurrents2D(node)
 
         ##################################################
 
@@ -633,7 +639,7 @@ if __name__ == "__main__":
                 #flt.apply_kernel()
                 #flt.fft_image_backward()
         
-                for fj in range(3):
+                for fj in range(conf.npasses):
                     flt.direct_convolve_3point()
                 flt.set_current(cell)
 
@@ -697,26 +703,21 @@ if __name__ == "__main__":
             #--------------------------------------------------
             #2D plots
             #try:
-            plotNode(axs[0], node, conf)
-
-            plot2dParticles(axs[1], node, conf, downsample=0.001)
-
-            plot2dYee(axs[2], node, conf, 'rho')
-
-            plot2dYee(axs[3], node, conf, 'jx')
-            plot2dYee(axs[4], node, conf, 'jy')
-            plot2dYee(axs[5], node, conf, 'jz')
-
-            plot2dYee(axs[6], node, conf, 'ex')
-            plot2dYee(axs[7], node, conf, 'ey')
-            plot2dYee(axs[8], node, conf, 'ez')
-
-            plot2dYee(axs[9], node, conf, 'bx')
-            plot2dYee(axs[10],node, conf, 'by')
-            plot2dYee(axs[11],node, conf, 'bz')
+            #plotNode(axs[0], node, conf)
+            #plot2dParticles(axs[1], node, conf, downsample=0.001)
+            #plot2dYee(axs[2], node, conf, 'rho')
+            #plot2dYee(axs[3], node, conf, 'jx')
+            #plot2dYee(axs[4], node, conf, 'jy')
+            #plot2dYee(axs[5], node, conf, 'jz')
+            #plot2dYee(axs[6], node, conf, 'ex')
+            #plot2dYee(axs[7], node, conf, 'ey')
+            #plot2dYee(axs[8], node, conf, 'ez')
+            #plot2dYee(axs[9], node, conf, 'bx')
+            #plot2dYee(axs[10],node, conf, 'by')
+            #plot2dYee(axs[11],node, conf, 'bz')
 
 
-            saveVisz(lap, node, conf)
+            #saveVisz(lap, node, conf)
 
 	    #except:
 	    #    pass

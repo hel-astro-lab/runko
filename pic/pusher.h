@@ -7,11 +7,13 @@
 //#include <fmt/string.h>
 //#include <fmt/ostream.h>
 
+#include "../tools/signum.h"
 
 #include "cell.h"
 
 namespace pic {
 
+  using toolbox::sign;
 
 class Pusher
 {
@@ -76,22 +78,28 @@ class Pusher
       double c = cell.cfl;
       double cinv = 1.0/c;
 
-      // electrons
-      double qm = -1.0;
+      // charge (sign only)
+      double qm = sign(container.q);
+      //double qm = container.q;
+      //std::cout << " qm = " << qm << " ispc: " << ispc << '\n';
 
 
       //TODO: SIMD
       for(int n=n1; n<n2; n++) {
 
+        //--------------------------------------------------
+        // Boris algorithm
+
         // read particle-specific fields
         ex0 = ex[n]*(0.5*qm);
-        bx0 = bx[n]*(0.5*qm*cinv);
-
         ey0 = ey[n]*(0.5*qm);
-        by0 = by[n]*(0.5*qm*cinv);
-
         ez0 = ez[n]*(0.5*qm);
+
+        bx0 = bx[n]*(0.5*qm*cinv);
+        by0 = by[n]*(0.5*qm*cinv);
         bz0 = bz[n]*(0.5*qm*cinv);
+
+
 
         // first half electric acceleration
         u0 = c*vel[0][n] + ex0;
@@ -142,9 +150,12 @@ class Pusher
         // position advance
 	  	  g = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
         //TODO: note the explicit 2D dimensionality enforcement
-        for(int i=0; i<2; i++)
-          loc[i][n] += vel[i][n]*g*c;
+        //for(int i=0; i<2; i++)
+        //  loc[i][n] += vel[i][n]*g*c;
 
+        loc[0][n] += vel[0][n]*g*c;
+        loc[1][n] += vel[1][n]*g*c;
+        loc[2][n] += vel[2][n]*g*c;
 
         //fmt::print("dx: {}\n",  vel[0][n]*g*c);
       }

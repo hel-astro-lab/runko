@@ -92,6 +92,20 @@ class Filter {
     jy = (fftwf_complex*) fftwf_alloc_complex(Nx*Ny*Nz);
     jz = (fftwf_complex*) fftwf_alloc_complex(Nx*Ny*Nz);
 
+    for(int j = 0 ; j < Ny ; ++j) {
+      for(int i = 0 ; i < Nx ; ++i) {
+        jx[ index(i,j) ][0] = 0.0;
+        jx[ index(i,j) ][1] = 0.0;
+
+        jy[ index(i,j) ][0] = 0.0;
+        jy[ index(i,j) ][1] = 0.0;
+
+        jz[ index(i,j) ][0] = 0.0;
+        jz[ index(i,j) ][1] = 0.0;
+      }
+    }
+
+
     //kernel = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * Nx*Ny*Nz);
     kernel = (fftwf_complex*) fftwf_alloc_complex(Nx*Ny*Nz);
 
@@ -601,12 +615,18 @@ class Filter {
       std::cout << " indx: " << indx;
       std::cout << " ix: " << (i+1)*mesh.Nx + q;
       std::cout << " jy: " << (j+1)*mesh.Ny + r;
-      std::cout << "\n";
-          */
+      */
 
           jx[ indx ][0] = mesh.jx(q,r,s);
           jy[ indx ][0] = mesh.jy(q,r,s);
           jz[ indx ][0] = mesh.jz(q,r,s);
+
+          /*
+      std::cout << " cur jx: " << jx[indx][0];
+      std::cout << " cur jy: " << jy[indx][0];
+      std::cout << " cur jz: " << jz[indx][0];
+      std::cout << "\n";
+      */
 
         }
       }
@@ -631,11 +651,21 @@ class Filter {
     int halo = 3;
     int s = 0; // TODO: third index for 3D case
 
-    for(int q=-halo; q<(int)mesh.Nx+halo; q++) {
-      for(int r=-halo; r<(int)mesh.Ny+halo; r++) {
-        //for(int s=0; r<Nz; s++) {
+    //for(int s=0; r<Nz; s++) {
+    for(int r=-halo; r<(int)mesh.Ny+halo; r++) {
+      for(int q=-halo; q<(int)mesh.Nx+halo; q++) {
 
         indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
+
+        /*
+        std::cout << "setting " << q << " " << r << " " << s;
+        std::cout << " to indx " << indx;
+        std::cout << " jx " <<  jx[ indx ][0];
+        std::cout << " jy " <<  jy[ indx ][0];
+        std::cout << " jz " <<  jz[ indx ][0];
+        std::cout << " \n";
+        */
+
         mesh.jx1(q,r,s) = jx[ indx ][0];
         mesh.jy1(q,r,s) = jy[ indx ][0];
         mesh.jz1(q,r,s) = jz[ indx ][0];

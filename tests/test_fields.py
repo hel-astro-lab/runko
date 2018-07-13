@@ -165,6 +165,11 @@ class Communications(unittest.TestCase):
 
         conf = Conf()
 
+        conf.NxMesh = 4
+        conf.NyMesh = 4
+
+
+
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
@@ -228,6 +233,10 @@ class Communications(unittest.TestCase):
         for cid in node.getCellIds():
             c = node.getCellPtr( cid )
             c.updateBoundaries2D(node)
+        #for i in [1]:
+        #    for j in [1]:
+        #        c = node.getCellPtr(i,j)
+        #        c.updateBoundaries2D(node)
 
         ref = np.zeros((conf.Nx*conf.Ny*conf.Nz, conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
@@ -250,10 +259,12 @@ class Communications(unittest.TestCase):
                         ref[m, qq, kk, rr] = yee.ex[q,k,r]
             m += 1
 
+    
+        #print("--------------------------------------------------")
         #print("cid = 0")
-        #print(ref[0,:,:,0])
-        #print(ref[0,:,:,1])
-        #print(ref[0,:,:,2])
+        #print(ref[4,:,:,0])
+        #print(ref[4,:,:,1])
+        #print(ref[4,:,:,2])
 
         # check every tile separately
         for m in range(conf.Nx*conf.Ny):

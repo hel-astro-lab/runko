@@ -274,8 +274,7 @@ def getYee2D(n, conf):
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
-            cid = n.cellId(i,j)
-            c = n.getCellPtr(cid)
+            c = n.getCellPtr(i,j)
 
             yee = c.getYee(0)
             for r in range(conf.NyMesh):

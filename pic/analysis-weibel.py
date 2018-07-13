@@ -17,10 +17,13 @@ conf = Configuration('config-weibel.ini')
 
 print("files...")
 ex   = combine_files(fdir, "field",    "ex",  conf)
-#ey   = combine_files(fdir, "field",    "ey",  conf)
-#bz   = combine_files(fdir, "field",    "bz",  conf)
+ey   = combine_files(fdir, "field",    "ey",  conf)
+ez   = combine_files(fdir, "field",    "ez",  conf)
+bx   = combine_files(fdir, "field",    "bx",  conf)
+by   = combine_files(fdir, "field",    "by",  conf)
+bz   = combine_files(fdir, "field",    "bz",  conf)
 rho  = combine_files(fdir, "field",    "rho", conf)
-ekin = combine_files(fdir, "analysis", "ekin", conf, isp=0)
+ekin = combine_files(fdir, "analysis", "ekin",conf, isp=0)
 
 
 #--------------------------------------------------
@@ -103,7 +106,16 @@ Gms = -22.7 + time*Gm
 axs[1].set_yscale('log')
 
 ex_edens = np.sum( flatten_spatial(ex*ex), 1 )
-axs[1].plot(time, ex_edens)
+axs[1].plot(time, ex_edens, linestyle="dashed", color="blue")
+
+ey_edens = np.sum( flatten_spatial(ey*ey), 1 )
+axs[1].plot(time, ey_edens, linestyle="dotted", color="blue")
+
+bz_edens = np.sum( flatten_spatial(bz*bz), 1 )
+axs[1].plot(time, ex_edens, linestyle="-.", color="red")
+
+
+
 
 plt.subplots_adjust(left=0.18, bottom=0.12, right=0.98, top=0.85, wspace=0.0, hspace=0.0)
 plt.savefig('weibel/weibel.pdf')
@@ -121,8 +133,8 @@ edens = np.sum( flatten_spatial( ex*ex + ey*ey + ez*ez ), 1 )
 bdens = np.sum( flatten_spatial( bx*bx + by*by + bz*bz ), 1 )
 #bdens = np.sum( flatten_spatial( bz*bz ), 1 )
 
-axs[1].plot(time, edens, "b--")
-axs[1].plot(time, bdens, "r--")
+axs[1].plot(time, edens, "b-")
+axs[1].plot(time, bdens, "r-")
 
 
 #TODO: model prediction
@@ -158,10 +170,10 @@ print("ratio: ekin/b", np.mean(ekintot)/np.mean(bdens))
 
 
 etot = ekintot + edens + bdens
-axs[4].plot(time, etot,    "k-" )
-axs[4].plot(time, ekintot, "b--")
-axs[4].plot(time, edens,  "r--")
-axs[4].plot(time, bdens,  "g--")
+#axs[4].plot(time, etot,    "k-" )
+#axs[4].plot(time, ekintot, "b--")
+axs[4].plot(time, edens,  "b--")
+axs[4].plot(time, bdens,  "r--")
 #axs[4].plot(time, ex_edens,  "r--")
 #axs[4].plot(time, ey_edens,  "r--")
 #axs[4].plot(time, bz_edens,  "r--")
