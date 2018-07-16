@@ -13,6 +13,7 @@ import pypic
 from configSetup import Configuration
 import argparse
 import initialize as init
+from sampling import boosted_maxwellian
 
 #from injector import spatialLoc
 
@@ -99,7 +100,7 @@ def loadCells(n, conf):
                 gamma0 = np.sqrt(1.0/(1.0-conf.gamma_e**2.0)) #relativistic dilatation
                 #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
                 q0 = -(gamma0*omp**2.0)/(ppc*(1.0 + np.abs(conf.me/conf.mi)) )
-                print("normalization factor: {}".format(q0))
+                #print("normalization factor: {}".format(q0))
 
                 # load particle containers
                 for sps in range(conf.Nspecies):
@@ -239,44 +240,13 @@ def filler(xloc, ispcs, conf):
     #zz = xloc[2] + np.random.rand(1)
     zz = 0.0
 
-    ux = 0.0
-    uy = 0.0
-    uz = 0.0
-
-    mux = 0.0
-    muy = 0.0
-    muz = 0.0
-
-    #if not((xx >= 200.0) and (xx<=300.0) ):
-    #    x0 = [xx, 0.0, 0.0]
-    #    u0 = [0.0, 0.0, 0.0]
-    #    return x0, u0
-
-
-    #speedtest
-    #if 1.0 < xx < 2.0:
-    #    x0 = [xx, 0.0, 0.0]
-    #    u0 = [1.0, 0.0, 0.0]
-    #    return x0, u0
-    #else:
-    #    x0 = [xx, 0.0, 0.0]
-    #    u0 = [0.0, 0.0, 0.0]
-    #    return x0, u0
-
-    # current test
-    #x0 = [xx, 0.0, 0.0]
-    #u0 = [0.1, 0.0, 0.0]
-    #return x0, u0
-
 
     #electrons
     if ispcs == 0:
         delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
 
-        # bulk velocities
-        mux = conf.gamma_e
-        #mux = 0.0
-
+        gamma = abs(conf.gamma_e) # bulk velocities
+        direction = np.sign(conf.gamma_e)
         #Lx  = conf.Nx*conf.NxMesh*conf.dx
         #mux_noise += np.sum( conf.beta*np.sin( 2*np.pi*( -modes*x/Lx + random_phase)) )
 
@@ -284,21 +254,10 @@ def filler(xloc, ispcs, conf):
     if ispcs == 1:
         delgam  = conf.delgam
 
-        # bulk velocities
-        mux = conf.gamma_i
+        gamma = abs(conf.gamma_i) # bulk velocities
+        direction = np.sign(conf.gamma_i)
 
-
-
-    vth = np.sqrt(delgam)
-
-    #Box-Muller sampling
-    rr1 = np.random.rand()
-    rr2 = np.random.rand()
-    r1  = np.sqrt(-2.0*np.log(rr1))*np.cos(2.0*np.pi*rr2)
-    r2  = np.sqrt(-2.0*np.log(rr1))*np.sin(2.0*np.pi*rr2)
-    ux = r1*vth + mux
-    uy = r2*vth + muy
-
+    ux, uy, uz, uu = boosted_maxwellian(delgam, gamma, direction=direction, dims=2)
 
     #print("injecting into {} ({})".format(xx, xloc[0]))
 
@@ -696,7 +655,6 @@ if __name__ == "__main__":
             #    plotDebug(axs[6], node, conf)
             #    plotDens( axs[7], node, conf)
             #    saveVisz(lap, node, conf)
-
 
             #--------------------------------------------------
             #2D plots
