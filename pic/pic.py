@@ -36,6 +36,9 @@ except:
 
 from timer import Timer
 
+def linear_field(x, y, z):
+    return 1.0*x + 2.0*y
+    #return 1.0*x + 10.0*y + 100.0*z
 
 
 def spatialLoc(node, Ncoords, Mcoords, conf):
@@ -312,14 +315,9 @@ def filler(xloc, ispcs, conf):
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
-def insert_em(node, conf):
+def insert_em(node, conf, ffunc):
 
-    #Lx  = conf.Nx*conf.NxMesh*conf.dx
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    k = 2.0 #mode
-
-    n0 = 1.0
-
     for i in range(node.getNx()):
         for j in range(node.getNy()):
             c = node.getCellPtr(i,j)
@@ -329,40 +327,42 @@ def insert_em(node, conf):
                 for m in range(conf.NyMesh):
                     for n in range(conf.NzMesh):
 
-                        #get x_i+1/2 (Yee lattice so rho_i)
-                        xloc0 = spatialLoc(node, (i,j), (l,  m,n), conf)
-                        xloc1 = spatialLoc(node, (i,j), (l+1,m,n), conf)
+                        # get x_i,j,k
+                        xloc0 = spatialLoc(node, (i,j), (l,m,n), conf)
 
+                        #get x_i+1/2, x_j+1/2, x_k+1/2
+                        xloc1 = spatialLoc(node, (i,j), (l+1,m,  n),   conf)
+                        yloc1 = spatialLoc(node, (i,j), (l,  m+1,n),   conf)
+                        zloc1 = spatialLoc(node, (i,j), (l,  m,  n+1), conf)
+
+                        # values in Yee lattice corners
+                        xcor = xloc0[0]
+                        ycor = xloc0[1]
+                        zcor = xloc0[2]
+
+                        # values in Yee lattice mids
                         xmid = 0.5*(xloc0[0] + xloc1[0])
-                        #yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
+                        ymid = 0.5*(xloc0[1] + yloc1[1])
+                        zmid = 0.5*(xloc0[2] + zloc1[2])
 
-                        yee.ex[l,m,n] = 1.0e-5
+                        #val = ffunc(xmid, ymid, zmid)
 
-def smooth(y, box_pts):
-    box = np.ones(box_pts)/box_pts
-    y_smooth = np.convolve(y, box, mode='same')
-    return y_smooth
+                        # enforce Yee lattice structure
+                        yee.ex[l,m,n] = ffunc(xmid, ycor, zcor)
+                        yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)+1.0
+                        #yee.ez[l,m,n] = ffunc(xcor, ycor, zmid)+2.0
+                        yee.ez[l,m,n] = ffunc(xcor, ycor, zcor)+2.0  #2D hack
 
+                        #yee.bx[l,m,n] = ffunc(xcor, ymid, zmid)+3.0
+                        yee.bx[l,m,n] = ffunc(xcor, ymid, zcor)+3.0  #2D hack
+                        #yee.by[l,m,n] = ffunc(xmid, ycor, zmid)+4.0 #2D hack
+                        yee.by[l,m,n] = ffunc(xmid, ycor, zcor)+4.0
+                        yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)+5.0
 
-def plotDebug(ax, n, conf):
+                        yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
+                        yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
+                        yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
 
-    #for i in range(conf.Nx):
-    #    cid = n.cellId(i,0)
-    #    c = n.getCellPtr(cid)
-
-    #    x  = c.container.loc(0)
-    #    ux = c.container.vel(0)
-    #    ex = c.container.ex()
-
-    #    ax.plot(x, ex, "k.", markersize=2, alpha=0.8)
-
-    #smoothed ex
-    yee = getYee(n, conf)
-    ex = yee['ex']
-    xx = yee['x']
-
-    exS = smooth(ex, 10)
-    ax.plot(xx, exS, "r-")
 
 
 
@@ -427,10 +427,9 @@ if __name__ == "__main__":
     node = corgi.Node(conf.Nx, conf.Ny)
 
     xmin = 0.0
-    #xmax = conf.dx*conf.Nx*conf.NxMesh 
     xmax = conf.Nx*conf.NxMesh #XXX scaled length
     ymin = 0.0
-    ymax = conf.dy*conf.Ny*conf.NyMesh
+    ymax = conf.Ny*conf.NyMesh
 
     node.setGridLims(xmin, xmax, ymin, ymax)
 
@@ -447,8 +446,7 @@ if __name__ == "__main__":
 
 
     inject(node, filler, conf) #injecting plasma particles
-
-    #insert_em(node, conf)
+    #insert_em(node, conf, linear_field)
 
 
     timer.stop("init") 

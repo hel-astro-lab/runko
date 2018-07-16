@@ -18,6 +18,18 @@ def natural_keys(text):
     return [ atoi(c) for c in re.split('(\d+)', text) ]
 
 
+
+# list & organize output files
+def get_file_list(fdir, fname):
+    fstr = fdir + fname + "*.h5"
+    files = glob.glob(fstr) 
+
+    files.sort(key=natural_keys)
+
+    return files
+
+
+
 # combine different time snapshots together
 def combine_files(fdir, 
                   fname, 
@@ -63,17 +75,24 @@ def combine_tiles(ff, fvar, conf, isp=None ):
         j = f[dset]['j'].value
         k = f[dset]['k'].value
 
-        ii = int( i*conf.NxMesh )
-        jj = int( j*conf.NyMesh )
-        kk = int( k*conf.NzMesh )
+        NxMesh = f[dset]['Nx'].value
+        NyMesh = f[dset]['Ny'].value
+        NzMesh = f[dset]['Nz'].value
+    
+        ii = int( i*NxMesh )
+        jj = int( j*NyMesh )
+        kk = int( k*NzMesh )
 
         tile = f[dset][fvar][()]
-        tile = np.reshape(tile, (conf.NxMesh, conf.NyMesh, conf.NzMesh))
+        tile = np.reshape(tile, (NzMesh, NyMesh, NxMesh))
 
-        for s in range(conf.NzMesh):
-            for r in range(conf.NyMesh):
-                for q in range(conf.NxMesh):
-                    arr[ii+q, jj+r, kk+s] = tile[q,r,s]
+        for s in range(NzMesh):
+            for r in range(NyMesh):
+                for q in range(NxMesh):
+                    arr[ii+q, jj+r, kk+s] = tile[s,r,q]
+
+
+
 
     return arr
 
