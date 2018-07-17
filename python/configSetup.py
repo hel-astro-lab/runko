@@ -2,7 +2,7 @@ from ConfigParser import SafeConfigParser
 import ast
 
 
-section_names = 'io', 'simulation', 'grid', 'vmesh', 'particles'
+section_names = 'io', 'simulation', 'grid', 'vmesh', 'particles', 'problem'
 
 
 # Class for parsing and holding all configuration files
@@ -27,7 +27,12 @@ class Configuration(object):
                 val = ast.literal_eval(elem[1])
 
                 self.__dict__.update( {key: val} )
-        
+
+
+        if not("dx" in self.__dict__):
+            self.__dict__["dx"] = 1.0
+
+
         #compute dt from CFL (if given)
         if "cfl" in self.__dict__:
             self.__dict__["dt"] = self.__dict__["cfl"]*self.__dict__["dx"]
