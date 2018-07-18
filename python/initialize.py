@@ -64,10 +64,9 @@ def loadCells(n, conf):
                 c.dx = conf.dx
                 #c.dy = conf.dy
                 #c.dz = conf.dz
-                
 
                 # initialize analysis tiles ready for incoming simulation data
-                for i in range(conf.Nspecies):
+                for ip in range(conf.Nspecies):
                     c.addAnalysisSpecies()
 
                 #add it to the node
