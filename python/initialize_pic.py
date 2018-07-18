@@ -5,6 +5,37 @@ import pypic
 import numpy as np
 
 
+def globalIndx(Ncoords, Mcoords, conf):
+
+    #node coordinates
+    i, j    = Ncoords 
+    Nx      = conf.Nx
+    Ny      = conf.Ny
+
+    #mesh coordinates
+    l, m, n = Mcoords 
+    NxMesh = conf.NxMesh
+    NyMesh = conf.NyMesh
+    NzMesh = conf.NzMesh
+
+    #calculate coordinate extent
+    x = 1.0*(i*NxMesh + l)
+    y = 1.0*(j*NyMesh + m)
+    z = 1.0*(0        + n)
+
+    return [x, y, z]
+
+
+def coord2indx(xloc, conf):
+    x,y,z = xloc
+
+    i = x/(1.0*conf.Nx*conf.NxMesh)
+    j = y/(1.0*conf.Ny*conf.NyMesh)
+    k = z/(1.0*conf.Nz*conf.NzMesh)
+
+    return [i,j,k]
+
+
 def spatialLoc(node, Ncoords, Mcoords, conf):
 
     #node coordinates
@@ -84,6 +115,11 @@ def loadCells(n, conf):
                 maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
                 c.set_tile_mins(mins)
                 c.set_tile_maxs(maxs)
+
+
+                # initialize analysis tiles ready for incoming simulation data
+                for ip in range(conf.Nspecies):
+                    c.addAnalysisSpecies()
 
                 #add it to the node
                 n.addCell(c) 

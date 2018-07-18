@@ -29,8 +29,8 @@ def velxyz(u):
 
     #3d treatment
     ux = u*(2.0*x1 -1.0)
-    uy = 2.0*u*np.sqrt(x1*(1.0-x1))*cos(2.0*np.pi*x2)
-    uz = 2.0*u*np.sqrt(x1*(1.0-x1))*sin(2.0*np.pi*x2)
+    uy = 2.0*u*np.sqrt(x1*(1.0-x1))*np.cos(2.0*np.pi*x2)
+    uz = 2.0*u*np.sqrt(x1*(1.0-x1))*np.sin(2.0*np.pi*x2)
 
     return ux, uy, uz
 

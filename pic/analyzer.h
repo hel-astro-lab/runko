@@ -94,7 +94,8 @@ class Analyzator {
         // fixed grid form assuming dx = 1
 		    i  = (int)floor( loc[0][n]-mins[0] );
 		    j  = (int)floor( loc[1][n]-mins[1] );
-		    k  = (int)floor( loc[2][n]-mins[2] );
+		    //k  = (int)floor( loc[2][n]-mins[2] );
+        k = 0; // 2D hack
 
         /*
         std::cout << "----------------------\n";
@@ -114,7 +115,7 @@ class Analyzator {
 
         assert( x0 >= mins[0] && x0 < maxs[0] );
         assert( y0 >= mins[1] && y0 < maxs[1] );
-        assert( z0 >= mins[2] && z0 < maxs[2] );
+        //assert( z0 >= mins[2] && z0 < maxs[2] );
 
         u0 = vel[0][n];
         v0 = vel[1][n];

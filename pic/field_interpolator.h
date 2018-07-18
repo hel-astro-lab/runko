@@ -84,9 +84,8 @@ class ParticleFieldInterpolator
 		    dy = (loc[1][n]-mins[1]) - j;
 
 		    //k  = trunc( (cell.NzMesh+1)*(loc[2][n]-mins[2])/(maxs[2]-mins[2]) );
-		    k  = floor( loc[2][n]-mins[2] );
-		    dz = (loc[2][n]-mins[2]) - k;
-
+		    //k  = floor( loc[2][n]-mins[2] );
+		    //dz = (loc[2][n]-mins[2]) - k;
 
         /*
         std::cout << '\n';
@@ -96,14 +95,15 @@ class ParticleFieldInterpolator
         */
 		    //l = i; // + iy*(j-1) + iz*(k-1);
 
-        assert(i >= 0 && i < (int)cell.NxMesh);
-        assert(j >= 0 && j < (int)cell.NyMesh);
-        assert(k >= 0 && k < (int)cell.NzMesh);
-
         // TODO: 2D hack
         k = 0;
         dz = 0.0;
         int iz = 0;
+
+        assert(i >= 0 && i < (int)cell.NxMesh);
+        assert(j >= 0 && j < (int)cell.NyMesh);
+        assert(k >= 0 && k < (int)cell.NzMesh);
+
 
         f = yee.ex(i,j,k) + yee.ex(i-1,j,k) +    dx*(yee.ex(i+1,j  ,k   ) - yee.ex(i-1,j  ,k  ));
         f+=                                      dy*(yee.ex(i  ,j+1,k   ) + yee.ex(i-1,j+1,k  )+

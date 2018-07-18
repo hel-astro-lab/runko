@@ -84,7 +84,7 @@ def flatten_spatial(arr):
 axs[0].set_yscale('log')
 
 ex_max = np.max( np.abs( flatten_spatial(ex) ),1 )
-axs[0].plot(time, ex_max, 'b-')
+axs[0].plot(time, ex_max, 'b.-')
 
 #ey_max = np.max( np.abs( flatten_spatial(ey) ),1 )
 #axs[0].plot(time, ey_max, 'g-')

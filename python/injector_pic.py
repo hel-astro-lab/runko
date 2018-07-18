@@ -23,11 +23,6 @@ def inject(node, ffunc, conf):
                 cid    = node.cellId(i,j)
                 c      = node.getCellPtr(cid) #get cell ptr
 
-
-                # initialize analysis tiles ready for incoming simulation data
-                for ip in range(conf.Nspecies):
-                    c.addAnalysisSpecies()
-
                 #if not(1 <= i <= 2 and j == 1):
                 #    continue
 
