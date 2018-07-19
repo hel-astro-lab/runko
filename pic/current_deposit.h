@@ -96,7 +96,6 @@ class Depositer {
         z1 = z0         - mins[2];
         z2 = loc[2][n]  - mins[2];
 
-
 	  	  i1  = (int)floor( x1 );
 	  	  i2  = (int)floor( x2 );
 	  	  j1  = (int)floor( y1 );
@@ -159,7 +158,6 @@ class Depositer {
 
         //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 
-        /*
         std::cout << "--------------------------------------------------\n";
         std::cout << "n=" << n;
         std::cout << " i1: " << i1;
@@ -171,13 +169,13 @@ class Depositer {
         std::cout << " k2: " << k2;
         std::cout << "\n";
 
-        std::cout << " x1sp: " << x1sp;
-        std::cout << " y1sp: " << y1sp;
-        std::cout << " z1sp: " << z1sp;
+        std::cout << " x1sp: " << x1;
+        std::cout << " y1sp: " << y1;
+        std::cout << " z1sp: " << z1;
         std::cout << " ||| ";
-        std::cout << " x2sp: " << x2sp;
-        std::cout << " y2sp: " << y2sp;
-        std::cout << " z2sp: " << z2sp;
+        std::cout << " x2sp: " << x2;
+        std::cout << " y2sp: " << y2;
+        std::cout << " z2sp: " << z2;
         std::cout << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
         std::cout << "\n";
 
@@ -207,7 +205,6 @@ class Depositer {
         std::cout << " Wy2: " <<  Wy2;
         std::cout << " Wz2: " <<  Wz2;
         std::cout << "\n";
-        */
 
         /*
         i1--;

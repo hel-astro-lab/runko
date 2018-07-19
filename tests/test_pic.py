@@ -217,6 +217,8 @@ class Conf:
     # NOTE: NxMesh = 5 grid looks like this:
     #
     # xmin      xmax
+    #  |         |
+    #  v         v
     #  |_|_|_|_|_
     #  0 1 2 3 4 5
     #

@@ -1,4 +1,5 @@
-import corgi
+# -*- coding: utf-8 -*- import corgi
+
 import pyplasma as plasma
 import pypic 
 
@@ -9,7 +10,7 @@ import numpy as np
 
 
 
-#inject plasma into cells
+#inject plasma into (individual) cells
 def inject(node, ffunc, conf):
 
     #loop over all *local* cells
@@ -32,6 +33,7 @@ def inject(node, ffunc, conf):
                 for ispcs in range(conf.Nspecies):
                     container = c.get_container(ispcs)
 
+                    # open and read previously made particle species (for location reference)
                     if ispcs % 2 == 1:
                         ref_container = c.get_container(ispcs-1)
                         xxs = ref_container.loc(0)
