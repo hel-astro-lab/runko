@@ -88,9 +88,7 @@ class ParticleBlock {
     for(uint64_t i=0; i<3; i++) locArr[i].resize(N);
     for(uint64_t i=0; i<3; i++) velArr[i].resize(N);
 
-    for(uint64_t i=0; i<3; i++) Epart[i].resize(N);
-    for(uint64_t i=0; i<3; i++) Bpart[i].resize(N);
-
+    Nprtcls = N;
   }
 
   // resize arrays for fields
@@ -152,8 +150,8 @@ class ParticleBlock {
   // particle creation & destruction methods
 
   void add_particle (
-      std::vector<double>& prtcl_loc,
-      std::vector<double>& prtcl_vel) 
+      std::vector<double> prtcl_loc,
+      std::vector<double> prtcl_vel) 
   {
 
     for (size_t i=0; i<3; i++)  
@@ -162,6 +160,7 @@ class ParticleBlock {
     for (size_t i=0; i<3; i++)  
       velArr[i].push_back(prtcl_vel[i]);
 
+    Nprtcls++;
   }
 
 

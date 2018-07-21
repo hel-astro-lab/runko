@@ -83,7 +83,7 @@ class Depositer {
 
         x0 = loc[0][n] - vel[0][n]*invgam*c;
         y0 = loc[1][n] - vel[1][n]*invgam*c;
-        z0 = loc[2][n] - vel[2][n]*invgam*c;
+        z0 = loc[2][n]; //- vel[2][n]*invgam*c; //TODO: 2D hack
 
         //q = weight*qe;
         //q = 1.0;
@@ -158,6 +158,7 @@ class Depositer {
 
         //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 
+        /*
         std::cout << "--------------------------------------------------\n";
         std::cout << "n=" << n;
         std::cout << " i1: " << i1;
@@ -205,6 +206,7 @@ class Depositer {
         std::cout << " Wy2: " <<  Wy2;
         std::cout << " Wz2: " <<  Wz2;
         std::cout << "\n";
+        */
 
         /*
         i1--;

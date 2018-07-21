@@ -27,6 +27,7 @@ class ParticleFieldInterpolator
       ParticleBlock& container = cell.get_container(ispc);
 
       int nparts = container.size();
+      container.resizeEM(nparts, 3); // make EM containers ready for insertion
 
 
       // initialize pointers to particle arrays
@@ -70,7 +71,6 @@ class ParticleFieldInterpolator
       auto mins = cell.mins;
       auto maxs = cell.maxs;
 
-
       // TODO: think SIMD (not possible due to ijk writing to yee)
       for(int n=n1; n<n2; n++) {
 
@@ -93,6 +93,8 @@ class ParticleFieldInterpolator
         std::cout << " ijk " << i << "," << j << "," << k << '\n';
         std::cout << " ds " << dx << "," << dy << "," << dz << '\n';
         */
+          
+          
 		    //l = i; // + iy*(j-1) + iz*(k-1);
 
         // TODO: 2D hack

@@ -94,7 +94,8 @@ class Communicator {
 
         if ((i == 0) && (j == 0)) continue; //TODO: hack to make this work with 2D corgi tiles
 
-        if ( (i != 0) | (j != 0) | (k != 0) ) {
+        //if ( (i != 0) | (j != 0) | (k != 0) ) {
+        if ( (i != 0) || (j != 0) ) { // TODO: another 2D hack
           to_others.insert( std::make_pair( std::make_tuple(i,j,k), n) );
         }
       }
@@ -207,10 +208,12 @@ class Communicator {
 
     for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
       ParticleBlock& container = cell.get_container(ispc);
+      int nparts = container.size();
 
       std::vector<int> to_be_deleted;
+      to_be_deleted.clear();
 
-      //for(auto& elem : cell.container.to_other_tiles)  {
+      //for(auto& elem : container.to_other_tiles)  {
       //  std::cout << "to be removed particle # " << elem.second << " ";
       //  std::cout << "(" << std::get<0>(elem.first) << "," << std::get<1>(elem.first) << "," << std::get<2>(elem.first) << ")";
       //  std::cout << '\n';
@@ -242,9 +245,12 @@ class Communicator {
           loc[i][indx] = loc[i][last];
           vel[i][indx] = vel[i][last];
         }
-
       }
-      container.resize(last);
+
+      // resize if needed and take care of the size
+      last = last < 0 ? 0 : last;
+      if ((last != (int)container.size()) && (container.size() > 0)) container.resize(last);
+
 
     } // end of loop over species
   }

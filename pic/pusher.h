@@ -85,6 +85,7 @@ class Pusher
 
 
       //TODO: SIMD
+      //TODO: vectorize with matrix multiplication form & Eigen
       for(int n=n1; n<n2; n++) {
 
         //--------------------------------------------------
@@ -100,7 +101,6 @@ class Pusher
         bz0 = bz[n]*(0.5*qm*cinv);
 
 
-
         // first half electric acceleration
         u0 = c*vel[0][n] + ex0;
         v0 = c*vel[1][n] + ey0;
@@ -113,9 +113,9 @@ class Pusher
         bz0 *= g;
 
         f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
-	  		u1 = (u0 + v0*bz0 -w0*by0)*f;
-	  		v1 = (v0 + w0*bx0 -u0*bz0)*f;
-	  		w1 = (w0 + u0*by0 -v0*bx0)*f;
+	  		u1 = (u0 + v0*bz0 - w0*by0)*f;
+	  		v1 = (v0 + w0*bx0 - u0*bz0)*f;
+	  		w1 = (w0 + u0*by0 - v0*bx0)*f;
 
         // second half of magnetic rotation & electric acceleration
 	  		u0 = u0 + v1*bz0 - w1*by0 + ex0;
@@ -155,7 +155,7 @@ class Pusher
 
         loc[0][n] += vel[0][n]*g*c;
         loc[1][n] += vel[1][n]*g*c;
-        loc[2][n] += vel[2][n]*g*c;
+        //loc[2][n] += vel[2][n]*g*c;
 
         //fmt::print("dx: {}\n",  vel[0][n]*g*c);
       }

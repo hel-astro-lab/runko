@@ -52,6 +52,12 @@ PYBIND11_MODULE(pypic, m) {
     .def("reserve",       &pic::ParticleBlock::reserve)
     .def("resizeEM",      &pic::ParticleBlock::resizeEM)
     .def("add_particle",  &pic::ParticleBlock::add_particle)
+    .def("add_particle2", [](pic::ParticleBlock& s, 
+                            double xx, double yy, double zz,
+                            double vx, double vy, double vz)
+        {
+          s.add_particle({xx,yy,zz}, {vx,vy,vz});
+        })
     .def("loc",          [](pic::ParticleBlock& s, size_t idim) 
         {
           return s.loc(idim); 
