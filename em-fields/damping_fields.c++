@@ -1,25 +1,43 @@
 #include "damping_fields.h"
 
 
-fields::PlasmaCellDamped::PlasmaCellDamped(
+
+using std::min;
+using std::max;
+using std::exp;
+
+
+template<int S>
+fields::PlasmaCellDamped<S>::PlasmaCellDamped(
     size_t i, size_t j,
     int o,
     size_t NxG, size_t NyG,
     size_t NxMesh, size_t NyMesh, size_t NzMesh
     ) : 
   corgi::Cell(i, j, o, NxG, NyG),
-  PlasmaCell(i, j, o, NxG, NyG, NxMesh, NyMesh, NzMesh)
+  PlasmaCell(i, j, o, NxG, NyG, NxMesh, NyMesh, NzMesh),
+  ex_ref(NxMesh, NyMesh, NzMesh),
+  ey_ref(NxMesh, NyMesh, NzMesh),
+  ez_ref(NxMesh, NyMesh, NzMesh),
+
+  bx_ref(NxMesh, NyMesh, NzMesh),
+  by_ref(NxMesh, NyMesh, NzMesh),
+  bz_ref(NxMesh, NyMesh, NzMesh)
 { }
 
 
+
+/*
 void fields::PlasmaCellDamped::pushE() {
 
   // this->pushE1d();
   this->pushE2d_damped();
   // this->pushE3d();
 }
+*/
 
 
+/*
 /// 2D E pusher
 void fields::PlasmaCellDamped::pushE2d_damped() {
 
@@ -48,9 +66,12 @@ void fields::PlasmaCellDamped::pushE2d_damped() {
     }
   }
 }
+*/
 
 
-void fields::PlasmaCellDamped::depositCurrent() {
+// deposit current with some resistivity
+template<int S>
+void fields::PlasmaCellDamped<S>::depositCurrent() {
   fields::YeeLattice& mesh = getYee();
 
   //std::cout << "Calling DAMPED J update\n";
@@ -65,6 +86,75 @@ void fields::PlasmaCellDamped::depositCurrent() {
 
 }
 
+/// Damp EM fields into the reference field
+template<int S>
+auto fields::PlasmaCellDamped<S>::dampFields( ) -> typename std::enable_if<( S==-2 | S==2 )>::type
+{
+  auto& yee = getYee();
+
+  //Realf lambda, lambda1;
+  Realf lambda2;
+  Realf ksupp = 10; // damping parameter
 
 
+  // moving injector position
+  //int ntimes = 10; // filter width
+  //int iback = 10 + max(50, ntimes);
+  //int istr = max(0,  (int)(xinject-iback) );
+  //int ifin = min(mx, (int)(xinject+iback) );
+    
+  // fixed position
+  int istr = 0;
+  int ifin = NxMesh;
+
+
+  int k = 0; // XXX: 2D hack
+  Realf jglob;
+  for(int j = 0; j<(int)NyMesh; j++) {
+    jglob = (Realf)j + mins[1];
+
+    // damping region
+    if ((jglob >= fld1) && (jglob < fld2)){
+      //lambda1 = kappa*pow( (fld2-jglob)/(fld2 - fld1), 3);
+      //lambda  = (1.0 - 0.5*lambda1)/(1.0 + 0.5*lambda1); //second order
+
+      lambda2 = ksupp*pow(1.*(fld2-jglob)/(fld2-fld1), 3);
+
+      for(int i=istr; i<ifin; i++) {
+        yee.ex(i,j,k) = exp(-lambda2)*yee.ex(i,j,k) + (1.0 - exp(-lambda2))*ex_ref(i,j,k);
+        yee.ey(i,j,k) = exp(-lambda2)*yee.ey(i,j,k) + (1.0 - exp(-lambda2))*ey_ref(i,j,k);
+        yee.ez(i,j,k) = exp(-lambda2)*yee.ez(i,j,k) + (1.0 - exp(-lambda2))*ez_ref(i,j,k);
+
+        yee.bx(i,j,k) = exp(-lambda2)*yee.bx(i,j,k) + (1.0 - exp(-lambda2))*bx_ref(i,j,k);
+        yee.by(i,j,k) = exp(-lambda2)*yee.by(i,j,k) + (1.0 - exp(-lambda2))*by_ref(i,j,k);
+        yee.bz(i,j,k) = exp(-lambda2)*yee.bz(i,j,k) + (1.0 - exp(-lambda2))*bz_ref(i,j,k);
+
+      }
+    }
+
+    // already damped region
+    if(jglob < fld1) { // left
+    //if(jglob > fld1) { // right
+      for(int i=istr; i<ifin; i++) {
+        yee.ex(i,j,k) = ex_ref(i,j,k);
+        yee.ey(i,j,k) = ey_ref(i,j,k);
+        yee.ez(i,j,k) = ez_ref(i,j,k);
+
+        yee.bx(i,j,k) = bx_ref(i,j,k);
+        yee.by(i,j,k) = by_ref(i,j,k);
+        yee.bz(i,j,k) = bz_ref(i,j,k);
+      }
+    }
+  }
+
+}
+
+
+//--------------------------------------------------
+//--------------------------------------------------
+
+// explicit template instantiation for supported directions
+  
+template class fields::PlasmaCellDamped<-2>;
+template class fields::PlasmaCellDamped<+2>;
 

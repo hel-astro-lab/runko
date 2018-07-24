@@ -83,7 +83,7 @@ class Depositer {
 
         x0 = loc[0][n] - vel[0][n]*invgam*c;
         y0 = loc[1][n] - vel[1][n]*invgam*c;
-        z0 = loc[2][n]; //- vel[2][n]*invgam*c; //TODO: 2D hack
+        z0 = loc[2][n] - vel[2][n]*invgam*c; //TODO: 2D hack
 
         //q = weight*qe;
         //q = 1.0;

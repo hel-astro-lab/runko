@@ -15,6 +15,7 @@ namespace py = pybind11;
 #include "../em-fields/fields.h"
 #include "../em-fields/damping_fields.h"
 
+
 #include "../vlasov/amr/mesh.h"
 //#include "../vlasov/amr/numerics.h"
 #include "../vlasov/amr/refiner.h"
@@ -84,7 +85,10 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 
   // generator for Mesh bindings with type T and halo H
   template<typename T, int H>
-  void declare_Mesh(py::module &m, int halo, std::string pyclass_name) {
+  void declare_Mesh(
+      py::module &m, 
+      std::string pyclass_name) 
+  {
       using Class = toolbox::Mesh<T, H>;
       py::class_<Class>(m, pyclass_name.c_str())
 
@@ -130,6 +134,29 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
       .def("clear",        &Class::clear);
   }
 
+  // generator for damped cell for various directions
+  template<int S>
+  void declare_PlasmaCellDamped(
+      py::module& m,
+      std::string pyclass_name) 
+  {
+    //using Class = fields::PlasmaCellDamped<S>; // does not function properly; maybe not triggering template?
+    // have to use explicit name instead like this
+
+    py::class_<fields::PlasmaCellDamped<S>,
+             fields::PlasmaCell,
+             std::shared_ptr<fields::PlasmaCellDamped<S>>
+            >(m, pyclass_name.c_str() )
+    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>())
+    .def_readwrite("ex_ref",   &fields::PlasmaCellDamped<S>::ex_ref, py::return_value_policy::reference)
+    .def_readwrite("ey_ref",   &fields::PlasmaCellDamped<S>::ey_ref, py::return_value_policy::reference)
+    .def_readwrite("ez_ref",   &fields::PlasmaCellDamped<S>::ez_ref, py::return_value_policy::reference)
+    .def_readwrite("bx_ref",   &fields::PlasmaCellDamped<S>::bx_ref, py::return_value_policy::reference)
+    .def_readwrite("by_ref",   &fields::PlasmaCellDamped<S>::by_ref, py::return_value_policy::reference)
+    .def_readwrite("bz_ref",   &fields::PlasmaCellDamped<S>::bz_ref, py::return_value_policy::reference)
+    .def("dampFields",         &fields::PlasmaCellDamped<S>::dampFields);
+
+  }
 
 
 
@@ -167,20 +194,17 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("exchangeCurrents2D",&fields::PlasmaCell::exchangeCurrents2D);
 
 
-  py::class_<fields::PlasmaCellDamped,
-             fields::PlasmaCell,
-             std::shared_ptr<fields::PlasmaCellDamped>
-            >(m, "PlasmaCellDamped")
-    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>());
 
-
+  //declare_PlasmaCellDamped<-1>(m, "PlasmaCellDamped_LX");
+  //declare_PlasmaCellDamped<+1>(m, "PlasmaCellDamped_RX");
+  declare_PlasmaCellDamped<-2>(m, "PlasmaCellDamped_LY");
+  declare_PlasmaCellDamped<+2>(m, "PlasmaCellDamped_RY");
 
 
   // Loading node bindings from corgi library
   py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
   py::class_<vlasov::Grid>(m, "Grid", corgiNode)
     .def(py::init<size_t, size_t>());
-
 
   py::class_<fields::YeeLattice>(m, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
@@ -341,9 +365,9 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<>());
 
 
-  declare_Mesh<Realf, 0>(m, 0, std::string("Mesh0") );
-  declare_Mesh<Realf, 1>(m, 1, std::string("Mesh1") );
-  declare_Mesh<Realf, 3>(m, 3, std::string("Mesh3") );
+  declare_Mesh<Realf, 0>(m, std::string("Mesh0") );
+  declare_Mesh<Realf, 1>(m, std::string("Mesh1") );
+  declare_Mesh<Realf, 3>(m, std::string("Mesh3") );
 
 
 
