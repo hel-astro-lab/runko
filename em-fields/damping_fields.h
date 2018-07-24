@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 #include <algorithm>
 
 #include "fields.h"
@@ -56,12 +57,18 @@ class PlasmaCellDamped :
     //-------------------------------------------------- 
     // damp field 
     //
-    // Correct method is picked based on SFINAE
-    //
-    // NOTE: relies on enable_if<> returning void and auto substituting that in
-    auto dampFields( ) -> typename std::enable_if<( S==-2 | S==2 )>::type; // Y-dir
+    // Correct method is picked based on SFINAE: relies on enable_if<> returning void 
 
-
+    template<int R>
+    typename std::enable_if<R==-1 | R==+1>::type 
+    dampFields();
+ 
+    template<int R>
+    typename std::enable_if<R==-2 | R==+2>::type 
+    dampFields();
+    
+    // trampoline function to avoid templatizing methods
+    void dampFields(){ dampFields<S>(); };
 
 
     /// start index of the slope

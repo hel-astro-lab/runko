@@ -86,9 +86,90 @@ void fields::PlasmaCellDamped<S>::depositCurrent() {
 
 }
 
+
 /// Damp EM fields into the reference field
+//
+// X-dir
 template<int S>
-auto fields::PlasmaCellDamped<S>::dampFields( ) -> typename std::enable_if<( S==-2 | S==2 )>::type
+template<int R>
+typename std::enable_if<R==-1 | R==+1>::type 
+fields::PlasmaCellDamped<S>::dampFields()
+{
+  auto& yee = getYee();
+
+  //Realf lambda, lambda1;
+  Realf lambda2;
+  Realf ksupp = 10; // damping parameter
+
+
+  // moving injector position
+  //int ntimes = 10; // filter width
+  //int iback = 10 + max(50, ntimes);
+  //int istr = max(0,  (int)(xinject-iback) );
+  //int ifin = min(mx, (int)(xinject+iback) );
+    
+  // fixed position
+  int istr = 0;
+  int ifin = NxMesh;
+
+  int jstr = 0;
+  int jfin = NyMesh;
+
+
+  int k = 0; // XXX: 2D hack
+  Realf iglob, jglob, kglob;
+
+  kglob = (Realf)k + mins[2];
+  for(int i = istr; i<ifin; i++) {
+    iglob = (Realf)i + mins[0];
+
+    // damping region
+    if ( ((S<0) && ((iglob >= fld1) && (iglob < fld2))) || 
+         ((S>0) && ((iglob <= fld1) && (iglob > fld2))) )  
+    {
+      //lambda1 = kappa*pow( (fld2-jglob)/(fld2 - fld1), 3);
+      //lambda  = (1.0 - 0.5*lambda1)/(1.0 + 0.5*lambda1); //second order
+
+      if (S < 0) lambda2 = ksupp*pow(1.*(fld2-iglob)/(fld2-fld1), 3); // left dir
+      if (S > 0) lambda2 = ksupp*pow(1.*(fld1-iglob)/(fld1-fld2), 3); // right dir
+
+      for(int j=jstr; j<jfin; j++) {
+        jglob = (Realf)j + mins[1];
+
+        yee.ex(i,j,k) = exp(-lambda2)*yee.ex(i,j,k) + (1.0 - exp(-lambda2))*ex_ref(i,j,k);
+        yee.ey(i,j,k) = exp(-lambda2)*yee.ey(i,j,k) + (1.0 - exp(-lambda2))*ey_ref(i,j,k);
+        yee.ez(i,j,k) = exp(-lambda2)*yee.ez(i,j,k) + (1.0 - exp(-lambda2))*ez_ref(i,j,k);
+
+        yee.bx(i,j,k) = exp(-lambda2)*yee.bx(i,j,k) + (1.0 - exp(-lambda2))*bx_ref(i,j,k);
+        yee.by(i,j,k) = exp(-lambda2)*yee.by(i,j,k) + (1.0 - exp(-lambda2))*by_ref(i,j,k);
+        yee.bz(i,j,k) = exp(-lambda2)*yee.bz(i,j,k) + (1.0 - exp(-lambda2))*bz_ref(i,j,k);
+
+      }
+    }
+
+    // already damped region
+    // left || right
+    if( ((S < 0) && (iglob < fld1)) || ((S > 0) && (iglob > fld1)) ) {
+      for(int j=jstr; j<jfin; j++) {
+        yee.ex(i,j,k) = ex_ref(i,j,k);
+        yee.ey(i,j,k) = ey_ref(i,j,k);
+        yee.ez(i,j,k) = ez_ref(i,j,k);
+
+        yee.bx(i,j,k) = bx_ref(i,j,k);
+        yee.by(i,j,k) = by_ref(i,j,k);
+        yee.bz(i,j,k) = bz_ref(i,j,k);
+      }
+    }
+  }
+
+}
+
+
+// Y-dir
+template<int S>
+template<int R>
+typename std::enable_if<R==-2 | R==+2>::type 
+fields::PlasmaCellDamped<S>::dampFields()
 {
   auto& yee = getYee();
 
@@ -114,11 +195,14 @@ auto fields::PlasmaCellDamped<S>::dampFields( ) -> typename std::enable_if<( S==
     jglob = (Realf)j + mins[1];
 
     // damping region
-    if ((jglob >= fld1) && (jglob < fld2)){
+    if ( ((S<0) && ((jglob >= fld1) && (jglob < fld2))) || 
+         ((S>0) && ((jglob <= fld1) && (jglob > fld2))) )  
+    {
       //lambda1 = kappa*pow( (fld2-jglob)/(fld2 - fld1), 3);
       //lambda  = (1.0 - 0.5*lambda1)/(1.0 + 0.5*lambda1); //second order
 
-      lambda2 = ksupp*pow(1.*(fld2-jglob)/(fld2-fld1), 3);
+      if (S < 0) lambda2 = ksupp*pow(1.*(fld2-jglob)/(fld2-fld1), 3);
+      if (S > 0) lambda2 = ksupp*pow(1.*(fld1-jglob)/(fld1-fld2), 3);
 
       for(int i=istr; i<ifin; i++) {
         yee.ex(i,j,k) = exp(-lambda2)*yee.ex(i,j,k) + (1.0 - exp(-lambda2))*ex_ref(i,j,k);
@@ -133,8 +217,7 @@ auto fields::PlasmaCellDamped<S>::dampFields( ) -> typename std::enable_if<( S==
     }
 
     // already damped region
-    if(jglob < fld1) { // left
-    //if(jglob > fld1) { // right
+    if( ((S < 0) && (jglob < fld1)) || ((S > 0) && (jglob > fld1)) ) {
       for(int i=istr; i<ifin; i++) {
         yee.ex(i,j,k) = ex_ref(i,j,k);
         yee.ey(i,j,k) = ey_ref(i,j,k);
@@ -155,6 +238,13 @@ auto fields::PlasmaCellDamped<S>::dampFields( ) -> typename std::enable_if<( S==
 
 // explicit template instantiation for supported directions
   
+template class fields::PlasmaCellDamped<-1>;
+template class fields::PlasmaCellDamped<+1>;
 template class fields::PlasmaCellDamped<-2>;
 template class fields::PlasmaCellDamped<+2>;
+  
+//template void  fields::PlasmaCellDamped<-1>::dampFields();
+//template void  fields::PlasmaCellDamped<+1>::dampFields();
+//template void  fields::PlasmaCellDamped<-2>::dampFields();
+//template void  fields::PlasmaCellDamped<+2>::dampFields();
 

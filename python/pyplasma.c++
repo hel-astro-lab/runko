@@ -15,7 +15,6 @@ namespace py = pybind11;
 #include "../em-fields/fields.h"
 #include "../em-fields/damping_fields.h"
 
-
 #include "../vlasov/amr/mesh.h"
 //#include "../vlasov/amr/numerics.h"
 #include "../vlasov/amr/refiner.h"
@@ -195,8 +194,8 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
 
-  //declare_PlasmaCellDamped<-1>(m, "PlasmaCellDamped_LX");
-  //declare_PlasmaCellDamped<+1>(m, "PlasmaCellDamped_RX");
+  declare_PlasmaCellDamped<-1>(m, "PlasmaCellDamped_LX");
+  declare_PlasmaCellDamped<+1>(m, "PlasmaCellDamped_RX");
   declare_PlasmaCellDamped<-2>(m, "PlasmaCellDamped_LY");
   declare_PlasmaCellDamped<+2>(m, "PlasmaCellDamped_RY");
 
