@@ -54,22 +54,8 @@ class PlasmaCellDamped :
     using PlasmaCell::cfl;
 
 
-    //-------------------------------------------------- 
     // damp field 
-    //
-    // Correct method is picked based on SFINAE: relies on enable_if<> returning void 
-
-    template<int R>
-    typename std::enable_if<R==-1 | R==+1>::type 
-    dampFields();
- 
-    template<int R>
-    typename std::enable_if<R==-2 | R==+2>::type 
-    dampFields();
-    
-    // trampoline function to avoid templatizing methods
-    void dampFields(){ dampFields<S>(); };
-
+    void dampFields();
 
     /// start index of the slope
     Realf fld1;

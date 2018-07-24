@@ -140,7 +140,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
       std::string pyclass_name) 
   {
     //using Class = fields::PlasmaCellDamped<S>; // does not function properly; maybe not triggering template?
-    // have to use explicit name instead like this
+    //have to use explicit name instead like this
 
     py::class_<fields::PlasmaCellDamped<S>,
              fields::PlasmaCell,

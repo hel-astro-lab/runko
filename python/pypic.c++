@@ -28,8 +28,6 @@ PYBIND11_MODULE(pypic, m) {
   py::object plasmaCell = (py::object) py::module::import("pyplasma").attr("PlasmaCell");
 
 
-
-
   py::class_<pic::PicCell, 
              fields::PlasmaCell,
              corgi::Cell, 
