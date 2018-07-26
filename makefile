@@ -2,6 +2,7 @@
 #ARCH=macOS
 ARCH=gnu
 #ARCH=kebnekaise
+#ARCH=clang
 
 #set FP precision to SP (single) or DP (double)
 FP_PRECISION=DP
