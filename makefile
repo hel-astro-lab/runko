@@ -40,7 +40,7 @@ all: clean pyplasma tests
 #INSTALL=build
 
 # full python interface
-py: pyplasma pypic
+py: pyplasma pypic pypic_boundaries
 
 
 # Executable:
@@ -82,6 +82,11 @@ pyplasma.o: ${DEPS_COMMON} python/pyplasma.c++ vlasov/grid.h vlasov/cell.h vlaso
 pypic.o: ${DEPS_COMMON} python/pypic.c++ pic/cell.h pic/particle.h pic/pusher.h pic/field_interpolator.h pic/communicate.h pic/current_deposit.h pic/filters.h pic/analyzer.h
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pypic.o -c python/pypic.c++
 
+wall.o: ${DEPS_COMMON} pic/boundaries/wall.c++ pic/boundaries/wall.h
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o wall.o -c pic/boundaries/wall.c++
+
+pypic_boundaries.o: ${DEPS_COMMON} python/pypic_boundaries.c++ pic/boundaries/wall.h em-fields/damping_fields.h em-fields/damping_fields.c++ pic/cell.h
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pypic_boundaries.o -c python/pypic_boundaries.c++
 
 
 #reference to pycorgi's own make
@@ -100,7 +105,8 @@ pyplasma: fields.o damping_fields.o vlasovCell.o pyplasma.o
 pypic: fields.o damping_fields.o pypic.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} ${LIBS} -o python/pypic.so pypic.o fields.o damping_fields.o
 
-
+pypic_boundaries: fields.o damping_fields.o wall.o pypic_boundaries.o 
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} ${LIBS} -o python/pypic_boundaries.so pypic_boundaries.o wall.o fields.o damping_fields.o
 
 
 #make documentation usign Doxygen

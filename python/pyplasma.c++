@@ -153,6 +153,8 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
     .def_readwrite("bx_ref",   &fields::PlasmaCellDamped<S>::bx_ref, py::return_value_policy::reference)
     .def_readwrite("by_ref",   &fields::PlasmaCellDamped<S>::by_ref, py::return_value_policy::reference)
     .def_readwrite("bz_ref",   &fields::PlasmaCellDamped<S>::bz_ref, py::return_value_policy::reference)
+    .def_readwrite("fld1",     &fields::PlasmaCellDamped<S>::fld1)
+    .def_readwrite("fld2",     &fields::PlasmaCellDamped<S>::fld2)
     .def("dampFields",         &fields::PlasmaCellDamped<S>::dampFields);
 
   }
