@@ -1,17 +1,15 @@
 import unittest
 
 import sys
-sys.path.append('python')
 import numpy as np
 
-import corgi
+import pycorgi
 import pyplasma as plasma
 import pypic 
 
-sys.path.append('pic')
-from pic import loadCells
-from pic import inject
-from pic import spatialLoc
+from initialize_pic import loadCells
+from initialize_pic import spatialLoc
+from injector_pic import inject
 
 
 from visualize_pic import Particles
@@ -601,7 +599,7 @@ class PIC(unittest.TestCase):
             plot2dYee(axs[5], node, conf, 'jx')
             plot2dYee(axs[6], node, conf, 'jy')
             plot2dYee(axs[7], node, conf, 'jz')
-            saveVisz(lap, node, conf)
+            #saveVisz(lap, node, conf)
 
             for j in range(conf.Ny*conf.NyMesh):
                 for i in range(conf.Nx*conf.NxMesh):
@@ -782,7 +780,7 @@ class PIC(unittest.TestCase):
         plot2dYee(axs[2], node, conf, 'jx')
         plot2dYee(axs[3], node, conf, 'jy')
         plot2dYee(axs[4], node, conf, 'jz')
-        saveVisz(-2, node, conf)
+        #saveVisz(-2, node, conf)
 
         
         for j in range(node.getNy()):

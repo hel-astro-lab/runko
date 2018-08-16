@@ -7,15 +7,13 @@ from math import floor, ceil
 from scipy.signal import convolve2d
 from scipy.signal import convolve
 
-import corgi
+import pycorgi
 import pyplasma as plasma
 import pypic 
 
-sys.path.append('pic')
-from pic import loadCells
-from pic import inject
-from pic import spatialLoc
-
+from initialize_pic import loadCells
+from initialize_pic import spatialLoc
+from injector_pic import inject
 
 from visualize import saveVisz
 
@@ -519,7 +517,7 @@ class Filters(unittest.TestCase):
 
         axs[7].imshow(err, vmin=-1.0, vmax=1.0)
 
-        plt.savefig("filter.png")
+        #plt.savefig("filter.png")
 
 
     def test_smearing2(self):
@@ -755,7 +753,7 @@ class Filters(unittest.TestCase):
 
 
 
-        plt.savefig("filter3.png")
+        #plt.savefig("filter3.png")
 
     def test_filters_in_action(self):
 

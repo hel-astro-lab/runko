@@ -168,7 +168,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 PYBIND11_MODULE(pyplasma, m) {
 
   // Loading cell bindings from corgi library
-  py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
+  py::object corgiCell = (py::object) py::module::import("pycorgi").attr("Cell");
 
 
   /// General class for handling Maxwell's equations
@@ -203,7 +203,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   // Loading node bindings from corgi library
-  py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
+  py::object corgiNode = (py::object) py::module::import("pycorgi").attr("Node");
   py::class_<vlasov::Grid>(m, "Grid", corgiNode)
     .def(py::init<size_t, size_t>());
 

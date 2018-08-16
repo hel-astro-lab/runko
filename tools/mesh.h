@@ -139,7 +139,7 @@ class Mesh {
       if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
       if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
       if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
-    };
+    }
 
     template<int H2>
     void copyVert(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);

@@ -28,7 +28,7 @@ void declare_PicCellWall(
 
 PYBIND11_MODULE(pypic_boundaries, m) {
 
-  py::object corgiCell  = (py::object) py::module::import("corgi").attr("Cell");
+  py::object corgiCell  = (py::object) py::module::import("pycorgi").attr("Cell");
   py::object vlasovCell = (py::object) py::module::import("pyplasma").attr("VlasovCell");
 
 

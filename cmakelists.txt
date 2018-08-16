@@ -25,15 +25,16 @@ FIND_PACKAGE (FMT REQUIRED)
 #INCLUDE_DIRECTORIES ( "$ENV{FMT_INCLUDE_DIR}" )
 
 
-
 # hdf5 for i/o
 #FIND_PACKAGE (HDF5 COMPONENTS CXX REQUIRED)
 #FIND_PACKAGE (HDF5 COMPONENTS CXX)
 FIND_PACKAGE (HDF5)
 
+#FIND_PACKAGE( FFTW3 ) # this does not exists
+
+
 # hpc stuff 
 #find_package (MPI)
-
 
 find_package (OpenMP)
 if (OpenMP_FOUND)
@@ -65,15 +66,14 @@ set (WARNING_FLAGS
 add_subdirectory(corgi)
 
 
-#add_subdirectory(vlasov)
+add_subdirectory(vlasov)
+add_subdirectory(em-fields)
+
 #add_subdirectory(pic)
-#add_subdirectory(em-fields)
 #add_subdirectory(io)
 #add_subdirectory(tests)
 
 add_subdirectory(python)
-
-
 
 
 
@@ -108,3 +108,17 @@ add_subdirectory(python)
 #    message(
 #        "Doxygen not found, skipping generation of documentation")
 #endif (DOXYGEN_FOUND)
+
+
+
+#-------------------------------------------------- 
+# unit tests
+#
+add_custom_target(check-pyplasmabox ALL
+                  ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
+                  DEPENDS pycorgi pyplasma pypic pypic_boundaries
+                  VERBATIM
+                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib
+                  )
+
+

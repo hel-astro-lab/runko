@@ -23,7 +23,7 @@ namespace py = pybind11;
 PYBIND11_MODULE(pypic, m) {
 
   // Loading cell bindings from corgi library
-  py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
+  py::object corgiCell = (py::object) py::module::import("pycorgi").attr("Cell");
 
   py::object plasmaCell = (py::object) py::module::import("pyplasma").attr("PlasmaCell");
 

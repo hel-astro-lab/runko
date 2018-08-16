@@ -1,7 +1,6 @@
 import unittest
 
 import sys
-sys.path.append('python')
 import numpy as np
 
 import pyplasma as plasma
