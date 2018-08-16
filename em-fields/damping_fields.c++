@@ -186,10 +186,11 @@ void fields::PlasmaCellDamped<S>::dampFields()
     // already damped region
       
     // Ydir: left || right
-    if (( ydir && ( (left && (jglob < fld1)) || (right && (jglob > fld1)) )) || !ydir ) {
+    if (( ydir && ( (left && (jglob <= fld1)) || (right && (jglob > fld1)) )) || !ydir ) {
       for(int i=istr; i<ifin; i++) {
+        iglob = (Realf)i + mins[0];
         // Xdir: left || right
-        if (( xdir && ( (left && (iglob < fld1)) || (right && (iglob > fld1)) )) || !xdir ) {
+        if (( xdir && ( (left && (iglob <= fld1)) || (right && (iglob > fld1)) )) || !xdir ) {
           yee.ex(i,j,k) = ex_ref(i,j,k);
           yee.ey(i,j,k) = ey_ref(i,j,k);
           yee.ez(i,j,k) = ez_ref(i,j,k);

@@ -40,9 +40,6 @@ First we need compile_commands.json.
 make sure llvm is on your path by appending your `.bash_profile`: `export PATH="/usr/local/opt/llvm/bin/:$PATH"`
 
 
-
-
-
 https://clang.llvm.org/extra/clang-rename.html
 
 http://clang.llvm.org/extra/clang-tidy/checks/list.html

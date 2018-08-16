@@ -153,6 +153,8 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
     .def_readwrite("bx_ref",   &fields::PlasmaCellDamped<S>::bx_ref, py::return_value_policy::reference)
     .def_readwrite("by_ref",   &fields::PlasmaCellDamped<S>::by_ref, py::return_value_policy::reference)
     .def_readwrite("bz_ref",   &fields::PlasmaCellDamped<S>::bz_ref, py::return_value_policy::reference)
+    .def_readwrite("fld1",     &fields::PlasmaCellDamped<S>::fld1)
+    .def_readwrite("fld2",     &fields::PlasmaCellDamped<S>::fld2)
     .def("dampFields",         &fields::PlasmaCellDamped<S>::dampFields);
 
   }
@@ -346,6 +348,10 @@ PYBIND11_MODULE(pyplasma, m) {
   py::class_<vlasov::AmrMomentumLagrangianSolver<Realf,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
+  py::class_<vlasov::GravityAmrMomentumLagrangianSolver<Realf,3>>(m, "GravityAmrMomentumLagrangianSolver", vvsol)
+     .def(py::init<>());
+
+
 
   // general interface for spatial solvers
   py::class_<vlasov::SpatialSolver<Realf>, PySpatialSolver> vssol(m, "SpatialSolver");
@@ -419,6 +425,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
     m.def("stepVelocity1d", &vlasov::stepVelocity<1>);
     m.def("stepVelocity",   &vlasov::stepVelocity<3>);
+    m.def("stepVelocityGravity1d",   &vlasov::stepVelocityGravity<1>);
 
     m.def("analyze",      &vlasov::analyze);
 
