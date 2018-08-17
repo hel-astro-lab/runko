@@ -24,7 +24,7 @@ class Grid : public corgi::Node {
     Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
   
     // default destructor
-    ~Grid() { };
+    ~Grid() = default;
 
     /// simple method class extension
     std::string howl() { return std::string("Auuu!"); };

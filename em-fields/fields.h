@@ -155,7 +155,7 @@ class PlasmaCell : virtual public corgi::Cell {
       size_t NxMesh, size_t NyMesh, size_t NzMesh);
 
   /// destructor
-  ~PlasmaCell() override { };
+  ~PlasmaCell() override = default;
 
 
   void updateBoundaries(corgi::Node& node);

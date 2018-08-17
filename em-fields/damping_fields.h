@@ -38,7 +38,7 @@ class PlasmaCellDamped :
       size_t NxG, size_t NyG,
       size_t NxMesh, size_t NyMesh, size_t NzMesh);
 
-    ~PlasmaCellDamped() override { };
+    ~PlasmaCellDamped() override = default;
 
     //void pushE() override;
     //using PlasmaCell::pushE;
