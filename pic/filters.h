@@ -16,7 +16,7 @@
 namespace pic {
 
 
-fields::YeeLattice& get_neighbor_yee(
+inline fields::YeeLattice& get_neighbor_yee(
     int i, int j,
     pic::PicCell& cell, 
     corgi::Node& node)

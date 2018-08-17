@@ -13,7 +13,7 @@
 namespace vlasov{
 
 
-void stepLocation( vlasov::Grid& grid )
+inline void stepLocation( vlasov::Grid& grid )
 {
 
 #pragma omp parallel
@@ -135,7 +135,7 @@ void updateBoundaries()
 */
 
 
-void analyze( vlasov::Grid& grid )
+inline void analyze( vlasov::Grid& grid )
 {
 
 #pragma omp parallel
@@ -162,7 +162,7 @@ void analyze( vlasov::Grid& grid )
 
 
 
-void writeYee( 
+inline void writeYee( 
     corgi::Node& grid, 
     int lap,
     std::string dir
@@ -183,7 +183,7 @@ void writeYee(
 }
 
 
-void writeAnalysis( 
+inline void writeAnalysis( 
     corgi::Node& grid, 
     int lap,
     std::string dir
@@ -204,7 +204,7 @@ void writeAnalysis(
 }
 
 
-void writeMesh( 
+inline void writeMesh( 
     vlasov::Grid& grid, 
     int lap,
     std::string dir 

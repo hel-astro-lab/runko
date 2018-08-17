@@ -14,7 +14,7 @@ using iter::reversed;
 namespace pic {
 
 // expose particle memory of external neighbors
-pic::ParticleBlock& get_external_data(
+inline pic::ParticleBlock& get_external_data(
   int i, int j,
   pic::PicCell& cell,
   corgi::Node& grid,
