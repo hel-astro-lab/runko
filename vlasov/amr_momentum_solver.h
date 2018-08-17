@@ -94,7 +94,8 @@ class MomentumSolver {
      */
     void solve( 
         vlasov::VlasovCell& cell,
-        T step_size = T(1))
+        T step_size = T(1)
+        )
     {
         
       // get reference to the Vlasov fluid that we are solving
@@ -108,7 +109,7 @@ class MomentumSolver {
       // timestep
       T dt   = (T) cell.dt;      
       T dx   = (T) cell.dx;      
-      T cfl  = dt/dx;
+      T cfl  = step_size*dt/dx;
 
 
       /// Now get future current
@@ -306,11 +307,11 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
     /// Relativistic Lorentz force
     virtual inline Vector3f lorentz_force(
-        Vector3f& uvel,
+        Vector3f&, // uvel,
         Vector3f& E,
-        Vector3f& B,
+        Vector3f&, // B,
         T qm,
-        T dt,
+        T, // dt,
         T cfl)
     {
 
@@ -523,11 +524,11 @@ class GravityAmrMomentumLagrangianSolver : public AmrMomentumLagrangianSolver<T,
 
     /// Relativistic Lorentz force
     inline Vector3f lorentz_force(
-        Vector3f& uvel,
+        Vector3f& ,//uvel,
         Vector3f& E,
-        Vector3f& B,
+        Vector3f& ,//B,
         T qm,
-        T dt,
+        T, //dt,
         T cfl)
     override {
 

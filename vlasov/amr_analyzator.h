@@ -119,7 +119,8 @@ class Analyzator {
           for(int q=0; q<Nx; q++) {
             const auto& M   = block0.block(q,r,s);   // f_i
 
-            T qm = 1.0 / block0.qm;  // charge to mass ratio
+            //T qm = 1.0 / block0.qm;  // charge to mass ratio
+
 
             // TODO there is a possibility to optimize this by putting everything 
             // inside one loop at the expense of code readability... So it is not done.
@@ -131,7 +132,7 @@ class Analyzator {
             yee.rho(q,r,s) += 
               integrate_moment(
                   M,
-                [](std::array<T,3>& uvel) -> T { return T(1);}
+                [](std::array<T,3>& ) -> T { return T(1);}
                 );
 
             // Jx current; chi(u) = u/gamma = v
@@ -152,7 +153,7 @@ class Analyzator {
             T rho = 
               integrate_moment(
                   M,
-                [](std::array<T,3>& uvel) -> T { return T(1); }
+                [](std::array<T,3>& ) -> T { return T(1); }
                 );
             analysis.rho(q,r,s) = rho;
 

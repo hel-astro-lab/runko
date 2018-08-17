@@ -208,7 +208,7 @@ class Communicator {
 
     for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
       ParticleBlock& container = cell.get_container(ispc);
-      int nparts = container.size();
+      //int nparts = container.size();
 
       std::vector<int> to_be_deleted;
       to_be_deleted.clear();

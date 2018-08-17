@@ -52,3 +52,20 @@ http://clang.llvm.org/extra/clang-tidy/checks/list.html
 
 
 
+/usr/local/opt/llvm/share/clang/run-clang-tidy.py -header-filter=.* -checks=performance-*
+
+
+## bug detection
+
+can be used to detect bugs during compile-time.
+`scan-build make`
+
+
+## optimization with Polly
+
+http://polly.llvm.org/docs/
+
+
+
+
+
