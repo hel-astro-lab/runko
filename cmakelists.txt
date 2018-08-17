@@ -114,11 +114,11 @@ add_subdirectory(python)
 #-------------------------------------------------- 
 # unit tests
 #
-#add_custom_target(check-pyplasmabox ALL
-#                  ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
-#                  DEPENDS pycorgi pyplasma pypic pypic_boundaries
-#                  VERBATIM
-#                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib
-#                  )
+add_custom_target(check-pyplasmabox ALL
+                  ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
+                  DEPENDS pycorgi pyplasma pypic pypic_boundaries
+                  VERBATIM
+                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib
+                  )
 
 

@@ -8,7 +8,9 @@ https://eli.thegreenplace.net/2014/05/21/compilation-databases-for-clang-based-t
 
 First we need compile_commands.json. 
 
-- from `cmake`
+- easiest done from `cmake`
+  - just add `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
+
 
 - or using `makefile` and bear
 

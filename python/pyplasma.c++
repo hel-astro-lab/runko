@@ -26,7 +26,7 @@ namespace py = pybind11;
 #include "../vlasov/tasker.h"
 
 
-typedef float Realf;
+using Realf = float;
 // typedef toolbox::AdaptiveMesh<Realf, 1> AM1d;
 typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
 typedef toolbox::Adapter<Realf, 3> Adapter3d;
