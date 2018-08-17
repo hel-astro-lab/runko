@@ -25,7 +25,7 @@ void stepLocation( vlasov::Grid& grid )
 #pragma omp task
         {
             
-          vlasov::VlasovCell& cell 
+          auto& cell 
             = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
 
           //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
@@ -54,7 +54,7 @@ void stepInitial( vlasov::Grid& grid )
 #pragma omp task
         {
           vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
-          vlasov::VlasovCell& cell 
+          auto& cell 
             = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
           vsol.solve(cell, -0.5);
         }// end of omp task
@@ -82,7 +82,7 @@ void stepVelocity( vlasov::Grid& grid )
 #pragma omp task
         {
           vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
-          vlasov::VlasovCell& cell 
+          auto& cell 
             = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
           vsol.solve(cell);
         }// end of omp task
@@ -107,7 +107,7 @@ void stepVelocityGravity( vlasov::Grid& grid )
 #pragma omp task
         {
           vlasov::GravityAmrMomentumLagrangianSolver<Realf,D> vsol;
-          vlasov::VlasovCell& cell 
+          auto& cell 
             = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
           vsol.solve(cell);
         }// end of omp task
@@ -147,7 +147,7 @@ void analyze( vlasov::Grid& grid )
 #pragma omp task
         {
           vlasov::Analyzator<Realf> analyzator;
-          vlasov::VlasovCell& cell 
+          auto& cell 
             = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
           analyzator.analyze(cell);
         }// end of omp task
@@ -174,7 +174,7 @@ void writeYee(
   h5io::Writer writer(prefix, lap);
 
   for(auto cid : grid.getCellIds() ){
-    fields::PlasmaCell& cell 
+    auto& cell 
       = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
     writer.writeYee(cell);
   }
@@ -195,7 +195,7 @@ void writeAnalysis(
   h5io::Writer writer(prefix, lap);
 
   for(auto cid : grid.getCellIds() ){
-    fields::PlasmaCell& cell 
+    auto& cell 
       = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
     writer.writeAnalysis(cell);
   }
@@ -218,7 +218,7 @@ void writeMesh(
 
   for(auto cid : grid.getCellIds() ){
 
-    vlasov::VlasovCell& cell 
+    auto& cell 
       = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
 
 
@@ -234,7 +234,7 @@ void writeMesh(
     int ispc = 0; // ith particle species
     for(auto&& block0 : step0) {
 
-      int Nx = int(block0.Nx),
+      auto Nx = int(block0.Nx),
           Ny = int(block0.Ny),
           Nz = int(block0.Nz);
 

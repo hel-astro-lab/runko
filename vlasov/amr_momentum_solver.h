@@ -54,7 +54,7 @@ class MomentumSolver {
       auto& step0 = cell.steps.get(0);
       for(auto&& block0 : step0) {
 
-        int Nx = int(block0.Nx),
+        auto Nx = int(block0.Nx),
             Ny = int(block0.Ny),
             Nz = int(block0.Nz);
 
@@ -107,8 +107,8 @@ class MomentumSolver {
       auto& yee = cell.getYee();
 
       // timestep
-      T dt   = (T) cell.dt;      
-      T dx   = (T) cell.dx;      
+      auto dt   = (T) cell.dt;      
+      auto dx   = (T) cell.dx;      
       T cfl  = step_size*dt/dx;
 
 
@@ -429,7 +429,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
 
       // level zero fill
-      T val     = T(0);
+      auto val     = T(0);
       T max_val = mesh0.max_value();
 
       T refine_indicator, unrefine_indicator;

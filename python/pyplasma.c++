@@ -98,9 +98,9 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
       .def("indx",         &Class::indx)
       .def("__getitem__", [](const Class &s, py::tuple indx) 
         {
-          int i = indx[0].cast<int>();
-          int j = indx[1].cast<int>();
-          int k = indx[2].cast<int>();
+          auto i = indx[0].cast<int>();
+          auto j = indx[1].cast<int>();
+          auto k = indx[2].cast<int>();
 
 
           // NOTE: these are out-of-bounds; not inbound checks
@@ -116,9 +116,9 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
         })
       .def("__setitem__", [](Class &s, py::tuple indx, Realf val) 
         {
-          int i = indx[0].cast<int>();
-          int j = indx[1].cast<int>();
-          int k = indx[2].cast<int>();
+          auto i = indx[0].cast<int>();
+          auto j = indx[1].cast<int>();
+          auto k = indx[2].cast<int>();
 
           if (i < -H) throw py::index_error();
           if (j < -H) throw py::index_error();
@@ -280,10 +280,10 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("get_cells",            &AM3d::get_cells)
     .def("__getitem__", [](const AM3d &s, py::tuple indx) 
         { 
-        uint64_t i = indx[0].cast<uint64_t>();
-        uint64_t j = indx[1].cast<uint64_t>();
-        uint64_t k = indx[2].cast<uint64_t>();
-        int    rfl = indx[3].cast<int>();
+        auto i = indx[0].cast<uint64_t>();
+        auto j = indx[1].cast<uint64_t>();
+        auto k = indx[2].cast<uint64_t>();
+        auto    rfl = indx[3].cast<int>();
         uint64_t cid = s.get_cell_from_indices({{i,j,k}}, rfl);
 
         if(cid == AM3d::error_cid) {throw py::index_error();}
@@ -292,10 +292,10 @@ PYBIND11_MODULE(pyplasma, m) {
         })
     .def("__setitem__", [](AM3d &s, py::tuple indx, Realf v) 
         { 
-        uint64_t i = indx[0].cast<uint64_t>();
-        uint64_t j = indx[1].cast<uint64_t>();
-        uint64_t k = indx[2].cast<uint64_t>();
-        int   rfl = indx[3].cast<int>();
+        auto i = indx[0].cast<uint64_t>();
+        auto j = indx[1].cast<uint64_t>();
+        auto k = indx[2].cast<uint64_t>();
+        auto   rfl = indx[3].cast<int>();
         uint64_t cid = s.get_cell_from_indices({{i,j,k}}, rfl);
 
         if(cid == AM3d::error_cid) {throw py::index_error();}
@@ -384,9 +384,9 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("qm", &vlasov::PlasmaBlock::qm)
     .def("__getitem__", [](const vlasov::PlasmaBlock &s, py::tuple indx) 
       {
-        int i = indx[0].cast<int>();
-        int j = indx[1].cast<int>();
-        int k = indx[2].cast<int>();
+        auto i = indx[0].cast<int>();
+        auto j = indx[1].cast<int>();
+        auto k = indx[2].cast<int>();
 
         if (i < 0) throw py::index_error();
         if (j < 0) throw py::index_error();
@@ -400,9 +400,9 @@ PYBIND11_MODULE(pyplasma, m) {
       }, py::return_value_policy::reference)
     .def("__setitem__", [](vlasov::PlasmaBlock &s, py::tuple indx, AM3d val) 
       {
-        int i = indx[0].cast<int>();
-        int j = indx[1].cast<int>();
-        int k = indx[2].cast<int>();
+        auto i = indx[0].cast<int>();
+        auto j = indx[1].cast<int>();
+        auto k = indx[2].cast<int>();
 
         if (i < 0) throw py::index_error();
         if (j < 0) throw py::index_error();

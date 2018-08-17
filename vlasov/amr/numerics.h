@@ -66,7 +66,7 @@ T deriv(
     x0 = mesh.get_center(indices,          refinement_level),
     x1 = mesh.get_center(indices_neighbor, refinement_level);
 
-  T dx = T(0);
+  auto dx = T(0);
   for(size_t i=0; i<D; i++) dx += std::pow( x1[i] - x0[i], 2);
   dx = std::sqrt(dx);
 

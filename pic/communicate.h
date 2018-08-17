@@ -22,7 +22,7 @@ pic::ParticleBlock& get_external_data(
 { 
   auto ind = cell.neighs(i, j); 
   uint64_t cid = grid.cellId( std::get<0>(ind), std::get<1>(ind) );
-  pic::PicCell& external_cell = dynamic_cast<pic::PicCell&>( grid.getCell(cid) );
+  auto& external_cell = dynamic_cast<pic::PicCell&>( grid.getCell(cid) );
 
   return external_cell.get_container(ispc);
 }

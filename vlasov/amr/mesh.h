@@ -84,7 +84,7 @@ class AdaptiveMesh {
   T get(const uint64_t key) const
   {
     // return data.at(key);
-    const_iterator it = data.find(key);
+    auto it = data.find(key);
     return it == data.end() ? T(0) : it->second;
   }
 
@@ -883,11 +883,11 @@ class AdaptiveMesh {
 
           uint64_t cid_parent = rhs.get_parent(cid_rhs);
 
-          T val_parent = T(0);
+          auto val_parent = T(0);
           const auto itp = rhs.data.find(cid_parent);
           if (itp != rhs.data.end()) val_parent = itp->second;
 
-          T val_tree = T(0);
+          auto val_tree = T(0);
           const auto itt = data.find(cid_parent);
           if (itt != data.end()) val_tree = itt->second;
 

@@ -37,7 +37,7 @@ T integrate_moment(
     const toolbox::AdaptiveMesh<T,3>& m,
     Lambda&& chi
     ) {
-  T integ = T(0);
+  auto integ = T(0);
 
   // pre-create size of the elements
   // TODO optimize this depending on top_refinement_level
@@ -110,7 +110,7 @@ class Analyzator {
       // get reference to species-specific analysis mesh
       auto& analysis = cell.analysis[ispc];
 
-      int Nx = int(block0.Nx),
+      auto Nx = int(block0.Nx),
           Ny = int(block0.Ny),
           Nz = int(block0.Nz);
 

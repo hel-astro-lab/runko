@@ -264,7 +264,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = Mm1.get_center(index, rfl);
 
         if (uvel[0] >= 0.0) {
-          T gam  = gamma<T,3>(uvel);
+          auto gam  = gamma<T,3>(uvel);
           //T gam = 1.0;
           T v   = cfl*uvel[0]/gam; // CFL
 
@@ -295,7 +295,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
         auto uvel  = M0.get_center(index, rfl);
 
         if (uvel[0] < 0.0) {
-          T gam  = gamma<T,3>(uvel);
+          auto gam  = gamma<T,3>(uvel);
           //T gam = 1.0;
           // v = i - x
           T v = cfl*uvel[0]/gam; // CFL
@@ -371,7 +371,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
       // local flows
       toolbox::AdaptiveMesh<T,3> flux;
-      int Nx = int(block0.Nx),
+      auto Nx = int(block0.Nx),
           Ny = int(block0.Ny),
           Nz = int(block0.Nz);
 
