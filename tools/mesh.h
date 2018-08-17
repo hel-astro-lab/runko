@@ -142,17 +142,17 @@ class Mesh {
     }
 
     template<int H2>
-    void copyVert(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
+    void copyVert(Mesh<T, H2>& rhs, int lhsI, int rhsI);
 
     template<int H2>
-    void addVert(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
+    void addVert(Mesh<T, H2>& rhs, int lhsI, int rhsI);
 
 
     template<int H2>
-    void copyHorz(Mesh<T, H2>& rhs, int lhsI, int rhsI);
+    void copyHorz(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
 
     template<int H2>
-    void addHorz(Mesh<T, H2>& rhs, int lhsI, int rhsI);
+    void addHorz(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
 
 
     template<int H2>
