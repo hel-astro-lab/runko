@@ -655,7 +655,7 @@ class AdaptiveMesh {
       all_cells.push_back( cid );
     };
 
-    if (sorted && all_cells.size() > 0) {
+    if (sorted && !all_cells.empty()) {
       std::sort(all_cells.begin(), all_cells.end());
     }
 
