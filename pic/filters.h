@@ -236,8 +236,8 @@ class Filter {
                                     1., 2., 1. }};
     // normalize
     Realf norm = 0.0;
-    for(Realf c : coeffs) norm += c;
-    for(size_t i=0; i<coeffs.size(); i++) coeffs[i] /= norm;
+    for(auto& coeff : coeffs) norm += coeff;
+    for(auto& coeff : coeffs) coeff /= norm;
 
     std::vector<Realf> image1, image2, image3;
     image1.resize(Nx*Ny*Nz); 
@@ -283,8 +283,8 @@ class Filter {
                                     1., 2., 1. }};
 
     Realf norm = 0.0;
-    for(Realf c : coeffs) norm += c;
-    for(size_t i=0; i<coeffs.size(); i++) coeffs[i] /= norm;
+    for(auto& coeff : coeffs) norm += coeff;
+    for(auto& coeff : coeffs) coeff /= norm;
 
 
     // create temporary Real number image array
