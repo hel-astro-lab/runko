@@ -261,7 +261,7 @@ fields::PlasmaMomentLattice& fields::PlasmaCell::getAnalysis(size_t i) {
 }
 
 void fields::PlasmaCell::addAnalysisSpecies() {
-  analysis.push_back( PlasmaMomentLattice(NxMesh, NyMesh, NzMesh) );
+  analysis.emplace_back(NxMesh, NyMesh, NzMesh );
 }
 
 
