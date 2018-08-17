@@ -11,7 +11,7 @@ namespace py = pybind11;
 template<int S>
 void declare_PicCellWall(
     py::module& m,
-    std::string pyclass_name) 
+    const std::string& pyclass_name) 
 {
 
   py::class_<pic::PicCellWall<S>,

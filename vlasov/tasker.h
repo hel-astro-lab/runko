@@ -165,7 +165,7 @@ inline void analyze( vlasov::Grid& grid )
 inline void writeYee( 
     corgi::Node& grid, 
     int lap,
-    std::string dir
+    const std::string& dir
     )
 {
 
@@ -186,7 +186,7 @@ inline void writeYee(
 inline void writeAnalysis( 
     corgi::Node& grid, 
     int lap,
-    std::string dir
+    const std::string& dir
     )
 {
 
@@ -207,7 +207,7 @@ inline void writeAnalysis(
 inline void writeMesh( 
     vlasov::Grid& grid, 
     int lap,
-    std::string dir 
+    const std::string& dir 
     )
 {
 

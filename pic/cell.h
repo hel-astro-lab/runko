@@ -35,7 +35,7 @@ public:
   ParticleBlock& get_container(size_t i) { return containers[i]; };
 
   /// set i:th container
-  void set_container(ParticleBlock block) {containers.push_back(block);};
+  void set_container(const ParticleBlock& block) {containers.push_back(block);};
 
   size_t Nspecies() { return containers.size(); };
 

@@ -86,7 +86,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
   template<typename T, int H>
   void declare_Mesh(
       py::module &m, 
-      std::string pyclass_name) 
+      const std::string& pyclass_name) 
   {
       using Class = toolbox::Mesh<T, H>;
       py::class_<Class>(m, pyclass_name.c_str())
@@ -137,7 +137,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
   template<int S>
   void declare_PlasmaCellDamped(
       py::module& m,
-      std::string pyclass_name) 
+      const std::string& pyclass_name) 
   {
     //using Class = fields::PlasmaCellDamped<S>; // does not function properly; maybe not triggering template?
     //have to use explicit name instead like this
