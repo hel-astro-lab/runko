@@ -5,7 +5,7 @@ import numpy as np
 import sys, os
 import h5py
 
-import corgi
+import pycorgi as corgi
 import pyplasma as plasma
 import pypic 
 

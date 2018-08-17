@@ -1,4 +1,4 @@
-from ConfigParser import SafeConfigParser
+from configparser import ConfigParser
 import ast
 
 
@@ -12,7 +12,7 @@ section_names = 'io', 'simulation', 'grid', 'vmesh', 'particles', 'problem'
 class Configuration(object):
 
     def __init__(self, *file_names):
-        parser = SafeConfigParser()
+        parser = ConfigParser()
         parser.optionxform = str  # make option names case sensitive
 
         found = parser.read(file_names)
