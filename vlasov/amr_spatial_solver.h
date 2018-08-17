@@ -530,7 +530,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
     // Strang splitted rotating (X/2 Y X/2) solver 
-    virtual void solve( vlasov::VlasovCell& cell, vlasov::Grid& grid )
+    void solve( vlasov::VlasovCell& cell, vlasov::Grid& grid ) override
     {
 
       // Yee lattice reference

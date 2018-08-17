@@ -29,7 +29,7 @@ class PicCellWall :
       fields::PlasmaCellDamped<S>(i,j,o,NxG, NyG, NxMesh,NyMesh, 1)
       { }
 
-    ~PicCellWall() = default;
+    ~PicCellWall() override = default;
 
     /// wall location
     using fields::PlasmaCellDamped<S>::fld1;

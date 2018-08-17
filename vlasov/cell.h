@@ -105,7 +105,7 @@ public:
 
 
   /// destructor
-  ~VlasovCell() { };
+  ~VlasovCell() override { };
 
 
   /// cell temporal and spatial scales

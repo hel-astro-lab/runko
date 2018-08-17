@@ -53,7 +53,7 @@ public:
 
 
   /// destructor
-  ~PicCell() { };
+  ~PicCell() override { };
 
   /// cell temporal and spatial scales
   using fields::PlasmaCell::cfl;

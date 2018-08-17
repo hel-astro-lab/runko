@@ -401,14 +401,14 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
     }
 
 
-    virtual void solveMesh( 
+    void solveMesh( 
         toolbox::AdaptiveMesh<T, 3>& mesh0,
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& Einc,
         vec& Binc,
         T qm,
         T dt,
-        T cfl)
+        T cfl) override
     {
 
       toolbox::Adapter<T,3> adapter;
