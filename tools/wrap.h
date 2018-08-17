@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math.h"
+#include <cmath>
 
 /* wrap x -> [0,max) */
 double wrap_max(double x, double max)

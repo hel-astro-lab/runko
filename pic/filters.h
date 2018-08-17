@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <tuple>
-#include <assert.h>
+#include <cassert>
 
 #include "cell.h"
 #include "communicate.h"

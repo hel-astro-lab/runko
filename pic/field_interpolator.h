@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmath> 
-#include <assert.h>
+#include <cassert>
 
 
 #include "cell.h"
