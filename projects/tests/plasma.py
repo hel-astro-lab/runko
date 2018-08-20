@@ -439,8 +439,7 @@ if __name__ == "__main__":
             plasma.writeAnalysis(node, lap, conf.outdir + "/")
             plasma.writeMesh(node,     lap, conf.outdir + "/")
 
-
-	    try:
+            try:
                 plotNode(axs[0], node, conf)
 
                 plotXmesh(axs[1], node, conf, 0, "x")
@@ -460,8 +459,8 @@ if __name__ == "__main__":
                 plotDens(axs[7], node, conf)
 
                 saveVisz(lap, node, conf)
-    	    except:
-    	        pass
+            except:
+                pass
 
 
             timer.stop("io")
