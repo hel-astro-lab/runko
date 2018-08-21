@@ -39,10 +39,10 @@ def get_particles(node, conf):
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                cid = node.cellId(i,j)
-                c = node.getCellPtr(cid)
+                cid = node.tileId(i,j)
+                c = node.getTilePtr(cid)
 
-                x, y, z, ux, uy, uz = get_particles_from_cell(c)
+                x, y, z, ux, uy, uz = get_particles_from_tile(c)
 
                 prtcl.xs.extend(x)
                 prtcl.ys.extend(y)
@@ -55,8 +55,8 @@ def get_particles(node, conf):
     return prtcl
 
 
-def get_particles_from_cell(cell, ispcs=0):
-    container = cell.get_container(ispcs)
+def get_particles_from_tile(tile, ispcs=0):
+    container = tile.get_container(ispcs)
     x  = container.loc(0)
     y  = container.loc(1)
     z  = container.loc(2)

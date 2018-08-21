@@ -6,7 +6,7 @@
 
 
 #include "../definitions.h"
-#include "../corgi/cell.h"
+#include "../corgi/tile.h"
 #include "amr/mesh.h"
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
@@ -18,7 +18,7 @@
 namespace vlasov {
 
 
-/*! \brief Block of Vlasov fluid's inside the cell
+/*! \brief Block of Vlasov fluid's inside the tile
 *
 * Container to hold a plasma species block
 */
@@ -44,14 +44,14 @@ class PlasmaBlock {
 
 
 
-/*! \brief Vlasov cell 
+/*! \brief Vlasov tile 
 *
-* Cell infrastructure methods are inherited from corgi::Cell
-* Maxwell field equation solver is inherited from fields::PlasmaCell
+* Tile infrastructure methods are inherited from corgi::Tile
+* Maxwell field equation solver is inherited from fields::PlasmaTile
 */
-class VlasovCell : 
-                 virtual public fields::PlasmaCell, 
-                 virtual public corgi::Cell {
+class VlasovTile : 
+                 virtual public fields::PlasmaTile, 
+                 virtual public corgi::Tile {
 
 public:
   
@@ -74,13 +74,13 @@ public:
 
 
   /// constructor
-  VlasovCell(size_t i, size_t j, 
+  VlasovTile(size_t i, size_t j, 
              int o, 
              size_t NxG, size_t NyG,
              size_t NxMesh, size_t NyMesh
              ) : 
-    corgi::Cell(i, j, o, NxG, NyG),
-    fields::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
+    corgi::Tile(i, j, o, NxG, NyG),
+    fields::PlasmaTile(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
     NxGrid(NxMesh),
     NyGrid(NyMesh),
     NzGrid(1)
@@ -105,20 +105,20 @@ public:
 
 
   /// destructor
-  ~VlasovCell() override = default;
+  ~VlasovTile() override = default;
 
 
-  /// cell temporal and spatial scales
-  using fields::PlasmaCell::cfl;
-  using fields::PlasmaCell::dt;
-  using fields::PlasmaCell::dx;
+  /// tile temporal and spatial scales
+  using fields::PlasmaTile::cfl;
+  using fields::PlasmaTile::dt;
+  using fields::PlasmaTile::dx;
 
 
   /// General clipping threshold
   Realf threshold = 1.0e-5;
 
 
-  /// Clip all the meshes inside cell
+  /// Clip all the meshes inside tile
   void clip() {
     auto& species = steps.get();
 
@@ -146,7 +146,7 @@ public:
   }
   */
 
-  /// get neighboring cell from grid
+  /// get neighboring tile from grid
   // TODO: separate into own communication module/header
   vlasov::PlasmaBlock& get_external_data(
       int i, int j, int ispc,

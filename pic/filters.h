@@ -5,7 +5,7 @@
 #include <tuple>
 #include <cassert>
 
-#include "cell.h"
+#include "tile.h"
 #include "communicate.h"
 
 #include "../units.h"
@@ -18,11 +18,11 @@ namespace pic {
 
 inline fields::YeeLattice& get_neighbor_yee(
     int i, int j,
-    pic::PicCell& cell, 
+    pic::PicTile& tile, 
     corgi::Node& node)
 {
-  auto cneigh = std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( cell.neighs(i, j) ));
+  auto cneigh = std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( tile.neighs(i, j) ));
   return cneigh->getYee();
 }
 
@@ -572,14 +572,14 @@ class Filter {
 
   /// Copy currents from neighbors into fftw array
   void get_padded_current(
-      pic::PicCell& cell, 
+      pic::PicTile& tile, 
       corgi::Node& node
       )
   {
 
-    //int NxMesh = cell.Nx;
-    //int NyMesh = cell.Ny;
-    //int NzMesh = cell.Nz;
+    //int NxMesh = tile.Nx;
+    //int NyMesh = tile.Ny;
+    //int NzMesh = tile.Nz;
     int indx;
 
     //int k = 0;
@@ -588,7 +588,7 @@ class Filter {
     //for (int k=-1; k<=1; k++) { // TODO: hack to get 2d tiles working
       //std::cout << "from: (" << i << "," << j << "," << k << ")" << '\n';
       
-      fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? cell.getYee() : get_neighbor_yee(i,j,cell,node);
+      fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? tile.getYee() : get_neighbor_yee(i,j,tile,node);
 
       /*
       std::cout << "--------------------------------------------------\n";
@@ -638,9 +638,9 @@ class Filter {
   /// set (filtered) current back to Yee lattice
   // NOTE: we export the current to jx1/jy1/jz1 instead of jx/jy/jz to 
   //       ensure thread safety
-  void set_current( pic::PicCell& cell)
+  void set_current( pic::PicTile& tile)
   {
-    fields::YeeLattice& mesh = cell.getYee();
+    fields::YeeLattice& mesh = tile.getYee();
 
     int indx;
 

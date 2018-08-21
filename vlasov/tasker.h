@@ -21,17 +21,17 @@ inline void stepLocation( vlasov::Grid& grid )
 #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
+      for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
             
-          auto& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
+          auto& tile 
+            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
 
           //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
-          //ssol.solve(cell, grid);
+          //ssol.solve(tile, grid);
             
-          cell.stepLocation(grid);
+          tile.stepLocation(grid);
         }// end of omp task
       }
 
@@ -50,13 +50,13 @@ void stepInitial( vlasov::Grid& grid )
 #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
+      for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
           vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
-          auto& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          vsol.solve(cell, -0.5);
+          auto& tile 
+            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+          vsol.solve(tile, -0.5);
         }// end of omp task
       }
 
@@ -78,13 +78,13 @@ void stepVelocity( vlasov::Grid& grid )
 #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
+      for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
           vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
-          auto& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          vsol.solve(cell);
+          auto& tile 
+            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+          vsol.solve(tile);
         }// end of omp task
       }
 
@@ -103,13 +103,13 @@ void stepVelocityGravity( vlasov::Grid& grid )
 #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
+      for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
           vlasov::GravityAmrMomentumLagrangianSolver<Realf,D> vsol;
-          auto& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          vsol.solve(cell);
+          auto& tile 
+            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+          vsol.solve(tile);
         }// end of omp task
       }
 
@@ -126,9 +126,9 @@ void stepVelocityGravity( vlasov::Grid& grid )
 void updateBoundaries()
 {
 
-  for(auto cid : getCellIds() ){
-    vlasov::VlasovCell& cell = dynamic_cast<vlasov::VlasovCell& >(getCell( cid ));
-    cell.updateBoundaries( *this );
+  for(auto cid : getTileIds() ){
+    vlasov::VlasovTile& tile = dynamic_cast<vlasov::VlasovTile& >(getTile( cid ));
+    tile.updateBoundaries( *this );
   }
 
 }
@@ -143,13 +143,13 @@ inline void analyze( vlasov::Grid& grid )
 #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
+      for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
           vlasov::Analyzator<Realf> analyzator;
-          auto& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          analyzator.analyze(cell);
+          auto& tile 
+            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+          analyzator.analyze(tile);
         }// end of omp task
       }
 
@@ -173,10 +173,10 @@ inline void writeYee(
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.getCellIds() ){
-    auto& cell 
-      = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
-    writer.writeYee(cell);
+  for(auto cid : grid.getTileIds() ){
+    auto& tile 
+      = dynamic_cast<fields::PlasmaTile&>(grid.getTile( cid ));
+    writer.writeYee(tile);
   }
 
 
@@ -194,10 +194,10 @@ inline void writeAnalysis(
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.getCellIds() ){
-    auto& cell 
-      = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
-    writer.writeAnalysis(cell);
+  for(auto cid : grid.getTileIds() ){
+    auto& tile 
+      = dynamic_cast<fields::PlasmaTile&>(grid.getTile( cid ));
+    writer.writeAnalysis(tile);
   }
 
 
@@ -216,19 +216,19 @@ inline void writeMesh(
   h5io::Writer writer(prefix, lap);
 
 
-  for(auto cid : grid.getCellIds() ){
+  for(auto cid : grid.getTileIds() ){
 
-    auto& cell 
-      = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
+    auto& tile 
+      = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
 
 
-    // cell location index
-    int i = cell.my_i;
-    int j = cell.my_j;
+    // tile location index
+    int i = tile.my_i;
+    int j = tile.my_j;
     int k = 0;
 
     // get reference to the current time step 
-    auto& step0 = cell.steps.get(0);
+    auto& step0 = tile.steps.get(0);
 
     // loop over different particle species 
     int ispc = 0; // ith particle species

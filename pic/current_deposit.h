@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include "cell.h"
+#include "tile.h"
 
 //#include <fmt/format.h>
 //#include <fmt/format.cc>
@@ -21,19 +21,19 @@ class Depositer {
   public:
 
 
-  void deposit( pic::PicCell& cell)
+  void deposit( pic::PicTile& tile)
   {
 
-    auto& yee = cell.getYee();
+    auto& yee = tile.getYee();
     yee.jx.clear();
     yee.jy.clear();
     yee.jz.clear();
 
-    auto mins = cell.mins;
+    auto mins = tile.mins;
 
 
-    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
-      ParticleBlock& container = cell.get_container(ispc);
+    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleBlock& container = tile.get_container(ispc);
 
       // initialize pointers to particle arrays
       int nparts = container.size();
@@ -48,7 +48,7 @@ class Depositer {
 
 
       double invgam;
-      double c = cell.cfl;
+      double c = tile.cfl;
       double q = container.q;
 
       double x0, y0, z0, x1, x2, y1, y2, z1, z2;
@@ -217,21 +217,21 @@ class Depositer {
 
         //--------------------------------------------------
         // index checking
-        assert(i1   >= -3 && i1   < (int)cell.NxMesh+3);
-        assert(j1   >= -3 && j1   < (int)cell.NyMesh+3);
-        assert(k1   >= -3 && k1   < (int)cell.NzMesh+3);
+        assert(i1   >= -3 && i1   < (int)tile.NxMesh+3);
+        assert(j1   >= -3 && j1   < (int)tile.NyMesh+3);
+        assert(k1   >= -3 && k1   < (int)tile.NzMesh+3);
 
-        //assert(i1p1 >= -3 && i1p1 < (int)cell.NxMesh+3);
-        //assert(j1p1 >= -3 && j1p1 < (int)cell.NyMesh+3);
-        //assert(k1p1 >= -3 && k1p1 < (int)cell.NzMesh+3);
+        //assert(i1p1 >= -3 && i1p1 < (int)tile.NxMesh+3);
+        //assert(j1p1 >= -3 && j1p1 < (int)tile.NyMesh+3);
+        //assert(k1p1 >= -3 && k1p1 < (int)tile.NzMesh+3);
 
-        assert(i2   >= -3 && i2   < (int)cell.NxMesh+3);
-        assert(j2   >= -3 && j2   < (int)cell.NyMesh+3);
-        assert(k2   >= -3 && k2   < (int)cell.NzMesh+3);
+        assert(i2   >= -3 && i2   < (int)tile.NxMesh+3);
+        assert(j2   >= -3 && j2   < (int)tile.NyMesh+3);
+        assert(k2   >= -3 && k2   < (int)tile.NzMesh+3);
 
-        //assert(i2p1 >= -3 && i2p1 < (int)cell.NxMesh+3);
-        //assert(j2p1 >= -3 && j2p1 < (int)cell.NyMesh+3);
-        //assert(k2p1 >= -3 && k2p1 < (int)cell.NzMesh+3);
+        //assert(i2p1 >= -3 && i2p1 < (int)tile.NxMesh+3);
+        //assert(j2p1 >= -3 && j2p1 < (int)tile.NyMesh+3);
+        //assert(k2p1 >= -3 && k2p1 < (int)tile.NzMesh+3);
 
         //--------------------------------------------------
 

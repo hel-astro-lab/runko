@@ -9,12 +9,12 @@
 namespace fields {
 
 
-/* \brief Damping electro-magnetic cell
+/* \brief Damping electro-magnetic tile
  *
  */
 template<int S>
-class PlasmaCellDamped : 
-  virtual public fields::PlasmaCell 
+class PlasmaTileDamped : 
+  virtual public fields::PlasmaTile 
 {
 
   public:
@@ -32,26 +32,26 @@ class PlasmaCellDamped :
     toolbox::Mesh<Realf, 1> by_ref;
     toolbox::Mesh<Realf, 1> bz_ref;
 
-    PlasmaCellDamped(
+    PlasmaTileDamped(
       size_t i, size_t j, 
       int o,
       size_t NxG, size_t NyG,
       size_t NxMesh, size_t NyMesh, size_t NzMesh);
 
-    ~PlasmaCellDamped() override = default;
+    ~PlasmaTileDamped() override = default;
 
     //void pushE() override;
-    //using PlasmaCell::pushE;
-    //using PlasmaCell::pushHalfB;
+    //using PlasmaTile::pushE;
+    //using PlasmaTile::pushHalfB;
       
     //void pushE2d_damped();
 
     void depositCurrent() override;
 
 
-    using PlasmaCell::dt;
-    using PlasmaCell::dx;
-    using PlasmaCell::cfl;
+    using PlasmaTile::dt;
+    using PlasmaTile::dx;
+    using PlasmaTile::cfl;
 
 
     // damp field 

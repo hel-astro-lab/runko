@@ -40,9 +40,9 @@ def get_leaf_mesh(m, rfl_max):
     ff = np.zeros((nx, ny, nz))
 
 
-    cells = m.get_cells(True)
+    tiles = m.get_tiles(True)
     leafs = 0
-    for cid in cells:
+    for cid in tiles:
         if(not m.is_leaf(cid) ):
             continue
         leafs += 1
@@ -65,8 +65,8 @@ def get_leaf_mesh(m, rfl_max):
                 for kk in range(st):
                     ff[i+ii, j+jj, k+kk] = val
 
-    #Nc = len(cells)
-    #print("cells: {} / leafs {} (ratio: {}) / full {} (compression {})".format(
+    #Nc = len(tiles)
+    #print("tiles: {} / leafs {} (ratio: {}) / full {} (compression {})".format(
     #    Nc,
     #    leafs, 
     #    1.0*Nc/(1.0*leafs),
@@ -128,8 +128,8 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
 
     for i in range(conf.Nx):
-        cid = n.cellId(i,0)
-        c = n.getCellPtr(cid)
+        cid = n.tileId(i,0)
+        c = n.getTilePtr(cid)
 
         block = c.getPlasmaSpecies(0, spcs)
         for s in range(conf.NxMesh):

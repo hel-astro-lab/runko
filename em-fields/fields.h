@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../corgi/cell.h"
+#include "../corgi/tile.h"
 #include "../corgi/corgi.h"
 
 #include "../tools/mesh.h"
@@ -123,14 +123,14 @@ class PlasmaMomentLattice {
 
 
 
-/*! \brief General Plasma cell for solving Maxwell's equations
+/*! \brief General Plasma tile for solving Maxwell's equations
  *
  * Internally everything for computations are stored in 
  * staggered Yee lattice.
  *
  * Analysis/reduced data is in PlasmaMomentLattice.
  */
-class PlasmaCell : virtual public corgi::Cell {
+class PlasmaTile : virtual public corgi::Tile {
 
   public:
 
@@ -148,14 +148,14 @@ class PlasmaCell : virtual public corgi::Cell {
 
   //--------------------------------------------------
 
-  PlasmaCell(
+  PlasmaTile(
       size_t i, size_t j, 
       int o,
       size_t NxG, size_t NyG,
       size_t NxMesh, size_t NyMesh, size_t NzMesh);
 
   /// destructor
-  ~PlasmaCell() override = default;
+  ~PlasmaTile() override = default;
 
 
   void updateBoundaries(corgi::Node& node);

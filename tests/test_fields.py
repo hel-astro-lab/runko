@@ -26,14 +26,14 @@ class Conf:
     #    print("initialized...")
 
 
-#load cells into each node
-def loadCells(n, conf):
+#load tiles into each node
+def loadTiles(n, conf):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             if n.getMpiGrid(i,j) == n.rank:
-                c = plasma.PlasmaCell(i, j, n.rank, n.getNx(), n.getNy(), conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                #c = plasma.VlasovCell(i, j, n.rank, n.getNx(), n.getNy(), 3, 3)
-                n.addCell(c) #TODO load data to cell
+                c = plasma.PlasmaTile(i, j, n.rank, n.getNx(), n.getNy(), conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                #c = plasma.VlasovTile(i, j, n.rank, n.getNx(), n.getNy(), 3, 3)
+                n.addTile(c) #TODO load data to tile
 
 
 def wrap(ii, N):
@@ -48,8 +48,8 @@ def wrap(ii, N):
 
 class Communications(unittest.TestCase):
 
-    """ Load cells, put running values in to them,
-        update boundaries, check that every cell
+    """ Load tiles, put running values in to them,
+        update boundaries, check that every tile
         has correct boundaries.
     """
     def test_updateBoundaries(self):
@@ -59,7 +59,7 @@ class Communications(unittest.TestCase):
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        loadCells(node, conf)
+        loadTiles(node, conf)
 
         # lets put values into Yee lattice
         val = 1.0
@@ -67,7 +67,7 @@ class Communications(unittest.TestCase):
             for j in range(node.getNy()):
                 #if n.getMpiGrid(i,j) == n.rank:
                 if True:
-                    c = node.getCellPtr(i,j)
+                    c = node.getTilePtr(i,j)
                     yee = c.getYee(0)
 
                     for q in range(conf.NxMesh):
@@ -88,8 +88,8 @@ class Communications(unittest.TestCase):
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
 
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
+        for cid in node.getTileIds():
+            c = node.getTilePtr( cid )
             (i, j) = c.index()
 
             yee = c.getYee(0)
@@ -116,8 +116,8 @@ class Communications(unittest.TestCase):
         #print(data[:,:,2,0])
 
         #update boundaries
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
+        for cid in node.getTileIds():
+            c = node.getTilePtr( cid )
             c.updateBoundaries(node)
 
         ref = np.zeros(( conf.Nx*conf.Ny*conf.Nz, 
@@ -126,8 +126,8 @@ class Communications(unittest.TestCase):
             conf.Nz*conf.NzMesh))
 
         m = 0
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
+        for cid in node.getTileIds():
+            c = node.getTilePtr( cid )
             (i, j) = c.index()
             yee = c.getYee(0)
 
@@ -172,7 +172,7 @@ class Communications(unittest.TestCase):
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        loadCells(node, conf)
+        loadTiles(node, conf)
 
         # lets put values into Yee lattice
         val = 1.0
@@ -180,7 +180,7 @@ class Communications(unittest.TestCase):
             for j in range(node.getNy()):
                 #if n.getMpiGrid(i,j) == n.rank:
                 if True:
-                    c = node.getCellPtr(i,j)
+                    c = node.getTilePtr(i,j)
                     yee = c.getYee(0)
 
                     for q in range(conf.NxMesh):
@@ -201,8 +201,8 @@ class Communications(unittest.TestCase):
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
 
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
+        for cid in node.getTileIds():
+            c = node.getTilePtr( cid )
             (i, j) = c.index()
 
             yee = c.getYee(0)
@@ -229,19 +229,19 @@ class Communications(unittest.TestCase):
         #print(data[:,:,2,0])
 
         #update boundaries
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
+        for cid in node.getTileIds():
+            c = node.getTilePtr( cid )
             c.updateBoundaries2D(node)
         #for i in [1]:
         #    for j in [1]:
-        #        c = node.getCellPtr(i,j)
+        #        c = node.getTilePtr(i,j)
         #        c.updateBoundaries2D(node)
 
         ref = np.zeros((conf.Nx*conf.Ny*conf.Nz, conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
         m = 0
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
+        for cid in node.getTileIds():
+            c = node.getTilePtr( cid )
             (i, j) = c.index()
             yee = c.getYee(0)
 

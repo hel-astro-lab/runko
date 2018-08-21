@@ -2,7 +2,7 @@
 
 #include <cmath> 
 
-#include "cell.h"
+#include "tile.h"
 #include "grid.h"
 #include "../em-fields/fields.h"
 #include "amr/mesh.h"
@@ -78,29 +78,29 @@ T integrate_moment(
 
 
 
-/// General analyzator that computes moments for the vlasov meshes inside the cells
+/// General analyzator that computes moments for the vlasov meshes inside the tiles
 template<typename T>
 class Analyzator {
 
 
   public:
 
-  virtual void analyze( vlasov::VlasovCell& cell )
+  virtual void analyze( vlasov::VlasovTile& tile )
   {
 
     // Yee lattice reference
-    auto& yee = cell.getYee();
+    auto& yee = tile.getYee();
     yee.rho.clear();
     //yee.ekin.clear();
     //yee.jx1.clear();
 
 
     // get reference to the Vlasov fluid that we are solving
-    auto& step0 = cell.steps.get(0);
+    auto& step0 = tile.steps.get(0);
 
     // timestep
-    // T dt = cell.dt;
-    // T dx = cell.dx;
+    // T dt = tile.dt;
+    // T dx = tile.dx;
 
 
     // loop over different particle species 
@@ -108,7 +108,7 @@ class Analyzator {
     for(auto&& block0 : step0) {
 
       // get reference to species-specific analysis mesh
-      auto& analysis = cell.analysis[ispc];
+      auto& analysis = tile.analysis[ispc];
 
       auto Nx = int(block0.Nx),
           Ny = int(block0.Ny),

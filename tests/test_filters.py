@@ -1,5 +1,3 @@
-import unittest
-
 import sys
 sys.path.append('python')
 import numpy as np
@@ -11,7 +9,7 @@ import pycorgi
 import pyplasma as plasma
 import pypic 
 
-from initialize_pic import loadCells
+from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
 from injector_pic import inject
 
@@ -37,7 +35,7 @@ def insert_em(node, conf, ffunc):
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
     for i in range(node.getNx()):
         for j in range(node.getNy()):
-            c = node.getCellPtr(i,j)
+            c = node.getTilePtr(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):
@@ -778,14 +776,14 @@ class Filters(unittest.TestCase):
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         insert_em(node, conf, linear_ramp)
         #inject(node, filler_no_velocity, conf) #injecting plasma particles
 
         flt = pypic.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(4.0, 4.0)
 
-        flt.get_padded_current( node.getCellPtr(1,1), node)
+        flt.get_padded_current( node.getTilePtr(1,1), node)
 
         img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
         #axs[0].imshow(img[conf.NxMesh:2*conf.NxMesh, conf.NyMesh:2*conf.NyMesh]) #, vmin=vmin, vmax=vmax)
@@ -794,8 +792,8 @@ class Filters(unittest.TestCase):
 
         # reference array
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
+        for cid in node.getTileIds():
+            c = node.getTilePtr( cid )
             (i, j) = c.index()
 
             yee = c.getYee(0)

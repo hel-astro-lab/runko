@@ -3,7 +3,7 @@ project (pyplasmabox)
 
 find_package(pybind11 REQUIRED)
 
-set (VLASOV_FILES ../vlasov/cell.c++)
+set (VLASOV_FILES ../vlasov/tile.c++)
 set (FIELDS_FILES ../em-fields/fields.c++ ../em-fields/damping_fields.c++)
 set (PIC_BOUNDARIES_FILES ../pic/boundaries/wall.c++)
 
@@ -13,7 +13,6 @@ set (PIC_BOUNDARIES_FILES ../pic/boundaries/wall.c++)
 #--------------------------------------------------
 
 pybind11_add_module(pyplasma pyplasma.c++ ${VLASOV_FILES} ${FIELDS_FILES})
-#target_link_libraries(pyplasma PRIVATE vlv-cell)
 
 target_link_libraries(pyplasma PRIVATE -lhdf5)
 target_link_libraries(pyplasma PRIVATE -lfftw3)

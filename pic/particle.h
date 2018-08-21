@@ -9,7 +9,7 @@
 
 namespace pic {
 
-/*! \brief Block of particles inside the cell
+/*! \brief Block of particles inside the tile
 *
 * Container to hold plasma particles 
 *
@@ -186,7 +186,7 @@ class ParticleBlock {
 
 
   // --------------------------------------------------
-  // Other useful miscellaneous methods
+  // Other useful mistileaneous methods
     
   //! test if prtcl is inside this block
   //bool is_local(uint64_t iprtcl);

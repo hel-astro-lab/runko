@@ -25,14 +25,12 @@ class Initialization(unittest.TestCase):
     NyMesh = 3
 
     def setUp(self):
-        self.cell = plasma.VlasovCell(self.i, self.j, self.o, 
-                                      self.Nx, self.Ny, 
-                                      self.NxMesh, self.NyMesh)
+        self.tile = plasma.VlasovTile()
 
-    # test that we can inherit from the corgi::Cell base class
+    # test that we can inherit from the corgi::Tile base class
     def test_inheritance(self):
 
-        (i,j) = self.cell.index()
+        (i,j) = self.tile.index
         self.assertEqual(i, 10)
         self.assertEqual(j, 11)
 

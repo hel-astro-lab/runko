@@ -9,7 +9,7 @@ namespace py = pybind11;
 //--------------------------------------------------
 // Vlasov module
   
-//#include "../vlasov/cell.h"
+//#include "../vlasov/tile.h"
 #include "../vlasov/grid.h"
 
 #include "../em-fields/fields.h"
@@ -66,14 +66,14 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
   public:
 
     void solve(
-      vlasov::VlasovCell& cell,
+      vlasov::VlasovTile& tile,
       vlasov::Grid& grid
       ) override {
       PYBIND11_OVERLOAD_PURE(
           void,
           vlasov::SpatialSolver<Realf>,
           solve,
-          cell, grid
+          tile, grid
           );
     }
 
@@ -133,29 +133,29 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
       .def("clear",        &Class::clear);
   }
 
-  // generator for damped cell for various directions
+  // generator for damped tile for various directions
   template<int S>
-  void declare_PlasmaCellDamped(
+  void declare_PlasmaTileDamped(
       py::module& m,
       const std::string& pyclass_name) 
   {
-    //using Class = fields::PlasmaCellDamped<S>; // does not function properly; maybe not triggering template?
+    //using Class = fields::PlasmaTileDamped<S>; // does not function properly; maybe not triggering template?
     //have to use explicit name instead like this
 
-    py::class_<fields::PlasmaCellDamped<S>,
-             fields::PlasmaCell,
-             std::shared_ptr<fields::PlasmaCellDamped<S>>
+    py::class_<fields::PlasmaTileDamped<S>,
+             fields::PlasmaTile,
+             std::shared_ptr<fields::PlasmaTileDamped<S>>
             >(m, pyclass_name.c_str() )
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>())
-    .def_readwrite("ex_ref",   &fields::PlasmaCellDamped<S>::ex_ref, py::return_value_policy::reference)
-    .def_readwrite("ey_ref",   &fields::PlasmaCellDamped<S>::ey_ref, py::return_value_policy::reference)
-    .def_readwrite("ez_ref",   &fields::PlasmaCellDamped<S>::ez_ref, py::return_value_policy::reference)
-    .def_readwrite("bx_ref",   &fields::PlasmaCellDamped<S>::bx_ref, py::return_value_policy::reference)
-    .def_readwrite("by_ref",   &fields::PlasmaCellDamped<S>::by_ref, py::return_value_policy::reference)
-    .def_readwrite("bz_ref",   &fields::PlasmaCellDamped<S>::bz_ref, py::return_value_policy::reference)
-    .def_readwrite("fld1",     &fields::PlasmaCellDamped<S>::fld1)
-    .def_readwrite("fld2",     &fields::PlasmaCellDamped<S>::fld2)
-    .def("dampFields",         &fields::PlasmaCellDamped<S>::dampFields);
+    .def_readwrite("ex_ref",   &fields::PlasmaTileDamped<S>::ex_ref, py::return_value_policy::reference)
+    .def_readwrite("ey_ref",   &fields::PlasmaTileDamped<S>::ey_ref, py::return_value_policy::reference)
+    .def_readwrite("ez_ref",   &fields::PlasmaTileDamped<S>::ez_ref, py::return_value_policy::reference)
+    .def_readwrite("bx_ref",   &fields::PlasmaTileDamped<S>::bx_ref, py::return_value_policy::reference)
+    .def_readwrite("by_ref",   &fields::PlasmaTileDamped<S>::by_ref, py::return_value_policy::reference)
+    .def_readwrite("bz_ref",   &fields::PlasmaTileDamped<S>::bz_ref, py::return_value_policy::reference)
+    .def_readwrite("fld1",     &fields::PlasmaTileDamped<S>::fld1)
+    .def_readwrite("fld2",     &fields::PlasmaTileDamped<S>::fld2)
+    .def("dampFields",         &fields::PlasmaTileDamped<S>::dampFields);
 
   }
 
@@ -167,39 +167,39 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 // python bindings for plasma classes & functions
 PYBIND11_MODULE(pyplasma, m) {
 
-  // Loading cell bindings from corgi library
-  py::object corgiCell = (py::object) py::module::import("pycorgi").attr("Cell");
+  // Loading tile bindings from corgi library
+  py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile");
 
 
   /// General class for handling Maxwell's equations
-  py::class_<fields::PlasmaCell,
-             corgi::Cell, 
-             std::shared_ptr<fields::PlasmaCell>
-            >(m, "PlasmaCell")
+  py::class_<fields::PlasmaTile,
+             corgi::Tile, 
+             std::shared_ptr<fields::PlasmaTile>
+            >(m, "PlasmaTile")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t, size_t>())
-    .def_readwrite("dt",   &fields::PlasmaCell::dt)
-    .def_readwrite("dx",   &fields::PlasmaCell::dx)
-    .def_readwrite("cfl",  &fields::PlasmaCell::cfl)
-    .def("cycleYee",         &fields::PlasmaCell::cycleYee)
-    .def("cycleCurrent",     &fields::PlasmaCell::cycleCurrent)
-    .def("cycleCurrent2D",   &fields::PlasmaCell::cycleCurrent2D)
-    .def("pushE",            &fields::PlasmaCell::pushE)
-    .def("pushHalfB",        &fields::PlasmaCell::pushHalfB)
-    .def("depositCurrent",   &fields::PlasmaCell::depositCurrent)
-    .def("getYee",           &fields::PlasmaCell::getYee, py::return_value_policy::reference)
-    .def("getAnalysis",      &fields::PlasmaCell::getAnalysis, py::return_value_policy::reference)
-    .def("addAnalysisSpecies", &fields::PlasmaCell::addAnalysisSpecies)
-    .def("updateBoundaries",  &fields::PlasmaCell::updateBoundaries)
-    .def("updateBoundaries2D",&fields::PlasmaCell::updateBoundaries2D)
-    .def("exchangeCurrents",  &fields::PlasmaCell::exchangeCurrents)
-    .def("exchangeCurrents2D",&fields::PlasmaCell::exchangeCurrents2D);
+    .def_readwrite("dt",   &fields::PlasmaTile::dt)
+    .def_readwrite("dx",   &fields::PlasmaTile::dx)
+    .def_readwrite("cfl",  &fields::PlasmaTile::cfl)
+    .def("cycleYee",         &fields::PlasmaTile::cycleYee)
+    .def("cycleCurrent",     &fields::PlasmaTile::cycleCurrent)
+    .def("cycleCurrent2D",   &fields::PlasmaTile::cycleCurrent2D)
+    .def("pushE",            &fields::PlasmaTile::pushE)
+    .def("pushHalfB",        &fields::PlasmaTile::pushHalfB)
+    .def("depositCurrent",   &fields::PlasmaTile::depositCurrent)
+    .def("getYee",           &fields::PlasmaTile::getYee, py::return_value_policy::reference)
+    .def("getAnalysis",      &fields::PlasmaTile::getAnalysis, py::return_value_policy::reference)
+    .def("addAnalysisSpecies", &fields::PlasmaTile::addAnalysisSpecies)
+    .def("updateBoundaries",  &fields::PlasmaTile::updateBoundaries)
+    .def("updateBoundaries2D",&fields::PlasmaTile::updateBoundaries2D)
+    .def("exchangeCurrents",  &fields::PlasmaTile::exchangeCurrents)
+    .def("exchangeCurrents2D",&fields::PlasmaTile::exchangeCurrents2D);
 
 
 
-  declare_PlasmaCellDamped<-1>(m, "PlasmaCellDamped_LX");
-  declare_PlasmaCellDamped<+1>(m, "PlasmaCellDamped_RX");
-  declare_PlasmaCellDamped<-2>(m, "PlasmaCellDamped_LY");
-  declare_PlasmaCellDamped<+2>(m, "PlasmaCellDamped_RY");
+  declare_PlasmaTileDamped<-1>(m, "PlasmaTileDamped_LX");
+  declare_PlasmaTileDamped<+1>(m, "PlasmaTileDamped_RX");
+  declare_PlasmaTileDamped<-2>(m, "PlasmaTileDamped_LY");
+  declare_PlasmaTileDamped<+2>(m, "PlasmaTileDamped_RY");
 
 
   // Loading node bindings from corgi library
@@ -235,17 +235,17 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("ekin",     &fields::PlasmaMomentLattice::ekin);
 
 
-  py::class_<vlasov::VlasovCell, 
-             fields::PlasmaCell,
-             corgi::Cell, 
-             std::shared_ptr<vlasov::VlasovCell>
-             >(m, "VlasovCell")
+  py::class_<vlasov::VlasovTile, 
+             fields::PlasmaTile,
+             corgi::Tile, 
+             std::shared_ptr<vlasov::VlasovTile>
+             >(m, "VlasovTile")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
-    .def_readwrite("dt",     &vlasov::VlasovCell::dt)
-    .def_readwrite("dx",     &vlasov::VlasovCell::dx)
-    .def("getPlasmaSpecies", [](vlasov::VlasovCell& cell, size_t i, size_t s) 
-        { return cell.steps.get(i).at(s); }, py::return_value_policy::reference)
-    .def("insertInitialSpecies", [](vlasov::VlasovCell& c, 
+    .def_readwrite("dt",     &vlasov::VlasovTile::dt)
+    .def_readwrite("dx",     &vlasov::VlasovTile::dx)
+    .def("getPlasmaSpecies", [](vlasov::VlasovTile& tile, size_t i, size_t s) 
+        { return tile.steps.get(i).at(s); }, py::return_value_policy::reference)
+    .def("insertInitialSpecies", [](vlasov::VlasovTile& c, 
                                   std::vector<vlasov::PlasmaBlock> species){
         // push twice to initialize both time steps (current and future)
         c.steps.push_back(species);
@@ -255,8 +255,8 @@ PYBIND11_MODULE(pyplasma, m) {
 
         })
 
-    .def("clip",         &vlasov::VlasovCell::clip)
-    .def("cycle",        &vlasov::VlasovCell::cycle);
+    .def("clip",         &vlasov::VlasovTile::clip)
+    .def("cycle",        &vlasov::VlasovTile::cycle);
 
 
 
@@ -302,7 +302,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
         s.set(cid, v);
         })
-    .def("clip_cells",       &AM3d::clip_cells)
+    .def("clip_cells",              &AM3d::clip_cells)
     .def("is_leaf",                 &AM3d::is_leaf)
     .def("set_min",                 &AM3d::set_min)
     .def("set_max",                 &AM3d::set_max)
@@ -365,7 +365,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<>());
 
 
-  /// Vlasov cell analyzator
+  /// Vlasov tile analyzator
   py::class_<vlasov::Analyzator<Realf> >(m, "Analyzator")
     .def(py::init<>());
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../definitions.h"
-#include "../corgi/cell.h"
+#include "../corgi/tile.h"
 
 #include "particle.h"
 
@@ -10,14 +10,14 @@
 namespace pic {
 
 
-/*! \brief PiC cell
+/*! \brief PiC tile
  *
- * Cell infrastructures are inherited from corgi::Cell
- * Maxwell field equation solver is inherited from fields::PlasmaCell
+ * Tile infrastructures are inherited from corgi::Tile
+ * Maxwell field equation solver is inherited from fields::PlasmaTile
 */
-class PicCell :
-  virtual public fields::PlasmaCell, 
-  virtual public corgi::Cell {
+class PicTile :
+  virtual public fields::PlasmaTile, 
+  virtual public corgi::Tile {
 
 public:
 
@@ -41,24 +41,24 @@ public:
 
 
   /// constructor
-  PicCell(size_t i, size_t j, 
+  PicTile(size_t i, size_t j, 
              int o, 
              size_t NxG, size_t NyG,
              size_t NxMesh, size_t NyMesh
              ) : 
-    corgi::Cell(i, j, o, NxG, NyG),
-    fields::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
+    corgi::Tile(i, j, o, NxG, NyG),
+    fields::PlasmaTile(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
     NxGrid(NxMesh), NyGrid(NyMesh), NzGrid(1)
   { }
 
 
   /// destructor
-  ~PicCell() override = default;
+  ~PicTile() override = default;
 
-  /// cell temporal and spatial scales
-  using fields::PlasmaCell::cfl;
-  using fields::PlasmaCell::dt;
-  using fields::PlasmaCell::dx;
+  /// tile temporal and spatial scales
+  using fields::PlasmaTile::cfl;
+  using fields::PlasmaTile::dt;
+  using fields::PlasmaTile::dx;
 
 
 };

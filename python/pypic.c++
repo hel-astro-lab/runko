@@ -6,7 +6,7 @@ namespace py = pybind11;
 //--------------------------------------------------
 // experimental PIC module
   
-#include "../pic/cell.h"
+#include "../pic/tile.h"
 #include "../pic/pusher.h"
 #include "../pic/field_interpolator.h"
 #include "../pic/communicate.h"
@@ -22,25 +22,25 @@ namespace py = pybind11;
 // python bindings for plasma classes & functions
 PYBIND11_MODULE(pypic, m) {
 
-  // Loading cell bindings from corgi library
-  py::object corgiCell = (py::object) py::module::import("pycorgi").attr("Cell");
+  // Loading tile bindings from corgi library
+  py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile");
 
-  py::object plasmaCell = (py::object) py::module::import("pyplasma").attr("PlasmaCell");
+  py::object plasmaTile = (py::object) py::module::import("pyplasma").attr("PlasmaTile");
 
 
-  py::class_<pic::PicCell, 
-             fields::PlasmaCell,
-             corgi::Cell, 
-             std::shared_ptr<pic::PicCell>
-             >(m, "PicCell")
+  py::class_<pic::PicTile, 
+             fields::PlasmaTile,
+             corgi::Tile, 
+             std::shared_ptr<pic::PicTile>
+             >(m, "PicTile")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
-    .def_readwrite("dt",        &pic::PicCell::dt)
-    .def_readwrite("dx",        &pic::PicCell::dx)
-    .def_readwrite("cfl",       &pic::PicCell::cfl)
-    //.def_readwrite("container", &pic::PicCell::container);
-    .def("get_container",       &pic::PicCell::get_container, 
+    .def_readwrite("dt",        &pic::PicTile::dt)
+    .def_readwrite("dx",        &pic::PicTile::dx)
+    .def_readwrite("cfl",       &pic::PicTile::cfl)
+    //.def_readwrite("container", &pic::PicTile::container);
+    .def("get_container",       &pic::PicTile::get_container, 
         py::return_value_policy::reference)
-    .def("set_container",       &pic::PicCell::set_container);
+    .def("set_container",       &pic::PicTile::set_container);
 
 
 
@@ -113,7 +113,7 @@ PYBIND11_MODULE(pypic, m) {
       .def("deposit", &pic::Depositer::deposit);
 
 
-    /// Pic cell analyzator
+    /// Pic tile analyzator
     py::class_<pic::Analyzator>(m, "Analyzator")
       .def(py::init<>())
       .def("analyze", &pic::Analyzator::analyze);

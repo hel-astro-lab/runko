@@ -9,7 +9,7 @@
 
 #include "../tools/signum.h"
 
-#include "cell.h"
+#include "tile.h"
 
 namespace pic {
 
@@ -23,14 +23,14 @@ class Pusher
   /*! \brief Push particles
    *
    */
-  void solve(pic::PicCell& cell)
+  void solve(pic::PicTile& tile)
   {
 
     // get reference to the Yee grid 
-    //auto& yee = cell.getYee();
+    //auto& yee = tile.getYee();
 
-    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
-      ParticleBlock& container = cell.get_container(ispc);
+    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleBlock& container = tile.get_container(ispc);
 
       int nparts = container.size();
 
@@ -45,13 +45,13 @@ class Pusher
         vel[i] = &( container.vel(i,0) );
 
       /*
-      double* ex = &( (*cell.container.Epart)[0*nparts] );
-      double* ey = &( (*cell.container.Epart)[1*nparts] );
-      double* ez = &( (*cell.container.Epart)[2*nparts] );
+      double* ex = &( (*tile.container.Epart)[0*nparts] );
+      double* ey = &( (*tile.container.Epart)[1*nparts] );
+      double* ez = &( (*tile.container.Epart)[2*nparts] );
 
-      double* bx = &( (*cell.container.Bpart)[0*nparts] );
-      double* by = &( (*cell.container.Bpart)[1*nparts] );
-      double* bz = &( (*cell.container.Bpart)[2*nparts] );
+      double* bx = &( (*tile.container.Bpart)[0*nparts] );
+      double* by = &( (*tile.container.Bpart)[1*nparts] );
+      double* bz = &( (*tile.container.Bpart)[2*nparts] );
       */
 
       double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
@@ -75,7 +75,7 @@ class Pusher
       double g, f;
 
 
-      double c = cell.cfl;
+      double c = tile.cfl;
       double cinv = 1.0/c;
 
       // charge (sign only)

@@ -66,9 +66,9 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     return [x, y, z]
 
 
-def initialize_cell(c, i, j, n, conf):
+def initialize_tile(c, i, j, n, conf):
 
-    #initialize cell dimensions 
+    #initialize tile dimensions 
     #c.dt  = conf.dt
     #c.dx  = conf.dx
     c.dx  = 1.0
@@ -100,8 +100,7 @@ def initialize_cell(c, i, j, n, conf):
         c.set_container( container )
     
     
-    #set bounding box of the tile
-    mins = spatialLoc(n, [i,j], [0,0,0], conf)
+    #set bounding box of the tile mins = spatialLoc(n, [i,j], [0,0,0], conf)
     maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
     c.set_tile_mins(mins)
     c.set_tile_maxs(maxs)
@@ -113,22 +112,19 @@ def initialize_cell(c, i, j, n, conf):
 
 
 
-#load cells into each node
-def loadCells(n, conf):
+#load tiles into each node
+def loadTiles(n, conf):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
-                c = pypic.PicCell(i, j, n.rank, 
-                                  n.getNx(), n.getNy(),
-                                  conf.NxMesh, conf.NyMesh
-                                  )
+                c = pypic.PicTile()
                 
-                initialize_cell(c, i, j, n, conf)
+                initialize_tile(c, i, j, n, conf)
 
                 #add it to the node
-                n.addCell(c) 
+                n.addTile(c) 
 
 
 

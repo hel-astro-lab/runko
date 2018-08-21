@@ -1,21 +1,20 @@
 #include "damping_fields.h"
 
 
-
 using std::min;
 using std::max;
 using std::exp;
 
 
 template<int S>
-fields::PlasmaCellDamped<S>::PlasmaCellDamped(
+fields::PlasmaTileDamped<S>::PlasmaTileDamped(
     size_t i, size_t j,
     int o,
     size_t NxG, size_t NyG,
     size_t NxMesh, size_t NyMesh, size_t NzMesh
     ) : 
-  corgi::Cell(i, j, o, NxG, NyG),
-  PlasmaCell(i, j, o, NxG, NyG, NxMesh, NyMesh, NzMesh),
+  corgi::Tile(i, j, o, NxG, NyG),
+  PlasmaTile(i, j, o, NxG, NyG, NxMesh, NyMesh, NzMesh),
   ex_ref(NxMesh, NyMesh, NzMesh),
   ey_ref(NxMesh, NyMesh, NzMesh),
   ez_ref(NxMesh, NyMesh, NzMesh),
@@ -28,7 +27,7 @@ fields::PlasmaCellDamped<S>::PlasmaCellDamped(
 
 
 /*
-void fields::PlasmaCellDamped::pushE() {
+void fields::PlasmaTileDamped::pushE() {
 
   // this->pushE1d();
   this->pushE2d_damped();
@@ -39,7 +38,7 @@ void fields::PlasmaCellDamped::pushE() {
 
 /*
 /// 2D E pusher
-void fields::PlasmaCellDamped::pushE2d_damped() {
+void fields::PlasmaTileDamped::pushE2d_damped() {
 
   fields::YeeLattice& mesh = getYee();
 
@@ -71,7 +70,7 @@ void fields::PlasmaCellDamped::pushE2d_damped() {
 
 // deposit current with some resistivity
 template<int S>
-void fields::PlasmaCellDamped<S>::depositCurrent() {
+void fields::PlasmaTileDamped<S>::depositCurrent() {
   fields::YeeLattice& mesh = getYee();
 
   //std::cout << "Calling DAMPED J update\n";
@@ -100,7 +99,7 @@ void fields::PlasmaCellDamped<S>::depositCurrent() {
 // NOTE: since S is known during compile time, compiler will optimize every other
 // direction out but the correct one
 template<int S>
-void fields::PlasmaCellDamped<S>::dampFields()
+void fields::PlasmaTileDamped<S>::dampFields()
 {
   auto& yee = getYee();
 
@@ -212,8 +211,8 @@ void fields::PlasmaCellDamped<S>::dampFields()
 
 // explicit template instantiation for supported directions
   
-template class fields::PlasmaCellDamped<-1>;
-template class fields::PlasmaCellDamped<+1>;
-template class fields::PlasmaCellDamped<-2>;
-template class fields::PlasmaCellDamped<+2>;
+template class fields::PlasmaTileDamped<-1>;
+template class fields::PlasmaTileDamped<+1>;
+template class fields::PlasmaTileDamped<-2>;
+template class fields::PlasmaTileDamped<+2>;
   

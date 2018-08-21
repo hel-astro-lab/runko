@@ -3,13 +3,13 @@
 #include "fields.h"
 
 
-fields::PlasmaCell::PlasmaCell(
+fields::PlasmaTile::PlasmaTile(
     size_t i, size_t j,
     int o,
     size_t NxG, size_t NyG,
     size_t NxMesh, size_t NyMesh, size_t NzMesh
     ) :
-  corgi::Cell(i, j, o, NxG, NyG),
+  corgi::Tile(i, j, o, NxG, NyG),
   NxMesh(NxMesh), NyMesh(NyMesh), NzMesh(NzMesh)
 {
 
@@ -36,7 +36,7 @@ fields::PlasmaCell::PlasmaCell(
  *
  * Contains a dimension switch for solvers depending on internal mesh dimensions
  */
-void fields::PlasmaCell::pushE() {
+void fields::PlasmaTile::pushE() {
 
   // this->pushE1d();
   this->pushE2d();
@@ -44,7 +44,7 @@ void fields::PlasmaCell::pushE() {
 }
 
 /// 1D E pusher
-void fields::PlasmaCell::pushE1d() {
+void fields::PlasmaTile::pushE1d() {
 
   fields::YeeLattice& mesh = getYee();
   Realf C = 1.0 * cfl;
@@ -69,7 +69,7 @@ void fields::PlasmaCell::pushE1d() {
 }
 
 /// 2D E pusher
-void fields::PlasmaCell::pushE2d() {
+void fields::PlasmaTile::pushE2d() {
 
   fields::YeeLattice& mesh = getYee();
 
@@ -100,7 +100,7 @@ void fields::PlasmaCell::pushE2d() {
 
 
 /// 3D E pusher
-void fields::PlasmaCell::pushE3d() {
+void fields::PlasmaTile::pushE3d() {
 
   fields::YeeLattice& mesh = getYee();
   Realf C = 1.0 * cfl;
@@ -134,7 +134,7 @@ void fields::PlasmaCell::pushE3d() {
 
 
 /// Deposit current into electric field
-void fields::PlasmaCell::depositCurrent() {
+void fields::PlasmaTile::depositCurrent() {
   fields::YeeLattice& mesh = getYee();
 
   mesh.ex -= mesh.jx;
@@ -157,7 +157,7 @@ void fields::PlasmaCell::depositCurrent() {
 */
 
 /// Update B field with a half step
-void fields::PlasmaCell::pushHalfB() {
+void fields::PlasmaTile::pushHalfB() {
 
   // this->pushHalfB1d();
   this->pushHalfB2d();
@@ -165,7 +165,7 @@ void fields::PlasmaCell::pushHalfB() {
 }
 
 /// 1D B pusher
-void fields::PlasmaCell::pushHalfB1d() {
+void fields::PlasmaTile::pushHalfB1d() {
   fields::YeeLattice& mesh = getYee();
   Realf C = 0.5 * cfl;
 
@@ -188,7 +188,7 @@ void fields::PlasmaCell::pushHalfB1d() {
 }
 
 /// 2D B pusher
-void fields::PlasmaCell::pushHalfB2d() {
+void fields::PlasmaTile::pushHalfB2d() {
   fields::YeeLattice& mesh = getYee();
 
   Realf C = 0.5 * cfl;
@@ -217,7 +217,7 @@ void fields::PlasmaCell::pushHalfB2d() {
 
 
 /// 3D B pusher
-void fields::PlasmaCell::pushHalfB3d() {
+void fields::PlasmaTile::pushHalfB3d() {
   fields::YeeLattice& mesh = getYee();
   Realf C = 0.5 * cfl;
 
@@ -250,17 +250,17 @@ void fields::PlasmaCell::pushHalfB3d() {
 
 
 /// Get current time snapshot of Yee lattice
-fields::YeeLattice& fields::PlasmaCell::getYee(size_t i) {
+fields::YeeLattice& fields::PlasmaTile::getYee(size_t i) {
   return yee.get(i);
 }
 
 
 /// Get analysis lattice of i:th species
-fields::PlasmaMomentLattice& fields::PlasmaCell::getAnalysis(size_t i) {
+fields::PlasmaMomentLattice& fields::PlasmaTile::getAnalysis(size_t i) {
   return analysis[i];
 }
 
-void fields::PlasmaCell::addAnalysisSpecies() {
+void fields::PlasmaTile::addAnalysisSpecies() {
   analysis.emplace_back(NxMesh, NyMesh, NzMesh );
 }
 
@@ -386,15 +386,15 @@ void addZdirPencilYee(
 
 
 /// Update Yee grid boundaries
-void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
+void fields::PlasmaTile::updateBoundaries(corgi::Node& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // copy from right side to left
@@ -403,8 +403,8 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // copy from left side to right
@@ -414,7 +414,7 @@ void fields::PlasmaCell::updateBoundaries(corgi::Node& node) {
 
 
 /// Update Yee grid boundaries
-void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
+void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -422,8 +422,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // copy from right side to left
@@ -433,8 +433,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // copy from left side to right
@@ -445,8 +445,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
   // TODO: fix these: they produce saw-like oscillations
   // top 
   auto ctop = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, +1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
   //copy from bottom side to top
@@ -456,8 +456,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
 
   // bottom
   auto cbot = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, -1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
   // copy from top side to bottom
@@ -470,8 +470,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
   // TODO: loop over H
 
   auto ctopleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, +1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, +1) ));
   fields::YeeLattice& mtopleft = ctopleft->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -480,8 +480,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
                                    mtopleft.Nx-h, +g-1);
 
   auto ctopright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, +1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, +1) ));
   fields::YeeLattice& mtopright = ctopright->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -490,8 +490,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
                                      +h-1,         +g-1);
 
   auto cbotleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, -1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, -1) ));
   fields::YeeLattice& mbotleft = cbotleft->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -500,8 +500,8 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
                           mbotleft.Nx-h, mbotleft.Ny-g);
 
   auto cbotright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, -1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, -1) ));
   fields::YeeLattice& mbotright = cbotright->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -525,7 +525,7 @@ void fields::PlasmaCell::updateBoundaries2D(corgi::Node& node) {
 
 }
 
-void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
+void fields::PlasmaTile::exchangeCurrents(corgi::Node& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -535,8 +535,8 @@ void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // add from right side to left
@@ -546,8 +546,8 @@ void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // add from left side to right
@@ -560,7 +560,7 @@ void fields::PlasmaCell::exchangeCurrents(corgi::Node& node) {
 /// Update currents on Yee grid boundaries
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
 // TODO: write unit test for this
-void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
+void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -569,8 +569,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // add from left to right
@@ -578,8 +578,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, 0) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // add from right to left
@@ -588,8 +588,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
   // top 
   auto ctop = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, +1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
   //add from top to bottom
@@ -598,8 +598,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
   // bottom
   auto cbot = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(0, -1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
   // add from bottom to top
@@ -612,8 +612,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
   // --------------------------------------------------  
   // diagonals
   auto ctopleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, +1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, +1) ));
   fields::YeeLattice& mtopleft = ctopleft->getYee();
 
   for(int h=0; h<  halo; h++)
@@ -623,8 +623,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
 
   auto ctopright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, +1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, +1) ));
   fields::YeeLattice& mtopright = ctopright->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -633,8 +633,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
                                     -h,         -g);
 
   auto cbotleft = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(-1, -1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(-1, -1) ));
   fields::YeeLattice& mbotleft = cbotleft->getYee();
   
   for(int h=0; h<  halo; h++)
@@ -643,8 +643,8 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
                                    mbotleft.Nx+h, mbotleft.Ny+g);
 
   auto cbotright = 
-    std::dynamic_pointer_cast<fields::PlasmaCell>(
-        node.getCellPtr( neighs(+1, -1) ));
+    std::dynamic_pointer_cast<fields::PlasmaTile>(
+        node.getTilePtr( neighs(+1, -1) ));
   fields::YeeLattice& mbotright = cbotright->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -664,12 +664,12 @@ void fields::PlasmaCell::exchangeCurrents2D(corgi::Node& node) {
 
 }
 
-void fields::PlasmaCell::cycleYee() {
+void fields::PlasmaTile::cycleYee() {
   yee.cycle();
 }
 
 /// cycle temporary and true current arrays
-void fields::PlasmaCell::cycleCurrent() 
+void fields::PlasmaTile::cycleCurrent() 
 {
   YeeLattice& mesh = getYee();
 
@@ -680,7 +680,7 @@ void fields::PlasmaCell::cycleCurrent()
 }
 
 
-void fields::PlasmaCell::cycleCurrent2D() 
+void fields::PlasmaTile::cycleCurrent2D() 
 {
   YeeLattice& mesh = getYee();
 

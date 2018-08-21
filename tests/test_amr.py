@@ -91,7 +91,7 @@ class Basics(unittest.TestCase):
                         #set this in
                         indx1 = [i,j,k]
                         rfl1  = rfl
-                        cid   = self.m.get_cell_from_indices(indx1, rfl1)
+                        cid   = self.m.get_tile_from_indices(indx1, rfl1)
                         #print("indx: ", indx1, rfl1, " cid:", cid)
 
 

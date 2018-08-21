@@ -2,7 +2,7 @@
 
 #include <cmath> 
 
-#include "cell.h"
+#include "tile.h"
 #include "grid.h"
 #include "../em-fields/fields.h"
 #include "amr/mesh.h"
@@ -34,19 +34,19 @@ namespace vlasov {
 template<typename T>
 class SpatialSolver {
     
-  /// get neighboring cell from grid
+  /// get neighboring tile from grid
   // TODO: think about dynamic casting; something might be wrong in the design
   // TODO: separate into own communication module/header
   //vlasov::PlasmaBlock& get_external_data(
   //    int i, int j, int ispc,
-  //    vlasov::VlasovCell& cell, 
+  //    vlasov::VlasovTile& tile, 
   //    vlasov::Grid& grid)
   //{
-  //  auto neigh_index   = cell.neighs(i, j); 
-  //  uint64_t neigh_cid = grid.cellId( std::get<0>(neigh_index), std::get<1>(neigh_index) );
-  //  vlasov::VlasovCell& cell_neigh = dynamic_cast<vlasov::VlasovCell&>( grid.getCell(neigh_cid) );
+  //  auto neigh_index   = tile.neighs(i, j); 
+  //  uint64_t neigh_cid = grid.tileId( std::get<0>(neigh_index), std::get<1>(neigh_index) );
+  //  vlasov::VlasovTile& tile_neigh = dynamic_cast<vlasov::VlasovTile&>( grid.getTile(neigh_cid) );
 
-  //  auto& species = cell_neigh.steps.get();
+  //  auto& species = tile_neigh.steps.get();
 
   //  return species[ispc];
   //}
@@ -56,7 +56,7 @@ class SpatialSolver {
     typedef std::array<T, 3> vec;
 
     /// Actual solver implementation
-    virtual void solve( vlasov::VlasovCell& cell, vlasov::Grid& grid) = 0;
+    virtual void solve( vlasov::VlasovTile& tile, vlasov::Grid& grid) = 0;
 };
 
 
@@ -530,22 +530,22 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
     // Strang splitted rotating (X/2 Y X/2) solver 
-    void solve( vlasov::VlasovCell& cell, vlasov::Grid& grid ) override
+    void solve( vlasov::VlasovTile& tile, vlasov::Grid& grid ) override
     {
 
       // Yee lattice reference
-      auto& yee = cell.getYee();
+      auto& yee = tile.getYee();
       yee.jx.clear();
       yee.jy.clear();
       yee.jz.clear();
 
 
       // get reference to the Vlasov fluid that we are solving
-      auto& step0 = cell.steps.get(0);
-      auto& step1 = cell.steps.get(1);
+      auto& step0 = tile.steps.get(0);
+      auto& step1 = tile.steps.get(1);
 
       // timestep
-      T cfl = cell.dt/cell.dx;
+      T cfl = tile.dt/tile.dx;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -559,10 +559,10 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
         // external neighbors
-        auto& block0_left   = cell.get_external_data(-1, 0, ispc, grid);
-        auto& block0_right  = cell.get_external_data(+1, 0, ispc, grid);
-        //auto& block0_bottom = get_external_data( 0,-1, ispc, cell, grid);
-        //auto& block0_top    = get_external_data( 0,+1, ispc, cell, grid);
+        auto& block0_left   = tile.get_external_data(-1, 0, ispc, grid);
+        auto& block0_right  = tile.get_external_data(+1, 0, ispc, grid);
+        //auto& block0_bottom = get_external_data( 0,-1, ispc, tile, grid);
+        //auto& block0_top    = get_external_data( 0,+1, ispc, tile, grid);
 
         // sweep in X
         xsweep(block0, block1, block0_left, block0_right, qm, cfl, yee);

@@ -3,7 +3,7 @@
 #include <cmath> 
 #include <cassert>
 
-#include "cell.h"
+#include "tile.h"
 #include "../em-fields/fields.h"
 
 #include "../tools/signum.h"
@@ -17,28 +17,28 @@ using toolbox::sign;
 namespace pic {
 
 
-/// General analyzator that computes moments for the particles inside the cells
+/// General analyzator that computes moments for the particles inside the tiles
 //template<typename T>
 class Analyzator {
 
 
   public:
 
-  virtual void analyze( pic::PicCell& cell )
+  virtual void analyze( pic::PicTile& tile )
   {
 
     // Yee lattice reference
-    auto& yee = cell.getYee();
+    auto& yee = tile.getYee();
     yee.rho.clear();
 
-    // cell limits
-    auto mins = cell.mins;
-    auto maxs = cell.maxs;
+    // tile limits
+    auto mins = tile.mins;
+    auto maxs = tile.maxs;
 
     // analysis lattice reference
-    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
-      ParticleBlock& container = cell.get_container(ispc);
-      auto& analysis = cell.analysis[ispc];
+    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleBlock& container = tile.get_container(ispc);
+      auto& analysis = tile.analysis[ispc];
 
       analysis.rho.clear();
       analysis.mgamma.clear();
@@ -60,7 +60,7 @@ class Analyzator {
 
 
       double gam;
-      //double c = cell.cfl;
+      //double c = tile.cfl;
       double q = container.q; // TODO: split into species
       double x0, y0, z0;
       double u0, v0, w0;
@@ -87,9 +87,9 @@ class Analyzator {
         //k = 0; // TODO: explicit 2D dimensionality enforcement
         */
 
-		    //i  = trunc( cell.NxMesh*(x0-mins[0])/(maxs[0]-mins[0]) );
-		    //j  = trunc( cell.NyMesh*(y0-mins[1])/(maxs[1]-mins[1]) );
-		    //k  = trunc( cell.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
+		    //i  = trunc( tile.NxMesh*(x0-mins[0])/(maxs[0]-mins[0]) );
+		    //j  = trunc( tile.NyMesh*(y0-mins[1])/(maxs[1]-mins[1]) );
+		    //k  = trunc( tile.NzMesh*(z0-mins[2])/(maxs[2]-mins[2]) );
           
         // fixed grid form assuming dx = 1
 		    i  = (int)floor( loc[0][n]-mins[0] );
@@ -99,9 +99,9 @@ class Analyzator {
 
         /*
         std::cout << "----------------------\n";
-        std::cout << "cell ijk =( " << cell.my_i << "," << cell.my_j << ")\n";
-        std::cout << "nx ny nz "    << cell.Nx << " " << cell.Ny << "\n";
-        std::cout << "nxG nyG nzG " << cell.NxMesh << " " << cell.NyMesh << " " << cell.NzMesh << "\n";
+        std::cout << "tile ijk =( " << tile.my_i << "," << tile.my_j << ")\n";
+        std::cout << "nx ny nz "    << tile.Nx << " " << tile.Ny << "\n";
+        std::cout << "nxG nyG nzG " << tile.NxMesh << " " << tile.NyMesh << " " << tile.NzMesh << "\n";
         std::cout << "ijk =(" << i << "," << j << "," << k << ")\n";
         std::cout << "mins " << mins[0] << " " << mins[1] << " " << mins[2] << "\n";
         std::cout << "maxs " << maxs[0] << " " << maxs[1] << " " << maxs[2] << "\n";
@@ -109,9 +109,9 @@ class Analyzator {
         std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
         */
 
-        assert(i >= 0 && i < (int)cell.NxMesh);
-        assert(j >= 0 && j < (int)cell.NyMesh);
-        assert(k >= 0 && k < (int)cell.NzMesh);
+        assert(i >= 0 && i < (int)tile.NxMesh);
+        assert(j >= 0 && j < (int)tile.NyMesh);
+        assert(k >= 0 && k < (int)tile.NzMesh);
 
         assert( x0 >= mins[0] && x0 < maxs[0] );
         assert( y0 >= mins[1] && y0 < maxs[1] );
@@ -146,9 +146,9 @@ class Analyzator {
 
 
       // normalize weight with number density
-      for (size_t i=0; i<cell.NxMesh; i++)
-      for (size_t j=0; j<cell.NyMesh; j++)
-      for (size_t k=0; k<cell.NzMesh; k++)
+      for (size_t i=0; i<tile.NxMesh; i++)
+      for (size_t j=0; j<tile.NyMesh; j++)
+      for (size_t k=0; k<tile.NzMesh; k++)
         analysis.mgamma(i,j,k) /= analysis.rho(i,j,k);
 
     }

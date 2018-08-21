@@ -4,7 +4,7 @@
 #include <cassert>
 
 
-#include "cell.h"
+#include "tile.h"
 
 namespace pic {
 
@@ -16,15 +16,15 @@ class ParticleFieldInterpolator
   /*! \brief interpolate electromagnetic fields to particle locations
    *
    */
-  void solve(pic::PicCell& cell)
+  void solve(pic::PicTile& tile)
   {
 
     // get reference to the Yee grid 
-    auto& yee = cell.getYee();
+    auto& yee = tile.getYee();
 
 
-    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
-      ParticleBlock& container = cell.get_container(ispc);
+    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleBlock& container = tile.get_container(ispc);
 
       int nparts = container.size();
       container.resizeEM(nparts, 3); // make EM containers ready for insertion
@@ -36,15 +36,15 @@ class ParticleFieldInterpolator
         loc[i] = &( container.loc(i,0) );
 
       // 1-d arrays
-      //double* ex = &( (*cell.container.Epart)[0*nparts] );
-      //double* ey = &( (*cell.container.Epart)[1*nparts] );
-      //double* ez = &( (*cell.container.Epart)[2*nparts] );
+      //double* ex = &( (*tile.container.Epart)[0*nparts] );
+      //double* ey = &( (*tile.container.Epart)[1*nparts] );
+      //double* ez = &( (*tile.container.Epart)[2*nparts] );
 
       // multiD array version
       //double *efield[3], *bfield[3];
       //for( int i=0; i<3; i++) {
-      //  efield[i] = &( cell.container.Epart[i][0] );
-      //  bfield[i] = &( cell.container.Bpart[i][0] );
+      //  efield[i] = &( tile.container.Epart[i][0] );
+      //  bfield[i] = &( tile.container.Bpart[i][0] );
       //}
         
       double *ex, *ey, *ez, *bx, *by, *bz;
@@ -61,29 +61,29 @@ class ParticleFieldInterpolator
       int n1 = 0;
       int n2 = nparts;
 
-      //double c = cell.cfl;
+      //double c = tile.cfl;
       //double cinv = 1.0/c;
 
       int i=0, j=0, k=0;
       double dx=0.0, dy=0.0, dz=0.0;
       double f,g;
 
-      auto mins = cell.mins;
-      auto maxs = cell.maxs;
+      auto mins = tile.mins;
+      auto maxs = tile.maxs;
 
       // TODO: think SIMD (not possible due to ijk writing to yee)
       for(int n=n1; n<n2; n++) {
 
         // particle location in the grid
-		    //i  = trunc( (cell.NxMesh+1)*(loc[0][n]-mins[0])/(maxs[0]-mins[0]) );
+		    //i  = trunc( (tile.NxMesh+1)*(loc[0][n]-mins[0])/(maxs[0]-mins[0]) );
 		    i  = floor( loc[0][n]-mins[0] );
 		    dx = (loc[0][n]-mins[0]) - i;
 
-		    //j  = trunc( (cell.NyMesh+1)*(loc[1][n]-mins[1])/(maxs[1]-mins[1]) );
+		    //j  = trunc( (tile.NyMesh+1)*(loc[1][n]-mins[1])/(maxs[1]-mins[1]) );
 		    j  = floor( loc[1][n]-mins[1] );
 		    dy = (loc[1][n]-mins[1]) - j;
 
-		    //k  = trunc( (cell.NzMesh+1)*(loc[2][n]-mins[2])/(maxs[2]-mins[2]) );
+		    //k  = trunc( (tile.NzMesh+1)*(loc[2][n]-mins[2])/(maxs[2]-mins[2]) );
 		    //k  = floor( loc[2][n]-mins[2] );
 		    //dz = (loc[2][n]-mins[2]) - k;
 
@@ -102,9 +102,9 @@ class ParticleFieldInterpolator
         dz = 0.0;
         int iz = 0;
 
-        assert(i >= 0 && i < (int)cell.NxMesh);
-        assert(j >= 0 && j < (int)cell.NyMesh);
-        assert(k >= 0 && k < (int)cell.NzMesh);
+        assert(i >= 0 && i < (int)tile.NxMesh);
+        assert(j >= 0 && j < (int)tile.NyMesh);
+        assert(k >= 0 && k < (int)tile.NzMesh);
 
 
         f = yee.ex(i,j,k) + yee.ex(i-1,j,k) +    dx*(yee.ex(i+1,j  ,k   ) - yee.ex(i-1,j  ,k  ));

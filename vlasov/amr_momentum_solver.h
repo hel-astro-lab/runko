@@ -4,7 +4,7 @@
 
 #include <Eigen/Dense>
 
-#include "cell.h"
+#include "tile.h"
 #include "../em-fields/fields.h"
 #include "amr/mesh.h"
 #include "amr/numerics.h"
@@ -44,14 +44,14 @@ class MomentumSolver {
 
     /// Get snapshot current J_i^n+1 from momentum distribution
     void updateFutureCurrent(
-        vlasov::VlasovCell& cell,
+        vlasov::VlasovTile& tile,
         T cfl)
     {
 
-      auto& yee = cell.getYee();
+      auto& yee = tile.getYee();
       yee.jx1.clear();
 
-      auto& step0 = cell.steps.get(0);
+      auto& step0 = tile.steps.get(0);
       for(auto&& block0 : step0) {
 
         auto Nx = int(block0.Nx),
@@ -87,39 +87,39 @@ class MomentumSolver {
 
 
 
-    /*! \brief Solve Vlasov cell contents
+    /*! \brief Solve Vlasov tile contents
      *
-     * Exposes the actual momentum mesh from the Vlasov Cell containers
+     * Exposes the actual momentum mesh from the Vlasov Tile containers
      * and feeds those to the mesh solver.
      */
     void solve( 
-        vlasov::VlasovCell& cell,
+        vlasov::VlasovTile& tile,
         T step_size = T(1)
         )
     {
         
       // get reference to the Vlasov fluid that we are solving
-      auto& step0 = cell.steps.get(0);
-      auto& step1 = cell.steps.get(1);
+      auto& step0 = tile.steps.get(0);
+      auto& step1 = tile.steps.get(1);
 
 
       // get reference to the Yee grid 
-      auto& yee = cell.getYee();
+      auto& yee = tile.getYee();
 
       // timestep
-      auto dt   = (T) cell.dt;      
-      auto dx   = (T) cell.dx;      
+      auto dt   = (T) tile.dt;      
+      auto dx   = (T) tile.dx;      
       T cfl  = step_size*dt/dx;
 
 
       /// Now get future current
-      updateFutureCurrent(cell, cfl);
+      updateFutureCurrent(tile, cfl);
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
       for(auto&& blocks : zip(step0, step1) ) {
           
-        // loop over the cell's internal grid
+        // loop over the tile's internal grid
         auto& block0 = std::get<0>(blocks);
         auto& block1 = std::get<1>(blocks);
           
@@ -138,7 +138,7 @@ class MomentumSolver {
                    (T) yee.bz(q,r,s)
                 }},              
 
-                // E-field interpolated to the middle of the cell
+                // E-field interpolated to the middle of the tile
                 // E_i = (E_i+1/2 + E_i-1/2)
                 // XXX
                 E =                
@@ -167,7 +167,7 @@ class MomentumSolver {
       }
 
       // XXX update jx1 for debug
-      //updateFutureCurrent(cell, cfl);
+      //updateFutureCurrent(tile, cfl);
 
       return;
     }
@@ -216,7 +216,7 @@ class MomentumSolver {
 //       // fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
 // 
 //       T val = T(0);
-//       for(auto&& cid : mesh0.get_cells(false) ) {
+//       for(auto&& cid : mesh0.get_tiles(false) ) {
 //         if(! mesh0.is_leaf(cid)) continue;
 // 
 //         auto index = mesh0.get_indices(cid);
@@ -231,7 +231,7 @@ class MomentumSolver {
 //         Vector3f P = qm*(Fhalf + Fhalf);
 // 
 // 
-//         // shift in units of cell (i.e., CFL number)
+//         // shift in units of tile (i.e., CFL number)
 //         int CFLr = (int) floor(P(0)*(dt/du[0])),
 //             CFLs = (int) floor(P(1)*(dt/du[1])),
 //             CFLt = (int) floor(P(2)*(dt/du[2]));
@@ -262,7 +262,7 @@ class MomentumSolver {
 //           // interpolation branch
 //             
 // 
-//           // internal shift in units of cell's length
+//           // internal shift in units of tile's length
 //           std::array<T, 3> deltau = {{
 //             P(0)*(dt/du[0]) - (T) CFLr,
 //             P(1)*(dt/du[1]) - (T) CFLs,
@@ -282,7 +282,7 @@ class MomentumSolver {
 //           val = tricubic_interp(mesh0, index, deltau, rfl);
 //         }
 // 
-//         uint64_t cid1 = mesh0.get_cell_from_indices(index1, rfl);
+//         uint64_t cid1 = mesh0.get_tile_from_indices(index1, rfl);
 // 
 //         mesh1.set_recursively(cid1, val);
 //       }
@@ -374,7 +374,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
       std::array<T,3> shift, cell_shift;
       for(int i=0; i<D; i++) shift[i] = F(i) / du[i];
 
-      // advected cells
+      // advected tiles
       std::array<int,3> index_shift;
       for(int i=0; i<D; i++) index_shift[i] = static_cast<int>( trunc(shift[i]) );
 

@@ -7,7 +7,7 @@ import pycorgi
 import pyplasma as plasma
 import pypic 
 
-from initialize_pic import loadCells
+from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
 from injector_pic import inject
 
@@ -121,7 +121,7 @@ def insert_em(node, conf, ffunc):
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
     for i in range(node.getNx()):
         for j in range(node.getNy()):
-            c = node.getCellPtr(i,j)
+            c = node.getTilePtr(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):
@@ -261,7 +261,7 @@ class PIC(unittest.TestCase):
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         insert_em(node, conf, const_field)
         inject(node, filler, conf) #injecting plasma particles
 
@@ -277,26 +277,26 @@ class PIC(unittest.TestCase):
 
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    pusher.solve(cell)
+                    tile = node.getTilePtr(i,j)
+                    pusher.solve(tile)
 
             #update particle boundaries
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    comm.check_outgoing_particles(cell)
+                    tile = node.getTilePtr(i,j)
+                    comm.check_outgoing_particles(tile)
 
             #copy particles
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    comm.get_incoming_particles(cell, node)
+                    tile = node.getTilePtr(i,j)
+                    comm.get_incoming_particles(tile, node)
 
             #delete transferred particles
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    comm.delete_transferred_particles(cell)
+                    tile = node.getTilePtr(i,j)
+                    comm.delete_transferred_particles(tile)
 
 
         # count how many particles we now have
@@ -304,8 +304,8 @@ class PIC(unittest.TestCase):
         for i in range(conf.Nx):
             for j in range(conf.Ny):
                 for k in range(conf.Nz):
-                    cid = node.cellId(i,j)
-                    c = node.getCellPtr(cid)
+                    cid = node.tileId(i,j)
+                    c = node.getTilePtr(cid)
 
                     #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
                     container = c.get_container(0)
@@ -364,29 +364,29 @@ class PIC(unittest.TestCase):
         conf = Conf()
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         insert_em(node, conf, const_field)
         inject(node, filler_no_velocity, conf) #injecting plasma particles
 
         ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries2D(node)
+                tile = node.getTilePtr(i,j)
+                tile.updateBoundaries2D(node)
 
         #interpolate fields
         fintp = pypic.ParticleFieldInterpolator()
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                fintp.solve(cell)
+                tile = node.getTilePtr(i,j)
+                fintp.solve(tile)
 
         #test results
         for i in range(conf.Nx):
             for j in range(conf.Ny):
 
-                cid = node.cellId(i,j)
-                c = node.getCellPtr(cid)
+                cid = node.tileId(i,j)
+                c = node.getTilePtr(cid)
                 container = c.get_container(0)
 
                 xx = container.loc(0)
@@ -430,30 +430,30 @@ class PIC(unittest.TestCase):
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         insert_em(node, conf, linear_field)
         inject(node, filler_no_velocity, conf) #injecting plasma particles
 
         ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries2D(node)
+                tile = node.getTilePtr(i,j)
+                tile.updateBoundaries2D(node)
 
         #interpolate fields
         fintp = pypic.ParticleFieldInterpolator()
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                fintp.solve(cell)
+                tile = node.getTilePtr(i,j)
+                fintp.solve(tile)
 
 
         #test results; avoid boundaries because they are cyclic
         for i in range(1,conf.Nx-1):
             for j in range(1,conf.Ny-1):
 
-                cid = node.cellId(i,j)
-                c = node.getCellPtr(cid)
+                cid = node.tileId(i,j)
+                c = node.getTilePtr(cid)
                 container = c.get_container(0)
 
                 xx = container.loc(0)
@@ -519,7 +519,7 @@ class PIC(unittest.TestCase):
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         #insert_em(node, conf, linear_field)
         insert_em(node, conf, zero_field)
         inject(node, filler, conf) #injecting plasma particles
@@ -541,26 +541,26 @@ class PIC(unittest.TestCase):
             #analyze
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    analyzer.analyze(cell)
+                    tile = node.getTilePtr(i,j)
+                    analyzer.analyze(tile)
 
             #update boundaries
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    cell.updateBoundaries2D(node)
+                    tile = node.getTilePtr(i,j)
+                    tile.updateBoundaries2D(node)
 
             #deposit current
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    currint.deposit(cell)
+                    tile = node.getTilePtr(i,j)
+                    currint.deposit(tile)
 
             #exchange currents
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    cell.exchangeCurrents2D(node)
+                    tile = node.getTilePtr(i,j)
+                    tile.exchangeCurrents2D(node)
 
             plotNode(axs[0], node, conf)
             #plot2dParticles(axs[0], node, conf, downsample=0.1)
@@ -575,8 +575,8 @@ class PIC(unittest.TestCase):
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     print(" i j ({},{})".format(i,j))
-                    cell = node.getCellPtr(i,j)
-                    flt.get_padded_current(cell, node)
+                    tile = node.getTilePtr(i,j)
+                    flt.get_padded_current(tile, node)
 
                     # fourier space filtering
                     flt.fft_image_forward()
@@ -586,13 +586,13 @@ class PIC(unittest.TestCase):
                     # direct filtering
                     #for fj in range(1):
                     #    flt.direct_convolve_3point()
-                    flt.set_current(cell)
+                    flt.set_current(tile)
 
             #cycle new and temporary currents
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    cell.cycleCurrent2D()
+                    tile = node.getTilePtr(i,j)
+                    tile.cycleCurrent2D()
 
             yee = getYee2D(node, conf)
 
@@ -643,7 +643,7 @@ class PIC(unittest.TestCase):
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         #insert_em(node, conf, linear_field)
         insert_em(node, conf, const_field)
         inject(node, filler_xvel, conf) #injecting plasma particles
@@ -656,7 +656,7 @@ class PIC(unittest.TestCase):
     
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                c = node.getCellPtr(i,j)
+                c = node.getTilePtr(i,j)
                 yee = c.getYee(0)
                 for l in range(-3, conf.NxMesh+3):
                     for m in range(-3,conf.NyMesh+3):
@@ -670,14 +670,14 @@ class PIC(unittest.TestCase):
         #    for i in range(node.getNx()):
         #for j in [1]:
         #    for i in [1]:
-        #        cell = node.getCellPtr(i,j)
-        #        currint.deposit(cell)
+        #        tile = node.getTilePtr(i,j)
+        #        currint.deposit(tile)
 
         #exchange currents for the middle one only
         for j in [1]:
             for i in [1]:
-                cell = node.getCellPtr(i,j)
-                cell.exchangeCurrents2D(node)
+                tile = node.getTilePtr(i,j)
+                tile.exchangeCurrents2D(node)
 
 
         #plotNode(axs[0], node, conf)
@@ -703,7 +703,7 @@ class PIC(unittest.TestCase):
         
         for j in [1]:
             for i in [1]:
-                c = node.getCellPtr(i,j)
+                c = node.getTilePtr(i,j)
                 yee = c.getYee(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
@@ -748,7 +748,7 @@ class PIC(unittest.TestCase):
 
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         #insert_em(node, conf, const_field)
         inject(node, filler_xvel, conf) #injecting plasma particles
 
@@ -762,16 +762,16 @@ class PIC(unittest.TestCase):
         #deposit current
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                currint.deposit(cell)
+                tile = node.getTilePtr(i,j)
+                currint.deposit(tile)
 
         #exchange currents for the middle one only
         #for j in [1]:
         #    for i in [1]:
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.exchangeCurrents2D(node)
+                tile = node.getTilePtr(i,j)
+                tile.exchangeCurrents2D(node)
 
 
         #plotNode(axs[0], node, conf)
@@ -785,7 +785,7 @@ class PIC(unittest.TestCase):
         
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                c = node.getCellPtr(i,j)
+                c = node.getTilePtr(i,j)
                 yee = c.getYee(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):

@@ -79,7 +79,7 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
 
     if conf.refinement_level < 1:
         if conf.clip:
-            vmesh.clip_cells(conf.clipThreshold)
+            vmesh.clip_tiles(conf.clipThreshold)
         return 
 
 
@@ -94,8 +94,8 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
         adapter.check(vmesh)
         adapter.refine(vmesh)
 
-        #print("cells to refine: {}".format( len(adapter.cells_to_refine)))
-        for cid in adapter.cells_created:
+        #print("tiles to refine: {}".format( len(adapter.tiles_to_refine)))
+        for cid in adapter.tiles_created:
             rfl = vmesh.get_refinement_level(cid)
             indx = vmesh.get_indices(cid)
             uloc = vmesh.get_center(indx, rfl)
@@ -104,31 +104,31 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
             vmesh[indx[0], indx[1], indx[2], rfl] = val
 
         adapter.unrefine(vmesh)
-        #print("cells to be removed: {}".format( len(adapter.cells_removed)))
+        #print("tiles to be removed: {}".format( len(adapter.tiles_removed)))
 
         sweep += 1
         if sweep > conf.refinement_level: break
 
     if conf.clip:
-        vmesh.clip_cells(conf.clipThreshold)
+        vmesh.clip_tiles(conf.clipThreshold)
 
     return 
 
 
 
-#inject plasma into cells
+#inject plasma into tiles
 def inject(node, ffunc, conf):
 
-    #loop over all *local* cells
+    #loop over all *local* tiles
     for i in range(node.getNx()):
         for j in range(node.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
                 print("creating ({},{})".format(i,j))
 
-                #get cell & its content
-                cid    = node.cellId(i,j)
-                c      = node.getCellPtr(cid) #get cell ptr
+                #get tile & its content
+                cid    = node.tileId(i,j)
+                c      = node.getTilePtr(cid) #get tile ptr
 
                 # loop over species
                 species = []

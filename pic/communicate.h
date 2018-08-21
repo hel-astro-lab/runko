@@ -3,7 +3,7 @@
 #include <map>
 #include <algorithm>
 
-#include "cell.h"
+#include "tile.h"
 #include "../tools/cppitertools/reversed.hpp"
 #include "../tools/wrap.h"
 
@@ -16,15 +16,15 @@ namespace pic {
 // expose particle memory of external neighbors
 inline pic::ParticleBlock& get_external_data(
   int i, int j,
-  pic::PicCell& cell,
+  pic::PicTile& tile,
   corgi::Node& grid,
   size_t ispc)
 { 
-  auto ind = cell.neighs(i, j); 
-  uint64_t cid = grid.cellId( std::get<0>(ind), std::get<1>(ind) );
-  auto& external_cell = dynamic_cast<pic::PicCell&>( grid.getCell(cid) );
+  auto ind = tile.neighs(i, j); 
+  uint64_t cid = grid.tileId( std::get<0>(ind), std::get<1>(ind) );
+  auto& external_tile = dynamic_cast<pic::PicTile&>( grid.getTile(cid) );
 
-  return external_cell.get_container(ispc);
+  return external_tile.get_container(ispc);
 }
 
 //! General communicator dealing with inter-tile particle transfer
@@ -34,18 +34,18 @@ class Communicator {
 
 
 
-  void check_outgoing_particles( pic::PicCell& cell)
+  void check_outgoing_particles( pic::PicTile& tile)
   {
 
-    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
-      ParticleBlock& container = cell.get_container(ispc);
+    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleBlock& container = tile.get_container(ispc);
 
       // initialize pointers to particle arrays
       int nparts = container.size();
 
       // block limits
-      auto mins = cell.mins;
-      auto maxs = cell.maxs;
+      auto mins = tile.mins;
+      auto maxs = tile.maxs;
 
       double xmin = mins[0];
       double xmax = maxs[0];
@@ -115,13 +115,13 @@ class Communicator {
 
   //! get incoming particles from neighboring tiles
   void get_incoming_particles( 
-      pic::PicCell& cell, 
+      pic::PicTile& tile, 
       corgi::Node& grid)
   {
 
     // local tile limits
-    //auto mins = cell.mins;
-    //auto maxs = cell.maxs;
+    //auto mins = tile.mins;
+    //auto maxs = tile.maxs;
 
     std::vector<double> mins = {
       grid.getXmin(),
@@ -136,8 +136,8 @@ class Communicator {
     };
 
 
-    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
-      ParticleBlock& container = cell.get_container(ispc);
+    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleBlock& container = tile.get_container(ispc);
 
       // fetch incoming particles from neighbors around me
       int k = 0;
@@ -145,7 +145,7 @@ class Communicator {
       for (int j=-1; j<=1; j++) {
       //for (int k=-1; k<=1; k++) { // TODO: hack to get 2d tiles working
         //std::cout << "from: (" << i << "," << j << "," << k << ")" << '\n';
-        pic::ParticleBlock& neigh  = get_external_data(i, j, cell, grid, ispc);
+        pic::ParticleBlock& neigh  = get_external_data(i, j, tile, grid, ispc);
 
         // indices as seen by sender
         std::tuple<int,int,int> nindx(-i, -j, -k);
@@ -202,12 +202,12 @@ class Communicator {
 
 
   //!  Finalize communication by deleting particles that went beyond tile boundaries
-  void delete_transferred_particles( pic::PicCell& cell)
+  void delete_transferred_particles( pic::PicTile& tile)
   {
 
 
-    for (size_t ispc=0; ispc<cell.Nspecies(); ispc++) {
-      ParticleBlock& container = cell.get_container(ispc);
+    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleBlock& container = tile.get_container(ispc);
       //int nparts = container.size();
 
       std::vector<int> to_be_deleted;

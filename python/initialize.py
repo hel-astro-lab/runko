@@ -46,19 +46,16 @@ def loadMpiXStrides(n):
     n.bcastMpiGrid()
 
 
-#load cells into each node
-def loadCells(n, conf):
+#load tiles into each node
+def loadTiles(n, conf):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
-                c = plasma.VlasovCell(i, j, n.rank, 
-                                      n.getNx(), n.getNy(),
-                                      conf.NxMesh, conf.NyMesh
-                                      )
+                c = plasma.VlasovTile()
 
-                #initialize cell dimensions 
+                #initialize tile dimensions 
                 c.cfl = conf.cfl
                 c.dt = conf.dt
                 c.dx = conf.dx
@@ -70,7 +67,7 @@ def loadCells(n, conf):
                     c.addAnalysisSpecies()
 
                 #add it to the node
-                n.addCell(c) 
+                n.addTile(c) 
 
 
 

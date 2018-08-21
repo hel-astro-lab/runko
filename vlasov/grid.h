@@ -17,7 +17,7 @@ namespace vlasov {
 class Grid : public corgi::Node {
   public:
 
-    //typedef std::shared_ptr<vlasov::VlasovCell> CellPtr;
+    //typedef std::shared_ptr<vlasov::VlasovTile> TilePtr;
 
 
     // copy constructor
@@ -29,13 +29,13 @@ class Grid : public corgi::Node {
     /// simple method class extension
     std::string howl() { return std::string("Auuu!"); };
 
-    /// Cycle data containers of each cell forward
+    /// Cycle data containers of each tile forward
     /*
     void cycle() {
-      for (auto& it: cells) {
-        CellPtr cellptr = std::dynamic_pointer_cast<vlasov::VlasovCell>( it.second );
-        cellptr->vmeshes.cycle();
-        cellptr->yee.cycle();
+      for (auto& it: tiles) {
+        TilePtr tileptr = std::dynamic_pointer_cast<vlasov::VlasovTile>( it.second );
+        tileptr->vmeshes.cycle();
+        tileptr->yee.cycle();
       }
     }
     */
