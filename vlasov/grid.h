@@ -8,46 +8,50 @@
 
 
 
-namespace vlasov {
+namespace vlv {
 
 /*! \brief Plasma grid
  *
  * Grid infrastructure methods are inherited from corgi::Node
  */
-class Grid : public corgi::Node {
+
+template<std::size_t D>
+class Grid : 
+  virtual public corgi::Node<D> 
+{
   public:
 
-    //typedef std::shared_ptr<vlasov::VlasovTile> TilePtr;
+
+  // Standard construction with grid size
+  template< typename... Dims,
+    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
+               corgi::internals::are_integral<Dims...>::value, void >
+  > 
+  Grid(Dims... dims) :
+    corgi::Node<D>(dims...)
+  {}
 
 
-    // copy constructor
-    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
-  
-    // default destructor
-    ~Grid() = default;
+  // default destructor
+  ~Grid() = default;
 
-    /// simple method class extension
-    std::string howl() { return std::string("Auuu!"); };
-
-    /// Cycle data containers of each tile forward
-    /*
-    void cycle() {
-      for (auto& it: tiles) {
-        TilePtr tileptr = std::dynamic_pointer_cast<vlasov::VlasovTile>( it.second );
-        tileptr->vmeshes.cycle();
-        tileptr->yee.cycle();
-      }
-    }
-    */
+  /// simple method class extension test
+  std::string howl() { return std::string("Auuu!"); };
 
 
+  /// Cycle data containers of each tile forward
+  /*
+     void cycle() {
+     for (auto& it: tiles) {
+     TilePtr tileptr = std::dynamic_pointer_cast<vlasov::VlasovTile>( it.second );
+     tileptr->vmeshes.cycle();
+     tileptr->yee.cycle();
+     }
+     }
+     */
 
 };
 
 
 
-
-
-
-} // end of namespace vlasov
-
+} // end of namespace vlv

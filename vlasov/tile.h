@@ -10,12 +10,12 @@
 #include "amr/mesh.h"
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 
 #include "grid.h"
 
 
-namespace vlasov {
+namespace vlv {
 
 
 /*! \brief Block of Vlasov fluid's inside the tile
@@ -47,22 +47,26 @@ class PlasmaBlock {
 /*! \brief Vlasov tile 
 *
 * Tile infrastructure methods are inherited from corgi::Tile
-* Maxwell field equation solver is inherited from fields::PlasmaTile
+* Maxwell field equation solver is inherited from fields::Tile
 */
-class VlasovTile : 
-                 virtual public fields::PlasmaTile, 
-                 virtual public corgi::Tile {
 
-public:
+template<std::size_t D>
+class Tile : 
+  virtual public fields::Tile<D>, 
+  virtual public  corgi::Tile<D> 
+{
+
+  public:
   
   /// Size of the internal grid
-  size_t NxGrid;
-  size_t NyGrid;
-  size_t NzGrid;
+  //size_t NxGrid;
+  //size_t NyGrid;
+  //size_t NzGrid;
+  using fields::Tile<D>::mesh_lengths;
 
-  size_t Nspecies = 2;
-  size_t Nsteps   = 2;
+  const size_t Nspecies = 2;
 
+  const size_t Nsteps   = 2;
 
   /// Simulation data container (2 steps long)
   // 
@@ -74,17 +78,14 @@ public:
 
 
   /// constructor
-  VlasovTile(size_t i, size_t j, 
-             int o, 
-             size_t NxG, size_t NyG,
-             size_t NxMesh, size_t NyMesh
-             ) : 
-    corgi::Tile(i, j, o, NxG, NyG),
-    fields::PlasmaTile(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
-    NxGrid(NxMesh),
-    NyGrid(NyMesh),
-    NzGrid(1)
-    { 
+  template< typename... Dims,
+    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
+               corgi::internals::are_integral<Dims...>::value, void >
+  > 
+  Tile(Dims... mesh_lens) :
+     corgi::Tile<D>(),
+    fields::Tile<D>(mesh_lens...)
+  { 
 
       // XXX pre-initialize; now done via python
       /*
@@ -101,17 +102,17 @@ public:
       }
       */
 
-    }
+  }
 
 
   /// destructor
-  ~VlasovTile() override = default;
+  ~Tile() override = default;
 
 
   /// tile temporal and spatial scales
-  using fields::PlasmaTile::cfl;
-  using fields::PlasmaTile::dt;
-  using fields::PlasmaTile::dx;
+  using fields::Tile<D>::cfl;
+  using fields::Tile<D>::dt;
+  using fields::Tile<D>::dx;
 
 
   /// General clipping threshold
@@ -123,12 +124,11 @@ public:
     auto& species = steps.get();
 
     for(auto&& internal_mesh : species) {
-      for (size_t k=0; k<NzGrid; k++) {
-        for (size_t j=0; j<NyGrid; j++) {
-          for (size_t i=0; i<NxGrid; i++) {
-            internal_mesh.block(i,j,k).clip_cells(threshold);
-          }
-        }
+
+      for (size_t k=0; k<mesh_lengths[2]; k++)
+      for (size_t j=0; j<mesh_lengths[1]; j++)
+      for (size_t i=0; i<mesh_lengths[0]; i++) {
+        internal_mesh.block(i,j,k).clip_cells(threshold);
       }
     }
   }
@@ -138,27 +138,23 @@ public:
 
 
   /// advance location 
-  virtual void stepLocation(vlasov::Grid& grid);
+  virtual void stepLocation(Grid<D>& grid);
   /*
   {
-    vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
+    vlv::AmrSpatialLagrangianSolver<Realf> ssol;
     ssol.solve(*this, grid);
   }
   */
 
   /// get neighboring tile from grid
   // TODO: separate into own communication module/header
-  vlasov::PlasmaBlock& get_external_data(
+  PlasmaBlock& get_external_data(
       int i, int j, int ispc,
-      vlasov::Grid& grid);
+      Grid<D>& grid);
 
 
 };
 
 
 
-
-
-
-
-} // end of namespace vlasov
+} // end of namespace vlv
