@@ -4,7 +4,7 @@ project (pyplasmabox)
 find_package(pybind11 REQUIRED)
 
 set (VLASOV_FILES ../vlasov/tile.c++)
-set (FIELDS_FILES ../em-fields/fields.c++ ../em-fields/damping_fields.c++)
+set (FIELDS_FILES ../em-fields/tile.c++ ../em-fields/damping_fields.c++)
 set (PIC_BOUNDARIES_FILES ../pic/boundaries/wall.c++)
 
 
