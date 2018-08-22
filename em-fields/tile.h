@@ -12,8 +12,6 @@
 namespace fields {
 
 
-
-
 /// Yee lattice of plasma quantities
 class YeeLattice {
 
@@ -130,14 +128,15 @@ class PlasmaMomentLattice {
  *
  * Analysis/reduced data is in PlasmaMomentLattice.
  */
-class PlasmaTile : virtual public corgi::Tile {
+template<std::size_t D>
+class Tile : 
+  virtual public corgi::Tile<D> 
+{
 
   public:
 
-  size_t NxMesh;
-  size_t NyMesh;
-  size_t NzMesh;
-
+  /// size of grid inside tile
+  std::array<size_t, D> mesh_lengths;
 
   /// Yee lattice of plasma quantities (with 1 timestep)
   toolbox::Rotator<YeeLattice, 1> yee;
@@ -146,52 +145,60 @@ class PlasmaTile : virtual public corgi::Tile {
   std::vector<PlasmaMomentLattice> analysis;
 
 
-  //--------------------------------------------------
+  /// CFL number (corresponds to simulation light speed c)
+  Realf cfl;
 
-  PlasmaTile(
-      size_t i, size_t j, 
-      int o,
-      size_t NxG, size_t NyG,
-      size_t NxMesh, size_t NyMesh, size_t NzMesh);
+  /// grid size (assuming cubical cells)
+  Realf dx = 1.0;
+
+  /// simulation timestep
+  // TODO: removable?
+  //Realf dt = 1.0;
+
+
+  //--------------------------------------------------
+  // constructor with internal mesh dimensions
+  template< typename... Dims,
+    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
+               corgi::internals::are_integral<Dims...>::value, void >
+  > 
+  Tile(Dims... mesh_lens) :
+    corgi::Tile<D>(),
+    mesh_lengths {{static_cast<size_t>(mesh_lens)...}}
+  {
+    // initialize one Yee lattice into the grid (into data rotator)
+    addYeeLattice();
+  }
+
 
   /// destructor
-  ~PlasmaTile() override = default;
+  ~Tile() override = default;
 
 
-  void updateBoundaries(corgi::Node& node);
-  void updateBoundaries2D(corgi::Node& node);
 
-  void exchangeCurrents(corgi::Node& node);
-  void exchangeCurrents2D(corgi::Node& node);
+  //--------------------------------------------------
+
+  virtual void updateBoundaries(  corgi::Node<D>& node);
+
+  virtual void exchangeCurrents(  corgi::Node<D>& node);
 
   virtual void pushHalfB();
-  void pushHalfB1d();
-  void pushHalfB2d();
-  void pushHalfB3d();
 
   virtual void pushE();
-  void pushE1d();
-  void pushE2d();
-  void pushE3d();
 
   virtual void depositCurrent();
 
-  YeeLattice& getYee(size_t i=0);
+  virtual YeeLattice& getYee(size_t i=0);
 
-  PlasmaMomentLattice& getAnalysis(size_t i);
+  virtual PlasmaMomentLattice& getAnalysis(size_t i);
 
-  void cycleYee();
+  virtual void cycleYee();
 
-  void cycleCurrent();
-  void cycleCurrent2D();
+  virtual void cycleCurrent();
 
-  Realf cfl;
-  Realf dt = 1.0;
-  Realf dx = 1.0;
-  //Realf yeeDy = 1.0;
-  //Realf yeeDz = 1.0;
+  virtual void addYeeLattice();
 
-  void addAnalysisSpecies();
+  virtual void addAnalysisSpecies();
 };
 
 

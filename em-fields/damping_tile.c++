@@ -1,28 +1,9 @@
-#include "damping_fields.h"
+#include "damping_tile.h"
 
 
 using std::min;
 using std::max;
 using std::exp;
-
-
-template<int S>
-fields::PlasmaTileDamped<S>::PlasmaTileDamped(
-    size_t i, size_t j,
-    int o,
-    size_t NxG, size_t NyG,
-    size_t NxMesh, size_t NyMesh, size_t NzMesh
-    ) : 
-  corgi::Tile(i, j, o, NxG, NyG),
-  PlasmaTile(i, j, o, NxG, NyG, NxMesh, NyMesh, NzMesh),
-  ex_ref(NxMesh, NyMesh, NzMesh),
-  ey_ref(NxMesh, NyMesh, NzMesh),
-  ez_ref(NxMesh, NyMesh, NzMesh),
-
-  bx_ref(NxMesh, NyMesh, NzMesh),
-  by_ref(NxMesh, NyMesh, NzMesh),
-  bz_ref(NxMesh, NyMesh, NzMesh)
-{ }
 
 
 
@@ -69,8 +50,11 @@ void fields::PlasmaTileDamped::pushE2d_damped() {
 
 
 // deposit current with some resistivity
-template<int S>
-void fields::PlasmaTileDamped<S>::depositCurrent() {
+template<
+  std::size_t D, 
+  int S
+>
+void fields::damping::Tile<D, S>::depositCurrent() {
   fields::YeeLattice& mesh = getYee();
 
   //std::cout << "Calling DAMPED J update\n";
@@ -98,8 +82,11 @@ void fields::PlasmaTileDamped<S>::depositCurrent() {
 //
 // NOTE: since S is known during compile time, compiler will optimize every other
 // direction out but the correct one
-template<int S>
-void fields::PlasmaTileDamped<S>::dampFields()
+template<
+  std::size_t D, 
+  int S
+>
+void fields::damping::Tile<D,S>::dampFields()
 {
   auto& yee = getYee();
 
@@ -123,10 +110,10 @@ void fields::PlasmaTileDamped<S>::dampFields()
 
   // fixed position
   int istr = 0;
-  int ifin = NxMesh;
+  int ifin = mesh_lengths[0];
 
   int jstr = 0;
-  int jfin = NyMesh;
+  int jfin = mesh_lengths[1];
 
 
   int k = 0; // XXX: 2D hack
@@ -210,9 +197,8 @@ void fields::PlasmaTileDamped<S>::dampFields()
 //--------------------------------------------------
 
 // explicit template instantiation for supported directions
-  
-template class fields::PlasmaTileDamped<-1>;
-template class fields::PlasmaTileDamped<+1>;
-template class fields::PlasmaTileDamped<-2>;
-template class fields::PlasmaTileDamped<+2>;
+template class fields::damping::Tile<2,-1>;
+template class fields::damping::Tile<2,+1>;
+template class fields::damping::Tile<2,-2>;
+template class fields::damping::Tile<2,+2>;
   

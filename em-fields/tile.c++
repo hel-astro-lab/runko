@@ -1,25 +1,8 @@
 #include <iostream>
 
-#include "fields.h"
+#include "tile.h"
 
 
-fields::PlasmaTile::PlasmaTile(
-    size_t i, size_t j,
-    int o,
-    size_t NxG, size_t NyG,
-    size_t NxMesh, size_t NyMesh, size_t NzMesh
-    ) :
-  corgi::Tile(i, j, o, NxG, NyG),
-  NxMesh(NxMesh), NyMesh(NyMesh), NzMesh(NzMesh)
-{
-
-  // append fresh Yee lattices into data container
-  yee.push_back( fields::YeeLattice(NxMesh, NyMesh, NzMesh) );
-  // yee.push_back( fields::YeeLattice(NxMesh, NyMesh, NzMesh) );
-
-
-
-}
 
 /* 
  * 1D version:
@@ -36,22 +19,18 @@ fields::PlasmaTile::PlasmaTile(
  *
  * Contains a dimension switch for solvers depending on internal mesh dimensions
  */
-void fields::PlasmaTile::pushE() {
 
-  // this->pushE1d();
-  this->pushE2d();
-  // this->pushE3d();
-}
 
 /// 1D E pusher
-void fields::PlasmaTile::pushE1d() {
+template<>
+void fields::Tile<1>::pushE() {
 
   fields::YeeLattice& mesh = getYee();
   Realf C = 1.0 * cfl;
 
   int k = 0;
   int j = 0;
-  for(int i=0; i<(int)NxMesh; i++) {
+  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
 
     // Ex
     // NONE
@@ -69,72 +48,71 @@ void fields::PlasmaTile::pushE1d() {
 }
 
 /// 2D E pusher
-void fields::PlasmaTile::pushE2d() {
+template<>
+void fields::Tile<2>::pushE() {
 
   fields::YeeLattice& mesh = getYee();
 
   Realf C = 1.0 * cfl;
 
-
   int k = 0;
-  for(int j=0; j<(int)NyMesh; j++) {
-    for(int i=0; i<(int)NxMesh; i++) {
+  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++) 
+  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
 
-      // Ex
-      mesh.ex(i,j,k) += 
-        + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
+    // Ex
+    mesh.ex(i,j,k) += 
+      + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
 
-      // Ey
-      mesh.ey(i,j,k) += 
-        + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
+    // Ey
+    mesh.ey(i,j,k) += 
+      + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
 
-      // Ez
-      mesh.ez(i,j,k) += 
-        + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k) 
-             -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
+    // Ez
+    mesh.ez(i,j,k) += 
+      + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k) 
+          -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
-    }
   }
-
 }
 
 
 /// 3D E pusher
-void fields::PlasmaTile::pushE3d() {
+template<>
+void fields::Tile<3>::pushE() {
 
   fields::YeeLattice& mesh = getYee();
   Realf C = 1.0 * cfl;
 
-  for(int k=0; k<(int)NzMesh; k++) {
-    for(int j=0; j<(int)NyMesh; j++) {
-      for(int i=0; i<(int)NxMesh; i++) {
+  for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++)
+  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++)
+  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
 
-        // Ex
-        mesh.ex(i,j,k) += 
-          + C*( mesh.by(i,j,  k-1) - mesh.by(i,j,k))
-          + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
+    // Ex
+    mesh.ex(i,j,k) += 
+      + C*( mesh.by(i,j,  k-1) - mesh.by(i,j,k))
+      + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
 
-        // Ey
-        mesh.ey(i,j,k) += 
-          + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k))
-          + C*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k));
+    // Ey
+    mesh.ey(i,j,k) += 
+      + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k))
+      + C*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k));
 
-        // Ez
-        mesh.ez(i,j,k) += 
-          + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
-          + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
+    // Ez
+    mesh.ez(i,j,k) += 
+      + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
+      + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
-      }
-    }
   }
 
 }
 
 
+//--------------------------------------------------
 
 
 /// Deposit current into electric field
-void fields::PlasmaTile::depositCurrent() {
+template<std::size_t D>
+void fields::Tile<D>::depositCurrent() {
   fields::YeeLattice& mesh = getYee();
 
   mesh.ex -= mesh.jx;
@@ -143,7 +121,7 @@ void fields::PlasmaTile::depositCurrent() {
 
 }
 
-
+//--------------------------------------------------
 
 /*
  * 1D version:
@@ -157,21 +135,17 @@ void fields::PlasmaTile::depositCurrent() {
 */
 
 /// Update B field with a half step
-void fields::PlasmaTile::pushHalfB() {
 
-  // this->pushHalfB1d();
-  this->pushHalfB2d();
-  // this->pushHalfB3d();
-}
 
 /// 1D B pusher
-void fields::PlasmaTile::pushHalfB1d() {
+template<>
+void fields::Tile<1>::pushHalfB() {
   fields::YeeLattice& mesh = getYee();
   Realf C = 0.5 * cfl;
 
   int k = 0;
   int j = 0;
-  for(int i=0; i<(int)NxMesh; i++) {
+  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
 
     // Bx
     // NONE
@@ -188,82 +162,114 @@ void fields::PlasmaTile::pushHalfB1d() {
 }
 
 /// 2D B pusher
-void fields::PlasmaTile::pushHalfB2d() {
+template<>
+void fields::Tile<2>::pushHalfB() {
   fields::YeeLattice& mesh = getYee();
 
   Realf C = 0.5 * cfl;
 
   int k = 0;
-  for(int j=0; j<(int)NyMesh; j++) {
-    for(int i=0; i<(int)NxMesh; i++) {
+  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++)
+  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
 
-      // Bx
-      mesh.bx(i,j,k) += 
-        + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
+    // Bx
+    mesh.bx(i,j,k) += 
+      + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
 
-      // By
-      mesh.by(i,j,k) += 
-        + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k));
+    // By
+    mesh.by(i,j,k) += 
+      + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k));
 
-      // Bz
-      mesh.bz(i,j,k) += 
-        + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)
-             -mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
+    // Bz
+    mesh.bz(i,j,k) += 
+      + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)
+          -mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
-    }
   }
 
 }
 
 
 /// 3D B pusher
-void fields::PlasmaTile::pushHalfB3d() {
+template<>
+void fields::Tile<3>::pushHalfB() {
   fields::YeeLattice& mesh = getYee();
   Realf C = 0.5 * cfl;
 
-  for(int k=0; k<(int)NzMesh; k++) {
-    for(int j=0; j<(int)NyMesh; j++) {
-      for(int i=0; i<(int)NxMesh; i++) {
+  for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++) 
+  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++) 
+  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
 
-        // Bx
-        mesh.bx(i,j,k) += 
-         + C*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k))
-         + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
+    // Bx
+    mesh.bx(i,j,k) += 
+      + C*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k))
+      + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
 
-        // By
-        mesh.by(i,j,k) += 
-         + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k))
-         + C*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k));
+    // By
+    mesh.by(i,j,k) += 
+      + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k))
+      + C*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k));
 
-        // Bz
-        mesh.bz(i,j,k) += 
-         + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
-         + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
+    // Bz
+    mesh.bz(i,j,k) += 
+      + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
+      + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
-      }
-    }
   }
-
 }
 
 
 
 
 /// Get current time snapshot of Yee lattice
-fields::YeeLattice& fields::PlasmaTile::getYee(size_t i) {
+template<std::size_t D>
+fields::YeeLattice& fields::Tile<D>::getYee(size_t i) {
   return yee.get(i);
 }
 
 
 /// Get analysis lattice of i:th species
-fields::PlasmaMomentLattice& fields::PlasmaTile::getAnalysis(size_t i) {
+template<std::size_t D>
+fields::PlasmaMomentLattice& fields::Tile<D>::getAnalysis(size_t i) {
   return analysis[i];
 }
 
-void fields::PlasmaTile::addAnalysisSpecies() {
-  analysis.emplace_back(NxMesh, NyMesh, NzMesh );
+//--------------------------------------------------
+// Specialize analysis species grid extension
+template<>
+void fields::Tile<1>::addAnalysisSpecies() {
+  analysis.emplace_back(mesh_lengths[0], 1, 1);
 }
 
+template<>
+void fields::Tile<2>::addAnalysisSpecies() {
+  analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], 1);
+}
+
+template<>
+void fields::Tile<3>::addAnalysisSpecies() {
+  analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+}
+
+
+//--------------------------------------------------
+// Specialize Yee Lattice insertion
+template<>
+void fields::Tile<1>::addYeeLattice() {
+  yee.push_back( fields::YeeLattice( mesh_lengths[0], 1, 1) );
+}
+
+template<>
+void fields::Tile<2>::addYeeLattice() {
+  yee.push_back( fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) );
+}
+
+template<>
+void fields::Tile<3>::addYeeLattice() {
+  yee.push_back( fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) );
+}
+
+//--------------------------------------------------
 
 /// Quick helper function to copy everything inside Yee lattice 
 void copyVertYee(
@@ -386,14 +392,15 @@ void addZdirPencilYee(
 
 
 /// Update Yee grid boundaries
-void fields::PlasmaTile::updateBoundaries(corgi::Node& node) {
+template<>
+void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<1> >(
         node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
@@ -403,7 +410,7 @@ void fields::PlasmaTile::updateBoundaries(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<1> >(
         node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
@@ -414,7 +421,8 @@ void fields::PlasmaTile::updateBoundaries(corgi::Node& node) {
 
 
 /// Update Yee grid boundaries
-void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
+template<>
+void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -422,7 +430,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
@@ -433,7 +441,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
@@ -445,7 +453,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
   // TODO: fix these: they produce saw-like oscillations
   // top 
   auto ctop = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
@@ -456,7 +464,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
 
   // bottom
   auto cbot = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
@@ -470,7 +478,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
   // TODO: loop over H
 
   auto ctopleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(-1, +1) ));
   fields::YeeLattice& mtopleft = ctopleft->getYee();
 
@@ -480,7 +488,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
                                    mtopleft.Nx-h, +g-1);
 
   auto ctopright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(+1, +1) ));
   fields::YeeLattice& mtopright = ctopright->getYee();
 
@@ -490,7 +498,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
                                      +h-1,         +g-1);
 
   auto cbotleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(-1, -1) ));
   fields::YeeLattice& mbotleft = cbotleft->getYee();
 
@@ -500,7 +508,7 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
                           mbotleft.Nx-h, mbotleft.Ny-g);
 
   auto cbotright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(+1, -1) ));
   fields::YeeLattice& mbotright = cbotright->getYee();
 
@@ -525,7 +533,8 @@ void fields::PlasmaTile::updateBoundaries2D(corgi::Node& node) {
 
 }
 
-void fields::PlasmaTile::exchangeCurrents(corgi::Node& node) {
+template<>
+void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -535,7 +544,7 @@ void fields::PlasmaTile::exchangeCurrents(corgi::Node& node) {
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<1> >(
         node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
@@ -546,7 +555,7 @@ void fields::PlasmaTile::exchangeCurrents(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<1> >(
         node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
@@ -560,7 +569,8 @@ void fields::PlasmaTile::exchangeCurrents(corgi::Node& node) {
 /// Update currents on Yee grid boundaries
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
 // TODO: write unit test for this
-void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
+template<>
+void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node) {
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -569,7 +579,7 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
@@ -578,7 +588,7 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
@@ -588,7 +598,7 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
 
   // top 
   auto ctop = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
@@ -598,7 +608,7 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
 
   // bottom
   auto cbot = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
@@ -607,12 +617,10 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
 
 
 
-
-
   // --------------------------------------------------  
   // diagonals
   auto ctopleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(-1, +1) ));
   fields::YeeLattice& mtopleft = ctopleft->getYee();
 
@@ -623,7 +631,7 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
 
 
   auto ctopright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(+1, +1) ));
   fields::YeeLattice& mtopright = ctopright->getYee();
 
@@ -633,7 +641,7 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
                                     -h,         -g);
 
   auto cbotleft = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(-1, -1) ));
   fields::YeeLattice& mbotleft = cbotleft->getYee();
   
@@ -643,7 +651,7 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
                                    mbotleft.Nx+h, mbotleft.Ny+g);
 
   auto cbotright = 
-    std::dynamic_pointer_cast<fields::PlasmaTile>(
+    std::dynamic_pointer_cast<fields::Tile<2> >(
         node.getTilePtr( neighs(+1, -1) ));
   fields::YeeLattice& mbotright = cbotright->getYee();
 
@@ -660,27 +668,16 @@ void fields::PlasmaTile::exchangeCurrents2D(corgi::Node& node) {
   // back
   //addFaceYee(mesh, mesh, mesh.Nz, 0);
 
-
-
 }
 
-void fields::PlasmaTile::cycleYee() {
+template<std::size_t D>
+void fields::Tile<D>::cycleYee() {
   yee.cycle();
 }
 
 /// cycle temporary and true current arrays
-void fields::PlasmaTile::cycleCurrent() 
-{
-  YeeLattice& mesh = getYee();
-
-  std::swap( mesh.jx.mat, mesh.jx1.mat );
-  std::swap( mesh.jy.mat, mesh.jy1.mat );
-  std::swap( mesh.jz.mat, mesh.jz1.mat );
-
-}
-
-
-void fields::PlasmaTile::cycleCurrent2D() 
+template<std::size_t D>
+void fields::Tile<D>::cycleCurrent() 
 {
   YeeLattice& mesh = getYee();
 
