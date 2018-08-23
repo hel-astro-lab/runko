@@ -66,9 +66,8 @@ set (WARNING_FLAGS
 add_subdirectory(corgi)
 
 
-add_subdirectory(vlasov)
-add_subdirectory(em-fields)
-
+#add_subdirectory(vlasov)
+#add_subdirectory(em-fields)
 #add_subdirectory(pic)
 #add_subdirectory(io)
 #add_subdirectory(tests)
@@ -116,7 +115,7 @@ add_subdirectory(python)
 #
 add_custom_target(check-pyplasmabox ALL
                   ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
-                  DEPENDS pycorgi pyplasma pypic pypic_boundaries
+                  DEPENDS pycorgi pyplasmabox 
                   VERBATIM
                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib
                   )

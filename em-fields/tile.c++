@@ -224,14 +224,14 @@ void fields::Tile<3>::pushHalfB() {
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
 fields::YeeLattice& fields::Tile<D>::getYee(size_t i) {
-  return yee.get(i);
+  return this->yee.get(i);
 }
 
 
 /// Get analysis lattice of i:th species
 template<std::size_t D>
 fields::PlasmaMomentLattice& fields::Tile<D>::getAnalysis(size_t i) {
-  return analysis[i];
+  return this->analysis.at(i);
 }
 
 //--------------------------------------------------
@@ -401,7 +401,7 @@ void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) {
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(-1, 0) ));
+        node.getTilePtr( neighs(-1) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // copy from right side to left
@@ -411,7 +411,7 @@ void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) {
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(+1, 0) ));
+        node.getTilePtr( neighs(+1) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // copy from left side to right
@@ -545,7 +545,7 @@ void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node) {
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(-1, 0) ));
+        node.getTilePtr( neighs(-1) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // add from right side to left
@@ -556,7 +556,7 @@ void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node) {
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(+1, 0) ));
+        node.getTilePtr( neighs(+1) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // add from left side to right
@@ -679,11 +679,12 @@ void fields::Tile<D>::cycleYee() {
 template<std::size_t D>
 void fields::Tile<D>::cycleCurrent() 
 {
-  YeeLattice& mesh = getYee();
+  auto& yee = this->getYee();
 
-  std::swap( mesh.jx.mat, mesh.jx1.mat );
-  std::swap( mesh.jy.mat, mesh.jy1.mat );
-  std::swap( mesh.jz.mat, mesh.jz1.mat );
+  std::swap( yee.jx.mat, yee.jx1.mat );
+  std::swap( yee.jy.mat, yee.jy1.mat );
+  std::swap( yee.jz.mat, yee.jz1.mat );
 
 }
+
 

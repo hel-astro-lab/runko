@@ -18,6 +18,7 @@ template<
   int S
 >
 class Tile : 
+  virtual public corgi::Tile<D>,
   virtual public fields::Tile<D>
 {
 
@@ -61,14 +62,17 @@ class Tile :
   //void pushE() override;
   //using Tile::pushE;
   //using Tile::pushHalfB;
-    
-  //void pushE2d_damped();
+
 
   void depositCurrent() override;
 
   //using fields::Tile<D>::dt;
   using fields::Tile<D>::dx;
   using fields::Tile<D>::cfl;
+
+  using fields::Tile<D>::getYee;
+  using fields::Tile<D>::getAnalysis;
+
 
   // damp field 
   void dampFields();
@@ -78,6 +82,7 @@ class Tile :
     
   /// end index of the slope
   Realf fld2;
+
 
 };
 

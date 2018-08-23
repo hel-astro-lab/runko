@@ -3,7 +3,7 @@ import unittest
 import sys
 import numpy as np
 
-import pyplasma as plasma
+import pyplasmabox.fields as plasma
 
 
 class Conf:
@@ -31,9 +31,9 @@ def loadTiles(n, conf):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             if n.getMpiGrid(i,j) == n.rank:
-                c = plasma.PlasmaTile(i, j, n.rank, n.getNx(), n.getNy(), conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = plasma.Tile2D(conf.NxMesh, conf.NyMesh)
                 #c = plasma.VlasovTile(i, j, n.rank, n.getNx(), n.getNy(), 3, 3)
-                n.addTile(c) #TODO load data to tile
+                n.addTile(c, i,j) 
 
 
 def wrap(ii, N):
@@ -67,7 +67,7 @@ class Communications(unittest.TestCase):
             for j in range(node.getNy()):
                 #if n.getMpiGrid(i,j) == n.rank:
                 if True:
-                    c = node.getTilePtr(i,j)
+                    c = node.getTile(i,j)
                     yee = c.getYee(0)
 
                     for q in range(conf.NxMesh):
@@ -167,8 +167,6 @@ class Communications(unittest.TestCase):
         conf.NxMesh = 4
         conf.NyMesh = 4
 
-
-
         node = plasma.Grid(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
@@ -231,7 +229,7 @@ class Communications(unittest.TestCase):
         #update boundaries
         for cid in node.getTileIds():
             c = node.getTilePtr( cid )
-            c.updateBoundaries2D(node)
+            c.updateBoundaries(node)
         #for i in [1]:
         #    for j in [1]:
         #        c = node.getTilePtr(i,j)

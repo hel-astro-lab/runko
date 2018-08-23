@@ -21,7 +21,7 @@ void fields::PlasmaTileDamped::pushE() {
 /// 2D E pusher
 void fields::PlasmaTileDamped::pushE2d_damped() {
 
-  fields::YeeLattice& mesh = getYee();
+  fields::YeeLattice& mesh = this->getYee();
 
   //std::cout << "Calling DAMPED E update\n";
   Realf C = 1.0 * cfl;
@@ -55,7 +55,8 @@ template<
   int S
 >
 void fields::damping::Tile<D, S>::depositCurrent() {
-  fields::YeeLattice& mesh = getYee();
+
+  auto& yee = ::fields::Tile<D>::getYee();
 
   //std::cout << "Calling DAMPED J update\n";
 
@@ -63,9 +64,9 @@ void fields::damping::Tile<D, S>::depositCurrent() {
   
   Realf resistivity = 10.0;
 
-  mesh.ex -= mesh.jx / resistivity;
-  mesh.ey -= mesh.jy / resistivity;
-  mesh.ez -= mesh.jz / resistivity;
+  yee.ex -= yee.jx / resistivity;
+  yee.ey -= yee.jy / resistivity;
+  yee.ez -= yee.jz / resistivity;
 
 }
 
@@ -88,7 +89,8 @@ template<
 >
 void fields::damping::Tile<D,S>::dampFields()
 {
-  auto& yee = getYee();
+
+  auto& yee = this->getYee();
 
   //Realf lambda, lambda1;
   Realf lambda2;
@@ -110,19 +112,19 @@ void fields::damping::Tile<D,S>::dampFields()
 
   // fixed position
   int istr = 0;
-  int ifin = mesh_lengths[0];
+  int ifin = fields::Tile<D>::mesh_lengths[0];
 
   int jstr = 0;
-  int jfin = mesh_lengths[1];
+  int jfin = fields::Tile<D>::mesh_lengths[1];
 
 
   int k = 0; // XXX: 2D hack
   Realf iglob, jglob;
   //Realf kglob;
-  //kglob = (Realf)k + mins[2];
+  //kglob = (Realf)k + fields::Tile<D>::mins[2];
 
   for(int j = jstr; j<jfin; j++) {
-    jglob = (Realf)j + mins[1];
+    jglob = (Realf)j + fields::Tile<D>::mins[1];
 
     // damping region for Y direction or if not, then just continue
     if ( (ydir && (
@@ -140,7 +142,7 @@ void fields::damping::Tile<D,S>::dampFields()
 
 
       for(int i=istr; i<ifin; i++) {
-        iglob = (Realf)i + mins[0];
+        iglob = (Realf)i + fields::Tile<D>::mins[0];
 
         // damping region for X direction or if not, then just continue
         if ( (xdir && (
@@ -174,7 +176,7 @@ void fields::damping::Tile<D,S>::dampFields()
     // Ydir: left || right
     if (( ydir && ( (left && (jglob <= fld1)) || (right && (jglob > fld1)) )) || !ydir ) {
       for(int i=istr; i<ifin; i++) {
-        iglob = (Realf)i + mins[0];
+        iglob = (Realf)i + fields::Tile<D>::mins[0];
         // Xdir: left || right
         if (( xdir && ( (left && (iglob <= fld1)) || (right && (iglob > fld1)) )) || !xdir ) {
           yee.ex(i,j,k) = ex_ref(i,j,k);

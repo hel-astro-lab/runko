@@ -3,43 +3,22 @@ project (pyplasmabox)
 
 find_package(pybind11 REQUIRED)
 
-set (VLASOV_FILES ../vlasov/tile.c++)
-set (FIELDS_FILES ../em-fields/tile.c++ ../em-fields/damping_fields.c++)
-set (PIC_BOUNDARIES_FILES ../pic/boundaries/wall.c++)
 
+set (FIELDS_FILES ../em-fields/tile.c++ ../em-fields/damping_tile.c++)
 
 
 # python module creation
 #--------------------------------------------------
+pybind11_add_module(pyplasmabox pyplasmabox.c++ pyfields.c++ pytools.c++ ${FIELDS_FILES})
 
-pybind11_add_module(pyplasma pyplasma.c++ ${VLASOV_FILES} ${FIELDS_FILES})
+target_link_libraries(pyplasmabox PRIVATE -lhdf5)
+target_link_libraries(pyplasmabox PRIVATE -lfftw3)
+target_link_libraries(pyplasmabox PRIVATE -lfftw3f)
 
-target_link_libraries(pyplasma PRIVATE -lhdf5)
-target_link_libraries(pyplasma PRIVATE -lfftw3)
-target_link_libraries(pyplasma PRIVATE -lfftw3f)
+target_compile_options(pyplasmabox PRIVATE ${WARNING_FLAGS})
 
-target_compile_options(pyplasma PRIVATE ${WARNING_FLAGS})
-
-
-
-#--------------------------------------------------
-pybind11_add_module(pypic pypic.c++ ${FIELDS_FILES}  )
-target_compile_options(pypic PRIVATE ${WARNING_FLAGS})
-
-target_link_libraries(pypic PRIVATE -lhdf5)
-target_link_libraries(pypic PRIVATE -lfftw3)
-target_link_libraries(pypic PRIVATE -lfftw3f)
-
-
-#--------------------------------------------------
-pybind11_add_module(pypic_boundaries pypic_boundaries.c++ ${FIELDS_FILES} ${PIC_BOUNDARIES_FILES} )
-target_compile_options(pypic_boundaries PRIVATE ${WARNING_FLAGS})
-
-target_link_libraries(pypic_boundaries PRIVATE -lhdf5)
-target_link_libraries(pypic_boundaries PRIVATE -lfftw3)
-target_link_libraries(pypic_boundaries PRIVATE -lfftw3f)
 
 
 
 # installation
-install (TARGETS pyplasma pypic pypic_boundaries DESTINATION lib)
+install (TARGETS pyplasmabox DESTINATION lib)

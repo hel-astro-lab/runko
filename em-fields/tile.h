@@ -68,6 +68,8 @@ class YeeLattice {
     jz1(Nx, Ny, Nz)
     { }
 
+  ~YeeLattice() = default;
+
 };
 
 
@@ -115,6 +117,7 @@ class PlasmaMomentLattice {
   { }
 
 
+  ~PlasmaMomentLattice() = default;
 
 };
 
@@ -144,6 +147,10 @@ class Tile :
   /// species specific analysis results
   std::vector<PlasmaMomentLattice> analysis;
 
+  /// explicitly show that we import tile limits from base class 
+  using corgi::Tile<D>::mins;
+  using corgi::Tile<D>::maxs;
+
 
   /// CFL number (corresponds to simulation light speed c)
   Realf cfl;
@@ -172,8 +179,7 @@ class Tile :
 
 
   /// destructor
-  ~Tile() override = default;
-
+  virtual ~Tile() override = default;
 
 
   //--------------------------------------------------
@@ -192,13 +198,13 @@ class Tile :
 
   virtual PlasmaMomentLattice& getAnalysis(size_t i);
 
-  virtual void cycleYee();
+  void cycleYee();
 
-  virtual void cycleCurrent();
+  void cycleCurrent();
 
-  virtual void addYeeLattice();
+  void addYeeLattice();
 
-  virtual void addAnalysisSpecies();
+  void addAnalysisSpecies();
 };
 
 
