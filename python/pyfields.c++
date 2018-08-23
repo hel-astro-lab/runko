@@ -32,7 +32,7 @@ auto declare_Tile(
     .def("pushHalfB",          &fields::Tile<D>::pushHalfB)
     .def("depositCurrent",     &fields::Tile<D>::depositCurrent)
     .def("getYee",             &fields::Tile<D>::getYee, py::return_value_policy::reference)
-    //.def("getAnalysis",        &fields::Tile<D>::getAnalysis, py::return_value_policy::reference)
+    .def("getAnalysis",        &fields::Tile<D>::getAnalysis, py::return_value_policy::reference)
     .def("addAnalysisSpecies", &fields::Tile<D>::addAnalysisSpecies)
     .def("updateBoundaries",   &fields::Tile<D>::updateBoundaries)
     .def("exchangeCurrents",   &fields::Tile<D>::exchangeCurrents);

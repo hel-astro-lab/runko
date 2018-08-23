@@ -70,9 +70,6 @@ class Tile :
   using fields::Tile<D>::dx;
   using fields::Tile<D>::cfl;
 
-  using fields::Tile<D>::getYee;
-  using fields::Tile<D>::getAnalysis;
-
 
   // damp field 
   void dampFields();

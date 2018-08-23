@@ -688,3 +688,9 @@ void fields::Tile<D>::cycleCurrent()
 }
 
 
+//--------------------------------------------------
+// explicit template instantiation
+
+template class fields::Tile<1>;
+template class fields::Tile<2>;
+//template class fields::Tile<3>;

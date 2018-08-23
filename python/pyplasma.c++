@@ -12,8 +12,8 @@ namespace py = pybind11;
 //#include "../vlasov/tile.h"
 #include "../vlasov/grid.h"
 
-#include "../em-fields/fields.h"
-#include "../em-fields/damping_fields.h"
+#include "../em-fields/tile.h"
+#include "../em-fields/damping_tile.h"
 
 #include "../vlasov/amr/mesh.h"
 //#include "../vlasov/amr/numerics.h"

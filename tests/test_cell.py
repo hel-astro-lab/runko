@@ -1,9 +1,7 @@
 import unittest
-
-import sys
 import numpy as np
 
-import pyplasma as plasma
+import pyplasmabox as plasma
 
 
 class Params:
