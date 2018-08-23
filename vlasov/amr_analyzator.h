@@ -4,7 +4,7 @@
 
 #include "tile.h"
 #include "grid.h"
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 #include "amr/mesh.h"
 
 #include "../tools/signum.h"
@@ -14,7 +14,7 @@
 using toolbox::sign;
 
 
-namespace vlasov {
+namespace vlv {
 
 /// Relativistic gamma from velocity
 template<typename T, int D>
@@ -51,7 +51,7 @@ T integrate_moment(
   //}
 
   // simplified approach assuming no refinement.
-  // TODO: rewrite this to accommade adaptivity
+  // TODO: rewrite this to accommodate adaptivity
   auto lens = m.get_length(0);
   T du0 = lens[0]*lens[1]*lens[2];
 
@@ -82,10 +82,14 @@ T integrate_moment(
 template<typename T>
 class Analyzator {
 
-
   public:
 
-  virtual void analyze( vlasov::VlasovTile& tile )
+  Analyzator() {};
+
+  virtual ~Analyzator() = default;
+
+
+  virtual void analyze( vlv::Tile<1>& tile )
   {
 
     // Yee lattice reference
@@ -110,11 +114,11 @@ class Analyzator {
       // get reference to species-specific analysis mesh
       auto& analysis = tile.analysis[ispc];
 
-      auto Nx = int(block0.Nx),
-          Ny = int(block0.Ny),
-          Nz = int(block0.Nz);
+      auto Nx = static_cast<int>(block0.Nx),
+           Ny = static_cast<int>(block0.Ny),
+           Nz = static_cast<int>(block0.Nz);
 
-      for(int s=0; s<Nz; s++) {
+        for(int s=0; s<Nz; s++) {
         for(int r=0; r<Ny; r++) {
           for(int q=0; q<Nx; q++) {
             const auto& M   = block0.block(q,r,s);   // f_i

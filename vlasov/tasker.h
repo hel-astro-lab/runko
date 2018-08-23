@@ -10,10 +10,10 @@
 #include "../io/io.h"
 
 
-namespace vlasov{
+namespace vlv{
 
 
-inline void stepLocation( vlasov::Grid& grid )
+inline void stepLocation( vlv::Grid<1>& grid )
 {
 
 #pragma omp parallel
@@ -26,7 +26,7 @@ inline void stepLocation( vlasov::Grid& grid )
         {
             
           auto& tile 
-            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
 
           //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
           //ssol.solve(tile, grid);
@@ -42,7 +42,7 @@ inline void stepLocation( vlasov::Grid& grid )
 }
 
 template<int D>
-void stepInitial( vlasov::Grid& grid )
+void stepInitial( vlv::Grid<1>& grid )
 {
 
 #pragma omp parallel
@@ -53,9 +53,9 @@ void stepInitial( vlasov::Grid& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
+          vlv::AmrMomentumLagrangianSolver<Realf,D> vsol;
           auto& tile 
-            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile, -0.5);
         }// end of omp task
       }
@@ -70,7 +70,7 @@ void stepInitial( vlasov::Grid& grid )
 
 
 template<int D>
-void stepVelocity( vlasov::Grid& grid )
+void stepVelocity( vlv::Grid<1>& grid )
 {
 
 #pragma omp parallel
@@ -81,9 +81,9 @@ void stepVelocity( vlasov::Grid& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
+          vlv::AmrMomentumLagrangianSolver<Realf,D> vsol;
           auto& tile 
-            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile);
         }// end of omp task
       }
@@ -95,7 +95,7 @@ void stepVelocity( vlasov::Grid& grid )
 }
 
 template<int D>
-void stepVelocityGravity( vlasov::Grid& grid )
+void stepVelocityGravity( vlv::Grid<1>& grid )
 {
 
 #pragma omp parallel
@@ -106,9 +106,9 @@ void stepVelocityGravity( vlasov::Grid& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlasov::GravityAmrMomentumLagrangianSolver<Realf,D> vsol;
+          vlv::GravityAmrMomentumLagrangianSolver<Realf,D> vsol;
           auto& tile 
-            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile);
         }// end of omp task
       }
@@ -135,7 +135,7 @@ void updateBoundaries()
 */
 
 
-inline void analyze( vlasov::Grid& grid )
+inline void analyze( vlv::Grid<1>& grid )
 {
 
 #pragma omp parallel
@@ -146,9 +146,9 @@ inline void analyze( vlasov::Grid& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlasov::Analyzator<Realf> analyzator;
+          vlv::Analyzator<Realf> analyzator;
           auto& tile 
-            = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           analyzator.analyze(tile);
         }// end of omp task
       }
@@ -163,7 +163,7 @@ inline void analyze( vlasov::Grid& grid )
 
 
 inline void writeYee( 
-    corgi::Node& grid, 
+    corgi::Node<1>& grid, 
     int lap,
     const std::string& dir
     )
@@ -175,7 +175,7 @@ inline void writeYee(
 
   for(auto cid : grid.getTileIds() ){
     auto& tile 
-      = dynamic_cast<fields::PlasmaTile&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<1>&>(grid.getTile( cid ));
     writer.writeYee(tile);
   }
 
@@ -184,7 +184,7 @@ inline void writeYee(
 
 
 inline void writeAnalysis( 
-    corgi::Node& grid, 
+    corgi::Node<1>& grid, 
     int lap,
     const std::string& dir
     )
@@ -196,7 +196,7 @@ inline void writeAnalysis(
 
   for(auto cid : grid.getTileIds() ){
     auto& tile 
-      = dynamic_cast<fields::PlasmaTile&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<1>&>(grid.getTile( cid ));
     writer.writeAnalysis(tile);
   }
 
@@ -205,7 +205,7 @@ inline void writeAnalysis(
 
 
 inline void writeMesh( 
-    vlasov::Grid& grid, 
+    vlv::Grid<1>& grid, 
     int lap,
     const std::string& dir 
     )
@@ -219,12 +219,12 @@ inline void writeMesh(
   for(auto cid : grid.getTileIds() ){
 
     auto& tile 
-      = dynamic_cast<vlasov::VlasovTile&>(grid.getTile( cid ));
+      = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
 
 
     // tile location index
-    int i = tile.my_i;
-    int j = tile.my_j;
+    int i = std::get<0>(tile.index);
+    int j = 0;
     int k = 0;
 
     // get reference to the current time step 
@@ -235,8 +235,8 @@ inline void writeMesh(
     for(auto&& block0 : step0) {
 
       auto Nx = int(block0.Nx),
-          Ny = int(block0.Ny),
-          Nz = int(block0.Nz);
+           Ny = int(block0.Ny),
+           Nz = int(block0.Nz);
 
       for(int s=0; s<Nz; s++) {
         for(int r=0; r<Ny; r++) {
@@ -272,9 +272,7 @@ inline void writeMesh(
     } // end of species
   } // end of loop over tiles
 
-
 }
 
 
-
-}// end of namespace
+}// end of namespace vlv

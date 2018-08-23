@@ -4,7 +4,7 @@
 #include <string>
 
 
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 #include "../tools/mesh.h"
 #include "../vlasov/amr/mesh.h"
 
@@ -99,19 +99,20 @@ class Writer {
 
 
     /// Write PlasmaTile content into a hdf5 data group
-    bool writeYee( fields::PlasmaTile& tile )
+    bool writeYee( fields::Tile<1>& tile )
     {
       auto& yee = tile.getYee();
 
       // internal tile numbering 
-      string numbering = fname.numbering(tile.my_i, tile.my_j, 0);
+      int my_i = static_cast<int>( std::get<0>(tile.index) );
+      string numbering = fname.numbering(my_i, 0, 0);
 
       // open individual group for the data
       auto gr = file["yee_"+numbering];
 
       // tile location inside node
-      gr["i"] = tile.my_i;
-      gr["j"] = tile.my_j;
+      gr["i"] = my_i;
+      gr["j"] = 0;
       gr["k"] = 0;
 
       // size
@@ -145,24 +146,25 @@ class Writer {
 
 
     /// Write PlasmaTile content into a hdf5 data group
-    bool writeAnalysis( fields::PlasmaTile& tile )
+    bool writeAnalysis( fields::Tile<1>& tile )
     {
 
-      int Nspecies = tile.analysis.size();
+      int Nspecies = static_cast<int>(tile.analysis.size());
 
       for(int ispcs = 0; ispcs < Nspecies; ispcs++) {
 
         auto& analysis = tile.getAnalysis(ispcs);
 
         // internal tile numbering 
-        string numbering = fname.numbering(tile.my_i, tile.my_j, 0);
+        int my_i = static_cast<int>( std::get<0>(tile.index) );
+        string numbering = fname.numbering(my_i, 0, 0);
 
         // open individual group for the data
         auto gr = file["analysis_"+numbering+"-"+to_string(ispcs) ];
 
         // tile location inside node
-        gr["i"] = tile.my_i;
-        gr["j"] = tile.my_j;
+        gr["i"] = my_i;
+        gr["j"] = 0;
         gr["k"] = 0;
         gr["ispcs"] = ispcs;
 
@@ -247,7 +249,7 @@ class Writer {
       vals.reserve( len );
 
       // serialize into 1D containers
-      for(uint64_t cid : mesh.get_tiles(true) ) {
+      for(uint64_t cid : mesh.get_cells(true) ) {
         cids.push_back(cid);
         vals.push_back(mesh.data.at(cid));
       }

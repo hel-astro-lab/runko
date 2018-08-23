@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 
 #include "tile.h"
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 #include "amr/mesh.h"
 #include "amr/numerics.h"
 #include "amr/refiner.h"
@@ -23,7 +23,7 @@ using iter::zip;
 using toolbox::sign;
 using units::pi;
 
-namespace vlasov {
+namespace vlv {
 
 
 
@@ -35,16 +35,24 @@ namespace vlasov {
  * correctly from the container.
  *
  */
-template<typename T, int D>
+template<
+  typename T, 
+  int D
+>
 class MomentumSolver {
+
 
   public:
     typedef std::array<T, 3> vec;
 
+    MomentumSolver() {};
+
+    virtual ~MomentumSolver() = default;
+
 
     /// Get snapshot current J_i^n+1 from momentum distribution
     void updateFutureCurrent(
-        vlasov::VlasovTile& tile,
+        vlv::Tile<D>& tile,
         T cfl)
     {
 
@@ -55,8 +63,8 @@ class MomentumSolver {
       for(auto&& block0 : step0) {
 
         auto Nx = int(block0.Nx),
-            Ny = int(block0.Ny),
-            Nz = int(block0.Nz);
+             Ny = int(block0.Ny),
+             Nz = int(block0.Nz);
 
         for (int s=0; s<Nz; s++) {
           for(int r=0; r<Ny; r++) {
@@ -93,7 +101,7 @@ class MomentumSolver {
      * and feeds those to the mesh solver.
      */
     void solve( 
-        vlasov::VlasovTile& tile,
+        vlv::Tile<D>& tile,
         T step_size = T(1)
         )
     {
@@ -107,9 +115,10 @@ class MomentumSolver {
       auto& yee = tile.getYee();
 
       // timestep
-      auto dt   = (T) tile.dt;      
-      auto dx   = (T) tile.dx;      
-      T cfl  = step_size*dt/dx;
+      //auto dt   = (T) tile.dt;      
+      //auto dx   = (T) tile.dx;      
+      //T cfl  = step_size*dt/dx;
+      auto cfl = step_size*tile.cfl;
 
 
       /// Now get future current
@@ -160,7 +169,7 @@ class MomentumSolver {
 
 
               // then the final call to the actual mesh solver
-              solveMesh( mesh0, mesh1, E, B, qm, dt, cfl);
+              solveMesh( mesh0, mesh1, E, B, qm, cfl);
             }
           }
         }
@@ -179,7 +188,6 @@ class MomentumSolver {
         vec& E,
         vec& B,
         T qm,
-        T dt,
         T cfl) = 0;
 
 };
@@ -298,11 +306,17 @@ class MomentumSolver {
 
 /// \brief back-substituting semi-Lagrangian adaptive advection solver
 template<typename T, int D>
-class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
+class AmrMomentumLagrangianSolver : 
+  virtual public MomentumSolver<T, D> 
+{
 
   public:
 
     typedef std::array<T, 3> vec;
+
+    AmrMomentumLagrangianSolver() {};
+
+    virtual ~AmrMomentumLagrangianSolver() = default;
 
 
     /// Relativistic Lorentz force
@@ -311,7 +325,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         Vector3f& E,
         Vector3f& /*B*/,
         T qm,
-        T /*dt*/, //
         T cfl)
     {
 
@@ -353,7 +366,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         Vector3f& E,
         Vector3f& B,
         T qm,
-        T dt,
         T cfl) 
     {
       T val; // return value
@@ -364,7 +376,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // get shift of the characteristic solution from Lorentz force
       Vector3f uvel( u.data() );
-      Vector3f F = lorentz_force(uvel, E, B, qm, dt, cfl);
+      Vector3f F = lorentz_force(uvel, E, B, qm, cfl);
 
 
       // advection in units of cells 
@@ -384,7 +396,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
       // new grid indices
       std::array<uint64_t, 3> index_new;
-      for(int i=0; i<D; i++)     index_new[i] = index[i] + index_shift[i];
+      for(int i=0;   i<D;   i++) index_new[i] = index[i] + index_shift[i];
       for(int i = 2; i>D-1; i--) index_new[i] = index[i];
 
 
@@ -407,7 +419,6 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
         vec& Einc,
         vec& Binc,
         T qm,
-        T dt,
         T cfl) override
     {
 
@@ -452,7 +463,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
             index[2] = t;
 
             uint64_t cid = mesh1.get_cell_from_indices(index, 0);
-            val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, dt, cfl);
+            val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, cfl);
 
             // refinement
             // TODO specialize to value & gradient instead of just value
@@ -486,7 +497,7 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
           // fmt::print("creating {} at {}\n", cid, rfl);
 
-          val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, dt, cfl);
+          val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, cfl);
           mesh1.set(cid, val);
 
           refine_indicator   = val/max_val;
@@ -516,9 +527,17 @@ class AmrMomentumLagrangianSolver : public MomentumSolver<T, D> {
 
 /// \brief back-substituting semi-Lagrangian adaptive advection solver with gravity
 template<typename T, int D>
-class GravityAmrMomentumLagrangianSolver : public AmrMomentumLagrangianSolver<T, D> {
+class GravityAmrMomentumLagrangianSolver : 
+  virtual public AmrMomentumLagrangianSolver<T, D> 
+{
 
   public:
+
+    GravityAmrMomentumLagrangianSolver() {};
+
+    virtual ~GravityAmrMomentumLagrangianSolver() = default;
+
+
 
     typedef std::array<T, 3> vec;
 
@@ -528,7 +547,6 @@ class GravityAmrMomentumLagrangianSolver : public AmrMomentumLagrangianSolver<T,
         Vector3f& E,
         Vector3f& /*B*/,
         T qm,
-        T /*dt*/, 
         T cfl)
     override {
 
@@ -546,4 +564,4 @@ class GravityAmrMomentumLagrangianSolver : public AmrMomentumLagrangianSolver<T,
 };
 
 
-} // end of namespace vlasov
+} // end of namespace vlv

@@ -3,13 +3,31 @@ project (pyplasmabox)
 
 find_package(pybind11 REQUIRED)
 
+set (TOOLS_FILES 
+     pytools.c++
+     )
 
-set (FIELDS_FILES ../em-fields/tile.c++ ../em-fields/damping_tile.c++)
+set (FIELDS_FILES 
+     pyfields.c++
+     ../em-fields/tile.c++ 
+     ../em-fields/damping_tile.c++
+     )
+
+set (VLV_FILES 
+     pyvlv.c++
+     ../vlasov/tile.c++
+     )
 
 
 # python module creation
 #--------------------------------------------------
-pybind11_add_module(pyplasmabox pyplasmabox.c++ pyfields.c++ pytools.c++ ${FIELDS_FILES})
+pybind11_add_module(pyplasmabox 
+                    pyplasmabox.c++ 
+                    ${TOOLS_FILES}
+                    ${FIELDS_FILES}
+                    ${VLV_FILES}
+                    )
+
 
 target_link_libraries(pyplasmabox PRIVATE -lhdf5)
 target_link_libraries(pyplasmabox PRIVATE -lfftw3)

@@ -4,7 +4,7 @@
 
 #include "tile.h"
 #include "grid.h"
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 #include "amr/mesh.h"
 #include "amr/numerics.h"
 #include "amr/refiner.h"
@@ -23,7 +23,7 @@ using std::min;
 using std::max;
 
 
-namespace vlasov {
+namespace vlv {
 
 
 
@@ -53,10 +53,16 @@ class SpatialSolver {
 
 
   public:
+
+    SpatialSolver() {};
+
+    virtual ~SpatialSolver() = default;
+
+
     typedef std::array<T, 3> vec;
 
     /// Actual solver implementation
-    virtual void solve( vlasov::VlasovTile& tile, vlasov::Grid& grid) = 0;
+    virtual void solve( vlv::Tile<1>& tile, vlv::Grid<1>& grid) = 0;
 };
 
 
@@ -114,9 +120,17 @@ T integrate_current(
 
 /// Lagrangian conservative solver
 template<typename T>
-class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
+class AmrSpatialLagrangianSolver : 
+  virtual public SpatialSolver<T> 
+{
 
   public:
+
+    AmrSpatialLagrangianSolver() {};
+
+    virtual ~AmrSpatialLagrangianSolver() = default;
+      
+
     //using SpatialSolver<T>::get_external_data;
 
     /// velocity tensor product
@@ -346,10 +360,10 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
     /// sweep and solve internal blocks in X direction
     void xsweep(
-        vlasov::PlasmaBlock& block0,
-        vlasov::PlasmaBlock& block1,
-        vlasov::PlasmaBlock& block0_left,
-        vlasov::PlasmaBlock& block0_right,
+        vlv::PlasmaBlock& block0,
+        vlv::PlasmaBlock& block1,
+        vlv::PlasmaBlock& block0_left,
+        vlv::PlasmaBlock& block0_right,
         T qm,
         T cfl,
         fields::YeeLattice& yee)
@@ -530,7 +544,7 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
     // Strang splitted rotating (X/2 Y X/2) solver 
-    void solve( vlasov::VlasovTile& tile, vlasov::Grid& grid ) override
+    void solve( vlv::Tile<1>& tile, vlv::Grid<1>& grid ) override
     {
 
       // Yee lattice reference
@@ -545,7 +559,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
       auto& step1 = tile.steps.get(1);
 
       // timestep
-      T cfl = tile.dt/tile.dx;
+      //T cfl = tile.dt/tile.dx;
+      auto cfl = tile.cfl;
 
 
       // loop over different particle species (zips current [0] and new [1] solutions)
@@ -559,8 +574,8 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
         // external neighbors
-        auto& block0_left   = tile.get_external_data(-1, 0, ispc, grid);
-        auto& block0_right  = tile.get_external_data(+1, 0, ispc, grid);
+        auto& block0_left   = tile.get_external_data(grid, ispc, -1);
+        auto& block0_right  = tile.get_external_data(grid, ispc, +1);
         //auto& block0_bottom = get_external_data( 0,-1, ispc, tile, grid);
         //auto& block0_top    = get_external_data( 0,+1, ispc, tile, grid);
 
@@ -581,6 +596,4 @@ class AmrSpatialLagrangianSolver : public SpatialSolver<T> {
 
 
 
-
-
-} // end of vlasov namespace
+} // end of vlv namespace

@@ -59,14 +59,11 @@ class Tile :
   public:
   
   /// Size of the internal grid
-  //size_t NxGrid;
-  //size_t NyGrid;
-  //size_t NzGrid;
   using fields::Tile<D>::mesh_lengths;
 
-  const size_t Nspecies = 2;
+  size_t Nspecies = 2;
 
-  const size_t Nsteps   = 2;
+  size_t Nsteps   = 2;
 
   /// Simulation data container (2 steps long)
   // 
@@ -111,7 +108,6 @@ class Tile :
 
   /// tile temporal and spatial scales
   using fields::Tile<D>::cfl;
-  using fields::Tile<D>::dt;
   using fields::Tile<D>::dx;
 
 
@@ -148,9 +144,7 @@ class Tile :
 
   /// get neighboring tile from grid
   // TODO: separate into own communication module/header
-  PlasmaBlock& get_external_data(
-      int i, int j, int ispc,
-      Grid<D>& grid);
+  PlasmaBlock& get_external_data(Grid<D>&, int, int);
 
 
 };

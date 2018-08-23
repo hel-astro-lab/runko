@@ -28,8 +28,8 @@ PYBIND11_MODULE(pyplasmabox, m_base) {
   bind_fields(m_fields);
 
   /// vlv
-  //py::module m_vlv = m_base.def_submodule("vlv", "PlasmaBox Vlasov module");
-  //bind_vlv(m_vlv);
+  py::module m_vlv = m_base.def_submodule("vlv", "PlasmaBox Vlasov module");
+  bind_vlv(m_vlv);
 
 
 }
