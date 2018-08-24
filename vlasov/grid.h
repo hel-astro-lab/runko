@@ -17,7 +17,7 @@ namespace vlv {
 
 template<std::size_t D>
 class Grid : 
-  virtual public corgi::Node<D> 
+  public corgi::Node<D> 
 {
   public:
 
@@ -49,6 +49,29 @@ class Grid :
      }
      }
      */
+
+  /*
+  void addTile2(
+    std::shared_ptr< vlv::Tile<D> > tileptr,
+    corgi::internals::tuple_of<D, size_t> indices
+    )
+  {
+    std::cout << "adding tile (NEW)\n";
+    uint64_t cid = id( indices );
+    std::cout << "1 \n";
+    corgi::Node<D>::tiles.erase(cid);
+    std::cout << "2 \n";
+    tileptr->index               = indices;
+    tileptr->cid                 = cid;
+    tileptr->communication.owner = corgi::Node<D>::rank;
+    tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
+    std::cout << "3 \n";
+    corgi::Node<D>::tiles[cid] = tileptr;
+    std::cout << "4 \n";
+  }
+  */
+
+
 
 };
 

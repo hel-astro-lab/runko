@@ -156,26 +156,27 @@ void bind_vlv(py::module& m)
   //py::class_<vlv::Grid<1>, corgi::Node<1> >(m, "Grid1D")
 
   //py::object corgiNode1D = (py::object) py::module::import("pycorgi").attr("Node1D");
-  py::class_<
-    vlv::Grid<1>, 
-    corgi::Node<1>
-    >(m, "Grid1D")
-    .def(py::init<size_t>());
+  //py::class_<
+  //  vlv::Grid<1>, 
+  //  corgi::Node<1>
+  //  >(m, "Grid1D")
+  //  .def(py::init<size_t>());
+  //  //.def("addTile2", &vlv::Grid<1>::addTile2);
 
 
   //py::class_<vlv::Grid<2>, corgi::Node<2> >(m, "Grid2D")
   //py::object corgiNode2D = (py::object) py::module::import("pycorgi").attr("Node2D");
-  py::class_<
-    vlv::Grid<2>,
-    corgi::Node<2>
-    >(m, "Grid2D")
-    .def(py::init<size_t, size_t>());
+  //py::class_<
+  //  vlv::Grid<2>,
+  //  corgi::Node<2>
+  //  >(m, "Grid2D")
+  //  .def(py::init<size_t, size_t>());
 
 
   //--------------------------------------------------
   // Tile bindings
     
-  auto t1 = declare_Tile<1>(m, "vlvTile1D");
+  auto t1 = declare_Tile<1>(m, "Tile1D");
   t1.def(py::init<size_t>());
 
   //auto t2 = declare_Tile<2>(m, "Tile2D");
