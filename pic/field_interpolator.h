@@ -3,6 +3,7 @@
 #include <cmath> 
 #include <cassert>
 
+#include "../definitions.h"
 
 #include "tile.h"
 
@@ -16,7 +17,7 @@ class ParticleFieldInterpolator
   /*! \brief interpolate electromagnetic fields to particle locations
    *
    */
-  void solve(pic::PicTile& tile)
+  void solve(pic::Tile<2>& tile)
   {
 
     // get reference to the Yee grid 
@@ -31,23 +32,23 @@ class ParticleFieldInterpolator
 
 
       // initialize pointers to particle arrays
-      double* loc[3];
+      Realf* loc[3];
       for( int i=0; i<3; i++)
         loc[i] = &( container.loc(i,0) );
 
       // 1-d arrays
-      //double* ex = &( (*tile.container.Epart)[0*nparts] );
-      //double* ey = &( (*tile.container.Epart)[1*nparts] );
-      //double* ez = &( (*tile.container.Epart)[2*nparts] );
+      //Realf* ex = &( (*tile.container.Epart)[0*nparts] );
+      //Realf* ey = &( (*tile.container.Epart)[1*nparts] );
+      //Realf* ez = &( (*tile.container.Epart)[2*nparts] );
 
       // multiD array version
-      //double *efield[3], *bfield[3];
+      //Realf *efield[3], *bfield[3];
       //for( int i=0; i<3; i++) {
       //  efield[i] = &( tile.container.Epart[i][0] );
       //  bfield[i] = &( tile.container.Bpart[i][0] );
       //}
         
-      double *ex, *ey, *ez, *bx, *by, *bz;
+      Realf *ex, *ey, *ez, *bx, *by, *bz;
       ex = &( container.Epart[0][0] );
       ey = &( container.Epart[1][0] );
       ez = &( container.Epart[2][0] );
@@ -61,15 +62,15 @@ class ParticleFieldInterpolator
       int n1 = 0;
       int n2 = nparts;
 
-      //double c = tile.cfl;
-      //double cinv = 1.0/c;
+      //Realf c = tile.cfl;
+      //Realf cinv = 1.0/c;
 
       int i=0, j=0, k=0;
-      double dx=0.0, dy=0.0, dz=0.0;
-      double f,g;
+      Realf dx=0.0, dy=0.0, dz=0.0;
+      Realf f,g;
 
       auto mins = tile.mins;
-      auto maxs = tile.maxs;
+      //auto maxs = tile.maxs;
 
       // TODO: think SIMD (not possible due to ijk writing to yee)
       for(int n=n1; n<n2; n++) {
@@ -102,9 +103,9 @@ class ParticleFieldInterpolator
         dz = 0.0;
         int iz = 0;
 
-        assert(i >= 0 && i < (int)tile.NxMesh);
-        assert(j >= 0 && j < (int)tile.NyMesh);
-        assert(k >= 0 && k < (int)tile.NzMesh);
+        assert(i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) );
+        assert(j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) );
+        //assert(k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) );
 
 
         f = yee.ex(i,j,k) + yee.ex(i-1,j,k) +    dx*(yee.ex(i+1,j  ,k   ) - yee.ex(i-1,j  ,k  ));

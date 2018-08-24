@@ -15,44 +15,44 @@ namespace py = pybind11;
 #include "../pic/filters.h"
 
 
+namespace pic {
 
 
 //--------------------------------------------------
 
 // python bindings for plasma classes & functions
-PYBIND11_MODULE(pypic, m) {
+void bind_pic(py::module& m)
+{
 
   // Loading tile bindings from corgi library
-  py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile");
+  //py::object corgiTile<2> = (py::object) py::module::import("pycorgi").attr("Tile<2>");
+  //py::object plasmaTile<2> = (py::object) py::module::import("pyplasma").attr("Tile<2>");
 
-  py::object plasmaTile = (py::object) py::module::import("pyplasma").attr("PlasmaTile");
 
-
-  py::class_<pic::PicTile, 
-             fields::PlasmaTile,
-             corgi::Tile, 
-             std::shared_ptr<pic::PicTile>
-             >(m, "PicTile")
-    .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
-    .def_readwrite("dt",        &pic::PicTile::dt)
-    .def_readwrite("dx",        &pic::PicTile::dx)
-    .def_readwrite("cfl",       &pic::PicTile::cfl)
-    //.def_readwrite("container", &pic::PicTile::container);
-    .def("get_container",       &pic::PicTile::get_container, 
+  py::class_<pic::Tile<2>, 
+             fields::Tile<2>,
+             corgi::Tile<2>, 
+             std::shared_ptr<pic::Tile<2>>
+             >(m, "Tile2D")
+    .def(py::init<size_t, size_t>())
+    .def_readwrite("dx",        &pic::Tile<2>::dx)
+    .def_readwrite("cfl",       &pic::Tile<2>::cfl)
+    //.def_readwrite("container", &pic::Tile<2>::container);
+    .def("get_container",       &pic::Tile<2>::get_container, 
         py::return_value_policy::reference)
-    .def("set_container",       &pic::PicTile::set_container);
+    .def("set_container",       &pic::Tile<2>::set_container);
 
 
 
   py::class_<pic::ParticleBlock>(m, "ParticleBlock")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("q",  &pic::ParticleBlock::q)
+    .def_readwrite("q",   &pic::ParticleBlock::q)
     .def("reserve",       &pic::ParticleBlock::reserve)
     .def("resizeEM",      &pic::ParticleBlock::resizeEM)
     .def("add_particle",  &pic::ParticleBlock::add_particle)
     .def("add_particle2", [](pic::ParticleBlock& s, 
-                            double xx, double yy, double zz,
-                            double vx, double vy, double vz)
+                            Realf xx, Realf yy, Realf zz,
+                            Realf vx, Realf vy, Realf vz)
         {
           s.add_particle({xx,yy,zz}, {vx,vy,vz});
         })
@@ -138,6 +138,9 @@ PYBIND11_MODULE(pypic, m) {
       .def("get_kernel",             &pic::Filter::get_kernel, py::return_value_policy::reference)
       .def("get_image",              &pic::Filter::get_image,  py::return_value_policy::reference);
 
+
+
+}
 
 
 }

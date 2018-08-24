@@ -31,6 +31,9 @@ PYBIND11_MODULE(pyplasmabox, m_base) {
   py::module m_vlv = m_base.def_submodule("vlv", "PlasmaBox Vlasov module");
   vlv::bind_vlv(m_vlv);
 
+  /// pic
+  py::module m_pic = m_base.def_submodule("pic", "PlasmaBox PIC module");
+  pic::bind_pic(m_pic);
 
 }
 

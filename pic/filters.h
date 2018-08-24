@@ -18,10 +18,10 @@ namespace pic {
 
 inline fields::YeeLattice& get_neighbor_yee(
     int i, int j,
-    pic::PicTile& tile, 
-    corgi::Node& node)
+    pic::Tile<2>& tile, 
+    corgi::Node<2>& node)
 {
-  auto cneigh = std::dynamic_pointer_cast<fields::PlasmaTile>(
+  auto cneigh = std::dynamic_pointer_cast<fields::Tile<2>>(
         node.getTilePtr( tile.neighs(i, j) ));
   return cneigh->getYee();
 }
@@ -377,7 +377,7 @@ class Filter {
     int h1 = Nx/2; // division is floor(x/y) automatically
     int w1 = Ny /2;
     int h2 = (Nx + 2 - 1)/2; // ceil(x/y)
-    int w2 = (Ny  + 2 - 1)/2;
+    int w2 = (Ny + 2 - 1)/2;
 
     int wi,wj;
     Realf val;
@@ -572,8 +572,8 @@ class Filter {
 
   /// Copy currents from neighbors into fftw array
   void get_padded_current(
-      pic::PicTile& tile, 
-      corgi::Node& node
+      pic::Tile<2>& tile, 
+      corgi::Node<2>& node
       )
   {
 
@@ -638,7 +638,7 @@ class Filter {
   /// set (filtered) current back to Yee lattice
   // NOTE: we export the current to jx1/jy1/jz1 instead of jx/jy/jz to 
   //       ensure thread safety
-  void set_current( pic::PicTile& tile)
+  void set_current( pic::Tile<2>& tile)
   {
     fields::YeeLattice& mesh = tile.getYee();
 

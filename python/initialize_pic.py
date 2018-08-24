@@ -1,6 +1,5 @@
-import corgi
-import pyplasma as plasma
-import pypic 
+import pycorgi
+import pyplasmabox.pic as pypic 
 
 import numpy as np
 
@@ -100,10 +99,11 @@ def initialize_tile(c, i, j, n, conf):
         c.set_container( container )
     
     
-    #set bounding box of the tile mins = spatialLoc(n, [i,j], [0,0,0], conf)
+    #set bounding box of the tile 
+    mins = spatialLoc(n, [i,j], [0,0,0], conf)
     maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
-    c.set_tile_mins(mins)
-    c.set_tile_maxs(maxs)
+    c.set_tile_mins(mins[0:2])
+    c.set_tile_maxs(maxs[0:2])
     
     
     # initialize analysis tiles ready for incoming simulation data
@@ -119,12 +119,12 @@ def loadTiles(n, conf):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
-                c = pypic.PicTile()
+                c = pypic.Tile2D(conf.NxMesh, conf.NyMesh)
                 
                 initialize_tile(c, i, j, n, conf)
 
                 #add it to the node
-                n.addTile(c) 
+                n.addTile(c, (i,j)) 
 
 
 

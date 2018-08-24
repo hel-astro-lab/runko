@@ -5,7 +5,7 @@
 
 #include "particle.h"
 
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 
 namespace pic {
 
@@ -13,19 +13,23 @@ namespace pic {
 /*! \brief PiC tile
  *
  * Tile infrastructures are inherited from corgi::Tile
- * Maxwell field equation solver is inherited from fields::PlasmaTile
+ * Maxwell field equation solver is inherited from fields::Tile
 */
-class PicTile :
-  virtual public fields::PlasmaTile, 
-  virtual public corgi::Tile {
+
+template<std::size_t D>
+class Tile :
+  virtual public fields::Tile<D>, 
+  virtual public  corgi::Tile<D> 
+{
 
 public:
 
   /// Size of the internal grid
-  size_t NxGrid;
-  size_t NyGrid;
-  size_t NzGrid;
+  //size_t NxGrid;
+  //size_t NyGrid;
+  //size_t NzGrid;
 
+  using fields::Tile<D>::mesh_lengths;
 
 
   //ParticleBlock container;
@@ -41,25 +45,23 @@ public:
 
 
   /// constructor
-  PicTile(size_t i, size_t j, 
-             int o, 
-             size_t NxG, size_t NyG,
-             size_t NxMesh, size_t NyMesh
-             ) : 
-    corgi::Tile(i, j, o, NxG, NyG),
-    fields::PlasmaTile(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
-    NxGrid(NxMesh), NyGrid(NyMesh), NzGrid(1)
+  template< typename... Dims,
+    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
+               corgi::internals::are_integral<Dims...>::value, void >
+  > 
+  Tile(Dims... mesh_lens) :
+     corgi::Tile<D>(),
+    fields::Tile<D>(mesh_lens...)
   { }
 
 
   /// destructor
-  ~PicTile() override = default;
+  ~Tile() override = default;
 
   /// tile temporal and spatial scales
-  using fields::PlasmaTile::cfl;
-  using fields::PlasmaTile::dt;
-  using fields::PlasmaTile::dx;
 
+  using fields::Tile<D>::cfl;
+  using fields::Tile<D>::dx;
 
 };
 

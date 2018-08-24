@@ -6,6 +6,7 @@
 #include "tile.h"
 #include "../tools/cppitertools/reversed.hpp"
 #include "../tools/wrap.h"
+#include "../definitions.h"
 
 using std::min;
 using std::max;
@@ -16,13 +17,13 @@ namespace pic {
 // expose particle memory of external neighbors
 inline pic::ParticleBlock& get_external_data(
   int i, int j,
-  pic::PicTile& tile,
-  corgi::Node& grid,
+  pic::Tile<2>& tile,
+  corgi::Node<2>& grid,
   size_t ispc)
 { 
   auto ind = tile.neighs(i, j); 
-  uint64_t cid = grid.tileId( std::get<0>(ind), std::get<1>(ind) );
-  auto& external_tile = dynamic_cast<pic::PicTile&>( grid.getTile(cid) );
+  uint64_t cid = grid.id( std::get<0>(ind), std::get<1>(ind) );
+  auto& external_tile = dynamic_cast<pic::Tile<2>&>( grid.getTile(cid) );
 
   return external_tile.get_container(ispc);
 }
@@ -34,7 +35,7 @@ class Communicator {
 
 
 
-  void check_outgoing_particles( pic::PicTile& tile)
+  void check_outgoing_particles( pic::Tile<2>& tile)
   {
 
     for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
@@ -47,21 +48,21 @@ class Communicator {
       auto mins = tile.mins;
       auto maxs = tile.maxs;
 
-      double xmin = mins[0];
-      double xmax = maxs[0];
+      Realf xmin = mins[0];
+      Realf xmax = maxs[0];
 
-      double ymin = mins[1];
-      double ymax = maxs[1];
+      Realf ymin = mins[1];
+      Realf ymax = maxs[1];
 
-      double zmin = mins[2];
-      double zmax = maxs[2];
+      Realf zmin = mins[2];
+      Realf zmax = maxs[2];
 
 
-      double* loc[3];
+      Realf* loc[3];
       for( int i=0; i<3; i++)
         loc[i] = &( container.loc(i,0) );
 
-      double x0, y0, z0;
+      Realf x0, y0, z0;
 
       // map of particles traveling beyond tile boundaries
       auto& to_others = container.to_other_tiles;
@@ -115,24 +116,24 @@ class Communicator {
 
   //! get incoming particles from neighboring tiles
   void get_incoming_particles( 
-      pic::PicTile& tile, 
-      corgi::Node& grid)
+      pic::Tile<2>& tile, 
+      corgi::Node<2>& grid)
   {
 
     // local tile limits
     //auto mins = tile.mins;
     //auto maxs = tile.maxs;
 
-    std::vector<double> mins = {
-      grid.getXmin(),
-      grid.getYmin(),
-      0.0
+    std::vector<Realf> mins = {
+      static_cast<Realf>( grid.getXmin() ),
+      static_cast<Realf>( grid.getYmin() ),
+      static_cast<Realf>( 0.0            )
     };
 
-    std::vector<double> maxs = {
-      grid.getXmax(),
-      grid.getYmax(),
-      1.0
+    std::vector<Realf> maxs = {
+      static_cast<Realf>( grid.getXmax() ),
+      static_cast<Realf>( grid.getYmax() ),
+      static_cast<Realf>( 1.0            )
     };
 
 
@@ -177,7 +178,7 @@ class Communicator {
             //std::cout << "wrapping " <<
               
             //std::cout << " incoming particle in loop indices of: ";
-            std::vector<double> loc = {
+            std::vector<Realf> loc = {
               wrap( neigh.loc(0, elem.second), mins[0], maxs[0] ),
               wrap( neigh.loc(1, elem.second), mins[1], maxs[1] ),
               wrap( neigh.loc(2, elem.second), mins[2], maxs[2] ),
@@ -186,7 +187,7 @@ class Communicator {
             //std::cout << "y_old: " << neigh.loc(1, elem.second) << "y_new: " << loc[1] << "\n";
             //std::cout << "z_old: " << neigh.loc(2, elem.second) << "z_new: " << loc[2] << "\n";
 
-            std::vector<double> vel = {
+            std::vector<Realf> vel = {
               neigh.vel(0, elem.second),
               neigh.vel(1, elem.second),
               neigh.vel(2, elem.second),
@@ -202,7 +203,7 @@ class Communicator {
 
 
   //!  Finalize communication by deleting particles that went beyond tile boundaries
-  void delete_transferred_particles( pic::PicTile& tile)
+  void delete_transferred_particles( pic::Tile<2>& tile)
   {
 
 
@@ -227,11 +228,11 @@ class Communicator {
       //vec[idx] = vec.back();
       //vec.pop_back();
 
-      double* loc[3];
+      Realf* loc[3];
       for( int i=0; i<3; i++)
         loc[i] = &( container.loc(i,0) );
 
-      double* vel[3];
+      Realf* vel[3];
       for( int i=0; i<3; i++)
         vel[i] = &( container.vel(i,0) );
 
@@ -254,7 +255,6 @@ class Communicator {
 
     } // end of loop over species
   }
-
 
 
 };

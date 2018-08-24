@@ -4,6 +4,8 @@
 #include <cassert>
 
 #include "tile.h"
+#include "../definitions.h"
+
 
 //#include <fmt/format.h>
 //#include <fmt/format.cc>
@@ -21,7 +23,7 @@ class Depositer {
   public:
 
 
-  void deposit( pic::PicTile& tile)
+  void deposit( pic::Tile<2>& tile)
   {
 
     auto& yee = tile.getYee();
@@ -38,35 +40,35 @@ class Depositer {
       // initialize pointers to particle arrays
       int nparts = container.size();
         
-      double* loc[3];
+      Realf* loc[3];
       for( int i=0; i<3; i++)
         loc[i] = &( container.loc(i,0) );
 
-      double* vel[3];
+      Realf* vel[3];
       for( int i=0; i<3; i++)
         vel[i] = &( container.vel(i,0) );
 
 
-      double invgam;
-      double c = tile.cfl;
-      double q = container.q;
+      Realf invgam;
+      Realf c = tile.cfl;
+      Realf q = container.q;
 
-      double x0, y0, z0, x1, x2, y1, y2, z1, z2;
+      Realf x0, y0, z0, x1, x2, y1, y2, z1, z2;
 
       //std::cout << " q = " << q << " ispc: " << ispc << '\n';
 
 
       //int i1,i2,j1,j2,k1,k2;
-      //double i1,i2,j1,j2,k1,k2;
-      //double i1p1,i2p1,j1p1,j2p1,k1p1,k2p1;
+      //Realf i1,i2,j1,j2,k1,k2;
+      //Realf i1p1,i2p1,j1p1,j2p1,k1p1,k2p1;
       int i1,i2,j1,j2,k1,k2;
       //int i1p1,i2p1,j1p1,j2p1,k1p1,k2p1;
 
-      double xr, yr, zr;
+      Realf xr, yr, zr;
 
-      double Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-      double Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
-      //double onemWx1, onemWy1, onemWz1, onemWx2, onemWy2, onemWz2;
+      Realf Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+      Realf Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+      //Realf onemWx1, onemWy1, onemWz1, onemWx2, onemWy2, onemWz2;
 
       // loop and check particles
       int n1 = 0;
@@ -104,9 +106,9 @@ class Depositer {
 	  	  k2  = (int)floor( z2 );
 
         // relay point; +1 is equal to +\Delta x
-	      xr = min( (double)(min(i1,i2)+1), max( (double)max(i1,i2), 0.5*(x1+x2) ) );
-	      yr = min( (double)(min(j1,j2)+1), max( (double)max(j1,j2), 0.5*(y1+y2) ) );
-	      zr = min( (double)(min(k1,k2)+1), max( (double)max(k1,k2), 0.5*(z1+z2) ) );
+	      xr = min( (Realf)(min(i1,i2)+1), max( (Realf)max(i1,i2), static_cast<Realf>(0.5)*(x1+x2) ) );
+	      yr = min( (Realf)(min(j1,j2)+1), max( (Realf)max(j1,j2), static_cast<Realf>(0.5)*(y1+y2) ) );
+	      zr = min( (Realf)(min(k1,k2)+1), max( (Realf)max(k1,k2), static_cast<Realf>(0.5)*(z1+z2) ) );
 
         // twoD mode
         k1 = 0;
@@ -217,17 +219,17 @@ class Depositer {
 
         //--------------------------------------------------
         // index checking
-        assert(i1   >= -3 && i1   < (int)tile.NxMesh+3);
-        assert(j1   >= -3 && j1   < (int)tile.NyMesh+3);
-        assert(k1   >= -3 && k1   < (int)tile.NzMesh+3);
+        assert(i1   >= -3 && i1   < static_cast<int>(tile.mesh_lengths[0]+3)) ;
+        assert(j1   >= -3 && j1   < static_cast<int>(tile.mesh_lengths[1]+3)) ;
+        //assert(k1   >= -3 && k1   < static_cast<int>(tile.mesh_lengths[2]+3)) ;
 
-        //assert(i1p1 >= -3 && i1p1 < (int)tile.NxMesh+3);
-        //assert(j1p1 >= -3 && j1p1 < (int)tile.NyMesh+3);
-        //assert(k1p1 >= -3 && k1p1 < (int)tile.NzMesh+3);
+        //assert(i1p1 >= -3 && i1p1 < static_cast<int>(tile.NxMesh+3);
+        //assert(j1p1 >= -3 && j1p1 < static_cast<int>(tile.NyMesh+3);
+        //assert(k1p1 >= -3 && k1p1 < static_cast<int>(tile.NzMesh+3);
 
-        assert(i2   >= -3 && i2   < (int)tile.NxMesh+3);
-        assert(j2   >= -3 && j2   < (int)tile.NyMesh+3);
-        assert(k2   >= -3 && k2   < (int)tile.NzMesh+3);
+        assert(i2   >= -3 && i2   < static_cast<int>(tile.mesh_lengths[0]+3));
+        assert(j2   >= -3 && j2   < static_cast<int>(tile.mesh_lengths[1]+3));
+        //assert(k2   >= -3 && k2   < static_cast<int>(tile.mesh_lengths[2]+3));
 
         //assert(i2p1 >= -3 && i2p1 < (int)tile.NxMesh+3);
         //assert(j2p1 >= -3 && j2p1 < (int)tile.NyMesh+3);

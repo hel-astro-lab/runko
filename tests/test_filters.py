@@ -6,8 +6,7 @@ from scipy.signal import convolve2d
 from scipy.signal import convolve
 
 import pycorgi
-import pyplasma as plasma
-import pypic 
+import pyplasmabox.pic as pypic
 
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
@@ -774,7 +773,7 @@ class Filters(unittest.TestCase):
         conf.NyMesh = 10
         conf.NzMesh = 1
 
-        node = plasma.Grid(conf.Nx, conf.Ny)
+        node = pycorgi.Node2D(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         insert_em(node, conf, linear_ramp)

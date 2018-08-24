@@ -18,6 +18,9 @@ namespace vlv {
   void bind_vlv(py::module& m);
 }
 
+namespace pic {
+  void bind_pic(py::module& m);
+}
 
 
 

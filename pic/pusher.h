@@ -8,6 +8,7 @@
 //#include <fmt/ostream.h>
 
 #include "../tools/signum.h"
+#include "../definitions.h"
 
 #include "tile.h"
 
@@ -23,7 +24,7 @@ class Pusher
   /*! \brief Push particles
    *
    */
-  void solve(pic::PicTile& tile)
+  void solve(pic::Tile<2>& tile)
   {
 
     // get reference to the Yee grid 
@@ -36,28 +37,28 @@ class Pusher
 
 
       // initialize pointers to particle arrays
-      double* loc[3];
+      Realf* loc[3];
       for( int i=0; i<3; i++)
         loc[i] = &( container.loc(i,0) );
 
-      double* vel[3];
+      Realf* vel[3];
       for( int i=0; i<3; i++)
         vel[i] = &( container.vel(i,0) );
 
       /*
-      double* ex = &( (*tile.container.Epart)[0*nparts] );
-      double* ey = &( (*tile.container.Epart)[1*nparts] );
-      double* ez = &( (*tile.container.Epart)[2*nparts] );
+      Realf* ex = &( (*tile.container.Epart)[0*nparts] );
+      Realf* ey = &( (*tile.container.Epart)[1*nparts] );
+      Realf* ez = &( (*tile.container.Epart)[2*nparts] );
 
-      double* bx = &( (*tile.container.Bpart)[0*nparts] );
-      double* by = &( (*tile.container.Bpart)[1*nparts] );
-      double* bz = &( (*tile.container.Bpart)[2*nparts] );
+      Realf* bx = &( (*tile.container.Bpart)[0*nparts] );
+      Realf* by = &( (*tile.container.Bpart)[1*nparts] );
+      Realf* bz = &( (*tile.container.Bpart)[2*nparts] );
       */
 
-      double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-      double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+      Realf ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
+      Realf bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
-      double *ex, *ey, *ez, *bx, *by, *bz;
+      Realf *ex, *ey, *ez, *bx, *by, *bz;
       ex = &( container.Epart[0][0] );
       ey = &( container.Epart[1][0] );
       ez = &( container.Epart[2][0] );
@@ -70,17 +71,17 @@ class Pusher
       int n1 = 0;
       int n2 = nparts;
 
-      double u0, v0, w0;
-      double u1, v1, w1;
-      double g, f;
+      Realf u0, v0, w0;
+      Realf u1, v1, w1;
+      Realf g, f;
 
 
-      double c = tile.cfl;
-      double cinv = 1.0/c;
+      Realf c = tile.cfl;
+      Realf cinv = 1.0/c;
 
       // charge (sign only)
-      double qm = sign(container.q);
-      //double qm = container.q;
+      Realf qm = sign(container.q);
+      //Realf qm = container.q;
       //std::cout << " qm = " << qm << " ispc: " << ispc << '\n';
 
 

@@ -18,6 +18,10 @@ set (VLV_FILES
      ../vlasov/tile.c++
      )
 
+set (PIC_FILES 
+     pypic.c++
+     )
+
 
 # python module creation
 #--------------------------------------------------
@@ -26,6 +30,7 @@ pybind11_add_module(pyplasmabox
                     ${TOOLS_FILES}
                     ${FIELDS_FILES}
                     ${VLV_FILES}
+                    ${PIC_FILES}
                     )
 
 

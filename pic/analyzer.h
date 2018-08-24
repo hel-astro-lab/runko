@@ -4,7 +4,7 @@
 #include <cassert>
 
 #include "tile.h"
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 
 #include "../tools/signum.h"
 
@@ -24,7 +24,11 @@ class Analyzator {
 
   public:
 
-  virtual void analyze( pic::PicTile& tile )
+  Analyzator() {};
+
+  virtual ~Analyzator() = default;
+
+  virtual void analyze( pic::Tile<2>& tile )
   {
 
     // Yee lattice reference
@@ -50,21 +54,21 @@ class Analyzator {
       // initialize pointers to particle arrays
       int nparts = container.size();
         
-      double* loc[3];
+      Realf* loc[3];
       for( int i=0; i<3; i++)
         loc[i] = &( container.loc(i,0) );
 
-      double* vel[3];
+      Realf* vel[3];
       for( int i=0; i<3; i++)
         vel[i] = &( container.vel(i,0) );
 
 
-      double gam;
-      //double c = tile.cfl;
-      double q = container.q; // TODO: split into species
-      double x0, y0, z0;
-      double u0, v0, w0;
-      //double i,j,k;
+      Realf gam;
+      //Realf c = tile.cfl;
+      Realf q = container.q; // TODO: split into species
+      Realf x0, y0, z0;
+      Realf u0, v0, w0;
+      //Realf i,j,k;
       int i,j,k;
 
 
@@ -109,9 +113,9 @@ class Analyzator {
         std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
         */
 
-        assert(i >= 0 && i < (int)tile.NxMesh);
-        assert(j >= 0 && j < (int)tile.NyMesh);
-        assert(k >= 0 && k < (int)tile.NzMesh);
+        assert(i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) );
+        assert(j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) );
+        //assert(k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) );
 
         assert( x0 >= mins[0] && x0 < maxs[0] );
         assert( y0 >= mins[1] && y0 < maxs[1] );
@@ -144,11 +148,10 @@ class Analyzator {
 
       }
 
-
       // normalize weight with number density
-      for (size_t i=0; i<tile.NxMesh; i++)
-      for (size_t j=0; j<tile.NyMesh; j++)
-      for (size_t k=0; k<tile.NzMesh; k++)
+      for (size_t i=0; i<tile.mesh_lengths[0]; i++)
+      for (size_t j=0; j<tile.mesh_lengths[1]; j++)
+      for (size_t k=0; k<tile.mesh_lengths[2]; k++)
         analysis.mgamma(i,j,k) /= analysis.rho(i,j,k);
 
     }
