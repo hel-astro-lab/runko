@@ -39,8 +39,8 @@ def get_particles(node, conf):
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                cid = node.tileId(i,j)
-                c = node.getTilePtr(cid)
+                cid = node.id(i,j)
+                c = node.getTile(cid)
 
                 x, y, z, ux, uy, uz = get_particles_from_tile(c)
 

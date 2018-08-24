@@ -306,7 +306,7 @@ class PIC(unittest.TestCase):
         for i in range(conf.Nx):
             for j in range(conf.Ny):
                 for k in range(conf.Nz):
-                    cid = node.tileId(i,j)
+                    cid = node.id(i,j)
                     c = node.getTile(cid)
 
                     #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
@@ -387,7 +387,7 @@ class PIC(unittest.TestCase):
         for i in range(conf.Nx):
             for j in range(conf.Ny):
 
-                cid = node.tileId(i,j)
+                cid = node.id(i,j)
                 c = node.getTile(cid)
                 container = c.get_container(0)
 
@@ -454,7 +454,7 @@ class PIC(unittest.TestCase):
         for i in range(1,conf.Nx-1):
             for j in range(1,conf.Ny-1):
 
-                cid = node.tileId(i,j)
+                cid = node.id(i,j)
                 c = node.getTile(cid)
                 container = c.get_container(0)
 

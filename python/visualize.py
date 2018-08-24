@@ -65,18 +65,18 @@ def plotNode(ax, n, conf):
 
 
     for cid in n.getTileIds():
-        c = n.getTilePtr( cid )
-        (i, j) = c.index()
+        c = n.getTile( cid )
+        (i, j) = c.index
         #check dublicates
         if tmp_grid[i,j] != -1.0:
             print("{}: ERROR in real tiles at ({},{})".format(n.rank, i,j))
             sys.exit()
-        tmp_grid[i,j] = c.owner
+        tmp_grid[i,j] = c.communication.owner
 
     #XXX add back
     #for cid in n.getVirtuals():
     #    c = n.getTile( cid )
-    #    (i,j) = c.index()
+    #    (i,j) = c.index
     #    if tmp_grid[i,j] != -1.0:
     #        print("{}: ERROR in virtual tiles at ({},{})".format(n.rank, i,j))
     #        sys.exit()
@@ -92,8 +92,8 @@ def plotNode(ax, n, conf):
 
     # add text label about number of neighbors
     for cid in n.getTileIds():
-        c = n.getTilePtr( cid )
-        (i, j) = c.index()
+        c = n.getTile( cid )
+        (i, j) = c.index
         dx = n.getXmax() - n.getXmin()
         dy = n.getYmax() - n.getYmin()
 
@@ -101,7 +101,7 @@ def plotNode(ax, n, conf):
         jy = n.getYmin() + dy*(j+0.5)/n.getNy()
 
         #Nv = n.number_of_virtual_neighbors(c)
-        Nv = c.number_of_virtual_neighbors
+        Nv = c.communication.number_of_virtual_neighbors
         label = str(Nv)
         #label = "{} ({},{})/{}".format(cid,i,j,Nv)
         #label = "({},{})".format(i,j)
@@ -109,7 +109,7 @@ def plotNode(ax, n, conf):
 
     #for cid in n.getVirtuals():
     #    c = n.getTile( cid )
-    #    (i,j) = c.index()
+    #    (i,j) = c.index
     #    ix = n.getXmin() + n.getXmax()*(i+0.5)/n.getNx()
     #    jy = n.getYmin() + n.getYmin()*(j+0.5)/n.getNy()
     #    label = "Vir"
@@ -127,8 +127,8 @@ def plotTileBoundaries(ax, node, conf):
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                cid = node.tileId(i,j)
-                c = node.getTilePtr(cid)
+                cid = node.id(i,j)
+                c = node.getTile(cid)
 
                 mins = np.array( c.mins ) 
                 maxs = np.array( c.maxs )
@@ -136,7 +136,7 @@ def plotTileBoundaries(ax, node, conf):
                 #ds = (maxs - mins)/lens
                 xx = np.linspace(mins[0], maxs[0], conf.NxMesh+1)
                 yy = np.linspace(mins[1], maxs[1], conf.NyMesh+1)
-                zz = np.linspace(mins[2], maxs[2], conf.NzMesh+1)
+                #zz = np.linspace(mins[2], maxs[2], conf.NzMesh+1)
                 
                 # inner mesh
                 for y in yy:
@@ -167,8 +167,8 @@ def plotXmesh(ax, n, conf, spcs):
 
     for i in range(conf.Nx):
 
-        cid = n.tileId(i,0)
-        c = n.getTilePtr(cid)
+        cid = n.id(i,0)
+        c = n.getTile(cid)
 
         #dig electron population out
         pgrid = c.getPlasmaGrid()
@@ -228,8 +228,8 @@ def getYee(n, conf):
            }
 
     for i in range(conf.Nx):
-        cid = n.tileId(i,0)
-        c = n.getTilePtr(cid)
+        cid = n.id(i,0)
+        c = n.getTile(cid)
 
         yee = c.getYee(0)
         for s in range(conf.NxMesh):
@@ -274,7 +274,7 @@ def getYee2D(n, conf):
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
-            c = n.getTilePtr(i,j)
+            c = n.getTile(i,j)
 
             yee = c.getYee(0)
             for r in range(conf.NyMesh):
@@ -318,8 +318,8 @@ def getAnalysis(n, conf, ispcs):
            }
 
     for i in range(conf.Nx):
-        cid = n.tileId(i,0)
-        c = n.getTilePtr(cid)
+        cid = n.id(i,0)
+        c = n.getTile(cid)
 
         analysis = c.getAnalysis(ispcs)
         for s in range(conf.NxMesh):

@@ -151,8 +151,7 @@ class Analyzator {
       // normalize weight with number density
       for (size_t i=0; i<tile.mesh_lengths[0]; i++)
       for (size_t j=0; j<tile.mesh_lengths[1]; j++)
-      for (size_t k=0; k<tile.mesh_lengths[2]; k++)
-        analysis.mgamma(i,j,k) /= analysis.rho(i,j,k);
+        analysis.mgamma(i,j,0) /= analysis.rho(i,j,0);
 
     }
 

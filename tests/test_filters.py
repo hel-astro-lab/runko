@@ -1,5 +1,5 @@
-import sys
-sys.path.append('python')
+import unittest
+
 import numpy as np
 from math import floor, ceil
 from scipy.signal import convolve2d
@@ -34,7 +34,7 @@ def insert_em(node, conf, ffunc):
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
     for i in range(node.getNx()):
         for j in range(node.getNy()):
-            c = node.getTilePtr(i,j)
+            c = node.getTile(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):
@@ -782,7 +782,7 @@ class Filters(unittest.TestCase):
         flt = pypic.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(4.0, 4.0)
 
-        flt.get_padded_current( node.getTilePtr(1,1), node)
+        flt.get_padded_current( node.getTile(1,1), node)
 
         img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
         #axs[0].imshow(img[conf.NxMesh:2*conf.NxMesh, conf.NyMesh:2*conf.NyMesh]) #, vmin=vmin, vmax=vmax)
@@ -792,8 +792,8 @@ class Filters(unittest.TestCase):
         # reference array
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
         for cid in node.getTileIds():
-            c = node.getTilePtr( cid )
-            (i, j) = c.index()
+            c = node.getTile( cid )
+            (i, j) = c.index
 
             yee = c.getYee(0)
             for k in range(conf.NyMesh):
