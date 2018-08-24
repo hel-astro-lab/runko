@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import pyplasmabox as plasma
+import pyplasmabox
 
 
 class Params:
@@ -23,14 +23,15 @@ class Initialization(unittest.TestCase):
     NyMesh = 3
 
     def setUp(self):
-        self.tile = plasma.VlasovTile()
+        self.tile = pyplasmabox.fields.Tile2D(self.NxMesh, self.NyMesh)
+        self.tile.index = (self.i, self.j)
 
     # test that we can inherit from the corgi::Tile base class
     def test_inheritance(self):
 
         (i,j) = self.tile.index
-        self.assertEqual(i, 10)
-        self.assertEqual(j, 11)
+        self.assertEqual(i, self.i)
+        self.assertEqual(j, self.j)
 
         
 
