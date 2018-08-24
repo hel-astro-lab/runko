@@ -57,7 +57,7 @@ set (WARNING_FLAGS
         -Wall -Wextra -Wpedantic
     >
     $<$<CXX_COMPILER_ID:Clang>:
-        -Wall -Wextra -Wpedantic -Wno-missing-braces 
+        -Wall -Wextra -Wpedantic -Wno-missing-braces -g
     >
 )
 

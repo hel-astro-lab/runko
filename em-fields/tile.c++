@@ -407,7 +407,6 @@ void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) {
   // copy from right side to left
   copyVertYee(mesh, mleft, -1, mleft.Nx-1); 
 
-
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::Tile<1> >(

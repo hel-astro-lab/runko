@@ -63,6 +63,8 @@ class Communications(unittest.TestCase):
     def test_updateBoundaries(self):
 
         conf = Conf()
+        conf.NyMesh = 1 #force 1D
+        conf.NzMesh = 1 #
 
         node = pycorgi.Node1D(conf.Nx)
         node.setGridLims(conf.xmin, conf.xmax)
@@ -94,14 +96,16 @@ class Communications(unittest.TestCase):
                             val += 1
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
+        
 
         for cid in node.getTileIds():
             c = node.getTile( cid )
-            (i,) = c.index()
+            (i,) = c.index
 
             yee = c.getYee(0)
-            for k in range(conf.NyMesh):
-                for q in range(conf.NxMesh):
+
+            for q in range(conf.NxMesh):
+                for k in range(conf.NyMesh):
                     for r in range(conf.NzMesh):
                         data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 0] = yee.ex[q,k,r]
                         data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 1] = yee.ey[q,k,r]
@@ -135,7 +139,7 @@ class Communications(unittest.TestCase):
         m = 0
         for cid in node.getTileIds():
             c = node.getTile( cid )
-            (i) = c.index()
+            (i,) = c.index
             yee = c.getYee(0)
 
             for r in range(-1, conf.NzMesh+1, 1):
@@ -173,6 +177,7 @@ class Communications(unittest.TestCase):
 
         conf.NxMesh = 4
         conf.NyMesh = 4
+        conf.NzMesh = 1 #force 2D
 
         node = pycorgi.Node2D(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
@@ -208,7 +213,7 @@ class Communications(unittest.TestCase):
 
         for cid in node.getTileIds():
             c = node.getTile( cid )
-            (i, j) = c.index()
+            (i, j) = c.index
 
             yee = c.getYee(0)
             for k in range(conf.NyMesh):
@@ -247,7 +252,7 @@ class Communications(unittest.TestCase):
         m = 0
         for cid in node.getTileIds():
             c = node.getTile( cid )
-            (i, j) = c.index()
+            (i, j) = c.index
             yee = c.getYee(0)
 
             for r in range(-1, conf.NzMesh+1, 1):
