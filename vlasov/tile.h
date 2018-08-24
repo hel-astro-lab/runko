@@ -103,7 +103,9 @@ class Tile :
 
 
   /// destructor
-  ~Tile() override = default;
+  virtual ~Tile() override = default;
+
+  Tile(Tile& ) = delete;
 
 
   /// tile temporal and spatial scales

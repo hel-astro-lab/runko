@@ -24,6 +24,7 @@
 
 #include "../vlasov/tasker.h"
 
+namespace vlv {
 
 
 using Adapter3d = toolbox::Adapter<Realf, 3>;
@@ -81,20 +82,20 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
 //--------------------------------------------------
 // generator for vlv::Grid 
 
-template<size_t D>
-auto declare_Grid(
-    py::module& m,
-    const std::string& pyclass_name,
-    const std::string& pycorgi_name
-    ) 
-{
-  py::object corgiNode = 
-    (py::object) py::module::import("pycorgi").attr(pycorgi_name.c_str());
-
-  return 
-    py::class_<vlv::Grid<D> >(m, pyclass_name.c_str(), corgiNode);
-      //.def()
-}
+//template<size_t D>
+//auto declare_Grid(
+//    py::module& m,
+//    const std::string& pyclass_name,
+//    const std::string& pycorgi_name
+//    ) 
+//{
+//  py::object corgiNode = 
+//    (py::object) py::module::import("pycorgi").attr(pycorgi_name.c_str());
+//
+//  return 
+//    py::class_<vlv::Grid<D> >(m, pyclass_name.c_str(), corgiNode);
+//      //.def()
+//}
 
 
 //--------------------------------------------------
@@ -143,24 +144,44 @@ void bind_vlv(py::module& m)
   //--------------------------------------------------
   // Grid bindings
 
-  //auto g1 = declare_Grid<1>(m, "Grid1D", "Node1D");
-  auto g2 = declare_Grid<2>(m, "Grid2D", "Node");
+  /*
+  auto g1 = declare_Grid<1>(m, "Grid1D", "Node1D");
+  auto g2 = declare_Grid<2>(m, "Grid2D", "Node2D");
   //auto g3 = declare_Grid<3>(m, "Grid3D", "Node3D");
 
-  //g1.def(py::init<size_t>());
+  g1.def(py::init<size_t>());
   g2.def(py::init<size_t, size_t>());
   //g3.def(py::init<size_t, size_t, size_t>());
+  */
+  //py::class_<vlv::Grid<1>, corgi::Node<1> >(m, "Grid1D")
+
+  //py::object corgiNode1D = (py::object) py::module::import("pycorgi").attr("Node1D");
+  py::class_<
+    vlv::Grid<1>, 
+    corgi::Node<1>
+    >(m, "Grid1D")
+    .def(py::init<size_t>());
+
+
+  //py::class_<vlv::Grid<2>, corgi::Node<2> >(m, "Grid2D")
+  //py::object corgiNode2D = (py::object) py::module::import("pycorgi").attr("Node2D");
+  py::class_<
+    vlv::Grid<2>,
+    corgi::Node<2>
+    >(m, "Grid2D")
+    .def(py::init<size_t, size_t>());
 
 
   //--------------------------------------------------
   // Tile bindings
     
-  auto t1 = declare_Tile<1>(m, "Tile1D");
-  //auto t2 = declare_Tile<2>(m, "Tile2D");
-  ////auto t3 = declare_Tile<3>(m, "Tile3D");
-
+  auto t1 = declare_Tile<1>(m, "vlvTile1D");
   t1.def(py::init<size_t>());
+
+  //auto t2 = declare_Tile<2>(m, "Tile2D");
   //t2.def(py::init<size_t, size_t>());
+    
+  //auto t3 = declare_Tile<3>(m, "Tile3D");
   //t3.def(py::init<size_t, size_t, size_t>());
 
 
@@ -291,3 +312,5 @@ void bind_vlv(py::module& m)
 
 
 }
+
+} // end of namespace vlv
