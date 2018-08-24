@@ -6,11 +6,17 @@
 namespace py = pybind11;
 
 
-void bind_tools(py::module& m);
+namespace tools {
+  void bind_tools(py::module& m);
+}
 
-void bind_fields(py::module& m);
+namespace fields {
+  void bind_fields(py::module& m);
+}
 
-void bind_vlv(py::module& m);
+namespace vlv {
+  void bind_vlv(py::module& m);
+}
 
 
 

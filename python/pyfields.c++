@@ -10,6 +10,7 @@
 
 //--------------------------------------------------
   
+namespace fields{
   
 // generator for damped tile for various directions
 template<size_t D>
@@ -105,11 +106,11 @@ void bind_fields(py::module& m)
   //--------------------------------------------------
 
   /// General class for handling Maxwell's equations
-  //auto t1 = declare_Tile<1>(m, "Tile1D");
+  auto t1 = declare_Tile<1>(m, "Tile1D");
   auto t2 = declare_Tile<2>(m, "Tile2D");
   //auto t3 = declare_Tile<3>(m, "Tile3D");
 
-  //t1.def(py::init<size_t>());
+  t1.def(py::init<size_t>());
   t2.def(py::init<size_t, size_t>());
   //t3.def(py::init<size_t, size_t, size_t>());
 
@@ -134,3 +135,5 @@ void bind_fields(py::module& m)
 
 
 }
+
+} // end of namespace fields

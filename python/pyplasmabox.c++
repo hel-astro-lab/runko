@@ -21,15 +21,15 @@ PYBIND11_MODULE(pyplasmabox, m_base) {
 
   /// auxiliary tools
   py::module m_tools = m_base.def_submodule("tools", "PlasmaBox auxiliary tools");
-  bind_tools(m_tools);
+  tools::bind_tools(m_tools);
 
   /// fields
   py::module m_fields = m_base.def_submodule("fields", "PlasmaBox fields module");
-  bind_fields(m_fields);
+  fields::bind_fields(m_fields);
 
   /// vlv
   py::module m_vlv = m_base.def_submodule("vlv", "PlasmaBox Vlasov module");
-  bind_vlv(m_vlv);
+  vlv::bind_vlv(m_vlv);
 
 
 }

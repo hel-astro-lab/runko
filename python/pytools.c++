@@ -5,6 +5,7 @@
 #include "../tools/mesh.h"
 #include "../vlasov/amr/mesh.h"
 
+namespace tools{
 
 //--------------------------------------------------
 // Different solver orders
@@ -72,9 +73,9 @@ void bind_tools(pybind11::module& m)
 {
 
   // declare Mesh with various halo sizes
-  declare_Mesh<Realf, 0>(m, std::string("Mesh0") );
-  declare_Mesh<Realf, 1>(m, std::string("Mesh1") );
-  declare_Mesh<Realf, 3>(m, std::string("Mesh3") );
+  declare_Mesh<Realf, 0>(m, "Mesh_H0" );
+  declare_Mesh<Realf, 1>(m, "Mesh_H1" );
+  declare_Mesh<Realf, 3>(m, "Mesh_H3" );
 
 
 
@@ -140,10 +141,4 @@ void bind_tools(pybind11::module& m)
 
 }
 
-
-
-
-
-
-
-
+} // end of namespace tools

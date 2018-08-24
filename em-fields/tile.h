@@ -181,6 +181,8 @@ class Tile :
   /// destructor
   virtual ~Tile() override = default;
 
+  Tile(Tile& ) = delete;
+
 
   //--------------------------------------------------
 
