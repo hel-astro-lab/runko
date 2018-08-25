@@ -4,7 +4,7 @@
 
 
 template<std::size_t D>
-void vlv::Tile<D>::stepLocation(vlv::Grid<D>& grid)
+void vlv::Tile<D>::stepLocation(corgi::Node<D>& grid)
 {
   vlv::AmrSpatialLagrangianSolver<Realf> ssol;
   ssol.solve(*this, grid);
@@ -15,7 +15,7 @@ void vlv::Tile<D>::stepLocation(vlv::Grid<D>& grid)
 // TODO: separate into own communication module/header
 template<>
 vlv::PlasmaBlock& vlv::Tile<1>::get_external_data(
-    vlv::Grid<1>& grid,
+    corgi::Node<1>& grid,
     int ispc,
     int i
     )

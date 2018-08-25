@@ -8,8 +8,8 @@
 //--------------------------------------------------
 // Vlasov module
   
-//#include "../vlasov/tile.h"
-#include "../vlasov/grid.h"
+#include "../vlasov/tile.h"
+//#include "../vlasov/grid.h"
 
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
@@ -67,7 +67,7 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
 
     void solve(
       vlv::Tile<1>& tile,
-      vlv::Grid<1>& grid
+      corgi::Node<1>& grid
       ) override {
       PYBIND11_OVERLOAD_PURE(
           void,

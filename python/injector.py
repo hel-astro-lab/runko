@@ -41,7 +41,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
 
 
 def createEmptyVelocityMesh(conf):
-    vmesh = pyplasmabox.AdaptiveMesh3D()
+    vmesh = pyplasmabox.tools.AdaptiveMesh3D()
 
     dx = (conf.vxmax - conf.vxmin)/(conf.Nvx)
     dy = (conf.vymax - conf.vymin)/(conf.Nvy)
@@ -133,7 +133,7 @@ def inject(node, ffunc, conf):
                 # loop over species
                 species = []
                 for ispcs in range(conf.Nspecies):
-                    block = pyplasmabox.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    block = pyplasmabox.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                     
                     #set q/m
                     if ispcs == 0:

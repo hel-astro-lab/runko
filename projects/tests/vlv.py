@@ -4,8 +4,8 @@ import numpy as np
 
 import sys, os
 
-import corgi
-import pyplasma as plasma
+import pycorgi
+import pyplasmabox.vlv.oneD as plasma
 
 
 from configSetup import Configuration
@@ -133,7 +133,7 @@ def filler(xloc, uloc, ispcs, conf):
     omp = conf.cfl*conf.dx
     n0 = (omp**2.0)/conf.Nspecies
 
-    #phase space cell volume normalization
+    #phase space tile volume normalization
     #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
     #n0 *= conf.dx/dv 
     #n0 *= 1.0/conf.dx
@@ -194,7 +194,7 @@ def insert_em(node, conf):
 
     for i in range(node.getNx()):
         for j in range(node.getNy()):
-            c = node.getCellPtr(i,j)
+            c = node.getTile(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):
@@ -269,7 +269,7 @@ if __name__ == "__main__":
 
     ################################################## 
     #initialize node
-    node = plasma.Grid(conf.Nx, conf.Ny)
+    node = pycorgi.oneD.Node(conf.Nx, conf.Ny, conf.Nz)
 
     xmin = 0.0
     xmax = conf.dx*conf.Nx*conf.NxMesh
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     #node.initMpi()
     #loadMpiXStrides(node)
 
-    init.loadCells(node, conf)
+    init.loadTiles(node, conf)
 
 
     ################################################## 
@@ -308,13 +308,13 @@ if __name__ == "__main__":
     #Initial step backwards for velocity
     for j in range(node.getNy()):
         for i in range(node.getNx()):
-            cell = node.getCellPtr(i,j)
-            cell.updateBoundaries(node)
-    plasma.stepInitial1d(node)
+            tile = node.getTile(i,j)
+            tile.updateBoundaries(node)
+    plasma.stepInitial(node)
     for j in range(node.getNy()):
         for i in range(node.getNx()):
-            cell = node.getCellPtr(i,j)
-            cell.cycle()
+            tile = node.getTile(i,j)
+            tile.cycle()
 
 
     # visualize initial condition
@@ -378,29 +378,29 @@ if __name__ == "__main__":
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycle()
+                tile = node.getTile(i,j)
+                tile.cycle()
 
         #current deposition from moving flux
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.depositCurrent()
+                tile = node.getTile(i,j)
+                tile.depositCurrent()
 
         #update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries(node)
+                tile = node.getTile(i,j)
+                tile.updateBoundaries(node)
 
         #momentum step
-        plasma.stepVelocity1d(node)
+        plasma.stepVelocity(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycle()
+                tile = node.getTile(i,j)
+                tile.cycle()
 
 
 
@@ -408,12 +408,12 @@ if __name__ == "__main__":
         ##################################################
         #diagnostics
 
-        #clip every cell
+        #clip every tile
         if conf.clip:
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    cell.clip()
+                    tile = node.getTile(i,j)
+                    tile.clip()
 
         # analyze
         plasma.analyze(node)

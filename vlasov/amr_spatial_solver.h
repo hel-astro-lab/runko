@@ -62,7 +62,7 @@ class SpatialSolver {
     typedef std::array<T, 3> vec;
 
     /// Actual solver implementation
-    virtual void solve( vlv::Tile<1>& tile, vlv::Grid<1>& grid) = 0;
+    virtual void solve( vlv::Tile<1>& tile, corgi::Node<1>& grid) = 0;
 };
 
 
@@ -544,7 +544,7 @@ class AmrSpatialLagrangianSolver :
 
 
     // Strang splitted rotating (X/2 Y X/2) solver 
-    void solve( vlv::Tile<1>& tile, vlv::Grid<1>& grid ) override
+    void solve( vlv::Tile<1>& tile, corgi::Node<1>& grid ) override
     {
 
       // Yee lattice reference

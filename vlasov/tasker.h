@@ -13,7 +13,7 @@
 namespace vlv{
 
 
-inline void stepLocation( vlv::Grid<1>& grid )
+inline void stepLocation( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -42,7 +42,7 @@ inline void stepLocation( vlv::Grid<1>& grid )
 }
 
 template<int D>
-void stepInitial( vlv::Grid<1>& grid )
+void stepInitial( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -70,7 +70,7 @@ void stepInitial( vlv::Grid<1>& grid )
 
 
 template<int D>
-void stepVelocity( vlv::Grid<1>& grid )
+void stepVelocity( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -95,7 +95,7 @@ void stepVelocity( vlv::Grid<1>& grid )
 }
 
 template<int D>
-void stepVelocityGravity( vlv::Grid<1>& grid )
+void stepVelocityGravity( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -135,7 +135,7 @@ void updateBoundaries()
 */
 
 
-inline void analyze( vlv::Grid<1>& grid )
+inline void analyze( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -205,7 +205,7 @@ inline void writeAnalysis(
 
 
 inline void writeMesh( 
-    vlv::Grid<1>& grid, 
+    corgi::Node<1>& grid, 
     int lap,
     const std::string& dir 
     )

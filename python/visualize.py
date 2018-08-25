@@ -127,7 +127,7 @@ def plotTileBoundaries(ax, node, conf):
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                cid = node.id(i,j)
+                cid = node.id(i)
                 c = node.getTile(cid)
 
                 mins = np.array( c.mins ) 
@@ -167,7 +167,7 @@ def plotXmesh(ax, n, conf, spcs):
 
     for i in range(conf.Nx):
 
-        cid = n.id(i,0)
+        cid = n.id(i)
         c = n.getTile(cid)
 
         #dig electron population out
@@ -228,7 +228,7 @@ def getYee(n, conf):
            }
 
     for i in range(conf.Nx):
-        cid = n.id(i,0)
+        cid = n.id(i)
         c = n.getTile(cid)
 
         yee = c.getYee(0)
@@ -318,7 +318,7 @@ def getAnalysis(n, conf, ispcs):
            }
 
     for i in range(conf.Nx):
-        cid = n.id(i,0)
+        cid = n.id(i)
         c = n.getTile(cid)
 
         analysis = c.getAnalysis(ispcs)

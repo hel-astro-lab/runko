@@ -57,17 +57,14 @@ def loadTiles(n, conf):
 
                 #initialize tile dimensions 
                 c.cfl = conf.cfl
-                c.dt = conf.dt
                 c.dx = conf.dx
-                #c.dy = conf.dy
-                #c.dz = conf.dz
 
                 # initialize analysis tiles ready for incoming simulation data
                 for ip in range(conf.Nspecies):
                     c.addAnalysisSpecies()
 
                 #add it to the node
-                n.addTile(c) 
+                n.addTile(c, (i,)) 
 
 
 

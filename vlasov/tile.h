@@ -12,7 +12,7 @@
 #include "../tools/rotator.h"
 #include "../em-fields/tile.h"
 
-#include "grid.h"
+//#include "grid.h"
 
 
 namespace vlv {
@@ -132,7 +132,7 @@ class Tile :
 
 
   /// advance location 
-  virtual void stepLocation(Grid<D>& grid);
+  virtual void stepLocation(corgi::Node<D>& grid);
   /*
   {
     vlv::AmrSpatialLagrangianSolver<Realf> ssol;
@@ -142,7 +142,7 @@ class Tile :
 
   /// get neighboring tile from grid
   // TODO: separate into own communication module/header
-  PlasmaBlock& get_external_data(Grid<D>&, int, int);
+  PlasmaBlock& get_external_data(corgi::Node<D>&, int, int);
 
 
 };
