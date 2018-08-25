@@ -75,13 +75,9 @@ class Tile :
 
 
   /// constructor
-  template< typename... Dims,
-    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
-               corgi::internals::are_integral<Dims...>::value, void >
-  > 
-  Tile(Dims... mesh_lens) :
+  Tile(size_t nx, size_t ny, size_t nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>(mesh_lens...)
+    fields::Tile<D>(nx,ny,nz)
   { 
 
       // XXX pre-initialize; now done via python

@@ -39,21 +39,17 @@ class Tile :
 
 
   /// constructor
-  template< typename... Dims,
-    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
-               corgi::internals::are_integral<Dims...>::value, void >
-  > 
-  Tile(Dims... mesh_lens) :
+  Tile(size_t nx, size_t ny, size_t nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>(mesh_lens...),
+    fields::Tile<D>(nx,ny,nz),
 
-    ex_ref(mesh_lens...),
-    ey_ref(mesh_lens...),
-    ez_ref(mesh_lens...),
+    ex_ref(nx,ny,nz),
+    ey_ref(nx,ny,nz),
+    ez_ref(nx,ny,nz),
 
-    bx_ref(mesh_lens...),
-    by_ref(mesh_lens...),
-    bz_ref(mesh_lens...)
+    bx_ref(nx,ny,nz),
+    by_ref(nx,ny,nz),
+    bz_ref(nx,ny,nz)
   { }
 
 

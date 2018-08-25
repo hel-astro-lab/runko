@@ -114,6 +114,7 @@ auto declare_Tile(
              corgi::Tile<D>, 
              std::shared_ptr<vlv::Tile<D> >
              >(m, pyclass_name.c_str())
+    .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",     &vlv::Tile<D>::dx)
     .def("getPlasmaSpecies", [](vlv::Tile<D>& tile, size_t i, size_t s) 
         { return tile.steps.get(i).at(s); }, py::return_value_policy::reference)
@@ -138,113 +139,12 @@ auto declare_Tile(
 
 
 /// python bindings for Vlasov module
-void bind_vlv(py::module& m)
+void bind_vlv(py::module& m_sub)
 {
-
   //--------------------------------------------------
-  // Grid bindings
+  // general bindings
 
-  /*
-  auto g1 = declare_Grid<1>(m, "Grid1D", "Node1D");
-  auto g2 = declare_Grid<2>(m, "Grid2D", "Node2D");
-  //auto g3 = declare_Grid<3>(m, "Grid3D", "Node3D");
-
-  g1.def(py::init<size_t>());
-  g2.def(py::init<size_t, size_t>());
-  //g3.def(py::init<size_t, size_t, size_t>());
-  */
-  //py::class_<vlv::Grid<1>, corgi::Node<1> >(m, "Grid1D")
-
-  //py::object corgiNode1D = (py::object) py::module::import("pycorgi").attr("Node1D");
-  //py::class_<
-  //  vlv::Grid<1>, 
-  //  corgi::Node<1>
-  //  >(m, "Grid1D")
-  //  .def(py::init<size_t>());
-  //  //.def("addTile2", &vlv::Grid<1>::addTile2);
-
-
-  //py::class_<vlv::Grid<2>, corgi::Node<2> >(m, "Grid2D")
-  //py::object corgiNode2D = (py::object) py::module::import("pycorgi").attr("Node2D");
-  //py::class_<
-  //  vlv::Grid<2>,
-  //  corgi::Node<2>
-  //  >(m, "Grid2D")
-  //  .def(py::init<size_t, size_t>());
-
-
-  //--------------------------------------------------
-  // Tile bindings
-    
-  auto t1 = declare_Tile<1>(m, "Tile1D");
-  t1.def(py::init<size_t>());
-
-  //auto t2 = declare_Tile<2>(m, "Tile2D");
-  //t2.def(py::init<size_t, size_t>());
-    
-  //auto t3 = declare_Tile<3>(m, "Tile3D");
-  //t3.def(py::init<size_t, size_t, size_t>());
-
-
-
-
-  //--------------------------------------------------
-
-  py::class_<Adapter3d>(m, "Adapter")
-    .def(py::init<>())
-    .def_readwrite("tolerance",         &Adapter3d::tolerance)
-    .def_readwrite("cells_to_refine",   &Adapter3d::cells_to_refine)
-    .def_readwrite("cells_to_unrefine", &Adapter3d::cells_to_unrefine)
-    .def_readwrite("cells_created",     &Adapter3d::cells_created)
-    .def_readwrite("cells_removed",     &Adapter3d::cells_removed)
-    .def("set_maximum_data_value",      &Adapter3d::set_maximum_data_value)
-    .def("maximum_value",               &Adapter3d::maximum_value)
-    .def("maximum_gradient",            &Adapter3d::maximum_gradient)
-    .def("check",                       &Adapter3d::check)
-    .def("refine",                      &Adapter3d::refine)
-    .def("unrefine",                    &Adapter3d::unrefine);
-
-  //--------------------------------------------------
-
-  // general interface for momentum solvers
-  py::class_<vlv::MomentumSolver<Realf,3>, PyMomentumSolver > vvsol(m, "MomentumSolver");
-  vvsol
-    .def(py::init<>())
-    .def("solve",     &vlv::MomentumSolver<Realf,3>::solve)
-    .def("solveMesh", &vlv::MomentumSolver<Realf,3>::solveMesh);
-
-  // AMR Lagrangian solver
-  py::class_<vlv::AmrMomentumLagrangianSolver<Realf,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
-     .def(py::init<>());
-
-  py::class_<vlv::GravityAmrMomentumLagrangianSolver<Realf,3>>(m, "GravityAmrMomentumLagrangianSolver", vvsol)
-     .def(py::init<>());
-
-
-  //--------------------------------------------------
-
-  // general interface for spatial solvers
-  py::class_<vlv::SpatialSolver<Realf>, PySpatialSolver> vssol(m, "SpatialSolver");
-  vssol
-    .def(py::init<>())
-    .def("solve", &vlv::SpatialSolver<Realf>::solve);
-
-
-  // AMR Lagrangian solver
-  py::class_<vlv::AmrSpatialLagrangianSolver<Realf>>(m, "AmrSpatialLagrangianSolver", vssol)
-    .def(py::init<>());
-
-
-  //--------------------------------------------------
-
-  /// Vlasov tile analyzator
-  py::class_<vlv::Analyzator<Realf> >(m, "Analyzator")
-    .def(py::init<>());
-
-
-  //--------------------------------------------------
-
-  py::class_<vlv::PlasmaBlock>(m, "PlasmaBlock")
+  py::class_<vlv::PlasmaBlock>(m_sub, "PlasmaBlock")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("Nx", &vlv::PlasmaBlock::Nx)
     .def_readwrite("Ny", &vlv::PlasmaBlock::Ny)
@@ -286,26 +186,83 @@ void bind_vlv(py::module& m)
 
 
 
+
+  //--------------------------------------------------
+  // 1D bindings
+
+  py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
+
+  //--------------------------------------------------
+  // Tile bindings
+    
+  auto t1 = declare_Tile<1>(m_1d, "Tile");
+
+
+  //--------------------------------------------------
+
+  py::class_<Adapter3d>(m_1d, "Adapter")
+    .def(py::init<>())
+    .def_readwrite("tolerance",         &Adapter3d::tolerance)
+    .def_readwrite("cells_to_refine",   &Adapter3d::cells_to_refine)
+    .def_readwrite("cells_to_unrefine", &Adapter3d::cells_to_unrefine)
+    .def_readwrite("cells_created",     &Adapter3d::cells_created)
+    .def_readwrite("cells_removed",     &Adapter3d::cells_removed)
+    .def("set_maximum_data_value",      &Adapter3d::set_maximum_data_value)
+    .def("maximum_value",               &Adapter3d::maximum_value)
+    .def("maximum_gradient",            &Adapter3d::maximum_gradient)
+    .def("check",                       &Adapter3d::check)
+    .def("refine",                      &Adapter3d::refine)
+    .def("unrefine",                    &Adapter3d::unrefine);
+
+  //--------------------------------------------------
+
+  // general interface for momentum solvers
+  py::class_<vlv::MomentumSolver<Realf,3>, PyMomentumSolver > vvsol(m_1d, "MomentumSolver");
+  vvsol
+    .def(py::init<>())
+    .def("solve",     &vlv::MomentumSolver<Realf,3>::solve)
+    .def("solveMesh", &vlv::MomentumSolver<Realf,3>::solveMesh);
+
+  // AMR Lagrangian solver
+  py::class_<vlv::AmrMomentumLagrangianSolver<Realf,3>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
+     .def(py::init<>());
+
+  py::class_<vlv::GravityAmrMomentumLagrangianSolver<Realf,3>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
+     .def(py::init<>());
+
+
+  //--------------------------------------------------
+
+  // general interface for spatial solvers
+  py::class_<vlv::SpatialSolver<Realf>, PySpatialSolver> vssol(m_1d, "SpatialSolver");
+  vssol
+    .def(py::init<>())
+    .def("solve", &vlv::SpatialSolver<Realf>::solve);
+
+
+  // AMR Lagrangian solver
+  py::class_<vlv::AmrSpatialLagrangianSolver<Realf>>(m_1d, "AmrSpatialLagrangianSolver", vssol)
+    .def(py::init<>());
+
+
+  //--------------------------------------------------
+
+  /// Vlasov tile analyzator
+  py::class_<vlv::Analyzator<Realf> >(m_1d, "Analyzator")
+    .def(py::init<>());
+
+
   //--------------------------------------------------
 
 
-  m.def("stepInitial1d",  &vlv::stepInitial<1>);
-  //m.def("stepInitial",    &vlv::stepInitial<3>);
-
-  m.def("stepLocation",   &vlv::stepLocation);
-
-
-  m.def("stepVelocity1d", &vlv::stepVelocity<1>);
-  //m.def("stepVelocity",   &vlv::stepVelocity<3>);
-  m.def("stepVelocityGravity1d",   &vlv::stepVelocityGravity<1>);
-
-  m.def("analyze",        &vlv::analyze);
-
-  m.def("writeYee",       &vlv::writeYee);
-
-  m.def("writeAnalysis",  &vlv::writeAnalysis);
-
-  m.def("writeMesh",      &vlv::writeMesh);
+  m_1d.def("stepInitial",  &vlv::stepInitial<1>);
+  m_1d.def("stepLocation",   &vlv::stepLocation);
+  m_1d.def("stepVelocity", &vlv::stepVelocity<1>);
+  m_1d.def("stepVelocityGravity",   &vlv::stepVelocityGravity<1>);
+  m_1d.def("analyze",        &vlv::analyze);
+  m_1d.def("writeYee",       &vlv::writeYee);
+  m_1d.def("writeAnalysis",  &vlv::writeAnalysis);
+  m_1d.def("writeMesh",      &vlv::writeMesh);
 
 
 

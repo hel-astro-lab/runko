@@ -24,7 +24,7 @@ auto declare_Tile(
               corgi::Tile<D>, 
              std::shared_ptr<fields::Tile<D> >
             >(m, pyclass_name.c_str() )
-    //.def(py::init<size_t>())
+    .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",       &fields::Tile<D>::dx)
     .def_readwrite("cfl",      &fields::Tile<D>::cfl)
     .def("cycleYee",           &fields::Tile<D>::cycleYee)
@@ -55,7 +55,7 @@ auto declare_TileDamped(
              corgi::Tile<D>,
              std::shared_ptr<fields::damping::Tile<D,S>>
           >(m, pyclass_name.c_str() )
-  //.def(py::init<>())
+  .def(py::init<size_t, size_t, size_t>())
   .def_readwrite("ex_ref",   &fields::damping::Tile<D,S>::ex_ref, py::return_value_policy::reference)
   .def_readwrite("ey_ref",   &fields::damping::Tile<D,S>::ey_ref, py::return_value_policy::reference)
   .def_readwrite("ez_ref",   &fields::damping::Tile<D,S>::ez_ref, py::return_value_policy::reference)
@@ -69,12 +69,12 @@ auto declare_TileDamped(
 
 
 
-void bind_fields(py::module& m)
+void bind_fields(py::module& m_sub)
 {
     
   //--------------------------------------------------
 
-  py::class_<fields::YeeLattice>(m, "YeeLattice")
+  py::class_<fields::YeeLattice>(m_sub, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("ex",   &fields::YeeLattice::ex)
     .def_readwrite("ey",   &fields::YeeLattice::ey)
@@ -90,7 +90,7 @@ void bind_fields(py::module& m)
 
   //--------------------------------------------------
 
-  py::class_<fields::PlasmaMomentLattice>(m, "PlasmaMomentLattice")
+  py::class_<fields::PlasmaMomentLattice>(m_sub, "PlasmaMomentLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho)
     .def_readwrite("mgamma",   &fields::PlasmaMomentLattice::mgamma)
@@ -104,15 +104,13 @@ void bind_fields(py::module& m)
 
 
   //--------------------------------------------------
+  py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
+  py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
 
   /// General class for handling Maxwell's equations
-  auto t1 = declare_Tile<1>(m, "Tile1D");
-  auto t2 = declare_Tile<2>(m, "Tile2D");
-  //auto t3 = declare_Tile<3>(m, "Tile3D");
-
-  t1.def(py::init<size_t>());
-  t2.def(py::init<size_t, size_t>());
-  //t3.def(py::init<size_t, size_t, size_t>());
+  auto t1 = declare_Tile<1>(m_1d, "Tile");
+  auto t2 = declare_Tile<2>(m_2d, "Tile");
+  //auto t3 = declare_Tile<3>(m, "Tile");
 
 
   //--------------------------------------------------
@@ -123,15 +121,10 @@ void bind_fields(py::module& m)
   //auto td1_m2 = declare_TileDamped<1, -2>(m, "TileDamped1D_LY");
   //auto td1_p2 = declare_TileDamped<1, +2>(m, "TileDamped1D_RY");
 
-  auto td2_m1 = declare_TileDamped<2, -1>(m, "TileDamped2D_LX");
-  auto td2_p1 = declare_TileDamped<2, +1>(m, "TileDamped2D_RX");
-  auto td2_m2 = declare_TileDamped<2, -2>(m, "TileDamped2D_LY");
-  auto td2_p2 = declare_TileDamped<2, +2>(m, "TileDamped2D_RY");
-  td2_m1.def(py::init<size_t, size_t>());
-  td2_p1.def(py::init<size_t, size_t>());
-  td2_m2.def(py::init<size_t, size_t>());
-  td2_p2.def(py::init<size_t, size_t>());
-
+  auto td2_m1 = declare_TileDamped<2, -1>(m_2d, "TileDamped2D_LX");
+  auto td2_p1 = declare_TileDamped<2, +1>(m_2d, "TileDamped2D_RX");
+  auto td2_m2 = declare_TileDamped<2, -2>(m_2d, "TileDamped2D_LY");
+  auto td2_p2 = declare_TileDamped<2, +2>(m_2d, "TileDamped2D_RY");
 
 
 }

@@ -139,7 +139,7 @@ class Tile :
   public:
 
   /// size of grid inside tile
-  std::array<size_t, D> mesh_lengths;
+  std::array<size_t, 3> mesh_lengths;
 
   /// Yee lattice of plasma quantities (with 1 timestep)
   toolbox::Rotator<YeeLattice, 1> yee;
@@ -165,13 +165,9 @@ class Tile :
 
   //--------------------------------------------------
   // constructor with internal mesh dimensions
-  template< typename... Dims,
-    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
-               corgi::internals::are_integral<Dims...>::value, void >
-  > 
-  Tile(Dims... mesh_lens) :
+  Tile(size_t nx, size_t ny, size_t nz) :
     corgi::Tile<D>(),
-    mesh_lengths {{static_cast<size_t>(mesh_lens)...}}
+    mesh_lengths {{nx, ny, nz}}
   {
     // initialize one Yee lattice into the grid (into data rotator)
     addYeeLattice();

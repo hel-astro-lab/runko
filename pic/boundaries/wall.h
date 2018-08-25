@@ -22,15 +22,11 @@ class Tile :
   public:
 
   /// constructor
-  template< typename... Dims,
-    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
-               corgi::internals::are_integral<Dims...>::value, void >
-  > 
-  Tile(Dims... mesh_lens) :
-    corgi::Tile<D>(),
-    fields::Tile<D>(mesh_lens...),
-    fields::damping::Tile<D,S>(mesh_lens...),
-    pic::Tile<D>(mesh_lens...)
+  Tile(size_t nx, size_t ny, size_t nz) :
+     corgi::Tile<D>(),
+    fields::Tile<D>(nx,ny,nz),
+    fields::damping::Tile<D,S>(nx,ny,nz),
+    pic::Tile<D>(nx,ny,nz)
   { }
 
   ~Tile() override = default;
