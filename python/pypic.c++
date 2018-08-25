@@ -14,11 +14,31 @@ namespace py = pybind11;
 #include "../pic/analyzer.h"
 #include "../pic/filters.h"
 
+#include "../pic/boundaries/wall.h"
+
 
 namespace pic {
 
 
 //--------------------------------------------------
+
+namespace wall {
+  // generator for wall tile
+  template<size_t D, int S>
+    auto declare_Tile(
+        py::module& m,
+        const std::string& pyclass_name) 
+    {
+      return
+        py::class_<pic::wall::Tile<D, S>,
+      fields::damping::Tile<D, S>,
+      pic::Tile<D>,
+      std::shared_ptr<pic::wall::Tile<D,S>>
+        >(m, pyclass_name.c_str() );
+    }
+}
+
+
 
 // python bindings for plasma classes & functions
 void bind_pic(py::module& m)
@@ -137,6 +157,19 @@ void bind_pic(py::module& m)
       .def("set_kernel",             &pic::Filter::set_kernel)
       .def("get_kernel",             &pic::Filter::get_kernel, py::return_value_policy::reference)
       .def("get_image",              &pic::Filter::get_image,  py::return_value_policy::reference);
+
+  //--------------------------------------------------
+  // wall
+
+  auto tw1 = pic::wall::declare_Tile<2, -1>(m, "Tile2D_wall_LX");
+  auto tw2 = pic::wall::declare_Tile<2, +1>(m, "Tile2D_wall_RX");
+  auto tw3 = pic::wall::declare_Tile<2, -2>(m, "Tile2D_wall_LY");
+  auto tw4 = pic::wall::declare_Tile<2, +2>(m, "Tile2D_wall_RY");
+
+  tw1.def(py::init<size_t, size_t>());
+  tw2.def(py::init<size_t, size_t>());
+  tw3.def(py::init<size_t, size_t>());
+  tw4.def(py::init<size_t, size_t>());
 
 
 

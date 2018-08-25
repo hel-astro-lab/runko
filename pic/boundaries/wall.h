@@ -4,43 +4,46 @@
 #include <vector>
 
 #include "../../pic/tile.h"
-#include "../../em-fields/damping_fields.h"
+#include "../../em-fields/damping_tile.h"
 
 
 namespace pic {
+  namespace wall {
 
-template<int S>
-class PicTileWall :
-          public fields::PlasmaTileDamped<S>,
-  virtual public pic::PicTile
+
+template<size_t D, int S>
+class Tile :
+  virtual public fields::damping::Tile<D, S>,
+  virtual public pic::Tile<D>,
+  virtual public fields::Tile<D>,
+  virtual public corgi::Tile<D>
 {
 
   public:
 
-    PicTileWall(
-      size_t i, size_t j, 
-      int o, 
-      size_t NxG, size_t NyG,
-      size_t NxMesh, size_t NyMesh
-    ) : 
-      corgi::Tile(i, j, o, NxG, NyG),
-      fields::PlasmaTile(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
-      pic::PicTile(i,j,o,NxG,NyG,NxMesh,NyMesh),
-      fields::PlasmaTileDamped<S>(i,j,o,NxG, NyG, NxMesh,NyMesh, 1)
-      { }
+  /// constructor
+  template< typename... Dims,
+    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
+               corgi::internals::are_integral<Dims...>::value, void >
+  > 
+  Tile(Dims... mesh_lens) :
+    corgi::Tile<D>(),
+    fields::Tile<D>(mesh_lens...),
+    fields::damping::Tile<D,S>(mesh_lens...),
+    pic::Tile<D>(mesh_lens...)
+  { }
 
-    ~PicTileWall() override = default;
+  ~Tile() override = default;
 
-    /// wall location
-    using fields::PlasmaTileDamped<S>::fld1;
-    using fields::PlasmaTileDamped<S>::fld2;
+  /// wall location
+  using fields::damping::Tile<D, S>::fld1;
+  using fields::damping::Tile<D, S>::fld2;
 
+  // TODO: add wall movement
 
-    // TODO: add wall movement
-
-    // TODO: particle reflector
+  // TODO: particle reflector
       
-    // TODO: wall current deposition
+  // TODO: wall current deposition
 
 };
 
@@ -50,6 +53,6 @@ class PicTileWall :
 
 
 
-
+}
 
 }

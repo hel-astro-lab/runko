@@ -2,8 +2,8 @@
 
 
 
-template class pic::PicTileWall<-1>;
-template class pic::PicTileWall<+1>;
+template class pic::wall::Tile<2, -1>;
+template class pic::wall::Tile<2, +1>;
 
-template class pic::PicTileWall<-2>;
-template class pic::PicTileWall<+2>;
+template class pic::wall::Tile<2, -2>;
+template class pic::wall::Tile<2, +2>;
