@@ -50,6 +50,15 @@ class Namer {
       return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
     }
 
+    string numbering(std::tuple<size_t, size_t, size_t>& ind)
+    {
+      return numbering(
+          std::get<0>(ind),
+          std::get<1>(ind),
+          std::get<2>(ind)
+          );
+    }
+
 };
 
 
@@ -65,6 +74,33 @@ class TileInfo {
 
 };
 
+
+// helper function to get variable length indices
+std::tuple<size_t, size_t, size_t> expand_indices( 
+    corgi::Tile<1>* tile )
+{
+  int my_i = static_cast<int>( std::get<0>(tile->index) );
+  return std::make_tuple(my_i, 0,0 );
+};
+
+// helper function to get variable length indices
+std::tuple<size_t, size_t, size_t> expand_indices( 
+    corgi::Tile<2>* tile )
+{
+  int my_i = static_cast<int>( std::get<0>(tile->index) );
+  int my_j = static_cast<int>( std::get<1>(tile->index) );
+  return std::make_tuple(my_i, my_j,0 );
+};
+
+// helper function to get variable length indices
+std::tuple<size_t, size_t, size_t> expand_indices( 
+    corgi::Tile<3>* tile )
+{
+  int my_i = static_cast<int>( std::get<0>(tile->index) );
+  int my_j = static_cast<int>( std::get<1>(tile->index) );
+  int my_k = static_cast<int>( std::get<2>(tile->index) );
+  return std::make_tuple(my_i, my_j,my_k );
+};
 
 
 
@@ -104,16 +140,16 @@ class Writer {
       auto& yee = tile.getYee();
 
       // internal tile numbering 
-      int my_i = static_cast<int>( std::get<0>(tile.index) );
-      string numbering = fname.numbering(my_i, 0, 0);
+      auto my_ind = expand_indices( &tile );
+      string numbering = fname.numbering(my_ind);
 
       // open individual group for the data
       auto gr = file["yee_"+numbering];
 
       // tile location inside node
-      gr["i"] = my_i;
-      gr["j"] = 0;
-      gr["k"] = 0;
+      gr["i"] = std::get<0>(my_ind);
+      gr["j"] = std::get<1>(my_ind);
+      gr["k"] = std::get<2>(my_ind);
 
       // size
       gr["Nx"] = yee.Nx;
@@ -156,16 +192,16 @@ class Writer {
         auto& analysis = tile.getAnalysis(ispcs);
 
         // internal tile numbering 
-        int my_i = static_cast<int>( std::get<0>(tile.index) );
-        string numbering = fname.numbering(my_i, 0, 0);
+        auto my_ind = expand_indices( &tile );
+        string numbering = fname.numbering(my_ind);
 
         // open individual group for the data
         auto gr = file["analysis_"+numbering+"-"+to_string(ispcs) ];
 
         // tile location inside node
-        gr["i"] = my_i;
-        gr["j"] = 0;
-        gr["k"] = 0;
+        gr["i"] = std::get<0>(my_ind);
+        gr["j"] = std::get<1>(my_ind);
+        gr["k"] = std::get<2>(my_ind);
         gr["ispcs"] = ispcs;
 
         // size
