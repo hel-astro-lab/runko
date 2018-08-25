@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 import pycorgi
-import pyplasmabox.pic as pypic
+import pyplasmabox.pic.twoD as pypic
 
 
 
@@ -256,11 +256,12 @@ class PIC(unittest.TestCase):
 
         conf.Nx = 3
         conf.Ny = 3
+        conf.Ny = 1
         conf.update_bbox()
 
         conf.vel = 0.1
 
-        node = pycorgi.Node2D(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         loadTiles(node, conf)
@@ -364,7 +365,7 @@ class PIC(unittest.TestCase):
     def test_const_field_interpolation(self):
 
         conf = Conf()
-        node = pycorgi.Node2D(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         insert_em(node, conf, const_field)
@@ -430,7 +431,7 @@ class PIC(unittest.TestCase):
         conf.Nx = 3
         conf.Ny = 3
 
-        node = pycorgi.Node2D(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         insert_em(node, conf, linear_field)
@@ -519,7 +520,7 @@ class PIC(unittest.TestCase):
         conf.vel = 0.1
         conf.update_bbox()
 
-        node = pycorgi.Node2D(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         #insert_em(node, conf, linear_field)
@@ -643,7 +644,7 @@ class PIC(unittest.TestCase):
 
         conf.update_bbox()
 
-        node = pycorgi.Node2D(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         #insert_em(node, conf, linear_field)
@@ -748,7 +749,7 @@ class PIC(unittest.TestCase):
 
         conf.update_bbox()
 
-        node = pycorgi.Node2D(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         #insert_em(node, conf, const_field)

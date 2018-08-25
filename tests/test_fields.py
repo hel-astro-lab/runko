@@ -30,9 +30,10 @@ class Conf:
 #load tiles into each node
 def loadTiles1D(n, conf):
     for i in range(n.getNx()):
-        #if n.getMpiGrid(i) == n.rank:
-        c = pyplasmabox.fields.Tile1D(conf.NxMesh)
-        n.addTile(c, (i,) ) 
+        for j in range(n.getNy()):
+            #if n.getMpiGrid(i) == n.rank:
+            c = pyplasmabox.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            n.addTile(c, (i,) ) 
 
 
 #load tiles into each node
@@ -40,7 +41,7 @@ def loadTiles2D(n, conf):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
-            c = pyplasmabox.fields.Tile2D(conf.NxMesh, conf.NyMesh)
+            c = pyplasmabox.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.addTile(c, (i,j) ) 
 
 
@@ -66,7 +67,7 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
-        node = pycorgi.Node1D(conf.Nx)
+        node = pycorgi.oneD.Node(conf.Nx, 1, 1)
         node.setGridLims(conf.xmin, conf.xmax)
 
         loadTiles1D(node, conf)
@@ -179,7 +180,7 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 4
         conf.NzMesh = 1 #force 2D
 
-        node = pycorgi.Node2D(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         loadTiles2D(node, conf)

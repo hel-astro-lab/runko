@@ -2,8 +2,8 @@ import numpy as np
 
 import sys, os
 
-import corgi
-import pyplasma as plasma
+import pycorgi
+import pyplasmabox 
 
 np.random.seed(0)
 
@@ -41,7 +41,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
 
 
 def createEmptyVelocityMesh(conf):
-    vmesh = plasma.AdaptiveMesh3D()
+    vmesh = pyplasmabox.AdaptiveMesh3D()
 
     dx = (conf.vxmax - conf.vxmin)/(conf.Nvx)
     dy = (conf.vymax - conf.vymin)/(conf.Nvy)
@@ -86,7 +86,7 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
     ###################################################
     # adaptivity
 
-    adapter = plasma.Adapter();
+    adapter = pyplasmabox.Adapter();
 
     sweep = 1
     while(True):
@@ -127,13 +127,13 @@ def inject(node, ffunc, conf):
                 print("creating ({},{})".format(i,j))
 
                 #get tile & its content
-                cid    = node.tileId(i,j)
-                c      = node.getTilePtr(cid) #get tile ptr
+                cid    = node.id(i)
+                c      = node.getTile(cid) #get tile ptr
 
                 # loop over species
                 species = []
                 for ispcs in range(conf.Nspecies):
-                    block = plasma.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    block = pyplasmabox.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                     
                     #set q/m
                     if ispcs == 0:

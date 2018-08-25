@@ -1,7 +1,7 @@
 
 
-import corgi
-import pyplasma as plasma
+import pycorgi
+import pyplasmabox 
 
 
 
@@ -53,7 +53,7 @@ def loadTiles(n, conf):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
-                c = plasma.VlasovTile()
+                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
                 #initialize tile dimensions 
                 c.cfl = conf.cfl

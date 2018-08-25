@@ -119,7 +119,7 @@ def loadTiles(n, conf):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
-                c = pypic.Tile2D(conf.NxMesh, conf.NyMesh)
+                c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 
                 initialize_tile(c, i, j, n, conf)
 
