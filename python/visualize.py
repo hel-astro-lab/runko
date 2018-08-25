@@ -127,7 +127,11 @@ def plotTileBoundaries(ax, node, conf):
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                cid = node.id(i)
+                try:
+                    cid = node.id(i,j)
+                except:
+                    cid = node.id(i)
+
                 c = node.getTile(cid)
 
                 mins = np.array( c.mins ) 

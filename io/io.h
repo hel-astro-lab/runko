@@ -135,7 +135,8 @@ class Writer {
 
 
     /// Write PlasmaTile content into a hdf5 data group
-    bool writeYee( fields::Tile<1>& tile )
+    template<size_t D>
+    bool writeYee( fields::Tile<D>& tile )
     {
       auto& yee = tile.getYee();
 
@@ -174,15 +175,14 @@ class Writer {
       gr["rho"] = yee.rho.serialize();
 
 
-
-
       return true;
     }
 
 
 
     /// Write PlasmaTile content into a hdf5 data group
-    bool writeAnalysis( fields::Tile<1>& tile )
+    template<size_t D>
+    bool writeAnalysis( fields::Tile<D>& tile )
     {
 
       int Nspecies = static_cast<int>(tile.analysis.size());

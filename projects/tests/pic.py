@@ -5,15 +5,15 @@ import numpy as np
 import sys, os
 import h5py
 
-import pycorgi as corgi
-import pyplasma as plasma
-import pypic 
+import pycorgi.twoD as corgi
+import pyplasmabox.vlv.twoD as pyvlv
+import pyplasmabox.pic.twoD as pypic
 
 
 from configSetup import Configuration
 import argparse
 import initialize as init
-from initialize_pic import loadCells
+from initialize_pic import loadTiles
 from sampling import boosted_maxwellian
 from initialize_pic import spatialLoc
 from injector_pic import inject
@@ -54,8 +54,8 @@ def plotXmesh(ax, n, conf, spcs, vdir):
     ax.clear()
 
     for i in range(conf.Nx):
-        cid = n.cellId(i,0)
-        c = n.getCellPtr(cid)
+        cid = n.id(i,0)
+        c = n.getTile(cid)
 
         container = c.get_container(spcs)
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
 
     #node = plasma.Grid(conf.Nx, conf.Ny)
-    node = corgi.Node(conf.Nx, conf.Ny)
+    node = corgi.Node(conf.Nx, conf.Ny, conf.Nz)
 
     xmin = 0.0
     xmax = conf.Nx*conf.NxMesh #XXX scaled length
@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     node.setGridLims(xmin, xmax, ymin, ymax)
 
-    loadCells(node, conf)
+    loadTiles(node, conf)
 
 
     ################################################## 
@@ -290,20 +290,20 @@ if __name__ == "__main__":
         #update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries2D(node)
+                tile = node.getTile(i,j)
+                tile.updateBoundaries(node)
 
         #push B half
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.pushHalfB()
+                tile = node.getTile(i,j)
+                tile.pushHalfB()
 
         #update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries2D(node)
+                tile = node.getTile(i,j)
+                tile.updateBoundaries(node)
 
         #--------------------------------------------------
         # move particles
@@ -311,14 +311,14 @@ if __name__ == "__main__":
         #interpolate fields
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                fintp.solve(cell)
+                tile = node.getTile(i,j)
+                fintp.solve(tile)
 
         #pusher
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                pusher.solve(cell)
+                tile = node.getTile(i,j)
+                pusher.solve(tile)
 
         #--------------------------------------------------
         # advance B half
@@ -326,14 +326,14 @@ if __name__ == "__main__":
         #push B half
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.pushHalfB()
+                tile = node.getTile(i,j)
+                tile.pushHalfB()
 
         ##update boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries2D(node)
+                tile = node.getTile(i,j)
+                tile.updateBoundaries(node)
 
         #--------------------------------------------------
         # advance E 
@@ -341,22 +341,22 @@ if __name__ == "__main__":
         #push E
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.pushE()
+                tile = node.getTile(i,j)
+                tile.pushE()
 
         #--------------------------------------------------
 
         #deposit current
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                currint.deposit(cell)
+                tile = node.getTile(i,j)
+                currint.deposit(tile)
 
         #exchange currents
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.exchangeCurrents2D(node)
+                tile = node.getTile(i,j)
+                tile.exchangeCurrents(node)
 
         ##################################################
         # particle communication 
@@ -365,20 +365,20 @@ if __name__ == "__main__":
         #update particle boundaries
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                comm.check_outgoing_particles(cell)
+                tile = node.getTile(i,j)
+                comm.check_outgoing_particles(tile)
 
         #copy particles
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                comm.get_incoming_particles(cell, node)
+                tile = node.getTile(i,j)
+                comm.get_incoming_particles(tile, node)
 
         #delete transferred particles
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                comm.delete_transferred_particles(cell)
+                tile = node.getTile(i,j)
+                comm.delete_transferred_particles(tile)
 
         # field communication
 
@@ -388,8 +388,8 @@ if __name__ == "__main__":
         #filter
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                flt.get_padded_current(cell, node)
+                tile = node.getTile(i,j)
+                flt.get_padded_current(tile, node)
 
                 #flt.fft_image_forward()
                 #flt.apply_kernel()
@@ -397,14 +397,14 @@ if __name__ == "__main__":
         
                 for fj in range(conf.npasses):
                     flt.direct_convolve_3point()
-                flt.set_current(cell)
+                flt.set_current(tile)
 
 
         ##cycle new and temporary currents
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.cycleCurrent2D()
+                tile = node.getTile(i,j)
+                tile.cycleCurrent()
 
         ##################################################
         
@@ -412,8 +412,8 @@ if __name__ == "__main__":
         #add current to E
         for j in range(node.getNy()):
             for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.depositCurrent()
+                tile = node.getTile(i,j)
+                tile.depositCurrent()
 
 
         ##################################################
@@ -438,13 +438,13 @@ if __name__ == "__main__":
             #analyze
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
-                    analyzer.analyze(cell)
+                    tile = node.getTile(i,j)
+                    analyzer.analyze(tile)
 
 
-            plasma.writeYee(node,      lap, conf.outdir + "/")
-            plasma.writeAnalysis(node, lap, conf.outdir + "/")
-            #plasma.writeMesh(node,     lap, conf.outdir + "/")
+            pyvlv.writeYee(node,      lap, conf.outdir + "/")
+            pyvlv.writeAnalysis(node, lap, conf.outdir + "/")
+            #pyvlv.writeMesh(node,     lap, conf.outdir + "/")
 
             #try:
             #    plotNode( axs[0], node, conf)

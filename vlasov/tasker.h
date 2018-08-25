@@ -161,9 +161,9 @@ inline void analyze( corgi::Node<1>& grid )
 
 
 
-
+template<size_t D>
 inline void writeYee( 
-    corgi::Node<1>& grid, 
+    corgi::Node<D>& grid, 
     int lap,
     const std::string& dir
     )
@@ -175,7 +175,7 @@ inline void writeYee(
 
   for(auto cid : grid.getTileIds() ){
     auto& tile 
-      = dynamic_cast<fields::Tile<1>&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
     writer.writeYee(tile);
   }
 
@@ -183,8 +183,9 @@ inline void writeYee(
 }
 
 
+template<size_t D>
 inline void writeAnalysis( 
-    corgi::Node<1>& grid, 
+    corgi::Node<2>& grid, 
     int lap,
     const std::string& dir
     )
@@ -196,7 +197,7 @@ inline void writeAnalysis(
 
   for(auto cid : grid.getTileIds() ){
     auto& tile 
-      = dynamic_cast<fields::Tile<1>&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<2>&>(grid.getTile( cid ));
     writer.writeAnalysis(tile);
   }
 

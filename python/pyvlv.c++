@@ -255,16 +255,24 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
 
-  m_1d.def("stepInitial",  &vlv::stepInitial<1>);
+  m_1d.def("stepInitial",    &vlv::stepInitial<1>);
   m_1d.def("stepLocation",   &vlv::stepLocation);
-  m_1d.def("stepVelocity", &vlv::stepVelocity<1>);
+  m_1d.def("stepVelocity",   &vlv::stepVelocity<1>);
   m_1d.def("stepVelocityGravity",   &vlv::stepVelocityGravity<1>);
+
   m_1d.def("analyze",        &vlv::analyze);
-  m_1d.def("writeYee",       &vlv::writeYee);
-  m_1d.def("writeAnalysis",  &vlv::writeAnalysis);
+  m_1d.def("writeYee",       &vlv::writeYee<1>);
+  m_1d.def("writeAnalysis",  &vlv::writeAnalysis<1>);
   m_1d.def("writeMesh",      &vlv::writeMesh);
 
 
+
+  //--------------------------------------------------
+  // 2D bindings
+
+  py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
+  m_2d.def("writeYee",       &vlv::writeYee<2>);
+  m_2d.def("writeAnalysis",  &vlv::writeAnalysis<2>);
 
 
 
