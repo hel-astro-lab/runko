@@ -20,6 +20,7 @@ set (VLV_FILES
 
 set (PIC_FILES 
      pypic.c++
+     ../pic/tile.c++
      ../pic/boundaries/wall.c++
      )
 
