@@ -116,10 +116,8 @@ void bind_fields(py::module& m_sub)
   //--------------------------------------------------
   // damping tiles
 
-  //auto td1_m1 = declare_TileDamped<1, -1>(m, "TileDamped1D_LX");
-  //auto td1_p1 = declare_TileDamped<1, +1>(m, "TileDamped1D_RX");
-  //auto td1_m2 = declare_TileDamped<1, -2>(m, "TileDamped1D_LY");
-  //auto td1_p2 = declare_TileDamped<1, +2>(m, "TileDamped1D_RY");
+  auto td1_m1 = declare_TileDamped<1, -1>(m_1d, "TileDamped1D_LX");
+  auto td1_p1 = declare_TileDamped<1, +1>(m_1d, "TileDamped1D_RX");
 
   auto td2_m1 = declare_TileDamped<2, -1>(m_2d, "TileDamped2D_LX");
   auto td2_p1 = declare_TileDamped<2, +1>(m_2d, "TileDamped2D_RX");

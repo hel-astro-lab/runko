@@ -179,10 +179,10 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
   // wall
 
-  auto tw1 = pic::wall::declare_Tile<2, -1>(m_2d, "Tile2D_wall_LX");
-  auto tw2 = pic::wall::declare_Tile<2, +1>(m_2d, "Tile2D_wall_RX");
-  auto tw3 = pic::wall::declare_Tile<2, -2>(m_2d, "Tile2D_wall_LY");
-  auto tw4 = pic::wall::declare_Tile<2, +2>(m_2d, "Tile2D_wall_RY");
+  auto tw1 = pic::wall::declare_Tile<2, -1>(m_2d, "Tile_wall_LX");
+  auto tw2 = pic::wall::declare_Tile<2, +1>(m_2d, "Tile_wall_RX");
+  auto tw3 = pic::wall::declare_Tile<2, -2>(m_2d, "Tile_wall_LY");
+  auto tw4 = pic::wall::declare_Tile<2, +2>(m_2d, "Tile_wall_RY");
 
 
 }

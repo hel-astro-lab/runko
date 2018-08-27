@@ -50,25 +50,25 @@ void fields::PlasmaTileDamped::pushE2d_damped() {
 
 
 // deposit current with some resistivity
-template<
-  std::size_t D, 
-  int S
->
-void fields::damping::Tile<D, S>::depositCurrent() {
-
-  auto& yee = ::fields::Tile<D>::getYee();
-
-  //std::cout << "Calling DAMPED J update\n";
-
-  //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDy*yeeDz) <<"\n";
-  
-  Realf resistivity = 10.0;
-
-  yee.ex -= yee.jx / resistivity;
-  yee.ey -= yee.jy / resistivity;
-  yee.ez -= yee.jz / resistivity;
-
-}
+//template<
+//  std::size_t D, 
+//  int S
+//>
+//void fields::damping::Tile<D, S>::depositCurrent() {
+//
+//  auto& yee = ::fields::Tile<D>::getYee();
+//
+//  //std::cout << "Calling DAMPED J update\n";
+//
+//  //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDy*yeeDz) <<"\n";
+//  
+//  Realf resistivity = 10.0;
+//
+//  yee.ex -= yee.jx / resistivity;
+//  yee.ey -= yee.jy / resistivity;
+//  yee.ez -= yee.jz / resistivity;
+//
+//}
 
 
 /// Damp EM fields into the reference field
@@ -199,6 +199,9 @@ void fields::damping::Tile<D,S>::dampFields()
 //--------------------------------------------------
 
 // explicit template instantiation for supported directions
+template class fields::damping::Tile<1,+1>;
+template class fields::damping::Tile<1,-1>;
+
 template class fields::damping::Tile<2,-1>;
 template class fields::damping::Tile<2,+1>;
 template class fields::damping::Tile<2,-2>;

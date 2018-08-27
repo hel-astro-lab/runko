@@ -16,7 +16,10 @@ set (FIELDS_FILES
 set (VLV_FILES 
      pyvlv.c++
      ../vlasov/tile.c++
+     ../vlasov/boundaries/piston.c++
      )
+
+#     ../vlasov/boundaries/outflow.c++
 
 set (PIC_FILES 
      pypic.c++

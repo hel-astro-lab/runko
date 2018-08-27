@@ -24,6 +24,13 @@
 
 #include "../vlasov/tasker.h"
 
+
+// boundaries
+#include "../vlasov/boundaries/outflow.h"
+#include "../vlasov/boundaries/piston.h"
+
+
+
 namespace vlv {
 
 
@@ -134,7 +141,46 @@ auto declare_Tile(
 }
 
 
+//--------------------------------------------------
+namespace outflow {
+  // generator for outflow tile
+  template<size_t D, int S>
+    auto declare_Tile(
+        py::module& m,
+        const std::string& pyclass_name) 
+    {
+      return
+        py::class_<
+        vlv::outflow::Tile<D, S>,
+          corgi::Tile<D>, 
+          fields::Tile<D>,
+          fields::damping::Tile<D, S>,
+          vlv::Tile<D>,
+        std::shared_ptr<vlv::outflow::Tile<D,S>>
+        >(m, pyclass_name.c_str() )
+    .def(py::init<size_t, size_t, size_t>());
+    }
+}
 
+
+namespace piston {
+  // generator for piston tile
+  template<size_t D>
+    auto declare_Tile(
+        py::module& m,
+        const std::string& pyclass_name) 
+    {
+      return
+        py::class_<vlv::piston::Tile<D>,
+          vlv::Tile<D>,
+          fields::Tile<D>,
+          corgi::Tile<D>, 
+      std::shared_ptr<vlv::piston::Tile<D>>
+        >(m, pyclass_name.c_str() )
+    .def(py::init<size_t, size_t, size_t>())
+    .def("reflect", &vlv::piston::Tile<D>::reflect);
+    }
+}
 
 
 
@@ -264,6 +310,15 @@ void bind_vlv(py::module& m_sub)
   m_1d.def("writeYee",       &vlv::writeYee<1>);
   m_1d.def("writeAnalysis",  &vlv::writeAnalysis<1>);
   m_1d.def("writeMesh",      &vlv::writeMesh);
+
+
+  //--------------------------------------------------
+  // boundaries
+  auto tf_R = outflow::declare_Tile<1,+1>(m_1d, "Tile_outflow_L");
+  auto tf_L = outflow::declare_Tile<1,-1>(m_1d, "Tile_outflow_R");
+
+  //auto tp = piston::declare_Tile<1>(m_1d, "Tile_piston");
+  
 
 
 
