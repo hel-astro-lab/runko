@@ -118,7 +118,6 @@ auto declare_Tile(
   return
     py::class_<vlv::Tile<D>, 
              fields::Tile<D>,
-             corgi::Tile<D>, 
              std::shared_ptr<vlv::Tile<D> >
              >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
@@ -152,8 +151,6 @@ namespace outflow {
       return
         py::class_<
         vlv::outflow::Tile<D, S>,
-          corgi::Tile<D>, 
-          fields::Tile<D>,
           fields::damping::Tile<D, S>,
           vlv::Tile<D>,
         std::shared_ptr<vlv::outflow::Tile<D,S>>
@@ -172,9 +169,7 @@ namespace piston {
     {
       return
         py::class_<vlv::piston::Tile<D>,
-          vlv::Tile<D>,
-          fields::Tile<D>,
-          corgi::Tile<D>, 
+        vlv::Tile<D>,
       std::shared_ptr<vlv::piston::Tile<D>>
         >(m, pyclass_name.c_str() )
     .def(py::init<size_t, size_t, size_t>())

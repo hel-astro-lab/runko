@@ -18,7 +18,6 @@ template<
   int S
 >
 class Tile : 
-  virtual public corgi::Tile<D>,
   virtual public fields::Tile<D>
 {
 
@@ -40,7 +39,6 @@ class Tile :
 
   /// constructor
   Tile(size_t nx, size_t ny, size_t nz) :
-     corgi::Tile<D>(),
     fields::Tile<D>(nx,ny,nz),
 
     ex_ref(nx,ny,nz),

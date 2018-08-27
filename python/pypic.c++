@@ -30,7 +30,6 @@ auto declare_Tile(
   return 
   py::class_<pic::Tile<D>, 
              fields::Tile<D>,
-             corgi::Tile<D>, 
              std::shared_ptr<pic::Tile<D>>
              >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
@@ -52,8 +51,8 @@ namespace wall {
     {
       return
         py::class_<pic::wall::Tile<D, S>,
-      fields::damping::Tile<D, S>,
       pic::Tile<D>,
+      fields::damping::Tile<D, S>,
       std::shared_ptr<pic::wall::Tile<D,S>>
         >(m, pyclass_name.c_str() )
     .def(py::init<size_t, size_t, size_t>());

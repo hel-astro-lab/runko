@@ -52,7 +52,6 @@ auto declare_TileDamped(
   return py::class_<
              fields::damping::Tile<D,S>,
              fields::Tile<D>,
-             corgi::Tile<D>,
              std::shared_ptr<fields::damping::Tile<D,S>>
           >(m, pyclass_name.c_str() )
   .def(py::init<size_t, size_t, size_t>())

@@ -166,7 +166,6 @@ class Tile :
   //--------------------------------------------------
   // constructor with internal mesh dimensions
   Tile(size_t nx, size_t ny, size_t nz) :
-    corgi::Tile<D>(),
     mesh_lengths {{nx, ny, nz}}
   {
     // initialize one Yee lattice into the grid (into data rotator)

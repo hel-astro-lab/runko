@@ -52,8 +52,7 @@ class PlasmaBlock {
 
 template<std::size_t D>
 class Tile : 
-  virtual public fields::Tile<D>, 
-  virtual public  corgi::Tile<D> 
+  virtual public fields::Tile<D>
 {
 
   public:
@@ -76,7 +75,6 @@ class Tile :
 
   /// constructor
   Tile(size_t nx, size_t ny, size_t nz) :
-     corgi::Tile<D>(),
     fields::Tile<D>(nx,ny,nz)
   { 
 
