@@ -4,8 +4,8 @@
 
 #include <omp.h>
 
-#include "amr_momentum_solver.h"
-#include "amr_spatial_solver.h"
+#include "momentum-solvers/amr_momentum_solver.h"
+#include "spatial-solvers/amr_spatial_solver.h"
 #include "amr_analyzator.h"
 #include "../io/io.h"
 
@@ -41,7 +41,7 @@ inline void stepLocation( corgi::Node<1>& grid )
 
 }
 
-template<int D>
+template<int V>
 void stepInitial( corgi::Node<1>& grid )
 {
 
@@ -53,7 +53,7 @@ void stepInitial( corgi::Node<1>& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlv::AmrMomentumLagrangianSolver<Realf,D> vsol;
+          vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile, -0.5);
@@ -69,7 +69,7 @@ void stepInitial( corgi::Node<1>& grid )
 
 
 
-template<int D>
+template<int V>
 void stepVelocity( corgi::Node<1>& grid )
 {
 
@@ -81,7 +81,7 @@ void stepVelocity( corgi::Node<1>& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlv::AmrMomentumLagrangianSolver<Realf,D> vsol;
+          vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile);
@@ -94,7 +94,7 @@ void stepVelocity( corgi::Node<1>& grid )
 
 }
 
-template<int D>
+template<int V>
 void stepVelocityGravity( corgi::Node<1>& grid )
 {
 
@@ -106,7 +106,7 @@ void stepVelocityGravity( corgi::Node<1>& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlv::GravityAmrMomentumLagrangianSolver<Realf,D> vsol;
+          vlv::GravityAmrMomentumLagrangianSolver<Realf,1,V> vsol;
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile);

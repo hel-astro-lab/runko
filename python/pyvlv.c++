@@ -18,8 +18,12 @@
 //#include "../vlasov/amr/numerics.h"
 #include "../vlasov/amr/refiner.h"
 #include "../vlasov/amr/operators.h"
-#include "../vlasov/amr_momentum_solver.h"
-#include "../vlasov/amr_spatial_solver.h"
+
+#include "../vlasov/momentum-solvers/amr_momentum_solver.h"
+#include "../vlasov/momentum-solvers/bwd_lagrangian.h"
+#include "../vlasov/momentum-solvers/bwd_lagrangian_gravity.h"
+
+#include "../vlasov/spatial-solvers/amr_spatial_solver.h"
 #include "../vlasov/amr_analyzator.h"
 
 #include "../vlasov/tasker.h"
@@ -40,7 +44,7 @@ using AM3d = toolbox::AdaptiveMesh<Realf, 3>;
 
 //--------------------------------------------------
 /// trampoline class for VlasovVelocitySolver
-using momsol = vlv::MomentumSolver<Realf,3>; // PYBIND preprocessor macro freaks out 
+using momsol = vlv::MomentumSolver<Realf,1,1>; // PYBIND preprocessor macro freaks out 
                                              // of commas so we hide them with typedef
 
                                                   
@@ -258,17 +262,17 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
   // general interface for momentum solvers
-  py::class_<vlv::MomentumSolver<Realf,3>, PyMomentumSolver > vvsol(m_1d, "MomentumSolver");
+  py::class_<vlv::MomentumSolver<Realf,1,1>, PyMomentumSolver > vvsol(m_1d, "MomentumSolver");
   vvsol
     .def(py::init<>())
-    .def("solve",     &vlv::MomentumSolver<Realf,3>::solve)
-    .def("solveMesh", &vlv::MomentumSolver<Realf,3>::solveMesh);
+    .def("solve",     &vlv::MomentumSolver<Realf,1,1>::solve)
+    .def("solveMesh", &vlv::MomentumSolver<Realf,1,1>::solveMesh);
 
   // AMR Lagrangian solver
-  py::class_<vlv::AmrMomentumLagrangianSolver<Realf,3>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlv::AmrMomentumLagrangianSolver<Realf,1,1>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
-  py::class_<vlv::GravityAmrMomentumLagrangianSolver<Realf,3>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlv::GravityAmrMomentumLagrangianSolver<Realf,1,1>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
 

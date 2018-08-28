@@ -79,7 +79,7 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
 
     if conf.refinement_level < 1:
         if conf.clip:
-            vmesh.clip_tiles(conf.clipThreshold)
+            vmesh.clip_cells(conf.clipThreshold)
         return 
 
 

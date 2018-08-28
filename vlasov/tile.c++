@@ -1,6 +1,6 @@
 #include "tile.h"
 
-#include "amr_spatial_solver.h"
+#include "spatial-solvers/amr_spatial_solver.h"
 
 
 template<std::size_t D>

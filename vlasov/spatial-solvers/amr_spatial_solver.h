@@ -2,17 +2,17 @@
 
 #include <cmath> 
 
-#include "tile.h"
-#include "grid.h"
-#include "../em-fields/tile.h"
-#include "amr/mesh.h"
-#include "amr/numerics.h"
-#include "amr/refiner.h"
-#include "amr/operators.h"
-#include "../tools/signum.h"
-#include "amr_analyzator.h"
+#include "../tile.h"
+#include "../grid.h"
+#include "../../em-fields/tile.h"
+#include "../amr/mesh.h"
+#include "../amr/numerics.h"
+#include "../amr/refiner.h"
+#include "../amr/operators.h"
+#include "../../tools/signum.h"
+#include "../amr_analyzator.h"
 
-#include "../tools/cppitertools/zip.hpp"
+#include "../../tools/cppitertools/zip.hpp"
 using iter::zip;
 using toolbox::sign;
 
