@@ -77,6 +77,10 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
   //T cfl  = step_size*dt/dx;
   auto cfl = step_size*tile.cfl;
 
+  // block limits
+  auto mins = tile.mins;
+  //auto maxs = tile.maxs;
+
 
   /// Now get future current
   updateFutureCurrent(tile, cfl);
@@ -123,10 +127,16 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
           auto& mesh1 = block1.block(q,r,s);
 
           // fmt::print("solving for srq ({},{},{})\n",s,r,q);
+            
+
+          vlv::tools::Params<T> params = {};
+          params.qm = qm;
+          params.cfl = cfl;
+          params.xloc = mins[0] + static_cast<T>(q);
 
 
           // then the final call to the actual mesh solver
-          solveMesh( mesh0, mesh1, E, B, qm, cfl);
+          solveMesh( mesh0, mesh1, E, B, params);
         }
       }
     }

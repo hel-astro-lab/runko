@@ -66,7 +66,13 @@ def plotNode(ax, n, conf):
 
     for cid in n.getTileIds():
         c = n.getTile( cid )
-        (i, j) = c.index
+
+        try:
+            (i, j) = c.index
+        except:
+            (i,) = c.index
+            j = 0
+
         #check dublicates
         if tmp_grid[i,j] != -1.0:
             print("{}: ERROR in real tiles at ({},{})".format(n.rank, i,j))
@@ -93,7 +99,13 @@ def plotNode(ax, n, conf):
     # add text label about number of neighbors
     for cid in n.getTileIds():
         c = n.getTile( cid )
-        (i, j) = c.index
+
+        try:
+            (i, j) = c.index
+        except:
+            (i,) = c.index
+            j = 0
+
         dx = n.getXmax() - n.getXmin()
         dy = n.getYmax() - n.getYmin()
 
@@ -391,6 +403,8 @@ def plotDens(ax, n, conf):
     ax.set_xlim(n.getXmin(), n.getXmax())
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
+
+    ax.set_yscale('log')
 
     ax.plot(yee['x'], yee['rho'], "b-")
     

@@ -59,14 +59,13 @@ class PyMomentumSolver : public momsol {
         AM3d& mesh1, 
         std::array<Realf, 3>& E,
         std::array<Realf, 3>& B,
-        Realf qm,
-        Realf cfl
+        vlv::tools::Params<Realf>& params
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
           momsol, 
           solveMesh, 
-          mesh0, mesh1, E, B, qm, cfl
+          mesh0, mesh1, E, B, params 
           );
     }
 };
@@ -273,7 +272,7 @@ void bind_vlv(py::module& m_sub)
      .def(py::init<>());
 
   py::class_<vlv::GravityAmrMomentumLagrangianSolver<Realf,1,1>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
-     .def(py::init<>());
+     .def(py::init<Realf,Realf>());
 
 
   //--------------------------------------------------

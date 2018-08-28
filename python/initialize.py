@@ -1,4 +1,5 @@
 
+from initialize_pic import spatialLoc #XXX make this general/not pic-specific
 
 import pycorgi
 import pyplasmabox 
@@ -46,6 +47,23 @@ def loadMpiXStrides(n):
     n.bcastMpiGrid()
 
 
+def initialize_tile(c, i, j, n, conf):
+
+    #initialize tile dimensions 
+    c.cfl = conf.cfl
+    c.dx = conf.dx
+
+    # initialize analysis tiles ready for incoming simulation data
+    for ip in range(conf.Nspecies):
+        c.addAnalysisSpecies()
+
+    #set bounding box of the tile 
+    mins = spatialLoc(n, [i,j], [0,0,0], conf)
+    maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
+    c.set_tile_mins(mins[0:1])
+    c.set_tile_maxs(maxs[0:1])
+
+
 #load tiles into each node
 def loadTiles(n, conf):
     for i in range(n.getNx()):
@@ -55,13 +73,7 @@ def loadTiles(n, conf):
             if n.getMpiGrid(i,j) == n.rank:
                 c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
-                #initialize tile dimensions 
-                c.cfl = conf.cfl
-                c.dx = conf.dx
-
-                # initialize analysis tiles ready for incoming simulation data
-                for ip in range(conf.Nspecies):
-                    c.addAnalysisSpecies()
+                initialize_tile(c, i, j, n, conf)
 
                 #add it to the node
                 n.addTile(c, (i,)) 

@@ -21,12 +21,13 @@ class AmrMomentumLagrangianSolver :
 
     virtual ~AmrMomentumLagrangianSolver() = default;
 
-    virtual Vector3f lorentz_force(
-        Vector3f& /*uvel*/,
-        Vector3f& E,
-        Vector3f& /*B*/,
-        T qm,
-        T cfl);
+    void solveMesh( 
+        toolbox::AdaptiveMesh<T, 3>& mesh0,
+        toolbox::AdaptiveMesh<T, 3>& mesh1,
+        vec& Einc,
+        vec& Binc,
+        tools::Params<T>& params
+        ) override;
 
     T backward_advect(
         std::array<uint64_t, 3>& index,
@@ -35,17 +36,20 @@ class AmrMomentumLagrangianSolver :
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         Vector3f& E,
         Vector3f& B,
+        tools::Params<T>& params
+        );
+
+    virtual Vector3f lorentz_force(
+        Vector3f& /*uvel*/,
+        Vector3f& E,
+        Vector3f& /*B*/,
         T qm,
         T cfl);
 
-    void solveMesh( 
-        toolbox::AdaptiveMesh<T, 3>& mesh0,
-        toolbox::AdaptiveMesh<T, 3>& mesh1,
-        vec& Einc,
-        vec& Binc,
-        T qm,
-        T cfl) override;
-
+    virtual Vector3f other_forces(
+        Vector3f& uvel,
+        tools::Params<T>& params
+        );
 };
 
 

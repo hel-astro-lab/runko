@@ -60,7 +60,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     #calculate coordinate extent
     x = xmin + i*(NxMesh)*dx + l*dx
     y = ymin + j*(NyMesh)*dy + m*dy
-    z = 0.0                    + n*dz
+    z = 0.0                  + n*dz
 
     return [x, y, z]
 

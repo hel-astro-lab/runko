@@ -4,29 +4,23 @@
 #include "../amr/mesh.h"
 #include "../tile.h"
 
-//#include <cmath> 
 #include <Eigen/Dense>
-//#include "tile.h"
-//#include "../em-fields/tile.h"
-//#include "amr/mesh.h"
-//#include "amr/numerics.h"
-//#include "amr/refiner.h"
-//#include "../tools/cppitertools/zip.hpp"
-//#include "../tools/cppitertools/enumerate.hpp"
-//#include "../tools/signum.h"
-//#include "../units.h"
-//#include "amr_analyzator.h"
 
-
-//using namespace Eigen;
-//using std::floor;
-//using iter::zip;
-//using toolbox::sign;
-//using units::pi;
 
 namespace vlv {
-
 using namespace Eigen;
+
+
+/// small container for all the solver parameters
+namespace tools {
+  template<typename T>
+  struct Params 
+  {
+    T qm;
+    T cfl;
+    T xloc;
+  };
+}
 
 
 /*! General interface for AMR Momentum space solvers
@@ -58,9 +52,8 @@ class MomentumSolver {
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& E,
         vec& B,
-        T qm,
-        T cfl) = 0;
-
+        vlv::tools::Params<T>& params
+        ) = 0;
 };
 
 } // end of namespace vlv

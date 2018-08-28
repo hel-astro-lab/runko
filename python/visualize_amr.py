@@ -40,9 +40,9 @@ def get_leaf_mesh(m, rfl_max):
     ff = np.zeros((nx, ny, nz))
 
 
-    tiles = m.get_tiles(True)
+    cells = m.get_cells(True)
     leafs = 0
-    for cid in tiles:
+    for cid in cells:
         if(not m.is_leaf(cid) ):
             continue
         leafs += 1
@@ -52,7 +52,7 @@ def get_leaf_mesh(m, rfl_max):
 
         [i,j,k] = m.get_indices(cid)
 
-        st = lvlm/lvl #stretch factor for ref lvl
+        st = lvlm // lvl #stretch factor for ref lvl
 
         val = m[i,j,k, rfl]
 
@@ -128,8 +128,8 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
 
     for i in range(conf.Nx):
-        cid = n.tileId(i,0)
-        c = n.getTilePtr(cid)
+        cid = n.id(i)
+        c = n.getTile(cid)
 
         block = c.getPlasmaSpecies(0, spcs)
         for s in range(conf.NxMesh):

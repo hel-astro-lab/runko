@@ -12,99 +12,8 @@
 
 using namespace Eigen;
 
-/// Relativistic Lorentz force
-template<typename T, int D, int V>
-inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
-  Vector3f& /*uvel*/,
-  Vector3f& E,
-  Vector3f& /*B*/,
-  T qm,
-  T cfl)
-{
-  // electromagnetic combined push
-  /*
-  Vector3f Ehalf = dt*E/2; // half step in E
-  Vector3f us = uvel - Ehalf; // P^*, i.e., velocity in the middle of the step
-
-  // B-field rotation matrix
-  Vector3f b = B.normalized();
-  T gamma = sqrt(1.0 + us.transpose()*us );
-  T wt = dt*(qm*B.norm() / gamma); // relativistic cyclotron frequency
-
-  Matrix3f Rot;
-  Rot <<
-    b(0)*b(0)+(1-b(0)*b(0))*cos(wt),    b(0)*b(1)*(1-cos(wt))-b(2)*sin(wt), b(0)*b(2)*(1-cos(wt))+b(1)*sin(wt),
-    b(0)*b(1)*(1-cos(wt))+b(2)*sin(wt), b(1)*b(1)+(1-b(1)*b(1))*cos(wt),    b(1)*b(2)*(1-cos(wt))-b(0)*sin(wt),
-    b(0)*b(2)*(1-cos(wt))-b(1)*sin(wt), b(1)*b(2)*(1-cos(wt))+b(0)*sin(wt), b(2)*b(2)+(1-b(2)*b(2))*cos(wt);
-
-  return qm*( -Ehalf + Rot*us - uvel )*dt;
-  */
-
-  // electrostatic push
-  //
-  // Boris scheme for b=0 translates to
-  // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
-  //
-  // with halving taken into account in definition of Ex
-  return -qm*E/cfl;
-}
 
 
-// backward advected Lorentz force
-template<typename T, int D, int V>
-T vlv::AmrMomentumLagrangianSolver<T,D,V>::backward_advect(
-    std::array<uint64_t, 3>& index,
-    int rfl,
-    const toolbox::AdaptiveMesh<T, 3>& mesh0,
-    toolbox::AdaptiveMesh<T, 3>& mesh1,
-    Vector3f& E,
-    Vector3f& B,
-    T qm,
-    T cfl) 
-{
-  T val; // return value
-  vec u    = mesh1.get_center(index, rfl);  // velocity
-  vec du   = mesh1.get_length(rfl);         // box size, i.e., \Delta u
-  auto len = mesh1.get_size(rfl);
-
-
-  // get shift of the characteristic solution from Lorentz force
-  Vector3f uvel( u.data() );
-  Vector3f F = lorentz_force(uvel, E, B, qm, cfl);
-
-
-  // advection in units of cells 
-  // NOTE: We normalize with CFL because velocities are in units 
-  // of c and we need them in units of grid speed.
-  // XXX: CHECK
-  std::array<T,3> shift, cell_shift;
-  for(int i=0; i<V; i++) shift[i] = F(i) / du[i];
-
-  // advected tiles
-  std::array<int,3> index_shift;
-  for(int i=0; i<V; i++) index_shift[i] = static_cast<int>( trunc(shift[i]) );
-
-  // advection inside cell
-  T tmp;
-  for(int i=0; i<V; i++) cell_shift[i] = modf(shift[i], &tmp);
-
-  // new grid indices
-  std::array<uint64_t, 3> index_new;
-  for(int i=0;   i<V;   i++) index_new[i] = index[i] + index_shift[i];
-  for(int i = 2; i>V-1; i--) index_new[i] = index[i];
-
-
-  // set boundary conditions (zero outside the grid limits)
-  for(int i=0; i<V; i++){
-    if( (index_new[i] <2) || (index_new[i] >= len[i]-2) ) return T(0);
-  }
-
-  // interpolation branch
-  val = toolbox::interp_cubic<T,V>(mesh0, index_new, cell_shift, rfl);
-  //val = toolbox::interp_linear<T,V>(mesh0, index_new, cell_shift, rfl);
-
-  return val;
-}
 
 
 template<typename T, int D, int V>
@@ -113,8 +22,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& Einc,
         vec& Binc,
-        T qm,
-        T cfl)
+        tools::Params<T>& params)
 {
 
   toolbox::Adapter<T,3> adapter;
@@ -158,7 +66,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
         index[2] = t;
 
         uint64_t cid = mesh1.get_cell_from_indices(index, 0);
-        val = backward_advect(index, 0, mesh0, mesh1, E, B, qm, cfl);
+        val = backward_advect(index, 0, mesh0, mesh1, E, B, params);
 
         // refinement
         // TODO specialize to value & gradient instead of just value
@@ -192,7 +100,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
 
       // fmt::print("creating {} at {}\n", cid, rfl);
 
-      val = backward_advect(index2, rfl, mesh0, mesh1, E, B, qm, cfl);
+      val = backward_advect(index2, rfl, mesh0, mesh1, E, B, params);
       mesh1.set(cid, val);
 
       refine_indicator   = val/max_val;
@@ -216,6 +124,113 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
   return;
 }
 
+// backward advected Lorentz force
+template<typename T, int D, int V>
+T vlv::AmrMomentumLagrangianSolver<T,D,V>::backward_advect(
+    std::array<uint64_t, 3>& index,
+    int rfl,
+    const toolbox::AdaptiveMesh<T, 3>& mesh0,
+    toolbox::AdaptiveMesh<T, 3>& mesh1,
+    Vector3f& E,
+    Vector3f& B,
+    tools::Params<T>& params)
+{
+  T val; // return value
+  vec u    = mesh1.get_center(index, rfl);  // velocity
+  vec du   = mesh1.get_length(rfl);         // box size, i.e., \Delta u
+  auto len = mesh1.get_size(rfl);
+
+
+  // get shift of the characteristic solution from Lorentz force
+  Vector3f uvel( u.data() );
+  Vector3f F = lorentz_force(uvel, E, B, params.qm, params.cfl);
+
+  // add other forces; default to zero 
+  Vector3f Fi = other_forces(uvel, params);
+  F += Fi;
+
+
+  // advection in units of cells 
+  // NOTE: We normalize with CFL because velocities are in units 
+  // of c and we need them in units of grid speed.
+  // XXX: CHECK
+  std::array<T,3> shift, cell_shift;
+  for(int i=0; i<V; i++) shift[i] = F(i) / du[i];
+
+  // advected tiles
+  std::array<int,3> index_shift;
+  for(int i=0; i<V; i++) index_shift[i] = static_cast<int>( trunc(shift[i]) );
+
+  // advection inside cell
+  T tmp;
+  for(int i=0; i<V; i++) cell_shift[i] = modf(shift[i], &tmp);
+
+  // new grid indices
+  std::array<uint64_t, 3> index_new;
+  for(int i=0;   i<V;   i++) index_new[i] = index[i] + index_shift[i];
+  for(int i = 2; i>V-1; i--) index_new[i] = index[i];
+
+
+  // set boundary conditions (zero outside the grid limits)
+  for(int i=0; i<V; i++){
+    if( (index_new[i] <2) || (index_new[i] >= len[i]-2) ) return T(0);
+  }
+
+  // interpolation branch
+  val = toolbox::interp_cubic<T,V>(mesh0, index_new, cell_shift, rfl);
+  //val = toolbox::interp_linear<T,V>(mesh0, index_new, cell_shift, rfl);
+
+  return val;
+}
+
+/// Relativistic Lorentz force
+template<typename T, int D, int V>
+inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
+  Vector3f& /*uvel*/,
+  Vector3f& E,
+  Vector3f& /*B*/,
+  T qm,
+  T cfl)
+{
+  // electromagnetic combined push
+  /*
+  Vector3f Ehalf = dt*E/2; // half step in E
+  Vector3f us = uvel - Ehalf; // P^*, i.e., velocity in the middle of the step
+
+  // B-field rotation matrix
+  Vector3f b = B.normalized();
+  T gamma = sqrt(1.0 + us.transpose()*us );
+  T wt = dt*(qm*B.norm() / gamma); // relativistic cyclotron frequency
+
+  Matrix3f Rot;
+  Rot <<
+    b(0)*b(0)+(1-b(0)*b(0))*cos(wt),    b(0)*b(1)*(1-cos(wt))-b(2)*sin(wt), b(0)*b(2)*(1-cos(wt))+b(1)*sin(wt),
+    b(0)*b(1)*(1-cos(wt))+b(2)*sin(wt), b(1)*b(1)+(1-b(1)*b(1))*cos(wt),    b(1)*b(2)*(1-cos(wt))-b(0)*sin(wt),
+    b(0)*b(2)*(1-cos(wt))-b(1)*sin(wt), b(1)*b(2)*(1-cos(wt))+b(0)*sin(wt), b(2)*b(2)+(1-b(2)*b(2))*cos(wt);
+
+  return qm*( -Ehalf + Rot*us - uvel )*dt;
+  */
+
+  // electrostatic push
+  //
+  // Boris scheme for b=0 translates to
+  // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
+  //
+  // with halving taken into account in definition of Ex
+  return -qm*E/cfl;
+}
+
+
+/// default zero force for to be overloaded by more complicated solvers
+template<typename T, int D, int V>
+inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
+    Vector3f& /*uvel*/,
+    tools::Params<T>& /*params*/
+    )
+{
+  Vector3f ret = Vector3f::Zero();
+  return ret;
+}
 
 //--------------------------------------------------
 // explicit template instantiation

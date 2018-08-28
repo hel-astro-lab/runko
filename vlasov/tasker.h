@@ -95,7 +95,11 @@ void stepVelocity( corgi::Node<1>& grid )
 }
 
 template<int V>
-void stepVelocityGravity( corgi::Node<1>& grid )
+void stepVelocityGravity( 
+    corgi::Node<1>& grid,
+    Realf g0,
+    Realf Lx
+    )
 {
 
 #pragma omp parallel
@@ -106,7 +110,7 @@ void stepVelocityGravity( corgi::Node<1>& grid )
       for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
-          vlv::GravityAmrMomentumLagrangianSolver<Realf,1,V> vsol;
+          vlv::GravityAmrMomentumLagrangianSolver<Realf,1,V> vsol(g0, Lx);
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile);
@@ -185,7 +189,7 @@ inline void writeYee(
 
 template<size_t D>
 inline void writeAnalysis( 
-    corgi::Node<2>& grid, 
+    corgi::Node<D>& grid, 
     int lap,
     const std::string& dir
     )
@@ -197,7 +201,7 @@ inline void writeAnalysis(
 
   for(auto cid : grid.getTileIds() ){
     auto& tile 
-      = dynamic_cast<fields::Tile<2>&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
     writer.writeAnalysis(tile);
   }
 
