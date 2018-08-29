@@ -1,7 +1,8 @@
 project (pyplasmabox)
 
 
-find_package(pybind11 REQUIRED)
+find_package(PYBIND11 REQUIRED)
+#INCLUDE_DIRECTORIES ( "$ENV{pybind11_INCLUDE_DIR}" )
 
 set (TOOLS_FILES 
      pytools.c++
