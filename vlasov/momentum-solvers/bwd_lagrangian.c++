@@ -13,7 +13,19 @@
 using namespace Eigen;
 
 
+namespace vlv {
+  namespace tools {
+template<typename T>
+T modf(T arg, T* iptr) = delete;
 
+template<>
+float modf(float arg, float* iptr) { return modff(arg, iptr); }
+
+template<>
+double modf(double arg, double* iptr) { return modf(arg, iptr); }
+
+}
+}
 
 
 template<typename T, int D, int V>
@@ -163,7 +175,7 @@ T vlv::AmrMomentumLagrangianSolver<T,D,V>::backward_advect(
 
   // advection inside cell
   T tmp;
-  for(int i=0; i<V; i++) cell_shift[i] = modf(shift[i], &tmp);
+  for(int i=0; i<V; i++) cell_shift[i] = tools::modf<T>(shift[i], &tmp);
 
   // new grid indices
   std::array<uint64_t, 3> index_new;
