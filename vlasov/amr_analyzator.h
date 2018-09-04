@@ -121,14 +121,15 @@ class Analyzator {
 
         for(int s=0; s<Nz; s++) {
         for(int r=0; r<Ny; r++) {
-          for(int q=0; q<Nx; q++) {
+        for(int q=0; q<Nx; q++) {
             const auto& M   = block0.block(q,r,s);   // f_i
 
             //T qm = 1.0 / block0.qm;  // charge to mass ratio
 
 
             // TODO there is a possibility to optimize this by putting everything 
-            // inside one loop at the expense of code readability... So it is not done.
+            // inside one loop at the expense of code readability... 
+            // ...So it is not done here atm.
 
             //-------------------------------------------------- 
             // Global quantities (sum over species)
@@ -152,7 +153,8 @@ class Analyzator {
 
             //-------------------------------------------------- 
             // Species-specific quantities
-            // NOTE: different insert location
+            // NOTE: different insert location (i.e., analysis object 
+            // instead of yee object)
 
             // number density; chi(u) = 1
             T rho = 
@@ -181,19 +183,20 @@ class Analyzator {
                 [](std::array<T,3> uvel) -> T 
                 { return uvel[0]/gamma<T,3>(uvel); }
                 );
-            analysis.Vx(q,r,s) = Vx;
+            analysis.Vx(q,r,s) = Vx / rho;
 
             // TODO add Vy and Vz components
 
               
             /// (non-relativistic) temperature
             // chi(u) = v - V
-            analysis.Tx(q,r,s) = 
+            T Tx = 
               integrate_moment(
                   M,
                 [Vx](std::array<T,3> uvel) -> T 
-                { return uvel[0]/gamma<T,3>(uvel) - Vx; }
+                { return std::pow(uvel[0]/gamma<T,3>(uvel) - Vx, 2); }
                 );
+            analysis.Tx(q,r,s) = std::sqrt(Tx);
 
             // TODO add Ty and Tz components
 

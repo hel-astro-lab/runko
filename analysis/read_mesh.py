@@ -3,8 +3,8 @@ from __future__ import print_function
 import numpy as np
 import h5py
 
-import corgi
-import pyplasma as plasma
+import pycorgi
+import pyplasmabox.tools as plasma
 
 from visualize     import imshow
 from visualize_amr import get_leaf_mesh
@@ -148,6 +148,7 @@ def get_1d_meshes(prefix, lap, conf, spcs, vdir):
     f5 = h5py.File(fname,'r')
     #print(fname)
 
+    # TODO: parallellize
     for i in range(conf.Nx):
         tinfo.i = i
         for s in range(conf.NxMesh):

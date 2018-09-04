@@ -34,6 +34,10 @@ def imshow(ax,
 
     if clip == None:
         mgrid = grid
+    elif type(clip) == tuple:
+        cmin, cmax = clip
+        print(cmin, cmax)
+        mgrid = np.ma.masked_where( np.logical_and(cmin <= grid, grid <= cmax), grid)
     else:
         mgrid = np.ma.masked_where(grid <= clip, grid)
     
