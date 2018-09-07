@@ -1,5 +1,7 @@
+import numpy as np
 from configparser import ConfigParser
 import ast
+
 
 
 section_names = 'io', 'simulation', 'grid', 'vmesh', 'particles', 'problem'
@@ -47,6 +49,36 @@ class Configuration(object):
             self.__dict__["gamma_e"] = 0.0
         if not("gamma_i" in self.__dict__):
             self.__dict__["gamma_i"] = 0.0
+
+
+        #Compute initial values for configuration; 
+        # assume that flow speed is beta if value is <=1, else it is gamma
+        if np.abs(self.gamma_e) <= 1.0:
+            beta = np.abs(self.gamma_e)
+            self.ub_e = beta/np.sqrt(1.0 - beta**2.0)
+        else:
+            self.ub_e = np.sqrt(self.gamma_e**2.0 - 1.0)
+    
+        if np.abs(self.gamma_i) <= 1.0:
+            beta = np.abs(self.gamma_i)
+            self.ub_i = beta/np.sqrt(1.0 - beta**2.0)
+        else:
+            self.ub_i = np.sqrt(self.gamma_i**2.0 - 1.0)
+
+        # imprint sign back
+        self.ub_e *= np.sign(self.gamma_e)
+        self.ub_i *= np.sign(self.gamma_i)
+
+        #self.gamma_e = np.abs(self.gamma_e) 
+        #self.gamma_i = np.abs(self.gamma_i) 
+
+        # assume 1D/2D dimensionality if not otherwise specified
+        if not("Ny" in self.__dict__):
+            self.__dict__["Ny"] = 1
+
+        if not("Nz" in self.__dict__):
+            self.__dict__["Nz"] = 1
+
 
 
 #load default 

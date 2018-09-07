@@ -102,7 +102,8 @@ def filler(xloc, uloc, ispcs, conf):
         delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
 
         # bulk velocities
-        mux = conf.gamma_e
+        #print("ub_e:", conf.ub_e)
+        mux = conf.ub_e
         muy = 0.0
         muz = 0.0
 
@@ -114,7 +115,8 @@ def filler(xloc, uloc, ispcs, conf):
         delgam  = conf.delgam
 
         # bulk velocities
-        mux = conf.gamma_i
+        #print("ub_i:", conf.ub_i)
+        mux = conf.ub_i
         muy = 0.0
         muz = 0.0
 

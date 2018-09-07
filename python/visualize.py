@@ -407,8 +407,7 @@ def plotDens(ax, n, conf):
     ax.set_xlim(n.getXmin(), n.getXmax())
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
-
-    ax.set_yscale('log')
+    #ax.set_yscale('log')
 
     ax.plot(yee['x'], yee['rho'], "b-")
     
