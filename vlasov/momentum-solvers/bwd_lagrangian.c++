@@ -44,7 +44,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
 
   // empty the target mesh
   // TODO: is this efficient; should we recycle instead?
-  mesh1.data.clear();
+  mesh1.clear();
 
 
   std::array<uint64_t, 3> index;
@@ -78,7 +78,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
         index[2] = t;
 
         uint64_t cid = mesh1.get_cell_from_indices(index, 0);
-        val = backward_advect(index, 0, mesh0, mesh1, E, B, params);
+        val = backward_advect(index, 0, mesh0, E, B, params);
 
         // refinement
         // TODO specialize to value & gradient instead of just value
@@ -112,7 +112,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
 
       // fmt::print("creating {} at {}\n", cid, rfl);
 
-      val = backward_advect(index2, rfl, mesh0, mesh1, E, B, params);
+      val = backward_advect(index2, rfl, mesh0, E, B, params);
       mesh1.set(cid, val);
 
       refine_indicator   = val/max_val;
@@ -142,15 +142,15 @@ T vlv::AmrMomentumLagrangianSolver<T,D,V>::backward_advect(
     std::array<uint64_t, 3>& index,
     int rfl,
     const toolbox::AdaptiveMesh<T, 3>& mesh0,
-    toolbox::AdaptiveMesh<T, 3>& mesh1,
+    //toolbox::AdaptiveMesh<T, 3>& mesh1,
     Vector3f& E,
     Vector3f& B,
     tools::Params<T>& params)
 {
   T val; // return value
-  vec u    = mesh1.get_center(index, rfl);  // velocity
-  vec du   = mesh1.get_length(rfl);         // box size, i.e., \Delta u
-  auto len = mesh1.get_size(rfl);
+  vec u    = mesh0.get_center(index, rfl);  // velocity
+  vec du   = mesh0.get_length(rfl);         // box size, i.e., \Delta u
+  auto len = mesh0.get_size(rfl);
 
 
   // get shift of the characteristic solution from Lorentz force

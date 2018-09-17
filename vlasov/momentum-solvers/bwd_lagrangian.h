@@ -33,7 +33,6 @@ class AmrMomentumLagrangianSolver :
         std::array<uint64_t, 3>& index,
         int rfl,
         const toolbox::AdaptiveMesh<T, 3>& mesh0,
-        toolbox::AdaptiveMesh<T, 3>& mesh1,
         Vector3f& E,
         Vector3f& B,
         tools::Params<T>& params

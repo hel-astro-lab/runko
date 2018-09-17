@@ -149,6 +149,10 @@ class AdaptiveMesh {
   }
   */
 
+  // empty internal data
+  void clear() {
+    data.clear();
+  }
 
 
 	uint64_t get_last_cid() const
