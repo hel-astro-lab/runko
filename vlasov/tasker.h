@@ -45,23 +45,24 @@ template<int V>
 void stepInitial( corgi::Node<1>& grid )
 {
 
-#pragma omp parallel
+  vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
+
+  #pragma omp parallel 
   {
-#pragma omp single
+    #pragma omp single 
     {
 
       for(auto cid : grid.getTileIds() ){
-#pragma omp task
+        #pragma omp task firstprivate(vsol)
         {
-          vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile, -0.5);
         }// end of omp task
       }
 
-
     }// end of omp single
+  #pragma omp taskwait
   }// end of omp parallel
 
 }
@@ -72,16 +73,16 @@ void stepInitial( corgi::Node<1>& grid )
 template<int V>
 void stepVelocity( corgi::Node<1>& grid )
 {
+  vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
 
-#pragma omp parallel
+  #pragma omp parallel
   {
-#pragma omp single
+    #pragma omp single
     {
 
       for(auto cid : grid.getTileIds() ){
-#pragma omp task
+        #pragma omp task firstprivate(vsol)
         {
-          vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile);
@@ -102,15 +103,16 @@ void stepVelocityGravity(
     )
 {
 
-#pragma omp parallel
+  vlv::GravityAmrMomentumLagrangianSolver<Realf,1,V> vsol(g0, Lx);
+
+  #pragma omp parallel
   {
-#pragma omp single
+    #pragma omp single
     {
 
       for(auto cid : grid.getTileIds() ){
-#pragma omp task
+        #pragma omp task firstprivate(vsol)
         {
-          vlv::GravityAmrMomentumLagrangianSolver<Realf,1,V> vsol(g0, Lx);
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           vsol.solve(tile);
@@ -141,16 +143,16 @@ void updateBoundaries()
 
 inline void analyze( corgi::Node<1>& grid )
 {
+  vlv::Analyzator<Realf> analyzator;
 
-#pragma omp parallel
+  #pragma omp parallel
   {
-#pragma omp single
+    #pragma omp single
     {
 
       for(auto cid : grid.getTileIds() ){
-#pragma omp task
+        #pragma omp task firstprivate(analyzator)
         {
-          vlv::Analyzator<Realf> analyzator;
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
           analyzator.analyze(tile);
