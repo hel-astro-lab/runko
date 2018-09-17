@@ -3,9 +3,9 @@
 #include <cmath> 
 #include <cassert>
 
-#include "../definitions.h"
+#include "../../definitions.h"
 
-#include "tile.h"
+#include "../tile.h"
 
 namespace pic {
 

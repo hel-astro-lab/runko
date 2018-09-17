@@ -378,7 +378,7 @@ class PIC(unittest.TestCase):
                 tile.updateBoundaries(node)
 
         #interpolate fields
-        fintp = pypic.ParticleFieldInterpolator()
+        fintp = pypic.LinearInterpolator()
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
@@ -444,7 +444,7 @@ class PIC(unittest.TestCase):
                 tile.updateBoundaries(node)
 
         #interpolate fields
-        fintp = pypic.ParticleFieldInterpolator()
+        fintp = pypic.LinearInterpolator()
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
@@ -529,7 +529,7 @@ class PIC(unittest.TestCase):
         #inject(node, filler_xvel, conf) #injecting plasma particles
 
         #pusher   = pypic.BorisPusher()
-        #fintp    = pypic.ParticleFieldInterpolator()
+        #fintp    = pypic.LinearInterpolator()
         #comm     = pypic.Communicator()
         currint  = pypic.Depositer()
         analyzer = pypic.Analyzator()
@@ -652,7 +652,7 @@ class PIC(unittest.TestCase):
         inject(node, filler_xvel, conf) #injecting plasma particles
 
         #pusher   = pypic.BorisPusher()
-        #fintp    = pypic.ParticleFieldInterpolator()
+        #fintp    = pypic.LinearInterpolator()
         #comm     = pypic.Communicator()
         currint  = pypic.Depositer()
         analyzer = pypic.Analyzator()
@@ -756,7 +756,7 @@ class PIC(unittest.TestCase):
         inject(node, filler_xvel, conf) #injecting plasma particles
 
         #pusher   = pypic.BorisPusher()
-        #fintp    = pypic.ParticleFieldInterpolator()
+        #fintp    = pypic.LinearInterpolator()
         #comm     = pypic.Communicator()
         currint  = pypic.Depositer()
         analyzer = pypic.Analyzator()

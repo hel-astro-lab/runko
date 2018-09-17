@@ -29,6 +29,7 @@ set (PIC_FILES
      ../pic/tile.c++
      ../pic/boundaries/wall.c++
      ../pic/solvers/boris.c++
+     ../pic/interpolators/linear.c++
      )
 
 

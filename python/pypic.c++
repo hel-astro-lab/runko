@@ -10,9 +10,12 @@ namespace py = pybind11;
 #include "../pic/solvers/pusher.h"
 #include "../pic/solvers/boris.h"
 
-#include "../pic/field_interpolator.h"
+#include "../pic/interpolators/interpolator.h"
+#include "../pic/interpolators/linear.h"
+
+#include "../pic/depositers/current_deposit.h"
+
 #include "../pic/communicate.h"
-#include "../pic/current_deposit.h"
 #include "../pic/analyzer.h"
 #include "../pic/filters.h"
 
@@ -63,6 +66,8 @@ namespace wall {
 }
 
 
+//--------------------------------------------------
+
 // pybind macros freak out from commas so we hide them using the "using" statement
 //using Pusher1D3V = pic::Pusher<1,3>;
 //using Pusher2D3V = pic::Pusher<2,3>;
@@ -87,7 +92,30 @@ class PyPusher : public Pusher3V<D>
   }
 };
 
+//--------------------------------------------------
 
+template<size_t D>
+using Interpolator3V = pic::Interpolator<D,3>;
+
+/// trampoline class for pic field Interpolator
+template<size_t D>
+class PyInterpolator : public Interpolator3V<D>
+{
+  //using Interpolator3V<D>::Interpolator;
+
+  void solve( pic::Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Interpolator3V<D>,
+      solve,
+      tile
+      );
+  }
+};
+
+
+
+//--------------------------------------------------
 
 
 
@@ -156,9 +184,6 @@ void bind_pic(py::module& m_sub)
 
 
   //--------------------------------------------------
-  //py::class_<pic::Pusher>(m_2d, "Pusher")
-  //  .def(py::init<>())
-  //  .def("solve", &pic::Pusher::solve);
 
   // General pusher interface
   py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
@@ -171,12 +196,25 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
 
+  //--------------------------------------------------
 
+  // General interpolator interface
 
-
-  py::class_<pic::ParticleFieldInterpolator>(m_2d, "ParticleFieldInterpolator")
+  // General pusher interface
+  py::class_< pic::Interpolator<2,3>, PyInterpolator<2> > picinterp2d(m_2d, "Interpolator");
+  picinterp2d
     .def(py::init<>())
-    .def("solve", &pic::ParticleFieldInterpolator::solve);
+    .def("solve", &pic::Interpolator<2,3>::solve);
+
+  // Linear pusher
+  py::class_<pic::LinearInterpolator<2,3>>(m_2d, "LinearInterpolator", picinterp2d)
+    .def(py::init<>());
+
+
+
+  //py::class_<pic::ParticleFieldInterpolator>(m_2d, "ParticleFieldInterpolator")
+  //  .def(py::init<>())
+  //  .def("solve", &pic::ParticleFieldInterpolator::solve);
 
 
     py::class_<pic::Communicator>(m_2d, "Communicator")
