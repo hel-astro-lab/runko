@@ -6,6 +6,7 @@ import sys, os
 import h5py
 
 import pycorgi.twoD as corgi
+import pyplasmabox.tools.twoD as pytools
 import pyplasmabox.vlv.twoD as pyvlv
 import pyplasmabox.pic.twoD as pypic
 
@@ -253,12 +254,12 @@ if __name__ == "__main__":
     #-DONE: boundary wrapper
     #-DONE:filtering
 
-    pusher   = pypic.Pusher()
-    fintp    = pypic.ParticleFieldInterpolator()
+    pusher   = pypic.BorisPusher()
+    fintp    = pypic.LinearInterpolator()
     comm     = pypic.Communicator()
-    currint  = pypic.Depositer()
+    currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
-    flt     =  pypic.Filter(conf.NxMesh, conf.NyMesh)
+    flt     =  pytools.Filter(conf.NxMesh, conf.NyMesh)
 
     flt.init_gaussian_kernel(2.0, 2.0)
 
@@ -350,7 +351,7 @@ if __name__ == "__main__":
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
-                currint.deposit(tile)
+                currint.solve(tile)
 
         #exchange currents
         for j in range(node.getNy()):
