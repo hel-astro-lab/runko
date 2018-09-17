@@ -9,7 +9,10 @@ from scipy.stats import mstats
 
 #--------------------------------------------------
 # read simulation data from file
-f = h5py.File('twostream/out/run.hdf5','r')
+#f = h5py.File('twostream/out/run.hdf5','r')
+#f = h5py.File('twostream/out_ub2/run.hdf5','r')
+#f = h5py.File('twostream_kebne/ub1.h5','r')
+f = h5py.File('twostream_kebne/ub4.h5','r')
 
 #f = h5py.File('twostream/out_limits_lowres128/run.hdf5','r')
 #f = h5py.File('bump-on-tail/out/run.hdf5','r')
@@ -64,7 +67,7 @@ for ax in axs:
     ax.set_xlabel(r'time $t\omega_{\mathrm{p}}$ ')
 
     #ax.set_xlim((0.0, maxtime))
-    ax.set_xlim((0.0, 50.0))
+    #ax.set_xlim((0.0, 50.0))
     #ax.set_xlim((0.0, 70.0))
     #ax.set_xlim((0.0, 54.0))
     #ax.set_xlim((0.0, 400.0))
@@ -85,6 +88,7 @@ axs[0].plot(time, np.log(ex_max))
 
 #axs[0].set_ylim(-14.0, 1.0)
 #axs[0].set_ylim(-20.0, 1.0)
+axs[0].set_ylim(-20.0, -5.0)
 
 
 #relativistic (vb = 1.0)
@@ -114,9 +118,13 @@ axs[0].plot(time, np.log(ex_max))
 
 
 #gammab = 1.414
-gammab = 2.236
+#gammab = 2.236
+#gammab = 3.162 
+gammab = 4.123
+
 Gi = 1.0/np.sqrt(8.0*gammab**3.0)
-Gms = -10.5 + time*Gi
+#Gms = -14.0 + time*Gi #ub1
+Gms = -13.5 + time*Gi #ub2
 
 axs[0].plot(time, Gms, 'r--')
 
@@ -133,12 +141,12 @@ axs[1].plot(time, wedens)
 #Gm = 0.21
 #Gms = -3.0 + time*Gm*2.0 # 1/2 comes from compensation of E_x^2
 
-Gms = -5.0 + time*Gi # 1/2 comes from compensation of E_x^2
+Gms = -9.0 + time*Gi # 1/2 comes from compensation of E_x^2
 axs[1].plot(time, Gms, 'r--')
 
 
 #axs[1].set_ylim(-10.0, 4.0)
-axs[1].set_ylim(-18.0, 4.0)
+#axs[1].set_ylim(-18.0, 4.0)
 
 ##################################################
 
@@ -150,6 +158,7 @@ prtcls = np.abs(prtcls - prtcls[0] )/prtcls[0]
 #prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
 
 axs[2].plot(time, np.log10(prtcls))
+axs[2].set_ylim((-6.0, 0.0))
 #axs[2].plot(time, prtcls)
 
 ##################################################
