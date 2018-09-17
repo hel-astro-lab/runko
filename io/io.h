@@ -4,7 +4,7 @@
 #include <string>
 
 
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 #include "../tools/mesh.h"
 #include "../vlasov/amr/mesh.h"
 
@@ -50,6 +50,15 @@ class Namer {
       return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
     }
 
+    string numbering(std::tuple<size_t, size_t, size_t>& ind)
+    {
+      return numbering(
+          std::get<0>(ind),
+          std::get<1>(ind),
+          std::get<2>(ind)
+          );
+    }
+
 };
 
 
@@ -65,6 +74,33 @@ class TileInfo {
 
 };
 
+
+// helper function to get variable length indices
+std::tuple<size_t, size_t, size_t> expand_indices( 
+    corgi::Tile<1>* tile )
+{
+  int my_i = static_cast<int>( std::get<0>(tile->index) );
+  return std::make_tuple(my_i, 0,0 );
+};
+
+// helper function to get variable length indices
+std::tuple<size_t, size_t, size_t> expand_indices( 
+    corgi::Tile<2>* tile )
+{
+  int my_i = static_cast<int>( std::get<0>(tile->index) );
+  int my_j = static_cast<int>( std::get<1>(tile->index) );
+  return std::make_tuple(my_i, my_j,0 );
+};
+
+// helper function to get variable length indices
+std::tuple<size_t, size_t, size_t> expand_indices( 
+    corgi::Tile<3>* tile )
+{
+  int my_i = static_cast<int>( std::get<0>(tile->index) );
+  int my_j = static_cast<int>( std::get<1>(tile->index) );
+  int my_k = static_cast<int>( std::get<2>(tile->index) );
+  return std::make_tuple(my_i, my_j,my_k );
+};
 
 
 
@@ -98,21 +134,23 @@ class Writer {
 
 
 
-    /// Write PlasmaCell content into a hdf5 data group
-    bool writeYee( fields::PlasmaCell& cell )
+    /// Write PlasmaTile content into a hdf5 data group
+    template<size_t D>
+    bool writeYee( fields::Tile<D>& tile )
     {
-      auto& yee = cell.getYee();
+      auto& yee = tile.getYee();
 
-      // internal cell numbering 
-      string numbering = fname.numbering(cell.my_i, cell.my_j, 0);
+      // internal tile numbering 
+      auto my_ind = expand_indices( &tile );
+      string numbering = fname.numbering(my_ind);
 
       // open individual group for the data
       auto gr = file["yee_"+numbering];
 
-      // cell location inside node
-      gr["i"] = cell.my_i;
-      gr["j"] = cell.my_j;
-      gr["k"] = 0;
+      // tile location inside node
+      gr["i"] = std::get<0>(my_ind);
+      gr["j"] = std::get<1>(my_ind);
+      gr["k"] = std::get<2>(my_ind);
 
       // size
       gr["Nx"] = yee.Nx;
@@ -137,33 +175,33 @@ class Writer {
       gr["rho"] = yee.rho.serialize();
 
 
-
-
       return true;
     }
 
 
 
-    /// Write PlasmaCell content into a hdf5 data group
-    bool writeAnalysis( fields::PlasmaCell& cell )
+    /// Write PlasmaTile content into a hdf5 data group
+    template<size_t D>
+    bool writeAnalysis( fields::Tile<D>& tile )
     {
 
-      int Nspecies = cell.analysis.size();
+      int Nspecies = static_cast<int>(tile.analysis.size());
 
       for(int ispcs = 0; ispcs < Nspecies; ispcs++) {
 
-        auto& analysis = cell.getAnalysis(ispcs);
+        auto& analysis = tile.getAnalysis(ispcs);
 
-        // internal cell numbering 
-        string numbering = fname.numbering(cell.my_i, cell.my_j, 0);
+        // internal tile numbering 
+        auto my_ind = expand_indices( &tile );
+        string numbering = fname.numbering(my_ind);
 
         // open individual group for the data
         auto gr = file["analysis_"+numbering+"-"+to_string(ispcs) ];
 
-        // cell location inside node
-        gr["i"] = cell.my_i;
-        gr["j"] = cell.my_j;
-        gr["k"] = 0;
+        // tile location inside node
+        gr["i"] = std::get<0>(my_ind);
+        gr["j"] = std::get<1>(my_ind);
+        gr["k"] = std::get<2>(my_ind);
         gr["ispcs"] = ispcs;
 
         // size
@@ -237,7 +275,7 @@ class Writer {
       gr["mins"] = mesh.mins;
       gr["maxs"] = mesh.maxs;
 
-      gr["number_of_cells"] = len;
+      gr["number_of_tiles"] = len;
 
       //--------------------------------------------------
       // save actual mesh points

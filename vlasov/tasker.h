@@ -4,16 +4,16 @@
 
 #include <omp.h>
 
-#include "amr_momentum_solver.h"
-#include "amr_spatial_solver.h"
+#include "momentum-solvers/amr_momentum_solver.h"
+#include "spatial-solvers/amr_spatial_solver.h"
 #include "amr_analyzator.h"
 #include "../io/io.h"
 
 
-namespace vlasov{
+namespace vlv{
 
 
-void stepLocation( vlasov::Grid& grid )
+inline void stepLocation( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -21,17 +21,17 @@ void stepLocation( vlasov::Grid& grid )
 #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
+      for(auto cid : grid.getTileIds() ){
 #pragma omp task
         {
             
-          vlasov::VlasovCell& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
+          auto& tile 
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
 
           //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
-          //ssol.solve(cell, grid);
+          //ssol.solve(tile, grid);
             
-          cell.stepLocation(grid);
+          tile.stepLocation(grid);
         }// end of omp task
       }
 
@@ -41,22 +41,51 @@ void stepLocation( vlasov::Grid& grid )
 
 }
 
-template<int D>
-void stepInitial( vlasov::Grid& grid )
+template<int V>
+void stepInitial( corgi::Node<1>& grid )
 {
 
-#pragma omp parallel
+  vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
+
+  #pragma omp parallel 
   {
-#pragma omp single
+    #pragma omp single 
     {
 
-      for(auto cid : grid.getCellIds() ){
-#pragma omp task
+      for(auto cid : grid.getTileIds() ){
+        #pragma omp task firstprivate(vsol)
         {
-          vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
-          vlasov::VlasovCell& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          vsol.solve(cell, -0.5);
+          auto& tile 
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+          vsol.solve(tile, -0.5);
+        }// end of omp task
+      }
+
+    }// end of omp single
+  #pragma omp taskwait
+  }// end of omp parallel
+
+}
+
+
+
+
+template<int V>
+void stepVelocity( corgi::Node<1>& grid )
+{
+  vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
+
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+
+      for(auto cid : grid.getTileIds() ){
+        #pragma omp task firstprivate(vsol)
+        {
+          auto& tile 
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+          vsol.solve(tile);
         }// end of omp task
       }
 
@@ -66,25 +95,27 @@ void stepInitial( vlasov::Grid& grid )
 
 }
 
-
-
-
-template<int D>
-void stepVelocity( vlasov::Grid& grid )
+template<int V>
+void stepVelocityGravity( 
+    corgi::Node<1>& grid,
+    Realf g0,
+    Realf Lx
+    )
 {
 
-#pragma omp parallel
+  vlv::GravityAmrMomentumLagrangianSolver<Realf,1,V> vsol(g0, Lx);
+
+  #pragma omp parallel
   {
-#pragma omp single
+    #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
-#pragma omp task
+      for(auto cid : grid.getTileIds() ){
+        #pragma omp task firstprivate(vsol)
         {
-          vlasov::AmrMomentumLagrangianSolver<Realf,D> vsol;
-          vlasov::VlasovCell& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          vsol.solve(cell);
+          auto& tile 
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+          vsol.solve(tile);
         }// end of omp task
       }
 
@@ -93,6 +124,7 @@ void stepVelocity( vlasov::Grid& grid )
   }// end of omp parallel
 
 }
+
 
 
 /// Update Yee lattice boundaries
@@ -100,30 +132,30 @@ void stepVelocity( vlasov::Grid& grid )
 void updateBoundaries()
 {
 
-  for(auto cid : getCellIds() ){
-    vlasov::VlasovCell& cell = dynamic_cast<vlasov::VlasovCell& >(getCell( cid ));
-    cell.updateBoundaries( *this );
+  for(auto cid : getTileIds() ){
+    vlasov::VlasovTile& tile = dynamic_cast<vlasov::VlasovTile& >(getTile( cid ));
+    tile.updateBoundaries( *this );
   }
 
 }
 */
 
 
-void analyze( vlasov::Grid& grid )
+inline void analyze( corgi::Node<1>& grid )
 {
+  vlv::Analyzator<Realf> analyzator;
 
-#pragma omp parallel
+  #pragma omp parallel
   {
-#pragma omp single
+    #pragma omp single
     {
 
-      for(auto cid : grid.getCellIds() ){
-#pragma omp task
+      for(auto cid : grid.getTileIds() ){
+        #pragma omp task firstprivate(analyzator)
         {
-          vlasov::Analyzator<Realf> analyzator;
-          vlasov::VlasovCell& cell 
-            = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
-          analyzator.analyze(cell);
+          auto& tile 
+            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+          analyzator.analyze(tile);
         }// end of omp task
       }
 
@@ -135,11 +167,11 @@ void analyze( vlasov::Grid& grid )
 
 
 
-
-void writeYee( 
-    corgi::Node& grid, 
+template<size_t D>
+inline void writeYee( 
+    corgi::Node<D>& grid, 
     int lap,
-    std::string dir
+    const std::string& dir
     )
 {
 
@@ -147,20 +179,21 @@ void writeYee(
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.getCellIds() ){
-    fields::PlasmaCell& cell 
-      = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
-    writer.writeYee(cell);
+  for(auto cid : grid.getTileIds() ){
+    auto& tile 
+      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
+    writer.writeYee(tile);
   }
 
 
 }
 
 
-void writeAnalysis( 
-    corgi::Node& grid, 
+template<size_t D>
+inline void writeAnalysis( 
+    corgi::Node<D>& grid, 
     int lap,
-    std::string dir
+    const std::string& dir
     )
 {
 
@@ -168,20 +201,20 @@ void writeAnalysis(
   prefix += std::to_string(grid.rank);
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.getCellIds() ){
-    fields::PlasmaCell& cell 
-      = dynamic_cast<fields::PlasmaCell&>(grid.getCell( cid ));
-    writer.writeAnalysis(cell);
+  for(auto cid : grid.getTileIds() ){
+    auto& tile 
+      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
+    writer.writeAnalysis(tile);
   }
 
 
 }
 
 
-void writeMesh( 
-    vlasov::Grid& grid, 
+inline void writeMesh( 
+    corgi::Node<1>& grid, 
     int lap,
-    std::string dir 
+    const std::string& dir 
     )
 {
 
@@ -190,27 +223,27 @@ void writeMesh(
   h5io::Writer writer(prefix, lap);
 
 
-  for(auto cid : grid.getCellIds() ){
+  for(auto cid : grid.getTileIds() ){
 
-    vlasov::VlasovCell& cell 
-      = dynamic_cast<vlasov::VlasovCell&>(grid.getCell( cid ));
+    auto& tile 
+      = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
 
 
-    // cell location index
-    int i = cell.my_i;
-    int j = cell.my_j;
+    // tile location index
+    int i = std::get<0>(tile.index);
+    int j = 0;
     int k = 0;
 
     // get reference to the current time step 
-    auto& step0 = cell.steps.get(0);
+    auto& step0 = tile.steps.get(0);
 
     // loop over different particle species 
     int ispc = 0; // ith particle species
     for(auto&& block0 : step0) {
 
-      int Nx = int(block0.Nx),
-          Ny = int(block0.Ny),
-          Nz = int(block0.Nz);
+      auto Nx = int(block0.Nx),
+           Ny = int(block0.Ny),
+           Nz = int(block0.Nz);
 
       for(int s=0; s<Nz; s++) {
         for(int r=0; r<Ny; r++) {
@@ -246,9 +279,7 @@ void writeMesh(
     } // end of species
   } // end of loop over tiles
 
-
 }
 
 
-
-}// end of namespace
+}// end of namespace vlv

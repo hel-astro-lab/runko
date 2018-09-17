@@ -1,9 +1,9 @@
 #pragma once
 
 
-typedef float Realf;
-typedef float Real;
-typedef const float creal;
+using Realf = float;
+using Real = float;
+using creal = const float;
 
 #define NBLOCKS 20     /// default cube size
 #define BLOCK_WID 4    /// block width

@@ -1,0 +1,10 @@
+project (fields)
+
+#add_library(fields-cell PRIVATE fields.h fields.c++)
+#add_library(damping-fields-cell PRIVATE damping_fields.h damping_fields.c++ fields.h fields.c++)
+
+
+
+
+
+

@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*- import corgi
-
-import pyplasma as plasma
-import pypic 
+# -*- coding: utf-8 -*- 
+import pycorgi
+import pyplasmabox.pic as pypic
 
 from initialize_pic import spatialLoc
 
@@ -21,8 +20,8 @@ def inject(node, ffunc, conf):
                 #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
-                cid    = node.cellId(i,j)
-                c      = node.getCellPtr(cid) #get cell ptr
+                cid    = node.id(i,j)
+                c      = node.getTile(cid) #get cell ptr
 
                 #if not(1 <= i <= 2 and j == 1):
                 #    continue
@@ -79,7 +78,7 @@ def insert_em(node, conf, ffunc):
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
     for i in range(node.getNx()):
         for j in range(node.getNy()):
-            c = node.getCellPtr(i,j)
+            c = node.getTile(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):

@@ -2,9 +2,9 @@
 
 #include <cmath> 
 
-#include "cell.h"
+#include "tile.h"
 #include "grid.h"
-#include "../em-fields/fields.h"
+#include "../em-fields/tile.h"
 #include "amr/mesh.h"
 
 #include "../tools/signum.h"
@@ -14,16 +14,17 @@
 using toolbox::sign;
 
 
-namespace vlasov {
+namespace vlv {
 
 /// Relativistic gamma from velocity
-template<typename T, int D>
-inline T gamma(std::array<T,D>& uvel) 
+template<typename T, int V>
+inline T gamma(std::array<T,V>& uvel) 
 {
   T gammasq = 1.0;
-  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
+  for(size_t i=0; i<V; i++) gammasq += uvel[i]*uvel[i];
   return std::sqrt(gammasq);
 }
+
 //{
 //  return 1.0;
 //}
@@ -37,7 +38,7 @@ T integrate_moment(
     const toolbox::AdaptiveMesh<T,3>& m,
     Lambda&& chi
     ) {
-  T integ = T(0);
+  auto integ = T(0);
 
   // pre-create size of the elements
   // TODO optimize this depending on top_refinement_level
@@ -51,7 +52,7 @@ T integrate_moment(
   //}
 
   // simplified approach assuming no refinement.
-  // TODO: rewrite this to accommade adaptivity
+  // TODO: rewrite this to accommodate adaptivity
   auto lens = m.get_length(0);
   T du0 = lens[0]*lens[1]*lens[2];
 
@@ -78,29 +79,33 @@ T integrate_moment(
 
 
 
-/// General analyzator that computes moments for the vlasov meshes inside the cells
+/// General analyzator that computes moments for the vlasov meshes inside the tiles
 template<typename T>
 class Analyzator {
 
-
   public:
 
-  virtual void analyze( vlasov::VlasovCell& cell )
+  Analyzator() {};
+
+  virtual ~Analyzator() = default;
+
+
+  virtual void analyze( vlv::Tile<1>& tile )
   {
 
     // Yee lattice reference
-    auto& yee = cell.getYee();
+    auto& yee = tile.getYee();
     yee.rho.clear();
     //yee.ekin.clear();
     //yee.jx1.clear();
 
 
     // get reference to the Vlasov fluid that we are solving
-    auto& step0 = cell.steps.get(0);
+    auto& step0 = tile.steps.get(0);
 
     // timestep
-    // T dt = cell.dt;
-    // T dx = cell.dx;
+    // T dt = tile.dt;
+    // T dx = tile.dx;
 
 
     // loop over different particle species 
@@ -108,21 +113,23 @@ class Analyzator {
     for(auto&& block0 : step0) {
 
       // get reference to species-specific analysis mesh
-      auto& analysis = cell.analysis[ispc];
+      auto& analysis = tile.analysis[ispc];
 
-      int Nx = int(block0.Nx),
-          Ny = int(block0.Ny),
-          Nz = int(block0.Nz);
+      auto Nx = static_cast<int>(block0.Nx),
+           Ny = static_cast<int>(block0.Ny),
+           Nz = static_cast<int>(block0.Nz);
 
-      for(int s=0; s<Nz; s++) {
+        for(int s=0; s<Nz; s++) {
         for(int r=0; r<Ny; r++) {
-          for(int q=0; q<Nx; q++) {
+        for(int q=0; q<Nx; q++) {
             const auto& M   = block0.block(q,r,s);   // f_i
 
-            T qm = 1.0 / block0.qm;  // charge to mass ratio
+            //T qm = 1.0 / block0.qm;  // charge to mass ratio
+
 
             // TODO there is a possibility to optimize this by putting everything 
-            // inside one loop at the expense of code readability... So it is not done.
+            // inside one loop at the expense of code readability... 
+            // ...So it is not done here atm.
 
             //-------------------------------------------------- 
             // Global quantities (sum over species)
@@ -131,7 +138,7 @@ class Analyzator {
             yee.rho(q,r,s) += 
               integrate_moment(
                   M,
-                [](std::array<T,3>& uvel) -> T { return T(1);}
+                [](std::array<T,3>& ) -> T { return T(1);}
                 );
 
             // Jx current; chi(u) = u/gamma = v
@@ -146,13 +153,14 @@ class Analyzator {
 
             //-------------------------------------------------- 
             // Species-specific quantities
-            // NOTE: different insert location
+            // NOTE: different insert location (i.e., analysis object 
+            // instead of yee object)
 
             // number density; chi(u) = 1
             T rho = 
               integrate_moment(
                   M,
-                [](std::array<T,3>& uvel) -> T { return T(1); }
+                [](std::array<T,3>& ) -> T { return T(1); }
                 );
             analysis.rho(q,r,s) = rho;
 
@@ -175,19 +183,20 @@ class Analyzator {
                 [](std::array<T,3> uvel) -> T 
                 { return uvel[0]/gamma<T,3>(uvel); }
                 );
-            analysis.Vx(q,r,s) = Vx;
+            analysis.Vx(q,r,s) = Vx / rho;
 
             // TODO add Vy and Vz components
 
               
             /// (non-relativistic) temperature
             // chi(u) = v - V
-            analysis.Tx(q,r,s) = 
+            T Tx = 
               integrate_moment(
                   M,
                 [Vx](std::array<T,3> uvel) -> T 
-                { return uvel[0]/gamma<T,3>(uvel) - Vx; }
+                { return std::pow(uvel[0]/gamma<T,3>(uvel) - Vx, 2); }
                 );
+            analysis.Tx(q,r,s) = std::sqrt(Tx);
 
             // TODO add Ty and Tz components
 

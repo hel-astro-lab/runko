@@ -39,7 +39,7 @@ class PairPlasmaIterator {
       return *this;
     }
 
-    /// Referencing cell interiors
+    /// Referencing tile interiors
     T& operator *() {
       if(spcs == 0) return (T&) (ptr->electrons);
       else if(spcs == 1) return (T&) (ptr->positrons);

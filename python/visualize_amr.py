@@ -52,7 +52,7 @@ def get_leaf_mesh(m, rfl_max):
 
         [i,j,k] = m.get_indices(cid)
 
-        st = lvlm/lvl #stretch factor for ref lvl
+        st = lvlm // lvl #stretch factor for ref lvl
 
         val = m[i,j,k, rfl]
 
@@ -65,8 +65,8 @@ def get_leaf_mesh(m, rfl_max):
                 for kk in range(st):
                     ff[i+ii, j+jj, k+kk] = val
 
-    #Nc = len(cells)
-    #print("cells: {} / leafs {} (ratio: {}) / full {} (compression {})".format(
+    #Nc = len(tiles)
+    #print("tiles: {} / leafs {} (ratio: {}) / full {} (compression {})".format(
     #    Nc,
     #    leafs, 
     #    1.0*Nc/(1.0*leafs),
@@ -128,8 +128,8 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
 
     for i in range(conf.Nx):
-        cid = n.cellId(i,0)
-        c = n.getCellPtr(cid)
+        cid = n.id(i)
+        c = n.getTile(cid)
 
         block = c.getPlasmaSpecies(0, spcs)
         for s in range(conf.NxMesh):

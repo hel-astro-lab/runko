@@ -5,7 +5,6 @@
 # accessibe by all nodes.
 
 
-
 # git repo
 PLASMA_DIR="/home/n/natj/plasma-toolbox"
 
@@ -15,19 +14,17 @@ mkdir ${PFS_PLASMA_DIR}
 
 
 # setup environment
-module load foss
-module load HDF5
-module load Python/2.7.14
-
+#module load foss
+#module load HDF5
+#module load Python/2.7.14
 
 # make
 #make -j4
 
 
 # copy binaries to parallel file system
-cp ${PLASMA_DIR}/python/pyplasma.so     ${PFS_PLASMA_DIR}/
-cp ${PLASMA_DIR}/python/pypic.so        ${PFS_PLASMA_DIR}/
-cp ${PLASMA_DIR}/corgi/pycorgi/corgi.so ${PFS_PLASMA_DIR}/
+cp ${PLASMA_DIR}/lib/*.so       ${PFS_PLASMA_DIR}/
+cp ${PLASMA_DIR}/corgi/lib/*.so ${PFS_PLASMA_DIR}/
 
 # copy python scripts 
 mkdir ${PFS_PLASMA_DIR}/python

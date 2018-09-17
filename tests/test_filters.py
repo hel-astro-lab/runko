@@ -1,21 +1,17 @@
 import unittest
 
-import sys
-sys.path.append('python')
 import numpy as np
 from math import floor, ceil
 from scipy.signal import convolve2d
 from scipy.signal import convolve
 
-import corgi
-import pyplasma as plasma
-import pypic 
+import pycorgi
+import pyplasmabox.pic.twoD as pypic
+import pyplasmabox.tools.twoD as pytools
 
-sys.path.append('pic')
-from pic import loadCells
-from pic import inject
-from pic import spatialLoc
-
+from initialize_pic import loadTiles
+from initialize_pic import spatialLoc
+from injector_pic import inject
 
 from visualize import saveVisz
 
@@ -39,7 +35,7 @@ def insert_em(node, conf, ffunc):
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
     for i in range(node.getNx()):
         for j in range(node.getNy()):
-            c = node.getCellPtr(i,j)
+            c = node.getTile(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):
@@ -255,7 +251,7 @@ class Filters(unittest.TestCase):
         NxF = NxMesh*3
         NyF = NyMesh*3
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         kernel = np.random.rand(NxF, NyF)
         image  = np.random.rand(NxF, NyF)
@@ -285,7 +281,7 @@ class Filters(unittest.TestCase):
         NxF = NxMesh*3
         NyF = NyMesh*3
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         flt.init_kernel()
         kernel = np.zeros((NxF, NyF))
@@ -320,7 +316,7 @@ class Filters(unittest.TestCase):
         NxF = NxMesh*3
         NyF = NyMesh*3
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         #flt.init_kernel()
         #kernel = np.random.rand(NxF, NyF)
@@ -373,7 +369,7 @@ class Filters(unittest.TestCase):
         vmin = 0.0
         vmax = 1.0
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         #flt.init_kernel()
         #flt.init_gaussian_kernel(5.0)
@@ -519,7 +515,7 @@ class Filters(unittest.TestCase):
 
         axs[7].imshow(err, vmin=-1.0, vmax=1.0)
 
-        plt.savefig("filter.png")
+        #plt.savefig("filter.png")
 
 
     def test_smearing2(self):
@@ -544,7 +540,7 @@ class Filters(unittest.TestCase):
         vmin = 0.0
         vmax = 1.0
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         ###################################################
         # init kernel
@@ -663,7 +659,7 @@ class Filters(unittest.TestCase):
         vmin = 0.0
         vmax = 1.0
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         ###################################################
         # init kernel and create 3-point image
@@ -696,7 +692,7 @@ class Filters(unittest.TestCase):
         ##################################################
         # Gaussian (in FFT space) for comparison
 
-        flt2 = pypic.Filter(NxMesh, NyMesh)
+        flt2 = pytools.Filter(NxMesh, NyMesh)
         flt2.set_image(  flatten(image) )
 
         sigx = 6.5
@@ -755,7 +751,7 @@ class Filters(unittest.TestCase):
 
 
 
-        plt.savefig("filter3.png")
+        #plt.savefig("filter3.png")
 
     def test_filters_in_action(self):
 
@@ -778,16 +774,16 @@ class Filters(unittest.TestCase):
         conf.NyMesh = 10
         conf.NzMesh = 1
 
-        node = plasma.Grid(conf.Nx, conf.Ny)
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
         node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadCells(node, conf)
+        loadTiles(node, conf)
         insert_em(node, conf, linear_ramp)
         #inject(node, filler_no_velocity, conf) #injecting plasma particles
 
-        flt = pypic.Filter(conf.NxMesh, conf.NyMesh)
+        flt = pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(4.0, 4.0)
 
-        flt.get_padded_current( node.getCellPtr(1,1), node)
+        flt.get_padded_current( node.getTile(1,1), node)
 
         img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
         #axs[0].imshow(img[conf.NxMesh:2*conf.NxMesh, conf.NyMesh:2*conf.NyMesh]) #, vmin=vmin, vmax=vmax)
@@ -796,9 +792,9 @@ class Filters(unittest.TestCase):
 
         # reference array
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
-        for cid in node.getCellIds():
-            c = node.getCellPtr( cid )
-            (i, j) = c.index()
+        for cid in node.getTileIds():
+            c = node.getTile( cid )
+            (i, j) = c.index
 
             yee = c.getYee(0)
             for k in range(conf.NyMesh):

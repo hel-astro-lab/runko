@@ -2,9 +2,8 @@ import unittest
 
 import numpy as np
 import sys
-#sys.path.append('python')
 
-import pyplasma
+import pyplasmabox.tools as pyplasma
 
 
 class conf:

@@ -3,44 +3,43 @@
 #include <array>
 #include <vector>
 
-#include "../../pic/cell.h"
-#include "../../em-fields/damping_fields.h"
+#include "../../pic/tile.h"
+#include "../../em-fields/damping_tile.h"
 
 
 namespace pic {
+  namespace wall {
 
-template<int S>
-class PicCellWall :
-          public fields::PlasmaCellDamped<S>,
-  virtual public pic::PicCell
+
+template<size_t D, int S>
+class Tile :
+  virtual public fields::damping::Tile<D, S>,
+  virtual public pic::Tile<D>,
+  virtual public fields::Tile<D>,
+  virtual public corgi::Tile<D>
 {
 
   public:
 
-    PicCellWall(
-      size_t i, size_t j, 
-      int o, 
-      size_t NxG, size_t NyG,
-      size_t NxMesh, size_t NyMesh
-    ) : 
-      corgi::Cell(i, j, o, NxG, NyG),
-      fields::PlasmaCell(i,j,o,NxG, NyG, NxMesh,NyMesh, 1),
-      pic::PicCell(i,j,o,NxG,NyG,NxMesh,NyMesh),
-      fields::PlasmaCellDamped<S>(i,j,o,NxG, NyG, NxMesh,NyMesh, 1)
-      { }
+  /// constructor
+  Tile(size_t nx, size_t ny, size_t nz) :
+     corgi::Tile<D>(),
+    fields::Tile<D>(nx,ny,nz),
+    fields::damping::Tile<D,S>(nx,ny,nz),
+    pic::Tile<D>(nx,ny,nz)
+  { }
 
-    ~PicCellWall() = default;
+  ~Tile() override = default;
 
-    /// wall location
-    using fields::PlasmaCellDamped<S>::fld1;
-    using fields::PlasmaCellDamped<S>::fld2;
+  /// wall location
+  using fields::damping::Tile<D, S>::fld1;
+  using fields::damping::Tile<D, S>::fld2;
 
+  // TODO: add wall movement
 
-    // TODO: add wall movement
-
-    // TODO: particle reflector
+  // TODO: particle reflector
       
-    // TODO: wall current deposition
+  // TODO: wall current deposition
 
 };
 
@@ -50,6 +49,6 @@ class PicCellWall :
 
 
 
-
+}
 
 }

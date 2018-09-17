@@ -1,7 +1,8 @@
 
+from initialize_pic import spatialLoc #XXX make this general/not pic-specific
 
-import corgi
-import pyplasma as plasma
+import pycorgi
+import pyplasmabox 
 
 
 
@@ -46,31 +47,36 @@ def loadMpiXStrides(n):
     n.bcastMpiGrid()
 
 
-#load cells into each node
-def loadCells(n, conf):
+def initialize_tile(c, i, j, n, conf):
+
+    #initialize tile dimensions 
+    c.cfl = conf.cfl
+    c.dx = conf.dx
+
+    # initialize analysis tiles ready for incoming simulation data
+    for ip in range(conf.Nspecies):
+        c.addAnalysisSpecies()
+
+    #set bounding box of the tile 
+    mins = spatialLoc(n, [i,j], [0,0,0], conf)
+    maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
+    c.set_tile_mins(mins[0:1])
+    c.set_tile_maxs(maxs[0:1])
+
+
+#load tiles into each node
+def loadTiles(n, conf):
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
 
             if n.getMpiGrid(i,j) == n.rank:
-                c = plasma.VlasovCell(i, j, n.rank, 
-                                      n.getNx(), n.getNy(),
-                                      conf.NxMesh, conf.NyMesh
-                                      )
+                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
-                #initialize cell dimensions 
-                c.cfl = conf.cfl
-                c.dt = conf.dt
-                c.dx = conf.dx
-                #c.dy = conf.dy
-                #c.dz = conf.dz
-
-                # initialize analysis tiles ready for incoming simulation data
-                for ip in range(conf.Nspecies):
-                    c.addAnalysisSpecies()
+                initialize_tile(c, i, j, n, conf)
 
                 #add it to the node
-                n.addCell(c) 
+                n.addTile(c, (i,)) 
 
 
 

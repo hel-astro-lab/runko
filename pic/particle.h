@@ -4,12 +4,13 @@
 #include <map>
 #include <cmath>
 
+#include "../definitions.h"
 
 
 
 namespace pic {
 
-/*! \brief Block of particles inside the cell
+/*! \brief Block of particles inside the tile
 *
 * Container to hold plasma particles 
 *
@@ -25,19 +26,19 @@ class ParticleBlock {
 
   size_t Nprtcls;
 
-  std::vector< std::vector<double> > locArr;
-  std::vector< std::vector<double> > velArr;
-  //std::vector< std::vector<double> > wgtArr;
+  std::vector< std::vector<Realf> > locArr;
+  std::vector< std::vector<Realf> > velArr;
+  //std::vector< std::vector<Realf> > wgtArr;
 
   public:
 
   //! particle specific electric field components
-  //std::vector<double> Epart;
-  std::vector< std::vector<double> > Epart;
+  //std::vector<Realf> Epart;
+  std::vector< std::vector<Realf> > Epart;
 
   //! particle specific magnetic field components
-  //std::vector<double> Bpart;
-  std::vector< std::vector<double> > Bpart;
+  //std::vector<Realf> Bpart;
+  std::vector< std::vector<Realf> > Bpart;
 
   //! multimap of particles going to other tiles
   typedef std::multimap<std::tuple<int,int,int>, int> mapType;
@@ -49,7 +50,7 @@ class ParticleBlock {
   size_t Ny;
   size_t Nz;
 
-  double q = 1.0; // normalization factor
+  Realf q = 1.0; // normalization factor
 
 
   /// Constructor 
@@ -112,17 +113,17 @@ class ParticleBlock {
 
   //--------------------------------------------------
   // locations
-  inline double loc( uint64_t idim, uint64_t iprtcl ) const
+  inline Realf loc( uint64_t idim, uint64_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
-  inline double& loc( uint64_t idim, uint64_t iprtcl )       
+  inline Realf& loc( uint64_t idim, uint64_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  inline std::vector<double> loc(uint64_t idim) const 
+  inline std::vector<Realf> loc(uint64_t idim) const 
   {
     return locArr[idim];
   }
@@ -130,17 +131,17 @@ class ParticleBlock {
 
   //--------------------------------------------------
   // velocities
-  inline double vel( uint64_t idim, uint64_t iprtcl ) const
+  inline Realf vel( uint64_t idim, uint64_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  inline double& vel( uint64_t idim, uint64_t iprtcl )       
+  inline Realf& vel( uint64_t idim, uint64_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  inline std::vector<double> vel(uint64_t idim) const 
+  inline std::vector<Realf> vel(uint64_t idim) const 
   {
     return velArr[idim];
   }
@@ -150,8 +151,8 @@ class ParticleBlock {
   // particle creation & destruction methods
 
   void add_particle (
-      std::vector<double> prtcl_loc,
-      std::vector<double> prtcl_vel) 
+      std::vector<Realf> prtcl_loc,
+      std::vector<Realf> prtcl_vel) 
   {
 
     for (size_t i=0; i<3; i++)  
@@ -167,7 +168,7 @@ class ParticleBlock {
 
   // --------------------------------------------------
   //! Lorentz factor
-  inline double gamma(unsigned int iprtcl) {
+  inline Realf gamma(unsigned int iprtcl) {
     return sqrt(1.+
          pow(vel(0,iprtcl),2)
         +pow(vel(1,iprtcl),2)
@@ -175,7 +176,7 @@ class ParticleBlock {
   }
 
   //! Reciprocal of Lorentz factor
-  //inline double invgamma(unsigned int iprtcl) {
+  //inline Realf invgamma(unsigned int iprtcl) {
   //    return 1./sqrt(1.+pow(vel(0,iprtcl),2)
   //                     +pow(vel(1,iprtcl),2)
   //                     +pow(vel(2,iprtcl),2));
@@ -186,7 +187,7 @@ class ParticleBlock {
 
 
   // --------------------------------------------------
-  // Other useful miscellaneous methods
+  // Other useful mistileaneous methods
     
   //! test if prtcl is inside this block
   //bool is_local(uint64_t iprtcl);

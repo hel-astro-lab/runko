@@ -8,37 +8,68 @@
 
 
 
-namespace vlasov {
+namespace vlv {
 
 /*! \brief Plasma grid
  *
  * Grid infrastructure methods are inherited from corgi::Node
  */
-class Grid : public corgi::Node {
+
+template<std::size_t D>
+class Grid : 
+  public corgi::Node<D> 
+{
   public:
 
-    //typedef std::shared_ptr<vlasov::VlasovCell> CellPtr;
+
+  // Standard construction with grid size
+  template< typename... Dims,
+    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
+               corgi::internals::are_integral<Dims...>::value, void >
+  > 
+  Grid(Dims... dims) :
+    corgi::Node<D>(dims...)
+  {}
 
 
-    // copy constructor
-    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
-  
-    // default destructor
-    ~Grid() { };
+  // default destructor
+  ~Grid() = default;
 
-    /// simple method class extension
-    std::string howl() { return std::string("Auuu!"); };
+  /// simple method class extension test
+  std::string howl() { return std::string("Auuu!"); };
 
-    /// Cycle data containers of each cell forward
-    /*
-    void cycle() {
-      for (auto& it: cells) {
-        CellPtr cellptr = std::dynamic_pointer_cast<vlasov::VlasovCell>( it.second );
-        cellptr->vmeshes.cycle();
-        cellptr->yee.cycle();
-      }
-    }
-    */
+
+  /// Cycle data containers of each tile forward
+  /*
+     void cycle() {
+     for (auto& it: tiles) {
+     TilePtr tileptr = std::dynamic_pointer_cast<vlasov::VlasovTile>( it.second );
+     tileptr->vmeshes.cycle();
+     tileptr->yee.cycle();
+     }
+     }
+     */
+
+  /*
+  void addTile2(
+    std::shared_ptr< vlv::Tile<D> > tileptr,
+    corgi::internals::tuple_of<D, size_t> indices
+    )
+  {
+    std::cout << "adding tile (NEW)\n";
+    uint64_t cid = id( indices );
+    std::cout << "1 \n";
+    corgi::Node<D>::tiles.erase(cid);
+    std::cout << "2 \n";
+    tileptr->index               = indices;
+    tileptr->cid                 = cid;
+    tileptr->communication.owner = corgi::Node<D>::rank;
+    tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
+    std::cout << "3 \n";
+    corgi::Node<D>::tiles[cid] = tileptr;
+    std::cout << "4 \n";
+  }
+  */
 
 
 
@@ -46,8 +77,4 @@ class Grid : public corgi::Node {
 
 
 
-
-
-
-} // end of namespace vlasov
-
+} // end of namespace vlv

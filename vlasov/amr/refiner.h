@@ -59,7 +59,7 @@ class Adapter {
     value_array_t lens = mesh.get_length(rfl);
 
     // compute volume 
-    T vol = T(1);
+    auto vol = T(1);
     for(auto x : lens) vol *= x;
 
     return val * vol / maximum_data_value;
@@ -127,7 +127,7 @@ class Adapter {
     cells_to_unrefine.clear();
 
 
-    T refine_indicator   = T(0),
+    auto refine_indicator   = T(0),
       unrefine_indicator = T(0);
     
 
@@ -177,7 +177,7 @@ class Adapter {
         auto children = mesh.get_children(cid);
 
         // collect cell values and remove
-        T avg_value = T(0);
+        auto avg_value = T(0);
         for(auto cidc : children) {
           avg_value += mesh.get(cidc);
 
