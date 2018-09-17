@@ -7,6 +7,7 @@ from scipy.signal import convolve
 
 import pycorgi
 import pyplasmabox.pic.twoD as pypic
+import pyplasmabox.tools.twoD as pytools
 
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
@@ -250,7 +251,7 @@ class Filters(unittest.TestCase):
         NxF = NxMesh*3
         NyF = NyMesh*3
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         kernel = np.random.rand(NxF, NyF)
         image  = np.random.rand(NxF, NyF)
@@ -280,7 +281,7 @@ class Filters(unittest.TestCase):
         NxF = NxMesh*3
         NyF = NyMesh*3
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         flt.init_kernel()
         kernel = np.zeros((NxF, NyF))
@@ -315,7 +316,7 @@ class Filters(unittest.TestCase):
         NxF = NxMesh*3
         NyF = NyMesh*3
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         #flt.init_kernel()
         #kernel = np.random.rand(NxF, NyF)
@@ -368,7 +369,7 @@ class Filters(unittest.TestCase):
         vmin = 0.0
         vmax = 1.0
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         #flt.init_kernel()
         #flt.init_gaussian_kernel(5.0)
@@ -539,7 +540,7 @@ class Filters(unittest.TestCase):
         vmin = 0.0
         vmax = 1.0
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         ###################################################
         # init kernel
@@ -658,7 +659,7 @@ class Filters(unittest.TestCase):
         vmin = 0.0
         vmax = 1.0
 
-        flt = pypic.Filter(NxMesh, NyMesh)
+        flt = pytools.Filter(NxMesh, NyMesh)
 
         ###################################################
         # init kernel and create 3-point image
@@ -691,7 +692,7 @@ class Filters(unittest.TestCase):
         ##################################################
         # Gaussian (in FFT space) for comparison
 
-        flt2 = pypic.Filter(NxMesh, NyMesh)
+        flt2 = pytools.Filter(NxMesh, NyMesh)
         flt2.set_image(  flatten(image) )
 
         sigx = 6.5
@@ -779,7 +780,7 @@ class Filters(unittest.TestCase):
         insert_em(node, conf, linear_ramp)
         #inject(node, filler_no_velocity, conf) #injecting plasma particles
 
-        flt = pypic.Filter(conf.NxMesh, conf.NyMesh)
+        flt = pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(4.0, 4.0)
 
         flt.get_padded_current( node.getTile(1,1), node)

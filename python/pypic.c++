@@ -18,7 +18,6 @@ namespace py = pybind11;
 
 #include "../pic/communicate.h"
 #include "../pic/analyzer.h"
-#include "../pic/filters.h"
 
 #include "../pic/boundaries/wall.h"
 
@@ -259,26 +258,6 @@ void bind_pic(py::module& m_sub)
     py::class_<pic::Analyzator>(m_2d, "Analyzator")
       .def(py::init<>())
       .def("analyze", &pic::Analyzator::analyze);
-
-
-    py::class_<pic::Filter>(m_2d, "Filter")
-      .def(py::init<int, int>())
-      .def("init_kernel",         &pic::Filter::init_kernel)
-      .def("init_gaussian_kernel",&pic::Filter::init_gaussian_kernel)
-      //.def("init_sinc_kernel",    &pic::Filter::init_sinc_kernel)
-      .def("init_lowpass_fft_kernel",&pic::Filter::init_lowpass_fft_kernel)
-      .def("init_3point",            &pic::Filter::init_3point_kernel)
-      .def("fft_kernel",             &pic::Filter::fft_kernel)
-      .def("fft_image_forward",      &pic::Filter::fft_image_forward)
-      .def("fft_image_backward",     &pic::Filter::fft_image_backward)
-      .def("apply_kernel",           &pic::Filter::apply_kernel)
-      .def("get_padded_current",     &pic::Filter::get_padded_current)
-      .def("set_current",            &pic::Filter::set_current)
-      .def("direct_convolve_3point", &pic::Filter::direct_convolve_3point)
-      .def("set_image",              &pic::Filter::set_image)
-      .def("set_kernel",             &pic::Filter::set_kernel)
-      .def("get_kernel",             &pic::Filter::get_kernel, py::return_value_policy::reference)
-      .def("get_image",              &pic::Filter::get_image,  py::return_value_policy::reference);
 
 
 

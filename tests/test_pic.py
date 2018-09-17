@@ -5,6 +5,7 @@ import numpy as np
 
 import pycorgi
 import pyplasmabox.pic.twoD as pypic
+import pyplasmabox.tools.twoD as pytools
 
 
 
@@ -534,7 +535,7 @@ class PIC(unittest.TestCase):
         currint  = pypic.ZigZag()
         analyzer = pypic.Analyzator()
 
-        flt =  pypic.Filter(conf.NxMesh, conf.NyMesh)
+        flt =  pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(1.0, 1.0)
 
 
@@ -698,10 +699,10 @@ class PIC(unittest.TestCase):
         ref[:, 0:3, ]   = 2
         ref[:, -3:10]   = 2
 
-        ref[0:3, 0:3]   = 4
+        ref[0:3,  0:3 ] = 4
         ref[7:10, 7:10] = 4
         ref[0:3,  7:10] = 4
-        ref[7:10,0:3]   = 4
+        ref[7:10, 0:3 ] = 4
         #print(ref)
         
         for j in [1]:

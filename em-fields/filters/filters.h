@@ -5,20 +5,20 @@
 #include <tuple>
 #include <cassert>
 
-#include "tile.h"
-#include "communicate.h"
+#include "../tile.h"
+//#include "communicate.h"
 
-#include "../units.h"
+#include "../../units.h"
 #include "fftw3.h"
 
 
 
-namespace pic {
+namespace fields {
 
 
 inline fields::YeeLattice& get_neighbor_yee(
     int i, int j,
-    pic::Tile<2>& tile, 
+    fields::Tile<2>& tile, 
     corgi::Node<2>& node)
 {
   auto cneigh = std::dynamic_pointer_cast<fields::Tile<2>>(
@@ -516,7 +516,7 @@ class Filter {
 
 
   /// FFT kernel (once is enough)
-  virtual void fft_kernel()         { fftwf_execute(p_kernel); }
+  virtual void fft_kernel() { fftwf_execute(p_kernel); }
 
   /// FFT image forward
   virtual void fft_image_forward()  
@@ -572,7 +572,7 @@ class Filter {
 
   /// Copy currents from neighbors into fftw array
   void get_padded_current(
-      pic::Tile<2>& tile, 
+      fields::Tile<2>& tile, 
       corgi::Node<2>& node
       )
   {
@@ -638,7 +638,7 @@ class Filter {
   /// set (filtered) current back to Yee lattice
   // NOTE: we export the current to jx1/jy1/jz1 instead of jx/jy/jz to 
   //       ensure thread safety
-  void set_current( pic::Tile<2>& tile)
+  void set_current( fields::Tile<2>& tile)
   {
     fields::YeeLattice& mesh = tile.getYee();
 
@@ -728,4 +728,4 @@ class Filter {
 
 };
 
-} // end of namespace pic
+} // end of namespace fields
