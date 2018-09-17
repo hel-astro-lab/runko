@@ -13,7 +13,8 @@ namespace py = pybind11;
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
 
-#include "../pic/depositers/current_deposit.h"
+#include "../pic/depositers/depositer.h"
+#include "../pic/depositers/zigzag.h"
 
 #include "../pic/communicate.h"
 #include "../pic/analyzer.h"
@@ -93,7 +94,8 @@ class PyPusher : public Pusher3V<D>
 };
 
 //--------------------------------------------------
-
+// interpolators
+  
 template<size_t D>
 using Interpolator3V = pic::Interpolator<D,3>;
 
@@ -113,11 +115,32 @@ class PyInterpolator : public Interpolator3V<D>
   }
 };
 
+//--------------------------------------------------
+// current depositers
+
+template<size_t D>
+using Depositer3V = pic::Depositer<D,3>;
+
+/// trampoline class for pic current Depositer
+template<size_t D>
+class PyDepositer : public Depositer3V<D>
+{
+  //using Depositer3V<D>::Depositer;
+
+  void solve( pic::Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Depositer3V<D>,
+      solve,
+      tile
+      );
+  }
+};
+
+
 
 
 //--------------------------------------------------
-
-
 
 // python bindings for plasma classes & functions
 void bind_pic(py::module& m_sub)
@@ -198,8 +221,6 @@ void bind_pic(py::module& m_sub)
 
   //--------------------------------------------------
 
-  // General interpolator interface
-
   // General pusher interface
   py::class_< pic::Interpolator<2,3>, PyInterpolator<2> > picinterp2d(m_2d, "Interpolator");
   picinterp2d
@@ -210,11 +231,20 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::LinearInterpolator<2,3>>(m_2d, "LinearInterpolator", picinterp2d)
     .def(py::init<>());
 
+  //--------------------------------------------------
+    
+  // General current depositer interface
+  py::class_< pic::Depositer<2,3>, PyDepositer<2> > picdeposit2d(m_2d, "Depositer");
+  picdeposit2d
+    .def(py::init<>())
+    .def("solve", &pic::Depositer<2,3>::solve);
+
+  // zigzag depositer
+  py::class_<pic::ZigZag<2,3>>(m_2d, "ZigZag", picdeposit2d)
+    .def(py::init<>());
 
 
-  //py::class_<pic::ParticleFieldInterpolator>(m_2d, "ParticleFieldInterpolator")
-  //  .def(py::init<>())
-  //  .def("solve", &pic::ParticleFieldInterpolator::solve);
+  //--------------------------------------------------
 
 
     py::class_<pic::Communicator>(m_2d, "Communicator")
@@ -223,10 +253,6 @@ void bind_pic(py::module& m_sub)
       .def("get_incoming_particles",      &pic::Communicator::get_incoming_particles)
       .def("delete_transferred_particles",&pic::Communicator::delete_transferred_particles);
 
-
-    py::class_<pic::Depositer>(m_2d, "Depositer")
-      .def(py::init<>())
-      .def("deposit", &pic::Depositer::deposit);
 
 
     /// Pic tile analyzator

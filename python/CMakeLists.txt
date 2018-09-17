@@ -30,6 +30,7 @@ set (PIC_FILES
      ../pic/boundaries/wall.c++
      ../pic/solvers/boris.c++
      ../pic/interpolators/linear.c++
+     ../pic/depositers/zigzag.c++
      )
 
 

@@ -531,7 +531,7 @@ class PIC(unittest.TestCase):
         #pusher   = pypic.BorisPusher()
         #fintp    = pypic.LinearInterpolator()
         #comm     = pypic.Communicator()
-        currint  = pypic.Depositer()
+        currint  = pypic.ZigZag()
         analyzer = pypic.Analyzator()
 
         flt =  pypic.Filter(conf.NxMesh, conf.NyMesh)
@@ -557,7 +557,7 @@ class PIC(unittest.TestCase):
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     tile = node.getTile(i,j)
-                    currint.deposit(tile)
+                    currint.solve(tile)
 
             #exchange currents
             for j in range(node.getNy()):
@@ -654,7 +654,7 @@ class PIC(unittest.TestCase):
         #pusher   = pypic.BorisPusher()
         #fintp    = pypic.LinearInterpolator()
         #comm     = pypic.Communicator()
-        currint  = pypic.Depositer()
+        currint  = pypic.ZigZag()
         analyzer = pypic.Analyzator()
     
         for j in range(node.getNy()):
@@ -674,7 +674,7 @@ class PIC(unittest.TestCase):
         #for j in [1]:
         #    for i in [1]:
         #        tile = node.getTile(i,j)
-        #        currint.deposit(tile)
+        #        currint.solve(tile)
 
         #exchange currents for the middle one only
         for j in [1]:
@@ -758,7 +758,7 @@ class PIC(unittest.TestCase):
         #pusher   = pypic.BorisPusher()
         #fintp    = pypic.LinearInterpolator()
         #comm     = pypic.Communicator()
-        currint  = pypic.Depositer()
+        currint  = pypic.ZigZag()
         analyzer = pypic.Analyzator()
     
 
@@ -766,7 +766,7 @@ class PIC(unittest.TestCase):
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
-                currint.deposit(tile)
+                currint.solve(tile)
 
         #exchange currents for the middle one only
         #for j in [1]:
