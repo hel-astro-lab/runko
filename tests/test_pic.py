@@ -270,7 +270,7 @@ class PIC(unittest.TestCase):
 
 
         # push particles couple of times to make them leak into neighboring tiles
-        pusher   = pypic.Pusher()
+        pusher   = pypic.BorisPusher()
         comm     = pypic.Communicator()
 
 
@@ -528,7 +528,7 @@ class PIC(unittest.TestCase):
         inject(node, filler, conf) #injecting plasma particles
         #inject(node, filler_xvel, conf) #injecting plasma particles
 
-        #pusher   = pypic.Pusher()
+        #pusher   = pypic.BorisPusher()
         #fintp    = pypic.ParticleFieldInterpolator()
         #comm     = pypic.Communicator()
         currint  = pypic.Depositer()
@@ -651,7 +651,7 @@ class PIC(unittest.TestCase):
         insert_em(node, conf, const_field)
         inject(node, filler_xvel, conf) #injecting plasma particles
 
-        #pusher   = pypic.Pusher()
+        #pusher   = pypic.BorisPusher()
         #fintp    = pypic.ParticleFieldInterpolator()
         #comm     = pypic.Communicator()
         currint  = pypic.Depositer()
@@ -755,7 +755,7 @@ class PIC(unittest.TestCase):
         #insert_em(node, conf, const_field)
         inject(node, filler_xvel, conf) #injecting plasma particles
 
-        #pusher   = pypic.Pusher()
+        #pusher   = pypic.BorisPusher()
         #fintp    = pypic.ParticleFieldInterpolator()
         #comm     = pypic.Communicator()
         currint  = pypic.Depositer()

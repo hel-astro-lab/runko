@@ -7,7 +7,9 @@ namespace py = pybind11;
 // experimental PIC module
   
 #include "../pic/tile.h"
-#include "../pic/pusher.h"
+#include "../pic/solvers/pusher.h"
+#include "../pic/solvers/boris.h"
+
 #include "../pic/field_interpolator.h"
 #include "../pic/communicate.h"
 #include "../pic/current_deposit.h"
@@ -59,6 +61,33 @@ namespace wall {
 
     }
 }
+
+
+// pybind macros freak out from commas so we hide them using the "using" statement
+//using Pusher1D3V = pic::Pusher<1,3>;
+//using Pusher2D3V = pic::Pusher<2,3>;
+//using Pusher3D3V = pic::Pusher<3,3>;
+
+template<size_t D>
+using Pusher3V = pic::Pusher<D,3>;
+
+/// trampoline class for pic Pusher
+template<size_t D>
+class PyPusher : public Pusher3V<D>
+{
+  //using Pusher3V<D>::Pusher;
+
+  void solve( pic::Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Pusher3V<D>,
+      solve,
+      tile
+      );
+  }
+};
+
+
 
 
 
@@ -126,14 +155,28 @@ void bind_pic(py::module& m_sub)
   auto t2 = pic::declare_Tile<2>(m_2d, "Tile");
 
 
+  //--------------------------------------------------
+  //py::class_<pic::Pusher>(m_2d, "Pusher")
+  //  .def(py::init<>())
+  //  .def("solve", &pic::Pusher::solve);
 
-    py::class_<pic::Pusher>(m_2d, "Pusher")
-      .def(py::init<>())
-      .def("solve", &pic::Pusher::solve);
+  // General pusher interface
+  py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
+  picpusher2d
+    .def(py::init<>())
+    .def("solve", &pic::Pusher<2,3>::solve);
 
-    py::class_<pic::ParticleFieldInterpolator>(m_2d, "ParticleFieldInterpolator")
-      .def(py::init<>())
-      .def("solve", &pic::ParticleFieldInterpolator::solve);
+  // Boris pusher
+  py::class_<pic::BorisPusher<2,3>>(m_2d, "BorisPusher", picpusher2d)
+    .def(py::init<>());
+
+
+
+
+
+  py::class_<pic::ParticleFieldInterpolator>(m_2d, "ParticleFieldInterpolator")
+    .def(py::init<>())
+    .def("solve", &pic::ParticleFieldInterpolator::solve);
 
 
     py::class_<pic::Communicator>(m_2d, "Communicator")

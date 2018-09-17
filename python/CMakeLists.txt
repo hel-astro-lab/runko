@@ -28,6 +28,7 @@ set (PIC_FILES
      pypic.c++
      ../pic/tile.c++
      ../pic/boundaries/wall.c++
+     ../pic/solvers/boris.c++
      )
 
 
