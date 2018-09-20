@@ -54,14 +54,12 @@ class Configuration(object):
         #Compute initial values for configuration; 
         # assume that flow speed is beta if value is <=1, else it is gamma
         if np.abs(self.gamma_e) <= 1.0:
-            beta = np.abs(self.gamma_e)
-            self.ub_e = beta/np.sqrt(1.0 - beta**2.0)
+            self.ub_e = np.abs(self.gamma_e)
         else:
             self.ub_e = np.sqrt(self.gamma_e**2.0 - 1.0)
     
         if np.abs(self.gamma_i) <= 1.0:
-            beta = np.abs(self.gamma_i)
-            self.ub_i = beta/np.sqrt(1.0 - beta**2.0)
+            self.ub_i = np.abs(self.gamma_i)
         else:
             self.ub_i = np.sqrt(self.gamma_i**2.0 - 1.0)
 
