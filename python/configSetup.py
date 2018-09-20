@@ -79,6 +79,16 @@ class Configuration(object):
         if not("Nz" in self.__dict__):
             self.__dict__["Nz"] = 1
 
+        #if velocity mesh cell size is only given, compute size
+        if not("Nvx" in self.__dict__):
+            self.__dict__["Nvx"] = int((self.vxmax - self.vxmin) // self.dvx)
+        if not("Nvy" in self.__dict__):
+            self.__dict__["Nvy"] = int((self.vymax - self.vymin) // self.dvy)
+        if not("Nvz" in self.__dict__):
+            self.__dict__["Nvz"] = int((self.vzmax - self.vzmin) // self.dvz)
+
+        print("Nvx=", self.Nvx)
+
 
 
 #load default 
