@@ -12,7 +12,9 @@ from scipy.stats import mstats
 #f = h5py.File('twostream/out/run.hdf5','r')
 #f = h5py.File('twostream/out_ub2/run.hdf5','r')
 #f = h5py.File('twostream_kebne/ub1.h5','r')
-f = h5py.File('twostream_kebne/ub4.h5','r')
+#f = h5py.File('twostream_kebne/ub4.h5','r')
+#f = h5py.File('twostream_kebne/ub4_noclip.h5','r')
+f = h5py.File('twostream_kebne/ub4_hiresv.h5','r')
 
 #f = h5py.File('twostream/out_limits_lowres128/run.hdf5','r')
 #f = h5py.File('bump-on-tail/out/run.hdf5','r')

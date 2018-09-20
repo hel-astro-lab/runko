@@ -6,8 +6,9 @@
 #include <algorithm>
 #include <array>
 #include <vector>
-#include <unordered_map>
-// #include <map>
+//#include <unordered_map>
+//#include <map>
+#include "../../tools/sparsepp/sparsepp/spp.h"
 
 // #include "reversed_iterator.h"
 
@@ -34,14 +35,17 @@ class AdaptiveMesh {
   typedef std::array<uint64_t, D> indices_t;
   typedef std::array<T, D> value_array_t;
 
-  using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
-  using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
-  std::unordered_map<uint64_t, T> data;
+  //using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
+  //using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
+  //std::unordered_map<uint64_t, T> data;
 
-  // using iterator       = typename std::map<uint64_t, T>::iterator;
-  // using const_iterator = typename std::map<uint64_t, T>::const_iterator;
-  // std::map<uint64_t, T> data;
+  //using iterator       = typename std::map<uint64_t, T>::iterator;
+  //using const_iterator = typename std::map<uint64_t, T>::const_iterator;
+  //std::map<uint64_t, T> data;
 
+  using iterator       = typename spp::sparse_hash_map<uint64_t, T>::iterator;
+  using const_iterator = typename spp::sparse_hash_map<uint64_t, T>::const_iterator;
+  spp::sparse_hash_map<uint64_t, T> data;
 
   static const uint64_t error_cid = 0;
   static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;

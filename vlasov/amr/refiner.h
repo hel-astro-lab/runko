@@ -17,13 +17,13 @@ using std::abs;
 namespace toolbox {
 
 
-template<typename T, int D>
+template<typename T, int V>
 class Adapter {
 
   public:
 
-  typedef typename AdaptiveMesh<T,D>::indices_t indices_t;
-  typedef typename AdaptiveMesh<T,D>::value_array_t value_array_t;
+  typedef typename AdaptiveMesh<T,V>::indices_t indices_t;
+  typedef typename AdaptiveMesh<T,V>::value_array_t value_array_t;
   
   // std::vector<uint64_t> cells_to_refine;
   // std::vector<uint64_t> cells_to_unrefine;
@@ -46,11 +46,11 @@ class Adapter {
   }
 
 
-  // T relative_difference(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const { }
+  // T relative_difference(const AdaptiveMesh<T,V>& mesh, const uint64_t cid) const { }
 
 
 
-  T maximum_value(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const 
+  T maximum_value(const AdaptiveMesh<T,V>& mesh, const uint64_t cid) const 
   {
     int rfl = mesh.get_refinement_level(cid);
 
@@ -68,12 +68,12 @@ class Adapter {
 
 
   // error norm is max{ |grad(f)| }
-  T maximum_gradient(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const
+  T maximum_gradient(const AdaptiveMesh<T,V>& mesh, const uint64_t cid) const
   {
     int rfl = mesh.get_refinement_level(cid);
     indices_t ind = mesh.get_indices(cid);
 
-    value_array_t gradient = grad<T,D>(mesh, ind, rfl);
+    value_array_t gradient = grad<T,V>(mesh, ind, rfl);
 
     return *std::max_element(std::begin( gradient) , std::end(gradient),
         [](T a, T b){return std::abs(a) < std::abs(b);});
@@ -82,7 +82,7 @@ class Adapter {
 
   /// Check given cell for possible refinement; if positive then it is appended to internal lists
   void checkCell(
-      AdaptiveMesh<T,D>& mesh,
+      AdaptiveMesh<T,V>& mesh,
       uint64_t cid, 
       T refine_indicator, 
       T unrefine_indicator)
@@ -121,7 +121,7 @@ class Adapter {
 
 
   /// Check full mesh for refinement
-  void check( AdaptiveMesh<T,D>& mesh )
+  void check( AdaptiveMesh<T,V>& mesh )
   {
     cells_to_refine.clear();
     cells_to_unrefine.clear();
@@ -149,7 +149,7 @@ class Adapter {
 
 
   // create empty new leafs 
-  void refine( AdaptiveMesh<T,D>& mesh )
+  void refine( AdaptiveMesh<T,V>& mesh )
   {
     cells_created.clear();
 
@@ -167,7 +167,7 @@ class Adapter {
 
 
 
-  void unrefine( AdaptiveMesh<T,D>& mesh )
+  void unrefine( AdaptiveMesh<T,V>& mesh )
   {
     cells_removed.clear();
 

@@ -70,12 +70,29 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
   //          [](std::array<T,3>& uvel) -> T { return T(1);}
   //          );
 
+  auto cids = mesh0.get_cells(true);
+  auto min_ind = mesh0.get_indices( cids.front() );
+  auto max_ind = mesh0.get_indices( cids.back()  );
+
+  int cfl_halo = 10; // how many CFL steps are allowed in backward substitution
+
   for(uint64_t r=0; r<len[0]; r++) {
     index[0] = r;
     for(uint64_t s=0; s<len[1]; s++) {
       index[1] = s;
       for(uint64_t t=0; t<len[2]; t++) {
         index[2] = t;
+
+        // cfl bound guards
+        if( r < (min_ind[0] - cfl_halo) ) continue;
+        if( r > (max_ind[0] + cfl_halo) ) continue;
+
+        if( s < (min_ind[1] - cfl_halo) ) continue;
+        if( s > (max_ind[1] + cfl_halo) ) continue;
+
+        if( t < (min_ind[2] - cfl_halo) ) continue;
+        if( t > (max_ind[2] + cfl_halo) ) continue;
+
 
         uint64_t cid = mesh1.get_cell_from_indices(index, 0);
         val = backward_advect(index, 0, mesh0, E, B, params);
@@ -90,6 +107,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
       }
     }
   }
+
 
 
   // create new leafs
