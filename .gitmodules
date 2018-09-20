@@ -10,3 +10,6 @@
 [submodule "tools/ezh5"]
 	path = tools/ezh5
 	url = https://github.com/natj/ezh5.git
+[submodule "tools/sparsepp"]
+	path = tools/sparsepp
+	url = https://github.com/greg7mdp/sparsepp.git

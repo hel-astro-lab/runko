@@ -246,7 +246,10 @@ if __name__ == "__main__":
         pass
 
     # Timer for profiling
-    timer = Timer(["total", "init", "step", "io"])
+    timer = Timer(
+            ["total", "init", "step", "io"],
+            ["cycle1", "cycle2", "loc", "vel", "cur-dep", "bounds", "clip", "analyze"]
+            )
     timer.start("total")
     timer.start("init")
 
@@ -375,34 +378,48 @@ if __name__ == "__main__":
         #xJEu loop (Umeda a la implicit FTDT)
 
         #configuration space push
+        timer.start_comp("loc")
         plasma.stepLocation(node)
+        timer.stop_comp("loc")
 
         #cycle to the new fresh snapshot
+        timer.start_comp("cycle1")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.cycle()
+        timer.stop_comp("cycle1")
+
 
         #current deposition from moving flux
+        timer.start_comp("cur-dep")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.depositCurrent()
+        timer.stop_comp("cur-dep")
 
         #update boundaries
+        timer.start_comp("bounds")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.updateBoundaries(node)
+        timer.stop_comp("bounds")
 
         #momentum step
+        timer.start_comp("vel")
         plasma.stepVelocity(node)
+        timer.stop_comp("vel")
+
 
         #cycle to the new fresh snapshot
+        timer.start_comp("cycle2")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.cycle()
+        timer.stop_comp("cycle2")
 
 
 
@@ -411,14 +428,19 @@ if __name__ == "__main__":
         #diagnostics
 
         #clip every tile
+        timer.start_comp("clip")
         if conf.clip:
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     tile = node.getTile(i,j)
                     tile.clip()
+        timer.stop_comp("clip")
+
 
         # analyze
+        timer.start_comp("analyze")
         plasma.analyze(node)
+        timer.stop_comp("analyze")
 
 
         timer.lap("step")
@@ -434,6 +456,8 @@ if __name__ == "__main__":
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
             timer.stats("step")
+            timer.comp_stats()
+            timer.purge_comps()
 
             timer.start("io")
 
