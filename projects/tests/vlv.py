@@ -27,9 +27,22 @@ import injector
 
 from timer import Timer
 
-
-
 import argparse
+
+
+# preclipper to accelerate injector
+def preclip(xloc, uloc, ispcs, conf):
+    if ispcs == 0:
+        delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
+        mux = conf.ub_e
+    elif ispcs == 1:
+        delgam  = conf.delgam
+        mux = conf.ub_i
+    
+    if ((uloc[0] - mux)**2.0)/delgam < 5.0:
+        return False
+    else:
+        return True
 
 
 # Generic function to fill the velocity mesh
@@ -57,8 +70,8 @@ def filler(xloc, uloc, ispcs, conf):
     delgam = conf.delgam
 
     #1d filler
-    if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
-        return 0.0
+    #if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
+    #    return 0.0
 
     #box advection test
     #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
@@ -304,10 +317,12 @@ if __name__ == "__main__":
     modes        = np.arange(Nx) 
     random_phase = np.random.rand(len(modes))
 
-    injector.inject(node, filler, conf) #injecting plasma
+    injector.inject(node, filler, conf, preclip) #injecting plasma
 
     #insert initial electric field
     #insert_em(node, conf)
+
+    #sys.exit()
 
 
     #Initial step backwards for velocity

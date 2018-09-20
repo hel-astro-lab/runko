@@ -64,14 +64,30 @@ def createEmptyVelocityMesh(conf):
         return vmesh
 
 
-def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
+
+def fillMesh(
+        vmesh, 
+        ffunc, 
+        xloc, 
+        ispcs, 
+        conf, 
+        preclip = lambda a,b,c,d : False
+        ):
+
+    nx, ny, nz = vmesh.get_size(0)
+
+    #collapse fill to 1V 
+    if (ny < 3) and (nz < 3):
+        ny = 1
+        nz = 1
 
     # standard flat fill on 0th rfl level
-    nx, ny, nz = vmesh.get_size(0)
-    for r in range(nx):
+    for t in range(nz):
         for s in range(ny):
-            for t in range(nz):
+            for r in range(nx):
                 uloc = vmesh.get_center([r,s,t], 0)
+
+                if preclip(xloc, uloc, ispcs, conf): continue
 
                 val = ffunc(xloc, uloc, ispcs, conf)
                 vmesh[r,s,t, 0] =  val #ref lvl 0
@@ -117,7 +133,12 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
 
 
 #inject plasma into tiles
-def inject(node, ffunc, conf):
+def inject(
+        node, 
+        ffunc, 
+        conf,
+        preclip = lambda a,b,c,d : False
+        ):
 
     #loop over all *local* tiles
     for i in range(node.getNx()):
@@ -158,7 +179,9 @@ def inject(node, ffunc, conf):
                                          ffunc,
                                          xloc,
                                          ispcs,
-                                         conf)
+                                         conf,
+                                         preclip=preclip,
+                                         )
                                 #vmesh.maximum_refinement_level = conf.refinement_level
 
                                 block[l,m,n] = vmesh
