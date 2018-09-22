@@ -124,7 +124,8 @@ auto declare_Tile(
              std::shared_ptr<vlv::Tile<D> >
              >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("dx",     &vlv::Tile<D>::dx)
+    .def_readwrite("dx",        &vlv::Tile<D>::dx)
+    .def_readwrite("threshold", &vlv::Tile<D>::threshold)
     .def("getPlasmaSpecies", [](vlv::Tile<D>& tile, size_t i, size_t s) 
         { return tile.steps.get(i).at(s); }, py::return_value_policy::reference)
     .def("insertInitialSpecies", [](vlv::Tile<D>& c, 
@@ -137,8 +138,9 @@ auto declare_Tile(
 
         })
 
-    .def("clip",         &vlv::Tile<D>::clip)
-    .def("cycle",        &vlv::Tile<D>::cycle);
+    .def("clip",           &vlv::Tile<D>::clip)
+    .def("clip_neighbors", &vlv::Tile<D>::clip_neighbors)
+    .def("cycle",          &vlv::Tile<D>::cycle);
 
 }
 

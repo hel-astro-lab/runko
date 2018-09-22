@@ -62,6 +62,7 @@ def initialize_tile(c, i, j, n, conf):
     maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
     c.set_tile_mins(mins[0:1])
     c.set_tile_maxs(maxs[0:1])
+    c.threshold = conf.clipThreshold
 
 
 #load tiles into each node

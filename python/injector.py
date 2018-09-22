@@ -7,6 +7,9 @@ import pyplasmabox
 
 np.random.seed(0)
 
+#from multiprocessing import Pool
+#from functools import partial
+
 
 
 def spatialLoc(node, Ncoords, Mcoords, conf):
@@ -131,6 +134,79 @@ def fillMesh(
     return 
 
 
+def inject_internal(i,j,
+                    node, 
+                    ffunc, 
+                    conf,
+                    preclip = lambda a,b,c,d : False
+                    ):
+
+    print("creating parallel ({},{})".format(i,j))
+    
+    #get tile & its content
+    cid    = node.id(i)
+    c      = node.getTile(cid) #get tile ptr
+    
+    # loop over species
+    species = []
+    for ispcs in range(conf.Nspecies):
+        block = pyplasmabox.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        
+        #set q/m
+        if ispcs == 0:
+            block.qm = conf.me
+        elif ispcs == 1:
+            block.qm = conf.mi
+        elif ispcs == 2:
+            block.qm = conf.me
+        elif ispcs == 3:
+            block.qm = conf.mi
+    
+    
+        for n in range(conf.NzMesh):
+            for m in range(conf.NyMesh):
+                for l in range(conf.NxMesh):
+                    #print(" sub mesh: ({},{},{})".format(l,m,n))
+    
+                    xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+    
+                    vmesh = createEmptyVelocityMesh(conf)
+                    fillMesh(vmesh,
+                             ffunc,
+                             xloc,
+                             ispcs,
+                             conf,
+                             preclip=preclip,
+                             )
+                    #vmesh.maximum_refinement_level = conf.refinement_level
+    
+                    block[l,m,n] = vmesh
+        species.append(block)
+    
+    c.insertInitialSpecies(species)
+
+
+#inject plasma into tiles
+def inject_parallel(
+        node, 
+        ffunc, 
+        conf,
+        preclip = lambda a,b,c,d : False
+        ):
+
+    #multiprocessing 
+    pool = Pool() 
+    nxnynz = [(i,j) for i in range(node.getNx()) for j in range(node.getNy()) ]
+    print("pool for injector:", nxnynz)
+    #pool.map(inject_internal, nxnynz)
+    pool.map(partial(inject_internal,
+                        node=node,
+                        ffunc=ffunc,
+                        conf=conf,
+                        preclip=preclip
+                        ),
+                    nxnynz)
+
 
 #inject plasma into tiles
 def inject(
@@ -143,6 +219,7 @@ def inject(
     #loop over all *local* tiles
     for i in range(node.getNx()):
         for j in range(node.getNy()):
+
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
                 print("creating ({},{})".format(i,j))
