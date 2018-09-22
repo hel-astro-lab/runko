@@ -727,10 +727,10 @@ class AdaptiveMesh {
     std::vector<uint64_t> below_threshold;
     T maxv = max_value();
 
-    for(const uint64_t cid: get_cells(false)) {
+    //for(const uint64_t cid: get_cells(false)) {
     //for(const auto& it : data) {
-    //for(const auto&& [cid,val] : data) {
-      if( data.at(cid)/maxv < threshold ) below_threshold.push_back(cid);
+    for(const auto& [cid,val] : data) {
+      if( val/maxv < threshold ) below_threshold.push_back(cid);
     }
 
     for(const uint64_t cid: below_threshold) data.erase(cid);
@@ -746,8 +746,8 @@ class AdaptiveMesh {
     T maxv = max_value();
 
     // get potentially removed cells
-    for(const uint64_t cid: get_cells(false)) {
-      if( data.at(cid)/maxv < threshold ) below_threshold.push_back(cid);
+    for(const auto& [cid,val] : data) {
+      if( val/maxv < threshold ) below_threshold.push_back(cid);
     }
 
     // check if they have neighbors
