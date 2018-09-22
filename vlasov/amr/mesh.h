@@ -465,6 +465,54 @@ class AdaptiveMesh {
 	}
 
 
+  // get neighboring cells on the same refinement level
+  std::vector<uint64_t> get_neighbors(const uint64_t cid) const 
+	{
+		std::vector<uint64_t> nbors;
+
+		if (cid == error_cid) return nbors; 
+		int refinement_level = get_refinement_level(cid);
+
+		nbors.reserve(26);
+
+		indices_t indices = get_indices(cid);
+
+		// get indices of next refinement level within this cell
+		for (uint64_t
+			z_shift = 0;
+			z_shift < 2;
+			z_shift++
+		)
+		for (uint64_t
+			y_shift = 0;
+			y_shift < 2;
+			y_shift++
+		)
+		for (uint64_t
+			x_shift = 0;
+			x_shift < 2;
+			x_shift++
+		) {
+      const indices_t index = 
+      {{ 
+         indices[0] + x_shift,
+         indices[1] + y_shift,
+         indices[2] + z_shift
+      }};
+
+      // skip itself
+      if (z_shift == 0 && y_shift == 0 && x_shift == 0) continue;
+
+			nbors.push_back(
+				get_cell_from_indices(index, refinement_level)
+			);
+		}
+
+		return nbors;
+	}
+
+
+
   std::vector<uint64_t> get_siblings(const uint64_t cid) const
   {
     uint64_t cid_parent = get_parent(cid);
@@ -674,16 +722,58 @@ class AdaptiveMesh {
   //-------------------------------------------------- 
   // Adaptivity
 
-  // clip every cell below threshold
+  /// clip every cell below threshold
   void clip_cells(const T threshold) {
     std::vector<uint64_t> below_threshold;
     T maxv = max_value();
 
     for(const uint64_t cid: get_cells(false)) {
+    //for(const auto& it : data) {
+    //for(const auto&& [cid,val] : data) {
       if( data.at(cid)/maxv < threshold ) below_threshold.push_back(cid);
     }
 
     for(const uint64_t cid: below_threshold) data.erase(cid);
+  }
+
+  /// clip only neighboring cells that are under threshold. 
+  //
+  // Helps with leaking mass because we keep a leaking buffer of cells
+  // around the problematic regions.
+  void clip_neighbors(const T threshold) {
+    std::vector<uint64_t> below_threshold;
+    std::vector<uint64_t> to_be_removed;
+    T maxv = max_value();
+
+    // get potentially removed cells
+    for(const uint64_t cid: get_cells(false)) {
+      if( data.at(cid)/maxv < threshold ) below_threshold.push_back(cid);
+    }
+
+    // check if they have neighbors
+    for(const uint64_t cid: below_threshold) {
+      bool no_neighbors = true;
+
+      for(auto nbor : get_neighbors(cid)) {
+        // only consider cells that exist
+        if (exists(nbor)) {
+
+          // is the nbor also under removal (i.e., value < threshold)
+          // if neighbor is "good" then break and do not remove this cid
+          if( std::count( 
+                std::begin(below_threshold), 
+                std::end(below_threshold), 
+                nbor) == 0 ) {
+            no_neighbors = false;
+            break;
+          }
+        }
+
+      } // loop over nbors
+    if (no_neighbors) to_be_removed.push_back(cid);
+    }
+
+  for(const uint64_t cid: to_be_removed) data.erase(cid);
   }
 
 
@@ -817,7 +907,9 @@ class AdaptiveMesh {
 
   bool exists(const uint64_t cid) const
   {
-    return data.count(cid) == data.end() ? false : true;
+    //return data.count(cid) == data.end() ? false : true;
+    //return std::count( std::begin(data), std::end(data), cid) == 1;
+    return data.find(cid) != data.end();
   }
 
 
