@@ -441,14 +441,13 @@ if __name__ == "__main__":
         #diagnostics
 
         #clip every tile
-        if (lap % conf.interval == 0):
-            timer.start_comp("clip")
-            if conf.clip:
-                for j in range(node.getNy()):
-                    for i in range(node.getNx()):
-                        tile = node.getTile(i,j)
-                        tile.clip_neighbors()
-            timer.stop_comp("clip")
+        timer.start_comp("clip")
+        if conf.clip:
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    tile = node.getTile(i,j)
+                    tile.clip_neighbors()
+        timer.stop_comp("clip")
 
 
         # analyze

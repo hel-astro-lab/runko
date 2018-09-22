@@ -727,10 +727,8 @@ class AdaptiveMesh {
     std::vector<uint64_t> below_threshold;
     T maxv = max_value();
 
-    //for(const uint64_t cid: get_cells(false)) {
-    //for(const auto& it : data) {
-    for(const auto& [cid,val] : data) {
-      if( val/maxv < threshold ) below_threshold.push_back(cid);
+    for(const auto& it : data) {
+      if( it.second/maxv < threshold ) below_threshold.push_back(it.first);
     }
 
     for(const uint64_t cid: below_threshold) data.erase(cid);
@@ -746,8 +744,8 @@ class AdaptiveMesh {
     T maxv = max_value();
 
     // get potentially removed cells
-    for(const auto& [cid,val] : data) {
-      if( val/maxv < threshold ) below_threshold.push_back(cid);
+    for(const auto& it : data) {  
+      if( it.second/maxv < threshold ) below_threshold.push_back(it.first);
     }
 
     // check if they have neighbors
@@ -966,7 +964,7 @@ class AdaptiveMesh {
   {
 
     // loop over sorted cells so that sizes of incoming cells is decreasing
-    for(auto cid_rhs : rhs.get_cells(true)) {
+    for(const auto cid_rhs : rhs.get_cells(true)) {
       auto it = data.find(cid_rhs);
       T val_rhs = rhs.data.at(cid_rhs); // cell guaranteed to exists in rhs.data so we can use .at()
 
@@ -1009,8 +1007,8 @@ class AdaptiveMesh {
   {
     T ret = T(0),
       val;
-    for(auto cid : get_cells(true) ) {
-      val = std::abs( data.at(cid) );
+    for(const auto& it : data) {
+      val = std::abs( it.second );
       ret = val > ret ? val : ret;
     };
 
@@ -1021,35 +1019,33 @@ class AdaptiveMesh {
   //--------------------------------------------------
 
   // scalar operations to the grid
-  void operator *= (T val) 
+  void operator *= (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) *= val;
+    for(auto& it : data) {
+      it.second *= val;
     }
   }
 
-  void operator /= (T val) 
+  void operator /= (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) /= val;
+    for(auto& it : data) {
+      it.second /= val;
     }
   }
 
-  void operator += (T val) 
+  void operator += (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) += val;
+    for(auto& it : data) {
+      it.second += val;
     }
   }
 
-  void operator -= (T val) 
+  void operator -= (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) -= val;
+    for(auto& it : data) {
+      it.second -= val;
     }
   }
-
-
 
 
 
