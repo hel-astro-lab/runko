@@ -131,19 +131,19 @@ class Adapter {
       unrefine_indicator = T(0);
     
 
-    for(const auto& cid : mesh.get_cells(true)) {
+    for(const auto& it : mesh.data) {
 
-      if (!mesh.is_leaf(cid)) continue;
+      if (!mesh.is_leaf(it.first)) continue;
 
       // error indicator for refinement/unrefinement
         
       // error_indicator = maximum_gradient(mesh, cid);
-      refine_indicator = maximum_value(mesh, cid);
+      refine_indicator = maximum_value(mesh, it.first);
       // error_indicator = relative_difference(mesh, cid);
 
       unrefine_indicator = refine_indicator;
 
-      checkCell(mesh, cid, refine_indicator, unrefine_indicator);
+      checkCell(mesh, it.first, refine_indicator, unrefine_indicator);
     }
   }
 
@@ -153,12 +153,12 @@ class Adapter {
   {
     cells_created.clear();
 
-    for(auto cid : cells_to_refine) {
+    for(const auto& cid : cells_to_refine) {
 
       // T parent_value = mesh.get(cid);
         
       // creating empty cells 
-      for(auto cidc : mesh.get_children(cid)) {
+      for(const auto& cidc : mesh.get_children(cid)) {
         //mesh.set(cidc, parent_value);
         cells_created.push_back(cidc);
       }
@@ -172,19 +172,19 @@ class Adapter {
     cells_removed.clear();
 
     // NOTE: these are actually parents of the children to be removed
-    for(const auto cid : cells_to_unrefine) {
+    for(const auto& cid : cells_to_unrefine) {
 
         auto children = mesh.get_children(cid);
 
         // collect cell values and remove
         auto avg_value = T(0);
-        for(auto cidc : children) {
+        for(const auto& cidc : children) {
           avg_value += mesh.get(cidc);
 
           mesh.data.erase(cidc);
           cells_removed.push_back(cidc);
         }
-        avg_value /= T( children.size() ); // this is the avg of children vals
+        avg_value /= static_cast<T>( children.size() ); // this is the avg of children vals
 
         mesh.set(cid, avg_value);
     }

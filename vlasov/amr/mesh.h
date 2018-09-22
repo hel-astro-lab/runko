@@ -830,15 +830,16 @@ class AdaptiveMesh {
 
 
   // get value from map. If it foes not exist, recursively check until parent is found
-  T get_from_roots(uint64_t cid) const
+  T get_from_roots(const uint64_t cid) const
   {
     int refinement_level = get_refinement_level(cid);
     indices_t ind = get_indices(cid);
 
+    uint64_t cidn;
     for(int rfl=refinement_level; rfl >= 0; rfl--) {
-      cid = get_cell_from_indices(ind, rfl);
+      cidn = get_cell_from_indices(ind, rfl);
 
-      auto it = data.find(cid);
+      const auto it = data.find(cid);
       if( it != data.end() ) return it->second;
 
       for(size_t i=0; i<D; i++) {
@@ -847,7 +848,7 @@ class AdaptiveMesh {
     }
 
     // we went through the tree and did not find any existing cell
-    return T(0);
+    return static_cast<T>(0);
   }
 
 
@@ -1046,8 +1047,6 @@ class AdaptiveMesh {
       it.second -= val;
     }
   }
-
-
 
 
 };

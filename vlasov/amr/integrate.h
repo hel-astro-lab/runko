@@ -10,7 +10,7 @@ T integrate_moment(
     const toolbox::AdaptiveMesh<T,3>& m,
     Lambda&& chi
     ) {
-  auto integ = T(0);
+  auto integ = static_cast<T>(0);
 
   // pre-create size of the elements
   // TODO optimize this depending on top_refinement_level
@@ -28,13 +28,12 @@ T integrate_moment(
   auto lens = m.get_length(0);
   T du0 = lens[0]*lens[1]*lens[2];
 
-
   // convolve with chi(u) function
-  for(auto cid : m.get_cells(false) ) {
-    if( !m.is_leaf(cid) ) continue; //TODO: fixme
+  for(const auto& it : m.data) {
+    if(!m.is_leaf(it.first)) continue; //TODO: fixme
 
-    auto index = m.get_indices(cid);
-    rfl        = m.get_refinement_level(cid);
+    auto index = m.get_indices(it.first);
+    rfl        = m.get_refinement_level(it.first);
     auto uvel  = m.get_center(index, rfl);
 
     //std::cout << "cid:" << cid << " data:" << m.data.at(cid) << " du:" << du[rfl] << " chi:" << chi(uvel) << '\n';
@@ -42,7 +41,7 @@ T integrate_moment(
 
     //integ += m.data.at(cid) * du[rfl] * chi(uvel);
     //integ += m.data.at(cid) * du[rfl] * chi(uvel);
-    integ += m.data.at(cid) * du0 * chi(uvel);
+    integ += it.second * du0 * chi(uvel);
   }
 
   return integ;
