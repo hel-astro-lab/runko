@@ -9,12 +9,12 @@ from scipy.stats import mstats
 
 #--------------------------------------------------
 # read simulation data from file
-#f = h5py.File('twostream/out/run.hdf5','r')
+f = h5py.File('twostream/out/run.hdf5','r')
 #f = h5py.File('twostream/out_ub2/run.hdf5','r')
 #f = h5py.File('twostream_kebne/ub1.h5','r')
 #f = h5py.File('twostream_kebne/ub4.h5','r')
 #f = h5py.File('twostream_kebne/ub4_noclip.h5','r')
-f = h5py.File('twostream_kebne/ub4_hiresv.h5','r')
+#f = h5py.File('twostream_kebne/ub4_hiresv.h5','r')
 
 #f = h5py.File('twostream/out_limits_lowres128/run.hdf5','r')
 #f = h5py.File('bump-on-tail/out/run.hdf5','r')
@@ -120,9 +120,9 @@ axs[0].set_ylim(-20.0, -5.0)
 
 
 #gammab = 1.414
-#gammab = 2.236
+gammab = 2.236
 #gammab = 3.162 
-gammab = 4.123
+#gammab = 4.123
 
 Gi = 1.0/np.sqrt(8.0*gammab**3.0)
 #Gms = -14.0 + time*Gi #ub1

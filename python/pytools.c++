@@ -132,6 +132,7 @@ void bind_tools(pybind11::module& m)
         })
 
     .def("clip_cells",              &AM3d::clip_cells)
+    .def("clip_neighbors",          &AM3d::clip_neighbors)
     .def("is_leaf",                 &AM3d::is_leaf)
     .def("set_min",                 &AM3d::set_min)
     .def("set_max",                 &AM3d::set_max)

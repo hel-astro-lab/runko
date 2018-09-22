@@ -322,8 +322,6 @@ if __name__ == "__main__":
     #insert initial electric field
     #insert_em(node, conf)
 
-    #sys.exit()
-
 
     #Initial step backwards for velocity
     for j in range(node.getNy()):
@@ -443,13 +441,14 @@ if __name__ == "__main__":
         #diagnostics
 
         #clip every tile
-        timer.start_comp("clip")
-        if conf.clip:
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
-                    tile.clip()
-        timer.stop_comp("clip")
+        if (lap % conf.interval == 0):
+            timer.start_comp("clip")
+            if conf.clip:
+                for j in range(node.getNy()):
+                    for i in range(node.getNx()):
+                        tile = node.getTile(i,j)
+                        tile.clip_neighbors()
+            timer.stop_comp("clip")
 
 
         # analyze
@@ -502,7 +501,6 @@ if __name__ == "__main__":
                 saveVisz(lap, node, conf)
             except:
                 pass
-
 
             timer.stop("io")
             timer.stats("io")
