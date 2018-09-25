@@ -155,12 +155,12 @@ axs[1].plot(time, Gms, 'r--')
 prtcls = np.sum(rho, 0) #integrate particle density
 #prtcls /= prtcls[0]
 
-
-prtcls = np.abs(prtcls - prtcls[0] )/prtcls[0]
+prtcls = np.abs(prtcls - prtcls[1] )/prtcls[1]
 #prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
 
+print("prtcls:", prtcls)
 axs[2].plot(time, np.log10(prtcls))
-#axs[2].set_ylim((-8.0, 0.0))
+axs[2].set_ylim((-8.0, 0.0))
 #axs[2].plot(time, prtcls)
 
 ##################################################

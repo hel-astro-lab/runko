@@ -216,13 +216,21 @@ def inject(
         preclip = lambda a,b,c,d : False
         ):
 
+    # setup toolbar
+    toolbar_width = 50
+    sys.stdout.write("[%s]" % (" " * toolbar_width))
+    sys.stdout.flush()
+    sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
+
     #loop over all *local* tiles
     for i in range(node.getNx()):
         for j in range(node.getNy()):
 
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
-                print("creating ({},{})".format(i,j))
+                #print("creating ({},{})".format(i,j))
+                sys.stdout.write("-")
+                sys.stdout.flush()
 
                 #get tile & its content
                 cid    = node.id(i)
@@ -266,3 +274,4 @@ def inject(
 
                 c.insertInitialSpecies(species)
 
+    sys.stdout.write("\n") #finish toolbar
