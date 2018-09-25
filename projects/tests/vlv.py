@@ -193,7 +193,7 @@ def save(n, conf, lap, f5):
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = analysis['ekin']
+    f5['fields/ekin'][:,lap] = analysis['edens']
     f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
@@ -446,14 +446,11 @@ if __name__ == "__main__":
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     tile = node.getTile(i,j)
-                    tile.clip_neighbors()
+                    #tile.clip_neighbors()
+                    tile.clip()
         timer.stop_comp("clip")
 
 
-        # analyze
-        timer.start_comp("analyze")
-        plasma.analyze(node)
-        timer.stop_comp("analyze")
 
 
         timer.lap("step")
@@ -464,8 +461,15 @@ if __name__ == "__main__":
 
         #sys.exit()
 
+        # analyze (this is done for every step because run.hdf5 is updated such a way)
+        timer.start_comp("analyze")
+        plasma.analyze(node)
+        timer.stop_comp("analyze")
+
         #I/O
         if (lap % conf.interval == 0):
+
+
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
             timer.stats("step")
@@ -476,7 +480,9 @@ if __name__ == "__main__":
 
             plasma.writeYee(node,      lap, conf.outdir + "/")
             plasma.writeAnalysis(node, lap, conf.outdir + "/")
-            plasma.writeMesh(node,     lap, conf.outdir + "/")
+
+            if (lap % conf.restart == 0):
+                plasma.writeMesh(node,     lap, conf.outdir + "/")
 
             try:
                 plotNode(axs[0], node, conf)

@@ -92,14 +92,20 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::PlasmaMomentLattice>(m_sub, "PlasmaMomentLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho)
-    .def_readwrite("mgamma",   &fields::PlasmaMomentLattice::mgamma)
+    .def_readwrite("edens",    &fields::PlasmaMomentLattice::edens)
+    .def_readwrite("temp",     &fields::PlasmaMomentLattice::temp)
     .def_readwrite("Vx",       &fields::PlasmaMomentLattice::Vx)
     .def_readwrite("Vy",       &fields::PlasmaMomentLattice::Vy)
     .def_readwrite("Vz",       &fields::PlasmaMomentLattice::Vz)
-    .def_readwrite("Tx",       &fields::PlasmaMomentLattice::Tx)
-    .def_readwrite("Ty",       &fields::PlasmaMomentLattice::Ty)
-    .def_readwrite("Tz",       &fields::PlasmaMomentLattice::Tz)
-    .def_readwrite("ekin",     &fields::PlasmaMomentLattice::ekin);
+    .def_readwrite("momx",     &fields::PlasmaMomentLattice::momx)
+    .def_readwrite("momy",     &fields::PlasmaMomentLattice::momy)
+    .def_readwrite("momz",     &fields::PlasmaMomentLattice::momz)
+    .def_readwrite("pressx",   &fields::PlasmaMomentLattice::pressx)
+    .def_readwrite("pressy",   &fields::PlasmaMomentLattice::pressy)
+    .def_readwrite("pressz",   &fields::PlasmaMomentLattice::pressz)
+    .def_readwrite("shearxy",  &fields::PlasmaMomentLattice::shearxy)
+    .def_readwrite("shearxz",  &fields::PlasmaMomentLattice::shearxz)
+    .def_readwrite("shearyz",  &fields::PlasmaMomentLattice::shearyz);
 
 
   //--------------------------------------------------

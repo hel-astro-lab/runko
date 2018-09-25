@@ -44,11 +44,7 @@ class Analyzator {
       ParticleBlock& container = tile.get_container(ispc);
       auto& analysis = tile.analysis[ispc];
 
-      analysis.rho.clear();
-      analysis.mgamma.clear();
-      analysis.Vx.clear();
-      analysis.Tx.clear();
-      analysis.ekin.clear();
+      analysis.clear();
 
 
       // initialize pointers to particle arrays
@@ -129,29 +125,39 @@ class Analyzator {
 
         // --------------------------------------------------
         // general quantities
-        yee.rho(i,j,k) += abs(q); // total number density
-
-        analysis.rho(i,j,k) += abs(q); // number density per species
-          
+        Realf mass = abs(q);
+        yee.rho(i,j,k) += mass; // total number density
 
         // --------------------------------------------------
         // particle-species quantities
-        analysis.mgamma(i,j,k) += gam; // mean gamma
+        analysis.rho(i,j,k) += mass; // number density per species
 
-        analysis.Vx(i,j,k) += u0/gam; // bulk velocity
+        analysis.edens(i,j,k) += gam*mass; // energy density
 
-        // TODO Tx
+        analysis.momx(i,j,k) += u0*mass; // momentum density
+        analysis.momy(i,j,k) += v0*mass; // momentum density
+        analysis.momz(i,j,k) += w0*mass; // momentum density
+
+        analysis.pressx(i,j,k) += u0*u0*mass/gam; // pressure density
+        analysis.pressy(i,j,k) += v0*v0*mass/gam; // pressure density
+        analysis.pressz(i,j,k) += w0*w0*mass/gam; // pressure density
+
+        analysis.shearxy(i,j,k) += u0*v0*mass/gam; // shear 
+        analysis.shearxz(i,j,k) += u0*w0*mass/gam; // shear
+        analysis.shearyz(i,j,k) += v0*w0*mass/gam; // shear
+
+        analysis.Vx(i,j,k) += u0/gam; // bulk velocity x
+        analysis.Vy(i,j,k) += v0/gam; // bulk velocity y
+        analysis.Vz(i,j,k) += w0/gam; // bulk velocity z
         
-        // kinetic energy
-        // chi(u) = 1/2 m v.v
-        analysis.ekin(i,j,k) += 0.5*abs(q)*(u0*u0 + v0*v0 + w0*w0)/gam/gam;
+        analysis.temp(i,j,k) += gam - Realf(1); // temperature XXX is it?
 
       }
 
       // normalize weight with number density
-      for (size_t i=0; i<tile.mesh_lengths[0]; i++)
-      for (size_t j=0; j<tile.mesh_lengths[1]; j++)
-        analysis.mgamma(i,j,0) /= analysis.rho(i,j,0);
+      //for (size_t i=0; i<tile.mesh_lengths[0]; i++)
+      //for (size_t j=0; j<tile.mesh_lengths[1]; j++)
+      //  analysis.mgamma(i,j,0) /= analysis.rho(i,j,0);
 
     }
 

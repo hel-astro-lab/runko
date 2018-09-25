@@ -117,19 +117,8 @@ class Analyzator {
                 );
             analysis.rho(q,r,s) = rho;
 
-
-            // mean gamma (fluid energy density)
-            // chi(u) = \gamma / rho
-            analysis.mgamma(q,r,s) = 
-              integrate_moment(
-                  M,
-                [](std::array<T,3> uvel) -> T { return gamma<T,3>(uvel); }
-                );
-            analysis.mgamma(q,r,s) /= rho; // normalize
-
-
-            /// (mean) fluid/bulk velocity
-            // chi(u) = v = u/gamma
+            /// (mean) non-relativistic fluid/bulk velocity
+            // chi(v) = V = U/gamma 
             T Vx = 
               integrate_moment(
                   M,
@@ -138,29 +127,56 @@ class Analyzator {
                 );
             analysis.Vx(q,r,s) = Vx / rho;
 
-            // TODO add Vy and Vz components
-
+            //--------------------------------------------------
+            // stress energy tensor components
               
-            /// (non-relativistic) temperature
-            // chi(u) = v - V
-            T Tx = 
+            // T^00: fluid energy density
+            // chi(u) = gam*mass*c^2
+            analysis.edens(q,r,s) = 
               integrate_moment(
                   M,
-                [Vx](std::array<T,3> uvel) -> T 
-                { return std::pow(uvel[0]/gamma<T,3>(uvel) - Vx, 2); }
+                [](std::array<T,3> uvel) -> T { return gamma<T,3>(uvel); }
                 );
-            analysis.Tx(q,r,s) = std::sqrt(Tx);
-
-            // TODO add Ty and Tz components
-
-
-            // Kinetic energy
-            // chi(u) = 1/2 u.u
-            analysis.ekin(q,r,s) = 
+              
+            /// T^01 = T^10: momentum density, chi(u) = u_x*mass*c = m u_x
+            analysis.momx(q,r,s) = 
               integrate_moment(
                   M,
-                [](std::array<T,3> uvel) -> T { 
-                return 0.5*uvel[0]*uvel[0]/(gamma<T,3>(uvel)*gamma<T,3>(uvel)); }
+                [](std::array<T,3> uvel) -> T 
+                { return uvel[0]; }
+                );
+
+            /// T^11: pressure, chi(u) = m u_x v_x *c^2
+            analysis.pressx(q,r,s) = 
+              integrate_moment(
+                  M,
+                [](std::array<T,3> uvel) -> T 
+                { return uvel[0]*uvel[0]/gamma<T,3>(uvel); }
+                );
+
+            /// T^12 = T^21: shear, chi(u) = m u_x v_y c^2
+            //analysis.shearxy(q,r,s) = 
+            //  integrate_moment(
+            //      M,
+            //    [](std::array<T,3> uvel) -> T 
+            //    { return uvel[0]*uvel[1]/gamma<T,3>(uvel); }
+            //    );
+
+            // + other components for u_y and u_z
+
+            //--------------------------------------------------
+              
+            // mean gamma
+            //analysis.mgamma(q,r,s) = analysis.edens(q,r,s)/rho;
+
+            // TODO: correct?
+            /// relativistic temperature
+            // chi(u) = gam - 1
+            analysis.temp(q,r,s) =  
+              integrate_moment(
+                  M,
+                [](std::array<T,3> uvel) -> T 
+                { return gamma<T,3>(uvel) - T(1); }
                 );
 
 

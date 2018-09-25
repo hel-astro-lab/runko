@@ -160,7 +160,7 @@ prtcls = np.abs(prtcls - prtcls[0] )/prtcls[0]
 #prtcls = np.clip(prtcls, 1.0e-8, 1.0e2)
 
 axs[2].plot(time, np.log10(prtcls))
-axs[2].set_ylim((-6.0, 0.0))
+#axs[2].set_ylim((-8.0, 0.0))
 #axs[2].plot(time, prtcls)
 
 ##################################################
