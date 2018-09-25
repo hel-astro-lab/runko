@@ -210,15 +210,24 @@ class Writer {
         gr["Nz"] = analysis.Nz;
 
         gr["rho"] = analysis.rho.serialize();
-
-        gr["mgamma"] = analysis.mgamma.serialize();
+        gr["edens"] = analysis.edens.serialize();
+        gr["temp"] = analysis.temp.serialize();
 
         gr["Vx"] = analysis.Vx.serialize();
+        gr["Vy"] = analysis.Vy.serialize();
+        gr["Vz"] = analysis.Vz.serialize();
 
-        gr["Tx"] = analysis.Tx.serialize();
+        gr["momx"] = analysis.momx.serialize();
+        gr["momy"] = analysis.momy.serialize();
+        gr["momz"] = analysis.momz.serialize();
 
-        gr["ekin"] = analysis.ekin.serialize();
+        gr["pressx"] = analysis.pressx.serialize();
+        gr["pressy"] = analysis.pressy.serialize();
+        gr["pressz"] = analysis.pressz.serialize();
 
+        gr["shearxy"] = analysis.shearxy.serialize();
+        gr["shearxz"] = analysis.shearxz.serialize();
+        gr["shearyz"] = analysis.shearyz.serialize();
 
       }
 

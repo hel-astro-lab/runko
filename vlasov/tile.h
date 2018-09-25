@@ -8,6 +8,7 @@
 #include "../definitions.h"
 #include "../corgi/tile.h"
 #include "amr/mesh.h"
+#include "amr/integrate.h"
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
 #include "../em-fields/tile.h"
@@ -114,16 +115,67 @@ class Tile :
   /// Clip all the meshes inside tile
   void clip() {
     auto& species = steps.get();
+    Realf norm0, norm1;
 
     for(auto&& internal_mesh : species) {
 
       for (size_t k=0; k<mesh_lengths[2]; k++)
       for (size_t j=0; j<mesh_lengths[1]; j++)
       for (size_t i=0; i<mesh_lengths[0]; i++) {
-        internal_mesh.block(i,j,k).clip_cells(threshold);
+        auto& mesh = internal_mesh.block(i,j,k);
+
+        // normalize
+        norm0 = integrate_moment( mesh,
+                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
+                  );
+        norm0 = norm0 <= 0 ? 1 : norm0;
+
+        // actual clipping
+        mesh.clip_cells(threshold);
+
+        // normalize back to original weight
+        // simulates collisions/diffusion
+        norm1 = integrate_moment( mesh,
+                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
+                  );
+        norm1 = norm1 <= 0 ? 1 : norm1;
+
+        mesh *= norm0/norm1;
       }
     }
   }
+    
+  /// Clip all the meshes inside tile with less aggressive clip_neighbors
+  void clip_neighbors() {
+    Realf norm0, norm1;
+
+    auto& species = steps.get();
+    for(auto&& internal_mesh : species) {
+      for (size_t k=0; k<mesh_lengths[2]; k++)
+      for (size_t j=0; j<mesh_lengths[1]; j++)
+      for (size_t i=0; i<mesh_lengths[0]; i++) {
+        auto& mesh = internal_mesh.block(i,j,k);
+
+        // normalize
+        norm0 = integrate_moment( mesh,
+                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
+                  );
+        norm0 = norm0 <= 0 ? 1 : norm0;
+
+        mesh.clip_neighbors(threshold);
+
+        // normalize back to original weight
+        // simulates collisions/diffusion
+        norm1 = integrate_moment( mesh,
+                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
+                  );
+        norm1 = norm1 <= 0 ? 1 : norm1;
+
+        mesh *= norm0/norm1;
+      }
+    }
+  }
+
 
   /// Cycle internal plasma container to another solution step
   void cycle() { steps.cycle(); }

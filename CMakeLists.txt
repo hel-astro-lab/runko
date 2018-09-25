@@ -19,7 +19,10 @@ set (FP_PRECISION DP)
 # dependencies
 
 FIND_PACKAGE (EIGEN3 REQUIRED NO_MODULE)
-INCLUDE_DIRECTORIES (SYSTEM "$ENV{EIGEN3_INCLUDE_DIR}" )
+if(APPLE)
+    INCLUDE_DIRECTORIES (SYSTEM "$ENV{EIGEN3_INCLUDE_DIR}" )
+endif()
+
 
 # fmt preinstallation fails with intel compilers
 #FIND_PACKAGE (FMT REQUIRED)
@@ -43,7 +46,7 @@ FIND_PACKAGE (HDF5)
 #see:
 # - https://stackoverflow.com/questions/46414660/macos-cmake-and-openmp
 
-OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" OFF)
+OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
 
 # Find OpenMP
 if(APPLE AND USE_OpenMP)

@@ -70,12 +70,27 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
   //          [](std::array<T,3>& uvel) -> T { return T(1);}
   //          );
 
-  for(uint64_t r=0; r<len[0]; r++) {
-    index[0] = r;
+
+  // cfl bound guards
+  auto cids = mesh0.get_cells(true);
+    
+  // if mesh is empty, bail out
+  if (cids.empty()) return;
+  auto min_ind = mesh0.get_indices( cids.front() );
+  auto max_ind = mesh0.get_indices( cids.back()  );
+
+  int cfl_halo = 10; // how many CFL steps are allowed in backward substitution
+
+  for(uint64_t t=0; t<len[2]; t++) {
+    index[2] = t;
     for(uint64_t s=0; s<len[1]; s++) {
       index[1] = s;
-      for(uint64_t t=0; t<len[2]; t++) {
-        index[2] = t;
+      for(uint64_t r=0; r<len[0]; r++) {
+        index[0] = r;
+
+        // cfl bound guards
+        if( r < (min_ind[0] - cfl_halo) ) continue;
+        if( r > (max_ind[0] + cfl_halo) ) continue;
 
         uint64_t cid = mesh1.get_cell_from_indices(index, 0);
         val = backward_advect(index, 0, mesh0, E, B, params);
@@ -90,6 +105,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
       }
     }
   }
+
 
 
   // create new leafs
@@ -244,8 +260,9 @@ inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
   return ret;
 }
 
+
+
 //--------------------------------------------------
 // explicit template instantiation
 template class vlv::AmrMomentumLagrangianSolver<Realf, 1, 1>; //1D1V
-
 

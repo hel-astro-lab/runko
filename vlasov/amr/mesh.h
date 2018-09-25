@@ -7,10 +7,14 @@
 #include <array>
 #include <vector>
 #include <unordered_map>
-// #include <map>
+#include <map>
+//#include "../../tools/sparsepp/sparsepp/spp.h"
 
 // #include "reversed_iterator.h"
+#include "../../definitions.h"
 
+/// super ugly hack to get optimized 1V / 3V switch
+//#define THREEVHACK
 
 
 namespace toolbox {
@@ -31,17 +35,20 @@ class AdaptiveMesh {
 
   public:
 
-  typedef std::array<uint64_t, D> indices_t;
-  typedef std::array<T, D> value_array_t;
+  typedef std::array<uint64_t, 3> indices_t;
+  typedef std::array<T, 3> value_array_t;
 
   using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
   using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
   std::unordered_map<uint64_t, T> data;
 
-  // using iterator       = typename std::map<uint64_t, T>::iterator;
-  // using const_iterator = typename std::map<uint64_t, T>::const_iterator;
-  // std::map<uint64_t, T> data;
+  using iterator       = typename std::map<uint64_t, T>::iterator;
+  using const_iterator = typename std::map<uint64_t, T>::const_iterator;
+  std::map<uint64_t, T> data;
 
+  //using iterator       = typename spp::sparse_hash_map<uint64_t, T>::iterator;
+  //using const_iterator = typename spp::sparse_hash_map<uint64_t, T>::const_iterator;
+  //spp::sparse_hash_map<uint64_t, T> data;
 
   static const uint64_t error_cid = 0;
   static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
@@ -54,8 +61,6 @@ class AdaptiveMesh {
 
   /// current size (number of cells) in each dimension
   indices_t length;
-
-
   
   /// location of mesh start corners
   value_array_t mins;
@@ -93,9 +98,9 @@ class AdaptiveMesh {
   // TOOD: check if they make any sense
 
   AdaptiveMesh() :
-    length({1,1,1}),
-    mins({0,0,0}),
-    maxs({1,1,1})
+    length{{1,1,1}},
+    mins{{0,0,0}},
+    maxs{{1,1,1}}
   {
     update_last_cid(); 
   }
@@ -321,26 +326,6 @@ class AdaptiveMesh {
 
   indices_t get_parent_indices(const indices_t& indices) const
   {
-
-    /*
-    uint64_t shift = (uint64_t(1) << int(1));
-    std::cout << "shift:" << shift << "\n";
-    std::cout << "i0: " << indices[0]/2 <<
-                 "i1: " << indices[1]/2 <<
-                 "i2: " << indices[2]/2 <<
-                 "\n";
-    */
-
-    // NOTE: implicit int casting does the flooring of this value
-    /*
-    indices_t parent_indices = 
-    {{
-       indices[0] / uint64_t(2),
-       indices[1] / uint64_t(2),
-       indices[2] / uint64_t(2) 
-    }};
-    */
-
     indices_t parent_indices = 
     {{
        indices[0] / (uint64_t(1) << 1),
@@ -357,7 +342,6 @@ class AdaptiveMesh {
     // int refinement_level = get_refinement_level(cid);
       
     if(refinement_level <= 1) return get_parent_indices(indices);
-
 
     indices_t parent_indices = 
     {{
@@ -423,24 +407,29 @@ class AdaptiveMesh {
 		int refinement_level = get_refinement_level(cid);
 		if (refinement_level >= maximum_refinement_level) return children;
 
-
-
+#ifdef THREEVHACK
 		children.reserve(8);
+#else 
+		children.reserve(2);
+#endif
 
 		indices_t indices = get_indices(cid);
 
 		// get indices of next refinement level within this cell
-		for (uint64_t
+    uint64_t x_shift = 0, y_shift = 0, z_shift = 0;
+#ifdef THREEVHACK
+		for (
 			z_shift = 0;
 			z_shift < 2;
 			z_shift++
 		)
-		for (uint64_t
+		for (
 			y_shift = 0;
 			y_shift < 2;
 			y_shift++
 		)
-		for (uint64_t
+#endif 
+		for (
 			x_shift = 0;
 			x_shift < 2;
 			x_shift++
@@ -459,6 +448,61 @@ class AdaptiveMesh {
 
 		return children;
 	}
+
+
+  // get neighboring cells on the same refinement level
+  std::vector<uint64_t> get_neighbors(const uint64_t cid) const 
+	{
+		std::vector<uint64_t> nbors;
+
+		if (cid == error_cid) return nbors; 
+		int refinement_level = get_refinement_level(cid);
+
+#ifdef THREEVHACK
+		nbors.reserve(26);
+#else
+		nbors.reserve(2);
+#endif
+
+		indices_t indices = get_indices(cid);
+
+		// get indices of next refinement level within this cell
+    uint64_t x_shift = 0, y_shift = 0, z_shift = 0;
+#ifdef THREEVHACK
+		for (
+			z_shift = 0;
+			z_shift < 2;
+			z_shift++
+		)
+		for (
+			y_shift = 0;
+			y_shift < 2;
+			y_shift++
+		)
+#endif
+		for (
+			x_shift = 0;
+			x_shift < 2;
+			x_shift++
+		) {
+      const indices_t index = 
+      {{ 
+         indices[0] + x_shift,
+         indices[1] + y_shift,
+         indices[2] + z_shift
+      }};
+
+      // skip itself
+      if (z_shift == 0 && y_shift == 0 && x_shift == 0) continue;
+
+			nbors.push_back(
+				get_cell_from_indices(index, refinement_level)
+			);
+		}
+
+		return nbors;
+	}
+
 
 
   std::vector<uint64_t> get_siblings(const uint64_t cid) const
@@ -670,16 +714,56 @@ class AdaptiveMesh {
   //-------------------------------------------------- 
   // Adaptivity
 
-  // clip every cell below threshold
+  /// clip every cell below threshold
   void clip_cells(const T threshold) {
     std::vector<uint64_t> below_threshold;
     T maxv = max_value();
 
-    for(const uint64_t cid: get_cells(false)) {
-      if( data.at(cid)/maxv < threshold ) below_threshold.push_back(cid);
+    for(const auto& it : data) {
+      if( it.second/maxv < threshold ) below_threshold.push_back(it.first);
     }
 
     for(const uint64_t cid: below_threshold) data.erase(cid);
+  }
+
+  /// clip only neighboring cells that are under threshold. 
+  //
+  // Helps with leaking mass because we keep a leaking buffer of cells
+  // around the problematic regions.
+  void clip_neighbors(const T threshold) {
+    std::vector<uint64_t> below_threshold;
+    std::vector<uint64_t> to_be_removed;
+    T maxv = max_value();
+
+    // get potentially removed cells
+    for(const auto& it : data) {  
+      if( it.second/maxv < threshold ) below_threshold.push_back(it.first);
+    }
+
+    // check if they have neighbors
+    for(const uint64_t cid: below_threshold) {
+      bool no_neighbors = true;
+
+      for(auto nbor : get_neighbors(cid)) {
+        // only consider cells that exist
+        if (exists(nbor)) {
+
+          // is the nbor also under removal (i.e., value < threshold)
+          // if neighbor is "good" then break and do not remove this cid
+          if( std::count( 
+                std::begin(below_threshold), 
+                std::end(below_threshold), 
+                nbor) == 0 ) {
+            no_neighbors = false;
+            break;
+          }
+        }
+
+      } // loop over nbors
+    if (no_neighbors) to_be_removed.push_back(cid);
+    }
+
+  for(const uint64_t cid: to_be_removed) data.erase(cid);
   }
 
 
@@ -738,15 +822,16 @@ class AdaptiveMesh {
 
 
   // get value from map. If it foes not exist, recursively check until parent is found
-  T get_from_roots(uint64_t cid) const
+  T get_from_roots(const uint64_t cid) const
   {
     int refinement_level = get_refinement_level(cid);
     indices_t ind = get_indices(cid);
 
+    uint64_t cidn;
     for(int rfl=refinement_level; rfl >= 0; rfl--) {
-      cid = get_cell_from_indices(ind, rfl);
+      cidn = get_cell_from_indices(ind, rfl);
 
-      auto it = data.find(cid);
+      const auto it = data.find(cid);
       if( it != data.end() ) return it->second;
 
       for(size_t i=0; i<D; i++) {
@@ -755,7 +840,7 @@ class AdaptiveMesh {
     }
 
     // we went through the tree and did not find any existing cell
-    return T(0);
+    return static_cast<T>(0);
   }
 
 
@@ -813,7 +898,9 @@ class AdaptiveMesh {
 
   bool exists(const uint64_t cid) const
   {
-    return data.count(cid) == data.end() ? false : true;
+    //return data.count(cid) == data.end() ? false : true;
+    //return std::count( std::begin(data), std::end(data), cid) == 1;
+    return data.find(cid) != data.end();
   }
 
 
@@ -870,7 +957,7 @@ class AdaptiveMesh {
   {
 
     // loop over sorted cells so that sizes of incoming cells is decreasing
-    for(auto cid_rhs : rhs.get_cells(true)) {
+    for(const auto cid_rhs : rhs.get_cells(true)) {
       auto it = data.find(cid_rhs);
       T val_rhs = rhs.data.at(cid_rhs); // cell guaranteed to exists in rhs.data so we can use .at()
 
@@ -913,8 +1000,8 @@ class AdaptiveMesh {
   {
     T ret = T(0),
       val;
-    for(auto cid : get_cells(true) ) {
-      val = std::abs( data.at(cid) );
+    for(const auto& it : data) {
+      val = std::abs( it.second );
       ret = val > ret ? val : ret;
     };
 
@@ -925,37 +1012,33 @@ class AdaptiveMesh {
   //--------------------------------------------------
 
   // scalar operations to the grid
-  void operator *= (T val) 
+  void operator *= (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) *= val;
+    for(auto& it : data) {
+      it.second *= val;
     }
   }
 
-  void operator /= (T val) 
+  void operator /= (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) /= val;
+    for(auto& it : data) {
+      it.second /= val;
     }
   }
 
-  void operator += (T val) 
+  void operator += (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) += val;
+    for(auto& it : data) {
+      it.second += val;
     }
   }
 
-  void operator -= (T val) 
+  void operator -= (const T val) 
   {
-    for(auto cid: get_cells(false)) {
-      data.at(cid) -= val;
+    for(auto& it : data) {
+      it.second -= val;
     }
   }
-
-
-
-
 
 
 };

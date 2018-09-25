@@ -68,56 +68,6 @@ class SpatialSolver {
 
 
 
-
-/// Relativistic gamma from velocity
-//template<typename T, int D>
-//inline T gamma(std::array<T,D>& uvel) 
-//{
-//  T gammasq = 1.0;
-//  for(size_t i=0; i<D; i++) gammasq += uvel[i]*uvel[i];
-//  return std::sqrt(gammasq);
-//}
-
-
-/// Simple (relativistic) box integration of a mesh flux
-/*
-template<typename T>
-T integrate_current(
-    toolbox::AdaptiveMesh<T,3>& m)
-{
-
-  int rfl; // current refinement level
-  T gam; // differential element (box size)
-
-  // pre-create size of the elements
-  std::vector<T> du;
-  du.resize( m.maximum_refinement_level );
-
-  for(rfl=0; rfl<=m.maximum_refinement_level; rfl++) {
-    auto lens = m.get_length(rfl);
-    T len = lens[0]*lens[1]*lens[2];
-    du[rfl] = len;
-  }
-
-  // integrate leafs; j = int{ U du/gamma}
-  T integ = T(0);
-  for(auto cid : m.get_cells(false) ) {
-    if( !m.is_leaf(cid) ) continue;
-
-    auto index = m.get_indices(cid);
-    rfl        = m.get_refinement_level(cid);
-    auto uvel  = m.get_center(index, rfl);
-    gam        = gamma<T,3>(uvel);
-
-    integ += m.data.at(cid)*du[rfl]/gam;
-  }
-
-  return integ;
-}
-*/
-
-
-
 /// Lagrangian conservative solver
 template<typename T>
 class AmrSpatialLagrangianSolver : 
@@ -140,20 +90,20 @@ class AmrSpatialLagrangianSolver :
         T Const)
     {
 
-      for(auto cid : lhs.get_cells(false)) {
-        auto index = lhs.get_indices(cid);
-        int rfl    = lhs.get_refinement_level(cid);
+      for(auto& it : lhs.data) {
+        auto index = lhs.get_indices(it.first);
+        int rfl    = lhs.get_refinement_level(it.first);
         auto uvel  = lhs.get_center(index, rfl);
 
         // compute (u_x/gamma)^R factor
-        T vvel = T(1);
+        T vvel = static_cast<T>(1);
         T gam  = gamma<T,3>(uvel);
         for(size_t i=0; i<rank; i++) {
           vvel *= (uvel[0]/gam);
         }
 
         // finally compute flux: C*(u_x dt/dx)^R f(x,v,t)
-        lhs.data.at(cid) *= vvel*Const;
+        it.second *= vvel*Const;
       }
 
       return lhs;
@@ -176,7 +126,8 @@ class AmrSpatialLagrangianSolver :
       // switch to units of grid speed by multiplying with Cfl
 
       //left side
-      for(auto&& cid : M0.get_cells(false)) {
+      for(const auto& it : M0.data) {
+        auto& cid  = it.first;
         auto index = M0.get_indices(cid);
         int rfl    = M0.get_refinement_level(cid);
         auto uvel  = M0.get_center(index, rfl);
@@ -184,7 +135,7 @@ class AmrSpatialLagrangianSolver :
         if (-uvel[0] < 0.0) {
           T gam  = gamma<T,3>(uvel);
           //T gam = 1.0;
-          flux.data[cid] = cfl*(uvel[0]/gam)*M0.data.at(cid);
+          flux.data[cid] = cfl*(uvel[0]/gam)*it.second;
 
           //if (M0.data.at(cid) > 0.01) std::cout << "LL:" << flux.data[cid] << " / " << M0.data.at(cid) << std::endl;
         } 
@@ -192,7 +143,8 @@ class AmrSpatialLagrangianSolver :
       }
 
       //right side
-      for(auto&& cid : Mp1.get_cells(false)) {
+      for(const auto& it : Mp1.data) {
+        auto& cid  = it.first;
         auto index = Mp1.get_indices(cid);
         int rfl    = Mp1.get_refinement_level(cid);
         auto uvel  = Mp1.get_center(index, rfl);
@@ -200,7 +152,7 @@ class AmrSpatialLagrangianSolver :
         if (-uvel[0] > 0.0) {
           T gam  = gamma<T,3>(uvel);
           //T gam = 1.0;
-          flux.data[cid] = cfl*(uvel[0]/gam)*Mp1.data.at(cid);
+          flux.data[cid] = cfl*(uvel[0]/gam)*it.second;
 
           //if (Mp1.data.at(cid) > 0.01) std::cout << "RR:" << uvel[0] << std::endl;
         }
@@ -272,7 +224,8 @@ class AmrSpatialLagrangianSolver :
       // switch to units of grid speed by multiplying with Cfl
 
       //left side
-      for(auto cid : Mm1.get_cells(false)) {
+      for(const auto& it : Mm1.data) {
+        auto& cid  = it.first;
         auto index = Mm1.get_indices(cid);
         int rfl    = Mm1.get_refinement_level(cid);
         auto uvel  = Mm1.get_center(index, rfl);
@@ -283,7 +236,7 @@ class AmrSpatialLagrangianSolver :
           T v   = cfl*uvel[0]/gam; // CFL
 
           T fm2 = Mm2.get(cid);
-          T fm1 = Mm1.get(cid);
+          T fm1 = it.second;
           T f0  =  M0.get(cid);
           T fp1 = Mp1.get(cid);
           T fp2 = Mp2.get(cid);
@@ -303,7 +256,8 @@ class AmrSpatialLagrangianSolver :
       }
 
       //right side
-      for(auto cid : Mp1.get_cells(false)) {
+      for(const auto& it : Mp1.data) {
+        auto& cid  = it.first;
         auto index = M0.get_indices(cid);
         int rfl    = M0.get_refinement_level(cid);
         auto uvel  = M0.get_center(index, rfl);
@@ -317,7 +271,7 @@ class AmrSpatialLagrangianSolver :
           //T fm2 = Mm2.get(cid);
           T fm1 = Mm1.get(cid);
           T f0  = M0.get(cid);
-          T fp1 = Mp1.get(cid);
+          T fp1 = it.second;
           T fp2 = Mp2.get(cid);
           T fp3 = Mp3.get(cid);
             

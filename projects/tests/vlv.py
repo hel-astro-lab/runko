@@ -27,9 +27,22 @@ import injector
 
 from timer import Timer
 
-
-
 import argparse
+
+
+# preclipper to accelerate injector
+def preclip(xloc, uloc, ispcs, conf):
+    if ispcs == 0:
+        delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
+        mux = conf.ub_e
+    elif ispcs == 1:
+        delgam  = conf.delgam
+        mux = conf.ub_i
+    
+    if ((uloc[0] - mux)**2.0)/delgam < 5.0:
+        return False
+    else:
+        return True
 
 
 # Generic function to fill the velocity mesh
@@ -57,8 +70,8 @@ def filler(xloc, uloc, ispcs, conf):
     delgam = conf.delgam
 
     #1d filler
-    if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
-        return 0.0
+    #if not( (np.abs(uy) < 0.01) and (np.abs(uz) < 0.01) ):
+    #    return 0.0
 
     #box advection test
     #dv = (conf.vxmax - conf.vxmin)/(conf.Nvx - 1.0)
@@ -180,7 +193,7 @@ def save(n, conf, lap, f5):
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = analysis['ekin']
+    f5['fields/ekin'][:,lap] = analysis['edens']
     f5['fields/jx'  ][:,lap] = yee['jx']
 
     return
@@ -246,7 +259,10 @@ if __name__ == "__main__":
         pass
 
     # Timer for profiling
-    timer = Timer(["total", "init", "step", "io"])
+    timer = Timer(
+            ["total", "init", "step", "io"],
+            ["cycle1", "cycle2", "loc", "vel", "cur-dep", "bounds", "clip", "analyze"]
+            )
     timer.start("total")
     timer.start("init")
 
@@ -301,7 +317,7 @@ if __name__ == "__main__":
     modes        = np.arange(Nx) 
     random_phase = np.random.rand(len(modes))
 
-    injector.inject(node, filler, conf) #injecting plasma
+    injector.inject(node, filler, conf, preclip) #injecting plasma
 
     #insert initial electric field
     #insert_em(node, conf)
@@ -375,34 +391,48 @@ if __name__ == "__main__":
         #xJEu loop (Umeda a la implicit FTDT)
 
         #configuration space push
+        timer.start_comp("loc")
         plasma.stepLocation(node)
+        timer.stop_comp("loc")
 
         #cycle to the new fresh snapshot
+        timer.start_comp("cycle1")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.cycle()
+        timer.stop_comp("cycle1")
+
 
         #current deposition from moving flux
+        timer.start_comp("cur-dep")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.depositCurrent()
+        timer.stop_comp("cur-dep")
 
         #update boundaries
+        timer.start_comp("bounds")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.updateBoundaries(node)
+        timer.stop_comp("bounds")
 
         #momentum step
+        timer.start_comp("vel")
         plasma.stepVelocity(node)
+        timer.stop_comp("vel")
+
 
         #cycle to the new fresh snapshot
+        timer.start_comp("cycle2")
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 tile = node.getTile(i,j)
                 tile.cycle()
+        timer.stop_comp("cycle2")
 
 
 
@@ -411,14 +441,16 @@ if __name__ == "__main__":
         #diagnostics
 
         #clip every tile
+        timer.start_comp("clip")
         if conf.clip:
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     tile = node.getTile(i,j)
+                    #tile.clip_neighbors()
                     tile.clip()
+        timer.stop_comp("clip")
 
-        # analyze
-        plasma.analyze(node)
+
 
 
         timer.lap("step")
@@ -429,17 +461,28 @@ if __name__ == "__main__":
 
         #sys.exit()
 
+        # analyze (this is done for every step because run.hdf5 is updated such a way)
+        timer.start_comp("analyze")
+        plasma.analyze(node)
+        timer.stop_comp("analyze")
+
         #I/O
         if (lap % conf.interval == 0):
+
+
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
             timer.stats("step")
+            timer.comp_stats()
+            timer.purge_comps()
 
             timer.start("io")
 
             plasma.writeYee(node,      lap, conf.outdir + "/")
             plasma.writeAnalysis(node, lap, conf.outdir + "/")
-            plasma.writeMesh(node,     lap, conf.outdir + "/")
+
+            if (lap % conf.restart == 0):
+                plasma.writeMesh(node,     lap, conf.outdir + "/")
 
             try:
                 plotNode(axs[0], node, conf)
@@ -463,7 +506,6 @@ if __name__ == "__main__":
                 saveVisz(lap, node, conf)
             except:
                 pass
-
 
             timer.stop("io")
             timer.stats("io")

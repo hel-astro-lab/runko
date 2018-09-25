@@ -7,6 +7,9 @@ import pyplasmabox
 
 np.random.seed(0)
 
+#from multiprocessing import Pool
+#from functools import partial
+
 
 
 def spatialLoc(node, Ncoords, Mcoords, conf):
@@ -64,14 +67,30 @@ def createEmptyVelocityMesh(conf):
         return vmesh
 
 
-def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
+
+def fillMesh(
+        vmesh, 
+        ffunc, 
+        xloc, 
+        ispcs, 
+        conf, 
+        preclip = lambda a,b,c,d : False
+        ):
+
+    nx, ny, nz = vmesh.get_size(0)
+
+    #collapse fill to 1V 
+    if (ny < 3) and (nz < 3):
+        ny = 1
+        nz = 1
 
     # standard flat fill on 0th rfl level
-    nx, ny, nz = vmesh.get_size(0)
-    for r in range(nx):
+    for t in range(nz):
         for s in range(ny):
-            for t in range(nz):
+            for r in range(nx):
                 uloc = vmesh.get_center([r,s,t], 0)
+
+                if preclip(xloc, uloc, ispcs, conf): continue
 
                 val = ffunc(xloc, uloc, ispcs, conf)
                 vmesh[r,s,t, 0] =  val #ref lvl 0
@@ -115,16 +134,103 @@ def fillMesh(vmesh, ffunc, xloc, ispcs, conf):
     return 
 
 
+def inject_internal(i,j,
+                    node, 
+                    ffunc, 
+                    conf,
+                    preclip = lambda a,b,c,d : False
+                    ):
+
+    print("creating parallel ({},{})".format(i,j))
+    
+    #get tile & its content
+    cid    = node.id(i)
+    c      = node.getTile(cid) #get tile ptr
+    
+    # loop over species
+    species = []
+    for ispcs in range(conf.Nspecies):
+        block = pyplasmabox.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        
+        #set q/m
+        if ispcs == 0:
+            block.qm = conf.me
+        elif ispcs == 1:
+            block.qm = conf.mi
+        elif ispcs == 2:
+            block.qm = conf.me
+        elif ispcs == 3:
+            block.qm = conf.mi
+    
+    
+        for n in range(conf.NzMesh):
+            for m in range(conf.NyMesh):
+                for l in range(conf.NxMesh):
+                    #print(" sub mesh: ({},{},{})".format(l,m,n))
+    
+                    xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+    
+                    vmesh = createEmptyVelocityMesh(conf)
+                    fillMesh(vmesh,
+                             ffunc,
+                             xloc,
+                             ispcs,
+                             conf,
+                             preclip=preclip,
+                             )
+                    #vmesh.maximum_refinement_level = conf.refinement_level
+    
+                    block[l,m,n] = vmesh
+        species.append(block)
+    
+    c.insertInitialSpecies(species)
+
 
 #inject plasma into tiles
-def inject(node, ffunc, conf):
+def inject_parallel(
+        node, 
+        ffunc, 
+        conf,
+        preclip = lambda a,b,c,d : False
+        ):
+
+    #multiprocessing 
+    pool = Pool() 
+    nxnynz = [(i,j) for i in range(node.getNx()) for j in range(node.getNy()) ]
+    print("pool for injector:", nxnynz)
+    #pool.map(inject_internal, nxnynz)
+    pool.map(partial(inject_internal,
+                        node=node,
+                        ffunc=ffunc,
+                        conf=conf,
+                        preclip=preclip
+                        ),
+                    nxnynz)
+
+
+#inject plasma into tiles
+def inject(
+        node, 
+        ffunc, 
+        conf,
+        preclip = lambda a,b,c,d : False
+        ):
+
+    # setup toolbar
+    toolbar_width = 50
+    sys.stdout.write("[%s]" % (" " * toolbar_width))
+    sys.stdout.flush()
+    sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
 
     #loop over all *local* tiles
     for i in range(node.getNx()):
         for j in range(node.getNy()):
+
             #if n.getMpiGrid(i,j) == n.rank:
             if True:
-                print("creating ({},{})".format(i,j))
+                #print("creating ({},{})".format(i,j))
+                sys.stdout.write("-")
+                sys.stdout.flush()
 
                 #get tile & its content
                 cid    = node.id(i)
@@ -158,7 +264,9 @@ def inject(node, ffunc, conf):
                                          ffunc,
                                          xloc,
                                          ispcs,
-                                         conf)
+                                         conf,
+                                         preclip=preclip,
+                                         )
                                 #vmesh.maximum_refinement_level = conf.refinement_level
 
                                 block[l,m,n] = vmesh
@@ -166,3 +274,4 @@ def inject(node, ffunc, conf):
 
                 c.insertInitialSpecies(species)
 
+    sys.stdout.write("\n") #finish toolbar

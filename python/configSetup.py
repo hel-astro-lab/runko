@@ -31,6 +31,10 @@ class Configuration(object):
                 self.__dict__.update( {key: val} )
 
 
+        # automatically set restart equal to other output, if not specified
+        if not("restart" in self.__dict__):
+            self.__dict__["restart"] = conf.interval
+
         if not("dx" in self.__dict__):
             self.__dict__["dx"] = 1.0
 
@@ -54,14 +58,12 @@ class Configuration(object):
         #Compute initial values for configuration; 
         # assume that flow speed is beta if value is <=1, else it is gamma
         if np.abs(self.gamma_e) <= 1.0:
-            beta = np.abs(self.gamma_e)
-            self.ub_e = beta/np.sqrt(1.0 - beta**2.0)
+            self.ub_e = np.abs(self.gamma_e)
         else:
             self.ub_e = np.sqrt(self.gamma_e**2.0 - 1.0)
     
         if np.abs(self.gamma_i) <= 1.0:
-            beta = np.abs(self.gamma_i)
-            self.ub_i = beta/np.sqrt(1.0 - beta**2.0)
+            self.ub_i = np.abs(self.gamma_i)
         else:
             self.ub_i = np.sqrt(self.gamma_i**2.0 - 1.0)
 
@@ -78,6 +80,16 @@ class Configuration(object):
 
         if not("Nz" in self.__dict__):
             self.__dict__["Nz"] = 1
+
+        #if velocity mesh cell size is only given, compute size
+        if not("Nvx" in self.__dict__):
+            self.__dict__["Nvx"] = int((self.vxmax - self.vxmin) // self.dvx)
+        if not("Nvy" in self.__dict__):
+            self.__dict__["Nvy"] = int((self.vymax - self.vymin) // self.dvy)
+        if not("Nvz" in self.__dict__):
+            self.__dict__["Nvz"] = int((self.vzmax - self.vzmin) // self.dvz)
+
+        print("Nvx=", self.Nvx)
 
 
 

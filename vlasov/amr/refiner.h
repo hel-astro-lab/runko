@@ -17,13 +17,13 @@ using std::abs;
 namespace toolbox {
 
 
-template<typename T, int D>
+template<typename T, int V>
 class Adapter {
 
   public:
 
-  typedef typename AdaptiveMesh<T,D>::indices_t indices_t;
-  typedef typename AdaptiveMesh<T,D>::value_array_t value_array_t;
+  typedef typename AdaptiveMesh<T,V>::indices_t indices_t;
+  typedef typename AdaptiveMesh<T,V>::value_array_t value_array_t;
   
   // std::vector<uint64_t> cells_to_refine;
   // std::vector<uint64_t> cells_to_unrefine;
@@ -46,11 +46,11 @@ class Adapter {
   }
 
 
-  // T relative_difference(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const { }
+  // T relative_difference(const AdaptiveMesh<T,V>& mesh, const uint64_t cid) const { }
 
 
 
-  T maximum_value(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const 
+  T maximum_value(const AdaptiveMesh<T,V>& mesh, const uint64_t cid) const 
   {
     int rfl = mesh.get_refinement_level(cid);
 
@@ -68,12 +68,12 @@ class Adapter {
 
 
   // error norm is max{ |grad(f)| }
-  T maximum_gradient(const AdaptiveMesh<T,D>& mesh, const uint64_t cid) const
+  T maximum_gradient(const AdaptiveMesh<T,V>& mesh, const uint64_t cid) const
   {
     int rfl = mesh.get_refinement_level(cid);
     indices_t ind = mesh.get_indices(cid);
 
-    value_array_t gradient = grad<T,D>(mesh, ind, rfl);
+    value_array_t gradient = grad<T,V>(mesh, ind, rfl);
 
     return *std::max_element(std::begin( gradient) , std::end(gradient),
         [](T a, T b){return std::abs(a) < std::abs(b);});
@@ -82,7 +82,7 @@ class Adapter {
 
   /// Check given cell for possible refinement; if positive then it is appended to internal lists
   void checkCell(
-      AdaptiveMesh<T,D>& mesh,
+      AdaptiveMesh<T,V>& mesh,
       uint64_t cid, 
       T refine_indicator, 
       T unrefine_indicator)
@@ -121,7 +121,7 @@ class Adapter {
 
 
   /// Check full mesh for refinement
-  void check( AdaptiveMesh<T,D>& mesh )
+  void check( AdaptiveMesh<T,V>& mesh )
   {
     cells_to_refine.clear();
     cells_to_unrefine.clear();
@@ -131,34 +131,34 @@ class Adapter {
       unrefine_indicator = T(0);
     
 
-    for(const auto& cid : mesh.get_cells(true)) {
+    for(const auto& it : mesh.data) {
 
-      if (!mesh.is_leaf(cid)) continue;
+      if (!mesh.is_leaf(it.first)) continue;
 
       // error indicator for refinement/unrefinement
         
       // error_indicator = maximum_gradient(mesh, cid);
-      refine_indicator = maximum_value(mesh, cid);
+      refine_indicator = maximum_value(mesh, it.first);
       // error_indicator = relative_difference(mesh, cid);
 
       unrefine_indicator = refine_indicator;
 
-      checkCell(mesh, cid, refine_indicator, unrefine_indicator);
+      checkCell(mesh, it.first, refine_indicator, unrefine_indicator);
     }
   }
 
 
   // create empty new leafs 
-  void refine( AdaptiveMesh<T,D>& mesh )
+  void refine( AdaptiveMesh<T,V>& mesh )
   {
     cells_created.clear();
 
-    for(auto cid : cells_to_refine) {
+    for(const auto& cid : cells_to_refine) {
 
       // T parent_value = mesh.get(cid);
         
       // creating empty cells 
-      for(auto cidc : mesh.get_children(cid)) {
+      for(const auto& cidc : mesh.get_children(cid)) {
         //mesh.set(cidc, parent_value);
         cells_created.push_back(cidc);
       }
@@ -167,24 +167,24 @@ class Adapter {
 
 
 
-  void unrefine( AdaptiveMesh<T,D>& mesh )
+  void unrefine( AdaptiveMesh<T,V>& mesh )
   {
     cells_removed.clear();
 
     // NOTE: these are actually parents of the children to be removed
-    for(const auto cid : cells_to_unrefine) {
+    for(const auto& cid : cells_to_unrefine) {
 
         auto children = mesh.get_children(cid);
 
         // collect cell values and remove
         auto avg_value = T(0);
-        for(auto cidc : children) {
+        for(const auto& cidc : children) {
           avg_value += mesh.get(cidc);
 
           mesh.data.erase(cidc);
           cells_removed.push_back(cidc);
         }
-        avg_value /= T( children.size() ); // this is the avg of children vals
+        avg_value /= static_cast<T>( children.size() ); // this is the avg of children vals
 
         mesh.set(cid, avg_value);
     }

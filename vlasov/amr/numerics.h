@@ -27,7 +27,7 @@ T deriv(
 {
   uint64_t cid = mesh.get_cell_from_indices(indices, refinement_level);
 
-  for(auto dir : directions) if( std::abs(dir) > 1) throw std::invalid_argument("Direction is more than 1");
+  for(const auto& dir : directions) if( std::abs(dir) > 1) throw std::invalid_argument("Direction is more than 1");
 
 
   // get relevant neighbor in my refinement level
@@ -37,11 +37,11 @@ T deriv(
 
   length = mesh.get_size(refinement_level);
   size_t i = 0;
-  for(auto dir: directions) {
+  for(const auto& dir: directions) {
 
     // silently return zero if derivative beyond array range is asked
-    if( (indices[i] <= 0) && (dir < 0))            return T(0);
-    if( (indices[i] >= length[i]-1) && (dir > 0) ) return T(0);
+    if( (indices[i] <= 0) && (dir < 0))            return static_cast<T>(0);
+    if( (indices[i] >= length[i]-1) && (dir > 0) ) return static_cast<T>(0);
 
     indices_neighbor[i] += dir;
     i++;
@@ -125,7 +125,7 @@ static inline T lerp_center(T t, T v0, T v1, T v2) {return T(0.5)*(v1 + (T(1) - 
 
 /// inlined value getter from the AMR mesh
 template<typename T>
-static inline T _getv(
+static const inline T _getv(
     const AdaptiveMesh<T,3>& mesh,
     const typename AdaptiveMesh<T,3>::indices_t& indices,
     int rfl)

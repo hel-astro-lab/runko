@@ -327,14 +327,20 @@ def getAnalysis(n, conf, ispcs):
 
     data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
            'rho':    -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'mgamma': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'edens': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'temp': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            'Vx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            'Vy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            'Vz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Tx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Ty':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Tz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'ekin':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'momx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'momy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'momz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearxy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearxz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearyz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            }
 
     for i in range(conf.Nx):
@@ -346,18 +352,24 @@ def getAnalysis(n, conf, ispcs):
             indx = i*conf.NxMesh + s
 
             data['rho'][indx] = analysis.rho[s, 0, 0]
-
-            data['mgamma'][indx] = analysis.mgamma[s, 0, 0]
+            data['edens'][indx] = analysis.edens[s, 0, 0]
+            data['temp'][indx] = analysis.temp[s, 0, 0]
 
             data['Vx'][indx] = analysis.Vx[s, 0, 0]
             data['Vy'][indx] = analysis.Vy[s, 0, 0]
             data['Vz'][indx] = analysis.Vz[s, 0, 0]
 
-            data['Tx'][indx] = analysis.Tx[s, 0, 0]
-            data['Ty'][indx] = analysis.Ty[s, 0, 0]
-            data['Tz'][indx] = analysis.Tz[s, 0, 0]
+            data['momx'][indx] = analysis.momx[s, 0, 0]
+            data['momy'][indx] = analysis.momy[s, 0, 0]
+            data['momz'][indx] = analysis.momz[s, 0, 0]
 
-            data['ekin'][indx] = analysis.ekin[s, 0, 0]
+            data['pressx'][indx] = analysis.pressx[s, 0, 0]
+            data['pressy'][indx] = analysis.pressy[s, 0, 0]
+            data['pressz'][indx] = analysis.pressz[s, 0, 0]
+
+            data['shearxy'][indx] = analysis.shearxy[s, 0, 0]
+            data['shearxz'][indx] = analysis.shearxz[s, 0, 0]
+            data['shearyz'][indx] = analysis.shearyz[s, 0, 0]
 
     return data
 

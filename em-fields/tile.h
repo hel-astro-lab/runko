@@ -85,40 +85,75 @@ class PlasmaMomentLattice {
   // density
   toolbox::Mesh<Realf, 0> rho;
 
-  /// mean gamma
-  toolbox::Mesh<Realf, 0> mgamma;
+  /// energy density
+  toolbox::Mesh<Realf, 0> edens;
+
+  /// temperature
+  toolbox::Mesh<Realf, 0> temp;
 
   /// (mean) flow speed
   toolbox::Mesh<Realf, 0> Vx;
   toolbox::Mesh<Realf, 0> Vy;
   toolbox::Mesh<Realf, 0> Vz;
 
-  /// Non-relativistic temperature
-  toolbox::Mesh<Realf, 0> Tx;
-  toolbox::Mesh<Realf, 0> Ty;
-  toolbox::Mesh<Realf, 0> Tz;
+  /// momentum density
+  toolbox::Mesh<Realf, 0> momx;
+  toolbox::Mesh<Realf, 0> momy;
+  toolbox::Mesh<Realf, 0> momz;
 
-  /// Kinetic energy
-  toolbox::Mesh<Realf, 0> ekin;
+  /// pressure
+  toolbox::Mesh<Realf, 0> pressx;
+  toolbox::Mesh<Realf, 0> pressy;
+  toolbox::Mesh<Realf, 0> pressz;
+
+  /// shear
+  toolbox::Mesh<Realf, 0> shearxy;
+  toolbox::Mesh<Realf, 0> shearxz;
+  toolbox::Mesh<Realf, 0> shearyz;
 
 
   /// constructor; initializes Mesh objects at the same time
   PlasmaMomentLattice(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
     Nx(Nx_in), Ny(Ny_in), Nz(Nz_in),
+
     rho(Nx, Ny, Nz),
-    mgamma(Nx, Ny, Nz),
+    edens(Nx, Ny, Nz),
+    temp(Nx, Ny, Nz),
     Vx( Nx, Ny, Nz ),
     Vy( Nx, Ny, Nz ),
     Vz( Nx, Ny, Nz ),
-    Tx( Nx, Ny, Nz ),
-    Ty( Nx, Ny, Nz ),
-    Tz( Nx, Ny, Nz ),
-    ekin(Nx, Ny, Nz)
+    momx( Nx, Ny, Nz ),
+    momy( Nx, Ny, Nz ),
+    momz( Nx, Ny, Nz ),
+    pressx( Nx, Ny, Nz ),
+    pressy( Nx, Ny, Nz ),
+    pressz( Nx, Ny, Nz ),
+    shearxy( Nx, Ny, Nz ),
+    shearxz( Nx, Ny, Nz ),
+    shearyz( Nx, Ny, Nz )
   { }
 
 
   ~PlasmaMomentLattice() = default;
 
+  void clear() 
+  {
+    rho    .clear();
+    edens  .clear();
+    temp   .clear();
+    Vx     .clear();   
+    Vy     .clear();  
+    Vz     .clear();     
+    momx   .clear();      
+    momy   .clear();       
+    momz   .clear();       
+    pressx .clear();        
+    pressy .clear();       
+    pressz .clear();       
+    shearxy.clear();
+    shearxz.clear();
+    shearyz.clear();  
+  }
 };
 
 
