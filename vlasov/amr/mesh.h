@@ -42,9 +42,9 @@ class AdaptiveMesh {
   using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
   std::unordered_map<uint64_t, T> data;
 
-  //using iterator       = typename std::map<uint64_t, T>::iterator;
-  //using const_iterator = typename std::map<uint64_t, T>::const_iterator;
-  //std::map<uint64_t, T> data;
+  using iterator       = typename std::map<uint64_t, T>::iterator;
+  using const_iterator = typename std::map<uint64_t, T>::const_iterator;
+  std::map<uint64_t, T> data;
 
   //using iterator       = typename spp::sparse_hash_map<uint64_t, T>::iterator;
   //using const_iterator = typename spp::sparse_hash_map<uint64_t, T>::const_iterator;
