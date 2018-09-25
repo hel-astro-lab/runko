@@ -6,12 +6,15 @@
 #include <algorithm>
 #include <array>
 #include <vector>
-//#include <unordered_map>
-//#include <map>
-#include "../../tools/sparsepp/sparsepp/spp.h"
+#include <unordered_map>
+#include <map>
+//#include "../../tools/sparsepp/sparsepp/spp.h"
 
 // #include "reversed_iterator.h"
+#include "../../definitions.h"
 
+/// super ugly hack to get optimized 1V / 3V switch
+//#define THREEVHACK
 
 
 namespace toolbox {
@@ -32,20 +35,20 @@ class AdaptiveMesh {
 
   public:
 
-  typedef std::array<uint64_t, D> indices_t;
-  typedef std::array<T, D> value_array_t;
+  typedef std::array<uint64_t, 3> indices_t;
+  typedef std::array<T, 3> value_array_t;
 
-  //using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
-  //using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
-  //std::unordered_map<uint64_t, T> data;
+  using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
+  using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;
+  std::unordered_map<uint64_t, T> data;
 
   //using iterator       = typename std::map<uint64_t, T>::iterator;
   //using const_iterator = typename std::map<uint64_t, T>::const_iterator;
   //std::map<uint64_t, T> data;
 
-  using iterator       = typename spp::sparse_hash_map<uint64_t, T>::iterator;
-  using const_iterator = typename spp::sparse_hash_map<uint64_t, T>::const_iterator;
-  spp::sparse_hash_map<uint64_t, T> data;
+  //using iterator       = typename spp::sparse_hash_map<uint64_t, T>::iterator;
+  //using const_iterator = typename spp::sparse_hash_map<uint64_t, T>::const_iterator;
+  //spp::sparse_hash_map<uint64_t, T> data;
 
   static const uint64_t error_cid = 0;
   static const uint64_t error_index = 0xFFFFFFFFFFFFFFFF;
@@ -58,8 +61,6 @@ class AdaptiveMesh {
 
   /// current size (number of cells) in each dimension
   indices_t length;
-
-
   
   /// location of mesh start corners
   value_array_t mins;
@@ -97,9 +98,9 @@ class AdaptiveMesh {
   // TOOD: check if they make any sense
 
   AdaptiveMesh() :
-    length({1,1,1}),
-    mins({0,0,0}),
-    maxs({1,1,1})
+    length{{1,1,1}},
+    mins{{0,0,0}},
+    maxs{{1,1,1}}
   {
     update_last_cid(); 
   }
@@ -325,26 +326,6 @@ class AdaptiveMesh {
 
   indices_t get_parent_indices(const indices_t& indices) const
   {
-
-    /*
-    uint64_t shift = (uint64_t(1) << int(1));
-    std::cout << "shift:" << shift << "\n";
-    std::cout << "i0: " << indices[0]/2 <<
-                 "i1: " << indices[1]/2 <<
-                 "i2: " << indices[2]/2 <<
-                 "\n";
-    */
-
-    // NOTE: implicit int casting does the flooring of this value
-    /*
-    indices_t parent_indices = 
-    {{
-       indices[0] / uint64_t(2),
-       indices[1] / uint64_t(2),
-       indices[2] / uint64_t(2) 
-    }};
-    */
-
     indices_t parent_indices = 
     {{
        indices[0] / (uint64_t(1) << 1),
@@ -361,7 +342,6 @@ class AdaptiveMesh {
     // int refinement_level = get_refinement_level(cid);
       
     if(refinement_level <= 1) return get_parent_indices(indices);
-
 
     indices_t parent_indices = 
     {{
@@ -427,24 +407,29 @@ class AdaptiveMesh {
 		int refinement_level = get_refinement_level(cid);
 		if (refinement_level >= maximum_refinement_level) return children;
 
-
-
+#ifdef THREEVHACK
 		children.reserve(8);
+#else 
+		children.reserve(2);
+#endif
 
 		indices_t indices = get_indices(cid);
 
 		// get indices of next refinement level within this cell
-		for (uint64_t
+    uint64_t x_shift = 0, y_shift = 0, z_shift = 0;
+#ifdef THREEVHACK
+		for (
 			z_shift = 0;
 			z_shift < 2;
 			z_shift++
 		)
-		for (uint64_t
+		for (
 			y_shift = 0;
 			y_shift < 2;
 			y_shift++
 		)
-		for (uint64_t
+#endif 
+		for (
 			x_shift = 0;
 			x_shift < 2;
 			x_shift++
@@ -473,22 +458,29 @@ class AdaptiveMesh {
 		if (cid == error_cid) return nbors; 
 		int refinement_level = get_refinement_level(cid);
 
+#ifdef THREEVHACK
 		nbors.reserve(26);
+#else
+		nbors.reserve(2);
+#endif
 
 		indices_t indices = get_indices(cid);
 
 		// get indices of next refinement level within this cell
-		for (uint64_t
+    uint64_t x_shift = 0, y_shift = 0, z_shift = 0;
+#ifdef THREEVHACK
+		for (
 			z_shift = 0;
 			z_shift < 2;
 			z_shift++
 		)
-		for (uint64_t
+		for (
 			y_shift = 0;
 			y_shift < 2;
 			y_shift++
 		)
-		for (uint64_t
+#endif
+		for (
 			x_shift = 0;
 			x_shift < 2;
 			x_shift++
