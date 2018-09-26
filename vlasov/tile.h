@@ -123,6 +123,7 @@ class Tile :
       for (size_t j=0; j<mesh_lengths[1]; j++)
       for (size_t i=0; i<mesh_lengths[0]; i++) {
         auto& mesh = internal_mesh.block(i,j,k);
+        if( mesh.size() < 10 ) continue; // do not clip small meshes
 
         // normalize
         norm0 = integrate_moment( mesh,

@@ -217,7 +217,7 @@ def inject(
         ):
 
     # setup toolbar
-    toolbar_width = 50
+    toolbar_width = conf.Nx*conf.Ny
     sys.stdout.write("[%s]" % (" " * toolbar_width))
     sys.stdout.flush()
     sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['

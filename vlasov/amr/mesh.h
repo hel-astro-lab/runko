@@ -159,6 +159,9 @@ class AdaptiveMesh {
     data.clear();
   }
 
+  size_t size() {
+    return data.size();
+  }
 
 	uint64_t get_last_cid() const
 	{

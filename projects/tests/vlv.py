@@ -469,6 +469,8 @@ if __name__ == "__main__":
         #I/O
         if (lap % conf.interval == 0):
 
+            # make sure hdf5 does not corrupt by regularly flushing it
+            f5.flush()
 
             print("--------------------------------------------------")
             print("------ lap: {} / t: {}".format(lap, time)) 
