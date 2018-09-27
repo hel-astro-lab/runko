@@ -16,14 +16,14 @@ fdir = 'weibel/out/'
 conf = Configuration('config-weibel.ini') 
 
 print("files...")
-ex   = combine_files(fdir, "field",    "ex",  conf)
-ey   = combine_files(fdir, "field",    "ey",  conf)
-ez   = combine_files(fdir, "field",    "ez",  conf)
-bx   = combine_files(fdir, "field",    "bx",  conf)
-by   = combine_files(fdir, "field",    "by",  conf)
-bz   = combine_files(fdir, "field",    "bz",  conf)
-rho  = combine_files(fdir, "field",    "rho", conf)
-ekin = combine_files(fdir, "analysis", "ekin",conf, isp=0)
+ex   = combine_files(fdir, "field",    "ex",   conf)
+ey   = combine_files(fdir, "field",    "ey",   conf)
+ez   = combine_files(fdir, "field",    "ez",   conf)
+bx   = combine_files(fdir, "field",    "bx",   conf)
+by   = combine_files(fdir, "field",    "by",   conf)
+bz   = combine_files(fdir, "field",    "bz",   conf)
+rho  = combine_files(fdir, "field",    "rho",  conf)
+ekin = combine_files(fdir, "analysis", "edens",conf, isp=0)
 
 
 #--------------------------------------------------

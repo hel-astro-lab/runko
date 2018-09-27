@@ -189,12 +189,13 @@ def save(n, conf, lap, f5):
 
     #get E field
     yee = getYee(n, conf)
-    analysis = getAnalysis(n, conf, 0)
+    analysis1 = getAnalysis(n, conf, 0)
+    analysis2 = getAnalysis(n, conf, 1)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = analysis['edens']
     f5['fields/jx'  ][:,lap] = yee['jx']
+    f5['fields/ekin'][:,lap] = analysis1['edens'] + analysis2['edens']
 
     return
 

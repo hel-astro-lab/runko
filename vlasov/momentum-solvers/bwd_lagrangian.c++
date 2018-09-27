@@ -249,6 +249,7 @@ inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
 }
 
 
+
 /// default zero force for to be overloaded by more complicated solvers
 template<typename T, int D, int V>
 inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
