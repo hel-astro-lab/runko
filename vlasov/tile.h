@@ -116,6 +116,7 @@ class Tile :
   void clip() {
     auto& species = steps.get();
     Realf norm0, norm1;
+    size_t nclips;
 
     for(auto&& internal_mesh : species) {
 
@@ -126,19 +127,16 @@ class Tile :
         if( mesh.size() < 10 ) continue; // do not clip small meshes
 
         // normalize
-        norm0 = integrate_moment( mesh,
-                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
-                  );
+        norm0 = integrate_moment(mesh);
         norm0 = norm0 <= 0 ? 1 : norm0;
 
         // actual clipping
-        mesh.clip_cells(threshold);
+        nclips = mesh.clip_cells(threshold);
+        if (nclips == 0) continue;
 
         // normalize back to original weight
         // simulates collisions/diffusion
-        norm1 = integrate_moment( mesh,
-                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
-                  );
+        norm1 = integrate_moment(mesh);
         norm1 = norm1 <= 0 ? 1 : norm1;
 
         mesh *= norm0/norm1;
@@ -149,6 +147,7 @@ class Tile :
   /// Clip all the meshes inside tile with less aggressive clip_neighbors
   void clip_neighbors() {
     Realf norm0, norm1;
+    size_t nclips;
 
     auto& species = steps.get();
     for(auto&& internal_mesh : species) {
@@ -156,20 +155,18 @@ class Tile :
       for (size_t j=0; j<mesh_lengths[1]; j++)
       for (size_t i=0; i<mesh_lengths[0]; i++) {
         auto& mesh = internal_mesh.block(i,j,k);
+        if( mesh.size() < 10 ) continue; // do not clip small meshes
 
         // normalize
-        norm0 = integrate_moment( mesh,
-                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
-                  );
+        norm0 = integrate_moment( mesh );
         norm0 = norm0 <= 0 ? 1 : norm0;
 
-        mesh.clip_neighbors(threshold);
+        nclips = mesh.clip_neighbors(threshold);
+        if (nclips == 0) continue;
 
         // normalize back to original weight
         // simulates collisions/diffusion
-        norm1 = integrate_moment( mesh,
-                  [](std::array<Realf,3>& /*uvel*/) -> Realf { return Realf(1);}
-                  );
+        norm1 = integrate_moment( mesh );
         norm1 = norm1 <= 0 ? 1 : norm1;
 
         mesh *= norm0/norm1;

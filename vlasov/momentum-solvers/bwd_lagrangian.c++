@@ -13,8 +13,7 @@
 using namespace Eigen;
 
 
-namespace vlv {
-  namespace tools {
+namespace vlv { namespace tools {
 template<typename T>
 T modf(T arg, T* iptr) = delete;
 
@@ -24,8 +23,7 @@ float modf(float arg, float* iptr) { return modff(arg, iptr); }
 template<>
 double modf(double arg, double* iptr) { return modf(arg, iptr); }
 
-}
-}
+} }
 
 
 template<typename T, int D, int V>
@@ -59,7 +57,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
   T max_val = mesh0.max_value();
 
   T refine_indicator, unrefine_indicator;
-  auto len = mesh1.get_size(0);
+  auto len = mesh0.get_size(0);
 
   // XXX remove higher-dimension updates (compresses inner loops away)
   // TODO does not work if the fill is not correctly done
@@ -75,7 +73,8 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
   auto cids = mesh0.get_cells(true);
     
   // if mesh is empty, bail out
-  if (cids.empty()) return;
+  if (cids.empty()) { return; }
+
   auto min_ind = mesh0.get_indices( cids.front() );
   auto max_ind = mesh0.get_indices( cids.back()  );
 
@@ -147,7 +146,6 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
   //          [](std::array<T,3>& uvel) -> T { return T(1);}
   //          );
   //mesh1 *= norm0/norm1;
-
 
   return;
 }

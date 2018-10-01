@@ -1,10 +1,10 @@
 #pragma once
 
+#include <Eigen/Dense>
 
 #include "../amr/mesh.h"
 #include "../tile.h"
 
-#include <Eigen/Dense>
 
 
 namespace vlv {

@@ -258,8 +258,6 @@ inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
   Rot *= 1/(1 + b(0)*b(0) + b(1)*b(1) + b(2)*b(2) ); // normalize
 
   return qm*( -Ehalf + Rot*us - uvel )/cfl;
-
-  return -qm*E/cfl;
 }
 
 

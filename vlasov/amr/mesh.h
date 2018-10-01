@@ -137,6 +137,25 @@ class AdaptiveMesh {
   }
 
 
+
+  /// create mesh object with same meta info but no data
+  void initialize(AdaptiveMesh<T,D>& m)
+  {
+    data.clear();
+    maximum_refinement_level = m.maximum_refinement_level;
+    top_refinement_level     = m.top_refinement_level;
+    last_cid                 = m.last_cid;
+    number_of_cells          = m.number_of_cells;
+    current_refinement_level = m.current_refinement_level;
+    length                   = m.length;
+    mins                     = m.mins;
+    maxs                     = m.maxs;
+
+    update_last_cid(); 
+  }
+
+
+
   /*
   // set item
   T operator() (indices_t indx, int refinement_level) 
@@ -692,7 +711,6 @@ class AdaptiveMesh {
 			}};
 
 		return ret_val;
-
   }
 
 
@@ -718,7 +736,7 @@ class AdaptiveMesh {
   // Adaptivity
 
   /// clip every cell below threshold
-  void clip_cells(const T threshold) {
+  size_t clip_cells(const T threshold) {
     std::vector<uint64_t> below_threshold;
     T maxv = max_value();
 
@@ -727,13 +745,15 @@ class AdaptiveMesh {
     }
 
     for(const uint64_t cid: below_threshold) data.erase(cid);
+
+    return below_threshold.size();
   }
 
   /// clip only neighboring cells that are under threshold. 
   //
   // Helps with leaking mass because we keep a leaking buffer of cells
   // around the problematic regions.
-  void clip_neighbors(const T threshold) {
+  size_t clip_neighbors(const T threshold) {
     std::vector<uint64_t> below_threshold;
     std::vector<uint64_t> to_be_removed;
     T maxv = max_value();
@@ -766,7 +786,9 @@ class AdaptiveMesh {
     if (no_neighbors) to_be_removed.push_back(cid);
     }
 
-  for(const uint64_t cid: to_be_removed) data.erase(cid);
+    for(const uint64_t cid: to_be_removed) data.erase(cid);
+
+    return to_be_removed.size();
   }
 
 
