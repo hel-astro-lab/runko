@@ -1,4 +1,4 @@
-#include "bwd_lagrangian.h"
+#include "bwd_full_lagrangian.h"
 
 
 #include <cmath> 
@@ -29,7 +29,7 @@ double modf(double arg, double* iptr) { return modf(arg, iptr); }
 
 
 template<typename T, int D, int V>
-void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh( 
+void vlv::FullAmrMomentumLagrangianSolver<T,D,V>::solveMesh( 
         toolbox::AdaptiveMesh<T, 3>& mesh0,
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& Einc,
@@ -154,7 +154,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
 
 // backward advected Lorentz force
 template<typename T, int D, int V>
-T vlv::AmrMomentumLagrangianSolver<T,D,V>::backward_advect(
+T vlv::FullAmrMomentumLagrangianSolver<T,D,V>::backward_advect(
     std::array<uint64_t, 3>& index,
     int rfl,
     const toolbox::AdaptiveMesh<T, 3>& mesh0,
@@ -211,21 +211,54 @@ T vlv::AmrMomentumLagrangianSolver<T,D,V>::backward_advect(
   return val;
 }
 
-/// Relativistic Lorentz force / Electrostatic version
+/// Relativistic Lorentz force (Full electromagnetic push)
 template<typename T, int D, int V>
-inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
-  Vector3f& /*uvel*/,
+inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
+  Vector3f& uvel,
   Vector3f& E,
-  Vector3f& /*B*/,
+  Vector3f& B,
   T qm,
   T cfl)
 {
-  // electrostatic push
+
+  // Electromagnetic Boris push
+  // TODO:
   //
   // Boris scheme for b=0 translates to
   // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
   //
   // with halving taken into account in definition of Ex
+  // electromagnetic combined push
+    
+  Vector3f Ehalf = -qm*E/2/cfl; // half step in E
+  Vector3f us = uvel - Ehalf;  // P^*, i.e., velocity in the middle of the step
+
+  // B-field rotation matrix full rotation
+  //Vector3f b = B.normalized();
+  //T gamma = sqrt(1.0 + us.transpose()*us );
+  //T wt = dt*(qm*B.norm() / gamma); // relativistic cyclotron frequency
+
+  /*
+  Matrix3f Rot;
+  Rot <<
+    b(0)*b(0)+(1-b(0)*b(0))*cos(wt),    b(0)*b(1)*(1-cos(wt))-b(2)*sin(wt), b(0)*b(2)*(1-cos(wt))+b(1)*sin(wt),
+    b(0)*b(1)*(1-cos(wt))+b(2)*sin(wt), b(1)*b(1)+(1-b(1)*b(1))*cos(wt),    b(1)*b(2)*(1-cos(wt))-b(0)*sin(wt),
+    b(0)*b(2)*(1-cos(wt))-b(1)*sin(wt), b(1)*b(2)*(1-cos(wt))+b(0)*sin(wt), b(2)*b(2)+(1-b(2)*b(2))*cos(wt);
+  */
+
+  // second order rotation
+  T gamma = sqrt(1.0 + us.transpose()*us );
+  Vector3f b = B.normalized() * qm / (cfl*gamma);
+  Matrix3f Rot;
+  Rot <<
+    1+b(0)*b(0)-b(1)*b(1)-b(2)*b(2), 2*(b(0)*b(1)+b(2)),              2*(b(0)*b(2)-b(1)), 
+    2*(b(1)*b(0)-b(2)),              1-b(0)*b(0)+b(1)*b(1)-b(2)*b(2), 2*(b(1)*b(2)+b(0)),
+    2*(b(2)*b(0)+b(1)),              2*(b(2)*b(1)-b(0)),              1-b(0)*b(0)-b(1)*b(1)+b(2)*b(2);
+
+  Rot *= 1/(1 + b(0)*b(0) + b(1)*b(1) + b(2)*b(2) ); // normalize
+
+  return qm*( -Ehalf + Rot*us - uvel )/cfl;
+
   return -qm*E/cfl;
 }
 
@@ -233,7 +266,7 @@ inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
 
 /// default zero force for to be overloaded by more complicated solvers
 template<typename T, int D, int V>
-inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
+inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::other_forces(
     Vector3f& /*uvel*/,
     tools::Params<T>& /*params*/
     )
@@ -246,5 +279,4 @@ inline Vector3f vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
 
 //--------------------------------------------------
 // explicit template instantiation
-template class vlv::AmrMomentumLagrangianSolver<Realf, 1, 1>; //1D1V
-
+template class vlv::AmrMomentumLagrangianSolver<Realf, 1, 3>; //1D3V
