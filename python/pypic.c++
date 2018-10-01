@@ -257,7 +257,9 @@ void bind_pic(py::module& m_sub)
     /// Pic tile analyzator
     py::class_<pic::Analyzator>(m_2d, "Analyzator")
       .def(py::init<>())
-      .def("analyze", &pic::Analyzator::analyze);
+      .def("analyze1d", &pic::Analyzator::analyze<1>)
+      .def("analyze2d", &pic::Analyzator::analyze<2>)
+      .def("analyze3d", &pic::Analyzator::analyze<3>);
 
 
 

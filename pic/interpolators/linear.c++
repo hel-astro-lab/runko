@@ -57,7 +57,9 @@ void pic::LinearInterpolator<D,V>::solve(
     Realf dx=0.0, dy=0.0, dz=0.0;
     Realf f,g;
 
-    int iz = 0; // flip switch for making array queries 2D
+    int iz = 1;
+    if (D<=2) iz = 0; // flip switch for making array queries 2D
+
 
     auto mins = tile.mins;
     //auto maxs = tile.maxs;

@@ -440,7 +440,7 @@ if __name__ == "__main__":
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     tile = node.getTile(i,j)
-                    analyzer.analyze(tile)
+                    analyzer.analyze2d(tile)
 
 
             pyvlv.writeYee(node,      lap, conf.outdir + "/")

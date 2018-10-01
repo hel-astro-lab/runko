@@ -168,7 +168,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
            cmap = 'plasma_r',
            vmin =   0.0,
            vmax =   1.0,
-           clip =   0.0,
+           clip =   None,
            )
 
     if vdir == "x":

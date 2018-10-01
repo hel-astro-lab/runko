@@ -546,7 +546,7 @@ class PIC(unittest.TestCase):
             for j in range(node.getNy()):
                 for i in range(node.getNx()):
                     tile = node.getTile(i,j)
-                    analyzer.analyze(tile)
+                    analyzer.analyze2d(tile)
 
             #update boundaries
             for j in range(node.getNy()):

@@ -229,12 +229,10 @@ class Communicator {
       //vec.pop_back();
 
       Realf* loc[3];
-      for( int i=0; i<3; i++)
-        loc[i] = &( container.loc(i,0) );
+      for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
       Realf* vel[3];
-      for( int i=0; i<3; i++)
-        vel[i] = &( container.vel(i,0) );
+      for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
       // overwrite particles with the last one on the array and then resize the array
       int last = container.size();

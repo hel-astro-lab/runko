@@ -33,7 +33,7 @@ class Configuration(object):
 
         # automatically set restart equal to other output, if not specified
         if not("restart" in self.__dict__):
-            self.__dict__["restart"] = conf.interval
+            self.__dict__["restart"] = self.interval
 
         if not("dx" in self.__dict__):
             self.__dict__["dx"] = 1.0
@@ -83,11 +83,14 @@ class Configuration(object):
 
         #if velocity mesh cell size is only given, compute size
         if not("Nvx" in self.__dict__):
-            self.__dict__["Nvx"] = int((self.vxmax - self.vxmin) // self.dvx)
+            if ("vxmin" in self.__dict__) and ("vxmax" in self.__dict__):
+                self.__dict__["Nvx"] = int((self.vxmax - self.vxmin) // self.dvx)
         if not("Nvy" in self.__dict__):
-            self.__dict__["Nvy"] = int((self.vymax - self.vymin) // self.dvy)
+            if ("vymin" in self.__dict__) and ("vymax" in self.__dict__):
+                self.__dict__["Nvy"] = int((self.vymax - self.vymin) // self.dvy)
         if not("Nvz" in self.__dict__):
-            self.__dict__["Nvz"] = int((self.vzmax - self.vzmin) // self.dvz)
+            if ("vzmin" in self.__dict__) and ("vzmax" in self.__dict__):
+                self.__dict__["Nvz"] = int((self.vzmax - self.vzmin) // self.dvz)
 
         print("Nvx=", self.Nvx)
 
