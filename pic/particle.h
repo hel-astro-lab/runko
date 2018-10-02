@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <cmath>
+#include <cassert>
 
 #include "../definitions.h"
 
@@ -23,6 +24,7 @@ namespace pic {
 */
 class ParticleBlock {
 
+  protected:
 
   size_t Nprtcls;
 
@@ -69,13 +71,13 @@ class ParticleBlock {
   //--------------------------------------------------
     
   /// reserve memory for particles
-  void reserve(uint64_t N, uint64_t D) {
+  virtual void reserve(size_t N) {
 
     locArr.resize(3);
-    for(uint64_t i=0; i<D; i++) locArr[i].reserve(N);
+    for(size_t i=0; i<3; i++) locArr[i].reserve(N);
 
-    velArr.resize(D);
-    for(uint64_t i=0; i<D; i++) velArr[i].reserve(N);
+    velArr.resize(3);
+    for(size_t i=0; i<3; i++) velArr[i].reserve(N);
 
     // reserve 1d N x D array for particle-specific fields
     // XXX is this needed since we can not push_back?
@@ -84,23 +86,23 @@ class ParticleBlock {
   }
 
   // resize everything
-  void resize(uint64_t N) {
+  virtual void resize(size_t N) {
 
-    for(uint64_t i=0; i<3; i++) locArr[i].resize(N);
-    for(uint64_t i=0; i<3; i++) velArr[i].resize(N);
+    for(size_t i=0; i<3; i++) locArr[i].resize(N);
+    for(size_t i=0; i<3; i++) velArr[i].resize(N);
 
     Nprtcls = N;
   }
 
   // resize arrays for fields
-  void resizeEM(uint64_t N, uint64_t D) {
+  void resizeEM(size_t N) {
     if (N <= 0) N = 1;
 
-    Epart.resize(D);
-    for(uint64_t i=0; i<D; i++) Epart[i].resize(N);
+    Epart.resize(3);
+    for(size_t i=0; i<3; i++) Epart[i].resize(N);
 
-    Bpart.resize(D);
-    for(uint64_t i=0; i<D; i++) Bpart[i].resize(N);
+    Bpart.resize(3);
+    for(size_t i=0; i<3; i++) Bpart[i].resize(N);
 
   }
 
@@ -113,17 +115,17 @@ class ParticleBlock {
 
   //--------------------------------------------------
   // locations
-  inline Realf loc( uint64_t idim, uint64_t iprtcl ) const
+  inline Realf loc( size_t idim, size_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
-  inline Realf& loc( uint64_t idim, uint64_t iprtcl )       
+  inline Realf& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  inline std::vector<Realf> loc(uint64_t idim) const 
+  inline std::vector<Realf> loc(size_t idim) const 
   {
     return locArr[idim];
   }
@@ -131,17 +133,17 @@ class ParticleBlock {
 
   //--------------------------------------------------
   // velocities
-  inline Realf vel( uint64_t idim, uint64_t iprtcl ) const
+  inline Realf vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  inline Realf& vel( uint64_t idim, uint64_t iprtcl )       
+  inline Realf& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  inline std::vector<Realf> vel(uint64_t idim) const 
+  inline std::vector<Realf> vel(size_t idim) const 
   {
     return velArr[idim];
   }
@@ -150,16 +152,16 @@ class ParticleBlock {
   // --------------------------------------------------
   // particle creation & destruction methods
 
-  void add_particle (
+  virtual void add_particle (
       std::vector<Realf> prtcl_loc,
       std::vector<Realf> prtcl_vel) 
   {
 
-    for (size_t i=0; i<3; i++)  
-      locArr[i].push_back(prtcl_loc[i]);
+    assert(prtcl_loc.size() == 3);
+    assert(prtcl_vel.size() == 3);
 
-    for (size_t i=0; i<3; i++)  
-      velArr[i].push_back(prtcl_vel[i]);
+    for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
+    for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_vel[i]);
 
     Nprtcls++;
   }
@@ -168,7 +170,7 @@ class ParticleBlock {
 
   // --------------------------------------------------
   //! Lorentz factor
-  inline Realf gamma(unsigned int iprtcl) {
+  inline Realf gamma(size_t iprtcl) {
     return sqrt(1.+
          pow(vel(0,iprtcl),2)
         +pow(vel(1,iprtcl),2)
@@ -187,10 +189,10 @@ class ParticleBlock {
 
 
   // --------------------------------------------------
-  // Other useful mistileaneous methods
+  // Other useful miscellaneous methods
     
   //! test if prtcl is inside this block
-  //bool is_local(uint64_t iprtcl);
+  //bool is_local(size_t iprtcl);
 
 };
 
