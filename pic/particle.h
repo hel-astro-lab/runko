@@ -65,6 +65,8 @@ class ParticleBlock {
   };
     
 
+  // default virtual dtor
+  virtual ~ParticleBlock() = default;
 
 
 

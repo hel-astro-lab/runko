@@ -4,7 +4,7 @@
 
 
 
-namespace radiation {
+namespace rad {
 
 /*! \brief Block of photons inside the tile
  *
@@ -19,8 +19,10 @@ namespace radiation {
  *
  */
 class PhotonBlock : 
-  pic::ParticleBlock 
+  virtual public pic::ParticleBlock 
 {
+  public:
+
 
   /// Constructor 
   PhotonBlock(size_t Nx, size_t Ny, size_t Nz) : 
@@ -28,18 +30,18 @@ class PhotonBlock :
   { };
 
   /// particle weight
-  std::vector< double > wgt;
+  std::vector< double > wgtArr;
 
   /// particle energy (h\nu in m_e c^2)
-  std::vector< double > ene;
+  std::vector< double > eneArr;
 
 
 
   /// initializes internal arrays
   virtual void reserve(size_t N) override
   {
-    wgt.reserve(N);
-    ene.reserve(N);
+    wgtArr.reserve(N);
+    eneArr.reserve(N);
 
     locArr.resize(3);
     for(size_t i=0; i<3; i++) locArr[i].reserve(N);
@@ -53,8 +55,8 @@ class PhotonBlock :
   void resize(size_t N) override
   {
     // reserve size for photon specific stuff
-    wgt.resize(N);
-    ene.resize(N);
+    wgtArr.resize(N);
+    eneArr.resize(N);
 
     // and finally to original arrays as well
     ParticleBlock::resize(N);
@@ -77,14 +79,25 @@ class PhotonBlock :
     for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
     for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_ang[i]);
 
-    wgt.push_back(weight);
-    ene.push_back(energy);
+    wgtArr.push_back(weight);
+    eneArr.push_back(energy);
 
     Nprtcls++;
   }
 
+  //inline std::vector<Realf> wgt(size_t idim) const 
+  //{
+  //  return wgtArr[idim];
+  //}
+
+
+  // explicitly disallow the usage of base class member
+  private:
+    using pic::ParticleBlock::add_particle;
+
 
 };
+
 
 
 

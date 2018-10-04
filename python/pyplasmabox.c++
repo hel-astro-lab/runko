@@ -35,5 +35,8 @@ PYBIND11_MODULE(pyplasmabox, m_base) {
   py::module m_pic = m_base.def_submodule("pic", "PlasmaBox PIC module");
   pic::bind_pic(m_pic);
 
+  /// rad
+  py::module m_rad = m_base.def_submodule("rad", "PlasmaBox radiation module");
+  rad::bind_rad(m_rad);
 }
 

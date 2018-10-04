@@ -33,6 +33,10 @@ set (PIC_FILES
      ../pic/depositers/zigzag.c++
      )
 
+set (RAD_FILES 
+     pyrad.c++
+     )
+
 
 # python module creation
 #--------------------------------------------------
@@ -42,6 +46,7 @@ pybind11_add_module(pyplasmabox
                     ${FIELDS_FILES}
                     ${VLV_FILES}
                     ${PIC_FILES}
+                    ${RAD_FILES}
                     )
 
 

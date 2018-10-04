@@ -16,7 +16,7 @@ void pic::LinearInterpolator<D,V>::solve(
     ParticleBlock& container = tile.get_container(ispc);
 
     int nparts = container.size();
-    container.resizeEM(nparts, 3); // make EM containers ready for insertion
+    container.resizeEM(nparts); // make EM containers ready for insertion
 
 
     // initialize pointers to particle arrays

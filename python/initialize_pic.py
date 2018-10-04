@@ -93,8 +93,8 @@ def initialize_tile(c, i, j, n, conf):
         
         #reserve memory for particles
         Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
-        container.reserve(Nprtcls, 3)
-        container.resizeEM(Nprtcls, 3)
+        container.reserve(Nprtcls)
+        container.resizeEM(Nprtcls)
     
         c.set_container( container )
     
