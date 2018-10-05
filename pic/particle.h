@@ -4,6 +4,7 @@
 #include <map>
 #include <cmath>
 #include <cassert>
+#include <iostream>
 
 #include "../definitions.h"
 
@@ -61,7 +62,6 @@ class ParticleBlock {
   { 
     locArr.resize(3);
     velArr.resize(3);
-  
   };
     
 
@@ -82,7 +82,8 @@ class ParticleBlock {
     for(size_t i=0; i<3; i++) velArr[i].reserve(N);
 
     // reserve 1d N x D array for particle-specific fields
-    // XXX is this needed since we can not push_back?
+    // TODO: is this needed since we can not push_back?
+    //       from optimization pov, yes maybe?
     //Epart.reserve(N*D);
     //Bpart.reserve(N*D);
   }
@@ -105,29 +106,26 @@ class ParticleBlock {
 
     Bpart.resize(3);
     for(size_t i=0; i<3; i++) Bpart[i].resize(N);
-
   }
-
 
 
   /// size of the container (in terms of particles)
   size_t size() { return locArr[0].size(); }
 
 
-
   //--------------------------------------------------
   // locations
-  inline Realf loc( size_t idim, size_t iprtcl ) const
+  virtual inline Realf loc( size_t idim, size_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
-  inline Realf& loc( size_t idim, size_t iprtcl )       
+  virtual inline Realf& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  inline std::vector<Realf> loc(size_t idim) const 
+  virtual inline std::vector<Realf> loc(size_t idim) const 
   {
     return locArr[idim];
   }
@@ -135,17 +133,17 @@ class ParticleBlock {
 
   //--------------------------------------------------
   // velocities
-  inline Realf vel( size_t idim, size_t iprtcl ) const
+  virtual inline Realf vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  inline Realf& vel( size_t idim, size_t iprtcl )       
+  virtual inline Realf& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  inline std::vector<Realf> vel(size_t idim) const 
+  virtual inline std::vector<Realf> vel(size_t idim) const 
   {
     return velArr[idim];
   }

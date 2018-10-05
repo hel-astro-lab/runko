@@ -23,23 +23,19 @@ class PhotonBlock :
 {
   public:
 
-
   /// Constructor 
   PhotonBlock(size_t Nx, size_t Ny, size_t Nz) : 
-    ParticleBlock(Nx, Ny, Nz)
-  { 
-    locArr.resize(3);
-    velArr.resize(3);
-  };
+    pic::ParticleBlock(Nx, Ny, Nz)
+  { };
 
   virtual ~PhotonBlock() = default;
 
 
   /// particle weight
-  std::vector< double > wgtArr;
+  std::vector< Realf > wgtArr;
 
   /// particle energy (h\nu in m_e c^2)
-  std::vector< double > eneArr;
+  std::vector< Realf > eneArr;
 
 
 
@@ -49,13 +45,7 @@ class PhotonBlock :
     wgtArr.reserve(N);
     eneArr.reserve(N);
 
-    ParticleBlock::reserve(N);
-
-    //locArr.resize(3);
-    for(size_t i=0; i<3; i++) locArr[i].reserve(N);
-
-    //velArr.resize(3);
-    for(size_t i=0; i<3; i++) velArr[i].reserve(N);
+    pic::ParticleBlock::reserve(N);
   }
 
 
@@ -67,40 +57,27 @@ class PhotonBlock :
     eneArr.resize(N);
 
     // and finally to original arrays as well
-    ParticleBlock::resize(N);
-
-    //for(size_t i=0; i<3; i++) locArr[i].resize(N);
-    //for(size_t i=0; i<3; i++) velArr[i].resize(N);
-    //Nprtcls = N;
+    pic::ParticleBlock::resize(N);
   }
 
   /// special method 
   void add_particle(
     std::vector<Realf> prtcl_loc,
-    std::vector<Realf> prtcl_ang,
+    std::vector<Realf> prtcl_vel,
     Realf weight,
     Realf energy) 
   {
-    assert(prtcl_loc.size() == 3);
-    assert(prtcl_ang.size() == 3);
-
-    for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
-    for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_ang[i]);
-
     wgtArr.push_back(weight);
     eneArr.push_back(energy);
 
-    Nprtcls++;
+    pic::ParticleBlock::add_particle(prtcl_loc, prtcl_vel);
   }
 
-  //inline std::vector<Realf> wgt(size_t idim) const 
-  //{
-  //  return wgtArr[idim];
-  //}
 
   // explicitly disallow the usage of base class member
   private:
     using pic::ParticleBlock::add_particle;
+    using pic::ParticleBlock::resizeEM;
 
 };
 

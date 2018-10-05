@@ -24,12 +24,16 @@ void bind_rad(py::module& m_sub)
           ( std::vector<Realf>, std::vector<Realf>, Realf, Realf ) ) 
             &rad::PhotonBlock::add_particle)
     .def("wgt", [](rad::PhotonBlock& s) {return s.wgtArr;}, py::return_value_policy::reference)
-    .def("ene", [](rad::PhotonBlock& s) {return s.eneArr;}, py::return_value_policy::reference);
-
-    //.def("wgt",         [](rad::PhotonBlock& s, size_t idim) 
-    //    {
-    //      return s.wgt(idim); 
-    //    }, py::return_value_policy::reference)
+    .def("ene", [](rad::PhotonBlock& s) {return s.eneArr;}, py::return_value_policy::reference)
+    // FIXME: use base class definition via getter/setter members to avoid this redefinition
+    .def("loc",          [](rad::PhotonBlock& s, size_t idim) 
+        {
+          return s.loc(idim); 
+        }, py::return_value_policy::reference)
+    .def("vel",          [](rad::PhotonBlock& s, size_t idim) 
+        {
+          return s.vel(idim); 
+        }, py::return_value_policy::reference);
 
 
 };

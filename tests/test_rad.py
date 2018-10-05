@@ -78,9 +78,9 @@ class Conf:
         self.zmax = self.Nz*self.NzMesh
 
 
-class RAD(unittest.TestCase):
+class radiation(unittest.TestCase):
 
-    def test_communication(self):
+    def test_initialization(self):
 
         #plt.fig = plt.figure(1, figsize=(3,3))
         #plt.rc('font', family='serif', size=12)
@@ -111,6 +111,11 @@ class RAD(unittest.TestCase):
 
         weight = 1.0
 
+        ene_ref = np.zeros(Nprtcls)
+        wgt_ref = np.zeros(Nprtcls)
+        x0_ref  = np.zeros((Nprtcls,3))
+        u0_ref  = np.zeros((Nprtcls,3))
+
         for ip in range(Nprtcls):
             ene = bbodySample(kT)
 
@@ -119,6 +124,37 @@ class RAD(unittest.TestCase):
         
             container.add_particle(x0, u0, weight, ene)
         
+            # add also to reference array
+            ene_ref[ip]  = ene
+            wgt_ref[ip]  = weight
+            x0_ref[ip,:] = x0
+            u0_ref[ip,:] = u0
+
+
+        ene  = container.ene()
+        wgt  = container.wgt()
+
+        loc0 = container.loc(0)
+        loc1 = container.loc(1)
+        loc2 = container.loc(2)
+
+        vel0 = container.vel(0)
+        vel1 = container.vel(1)
+        vel2 = container.vel(2)
+
+        print(ene)
+
+        for ip in range(Nprtcls):
+            self.assertAlmostEqual( container.ene()[ip],  ene_ref[ip],  places=5)
+            self.assertAlmostEqual( container.wgt()[ip],  wgt_ref[ip],  places=5)
+
+            self.assertAlmostEqual( container.loc(0)[ip], x0_ref[ip,0], places=5)
+            self.assertAlmostEqual( container.loc(1)[ip], x0_ref[ip,1], places=5)
+            self.assertAlmostEqual( container.loc(2)[ip], x0_ref[ip,2], places=5)
+
+            self.assertAlmostEqual( container.vel(0)[ip], u0_ref[ip,0], places=5)
+            self.assertAlmostEqual( container.vel(1)[ip], u0_ref[ip,1], places=5)
+            self.assertAlmostEqual( container.vel(2)[ip], u0_ref[ip,2], places=5)
 
 
 
