@@ -75,10 +75,10 @@ class ParticleBlock {
   /// reserve memory for particles
   virtual void reserve(size_t N) {
 
-    locArr.resize(3);
+    //locArr.resize(3);
     for(size_t i=0; i<3; i++) locArr[i].reserve(N);
 
-    velArr.resize(3);
+    //velArr.resize(3);
     for(size_t i=0; i<3; i++) velArr[i].reserve(N);
 
     // reserve 1d N x D array for particle-specific fields

@@ -19,6 +19,7 @@ void bind_rad(py::module& m_sub)
   //   .def("set", (void (Pet::*)(const std::string &)) &Pet::set, "Set the pet's name");
 
   py::class_<rad::PhotonBlock, pic::ParticleBlock>(m_sub, "PhotonBlock")
+    .def(py::init<size_t, size_t, size_t>())
     .def("add_particle",  (void (rad::PhotonBlock::*)
           ( std::vector<Realf>, std::vector<Realf>, Realf, Realf ) ) 
             &rad::PhotonBlock::add_particle)

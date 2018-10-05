@@ -27,7 +27,13 @@ class PhotonBlock :
   /// Constructor 
   PhotonBlock(size_t Nx, size_t Ny, size_t Nz) : 
     ParticleBlock(Nx, Ny, Nz)
-  { };
+  { 
+    locArr.resize(3);
+    velArr.resize(3);
+  };
+
+  virtual ~PhotonBlock() = default;
+
 
   /// particle weight
   std::vector< double > wgtArr;
@@ -43,10 +49,12 @@ class PhotonBlock :
     wgtArr.reserve(N);
     eneArr.reserve(N);
 
-    locArr.resize(3);
+    ParticleBlock::reserve(N);
+
+    //locArr.resize(3);
     for(size_t i=0; i<3; i++) locArr[i].reserve(N);
 
-    velArr.resize(3);
+    //velArr.resize(3);
     for(size_t i=0; i<3; i++) velArr[i].reserve(N);
   }
 
@@ -90,11 +98,9 @@ class PhotonBlock :
   //  return wgtArr[idim];
   //}
 
-
   // explicitly disallow the usage of base class member
   private:
     using pic::ParticleBlock::add_particle;
-
 
 };
 
