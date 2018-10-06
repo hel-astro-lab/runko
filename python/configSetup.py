@@ -38,7 +38,6 @@ class Configuration(object):
         if not("dx" in self.__dict__):
             self.__dict__["dx"] = 1.0
 
-
         #compute dt from CFL (if given)
         if "cfl" in self.__dict__:
             self.__dict__["dt"] = self.__dict__["cfl"]*self.__dict__["dx"]

@@ -1,9 +1,30 @@
 #include "py_submodules.h"
 
 #include "../radiation/photon.h"
+#include "../radiation/tile.h"
 
 
 namespace rad {
+
+//--------------------------------------------------
+template<size_t D>
+auto declare_Tile(
+    py::module& m,
+    const std::string& pyclass_name) 
+{
+
+  return 
+  py::class_<rad::Tile<D>,
+             pic::Tile<D>, 
+             fields::Tile<D>,
+             std::shared_ptr<rad::Tile<D>>
+             >(m, pyclass_name.c_str())
+    .def(py::init<size_t, size_t, size_t>())
+    .def("get_bucket",       &rad::Tile<D>::get_bucket, 
+        py::return_value_policy::reference)
+    .def("push_back",       &rad::Tile<D>::push_back);
+}
+
 
 
 //--------------------------------------------------
@@ -34,6 +55,13 @@ void bind_rad(py::module& m_sub)
         {
           return s.vel(idim); 
         }, py::return_value_policy::reference);
+
+
+  // 2D bindings
+  py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
+  auto t2 = rad::declare_Tile<2>(m_2d, "Tile");
+
+
 
 
 };

@@ -110,7 +110,19 @@ class ParticleBlock {
 
 
   /// size of the container (in terms of particles)
-  size_t size() { return locArr[0].size(); }
+  size_t size() { 
+    // FIXME: these fail
+    //assert(locArr[0].size() == Nprtcls);
+    //assert(locArr[1].size() == Nprtcls);
+    //assert(locArr[2].size() == Nprtcls);
+
+    //assert(velArr[0].size() == Nprtcls);
+    //assert(velArr[1].size() == Nprtcls);
+    //assert(velArr[2].size() == Nprtcls);
+
+    //return Nprtcls; // FIXME: this is the correct way to return
+    return locArr[0].size();
+  }
 
 
   //--------------------------------------------------

@@ -1,9 +1,11 @@
 import numpy as np
 
+import pycorgi
+import pyplasmabox.rad as pyrad
 
 
 
-#### Sample from blackbody distribution
+# Sample from blackbody distribution
 def bbodySample(kTbb):
     
     xi1=np.random.rand()
@@ -27,6 +29,37 @@ def bbodySample(kTbb):
     hv = - kTbb * np.log(xi2*xi3*xi4) / xi
   
     return hv
+
+
+# Sample from Maxwellian distribution
+def maxwellSample(kTe):
+    pel = 0.0
+    if kTe < 0.29:
+        while True:
+            xi1=np.random.rand()
+            xi2=np.random.rand()
+        
+            xip = -1.5 * np.log(xi1)
+        
+            xi_limit = 0.151*(1. + kTe*xip)**2*xip*(2. + kTe*xip)*xi1
+            if xi2**2 < xi_limit:
+                pel = np.sqrt( kTe*xip*(2. + kTe*xip) )
+                break
+    else:
+        while True:
+            xi1=np.random.rand()
+            xi2=np.random.rand()
+            xi3=np.random.rand()
+            xi4=np.random.rand()
+            
+            eta  = -kTe*np.log( xi1*xi2*xi3)
+            zeta = -kTe*np.log( xi1*xi2*xi3*xi4)
+            
+            if (zeta**2 - eta**2) > 1.0:
+                pel = eta
+                break
+    return pel
+
 
 
 def randab(a, b):
@@ -61,5 +94,15 @@ def rand3Dvel(vabs):
 
 
 
+def initialize_tile(c, i, j, n, conf):
+    
+    # load particle containers
+    bucket = pyrad.PhotonBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        
+    #reserve memory for particles
+    Nprtcls = conf.ppt
+    bucket.reserve(Nprtcls)
+    c.push_back( bucket )
+    
 
-
+    

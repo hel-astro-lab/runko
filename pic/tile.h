@@ -1,13 +1,11 @@
 #pragma once
 
-#include "array"
+#include <array>
 
 #include "../definitions.h"
 #include "../corgi/tile.h"
-
-#include "particle.h"
-
 #include "../em-fields/tile.h"
+#include "particle.h"
 
 namespace pic {
 

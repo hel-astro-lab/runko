@@ -3,13 +3,19 @@ import unittest
 import sys
 import numpy as np
 
+import pycorgi
 import pyplasmabox.rad as pyrad
 
+
+import initialize_pic as init_pic
+import initialize_rad as init_rad
 
 from initialize_rad import bbodySample
 from initialize_rad import rand3Dloc
 from initialize_rad import rand3Dvel
 
+
+do_plots = True
 
 try:
     import matplotlib.pyplot as plt
@@ -44,11 +50,18 @@ class Conf:
 
     cfl = 0.45
     c_omp = 10.0
-    ppc = 1
+    ppc = 1 #particles per cell
+    ppt = 1 #photons per tile
 
     dx = 1.0
     dy = 1.0
     dz = 1.0
+
+    gamma_e = 0.0
+    gamma_i = 0.0
+
+    me = 1
+    mi = 1
 
     Nspecies = 1
 
@@ -142,8 +155,6 @@ class radiation(unittest.TestCase):
         vel1 = container.vel(1)
         vel2 = container.vel(2)
 
-        print(ene)
-
         for ip in range(Nprtcls):
             self.assertAlmostEqual( container.ene()[ip],  ene_ref[ip],  places=5)
             self.assertAlmostEqual( container.wgt()[ip],  wgt_ref[ip],  places=5)
@@ -155,6 +166,96 @@ class radiation(unittest.TestCase):
             self.assertAlmostEqual( container.vel(0)[ip], u0_ref[ip,0], places=5)
             self.assertAlmostEqual( container.vel(1)[ip], u0_ref[ip,1], places=5)
             self.assertAlmostEqual( container.vel(2)[ip], u0_ref[ip,2], places=5)
+
+
+    def test_blackbody(self):
+
+        if do_plots:
+            plt.fig = plt.figure(1, figsize=(3,3))
+            plt.rc('font', family='serif', size=12)
+            plt.rc('xtick')
+            plt.rc('ytick')
+            
+            gs = plt.GridSpec(1, 1)
+             
+            axs = []
+            for ai in range(1):
+                axs.append( plt.subplot(gs[ai]) )
+
+        conf = Conf()
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.ppc = 1
+        conf.update_bbox()
+
+        kTbb = 1.5e-2/511.0 # Photon blackbody temperature in units of mc^2; 2e-4 = 0.1 keV
+
+        #Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc
+        Nprtcls = int(1e4)
+
+        container = pyrad.PhotonBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        container.reserve(Nprtcls)
+
+        weight = 1.0
+        for ip in range(Nprtcls):
+            ene = bbodySample(kTbb)
+
+            x0 = rand3Dloc(conf)
+            u0 = rand3Dvel(1.0)
+        
+            container.add_particle(x0, u0, weight, ene)
+        
+
+        nbins = 100
+        emin = 1.0e-3
+        emax = 2.0e+3
+        #Nph = container.size()
+        Nph = Nprtcls
+        self.assertEqual(Nprtcls, Nph)
+
+        if do_plots:
+            axs[0].set_xlim(emin, emax)
+            #axs[0].set_ylim(1e-4, 1.2e-0)
+            axs[0].minorticks_on()
+            axs[0].set_xscale('log')
+            axs[0].set_yscale('log')
+
+        ene = np.array(container.ene())
+        phhist, edges = np.histogram(ene*511., np.logspace(np.log10(emin), np.log10(emax), nbins))
+
+        if do_plots:
+            axs[0].bar(edges[:-1], phhist.astype(np.float32)/Nph, width=np.diff(edges), log=True)# number of photons per log energy
+
+        prtcl_sum=np.sum(phhist*edges[:-1])/Nph
+        print("Energy of photons: {}".format(prtcl_sum))
+
+        bbrad_sum = np.sum(3.0e12*2.*edges**3/(np.exp(edges/kTbb)-1.0))
+        print("Blackbody energy: {}".format(bbrad_sum))
+
+
+        plt.savefig("blackbody.pdf")
+
+
+    
+    # test that tile supports both pic and rad initialization
+    def test_initialization(self):
+
+        conf = Conf()
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.NzMesh = 3
+        conf.Nx = 1
+        conf.Ny = 1
+        conf.Nz = 1
+        conf.ppc = 1
+        conf.update_bbox()
+
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
+        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        c = pyrad.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        init_pic.initialize_tile(c, 0, 0, node, conf)
+        init_rad.initialize_tile(c, 0, 0, node, conf)
 
 
 

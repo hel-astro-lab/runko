@@ -151,6 +151,7 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("q",   &pic::ParticleBlock::q)
     .def("reserve",       &pic::ParticleBlock::reserve)
     .def("resizeEM",      &pic::ParticleBlock::resizeEM)
+    .def("size",          &pic::ParticleBlock::size)
     .def("add_particle",  &pic::ParticleBlock::add_particle)
     .def("add_particle2", [](pic::ParticleBlock& s, 
                             Realf xx, Realf yy, Realf zz,
