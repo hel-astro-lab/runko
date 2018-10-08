@@ -22,7 +22,7 @@ h5io::Writer::write(
   int Nspecies = static_cast<int>(tile.analysis.size());
   for(int ispcs = 0; ispcs < Nspecies; ispcs++) {
 
-    auto& analysis = tile.getAnalysis(ispcs);
+    const auto& analysis = tile.getConstAnalysis(ispcs);
 
     // open individual group for the data
     auto gr = file["analysis_"+numbering+"-"+to_string(ispcs) ];

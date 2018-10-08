@@ -231,6 +231,13 @@ class Tile :
 
   virtual PlasmaMomentLattice& getAnalysis(size_t i);
 
+  //FIXME: naming is wrong because of pybind: it can not deduce correct function
+  //       with only constness difference.
+  virtual const YeeLattice& getConstYee(size_t i=0) const; 
+
+  virtual const PlasmaMomentLattice& getConstAnalysis(size_t i) const;
+
+
   void cycleYee();
 
   void cycleCurrent();

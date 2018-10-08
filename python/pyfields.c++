@@ -11,6 +11,9 @@
 //--------------------------------------------------
   
 namespace fields{
+
+  namespace py = pybind11;
+
   
 // generator for damped tile for various directions
 template<size_t D>
@@ -32,11 +35,16 @@ auto declare_Tile(
     .def("pushE",              &fields::Tile<D>::pushE)
     .def("pushHalfB",          &fields::Tile<D>::pushHalfB)
     .def("depositCurrent",     &fields::Tile<D>::depositCurrent)
-    .def("getYee",             &fields::Tile<D>::getYee, py::return_value_policy::reference)
-    .def("getAnalysis",        &fields::Tile<D>::getAnalysis, py::return_value_policy::reference)
     .def("addAnalysisSpecies", &fields::Tile<D>::addAnalysisSpecies)
     .def("updateBoundaries",   &fields::Tile<D>::updateBoundaries)
-    .def("exchangeCurrents",   &fields::Tile<D>::exchangeCurrents);
+    .def("exchangeCurrents",   &fields::Tile<D>::exchangeCurrents)
+    .def("getYee",             &fields::Tile<D>::getYee, 
+                                py::arg("i")=0,
+                                py::return_value_policy::reference)
+    .def("getAnalysis",        &fields::Tile<D>::getAnalysis, 
+                                py::arg("i")=0,
+                                py::return_value_policy::reference);
+        
 }
 
 

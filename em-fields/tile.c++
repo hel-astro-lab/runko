@@ -23,8 +23,8 @@
 
 /// 1D E pusher
 template<>
-void fields::Tile<1>::pushE() {
-
+void fields::Tile<1>::pushE() 
+{
   fields::YeeLattice& mesh = getYee();
   Realf C = 1.0 * cfl;
 
@@ -49,8 +49,8 @@ void fields::Tile<1>::pushE() {
 
 /// 2D E pusher
 template<>
-void fields::Tile<2>::pushE() {
-
+void fields::Tile<2>::pushE() 
+{
   fields::YeeLattice& mesh = getYee();
 
   Realf C = 1.0 * cfl;
@@ -78,8 +78,8 @@ void fields::Tile<2>::pushE() {
 
 /// 3D E pusher
 template<>
-void fields::Tile<3>::pushE() {
-
+void fields::Tile<3>::pushE() 
+{
   fields::YeeLattice& mesh = getYee();
   Realf C = 1.0 * cfl;
 
@@ -112,7 +112,8 @@ void fields::Tile<3>::pushE() {
 
 /// Deposit current into electric field
 template<std::size_t D>
-void fields::Tile<D>::depositCurrent() {
+void fields::Tile<D>::depositCurrent() 
+{
   fields::YeeLattice& mesh = getYee();
 
   mesh.ex -= mesh.jx;
@@ -139,7 +140,8 @@ void fields::Tile<D>::depositCurrent() {
 
 /// 1D B pusher
 template<>
-void fields::Tile<1>::pushHalfB() {
+void fields::Tile<1>::pushHalfB() 
+{
   fields::YeeLattice& mesh = getYee();
   Realf C = 0.5 * cfl;
 
@@ -163,7 +165,8 @@ void fields::Tile<1>::pushHalfB() {
 
 /// 2D B pusher
 template<>
-void fields::Tile<2>::pushHalfB() {
+void fields::Tile<2>::pushHalfB() 
+{
   fields::YeeLattice& mesh = getYee();
 
   Realf C = 0.5 * cfl;
@@ -192,7 +195,8 @@ void fields::Tile<2>::pushHalfB() {
 
 /// 3D B pusher
 template<>
-void fields::Tile<3>::pushHalfB() {
+void fields::Tile<3>::pushHalfB() 
+{
   fields::YeeLattice& mesh = getYee();
   Realf C = 0.5 * cfl;
 
@@ -223,31 +227,48 @@ void fields::Tile<3>::pushHalfB() {
 
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
-fields::YeeLattice& fields::Tile<D>::getYee(size_t i) {
+fields::YeeLattice& fields::Tile<D>::getYee(size_t i) 
+{
+  return this->yee.get(i);
+}
+
+template<std::size_t D>
+const fields::YeeLattice& fields::Tile<D>::getConstYee(size_t i) const 
+{
   return this->yee.get(i);
 }
 
 
 /// Get analysis lattice of i:th species
 template<std::size_t D>
-fields::PlasmaMomentLattice& fields::Tile<D>::getAnalysis(size_t i) {
+fields::PlasmaMomentLattice& fields::Tile<D>::getAnalysis(size_t i) 
+{
+  return this->analysis.at(i);
+}
+
+template<std::size_t D>
+const fields::PlasmaMomentLattice& fields::Tile<D>::getConstAnalysis(size_t i) const 
+{
   return this->analysis.at(i);
 }
 
 //--------------------------------------------------
 // Specialize analysis species grid extension
 template<>
-void fields::Tile<1>::addAnalysisSpecies() {
+void fields::Tile<1>::addAnalysisSpecies() 
+{
   analysis.emplace_back(mesh_lengths[0], 1, 1);
 }
 
 template<>
-void fields::Tile<2>::addAnalysisSpecies() {
+void fields::Tile<2>::addAnalysisSpecies() 
+{
   analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], 1);
 }
 
 template<>
-void fields::Tile<3>::addAnalysisSpecies() {
+void fields::Tile<3>::addAnalysisSpecies() 
+{
   analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
 
@@ -255,17 +276,20 @@ void fields::Tile<3>::addAnalysisSpecies() {
 //--------------------------------------------------
 // Specialize Yee Lattice insertion
 template<>
-void fields::Tile<1>::addYeeLattice() {
+void fields::Tile<1>::addYeeLattice() 
+{
   yee.push_back( fields::YeeLattice( mesh_lengths[0], 1, 1) );
 }
 
 template<>
-void fields::Tile<2>::addYeeLattice() {
+void fields::Tile<2>::addYeeLattice() 
+{
   yee.push_back( fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) );
 }
 
 template<>
-void fields::Tile<3>::addYeeLattice() {
+void fields::Tile<3>::addYeeLattice() 
+{
   yee.push_back( fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) );
 }
 
@@ -275,7 +299,8 @@ void fields::Tile<3>::addYeeLattice() {
 void copyVertYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
-    int lhsI, int rhsI) {
+    int lhsI, int rhsI) 
+{
 
   lhs.ex.copyVert(rhs.ex, lhsI, rhsI); 
   lhs.ey.copyVert(rhs.ey, lhsI, rhsI); 
@@ -292,8 +317,8 @@ void copyVertYee(
 void addVertYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
-    int lhsI, int rhsI) {
-
+    int lhsI, int rhsI) 
+{
   lhs.jx.addVert(rhs.jx, lhsI, rhsI); 
   lhs.jy.addVert(rhs.jy, lhsI, rhsI); 
   lhs.jz.addVert(rhs.jz, lhsI, rhsI); 
@@ -306,8 +331,8 @@ void addVertYee(
 void copyHorzYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
-    int lhsJ, int rhsJ) {
-
+    int lhsJ, int rhsJ) 
+{
   lhs.ex.copyHorz(rhs.ex, lhsJ, rhsJ); 
   lhs.ey.copyHorz(rhs.ey, lhsJ, rhsJ); 
   lhs.ez.copyHorz(rhs.ez, lhsJ, rhsJ); 
@@ -323,8 +348,8 @@ void copyHorzYee(
 void addHorzYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
-    int lhsJ, int rhsJ) {
-                                    
+    int lhsJ, int rhsJ) 
+{
   lhs.jx.addHorz(rhs.jx, lhsJ, rhsJ); 
   lhs.jy.addHorz(rhs.jy, lhsJ, rhsJ); 
   lhs.jz.addHorz(rhs.jz, lhsJ, rhsJ); 
@@ -334,8 +359,8 @@ void addHorzYee(
 void copyFaceYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
-    int lhsK, int rhsK) {
-
+    int lhsK, int rhsK) 
+{
   lhs.ex.copyFace(rhs.ex, lhsK, rhsK); 
   lhs.ey.copyFace(rhs.ey, lhsK, rhsK); 
   lhs.ez.copyFace(rhs.ez, lhsK, rhsK); 
@@ -351,8 +376,8 @@ void copyFaceYee(
 void addFaceYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
-    int lhsK, int rhsK) {
-                                    
+    int lhsK, int rhsK) 
+{
   lhs.jx.addFace(rhs.jx, lhsK, rhsK); 
   lhs.jy.addFace(rhs.jy, lhsK, rhsK); 
   lhs.jz.addFace(rhs.jz, lhsK, rhsK); 
@@ -364,8 +389,8 @@ void copyZdirPencilYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
     int lhsI, int lhsJ,
-    int rhsI, int rhsJ) {
-
+    int rhsI, int rhsJ) 
+{
   lhs.ex.copyZdirPencil(rhs.ex, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.ey.copyZdirPencil(rhs.ey, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.ez.copyZdirPencil(rhs.ez, lhsI, lhsJ, rhsI, rhsJ); 
@@ -380,8 +405,8 @@ void addZdirPencilYee(
     fields::YeeLattice& lhs, 
     fields::YeeLattice& rhs, 
     int lhsI, int lhsJ,
-    int rhsI, int rhsJ) {
-
+    int rhsI, int rhsJ) 
+{
   lhs.jx.addZdirPencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.jy.addZdirPencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.jz.addZdirPencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
@@ -393,8 +418,8 @@ void addZdirPencilYee(
 
 /// Update Yee grid boundaries
 template<>
-void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) {
-
+void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) 
+{
   // target
   fields::YeeLattice& mesh = getYee();
 
@@ -421,7 +446,8 @@ void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) {
 
 /// Update Yee grid boundaries
 template<>
-void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node) {
+void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node) 
+{
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -533,7 +559,8 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node) {
 }
 
 template<>
-void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node) {
+void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node) 
+{
 
   // target
   fields::YeeLattice& mesh = getYee();
@@ -569,8 +596,8 @@ void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node) {
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
 // TODO: write unit test for this
 template<>
-void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node) {
-
+void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node) 
+{
   // target
   fields::YeeLattice& mesh = getYee();
 
@@ -670,7 +697,8 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node) {
 }
 
 template<std::size_t D>
-void fields::Tile<D>::cycleYee() {
+void fields::Tile<D>::cycleYee() 
+{
   yee.cycle();
 }
 

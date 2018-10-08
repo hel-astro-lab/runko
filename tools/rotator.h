@@ -20,11 +20,13 @@ class Rotator {
   void push_back(T vm) {container.push_back(vm); };
 
   /// general index
-  inline size_t index(size_t i) {return (i + currentStep) % L ; };
+  inline size_t index(size_t i) const {return (i + currentStep) % L ; };
 
   /// get reference to the current time step
   inline T& get(size_t i=0) { return container[ index(i) ]; };
 
+  /// get reference to the current time step
+  inline const T& get(size_t i=0) const { return container[ index(i) ]; };
 
   // FIXME raw cycling for time step index
   void cycle() {

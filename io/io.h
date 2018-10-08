@@ -91,30 +91,20 @@ class Writer {
       file.~File(); // call destructor explicitly
     }
 
-    // general interface that is overloaded for each specific type
-    //template<size_t D, typename ... Ts>
-    //bool write(Ts ...args) const = delete;
-
-    //template<typename ...T, typename ...A>
-    //bool write(const T... tile, A... tag) const = delete;
-
-    template< template<typename> class T>
-    bool write(const T<size_t>& tile) = delete;
-
-    //template<typename T, typename A>
-    //bool write(const T& tile, A tag) const = delete;
 
     // FIXME: use SFINAE to pick the right specialization without
     //        explicitly duplicating function signatures here.
+    //template< template<typename> class T>
+    //bool write(const T<size_t>& tile) = delete;
 
-    //template<size_t D>
-    //bool write(const fields::Tile<D>& tile);
+    template<size_t D>
+    bool write(const fields::Tile<D>& tile);
 
-    //template<size_t D>
-    //bool write(const fields::Tile<D>& tile, WriteMode::Analysis);
+    template<size_t D>
+    bool write(const fields::Tile<D>& tile, WriteMode::Analysis);
 
-    //template<size_t D>
-    //bool write( const vlv::Tile<D>& tile);
+    template<size_t D>
+    bool write( const vlv::Tile<D>& tile);
 
 };
 

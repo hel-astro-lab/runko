@@ -10,7 +10,7 @@ h5io::Writer::write(
   const fields::Tile<D>& tile 
   )
 {
-  auto& yee = tile.getYee();
+  const auto& yee = tile.getConstYee();
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );

@@ -21,7 +21,7 @@ h5io::Writer::write(
   auto gr1 = file["tile-"+numbering];
 
   // get reference to the current time step 
-  auto& step0 = tile.steps.get(0);
+  const auto& step0 = tile.steps.get(0);
 
   // loop over different particle species 
   int ispc = 0; // ith particle species

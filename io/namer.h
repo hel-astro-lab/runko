@@ -31,12 +31,12 @@ class Namer {
       
     //standard numbering scheme
     // TODO generalize to variable argument
-    string numbering(size_t i, size_t j, size_t k)
+    string numbering(size_t i, size_t j, size_t k) const
     {
       return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
     }
 
-    string numbering(std::tuple<size_t, size_t, size_t>& ind)
+    string numbering(std::tuple<size_t, size_t, size_t>& ind) const
     {
       return numbering(
           std::get<0>(ind),
