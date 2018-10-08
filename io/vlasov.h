@@ -63,12 +63,12 @@ h5io::Writer::write(
           gr["maxs"] = mesh.maxs;
 
           size_t len = mesh.data.size();
-          gr["number_of_tiles"] = len;
+          gr["number_of_cells"] = len;
 
           //--------------------------------------------------
           // save actual mesh points
           std::vector<uint64_t> cids;
-          std::vector<double  > vals;
+          std::vector<double>   vals;
           cids.reserve( len );
           vals.reserve( len );
 

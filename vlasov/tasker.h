@@ -8,11 +8,8 @@
 #include "spatial-solvers/amr_spatial_solver.h"
 #include "amr_analyzator.h"
 
-#include "../io/io.h"
-#include "../io/write_tags.h"
-#include "../io/fields.h"
-#include "../io/analysis.h"
-#include "../io/vlasov.h"
+#include "../io/writer.h"
+
 
 namespace vlv{
 
