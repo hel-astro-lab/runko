@@ -309,7 +309,7 @@ void bind_vlv(py::module& m_sub)
   m_1d.def("analyze",        &vlv::analyze);
   m_1d.def("writeYee",       &vlv::writeYee<1>);
   m_1d.def("writeAnalysis",  &vlv::writeAnalysis<1>);
-  m_1d.def("writeMesh",      &vlv::writeMesh);
+  m_1d.def("writeMesh",      &vlv::writeMesh<1>);
 
 
   //--------------------------------------------------
