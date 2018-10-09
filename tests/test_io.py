@@ -5,12 +5,15 @@ import os
 import numpy as np
 import pycorgi
 import pyplasmabox
+import h5py
 
 from visualize import getYee
 from visualize import getYee2D
 from combine_files import combine_tiles
 
 import injector
+from read_mesh import TileInfo
+from read_mesh import get_mesh
  
 class Conf:
 
@@ -285,7 +288,7 @@ class IO(unittest.TestCase):
                                                              ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
 
 
-    def test_write_Mesh1V(self):
+    def test_write_Mesh3V(self):
 
         ##################################################
         # write
@@ -335,6 +338,73 @@ class IO(unittest.TestCase):
 
         ##################################################
         # read using analysis tools
+        fname = conf.outdir + "meshes-0_0.h5"
+        f = h5py.File(fname,'r')
+
+        for i in range(node.getNx()):
+            for j in range(node.getNy()):
+                for k in range(node.getNz()):
+                    c = node.getTile(i,j,k)
+
+                    #if n.getMpiGrid(i,j) == n.rank:
+                    if True:
+                        for ispcs in range(conf.Nspecies):
+                            block = c.getPlasmaSpecies(0, ispcs)
+
+                            for q in range(conf.NxMesh):
+                                for r in range(conf.NyMesh):
+                                    for s in range(conf.NzMesh):
+                                        tinfo = TileInfo()
+                                        tinfo.i = i
+                                        tinfo.j = j
+                                        tinfo.k = k
+                                        tinfo.q = q
+                                        tinfo.r = r
+                                        tinfo.s = s
+                                        tinfo.ispcs = ispcs
+                                        vm = get_mesh(f, tinfo)
+                                        cells = vm.get_cells(True)
+
+                                        #now assert 
+                                        ref = block[q,r,s]
+                                        refcells = ref.get_cells(True)
+
+                                        #metainfo
+                                        self.assertEqual( vm.length, ref.length )
+                                        self.assertEqual( vm.maximum_refinement_level, ref.maximum_refinement_level )
+                                        self.assertEqual( vm.top_refinement_level, ref.top_refinement_level )
+                                        self.assertEqual( len(cells), len(refcells) )
+
+                                        for cid in cells:
+                                            #refinement level
+                                            rfl1 = vm.get_refinement_level(cid)
+                                            rfl2 = ref.get_refinement_level(cid)
+                                            self.assertEqual(rfl1, rfl2)
+
+                                            #indices
+                                            [ii1,jj1,kk1] = vm.get_indices(cid)
+                                            [ii2,jj2,kk2] =ref.get_indices(cid)
+                                            self.assertEqual(ii1, ii2)
+                                            self.assertEqual(jj1, jj2)
+                                            self.assertEqual(kk1, kk2)
+                                        
+                                            #value
+                                            self.assertEqual( vm[ii1,jj1,kk1,rfl1], ref[ii2,jj2,kk2,rfl2] )
+
+                                            #center
+                                            xx1,yy1,zz1 = vm.get_center([ii1,jj1,kk1], rfl1)
+                                            xx2,yy2,zz2 =ref.get_center([ii2,jj2,kk2], rfl2)
+                                            self.assertEqual(xx1, xx2)
+                                            self.assertEqual(yy1, yy2)
+                                            self.assertEqual(zz1, zz2)
+
+
+
+
+
+
+
+
 
 
 
