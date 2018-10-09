@@ -205,7 +205,7 @@ inline void writeAnalysis(
   for(auto cid : grid.getTileIds() ){
     const auto& tile 
       = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
-    writer.write(tile, WriteMode::analysis);
+    writer.write(tile, h5io::WriteMode::analysis);
   }
 
 

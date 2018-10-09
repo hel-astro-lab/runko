@@ -66,23 +66,43 @@ class Writer {
 
     // FIXME: use SFINAE to pick the right specialization without
     //        explicitly duplicating function signatures here.
-    //template< template<typename> class T>
-    //bool write(const T<size_t>& tile) = delete;
+    //
+    // try1:
+    //
+    // template< template<typename> class T>
+    // bool write(const T<size_t>& tile) = delete;
+    //
+    // try 2:
+    //
+    // template<typename T, typename W>
+    // bool write( const T& tile, W iomode = WriteMode::standard )
+    // {
+    //   return write(tile, iomode);
+    // }
 
     template<size_t D>
-    bool write(const fields::Tile<D>& tile);
+    bool write(const fields::Tile<D>& tile, WriteMode::Standard = WriteMode::standard);
 
     template<size_t D>
     bool write(const fields::Tile<D>& tile, WriteMode::Analysis);
 
     template<size_t D>
-    bool write( const vlv::Tile<D>& tile);
+    bool write(const vlv::Tile<D>& tile,    WriteMode::Standard = WriteMode::standard);
+
+
 
 };
 
 } // end of namespace io
 
+//--------------------------------------------------
+// template implementations
 
 #include "fields.h"
 #include "analysis.h"
 #include "vlasov.h"
+
+
+
+
+

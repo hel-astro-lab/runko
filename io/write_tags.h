@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../corgi/tags.h"
+
 /// I/O Write modes, 
 //
 // Note: 
@@ -10,8 +12,12 @@
 //    func(xx, yy, ..., WriteMode::TagName)
 //    and call the function as
 //    yy = func(aa, bb,..., WriteMode::tagName)
-//
-class WriteMode
+
+namespace h5io {
+
+
+class WriteMode :
+  public corgi::tags::WriteMode
 {
   public:
 
@@ -21,6 +27,4 @@ class WriteMode
 
 
 
-
-
-
+} // ns h5io

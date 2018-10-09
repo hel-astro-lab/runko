@@ -7,7 +7,8 @@
 template<size_t D>
 bool 
 h5io::Writer::write( 
-  const fields::Tile<D>& tile 
+  const fields::Tile<D>& tile,
+  h5io::WriteMode::Standard
   )
 {
   const auto& yee = tile.getConstYee();

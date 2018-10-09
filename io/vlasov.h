@@ -9,7 +9,8 @@
 template<size_t D>
 bool
 h5io::Writer::write(
-    const vlv::Tile<D>& tile
+  const vlv::Tile<D>& tile,
+  h5io::WriteMode::Standard 
   ) 
 {
 
@@ -90,5 +91,4 @@ h5io::Writer::write(
 
   return true;
 }
-
 

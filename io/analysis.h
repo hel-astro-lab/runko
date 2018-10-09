@@ -10,7 +10,7 @@ template<size_t D>
 bool 
 h5io::Writer::write( 
   const fields::Tile<D>& tile,
-  WriteMode::Analysis
+  h5io::WriteMode::Analysis
     ) 
 {
 
