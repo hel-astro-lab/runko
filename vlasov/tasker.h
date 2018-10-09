@@ -9,6 +9,7 @@
 #include "amr_analyzator.h"
 
 #include "../io/writer.h"
+#include "../io/reader.h"
 
 
 namespace vlv{
@@ -229,6 +230,26 @@ inline void writeMesh(
       = dynamic_cast<vlv::Tile<D>&>(grid.getTile( cid ));
     writer.write(tile);
   }
+
+}
+
+
+template<size_t D>
+inline void readYee( 
+    corgi::Node<D>& grid, 
+    int lap,
+    const std::string& dir 
+    )
+{
+
+  h5io::Reader reader(dir, lap);
+
+  for(auto cid : grid.getTileIds() ){
+    auto& tile 
+      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
+    reader.read(tile);
+  }
+
 
 }
 

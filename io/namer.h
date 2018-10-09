@@ -38,6 +38,23 @@ std::tuple<size_t, size_t, size_t> expand_indices(
 };
 
 
+//standard numbering scheme
+// TODO generalize to variable argument
+string create_numbering(size_t i, size_t j, size_t k) 
+{
+  return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
+}
+
+string create_numbering(std::tuple<size_t, size_t, size_t>& ind)
+{
+  return create_numbering(
+      std::get<0>(ind),
+      std::get<1>(ind),
+      std::get<2>(ind)
+      );
+}
+
+
 
 /// General class to do all the text and file name mangling 
 class Namer {
@@ -59,21 +76,6 @@ class Namer {
       name = prefix + "_" + to_string(lap) + extension;
     }
       
-    //standard numbering scheme
-    // TODO generalize to variable argument
-    string numbering(size_t i, size_t j, size_t k) const
-    {
-      return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
-    }
-
-    string numbering(std::tuple<size_t, size_t, size_t>& ind) const
-    {
-      return numbering(
-          std::get<0>(ind),
-          std::get<1>(ind),
-          std::get<2>(ind)
-          );
-    }
 
 };
 

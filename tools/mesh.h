@@ -104,10 +104,14 @@ class Mesh {
 
     /// load 3D data cube from 1D serial vector
     // TODO: vec or vec& ?
-    void load_serial(
+    void unserialize(
         std::vector<T> vec, 
-        size_t Nx, size_t Ny, size_t Nz
+        size_t Nx_in, size_t Ny_in, size_t Nz_in
         ) {
+
+      Nx = Nx_in;
+      Ny = Ny_in;
+      Nz = Nz_in;
       mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
 
       int q = 0;

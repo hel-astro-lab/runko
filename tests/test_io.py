@@ -212,8 +212,6 @@ class IO(unittest.TestCase):
         ##################################################
         # read using analysis tools
 
-        yee = getYee(node, conf)
-
         arrs = combine_tiles(conf.outdir+"fields-0_0.h5", "ex", conf)
 
         Nx = node.getNx()
@@ -233,6 +231,33 @@ class IO(unittest.TestCase):
                                 for s in range(conf.NzMesh):
                                     self.assertAlmostEqual( arrs[i*NxM + q, j*NyM + r, k*NzM + s],  
                                                              ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
+
+        ##################################################
+        # test reading back
+        node2 = pycorgi.oneD.Node(conf.Nx, conf.Ny)
+        node2.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        loadTiles1D(node2, conf)
+
+        pyplasmabox.vlv.oneD.readYee(node2, 0, "io_test_1D")
+
+        yee1 = getYee(node,  conf)
+        yee2 = getYee(node2, conf)
+
+        for i in range(node.getNx()):
+            for j in range(node.getNy()):
+                for k in range(node.getNz()):
+                    #if n.getMpiGrid(i,j) == n.rank:
+                    if True:
+                        for q in range(conf.NxMesh):
+                            for r in range(conf.NyMesh):
+                                for s in range(conf.NzMesh):
+                                    for m in ["jx", "jy", "jz", "ex", "ey", "ez", "bx", "by", "bz"]:
+
+                                        self.assertAlmostEqual( 
+                                                yee1[m][i*NxM + q],
+                                                yee2[m][i*NxM + q],
+                                                places=6)
+
 
 
     def test_write_fields2D(self):
@@ -264,9 +289,6 @@ class IO(unittest.TestCase):
         
         ##################################################
         # read using analysis tools
-
-        yee = getYee2D(node, conf)
-
         arrs = combine_tiles(conf.outdir+"fields-0_0.h5", "ex", conf)
 
         Nx = node.getNx()
@@ -287,6 +309,32 @@ class IO(unittest.TestCase):
                                     self.assertAlmostEqual( arrs[i*NxM + q, j*NyM + r, k*NzM + s],  
                                                              ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
 
+
+        ##################################################
+        # test reading back
+        node2 = pycorgi.twoD.Node(conf.Nx, conf.Ny)
+        node2.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        loadTiles2D(node2, conf)
+
+        pyplasmabox.vlv.twoD.readYee(node2, 0, "io_test_2D")
+
+        yee1 = getYee2D(node,  conf)
+        yee2 = getYee2D(node2, conf)
+
+        for i in range(node.getNx()):
+            for j in range(node.getNy()):
+                for k in range(node.getNz()):
+                    #if n.getMpiGrid(i,j) == n.rank:
+                    if True:
+                        for q in range(conf.NxMesh):
+                            for r in range(conf.NyMesh):
+                                for s in range(conf.NzMesh):
+                                    for m in ["jx", "jy", "jz", "ex", "ey", "ez", "bx", "by", "bz"]:
+
+                                        self.assertAlmostEqual( 
+                                                yee1[m][i*NxM + q, j*NyM + r],
+                                                yee2[m][i*NxM + q, j*NyM + r],
+                                                places=6)
 
     def test_write_Mesh3V(self):
 

@@ -16,7 +16,7 @@ h5io::Writer::write(
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
-  string numbering = fname.numbering(my_ind);
+  string numbering = create_numbering(my_ind);
 
   // group for tile
   auto gr1 = file["tile-"+numbering];
@@ -39,7 +39,7 @@ h5io::Writer::write(
           const auto& mesh = block0.block(q,r,s);   // f_i
 
           // group for location in tile
-          auto gr2 = gr1["loc-" + fname.numbering( q, r, s)];
+          auto gr2 = gr1["loc-" + create_numbering( q, r, s)];
 
           // group for species
           auto gr = gr2["sp-" + std::to_string(ispc)];

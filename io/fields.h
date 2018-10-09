@@ -15,10 +15,10 @@ h5io::Writer::write(
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
-  string numbering = fname.numbering(my_ind);
+  string numbering = create_numbering(my_ind);
 
   // open individual group for the data
-  auto gr = file["yee_"+numbering];
+  auto gr = file["yee_"+ numbering];
 
   // tile location inside node
   gr["i"] = std::get<0>(my_ind);
@@ -50,5 +50,6 @@ h5io::Writer::write(
 
   return true;
 }
+
 
 

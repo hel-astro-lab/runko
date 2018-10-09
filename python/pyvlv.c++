@@ -311,6 +311,8 @@ void bind_vlv(py::module& m_sub)
   m_1d.def("writeAnalysis",  &vlv::writeAnalysis<1>);
   m_1d.def("writeMesh",      &vlv::writeMesh<1>);
 
+  m_1d.def("readYee",        &vlv::readYee<1>);
+
 
   //--------------------------------------------------
   // boundaries
@@ -329,7 +331,7 @@ void bind_vlv(py::module& m_sub)
   m_2d.def("writeYee",       &vlv::writeYee<2>);
   m_2d.def("writeAnalysis",  &vlv::writeAnalysis<2>);
 
-
+  m_2d.def("readYee",        &vlv::readYee<2>);
 
 
 }

@@ -16,7 +16,7 @@ h5io::Writer::write(
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
-  string numbering = fname.numbering(my_ind);
+  string numbering = create_numbering(my_ind);
 
   // loop over all species
   int Nspecies = static_cast<int>(tile.analysis.size());
