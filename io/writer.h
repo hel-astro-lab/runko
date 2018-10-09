@@ -12,9 +12,6 @@
 #include "../vlasov/tile.h"
 #include "../vlasov/amr/mesh.h"
 
-//#include "../tools/HighFive/include/highfive/H5File.hpp"
-//#include "../tools/HighFive/include/highfive/H5DataSet.hpp"
-//#include "../tools/HighFive/include/highfive/H5DataSpace.hpp"
 #include "../tools/ezh5/src/ezh5.hpp"
 
 
