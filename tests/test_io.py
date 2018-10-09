@@ -9,6 +9,8 @@ import pyplasmabox
 from visualize import getYee
 from visualize import getYee2D
 from combine_files import combine_tiles
+
+import injector
  
 class Conf:
 
@@ -26,6 +28,8 @@ class Conf:
     ymin = 0.0
     ymax = 1.0
 
+    me = -1.0
+    mi =  1.0
 
     #def __init__(self):
     #    print("initialized...")
@@ -127,6 +131,52 @@ def fill_yee(node, data, conf):
                                 yee.jz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 8]
 
 
+# Generic function to fill the velocity mesh
+def filler(xloc, uloc, ispcs, conf):
+    x = xloc[0]
+    y = xloc[1]
+    z = xloc[2] 
+
+    ux = uloc[0]
+    uy = uloc[1]
+    uz = uloc[2] 
+
+    return x + y + z + ux + uy + uz + ispcs
+
+    #physical version
+    mux = 0.0
+    muy = 0.0
+    muz = 0.0
+    delgam = conf.delgam
+
+    #electrons
+    if ispcs == 0:
+        delgam  = conf.delgam * np.abs(conf.mi / conf.me) * conf.temperature_ratio
+        mux = conf.ub_e
+        muy = 0.0
+        muz = 0.0
+    #positrons/ions/second species
+    if ispcs == 1:
+        delgam  = conf.delgam
+        mux = conf.ub_i
+        muy = 0.0
+        muz = 0.0
+
+    #plasma reaction
+    omp = conf.cfl*conf.dx
+    n0 = (omp**2.0)/conf.Nspecies
+    
+    #velocity perturbation
+    Lx = conf.Nx*conf.NxMesh*conf.dx
+    kmode = conf.modes
+    mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*x/Lx) * (Lx/(2.0*np.pi*kmode))
+
+    #Classical Maxwellian
+    f  = n0*(1.0/(2.0*np.pi*delgam))**(0.5)
+    f *= np.exp(-0.5*((ux - mux - mux_noise)**2.0)/(delgam))
+    return f
+
+
 class IO(unittest.TestCase):
 
     def test_write_fields1D(self):
@@ -178,9 +228,9 @@ class IO(unittest.TestCase):
                         for q in range(conf.NxMesh):
                             for r in range(conf.NyMesh):
                                 for s in range(conf.NzMesh):
-                                    self.assertAlmostEqual( arrs[i*NxM + q, j*NyM + r, k*NzM + s],  ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
+                                    self.assertAlmostEqual( arrs[i*NxM + q, j*NyM + r, k*NzM + s],  
+                                                             ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
 
-        ##################################################
 
     def test_write_fields2D(self):
 
@@ -231,14 +281,60 @@ class IO(unittest.TestCase):
                         for q in range(conf.NxMesh):
                             for r in range(conf.NyMesh):
                                 for s in range(conf.NzMesh):
-                                    self.assertAlmostEqual( arrs[i*NxM + q, j*NyM + r, k*NzM + s],  ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
+                                    self.assertAlmostEqual( arrs[i*NxM + q, j*NyM + r, k*NzM + s],  
+                                                             ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
+
+
+    def test_write_Mesh1V(self):
 
         ##################################################
+        # write
+        conf = Conf()
+        conf.Nx = 2
+        conf.Ny = 1
+        conf.Nz = 1
+        conf.NxMesh = 3
+        conf.NyMesh = 1
+        conf.NzMesh = 1 
+        conf.Nspecies = 2
+        conf.outdir = "io_test_mesh/"
+
+        conf.dx  = 1.0
+        conf.dy  = 1.0
+        conf.dz  = 1.0
+        conf.Nvx = 3
+        conf.Nvy = 5
+        conf.Nvz = 8
+
+        conf.vxmin =  -1.0
+        conf.vymin =  -2.0
+        conf.vzmin =  -3.0
+        conf.vxmax =   4.0
+        conf.vymax =   5.0
+        conf.vzmax =   6.0
+        conf.refinement_level= 0
+        conf.clip= True
+        conf.clipThreshold= 1.0e-5
+
+        if not os.path.exists( conf.outdir ):
+            os.makedirs(conf.outdir)
+
+        node = pycorgi.oneD.Node(conf.Nx, conf.Ny)
+        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        for i in range(node.getNx()):
+            for j in range(node.getNy()):
+                #if n.getMpiGrid(i) == n.rank:
+                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                node.addTile(c, (i,) ) 
+
+        injector.inject(node, filler, conf ) #injecting plasma
+
+        pyplasmabox.vlv.oneD.writeMesh(node, 0, conf.outdir)
 
 
-
-
-
+        ##################################################
+        # read using analysis tools
 
 
 
