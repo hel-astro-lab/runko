@@ -6,6 +6,7 @@
 #include "../tools/ezh5/src/ezh5.hpp"
 
 #include "../em-fields/tile.h"
+#include "../vlasov/tile.h"
 
 namespace h5io {
 
@@ -51,6 +52,9 @@ class Reader
   template<size_t D>
   bool read(fields::Tile<D>& tile);
 
+  template<size_t D>
+  bool read(vlv::Tile<D>& tile);
+
 
 };
 
@@ -62,6 +66,7 @@ class Reader
 // template implementations
 
 #include "input_fields.h"
+#include "input_vlasov.h"
 
 
 

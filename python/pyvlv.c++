@@ -312,6 +312,7 @@ void bind_vlv(py::module& m_sub)
   m_1d.def("writeMesh",      &vlv::writeMesh<1>);
 
   m_1d.def("readYee",        &vlv::readYee<1>);
+  m_1d.def("readMesh",       &vlv::readMesh<1>);
 
 
   //--------------------------------------------------

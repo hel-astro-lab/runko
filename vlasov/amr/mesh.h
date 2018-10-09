@@ -591,12 +591,12 @@ class AdaptiveMesh {
   }
 
   
-  void set_min(value_array_t& given_mins)
+  void set_min(value_array_t given_mins)
   {
     mins = given_mins;
   }
 
-  void set_max(value_array_t& given_maxs)
+  void set_max(value_array_t given_maxs)
   {
     maxs = given_maxs;
   }
@@ -1062,6 +1062,21 @@ class AdaptiveMesh {
   {
     for(auto& it : data) {
       it.second -= val;
+    }
+  }
+
+  // unpack mesh object from index & value vectors
+  void unserialize(
+      const std::vector<uint64_t>& cids,
+      const std::vector<T>& vals)
+  {
+    assert(cids.size() == vals.size());
+    data.clear();
+    assert(data.empty());
+    
+    for(size_t i = 0; i < cids.size(); i++) {
+      data.insert( std::make_pair(cids[i], vals[i]) );
+      //data[cids[i]] = vals[i];
     }
   }
 

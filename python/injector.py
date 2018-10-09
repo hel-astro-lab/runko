@@ -67,6 +67,8 @@ def createEmptyVelocityMesh(conf):
         return vmesh
 
 
+def empty_filler(xloc, uloc, ispcs, conf):
+    return 0.0
 
 def fillMesh(
         vmesh, 
@@ -213,7 +215,8 @@ def inject(
         node, 
         ffunc, 
         conf,
-        preclip = lambda a,b,c,d : False
+        preclip = lambda a,b,c,d : False,
+        empty = False,
         ):
 
     # setup toolbar
@@ -260,13 +263,14 @@ def inject(
                                 xloc = spatialLoc(node, (i,j), (l,m,n), conf)
 
                                 vmesh = createEmptyVelocityMesh(conf)
-                                fillMesh(vmesh,
-                                         ffunc,
-                                         xloc,
-                                         ispcs,
-                                         conf,
-                                         preclip=preclip,
-                                         )
+                                if not(empty):
+                                    fillMesh(vmesh,
+                                             ffunc,
+                                             xloc,
+                                             ispcs,
+                                             conf,
+                                             preclip=preclip,
+                                             )
                                 #vmesh.maximum_refinement_level = conf.refinement_level
 
                                 block[l,m,n] = vmesh

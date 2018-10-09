@@ -100,14 +100,10 @@ h5io::Reader::read(
   arr << gr["rho"];
   yee.rho.unserialize(arr, Nx, Ny, Nz);
 
-  // file handle is closed automatically here as it goes out-of-scope
 
+  // file handle is closed automatically here as it goes out-of-scope
   return true;
 }
-
-
-
-
 
 
 

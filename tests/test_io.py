@@ -251,7 +251,7 @@ class IO(unittest.TestCase):
                         for q in range(conf.NxMesh):
                             for r in range(conf.NyMesh):
                                 for s in range(conf.NzMesh):
-                                    for m in ["jx", "jy", "jz", "ex", "ey", "ez", "bx", "by", "bz"]:
+                                    for m in ["jx", "jy", "jz", "ex", "ey", "ez", "bx", "by", "bz", "rho"]:
 
                                         self.assertAlmostEqual( 
                                                 yee1[m][i*NxM + q],
@@ -329,12 +329,48 @@ class IO(unittest.TestCase):
                         for q in range(conf.NxMesh):
                             for r in range(conf.NyMesh):
                                 for s in range(conf.NzMesh):
-                                    for m in ["jx", "jy", "jz", "ex", "ey", "ez", "bx", "by", "bz"]:
+                                    for m in ["jx", "jy", "jz", "ex", "ey", "ez", "bx", "by", "bz", "rho"]:
 
                                         self.assertAlmostEqual( 
                                                 yee1[m][i*NxM + q, j*NyM + r],
                                                 yee2[m][i*NxM + q, j*NyM + r],
                                                 places=6)
+
+
+    # compare two AdaptiveMesh3D objects and assert their equality
+    def compareMeshes(self, vm, ref):
+        cells = vm.get_cells(True)
+        refcells = ref.get_cells(True)
+
+        #metainfo
+        self.assertEqual( vm.length, ref.length )
+        self.assertEqual( vm.maximum_refinement_level, ref.maximum_refinement_level )
+        self.assertEqual( vm.top_refinement_level, ref.top_refinement_level )
+        self.assertEqual( len(cells), len(refcells) )
+
+        for cid in cells:
+            #refinement level
+            rfl1 = vm.get_refinement_level(cid)
+            rfl2 = ref.get_refinement_level(cid)
+            self.assertEqual(rfl1, rfl2)
+
+            #indices
+            [ii1,jj1,kk1] = vm.get_indices(cid)
+            [ii2,jj2,kk2] =ref.get_indices(cid)
+            self.assertEqual(ii1, ii2)
+            self.assertEqual(jj1, jj2)
+            self.assertEqual(kk1, kk2)
+        
+            #value
+            self.assertEqual( vm[ii1,jj1,kk1,rfl1], ref[ii2,jj2,kk2,rfl2] )
+
+            #center
+            xx1,yy1,zz1 = vm.get_center([ii1,jj1,kk1], rfl1)
+            xx2,yy2,zz2 =ref.get_center([ii2,jj2,kk2], rfl2)
+            self.assertEqual(xx1, xx2)
+            self.assertEqual(yy1, yy2)
+            self.assertEqual(zz1, zz2)
+
 
     def test_write_Mesh3V(self):
 
@@ -378,11 +414,9 @@ class IO(unittest.TestCase):
                 #if n.getMpiGrid(i) == n.rank:
                 c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 node.addTile(c, (i,) ) 
-
         injector.inject(node, filler, conf ) #injecting plasma
 
         pyplasmabox.vlv.oneD.writeMesh(node, 0, conf.outdir)
-
 
         ##################################################
         # read using analysis tools
@@ -410,50 +444,58 @@ class IO(unittest.TestCase):
                                         tinfo.r = r
                                         tinfo.s = s
                                         tinfo.ispcs = ispcs
-                                        vm = get_mesh(f, tinfo)
-                                        cells = vm.get_cells(True)
 
                                         #now assert 
+                                        vm = get_mesh(f, tinfo)
                                         ref = block[q,r,s]
-                                        refcells = ref.get_cells(True)
-
-                                        #metainfo
-                                        self.assertEqual( vm.length, ref.length )
-                                        self.assertEqual( vm.maximum_refinement_level, ref.maximum_refinement_level )
-                                        self.assertEqual( vm.top_refinement_level, ref.top_refinement_level )
-                                        self.assertEqual( len(cells), len(refcells) )
-
-                                        for cid in cells:
-                                            #refinement level
-                                            rfl1 = vm.get_refinement_level(cid)
-                                            rfl2 = ref.get_refinement_level(cid)
-                                            self.assertEqual(rfl1, rfl2)
-
-                                            #indices
-                                            [ii1,jj1,kk1] = vm.get_indices(cid)
-                                            [ii2,jj2,kk2] =ref.get_indices(cid)
-                                            self.assertEqual(ii1, ii2)
-                                            self.assertEqual(jj1, jj2)
-                                            self.assertEqual(kk1, kk2)
-                                        
-                                            #value
-                                            self.assertEqual( vm[ii1,jj1,kk1,rfl1], ref[ii2,jj2,kk2,rfl2] )
-
-                                            #center
-                                            xx1,yy1,zz1 = vm.get_center([ii1,jj1,kk1], rfl1)
-                                            xx2,yy2,zz2 =ref.get_center([ii2,jj2,kk2], rfl2)
-                                            self.assertEqual(xx1, xx2)
-                                            self.assertEqual(yy1, yy2)
-                                            self.assertEqual(zz1, zz2)
+                                        self.compareMeshes(vm, ref)
 
 
 
+        ##################################################
+        # read back
 
+        node2 = pycorgi.oneD.Node(conf.Nx, conf.Ny)
+        node2.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
+        for i in range(node2.getNx()):
+            for j in range(node2.getNy()):
+                #if n.getMpiGrid(i) == n.rank:
+                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                node2.addTile(c, (i,) ) 
+        injector.inject(node2, injector.empty_filler, conf, empty=True) #injecting empty meshes
 
+        #pyplasmabox.vlv.oneD.writeMesh(node2, 1, conf.outdir)
+        pyplasmabox.vlv.oneD.readMesh(node2,  0, "io_test_mesh")
+        #pyplasmabox.vlv.oneD.writeMesh(node2, 2, conf.outdir)
 
+        for i in range(node2.getNx()):
+            for j in range(node2.getNy()):
+                for k in range(node2.getNz()):
+                    c1 = node.getTile(i,j,k)
+                    c2 = node2.getTile(i,j,k)
 
+                    #if n.getMpiGrid(i,j) == n.rank:
+                    if True:
+                        for ispcs in range(conf.Nspecies):
+                            block1 = c1.getPlasmaSpecies(0, ispcs)
+                            block2 = c2.getPlasmaSpecies(0, ispcs)
 
+                            for q in range(conf.NxMesh):
+                                for r in range(conf.NyMesh):
+                                    for s in range(conf.NzMesh):
+                                        tinfo = TileInfo()
+                                        tinfo.i = i
+                                        tinfo.j = j
+                                        tinfo.k = k
+                                        tinfo.q = q
+                                        tinfo.r = r
+                                        tinfo.s = s
+                                        tinfo.ispcs = ispcs
 
+                                        #now assert 
+                                        vm1 = block1[q,r,s]
+                                        vm2 = block2[q,r,s]
+                                        self.compareMeshes(vm1, vm2)
 
 
