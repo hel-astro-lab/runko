@@ -31,6 +31,9 @@ class Configuration(object):
                 self.__dict__.update( {key: val} )
 
 
+        if not("laprestart" in self.__dict__):
+            self.__dict__["laprestart"] = 0
+
         # automatically set restart equal to other output, if not specified
         if not("restart" in self.__dict__):
             self.__dict__["restart"] = self.interval

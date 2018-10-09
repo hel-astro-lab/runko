@@ -318,22 +318,30 @@ if __name__ == "__main__":
     modes        = np.arange(Nx) 
     random_phase = np.random.rand(len(modes))
 
-    injector.inject(node, filler, conf, preclip) #injecting plasma
+    # restart
+    if conf.laprestart > 0:
+        lap = conf.laprestart + 1
+        injector.inject(node, injector.empty_filler, conf, empty=True) #injecting plasma
 
-    #insert initial electric field
-    #insert_em(node, conf)
+        plasma.readYee( node, conf.laprestart, conf.outdir)
+        plasma.readMesh(node, conf.laprestart, conf.outdir)
+    else:
+        lap = 0
+        injector.inject(node, filler, conf, preclip) #injecting plasma
 
+        #insert initial electric field
+        #insert_em(node, conf)
 
-    #Initial step backwards for velocity
-    for j in range(node.getNy()):
-        for i in range(node.getNx()):
-            tile = node.getTile(i,j)
-            tile.updateBoundaries(node)
-    plasma.stepInitial(node)
-    for j in range(node.getNy()):
-        for i in range(node.getNx()):
-            tile = node.getTile(i,j)
-            tile.cycle()
+        #Initial step backwards for velocity
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                tile = node.getTile(i,j)
+                tile.updateBoundaries(node)
+        plasma.stepInitial(node)
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                tile = node.getTile(i,j)
+                tile.cycle()
 
 
     # visualize initial condition
@@ -385,9 +393,9 @@ if __name__ == "__main__":
 
 
     #simulation loop
-    time  = 0.0
+    time  = conf.dt*lap #start time
     ifile = 0
-    for lap in range(0, conf.Nt):
+    for lap in range(lap, conf.Nt):
 
         #xJEu loop (Umeda a la implicit FTDT)
 

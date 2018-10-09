@@ -187,7 +187,7 @@ inline void writeYee(
     writer.write(tile);
   }
 
-
+  //writer.~Writer();
 }
 
 
@@ -210,6 +210,7 @@ inline void writeAnalysis(
   }
 
 
+  //writer.~Writer();
 }
 
 
@@ -231,6 +232,7 @@ inline void writeMesh(
     writer.write(tile);
   }
 
+  //writer.~Writer();
 }
 
 
@@ -249,6 +251,7 @@ inline void readYee(
       = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
     reader.read(tile);
   }
+
 }
 
 
