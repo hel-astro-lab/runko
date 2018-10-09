@@ -75,17 +75,17 @@ def fill_ref(node, conf):
                             for s in range(conf.NzMesh):
                                 #print(i,j,k,q,r,s, "val=",val)
                                 # insert 1/val to get more complex floats (instead of ints only)
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 0] = val # 1.0/val + 1.0 
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 1] = val # 1.0/val + 2.0
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 2] = val # 1.0/val + 3.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 0] = 1.0/val + 1.0 
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 1] = 1.0/val + 2.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 2] = 1.0/val + 3.0
 
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 3] = val # 1.0/val + 4.0
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 4] = val # 1.0/val + 5.0
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 5] = val # 1.0/val + 6.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 3] = 1.0/val + 4.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 4] = 1.0/val + 5.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 5] = 1.0/val + 6.0
 
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 6] = val # 1.0/val + 7.0
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 7] = val # 1.0/val + 8.0
-                                data[i*NxM + q, j*NyM + r, k*NzM + s, 8] = val # 1.0/val + 9.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 6] = 1.0/val + 7.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 7] = 1.0/val + 8.0
+                                data[i*NxM + q, j*NyM + r, k*NzM + s, 8] = 1.0/val + 9.0
                                 val += 1
     return data
 
