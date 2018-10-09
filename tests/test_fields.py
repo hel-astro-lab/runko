@@ -81,19 +81,19 @@ class Communications(unittest.TestCase):
                 yee = c.getYee(0)
 
                 for q in range(conf.NxMesh):
-                    for k in range(conf.NyMesh):
-                        for r in range(conf.NzMesh):
-                            yee.ex[q,k,r] = val
-                            yee.ey[q,k,r] = val
-                            yee.ez[q,k,r] = val
-
-                            yee.bx[q,k,r] = val
-                            yee.by[q,k,r] = val
-                            yee.bz[q,k,r] = val
-
-                            yee.jx[q,k,r] = val
-                            yee.jy[q,k,r] = val
-                            yee.jz[q,k,r] = val
+                    for r in range(conf.NyMesh):
+                        for s in range(conf.NzMesh):
+                            yee.ex[q,r,s] = val
+                            yee.ey[q,r,s] = val
+                            yee.ez[q,r,s] = val
+                                        
+                            yee.bx[q,r,s] = val
+                            yee.by[q,r,s] = val
+                            yee.bz[q,r,s] = val
+                                        
+                            yee.jx[q,r,s] = val
+                            yee.jy[q,r,s] = val
+                            yee.jz[q,r,s] = val
                             val += 1
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
@@ -106,19 +106,19 @@ class Communications(unittest.TestCase):
             yee = c.getYee(0)
 
             for q in range(conf.NxMesh):
-                for k in range(conf.NyMesh):
-                    for r in range(conf.NzMesh):
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 0] = yee.ex[q,k,r]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 1] = yee.ey[q,k,r]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 2] = yee.ez[q,k,r]
-                                                  
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 3] = yee.bx[q,k,r]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 4] = yee.by[q,k,r]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 5] = yee.bz[q,k,r]
-                                                  
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 6] = yee.jx[q,k,r]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 7] = yee.jy[q,k,r]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + k, 0*conf.NzMesh + r, 8] = yee.jz[q,k,r]
+                for r in range(conf.NyMesh):
+                    for s in range(conf.NzMesh):
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 0] = yee.ex[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 1] = yee.ey[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 2] = yee.ez[q,r,s]
+                                                                                     
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 3] = yee.bx[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 4] = yee.by[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 5] = yee.bz[q,r,s]
+                                                                                     
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 6] = yee.jx[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 7] = yee.jy[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 8] = yee.jz[q,r,s]
 
         #print("r=0-------")
         #print(data[:,:,0,0])
@@ -143,14 +143,14 @@ class Communications(unittest.TestCase):
             (i,) = c.index
             yee = c.getYee(0)
 
-            for r in range(-1, conf.NzMesh+1, 1):
-                for k in range(-1, conf.NyMesh+1, 1):
+            for s in range(-1, conf.NzMesh+1, 1):
+                for r in range(-1, conf.NyMesh+1, 1):
                     for q in range(-1, conf.NxMesh+1, 1):
                         #print("q k r ({},{},{})".format(q,k,r))
                         qq = wrap( i*conf.NxMesh + q, conf.Nx*conf.NxMesh )
-                        kk = wrap( 0*conf.NyMesh + k, conf.Ny*conf.NyMesh )
-                        rr = wrap( 0*conf.NzMesh + r, conf.Nz*conf.NzMesh )
-                        ref[m, qq, kk, rr] = yee.ex[q,k,r]
+                        rr = wrap( 0*conf.NyMesh + r, conf.Ny*conf.NyMesh )
+                        ss = wrap( 0*conf.NzMesh + s, conf.Nz*conf.NzMesh )
+                        ref[m, qq, rr, ss] = yee.ex[q,r,s]
             m += 1
 
         #print("cid = 0")
@@ -195,19 +195,19 @@ class Communications(unittest.TestCase):
                     yee = c.getYee(0)
 
                     for q in range(conf.NxMesh):
-                        for k in range(conf.NyMesh):
-                            for r in range(conf.NzMesh):
-                                yee.ex[q,k,r] = val
-                                yee.ey[q,k,r] = val
-                                yee.ez[q,k,r] = val
+                        for r in range(conf.NyMesh):
+                            for s in range(conf.NzMesh):
+                                yee.ex[q,r,s] = val
+                                yee.ey[q,r,s] = val
+                                yee.ez[q,r,s] = val
 
-                                yee.bx[q,k,r] = val
-                                yee.by[q,k,r] = val
-                                yee.bz[q,k,r] = val
+                                yee.bx[q,r,s] = val
+                                yee.by[q,r,s] = val
+                                yee.bz[q,r,s] = val
 
-                                yee.jx[q,k,r] = val
-                                yee.jy[q,k,r] = val
-                                yee.jz[q,k,r] = val
+                                yee.jx[q,r,s] = val
+                                yee.jy[q,r,s] = val
+                                yee.jz[q,r,s] = val
                                 val += 1
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
@@ -217,20 +217,20 @@ class Communications(unittest.TestCase):
             (i, j) = c.index
 
             yee = c.getYee(0)
-            for k in range(conf.NyMesh):
-                for q in range(conf.NxMesh):
-                    for r in range(conf.NzMesh):
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 0] = yee.ex[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 1] = yee.ey[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 2] = yee.ez[q,k,r]
-
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 3] = yee.bx[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 4] = yee.by[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 5] = yee.bz[q,k,r]
-
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 6] = yee.jx[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 7] = yee.jy[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 8] = yee.jz[q,k,r]
+            for q in range(conf.NxMesh):
+                for r in range(conf.NyMesh):
+                    for s in range(conf.NzMesh):
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 0] = yee.ex[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 1] = yee.ey[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 2] = yee.ez[q,r,s]
+                                                                                                        
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 3] = yee.bx[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 4] = yee.by[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 5] = yee.bz[q,r,s]
+                                                                                                        
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 6] = yee.jx[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 7] = yee.jy[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 8] = yee.jz[q,r,s]
 
         #print("r=0-------")
         #print(data[:,:,0,0])
@@ -256,17 +256,17 @@ class Communications(unittest.TestCase):
             (i, j) = c.index
             yee = c.getYee(0)
 
-            for r in range(-1, conf.NzMesh+1, 1):
-                for k in range(-1, conf.NyMesh+1, 1):
+            for s in range(-1, conf.NzMesh+1, 1):
+                for r in range(-1, conf.NyMesh+1, 1):
                     for q in range(-1, conf.NxMesh+1, 1):
                         #print("q k r ({},{},{})".format(q,k,r))
 
                         qq = wrap( i*conf.NxMesh + q, conf.Nx*conf.NxMesh )
-                        kk = wrap( j*conf.NyMesh + k, conf.Ny*conf.NyMesh )
-                        rr = wrap( 0*conf.NzMesh + r, conf.Nz*conf.NzMesh )
+                        rr = wrap( j*conf.NyMesh + r, conf.Ny*conf.NyMesh )
+                        ss = wrap( 0*conf.NzMesh + s, conf.Nz*conf.NzMesh )
                         #print( ref[m, qq, kk, rr]  )
                         #print(  yee.ex[q,k,r] )
-                        ref[m, qq, kk, rr] = yee.ex[q,k,r]
+                        ref[m, qq, rr, ss] = yee.ex[q,r,s]
             m += 1
 
     
