@@ -166,7 +166,6 @@ def insert_em(node, conf, ffunc):
                         yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
                         yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
 
-    
 
 
 # basic Conf file/class for PiC simulation testing
@@ -497,17 +496,19 @@ class PIC(unittest.TestCase):
     def test_filters(self):
         """ filter integration test with rest of the PIC functions"""
 
+        try:
+            plt.fig = plt.figure(1, figsize=(5,7))
+            plt.rc('font', family='serif', size=12)
+            plt.rc('xtick')
+            plt.rc('ytick')
 
-        plt.fig = plt.figure(1, figsize=(5,7))
-        plt.rc('font', family='serif', size=12)
-        plt.rc('xtick')
-        plt.rc('ytick')
-        
-        gs = plt.GridSpec(8, 1)
-        
-        axs = []
-        for ai in range(8):
-            axs.append( plt.subplot(gs[ai]) )
+            gs = plt.GridSpec(8, 1)
+
+            axs = []
+            for ai in range(8):
+                axs.append( plt.subplot(gs[ai]) )
+        except:
+            pass
 
 
         conf = Conf()
@@ -566,12 +567,15 @@ class PIC(unittest.TestCase):
                     tile = node.getTile(i,j)
                     tile.exchangeCurrents(node)
 
-            plotNode(axs[0], node, conf)
-            #plot2dParticles(axs[0], node, conf, downsample=0.1)
-            plot2dYee(axs[1], node, conf, 'rho')
-            plot2dYee(axs[2], node, conf, 'jx')
-            plot2dYee(axs[3], node, conf, 'jy')
-            plot2dYee(axs[4], node, conf, 'jz')
+            try:
+                plotNode(axs[0], node, conf)
+                #plot2dParticles(axs[0], node, conf, downsample=0.1)
+                plot2dYee(axs[1], node, conf, 'rho')
+                plot2dYee(axs[2], node, conf, 'jx')
+                plot2dYee(axs[3], node, conf, 'jy')
+                plot2dYee(axs[4], node, conf, 'jz')
+            except:
+                pass
 
             yee_ref = getYee2D(node, conf)
 
@@ -600,10 +604,13 @@ class PIC(unittest.TestCase):
 
             yee = getYee2D(node, conf)
 
-            plot2dYee(axs[5], node, conf, 'jx')
-            plot2dYee(axs[6], node, conf, 'jy')
-            plot2dYee(axs[7], node, conf, 'jz')
-            #saveVisz(lap, node, conf)
+            try:
+                plot2dYee(axs[5], node, conf, 'jx')
+                plot2dYee(axs[6], node, conf, 'jy')
+                plot2dYee(axs[7], node, conf, 'jz')
+                #saveVisz(lap, node, conf)
+            except:
+                pass
 
             for j in range(conf.Ny*conf.NyMesh):
                 for i in range(conf.Nx*conf.NxMesh):
@@ -657,7 +664,7 @@ class PIC(unittest.TestCase):
         #comm     = pypic.Communicator()
         currint  = pypic.ZigZag()
         analyzer = pypic.Analyzator()
-    
+
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 c = node.getTile(i,j)
@@ -704,7 +711,7 @@ class PIC(unittest.TestCase):
         ref[0:3,  7:10] = 4
         ref[7:10, 0:3 ] = 4
         #print(ref)
-        
+
         for j in [1]:
             for i in [1]:
                 c = node.getTile(i,j)
@@ -723,16 +730,18 @@ class PIC(unittest.TestCase):
         """
 
 
-        plt.fig = plt.figure(1, figsize=(5,7))
-        plt.rc('font', family='serif', size=12)
-        plt.rc('xtick')
-        plt.rc('ytick')
-        
-        gs = plt.GridSpec(5, 1)
-        
-        axs = []
-        for ai in range(5):
-            axs.append( plt.subplot(gs[ai]) )
+        try:
+            plt.fig = plt.figure(1, figsize=(5,7))
+            plt.rc('font', family='serif', size=12)
+            plt.rc('xtick')
+            plt.rc('ytick')
+            gs = plt.GridSpec(5, 1)
+
+            axs = []
+            for ai in range(5):
+                axs.append( plt.subplot(gs[ai]) )
+        except:
+            pass
 
 
         conf = Conf()
@@ -761,7 +770,7 @@ class PIC(unittest.TestCase):
         #comm     = pypic.Communicator()
         currint  = pypic.ZigZag()
         analyzer = pypic.Analyzator()
-    
+
 
         #deposit current
         for j in range(node.getNy()):
@@ -778,15 +787,17 @@ class PIC(unittest.TestCase):
                 tile.exchangeCurrents(node)
 
 
-        #plotNode(axs[0], node, conf)
-        plot2dParticles(axs[0], node, conf, downsample=0.1)
-        plot2dYee(axs[1], node, conf, 'rho')
-        plot2dYee(axs[2], node, conf, 'jx')
-        plot2dYee(axs[3], node, conf, 'jy')
-        plot2dYee(axs[4], node, conf, 'jz')
-        #saveVisz(-2, node, conf)
+        try:
+            #plotNode(axs[0], node, conf)
+            plot2dParticles(axs[0], node, conf, downsample=0.1)
+            plot2dYee(axs[1], node, conf, 'rho')
+            plot2dYee(axs[2], node, conf, 'jx')
+            plot2dYee(axs[3], node, conf, 'jy')
+            plot2dYee(axs[4], node, conf, 'jz')
+            #saveVisz(-2, node, conf)
+        except:
+            pass
 
-        
         for j in range(node.getNy()):
             for i in range(node.getNx()):
                 c = node.getTile(i,j)
@@ -799,7 +810,5 @@ class PIC(unittest.TestCase):
                         #self.assertEqual(yee.jx[l,m,0], 0.0 )
                         #self.assertEqual(yee.jy[l,m,0], 0.0 )
                         #self.assertEqual(yee.jz[l,m,0], 0.0 )
-
-
 
 

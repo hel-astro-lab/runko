@@ -171,16 +171,19 @@ class radiation(unittest.TestCase):
     def test_blackbody(self):
 
         if do_plots:
-            plt.fig = plt.figure(1, figsize=(3,3))
-            plt.rc('font', family='serif', size=12)
-            plt.rc('xtick')
-            plt.rc('ytick')
-            
-            gs = plt.GridSpec(1, 1)
-             
-            axs = []
-            for ai in range(1):
-                axs.append( plt.subplot(gs[ai]) )
+            try:
+                plt.fig = plt.figure(1, figsize=(3,3))
+                plt.rc('font', family='serif', size=12)
+                plt.rc('xtick')
+                plt.rc('ytick')
+                
+                gs = plt.GridSpec(1, 1)
+                 
+                axs = []
+                for ai in range(1):
+                    axs.append( plt.subplot(gs[ai]) )
+            except:
+                pass
 
         conf = Conf()
         conf.NxMesh = 3
@@ -214,17 +217,23 @@ class radiation(unittest.TestCase):
         self.assertEqual(Nprtcls, Nph)
 
         if do_plots:
-            axs[0].set_xlim(emin, emax)
-            #axs[0].set_ylim(1e-4, 1.2e-0)
-            axs[0].minorticks_on()
-            axs[0].set_xscale('log')
-            axs[0].set_yscale('log')
+            try:
+                axs[0].set_xlim(emin, emax)
+                #axs[0].set_ylim(1e-4, 1.2e-0)
+                axs[0].minorticks_on()
+                axs[0].set_xscale('log')
+                axs[0].set_yscale('log')
+            except:
+                pass
 
         ene = np.array(container.ene())
         phhist, edges = np.histogram(ene*511., np.logspace(np.log10(emin), np.log10(emax), nbins))
 
         if do_plots:
-            axs[0].bar(edges[:-1], phhist.astype(np.float32)/Nph, width=np.diff(edges), log=True)# number of photons per log energy
+            try:
+                axs[0].bar(edges[:-1], phhist.astype(np.float32)/Nph, width=np.diff(edges), log=True)# number of photons per log energy
+            except:
+                pass
 
         prtcl_sum=np.sum(phhist*edges[:-1])/Nph
         print("Energy of photons: {}".format(prtcl_sum))
@@ -233,7 +242,10 @@ class radiation(unittest.TestCase):
         print("Blackbody energy: {}".format(bbrad_sum))
 
 
-        plt.savefig("blackbody.pdf")
+        try:
+            plt.savefig("blackbody.pdf")
+        except:
+            pass
 
 
     
