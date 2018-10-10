@@ -58,48 +58,29 @@ h5io::Reader::read(
   //std::cout << "tile Nz=" << yee.Nz << "vs read value: " << Nz << "\n";
 
   // meshes
-  std::vector<Realf> arr;
+  std::vector<Realf> arr1, arr2, arr3, arr4, arr5, arr6, arr7, arr8, arr9, arr10;
 
-  arr.clear();
-  arr << gr["jx"];
-  yee.jx.unserialize(arr, Nx, Ny, Nz);
+  arr1  << gr["jx"];
+  arr2  << gr["jy"];
+  arr3  << gr["jz"];
+  arr4  << gr["ex"];
+  arr5  << gr["ey"];
+  arr6  << gr["ez"];
+  arr7  << gr["bx"];
+  arr8  << gr["by"];
+  arr9  << gr["bz"];
+  arr10 << gr["rho"];
 
-  arr.clear();
-  arr << gr["jy"];
-  yee.jy.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["jz"];
-  yee.jz.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["ex"];
-  yee.ex.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["ey"];
-  yee.ey.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["ez"];
-  yee.ez.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["bx"];
-  yee.bx.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["by"];
-  yee.by.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["bz"];
-  yee.bz.unserialize(arr, Nx, Ny, Nz);
-
-  arr.clear();
-  arr << gr["rho"];
-  yee.rho.unserialize(arr, Nx, Ny, Nz);
-
+  yee.jx.unserialize(arr1,   Nx, Ny, Nz);
+  yee.jy.unserialize(arr2,   Nx, Ny, Nz);
+  yee.jz.unserialize(arr3,   Nx, Ny, Nz);
+  yee.ex.unserialize(arr4,   Nx, Ny, Nz);
+  yee.ey.unserialize(arr5,   Nx, Ny, Nz);
+  yee.ez.unserialize(arr6,   Nx, Ny, Nz);
+  yee.bx.unserialize(arr7,   Nx, Ny, Nz);
+  yee.by.unserialize(arr8,   Nx, Ny, Nz);
+  yee.bz.unserialize(arr9,   Nx, Ny, Nz);
+  yee.rho.unserialize(arr10, Nx, Ny, Nz);
 
   // file handle is closed automatically here as it goes out-of-scope
   file.~File();
