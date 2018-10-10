@@ -8,9 +8,8 @@
 /// Write PlasmaTile content into a hdf5 data group
 template<size_t D>
 bool 
-h5io::Writer::write( 
-  const fields::Tile<D>& tile,
-  h5io::WriteMode::Analysis
+h5io::Writer::write2( 
+  const fields::Tile<D>& tile
     ) 
 {
 

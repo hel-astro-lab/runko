@@ -45,7 +45,7 @@ FIND_PACKAGE (HDF5)
 # openMP
 #see:
 # - https://stackoverflow.com/questions/46414660/macos-cmake-and-openmp
-OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" OFF)
+OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" On)
 
 
 # Find OpenMP

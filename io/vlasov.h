@@ -3,14 +3,14 @@
 #include "namer.h"
 #include "../vlasov/tile.h"
 #include "../vlasov/amr/mesh.h"
+#include "write_tags.h"
 
 
 /// Write vlv::Tile 
 template<size_t D>
 bool
 h5io::Writer::write(
-  const vlv::Tile<D>& tile,
-  h5io::WriteMode::Standard 
+  const vlv::Tile<D>& tile
   ) 
 {
 

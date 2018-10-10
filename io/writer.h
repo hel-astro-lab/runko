@@ -78,13 +78,13 @@ class Writer {
     // }
 
     template<size_t D>
-    bool write(const fields::Tile<D>& tile, WriteMode::Standard = WriteMode::standard);
+    bool write(const fields::Tile<D>& tile);
 
     template<size_t D>
-    bool write(const fields::Tile<D>& tile, WriteMode::Analysis);
+    bool write2(const fields::Tile<D>& tile);
 
     template<size_t D>
-    bool write(const vlv::Tile<D>& tile,    WriteMode::Standard = WriteMode::standard);
+    bool write(const vlv::Tile<D>& tile);
 
 
 

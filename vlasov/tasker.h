@@ -10,6 +10,7 @@
 
 #include "../io/writer.h"
 #include "../io/reader.h"
+#include "../io/write_tags.h"
 
 
 namespace vlv{
@@ -206,7 +207,7 @@ inline void writeAnalysis(
   for(auto cid : grid.getTileIds() ){
     const auto& tile 
       = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
-    writer.write(tile, h5io::WriteMode::analysis);
+    writer.write2(tile);
   }
 
 

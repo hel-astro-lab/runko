@@ -2,13 +2,14 @@
 
 #include "namer.h"
 #include "../em-fields/tile.h"
+#include "write_tags.h"
+
 
 /// Write PlasmaTile content into a hdf5 data group
 template<size_t D>
 bool 
 h5io::Writer::write( 
-  const fields::Tile<D>& tile,
-  h5io::WriteMode::Standard
+  const fields::Tile<D>& tile
   )
 {
   const auto& yee = tile.getConstYee();
