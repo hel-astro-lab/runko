@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import h5py
+import os.path
 
 import pycorgi
 import pyplasmabox.tools as plasma
@@ -132,53 +133,77 @@ def get_1d_meshes(prefix, lap, conf, spcs, vdir):
         fullNvz = fullNvz if conf.Nvz > 1 else 2*2**conf.refinement_level
         data = -1.0 * np.ones( (conf.Nx*conf.NxMesh, fullNvz) )
 
-    # initialize tile info
-    tinfo = TileInfo()
-    #tinfo.j = 0
-    tinfo.j = 0
-    tinfo.k = 0
-    #tinfo.q = 0
-    tinfo.r = 0
-    tinfo.s = 0
-    tinfo.ispcs = spcs
+    #read from preprocessed file if it exists
+    fname = prefix + "meshes_" + str(lap) + "-processed_" + str(spcs) + ".h5"
+    if os.path.isfile(fname):
+        print("reading from preprocesses file...")
+        f5 = h5py.File(fname,'r')
 
+        dset = f5['mesh']
+        data = np.array(f5['mesh'][:,:])
+        vmin = dset.attrs['vmin']
+        vmax = dset.attrs['vmax']
 
-    rank = 0 #TODO remove hard coded rank
-    fname = prefix + "meshes-" + str(rank) + "_" + str(lap) + ".h5"
-    f5 = h5py.File(fname,'r')
-    #print(fname)
+    else:
+        print("reading from raw files...")
 
-    # TODO: parallellize
-    for i in range(conf.Nx):
-        tinfo.i = i
-        for s in range(conf.NxMesh):
-            tinfo.q = s
+        # initialize tile info
+        tinfo = TileInfo()
+        #tinfo.j = 0
+        tinfo.j = 0
+        tinfo.k = 0
+        #tinfo.q = 0
+        tinfo.r = 0
+        tinfo.s = 0
+        tinfo.ispcs = spcs
 
-            vmesh = get_mesh(f5, tinfo)
-            pym = get_leaf_mesh(vmesh, conf.refinement_level)
-            
-            if vdir == "x":
-                sl = xSliceMid(pym) #slice from middle
+        rank = 0 #TODO remove hard coded rank
+        fname2 = prefix + "meshes-" + str(rank) + "_" + str(lap) + ".h5"
+        f5 = h5py.File(fname2,'r')
+        #print(fname2)
+
+        # TODO: parallellize
+        for i in range(conf.Nx):
+            tinfo.i = i
+            for s in range(conf.NxMesh):
+                tinfo.q = s
+
+                vmesh = get_mesh(f5, tinfo)
+                pym = get_leaf_mesh(vmesh, conf.refinement_level)
+                
+                if vdir == "x":
+                    sl = xSliceMid(pym) #slice from middle
+                    data[ i*conf.NxMesh + s, :] = sl
+
+                    dx = pym.xx[1]-pym.xx[0]
+                    vmin = pym.xx[0] -dx/2.0
+                    vmax = pym.xx[-1]+dx/1.0
+
+                elif vdir == "y":
+                    sl = ySliceMid(pym) #slice from middle
+                    data[ i*conf.NxMesh + s, :] = sl
+
+                    dx = pym.yy[1]-pym.yy[0]
+                    vmin = pym.yy[0] -dx/2.0
+                    vmax = pym.yy[-1]+dx/1.0
+                elif vdir == "z":
+                    sl = zSliceMid(pym) #slice from middle
+
+                    dx = pym.zz[1]-pym.zz[0]
+                    vmin = pym.zz[0] -dx/2.0
+                    vmax = pym.zz[-1]+dx/1.0
+
                 data[ i*conf.NxMesh + s, :] = sl
 
-                dx = pym.xx[1]-pym.xx[0]
-                vmin = pym.xx[0] -dx/2.0
-                vmax = pym.xx[-1]+dx/1.0
-            elif vdir == "y":
-                sl = ySliceMid(pym) #slice from middle
-                data[ i*conf.NxMesh + s, :] = sl
+        #writing the quick read file
+        print("writing preprocesses file...")
+        f5 = h5py.File(fname,'w')
+        dset = f5.create_dataset('mesh', data=data)
 
-                dx = pym.yy[1]-pym.yy[0]
-                vmin = pym.yy[0] -dx/2.0
-                vmax = pym.yy[-1]+dx/1.0
-            elif vdir == "z":
-                sl = zSliceMid(pym) #slice from middle
+        #dset = f5.create_dataset('meta')
+        dset.attrs['vmin'] = vmin
+        dset.attrs['vmax'] = vmax
 
-                dx = pym.zz[1]-pym.zz[0]
-                vmin = pym.zz[0] -dx/2.0
-                vmax = pym.zz[-1]+dx/1.0
-
-            data[ i*conf.NxMesh + s, :] = sl
 
     meshes = {
             'data': data,
