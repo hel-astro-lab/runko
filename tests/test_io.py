@@ -14,6 +14,8 @@ from combine_files import combine_tiles
 import injector
 from read_mesh import TileInfo
 from read_mesh import get_mesh
+
+import initialize as init
  
 class Conf:
 
@@ -497,5 +499,59 @@ class IO(unittest.TestCase):
                                         vm1 = block1[q,r,s]
                                         vm2 = block2[q,r,s]
                                         self.compareMeshes(vm1, vm2)
+
+
+
+    # Complicated restart from file with heterogeneous (boundary) tiles
+    def skip_test_restart(self):
+
+        conf = Conf()
+        conf.Nx = 5
+        conf.Ny = 1
+        conf.Nz = 1
+        conf.NxMesh = 5
+        conf.NyMesh = 1
+        conf.NzMesh = 1 
+        conf.outdir = "io_test_restart/"
+
+        if not os.path.exists( conf.outdir ):
+            os.makedirs(conf.outdir)
+
+        node = pycorgi.oneD.Node(conf.Nx, conf.Ny)
+        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        init.loadTiles(node, conf)
+    
+        #load boundaries
+        for i in [0, node.getNx()-1]:
+            for j in range(node.getNy()):
+                if i == 0:
+                    c = plasma.Tile_outflow_L(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+                    #set left (top) wall location
+                    c.fld1 = 1
+                    c.fld2 = 1
+
+                else:
+                    c = plasma.Tile_outflow_R(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+                    #set right (bottom) wall location
+                    l = conf.NxMesh-2
+                    iglob, jglob, kglob = globalIndx( (i,j), (l,0,0), conf)
+
+                    c.fld1 = iglob
+                    c.fld2 = iglob
+                
+                init.initialize_tile(c, i,j, node, conf)
+
+                #add it to the node
+                node.addTile(c, (i,)) 
+
+
+
+
+
+
+
 
 

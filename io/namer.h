@@ -2,6 +2,7 @@
 #include <tuple>
 #include <string>
 
+#include "../corgi/tile.h"
 
 
 namespace h5io {
@@ -75,7 +76,6 @@ class Namer {
     {
       name = prefix + "_" + to_string(lap) + extension;
     }
-      
 
 };
 
