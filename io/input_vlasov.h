@@ -88,12 +88,18 @@ h5io::Reader::read(
           vals << gr["vals"];
           mesh.unserialize(cids, vals);
 
-
         } // q
       } // r
     } // s
     ispc++;
   } // end of species
+
+
+  // overwrite also to other time steps
+  // TODO: Does not take into account multi-stepping schemes.
+  //       This only fixes boundary tile behavior.
+  auto& step1 = tile.steps.get(1);
+  step1 = step0;
 
 
   // file handle is closed automatically here as it goes out-of-scope
