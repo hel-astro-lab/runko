@@ -37,6 +37,11 @@ set (RAD_FILES
      pyrad.c++
      )
 
+set (IO_FILES 
+     ../io/writer.c++
+     ../io/reader.c++
+    )
+
 
 # python module creation
 #--------------------------------------------------
@@ -47,6 +52,7 @@ pybind11_add_module(pyplasmabox
                     ${VLV_FILES}
                     ${PIC_FILES}
                     ${RAD_FILES}
+                    #${IO_FILES}
                     )
 
 
