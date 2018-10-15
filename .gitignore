@@ -54,3 +54,6 @@ refs
 .ycm_extra_conf.py
 
 *.h5
+
+*.err
+*.out
