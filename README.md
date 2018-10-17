@@ -1,6 +1,6 @@
-# Kinetic plasma simulation toolbox
+# Modern C++-14/python3 kinetic plasma simulation toolbox
 
-Plasma-toolbox is a collection of simulation modules written in modern C++14/17 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and heavily relies on presenting the code as physical modules that can be combined or run individually.
+Plasma-toolbox is a collection of simulation modules written in modern C++14 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and relies on presenting the code as physical modules that can be either combined in a heterogenous fashion or run individually.
 
 
 ## Installation
@@ -13,6 +13,7 @@ Currently these include:
 - [cppitertools](https://github.com/ryanhaining/cppitertools) for various python-like iterators etc.
 - [ezh5](https://github.com/natj/ezh5) lazy template interface to HDF5 for easier usage (originally from [mileschen](https://github.com/mileschen360/ezh5))
 - [inih](https://github.com/benhoyt/inih) `.ini` file parser for configuration files.
+- [Eigen3](http://eigen.tuxfamily.org/index.php?title=Main_Page) for linear algebra
 
 
 ### Requirements
@@ -21,12 +22,11 @@ Your system should have these installed:
 - python3 for scripting
 - [HDF5](https://support.hdfgroup.org/HDF5/) for I/O
 - [CMake](https://cmake.org/) (>v3.0) for building and compiling
-- [Eigen3](http://eigen.tuxfamily.org/index.php?title=Main_Page) for linear algebra
 - [FFTW](http://www.fftw.org/) for Fourier transforms
 - [fmt](https://github.com/fmtlib/fmt) I/O formatting library
 
 On MacOS these should be (quite) easily obtained by using [homebrew](https://brew.sh/) and running.
-- `brew install gcc hdf5 python3 cmake eigen3 fftw fmt`
+- `brew install gcc hdf5 python3 cmake fftw fmt`
 
 Additionally, especially for larger jobs and better performance, consider installing:
 - MPI message passing library
@@ -42,7 +42,7 @@ mkdir build
 cd build
 cmake ..
 ```
-And make sure cmake finishes succesfully. After that, you can try and compile the framework as
+And make sure that cmake finishes succesfully. After that, you can try and compile the framework as
 ```
 make -j8
 ```
@@ -78,6 +78,7 @@ export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/analysis
 - `io`: input/output module
 - `pic`: Particle-in-Cell module
 - `vlasov`: Relativistic Vlasov module
+- `radiation`: Radiation module 
 
 
 
