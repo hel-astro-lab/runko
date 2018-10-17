@@ -1,4 +1,4 @@
-# Modern C++-14/python3 kinetic plasma simulation toolbox
+# Modern kinetic plasma simulation toolbox
 
 Plasma-toolbox is a collection of simulation modules written in modern C++14 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and relies on presenting the code as physical modules that can be either combined in a heterogenous fashion or run individually.
 
