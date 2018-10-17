@@ -856,12 +856,10 @@ class AdaptiveMesh {
     for(int rfl=refinement_level; rfl >= 0; rfl--) {
       cidn = get_cell_from_indices(ind, rfl);
 
-      const auto it = data.find(cid);
+      const auto it = data.find(cidn);
       if( it != data.end() ) return it->second;
 
-      for(size_t i=0; i<D; i++) {
-        ind[i] /= 2;
-      }
+      for(size_t i=0; i<D; i++) ind[i] /= 2;
     }
 
     // we went through the tree and did not find any existing cell
