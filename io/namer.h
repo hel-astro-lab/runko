@@ -17,7 +17,7 @@ std::tuple<size_t, size_t, size_t> expand_indices(
 {
   int my_i = static_cast<int>( std::get<0>(tile->index) );
   return std::make_tuple(my_i, 0, 0);
-};
+}
 
 // helper function to get variable length indices
 std::tuple<size_t, size_t, size_t> expand_indices( 
@@ -26,7 +26,7 @@ std::tuple<size_t, size_t, size_t> expand_indices(
   int my_i = static_cast<int>( std::get<0>(tile->index) );
   int my_j = static_cast<int>( std::get<1>(tile->index) );
   return std::make_tuple(my_i, my_j, 0);
-};
+}
 
 // helper function to get variable length indices
 std::tuple<size_t, size_t, size_t> expand_indices( 
@@ -36,7 +36,7 @@ std::tuple<size_t, size_t, size_t> expand_indices(
   int my_j = static_cast<int>( std::get<1>(tile->index) );
   int my_k = static_cast<int>( std::get<2>(tile->index) );
   return std::make_tuple(my_i, my_j,my_k );
-};
+}
 
 
 //standard numbering scheme
