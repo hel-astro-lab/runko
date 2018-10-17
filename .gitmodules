@@ -13,3 +13,6 @@
 [submodule "tools/sparsepp"]
 	path = tools/sparsepp
 	url = https://github.com/greg7mdp/sparsepp.git
+[submodule "tools/eigen"]
+	path = tools/eigen
+	url = https://github.com/eigenteam/eigen-git-mirror.git

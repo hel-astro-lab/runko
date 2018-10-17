@@ -18,10 +18,11 @@ set (FP_PRECISION DP)
 ##################################################
 # dependencies
 
-FIND_PACKAGE (EIGEN3 REQUIRED NO_MODULE)
-if(APPLE)
-    INCLUDE_DIRECTORIES (SYSTEM "$ENV{EIGEN3_INCLUDE_DIR}" )
-endif()
+#FIND_PACKAGE (EIGEN3 REQUIRED NO_MODULE)
+#if(APPLE)
+#    INCLUDE_DIRECTORIES (SYSTEM "$ENV{EIGEN3_INCLUDE_DIR}" )
+#endif()
+include_directories(tools/eigen/)
 
 
 # fmt preinstallation fails with intel compilers

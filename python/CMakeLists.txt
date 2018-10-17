@@ -1,7 +1,7 @@
 project (pyplasmabox)
 
 
-find_package(PYBIND11 REQUIRED)
+#find_package(PYBIND11 REQUIRED) #loaded externally from corgi
 #INCLUDE_DIRECTORIES ( "$ENV{pybind11_INCLUDE_DIR}" )
 
 set (TOOLS_FILES 
