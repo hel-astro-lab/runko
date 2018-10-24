@@ -16,9 +16,10 @@ h5io::Reader::read(
 
   std::string fname = 
     folder + "/fields-" + to_string(frank) + "_" + to_string(lap) + ".h5";
-  //std::cout << "reading file " << fname << std::endl;
+  std::cout << "reading file " << fname << std::endl;
     
   ezh5::File file(fname, H5F_ACC_RDONLY);
+  std::cout << "opened File file handle\n";
 
   //--------------------------------------------------
   // open group
@@ -29,6 +30,7 @@ h5io::Reader::read(
 
   // open individual group for the data
   auto gr = file["yee_"+ numbering];
+  std::cout << "opened gr\n";
 
 
   //--------------------------------------------------
@@ -83,6 +85,7 @@ h5io::Reader::read(
   yee.rho.unserialize(arr10, Nx, Ny, Nz);
 
   // file handle is closed automatically here as it goes out-of-scope
+  // TODO: seems that it does not...
   file.~File();
 
   return true;

@@ -17,7 +17,7 @@ from read_mesh import TileInfo
 from read_mesh import get_mesh
 
 import initialize as init
- 
+
 class Conf:
 
     Nx = 3
@@ -171,7 +171,7 @@ def filler(xloc, uloc, ispcs, conf):
     #plasma reaction
     omp = conf.cfl*conf.dx
     n0 = (omp**2.0)/conf.Nspecies
-    
+
     #velocity perturbation
     Lx = conf.Nx*conf.NxMesh*conf.dx
     kmode = conf.modes
@@ -189,6 +189,7 @@ class IO(unittest.TestCase):
 
         ##################################################
         # write
+        print("working in fields1D: ", os.getcwd())
 
         conf = Conf()
         conf.Nx = 3
@@ -212,6 +213,7 @@ class IO(unittest.TestCase):
 
         pyplasmabox.vlv.oneD.writeYee(node, 0, conf.outdir)
         
+        print("wrote hdf5")
         ##################################################
         # read using analysis tools
 
@@ -235,13 +237,16 @@ class IO(unittest.TestCase):
                                     self.assertAlmostEqual( arrs[i*NxM + q, j*NyM + r, k*NzM + s],  
                                                              ref[i*NxM + q, j*NyM + r, k*NzM + s, 0], places=6)
 
+        print("read using analysis tools")
         ##################################################
         # test reading back
         node2 = pycorgi.oneD.Node(conf.Nx, conf.Ny)
         node2.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
+        print("readinfg using ezh5")
         pyplasmabox.vlv.oneD.readYee(node2, 0, "io_test_1D")
+        print("read using c++ tools")
 
         yee1 = getYee(node,  conf)
         yee2 = getYee(node2, conf)
@@ -267,6 +272,7 @@ class IO(unittest.TestCase):
 
         ##################################################
         # write
+        print("working in fields2D: ", os.getcwd())
 
         conf = Conf()
         conf.Nx = 3
@@ -376,6 +382,7 @@ class IO(unittest.TestCase):
 
 
     def test_write_Mesh3V(self):
+        print("working in mesh3V: ", os.getcwd())
 
         ##################################################
         # write
