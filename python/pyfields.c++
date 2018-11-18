@@ -36,7 +36,7 @@ auto declare_Tile(
     .def("pushHalfB",          &fields::Tile<D>::pushHalfB)
     .def("depositCurrent",     &fields::Tile<D>::depositCurrent)
     .def("addAnalysisSpecies", &fields::Tile<D>::addAnalysisSpecies)
-    .def("updateBoundaries",   &fields::Tile<D>::updateBoundaries)
+    .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
     .def("exchangeCurrents",   &fields::Tile<D>::exchangeCurrents)
     .def("getYee",             &fields::Tile<D>::getYee, 
                                 py::arg("i")=0,

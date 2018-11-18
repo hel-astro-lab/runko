@@ -168,7 +168,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 PYBIND11_MODULE(pyplasma, m) {
 
   // Loading tile bindings from corgi library
-  py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile");
+  py::object corgi_tile = (py::object) py::module::import("pycorgi").attr("Tile");
 
 
   /// General class for handling Maxwell's equations
@@ -189,7 +189,7 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("getYee",           &fields::PlasmaTile::getYee, py::return_value_policy::reference)
     .def("getAnalysis",      &fields::PlasmaTile::getAnalysis, py::return_value_policy::reference)
     .def("addAnalysisSpecies", &fields::PlasmaTile::addAnalysisSpecies)
-    .def("updateBoundaries",  &fields::PlasmaTile::updateBoundaries)
+    .def("update_boundaries",  &fields::PlasmaTile::update_boundaries)
     .def("updateBoundaries2D",&fields::PlasmaTile::updateBoundaries2D)
     .def("exchangeCurrents",  &fields::PlasmaTile::exchangeCurrents)
     .def("exchangeCurrents2D",&fields::PlasmaTile::exchangeCurrents2D);
@@ -203,8 +203,8 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   // Loading node bindings from corgi library
-  py::object corgiNode = (py::object) py::module::import("pycorgi").attr("Node");
-  py::class_<vlasov::Grid>(m, "Grid", corgiNode)
+  py::object corgi_node = (py::object) py::module::import("pycorgi").attr("Node");
+  py::class_<vlasov::Grid>(m, "Grid", corgi_node)
     .def(py::init<size_t, size_t>());
 
   py::class_<fields::YeeLattice>(m, "YeeLattice")

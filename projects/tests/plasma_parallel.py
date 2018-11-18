@@ -185,9 +185,9 @@ def insert_em(node, conf):
 
     n0 = 1.0
 
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            c = node.getCellPtr(i,j)
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
+            c = node.get_tileptr(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     ymin = 0.0
     ymax = conf.dy*conf.Ny*conf.NyMesh
 
-    node.setGridLims(xmin, xmax, ymin, ymax)
+    node.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
     #node.initMpi()
@@ -299,14 +299,14 @@ if __name__ == "__main__":
 
 
     #Initial step backwards for velocity
-    for j in range(node.getNy()):
-        for i in range(node.getNx()):
-            cell = node.getCellPtr(i,j)
-            cell.updateBoundaries(node)
+    for j in range(node.get_Ny()):
+        for i in range(node.get_Nx()):
+            cell = node.get_tileptr(i,j)
+            cell.update_boundaries(node)
     plasma.stepInitial1d(node)
-    for j in range(node.getNy()):
-        for i in range(node.getNx()):
-            cell = node.getCellPtr(i,j)
+    for j in range(node.get_Ny()):
+        for i in range(node.get_Nx()):
+            cell = node.get_tileptr(i,j)
             cell.cycle()
 
 
@@ -372,30 +372,30 @@ if __name__ == "__main__":
         plasma.stepLocation(node)
 
         #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
                 cell.cycle()
 
         #current deposition from moving flux
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
                 cell.depositCurrent()
 
         #update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
+                cell.update_boundaries(node)
 
         #momentum step
         plasma.stepVelocity1d(node)
 
         #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
                 cell.cycle()
 
 
@@ -406,9 +406,9 @@ if __name__ == "__main__":
 
         #clip every cell
         if conf.clip:
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    cell = node.get_tileptr(i,j)
                     cell.clip()
 
         # analyze

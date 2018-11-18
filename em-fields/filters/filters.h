@@ -22,7 +22,7 @@ inline fields::YeeLattice& get_neighbor_yee(
     corgi::Node<2>& node)
 {
   auto cneigh = std::dynamic_pointer_cast<fields::Tile<2>>(
-        node.getTilePtr( tile.neighs(i, j) ));
+        node.get_tileptr( tile.neighs(i, j) ));
   return cneigh->getYee();
 }
 

@@ -302,13 +302,13 @@ void copyVertYee(
     int lhsI, int rhsI) 
 {
 
-  lhs.ex.copyVert(rhs.ex, lhsI, rhsI); 
-  lhs.ey.copyVert(rhs.ey, lhsI, rhsI); 
-  lhs.ez.copyVert(rhs.ez, lhsI, rhsI); 
+  lhs.ex.copy_vert(rhs.ex, lhsI, rhsI); 
+  lhs.ey.copy_vert(rhs.ey, lhsI, rhsI); 
+  lhs.ez.copy_vert(rhs.ez, lhsI, rhsI); 
 
-  lhs.bx.copyVert(rhs.bx, lhsI, rhsI); 
-  lhs.by.copyVert(rhs.by, lhsI, rhsI); 
-  lhs.bz.copyVert(rhs.bz, lhsI, rhsI); 
+  lhs.bx.copy_vert(rhs.bx, lhsI, rhsI); 
+  lhs.by.copy_vert(rhs.by, lhsI, rhsI); 
+  lhs.bz.copy_vert(rhs.bz, lhsI, rhsI); 
 
 }
 
@@ -333,13 +333,13 @@ void copyHorzYee(
     fields::YeeLattice& rhs, 
     int lhsJ, int rhsJ) 
 {
-  lhs.ex.copyHorz(rhs.ex, lhsJ, rhsJ); 
-  lhs.ey.copyHorz(rhs.ey, lhsJ, rhsJ); 
-  lhs.ez.copyHorz(rhs.ez, lhsJ, rhsJ); 
+  lhs.ex.copy_horz(rhs.ex, lhsJ, rhsJ); 
+  lhs.ey.copy_horz(rhs.ey, lhsJ, rhsJ); 
+  lhs.ez.copy_horz(rhs.ez, lhsJ, rhsJ); 
                                     
-  lhs.bx.copyHorz(rhs.bx, lhsJ, rhsJ); 
-  lhs.by.copyHorz(rhs.by, lhsJ, rhsJ); 
-  lhs.bz.copyHorz(rhs.bz, lhsJ, rhsJ); 
+  lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
+  lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
+  lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
 
 }
 
@@ -418,7 +418,7 @@ void addZdirPencilYee(
 
 /// Update Yee grid boundaries
 template<>
-void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node) 
+void fields::Tile<1>::update_boundaries(corgi::Node<1>& node) 
 {
   // target
   fields::YeeLattice& mesh = getYee();
@@ -426,7 +426,7 @@ void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(-1) ));
+        node.get_tileptr( neighs(-1) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // copy from right side to left
@@ -435,7 +435,7 @@ void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(+1) ));
+        node.get_tileptr( neighs(+1) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // copy from left side to right
@@ -446,7 +446,7 @@ void fields::Tile<1>::updateBoundaries(corgi::Node<1>& node)
 
 /// Update Yee grid boundaries
 template<>
-void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node) 
+void fields::Tile<2>::update_boundaries(corgi::Node<2>& node) 
 {
 
   // target
@@ -456,7 +456,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(-1, 0) ));
+        node.get_tileptr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // copy from right side to left
@@ -467,7 +467,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(+1, 0) ));
+        node.get_tileptr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // copy from left side to right
@@ -479,7 +479,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
   // top 
   auto ctop = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(0, +1) ));
+        node.get_tileptr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
   //copy from bottom side to top
@@ -490,7 +490,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
   // bottom
   auto cbot = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(0, -1) ));
+        node.get_tileptr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
   // copy from top side to bottom
@@ -504,7 +504,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
 
   auto ctopleft = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(-1, +1) ));
+        node.get_tileptr( neighs(-1, +1) ));
   fields::YeeLattice& mtopleft = ctopleft->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -514,7 +514,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
 
   auto ctopright = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(+1, +1) ));
+        node.get_tileptr( neighs(+1, +1) ));
   fields::YeeLattice& mtopright = ctopright->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -524,7 +524,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
 
   auto cbotleft = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(-1, -1) ));
+        node.get_tileptr( neighs(-1, -1) ));
   fields::YeeLattice& mbotleft = cbotleft->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -534,7 +534,7 @@ void fields::Tile<2>::updateBoundaries(corgi::Node<2>& node)
 
   auto cbotright = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(+1, -1) ));
+        node.get_tileptr( neighs(+1, -1) ));
   fields::YeeLattice& mbotright = cbotright->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -571,7 +571,7 @@ void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(-1) ));
+        node.get_tileptr( neighs(-1) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // add from right side to left
@@ -582,7 +582,7 @@ void fields::Tile<1>::exchangeCurrents(corgi::Node<1>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::Tile<1> >(
-        node.getTilePtr( neighs(+1) ));
+        node.get_tileptr( neighs(+1) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // add from left side to right
@@ -606,7 +606,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(-1, 0) ));
+        node.get_tileptr( neighs(-1, 0) ));
   fields::YeeLattice& mleft = cleft->getYee();
 
   // add from left to right
@@ -615,7 +615,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(+1, 0) ));
+        node.get_tileptr( neighs(+1, 0) ));
   fields::YeeLattice& mright = cright->getYee();
     
   // add from right to left
@@ -625,7 +625,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
   // top 
   auto ctop = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(0, +1) ));
+        node.get_tileptr( neighs(0, +1) ));
   fields::YeeLattice& mtop = ctop->getYee();
 
   //add from top to bottom
@@ -635,7 +635,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
   // bottom
   auto cbot = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(0, -1) ));
+        node.get_tileptr( neighs(0, -1) ));
   fields::YeeLattice& mbot = cbot->getYee();
     
   // add from bottom to top
@@ -647,7 +647,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
   // diagonals
   auto ctopleft = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(-1, +1) ));
+        node.get_tileptr( neighs(-1, +1) ));
   fields::YeeLattice& mtopleft = ctopleft->getYee();
 
   for(int h=0; h<  halo; h++)
@@ -658,7 +658,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
 
   auto ctopright = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(+1, +1) ));
+        node.get_tileptr( neighs(+1, +1) ));
   fields::YeeLattice& mtopright = ctopright->getYee();
 
   for(int h=1; h<= halo; h++)
@@ -668,7 +668,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
 
   auto cbotleft = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(-1, -1) ));
+        node.get_tileptr( neighs(-1, -1) ));
   fields::YeeLattice& mbotleft = cbotleft->getYee();
   
   for(int h=0; h<  halo; h++)
@@ -678,7 +678,7 @@ void fields::Tile<2>::exchangeCurrents(corgi::Node<2>& node)
 
   auto cbotright = 
     std::dynamic_pointer_cast<fields::Tile<2> >(
-        node.getTilePtr( neighs(+1, -1) ));
+        node.get_tileptr( neighs(+1, -1) ));
   fields::YeeLattice& mbotright = cbotright->getYee();
 
   for(int h=1; h<= halo; h++)

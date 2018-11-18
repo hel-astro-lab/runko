@@ -129,7 +129,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
     for i in range(conf.Nx):
         cid = n.id(i)
-        c = n.getTile(cid)
+        c = n.get_tile(cid)
 
         block = c.getPlasmaSpecies(0, spcs)
         for s in range(conf.NxMesh):
@@ -163,7 +163,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
     data = data/data.max()
 
     imshow(ax, data,
-           n.getXmin(), n.getXmax(), 
+           n.get_xmin(), n.get_xmax(), 
            vmin, vmax,
            cmap = 'plasma_r',
            vmin =   0.0,

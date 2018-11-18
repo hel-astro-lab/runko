@@ -23,7 +23,7 @@ inline pic::ParticleBlock& get_external_data(
 { 
   auto ind = tile.neighs(i, j); 
   uint64_t cid = grid.id( std::get<0>(ind), std::get<1>(ind) );
-  auto& external_tile = dynamic_cast<pic::Tile<2>&>( grid.getTile(cid) );
+  auto& external_tile = dynamic_cast<pic::Tile<2>&>( grid.get_tile(cid) );
 
   return external_tile.get_container(ispc);
 }
@@ -125,14 +125,14 @@ class Communicator {
     //auto maxs = tile.maxs;
 
     std::vector<Realf> mins = {
-      static_cast<Realf>( grid.getXmin() ),
-      static_cast<Realf>( grid.getYmin() ),
+      static_cast<Realf>( grid.get_xmin() ),
+      static_cast<Realf>( grid.get_ymin() ),
       static_cast<Realf>( 0.0            )
     };
 
     std::vector<Realf> maxs = {
-      static_cast<Realf>( grid.getXmax() ),
-      static_cast<Realf>( grid.getYmax() ),
+      static_cast<Realf>( grid.get_xmax() ),
+      static_cast<Realf>( grid.get_ymax() ),
       static_cast<Realf>( 1.0            )
     };
 

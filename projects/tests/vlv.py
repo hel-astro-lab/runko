@@ -208,9 +208,9 @@ def insert_em(node, conf):
 
     n0 = 1.0
 
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            c = node.getTile(i,j)
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
+            c = node.get_tile(i,j)
             yee = c.getYee(0)
 
             for l in range(conf.NxMesh):
@@ -295,7 +295,7 @@ if __name__ == "__main__":
     ymin = 0.0
     ymax = conf.dy*conf.Ny*conf.NyMesh
 
-    node.setGridLims(xmin, xmax, ymin, ymax)
+    node.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
     #node.initMpi()
@@ -333,14 +333,14 @@ if __name__ == "__main__":
         #insert_em(node, conf)
 
         #Initial step backwards for velocity
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
         plasma.stepInitial(node)
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.cycle()
 
 
@@ -406,27 +406,27 @@ if __name__ == "__main__":
 
         #cycle to the new fresh snapshot
         timer.start_comp("cycle1")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.cycle()
         timer.stop_comp("cycle1")
 
 
         #current deposition from moving flux
         timer.start_comp("cur-dep")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.depositCurrent()
         timer.stop_comp("cur-dep")
 
         #update boundaries
         timer.start_comp("bounds")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
         timer.stop_comp("bounds")
 
         #momentum step
@@ -437,9 +437,9 @@ if __name__ == "__main__":
 
         #cycle to the new fresh snapshot
         timer.start_comp("cycle2")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.cycle()
         timer.stop_comp("cycle2")
 
@@ -452,9 +452,9 @@ if __name__ == "__main__":
         #clip every tile
         timer.start_comp("clip")
         if conf.clip:
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     #tile.clip_neighbors()
                     tile.clip()
         timer.stop_comp("clip")

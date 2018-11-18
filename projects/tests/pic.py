@@ -56,7 +56,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
     for i in range(conf.Nx):
         cid = n.id(i,0)
-        c = n.getTile(cid)
+        c = n.get_tile(cid)
 
         container = c.get_container(spcs)
 
@@ -78,7 +78,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
     ax.minorticks_on()
 
-    ax.set_xlim(n.getXmin(), n.getXmax())
+    ax.set_xlim(n.get_xmin(), n.get_xmax())
     ax.set_ylim(-0.2, 0.2)
 
 
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     ymin = 0.0
     ymax = conf.Ny*conf.NyMesh
 
-    node.setGridLims(xmin, xmax, ymin, ymax)
+    node.set_grid_lims(xmin, xmax, ymin, ymax)
 
     loadTiles(node, conf)
 
@@ -289,74 +289,74 @@ if __name__ == "__main__":
         # advance Half B
 
         #update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #push B half
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.pushHalfB()
 
         #update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #--------------------------------------------------
         # move particles
 
         #interpolate fields
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 fintp.solve(tile)
 
         #pusher
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 pusher.solve(tile)
 
         #--------------------------------------------------
         # advance B half
 
         #push B half
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.pushHalfB()
 
         ##update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #--------------------------------------------------
         # advance E 
 
         #push E
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.pushE()
 
         #--------------------------------------------------
 
         #deposit current
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 currint.solve(tile)
 
         #exchange currents
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.exchangeCurrents(node)
 
         ##################################################
@@ -364,21 +364,21 @@ if __name__ == "__main__":
 
 
         #update particle boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 comm.check_outgoing_particles(tile)
 
         #copy particles
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 comm.get_incoming_particles(tile, node)
 
         #delete transferred particles
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 comm.delete_transferred_particles(tile)
 
         # field communication
@@ -387,9 +387,9 @@ if __name__ == "__main__":
         ##################################################
 
         #filter
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 flt.get_padded_current(tile, node)
 
                 #flt.fft_image_forward()
@@ -402,18 +402,18 @@ if __name__ == "__main__":
 
 
         ##cycle new and temporary currents
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.cycleCurrent()
 
         ##################################################
         
 
         #add current to E
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.depositCurrent()
 
 
@@ -437,9 +437,9 @@ if __name__ == "__main__":
             timer.start("io")
 
             #analyze
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     analyzer.analyze2d(tile)
 
 

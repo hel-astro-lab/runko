@@ -99,11 +99,11 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
 //    const std::string& pycorgi_name
 //    ) 
 //{
-//  py::object corgiNode = 
+//  py::object corgi_node = 
 //    (py::object) py::module::import("pycorgi").attr(pycorgi_name.c_str());
 //
 //  return 
-//    py::class_<vlv::Grid<D> >(m, pyclass_name.c_str(), corgiNode);
+//    py::class_<vlv::Grid<D> >(m, pyclass_name.c_str(), corgi_node);
 //      //.def()
 //}
 

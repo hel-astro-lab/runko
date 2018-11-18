@@ -44,7 +44,7 @@ class SpatialSolver {
   //{
   //  auto neigh_index   = tile.neighs(i, j); 
   //  uint64_t neigh_cid = grid.tileId( std::get<0>(neigh_index), std::get<1>(neigh_index) );
-  //  vlasov::VlasovTile& tile_neigh = dynamic_cast<vlasov::VlasovTile&>( grid.getTile(neigh_cid) );
+  //  vlasov::VlasovTile& tile_neigh = dynamic_cast<vlasov::VlasovTile&>( grid.get_tile(neigh_cid) );
 
   //  auto& species = tile_neigh.steps.get();
 

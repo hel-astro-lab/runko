@@ -49,8 +49,8 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     NzMesh = conf.NzMesh
 
     #grid spacing
-    xmin = node.getXmin()
-    ymin = node.getYmin()
+    xmin = node.get_xmin()
+    ymin = node.get_ymin()
 
     dx = 1.0 #conf.dx
     dy = 1.0 #conf.dy
@@ -114,17 +114,17 @@ def initialize_tile(c, i, j, n, conf):
 
 #load tiles into each node
 def loadTiles(n, conf):
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
-            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
-            if n.getMpiGrid(i,j) == n.rank:
+            if n.get_mpi_grid(i,j) == n.rank:
                 c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 
                 initialize_tile(c, i, j, n, conf)
 
                 #add it to the node
-                n.addTile(c, (i,j)) 
+                n.add_tile(c, (i,j)) 
 
 
 

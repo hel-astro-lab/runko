@@ -157,14 +157,14 @@ class Mesh {
     }
 
     template<int H2>
-    void copyVert(Mesh<T, H2>& rhs, int lhsI, int rhsI);
+    void copy_vert(Mesh<T, H2>& rhs, int lhsI, int rhsI);
 
     template<int H2>
     void addVert(Mesh<T, H2>& rhs, int lhsI, int rhsI);
 
 
     template<int H2>
-    void copyHorz(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
+    void copy_horz(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
 
     template<int H2>
     void addHorz(Mesh<T, H2>& rhs, int lhsJ, int rhsJ);
@@ -354,7 +354,7 @@ inline Mesh<T,H> operator/(Mesh<T,H> lhs, const T& rhs) {
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and ignoring it
 template <class T, int H>
 template <int H2>
-void Mesh<T,H>::copyVert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
+void Mesh<T,H>::copy_vert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
@@ -383,7 +383,7 @@ void Mesh<T,H>::addVert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
 /// Copy horizontal slice 
 template <class T, int H>
 template <int H2>
-void Mesh<T,H>::copyHorz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
+void Mesh<T,H>::copy_horz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
   if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 

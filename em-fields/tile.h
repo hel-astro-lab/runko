@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../corgi/tile.h"
+#include "../corgi/corgi.h"
 
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
@@ -216,7 +217,7 @@ class Tile :
 
   //--------------------------------------------------
 
-  virtual void updateBoundaries(  corgi::Node<D>& node);
+  virtual void update_boundaries(  corgi::Node<D>& node);
 
   virtual void exchangeCurrents(  corgi::Node<D>& node);
 
