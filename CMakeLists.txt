@@ -86,6 +86,8 @@ set (WARNING_FLAGS
         -Wall -Wextra -Wpedantic -Wno-missing-braces -g
     >
 )
+#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -h gnu")
+
 
 #-------------------------------------------------- 
 

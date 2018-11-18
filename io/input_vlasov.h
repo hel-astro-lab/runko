@@ -103,6 +103,7 @@ h5io::Reader::read(
 
 
   // file handle is closed automatically here as it goes out-of-scope
+  // TODO: seems that it does not...
   file.~File();
 
   return true;
