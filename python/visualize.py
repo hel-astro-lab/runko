@@ -7,6 +7,7 @@ except:
     pass
 
 import numpy as np
+import sys
 
 
 Nrank = 4
@@ -21,6 +22,7 @@ def imshow(ax,
            vmin = 0.0,
            vmax = 1.0,
            clip = -1.0,
+           cap = None,
           ):
 
     ax.clear()
@@ -40,6 +42,9 @@ def imshow(ax,
         mgrid = np.ma.masked_where( np.logical_and(cmin <= grid, grid <= cmax), grid)
     else:
         mgrid = np.ma.masked_where(grid <= clip, grid)
+
+    if cap != None:
+        mgrid = np.clip(mgrid, cap )
     
     mgrid = mgrid.T
     im = ax.imshow(mgrid,
@@ -79,18 +84,24 @@ def plotNode(ax, n, conf):
 
         #check dublicates
         if tmp_grid[i,j] != -1.0:
-            print("{}: ERROR in real tiles at ({},{})".format(n.rank, i,j))
+            print("{}: ERROR in real tiles at ({},{})".format(n.rank(), i,j))
             sys.exit()
         tmp_grid[i,j] = c.communication.owner
 
-    #XXX add back
+    #XXX add back / now combined with a full loop 
     #for cid in n.getVirtuals():
     #    c = n.getTile( cid )
-    #    (i,j) = c.index
-    #    if tmp_grid[i,j] != -1.0:
-    #        print("{}: ERROR in virtual tiles at ({},{})".format(n.rank, i,j))
-    #        sys.exit()
-    #    tmp_grid[i,j] = c.owner
+    #    try:
+    #        (i,j) = c.index
+    #    except:
+    #        (i,) = c.index
+    #        j = 0
+
+    #    #if tmp_grid[i,j] != -1.0:
+    #    #    print("{}: ERROR in virtual tiles at ({},{})".format(n.rank, i,j))
+    #    #    sys.exit()
+    #    tmp_grid[i,j] = c.communication.owner
+
 
     imshow(ax, tmp_grid, 
             n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
@@ -125,14 +136,18 @@ def plotNode(ax, n, conf):
 
     #for cid in n.getVirtuals():
     #    c = n.getTile( cid )
-    #    (i,j) = c.index
+    #    try:
+    #        (i,j) = c.index
+    #    except:
+    #        (i,) = c.index
+    #        j = 0
     #    ix = n.getXmin() + n.getXmax()*(i+0.5)/n.getNx()
     #    jy = n.getYmin() + n.getYmin()*(j+0.5)/n.getNy()
     #    label = "Vir"
-    #    ax.text(jy, ix, label, ha='center',va='center')
+    #    ax.text(ix, jy, label, ha='center',va='center')
 
     #XXX add back
-    #ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getTileIds() )))
+    ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getTileIds() )))
 
     ax.set_ylabel('node')
 
@@ -174,7 +189,7 @@ def plotTileBoundaries(ax, node, conf):
 def saveVisz(lap, n, conf):
 
     slap = str(lap).rjust(4, '0')
-    fname = conf.outdir + '/node_{}_{}.png'.format(n.rank, slap)
+    fname = conf.outdir + '/node_{}_{}.png'.format(n.rank(), slap)
     plt.savefig(fname)
 
 

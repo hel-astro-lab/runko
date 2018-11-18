@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../corgi/tile.h"
-#include "../corgi/corgi.h"
 
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
