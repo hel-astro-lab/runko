@@ -1,4 +1,4 @@
-#!/bin/bash -l
+#!/bin/bash
 #SBATCH -A 2017-12-57
 #SBATCH -J pytests
 #SBATCH --output=%J.out
@@ -9,13 +9,6 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH -c 1
 
-module load git
-module load anaconda
-module load fftw
-module load cdt/17.10
-module load hdf5
-
-
 cd $PLASMABOXDIR
-aprun -n 1 -N 1 -d 1 python -m unittest discover -s tests/ -v
+aprun -n 1 -N 1 -d 1 python3 -m unittest discover -s tests/ -v
 

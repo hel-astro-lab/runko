@@ -83,6 +83,7 @@ h5io::Reader::read(
   yee.rho.unserialize(arr10, Nx, Ny, Nz);
 
   // file handle is closed automatically here as it goes out-of-scope
+  // TODO: seems that it does not...
   file.~File();
 
   return true;

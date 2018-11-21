@@ -1,3 +1,4 @@
+from mpi4py import MPI
 import unittest
 
 import os
@@ -16,7 +17,7 @@ from read_mesh import TileInfo
 from read_mesh import get_mesh
 
 import initialize as init
- 
+
 class Conf:
 
     Nx = 3
@@ -170,7 +171,7 @@ def filler(xloc, uloc, ispcs, conf):
     #plasma reaction
     omp = conf.cfl*conf.dx
     n0 = (omp**2.0)/conf.Nspecies
-    
+
     #velocity perturbation
     Lx = conf.Nx*conf.NxMesh*conf.dx
     kmode = conf.modes
@@ -188,7 +189,6 @@ class IO(unittest.TestCase):
 
         ##################################################
         # write
-
         conf = Conf()
         conf.Nx = 3
         conf.Ny = 1
@@ -210,7 +210,7 @@ class IO(unittest.TestCase):
         fill_yee(node, ref, conf)
 
         pyplasmabox.vlv.oneD.writeYee(node, 0, conf.outdir)
-        
+
         ##################################################
         # read using analysis tools
 
@@ -375,7 +375,6 @@ class IO(unittest.TestCase):
 
 
     def test_write_Mesh3V(self):
-
         ##################################################
         # write
         conf = Conf()

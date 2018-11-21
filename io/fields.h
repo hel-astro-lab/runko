@@ -22,14 +22,14 @@ h5io::Writer::write(
   auto gr = file["yee_"+ numbering];
 
   // tile location inside node
-  gr["i"] = std::get<0>(my_ind);
-  gr["j"] = std::get<1>(my_ind);
-  gr["k"] = std::get<2>(my_ind);
+  gr["i"] = static_cast<int>( std::get<0>(my_ind) );
+  gr["j"] = static_cast<int>( std::get<1>(my_ind) );
+  gr["k"] = static_cast<int>( std::get<2>(my_ind) );
 
   // size
-  gr["Nx"] = yee.Nx;
-  gr["Ny"] = yee.Ny;
-  gr["Nz"] = yee.Nz;
+  gr["Nx"] = static_cast<int>( yee.Nx );
+  gr["Ny"] = static_cast<int>( yee.Ny );
+  gr["Nz"] = static_cast<int>( yee.Nz );
 
   //--------------------------------------------------
   // Yee lattice quantities
