@@ -16,7 +16,7 @@ from visualize import plotNode
 from visualize_amr import plotXmesh
 from visualize import plotJ, plotE, plotDens
 from visualize import saveVisz
-from visualize import getYee
+from visualize import get_yee
 
 import injector
 
@@ -100,7 +100,7 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     ymin = 0.0
     ymax = conf.dy*conf.Ny*conf.NyMesh
 
-    node.setGridLims(xmin, xmax, ymin, ymax)
+    node.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
     #node.initMpi()
@@ -232,57 +232,57 @@ if __name__ == "__main__":
         ##move vlasov fluid
 
         #update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
+                cell.update_boundaries(node)
 
         #momentum step
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
+        #for j in range(node.get_Ny()):
+        #    for i in range(node.get_Nx()):
+        #        cell = node.get_tileptr(i,j)
         #        vsol.solve(cell)
-        plasma.stepVelocity1d(node)
+        plasma.step_velocity_1d(node)
 
 
         #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
                 cell.cycle()
 
         #spatial step
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
-        #        cell = node.getCellPtr(i,j)
+        #for j in range(node.get_Ny()):
+        #    for i in range(node.get_Nx()):
+        #        cell = node.get_tileptr(i,j)
         #        ssol.solve(cell, node)
-        plasma.stepLocation(node)
+        plasma.step_location(node)
 
         #cycle to the new fresh snapshot
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
                 cell.cycle()
 
         #B field second half update
 
         #E field (Ampere's law)
         #for cid in node.getCellIds():
-        #    c = node.getCellPtr( cid )
-        #    c.pushE()
+        #    c = node.get_tileptr( cid )
+        #    c.push_e()
 
 
         #current deposition from moving flux
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                cell = node.getCellPtr(i,j)
-                cell.depositCurrent()
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                cell = node.get_tileptr(i,j)
+                cell.deposit_current()
 
         #clip every cell
         if conf.clip:
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    cell = node.getCellPtr(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    cell = node.get_tileptr(i,j)
                     cell.clip()
 
         # analyze

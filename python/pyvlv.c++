@@ -54,7 +54,7 @@ class PyMomentumSolver : public momsol {
     using momsol::MomentumSolver;
     using momsol::solve;
 
-    void solveMesh( 
+    void solve_mesh( 
         AM3d& mesh0, 
         AM3d& mesh1, 
         std::array<Realf, 3>& E,
@@ -64,7 +64,7 @@ class PyMomentumSolver : public momsol {
       PYBIND11_OVERLOAD_PURE(
           void, 
           momsol, 
-          solveMesh, 
+          solve_mesh, 
           mesh0, mesh1, E, B, params 
           );
     }
@@ -93,17 +93,17 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
 // generator for vlv::Grid 
 
 //template<size_t D>
-//auto declare_Grid(
+//auto declare_grid(
 //    py::module& m,
 //    const std::string& pyclass_name,
 //    const std::string& pycorgi_name
 //    ) 
 //{
-//  py::object corgiNode = 
+//  py::object corgi_node = 
 //    (py::object) py::module::import("pycorgi").attr(pycorgi_name.c_str());
 //
 //  return 
-//    py::class_<vlv::Grid<D> >(m, pyclass_name.c_str(), corgiNode);
+//    py::class_<vlv::Grid<D> >(m, pyclass_name.c_str(), corgi_node);
 //      //.def()
 //}
 
@@ -112,7 +112,7 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
 // generator for vlv::Tile 
 
 template<size_t D>
-auto declare_Tile(
+auto declare_tile(
     py::module& m,
     const std::string& pyclass_name
     ) 
@@ -126,9 +126,9 @@ auto declare_Tile(
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",        &vlv::Tile<D>::dx)
     .def_readwrite("threshold", &vlv::Tile<D>::threshold)
-    .def("getPlasmaSpecies", [](vlv::Tile<D>& tile, size_t i, size_t s) 
+    .def("get_plasma_species", [](vlv::Tile<D>& tile, size_t i, size_t s) 
         { return tile.steps.get(i).at(s); }, py::return_value_policy::reference)
-    .def("insertInitialSpecies", [](vlv::Tile<D>& c, 
+    .def("insert_initial_species", [](vlv::Tile<D>& c, 
                                     std::vector<vlv::PlasmaBlock> species){
         // push twice to initialize both time steps (current and future)
         c.steps.push_back(species);
@@ -149,7 +149,7 @@ auto declare_Tile(
 namespace outflow {
   // generator for outflow tile
   template<size_t D, int S>
-    auto declare_Tile(
+    auto declare_tile(
         py::module& m,
         const std::string& pyclass_name) 
     {
@@ -168,7 +168,7 @@ namespace outflow {
 namespace piston {
   // generator for piston tile
   template<size_t D>
-    auto declare_Tile(
+    auto declare_tile(
         py::module& m,
         const std::string& pyclass_name) 
     {
@@ -241,7 +241,7 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
   // Tile bindings
     
-  auto t1 = declare_Tile<1>(m_1d, "Tile");
+  auto t1 = declare_tile<1>(m_1d, "Tile");
 
 
   //--------------------------------------------------
@@ -267,7 +267,7 @@ void bind_vlv(py::module& m_sub)
   vvsol
     .def(py::init<>())
     .def("solve",     &vlv::MomentumSolver<Realf,1,1>::solve)
-    .def("solveMesh", &vlv::MomentumSolver<Realf,1,1>::solveMesh);
+    .def("solve_mesh", &vlv::MomentumSolver<Realf,1,1>::solve_mesh);
 
   // AMR Lagrangian solver
   py::class_<vlv::AmrMomentumLagrangianSolver<Realf,1,1>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
@@ -301,26 +301,26 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
 
-  m_1d.def("stepInitial",    &vlv::stepInitial<1>);
-  m_1d.def("stepLocation",   &vlv::stepLocation);
-  m_1d.def("stepVelocity",   &vlv::stepVelocity<1>);
-  m_1d.def("stepVelocityGravity",   &vlv::stepVelocityGravity<1>);
+  m_1d.def("initial_step",    &vlv::initial_step<1>);
+  m_1d.def("step_location",   &vlv::step_location);
+  m_1d.def("step_velocity",   &vlv::step_velocity<1>);
+  m_1d.def("step_velocity_with_gravity",   &vlv::step_velocity_with_gravity<1>);
 
   m_1d.def("analyze",        &vlv::analyze);
-  m_1d.def("writeYee",       &vlv::writeYee<1>);
-  m_1d.def("writeAnalysis",  &vlv::writeAnalysis<1>);
-  m_1d.def("writeMesh",      &vlv::writeMesh<1>);
+  m_1d.def("write_yee",       &vlv::write_yee<1>);
+  m_1d.def("write_analysis",  &vlv::write_analysis<1>);
+  m_1d.def("write_mesh",      &vlv::write_mesh<1>);
 
-  m_1d.def("readYee",        &vlv::readYee<1>);
-  m_1d.def("readMesh",       &vlv::readMesh<1>);
+  m_1d.def("read_yee",        &vlv::read_yee<1>);
+  m_1d.def("read_mesh",       &vlv::read_mesh<1>);
 
 
   //--------------------------------------------------
   // boundaries
-  auto tf_R = outflow::declare_Tile<1,+1>(m_1d, "Tile_outflow_L");
-  auto tf_L = outflow::declare_Tile<1,-1>(m_1d, "Tile_outflow_R");
+  auto tf_R = outflow::declare_tile<1,+1>(m_1d, "Tile_outflow_L");
+  auto tf_L = outflow::declare_tile<1,-1>(m_1d, "Tile_outflow_R");
 
-  //auto tp = piston::declare_Tile<1>(m_1d, "Tile_piston");
+  //auto tp = piston::declare_tile<1>(m_1d, "Tile_piston");
   
 
 
@@ -329,10 +329,10 @@ void bind_vlv(py::module& m_sub)
   // 2D bindings
 
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
-  m_2d.def("writeYee",       &vlv::writeYee<2>);
-  m_2d.def("writeAnalysis",  &vlv::writeAnalysis<2>);
+  m_2d.def("write_yee",       &vlv::write_yee<2>);
+  m_2d.def("write_analysis",  &vlv::write_analysis<2>);
 
-  m_2d.def("readYee",        &vlv::readYee<2>);
+  m_2d.def("read_yee",        &vlv::read_yee<2>);
 
 
 }

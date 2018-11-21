@@ -13,7 +13,7 @@ class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T, D> {
 
     typedef std::array<T, 3> vec;
 
-    virtual void solveMesh( 
+    virtual void solve_mesh( 
         toolbox::AdaptiveMesh<T, 3>& mesh0,
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& Einc,

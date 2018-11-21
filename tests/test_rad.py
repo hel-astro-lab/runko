@@ -264,7 +264,7 @@ class radiation(unittest.TestCase):
         conf.update_bbox()
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         c = pyrad.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         init_pic.initialize_tile(c, 0, 0, node, conf)

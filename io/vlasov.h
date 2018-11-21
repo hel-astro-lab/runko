@@ -22,7 +22,7 @@ h5io::Writer::write(
   auto gr1 = file["tile-"+numbering];
 
   // get reference to the current time step 
-  //std::cout << "writing rotator step:" << tile.steps.currentStep << "to h5\n";
+  //std::cout << "writing rotator step:" << tile.steps.current_step << "to h5\n";
   const auto& step0 = tile.steps.get();
 
   // loop over different particle species 

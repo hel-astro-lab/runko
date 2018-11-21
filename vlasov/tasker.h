@@ -16,7 +16,7 @@
 namespace vlv{
 
 
-inline void stepLocation( corgi::Node<1>& grid )
+inline void step_location( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -24,17 +24,17 @@ inline void stepLocation( corgi::Node<1>& grid )
 #pragma omp single
     {
 
-      for(auto cid : grid.getTileIds() ){
+      for(auto cid : grid.get_tile_ids() ){
 #pragma omp task
         {
             
           auto& tile 
-            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
 
           //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
           //ssol.solve(tile, grid);
             
-          tile.stepLocation(grid);
+          tile.step_location(grid);
         }// end of omp task
       }
 
@@ -45,7 +45,7 @@ inline void stepLocation( corgi::Node<1>& grid )
 }
 
 template<int V>
-void stepInitial( corgi::Node<1>& grid )
+void initial_step( corgi::Node<1>& grid )
 {
 
   vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
@@ -55,11 +55,11 @@ void stepInitial( corgi::Node<1>& grid )
     #pragma omp single 
     {
 
-      for(auto cid : grid.getTileIds() ){
+      for(auto cid : grid.get_tile_ids() ){
         #pragma omp task firstprivate(vsol)
         {
           auto& tile 
-            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
           vsol.solve(tile, -0.5);
         }// end of omp task
       }
@@ -74,7 +74,7 @@ void stepInitial( corgi::Node<1>& grid )
 
 
 template<int V>
-void stepVelocity( corgi::Node<1>& grid )
+void step_velocity( corgi::Node<1>& grid )
 {
   vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
 
@@ -83,11 +83,11 @@ void stepVelocity( corgi::Node<1>& grid )
     #pragma omp single
     {
 
-      for(auto cid : grid.getTileIds() ){
+      for(auto cid : grid.get_tile_ids() ){
         #pragma omp task firstprivate(vsol)
         {
           auto& tile 
-            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
           vsol.solve(tile);
         }// end of omp task
       }
@@ -99,7 +99,7 @@ void stepVelocity( corgi::Node<1>& grid )
 }
 
 template<int V>
-void stepVelocityGravity( 
+void step_velocity_with_gravity( 
     corgi::Node<1>& grid,
     Realf g0,
     Realf Lx
@@ -113,11 +113,11 @@ void stepVelocityGravity(
     #pragma omp single
     {
 
-      for(auto cid : grid.getTileIds() ){
+      for(auto cid : grid.get_tile_ids() ){
         #pragma omp task firstprivate(vsol)
         {
           auto& tile 
-            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
           vsol.solve(tile);
         }// end of omp task
       }
@@ -132,12 +132,12 @@ void stepVelocityGravity(
 
 /// Update Yee lattice boundaries
 /*
-void updateBoundaries()
+void update_boundaries()
 {
 
-  for(auto cid : getTileIds() ){
-    vlasov::VlasovTile& tile = dynamic_cast<vlasov::VlasovTile& >(getTile( cid ));
-    tile.updateBoundaries( *this );
+  for(auto cid : get_tile_ids() ){
+    vlasov::VlasovTile& tile = dynamic_cast<vlasov::VlasovTile& >(get_tile( cid ));
+    tile.update_boundaries( *this );
   }
 
 }
@@ -153,11 +153,11 @@ inline void analyze( corgi::Node<1>& grid )
     #pragma omp single
     {
 
-      for(auto cid : grid.getTileIds() ){
+      for(auto cid : grid.get_tile_ids() ){
         #pragma omp task firstprivate(analyzator)
         {
           auto& tile 
-            = dynamic_cast<vlv::Tile<1>&>(grid.getTile( cid ));
+            = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
           analyzator.analyze(tile);
         }// end of omp task
       }
@@ -171,7 +171,7 @@ inline void analyze( corgi::Node<1>& grid )
 
 
 template<size_t D>
-inline void writeYee( 
+inline void write_yee( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir
@@ -179,12 +179,12 @@ inline void writeYee(
 {
 
   std::string prefix = dir + "fields-"; 
-  prefix += std::to_string(grid.rank);
+  prefix += std::to_string(grid.comm.rank());
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.getTileIds() ){
+  for(auto cid : grid.get_tile_ids() ){
     const auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile);
   }
 
@@ -193,7 +193,7 @@ inline void writeYee(
 
 
 template<size_t D>
-inline void writeAnalysis( 
+inline void write_analysis( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir
@@ -201,12 +201,12 @@ inline void writeAnalysis(
 {
 
   std::string prefix = dir + "analysis-"; 
-  prefix += std::to_string(grid.rank);
+  prefix += std::to_string(grid.comm.rank());
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.getTileIds() ){
+  for(auto cid : grid.get_tile_ids() ){
     const auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
     writer.write2(tile);
   }
 
@@ -216,7 +216,7 @@ inline void writeAnalysis(
 
 
 template<size_t D>
-inline void writeMesh( 
+inline void write_mesh( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir 
@@ -224,12 +224,12 @@ inline void writeMesh(
 {
 
   std::string prefix = dir + "meshes-"; 
-  prefix += std::to_string(grid.rank);
+  prefix += std::to_string(grid.comm.rank());
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.getTileIds() ){
+  for(auto cid : grid.get_tile_ids() ){
     const auto& tile 
-      = dynamic_cast<vlv::Tile<D>&>(grid.getTile( cid ));
+      = dynamic_cast<vlv::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile);
   }
 
@@ -238,7 +238,7 @@ inline void writeMesh(
 
 
 template<size_t D>
-inline void readYee( 
+inline void read_yee( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir 
@@ -247,9 +247,9 @@ inline void readYee(
 
   h5io::Reader reader(dir, lap);
 
-  for(auto cid : grid.getTileIds() ){
+  for(auto cid : grid.get_tile_ids() ){
     auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.getTile( cid ));
+      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
     reader.read(tile);
   }
 
@@ -257,7 +257,7 @@ inline void readYee(
 
 
 template<size_t D>
-inline void readMesh( 
+inline void read_mesh( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir 
@@ -265,9 +265,9 @@ inline void readMesh(
 {
   h5io::Reader reader(dir, lap);
 
-  for(auto cid : grid.getTileIds() ){
+  for(auto cid : grid.get_tile_ids() ){
     auto& tile 
-      = dynamic_cast<vlv::Tile<D>&>(grid.getTile( cid ));
+      = dynamic_cast<vlv::Tile<D>&>(grid.get_tile( cid ));
     reader.read(tile);
   }
 }

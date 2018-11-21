@@ -27,7 +27,7 @@ double modf(double arg, double* iptr) { return modf(arg, iptr); }
 
 
 template<typename T, int D, int V>
-void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh( 
+void vlv::AmrMomentumLagrangianSolver<T,D,V>::solve_mesh( 
         toolbox::AdaptiveMesh<T, 3>& mesh0,
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& Einc,
@@ -98,7 +98,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
         // TODO specialize to value & gradient instead of just value
         refine_indicator   = val/max_val;
         unrefine_indicator = val/max_val;
-        adapter.checkCell(mesh1, cid, refine_indicator, unrefine_indicator);
+        adapter.check_cell(mesh1, cid, refine_indicator, unrefine_indicator);
 
         mesh1.set(cid, val);
       }
@@ -132,7 +132,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solveMesh(
 
       refine_indicator   = val/max_val;
       unrefine_indicator = val/max_val;
-      adapter.checkCell(mesh1, cid, refine_indicator, unrefine_indicator);
+      adapter.check_cell(mesh1, cid, refine_indicator, unrefine_indicator);
     }
 
     // now unrefine 

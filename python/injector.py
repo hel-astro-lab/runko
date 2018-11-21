@@ -26,8 +26,8 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     NzMesh = conf.NzMesh
 
     #grid spacing
-    xmin = node.getXmin()
-    ymin = node.getYmin()
+    xmin = node.get_xmin()
+    ymin = node.get_ymin()
 
     dx = conf.dx
     dy = conf.dy
@@ -147,7 +147,7 @@ def inject_internal(i,j,
     
     #get tile & its content
     cid    = node.id(i)
-    c      = node.getTile(cid) #get tile ptr
+    c      = node.get_tile(cid) #get tile ptr
     
     # loop over species
     species = []
@@ -185,7 +185,7 @@ def inject_internal(i,j,
                     block[l,m,n] = vmesh
         species.append(block)
     
-    c.insertInitialSpecies(species)
+    c.insert_initial_species(species)
 
 
 #inject plasma into tiles
@@ -198,7 +198,7 @@ def inject_parallel(
 
     #multiprocessing 
     pool = Pool() 
-    nxnynz = [(i,j) for i in range(node.getNx()) for j in range(node.getNy()) ]
+    nxnynz = [(i,j) for i in range(node.get_Nx()) for j in range(node.get_Ny()) ]
     print("pool for injector:", nxnynz)
     #pool.map(inject_internal, nxnynz)
     pool.map(partial(inject_internal,
@@ -226,10 +226,10 @@ def inject(
     sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
 
     #loop over all *local* tiles
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
 
-            #if n.getMpiGrid(i,j) == n.rank:
+            #if n.get_mpi_grid(i,j) == n.rank:
             if True:
                 #print("creating ({},{})".format(i,j))
                 sys.stdout.write("-")
@@ -237,7 +237,7 @@ def inject(
 
                 #get tile & its content
                 cid    = node.id(i)
-                c      = node.getTile(cid) #get tile ptr
+                c      = node.get_tile(cid) #get tile ptr
 
                 # loop over species
                 species = []
@@ -276,6 +276,6 @@ def inject(
                                 block[l,m,n] = vmesh
                     species.append(block)
 
-                c.insertInitialSpecies(species)
+                c.insert_initial_species(species)
 
     sys.stdout.write("\n") #finish toolbar

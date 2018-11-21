@@ -35,7 +35,7 @@ h5io::Reader::read(
   // read
 
   // container that we update
-  auto& yee = tile.getYee();
+  auto& yee = tile.get_yee();
 
   // tile location inside node
   int i,j,k;

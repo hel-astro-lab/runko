@@ -21,7 +21,7 @@ h5io::Writer::write2(
   int Nspecies = static_cast<int>(tile.analysis.size());
   for(int ispcs = 0; ispcs < Nspecies; ispcs++) {
 
-    const auto& analysis = tile.getConstAnalysis(ispcs);
+    const auto& analysis = tile.get_const_analysis(ispcs);
 
     // open individual group for the data
     auto gr = file["analysis_"+numbering+"-"+to_string(ispcs) ];

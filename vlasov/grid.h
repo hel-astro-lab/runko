@@ -43,7 +43,7 @@ class Grid :
   /*
      void cycle() {
      for (auto& it: tiles) {
-     TilePtr tileptr = std::dynamic_pointer_cast<vlasov::VlasovTile>( it.second );
+     Tileptr tileptr = std::dynamic_pointer_cast<vlasov::VlasovTile>( it.second );
      tileptr->vmeshes.cycle();
      tileptr->yee.cycle();
      }
@@ -51,7 +51,7 @@ class Grid :
      */
 
   /*
-  void addTile2(
+  void add_tile2(
     std::shared_ptr< vlv::Tile<D> > tileptr,
     corgi::internals::tuple_of<D, size_t> indices
     )

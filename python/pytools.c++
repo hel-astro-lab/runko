@@ -21,7 +21,7 @@ using AM3d = toolbox::AdaptiveMesh<Realf, 3>;
 
 // generator for Mesh bindings with type T and halo H
 template<typename T, int H>
-void declare_Mesh(
+void declare_mesh(
     py::module &m, 
     const std::string& pyclass_name) 
 {
@@ -78,9 +78,9 @@ void bind_tools(pybind11::module& m)
 {
 
   // declare Mesh with various halo sizes
-  declare_Mesh<Realf, 0>(m, "Mesh_H0" );
-  declare_Mesh<Realf, 1>(m, "Mesh_H1" );
-  declare_Mesh<Realf, 3>(m, "Mesh_H3" );
+  declare_mesh<Realf, 0>(m, "Mesh_H0" );
+  declare_mesh<Realf, 1>(m, "Mesh_H1" );
+  declare_mesh<Realf, 3>(m, "Mesh_H3" );
 
 
 

@@ -4,7 +4,7 @@
 
 
 template<std::size_t D>
-void vlv::Tile<D>::stepLocation(corgi::Node<D>& grid)
+void vlv::Tile<D>::step_location(corgi::Node<D>& grid)
 {
   vlv::AmrSpatialLagrangianSolver<Realf> ssol;
   ssol.solve(*this, grid);
@@ -22,7 +22,7 @@ vlv::PlasmaBlock& vlv::Tile<1>::get_external_data(
 {
   auto neigh_index   = this->neighs(i); 
   uint64_t neigh_cid = grid.id( neigh_index );
-  auto& tile_neigh = dynamic_cast<vlv::Tile<1>&>( grid.getTile(neigh_cid) );
+  auto& tile_neigh = dynamic_cast<vlv::Tile<1>&>( grid.get_tile(neigh_cid) );
 
   auto& species = tile_neigh.steps.get();
 

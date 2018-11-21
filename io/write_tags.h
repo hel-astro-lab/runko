@@ -9,16 +9,16 @@
 //
 // Usage: 
 //    Define functions that depend on tags as
-//    func(xx, yy, ..., WriteMode::TagName)
+//    func(xx, yy, ..., Write_mode::Tag_name)
 //    and call the function as
-//    yy = func(aa, bb,..., WriteMode::tagName)
-//class WriteMode :
-//  public corgi::tags::WriteMode
+//    yy = func(aa, bb,..., Write_mode::tag_name)
+//class Write_mode :
+//  public corgi::tags::Write_mode
 
 namespace h5io {
 
 
-class WriteMode 
+class Write_mode 
 {
   public:
 

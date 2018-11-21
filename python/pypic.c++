@@ -27,7 +27,7 @@ namespace pic {
 
 //--------------------------------------------------
 template<size_t D>
-auto declare_Tile(
+auto declare_tile(
     py::module& m,
     const std::string& pyclass_name) 
 {
@@ -50,7 +50,7 @@ auto declare_Tile(
 namespace wall {
   // generator for wall tile
   template<size_t D, int S>
-    auto declare_Tile(
+    auto declare_tile(
         py::module& m,
         const std::string& pyclass_name) 
     {
@@ -150,7 +150,7 @@ void bind_pic(py::module& m_sub)
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("q",   &pic::ParticleBlock::q)
     .def("reserve",       &pic::ParticleBlock::reserve)
-    .def("resizeEM",      &pic::ParticleBlock::resizeEM)
+    .def("resize_em",      &pic::ParticleBlock::resize_em)
     .def("size",          &pic::ParticleBlock::size)
     .def("add_particle",  &pic::ParticleBlock::add_particle)
     .def("add_particle2", [](pic::ParticleBlock& s, 
@@ -203,7 +203,7 @@ void bind_pic(py::module& m_sub)
   // 2D bindings
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
 
-  auto t2 = pic::declare_Tile<2>(m_2d, "Tile");
+  auto t2 = pic::declare_tile<2>(m_2d, "Tile");
 
 
   //--------------------------------------------------
@@ -267,10 +267,10 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
   // wall
 
-  auto tw1 = pic::wall::declare_Tile<2, -1>(m_2d, "Tile_wall_LX");
-  auto tw2 = pic::wall::declare_Tile<2, +1>(m_2d, "Tile_wall_RX");
-  auto tw3 = pic::wall::declare_Tile<2, -2>(m_2d, "Tile_wall_LY");
-  auto tw4 = pic::wall::declare_Tile<2, +2>(m_2d, "Tile_wall_RY");
+  auto tw1 = pic::wall::declare_tile<2, -1>(m_2d, "Tile_wall_LX");
+  auto tw2 = pic::wall::declare_tile<2, +1>(m_2d, "Tile_wall_RX");
+  auto tw3 = pic::wall::declare_tile<2, -2>(m_2d, "Tile_wall_LY");
+  auto tw4 = pic::wall::declare_tile<2, +2>(m_2d, "Tile_wall_RY");
 
 
 }

@@ -14,9 +14,9 @@ using iter::zip;
 
 /// Get snapshot current J_i^n+1 from momentum distribution
 template< typename T, int D, int V>
-void vlv::MomentumSolver<T,D,V>::updateFutureCurrent( vlv::Tile<D>& tile, T cfl)
+void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cfl)
 {
-  auto& yee = tile.getYee();
+  auto& yee = tile.get_yee();
   yee.jx1.clear();
 
   auto& step0 = tile.steps.get(0);
@@ -72,7 +72,7 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
 
 
   // get reference to the Yee grid 
-  auto& yee = tile.getYee();
+  auto& yee = tile.get_yee();
 
   // timestep
   //auto dt   = (T) tile.dt;      
@@ -86,9 +86,9 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
 
 
   /// Now get future current
-  updateFutureCurrent(tile, cfl);
+  update_future_current(tile, cfl);
 
-  // param object for solveMesh
+  // param object for solve_mesh
   vlv::tools::Params<T> params = {};
   params.cfl = cfl;
 
@@ -140,14 +140,14 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
           params.xloc = mins[0] + static_cast<T>(q);
 
           // then the final call to the actual mesh solver
-          solveMesh( mesh0, mesh1, E, B, params);
+          solve_mesh( mesh0, mesh1, E, B, params);
         }
       }
     }
   }
 
   // XXX update jx1 for debug
-  //updateFutureCurrent(tile, cfl);
+  //update_future_current(tile, cfl);
   //
   
 

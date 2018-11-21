@@ -15,8 +15,8 @@ PYBIND11_MODULE(pyplasmabox, m_base) {
   m_base.doc() = "pyPlasmaBox Python3 bindings";
 
   auto pycorgi = py::module::import("pycorgi");
-  //py::object corgiNode = (py::object) py::module::import("pycorgi").attr("Node");
-  //py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile");
+  //py::object corgi_node = (py::object) py::module::import("pycorgi").attr("Node");
+  //py::object corgi_tile = (py::object) py::module::import("pycorgi").attr("Tile");
 
 
   /// auxiliary tools

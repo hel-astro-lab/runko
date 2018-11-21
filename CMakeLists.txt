@@ -40,7 +40,8 @@ FIND_PACKAGE (HDF5)
 
 # hpc stuff 
 #find_package (MPI)
-
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/corgi/mpi4cpp/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/corgi/mpi4cpp/tools/optional-lite/include )
 
 ##################################################
 # openMP

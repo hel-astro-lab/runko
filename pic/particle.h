@@ -98,7 +98,7 @@ class ParticleBlock {
   }
 
   // resize arrays for fields
-  void resizeEM(size_t N) {
+  void resize_em(size_t N) {
     if (N <= 0) N = 1;
 
     Epart.resize(3);

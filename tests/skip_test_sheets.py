@@ -43,8 +43,8 @@ class Arithmetics(unittest.TestCase):
 
         for i in range(self.Ni):
             for j in range(self.Nj):
-                self.s1.loadValue(i, j, 1.0)
-                self.s2.loadValue(i, j, 2.0)
+                self.s1.load_value(i, j, 1.0)
+                self.s2.load_value(i, j, 2.0)
 
 
     # require that every element in sheet is equal to the val
@@ -52,7 +52,7 @@ class Arithmetics(unittest.TestCase):
     def assertAll(self, s1, val):
         for i in range(self.Ni):
             for j in range(self.Nj):
-                block = s1.getBlock(i,j)
+                block = s1.get_block(i,j)
                 self.assertEqual( block[0], val )
 
 

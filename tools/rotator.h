@@ -13,14 +13,14 @@ class Rotator {
 
   public:
 
-  size_t currentStep = 0;
+  size_t current_step = 0;
 
 
   /// method to add data into the container
   void push_back(T vm) {container.push_back(vm); };
 
   /// general index
-  inline size_t index(size_t i) const {return (i + currentStep) % L ; };
+  inline size_t index(size_t i) const {return (i + current_step) % L ; };
 
   /// get reference to the current time step
   inline T& get(size_t i=0) { return container[ index(i) ]; };
@@ -30,12 +30,12 @@ class Rotator {
 
   // FIXME raw cycling for time step index
   void cycle() {
-    currentStep++;
+    current_step++;
 
     // check bounds and cycle back
-    if (currentStep >= L) currentStep = 0;
+    if (current_step >= L) current_step = 0;
 
-    //std::cout << "ROTATOR STEP IS " << currentStep << '\n';
+    //std::cout << "ROTATOR STEP IS " << current_step << '\n';
   }
 
 

@@ -34,10 +34,10 @@ def linear_ramp(x,y,z):
 def insert_em(node, conf, ffunc):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            c = node.getTile(i,j)
-            yee = c.getYee(0)
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
+            c = node.get_tile(i,j)
+            yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -776,7 +776,7 @@ class Filters(unittest.TestCase):
         conf.NzMesh = 1
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         insert_em(node, conf, linear_ramp)
         #inject(node, filler_no_velocity, conf) #injecting plasma particles
@@ -784,7 +784,7 @@ class Filters(unittest.TestCase):
         flt = pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(4.0, 4.0)
 
-        flt.get_padded_current( node.getTile(1,1), node)
+        flt.get_padded_current( node.get_tile(1,1), node)
 
         img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
         #axs[0].imshow(img[conf.NxMesh:2*conf.NxMesh, conf.NyMesh:2*conf.NyMesh]) #, vmin=vmin, vmax=vmax)
@@ -793,11 +793,11 @@ class Filters(unittest.TestCase):
 
         # reference array
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
-        for cid in node.getTileIds():
-            c = node.getTile( cid )
+        for cid in node.get_tile_ids():
+            c = node.get_tile( cid )
             (i, j) = c.index
 
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
             for k in range(conf.NyMesh):
                 for q in range(conf.NxMesh):
                     for r in range(conf.NzMesh):

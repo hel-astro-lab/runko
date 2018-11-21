@@ -53,12 +53,12 @@ class Tile :
 
   ~Tile() override = default;
 
-  //void pushE() override;
-  //using Tile::pushE;
-  //using Tile::pushHalfB;
+  //void push_e() override;
+  //using Tile::push_e;
+  //using Tile::push_half_b;
 
 
-  //void depositCurrent() override;
+  //void deposit_current() override;
 
   //using fields::Tile<D>::dt;
   using fields::Tile<D>::dx;
@@ -66,7 +66,7 @@ class Tile :
 
 
   // damp field 
-  void dampFields();
+  void damp_fields();
 
   /// start index of the slope
   Realf fld1;

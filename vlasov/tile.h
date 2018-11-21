@@ -180,7 +180,7 @@ class Tile :
 
 
   /// advance location 
-  virtual void stepLocation(corgi::Node<D>& grid);
+  virtual void step_location(corgi::Node<D>& grid);
   /*
   {
     vlv::AmrSpatialLagrangianSolver<Realf> ssol;

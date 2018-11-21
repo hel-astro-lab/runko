@@ -21,8 +21,8 @@ try:
 except:
     pass
 
-from visualize import getYee
-from visualize import getAnalysis
+from visualize import get_yee
+from visualize import get_analysis
 import injector
 
 from timer import Timer
@@ -188,9 +188,9 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = getYee(n, conf)
-    analysis1 = getAnalysis(n, conf, 0)
-    analysis2 = getAnalysis(n, conf, 1)
+    yee = get_yee(n, conf)
+    analysis1 = get_analysis(n, conf, 0)
+    analysis2 = get_analysis(n, conf, 1)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
@@ -208,10 +208,10 @@ def insert_em(node, conf):
 
     n0 = 1.0
 
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            c = node.getTile(i,j)
-            yee = c.getYee(0)
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
+            c = node.get_tile(i,j)
+            yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -232,7 +232,7 @@ def insert_em(node, conf):
 
 
 def solvePoisson(ax, node, conf):
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     x   = yee['x']
     rho = yee['rho']
@@ -295,7 +295,7 @@ if __name__ == "__main__":
     ymin = 0.0
     ymax = conf.dy*conf.Ny*conf.NyMesh
 
-    node.setGridLims(xmin, xmax, ymin, ymax)
+    node.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
     #node.initMpi()
@@ -323,8 +323,8 @@ if __name__ == "__main__":
         lap = conf.laprestart + 1
         injector.inject(node, injector.empty_filler, conf, empty=True) #injecting plasma
 
-        plasma.readYee( node, conf.laprestart, conf.outdir)
-        plasma.readMesh(node, conf.laprestart, conf.outdir)
+        plasma.read_yee( node, conf.laprestart, conf.outdir)
+        plasma.read_mesh(node, conf.laprestart, conf.outdir)
     else:
         lap = 0
         injector.inject(node, filler, conf, preclip) #injecting plasma
@@ -333,14 +333,14 @@ if __name__ == "__main__":
         #insert_em(node, conf)
 
         #Initial step backwards for velocity
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
-        plasma.stepInitial(node)
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
+        plasma.initial_step(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.cycle()
 
 
@@ -401,45 +401,45 @@ if __name__ == "__main__":
 
         #configuration space push
         timer.start_comp("loc")
-        plasma.stepLocation(node)
+        plasma.step_location(node)
         timer.stop_comp("loc")
 
         #cycle to the new fresh snapshot
         timer.start_comp("cycle1")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.cycle()
         timer.stop_comp("cycle1")
 
 
         #current deposition from moving flux
         timer.start_comp("cur-dep")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.depositCurrent()
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.deposit_current()
         timer.stop_comp("cur-dep")
 
         #update boundaries
         timer.start_comp("bounds")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
         timer.stop_comp("bounds")
 
         #momentum step
         timer.start_comp("vel")
-        plasma.stepVelocity(node)
+        plasma.step_velocity(node)
         timer.stop_comp("vel")
 
 
         #cycle to the new fresh snapshot
         timer.start_comp("cycle2")
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 tile.cycle()
         timer.stop_comp("cycle2")
 
@@ -452,9 +452,9 @@ if __name__ == "__main__":
         #clip every tile
         timer.start_comp("clip")
         if conf.clip:
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     #tile.clip_neighbors()
                     tile.clip()
         timer.stop_comp("clip")
@@ -489,11 +489,11 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            plasma.writeYee(node,      lap, conf.outdir + "/")
-            plasma.writeAnalysis(node, lap, conf.outdir + "/")
+            plasma.write_yee(node,      lap, conf.outdir + "/")
+            plasma.write_analysis(node, lap, conf.outdir + "/")
 
             if (lap % conf.restart == 0):
-                plasma.writeMesh(node,     lap, conf.outdir + "/")
+                plasma.write_mesh(node,     lap, conf.outdir + "/")
 
             try:
                 plotNode(axs[0], node, conf)

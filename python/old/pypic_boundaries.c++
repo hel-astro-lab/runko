@@ -28,7 +28,7 @@ void declare_PicTileWall(
 
 PYBIND11_MODULE(pypic_boundaries, m) {
 
-  py::object corgiTile  = (py::object) py::module::import("pycorgi").attr("Tile");
+  py::object corgi_tile  = (py::object) py::module::import("pycorgi").attr("Tile");
   py::object vlasovTile = (py::object) py::module::import("pyplasma").attr("VlasovTile");
 
 

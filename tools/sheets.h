@@ -30,7 +30,7 @@ namespace toolbox {
       size_t Nj = 0;
 
       /// coordinate of the sheet in the slicing dimension
-      double sliceVal;
+      double slice_value;
 
       /// Value storage of the sheet
       std::vector<Realf> values;
@@ -38,19 +38,19 @@ namespace toolbox {
 
       void resize(size_t Ni_, size_t Nj_);
 
-      size_t getIndex(size_t i, size_t j);
+      size_t get_index(size_t i, size_t j);
 
-      void loadValue(size_t i, size_t j, Realf val);
+      void load_value(size_t i, size_t j, Realf val);
 
-      void loadZeroBlock(size_t i, size_t j);
+      void load_zero_block(size_t i, size_t j);
 
-      void loadBlock(size_t i, size_t j, vblock_t block);
+      void load_block(size_t i, size_t j, vblock_t block);
 
-      vblock_t getBlock(size_t i, size_t j);
+      vblock_t get_block(size_t i, size_t j);
 
-      bool isNonZero(size_t i, size_t j);
+      bool is_non_zero(size_t i, size_t j);
 
-      void checkSizes(const Sheet& s);
+      void check_size(const Sheet& s);
 
       Realf sum();
 
@@ -131,43 +131,43 @@ inline void toolbox::Sheet::resize(size_t Ni_, size_t Nj_) {
 }
 
 /// internal function to get general id from sheet indices
-inline size_t toolbox::Sheet::getIndex(size_t i, size_t j) {
+inline size_t toolbox::Sheet::get_index(size_t i, size_t j) {
   return Ni*j + i;
 }
 
 /// Load scalar to the sheet
-inline void toolbox::Sheet::loadValue(size_t i, size_t j, Realf val) {
-  size_t indx = getIndex(i, j);
+inline void toolbox::Sheet::load_value(size_t i, size_t j, Realf val) {
+  size_t indx = get_index(i, j);
   values[indx] = val;
 }
 
 /// load zeros to location (i,j)
-inline void toolbox::Sheet::loadZeroBlock(size_t i, size_t j) {
-  size_t indx = getIndex(i, j);
+inline void toolbox::Sheet::load_zero_block(size_t i, size_t j) {
+  size_t indx = get_index(i, j);
 
   // TODO add block instead of scalar
   values[indx] = 0.0;
 }
 
-inline void toolbox::Sheet::loadBlock(size_t i, size_t j, vblock_t block) {
-  size_t indx = getIndex(i, j);
+inline void toolbox::Sheet::load_block(size_t i, size_t j, vblock_t block) {
+  size_t indx = get_index(i, j);
 
   // TODO add block instead of scalar
   values[indx] = block[0];
 }
 
 /// return block at location (i,j)
-inline vblock_t toolbox::Sheet::getBlock(size_t i, size_t j) {
+inline vblock_t toolbox::Sheet::get_block(size_t i, size_t j) {
   vblock_t ret;
-  size_t indx = getIndex(i, j);
+  size_t indx = get_index(i, j);
   ret[0] = values[indx]; //TODO return block instead element
 
   return ret;
 }
 
 /// check if block at location (i,j) is zero
-inline bool toolbox::Sheet::isNonZero(size_t i, size_t j) {
-  size_t indx = getIndex(i, j);
+inline bool toolbox::Sheet::is_non_zero(size_t i, size_t j) {
+  size_t indx = get_index(i, j);
   if ( values[indx] == 0.0 ) { return false; };
   return true;
 }
@@ -196,7 +196,7 @@ inline Realf toolbox::Sheet::sum() {
 }
 
 /// Check that another sheet conforms to my size & dimensions
-inline void toolbox::Sheet::checkSizes(const Sheet& s) {
+inline void toolbox::Sheet::check_size(const Sheet& s) {
   if(this->Ni != s.Ni) throw std::range_error ("i dimensions do not match"); 
   if(this->Nj != s.Nj) throw std::range_error ("j dimensions do not match"); 
 }
@@ -225,7 +225,7 @@ inline toolbox::Sheet& toolbox::Sheet::operator/=(const T rhs) {
 }
 
 inline toolbox::Sheet& toolbox::Sheet::operator*=(const Sheet& rhs) {
-  this->checkSizes(rhs);
+  this->check_size(rhs);
 
   for(size_t q=0; q<(this->Ni*this->Nj); q++) { 
     this->values[q] *= rhs.values[q];

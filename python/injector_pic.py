@@ -13,15 +13,15 @@ import numpy as np
 def inject(node, ffunc, conf):
 
     #loop over all *local* cells
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            #if n.getMpiGrid(i,j) == n.rank:
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
+            #if n.get_mpi_grid(i,j) == n.rank:
             if True:
                 #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
                 cid    = node.id(i,j)
-                c      = node.getTile(cid) #get cell ptr
+                c      = node.get_tile(cid) #get cell ptr
 
                 #if not(1 <= i <= 2 and j == 1):
                 #    continue
@@ -76,10 +76,10 @@ def inject(node, ffunc, conf):
 def insert_em(node, conf, ffunc):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            c = node.getTile(i,j)
-            yee = c.getYee(0)
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
+            c = node.get_tile(i,j)
+            yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):

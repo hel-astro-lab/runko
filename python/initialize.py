@@ -10,41 +10,41 @@ import pyplasmabox
 def loadMpiRandomly(n):
     np.random.seed(4)
     if n.master:
-        for i in range(n.getNx()):
-            for j in range(n.getNy()):
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
                 val = np.random.randint(n.Nrank)
-                n.setMpiGrid(i, j, val)
+                n.set_mpi_grid(i, j, val)
 
 
 #load nodes to be in stripe formation (splitted in Y=vertical direction)
 def loadMpiYStrides(n):
     if n.master: #only master initializes; then sends
-        stride = np.zeros( (n.getNy()), np.int64)
-        dy = np.float(n.getNy()) / np.float(n.Nrank) 
-        for j in range(n.getNy()):
+        stride = np.zeros( (n.get_Ny()), np.int64)
+        dy = np.float(n.get_Ny()) / np.float(n.Nrank) 
+        for j in range(n.get_Ny()):
             val = np.int( j/dy )
             stride[j] = val
 
-        for i in range(n.getNx()):
-            for j in range(n.getNy()):
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
                 val = stride[j]
-                n.setMpiGrid(i, j, val)
-    n.bcastMpiGrid()
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
 
 #load nodes to be in stripe formation (splitted in X=horizontal direction)
 def loadMpiXStrides(n):
     if n.master: #only master initializes; then sends
-        stride = np.zeros( (n.getNx()), np.int64)
-        dx = np.float(n.getNx()) / np.float(n.Nrank) 
-        for i in range(n.getNx()):
+        stride = np.zeros( (n.get_Nx()), np.int64)
+        dx = np.float(n.get_Nx()) / np.float(n.Nrank) 
+        for i in range(n.get_Nx()):
             val = np.int( i/dx )
             stride[i] = val
 
-        for j in range(n.getNy()):
-            for i in range(n.getNx()):
+        for j in range(n.get_Ny()):
+            for i in range(n.get_Nx()):
                 val = stride[i]
-                n.setMpiGrid(i, j, val)
-    n.bcastMpiGrid()
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
 
 
 def initialize_tile(c, i, j, n, conf):
@@ -55,7 +55,7 @@ def initialize_tile(c, i, j, n, conf):
 
     # initialize analysis tiles ready for incoming simulation data
     for ip in range(conf.Nspecies):
-        c.addAnalysisSpecies()
+        c.add_analysis_species()
 
     #set bounding box of the tile 
     mins = spatialLoc(n, [i,j], [0,0,0], conf)
@@ -67,17 +67,17 @@ def initialize_tile(c, i, j, n, conf):
 
 #load tiles into each node
 def loadTiles(n, conf):
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
-            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
-            if n.getMpiGrid(i,j) == n.rank:
+            if n.get_mpi_grid(i,j) == n.rank():
                 c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
                 initialize_tile(c, i, j, n, conf)
 
                 #add it to the node
-                n.addTile(c, (i,)) 
+                n.add_tile(c, (i,)) 
 
 
 
@@ -87,7 +87,7 @@ def loadTiles(n, conf):
 #
 #    pmins = [conf.vxmin, conf.vymin, conf.vzmin]
 #    pmaxs = [conf.vxmax, conf.vymax, conf.vzmax]
-#    mesh.zFill( pmins, pmaxs )
+#    mesh.z_fill( pmins, pmaxs )
 #
 #
 #

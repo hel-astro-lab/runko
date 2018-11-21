@@ -7,6 +7,7 @@ except:
     pass
 
 import numpy as np
+import sys
 
 
 Nrank = 4
@@ -21,6 +22,7 @@ def imshow(ax,
            vmin = 0.0,
            vmax = 1.0,
            clip = -1.0,
+           cap = None,
           ):
 
     ax.clear()
@@ -40,6 +42,9 @@ def imshow(ax,
         mgrid = np.ma.masked_where( np.logical_and(cmin <= grid, grid <= cmax), grid)
     else:
         mgrid = np.ma.masked_where(grid <= clip, grid)
+
+    if cap != None:
+        mgrid = np.clip(mgrid, cap )
     
     mgrid = mgrid.T
     im = ax.imshow(mgrid,
@@ -59,17 +64,17 @@ def imshow(ax,
 
 # Visualize current tile ownership on node
 def plotNode(ax, n, conf):
-    tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
+    tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
     
-    #for i in range(n.getNx()):
-    #    for j in range(n.getNy()):
+    #for i in range(n.get_Nx()):
+    #    for j in range(n.get_Ny()):
     #        cid = n.tile_id(i,j)
     #        if n.is_local(cid):
     #            tmp_grid[i,j] = 0.5
 
 
-    for cid in n.getTileIds():
-        c = n.getTile( cid )
+    for cid in n.get_tile_ids():
+        c = n.get_tile( cid )
 
         try:
             (i, j) = c.index
@@ -79,21 +84,27 @@ def plotNode(ax, n, conf):
 
         #check dublicates
         if tmp_grid[i,j] != -1.0:
-            print("{}: ERROR in real tiles at ({},{})".format(n.rank, i,j))
+            print("{}: ERROR in real tiles at ({},{})".format(n.rank(), i,j))
             sys.exit()
         tmp_grid[i,j] = c.communication.owner
 
-    #XXX add back
-    #for cid in n.getVirtuals():
-    #    c = n.getTile( cid )
-    #    (i,j) = c.index
-    #    if tmp_grid[i,j] != -1.0:
-    #        print("{}: ERROR in virtual tiles at ({},{})".format(n.rank, i,j))
-    #        sys.exit()
-    #    tmp_grid[i,j] = c.owner
+    #XXX add back / now combined with a full loop 
+    #for cid in n.get_virtuals():
+    #    c = n.get_tile( cid )
+    #    try:
+    #        (i,j) = c.index
+    #    except:
+    #        (i,) = c.index
+    #        j = 0
+
+    #    #if tmp_grid[i,j] != -1.0:
+    #    #    print("{}: ERROR in virtual tiles at ({},{})".format(n.rank, i,j))
+    #    #    sys.exit()
+    #    tmp_grid[i,j] = c.communication.owner
+
 
     imshow(ax, tmp_grid, 
-            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
             vmax = Nrank-1
@@ -101,8 +112,8 @@ def plotNode(ax, n, conf):
 
 
     # add text label about number of neighbors
-    for cid in n.getTileIds():
-        c = n.getTile( cid )
+    for cid in n.get_tile_ids():
+        c = n.get_tile( cid )
 
         try:
             (i, j) = c.index
@@ -110,11 +121,11 @@ def plotNode(ax, n, conf):
             (i,) = c.index
             j = 0
 
-        dx = n.getXmax() - n.getXmin()
-        dy = n.getYmax() - n.getYmin()
+        dx = n.get_xmax() - n.get_xmin()
+        dy = n.get_ymax() - n.get_ymin()
 
-        ix = n.getXmin() + dx*(i+0.5)/n.getNx()
-        jy = n.getYmin() + dy*(j+0.5)/n.getNy()
+        ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
+        jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
 
         #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.communication.number_of_virtual_neighbors
@@ -123,16 +134,20 @@ def plotNode(ax, n, conf):
         #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
-    #for cid in n.getVirtuals():
-    #    c = n.getTile( cid )
-    #    (i,j) = c.index
-    #    ix = n.getXmin() + n.getXmax()*(i+0.5)/n.getNx()
-    #    jy = n.getYmin() + n.getYmin()*(j+0.5)/n.getNy()
+    #for cid in n.get_virtuals():
+    #    c = n.get_tile( cid )
+    #    try:
+    #        (i,j) = c.index
+    #    except:
+    #        (i,) = c.index
+    #        j = 0
+    #    ix = n.get_xmin() + n.get_xmax()*(i+0.5)/n.get_Nx()
+    #    jy = n.get_ymin() + n.get_ymin()*(j+0.5)/n.get_Ny()
     #    label = "Vir"
-    #    ax.text(jy, ix, label, ha='center',va='center')
+    #    ax.text(ix, jy, label, ha='center',va='center')
 
     #XXX add back
-    #ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getTileIds() )))
+    ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.get_tile_ids() )))
 
     ax.set_ylabel('node')
 
@@ -148,7 +163,7 @@ def plotTileBoundaries(ax, node, conf):
                 except:
                     cid = node.id(i)
 
-                c = node.getTile(cid)
+                c = node.get_tile(cid)
 
                 mins = np.array( c.mins ) 
                 maxs = np.array( c.maxs )
@@ -174,7 +189,7 @@ def plotTileBoundaries(ax, node, conf):
 def saveVisz(lap, n, conf):
 
     slap = str(lap).rjust(4, '0')
-    fname = conf.outdir + '/node_{}_{}.png'.format(n.rank, slap)
+    fname = conf.outdir + '/node_{}_{}.png'.format(n.rank(), slap)
     plt.savefig(fname)
 
 
@@ -188,7 +203,7 @@ def plotXmesh(ax, n, conf, spcs):
     for i in range(conf.Nx):
 
         cid = n.id(i)
-        c = n.getTile(cid)
+        c = n.get_tile(cid)
 
         #dig electron population out
         pgrid = c.getPlasmaGrid()
@@ -203,13 +218,13 @@ def plotXmesh(ax, n, conf, spcs):
                 raise IndexError
 
 
-            vbundle = vm.getBundle(0, 0, 0) #xdir (dir = 0) @ j = 0, z = 0
+            vbundle = vm.get_bundle(0, 0, 0) #xdir (dir = 0) @ j = 0, z = 0
 
-            data[ i*conf.NxMesh + s, :] = vbundle.getPencil()
+            data[ i*conf.NxMesh + s, :] = vbundle.get_pencil()
 
     #data = np.log10(data)
     imshow(ax, data,
-           n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
+           n.get_xmin(), n.get_xmax(), conf.vxmin, conf.vxmax,
            cmap = 'plasma_r',
            #vmin = -10.0,
            #vmax =  2.0,
@@ -222,7 +237,7 @@ def plotXmesh(ax, n, conf, spcs):
     #print(dmax)
 
     #imshow(ax, data,
-    #       n.getXmin(), n.getXmax(), conf.vxmin, conf.vxmax,
+    #       n.get_xmin(), n.get_xmax(), conf.vxmin, conf.vxmax,
     #       cmap = 'plasma_r',
     #       vmin =  0.0,
     #       vmax = 10.0,
@@ -230,9 +245,9 @@ def plotXmesh(ax, n, conf, spcs):
     #       )
 
 
-def getYee(n, conf):
+def get_yee(n, conf):
 
-    data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
+    data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
             'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
             'ey':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
             'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
@@ -249,9 +264,9 @@ def getYee(n, conf):
 
     for i in range(conf.Nx):
         cid = n.id(i)
-        c = n.getTile(cid)
+        c = n.get_tile(cid)
 
-        yee = c.getYee(0)
+        yee = c.get_yee(0)
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
 
@@ -276,8 +291,8 @@ def getYee(n, conf):
 
 def getYee2D(n, conf):
 
-    data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
-            'y' : np.linspace(n.getYmin(), n.getYmax(), conf.Ny*conf.NyMesh),
+    data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
+            'y' : np.linspace(n.get_ymin(), n.get_ymax(), conf.Ny*conf.NyMesh),
             'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'ey':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
@@ -294,9 +309,9 @@ def getYee2D(n, conf):
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
-            c = n.getTile(i,j)
+            c = n.get_tile(i,j)
 
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
             for r in range(conf.NyMesh):
                 for q in range(conf.NxMesh):
 
@@ -323,9 +338,9 @@ def getYee2D(n, conf):
 
 
 # species-specific analysis meshes (plasma moments)
-def getAnalysis(n, conf, ispcs):
+def get_analysis(n, conf, ispcs):
 
-    data = {'x' : np.linspace(n.getXmin(), n.getXmax(), conf.Nx*conf.NxMesh),
+    data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
            'rho':    -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            'edens': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
            'temp': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
@@ -345,9 +360,9 @@ def getAnalysis(n, conf, ispcs):
 
     for i in range(conf.Nx):
         cid = n.id(i)
-        c = n.getTile(cid)
+        c = n.get_tile(cid)
 
-        analysis = c.getAnalysis(ispcs)
+        analysis = c.get_analysis(ispcs)
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
 
@@ -374,11 +389,11 @@ def getAnalysis(n, conf, ispcs):
     return data
 
 def plotJ(ax, n, conf):
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     ax.clear()
     ax.minorticks_on()
-    ax.set_xlim(n.getXmin(), n.getXmax())
+    ax.set_xlim(n.get_xmin(), n.get_xmax())
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
 
@@ -396,11 +411,11 @@ def plotJ(ax, n, conf):
 
 
 def plotE(ax, n, conf):
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     ax.clear()
     ax.minorticks_on()
-    ax.set_xlim(n.getXmin(), n.getXmax())
+    ax.set_xlim(n.get_xmin(), n.get_xmax())
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
 
@@ -412,11 +427,11 @@ def plotE(ax, n, conf):
 
 
 def plotDens(ax, n, conf):
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     ax.clear()
     ax.minorticks_on()
-    ax.set_xlim(n.getXmin(), n.getXmax())
+    ax.set_xlim(n.get_xmin(), n.get_xmax())
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
     #ax.set_yscale('log')
@@ -439,7 +454,7 @@ def plot2dYee(ax, n, conf, val = 'jx'):
 
 
     imshow(ax, yee[val],
-           n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+           n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
            cmap = "RdBu",
            vmin = -vminmax,
            vmax =  vminmax,

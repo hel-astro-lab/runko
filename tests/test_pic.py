@@ -122,10 +122,10 @@ def linear_field(x, y, z):
 def insert_em(node, conf, ffunc):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(node.getNx()):
-        for j in range(node.getNy()):
-            c = node.getTile(i,j)
-            yee = c.getYee(0)
+    for i in range(node.get_Nx()):
+        for j in range(node.get_Ny()):
+            c = node.get_tile(i,j)
+            yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -263,7 +263,7 @@ class PIC(unittest.TestCase):
         conf.vel = 0.1
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         loadTiles(node, conf)
         insert_em(node, conf, const_field)
@@ -279,27 +279,27 @@ class PIC(unittest.TestCase):
             #plot2dParticles(axs[0], node, conf)
             #saveVisz(lap, node, conf)
 
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     pusher.solve(tile)
 
             #update particle boundaries
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     comm.check_outgoing_particles(tile)
 
             #copy particles
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     comm.get_incoming_particles(tile, node)
 
             #delete transferred particles
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     comm.delete_transferred_particles(tile)
 
 
@@ -309,7 +309,7 @@ class PIC(unittest.TestCase):
             for j in range(conf.Ny):
                 for k in range(conf.Nz):
                     cid = node.id(i,j)
-                    c = node.getTile(cid)
+                    c = node.get_tile(cid)
 
                     #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
                     container = c.get_container(0)
@@ -367,22 +367,22 @@ class PIC(unittest.TestCase):
 
         conf = Conf()
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         insert_em(node, conf, const_field)
         inject(node, filler_no_velocity, conf) #injecting plasma particles
 
         ##update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #interpolate fields
         fintp = pypic.LinearInterpolator()
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 fintp.solve(tile)
 
         #test results
@@ -390,7 +390,7 @@ class PIC(unittest.TestCase):
             for j in range(conf.Ny):
 
                 cid = node.id(i,j)
-                c = node.getTile(cid)
+                c = node.get_tile(cid)
                 container = c.get_container(0)
 
                 xx = container.loc(0)
@@ -433,22 +433,22 @@ class PIC(unittest.TestCase):
         conf.Ny = 3
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         insert_em(node, conf, linear_field)
         inject(node, filler_no_velocity, conf) #injecting plasma particles
 
         ##update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #interpolate fields
         fintp = pypic.LinearInterpolator()
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 fintp.solve(tile)
 
 
@@ -457,7 +457,7 @@ class PIC(unittest.TestCase):
             for j in range(1,conf.Ny-1):
 
                 cid = node.id(i,j)
-                c = node.getTile(cid)
+                c = node.get_tile(cid)
                 container = c.get_container(0)
 
                 xx = container.loc(0)
@@ -524,7 +524,7 @@ class PIC(unittest.TestCase):
         conf.update_bbox()
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         #insert_em(node, conf, linear_field)
         insert_em(node, conf, zero_field)
@@ -545,28 +545,28 @@ class PIC(unittest.TestCase):
         for lap in range(1):
 
             #analyze
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     analyzer.analyze2d(tile)
 
             #update boundaries
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
-                    tile.updateBoundaries(node)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
+                    tile.update_boundaries(node)
 
             #deposit current
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     currint.solve(tile)
 
             #exchange currents
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
-                    tile.exchangeCurrents(node)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
+                    tile.exchange_currents(node)
 
             try:
                 plotNode(axs[0], node, conf)
@@ -581,10 +581,10 @@ class PIC(unittest.TestCase):
             yee_ref = getYee2D(node, conf)
 
             #filter
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
                     print(" i j ({},{})".format(i,j))
-                    tile = node.getTile(i,j)
+                    tile = node.get_tile(i,j)
                     flt.get_padded_current(tile, node)
 
                     # fourier space filtering
@@ -598,10 +598,10 @@ class PIC(unittest.TestCase):
                     flt.set_current(tile)
 
             #cycle new and temporary currents
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
-                    tile.cycleCurrent()
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
+                    tile.cycle_current()
 
             yee = getYee2D(node, conf)
 
@@ -654,7 +654,7 @@ class PIC(unittest.TestCase):
         conf.update_bbox()
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         #insert_em(node, conf, linear_field)
         insert_em(node, conf, const_field)
@@ -666,10 +666,10 @@ class PIC(unittest.TestCase):
         currint  = pypic.ZigZag()
         analyzer = pypic.Analyzator()
 
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                c = node.getTile(i,j)
-                yee = c.getYee(0)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                c = node.get_tile(i,j)
+                yee = c.get_yee(0)
                 for l in range(-3, conf.NxMesh+3):
                     for m in range(-3,conf.NyMesh+3):
                         for n in range(-3,conf.NzMesh+3):
@@ -678,18 +678,18 @@ class PIC(unittest.TestCase):
                             yee.jz[l,m,n] = 1.0
 
         #deposit current
-        #for j in range(node.getNy()):
-        #    for i in range(node.getNx()):
+        #for j in range(node.get_Ny()):
+        #    for i in range(node.get_Nx()):
         #for j in [1]:
         #    for i in [1]:
-        #        tile = node.getTile(i,j)
+        #        tile = node.get_tile(i,j)
         #        currint.solve(tile)
 
         #exchange currents for the middle one only
         for j in [1]:
             for i in [1]:
-                tile = node.getTile(i,j)
-                tile.exchangeCurrents(node)
+                tile = node.get_tile(i,j)
+                tile.exchange_currents(node)
 
 
         #plotNode(axs[0], node, conf)
@@ -715,8 +715,8 @@ class PIC(unittest.TestCase):
 
         for j in [1]:
             for i in [1]:
-                c = node.getTile(i,j)
-                yee = c.getYee(0)
+                c = node.get_tile(i,j)
+                yee = c.get_yee(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
                         self.assertEqual(ref[l,m], yee.jx[l,m,0] )
@@ -761,7 +761,7 @@ class PIC(unittest.TestCase):
         conf.update_bbox()
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles(node, conf)
         #insert_em(node, conf, const_field)
         inject(node, filler_xvel, conf) #injecting plasma particles
@@ -774,18 +774,18 @@ class PIC(unittest.TestCase):
 
 
         #deposit current
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 currint.solve(tile)
 
         #exchange currents for the middle one only
         #for j in [1]:
         #    for i in [1]:
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.exchangeCurrents(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.exchange_currents(node)
 
 
         try:
@@ -799,10 +799,10 @@ class PIC(unittest.TestCase):
         except:
             pass
 
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                c = node.getTile(i,j)
-                yee = c.getYee(0)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                c = node.get_tile(i,j)
+                yee = c.get_yee(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
                         self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=7 )

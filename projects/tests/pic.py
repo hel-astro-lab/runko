@@ -29,7 +29,7 @@ try:
     import matplotlib.pyplot as plt
     from visualize import plotNode
     from visualize import plotJ, plotE, plotDens
-    from visualize import getYee
+    from visualize import get_yee
     from visualize import saveVisz
     
     from visualize import plot2dYee
@@ -56,7 +56,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
     for i in range(conf.Nx):
         cid = n.id(i,0)
-        c = n.getTile(cid)
+        c = n.get_tile(cid)
 
         container = c.get_container(spcs)
 
@@ -78,7 +78,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
 
     ax.minorticks_on()
 
-    ax.set_xlim(n.getXmin(), n.getXmax())
+    ax.set_xlim(n.get_xmin(), n.get_xmax())
     ax.set_ylim(-0.2, 0.2)
 
 
@@ -129,7 +129,7 @@ def filler(xloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
     ex = yee['ex']
     exS = smooth(ex, 10)
 
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     ymin = 0.0
     ymax = conf.Ny*conf.NyMesh
 
-    node.setGridLims(xmin, xmax, ymin, ymax)
+    node.set_grid_lims(xmin, xmax, ymin, ymax)
 
     loadTiles(node, conf)
 
@@ -289,96 +289,96 @@ if __name__ == "__main__":
         # advance Half B
 
         #update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #push B half
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.pushHalfB()
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.push_half_b()
 
         #update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #--------------------------------------------------
         # move particles
 
         #interpolate fields
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 fintp.solve(tile)
 
         #pusher
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 pusher.solve(tile)
 
         #--------------------------------------------------
         # advance B half
 
         #push B half
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.pushHalfB()
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.push_half_b()
 
         ##update boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.updateBoundaries(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.update_boundaries(node)
 
         #--------------------------------------------------
         # advance E 
 
         #push E
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.pushE()
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.push_e()
 
         #--------------------------------------------------
 
         #deposit current
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 currint.solve(tile)
 
         #exchange currents
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.exchangeCurrents(node)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.exchange_currents(node)
 
         ##################################################
         # particle communication 
 
 
         #update particle boundaries
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 comm.check_outgoing_particles(tile)
 
         #copy particles
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 comm.get_incoming_particles(tile, node)
 
         #delete transferred particles
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 comm.delete_transferred_particles(tile)
 
         # field communication
@@ -387,9 +387,9 @@ if __name__ == "__main__":
         ##################################################
 
         #filter
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
                 flt.get_padded_current(tile, node)
 
                 #flt.fft_image_forward()
@@ -402,19 +402,19 @@ if __name__ == "__main__":
 
 
         ##cycle new and temporary currents
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.cycleCurrent()
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.cycle_current()
 
         ##################################################
         
 
         #add current to E
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                tile = node.getTile(i,j)
-                tile.depositCurrent()
+        for j in range(node.get_Ny()):
+            for i in range(node.get_Nx()):
+                tile = node.get_tile(i,j)
+                tile.deposit_current()
 
 
         ##################################################
@@ -437,15 +437,15 @@ if __name__ == "__main__":
             timer.start("io")
 
             #analyze
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    tile = node.getTile(i,j)
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    tile = node.get_tile(i,j)
                     analyzer.analyze2d(tile)
 
 
-            pyvlv.writeYee(node,      lap, conf.outdir + "/")
-            pyvlv.writeAnalysis(node, lap, conf.outdir + "/")
-            #pyvlv.writeMesh(node,     lap, conf.outdir + "/")
+            pyvlv.write_yee(node,      lap, conf.outdir + "/")
+            pyvlv.write_analysis(node, lap, conf.outdir + "/")
+            #pyvlv.write_mesh(node,     lap, conf.outdir + "/")
 
             #try:
             #    plotNode( axs[0], node, conf)

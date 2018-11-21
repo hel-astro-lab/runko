@@ -72,7 +72,7 @@ class Writer {
     // try 2:
     //
     // template<typename T, typename W>
-    // bool write( const T& tile, W iomode = WriteMode::standard )
+    // bool write( const T& tile, W iomode = Write_mode::standard )
     // {
     //   return write(tile, iomode);
     // }
