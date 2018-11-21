@@ -8,7 +8,7 @@ import pycorgi
 import pyplasmabox
 import h5py
 
-from visualize import getYee
+from visualize import get_yee
 from visualize import getYee2D
 from combine_files import combine_tiles
 
@@ -119,7 +119,7 @@ def fill_yee(node, data, conf):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     c = node.get_tile(i,j,k)
-                    yee = c.getYee(0)
+                    yee = c.get_yee(0)
 
                     for q in range(conf.NxMesh):
                         for r in range(conf.NyMesh):
@@ -209,7 +209,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(node, conf)
         fill_yee(node, ref, conf)
 
-        pyplasmabox.vlv.oneD.writeYee(node, 0, conf.outdir)
+        pyplasmabox.vlv.oneD.write_yee(node, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -240,10 +240,10 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyplasmabox.vlv.oneD.readYee(node2, 0, "io_test_1D")
+        pyplasmabox.vlv.oneD.read_yee(node2, 0, "io_test_1D")
 
-        yee1 = getYee(node,  conf)
-        yee2 = getYee(node2, conf)
+        yee1 = get_yee(node,  conf)
+        yee2 = get_yee(node2, conf)
 
         for i in range(node.get_Nx()):
             for j in range(node.get_Ny()):
@@ -287,7 +287,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(node, conf)
         fill_yee(node, ref, conf)
 
-        pyplasmabox.vlv.twoD.writeYee(node, 0, conf.outdir)
+        pyplasmabox.vlv.twoD.write_yee(node, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
@@ -318,7 +318,7 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyplasmabox.vlv.twoD.readYee(node2, 0, "io_test_2D")
+        pyplasmabox.vlv.twoD.read_yee(node2, 0, "io_test_2D")
 
         yee1 = getYee2D(node,  conf)
         yee2 = getYee2D(node2, conf)
@@ -417,7 +417,7 @@ class IO(unittest.TestCase):
                 node.add_tile(c, (i,) ) 
         injector.inject(node, filler, conf ) #injecting plasma
 
-        pyplasmabox.vlv.oneD.writeMesh(node, 0, conf.outdir)
+        pyplasmabox.vlv.oneD.write_mesh(node, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -432,7 +432,7 @@ class IO(unittest.TestCase):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         for ispcs in range(conf.Nspecies):
-                            block = c.getPlasmaSpecies(0, ispcs)
+                            block = c.get_plasma_species(0, ispcs)
 
                             for q in range(conf.NxMesh):
                                 for r in range(conf.NyMesh):
@@ -466,9 +466,9 @@ class IO(unittest.TestCase):
                 node2.add_tile(c, (i,) ) 
         injector.inject(node2, injector.empty_filler, conf, empty=True) #injecting empty meshes
 
-        #pyplasmabox.vlv.oneD.writeMesh(node2, 1, conf.outdir)
-        pyplasmabox.vlv.oneD.readMesh(node2,  0, "io_test_mesh")
-        #pyplasmabox.vlv.oneD.writeMesh(node2, 2, conf.outdir)
+        #pyplasmabox.vlv.oneD.write_mesh(node2, 1, conf.outdir)
+        pyplasmabox.vlv.oneD.read_mesh(node2,  0, "io_test_mesh")
+        #pyplasmabox.vlv.oneD.write_mesh(node2, 2, conf.outdir)
 
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
@@ -479,8 +479,8 @@ class IO(unittest.TestCase):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         for ispcs in range(conf.Nspecies):
-                            block1 = c1.getPlasmaSpecies(0, ispcs)
-                            block2 = c2.getPlasmaSpecies(0, ispcs)
+                            block1 = c1.get_plasma_species(0, ispcs)
+                            block2 = c2.get_plasma_species(0, ispcs)
 
                             for q in range(conf.NxMesh):
                                 for r in range(conf.NyMesh):

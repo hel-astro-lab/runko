@@ -42,7 +42,7 @@ class PyMomentumSolver : public momsol {
     using momsol::MomentumSolver;
     using momsol::solve;
 
-    void solveMesh( 
+    void solve_mesh( 
         AM3d& mesh0, 
         AM3d& mesh1, 
         std::array<Realf, 3>& E,
@@ -54,7 +54,7 @@ class PyMomentumSolver : public momsol {
       PYBIND11_OVERLOAD_PURE(
           void, 
           momsol, 
-          solveMesh, 
+          solve_mesh, 
           mesh0, mesh1, E, B, qm, dt, cfl
           );
     }
@@ -84,7 +84,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 
   // generator for Mesh bindings with type T and halo H
   template<typename T, int H>
-  void declare_Mesh(
+  void declare_mesh(
       py::module &m, 
       const std::string& pyclass_name) 
   {
@@ -155,7 +155,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
     .def_readwrite("bz_ref",   &fields::PlasmaTileDamped<S>::bz_ref, py::return_value_policy::reference)
     .def_readwrite("fld1",     &fields::PlasmaTileDamped<S>::fld1)
     .def_readwrite("fld2",     &fields::PlasmaTileDamped<S>::fld2)
-    .def("dampFields",         &fields::PlasmaTileDamped<S>::dampFields);
+    .def("damp_fields",         &fields::PlasmaTileDamped<S>::damp_fields);
 
   }
 
@@ -180,19 +180,19 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("dt",   &fields::PlasmaTile::dt)
     .def_readwrite("dx",   &fields::PlasmaTile::dx)
     .def_readwrite("cfl",  &fields::PlasmaTile::cfl)
-    .def("cycleYee",         &fields::PlasmaTile::cycleYee)
-    .def("cycleCurrent",     &fields::PlasmaTile::cycleCurrent)
-    .def("cycleCurrent2D",   &fields::PlasmaTile::cycleCurrent2D)
-    .def("pushE",            &fields::PlasmaTile::pushE)
-    .def("pushHalfB",        &fields::PlasmaTile::pushHalfB)
-    .def("depositCurrent",   &fields::PlasmaTile::depositCurrent)
-    .def("getYee",           &fields::PlasmaTile::getYee, py::return_value_policy::reference)
-    .def("getAnalysis",      &fields::PlasmaTile::getAnalysis, py::return_value_policy::reference)
-    .def("addAnalysisSpecies", &fields::PlasmaTile::addAnalysisSpecies)
+    .def("cycle_yee",         &fields::PlasmaTile::cycle_yee)
+    .def("cycle_current",     &fields::PlasmaTile::cycle_current)
+    .def("cycle_current_2d",   &fields::PlasmaTile::cycle_current_2d)
+    .def("push_e",            &fields::PlasmaTile::push_e)
+    .def("push_half_b",        &fields::PlasmaTile::push_half_b)
+    .def("deposit_current",   &fields::PlasmaTile::deposit_current)
+    .def("get_yee",           &fields::PlasmaTile::get_yee, py::return_value_policy::reference)
+    .def("get_analysis",      &fields::PlasmaTile::get_analysis, py::return_value_policy::reference)
+    .def("add_analysis_species", &fields::PlasmaTile::add_analysis_species)
     .def("update_boundaries",  &fields::PlasmaTile::update_boundaries)
-    .def("updateBoundaries2D",&fields::PlasmaTile::updateBoundaries2D)
-    .def("exchangeCurrents",  &fields::PlasmaTile::exchangeCurrents)
-    .def("exchangeCurrents2D",&fields::PlasmaTile::exchangeCurrents2D);
+    .def("update_boundaries_2d",&fields::PlasmaTile::update_boundaries_2d)
+    .def("exchange_currents",  &fields::PlasmaTile::exchange_currents)
+    .def("exchange_currents_2d",&fields::PlasmaTile::exchange_currents_2d);
 
 
 
@@ -243,9 +243,9 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
     .def_readwrite("dt",     &vlasov::VlasovTile::dt)
     .def_readwrite("dx",     &vlasov::VlasovTile::dx)
-    .def("getPlasmaSpecies", [](vlasov::VlasovTile& tile, size_t i, size_t s) 
+    .def("get_plasma_species", [](vlasov::VlasovTile& tile, size_t i, size_t s) 
         { return tile.steps.get(i).at(s); }, py::return_value_policy::reference)
-    .def("insertInitialSpecies", [](vlasov::VlasovTile& c, 
+    .def("insert_initial_species", [](vlasov::VlasovTile& c, 
                                   std::vector<vlasov::PlasmaBlock> species){
         // push twice to initialize both time steps (current and future)
         c.steps.push_back(species);
@@ -342,7 +342,7 @@ PYBIND11_MODULE(pyplasma, m) {
   vvsol
     .def(py::init<>())
     .def("solve",     &vlasov::MomentumSolver<Realf,3>::solve)
-    .def("solveMesh", &vlasov::MomentumSolver<Realf,3>::solveMesh);
+    .def("solve_mesh", &vlasov::MomentumSolver<Realf,3>::solve_mesh);
 
   // AMR Lagrangian solver
   py::class_<vlasov::AmrMomentumLagrangianSolver<Realf,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
@@ -370,9 +370,9 @@ PYBIND11_MODULE(pyplasma, m) {
     .def(py::init<>());
 
 
-  declare_Mesh<Realf, 0>(m, std::string("Mesh0") );
-  declare_Mesh<Realf, 1>(m, std::string("Mesh1") );
-  declare_Mesh<Realf, 3>(m, std::string("Mesh3") );
+  declare_mesh<Realf, 0>(m, std::string("Mesh0") );
+  declare_mesh<Realf, 1>(m, std::string("Mesh1") );
+  declare_mesh<Realf, 3>(m, std::string("Mesh3") );
 
 
 
@@ -417,23 +417,23 @@ PYBIND11_MODULE(pyplasma, m) {
     .def("clear",       [](vlasov::PlasmaBlock &s){s.block.clear();});
 
 
-    m.def("stepInitial1d", &vlasov::stepInitial<1>);
-    m.def("stepInitial", &vlasov::stepInitial<3>);
+    m.def("initial_step_1d", &vlasov::initial_step<1>);
+    m.def("initial_step", &vlasov::initial_step<3>);
 
-    m.def("stepLocation", &vlasov::stepLocation);
+    m.def("step_location", &vlasov::step_location);
 
 
-    m.def("stepVelocity1d", &vlasov::stepVelocity<1>);
-    m.def("stepVelocity",   &vlasov::stepVelocity<3>);
-    m.def("stepVelocityGravity1d",   &vlasov::stepVelocityGravity<1>);
+    m.def("step_velocity_1d", &vlasov::step_velocity<1>);
+    m.def("step_velocity",   &vlasov::step_velocity<3>);
+    m.def("step_velocity_with_gravity_1d",   &vlasov::step_velocity_with_gravity<1>);
 
     m.def("analyze",      &vlasov::analyze);
 
-    m.def("writeYee", &vlasov::writeYee);
+    m.def("write_yee", &vlasov::write_yee);
 
-    m.def("writeAnalysis", &vlasov::writeAnalysis);
+    m.def("write_analysis", &vlasov::write_analysis);
 
-    m.def("writeMesh", &vlasov::writeMesh);
+    m.def("write_mesh", &vlasov::write_mesh);
 
 }
 

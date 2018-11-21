@@ -9,14 +9,14 @@ void pic::LinearInterpolator<D,V>::solve(
 {
 
   // get reference to the Yee grid 
-  auto& yee = tile.getYee();
+  auto& yee = tile.get_yee();
 
 
   for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
     ParticleBlock& container = tile.get_container(ispc);
 
     int nparts = container.size();
-    container.resizeEM(nparts); // make EM containers ready for insertion
+    container.resize_em(nparts); // make EM containers ready for insertion
 
 
     // initialize pointers to particle arrays

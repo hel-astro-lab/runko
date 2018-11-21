@@ -77,7 +77,7 @@ class PhotonBlock :
   // explicitly disallow the usage of base class member
   private:
     using pic::ParticleBlock::add_particle;
-    using pic::ParticleBlock::resizeEM;
+    using pic::ParticleBlock::resize_em;
 
 };
 

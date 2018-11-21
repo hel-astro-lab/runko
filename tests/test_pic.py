@@ -125,7 +125,7 @@ def insert_em(node, conf, ffunc):
     for i in range(node.get_Nx()):
         for j in range(node.get_Ny()):
             c = node.get_tile(i,j)
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -566,7 +566,7 @@ class PIC(unittest.TestCase):
             for j in range(node.get_Ny()):
                 for i in range(node.get_Nx()):
                     tile = node.get_tile(i,j)
-                    tile.exchangeCurrents(node)
+                    tile.exchange_currents(node)
 
             try:
                 plotNode(axs[0], node, conf)
@@ -601,7 +601,7 @@ class PIC(unittest.TestCase):
             for j in range(node.get_Ny()):
                 for i in range(node.get_Nx()):
                     tile = node.get_tile(i,j)
-                    tile.cycleCurrent()
+                    tile.cycle_current()
 
             yee = getYee2D(node, conf)
 
@@ -669,7 +669,7 @@ class PIC(unittest.TestCase):
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 c = node.get_tile(i,j)
-                yee = c.getYee(0)
+                yee = c.get_yee(0)
                 for l in range(-3, conf.NxMesh+3):
                     for m in range(-3,conf.NyMesh+3):
                         for n in range(-3,conf.NzMesh+3):
@@ -689,7 +689,7 @@ class PIC(unittest.TestCase):
         for j in [1]:
             for i in [1]:
                 tile = node.get_tile(i,j)
-                tile.exchangeCurrents(node)
+                tile.exchange_currents(node)
 
 
         #plotNode(axs[0], node, conf)
@@ -716,7 +716,7 @@ class PIC(unittest.TestCase):
         for j in [1]:
             for i in [1]:
                 c = node.get_tile(i,j)
-                yee = c.getYee(0)
+                yee = c.get_yee(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
                         self.assertEqual(ref[l,m], yee.jx[l,m,0] )
@@ -785,7 +785,7 @@ class PIC(unittest.TestCase):
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 tile = node.get_tile(i,j)
-                tile.exchangeCurrents(node)
+                tile.exchange_currents(node)
 
 
         try:
@@ -802,7 +802,7 @@ class PIC(unittest.TestCase):
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 c = node.get_tile(i,j)
-                yee = c.getYee(0)
+                yee = c.get_yee(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
                         self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=7 )

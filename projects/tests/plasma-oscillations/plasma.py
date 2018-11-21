@@ -16,7 +16,7 @@ from visualize import plotNode
 from visualize_amr import plotXmesh
 from visualize import plotJ, plotE, plotDens
 from visualize import saveVisz
-from visualize import getYee
+from visualize import get_yee
 
 import injector
 
@@ -100,7 +100,7 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
@@ -242,7 +242,7 @@ if __name__ == "__main__":
         #    for i in range(node.get_Nx()):
         #        cell = node.get_tileptr(i,j)
         #        vsol.solve(cell)
-        plasma.stepVelocity1d(node)
+        plasma.step_velocity_1d(node)
 
 
         #cycle to the new fresh snapshot
@@ -256,7 +256,7 @@ if __name__ == "__main__":
         #    for i in range(node.get_Nx()):
         #        cell = node.get_tileptr(i,j)
         #        ssol.solve(cell, node)
-        plasma.stepLocation(node)
+        plasma.step_location(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.get_Ny()):
@@ -269,14 +269,14 @@ if __name__ == "__main__":
         #E field (Ampere's law)
         #for cid in node.getCellIds():
         #    c = node.get_tileptr( cid )
-        #    c.pushE()
+        #    c.push_e()
 
 
         #current deposition from moving flux
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 cell = node.get_tileptr(i,j)
-                cell.depositCurrent()
+                cell.deposit_current()
 
         #clip every cell
         if conf.clip:

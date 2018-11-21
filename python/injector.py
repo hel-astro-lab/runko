@@ -185,7 +185,7 @@ def inject_internal(i,j,
                     block[l,m,n] = vmesh
         species.append(block)
     
-    c.insertInitialSpecies(species)
+    c.insert_initial_species(species)
 
 
 #inject plasma into tiles
@@ -276,6 +276,6 @@ def inject(
                                 block[l,m,n] = vmesh
                     species.append(block)
 
-                c.insertInitialSpecies(species)
+                c.insert_initial_species(species)
 
     sys.stdout.write("\n") #finish toolbar

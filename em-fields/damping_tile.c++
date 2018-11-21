@@ -8,20 +8,20 @@ using std::exp;
 
 
 /*
-void fields::PlasmaTileDamped::pushE() {
+void fields::PlasmaTileDamped::push_e() {
 
-  // this->pushE1d();
-  this->pushE2d_damped();
-  // this->pushE3d();
+  // this->push_e_1d();
+  this->push_e_2d_damped();
+  // this->push_e_3d();
 }
 */
 
 
 /*
 /// 2D E pusher
-void fields::PlasmaTileDamped::pushE2d_damped() {
+void fields::PlasmaTileDamped::push_e_2d_damped() {
 
-  fields::YeeLattice& mesh = this->getYee();
+  fields::YeeLattice& mesh = this->get_yee();
 
   //std::cout << "Calling DAMPED E update\n";
   Realf C = 1.0 * cfl;
@@ -54,9 +54,9 @@ void fields::PlasmaTileDamped::pushE2d_damped() {
 //  std::size_t D, 
 //  int S
 //>
-//void fields::damping::Tile<D, S>::depositCurrent() {
+//void fields::damping::Tile<D, S>::deposit_current() {
 //
-//  auto& yee = ::fields::Tile<D>::getYee();
+//  auto& yee = ::fields::Tile<D>::get_yee();
 //
 //  //std::cout << "Calling DAMPED J update\n";
 //
@@ -87,10 +87,10 @@ template<
   std::size_t D, 
   int S
 >
-void fields::damping::Tile<D,S>::dampFields()
+void fields::damping::Tile<D,S>::damp_fields()
 {
 
-  auto& yee = this->getYee();
+  auto& yee = this->get_yee();
 
   //Realf lambda, lambda1;
   Realf lambda2;

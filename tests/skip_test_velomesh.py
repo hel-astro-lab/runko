@@ -29,8 +29,8 @@ def populate_mesh( mesh ):
     for k in range(mesh.Nblocks[2]):
         for j in range(mesh.Nblocks[1]):
             for i in range(mesh.Nblocks[0]):
-                cid = mesh.getBlockID([i,j,k])
-                (x,y,z) = mesh.getCenter( cid )
+                cid = mesh.get_block_id([i,j,k])
+                (x,y,z) = mesh.get_center( cid )
 
                 fval = physical_vel(x,y,z)
                 mesh[i,j,k] = [fval, fval, fval, fval]
@@ -74,7 +74,7 @@ class Basics(unittest.TestCase):
 
 
     def test_zFill(self):
-        self.mesh.zFill( self.params.mins, self.params.maxs )
+        self.mesh.z_fill( self.params.mins, self.params.maxs )
 
         self.assertEqual( self.mesh.number_of_blocks, self.Nx*self.Ny*self.Nz )
 
@@ -84,9 +84,9 @@ class Basics(unittest.TestCase):
         for test in tests:
 
             #get cell id and compare to internal python formula
-            cid = self.mesh.getBlockID( test )
+            cid = self.mesh.get_block_id( test )
             indx = cellID2index( cid , self.mesh.Nblocks )
-            ref_indx = self.mesh.getIndices( cid )
+            ref_indx = self.mesh.get_indices( cid )
 
             #check i, j, k indices
             self.assertEqual(indx[0], ref_indx[0])
@@ -112,7 +112,7 @@ class Data(unittest.TestCase):
 
         self.mesh = plasma.VeloMesh()
         self.mesh.Nblocks = [self.Nx, self.Ny, self.Nz]
-        self.mesh.zFill( self.params.mins, self.params.maxs )
+        self.mesh.z_fill( self.params.mins, self.params.maxs )
 
     def test_meshData(self):
         data = [1.0, 2.0, 3.0, 4.5]

@@ -29,7 +29,7 @@ try:
     import matplotlib.pyplot as plt
     from visualize import plotNode
     from visualize import plotJ, plotE, plotDens
-    from visualize import getYee
+    from visualize import get_yee
     from visualize import saveVisz
     
     from visualize import plot2dYee
@@ -129,7 +129,7 @@ def filler(xloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
     ex = yee['ex']
     exS = smooth(ex, 10)
 
@@ -298,7 +298,7 @@ if __name__ == "__main__":
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 tile = node.get_tile(i,j)
-                tile.pushHalfB()
+                tile.push_half_b()
 
         #update boundaries
         for j in range(node.get_Ny()):
@@ -328,7 +328,7 @@ if __name__ == "__main__":
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 tile = node.get_tile(i,j)
-                tile.pushHalfB()
+                tile.push_half_b()
 
         ##update boundaries
         for j in range(node.get_Ny()):
@@ -343,7 +343,7 @@ if __name__ == "__main__":
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 tile = node.get_tile(i,j)
-                tile.pushE()
+                tile.push_e()
 
         #--------------------------------------------------
 
@@ -357,7 +357,7 @@ if __name__ == "__main__":
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 tile = node.get_tile(i,j)
-                tile.exchangeCurrents(node)
+                tile.exchange_currents(node)
 
         ##################################################
         # particle communication 
@@ -405,7 +405,7 @@ if __name__ == "__main__":
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 tile = node.get_tile(i,j)
-                tile.cycleCurrent()
+                tile.cycle_current()
 
         ##################################################
         
@@ -414,7 +414,7 @@ if __name__ == "__main__":
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 tile = node.get_tile(i,j)
-                tile.depositCurrent()
+                tile.deposit_current()
 
 
         ##################################################
@@ -443,9 +443,9 @@ if __name__ == "__main__":
                     analyzer.analyze2d(tile)
 
 
-            pyvlv.writeYee(node,      lap, conf.outdir + "/")
-            pyvlv.writeAnalysis(node, lap, conf.outdir + "/")
-            #pyvlv.writeMesh(node,     lap, conf.outdir + "/")
+            pyvlv.write_yee(node,      lap, conf.outdir + "/")
+            pyvlv.write_analysis(node, lap, conf.outdir + "/")
+            #pyvlv.write_mesh(node,     lap, conf.outdir + "/")
 
             #try:
             #    plotNode( axs[0], node, conf)

@@ -25,7 +25,7 @@ class Tile :
   ~Tile() override = default;
 
 
-  void stepLocation(corgi::Node<D>& /*grid*/) override {
+  void step_location(corgi::Node<D>& /*grid*/) override {
       //std::cout<<"BC spatial step\n";
 
       //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;

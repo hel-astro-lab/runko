@@ -14,8 +14,8 @@ namespace py = pybind11;
 class PyBundleInterpolator : public toolbox::BundleInterpolator {
   public:
     using toolbox::BundleInterpolator::BundleInterpolator;
-    using toolbox::BundleInterpolator::setBundle;
-    using toolbox::BundleInterpolator::getBundle;
+    using toolbox::BundleInterpolator::set_bundle;
+    using toolbox::BundleInterpolator::get_bundle;
     toolbox::Bundle interpolate() override {
       PYBIND11_OVERLOAD_PURE(toolbox::Bundle, toolbox::BundleInterpolator, interpolate, );
     }
@@ -48,9 +48,9 @@ PYBIND11_MODULE(plasmatools, m) {
   .def("__mul__",              [](sheets::Sheet const & self, Realf const other) 
         { return self * other; }, py::is_operator())
   .def("resize",                 &sheets::Sheet::resize)
-    .def("loadValue",            &sheets::Sheet::loadValue)
-    .def("getBlock",             &sheets::Sheet::getBlock)
-    .def("isNonZero",            &sheets::Sheet::isNonZero);
+    .def("load_value",            &sheets::Sheet::load_value)
+    .def("get_block",             &sheets::Sheet::get_block)
+    .def("is_non_zero",            &sheets::Sheet::is_non_zero);
   */
 
 
@@ -60,15 +60,15 @@ PYBIND11_MODULE(plasmatools, m) {
   // TODO expand
   py::class_<toolbox::Bundle>(m, "Bundle" )
     .def(py::init<>())
-    .def("getGrid",   &toolbox::Bundle::getGrid)
-    .def("getPencil", &toolbox::Bundle::getPencil);
+    .def("get_grid",   &toolbox::Bundle::get_grid)
+    .def("get_pencil", &toolbox::Bundle::get_pencil);
 
 
   py::class_<toolbox::BundleInterpolator, PyBundleInterpolator> bintp(m, "BundleInterpolator" );
   bintp
     .def(py::init<>())
-    .def("setBundle",   &toolbox::BundleInterpolator::setBundle)
-    .def("getBundle",   &toolbox::BundleInterpolator::getBundle)
+    .def("set_bundle",   &toolbox::BundleInterpolator::set_bundle)
+    .def("get_bundle",   &toolbox::BundleInterpolator::get_bundle)
     .def("interpolate", &toolbox::BundleInterpolator::interpolate);
 
   py::class_<toolbox::BundleInterpolator2nd>(m, "BundleInterpolator2nd", bintp)
@@ -90,16 +90,16 @@ PYBIND11_MODULE(plasmatools, m) {
     .def_readwrite("maxs",             &vmesh::VeloMesh::maxs)
     .def_readwrite("lens",             &vmesh::VeloMesh::lens)
     .def_readwrite("Nblocks",          &vmesh::VeloMesh::Nblocks)
-    .def("zFill",                      &vmesh::VeloMesh::zFill)
-    .def("getBlock",                   &vmesh::VeloMesh::getBlock)
-    .def("getBlockID",                 &vmesh::VeloMesh::getBlockID)
-    .def("getIndices",                 &vmesh::VeloMesh::getIndices)
-    .def("allBlocks",                  &vmesh::VeloMesh::allBlocks)
-    .def("getSize",                    &vmesh::VeloMesh::getSize)
-    .def("getCenter",                  &vmesh::VeloMesh::getCenter)
-    .def("getBundle",                  &vmesh::VeloMesh::getBundle)
-    .def("addBundle",                  &vmesh::VeloMesh::addBundle)
-    .def("getSheet",                   &vmesh::VeloMesh::getSheet)
+    .def("z_fill",                      &vmesh::VeloMesh::z_fill)
+    .def("get_block",                   &vmesh::VeloMesh::get_block)
+    .def("get_block_id",                 &vmesh::VeloMesh::get_block_id)
+    .def("get_indices",                 &vmesh::VeloMesh::get_indices)
+    .def("all_blocks",                  &vmesh::VeloMesh::all_blocks)
+    .def("get_size",                    &vmesh::VeloMesh::get_size)
+    .def("get_center",                  &vmesh::VeloMesh::get_center)
+    .def("get_bundle",                  &vmesh::VeloMesh::get_bundle)
+    .def("add_bundle",                  &vmesh::VeloMesh::add_bundle)
+    .def("get_sheet",                   &vmesh::VeloMesh::get_sheet)
 
     .def("__getitem__", [](const vmesh::VeloMesh &s, uint64_t i) {
         return s.__getitem__(i);
@@ -121,8 +121,8 @@ PYBIND11_MODULE(plasmatools, m) {
       size_t k = indx[2].cast<size_t>();
       return s.__setitem2__( i,j,k, v);
       })
-  .def("sizeInBytes", &vmesh::VeloMesh::sizeInBytes)
-    .def("capacityInBytes", &vmesh::VeloMesh::capacityInBytes)
+  .def("size_in_bytes", &vmesh::VeloMesh::size_in_bytes)
+    .def("capacity_in_bytes", &vmesh::VeloMesh::capacity_in_bytes)
     .def("clip", &vmesh::VeloMesh::clip);
 
 

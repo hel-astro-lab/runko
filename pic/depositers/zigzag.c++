@@ -12,7 +12,7 @@ template<size_t D, size_t V>
 void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 {
 
-  auto& yee = tile.getYee();
+  auto& yee = tile.get_yee();
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();

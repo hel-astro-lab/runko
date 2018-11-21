@@ -8,7 +8,7 @@ namespace rad {
 
 //--------------------------------------------------
 template<size_t D>
-auto declare_Tile(
+auto declare_tile(
     py::module& m,
     const std::string& pyclass_name) 
 {
@@ -59,7 +59,7 @@ void bind_rad(py::module& m_sub)
 
   // 2D bindings
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
-  auto t2 = rad::declare_Tile<2>(m_2d, "Tile");
+  auto t2 = rad::declare_tile<2>(m_2d, "Tile");
 
 
 

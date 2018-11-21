@@ -4,7 +4,7 @@
 
 
 template<std::size_t D>
-void vlv::Tile<D>::stepLocation(corgi::Node<D>& grid)
+void vlv::Tile<D>::step_location(corgi::Node<D>& grid)
 {
   vlv::AmrSpatialLagrangianSolver<Realf> ssol;
   ssol.solve(*this, grid);

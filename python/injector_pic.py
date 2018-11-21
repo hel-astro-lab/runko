@@ -79,7 +79,7 @@ def insert_em(node, conf, ffunc):
     for i in range(node.get_Nx()):
         for j in range(node.get_Ny()):
             c = node.get_tile(i,j)
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):

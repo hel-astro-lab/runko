@@ -131,7 +131,7 @@ def plotXmesh(ax, n, conf, spcs, vdir):
         cid = n.id(i)
         c = n.get_tile(cid)
 
-        block = c.getPlasmaSpecies(0, spcs)
+        block = c.get_plasma_species(0, spcs)
         for s in range(conf.NxMesh):
             vmesh = block[s,0,0]
             pym = get_leaf_mesh(vmesh, conf.refinement_level)

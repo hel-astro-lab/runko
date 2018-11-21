@@ -23,7 +23,7 @@ inline fields::YeeLattice& get_neighbor_yee(
 {
   auto cneigh = std::dynamic_pointer_cast<fields::Tile<2>>(
         node.get_tileptr( tile.neighs(i, j) ));
-  return cneigh->getYee();
+  return cneigh->get_yee();
 }
 
 
@@ -588,7 +588,7 @@ class Filter {
     //for (int k=-1; k<=1; k++) { // TODO: hack to get 2d tiles working
       //std::cout << "from: (" << i << "," << j << "," << k << ")" << '\n';
       
-      fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? tile.getYee() : get_neighbor_yee(i,j,tile,node);
+      fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? tile.get_yee() : get_neighbor_yee(i,j,tile,node);
 
       /*
       std::cout << "--------------------------------------------------\n";
@@ -640,7 +640,7 @@ class Filter {
   //       ensure thread safety
   void set_current( fields::Tile<2>& tile)
   {
-    fields::YeeLattice& mesh = tile.getYee();
+    fields::YeeLattice& mesh = tile.get_yee();
 
     int indx;
 

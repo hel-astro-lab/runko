@@ -25,21 +25,21 @@ namespace toolbox {
 
     size_t size();
 
-    void loadZeroBlock(size_t q);
+    void load_zero_block(size_t q);
 
-    void loadBlock(size_t q, vblock_t block);
+    void load_block(size_t q, vblock_t block);
 
-    void loadGrid(size_t q, Realf val);
+    void load_grid(size_t q, Realf val);
 
-    std::vector<Realf> getGrid();
+    std::vector<Realf> get_grid();
 
-    std::vector<Realf> getPencil();
+    std::vector<Realf> get_pencil();
 
-    bool isNonZero(size_t q);
+    bool is_non_zero(size_t q);
 
-    vblock_t getSlice(size_t q);
+    vblock_t get_slice(size_t q);
 
-    Realf getDx(size_t q);
+    Realf get_dx(size_t q);
 
   }; // end of Bundle class
 
@@ -63,13 +63,13 @@ namespace toolbox {
 
       virtual ~BundleInterpolator() { };
 
-      void setBundle(Bundle _bundle);
+      void set_bundle(Bundle _bundle);
 
-      Bundle getBundle( );
+      Bundle get_bundle( );
 
-      void setDelta( Bundle _delta );
+      void set_delta( Bundle _delta );
 
-      vblock_t getDeltaSlice(size_t i);
+      vblock_t get_delta_slice(size_t i);
 
       virtual Bundle interpolate() = 0;
   };

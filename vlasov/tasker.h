@@ -16,7 +16,7 @@
 namespace vlv{
 
 
-inline void stepLocation( corgi::Node<1>& grid )
+inline void step_location( corgi::Node<1>& grid )
 {
 
 #pragma omp parallel
@@ -34,7 +34,7 @@ inline void stepLocation( corgi::Node<1>& grid )
           //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
           //ssol.solve(tile, grid);
             
-          tile.stepLocation(grid);
+          tile.step_location(grid);
         }// end of omp task
       }
 
@@ -45,7 +45,7 @@ inline void stepLocation( corgi::Node<1>& grid )
 }
 
 template<int V>
-void stepInitial( corgi::Node<1>& grid )
+void initial_step( corgi::Node<1>& grid )
 {
 
   vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
@@ -74,7 +74,7 @@ void stepInitial( corgi::Node<1>& grid )
 
 
 template<int V>
-void stepVelocity( corgi::Node<1>& grid )
+void step_velocity( corgi::Node<1>& grid )
 {
   vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
 
@@ -99,7 +99,7 @@ void stepVelocity( corgi::Node<1>& grid )
 }
 
 template<int V>
-void stepVelocityGravity( 
+void step_velocity_with_gravity( 
     corgi::Node<1>& grid,
     Realf g0,
     Realf Lx
@@ -171,7 +171,7 @@ inline void analyze( corgi::Node<1>& grid )
 
 
 template<size_t D>
-inline void writeYee( 
+inline void write_yee( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir
@@ -193,7 +193,7 @@ inline void writeYee(
 
 
 template<size_t D>
-inline void writeAnalysis( 
+inline void write_analysis( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir
@@ -216,7 +216,7 @@ inline void writeAnalysis(
 
 
 template<size_t D>
-inline void writeMesh( 
+inline void write_mesh( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir 
@@ -238,7 +238,7 @@ inline void writeMesh(
 
 
 template<size_t D>
-inline void readYee( 
+inline void read_yee( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir 
@@ -257,7 +257,7 @@ inline void readYee(
 
 
 template<size_t D>
-inline void readMesh( 
+inline void read_mesh( 
     corgi::Node<D>& grid, 
     int lap,
     const std::string& dir 

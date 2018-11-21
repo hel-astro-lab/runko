@@ -81,7 +81,7 @@ class Adapter {
 
 
   /// Check given cell for possible refinement; if positive then it is appended to internal lists
-  void checkCell(
+  void check_cell(
       AdaptiveMesh<T,V>& mesh,
       uint64_t cid, 
       T refine_indicator, 
@@ -143,7 +143,7 @@ class Adapter {
 
       unrefine_indicator = refine_indicator;
 
-      checkCell(mesh, it.first, refine_indicator, unrefine_indicator);
+      check_cell(mesh, it.first, refine_indicator, unrefine_indicator);
     }
   }
 

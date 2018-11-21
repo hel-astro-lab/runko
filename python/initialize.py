@@ -55,7 +55,7 @@ def initialize_tile(c, i, j, n, conf):
 
     # initialize analysis tiles ready for incoming simulation data
     for ip in range(conf.Nspecies):
-        c.addAnalysisSpecies()
+        c.add_analysis_species()
 
     #set bounding box of the tile 
     mins = spatialLoc(n, [i,j], [0,0,0], conf)
@@ -87,7 +87,7 @@ def loadTiles(n, conf):
 #
 #    pmins = [conf.vxmin, conf.vymin, conf.vzmin]
 #    pmaxs = [conf.vxmax, conf.vymax, conf.vzmax]
-#    mesh.zFill( pmins, pmaxs )
+#    mesh.z_fill( pmins, pmaxs )
 #
 #
 #

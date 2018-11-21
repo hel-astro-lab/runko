@@ -94,7 +94,7 @@ def initialize_tile(c, i, j, n, conf):
         #reserve memory for particles
         Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
         container.reserve(Nprtcls)
-        container.resizeEM(Nprtcls)
+        container.resize_em(Nprtcls)
     
         c.set_container( container )
     
@@ -108,7 +108,7 @@ def initialize_tile(c, i, j, n, conf):
     
     # initialize analysis tiles ready for incoming simulation data
     for ip in range(conf.Nspecies):
-        c.addAnalysisSpecies()
+        c.add_analysis_species()
 
 
 

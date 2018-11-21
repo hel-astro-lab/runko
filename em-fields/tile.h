@@ -205,7 +205,7 @@ class Tile :
     mesh_lengths {{nx, ny, nz}}
   {
     // initialize one Yee lattice into the grid (into data rotator)
-    addYeeLattice();
+    add_yee_lattice();
   }
 
 
@@ -220,32 +220,32 @@ class Tile :
 
   virtual void update_boundaries(  corgi::Node<D>& node);
 
-  virtual void exchangeCurrents(  corgi::Node<D>& node);
+  virtual void exchange_currents(  corgi::Node<D>& node);
 
-  virtual void pushHalfB();
+  virtual void push_half_b();
 
-  virtual void pushE();
+  virtual void push_e();
 
-  virtual void depositCurrent();
+  virtual void deposit_current();
 
-  virtual YeeLattice& getYee(size_t i=0);
+  virtual YeeLattice& get_yee(size_t i=0);
 
-  virtual PlasmaMomentLattice& getAnalysis(size_t i);
+  virtual PlasmaMomentLattice& get_analysis(size_t i);
 
   //FIXME: naming is wrong because of pybind: it can not deduce correct function
   //       with only constness difference.
-  virtual const YeeLattice& getConstYee(size_t i=0) const; 
+  virtual const YeeLattice& get_const_yee(size_t i=0) const; 
 
-  virtual const PlasmaMomentLattice& getConstAnalysis(size_t i) const;
+  virtual const PlasmaMomentLattice& get_const_analysis(size_t i) const;
 
 
-  void cycleYee();
+  void cycle_yee();
 
-  void cycleCurrent();
+  void cycle_current();
 
-  void addYeeLattice();
+  void add_yee_lattice();
 
-  void addAnalysisSpecies();
+  void add_analysis_species();
 };
 
 

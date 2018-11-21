@@ -47,7 +47,7 @@ class Analyzator {
   {
 
     // Yee lattice reference
-    auto& yee = tile.getYee();
+    auto& yee = tile.get_yee();
     yee.rho.clear();
     //yee.ekin.clear();
     //yee.jx1.clear();

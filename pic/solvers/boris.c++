@@ -17,7 +17,7 @@ void pic::BorisPusher<D,V>::solve(
 {
 
   // get reference to the Yee grid 
-  //auto& yee = tile.getYee();
+  //auto& yee = tile.get_yee();
 
   for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
     ParticleBlock& container = tile.get_container(ispc);

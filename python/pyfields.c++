@@ -17,7 +17,7 @@ namespace fields{
   
 // generator for damped tile for various directions
 template<size_t D>
-auto declare_Tile(
+auto declare_tile(
     py::module& m,
     const std::string& pyclass_name) 
 {
@@ -30,18 +30,18 @@ auto declare_Tile(
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",       &fields::Tile<D>::dx)
     .def_readwrite("cfl",      &fields::Tile<D>::cfl)
-    .def("cycleYee",           &fields::Tile<D>::cycleYee)
-    .def("cycleCurrent",       &fields::Tile<D>::cycleCurrent)
-    .def("pushE",              &fields::Tile<D>::pushE)
-    .def("pushHalfB",          &fields::Tile<D>::pushHalfB)
-    .def("depositCurrent",     &fields::Tile<D>::depositCurrent)
-    .def("addAnalysisSpecies", &fields::Tile<D>::addAnalysisSpecies)
+    .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
+    .def("cycle_current",       &fields::Tile<D>::cycle_current)
+    .def("push_e",              &fields::Tile<D>::push_e)
+    .def("push_half_b",          &fields::Tile<D>::push_half_b)
+    .def("deposit_current",     &fields::Tile<D>::deposit_current)
+    .def("add_analysis_species", &fields::Tile<D>::add_analysis_species)
     .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
-    .def("exchangeCurrents",   &fields::Tile<D>::exchangeCurrents)
-    .def("getYee",             &fields::Tile<D>::getYee, 
+    .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
+    .def("get_yee",             &fields::Tile<D>::get_yee, 
                                 py::arg("i")=0,
                                 py::return_value_policy::reference)
-    .def("getAnalysis",        &fields::Tile<D>::getAnalysis, 
+    .def("get_analysis",        &fields::Tile<D>::get_analysis, 
                                 py::arg("i")=0,
                                 py::return_value_policy::reference);
         
@@ -71,7 +71,7 @@ auto declare_TileDamped(
   .def_readwrite("bz_ref",   &fields::damping::Tile<D,S>::bz_ref, py::return_value_policy::reference)
   .def_readwrite("fld1",     &fields::damping::Tile<D,S>::fld1)
   .def_readwrite("fld2",     &fields::damping::Tile<D,S>::fld2)
-  .def("dampFields",         &fields::damping::Tile<D,S>::dampFields);
+  .def("damp_fields",         &fields::damping::Tile<D,S>::damp_fields);
 }
 
 
@@ -121,9 +121,9 @@ void bind_fields(py::module& m_sub)
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
 
   /// General class for handling Maxwell's equations
-  auto t1 = declare_Tile<1>(m_1d, "Tile");
-  auto t2 = declare_Tile<2>(m_2d, "Tile");
-  //auto t3 = declare_Tile<3>(m, "Tile");
+  auto t1 = declare_tile<1>(m_1d, "Tile");
+  auto t2 = declare_tile<2>(m_2d, "Tile");
+  //auto t3 = declare_tile<3>(m, "Tile");
 
 
   //--------------------------------------------------

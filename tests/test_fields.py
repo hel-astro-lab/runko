@@ -79,7 +79,7 @@ class Communications(unittest.TestCase):
             #if n.get_mpi_grid(i,j) == n.rank:
             if True:
                 c = node.get_tile(i)
-                yee = c.getYee(0)
+                yee = c.get_yee(0)
 
                 for q in range(conf.NxMesh):
                     for r in range(conf.NyMesh):
@@ -104,7 +104,7 @@ class Communications(unittest.TestCase):
             c = node.get_tile( cid )
             (i,) = c.index
 
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
 
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
@@ -142,7 +142,7 @@ class Communications(unittest.TestCase):
         for cid in node.get_tile_ids():
             c = node.get_tile( cid )
             (i,) = c.index
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
 
             for s in range(-1, conf.NzMesh+1, 1):
                 for r in range(-1, conf.NyMesh+1, 1):
@@ -193,7 +193,7 @@ class Communications(unittest.TestCase):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     c = node.get_tile(i,j)
-                    yee = c.getYee(0)
+                    yee = c.get_yee(0)
 
                     for q in range(conf.NxMesh):
                         for r in range(conf.NyMesh):
@@ -217,7 +217,7 @@ class Communications(unittest.TestCase):
             c = node.get_tile( cid )
             (i, j) = c.index
 
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
                     for s in range(conf.NzMesh):
@@ -247,7 +247,7 @@ class Communications(unittest.TestCase):
         #for i in [1]:
         #    for j in [1]:
         #        c = node.get_tile(i,j)
-        #        c.updateBoundaries2D(node)
+        #        c.update_boundaries_2d(node)
 
         ref = np.zeros((conf.Nx*conf.Ny*conf.Nz, conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
@@ -255,7 +255,7 @@ class Communications(unittest.TestCase):
         for cid in node.get_tile_ids():
             c = node.get_tile( cid )
             (i, j) = c.index
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
 
             for s in range(-1, conf.NzMesh+1, 1):
                 for r in range(-1, conf.NyMesh+1, 1):

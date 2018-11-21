@@ -17,7 +17,7 @@ import initialize as init
 #from visualize_amr import plotXmesh
 #from visualize import plotJ, plotE, plotDens
 #from visualize import saveVisz
-from visualize import getYee
+from visualize import get_yee
 
 import injector
 
@@ -167,7 +167,7 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
@@ -188,7 +188,7 @@ def insert_em(node, conf):
     for i in range(node.get_Nx()):
         for j in range(node.get_Ny()):
             c = node.get_tileptr(i,j)
-            yee = c.getYee(0)
+            yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -209,7 +209,7 @@ def insert_em(node, conf):
 
 
 def solvePoisson(ax, node, conf):
-    yee = getYee(n, conf)
+    yee = get_yee(n, conf)
 
     x   = yee['x']
     rho = yee['rho']
@@ -293,9 +293,9 @@ if __name__ == "__main__":
     #insert_em(node, conf)
 
     lap = 0
-    plasma.writeYee(node,      lap)
-    plasma.writeAnalysis(node, lap)
-    plasma.writeMesh(node,     lap)
+    plasma.write_yee(node,      lap)
+    plasma.write_analysis(node, lap)
+    plasma.write_mesh(node,     lap)
 
 
     #Initial step backwards for velocity
@@ -303,7 +303,7 @@ if __name__ == "__main__":
         for i in range(node.get_Nx()):
             cell = node.get_tileptr(i,j)
             cell.update_boundaries(node)
-    plasma.stepInitial1d(node)
+    plasma.initial_step_1d(node)
     for j in range(node.get_Ny()):
         for i in range(node.get_Nx()):
             cell = node.get_tileptr(i,j)
@@ -356,9 +356,9 @@ if __name__ == "__main__":
 
 
     lap = 0
-    plasma.writeYee(node,      lap)
-    plasma.writeAnalysis(node, lap)
-    plasma.writeMesh(node,     lap)
+    plasma.write_yee(node,      lap)
+    plasma.write_analysis(node, lap)
+    plasma.write_mesh(node,     lap)
 
 
     #simulation loop
@@ -369,7 +369,7 @@ if __name__ == "__main__":
         #xJEu loop (Umeda a la implicit FTDT)
 
         #configuration space push
-        plasma.stepLocation(node)
+        plasma.step_location(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.get_Ny()):
@@ -381,7 +381,7 @@ if __name__ == "__main__":
         for j in range(node.get_Ny()):
             for i in range(node.get_Nx()):
                 cell = node.get_tileptr(i,j)
-                cell.depositCurrent()
+                cell.deposit_current()
 
         #update boundaries
         for j in range(node.get_Ny()):
@@ -390,7 +390,7 @@ if __name__ == "__main__":
                 cell.update_boundaries(node)
 
         #momentum step
-        plasma.stepVelocity1d(node)
+        plasma.step_velocity_1d(node)
 
         #cycle to the new fresh snapshot
         for j in range(node.get_Ny()):
@@ -431,9 +431,9 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            plasma.writeYee(node,      lap)
-            plasma.writeAnalysis(node, lap)
-            plasma.writeMesh(node,     lap)
+            plasma.write_yee(node,      lap)
+            plasma.write_analysis(node, lap)
+            plasma.write_mesh(node,     lap)
 
 
             #plotNode(axs[0], node, conf)

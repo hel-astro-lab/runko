@@ -43,7 +43,7 @@ class SpatialSolver {
   //    vlasov::Grid& grid)
   //{
   //  auto neigh_index   = tile.neighs(i, j); 
-  //  uint64_t neigh_cid = grid.tileId( std::get<0>(neigh_index), std::get<1>(neigh_index) );
+  //  uint64_t neigh_cid = grid.tile_id( std::get<0>(neigh_index), std::get<1>(neigh_index) );
   //  vlasov::VlasovTile& tile_neigh = dynamic_cast<vlasov::VlasovTile&>( grid.get_tile(neigh_cid) );
 
   //  auto& species = tile_neigh.steps.get();
@@ -84,7 +84,7 @@ class AmrSpatialLagrangianSolver :
     //using SpatialSolver<T>::get_external_data;
 
     /// velocity tensor product
-    toolbox::AdaptiveMesh<T,3>& velocityTensorProduct(
+    toolbox::AdaptiveMesh<T,3>& velocity_tensor_product(
         toolbox::AdaptiveMesh<T,3>&  lhs,
         size_t rank,
         T Const)
@@ -305,8 +305,8 @@ class AmrSpatialLagrangianSolver :
       auto Mp = Mp1 + M; 
       auto Mn = Mp1 - M;    
 
-      return   velocityTensorProduct(Mp, 1, 0.5*cfl ) 
-             - velocityTensorProduct(Mn, 2, 0.5*cfl*cfl ); 
+      return   velocity_tensor_product(Mp, 1, 0.5*cfl ) 
+             - velocity_tensor_product(Mn, 2, 0.5*cfl*cfl ); 
     }
 
 
@@ -502,7 +502,7 @@ class AmrSpatialLagrangianSolver :
     {
 
       // Yee lattice reference
-      auto& yee = tile.getYee();
+      auto& yee = tile.get_yee();
       yee.jx.clear();
       yee.jy.clear();
       yee.jz.clear();
