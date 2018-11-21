@@ -71,7 +71,7 @@ def loadTiles(n, conf):
         for j in range(n.get_Ny()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
-            if n.get_mpi_grid(i,j) == n.rank:
+            if n.get_mpi_grid(i,j) == n.rank():
                 c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
                 initialize_tile(c, i, j, n, conf)
