@@ -47,19 +47,23 @@ def combine_files(fdir,
     #print(files)
     #print(files[-1])
 
-    fname_prepro = fdir + "processed-" + fname + "-" + var + "_" + str(isp) + ".h5"
+    if fname == 'analysis':
+        fname_prepro = fdir + "processed-" + fname + "-" + var + "_" + str(isp) + ".h5"
+    elif fname == 'fields':
+        fname_prepro = fdir + "processed-" + fname + "-" + var + ".h5"
+
     #print(fname_prepro)
 
+    #print( re.split('(\d+)', files[-1].strip()) )
     last_file_num = atoi( re.split('(\d+)', files[-1].strip())[-4] )
-    print("newest file is: ", last_file_num)
+    print("...newest file is: ", last_file_num)
 
     if os.path.isfile(fname_prepro):
-        print("reading from preprocesses file: ", fname_prepro)
+        print("...reading from preprocesses file: ", fname_prepro)
         f5 = h5py.File(fname_prepro,'r')
         dset = f5['processed']
         newest_snapshot = dset.attrs['current_head']
-
-        print(" latest processed file is ", newest_snapshot)
+        print("...latest processed file is ", newest_snapshot)
 
         #use what is in the file and read the rest, then update the tail 
         if newest_snapshot < last_file_num:
