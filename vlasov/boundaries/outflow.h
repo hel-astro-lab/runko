@@ -4,6 +4,7 @@
 #include "../../em-fields/damping_tile.h"
 #include "../../vlasov/tile.h"
 
+#include "../spatial-solvers/amr_spatial_solver.h"
 
 namespace vlv {
 
@@ -27,13 +28,17 @@ class Tile :
   /// destructor
   ~Tile() override = default;
 
+  /// switch flag to determine if we move plasma or not
+  bool advance = false;
 
-  void step_location(corgi::Node<D>& /*grid*/) override {
+  void step_location(corgi::Node<D>& grid) override {
       //std::cout<<"BC spatial step\n";
 
-      //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
-      //ssol.solve(*this, grid);
+    if(advance) {
+      vlv::AmrSpatialLagrangianSolver<Realf> ssol;
+      ssol.solve(*this, grid);
     }
+  }
     
   /// wall location
   using fields::damping::Tile<D, S>::fld1;

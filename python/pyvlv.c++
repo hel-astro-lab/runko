@@ -160,7 +160,8 @@ namespace outflow {
           vlv::Tile<D>,
         std::shared_ptr<vlv::outflow::Tile<D,S>>
         >(m, pyclass_name.c_str() )
-    .def(py::init<size_t, size_t, size_t>());
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("advance", &vlv::outflow::Tile<D,S>::advance);
     }
 }
 
