@@ -32,18 +32,15 @@ void pic::BorisPusher<D,V>::solve(
     for( int i=0; i<3; i++)
       vel[i] = &( container.vel(i,0) );
 
-    /*
-    double* ex = &( (*tile.container.Epart)[0*nparts] );
-    double* ey = &( (*tile.container.Epart)[1*nparts] );
-    double* ez = &( (*tile.container.Epart)[2*nparts] );
-
-    double* bx = &( (*tile.container.Bpart)[0*nparts] );
-    double* by = &( (*tile.container.Bpart)[1*nparts] );
-    double* bz = &( (*tile.container.Bpart)[2*nparts] );
-    */
 
     double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
     double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+
+    // make sure E and B tmp arrays are of correct size
+    if(container.Epart.size() != (size_t)3*nparts)
+      container.Epart.resize(3*nparts);
+    if(container.Bpart.size() != (size_t)3*nparts)
+      container.Bpart.resize(3*nparts);
 
     double *ex, *ey, *ez, *bx, *by, *bz;
     ex = &( container.Epart[0*nparts] );

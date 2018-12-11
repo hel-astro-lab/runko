@@ -85,7 +85,7 @@ def initialize_tile(c, i, j, n, conf):
     
     # load particle containers
     for sps in range(conf.Nspecies):
-        container = pypic.ParticleBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        container = pypic.ParticleContainer()
         if sps % 2 == 0:
             container.q = conf.me*q0
         else:
@@ -94,7 +94,6 @@ def initialize_tile(c, i, j, n, conf):
         #reserve memory for particles
         Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
         container.reserve(Nprtcls)
-        container.resize_em(Nprtcls)
     
         c.set_container( container )
     

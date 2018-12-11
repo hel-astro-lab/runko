@@ -31,6 +31,10 @@ void pic::LinearInterpolator<D,V>::solve(
     //  efield[i] = &( tile.container.Epart[i][0] );
     //  bfield[i] = &( tile.container.Bpart[i][0] );
     //}
+
+    /// resize internal arrays
+    container.Epart.resize(3*nparts);
+    container.Bpart.resize(3*nparts);
       
     double *ex, *ey, *ez, *bx, *by, *bz;
     ex = &( container.Epart[0*nparts] );

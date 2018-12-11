@@ -52,6 +52,15 @@ void ParticleContainer::resize(size_t N)
 size_t ParticleContainer::size() 
 { 
   // FIXME: these fail
+  //std::cout << "prtcl container size()" << Nprtcls << " vs " 
+  //  << locArr[0].size() << "/"
+  //  << locArr[1].size() << "/"
+  //  << locArr[2].size() << "/"
+  //  << velArr[0].size() << "/"
+  //  << velArr[1].size() << "/"
+  //  << velArr[2].size() << "/"
+  //  << wgtArr.size() << "\n";
+
   assert(locArr[0].size() == Nprtcls);
   assert(locArr[1].size() == Nprtcls);
   assert(locArr[2].size() == Nprtcls);

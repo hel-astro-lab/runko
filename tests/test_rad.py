@@ -120,7 +120,7 @@ class radiation(unittest.TestCase):
 
         Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc
 
-        container = pyrad.PhotonBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        container = pyrad.PhotonContainer()
         container.reserve(Nprtcls)
 
         weight = 1.0
@@ -197,7 +197,7 @@ class radiation(unittest.TestCase):
         #Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc
         Nprtcls = int(1e4)
 
-        container = pyrad.PhotonBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        container = pyrad.PhotonContainer()
         container.reserve(Nprtcls)
 
         weight = 1.0

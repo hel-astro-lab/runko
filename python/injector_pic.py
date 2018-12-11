@@ -15,7 +15,7 @@ def inject(node, ffunc, conf):
     #loop over all *local* cells
     for i in range(node.get_Nx()):
         for j in range(node.get_Ny()):
-            if n.get_mpi_grid(i,j) == n.rank():
+            if node.get_mpi_grid(i,j) == node.rank():
                 #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
@@ -67,7 +67,7 @@ def inject(node, ffunc, conf):
 
                                     ip_mesh += 1
 
-                                    container.add_particle(x0, u0)
+                                    container.add_particle(x0, u0, 1.0)
 
 
 

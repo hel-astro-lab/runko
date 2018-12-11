@@ -97,7 +97,7 @@ def rand3Dvel(vabs):
 def initialize_tile(c, i, j, n, conf):
     
     # load particle containers
-    bucket = pyrad.PhotonBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+    bucket = pyrad.PhotonContainer()
         
     #reserve memory for particles
     Nprtcls = conf.ppt

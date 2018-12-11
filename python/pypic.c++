@@ -173,33 +173,41 @@ void bind_pic(py::module& m_sub)
           return s.vel(idim); 
         }, py::return_value_policy::reference)
     //temporary binding
-    .def("ex",          [](pic::ParticleContainer& s) 
-        {
-          return s.Epart[0];
-        }, py::return_value_policy::reference)
-    .def("ey",          [](pic::ParticleContainer& s) 
+    .def("ex",          [](pic::ParticleContainer& s, int i) 
         {
           int nparts = s.size();
-          return s.Epart[1*nparts];
+          assert(i < nparts);
+          return s.Epart[i];
         }, py::return_value_policy::reference)
-    .def("ez",          [](pic::ParticleContainer& s) 
+    .def("ey",          [](pic::ParticleContainer& s, int i) 
         {
           int nparts = s.size();
-          return s.Epart[2*nparts];
+          assert(i < nparts);
+          return s.Epart[i + 1*nparts];
         }, py::return_value_policy::reference)
-    .def("bx",          [](pic::ParticleContainer& s) 
-        {
-          return s.Bpart[0];
-        }, py::return_value_policy::reference)
-    .def("by",          [](pic::ParticleContainer& s) 
+    .def("ez",          [](pic::ParticleContainer& s, int i) 
         {
           int nparts = s.size();
-          return s.Bpart[1*nparts];
+          assert(i < nparts);
+          return s.Epart[i + 2*nparts];
         }, py::return_value_policy::reference)
-    .def("bz",          [](pic::ParticleContainer& s) 
+    .def("bx",          [](pic::ParticleContainer& s, int i)
         {
           int nparts = s.size();
-          return s.Bpart[2*nparts];
+          assert(i < nparts);
+          return s.Bpart[i];
+        }, py::return_value_policy::reference)
+    .def("by",          [](pic::ParticleContainer& s, int i) 
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Bpart[i + 1*nparts];
+        }, py::return_value_policy::reference)
+    .def("bz",          [](pic::ParticleContainer& s, int i) 
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Bpart[i + 2*nparts];
         }, py::return_value_policy::reference);
     
 

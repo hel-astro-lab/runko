@@ -84,7 +84,7 @@ class ParticleContainer {
 
   protected:
 
-  size_t Nprtcls;
+  size_t Nprtcls = 0;
 
   std::vector< std::vector<double> > locArr;
   std::vector< std::vector<double> > velArr;
