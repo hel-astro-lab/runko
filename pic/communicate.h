@@ -32,9 +32,6 @@ inline pic::ParticleBlock& get_external_data(
 class Communicator {
   public:
 
-
-
-
   void check_outgoing_particles( pic::Tile<2>& tile)
   {
 
