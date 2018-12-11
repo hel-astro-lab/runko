@@ -19,33 +19,32 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
   auto mins = tile.mins;
 
-  for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-    ParticleBlock& container = tile.get_container(ispc);
+  for(auto&& container : tile.containers) {
 
     // initialize pointers to particle arrays
     int nparts = container.size();
       
-    Realf* loc[3];
+    double* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    Realf* vel[3];
+    double* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-    Realf invgam;
-    Realf c = tile.cfl;
-    Realf q = container.q;
+    double invgam;
+    double c = tile.cfl;
+    double q = container.q;
 
-    Realf x0, y0, z0, x1, x2, y1, y2, z1, z2;
+    double x0, y0, z0, x1, x2, y1, y2, z1, z2;
 
     //std::cout << " q = " << q << " ispc: " << ispc << '\n';
 
     int i1,i2,j1,j2,k1,k2;
 
-    Realf xr, yr, zr;
+    double xr, yr, zr;
 
-    Realf Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-    Realf Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+    double Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+    double Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
 
     // loop and check particles
     int n1 = 0;
@@ -84,9 +83,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   	  k2  = D >= 3 ? static_cast<int>(floor( z2 ) ) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      xr = min( (Realf)(min(i1,i2)+1), max( (Realf)max(i1,i2), static_cast<Realf>(0.5)*(x1+x2) ) );
-      yr = min( (Realf)(min(j1,j2)+1), max( (Realf)max(j1,j2), static_cast<Realf>(0.5)*(y1+y2) ) );
-      zr = min( (Realf)(min(k1,k2)+1), max( (Realf)max(k1,k2), static_cast<Realf>(0.5)*(z1+z2) ) );
+      xr = min( (double)(min(i1,i2)+1), max( (double)max(i1,i2), static_cast<double>(0.5)*(x1+x2) ) );
+      yr = min( (double)(min(j1,j2)+1), max( (double)max(j1,j2), static_cast<double>(0.5)*(y1+y2) ) );
+      zr = min( (double)(min(k1,k2)+1), max( (double)max(k1,k2), static_cast<double>(0.5)*(z1+z2) ) );
 
 
       // -q to include -j in the Ampere's equation

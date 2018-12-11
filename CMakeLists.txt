@@ -12,6 +12,7 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 # set numerical precision variable
 set (FP_PRECISION DP)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 
@@ -47,7 +48,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/corgi/mpi4cpp/tools/optional-li
 # openMP
 #see:
 # - https://stackoverflow.com/questions/46414660/macos-cmake-and-openmp
-OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
+OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" OFF)
 
 
 # Find OpenMP

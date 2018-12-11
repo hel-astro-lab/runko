@@ -11,51 +11,47 @@ void pic::LinearInterpolator<D,V>::solve(
   // get reference to the Yee grid 
   auto& yee = tile.get_yee();
 
-
-  for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-    ParticleBlock& container = tile.get_container(ispc);
+  for(auto&& container : tile.containers) {
 
     int nparts = container.size();
-    container.resize_em(nparts); // make EM containers ready for insertion
-
 
     // initialize pointers to particle arrays
-    Realf* loc[3];
+    double* loc[3];
     for( int i=0; i<3; i++)
       loc[i] = &( container.loc(i,0) );
 
     // 1-d arrays
-    //Realf* ex = &( (*tile.container.Epart)[0*nparts] );
-    //Realf* ey = &( (*tile.container.Epart)[1*nparts] );
-    //Realf* ez = &( (*tile.container.Epart)[2*nparts] );
+    //double* ex = &( (*tile.container.Epart)[0*nparts] );
+    //double* ey = &( (*tile.container.Epart)[1*nparts] );
+    //double* ez = &( (*tile.container.Epart)[2*nparts] );
 
     // multiD array version
-    //Realf *efield[3], *bfield[3];
+    //double *efield[3], *bfield[3];
     //for( int i=0; i<3; i++) {
     //  efield[i] = &( tile.container.Epart[i][0] );
     //  bfield[i] = &( tile.container.Bpart[i][0] );
     //}
       
-    Realf *ex, *ey, *ez, *bx, *by, *bz;
-    ex = &( container.Epart[0][0] );
-    ey = &( container.Epart[1][0] );
-    ez = &( container.Epart[2][0] );
+    double *ex, *ey, *ez, *bx, *by, *bz;
+    ex = &( container.Epart[0*nparts] );
+    ey = &( container.Epart[1*nparts] );
+    ez = &( container.Epart[2*nparts] );
 
-    bx = &( container.Bpart[0][0] );
-    by = &( container.Bpart[1][0] );
-    bz = &( container.Bpart[2][0] );
+    bx = &( container.Bpart[0*nparts] );
+    by = &( container.Bpart[1*nparts] );
+    bz = &( container.Bpart[2*nparts] );
 
 
     // loop over particles
     int n1 = 0;
     int n2 = nparts;
 
-    //Realf c = tile.cfl;
-    //Realf cinv = 1.0/c;
+    //double c = tile.cfl;
+    //double cinv = 1.0/c;
 
     int i=0, j=0, k=0;
-    Realf dx=0.0, dy=0.0, dz=0.0;
-    Realf f,g;
+    double dx=0.0, dy=0.0, dz=0.0;
+    double f,g;
 
     int iz = 1;
     if (D<=2) iz = 0; // flip switch for making array queries 2D
@@ -162,5 +158,5 @@ void pic::LinearInterpolator<D,V>::solve(
 
 //template class pic::LinearInterpolator<1,3>; // 1D3V
 template class pic::LinearInterpolator<2,3>; // 2D3V
-template class pic::LinearInterpolator<3,3>; // 3D3V
+//template class pic::LinearInterpolator<3,3>; // 3D3V
 

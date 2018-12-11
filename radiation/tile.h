@@ -44,14 +44,14 @@ public:
   /// destructor
   ~Tile() override = default;
 
-  //PhotonBlock container/storage
-  std::vector<PhotonBlock> buckets;
+  //PhotonContainer container/storage
+  std::vector<PhotonContainer> buckets;
 
   /// get i:th bucket
-  PhotonBlock& get_bucket(size_t i) { return buckets[i]; };
+  PhotonContainer& get_bucket(size_t i) { return buckets[i]; };
 
   /// push_back new bucket
-  void push_back(const PhotonBlock& bucket) {buckets.push_back(bucket);};
+  void push_back(const PhotonContainer& bucket) {buckets.push_back(bucket);};
 
 
 

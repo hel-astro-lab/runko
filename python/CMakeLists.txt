@@ -27,6 +27,7 @@ set (VLV_FILES
 set (PIC_FILES 
      pypic.c++
      ../pic/tile.c++
+     ../pic/particle.c++
      ../pic/boundaries/wall.c++
      ../pic/solvers/boris.c++
      ../pic/interpolators/linear.c++

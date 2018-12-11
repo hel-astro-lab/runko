@@ -19,58 +19,56 @@ void pic::BorisPusher<D,V>::solve(
   // get reference to the Yee grid 
   //auto& yee = tile.get_yee();
 
-  for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-    ParticleBlock& container = tile.get_container(ispc);
-
+  for(auto&& container : tile.containers) {
     int nparts = container.size();
 
 
     // initialize pointers to particle arrays
-    Realf* loc[3];
+    double* loc[3];
     for( int i=0; i<3; i++)
       loc[i] = &( container.loc(i,0) );
 
-    Realf* vel[3];
+    double* vel[3];
     for( int i=0; i<3; i++)
       vel[i] = &( container.vel(i,0) );
 
     /*
-    Realf* ex = &( (*tile.container.Epart)[0*nparts] );
-    Realf* ey = &( (*tile.container.Epart)[1*nparts] );
-    Realf* ez = &( (*tile.container.Epart)[2*nparts] );
+    double* ex = &( (*tile.container.Epart)[0*nparts] );
+    double* ey = &( (*tile.container.Epart)[1*nparts] );
+    double* ez = &( (*tile.container.Epart)[2*nparts] );
 
-    Realf* bx = &( (*tile.container.Bpart)[0*nparts] );
-    Realf* by = &( (*tile.container.Bpart)[1*nparts] );
-    Realf* bz = &( (*tile.container.Bpart)[2*nparts] );
+    double* bx = &( (*tile.container.Bpart)[0*nparts] );
+    double* by = &( (*tile.container.Bpart)[1*nparts] );
+    double* bz = &( (*tile.container.Bpart)[2*nparts] );
     */
 
-    Realf ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-    Realf bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+    double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
+    double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
-    Realf *ex, *ey, *ez, *bx, *by, *bz;
-    ex = &( container.Epart[0][0] );
-    ey = &( container.Epart[1][0] );
-    ez = &( container.Epart[2][0] );
+    double *ex, *ey, *ez, *bx, *by, *bz;
+    ex = &( container.Epart[0*nparts] );
+    ey = &( container.Epart[1*nparts] );
+    ez = &( container.Epart[2*nparts] );
 
-    bx = &( container.Bpart[0][0] );
-    by = &( container.Bpart[1][0] );
-    bz = &( container.Bpart[2][0] );
+    bx = &( container.Bpart[0*nparts] );
+    by = &( container.Bpart[1*nparts] );
+    bz = &( container.Bpart[2*nparts] );
 
     // loop over particles
     int n1 = 0;
     int n2 = nparts;
 
-    Realf u0, v0, w0;
-    Realf u1, v1, w1;
-    Realf g, f;
+    double u0, v0, w0;
+    double u1, v1, w1;
+    double g, f;
 
 
-    Realf c = tile.cfl;
-    Realf cinv = 1.0/c;
+    double c = tile.cfl;
+    double cinv = 1.0/c;
 
     // charge (sign only)
-    Realf qm = sign(container.q);
-    //Realf qm = container.q;
+    double qm = sign(container.q);
+    //double qm = container.q;
     //std::cout << " qm = " << qm << " ispc: " << ispc << '\n';
 
 

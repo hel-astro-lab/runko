@@ -1,14 +1,17 @@
 #pragma once
 
 #include <array>
+#include <mpi4cpp/mpi.h>
 
 #include "../definitions.h"
 #include "../corgi/tile.h"
+#include "../corgi/corgi.h"
 #include "../em-fields/tile.h"
 #include "particle.h"
 
 namespace pic {
 
+using namespace mpi4cpp;
 
 /*! \brief PiC tile
  *
@@ -32,14 +35,14 @@ public:
   using fields::Tile<D>::mesh_lengths;
 
 
-  //ParticleBlock container;
-  std::vector<ParticleBlock> containers;
+  //ParticleContainer container;
+  std::vector<ParticleContainer> containers;
 
   /// get i:th container
-  ParticleBlock& get_container(size_t i) { return containers[i]; };
+  ParticleContainer& get_container(size_t i) { return containers[i]; };
 
   /// set i:th container
-  void set_container(const ParticleBlock& block) {containers.push_back(block);};
+  void set_container(const ParticleContainer& block) {containers.push_back(block);};
 
   size_t Nspecies() { return containers.size(); };
 
@@ -58,6 +61,55 @@ public:
 
   using fields::Tile<D>::cfl;
   using fields::Tile<D>::dx;
+
+  //--------------------------------------------------
+  // MPI send
+  virtual std::vector<mpi::request> 
+  send_data( mpi::communicator&, int orig, int tag) override;
+
+  /// actual tag=0 send
+  std::vector<mpi::request> 
+  send_particle_data( mpi::communicator&, int orig);
+
+  /// actual tag=1 send
+  std::vector<mpi::request> 
+  send_particle_extra_data( mpi::communicator&, int orig);
+
+
+  //--------------------------------------------------
+  // MPI recv
+  virtual std::vector<mpi::request> 
+  recv_data(mpi::communicator&, int dest, int tag) override;
+
+  /// actual tag=0 recv
+  std::vector<mpi::request> 
+  recv_particle_data(mpi::communicator&, int dest);
+
+  /// actual tag=1 recv
+  std::vector<mpi::request> 
+  recv_particle_extra_data(mpi::communicator&, int dest);
+  //--------------------------------------------------
+
+
+  /// check all particle containers for particles
+  // exceeding limits
+  void check_outgoing_particles();
+
+  /// delete particles from each container that are exceeding
+  // the boundaries
+  void delete_transferred_particles();
+
+  /// get particles flowing into this tile
+  void get_incoming_particles(corgi::Node<D>& grid);
+
+  /// pack particles for MPI message
+  void pack_outgoing_particles();
+
+  /// unpack received MPI message particles
+  void unpack_incoming_particles();
+
+  /// delete all particles from each container
+  void delete_all_particles();
 
 };
 

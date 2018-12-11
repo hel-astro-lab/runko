@@ -42,7 +42,7 @@ class Analyzator {
 
     // analysis lattice reference
     for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-      ParticleBlock& container = tile.get_container(ispc);
+      ParticleContainer& container = tile.get_container(ispc);
       auto& analysis = tile.analysis[ispc];
 
       analysis.clear();
@@ -51,18 +51,18 @@ class Analyzator {
       // initialize pointers to particle arrays
       int nparts = container.size();
         
-      Realf* loc[3];
+      double* loc[3];
       for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-      Realf* vel[3];
+      double* vel[3];
       for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-      Realf gam;
-      //Realf c = tile.cfl;
-      Realf q = container.q; // TODO: split into species
-      Realf x0, y0, z0;
-      Realf u0, v0, w0;
+      double gam;
+      //double c = tile.cfl;
+      double q = container.q; // TODO: split into species
+      double x0, y0, z0;
+      double u0, v0, w0;
       int i,j,k;
 
 
@@ -111,7 +111,7 @@ class Analyzator {
 
         // --------------------------------------------------
         // general quantities
-        Realf mass = abs(q);
+        double mass = abs(q);
         yee.rho(i,j,k) += mass; // total number density
 
         // --------------------------------------------------
@@ -139,7 +139,7 @@ class Analyzator {
         analysis.Vy(i,j,k)      += v0/gam; // bulk velocity y
         analysis.Vz(i,j,k)      += w0/gam; // bulk velocity z
 
-        analysis.temp(i,j,k)    += gam - Realf(1); // temperature XXX is it?
+        analysis.temp(i,j,k)    += gam - double(1); // temperature XXX is it?
 
       }
 

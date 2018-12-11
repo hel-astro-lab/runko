@@ -43,7 +43,13 @@ auto declare_tile(
     //.def_readwrite("container", &pic::Tile<D>::container);
     .def("get_container",       &pic::Tile<D>::get_container, 
         py::return_value_policy::reference)
-    .def("set_container",       &pic::Tile<D>::set_container);
+    .def("set_container",       &pic::Tile<D>::set_container)
+    .def("check_outgoing_particles",     &pic::Tile<D>::check_outgoing_particles)
+    .def("get_incoming_particles",       &pic::Tile<D>::get_incoming_particles)
+    .def("delete_transferred_particles", &pic::Tile<D>::delete_transferred_particles)
+    .def("pack_outgoing_particles",      &pic::Tile<D>::pack_outgoing_particles)
+    .def("unpack_incoming_particles",    &pic::Tile<D>::unpack_incoming_particles)
+    .def("delete_all_particles",         &pic::Tile<D>::delete_all_particles);
 }
 
 
@@ -146,51 +152,54 @@ void bind_pic(py::module& m_sub)
 {
 
 
-  py::class_<pic::ParticleBlock>(m_sub, "ParticleBlock")
-    .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("q",   &pic::ParticleBlock::q)
-    .def("reserve",       &pic::ParticleBlock::reserve)
-    .def("resize_em",      &pic::ParticleBlock::resize_em)
-    .def("size",          &pic::ParticleBlock::size)
-    .def("add_particle",  &pic::ParticleBlock::add_particle)
-    .def("add_particle2", [](pic::ParticleBlock& s, 
+  py::class_<pic::ParticleContainer>(m_sub, "ParticleContainer")
+    .def(py::init<>())
+    .def_readwrite("q",   &pic::ParticleContainer::q)
+    .def("reserve",       &pic::ParticleContainer::reserve)
+    .def("size",          &pic::ParticleContainer::size)
+    .def("add_particle",  &pic::ParticleContainer::add_particle)
+    .def("add_particle2", [](pic::ParticleContainer& s, 
                             Realf xx, Realf yy, Realf zz,
-                            Realf vx, Realf vy, Realf vz)
+                            Realf vx, Realf vy, Realf vz, Realf wgt)
         {
-          s.add_particle({xx,yy,zz}, {vx,vy,vz});
+          s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
         })
-    .def("loc",          [](pic::ParticleBlock& s, size_t idim) 
+    .def("loc",          [](pic::ParticleContainer& s, size_t idim) 
         {
           return s.loc(idim); 
         }, py::return_value_policy::reference)
-    .def("vel",          [](pic::ParticleBlock& s, size_t idim) 
+    .def("vel",          [](pic::ParticleContainer& s, size_t idim) 
         {
           return s.vel(idim); 
         }, py::return_value_policy::reference)
     //temporary binding
-    .def("ex",          [](pic::ParticleBlock& s) 
+    .def("ex",          [](pic::ParticleContainer& s) 
         {
           return s.Epart[0];
         }, py::return_value_policy::reference)
-    .def("ey",          [](pic::ParticleBlock& s) 
+    .def("ey",          [](pic::ParticleContainer& s) 
         {
-          return s.Epart[1];
+          int nparts = s.size();
+          return s.Epart[1*nparts];
         }, py::return_value_policy::reference)
-    .def("ez",          [](pic::ParticleBlock& s) 
+    .def("ez",          [](pic::ParticleContainer& s) 
         {
-          return s.Epart[2];
+          int nparts = s.size();
+          return s.Epart[2*nparts];
         }, py::return_value_policy::reference)
-    .def("bx",          [](pic::ParticleBlock& s) 
+    .def("bx",          [](pic::ParticleContainer& s) 
         {
           return s.Bpart[0];
         }, py::return_value_policy::reference)
-    .def("by",          [](pic::ParticleBlock& s) 
+    .def("by",          [](pic::ParticleContainer& s) 
         {
-          return s.Bpart[1];
+          int nparts = s.size();
+          return s.Bpart[1*nparts];
         }, py::return_value_policy::reference)
-    .def("bz",          [](pic::ParticleBlock& s) 
+    .def("bz",          [](pic::ParticleContainer& s) 
         {
-          return s.Bpart[2];
+          int nparts = s.size();
+          return s.Bpart[2*nparts];
         }, py::return_value_policy::reference);
     
 
@@ -247,20 +256,12 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
 
 
-    py::class_<pic::Communicator>(m_2d, "Communicator")
-      .def(py::init<>())
-      .def("check_outgoing_particles",    &pic::Communicator::check_outgoing_particles)
-      .def("get_incoming_particles",      &pic::Communicator::get_incoming_particles)
-      .def("delete_transferred_particles",&pic::Communicator::delete_transferred_particles);
-
-
-
-    /// Pic tile analyzator
-    py::class_<pic::Analyzator>(m_2d, "Analyzator")
-      .def(py::init<>())
-      .def("analyze1d", &pic::Analyzator::analyze<1>)
-      .def("analyze2d", &pic::Analyzator::analyze<2>)
-      .def("analyze3d", &pic::Analyzator::analyze<3>);
+  /// Pic tile analyzator
+  py::class_<pic::Analyzator>(m_2d, "Analyzator")
+    .def(py::init<>())
+    .def("analyze1d", &pic::Analyzator::analyze<1>)
+    .def("analyze2d", &pic::Analyzator::analyze<2>)
+    .def("analyze3d", &pic::Analyzator::analyze<3>);
 
 
 
