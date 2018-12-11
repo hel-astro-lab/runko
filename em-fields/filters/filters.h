@@ -9,7 +9,7 @@
 //#include "communicate.h"
 
 #include "../../units.h"
-#include "fftw3.h"
+#include <fftw3.h>
 
 
 
