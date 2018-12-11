@@ -2,11 +2,12 @@
 
 #include "spatial-solvers/amr_spatial_solver.h"
 
+namespace vlv {
 
 template<std::size_t D>
-void vlv::Tile<D>::step_location(corgi::Node<D>& grid)
+void Tile<D>::step_location(corgi::Node<D>& grid)
 {
-  vlv::AmrSpatialLagrangianSolver<Realf> ssol;
+  AmrSpatialLagrangianSolver<Realf> ssol;
   ssol.solve(*this, grid);
 }
 
@@ -14,7 +15,7 @@ void vlv::Tile<D>::step_location(corgi::Node<D>& grid)
 
 // TODO: separate into own communication module/header
 template<>
-vlv::PlasmaBlock& vlv::Tile<1>::get_external_data(
+PlasmaBlock& Tile<1>::get_external_data(
     corgi::Node<1>& grid,
     int ispc,
     int i
@@ -22,7 +23,7 @@ vlv::PlasmaBlock& vlv::Tile<1>::get_external_data(
 {
   auto neigh_index   = this->neighs(i); 
   uint64_t neigh_cid = grid.id( neigh_index );
-  auto& tile_neigh = dynamic_cast<vlv::Tile<1>&>( grid.get_tile(neigh_cid) );
+  auto& tile_neigh = dynamic_cast<Tile<1>&>( grid.get_tile(neigh_cid) );
 
   auto& species = tile_neigh.steps.get();
 
@@ -37,6 +38,8 @@ vlv::PlasmaBlock& vlv::Tile<1>::get_external_data(
 //--------------------------------------------------
 // explicit template instantiation
 
-template class vlv::Tile<1>;
-//template class vlv::Tile<2>;
-//template class vlv::Tile<3>;
+template class Tile<1>;
+//template class Tile<2>;
+//template class Tile<3>;
+
+} // end of ns vlv

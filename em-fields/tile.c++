@@ -3,6 +3,7 @@
 #include "tile.h"
 
 
+namespace fields {
 
 /* 
  * 1D version:
@@ -23,9 +24,9 @@
 
 /// 1D E pusher
 template<>
-void fields::Tile<1>::push_e() 
+void Tile<1>::push_e() 
 {
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
   Realf C = 1.0 * cfl;
 
   int k = 0;
@@ -49,9 +50,9 @@ void fields::Tile<1>::push_e()
 
 /// 2D E pusher
 template<>
-void fields::Tile<2>::push_e() 
+void Tile<2>::push_e() 
 {
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
 
   Realf C = 1.0 * cfl;
 
@@ -78,9 +79,9 @@ void fields::Tile<2>::push_e()
 
 /// 3D E pusher
 template<>
-void fields::Tile<3>::push_e() 
+void Tile<3>::push_e() 
 {
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
   Realf C = 1.0 * cfl;
 
   for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++)
@@ -112,9 +113,9 @@ void fields::Tile<3>::push_e()
 
 /// Deposit current into electric field
 template<std::size_t D>
-void fields::Tile<D>::deposit_current() 
+void Tile<D>::deposit_current() 
 {
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
 
   mesh.ex -= mesh.jx;
   mesh.ey -= mesh.jy;
@@ -140,9 +141,9 @@ void fields::Tile<D>::deposit_current()
 
 /// 1D B pusher
 template<>
-void fields::Tile<1>::push_half_b() 
+void Tile<1>::push_half_b() 
 {
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
   Realf C = 0.5 * cfl;
 
   int k = 0;
@@ -165,9 +166,9 @@ void fields::Tile<1>::push_half_b()
 
 /// 2D B pusher
 template<>
-void fields::Tile<2>::push_half_b() 
+void Tile<2>::push_half_b() 
 {
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
 
   Realf C = 0.5 * cfl;
 
@@ -195,9 +196,9 @@ void fields::Tile<2>::push_half_b()
 
 /// 3D B pusher
 template<>
-void fields::Tile<3>::push_half_b() 
+void Tile<3>::push_half_b() 
 {
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
   Realf C = 0.5 * cfl;
 
   for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++) 
@@ -227,13 +228,13 @@ void fields::Tile<3>::push_half_b()
 
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
-fields::YeeLattice& fields::Tile<D>::get_yee(size_t i) 
+YeeLattice& Tile<D>::get_yee(size_t i) 
 {
   return this->yee.get(i);
 }
 
 template<std::size_t D>
-const fields::YeeLattice& fields::Tile<D>::get_const_yee(size_t i) const 
+const YeeLattice& Tile<D>::get_const_yee(size_t i) const 
 {
   return this->yee.get(i);
 }
@@ -241,13 +242,13 @@ const fields::YeeLattice& fields::Tile<D>::get_const_yee(size_t i) const
 
 /// Get analysis lattice of i:th species
 template<std::size_t D>
-fields::PlasmaMomentLattice& fields::Tile<D>::get_analysis(size_t i) 
+PlasmaMomentLattice& Tile<D>::get_analysis(size_t i) 
 {
   return this->analysis.at(i);
 }
 
 template<std::size_t D>
-const fields::PlasmaMomentLattice& fields::Tile<D>::get_const_analysis(size_t i) const 
+const PlasmaMomentLattice& Tile<D>::get_const_analysis(size_t i) const 
 {
   return this->analysis.at(i);
 }
@@ -255,19 +256,19 @@ const fields::PlasmaMomentLattice& fields::Tile<D>::get_const_analysis(size_t i)
 //--------------------------------------------------
 // Specialize analysis species grid extension
 template<>
-void fields::Tile<1>::add_analysis_species() 
+void Tile<1>::add_analysis_species() 
 {
   analysis.emplace_back(mesh_lengths[0], 1, 1);
 }
 
 template<>
-void fields::Tile<2>::add_analysis_species() 
+void Tile<2>::add_analysis_species() 
 {
   analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], 1);
 }
 
 template<>
-void fields::Tile<3>::add_analysis_species() 
+void Tile<3>::add_analysis_species() 
 {
   analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
@@ -276,29 +277,29 @@ void fields::Tile<3>::add_analysis_species()
 //--------------------------------------------------
 // Specialize Yee Lattice insertion
 template<>
-void fields::Tile<1>::add_yee_lattice() 
+void Tile<1>::add_yee_lattice() 
 {
-  yee.push_back( fields::YeeLattice( mesh_lengths[0], 1, 1) );
+  yee.push_back( YeeLattice( mesh_lengths[0], 1, 1) );
 }
 
 template<>
-void fields::Tile<2>::add_yee_lattice() 
+void Tile<2>::add_yee_lattice() 
 {
-  yee.push_back( fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) );
+  yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) );
 }
 
 template<>
-void fields::Tile<3>::add_yee_lattice() 
+void Tile<3>::add_yee_lattice() 
 {
-  yee.push_back( fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) );
+  yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) );
 }
 
 //--------------------------------------------------
 
 /// Quick helper function to copy everything inside Yee lattice 
 void copy_vert_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsI, int rhsI) 
 {
 
@@ -315,8 +316,8 @@ void copy_vert_yee(
 
 /// Quick helper function to add everything inside Yee lattice 
 void add_vert_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsI, int rhsI) 
 {
   lhs.jx.add_vert(rhs.jx, lhsI, rhsI); 
@@ -329,8 +330,8 @@ void add_vert_yee(
 
 /// Quick helper function to copy everything inside Yee lattice 
 void copy_horz_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsJ, int rhsJ) 
 {
   lhs.ex.copy_horz(rhs.ex, lhsJ, rhsJ); 
@@ -346,8 +347,8 @@ void copy_horz_yee(
 
 /// Quick helper function to add everything inside Yee lattice 
 void add_horz_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsJ, int rhsJ) 
 {
   lhs.jx.add_horz(rhs.jx, lhsJ, rhsJ); 
@@ -357,8 +358,8 @@ void add_horz_yee(
 
 /// Quick helper function to copy everything inside Yee lattice 
 void copy_face_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsK, int rhsK) 
 {
   lhs.ex.copy_face(rhs.ex, lhsK, rhsK); 
@@ -374,8 +375,8 @@ void copy_face_yee(
 
 /// Quick helper function to add everything inside Yee lattice 
 void add_face_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsK, int rhsK) 
 {
   lhs.jx.add_face(rhs.jx, lhsK, rhsK); 
@@ -386,8 +387,8 @@ void add_face_yee(
 
 
 void copy_z_pencil_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsI, int lhsJ,
     int rhsI, int rhsJ) 
 {
@@ -402,8 +403,8 @@ void copy_z_pencil_yee(
 }
 
 void add_z_pencil_yee(
-    fields::YeeLattice& lhs, 
-    fields::YeeLattice& rhs, 
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
     int lhsI, int lhsJ,
     int rhsI, int rhsJ) 
 {
@@ -418,25 +419,25 @@ void add_z_pencil_yee(
 
 /// Update Yee grid boundaries
 template<>
-void fields::Tile<1>::update_boundaries(corgi::Node<1>& node) 
+void Tile<1>::update_boundaries(corgi::Node<1>& node) 
 {
   // target
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::Tile<1> >(
+    std::dynamic_pointer_cast<Tile<1> >(
         node.get_tileptr( neighs(-1) ));
-  fields::YeeLattice& mleft = cleft->get_yee();
+  YeeLattice& mleft = cleft->get_yee();
 
   // copy from right side to left
   copy_vert_yee(mesh, mleft, -1, mleft.Nx-1); 
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::Tile<1> >(
+    std::dynamic_pointer_cast<Tile<1> >(
         node.get_tileptr( neighs(+1) ));
-  fields::YeeLattice& mright = cright->get_yee();
+  YeeLattice& mright = cright->get_yee();
     
   // copy from left side to right
   copy_vert_yee(mesh, mright, mesh.Nx, 0); 
@@ -446,18 +447,18 @@ void fields::Tile<1>::update_boundaries(corgi::Node<1>& node)
 
 /// Update Yee grid boundaries
 template<>
-void fields::Tile<2>::update_boundaries(corgi::Node<2>& node) 
+void Tile<2>::update_boundaries(corgi::Node<2>& node) 
 {
 
   // target
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
   int halo = 1; // halo region size for current
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(-1, 0) ));
-  fields::YeeLattice& mleft = cleft->get_yee();
+  YeeLattice& mleft = cleft->get_yee();
 
   // copy from right side to left
   for(int h=1; h<= halo; h++)
@@ -466,9 +467,9 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(+1, 0) ));
-  fields::YeeLattice& mright = cright->get_yee();
+  YeeLattice& mright = cright->get_yee();
     
   // copy from left side to right
   for(int h=1; h<= halo; h++)
@@ -478,9 +479,9 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
   // TODO: fix these: they produce saw-like oscillations
   // top 
   auto ctop = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(0, +1) ));
-  fields::YeeLattice& mtop = ctop->get_yee();
+  YeeLattice& mtop = ctop->get_yee();
 
   //copy from bottom side to top
   for(int h=1; h<= halo; h++)
@@ -489,9 +490,9 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
 
   // bottom
   auto cbot = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(0, -1) ));
-  fields::YeeLattice& mbot = cbot->get_yee();
+  YeeLattice& mbot = cbot->get_yee();
     
   // copy from top side to bottom
   for(int h=1; h<= halo; h++)
@@ -503,9 +504,9 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
   // TODO: loop over H
 
   auto ctopleft = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(-1, +1) ));
-  fields::YeeLattice& mtopleft = ctopleft->get_yee();
+  YeeLattice& mtopleft = ctopleft->get_yee();
 
   for(int h=1; h<= halo; h++)
   for(int g=1; g<= halo; g++)
@@ -513,9 +514,9 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
                                    mtopleft.Nx-h, +g-1);
 
   auto ctopright = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(+1, +1) ));
-  fields::YeeLattice& mtopright = ctopright->get_yee();
+  YeeLattice& mtopright = ctopright->get_yee();
 
   for(int h=1; h<= halo; h++)
   for(int g=1; g<= halo; g++)
@@ -523,9 +524,9 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
                                      +h-1,         +g-1);
 
   auto cbotleft = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(-1, -1) ));
-  fields::YeeLattice& mbotleft = cbotleft->get_yee();
+  YeeLattice& mbotleft = cbotleft->get_yee();
 
   for(int h=1; h<= halo; h++)
   for(int g=1; g<= halo; g++)
@@ -533,9 +534,9 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
                           mbotleft.Nx-h, mbotleft.Ny-g);
 
   auto cbotright = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(+1, -1) ));
-  fields::YeeLattice& mbotright = cbotright->get_yee();
+  YeeLattice& mbotright = cbotright->get_yee();
 
   for(int h=1; h<= halo; h++)
   for(int g=1; g<= halo; g++)
@@ -559,20 +560,20 @@ void fields::Tile<2>::update_boundaries(corgi::Node<2>& node)
 }
 
 template<>
-void fields::Tile<1>::exchange_currents(corgi::Node<1>& node) 
+void Tile<1>::exchange_currents(corgi::Node<1>& node) 
 {
 
   // target
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
 
   int halo = 1; // halo region size for currents
 
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::Tile<1> >(
+    std::dynamic_pointer_cast<Tile<1> >(
         node.get_tileptr( neighs(-1) ));
-  fields::YeeLattice& mleft = cleft->get_yee();
+  YeeLattice& mleft = cleft->get_yee();
 
   // add from right side to left
   for(int h=1; h<= halo; h++)
@@ -581,9 +582,9 @@ void fields::Tile<1>::exchange_currents(corgi::Node<1>& node)
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::Tile<1> >(
+    std::dynamic_pointer_cast<Tile<1> >(
         node.get_tileptr( neighs(+1) ));
-  fields::YeeLattice& mright = cright->get_yee();
+  YeeLattice& mright = cright->get_yee();
     
   // add from left side to right
   for(int h=1; h<= halo; h++)
@@ -596,27 +597,27 @@ void fields::Tile<1>::exchange_currents(corgi::Node<1>& node)
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
 // TODO: write unit test for this
 template<>
-void fields::Tile<2>::exchange_currents(corgi::Node<2>& node) 
+void Tile<2>::exchange_currents(corgi::Node<2>& node) 
 {
   // target
-  fields::YeeLattice& mesh = get_yee();
+  YeeLattice& mesh = get_yee();
 
   int halo = 3;
 
   // left 
   auto cleft = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(-1, 0) ));
-  fields::YeeLattice& mleft = cleft->get_yee();
+  YeeLattice& mleft = cleft->get_yee();
 
   // add from left to right
   for(int h=0; h< halo; h++) add_vert_yee(mesh, mleft, h, mleft.Nx+h); 
 
   // right
   auto cright = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(+1, 0) ));
-  fields::YeeLattice& mright = cright->get_yee();
+  YeeLattice& mright = cright->get_yee();
     
   // add from right to left
   for(int h=1; h<= halo; h++) add_vert_yee(mesh, mright, mesh.Nx-h, -h); 
@@ -624,9 +625,9 @@ void fields::Tile<2>::exchange_currents(corgi::Node<2>& node)
 
   // top 
   auto ctop = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(0, +1) ));
-  fields::YeeLattice& mtop = ctop->get_yee();
+  YeeLattice& mtop = ctop->get_yee();
 
   //add from top to bottom
   for(int h=0; h< halo; h++) add_horz_yee(mesh, mtop, h, mtop.Ny+h); 
@@ -634,9 +635,9 @@ void fields::Tile<2>::exchange_currents(corgi::Node<2>& node)
 
   // bottom
   auto cbot = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(0, -1) ));
-  fields::YeeLattice& mbot = cbot->get_yee();
+  YeeLattice& mbot = cbot->get_yee();
     
   // add from bottom to top
   for(int h=1; h<=halo; h++) add_horz_yee(mesh, mbot, mesh.Ny-h, -h); 
@@ -646,9 +647,9 @@ void fields::Tile<2>::exchange_currents(corgi::Node<2>& node)
   // --------------------------------------------------  
   // diagonals
   auto ctopleft = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(-1, +1) ));
-  fields::YeeLattice& mtopleft = ctopleft->get_yee();
+  YeeLattice& mtopleft = ctopleft->get_yee();
 
   for(int h=0; h<  halo; h++)
   for(int g=1; g<= halo; g++)
@@ -657,9 +658,9 @@ void fields::Tile<2>::exchange_currents(corgi::Node<2>& node)
 
 
   auto ctopright = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(+1, +1) ));
-  fields::YeeLattice& mtopright = ctopright->get_yee();
+  YeeLattice& mtopright = ctopright->get_yee();
 
   for(int h=1; h<= halo; h++)
   for(int g=1; g<= halo; g++)
@@ -667,9 +668,9 @@ void fields::Tile<2>::exchange_currents(corgi::Node<2>& node)
                                     -h,         -g);
 
   auto cbotleft = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(-1, -1) ));
-  fields::YeeLattice& mbotleft = cbotleft->get_yee();
+  YeeLattice& mbotleft = cbotleft->get_yee();
   
   for(int h=0; h<  halo; h++)
   for(int g=0; g<  halo; g++)
@@ -677,9 +678,9 @@ void fields::Tile<2>::exchange_currents(corgi::Node<2>& node)
                                    mbotleft.Nx+h, mbotleft.Ny+g);
 
   auto cbotright = 
-    std::dynamic_pointer_cast<fields::Tile<2> >(
+    std::dynamic_pointer_cast<Tile<2> >(
         node.get_tileptr( neighs(+1, -1) ));
-  fields::YeeLattice& mbotright = cbotright->get_yee();
+  YeeLattice& mbotright = cbotright->get_yee();
 
   for(int h=1; h<= halo; h++)
   for(int g=0; g<  halo; g++)
@@ -697,14 +698,14 @@ void fields::Tile<2>::exchange_currents(corgi::Node<2>& node)
 }
 
 template<std::size_t D>
-void fields::Tile<D>::cycle_yee() 
+void Tile<D>::cycle_yee() 
 {
   yee.cycle();
 }
 
 /// cycle temporary and true current arrays
 template<std::size_t D>
-void fields::Tile<D>::cycle_current() 
+void Tile<D>::cycle_current() 
 {
   auto& yee = this->get_yee();
 
@@ -718,6 +719,8 @@ void fields::Tile<D>::cycle_current()
 //--------------------------------------------------
 // explicit template instantiation
 
-template class fields::Tile<1>;
-template class fields::Tile<2>;
-//template class fields::Tile<3>;
+template class Tile<1>;
+template class Tile<2>;
+//template class Tile<3>;
+
+} // end of ns fields
