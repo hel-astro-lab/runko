@@ -4,6 +4,8 @@
 
 
 namespace fields {
+  using namespace mpi4cpp;
+
 
 /* 
  * 1D version:
@@ -714,6 +716,51 @@ void Tile<D>::cycle_current()
   std::swap( yee.jz.mat, yee.jz1.mat );
 
 }
+
+
+
+//--------------------------------------------------
+// MPI routines
+
+// create MPI tag given tile id and extra layer of differentiation
+int get_tag(int cid, int extra_param)
+{
+  assert(extra_param < 100);
+  return cid + extra_param*1e6;
+}
+
+template<std::size_t D>
+std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest, int /*tag*/)
+{
+  //std::cout << "SEND to " << dest << "\n";
+  auto& yee = get_yee(); 
+
+  std::vector<mpi::request> reqs;
+  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
+  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
+  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+
+  return reqs;
+}
+
+template<std::size_t D>
+std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
+{
+  //std::cout << "RECV from " << orig << "\n";
+  auto& yee = get_yee(); 
+
+  std::vector<mpi::request> reqs;
+  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
+  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
+  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+
+  return reqs;
+}
+
+
+
+
+
 
 
 //--------------------------------------------------

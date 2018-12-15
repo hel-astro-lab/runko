@@ -82,6 +82,13 @@ class Mesh {
       Nx(Nx_in), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
 
 
+    /// address to data
+    T* data() { return mat.data(); }
+
+    const T* data() const {return mat.data(); }
+
+    /// internal storage size
+    size_t size() { return mat.size(); }
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {

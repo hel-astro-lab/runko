@@ -1,16 +1,17 @@
 #pragma once
 
-#include "../corgi/tile.h"
-//#include "../corgi/fwd_corgi.h"
-#include "../corgi/corgi.h"
+#include <vector>
+#include <mpi4cpp/mpi.h>
 
+#include "../corgi/tile.h"
+#include "../corgi/corgi.h"
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
-
 #include "../definitions.h"
 
 
 namespace fields {
+  namespace mpi = mpi4cpp::mpi;
 
 
 /// Yee lattice of plasma quantities
@@ -246,6 +247,12 @@ class Tile :
   void add_yee_lattice();
 
   void add_analysis_species();
+
+  virtual std::vector<mpi::request> 
+  send_data( mpi::communicator&, int orig, int tag) override;
+
+  virtual std::vector<mpi::request> 
+  recv_data( mpi::communicator&, int dest, int tag) override;
 };
 
 

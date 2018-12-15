@@ -57,7 +57,7 @@ def filler(xloc, ispcs, conf):
     xx = xloc[0] + np.random.rand(1)
     yy = xloc[1] + np.random.rand(1)
     #zz = xloc[2] + np.random.rand(1)
-    zz = 0.0
+    zz = 0.5
 
     ur = conf.vel
     uc = randab(0.0, 2.0*np.pi) 
@@ -71,7 +71,7 @@ def filler(xloc, ispcs, conf):
     #2D
     ux = ur*np.sin( uc )
     uy = ur*np.cos( uc )
-    uz = 0.0
+    uz = 0.5
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
@@ -88,7 +88,7 @@ def filler_xvel(xloc, ispcs, conf):
 
     #xx = xloc[0] #+ 0.5
     #yy = xloc[1] #+ 0.5
-    zz = 0.0
+    zz = 0.5
 
     x0 = [xx, yy, zz]
 
@@ -333,8 +333,8 @@ class PIC(unittest.TestCase):
                     cid = node.id(i,j)
                     c = node.get_tile(cid)
 
-                    #print("({},{},{}) has {}".format(i,j,k,len(c.container.loc(0))))
                     container = c.get_container(0)
+                    print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
                     n_particles += len(container.loc(0))
 
                     #self.assertTrue( 0.0 <= container.loc(0) <= conf.xmax )
