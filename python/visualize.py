@@ -61,95 +61,63 @@ def imshow(ax,
     return im
 
 
-
-# Visualize current tile ownership on node
+# Visualize current cell ownership on node
 def plotNode(ax, n, conf):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
-    
-    #for i in range(n.get_Nx()):
-    #    for j in range(n.get_Ny()):
-    #        cid = n.tile_id(i,j)
-    #        if n.is_local(cid):
-    #            tmp_grid[i,j] = 0.5
-
 
     for cid in n.get_tile_ids():
         c = n.get_tile( cid )
-
-        try:
-            (i, j) = c.index
-        except:
-            (i,) = c.index
-            j = 0
-
+        (i, j) = c.index
         #check dublicates
         if tmp_grid[i,j] != -1.0:
-            print("{}: ERROR in real tiles at ({},{})".format(n.rank(), i,j))
+            print("{}: ERROR in real cells at ({},{})".format(n.rank, i,j))
             sys.exit()
         tmp_grid[i,j] = c.communication.owner
-
-    #XXX add back / now combined with a full loop 
-    #for cid in n.get_virtuals():
-    #    c = n.get_tile( cid )
-    #    try:
-    #        (i,j) = c.index
-    #    except:
-    #        (i,) = c.index
-    #        j = 0
-
-    #    #if tmp_grid[i,j] != -1.0:
-    #    #    print("{}: ERROR in virtual tiles at ({},{})".format(n.rank, i,j))
-    #    #    sys.exit()
-    #    tmp_grid[i,j] = c.communication.owner
-
 
     imshow(ax, tmp_grid, 
             n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
-            vmax = Nrank-1
+            vmax = n.size(),
             )
-
 
     # add text label about number of neighbors
     for cid in n.get_tile_ids():
         c = n.get_tile( cid )
-
-        try:
-            (i, j) = c.index
-        except:
-            (i,) = c.index
-            j = 0
-
+        (i, j) = c.index
         dx = n.get_xmax() - n.get_xmin()
         dy = n.get_ymax() - n.get_ymin()
 
         ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
         jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
 
-        #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.communication.number_of_virtual_neighbors
         label = str(Nv)
-        #label = "{} ({},{})/{}".format(cid,i,j,Nv)
-        #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
-    #for cid in n.get_virtuals():
-    #    c = n.get_tile( cid )
-    #    try:
-    #        (i,j) = c.index
-    #    except:
-    #        (i,) = c.index
-    #        j = 0
-    #    ix = n.get_xmin() + n.get_xmax()*(i+0.5)/n.get_Nx()
-    #    jy = n.get_ymin() + n.get_ymin()*(j+0.5)/n.get_Ny()
-    #    label = "Vir"
-    #    ax.text(ix, jy, label, ha='center',va='center')
+    #mark boundaries with hatch
+    dx = n.get_xmax() - n.get_xmin()
+    dy = n.get_ymax() - n.get_ymin()
+    for cid in n.get_boundary_tiles():
+        c = n.get_tile( cid )
+        (i, j) = c.index
 
-    #XXX add back
-    ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.get_tile_ids() )))
+        ix0 = n.get_xmin() + dx*(i+0.0)/n.get_Nx()
+        jy0 = n.get_ymin() + dy*(j+0.0)/n.get_Ny()
 
-    ax.set_ylabel('node')
+        ix1 = n.get_xmin() + dx*(i+1.0)/n.get_Nx()
+        jy1 = n.get_ymin() + dy*(j+1.0)/n.get_Ny()
+
+        #ax.fill_between([ix0,ix1], [jy0, jy1], hatch='///', alpha=0.0)
+
+        ax.plot([ix0, ix0],[jy0, jy1], color='k', linestyle='dotted')
+        ax.plot([ix1, ix1],[jy0, jy1], color='k', linestyle='dotted')
+        ax.plot([ix0, ix1],[jy0, jy0], color='k', linestyle='dotted')
+        ax.plot([ix0, ix1],[jy1, jy1], color='k', linestyle='dotted')
+
+
+
+
 
 
 # plot tile boundaries

@@ -1,19 +1,36 @@
-
 from initialize_pic import spatialLoc #XXX make this general/not pic-specific
+
+import numpy as np
 
 import pycorgi
 import pyplasmabox 
 
 
-
 #make random starting order
 def loadMpiRandomly(n):
-    np.random.seed(4)
+    np.random.seed(0)
     if n.master:
         for i in range(n.get_Nx()):
             for j in range(n.get_Ny()):
-                val = np.random.randint(n.Nrank)
+                val = np.random.randint( n.size() )
                 n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
+
+
+#load nodes to be in stripe formation (splitted in X=horizontal direction)
+def loadMpiXStrides(n):
+    if n.master: #only master initializes; then sends
+        stride = np.zeros( (n.get_Nx()), np.int64)
+        dx = np.float(n.get_Nx()) / np.float(n.size() ) 
+        for i in range(n.get_Nx()):
+            val = np.int( i/dx )
+            stride[i] = val
+
+        for j in range(n.get_Ny()):
+            for i in range(n.get_Nx()):
+                val = stride[i]
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
 
 
 #load nodes to be in stripe formation (splitted in Y=vertical direction)
@@ -28,21 +45,6 @@ def loadMpiYStrides(n):
         for i in range(n.get_Nx()):
             for j in range(n.get_Ny()):
                 val = stride[j]
-                n.set_mpi_grid(i, j, val)
-    n.bcast_mpi_grid()
-
-#load nodes to be in stripe formation (splitted in X=horizontal direction)
-def loadMpiXStrides(n):
-    if n.master: #only master initializes; then sends
-        stride = np.zeros( (n.get_Nx()), np.int64)
-        dx = np.float(n.get_Nx()) / np.float(n.Nrank) 
-        for i in range(n.get_Nx()):
-            val = np.int( i/dx )
-            stride[i] = val
-
-        for j in range(n.get_Ny()):
-            for i in range(n.get_Nx()):
-                val = stride[i]
                 n.set_mpi_grid(i, j, val)
     n.bcast_mpi_grid()
 

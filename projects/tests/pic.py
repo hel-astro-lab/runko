@@ -1,4 +1,5 @@
 from __future__ import print_function
+from mpi4py import MPI
 
 import numpy as np
 
@@ -25,20 +26,18 @@ from injector_pic import insert_em
 np.random.seed(1)
 
 
-try:
-    import matplotlib.pyplot as plt
-    from visualize import plotNode
-    from visualize import plotJ, plotE, plotDens
-    from visualize import get_yee
-    from visualize import saveVisz
-    
-    from visualize import plot2dYee
-    from visualize_pic import plot2dParticles
+#try:
+import matplotlib.pyplot as plt
+from visualize import plotNode
+from visualize import plotJ, plotE, plotDens
+from visualize import get_yee
+from visualize import saveVisz
 
+from visualize import plot2dYee
+from visualize_pic import plot2dParticles
 
-except:
-    pass
-
+#except:
+#pass
 
 from timer import Timer
 
@@ -149,20 +148,21 @@ if __name__ == "__main__":
 
     ################################################## 
     # set up plotting and figure
-    try:
-        plt.fig = plt.figure(1, figsize=(8,10))
-        plt.rc('font', family='serif', size=12)
-        plt.rc('xtick')
-        plt.rc('ytick')
-        
-        gs = plt.GridSpec(4, 3)
-        gs.update(hspace = 0.5)
-        
-        axs = []
-        for ai in range(12):
-            axs.append( plt.subplot(gs[ai]) )
-    except:
-        pass
+    #try:
+    plt.fig = plt.figure(1, figsize=(8,10))
+    plt.rc('font', family='serif', size=12)
+    plt.rc('xtick')
+    plt.rc('ytick')
+    
+    gs = plt.GridSpec(4, 3)
+    gs.update(hspace = 0.5)
+    
+    axs = []
+    for ai in range(12):
+        axs.append( plt.subplot(gs[ai]) )
+    #except:
+    #    print()
+        #pass
 
 
     # Timer for profiling
@@ -192,6 +192,10 @@ if __name__ == "__main__":
 
     node.set_grid_lims(xmin, xmax, ymin, ymax)
 
+
+    init.loadMpiRandomly(node)
+    #init.loadMpiXStrides(node)
+
     loadTiles(node, conf)
 
 
@@ -216,51 +220,22 @@ if __name__ == "__main__":
 
 
     # visualize initial condition
-    try:
-        plotNode( axs[0], node, conf)
-        plotXmesh(axs[1], node, conf, 0, "x")
-        saveVisz(-1, node, conf)
-    except:
-        pass
-
-    
-    #setup output file
-    f5 = h5py.File(conf.outdir+"/run.hdf5", "w")
-    grp0 = f5.create_group("params")
-    grp0.attrs['dx']    = 1.0/conf.c_omp
-    #grp0.attrs['dt']    = conf.interval*conf.dt
-    grp0.attrs['dt']    = conf.cfl/conf.c_omp
-    grp = f5.create_group("fields")
+    #try:
+    plotNode( axs[0], node, conf)
+    #plotXmesh(axs[1], node, conf, 0, "x")
+    saveVisz(-1, node, conf)
+    #except:
+    #    print()
+    #    pass
 
 
     Nsamples = conf.Nt
-    dset  = grp.create_dataset("Ex",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    dset2 = grp.create_dataset("rho",  (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    #dset3 = grp.create_dataset("ekin", (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-    dset4 = grp.create_dataset("jx",   (conf.Nx*conf.NxMesh, Nsamples), dtype='f')
-
-
-
-
-
-
-
-    #TODO:
-
-    #-DONE: field interpolator
-    #-DONE: Vau/Boris vel pusher
-    #   -position update
-    #-DONE:deposit particles (zigzag)
-    #-DONE: boundary wrapper
-    #-DONE:filtering
 
     pusher   = pypic.BorisPusher()
     fintp    = pypic.LinearInterpolator()
-    comm     = pypic.Communicator()
     currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
     flt     =  pytools.Filter(conf.NxMesh, conf.NyMesh)
-
     flt.init_gaussian_kernel(2.0, 2.0)
 
     #simulation loop
@@ -289,132 +264,145 @@ if __name__ == "__main__":
         # advance Half B
 
         #update boundaries
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.update_boundaries(node)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.update_boundaries(node)
 
         #push B half
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.push_half_b()
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.push_half_b()
 
         #update boundaries
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.update_boundaries(node)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.update_boundaries(node)
 
         #--------------------------------------------------
         # move particles
 
         #interpolate fields
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                fintp.solve(tile)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            fintp.solve(tile)
 
         #pusher
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                pusher.solve(tile)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            pusher.solve(tile)
 
         #--------------------------------------------------
         # advance B half
 
         #push B half
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.push_half_b()
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.push_half_b()
 
         ##update boundaries
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.update_boundaries(node)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.update_boundaries(node)
 
         #--------------------------------------------------
         # advance E 
 
         #push E
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.push_e()
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.push_e()
 
         #--------------------------------------------------
 
         #deposit current
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                currint.solve(tile)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            currint.solve(tile)
+
+        node.send_data(0) #(indepdendent)
+        node.recv_data(0) #(indepdendent)
+        node.wait_data(0) #(indepdendent)
 
         #exchange currents
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.exchange_currents(node)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.exchange_currents(node)
+
 
         ##################################################
         # particle communication 
 
+        #local particle exchange (independent)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.check_outgoing_particles()
 
-        #update particle boundaries
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                comm.check_outgoing_particles(tile)
+        # global mpi exchange (independent)
+        for cid in node.get_boundary_tiles():
+            tile = node.get_tile(cid)
+            tile.pack_outgoing_particles()
 
-        #copy particles
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                comm.get_incoming_particles(tile, node)
+        # MPI global exchange
+        # transfer primary and extra data
+        node.send_data(1) #(indepdendent)
+        node.send_data(2) #(indepdendent)
 
-        #delete transferred particles
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                comm.delete_transferred_particles(tile)
+        node.recv_data(1) #(indepdendent)
+        node.recv_data(2) #(indepdendent)
 
-        # field communication
+        node.wait_data(1) #(indepdendent)
+        node.wait_data(2) #(indepdendent)
+
+
+        # global unpacking (independent)
+        for cid in node.get_virtual_tiles(): 
+            tile = node.get_tile(cid)
+            tile.unpack_incoming_particles()
+            tile.check_outgoing_particles()
+
+        # transfer local + global
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.get_incoming_particles(node)
+
+        # delete local transferred particles
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.delete_transferred_particles()
+
+        for cid in node.get_virtual_tiles(): 
+            tile = node.get_tile(cid)
+            tile.delete_all_particles()
 
 
         ##################################################
 
         #filter
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                flt.get_padded_current(tile, node)
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            flt.get_padded_current(tile, node)
 
-                #flt.fft_image_forward()
-                #flt.apply_kernel()
-                #flt.fft_image_backward()
+            #flt.fft_image_forward()
+            #flt.apply_kernel()
+            #flt.fft_image_backward()
         
-                for fj in range(conf.npasses):
-                    flt.direct_convolve_3point()
-                flt.set_current(tile)
+            for fj in range(conf.npasses):
+                flt.direct_convolve_3point()
+            flt.set_current(tile)
 
 
         ##cycle new and temporary currents
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.cycle_current()
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.cycle_current()
 
         ##################################################
         
 
         #add current to E
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.deposit_current()
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.deposit_current()
 
 
         ##################################################
@@ -437,10 +425,9 @@ if __name__ == "__main__":
             timer.start("io")
 
             #analyze
-            for j in range(node.get_Ny()):
-                for i in range(node.get_Nx()):
-                    tile = node.get_tile(i,j)
-                    analyzer.analyze2d(tile)
+            for cid in node.get_local_tiles():
+                tile = node.get_tile(cid)
+                analyzer.analyze2d(tile)
 
 
             pyvlv.write_yee(node,      lap, conf.outdir + "/")
@@ -459,25 +446,22 @@ if __name__ == "__main__":
             #--------------------------------------------------
             #2D plots
             #try:
-            #plotNode(axs[0], node, conf)
-            #plot2dParticles(axs[1], node, conf, downsample=0.001)
-            #plot2dYee(axs[2], node, conf, 'rho')
-            #plot2dYee(axs[3], node, conf, 'jx')
-            #plot2dYee(axs[4], node, conf, 'jy')
-            #plot2dYee(axs[5], node, conf, 'jz')
-            #plot2dYee(axs[6], node, conf, 'ex')
-            #plot2dYee(axs[7], node, conf, 'ey')
-            #plot2dYee(axs[8], node, conf, 'ez')
-            #plot2dYee(axs[9], node, conf, 'bx')
-            #plot2dYee(axs[10],node, conf, 'by')
-            #plot2dYee(axs[11],node, conf, 'bz')
-
-
-            #saveVisz(lap, node, conf)
-
-	    #except:
-	    #    pass
-
+            plotNode(axs[0], node, conf)
+            plot2dParticles(axs[1], node, conf, downsample=0.001)
+            plot2dYee(axs[2], node, conf, 'rho')
+            plot2dYee(axs[3], node, conf, 'jx')
+            plot2dYee(axs[4], node, conf, 'jy')
+            plot2dYee(axs[5], node, conf, 'jz')
+            plot2dYee(axs[6], node, conf, 'ex')
+            plot2dYee(axs[7], node, conf, 'ey')
+            plot2dYee(axs[8], node, conf, 'ez')
+            plot2dYee(axs[9], node, conf, 'bx')
+            plot2dYee(axs[10],node, conf, 'by')
+            plot2dYee(axs[11],node, conf, 'bz')
+            saveVisz(lap, node, conf)
+            #except:
+            #    print()
+            #    pass
 
             timer.stop("io")
             timer.stats("io")
