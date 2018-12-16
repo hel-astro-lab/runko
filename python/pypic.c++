@@ -172,6 +172,10 @@ void bind_pic(py::module& m_sub)
         {
           return s.vel(idim); 
         }, py::return_value_policy::reference)
+    .def("wgt",          [](pic::ParticleContainer& s) 
+        {
+          return s.wgt(); 
+        }, py::return_value_policy::reference)
     //temporary binding
     .def("ex",          [](pic::ParticleContainer& s, int i) 
         {

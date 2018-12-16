@@ -726,8 +726,9 @@ void Tile<D>::cycle_current()
 int get_tag(int cid, int extra_param)
 {
   assert(extra_param < 100);
-  return cid + extra_param*1e6;
+  return cid + extra_param*1e9;
 }
+
 
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest, int /*tag*/)
@@ -742,6 +743,7 @@ std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest,
 
   return reqs;
 }
+
 
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
