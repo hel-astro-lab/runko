@@ -127,5 +127,22 @@ def loadTiles(n, conf):
 
 
 
+# make all tiles same type 
+def initialize_virtuals(n, conf):
+
+    for cid in n.get_virtual_tiles():
+        c_orig = n.get_tile(cid)
+        (i,j) = c_orig.index
+
+        # new prtcl tile;
+        # TODO: load_metainfo *HAS* to be after add_tile
+        c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        n.add_tile(c, (i,j)) 
+
+        c_orig.communication.local = False;
+        c.load_metainfo(c_orig.communication)
+        print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
+        
+        initialize_tile(c, i,j,n, conf)
 
 

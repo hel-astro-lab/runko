@@ -16,6 +16,7 @@ from configSetup import Configuration
 import argparse
 import initialize as init
 from initialize_pic import loadTiles
+from initialize_pic import initialize_virtuals
 from sampling import boosted_maxwellian
 from initialize_pic import spatialLoc
 from injector_pic import inject
@@ -211,6 +212,12 @@ if __name__ == "__main__":
     inject(node, filler, conf) #injecting plasma particles
     #insert_em(node, conf, linear_field)
 
+    #static setup; communicate neighbor info once
+    node.analyze_boundaries()
+    node.send_tiles()
+    node.recv_tiles()
+    initialize_virtuals(node, conf)
+
 
     timer.stop("init") 
     timer.stats("init") 
@@ -319,8 +326,12 @@ if __name__ == "__main__":
             tile = node.get_tile(cid)
             currint.solve(tile)
 
+        #mpi send currents
+        print("send 0")
         node.send_data(0) #(indepdendent)
+        print("recv 0")
         node.recv_data(0) #(indepdendent)
+        print("wait 0")
         node.wait_data(0) #(indepdendent)
 
         #exchange currents

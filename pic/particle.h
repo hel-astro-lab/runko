@@ -109,7 +109,7 @@ class ParticleContainer {
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 
   // in hand with the corresponding receiver side.
-  int optimal_message_size = 10;
+  int optimal_message_size = 30;
 
   //! particle specific electric field components
   std::vector<double> Epart;
