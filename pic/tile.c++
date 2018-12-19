@@ -39,9 +39,9 @@ void Tile<D>::check_outgoing_particles()
   for(size_t i=0; i<D; i++) tile_mins[i] = corgi::Tile<D>::mins[i];
   for(size_t i=0; i<D; i++) tile_maxs[i] = corgi::Tile<D>::maxs[i];
 
-  for(auto&& container : containers) {
+  for(auto&& container : containers)
     container.check_outgoing_particles(tile_mins, tile_maxs);
-  }
+
 }
 
 template<std::size_t D>
@@ -63,13 +63,13 @@ void Tile<2>::get_incoming_particles(
     corgi::Node<2>& grid)
 {
 
-  std::array<double,3> grid_mins = {
+  std::array<double,3> global_mins = {
     static_cast<double>( grid.get_xmin() ),
     static_cast<double>( grid.get_ymin() ),
     static_cast<double>( 0.0             )
   };
 
-  std::array<double,3> grid_maxs = {
+  std::array<double,3> global_maxs = {
     static_cast<double>( grid.get_xmax() ),
     static_cast<double>( grid.get_ymax() ),
     static_cast<double>( 1.0             )
@@ -93,12 +93,10 @@ void Tile<2>::get_incoming_particles(
         ParticleContainer& neigh = external_tile.get_container(ispc);
 
         container.transfer_and_wrap_particles(
-            neigh, {i,j,k}, grid_mins, grid_maxs);
+            neigh, {i,j,k}, global_mins, global_maxs);
       }
     }
   }
-
-  return;
 }
 
 

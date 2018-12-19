@@ -34,6 +34,7 @@ from visualize import plotJ, plotE, plotDens
 from visualize import get_yee
 from visualize import saveVisz
 
+from visualize import getYee2D
 from visualize import plot2dYee
 from visualize_pic import plot2dParticles
 
@@ -89,8 +90,7 @@ def filler(xloc, ispcs, conf):
     xx = xloc[0] + np.random.rand(1)
     yy = xloc[1] + np.random.rand(1)
     #zz = xloc[2] + np.random.rand(1)
-    zz = 0.0
-
+    zz = 0.5
 
     #electrons
     if ispcs == 0:
@@ -117,7 +117,6 @@ def filler(xloc, ispcs, conf):
     #kmode = conf.modes
     #mux_noise = conf.beta*np.cos(2.0*np.pi*kmode*xx/Lx) * (Lx/(2.0*np.pi*kmode))
     #ux += vth*mux_noise
-
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
@@ -194,8 +193,8 @@ if __name__ == "__main__":
     node.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
-    init.loadMpiRandomly(node)
-    #init.loadMpiXStrides(node)
+    #init.loadMpiRandomly(node)
+    init.loadMpiXStrides(node)
 
     loadTiles(node, conf)
 
@@ -471,16 +470,18 @@ if __name__ == "__main__":
             #try:
             plotNode(axs[0], node, conf)
             plot2dParticles(axs[1], node, conf, downsample=0.001)
-            plot2dYee(axs[2], node, conf, 'rho')
-            plot2dYee(axs[3], node, conf, 'jx')
-            plot2dYee(axs[4], node, conf, 'jy')
-            plot2dYee(axs[5], node, conf, 'jz')
-            plot2dYee(axs[6], node, conf, 'ex')
-            plot2dYee(axs[7], node, conf, 'ey')
-            plot2dYee(axs[8], node, conf, 'ez')
-            plot2dYee(axs[9], node, conf, 'bx')
-            plot2dYee(axs[10],node, conf, 'by')
-            plot2dYee(axs[11],node, conf, 'bz')
+
+            yee = getYee2D(node, conf)
+            plot2dYee(axs[2],  yee, node, conf, 'rho')
+            plot2dYee(axs[3],  yee, node, conf, 'jx')
+            plot2dYee(axs[4],  yee, node, conf, 'jy')
+            plot2dYee(axs[5],  yee, node, conf, 'jz')
+            plot2dYee(axs[6],  yee, node, conf, 'ex')
+            plot2dYee(axs[7],  yee, node, conf, 'ey')
+            plot2dYee(axs[8],  yee, node, conf, 'ez')
+            plot2dYee(axs[9],  yee, node, conf, 'bx')
+            plot2dYee(axs[10], yee, node, conf, 'by')
+            plot2dYee(axs[11], yee, node, conf, 'bz')
             saveVisz(lap, node, conf)
             #except:
             #    print()
@@ -492,8 +493,6 @@ if __name__ == "__main__":
 
         time += conf.cfl/conf.c_omp
     #end of loop
-
-    #node.finalizeMpi()
 
 
     timer.stop("total")

@@ -131,7 +131,11 @@ void ParticleContainer::check_outgoing_particles(
     if(z0 <  zmin) k--; // back
     if(z0 >= zmax) k++; // front
 
-    to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
+    // FIXME: hack to make this work with 2D 
+    if ((i == 0) && (j == 0)) continue; 
+
+    if ( (i != 0) || (j != 0) || (k != 0) ) 
+      to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
   }
 }
 
@@ -145,10 +149,10 @@ void ParticleContainer::delete_transferred_particles()
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
   double* locn[3];
-  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
+  for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
   double* veln[3];
-  for( int i=0; i<3; i++) veln[i] = &( vel(i,0) );
+  for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
 
   // overwrite particles with the last one on the array and 
   // then resize the array
@@ -173,8 +177,8 @@ void ParticleContainer::delete_transferred_particles()
 void ParticleContainer::transfer_and_wrap_particles( 
     ParticleContainer& neigh,
     std::array<int,3>    dirs, 
-    std::array<double,3>& mins, 
-    std::array<double,3>& maxs
+    std::array<double,3>& global_mins, 
+    std::array<double,3>& global_maxs
     )
 {
   double locx, locy, locz, velx, vely, velz, wgt;
@@ -194,9 +198,9 @@ void ParticleContainer::transfer_and_wrap_particles(
 
       ind = elem.second;
 
-      locx = wrap( neigh.loc(0, ind), mins[0], maxs[0] );
-      locy = wrap( neigh.loc(1, ind), mins[1], maxs[1] );
-      locz = wrap( neigh.loc(2, ind), mins[2], maxs[2] );
+      locx = wrap( neigh.loc(0, ind), global_mins[0], global_maxs[0] );
+      locy = wrap( neigh.loc(1, ind), global_mins[1], global_maxs[1] );
+      locz = wrap( neigh.loc(2, ind), global_mins[2], global_maxs[2] );
 
       velx = neigh.vel(0, ind);
       vely = neigh.vel(1, ind);
@@ -220,10 +224,10 @@ void ParticleContainer::pack_outgoing_particles()
   int np = to_other_tiles.size() + 1;
   InfoParticle infoprtcl(np);
 
-  //if (np>1) {
-  //  std::cout << "Packing Np:" << np 
-  //    << " and extra is: " << np-optimal_message_size << "\n";
-  //}
+  if (np>1) {
+    std::cout << "Packing Np:" << np 
+      << " and extra is: " << np-optimal_message_size << "\n";
+  }
 
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
@@ -253,6 +257,10 @@ void ParticleContainer::pack_outgoing_particles()
 
     i++;
   }
+
+  std::cout << " outg arr size:" << outgoing_particles.size()
+            << " outgE arr size: " << outgoing_extra_particles.size()
+            << "\n";
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;

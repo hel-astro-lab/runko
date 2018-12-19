@@ -734,11 +734,11 @@ template<std::size_t D>
 std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest, int /*tag*/)
 {
   auto& yee = get_yee(); 
-  std::cout << "SEND field to " << dest 
-    << "nx " << yee.jx.size()
-    << "ny " << yee.jy.size()
-    << "nz " << yee.jz.size()
-    << "\n";
+  //std::cout << "SEND field to " << dest 
+  //  << "nx " << yee.jx.size()
+  //  << "ny " << yee.jy.size()
+  //  << "nz " << yee.jz.size()
+  //  << "\n";
 
   std::vector<mpi::request> reqs;
   reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
@@ -754,11 +754,11 @@ std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig,
 {
   //std::cout << "RECV from " << orig << "\n";
   auto& yee = get_yee(); 
-  std::cout << "RECV field to " << orig
-    << "nx " << yee.jx.size()
-    << "ny " << yee.jy.size()
-    << "nz " << yee.jz.size()
-    << "\n";
+  //std::cout << "RECV field to " << orig
+  //  << "nx " << yee.jx.size()
+  //  << "ny " << yee.jy.size()
+  //  << "nz " << yee.jz.size()
+  //  << "\n";
 
   std::vector<mpi::request> reqs;
   reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );

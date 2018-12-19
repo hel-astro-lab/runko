@@ -104,11 +104,9 @@ def initialize_tile(c, i, j, n, conf):
     c.set_tile_mins(mins[0:2])
     c.set_tile_maxs(maxs[0:2])
     
-    
     # initialize analysis tiles ready for incoming simulation data
     for ip in range(conf.Nspecies):
         c.add_analysis_species()
-
 
 
 #load tiles into each node
@@ -141,7 +139,7 @@ def initialize_virtuals(n, conf):
 
         c_orig.communication.local = False;
         c.load_metainfo(c_orig.communication)
-        print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
+        #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
         
         initialize_tile(c, i,j,n, conf)
 

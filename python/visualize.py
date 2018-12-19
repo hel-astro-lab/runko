@@ -275,32 +275,31 @@ def getYee2D(n, conf):
             'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
            }
 
-    for i in range(conf.Nx):
-        for j in range(conf.Ny):
-            c = n.get_tile(i,j)
+    #for cid in n.get_local_tiles():
+    for cid in n.get_tile_ids():
+        c = n.get_tile(cid)
+        i,j = c.index
+        yee = c.get_yee(0)
+        for r in range(conf.NyMesh):
+            for q in range(conf.NxMesh):
+                indx = i*conf.NxMesh + q
+                jndx = j*conf.NyMesh + r
 
-            yee = c.get_yee(0)
-            for r in range(conf.NyMesh):
-                for q in range(conf.NxMesh):
+                data['ex'][indx, jndx] = yee.ex[q, r, 0]
+                data['ey'][indx, jndx] = yee.ey[q, r, 0]
+                data['ez'][indx, jndx] = yee.ez[q, r, 0]
 
-                    indx = i*conf.NxMesh + q
-                    jndx = j*conf.NyMesh + r
+                data['bx'][indx, jndx] = yee.bx[q, r, 0]
+                data['by'][indx, jndx] = yee.by[q, r, 0]
+                data['bz'][indx, jndx] = yee.bz[q, r, 0]
+                                                    
+                data['jx'][indx, jndx] = yee.jx[q, r, 0]
+                data['jy'][indx, jndx] = yee.jy[q, r, 0]
+                data['jz'][indx, jndx] = yee.jz[q, r, 0]
 
-                    data['ex'][indx, jndx] = yee.ex[q, r, 0]
-                    data['ey'][indx, jndx] = yee.ey[q, r, 0]
-                    data['ez'][indx, jndx] = yee.ez[q, r, 0]
+                data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
 
-                    data['bx'][indx, jndx] = yee.bx[q, r, 0]
-                    data['by'][indx, jndx] = yee.by[q, r, 0]
-                    data['bz'][indx, jndx] = yee.bz[q, r, 0]
-                                                        
-                    data['jx'][indx, jndx] = yee.jx[q, r, 0]
-                    data['jy'][indx, jndx] = yee.jy[q, r, 0]
-                    data['jz'][indx, jndx] = yee.jz[q, r, 0]
-
-                    data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
-
-                    data['rho'][indx, jndx] = yee.rho[q, r, 0]
+                data['rho'][indx, jndx] = yee.rho[q, r, 0]
 
     return data
 
@@ -410,16 +409,15 @@ def plotDens(ax, n, conf):
 
 
 
-def plot2dYee(ax, n, conf, val = 'jx'):
+def plot2dYee(ax, yee, n, conf, val = 'jx'):
 
     #ax.clear()
     ax.cla()
-    yee = getYee2D(n, conf)
+    #yee = getYee2D(n, conf)
 
     vmin, vmax = np.min(yee[val]), np.max(yee[val])
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
     #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
-
 
     imshow(ax, yee[val],
            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
