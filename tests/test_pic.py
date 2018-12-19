@@ -499,7 +499,7 @@ class PIC(unittest.TestCase):
 
 
 
-    def test_filters(self):
+    def skip_test_filters(self):
         """ filter integration test with rest of the PIC functions"""
 
         try:
