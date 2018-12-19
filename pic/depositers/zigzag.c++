@@ -131,15 +131,15 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 
       bool debug_flag = false;
-      if (i1 >= -3 && i1   < static_cast<int>(tile.mesh_lengths[0]+3)) debug_flag=true;
-      if (j1 >= -3 && j1   < static_cast<int>(tile.mesh_lengths[1]+3)) debug_flag=true;
-      if (k1 >= -3 && k1   < static_cast<int>(tile.mesh_lengths[2]+3)) debug_flag=true;
+      if (! (i1 >= -3 && i1   < static_cast<int>(tile.mesh_lengths[0]+3)) ) debug_flag=true;
+      if (! (j1 >= -3 && j1   < static_cast<int>(tile.mesh_lengths[1]+3)) ) debug_flag=true;
+      if (! (k1 >= -3 && k1   < static_cast<int>(tile.mesh_lengths[2]+3)) ) debug_flag=true;
 
-      if (i2 >= -3 && i2   < static_cast<int>(tile.mesh_lengths[0]+3)) debug_flag=true;
-      if (j2 >= -3 && j2   < static_cast<int>(tile.mesh_lengths[1]+3)) debug_flag=true;
-      if (k2 >= -3 && k2   < static_cast<int>(tile.mesh_lengths[2]+3)) debug_flag=true;
+      if (! (i2 >= -3 && i2   < static_cast<int>(tile.mesh_lengths[0]+3)) ) debug_flag=true;
+      if (! (j2 >= -3 && j2   < static_cast<int>(tile.mesh_lengths[1]+3)) ) debug_flag=true;
+      if (! (k2 >= -3 && k2   < static_cast<int>(tile.mesh_lengths[2]+3)) ) debug_flag=true;
 
-      if debug_flag {
+      if (debug_flag) {
         std::cout << "--------------------------------------------------\n";
         std::cout << "n=" << n;
         std::cout << " i1: " << i1;

@@ -159,6 +159,7 @@ void ParticleContainer::delete_transferred_particles()
   int last = size();
   for(int indx : to_be_deleted) {
     last--;
+    if(indx == last) continue;
     //std::cout << "deleting " << indx 
     //          << " by putting it to " << last << '\n';
     for(int i=0; i<3; i++) locn[i][indx] = locn[i][last];
