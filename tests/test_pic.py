@@ -71,7 +71,7 @@ def filler(xloc, ispcs, conf):
     #2D
     ux = ur*np.sin( uc )
     uy = ur*np.cos( uc )
-    uz = 0.5
+    uz = 0.0
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
@@ -268,7 +268,6 @@ class PIC(unittest.TestCase):
         loadTiles(node, conf)
         insert_em(node, conf, const_field)
         inject(node, filler, conf) #injecting plasma particles
-
 
         # push particles couple of times to make them leak into neighboring tiles
         pusher   = pypic.BorisPusher()
