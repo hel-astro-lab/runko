@@ -270,19 +270,19 @@ if __name__ == "__main__":
         # advance Half B
 
         #update boundaries
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
         #FIXME: update also virtuals (for push_b)
 
         #push B half
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_half_b()
         #FIXME: push also virtuals to get correct boundaries for locals
 
         #update boundaries
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
         #FIXME: update also virtuals (for second push_b)
@@ -304,13 +304,13 @@ if __name__ == "__main__":
         # advance B half
 
         #push B half
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_half_b()
         #FIXME: push also virtuals
 
         #update boundaries
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
         #FIXME: update virtuals
@@ -319,7 +319,7 @@ if __name__ == "__main__":
         # advance E 
 
         #push E
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_e()
         #FIXME: push also virtuals
@@ -331,7 +331,7 @@ if __name__ == "__main__":
             tile = node.get_tile(cid)
             currint.solve(tile)
         
-        # FIXME: current solving is also taking place in nbor ranks
+        # current solving is also taking place in nbor ranks
         # that is why we update virtuals here with MPI
         #
         # This is the most expensive task so we do not double it 
@@ -346,7 +346,7 @@ if __name__ == "__main__":
         node.wait_data(0) #(indepdendent)
 
         #exchange currents
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.exchange_currents(node)
         #FIXME: exchange also virtuals (to get inner boundaries right)
@@ -400,7 +400,7 @@ if __name__ == "__main__":
         ##################################################
 
         #filter
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             flt.get_padded_current(tile, node)
 
@@ -415,7 +415,7 @@ if __name__ == "__main__":
         # FIXME: or mpi communicate filtered currents
 
         ##cycle new and temporary currents
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.cycle_current()
         # FIXME: cycle also virtuals
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         ##################################################
 
         #add current to E
-        for cid in node.get_local_tiles():
+        for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.deposit_current()
         #FIXME: deposit also virtuals
