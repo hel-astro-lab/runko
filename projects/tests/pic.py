@@ -338,11 +338,8 @@ if __name__ == "__main__":
         # here.
 
         #mpi send currents
-        print("send 0")
         node.send_data(0) #(indepdendent)
-        print("recv 0")
         node.recv_data(0) #(indepdendent)
-        print("wait 0")
         node.wait_data(0) #(indepdendent)
 
         #exchange currents
@@ -431,13 +428,11 @@ if __name__ == "__main__":
         ##################################################
         # data reduction and I/O
 
-
         timer.lap("step")
 
         #save temporarily to file
         #save(node, conf, ifile, f5)
         #ifile += 1
-
 
         #I/O
         if (lap % conf.interval == 0):

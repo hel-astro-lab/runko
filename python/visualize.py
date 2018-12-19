@@ -261,22 +261,22 @@ def getYee2D(n, conf):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
             'y' : np.linspace(n.get_ymin(), n.get_ymax(), conf.Ny*conf.NyMesh),
-            'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'ey':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'bx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'by':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'bz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jy':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jx1':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ex':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ey':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bx':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'by':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bz':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jy':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jz':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'rho':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
            }
 
-    #for cid in n.get_local_tiles():
-    for cid in n.get_tile_ids():
+    for cid in n.get_local_tiles():
+    #for cid in n.get_tile_ids():
         c = n.get_tile(cid)
         i,j = c.index
         yee = c.get_yee(0)
@@ -308,21 +308,21 @@ def getYee2D(n, conf):
 def get_analysis(n, conf, ispcs):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
-           'rho':    -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'edens': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'temp': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'momx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'momy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'momz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'pressx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'pressy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'pressz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'shearxy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'shearxz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'shearyz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'rho':     -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'edens':   -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'temp':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vx':      -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vy':      -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vz':      -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'momx':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'momy':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'momz':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressx':  -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressy':  -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressz':  -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearxy': -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearxz': -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearyz': -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
            }
 
     for i in range(conf.Nx):
@@ -415,11 +415,16 @@ def plot2dYee(ax, yee, n, conf, val = 'jx'):
     ax.cla()
     #yee = getYee2D(n, conf)
 
-    vmin, vmax = np.min(yee[val]), np.max(yee[val])
+    #filter non-existent values away
+    arr = yee[val]
+    arr = np.ma.masked_where(arr == -np.inf, arr)
+
+    vmin, vmax = np.min(arr), np.max(arr)
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
     #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 
-    imshow(ax, yee[val],
+
+    imshow(ax, arr,
            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
            cmap = "RdBu",
            vmin = -vminmax,
