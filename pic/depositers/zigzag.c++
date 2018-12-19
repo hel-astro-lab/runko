@@ -130,55 +130,64 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 
-      /*
-      std::cout << "--------------------------------------------------\n";
-      std::cout << "n=" << n;
-      std::cout << " i1: " << i1;
-      std::cout << " j1: " << j1;
-      std::cout << " k1: " << k1;
-      std::cout << " ||| ";
-      std::cout << " i2: " << i2;
-      std::cout << " j2: " << j2;
-      std::cout << " k2: " << k2;
-      std::cout << "\n";
+      bool debug_flag = false;
+      if (i1 >= -3 && i1   < static_cast<int>(tile.mesh_lengths[0]+3)) debug_flag=true;
+      if (j1 >= -3 && j1   < static_cast<int>(tile.mesh_lengths[1]+3)) debug_flag=true;
+      if (k1 >= -3 && k1   < static_cast<int>(tile.mesh_lengths[2]+3)) debug_flag=true;
 
-      std::cout << " x1sp: " << x1;
-      std::cout << " y1sp: " << y1;
-      std::cout << " z1sp: " << z1;
-      std::cout << " ||| ";
-      std::cout << " x2sp: " << x2;
-      std::cout << " y2sp: " << y2;
-      std::cout << " z2sp: " << z2;
-      std::cout << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
-      std::cout << "\n";
+      if (i2 >= -3 && i2   < static_cast<int>(tile.mesh_lengths[0]+3)) debug_flag=true;
+      if (j2 >= -3 && j2   < static_cast<int>(tile.mesh_lengths[1]+3)) debug_flag=true;
+      if (k2 >= -3 && k2   < static_cast<int>(tile.mesh_lengths[2]+3)) debug_flag=true;
 
-      std::cout << " vx: " <<  vel[0][n];
-      std::cout << " vy: " <<  vel[1][n];
-      std::cout << " vz: " <<  vel[2][n];
-      std::cout << " gam: "<<  invgam;
-      std::cout << "\n";
+      if debug_flag {
+        std::cout << "--------------------------------------------------\n";
+        std::cout << "n=" << n;
+        std::cout << " i1: " << i1;
+        std::cout << " j1: " << j1;
+        std::cout << " k1: " << k1;
+        std::cout << " ||| ";
+        std::cout << " i2: " << i2;
+        std::cout << " j2: " << j2;
+        std::cout << " k2: " << k2;
+        std::cout << "\n";
 
-      std::cout << " xr: " <<  xr;
-      std::cout << " yr: " <<  yr;
-      std::cout << " zr: " <<  zr;
-      std::cout << "\n";
+        std::cout << " x1sp: " << x1;
+        std::cout << " y1sp: " << y1;
+        std::cout << " z1sp: " << z1;
+        std::cout << " ||| ";
+        std::cout << " x2sp: " << x2;
+        std::cout << " y2sp: " << y2;
+        std::cout << " z2sp: " << z2;
+        std::cout << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
+        std::cout << "\n";
 
-      std::cout << " Fx1: " <<  Fx1;
-      std::cout << " Fy1: " <<  Fy1;
-      std::cout << " Fz1: " <<  Fz1;
-      std::cout << " Wx1: " <<  Wx1;
-      std::cout << " Wy1: " <<  Wy1;
-      std::cout << " Wz1: " <<  Wz1;
-      std::cout << "\n";
+        std::cout << " vx: " <<  vel[0][n];
+        std::cout << " vy: " <<  vel[1][n];
+        std::cout << " vz: " <<  vel[2][n];
+        std::cout << " gam: "<<  invgam;
+        std::cout << "\n";
 
-      std::cout << " Fx2: " <<  Fx2;
-      std::cout << " Fy2: " <<  Fy2;
-      std::cout << " Fz2: " <<  Fz2;
-      std::cout << " Wx2: " <<  Wx2;
-      std::cout << " Wy2: " <<  Wy2;
-      std::cout << " Wz2: " <<  Wz2;
-      std::cout << "\n";
-      */
+        std::cout << " xr: " <<  xr;
+        std::cout << " yr: " <<  yr;
+        std::cout << " zr: " <<  zr;
+        std::cout << "\n";
+
+        std::cout << " Fx1: " <<  Fx1;
+        std::cout << " Fy1: " <<  Fy1;
+        std::cout << " Fz1: " <<  Fz1;
+        std::cout << " Wx1: " <<  Wx1;
+        std::cout << " Wy1: " <<  Wy1;
+        std::cout << " Wz1: " <<  Wz1;
+        std::cout << "\n";
+
+        std::cout << " Fx2: " <<  Fx2;
+        std::cout << " Fy2: " <<  Fy2;
+        std::cout << " Fz2: " <<  Fz2;
+        std::cout << " Wx2: " <<  Wx2;
+        std::cout << " Wy2: " <<  Wy2;
+        std::cout << " Wz2: " <<  Wz2;
+        std::cout << "\n";
+      }
 
       /*
       i1--;

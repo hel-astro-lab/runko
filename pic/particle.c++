@@ -225,8 +225,7 @@ void ParticleContainer::pack_outgoing_particles()
   InfoParticle infoprtcl(np);
 
   //if (np>1) {
-  //  std::cout << "Packing Np:" << np 
-  //    << " and extra is: " << np-optimal_message_size << "\n";
+  //  std::cout << "Packing Np:" << np << " and extra is: " << np-optimal_message_size << "\n";
   //}
 
   outgoing_particles.reserve(optimal_message_size);

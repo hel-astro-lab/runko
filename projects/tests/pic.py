@@ -43,6 +43,11 @@ from visualize_pic import plot2dParticles
 
 from timer import Timer
 
+
+#debug = True
+debug = False
+
+
 def linear_field(x, y, z):
     return 1.0*x + 2.0*y
     #return 1.0*x + 10.0*y + 100.0*z
@@ -142,6 +147,10 @@ def save(n, conf, lap, f5):
     return
 
 
+def debug_print(n, msg):
+    if debug:
+        print("{}: {}".format(n.rank(), msg))
+
 
 if __name__ == "__main__":
 
@@ -208,6 +217,7 @@ if __name__ == "__main__":
 
 
 
+    np.random.seed(1)
     inject(node, filler, conf) #injecting plasma particles
     #insert_em(node, conf, linear_field)
 
@@ -270,18 +280,21 @@ if __name__ == "__main__":
         # advance Half B
 
         #update boundaries
+        debug_print(node,"update_boundaries 0")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
         #FIXME: update also virtuals (for push_b)
 
         #push B half
+        debug_print(node,"push_half_b 1")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_half_b()
         #FIXME: push also virtuals to get correct boundaries for locals
 
         #update boundaries
+        debug_print(node,"update_boundaries 1")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
@@ -291,11 +304,13 @@ if __name__ == "__main__":
         # move particles (only locals tiles)
 
         #interpolate fields (can move to next asap)
+        debug_print(node,"interpolate fields")
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             fintp.solve(tile)
 
         #pusher 
+        debug_print(node,"push particles")
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             pusher.solve(tile)
@@ -304,12 +319,14 @@ if __name__ == "__main__":
         # advance B half
 
         #push B half
+        debug_print(node,"push_half_b 2")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_half_b()
         #FIXME: push also virtuals
 
         #update boundaries
+        debug_print(node,"update_boundaries 2")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
@@ -319,6 +336,7 @@ if __name__ == "__main__":
         # advance E 
 
         #push E
+        debug_print(node,"push_e")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_e()
@@ -326,7 +344,8 @@ if __name__ == "__main__":
 
         #--------------------------------------------------
 
-        #deposit current
+        #current calculation
+        debug_print(node,"current computation")
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             currint.solve(tile)
@@ -338,11 +357,15 @@ if __name__ == "__main__":
         # here.
 
         #mpi send currents
+        debug_print(node,"send 0")
         node.send_data(0) #(indepdendent)
+        debug_print(node,"recv 0")
         node.recv_data(0) #(indepdendent)
+        debug_print(node,"wait 0")
         node.wait_data(0) #(indepdendent)
 
         #exchange currents
+        debug_print(node,"exchange_currents")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.exchange_currents(node)
@@ -353,43 +376,57 @@ if __name__ == "__main__":
         # particle communication (only local/boundary tiles)
 
         #local particle exchange (independent)
+        debug_print(node,"check_outgoing_particles")
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.check_outgoing_particles()
 
         # global mpi exchange (independent)
+        debug_print(node,"pack_outgoing_particles")
         for cid in node.get_boundary_tiles():
             tile = node.get_tile(cid)
             tile.pack_outgoing_particles()
 
         # MPI global exchange
         # transfer primary and extra data
+        debug_print(node, "send 1")
         node.send_data(1) #(indepdendent)
+        debug_print(node, "send 2")
         node.send_data(2) #(indepdendent)
 
+        debug_print(node, "recv 1")
         node.recv_data(1) #(indepdendent)
+
+        debug_print(node,"wait 1")
+        node.wait_data(1) #(indepdendent)
+
+        debug_print(node, "recv 2")
         node.recv_data(2) #(indepdendent)
 
-        node.wait_data(1) #(indepdendent)
+        debug_print(node,"wait 2")
         node.wait_data(2) #(indepdendent)
 
 
         # global unpacking (independent)
+        debug_print(node,"check_outgoing_particles")
         for cid in node.get_virtual_tiles(): 
             tile = node.get_tile(cid)
             tile.unpack_incoming_particles()
             tile.check_outgoing_particles()
 
         # transfer local + global
+        debug_print(node,"get_incoming_particles")
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.get_incoming_particles(node)
 
         # delete local transferred particles
+        debug_print(node,"delete_transferred_particles")
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.delete_transferred_particles()
 
+        debug_print(node,"delete all virtual particles")
         for cid in node.get_virtual_tiles(): 
             tile = node.get_tile(cid)
             tile.delete_all_particles()
@@ -397,21 +434,23 @@ if __name__ == "__main__":
         ##################################################
 
         #filter
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            flt.get_padded_current(tile, node)
+        #debug_print(node,"filter")
+        #for cid in node.get_tile_ids():
+        #    tile = node.get_tile(cid)
+        #    flt.get_padded_current(tile, node)
 
-            #flt.fft_image_forward()
-            #flt.apply_kernel()
-            #flt.fft_image_backward()
-        
-            for fj in range(conf.npasses):
-                flt.direct_convolve_3point()
-            flt.set_current(tile)
+        #    #flt.fft_image_forward()
+        #    #flt.apply_kernel()
+        #    #flt.fft_image_backward()
+        #
+        #    for fj in range(conf.npasses):
+        #        flt.direct_convolve_3point()
+        #    flt.set_current(tile)
         # FIXME: filter also virtuals
         # FIXME: or mpi communicate filtered currents
 
         ##cycle new and temporary currents
+        debug_print(node,"cycle currents")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.cycle_current()
@@ -420,6 +459,7 @@ if __name__ == "__main__":
         ##################################################
 
         #add current to E
+        debug_print(node,"add J to E")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.deposit_current()

@@ -16,16 +16,6 @@
 namespace fields {
 
 
-inline fields::YeeLattice& get_neighbor_yee(
-    int i, int j,
-    fields::Tile<2>& tile, 
-    corgi::Node<2>& node)
-{
-  auto cneigh = std::dynamic_pointer_cast<fields::Tile<2>>(
-        node.get_tileptr( tile.neighs(i, j) ));
-  return cneigh->get_yee();
-}
-
 
 
 using units::pi;
@@ -586,7 +576,7 @@ class Filter {
     fields::YeeLattice& mesh = tile.get_yee();
 
     int s=0;
-    int i=0, j=0, k=0;
+    int i=0, j=0; //, k=0;
     for(int r=0; r<(int)mesh.Ny; r++) {
       for(int q=0; q<(int)mesh.Nx; q++) {
         indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
