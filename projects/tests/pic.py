@@ -274,26 +274,29 @@ if __name__ == "__main__":
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
+        #FIXME: update also virtuals (for push_b)
 
         #push B half
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.push_half_b()
+        #FIXME: push also virtuals to get correct boundaries for locals
 
         #update boundaries
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
+        #FIXME: update also virtuals (for second push_b)
 
         #--------------------------------------------------
-        # move particles
+        # move particles (only locals tiles)
 
-        #interpolate fields
+        #interpolate fields (can move to next asap)
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             fintp.solve(tile)
 
-        #pusher
+        #pusher 
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             pusher.solve(tile)
@@ -305,11 +308,13 @@ if __name__ == "__main__":
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.push_half_b()
+        #FIXME: push also virtuals
 
-        ##update boundaries
+        #update boundaries
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.update_boundaries(node)
+        #FIXME: update virtuals
 
         #--------------------------------------------------
         # advance E 
@@ -318,6 +323,7 @@ if __name__ == "__main__":
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.push_e()
+        #FIXME: push also virtuals
 
         #--------------------------------------------------
 
@@ -325,6 +331,12 @@ if __name__ == "__main__":
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             currint.solve(tile)
+        
+        # FIXME: current solving is also taking place in nbor ranks
+        # that is why we update virtuals here with MPI
+        #
+        # This is the most expensive task so we do not double it 
+        # here.
 
         #mpi send currents
         print("send 0")
@@ -338,10 +350,11 @@ if __name__ == "__main__":
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.exchange_currents(node)
+        #FIXME: exchange also virtuals (to get inner boundaries right)
 
 
         ##################################################
-        # particle communication 
+        # particle communication (only local/boundary tiles)
 
         #local particle exchange (independent)
         for cid in node.get_local_tiles():
@@ -385,7 +398,6 @@ if __name__ == "__main__":
             tile = node.get_tile(cid)
             tile.delete_all_particles()
 
-
         ##################################################
 
         #filter
@@ -400,21 +412,22 @@ if __name__ == "__main__":
             for fj in range(conf.npasses):
                 flt.direct_convolve_3point()
             flt.set_current(tile)
-
+        # FIXME: filter also virtuals
+        # FIXME: or mpi communicate filtered currents
 
         ##cycle new and temporary currents
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.cycle_current()
+        # FIXME: cycle also virtuals
 
         ##################################################
-        
 
         #add current to E
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.deposit_current()
-
+        #FIXME: deposit also virtuals
 
         ##################################################
         # data reduction and I/O
@@ -435,11 +448,10 @@ if __name__ == "__main__":
             timer.stats("step")
             timer.start("io")
 
-            #analyze
+            #analyze (independent)
             for cid in node.get_local_tiles():
                 tile = node.get_tile(cid)
                 analyzer.analyze2d(tile)
-
 
             pyvlv.write_yee(node,      lap, conf.outdir + "/")
             pyvlv.write_analysis(node, lap, conf.outdir + "/")
