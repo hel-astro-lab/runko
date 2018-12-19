@@ -224,14 +224,14 @@ void ParticleContainer::pack_outgoing_particles()
   int np = to_other_tiles.size() + 1;
   InfoParticle infoprtcl(np);
 
-  if (np>1) {
-    std::cout << "Packing Np:" << np 
-      << " and extra is: " << np-optimal_message_size << "\n";
-  }
+  //if (np>1) {
+  //  std::cout << "Packing Np:" << np 
+  //    << " and extra is: " << np-optimal_message_size << "\n";
+  //}
 
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
-    std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
+    //std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
@@ -258,9 +258,9 @@ void ParticleContainer::pack_outgoing_particles()
     i++;
   }
 
-  std::cout << " outg arr size:" << outgoing_particles.size()
-            << " outgE arr size: " << outgoing_extra_particles.size()
-            << "\n";
+  //std::cout << " outg arr size:" << outgoing_particles.size()
+  //          << " outgE arr size: " << outgoing_extra_particles.size()
+  //          << "\n";
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;

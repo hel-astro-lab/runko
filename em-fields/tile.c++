@@ -401,7 +401,6 @@ void copy_z_pencil_yee(
   lhs.bx.copy_z_pencil(rhs.bx, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.by.copy_z_pencil(rhs.by, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.bz.copy_z_pencil(rhs.bz, lhsI, lhsJ, rhsI, rhsJ); 
-
 }
 
 void add_z_pencil_yee(
@@ -413,7 +412,6 @@ void add_z_pencil_yee(
   lhs.jx.add_z_pencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.jy.add_z_pencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.jz.add_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
-
 }
 
 
@@ -447,119 +445,70 @@ void Tile<1>::update_boundaries(corgi::Node<1>& node)
 }
 
 
-/// Update Yee grid boundaries
 template<>
-void Tile<2>::update_boundaries(corgi::Node<2>& node) 
+void Tile<2>::update_boundaries(corgi::Node<2>& grid) 
 {
+  using Tile_t  = Tile<2>;
+  using Tileptr = std::shared_ptr<Tile_t>;
 
-  // target
-  YeeLattice& mesh = get_yee();
-  int halo = 1; // halo region size for current
+  int ito, jto, ifro, jfro;
+  Tileptr tpr;
 
-  // left 
-  auto cleft = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(-1, 0) ));
-  YeeLattice& mleft = cleft->get_yee();
+  auto& mesh = get_yee(); // target as a reference to update into
 
-  // copy from right side to left
-  for(int h=1; h<= halo; h++)
-  copy_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
+  for(int in=-1; in <= 1; in++) {
+    for(int jn=-1; jn <= 1; jn++) {
+      if (in == 0 && jn == 0) continue;
 
+      tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn) ));
+      if (tpr) {
+        auto& mpr = tpr->get_yee();
 
-  // right
-  auto cright = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(+1, 0) ));
-  YeeLattice& mright = cright->get_yee();
-    
-  // copy from left side to right
-  for(int h=1; h<= halo; h++)
-  copy_vert_yee(mesh, mright, mesh.Nx+h-1, h-1); 
+        /* diagonal rules are:
+        if + then to   n
+        if + then from 0
 
+        if - then to   -1
+        if - then from n-1
+        */
 
-  // TODO: fix these: they produce saw-like oscillations
-  // top 
-  auto ctop = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(0, +1) ));
-  YeeLattice& mtop = ctop->get_yee();
+        if (in == +1) { ito = mesh.Nx; ifro = 0; }
+        if (jn == +1) { jto = mesh.Ny; jfro = 0; }
 
-  //copy from bottom side to top
-  for(int h=1; h<= halo; h++)
-  copy_horz_yee(mesh, mtop, mesh.Ny+h-1, h-1); 
+        if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
+        if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
 
+        // copy
+        if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
+        else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
+        else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
+        
 
-  // bottom
-  auto cbot = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(0, -1) ));
-  YeeLattice& mbot = cbot->get_yee();
-    
-  // copy from top side to bottom
-  for(int h=1; h<= halo; h++)
-  copy_horz_yee(mesh, mbot, -h, mbot.Ny-h); 
+        /*
+FIXME: this is how we should loop over H>1 halo boundaries
+        for(int h=1; h<= halo; h++)
+        copy_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
 
+        for(int h=1; h<= halo; h++)
+        copy_horz_yee(mesh, mtop, mesh.Ny+h-1, h-1); 
 
-  // --------------------------------------------------  
-  // diagonals
-  // TODO: loop over H
+        for(int h=1; h<= halo; h++)
+        for(int g=1; g<= halo; g++)
+        copy_z_pencil_yee(mesh, mtopleft, -h, mesh.Ny +g-1, mtopleft.Nx-h, +g-1);
 
-  auto ctopleft = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(-1, +1) ));
-  YeeLattice& mtopleft = ctopleft->get_yee();
-
-  for(int h=1; h<= halo; h++)
-  for(int g=1; g<= halo; g++)
-  copy_z_pencil_yee(mesh, mtopleft, -h,           mesh.Ny +g-1,
-                                   mtopleft.Nx-h, +g-1);
-
-  auto ctopright = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(+1, +1) ));
-  YeeLattice& mtopright = ctopright->get_yee();
-
-  for(int h=1; h<= halo; h++)
-  for(int g=1; g<= halo; g++)
-  copy_z_pencil_yee(mesh, mtopright, mesh.Nx +h-1, mesh.Ny +g-1,
-                                     +h-1,         +g-1);
-
-  auto cbotleft = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(-1, -1) ));
-  YeeLattice& mbotleft = cbotleft->get_yee();
-
-  for(int h=1; h<= halo; h++)
-  for(int g=1; g<= halo; g++)
-  copy_z_pencil_yee(mesh, mbotleft, -h, -g,
-                          mbotleft.Nx-h, mbotleft.Ny-g);
-
-  auto cbotright = 
-    std::dynamic_pointer_cast<Tile<2> >(
-        node.get_tileptr( neighs(+1, -1) ));
-  YeeLattice& mbotright = cbotright->get_yee();
-
-  for(int h=1; h<= halo; h++)
-  for(int g=1; g<= halo; g++)
-  copy_z_pencil_yee(mesh, mbotright, mesh.Nx +h-1, -g,
-                                     +h-1,         mbotright.Ny-g);
+        for(int h=1; h<= halo; h++)
+        for(int g=1; g<= halo; g++)
+        copy_z_pencil_yee(mesh, mtopright, mesh.Nx +h-1, mesh.Ny +g-1, +h-1,+g-1);
+        */
 
 
-  // --------------------------------------------------  
-  // front
-  // TODO: hack to deal with 2D corgi tiles
-  //copy_face_yee(mesh, mesh, -1, mesh.Nz-1);
-
-  // back
-  //copy_face_yee(mesh, mesh, mesh.Nz, 0);
-  // --------------------------------------------------  
-  // TODO: x-pencils
-  // TODO: y-pencils
-  // TODO: corners
-
-
+      } // end of if(tpr)
+    }
+  }
 }
+
+
+
 
 template<>
 void Tile<1>::exchange_currents(corgi::Node<1>& node) 
@@ -598,6 +547,99 @@ void Tile<1>::exchange_currents(corgi::Node<1>& node)
 /// Update currents on Yee grid boundaries
 // TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
 // TODO: write unit test for this
+//
+// The whole "FROM" -> "TO" index selection depending on neighbor is abstractified.
+// The rules are:
+//  - if neighbor is - (i.e., left, or bottom) => TO=-1 & FROM=N-1
+//  - if neighbor is + (i.e., right or top)    => TO=N  & FROM=0
+//  
+// Therefore, given a range h=1,2,3,..halo, we need to copy/add values 
+//  to an index TO-S*h from index FRO-S*h
+// where S is the sign of the neighbor.
+//
+//--------------------------------------------------
+// Here is an example from an addition of top tile (i.e. +1 neighbor)
+//
+// local index in mesh:  | neighbors index:
+//  (outside mesh)  Ny   | 0  (start of neighbor mesh; values below are halo regions)
+//                -------|-------
+//                  Ny-1 | -1
+//                  Ny-2 | -2
+//                  Ny-3 | -3
+//
+// so we need to add:
+//  neighbor at j=-1 to j=Ny-1
+//  neighbor at j=-2 to j=Ny-2
+//  neighbor at j=-3 to j=Ny-3
+//
+// In a loop over h=1,2,3 this is, given more succinctly:
+//  FRO - S*h into TO - S*h, 
+//
+//  where FRO=Ny, TO=0, and S=-1.
+//--------------------------------------------------
+//
+template<>
+void Tile<2>::exchange_currents(corgi::Node<2>& grid) 
+{
+  using Tile_t  = Tile<2>;
+  using Tileptr = std::shared_ptr<Tile_t>;
+
+  int ito, jto, ifro, jfro;
+  Tileptr tpr; 
+
+  int halo = 3;
+
+  auto& mesh = get_yee(); // target as a reference to update into
+
+  for(int in=-1; in <= 1; in++) {
+    for(int jn=-1; jn <= 1; jn++) {
+      if (in == 0 && jn == 0) continue;
+
+      tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn) ));
+      if (tpr) {
+        auto& mpr = tpr->get_yee();
+
+        /* diagonal rules are:
+        if + then to   n
+        if + then from 0
+
+        if - then to   -1
+        if - then from n-1
+        */
+
+        if (in == +1) { ito = mesh.Nx; ifro = 0; }
+        if (jn == +1) { jto = mesh.Ny; jfro = 0; }
+
+        if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
+        if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
+
+        // add
+        if (jn == 0) { // vertical
+          for(int h=1; h<=halo; h++)
+            add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
+
+        } else if (in == 0) { // horizontal
+          for(int g=1; g<=halo; g++)
+            add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
+
+        } else { // diagonal
+          for(int h=1; h<=halo; h++) {
+            for(int g=1; g<=halo; g++) {
+              add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
+            }
+          }
+        }
+      } // end of if(tpr)
+    }
+  }
+}
+
+
+
+
+
+/// Update currents on Yee grid boundaries
+/**
 template<>
 void Tile<2>::exchange_currents(corgi::Node<2>& node) 
 {
@@ -698,6 +740,7 @@ void Tile<2>::exchange_currents(corgi::Node<2>& node)
   //add_face_yee(mesh, mesh, mesh.Nz, 0);
 
 }
+*/
 
 template<std::size_t D>
 void Tile<D>::cycle_yee() 
