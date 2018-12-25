@@ -421,7 +421,7 @@ def plot2dYee(ax, yee, n, conf, val = 'jx'):
 
     vmin, vmax = np.min(arr), np.max(arr)
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
-    #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
+    print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 
 
     imshow(ax, arr,
@@ -429,7 +429,7 @@ def plot2dYee(ax, yee, n, conf, val = 'jx'):
            cmap = "RdBu",
            vmin = -vminmax,
            vmax =  vminmax,
-           #clip = 0.0
+           clip = None,
           )
     ax.set_title(val)
 
