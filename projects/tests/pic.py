@@ -449,11 +449,11 @@ if __name__ == "__main__":
         # FIXME: filter also virtuals
         # FIXME: or mpi communicate filtered currents
 
-        ##cycle new and temporary currents
-        debug_print(node,"cycle currents")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.cycle_current()
+        ##cycle new and temporary currents (only if filtering)
+        #debug_print(node,"cycle currents")
+        #for cid in node.get_tile_ids():
+        #    tile = node.get_tile(cid)
+        #    tile.cycle_current()
         # FIXME: cycle also virtuals
 
         ##################################################
