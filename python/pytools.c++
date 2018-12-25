@@ -1,5 +1,5 @@
 #include "py_submodules.h"
-
+#include <pybind11/operators.h>
 
 #include "../definitions.h"
 #include "../tools/mesh.h"
@@ -68,7 +68,15 @@ void declare_mesh(
 
         s(i,j,k) = val;
         })
-    .def("clear",        &Class::clear);
+    .def("clear",        &Class::clear)
+    .def(py::self +  py::self)
+    .def(py::self += py::self)
+    .def(py::self -  py::self)
+    .def(py::self -= py::self);
+    //.def(py::self *  py::self)
+    //.def(py::self *= py::self)
+    //.def(py::self /  py::self)
+    //.def(py::self /= py::self);
 }
 
 
