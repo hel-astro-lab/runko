@@ -32,6 +32,7 @@ auto declare_tile(
     .def_readwrite("cfl",      &fields::Tile<D>::cfl)
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("cycle_current",       &fields::Tile<D>::cycle_current)
+    .def("clear_current",       &fields::Tile<D>::clear_current)
     .def("push_e",              &fields::Tile<D>::push_e)
     .def("push_half_b",          &fields::Tile<D>::push_half_b)
     .def("deposit_current",     &fields::Tile<D>::deposit_current)

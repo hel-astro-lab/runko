@@ -17,6 +17,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   yee.jy.clear();
   yee.jz.clear();
 
+
   auto mins = tile.mins;
 
   for(auto&& container : tile.containers) {

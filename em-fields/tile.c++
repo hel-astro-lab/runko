@@ -654,6 +654,15 @@ void Tile<D>::cycle_current()
 }
 
 
+template<std::size_t D>
+void Tile<D>::clear_current() 
+{
+  auto& yee = this->get_yee();
+  yee.jx.clear();
+  yee.jy.clear();
+  yee.jz.clear();
+}
+
 
 //--------------------------------------------------
 // MPI routines

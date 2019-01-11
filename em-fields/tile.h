@@ -244,6 +244,8 @@ class Tile :
 
   void cycle_current();
 
+  void clear_current();
+
   void add_yee_lattice();
 
   void add_analysis_species();

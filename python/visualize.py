@@ -275,8 +275,8 @@ def getYee2D(n, conf):
             'rho':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
            }
 
-    for cid in n.get_local_tiles():
-    #for cid in n.get_tile_ids():
+    #for cid in n.get_local_tiles():
+    for cid in n.get_tile_ids():
         c = n.get_tile(cid)
         i,j = c.index
         yee = c.get_yee(0)
