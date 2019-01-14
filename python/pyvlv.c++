@@ -307,7 +307,7 @@ void bind_vlv(py::module& m_sub)
   m_1d.def("step_velocity",   &vlv::step_velocity<1>);
   m_1d.def("step_velocity_with_gravity",   &vlv::step_velocity_with_gravity<1>);
 
-  m_1d.def("analyze",        &vlv::analyze);
+  m_1d.def("analyze",         &vlv::analyze);
   m_1d.def("write_yee",       &vlv::write_yee<1>);
   m_1d.def("write_analysis",  &vlv::write_analysis<1>);
   m_1d.def("write_mesh",      &vlv::write_mesh<1>);
