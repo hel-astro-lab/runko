@@ -5,6 +5,11 @@ import argparse
 from parser import parse_input
 
 
+from merge_nodes import merge_field_nodes
+from merge_nodes import merge_analysis_nodes
+
+
+
 # based on https://github.com/jbornschein/mpi4py-examples/blob/master/09-task-pull.py
 
 
@@ -73,11 +78,22 @@ class Tasker:
             print("Tasker operating on dir:{} with {} workers".format(self.fdir, self.size))
 
 
+
+
+
+
     # task scheduling
     def schedule_tasks(self):
 
         # Master process executes code below
-        tasks = range(2*self.size)
+        #tasks = range(2*self.size)
+
+        tasks = [
+                {'function':'test_member', 'args':1},
+                {'function':'test_member', 'args':2},
+                {'function':'test_member', 'args':(3,3)},
+                ]
+
 
         task_index = 0
         num_workers = self.size - 1
@@ -89,6 +105,7 @@ class Tasker:
             source = self.status.Get_source()
             tag = self.status.Get_tag()
             if tag == tags.READY:
+
                 # Worker is ready, so send it a task
                 if task_index < len(tasks):
                     self.comm.send(tasks[task_index], dest=source, tag=tags.START)
@@ -96,6 +113,8 @@ class Tasker:
                     task_index += 1
                 else:
                     self.comm.send(None, dest=source, tag=tags.EXIT)
+
+
             elif tag == tags.DONE:
                 results = data
 
@@ -123,14 +142,21 @@ class Tasker:
             if tag == tags.START:
 
                 # Do the work here
-                result = task**2
-
+                method_to_call = getattr(self, task['function'])
+                result = method_to_call( task['args'] )
 
                 self.comm.send(result, dest=0, tag=tags.DONE)
             elif tag == tags.EXIT:
                 break
 
         self.comm.send(None, dest=0, tag=tags.EXIT)
+
+
+    def test_member(self, args):
+        print("running test_member with args", args)
+
+        return True
+
 
 
     def run(self):
