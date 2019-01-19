@@ -343,7 +343,6 @@ void copy_horz_yee(
   lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
   lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
   lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
-
 }
 
 
@@ -371,7 +370,6 @@ void copy_face_yee(
   lhs.bx.copy_face(rhs.bx, lhsK, rhsK); 
   lhs.by.copy_face(rhs.by, lhsK, rhsK); 
   lhs.bz.copy_face(rhs.bz, lhsK, rhsK); 
-
 }
 
 

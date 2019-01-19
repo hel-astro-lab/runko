@@ -7,6 +7,8 @@
 
 #include "../em-fields/filters/filters.h"
 
+#include "../tools/hilbert.h"
+
 
 
 namespace tools{
@@ -176,6 +178,14 @@ void bind_tools(pybind11::module& m)
     .def("set_kernel",              &fields::Filter::set_kernel)
     .def("get_kernel",              &fields::Filter::get_kernel, py::return_value_policy::reference)
     .def("get_image",               &fields::Filter::get_image,  py::return_value_policy::reference);
+
+
+
+
+  py::class_<hilbert::Hilbert2D>(m_2d, "HilbertGen")
+    .def(py::init<int, int>())
+    .def("hindex", &hilbert::Hilbert2D::hindex)
+    .def("inv",    &hilbert::Hilbert2D::inv);
 
 
 

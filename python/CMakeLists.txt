@@ -6,6 +6,7 @@ project (pyplasmabox)
 
 set (TOOLS_FILES 
      pytools.c++
+     ../tools/hilbert.c++
      )
 
 set (FIELDS_FILES 
