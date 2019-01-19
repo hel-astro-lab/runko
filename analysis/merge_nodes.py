@@ -96,12 +96,14 @@ def merge_analysis_nodes(fdir, lap, isps, conf):
 if __name__ == "__main__":
 
 
-    conf = Configuration('turb100hot.ini')
+    #conf = Configuration('turb100hot.ini')
+    fdir = "out100hot"
 
-    lap = 1400
-    fdir = "out100hotP"
+    lap = 100
+    conf = Configuration('config-test.ini')
+    fdir = 'out'
 
-    #merge_field_nodes(fdir, lap, conf)
+    merge_field_nodes(fdir, lap, conf)
     merge_analysis_nodes(fdir, lap, [0,1], conf)
 
 
