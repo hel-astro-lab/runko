@@ -82,20 +82,49 @@ class Tasker:
 
 
 
-    # task scheduling
+
+    ##################################################
+    # task lists to be executed
+    lap_tasks = [ 'test_member', 'test_other_member' ]
+
+    sim_tasks = [ 'test_global' ]
+
+
+
+    ##################################################
+    # internal variables
+
+    work_to_do = True # distribute tasks until this is false
+    lap = 0  # keep track of lap we are processing
+    task_index = 0 #keep track of lap task we are processing
+
+
+    # task feeder
+    def get_new_task(self):
+        
+        # cycle among laps
+        if self.task_index >= len(self.lap_tasks):
+            self.lap += self.conf.interval
+            self.task_index = 0
+
+        task = {
+                'name': self.lap_tasks[self.task_index],
+                'args': self.lap,
+                }
+        self.task_index += 1
+
+
+        if self.lap >= 1000:
+            self.work_to_do = False
+
+        return task
+
+
+
+    # task scheduling; master process executes this
     def schedule_tasks(self):
 
-        # Master process executes code below
-        #tasks = range(2*self.size)
-
-        tasks = [
-                {'function':'test_member', 'args':1},
-                {'function':'test_member', 'args':2},
-                {'function':'test_member', 'args':(3,3)},
-                ]
-
-
-        task_index = 0
+        #task_index = 0
         num_workers = self.size - 1
         closed_workers = 0
 
@@ -107,10 +136,13 @@ class Tasker:
             if tag == tags.READY:
 
                 # Worker is ready, so send it a task
-                if task_index < len(tasks):
-                    self.comm.send(tasks[task_index], dest=source, tag=tags.START)
-                    print("Sending task %d to worker %d" % (task_index, source))
-                    task_index += 1
+                #if task_index < len(tasks):
+                if self.work_to_do:
+
+                    task = self.get_new_task()
+                    
+                    self.comm.send(task, dest=source, tag=tags.START)
+                    print("Sending task {} to worker {}".format(task['name'], source))
                 else:
                     self.comm.send(None, dest=source, tag=tags.EXIT)
 
@@ -124,7 +156,7 @@ class Tasker:
                 print("Worker %d exited." % source)
                 closed_workers += 1
 
-        print("Master finishing")
+        print("Master finishing...")
 
 
 
@@ -142,7 +174,7 @@ class Tasker:
             if tag == tags.START:
 
                 # Do the work here
-                method_to_call = getattr(self, task['function'])
+                method_to_call = getattr(self, task['name'])
                 result = method_to_call( task['args'] )
 
                 self.comm.send(result, dest=0, tag=tags.DONE)
@@ -154,6 +186,16 @@ class Tasker:
 
     def test_member(self, args):
         print("running test_member with args", args)
+
+        return True
+
+    def test_other_member(self, args):
+        print("running test_other_member with args", args)
+
+        return True
+
+    def test_global(self, args):
+        print("running test_global with args", args)
 
         return True
 
