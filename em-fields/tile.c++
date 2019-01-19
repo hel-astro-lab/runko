@@ -73,7 +73,7 @@ void Tile<2>::push_e()
     // Ez
     mesh.ez(i,j,k) += 
       + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k) 
-          -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
+           -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
   }
 }
