@@ -106,9 +106,12 @@ std::vector<mpi::request> Tile<D>::send_data(
     int dest, 
     int tag)
 {
-  if(tag == 0)      return fields::Tile<D>::send_data(comm, dest, tag);
-  else if(tag == 1) return send_particle_data(comm,dest);
-  else if(tag == 2) return send_particle_extra_data(comm,dest);
+  if     (tag == 0) return fields::Tile<D>::send_data(comm, dest, tag);
+  else if(tag == 1) return fields::Tile<D>::send_data(comm, dest, tag);
+  else if(tag == 2) return fields::Tile<D>::send_data(comm, dest, tag);
+
+  else if(tag == 3) return send_particle_data(comm,dest);
+  else if(tag == 4) return send_particle_extra_data(comm,dest);
   else assert(false);
 }
 
@@ -160,9 +163,12 @@ std::vector<mpi::request> Tile<D>::recv_data(
     int orig, 
     int tag)
 {
-  if(tag == 0)      return fields::Tile<D>::recv_data(comm, orig, tag);
-  else if(tag == 1) return recv_particle_data(comm,orig);
-  else if(tag == 2) return recv_particle_extra_data(comm,orig);
+  if     (tag == 0) return fields::Tile<D>::recv_data(comm, orig, tag);
+  else if(tag == 1) return fields::Tile<D>::recv_data(comm, orig, tag);
+  else if(tag == 2) return fields::Tile<D>::recv_data(comm, orig, tag);
+
+  else if(tag == 3) return recv_particle_data(comm,orig);
+  else if(tag == 4) return recv_particle_extra_data(comm,orig);
   else assert(false);
 }
 

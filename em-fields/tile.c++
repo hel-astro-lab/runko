@@ -674,7 +674,7 @@ int get_tag(int cid, int extra_param)
 
 
 template<std::size_t D>
-std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest, int /*tag*/)
+std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest, int tag)
 {
   auto& yee = get_yee(); 
   //std::cout << "SEND field to " << dest 
@@ -682,18 +682,28 @@ std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest,
   //  << "ny " << yee.jy.size()
   //  << "nz " << yee.jz.size()
   //  << "\n";
-
   std::vector<mpi::request> reqs;
-  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
-  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
-  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+
+  if (tag == 0) {
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+  } else if (tag == 1) {
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.ex.data(), yee.ex.size()) );
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.ey.data(), yee.ey.size()) );
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.ez.data(), yee.ez.size()) );
+  } else if (tag == 2) {
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.bx.data(), yee.bx.size()) );
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.by.data(), yee.by.size()) );
+    reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.bz.data(), yee.bz.size()) );
+  }
 
   return reqs;
 }
 
 
 template<std::size_t D>
-std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
+std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig, int tag)
 {
   //std::cout << "RECV from " << orig << "\n";
   auto& yee = get_yee(); 
@@ -704,9 +714,21 @@ std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig,
   //  << "\n";
 
   std::vector<mpi::request> reqs;
-  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
-  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
-  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+
+  if (tag == 0) {
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+  } else if (tag == 1) {
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.ex.data(), yee.ex.size()) );
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.ey.data(), yee.ey.size()) );
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.ez.data(), yee.ez.size()) );
+  } else if (tag == 2) {
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.bx.data(), yee.bx.size()) );
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.by.data(), yee.by.size()) );
+    reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.bz.data(), yee.bz.size()) );
+  }
+
 
   return reqs;
 }
