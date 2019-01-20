@@ -73,7 +73,7 @@ void Tile<2>::push_e()
     // Ez
     mesh.ez(i,j,k) += 
       + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k) 
-          -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
+           -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
   }
 }
@@ -230,15 +230,17 @@ void Tile<3>::push_half_b()
 
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
-YeeLattice& Tile<D>::get_yee(size_t i) 
+YeeLattice& Tile<D>::get_yee(size_t /*i*/) 
 {
-  return this->yee.get(i);
+  //return this->yee.get(i);
+  return this->yee;
 }
 
 template<std::size_t D>
-const YeeLattice& Tile<D>::get_const_yee(size_t i) const 
+const YeeLattice& Tile<D>::get_const_yee(size_t /*i*/) const 
 {
-  return this->yee.get(i);
+  //return this->yee.get(i);
+  return this->yee;
 }
 
 
@@ -281,19 +283,25 @@ void Tile<3>::add_analysis_species()
 template<>
 void Tile<1>::add_yee_lattice() 
 {
-  yee.push_back( YeeLattice( mesh_lengths[0], 1, 1) );
+  //std::cout << "add 1D Yee \n";
+  //yee.push_back( YeeLattice( mesh_lengths[0], 1, 1) );
+  yee = YeeLattice(mesh_lengths[0], 1, 1);
 }
 
 template<>
 void Tile<2>::add_yee_lattice() 
 {
-  yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) );
+  //std::cout << "add 2D Yee \n";
+  //yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) );
+  yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], 1);
 }
 
 template<>
 void Tile<3>::add_yee_lattice() 
 {
-  yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) );
+  //std::cout << "add 3D Yee \n";
+  //yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) );
+  yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
 
 //--------------------------------------------------
@@ -343,7 +351,6 @@ void copy_horz_yee(
   lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
   lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
   lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
-
 }
 
 
@@ -371,7 +378,6 @@ void copy_face_yee(
   lhs.bx.copy_face(rhs.bx, lhsK, rhsK); 
   lhs.by.copy_face(rhs.by, lhsK, rhsK); 
   lhs.bz.copy_face(rhs.bz, lhsK, rhsK); 
-
 }
 
 
@@ -638,7 +644,7 @@ void Tile<2>::exchange_currents(corgi::Node<2>& grid)
 template<std::size_t D>
 void Tile<D>::cycle_yee() 
 {
-  yee.cycle();
+  //yee.cycle();
 }
 
 /// cycle temporary and true current arrays
@@ -676,7 +682,7 @@ int get_tag(int cid, int extra_param)
 
 
 template<std::size_t D>
-std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest, int /*tag*/)
+std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest, int tag)
 {
   auto& yee = get_yee(); 
   //std::cout << "SEND field to " << dest 
@@ -684,18 +690,28 @@ std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest,
   //  << "ny " << yee.jy.size()
   //  << "nz " << yee.jz.size()
   //  << "\n";
-
   std::vector<mpi::request> reqs;
-  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
-  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
-  reqs.push_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+
+  if (tag == 0) {
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+  } else if (tag == 1) {
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 4), yee.ex.data(), yee.ex.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 5), yee.ey.data(), yee.ey.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 6), yee.ez.data(), yee.ez.size()) );
+  } else if (tag == 2) {
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 7), yee.bx.data(), yee.bx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 8), yee.by.data(), yee.by.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 9), yee.bz.data(), yee.bz.size()) );
+  }
 
   return reqs;
 }
 
 
 template<std::size_t D>
-std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
+std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig, int tag)
 {
   //std::cout << "RECV from " << orig << "\n";
   auto& yee = get_yee(); 
@@ -706,9 +722,22 @@ std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig,
   //  << "\n";
 
   std::vector<mpi::request> reqs;
-  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
-  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
-  reqs.push_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+
+
+  if (tag == 0) {
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+  } else if (tag == 1) {
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 4), yee.ex.data(), yee.ex.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 5), yee.ey.data(), yee.ey.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 6), yee.ez.data(), yee.ez.size()) );
+  } else if (tag == 2) {
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 7), yee.bx.data(), yee.bx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 8), yee.by.data(), yee.by.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 9), yee.bz.data(), yee.bz.size()) );
+  }
+
 
   return reqs;
 }

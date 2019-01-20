@@ -3,7 +3,9 @@ import h5py
 import glob
 import re
 import os
+import argparse
 
+from parser import parse_input
 from configSetup import Configuration
 
 from combine_files import natural_keys
@@ -93,16 +95,43 @@ def merge_analysis_nodes(fdir, lap, isps, conf):
 
 
 
+
+
 if __name__ == "__main__":
 
+    conf, fdir, args = parse_input()
 
-    conf = Configuration('turb100hot.ini')
 
-    lap = 1400
-    fdir = "out100hotP"
+    # if only one lap is given analyze it
+    if not(args.lap == None):
+        lap = args.lap
+
+        merge_field_nodes(fdir, lap, conf)
+        merge_analysis_nodes(fdir, lap, [0,1], conf)
+
+    #otherwise find all files and merge them
+    else:
+        print("analyzing all files inside {}".format(fdir))
+
+        loop = True
+        lap = 0
+        while loop:
+
+            merge_field_nodes(fdir, lap, conf)
+            merge_analysis_nodes(fdir, lap, [0,1], conf)
+
+            lap += conf.interval
+
+
+    #conf = Configuration('turb100hot.ini')
+    #fdir = "out100hot"
+
+    #lap = 100
+    #conf = Configuration('config-test.ini')
+    #fdir = 'out'
 
     #merge_field_nodes(fdir, lap, conf)
-    merge_analysis_nodes(fdir, lap, [0,1], conf)
+    #merge_analysis_nodes(fdir, lap, [0,1], conf)
 
 
 

@@ -1,15 +1,16 @@
 # Modern kinetic plasma simulation toolbox
 
-Plasma-toolbox is a collection of simulation modules written in modern C++14 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and relies on presenting the code as physical modules that can be either combined in a heterogenous fashion or run individually.
+PlasmaBox is a collection of simulation modules written in modern C++14 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and relies on presenting the code as physical modules that can be either run individually or combined in a heterogeneous fashion.
 
 
 ## Installation
 
-Plasmabox relies on various small template libraries that are automatically obtained along the main code as submodules. Because of this, one should always when downloading the repository issue a recursive clone as
+PlasmaBox relies on various small template libraries that are automatically obtained along the main code as submodules. Because of this, remember to always issue a recursive clone:
 ```
-git clone --recursive https://github.com/natj/plasma-toolbox.git
+git clone --recursive https://github.com/natj/plasmabox.git
 ```
-Currently these include:
+Currently the libraries shipped together with the code are:
+- [corgi](https://github.com/natj/corgi) grid infrastructure
 - [cppitertools](https://github.com/ryanhaining/cppitertools) for various python-like iterators etc.
 - [ezh5](https://github.com/natj/ezh5) lazy template interface to HDF5 for easier usage (originally from [mileschen](https://github.com/mileschen360/ezh5))
 - [inih](https://github.com/benhoyt/inih) `.ini` file parser for configuration files.
@@ -22,16 +23,17 @@ Your system should have these installed:
 - python3 for scripting
 - [HDF5](https://support.hdfgroup.org/HDF5/) for I/O
 - [CMake](https://cmake.org/) (>v3.0) for building and compiling
-- [FFTW](http://www.fftw.org/) for Fourier transforms
 - [fmt](https://github.com/fmtlib/fmt) I/O formatting library
+- [FFTW](http://www.fftw.org/) for Fourier transforms
+- MPI message passing interface
 
 On MacOS these should be (quite) easily obtained by using [homebrew](https://brew.sh/) and running.
 - `brew install gcc hdf5 python3 cmake fftw fmt`
 
 Additionally, especially for larger jobs and better performance, consider installing:
-- MPI message passing library
-- openMP (>v4.0) supported by the compiler 
-    - NOTE: default clang++ in MacOS does not support this
+- OpenMP (>= v4.0)
+    - NOTE: Your compiler needs to support this
+        - NOTE: default clang++ in MacOS does not support this
 
 
 ### Compiling
@@ -42,9 +44,9 @@ mkdir build
 cd build
 cmake ..
 ```
-And make sure that cmake finishes succesfully. After that, you can try and compile the framework as
+And make sure that CMake finishes successfully. After that, you can try and compile the framework with
 ```
-make -j8
+make
 ```
 
 Different compilers can be selected by modifying the `CXX` and `CC` global environment variables.
@@ -69,7 +71,7 @@ export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/analysis
     - new simulation setups should go here
 - `prototypes`: different prototypes and test versions of the code
 - `python`: python3 bindings and scripts for running simulations using python
-- `tests`: unittests
+- `tests`: code unit tests
 - `tools`: C++ libraries, bash scripts, git tools
 
 ### Physical modules include:

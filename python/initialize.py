@@ -49,6 +49,52 @@ def loadMpiYStrides(n):
     n.bcast_mpi_grid()
 
 
+# load nodes using 2D Hilbert curve
+def loadMpi2D(n):
+    if n.master: #only master initializes; then sends
+
+        nx = n.get_Nx()
+        ny = n.get_Ny()
+
+        m0 = np.log2(nx)
+        m1 = np.log2(ny)
+
+        if not(m0.is_integer()):
+            raise ValueError('Nx is not power of 2 (i.e. 2^m)')
+
+        if not(m1.is_integer()):
+            raise ValueError('Ny is not power of 2 (i.e. 2^m)')
+
+        print('Generating hilbert with 2^{} {}'.format(m0,m1))
+        hgen = pyplasmabox.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
+
+        igrid = np.zeros( (nx, ny), np.int64)
+        grid  = np.zeros( (nx, ny) ) #, np.int64)
+
+        for i in range(nx):
+            for j in range(ny):
+                grid[i,j] = hgen.hindex(i,j)
+        #print(grid)
+        hmin, hmax = np.min(grid), np.max(grid)
+        for i in range(nx):
+            for j in range(ny):
+                igrid[i,j] = np.floor( n.size()*grid[i,j]/(hmax+1) ) 
+
+        #check that nodes get about same work load
+        #y = np.bincount(igrid.flatten())
+        #ii = np.nonzero(y)[0]
+        #print(list(zip(ii,y[ii])))
+
+        for i in range(nx):
+            for j in range(ny):
+                val = igrid[i,j] 
+
+                n.set_mpi_grid(i, j, val)
+
+    n.bcast_mpi_grid()
+
+
+
 def initialize_tile(c, i, j, n, conf):
 
     #initialize tile dimensions 

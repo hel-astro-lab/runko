@@ -64,6 +64,8 @@ class Mesh {
       return mat[ indx(i,j,k) ];
     }
 
+    /// empty default constructor
+    //Mesh() {};
 
     /// Default initialization
     Mesh(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
@@ -112,7 +114,7 @@ class Mesh {
     /// load 3D data cube from 1D serial vector
     // TODO: vec or vec& ?
     void unserialize(
-        std::vector<T> vec, 
+        std::vector<T>& vec, 
         size_t Nx_in, size_t Ny_in, size_t Nz_in
         ) {
 
@@ -136,21 +138,31 @@ class Mesh {
 
 
     // Mesh arithmetics
-    //Mesh& operator=(const Mesh& rhs);
+    //=
+    Mesh& operator=(const Mesh<T, H>& rhs);
 
     template<int H2>
     Mesh& operator=(const Mesh<T, H2>& rhs);
 
     Mesh& operator=(const T& rhs);
 
+
+    //+=
+    Mesh& operator+=(const Mesh<T, H>& rhs);
+
     template<int H2>
     Mesh& operator+=(const Mesh<T, H2>& rhs);
+
+    //-=
+    Mesh& operator-=(const Mesh<T, H>& rhs);
 
     template<int H2>
     Mesh& operator-=(const Mesh<T, H2>& rhs);
 
+    //*=
     Mesh& operator*=(const T& rhs);
 
+    // /=
     Mesh& operator/=(const T& rhs);
 
 
@@ -204,7 +216,18 @@ Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
 }
 */
 
+/// = with same halo size
+template<typename T, int H>
+Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
+  validateDims(rhs);
+  for(size_t i=0; i<this->mat.size(); i++) {
+    this->mat[i] = rhs.mat[i];
+  }
+  return *this;
+}
 
+
+/// = with differing halo size
 template<typename T, int H>
 template <int H2>
 Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
@@ -232,17 +255,14 @@ Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
 }
 
 
-/*
-template <class T, int H>
+template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
-
   for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] += rhs.mat[i];
   }
   return *this;
 }
-*/
 
 template<typename T, int H>
 template <int H2>
@@ -261,17 +281,14 @@ Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H2>& rhs) {
 }
 
 
-/*
-template <class T, int H>
+template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
-
   for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] -= rhs.mat[i];
   }
   return *this;
 }
-*/
 
 template<typename T, int H>
 template <int H2>

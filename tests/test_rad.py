@@ -256,7 +256,7 @@ class radiation(unittest.TestCase):
         conf = Conf()
         conf.NxMesh = 3
         conf.NyMesh = 3
-        conf.NzMesh = 3
+        conf.NzMesh = 1
         conf.Nx = 1
         conf.Ny = 1
         conf.Nz = 1

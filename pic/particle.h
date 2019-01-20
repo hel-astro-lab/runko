@@ -34,6 +34,7 @@ public:
   inline double& uy()  { return data[4]; };
   inline double& uz()  { return data[5]; };
   inline double& wgt() { return data[6]; };
+
 };
 
 
