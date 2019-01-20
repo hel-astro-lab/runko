@@ -125,7 +125,7 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleContainer& container = get_container(ispc);
 
-    reqs.push_back(
+    reqs.emplace_back(
         comm.isend(dest, get_tag(corgi::Tile<D>::cid, ispc), 
           container.outgoing_particles.data(), 
           container.outgoing_particles.size())
@@ -146,7 +146,7 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
     ParticleContainer& container = get_container(ispc);
 
     if(!container.outgoing_extra_particles.empty()) {
-      reqs.push_back(
+      reqs.emplace_back(
           comm.isend(dest, get_extra_tag(corgi::Tile<D>::cid, ispc), 
             container.outgoing_extra_particles.data(), 
             container.outgoing_extra_particles.size())
@@ -183,7 +183,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
     ParticleContainer& container = get_container(ispc);
     container.incoming_particles.resize( container.optimal_message_size );
 
-    reqs.push_back(
+    reqs.emplace_back(
         comm.irecv(orig, get_tag(corgi::Tile<D>::cid, ispc),
           container.incoming_particles.data(),
           container.optimal_message_size)
@@ -215,7 +215,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     if(extra_size > 0) {
       container.incoming_extra_particles.resize(extra_size);
 
-      reqs.push_back(
+      reqs.emplace_back(
           comm.irecv(orig, get_extra_tag(corgi::Tile<D>::cid, ispc),
             container.incoming_extra_particles.data(),
             extra_size)
@@ -256,6 +256,7 @@ void Tile<D>::delete_all_particles()
 {
   for(auto&& container : containers) {
     container.resize(0);
+    //container.clear(0);
   }
 }
 

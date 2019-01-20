@@ -77,6 +77,7 @@ class Timer:
 
     def stats(self, name):
 
+        #print("timer len:", len(self.times), len(self.ctimes) )
         indx = self._look_name(name)
         ts = np.array( self.times[indx] )
         cnts = len(ts) - 1
