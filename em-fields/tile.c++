@@ -723,6 +723,7 @@ std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig,
 
   std::vector<mpi::request> reqs;
 
+
   if (tag == 0) {
     reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
     reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
