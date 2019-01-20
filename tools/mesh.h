@@ -64,6 +64,8 @@ class Mesh {
       return mat[ indx(i,j,k) ];
     }
 
+    /// empty default constructor
+    //Mesh() {};
 
     /// Default initialization
     Mesh(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
@@ -112,7 +114,7 @@ class Mesh {
     /// load 3D data cube from 1D serial vector
     // TODO: vec or vec& ?
     void unserialize(
-        std::vector<T> vec, 
+        std::vector<T>& vec, 
         size_t Nx_in, size_t Ny_in, size_t Nz_in
         ) {
 
