@@ -65,7 +65,7 @@ def loadMpi2D(n):
         if not(m1.is_integer()):
             raise ValueError('Ny is not power of 2 (i.e. 2^m)')
 
-        print('Generating hilbert with 2^{} {}'.format(m0,m1))
+        #print('Generating hilbert with 2^{} {}'.format(m0,m1))
         hgen = pyplasmabox.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
 
         igrid = np.zeros( (nx, ny), np.int64)
