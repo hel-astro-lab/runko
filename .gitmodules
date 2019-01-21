@@ -1,18 +1,23 @@
 [submodule "corgi"]
 	path = corgi
 	url = https://github.com/natj/corgi.git
+	branch = master
 [submodule "tools/inih"]
 	path = tools/inih
 	url = https://github.com/benhoyt/inih.git
+	branch = master
 [submodule "tools/cppitertools"]
 	path = tools/cppitertools
 	url = https://github.com/ryanhaining/cppitertools.git
 [submodule "tools/ezh5"]
 	path = tools/ezh5
 	url = https://github.com/natj/ezh5.git
+	branch = master
 [submodule "tools/sparsepp"]
 	path = tools/sparsepp
 	url = https://github.com/greg7mdp/sparsepp.git
+	branch = master
 [submodule "tools/eigen"]
 	path = tools/eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
+	branch = master
