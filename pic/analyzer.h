@@ -95,13 +95,43 @@ class Analyzator {
         std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
         */
 
-        if( D >= 1) assert(i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) );
-        if( D >= 2) assert(j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) );
-        if( D >= 3) assert(k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) );
+        bool debug_flag = false;
+        if( (D >= 1) && (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0])) ) debug_flag = true;
+        if( (D >= 2) && (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1])) ) debug_flag = true;
+        if( (D >= 3) && (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2])) ) debug_flag = true;
 
-        if( D >= 1) assert( x0 >= mins[0] && x0 < maxs[0] );
-        if( D >= 2) assert( y0 >= mins[1] && y0 < maxs[1] );
-        if( D >= 3) assert( z0 >= mins[2] && z0 < maxs[2] );
+        if( (D >= 1) && (x0 >= mins[0] && x0 < maxs[0]) ) debug_flag = true;
+        if( (D >= 2) && (y0 >= mins[1] && y0 < maxs[1]) ) debug_flag = true;
+        if( (D >= 3) && (z0 >= mins[2] && z0 < maxs[2]) ) debug_flag = true;
+
+
+        if (!debug_flag) {
+
+          std::cout << "--------------------------------------------------\n";
+          std::cout << "n=" << n;
+          std::cout << " i: " << i;
+          std::cout << " j: " << j;
+          std::cout << " k: " << k;
+          std::cout << "\n";
+
+          std::cout << " mins0: " << mins[0];
+          std::cout << " mins1: " << mins[1];
+          std::cout << " mins2: " << mins[2];
+
+          std::cout << " maxs0: " << maxs[0];
+          std::cout << " maxs1: " << maxs[1];
+          std::cout << " maxs2: " << maxs[2];
+
+          std::cout << " x0: " << x0;
+          std::cout << " y0: " << y0;
+          std::cout << " z0: " << z0;
+          std::cout << "\n";
+          
+          std::cout << std::flush;
+          // always fail
+          assert(false);
+        }
+
 
         u0 = vel[0][n];
         v0 = vel[1][n];
