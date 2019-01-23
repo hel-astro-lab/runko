@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <map>
 #include <cmath>
 #include <cassert>
@@ -12,7 +13,64 @@
 
 namespace pic {
 
-/*! \brief Block of particles inside the tile
+
+/// Particle class for easier communication
+class Particle
+{
+public:
+
+  std::array<double,7> data;
+
+  Particle() {};
+
+  Particle(double x,  double y,  double z,
+           double ux, double uy, double uz,
+           double wgt);
+
+  inline double& x()   { return data[0]; };
+  inline double& y()   { return data[1]; };
+  inline double& z()   { return data[2]; };
+  inline double& ux()  { return data[3]; };
+  inline double& uy()  { return data[4]; };
+  inline double& uz()  { return data[5]; };
+  inline double& wgt() { return data[6]; };
+
+};
+
+
+/// Special handling of particle MPI message info 
+// via this auxiliary helper class
+class InfoParticle : public Particle
+{
+public:
+
+  InfoParticle(size_t np) 
+    : Particle(
+        static_cast<double>(np), 0,0,
+        0,0,0,
+        0) {}
+
+  InfoParticle(Particle& prtcl) {
+    data[0] = prtcl.x();
+  }
+
+  size_t size() {return static_cast<size_t>(Particle::x());}
+
+private:
+  using Particle::x;
+  using Particle::y;
+  using Particle::z;
+  using Particle::ux;
+  using Particle::uy;
+  using Particle::uz;
+  using Particle::wgt;
+
+};
+
+
+
+
+/*! \brief Container of particles inside the tile
 *
 * Container to hold plasma particles 
 *
@@ -23,25 +81,42 @@ namespace pic {
 *   qm
 *
 */
-class ParticleBlock {
+class ParticleContainer {
 
   protected:
 
-  size_t Nprtcls;
+  size_t Nprtcls = 0;
 
-  std::vector< std::vector<Realf> > locArr;
-  std::vector< std::vector<Realf> > velArr;
-  //std::vector< std::vector<Realf> > wgtArr;
+  std::vector< std::vector<double> > locArr;
+  std::vector< std::vector<double> > velArr;
+  std::vector<double> wgtArr;
 
   public:
+    
+  /// packed outgoing particles
+  std::vector<Particle> outgoing_particles;
+  std::vector<Particle> outgoing_extra_particles;
+
+  /// pack particles that are marked as outflowing
+  void pack_outgoing_particles();
+
+  /// packed incoming particles
+  std::vector<Particle> incoming_particles;
+  std::vector<Particle> incoming_extra_particles;
+
+  /// unpack incoming particles into internal vectors
+  void unpack_incoming_particles();
+
+  /// dynamic message size that traces the optimal
+  // message length (i.e., number of particles) hand 
+  // in hand with the corresponding receiver side.
+  int optimal_message_size = 30;
 
   //! particle specific electric field components
-  //std::vector<Realf> Epart;
-  std::vector< std::vector<Realf> > Epart;
+  std::vector<double> Epart;
 
   //! particle specific magnetic field components
-  //std::vector<Realf> Bpart;
-  std::vector< std::vector<Realf> > Bpart;
+  std::vector<double> Bpart;
 
   //! multimap of particles going to other tiles
   typedef std::multimap<std::tuple<int,int,int>, int> mapType;
@@ -53,91 +128,41 @@ class ParticleBlock {
   size_t Ny;
   size_t Nz;
 
-  Realf q = 1.0; // normalization factor
+  double q = 1.0; // normalization factor
 
 
   /// Constructor 
-  ParticleBlock(size_t Nx, size_t Ny, size_t Nz) : 
-    Nx(Nx), Ny(Ny), Nz(Nz)
-  { 
-    locArr.resize(3);
-    velArr.resize(3);
-  };
-    
+  ParticleContainer();
 
   // default virtual dtor
-  virtual ~ParticleBlock() = default;
-
+  virtual ~ParticleContainer() = default;
 
 
   //--------------------------------------------------
     
   /// reserve memory for particles
-  virtual void reserve(size_t N) {
-
-    //locArr.resize(3);
-    for(size_t i=0; i<3; i++) locArr[i].reserve(N);
-
-    //velArr.resize(3);
-    for(size_t i=0; i<3; i++) velArr[i].reserve(N);
-
-    // reserve 1d N x D array for particle-specific fields
-    // TODO: is this needed since we can not push_back?
-    //       from optimization pov, yes maybe?
-    //Epart.reserve(N*D);
-    //Bpart.reserve(N*D);
-  }
+  virtual void reserve(size_t N);
 
   // resize everything
-  virtual void resize(size_t N) {
-
-    for(size_t i=0; i<3; i++) locArr[i].resize(N);
-    for(size_t i=0; i<3; i++) velArr[i].resize(N);
-
-    Nprtcls = N;
-  }
-
-  // resize arrays for fields
-  void resize_em(size_t N) {
-    if (N <= 0) N = 1;
-
-    Epart.resize(3);
-    for(size_t i=0; i<3; i++) Epart[i].resize(N);
-
-    Bpart.resize(3);
-    for(size_t i=0; i<3; i++) Bpart[i].resize(N);
-  }
-
+  virtual void resize(size_t N);
 
   /// size of the container (in terms of particles)
-  size_t size() { 
-    // FIXME: these fail
-    //assert(locArr[0].size() == Nprtcls);
-    //assert(locArr[1].size() == Nprtcls);
-    //assert(locArr[2].size() == Nprtcls);
-
-    //assert(velArr[0].size() == Nprtcls);
-    //assert(velArr[1].size() == Nprtcls);
-    //assert(velArr[2].size() == Nprtcls);
-
-    //return Nprtcls; // FIXME: this is the correct way to return
-    return locArr[0].size();
-  }
+  size_t size();
 
 
   //--------------------------------------------------
   // locations
-  virtual inline Realf loc( size_t idim, size_t iprtcl ) const
+  virtual inline double loc( size_t idim, size_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline Realf& loc( size_t idim, size_t iprtcl )       
+  virtual inline double& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<Realf> loc(size_t idim) const 
+  virtual inline std::vector<double> loc(size_t idim) const 
   {
     return locArr[idim];
   }
@@ -145,66 +170,64 @@ class ParticleBlock {
 
   //--------------------------------------------------
   // velocities
-  virtual inline Realf vel( size_t idim, size_t iprtcl ) const
+  virtual inline double vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline Realf& vel( size_t idim, size_t iprtcl )       
+  virtual inline double& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<Realf> vel(size_t idim) const 
+  virtual inline std::vector<double> vel(size_t idim) const 
   {
     return velArr[idim];
   }
 
-
-  // --------------------------------------------------
-  // particle creation & destruction methods
-
-  virtual void add_particle (
-      std::vector<Realf> prtcl_loc,
-      std::vector<Realf> prtcl_vel) 
+  //--------------------------------------------------
+  // weights
+  virtual inline double wgt( size_t iprtcl ) const
   {
-
-    assert(prtcl_loc.size() == 3);
-    assert(prtcl_vel.size() == 3);
-
-    for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
-    for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_vel[i]);
-
-    Nprtcls++;
+    return wgtArr[iprtcl];
   }
 
-
-
-  // --------------------------------------------------
-  //! Lorentz factor
-  inline Realf gamma(size_t iprtcl) {
-    return sqrt(1.+
-         pow(vel(0,iprtcl),2)
-        +pow(vel(1,iprtcl),2)
-        +pow(vel(2,iprtcl),2));
+  virtual inline double& wgt( size_t iprtcl )       
+  {
+    return wgtArr[iprtcl];
   }
 
-  //! Reciprocal of Lorentz factor
-  //inline Realf invgamma(unsigned int iprtcl) {
-  //    return 1./sqrt(1.+pow(vel(0,iprtcl),2)
-  //                     +pow(vel(1,iprtcl),2)
-  //                     +pow(vel(2,iprtcl),2));
-  //}
+  virtual inline std::vector<double>& wgt() 
+  {
+    return wgtArr;
+  }
 
-
-
-
+  // particle creation
+  virtual void add_particle (
+      std::vector<double> prtcl_loc,
+      std::vector<double> prtcl_vel,
+      double prtcl_wgt);
 
   // --------------------------------------------------
-  // Other useful miscellaneous methods
-    
-  //! test if prtcl is inside this block
-  //bool is_local(size_t iprtcl);
+  // particle boundary checks
+
+  /// check and mark particles exceeding given limits
+  void check_outgoing_particles(
+      std::array<double,3>&,
+      std::array<double,3>& );
+
+
+  /// delete particles that went beyond boundaries, i.e.,
+  // ended up in to_other_tiles box
+  void delete_transferred_particles();
+
+
+  /// transfer particles between blocks
+  void transfer_and_wrap_particles(
+      ParticleContainer&, 
+      std::array<int,3>,
+      std::array<double,3>&,
+      std::array<double,3>&);
 
 };
 

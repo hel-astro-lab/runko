@@ -85,7 +85,7 @@ def initialize_tile(c, i, j, n, conf):
     
     # load particle containers
     for sps in range(conf.Nspecies):
-        container = pypic.ParticleBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        container = pypic.ParticleContainer()
         if sps % 2 == 0:
             container.q = conf.me*q0
         else:
@@ -94,7 +94,6 @@ def initialize_tile(c, i, j, n, conf):
         #reserve memory for particles
         Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
         container.reserve(Nprtcls)
-        container.resize_em(Nprtcls)
     
         c.set_container( container )
     
@@ -105,11 +104,9 @@ def initialize_tile(c, i, j, n, conf):
     c.set_tile_mins(mins[0:2])
     c.set_tile_maxs(maxs[0:2])
     
-    
     # initialize analysis tiles ready for incoming simulation data
     for ip in range(conf.Nspecies):
         c.add_analysis_species()
-
 
 
 #load tiles into each node
@@ -128,5 +125,22 @@ def loadTiles(n, conf):
 
 
 
+# make all tiles same type 
+def initialize_virtuals(n, conf):
+
+    for cid in n.get_virtual_tiles():
+        c_orig = n.get_tile(cid)
+        (i,j) = c_orig.index
+
+        # new prtcl tile;
+        # TODO: load_metainfo *HAS* to be after add_tile
+        c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        n.add_tile(c, (i,j)) 
+
+        c_orig.communication.local = False;
+        c.load_metainfo(c_orig.communication)
+        #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
+        
+        initialize_tile(c, i,j,n, conf)
 
 

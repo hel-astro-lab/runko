@@ -6,6 +6,7 @@ project (pyplasmabox)
 
 set (TOOLS_FILES 
      pytools.c++
+     ../tools/hilbert.c++
      )
 
 set (FIELDS_FILES 
@@ -27,6 +28,7 @@ set (VLV_FILES
 set (PIC_FILES 
      pypic.c++
      ../pic/tile.c++
+     ../pic/particle.c++
      ../pic/boundaries/wall.c++
      ../pic/solvers/boris.c++
      ../pic/interpolators/linear.c++
@@ -57,8 +59,8 @@ pybind11_add_module(pyplasmabox
 
 
 target_link_libraries(pyplasmabox PRIVATE -lhdf5)
-target_link_libraries(pyplasmabox PRIVATE -lfftw3)
-target_link_libraries(pyplasmabox PRIVATE -lfftw3f)
+#target_link_libraries(pyplasmabox PRIVATE -lfftw3)
+#target_link_libraries(pyplasmabox PRIVATE -lfftw3f)
 
 target_compile_options(pyplasmabox PRIVATE ${WARNING_FLAGS})
 

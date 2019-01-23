@@ -1,16 +1,17 @@
 #pragma once
 
-#include "../corgi/tile.h"
-//#include "../corgi/fwd_corgi.h"
-#include "../corgi/corgi.h"
+#include <vector>
+#include <mpi4cpp/mpi.h>
 
+#include "../corgi/tile.h"
+#include "../corgi/corgi.h"
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
-
 #include "../definitions.h"
 
 
 namespace fields {
+  namespace mpi = mpi4cpp::mpi;
 
 
 /// Yee lattice of plasma quantities
@@ -46,7 +47,10 @@ class YeeLattice {
   toolbox::Mesh<Realf, 3> jz1;
 
 
+  // default empty constructor
+  //YeeLattice() {};
 
+  // real initializer constructor
   YeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
 
@@ -178,7 +182,8 @@ class Tile :
   std::array<size_t, 3> mesh_lengths;
 
   /// Yee lattice of plasma quantities (with 1 timestep)
-  toolbox::Rotator<YeeLattice, 1> yee;
+  //toolbox::Rotator<YeeLattice, 1> yee;
+  YeeLattice yee;
 
   /// species specific analysis results
   std::vector<PlasmaMomentLattice> analysis;
@@ -202,10 +207,14 @@ class Tile :
   //--------------------------------------------------
   // constructor with internal mesh dimensions
   Tile(size_t nx, size_t ny, size_t nz) :
-    mesh_lengths {{nx, ny, nz}}
+    mesh_lengths {{nx, ny, nz}},
+    yee(nx, ny, nz)
   {
+    if (D == 1) assert(ny == 1 && nz == 1);
+    if (D == 2) assert(nz == 1);
+
     // initialize one Yee lattice into the grid (into data rotator)
-    add_yee_lattice();
+    //add_yee_lattice();
   }
 
 
@@ -243,9 +252,17 @@ class Tile :
 
   void cycle_current();
 
+  void clear_current();
+
   void add_yee_lattice();
 
   void add_analysis_species();
+
+  virtual std::vector<mpi::request> 
+  send_data( mpi::communicator&, int orig, int tag) override;
+
+  virtual std::vector<mpi::request> 
+  recv_data( mpi::communicator&, int dest, int tag) override;
 };
 
 

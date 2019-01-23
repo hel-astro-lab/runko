@@ -153,7 +153,7 @@ inline void analyze( corgi::Node<1>& grid )
     #pragma omp single
     {
 
-      for(auto cid : grid.get_tile_ids() ){
+      for(auto cid : grid.get_local_tiles()) {
         #pragma omp task firstprivate(analyzator)
         {
           auto& tile 
@@ -182,7 +182,7 @@ inline void write_yee(
   prefix += std::to_string(grid.comm.rank());
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.get_tile_ids() ){
+  for(auto cid : grid.get_local_tiles() ){
     const auto& tile 
       = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile);
@@ -204,7 +204,7 @@ inline void write_analysis(
   prefix += std::to_string(grid.comm.rank());
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.get_tile_ids() ){
+  for(auto cid : grid.get_local_tiles() ){
     const auto& tile 
       = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
     writer.write2(tile);
@@ -227,7 +227,7 @@ inline void write_mesh(
   prefix += std::to_string(grid.comm.rank());
   h5io::Writer writer(prefix, lap);
 
-  for(auto cid : grid.get_tile_ids() ){
+  for(auto cid : grid.get_local_tiles() ){
     const auto& tile 
       = dynamic_cast<vlv::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile);

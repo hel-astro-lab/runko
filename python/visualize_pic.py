@@ -23,6 +23,8 @@ class Particles:
     uys = []
     uzs = []
 
+    wgt = []
+
     def clear(self):
         self.xs  = []
         self.ys  = []
@@ -32,30 +34,36 @@ class Particles:
         self.uys = []
         self.uzs = []
 
-def get_particles(node, conf):
+        self.wgt = []
+
+
+def get_particles(node, conf, ip):
     prtcl = Particles()
     prtcl.clear()
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                cid = node.id(i,j)
-                c = node.get_tile(cid)
+                if node.get_mpi_grid(i,j) == node.rank():
+                    cid = node.id(i,j)
+                    c = node.get_tile(cid)
 
-                x, y, z, ux, uy, uz = get_particles_from_tile(c)
+                    x, y, z, ux, uy, uz, wgt = get_particles_from_tile(c, ip)
 
-                prtcl.xs.extend(x)
-                prtcl.ys.extend(y)
-                prtcl.zs.extend(z)
+                    prtcl.xs.extend(x)
+                    prtcl.ys.extend(y)
+                    prtcl.zs.extend(z)
 
-                prtcl.uxs.extend(ux)
-                prtcl.uys.extend(uy)
-                prtcl.uzs.extend(uz)
+                    prtcl.uxs.extend(ux)
+                    prtcl.uys.extend(uy)
+                    prtcl.uzs.extend(uz)
+
+                    prtcl.wgt.extend(wgt)
 
     return prtcl
 
 
-def get_particles_from_tile(tile, ispcs=0):
+def get_particles_from_tile(tile, ispcs):
     container = tile.get_container(ispcs)
     x  = container.loc(0)
     y  = container.loc(1)
@@ -65,18 +73,20 @@ def get_particles_from_tile(tile, ispcs=0):
     uy = container.vel(1)
     uz = container.vel(2)
 
-    return x, y, z, ux, uy, uz
+    wgt = container.wgt()
+
+    return x, y, z, ux, uy, uz, wgt
 
 
 
 def plot2dParticles(ax, n, conf, downsample=0):
 
     #ax.clear()
-    ax.cla()
+    #ax.cla()
     plotNode(ax, n, conf)
-    plotTileBoundaries(ax, n, conf)
+    #plotTileBoundaries(ax, n, conf)
 
-    prtcl = get_particles(n, conf)
+    prtcl = get_particles(n, conf, 0)
     Np = len(prtcl.xs)
     #print("particles to plot: {}".format(Np))
 

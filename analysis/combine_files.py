@@ -22,7 +22,7 @@ def natural_keys(text):
 
 # list & organize output files
 def get_file_list(fdir, fname):
-    fstr = fdir + fname + "*.h5"
+    fstr = fdir + fname + '_*.h5'
     files = glob.glob(fstr) 
 
     files.sort(key=natural_keys)
@@ -176,9 +176,6 @@ def combine_tiles(ff, fvar, conf, isp=None ):
             for r in range(NyMesh):
                 for q in range(NxMesh):
                     arr[ii+q, jj+r, kk+s] = tile[s,r,q]
-
-
-
 
     return arr
 

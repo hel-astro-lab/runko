@@ -42,7 +42,7 @@ class Analyzator {
 
     // analysis lattice reference
     for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-      ParticleBlock& container = tile.get_container(ispc);
+      ParticleContainer& container = tile.get_container(ispc);
       auto& analysis = tile.analysis[ispc];
 
       analysis.clear();
@@ -51,18 +51,18 @@ class Analyzator {
       // initialize pointers to particle arrays
       int nparts = container.size();
         
-      Realf* loc[3];
+      double* loc[3];
       for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-      Realf* vel[3];
+      double* vel[3];
       for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-      Realf gam;
-      //Realf c = tile.cfl;
-      Realf q = container.q; // TODO: split into species
-      Realf x0, y0, z0;
-      Realf u0, v0, w0;
+      double gam;
+      //double c = tile.cfl;
+      double q = container.q; // TODO: split into species
+      double x0, y0, z0;
+      double u0, v0, w0;
       int i,j,k;
 
 
@@ -95,13 +95,43 @@ class Analyzator {
         std::cout << " n = " << n << " " << n1 << " " << n2 << "\n";
         */
 
-        if( D >= 1) assert(i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) );
-        if( D >= 2) assert(j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) );
-        if( D >= 3) assert(k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) );
+        bool debug_flag = false;
+        if(D >= 1){ if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]))) debug_flag = true;}
+        if(D >= 2){ if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]))) debug_flag = true;}
+        if(D >= 3){ if(! (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]))) debug_flag = true;}
 
-        if( D >= 1) assert( x0 >= mins[0] && x0 < maxs[0] );
-        if( D >= 2) assert( y0 >= mins[1] && y0 < maxs[1] );
-        if( D >= 3) assert( z0 >= mins[2] && z0 < maxs[2] );
+        if(D >= 1){ if(! (x0 >= mins[0] && x0 < maxs[0]) ) debug_flag = true;}
+        if(D >= 2){ if(! (y0 >= mins[1] && y0 < maxs[1]) ) debug_flag = true;}
+        if(D >= 3){ if(! (z0 >= mins[2] && z0 < maxs[2]) ) debug_flag = true;}
+
+
+        if (debug_flag) {
+
+          std::cout << "--------------------------------------------------\n";
+          std::cout << "n=" << n;
+          std::cout << " i: " << i;
+          std::cout << " j: " << j;
+          std::cout << " k: " << k;
+          std::cout << "\n";
+
+          std::cout << " mins0: " << mins[0];
+          std::cout << " mins1: " << mins[1];
+          std::cout << " mins2: " << mins[2];
+
+          std::cout << " maxs0: " << maxs[0];
+          std::cout << " maxs1: " << maxs[1];
+          std::cout << " maxs2: " << maxs[2];
+
+          std::cout << " x0: " << x0;
+          std::cout << " y0: " << y0;
+          std::cout << " z0: " << z0;
+          std::cout << "\n";
+          
+          std::cout << std::flush;
+          // always fail
+          assert(false);
+        }
+
 
         u0 = vel[0][n];
         v0 = vel[1][n];
@@ -111,7 +141,7 @@ class Analyzator {
 
         // --------------------------------------------------
         // general quantities
-        Realf mass = abs(q);
+        double mass = abs(q);
         yee.rho(i,j,k) += mass; // total number density
 
         // --------------------------------------------------
@@ -139,7 +169,7 @@ class Analyzator {
         analysis.Vy(i,j,k)      += v0/gam; // bulk velocity y
         analysis.Vz(i,j,k)      += w0/gam; // bulk velocity z
 
-        analysis.temp(i,j,k)    += gam - Realf(1); // temperature XXX is it?
+        analysis.temp(i,j,k)    += gam - double(1); // temperature XXX is it?
 
       }
 

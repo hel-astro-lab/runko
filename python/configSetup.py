@@ -94,7 +94,7 @@ class Configuration(object):
             if ("vzmin" in self.__dict__) and ("vzmax" in self.__dict__):
                 self.__dict__["Nvz"] = int((self.vzmax - self.vzmin) // self.dvz)
 
-        print("Nvx=", self.Nvx)
+        #print("Nvx=", self.Nvx)
 
 
 

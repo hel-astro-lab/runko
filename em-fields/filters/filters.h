@@ -16,16 +16,6 @@
 namespace fields {
 
 
-inline fields::YeeLattice& get_neighbor_yee(
-    int i, int j,
-    fields::Tile<2>& tile, 
-    corgi::Node<2>& node)
-{
-  auto cneigh = std::dynamic_pointer_cast<fields::Tile<2>>(
-        node.get_tileptr( tile.neighs(i, j) ));
-  return cneigh->get_yee();
-}
-
 
 
 using units::pi;
@@ -582,56 +572,55 @@ class Filter {
     //int NzMesh = tile.Nz;
     int indx;
 
-    //int k = 0;
-    for (int i=-1; i<=1; i++)
-    for (int j=-1; j<=1; j++) {
-    //for (int k=-1; k<=1; k++) { // TODO: hack to get 2d tiles working
-      //std::cout << "from: (" << i << "," << j << "," << k << ")" << '\n';
-      
-      fields::YeeLattice& mesh = ((i==0)&&(j==0)) ? tile.get_yee() : get_neighbor_yee(i,j,tile,node);
+    // copy local patch to filter's memory
+    fields::YeeLattice& mesh = tile.get_yee();
 
-      /*
-      std::cout << "--------------------------------------------------\n";
-      std::cout << " Nx: " << mesh.Nx;
-      std::cout << " Ny: " << mesh.Ny;
-      std::cout << " Nz: " << mesh.Nz;
-      std::cout << " i: " << i;
-      std::cout << " j: " << j;
-      std::cout << "\n";
-      std::cout << "==============================\n";
-      */
-
-      int s = 0;
-      for(int r=0; r<(int)mesh.Ny; r++) {
-        for(int q=0; q<(int)mesh.Nx; q++) {
-          //for(int s=0; r<Nz; s++) {
-          
-          indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
-
-          /*
-      std::cout << " q: " << q;
-      std::cout << " r: " << r;
-      std::cout << " s: " << s;
-      std::cout << " indx: " << indx;
-      std::cout << " ix: " << (i+1)*mesh.Nx + q;
-      std::cout << " jy: " << (j+1)*mesh.Ny + r;
-      */
-
-          jx[ indx ][0] = mesh.jx(q,r,s);
-          jy[ indx ][0] = mesh.jy(q,r,s);
-          jz[ indx ][0] = mesh.jz(q,r,s);
-
-          /*
-      std::cout << " cur jx: " << jx[indx][0];
-      std::cout << " cur jy: " << jy[indx][0];
-      std::cout << " cur jz: " << jz[indx][0];
-      std::cout << "\n";
-      */
-
-        }
+    int s=0;
+    int i=0, j=0; //, k=0;
+    for(int r=0; r<(int)mesh.Ny; r++) {
+      for(int q=0; q<(int)mesh.Nx; q++) {
+        indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
+        jx[ indx ][0] = mesh.jx(q,r,s);
+        jy[ indx ][0] = mesh.jy(q,r,s);
+        jz[ indx ][0] = mesh.jz(q,r,s);
       }
+    }
 
+    // copy external neighbor patches to filter's memory
+    //int k = 0;
+    for (i=-1; i<=1; i++)
+    for (j=-1; j<=1; j++) {
+    //for (int k=-1; k<=1; k++) { // TODO: hack to get 2d tiles working
+      if ((i==0)&&(j==0)) continue;
 
+      auto cneigh = 
+        std::dynamic_pointer_cast<fields::Tile<2>>(node.get_tileptr( tile.neighs(i, j) ));
+      if (cneigh) {
+        fields::YeeLattice& mesh = cneigh->get_yee();
+
+        /*
+        std::cout << "--------------------------------------------------\n";
+        std::cout << " Nx: " << mesh.Nx;
+        std::cout << " Ny: " << mesh.Ny;
+        std::cout << " Nz: " << mesh.Nz;
+        std::cout << " i: " << i;
+        std::cout << " j: " << j;
+        std::cout << "\n";
+        std::cout << "==============================\n";
+        */
+
+        int s = 0;
+        for(int r=0; r<(int)mesh.Ny; r++) {
+          for(int q=0; q<(int)mesh.Nx; q++) {
+            //for(int s=0; r<Nz; s++) {
+            
+            indx = index((i+1)*mesh.Nx + q, (j+1)*mesh.Ny + r);
+            jx[ indx ][0] = mesh.jx(q,r,s);
+            jy[ indx ][0] = mesh.jy(q,r,s);
+            jz[ indx ][0] = mesh.jz(q,r,s);
+          }
+        }
+      } // end if(cneigh)
     }
   }
 

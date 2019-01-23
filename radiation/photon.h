@@ -6,7 +6,7 @@
 
 namespace rad {
 
-/*! \brief Block of photons inside the tile
+/*! \brief Container of photons inside the tile
  *
  * Container to hold photon particles, i.e., computational
  * particles with v=c.
@@ -18,66 +18,51 @@ namespace rad {
  *   qm
  *
  */
-class PhotonBlock : 
-  virtual public pic::ParticleBlock 
+class PhotonContainer : 
+  virtual public pic::ParticleContainer
 {
   public:
 
   /// Constructor 
-  PhotonBlock(size_t Nx, size_t Ny, size_t Nz) : 
-    pic::ParticleBlock(Nx, Ny, Nz)
+  PhotonContainer() : 
+    pic::ParticleContainer()
   { };
 
-  virtual ~PhotonBlock() = default;
-
-
-  /// particle weight
-  std::vector< Realf > wgtArr;
+  virtual ~PhotonContainer() = default;
 
   /// particle energy (h\nu in m_e c^2)
-  std::vector< Realf > eneArr;
-
+  std::vector< double > eneArr;
 
 
   /// initializes internal arrays
   virtual void reserve(size_t N) override
   {
-    wgtArr.reserve(N);
     eneArr.reserve(N);
-
-    pic::ParticleBlock::reserve(N);
+    pic::ParticleContainer::reserve(N);
   }
 
 
   /// resize 
   void resize(size_t N) override
   {
-    // reserve size for photon specific stuff
-    wgtArr.resize(N);
     eneArr.resize(N);
-
-    // and finally to original arrays as well
-    pic::ParticleBlock::resize(N);
+    pic::ParticleContainer::resize(N);
   }
 
   /// special method 
   void add_particle(
-    std::vector<Realf> prtcl_loc,
-    std::vector<Realf> prtcl_vel,
-    Realf weight,
-    Realf energy) 
+    std::vector<double> prtcl_loc,
+    std::vector<double> prtcl_vel,
+    double weight,
+    double energy) 
   {
-    wgtArr.push_back(weight);
     eneArr.push_back(energy);
-
-    pic::ParticleBlock::add_particle(prtcl_loc, prtcl_vel);
+    pic::ParticleContainer::add_particle(prtcl_loc, prtcl_vel, weight);
   }
-
 
   // explicitly disallow the usage of base class member
   private:
-    using pic::ParticleBlock::add_particle;
-    using pic::ParticleBlock::resize_em;
+    using pic::ParticleContainer::add_particle;
 
 };
 

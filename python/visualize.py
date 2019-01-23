@@ -23,6 +23,7 @@ def imshow(ax,
            vmax = 1.0,
            clip = -1.0,
            cap = None,
+           aspect = 'auto',
           ):
 
     ax.clear()
@@ -54,102 +55,70 @@ def imshow(ax,
               cmap = cmap,
               vmin = vmin,
               vmax = vmax,
-              aspect='auto',
+              aspect=aspect,
               #vmax = Nrank,
               #alpha=0.5
               )
     return im
 
 
-
-# Visualize current tile ownership on node
+# Visualize current cell ownership on node
 def plotNode(ax, n, conf):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
-    
-    #for i in range(n.get_Nx()):
-    #    for j in range(n.get_Ny()):
-    #        cid = n.tile_id(i,j)
-    #        if n.is_local(cid):
-    #            tmp_grid[i,j] = 0.5
-
 
     for cid in n.get_tile_ids():
         c = n.get_tile( cid )
-
-        try:
-            (i, j) = c.index
-        except:
-            (i,) = c.index
-            j = 0
-
+        (i, j) = c.index
         #check dublicates
         if tmp_grid[i,j] != -1.0:
-            print("{}: ERROR in real tiles at ({},{})".format(n.rank(), i,j))
+            print("{}: ERROR in real cells at ({},{})".format(n.rank, i,j))
             sys.exit()
         tmp_grid[i,j] = c.communication.owner
-
-    #XXX add back / now combined with a full loop 
-    #for cid in n.get_virtuals():
-    #    c = n.get_tile( cid )
-    #    try:
-    #        (i,j) = c.index
-    #    except:
-    #        (i,) = c.index
-    #        j = 0
-
-    #    #if tmp_grid[i,j] != -1.0:
-    #    #    print("{}: ERROR in virtual tiles at ({},{})".format(n.rank, i,j))
-    #    #    sys.exit()
-    #    tmp_grid[i,j] = c.communication.owner
-
 
     imshow(ax, tmp_grid, 
             n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
-            vmax = Nrank-1
+            vmax = n.size(),
             )
-
 
     # add text label about number of neighbors
     for cid in n.get_tile_ids():
         c = n.get_tile( cid )
-
-        try:
-            (i, j) = c.index
-        except:
-            (i,) = c.index
-            j = 0
-
+        (i, j) = c.index
         dx = n.get_xmax() - n.get_xmin()
         dy = n.get_ymax() - n.get_ymin()
 
         ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
         jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
 
-        #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.communication.number_of_virtual_neighbors
         label = str(Nv)
-        #label = "{} ({},{})/{}".format(cid,i,j,Nv)
-        #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
-    #for cid in n.get_virtuals():
-    #    c = n.get_tile( cid )
-    #    try:
-    #        (i,j) = c.index
-    #    except:
-    #        (i,) = c.index
-    #        j = 0
-    #    ix = n.get_xmin() + n.get_xmax()*(i+0.5)/n.get_Nx()
-    #    jy = n.get_ymin() + n.get_ymin()*(j+0.5)/n.get_Ny()
-    #    label = "Vir"
-    #    ax.text(ix, jy, label, ha='center',va='center')
+    #mark boundaries with hatch
+    dx = n.get_xmax() - n.get_xmin()
+    dy = n.get_ymax() - n.get_ymin()
+    for cid in n.get_boundary_tiles():
+        c = n.get_tile( cid )
+        (i, j) = c.index
 
-    #XXX add back
-    ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.get_tile_ids() )))
+        ix0 = n.get_xmin() + dx*(i+0.0)/n.get_Nx()
+        jy0 = n.get_ymin() + dy*(j+0.0)/n.get_Ny()
 
-    ax.set_ylabel('node')
+        ix1 = n.get_xmin() + dx*(i+1.0)/n.get_Nx()
+        jy1 = n.get_ymin() + dy*(j+1.0)/n.get_Ny()
+
+        #ax.fill_between([ix0,ix1], [jy0, jy1], hatch='///', alpha=0.0)
+
+        ax.plot([ix0, ix0],[jy0, jy1], color='k', linestyle='dotted')
+        ax.plot([ix1, ix1],[jy0, jy1], color='k', linestyle='dotted')
+        ax.plot([ix0, ix1],[jy0, jy0], color='k', linestyle='dotted')
+        ax.plot([ix0, ix1],[jy1, jy1], color='k', linestyle='dotted')
+
+
+
+
 
 
 # plot tile boundaries
@@ -293,46 +262,45 @@ def getYee2D(n, conf):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
             'y' : np.linspace(n.get_ymin(), n.get_ymax(), conf.Ny*conf.NyMesh),
-            'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'ey':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'ez':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'bx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'by':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'bz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jx':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jy':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jz':   -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'jx1':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
-            'rho':  -1.0 * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ex':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ey':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'ez':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bx':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'by':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'bz':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jy':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jz':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jx1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'rho':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
            }
 
-    for i in range(conf.Nx):
-        for j in range(conf.Ny):
-            c = n.get_tile(i,j)
+    #for cid in n.get_local_tiles():
+    for cid in n.get_tile_ids():
+        c = n.get_tile(cid)
+        i,j = c.index
+        yee = c.get_yee(0)
+        for r in range(conf.NyMesh):
+            for q in range(conf.NxMesh):
+                indx = i*conf.NxMesh + q
+                jndx = j*conf.NyMesh + r
 
-            yee = c.get_yee(0)
-            for r in range(conf.NyMesh):
-                for q in range(conf.NxMesh):
+                data['ex'][indx, jndx] = yee.ex[q, r, 0]
+                data['ey'][indx, jndx] = yee.ey[q, r, 0]
+                data['ez'][indx, jndx] = yee.ez[q, r, 0]
 
-                    indx = i*conf.NxMesh + q
-                    jndx = j*conf.NyMesh + r
+                data['bx'][indx, jndx] = yee.bx[q, r, 0]
+                data['by'][indx, jndx] = yee.by[q, r, 0]
+                data['bz'][indx, jndx] = yee.bz[q, r, 0]
+                                                    
+                data['jx'][indx, jndx] = yee.jx[q, r, 0]
+                data['jy'][indx, jndx] = yee.jy[q, r, 0]
+                data['jz'][indx, jndx] = yee.jz[q, r, 0]
 
-                    data['ex'][indx, jndx] = yee.ex[q, r, 0]
-                    data['ey'][indx, jndx] = yee.ey[q, r, 0]
-                    data['ez'][indx, jndx] = yee.ez[q, r, 0]
+                data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
 
-                    data['bx'][indx, jndx] = yee.bx[q, r, 0]
-                    data['by'][indx, jndx] = yee.by[q, r, 0]
-                    data['bz'][indx, jndx] = yee.bz[q, r, 0]
-                                                        
-                    data['jx'][indx, jndx] = yee.jx[q, r, 0]
-                    data['jy'][indx, jndx] = yee.jy[q, r, 0]
-                    data['jz'][indx, jndx] = yee.jz[q, r, 0]
-
-                    data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
-
-                    data['rho'][indx, jndx] = yee.rho[q, r, 0]
+                data['rho'][indx, jndx] = yee.rho[q, r, 0]
 
     return data
 
@@ -341,21 +309,21 @@ def getYee2D(n, conf):
 def get_analysis(n, conf, ispcs):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
-           'rho':    -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'edens': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'temp': -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'Vz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'momx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'momy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'momz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'pressx':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'pressy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'pressz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'shearxy':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'shearxz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
-           'shearyz':     -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
+           'rho':     -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'edens':   -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'temp':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vx':      -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vy':      -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'Vz':      -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'momx':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'momy':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'momz':    -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressx':  -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressy':  -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'pressz':  -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearxy': -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearxz': -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
+           'shearyz': -np.inf* np.ones( (conf.Nx*conf.NxMesh) ),
            }
 
     for i in range(conf.Nx):
@@ -442,23 +410,27 @@ def plotDens(ax, n, conf):
 
 
 
-def plot2dYee(ax, n, conf, val = 'jx'):
+def plot2dYee(ax, yee, n, conf, val = 'jx'):
 
     #ax.clear()
     ax.cla()
-    yee = getYee2D(n, conf)
+    #yee = getYee2D(n, conf)
 
-    vmin, vmax = np.min(yee[val]), np.max(yee[val])
+    #filter non-existent values away
+    arr = yee[val]
+    arr = np.ma.masked_where(arr == -np.inf, arr)
+
+    vmin, vmax = np.min(arr), np.max(arr)
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
-    #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
+    print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 
 
-    imshow(ax, yee[val],
+    imshow(ax, arr,
            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
            cmap = "RdBu",
            vmin = -vminmax,
            vmax =  vminmax,
-           #clip = 0.0
+           clip = None,
           )
     ax.set_title(val)
 

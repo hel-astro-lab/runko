@@ -11,75 +11,85 @@ void pic::LinearInterpolator<D,V>::solve(
   // get reference to the Yee grid 
   auto& yee = tile.get_yee();
 
-
-  for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-    ParticleBlock& container = tile.get_container(ispc);
+  for(auto&& container : tile.containers) {
 
     int nparts = container.size();
-    container.resize_em(nparts); // make EM containers ready for insertion
-
 
     // initialize pointers to particle arrays
-    Realf* loc[3];
+    double* loc[3];
     for( int i=0; i<3; i++)
       loc[i] = &( container.loc(i,0) );
 
     // 1-d arrays
-    //Realf* ex = &( (*tile.container.Epart)[0*nparts] );
-    //Realf* ey = &( (*tile.container.Epart)[1*nparts] );
-    //Realf* ez = &( (*tile.container.Epart)[2*nparts] );
+    //double* ex = &( (*tile.container.Epart)[0*nparts] );
+    //double* ey = &( (*tile.container.Epart)[1*nparts] );
+    //double* ez = &( (*tile.container.Epart)[2*nparts] );
 
     // multiD array version
-    //Realf *efield[3], *bfield[3];
+    //double *efield[3], *bfield[3];
     //for( int i=0; i<3; i++) {
     //  efield[i] = &( tile.container.Epart[i][0] );
     //  bfield[i] = &( tile.container.Bpart[i][0] );
     //}
-      
-    Realf *ex, *ey, *ez, *bx, *by, *bz;
-    ex = &( container.Epart[0][0] );
-    ey = &( container.Epart[1][0] );
-    ez = &( container.Epart[2][0] );
 
-    bx = &( container.Bpart[0][0] );
-    by = &( container.Bpart[1][0] );
-    bz = &( container.Bpart[2][0] );
+    /// resize internal arrays
+    container.Epart.resize(3*nparts);
+    container.Bpart.resize(3*nparts);
+      
+    double *ex, *ey, *ez, *bx, *by, *bz;
+    ex = &( container.Epart[0*nparts] );
+    ey = &( container.Epart[1*nparts] );
+    ez = &( container.Epart[2*nparts] );
+
+    bx = &( container.Bpart[0*nparts] );
+    by = &( container.Bpart[1*nparts] );
+    bz = &( container.Bpart[2*nparts] );
 
 
     // loop over particles
     int n1 = 0;
     int n2 = nparts;
 
-    //Realf c = tile.cfl;
-    //Realf cinv = 1.0/c;
+    //double c = tile.cfl;
+    //double cinv = 1.0/c;
 
     int i=0, j=0, k=0;
-    Realf dx=0.0, dy=0.0, dz=0.0;
-    Realf f,g;
+    double dx=0.0, dy=0.0, dz=0.0;
+    double f,g;
 
     int iz = 1;
     if (D<=2) iz = 0; // flip switch for making array queries 2D
 
 
     auto mins = tile.mins;
-    //auto maxs = tile.maxs;
+    auto maxs = tile.maxs;
 
     // TODO: think SIMD (not possible due to ijk writing to yee)
     for(int n=n1; n<n2; n++) {
 
       // particle location in the grid
-        
+      //
+      // FIXME: atm we have a hack here to prevent x = max case.
+      // A more elegant solution most probably exists.
+      // Alternatively this might imply that some < > comparison operators
+      // are wrong somewhere and should be <= or >=, or vice versa.
       if (D >= 1) {
+        if(loc[0][n] == maxs[0]) loc[0][n] -= 1.0e-5;
+
 	      i  = floor( loc[0][n]-mins[0] );
 	      dx = (loc[0][n]-mins[0]) - i;
       }
 
       if (D >= 2) {
+        if(loc[1][n] == maxs[1]) loc[1][n] -= 1.0e-5;
+
 	      j  = floor( loc[1][n]-mins[1] );
 	      dy = (loc[1][n]-mins[1]) - j;
       }
 
       if (D >= 3) {
+        if(loc[2][n] == maxs[2]) loc[2][n] -= 1.0e-5;
+
 	      k  = floor( loc[2][n]-mins[2] );
 	      dz = (loc[2][n]-mins[2]) - k;
       }
@@ -93,9 +103,40 @@ void pic::LinearInterpolator<D,V>::solve(
         
 	    //l = i; // + iy*(j-1) + iz*(k-1);
 
-      if (D >= 1) assert(i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) );
-      if (D >= 2) assert(j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) );
-      if (D >= 3) assert(k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) );
+      bool debug_flag = false;
+      if(D >= 1) { if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
+      if(D >= 2) { if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
+      if(D >= 3) { if(! (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
+
+      if(debug_flag) {
+        std::cout << "--------------------------------------------------\n";
+        std::cout << "n=" << n;
+        std::cout << " i: " << i;
+        std::cout << " j: " << j;
+        std::cout << " k: " << k;
+        std::cout << "\n";
+
+        std::cout << " mins0: " << mins[0];
+        std::cout << " mins1: " << mins[1];
+        std::cout << " mins2: " << mins[2];
+
+        std::cout << " x: " << loc[0][n];
+        std::cout << " y: " << loc[1][n];
+        std::cout << " z: " << loc[2][n];
+        std::cout << "\n";
+
+        std::cout << " dx: " << dx;
+        std::cout << " dy: " << dy;
+        std::cout << " dz: " << dz;
+        std::cout << "\n";
+
+        std::cout << std::flush;
+        // always fail
+        assert(false);
+      }
+
+
+
 
 
       // TODO: these can be optimized further when we know D
@@ -162,5 +203,5 @@ void pic::LinearInterpolator<D,V>::solve(
 
 //template class pic::LinearInterpolator<1,3>; // 1D3V
 template class pic::LinearInterpolator<2,3>; // 2D3V
-template class pic::LinearInterpolator<3,3>; // 3D3V
+//template class pic::LinearInterpolator<3,3>; // 3D3V
 

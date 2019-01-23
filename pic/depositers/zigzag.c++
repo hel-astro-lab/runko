@@ -17,35 +17,35 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   yee.jy.clear();
   yee.jz.clear();
 
+
   auto mins = tile.mins;
 
-  for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-    ParticleBlock& container = tile.get_container(ispc);
+  for(auto&& container : tile.containers) {
 
     // initialize pointers to particle arrays
     int nparts = container.size();
       
-    Realf* loc[3];
+    double* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    Realf* vel[3];
+    double* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-    Realf invgam;
-    Realf c = tile.cfl;
-    Realf q = container.q;
+    double invgam;
+    double c = tile.cfl;
+    double q = container.q;
 
-    Realf x0, y0, z0, x1, x2, y1, y2, z1, z2;
+    double x0, y0, z0, x1, x2, y1, y2, z1, z2;
 
     //std::cout << " q = " << q << " ispc: " << ispc << '\n';
 
     int i1,i2,j1,j2,k1,k2;
 
-    Realf xr, yr, zr;
+    double xr, yr, zr;
 
-    Realf Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-    Realf Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+    double Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+    double Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
 
     // loop and check particles
     int n1 = 0;
@@ -84,9 +84,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   	  k2  = D >= 3 ? static_cast<int>(floor( z2 ) ) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      xr = min( (Realf)(min(i1,i2)+1), max( (Realf)max(i1,i2), static_cast<Realf>(0.5)*(x1+x2) ) );
-      yr = min( (Realf)(min(j1,j2)+1), max( (Realf)max(j1,j2), static_cast<Realf>(0.5)*(y1+y2) ) );
-      zr = min( (Realf)(min(k1,k2)+1), max( (Realf)max(k1,k2), static_cast<Realf>(0.5)*(z1+z2) ) );
+      xr = min( (double)(min(i1,i2)+1), max( (double)max(i1,i2), static_cast<double>(0.5)*(x1+x2) ) );
+      yr = min( (double)(min(j1,j2)+1), max( (double)max(j1,j2), static_cast<double>(0.5)*(y1+y2) ) );
+      zr = min( (double)(min(k1,k2)+1), max( (double)max(k1,k2), static_cast<double>(0.5)*(z1+z2) ) );
 
 
       // -q to include -j in the Ampere's equation
@@ -131,55 +131,68 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
 
-      /*
-      std::cout << "--------------------------------------------------\n";
-      std::cout << "n=" << n;
-      std::cout << " i1: " << i1;
-      std::cout << " j1: " << j1;
-      std::cout << " k1: " << k1;
-      std::cout << " ||| ";
-      std::cout << " i2: " << i2;
-      std::cout << " j2: " << j2;
-      std::cout << " k2: " << k2;
-      std::cout << "\n";
+      bool debug_flag = false;
+      if (!( (i1 >= -3 && i1 < static_cast<int>(tile.mesh_lengths[0]+3)) )) debug_flag=true;
+      if (!( (j1 >= -3 && j1 < static_cast<int>(tile.mesh_lengths[1]+3)) )) debug_flag=true;
+      if (!( (k1 >= -3 && k1 < static_cast<int>(tile.mesh_lengths[2]+3)) )) debug_flag=true;
 
-      std::cout << " x1sp: " << x1;
-      std::cout << " y1sp: " << y1;
-      std::cout << " z1sp: " << z1;
-      std::cout << " ||| ";
-      std::cout << " x2sp: " << x2;
-      std::cout << " y2sp: " << y2;
-      std::cout << " z2sp: " << z2;
-      std::cout << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
-      std::cout << "\n";
+      if (!( (i2 >= -3 && i2 < static_cast<int>(tile.mesh_lengths[0]+3)) )) debug_flag=true;
+      if (!( (j2 >= -3 && j2 < static_cast<int>(tile.mesh_lengths[1]+3)) )) debug_flag=true;
+      if (!( (k2 >= -3 && k2 < static_cast<int>(tile.mesh_lengths[2]+3)) )) debug_flag=true;
 
-      std::cout << " vx: " <<  vel[0][n];
-      std::cout << " vy: " <<  vel[1][n];
-      std::cout << " vz: " <<  vel[2][n];
-      std::cout << " gam: "<<  invgam;
-      std::cout << "\n";
+      if (debug_flag) {
+        std::cout << "--------------------------------------------------\n";
+        std::cout << "n=" << n;
+        std::cout << " i1: " << i1;
+        std::cout << " j1: " << j1;
+        std::cout << " k1: " << k1;
+        std::cout << " ||| ";
+        std::cout << " i2: " << i2;
+        std::cout << " j2: " << j2;
+        std::cout << " k2: " << k2;
+        std::cout << "\n";
 
-      std::cout << " xr: " <<  xr;
-      std::cout << " yr: " <<  yr;
-      std::cout << " zr: " <<  zr;
-      std::cout << "\n";
+        std::cout << " x1sp: " << x1;
+        std::cout << " y1sp: " << y1;
+        std::cout << " z1sp: " << z1;
+        std::cout << " ||| ";
+        std::cout << " x2sp: " << x2;
+        std::cout << " y2sp: " << y2;
+        std::cout << " z2sp: " << z2;
+        std::cout << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
+        std::cout << "\n";
 
-      std::cout << " Fx1: " <<  Fx1;
-      std::cout << " Fy1: " <<  Fy1;
-      std::cout << " Fz1: " <<  Fz1;
-      std::cout << " Wx1: " <<  Wx1;
-      std::cout << " Wy1: " <<  Wy1;
-      std::cout << " Wz1: " <<  Wz1;
-      std::cout << "\n";
+        std::cout << " vx: " <<  vel[0][n];
+        std::cout << " vy: " <<  vel[1][n];
+        std::cout << " vz: " <<  vel[2][n];
+        std::cout << " gam: "<<  invgam;
+        std::cout << "\n";
 
-      std::cout << " Fx2: " <<  Fx2;
-      std::cout << " Fy2: " <<  Fy2;
-      std::cout << " Fz2: " <<  Fz2;
-      std::cout << " Wx2: " <<  Wx2;
-      std::cout << " Wy2: " <<  Wy2;
-      std::cout << " Wz2: " <<  Wz2;
-      std::cout << "\n";
-      */
+        std::cout << " xr: " <<  xr;
+        std::cout << " yr: " <<  yr;
+        std::cout << " zr: " <<  zr;
+        std::cout << "\n";
+
+        std::cout << " Fx1: " <<  Fx1;
+        std::cout << " Fy1: " <<  Fy1;
+        std::cout << " Fz1: " <<  Fz1;
+        std::cout << " Wx1: " <<  Wx1;
+        std::cout << " Wy1: " <<  Wy1;
+        std::cout << " Wz1: " <<  Wz1;
+        std::cout << "\n";
+
+        std::cout << " Fx2: " <<  Fx2;
+        std::cout << " Fy2: " <<  Fy2;
+        std::cout << " Fz2: " <<  Fz2;
+        std::cout << " Wx2: " <<  Wx2;
+        std::cout << " Wy2: " <<  Wy2;
+        std::cout << " Wz2: " <<  Wz2;
+        std::cout << "\n";
+
+        std::cout << std::flush;
+        // always fail
+        assert(false);
+      }
 
       /*
       i1--;
