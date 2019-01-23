@@ -118,7 +118,7 @@ if __name__ == "__main__":
         while loop:
 
             merge_field_nodes(fdir, lap, conf)
-            merge_analysis_nodes(fdir, lap, [0,1], conf)
+            #merge_analysis_nodes(fdir, lap, [0,1], conf)
 
             lap += conf.interval
 

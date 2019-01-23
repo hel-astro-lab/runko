@@ -23,6 +23,7 @@ def imshow(ax,
            vmax = 1.0,
            clip = -1.0,
            cap = None,
+           aspect = 'auto',
           ):
 
     ax.clear()
@@ -54,7 +55,7 @@ def imshow(ax,
               cmap = cmap,
               vmin = vmin,
               vmax = vmax,
-              aspect='auto',
+              aspect=aspect,
               #vmax = Nrank,
               #alpha=0.5
               )
