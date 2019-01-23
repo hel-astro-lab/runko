@@ -62,24 +62,34 @@ void pic::LinearInterpolator<D,V>::solve(
 
 
     auto mins = tile.mins;
-    //auto maxs = tile.maxs;
+    auto maxs = tile.maxs;
 
     // TODO: think SIMD (not possible due to ijk writing to yee)
     for(int n=n1; n<n2; n++) {
 
       // particle location in the grid
-        
+      //
+      // FIXME: atm we have a hack here to prevent x = max case.
+      // A more elegant solution most probably exists.
+      // Alternatively this might imply that some < > comparison operators
+      // are wrong somewhere and should be <= or >=, or vice versa.
       if (D >= 1) {
+        if(loc[0][n] == maxs[0]) loc[0][n] -= 1.0e-5;
+
 	      i  = floor( loc[0][n]-mins[0] );
 	      dx = (loc[0][n]-mins[0]) - i;
       }
 
       if (D >= 2) {
+        if(loc[1][n] == maxs[1]) loc[1][n] -= 1.0e-5;
+
 	      j  = floor( loc[1][n]-mins[1] );
 	      dy = (loc[1][n]-mins[1]) - j;
       }
 
       if (D >= 3) {
+        if(loc[2][n] == maxs[2]) loc[2][n] -= 1.0e-5;
+
 	      k  = floor( loc[2][n]-mins[2] );
 	      dz = (loc[2][n]-mins[2]) - k;
       }
