@@ -96,16 +96,16 @@ class Analyzator {
         */
 
         bool debug_flag = false;
-        if( (D >= 1) && (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0])) ) debug_flag = true;
-        if( (D >= 2) && (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1])) ) debug_flag = true;
-        if( (D >= 3) && (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2])) ) debug_flag = true;
+        if(D >= 1){ if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]))) debug_flag = true;}
+        if(D >= 2){ if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]))) debug_flag = true;}
+        if(D >= 3){ if(! (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]))) debug_flag = true;}
 
-        if( (D >= 1) && (x0 >= mins[0] && x0 < maxs[0]) ) debug_flag = true;
-        if( (D >= 2) && (y0 >= mins[1] && y0 < maxs[1]) ) debug_flag = true;
-        if( (D >= 3) && (z0 >= mins[2] && z0 < maxs[2]) ) debug_flag = true;
+        if(D >= 1){ if(! (x0 >= mins[0] && x0 < maxs[0]) ) debug_flag = true;}
+        if(D >= 2){ if(! (y0 >= mins[1] && y0 < maxs[1]) ) debug_flag = true;}
+        if(D >= 3){ if(! (z0 >= mins[2] && z0 < maxs[2]) ) debug_flag = true;}
 
 
-        if (!debug_flag) {
+        if (debug_flag) {
 
           std::cout << "--------------------------------------------------\n";
           std::cout << "n=" << n;

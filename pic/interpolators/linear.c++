@@ -94,11 +94,11 @@ void pic::LinearInterpolator<D,V>::solve(
 	    //l = i; // + iy*(j-1) + iz*(k-1);
 
       bool debug_flag = false;
-      if ((D >= 1) && (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;
-      if ((D >= 2) && (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;
-      if ((D >= 3) && (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;
+      if(D >= 1) { if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
+      if(D >= 2) { if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
+      if(D >= 3) { if(! (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
 
-      if (!debug_flag) {
+      if(debug_flag) {
         std::cout << "--------------------------------------------------\n";
         std::cout << "n=" << n;
         std::cout << " i: " << i;
