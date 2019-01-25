@@ -1,4 +1,5 @@
 # Modern kinetic plasma simulation toolbox
+<img align="top" src="notes/header.png">
 
 PlasmaBox is a collection of simulation modules written in modern C++14 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and relies on presenting the code as physical modules that can be either run individually or combined in a heterogeneous fashion.
 
@@ -32,8 +33,7 @@ On MacOS these should be (quite) easily obtained by using [homebrew](https://bre
 
 Additionally, especially for larger jobs and better performance, consider installing:
 - OpenMP (>= v4.0)
-    - NOTE: Your compiler needs to support this
-        - NOTE: default clang++ in MacOS does not support this
+    - NOTE: Your compiler needs to support this, the default clang++ in MacOS does not.
 
 
 ### Compiling
@@ -48,6 +48,8 @@ And make sure that CMake finishes successfully. After that, you can try and comp
 ```
 make
 ```
+
+When compiling and linking is finished, the CMake runs few automated tests to check that everything is working. You should see a message *"XX tests finished succesfully"* in the end, if everything went ok.
 
 Different compilers can be selected by modifying the `CXX` and `CC` global environment variables.
 
