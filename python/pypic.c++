@@ -9,6 +9,7 @@ namespace py = pybind11;
 #include "../pic/tile.h"
 #include "../pic/solvers/pusher.h"
 #include "../pic/solvers/boris.h"
+#include "../pic/solvers/boris_drag.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
@@ -237,6 +238,11 @@ void bind_pic(py::module& m_sub)
 
   // Boris pusher
   py::class_<pic::BorisPusher<2,3>>(m_2d, "BorisPusher", picpusher2d)
+    .def(py::init<>());
+
+  // Boris pusher with drag force
+  py::class_<pic::BorisPusherDrag<2,3>>(m_2d, "BorisDragPusher", picpusher2d)
+    .def_readwrite("drag", &pic::BorisPusherDrag<2,3>::drag)
     .def(py::init<>());
 
 
