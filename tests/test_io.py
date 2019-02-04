@@ -548,6 +548,79 @@ class IO(unittest.TestCase):
 
 
 
+    def test_write_pic2D(self):
+
+        def test_filler(xloc, ispcs, conf):
+        
+            xx = xloc[0] 
+            yy = xloc[1] 
+
+            #electrons
+            if ispcs == 0:
+                zz = 0.1
+        
+            #positrons/ions/second species
+            if ispcs == 1:
+                zz = 0.2
+        
+            ux = xx*100.0
+            uy = yy*1000.0
+            uz = xx*yy*10000.0
+        
+            x0 = [xx, yy, zz]
+            u0 = [ux, uy, uz]
+
+            return x0, u0
+
+
+        from initialize_pic import initialize_tile
+        from injector_pic import inject
+
+        ##################################################
+        # write
+
+        conf = Conf()
+        conf.Nx = 3
+        conf.Ny = 4
+        conf.Nz = 1
+        conf.NxMesh = 5
+        conf.NyMesh = 6
+        conf.NzMesh = 1 
+        conf.outdir = "io_test_2D/"
+        conf.ppc = 10
+        conf.Nspecies = 2
+
+        #tmp non-needed variables
+        conf.omp = 1
+        conf.gamma_e = 0.0
+        conf.me = 1
+        conf.mi = 1
+        conf.cfl = 1.0
+        conf.c_omp = 1.0
+
+
+        if not os.path.exists( conf.outdir ):
+            os.makedirs(conf.outdir)
+
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        for i in range(node.get_Nx()):
+            for j in range(node.get_Ny()):
+                c = pyplasmabox.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                initialize_tile(c, i, j, node, conf)
+                node.add_tile(c, (i,j)) 
+
+        inject(node, test_filler, conf)
+
+        pyplasmabox.vlv.twoD.write_particles(node, 0, conf.outdir)
+
+
+        # read with h5py
+
+        # read with internal read tool
+
+
 
 
 
