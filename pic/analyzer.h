@@ -169,7 +169,7 @@ class Analyzator {
         analysis.Vy(i,j,k)      += v0/gam; // bulk velocity y
         analysis.Vz(i,j,k)      += w0/gam; // bulk velocity z
 
-        analysis.temp(i,j,k)    += gam - double(1); // temperature XXX is it?
+        analysis.temp(i,j,k)    += gam - 1.0; // temperature XXX is it?
 
       }
 

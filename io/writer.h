@@ -95,9 +95,9 @@ class Writer {
 //--------------------------------------------------
 // template implementations
 
-#include "fields.h"
-#include "analysis.h"
-#include "vlasov.h"
+#include "output_fields.h"
+#include "output_analysis.h"
+#include "output_vlasov.h"
 
 
 
