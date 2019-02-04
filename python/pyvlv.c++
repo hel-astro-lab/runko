@@ -308,12 +308,14 @@ void bind_vlv(py::module& m_sub)
   m_1d.def("step_velocity_with_gravity",   &vlv::step_velocity_with_gravity<1>);
 
   m_1d.def("analyze",         &vlv::analyze);
-  m_1d.def("write_yee",       &vlv::write_yee<1>);
-  m_1d.def("write_analysis",  &vlv::write_analysis<1>);
   m_1d.def("write_mesh",      &vlv::write_mesh<1>);
-
-  m_1d.def("read_yee",        &vlv::read_yee<1>);
   m_1d.def("read_mesh",       &vlv::read_mesh<1>);
+
+
+  m_1d.def("read_yee",        &fields::read_yee<1>);
+  m_1d.def("write_yee",       &fields::write_yee<1>);
+  m_1d.def("write_analysis",  &fields::write_analysis<1>);
+
 
 
   //--------------------------------------------------
@@ -324,19 +326,16 @@ void bind_vlv(py::module& m_sub)
   //auto tp = piston::declare_tile<1>(m_1d, "Tile_piston");
   
 
-
-
   //--------------------------------------------------
   // 2D bindings
 
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
-  m_2d.def("write_yee",       &vlv::write_yee<2>);
-  m_2d.def("write_analysis",  &vlv::write_analysis<2>);
+  m_2d.def("write_yee",       &fields::write_yee<2>);
+  m_2d.def("write_analysis",  &fields::write_analysis<2>);
+  m_2d.def("read_yee",        &fields::read_yee<2>);
 
-  m_2d.def("read_yee",        &vlv::read_yee<2>);
-
-  //m_2d.def("write_particles",  &pic::write_particles<2>);
-  //m_2d.def("read_particles",   &pic::read_particles<2>);
+  m_2d.def("write_particles",  &pic::write_particles<2>);
+  m_2d.def("read_particles",   &pic::read_particles<2>);
 
 }
 

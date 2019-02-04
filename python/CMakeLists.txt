@@ -56,7 +56,7 @@ pybind11_add_module(pyplasmabox
                     ${VLV_FILES}
                     ${PIC_FILES}
                     ${RAD_FILES}
-                    ${IO_FILES}
+#                    ${IO_FILES}
                     )
 
 

@@ -129,21 +129,6 @@ void step_velocity_with_gravity(
 }
 
 
-
-/// Update Yee lattice boundaries
-/*
-void update_boundaries()
-{
-
-  for(auto cid : get_tile_ids() ){
-    vlasov::VlasovTile& tile = dynamic_cast<vlasov::VlasovTile& >(get_tile( cid ));
-    tile.update_boundaries( *this );
-  }
-
-}
-*/
-
-
 inline void analyze( corgi::Node<1>& grid )
 {
   vlv::Analyzator<Realf> analyzator;
@@ -171,51 +156,6 @@ inline void analyze( corgi::Node<1>& grid )
 
 
 template<size_t D>
-inline void write_yee( 
-    corgi::Node<D>& grid, 
-    int lap,
-    const std::string& dir
-    )
-{
-
-  std::string prefix = dir + "fields-"; 
-  prefix += std::to_string(grid.comm.rank());
-  h5io::Writer writer(prefix, lap);
-
-  for(auto cid : grid.get_local_tiles() ){
-    const auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
-    writer.write(tile);
-  }
-
-  //writer.~Writer();
-}
-
-
-template<size_t D>
-inline void write_analysis( 
-    corgi::Node<D>& grid, 
-    int lap,
-    const std::string& dir
-    )
-{
-
-  std::string prefix = dir + "analysis-"; 
-  prefix += std::to_string(grid.comm.rank());
-  h5io::Writer writer(prefix, lap);
-
-  for(auto cid : grid.get_local_tiles() ){
-    const auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
-    writer.write2(tile);
-  }
-
-
-  //writer.~Writer();
-}
-
-
-template<size_t D>
 inline void write_mesh( 
     corgi::Node<D>& grid, 
     int lap,
@@ -231,25 +171,6 @@ inline void write_mesh(
     const auto& tile 
       = dynamic_cast<vlv::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile);
-  }
-
-}
-
-
-template<size_t D>
-inline void read_yee( 
-    corgi::Node<D>& grid, 
-    int lap,
-    const std::string& dir 
-    )
-{
-
-  h5io::Reader reader(dir, lap);
-
-  for(auto cid : grid.get_tile_ids() ){
-    auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
-    reader.read(tile);
   }
 
 }
@@ -272,6 +193,116 @@ inline void read_mesh(
 }
 
 
-
-
 }// end of namespace vlv
+
+
+//--------------------------------------------------
+
+namespace fields {
+
+template<size_t D>
+inline void write_yee( 
+    corgi::Node<D>& grid, 
+    int lap,
+    const std::string& dir
+    )
+{
+
+  std::string prefix = dir + "fields-"; 
+  prefix += std::to_string(grid.comm.rank());
+  h5io::Writer writer(prefix, lap);
+
+  for(auto cid : grid.get_local_tiles() ){
+    const auto& tile 
+      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+    writer.write(tile);
+  }
+}
+
+
+template<size_t D>
+inline void write_analysis( 
+    corgi::Node<D>& grid, 
+    int lap,
+    const std::string& dir
+    )
+{
+
+  std::string prefix = dir + "analysis-"; 
+  prefix += std::to_string(grid.comm.rank());
+  h5io::Writer writer(prefix, lap);
+
+  for(auto cid : grid.get_local_tiles() ){
+    const auto& tile 
+      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+    writer.write2(tile);
+  }
+}
+
+template<size_t D>
+inline void read_yee( 
+    corgi::Node<D>& grid, 
+    int lap,
+    const std::string& dir 
+    )
+{
+
+  h5io::Reader reader(dir, lap);
+
+  for(auto cid : grid.get_tile_ids() ){
+    auto& tile 
+      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+    reader.read(tile);
+  }
+
+}
+
+} // end of ns fields
+
+
+//--------------------------------------------------
+
+namespace pic {
+
+
+template<size_t D>
+void write_particles( 
+    corgi::Node<D>& grid, 
+    int lap,
+    const std::string& dir 
+    )
+{
+
+  std::string prefix = dir + "particles-"; 
+  prefix += std::to_string(grid.comm.rank());
+  h5io::Writer writer(prefix, lap);
+
+  for(auto cid : grid.get_local_tiles() ){
+    const auto& tile 
+      = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
+    writer.write(tile);
+  }
+
+}
+
+
+template<size_t D>
+inline void read_particles( 
+    corgi::Node<D>& grid, 
+    int lap,
+    const std::string& dir 
+    )
+{
+  h5io::Reader reader(dir, lap);
+
+  for(auto cid : grid.get_tile_ids() ){
+    auto& tile 
+      = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
+    reader.read(tile);
+  }
+}
+
+
+}
+
+

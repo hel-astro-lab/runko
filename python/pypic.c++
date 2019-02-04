@@ -22,7 +22,7 @@ namespace py = pybind11;
 
 #include "../pic/boundaries/wall.h"
 
-#include "../pic/tasker.h"
+//#include "../pic/tasker.h"
 
 
 namespace pic {
@@ -284,8 +284,8 @@ void bind_pic(py::module& m_sub)
 
 
   /// IO bindings
-  m_2d.def("write_particles",  &pic::write_particles<2>);
-  m_2d.def("read_particles",   &pic::read_particles<2>);
+  //m_2d.def("write_particles",  &pic::write_particles<2>);
+  //m_2d.def("read_particles",   &pic::read_particles<2>);
 
 
 
