@@ -233,7 +233,6 @@ inline void write_mesh(
     writer.write(tile);
   }
 
-  //writer.~Writer();
 }
 
 

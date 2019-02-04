@@ -7,6 +7,7 @@
 
 #include "../em-fields/tile.h"
 #include "../vlasov/tile.h"
+#include "../pic/tile.h"
 
 namespace h5io {
 
@@ -55,6 +56,8 @@ class Reader
   template<size_t D>
   bool read(vlv::Tile<D>& tile);
 
+  template<size_t D>
+  bool read(pic::Tile<D>& tile);
 
 };
 
@@ -67,9 +70,6 @@ class Reader
 
 #include "input_fields.h"
 #include "input_vlasov.h"
-
-
-
-
+#include "input_pic.h"
 
 

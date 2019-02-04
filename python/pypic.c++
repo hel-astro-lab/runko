@@ -22,6 +22,8 @@ namespace py = pybind11;
 
 #include "../pic/boundaries/wall.h"
 
+#include "../pic/tasker.h"
+
 
 namespace pic {
 
@@ -273,13 +275,17 @@ void bind_pic(py::module& m_sub)
 
   //--------------------------------------------------
 
-
   /// Pic tile analyzator
   py::class_<pic::Analyzator>(m_2d, "Analyzator")
     .def(py::init<>())
     .def("analyze1d", &pic::Analyzator::analyze<1>)
     .def("analyze2d", &pic::Analyzator::analyze<2>)
     .def("analyze3d", &pic::Analyzator::analyze<3>);
+
+
+  /// IO bindings
+  m_2d.def("write_particles",  &pic::write_particles<2>);
+  m_2d.def("read_particles",   &pic::read_particles<2>);
 
 
 

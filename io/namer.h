@@ -12,7 +12,7 @@ using std::to_string;
 
 
 // helper function to get variable length indices
-std::tuple<size_t, size_t, size_t> expand_indices( 
+inline std::tuple<size_t, size_t, size_t> expand_indices( 
     const corgi::Tile<1>* tile )
 {
   int my_i = static_cast<int>( std::get<0>(tile->index) );
@@ -20,7 +20,7 @@ std::tuple<size_t, size_t, size_t> expand_indices(
 }
 
 // helper function to get variable length indices
-std::tuple<size_t, size_t, size_t> expand_indices( 
+inline std::tuple<size_t, size_t, size_t> expand_indices( 
     const corgi::Tile<2>* tile )
 {
   int my_i = static_cast<int>( std::get<0>(tile->index) );
@@ -29,7 +29,7 @@ std::tuple<size_t, size_t, size_t> expand_indices(
 }
 
 // helper function to get variable length indices
-std::tuple<size_t, size_t, size_t> expand_indices( 
+inline std::tuple<size_t, size_t, size_t> expand_indices( 
     const corgi::Tile<3>* tile )
 {
   int my_i = static_cast<int>( std::get<0>(tile->index) );
@@ -41,12 +41,12 @@ std::tuple<size_t, size_t, size_t> expand_indices(
 
 //standard numbering scheme
 // TODO generalize to variable argument
-string create_numbering(size_t i, size_t j, size_t k) 
+inline string create_numbering(size_t i, size_t j, size_t k) 
 {
   return to_string(i) + "_" + to_string(j) + "_" + to_string(k);
 }
 
-string create_numbering(std::tuple<size_t, size_t, size_t>& ind)
+inline string create_numbering(std::tuple<size_t, size_t, size_t>& ind)
 {
   return create_numbering(
       std::get<0>(ind),

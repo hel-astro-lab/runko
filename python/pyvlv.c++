@@ -335,6 +335,8 @@ void bind_vlv(py::module& m_sub)
 
   m_2d.def("read_yee",        &vlv::read_yee<2>);
 
+  //m_2d.def("write_particles",  &pic::write_particles<2>);
+  //m_2d.def("read_particles",   &pic::read_particles<2>);
 
 }
 

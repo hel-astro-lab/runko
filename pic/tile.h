@@ -41,10 +41,12 @@ public:
   /// get i:th container
   ParticleContainer& get_container(size_t i) { return containers[i]; };
 
+  const ParticleContainer& get_const_container(size_t i) const { return containers[i]; };
+
   /// set i:th container
   void set_container(const ParticleContainer& block) {containers.push_back(block);};
 
-  size_t Nspecies() { return containers.size(); };
+  size_t Nspecies() const { return containers.size(); };
 
 
   /// constructor

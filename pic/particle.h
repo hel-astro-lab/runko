@@ -197,7 +197,7 @@ class ParticleContainer {
     return wgtArr[iprtcl];
   }
 
-  virtual inline std::vector<double>& wgt() 
+  virtual inline std::vector<double> wgt() const
   {
     return wgtArr;
   }
