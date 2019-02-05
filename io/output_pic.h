@@ -11,7 +11,6 @@ h5io::Writer::write(
   const pic::Tile<D>& tile
   ) 
 {
-
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
   string numbering = create_numbering(my_ind);
@@ -30,23 +29,6 @@ h5io::Writer::write(
     gr["sp"] = static_cast<int>( ispc );
 
     const pic::ParticleContainer& container = tile.get_const_container(ispc);
-
-    // initialize pointers to particle arrays
-    //int nparts = container.size();
-    //double* loc[3], * vel[3];
-    //for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
-    //for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
-
-    //// loop and check particles
-    //int n1 = 0;
-    //int n2 = nparts;
-
-    //for(int n=n1; n<n2; n++) {
-    //  // grid coordinate location
-    //  x0 = loc[0][n];
-    //  y0 = loc[1][n];
-    //  z0 = loc[2][n];
-    //}
 
     gr["x"]   = container.loc(0);
     gr["y"]   = container.loc(1);

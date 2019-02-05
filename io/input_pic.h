@@ -20,18 +20,14 @@ h5io::Reader::read(
     
   ezh5::File file(fname, H5F_ACC_RDONLY);
 
-  //--------------------------------------------------
-  // open group
-
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
   string numbering = create_numbering(my_ind);
 
-  // open individual group for the data
+  // open individual group for the tile
   auto gr1 = file["tile_"+ numbering];
 
-
-  // tile location inside node
+  // loop over species and add (individually) all particles
   int i,j,k,sp;
   for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
 
@@ -44,6 +40,8 @@ h5io::Reader::read(
     k  << gr["k"]; 
     sp << gr["sp"]; 
 
+    // read into explicitly initialized arrays; otherwise, some -OX options 
+    // try to optimize these away and we don't read anything.
     std::vector<double> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
     arr1  << gr["x"];
     arr2  << gr["y"];
@@ -54,6 +52,7 @@ h5io::Reader::read(
     arr7  << gr["wgt"];
 
     size_t nparts = arr1.size();
+    // XXX: are these asserts needed?
     assert(arr1.size() == nparts);
     assert(arr2.size() == nparts);
     assert(arr3.size() == nparts);
