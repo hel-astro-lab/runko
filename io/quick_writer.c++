@@ -87,6 +87,34 @@ inline bool h5io::QuickWriter<D>::write(
 
 
 
+
+  // build filename
+  std::string full_filename = 
+    fname + 
+    "-" +
+    std::to_string(grid.comm.rank()) + 
+    "_" +
+    std::to_string(lap) +
+    extension;
+
+
+  // open file and write
+  file(full_filename, H5F_ACC_TRUNC);
+
+  file["ex"] = arr[0].serialize();
+  file["ey"] = arr[1].serialize();
+  file["ez"] = arr[2].serialize();
+
+  file["bx"] = arr[3].serialize();
+  file["by"] = arr[4].serialize();
+  file["bz"] = arr[5].serialize();
+
+  file["jx"] = arr[6].serialize();
+  file["jy"] = arr[7].serialize();
+  file["jz"] = arr[8].serialize();
+
+  file["rho"]= arr[9].serialize();
+
   return true;
 }
 
