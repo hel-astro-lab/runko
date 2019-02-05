@@ -41,8 +41,8 @@ set (RAD_FILES
      )
 
 set (IO_FILES 
-#   ../io/writer.c++
-#   ../io/reader.c++
+     ../io/writer.c++
+     ../io/reader.c++
      ../io/quick_writer.c++
     )
 

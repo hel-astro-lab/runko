@@ -1,5 +1,3 @@
-#pragma once
-
 #include "quick_writer.h"
 
 #include "../tools/mesh.h"
@@ -20,7 +18,7 @@ inline bool h5io::QuickWriter<D>::write(
   }
 
 
-
+  return true;
 }
 
 
