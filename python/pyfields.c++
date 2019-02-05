@@ -148,7 +148,7 @@ void bind_fields(py::module& m_sub)
   // Quick IO 
 
   py::class_<h5io::QuickWriter<2>>(m_2d, "QuickWriter")
-    .def(py::init<const std::string&, int>())
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write",   &h5io::QuickWriter<2>::write);
 
 
