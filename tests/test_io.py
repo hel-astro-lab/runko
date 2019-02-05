@@ -587,7 +587,7 @@ class IO(unittest.TestCase):
         conf.NyMesh = 6
         conf.NzMesh = 1 
         conf.outdir = "io_test_2D/"
-        conf.ppc = 10
+        conf.ppc = 1
         conf.Nspecies = 2
 
         #tmp non-needed variables
@@ -615,10 +615,79 @@ class IO(unittest.TestCase):
 
         pyplasmabox.vlv.twoD.write_particles(node, 0, conf.outdir)
 
+        # TODO: read with h5py
 
-        # read with h5py
 
-        # read with internal read tool
+
+        # TODO: read with internal read tool
+        node2 = pycorgi.twoD.Node(conf.Nx, conf.Ny)
+        node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        for i in range(node2.get_Nx()):
+            for j in range(node2.get_Ny()):
+                c = pyplasmabox.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                initialize_tile(c, i, j, node2, conf)
+                node2.add_tile(c, (i,j)) 
+
+        pyplasmabox.vlv.twoD.read_particles(node2, 0, conf.outdir)
+
+        #assert
+        for i in range(node2.get_Nx()):
+            for j in range(node2.get_Ny()):
+                if node2.get_mpi_grid(i,j) == node2.rank():
+                    cid    = node2.id(i,j)
+                    c      = node2.get_tile(cid) #get cell ptr
+
+                    c_ref  = node.get_tile(cid) #get cell ptr
+
+                    for ispcs in range(conf.Nspecies):
+                        container1 = c.get_container(ispcs)
+                        container2 = c_ref.get_container(ispcs)
+
+                        #TODO: assert content
+
+                        xxs1 = container1.loc(0)
+                        yys1 = container1.loc(1)
+                        zzs1 = container1.loc(2)
+                        vxs1 = container1.vel(0)
+                        vys1 = container1.vel(1)
+                        vzs1 = container1.vel(2)
+                        wgs1 = container1.wgt()
+
+                        xxs2 = container2.loc(0)
+                        yys2 = container2.loc(1)
+                        zzs2 = container2.loc(2)
+                        vxs2 = container2.vel(0)
+                        vys2 = container2.vel(1)
+                        vzs2 = container2.vel(2)
+                        wgs2 = container2.wgt()
+
+                        nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
+
+                        self.assertEqual(len(xxs1), len(xxs2))
+                        self.assertEqual(len(yys1), len(yys2))
+                        self.assertEqual(len(zzs1), len(zzs2))
+                        
+                        self.assertEqual(len(vxs1), len(vxs2))
+                        self.assertEqual(len(vys1), len(vys2))
+                        self.assertEqual(len(vzs1), len(vzs2))
+
+                        self.assertEqual(len(wgs1), len(wgs2))
+
+                        for n in range(nprtcls):
+                            self.assertAlmostEqual(xxs1[n], xxs2[n], places=6)
+                            self.assertAlmostEqual(yys1[n], yys2[n], places=6)
+                            self.assertAlmostEqual(zzs1[n], zzs2[n], places=6)
+
+                            self.assertAlmostEqual(vxs1[n], vxs2[n], places=6)
+                            self.assertAlmostEqual(vys1[n], vys2[n], places=6)
+                            self.assertAlmostEqual(vzs1[n], vzs2[n], places=6)
+
+                            self.assertAlmostEqual(wgs1[n], wgs2[n], places=6)
+
+
+
+
 
 
 

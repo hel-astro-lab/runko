@@ -90,6 +90,7 @@ void ParticleContainer::add_particle (
   Nprtcls++;
 }
 
+
 void ParticleContainer::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)

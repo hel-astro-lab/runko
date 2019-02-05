@@ -53,8 +53,21 @@ h5io::Reader::read(
     arr6  << gr["vz"];
     arr7  << gr["wgt"];
 
-    //container.x = arr1;
-    //...
+    size_t nparts = arr1.size();
+    assert(arr1.size() == nparts);
+    assert(arr2.size() == nparts);
+    assert(arr3.size() == nparts);
+    assert(arr4.size() == nparts);
+    assert(arr5.size() == nparts);
+    assert(arr6.size() == nparts);
+    assert(arr7.size() == nparts);
+
+    for(size_t n=0; n<nparts; n++) {
+      container.add_particle(
+        {arr1[n], arr2[n], arr3[n]}, 
+        {arr4[n], arr5[n], arr6[n]}, arr7[n]);
+    }
+
 
   }
 
