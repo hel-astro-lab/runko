@@ -30,7 +30,7 @@ inline void h5io::QuickWriter<2>::read_tiles(
 
 
   // read my local tiles
-  for(auto cid : grid.get_tile_ids() ){
+  for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<fields::Tile<2>&>(grid.get_tile( cid ));
     auto& yee = tile.get_yee();
 
@@ -77,19 +77,16 @@ inline void h5io::QuickWriter<2>::read_tiles(
                 //  << std::endl;
 
 
-                ex(i0+is, j0+js, k0+ks) += yee.ex( is+istride, js+jstride, ks+kstride);
-                ey(i0+is, j0+js, k0+ks) += yee.ey( is+istride, js+jstride, ks+kstride);
-                ez(i0+is, j0+js, k0+ks) += yee.ez( is+istride, js+jstride, ks+kstride);
-                                                                                      
-                bx(i0+is, j0+js, k0+ks) += yee.bx( is+istride, js+jstride, ks+kstride);
-                by(i0+is, j0+js, k0+ks) += yee.by( is+istride, js+jstride, ks+kstride);
-                bz(i0+is, j0+js, k0+ks) += yee.bz( is+istride, js+jstride, ks+kstride);
-                                                                                      
-                jx(i0+is, j0+js, k0+ks) += yee.jx( is+istride, js+jstride, ks+kstride);
-                jy(i0+is, j0+js, k0+ks) += yee.jy( is+istride, js+jstride, ks+kstride);
-                jz(i0+is, j0+js, k0+ks) += yee.jz( is+istride, js+jstride, ks+kstride);
-                                                                                      
-                rh(i0+is, j0+js, k0+ks) += yee.rho(is+istride, js+jstride, ks+kstride);
+                ex(i0+is, j0+js, k0+ks) += yee.ex( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                ey(i0+is, j0+js, k0+ks) += yee.ey( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                ez(i0+is, j0+js, k0+ks) += yee.ez( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                bx(i0+is, j0+js, k0+ks) += yee.bx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                by(i0+is, j0+js, k0+ks) += yee.by( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                bz(i0+is, j0+js, k0+ks) += yee.bz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                jx(i0+is, j0+js, k0+ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                jy(i0+is, j0+js, k0+ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                jz(i0+is, j0+js, k0+ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+                rh(i0+is, j0+js, k0+ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
               }
             }
           }
