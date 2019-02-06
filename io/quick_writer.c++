@@ -7,9 +7,10 @@
 
 
 using ezh5::File;
-template<size_t D>
-inline void h5io::QuickWriter<D>::read_tiles(
-    corgi::Node<D>& grid)
+//template<size_t D>
+template<>
+inline void h5io::QuickWriter<2>::read_tiles(
+    corgi::Node<2>& grid)
 {
 
   // clear target arrays
@@ -30,7 +31,7 @@ inline void h5io::QuickWriter<D>::read_tiles(
 
   // read my local tiles
   for(auto cid : grid.get_tile_ids() ){
-    auto& tile = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+    auto& tile = dynamic_cast<fields::Tile<2>&>(grid.get_tile( cid ));
     auto& yee = tile.get_yee();
 
     // get arrays
@@ -43,34 +44,58 @@ inline void h5io::QuickWriter<D>::read_tiles(
     int j0 = (yee.Ny/stride)*std::get<1>(index);
     int k0 = (yee.Nz/stride)*std::get<2>(index);
 
-    // copy tile patch by stride hopping
-    for(int ks=0; ks<(int)yee.Nz/stride; ks++ ) {
-      for(int kstride=0; kstride < stride; kstride++) {
+    // tile limits taking into account 0 collapsing dimensions
+    int nxt, nyt, nzt;
+    nxt = (int)yee.Nx/stride;
+    nyt = (int)yee.Ny/stride;
+    nzt = (int)yee.Nz/stride;
 
-        for(int js=0; js<(int)yee.Ny/stride; js++) {
+    nxt = nxt == 0 ? 1 : nxt;
+    nyt = nyt == 0 ? 1 : nyt;
+    nzt = nzt == 0 ? 1 : nzt;
+
+    // copy tile patch by stride hopping
+    //for(int ks=0; ks<nzt; ks++ ) {
+    //  for(int kstride=0; kstride < stride; kstride++) {
+    int ks = 0;
+    int kstride = 0;
+    k0 = 0;
+        for(int js=0; js<nyt; js++) {
           for(int jstride=0; jstride < stride; jstride++) {
 
-            for(int is=0; is<(int)yee.Nx/stride; is++) {
+            for(int is=0; is<nxt; is++) {
               for(int istride=0; istride < stride; istride++) {
-                ex(i0+is, j0+js, k0+ks) += yee.ex( is+istride, js+jstride, ks+stride);
-                ey(i0+is, j0+js, k0+ks) += yee.ey( is+istride, js+jstride, ks+stride);
-                ez(i0+is, j0+js, k0+ks) += yee.ez( is+istride, js+jstride, ks+stride);
-                                                                                     
-                bx(i0+is, j0+js, k0+ks) += yee.bx( is+istride, js+jstride, ks+stride);
-                by(i0+is, j0+js, k0+ks) += yee.by( is+istride, js+jstride, ks+stride);
-                bz(i0+is, j0+js, k0+ks) += yee.bz( is+istride, js+jstride, ks+stride);
-                                                                                     
-                jx(i0+is, j0+js, k0+ks) += yee.jx( is+istride, js+jstride, ks+stride);
-                jy(i0+is, j0+js, k0+ks) += yee.jy( is+istride, js+jstride, ks+stride);
-                jz(i0+is, j0+js, k0+ks) += yee.jz( is+istride, js+jstride, ks+stride);
-                                                                                     
-                rh(i0+is, j0+js, k0+ks) += yee.rho(is+istride, js+jstride, ks+stride);
+                //std::cout << "summing from "
+                //  << " " << i0 << " " << is 
+                //  << " " << j0 << " " << js 
+                //  << " " << k0 << " " << ks 
+                //  << " " << "to "
+                //  << " " << is << " " << istride
+                //  << " " << js << " " << jstride
+                //  << " " << ks << " " << kstride
+                //  << " val " << rh(i0+is, j0+js, k0+ks) << " += " << yee.rho(is+istride, js+jstride, ks+kstride)
+                //  << std::endl;
+
+
+                ex(i0+is, j0+js, k0+ks) += yee.ex( is+istride, js+jstride, ks+kstride);
+                ey(i0+is, j0+js, k0+ks) += yee.ey( is+istride, js+jstride, ks+kstride);
+                ez(i0+is, j0+js, k0+ks) += yee.ez( is+istride, js+jstride, ks+kstride);
+                                                                                      
+                bx(i0+is, j0+js, k0+ks) += yee.bx( is+istride, js+jstride, ks+kstride);
+                by(i0+is, j0+js, k0+ks) += yee.by( is+istride, js+jstride, ks+kstride);
+                bz(i0+is, j0+js, k0+ks) += yee.bz( is+istride, js+jstride, ks+kstride);
+                                                                                      
+                jx(i0+is, j0+js, k0+ks) += yee.jx( is+istride, js+jstride, ks+kstride);
+                jy(i0+is, j0+js, k0+ks) += yee.jy( is+istride, js+jstride, ks+kstride);
+                jz(i0+is, j0+js, k0+ks) += yee.jz( is+istride, js+jstride, ks+kstride);
+                                                                                      
+                rh(i0+is, j0+js, k0+ks) += yee.rho(is+istride, js+jstride, ks+kstride);
               }
             }
           }
         }
-      }
-    }
+    //  }
+    //}
   }
 
 
@@ -125,5 +150,5 @@ inline bool h5io::QuickWriter<D>::write(
 
 //--------------------------------------------------
 // explicit template class instantiations
-template class h5io::QuickWriter<1>;
+//template class h5io::QuickWriter<1>;
 template class h5io::QuickWriter<2>;

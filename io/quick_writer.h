@@ -25,6 +25,9 @@ class QuickWriter {
     /// meshes
     std::vector< toolbox::Mesh<double> > arrs;
 
+    /// internal image size
+    int nx,ny,nz;
+
 
   public:
 
@@ -42,9 +45,9 @@ class QuickWriter {
       stride(stride)
     {
       //fname = prefix + "-" + to_string(lap) + extension;
-      int nx = Nx*NxMesh/stride;
-      int ny = Ny*NyMesh/stride;
-      int nz = Nz*NzMesh/stride;
+      nx = Nx*NxMesh/stride;
+      ny = Ny*NyMesh/stride;
+      nz = Nz*NzMesh/stride;
 
       nx = nx == 0 ? 1 : nx;
       ny = ny == 0 ? 1 : ny;
