@@ -96,6 +96,12 @@ class Configuration(object):
 
         #print("Nvx=", self.Nvx)
 
+        if not("stride" in self.__dict__):
+            self.stride = 1
+        else:
+            if not(self.NxMesh/self.stride == self.NxMesh//self.stride):
+                print("Error: stride must split NxMesh evenly; setting to 1")
+                self.stride = 1
 
 
 #load default 
