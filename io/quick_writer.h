@@ -25,6 +25,9 @@ class QuickWriter {
     /// meshes
     std::vector< toolbox::Mesh<double> > arrs;
 
+    /// mpi receive buffer
+    std::vector< toolbox::Mesh<double> > rbuf;
+
     /// internal image size
     int nx,ny,nz;
 
@@ -54,11 +57,16 @@ class QuickWriter {
       nz = nz == 0 ? 1 : nz;
 
       for(size_t i=0; i<10; i++) arrs.emplace_back(nx, ny, nz);
+      for(size_t i=0; i<10; i++) rbuf.emplace_back(nx, ny, nz);
     }
 
     /// read tile meshes into memory
     void read_tiles(corgi::Node<D>& grid);
 
+    /// communicate snapshots with a B-tree cascade to rank 0
+    void mpi_reduce_snapshots(corgi::Node<D>& grid);
+
+    /// write hdf5 file
     bool write(corgi::Node<D>& grid, int lap);
 };
 

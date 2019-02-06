@@ -1,13 +1,35 @@
 #include "quick_writer.h"
 
+#include <mpi4cpp/mpi.h>
 #include "../tools/mesh.h"
 #include "../em-fields/tile.h"
 #include "../tools/ezh5/src/ezh5.hpp"
 #include "namer.h"
 
+using namespace mpi4cpp;
+
+
+static int fastlog2(uint32_t v) {
+  // http://graphics.stanford.edu/~seander/bithacks.html
+  int r;
+  static const int MultiplyDeBruijnBitPosition[32] = 
+  {
+    0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30,
+    8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31
+  };
+
+  v |= v >> 1; // first round down to one less than a power of 2 
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+
+  r = MultiplyDeBruijnBitPosition[(uint32_t)(v * 0x07C4ACDDU) >> 27];
+  return r;
+}
+
 
 using ezh5::File;
-//template<size_t D>
 template<>
 inline void h5io::QuickWriter<2>::read_tiles(
     corgi::Node<2>& grid)
@@ -65,18 +87,6 @@ inline void h5io::QuickWriter<2>::read_tiles(
 
             for(int is=0; is<nxt; is++) {
               for(int istride=0; istride < stride; istride++) {
-                //std::cout << "summing from "
-                //  << " " << i0 << " " << is 
-                //  << " " << j0 << " " << js 
-                //  << " " << k0 << " " << ks 
-                //  << " " << "to "
-                //  << " " << is << " " << istride
-                //  << " " << js << " " << jstride
-                //  << " " << ks << " " << kstride
-                //  << " val " << rh(i0+is, j0+js, k0+ks) << " += " << yee.rho(is+istride, js+jstride, ks+kstride)
-                //  << std::endl;
-
-
                 ex(i0+is, j0+js, k0+ks) += yee.ex( is*stride+istride, js*stride+jstride, ks*stride+kstride);
                 ey(i0+is, j0+js, k0+ks) += yee.ey( is*stride+istride, js*stride+jstride, ks*stride+kstride);
                 ez(i0+is, j0+js, k0+ks) += yee.ez( is*stride+istride, js*stride+jstride, ks*stride+kstride);
@@ -94,10 +104,58 @@ inline void h5io::QuickWriter<2>::read_tiles(
     //  }
     //}
   }
+}
+
+
+template<size_t D>
+inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
+    corgi::Node<D>& grid)
+{
+  /* based on https://gist.github.com/rmcgibbo/7178576
+   */
+
+  for(auto& arr : rbuf) arr.clear();
+
+  int tag = 0;
+  const int size = grid.comm.size(); //MPI::COMM_WORLD.Get_size();
+  const int rank = grid.comm.rank(); //MPI::COMM_WORLD.Get_rank();
+  const int lastpower = 1 << fastlog2(size);
+
+  // each of the ranks greater than the last power of 2 less than size
+  // need to downshift their data, since the binary tree reduction below
+  // only works when N is a power of two.
+  for (int i = lastpower; i < size; i++)
+    if (rank == i)
+      //MPI::COMM_WORLD.Send(&value, 1, MPI_INT, i-lastpower, tag);
+      grid.comm.send(i-lastpower, tag, arrs[9].data(), arrs[9].size());
+
+  for (int i = 0; i < size-lastpower; i++)
+    if (rank == i) {
+      //MPI::COMM_WORLD.Recv(&recvbuffer, 1, MPI_INT, i+lastpower, tag);
+      grid.comm.recv(i+lastpower, tag, rbuf[9].data(), rbuf[9].size());
+
+      //value += recvbuffer; // your operation
+      arrs[9] += rbuf[9];
+    }
+
+  for (int d = 0; d < fastlog2(lastpower); d++)
+    for (int k = 0; k < lastpower; k += 1 << (d + 1)) {
+      const int receiver = k;
+      const int sender = k + (1 << d);
+      if (rank == receiver) {
+        //MPI::COMM_WORLD.Recv(&recvbuffer, 1, MPI_INT, sender, tag);
+        grid.comm.recv(sender, tag, rbuf[9].data(), rbuf[9].size());
+
+        //value += recvbuffer; // your operation
+        arrs[9] += rbuf[9];
+      }
+      else if (rank == sender)
+        //MPI::COMM_WORLD.Send(&value, 1, MPI_INT, receiver, tag);
+        grid.comm.send(receiver, tag, arrs[9].data(), arrs[9].size());
+    }
 
 
 }
-
 
 
 template<size_t D>
@@ -105,6 +163,7 @@ inline bool h5io::QuickWriter<D>::write(
     corgi::Node<D>& grid, int lap)
 {
   read_tiles(grid);
+  mpi_reduce_snapshots(grid);
 
   // build filename
   std::string full_filename = 
