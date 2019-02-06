@@ -124,35 +124,45 @@ inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
   // each of the ranks greater than the last power of 2 less than size
   // need to downshift their data, since the binary tree reduction below
   // only works when N is a power of two.
-  for (int i = lastpower; i < size; i++)
-    if (rank == i)
-      //MPI::COMM_WORLD.Send(&value, 1, MPI_INT, i-lastpower, tag);
-      grid.comm.send(i-lastpower, tag, arrs[9].data(), arrs[9].size());
-
-  for (int i = 0; i < size-lastpower; i++)
+  
+  std::vector<mpi::request> reqs;
+  for (int i = lastpower; i < size; i++) {
     if (rank == i) {
-      //MPI::COMM_WORLD.Recv(&recvbuffer, 1, MPI_INT, i+lastpower, tag);
-      grid.comm.recv(i+lastpower, tag, rbuf[9].data(), rbuf[9].size());
-
-      //value += recvbuffer; // your operation
-      arrs[9] += rbuf[9];
+      for(size_t els=0; els<arrs.size(); els++) {
+        reqs.push_back( grid.comm.isend(i-lastpower, tag, arrs[els].data(), arrs[els].size()) );
+      }
     }
+  }
 
-  for (int d = 0; d < fastlog2(lastpower); d++)
+  for (int i = 0; i < size-lastpower; i++) {
+    if (rank == i) {
+      for(size_t els=0; els<arrs.size(); els++) {
+        grid.comm.recv(i+lastpower, tag, rbuf[els].data(), rbuf[els].size());
+        arrs[els] += rbuf[els];
+      }
+    }
+  }
+  mpi::wait_all(reqs.begin(), reqs.end());
+
+
+  for (int d = 0; d < fastlog2(lastpower); d++) {
     for (int k = 0; k < lastpower; k += 1 << (d + 1)) {
       const int receiver = k;
       const int sender = k + (1 << d);
       if (rank == receiver) {
-        //MPI::COMM_WORLD.Recv(&recvbuffer, 1, MPI_INT, sender, tag);
-        grid.comm.recv(sender, tag, rbuf[9].data(), rbuf[9].size());
 
-        //value += recvbuffer; // your operation
-        arrs[9] += rbuf[9];
+        for(size_t els=0; els<arrs.size(); els++) {
+          grid.comm.recv(sender, tag, rbuf[els].data(), rbuf[els].size());
+          arrs[els] += rbuf[els];
+        }
       }
-      else if (rank == sender)
-        //MPI::COMM_WORLD.Send(&value, 1, MPI_INT, receiver, tag);
-        grid.comm.send(receiver, tag, arrs[9].data(), arrs[9].size());
+      else if (rank == sender) {
+        for(size_t els=0; els<arrs.size(); els++) {
+          grid.comm.send(receiver, tag, arrs[els].data(), arrs[els].size());
+        }
+      }
     }
+  }
 
 
 }
@@ -165,36 +175,37 @@ inline bool h5io::QuickWriter<D>::write(
   read_tiles(grid);
   mpi_reduce_snapshots(grid);
 
-  // build filename
-  std::string full_filename = 
-    fname + 
-    "/quick-fields-" +
-    std::to_string(grid.comm.rank()) + 
-    "_" +
-    std::to_string(lap) +
-    extension;
-  std::cout << "QW: " << full_filename << std::endl;
+  if( grid.comm.rank() == 0 ) {
+    // build filename
+    std::string full_filename = 
+      fname + 
+      "/flds" +
+      /*std::to_string(grid.comm.rank()) + */
+      "_" +
+      std::to_string(lap) +
+      extension;
+    //std::cout << "QW: " << full_filename << std::endl;
 
+    // open file and write
+    File file(full_filename, H5F_ACC_TRUNC);
+    file["Nx"] = arrs[0].Nx;
+    file["Ny"] = arrs[0].Ny;
+    file["Nz"] = arrs[0].Nz;
 
-  // open file and write
-  File file(full_filename, H5F_ACC_TRUNC);
-  file["Nx"] = arrs[0].Nx;
-  file["Ny"] = arrs[0].Ny;
-  file["Nz"] = arrs[0].Nz;
+    file["ex"] = arrs[0].serialize();
+    file["ey"] = arrs[1].serialize();
+    file["ez"] = arrs[2].serialize();
 
-  file["ex"] = arrs[0].serialize();
-  file["ey"] = arrs[1].serialize();
-  file["ez"] = arrs[2].serialize();
+    file["bx"] = arrs[3].serialize();
+    file["by"] = arrs[4].serialize();
+    file["bz"] = arrs[5].serialize();
 
-  file["bx"] = arrs[3].serialize();
-  file["by"] = arrs[4].serialize();
-  file["bz"] = arrs[5].serialize();
+    file["jx"] = arrs[6].serialize();
+    file["jy"] = arrs[7].serialize();
+    file["jz"] = arrs[8].serialize();
 
-  file["jx"] = arrs[6].serialize();
-  file["jy"] = arrs[7].serialize();
-  file["jz"] = arrs[8].serialize();
-
-  file["rho"]= arrs[9].serialize();
+    file["rho"]= arrs[9].serialize();
+  }
 
   return true;
 }
