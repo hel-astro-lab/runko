@@ -84,36 +84,36 @@ inline bool h5io::QuickWriter<D>::write(
 {
   read_tiles(grid);
 
-
-
-
-
   // build filename
   std::string full_filename = 
     fname + 
-    "-" +
+    "/quick-fields-" +
     std::to_string(grid.comm.rank()) + 
     "_" +
     std::to_string(lap) +
     extension;
+  std::cout << "QW: " << full_filename << std::endl;
 
 
   // open file and write
-  file(full_filename, H5F_ACC_TRUNC);
+  File file(full_filename, H5F_ACC_TRUNC);
+  file["Nx"] = arrs[0].Nx;
+  file["Ny"] = arrs[0].Ny;
+  file["Nz"] = arrs[0].Nz;
 
-  file["ex"] = arr[0].serialize();
-  file["ey"] = arr[1].serialize();
-  file["ez"] = arr[2].serialize();
+  file["ex"] = arrs[0].serialize();
+  file["ey"] = arrs[1].serialize();
+  file["ez"] = arrs[2].serialize();
 
-  file["bx"] = arr[3].serialize();
-  file["by"] = arr[4].serialize();
-  file["bz"] = arr[5].serialize();
+  file["bx"] = arrs[3].serialize();
+  file["by"] = arrs[4].serialize();
+  file["bz"] = arrs[5].serialize();
 
-  file["jx"] = arr[6].serialize();
-  file["jy"] = arr[7].serialize();
-  file["jz"] = arr[8].serialize();
+  file["jx"] = arrs[6].serialize();
+  file["jy"] = arrs[7].serialize();
+  file["jz"] = arrs[8].serialize();
 
-  file["rho"]= arr[9].serialize();
+  file["rho"]= arrs[9].serialize();
 
   return true;
 }

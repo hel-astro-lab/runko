@@ -46,6 +46,10 @@ class QuickWriter {
       int ny = Ny*NyMesh/stride;
       int nz = Nz*NzMesh/stride;
 
+      nx = nx == 0 ? 1 : nx;
+      ny = ny == 0 ? 1 : ny;
+      nz = nz == 0 ? 1 : nz;
+
       for(size_t i=0; i<10; i++) arrs.emplace_back(nx, ny, nz);
     }
 
