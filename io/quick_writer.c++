@@ -129,7 +129,7 @@ inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
   for (int i = lastpower; i < size; i++) {
     if (rank == i) {
       for(size_t els=0; els<arrs.size(); els++) {
-        reqs.push_back( grid.comm.isend(i-lastpower, tag, arrs[els].data(), arrs[els].size()) );
+        reqs.push_back( grid.comm.isend(i-lastpower, tag+els, arrs[els].data(), arrs[els].size()) );
       }
     }
   }
@@ -137,7 +137,7 @@ inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
   for (int i = 0; i < size-lastpower; i++) {
     if (rank == i) {
       for(size_t els=0; els<arrs.size(); els++) {
-        grid.comm.recv(i+lastpower, tag, rbuf[els].data(), rbuf[els].size());
+        grid.comm.recv(i+lastpower, tag+els, rbuf[els].data(), rbuf[els].size());
         arrs[els] += rbuf[els];
       }
     }
@@ -152,13 +152,13 @@ inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
       if (rank == receiver) {
 
         for(size_t els=0; els<arrs.size(); els++) {
-          grid.comm.recv(sender, tag, rbuf[els].data(), rbuf[els].size());
+          grid.comm.recv(sender, tag+els, rbuf[els].data(), rbuf[els].size());
           arrs[els] += rbuf[els];
         }
       }
       else if (rank == sender) {
         for(size_t els=0; els<arrs.size(); els++) {
-          grid.comm.send(receiver, tag, arrs[els].data(), arrs[els].size());
+          grid.comm.send(receiver, tag+els, arrs[els].data(), arrs[els].size());
         }
       }
     }
