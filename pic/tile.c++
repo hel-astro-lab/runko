@@ -39,7 +39,12 @@ void Tile<D>::check_outgoing_particles()
   for(size_t i=0; i<D; i++) tile_mins[i] = corgi::Tile<D>::mins[i];
   for(size_t i=0; i<D; i++) tile_maxs[i] = corgi::Tile<D>::maxs[i];
 
+  // normal particles
   for(auto&& container : containers)
+    container.check_outgoing_particles(tile_mins, tile_maxs);
+
+  // test particles
+  for(auto&& container : test_containers)
     container.check_outgoing_particles(tile_mins, tile_maxs);
 
 }
@@ -47,15 +52,12 @@ void Tile<D>::check_outgoing_particles()
 template<std::size_t D>
 void Tile<D>::delete_transferred_particles()
 {
-  for(auto&& container : containers) {
+  for(auto&& container : containers) 
     container.delete_transferred_particles();
-  }
+
+  for(auto&& container : test_containers) 
+    container.delete_transferred_particles();
 }
-
-
-//template<std::size_t D>
-//void Tile<D>::get_incoming_particles(
-//    corgi::Node<D>& grid) = delete;
 
 
 template<>
@@ -88,13 +90,24 @@ void Tile<2>::get_incoming_particles(
         dynamic_cast<Tile&>( grid.get_tile(cid) );
 
       // loop over all containers
+        
       for(size_t ispc=0; ispc<Nspecies(); ispc++) {
-        ParticleContainer& container = get_container(ispc);
-        ParticleContainer& neigh = external_tile.get_container(ispc);
+        auto& container = get_container(ispc);
+        auto& neigh = external_tile.get_container(ispc);
 
         container.transfer_and_wrap_particles(
             neigh, {i,j,k}, global_mins, global_maxs);
       }
+
+      for(size_t ispc=0; ispc<Nspecies_test(); ispc++) {
+        auto& container = get_test_container(ispc);
+        auto& neigh = external_tile.get_test_container(ispc);
+
+        container.transfer_and_wrap_particles(
+            neigh, {i,j,k}, global_mins, global_maxs);
+      }
+
+
     }
   }
 }
@@ -123,10 +136,21 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
 {
   std::vector<mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleContainer& container = get_container(ispc);
+    auto& container = get_container(ispc);
 
     reqs.emplace_back(
         comm.isend(dest, get_tag(corgi::Tile<D>::cid, ispc), 
+          container.outgoing_particles.data(), 
+          container.outgoing_particles.size())
+        );
+  }
+
+
+  for(size_t ispc=0; ispc<Nspecies_test(); ispc++) {
+    auto& container = get_test_container(ispc);
+
+    reqs.emplace_back(
+        comm.isend(dest, get_tag(corgi::Tile<D>::cid, ispc+Nspecies() ), 
           container.outgoing_particles.data(), 
           container.outgoing_particles.size())
         );
@@ -143,7 +167,7 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
 {
   std::vector<mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleContainer& container = get_container(ispc);
+    auto& container = get_container(ispc);
 
     if(!container.outgoing_extra_particles.empty()) {
       reqs.emplace_back(
@@ -153,6 +177,20 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
           );
     }
   }
+
+  for(size_t ispc=0; ispc<Nspecies_test(); ispc++) {
+    auto& container = get_test_container(ispc);
+
+    if(!container.outgoing_extra_particles.empty()) {
+      reqs.emplace_back(
+          comm.isend(dest, get_extra_tag(corgi::Tile<D>::cid, ispc+Nspecies() ), 
+            container.outgoing_extra_particles.data(), 
+            container.outgoing_extra_particles.size())
+          );
+    }
+  }
+
+
   return reqs;
 }
 
@@ -180,7 +218,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
 {
   std::vector<mpi::request> reqs;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleContainer& container = get_container(ispc);
+    auto& container = get_container(ispc);
     container.incoming_particles.resize( container.optimal_message_size );
 
     reqs.emplace_back(
@@ -189,6 +227,19 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
           container.optimal_message_size)
         );
   }
+
+
+  for (size_t ispc=0; ispc<Nspecies_test(); ispc++) {
+    auto& container = get_test_container(ispc);
+    container.incoming_particles.resize( container.optimal_message_size );
+
+    reqs.emplace_back(
+        comm.irecv(orig, get_tag(corgi::Tile<D>::cid, ispc+Nspecies() ),
+          container.incoming_particles.data(),
+          container.optimal_message_size)
+        );
+  }
+
 
   return reqs;
 }
@@ -204,9 +255,10 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
   // this assumes that wait for the first message is already called
   // and passed.
 
+  // normal particles
   int extra_size;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleContainer& container = get_container(ispc);
+    auto& container = get_container(ispc);
     InfoParticle msginfo(container.incoming_particles[0]);
 
     // check if we need to expect extra message
@@ -226,8 +278,30 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
 
     //TODO: dynamic optimal_message_size here
     //container.optimal_message_size = msginfo.size();
-
   }
+
+
+  // test particles
+  for (size_t ispc=0; ispc<Nspecies_test(); ispc++) {
+    auto& container = get_test_container(ispc);
+    InfoParticle msginfo(container.incoming_particles[0]);
+
+    // check if we need to expect extra message
+    extra_size = msginfo.size() - container.optimal_message_size;
+    //std::cout << "expecting" << extra_size << "particles\n";
+    if(extra_size > 0) {
+      container.incoming_extra_particles.resize(extra_size);
+
+      reqs.emplace_back(
+          comm.irecv(orig, get_extra_tag(corgi::Tile<D>::cid, ispc+Nspecies() ),
+            container.incoming_extra_particles.data(),
+            extra_size)
+          );
+    } else {
+      container.incoming_extra_particles.clear();
+    }
+  }
+
 
   return reqs;
 }
@@ -236,28 +310,36 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
 template<std::size_t D>
 void Tile<D>::pack_outgoing_particles()
 {
-  for(auto&& container : containers) {
+  for(auto&& container : containers) 
     container.pack_outgoing_particles();
-  }
+
+  for(auto&& container : test_containers) 
+    container.pack_outgoing_particles();
+
 }
 
 
 template<std::size_t D>
 void Tile<D>::unpack_incoming_particles()
 {
-  for(auto&& container : containers) {
+  for(auto&& container : containers) 
     container.unpack_incoming_particles();
-  }
+
+  for(auto&& container : test_containers) 
+    container.unpack_incoming_particles();
+
 }
 
 
 template<std::size_t D>
 void Tile<D>::delete_all_particles()
 {
-  for(auto&& container : containers) {
+  for(auto&& container : containers) 
     container.resize(0);
-    //container.clear(0);
-  }
+
+  for(auto&& container : test_containers) 
+    container.resize(0);
+
 }
 
 
