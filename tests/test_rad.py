@@ -262,6 +262,7 @@ class radiation(unittest.TestCase):
         conf.Nz = 1
         conf.ppc = 1
         conf.update_bbox()
+        conf.Nspecies_test = 0
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)

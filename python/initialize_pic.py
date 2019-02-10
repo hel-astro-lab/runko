@@ -106,7 +106,7 @@ def initialize_tile(c, i, j, n, conf):
             container.q = conf.mi*q0
         Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc_test
         container.reserve(Nprtcls)
-
+        c.set_test_container( container )
 
 
     #set bounding box of the tile 

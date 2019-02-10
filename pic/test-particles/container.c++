@@ -6,7 +6,7 @@
 
 
 pic::TestParticleContainer::TestParticleContainer() :
-    ParticleContainer() 
+    pic::ParticleContainer()
 {
   // Get the number of processes
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
@@ -18,6 +18,8 @@ pic::TestParticleContainer::TestParticleContainer() :
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 }
+
+
 
 double pic::TestParticleContainer::keygen() 
 {

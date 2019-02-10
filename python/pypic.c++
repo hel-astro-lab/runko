@@ -160,7 +160,8 @@ void bind_pic(py::module& m_sub)
 {
 
 
-  py::class_<pic::ParticleContainer>(m_sub, "ParticleContainer")
+  py::class_<pic::ParticleContainer> prtcl_con(m_sub, "ParticleContainer");
+  prtcl_con
     .def(py::init<>())
     .def_readwrite("q",   &pic::ParticleContainer::q)
     .def("reserve",       &pic::ParticleContainer::reserve)
@@ -224,9 +225,7 @@ void bind_pic(py::module& m_sub)
     
 
 
-  py::class_<
-    pic::TestParticleContainer, 
-    pic::ParticleContainer>(m_sub, "TestParticleContainer")
+  py::class_< pic::TestParticleContainer>(m_sub, "TestParticleContainer", prtcl_con)
     .def(py::init<>())
     .def("add_test_particle",  &pic::TestParticleContainer::add_test_particle);
 

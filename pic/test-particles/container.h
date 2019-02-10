@@ -12,7 +12,7 @@ namespace pic {
  * the full history.
  */
 class TestParticleContainer :
-  public virtual ParticleContainer
+  virtual public pic::ParticleContainer
 {
 
   private:
@@ -32,19 +32,24 @@ class TestParticleContainer :
 
   public:
 
+
   /// Constructor 
   TestParticleContainer();
 
   // default virtual dtor
   virtual ~TestParticleContainer() = default;
 
-
-
   /// add particle with automatic unique key generation
   void add_test_particle (
       std::vector<double> prtcl_loc,
       std::vector<double> prtcl_vel);
 
+
+  /// FIXME: for some reason pybind11 needs this duplicate
+  virtual void reserve(size_t N) override
+  {
+    pic::ParticleContainer::reserve(N);
+  }
 
 
 
