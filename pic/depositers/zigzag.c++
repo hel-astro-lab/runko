@@ -7,7 +7,7 @@ using std::min;
 using std::max;
 
 
-// TODO: optimize for cases when we know D; know specialized for D=2
+// TODO: optimize for cases when we know D; now specialized for D=2
 template<size_t D, size_t V>
 void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 {

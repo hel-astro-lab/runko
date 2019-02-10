@@ -34,6 +34,7 @@ set (PIC_FILES
      ../pic/solvers/boris_drag.c++
      ../pic/interpolators/linear.c++
      ../pic/depositers/zigzag.c++
+     ../pic/test-particles/container.c++
      )
 
 set (RAD_FILES 

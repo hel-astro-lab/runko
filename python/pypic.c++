@@ -47,6 +47,11 @@ auto declare_tile(
     .def("get_container",       &pic::Tile<D>::get_container, 
         py::return_value_policy::reference)
     .def("set_container",       &pic::Tile<D>::set_container)
+
+    .def("get_test_container",  &pic::Tile<D>::get_test_container, 
+        py::return_value_policy::reference)
+    .def("set_test_container",  &pic::Tile<D>::set_test_container)
+
     .def("check_outgoing_particles",     &pic::Tile<D>::check_outgoing_particles)
     .def("get_incoming_particles",       &pic::Tile<D>::get_incoming_particles)
     .def("delete_transferred_particles", &pic::Tile<D>::delete_transferred_particles)
@@ -179,7 +184,7 @@ void bind_pic(py::module& m_sub)
         {
           return s.wgt(); 
         }, py::return_value_policy::reference)
-    //temporary binding
+    //temporary binding; only needed for unit tests
     .def("ex",          [](pic::ParticleContainer& s, int i) 
         {
           int nparts = s.size();
@@ -217,6 +222,15 @@ void bind_pic(py::module& m_sub)
           return s.Bpart[i + 2*nparts];
         }, py::return_value_policy::reference);
     
+
+
+  py::class_<
+    pic::TestParticleContainer, 
+    pic::ParticleContainer>(m_sub, "TestParticleContainer")
+    .def(py::init<>())
+    .def("add_test_particle",  &pic::TestParticleContainer::add_test_particle);
+
+
 
   //--------------------------------------------------
   // 1D bindings

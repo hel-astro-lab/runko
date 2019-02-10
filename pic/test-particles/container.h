@@ -2,6 +2,7 @@
 
 #include "../particle.h"
 
+namespace pic {
 
 /*! \brief Test particle container
  *
@@ -14,6 +15,23 @@ class TestParticleContainer :
   public virtual ParticleContainer
 {
 
+  private:
+
+    /// global mpi rank
+    int rank;
+
+    /// comm size
+    int mpi_world_size;
+
+    /// running key generator seed
+    int key = 1;
+
+    /// unique key generator
+    double keygen();
+
+
+  public:
+
   /// Constructor 
   TestParticleContainer();
 
@@ -22,26 +40,37 @@ class TestParticleContainer :
 
 
 
+  /// add particle with automatic unique key generation
+  void add_test_particle (
+      std::vector<double> prtcl_loc,
+      std::vector<double> prtcl_vel);
+
+
 
 
   //--------------------------------------------------
   // id
-  inline int id( size_t iprtcl ) const
-  {
-    return wgtArr[iprtcl];
-  }
+  //inline int id( size_t iprtcl ) const
+  //{
+  //  return wgtArr[iprtcl];
+  //}
 
-  inline int& id( size_t iprtcl )       
-  {
-    return wgtArr[iprtcl];
-  }
+  //inline int& id( size_t iprtcl )       
+  //{
+  //  return wgtArr[iprtcl];
+  //}
 
-  inline std::vector<int> id() const
-  {
-    return wgtArr;
-  }
+  //inline std::vector<int> id() const
+  //{
+  //  return wgtArr;
+  //}
 
+  // overwrite weight and return unity
+  // This is to make sure that test particles behave
+  // correctly with depositer etc. that need weights.
 
+  // note: can't do this because ParticleContainer::pack_xxx
+  // etc use wgt(ind)
 
 
 
@@ -51,6 +80,4 @@ class TestParticleContainer :
 
 
 
-
-
-
+} // end of ns pic

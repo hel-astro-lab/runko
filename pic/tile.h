@@ -8,6 +8,8 @@
 #include "../corgi/corgi.h"
 #include "../em-fields/tile.h"
 #include "particle.h"
+#include "test-particles/container.h"
+
 
 namespace pic {
 
@@ -38,6 +40,12 @@ public:
   //ParticleContainer container;
   std::vector<ParticleContainer> containers;
 
+  //Test particle containers
+  std::vector<TestParticleContainer> test_containers;
+
+  //--------------------------------------------------
+  // normal container methods
+     
   /// get i:th container
   ParticleContainer& get_container(size_t i) { return containers[i]; };
 
@@ -47,6 +55,23 @@ public:
   void set_container(const ParticleContainer& block) {containers.push_back(block);};
 
   size_t Nspecies() const { return containers.size(); };
+
+
+  //--------------------------------------------------
+  // test particle container methods
+    
+  TestParticleContainer& get_test_container(size_t i) 
+  { return test_containers[i]; };
+
+  const TestParticleContainer& get_const_test_container(size_t i) const 
+  { return test_containers[i]; };
+
+  void set_test_container(const TestParticleContainer& block) {test_containers.push_back(block);};
+
+  size_t Nspecies_test() const { return test_containers.size(); };
+
+
+
 
 
   /// constructor
