@@ -14,8 +14,7 @@ class BorisPusherDrag :
   public:
   double drag;
 
-  /// setter method to adjust drag
-  //void set_drag(double drag);
+  void push_container( pic::ParticleContainer&, double cfl);
 
   void solve(pic::Tile<D>& tile) override;
 

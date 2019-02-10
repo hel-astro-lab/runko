@@ -268,7 +268,7 @@ class PIC(unittest.TestCase):
         conf.Ny = 1
         conf.update_bbox()
 
-        conf.vel = 0.1
+        conf.vel = 0.3
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
@@ -277,9 +277,7 @@ class PIC(unittest.TestCase):
         insert_em(node, conf, const_field)
         inject(node, filler, conf) #injecting plasma particles
 
-        print("a")
         inject_test_particles(node, filler, conf)
-        print("b")
 
 
         # push particles couple of times to make them leak into neighboring tiles
@@ -292,6 +290,7 @@ class PIC(unittest.TestCase):
             for cid in node.get_local_tiles():
                 tile = node.get_tile(cid)
                 pusher.solve(tile)
+
 
             ##################################################
             # communication
@@ -399,6 +398,7 @@ class PIC(unittest.TestCase):
         ##################################################
         # count test particles too
 
+        print("test particles...")
         n_test_particles = 0
         for i in range(conf.Nx):
             for j in range(conf.Ny):
