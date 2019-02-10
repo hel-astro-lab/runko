@@ -69,8 +69,10 @@ size_t ParticleContainer::size()
   assert(velArr[1].size() == Nprtcls);
   assert(velArr[2].size() == Nprtcls);
 
-  //return Nprtcls; // FIXME: this is the correct way to return
-  return locArr[0].size();
+  assert(wgtArr.size() == Nprtcls);
+
+  //return locArr[0].size();
+  return Nprtcls; // FIXME: this is the correct way to return
 }
 
 
