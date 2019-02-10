@@ -225,10 +225,9 @@ void bind_pic(py::module& m_sub)
     
 
 
-  py::class_< pic::TestParticleContainer>(m_sub, "TestParticleContainer", prtcl_con)
+  py::class_< pic::TestParticleContainer, pic::ParticleContainer>(m_sub, "TestParticleContainer")
     .def(py::init<>())
     .def("add_test_particle",  &pic::TestParticleContainer::add_test_particle);
-
 
 
   //--------------------------------------------------

@@ -13,6 +13,7 @@ import pyplasmabox.tools.twoD as pytools
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
 from injector_pic import inject
+from injector_pic import inject_test_particles
 
 
 from visualize_pic import Particles
@@ -258,6 +259,10 @@ class PIC(unittest.TestCase):
         conf.NxMesh = 3
         conf.NyMesh = 3
 
+        # add test particles too
+        conf.Nspecies_test = 1
+        conf.ppc_test = 1
+
         conf.Nx = 3
         conf.Ny = 3
         conf.Ny = 1
@@ -271,6 +276,11 @@ class PIC(unittest.TestCase):
         loadTiles(node, conf)
         insert_em(node, conf, const_field)
         inject(node, filler, conf) #injecting plasma particles
+
+        print("a")
+        inject_test_particles(node, filler, conf)
+        print("b")
+
 
         # push particles couple of times to make them leak into neighboring tiles
         pusher   = pypic.BorisPusher()
@@ -384,6 +394,29 @@ class PIC(unittest.TestCase):
 
         # assert that there is equal number of particles as we began with
         self.assertEqual( tot_particles, n_particles )
+
+
+        ##################################################
+        # count test particles too
+
+        n_test_particles = 0
+        for i in range(conf.Nx):
+            for j in range(conf.Ny):
+                for k in range(conf.Nz):
+                    cid = node.id(i,j)
+                    c = node.get_tile(cid)
+
+                    container = c.get_test_container(0)
+                    print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
+                    n_test_particles += len(container.loc(0))
+
+        tot_test_particles = (
+                        conf.Nx*conf.NxMesh *
+                        conf.Ny*conf.NyMesh *
+                        conf.Nz*conf.NzMesh *
+                        conf.ppc_test)
+        self.assertEqual( tot_test_particles, n_test_particles )
+
 
 
 

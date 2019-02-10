@@ -4,9 +4,7 @@
 
 
 
-
-pic::TestParticleContainer::TestParticleContainer() :
-    pic::ParticleContainer()
+pic::TestParticleContainer::TestParticleContainer() : pic::ParticleContainer()
 {
   // Get the number of processes
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
