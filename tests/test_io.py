@@ -589,6 +589,7 @@ class IO(unittest.TestCase):
         conf.outdir = "io_test_2D/"
         conf.ppc = 1
         conf.Nspecies = 2
+        conf.Nspecies_test = 0
 
         #tmp non-needed variables
         conf.omp = 1

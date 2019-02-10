@@ -96,8 +96,19 @@ def initialize_tile(c, i, j, n, conf):
         container.reserve(Nprtcls)
     
         c.set_container( container )
-    
-    
+
+    # test particles
+    for sps in range(conf.Nspecies_test):
+        container = pypic.TestParticleContainer()
+        if sps % 2 == 0:
+            container.q = conf.me*q0
+        else:
+            container.q = conf.mi*q0
+        Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc_test
+        container.reserve(Nprtcls)
+
+
+
     #set bounding box of the tile 
     mins = spatialLoc(n, [i,j], [0,0,0], conf)
     maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)

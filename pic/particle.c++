@@ -31,6 +31,10 @@ ParticleContainer::ParticleContainer()
 
 
 void ParticleContainer::reserve(size_t N) {
+
+  // always reserve at least 1 element to ensure proper array initialization
+  if (N <= 0) N = 1;
+
   for(size_t i=0; i<3; i++) locArr[i].reserve(N);
   for(size_t i=0; i<3; i++) velArr[i].reserve(N);
   wgtArr.reserve(N);

@@ -78,6 +78,4 @@ class TestParticleContainer :
 
 
 
-
-
 } // end of ns pic

@@ -205,6 +205,9 @@ class Conf:
 
     Nspecies = 1
 
+    Nspecies_test = 0
+    ppc_test = 0
+
     outdir = "out"
 
     vel = 0.1
@@ -813,5 +816,32 @@ class PIC(unittest.TestCase):
                         #self.assertEqual(yee.jx[l,m,0], 0.0 )
                         #self.assertEqual(yee.jy[l,m,0], 0.0 )
                         #self.assertEqual(yee.jz[l,m,0], 0.0 )
+
+
+
+    def test_test_particle_initialization(self):
+
+        conf = Conf()
+
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Ny = 1
+        conf.ppc = 1
+        conf.update_bbox()
+
+        # few test particle containers
+        conf.Nspecies_test = 2
+        conf.ppc_test = 2
+
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        # this calls internally test particle addition
+        loadTiles(node, conf)
+
+
+
 
 
