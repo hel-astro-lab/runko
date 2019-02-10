@@ -27,17 +27,16 @@ h5io::Reader::read(
   // open individual group for the tile
   auto gr1 = file["tile_"+ numbering];
 
-  // loop over species and add (individually) all particles
   int i,j,k,sp;
+  i  << gr1["i"]; 
+  j  << gr1["j"]; 
+  k  << gr1["k"]; 
+
+  // loop over species and add (individually) all particles
   for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-
-    auto gr = gr1["sp-" + std::to_string(ispc)];
-
     pic::ParticleContainer& container = tile.get_container(ispc);
 
-    i  << gr["i"]; 
-    j  << gr["j"]; 
-    k  << gr["k"]; 
+    auto gr = gr1["sp-" + std::to_string(ispc)];
     sp << gr["sp"]; 
 
     // read into explicitly initialized arrays; otherwise, some -OX options 

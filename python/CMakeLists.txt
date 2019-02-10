@@ -43,6 +43,7 @@ set (RAD_FILES
 set (IO_FILES 
      ../io/writer.c++
      ../io/reader.c++
+     ../io/quick_writer.c++
     )
 
 
@@ -56,7 +57,7 @@ pybind11_add_module(pyplasmabox
                     ${VLV_FILES}
                     ${PIC_FILES}
                     ${RAD_FILES}
-#                    ${IO_FILES}
+                    ${IO_FILES}
                     )
 
 

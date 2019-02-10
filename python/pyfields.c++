@@ -1,12 +1,14 @@
+#include <string>
 
 #include "py_submodules.h"
-
 
 #include "../definitions.h"
 #include "../tools/mesh.h"
 
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
+
+#include "../io/quick_writer.h"
 
 //--------------------------------------------------
   
@@ -117,6 +119,9 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("shearyz",  &fields::PlasmaMomentLattice::shearyz);
 
 
+
+
+
   //--------------------------------------------------
   py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
@@ -137,6 +142,14 @@ void bind_fields(py::module& m_sub)
   auto td2_p1 = declare_TileDamped<2, +1>(m_2d, "TileDamped2D_RX");
   auto td2_m2 = declare_TileDamped<2, -2>(m_2d, "TileDamped2D_LY");
   auto td2_p2 = declare_TileDamped<2, +2>(m_2d, "TileDamped2D_RY");
+
+
+  //--------------------------------------------------
+  // Quick IO 
+
+  py::class_<h5io::QuickWriter<2>>(m_2d, "QuickWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::QuickWriter<2>::write);
 
 
 }

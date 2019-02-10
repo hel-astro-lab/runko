@@ -18,14 +18,16 @@ h5io::Writer::write(
   // group for tile
   auto gr1 = file["tile_"+numbering];
 
+  gr1["i"] = static_cast<int>( std::get<0>(my_ind) );
+  gr1["j"] = static_cast<int>( std::get<1>(my_ind) );
+  gr1["k"] = static_cast<int>( std::get<2>(my_ind) );
+
+
   // loop over different particle species 
   for(size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
 
     // group for species + tile metainfo
     auto gr = gr1["sp-" + std::to_string(ispc)];
-    gr["i"]  = static_cast<int>( std::get<0>(my_ind) );
-    gr["j"]  = static_cast<int>( std::get<1>(my_ind) );
-    gr["k"]  = static_cast<int>( std::get<2>(my_ind) );
     gr["sp"] = static_cast<int>( ispc );
 
     const pic::ParticleContainer& container = tile.get_const_container(ispc);
