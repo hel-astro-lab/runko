@@ -49,7 +49,7 @@ public:
   const ParticleContainer& get_const_container(size_t i) const { return containers[i]; };
 
   /// set i:th container
-  void set_container(const ParticleContainer& block) {containers.push_back(block);};
+  void set_container(const ParticleContainer& block) { containers.push_back(block); };
 
   size_t Nspecies() const { return containers.size(); };
 

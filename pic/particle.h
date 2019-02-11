@@ -99,14 +99,11 @@ class ParticleContainer {
 
   private:
 
-  /// global mpi rank
-  int rank;
-
-  /// comm size
-  int mpi_world_size;
+  /// mpi rank
+  int _rank = 0;
 
   /// running key generator seed
-  int key = 0;
+  int _key = 0;
 
   /// unique key generator
   std::pair<int,int> keygen();
@@ -291,6 +288,10 @@ class ParticleContainer {
       std::array<int,3>,
       std::array<double,3>&,
       std::array<double,3>&);
+
+
+  /// set keygenerator state
+  void set_keygen_state(int __key, int __rank);
 
 };
 

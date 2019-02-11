@@ -169,6 +169,7 @@ void bind_pic(py::module& m_sub)
         {
           s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
         })
+    .def("set_keygen_state", &pic::ParticleContainer::set_keygen_state)
     .def("loc",          [](pic::ParticleContainer& s, size_t idim) 
         {
           return s.loc(idim); 
@@ -181,6 +182,11 @@ void bind_pic(py::module& m_sub)
         {
           return s.wgt(); 
         }, py::return_value_policy::reference)
+    .def("id",           [](pic::ParticleContainer& s, size_t idim) 
+        {
+          return s.id(idim); 
+        }, py::return_value_policy::reference)
+
     //temporary binding; only needed for unit tests
     .def("ex",          [](pic::ParticleContainer& s, int i) 
         {

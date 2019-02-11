@@ -6,6 +6,7 @@
 #include <map>
 #include <utility>
 #include <mpi.h>
+#include <functional>
 
 
 namespace pic {
@@ -36,10 +37,10 @@ ParticleContainer::ParticleContainer()
   indArr.resize(2);
 
   // Get the number of processes
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
+  //MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
 
   // Get the rank of the process
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 };
 
@@ -99,11 +100,11 @@ size_t ParticleContainer::size()
 
 std::pair<int,int> pic::ParticleContainer::keygen() 
 {
-  // get running key and increment internal counter
-  int unique_key = key;
-  key++; // TODO: add atomic around this to enable non-overlapping keys
+    // get running key and increment internal counter
+  int unique_key = _key;
+  _key++; // TODO: add atomic around this to assure non-overlapping keys
 
-  return std::make_pair(unique_key, rank);
+  return std::make_pair(unique_key, _rank);
 }
 
 
@@ -433,7 +434,11 @@ void ParticleContainer::unpack_incoming_particles()
 }
 
 
-
+void ParticleContainer::set_keygen_state(int __key, int __rank)
+{
+  _key  = __key;
+  _rank = __rank;
+}
 
 
 } // end ns pic

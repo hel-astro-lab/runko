@@ -342,11 +342,14 @@ class PIC(unittest.TestCase):
                     #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
 
                     for prtcl in range(len(container.loc(0))):
-                        #print("{} {} {} maxs {} {} {}".format( 
-                        #container.loc(0)[prtcl], 
-                        #container.loc(1)[prtcl], 
-                        #container.loc(2)[prtcl], 
-                        #conf.xmax, conf.ymax, conf.zmax))
+                        print("{} {} {} maxs {} {} {} id {}/{}".format( 
+                        container.loc(0)[prtcl], 
+                        container.loc(1)[prtcl], 
+                        container.loc(2)[prtcl], 
+                        conf.xmax, conf.ymax, conf.zmax, 
+                        container.id(0)[prtcl], 
+                        container.id(1)[prtcl], 
+                        ))
 
                         #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
                         #    prtcl, 
