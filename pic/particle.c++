@@ -223,6 +223,46 @@ void ParticleContainer::transfer_and_wrap_particles(
   return;
 }
 
+
+
+void ParticleContainer::pack_all_particles()
+{
+  outgoing_particles.clear();
+  outgoing_extra_particles.clear();
+    
+  // +1 for info particle
+  int np = size() + 1;
+  InfoParticle infoprtcl(np);
+
+  outgoing_particles.reserve(optimal_message_size);
+  if (np-optimal_message_size > 0) {
+    outgoing_extra_particles.reserve( np-optimal_message_size );
+  }
+
+  // first particle is always the message info
+  outgoing_particles.push_back(infoprtcl);
+
+  // next, pack all other particles
+  int i=1;
+  for (size_t ind=0; ind < size(); ind++) {
+    if(i < optimal_message_size) {
+      outgoing_particles.emplace_back( 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind));
+    } else {
+      outgoing_extra_particles.emplace_back( 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind));
+    }
+    i++;
+  }
+
+}
+
+
+
 void ParticleContainer::pack_outgoing_particles()
 {
   outgoing_particles.clear();

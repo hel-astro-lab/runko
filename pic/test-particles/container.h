@@ -43,6 +43,11 @@ class TestParticleContainer :
       std::vector<double> prtcl_loc,
       std::vector<double> prtcl_vel);
 
+  /// pack all particles to be sent
+  void pack_all_particles();
+
+
+
 
   //--------------------------------------------------
   // id

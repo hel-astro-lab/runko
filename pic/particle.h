@@ -97,6 +97,9 @@ class ParticleContainer {
   std::vector<Particle> outgoing_particles;
   std::vector<Particle> outgoing_extra_particles;
 
+  /// pack all particles in the container
+  void pack_all_particles();
+
   /// pack particles that are marked as outflowing
   void pack_outgoing_particles();
 
