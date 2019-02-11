@@ -64,7 +64,7 @@ def inject(node, ffunc, conf):
                                         #vx = vxs[ip_mesh]
                                         #vy = vys[ip_mesh]
                                         #vz = vzs[ip_mesh]
-                                        #u0 = [vx, vy, vz] #overwrite location
+                                        #u0 = [vx, vy, vz] #overwrite velocity
 
                                     #print("injecting particle sps={} of # {}:th to ({},{},{})".format(
                                     #        ispcs, ip_mesh, x0[0], x0[1], x0[2]))
