@@ -19,13 +19,22 @@ class Particle
 {
 public:
 
+  /// actual particle data
   std::array<double,7> data;
+
+  /// particle id
+  int _id = 0;
+
+  /// mpi rank separator
+  int _proc = 0;
 
   Particle() {};
 
   Particle(double x,  double y,  double z,
            double ux, double uy, double uz,
-           double wgt);
+           double wgt,
+           int __ind, int __proc
+           );
 
   inline double& x()   { return data[0]; };
   inline double& y()   { return data[1]; };
@@ -34,6 +43,9 @@ public:
   inline double& uy()  { return data[4]; };
   inline double& uz()  { return data[5]; };
   inline double& wgt() { return data[6]; };
+
+  inline int& id()   { return _id;   };
+  inline int& proc() { return _proc; };
 
 };
 
@@ -48,7 +60,7 @@ public:
     : Particle(
         static_cast<double>(np), 0,0,
         0,0,0,
-        0) {}
+        0,0,0) {}
 
   InfoParticle(Particle& prtcl) {
     data[0] = prtcl.x();
@@ -64,6 +76,8 @@ private:
   using Particle::uy;
   using Particle::uz;
   using Particle::wgt;
+  using Particle::id;
+  using Particle::proc;
 
 };
 
@@ -83,12 +97,28 @@ private:
 */
 class ParticleContainer {
 
+  private:
+
+  /// global mpi rank
+  int rank;
+
+  /// comm size
+  int mpi_world_size;
+
+  /// running key generator seed
+  int key = 0;
+
+  /// unique key generator
+  std::pair<int,int> keygen();
+
+
   protected:
 
   size_t Nprtcls = 0;
 
   std::vector< std::vector<double> > locArr;
   std::vector< std::vector<double> > velArr;
+  std::vector< std::vector<int> > indArr;
   std::vector<double> wgtArr;
 
   public:
@@ -205,11 +235,41 @@ class ParticleContainer {
     return wgtArr;
   }
 
+
+  //--------------------------------------------------
+  // id
+  virtual inline int id( size_t idim, size_t iprtcl ) const
+  {
+    return indArr[idim][iprtcl];
+  }
+
+  virtual inline int& id( size_t idim, size_t iprtcl )       
+  {
+    return indArr[idim][iprtcl];
+  }
+
+  virtual inline std::vector<int> id(size_t idim) const 
+  {
+    return indArr[idim];
+  }
+
+
   // particle creation
   virtual void add_particle (
       std::vector<double> prtcl_loc,
       std::vector<double> prtcl_vel,
       double prtcl_wgt);
+
+  private:
+    // particle creation
+    virtual void add_identified_particle (
+        std::vector<double> prtcl_loc,
+        std::vector<double> prtcl_vel,
+        double prtcl_wgt, 
+        int _ind, int _proc);
+
+  public:
+
 
   // --------------------------------------------------
   // particle boundary checks

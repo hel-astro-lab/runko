@@ -22,22 +22,26 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
   MPI_Get_address( &obj, &base ); 
 
   // how many elements per each type
-  std::array<int, 1> block_lengths{
-    { 7 } 
+  std::array<int, 3> block_lengths{
+    { 7, 1, 1} 
   };
 
   // and then the actual members
-  std::array<MPI_Aint, 1> member_offsets; // relative offsets
+  std::array<MPI_Aint, 3> member_offsets; // relative offsets
   MPI_Get_address( &obj.data[0], &member_offsets[0]);
+  MPI_Get_address( &obj._id,     &member_offsets[1]);
+  MPI_Get_address( &obj._proc,   &member_offsets[2]);
 
   // create real (absolute) offsets (=rel - base)
-  std::array<MPI_Aint, 1> offsets {
+  std::array<MPI_Aint, 3> offsets {
     member_offsets[0] - base,
+    member_offsets[1] - base,
+    member_offsets[2] - base,
   };
 
   // introduce datatypes
-  std::array<MPI_Datatype, 1> datatypes{
-    { MPI_DOUBLE }
+  std::array<MPI_Datatype, 3> datatypes{
+    {MPI_DOUBLE, MPI_INT, MPI_INT}
   };
 
   //--------------------------------------------------
