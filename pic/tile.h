@@ -8,7 +8,6 @@
 #include "../corgi/corgi.h"
 #include "../em-fields/tile.h"
 #include "particle.h"
-#include "test-particles/container.h"
 
 
 namespace pic {

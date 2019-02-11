@@ -22,7 +22,7 @@ namespace py = pybind11;
 
 #include "../pic/boundaries/wall.h"
 
-//#include "../pic/tasker.h"
+#include "../io/test_prtcl_writer.h"
 
 
 namespace pic {
@@ -306,6 +306,13 @@ void bind_pic(py::module& m_sub)
   auto tw2 = pic::wall::declare_tile<2, +1>(m_2d, "Tile_wall_RX");
   auto tw3 = pic::wall::declare_tile<2, -2>(m_2d, "Tile_wall_LY");
   auto tw4 = pic::wall::declare_tile<2, +2>(m_2d, "Tile_wall_RY");
+
+  //--------------------------------------------------
+  // Quick IO 
+
+  py::class_<h5io::TestPrtclWriter<2>>(m_2d, "TestPrtclWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>());
+    //.def("write",   &h5io::TestPrtclWriter<2>::write);
 
 
 }

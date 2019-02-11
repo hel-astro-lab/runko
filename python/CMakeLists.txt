@@ -44,6 +44,7 @@ set (IO_FILES
      ../io/writer.c++
      ../io/reader.c++
      ../io/quick_writer.c++
+     ../io/test_prtcl_writer.c++
     )
 
 
