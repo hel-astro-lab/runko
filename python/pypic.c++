@@ -48,14 +48,11 @@ auto declare_tile(
         py::return_value_policy::reference)
     .def("set_container",       &pic::Tile<D>::set_container)
 
-    .def("get_test_container",  &pic::Tile<D>::get_test_container, 
-        py::return_value_policy::reference)
-    .def("set_test_container",  &pic::Tile<D>::set_test_container)
-
     .def("check_outgoing_particles",     &pic::Tile<D>::check_outgoing_particles)
     .def("get_incoming_particles",       &pic::Tile<D>::get_incoming_particles)
     .def("delete_transferred_particles", &pic::Tile<D>::delete_transferred_particles)
     .def("pack_outgoing_particles",      &pic::Tile<D>::pack_outgoing_particles)
+    .def("pack_all_particles",           &pic::Tile<D>::pack_all_particles)
     .def("unpack_incoming_particles",    &pic::Tile<D>::unpack_incoming_particles)
     .def("delete_all_particles",         &pic::Tile<D>::delete_all_particles);
 }
@@ -223,11 +220,6 @@ void bind_pic(py::module& m_sub)
           return s.Bpart[i + 2*nparts];
         }, py::return_value_policy::reference);
     
-
-
-  py::class_< pic::TestParticleContainer, pic::ParticleContainer>(m_sub, "TestParticleContainer")
-    .def(py::init<>())
-    .def("add_test_particle",  &pic::TestParticleContainer::add_test_particle);
 
 
   //--------------------------------------------------

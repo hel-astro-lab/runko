@@ -108,17 +108,8 @@ template<size_t D, size_t V>
 void pic::BorisPusher<D,V>::solve(
     pic::Tile<D>& tile)
 {
-
-  // normal particles
   for(auto&& container : tile.containers)
     push_container(container, tile.cfl);
-
-  // test particles
-  for(auto&& test_container : tile.test_containers) {
-    auto&& container = dynamic_cast<pic::ParticleContainer&&>(test_container);
-    push_container(container, tile.cfl);
-  }
-
 }
 
 

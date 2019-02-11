@@ -19,6 +19,16 @@ class Pusher
 
   virtual void solve(pic::Tile<D>& ) = 0;
 
+  //virtual void push_container(pic::Tile<D>& ) = 0;
+
+  //void solve(pic::Tile<D>& tile)
+  //{
+  //  for(auto&& container : tile.containers)
+  //    push_container(container, tile.cfl);
+  //
+  //}
+
+
 };
 
 

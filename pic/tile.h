@@ -40,9 +40,6 @@ public:
   //ParticleContainer container;
   std::vector<ParticleContainer> containers;
 
-  //Test particle containers
-  std::vector<TestParticleContainer> test_containers;
-
   //--------------------------------------------------
   // normal container methods
      
@@ -55,22 +52,6 @@ public:
   void set_container(const ParticleContainer& block) {containers.push_back(block);};
 
   size_t Nspecies() const { return containers.size(); };
-
-
-  //--------------------------------------------------
-  // test particle container methods
-    
-  TestParticleContainer& get_test_container(size_t i) 
-  { return test_containers[i]; };
-
-  const TestParticleContainer& get_const_test_container(size_t i) const 
-  { return test_containers[i]; };
-
-  void set_test_container(const TestParticleContainer& block) {test_containers.push_back(block);};
-
-  size_t Nspecies_test() const { return test_containers.size(); };
-
-
 
 
 
@@ -128,6 +109,9 @@ public:
 
   /// get particles flowing into this tile
   void get_incoming_particles(corgi::Node<D>& grid);
+
+  /// pack all particles for MPI message
+  void pack_all_particles();
 
   /// pack particles for MPI message
   void pack_outgoing_particles();

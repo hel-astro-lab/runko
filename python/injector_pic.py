@@ -70,34 +70,6 @@ def inject(node, ffunc, conf):
                                     container.add_particle(x0, u0, 1.0)
 
 
-#inject test particles into (individual) cells
-def inject_test_particles(node, ffunc, conf):
-
-    #loop over all *local* cells
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            if node.get_mpi_grid(i,j) == node.rank():
-                cid    = node.id(i,j)
-                c      = node.get_tile(cid) #get cell ptr
-
-                # inject particles
-                for ispcs in range(conf.Nspecies_test):
-                    container = c.get_test_container(ispcs)
-
-                    #FIXME to inject more generally
-
-                    for n in range(conf.NzMesh):
-                        for m in range(conf.NyMesh):
-                            for l in range(conf.NxMesh):
-                                xloc = spatialLoc(node, (i,j), (l,m,n), conf)
-
-                                for ip in range(conf.ppc_test):
-                                    x0, u0 = ffunc(xloc, ispcs, conf)
-                                    container.add_test_particle(x0, u0)
-
-
-
-
 
 # insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(node, conf, ffunc):
