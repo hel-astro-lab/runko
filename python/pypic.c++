@@ -84,24 +84,23 @@ namespace wall {
 //using Pusher2D3V = pic::Pusher<2,3>;
 //using Pusher3D3V = pic::Pusher<3,3>;
 
-template<size_t D>
-using Pusher3V = pic::Pusher<D,3>;
+//template<size_t D>
+//using Pusher3V = pic::Pusher<D,3>;
 
-/// trampoline class for pic Pusher
-template<size_t D>
-class PyPusher : public Pusher3V<D>
-{
-  //using Pusher3V<D>::Pusher;
+// trampoline class for pic Pusher
+//template<size_t D>
+//class PyPusher : public Pusher3V<D>
+//{
+//  void solve(pic::Tile<D>& tile) override {
+//  PYBIND11_OVERLOAD_PURE(
+//      void,
+//      Pusher3V<D>,
+//      solve,
+//      tile
+//      );
+//  }
+//};
 
-  void solve( pic::Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      Pusher3V<D>,
-      solve,
-      tile
-      );
-  }
-};
 
 //--------------------------------------------------
 // interpolators
@@ -237,7 +236,8 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
 
   // General pusher interface
-  py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
+  //py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
+  py::class_< pic::Pusher<2,3>> picpusher2d(m_2d, "Pusher");
   picpusher2d
     .def(py::init<>())
     .def("solve", &pic::Pusher<2,3>::solve);
@@ -254,7 +254,7 @@ void bind_pic(py::module& m_sub)
 
   //--------------------------------------------------
 
-  // General pusher interface
+  // General interpolator interface
   py::class_< pic::Interpolator<2,3>, PyInterpolator<2> > picinterp2d(m_2d, "Interpolator");
   picinterp2d
     .def(py::init<>())

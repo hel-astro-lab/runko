@@ -17,16 +17,30 @@ class Pusher
 
   virtual ~Pusher() = default;
 
-  virtual void solve(pic::Tile<D>& ) = 0;
+  virtual void push_container(pic::ParticleContainer& container, double cfl) 
+  {
+    // check that this is never used or that the user must know it
+    assert(false);
 
-  //virtual void push_container(pic::Tile<D>& ) = 0;
+    // initialize pointers to particle arrays
+    double* loc[3];
+    for( int i=0; i<3; i++)
+      loc[i] = &( container.loc(i,0) );
 
-  //void solve(pic::Tile<D>& tile)
-  //{
-  //  for(auto&& container : tile.containers)
-  //    push_container(container, tile.cfl);
-  //
-  //}
+    double* vel[3];
+    for( int i=0; i<3; i++)
+      vel[i] = &( container.vel(i,0) );
+
+    for(size_t n=0; n<container.size(); n++) {
+      for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*cfl;
+    }
+  }
+
+  void solve(pic::Tile<D>& tile)
+  {
+    for(auto&& container : tile.containers)
+      push_container(container, tile.cfl);
+  }
 
 
 };

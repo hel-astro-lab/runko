@@ -8,7 +8,7 @@ using toolbox::sign;
 template<size_t D, size_t V>
 void pic::BorisPusher<D,V>::push_container(
     pic::ParticleContainer& container, 
-    double cfl)
+    double cfl) 
 {
   int nparts = container.size();
 
@@ -101,15 +101,6 @@ void pic::BorisPusher<D,V>::push_container(
     for(size_t i=0; i<D; i++)
       loc[i][n] += vel[i][n]*g*c;
   }
-}
-
-
-template<size_t D, size_t V>
-void pic::BorisPusher<D,V>::solve(
-    pic::Tile<D>& tile)
-{
-  for(auto&& container : tile.containers)
-    push_container(container, tile.cfl);
 }
 
 
