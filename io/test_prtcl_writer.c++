@@ -83,7 +83,8 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
     corgi::Node<2>& grid)
 {
   // clear target arrays
-  for(auto& arr : arrs) arr.clear();
+  for(auto& arr : arrs ) arr.clear();
+  for(auto& arr : arrs2) arr.clear();
 
   // target arrays
   auto& xloc = arrs[0];
@@ -165,7 +166,8 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
   /* based on https://gist.github.com/rmcgibbo/7178576
    */
 
-  for(auto& arr : rbuf) arr.clear();
+  for(auto& arr : rbuf)  arr.clear();
+  for(auto& arr : rbuf2) arr.clear();
 
   int tag = 0;
   const int size = grid.comm.size(); //MPI::COMM_WORLD.Get_size();
