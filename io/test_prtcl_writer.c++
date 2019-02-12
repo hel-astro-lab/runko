@@ -134,11 +134,13 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
         ir = idn[1][n];        // get proc
 
 
+        /*
         std::cout << "...prtcl: " <<
           ip << " " <<
           ir << " " <<
           idn[0][n] << " " <<
           idn[1][n] << "\n";
+        */
 
         // save particle to correct position
         xloc( tstep, ip, ir) = loc[0][n];
