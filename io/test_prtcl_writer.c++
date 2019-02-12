@@ -29,7 +29,7 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   int n_particles = Nx*NxMesh*Ny*NyMesh*Nz*NzMesh*ppc;
 
   // corresponding thinning factor is then (approximately)
-  int stride = n_particles/n_test_particles_approx;
+  stride = n_particles/n_test_particles_approx;
 
   // how many particles would this particular rank have
   int my_n_prtcls = (n_local_tiles*NxMesh*NyMesh*NzMesh*ppc)/stride;
@@ -44,19 +44,11 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   MPI_Allreduce(&my_n_prtcls, &min_n_prtcls, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
   // cutoff id is then (to satisfy min_n_prtcls in our search)
-  int cutoff_id = stride*min_n_prtcls;
+  cutoff_id = stride*min_n_prtcls;
 
   // calculate true number of test particles
   int n_test_particles = min_n_prtcls*n_comm_size;
 
-
-  // get maximum global prtcl number per tile
-  //int n_prtcls_per_rank = n_tiles * NxMesh*NyMesh*NzMesh*ppc;
-
-  //n_comm_size
-  //n_test_particles = n_comm_size*(n_prtcls_per_rank/stride)
-  //stride = n_comm_size*n_prtcls_per_rank/n_test_particles_approx;
-  //n_prtcls_per_rank;
 
   if(my_rank == 0) {
     std::cout << 
@@ -69,14 +61,10 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
       << "\n";
   }
 
-  /// how many time steps to save
-  int nt=1;
 
-  /// total number of (test) particles
-  int np = min_n_prtcls;
-
-  /// how many ranks/categories of particles (second id parameter)
-  int nr = n_comm_size;
+  //nt=1;
+  np = min_n_prtcls;
+  nr = n_comm_size;
 
   // 8 variables per particle to save
   for(size_t i=0; i<8; i++) arrs.emplace_back(nt, np, nr);
@@ -109,8 +97,8 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
   auto& ids   = arrs2[0];
   auto& procs = arrs2[1];
 
-  int ip;
-  int tstep = 1;
+  int ip, ir;
+  int tstep = 0;
 
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
@@ -134,11 +122,22 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
 
 
     // loop and search over all particles
-    int ir;
     for(size_t n=0; n<container.size(); n++) {
+
+      // skip beyond cutoff
+      if(idn[0][n] >= cutoff_id) continue;
+
+      // process only multiples of stride
       if(idn[0][n] % stride == 0) {
-        ip = idn[0][n]; // get id
-        ir = idn[1][n]; // get proc
+        ip = idn[0][n]/stride; // get id
+        ir = idn[1][n];        // get proc
+
+
+        std::cout << "...prtcl: " <<
+          ip << " " <<
+          ir << " " <<
+          idn[0][n] << " " <<
+          idn[1][n] << "\n";
 
         // save particle to correct position
         xloc( tstep, ip, ir) = loc[0][n];
@@ -183,6 +182,11 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
       for(size_t els=0; els<arrs.size(); els++) {
         reqs.push_back( grid.comm.isend(i-lastpower, tag+els, arrs[els].data(), arrs[els].size()) );
       }
+
+      for(size_t els=0; els<arrs2.size(); els++) {
+        reqs.push_back( grid.comm.isend(i-lastpower, tag+els+10, arrs2[els].data(), arrs2[els].size()) );
+      }
+
     }
   }
 
@@ -192,6 +196,12 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
         grid.comm.recv(i+lastpower, tag+els, rbuf[els].data(), rbuf[els].size());
         arrs[els] += rbuf[els];
       }
+
+      for(size_t els=0; els<arrs2.size(); els++) {
+        grid.comm.recv(i+lastpower, tag+els+10, rbuf2[els].data(), rbuf2[els].size());
+        arrs2[els] += rbuf2[els];
+      }
+
     }
   }
   mpi::wait_all(reqs.begin(), reqs.end());
@@ -207,61 +217,71 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
           grid.comm.recv(sender, tag+els, rbuf[els].data(), rbuf[els].size());
           arrs[els] += rbuf[els];
         }
+
+        for(size_t els=0; els<arrs2.size(); els++) {
+          grid.comm.recv(sender, tag+els+10, rbuf2[els].data(), rbuf2[els].size());
+          arrs2[els] += rbuf2[els];
+        }
+
       }
       else if (rank == sender) {
         for(size_t els=0; els<arrs.size(); els++) {
           grid.comm.send(receiver, tag+els, arrs[els].data(), arrs[els].size());
         }
+
+        for(size_t els=0; els<arrs2.size(); els++) {
+          grid.comm.send(receiver, tag+els+10, arrs2[els].data(), arrs2[els].size());
+        }
+
+
       }
     }
   }
-
-
 }
 
 
 
-//template<size_t D>
-//inline bool h5io::TestPrtclWriter<D>::write(
-//    corgi::Node<D>& grid, int lap)
-//{
-//  read_tiles(grid);
-//  mpi_reduce_snapshots(grid);
-//
-//  if( grid.comm.rank() == 0 ) {
-//    // build filename
-//    std::string full_filename = 
-//      fname + 
-//      "/flds" +
-//      /*std::to_string(grid.comm.rank()) + */
-//      "_" +
-//      std::to_string(lap) +
-//      extension;
-//    //std::cout << "QW: " << full_filename << std::endl;
-//
-//    // open file and write
-//    File file(full_filename, H5F_ACC_TRUNC);
-//    file["Nx"] = arrs[0].Nx;
-//    file["Ny"] = arrs[0].Ny;
-//    file["Nz"] = arrs[0].Nz;
-//
-//    file["ex"] = arrs[0].serialize();
-//    file["ey"] = arrs[1].serialize();
-//    file["ez"] = arrs[2].serialize();
-//
-//    file["bx"] = arrs[3].serialize();
-//    file["by"] = arrs[4].serialize();
-//    file["bz"] = arrs[5].serialize();
-//
-//    file["jx"] = arrs[6].serialize();
-//    file["jy"] = arrs[7].serialize();
-//    file["jz"] = arrs[8].serialize();
-//
-//    file["rho"]= arrs[9].serialize();
-//  }
-//
-//  return true;
-//}
+template<size_t D>
+inline bool h5io::TestPrtclWriter<D>::write(
+    corgi::Node<D>& grid, int lap)
+{
+  read_tiles(grid);
+  mpi_reduce_snapshots(grid);
+
+  if( grid.comm.rank() == 0 ) {
+
+    // build filename
+    std::string full_filename = 
+      fname + 
+      "/test-prtcls" +
+      /*std::to_string(grid.comm.rank()) + */
+      "_" +
+      std::to_string(lap) +
+      extension;
+    //std::cout << "QW: " << full_filename << std::endl;
+
+    // open file and write
+    File file(full_filename, H5F_ACC_TRUNC);
+    file["Nx"] = arrs[0].Nx;
+    file["Ny"] = arrs[0].Ny;
+    file["Nz"] = arrs[0].Nz;
+
+
+    file["x"]   = arrs[0].serialize();
+    file["y"]   = arrs[1].serialize();
+    file["z"]   = arrs[2].serialize();
+    file["vx"]  = arrs[3].serialize();
+    file["vy"]  = arrs[4].serialize();
+    file["vz"]  = arrs[5].serialize();
+    file["wgt"] = arrs[6].serialize();
+
+    file["id"]   = arrs2[0].serialize();
+    file["proc"] = arrs2[1].serialize();
+
+  }
+
+  return true;
+}
 
 
 

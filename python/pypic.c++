@@ -311,8 +311,10 @@ void bind_pic(py::module& m_sub)
   // Quick IO 
 
   py::class_<h5io::TestPrtclWriter<2>>(m_2d, "TestPrtclWriter")
-    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>());
-    //.def("write",   &h5io::TestPrtclWriter<2>::write);
+    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::TestPrtclWriter<2>::write);
+
+
 
 
 }

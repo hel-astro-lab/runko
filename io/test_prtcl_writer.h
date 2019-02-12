@@ -34,8 +34,18 @@ class TestPrtclWriter {
     std::vector< toolbox::Mesh<int> > arrs2;
     std::vector< toolbox::Mesh<int> > rbuf2;
 
-    /// internal image size
-    int nx,ny,nz;
+
+    /// do not consider particles beyond this id
+    int cutoff_id;
+
+    /// how many time steps to save
+    int nt=1;
+
+    /// total number of (test) particles
+    int np;
+
+    /// how many ranks/categories of particles (second id parameter)
+    int nr;
 
 
   public:
@@ -46,7 +56,7 @@ class TestPrtclWriter {
     /// data stride length
     int stride = 1;
 
-    /// constructor that creates a name and opens the file handle
+    /// constructor that creates a name and creates uniform sampling of particles
     TestPrtclWriter(
         const std::string& prefix, 
         int Nx, int NxMesh,
