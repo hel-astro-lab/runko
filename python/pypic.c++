@@ -255,6 +255,7 @@ void bind_pic(py::module& m_sub)
   // Boris pusher with drag force
   py::class_<pic::BorisPusherDrag<2,3>>(m_2d, "BorisDragPusher", picpusher2d)
     .def_readwrite("drag", &pic::BorisPusherDrag<2,3>::drag)
+    .def_readwrite("temp", &pic::BorisPusherDrag<2,3>::temp)
     .def(py::init<>());
 
 

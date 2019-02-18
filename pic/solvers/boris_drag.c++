@@ -5,6 +5,19 @@
 
 using toolbox::sign;
 
+
+template<size_t D, size_t V>
+double pic::BorisPusherDrag<D,V>::kn(double x)
+{
+  if (temp == 0.0) return 1.0; // Thompson limit
+
+  double sig;
+  sig = (1.0 - 4.0/x - 8.0/x/x)*log(1.+x) + 0.5 + 8.0/x - 1.0/(2.0*(1. + x)*(1. + x));
+  return (3.0/4.0)*sig/x;
+}
+
+
+
 template<size_t D, size_t V>
 void pic::BorisPusherDrag<D,V>::push_container(
     pic::ParticleContainer& container, 
@@ -47,7 +60,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
 
   double u0, v0, w0;
   double u1, v1, w1;
-  double g, f, ginv;
+  double g, f, ginv, gam;
 
   double c = cfl;
   double cinv = 1.0/c;
@@ -98,10 +111,16 @@ void pic::BorisPusherDrag<D,V>::push_container(
 
     // addition of drag
     // = A g^2 beta = A g^2 u/g = A g u = A u / ginv
-    ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
-    vel[0][n] = vel[0][n] - drag*vel[0][n]/ginv;
-    vel[1][n] = vel[1][n] - drag*vel[1][n]/ginv;
-    vel[2][n] = vel[2][n] - drag*vel[2][n]/ginv;
+    gam = sqrt(c*c + u0*u0 + v0*v0 + w0*w0)/c;
+    //vel[0][n] = vel[0][n] - drag*vel[0][n]*gam;
+    //vel[1][n] = vel[1][n] - drag*vel[1][n]*gam;
+    //vel[2][n] = vel[2][n] - drag*vel[2][n]*gam;
+
+    // with Klein-Nishina reduction
+    vel[0][n] = vel[0][n] - drag*vel[0][n]*gam*kn(3.0*gam*temp);
+    vel[1][n] = vel[1][n] - drag*vel[1][n]*gam*kn(3.0*gam*temp);
+    vel[2][n] = vel[2][n] - drag*vel[2][n]*gam*kn(3.0*gam*temp);
+
 
     // position advance
     ginv = 1.0/sqrt(1.0 + 

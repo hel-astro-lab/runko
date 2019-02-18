@@ -12,7 +12,11 @@ class BorisPusherDrag :
 
   /// amount of drag asserted on particles
   public:
-  double drag;
+  double drag; // = gamma_rad^-2
+  double temp; // = 3\Theta
+
+  // Klein-Nishina cross-section
+  double kn(double x);
 
   void push_container( pic::ParticleContainer&, double cfl) override;
 };
