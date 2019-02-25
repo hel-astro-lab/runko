@@ -1,38 +1,39 @@
-sudo: required
-dist: trusty
 language: cpp
+dist: trusty
 
 matrix:
   include:
-    - name: "linux-gcc"
-        os: linux
-        compiler: gcc
-        addons:
-            apt:
-                sources: ubuntu-toolchain-r-test
-                packages: g++-7
-        env: COMP_EVAL="CC=gcc-7 && CXX=g++7"
+  - os: linux
+    compiler: gcc
+    addons:
+      apt:
+        sources: 
+        - ubuntu-toolchain-r-test
+        packages: 
+        - g++-7
+    env: COMP_EVAL="CC=gcc-7 && CXX=g++7"
 
-    - name: "linux-clang"
-        os: linux
-        compiler: clang
-        addons:
-            apt:
-                sources: llvm-toolchain-trusty-5.0
-                packages: clang-5.0
-        env: COMP_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+  - os: linux
+    compiler: clang
+    addons:
+      apt:
+        sources: 
+        - ubuntu-toolchain-r-test
+        - llvm-toolchain-trusty-5.0
+        packages: 
+        - clang-5.0
+    env: COMP_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
-    - name: "macos-gcc"
-        os: osx
-        osx_image: xcode8
-            env: COMP_EVAL="brew install gcc && CC=gcc-7 && CXX=g++-7"
+  - os: osx
+    osx_image: xcode8
+    env: COMP_EVAL="brew install gcc && CC=gcc-7 && CXX=g++-7"
 
 
 before_install:
-    - eval "${COMP_EVAL}"
+  - eval "${COMP_EVAL}"
 
 script:
-    - mkdir build && cd build 
-    - cmake .. 
-    - make
+  - mkdir build && cd build 
+  - cmake .. 
+  - make
 
