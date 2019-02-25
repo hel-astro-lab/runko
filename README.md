@@ -1,6 +1,8 @@
 # Modern kinetic plasma simulation toolbox
 <img align="top" src="notes/header.png">
 
+[![Build Status](https://travis-ci.com/natj/plasmabox.svg?branch=master)](https://travis-ci.com/natj/plasmabox)
+
 PlasmaBox is a collection of simulation modules written in modern C++14 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and relies on presenting the code as physical modules that can be either run individually or combined in a heterogeneous fashion.
 
 
