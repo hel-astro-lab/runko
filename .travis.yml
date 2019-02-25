@@ -12,8 +12,8 @@ matrix:
         - g++-7
         - hdf5-tools
         - python3
-        - libopenmpi3
-    env: COMP_EVAL="CC=gcc-7 && COMP_CXX=g++-7"
+        - libopenmpi-dev
+    env: COMP_EVAL="COMP_CC=gcc-7 && COMP_CXX=g++-7"
     python: 3.6
 
   - os: linux
@@ -26,13 +26,13 @@ matrix:
         - clang-5.0
         - hdf5-tools
         - python3
-        - libopenmpi3
-    env: COMP_EVAL="CC=clang-5.0 && COMP_CXX=clang++-5.0"
+        - libopenmpi-dev
+    env: COMP_EVAL="COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
     python: 3.6
 
   - os: osx
     osx_image: xcode10.1
-    env: COMP_EVAL="brew update && brew install gcc hdf5 open-mpi fftw fmt && CC=gcc-8 && CXX=g++-8"
+    env: COMP_EVAL="brew update && brew install gcc hdf5 open-mpi fftw fmt && COMP_CC=gcc-8 && COMP_CXX=g++-8"
     language: generic
 
 
@@ -42,6 +42,8 @@ before_install:
 
 script:
   - $CXX --version
+  - export CC=${COMP_CC}
+  - export CXX=${COMP_CXX}
   - mkdir build && cd build 
   - cmake .. 
   - make
