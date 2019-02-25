@@ -4,6 +4,9 @@
 
 #include <algorithm>
 #include <map>
+#include <utility>
+#include <mpi.h>
+#include <functional>
 
 
 namespace pic {
@@ -11,7 +14,11 @@ namespace pic {
 inline Particle::Particle(
     double x, double y, double z,
     double ux, double uy, double uz, 
-    double wgt)
+    double wgt,
+    int __ind, int __proc
+    ) : 
+  _id(__ind),
+  _proc(__proc)
 {
   data[0] = x;
   data[1] = y;
@@ -27,12 +34,25 @@ ParticleContainer::ParticleContainer()
 { 
   locArr.resize(3);
   velArr.resize(3);
+  indArr.resize(2);
+
+  // Get the number of processes
+  //MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
+
+  // Get the rank of the process
+  //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
 };
 
 
 void ParticleContainer::reserve(size_t N) {
+
+  // always reserve at least 1 element to ensure proper array initialization
+  if (N <= 0) N = 1;
+
   for(size_t i=0; i<3; i++) locArr[i].reserve(N);
   for(size_t i=0; i<3; i++) velArr[i].reserve(N);
+  for(size_t i=0; i<2; i++) indArr[i].reserve(N);
   wgtArr.reserve(N);
     
   // reserve 1d N x D array for particle-specific fields
@@ -44,6 +64,7 @@ void ParticleContainer::resize(size_t N)
 {
   for(size_t i=0; i<3; i++) locArr[i].resize(N);
   for(size_t i=0; i<3; i++) velArr[i].resize(N);
+  for(size_t i=0; i<2; i++) indArr[i].resize(N);
   wgtArr.resize(N);
   Nprtcls = N;
 }
@@ -69,8 +90,21 @@ size_t ParticleContainer::size()
   assert(velArr[1].size() == Nprtcls);
   assert(velArr[2].size() == Nprtcls);
 
-  //return Nprtcls; // FIXME: this is the correct way to return
-  return locArr[0].size();
+  assert(indArr[0].size() == Nprtcls);
+  assert(indArr[1].size() == Nprtcls);
+
+  assert(wgtArr.size() == Nprtcls);
+
+  return Nprtcls; 
+}
+
+std::pair<int,int> pic::ParticleContainer::keygen() 
+{
+    // get running key and increment internal counter
+  int unique_key = _key;
+  _key++; // TODO: add atomic around this to assure non-overlapping keys
+
+  return std::make_pair(unique_key, _rank);
 }
 
 
@@ -87,8 +121,33 @@ void ParticleContainer::add_particle (
   for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_vel[i]);
   wgtArr.push_back(prtcl_wgt);
 
+  // get unique running key
+  auto unique_key = keygen();
+  indArr[0].push_back(std::get<0>(unique_key));
+  indArr[1].push_back(std::get<1>(unique_key));
+
   Nprtcls++;
 }
+
+void ParticleContainer::add_identified_particle (
+    std::vector<double> prtcl_loc,
+    std::vector<double> prtcl_vel,
+    double prtcl_wgt,
+    int _id, int _proc)
+{
+  assert(prtcl_loc.size() == 3);
+  assert(prtcl_vel.size() == 3);
+
+  for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
+  for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_vel[i]);
+  wgtArr.push_back(prtcl_wgt);
+
+  indArr[0].push_back(_id);
+  indArr[1].push_back(_proc);
+
+  Nprtcls++;
+}
+
 
 
 void ParticleContainer::check_outgoing_particles(
@@ -155,6 +214,10 @@ void ParticleContainer::delete_transferred_particles()
   double* veln[3];
   for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
 
+  int* idn[2];
+  for(int i=0; i<2; i++) idn[i] = &( id(i,0) );
+
+
   // overwrite particles with the last one on the array and 
   // then resize the array
   int last = size();
@@ -166,6 +229,7 @@ void ParticleContainer::delete_transferred_particles()
     for(int i=0; i<3; i++) locn[i][indx] = locn[i][last];
     for(int i=0; i<3; i++) veln[i][indx] = veln[i][last];
     wgtArr[indx] = wgtArr[last];
+    for(int i=0; i<2; i++) idn[i][indx] = idn[i][last];
   }
 
   // resize if needed and take care of the size
@@ -184,8 +248,9 @@ void ParticleContainer::transfer_and_wrap_particles(
     )
 {
   double locx, locy, locz, velx, vely, velz, wgt;
-  int ind;
+  int id, proc;
 
+  int i;
   for (auto&& elem : neigh.to_other_tiles) {
       
     //TODO: collapsed z-dimension due to 2D corgi tiles
@@ -198,24 +263,69 @@ void ParticleContainer::transfer_and_wrap_particles(
     if (std::get<0>(elem.first) == -dirs[0] &&
         std::get<1>(elem.first) == -dirs[1] ) {
 
-      ind = elem.second;
+      i = elem.second;
 
-      locx = wrap( neigh.loc(0, ind), global_mins[0], global_maxs[0] );
-      locy = wrap( neigh.loc(1, ind), global_mins[1], global_maxs[1] );
-      locz = wrap( neigh.loc(2, ind), global_mins[2], global_maxs[2] );
+      locx = wrap( neigh.loc(0, i), global_mins[0], global_maxs[0] );
+      locy = wrap( neigh.loc(1, i), global_mins[1], global_maxs[1] );
+      locz = wrap( neigh.loc(2, i), global_mins[2], global_maxs[2] );
 
-      velx = neigh.vel(0, ind);
-      vely = neigh.vel(1, ind);
-      velz = neigh.vel(2, ind);
+      velx = neigh.vel(0, i);
+      vely = neigh.vel(1, i);
+      velz = neigh.vel(2, i);
 
-      wgt  = neigh.wgt(ind);
+      wgt  = neigh.wgt(i);
 
-      add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
+      id   = neigh.id(0,i);
+      proc = neigh.id(1,i);
+
+      add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
     }
   }
 
   return;
 }
+
+
+
+void ParticleContainer::pack_all_particles()
+{
+  outgoing_particles.clear();
+  outgoing_extra_particles.clear();
+    
+  // +1 for info particle
+  int np = size() + 1;
+  InfoParticle infoprtcl(np);
+
+  outgoing_particles.reserve(optimal_message_size);
+  if (np-optimal_message_size > 0) {
+    outgoing_extra_particles.reserve( np-optimal_message_size );
+  }
+
+  // first particle is always the message info
+  outgoing_particles.push_back(infoprtcl);
+
+  // next, pack all other particles
+  int i=1;
+  for (size_t ind=0; ind < size(); ind++) {
+    if(i < optimal_message_size) {
+      outgoing_particles.emplace_back( 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind), 
+        id(0, ind), id(1, ind) );
+    } else {
+      outgoing_extra_particles.emplace_back( 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind), 
+        id(0, ind), id(1, ind) );
+    }
+    i++;
+  }
+
+}
+
+
 
 void ParticleContainer::pack_outgoing_particles()
 {
@@ -248,12 +358,14 @@ void ParticleContainer::pack_outgoing_particles()
       outgoing_particles.emplace_back( 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
-        wgt(ind));
+        wgt(ind), 
+        id(0, ind), id(1, ind) );
     } else {
       outgoing_extra_particles.emplace_back( 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
-        wgt(ind));
+        wgt(ind), 
+        id(0, ind), id(1, ind) );
     }
 
     i++;
@@ -272,7 +384,8 @@ void ParticleContainer::pack_outgoing_particles()
 
 void ParticleContainer::unpack_incoming_particles()
 {
-  double locx, locy, locz, velx, vely, velz, wgt;
+  double locx, locy, locz, velx, vely, velz, wgts;
+  int ids, proc;
 
   // get real number of incoming particles
   InfoParticle msginfo(incoming_particles[0]);
@@ -284,12 +397,6 @@ void ParticleContainer::unpack_incoming_particles()
 
   int number_of_secondary_particles = incoming_extra_particles.size();
 
-  //if (number_of_incoming_particles > 1) {
-  //  std::cout << "unpacking Np:" << number_of_incoming_particles
-  //    << " /+ " << number_of_primary_particles << "/"
-  //    << number_of_secondary_particles << "\n";
-  //}
-
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
     locx = incoming_particles[i].x();
@@ -299,9 +406,12 @@ void ParticleContainer::unpack_incoming_particles()
     velx = incoming_particles[i].ux();
     vely = incoming_particles[i].uy();
     velz = incoming_particles[i].uz();
-    wgt  = incoming_particles[i].wgt();
+    wgts = incoming_particles[i].wgt();
 
-    add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
+    ids  = incoming_particles[i].id();
+    proc = incoming_particles[i].proc();
+
+    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
 
   for(int i=0; i<number_of_secondary_particles; i++){
@@ -312,16 +422,23 @@ void ParticleContainer::unpack_incoming_particles()
     velx = incoming_extra_particles[i].ux();
     vely = incoming_extra_particles[i].uy();
     velz = incoming_extra_particles[i].uz();
-    wgt  = incoming_extra_particles[i].wgt();
+    wgts = incoming_extra_particles[i].wgt();
 
-    add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
+    ids  = incoming_extra_particles[i].id();
+    proc = incoming_extra_particles[i].proc();
+
+    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
 
   return;
 }
 
 
-
+void ParticleContainer::set_keygen_state(int __key, int __rank)
+{
+  _key  = __key;
+  _rank = __rank;
+}
 
 
 } // end ns pic

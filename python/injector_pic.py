@@ -12,6 +12,10 @@ import numpy as np
 #inject plasma into (individual) cells
 def inject(node, ffunc, conf):
 
+    rank = node.rank()
+
+    prtcl_tot = np.zeros(conf.Nspecies,dtype=np.int64)
+
     #loop over all *local* cells
     for i in range(node.get_Nx()):
         for j in range(node.get_Ny()):
@@ -30,6 +34,7 @@ def inject(node, ffunc, conf):
                 # top of previous even ones
                 for ispcs in range(conf.Nspecies):
                     container = c.get_container(ispcs)
+                    container.set_keygen_state(prtcl_tot[ispcs], rank)
 
                     # open and read previously made particle species (for location reference)
                     if ispcs % 2 == 1:
@@ -60,7 +65,7 @@ def inject(node, ffunc, conf):
                                         #vx = vxs[ip_mesh]
                                         #vy = vys[ip_mesh]
                                         #vz = vzs[ip_mesh]
-                                        #u0 = [vx, vy, vz] #overwrite location
+                                        #u0 = [vx, vy, vz] #overwrite velocity
 
                                     #print("injecting particle sps={} of # {}:th to ({},{},{})".format(
                                     #        ispcs, ip_mesh, x0[0], x0[1], x0[2]))
@@ -68,7 +73,9 @@ def inject(node, ffunc, conf):
                                     ip_mesh += 1
 
                                     container.add_particle(x0, u0, 1.0)
+                                    prtcl_tot[ispcs] += 1
 
+    #print("Injected total of:", prtcl_tot)
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)

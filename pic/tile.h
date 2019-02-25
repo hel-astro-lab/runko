@@ -9,6 +9,7 @@
 #include "../em-fields/tile.h"
 #include "particle.h"
 
+
 namespace pic {
 
 using namespace mpi4cpp;
@@ -38,15 +39,19 @@ public:
   //ParticleContainer container;
   std::vector<ParticleContainer> containers;
 
+  //--------------------------------------------------
+  // normal container methods
+     
   /// get i:th container
   ParticleContainer& get_container(size_t i) { return containers[i]; };
 
   const ParticleContainer& get_const_container(size_t i) const { return containers[i]; };
 
   /// set i:th container
-  void set_container(const ParticleContainer& block) {containers.push_back(block);};
+  void set_container(const ParticleContainer& block) { containers.push_back(block); };
 
   size_t Nspecies() const { return containers.size(); };
+
 
 
   /// constructor
@@ -103,6 +108,9 @@ public:
 
   /// get particles flowing into this tile
   void get_incoming_particles(corgi::Node<D>& grid);
+
+  /// pack all particles for MPI message
+  void pack_all_particles();
 
   /// pack particles for MPI message
   void pack_outgoing_particles();

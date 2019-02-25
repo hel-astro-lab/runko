@@ -96,8 +96,7 @@ def initialize_tile(c, i, j, n, conf):
         container.reserve(Nprtcls)
     
         c.set_container( container )
-    
-    
+
     #set bounding box of the tile 
     mins = spatialLoc(n, [i,j], [0,0,0], conf)
     maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)

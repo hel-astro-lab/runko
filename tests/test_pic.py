@@ -260,7 +260,7 @@ class PIC(unittest.TestCase):
         conf.Ny = 1
         conf.update_bbox()
 
-        conf.vel = 0.1
+        conf.vel = 0.3
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
         node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
@@ -279,6 +279,7 @@ class PIC(unittest.TestCase):
             for cid in node.get_local_tiles():
                 tile = node.get_tile(cid)
                 pusher.solve(tile)
+
 
             ##################################################
             # communication
@@ -341,11 +342,14 @@ class PIC(unittest.TestCase):
                     #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
 
                     for prtcl in range(len(container.loc(0))):
-                        #print("{} {} {} maxs {} {} {}".format( 
-                        #container.loc(0)[prtcl], 
-                        #container.loc(1)[prtcl], 
-                        #container.loc(2)[prtcl], 
-                        #conf.xmax, conf.ymax, conf.zmax))
+                        print("{} {} {} maxs {} {} {} id {}/{}".format( 
+                        container.loc(0)[prtcl], 
+                        container.loc(1)[prtcl], 
+                        container.loc(2)[prtcl], 
+                        conf.xmax, conf.ymax, conf.zmax, 
+                        container.id(0)[prtcl], 
+                        container.id(1)[prtcl], 
+                        ))
 
                         #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
                         #    prtcl, 
@@ -813,5 +817,28 @@ class PIC(unittest.TestCase):
                         #self.assertEqual(yee.jx[l,m,0], 0.0 )
                         #self.assertEqual(yee.jy[l,m,0], 0.0 )
                         #self.assertEqual(yee.jz[l,m,0], 0.0 )
+
+
+
+    def test_test_particle_initialization(self):
+
+        conf = Conf()
+
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Ny = 1
+        conf.ppc = 1
+        conf.update_bbox()
+
+        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        # this calls internally test particle addition
+        loadTiles(node, conf)
+
+
+
 
 

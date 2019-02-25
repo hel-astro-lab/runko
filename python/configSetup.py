@@ -47,6 +47,13 @@ class Configuration(object):
         #else:
         #    self.__dict__[key] = xx
 
+        # by default no test particles
+        if not("Nspecies_test" in self.__dict__):
+            self.__dict__["Nspecies_test"] = 0
+            
+        if not("ppc_test" in self.__dict__):
+            self.__dict__["ppc_test"] = 0
+
 
         ##################################################
         # Default parameters; if not given

@@ -22,7 +22,7 @@ namespace py = pybind11;
 
 #include "../pic/boundaries/wall.h"
 
-//#include "../pic/tasker.h"
+#include "../io/test_prtcl_writer.h"
 
 
 namespace pic {
@@ -47,10 +47,12 @@ auto declare_tile(
     .def("get_container",       &pic::Tile<D>::get_container, 
         py::return_value_policy::reference)
     .def("set_container",       &pic::Tile<D>::set_container)
+
     .def("check_outgoing_particles",     &pic::Tile<D>::check_outgoing_particles)
     .def("get_incoming_particles",       &pic::Tile<D>::get_incoming_particles)
     .def("delete_transferred_particles", &pic::Tile<D>::delete_transferred_particles)
     .def("pack_outgoing_particles",      &pic::Tile<D>::pack_outgoing_particles)
+    .def("pack_all_particles",           &pic::Tile<D>::pack_all_particles)
     .def("unpack_incoming_particles",    &pic::Tile<D>::unpack_incoming_particles)
     .def("delete_all_particles",         &pic::Tile<D>::delete_all_particles);
 }
@@ -82,24 +84,23 @@ namespace wall {
 //using Pusher2D3V = pic::Pusher<2,3>;
 //using Pusher3D3V = pic::Pusher<3,3>;
 
-template<size_t D>
-using Pusher3V = pic::Pusher<D,3>;
+//template<size_t D>
+//using Pusher3V = pic::Pusher<D,3>;
 
-/// trampoline class for pic Pusher
-template<size_t D>
-class PyPusher : public Pusher3V<D>
-{
-  //using Pusher3V<D>::Pusher;
+// trampoline class for pic Pusher
+//template<size_t D>
+//class PyPusher : public Pusher3V<D>
+//{
+//  void solve(pic::Tile<D>& tile) override {
+//  PYBIND11_OVERLOAD_PURE(
+//      void,
+//      Pusher3V<D>,
+//      solve,
+//      tile
+//      );
+//  }
+//};
 
-  void solve( pic::Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      Pusher3V<D>,
-      solve,
-      tile
-      );
-  }
-};
 
 //--------------------------------------------------
 // interpolators
@@ -155,7 +156,8 @@ void bind_pic(py::module& m_sub)
 {
 
 
-  py::class_<pic::ParticleContainer>(m_sub, "ParticleContainer")
+  py::class_<pic::ParticleContainer> prtcl_con(m_sub, "ParticleContainer");
+  prtcl_con
     .def(py::init<>())
     .def_readwrite("q",   &pic::ParticleContainer::q)
     .def("reserve",       &pic::ParticleContainer::reserve)
@@ -167,6 +169,7 @@ void bind_pic(py::module& m_sub)
         {
           s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
         })
+    .def("set_keygen_state", &pic::ParticleContainer::set_keygen_state)
     .def("loc",          [](pic::ParticleContainer& s, size_t idim) 
         {
           return s.loc(idim); 
@@ -179,7 +182,12 @@ void bind_pic(py::module& m_sub)
         {
           return s.wgt(); 
         }, py::return_value_policy::reference)
-    //temporary binding
+    .def("id",           [](pic::ParticleContainer& s, size_t idim) 
+        {
+          return s.id(idim); 
+        }, py::return_value_policy::reference)
+
+    //temporary binding; only needed for unit tests
     .def("ex",          [](pic::ParticleContainer& s, int i) 
         {
           int nparts = s.size();
@@ -218,6 +226,7 @@ void bind_pic(py::module& m_sub)
         }, py::return_value_policy::reference);
     
 
+
   //--------------------------------------------------
   // 1D bindings
   //py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
@@ -233,7 +242,8 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
 
   // General pusher interface
-  py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
+  //py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
+  py::class_< pic::Pusher<2,3>> picpusher2d(m_2d, "Pusher");
   picpusher2d
     .def(py::init<>())
     .def("solve", &pic::Pusher<2,3>::solve);
@@ -245,12 +255,13 @@ void bind_pic(py::module& m_sub)
   // Boris pusher with drag force
   py::class_<pic::BorisPusherDrag<2,3>>(m_2d, "BorisDragPusher", picpusher2d)
     .def_readwrite("drag", &pic::BorisPusherDrag<2,3>::drag)
+    .def_readwrite("temp", &pic::BorisPusherDrag<2,3>::temp)
     .def(py::init<>());
 
 
   //--------------------------------------------------
 
-  // General pusher interface
+  // General interpolator interface
   py::class_< pic::Interpolator<2,3>, PyInterpolator<2> > picinterp2d(m_2d, "Interpolator");
   picinterp2d
     .def(py::init<>())
@@ -296,6 +307,15 @@ void bind_pic(py::module& m_sub)
   auto tw2 = pic::wall::declare_tile<2, +1>(m_2d, "Tile_wall_RX");
   auto tw3 = pic::wall::declare_tile<2, -2>(m_2d, "Tile_wall_LY");
   auto tw4 = pic::wall::declare_tile<2, +2>(m_2d, "Tile_wall_RY");
+
+  //--------------------------------------------------
+  // Quick IO 
+
+  py::class_<h5io::TestPrtclWriter<2>>(m_2d, "TestPrtclWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::TestPrtclWriter<2>::write);
+
+
 
 
 }
