@@ -1,4 +1,4 @@
-language: cpp
+language: python
 dist: trusty
 
 matrix:
@@ -14,6 +14,7 @@ matrix:
         - hdf5-tools
         - python3
     env: COMP_EVAL="CC=gcc-7 && CXX=g++-7"
+    python: 3.4
 
   - os: linux
     compiler: clang
@@ -27,10 +28,12 @@ matrix:
         - hdf5-tools
         - python3
     env: COMP_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+    python: 3.4
 
   - os: osx
     osx_image: xcode10.1
-    env: COMP_EVAL="brew install gcc@7 hdf5 python3 fftw fmt && CC=gcc-7 && CXX=g++-7"
+    env: COMP_EVAL="brew update && brew install gcc hdf5 fftw fmt && CC=gcc-7 && CXX=g++-7"
+    language: generic
 
 
 before_install:
