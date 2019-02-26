@@ -39,8 +39,8 @@ h5io::Reader::read(
     auto gr = gr1["sp-" + std::to_string(ispc)];
     sp << gr["sp"]; 
 
-    // read into explicitly initialized arrays; otherwise, some -OX options 
-    // try to optimize these away and we don't read anything.
+    // read into explicitly initialized arrays; otherwise, some -OX option
+    // tries to optimize these away and we don't read anything.
     std::vector<double> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
     arr1  << gr["x"];
     arr2  << gr["y"];
@@ -49,6 +49,11 @@ h5io::Reader::read(
     arr5  << gr["vy"];
     arr6  << gr["vz"];
     arr7  << gr["wgt"];
+
+    std::vector<int> iarr1, iarr2;
+    iarr1  << gr["id"];
+    iarr2  << gr["proc"];
+
 
     size_t nparts = arr1.size();
     // XXX: are these asserts needed?
@@ -60,16 +65,23 @@ h5io::Reader::read(
     assert(arr6.size() == nparts);
     assert(arr7.size() == nparts);
 
+    assert(iarr1.size() == nparts);
+    assert(iarr2.size() == nparts);
+
     for(size_t n=0; n<nparts; n++) {
-      container.add_particle(
+      // generates key
+      //container.add_particle(
+      //  {arr1[n], arr2[n], arr3[n]}, 
+      //  {arr4[n], arr5[n], arr6[n]}, arr7[n]);
+
+      // assumes old key
+      container.add_identified_particle(
         {arr1[n], arr2[n], arr3[n]}, 
-        {arr4[n], arr5[n], arr6[n]}, arr7[n]);
+        {arr4[n], arr5[n], arr6[n]}, arr7[n],
+        iarr1[n], iarr2[n]
+        );
     }
-
-
   }
-
-
 
   file.~File();
 

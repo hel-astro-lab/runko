@@ -257,15 +257,13 @@ class ParticleContainer {
       std::vector<double> prtcl_vel,
       double prtcl_wgt);
 
-  private:
-    // particle creation
-    virtual void add_identified_particle (
-        std::vector<double> prtcl_loc,
-        std::vector<double> prtcl_vel,
-        double prtcl_wgt, 
-        int _ind, int _proc);
+  // particle creation
+  virtual void add_identified_particle (
+      std::vector<double> prtcl_loc,
+      std::vector<double> prtcl_vel,
+      double prtcl_wgt, 
+      int _ind, int _proc);
 
-  public:
 
 
   // --------------------------------------------------

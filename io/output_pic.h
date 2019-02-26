@@ -22,7 +22,6 @@ h5io::Writer::write(
   gr1["j"] = static_cast<int>( std::get<1>(my_ind) );
   gr1["k"] = static_cast<int>( std::get<2>(my_ind) );
 
-
   // loop over different particle species 
   for(size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
 
@@ -39,6 +38,10 @@ h5io::Writer::write(
     gr["vy"]  = container.vel(1);
     gr["vz"]  = container.vel(2);
     gr["wgt"] = container.wgt();
+
+    gr["id"]  = container.id(0);
+    gr["proc"]= container.id(1);
+
 
   } // end of species
 
