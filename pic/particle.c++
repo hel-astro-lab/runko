@@ -42,7 +42,7 @@ ParticleContainer::ParticleContainer()
   // Get the rank of the process
   //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-};
+}
 
 
 void ParticleContainer::reserve(size_t N) {
