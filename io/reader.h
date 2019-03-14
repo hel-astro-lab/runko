@@ -25,12 +25,15 @@ class Reader
   // lap to consider
   int lap;
 
+  // my rank
+  int my_rank;
 
   public:
 
-  Reader(const std::string& folder, int lap) : 
+  Reader(const std::string& folder, int lap, int rank) : 
     folder(folder),
-    lap(lap)
+    lap(lap),
+    my_rank(rank)
   {};
 
 
@@ -45,8 +48,8 @@ class Reader
     //for (auto & p : fs::directory_iterator(path))
     //    std::cout << p << std::endl;
 
-    // assuming no MPI
-    return 0;
+    // assuming no tile migration
+    return my_rank;
   }
 
 

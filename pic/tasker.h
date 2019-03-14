@@ -40,7 +40,7 @@ inline void read_particles(
     const std::string& dir 
     )
 {
-  h5io::Reader reader(dir, lap);
+  h5io::Reader reader(dir, lap, grid.comm.rank());
 
   for(auto cid : grid.get_tile_ids() ){
     auto& tile 
