@@ -13,7 +13,7 @@ void Tile<2>::compute_perp_current()
 {
   YeeLattice& mesh = get_yee();
 
-  Realf C = 0.5 * cfl;
+  double C = 0.5 * cfl;
 
   int k = 0;
   for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++)
@@ -42,7 +42,7 @@ template<>
 void Tile<3>::compute_perp_curent() 
 {
   YeeLattice& mesh = get_yee();
-  Realf C = 0.5 * cfl;
+  double C = 0.5 * cfl;
 
   for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++) 
   for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++) 
