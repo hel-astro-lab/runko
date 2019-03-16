@@ -36,6 +36,7 @@ class MomentumSolver {
 
   public:
     typedef std::array<T, 3> vec;
+    typedef Vector3f Vec3E;
 
     MomentumSolver() {};
 
