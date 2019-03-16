@@ -31,7 +31,7 @@ Your system should have these installed:
 
 ### MacOS
 On MacOS these should be (quite) easily obtained by using [homebrew](https://brew.sh/) and running:
-- `brew install gcc@7 hdf5 python3 open-mpi cmake fftw fmt eigen`
+- `brew install gcc@7 hdf5 python3 open-mpi cmake fftw fmt`
 
 ### Linux
 On Linux (assuming Ubuntu) run:

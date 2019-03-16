@@ -54,8 +54,15 @@ script:
   - mpic++ --version
   - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$MPI_COMPILE_FLAGS
   - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$MPI_LINK_FLAGS
+  - export PATH=${PATH}:/usr/lib/openmpi/include  
   - echo $LD_LIBRARY_PATH
   - pip3 install -r requirements.txt
+  - export PLASMABOX=$(pwd)
+  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/corgi/lib
+  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/lib
+  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/python
+  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/analysis
+  - echo $PYTHONPATH
   - mkdir build && cd build 
   - cmake .. 
   - make
