@@ -30,8 +30,6 @@ class GravityAmrMomentumLagrangianSolver :
 
     virtual ~GravityAmrMomentumLagrangianSolver() = default;
 
-    typedef std::array<T, 3> vec;
-
     /// Gravity
     inline Vec3E other_forces(
         Vec3E& uvel,
