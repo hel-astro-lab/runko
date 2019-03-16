@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <math.h>
 
 using std::min;
 using std::max;
@@ -68,12 +69,12 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       //q = 1.0;
 
       // normalized location w.r.t. tile
-      x1 = x0         - mins[0];
-      x2 = loc[0][n]  - mins[0];
-      y1 = y0         - mins[1];
-      y2 = loc[1][n]  - mins[1];
-      z1 = z0         - mins[2];
-      z2 = loc[2][n]  - mins[2];
+      x1 = D >= 1 ? x0         - mins[0] : x0;
+      x2 = D >= 1 ? loc[0][n]  - mins[0] : loc[0][n];
+      y1 = D >= 2 ? y0         - mins[1] : y0;
+      y2 = D >= 2 ? loc[1][n]  - mins[1] : loc[1][n];
+      z1 = D >= 3 ? z0         - mins[2] : z0;
+      z2 = D >= 3 ? loc[2][n]  - mins[2] : loc[2][n];
 
       // FIXME defaults to 1 in Fortran scheme
   	  i1  = D >= 1 ? static_cast<int>(floor( x1 ) ) : 0;
