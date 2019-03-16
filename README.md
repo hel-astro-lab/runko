@@ -36,13 +36,11 @@ On MacOS these should be (quite) easily obtained by using [homebrew](https://bre
 ### Linux
 On Linux (assuming Ubuntu) run:
 - `sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"`
-- `sudo apt-get install install clang-5.0 g++-7 hdf5-tools python3 libopenmpi-dev`
+- `sudo apt-get install install clang-5.0 g++-7 hdf5-tools python3 python3-pip libopenmpi-dev`
 
 ### Python libraries
 All the python requirements can be installed via pip as
-- `pip install -r requirements.txt`
-
-Note that on MacOS you should use `pip3` instead to get the correct python3 version of the libraries.
+- `pip3 install -r requirements.txt`
 
 
 
