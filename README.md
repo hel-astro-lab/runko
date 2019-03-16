@@ -36,7 +36,7 @@ On MacOS these should be (quite) easily obtained by using [homebrew](https://bre
 ### Linux
 On Linux (assuming Ubuntu) run:
 - `sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"`
-- `sudo apt-get install install clang-5.0 g++-7 hdf5-tools python3 python3-pip libopenmpi-dev`
+- `sudo apt-get install install clang-5.0 g++-7 hdf5-tools python3 python3-pip openmpi-bin libopenmpi-dev`
 
 ### Python libraries
 All the python requirements can be installed via pip as

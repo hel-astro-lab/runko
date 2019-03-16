@@ -13,6 +13,7 @@ matrix:
         - hdf5-tools
         - python3
         - python3-pip
+        - openmpi-bin
         - libopenmpi-dev
     env: COMP_EVAL="COMP_CC=gcc-7 && COMP_CXX=g++-7"
     python: 3.6
@@ -29,6 +30,7 @@ matrix:
         - hdf5-tools
         - python3
         - python3-pip
+        - openmpi-bin
         - libopenmpi-dev
     env: COMP_EVAL="COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
     python: 3.6
