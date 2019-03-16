@@ -33,7 +33,7 @@ matrix:
 
   - os: osx
     osx_image: xcode10.1
-    env: COMP_EVAL="brew update && brew install gcc@7 hdf5 open-mpi fftw fmt eigen && COMP_CC=gcc-7 && COMP_CXX=g++-7"
+    env: COMP_EVAL="brew update && brew install gcc@7 hdf5 open-mpi fftw fmt && COMP_CC=gcc-7 && COMP_CXX=g++-7"
     language: generic
 
 
@@ -45,6 +45,12 @@ script:
   - export CC=${COMP_CC}
   - export CXX=${COMP_CXX}
   - $CXX --version
+  - MPI_COMPILE_FLAGS = $(mpicc --showme:compile)
+  - MPI_LINK_FLAGS = $(mpicc --showme:link)
+  - echo $MPI_COMPILE_FLAGS
+  - echo $MPI_LINK_FLAGS
+  - export PATH=${PATH):$MPI_LINK_FLAGS:$MPI_LINK_FLAGS
+  - echo $PATH
   - pip install -r requirements.txt
   - mkdir build && cd build 
   - cmake .. 

@@ -16,13 +16,11 @@ Currently the libraries shipped together with the code are:
 - [corgi](https://github.com/natj/corgi) grid infrastructure
 - [cppitertools](https://github.com/ryanhaining/cppitertools) for various python-like iterators etc.
 - [ezh5](https://github.com/natj/ezh5) lazy template interface to HDF5 for easier usage (originally from [mileschen](https://github.com/mileschen360/ezh5))
-- [inih](https://github.com/benhoyt/inih) `.ini` file parser for configuration files.
-- [Eigen3](http://eigen.tuxfamily.org/index.php?title=Main_Page) for linear algebra
 
 
 ### Requirements
 Your system should have these installed:
-- Modern C++ compiler (such as [Clang++](https://clang.llvm.org/), g++ [>v5.0], or similar)
+- Modern C++ compiler (such as [Clang++](https://clang.llvm.org/), g++ [>v7.0], or similar)
 - python3 for scripting
 - [HDF5](https://support.hdfgroup.org/HDF5/) for I/O
 - [CMake](https://cmake.org/) (>v3.0) for building and compiling
@@ -30,39 +28,54 @@ Your system should have these installed:
 - [FFTW](http://www.fftw.org/) for Fourier transforms
 - MPI message passing interface
 
-On MacOS these should be (quite) easily obtained by using [homebrew](https://brew.sh/) and running.
-- `brew install gcc hdf5 python3 cmake fftw fmt`
 
-Additionally, especially for larger jobs and better performance, consider installing:
-- OpenMP (>= v4.0)
-    - NOTE: Your compiler needs to support this, the default clang++ in MacOS does not.
+### MacOS
+On MacOS these should be (quite) easily obtained by using [homebrew](https://brew.sh/) and running:
+- `brew install gcc@7 hdf5 python3 open-mpi cmake fftw fmt eigen`
+
+### Linux
+On Linux (assuming Ubuntu) run:
+- `sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"`
+- `sudo apt-get install install clang-5.0 g++-7 hdf5-tools python3 libopenmpi-dev`
+
+
+All the python requirements can be installed via pip as
+- `pip install -r requirements.txt`
+Note that on MacOS you should use `pip3` instead to get the correct python3 version of the libraries.
+
 
 
 ### Compiling
 
-First, you need to configure the build. Out-of-source builds are recommended so inside the repository run:
+First you need to configure the build. To use your (freshly installed) modern C++ compiler export it as
+```
+export CC=gcc-7
+export CXX=g++-7
+```
+You can also put this part into your `~/.bashrc` (or `~/.bash_profile` on MacOS) so correct compilers are automatically exported.
+
+Next we can proceed to compiling. Out-of-source builds are recommended so inside the repository run:
 ```
 mkdir build
 cd build
 cmake ..
 ```
-And make sure that CMake finishes successfully. After that, you can try and compile the framework with
+And make sure that CMake finishes successfully. After that, you can try and compile the complete framework with
 ```
 make
 ```
 
-When compiling and linking is finished, the CMake runs few automated tests to check that everything is working. You should see a message *"XX tests finished succesfully"* in the end, if everything went ok.
-
-Different compilers can be selected by modifying the `CXX` and `CC` global environment variables.
+When compiling and linking is finished, the CMake runs few automated tests to check that everything is working. You should see a message *"XX tests finished succesfully"* in the end, if the build was successful.
 
 
-After compilation, you should add the python modules into `PYTHONPATH` environment variable for easier access. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (linux) by appending `corgi` and `plasmabox` libraries to the path as
+After compilation, you should add the python modules into `PYTHONPATH` environment variable for easier access. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `plasmabox` libraries to the path as
 ```
 export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/corgi/lib
 export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/lib
 export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/python
 export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/analysis
 ```
+where `path2repo` points to the location where you cloned the repository.
 
 
 
