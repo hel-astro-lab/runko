@@ -15,6 +15,8 @@ class GravityAmrMomentumLagrangianSolver :
 {
 
   public:
+    using typename MomentumSolver<T,D,V>::vec;
+    using typename MomentumSolver<T,D,V>::Vec3E;
 
     T g0; // strength of gravity
     T Lx; // box size
@@ -28,11 +30,9 @@ class GravityAmrMomentumLagrangianSolver :
 
     virtual ~GravityAmrMomentumLagrangianSolver() = default;
 
-    typedef std::array<T, 3> vec;
-
     /// Gravity
-    inline Vector3f other_forces(
-        Vector3f& uvel,
+    inline Vec3E other_forces(
+        Vec3E& uvel,
         vlv::tools::Params<T>& params) 
     override
     {
@@ -40,16 +40,16 @@ class GravityAmrMomentumLagrangianSolver :
       //std::cout << "using special other force at xloc=" << params.xloc << " gam=" << gam;
       //std::cout << " with g0=" << g0 << " and Lx=" << Lx << "\n";
 
-      //Vector3f ret( -g0*gam*(2.0*params.xloc/Lx - 1.0), 0, 0); // flux tube
-      Vector3f ret( -g0*gam*(params.xloc/Lx)/params.cfl, 0, 0); // atmosphere
+      //Vec3E ret( -g0*gam*(2.0*params.xloc/Lx - 1.0), 0, 0); // flux tube
+      Vec3E ret( -g0*gam*(params.xloc/Lx)/params.cfl, 0, 0); // atmosphere
       return ret;
     }
 
     /// Relativistic Lorentz force
-    inline Vector3f lorentz_force(
-        Vector3f& /*uvel*/,
-        Vector3f& E,
-        Vector3f& /*B*/,
+    inline Vec3E lorentz_force(
+        Vec3E& /*uvel*/,
+        Vec3E& E,
+        Vec3E& /*B*/,
         T qm,
         T cfl)
     override {

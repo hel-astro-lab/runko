@@ -14,8 +14,9 @@ class AmrMomentumLagrangianSolver :
 {
 
   public:
+    using typename MomentumSolver<T,D,V>::vec;
+    using typename MomentumSolver<T,D,V>::Vec3E;
 
-    typedef std::array<T, 3> vec;
 
     AmrMomentumLagrangianSolver() {};
 
@@ -33,20 +34,20 @@ class AmrMomentumLagrangianSolver :
         std::array<uint64_t, 3>& index,
         int rfl,
         const toolbox::AdaptiveMesh<T, 3>& mesh0,
-        Vector3f& E,
-        Vector3f& B,
+        Vec3E& E,
+        Vec3E& B,
         tools::Params<T>& params
         );
 
-    virtual Vector3f lorentz_force(
-        Vector3f& /*uvel*/,
-        Vector3f& E,
-        Vector3f& /*B*/,
+    virtual Vec3E lorentz_force(
+        Vec3E& /*uvel*/,
+        Vec3E& E,
+        Vec3E& /*B*/,
         T qm,
         T cfl);
 
-    virtual Vector3f other_forces(
-        Vector3f& uvel,
+    virtual Vec3E other_forces(
+        Vec3E& uvel,
         tools::Params<T>& params
         );
 };

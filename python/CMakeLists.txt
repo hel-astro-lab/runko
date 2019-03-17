@@ -65,6 +65,7 @@ pybind11_add_module(pyplasmabox
 target_link_libraries(pyplasmabox PRIVATE -lhdf5)
 #target_link_libraries(pyplasmabox PRIVATE -lfftw3)
 #target_link_libraries(pyplasmabox PRIVATE -lfftw3f)
+target_link_libraries(pyplasmabox PUBLIC coverage_config)
 
 target_compile_options(pyplasmabox PRIVATE ${WARNING_FLAGS})
 

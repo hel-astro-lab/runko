@@ -50,8 +50,8 @@ void vlv::FullAmrMomentumLagrangianSolver<T,D,V>::solve_mesh(
   std::array<uint64_t, 3> index;
   // std::array<T, 3> grad;
 
-  Vector3f B(Binc.data());  
-  Vector3f E(Einc.data());  
+  Vec3E B(Binc.data());  
+  Vec3E E(Einc.data());  
 
 
   // level zero fill
@@ -159,8 +159,8 @@ T vlv::FullAmrMomentumLagrangianSolver<T,D,V>::backward_advect(
     int rfl,
     const toolbox::AdaptiveMesh<T, 3>& mesh0,
     //toolbox::AdaptiveMesh<T, 3>& mesh1,
-    Vector3f& E,
-    Vector3f& B,
+    Vec3E& E,
+    Vec3E& B,
     tools::Params<T>& params)
 {
   T val; // return value
@@ -170,11 +170,11 @@ T vlv::FullAmrMomentumLagrangianSolver<T,D,V>::backward_advect(
 
 
   // get shift of the characteristic solution from Lorentz force
-  Vector3f uvel( u.data() );
-  Vector3f F = lorentz_force(uvel, E, B, params.qm, params.cfl);
+  Vec3E uvel( u.data() );
+  Vec3E F = lorentz_force(uvel, E, B, params.qm, params.cfl);
 
   // add other forces; default to zero 
-  Vector3f Fi = other_forces(uvel, params);
+  Vec3E Fi = other_forces(uvel, params);
   F += Fi;
 
 
@@ -213,10 +213,10 @@ T vlv::FullAmrMomentumLagrangianSolver<T,D,V>::backward_advect(
 
 /// Relativistic Lorentz force (Full electromagnetic push)
 template<typename T, int D, int V>
-inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
-  Vector3f& uvel,
-  Vector3f& E,
-  Vector3f& B,
+inline Vec3E vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
+  Vec3E& uvel,
+  Vec3E& E,
+  Vec3E& B,
   T qm,
   T cfl)
 {
@@ -230,11 +230,11 @@ inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
   // with halving taken into account in definition of Ex
   // electromagnetic combined push
     
-  Vector3f Ehalf = -qm*E/2/cfl; // half step in E
-  Vector3f us = uvel - Ehalf;  // P^*, i.e., velocity in the middle of the step
+  Vec3E Ehalf = -qm*E/2/cfl; // half step in E
+  Vec3E us = uvel - Ehalf;  // P^*, i.e., velocity in the middle of the step
 
   // B-field rotation matrix full rotation
-  //Vector3f b = B.normalized();
+  //Vec3E b = B.normalized();
   //T gamma = sqrt(1.0 + us.transpose()*us );
   //T wt = dt*(qm*B.norm() / gamma); // relativistic cyclotron frequency
 
@@ -248,7 +248,7 @@ inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
 
   // second order rotation
   T gamma = sqrt(1.0 + us.transpose()*us );
-  Vector3f b = B.normalized() * qm / (cfl*gamma);
+  Vec3E b = B.normalized() * qm / (cfl*gamma);
   Matrix3f Rot;
   Rot <<
     1+b(0)*b(0)-b(1)*b(1)-b(2)*b(2), 2*(b(0)*b(1)+b(2)),              2*(b(0)*b(2)-b(1)), 
@@ -264,12 +264,12 @@ inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
 
 /// default zero force for to be overloaded by more complicated solvers
 template<typename T, int D, int V>
-inline Vector3f vlv::FullAmrMomentumLagrangianSolver<T,D,V>::other_forces(
-    Vector3f& /*uvel*/,
+inline Vec3E vlv::FullAmrMomentumLagrangianSolver<T,D,V>::other_forces(
+    Vec3E& /*uvel*/,
     tools::Params<T>& /*params*/
     )
 {
-  Vector3f ret = Vector3f::Zero();
+  Vec3E ret = Vec3E::Zero();
   return ret;
 }
 

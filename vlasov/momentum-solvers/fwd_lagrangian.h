@@ -18,7 +18,7 @@ class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T, D> {
         toolbox::AdaptiveMesh<T, 3>& mesh1,
         vec& Einc,
         vec& Binc,
-        T qm
+        T qm)
     {
 
       // empty the target mesh
@@ -26,10 +26,10 @@ class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T, D> {
       mesh1.data.clear();
 
       // create vectors
-      Vector3f B(Binc.data());  
-      Vector3f E(Einc.data());  
+      Vec3E B(Binc.data());  
+      Vec3E E(Einc.data());  
 
-      Vector3f Fhalf = E/2.0; // construct (1/2) force
+      Vec3E Fhalf = E/2.0; // construct (1/2) force
 
       // fmt::print("F: {} {} {}\n", Fhalf(0), Fhalf(1), Fhalf(2));
 
@@ -46,7 +46,7 @@ class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T, D> {
 
 
         // get shift of the characteristic solution
-        Vector3f P = qm*(Fhalf + Fhalf);
+        Vec3E P = qm*(Fhalf + Fhalf);
 
 
         // shift in units of tile (i.e., CFL number)
