@@ -126,3 +126,4 @@ def insert_em(node, conf, ffunc):
                         yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
                         yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
                         yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+
