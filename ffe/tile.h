@@ -29,8 +29,7 @@ class ExtraLattice {
     ex(Nx, Ny, Nz)
     { }
 
-}
-
+};
 
 
 
@@ -56,8 +55,8 @@ class Tile :
 
 
   // explicitly import EM methods
-  using fields::Tile<D>::push_e();
-  using fields::Tile<D>::push_half_b();
+  using fields::Tile<D>::push_e;
+  using fields::Tile<D>::push_half_b;
 
   ExtraLattice lattice;
 
@@ -73,11 +72,10 @@ class Tile :
   ~Tile() override = default;
 
   /// Compute perpendicular component of the force-free current.
-  void compute_perp_curent();
+  void compute_perp_current();
 
   /// subtract parallel E field component to enforce E.B=0
   void subtract_parallel_e();
-
 
 
 };

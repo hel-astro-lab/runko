@@ -7,11 +7,11 @@ namespace ffe {
   using namespace mpi4cpp;
 
 
-/// 2D B pusher
+/// 2D Force-free current calculator
 template<>
 void Tile<2>::compute_perp_current() 
 {
-  YeeLattice& mesh = get_yee();
+  fields::YeeLattice& mesh = get_yee();
 
   double C = 0.5 * cfl;
 
@@ -37,11 +37,11 @@ void Tile<2>::compute_perp_current()
 }
 
 
-/// 3D B pusher
+/// 3D Force-free current calculator
 template<>
-void Tile<3>::compute_perp_curent() 
+void Tile<3>::compute_perp_current() 
 {
-  YeeLattice& mesh = get_yee();
+  fields::YeeLattice& mesh = get_yee();
   double C = 0.5 * cfl;
 
   for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++) 
@@ -66,11 +66,17 @@ void Tile<3>::compute_perp_curent()
   }
 }
 
+/// 2D Force-free E.B = 0 enforcer
+template<>
+void Tile<2>::subtract_parallel_e() 
+{
+  //fields::YeeLattice& mesh = get_yee();
+}
+
 
 
 //--------------------------------------------------
 // explicit template instantiation
-
 template class Tile<2>;
 //template class Tile<3>;
 

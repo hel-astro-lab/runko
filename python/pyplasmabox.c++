@@ -38,5 +38,11 @@ PYBIND11_MODULE(pyplasmabox, m_base) {
   /// rad
   py::module m_rad = m_base.def_submodule("rad", "PlasmaBox radiation module");
   rad::bind_rad(m_rad);
+
+  /// ffe
+  py::module m_ffe = m_base.def_submodule("ffe", "PlasmaBox force-free MHD module");
+  ffe::bind_ffe(m_ffe);
+
+
 }
 
