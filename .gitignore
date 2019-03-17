@@ -4,7 +4,7 @@
 *.o
 *.obj
 .DS_Store
-
+compile_commands.json
 
 
 # Precompiled Headers
