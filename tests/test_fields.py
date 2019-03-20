@@ -1,4 +1,5 @@
 from mpi4py import MPI
+
 import unittest
 
 import sys
@@ -68,7 +69,9 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
+        print("creating node")
         node = pycorgi.oneD.Node(conf.Nx, 1, 1)
+        print("creating node")
         node.set_grid_lims(conf.xmin, conf.xmax)
 
         loadTiles1D(node, conf)
