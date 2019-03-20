@@ -15,7 +15,7 @@ matrix:
         - python3-pip
         - openmpi-bin
         - libopenmpi-dev
-    env: COMP_EVAL="COMP_CC=gcc-7 && COMP_CXX=g++-7"
+    env: COMP_EVAL="OMPI_CC=gcc-7 && OMPI_CXX=g++-7 && COMP_CC=mpicc && COMP_CXX=mpic++"
     python: 3.6
 
   - os: linux
@@ -32,7 +32,7 @@ matrix:
         - python3-pip
         - openmpi-bin
         - libopenmpi-dev
-    env: COMP_EVAL="COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
+    env: COMP_EVAL="OMPI_CC=clang-5.0 && OMPI_CXX=clang++-5.0 && COMP_CC=mpicc && COMP_CXX=mpic++"
     python: 3.6
 
   - os: osx
