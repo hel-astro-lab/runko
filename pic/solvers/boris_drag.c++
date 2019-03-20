@@ -59,6 +59,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
   int n2 = nparts;
 
   double u0, v0, w0;
+  double uxt, uyt, uzt;
   double u1, v1, w1;
   double g, f, ginv, gam, kncorr;
 
