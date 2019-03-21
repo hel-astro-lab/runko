@@ -61,7 +61,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
   double u0, v0, w0;
   double uxt, uyt, uzt;
   double u1, v1, w1;
-  double g, f, ginv, gam, kncorr;
+  double g, f, ginv, gam, kncorr, gamt, ut;
 
   double c = cfl;
   double cinv = 1.0/c;
@@ -117,14 +117,15 @@ void pic::BorisPusherDrag<D,V>::push_container(
     uxt = (u0*cinv + vel[0][n])*0.5;
     uyt = (v0*cinv + vel[1][n])*0.5;
     uzt = (w0*cinv + vel[2][n])*0.5;
-    gam = sqrt(1.0 + uxt*uxt + uyt*uyt + uzt*uzt);
+    ut  = sqrt(uxt*uxt + uyt*uyt + uzt*uzt);
+    gamt= sqrt(1.0 + ut*ut);
 
     // subtract drag with Klein-Nishina reduction
     // A g^2 beta = A g^2 u/g = A g u
-    kncorr = kn(3.0*gam*temp);
-    vel[0][n] = u0*cinv - c*drag*kncorr*uxt*gam;
-    vel[1][n] = v0*cinv - c*drag*kncorr*uyt*gam;
-    vel[2][n] = w0*cinv - c*drag*kncorr*uzt*gam;
+    kncorr = kn(3.0*gamt*temp);
+    vel[0][n] = u0*cinv - c*drag*kncorr*ut*ut*(uxt/gamt);
+    vel[1][n] = v0*cinv - c*drag*kncorr*ut*ut*(uyt/gamt);
+    vel[2][n] = w0*cinv - c*drag*kncorr*ut*ut*(uzt/gamt);
 
 
     // position advance
