@@ -34,7 +34,10 @@ case "$os" in
                     wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-4.0.0.tar.bz2
                     tar -xjf openmpi-4.0.0.tar.bz2
                     cd openmpi-4.0.0
-                    ./configure CC=$COMP_CC CXX=$COMP_CXX --prefix=$HOME/local/$MPI_IMPL && make -j 4 && make install && make clean
+                    ./configure CC=$COMP_CC CXX=$COMP_CXX --prefix=$HOME/local/$MPI_IMPL
+                    make -j 4 > /dev/null
+                    make install 
+                    make clean
                     cd ../../
                     echo 'Using cached OpenMPI 1.8.8 directory';
                 fi
@@ -45,7 +48,8 @@ case "$os" in
                 ;;
         esac
         ;;
-
+    osx)
+        echo "Installation using homebrew..."
     *)
         echo "Unknown operating system: $os"
         exit 1
