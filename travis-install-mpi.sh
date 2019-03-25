@@ -10,7 +10,7 @@ MPI_IMPL="$1"
 os=$TRAVIS_OS_NAME
 
 case "$os" in
-    Linux)
+    linux)
         #sudo apt-get update -q
         case "$MPI_IMPL" in
             mpich3)
