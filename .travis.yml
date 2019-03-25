@@ -53,23 +53,23 @@ before_script:
   - export MPI="openmpi40"
   - echo "Running mpi installation script"
   - echo $MPI
-  - echo $OS
+  - echo $TRAVIS_OS_NAME
   - mkdir -p $HOME/local
   - sh ./travis-install-mpi.sh $MPI
   - ls -r $HOME/local
   - export PATH=$PATH:$HOME/local/$MPI/bin
   - export LIBRARY_PATH=$LIBRARY_PATH:$HOME/local/$MPI/lib
   - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI/lib
-  - if [ "$OS" = "Linux" ]; then export CC=mpicc; fi
-  - if [ "$OS" = "Linux" ]; then export CXX=mpic++; fi
+  - if [ "$TRAVIS_OS_NAME" = "Linux" ]; then export CC=mpicc; fi
+  - if [ "$TRAVIS_OS_NAME" = "Linux" ]; then export CXX=mpic++; fi
   - $CC --version
   - $CXX --version
   - mpicc --version
   - mpic++ --version
   #setup plasmabox
-  - export PATH=${PATH}:/usr/lib/openmpi/include
-  - export PATH=${PATH}:/usr/lib/openmpi/include/openmpi
-  - export PATH=${PATH}:/usr/lib/openmpi/lib
+  #- export PATH=${PATH}:/usr/lib/openmpi/include
+  #- export PATH=${PATH}:/usr/lib/openmpi/include/openmpi
+  #- export PATH=${PATH}:/usr/lib/openmpi/lib
   - echo $PATH
   - pip3 install -r requirements.txt
   - export PLASMABOX=$(pwd)
