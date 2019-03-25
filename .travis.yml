@@ -43,20 +43,30 @@ matrix:
 
 before_install:
   - eval "${COMP_EVAL}"
-
-script:
   - export CC=${COMP_CC}
   - export CXX=${COMP_CXX}
   - $CXX --version
-  - export MPI_COMPILE_FLAGS=$(mpicc --showme:compile)
-  - export MPI_LINK_FLAGS=$(mpicc --showme:link)
-  - echo $MPI_COMPILE_FLAGS
-  - echo $MPI_LINK_FLAGS
+
+
+before_script:
+  #install mpi (in linux)
+  - export MPI="openmpi40"
+  - echo "Running mpi installation script"
+  - echo $MPI
+  - echo $OS
+  - mkdir -p $HOME/local
+  - sh ./travis-install-mpi.sh $MPI
+  - ls -r $HOME/local
+  - export PATH=$PATH:$HOME/local/$MPI/bin
+  - export LIBRARY_PATH=$LIBRARY_PATH:$HOME/local/$MPI/lib
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI/lib
+  - if [ "$OS" = "Linux" ]; then export CC=mpicc; fi
+  - if [ "$OS" = "Linux" ]; then export CXX=mpic++; fi
+  - $CC --version
+  - $CXX --version
   - mpicc --version
   - mpic++ --version
-  - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$MPI_COMPILE_FLAGS
-  - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$MPI_LINK_FLAGS
-  - echo $LD_LIBRARY_PATH
+  #setup plasmabox
   - export PATH=${PATH}:/usr/lib/openmpi/include
   - export PATH=${PATH}:/usr/lib/openmpi/include/openmpi
   - export PATH=${PATH}:/usr/lib/openmpi/lib
@@ -68,6 +78,9 @@ script:
   - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/python
   - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/analysis
   - echo $PYTHONPATH
+
+
+script:
   - mkdir build && cd build 
   - cmake .. 
   - make
