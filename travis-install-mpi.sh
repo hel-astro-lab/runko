@@ -50,6 +50,7 @@ case "$os" in
         ;;
     osx)
         echo "Installation using homebrew..."
+        ;;
     *)
         echo "Unknown operating system: $os"
         exit 1
