@@ -34,12 +34,19 @@ case "$os" in
                     wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-4.0.0.tar.bz2
                     tar -xjf openmpi-4.0.0.tar.bz2
                     cd openmpi-4.0.0
-                    ./configure CC=$COMP_CC CXX=$COMP_CXX --prefix=$HOME/local/$MPI_IMPL
+                    export OMPI_CC=$COMP_CC
+                    export OMPI_CXX=$COMP_XX
+                    ./configure CC=$COMP_CC CXX=$COMP_CXX --prefix=$HOME/local/$MPI_IMPL > /dev/null
                     make -j 4 > /dev/null
-                    make install 
-                    make clean
+                    make install > /dev/null
+                    make clean > /dev/null
                     cd ../../
-                    echo 'Using cached OpenMPI 1.8.8 directory';
+
+                    export PATH=$PATH:$HOME/local/$MPI_IMPL/bin
+                    export PATH=$PATH:$HOME/local/$MPI_IMPL/include
+                    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI_IMPL/lib
+
+                    echo 'Using cached OpenMPI 4.0.0 directory';
                 fi
                 ;;
             *)

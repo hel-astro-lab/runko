@@ -2,7 +2,14 @@ language: python
 dist: trusty
 
 matrix:
+  fast_finish: true
   include:
+  - os: osx
+    osx_image: xcode10.1
+    env: COMP_EVAL="brew update && brew install gcc@7 hdf5 open-mpi fftw fmt && COMP_CC=gcc-7 && COMP_CXX=g++-7"
+    language: generic
+
+  allow_failures:
   - os: linux
     addons:
       apt:
@@ -35,10 +42,15 @@ matrix:
     env: COMP_EVAL="COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
     python: 3.6
 
-  - os: osx
-    osx_image: xcode10.1
-    env: COMP_EVAL="brew update && brew install gcc@7 hdf5 open-mpi fftw fmt && COMP_CC=gcc-7 && COMP_CXX=g++-7"
-    language: generic
+
+addons:
+    apt:
+        update: true
+    homebrew:
+        update: true
+
+cache:
+    apt: true
 
 
 before_install:
@@ -52,24 +64,14 @@ before_script:
   #install mpi (in linux)
   - export MPI="openmpi40"
   - echo "Running mpi installation script"
-  - echo $MPI
-  - echo $TRAVIS_OS_NAME
   - mkdir -p $HOME/local
   - sh ./travis-install-mpi.sh $MPI
-  - ls -r $HOME/local
-  - export PATH=$PATH:$HOME/local/$MPI/bin
-  - export LIBRARY_PATH=$LIBRARY_PATH:$HOME/local/$MPI/lib
-  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI/lib
-  - if [ "$TRAVIS_OS_NAME" = "Linux" ]; then export CC=mpicc; fi
-  - if [ "$TRAVIS_OS_NAME" = "Linux" ]; then export CXX=mpic++; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
   - $CC --version
   - $CXX --version
   - mpicc --version
   - mpic++ --version
-  #setup plasmabox
-  #- export PATH=${PATH}:/usr/lib/openmpi/include
-  #- export PATH=${PATH}:/usr/lib/openmpi/include/openmpi
-  #- export PATH=${PATH}:/usr/lib/openmpi/lib
   - echo $PATH
   - pip3 install -r requirements.txt
   - export PLASMABOX=$(pwd)
