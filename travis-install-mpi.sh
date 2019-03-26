@@ -35,7 +35,7 @@ case "$os" in
                     tar -xjf openmpi-4.0.0.tar.bz2
                     cd openmpi-4.0.0
                     export OMPI_CC=$COMP_CC
-                    export OMPI_CXX=$COMP_XX
+                    export OMPI_CXX=$COMP_CXX
                     ./configure CC=$COMP_CC CXX=$COMP_CXX --prefix=$HOME/local/$MPI_IMPL > /dev/null
                     make -j 4 > /dev/null
                     make install > /dev/null
