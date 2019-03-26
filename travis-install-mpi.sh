@@ -57,6 +57,7 @@ case "$os" in
         ;;
     osx)
         echo "Installation using homebrew..."
+        brew install open-mpi
         ;;
     *)
         echo "Unknown operating system: $os"
