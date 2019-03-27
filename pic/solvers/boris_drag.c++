@@ -61,7 +61,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
   double u0, v0, w0;
   double uxt, uyt, uzt;
   double u1, v1, w1;
-  double g, f, ginv, gam, kncorr, gamt, ut;
+  double g, f, ginv, kncorr, gamt, ut;
 
   double c = cfl;
   double cinv = 1.0/c;
