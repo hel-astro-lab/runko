@@ -85,11 +85,13 @@ def loadMpi2D(n):
         #ii = np.nonzero(y)[0]
         #print(list(zip(ii,y[ii])))
 
+        #print("grid:")
         for i in range(nx):
             for j in range(ny):
                 val = igrid[i,j] 
-
                 n.set_mpi_grid(i, j, val)
+                #print("({},{}) = {}".format(i,j,val))
+
 
     n.bcast_mpi_grid()
 
