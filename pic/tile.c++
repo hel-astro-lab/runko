@@ -11,16 +11,16 @@ using namespace mpi4cpp;
 // create MPI tag given tile id and extra layer of differentiation
 int get_tag(int cid, int extra_param)
 {
-  assert(extra_param < 100);
-  return cid + extra_param*1e6;
+  assert(extra_param < 10);
+  return cid + extra_param*1e4;
 }
 
 // create MPI tag for extra communication given tile 
 // id and extra layer of differentiation
 int get_extra_tag(int cid, int extra_param)
 {
-  assert(extra_param < 100);
-  return cid + extra_param*1e8;
+  assert(extra_param < 10);
+  return cid + extra_param*1e5;
 }
 
 

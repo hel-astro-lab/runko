@@ -677,7 +677,7 @@ void Tile<D>::clear_current()
 int get_tag(int cid, int extra_param)
 {
   assert(extra_param < 100);
-  return cid + extra_param*1e6;
+  return cid + extra_param*1e4;
 }
 
 
