@@ -26,10 +26,11 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   //fname = prefix + "-" + to_string(lap) + extension;
 
   // total number of particles
-  int n_particles = Nx*NxMesh*Ny*NyMesh*Nz*NzMesh*ppc;
+  long n_particles = Nx*NxMesh*Ny*NyMesh*Nz*NzMesh*ppc;
 
   // corresponding thinning factor is then (approximately)
-  stride = n_particles/n_test_particles_approx;
+  long lstride = n_particles/((long)n_test_particles_approx);
+  stride = (int) lstride;
 
   // avoid under/overflows
   //stride = stride > NxMesh*NyMesh*NzMesh*ppc ? NxMesh*NyMesh*NzMesh*ppc : stride;
