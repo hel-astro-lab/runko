@@ -31,6 +31,9 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   // corresponding thinning factor is then (approximately)
   stride = n_particles/n_test_particles_approx;
 
+  // avoid under/overflows
+  //stride = stride > NxMesh*NyMesh*NzMesh*ppc ? NxMesh*NyMesh*NzMesh*ppc : stride;
+
   // how many particles would this particular rank have
   int my_n_prtcls = (n_local_tiles*NxMesh*NyMesh*NzMesh*ppc)/stride;
 

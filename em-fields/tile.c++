@@ -676,8 +676,8 @@ void Tile<D>::clear_current()
 // create MPI tag given tile id and extra layer of differentiation
 int get_tag(int cid, int extra_param)
 {
-  assert(extra_param < 100);
-  return cid + extra_param*1e4;
+  assert(extra_param < 10);
+  return cid + extra_param*3e5;
 }
 
 
@@ -693,17 +693,17 @@ std::vector<mpi::request> Tile<D>::send_data( mpi::communicator& comm, int dest,
   std::vector<mpi::request> reqs;
 
   if (tag == 0) {
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 0), yee.jx.data(), yee.jx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.jy.data(), yee.jy.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.jz.data(), yee.jz.size()) );
   } else if (tag == 1) {
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 4), yee.ex.data(), yee.ex.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 5), yee.ey.data(), yee.ey.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 6), yee.ez.data(), yee.ez.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 0), yee.ex.data(), yee.ex.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.ey.data(), yee.ey.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.ez.data(), yee.ez.size()) );
   } else if (tag == 2) {
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 7), yee.bx.data(), yee.bx.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 8), yee.by.data(), yee.by.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 9), yee.bz.data(), yee.bz.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 0), yee.bx.data(), yee.bx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 1), yee.by.data(), yee.by.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(corgi::Tile<D>::cid, 2), yee.bz.data(), yee.bz.size()) );
   }
 
   return reqs;
@@ -725,17 +725,17 @@ std::vector<mpi::request> Tile<D>::recv_data( mpi::communicator& comm, int orig,
 
 
   if (tag == 0) {
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jx.data(), yee.jx.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jy.data(), yee.jy.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 3), yee.jz.data(), yee.jz.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 0), yee.jx.data(), yee.jx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.jy.data(), yee.jy.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.jz.data(), yee.jz.size()) );
   } else if (tag == 1) {
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 4), yee.ex.data(), yee.ex.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 5), yee.ey.data(), yee.ey.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 6), yee.ez.data(), yee.ez.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 0), yee.ex.data(), yee.ex.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.ey.data(), yee.ey.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.ez.data(), yee.ez.size()) );
   } else if (tag == 2) {
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 7), yee.bx.data(), yee.bx.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 8), yee.by.data(), yee.by.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 9), yee.bz.data(), yee.bz.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 0), yee.bx.data(), yee.bx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 1), yee.by.data(), yee.by.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(corgi::Tile<D>::cid, 2), yee.bz.data(), yee.bz.size()) );
   }
 
 

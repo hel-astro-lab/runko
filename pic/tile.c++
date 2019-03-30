@@ -12,7 +12,7 @@ using namespace mpi4cpp;
 int get_tag(int cid, int extra_param)
 {
   assert(extra_param < 10);
-  return cid + extra_param*1e4;
+  return cid + extra_param*3e5;
 }
 
 // create MPI tag for extra communication given tile 
@@ -20,7 +20,7 @@ int get_tag(int cid, int extra_param)
 int get_extra_tag(int cid, int extra_param)
 {
   assert(extra_param < 10);
-  return cid + extra_param*1e5;
+  return cid + (extra_param+2)*3e5;
 }
 
 
