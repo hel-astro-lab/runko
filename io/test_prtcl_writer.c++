@@ -24,6 +24,12 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
         int n_test_particles_approx) : fname(prefix)
 {
   //fname = prefix + "-" + to_string(lap) + extension;
+    
+  // internal mpi calls
+  int n_comm_size, my_rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_comm_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
 
   // total number of particles
   long n_particles = Nx*NxMesh*Ny*NyMesh*Nz*NzMesh*ppc;
@@ -33,7 +39,15 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   stride = (int) lstride;
 
   // avoid under/overflows
+  if(stride > NxMesh*NyMesh*NzMesh*ppc) {
+    if(my_rank == 0) {
+      std::cout << "WARNING TestPrtclWriter fallbacking to minimum number of particles\n";
+    }
+
+    stride = NxMesh*NyMesh*NzMesh*ppc;
+  }
   //stride = stride > NxMesh*NyMesh*NzMesh*ppc ? NxMesh*NyMesh*NzMesh*ppc : stride;
+
 
   // how many particles would this particular rank have
   int my_n_prtcls = (n_local_tiles*NxMesh*NyMesh*NzMesh*ppc)/stride;
@@ -41,9 +55,6 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   // global minimum number of particles per rank
   int min_n_prtcls;
 
-  int n_comm_size, my_rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &n_comm_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   MPI_Allreduce(&my_n_prtcls, &min_n_prtcls, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
