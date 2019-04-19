@@ -17,52 +17,72 @@ using ezh5::File;
 template<size_t D>
 h5io::TestPrtclWriter<D>::TestPrtclWriter(
         const std::string& prefix, 
-        int Nx, int NxMesh,
-        int Ny, int NyMesh,
-        int Nz, int NzMesh,
-        int ppc, int n_local_tiles,
-        int n_test_particles_approx) : fname(prefix)
+        int Nx_in, int NxMesh_in,
+        int Ny_in, int NyMesh_in,
+        int Nz_in, int NzMesh_in,
+        int ppc_in, int n_local_tiles_in,
+        int n_test_particles_approx_in) : fname(prefix)
 {
+
+  // enforce long accuracy due to persistent overflows
+  auto Nx = static_cast<long>(Nx_in);
+  auto Ny = static_cast<long>(Ny_in);
+  auto Nz = static_cast<long>(Nz_in);
+
+  auto NxMesh = static_cast<long>(NxMesh_in);
+  auto NyMesh = static_cast<long>(NyMesh_in);
+  auto NzMesh = static_cast<long>(NzMesh_in);
+
+  auto ppc = static_cast<long>(ppc_in);
+  auto n_local_tiles = static_cast<long>(n_local_tiles_in);
+  auto n_test_particles_approx = static_cast<long>(n_test_particles_approx_in);
+
+
   //fname = prefix + "-" + to_string(lap) + extension;
     
   // internal mpi calls
-  int n_comm_size, my_rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &n_comm_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  int n_comm_size_in, my_rank_in;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_comm_size_in);
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank_in);
 
+  auto n_comm_size = static_cast<long>(n_comm_size_in);
+  auto my_rank     = static_cast<long>(my_rank_in);
 
   // total number of particles
   long n_particles = Nx*NxMesh*Ny*NyMesh*Nz*NzMesh*ppc;
 
   // corresponding thinning factor is then (approximately)
-  long lstride = n_particles/((long)n_test_particles_approx);
-  stride = (int) lstride;
+  stride = n_particles/n_test_particles_approx;
 
   // avoid under/overflows
   if(stride > NxMesh*NyMesh*NzMesh*ppc) {
     if(my_rank == 0) {
       std::cout << "WARNING TestPrtclWriter fallbacking to minimum number of particles\n";
     }
-
     stride = NxMesh*NyMesh*NzMesh*ppc;
   }
   //stride = stride > NxMesh*NyMesh*NzMesh*ppc ? NxMesh*NyMesh*NzMesh*ppc : stride;
 
+  if( stride <= 0 ) {
+    if(my_rank == 0) {
+      std::cout << "WARNING TestPrtclWriter overflow; fallbacking to minimum number of particles\n";
+    }
+    stride = NxMesh*NyMesh*NzMesh*ppc;
+  }
 
   // how many particles would this particular rank have
-  int my_n_prtcls = (n_local_tiles*NxMesh*NyMesh*NzMesh*ppc)/stride;
+  long my_n_prtcls = (n_local_tiles*NxMesh*NyMesh*NzMesh*ppc)/stride;
 
   // global minimum number of particles per rank
-  int min_n_prtcls;
+  long min_n_prtcls;
 
-
-  MPI_Allreduce(&my_n_prtcls, &min_n_prtcls, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+  MPI_Allreduce(&my_n_prtcls, &min_n_prtcls, 1, MPI_LONG, MPI_MIN, MPI_COMM_WORLD);
 
   // cutoff id is then (to satisfy min_n_prtcls in our search)
   cutoff_id = stride*min_n_prtcls;
 
   // calculate true number of test particles
-  int n_test_particles = min_n_prtcls*n_comm_size;
+  long n_test_particles = min_n_prtcls*n_comm_size;
 
 
   if(my_rank == 0) {
@@ -136,18 +156,21 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
     int* idn[2];
     for(int i=0; i<2; i++) idn[i] = &( container.id(i,0) );
 
+    // long length id
+    long idnl0, idnl1;
 
     // loop and search over all particles
     for(size_t n=0; n<container.size(); n++) {
+      idnl0 = static_cast<long>(idn[0][n]);
+      idnl1 = static_cast<long>(idn[1][n]);
 
       // skip beyond cutoff
-      if(idn[0][n] >= cutoff_id) continue;
+      if(idnl0 >= cutoff_id) continue;
 
       // process only multiples of stride
-      if(idn[0][n] % stride == 0) {
-        ip = idn[0][n]/stride; // get id
-        ir = idn[1][n];        // get proc
-
+      if(idnl0 % stride == 0) {
+        ip = static_cast<int>(idnl0/stride); // get id
+        ir = static_cast<int>(idnl1);        // get proc
 
         /*
         std::cout << "...prtcl: " <<
