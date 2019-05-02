@@ -84,7 +84,7 @@ You can also put this part into your `~/.bashrc` (or `~/.bash_profile` on MacOS)
 
 You should also add the python modules into `PYTHONPATH` environment variable. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `plasmabox` libraries to the path by exporting
 ```
-export $PLASMABOXDIR=/path2repo/
+export PLASMABOXDIR=/path2repo/
 export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/corgi/lib
 export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/lib
 export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/python
