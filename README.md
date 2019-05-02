@@ -6,9 +6,9 @@
 
 PlasmaBox is a collection of simulation modules written in modern C++14/Python3 to model astrophysical plasmas. The framework is build on top of massively parallel heterogeneous template library [corgi](https://github.com/natj/corgi) and relies on presenting the code as physical modules that can be either run individually or combined in a heterogeneous fashion.
 
-Usage of modern C++ allows us to write modular and high-performance low-level code. By binding these fast low-level classes to Python objects it is also easy to use and extend them. This ensures fast code, rapid prototyping, and easy extendability. 
+Usage of modern C++ allows us to write modular and high-performance low-level code. By binding these fast low-level classes to Python objects it is also easy to use and extend them. This ensures fast code, rapid prototyping, and ease of use. 
 
-Finally, thanks to building everything on top of the Corgi library, all of the simulations are automatically parallelized with dynamic load-balancing capability: Small simulation setups can be tested on local laptops and then automatically extended for massively parallel supercomputer platforms (currently tested up to ~10k cores).
+Finally, thanks to building everything on top of the [corgi](https://github.com/natj/corgi) library, all of the simulations are automatically parallelized with dynamic load-balancing capability: small simulation setups can be tested on local laptops and then automatically extended for massively parallel supercomputer platforms (currently tested up to ~10k cores).
 
 
 Current physical simulation modules include:
@@ -35,6 +35,10 @@ PlasmaBox relies on various small template libraries that are automatically obta
 ```
 git clone --recursive https://github.com/natj/plasmabox.git
 ```
+and it is also a good idea to update all the submodules (so that other branches are also in sync) with
+```
+git submodule update --recursive
+```
 Currently the libraries shipped together with the code are:
 - [corgi](https://github.com/natj/corgi) massively-parallel grid infrastructure
 - [PyBind11](https://github.com/https://github.com/pybind/pybind11) for seamless operability between C++ and Python
@@ -45,7 +49,7 @@ Currently the libraries shipped together with the code are:
 
 ### Requirements
 Your system should have these installed:
-- Modern C++ compiler (such as [Clang++](https://clang.llvm.org/), g++ [>v6.0], or similar)
+- Modern C++ compiler (such as [Clang++](https://clang.llvm.org/), g++ [>v6.0], or similar. Note that gcc8 does not work atm because of a compiler bug)
 - python3 for scripting
 - [HDF5](https://support.hdfgroup.org/HDF5/) for I/O
 - [CMake](https://cmake.org/) (>v3.0) for building and compiling
@@ -78,6 +82,16 @@ export CXX=g++-7
 ```
 You can also put this part into your `~/.bashrc` (or `~/.bash_profile` on MacOS) so correct compilers are automatically exported.
 
+You should also add the python modules into `PYTHONPATH` environment variable. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `plasmabox` libraries to the path by exporting
+```
+export $PLASMABOXDIR=/path2repo/
+export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/corgi/lib
+export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/lib
+export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/python
+export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/analysis
+```
+where `path2repo` points to the location where you cloned the repository (i.e. path to plasmabox directory).
+
 Next we can proceed to compiling. Out-of-source builds are recommended so inside the repository run:
 ```
 mkdir build
@@ -92,14 +106,6 @@ make
 When compiling and linking is finished, the CMake runs few automated tests to check that everything is working. You should see a message *"XX tests finished succesfully"* in the end, if the build was successful.
 
 
-After compilation, you should add the python modules into `PYTHONPATH` environment variable for easier access. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `plasmabox` libraries to the path as
-```
-export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/corgi/lib
-export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/lib
-export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/python
-export PYTHONPATH=$PYTHONPATH:/path2repo/plasmabox/analysis
-```
-where `path2repo` points to the location where you cloned the repository.
 
 
 
@@ -115,7 +121,7 @@ where `path2repo` points to the location where you cloned the repository.
 - `tests`: code unit tests
 - `tools`: C++ libraries, bash scripts, git tools
 
-### Physical modules include:
+### Physical modules
 - `corgi`: corgi library
 - `em-fields`: Maxwell field solver module
 - `io`: input/output module
