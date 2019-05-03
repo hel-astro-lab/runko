@@ -50,8 +50,12 @@ def loadMpiYStrides(n):
 
 
 # load nodes using 2D Hilbert curve
-def loadMpi2D(n):
+def loadMpi2D(n, nsize=None):
+    if nsize == None:
+        nsize = n.size()
+
     if n.master: #only master initializes; then sends
+
 
         nx = n.get_Nx()
         ny = n.get_Ny()
@@ -78,7 +82,7 @@ def loadMpi2D(n):
         hmin, hmax = np.min(grid), np.max(grid)
         for i in range(nx):
             for j in range(ny):
-                igrid[i,j] = np.floor( n.size()*grid[i,j]/(hmax+1) ) 
+                igrid[i,j] = np.floor( nsize*grid[i,j]/(hmax+1) ) 
 
         #check that nodes get about same work load
         #y = np.bincount(igrid.flatten())
