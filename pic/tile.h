@@ -61,11 +61,7 @@ public:
   { }
 
 
-  /// destructor
-  ~Tile() override = default;
-
   /// tile temporal and spatial scales
-
   using fields::Tile<D>::cfl;
   using fields::Tile<D>::dx;
 

@@ -21,9 +21,6 @@ class Tile :
     vlv::Tile<D>(nx,ny,nz)
   { }
 
-  /// destructor
-  ~Tile() override = default;
-
 
   void step_location(corgi::Node<D>& /*grid*/) override {
       //std::cout<<"BC spatial step\n";

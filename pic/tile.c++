@@ -79,8 +79,7 @@ void Tile<2>::get_incoming_particles(
 
       // get neighboring tile
       auto ind = this->neighs(i, j); 
-      uint64_t cid = 
-      grid.id( std::get<0>(ind), std::get<1>(ind) );
+      uint64_t cid = grid.id( std::get<0>(ind), std::get<1>(ind) );
       Tile& external_tile = 
         dynamic_cast<Tile&>( grid.get_tile(cid) );
 
@@ -153,6 +152,8 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
             container.outgoing_extra_particles.size())
           );
     }
+
+    std::cout << this->communication.cid << " send " << container.outgoing_particles.size() << " + " << container.outgoing_extra_particles.size() << " particles\n";
   }
 
   return reqs;
@@ -230,6 +231,8 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     } else {
       container.incoming_extra_particles.clear();
     }
+
+    std::cout << this->communication.cid << " recv " << container.incoming_particles.size() << " + " << container.incoming_extra_particles.size() << " particles\n";
 
     //TODO: dynamic optimal_message_size here
     //container.optimal_message_size = msginfo.size();

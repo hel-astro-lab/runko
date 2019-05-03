@@ -297,16 +297,17 @@ void ParticleContainer::pack_all_particles()
   InfoParticle infoprtcl(np);
 
   outgoing_particles.reserve(optimal_message_size);
-  if (np-optimal_message_size > 0) {
+  if(np-optimal_message_size > 0) {
     outgoing_extra_particles.reserve( np-optimal_message_size );
   }
 
   // first particle is always the message info
   outgoing_particles.push_back(infoprtcl);
+  //outgoing_particles[0] = infoprtcl;
 
   // next, pack all other particles
   int i=1;
-  for (size_t ind=0; ind < size(); ind++) {
+  for(size_t ind=0; ind < size(); ind++) {
     if(i < optimal_message_size) {
       outgoing_particles.emplace_back( 
         loc(0, ind), loc(1, ind), loc(2, ind), 
@@ -336,25 +337,26 @@ void ParticleContainer::pack_outgoing_particles()
   int np = to_other_tiles.size() + 1;
   InfoParticle infoprtcl(np);
 
-  //if (np>1) {
-  //  std::cout << "Packing Np:" << np << " and extra is: " << np-optimal_message_size << "\n";
-  //}
+  if (np>1) {
+    std::cout << "Packing Np:" << np << " and extra is: " << np-optimal_message_size << "\n";
+  }
 
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
-    //std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
+    std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
   // first particle is always the message info
   outgoing_particles.push_back(infoprtcl);
+  //outgoing_particles[0] = infoprtcl;
 
   // next, pack all other particles
   int i=1, ind;
   for (auto&& elem : to_other_tiles) {
     ind = elem.second;
 
-    if(i < optimal_message_size) {
+    if(i <= optimal_message_size) {
       outgoing_particles.emplace_back( 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
@@ -371,9 +373,9 @@ void ParticleContainer::pack_outgoing_particles()
     i++;
   }
 
-  //std::cout << " outg arr size:" << outgoing_particles.size()
-  //          << " outgE arr size: " << outgoing_extra_particles.size()
-  //          << "\n";
+  std::cout << " outg arr size:" << outgoing_particles.size()
+            << " outgE arr size: " << outgoing_extra_particles.size()
+            << "\n";
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;

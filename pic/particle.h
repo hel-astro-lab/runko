@@ -47,6 +47,10 @@ public:
   inline int& id()   { return _id;   };
   inline int& proc() { return _proc; };
 
+  //virtual ~Particle() = default;
+  //virtual ~Particle() {
+  //  assert(false);
+  //}
 };
 
 
@@ -58,12 +62,18 @@ public:
 
   InfoParticle(size_t np) 
     : Particle(
-        static_cast<double>(np), 0,0,
-        0,0,0,
-        0,0,0) {}
+        static_cast<double>(np), 2,3,
+        4,5,6,
+        7,8,9) {}
 
   InfoParticle(Particle& prtcl) {
     data[0] = prtcl.x();
+    data[1] = 100000;
+    data[2] = 200000;
+    data[3] = 300000;
+    data[4] = 400000;
+    data[5] = 500000;
+    data[6] = 600000;
   }
 
   size_t size() {return static_cast<size_t>(Particle::x());}

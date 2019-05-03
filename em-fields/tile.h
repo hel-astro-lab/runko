@@ -73,8 +73,7 @@ class YeeLattice {
     jz1(Nx, Ny, Nz)
     { }
 
-  ~YeeLattice() = default;
-
+  virtual ~YeeLattice() = default;
 };
 
 
@@ -138,9 +137,9 @@ class PlasmaMomentLattice {
     shearyz( Nx, Ny, Nz )
   { }
 
+  virtual ~PlasmaMomentLattice() = default;
 
-  ~PlasmaMomentLattice() = default;
-
+  // clear all internal storages
   void clear() 
   {
     rho    .clear();
@@ -217,13 +216,8 @@ class Tile :
     //add_yee_lattice();
   }
 
-
-  /// destructor
-  virtual ~Tile() override = default;
-
-
+  // avoid copies; TODO: is this needed?
   Tile(Tile& ) = delete;
-
 
   //--------------------------------------------------
 
@@ -246,7 +240,6 @@ class Tile :
   virtual const YeeLattice& get_const_yee(size_t i=0) const; 
 
   virtual const PlasmaMomentLattice& get_const_analysis(size_t i) const;
-
 
   void cycle_yee();
 
