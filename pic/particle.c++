@@ -348,15 +348,17 @@ void ParticleContainer::pack_outgoing_particles()
   }
 
   // first particle is always the message info
+  auto s1 = outgoing_particles.size();
   outgoing_particles.push_back(infoprtcl);
   //outgoing_particles[0] = infoprtcl;
+  auto s2 = outgoing_particles.size();
 
   // next, pack all other particles
   int i=1, ind;
   for (auto&& elem : to_other_tiles) {
     ind = elem.second;
 
-    if(i <= optimal_message_size) {
+    if(i < optimal_message_size) {
       outgoing_particles.emplace_back( 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
@@ -372,6 +374,9 @@ void ParticleContainer::pack_outgoing_particles()
 
     i++;
   }
+
+  auto s3 = outgoing_particles.size();
+  std::cout << "size comp" << s1 << " vs " << s2 << " vs " << s3 << "\n";
 
   std::cout << " outg arr size:" << outgoing_particles.size()
             << " outgE arr size: " << outgoing_extra_particles.size()

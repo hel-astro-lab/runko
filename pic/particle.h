@@ -20,7 +20,7 @@ class Particle
 public:
 
   /// actual particle data
-  std::array<double,7> data = {0.,0.,0.,0.,0.,0.,0.};
+  std::array<double,7> data;
 
   /// particle id
   int _id = 0;
@@ -47,7 +47,7 @@ public:
   inline int& id()   { return _id;   };
   inline int& proc() { return _proc; };
 
-  //virtual ~Particle() = default;
+  virtual ~Particle() = default;
   //virtual ~Particle() {
   //  assert(false);
   //}
@@ -150,7 +150,7 @@ class ParticleContainer {
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 
   // in hand with the corresponding receiver side.
-  int optimal_message_size = 30;
+  int optimal_message_size = 2;
 
   //! particle specific electric field components
   std::vector<double> Epart;
