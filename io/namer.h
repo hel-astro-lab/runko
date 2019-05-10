@@ -63,7 +63,6 @@ class Namer {
   private:
     const string extension = ".h5";
 
-
   public:
     string name;
 
@@ -76,7 +75,6 @@ class Namer {
     {
       name = prefix + "_" + to_string(lap) + extension;
     }
-
 };
 
 
