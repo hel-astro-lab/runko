@@ -6,6 +6,12 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 
 project (plasmabox)
 
+# optimization flags
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=haswell -mtune=haswell") #latest optimization
+
 # set location of python libraries
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 

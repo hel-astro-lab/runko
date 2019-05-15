@@ -172,7 +172,6 @@ inline void write_mesh(
       = dynamic_cast<vlv::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile);
   }
-
 }
 
 
@@ -282,7 +281,6 @@ void write_particles(
       = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile);
   }
-
 }
 
 

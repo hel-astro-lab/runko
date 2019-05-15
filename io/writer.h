@@ -56,9 +56,9 @@ class Writer {
     {};
 
     /// Destructor that explicitly closes the file handle
-    ~Writer() {
-      file.~File(); // call destructor explicitly
-    }
+    //~Writer() {
+    //  file.~File(); // call destructor explicitly
+    //}
 
 
     // FIXME: use SFINAE to pick the right specialization without

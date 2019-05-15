@@ -20,7 +20,7 @@ class Particle
 public:
 
   /// actual particle data
-  std::array<double,7> data;
+  std::array<double,7> data = {0.,0.,0.,0.,0.,0.,0.};
 
   /// particle id
   int _id = 0;
