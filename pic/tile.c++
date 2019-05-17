@@ -1,5 +1,6 @@
 #include "tile.h"
 #include "communicate.h"
+#include <cmath>
 
 
 namespace pic {
@@ -7,20 +8,23 @@ namespace pic {
 using namespace mpi4cpp;
 
 
-
 // create MPI tag given tile id and extra layer of differentiation
-int get_tag(int cid, int extra_param)
+int get_tag(int tag, int extra_param)
 {
-  assert(extra_param < 100);
-  return cid + extra_param*1e6;
+  assert(extra_param <= 8); // max 8 species
+  assert(tag < (pow(2,16) - 1)); // cray-mpich supports maximum of 2^22-1 tag value
+
+  return tag + (9+extra_param)*pow(2,16);
 }
 
 // create MPI tag for extra communication given tile 
 // id and extra layer of differentiation
-int get_extra_tag(int cid, int extra_param)
+int get_extra_tag(int tag, int extra_param)
 {
-  assert(extra_param < 100);
-  return cid + extra_param*1e8;
+  assert(extra_param <= 8); // max 8 species
+  assert(tag < (pow(2,16) - 1)); // cray-mpich supports maximum of 2^22-1 tag value
+
+  return tag + (9+8+extra_param)*pow(2,16);
 }
 
 
@@ -98,14 +102,15 @@ template<std::size_t D>
 std::vector<mpi::request> Tile<D>::send_data( 
     mpi::communicator& comm, 
     int dest, 
+    int mode,
     int tag)
 {
-  if     (tag == 0) return fields::Tile<D>::send_data(comm, dest, tag);
-  else if(tag == 1) return fields::Tile<D>::send_data(comm, dest, tag);
-  else if(tag == 2) return fields::Tile<D>::send_data(comm, dest, tag);
+  if     (mode == 0) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  else if(mode == 1) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  else if(mode == 2) return fields::Tile<D>::send_data(comm, dest, mode, tag);
 
-  else if(tag == 3) return send_particle_data(comm,dest);
-  else if(tag == 4) return send_particle_extra_data(comm,dest);
+  else if(mode == 3) return send_particle_data(comm,dest,tag);
+  else if(mode == 4) return send_particle_extra_data(comm,dest,tag);
   else assert(false);
 }
 
@@ -113,14 +118,15 @@ std::vector<mpi::request> Tile<D>::send_data(
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::send_particle_data( 
     mpi::communicator& comm, 
-    int dest)
+    int dest,
+    int tag)
 {
   std::vector<mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
 
     reqs.emplace_back(
-        comm.isend(dest, get_tag(corgi::Tile<D>::cid, ispc), 
+        comm.isend(dest, get_tag(tag, ispc), 
           container.outgoing_particles.data(), 
           container.outgoing_particles.size())
         );
@@ -133,7 +139,8 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::send_particle_extra_data( 
     mpi::communicator& comm, 
-    int dest)
+    int dest,
+    int tag)
 {
   std::vector<mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
@@ -141,7 +148,7 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
 
     if(!container.outgoing_extra_particles.empty()) {
       reqs.emplace_back(
-          comm.isend(dest, get_extra_tag(corgi::Tile<D>::cid, ispc), 
+          comm.isend(dest, get_extra_tag(tag, ispc), 
             container.outgoing_extra_particles.data(), 
             container.outgoing_extra_particles.size())
           );
@@ -156,14 +163,15 @@ template<std::size_t D>
 std::vector<mpi::request> Tile<D>::recv_data( 
     mpi::communicator& comm, 
     int orig, 
+    int mode,
     int tag)
 {
-  if     (tag == 0) return fields::Tile<D>::recv_data(comm, orig, tag);
-  else if(tag == 1) return fields::Tile<D>::recv_data(comm, orig, tag);
-  else if(tag == 2) return fields::Tile<D>::recv_data(comm, orig, tag);
+  if     (mode == 0) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  else if(mode == 1) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  else if(mode == 2) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
 
-  else if(tag == 3) return recv_particle_data(comm,orig);
-  else if(tag == 4) return recv_particle_extra_data(comm,orig);
+  else if(mode == 3) return recv_particle_data(comm,orig,tag);
+  else if(mode == 4) return recv_particle_extra_data(comm,orig,tag);
   else assert(false);
 }
 
@@ -171,7 +179,8 @@ std::vector<mpi::request> Tile<D>::recv_data(
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::recv_particle_data( 
     mpi::communicator& comm, 
-    int orig)
+    int orig,
+    int tag)
 {
   std::vector<mpi::request> reqs;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
@@ -179,7 +188,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
     container.incoming_particles.resize( container.optimal_message_size );
 
     reqs.emplace_back(
-        comm.irecv(orig, get_tag(corgi::Tile<D>::cid, ispc),
+        comm.irecv(orig, get_tag(tag, ispc),
           container.incoming_particles.data(),
           container.optimal_message_size)
         );
@@ -192,7 +201,8 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::recv_particle_extra_data( 
     mpi::communicator& comm, 
-    int orig )
+    int orig,
+    int tag)
 {
   std::vector<mpi::request> reqs;
 
@@ -200,10 +210,12 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
   // and passed.
 
   // normal particles
-  int extra_size;
+  int extra_size=0;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
     InfoParticle msginfo(container.incoming_particles[0]);
+
+    //std::cout << "recv_prtcl: got " << msginfo.size() << " by mpi\n";
 
     // check if we need to expect extra message
     extra_size = msginfo.size() - container.optimal_message_size;
@@ -211,7 +223,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
       container.incoming_extra_particles.resize(extra_size);
 
       reqs.emplace_back(
-          comm.irecv(orig, get_extra_tag(corgi::Tile<D>::cid, ispc),
+          comm.irecv(orig, get_extra_tag(tag, ispc),
             container.incoming_extra_particles.data(),
             extra_size)
           );

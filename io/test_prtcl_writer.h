@@ -36,16 +36,16 @@ class TestPrtclWriter {
 
 
     /// do not consider particles beyond this id
-    int cutoff_id;
+    long cutoff_id;
 
     /// how many time steps to save
     int nt=1;
 
     /// total number of (test) particles
-    int np;
+    long np;
 
     /// how many ranks/categories of particles (second id parameter)
-    int nr;
+    long nr;
 
 
   public:
@@ -54,7 +54,7 @@ class TestPrtclWriter {
     int ispc = 0;
 
     /// data stride length
-    int stride = 1;
+    long stride = 1;
 
     /// constructor that creates a name and creates uniform sampling of particles
     TestPrtclWriter(
