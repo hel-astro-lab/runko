@@ -59,6 +59,10 @@ class Writer {
     //~Writer() {
     //  file.~File(); // call destructor explicitly
     //}
+    
+    close() {
+        file.~File();
+    }
 
 
     // FIXME: use SFINAE to pick the right specialization without
