@@ -60,7 +60,7 @@ class Writer {
     //  file.~File(); // call destructor explicitly
     //}
     
-    close() {
+    void close() {
         file.~File();
     }
 
