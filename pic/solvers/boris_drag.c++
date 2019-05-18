@@ -59,8 +59,9 @@ void pic::BorisPusherDrag<D,V>::push_container(
   int n2 = nparts;
 
   double u0, v0, w0;
+  double uxt, uyt, uzt;
   double u1, v1, w1;
-  double g, f, ginv, gam;
+  double g, f, ginv, kncorr, gamt, ut;
 
   double c = cfl;
   double cinv = 1.0/c;
@@ -105,21 +106,26 @@ void pic::BorisPusherDrag<D,V>::push_container(
     w0 = w0 + u1*by0 - v1*bx0 + ez0;
 
     // normalized 4-velocity advance
-    vel[0][n] = u0*cinv;
-    vel[1][n] = v0*cinv;
-    vel[2][n] = w0*cinv;
+    //vel[0][n] = u0*cinv;
+    //vel[1][n] = v0*cinv;
+    //vel[2][n] = w0*cinv;
 
-    // addition of drag
-    // = A g^2 beta = A g^2 u/g = A g u = A u / ginv
-    gam = sqrt(c*c + u0*u0 + v0*v0 + w0*w0)/c;
-    //vel[0][n] = vel[0][n] - drag*vel[0][n]*gam;
-    //vel[1][n] = vel[1][n] - drag*vel[1][n]*gam;
-    //vel[2][n] = vel[2][n] - drag*vel[2][n]*gam;
+    //--------------------------------------------------
+    // addition of drag (gamma at half time step)
 
-    // with Klein-Nishina reduction
-    vel[0][n] = vel[0][n] - drag*vel[0][n]*gam*kn(3.0*gam*temp);
-    vel[1][n] = vel[1][n] - drag*vel[1][n]*gam*kn(3.0*gam*temp);
-    vel[2][n] = vel[2][n] - drag*vel[2][n]*gam*kn(3.0*gam*temp);
+    // u at t + dt/2
+    uxt = (u0*cinv + vel[0][n])*0.5;
+    uyt = (v0*cinv + vel[1][n])*0.5;
+    uzt = (w0*cinv + vel[2][n])*0.5;
+    ut  = sqrt(uxt*uxt + uyt*uyt + uzt*uzt);
+    gamt= sqrt(1.0 + ut*ut);
+
+    // subtract drag with Klein-Nishina reduction
+    // A g^2 beta = A g^2 u/g = A g u
+    kncorr = kn(3.0*gamt*temp);
+    vel[0][n] = u0*cinv - c*drag*kncorr*ut*ut*(uxt/gamt);
+    vel[1][n] = v0*cinv - c*drag*kncorr*ut*ut*(uyt/gamt);
+    vel[2][n] = w0*cinv - c*drag*kncorr*ut*ut*(uzt/gamt);
 
 
     // position advance
