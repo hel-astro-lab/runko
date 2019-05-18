@@ -87,6 +87,10 @@ def filler(xloc, ispcs, conf):
 # Field initialization (guide field)
 def insert_em(node, conf):
 
+    #into radians
+    btheta = conf.btheta/180.*np.pi
+    bphi   = conf.bphi/180.*np.pi
+
     kk = 0
     for cid in node.get_tile_ids():
         tile = node.get_tile(cid)
@@ -97,19 +101,16 @@ def insert_em(node, conf):
         for n in range(conf.NzMesh):
             for m in range(-1, conf.NyMesh+1):
                 for l in range(-1, conf.NxMesh+1):
-                    # FIXME
-                    #print("{}: ind ({},{},{})".format(node.rank(), l,m,n))
                     # get global coordinates
                     iglob, jglob, kglob = globalIndx( (ii,jj), (l,m,n), conf)
 
+                    yee.bx[l,m,n] = conf.binit*np.cos(btheta) 
+                    yee.by[l,m,n] = conf.binit*np.sin(btheta)*np.sin(bphi)
+                    yee.bz[l,m,n] = conf.binit*np.sin(btehta)*np.cos(bphi)   
+
                     yee.ex[l,m,n] = 0.0
-                    yee.ey[l,m,n] = 0.0
-                    yee.ez[l,m,n] = 0.0
-
-                    yee.bx[l,m,n] = 0.0
-                    yee.by[l,m,n] = 0.0
-                    yee.bz[l,m,n] = conf.binit   
-
+                    yee.ey[l,m,n] =-beta*yee.bz[l,m,n]
+                    yee.ez[l,m,n] = beta*yee.by[l,m,n]
 
 
 if __name__ == "__main__":
