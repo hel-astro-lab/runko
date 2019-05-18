@@ -25,9 +25,13 @@ class Configuration_Shocks(Configuration):
         ppc = self.ppc*2.0 #multiply x2 to account for 2 species/pair plasma
 
         # if gammas < 1, we interpret it as beta/c
-        if(self.gamma < 1.):
-            self.gamma = sqrt(1./(1.-self.gamma**2.)) 
-        self.beta = sqrt(1.-1./self.gamma**2.)
+        if self.gamma == 0:
+            self.gamma = 1.0
+            self.beta  = 0.0
+        else:
+            if(self.gamma < 1.):
+                self.gamma = sqrt(1./(1.-self.gamma**2.)) 
+            self.beta = sqrt(1.-1./self.gamma**2.)
         
 	#plasma reaction & subsequent normalization
         omp=c/self.c_omp
@@ -89,6 +93,10 @@ class Configuration_Shocks(Configuration):
             print("init: B_guide: ", self.binit)
 
 
+        #possibly moving piston wall
+        if(self.wallgamma < 1.):
+            self.wallgamma = sqrt(1./(1.-self.wallgamma**2.)) 
+        self.beta = sqrt(1.-1./self.gamma**2.)
 
 
         #-------------------------------------------------- 

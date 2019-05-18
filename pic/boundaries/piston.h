@@ -14,9 +14,9 @@ class Piston
 
   Piston() {};
 
-  double walloc;    // x location of the wall
-  double gammawall; // gamma of the moving wall
-  double betawall;  // beta of the moving wall
+  double walloc = 0.0;     // x location of the wall
+  double gammawall = 1.0;  // gamma of the moving wall
+  double betawall  = 0.0;  // beta of the moving wall
 
   /// \brief interpolate electromagnetic fields to particle locations
   void solve(pic::Tile<D>& );

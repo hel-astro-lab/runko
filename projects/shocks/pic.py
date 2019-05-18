@@ -84,12 +84,34 @@ def filler(xloc, ispcs, conf):
     return x0, u0
 
 
+def initialize_piston(node, piston, conf):
+
+    gam = conf.wallgamma
+    beta = np.sqrt(1.-1./gam**2.)
+
+    piston.gammawall = gam
+    piston.betawall = beta
+    piston.walloc = 1.0
+
+    print("wall gamma:", piston.gammawall)
+    print("wall beta:", piston.betawall)
+
+    for cid in node.get_local_tiles():
+        tile = node.get_tile(cid)
+
+        #TODO: check tile boundaries
+        #TODO: remove prtcls inside the wall
+
+
+
+
 # Field initialization (guide field)
 def insert_em(node, conf):
 
     #into radians
     btheta = conf.btheta/180.*np.pi
     bphi   = conf.bphi/180.*np.pi
+    beta   = conf.beta
 
     kk = 0
     for cid in node.get_tile_ids():
@@ -106,7 +128,7 @@ def insert_em(node, conf):
 
                     yee.bx[l,m,n] = conf.binit*np.cos(btheta) 
                     yee.by[l,m,n] = conf.binit*np.sin(btheta)*np.sin(bphi)
-                    yee.bz[l,m,n] = conf.binit*np.sin(btehta)*np.cos(bphi)   
+                    yee.bz[l,m,n] = conf.binit*np.sin(btheta)*np.cos(bphi)   
 
                     yee.ex[l,m,n] = 0.0
                     yee.ey[l,m,n] =-beta*yee.bz[l,m,n]
@@ -288,6 +310,11 @@ if __name__ == "__main__":
     #flt     =  pytools.Filter(conf.NxMesh, conf.NyMesh)
     #flt.init_gaussian_kernel(2.0, 2.0)
 
+    #moving walls
+    piston   = pypic.Piston()
+    initialize_piston(node, piston, conf)
+
+
     # quick field snapshots
     #debug_print(node, "qwriter")
     #qwriter  = pyfld.QuickWriter(conf.outdir, 
@@ -305,6 +332,7 @@ if __name__ == "__main__":
             conf.Nz, conf.NzMesh,
             conf.ppc, len(node.get_local_tiles()),
             conf.n_test_prtcls)
+
 
 
 
@@ -410,6 +438,14 @@ if __name__ == "__main__":
             pusher.solve(tile)
 
         timer.stop_comp("push")
+
+        #--------------------------------------------------
+        # apply moving walls
+        timer.start_comp("walls")
+        debug_print(node, "walls")
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            piston.solve(tile)
 
 
         ##################################################

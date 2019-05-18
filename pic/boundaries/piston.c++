@@ -3,6 +3,7 @@
 
 #include <cmath> 
 #include <cassert>
+#include <algorithm>
 
 template<size_t D>
 void pic::Piston<D>::zigzag(
@@ -78,6 +79,8 @@ void pic::Piston<D>::solve(
         // reset particle momentum, getting kick from the wall
         vel[0][n] = gammawall*gammawall*gamma
           *(2.*betawall - vel[0][n]/gamma*(1.0+betawall*betawall));
+
+        tfrac = std::min( std::abs((vel[0][n]-xcolis)/std::max(abs(vel[0][n]-x0), 1.0e-9)), 1.0);
 
         // move particle from the location of the wall with new velocity
         loc[0][n] = xcolis + vel[0][n]/gamma*c * tfrac;
