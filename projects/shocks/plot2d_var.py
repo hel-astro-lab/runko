@@ -85,8 +85,8 @@ def read_var(f5F, var):
         #print("reshaping 1D array into multiD with {} {} {}".format(nx,ny,nz))
 
         val = f5F[var][:]
-        val = np.reshape(val, (nx, ny, nz))
-        val = val[:,:,0]
+        val = np.reshape(val, (ny, nx, nz))
+        val = np.transpose(val[:,:,0])
 
     return val
 
