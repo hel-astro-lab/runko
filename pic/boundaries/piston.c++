@@ -120,17 +120,17 @@ void pic::Piston<D>::solve(
     pic::Tile<D>& tile)
 {
 
-  // get reference to the Yee grid 
-  //auto& yee = tile.get_yee();
+  // outflowing particles
+  std::vector<int> to_be_deleted;
 
   // skip if piston head is not inside tile boundaries
   auto mins = tile.mins;
   auto maxs = tile.maxs;
 
-
   if(!(mins[0] <= walloc && walloc <= maxs[0])) return;
 
   for(auto&& container : tile.containers) {
+    to_be_deleted.clear();
     int nparts = container.size();
 
     // initialize pointers to particle arrays
@@ -156,6 +156,14 @@ void pic::Piston<D>::solve(
       // left side of the wall boundary
       if(loc[0][n] < walloc) {
 
+        // this can not be reflected particle; remove 
+        // equals to right boundary outflow as they wrap particles here
+        if(walloc - loc[0][n] > 1.0) {
+          //std::cout << "reflected?" << n << "x:" << loc[0][n] << "\n";
+          to_be_deleted.push_back(n);
+          continue;
+        }
+
         gamma = sqrt(1.0
             + vel[0][n]*vel[0][n]
             + vel[1][n]*vel[1][n]
@@ -173,7 +181,7 @@ void pic::Piston<D>::solve(
         xcolis = x0 + vel[0][n]/gamma*c*tfrac;
         ycolis = y0;
         zcolis = z0;
-
+          
         // deposit current up to intersection point
         zigzag(tile, xcolis, ycolis, zcolis, x0, y0, z0, container.q);
 
@@ -201,12 +209,10 @@ void pic::Piston<D>::solve(
       }
     }
 
+    // process outflown particles
+    container.delete_particles(to_be_deleted);
+
   } // end of loop over species
-
-
-
-
-
 
   return;
 }
@@ -230,8 +236,9 @@ void pic::Piston<2>::field_bc(
     int iw = walloc - mins[0]; 
     if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
 
+    // set transverse directions to zero
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<iw; i++) {
+      for(int i=0; i<=iw; i++) {
         yee.ey(i,j,k) = 0.0;
         yee.ez(i,j,k) = 0.0;
       }

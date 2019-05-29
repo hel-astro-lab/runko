@@ -30,8 +30,8 @@ def inject(node, ffunc, conf):
                 #do_inject = False
                 #if (2 <= i <= 3):
                 #    do_inject = True
-                if not(2 <= i <= 3):
-                    continue
+                #if not(2 <= i <= 3):
+                #    continue
 
                 # inject particles
                 # even species are on their own; odd species are located on 

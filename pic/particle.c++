@@ -200,12 +200,8 @@ void ParticleContainer::check_outgoing_particles(
 }
 
 
-void ParticleContainer::delete_transferred_particles()
+void ParticleContainer::delete_particles(std::vector<int> to_be_deleted) 
 {
-  std::vector<int> to_be_deleted;
-
-  // get and reverse sort deleted particles
-  for(auto& elem : to_other_tiles) to_be_deleted.push_back( elem.second );
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
   double* locn[3];
@@ -237,6 +233,17 @@ void ParticleContainer::delete_transferred_particles()
   if ((last != (int)size()) && (size() > 0)) resize(last);
 
   return;
+}
+
+
+void ParticleContainer::delete_transferred_particles()
+{
+  std::vector<int> to_be_deleted;
+
+  // get transferred 
+  for(auto& elem : to_other_tiles) to_be_deleted.push_back( elem.second );
+
+  delete_particles(to_be_deleted);
 }
 
 
