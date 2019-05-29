@@ -30,6 +30,7 @@ set (PIC_FILES
      ../pic/tile.c++
      ../pic/particle.c++
      ../pic/boundaries/wall.c++
+     ../pic/boundaries/piston.c++
      ../pic/solvers/boris.c++
      ../pic/solvers/boris_drag.c++
      ../pic/interpolators/linear.c++

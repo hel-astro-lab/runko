@@ -279,6 +279,8 @@ class ParticleContainer {
   // ended up in to_other_tiles box
   void delete_transferred_particles();
 
+  /// process through an index list and delete particles in it
+  void delete_particles(std::vector<int> l);
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(

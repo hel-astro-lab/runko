@@ -410,7 +410,7 @@ def plotDens(ax, n, conf):
 
 
 
-def plot2dYee(ax, yee, n, conf, val = 'jx'):
+def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
 
     #ax.clear()
     ax.cla()
@@ -432,7 +432,10 @@ def plot2dYee(ax, yee, n, conf, val = 'jx'):
            vmax =  vminmax,
            clip = None,
           )
-    ax.set_title(val)
+    if label_title:
+        ax.set_ylabel(val)
+    else:
+        ax.set_title(val)
 
 
 
