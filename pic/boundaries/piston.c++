@@ -126,8 +126,9 @@ void pic::Piston<D>::solve(
   // skip if piston head is not inside tile boundaries
   auto mins = tile.mins;
   auto maxs = tile.maxs;
-  if(!(mins[0] <= walloc && walloc <= maxs[0])) return;
 
+
+  if(!(mins[0] <= walloc && walloc <= maxs[0])) return;
 
   for(auto&& container : tile.containers) {
     int nparts = container.size();
@@ -202,7 +203,41 @@ void pic::Piston<D>::solve(
 
   } // end of loop over species
 
+
+
+
+
+
   return;
+}
+
+
+template<>
+void pic::Piston<2>::field_bc(
+    pic::Tile<2>& tile)
+{
+  int k = 0; // collapse third D
+
+  // skip if piston head is not inside tile boundaries
+  auto mins = tile.mins;
+  auto maxs = tile.maxs;
+
+  // make left side of piston conductor
+  if(walloc < maxs[0]) {
+    auto& yee = tile.get_yee();
+
+    // wall location 
+    int iw = walloc - mins[0]; 
+    if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
+
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<iw; i++) {
+        yee.ey(i,j,k) = 0.0;
+        yee.ez(i,j,k) = 0.0;
+      }
+    }
+  }
+
 }
 
 

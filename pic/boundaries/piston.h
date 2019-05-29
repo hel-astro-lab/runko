@@ -20,6 +20,9 @@ class Piston
 
   /// \brief interpolate electromagnetic fields to particle locations
   void solve(pic::Tile<D>& );
+    
+  /// \brief apply conducting boundaries behind piston head
+  void field_bc(pic::Tile<D>& );
 
   /// Small current deposition routine for individual particles 
   void zigzag(pic::Tile<D>&, 

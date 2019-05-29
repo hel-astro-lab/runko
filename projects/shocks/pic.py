@@ -386,6 +386,7 @@ if __name__ == "__main__":
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_half_b()
+            piston.field_bc(tile)
 
         timer.stop_comp("push_half_b1")
 
@@ -458,6 +459,7 @@ if __name__ == "__main__":
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_half_b()
+            piston.field_bc(tile)
 
         timer.stop_comp("push_half_b2")
 
@@ -496,6 +498,7 @@ if __name__ == "__main__":
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
             tile.push_e()
+            piston.field_bc(tile)
 
         timer.stop_comp("push_e")
 
