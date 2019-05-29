@@ -315,12 +315,12 @@ if __name__ == "__main__":
 
 
     # quick field snapshots
-    #debug_print(node, "qwriter")
-    #qwriter  = pyfld.QuickWriter(conf.outdir, 
-    #        conf.Nx, conf.NxMesh,
-    #        conf.Ny, conf.NyMesh,
-    #        conf.Nz, conf.NzMesh,
-    #        conf.stride)
+    debug_print(node, "qwriter")
+    qwriter  = pyfld.QuickWriter(conf.outdir, 
+            conf.Nx, conf.NxMesh,
+            conf.Ny, conf.NyMesh,
+            conf.Nz, conf.NzMesh,
+            conf.stride)
 
     # test particles
     debug_print(node, "tpwriter")
@@ -722,7 +722,7 @@ if __name__ == "__main__":
 
             debug_print(node, "qwriter")
             #shallow IO
-            #qwriter.write(node, lap) #quick field snapshots
+            qwriter.write(node, lap) #quick field snapshots
 
             debug_print(node, "tpwriter")
             tpwriter.write(node, lap) #test particles
