@@ -27,7 +27,11 @@ def inject(node, ffunc, conf):
                 c      = node.get_tile(cid) #get cell ptr
 
                 #if not(1 <= i <= 2 and j == 1):
-                #    continue
+                #do_inject = False
+                #if (2 <= i <= 3):
+                #    do_inject = True
+                if not(2 <= i <= 3):
+                    continue
 
                 # inject particles
                 # even species are on their own; odd species are located on 

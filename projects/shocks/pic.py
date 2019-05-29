@@ -76,7 +76,7 @@ def filler(xloc, ispcs, conf):
         zz = 0.5
 
     gamma = conf.gamma
-    direction = +1
+    direction = -1
     ux, uy, uz, uu = boosted_maxwellian(delgam, gamma, direction=direction, dims=3)
 
     x0 = [xx, yy, zz]
@@ -91,7 +91,7 @@ def initialize_piston(node, piston, conf):
 
     piston.gammawall = gam
     piston.betawall = beta
-    piston.walloc = 1.0
+    piston.walloc = 5.0
 
     print("wall gamma:", piston.gammawall)
     print("wall beta:", piston.betawall)
@@ -99,7 +99,6 @@ def initialize_piston(node, piston, conf):
     for cid in node.get_local_tiles():
         tile = node.get_tile(cid)
 
-        #TODO: check tile boundaries
         #TODO: remove prtcls inside the wall
 
 
@@ -447,7 +446,7 @@ if __name__ == "__main__":
             tile = node.get_tile(cid)
             piston.solve(tile)
 
-
+        timer.stop_comp("walls")
         ##################################################
         # advance B half
 
