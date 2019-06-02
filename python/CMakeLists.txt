@@ -32,8 +32,8 @@ set (PIC_FILES
      ../pic/particle.c++
      ../pic/boundaries/wall.c++
      ../pic/boundaries/piston.c++
-     ../pic/solvers/boris.c++
-     ../pic/solvers/boris_drag.c++
+     ../pic/pushers/boris.c++
+     ../pic/pushers/boris_drag.c++
      ../pic/interpolators/linear.c++
      ../pic/depositers/zigzag.c++
      )

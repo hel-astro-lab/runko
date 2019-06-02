@@ -7,9 +7,9 @@ namespace py = pybind11;
 // experimental PIC module
   
 #include "../pic/tile.h"
-#include "../pic/solvers/pusher.h"
-#include "../pic/solvers/boris.h"
-#include "../pic/solvers/boris_drag.h"
+#include "../pic/pushers/pusher.h"
+#include "../pic/pushers/boris.h"
+#include "../pic/pushers/boris_drag.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
