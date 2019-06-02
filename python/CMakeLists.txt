@@ -1,4 +1,4 @@
-project (pyplasmabox)
+../python/pyfields.c++project (pyplasmabox)
 
 
 #find_package(PYBIND11 REQUIRED) #loaded externally from corgi
@@ -13,6 +13,7 @@ set (FIELDS_FILES
      pyfields.c++
      ../em-fields/tile.c++ 
      ../em-fields/damping_tile.c++
+     ../em-fields/propagator/fdtd2.c++ 
      )
 
 set (VLV_FILES 
