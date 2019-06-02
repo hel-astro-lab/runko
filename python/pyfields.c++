@@ -37,8 +37,6 @@ auto declare_tile(
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("cycle_current",       &fields::Tile<D>::cycle_current)
     .def("clear_current",       &fields::Tile<D>::clear_current)
-    //.def("push_e",              &fields::Tile<D>::push_e)
-    //.def("push_half_b",         &fields::Tile<D>::push_half_b)
     .def("deposit_current",     &fields::Tile<D>::deposit_current)
     .def("add_analysis_species", &fields::Tile<D>::add_analysis_species)
     .def("update_boundaries",   &fields::Tile<D>::update_boundaries)

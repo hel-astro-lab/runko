@@ -303,6 +303,7 @@ if __name__ == "__main__":
         pusher   = pypic.BorisPusher()
 
 
+    fldprop  = pyfld.FDTD2()
     fintp    = pypic.LinearInterpolator()
     currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
@@ -385,7 +386,7 @@ if __name__ == "__main__":
 
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
-            tile.push_half_b()
+            fldprop.push_half_b(tile)
             piston.field_bc(tile)
 
         timer.stop_comp("push_half_b1")
@@ -458,7 +459,7 @@ if __name__ == "__main__":
 
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
-            tile.push_half_b()
+            fldprop.push_half_b(tile)
             piston.field_bc(tile)
 
         timer.stop_comp("push_half_b2")
@@ -497,7 +498,7 @@ if __name__ == "__main__":
 
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
-            tile.push_e()
+            fldprop.push_e(tile)
             piston.field_bc(tile)
 
         timer.stop_comp("push_e")
