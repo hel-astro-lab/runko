@@ -1,4 +1,4 @@
-../python/pyfields.c++project (pyplasmabox)
+project (pyplasmabox)
 
 
 #find_package(PYBIND11 REQUIRED) #loaded externally from corgi

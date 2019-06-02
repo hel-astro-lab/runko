@@ -12,13 +12,13 @@ class Propagator
 {
   public:
 
-    Propagator() {};
+  Propagator() {};
 
-    virtual ~Propagator() = default;
+  virtual ~Propagator() = default;
 
-  virtual void push_e(fields::Tile<D>& tile);
+  virtual void push_e(Tile<D>& tile) = 0;
 
-  virtual void push_half_b(fields::Tile<D>& tile);
+  virtual void push_half_b(Tile<D>& tile) = 0;
 
 };
 
