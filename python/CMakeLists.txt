@@ -13,6 +13,7 @@ set (FIELDS_FILES
      pyfields.c++
      ../em-fields/tile.c++ 
      ../em-fields/damping_tile.c++
+     ../em-fields/propagator/fdtd2.c++ 
      )
 
 set (VLV_FILES 

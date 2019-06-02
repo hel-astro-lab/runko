@@ -247,6 +247,7 @@ if __name__ == "__main__":
 
     Nsamples = conf.Nt
 
+    fldprop  = pyfld.FDTD2()
     pusher   = pypic.BorisPusher()
     fintp    = pypic.LinearInterpolator()
     currint  = pypic.ZigZag()
@@ -290,7 +291,7 @@ if __name__ == "__main__":
         debug_print(node,"push_half_b 1")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
-            tile.push_half_b()
+            fldprop.push_half_b(tile)
         #FIXME: push also virtuals to get correct boundaries for locals
 
         #update boundaries
@@ -322,7 +323,7 @@ if __name__ == "__main__":
         debug_print(node,"push_half_b 2")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
-            tile.push_half_b()
+            fldprop.push_half_b(tile)
         #FIXME: push also virtuals
 
         #update boundaries
@@ -339,7 +340,7 @@ if __name__ == "__main__":
         debug_print(node,"push_e")
         for cid in node.get_tile_ids():
             tile = node.get_tile(cid)
-            tile.push_e()
+            fldprop.push_e(tile)
         #FIXME: push also virtuals
 
         #--------------------------------------------------

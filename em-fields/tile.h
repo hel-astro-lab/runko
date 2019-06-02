@@ -185,7 +185,7 @@ class Tile :
   //toolbox::Rotator<YeeLattice, 1> yee;
   YeeLattice yee;
 
-  /// species specific analysis results
+  /// species-specific analysis results
   std::vector<PlasmaMomentLattice> analysis;
 
   /// explicitly show that we import tile limits from base class 
@@ -221,9 +221,7 @@ class Tile :
   /// destructor
   virtual ~Tile() override = default;
 
-
   Tile(Tile& ) = delete;
-
 
   //--------------------------------------------------
 
@@ -231,9 +229,9 @@ class Tile :
 
   virtual void exchange_currents(  corgi::Node<D>& node);
 
-  virtual void push_half_b();
+  //virtual void push_half_b();
 
-  virtual void push_e();
+  //virtual void push_e();
 
   virtual void deposit_current();
 

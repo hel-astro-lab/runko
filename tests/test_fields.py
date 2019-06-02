@@ -56,6 +56,32 @@ def wrap(ii, N):
     #return ii
 
 
+class FLD_inits(unittest.TestCase):
+
+    def test_propagators_1d(self):
+        conf = Conf()
+        conf.NyMesh = 1 #force 1D
+        conf.NzMesh = 1 #
+
+        fdtd2 = pyplasmabox.fields.oneD.FDTD2()
+        tile = pyplasmabox.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        fdtd2.push_e(tile)
+        fdtd2.push_half_b(tile)
+        
+    def test_propagators_2d(self):
+        conf = Conf()
+        conf.NzMesh = 1 #force 2D
+
+        fdtd2 = pyplasmabox.fields.twoD.FDTD2()
+        tile = pyplasmabox.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        fdtd2.push_e(tile)
+        fdtd2.push_half_b(tile)
+
+
+
+
 
 class Communications(unittest.TestCase):
 

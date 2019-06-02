@@ -7,6 +7,8 @@
 
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
+#include "../em-fields/propagator/propagator.h"
+#include "../em-fields/propagator/fdtd2.h"
 
 #include "../io/quick_writer.h"
 
@@ -35,8 +37,6 @@ auto declare_tile(
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("cycle_current",       &fields::Tile<D>::cycle_current)
     .def("clear_current",       &fields::Tile<D>::clear_current)
-    .def("push_e",              &fields::Tile<D>::push_e)
-    .def("push_half_b",          &fields::Tile<D>::push_half_b)
     .def("deposit_current",     &fields::Tile<D>::deposit_current)
     .def("add_analysis_species", &fields::Tile<D>::add_analysis_species)
     .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
@@ -76,6 +76,38 @@ auto declare_TileDamped(
   .def_readwrite("fld2",     &fields::damping::Tile<D,S>::fld2)
   .def("damp_fields",         &fields::damping::Tile<D,S>::damp_fields);
 }
+
+
+/// trampoline class for fields Propagator
+template<size_t D>
+class PyPropagator : public Propagator<D>
+{
+  void push_e( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Propagator<D>,
+      push_e,
+      tile
+      );
+  }
+
+  void push_half_b( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Propagator<D>,
+      push_half_b,
+      tile
+      );
+  }
+
+};
+
+
+
+
+
+
+
 
 
 
@@ -120,8 +152,6 @@ void bind_fields(py::module& m_sub)
 
 
 
-
-
   //--------------------------------------------------
   py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
@@ -142,6 +172,33 @@ void bind_fields(py::module& m_sub)
   auto td2_p1 = declare_TileDamped<2, +1>(m_2d, "TileDamped2D_RX");
   auto td2_m2 = declare_TileDamped<2, -2>(m_2d, "TileDamped2D_LY");
   auto td2_p2 = declare_TileDamped<2, +2>(m_2d, "TileDamped2D_RY");
+
+
+  //--------------------------------------------------
+  // 1D Propagator bindings
+  py::class_< fields::Propagator<1>, PyPropagator<1> > fieldspropag1d(m_1d, "Propagator");
+  fieldspropag1d
+    .def(py::init<>())
+    .def("push_e",      &fields::Propagator<1>::push_e)
+    .def("push_half_b", &fields::Propagator<1>::push_half_b);
+
+  // fdtd2 propagator
+  py::class_<fields::FDTD2<1>>(m_1d, "FDTD2", fieldspropag1d)
+    .def(py::init<>());
+
+
+  //--------------------------------------------------
+  // 2D Propagator bindings
+  py::class_< fields::Propagator<2>, PyPropagator<2> > fieldspropag2d(m_2d, "Propagator");
+  fieldspropag2d
+    .def(py::init<>())
+    .def("push_e",      &fields::Propagator<2>::push_e)
+    .def("push_half_b", &fields::Propagator<2>::push_half_b);
+
+  // fdtd2 propagator
+  py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
+    .def(py::init<>());
+
 
 
   //--------------------------------------------------
