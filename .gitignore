@@ -31,7 +31,6 @@ compile_commands.json
 *.exe
 *.out
 *.app
-radpic
 
 # debug folders
 *.dSYM
@@ -48,9 +47,6 @@ out/
 *.mp4
 
 
-docs
-workshop
-refs
 .ycm_extra_conf.py
 
 *.h5
