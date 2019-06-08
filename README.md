@@ -1,8 +1,9 @@
 # Modern kinetic plasma simulation toolbox
 <img align="top" src="notes/header.png">
 
-[![Build Status](https://travis-ci.com/natj/plasmabox.svg?branch=master)](https://travis-ci.com/natj/plasmabox) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/plasmabox/LICENSE)
+[![Build Status](https://travis-ci.com/natj/plasmabox.svg?branch=master)](https://travis-ci.com/natj/plasmabox) [![Documentation Status](https://readthedocs.org/projects/plasmabox/badge/?version=latest)](https://plasmabox.readthedocs.io/en/latest/?badge=latest) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/plasmabox/LICENSE) 
 
+ 
 
 PlasmaBox is a collection of simulation codes written in modern C++14/Python3 to model astrophysical plasmas. The framework consists of various physical modules that can be run independently or combined to create multi-physics simulations. Low-level "kernels" are mainly implemented in modern C++ that allows to write modular and high performance code. By binding these fast low-level classes to Python objects it is also easy to use and extend them. This ensures efficient code, rapid prototyping, and ease of use.
 
