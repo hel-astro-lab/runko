@@ -6,6 +6,11 @@
 .DS_Store
 compile_commands.json
 
+# doxygen files
+*.tmp
+*/html/
+*/latex/
+
 
 # Precompiled Headers
 *.gch
