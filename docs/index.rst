@@ -10,6 +10,10 @@ Welcome to PlasmaBox's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+API
+-------
+
+.. doxygennamespace:: pic
 
 
 Indices and tables
