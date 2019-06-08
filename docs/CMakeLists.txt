@@ -1,6 +1,6 @@
 find_package(Doxygen)
 if (NOT DOXYGEN)
-  message(STATUS "Target 'doc' disabled (requires doxygen)")
+  message(STATUS "Target 'doxygen' disabled (requires doxygen)")
   return ()
 endif ()
 
@@ -22,4 +22,23 @@ add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
                    MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
                    COMMENT "Generating docs")
  
-add_custom_target(Doxygen DEPENDS ${DOXYGEN_INDEX_FILE})
+add_custom_target(doxygen DEPENDS ${DOXYGEN_INDEX_FILE})
+
+
+find_package(Sphinx)
+#if (NOT Sphinx)
+#  message(STATUS "Target 'docs' disabled (requires sphinx)")
+#  return ()
+#endif ()
+ 
+set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR})
+set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/docs/sphinx)
+ 
+add_custom_target(docs 
+                  COMMAND
+                  ${SPHINX_EXECUTABLE} -b html
+                  ${SPHINX_SOURCE} ${SPHINX_BUILD}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                  COMMENT "Generating documentation with Sphinx")
+
+

@@ -6,6 +6,9 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 
 project (plasmabox)
 
+# Add the cmake folder to get FindPkg files
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+ 
 # optimization flags
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
