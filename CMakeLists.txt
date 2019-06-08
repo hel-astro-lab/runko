@@ -133,7 +133,7 @@ add_subdirectory(corgi)
 #add_subdirectory(tests)
 
 add_subdirectory(python)
-
+add_subdirectory(docs)
 
 
 

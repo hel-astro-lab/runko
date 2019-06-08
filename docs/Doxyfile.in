@@ -58,7 +58,7 @@ PROJECT_LOGO           =
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       =
+OUTPUT_DIRECTORY       = "@DOXYGEN_OUTPUT_DIR@"
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -813,20 +813,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-#INPUT                  = ../
-
-INPUT                  = ../analysis/ \
-                         ../build/ \
-                         ../em-fields/ \
-                         ../io/ \
-                         ../lib/ \
-                         ../pic/ \
-                         ../python/ \
-                         ../radiation/ \
-                         ../tests/ \
-                         ../tools/ \
-                         ../vlasov/ 
-
+INPUT = "@DOXYGEN_INPUT_DIR@"
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -852,51 +839,17 @@ INPUT_ENCODING         = UTF-8
 # *.f, *.for, *.tcl, *.vhd, *.vhdl, *.ucf, *.qsf and *.ice.
 
 FILE_PATTERNS          = *.c \
-                         *.cc \
                          *.cxx \
                          *.c++ \
                          *.cpp \
-                         *.c++ \
-                         *.java \
-                         *.ii \
-                         *.ixx \
-                         *.ipp \
-                         *.i++ \
-                         *.inl \
-                         *.idl \
-                         *.ddl \
-                         *.odl \
                          *.h \
-                         *.hh \
                          *.hxx \
                          *.hpp \
                          *.h++ \
-                         *.cs \
-                         *.d \
-                         *.php \
-                         *.php4 \
-                         *.php5 \
-                         *.phtml \
-                         *.inc \
-                         *.m \
                          *.markdown \
-                         *.md \
-                         *.mm \
-                         *.dox \
-                         *.py \
-                         *.pyw \
-                         *.f90 \
-                         *.f95 \
-                         *.f03 \
-                         *.f08 \
-                         *.f \
-                         *.for \
-                         *.tcl \
-                         *.vhd \
-                         *.vhdl \
-                         *.ucf \
-                         *.qsf \
-                         *.ice
+                         *.md 
+
+#                         *.py \
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -928,10 +881,7 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-#EXCLUDE_PATTERNS       = */build/* */corgi/* */docs/* */lib/* */notes/* */prototypes/* */tools/*
-
-EXCLUDE_PATTERNS       = */tools/cppitertools/* */tools/eigen/* */tools/ezh5/* */tools/inih/* */tools/sparsepp/* */skip_test* */test_*
-
+EXCLUDE_PATTERNS       = */tools/cppitertools/* */tools/eigen/* */tools/ezh5/* */tools/inih/* */tools/sparsepp/* */skip_test* */test_* */notes/* */corgi/* */lib/* */prototypes/* */reconnection/*
 
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
