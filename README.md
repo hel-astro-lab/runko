@@ -29,6 +29,32 @@ Additionally, modules under construction include:
 3) Test & prototype your new simulation setups on your laptop/desktop.
 4) Simulate on supercomputers!
 
+## Showcase
+<img align="right" src="https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/turb_small.gif">	
+
+### Relativistic kinetic turbulence 	
+PIC module has been used to simulate formation of turbulence in collisionless magnetically-dominated pair plasma.
+
+We start by perturbing the initial magnetic field in an otherwise uniform box of plasma. Magnetic eddies are quickly seen to develop. When the eddies collide, thin current sheets are formed. These thin sheets are unstable for magnetic reconnection that starts to tear the sheets and produce plasmoid.
+
+</br>
+</br>
+</br>
+
+### Collisionless shocks
+<img align="center" src="https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/shock.gif">
+
+PIC module has also an initial **work-in-progress** collisionless shock setup. This is based on the common piston setup where plasma is reflected from the left simulation wall and made to collide with it self. A collisionless shock is quickly formed stopping the plasma.
+
+
+### Plasma instabilities
+
+<img align="right" src="https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/beam.gif">	
+
+Vlasov module has been used to simulate the development of beam instability in a stratified medium. 
+
+In this 1D1V simulation we track the development of stratified beam instability starting from a relative density of ~10^-5 as the incoming beam enters the box. At higer densities of ~1 the beam excites Langmuir wave turbulence and heats the background plasma. This is a density contrast of over 100000!
+
 
 ## Installation
 
