@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 import pycorgi
-import pyplasmabox.rad as pyrad
+import pyrunko.rad as pyrad
 
 
 import initialize_pic as init_pic

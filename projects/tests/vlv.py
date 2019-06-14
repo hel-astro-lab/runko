@@ -5,7 +5,7 @@ import numpy as np
 import sys, os
 
 import pycorgi
-import pyplasmabox.vlv.oneD as plasma
+import pyrunko.vlv.oneD as plasma
 
 
 from configSetup import Configuration

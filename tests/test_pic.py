@@ -5,8 +5,8 @@ import sys
 import numpy as np
 
 import pycorgi
-import pyplasmabox.pic.twoD as pypic
-import pyplasmabox.tools.twoD as pytools
+import pyrunko.pic.twoD as pypic
+import pyrunko.tools.twoD as pytools
 
 
 

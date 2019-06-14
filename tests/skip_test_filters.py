@@ -7,8 +7,8 @@ from scipy.signal import convolve2d
 from scipy.signal import convolve
 
 import pycorgi
-import pyplasmabox.pic.twoD as pypic
-import pyplasmabox.tools.twoD as pytools
+import pyrunko.pic.twoD as pypic
+import pyrunko.tools.twoD as pytools
 
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc

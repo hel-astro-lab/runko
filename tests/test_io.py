@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 import pycorgi
-import pyplasmabox
+import pyrunko
 import h5py
 
 from visualize import get_yee
@@ -47,7 +47,7 @@ def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyplasmabox.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
@@ -56,7 +56,7 @@ def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyplasmabox.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
@@ -209,7 +209,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(node, conf)
         fill_yee(node, ref, conf)
 
-        pyplasmabox.vlv.oneD.write_yee(node, 0, conf.outdir)
+        pyrunko.vlv.oneD.write_yee(node, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -240,7 +240,7 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyplasmabox.vlv.oneD.read_yee(node2, 0, "io_test_1D")
+        pyrunko.vlv.oneD.read_yee(node2, 0, "io_test_1D")
 
         yee1 = get_yee(node,  conf)
         yee2 = get_yee(node2, conf)
@@ -287,7 +287,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(node, conf)
         fill_yee(node, ref, conf)
 
-        pyplasmabox.vlv.twoD.write_yee(node, 0, conf.outdir)
+        pyrunko.vlv.twoD.write_yee(node, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
@@ -318,7 +318,7 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyplasmabox.vlv.twoD.read_yee(node2, 0, "io_test_2D")
+        pyrunko.vlv.twoD.read_yee(node2, 0, "io_test_2D")
 
         yee1 = getYee2D(node,  conf)
         yee2 = getYee2D(node2, conf)
@@ -413,11 +413,11 @@ class IO(unittest.TestCase):
         for i in range(node.get_Nx()):
             for j in range(node.get_Ny()):
                 #if n.get_mpi_grid(i) == n.rank:
-                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 node.add_tile(c, (i,) ) 
         injector.inject(node, filler, conf ) #injecting plasma
 
-        pyplasmabox.vlv.oneD.write_mesh(node, 0, conf.outdir)
+        pyrunko.vlv.oneD.write_mesh(node, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -462,13 +462,13 @@ class IO(unittest.TestCase):
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
                 #if n.get_mpi_grid(i) == n.rank:
-                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 node2.add_tile(c, (i,) ) 
         injector.inject(node2, injector.empty_filler, conf, empty=True) #injecting empty meshes
 
-        #pyplasmabox.vlv.oneD.write_mesh(node2, 1, conf.outdir)
-        pyplasmabox.vlv.oneD.read_mesh(node2,  0, "io_test_mesh")
-        #pyplasmabox.vlv.oneD.write_mesh(node2, 2, conf.outdir)
+        #pyrunko.vlv.oneD.write_mesh(node2, 1, conf.outdir)
+        pyrunko.vlv.oneD.read_mesh(node2,  0, "io_test_mesh")
+        #pyrunko.vlv.oneD.write_mesh(node2, 2, conf.outdir)
 
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
@@ -608,13 +608,13 @@ class IO(unittest.TestCase):
 
         for i in range(node.get_Nx()):
             for j in range(node.get_Ny()):
-                c = pyplasmabox.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 initialize_tile(c, i, j, node, conf)
                 node.add_tile(c, (i,j)) 
 
         inject(node, test_filler, conf)
 
-        pyplasmabox.vlv.twoD.write_particles(node, 0, conf.outdir)
+        pyrunko.vlv.twoD.write_particles(node, 0, conf.outdir)
 
         # TODO: read with h5py
 
@@ -626,11 +626,11 @@ class IO(unittest.TestCase):
 
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
-                c = pyplasmabox.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 initialize_tile(c, i, j, node2, conf)
                 node2.add_tile(c, (i,j)) 
 
-        pyplasmabox.vlv.twoD.read_particles(node2, 0, conf.outdir)
+        pyrunko.vlv.twoD.read_particles(node2, 0, conf.outdir)
 
         #assert
         for i in range(node2.get_Nx()):

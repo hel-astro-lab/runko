@@ -1,5 +1,5 @@
 import pycorgi
-import pyplasmabox.pic as pypic 
+import pyrunko.pic as pypic 
 
 import numpy as np
 

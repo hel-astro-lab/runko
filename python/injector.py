@@ -3,7 +3,7 @@ import numpy as np
 import sys, os
 
 import pycorgi
-import pyplasmabox 
+import pyrunko 
 
 np.random.seed(0)
 
@@ -44,7 +44,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
 
 
 def createEmptyVelocityMesh(conf):
-    vmesh = pyplasmabox.tools.AdaptiveMesh3D()
+    vmesh = pyrunko.tools.AdaptiveMesh3D()
 
     dx = (conf.vxmax - conf.vxmin)/(conf.Nvx)
     dy = (conf.vymax - conf.vymin)/(conf.Nvy)
@@ -107,7 +107,7 @@ def fillMesh(
     ###################################################
     # adaptivity
 
-    adapter = pyplasmabox.Adapter();
+    adapter = pyrunko.Adapter();
 
     sweep = 1
     while(True):
@@ -152,7 +152,7 @@ def inject_internal(i,j,
     # loop over species
     species = []
     for ispcs in range(conf.Nspecies):
-        block = pyplasmabox.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        block = pyrunko.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         
         #set q/m
         if ispcs == 0:
@@ -242,7 +242,7 @@ def inject(
                 # loop over species
                 species = []
                 for ispcs in range(conf.Nspecies):
-                    block = pyplasmabox.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    block = pyrunko.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                     
                     #set q/m
                     if ispcs == 0:

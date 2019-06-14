@@ -6,7 +6,7 @@ import sys
 import numpy as np
 
 import pycorgi
-import pyplasmabox
+import pyrunko
 
 
 class Conf:
@@ -34,7 +34,7 @@ def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyplasmabox.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
@@ -43,7 +43,7 @@ def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyplasmabox.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
@@ -63,8 +63,8 @@ class FLD_inits(unittest.TestCase):
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
-        fdtd2 = pyplasmabox.fields.oneD.FDTD2()
-        tile = pyplasmabox.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fdtd2 = pyrunko.fields.oneD.FDTD2()
+        tile = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
@@ -73,8 +73,8 @@ class FLD_inits(unittest.TestCase):
         conf = Conf()
         conf.NzMesh = 1 #force 2D
 
-        fdtd2 = pyplasmabox.fields.twoD.FDTD2()
-        tile = pyplasmabox.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fdtd2 = pyrunko.fields.twoD.FDTD2()
+        tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)

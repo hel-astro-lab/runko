@@ -7,9 +7,9 @@ import sys, os
 import h5py
 
 import pycorgi.twoD as corgi
-import pyplasmabox.tools.twoD as pytools
-import pyplasmabox.vlv.twoD as pyvlv
-import pyplasmabox.pic.twoD as pypic
+import pyrunko.tools.twoD as pytools
+import pyrunko.vlv.twoD as pyvlv
+import pyrunko.pic.twoD as pypic
 
 
 from configSetup import Configuration

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- 
 import pycorgi
-import pyplasmabox.pic as pypic
+import pyrunko.pic as pypic
 
 from initialize_pic import spatialLoc
 
