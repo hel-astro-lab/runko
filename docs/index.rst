@@ -1,24 +1,39 @@
-.. PlasmaBox documentation master file, created by
-   sphinx-quickstart on Sat Jun  8 12:57:20 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. image:: header.png
 
-Runko: modern toolbox for plasma simulations 
-=====================================
+
+Runko --- modern toolbox for plasma simulations 
+==========================================================
+
+Runko is a modern numerical toolkit for simulating astrophysical plasmas. It is written in modern C++14/Python3 and is designed to be highly modular. Its name originates from Finnish word *runko* meaning literally a "frame".  
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :hidden:
 
-API
--------
-
-.. doxygennamespace:: pic
+   installation
 
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+The framework consists of various physics modules that can be run independently or combined to create multi-physics simulations. 
+
+.. toctree::
+   :caption: Modules:
+   :maxdepth: 2
+
+   pic
+   fields
+   vlv
+
+
+.. toctree::
+   :caption: APIs:
+   :maxdepth: 2
+
+   APIs/fields
+   APIs/pic
+   APIs/vlv
+
+See also full :ref:`genindex` of the code components.
+
+
+
