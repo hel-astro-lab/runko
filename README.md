@@ -23,7 +23,7 @@ Additionally, modules under construction include:
 
 
 ## Quick getting started guide
-1) Follow the installation instructions below to get Runko running on your laptop.
+1) Follow the [installation instructions](https://runko.readthedocs.io/en/latest/installation.html) to get Runko running on your laptop.
 2) Add your own project repository under `projects/` directory.
 	- This can be based on, for example, Python drivers in `projects/tests/`
 3) Test & prototype your new simulation setups on your laptop/desktop.
