@@ -53,9 +53,7 @@ PIC module has also an initial **work-in-progress** collisionless shock setup. T
 
 Vlasov module has been used to simulate the development of beam instability in a stratified medium. 
 
-In this 1D1V simulation we track the development of stratified beam instability starting from a relative density of ~10^-5 as the incoming beam enters the box. At higer densities of ~1 the beam excites Langmuir wave turbulence and heats the background plasma. This is a density contrast of over 100000!
-
-
+In this 1D1V simulation we track the development of stratified beam instability starting from a relative density of ~10^-5 as the incoming beam enters the box. At higher densities of ~1 the beam excites Langmuir wave turbulence and heats the background plasma. This is a density contrast of over 100000!
 
 
 

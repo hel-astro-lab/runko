@@ -4,7 +4,7 @@
 Runko --- modern toolbox for plasma simulations 
 ==========================================================
 
-Runko is a modern numerical toolkit for simulating astrophysical plasmas. It is written in modern C++14/Python3 and is designed to be highly modular. Its name originates from Finnish word *runko* meaning literally a "frame".  
+Runko is a modern numerical toolkit for simulating astrophysical plasmas. It is written in C++14/Python3 and is designed to be highly modular. Its name originates from Finnish word *runko* meaning literally a "frame".  
 
 .. toctree::
    :maxdepth: 2
