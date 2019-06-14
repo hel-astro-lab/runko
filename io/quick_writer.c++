@@ -15,7 +15,7 @@ using namespace mpi4cpp;
 using ezh5::File;
 template<>
 inline void h5io::QuickWriter<2>::read_tiles(
-    corgi::Node<2>& grid)
+    corgi::Grid<2>& grid)
 {
 
   // clear target arrays
@@ -92,7 +92,7 @@ inline void h5io::QuickWriter<2>::read_tiles(
 
 template<size_t D>
 inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
-    corgi::Node<D>& grid)
+    corgi::Grid<D>& grid)
 {
   /* based on https://gist.github.com/rmcgibbo/7178576
    */
@@ -153,7 +153,7 @@ inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
 
 template<size_t D>
 inline bool h5io::QuickWriter<D>::write(
-    corgi::Node<D>& grid, int lap)
+    corgi::Grid<D>& grid, int lap)
 {
   read_tiles(grid);
   mpi_reduce_snapshots(grid);

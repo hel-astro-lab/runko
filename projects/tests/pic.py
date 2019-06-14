@@ -129,7 +129,7 @@ def filler(xloc, ispcs, conf):
 
 
 
-# Get Yee grid components from node and save to hdf5 file
+# Get Yee grid components from grid and save to hdf5 file
 def save(n, conf, lap, f5):
 
     #get E field
@@ -191,26 +191,26 @@ if __name__ == "__main__":
         conf = Configuration(args.conf_filename)
 
 
-    #node = plasma.Grid(conf.Nx, conf.Ny)
-    node = corgi.Node(conf.Nx, conf.Ny, conf.Nz)
+    #grid = plasma.Grid(conf.Nx, conf.Ny)
+    grid = corgi.Grid(conf.Nx, conf.Ny, conf.Nz)
 
     xmin = 0.0
     xmax = conf.Nx*conf.NxMesh #XXX scaled length
     ymin = 0.0
     ymax = conf.Ny*conf.NyMesh
 
-    node.set_grid_lims(xmin, xmax, ymin, ymax)
+    grid.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
-    #init.loadMpiRandomly(node)
-    init.loadMpiXStrides(node)
+    #init.loadMpiRandomly(grid)
+    init.loadMpiXStrides(grid)
 
-    loadTiles(node, conf)
+    loadTiles(grid, conf)
 
 
     ################################################## 
     # Path to be created 
-    #if node.master:
+    #if grid.master:
     if True:
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
@@ -218,14 +218,14 @@ if __name__ == "__main__":
 
 
     np.random.seed(1)
-    inject(node, filler, conf) #injecting plasma particles
-    #insert_em(node, conf, linear_field)
+    inject(grid, filler, conf) #injecting plasma particles
+    #insert_em(grid, conf, linear_field)
 
     #static setup; communicate neighbor info once
-    node.analyze_boundaries()
-    node.send_tiles()
-    node.recv_tiles()
-    initialize_virtuals(node, conf)
+    grid.analyze_boundaries()
+    grid.send_tiles()
+    grid.recv_tiles()
+    initialize_virtuals(grid, conf)
 
 
     timer.stop("init") 
@@ -237,9 +237,9 @@ if __name__ == "__main__":
 
     # visualize initial condition
     #try:
-    plotNode( axs[0], node, conf)
-    #plotXmesh(axs[1], node, conf, 0, "x")
-    saveVisz(-1, node, conf)
+    plotNode( axs[0], grid, conf)
+    #plotXmesh(axs[1], grid, conf, 0, "x")
+    saveVisz(-1, grid, conf)
     #except:
     #    print()
     #    pass
@@ -281,74 +281,74 @@ if __name__ == "__main__":
         # advance Half B
 
         #update boundaries
-        debug_print(node,"update_boundaries 0")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        debug_print(grid,"update_boundaries 0")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
         #FIXME: update also virtuals (for push_b)
 
         #push B half
-        debug_print(node,"push_half_b 1")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        debug_print(grid,"push_half_b 1")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             fldprop.push_half_b(tile)
         #FIXME: push also virtuals to get correct boundaries for locals
 
         #update boundaries
-        debug_print(node,"update_boundaries 1")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        debug_print(grid,"update_boundaries 1")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
         #FIXME: update also virtuals (for second push_b)
 
         #--------------------------------------------------
         # move particles (only locals tiles)
 
         #interpolate fields (can move to next asap)
-        debug_print(node,"interpolate fields")
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        debug_print(grid,"interpolate fields")
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             fintp.solve(tile)
 
         #pusher 
-        debug_print(node,"push particles")
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        debug_print(grid,"push particles")
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             pusher.solve(tile)
 
         #--------------------------------------------------
         # advance B half
 
         #push B half
-        debug_print(node,"push_half_b 2")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        debug_print(grid,"push_half_b 2")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             fldprop.push_half_b(tile)
         #FIXME: push also virtuals
 
         #update boundaries
-        debug_print(node,"update_boundaries 2")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        debug_print(grid,"update_boundaries 2")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
         #FIXME: update virtuals
 
         #--------------------------------------------------
         # advance E 
 
         #push E
-        debug_print(node,"push_e")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        debug_print(grid,"push_e")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             fldprop.push_e(tile)
         #FIXME: push also virtuals
 
         #--------------------------------------------------
 
         #current calculation
-        debug_print(node,"current computation")
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        debug_print(grid,"current computation")
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             currint.solve(tile)
         
         # current solving is also taking place in nbor ranks
@@ -358,18 +358,18 @@ if __name__ == "__main__":
         # here.
 
         #mpi send currents
-        debug_print(node,"send 0")
-        node.send_data(0) #(indepdendent)
-        debug_print(node,"recv 0")
-        node.recv_data(0) #(indepdendent)
-        debug_print(node,"wait 0")
-        node.wait_data(0) #(indepdendent)
+        debug_print(grid,"send 0")
+        grid.send_data(0) #(indepdendent)
+        debug_print(grid,"recv 0")
+        grid.recv_data(0) #(indepdendent)
+        debug_print(grid,"wait 0")
+        grid.wait_data(0) #(indepdendent)
 
         #exchange currents
-        debug_print(node,"exchange_currents")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.exchange_currents(node)
+        debug_print(grid,"exchange_currents")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.exchange_currents(grid)
         #FIXME: exchange also virtuals (to get inner boundaries right)
 
 
@@ -377,68 +377,68 @@ if __name__ == "__main__":
         # particle communication (only local/boundary tiles)
 
         #local particle exchange (independent)
-        debug_print(node,"check_outgoing_particles")
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        debug_print(grid,"check_outgoing_particles")
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             tile.check_outgoing_particles()
 
         # global mpi exchange (independent)
-        debug_print(node,"pack_outgoing_particles")
-        for cid in node.get_boundary_tiles():
-            tile = node.get_tile(cid)
+        debug_print(grid,"pack_outgoing_particles")
+        for cid in grid.get_boundary_tiles():
+            tile = grid.get_tile(cid)
             tile.pack_outgoing_particles()
 
         # MPI global exchange
         # transfer primary and extra data
-        debug_print(node, "send 1")
-        node.send_data(1) #(indepdendent)
-        debug_print(node, "send 2")
-        node.send_data(2) #(indepdendent)
+        debug_print(grid, "send 1")
+        grid.send_data(1) #(indepdendent)
+        debug_print(grid, "send 2")
+        grid.send_data(2) #(indepdendent)
 
-        debug_print(node, "recv 1")
-        node.recv_data(1) #(indepdendent)
+        debug_print(grid, "recv 1")
+        grid.recv_data(1) #(indepdendent)
 
-        debug_print(node,"wait 1")
-        node.wait_data(1) #(indepdendent)
+        debug_print(grid,"wait 1")
+        grid.wait_data(1) #(indepdendent)
 
-        debug_print(node, "recv 2")
-        node.recv_data(2) #(indepdendent)
+        debug_print(grid, "recv 2")
+        grid.recv_data(2) #(indepdendent)
 
-        debug_print(node,"wait 2")
-        node.wait_data(2) #(indepdendent)
+        debug_print(grid,"wait 2")
+        grid.wait_data(2) #(indepdendent)
 
 
         # global unpacking (independent)
-        debug_print(node,"check_outgoing_particles")
-        for cid in node.get_virtual_tiles(): 
-            tile = node.get_tile(cid)
+        debug_print(grid,"check_outgoing_particles")
+        for cid in grid.get_virtual_tiles(): 
+            tile = grid.get_tile(cid)
             tile.unpack_incoming_particles()
             tile.check_outgoing_particles()
 
         # transfer local + global
-        debug_print(node,"get_incoming_particles")
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
-            tile.get_incoming_particles(node)
+        debug_print(grid,"get_incoming_particles")
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
+            tile.get_incoming_particles(grid)
 
         # delete local transferred particles
-        debug_print(node,"delete_transferred_particles")
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        debug_print(grid,"delete_transferred_particles")
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             tile.delete_transferred_particles()
 
-        debug_print(node,"delete all virtual particles")
-        for cid in node.get_virtual_tiles(): 
-            tile = node.get_tile(cid)
+        debug_print(grid,"delete all virtual particles")
+        for cid in grid.get_virtual_tiles(): 
+            tile = grid.get_tile(cid)
             tile.delete_all_particles()
 
         ##################################################
 
         #filter
-        #debug_print(node,"filter")
-        #for cid in node.get_tile_ids():
-        #    tile = node.get_tile(cid)
-        #    flt.get_padded_current(tile, node)
+        #debug_print(grid,"filter")
+        #for cid in grid.get_tile_ids():
+        #    tile = grid.get_tile(cid)
+        #    flt.get_padded_current(tile, grid)
 
         #    #flt.fft_image_forward()
         #    #flt.apply_kernel()
@@ -451,18 +451,18 @@ if __name__ == "__main__":
         # FIXME: or mpi communicate filtered currents
 
         ##cycle new and temporary currents (only if filtering)
-        #debug_print(node,"cycle currents")
-        #for cid in node.get_tile_ids():
-        #    tile = node.get_tile(cid)
+        #debug_print(grid,"cycle currents")
+        #for cid in grid.get_tile_ids():
+        #    tile = grid.get_tile(cid)
         #    tile.cycle_current()
         # FIXME: cycle also virtuals
 
         ##################################################
 
         #add current to E
-        debug_print(node,"add J to E")
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        debug_print(grid,"add J to E")
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             tile.deposit_current()
         #FIXME: deposit also virtuals
 
@@ -472,7 +472,7 @@ if __name__ == "__main__":
         timer.lap("step")
 
         #save temporarily to file
-        #save(node, conf, ifile, f5)
+        #save(grid, conf, ifile, f5)
         #ifile += 1
 
         #I/O
@@ -484,41 +484,41 @@ if __name__ == "__main__":
             timer.start("io")
 
             #analyze (independent)
-            for cid in node.get_local_tiles():
-                tile = node.get_tile(cid)
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
                 analyzer.analyze2d(tile)
 
-            pyvlv.write_yee(node,      lap, conf.outdir + "/")
-            pyvlv.write_analysis(node, lap, conf.outdir + "/")
-            #pyvlv.write_mesh(node,     lap, conf.outdir + "/")
+            pyvlv.write_yee(grid,      lap, conf.outdir + "/")
+            pyvlv.write_analysis(grid, lap, conf.outdir + "/")
+            #pyvlv.write_mesh(grid,     lap, conf.outdir + "/")
 
             #try:
-            #    plotNode( axs[0], node, conf)
-            #    plotXmesh(axs[1], node, conf, 0, "x")
-            #    plotJ(    axs[5], node, conf)
-            #    plotE(    axs[6], node, conf)
-            #    plotDebug(axs[6], node, conf)
-            #    plotDens( axs[7], node, conf)
-            #    saveVisz(lap, node, conf)
+            #    plotNode( axs[0], grid, conf)
+            #    plotXmesh(axs[1], grid, conf, 0, "x")
+            #    plotJ(    axs[5], grid, conf)
+            #    plotE(    axs[6], grid, conf)
+            #    plotDebug(axs[6], grid, conf)
+            #    plotDens( axs[7], grid, conf)
+            #    saveVisz(lap, grid, conf)
 
             #--------------------------------------------------
             #2D plots
             #try:
-            plotNode(axs[0], node, conf)
-            plot2dParticles(axs[1], node, conf, downsample=0.001)
+            plotNode(axs[0], grid, conf)
+            plot2dParticles(axs[1], grid, conf, downsample=0.001)
 
-            yee = getYee2D(node, conf)
-            plot2dYee(axs[2],  yee, node, conf, 'rho')
-            plot2dYee(axs[3],  yee, node, conf, 'jx')
-            plot2dYee(axs[4],  yee, node, conf, 'jy')
-            plot2dYee(axs[5],  yee, node, conf, 'jz')
-            plot2dYee(axs[6],  yee, node, conf, 'ex')
-            plot2dYee(axs[7],  yee, node, conf, 'ey')
-            plot2dYee(axs[8],  yee, node, conf, 'ez')
-            plot2dYee(axs[9],  yee, node, conf, 'bx')
-            plot2dYee(axs[10], yee, node, conf, 'by')
-            plot2dYee(axs[11], yee, node, conf, 'bz')
-            saveVisz(lap, node, conf)
+            yee = getYee2D(grid, conf)
+            plot2dYee(axs[2],  yee, grid, conf, 'rho')
+            plot2dYee(axs[3],  yee, grid, conf, 'jx')
+            plot2dYee(axs[4],  yee, grid, conf, 'jy')
+            plot2dYee(axs[5],  yee, grid, conf, 'jz')
+            plot2dYee(axs[6],  yee, grid, conf, 'ex')
+            plot2dYee(axs[7],  yee, grid, conf, 'ey')
+            plot2dYee(axs[8],  yee, grid, conf, 'ez')
+            plot2dYee(axs[9],  yee, grid, conf, 'bx')
+            plot2dYee(axs[10], yee, grid, conf, 'by')
+            plot2dYee(axs[11], yee, grid, conf, 'bz')
+            saveVisz(lap, grid, conf)
             #except:
             #    print()
             #    pass

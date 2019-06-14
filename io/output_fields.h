@@ -21,7 +21,7 @@ h5io::Writer::write(
   // open individual group for the data
   auto gr = file["yee_"+ numbering];
 
-  // tile location inside node
+  // tile location inside grid
   gr["i"] = static_cast<int>( std::get<0>(my_ind) );
   gr["j"] = static_cast<int>( std::get<1>(my_ind) );
   gr["k"] = static_cast<int>( std::get<2>(my_ind) );

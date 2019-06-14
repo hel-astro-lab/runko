@@ -31,7 +31,7 @@ class Tile :
   /// switch flag to determine if we move plasma or not
   bool advance = false;
 
-  void step_location(corgi::Node<D>& grid) override {
+  void step_location(corgi::Grid<D>& grid) override {
       //std::cout<<"BC spatial step\n";
 
     if(advance) {

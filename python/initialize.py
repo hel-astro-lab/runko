@@ -118,7 +118,7 @@ def initialize_tile(c, i, j, n, conf):
     c.threshold = conf.clipThreshold
 
 
-#load tiles into each node
+#load tiles into each grid
 def loadTiles(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -129,7 +129,7 @@ def loadTiles(n, conf):
 
                 initialize_tile(c, i, j, n, conf)
 
-                #add it to the node
+                #add it to the grid
                 n.add_tile(c, (i,)) 
 
 

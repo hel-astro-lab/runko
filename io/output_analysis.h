@@ -26,7 +26,7 @@ h5io::Writer::write2(
     // open individual group for the data
     auto gr = file["analysis_"+numbering+"-"+to_string(ispcs) ];
 
-    // tile location inside node
+    // tile location inside grid
     gr["i"] = std::get<0>(my_ind);
     gr["j"] = std::get<1>(my_ind);
     gr["k"] = std::get<2>(my_ind);

@@ -60,7 +60,7 @@ inline void reflect_x(
 /// Tile reflection member that applies reflect_x into the Vlasov fluid 
 // inside tile
 template<size_t D>
-void vlv::piston::Tile<D>::reflect( corgi::Node<D>& grid )
+void vlv::piston::Tile<D>::reflect( corgi::Grid<D>& grid )
 {
 
   auto& step0 = vlv::Tile<D>::steps.get(0);

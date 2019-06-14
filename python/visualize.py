@@ -62,7 +62,7 @@ def imshow(ax,
     return im
 
 
-# Visualize current cell ownership on node
+# Visualize current cell ownership on grid
 def plotNode(ax, n, conf):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
 
@@ -122,17 +122,17 @@ def plotNode(ax, n, conf):
 
 
 # plot tile boundaries
-def plotTileBoundaries(ax, node, conf):
+def plotTileBoundaries(ax, grid, conf):
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
                 try:
-                    cid = node.id(i,j)
+                    cid = grid.id(i,j)
                 except:
-                    cid = node.id(i)
+                    cid = grid.id(i)
 
-                c = node.get_tile(cid)
+                c = grid.get_tile(cid)
 
                 mins = np.array( c.mins ) 
                 maxs = np.array( c.maxs )

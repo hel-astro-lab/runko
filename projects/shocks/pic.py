@@ -84,7 +84,7 @@ def filler(xloc, ispcs, conf):
     return x0, u0
 
 
-def initialize_piston(node, piston, conf):
+def initialize_piston(grid, piston, conf):
 
     gam = conf.wallgamma
     beta = np.sqrt(1.-1./gam**2.)
@@ -96,8 +96,8 @@ def initialize_piston(node, piston, conf):
     print("wall gamma:", piston.gammawall)
     print("wall beta:", piston.betawall)
 
-    for cid in node.get_local_tiles():
-        tile = node.get_tile(cid)
+    for cid in grid.get_local_tiles():
+        tile = grid.get_tile(cid)
 
         #TODO: remove prtcls inside the wall
 
@@ -105,7 +105,7 @@ def initialize_piston(node, piston, conf):
 
 
 # Field initialization (guide field)
-def insert_em(node, conf):
+def insert_em(grid, conf):
 
     #into radians
     btheta = conf.btheta/180.*np.pi
@@ -113,8 +113,8 @@ def insert_em(node, conf):
     beta   = conf.beta
 
     kk = 0
-    for cid in node.get_tile_ids():
-        tile = node.get_tile(cid)
+    for cid in grid.get_tile_ids():
+        tile = grid.get_tile(cid)
         yee = tile.get_yee(0)
 
         ii,jj = tile.index
@@ -186,24 +186,24 @@ if __name__ == "__main__":
         conf = Configuration(args.conf_filename, do_print=do_print)
 
 
-    node = corgi.Node(conf.Nx, conf.Ny, conf.Nz)
+    grid = corgi.Grid(conf.Nx, conf.Ny, conf.Nz)
 
     xmin = 0.0
     xmax = conf.Nx*conf.NxMesh #XXX scaled length
     ymin = 0.0
     ymax = conf.Ny*conf.NyMesh
-    node.set_grid_lims(xmin, xmax, ymin, ymax)
+    grid.set_grid_lims(xmin, xmax, ymin, ymax)
 
-    #init.loadMpiRandomly(node)
-    #init.loadMpiXStrides(node)
-    debug_print(node, "load mpi 2d")
-    init.loadMpi2D(node)
-    debug_print(node, "load tiles")
-    loadTiles(node, conf)
+    #init.loadMpiRandomly(grid)
+    #init.loadMpiXStrides(grid)
+    debug_print(grid, "load mpi 2d")
+    init.loadMpi2D(grid)
+    debug_print(grid, "load tiles")
+    loadTiles(grid, conf)
 
     ################################################## 
     # Path to be created 
-    if node.master():
+    if grid.master():
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
         if not os.path.exists( conf.outdir+"/restart" ):
@@ -241,38 +241,38 @@ if __name__ == "__main__":
             read_lap = lap
             odir = conf.outdir + '/full_output'
 
-        debug_print(node, "read")
+        debug_print(grid, "read")
         if do_print:
             print("...reading Yee lattices (lap {}) from {}".format(read_lap, odir))
-        pyvlv.read_yee(node, read_lap, odir)
+        pyvlv.read_yee(grid, read_lap, odir)
 
         if do_print:
             print("...reading particles (lap {}) from {}".format(read_lap, odir))
-        pyvlv.read_particles(node, read_lap, odir)
+        pyvlv.read_particles(grid, read_lap, odir)
 
         lap += 1 #step one step ahead
 
     # initialize
     if do_initialization:
-        debug_print(node, "inject")
+        debug_print(grid, "inject")
         lap = 0
         np.random.seed(1)
-        inject(node, filler, conf) #injecting plasma particles
-        insert_em(node, conf)
+        inject(grid, filler, conf) #injecting plasma particles
+        insert_em(grid, conf)
 
     #static load balancing setup; communicate neighbor info once
-    debug_print(node, "analyze bcs")
-    node.analyze_boundaries()
-    debug_print(node, "send tiles")
-    node.send_tiles()
-    debug_print(node, "recv tiles")
-    node.recv_tiles()
+    debug_print(grid, "analyze bcs")
+    grid.analyze_boundaries()
+    debug_print(grid, "send tiles")
+    grid.send_tiles()
+    debug_print(grid, "recv tiles")
+    grid.recv_tiles()
     MPI.COMM_WORLD.barrier()
 
     #sys.exit()
 
-    debug_print(node, "init virs")
-    initialize_virtuals(node, conf)
+    debug_print(grid, "init virs")
+    initialize_virtuals(grid, conf)
 
 
     timer.stop("init") 
@@ -281,15 +281,15 @@ if __name__ == "__main__":
 
     # end of initialization
     ################################################## 
-    debug_print(node, "solvers")
+    debug_print(grid, "solvers")
 
 
     # visualize initial condition
     if do_plots:
         try:
-            plotNode( axs[0], node, conf)
-            #plotXmesh(axs[1], node, conf, 0, "x")
-            saveVisz(-1, node, conf)
+            plotNode( axs[0], grid, conf)
+            #plotXmesh(axs[1], grid, conf, 0, "x")
+            saveVisz(-1, grid, conf)
         except:
             pass
 
@@ -312,11 +312,11 @@ if __name__ == "__main__":
 
     #moving walls
     piston   = pypic.Piston()
-    initialize_piston(node, piston, conf)
+    initialize_piston(grid, piston, conf)
 
 
     # quick field snapshots
-    debug_print(node, "qwriter")
+    debug_print(grid, "qwriter")
     qwriter  = pyfld.QuickWriter(conf.outdir, 
             conf.Nx, conf.NxMesh,
             conf.Ny, conf.NyMesh,
@@ -324,27 +324,27 @@ if __name__ == "__main__":
             conf.stride)
 
     # test particles
-    debug_print(node, "tpwriter")
+    debug_print(grid, "tpwriter")
     tpwriter = pypic.TestPrtclWriter(
             conf.outdir, 
             conf.Nx, conf.NxMesh,
             conf.Ny, conf.NyMesh,
             conf.Nz, conf.NzMesh,
-            conf.ppc, len(node.get_local_tiles()),
+            conf.ppc, len(grid.get_local_tiles()),
             conf.n_test_prtcls)
 
 
 
 
-    debug_print(node, "mpi_e")
-    node.send_data(1) 
-    node.recv_data(1) 
-    node.wait_data(1) 
+    debug_print(grid, "mpi_e")
+    grid.send_data(1) 
+    grid.recv_data(1) 
+    grid.wait_data(1) 
 
-    debug_print(node, "mpi_b")
-    node.send_data(2) 
-    node.recv_data(2) 
-    node.wait_data(2) 
+    debug_print(grid, "mpi_b")
+    grid.send_data(2) 
+    grid.recv_data(2) 
+    grid.wait_data(2) 
 
     ################################################## 
     sys.stdout.flush()
@@ -352,7 +352,7 @@ if __name__ == "__main__":
     #simulation loop
     time = lap*(conf.cfl/conf.c_omp)
     for lap in range(lap, conf.Nt+1):
-        debug_print(node, "lap_start")
+        debug_print(grid, "lap_start")
 
         ################################################## 
         # advance Half B
@@ -360,32 +360,32 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # comm B
         timer.start_comp("mpi_b1")
-        debug_print(node, "mpi_b1")
+        debug_print(grid, "mpi_b1")
 
-        node.send_data(2) 
-        node.recv_data(2) 
-        node.wait_data(2) 
+        grid.send_data(2) 
+        grid.recv_data(2) 
+        grid.wait_data(2) 
 
         timer.stop_comp("mpi_b1")
 
         #--------------------------------------------------
         #update boundaries
         timer.start_comp("upd_bc0")
-        debug_print(node, "upd_bc0")
+        debug_print(grid, "upd_bc0")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
 
         timer.stop_comp("upd_bc0")
 
         #--------------------------------------------------
         #push B half
         timer.start_comp("push_half_b1")
-        debug_print(node, "push_half_b1")
+        debug_print(grid, "push_half_b1")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             fldprop.push_half_b(tile)
             piston.field_bc(tile)
 
@@ -394,22 +394,22 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # comm B
         timer.start_comp("mpi_b2")
-        debug_print(node, "mpi_b2")
+        debug_print(grid, "mpi_b2")
 
-        node.send_data(2) 
-        node.recv_data(2) 
-        node.wait_data(2) 
+        grid.send_data(2) 
+        grid.recv_data(2) 
+        grid.wait_data(2) 
 
         timer.stop_comp("mpi_b2")
 
         #--------------------------------------------------
         #update boundaries
         timer.start_comp("upd_bc1")
-        debug_print(node, "upd_bc1")
+        debug_print(grid, "upd_bc1")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
 
         timer.stop_comp("upd_bc1")
 
@@ -420,10 +420,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #interpolate fields (can move to next asap)
         timer.start_comp("interp_em")
-        debug_print(node, "interp_em")
+        debug_print(grid, "interp_em")
 
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             fintp.solve(tile)
 
         timer.stop_comp("interp_em")
@@ -432,10 +432,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #push particles in x and u
         timer.start_comp("push")
-        debug_print(node, "push")
+        debug_print(grid, "push")
 
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             pusher.solve(tile)
 
         timer.stop_comp("push")
@@ -443,9 +443,9 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # apply moving walls
         timer.start_comp("walls")
-        debug_print(node, "walls")
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        debug_print(grid, "walls")
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             piston.solve(tile)
 
         timer.stop_comp("walls")
@@ -455,10 +455,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #push B half
         timer.start_comp("push_half_b2")
-        debug_print(node, "push_half_b2")
+        debug_print(grid, "push_half_b2")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             fldprop.push_half_b(tile)
             piston.field_bc(tile)
 
@@ -468,22 +468,22 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # comm B
         timer.start_comp("mpi_e1")
-        debug_print(node, "mpi_e1")
+        debug_print(grid, "mpi_e1")
 
-        node.send_data(1) 
-        node.recv_data(1) 
-        node.wait_data(1) 
+        grid.send_data(1) 
+        grid.recv_data(1) 
+        grid.wait_data(1) 
 
         timer.stop_comp("mpi_e1")
 
         #--------------------------------------------------
         #update boundaries
         timer.start_comp("upd_bc2")
-        debug_print(node, "upd_bc2")
+        debug_print(grid, "upd_bc2")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
 
         timer.stop_comp("upd_bc2")
 
@@ -494,10 +494,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #push E
         timer.start_comp("push_e")
-        debug_print(node, "push_e")
+        debug_print(grid, "push_e")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             fldprop.push_e(tile)
             piston.field_bc(tile)
 
@@ -506,20 +506,20 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #current calculation; charge conserving current deposition
         timer.start_comp("comp_curr")
-        debug_print(node, "comp_cur")
+        debug_print(grid, "comp_cur")
 
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             currint.solve(tile)
 
         timer.stop_comp("comp_curr")
 
         #--------------------------------------------------
         timer.start_comp("clear_vir_cur")
-        debug_print(node, "clear_vir_cur")
+        debug_print(grid, "clear_vir_cur")
 
-        for cid in node.get_virtual_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_virtual_tiles():
+            tile = grid.get_tile(cid)
             tile.clear_current()
 
         timer.stop_comp("clear_vir_cur")
@@ -535,11 +535,11 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #mpi send currents
         timer.start_comp("mpi_cur")
-        debug_print(node, "mpi_cur")
+        debug_print(grid, "mpi_cur")
 
-        node.send_data(0)
-        node.recv_data(0) 
-        node.wait_data(0)
+        grid.send_data(0)
+        grid.recv_data(0) 
+        grid.wait_data(0)
 
         timer.stop_comp("mpi_cur")
 
@@ -547,11 +547,11 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #exchange currents
         timer.start_comp("cur_exchange")
-        debug_print(node, "cur_exchange")
+        debug_print(grid, "cur_exchange")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.exchange_currents(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.exchange_currents(grid)
 
         timer.stop_comp("cur_exchange")
 
@@ -563,10 +563,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #local particle exchange (independent)
         timer.start_comp("check_outg_prtcls")
-        debug_print(node, "check_outg_prtcls")
+        debug_print(grid, "check_outg_prtcls")
 
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             tile.check_outgoing_particles()
 
         timer.stop_comp("check_outg_prtcls")
@@ -574,10 +574,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # global mpi exchange (independent)
         timer.start_comp("pack_outg_prtcls")
-        debug_print(node, "pack_outg_prtcls")
+        debug_print(grid, "pack_outg_prtcls")
 
-        for cid in node.get_boundary_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_boundary_tiles():
+            tile = grid.get_tile(cid)
             tile.pack_outgoing_particles()
 
         timer.stop_comp("pack_outg_prtcls")
@@ -586,36 +586,36 @@ if __name__ == "__main__":
         # MPI global particle exchange
         # transfer primary and extra data
         timer.start_comp("mpi_prtcls")
-        debug_print(node, "mpi_prtcls")
+        debug_print(grid, "mpi_prtcls")
 
-        debug_print(node, "mpi_prtcls: send3")
-        node.send_data(3) 
+        debug_print(grid, "mpi_prtcls: send3")
+        grid.send_data(3) 
 
-        debug_print(node, "mpi_prtcls: recv3")
-        node.recv_data(3) 
+        debug_print(grid, "mpi_prtcls: recv3")
+        grid.recv_data(3) 
 
-        debug_print(node, "mpi_prtcls: wait3")
-        node.wait_data(3) 
+        debug_print(grid, "mpi_prtcls: wait3")
+        grid.wait_data(3) 
 
         # orig just after send3
-        debug_print(node, "mpi_prtcls: send4")
-        node.send_data(4) 
+        debug_print(grid, "mpi_prtcls: send4")
+        grid.send_data(4) 
 
-        debug_print(node, "mpi_prtcls: recv4")
-        node.recv_data(4) 
+        debug_print(grid, "mpi_prtcls: recv4")
+        grid.recv_data(4) 
 
-        debug_print(node, "mpi_prtcls: wait4")
-        node.wait_data(4) 
+        debug_print(grid, "mpi_prtcls: wait4")
+        grid.wait_data(4) 
 
         timer.stop_comp("mpi_prtcls")
 
         #--------------------------------------------------
         # global unpacking (independent)
         timer.start_comp("unpack_vir_prtcls")
-        debug_print(node, "unpack_vir_prtcls")
+        debug_print(grid, "unpack_vir_prtcls")
 
-        for cid in node.get_virtual_tiles(): 
-            tile = node.get_tile(cid)
+        for cid in grid.get_virtual_tiles(): 
+            tile = grid.get_tile(cid)
             tile.unpack_incoming_particles()
             tile.check_outgoing_particles()
 
@@ -624,21 +624,21 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # transfer local + global
         timer.start_comp("get_inc_prtcls")
-        debug_print(node, "get_inc_prtcls")
+        debug_print(grid, "get_inc_prtcls")
 
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
-            tile.get_incoming_particles(node)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
+            tile.get_incoming_particles(grid)
 
         timer.stop_comp("get_inc_prtcls")
 
         #--------------------------------------------------
         # delete local transferred particles
         timer.start_comp("del_trnsfrd_prtcls")
-        debug_print(node, "del_trnsfrd_prtcls")
+        debug_print(grid, "del_trnsfrd_prtcls")
 
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             tile.delete_transferred_particles()
 
         timer.stop_comp("del_trnsfrd_prtcls")
@@ -646,10 +646,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         # delete all virtual particles (because new prtcls will come)
         timer.start_comp("del_vir_prtcls")
-        debug_print(node, "del_vir_prtcls")
+        debug_print(grid, "del_vir_prtcls")
 
-        for cid in node.get_virtual_tiles(): 
-            tile = node.get_tile(cid)
+        for cid in grid.get_virtual_tiles(): 
+            tile = grid.get_tile(cid)
             tile.delete_all_particles()
 
         timer.stop_comp("del_vir_prtcls")
@@ -660,9 +660,9 @@ if __name__ == "__main__":
         #filter
         #timer.start_comp("filter")
 
-        #for cid in node.get_tile_ids():
-        #    tile = node.get_tile(cid)
-        #    flt.get_padded_current(tile, node)
+        #for cid in grid.get_tile_ids():
+        #    tile = grid.get_tile(cid)
+        #    flt.get_padded_current(tile, grid)
 
         #    #flt.fft_image_forward()
         #    #flt.apply_kernel()
@@ -673,8 +673,8 @@ if __name__ == "__main__":
         #    flt.set_current(tile)
 
         ##cycle new and temporary currents (only if filttering)
-        #for cid in node.get_tile_ids():
-        #    tile = node.get_tile(cid)
+        #for cid in grid.get_tile_ids():
+        #    tile = grid.get_tile(cid)
         #    tile.cycle_current()
         # FIXME: cycle also virtuals
         #--------------------------------------------------
@@ -684,10 +684,10 @@ if __name__ == "__main__":
         #--------------------------------------------------
         #add current to E
         timer.start_comp("add_cur")
-        debug_print(node, "add_cur")
+        debug_print(grid, "add_cur")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             tile.deposit_current()
 
         timer.stop_comp("add_cur")
@@ -698,13 +698,13 @@ if __name__ == "__main__":
 
         timer.lap("step")
         if (lap % conf.interval == 0):
-            debug_print(node, "io")
+            debug_print(grid, "io")
             if do_print:
                 print("--------------------------------------------------")
                 print("------ lap: {} / t: {}".format(lap, time)) 
 
-            #for cid in node.get_tile_ids():
-            #    tile = node.get_tile(cid)
+            #for cid in grid.get_tile_ids():
+            #    tile = grid.get_tile(cid)
             #    tile.erase_temporary_arrays()
 
             timer.stats("step")
@@ -714,46 +714,46 @@ if __name__ == "__main__":
             #analyze (independent)
             timer.start("io")
 
-            for cid in node.get_local_tiles():
-                tile = node.get_tile(cid)
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
                 analyzer.analyze2d(tile)
 
             # barrier for quick writers
             MPI.COMM_WORLD.barrier()
 
-            debug_print(node, "qwriter")
+            debug_print(grid, "qwriter")
             #shallow IO
-            qwriter.write(node, lap) #quick field snapshots
+            qwriter.write(grid, lap) #quick field snapshots
 
-            debug_print(node, "tpwriter")
-            tpwriter.write(node, lap) #test particles
+            debug_print(grid, "tpwriter")
+            tpwriter.write(grid, lap) #test particles
 
             #deep IO
             if (conf.full_interval != -1 and (lap % conf.full_interval == 0) and (lap > 0)):
-                debug_print(node, "deep io")
+                debug_print(grid, "deep io")
 
-                debug_print(node, "deep write_yee")
-                pyvlv.write_yee(node,      lap, conf.outdir + "/full_output/" )
-                debug_print(node, "deep write_analysis")
-                pyvlv.write_analysis(node, lap, conf.outdir + "/full_output/" )
-                debug_print(node, "deep write_prtcls")
-                pyvlv.write_particles(node,lap, conf.outdir + "/full_output/" )
+                debug_print(grid, "deep write_yee")
+                pyvlv.write_yee(grid,      lap, conf.outdir + "/full_output/" )
+                debug_print(grid, "deep write_analysis")
+                pyvlv.write_analysis(grid, lap, conf.outdir + "/full_output/" )
+                debug_print(grid, "deep write_prtcls")
+                pyvlv.write_particles(grid,lap, conf.outdir + "/full_output/" )
 
 
             #restart IO (overwrites)
             if ((lap % conf.restart == 0) and (lap > 0)):
-                debug_print(node, "restart io")
+                debug_print(grid, "restart io")
                 #flip between two sets of files
                 deep_io_switch = 1 if deep_io_switch == 0 else 0
 
-                print(node, "write_yee")
-                pyvlv.write_yee(node,      deep_io_switch, conf.outdir + "/restart/" )
-                print(node, "write_prtcls")
-                pyvlv.write_particles(node,deep_io_switch, conf.outdir + "/restart/" )
+                print(grid, "write_yee")
+                pyvlv.write_yee(grid,      deep_io_switch, conf.outdir + "/restart/" )
+                print(grid, "write_prtcls")
+                pyvlv.write_particles(grid,deep_io_switch, conf.outdir + "/restart/" )
 
                 #if successful adjust info file
                 MPI.COMM_WORLD.barrier() # sync everybody in case of failure before write
-                if node.rank() == 0:
+                if grid.rank() == 0:
                     with open(conf.outdir+"/restart/laps.txt", "a") as lapfile:
                         lapfile.write("{},{}\n".format(lap, deep_io_switch))
 
@@ -762,20 +762,20 @@ if __name__ == "__main__":
             #2D plots
             if do_plots:
                 try:
-                    plotNode(axs[0], node, conf)
+                    plotNode(axs[0], grid, conf)
 
-                    yee = getYee2D(node, conf)
-                    plot2dYee(axs[1],  yee, node, conf, 'rho', label_title=True)
-                    plot2dYee(axs[2],  yee, node, conf, 'jx' , label_title=True)
-                    plot2dYee(axs[3],  yee, node, conf, 'jy' , label_title=True)
-                    plot2dYee(axs[4],  yee, node, conf, 'jz' , label_title=True)
-                    plot2dYee(axs[5],  yee, node, conf, 'ex' , label_title=True)
-                    plot2dYee(axs[6],  yee, node, conf, 'ey' , label_title=True)
-                    plot2dYee(axs[7],  yee, node, conf, 'ez' , label_title=True)
-                    plot2dYee(axs[8],  yee, node, conf, 'bx' , label_title=True)
-                    plot2dYee(axs[9],  yee, node, conf, 'by' , label_title=True)
-                    plot2dYee(axs[10], yee, node, conf, 'bz' , label_title=True)
-                    saveVisz(lap, node, conf)
+                    yee = getYee2D(grid, conf)
+                    plot2dYee(axs[1],  yee, grid, conf, 'rho', label_title=True)
+                    plot2dYee(axs[2],  yee, grid, conf, 'jx' , label_title=True)
+                    plot2dYee(axs[3],  yee, grid, conf, 'jy' , label_title=True)
+                    plot2dYee(axs[4],  yee, grid, conf, 'jz' , label_title=True)
+                    plot2dYee(axs[5],  yee, grid, conf, 'ex' , label_title=True)
+                    plot2dYee(axs[6],  yee, grid, conf, 'ey' , label_title=True)
+                    plot2dYee(axs[7],  yee, grid, conf, 'ez' , label_title=True)
+                    plot2dYee(axs[8],  yee, grid, conf, 'bx' , label_title=True)
+                    plot2dYee(axs[9],  yee, grid, conf, 'by' , label_title=True)
+                    plot2dYee(axs[10], yee, grid, conf, 'bz' , label_title=True)
+                    saveVisz(lap, grid, conf)
                 except:
                     #print()
                     pass
