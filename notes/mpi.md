@@ -4,7 +4,7 @@ For convenience it might be better to compile MPI library yourself so that you g
 
 Before beginning, uninstall old openmpi to avoid confusion of having multiple versions.
 ```
-brew uninstall openmpi
+brew uninstall --ignore-dependencies openmpi
 ```
 
 ## Compile and configure openmpi
@@ -20,9 +20,9 @@ Download newest open-mpi (v.4.0 as of writing) here https://www.open-mpi.org/sof
 tar xf openmpi-4.0.0.tar.gz
 ```
 
-Configure to use gcc-7 and to install into ~/libs
+Configure to use gcc-9 and to install into ~/libs
 ```
-./configure CC=gcc-7 CXX=g++-7 --prefix=~/libs
+./configure CC=gcc-9 CXX=g++-9 --prefix=~/libs
 ```
 
 Compile it
@@ -58,7 +58,7 @@ pip3 uninstall mpi4py
 pip3 install mpi4py --no-cache-dir
 ```
 
-## Re-compile PlasmaBox
+## Re-compile Runko
 
 Now everything should be working. Normally, in build directory run
 ```

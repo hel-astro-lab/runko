@@ -75,11 +75,11 @@ before_script:
   - echo $PATH
   - pip3 uninstall numpy -y
   - pip3 install -r requirements.txt
-  - export PLASMABOX=$(pwd)
-  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/corgi/lib
-  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/lib
-  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/python
-  - export PYTHONPATH=$PYTHONPATH:$PLASMABOX/analysis
+  - export RUNKO=$(pwd)
+  - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
+  - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
+  - export PYTHONPATH=$PYTHONPATH:$RUNKO/python
+  - export PYTHONPATH=$PYTHONPATH:$RUNKO/analysis
   - echo $PYTHONPATH
 
 
