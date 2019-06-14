@@ -1,13 +1,13 @@
 # Modern kinetic plasma simulation toolbox
 <img align="top" src="notes/header.png">
 
-[![Build Status](https://travis-ci.com/natj/plasmabox.svg?branch=master)](https://travis-ci.com/natj/plasmabox) [![Documentation Status](https://readthedocs.org/projects/plasmabox/badge/?version=latest)](https://plasmabox.readthedocs.io/en/latest/?badge=latest) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/plasmabox/LICENSE) 
+[![Build Status](https://travis-ci.com/natj/runko.svg?branch=master)](https://travis-ci.com/natj/runko) [![Documentation Status](https://readthedocs.org/projects/runko/badge/?version=latest)](https://runko.readthedocs.io/en/latest/?badge=latest) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/runko/LICENSE) 
 
 Runko is a collection of simulation codes written in modern C++14/Python3 to model astrophysical plasmas. The framework consists of various physical modules that can be run independently or combined to create multi-physics simulations. Low-level "kernels" are mainly implemented in modern C++ that allows to write modular and high performance code. By binding these fast low-level classes to Python objects it is also easy to use and extend them. This ensures efficient code, rapid prototyping, and ease of use.
 
 Under the hood, the framework uses the massively parallel grid infrastructure library [corgi](https://github.com/natj/corgi) that relies on decomposing the grid to smaller subregions, called tiles, that can be operated on and updated independently of each other. [Corgi](https://github.com/natj/corgi) also automatically parallelizes the simulations and provides dynamic load-balancing capability. Therefore, small simulation setups can be tested locally on laptops and then extended for massively parallel supercomputer platforms (currently tested up to ~10k cores).
 
-**Documentation is available from [plasmabox.readthedocs.io](https://plasmabox.readthedocs.io/en/latest/?badge=latest) (work-in-progress).**
+Documentation is available from [runko.readthedocs.io](https://runko.readthedocs.io/en/latest/?badge=latest) 
 
 
 ## Available modules
@@ -60,7 +60,7 @@ In this 1D1V simulation we track the development of stratified beam instability 
 
 Runko relies on various small template libraries that are automatically obtained along the main code as submodules. Because of this, remember to always issue a recursive clone:
 ```
-git clone --recursive https://github.com/natj/plasmabox.git
+git clone --recursive https://github.com/natj/runko.git
 ```
 You also need to update all the submodules (so that other branches are also in sync) with
 ```
@@ -86,12 +86,12 @@ Before proceeding to compilation, check that your system has these requirements 
 
 ### MacOS
 On MacOS these should be easily installed by using [homebrew](https://brew.sh/) and running:
-- `brew install gcc@7 hdf5 python3 open-mpi cmake fftw`
+- `brew install gcc@9 hdf5 python3 open-mpi cmake fftw`
 
 ### Linux
 On Linux (assuming Ubuntu) run:
 - `sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"`
-- `sudo apt-get install install clang-5.0 g++-7 hdf5-tools python3 python3-pip openmpi-bin libopenmpi-dev`
+- `sudo apt-get install install clang-5.0 g++-9 hdf5-tools python3 python3-pip openmpi-bin libopenmpi-dev`
 
 ### Python libraries
 All the python requirements can be installed via pip as
@@ -102,18 +102,18 @@ All the python requirements can be installed via pip as
 ### Compiling
 After installign all the pre-requisites, you can proceed to compiling. First you need to configure the build. To use your (freshly installed) modern C++ compiler we need to export it as
 ```
-export CC=gcc-7
-export CXX=g++-7
+export CC=gcc-9
+export CXX=g++-9
 ```
 You can also put this part into your `~/.bashrc` (or `~/.bash_profile` on MacOS) so correct compilers are automatically exported in the startup.
 
 You should also add the python script directories into `PYTHONPATH` environment variable. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `runko` libraries to the path by exporting
 ```
-export PLASMABOXDIR=/path2repo/
-export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/corgi/lib
-export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/lib
-export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/python
-export PYTHONPATH=$PYTHONPATH:$PLASMABOXDIR/analysis
+export RUNKO=/path2repo/
+export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
+export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
+export PYTHONPATH=$PYTHONPATH:$RUNKO/python
+export PYTHONPATH=$PYTHONPATH:$RUNKO/analysis
 ```
 where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory).
 
