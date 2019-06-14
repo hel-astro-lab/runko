@@ -26,7 +26,7 @@ if read_the_docs_build:
     output_dir = 'build'
     configureDoxyfile(input_dir, output_dir)
     subprocess.call('doxygen', shell=True)
-    breathe_projects['PlasmaBox'] = output_dir + '/xml'
+    breathe_projects['Runko'] = output_dir + '/xml'
 
 
 # -- Path setup --------------------------------------------------------------
@@ -42,7 +42,7 @@ if read_the_docs_build:
 
 # -- Project information -----------------------------------------------------
 
-project = 'PlasmaBox'
+project = 'Runko'
 copyright = '2019, Joonas Nättilä'
 author = 'Joonas Nättilä'
 
@@ -55,7 +55,7 @@ author = 'Joonas Nättilä'
 extensions = ["breathe"]
 
 # Breathe Configuration
-breathe_default_project = "PlasmaBox"
+breathe_default_project = "Runko"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

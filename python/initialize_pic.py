@@ -1,12 +1,12 @@
 import pycorgi
-import pyplasmabox.pic as pypic 
+import pyrunko.pic as pypic 
 
 import numpy as np
 
 
 def globalIndx(Ncoords, Mcoords, conf):
 
-    #node coordinates
+    #grid coordinates
     i, j    = Ncoords 
     Nx      = conf.Nx
     Ny      = conf.Ny
@@ -35,9 +35,9 @@ def coord2indx(xloc, conf):
     return [i,j,k]
 
 
-def spatialLoc(node, Ncoords, Mcoords, conf):
+def spatialLoc(grid, Ncoords, Mcoords, conf):
 
-    #node coordinates
+    #grid coordinates
     i, j    = Ncoords 
     Nx      = conf.Nx
     Ny      = conf.Ny
@@ -49,8 +49,8 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     NzMesh = conf.NzMesh
 
     #grid spacing
-    xmin = node.get_xmin()
-    ymin = node.get_ymin()
+    xmin = grid.get_xmin()
+    ymin = grid.get_ymin()
 
     dx = 1.0 #conf.dx
     dy = 1.0 #conf.dy
@@ -108,7 +108,7 @@ def initialize_tile(c, i, j, n, conf):
         c.add_analysis_species()
 
 
-#load tiles into each node
+#load tiles into each grid
 def loadTiles(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -119,7 +119,7 @@ def loadTiles(n, conf):
                 
                 initialize_tile(c, i, j, n, conf)
 
-                #add it to the node
+                #add it to the grid
                 n.add_tile(c, (i,j)) 
 
 

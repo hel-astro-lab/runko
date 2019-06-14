@@ -7,8 +7,8 @@ from scipy.signal import convolve2d
 from scipy.signal import convolve
 
 import pycorgi
-import pyplasmabox.pic.twoD as pypic
-import pyplasmabox.tools.twoD as pytools
+import pyrunko.pic.twoD as pypic
+import pyrunko.tools.twoD as pytools
 
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
@@ -31,12 +31,12 @@ def linear_ramp(x,y,z):
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
-def insert_em(node, conf, ffunc):
+def insert_em(grid, conf, ffunc):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            c = node.get_tile(i,j)
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            c = grid.get_tile(i,j)
             yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
@@ -44,8 +44,8 @@ def insert_em(node, conf, ffunc):
                     for n in range(conf.NzMesh):
 
                         #get x_i+1/2 (Yee lattice so rho_i)
-                        xloc0 = spatialLoc(node, (i,j), (l,  m,n), conf)
-                        xloc1 = spatialLoc(node, (i,j), (l+1,m,n), conf)
+                        xloc0 = spatialLoc(grid, (i,j), (l,  m,n), conf)
+                        xloc1 = spatialLoc(grid, (i,j), (l+1,m,n), conf)
 
                         xmid = 0.5*(xloc0[0] + xloc1[0])
                         ymid = 0.5*(xloc0[1] + xloc1[1])
@@ -775,16 +775,16 @@ class Filters(unittest.TestCase):
         conf.NyMesh = 10
         conf.NzMesh = 1
 
-        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadTiles(node, conf)
-        insert_em(node, conf, linear_ramp)
-        #inject(node, filler_no_velocity, conf) #injecting plasma particles
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        loadTiles(grid, conf)
+        insert_em(grid, conf, linear_ramp)
+        #inject(grid, filler_no_velocity, conf) #injecting plasma particles
 
         flt = pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(4.0, 4.0)
 
-        flt.get_padded_current( node.get_tile(1,1), node)
+        flt.get_padded_current( grid.get_tile(1,1), grid)
 
         img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
         #axs[0].imshow(img[conf.NxMesh:2*conf.NxMesh, conf.NyMesh:2*conf.NyMesh]) #, vmin=vmin, vmax=vmax)
@@ -793,8 +793,8 @@ class Filters(unittest.TestCase):
 
         # reference array
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
             (i, j) = c.index
 
             yee = c.get_yee(0)

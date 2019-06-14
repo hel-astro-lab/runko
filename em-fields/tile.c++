@@ -218,7 +218,7 @@ void add_z_pencil_yee(
 
 /// Update Yee grid boundaries
 template<>
-void Tile<1>::update_boundaries(corgi::Node<1>& node) 
+void Tile<1>::update_boundaries(corgi::Grid<1>& grid) 
 {
   // target
   YeeLattice& mesh = get_yee();
@@ -226,7 +226,7 @@ void Tile<1>::update_boundaries(corgi::Node<1>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(-1) ));
+        grid.get_tileptr( neighs(-1) ));
   YeeLattice& mleft = cleft->get_yee();
 
   // copy from right side to left
@@ -235,7 +235,7 @@ void Tile<1>::update_boundaries(corgi::Node<1>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(+1) ));
+        grid.get_tileptr( neighs(+1) ));
   YeeLattice& mright = cright->get_yee();
     
   // copy from left side to right
@@ -245,7 +245,7 @@ void Tile<1>::update_boundaries(corgi::Node<1>& node)
 
 
 template<>
-void Tile<2>::update_boundaries(corgi::Node<2>& grid) 
+void Tile<2>::update_boundaries(corgi::Grid<2>& grid) 
 {
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -310,7 +310,7 @@ FIXME: this is how we should loop over H>1 halo boundaries
 
 
 template<>
-void Tile<1>::exchange_currents(corgi::Node<1>& node) 
+void Tile<1>::exchange_currents(corgi::Grid<1>& grid) 
 {
 
   // target
@@ -322,7 +322,7 @@ void Tile<1>::exchange_currents(corgi::Node<1>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(-1) ));
+        grid.get_tileptr( neighs(-1) ));
   YeeLattice& mleft = cleft->get_yee();
 
   // add from right side to left
@@ -333,7 +333,7 @@ void Tile<1>::exchange_currents(corgi::Node<1>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(+1) ));
+        grid.get_tileptr( neighs(+1) ));
   YeeLattice& mright = cright->get_yee();
     
   // add from left side to right
@@ -378,7 +378,7 @@ void Tile<1>::exchange_currents(corgi::Node<1>& node)
 //--------------------------------------------------
 //
 template<>
-void Tile<2>::exchange_currents(corgi::Node<2>& grid) 
+void Tile<2>::exchange_currents(corgi::Grid<2>& grid) 
 {
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;

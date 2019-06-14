@@ -225,9 +225,9 @@ class Tile :
 
   //--------------------------------------------------
 
-  virtual void update_boundaries(  corgi::Node<D>& node);
+  virtual void update_boundaries(  corgi::Grid<D>& grid);
 
-  virtual void exchange_currents(  corgi::Node<D>& node);
+  virtual void exchange_currents(  corgi::Grid<D>& grid);
 
   //virtual void push_half_b();
 

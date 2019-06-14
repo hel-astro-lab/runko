@@ -77,7 +77,7 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
 
     void solve(
       vlv::Tile<1>& tile,
-      corgi::Node<1>& grid
+      corgi::Grid<1>& grid
       ) override {
       PYBIND11_OVERLOAD_PURE(
           void,

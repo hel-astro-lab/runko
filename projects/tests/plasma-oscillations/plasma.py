@@ -96,7 +96,7 @@ def filler(xloc, uloc, ispcs, conf):
     return f
 
 
-# Get Yee grid components from node and save to hdf5 file
+# Get Yee grid components from grid and save to hdf5 file
 def save(n, conf, lap, f5):
 
     #get E field
@@ -143,29 +143,29 @@ if __name__ == "__main__":
 
 
     ################################################## 
-    #initialize node
+    #initialize grid
     conf = Configuration('config-plasmaosc.ini') 
     #conf = Configuration('config-dispersion.ini') 
 
-    node = plasma.Grid(conf.Nx, conf.Ny)
+    grid = plasma.Grid(conf.Nx, conf.Ny)
 
     xmin = 0.0
     xmax = conf.dx*conf.Nx*conf.NxMesh
     ymin = 0.0
     ymax = conf.dy*conf.Ny*conf.NyMesh
 
-    node.set_grid_lims(xmin, xmax, ymin, ymax)
+    grid.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
-    #node.initMpi()
-    #loadMpiXStrides(node)
+    #grid.initMpi()
+    #loadMpiXStrides(grid)
 
-    init.loadCells(node, conf)
+    init.loadCells(grid, conf)
 
 
     ################################################## 
     # Path to be created 
-    #if node.master:
+    #if grid.master:
     if True:
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
@@ -178,19 +178,19 @@ if __name__ == "__main__":
     #modes        = np.array([2])
     random_phase = np.random.rand(len(modes))
 
-    injector.inject(node, filler, conf) #injecting plasma
+    injector.inject(grid, filler, conf) #injecting plasma
 
 
     # visualize initial condition
-    plotNode(axs[0], node, conf)
-    plotXmesh(axs[1], node, conf, 0, "x")
-    plotXmesh(axs[2], node, conf, 0, "y")
-    plotXmesh(axs[3], node, conf, 1, "x")
-    plotXmesh(axs[4], node, conf, 1, "y")
-    plotJ(axs[5], node, conf)
-    plotE(axs[6], node, conf)
-    plotDens(axs[7], node, conf)
-    saveVisz(-1, node, conf)
+    plotNode(axs[0], grid, conf)
+    plotXmesh(axs[1], grid, conf, 0, "x")
+    plotXmesh(axs[2], grid, conf, 0, "y")
+    plotXmesh(axs[3], grid, conf, 1, "x")
+    plotXmesh(axs[4], grid, conf, 1, "y")
+    plotJ(axs[5], grid, conf)
+    plotE(axs[6], grid, conf)
+    plotDens(axs[7], grid, conf)
+    saveVisz(-1, grid, conf)
 
 
 
@@ -232,64 +232,64 @@ if __name__ == "__main__":
         ##move vlasov fluid
 
         #update boundaries
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                cell = node.get_tileptr(i,j)
-                cell.update_boundaries(node)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                cell = grid.get_tileptr(i,j)
+                cell.update_boundaries(grid)
 
         #momentum step
-        #for j in range(node.get_Ny()):
-        #    for i in range(node.get_Nx()):
-        #        cell = node.get_tileptr(i,j)
+        #for j in range(grid.get_Ny()):
+        #    for i in range(grid.get_Nx()):
+        #        cell = grid.get_tileptr(i,j)
         #        vsol.solve(cell)
-        plasma.step_velocity_1d(node)
+        plasma.step_velocity_1d(grid)
 
 
         #cycle to the new fresh snapshot
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                cell = node.get_tileptr(i,j)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                cell = grid.get_tileptr(i,j)
                 cell.cycle()
 
         #spatial step
-        #for j in range(node.get_Ny()):
-        #    for i in range(node.get_Nx()):
-        #        cell = node.get_tileptr(i,j)
-        #        ssol.solve(cell, node)
-        plasma.step_location(node)
+        #for j in range(grid.get_Ny()):
+        #    for i in range(grid.get_Nx()):
+        #        cell = grid.get_tileptr(i,j)
+        #        ssol.solve(cell, grid)
+        plasma.step_location(grid)
 
         #cycle to the new fresh snapshot
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                cell = node.get_tileptr(i,j)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                cell = grid.get_tileptr(i,j)
                 cell.cycle()
 
         #B field second half update
 
         #E field (Ampere's law)
-        #for cid in node.getCellIds():
-        #    c = node.get_tileptr( cid )
+        #for cid in grid.getCellIds():
+        #    c = grid.get_tileptr( cid )
         #    c.push_e()
 
 
         #current deposition from moving flux
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                cell = node.get_tileptr(i,j)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                cell = grid.get_tileptr(i,j)
                 cell.deposit_current()
 
         #clip every cell
         if conf.clip:
-            for j in range(node.get_Ny()):
-                for i in range(node.get_Nx()):
-                    cell = node.get_tileptr(i,j)
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    cell = grid.get_tileptr(i,j)
                     cell.clip()
 
         # analyze
-        plasma.analyze(node)
+        plasma.analyze(grid)
 
         #save temporarily to file
-        save(node, conf, ifile, f5)
+        save(grid, conf, ifile, f5)
         ifile += 1
 
 
@@ -307,18 +307,18 @@ if __name__ == "__main__":
             timer.start("io")
 
 
-            plotNode(axs[0], node, conf)
+            plotNode(axs[0], grid, conf)
 
-            plotXmesh(axs[1], node, conf, 0, "x")
-            plotXmesh(axs[2], node, conf, 0, "y")
-            plotXmesh(axs[3], node, conf, 1, "x")
-            plotXmesh(axs[4], node, conf, 1, "y")
+            plotXmesh(axs[1], grid, conf, 0, "x")
+            plotXmesh(axs[2], grid, conf, 0, "y")
+            plotXmesh(axs[3], grid, conf, 1, "x")
+            plotXmesh(axs[4], grid, conf, 1, "y")
 
-            plotJ(axs[5], node, conf)
-            plotE(axs[6], node, conf)
-            plotDens(axs[7], node, conf)
+            plotJ(axs[5], grid, conf)
+            plotE(axs[6], grid, conf)
+            plotDens(axs[7], grid, conf)
 
-            saveVisz(lap, node, conf)
+            saveVisz(lap, grid, conf)
 
 
             timer.stop("io")
@@ -330,7 +330,7 @@ if __name__ == "__main__":
         time += conf.dt
     
     f5.close()
-    #node.finalizeMpi()
+    #grid.finalizeMpi()
 
 
     timer.stop("total")

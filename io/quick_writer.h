@@ -61,13 +61,13 @@ class QuickWriter {
     }
 
     /// read tile meshes into memory
-    void read_tiles(corgi::Node<D>& grid);
+    void read_tiles(corgi::Grid<D>& grid);
 
     /// communicate snapshots with a B-tree cascade to rank 0
-    void mpi_reduce_snapshots(corgi::Node<D>& grid);
+    void mpi_reduce_snapshots(corgi::Grid<D>& grid);
 
     /// write hdf5 file
-    bool write(corgi::Node<D>& grid, int lap);
+    bool write(corgi::Grid<D>& grid, int lap);
 };
 
 

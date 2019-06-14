@@ -37,16 +37,16 @@ class Particles:
         self.wgt = []
 
 
-def get_particles(node, conf, ip):
+def get_particles(grid, conf, ip):
     prtcl = Particles()
     prtcl.clear()
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                if node.get_mpi_grid(i,j) == node.rank():
-                    cid = node.id(i,j)
-                    c = node.get_tile(cid)
+                if grid.get_mpi_grid(i,j) == grid.rank():
+                    cid = grid.id(i,j)
+                    c = grid.get_tile(cid)
 
                     x, y, z, ux, uy, uz, wgt = get_particles_from_tile(c, ip)
 

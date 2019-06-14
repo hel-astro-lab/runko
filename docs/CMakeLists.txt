@@ -36,7 +36,7 @@ set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/docs/sphinx)
  
 add_custom_target(docs 
                   COMMAND ${SPHINX_EXECUTABLE} -b html
-                  -Dbreathe_projects.PlasmaBox=${DOXYGEN_OUTPUT_DIR}/xml
+                  -Dbreathe_projects.Runko=${DOXYGEN_OUTPUT_DIR}/xml
                   ${SPHINX_SOURCE} ${SPHINX_BUILD}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 	              DEPENDS 
