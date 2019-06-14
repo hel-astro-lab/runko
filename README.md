@@ -1,5 +1,5 @@
 # Modern kinetic plasma simulation toolbox
-<img align="top" src="notes/header.png">
+<img align="top" src="docs/header.png">
 
 [![Build Status](https://travis-ci.com/natj/runko.svg?branch=master)](https://travis-ci.com/natj/runko) [![Documentation Status](https://readthedocs.org/projects/runko/badge/?version=latest)](https://runko.readthedocs.io/en/latest/?badge=latest) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/runko/LICENSE) 
 
