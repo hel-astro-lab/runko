@@ -128,6 +128,8 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("jy",   &fields::YeeLattice::jy)
     .def_readwrite("jz",   &fields::YeeLattice::jz)
     .def_readwrite("jx1",  &fields::YeeLattice::jx1)
+    .def_readwrite("jy1",  &fields::YeeLattice::jy1)
+    .def_readwrite("jz1",  &fields::YeeLattice::jz1)
     .def_readwrite("rho",  &fields::YeeLattice::rho);
 
   //--------------------------------------------------

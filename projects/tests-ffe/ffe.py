@@ -510,9 +510,9 @@ if __name__ == "__main__":
 
                     yee = getYee2D(grid, conf)
                     plot2dYee(axs[2],  yee, grid, conf, 'rho')
-                    plot2dYee(axs[3],  yee, grid, conf, 'jx')
-                    plot2dYee(axs[4],  yee, grid, conf, 'jy')
-                    plot2dYee(axs[5],  yee, grid, conf, 'jz')
+                    plot2dYee(axs[3],  yee, grid, conf, 'jx1')
+                    plot2dYee(axs[4],  yee, grid, conf, 'jy1')
+                    plot2dYee(axs[5],  yee, grid, conf, 'jz1')
                     plot2dYee(axs[6],  yee, grid, conf, 'ex')
                     plot2dYee(axs[7],  yee, grid, conf, 'ey')
                     plot2dYee(axs[8],  yee, grid, conf, 'ez')

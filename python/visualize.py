@@ -273,6 +273,8 @@ def getYee2D(n, conf):
             'jy':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'jz':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'jx1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jy1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jz1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'rho':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
            }
 
@@ -299,6 +301,8 @@ def getYee2D(n, conf):
                 data['jz'][indx, jndx] = yee.jz[q, r, 0]
 
                 data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
+                data['jy1'][indx, jndx] = yee.jy1[q, r, 0]
+                data['jz1'][indx, jndx] = yee.jz1[q, r, 0]
 
                 data['rho'][indx, jndx] = yee.rho[q, r, 0]
 
