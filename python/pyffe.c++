@@ -4,6 +4,9 @@ namespace py = pybind11;
 
 #include "../ffe/tile.h"
 
+#include "../ffe/currents/current.h"
+#include "../ffe/currents/driftcurrent.h"
+
 
 namespace ffe {
 
@@ -27,6 +30,21 @@ auto declare_tile(
 }
 
 //--------------------------------------------------
+//
+/// trampoline class for Current solver
+template<size_t D>
+class PyCurrent : public Current<D>
+{
+  void solve( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Current<D>,
+      solve,
+      tile
+      );
+  }
+};
+
 
 // python bindings for plasma classes & functions
 void bind_ffe(py::module& m_sub)
@@ -45,6 +63,19 @@ void bind_ffe(py::module& m_sub)
   // 3D bindings
   //py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
   //auto t3 = ffe::declare_tile<3>(m_2d, "Tile");
+
+
+  //--------------------------------------------------
+  // 2D Current solver bindings
+  py::class_< ffe::Current<2>, PyCurrent<2> > currentcalc2d(m_2d, "Current");
+  currentcalc2d
+    .def(py::init<>())
+    .def("solve",      &ffe::Current<2>::solve);
+
+  // Drift current solver
+  py::class_<ffe::DriftCurrent<2>>(m_2d, "DriftCurrent", currentcalc2d)
+    .def(py::init<>());
+
 
 
 }

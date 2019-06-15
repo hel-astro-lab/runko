@@ -11,7 +11,6 @@ namespace ffe {
 template<std::size_t D>
 fields::YeeLattice& Tile<D>::get_yee(size_t i) 
 {
-  std::cout << "getting yee from snapshotter \n";
   return this->yee_snapshots.get(i);
 }
 

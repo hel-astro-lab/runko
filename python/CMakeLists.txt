@@ -45,6 +45,7 @@ set (RAD_FILES
 set (FFE_FILES 
      pyffe.c++
      ../ffe/tile.c++
+     ../ffe/currents/driftcurrent.c++
      )
 
 set (IO_FILES 

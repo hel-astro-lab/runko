@@ -311,6 +311,16 @@ if __name__ == "__main__":
     time = lap*(conf.cfl/conf.c_omp)
     for lap in range(lap, conf.Nt+1):
 
+
+        #Derivative
+        # compute drift current
+        # enforce E <= B 
+        # subtract E_par
+
+
+
+
+
         ################################################## 
         # advance Half B
 
