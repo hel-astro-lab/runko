@@ -21,12 +21,20 @@ class ExtraLattice {
   size_t Ny;
   size_t Nz;
 
-  /// storages
-  toolbox::Mesh<double, 1> ex;
+  /// half-cell staggered B
+  toolbox::Mesh<double, 1> bxf;
+  toolbox::Mesh<double, 1> byf;
+  toolbox::Mesh<double, 1> bzf;
+
+  /// divergence of E
+  //toolbox::Mesh<double, 1> dive;
 
   ExtraLattice(size_t Nx, size_t Ny, size_t Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
-    ex(Nx, Ny, Nz)
+    bxf(Nx, Ny, Nz),
+    byf(Nx, Ny, Nz),
+    bzf(Nx, Ny, Nz)
+    //dive(Nx, Ny, Nz)
     { }
 
 };
@@ -65,13 +73,13 @@ class Tile :
   void add_yee_lattice() override;
 
 
-  ExtraLattice lattice;
+  ExtraLattice tmp;
 
   /// constructor
   Tile(size_t nx, size_t ny, size_t nz) :
      corgi::Tile<D>(),
     fields::Tile<D>(nx,ny,nz),
-    lattice(nx,ny,nz)
+    tmp(nx,ny,nz)
   { 
   
     // preinitialize arrays for 4-stage RK

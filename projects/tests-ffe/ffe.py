@@ -288,6 +288,7 @@ if __name__ == "__main__":
             pass
 
     fldprop  = pyfld.FDTD2()
+    driftcur = pyffe.DriftCurrent()
 
     # quick field snapshots
     qwriter  = pyfld.QuickWriter(conf.outdir, 
@@ -317,12 +318,83 @@ if __name__ == "__main__":
         # enforce E <= B 
         # subtract E_par
 
-
-
-
-
         ################################################## 
-        # advance Half B
+        # compute current
+
+        #--------------------------------------------------
+        #update boundaries
+        timer.start_comp("upd_bc0")
+
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
+
+        timer.stop_comp("upd_bc0")
+
+        #--------------------------------------------------
+        #compute drift current
+        timer.start_comp("compute_current")
+
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            driftcur.comp_drift_cur(tile)
+
+        timer.stop_comp("compute_current")
+
+        #--------------------------------------------------
+        #add current to E
+        timer.start_comp("add_cur")
+
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.deposit_current()
+
+        timer.stop_comp("add_cur")
+
+        #--------------------------------------------------
+        #push E
+        timer.start_comp("push_e")
+
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            fldprop.push_e(tile)
+
+        timer.stop_comp("push_e")
+
+        #--------------------------------------------------
+        # comm E
+        timer.start_comp("mpi_e0")
+
+        grid.send_data(1) 
+        grid.recv_data(1) 
+        grid.wait_data(1) 
+
+        timer.stop_comp("mpi_e0")
+
+        #--------------------------------------------------
+        #update boundaries
+        timer.start_comp("upd_bc1")
+
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
+
+        timer.stop_comp("upd_bc1")
+
+
+        #--------------------------------------------------
+        #push B half
+        timer.start_comp("push_b0")
+
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+
+            tile.cfl *= 2.0
+            fldprop.push_half_b(tile)
+            tile.cfl *= 0.5
+
+        timer.stop_comp("push_b0")
+
 
         #--------------------------------------------------
         # comm B
@@ -336,57 +408,26 @@ if __name__ == "__main__":
 
         #--------------------------------------------------
         #update boundaries
-        timer.start_comp("upd_bc0")
+        timer.start_comp("upd_bc2")
 
         for cid in grid.get_tile_ids():
             tile = grid.get_tile(cid)
             tile.update_boundaries(grid)
 
-        timer.stop_comp("upd_bc0")
+        timer.stop_comp("upd_bc2")
+
+        #TODO: enforce E.B=0
+        #TODO: enforce E <= B
 
         #--------------------------------------------------
-        #push B half
-        timer.start_comp("push_half_b1")
+        #compute drift current
+        timer.start_comp("compute_para_current")
 
         for cid in grid.get_tile_ids():
             tile = grid.get_tile(cid)
-            fldprop.push_half_b(tile)
+            driftcur.comp_parallel_cur(tile)
 
-        timer.stop_comp("push_half_b1")
-
-        #--------------------------------------------------
-        # comm B
-        timer.start_comp("mpi_b2")
-
-        grid.send_data(2) 
-        grid.recv_data(2) 
-        grid.wait_data(2) 
-
-        timer.stop_comp("mpi_b2")
-
-        #--------------------------------------------------
-        #update boundaries
-        timer.start_comp("upd_bc1")
-
-        for cid in grid.get_tile_ids():
-            tile = grid.get_tile(cid)
-            tile.update_boundaries(grid)
-
-        timer.stop_comp("upd_bc1")
-
-        ##################################################
-        # advance B half
-
-        #--------------------------------------------------
-        #push B half
-        timer.start_comp("push_half_b2")
-
-        for cid in grid.get_tile_ids():
-            tile = grid.get_tile(cid)
-            fldprop.push_half_b(tile)
-
-        timer.stop_comp("push_half_b2")
-
+        timer.stop_comp("compute_para_current")
 
         #--------------------------------------------------
         # comm B
@@ -398,29 +439,8 @@ if __name__ == "__main__":
 
         timer.stop_comp("mpi_e1")
 
-        #--------------------------------------------------
-        #update boundaries
-        timer.start_comp("upd_bc2")
 
-        for cid in grid.get_tile_ids():
-            tile = grid.get_tile(cid)
-            tile.update_boundaries(grid)
-
-        timer.stop_comp("upd_bc2")
-
-
-        ##################################################
-        # advance E 
-
-        #--------------------------------------------------
-        #push E
-        timer.start_comp("push_e")
-
-        for cid in grid.get_tile_ids():
-            tile = grid.get_tile(cid)
-            fldprop.push_e(tile)
-
-        timer.stop_comp("push_e")
+        #TODO XXX --------------------------------------
 
         #--------------------------------------------------
         #current calculation; charge conserving current deposition
@@ -433,47 +453,15 @@ if __name__ == "__main__":
         #timer.stop_comp("comp_curr")
 
         #--------------------------------------------------
-        timer.start_comp("clear_vir_cur")
+        #timer.start_comp("clear_vir_cur")
 
-        for cid in grid.get_virtual_tiles():
-            tile = grid.get_tile(cid)
-            tile.clear_current()
+        #for cid in grid.get_virtual_tiles():
+        #    tile = grid.get_tile(cid)
+        #    tile.clear_current()
 
-        timer.stop_comp("clear_vir_cur")
-
-
-        ##################################################
-        # current solving is also taking place in nbor ranks
-
-        #mpi send currents
-        timer.start_comp("mpi_cur")
-
-        grid.send_data(0)
-        grid.recv_data(0) 
-        grid.wait_data(0)
-
-        timer.stop_comp("mpi_cur")
-
-        #--------------------------------------------------
-        #exchange currents
-        timer.start_comp("cur_exchange")
-
-        for cid in grid.get_tile_ids():
-            tile = grid.get_tile(cid)
-            tile.exchange_currents(grid)
-
-        timer.stop_comp("cur_exchange")
+        #timer.stop_comp("clear_vir_cur")
 
 
-        #--------------------------------------------------
-        #add current to E
-        timer.start_comp("add_cur")
-
-        for cid in grid.get_tile_ids():
-            tile = grid.get_tile(cid)
-            tile.deposit_current()
-
-        timer.stop_comp("add_cur")
 
 
         ##################################################

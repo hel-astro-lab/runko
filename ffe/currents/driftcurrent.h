@@ -9,7 +9,17 @@ template<size_t D>
 class DriftCurrent :
   public virtual Current<D>
 {
-  void solve(Tile<D>& tile) override;
+
+  void interpolate_b(
+    fields::YeeLattice& yee,
+    ffe::ExtraLattice& tmp
+    );
+
+  void comp_drift_cur(Tile<D>& tile) override;
+
+  void comp_parallel_cur(Tile<D>& tile) override;
+
+
 };
 
 

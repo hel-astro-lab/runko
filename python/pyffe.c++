@@ -35,11 +35,20 @@ auto declare_tile(
 template<size_t D>
 class PyCurrent : public Current<D>
 {
-  void solve( Tile<D>& tile ) override {
+  void comp_drift_cur( Tile<D>& tile ) override {
   PYBIND11_OVERLOAD_PURE(
       void,
       Current<D>,
-      solve,
+      comp_drift_cur,
+      tile
+      );
+  }
+
+  void comp_parallel_cur( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Current<D>,
+      comp_parallel_cur,
       tile
       );
   }
@@ -70,7 +79,8 @@ void bind_ffe(py::module& m_sub)
   py::class_< ffe::Current<2>, PyCurrent<2> > currentcalc2d(m_2d, "Current");
   currentcalc2d
     .def(py::init<>())
-    .def("solve",      &ffe::Current<2>::solve);
+    .def("comp_drift_cur",      &ffe::Current<2>::comp_drift_cur)
+    .def("comp_parallel_cur",   &ffe::Current<2>::comp_parallel_cur);
 
   // Drift current solver
   py::class_<ffe::DriftCurrent<2>>(m_2d, "DriftCurrent", currentcalc2d)
