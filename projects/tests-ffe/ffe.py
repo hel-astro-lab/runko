@@ -310,23 +310,7 @@ if __name__ == "__main__":
     #simulation loop
     time = lap*(conf.cfl/conf.c_omp)
     for lap in range(lap, conf.Nt+1):
-
-        #Main loop
-        #  advance B half
-        #  move particles
-        #  advance B half
-        #  advance E
-        #  reset current (j=0)
-        #  deposit
-        #  exchange particles
-        #  exchange current
-        #  filter
-        #  add current
-        #  inject particles from other processors
-        #  enlarge domain
-        #  reorder particles
-        #  pause simulation if pause file exists
-
+        debug_print(grid, "lap_start")
 
         ################################################## 
         # advance Half B

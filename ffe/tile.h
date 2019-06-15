@@ -7,7 +7,7 @@
 #include "../corgi/corgi.h"
 #include "../em-fields/tile.h"
 #include "../tools/mesh.h"
-#include "../tools/rotator.h"
+#include "../tools/snapshots.h"
 
 
 namespace ffe {
@@ -51,12 +51,18 @@ class Tile :
   using fields::Tile<D>::mesh_lengths;
   using fields::Tile<D>::cfl;
   using fields::Tile<D>::dx;
-  using fields::Tile<D>::yee;
-
+  //using fields::Tile<D>::yee;
 
   // explicitly import EM methods
   //using fields::Tile<D>::push_e;
   //using fields::Tile<D>::push_half_b;
+
+  toolbox::IntegratorSnapshots<
+    fields::YeeLattice> yee_snapshots;
+
+  fields::YeeLattice& get_yee(size_t i=0) override;
+
+
 
   ExtraLattice lattice;
 
