@@ -14,7 +14,7 @@ namespace pic {
 
 template<size_t D>
 void write_particles( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir 
     )
@@ -35,7 +35,7 @@ void write_particles(
 
 template<size_t D>
 inline void read_particles( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir 
     )

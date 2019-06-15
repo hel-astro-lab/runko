@@ -57,7 +57,7 @@ void Tile<D>::delete_transferred_particles()
 
 template<>
 void Tile<2>::get_incoming_particles(
-    corgi::Node<2>& grid)
+    corgi::Grid<2>& grid)
 {
 
   std::array<double,3> global_mins = {

@@ -115,7 +115,7 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
 
 template<>
 inline void h5io::TestPrtclWriter<2>::read_tiles(
-    corgi::Node<2>& grid)
+    corgi::Grid<2>& grid)
 {
   // clear target arrays
   for(auto& arr : arrs ) arr.clear();
@@ -201,7 +201,7 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
 
 template<size_t D>
 inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
-    corgi::Node<D>& grid)
+    corgi::Grid<D>& grid)
 {
   /* based on https://gist.github.com/rmcgibbo/7178576
    */
@@ -285,7 +285,7 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
 
 template<size_t D>
 inline bool h5io::TestPrtclWriter<D>::write(
-    corgi::Node<D>& grid, int lap)
+    corgi::Grid<D>& grid, int lap)
 {
   read_tiles(grid);
   mpi_reduce_snapshots(grid);

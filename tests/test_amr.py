@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import sys
 
-import pyplasmabox.tools as pyplasma
+import pyrunko.tools as pyplasma
 
 
 class conf:

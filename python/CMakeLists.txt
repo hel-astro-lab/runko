@@ -1,4 +1,4 @@
-project (pyplasmabox)
+project (pyrunko)
 
 
 #find_package(PYBIND11 REQUIRED) #loaded externally from corgi
@@ -13,6 +13,7 @@ set (FIELDS_FILES
      pyfields.c++
      ../em-fields/tile.c++ 
      ../em-fields/damping_tile.c++
+     ../em-fields/propagator/fdtd2.c++ 
      )
 
 set (VLV_FILES 
@@ -30,8 +31,9 @@ set (PIC_FILES
      ../pic/tile.c++
      ../pic/particle.c++
      ../pic/boundaries/wall.c++
-     ../pic/solvers/boris.c++
-     ../pic/solvers/boris_drag.c++
+     ../pic/boundaries/piston.c++
+     ../pic/pushers/boris.c++
+     ../pic/pushers/boris_drag.c++
      ../pic/interpolators/linear.c++
      ../pic/depositers/zigzag.c++
      )
@@ -56,8 +58,8 @@ set (IO_FILES
 
 # python module creation
 #--------------------------------------------------
-pybind11_add_module(pyplasmabox 
-                    pyplasmabox.c++ 
+pybind11_add_module(pyrunko 
+                    runko.c++ 
                     ${TOOLS_FILES}
                     ${FIELDS_FILES}
                     ${VLV_FILES}
@@ -68,15 +70,15 @@ pybind11_add_module(pyplasmabox
                     )
 
 
-target_link_libraries(pyplasmabox PRIVATE -lhdf5)
-#target_link_libraries(pyplasmabox PRIVATE -lfftw3)
-#target_link_libraries(pyplasmabox PRIVATE -lfftw3f)
-target_link_libraries(pyplasmabox PUBLIC coverage_config)
+target_link_libraries(pyrunko PRIVATE -lhdf5)
+#target_link_libraries(pyrunko PRIVATE -lfftw3)
+#target_link_libraries(pyrunko PRIVATE -lfftw3f)
+target_link_libraries(pyrunko PUBLIC coverage_config)
 
-target_compile_options(pyplasmabox PRIVATE ${WARNING_FLAGS})
+target_compile_options(pyrunko PRIVATE ${WARNING_FLAGS})
 
 
 
 
 # installation
-install (TARGETS pyplasmabox DESTINATION lib)
+install (TARGETS pyrunko DESTINATION lib)

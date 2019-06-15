@@ -107,7 +107,7 @@ public:
   void delete_transferred_particles();
 
   /// get particles flowing into this tile
-  void get_incoming_particles(corgi::Node<D>& grid);
+  void get_incoming_particles(corgi::Grid<D>& grid);
 
   /// pack all particles for MPI message
   void pack_all_particles();

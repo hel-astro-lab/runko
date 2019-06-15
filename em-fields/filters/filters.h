@@ -563,7 +563,7 @@ class Filter {
   /// Copy currents from neighbors into fftw array
   void get_padded_current(
       fields::Tile<2>& tile, 
-      corgi::Node<2>& node
+      corgi::Grid<2>& grid
       )
   {
 
@@ -594,7 +594,7 @@ class Filter {
       if ((i==0)&&(j==0)) continue;
 
       auto cneigh = 
-        std::dynamic_pointer_cast<fields::Tile<2>>(node.get_tileptr( tile.neighs(i, j) ));
+        std::dynamic_pointer_cast<fields::Tile<2>>(grid.get_tileptr( tile.neighs(i, j) ));
       if (cneigh) {
         fields::YeeLattice& mesh = cneigh->get_yee();
 

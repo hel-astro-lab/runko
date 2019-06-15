@@ -5,7 +5,7 @@ import h5py
 import os.path
 
 import pycorgi
-import pyplasmabox.tools as plasma
+import pyrunko.tools as pytools
 
 from visualize     import imshow
 from visualize_amr import get_leaf_mesh
@@ -62,7 +62,7 @@ def get_mesh(f5, conf):
     tref   = dset["top_refinement_level"].value
 
     # create empty mesh with metadata
-    vmesh = plasma.AdaptiveMesh3D()
+    vmesh = pytools.AdaptiveMesh3D()
     vmesh.resize(length)
     vmesh.set_min(mins)
     vmesh.set_max(maxs)

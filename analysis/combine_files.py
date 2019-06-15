@@ -143,7 +143,7 @@ def combine_files(fdir,
 
 
 
-# combine tiles inside node together into one array
+# combine tiles inside grid together into one array
 def combine_tiles(ff, fvar, conf, isp=None ):
 
     arr = np.zeros((conf.Nx*conf.NxMesh, 

@@ -8,112 +8,6 @@ namespace fields {
   using namespace mpi4cpp;
 
 
-/* 
- * 1D version:
- *	ey(i,j,k)=ey(i,j,k) + c *(bz(im1,j,k)-bz(i,j,k))  
- *	ez(i,j,k)=ez(i,j,k) + c *(by(i,j,k)-by(im1,j,k)) 
- *
- * 2D version
- * ex(i,j,k)=ex(i,j,k)+const*(-bz(i,jm1,k)+bz(i,j,k))
- * ey(i,j,k)=ey(i,j,k)+const*(bz(im1,j,k)-bz(i,j,k))
- * ez(i,j,k)=ez(i,j,k)+const*(bx(i,jm1,k)-bx(i,j,k)-  by(im1,j,k)+by(i,j,k))
-*/
-
-/*! \brief Update E field with full step
- *
- * Contains a dimension switch for solvers depending on internal mesh dimensions
- */
-
-
-/// 1D E pusher
-template<>
-void Tile<1>::push_e() 
-{
-  YeeLattice& mesh = get_yee();
-  Realf C = 1.0 * cfl;
-
-  int k = 0;
-  int j = 0;
-  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
-
-    // Ex
-    // NONE
-
-    // Ey
-    mesh.ey(i,j,k) += 
-      + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
-
-    // Ez
-    mesh.ez(i,j,k) += 
-      + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
-
-  }
-
-}
-
-/// 2D E pusher
-template<>
-void Tile<2>::push_e() 
-{
-  YeeLattice& mesh = get_yee();
-
-  Realf C = 1.0 * cfl;
-
-  int k = 0;
-  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
-
-    // Ex
-    mesh.ex(i,j,k) += 
-      + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
-
-    // Ey
-    mesh.ey(i,j,k) += 
-      + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
-
-    // Ez
-    mesh.ez(i,j,k) += 
-      + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k) 
-           -mesh.by(i-1,j,   k) + mesh.by(i,j,k));
-
-  }
-}
-
-
-/// 3D E pusher
-template<>
-void Tile<3>::push_e() 
-{
-  YeeLattice& mesh = get_yee();
-  Realf C = 1.0 * cfl;
-
-  for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++)
-  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++)
-  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
-
-    // Ex
-    mesh.ex(i,j,k) += 
-      + C*( mesh.by(i,j,  k-1) - mesh.by(i,j,k))
-      + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
-
-    // Ey
-    mesh.ey(i,j,k) += 
-      + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k))
-      + C*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k));
-
-    // Ez
-    mesh.ez(i,j,k) += 
-      + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
-      + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
-
-  }
-
-}
-
-
-//--------------------------------------------------
-
-
 /// Deposit current into electric field
 template<std::size_t D>
 void Tile<D>::deposit_current() 
@@ -125,108 +19,6 @@ void Tile<D>::deposit_current()
   mesh.ez -= mesh.jz;
 
 }
-
-//--------------------------------------------------
-
-/*
- * 1D version:
-  by(i,j,k)=by(i,j,k)+const*(ez(ip1,j,k)-ez(i,j,k)) !-0*ex(i,j,k+1)+0*ex(i,j,k))
-	bz(i,j,k)=bz(i,j,k)+const*(ey(i,j,k)-ey(ip1,j,k)) !+0*ex(i,j+1,k)-0*ex(i,j,k))
-  
- * 2D version:
- * bx(i,j,k)=bx(i,j,k)+const*(-ez(i,jp1,k)+ez(i,j,k))
- * by(i,j,k)=by(i,j,k)+const*(ez(ip1,j,k)-ez(i,j,k))
- * bz(i,j,k)=bz(i,j,k)+const*(ex(i,jp1,k)-ex(i,j,k) -ey(ip1,j,k)+ey(i,j,k))
-*/
-
-/// Update B field with a half step
-
-
-/// 1D B pusher
-template<>
-void Tile<1>::push_half_b() 
-{
-  YeeLattice& mesh = get_yee();
-  Realf C = 0.5 * cfl;
-
-  int k = 0;
-  int j = 0;
-  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
-
-    // Bx
-    // NONE
-
-    // By
-    mesh.by(i,j,k) += 
-      + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k));
-
-    // Bz
-    mesh.bz(i,j,k) += 
-      + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
-  }
-
-}
-
-/// 2D B pusher
-template<>
-void Tile<2>::push_half_b() 
-{
-  YeeLattice& mesh = get_yee();
-
-  Realf C = 0.5 * cfl;
-
-  int k = 0;
-  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++)
-  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
-
-    // Bx
-    mesh.bx(i,j,k) += 
-      + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
-
-    // By
-    mesh.by(i,j,k) += 
-      + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k));
-
-    // Bz
-    mesh.bz(i,j,k) += 
-      + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k)
-          -mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
-
-  }
-
-}
-
-
-/// 3D B pusher
-template<>
-void Tile<3>::push_half_b() 
-{
-  YeeLattice& mesh = get_yee();
-  Realf C = 0.5 * cfl;
-
-  for(int k=0; k<static_cast<int>(mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(mesh_lengths[0]); i++) {
-
-    // Bx
-    mesh.bx(i,j,k) += 
-      + C*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k))
-      + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
-
-    // By
-    mesh.by(i,j,k) += 
-      + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k))
-      + C*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k));
-
-    // Bz
-    mesh.bz(i,j,k) += 
-      + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
-      + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
-
-  }
-}
-
-
 
 
 /// Get current time snapshot of Yee lattice
@@ -426,7 +218,7 @@ void add_z_pencil_yee(
 
 /// Update Yee grid boundaries
 template<>
-void Tile<1>::update_boundaries(corgi::Node<1>& node) 
+void Tile<1>::update_boundaries(corgi::Grid<1>& grid) 
 {
   // target
   YeeLattice& mesh = get_yee();
@@ -434,7 +226,7 @@ void Tile<1>::update_boundaries(corgi::Node<1>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(-1) ));
+        grid.get_tileptr( neighs(-1) ));
   YeeLattice& mleft = cleft->get_yee();
 
   // copy from right side to left
@@ -443,7 +235,7 @@ void Tile<1>::update_boundaries(corgi::Node<1>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(+1) ));
+        grid.get_tileptr( neighs(+1) ));
   YeeLattice& mright = cright->get_yee();
     
   // copy from left side to right
@@ -453,7 +245,7 @@ void Tile<1>::update_boundaries(corgi::Node<1>& node)
 
 
 template<>
-void Tile<2>::update_boundaries(corgi::Node<2>& grid) 
+void Tile<2>::update_boundaries(corgi::Grid<2>& grid) 
 {
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -518,7 +310,7 @@ FIXME: this is how we should loop over H>1 halo boundaries
 
 
 template<>
-void Tile<1>::exchange_currents(corgi::Node<1>& node) 
+void Tile<1>::exchange_currents(corgi::Grid<1>& grid) 
 {
 
   // target
@@ -530,7 +322,7 @@ void Tile<1>::exchange_currents(corgi::Node<1>& node)
   // left 
   auto cleft = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(-1) ));
+        grid.get_tileptr( neighs(-1) ));
   YeeLattice& mleft = cleft->get_yee();
 
   // add from right side to left
@@ -541,7 +333,7 @@ void Tile<1>::exchange_currents(corgi::Node<1>& node)
   // right
   auto cright = 
     std::dynamic_pointer_cast<Tile<1> >(
-        node.get_tileptr( neighs(+1) ));
+        grid.get_tileptr( neighs(+1) ));
   YeeLattice& mright = cright->get_yee();
     
   // add from left side to right
@@ -586,7 +378,7 @@ void Tile<1>::exchange_currents(corgi::Node<1>& node)
 //--------------------------------------------------
 //
 template<>
-void Tile<2>::exchange_currents(corgi::Node<2>& grid) 
+void Tile<2>::exchange_currents(corgi::Grid<2>& grid) 
 {
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;
