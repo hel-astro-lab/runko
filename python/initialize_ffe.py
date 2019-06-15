@@ -1,5 +1,5 @@
 import pycorgi
-import pyplasmabox.ffe as pyffe 
+import pyrunko.ffe as pyffe 
 
 import numpy as np
 from initialize_pic import globalIndx, coord2indx, spatialLoc

@@ -5,10 +5,10 @@ import numpy as np
 import sys, os
 import h5py
 
-import pyplasmabox.ffe.twoD as pyffe
+import pyrunko.ffe.twoD as pyffe
 import pycorgi.twoD as corgi
-import pyplasmabox.vlv.twoD as pyvlv
-import pyplasmabox.fields.twoD as pyfld
+import pyrunko.vlv.twoD as pyvlv
+import pyrunko.fields.twoD as pyfld
 
 from timer import Timer
 
@@ -37,11 +37,11 @@ from numpy import sinh, cosh, tanh, pi, sin, cos, tan, sqrt
 
 
 # Field initialization (guide field)
-def insert_em(node, conf):
+def insert_em(grid, conf):
 
     kk = 0
-    for cid in node.get_tile_ids():
-        tile = node.get_tile(cid)
+    for cid in grid.get_tile_ids():
+        tile = grid.get_tile(cid)
         yee = tile.get_yee(0)
 
         ii,jj = tile.index
@@ -51,7 +51,7 @@ def insert_em(node, conf):
                 for l in range(-1, conf.NxMesh+1):
                     
                     # FIXME
-                    #print("{}: ind ({},{},{})".format(node.rank(), l,m,n))
+                    #print("{}: ind ({},{},{})".format(grid.rank(), l,m,n))
                     # get global coordinates
                     iglob, jglob, kglob = globalIndx( (ii,jj), (l,m,n), conf)
 
@@ -66,7 +66,7 @@ def insert_em(node, conf):
 
 ##################################################
 # Field initialization   
-def insert_em_harris_sheet(node, conf):
+def insert_em_harris_sheet(grid, conf):
     dvstripe = conf.dvstripe
     dstripe  = conf.dstripe
     nstripe  = conf.nstripe
@@ -83,10 +83,10 @@ def insert_em_harris_sheet(node, conf):
     lstripe = conf.lstripe
 
     kk = 0
-    for jj in range(node.get_Ny()):
-        for ii in range(node.get_Nx()):
-            if node.get_mpi_grid(ii,jj) == node.rank():
-                c = node.get_tile(ii,jj)
+    for jj in range(grid.get_Ny()):
+        for ii in range(grid.get_Nx()):
+            if grid.get_mpi_grid(ii,jj) == grid.rank():
+                c = grid.get_tile(ii,jj)
                 yee = c.get_yee(0)
 
                 for n in range(conf.NzMesh):
@@ -199,21 +199,21 @@ if __name__ == "__main__":
             print("Reading configuration setup from ", args.conf_filename)
         conf = Configuration(args.conf_filename, do_print=do_print)
 
-    node = corgi.Node(conf.Nx, conf.Ny, conf.Nz)
+    grid = corgi.Grid(conf.Nx, conf.Ny, conf.Nz)
 
     xmin = 0.0
     xmax = conf.Nx*conf.NxMesh
     ymin = 0.0
     ymax = conf.Ny*conf.NyMesh
 
-    node.set_grid_lims(xmin, xmax, ymin, ymax)
-    init.loadMpi2D(node)
+    grid.set_grid_lims(xmin, xmax, ymin, ymax)
+    init.loadMpi2D(grid)
 
-    loadTiles(node, conf)
+    loadTiles(grid, conf)
 
     ################################################## 
     # Path to be created 
-    if node.master():
+    if grid.master():
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
         if not os.path.exists( conf.outdir+"/restart" ):
@@ -253,7 +253,7 @@ if __name__ == "__main__":
 
         if do_print:
             print("...reading Yee lattices (lap {}) from {}".format(read_lap, odir))
-        pyvlv.read_yee(node, read_lap, odir)
+        pyvlv.read_yee(grid, read_lap, odir)
 
         lap += 1 #step one step ahead
 
@@ -262,14 +262,14 @@ if __name__ == "__main__":
     if do_initialization:
         lap = 0
         np.random.seed(1)
-        #insert_em(node, conf)
-        insert_em_harris_sheet(node, conf)
+        #insert_em(grid, conf)
+        insert_em_harris_sheet(grid, conf)
 
     #static load balancing setup; communicate neighbor info once
-    node.analyze_boundaries()
-    node.send_tiles()
-    node.recv_tiles()
-    initialize_virtuals(node, conf)
+    grid.analyze_boundaries()
+    grid.send_tiles()
+    grid.recv_tiles()
+    initialize_virtuals(grid, conf)
 
     timer.stop("init") 
     timer.stats("init") 
@@ -281,12 +281,13 @@ if __name__ == "__main__":
     # visualize initial condition
     if do_plots:
         try:
-            plotNode( axs[0], node, conf)
-            #plotXmesh(axs[1], node, conf, 0, "x")
-            saveVisz(-1, node, conf)
+            plotNode( axs[0], grid, conf)
+            #plotXmesh(axs[1], grid, conf, 0, "x")
+            saveVisz(-1, grid, conf)
         except:
             pass
 
+    fldprop  = pyfld.FDTD2()
 
     # quick field snapshots
     qwriter  = pyfld.QuickWriter(conf.outdir, 
@@ -295,13 +296,13 @@ if __name__ == "__main__":
             conf.Nz, conf.NzMesh,
             conf.stride)
 
-    node.send_data(1) 
-    node.recv_data(1) 
-    node.wait_data(1) 
+    grid.send_data(1) 
+    grid.recv_data(1) 
+    grid.wait_data(1) 
 
-    node.send_data(2) 
-    node.recv_data(2) 
-    node.wait_data(2) 
+    grid.send_data(2) 
+    grid.recv_data(2) 
+    grid.wait_data(2) 
 
     ################################################## 
     sys.stdout.flush()
@@ -334,9 +335,9 @@ if __name__ == "__main__":
         # comm B
         timer.start_comp("mpi_b1")
 
-        node.send_data(2) 
-        node.recv_data(2) 
-        node.wait_data(2) 
+        grid.send_data(2) 
+        grid.recv_data(2) 
+        grid.wait_data(2) 
 
         timer.stop_comp("mpi_b1")
 
@@ -344,9 +345,9 @@ if __name__ == "__main__":
         #update boundaries
         timer.start_comp("upd_bc0")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
 
         timer.stop_comp("upd_bc0")
 
@@ -354,9 +355,9 @@ if __name__ == "__main__":
         #push B half
         timer.start_comp("push_half_b1")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.push_half_b()
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            fldprop.push_half_b(tile)
 
         timer.stop_comp("push_half_b1")
 
@@ -364,9 +365,9 @@ if __name__ == "__main__":
         # comm B
         timer.start_comp("mpi_b2")
 
-        node.send_data(2) 
-        node.recv_data(2) 
-        node.wait_data(2) 
+        grid.send_data(2) 
+        grid.recv_data(2) 
+        grid.wait_data(2) 
 
         timer.stop_comp("mpi_b2")
 
@@ -374,9 +375,9 @@ if __name__ == "__main__":
         #update boundaries
         timer.start_comp("upd_bc1")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
 
         timer.stop_comp("upd_bc1")
 
@@ -387,9 +388,9 @@ if __name__ == "__main__":
         #push B half
         timer.start_comp("push_half_b2")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.push_half_b()
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            fldprop.push_half_b(tile)
 
         timer.stop_comp("push_half_b2")
 
@@ -398,9 +399,9 @@ if __name__ == "__main__":
         # comm B
         timer.start_comp("mpi_e1")
 
-        node.send_data(1) 
-        node.recv_data(1) 
-        node.wait_data(1) 
+        grid.send_data(1) 
+        grid.recv_data(1) 
+        grid.wait_data(1) 
 
         timer.stop_comp("mpi_e1")
 
@@ -408,9 +409,9 @@ if __name__ == "__main__":
         #update boundaries
         timer.start_comp("upd_bc2")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
 
         timer.stop_comp("upd_bc2")
 
@@ -422,9 +423,9 @@ if __name__ == "__main__":
         #push E
         timer.start_comp("push_e")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.push_e()
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            fldprop.push_e(tile)
 
         timer.stop_comp("push_e")
 
@@ -432,8 +433,8 @@ if __name__ == "__main__":
         #current calculation; charge conserving current deposition
         #timer.start_comp("comp_curr")
 
-        #for cid in node.get_local_tiles():
-        #    tile = node.get_tile(cid)
+        #for cid in grid.get_local_tiles():
+        #    tile = grid.get_tile(cid)
         #    currint.solve(tile)
 
         #timer.stop_comp("comp_curr")
@@ -441,8 +442,8 @@ if __name__ == "__main__":
         #--------------------------------------------------
         timer.start_comp("clear_vir_cur")
 
-        for cid in node.get_virtual_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_virtual_tiles():
+            tile = grid.get_tile(cid)
             tile.clear_current()
 
         timer.stop_comp("clear_vir_cur")
@@ -454,9 +455,9 @@ if __name__ == "__main__":
         #mpi send currents
         timer.start_comp("mpi_cur")
 
-        node.send_data(0)
-        node.recv_data(0) 
-        node.wait_data(0)
+        grid.send_data(0)
+        grid.recv_data(0) 
+        grid.wait_data(0)
 
         timer.stop_comp("mpi_cur")
 
@@ -464,9 +465,9 @@ if __name__ == "__main__":
         #exchange currents
         timer.start_comp("cur_exchange")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
-            tile.exchange_currents(node)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
+            tile.exchange_currents(grid)
 
         timer.stop_comp("cur_exchange")
 
@@ -475,8 +476,8 @@ if __name__ == "__main__":
         #add current to E
         timer.start_comp("add_cur")
 
-        for cid in node.get_tile_ids():
-            tile = node.get_tile(cid)
+        for cid in grid.get_tile_ids():
+            tile = grid.get_tile(cid)
             tile.deposit_current()
 
         timer.stop_comp("add_cur")
@@ -500,22 +501,22 @@ if __name__ == "__main__":
 
 
             #shallow IO
-            qwriter.write(node, lap) #quick field snapshots
+            qwriter.write(grid, lap) #quick field snapshots
 
             #deep IO
             if (conf.full_interval != -1 and (lap % conf.full_interval == 0) and (lap > 0)):
-                pyvlv.write_yee(node,      lap, conf.outdir + "/full_output/" )
+                pyvlv.write_yee(grid,      lap, conf.outdir + "/full_output/" )
 
             #restart IO (overwrites)
             if ((lap % conf.restart == 0) and (lap > 0)):
                 #flip between two sets of files
                 deep_io_switch = 1 if deep_io_switch == 0 else 0
 
-                pyvlv.write_yee(node,      deep_io_switch, conf.outdir + "/restart/" )
+                pyvlv.write_yee(grid,      deep_io_switch, conf.outdir + "/restart/" )
 
                 #if successful adjust info file
                 MPI.COMM_WORLD.barrier()
-                if node.rank() == 0:
+                if grid.rank() == 0:
                     with open(conf.outdir+"/restart/laps.txt", "a") as lapfile:
                         lapfile.write("{},{}\n".format(lap, deep_io_switch))
 
@@ -524,20 +525,20 @@ if __name__ == "__main__":
             #try:
             if True:
                 if do_plots:
-                    plotNode(axs[0], node, conf)
+                    plotNode(axs[0], grid, conf)
 
-                    yee = getYee2D(node, conf)
-                    plot2dYee(axs[2],  yee, node, conf, 'rho')
-                    plot2dYee(axs[3],  yee, node, conf, 'jx')
-                    plot2dYee(axs[4],  yee, node, conf, 'jy')
-                    plot2dYee(axs[5],  yee, node, conf, 'jz')
-                    plot2dYee(axs[6],  yee, node, conf, 'ex')
-                    plot2dYee(axs[7],  yee, node, conf, 'ey')
-                    plot2dYee(axs[8],  yee, node, conf, 'ez')
-                    plot2dYee(axs[9],  yee, node, conf, 'bx')
-                    plot2dYee(axs[10], yee, node, conf, 'by')
-                    plot2dYee(axs[11], yee, node, conf, 'bz')
-                    saveVisz(lap, node, conf)
+                    yee = getYee2D(grid, conf)
+                    plot2dYee(axs[2],  yee, grid, conf, 'rho')
+                    plot2dYee(axs[3],  yee, grid, conf, 'jx')
+                    plot2dYee(axs[4],  yee, grid, conf, 'jy')
+                    plot2dYee(axs[5],  yee, grid, conf, 'jz')
+                    plot2dYee(axs[6],  yee, grid, conf, 'ex')
+                    plot2dYee(axs[7],  yee, grid, conf, 'ey')
+                    plot2dYee(axs[8],  yee, grid, conf, 'ez')
+                    plot2dYee(axs[9],  yee, grid, conf, 'bx')
+                    plot2dYee(axs[10], yee, grid, conf, 'by')
+                    plot2dYee(axs[11], yee, grid, conf, 'bz')
+                    saveVisz(lap, grid, conf)
             #except:
             #    print()
             #    pass

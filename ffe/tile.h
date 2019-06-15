@@ -55,8 +55,8 @@ class Tile :
 
 
   // explicitly import EM methods
-  using fields::Tile<D>::push_e;
-  using fields::Tile<D>::push_half_b;
+  //using fields::Tile<D>::push_e;
+  //using fields::Tile<D>::push_half_b;
 
   ExtraLattice lattice;
 
