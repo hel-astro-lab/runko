@@ -62,6 +62,7 @@ class Tile :
 
   fields::YeeLattice& get_yee(size_t i=0) override;
 
+  void add_yee_lattice() override;
 
 
   ExtraLattice lattice;
@@ -71,7 +72,13 @@ class Tile :
      corgi::Tile<D>(),
     fields::Tile<D>(nx,ny,nz),
     lattice(nx,ny,nz)
-  { }
+  { 
+  
+    // preinitialize arrays for 4-stage RK
+    for(size_t nstages=0; nstages < 4; nstages++)
+      add_yee_lattice();
+
+  }
 
 
   /// destructor

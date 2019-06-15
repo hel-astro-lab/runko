@@ -310,7 +310,6 @@ if __name__ == "__main__":
     #simulation loop
     time = lap*(conf.cfl/conf.c_omp)
     for lap in range(lap, conf.Nt+1):
-        debug_print(grid, "lap_start")
 
         ################################################## 
         # advance Half B

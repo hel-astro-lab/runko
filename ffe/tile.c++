@@ -15,6 +15,32 @@ fields::YeeLattice& Tile<D>::get_yee(size_t i)
   return this->yee_snapshots.get(i);
 }
 
+//--------------------------------------------------
+// Specialize Yee Lattice insertion
+template<>
+void Tile<1>::add_yee_lattice() 
+{
+  //std::cout << "add 1D Yee \n";
+  yee_snapshots.push_back( 
+      fields::YeeLattice( mesh_lengths[0], 1, 1) 
+      );
+}
+
+template<>
+void Tile<2>::add_yee_lattice() 
+{
+  yee_snapshots.push_back( 
+      fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) 
+      );
+}
+
+template<>
+void Tile<3>::add_yee_lattice() 
+{
+  yee_snapshots.push_back( 
+      fields::YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) 
+      );
+}
 
 
 
