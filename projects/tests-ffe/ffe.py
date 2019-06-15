@@ -34,6 +34,7 @@ except:
 
 from numpy import sinh, cosh, tanh, pi, sin, cos, tan, sqrt
 
+from antenna2 import Antenna
 
 
 # Field initialization (guide field)
@@ -262,8 +263,8 @@ if __name__ == "__main__":
     if do_initialization:
         lap = 0
         np.random.seed(1)
-        #insert_em(grid, conf)
-        insert_em_harris_sheet(grid, conf)
+        insert_em(grid, conf)
+        #insert_em_harris_sheet(grid, conf)
 
     #static load balancing setup; communicate neighbor info once
     grid.analyze_boundaries()
@@ -296,6 +297,19 @@ if __name__ == "__main__":
             conf.Ny, conf.NyMesh,
             conf.Nz, conf.NzMesh,
             conf.stride)
+
+    ################################################## 
+    # Langeving antenna
+    if do_initialization:
+
+        # direct B_{x,y} perturbation
+        if True:
+            antenna = Antenna(conf.min_mode, conf.max_mode, conf)
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                antenna.add_driving(tile)
+
+
 
     grid.send_data(1) 
     grid.recv_data(1) 
@@ -510,9 +524,9 @@ if __name__ == "__main__":
 
                     yee = getYee2D(grid, conf)
                     plot2dYee(axs[2],  yee, grid, conf, 'rho')
-                    plot2dYee(axs[3],  yee, grid, conf, 'jx1')
-                    plot2dYee(axs[4],  yee, grid, conf, 'jy1')
-                    plot2dYee(axs[5],  yee, grid, conf, 'jz1')
+                    plot2dYee(axs[3],  yee, grid, conf, 'jx')
+                    plot2dYee(axs[4],  yee, grid, conf, 'jy')
+                    plot2dYee(axs[5],  yee, grid, conf, 'jz')
                     plot2dYee(axs[6],  yee, grid, conf, 'ex')
                     plot2dYee(axs[7],  yee, grid, conf, 'ey')
                     plot2dYee(axs[8],  yee, grid, conf, 'ez')
