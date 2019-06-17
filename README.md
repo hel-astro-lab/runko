@@ -56,5 +56,24 @@ Vlasov module has been used to simulate the development of beam instability in a
 
 In this 1D1V simulation we track the development of stratified beam instability starting from a relative density of ~10^-5 as the incoming beam enters the box. At higher densities of ~1 the beam excites Langmuir wave turbulence and heats the background plasma. This is a density contrast of over 100000!
 
+## How to cite?
 
+You can use the following BibTeX template to cite Runko in any scientific discourse:
+```
+@ARTICLE{runko,
+       author = {{N{\"a}ttil{\"a}}, J.},
+        title = "{Runko: Modern multi-physics toolbox for simulating plasma}",
+      journal = {arXiv e-prints},
+     keywords = {Physics - Computational Physics, Astrophysics - Instrumentation and Methods for Astrophysics, Physics - Plasma Physics},
+         year = "2019",
+        month = "Jun",
+          eid = {arXiv:1906.06306},
+        pages = {arXiv:1906.06306},
+archivePrefix = {arXiv},
+       eprint = {1906.06306},
+ primaryClass = {physics.comp-ph},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2019arXiv190606306N},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+```
 
