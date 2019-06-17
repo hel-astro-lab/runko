@@ -8,7 +8,9 @@ Runko is a collection of simulation codes written in modern C++14/Python3 to mod
 
 Under the hood, the framework uses the massively parallel grid infrastructure library [corgi](https://github.com/natj/corgi) that relies on decomposing the grid to smaller subregions, called tiles, that can be operated on and updated independently of each other. [Corgi](https://github.com/natj/corgi) also automatically parallelizes the simulations and provides dynamic load-balancing capability. Therefore, small simulation setups can be tested locally on laptops and then extended for massively parallel supercomputer platforms (currently tested up to ~10k cores).
 
-Documentation is available from [runko.readthedocs.io](https://runko.readthedocs.io/en/latest/?badge=latest) 
+Documentation is available from [runko.readthedocs.io](https://runko.readthedocs.io/en/latest/?badge=latest). 
+
+Design and usage of the code is described in detail in the accompanying [paper](https://arxiv.org/abs/1906.06306).
 
 
 ## Available modules
