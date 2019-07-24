@@ -63,8 +63,10 @@ pybind11_add_module(pyrunko
                     ${IO_FILES}
                     )
 
+#target_link_libraries(pyrunko PRIVATE -lhdf5)
+target_link_libraries(pyrunko PRIVATE ${HDF5_C_LIBRARIES})
+target_include_directories(pyrunko PRIVATE ${HDF5_INCLUDE_DIRS})
 
-target_link_libraries(pyrunko PRIVATE -lhdf5)
 #target_link_libraries(pyrunko PRIVATE -lfftw3)
 #target_link_libraries(pyrunko PRIVATE -lfftw3f)
 target_link_libraries(pyrunko PUBLIC coverage_config)
