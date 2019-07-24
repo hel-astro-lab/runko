@@ -189,7 +189,7 @@ void pic::Piston<D>::solve(
         vel[0][n] = gammawall*gammawall*gamma
           *(2.*betawall - vel[0][n]/gamma*(1.0+betawall*betawall));
 
-        tfrac = std::min( std::abs((vel[0][n]-xcolis)/std::max(abs(vel[0][n]-x0), 1.0e-9)), 1.0);
+        tfrac = std::min(std::abs((vel[0][n]-xcolis)/std::max(std::abs(vel[0][n]-x0), 1.0e-9)), 1.0);
 
         // move particle from the location of the wall with new velocity
         loc[0][n] = xcolis + vel[0][n]/gamma*c * tfrac;
