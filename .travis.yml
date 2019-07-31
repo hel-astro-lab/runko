@@ -63,12 +63,13 @@ before_install:
   - $CXX --version
   - mpicc --version
   - mpic++ --version
-    #- if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
-    #- if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
     #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
     #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
 
 before_script:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux"]; then export HDF5_ROOT=/usr/include/hdf5/serial; fi
   - export RUNKO=$(pwd)
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
@@ -76,8 +77,8 @@ before_script:
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/analysis
   - echo $PYTHONPATH
 
-
 script:
   - mkdir build && cd build 
   - cmake .. 
   - make
+
