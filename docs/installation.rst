@@ -61,6 +61,7 @@ On MacOS these should be easily installed by using `homebrew <https://brew.sh/>`
 MPI needs to be compiled separately because by default it uses the AppleClang compiler (instead of the g++-9 just installed). This can be done by running
 
 .. code-block:: bash
+
    export MPI_IMPL=openmpi40
    mkdir $HOME/local/$MPI_IMPL/bin
    cd $HOME/local/$MPI_IMPL/bin
@@ -94,11 +95,12 @@ On Linux (assuming Ubuntu) run:
 
 .. note::
 
-   Note that recent Ubuntu (bionic) comes with gcc-7 which makes the installation easier. For previous versions you, additionally, need to install gcc-7 (or 9) and manually compile MPI similar to MacOS.
+   Recent Ubuntu (bionic) comes with gcc-7 which makes the installation easier. For previous versions you, additionally, need to install gcc-7 (or 9) and manually compile MPI similar to MacOS.
 
 You also need to export the HDF5 library location (since it is non-standard at least in Ubuntu) with
 
 .. code-block:: bash
+
    export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial
 
 
