@@ -19,6 +19,8 @@ matrix:
         - libhdf5-serial-dev
         - openmpi-bin
         - libopenmpi-dev
+        - libblas-dev
+        - liblapack-dev
     env: COMP_EVAL="OS=linux && COMP_CC=gcc-7 && COMP_CXX=g++-7"
     python: 3.7
 
@@ -32,6 +34,8 @@ matrix:
         - libhdf5-serial-dev
         - openmpi-bin
         - libopenmpi-dev
+        - libblas-dev
+        - liblapack-dev
     env: COMP_EVAL="OS=linux && COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
     python: 3.7
 
@@ -69,8 +73,10 @@ before_install:
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
+  - pip3 uninstall numpy -y
   - pip3 install -r requirements.txt
   - if [ "$TRAVIS_OS_NAME" = "linux"]; then export PATH=${PATH}:/usr/include/hdf5/serial; fi
+  - h5cc -show
   - export RUNKO=$(pwd)
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
