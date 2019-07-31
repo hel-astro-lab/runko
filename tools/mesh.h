@@ -84,6 +84,14 @@ class Mesh {
       Nx(Nx_in), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
 
 
+    // explicit default copy operator
+    Mesh(Mesh& other) = default;
+    Mesh(const Mesh& other) = default;
+    
+
+    //Mesh& operator=(const Mesh& other) = default;
+
+
     /// address to data
     T* data() { return mat.data(); }
 
