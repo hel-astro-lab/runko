@@ -52,10 +52,10 @@ cache:
 before_install:
   - eval "${COMP_EVAL}"
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc@9 hdf5 open-mpi fftw fmt; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; export CC=${COMP_CC}; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; export CXX=${COMP_CXX}; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; export CC=mpicc; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; export CXX=mpic++; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
 
 before_script:
   - export MPI="openmpi40"
