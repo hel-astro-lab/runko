@@ -66,9 +66,6 @@ before_install:
     #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
     #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
 
-install:
-  - pip install -r requirements.txt
-
 
 before_script:
   - export MPI="openmpi40"
