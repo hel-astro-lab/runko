@@ -69,7 +69,8 @@ before_install:
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux"]; then export HDF5_ROOT=/usr/include/hdf5/serial; fi
+  - pip3 install -r requirements.txt
+  - if [ "$TRAVIS_OS_NAME" = "linux"]; then export PATH=${PATH}:/usr/include/hdf5/serial; fi
   - export RUNKO=$(pwd)
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
