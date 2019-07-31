@@ -43,7 +43,7 @@ matrix:
 
     allow_failures:
         - env: COMP_EVAL="OS=linux && COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
-    #    - env: COMP_EVAL="OS=linux && COMP_CC=gcc-9 && COMP_CXX=g++-9"
+        - env: COMP_EVAL="OS=linux && COMP_CC=gcc-7 && COMP_CXX=g++-7"
 
 
 addons:
@@ -58,6 +58,7 @@ cache:
 
 before_install:
   - eval "${COMP_EVAL}"
+  #pre-install mpi
   - export CXX=${COMP_CXX}
   - export CC=${COMP_CC}
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc@9 hdf5 open-mpi fftw fmt; fi
@@ -65,6 +66,7 @@ before_install:
   - export MPI="openmpi40"
   - export CC=mpicc
   - export CXX=mpic++
+  #test mpi compiler wrappers
   - $CC --version
   - $CXX --version
   - mpicc --version
@@ -75,10 +77,14 @@ before_install:
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
+  #install python requirements
   - pip3 uninstall numpy -y
-  - pip3 install --user -r requirements.txt
-  - if [ "$TRAVIS_OS_NAME" = "linux"]; then export PATH=${PATH}:/usr/include/hdf5/serial; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then pip3 install --user -r requirements.txt; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pip3 install -r requirements.txt; fi
+  #configure hdf5 (for linux)
+  - if [ "$TRAVIS_OS_NAME" = "linux"]; then export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial; fi
   - h5cc -show
+  #configure runko env variables
   - export RUNKO=$(pwd)
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
