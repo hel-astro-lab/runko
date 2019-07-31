@@ -17,6 +17,7 @@ matrix:
         - ubuntu-toolchain-r-test
         packages: 
         - libhdf5-serial-dev
+        - hdf5-helpers
         - openmpi-bin
         - libopenmpi-dev
         - libblas-dev
@@ -32,6 +33,7 @@ matrix:
         - llvm-toolchain-trusty-5.0
         packages: 
         - libhdf5-serial-dev
+        - hdf5-helpers
         - openmpi-bin
         - libopenmpi-dev
         - libblas-dev
@@ -74,7 +76,7 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
   - pip3 uninstall numpy -y
-  - pip3 install -r requirements.txt
+  - pip3 install --user -r requirements.txt
   - if [ "$TRAVIS_OS_NAME" = "linux"]; then export PATH=${PATH}:/usr/include/hdf5/serial; fi
   - h5cc -show
   - export RUNKO=$(pwd)
