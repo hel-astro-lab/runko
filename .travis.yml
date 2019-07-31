@@ -62,7 +62,7 @@ before_install:
   - export CXX=${COMP_CXX}
   - export CC=${COMP_CC}
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc@9 hdf5 open-mpi fftw fmt; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libopenmpi-dev; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libopenmpi-dev libhdf5-serial-dev hdf5-helpers openmpi-bin libblas-dev liblapack-dev; fi
   - export MPI="openmpi40"
   - export CC=mpicc
   - export CXX=mpic++
