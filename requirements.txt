@@ -1,5 +1,4 @@
 numpy
-mpi4py
 h5py
 scipy
 palettable

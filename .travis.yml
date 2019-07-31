@@ -6,6 +6,14 @@ matrix:
   include:
   - os: osx
     osx_image: xcode10.1
+    addons:
+      homebrew:
+        packages:
+        - gcc@9
+        - hdf5
+        - open-mpi
+        - fftw
+        - fmt
     env: COMP_EVAL="OS=osx && COMP_CC=gcc-9 && COMP_CXX=g++-9"
     language: generic
 
@@ -51,11 +59,16 @@ cache:
 
 before_install:
   - eval "${COMP_EVAL}"
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc@9 hdf5 open-mpi fftw fmt; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
+  - export CXX=${COMP_CXX}
+  - export CC=${COMP_CC}
+    #- if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
+    #- if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
+    #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
+    #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
+
+install:
+  - pip install -r requirements.txt
+
 
 before_script:
   - export MPI="openmpi40"
@@ -66,7 +79,7 @@ before_script:
   - mpicc --version
   - mpic++ --version
   - echo $PATH
-  - pip3 install -r requirements.txt
+  - pip install mpi4py
   - export RUNKO=$(pwd)
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
