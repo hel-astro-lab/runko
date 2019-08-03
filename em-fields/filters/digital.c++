@@ -47,7 +47,6 @@ void fields::Binomial2<2>::solve(
       mesh.jx(i  , j+1, k)*wts + 
       mesh.jx(i+1, j+1, k)*wtc;
   }
-
   mesh.jx = tmp; // then copy from scratch to original arrays
 
   // Jy

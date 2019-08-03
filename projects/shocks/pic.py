@@ -519,6 +519,7 @@ if __name__ == "__main__":
         timer.start_comp("clear_vir_cur")
         debug_print(grid, "clear_vir_cur")
 
+        #clear virtual current arrays for easier addition after mpi
         for cid in grid.get_virtual_tiles():
             tile = grid.get_tile(cid)
             tile.clear_current()
@@ -665,13 +666,9 @@ if __name__ == "__main__":
         for fj in range(conf.npasses):
 
             #filter each tile
-            for cid in grid.get_tile_ids():
+            for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
                 flt.solve(tile)
-
-                #clean current behind piston
-                #TODO: is this needed now after filtering only?
-                piston.field_bc(tile)
 
             #mpi
             grid.send_data(0)
@@ -679,11 +676,16 @@ if __name__ == "__main__":
             grid.wait_data(0)
 
             #get halo boundaries
-            for cid in grid.get_tile_ids():
+            for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
-                tile.exchange_currents(grid)
+                tile.update_boundaries(grid)
 
             MPI.COMM_WORLD.barrier() # sync everybody 
+
+        #clean current behind piston
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
+            piston.field_bc(tile)
 
         #--------------------------------------------------
         timer.stop_comp("filter")

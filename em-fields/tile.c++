@@ -114,6 +114,10 @@ void copy_vert_yee(
   lhs.by.copy_vert(rhs.by, lhsI, rhsI); 
   lhs.bz.copy_vert(rhs.bz, lhsI, rhsI); 
 
+  //TODO: separate into own function
+  lhs.jx.copy_vert(rhs.jx, lhsI, rhsI); 
+  lhs.jy.copy_vert(rhs.jy, lhsI, rhsI); 
+  lhs.jz.copy_vert(rhs.jz, lhsI, rhsI); 
 }
 
 
@@ -144,7 +148,12 @@ void copy_horz_yee(
   lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
   lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
   lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
-}
+
+  //TODO: separate into own function
+  lhs.jx.copy_horz(rhs.jx, lhsJ, rhsJ); 
+  lhs.jy.copy_horz(rhs.jy, lhsJ, rhsJ); 
+  lhs.jz.copy_horz(rhs.jz, lhsJ, rhsJ); 
+}                       
 
 
 /// Quick helper function to add everything inside Yee lattice 
@@ -171,6 +180,11 @@ void copy_face_yee(
   lhs.bx.copy_face(rhs.bx, lhsK, rhsK); 
   lhs.by.copy_face(rhs.by, lhsK, rhsK); 
   lhs.bz.copy_face(rhs.bz, lhsK, rhsK); 
+
+  //TODO: separate into own function
+  lhs.jx.copy_face(rhs.jx, lhsK, rhsK); 
+  lhs.jy.copy_face(rhs.jy, lhsK, rhsK); 
+  lhs.jz.copy_face(rhs.jz, lhsK, rhsK); 
 }
 
 
@@ -200,6 +214,11 @@ void copy_z_pencil_yee(
   lhs.bx.copy_z_pencil(rhs.bx, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.by.copy_z_pencil(rhs.by, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.bz.copy_z_pencil(rhs.bz, lhsI, lhsJ, rhsI, rhsJ); 
+
+  //TODO: separate into own function
+  lhs.jx.copy_z_pencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jy.copy_z_pencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jz.copy_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
 }
 
 void add_z_pencil_yee(
@@ -284,7 +303,7 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
         
 
         /*
-FIXME: this is how we should loop over H>1 halo boundaries
+        FIXME: this is how we should loop over H>1 halo boundaries
         for(int h=1; h<= halo; h++)
         copy_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
 
