@@ -7,8 +7,12 @@
 
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
+
 #include "../em-fields/propagator/propagator.h"
 #include "../em-fields/propagator/fdtd2.h"
+
+#include "../em-fields/filters/filter.h"
+#include "../em-fields/filters/digital.h"
 
 #include "../io/quick_writer.h"
 
@@ -103,11 +107,19 @@ class PyPropagator : public Propagator<D>
 };
 
 
-
-
-
-
-
+/// trampoline class for fields Filter
+template<size_t D>
+class PyFilter : public Filter<D>
+{
+  void solve( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Filter<D>,
+      solve,
+      tile
+      );
+  }
+};
 
 
 
@@ -197,6 +209,18 @@ void bind_fields(py::module& m_sub)
 
   // fdtd2 propagator
   py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
+    .def(py::init<>());
+
+
+  //--------------------------------------------------
+  // 2D Filter bindings
+  py::class_< fields::Filter<2>, PyFilter<2> > fieldsfiltter2d(m_2d, "Filter");
+  fieldsfiltter2d
+    .def(py::init<>())
+    .def("solve", &fields::Filter<2>::solve);
+
+  // digital filter
+  py::class_<fields::DigitalFilter<2>>(m_2d, "DigitalFilter", fieldsfiltter2d)
     .def(py::init<>());
 
 

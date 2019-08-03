@@ -91,6 +91,10 @@ class Mesh {
 
     //Mesh& operator=(const Mesh& other) = default;
 
+    /// copy only the internal data container 
+    void copy_container(const Mesh& other) {
+
+    }
 
     /// address to data
     T* data() { return mat.data(); }
