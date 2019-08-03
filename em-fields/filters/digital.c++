@@ -8,8 +8,6 @@ template<>
 void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
 {
-  std::cout << "AAAAAAAAAAAAAAAAAA inside solve\n";
-
   // 2D 1st order binomial coefficients
   double winv=1./16.,
          wtm=4.*winv, //middle

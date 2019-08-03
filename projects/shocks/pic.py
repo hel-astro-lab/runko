@@ -309,6 +309,7 @@ if __name__ == "__main__":
     analyzer = pypic.Analyzator()
     #flt     =  pytools.Filter(conf.NxMesh, conf.NyMesh)
     #flt.init_gaussian_kernel(2.0, 2.0)
+    flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     #moving walls
     piston   = pypic.Piston()
@@ -658,27 +659,34 @@ if __name__ == "__main__":
 
         ##################################################
         #filter
-        #timer.start_comp("filter")
+        timer.start_comp("filter")
 
-        #for cid in grid.get_tile_ids():
-        #    tile = grid.get_tile(cid)
-        #    flt.get_padded_current(tile, grid)
+        #sweep over npasses times
+        for fj in range(conf.npasses):
 
-        #    #flt.fft_image_forward()
-        #    #flt.apply_kernel()
-        #    #flt.fft_image_backward()
-        #
-        #    for fj in range(conf.npasses):
-        #        flt.direct_convolve_3point()
-        #    flt.set_current(tile)
+            #filter each tile
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                flt.solve(tile)
 
-        ##cycle new and temporary currents (only if filttering)
-        #for cid in grid.get_tile_ids():
-        #    tile = grid.get_tile(cid)
-        #    tile.cycle_current()
-        # FIXME: cycle also virtuals
+                #clean current behind piston
+                #TODO: is this needed now after filtering only?
+                piston.field_bc(tile)
+
+            #mpi
+            grid.send_data(0)
+            grid.recv_data(0) 
+            grid.wait_data(0)
+
+            #get halo boundaries
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                tile.exchange_currents(grid)
+
+            MPI.COMM_WORLD.barrier() # sync everybody 
+
         #--------------------------------------------------
-        #timer.stop_comp("filter")
+        timer.stop_comp("filter")
 
 
         #--------------------------------------------------

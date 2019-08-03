@@ -180,7 +180,7 @@ class Mesh {
       if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
       if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
       if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
-      if(this->mat.size() != rhs.mat.size()) throw std::range_error ("container sizes do not match");
+      //if(this->mat.size() != rhs.mat.size()) throw std::range_error ("container sizes do not match");
     }
 
     template<int H2>
@@ -224,18 +224,18 @@ Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
 }
 */
 
-/// = with same halo size
+/// = with any halo size
 template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
     
   // explicit deep copy
-  //for(size_t i=0; i<this->mat.size(); i++) {
-  //  this->mat[i] = rhs.mat[i];
-  //}
+  for(size_t i=0; i<this->mat.size(); i++) {
+    this->mat[i] = rhs.mat[i];
+  }
     
   // implicit deep copy
-  this->mat = rhs.mat;
+  //this->mat = rhs.mat;
   return *this;
 }
 
