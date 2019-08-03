@@ -9,14 +9,17 @@ template<size_t D>
 class Binomial2 :
   public virtual Filter<D>
 {
+  public:
+
   using Filter<D>::Filter;
 
-  void solve(Tile<D>& tile) override;
+  //Binomial2(size_t Nx, size_t Ny, size_t Nz) :
+  //  Filter<D>(Nx,Ny,Nz) 
+  //{}
+
+  void solve(fields::Tile<D>& tile) override;
+
 };
-
-
-
-
 
 
 

@@ -11,7 +11,7 @@ namespace fields {
 template<size_t D>
 class Filter
 {
-  private:
+  public:
 
   /// grid size along x
   size_t Nx;
@@ -22,20 +22,22 @@ class Filter
   /// grid size along z
   size_t Nz;
 
-  protected:
   ///internal scratch container (size equal to jx/jy/jz)
   toolbox::Mesh<Realf, 3> tmp;
-
-  public:
 
   Filter(size_t Nx, size_t Ny, size_t Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
     tmp(Nx,Ny,Nz)
   {}
 
+  //Filter() {};
+
   virtual ~Filter() = default;
 
-  virtual void solve(Tile<D>& tile) = 0;
+  //virtual void solve(fields::Tile<D>& tile) = 0;
+  virtual void solve(fields::Tile<D>& tile) {
+    std::cout << "AABBBBBBBBBBBBAB\n";
+  }
 
 };
 

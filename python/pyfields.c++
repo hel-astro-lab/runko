@@ -113,7 +113,7 @@ class PyFilter : public Filter<D>
 {
   using Filter<D>::Filter;
 
-  void solve( Tile<D>& tile ) override {
+  void solve( fields::Tile<D>& tile ) override {
   PYBIND11_OVERLOAD_PURE(
       void,
       Filter<D>,
@@ -216,15 +216,26 @@ void bind_fields(py::module& m_sub)
 
   //--------------------------------------------------
   // 2D Filter bindings
-  py::class_< fields::Filter<2>, PyFilter<2> > fieldsfiltter2d(m_2d, "Filter");
-  fieldsfiltter2d
+  py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
+  fieldsfilter2d
     .def(py::init<size_t, size_t, size_t>())
+    //.def(py::init<>())
     .def("solve", &fields::Filter<2>::solve);
 
   // digital filter
-  py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfiltter2d)
-    .def(py::init<size_t, size_t, size_t>());
+  py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",      &fields::Binomial2<2>::solve);
 
+
+  //py::class_< fields::Filter<2>, PyFilter<2> > fieldsflt2d(m_2d, "Filter");
+  //fieldsflt2d
+  //  .def(py::init<>())
+  //  .def("solve",      &fields::Filter<2>::solve);
+
+  //py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsflt2d)
+  //  .def(py::init<>())
+  //  .def("solve",      &fields::Binomial2<2>::solve);
 
 
   //--------------------------------------------------

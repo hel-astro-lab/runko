@@ -8,6 +8,7 @@ template<>
 void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
 {
+  std::cout << "AAAAAAAAAAAAAAAAAA inside solve\n";
 
   // 2D 1st order binomial coefficients
   double winv=1./16.,
@@ -91,10 +92,6 @@ void fields::Binomial2<2>::solve(
 }
 
 
-
-
-
-
-
-
-
+//template class fields::Binomial2<1>; // 1D
+template class fields::Binomial2<2>; // 2D
+//template class fields::Binomial2<3>; // 3D

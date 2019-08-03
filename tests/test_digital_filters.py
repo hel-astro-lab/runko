@@ -10,48 +10,32 @@ from math import floor, ceil
 #from scipy.signal import convolve
 
 import pycorgi
-import pyrunko.pic.twoD as pypic
-import pyrunko.tools.twoD as pytools
-import pyrunko.fields.twoD as pyfields
-
-from initialize_pic import loadTiles
-from initialize_pic import spatialLoc
-from injector_pic import inject
+import pyrunko.pic as pypic
+import pyrunko.tools as pytools
+import pyrunko.fields as pyfields
 
 
 def const_field(x, y, z):
-    return 1.0
+    return 1.0, 2.0, 3.0
 
 def linear_ramp(x,y,z):
-    return x + y + z
+    return x + y + z, 2*(x+y+z), 3*(x+y+z)
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
-def insert_em(grid, conf, ffunc):
+def insert_em_tile(tile, conf, ffunc):
 
-    Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(grid.get_Nx()):
-        for j in range(grid.get_Ny()):
-            c = grid.get_tile(i,j)
-            yee = c.get_yee(0)
+    yee = tile.get_yee(0)
+    for l in range(conf.NxMesh):
+        for m in range(conf.NyMesh):
+            for n in range(conf.NzMesh):
 
-            for l in range(conf.NxMesh):
-                for m in range(conf.NyMesh):
-                    for n in range(conf.NzMesh):
+                #use indexes directly as coordinates
+                valx, valy, valz = ffunc(l,m,n)
 
-                        #get x_i+1/2 (Yee lattice so rho_i)
-                        xloc0 = spatialLoc(grid, (i,j), (l,  m,n), conf)
-                        xloc1 = spatialLoc(grid, (i,j), (l+1,m,n), conf)
-
-                        xmid = 0.5*(xloc0[0] + xloc1[0])
-                        ymid = 0.5*(xloc0[1] + xloc1[1])
-                        zmid = 0.5*(xloc0[2] + xloc1[2])
-
-                        val = ffunc(xmid, ymid, zmid)
-
-                        yee.jx[l,m,n] = val
-                        yee.jy[l,m,n] = val+1.0
-                        yee.jz[l,m,n] = val+2.0
+                yee.jx[l,m,n] = valx
+                yee.jy[l,m,n] = valy
+                yee.jz[l,m,n] = valz
 
 
 # basic Conf file/class for PiC simulation testing
@@ -125,14 +109,70 @@ def digi5(i,j):
         return (1.0/16.0)*digi5a[i2,j2]
 
 
+def get_js(tile, conf):
+    jx = np.zeros((conf.NxMesh, conf.NyMesh, conf.NzMesh))
+    jy = np.zeros((conf.NxMesh, conf.NyMesh, conf.NzMesh))
+    jz = np.zeros((conf.NxMesh, conf.NyMesh, conf.NzMesh))
+
+    yee = tile.get_yee()
+
+    for q in range(conf.NxMesh):
+        for r in range(conf.NyMesh):
+            for s in range(conf.NzMesh):
+                jx[q,r,s] = yee.jx[q,r,s]
+                jy[q,r,s] = yee.jy[q,r,s]
+                jz[q,r,s] = yee.jz[q,r,s]
+
+    return jx,jy,jz
+
+
 class FilterTests(unittest.TestCase):
 
     #test loading of different filters
     def test_init(self):
         conf = Conf()
 
-        flt1 = pyfields.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt1 = pyfields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #flt1 = pyfields.twoD.Binomial2()
 
+
+    def test_normalization(self):
+
+        conf = Conf()
+        tile = pyfields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        insert_em_tile(tile, conf, const_field)
+
+        #get current arrays and sum (only internal values #to avoid garbage on boundaries
+
+        jx,jy,jz = get_js(tile,conf)
+        sumx = np.sum(jx[1:-1,1:-1,0])
+        sumy = np.sum(jy[1:-1,1:-1,0])
+        sumz = np.sum(jz[1:-1,1:-1,0])
+
+        #should be 25,50,75
+        print("sumx {} sumy {} sumz {}".format(sumx, sumy, sumz))
+        print(jx[:,:,0])
+        print(jy[:,:,0])
+        print(jz[:,:,0])
+
+        flt = pyfields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #flt = pyfields.twoD.Filter()
+        #fltB2 = pyfields.twoD.Binomial2()
+
+        flt.solve(tile) 
+        #fltB2.solve(tile) 
+        
+        jx1,jy1,jz1 = get_js(tile,conf)
+        sumx1 = np.sum(jx1[1:-1,1:-1,0])
+        sumy1 = np.sum(jy1[1:-1,1:-1,0])
+        sumz1 = np.sum(jz1[1:-1,1:-1,0])
+
+        print(jx1[:,:,0])
+        print(jy1[:,:,0])
+        print(jz1[:,:,0])
+
+        print("sumx {} sumy {} sumz {}".format(sumx1, sumy1, sumz1))
 
 
 
