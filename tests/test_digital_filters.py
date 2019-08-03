@@ -133,7 +133,6 @@ class FilterTests(unittest.TestCase):
         conf = Conf()
 
         flt1 = pyfields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        #flt1 = pyfields.twoD.Binomial2()
 
 
     def test_normalization(self):
@@ -150,29 +149,27 @@ class FilterTests(unittest.TestCase):
         sumy = np.sum(jy[1:-1,1:-1,0])
         sumz = np.sum(jz[1:-1,1:-1,0])
 
-        #should be 25,50,75
-        print("sumx {} sumy {} sumz {}".format(sumx, sumy, sumz))
-        print(jx[:,:,0])
-        print(jy[:,:,0])
-        print(jz[:,:,0])
+        #should be 25,50,75 (now 9,12,27 without boundaries)
+        #print("sumx {} sumy {} sumz {}".format(sumx, sumy, sumz))
+        #print(jx[:,:,0])
+        #print(jy[:,:,0])
+        #print(jz[:,:,0])
 
         flt = pyfields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        #flt = pyfields.twoD.Filter()
-        #fltB2 = pyfields.twoD.Binomial2()
 
         flt.solve(tile) 
-        #fltB2.solve(tile) 
         
         jx1,jy1,jz1 = get_js(tile,conf)
         sumx1 = np.sum(jx1[1:-1,1:-1,0])
         sumy1 = np.sum(jy1[1:-1,1:-1,0])
         sumz1 = np.sum(jz1[1:-1,1:-1,0])
 
-        print(jx1[:,:,0])
-        print(jy1[:,:,0])
-        print(jz1[:,:,0])
+        #print(jx1[:,:,0])
+        #print(jy1[:,:,0])
+        #print(jz1[:,:,0])
+        #print("sumx {} sumy {} sumz {}".format(sumx1, sumy1, sumz1))
 
-        print("sumx {} sumy {} sumz {}".format(sumx1, sumy1, sumz1))
-
-
+        self.assertAlmostEqual( sumx, sumx1, places=5 )
+        self.assertAlmostEqual( sumy, sumy1, places=5 )
+        self.assertAlmostEqual( sumz, sumz1, places=5 )
 

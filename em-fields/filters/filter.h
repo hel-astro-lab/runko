@@ -30,14 +30,9 @@ class Filter
     tmp(Nx,Ny,Nz)
   {}
 
-  //Filter() {};
-
   virtual ~Filter() = default;
 
-  //virtual void solve(fields::Tile<D>& tile) = 0;
-  virtual void solve(fields::Tile<D>& tile) {
-    std::cout << "AABBBBBBBBBBBBAB\n";
-  }
+  virtual void solve(fields::Tile<D>& tile) = 0;
 
 };
 

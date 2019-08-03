@@ -219,23 +219,15 @@ void bind_fields(py::module& m_sub)
   py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
   fieldsfilter2d
     .def(py::init<size_t, size_t, size_t>())
-    //.def(py::init<>())
     .def("solve", &fields::Filter<2>::solve);
 
   // digital filter
+  // TODO: remove hack where we explicitly define solve (instead of use trampoline class)
+  // overwriting the solve function from trampoline does not work atm for some weird reason.
   py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
     .def(py::init<size_t, size_t, size_t>())
     .def("solve",      &fields::Binomial2<2>::solve);
 
-
-  //py::class_< fields::Filter<2>, PyFilter<2> > fieldsflt2d(m_2d, "Filter");
-  //fieldsflt2d
-  //  .def(py::init<>())
-  //  .def("solve",      &fields::Filter<2>::solve);
-
-  //py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsflt2d)
-  //  .def(py::init<>())
-  //  .def("solve",      &fields::Binomial2<2>::solve);
 
 
   //--------------------------------------------------
