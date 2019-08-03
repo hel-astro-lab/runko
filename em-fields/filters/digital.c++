@@ -5,7 +5,8 @@
 
 /// single 2D 2nd order binomial filter pass
 template<>
-void fields::Binomial2<2>::solve(fields::Tile<2>& tile)
+void fields::Binomial2<2>::solve(
+    fields::Tile<2>& tile)
 {
 
   // 2D 1st order binomial coefficients
@@ -14,9 +15,9 @@ void fields::Binomial2<2>::solve(fields::Tile<2>& tile)
          wts=2.*winv, //side
          wtc=1.*winv; //corner
 
-  YeeLattice& mesh = tile.get_yee();
+  auto& mesh = tile.get_yee();
 
-  // using jx1, jy1, and jz1 as scratch arrays
+  // using tmp as scratch arrays
   //
   // values are processed in the following order
   //
@@ -31,59 +32,61 @@ void fields::Binomial2<2>::solve(fields::Tile<2>& tile)
 
   //--------------------------------------------------
   // Jx
-      
   int k = 0;
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-    mesh.jx1(i,j,k) = 
-      jx(i-1, j-1, k)*wtc + 
-      jx(i  , j-1, k)*wts + 
-      jx(i+1, j-1, k)*wtc + 
-                          
-      jx(i-1, j  , k)*wts + 
-      jx(i  , j  , k)*wtm + 
-      jx(i+1, j  , k)*wts + 
+    tmp(i,j,k) = 
+      mesh.jx(i-1, j-1, k)*wtc + 
+      mesh.jx(i  , j-1, k)*wts + 
+      mesh.jx(i+1, j-1, k)*wtc + 
 
-      jx(i-1, j+1, k)*wtc + 
-      jx(i  , j+1, k)*wts + 
-      jx(i+1, j+1, k)*wtc;
+      mesh.jx(i-1, j  , k)*wts + 
+      mesh.jx(i  , j  , k)*wtm + 
+      mesh.jx(i+1, j  , k)*wts + 
+
+      mesh.jx(i-1, j+1, k)*wtc + 
+      mesh.jx(i  , j+1, k)*wts + 
+      mesh.jx(i+1, j+1, k)*wtc;
   }
+
+  mesh.jx = tmp; // then copy from scratch to original arrays
 
   // Jy
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-    mesh.jy1(i,j,k) = 
-      jy(i-1, j-1, k)*wtc + 
-      jy(i  , j-1, k)*wts + 
-      jy(i+1, j-1, k)*wtc + 
-                          
-      jy(i-1, j  , k)*wts + 
-      jy(i  , j  , k)*wtm + 
-      jy(i+1, j  , k)*wts + 
-        
-      jy(i-1, j+1, k)*wtc + 
-      jy(i  , j+1, k)*wts + 
-      jy(i+1, j+1, k)*wtc;
+    tmp(i,j,k) = 
+      mesh.jy(i-1, j-1, k)*wtc + 
+      mesh.jy(i  , j-1, k)*wts + 
+      mesh.jy(i+1, j-1, k)*wtc + 
+
+      mesh.jy(i-1, j  , k)*wts + 
+      mesh.jy(i  , j  , k)*wtm + 
+      mesh.jy(i+1, j  , k)*wts + 
+
+      mesh.jy(i-1, j+1, k)*wtc + 
+      mesh.jy(i  , j+1, k)*wts + 
+      mesh.jy(i+1, j+1, k)*wtc;
   }
+  mesh.jy = tmp; // then copy from scratch to original arrays
 
   // Jz
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-    mesh.jz1(i,j,k) = 
-      jz(i-1, j-1, k)*wtc + 
-      jz(i  , j-1, k)*wts + 
-      jz(i+1, j-1, k)*wtc + 
-                          
-      jz(i-1, j  , k)*wts + 
-      jz(i  , j  , k)*wtm + 
-      jz(i+1, j  , k)*wts + 
-        
-      jz(i-1, j+1, k)*wtc + 
-      jz(i  , j+1, k)*wts + 
-      jz(i+1, j+1, k)*wtc;
-  }
+    tmp(i,j,k) = 
+      mesh.jz(i-1, j-1, k)*wtc + 
+      mesh.jz(i  , j-1, k)*wts + 
+      mesh.jz(i+1, j-1, k)*wtc + 
 
-  // then copy from scratch to original arrays
+      mesh.jz(i-1, j  , k)*wts + 
+      mesh.jz(i  , j  , k)*wtm + 
+      mesh.jz(i+1, j  , k)*wts + 
+
+      mesh.jz(i-1, j+1, k)*wtc + 
+      mesh.jz(i  , j+1, k)*wts + 
+      mesh.jz(i+1, j+1, k)*wtc;
+  }
+  mesh.jz = tmp; // then copy from scratch to original arrays
+
 
 }
 

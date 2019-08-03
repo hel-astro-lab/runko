@@ -111,6 +111,8 @@ class PyPropagator : public Propagator<D>
 template<size_t D>
 class PyFilter : public Filter<D>
 {
+  using Filter<D>::Filter;
+
   void solve( Tile<D>& tile ) override {
   PYBIND11_OVERLOAD_PURE(
       void,
@@ -216,12 +218,12 @@ void bind_fields(py::module& m_sub)
   // 2D Filter bindings
   py::class_< fields::Filter<2>, PyFilter<2> > fieldsfiltter2d(m_2d, "Filter");
   fieldsfiltter2d
-    .def(py::init<>())
+    .def(py::init<size_t, size_t, size_t>())
     .def("solve", &fields::Filter<2>::solve);
 
   // digital filter
-  py::class_<fields::DigitalFilter<2>>(m_2d, "DigitalFilter", fieldsfiltter2d)
-    .def(py::init<>());
+  py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfiltter2d)
+    .def(py::init<size_t, size_t, size_t>());
 
 
 

@@ -9,6 +9,8 @@ template<size_t D>
 class Binomial2 :
   public virtual Filter<D>
 {
+  using Filter<D>::Filter;
+
   void solve(Tile<D>& tile) override;
 };
 
