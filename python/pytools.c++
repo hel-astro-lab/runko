@@ -188,6 +188,7 @@ void bind_tools(pybind11::module& m)
     .def("inv",    &hilbert::Hilbert2D::inv);
 
 
+  // TODO: 3D Hilbert generator
 
 
 }

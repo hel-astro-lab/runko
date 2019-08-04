@@ -236,8 +236,12 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
   // 2D bindings
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
-
   auto t2 = pic::declare_tile<2>(m_2d, "Tile");
+
+  //--------------------------------------------------
+  // 3D bindings
+  py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
+  auto t3 = pic::declare_tile<3>(m_3d, "Tile");
 
 
   //--------------------------------------------------
@@ -260,6 +264,17 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
 
+  // 3D version
+  py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
+  picpusher3d
+    .def(py::init<>())
+    .def("solve", &pic::Pusher<3,3>::solve);
+
+  // Boris pusher
+  py::class_<pic::BorisPusher<3,3>>(m_3d, "BorisPusher", picpusher3d)
+    .def(py::init<>());
+
+
   //--------------------------------------------------
 
   // General interpolator interface
@@ -270,6 +285,17 @@ void bind_pic(py::module& m_sub)
 
   // Linear pusher
   py::class_<pic::LinearInterpolator<2,3>>(m_2d, "LinearInterpolator", picinterp2d)
+    .def(py::init<>());
+
+
+  // 3D version
+  py::class_< pic::Interpolator<3,3>, PyInterpolator<3> > picinterp3d(m_3d, "Interpolator");
+  picinterp3d
+    .def(py::init<>())
+    .def("solve", &pic::Interpolator<3,3>::solve);
+
+  // Linear pusher
+  py::class_<pic::LinearInterpolator<3,3>>(m_3d, "LinearInterpolator", picinterp3d)
     .def(py::init<>());
 
   //--------------------------------------------------
@@ -285,6 +311,17 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
 
+  // 3D version
+  py::class_< pic::Depositer<3,3>, PyDepositer<3> > picdeposit3d(m_3d, "Depositer");
+  picdeposit3d
+    .def(py::init<>())
+    .def("solve", &pic::Depositer<3,3>::solve);
+
+  // zigzag depositer
+  py::class_<pic::ZigZag<3,3>>(m_3d, "ZigZag", picdeposit3d)
+    .def(py::init<>());
+
+
   //--------------------------------------------------
 
   /// Pic tile analyzator
@@ -294,6 +331,7 @@ void bind_pic(py::module& m_sub)
     .def("analyze2d", &pic::Analyzator::analyze<2>)
     .def("analyze3d", &pic::Analyzator::analyze<3>);
 
+  //TODO: 3D analyzator
 
   /// IO bindings
   //m_2d.def("write_particles",  &pic::write_particles<2>);
@@ -309,6 +347,7 @@ void bind_pic(py::module& m_sub)
     .def("solve",    &pic::Piston<2>::solve)
     .def("field_bc", &pic::Piston<2>::field_bc);
 
+  //TODO: 3D piston
 
   //--------------------------------------------------
   // wall
@@ -325,6 +364,7 @@ void bind_pic(py::module& m_sub)
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
     .def("write",   &h5io::TestPrtclWriter<2>::write);
 
+  //TODO: 3D test particles
 
 }
 

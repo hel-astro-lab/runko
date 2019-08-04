@@ -253,6 +253,8 @@ void bind_fields(py::module& m_sub)
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write",   &h5io::QuickWriter<2>::write);
 
+  // TODO: 3D IO
+
 
 }
 

@@ -98,6 +98,37 @@ void Tile<2>::get_incoming_particles(
 }
 
 
+template<>
+void Tile<3>::get_incoming_particles(
+    corgi::Grid<3>& grid)
+{
+
+  std::array<double,3> global_mins = {
+    static_cast<double>( grid.get_xmin() ),
+    static_cast<double>( grid.get_ymin() ),
+    static_cast<double>( grid.get_zmin() )
+  };
+
+  std::array<double,3> global_maxs = {
+    static_cast<double>( grid.get_xmax() ),
+    static_cast<double>( grid.get_ymax() ),
+    static_cast<double>( grid.get_zmax() )
+  };
+
+  // fetch incoming particles from neighbors around me
+  for(int i=-1; i<=1; i++) {
+    for(int j=-1; j<=1; j++) {
+      for(int k=-1; k<=1; k++) {
+
+        //TODO 3D
+        assert(false);
+
+      }
+    }
+  }
+
+}
+
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::send_data( 
     mpi::communicator& comm, 
@@ -280,4 +311,4 @@ void Tile<D>::delete_all_particles()
 
 //template class pic::Tile<1>;
 template class pic::Tile<2>;
-//template class pic::Tile<3>;
+template class pic::Tile<3>;
