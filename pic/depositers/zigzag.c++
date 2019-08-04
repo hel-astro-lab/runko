@@ -64,8 +64,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       y0 = loc[1][n] - vel[1][n]*invgam*c;
       z0 = loc[2][n] - vel[2][n]*invgam*c; 
 
-      //q = weight*qe;
-      //q = 1.0;
 
       // normalized location w.r.t. tile
       x1 = D >= 1 ? x0         - mins[0] : x0;
@@ -75,21 +73,21 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       z1 = D >= 3 ? z0         - mins[2] : z0;
       z2 = D >= 3 ? loc[2][n]  - mins[2] : loc[2][n];
 
-      // FIXME defaults to 1 in Fortran scheme
-  	  i1  = D >= 1 ? static_cast<int>(floor( x1 ) ) : 0;
-  	  i2  = D >= 1 ? static_cast<int>(floor( x2 ) ) : 0;
-  	  j1  = D >= 2 ? static_cast<int>(floor( y1 ) ) : 0;
-  	  j2  = D >= 2 ? static_cast<int>(floor( y2 ) ) : 0;
-  	  k1  = D >= 3 ? static_cast<int>(floor( z1 ) ) : 0;
-  	  k2  = D >= 3 ? static_cast<int>(floor( z2 ) ) : 0;
+      // TODO: is this correctly aligned
+  	  i1  = D >= 1 ? static_cast<int>(floor( x1 )) : 0;
+  	  i2  = D >= 1 ? static_cast<int>(floor( x2 )) : 0;
+  	  j1  = D >= 2 ? static_cast<int>(floor( y1 )) : 0;
+  	  j2  = D >= 2 ? static_cast<int>(floor( y2 )) : 0;
+  	  k1  = D >= 3 ? static_cast<int>(floor( z1 )) : 0;
+  	  k2  = D >= 3 ? static_cast<int>(floor( z2 )) : 0;
 
       // relay point; +1 is equal to +\Delta x
       xr = min( double(min(i1,i2)+1), max( double(max(i1,i2)), 0.5*(double(x1+x2)) ) );
       yr = min( double(min(j1,j2)+1), max( double(max(j1,j2)), 0.5*(double(y1+y2)) ) );
       zr = min( double(min(k1,k2)+1), max( double(max(k1,k2)), 0.5*(double(z1+z2)) ) );
 
-      // -q to include -j in the Ampere's equation
-      // FIXME: opposite; +q to have -j explicitly in Ampere's law
+      // +q since - sign is already included in the Ampere's equation
+      //q = weight*qe;
       Fx1 = +q*(xr - x1);
       Fy1 = +q*(yr - y1);
       Fz1 = +q*(zr - z1);
@@ -101,7 +99,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
     	Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
   	  Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
-
 
       Fx2 = +q*(x2-xr);
       Fy2 = +q*(y2-yr);
@@ -167,7 +164,8 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
         std::cout << "\n";
 
         std::cout << std::flush;
-        // always fail
+
+        // always fail if we end here
         assert(false);
       }
 
