@@ -103,6 +103,7 @@ void pic::LinearInterpolator<D,V>::solve(
         
 	    //l = i; // + iy*(j-1) + iz*(k-1);
 
+      // check section; TODO; remove
       bool debug_flag = false;
       if(D >= 1) { if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
       if(D >= 2) { if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
@@ -134,9 +135,6 @@ void pic::LinearInterpolator<D,V>::solve(
         // always fail
         assert(false);
       }
-
-
-
 
 
       // TODO: these can be optimized further when we know D
@@ -203,5 +201,5 @@ void pic::LinearInterpolator<D,V>::solve(
 
 //template class pic::LinearInterpolator<1,3>; // 1D3V
 template class pic::LinearInterpolator<2,3>; // 2D3V
-//template class pic::LinearInterpolator<3,3>; // 3D3V
+template class pic::LinearInterpolator<3,3>; // 3D3V //TODO; validate
 
