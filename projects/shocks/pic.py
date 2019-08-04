@@ -307,8 +307,6 @@ if __name__ == "__main__":
     fintp    = pypic.LinearInterpolator()
     currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
-    #flt     =  pytools.Filter(conf.NxMesh, conf.NyMesh)
-    #flt.init_gaussian_kernel(2.0, 2.0)
     flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     #moving walls
@@ -683,9 +681,10 @@ if __name__ == "__main__":
             MPI.COMM_WORLD.barrier() # sync everybody 
 
         #clean current behind piston
-        for cid in grid.get_local_tiles():
-            tile = grid.get_tile(cid)
-            piston.field_bc(tile)
+        if conf.npasses > 0:
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                piston.field_bc(tile)
 
         #--------------------------------------------------
         timer.stop_comp("filter")

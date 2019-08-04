@@ -20,18 +20,6 @@ void pic::LinearInterpolator<D,V>::solve(
     for( int i=0; i<3; i++)
       loc[i] = &( container.loc(i,0) );
 
-    // 1-d arrays
-    //double* ex = &( (*tile.container.Epart)[0*nparts] );
-    //double* ey = &( (*tile.container.Epart)[1*nparts] );
-    //double* ez = &( (*tile.container.Epart)[2*nparts] );
-
-    // multiD array version
-    //double *efield[3], *bfield[3];
-    //for( int i=0; i<3; i++) {
-    //  efield[i] = &( tile.container.Epart[i][0] );
-    //  bfield[i] = &( tile.container.Bpart[i][0] );
-    //}
-
     /// resize internal arrays
     container.Epart.resize(3*nparts);
     container.Bpart.resize(3*nparts);
@@ -50,16 +38,12 @@ void pic::LinearInterpolator<D,V>::solve(
     int n1 = 0;
     int n2 = nparts;
 
-    //double c = tile.cfl;
-    //double cinv = 1.0/c;
-
     int i=0, j=0, k=0;
     double dx=0.0, dy=0.0, dz=0.0;
     double f,g;
 
     int iz = 1;
     if (D<=2) iz = 0; // flip switch for making array queries 2D
-
 
     auto mins = tile.mins;
     auto maxs = tile.maxs;
@@ -76,21 +60,21 @@ void pic::LinearInterpolator<D,V>::solve(
       if (D >= 1) {
         if(loc[0][n] == maxs[0]) loc[0][n] -= 1.0e-5;
 
-	      i  = floor( loc[0][n]-mins[0] );
+	      i  = (int)floor( loc[0][n]-mins[0] );
 	      dx = (loc[0][n]-mins[0]) - i;
       }
 
       if (D >= 2) {
         if(loc[1][n] == maxs[1]) loc[1][n] -= 1.0e-5;
 
-	      j  = floor( loc[1][n]-mins[1] );
+	      j  = (int)floor( loc[1][n]-mins[1] );
 	      dy = (loc[1][n]-mins[1]) - j;
       }
 
       if (D >= 3) {
         if(loc[2][n] == maxs[2]) loc[2][n] -= 1.0e-5;
 
-	      k  = floor( loc[2][n]-mins[2] );
+	      k  = (int)floor( loc[2][n]-mins[2] );
 	      dz = (loc[2][n]-mins[2]) - k;
       }
 
@@ -138,6 +122,8 @@ void pic::LinearInterpolator<D,V>::solve(
 
 
       // TODO: these can be optimized further when we know D
+      // TODO: can also be optimized by using 1D indexing (since we can pre-compute index with
+      // l = i + iy*(j-1)+iz*(k-1)
       f = yee.ex(i,j,k) + yee.ex(i-1,j,k) +    dx*(yee.ex(i+1,j  ,k   ) - yee.ex(i-1,j  ,k  ));
       f+=                                      dy*(yee.ex(i  ,j+1,k   ) + yee.ex(i-1,j+1,k  )+
                                                dx*(yee.ex(i+1,j+1,k   ) - yee.ex(i-1,j+1,k  ))-f);
