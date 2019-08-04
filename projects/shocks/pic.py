@@ -663,12 +663,7 @@ if __name__ == "__main__":
         #sweep over npasses times
         for fj in range(conf.npasses):
 
-            #filter each tile
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                flt.solve(tile)
-
-            #mpi
+            #update global neighbors (mpi)
             grid.send_data(0)
             grid.recv_data(0) 
             grid.wait_data(0)
@@ -677,6 +672,12 @@ if __name__ == "__main__":
             for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
                 tile.update_boundaries(grid)
+
+            #filter each tile
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                flt.solve(tile)
+
 
             MPI.COMM_WORLD.barrier() # sync everybody 
 
