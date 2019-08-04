@@ -169,11 +169,12 @@ void bind_fields(py::module& m_sub)
   //--------------------------------------------------
   py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
+  py::module m_3d = m_sub.def_submodule("threeD","3D specializations");
 
   /// General class for handling Maxwell's equations
   auto t1 = declare_tile<1>(m_1d, "Tile");
   auto t2 = declare_tile<2>(m_2d, "Tile");
-  //auto t3 = declare_tile<3>(m, "Tile");
+  auto t3 = declare_tile<3>(m_3d, "Tile");
 
 
   //--------------------------------------------------
@@ -215,6 +216,19 @@ void bind_fields(py::module& m_sub)
 
 
   //--------------------------------------------------
+  // 3D Propagator bindings
+  py::class_< fields::Propagator<3>, PyPropagator<3> > fieldspropag3d(m_3d, "Propagator");
+  fieldspropag3d
+    .def(py::init<>())
+    .def("push_e",      &fields::Propagator<3>::push_e)
+    .def("push_half_b", &fields::Propagator<3>::push_half_b);
+
+  // fdtd2 propagator
+  py::class_<fields::FDTD2<3>>(m_3d, "FDTD3", fieldspropag3d)
+    .def(py::init<>());
+
+
+  //--------------------------------------------------
   // 2D Filter bindings
   py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
   fieldsfilter2d
@@ -228,6 +242,8 @@ void bind_fields(py::module& m_sub)
     .def(py::init<size_t, size_t, size_t>())
     .def("solve",      &fields::Binomial2<2>::solve);
 
+
+  // TODO: 3D filters
 
 
   //--------------------------------------------------

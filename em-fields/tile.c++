@@ -326,6 +326,35 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
 }
 
 
+template<>
+void Tile<3>::update_boundaries(corgi::Grid<3>& grid) 
+{
+  using Tile_t  = Tile<3>;
+  using Tileptr = std::shared_ptr<Tile_t>;
+
+  int ito, jto, kto, ifro, jfro, kfro;
+  Tileptr tpr;
+
+  auto& mesh = get_yee(); // target as a reference to update into
+
+  for(int in=-1; in <= 1; in++) {
+    for(int jn=-1; jn <= 1; jn++) {
+      for(int kn=-1; kn <= 1; kn++) {
+        if (in == 0 && jn == 0 && kn == 0) continue;
+
+        tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
+        if (tpr) {
+          auto& mpr = tpr->get_yee();
+
+          //TODO: implement 3D
+          assert(false);
+
+        }
+      }
+    }
+  }
+
+}
 
 
 template<>
@@ -452,11 +481,45 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
   }
 }
 
+template<>
+void Tile<3>::exchange_currents(corgi::Grid<3>& grid) 
+{
+  using Tile_t  = Tile<3>;
+  using Tileptr = std::shared_ptr<Tile_t>;
+
+  int ito, jto, kto, ifro, jfro, kfro;
+  Tileptr tpr; 
+
+  int halo = 3;
+
+  auto& mesh = get_yee(); // target as a reference to update into
+
+  for(int in=-1; in <= 1; in++) {
+    for(int jn=-1; jn <= 1; jn++) {
+      for(int kn=-1; kn <= 1; kn++) {
+        if (in == 0 && jn == 0) continue;
+
+        tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
+        if (tpr) {
+          auto& mpr = tpr->get_yee();
+
+          //TODO: implement 3D
+          assert(false);
+
+        }
+      }
+    }
+  }
+
+}
+
+
 
 template<std::size_t D>
 void Tile<D>::cycle_yee() 
 {
   //yee.cycle();
+  // do nothing since Yee's are not in a container atm
 }
 
 /// cycle temporary and true current arrays
@@ -565,16 +628,11 @@ std::vector<mpi::request> Tile<D>::recv_data(
 }
 
 
-
-
-
-
-
 //--------------------------------------------------
 // explicit template instantiation
 
 template class Tile<1>;
 template class Tile<2>;
-//template class Tile<3>;
+template class Tile<3>;
 
 } // end of ns fields
