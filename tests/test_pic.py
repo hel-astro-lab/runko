@@ -336,7 +336,7 @@ class PIC(unittest.TestCase):
                     c = grid.get_tile(cid)
 
                     container = c.get_container(0)
-                    print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
+                    #print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
                     n_particles += len(container.loc(0))
 
                     #self.assertTrue( 0.0 <= container.loc(0) <= conf.xmax )
@@ -344,14 +344,14 @@ class PIC(unittest.TestCase):
                     #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
 
                     for prtcl in range(len(container.loc(0))):
-                        print("{} {} {} maxs {} {} {} id {}/{}".format( 
-                        container.loc(0)[prtcl], 
-                        container.loc(1)[prtcl], 
-                        container.loc(2)[prtcl], 
-                        conf.xmax, conf.ymax, conf.zmax, 
-                        container.id(0)[prtcl], 
-                        container.id(1)[prtcl], 
-                        ))
+                        #print("{} {} {} maxs {} {} {} id {}/{}".format( 
+                        #container.loc(0)[prtcl], 
+                        #container.loc(1)[prtcl], 
+                        #container.loc(2)[prtcl], 
+                        #conf.xmax, conf.ymax, conf.zmax, 
+                        #container.id(0)[prtcl], 
+                        #container.id(1)[prtcl], 
+                        #))
 
                         #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
                         #    prtcl, 
