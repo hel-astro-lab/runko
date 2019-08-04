@@ -309,6 +309,7 @@ if __name__ == "__main__":
     analyzer = pypic.Analyzator()
     #flt     =  pytools.Filter(conf.NxMesh, conf.NyMesh)
     #flt.init_gaussian_kernel(2.0, 2.0)
+    flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     #moving walls
     piston   = pypic.Piston()
@@ -518,6 +519,7 @@ if __name__ == "__main__":
         timer.start_comp("clear_vir_cur")
         debug_print(grid, "clear_vir_cur")
 
+        #clear virtual current arrays for easier addition after mpi
         for cid in grid.get_virtual_tiles():
             tile = grid.get_tile(cid)
             tile.clear_current()
@@ -658,27 +660,35 @@ if __name__ == "__main__":
 
         ##################################################
         #filter
-        #timer.start_comp("filter")
+        timer.start_comp("filter")
 
-        #for cid in grid.get_tile_ids():
-        #    tile = grid.get_tile(cid)
-        #    flt.get_padded_current(tile, grid)
+        #sweep over npasses times
+        for fj in range(conf.npasses):
 
-        #    #flt.fft_image_forward()
-        #    #flt.apply_kernel()
-        #    #flt.fft_image_backward()
-        #
-        #    for fj in range(conf.npasses):
-        #        flt.direct_convolve_3point()
-        #    flt.set_current(tile)
+            #filter each tile
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                flt.solve(tile)
 
-        ##cycle new and temporary currents (only if filttering)
-        #for cid in grid.get_tile_ids():
-        #    tile = grid.get_tile(cid)
-        #    tile.cycle_current()
-        # FIXME: cycle also virtuals
+            #mpi
+            grid.send_data(0)
+            grid.recv_data(0) 
+            grid.wait_data(0)
+
+            #get halo boundaries
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                tile.update_boundaries(grid)
+
+            MPI.COMM_WORLD.barrier() # sync everybody 
+
+        #clean current behind piston
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
+            piston.field_bc(tile)
+
         #--------------------------------------------------
-        #timer.stop_comp("filter")
+        timer.stop_comp("filter")
 
 
         #--------------------------------------------------

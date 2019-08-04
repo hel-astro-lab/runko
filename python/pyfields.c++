@@ -7,8 +7,12 @@
 
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
+
 #include "../em-fields/propagator/propagator.h"
 #include "../em-fields/propagator/fdtd2.h"
+
+#include "../em-fields/filters/filter.h"
+#include "../em-fields/filters/digital.h"
 
 #include "../io/quick_writer.h"
 
@@ -103,11 +107,21 @@ class PyPropagator : public Propagator<D>
 };
 
 
+/// trampoline class for fields Filter
+template<size_t D>
+class PyFilter : public Filter<D>
+{
+  using Filter<D>::Filter;
 
-
-
-
-
+  void solve( fields::Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Filter<D>,
+      solve,
+      tile
+      );
+  }
+};
 
 
 
@@ -198,6 +212,21 @@ void bind_fields(py::module& m_sub)
   // fdtd2 propagator
   py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
     .def(py::init<>());
+
+
+  //--------------------------------------------------
+  // 2D Filter bindings
+  py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
+  fieldsfilter2d
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve", &fields::Filter<2>::solve);
+
+  // digital filter
+  // TODO: remove hack where we explicitly define solve (instead of use trampoline class)
+  // overwriting the solve function from trampoline does not work atm for some weird reason.
+  py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",      &fields::Binomial2<2>::solve);
 
 
 
