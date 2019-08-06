@@ -93,8 +93,8 @@ def initialize_piston(grid, piston, conf):
     piston.betawall = beta
     piston.walloc = 5.0
 
-    print("wall gamma:", piston.gammawall)
-    print("wall beta:", piston.betawall)
+    #print("wall gamma:", piston.gammawall)
+    #print("wall beta:", piston.betawall)
 
     for cid in grid.get_local_tiles():
         tile = grid.get_tile(cid)

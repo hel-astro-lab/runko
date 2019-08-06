@@ -5,6 +5,7 @@
 #SBATCH --error=%J.err
 #SBATCH -t 0-23:00:00
 #SBATCH --nodes 8
+#SBATCH --ntasks-per-node=32
 
 # activate threading
 export OMP_NUM_THREADS=1
