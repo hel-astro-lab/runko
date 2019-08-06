@@ -64,12 +64,12 @@ class Configuration_Shocks(Configuration):
 
         #---------cold plasma-----------
         # parse external magnetic field strength from sigma_ext
-	#self.bz_ext = sqrt( (self.gamma-1.0)*.5*ppc*c**2*(mi+me)*self.sigma_ext)
+        #self.bz_ext = sqrt( (self.gamma-1.0)*.5*ppc*c**2*(mi+me)*self.sigma_ext)
 
-	#determine initial magnetic field based on magnetization sigma which 
+        #determine initial magnetic field based on magnetization sigma which 
         #is magnetic energy density/ kinetic energy density
-	#this definition works even for nonrelativistic flows. 
-	self.binit = sqrt((self.gamma)*ppc*.5*c**2.*(me*(1.+me/mi))*self.sigma)
+        #this definition works even for nonrelativistic flows. 
+        self.binit = sqrt((self.gamma)*ppc*.5*c**2.*(me*(1.+me/mi))*self.sigma)
 
 
         #----------hot plasma----------
