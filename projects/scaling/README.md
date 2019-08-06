@@ -10,13 +10,13 @@ Here you can find various scripts for testing the performance and parallel scali
 
 - `strong_scaling.py` can be used to visualize strong scaling results (component-wise)
 
-![strong scaling](https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/imgs/strong_scaling.png")
+![strong scaling](https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/imgs/strong_scaling.png)
 
 
 ### Weak scaling
 
 - `weak_scaling.py` can be used to visualize weak scaling results (component-wise)
 
-![weak scaling](https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/imgs/weak_scaling.png")
+![weak scaling](https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/imgs/weak_scaling.png)
 
 
