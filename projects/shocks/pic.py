@@ -739,7 +739,7 @@ if __name__ == "__main__":
             tpwriter.write(grid, lap) #test particles
 
             #deep IO
-            if (conf.full_interval != -1 and (lap % conf.full_interval == 0) and (lap > 0)):
+            if (conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0)):
                 debug_print(grid, "deep io")
 
                 debug_print(grid, "deep write_yee")
@@ -756,9 +756,9 @@ if __name__ == "__main__":
                 #flip between two sets of files
                 deep_io_switch = 1 if deep_io_switch == 0 else 0
 
-                print(grid, "write_yee")
+                debug_print(grid, "write_yee")
                 pyvlv.write_yee(grid,      deep_io_switch, conf.outdir + "/restart/" )
-                print(grid, "write_prtcls")
+                debug_print(grid, "write_prtcls")
                 pyvlv.write_particles(grid,deep_io_switch, conf.outdir + "/restart/" )
 
                 #if successful adjust info file
