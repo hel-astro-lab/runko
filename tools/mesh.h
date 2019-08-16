@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include<algorithm>
 #include <vector>
 #include <stdexcept>
 #include <cassert>
@@ -83,6 +84,12 @@ class Mesh {
     Mesh(size_t Nx_in) : 
       Nx(Nx_in), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
 
+
+    // explicit default copy operator
+    Mesh(Mesh& other) = default;
+    Mesh(const Mesh& other) = default;
+    
+    //Mesh& operator=(const Mesh& other) = default;
 
     /// address to data
     T* data() { return mat.data(); }
@@ -173,6 +180,7 @@ class Mesh {
       if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
       if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
       if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
+      //if(this->mat.size() != rhs.mat.size()) throw std::range_error ("container sizes do not match");
     }
 
     template<int H2>
@@ -216,13 +224,18 @@ Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
 }
 */
 
-/// = with same halo size
+/// = with any halo size
 template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
+    
+  // explicit deep copy
   for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] = rhs.mat[i];
   }
+    
+  // implicit deep copy
+  //this->mat = rhs.mat;
   return *this;
 }
 
@@ -258,9 +271,20 @@ Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
 template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
+
   for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] += rhs.mat[i];
   }
+
+  // TODO: do not operate on halo regions
+  //for(size_t k=0;  k<this->Nz; k++) {
+  //  for(size_t j=0;  j<this->Ny; j++) {
+  //    for(size_t i=0;  i<this->Nx; i++) {
+  //      this->operator()(i,j,k) += rhs(i,j,k);
+  //    }
+  //  }
+  //}
+
   return *this;
 }
 
@@ -284,9 +308,19 @@ Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H2>& rhs) {
 template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
+
   for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] -= rhs.mat[i];
   }
+
+  // TODO: do not operate on halo regions
+  //for(size_t k=0;  k<this->Nz; k++) {
+  //  for(size_t j=0;  j<this->Ny; j++) {
+  //    for(size_t i=0;  i<this->Nx; i++) {
+  //      this->operator()(i,j,k) -= rhs(i,j,k);
+  //    }
+  //  }
+  //}
   return *this;
 }
 

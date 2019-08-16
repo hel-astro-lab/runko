@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH -A SNIC2018-2-41
+#SBATCH -J y64x512s0
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -t 1-00:00:00
+#SBATCH -n 128
+
+# activate threading
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+# go to working directory
+cd /pfs/nobackup/home/n/natj/runko/projects/shocks/
+
+mpirun python pic.py --conf y64x512s0.ini

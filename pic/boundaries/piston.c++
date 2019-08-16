@@ -241,6 +241,10 @@ void pic::Piston<2>::field_bc(
       for(int i=0; i<=iw; i++) {
         yee.ey(i,j,k) = 0.0;
         yee.ez(i,j,k) = 0.0;
+
+        yee.jx(i,j,k) = 0.0;
+        yee.jy(i,j,k) = 0.0;
+        yee.jz(i,j,k) = 0.0;
       }
     }
   }

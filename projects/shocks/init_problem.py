@@ -34,8 +34,8 @@ class Configuration_Shocks(Configuration):
             self.beta = sqrt(1.-1./self.gamma**2.)
         
 	#plasma reaction & subsequent normalization
-        omp=c/self.c_omp
-        self.qe = -(omp**2.*self.gamma)/((ppc*.5)*(1.+me/mi)) 
+        self.omp=c/self.c_omp
+        self.qe = -(self.omp**2.*self.gamma)/((ppc*.5)*(1.+me/mi)) 
         self.qi = -self.qe 
 
         me *= abs(self.qi)
@@ -54,6 +54,7 @@ class Configuration_Shocks(Configuration):
 
         sigmaeff = self.sigma #* temperature corrections
         if do_print:
+            print("init: Upstream gamma: ",self.gamma)
             print("init: Alfven (outflow) three-velocity: ",sqrt(sigmaeff/(1.+sigmaeff)))
             print("init: Ion beta: ",     2.*self.delgam_i/(self.sigma*(mi/me+1.)/(mi/me)) )
             print("init: Electron beta: ",2.*self.delgam_e/(self.sigma*(mi/me+1.)) )
@@ -63,30 +64,30 @@ class Configuration_Shocks(Configuration):
 
         #---------cold plasma-----------
         # parse external magnetic field strength from sigma_ext
-	#self.bz_ext = sqrt( (self.gamma-1.0)*.5*ppc*c**2*(mi+me)*self.sigma_ext)
+        #self.bz_ext = sqrt( (self.gamma-1.0)*.5*ppc*c**2*(mi+me)*self.sigma_ext)
 
-	#determine initial magnetic field based on magnetization sigma which 
+        #determine initial magnetic field based on magnetization sigma which 
         #is magnetic energy density/ kinetic energy density
-	#this definition works even for nonrelativistic flows. 
-	#self.binit = sqrt((self.gamma)*ppc*.5*c**2.*(mi+me)*self.sigma)
+        #this definition works even for nonrelativistic flows. 
+        self.binit = sqrt((self.gamma)*ppc*.5*c**2.*(me*(1.+me/mi))*self.sigma)
 
 
         #----------hot plasma----------
-        corrdelgam_qe = 1.0
-        corrdelgam_sig = 1.0
+        #corrdelgam_qe = 1.0
+        #corrdelgam_sig = 1.0
 
-        delgam_i = self.delgam_i
-        delgam_e = self.delgam_e
+        #delgam_i = self.delgam_i
+        #delgam_e = self.delgam_e
 
-        zeta=delgam_i/(0.24 + delgam_i)
-        gad_i=1./3.*(5 - 1.21937*zeta + 0.18203*zeta**2 - 0.96583*zeta**3 + 2.32513*zeta**4 - 2.39332*zeta**5 + 1.07136*zeta**6)
-        delgam_e=self.delgam*mi/me*self.temp_ratio 
-        zeta=delgam_e/(0.24 + delgam_e)
-        gad_e=1./3.*(5 - 1.21937*zeta + 0.18203*zeta**2 - 0.96583*zeta**3 + 2.32513*zeta**4 - 2.39332*zeta**5 + 1.07136*zeta**6)
+        #zeta=delgam_i/(0.24 + delgam_i)
+        #gad_i=1./3.*(5 - 1.21937*zeta + 0.18203*zeta**2 - 0.96583*zeta**3 + 2.32513*zeta**4 - 2.39332*zeta**5 + 1.07136*zeta**6)
+        #delgam_e=self.delgam*mi/me*self.temp_ratio 
+        #zeta=delgam_e/(0.24 + delgam_e)
+        #gad_e=1./3.*(5 - 1.21937*zeta + 0.18203*zeta**2 - 0.96583*zeta**3 + 2.32513*zeta**4 - 2.39332*zeta**5 + 1.07136*zeta**6)
 
-        self.binit=1.*sqrt(ppc*.5*c**2.* \
-                (mi*(1.+corrdelgam_sig*gad_i/(gad_i-1.)*self.delgam_i)+me*(1.+ \
-                corrdelgam_sig*gad_e/(gad_e-1.)*self.delgam_e))*self.sigma)
+        #self.binit=1.*sqrt(ppc*.5*c**2.* \
+        #        (mi*(1.+corrdelgam_sig*gad_i/(gad_i-1.)*self.delgam_i)+me*(1.+ \
+        #        corrdelgam_sig*gad_e/(gad_e-1.)*self.delgam_e))*self.sigma)
 
         if do_print:
             print("init: sigma: ", self.sigma)
@@ -98,25 +99,4 @@ class Configuration_Shocks(Configuration):
             self.wallgamma = sqrt(1./(1.-self.wallgamma**2.)) 
         self.beta = sqrt(1.-1./self.gamma**2.)
 
-
-        #-------------------------------------------------- 
-        # radiation drag, if any
-
-        if "gammarad" in self.__dict__:
-            if not(self.gammarad == 0.0):
-                self.drag_amplitude = 0.1*self.binit/(self.gammarad**2.0)
-
-                if do_print:
-                    print("using radiation drag...")
-                    print(" drag amplitude: {} with gamma_rad: {}".format(self.drag_amplitude, self.gammarad))
-        else:
-            self.gammarad = 0.0
-
-        if "radtemp" in self.__dict__:
-            if not(self.radtemp == 0.0):
-                if do_print:
-                    print("using radiation drag with temperature...")
-                    print(" drag temperature: {}".format(self.radtemp))
-        else:
-            self.radtemp = 0.0
 

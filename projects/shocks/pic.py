@@ -93,8 +93,8 @@ def initialize_piston(grid, piston, conf):
     piston.betawall = beta
     piston.walloc = 5.0
 
-    print("wall gamma:", piston.gammawall)
-    print("wall beta:", piston.betawall)
+    #print("wall gamma:", piston.gammawall)
+    #print("wall beta:", piston.betawall)
 
     for cid in grid.get_local_tiles():
         tile = grid.get_tile(cid)
@@ -307,8 +307,7 @@ if __name__ == "__main__":
     fintp    = pypic.LinearInterpolator()
     currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
-    #flt     =  pytools.Filter(conf.NxMesh, conf.NyMesh)
-    #flt.init_gaussian_kernel(2.0, 2.0)
+    flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     #moving walls
     piston   = pypic.Piston()
@@ -518,6 +517,7 @@ if __name__ == "__main__":
         timer.start_comp("clear_vir_cur")
         debug_print(grid, "clear_vir_cur")
 
+        #clear virtual current arrays for easier addition after mpi
         for cid in grid.get_virtual_tiles():
             tile = grid.get_tile(cid)
             tile.clear_current()
@@ -658,27 +658,37 @@ if __name__ == "__main__":
 
         ##################################################
         #filter
-        #timer.start_comp("filter")
+        timer.start_comp("filter")
 
-        #for cid in grid.get_tile_ids():
-        #    tile = grid.get_tile(cid)
-        #    flt.get_padded_current(tile, grid)
+        #sweep over npasses times
+        for fj in range(conf.npasses):
 
-        #    #flt.fft_image_forward()
-        #    #flt.apply_kernel()
-        #    #flt.fft_image_backward()
-        #
-        #    for fj in range(conf.npasses):
-        #        flt.direct_convolve_3point()
-        #    flt.set_current(tile)
+            #update global neighbors (mpi)
+            grid.send_data(0)
+            grid.recv_data(0) 
+            grid.wait_data(0)
 
-        ##cycle new and temporary currents (only if filttering)
-        #for cid in grid.get_tile_ids():
-        #    tile = grid.get_tile(cid)
-        #    tile.cycle_current()
-        # FIXME: cycle also virtuals
+            #get halo boundaries
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                tile.update_boundaries(grid)
+
+            #filter each tile
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                flt.solve(tile)
+
+
+            MPI.COMM_WORLD.barrier() # sync everybody 
+
+        #clean current behind piston
+        if conf.npasses > 0:
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                piston.field_bc(tile)
+
         #--------------------------------------------------
-        #timer.stop_comp("filter")
+        timer.stop_comp("filter")
 
 
         #--------------------------------------------------
@@ -729,7 +739,7 @@ if __name__ == "__main__":
             tpwriter.write(grid, lap) #test particles
 
             #deep IO
-            if (conf.full_interval != -1 and (lap % conf.full_interval == 0) and (lap > 0)):
+            if (conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0)):
                 debug_print(grid, "deep io")
 
                 debug_print(grid, "deep write_yee")
@@ -746,9 +756,9 @@ if __name__ == "__main__":
                 #flip between two sets of files
                 deep_io_switch = 1 if deep_io_switch == 0 else 0
 
-                print(grid, "write_yee")
+                debug_print(grid, "write_yee")
                 pyvlv.write_yee(grid,      deep_io_switch, conf.outdir + "/restart/" )
-                print(grid, "write_prtcls")
+                debug_print(grid, "write_prtcls")
                 pyvlv.write_particles(grid,deep_io_switch, conf.outdir + "/restart/" )
 
                 #if successful adjust info file

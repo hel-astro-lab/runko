@@ -1,12 +1,13 @@
 language: python
-dist: trusty
+dist: bionic
+sudo: true
 
 matrix:
   fast_finish: true
   include:
   - os: osx
     osx_image: xcode10.1
-    env: COMP_EVAL="OS=osx && COMP_CC=gcc-7 && COMP_CXX=g++-7"
+    env: COMP_EVAL="OS=osx && COMP_CC=gcc-9 && COMP_CXX=g++-9"
     language: generic
 
   - os: linux
@@ -15,12 +16,14 @@ matrix:
         sources: 
         - ubuntu-toolchain-r-test
         packages: 
-        - g++-7
-        - hdf5-tools
-        - python3
-        - python3-pip
+        - libhdf5-serial-dev
+        - hdf5-helpers
+        - openmpi-bin
+        - libopenmpi-dev
+        - libblas-dev
+        - liblapack-dev
     env: COMP_EVAL="OS=linux && COMP_CC=gcc-7 && COMP_CXX=g++-7"
-    python: 3.6
+    python: 3.7
 
   - os: linux
     addons:
@@ -29,24 +32,25 @@ matrix:
         - ubuntu-toolchain-r-test
         - llvm-toolchain-trusty-5.0
         packages: 
-        - clang-5.0
-        - g++-7
-        - hdf5-tools
-        - python3
-        - python3-pip
+        - libhdf5-serial-dev
+        - hdf5-helpers
+        - openmpi-bin
+        - libopenmpi-dev
+        - libblas-dev
+        - liblapack-dev
     env: COMP_EVAL="OS=linux && COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
-    python: 3.6
+    python: 3.7
 
-  allow_failures:
+    allow_failures:
     - env: COMP_EVAL="OS=linux && COMP_CC=gcc-7 && COMP_CXX=g++-7"
-    - env: COMP_EVAL="OS=linux && COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
+    #- env: COMP_EVAL="OS=linux && COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
 
 
 addons:
     apt:
         update: true
     homebrew:
-        update: true
+        update: false
 
 cache:
     apt: true
@@ -54,27 +58,32 @@ cache:
 
 before_install:
   - eval "${COMP_EVAL}"
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc@7 hdf5 open-mpi fftw fmt; fi
-  - export CC=${COMP_CC}
+  #pre-install mpi
   - export CXX=${COMP_CXX}
-  - $CXX --version
-
-
-before_script:
-  #install mpi (in linux)
+  - export CC=${COMP_CC}
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc@9 hdf5 open-mpi fftw fmt; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libopenmpi-dev libhdf5-serial-dev hdf5-helpers openmpi-bin libblas-dev liblapack-dev; fi
   - export MPI="openmpi40"
-  - echo "Running mpi installation script"
-  - mkdir -p $HOME/local
-  - sh ./travis-install-mpi.sh $MPI
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
+  - export CC=mpicc
+  - export CXX=mpic++
+  #test mpi compiler wrappers
   - $CC --version
   - $CXX --version
   - mpicc --version
   - mpic++ --version
-  - echo $PATH
+    #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
+    #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=mpic++; fi
+
+before_script:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CC=${COMP_CC}; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CXX=${COMP_CXX}; fi
+  #install python requirements
   - pip3 uninstall numpy -y
-  - pip3 install -r requirements.txt
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then pip3 install --user -r requirements.txt; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pip3 install -r requirements.txt; fi
+  #configure hdf5 (for linux)
+  - if [ "$TRAVIS_OS_NAME" = "linux"]; then export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial; fi
+  #configure runko env variables
   - export RUNKO=$(pwd)
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
@@ -82,8 +91,8 @@ before_script:
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/analysis
   - echo $PYTHONPATH
 
-
 script:
   - mkdir build && cd build 
   - cmake .. 
   - make
+
