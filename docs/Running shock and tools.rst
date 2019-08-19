@@ -7,6 +7,7 @@ Using the script
 ===================
 A python script is provided called Run.py, which can automatically run the shock and analytical tools, along with ffmpeg in succession. Details of each are provided below.
 To run the script, use the command:
+
 .. code-block:: bash
 
    python3 Run.py --conf shock.ini
