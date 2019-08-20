@@ -22,6 +22,7 @@ However make sure to include pic.py, init_problem.py, the shock config file and 
 Configuring the simulation
 ===================
 To configure the simulation, you can edit the shock.ini file given. The following settings are given:
+
 - [io]
    - outdir: Defines the output directory name
    - interval: No. of steps between output files written
@@ -64,7 +65,7 @@ To configure the simulation, you can edit the shock.ini file given. The followin
    
 Running the simulation
 ===================
-To run a shock on runko, use the following command:
+To run a shock simulation on runko, use the following command:
 
 .. code-block:: bash
 
@@ -84,7 +85,7 @@ To run, use the command:
    python3 prtcl_spec.py --conf shock.ini [--lap lap_no]
 
 2. Particle Path
-This script will generate a file called prtcl_path.png which shows the 10 most energetic particles' position against time and gamma against time.
+This script will generate a file called prtcl_path.pdf which shows the 10 most energetic particles' position against time and gamma against time.
 
 To run, use the command:
 
@@ -92,7 +93,7 @@ To run, use the command:
 
    python3 prtcl_path.py --conf shock.ini
   
-3. UniPlot
+3. Plot shock
 This script generates a four-part graph showing:
 - A density map
 - A magnetic field map (Z-direction)
@@ -104,7 +105,7 @@ To run, use the command:
 
 .. code-block:: bash
 
-   python3 UniPlot.py --conf shock.ini [--lap lap_no]
+   python3 plot_shock.py --conf shock.ini [--lap lap_no]
 
 4. Shock velocity
 This script will load in the 1D density data, and use it to find the compression ratio of the shock and subsequently the shock velocity based on the midpoint of the shock.
@@ -114,4 +115,4 @@ To run, use the command:
 
 .. code-block:: bash
 
-   python3 RH_shk.py --conf shock.ini
+   python3 shock_RH.py --conf shock.ini
