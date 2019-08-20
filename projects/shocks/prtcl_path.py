@@ -43,45 +43,43 @@ if __name__ == "__main__":
     print(topkeys)
     print("Keys loaded...")
 
-    plt.fig = plt.figure(1, figsize=(16,12.0), dpi=300)
+    plt.fig = plt.figure(1, figsize=(5.73, 3.54), dpi=300)
+    plt.rcParams.update({'font.size': 8})
     gs = plt.GridSpec(1, 2)
     ax = plt.subplot(gs[0,0])
     ax2 = plt.subplot(gs[0,1])
-    #gs.update(hspace = 0.2)
-    #gs.update(wspace = 0.056)
-
 
     ax.set_xlabel('x (Skindepth)', color = 'black')
     ax.set_ylabel('Time (Laps)', color = 'black')
     ax.tick_params(axis='x', colors='black')
     ax.tick_params(axis='y', colors='black')
+    ax.minorticks_on()
     
     ax2.set_xlabel('Gamma', color = 'black')
     ax2.set_ylabel('Time (Laps)', color = 'black')
     ax2.tick_params(axis='x', colors='black')
     ax2.tick_params(axis='y', colors='black')
-    
+    ax2.minorticks_on()
+
     Nolaps = int((conf.Nt/conf.interval)+1)
     laplen = range(Nolaps)
 
     for key in topkeys:
         p = prtcls.prtcls[key]
         p_np = np.array(p)
-    
         x = p_np[:,0]
-        #print(x)
+        
         ax.plot(x, laplen)
-    
+        
         ux = p_np[:,3]
         uy = p_np[:,4]
         uz = p_np[:,5]
     
         gamma = (1 + ux**2 + uy**2 + uz**2)**0.5
         ax2.plot(gamma, laplen)
-
-    #plt.tight_layout()
-    #plt.show()
-    plt.savefig('{}/prtcl_path.png'.format(conf.outdir))
+    
+    plt.tight_layout()
+    plt.savefig('{}/prtcl_path.pdf'.format(conf.outdir))
     
     
 
