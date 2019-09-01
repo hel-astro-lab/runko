@@ -25,6 +25,8 @@ class Conf:
     ymin = 0.0
     ymax = 1.0
 
+    qe = 1.0
+
     #def __init__(self):
     #    print("initialized...")
 
