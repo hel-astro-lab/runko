@@ -20,7 +20,7 @@ class Particle
 public:
 
   /// actual particle data
-  std::array<double,7> data;
+  std::array<double,7> data = {-1,-2,-3,-4,-5,-7};
 
   /// particle id
   int _id = 0;
@@ -30,11 +30,15 @@ public:
 
   Particle() {};
 
+  /// standard ctor
   Particle(double x,  double y,  double z,
            double ux, double uy, double uz,
            double wgt,
            int __ind, int __proc
            );
+
+  /// special ctor for info prtcl
+  Particle(size_t number_of_particles);
 
   inline double& x()   { return data[0]; };
   inline double& y()   { return data[1]; };
@@ -48,48 +52,44 @@ public:
   inline int& proc() { return _proc; };
 
   virtual ~Particle() = default;
-  //virtual ~Particle() {
-  //  assert(false);
-  //}
+
+  /// special method for info particle that re-uses x mem location
+  size_t number_of_particles();
+
 };
 
 
 /// Special handling of particle MPI message info 
 // via this auxiliary helper class
-class InfoParticle : public Particle
-{
-public:
-
-  InfoParticle(size_t np) 
-    : Particle(
-        static_cast<double>(np), 2,3,
-        4,5,6,
-        7,8,9) {}
-
-  InfoParticle(Particle& prtcl) {
-    data[0] = prtcl.x();
-    data[1] = 100000;
-    data[2] = 200000;
-    data[3] = 300000;
-    data[4] = 400000;
-    data[5] = 500000;
-    data[6] = 600000;
-  }
-
-  size_t size() {return static_cast<size_t>(Particle::x());}
-
-private:
-  using Particle::x;
-  using Particle::y;
-  using Particle::z;
-  using Particle::ux;
-  using Particle::uy;
-  using Particle::uz;
-  using Particle::wgt;
-  using Particle::id;
-  using Particle::proc;
-
-};
+//class InfoParticle : public Particle
+//{
+//public:
+//
+//  InfoParticle(size_t np) 
+//    : Particle(
+//        static_cast<double>(np), 0,0,
+//        0,0,0,
+//        0,0,0) 
+//  { }
+//
+//  InfoParticle(Particle prtcl) {
+//    data[0] = prtcl.x();
+//  }
+//
+//  size_t size() {return static_cast<size_t>(Particle::x());}
+//
+//private:
+//  using Particle::x;
+//  using Particle::y;
+//  using Particle::z;
+//  using Particle::ux;
+//  using Particle::uy;
+//  using Particle::uz;
+//  using Particle::wgt;
+//  using Particle::id;
+//  using Particle::proc;
+//
+//};
 
 
 

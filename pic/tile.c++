@@ -216,12 +216,19 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     auto& container = get_container(ispc);
     //container.incoming_extra_particles.clear();
 
-    InfoParticle msginfo(container.incoming_particles[0]);
+    //InfoParticle msginfo(container.incoming_particles[0]);
+    //std::cout << "recv_prtcl: got " << msginfo.size() << " by mpi\n";
+      
+    std::cout << "recv_prtcl: got " << 
+      container.incoming_particles[0].number_of_particles()
+      << " by mpi\n";
 
-    std::cout << "recv_prtcl: got " << msginfo.size() << " by mpi\n";
 
     // check if we need to expect extra message
-    extra_size = msginfo.size() - container.optimal_message_size;
+    //extra_size = msginfo.size() - container.optimal_message_size;
+    extra_size = container.incoming_particles[0].number_of_particles() 
+      - container.optimal_message_size;
+
     if(extra_size > 0) {
       container.incoming_extra_particles.resize(extra_size);
 
