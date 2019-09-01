@@ -3,7 +3,7 @@ import numpy as np
 import sys, os
 
 import pycorgi
-import pyplasmabox 
+import pyrunko 
 
 np.random.seed(0)
 
@@ -12,9 +12,9 @@ np.random.seed(0)
 
 
 
-def spatialLoc(node, Ncoords, Mcoords, conf):
+def spatialLoc(grid, Ncoords, Mcoords, conf):
 
-    #node coordinates
+    #grid coordinates
     i, j    = Ncoords 
     Nx      = conf.Nx
     Ny      = conf.Ny
@@ -26,8 +26,8 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     NzMesh = conf.NzMesh
 
     #grid spacing
-    xmin = node.get_xmin()
-    ymin = node.get_ymin()
+    xmin = grid.get_xmin()
+    ymin = grid.get_ymin()
 
     dx = conf.dx
     dy = conf.dy
@@ -44,7 +44,7 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
 
 
 def createEmptyVelocityMesh(conf):
-    vmesh = pyplasmabox.tools.AdaptiveMesh3D()
+    vmesh = pyrunko.tools.AdaptiveMesh3D()
 
     dx = (conf.vxmax - conf.vxmin)/(conf.Nvx)
     dy = (conf.vymax - conf.vymin)/(conf.Nvy)
@@ -107,7 +107,7 @@ def fillMesh(
     ###################################################
     # adaptivity
 
-    adapter = pyplasmabox.Adapter();
+    adapter = pyrunko.Adapter();
 
     sweep = 1
     while(True):
@@ -137,7 +137,7 @@ def fillMesh(
 
 
 def inject_internal(i,j,
-                    node, 
+                    grid, 
                     ffunc, 
                     conf,
                     preclip = lambda a,b,c,d : False
@@ -146,13 +146,13 @@ def inject_internal(i,j,
     print("creating parallel ({},{})".format(i,j))
     
     #get tile & its content
-    cid    = node.id(i)
-    c      = node.get_tile(cid) #get tile ptr
+    cid    = grid.id(i)
+    c      = grid.get_tile(cid) #get tile ptr
     
     # loop over species
     species = []
     for ispcs in range(conf.Nspecies):
-        block = pyplasmabox.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        block = pyrunko.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         
         #set q/m
         if ispcs == 0:
@@ -170,7 +170,7 @@ def inject_internal(i,j,
                 for l in range(conf.NxMesh):
                     #print(" sub mesh: ({},{},{})".format(l,m,n))
     
-                    xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+                    xloc = spatialLoc(grid, (i,j), (l,m,n), conf)
     
                     vmesh = createEmptyVelocityMesh(conf)
                     fillMesh(vmesh,
@@ -190,7 +190,7 @@ def inject_internal(i,j,
 
 #inject plasma into tiles
 def inject_parallel(
-        node, 
+        grid, 
         ffunc, 
         conf,
         preclip = lambda a,b,c,d : False
@@ -198,11 +198,11 @@ def inject_parallel(
 
     #multiprocessing 
     pool = Pool() 
-    nxnynz = [(i,j) for i in range(node.get_Nx()) for j in range(node.get_Ny()) ]
+    nxnynz = [(i,j) for i in range(grid.get_Nx()) for j in range(grid.get_Ny()) ]
     print("pool for injector:", nxnynz)
     #pool.map(inject_internal, nxnynz)
     pool.map(partial(inject_internal,
-                        node=node,
+                        grid=node,
                         ffunc=ffunc,
                         conf=conf,
                         preclip=preclip
@@ -212,7 +212,7 @@ def inject_parallel(
 
 #inject plasma into tiles
 def inject(
-        node, 
+        grid, 
         ffunc, 
         conf,
         preclip = lambda a,b,c,d : False,
@@ -226,8 +226,8 @@ def inject(
     sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
 
     #loop over all *local* tiles
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
 
             #if n.get_mpi_grid(i,j) == n.rank:
             if True:
@@ -236,13 +236,13 @@ def inject(
                 sys.stdout.flush()
 
                 #get tile & its content
-                cid    = node.id(i)
-                c      = node.get_tile(cid) #get tile ptr
+                cid    = grid.id(i)
+                c      = grid.get_tile(cid) #get tile ptr
 
                 # loop over species
                 species = []
                 for ispcs in range(conf.Nspecies):
-                    block = pyplasmabox.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    block = pyrunko.vlv.PlasmaBlock(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                     
                     #set q/m
                     if ispcs == 0:
@@ -260,7 +260,7 @@ def inject(
                             for l in range(conf.NxMesh):
                                 #print(" sub mesh: ({},{},{})".format(l,m,n))
 
-                                xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+                                xloc = spatialLoc(grid, (i,j), (l,m,n), conf)
 
                                 vmesh = createEmptyVelocityMesh(conf)
                                 if not(empty):

@@ -22,14 +22,14 @@ class Tile :
   { }
 
 
-  void step_location(corgi::Node<D>& /*grid*/) override {
+  void step_location(corgi::Grid<D>& /*grid*/) override {
       //std::cout<<"BC spatial step\n";
 
       //vlasov::AmrSpatialLagrangianSolver<Realf> ssol;
       //ssol.solve(*this, grid);
     }
     
-  void reflect(corgi::Node<D>& grid);
+  void reflect(corgi::Grid<D>& grid);
 
 };
 

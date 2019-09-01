@@ -4,7 +4,16 @@ set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
-project (plasmabox)
+project (runko)
+
+# Add the cmake folder to get FindPkg files
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+ 
+# optimization flags
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=haswell -mtune=haswell") #latest optimization
 
 # set location of python libraries
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
@@ -127,7 +136,7 @@ add_subdirectory(corgi)
 #add_subdirectory(tests)
 
 add_subdirectory(python)
-
+add_subdirectory(docs)
 
 
 
@@ -167,9 +176,9 @@ add_subdirectory(python)
 #-------------------------------------------------- 
 # unit tests
 #
-add_custom_target(check-pyplasmabox ALL
+add_custom_target(check-runko ALL
                   ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
-                  DEPENDS pycorgi pyplasmabox 
+                  DEPENDS pycorgi pyrunko 
                   VERBATIM
                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib
                   )

@@ -5,7 +5,7 @@ import numpy as np
 import sys, os
 
 import pycorgi
-import pyplasmabox.vlv.oneD as plasma
+import pyrunko.vlv.oneD as plasma
 
 
 from configSetup import Configuration
@@ -184,7 +184,7 @@ def filler(xloc, uloc, ispcs, conf):
 
 
 
-# Get Yee grid components from node and save to hdf5 file
+# Get Yee grid components from grid and save to hdf5 file
 def save(n, conf, lap, f5):
 
     #get E field
@@ -201,16 +201,16 @@ def save(n, conf, lap, f5):
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
-def insert_em(node, conf):
+def insert_em(grid, conf):
 
     Lx  = conf.Nx*conf.NxMesh*conf.dx
     k = 2.0 #mode
 
     n0 = 1.0
 
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            c = node.get_tile(i,j)
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            c = grid.get_tile(i,j)
             yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
@@ -218,12 +218,12 @@ def insert_em(node, conf):
                     for n in range(conf.NzMesh):
 
                         #get x_i+1/2 (Yee lattice so rho_i)
-                        xloc0 = injector.spatialLoc(node, (i,j), (l,  m,n), conf)
-                        xloc1 = injector.spatialLoc(node, (i,j), (l+1,m,n), conf)
+                        xloc0 = injector.spatialLoc(grid, (i,j), (l,  m,n), conf)
+                        xloc1 = injector.spatialLoc(grid, (i,j), (l+1,m,n), conf)
 
                         #get x_i-1/2 (Yee lattice so rho_i)
-                        #xloc0 = injector.spatialLoc(node, (i,j), (l,  m,n), conf)
-                        #xloc1 = injector.spatialLoc(node, (i,j), (l-1,m,n), conf)
+                        #xloc0 = injector.spatialLoc(grid, (i,j), (l,  m,n), conf)
+                        #xloc1 = injector.spatialLoc(grid, (i,j), (l-1,m,n), conf)
 
                         xmid = 0.5*(xloc0[0] + xloc1[0])
                         yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
@@ -231,7 +231,7 @@ def insert_em(node, conf):
                         #yee.ex[l,m,n] = 1.0e-5
 
 
-def solvePoisson(ax, node, conf):
+def solvePoisson(ax, grid, conf):
     yee = get_yee(n, conf)
 
     x   = yee['x']
@@ -287,26 +287,26 @@ if __name__ == "__main__":
 
 
     ################################################## 
-    #initialize node
-    node = pycorgi.oneD.Node(conf.Nx, conf.Ny, conf.Nz)
+    #initialize grid
+    grid = pycorgi.oneD.Grid(conf.Nx, conf.Ny, conf.Nz)
 
     xmin = 0.0
     xmax = conf.dx*conf.Nx*conf.NxMesh
     ymin = 0.0
     ymax = conf.dy*conf.Ny*conf.NyMesh
 
-    node.set_grid_lims(xmin, xmax, ymin, ymax)
+    grid.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
-    #node.initMpi()
-    #loadMpiXStrides(node)
+    #grid.initMpi()
+    #loadMpiXStrides(grid)
 
-    init.loadTiles(node, conf)
+    init.loadTiles(grid, conf)
 
 
     ################################################## 
     # Path to be created 
-    #if node.master:
+    #if grid.master:
     if True:
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
@@ -321,41 +321,41 @@ if __name__ == "__main__":
     # restart
     if conf.laprestart > 0:
         lap = conf.laprestart + 1
-        injector.inject(node, injector.empty_filler, conf, empty=True) #injecting plasma
+        injector.inject(grid, injector.empty_filler, conf, empty=True) #injecting plasma
 
-        plasma.read_yee( node, conf.laprestart, conf.outdir)
-        plasma.read_mesh(node, conf.laprestart, conf.outdir)
+        plasma.read_yee( grid, conf.laprestart, conf.outdir)
+        plasma.read_mesh(grid, conf.laprestart, conf.outdir)
     else:
         lap = 0
-        injector.inject(node, filler, conf, preclip) #injecting plasma
+        injector.inject(grid, filler, conf, preclip) #injecting plasma
 
         #insert initial electric field
-        #insert_em(node, conf)
+        #insert_em(grid, conf)
 
         #Initial step backwards for velocity
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.update_boundaries(node)
-        plasma.initial_step(node)
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                tile = grid.get_tile(i,j)
+                tile.update_boundaries(grid)
+        plasma.initial_step(grid)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                tile = grid.get_tile(i,j)
                 tile.cycle()
 
 
     # visualize initial condition
     try:
-        plotNode(axs[0], node, conf)
-        plotXmesh(axs[1], node, conf, 0, "x")
-        #plotXmesh(axs[2], node, conf, 0, "y")
+        plotNode(axs[0], grid, conf)
+        plotXmesh(axs[1], grid, conf, 0, "x")
+        #plotXmesh(axs[2], grid, conf, 0, "y")
         if conf.Nspecies == 2:
-            plotXmesh(axs[3], node, conf, 1, "x")
-            #plotXmesh(axs[4], node, conf, 1, "y")
-        plotJ(axs[5], node, conf)
-        plotE(axs[6], node, conf)
-        plotDens(axs[7], node, conf)
-        saveVisz(-1, node, conf)
+            plotXmesh(axs[3], grid, conf, 1, "x")
+            #plotXmesh(axs[4], grid, conf, 1, "y")
+        plotJ(axs[5], grid, conf)
+        plotE(axs[6], grid, conf)
+        plotDens(axs[7], grid, conf)
+        saveVisz(-1, grid, conf)
     except:
         pass
 
@@ -401,45 +401,45 @@ if __name__ == "__main__":
 
         #configuration space push
         timer.start_comp("loc")
-        plasma.step_location(node)
+        plasma.step_location(grid)
         timer.stop_comp("loc")
 
         #cycle to the new fresh snapshot
         timer.start_comp("cycle1")
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                tile = grid.get_tile(i,j)
                 tile.cycle()
         timer.stop_comp("cycle1")
 
 
         #current deposition from moving flux
         timer.start_comp("cur-dep")
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                tile = grid.get_tile(i,j)
                 tile.deposit_current()
         timer.stop_comp("cur-dep")
 
         #update boundaries
         timer.start_comp("bounds")
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
-                tile.update_boundaries(node)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                tile = grid.get_tile(i,j)
+                tile.update_boundaries(grid)
         timer.stop_comp("bounds")
 
         #momentum step
         timer.start_comp("vel")
-        plasma.step_velocity(node)
+        plasma.step_velocity(grid)
         timer.stop_comp("vel")
 
 
         #cycle to the new fresh snapshot
         timer.start_comp("cycle2")
-        for j in range(node.get_Ny()):
-            for i in range(node.get_Nx()):
-                tile = node.get_tile(i,j)
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                tile = grid.get_tile(i,j)
                 tile.cycle()
         timer.stop_comp("cycle2")
 
@@ -452,9 +452,9 @@ if __name__ == "__main__":
         #clip every tile
         timer.start_comp("clip")
         if conf.clip:
-            for j in range(node.get_Ny()):
-                for i in range(node.get_Nx()):
-                    tile = node.get_tile(i,j)
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    tile = grid.get_tile(i,j)
                     #tile.clip_neighbors()
                     tile.clip()
         timer.stop_comp("clip")
@@ -465,14 +465,14 @@ if __name__ == "__main__":
         timer.lap("step")
 
         #save temporarily to file
-        save(node, conf, ifile, f5)
+        save(grid, conf, ifile, f5)
         ifile += 1
 
         #sys.exit()
 
         # analyze (this is done for every step because run.hdf5 is updated such a way)
         timer.start_comp("analyze")
-        plasma.analyze(node)
+        plasma.analyze(grid)
         timer.stop_comp("analyze")
 
         #I/O
@@ -489,32 +489,32 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            plasma.write_yee(node,      lap, conf.outdir + "/")
-            plasma.write_analysis(node, lap, conf.outdir + "/")
+            plasma.write_yee(grid,      lap, conf.outdir + "/")
+            plasma.write_analysis(grid, lap, conf.outdir + "/")
 
             if (lap % conf.restart == 0):
-                plasma.write_mesh(node,     lap, conf.outdir + "/")
+                plasma.write_mesh(grid,     lap, conf.outdir + "/")
 
             try:
-                plotNode(axs[0], node, conf)
+                plotNode(axs[0], grid, conf)
 
-                plotXmesh(axs[1], node, conf, 0, "x")
-                #plotXmesh(axs[2], node, conf, 0, "y")
+                plotXmesh(axs[1], grid, conf, 0, "x")
+                #plotXmesh(axs[2], grid, conf, 0, "y")
 
                 if conf.Nspecies == 2:
-                    plotXmesh(axs[3], node, conf, 1, "x")
-                    #plotXmesh(axs[4], node, conf, 1, "y")
+                    plotXmesh(axs[3], grid, conf, 1, "x")
+                    #plotXmesh(axs[4], grid, conf, 1, "y")
 
                 if conf.Nspecies == 4:
-                    plotXmesh(axs[2], node, conf, 1, "x")
-                    plotXmesh(axs[3], node, conf, 2, "x")
-                    plotXmesh(axs[4], node, conf, 3, "x")
+                    plotXmesh(axs[2], grid, conf, 1, "x")
+                    plotXmesh(axs[3], grid, conf, 2, "x")
+                    plotXmesh(axs[4], grid, conf, 3, "x")
 
-                plotJ(axs[5], node, conf)
-                plotE(axs[6], node, conf)
-                plotDens(axs[7], node, conf)
+                plotJ(axs[5], grid, conf)
+                plotE(axs[6], grid, conf)
+                plotDens(axs[7], grid, conf)
 
-                saveVisz(lap, node, conf)
+                saveVisz(lap, grid, conf)
             except:
                 pass
 
@@ -528,7 +528,7 @@ if __name__ == "__main__":
 
     
     f5.close()
-    #node.finalizeMpi()
+    #grid.finalizeMpi()
 
 
     timer.stop("total")

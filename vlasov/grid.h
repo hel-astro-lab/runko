@@ -12,12 +12,12 @@ namespace vlv {
 
 /*! \brief Plasma grid
  *
- * Grid infrastructure methods are inherited from corgi::Node
+ * Grid infrastructure methods are inherited from corgi::Grid
  */
 
 template<std::size_t D>
 class Grid : 
-  public corgi::Node<D> 
+  public corgi::Grid<D> 
 {
   public:
 
@@ -28,7 +28,7 @@ class Grid :
                corgi::internals::are_integral<Dims...>::value, void >
   > 
   Grid(Dims... dims) :
-    corgi::Node<D>(dims...)
+    corgi::Grid<D>(dims...)
   {}
 
 
@@ -56,14 +56,14 @@ class Grid :
     std::cout << "adding tile (NEW)\n";
     uint64_t cid = id( indices );
     std::cout << "1 \n";
-    corgi::Node<D>::tiles.erase(cid);
+    corgi::Grid<D>::tiles.erase(cid);
     std::cout << "2 \n";
     tileptr->index               = indices;
     tileptr->cid                 = cid;
-    tileptr->communication.owner = corgi::Node<D>::rank;
+    tileptr->communication.owner = corgi::Grid<D>::rank;
     tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
     std::cout << "3 \n";
-    corgi::Node<D>::tiles[cid] = tileptr;
+    corgi::Grid<D>::tiles[cid] = tileptr;
     std::cout << "4 \n";
   }
   */

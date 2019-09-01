@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- 
 import pycorgi
-import pyplasmabox.pic as pypic
+import pyrunko.pic as pypic
 
 from initialize_pic import spatialLoc
 
@@ -10,23 +10,27 @@ import numpy as np
 
 
 #inject plasma into (individual) cells
-def inject(node, ffunc, conf):
+def inject(grid, ffunc, conf):
 
-    rank = node.rank()
+    rank = grid.rank()
 
     prtcl_tot = np.zeros(conf.Nspecies,dtype=np.int64)
 
     #loop over all *local* cells
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            if node.get_mpi_grid(i,j) == node.rank():
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            if grid.get_mpi_grid(i,j) == grid.rank():
                 #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
-                cid    = node.id(i,j)
-                c      = node.get_tile(cid) #get cell ptr
+                cid    = grid.id(i,j)
+                c      = grid.get_tile(cid) #get cell ptr
 
                 #if not(1 <= i <= 2 and j == 1):
+                #do_inject = False
+                #if (2 <= i <= 3):
+                #    do_inject = True
+                #if not(2 <= i <= 3):
                 #    continue
 
                 # inject particles
@@ -52,7 +56,7 @@ def inject(node, ffunc, conf):
                         for m in range(conf.NyMesh):
                             for l in range(conf.NxMesh):
                                 #print(" sub mesh: ({},{},{})".format(l,m,n))
-                                xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+                                xloc = spatialLoc(grid, (i,j), (l,m,n), conf)
 
                                 for ip in range(conf.ppc):
                                     x0, u0 = ffunc(xloc, ispcs, conf)
@@ -79,12 +83,12 @@ def inject(node, ffunc, conf):
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
-def insert_em(node, conf, ffunc):
+def insert_em(grid, conf, ffunc):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            c = node.get_tile(i,j)
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            c = grid.get_tile(i,j)
             yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
@@ -92,12 +96,12 @@ def insert_em(node, conf, ffunc):
                     for n in range(conf.NzMesh):
 
                         # get x_i,j,k
-                        xloc0 = spatialLoc(node, (i,j), (l,m,n), conf)
+                        xloc0 = spatialLoc(grid, (i,j), (l,m,n), conf)
 
                         #get x_i+1/2, x_j+1/2, x_k+1/2
-                        xloc1 = spatialLoc(node, (i,j), (l+1,m,  n),   conf)
-                        yloc1 = spatialLoc(node, (i,j), (l,  m+1,n),   conf)
-                        zloc1 = spatialLoc(node, (i,j), (l,  m,  n+1), conf)
+                        xloc1 = spatialLoc(grid, (i,j), (l+1,m,  n),   conf)
+                        yloc1 = spatialLoc(grid, (i,j), (l,  m+1,n),   conf)
+                        zloc1 = spatialLoc(grid, (i,j), (l,  m,  n+1), conf)
 
                         # values in Yee lattice corners
                         xcor = xloc0[0]

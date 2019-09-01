@@ -178,7 +178,7 @@ class Tile :
 
 
   /// advance location 
-  virtual void step_location(corgi::Node<D>& grid);
+  virtual void step_location(corgi::Grid<D>& grid);
   /*
   {
     vlv::AmrSpatialLagrangianSolver<Realf> ssol;
@@ -188,7 +188,7 @@ class Tile :
 
   /// get neighboring tile from grid
   // TODO: separate into own communication module/header
-  PlasmaBlock& get_external_data(corgi::Node<D>&, int, int);
+  PlasmaBlock& get_external_data(corgi::Grid<D>&, int, int);
 
 
 };

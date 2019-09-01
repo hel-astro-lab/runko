@@ -3,7 +3,7 @@ from initialize_pic import spatialLoc #XXX make this general/not pic-specific
 import numpy as np
 
 import pycorgi
-import pyplasmabox 
+import pyrunko 
 
 
 #make random starting order
@@ -50,12 +50,11 @@ def loadMpiYStrides(n):
 
 
 # load nodes using 2D Hilbert curve
-def loadMpi2D(n, nsize=None):
-    if nsize == None:
-        nsize = n.size()
-
+def loadMpi2D(n, comm_size=None):
     if n.master: #only master initializes; then sends
 
+        if comm_size == None:
+            comm_size = n.size()
 
         nx = n.get_Nx()
         ny = n.get_Ny()
@@ -70,7 +69,7 @@ def loadMpi2D(n, nsize=None):
             raise ValueError('Ny is not power of 2 (i.e. 2^m)')
 
         #print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        hgen = pyplasmabox.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
+        hgen = pyrunko.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
 
         igrid = np.zeros( (nx, ny), np.int64)
         grid  = np.zeros( (nx, ny) ) #, np.int64)
@@ -82,7 +81,7 @@ def loadMpi2D(n, nsize=None):
         hmin, hmax = np.min(grid), np.max(grid)
         for i in range(nx):
             for j in range(ny):
-                igrid[i,j] = np.floor( nsize*grid[i,j]/(hmax+1) ) 
+                igrid[i,j] = np.floor( comm_size*grid[i,j]/(hmax+1) ) 
 
         #check that nodes get about same work load
         #y = np.bincount(igrid.flatten())
@@ -119,18 +118,18 @@ def initialize_tile(c, i, j, n, conf):
     c.threshold = conf.clipThreshold
 
 
-#load tiles into each node
+#load tiles into each grid
 def loadTiles(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
             if n.get_mpi_grid(i,j) == n.rank():
-                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
                 initialize_tile(c, i, j, n, conf)
 
-                #add it to the node
+                #add it to the grid
                 n.add_tile(c, (i,)) 
 
 

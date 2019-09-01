@@ -1,20 +1,24 @@
 from mpi4py import MPI
+
 import unittest
 
+import sys
 import numpy as np
+
 from math import floor, ceil
 from scipy.signal import convolve2d
 from scipy.signal import convolve
 
 import pycorgi
-import pyplasmabox.pic.twoD as pypic
-import pyplasmabox.tools.twoD as pytools
+import pyrunko.pic.twoD as pypic
+import pyrunko.tools.twoD as pytools
+import pyrunko.fields.twoD as pyfields
 
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
 from injector_pic import inject
 
-from visualize import saveVisz
+#from visualize import saveVisz
 
 try:
     import matplotlib.pyplot as plt
@@ -31,12 +35,12 @@ def linear_ramp(x,y,z):
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
-def insert_em(node, conf, ffunc):
+def insert_em(grid, conf, ffunc):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            c = node.get_tile(i,j)
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            c = grid.get_tile(i,j)
             yee = c.get_yee(0)
 
             for l in range(conf.NxMesh):
@@ -44,8 +48,8 @@ def insert_em(node, conf, ffunc):
                     for n in range(conf.NzMesh):
 
                         #get x_i+1/2 (Yee lattice so rho_i)
-                        xloc0 = spatialLoc(node, (i,j), (l,  m,n), conf)
-                        xloc1 = spatialLoc(node, (i,j), (l+1,m,n), conf)
+                        xloc0 = spatialLoc(grid, (i,j), (l,  m,n), conf)
+                        xloc1 = spatialLoc(grid, (i,j), (l+1,m,n), conf)
 
                         xmid = 0.5*(xloc0[0] + xloc1[0])
                         ymid = 0.5*(xloc0[1] + xloc1[1])
@@ -108,29 +112,16 @@ class Conf:
 # 2d -> 1d
 def flatten(arr):
     return arr.flatten().tolist()
-    #return np.transpose(arr).flatten().tolist()
 
 # 1d -> 2d
 def reshape(vec, nx, ny):
     return np.reshape(vec, (nx, ny))
-    #return np.transpose( np.reshape(vec, (nx, ny)) )
-    #return np.reshape(np.flipud(vec), (nx, ny)) 
 
 def flip(arr):
     return np.fliplr(np.flipud(arr))
 
-#def fftshift1d(i, w):
-#    if i >= 0:
-#        return i
-#    else:
-#        return i - w
-
 def fftshift1d(i, w):
-    #return i + np.int(np.ceil(1.0*w/2.0))
     return i + np.int(np.floor(1.0*w/2.0))-1
-    #return i + w/2
-
-
 
 # fft shift 2D array
 def fftshift(farr):
@@ -141,10 +132,10 @@ def fftshift(farr):
     yc1 = np.int( np.floor(1.0*ny/2.0))
     xc2 = np.int( np.ceil(1.0*nx/2.0) )
     yc2 = np.int( np.ceil(1.0*ny/2.0) )
-    print(xc1, yc1)
-    print(xc2, yc2)
+    #print(xc1, yc1)
+    #print(xc2, yc2)
 
-    print("center (0,0) = ({},{})".format(fftshift1d(0,nx), fftshift1d(0,ny)))
+    #print("center (0,0) = ({},{})".format(fftshift1d(0,nx), fftshift1d(0,ny)))
 
     for i in np.arange(-xc1+1, xc2+1, 1):
         for j in np.arange(-yc1+1, yc2+1, 1):
@@ -169,7 +160,6 @@ def sinc2d(kernel, X, Y):
             iff = fftshift1d(i, nx)
             jff = fftshift1d(j, ny)
             arr[iff,jff] = val
-
 
 def const(i,j):
     return 1.0
@@ -238,21 +228,21 @@ def init_center(kernel, dfilt=const):
 
 
 
-class Filters(unittest.TestCase):
+class FilterTests(unittest.TestCase):
 
 
-
-    def test_init(self):
+    def test_fourier_init(self):
         """ write to kernel & image variables and read back"""
 
         NxMesh = 3
+        NyMesh = 3
         NyMesh = 3
 
         #internal filter size is 3x Nx/y/zMesh
         NxF = NxMesh*3
         NyF = NyMesh*3
 
-        flt = pytools.Filter(NxMesh, NyMesh)
+        flt = pyfields.Filter(NxMesh, NyMesh, NzMesh)
 
         kernel = np.random.rand(NxF, NyF)
         image  = np.random.rand(NxF, NyF)
@@ -272,7 +262,7 @@ class Filters(unittest.TestCase):
                 self.assertAlmostEqual( image[i,j],img2[i,j], places=4)
                 
 
-    def test_kernel_init(self):
+    def test_fourier_kernel_init(self):
         """ TODO: transform with unitary transformation and get original back"""
 
         NxMesh = 3
@@ -306,7 +296,7 @@ class Filters(unittest.TestCase):
 
 
 
-    def test_fft_backandforth(self):
+    def test_fourier_backandforth(self):
         """FFT transform image forward and then backward to see if we get the same result back
          NOTE: floating-point conversion if not exact so we need some error tolerance"""
 
@@ -346,7 +336,7 @@ class Filters(unittest.TestCase):
 
 
 
-    def skip_smearing_test0(self):
+    def smearing_test0(self):
         """ put Gaussian filter in, convolve, and compare to scipy.conv2d"""
 
         plt.fig = plt.figure(1, figsize=(4,6))
@@ -519,7 +509,7 @@ class Filters(unittest.TestCase):
         #plt.savefig("filter.png")
 
 
-    def test_smearing2(self):
+    def test_fourier_smearing2(self):
 
         #plt.fig = plt.figure(1, figsize=(4,6))
         #plt.rc('font', family='serif', size=12)
@@ -638,7 +628,7 @@ class Filters(unittest.TestCase):
             for j in range(NyMesh):
                 self.assertAlmostEqual(cimg_dc[i,j], cimg_fft[i,j], places=4) 
 
-    def skip_test_gaussian(self):
+    def test_gaussian(self):
 
         plt.fig = plt.figure(1, figsize=(4,6))
         plt.rc('font', family='serif', size=12)
@@ -775,16 +765,16 @@ class Filters(unittest.TestCase):
         conf.NyMesh = 10
         conf.NzMesh = 1
 
-        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadTiles(node, conf)
-        insert_em(node, conf, linear_ramp)
-        #inject(node, filler_no_velocity, conf) #injecting plasma particles
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        loadTiles(grid, conf)
+        insert_em(grid, conf, linear_ramp)
+        #inject(grid, filler_no_velocity, conf) #injecting plasma particles
 
         flt = pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(4.0, 4.0)
 
-        flt.get_padded_current( node.get_tile(1,1), node)
+        flt.get_padded_current( grid.get_tile(1,1), grid)
 
         img = reshape( flt.get_image( ), conf.NxMesh*3, conf.NyMesh*3)
         #axs[0].imshow(img[conf.NxMesh:2*conf.NxMesh, conf.NyMesh:2*conf.NyMesh]) #, vmin=vmin, vmax=vmax)
@@ -793,8 +783,8 @@ class Filters(unittest.TestCase):
 
         # reference array
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
             (i, j) = c.index
 
             yee = c.get_yee(0)

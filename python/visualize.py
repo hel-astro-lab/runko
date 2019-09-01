@@ -62,7 +62,7 @@ def imshow(ax,
     return im
 
 
-# Visualize current cell ownership on node
+# Visualize current cell ownership on grid
 def plotNode(ax, n, conf):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
 
@@ -122,17 +122,17 @@ def plotNode(ax, n, conf):
 
 
 # plot tile boundaries
-def plotTileBoundaries(ax, node, conf):
+def plotTileBoundaries(ax, grid, conf):
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
                 try:
-                    cid = node.id(i,j)
+                    cid = grid.id(i,j)
                 except:
-                    cid = node.id(i)
+                    cid = grid.id(i)
 
-                c = node.get_tile(cid)
+                c = grid.get_tile(cid)
 
                 mins = np.array( c.mins ) 
                 maxs = np.array( c.maxs )
@@ -410,7 +410,7 @@ def plotDens(ax, n, conf):
 
 
 
-def plot2dYee(ax, yee, n, conf, val = 'jx'):
+def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
 
     #ax.clear()
     ax.cla()
@@ -422,7 +422,7 @@ def plot2dYee(ax, yee, n, conf, val = 'jx'):
 
     vmin, vmax = np.min(arr), np.max(arr)
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
-    print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
+    #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 
 
     imshow(ax, arr,
@@ -432,7 +432,11 @@ def plot2dYee(ax, yee, n, conf, val = 'jx'):
            vmax =  vminmax,
            clip = None,
           )
-    ax.set_title(val)
+
+    if label_title:
+        ax.set_ylabel(val)
+    else:
+        ax.set_title(val)
 
 
 

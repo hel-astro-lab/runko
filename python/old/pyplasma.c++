@@ -202,8 +202,8 @@ PYBIND11_MODULE(pyplasma, m) {
   declare_PlasmaTileDamped<+2>(m, "PlasmaTileDamped_RY");
 
 
-  // Loading node bindings from corgi library
-  py::object corgi_node = (py::object) py::module::import("pycorgi").attr("Node");
+  // Loading grid bindings from corgi library
+  py::object corgi_node = (py::object) py::module::import("pycorgi").attr("Grid");
   py::class_<vlasov::Grid>(m, "Grid", corgi_node)
     .def(py::init<size_t, size_t>());
 

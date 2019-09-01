@@ -16,7 +16,7 @@
 namespace vlv{
 
 
-inline void step_location( corgi::Node<1>& grid )
+inline void step_location( corgi::Grid<1>& grid )
 {
 
 #pragma omp parallel
@@ -45,7 +45,7 @@ inline void step_location( corgi::Node<1>& grid )
 }
 
 template<int V>
-void initial_step( corgi::Node<1>& grid )
+void initial_step( corgi::Grid<1>& grid )
 {
 
   vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
@@ -74,7 +74,7 @@ void initial_step( corgi::Node<1>& grid )
 
 
 template<int V>
-void step_velocity( corgi::Node<1>& grid )
+void step_velocity( corgi::Grid<1>& grid )
 {
   vlv::AmrMomentumLagrangianSolver<Realf,1,V> vsol;
 
@@ -100,7 +100,7 @@ void step_velocity( corgi::Node<1>& grid )
 
 template<int V>
 void step_velocity_with_gravity( 
-    corgi::Node<1>& grid,
+    corgi::Grid<1>& grid,
     Realf g0,
     Realf Lx
     )
@@ -129,7 +129,7 @@ void step_velocity_with_gravity(
 }
 
 
-inline void analyze( corgi::Node<1>& grid )
+inline void analyze( corgi::Grid<1>& grid )
 {
   vlv::Analyzator<Realf> analyzator;
 
@@ -157,7 +157,7 @@ inline void analyze( corgi::Node<1>& grid )
 
 template<size_t D>
 inline void write_mesh( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir 
     )
@@ -177,7 +177,7 @@ inline void write_mesh(
 
 template<size_t D>
 inline void read_mesh( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir 
     )
@@ -201,7 +201,7 @@ namespace fields {
 
 template<size_t D>
 inline void write_yee( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir
     )
@@ -221,7 +221,7 @@ inline void write_yee(
 
 template<size_t D>
 inline void write_analysis( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir
     )
@@ -240,7 +240,7 @@ inline void write_analysis(
 
 template<size_t D>
 inline void read_yee( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir 
     )
@@ -266,7 +266,7 @@ namespace pic {
 
 template<size_t D>
 void write_particles( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir 
     )
@@ -286,7 +286,7 @@ void write_particles(
 
 template<size_t D>
 inline void read_particles( 
-    corgi::Node<D>& grid, 
+    corgi::Grid<D>& grid, 
     int lap,
     const std::string& dir 
     )

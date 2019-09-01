@@ -150,7 +150,7 @@ class ParticleContainer {
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 
   // in hand with the corresponding receiver side.
-  int optimal_message_size = 2;
+  int optimal_message_size = 3000;
 
   //! particle specific electric field components
   std::vector<double> Epart;
@@ -289,6 +289,8 @@ class ParticleContainer {
   // ended up in to_other_tiles box
   void delete_transferred_particles();
 
+  /// process through an index list and delete particles in it
+  void delete_particles(std::vector<int> l);
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(

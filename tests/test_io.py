@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 import pycorgi
-import pyplasmabox
+import pyrunko
 import h5py
 
 from visualize import get_yee
@@ -37,47 +37,50 @@ class Conf:
     me = -1.0
     mi =  1.0
 
+    qe = 1.0
+    qi = 1.0
+
     #def __init__(self):
     #    print("initialized...")
 
 
 
-#load tiles into each node
+#load tiles into each grid
 def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyplasmabox.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
-#load tiles into each node
+#load tiles into each grid
 def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyplasmabox.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
 # create similar reference array
-def fill_ref(node, conf):
+def fill_ref(grid, conf):
     data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
 
     # lets put floats into Yee lattice
     val = 1.0
-    Nx = node.get_Nx()
-    Ny = node.get_Ny()
-    Nz = node.get_Nz()
+    Nx = grid.get_Nx()
+    Ny = grid.get_Ny()
+    Nz = grid.get_Nz()
 
     NxM = conf.NxMesh
     NyM = conf.NyMesh
     NzM = conf.NzMesh
 
     #print("filling ref")
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            for k in range(node.get_Nz()):
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            for k in range(grid.get_Nz()):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     for q in range(conf.NxMesh):
@@ -101,11 +104,11 @@ def fill_ref(node, conf):
 
 
 # fill Yee mesh with values
-def fill_yee(node, data, conf):
+def fill_yee(grid, data, conf):
 
-    Nx = node.get_Nx()
-    Ny = node.get_Ny()
-    Nz = node.get_Nz()
+    Nx = grid.get_Nx()
+    Ny = grid.get_Ny()
+    Nz = grid.get_Nz()
 
     NxM = conf.NxMesh
     NyM = conf.NyMesh
@@ -113,12 +116,12 @@ def fill_yee(node, data, conf):
 
     # lets put ref array into Yee lattice
     #print("filling yee")
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            for k in range(node.get_Nz()):
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            for k in range(grid.get_Nz()):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
-                    c = node.get_tile(i,j,k)
+                    c = grid.get_tile(i,j,k)
                     yee = c.get_yee(0)
 
                     for q in range(conf.NxMesh):
@@ -201,31 +204,31 @@ class IO(unittest.TestCase):
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
 
-        node = pycorgi.oneD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.oneD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        loadTiles1D(node, conf)
+        loadTiles1D(grid, conf)
 
-        ref = fill_ref(node, conf)
-        fill_yee(node, ref, conf)
+        ref = fill_ref(grid, conf)
+        fill_yee(grid, ref, conf)
 
-        pyplasmabox.vlv.oneD.write_yee(node, 0, conf.outdir)
+        pyrunko.vlv.oneD.write_yee(grid, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
 
         arrs = combine_tiles(conf.outdir+"fields-0_0.h5", "ex", conf)
 
-        Nx = node.get_Nx()
-        Ny = node.get_Ny()
-        Nz = node.get_Nz()
+        Nx = grid.get_Nx()
+        Ny = grid.get_Ny()
+        Nz = grid.get_Nz()
 
         NxM = conf.NxMesh
         NyM = conf.NyMesh
         NzM = conf.NzMesh
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                for k in range(node.get_Nz()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                for k in range(grid.get_Nz()):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         for q in range(conf.NxMesh):
@@ -236,18 +239,18 @@ class IO(unittest.TestCase):
 
         ##################################################
         # test reading back
-        node2 = pycorgi.oneD.Node(conf.Nx, conf.Ny)
+        node2 = pycorgi.oneD.Grid(conf.Nx, conf.Ny)
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyplasmabox.vlv.oneD.read_yee(node2, 0, "io_test_1D")
+        pyrunko.vlv.oneD.read_yee(node2, 0, "io_test_1D")
 
-        yee1 = get_yee(node,  conf)
+        yee1 = get_yee(grid,  conf)
         yee2 = get_yee(node2, conf)
 
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                for k in range(node.get_Nz()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                for k in range(grid.get_Nz()):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         for q in range(conf.NxMesh):
@@ -279,30 +282,30 @@ class IO(unittest.TestCase):
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
 
-        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        loadTiles2D(node, conf)
+        loadTiles2D(grid, conf)
 
-        ref = fill_ref(node, conf)
-        fill_yee(node, ref, conf)
+        ref = fill_ref(grid, conf)
+        fill_yee(grid, ref, conf)
 
-        pyplasmabox.vlv.twoD.write_yee(node, 0, conf.outdir)
+        pyrunko.vlv.twoD.write_yee(grid, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
         arrs = combine_tiles(conf.outdir+"fields-0_0.h5", "ex", conf)
 
-        Nx = node.get_Nx()
-        Ny = node.get_Ny()
-        Nz = node.get_Nz()
+        Nx = grid.get_Nx()
+        Ny = grid.get_Ny()
+        Nz = grid.get_Nz()
 
         NxM = conf.NxMesh
         NyM = conf.NyMesh
         NzM = conf.NzMesh
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                for k in range(node.get_Nz()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                for k in range(grid.get_Nz()):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         for q in range(conf.NxMesh):
@@ -314,18 +317,18 @@ class IO(unittest.TestCase):
 
         ##################################################
         # test reading back
-        node2 = pycorgi.twoD.Node(conf.Nx, conf.Ny)
+        node2 = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyplasmabox.vlv.twoD.read_yee(node2, 0, "io_test_2D")
+        pyrunko.vlv.twoD.read_yee(node2, 0, "io_test_2D")
 
-        yee1 = getYee2D(node,  conf)
+        yee1 = getYee2D(grid,  conf)
         yee2 = getYee2D(node2, conf)
 
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                for k in range(node.get_Nz()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                for k in range(grid.get_Nz()):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         for q in range(conf.NxMesh):
@@ -407,27 +410,27 @@ class IO(unittest.TestCase):
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
 
-        node = pycorgi.oneD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.oneD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
                 #if n.get_mpi_grid(i) == n.rank:
-                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                node.add_tile(c, (i,) ) 
-        injector.inject(node, filler, conf ) #injecting plasma
+                c = pyrunko.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                grid.add_tile(c, (i,) ) 
+        injector.inject(grid, filler, conf ) #injecting plasma
 
-        pyplasmabox.vlv.oneD.write_mesh(node, 0, conf.outdir)
+        pyrunko.vlv.oneD.write_mesh(grid, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
         fname = conf.outdir + "meshes-0_0.h5"
         f = h5py.File(fname,'r')
 
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                for k in range(node.get_Nz()):
-                    c = node.get_tile(i,j,k)
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                for k in range(grid.get_Nz()):
+                    c = grid.get_tile(i,j,k)
 
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
@@ -456,24 +459,24 @@ class IO(unittest.TestCase):
         ##################################################
         # read back
 
-        node2 = pycorgi.oneD.Node(conf.Nx, conf.Ny)
+        node2 = pycorgi.oneD.Grid(conf.Nx, conf.Ny)
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
                 #if n.get_mpi_grid(i) == n.rank:
-                c = pyplasmabox.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 node2.add_tile(c, (i,) ) 
         injector.inject(node2, injector.empty_filler, conf, empty=True) #injecting empty meshes
 
-        #pyplasmabox.vlv.oneD.write_mesh(node2, 1, conf.outdir)
-        pyplasmabox.vlv.oneD.read_mesh(node2,  0, "io_test_mesh")
-        #pyplasmabox.vlv.oneD.write_mesh(node2, 2, conf.outdir)
+        #pyrunko.vlv.oneD.write_mesh(node2, 1, conf.outdir)
+        pyrunko.vlv.oneD.read_mesh(node2,  0, "io_test_mesh")
+        #pyrunko.vlv.oneD.write_mesh(node2, 2, conf.outdir)
 
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
                 for k in range(node2.get_Nz()):
-                    c1 = node.get_tile(i,j,k)
+                    c1 = grid.get_tile(i,j,k)
                     c2 = node2.get_tile(i,j,k)
 
                     #if n.get_mpi_grid(i,j) == n.rank:
@@ -516,14 +519,14 @@ class IO(unittest.TestCase):
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
 
-        node = pycorgi.oneD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.oneD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        init.loadTiles(node, conf)
+        init.loadTiles(grid, conf)
     
         #load boundaries
-        for i in [0, node.get_Nx()-1]:
-            for j in range(node.get_Ny()):
+        for i in [0, grid.get_Nx()-1]:
+            for j in range(grid.get_Ny()):
                 if i == 0:
                     c = plasma.Tile_outflow_L(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
@@ -541,10 +544,10 @@ class IO(unittest.TestCase):
                     c.fld1 = iglob
                     c.fld2 = iglob
                 
-                init.initialize_tile(c, i,j, node, conf)
+                init.initialize_tile(c, i,j, grid, conf)
 
-                #add it to the node
-                node.add_tile(c, (i,)) 
+                #add it to the grid
+                grid.add_tile(c, (i,)) 
 
 
 
@@ -603,34 +606,34 @@ class IO(unittest.TestCase):
         if not os.path.exists( conf.outdir ):
             os.makedirs(conf.outdir)
 
-        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                c = pyplasmabox.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                initialize_tile(c, i, j, node, conf)
-                node.add_tile(c, (i,j)) 
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                initialize_tile(c, i, j, grid, conf)
+                grid.add_tile(c, (i,j)) 
 
-        inject(node, test_filler, conf)
+        inject(grid, test_filler, conf)
 
-        pyplasmabox.vlv.twoD.write_particles(node, 0, conf.outdir)
+        pyrunko.vlv.twoD.write_particles(grid, 0, conf.outdir)
 
         # TODO: read with h5py
 
 
 
         # TODO: read with internal read tool
-        node2 = pycorgi.twoD.Node(conf.Nx, conf.Ny)
+        node2 = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
-                c = pyplasmabox.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 initialize_tile(c, i, j, node2, conf)
                 node2.add_tile(c, (i,j)) 
 
-        pyplasmabox.vlv.twoD.read_particles(node2, 0, conf.outdir)
+        pyrunko.vlv.twoD.read_particles(node2, 0, conf.outdir)
 
         #assert
         for i in range(node2.get_Nx()):
@@ -639,7 +642,7 @@ class IO(unittest.TestCase):
                     cid    = node2.id(i,j)
                     c      = node2.get_tile(cid) #get cell ptr
 
-                    c_ref  = node.get_tile(cid) #get cell ptr
+                    c_ref  = grid.get_tile(cid) #get cell ptr
 
                     for ispcs in range(conf.Nspecies):
                         container1 = c.get_container(ispcs)

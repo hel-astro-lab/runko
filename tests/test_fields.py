@@ -6,7 +6,7 @@ import sys
 import numpy as np
 
 import pycorgi
-import pyplasmabox
+import pyrunko
 
 
 class Conf:
@@ -25,25 +25,27 @@ class Conf:
     ymin = 0.0
     ymax = 1.0
 
+    qe = 1.0
+
     #def __init__(self):
     #    print("initialized...")
 
 
-#load tiles into each node
+#load tiles into each grid
 def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyplasmabox.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
-#load tiles into each node
+#load tiles into each grid
 def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyplasmabox.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
@@ -54,6 +56,32 @@ def wrap(ii, N):
     #if ii > N:
     #    return 0
     #return ii
+
+
+class FLD_inits(unittest.TestCase):
+
+    def test_propagators_1d(self):
+        conf = Conf()
+        conf.NyMesh = 1 #force 1D
+        conf.NzMesh = 1 #
+
+        fdtd2 = pyrunko.fields.oneD.FDTD2()
+        tile = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        fdtd2.push_e(tile)
+        fdtd2.push_half_b(tile)
+        
+    def test_propagators_2d(self):
+        conf = Conf()
+        conf.NzMesh = 1 #force 2D
+
+        fdtd2 = pyrunko.fields.twoD.FDTD2()
+        tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        fdtd2.push_e(tile)
+        fdtd2.push_half_b(tile)
+
+
 
 
 
@@ -69,19 +97,19 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
-        print("creating node")
-        node = pycorgi.oneD.Node(conf.Nx, 1, 1)
-        print("creating node")
-        node.set_grid_lims(conf.xmin, conf.xmax)
+        print("creating grid")
+        grid = pycorgi.oneD.Grid(conf.Nx, 1, 1)
+        print("creating grid")
+        grid.set_grid_lims(conf.xmin, conf.xmax)
 
-        loadTiles1D(node, conf)
+        loadTiles1D(grid, conf)
 
         # lets put values into Yee lattice
         val = 1.0
-        for i in range(node.get_Nx()):
+        for i in range(grid.get_Nx()):
             #if n.get_mpi_grid(i,j) == n.rank:
             if True:
-                c = node.get_tile(i)
+                c = grid.get_tile(i)
                 yee = c.get_yee(0)
 
                 for q in range(conf.NxMesh):
@@ -103,8 +131,8 @@ class Communications(unittest.TestCase):
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
         
 
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
             (i,) = c.index
 
             yee = c.get_yee(0)
@@ -132,9 +160,9 @@ class Communications(unittest.TestCase):
         #print(data[:,:,2,0])
 
         #update boundaries
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
-            c.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
+            c.update_boundaries(grid)
 
         ref = np.zeros(( conf.Nx*conf.Ny*conf.Nz, 
             conf.Nx*conf.NxMesh, 
@@ -142,8 +170,8 @@ class Communications(unittest.TestCase):
             conf.Nz*conf.NzMesh))
 
         m = 0
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
             (i,) = c.index
             yee = c.get_yee(0)
 
@@ -184,18 +212,18 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 4
         conf.NzMesh = 1 #force 2D
 
-        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        loadTiles2D(node, conf)
+        loadTiles2D(grid, conf)
 
         # lets put values into Yee lattice
         val = 1.0
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
-                    c = node.get_tile(i,j)
+                    c = grid.get_tile(i,j)
                     yee = c.get_yee(0)
 
                     for q in range(conf.NxMesh):
@@ -216,8 +244,8 @@ class Communications(unittest.TestCase):
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
 
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
             (i, j) = c.index
 
             yee = c.get_yee(0)
@@ -244,19 +272,19 @@ class Communications(unittest.TestCase):
         #print(data[:,:,2,0])
 
         #update boundaries
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
-            c.update_boundaries(node)
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
+            c.update_boundaries(grid)
         #for i in [1]:
         #    for j in [1]:
-        #        c = node.get_tile(i,j)
-        #        c.update_boundaries_2d(node)
+        #        c = grid.get_tile(i,j)
+        #        c.update_boundaries_2d(grid)
 
         ref = np.zeros((conf.Nx*conf.Ny*conf.Nz, conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
         m = 0
-        for cid in node.get_tile_ids():
-            c = node.get_tile( cid )
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
             (i, j) = c.index
             yee = c.get_yee(0)
 

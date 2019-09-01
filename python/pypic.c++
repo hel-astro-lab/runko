@@ -7,9 +7,9 @@ namespace py = pybind11;
 // experimental PIC module
   
 #include "../pic/tile.h"
-#include "../pic/solvers/pusher.h"
-#include "../pic/solvers/boris.h"
-#include "../pic/solvers/boris_drag.h"
+#include "../pic/pushers/pusher.h"
+#include "../pic/pushers/boris.h"
+#include "../pic/pushers/boris_drag.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
@@ -21,6 +21,7 @@ namespace py = pybind11;
 #include "../pic/analyzer.h"
 
 #include "../pic/boundaries/wall.h"
+#include "../pic/boundaries/piston.h"
 
 #include "../io/test_prtcl_writer.h"
 
@@ -298,6 +299,15 @@ void bind_pic(py::module& m_sub)
   //m_2d.def("write_particles",  &pic::write_particles<2>);
   //m_2d.def("read_particles",   &pic::read_particles<2>);
 
+  //--------------------------------------------------
+  // piston
+  py::class_<pic::Piston<2>>(m_2d, "Piston")
+    .def(py::init<>())
+    .def_readwrite("walloc",   &pic::Piston<2>::walloc)
+    .def_readwrite("gammawall",&pic::Piston<2>::gammawall)
+    .def_readwrite("betawall", &pic::Piston<2>::betawall)
+    .def("solve",    &pic::Piston<2>::solve)
+    .def("field_bc", &pic::Piston<2>::field_bc);
 
 
   //--------------------------------------------------
@@ -314,8 +324,6 @@ void bind_pic(py::module& m_sub)
   py::class_<h5io::TestPrtclWriter<2>>(m_2d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
     .def("write",   &h5io::TestPrtclWriter<2>::write);
-
-
 
 
 }

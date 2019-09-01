@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 import pycorgi
-import pyplasmabox.rad as pyrad
+import pyrunko.rad as pyrad
 
 
 import initialize_pic as init_pic
@@ -67,6 +67,8 @@ class Conf:
     Nspecies = 1
 
     outdir = "out"
+
+    qe = 1.0
 
     #def __init__(self):
     #    print("initialized...")
@@ -263,12 +265,12 @@ class radiation(unittest.TestCase):
         conf.ppc = 1
         conf.update_bbox()
 
-        node = pycorgi.twoD.Node(conf.Nx, conf.Ny, conf.Nz)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         c = pyrad.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        init_pic.initialize_tile(c, 0, 0, node, conf)
-        init_rad.initialize_tile(c, 0, 0, node, conf)
+        init_pic.initialize_tile(c, 0, 0, grid, conf)
+        init_rad.initialize_tile(c, 0, 0, grid, conf)
 
 
 

@@ -36,10 +36,10 @@ case "$os" in
                     cd openmpi-4.0.0
                     export OMPI_CC=$COMP_CC
                     export OMPI_CXX=$COMP_CXX
-                    ./configure CC=$COMP_CC CXX=$COMP_CXX --prefix=$HOME/local/$MPI_IMPL > /dev/null
-                    make -j 4 > /dev/null
-                    make install > /dev/null
-                    make clean > /dev/null
+                    ./configure CC=$COMP_CC CXX=$COMP_CXX --prefix=$HOME/local/$MPI_IMPL > /dev/null 2>&1
+                    make -j 4 > /dev/null 2>&1
+                    make install > /dev/null 2>&1
+                    make clean > /dev/null 2>&1
                     cd ../../
 
                     export PATH=$PATH:$HOME/local/$MPI_IMPL/bin

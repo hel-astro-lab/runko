@@ -54,6 +54,8 @@ void pic::BorisPusher<D,V>::push_container(
   // charge (sign only)
   double qm = sign(container.q);
 
+  // add division by m_s to simulate multiple species
+
   //TODO: SIMD
   for(int n=n1; n<n2; n++) {
 
