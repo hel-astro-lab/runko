@@ -16,6 +16,18 @@ template <>
 inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
     const ::pic::Particle& obj) 
 {
+  //--------------------------------------------------
+  // check if we have already created the object once
+  MPI_Datatype obj_type;
+  //obj_type = mpi4cpp::mpi::detail::mpi_datatype_cache().datatype<::pic::Particle>();
+  std::type_info const* t = &typeid(::pic::Particle);
+  obj_type = mpi4cpp::mpi::detail::mpi_datatype_cache().get(t);
+
+  if(obj_type != MPI_DATATYPE_NULL) return obj_type;
+
+
+  //--------------------------------------------------
+  // if not; we'll create it now
     
   // get start of the class
   MPI_Aint base;
@@ -46,7 +58,6 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
 
   //--------------------------------------------------
   // create datatype; this is standard format and should not be changed
-  MPI_Datatype obj_type;
   MPI_Type_create_struct(
       block_lengths.size(),
       block_lengths.data(),
@@ -76,6 +87,9 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
     MPI_Type_commit(&obj_type);
     MPI_Type_free(&temptype);
   }
+  
+  // save datatype to internal cache
+  mpi4cpp::mpi::detail::mpi_datatype_cache().set(t, obj_type);
 
   return obj_type;
 }
