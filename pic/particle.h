@@ -59,41 +59,6 @@ public:
 };
 
 
-/// Special handling of particle MPI message info 
-// via this auxiliary helper class
-//class InfoParticle : public Particle
-//{
-//public:
-//
-//  InfoParticle(size_t np) 
-//    : Particle(
-//        static_cast<double>(np), 0,0,
-//        0,0,0,
-//        0,0,0) 
-//  { }
-//
-//  InfoParticle(Particle prtcl) {
-//    data[0] = prtcl.x();
-//  }
-//
-//  size_t size() {return static_cast<size_t>(Particle::x());}
-//
-//private:
-//  using Particle::x;
-//  using Particle::y;
-//  using Particle::z;
-//  using Particle::ux;
-//  using Particle::uy;
-//  using Particle::uz;
-//  using Particle::wgt;
-//  using Particle::id;
-//  using Particle::proc;
-//
-//};
-
-
-
-
 /*! \brief Container of particles inside the tile
 *
 * Container to hold plasma particles 
@@ -304,7 +269,6 @@ class ParticleContainer {
   void set_keygen_state(int __key, int __rank);
 
 };
-
 
 
 

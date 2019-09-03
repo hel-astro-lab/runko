@@ -68,7 +68,7 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
   MPI_Type_commit(&obj_type);
 
 
-  /* check extent (not really necessary on most platforms) */
+  // check and correct for extent in arrays
   MPI_Aint lb, extent, dist[2];
   MPI_Type_get_extent(obj_type, &lb, &extent);
   std::array<pic::Particle,10> particles;
@@ -78,7 +78,7 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
 
   MPI_Datatype temptype;
   if (extent != (dist[1] - dist[0])) {
-    std::cout << "WARNING! Extra padding between arrays in MPI datatype\n";
+    //std::cout << "WARNING! Extra padding between arrays in MPI datatype\n";
     temptype = obj_type;
     lb = 0;
     extent = dist[1] - dist[0];

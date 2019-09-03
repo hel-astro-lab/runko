@@ -153,7 +153,7 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
           );
     }
 
-    std::cout << this->communication.cid << " send " << container.outgoing_particles.size() << " + " << container.outgoing_extra_particles.size() << " particles\n";
+    //std::cout << this->communication.cid << " send " << container.outgoing_particles.size() << " + " << container.outgoing_extra_particles.size() << " particles\n";
   }
 
   return reqs;
@@ -215,14 +215,10 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
     //container.incoming_extra_particles.clear();
-
-    //InfoParticle msginfo(container.incoming_particles[0]);
-    //std::cout << "recv_prtcl: got " << msginfo.size() << " by mpi\n";
       
-    std::cout << "recv_prtcl: got " << 
-      container.incoming_particles[0].number_of_particles()
-      << " by mpi\n";
-
+    //std::cout << "recv_prtcl: got " << 
+    //  container.incoming_particles[0].number_of_particles()
+    //  << " by mpi\n";
 
     // check if we need to expect extra message
     //extra_size = msginfo.size() - container.optimal_message_size;
@@ -241,7 +237,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
       container.incoming_extra_particles.clear();
     }
 
-    std::cout << this->communication.cid << " recv " << container.incoming_particles.size() << " + " << container.incoming_extra_particles.size() << " particles\n";
+    //std::cout << this->communication.cid << " recv " << container.incoming_particles.size() << " + " << container.incoming_extra_particles.size() << " particles\n";
 
     //TODO: dynamic optimal_message_size here
     //container.optimal_message_size = msginfo.size();

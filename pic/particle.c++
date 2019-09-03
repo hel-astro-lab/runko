@@ -88,16 +88,6 @@ void ParticleContainer::resize(size_t N)
 
 size_t ParticleContainer::size() 
 { 
-  // FIXME: these fail
-  //std::cout << "prtcl container size()" << Nprtcls << " vs " 
-  //  << locArr[0].size() << "/"
-  //  << locArr[1].size() << "/"
-  //  << locArr[2].size() << "/"
-  //  << velArr[0].size() << "/"
-  //  << velArr[1].size() << "/"
-  //  << velArr[2].size() << "/"
-  //  << wgtArr.size() << "\n";
-
   assert(locArr[0].size() == Nprtcls);
   assert(locArr[1].size() == Nprtcls);
   assert(locArr[2].size() == Nprtcls);
@@ -317,10 +307,6 @@ void ParticleContainer::pack_all_particles()
     
   // +1 for info particle
   int np = size() + 1;
-  //InfoParticle infoprtcl(np);
-
-  //XXX
-  //Particle infoprtcl(np, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8, 9);
 
   outgoing_particles.reserve(optimal_message_size);
   if(np-optimal_message_size > 0) {
@@ -328,11 +314,7 @@ void ParticleContainer::pack_all_particles()
   }
 
   // first particle is always the message info
-  //outgoing_particles.push_back(infoprtcl);
-  //outgoing_particles[0] = infoprtcl;
-    
   outgoing_particles.emplace_back(np);
-
 
   // next, pack all other particles
   int i=1;
@@ -364,28 +346,22 @@ void ParticleContainer::pack_outgoing_particles()
     
   // +1 for info particle
   int np = to_other_tiles.size() + 1;
-  //InfoParticle infoprtcl(np);
 
-  //XXX
-  //Particle infoprtcl(np, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8, 9);
-
-  if (np>1) {
-    std::cout << "Packing Np:" << np << " and extra is: " << np-optimal_message_size << "\n";
-  }
+  //if (np>1) {
+  //  std::cout << "Packing Np:" << np << " and extra is: " << np-optimal_message_size << "\n";
+  //}
 
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
-    std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
+    //std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
 
   // first particle is always the message info
-  auto s1 = outgoing_particles.size();
-  //outgoing_particles.push_back(infoprtcl);
-  //outgoing_particles[0] = infoprtcl;
+  //auto s1 = outgoing_particles.size();
   outgoing_particles.emplace_back(np);
-  auto s2 = outgoing_particles.size();
+  //auto s2 = outgoing_particles.size();
 
 
   // next, pack all other particles
@@ -410,12 +386,12 @@ void ParticleContainer::pack_outgoing_particles()
     i++;
   }
 
-  auto s3 = outgoing_particles.size();
-  std::cout << "size comp" << s1 << " vs " << s2 << " vs " << s3 << "\n";
+  //auto s3 = outgoing_particles.size();
+  //std::cout << "size comp" << s1 << " vs " << s2 << " vs " << s3 << "\n";
 
-  std::cout << " outg arr size:" << outgoing_particles.size()
-            << " outgE arr size: " << outgoing_extra_particles.size()
-            << "\n";
+  //std::cout << " outg arr size:" << outgoing_particles.size()
+  //          << " outgE arr size: " << outgoing_extra_particles.size()
+  //          << "\n";
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
@@ -430,15 +406,7 @@ void ParticleContainer::unpack_incoming_particles()
   int ids, proc;
 
   // get real number of incoming particles
-  //InfoParticle msginfo(incoming_particles[0]);
-  //int number_of_incoming_particles = msginfo.size();
   int number_of_incoming_particles = incoming_particles[0].number_of_particles();
-
-
-  //XXX
-  // get real number of incoming particles from x component directly
-  //int number_of_incoming_particles = incoming_particles[0].x();
-
 
   int number_of_primary_particles = 
     number_of_incoming_particles > optimal_message_size 
