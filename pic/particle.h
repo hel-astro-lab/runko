@@ -151,6 +151,9 @@ class ParticleContainer {
   // resize everything
   virtual void resize(size_t N);
 
+  // "shrink to fit" all internal main containers
+  virtual void shrink_to_fit();
+
   /// size of the container (in terms of particles)
   size_t size();
 

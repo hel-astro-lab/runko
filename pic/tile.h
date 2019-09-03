@@ -117,6 +117,8 @@ public:
   /// delete all particles from each container
   void delete_all_particles();
 
+  /// shrink to fit all internal containers
+  void shrink_to_fit_all_particles();
 };
 
 

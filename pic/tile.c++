@@ -235,6 +235,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
           );
     } else {
       container.incoming_extra_particles.clear();
+      container.incoming_extra_particles.shrink_to_fit();
     }
 
     //std::cout << this->communication.cid << " recv " << container.incoming_particles.size() << " + " << container.incoming_extra_particles.size() << " particles\n";
@@ -280,6 +281,27 @@ void Tile<D>::delete_all_particles()
     container.resize(0);
 
 }
+
+
+template<std::size_t D>
+void Tile<D>::shrink_to_fit_all_particles()
+{
+  for(auto&& container : containers) {
+
+    // mpi main containers (should remain the same if not dynamical sizing)
+    container.incoming_particles.resize(container.optimal_message_size);
+    container.outgoing_particles.resize(container.optimal_message_size);
+
+    // mpi extra message containers
+    container.incoming_extra_particles.shrink_to_fit();
+    container.outgoing_extra_particles.shrink_to_fit();
+
+    // internal main particle containers
+    container.shrink_to_fit();
+  }
+
+}
+
 
 
 } // end of ns pic

@@ -724,6 +724,12 @@ if __name__ == "__main__":
             #analyze (independent)
             timer.start("io")
 
+            #shrink particle arrays
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                tile.shrink_to_fit_all_particles()
+
+            #analyze
             for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
                 analyzer.analyze2d(tile)

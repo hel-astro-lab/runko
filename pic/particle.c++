@@ -85,6 +85,14 @@ void ParticleContainer::resize(size_t N)
   Nprtcls = N;
 }
 
+void ParticleContainer::shrink_to_fit()
+{
+  for(size_t i=0; i<3; i++) locArr[i].shrink_to_fit();
+  for(size_t i=0; i<3; i++) velArr[i].shrink_to_fit();
+  for(size_t i=0; i<2; i++) indArr[i].shrink_to_fit();
+  wgtArr.shrink_to_fit();
+}
+
 
 size_t ParticleContainer::size() 
 { 
@@ -347,22 +355,13 @@ void ParticleContainer::pack_outgoing_particles()
   // +1 for info particle
   int np = to_other_tiles.size() + 1;
 
-  //if (np>1) {
-  //  std::cout << "Packing Np:" << np << " and extra is: " << np-optimal_message_size << "\n";
-  //}
-
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
-    //std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
-
   // first particle is always the message info
-  //auto s1 = outgoing_particles.size();
   outgoing_particles.emplace_back(np);
-  //auto s2 = outgoing_particles.size();
-
 
   // next, pack all other particles
   int i=1, ind;
@@ -386,12 +385,6 @@ void ParticleContainer::pack_outgoing_particles()
     i++;
   }
 
-  //auto s3 = outgoing_particles.size();
-  //std::cout << "size comp" << s1 << " vs " << s2 << " vs " << s3 << "\n";
-
-  //std::cout << " outg arr size:" << outgoing_particles.size()
-  //          << " outgE arr size: " << outgoing_extra_particles.size()
-  //          << "\n";
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
