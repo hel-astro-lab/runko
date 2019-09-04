@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+#include <typeinfo>
 #include <mpi4cpp/mpi.h>
 
 // introduce class to mpi
