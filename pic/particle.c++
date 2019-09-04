@@ -343,6 +343,7 @@ void ParticleContainer::pack_all_particles()
     i++;
   }
 
+  outgoing_extra_particles.shrink_to_fit();
 }
 
 
@@ -385,6 +386,7 @@ void ParticleContainer::pack_outgoing_particles()
     i++;
   }
 
+  outgoing_extra_particles.shrink_to_fit();
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
