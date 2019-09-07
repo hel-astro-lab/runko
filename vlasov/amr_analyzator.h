@@ -42,7 +42,6 @@ class Analyzator {
 
   virtual ~Analyzator() = default;
 
-
   virtual void analyze( vlv::Tile<1>& tile )
   {
 

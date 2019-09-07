@@ -79,8 +79,7 @@ void Tile<2>::get_incoming_particles(
 
       // get neighboring tile
       auto ind = this->neighs(i, j); 
-      uint64_t cid = 
-      grid.id( std::get<0>(ind), std::get<1>(ind) );
+      uint64_t cid = grid.id( std::get<0>(ind), std::get<1>(ind) );
       Tile& external_tile = 
         dynamic_cast<Tile&>( grid.get_tile(cid) );
 
@@ -184,6 +183,8 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
             container.outgoing_extra_particles.size())
           );
     }
+
+    //std::cout << this->communication.cid << " send " << container.outgoing_particles.size() << " + " << container.outgoing_extra_particles.size() << " particles\n";
   }
 
   return reqs;
@@ -244,12 +245,17 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
   int extra_size=0;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
-    InfoParticle msginfo(container.incoming_particles[0]);
-
-    //std::cout << "recv_prtcl: got " << msginfo.size() << " by mpi\n";
+    //container.incoming_extra_particles.clear();
+      
+    //std::cout << "recv_prtcl: got " << 
+    //  container.incoming_particles[0].number_of_particles()
+    //  << " by mpi\n";
 
     // check if we need to expect extra message
-    extra_size = msginfo.size() - container.optimal_message_size;
+    //extra_size = msginfo.size() - container.optimal_message_size;
+    extra_size = container.incoming_particles[0].number_of_particles() 
+      - container.optimal_message_size;
+
     if(extra_size > 0) {
       container.incoming_extra_particles.resize(extra_size);
 
@@ -260,7 +266,10 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
           );
     } else {
       container.incoming_extra_particles.clear();
+      container.incoming_extra_particles.shrink_to_fit();
     }
+
+    //std::cout << this->communication.cid << " recv " << container.incoming_particles.size() << " + " << container.incoming_extra_particles.size() << " particles\n";
 
     //TODO: dynamic optimal_message_size here
     //container.optimal_message_size = msginfo.size();
@@ -303,6 +312,27 @@ void Tile<D>::delete_all_particles()
     container.resize(0);
 
 }
+
+
+template<std::size_t D>
+void Tile<D>::shrink_to_fit_all_particles()
+{
+  for(auto&& container : containers) {
+
+    // mpi main containers (should remain the same if not dynamical sizing)
+    container.incoming_particles.resize(container.optimal_message_size);
+    container.outgoing_particles.resize(container.optimal_message_size);
+
+    // mpi extra message containers
+    container.incoming_extra_particles.shrink_to_fit();
+    container.outgoing_extra_particles.shrink_to_fit();
+
+    // internal main particle containers
+    container.shrink_to_fit();
+  }
+
+}
+
 
 
 } // end of ns pic
