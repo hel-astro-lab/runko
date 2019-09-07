@@ -175,6 +175,10 @@ class ParticleContainer {
     return locArr[idim];
   }
 
+  virtual inline std::vector<double>& loc(size_t idim)
+  {
+    return locArr[idim];
+  }
 
   //--------------------------------------------------
   // velocities
@@ -189,6 +193,11 @@ class ParticleContainer {
   }
 
   virtual inline std::vector<double> vel(size_t idim) const 
+  {
+    return velArr[idim];
+  }
+
+  virtual inline std::vector<double>& vel(size_t idim)
   {
     return velArr[idim];
   }
@@ -210,6 +219,10 @@ class ParticleContainer {
     return wgtArr;
   }
 
+  virtual inline std::vector<double>& wgt()
+  {
+    return wgtArr;
+  }
 
   //--------------------------------------------------
   // id
@@ -228,6 +241,10 @@ class ParticleContainer {
     return indArr[idim];
   }
 
+  virtual inline std::vector<int>& id(size_t idim)
+  {
+    return indArr[idim];
+  }
 
   // particle creation
   virtual void add_particle (
