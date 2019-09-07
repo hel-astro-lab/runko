@@ -36,7 +36,7 @@ inline Particle::Particle( size_t number_of_particles)
 }
 
 /// special method for info particle that re-uses x mem location
-inline size_t Particle::number_of_particles() {
+size_t Particle::number_of_particles() {
   return static_cast<size_t>( data[0] );
 }
 
