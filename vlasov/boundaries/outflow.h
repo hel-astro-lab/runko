@@ -25,9 +25,6 @@ class Tile :
     vlv::Tile<D>(nx,ny,nz)
   { }
 
-  /// destructor
-  ~Tile() override = default;
-
   /// switch flag to determine if we move plasma or not
   bool advance = false;
 

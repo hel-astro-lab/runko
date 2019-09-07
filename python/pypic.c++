@@ -55,7 +55,8 @@ auto declare_tile(
     .def("pack_outgoing_particles",      &pic::Tile<D>::pack_outgoing_particles)
     .def("pack_all_particles",           &pic::Tile<D>::pack_all_particles)
     .def("unpack_incoming_particles",    &pic::Tile<D>::unpack_incoming_particles)
-    .def("delete_all_particles",         &pic::Tile<D>::delete_all_particles);
+    .def("delete_all_particles",         &pic::Tile<D>::delete_all_particles)
+    .def("shrink_to_fit_all_particles",  &pic::Tile<D>::shrink_to_fit_all_particles);
 }
 
 

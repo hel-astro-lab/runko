@@ -32,9 +32,6 @@ class Grid :
   {}
 
 
-  // default destructor
-  ~Grid() = default;
-
   /// simple method class extension test
   std::string howl() { return std::string("Auuu!"); };
 
