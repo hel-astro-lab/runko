@@ -179,7 +179,7 @@ if __name__ == "__main__":
                        help='Name of the configuration file (default: None)')
     args = parser.parse_args()
     if args.conf_filename == None:
-        conf = Configuration('config-test.ini', do_print=do_print) 
+        conf = Configuration('shock_mini.ini', do_print=do_print) 
     else:
         if do_print:
             print("Reading configuration setup from ", args.conf_filename)
@@ -295,12 +295,7 @@ if __name__ == "__main__":
 
 
     Nsamples = conf.Nt
-    if conf.gammarad > 0:
-        pusher   = pypic.BorisDragPusher()
-        pusher.drag = conf.drag_amplitude
-        pusher.temp = conf.radtemp
-    else:
-        pusher   = pypic.BorisPusher()
+    pusher   = pypic.BorisPusher()
 
 
     fldprop  = pyfld.FDTD2()
