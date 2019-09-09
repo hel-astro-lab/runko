@@ -61,11 +61,7 @@ public:
   { }
 
 
-  /// destructor
-  ~Tile() override = default;
-
   /// tile temporal and spatial scales
-
   using fields::Tile<D>::cfl;
   using fields::Tile<D>::dx;
 
@@ -121,6 +117,8 @@ public:
   /// delete all particles from each container
   void delete_all_particles();
 
+  /// shrink to fit all internal containers
+  void shrink_to_fit_all_particles();
 };
 
 

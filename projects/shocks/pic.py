@@ -136,7 +136,7 @@ def insert_em(grid, conf):
 
 if __name__ == "__main__":
 
-    do_plots = True
+    do_plots = False
     do_print = False
 
     if MPI.COMM_WORLD.Get_rank() == 0:
@@ -179,7 +179,7 @@ if __name__ == "__main__":
                        help='Name of the configuration file (default: None)')
     args = parser.parse_args()
     if args.conf_filename == None:
-        conf = Configuration('config-test.ini', do_print=do_print) 
+        conf = Configuration('shock_mini.ini', do_print=do_print) 
     else:
         if do_print:
             print("Reading configuration setup from ", args.conf_filename)
@@ -295,12 +295,7 @@ if __name__ == "__main__":
 
 
     Nsamples = conf.Nt
-    if conf.gammarad > 0:
-        pusher   = pypic.BorisDragPusher()
-        pusher.drag = conf.drag_amplitude
-        pusher.temp = conf.radtemp
-    else:
-        pusher   = pypic.BorisPusher()
+    pusher   = pypic.BorisPusher()
 
 
     fldprop  = pyfld.FDTD2()
@@ -724,6 +719,12 @@ if __name__ == "__main__":
             #analyze (independent)
             timer.start("io")
 
+            #shrink particle arrays
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                tile.shrink_to_fit_all_particles()
+
+            #analyze
             for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
                 analyzer.analyze2d(tile)

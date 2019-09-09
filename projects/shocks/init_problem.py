@@ -34,8 +34,8 @@ class Configuration_Shocks(Configuration):
             self.beta = sqrt(1.-1./self.gamma**2.)
         
 	#plasma reaction & subsequent normalization
-        omp=c/self.c_omp
-        self.qe = -(omp**2.*self.gamma)/((ppc*.5)*(1.+me/mi)) 
+        self.omp=c/self.c_omp
+        self.qe = -(self.omp**2.*self.gamma)/((ppc*.5)*(1.+me/mi)) 
         self.qi = -self.qe 
 
         me *= abs(self.qi)

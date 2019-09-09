@@ -91,13 +91,14 @@ def boosted_maxwellian(theta, Gamma, direction=1, dims=2):
     if Gamma == 0:
         return ux, uy, uz, u
 
-    #We interpret this as v/c = beta
     if Gamma < 1.0:
+        #We interpret this as v/c = beta
         beta = Gamma
         Gamma = 1.0/np.sqrt(1.0 - beta*beta)
-    else: #else as bulk lorentz factor
-        beta = 1.0/np.sqrt(1.0 + Gamma*Gamma)
-    
+    else: 
+        #else as bulk lorentz factor
+        beta = np.sqrt(1.0 - 1.0/Gamma/Gamma)
+
     #beta = 1.0/sqrt(1.0 + Gamma*Gamma)
     X8 = np.random.rand()
     vx = ux/np.sqrt(1.0 + u*u)

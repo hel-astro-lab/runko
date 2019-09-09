@@ -37,6 +37,9 @@ class Conf:
     me = -1.0
     mi =  1.0
 
+    qe = 1.0
+    qi = 1.0
+
     #def __init__(self):
     #    print("initialized...")
 

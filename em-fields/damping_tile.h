@@ -50,9 +50,6 @@ class Tile :
     bz_ref(nx,ny,nz)
   { }
 
-
-  ~Tile() override = default;
-
   //void push_e() override;
   //using Tile::push_e;
   //using Tile::push_half_b;

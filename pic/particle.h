@@ -20,7 +20,7 @@ class Particle
 public:
 
   /// actual particle data
-  std::array<double,7> data = {0.,0.,0.,0.,0.,0.,0.};
+  std::array<double,7> data = {-1,-2,-3,-4,-5,-7};
 
   /// particle id
   int _id = 0;
@@ -30,11 +30,15 @@ public:
 
   Particle() {};
 
+  /// standard ctor
   Particle(double x,  double y,  double z,
            double ux, double uy, double uz,
            double wgt,
            int __ind, int __proc
            );
+
+  /// special ctor for info prtcl
+  Particle(size_t number_of_particles);
 
   inline double& x()   { return data[0]; };
   inline double& y()   { return data[1]; };
@@ -47,41 +51,12 @@ public:
   inline int& id()   { return _id;   };
   inline int& proc() { return _proc; };
 
-};
+  virtual ~Particle() = default;
 
-
-/// Special handling of particle MPI message info 
-// via this auxiliary helper class
-class InfoParticle : public Particle
-{
-public:
-
-  InfoParticle(size_t np) 
-    : Particle(
-        static_cast<double>(np), 0,0,
-        0,0,0,
-        0,0,0) {}
-
-  InfoParticle(Particle& prtcl) {
-    data[0] = prtcl.x();
-  }
-
-  size_t size() {return static_cast<size_t>(Particle::x());}
-
-private:
-  using Particle::x;
-  using Particle::y;
-  using Particle::z;
-  using Particle::ux;
-  using Particle::uy;
-  using Particle::uz;
-  using Particle::wgt;
-  using Particle::id;
-  using Particle::proc;
+  /// special method for info particle that re-uses x mem location
+  size_t number_of_particles();
 
 };
-
-
 
 
 /*! \brief Container of particles inside the tile
@@ -176,6 +151,9 @@ class ParticleContainer {
   // resize everything
   virtual void resize(size_t N);
 
+  // "shrink to fit" all internal main containers
+  virtual void shrink_to_fit();
+
   /// size of the container (in terms of particles)
   size_t size();
 
@@ -197,6 +175,10 @@ class ParticleContainer {
     return locArr[idim];
   }
 
+  virtual inline std::vector<double>& loc(size_t idim)
+  {
+    return locArr[idim];
+  }
 
   //--------------------------------------------------
   // velocities
@@ -211,6 +193,11 @@ class ParticleContainer {
   }
 
   virtual inline std::vector<double> vel(size_t idim) const 
+  {
+    return velArr[idim];
+  }
+
+  virtual inline std::vector<double>& vel(size_t idim)
   {
     return velArr[idim];
   }
@@ -232,6 +219,10 @@ class ParticleContainer {
     return wgtArr;
   }
 
+  virtual inline std::vector<double>& wgt()
+  {
+    return wgtArr;
+  }
 
   //--------------------------------------------------
   // id
@@ -250,6 +241,10 @@ class ParticleContainer {
     return indArr[idim];
   }
 
+  virtual inline std::vector<int>& id(size_t idim)
+  {
+    return indArr[idim];
+  }
 
   // particle creation
   virtual void add_particle (
@@ -294,7 +289,6 @@ class ParticleContainer {
   void set_keygen_state(int __key, int __rank);
 
 };
-
 
 
 

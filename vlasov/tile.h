@@ -39,6 +39,7 @@ class PlasmaBlock {
     block(Nx, Ny, Nz) 
   { }
 
+  //virtual ~PlasmaBlock() = default;
 
   Realf qm; 
 };
@@ -97,11 +98,8 @@ class Tile :
   }
 
 
-  /// destructor
-  virtual ~Tile() override = default;
-
+  /// explicitly avoid copies; TODO: is this needed?
   Tile(Tile& ) = delete;
-
 
   /// tile temporal and spatial scales
   using fields::Tile<D>::cfl;

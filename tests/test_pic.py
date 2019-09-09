@@ -211,6 +211,9 @@ class Conf:
 
     vel = 0.1
 
+    qe = 1.0
+    qi =-1.0
+
     #def __init__(self):
     #    print("initialized...")
 
