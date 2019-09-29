@@ -128,7 +128,7 @@ def initialize_virtuals(n, conf):
         c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         n.add_tile(c, (i,j)) 
 
-        c_orig.communication.local = False;
+        #c_orig.communication.local = False;
         c.load_metainfo(c_orig.communication)
         #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
         
