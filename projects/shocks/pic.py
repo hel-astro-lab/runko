@@ -304,6 +304,10 @@ if __name__ == "__main__":
     analyzer = pypic.Analyzator()
     flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
+    #enhance numerical speed of light slightly to suppress numerical Cherenkov instability
+    fldprop.corr = 1.02
+
+
     #moving walls
     piston   = pypic.Piston()
     initialize_piston(grid, piston, conf)

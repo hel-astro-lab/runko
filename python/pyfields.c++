@@ -198,7 +198,8 @@ void bind_fields(py::module& m_sub)
 
   // fdtd2 propagator
   py::class_<fields::FDTD2<1>>(m_1d, "FDTD2", fieldspropag1d)
-    .def(py::init<>());
+    .def(py::init<>())
+    .def_readwrite("corr",     &fields::FDTD2<1>::corr);
 
 
   //--------------------------------------------------
@@ -211,6 +212,7 @@ void bind_fields(py::module& m_sub)
 
   // fdtd2 propagator
   py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
+    .def_readwrite("corr",     &fields::FDTD2<2>::corr)
     .def(py::init<>());
 
 
