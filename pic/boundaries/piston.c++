@@ -8,7 +8,7 @@
 using std::min;
 using std::max;
 
-//TODO: FIXME directy copy from depositer/zigzag.c++
+//TODO: FIXME direct copy from depositer/zigzag.c++
 // use friending of the class or inherit this?
 template<size_t D>
 void pic::Piston<D>::zigzag(
@@ -237,8 +237,8 @@ void pic::Piston<2>::field_bc(
     if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
 
     // set transverse directions to zero
-    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<=iw; i++) {
+    for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) {
+      for(int i=-3; i<=iw; i++) {
         yee.ey(i,j,k) = 0.0;
         yee.ez(i,j,k) = 0.0;
 
