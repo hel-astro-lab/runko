@@ -14,6 +14,7 @@ set (FIELDS_FILES
      ../em-fields/tile.c++ 
      ../em-fields/damping_tile.c++
      ../em-fields/propagator/fdtd2.c++ 
+     ../em-fields/propagator/fdtd4.c++ 
      ../em-fields/filters/digital.c++
      )
 

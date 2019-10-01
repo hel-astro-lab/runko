@@ -10,6 +10,7 @@
 
 #include "../em-fields/propagator/propagator.h"
 #include "../em-fields/propagator/fdtd2.h"
+#include "../em-fields/propagator/fdtd4.h"
 
 #include "../em-fields/filters/filter.h"
 #include "../em-fields/filters/digital.h"
@@ -213,6 +214,11 @@ void bind_fields(py::module& m_sub)
   // fdtd2 propagator
   py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
     .def_readwrite("corr",     &fields::FDTD2<2>::corr)
+    .def(py::init<>());
+
+  // fdtd4 propagator
+  py::class_<fields::FDTD4<2>>(m_2d, "FDTD4", fieldspropag2d)
+    .def_readwrite("corr",     &fields::FDTD4<2>::corr)
     .def(py::init<>());
 
 
