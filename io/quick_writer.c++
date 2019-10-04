@@ -67,20 +67,27 @@ inline void h5io::QuickWriter<2>::read_tiles(
     k0 = 0;
         for(int js=0; js<nyt; js++) {
           for(int jstride=0; jstride < stride; jstride++) {
-
             for(int is=0; is<nxt; is++) {
+
+              // field quantities; no integration
+              if (jstride==0) {
+                ex(i0+is, j0+js, k0+ks) += yee.ex( is*stride, js*stride, ks*stride);
+                ey(i0+is, j0+js, k0+ks) += yee.ey( is*stride, js*stride, ks*stride);
+                ez(i0+is, j0+js, k0+ks) += yee.ez( is*stride, js*stride, ks*stride);
+
+                bx(i0+is, j0+js, k0+ks) += yee.bx( is*stride, js*stride, ks*stride);
+                by(i0+is, j0+js, k0+ks) += yee.by( is*stride, js*stride, ks*stride);
+                bz(i0+is, j0+js, k0+ks) += yee.bz( is*stride, js*stride, ks*stride);
+              }
+
+              // densities; these quantities we need to integrate over stride
               for(int istride=0; istride < stride; istride++) {
-                ex(i0+is, j0+js, k0+ks) += yee.ex( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-                ey(i0+is, j0+js, k0+ks) += yee.ey( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-                ez(i0+is, j0+js, k0+ks) += yee.ez( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-                bx(i0+is, j0+js, k0+ks) += yee.bx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-                by(i0+is, j0+js, k0+ks) += yee.by( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-                bz(i0+is, j0+js, k0+ks) += yee.bz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
                 jx(i0+is, j0+js, k0+ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
                 jy(i0+is, j0+js, k0+ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
                 jz(i0+is, j0+js, k0+ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
                 rh(i0+is, j0+js, k0+ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
               }
+
             }
           }
         }
@@ -175,19 +182,21 @@ inline bool h5io::QuickWriter<D>::write(
     file["Ny"] = arrs[0].Ny;
     file["Nz"] = arrs[0].Nz;
 
-    file["ex"] = arrs[0].serialize();
-    file["ey"] = arrs[1].serialize();
-    file["ez"] = arrs[2].serialize();
+    // avoid extra copy by using internal container reference;
+    // this works because writer meshes don't have halos
+    file["ex"] = arrs[0].mat;
+    file["ey"] = arrs[1].mat;
+    file["ez"] = arrs[2].mat;
 
-    file["bx"] = arrs[3].serialize();
-    file["by"] = arrs[4].serialize();
-    file["bz"] = arrs[5].serialize();
+    file["bx"] = arrs[3].mat;
+    file["by"] = arrs[4].mat;
+    file["bz"] = arrs[5].mat;
 
-    file["jx"] = arrs[6].serialize();
-    file["jy"] = arrs[7].serialize();
-    file["jz"] = arrs[8].serialize();
+    file["jx"] = arrs[6].mat;
+    file["jy"] = arrs[7].mat;
+    file["jz"] = arrs[8].mat;
 
-    file["rho"]= arrs[9].serialize();
+    file["rho"]= arrs[9].mat;
   }
 
   return true;

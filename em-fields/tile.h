@@ -24,14 +24,14 @@ class YeeLattice {
   size_t Nz;
 
   /// Electric field 
-  toolbox::Mesh<Realf, 1> ex;
-  toolbox::Mesh<Realf, 1> ey;
-  toolbox::Mesh<Realf, 1> ez;
+  toolbox::Mesh<Realf, 3> ex;
+  toolbox::Mesh<Realf, 3> ey;
+  toolbox::Mesh<Realf, 3> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<Realf, 1> bx;
-  toolbox::Mesh<Realf, 1> by;
-  toolbox::Mesh<Realf, 1> bz;
+  toolbox::Mesh<Realf, 3> bx;
+  toolbox::Mesh<Realf, 3> by;
+  toolbox::Mesh<Realf, 3> bz;
     
   /// Charge density
   toolbox::Mesh<Realf, 1> rho;

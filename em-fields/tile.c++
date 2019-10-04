@@ -274,6 +274,8 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
 
   auto& mesh = get_yee(); // target as a reference to update into
 
+  int halo = 3; // halo region size for fields
+
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
       if (in == 0 && jn == 0) continue;
@@ -296,29 +298,27 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
         if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
         if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
 
-        // copy
-        if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
-        else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
-        else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
+        // copy (halo = 1) assignment
+        //if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
+        //else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
+        //else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
         
+        // generalized halo >= 1 loops
+        if (jn == 0) { // vertical
+          for(int h=0; h<halo; h++)
+            copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
 
-        /*
-        FIXME: this is how we should loop over H>1 halo boundaries
-        for(int h=1; h<= halo; h++)
-        copy_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
+        } else if (in == 0) { // horizontal
+          for(int g=0; g<halo; g++)
+            copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
 
-        for(int h=1; h<= halo; h++)
-        copy_horz_yee(mesh, mtop, mesh.Ny+h-1, h-1); 
-
-        for(int h=1; h<= halo; h++)
-        for(int g=1; g<= halo; g++)
-        copy_z_pencil_yee(mesh, mtopleft, -h, mesh.Ny +g-1, mtopleft.Nx-h, +g-1);
-
-        for(int h=1; h<= halo; h++)
-        for(int g=1; g<= halo; g++)
-        copy_z_pencil_yee(mesh, mtopright, mesh.Nx +h-1, mesh.Ny +g-1, +h-1,+g-1);
-        */
-
+        } else { // diagonal
+          for(int h=0; h<halo; h++) {
+            for(int g=0; g<halo; g++) {
+              copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+            }
+          }
+        }
 
       } // end of if(tpr)
     }
