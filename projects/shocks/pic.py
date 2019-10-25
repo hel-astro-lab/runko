@@ -295,7 +295,8 @@ if __name__ == "__main__":
 
 
     Nsamples = conf.Nt
-    pusher   = pypic.BorisPusher()
+    #pusher   = pypic.BorisPusher()
+    pusher   = pypic.VayPusher()
 
 
     #fldprop  = pyfld.FDTD2()
