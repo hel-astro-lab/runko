@@ -120,8 +120,8 @@ def insert_em(grid, conf):
         ii,jj = tile.index
 
         for n in range(conf.NzMesh):
-            for m in range(-1, conf.NyMesh+1):
-                for l in range(-1, conf.NxMesh+1):
+            for m in range(-3, conf.NyMesh+3):
+                for l in range(-3, conf.NxMesh+3):
                     # get global coordinates
                     iglob, jglob, kglob = globalIndx( (ii,jj), (l,m,n), conf)
 
@@ -295,14 +295,20 @@ if __name__ == "__main__":
 
 
     Nsamples = conf.Nt
-    pusher   = pypic.BorisPusher()
+    #pusher   = pypic.BorisPusher()
+    pusher   = pypic.VayPusher()
 
 
-    fldprop  = pyfld.FDTD2()
+    #fldprop  = pyfld.FDTD2()
+    fldprop  = pyfld.FDTD4()
     fintp    = pypic.LinearInterpolator()
     currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
     flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+    #enhance numerical speed of light slightly to suppress numerical Cherenkov instability
+    fldprop.corr = 1.02
+
 
     #moving walls
     piston   = pypic.Piston()
@@ -673,7 +679,6 @@ if __name__ == "__main__":
                 tile = grid.get_tile(cid)
                 flt.solve(tile)
 
-
             MPI.COMM_WORLD.barrier() # sync everybody 
 
         #clean current behind piston
@@ -696,6 +701,16 @@ if __name__ == "__main__":
             tile.deposit_current()
 
         timer.stop_comp("add_cur")
+
+        #comm E
+        timer.start_comp("mpi_e2")
+        debug_print(grid, "mpi_e2")
+
+        grid.send_data(1) 
+        grid.recv_data(1) 
+        grid.wait_data(1) 
+
+        timer.stop_comp("mpi_e2")
 
 
         ##################################################

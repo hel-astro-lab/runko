@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "../pic/pushers/pusher.h"
 #include "../pic/pushers/boris.h"
 #include "../pic/pushers/boris_drag.h"
+#include "../pic/pushers/vay.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
@@ -264,6 +265,9 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("temp", &pic::BorisPusherDrag<2,3>::temp)
     .def(py::init<>());
 
+  // Vay pusher
+  py::class_<pic::VayPusher<2,3>>(m_2d, "VayPusher", picpusher2d)
+    .def(py::init<>());
 
   // 3D version
   py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
