@@ -337,6 +337,8 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 
   auto& mesh = get_yee(); // target as a reference to update into
 
+  int halo = 3; // halo region size for fields
+
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
       for(int kn=-1; kn <= 1; kn++) {
@@ -348,6 +350,46 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 
           //TODO: implement 3D
           assert(false);
+
+
+
+          /* diagonal rules are:
+          if + then to   n
+          if + then from 0
+
+          if - then to   -1
+          if - then from n-1
+          */
+
+          if (in == +1) { ito = mesh.Nx; ifro = 0; }
+          if (jn == +1) { jto = mesh.Ny; jfro = 0; }
+
+          if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
+          if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
+
+          // copy (halo = 1) assignment
+          //if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
+          //else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
+          //else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
+          
+          // generalized halo >= 1 loops
+          if (jn == 0) { // vertical
+            for(int h=0; h<halo; h++)
+              copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
+
+          } else if (in == 0) { // horizontal
+            for(int g=0; g<halo; g++)
+              copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
+
+          } else { // diagonal
+            for(int h=0; h<halo; h++) {
+              for(int g=0; g<halo; g++) {
+                copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+              }
+            }
+          }
+
+
 
         }
       }
