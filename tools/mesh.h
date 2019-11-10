@@ -207,6 +207,21 @@ class Mesh {
     void add_face(Mesh<T, H2>& rhs, int lhsK, int rhsK);
 
 
+    //--------------------------------------------------
+    template<int H2>
+    void copy_x_pencil(Mesh<T, H2>& rhs, int lhsJ, int lhsK, int rhsJ, int rhsK);
+
+    template<int H2>
+    void add_x_pencil(Mesh<T, H2>& rhs, int lhsJ, int lhsK, int rhsJ, int rhsK);
+
+    //--------------------------------------------------
+    template<int H2>
+    void copy_y_pencil(Mesh<T, H2>& rhs, int lhsI, int lhsK, int rhsI, int rhsK);
+
+    template<int H2>
+    void add_y_pencil(Mesh<T, H2>& rhs, int lhsI, int lhsK, int rhsI, int rhsK);
+
+    //--------------------------------------------------
     template<int H2>
     void copy_z_pencil(Mesh<T, H2>& rhs, int lhsI, int lhsJ, int rhsI, int rhsJ);
 
@@ -312,11 +327,14 @@ template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
 
+  // purely vectorized version
   //for(size_t i=0; i<this->mat.size(); i++) {
   //  this->mat[i] -= rhs.mat[i];
   //}
 
-  // TODO: do not operate on halo regions
+  // Version that does not operate on halo regions
+  // this is more correct but every so slightly slower
+  // because vectorization is interrupted.
   for(size_t k=0;  k<this->Nz; k++) {
     for(size_t j=0;  j<this->Ny; j++) {
       for(size_t i=0;  i<this->Nx; i++) {
@@ -496,6 +514,55 @@ void Mesh<T,H>::add_face(Mesh<T,H2>& rhs, int lhsK, int rhsK) {
     }
   }
 }
+
+//--------------------------------------------------
+// copy pencil pointing along X
+template <class T, int H>
+template <int H2>
+void Mesh<T,H>::copy_x_pencil(Mesh<T,H2>& rhs, int lhsJ, int lhsK, int rhsJ, int rhsK) {
+  if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
+
+  for(int i=0; i<(int)this->Nx; i++) { 
+    this->operator()(i, lhsJ, lhsK) = rhs(i, rhsJ, rhsK);
+  }
+}
+
+// add pencil pointing along X
+template <class T, int H>
+template <int H2>
+void Mesh<T,H>::add_x_pencil(Mesh<T,H2>& rhs, int lhsJ, int lhsK, int rhsJ, int rhsK) {
+  if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
+
+  for(int i=0; i<(int)this->Nx; i++) { 
+    this->operator()(i, lhsJ, lhsK) += rhs(i, rhsJ, rhsK);
+  }
+}
+
+//--------------------------------------------------
+
+// copy pencil pointing along Y
+template <class T, int H>
+template <int H2>
+void Mesh<T,H>::copy_y_pencil(Mesh<T,H2>& rhs, int lhsI, int lhsK, int rhsI, int rhsK) {
+  if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
+
+  for(int j=0; j<(int)this->Ny; j++) { 
+    this->operator()(lhsI, j, lhsK) = rhs(rhsI, j, rhsK);
+  }
+}
+
+// add pencil pointing along Y
+template <class T, int H>
+template <int H2>
+void Mesh<T,H>::add_y_pencil(Mesh<T,H2>& rhs, int lhsI, int lhsK, int rhsI, int rhsK) {
+  if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
+
+  for(int j=0; j<(int)this->Ny; j++) { 
+    this->operator()(lhsI, j, lhsK) += rhs(rhsI, j, rhsK);
+  }
+}
+
+//--------------------------------------------------
 
 // copy pencil pointing along Z
 template <class T, int H>

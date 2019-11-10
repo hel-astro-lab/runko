@@ -199,6 +199,69 @@ void add_face_yee(
 }
 
 
+void copy_x_pencil_yee(
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
+    int lhsJ, int lhsK,
+    int rhsJ, int rhsK) 
+{
+  lhs.ex.copy_x_pencil(rhs.ex, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.ey.copy_x_pencil(rhs.ey, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.ez.copy_x_pencil(rhs.ez, lhsJ, lhsK, rhsJ, rhsK); 
+                                                     
+  lhs.bx.copy_x_pencil(rhs.bx, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.by.copy_x_pencil(rhs.by, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.bz.copy_x_pencil(rhs.bz, lhsJ, lhsK, rhsJ, rhsK); 
+                                                     
+  //TODO: separate into own function                 
+  lhs.jx.copy_x_pencil(rhs.jx, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.jy.copy_x_pencil(rhs.jy, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.jz.copy_x_pencil(rhs.jz, lhsJ, lhsK, rhsJ, rhsK); 
+}
+
+void add_x_pencil_yee(
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
+    int lhsJ, int lhsK,
+    int rhsJ, int rhsK) 
+{
+  lhs.jx.add_x_pencil(rhs.jx, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.jy.add_x_pencil(rhs.jy, lhsJ, lhsK, rhsJ, rhsK); 
+  lhs.jz.add_x_pencil(rhs.jz, lhsJ, lhsK, rhsJ, rhsK); 
+}
+
+
+void copy_y_pencil_yee(
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
+    int lhsI, int lhsK,
+    int rhsI, int rhsK) 
+{           
+  lhs.ex.copy_y_pencil(rhs.ex, lhsI, lhsK, rhsI, rhsK); 
+  lhs.ey.copy_y_pencil(rhs.ey, lhsI, lhsK, rhsI, rhsK); 
+  lhs.ez.copy_y_pencil(rhs.ez, lhsI, lhsK, rhsI, rhsK); 
+                                                     
+  lhs.bx.copy_y_pencil(rhs.bx, lhsI, lhsK, rhsI, rhsK); 
+  lhs.by.copy_y_pencil(rhs.by, lhsI, lhsK, rhsI, rhsK); 
+  lhs.bz.copy_y_pencil(rhs.bz, lhsI, lhsK, rhsI, rhsK); 
+                                                     
+  //TODO: separate into own function                 
+  lhs.jx.copy_y_pencil(rhs.jx, lhsI, lhsK, rhsI, rhsK); 
+  lhs.jy.copy_y_pencil(rhs.jy, lhsI, lhsK, rhsI, rhsK); 
+  lhs.jz.copy_y_pencil(rhs.jz, lhsI, lhsK, rhsI, rhsK); 
+}
+
+void add_y_pencil_yee(
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
+    int lhsI, int lhsK,
+    int rhsI, int rhsK) 
+{
+  lhs.jx.add_y_pencil(rhs.jx, lhsI, lhsK, rhsI, rhsK); 
+  lhs.jy.add_y_pencil(rhs.jy, lhsI, lhsK, rhsI, rhsK); 
+  lhs.jz.add_y_pencil(rhs.jz, lhsI, lhsK, rhsI, rhsK); 
+}
+
 
 void copy_z_pencil_yee(
     YeeLattice& lhs, 
@@ -231,6 +294,60 @@ void add_z_pencil_yee(
   lhs.jz.add_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
 }
 
+
+template<class T, int H>
+inline void copy_point(
+    toolbox::Mesh<T,H>& lhs, 
+    toolbox::Mesh<T,H>& rhs, 
+    int lhsI, int lhsJ, int lhsK,
+    int rhsI, int rhsJ, int rhsK) 
+{
+  lhs(lhsI, lhsJ, lhsK) = rhs(rhsI, rhsJ, rhsK);
+  return;
+}
+
+inline void copy_point_yee(
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
+    int lhsI, int lhsJ, int lhsK,
+    int rhsI, int rhsJ, int rhsK) 
+{
+  copy_point(lhs.ex, rhs.ex, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  copy_point(lhs.ey, rhs.ey, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  copy_point(lhs.ez, rhs.ez, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+
+  copy_point(lhs.bx, rhs.bx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  copy_point(lhs.by, rhs.by, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  copy_point(lhs.bz, rhs.bz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+
+  copy_point(lhs.jx, rhs.jx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  copy_point(lhs.jy, rhs.jy, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  copy_point(lhs.jz, rhs.jz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+
+}
+
+
+template<class T, int H>
+inline void add_point(
+    toolbox::Mesh<T,H>& lhs, 
+    toolbox::Mesh<T,H>& rhs, 
+    int lhsI, int lhsJ, int lhsK,
+    int rhsI, int rhsJ, int rhsK) 
+{
+  lhs(lhsI, lhsJ, lhsK) += rhs(rhsI, rhsJ, rhsK);
+  return;
+}
+
+inline void add_point_yee(
+    YeeLattice& lhs, 
+    YeeLattice& rhs, 
+    int lhsI, int lhsJ, int lhsK,
+    int rhsI, int rhsJ, int rhsK) 
+{
+  add_point(lhs.jx, rhs.jx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  add_point(lhs.jy, rhs.jy, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  add_point(lhs.jz, rhs.jz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+}
 
 
 
@@ -343,13 +460,13 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
       for(int kn=-1; kn <= 1; kn++) {
         if (in == 0 && jn == 0 && kn == 0) continue;
 
+        // continue only if the tile exists (get_tileptr return nullptr otherwise)
         tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
         if (tpr) {
           auto& mpr = tpr->get_yee();
 
           //TODO: implement 3D
           assert(false);
-
 
 
           /* diagonal rules are:
@@ -362,9 +479,11 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 
           if (in == +1) { ito = mesh.Nx; ifro = 0; }
           if (jn == +1) { jto = mesh.Ny; jfro = 0; }
+          if (kn == +1) { kto = mesh.Nz; kfro = 0; }
 
           if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
           if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
+          if (kn == -1) { kto = -1;      kfro = mpr.Nz-1; }
 
           // copy (halo = 1) assignment
           //if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
@@ -372,29 +491,83 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
           //else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
           
           // generalized halo >= 1 loops
-          if (jn == 0) { // vertical
-            for(int h=0; h<halo; h++)
-              copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
 
-          } else if (in == 0) { // horizontal
-            for(int g=0; g<halo; g++)
-              copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
+          // 2D case; kn == 0; no tiles behind or infront
+          if (kn == 0) {
 
-          } else { // diagonal
-            for(int h=0; h<halo; h++) {
-              for(int g=0; g<halo; g++) {
-                copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+            // vertical
+            if (jn == 0) { 
+              for(int h=0; h<halo; h++)
+                copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
+
+            // horizontal
+            } else if (in == 0) { 
+              for(int g=0; g<halo; g++)
+                copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
+
+            // diagonal
+            } else { 
+              for(int h=0; h<halo; h++) {
+                for(int g=0; g<halo; g++) {
+                  copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+                }
               }
-            }
-          }
+            } 
+         
+          // 3D case with kn != 0
+          } else {
+            
+            // infront/behind directions
+            if (in == 0 && jn == 0) { 
+              for(int g=0; g<halo; g++)
+                copy_face_yee(mesh, mpr, kto+kn*g, kfro+kn*g);   
 
+            // 3D generalized diagonal locations
+            // If the finite-difference scheme is purely non-diagonal
+            // then these can be dropped off.
+              
+            // vertical wedges
+            } else if (jn == 0) {
 
+              // y pencils
+              for(int h=0; h<halo; h++) {
+                for(int g=0; g<halo; g++) {
+                  copy_y_pencil_yee(mesh, mpr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                }
+              }
 
-        }
-      }
-    }
-  }
+            // horizontal wedges
+            } else if (in == 0) {
 
+              // x pencils
+              for(int h=0; h<halo; h++) {
+                for(int g=0; g<halo; g++) {
+                  copy_x_pencil_yee(mesh, mpr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                }
+              }
+
+            // corners
+            } else {
+
+              // pointwise
+              for(int h=0; h<halo; h++) {
+                for(int g=0; g<halo; g++) {
+                  for(int f=0; f<halo; f++) {
+                    copy_point_yee(mesh, mpr, 
+                        ito +in*h, jto +jn*g, kto +kn*f,
+                        ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  }
+                }
+              }
+            } 
+
+          } // 3D cases with kn != 0
+        } // if tpr
+      } // kn
+    } // jn
+  } // in
+
+  return;
 }
 
 
@@ -433,8 +606,6 @@ void Tile<1>::exchange_currents(corgi::Grid<1>& grid)
 
 
 /// Update currents on Yee grid boundaries
-// TODO: assumes implicitly 2D (x-y) arrays only by setting k=0 and then ignoring it
-// TODO: write unit test for this
 //
 // The whole "FROM" -> "TO" index selection depending on neighbor is abstractified.
 // The rules are:

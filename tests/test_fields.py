@@ -527,6 +527,10 @@ class Communications(unittest.TestCase):
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
                     for s in range(conf.NzMesh):
+                        print("indices:")
+                        print(q,r,s)
+                        print(i,j)
+
                         data[ i*conf.NxMesh + q, j*conf.NyMesh + r, k*conf.NzMesh + s, 0] = yee.ex[q,r,s]
                         data[ i*conf.NxMesh + q, j*conf.NyMesh + r, k*conf.NzMesh + s, 1] = yee.ey[q,r,s]
                         data[ i*conf.NxMesh + q, j*conf.NyMesh + r, k*conf.NzMesh + s, 2] = yee.ez[q,r,s]
