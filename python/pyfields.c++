@@ -2,6 +2,8 @@
 
 #include "py_submodules.h"
 
+#include "../corgi/internals.h"
+
 #include "../definitions.h"
 #include "../tools/mesh.h"
 
@@ -31,10 +33,12 @@ auto declare_tile(
     const std::string& pyclass_name) 
 {
 
+  //TODO: it is possible to change shared_ptr to unique with nodelete
+  //std::unique_ptr<fields::Tile<D>, py::nodelete >
   return py::class_<
              fields::Tile<D>,
               corgi::Tile<D>, 
-             std::shared_ptr<fields::Tile<D> >
+              std::shared_ptr<fields::Tile<D>>
             >(m, pyclass_name.c_str() )
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",       &fields::Tile<D>::dx)
@@ -43,17 +47,19 @@ auto declare_tile(
     .def("cycle_current",       &fields::Tile<D>::cycle_current)
     .def("clear_current",       &fields::Tile<D>::clear_current)
     .def("deposit_current",     &fields::Tile<D>::deposit_current)
-    .def("add_analysis_species", &fields::Tile<D>::add_analysis_species)
     .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
     .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
     .def("get_yee",             &fields::Tile<D>::get_yee, 
                                 py::arg("i")=0,
-                                py::return_value_policy::reference)
+                                py::return_value_policy::reference,
+                                py::keep_alive<0,1>()
+                                );
+    .def("add_analysis_species",&fields::Tile<D>::add_analysis_species)
     .def("get_analysis",        &fields::Tile<D>::get_analysis, 
                                 py::arg("i")=0,
                                 py::return_value_policy::reference);
-        
 }
+
 
 
 // generator for damped tile for various directions
@@ -62,8 +68,9 @@ auto declare_TileDamped(
     py::module& m,
     const std::string& pyclass_name) 
 {
-  //using Class = fields::TileDamped<D,S>; // does not function properly; maybe not triggering template?
-  //have to use explicit name instead like this
+  // using Class = fields::TileDamped<D,S>; 
+  // does not function properly; maybe not triggering template?
+  // have to use explicit name instead like this
 
   return py::class_<
              fields::damping::Tile<D,S>,
@@ -131,7 +138,12 @@ void bind_fields(py::module& m_sub)
     
   //--------------------------------------------------
 
-  py::class_<fields::YeeLattice>(m_sub, "YeeLattice")
+  // TODO: can use unique here too as:
+  // std::unique_ptr<fields::YeeLattice, py::nodelete> 
+  py::class_<
+    fields::YeeLattice, 
+    std::shared_ptr<fields::YeeLattice> 
+            >(m_sub, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("ex",   &fields::YeeLattice::ex)
     .def_readwrite("ey",   &fields::YeeLattice::ey)
@@ -147,7 +159,11 @@ void bind_fields(py::module& m_sub)
 
   //--------------------------------------------------
 
-  py::class_<fields::PlasmaMomentLattice>(m_sub, "PlasmaMomentLattice")
+  // TODO: can use unique here too?
+  py::class_<
+    fields::PlasmaMomentLattice, 
+    std::shared_ptr<fields::PlasmaMomentLattice> 
+            >(m_sub, "PlasmaMomentLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho)
     .def_readwrite("edens",    &fields::PlasmaMomentLattice::edens)
@@ -175,7 +191,54 @@ void bind_fields(py::module& m_sub)
   /// General class for handling Maxwell's equations
   auto t1 = declare_tile<1>(m_1d, "Tile");
   auto t2 = declare_tile<2>(m_2d, "Tile");
-  auto t3 = declare_tile<3>(m_3d, "Tile");
+  //auto t3 = declare_tile<3>(m_3d, "Tile");
+    
+  // Declare manually instead because there are too many differences
+  py::class_<fields::Tile<3>, corgi::Tile<3>, std::shared_ptr<fields::Tile<3>>
+            >(m_3d, "Tile")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("dx",         &fields::Tile<3>::dx)
+    .def_readwrite("cfl",        &fields::Tile<3>::cfl)
+    .def("cycle_yee",            &fields::Tile<3>::cycle_yee)
+    .def("cycle_current",        &fields::Tile<3>::cycle_current)
+    .def("clear_current",        &fields::Tile<3>::clear_current)
+    .def("deposit_current",      &fields::Tile<3>::deposit_current)
+    .def("update_boundaries",    &fields::Tile<3>::update_boundaries)
+    .def("exchange_currents",    &fields::Tile<3>::exchange_currents)
+    .def("get_yee",              &fields::Tile<3>::get_yee, 
+                                  py::arg("i")=0,
+                                  py::return_value_policy::reference,
+                                  py::keep_alive<0,1>())
+    .def("add_analysis_species", &fields::Tile<3>::add_analysis_species)
+
+    //.def_property("get_yee",
+    //        [](fields::Tile<3> &self) { return self.yee; },
+    //          py::cpp_function([](fields::Tile<3> &self, a *aptr) 
+    //            { 
+    //            self.ptrToA = aptr; 
+    //            }, py::keep_alive<1, 2>())
+
+
+  // TODO: testing grid-based tile generator instead
+  //
+  // example:
+  //m.def("make_bell", []() { return new Bell; }, return_value_policy::reference);
+  m_3d.def("make_and_add_tile", [](
+        corgi::Grid<3>& grid,
+        size_t nx, size_t ny, size_t nz,
+        corgi::internals::tuple_of<3, size_t> indices
+        ) {
+
+        auto p = new fields::Tile<3>(nx,ny,nz);
+        std::shared_ptr<fields::Tile<3>> sp(p);
+
+        grid.add_tile(sp, indices);
+        return sp;
+      },
+        py::return_value_policy::reference
+        // keep alive for the lifetime of the grid
+        //py::keep_alive<nurse,patient>()
+      ); 
 
 
   //--------------------------------------------------
@@ -244,7 +307,7 @@ void bind_fields(py::module& m_sub)
     .def("solve", &fields::Filter<2>::solve);
 
   // digital filter
-  // TODO: remove hack where we explicitly define solve (instead of use trampoline class)
+  // FIXME: remove hack where we explicitly define solve (instead of use trampoline class)
   // overwriting the solve function from trampoline does not work atm for some weird reason.
   py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
     .def(py::init<size_t, size_t, size_t>())

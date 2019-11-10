@@ -8,6 +8,8 @@ import numpy as np
 import pycorgi
 import pyrunko
 
+#import gc
+#gc.set_debug(gc.DEBUG_LEAK|gc.DEBUG_STATS)
 
 class Conf:
 
@@ -393,13 +395,56 @@ class Communications(unittest.TestCase):
         print("lims")
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
-        print("load")
-        tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        grid.add_tile(tile, (0,0,0) ) 
+        print("create2")
+        pyrunko.fields.threeD.make_and_add_tile(
+                grid, 
+                conf.NxMesh, conf.NyMesh, conf.NzMesh,
+                (0,0,1)
+                )
+        tile = grid.get_tile(0,0,1)
+
+        #print("create")
+        #tile = pyrunko.fields.threeD.make_tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        print("end of create")
+
+        #grid.add_tile(
+        #    pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh),
+        #    (0,0,1))
+
+        #tile = grid.get_tile(0,0,1)
+        tile.set_tile_mins([1.0,1.0,1.0])
+        tile.set_tile_maxs([2.0,2.0,2.0])
+        #tile.add_analysis_species()
+
+        #print("get yee")
+        #yee0 = tile.get_yee()
+        #print("getting size")
+        #nx = yee0.ex.Nx
+        #print("size", nx)
+
+        print("yee size:", tile.yee0.ex.Nx, tile.yee0.ex.Ny, tile.yee0.ex.Nz)
+
+        #print("set yee")
+        #tile.yee0.ex[0,0,0] = 1.0
+
+        print("adding tile")
+        grid.add_tile(tile, (0,0,1) ) 
 
         print("getting 000")
-        c = grid.get_tile(0,0,0)
-        yee = c.get_yee()
+        c = grid.get_tile(0,0,1)
+        print(c.cid)
+        print(c.mins) 
+        print(c.maxs) 
+        print(c.index) 
+
+        #print("get yee")
+        #yee = c.get_yee()
+        #print("getting size")
+        #nx = tile.yee.ex.Nx
+        #print("size", nx)
+        print("size", c.yee.ex.nx)
+
         #analysis = c.get_analysis()
 
         print("mem bug +++++++")

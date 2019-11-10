@@ -73,7 +73,10 @@ class YeeLattice {
     jz1(Nx, Ny, Nz)
     { }
 
-  virtual ~YeeLattice() = default;
+  //virtual ~YeeLattice() = default;
+  virtual ~YeeLattice() {
+    std::cout << "YeeLattice destructor being called\n";
+  };
 };
 
 
@@ -182,7 +185,8 @@ class Tile :
 
   /// Yee lattice of plasma quantities (with 1 timestep)
   //toolbox::Rotator<YeeLattice, 1> yee;
-  YeeLattice yee;
+  //YeeLattice yee;
+  std::vector<YeeLattice> yee;
 
   /// species-specific analysis results
   std::vector<PlasmaMomentLattice> analysis;
@@ -198,36 +202,33 @@ class Tile :
   /// grid size (assuming cubical cells)
   Realf dx = 1.0;
 
-  /// simulation timestep
-  // TODO: removable?
-  //Realf dt = 1.0;
-
-
   //--------------------------------------------------
   // constructor with internal mesh dimensions
   Tile(size_t nx, size_t ny, size_t nz) :
-    mesh_lengths {{nx, ny, nz}},
-    yee(nx, ny, nz)
+    mesh_lengths {{nx, ny, nz}}
   {
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);
 
-    // initialize one Yee lattice into the grid (into data rotator)
-    //add_yee_lattice();
+    // initialize one Yee lattice into the grid 
+    // TODO: into data rotator?
+    add_yee_lattice();
   }
 
   // avoid copies; TODO: is this needed?
   Tile(Tile& ) = delete;
+
+  //~Tile() = default;
+  virtual ~Tile(){
+    std::cout << "somebody is calling Tile destructor here!";
+  };
+  //~Tile(){};
 
   //--------------------------------------------------
 
   virtual void update_boundaries(  corgi::Grid<D>& grid);
 
   virtual void exchange_currents(  corgi::Grid<D>& grid);
-
-  //virtual void push_half_b();
-
-  //virtual void push_e();
 
   virtual void deposit_current();
 

@@ -25,15 +25,13 @@ void Tile<D>::deposit_current()
 template<std::size_t D>
 YeeLattice& Tile<D>::get_yee(size_t /*i*/) 
 {
-  //return this->yee.get(i);
-  return this->yee;
+  return this->yee.at(0);
 }
 
 template<std::size_t D>
 const YeeLattice& Tile<D>::get_const_yee(size_t /*i*/) const 
 {
-  //return this->yee.get(i);
-  return this->yee;
+  return this->yee.at(0);
 }
 
 
@@ -44,7 +42,7 @@ PlasmaMomentLattice& Tile<D>::get_analysis(size_t i)
   return this->analysis.at(i);
 }
 
-template<std::size_t D>
+//template<std::size_t D>
 const PlasmaMomentLattice& Tile<D>::get_const_analysis(size_t i) const 
 {
   return this->analysis.at(i);
@@ -67,7 +65,19 @@ void Tile<2>::add_analysis_species()
 template<>
 void Tile<3>::add_analysis_species() 
 {
-  analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+  // 3D tile can not have PlasmaMomentLattice because it is too big to
+  // fit into the memory.
+  assert(false);
+
+  //TODO
+  //std::cout << "emplacing moment lattice " << 
+  //  mesh_lengths[0] << " " << 
+  //  mesh_lengths[1] << " " << 
+  //  mesh_lengths[2] << "\n";
+
+  //analysis.push_back(PlasmaMomentLattice(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]));
+  //analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+  //analysis.emplace_back(PlasmaMomentLattice(1,1,1));
 }
 
 
@@ -76,25 +86,23 @@ void Tile<3>::add_analysis_species()
 template<>
 void Tile<1>::add_yee_lattice() 
 {
-  //std::cout << "add 1D Yee \n";
-  //yee.push_back( YeeLattice( mesh_lengths[0], 1, 1) );
-  yee = YeeLattice(mesh_lengths[0], 1, 1);
+  yee.emplace_back( mesh_lengths[0], 1, 1);
 }
 
 template<>
 void Tile<2>::add_yee_lattice() 
 {
-  //std::cout << "add 2D Yee \n";
-  //yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], 1) );
-  yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], 1);
+  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
+  //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], 1);
 }
 
 template<>
 void Tile<3>::add_yee_lattice() 
 {
-  //std::cout << "add 3D Yee \n";
-  //yee.push_back( YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]) );
-  yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+  //TODO
+  std::cout << "adding 3D Yee \n";
+  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+  //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
 
 //--------------------------------------------------

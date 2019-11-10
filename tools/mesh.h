@@ -91,6 +91,9 @@ class Mesh {
     
     //Mesh& operator=(const Mesh& other) = default;
 
+    virtual ~Mesh() = default;
+
+
     /// address to data
     T* data() { return mat.data(); }
 
