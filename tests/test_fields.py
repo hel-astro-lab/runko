@@ -59,10 +59,17 @@ def loadTiles3D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             for k in range(n.get_Nz()):
-                print("putting", i,j,k)
+
+                #print("putting", i,j,k)
                 #if n.get_mpi_grid(i,j) == n.rank:
-                c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                n.add_tile(c, (i,j,k) ) 
+                #c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                #n.add_tile(c, (i,j,k) ) 
+
+        
+                # 3D tiles have to be loaded like this to tie their lifetime into the grid
+                pyrunko.fields.threeD.make_and_add_tile( n, 
+                        conf.NxMesh, conf.NyMesh, conf.NzMesh, (i,j,k))
+
 
 
 def wrap(ii, N):
@@ -389,70 +396,75 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 3
         conf.NzMesh = 3 
 
-        print("mem bug --------")
-        print("grid")
+        #print("mem bug --------")
+        #print("grid")
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
-        print("lims")
+        #print("lims")
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
-        print("create2")
-        pyrunko.fields.threeD.make_and_add_tile(
+        #Second create mechanism with automatic tying of pointer to grid lifetime
+        #print("create2")
+        tile = pyrunko.fields.threeD.make_and_add_tile(
                 grid, 
                 conf.NxMesh, conf.NyMesh, conf.NzMesh,
                 (0,0,1)
                 )
-        tile = grid.get_tile(0,0,1)
 
+        #First default create mechanism
+        # NOTE: leads to segfaulting with 3D tiles. Most likely py GC cleans tiles
+        # aggressively.
         #print("create")
-        #tile = pyrunko.fields.threeD.make_tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         #tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        print("end of create")
+        #grid.add_tile(tile, (0,0,1) ) 
 
-        #grid.add_tile(
-        #    pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh),
-        #    (0,0,1))
+        #print("end of create")
 
         #tile = grid.get_tile(0,0,1)
         tile.set_tile_mins([1.0,1.0,1.0])
         tile.set_tile_maxs([2.0,2.0,2.0])
         #tile.add_analysis_species()
 
-        #print("get yee")
-        #yee0 = tile.get_yee()
+        #print("getting yee")
+        yee0 = tile.get_yee()
         #print("getting size")
-        #nx = yee0.ex.Nx
+        nx = yee0.ex.Nx
         #print("size", nx)
+        self.assertEqual(nx, conf.NxMesh)
 
-        print("yee size:", tile.yee0.ex.Nx, tile.yee0.ex.Ny, tile.yee0.ex.Nz)
-
-        #print("set yee")
-        #tile.yee0.ex[0,0,0] = 1.0
-
-        print("adding tile")
-        grid.add_tile(tile, (0,0,1) ) 
-
-        print("getting 000")
+        # now re-ask for the tile to test handling of multiple copies of same object
+        #print("---phase 2---")
+        #print("fetching another copy of the same tile")
+        #print("getting 000")
         c = grid.get_tile(0,0,1)
-        print(c.cid)
-        print(c.mins) 
-        print(c.maxs) 
-        print(c.index) 
+        #print(c.cid)
+        #print(c.mins) 
+        #print(c.maxs) 
+        #print(c.index) 
 
-        #print("get yee")
-        #yee = c.get_yee()
+        #print("getting yee")
+        yee = c.get_yee()
         #print("getting size")
-        #nx = tile.yee.ex.Nx
-        #print("size", nx)
-        print("size", c.yee.ex.nx)
+        nx = yee.ex.Nx
+        #print("size from yee", nx)
+        #print("size from tile directly", c.yee.ex.nx)
+        self.assertEqual(nx, conf.NxMesh)
 
         #analysis = c.get_analysis()
 
-        print("mem bug +++++++")
+        #now ask even more references
+        c1= grid.get_tile(0,0,1)
+        yee1 = c1.get_yee()
+
+        c2= grid.get_tile(0,0,1)
+        yee2 = c2.get_yee()
+
+        c3= grid.get_tile(0,0,1)
+        yee3 = c3.get_yee()
+
+        #print("mem bug +++++++")
 
 
-
-
-    def skip_test_updateBoundaries3D(self):
+    def test_updateBoundaries3D(self):
 
         conf = Conf()
 
@@ -463,17 +475,17 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 3
         conf.NzMesh = 3 
 
-        print("grid")
+        #print("grid")
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
-        print("lims")
+        #print("lims")
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
-        print("load")
+        #print("load")
         loadTiles3D(grid, conf)
 
-        print("getting 000")
-        c = grid.get_tile(0,0,0)
-        analysis = c.get_analysis()
+        #print("getting 000")
+        #c = grid.get_tile(0,0,0)
+        #analysis = c.get_analysis()
         #yee = c.get_yee()
 
         # lets put values into Yee lattice
@@ -483,15 +495,15 @@ class Communications(unittest.TestCase):
                 for k in range(grid.get_Nz()):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
-                        print("get tile", i,j,k)
+                        #print("get tile", i,j,k)
                         c = grid.get_tile(i,j,k)
-                        print("get yee")
+                        #print("get yee")
                         yee = c.get_yee()
 
                         for s in range(conf.NzMesh):
                             for r in range(conf.NyMesh):
                                 for q in range(conf.NxMesh):
-                                    print("set yee")
+                                    #print("set yee")
                                     yee.ex[q,r,s] = val
                                     yee.ey[q,r,s] = val
                                     yee.ez[q,r,s] = val

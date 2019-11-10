@@ -49,11 +49,19 @@ auto declare_tile(
     .def("deposit_current",     &fields::Tile<D>::deposit_current)
     .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
     .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
+
     .def("get_yee",             &fields::Tile<D>::get_yee, 
-                                py::arg("i")=0,
-                                py::return_value_policy::reference,
-                                py::keep_alive<0,1>()
-                                );
+        py::arg("i")=0,
+        py::return_value_policy::reference,
+        // keep alive for the lifetime of the grid
+        //
+        // pybind11:
+        // argument indices start at one, while zero refers to the return 
+        // value. For methods, index one refers to the implicit this pointer, 
+        // while regular arguments begin at index two. 
+        // py::keep_alive<nurse,patient>()
+        py::keep_alive<1,0>()
+        )
     .def("add_analysis_species",&fields::Tile<D>::add_analysis_species)
     .def("get_analysis",        &fields::Tile<D>::get_analysis, 
                                 py::arg("i")=0,
@@ -206,10 +214,18 @@ void bind_fields(py::module& m_sub)
     .def("update_boundaries",    &fields::Tile<3>::update_boundaries)
     .def("exchange_currents",    &fields::Tile<3>::exchange_currents)
     .def("get_yee",              &fields::Tile<3>::get_yee, 
-                                  py::arg("i")=0,
-                                  py::return_value_policy::reference,
-                                  py::keep_alive<0,1>())
-    .def("add_analysis_species", &fields::Tile<3>::add_analysis_species)
+        py::arg("i")=0,
+        py::return_value_policy::reference,
+        // keep alive for the lifetime of the grid
+        //
+        // pybind11:
+        // argument indices start at one, while zero refers to the return 
+        // value. For methods, index one refers to the implicit this pointer, 
+        // while regular arguments begin at index two. 
+        // py::keep_alive<nurse,patient>()
+        py::keep_alive<1,0>()
+        )
+    .def("add_analysis_species", &fields::Tile<3>::add_analysis_species);
 
     //.def_property("get_yee",
     //        [](fields::Tile<3> &self) { return self.yee; },
@@ -235,9 +251,15 @@ void bind_fields(py::module& m_sub)
         grid.add_tile(sp, indices);
         return sp;
       },
-        py::return_value_policy::reference
+        py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
-        //py::keep_alive<nurse,patient>()
+        //
+        // pybind11:
+        // argument indices start at one, while zero refers to the return 
+        // value. For methods, index one refers to the implicit this pointer, 
+        // while regular arguments begin at index two. 
+        // py::keep_alive<nurse,patient>()
+        py::keep_alive<1,0>()
       ); 
 
 

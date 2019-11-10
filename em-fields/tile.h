@@ -73,10 +73,7 @@ class YeeLattice {
     jz1(Nx, Ny, Nz)
     { }
 
-  //virtual ~YeeLattice() = default;
-  virtual ~YeeLattice() {
-    std::cout << "YeeLattice destructor being called\n";
-  };
+  virtual ~YeeLattice() = default;
 };
 
 
@@ -218,11 +215,7 @@ class Tile :
   // avoid copies; TODO: is this needed?
   Tile(Tile& ) = delete;
 
-  //~Tile() = default;
-  virtual ~Tile(){
-    std::cout << "somebody is calling Tile destructor here!";
-  };
-  //~Tile(){};
+  ~Tile() = default;
 
   //--------------------------------------------------
 

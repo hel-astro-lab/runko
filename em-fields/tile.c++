@@ -42,7 +42,7 @@ PlasmaMomentLattice& Tile<D>::get_analysis(size_t i)
   return this->analysis.at(i);
 }
 
-//template<std::size_t D>
+template<std::size_t D>
 const PlasmaMomentLattice& Tile<D>::get_const_analysis(size_t i) const 
 {
   return this->analysis.at(i);
@@ -69,15 +69,8 @@ void Tile<3>::add_analysis_species()
   // fit into the memory.
   assert(false);
 
-  //TODO
-  //std::cout << "emplacing moment lattice " << 
-  //  mesh_lengths[0] << " " << 
-  //  mesh_lengths[1] << " " << 
-  //  mesh_lengths[2] << "\n";
-
   //analysis.push_back(PlasmaMomentLattice(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]));
   //analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
-  //analysis.emplace_back(PlasmaMomentLattice(1,1,1));
 }
 
 
@@ -99,8 +92,6 @@ void Tile<2>::add_yee_lattice()
 template<>
 void Tile<3>::add_yee_lattice() 
 {
-  //TODO
-  std::cout << "adding 3D Yee \n";
   yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
   //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
