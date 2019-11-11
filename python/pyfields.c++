@@ -249,6 +249,8 @@ void bind_fields(py::module& m_sub)
         std::shared_ptr<fields::Tile<3>> sp(p);
 
         grid.add_tile(sp, indices);
+        sp->index = indices;
+
         return sp;
       },
         py::return_value_policy::reference,

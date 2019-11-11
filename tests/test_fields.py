@@ -463,8 +463,99 @@ class Communications(unittest.TestCase):
 
         #print("mem bug +++++++")
 
+    def test_tile_indices2D(self):
 
-    def test_updateBoundaries3D(self):
+        conf = Conf()
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 1
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.NzMesh = 1 
+
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        loadTiles2D(grid, conf)
+
+        # lets put values into Yee lattice
+        val = 1.0
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                #if n.get_mpi_grid(i,j) == n.rank:
+                if True:
+                    c = grid.get_tile(i,j)
+
+                    # Capture 3D indexing bug here where k index
+                    # did not match what was expected
+
+                    indx1 = c.index
+                    indx2 = c.communication.indices
+                    indx3 = c.get_index(grid)
+
+                    print("what got out 1:",c.cid," <-> ", i,j," vs. indx ", indx1)
+                    print("what got out 2:",c.cid," <-> ", i,j," vs. indx ", indx2)
+                    print("what got out 3:",c.cid," <-> ", i,j," vs. indx ", indx3)
+
+                    self.assertEqual(i, indx1[0])
+                    self.assertEqual(j, indx1[1])
+
+                    self.assertEqual(i, indx2[0])
+                    self.assertEqual(j, indx2[1])
+
+                    self.assertEqual(i, indx3[0])
+                    self.assertEqual(j, indx3[1])
+
+
+    def test_tile_indices3D(self):
+
+        conf = Conf()
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 3
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.NzMesh = 3
+
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+
+        loadTiles3D(grid, conf)
+
+        # lets put values into Yee lattice
+        val = 1.0
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                for k in range(grid.get_Nz()):
+                    #if n.get_mpi_grid(i,j) == n.rank:
+                    if True:
+                        c = grid.get_tile(i,j,k)
+
+                        # Capture 3D indexing bug here where k index
+                        # did not match what was expected
+
+                        indx1 = c.index
+                        indx2 = c.communication.indices
+                        indx3 = c.get_index(grid)
+
+                        print("what got out 1:",c.cid," <-> ", i,j," vs. indx ", indx1)
+                        print("what got out 2:",c.cid," <-> ", i,j," vs. indx ", indx2)
+                        print("what got out 3:",c.cid," <-> ", i,j," vs. indx ", indx3)
+
+                        self.assertEqual(i, indx1[0])
+                        self.assertEqual(j, indx1[1])
+                        self.assertEqual(k, indx1[2])
+
+                        self.assertEqual(i, indx2[0])
+                        self.assertEqual(j, indx2[1])
+                        self.assertEqual(k, indx2[2])
+
+                        self.assertEqual(i, indx3[0])
+                        self.assertEqual(j, indx3[1])
+                        self.assertEqual(k, indx3[2])
+
+
+    def skip_test_updateBoundaries3D(self):
 
         conf = Conf()
 
@@ -489,6 +580,8 @@ class Communications(unittest.TestCase):
         #yee = c.get_yee()
 
         # lets put values into Yee lattice
+        print("testing k index")
+        print()
         val = 1.0
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -497,6 +590,22 @@ class Communications(unittest.TestCase):
                     if True:
                         #print("get tile", i,j,k)
                         c = grid.get_tile(i,j,k)
+
+                        # Capture 3D indexing bug here where k index
+                        # did not match what was expected
+
+                        indx1 = c.index
+                        indx2 = c.communication.indices
+                        indx3 = c.get_index(grid)
+
+                        print("what got out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
+                        print("what got out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
+                        print("what got out 3:",c.cid," <-> ", i,j,k," vs. indx ", indx3)
+
+                        self.assertEqual(i, indx1[0])
+                        self.assertEqual(j, indx1[1])
+                        self.assertEqual(k, indx1[2])
+
                         #print("get yee")
                         yee = c.get_yee()
 
