@@ -205,52 +205,57 @@ void bind_fields(py::module& m_sub)
   /// General class for handling Maxwell's equations
   auto t1 = declare_tile<1>(m_1d, "Tile");
   auto t2 = declare_tile<2>(m_2d, "Tile");
-  //auto t3 = declare_tile<3>(m_3d, "Tile"); // defined below
-    
+  auto t3 = declare_tile<3>(m_3d, "Tile"); // defined below
+
+
+  // FIXME extra debug additions/tests
+  t3.def_property("yee", 
+    &fields::Tile<3>::get_yee2,
+    &fields::Tile<3>::set_yee,
+    py::return_value_policy::reference_internal, 
+    py::keep_alive<0,1>());
+  t3.def("get_yeeptr",           &fields::Tile<3>::get_yeeptr,
+        py::return_value_policy::reference_internal);
+
+
+
 
   // Declare manually instead because there are too many differences
-  py::class_<fields::Tile<3>, corgi::Tile<3>, 
-             std::shared_ptr<fields::Tile<3>>
-            >(m_3d, "Tile")
-    .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("dx",         &fields::Tile<3>::dx)
-    .def_readwrite("cfl",        &fields::Tile<3>::cfl)
-    //.def_readwrite("yee",        &fields::Tile<3>::yee,
-    //    py::return_value_policy::reference_internal, 
-    //    py::keep_alive<0,1>())
-    .def_property("yee", 
-        &fields::Tile<3>::get_yee2,
-        &fields::Tile<3>::set_yee,
-        py::return_value_policy::reference_internal, 
-        py::keep_alive<0,1>())
-    .def("cycle_yee",            &fields::Tile<3>::cycle_yee)
-    .def("cycle_current",        &fields::Tile<3>::cycle_current)
-    .def("clear_current",        &fields::Tile<3>::clear_current)
-    .def("deposit_current",      &fields::Tile<3>::deposit_current)
-    .def("update_boundaries",    &fields::Tile<3>::update_boundaries)
-    .def("exchange_currents",    &fields::Tile<3>::exchange_currents)
-    .def("get_yeeptr",           &fields::Tile<3>::get_yeeptr,
-        py::return_value_policy::reference_internal)
-    .def("get_yee",              &fields::Tile<3>::get_yee, 
-        py::arg("i")=0,
-        py::return_value_policy::reference,
-        // keep alive for the lifetime of the grid
-        //
-        // pybind11:
-        // argument indices start at one, while zero refers to the return 
-        // value. For methods, index one refers to the implicit this pointer, 
-        // while regular arguments begin at index two. 
-        // py::keep_alive<nurse,patient>()
-        py::keep_alive<1,0>()
-        )
-    .def("add_analysis_species", &fields::Tile<3>::add_analysis_species);
-
-    //.def_property("get_yee",
-    //        [](fields::Tile<3> &self) { return self.yee; },
-    //          py::cpp_function([](fields::Tile<3> &self, a *aptr) 
-    //            { 
-    //            self.ptrToA = aptr; 
-    //            }, py::keep_alive<1, 2>())
+  //py::class_<fields::Tile<3>, corgi::Tile<3>, 
+  //           std::shared_ptr<fields::Tile<3>>
+  //          >(m_3d, "Tile")
+  //  .def(py::init<size_t, size_t, size_t>())
+  //  .def_readwrite("dx",         &fields::Tile<3>::dx)
+  //  .def_readwrite("cfl",        &fields::Tile<3>::cfl)
+  //  //.def_readwrite("yee",        &fields::Tile<3>::yee,
+  //  //    py::return_value_policy::reference_internal, 
+  //  //    py::keep_alive<0,1>())
+  //  .def_property("yee", 
+  //      &fields::Tile<3>::get_yee2,
+  //      &fields::Tile<3>::set_yee,
+  //      py::return_value_policy::reference_internal, 
+  //      py::keep_alive<0,1>())
+  //  .def("cycle_yee",            &fields::Tile<3>::cycle_yee)
+  //  .def("cycle_current",        &fields::Tile<3>::cycle_current)
+  //  .def("clear_current",        &fields::Tile<3>::clear_current)
+  //  .def("deposit_current",      &fields::Tile<3>::deposit_current)
+  //  .def("update_boundaries",    &fields::Tile<3>::update_boundaries)
+  //  .def("exchange_currents",    &fields::Tile<3>::exchange_currents)
+  //  .def("get_yeeptr",           &fields::Tile<3>::get_yeeptr,
+  //      py::return_value_policy::reference_internal)
+  //  .def("get_yee",              &fields::Tile<3>::get_yee, 
+  //      py::arg("i")=0,
+  //      py::return_value_policy::reference,
+  //      // keep alive for the lifetime of the grid
+  //      //
+  //      // pybind11:
+  //      // argument indices start at one, while zero refers to the return 
+  //      // value. For methods, index one refers to the implicit this pointer, 
+  //      // while regular arguments begin at index two. 
+  //      // py::keep_alive<nurse,patient>()
+  //      py::keep_alive<1,0>()
+  //      )
+  //  .def("add_analysis_species", &fields::Tile<3>::add_analysis_species);
 
 
   // TODO: testing grid-based tile generator instead

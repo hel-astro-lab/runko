@@ -391,8 +391,8 @@ class Communications(unittest.TestCase):
         conf = Conf()
         conf.Nx = 3
         conf.Ny = 3
-        conf.NxMesh = 3
-        conf.NyMesh = 3
+        conf.NxMesh = 40
+        conf.NyMesh = 40
 
         #print("mem bug --------")
         #print("grid")
@@ -402,16 +402,32 @@ class Communications(unittest.TestCase):
 
         #print("load")
         tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, 1)
+        print("ref count tile 2d:", sys.getrefcount(tile))
         grid.add_tile(tile, (0,0) ) 
-
-        print(sys.getrefcount(tile))
-        print(gc.get_referrers(tile))
+        print("ref count tile 2d:", sys.getrefcount(tile))
 
         #print("getting 000")
         c = grid.get_tile(0,0)
         yee = c.get_yee()
 
         #print("mem bug +++++++")
+
+    def test_3D_mesh_memory_bug(self):
+        conf = Conf()
+        conf.NxMesh = 10
+        conf.NyMesh = 10
+        conf.NzMesh = 10
+
+        #print("\n mesh mem bug --------")
+        #print("separate pure python mesh")
+        abc = pyrunko.tools.Mesh_H3(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #print("ref count abc:", sys.getrefcount(abc))
+        nx = abc.size()
+        #print("size:", nx)
+
+        H = 3
+        self.assertEqual(nx, (conf.NxMesh+H*2)*(conf.NyMesh+H*2)*(conf.NzMesh+H*2))
+
 
     def test_3D_tile_memory_bug(self):
 
@@ -443,10 +459,9 @@ class Communications(unittest.TestCase):
         # aggressively.
         print("create")
         tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        print(sys.getrefcount(tile))
-        print(gc.get_referrers(tile))
+        print("ref count tile:", sys.getrefcount(tile))
         grid.add_tile(tile, (0,0,1) ) 
-        print(sys.getrefcount(tile))
+        print("ref count tile:", sys.getrefcount(tile))
         print("end of create")
 
         #tile = grid.get_tile(0,0,1)
@@ -461,22 +476,29 @@ class Communications(unittest.TestCase):
         #print("ending yee2")
 
 
-        print("getting yee p0")
-        yee0 = tile.get_yee()
-        #yee0 = tile.yee
-        #yee0 = tile.get_yeeptr()
-        print(sys.getrefcount(yee0))
-        print("getting ex")
-        ex0 = yee0.ex
-        #ex0 = yee0.get_ex()
-        #ex0 = yee0.ex2
-        print("getting size")
-        nx = ex0.size()
-        print("size was", nx)
-        self.assertEqual(nx, conf.NxMesh)
-        print("getting corner")
-        val = ex0[1,1,1]
-        print("end of getting yee p0")
+        if True:
+            print("getting yee p0")
+            yee0 = tile.get_yee()
+            #yee0 = tile.yee
+            #yee0 = tile.get_yeeptr()
+            print("ref count yee0:", sys.getrefcount(yee0))
+            print("getting ex")
+            ex0 = yee0.ex
+            #ex0 = yee0.get_ex()
+            #ex0 = yee0.ex2
+            print("getting size")
+            nt = ex0.size()
+            print("size was", nt)
+
+            nx = ex0.Nx
+            ny = ex0.Ny
+            nz = ex0.Nz
+            print("nx ny nz ", nx,ny,nz)
+
+            #self.assertEqual(nx, conf.NxMesh)
+            print("getting corner")
+            val = ex0[1,1,1]
+            print("end of getting yee p0")
 
         # now re-ask for the tile to test handling of multiple copies of same object
         print("---phase 2---")
@@ -488,21 +510,21 @@ class Communications(unittest.TestCase):
         print(c.maxs) 
         print(c.index) 
 
-        print(sys.getrefcount(c))
-        print(gc.get_referrers(c))
-
+        print("ref count tile:", sys.getrefcount(c))
 
         print("getting yee p1")
-        #yee = c.get_yee()
-        yee = c.yee
+        yee = c.get_yee()
+        print("ref count yee:", sys.getrefcount(yee))
+        #yee = c.yee
         #yee = c.get_yeeptr()
         print("getting ex")
         ex = yee.ex
+        print("ref count ex:", sys.getrefcount(ex))
         #ex = yee.get_ex()
         print("getting corner")
-        val = yee.ex[0,0,0]
+        val = yee.ex[1,1,1]
         print("getting size")
-        nx = ex.Nx
+        nx = ex.size()
         print("size from yee", nx)
         #print("size from tile directly", c.yee.ex.nx)
         self.assertEqual(nx, conf.NxMesh)

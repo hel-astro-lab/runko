@@ -23,8 +23,6 @@ class Mesh
 {
 
   public:
-    /// internal storage
-    std::vector<T> mat;
 
     /// grid size along x
     size_t Nx;
@@ -35,6 +33,8 @@ class Mesh
     /// grid size along z
     size_t Nz;
 
+    /// internal storage
+    std::vector<T> mat;
 
     /// Internal indexing with halo region padding of width H
     inline size_t indx(int i, int j, int k) const {
@@ -66,19 +66,26 @@ class Mesh
 
     /// empty default constructor
     //Mesh() = default;
-    Mesh() 
+    Mesh() :
+      Nx(1),
+      Ny(1),
+      Nz(1),
+      mat( (Nx + 2*(size_t)H)*(Ny + 2*(size_t)H)*(Nz + 2*(size_t)H) )
     {
       mat.resize( 1 );
       std::cout << "Mesh ctor empty\n";
     }
 
     /// standard initialization
-    Mesh(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
-      Nx(Nx_in), Ny(Ny_in), Nz(Nz_in) 
+    Mesh(size_t nx, size_t ny, size_t nz) : 
+      Nx(nx), 
+      Ny(ny), 
+      Nz(nz),
+      mat( (Nx + 2*(size_t)H)*(Ny + 2*(size_t)H)*(Nz + 2*(size_t)H) )
     {
       std::cout << "Mesh ctor: 0  " << Nx << " " << Ny << " " << Nz << " s:" << mat.size() << "\n";
       try {
-        mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
+        //mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) ); //automatically done at construction
         std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
       } catch ( std::exception& e) {
         // whoops... if control reaches here, a memory allocation
@@ -103,18 +110,18 @@ class Mesh
     // explicit default copy operator
     //Mesh(Mesh& other) = default;
     Mesh(Mesh& other) :
-      mat(other.mat),
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz)
+      Nz(other.Nz),
+      mat(other.mat)
     { }
 
     // Mesh(const Mesh& other) = default;
     Mesh(const Mesh& other) :
-      mat(other.mat),
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz)
+      Nz(other.Nz),
+      mat(other.mat)
     { }
     
     // public swap for efficient memory management
@@ -192,7 +199,7 @@ class Mesh
       Nx = Nx_in;
       Ny = Ny_in;
       Nz = Nz_in;
-      mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
+      mat.resize( (Nx + 2*(size_t)H)*(Ny + 2*(size_t)H)*(Nz + 2*(size_t)H) );
 
       int q = 0;
       for(int k=0; k<int(Nz); k++)
