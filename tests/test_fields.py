@@ -462,16 +462,16 @@ class Communications(unittest.TestCase):
 
 
         print("getting yee p0")
-        #yee0 = tile.get_yee()
-        yee0 = tile.yee
+        yee0 = tile.get_yee()
+        #yee0 = tile.yee
         #yee0 = tile.get_yeeptr()
         print(sys.getrefcount(yee0))
         print("getting ex")
-        #ex0 = yee0.ex
+        ex0 = yee0.ex
         #ex0 = yee0.get_ex()
-        ex0 = yee0.ex2
+        #ex0 = yee0.ex2
         print("getting size")
-        nx = ex0.Nx
+        nx = ex0.size()
         print("size was", nx)
         self.assertEqual(nx, conf.NxMesh)
         print("getting corner")

@@ -50,27 +50,25 @@ class YeeLattice
 
 
   // default empty constructor
-  YeeLattice() {};
+  YeeLattice() 
+  {
+    std::cout << "YeeL ctor empty\n";
+  };
 
 
   // real initializer constructor
   YeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
-
     ex(Nx, Ny, Nz),
     ey(Nx, Ny, Nz),
     ez(Nx, Ny, Nz),
-
     bx(Nx, Ny, Nz),
     by(Nx, Ny, Nz),
     bz(Nx, Ny, Nz),
-
     rho(Nx, Ny, Nz),
-
     jx(Nx, Ny, Nz),
     jy(Nx, Ny, Nz),
     jz(Nx, Ny, Nz),
-
     jx1(Nx, Ny, Nz),
     jy1(Nx, Ny, Nz),
     jz1(Nx, Ny, Nz)

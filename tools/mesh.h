@@ -65,12 +65,18 @@ class Mesh
     }
 
     /// empty default constructor
-    Mesh() = default;
+    //Mesh() = default;
+    Mesh() 
+    {
+      mat.resize( 1 );
+      std::cout << "Mesh ctor empty\n";
+    }
 
     /// standard initialization
     Mesh(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
       Nx(Nx_in), Ny(Ny_in), Nz(Nz_in) 
     {
+      std::cout << "Mesh ctor: 0  " << Nx << " " << Ny << " " << Nz << " s:" << mat.size() << "\n";
       try {
         mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
         std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
@@ -80,8 +86,9 @@ class Mesh
         std::cout << "Standard exception: " << e.what() << std::endl;
         assert(false);
       }
-      std::cout << "Mesh ctor: (" << Nx << "," << Ny << "," << Nz << ")\n";
+      std::cout << "Mesh ctor: 1 (" << Nx << "," << Ny << "," << Nz << ") s:" << mat.size() << "\n";
 
+      if(mat.size() < 1) assert(false);
     };
 
     // 2D shortcut

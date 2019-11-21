@@ -146,11 +146,9 @@ void bind_fields(py::module& m_sub)
     
   //--------------------------------------------------
 
-  // TODO: can use unique here too as:
-  // std::unique_ptr<fields::YeeLattice, py::nodelete> 
   py::class_<
-    fields::YeeLattice
-    //std::shared_ptr<fields::YeeLattice> 
+    fields::YeeLattice,
+    std::shared_ptr<fields::YeeLattice>
     //std::unique_ptr<fields::YeeLattice, py::nodelete>
             >(m_sub, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
@@ -177,8 +175,8 @@ void bind_fields(py::module& m_sub)
 
   // TODO: can use unique here too?
   py::class_<
-    fields::PlasmaMomentLattice
-    //std::shared_ptr<fields::PlasmaMomentLattice> 
+    fields::PlasmaMomentLattice,
+    std::shared_ptr<fields::PlasmaMomentLattice> 
             >(m_sub, "PlasmaMomentLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho)

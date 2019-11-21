@@ -34,14 +34,15 @@ void declare_mesh(
 
     py::class_<
       toolbox::Mesh<T,H>,
-      //std::shared_ptr<toolbox::Mesh<T,H>>
-      std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
+      std::shared_ptr<toolbox::Mesh<T,H>>
+      //std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
             >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("Nx", &Class::Nx)
     .def_readwrite("Ny", &Class::Ny)
     .def_readwrite("Nz", &Class::Nz)
     .def("indx",         &Class::indx)
+    .def("size",         &Class::size)
     .def("__getitem__", [](Class &s, py::tuple indx) 
       {
         auto i = indx[0].cast<int>();
