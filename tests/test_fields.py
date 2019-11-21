@@ -8,7 +8,7 @@ import numpy as np
 import pycorgi
 import pyrunko
 
-#import gc
+import gc
 #gc.set_debug(gc.DEBUG_LEAK|gc.DEBUG_STATS)
 
 class Conf:
@@ -62,14 +62,39 @@ def loadTiles3D(n, conf):
 
                 #print("putting", i,j,k)
                 #if n.get_mpi_grid(i,j) == n.rank:
-                #c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                #n.add_tile(c, (i,j,k) ) 
+                c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                n.add_tile(c, (i,j,k) ) 
 
         
                 # 3D tiles have to be loaded like this to tie their lifetime into the grid
-                pyrunko.fields.threeD.make_and_add_tile( n, 
-                        conf.NxMesh, conf.NyMesh, conf.NzMesh, (i,j,k))
+                print("++++++++++++++++?")
+                #c = pyrunko.fields.threeD.make_and_add_tile( n, 
+                #        conf.NxMesh, conf.NyMesh, conf.NzMesh, (i,j,k))
 
+                print(sys.getrefcount(c))
+                print(gc.get_referrers(c))
+
+                indx1 = c.index
+                indx2 = c.communication.indices
+                indx3 = c.get_index(n)
+
+                print("---------Out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
+                print("---------Out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
+                print("---------Out 3:",c.cid," <-> ", i,j,k," vs. indx ", indx3)
+
+                #self.assertEqual(i, indx1[0])
+                #self.assertEqual(j, indx1[1])
+                #self.assertEqual(k, indx1[2])
+
+                #c1 = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                #print(sys.getrefcount(c1))
+                #print(gc.get_referrers(c1))
+                #indx1 = c1.index
+                #indx2 = c1.communication.indices
+                #indx3 = c1.get_index(n)
+                #print("---------Out 1:",c1.cid," <-> ", i,j,k," vs. indx ", indx1)
+                #print("---------Out 2:",c1.cid," <-> ", i,j,k," vs. indx ", indx2)
+                #print("---------Out 3:",c1.cid," <-> ", i,j,k," vs. indx ", indx3)
 
 
 def wrap(ii, N):
@@ -379,6 +404,9 @@ class Communications(unittest.TestCase):
         tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, 1)
         grid.add_tile(tile, (0,0) ) 
 
+        print(sys.getrefcount(tile))
+        print(gc.get_referrers(tile))
+
         #print("getting 000")
         c = grid.get_tile(0,0)
         yee = c.get_yee()
@@ -392,11 +420,11 @@ class Communications(unittest.TestCase):
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 3
-        conf.NxMesh = 3
-        conf.NyMesh = 3
-        conf.NzMesh = 3 
+        conf.NxMesh = 10
+        conf.NyMesh = 10
+        conf.NzMesh = 10
 
-        #print("mem bug --------")
+        print("\n mem bug --------")
         #print("grid")
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         #print("lims")
@@ -404,48 +432,78 @@ class Communications(unittest.TestCase):
 
         #Second create mechanism with automatic tying of pointer to grid lifetime
         #print("create2")
-        tile = pyrunko.fields.threeD.make_and_add_tile(
-                grid, 
-                conf.NxMesh, conf.NyMesh, conf.NzMesh,
-                (0,0,1)
-                )
+        #tile = pyrunko.fields.threeD.make_and_add_tile(
+        #        grid, 
+        #        conf.NxMesh, conf.NyMesh, conf.NzMesh,
+        #        (0,0,1)
+        #        )
 
         #First default create mechanism
         # NOTE: leads to segfaulting with 3D tiles. Most likely py GC cleans tiles
         # aggressively.
-        #print("create")
-        #tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        #grid.add_tile(tile, (0,0,1) ) 
-
-        #print("end of create")
+        print("create")
+        tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        print(sys.getrefcount(tile))
+        print(gc.get_referrers(tile))
+        grid.add_tile(tile, (0,0,1) ) 
+        print(sys.getrefcount(tile))
+        print("end of create")
 
         #tile = grid.get_tile(0,0,1)
         tile.set_tile_mins([1.0,1.0,1.0])
         tile.set_tile_maxs([2.0,2.0,2.0])
         #tile.add_analysis_species()
 
-        #print("getting yee")
-        yee0 = tile.get_yee()
-        #print("getting size")
-        nx = yee0.ex.Nx
-        #print("size", nx)
+
+        #print("creating yee2")
+        #yee2 = pyrunko.fields.YeeLattice(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #print(sys.getrefcount(yee2))
+        #print("ending yee2")
+
+
+        print("getting yee p0")
+        #yee0 = tile.get_yee()
+        yee0 = tile.yee
+        #yee0 = tile.get_yeeptr()
+        print(sys.getrefcount(yee0))
+        print("getting ex")
+        #ex0 = yee0.ex
+        #ex0 = yee0.get_ex()
+        ex0 = yee0.ex2
+        print("getting size")
+        nx = ex0.Nx
+        print("size was", nx)
         self.assertEqual(nx, conf.NxMesh)
+        print("getting corner")
+        val = ex0[1,1,1]
+        print("end of getting yee p0")
 
         # now re-ask for the tile to test handling of multiple copies of same object
-        #print("---phase 2---")
-        #print("fetching another copy of the same tile")
+        print("---phase 2---")
+        print("fetching another copy of the same tile")
         #print("getting 000")
         c = grid.get_tile(0,0,1)
-        #print(c.cid)
-        #print(c.mins) 
-        #print(c.maxs) 
-        #print(c.index) 
+        print(c.cid)
+        print(c.mins) 
+        print(c.maxs) 
+        print(c.index) 
 
-        #print("getting yee")
-        yee = c.get_yee()
-        #print("getting size")
-        nx = yee.ex.Nx
-        #print("size from yee", nx)
+        print(sys.getrefcount(c))
+        print(gc.get_referrers(c))
+
+
+        print("getting yee p1")
+        #yee = c.get_yee()
+        yee = c.yee
+        #yee = c.get_yeeptr()
+        print("getting ex")
+        ex = yee.ex
+        #ex = yee.get_ex()
+        print("getting corner")
+        val = yee.ex[0,0,0]
+        print("getting size")
+        nx = ex.Nx
+        print("size from yee", nx)
         #print("size from tile directly", c.yee.ex.nx)
         self.assertEqual(nx, conf.NxMesh)
 
@@ -454,16 +512,19 @@ class Communications(unittest.TestCase):
         #now ask even more references
         c1= grid.get_tile(0,0,1)
         yee1 = c1.get_yee()
+        ex1 = c1.ex
 
         c2= grid.get_tile(0,0,1)
         yee2 = c2.get_yee()
+        ex2 = c2.ex
 
         c3= grid.get_tile(0,0,1)
         yee3 = c3.get_yee()
+        ex3 = c3.ex
 
-        #print("mem bug +++++++")
+        print("mem bug +++++++")
 
-    def test_tile_indices2D(self):
+    def skip_test_tile_indices2D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -507,7 +568,7 @@ class Communications(unittest.TestCase):
                     self.assertEqual(j, indx3[1])
 
 
-    def test_tile_indices3D(self):
+    def skip_test_tile_indices3D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -582,6 +643,7 @@ class Communications(unittest.TestCase):
         # lets put values into Yee lattice
         print("testing k index")
         print()
+
         val = 1.0
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -594,17 +656,17 @@ class Communications(unittest.TestCase):
                         # Capture 3D indexing bug here where k index
                         # did not match what was expected
 
-                        indx1 = c.index
-                        indx2 = c.communication.indices
-                        indx3 = c.get_index(grid)
+                        #indx1 = c.index
+                        #indx2 = c.communication.indices
+                        indx = c.get_index(grid)
 
-                        print("what got out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
-                        print("what got out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
-                        print("what got out 3:",c.cid," <-> ", i,j,k," vs. indx ", indx3)
+                        #print("what got out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
+                        #print("what got out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
+                        #print("what got out 3:",c.cid," <-> ", i,j,k," vs. indx ", indx3)
 
-                        self.assertEqual(i, indx1[0])
-                        self.assertEqual(j, indx1[1])
-                        self.assertEqual(k, indx1[2])
+                        #self.assertEqual(i, indx[0])
+                        #self.assertEqual(j, indx[1])
+                        #self.assertEqual(k, indx[2])
 
                         #print("get yee")
                         yee = c.get_yee()
@@ -630,15 +692,16 @@ class Communications(unittest.TestCase):
 
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
-            (i, j, k) = c.index
+            #(i, j, k) = c.index
+            (i, j, k) = c.get_index(grid)
 
             yee = c.get_yee(0)
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
                     for s in range(conf.NzMesh):
-                        print("indices:")
-                        print(q,r,s)
-                        print(i,j)
+                        #print("indices:")
+                        #print(q,r,s)
+                        #print(i,j)
 
                         data[ i*conf.NxMesh + q, j*conf.NyMesh + r, k*conf.NzMesh + s, 0] = yee.ex[q,r,s]
                         data[ i*conf.NxMesh + q, j*conf.NyMesh + r, k*conf.NzMesh + s, 1] = yee.ey[q,r,s]
@@ -674,7 +737,7 @@ class Communications(unittest.TestCase):
         m = 0
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
-            (i, j, k) = c.index
+            (i, j, k) = c.get_index(grid)
             yee = c.get_yee(0)
 
             for s in range(-3, conf.NzMesh+3, 1):

@@ -163,7 +163,7 @@ void ParticleContainer::add_identified_particle (
 }
 
 
-
+//template<size_t D>
 void ParticleContainer::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)
@@ -207,11 +207,15 @@ void ParticleContainer::check_outgoing_particles(
 
     // FIXME: hack to make this work with 2D 
     if ((i == 0) && (j == 0)) continue; 
+    //if (D == 2) {
+    //  if ((i == 0) && (j == 0)) continue; 
+    //}
 
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
   }
 }
+
 
 
 void ParticleContainer::delete_particles(std::vector<int> to_be_deleted) 
@@ -454,3 +458,7 @@ void ParticleContainer::set_keygen_state(int __key, int __rank)
 
 
 } // end ns pic
+
+
+//template<> void pic::ParticleContainer::check_outgoing_particles<2>;
+//template<> void pic::ParticleContainer::check_outgoing_particles<3>;

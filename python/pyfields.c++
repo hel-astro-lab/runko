@@ -149,28 +149,36 @@ void bind_fields(py::module& m_sub)
   // TODO: can use unique here too as:
   // std::unique_ptr<fields::YeeLattice, py::nodelete> 
   py::class_<
-    fields::YeeLattice, 
-    std::shared_ptr<fields::YeeLattice> 
+    fields::YeeLattice
+    //std::shared_ptr<fields::YeeLattice> 
+    //std::unique_ptr<fields::YeeLattice, py::nodelete>
             >(m_sub, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("ex",   &fields::YeeLattice::ex)
-    .def_readwrite("ey",   &fields::YeeLattice::ey)
-    .def_readwrite("ez",   &fields::YeeLattice::ez)
-    .def_readwrite("bx",   &fields::YeeLattice::bx)
-    .def_readwrite("by",   &fields::YeeLattice::by)
-    .def_readwrite("bz",   &fields::YeeLattice::bz)
-    .def_readwrite("jx",   &fields::YeeLattice::jx)
-    .def_readwrite("jy",   &fields::YeeLattice::jy)
-    .def_readwrite("jz",   &fields::YeeLattice::jz)
-    .def_readwrite("jx1",  &fields::YeeLattice::jx1)
-    .def_readwrite("rho",  &fields::YeeLattice::rho);
+    .def_readwrite("ex",   &fields::YeeLattice::ex   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("ey",   &fields::YeeLattice::ey   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("ez",   &fields::YeeLattice::ez   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("bx",   &fields::YeeLattice::bx   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("by",   &fields::YeeLattice::by   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("bz",   &fields::YeeLattice::bz   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("jx",   &fields::YeeLattice::jx   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("jy",   &fields::YeeLattice::jy   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("jz",   &fields::YeeLattice::jz   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("jx1",  &fields::YeeLattice::jx1  ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_readwrite("rho",  &fields::YeeLattice::rho  ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
+    .def_property("ex2",   
+        [](YeeLattice& self) { return self.ex; },
+        [](YeeLattice& self, toolbox::Mesh<double,3>& v) { self.ex = v; },
+        py::return_value_policy::reference_internal, 
+        py::keep_alive<1,0>() 
+        );
+
 
   //--------------------------------------------------
 
   // TODO: can use unique here too?
   py::class_<
-    fields::PlasmaMomentLattice, 
-    std::shared_ptr<fields::PlasmaMomentLattice> 
+    fields::PlasmaMomentLattice
+    //std::shared_ptr<fields::PlasmaMomentLattice> 
             >(m_sub, "PlasmaMomentLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho)
@@ -199,20 +207,32 @@ void bind_fields(py::module& m_sub)
   /// General class for handling Maxwell's equations
   auto t1 = declare_tile<1>(m_1d, "Tile");
   auto t2 = declare_tile<2>(m_2d, "Tile");
-  //auto t3 = declare_tile<3>(m_3d, "Tile");
+  //auto t3 = declare_tile<3>(m_3d, "Tile"); // defined below
     
+
   // Declare manually instead because there are too many differences
-  py::class_<fields::Tile<3>, corgi::Tile<3>, std::shared_ptr<fields::Tile<3>>
+  py::class_<fields::Tile<3>, corgi::Tile<3>, 
+             std::shared_ptr<fields::Tile<3>>
             >(m_3d, "Tile")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",         &fields::Tile<3>::dx)
     .def_readwrite("cfl",        &fields::Tile<3>::cfl)
+    //.def_readwrite("yee",        &fields::Tile<3>::yee,
+    //    py::return_value_policy::reference_internal, 
+    //    py::keep_alive<0,1>())
+    .def_property("yee", 
+        &fields::Tile<3>::get_yee2,
+        &fields::Tile<3>::set_yee,
+        py::return_value_policy::reference_internal, 
+        py::keep_alive<0,1>())
     .def("cycle_yee",            &fields::Tile<3>::cycle_yee)
     .def("cycle_current",        &fields::Tile<3>::cycle_current)
     .def("clear_current",        &fields::Tile<3>::clear_current)
     .def("deposit_current",      &fields::Tile<3>::deposit_current)
     .def("update_boundaries",    &fields::Tile<3>::update_boundaries)
     .def("exchange_currents",    &fields::Tile<3>::exchange_currents)
+    .def("get_yeeptr",           &fields::Tile<3>::get_yeeptr,
+        py::return_value_policy::reference_internal)
     .def("get_yee",              &fields::Tile<3>::get_yee, 
         py::arg("i")=0,
         py::return_value_policy::reference,
@@ -245,15 +265,22 @@ void bind_fields(py::module& m_sub)
         corgi::internals::tuple_of<3, size_t> indices
         ) {
 
-        auto p = new fields::Tile<3>(nx,ny,nz);
-        std::shared_ptr<fields::Tile<3>> sp(p);
-
+        //auto p = new fields::Tile<3>(nx,ny,nz);
+        //std::shared_ptr<fields::Tile<3>> sp(p);
+        //sp->index = indices;
+        //grid.add_tile(sp, indices);
+          
+        std::shared_ptr<fields::Tile<3>> sp(new fields::Tile<3>(nx,ny,nz));
         grid.add_tile(sp, indices);
-        sp->index = indices;
 
-        return sp;
+        //fields::Tile<3> ti(nx,ny,nz);
+        //std::shared_ptr<fields::Tile<3>> sp(&ti);
+        //grid.add_tile(sp, indices);
+
+        auto t = grid.get_tileptr(indices);
+        return t;
       },
-        py::return_value_policy::reference,
+        //py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
         //
         // pybind11:

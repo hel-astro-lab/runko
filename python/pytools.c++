@@ -9,6 +9,7 @@
 
 #include "../tools/hilbert.h"
 
+#include <exception>
 
 
 namespace tools{
@@ -29,21 +30,27 @@ void declare_mesh(
 {
 
     using Class = toolbox::Mesh<T, H>;
-    py::class_<Class>(m, pyclass_name.c_str())
+    //py::class_<Class>(m, pyclass_name.c_str())
 
+    py::class_<
+      toolbox::Mesh<T,H>,
+      //std::shared_ptr<toolbox::Mesh<T,H>>
+      std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
+            >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("Nx", &Class::Nx)
     .def_readwrite("Ny", &Class::Ny)
     .def_readwrite("Nz", &Class::Nz)
     .def("indx",         &Class::indx)
-    .def("__getitem__", [](const Class &s, py::tuple indx) 
+    .def("__getitem__", [](Class &s, py::tuple indx) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
         auto k = indx[2].cast<int>();
-
+        std::cout << "__getitem__ " << i << " " << j << " " << k << "\n";
 
         // NOTE: these are out-of-bounds; not inbound checks
+        try {
         if (i < -H) throw py::index_error();
         if (j < -H) throw py::index_error();
         if (k < -H) throw py::index_error();
@@ -51,9 +58,16 @@ void declare_mesh(
         if (i >= (int)s.Nx+H) throw py::index_error();
         if (j >= (int)s.Ny+H) throw py::index_error();
         if (k >= (int)s.Nz+H) throw py::index_error();
+        } catch (std::exception& e) {
+        std::cout << "Standard exception: " << e.what() << std::endl;
+        }
+        std::cout << "__getitem passed ind__ nxnynz:" << s.Nx+H << " " << s.Ny+H << " " << s.Nz+H << "\n";
+
+        T val = s(i,j,k);
+        return val;
 
         return s(i,j,k);
-      })
+      }, py::return_value_policy::reference)
     .def("__setitem__", [](Class &s, py::tuple indx, Realf val) 
       {
         auto i = indx[0].cast<int>();

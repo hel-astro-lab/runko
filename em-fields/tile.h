@@ -15,7 +15,9 @@ namespace fields {
 
 
 /// Yee lattice of plasma quantities
-class YeeLattice {
+class YeeLattice 
+//  public std::enable_shared_from_this<YeeLattice>
+{
 
   public:
 
@@ -48,7 +50,8 @@ class YeeLattice {
 
 
   // default empty constructor
-  //YeeLattice() {};
+  YeeLattice() {};
+
 
   // real initializer constructor
   YeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
@@ -71,9 +74,98 @@ class YeeLattice {
     jx1(Nx, Ny, Nz),
     jy1(Nx, Ny, Nz),
     jz1(Nx, Ny, Nz)
-    { }
+    { 
+      std::cout << "YeeL ctor: (" << Nx << "," << Ny << "," << Nz << ")\n";
+    }
 
-  virtual ~YeeLattice() = default;
+  // copy ctor
+  YeeLattice(YeeLattice& other) :
+    Nx(other.Nx),
+    Ny(other.Ny),
+    Nz(other.Nz),
+    ex(other.ex),
+    ey(other.ey),
+    ez(other.ez),
+    bx(other.bx),
+    by(other.by),
+    bz(other.bz),
+    rho(other.rho),
+    jx(other.jx),
+    jy(other.jy),
+    jz(other.jz),
+    jx1(other.jx1),
+    jy1(other.jy1),
+    jz1(other.jz1)
+  {
+    std::cout << "Yee copy ctor\n";
+  }
+
+  YeeLattice(const YeeLattice& other) :
+    Nx(other.Nx),
+    Ny(other.Ny),
+    Nz(other.Nz),
+    ex(other.ex),
+    ey(other.ey),
+    ez(other.ez),
+    bx(other.bx),
+    by(other.by),
+    bz(other.bz),
+    rho(other.rho),
+    jx(other.jx),
+    jy(other.jy),
+    jz(other.jz),
+    jx1(other.jx1),
+    jy1(other.jy1),
+    jz1(other.jz1)
+  {
+    std::cout << "const Yee copy ctor\n";
+  }
+
+  // move constructor
+  YeeLattice(YeeLattice&& other)
+      : YeeLattice() // initialize via default constructor, C++11 only
+  {
+    swap(*this, other);
+  }
+
+
+  // public swap for efficient memory management
+  friend void swap(YeeLattice& first, YeeLattice& second)
+  {
+    using std::swap;
+    swap(first.Nx,  second.Nx);
+    swap(first.Ny,  second.Ny);
+    swap(first.Nz,  second.Nz);
+    swap(first.ex , second.ex);
+    swap(first.ey , second.ey);
+    swap(first.ez , second.ez);
+    swap(first.bx , second.bx);
+    swap(first.by , second.by);
+    swap(first.bz , second.bz);
+    swap(first.rho, second.rho);
+    swap(first.jx , second.jx);
+    swap(first.jy , second.jy);
+    swap(first.jz , second.jz);
+    swap(first.jx1, second.jx1);
+    swap(first.jy1, second.jy1);
+    swap(first.jz1, second.jz1);
+  }
+
+  // copy-and-swap algorithm
+  YeeLattice& operator=(YeeLattice other) 
+  {
+    swap(*this, other);
+    return *this;
+  }
+
+  //virtual ~YeeLattice() = default;
+  ~YeeLattice() {
+    std::cout << "~YeeLattice\n";
+  }
+
+
+  
+
 };
 
 
@@ -137,7 +229,7 @@ class PlasmaMomentLattice {
     shearyz( Nx, Ny, Nz )
   { }
 
-  virtual ~PlasmaMomentLattice() = default;
+  //virtual ~PlasmaMomentLattice() = default;
 
   // clear all internal storages
   void clear() 
@@ -172,7 +264,8 @@ class PlasmaMomentLattice {
  */
 template<std::size_t D>
 class Tile : 
-  virtual public corgi::Tile<D> 
+  virtual public corgi::Tile<D>,
+  public std::enable_shared_from_this<Tile<D>>
 {
 
   public:
@@ -182,8 +275,8 @@ class Tile :
 
   /// Yee lattice of plasma quantities (with 1 timestep)
   //toolbox::Rotator<YeeLattice, 1> yee;
-  //YeeLattice yee;
-  std::vector<YeeLattice> yee;
+  YeeLattice yee;
+  //std::vector<YeeLattice> yee;
 
   /// species-specific analysis results
   std::vector<PlasmaMomentLattice> analysis;
@@ -202,20 +295,26 @@ class Tile :
   //--------------------------------------------------
   // constructor with internal mesh dimensions
   Tile(size_t nx, size_t ny, size_t nz) :
-    mesh_lengths {{nx, ny, nz}}
+    mesh_lengths {{nx, ny, nz}},
+    yee(nx,ny,nz)
   {
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);
 
     // initialize one Yee lattice into the grid 
     // TODO: into data rotator?
-    add_yee_lattice();
+    //std::cout<<"len0 of yee vec:" << yee.size() << "\n";
+    //add_yee_lattice();
+    //std::cout<<"len1 of yee vec:" << yee.size() << "\n";
   }
 
   // avoid copies; TODO: is this needed?
   Tile(Tile& ) = delete;
 
-  ~Tile() = default;
+  //~Tile() = default;
+  ~Tile() {
+    std::cout << "~Tile\n";
+  }
 
   //--------------------------------------------------
 
@@ -226,6 +325,12 @@ class Tile :
   virtual void deposit_current();
 
   virtual YeeLattice& get_yee(size_t i=0);
+
+  virtual YeeLattice& get_yee2();
+
+  virtual void set_yee(YeeLattice& v);
+
+  virtual std::shared_ptr<YeeLattice> get_yeeptr();
 
   virtual PlasmaMomentLattice& get_analysis(size_t i);
 

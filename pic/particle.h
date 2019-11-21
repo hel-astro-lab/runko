@@ -265,6 +265,7 @@ class ParticleContainer {
   // particle boundary checks
 
   /// check and mark particles exceeding given limits
+  //template <size_t D> 
   void check_outgoing_particles(
       std::array<double,3>&,
       std::array<double,3>& );

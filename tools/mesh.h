@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdexcept>
 #include <cassert>
+#include <exception>
 
 
 namespace toolbox {
@@ -18,9 +19,10 @@ namespace toolbox {
  */
 
 template <class T, int H=0> 
-class Mesh {
-  public:
+class Mesh 
+{
 
+  public:
     /// internal storage
     std::vector<T> mat;
 
@@ -40,16 +42,13 @@ class Mesh {
       assert( (j >= -H) && (j <  (int)Ny + H)  );
       assert( (k >= -H) && (k <  (int)Nz + H)  );
 
-
       int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
 
-      /*
       std::cout << "indx: " << indx;
       std::cout << "i: " << i << " j " << j << " k " << k << "\n";
       std::cout << "H: " << H << "\n";
       std::cout << "size: " << mat.size() << "\n";
       std::cout << "Nx: " << Nx << " Ny " << Ny << " Nz " << Nz << "\n";
-      */
 
       assert( (indx >= 0) && (indx <  (int)mat.size() ) );
 
@@ -66,14 +65,23 @@ class Mesh {
     }
 
     /// empty default constructor
-    //Mesh() {};
+    Mesh() = default;
 
-    /// Default initialization
+    /// standard initialization
     Mesh(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
       Nx(Nx_in), Ny(Ny_in), Nz(Nz_in) 
     {
-      mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
-      std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
+      try {
+        mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
+        std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
+      } catch ( std::exception& e) {
+        // whoops... if control reaches here, a memory allocation
+        // failure occurred somewhere.
+        std::cout << "Standard exception: " << e.what() << std::endl;
+        assert(false);
+      }
+      std::cout << "Mesh ctor: (" << Nx << "," << Ny << "," << Nz << ")\n";
+
     };
 
     // 2D shortcut
@@ -86,13 +94,59 @@ class Mesh {
 
 
     // explicit default copy operator
-    Mesh(Mesh& other) = default;
-    Mesh(const Mesh& other) = default;
+    //Mesh(Mesh& other) = default;
+    Mesh(Mesh& other) :
+      mat(other.mat),
+      Nx(other.Nx),
+      Ny(other.Ny),
+      Nz(other.Nz)
+    { }
+
+    // Mesh(const Mesh& other) = default;
+    Mesh(const Mesh& other) :
+      mat(other.mat),
+      Nx(other.Nx),
+      Ny(other.Ny),
+      Nz(other.Nz)
+    { }
     
+    // public swap for efficient memory management
+    friend void swap(Mesh& first, Mesh& second)
+    {
+        using std::swap;
+
+        swap(first.Nx, second.Nx);
+        swap(first.Ny, second.Ny);
+        swap(first.Nz, second.Nz);
+        swap(first.mat, second.mat);
+    }
+
     //Mesh& operator=(const Mesh& other) = default;
+    // copy-and-swap algorithm
+    //
+    // NOTE: rhs is passed by value.
+    // See: 
+    // https://web.archive.org/web/20140113221447/http://cpp-next.com/archive/2009/08/want-speed-pass-by-value/
+    // https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
+    Mesh& operator=(Mesh other) 
+    {
+      swap(*this, other); 
+      return *this;
+    }
 
-    virtual ~Mesh() = default;
+    // move constructor
+    Mesh(Mesh&& other)
+        : Mesh() // initialize via default constructor, C++11 only
+    {
+        swap(*this, other);
+    }
 
+
+
+    ~Mesh() {
+      std::cout << "~Mesh\n";
+    }
+    //virtual ~Mesh() = default;
 
     /// address to data
     T* data() { return mat.data(); }
@@ -100,7 +154,7 @@ class Mesh {
     const T* data() const {return mat.data(); }
 
     /// internal storage size
-    size_t size() { return mat.size(); }
+    size_t size() const { return mat.size(); }
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
@@ -149,13 +203,14 @@ class Mesh {
 
     // Mesh arithmetics
     //=
-    Mesh& operator=(const Mesh<T, H>& rhs);
+    //Mesh& operator=(const Mesh<T, H>& rhs);
 
     template<int H2>
     Mesh& operator=(const Mesh<T, H2>& rhs);
 
-    Mesh& operator=(const T& rhs);
 
+    // scalar assignment
+    Mesh& operator=(const T& rhs);
 
     //+=
     Mesh& operator+=(const Mesh<T, H>& rhs);
@@ -180,10 +235,13 @@ class Mesh {
     // TODO: unify index testing; use assert() ?
     template<int H2>
     void validateDims(const Mesh<T,H2>& rhs) {
-      if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
-      if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
-      if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
+      //if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
+      //if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
+      //if(this->Nz != rhs.Nz) throw std::range_error ("z dimensions do not match");
       //if(this->mat.size() != rhs.mat.size()) throw std::range_error ("container sizes do not match");
+      assert(this->Nx == rhs.Nx);
+      assert(this->Ny == rhs.Ny);
+      assert(this->Nz == rhs.Nz);
     }
 
     template<int H2>
@@ -243,19 +301,19 @@ Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
 */
 
 /// = with any halo size
-template<typename T, int H>
-Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
-  validateDims(rhs);
-    
-  // explicit deep copy
-  for(size_t i=0; i<this->mat.size(); i++) {
-    this->mat[i] = rhs.mat[i];
-  }
-    
-  // implicit deep copy
-  //this->mat = rhs.mat;
-  return *this;
-}
+//template<typename T, int H>
+//Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
+//  validateDims(rhs);
+//    
+//  // explicit deep copy
+//  for(size_t i=0; i<this->mat.size(); i++) {
+//    this->mat[i] = rhs.mat[i];
+//  }
+//    
+//  // implicit deep copy
+//  //this->mat = rhs.mat;
+//  return *this;
+//}
 
 
 /// = with differing halo size
@@ -276,9 +334,9 @@ Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
 }
 
 
-
 template <class T, int H>
 Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
+  // overwriting internal container with a scalar
   for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] = rhs;
   }

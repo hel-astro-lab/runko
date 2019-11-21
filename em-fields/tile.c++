@@ -25,13 +25,36 @@ void Tile<D>::deposit_current()
 template<std::size_t D>
 YeeLattice& Tile<D>::get_yee(size_t /*i*/) 
 {
-  return this->yee.at(0);
+  //return this->yee[0];
+  return this->yee;
+}
+  
+/// Get current time snapshot of Yee lattice
+template<std::size_t D>
+YeeLattice& Tile<D>::get_yee2() 
+{
+  return this->yee;
+}
+
+/// Set current time snapshot of Yee lattice
+template<std::size_t D>
+void Tile<D>::set_yee(YeeLattice& val)
+{
+  this->yee = val;
+}
+
+template<std::size_t D>
+std::shared_ptr<YeeLattice> Tile<D>::get_yeeptr() 
+{
+  //return std::shared_ptr<YeeLattice>(&this->yee[0]);
+  return std::shared_ptr<YeeLattice>(&yee);
 }
 
 template<std::size_t D>
 const YeeLattice& Tile<D>::get_const_yee(size_t /*i*/) const 
 {
-  return this->yee.at(0);
+  //return this->yee.at(0);
+  return this->yee;
 }
 
 
@@ -79,20 +102,20 @@ void Tile<3>::add_analysis_species()
 template<>
 void Tile<1>::add_yee_lattice() 
 {
-  yee.emplace_back( mesh_lengths[0], 1, 1);
+  //yee.emplace_back( mesh_lengths[0], 1, 1);
 }
 
 template<>
 void Tile<2>::add_yee_lattice() 
 {
-  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
+  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
   //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], 1);
 }
 
 template<>
 void Tile<3>::add_yee_lattice() 
 {
-  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
   //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
 
@@ -466,8 +489,6 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
           auto& mpr = tpr->get_yee();
 
           //TODO: implement 3D
-          assert(false);
-
 
           /* diagonal rules are:
           if + then to   n
