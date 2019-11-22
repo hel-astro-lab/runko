@@ -152,9 +152,9 @@ void bind_fields(py::module& m_sub)
   //py::init([](const std::binary_function<double, double, bool> & other) { return new std::binary_function<double, double, bool>(other); })
   //
   py::class_<
-    fields::YeeLattice,
+    fields::YeeLattice
     //std::shared_ptr<fields::YeeLattice>
-    std::unique_ptr<fields::YeeLattice, py::nodelete>
+    //std::unique_ptr<fields::YeeLattice, py::nodelete>
             >(m_sub, "YeeLattice")
     .def(py::init<int, int, int>())
     .def_readwrite("ex",   &fields::YeeLattice::ex   ,py::return_value_policy::reference_internal)
@@ -180,8 +180,8 @@ void bind_fields(py::module& m_sub)
 
   // TODO: can use unique here too?
   py::class_<
-    fields::PlasmaMomentLattice,
-    std::unique_ptr<fields::PlasmaMomentLattice, py::nodelete>
+    fields::PlasmaMomentLattice
+    //std::unique_ptr<fields::PlasmaMomentLattice, py::nodelete>
     //std::shared_ptr<fields::PlasmaMomentLattice> 
             >(m_sub, "PlasmaMomentLattice")
     .def(py::init<int, int, int>())
@@ -286,10 +286,12 @@ void bind_fields(py::module& m_sub)
         //std::shared_ptr<fields::Tile<3>> sp(&ti);
         //grid.add_tile(sp, indices);
 
-        auto t = grid.get_tileptr(indices);
-        return t;
+        return sp;
+
+        //auto t = grid.get_tileptr(indices);
+        //return t;
       },
-        //py::return_value_policy::reference,
+        py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
         //
         // pybind11:

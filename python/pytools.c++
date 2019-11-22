@@ -33,9 +33,9 @@ void declare_mesh(
     //py::class_<Class>(m, pyclass_name.c_str())
 
     py::class_<
-      toolbox::Mesh<T,H>,
+      toolbox::Mesh<T,H>
       //std::shared_ptr<toolbox::Mesh<T,H>>,
-      std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
+      //std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
             >(m, pyclass_name.c_str())
     .def(py::init<int, int, int>())
     //.def("Nx", &Class::Nx)

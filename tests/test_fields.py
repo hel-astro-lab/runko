@@ -108,7 +108,7 @@ def wrap(ii, N):
 
 class FLD_inits(unittest.TestCase):
 
-    def ttest_propagators_1d(self):
+    def test_propagators_1d(self):
         conf = Conf()
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
@@ -119,7 +119,7 @@ class FLD_inits(unittest.TestCase):
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
         
-    def ttest_propagators_2d(self):
+    def test_propagators_2d(self):
         conf = Conf()
         conf.NzMesh = 1 #force 2D
 
@@ -139,7 +139,7 @@ class Communications(unittest.TestCase):
         update boundaries, check that every tile
         has correct boundaries.
     """
-    def ttest_updateBoundaries(self):
+    def test_updateBoundaries(self):
 
         conf = Conf()
         conf.NyMesh = 1 #force 1D
@@ -252,7 +252,7 @@ class Communications(unittest.TestCase):
                 
 
 
-    def ttest_updateBoundaries2D(self):
+    def test_updateBoundaries2D(self):
 
         conf = Conf()
 
@@ -387,7 +387,7 @@ class Communications(unittest.TestCase):
                 self.assertEqual(ref2[i,j], arr[i,j])
 
     # testing a spesific seg fault with loading of yee lattices. This same test fails with 3D
-    def ttest_2D_tile_memory_bug(self):
+    def test_2D_tile_memory_bug(self):
         conf = Conf()
         conf.Nx = 3
         conf.Ny = 3
@@ -444,25 +444,26 @@ class Communications(unittest.TestCase):
         #print("grid")
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         #print("lims")
-        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+       #grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
         #Second create mechanism with automatic tying of pointer to grid lifetime
-        #print("create2")
-        #tile = pyrunko.fields.threeD.make_and_add_tile(
-        #        grid, 
-        #        conf.NxMesh, conf.NyMesh, conf.NzMesh,
-        #        (0,0,1)
-        #        )
-
-        #First default create mechanism
-        # NOTE: leads to segfaulting with 3D tiles. Most likely py GC cleans tiles
-        # aggressively.
-        print("create")
-        tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        print("ref count tile:", sys.getrefcount(tile))
-        grid.add_tile(tile, (0,0,1) ) 
-        print("ref count tile:", sys.getrefcount(tile))
-        print("end of create")
+        if False:
+            print("create2")
+            tile = pyrunko.fields.threeD.make_and_add_tile(
+                    grid, 
+                    conf.NxMesh, conf.NyMesh, conf.NzMesh,
+                    (1,0,0)
+                    )
+        else:
+            #First default create mechanism
+            # NOTE: leads to segfaulting with 3D tiles. Most likely py GC cleans tiles
+            # aggressively.
+            print("create")
+            tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            print("ref count tile:", sys.getrefcount(tile))
+            grid.add_tile(tile, (1,0,0) ) 
+            print("ref count tile:", sys.getrefcount(tile))
+            print("end of create")
 
         #tile = grid.get_tile(0,0,1)
         tile.set_tile_mins([1.0,1.0,1.0])
@@ -508,7 +509,8 @@ class Communications(unittest.TestCase):
             print("---phase 2---")
             print("fetching another copy of the same tile")
             #print("getting 000")
-            c = grid.get_tile(0,0,1)
+            #c = grid.get_tile(0,0,1)
+            c = grid.get_tile(1,0,0)
             print(c.cid)
             print(c.mins) 
             print(c.maxs) 
