@@ -67,12 +67,12 @@ class Mesh
     /// empty default constructor
     //Mesh() = default;
     Mesh() :
-      Nx(1),
-      Ny(1),
-      Nz(1),
-      mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
+      Nx(0),
+      Ny(0),
+      Nz(0),
+      mat(0)
     {
-      mat.resize( 1 );
+      //mat.resize( 0 );
       std::cout << "Mesh ctor empty\n";
     }
 

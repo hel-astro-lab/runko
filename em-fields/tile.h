@@ -205,6 +205,9 @@ class PlasmaMomentLattice {
   toolbox::Mesh<float_t, 0> shearxz;
   toolbox::Mesh<float_t, 0> shearyz;
 
+  // default empty constructor
+  PlasmaMomentLattice() {};
+
 
   /// constructor; initializes Mesh objects at the same time
   PlasmaMomentLattice(int Nx_in, int Ny_in, int Nz_in) : 
@@ -228,6 +231,10 @@ class PlasmaMomentLattice {
   { }
 
   //virtual ~PlasmaMomentLattice() = default;
+  ~PlasmaMomentLattice() 
+  {
+    std::cout << "~PlasmaMomentLattice\n";
+  };
 
   // clear all internal storages
   void clear() 
@@ -273,8 +280,8 @@ class Tile :
 
   /// Yee lattice of plasma quantities (with 1 timestep)
   //toolbox::Rotator<YeeLattice, 1> yee;
-  YeeLattice yee;
-  //std::vector<YeeLattice> yee;
+  //YeeLattice yee;
+  std::vector<YeeLattice> yee;
 
   /// species-specific analysis results
   std::vector<PlasmaMomentLattice> analysis;
@@ -293,24 +300,31 @@ class Tile :
   //--------------------------------------------------
   // constructor with internal mesh dimensions
   Tile(int nx, int ny, int nz) :
-    mesh_lengths {{nx, ny, nz}},
-    yee(nx, ny, nz)
+    mesh_lengths {{nx, ny, nz}}
+    //yee(nx, ny, nz)
   {
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);
 
     // initialize one Yee lattice into the grid 
     // TODO: into data rotator?
-    //std::cout<<"len0 of yee vec:" << yee.size() << "\n";
-    //add_yee_lattice();
-    //std::cout<<"len1 of yee vec:" << yee.size() << "\n";
+
+    std::cout<<"len0 of yee vec:" << yee.size() << "\n";
+    add_yee_lattice();
+    std::cout<<"len1 of yee vec:" << yee.size() << "\n";
+
+    std::cout << "Tile() ctor has:" <<
+                 nx << " " << ny << " " << nz << " meshes (ex) has" <<
+                 yee[0].ex.Nx << " " << yee[0].ex.Ny << " " << yee[0].ex.Nz << "\n";
+
+
   }
 
   // avoid copies; TODO: is this needed?
-  Tile(Tile& ) = delete;
+  //Tile(Tile& ) = delete;
 
   //~Tile() = default;
-  ~Tile() {
+  virtual ~Tile() {
     std::cout << "~Tile\n";
   }
 

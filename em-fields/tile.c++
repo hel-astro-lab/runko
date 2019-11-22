@@ -25,36 +25,38 @@ void Tile<D>::deposit_current()
 template<std::size_t D>
 YeeLattice& Tile<D>::get_yee(int /*i*/) 
 {
-  //return this->yee[0];
-  return this->yee;
+  return this->yee[0];
+  //return this->yee;
 }
   
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
 YeeLattice& Tile<D>::get_yee2() 
 {
-  return this->yee;
+  return this->yee[0];
+  //return this->yee;
 }
 
 /// Set current time snapshot of Yee lattice
 template<std::size_t D>
 void Tile<D>::set_yee(YeeLattice& val)
 {
-  this->yee = val;
+  this->yee[0] = val;
+  //this->yee = val;
 }
 
 template<std::size_t D>
 std::shared_ptr<YeeLattice> Tile<D>::get_yeeptr() 
 {
-  //return std::shared_ptr<YeeLattice>(&this->yee[0]);
-  return std::shared_ptr<YeeLattice>(&yee);
+  return std::shared_ptr<YeeLattice>(&this->yee[0]);
+  //return std::shared_ptr<YeeLattice>(&yee);
 }
 
 template<std::size_t D>
 const YeeLattice& Tile<D>::get_const_yee(int /*i*/) const 
 {
-  //return this->yee.at(0);
-  return this->yee;
+  return this->yee.at(0);
+  //return this->yee;
 }
 
 
@@ -102,20 +104,20 @@ void Tile<3>::add_analysis_species()
 template<>
 void Tile<1>::add_yee_lattice() 
 {
-  //yee.emplace_back( mesh_lengths[0], 1, 1);
+  yee.emplace_back( mesh_lengths[0], 1, 1);
 }
 
 template<>
 void Tile<2>::add_yee_lattice() 
 {
-  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
+  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
   //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], 1);
 }
 
 template<>
 void Tile<3>::add_yee_lattice() 
 {
-  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
   //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
 
