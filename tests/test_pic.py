@@ -375,7 +375,7 @@ class PIC(unittest.TestCase):
                         vely = container.vel(1)[prtcl]
                         velz = container.vel(2)[prtcl]
                         vel = np.sqrt( velx*velx + vely*vely + velz*velz )
-                        self.assertAlmostEqual( vel, conf.vel, places=6 )
+                        self.assertAlmostEqual( vel, conf.vel, places=5 )
 
         tot_particles = (conf.Nx*conf.NxMesh *
                         conf.Ny*conf.NyMesh *
@@ -629,9 +629,9 @@ class PIC(unittest.TestCase):
             for j in range(conf.Ny*conf.NyMesh):
                 for i in range(conf.Nx*conf.NxMesh):
                     #print("({},{})".format(i,j))
-                    self.assertAlmostEqual( yee_ref['jx'][i,j], yee['jx'][i,j], places=6 )
-                    self.assertAlmostEqual( yee_ref['jy'][i,j], yee['jy'][i,j], places=6 )
-                    self.assertAlmostEqual( yee_ref['jz'][i,j], yee['jz'][i,j], places=6 )
+                    self.assertAlmostEqual( yee_ref['jx'][i,j], yee['jx'][i,j], places=5 )
+                    self.assertAlmostEqual( yee_ref['jy'][i,j], yee['jy'][i,j], places=5 )
+                    self.assertAlmostEqual( yee_ref['jz'][i,j], yee['jz'][i,j], places=5 )
 
 
 
@@ -816,9 +816,9 @@ class PIC(unittest.TestCase):
                 yee = c.get_yee(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
-                        self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=7 )
-                        self.assertAlmostEqual(yee.jy[l,m,0], 0.0, places=7 )
-                        self.assertAlmostEqual(yee.jz[l,m,0], 0.0, places=7 )
+                        self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=5 )
+                        self.assertAlmostEqual(yee.jy[l,m,0], 0.0, places=5 )
+                        self.assertAlmostEqual(yee.jz[l,m,0], 0.0, places=5 )
                         #self.assertEqual(yee.jx[l,m,0], 0.0 )
                         #self.assertEqual(yee.jy[l,m,0], 0.0 )
                         #self.assertEqual(yee.jz[l,m,0], 0.0 )

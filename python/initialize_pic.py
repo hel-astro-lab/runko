@@ -70,7 +70,7 @@ def initialize_tile(c, i, j, n, conf):
     #initialize tile dimensions 
     #c.dt  = conf.dt
     #c.dx  = conf.dx
-    c.dx  = 1.0
+    #c.dx  = 1.0
     c.cfl = conf.cfl
     
     ppc = conf.ppc #/ conf.Nspecies
