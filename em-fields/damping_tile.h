@@ -27,14 +27,14 @@ class Tile :
   // reference field to relax tile into
 
   /// Electric field 
-  toolbox::Mesh<Realf, 1> ex_ref;
-  toolbox::Mesh<Realf, 1> ey_ref;
-  toolbox::Mesh<Realf, 1> ez_ref;
+  toolbox::Mesh<float_t, 1> ex_ref;
+  toolbox::Mesh<float_t, 1> ey_ref;
+  toolbox::Mesh<float_t, 1> ez_ref;
   
   /// Magnetic field 
-  toolbox::Mesh<Realf, 1> bx_ref;
-  toolbox::Mesh<Realf, 1> by_ref;
-  toolbox::Mesh<Realf, 1> bz_ref;
+  toolbox::Mesh<float_t, 1> bx_ref;
+  toolbox::Mesh<float_t, 1> by_ref;
+  toolbox::Mesh<float_t, 1> bz_ref;
 
 
   /// constructor
@@ -57,8 +57,6 @@ class Tile :
 
   //void deposit_current() override;
 
-  //using fields::Tile<D>::dt;
-  using fields::Tile<D>::dx;
   using fields::Tile<D>::cfl;
 
 
@@ -66,10 +64,10 @@ class Tile :
   void damp_fields();
 
   /// start index of the slope
-  Realf fld1;
+  float_t fld1;
     
   /// end index of the slope
-  Realf fld2;
+  float_t fld2;
 
 
 };

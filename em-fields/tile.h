@@ -21,32 +21,32 @@ class YeeLattice
 
   public:
 
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
+  int Nx;
+  int Ny;
+  int Nz;
 
   /// Electric field 
-  toolbox::Mesh<Realf, 3> ex;
-  toolbox::Mesh<Realf, 3> ey;
-  toolbox::Mesh<Realf, 3> ez;
+  toolbox::Mesh<float_t, 3> ex;
+  toolbox::Mesh<float_t, 3> ey;
+  toolbox::Mesh<float_t, 3> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<Realf, 3> bx;
-  toolbox::Mesh<Realf, 3> by;
-  toolbox::Mesh<Realf, 3> bz;
+  toolbox::Mesh<float_t, 3> bx;
+  toolbox::Mesh<float_t, 3> by;
+  toolbox::Mesh<float_t, 3> bz;
     
   /// Charge density
-  toolbox::Mesh<Realf, 1> rho;
+  toolbox::Mesh<float_t, 1> rho;
 
   /// Current vector 
-  toolbox::Mesh<Realf, 3> jx;
-  toolbox::Mesh<Realf, 3> jy;
-  toolbox::Mesh<Realf, 3> jz;
+  toolbox::Mesh<float_t, 3> jx;
+  toolbox::Mesh<float_t, 3> jy;
+  toolbox::Mesh<float_t, 3> jz;
 
   /// temporary current
-  toolbox::Mesh<Realf, 3> jx1;
-  toolbox::Mesh<Realf, 3> jy1;
-  toolbox::Mesh<Realf, 3> jz1;
+  toolbox::Mesh<float_t, 3> jx1;
+  toolbox::Mesh<float_t, 3> jy1;
+  toolbox::Mesh<float_t, 3> jz1;
 
 
   // default empty constructor
@@ -57,7 +57,7 @@ class YeeLattice
 
 
   // real initializer constructor
-  YeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
+  YeeLattice(int Nx, int Ny, int Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
     ex(Nx, Ny, Nz),
     ey(Nx, Ny, Nz),
@@ -177,33 +177,33 @@ class PlasmaMomentLattice {
   size_t Nz;
 
   // density
-  toolbox::Mesh<Realf, 0> rho;
+  toolbox::Mesh<float_t, 0> rho;
 
   /// energy density
-  toolbox::Mesh<Realf, 0> edens;
+  toolbox::Mesh<float_t, 0> edens;
 
   /// temperature
-  toolbox::Mesh<Realf, 0> temp;
+  toolbox::Mesh<float_t, 0> temp;
 
   /// (mean) flow speed
-  toolbox::Mesh<Realf, 0> Vx;
-  toolbox::Mesh<Realf, 0> Vy;
-  toolbox::Mesh<Realf, 0> Vz;
+  toolbox::Mesh<float_t, 0> Vx;
+  toolbox::Mesh<float_t, 0> Vy;
+  toolbox::Mesh<float_t, 0> Vz;
 
   /// momentum density
-  toolbox::Mesh<Realf, 0> momx;
-  toolbox::Mesh<Realf, 0> momy;
-  toolbox::Mesh<Realf, 0> momz;
+  toolbox::Mesh<float_t, 0> momx;
+  toolbox::Mesh<float_t, 0> momy;
+  toolbox::Mesh<float_t, 0> momz;
 
   /// pressure
-  toolbox::Mesh<Realf, 0> pressx;
-  toolbox::Mesh<Realf, 0> pressy;
-  toolbox::Mesh<Realf, 0> pressz;
+  toolbox::Mesh<float_t, 0> pressx;
+  toolbox::Mesh<float_t, 0> pressy;
+  toolbox::Mesh<float_t, 0> pressz;
 
   /// shear
-  toolbox::Mesh<Realf, 0> shearxy;
-  toolbox::Mesh<Realf, 0> shearxz;
-  toolbox::Mesh<Realf, 0> shearyz;
+  toolbox::Mesh<float_t, 0> shearxy;
+  toolbox::Mesh<float_t, 0> shearxz;
+  toolbox::Mesh<float_t, 0> shearyz;
 
 
   /// constructor; initializes Mesh objects at the same time
@@ -285,16 +285,16 @@ class Tile :
 
 
   /// CFL number (corresponds to simulation light speed c)
-  Realf cfl;
+  double_t cfl;
 
   /// grid size (assuming cubical cells)
-  Realf dx = 1.0;
+  //double_t dx = 1.0;
 
   //--------------------------------------------------
   // constructor with internal mesh dimensions
   Tile(size_t nx, size_t ny, size_t nz) :
     mesh_lengths {{nx, ny, nz}},
-    yee(nx,ny,nz)
+    yee((int)nx, (int)ny, (int)nz)
   {
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);

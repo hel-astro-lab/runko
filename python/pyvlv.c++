@@ -124,7 +124,7 @@ auto declare_tile(
              std::shared_ptr<vlv::Tile<D> >
              >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("dx",        &vlv::Tile<D>::dx)
+    //.def_readwrite("dx",        &vlv::Tile<D>::dx)
     .def_readwrite("threshold", &vlv::Tile<D>::threshold)
     .def("get_plasma_species", [](vlv::Tile<D>& tile, size_t i, size_t s) 
         { return tile.steps.get(i).at(s); }, py::return_value_policy::reference)

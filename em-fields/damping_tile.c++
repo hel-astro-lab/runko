@@ -93,8 +93,8 @@ void fields::damping::Tile<D,S>::damp_fields()
   auto& yee = this->get_yee();
 
   //Realf lambda, lambda1;
-  Realf lambda2;
-  Realf ksupp = 10; // damping parameter
+  float_t lambda2;
+  float_t ksupp = 10; // damping parameter
 
 
   // moving injector position
@@ -119,12 +119,12 @@ void fields::damping::Tile<D,S>::damp_fields()
 
 
   int k = 0; // XXX: 2D hack
-  Realf iglob, jglob;
+  float_t iglob, jglob;
   //Realf kglob;
   //kglob = (Realf)k + fields::Tile<D>::mins[2];
 
   for(int j = jstr; j<jfin; j++) {
-    jglob = (Realf)j + fields::Tile<D>::mins[1];
+    jglob = (float_t)j + fields::Tile<D>::mins[1];
 
     // damping region for Y direction or if not, then just continue
     if ( (ydir && (
@@ -142,7 +142,7 @@ void fields::damping::Tile<D,S>::damp_fields()
 
 
       for(int i=istr; i<ifin; i++) {
-        iglob = (Realf)i + fields::Tile<D>::mins[0];
+        iglob = (float_t)i + fields::Tile<D>::mins[0];
 
         // damping region for X direction or if not, then just continue
         if ( (xdir && (
@@ -176,7 +176,7 @@ void fields::damping::Tile<D,S>::damp_fields()
     // Ydir: left || right
     if (( ydir && ( (left && (jglob <= fld1)) || (right && (jglob > fld1)) )) || !ydir ) {
       for(int i=istr; i<ifin; i++) {
-        iglob = (Realf)i + fields::Tile<D>::mins[0];
+        iglob = (float_t)i + fields::Tile<D>::mins[0];
         // Xdir: left || right
         if (( xdir && ( (left && (iglob <= fld1)) || (right && (iglob > fld1)) )) || !xdir ) {
           yee.ex(i,j,k) = ex_ref(i,j,k);

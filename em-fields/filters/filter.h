@@ -23,7 +23,7 @@ class Filter
   size_t Nz;
 
   ///internal scratch container (size equal to jx/jy/jz)
-  toolbox::Mesh<Realf, 3> tmp;
+  toolbox::Mesh<float_t, 3> tmp;
 
   Filter(size_t Nx, size_t Ny, size_t Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),

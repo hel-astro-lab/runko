@@ -41,7 +41,7 @@ auto declare_tile(
               std::shared_ptr<fields::Tile<D>>
             >(m, pyclass_name.c_str() )
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("dx",       &fields::Tile<D>::dx)
+    //.def_readwrite("dx",       &fields::Tile<D>::dx)
     .def_readwrite("cfl",      &fields::Tile<D>::cfl)
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("cycle_current",       &fields::Tile<D>::cycle_current)
@@ -151,7 +151,7 @@ void bind_fields(py::module& m_sub)
     //std::shared_ptr<fields::YeeLattice>
     std::unique_ptr<fields::YeeLattice, py::nodelete>
             >(m_sub, "YeeLattice")
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def_readwrite("ex",   &fields::YeeLattice::ex   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
     .def_readwrite("ey",   &fields::YeeLattice::ey   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
     .def_readwrite("ez",   &fields::YeeLattice::ez   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
@@ -165,7 +165,7 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("rho",  &fields::YeeLattice::rho  ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )
     .def_property("ex2",   
         [](YeeLattice& self) { return self.ex; },
-        [](YeeLattice& self, toolbox::Mesh<double,3>& v) { self.ex = v; },
+        [](YeeLattice& self, toolbox::Mesh<float_t,3>& v) { self.ex = v; },
         py::return_value_policy::reference_internal, 
         py::keep_alive<1,0>() 
         );

@@ -63,7 +63,7 @@ public:
 
   /// tile temporal and spatial scales
   using fields::Tile<D>::cfl;
-  using fields::Tile<D>::dx;
+  //using fields::Tile<D>::dx;
 
   //--------------------------------------------------
   // MPI send

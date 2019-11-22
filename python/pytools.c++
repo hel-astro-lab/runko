@@ -16,8 +16,8 @@ namespace tools{
 
 //--------------------------------------------------
 // Different solver orders
-using AM1d = toolbox::AdaptiveMesh<Realf, 1>;
-using AM3d = toolbox::AdaptiveMesh<Realf, 3>;
+using AM1d = toolbox::AdaptiveMesh<double_t, 1>;
+using AM3d = toolbox::AdaptiveMesh<double_t, 3>;
 
 
 
@@ -37,13 +37,14 @@ void declare_mesh(
       //std::shared_ptr<toolbox::Mesh<T,H>>,
       std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
             >(m, pyclass_name.c_str())
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     //.def("Nx", &Class::Nx)
     //.def("Ny", &Class::Ny)
     //.def("Nz", &Class::Nz)
-    .def_property("Nx", [](Class &s){return (int)s.Nx;}, [](Class &s, int v){s.Nx = (size_t)v;})
-    .def_property("Ny", [](Class &s){return (int)s.Ny;}, [](Class &s, int v){s.Ny = (size_t)v;})
-    .def_property("Nz", [](Class &s){return (int)s.Nz;}, [](Class &s, int v){s.Nz = (size_t)v;})
+    .def_property("Nx", [](Class &s){return s.Nx;}, [](Class &s, int v){s.Nx = v;})
+    .def_property("Ny", [](Class &s){return s.Ny;}, [](Class &s, int v){s.Ny = v;})
+    .def_property("Nz", [](Class &s){return s.Nz;}, [](Class &s, int v){s.Nz = v;})
+    .def("get_Ny", [](Class &s){ return s.Ny;})
     .def("indx",         &Class::indx)
     .def("size",         &Class::size)
     .def("__getitem__", [](Class &s, py::tuple indx) 
@@ -55,16 +56,17 @@ void declare_mesh(
 
         // NOTE: these are out-of-bounds; not inbound checks
         try {
-        if (i < -H) throw py::index_error();
-        if (j < -H) throw py::index_error();
-        if (k < -H) throw py::index_error();
+          if (i < -H) throw py::index_error();
+          if (j < -H) throw py::index_error();
+          if (k < -H) throw py::index_error();
 
-        if (i >= (int)s.Nx+H) throw py::index_error();
-        if (j >= (int)s.Ny+H) throw py::index_error();
-        if (k >= (int)s.Nz+H) throw py::index_error();
+          if (i >= (int)s.Nx+H) throw py::index_error();
+          if (j >= (int)s.Ny+H) throw py::index_error();
+          if (k >= (int)s.Nz+H) throw py::index_error();
         } catch (std::exception& e) {
-        std::cout << "Standard exception: " << e.what() << std::endl;
+          std::cout << "Standard exception: " << e.what() << std::endl;
         }
+
         std::cout << "__getitem passed ind__ nxnynz:" << s.Nx+H << " " << s.Ny+H << " " << s.Nz+H << "\n";
 
         T val = s(i,j,k);
@@ -72,7 +74,7 @@ void declare_mesh(
 
         return s(i,j,k);
       }, py::return_value_policy::reference)
-    .def("__setitem__", [](Class &s, py::tuple indx, Realf val) 
+    .def("__setitem__", [](Class &s, py::tuple indx, float_t val) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
@@ -106,9 +108,9 @@ void bind_tools(pybind11::module& m)
 {
 
   // declare Mesh with various halo sizes
-  declare_mesh<Realf, 0>(m, "Mesh_H0" );
-  declare_mesh<Realf, 1>(m, "Mesh_H1" );
-  declare_mesh<Realf, 3>(m, "Mesh_H3" );
+  declare_mesh<float_t, 0>(m, "Mesh_H0" );
+  declare_mesh<float_t, 1>(m, "Mesh_H1" );
+  declare_mesh<float_t, 3>(m, "Mesh_H3" );
 
 
 
@@ -146,7 +148,7 @@ void bind_tools(pybind11::module& m)
 
         return s.get_from_roots(cid);
         })
-    .def("__setitem__", [](AM3d &s, py::tuple indx, Realf v) 
+    .def("__setitem__", [](AM3d &s, py::tuple indx, float_t v) 
         { 
         auto i = indx[0].cast<uint64_t>();
         auto j = indx[1].cast<uint64_t>();

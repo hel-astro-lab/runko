@@ -491,7 +491,8 @@ class Communications(unittest.TestCase):
             print("size was", nt)
 
             nx = ex0.Nx
-            ny = ex0.Ny
+            #ny = ex0.Ny
+            ny = ex0.get_Ny()
             nz = ex0.Nz
             print("nx ny nz ", nx,ny,nz)
 

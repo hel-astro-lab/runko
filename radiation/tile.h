@@ -31,7 +31,6 @@ public:
 
   using fields::Tile<D>::mesh_lengths;
   using fields::Tile<D>::cfl;
-  using fields::Tile<D>::dx;
 
 
   /// constructor

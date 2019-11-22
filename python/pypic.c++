@@ -43,7 +43,6 @@ auto declare_tile(
              std::shared_ptr<pic::Tile<D>>
              >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("dx",        &pic::Tile<D>::dx)
     .def_readwrite("cfl",       &pic::Tile<D>::cfl)
     //.def_readwrite("container", &pic::Tile<D>::container);
     .def("get_container",       &pic::Tile<D>::get_container, 
