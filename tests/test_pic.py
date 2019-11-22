@@ -596,7 +596,7 @@ class PIC(unittest.TestCase):
             #filter
             for j in range(grid.get_Ny()):
                 for i in range(grid.get_Nx()):
-                    print(" i j ({},{})".format(i,j))
+                    #print(" i j ({},{})".format(i,j))
                     tile = grid.get_tile(i,j)
                     flt.get_padded_current(tile, grid)
 

@@ -59,42 +59,14 @@ def loadTiles3D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             for k in range(n.get_Nz()):
-
                 #print("putting", i,j,k)
                 #if n.get_mpi_grid(i,j) == n.rank:
                 c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 n.add_tile(c, (i,j,k) ) 
-
         
-                # 3D tiles have to be loaded like this to tie their lifetime into the grid
-                print("++++++++++++++++?")
                 #c = pyrunko.fields.threeD.make_and_add_tile( n, 
                 #        conf.NxMesh, conf.NyMesh, conf.NzMesh, (i,j,k))
 
-                print(sys.getrefcount(c))
-                print(gc.get_referrers(c))
-
-                indx1 = c.index
-                indx2 = c.communication.indices
-                indx3 = c.get_index(n)
-
-                print("---------Out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
-                print("---------Out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
-                print("---------Out 3:",c.cid," <-> ", i,j,k," vs. indx ", indx3)
-
-                #self.assertEqual(i, indx1[0])
-                #self.assertEqual(j, indx1[1])
-                #self.assertEqual(k, indx1[2])
-
-                #c1 = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                #print(sys.getrefcount(c1))
-                #print(gc.get_referrers(c1))
-                #indx1 = c1.index
-                #indx2 = c1.communication.indices
-                #indx3 = c1.get_index(n)
-                #print("---------Out 1:",c1.cid," <-> ", i,j,k," vs. indx ", indx1)
-                #print("---------Out 2:",c1.cid," <-> ", i,j,k," vs. indx ", indx2)
-                #print("---------Out 3:",c1.cid," <-> ", i,j,k," vs. indx ", indx3)
 
 
 def wrap(ii, N):
@@ -145,9 +117,7 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
-        print("creating grid")
         grid = pycorgi.oneD.Grid(conf.Nx, 1, 1)
-        print("setting grid lims")
         grid.set_grid_lims(conf.xmin, conf.xmax)
 
         loadTiles1D(grid, conf)
@@ -402,9 +372,9 @@ class Communications(unittest.TestCase):
 
         #print("load")
         tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, 1)
-        print("ref count tile 2d:", sys.getrefcount(tile))
+        #print("ref count tile 2d:", sys.getrefcount(tile))
         grid.add_tile(tile, (0,0) ) 
-        print("ref count tile 2d:", sys.getrefcount(tile))
+        #print("ref count tile 2d:", sys.getrefcount(tile))
 
         #print("getting 000")
         c = grid.get_tile(0,0)
@@ -429,6 +399,9 @@ class Communications(unittest.TestCase):
         self.assertEqual(nx, (conf.NxMesh+H*2)*(conf.NyMesh+H*2)*(conf.NzMesh+H*2))
 
 
+    # Captures memory bug with mesh initialization; when internal meshes in YeeLattice
+    # are too big, compiler tires to over-optimize. Then some stuff never gets allocated.
+    # This is fixed now by a copy-and-swap algorithm in toolbox::Mesh.
     def test_3D_tile_memory_bug(self):
 
         conf = Conf()
@@ -440,7 +413,7 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 10
         conf.NzMesh = 10
 
-        print("\n mem bug --------")
+        #print("\n mem bug --------")
         #print("grid")
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         #print("lims")
@@ -448,28 +421,28 @@ class Communications(unittest.TestCase):
 
         #Second create mechanism with automatic tying of pointer to grid lifetime
         if False:
-            print("create2")
+            #print("create2")
             tile = pyrunko.fields.threeD.make_and_add_tile(
                     grid, 
                     conf.NxMesh, conf.NyMesh, conf.NzMesh,
                     (1,0,0)
                     )
+        #First create mechanism with python-organized object lifetime
         else:
             #First default create mechanism
             # NOTE: leads to segfaulting with 3D tiles. Most likely py GC cleans tiles
-            # aggressively.
-            print("create")
+            # aggressively. FIXED.
+            #print("create")
             tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-            print("ref count tile:", sys.getrefcount(tile))
+            #print("ref count tile:", sys.getrefcount(tile))
             grid.add_tile(tile, (1,0,0) ) 
-            print("ref count tile:", sys.getrefcount(tile))
-            print("end of create")
+            #print("ref count tile:", sys.getrefcount(tile))
+            #print("end of create")
 
         #tile = grid.get_tile(0,0,1)
         tile.set_tile_mins([1.0,1.0,1.0])
         tile.set_tile_maxs([2.0,2.0,2.0])
         #tile.add_analysis_species()
-
 
         #print("creating yee2")
         #yee2 = pyrunko.fields.YeeLattice(conf.NxMesh, conf.NyMesh, conf.NzMesh)
@@ -478,70 +451,72 @@ class Communications(unittest.TestCase):
 
 
         if True:
-            print("getting yee p0")
+            #print("getting yee p0")
             yee0 = tile.get_yee()
             #yee0 = tile.yee
             #yee0 = tile.get_yeeptr()
-            print("ref count yee0:", sys.getrefcount(yee0))
-            print("getting ex")
+            #print("ref count yee0:", sys.getrefcount(yee0))
+            #print("getting ex")
             ex0 = yee0.ex
             #ex0 = yee0.get_ex()
             #ex0 = yee0.ex2
-            print("getting size")
+            #print("getting size")
             nt = ex0.size()
-            print("size was", nt)
+            #print("size was", nt)
 
             nx = ex0.Nx
             ny = ex0.Ny
             nz = ex0.Nz
-            print("nx ny nz ", nx,ny,nz)
+            #print("nx ny nz ", nx,ny,nz)
 
-            #self.assertEqual(nx, conf.NxMesh)
-            print("getting corner")
+            self.assertEqual(nx, conf.NxMesh)
+            self.assertEqual(ny, conf.NyMesh)
+            self.assertEqual(nz, conf.NzMesh)
+            #print("getting corner")
             val = ex0[1,1,1]
 
-            print("setting same corner")
+            #print("setting same corner")
             ex0[1,1,1] = 2.0
-            print("end of getting yee p0")
+            #print("end of getting yee p0")
 
         # now re-ask for the tile to test handling of multiple copies of same object
         if True:
-            print("---phase 2---")
-            print("fetching another copy of the same tile")
+            #print("---phase 2---")
+            #print("fetching another copy of the same tile")
             #print("getting 000")
             #c = grid.get_tile(0,0,1)
             c = grid.get_tile(1,0,0)
-            print(c.cid)
-            print(c.mins) 
-            print(c.maxs) 
-            print(c.index) 
+            #print(c.cid)
+            #print(c.mins) 
+            #print(c.maxs) 
+            #print(c.index) 
 
-            print("ref count tile:", sys.getrefcount(c))
+            #print("ref count tile:", sys.getrefcount(c))
 
-            print("getting yee p1")
+            #print("getting yee p1")
             yee = c.get_yee()
-            print("ref count yee:", sys.getrefcount(yee))
+            #print("ref count yee:", sys.getrefcount(yee))
             #yee = c.yee
             #yee = c.get_yeeptr()
-            print("getting ex")
+            #print("getting ex")
             ex = yee.ex
-            print("ref count ex:", sys.getrefcount(ex))
+            #print("ref count ex:", sys.getrefcount(ex))
             #ex = yee.get_ex()
 
             nt = ex.size()
-            print("size was", nt)
+            #print("size was", nt)
             nx = ex.Nx
             ny = ex.Ny
             nz = ex.Nz
-            print("nx ny nz ", nx,ny,nz)
+            #print("nx ny nz ", nx,ny,nz)
 
 
-            print("getting corner")
+            #print("getting corner")
             val = ex[1,1,1]
-            print("val = ", val)
-            print("getting size")
+            #print("val = ", val)
+            #print("getting size")
             nt = ex.size()
-            print("size from yee", nt)
+            #print("size from yee", nt)
 
             #print("size from tile directly", c.yee.ex.nx)
             #self.assertEqual(nx, conf.NxMesh)
@@ -562,10 +537,9 @@ class Communications(unittest.TestCase):
             yee3 = c3.get_yee()
             ex3 = c3.ex
 
+        #print("mem bug +++++++")
 
-        print("mem bug +++++++")
-
-    def skip_test_tile_indices2D(self):
+    def test_tile_indices2D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -595,9 +569,9 @@ class Communications(unittest.TestCase):
                     indx2 = c.communication.indices
                     indx3 = c.get_index(grid)
 
-                    print("what got out 1:",c.cid," <-> ", i,j," vs. indx ", indx1)
-                    print("what got out 2:",c.cid," <-> ", i,j," vs. indx ", indx2)
-                    print("what got out 3:",c.cid," <-> ", i,j," vs. indx ", indx3)
+                    #print("what got out 1:",c.cid," <-> ", i,j," vs. indx ", indx1)
+                    #print("what got out 2:",c.cid," <-> ", i,j," vs. indx ", indx2)
+                    #print("what got out 3:",c.cid," <-> ", i,j," vs. indx ", indx3)
 
                     self.assertEqual(i, indx1[0])
                     self.assertEqual(j, indx1[1])
@@ -609,7 +583,7 @@ class Communications(unittest.TestCase):
                     self.assertEqual(j, indx3[1])
 
 
-    def skip_test_tile_indices3D(self):
+    def test_tile_indices3D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -640,9 +614,9 @@ class Communications(unittest.TestCase):
                         indx2 = c.communication.indices
                         indx3 = c.get_index(grid)
 
-                        print("what got out 1:",c.cid," <-> ", i,j," vs. indx ", indx1)
-                        print("what got out 2:",c.cid," <-> ", i,j," vs. indx ", indx2)
-                        print("what got out 3:",c.cid," <-> ", i,j," vs. indx ", indx3)
+                        #print("what got out 1:",c.cid," <-> ", i,j," vs. indx ", indx1)
+                        #print("what got out 2:",c.cid," <-> ", i,j," vs. indx ", indx2)
+                        #print("what got out 3:",c.cid," <-> ", i,j," vs. indx ", indx3)
 
                         self.assertEqual(i, indx1[0])
                         self.assertEqual(j, indx1[1])
@@ -657,7 +631,7 @@ class Communications(unittest.TestCase):
                         self.assertEqual(k, indx3[2])
 
 
-    def skip_test_updateBoundaries3D(self):
+    def skip_updateBoundaries3D(self):
 
         conf = Conf()
 
@@ -668,23 +642,14 @@ class Communications(unittest.TestCase):
         conf.NyMesh = 3
         conf.NzMesh = 3 
 
-        #print("grid")
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
-        #print("lims")
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
-
-        #print("load")
         loadTiles3D(grid, conf)
 
-        #print("getting 000")
-        #c = grid.get_tile(0,0,0)
-        #analysis = c.get_analysis()
-        #yee = c.get_yee()
-
         # lets put values into Yee lattice
-        print("testing k index")
-        print()
+        print("3D boundary test")
 
+        print("insert values")
         val = 1.0
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -694,12 +659,9 @@ class Communications(unittest.TestCase):
                         #print("get tile", i,j,k)
                         c = grid.get_tile(i,j,k)
 
-                        # Capture 3D indexing bug here where k index
-                        # did not match what was expected
-
-                        #indx1 = c.index
+                        indx = c.index
                         #indx2 = c.communication.indices
-                        indx = c.get_index(grid)
+                        #indx = c.get_index(grid)
 
                         #print("what got out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
                         #print("what got out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
@@ -731,10 +693,11 @@ class Communications(unittest.TestCase):
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
 
+        print("get values")
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
-            #(i, j, k) = c.index
-            (i, j, k) = c.get_index(grid)
+            (i, j, k) = c.index
+            #(i, j, k) = c.get_index(grid)
 
             yee = c.get_yee(0)
             for q in range(conf.NxMesh):
@@ -764,9 +727,11 @@ class Communications(unittest.TestCase):
         #print(data[:,:,2,0])
 
         #update boundaries
+        print("update boundaries")
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             c.update_boundaries(grid)
+
         #for i in [1]:
         #    for j in [1]:
         #        c = grid.get_tile(i,j)
@@ -774,7 +739,7 @@ class Communications(unittest.TestCase):
 
         ref = np.zeros((conf.Nx*conf.Ny*conf.Nz, conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
-
+        print("build check boundaries array")
         m = 0
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
@@ -801,6 +766,7 @@ class Communications(unittest.TestCase):
         #print(ref[4,:,:,1])
         #print(ref[4,:,:,2])
 
+        print("check boundaries array")
         # check every tile separately
         for m in range(conf.Nx*conf.Ny):
             for i in range(conf.Nx*conf.NxMesh):
@@ -820,6 +786,7 @@ class Communications(unittest.TestCase):
         c = grid.get_tile(1,1,1)
         yee = c.get_yee(0)
 
+        print("check halo regions")
         #loop over ex,ey,...
         for iarrs in range(9):
             arr = np.zeros((conf.NxMesh+6, conf.NyMesh+6, conf.NzMesh+6))

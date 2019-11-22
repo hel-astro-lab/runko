@@ -44,12 +44,6 @@ class Mesh
 
       int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
 
-      std::cout << "indx: " << indx;
-      std::cout << "i: " << i << " j " << j << " k " << k << "\n";
-      std::cout << "H: " << H << "\n";
-      std::cout << "size: " << mat.size() << "\n";
-      std::cout << "Nx: " << Nx << " Ny " << Ny << " Nz " << Nz << "\n";
-
       assert( (indx >= 0) && (indx <  (int)mat.size() ) );
 
       return indx;
@@ -71,10 +65,7 @@ class Mesh
       Ny(0),
       Nz(0),
       mat(0)
-    {
-      //mat.resize( 0 );
-      std::cout << "Mesh ctor empty\n";
-    }
+    { }
 
     /// standard initialization
     Mesh(int Nx, int Ny, int Nz) : 
@@ -83,7 +74,6 @@ class Mesh
       Nz(Nz),
       mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
-      std::cout << "Mesh ctor: 0  " << Nx << " " << Ny << " " << Nz << " s:" << mat.size() << "\n";
       try {
 
         if(Nx > 256) throw std::range_error ("Mesh nx too big");
@@ -91,26 +81,18 @@ class Mesh
         if(Nz > 256) throw std::range_error ("Mesh nz too big");
 
         //mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) ); //automatically done at construction
+          
         std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
       } catch ( std::exception& e) {
+
         // whoops... if control reaches here, a memory allocation
         // failure occurred somewhere.
-        std::cout << "Standard exception: " << e.what() << std::endl;
+        std::cerr << "Standard exception: " << e.what() << std::endl;
         assert(false);
       }
-      std::cout << "Mesh ctor: 1 (" << Nx << "," << Ny << "," << Nz << ") s:" << mat.size() << "\n";
 
       if(mat.size() < 1) assert(false);
     };
-
-    // 2D shortcut
-    //Mesh(int Nx, int Ny) :
-    //  Nx(Nx), Ny(Ny), Nz(1) { Mesh(Nx, Ny, Nz); }
-
-    //// 1D shortcut
-    //Mesh(int Nx) : 
-    //  Nx(Nx), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
-
 
     // explicit default copy operator
     //Mesh(Mesh& other) = default;
@@ -160,12 +142,7 @@ class Mesh
         swap(*this, other);
     }
 
-
-
-    ~Mesh() {
-      std::cout << "~Mesh\n";
-    }
-    //virtual ~Mesh() = default;
+    ~Mesh() = default;
 
     /// address to data
     T* data() { return mat.data(); }
@@ -307,33 +284,10 @@ class Mesh
 };
 
 
-/*
-template <class T, int H>
-Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
-  validateDims(rhs);
 
-  for(size_t i=0; i<this->mat.size(); i++) {
-    this->mat[i] = rhs.mat[i];
-  }
-  return *this;
-}
-*/
 
-/// = with any halo size
-//template<typename T, int H>
-//Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H>& rhs) {
-//  validateDims(rhs);
-//    
-//  // explicit deep copy
-//  for(size_t i=0; i<this->mat.size(); i++) {
-//    this->mat[i] = rhs.mat[i];
-//  }
-//    
-//  // implicit deep copy
-//  //this->mat = rhs.mat;
-//  return *this;
-//}
 
+//--------------------------------------------------
 
 /// = with differing halo size
 template<typename T, int H>
@@ -457,28 +411,11 @@ Mesh<T,H>& Mesh<T,H>::operator/=(const T& rhs) {
 
 // Array arithmetics 
 //-------------------------------------------------- 
-/*
-template <class T, int H>
-inline Mesh<T,H> operator+(Mesh<T,H> lhs, const Mesh<T,H>& rhs) {
-  lhs += rhs;
-  return lhs;
-}
-*/
-
 template <class T, int H, int H2>
 inline Mesh<T,H> operator+(Mesh<T,H> lhs, const Mesh<T,H2>& rhs) {
   lhs += rhs;
   return lhs;
 }
-
-
-/*
-template <class T, int H>
-inline Mesh<T,H> operator-(Mesh<T,H> lhs, const Mesh<T,H>& rhs) {
-  lhs -= rhs;
-  return lhs;
-}
-*/
 
 template <class T, int H, int H2>
 inline Mesh<T,H> operator-(Mesh<T,H> lhs, const Mesh<T,H2>& rhs) {

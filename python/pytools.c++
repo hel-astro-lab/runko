@@ -52,7 +52,6 @@ void declare_mesh(
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
         auto k = indx[2].cast<int>();
-        std::cout << "__getitem__ " << i << " " << j << " " << k << "\n";
 
         // NOTE: these are out-of-bounds; not inbound checks
         try {
@@ -64,10 +63,8 @@ void declare_mesh(
           if (j >= (int)s.Ny+H) throw py::index_error();
           if (k >= (int)s.Nz+H) throw py::index_error();
         } catch (std::exception& e) {
-          std::cout << "Standard exception: " << e.what() << std::endl;
+          std::cerr << "Standard exception: " << e.what() << std::endl;
         }
-
-        std::cout << "__getitem passed ind__ nxnynz:" << s.Nx+H << " " << s.Ny+H << " " << s.Nz+H << "\n";
 
         T val = s(i,j,k);
         return val;

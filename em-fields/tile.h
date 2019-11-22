@@ -50,11 +50,7 @@ class YeeLattice
 
 
   // default empty constructor
-  YeeLattice() 
-  {
-    std::cout << "YeeL ctor empty\n";
-  };
-
+  YeeLattice()  = default;
 
   // real initializer constructor
   YeeLattice(int Nx, int Ny, int Nz) : 
@@ -72,9 +68,7 @@ class YeeLattice
     jx1(Nx, Ny, Nz),
     jy1(Nx, Ny, Nz),
     jz1(Nx, Ny, Nz)
-    { 
-      std::cout << "YeeL ctor: (" << Nx << "," << Ny << "," << Nz << ")\n";
-    }
+    { }
 
   // copy ctor
   YeeLattice(YeeLattice& other) :
@@ -94,9 +88,7 @@ class YeeLattice
     jx1(other.jx1),
     jy1(other.jy1),
     jz1(other.jz1)
-  {
-    std::cout << "Yee copy ctor\n";
-  }
+  { }
 
   YeeLattice(const YeeLattice& other) :
     Nx(other.Nx),
@@ -115,9 +107,7 @@ class YeeLattice
     jx1(other.jx1),
     jy1(other.jy1),
     jz1(other.jz1)
-  {
-    std::cout << "const Yee copy ctor\n";
-  }
+  { }
 
   // move constructor
   YeeLattice(YeeLattice&& other)
@@ -156,13 +146,7 @@ class YeeLattice
     return *this;
   }
 
-  //virtual ~YeeLattice() = default;
-  ~YeeLattice() {
-    std::cout << "~YeeLattice\n";
-  }
-
-
-  
+  ~YeeLattice() = default;
 
 };
 
@@ -231,10 +215,7 @@ class PlasmaMomentLattice {
   { }
 
   //virtual ~PlasmaMomentLattice() = default;
-  ~PlasmaMomentLattice() 
-  {
-    std::cout << "~PlasmaMomentLattice\n";
-  };
+  ~PlasmaMomentLattice() = default;
 
   // clear all internal storages
   void clear() 
@@ -309,24 +290,14 @@ class Tile :
     // initialize one Yee lattice into the grid 
     // TODO: into data rotator?
 
-    std::cout<<"len0 of yee vec:" << yee.size() << "\n";
     add_yee_lattice();
-    std::cout<<"len1 of yee vec:" << yee.size() << "\n";
-
-    std::cout << "Tile() ctor has:" <<
-                 nx << " " << ny << " " << nz << " meshes (ex) has" <<
-                 yee[0].ex.Nx << " " << yee[0].ex.Ny << " " << yee[0].ex.Nz << "\n";
-
-
   }
 
   // avoid copies; TODO: is this needed?
   //Tile(Tile& ) = delete;
 
   //~Tile() = default;
-  virtual ~Tile() {
-    std::cout << "~Tile\n";
-  }
+  virtual ~Tile() = default;
 
   //--------------------------------------------------
 
