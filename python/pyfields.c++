@@ -148,8 +148,8 @@ void bind_fields(py::module& m_sub)
 
   py::class_<
     fields::YeeLattice,
-    std::shared_ptr<fields::YeeLattice>
-    //std::unique_ptr<fields::YeeLattice, py::nodelete>
+    //std::shared_ptr<fields::YeeLattice>
+    std::unique_ptr<fields::YeeLattice, py::nodelete>
             >(m_sub, "YeeLattice")
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("ex",   &fields::YeeLattice::ex   ,py::return_value_policy::reference_internal, py::keep_alive<1,0>() )

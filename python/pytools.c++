@@ -34,13 +34,13 @@ void declare_mesh(
 
     py::class_<
       toolbox::Mesh<T,H>,
-      std::shared_ptr<toolbox::Mesh<T,H>>
-      //std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
+      //std::shared_ptr<toolbox::Mesh<T,H>>,
+      std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
             >(m, pyclass_name.c_str())
     .def(py::init<size_t, size_t, size_t>())
-    //.def_property("Nx", &Class::Nx)
-    //.def_property("Ny", &Class::Ny)
-    //.def_property("Nz", &Class::Nz)
+    //.def("Nx", &Class::Nx)
+    //.def("Ny", &Class::Ny)
+    //.def("Nz", &Class::Nz)
     .def_property("Nx", [](Class &s){return (int)s.Nx;}, [](Class &s, int v){s.Nx = (size_t)v;})
     .def_property("Ny", [](Class &s){return (int)s.Ny;}, [](Class &s, int v){s.Ny = (size_t)v;})
     .def_property("Nz", [](Class &s){return (int)s.Nz;}, [](Class &s, int v){s.Nz = (size_t)v;})
