@@ -104,12 +104,12 @@ class Mesh
     };
 
     // 2D shortcut
-    Mesh(int Nx, int Ny) :
-      Nx(Nx), Ny(Ny), Nz(1) { Mesh(Nx, Ny, Nz); }
+    //Mesh(int Nx, int Ny) :
+    //  Nx(Nx), Ny(Ny), Nz(1) { Mesh(Nx, Ny, Nz); }
 
-    // 1D shortcut
-    Mesh(int Nx) : 
-      Nx(Nx), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
+    //// 1D shortcut
+    //Mesh(int Nx) : 
+    //  Nx(Nx), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
 
 
     // explicit default copy operator

@@ -172,9 +172,9 @@ class PlasmaMomentLattice {
 
   public:
 
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
+  int Nx;
+  int Ny;
+  int Nz;
 
   // density
   toolbox::Mesh<float_t, 0> rho;
@@ -207,7 +207,7 @@ class PlasmaMomentLattice {
 
 
   /// constructor; initializes Mesh objects at the same time
-  PlasmaMomentLattice(size_t Nx_in, size_t Ny_in, size_t Nz_in) : 
+  PlasmaMomentLattice(int Nx_in, int Ny_in, int Nz_in) : 
     Nx(Nx_in), Ny(Ny_in), Nz(Nz_in),
 
     rho(Nx, Ny, Nz),
@@ -269,7 +269,7 @@ class Tile :
   public:
 
   /// size of grid inside tile
-  std::array<size_t, 3> mesh_lengths;
+  std::array<int, 3> mesh_lengths;
 
   /// Yee lattice of plasma quantities (with 1 timestep)
   //toolbox::Rotator<YeeLattice, 1> yee;
@@ -292,9 +292,9 @@ class Tile :
 
   //--------------------------------------------------
   // constructor with internal mesh dimensions
-  Tile(size_t nx, size_t ny, size_t nz) :
+  Tile(int nx, int ny, int nz) :
     mesh_lengths {{nx, ny, nz}},
-    yee((int)nx, (int)ny, (int)nz)
+    yee(nx, ny, nz)
   {
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);
@@ -322,7 +322,7 @@ class Tile :
 
   virtual void deposit_current();
 
-  virtual YeeLattice& get_yee(size_t i=0);
+  virtual YeeLattice& get_yee(int i=0);
 
   virtual YeeLattice& get_yee2();
 
@@ -330,13 +330,13 @@ class Tile :
 
   virtual std::shared_ptr<YeeLattice> get_yeeptr();
 
-  virtual PlasmaMomentLattice& get_analysis(size_t i);
+  virtual PlasmaMomentLattice& get_analysis(int i);
 
   //FIXME: naming is wrong because of pybind: it can not deduce correct function
   //       with only constness difference.
-  virtual const YeeLattice& get_const_yee(size_t i=0) const; 
+  virtual const YeeLattice& get_const_yee(int i=0) const; 
 
-  virtual const PlasmaMomentLattice& get_const_analysis(size_t i) const;
+  virtual const PlasmaMomentLattice& get_const_analysis(int i) const;
 
   void cycle_yee();
 

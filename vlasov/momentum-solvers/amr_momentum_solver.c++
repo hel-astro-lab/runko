@@ -102,9 +102,9 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
 
       
 
-    for(size_t q=0; q<block0.Nx; q++) {
-      for(size_t r=0; r<block0.Ny; r++) {
-        for (size_t s=0; s<block0.Nz; s++) {
+    for(int q=0; q<block0.Nx; q++) {
+      for(int r=0; r<block0.Ny; r++) {
+        for(int s=0; s<block0.Nz; s++) {
           T qm = 1.0 / block0.qm;  // charge to mass ratio
 
 

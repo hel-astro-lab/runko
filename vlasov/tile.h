@@ -28,13 +28,13 @@ class PlasmaBlock {
 
   public:
 
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
+  int Nx;
+  int Ny;
+  int Nz;
 
   T block;
 
-  PlasmaBlock(size_t Nx, size_t Ny, size_t Nz) : 
+  PlasmaBlock(int Nx, int Ny, int Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
     block(Nx, Ny, Nz) 
   { }
@@ -62,9 +62,9 @@ class Tile :
   /// Size of the internal grid
   using fields::Tile<D>::mesh_lengths;
 
-  size_t Nspecies = 2;
+  int Nspecies = 2;
 
-  size_t Nsteps   = 2;
+  int Nsteps   = 2;
 
   /// Simulation data container (2 steps long)
   // 
@@ -76,7 +76,7 @@ class Tile :
 
 
   /// constructor
-  Tile(size_t nx, size_t ny, size_t nz) :
+  Tile(int nx, int ny, int nz) :
     fields::Tile<D>(nx,ny,nz)
   { 
 
@@ -118,9 +118,9 @@ class Tile :
 
     for(auto&& internal_mesh : species) {
 
-      for (size_t k=0; k<mesh_lengths[2]; k++)
-      for (size_t j=0; j<mesh_lengths[1]; j++)
-      for (size_t i=0; i<mesh_lengths[0]; i++) {
+      for (int k=0; k<mesh_lengths[2]; k++)
+      for (int j=0; j<mesh_lengths[1]; j++)
+      for (int i=0; i<mesh_lengths[0]; i++) {
         auto& mesh = internal_mesh.block(i,j,k);
         if( mesh.size() < 10 ) continue; // do not clip small meshes
 
@@ -149,9 +149,9 @@ class Tile :
 
     auto& species = steps.get();
     for(auto&& internal_mesh : species) {
-      for (size_t k=0; k<mesh_lengths[2]; k++)
-      for (size_t j=0; j<mesh_lengths[1]; j++)
-      for (size_t i=0; i<mesh_lengths[0]; i++) {
+      for (int k=0; k<mesh_lengths[2]; k++)
+      for (int j=0; j<mesh_lengths[1]; j++)
+      for (int i=0; i<mesh_lengths[0]; i++) {
         auto& mesh = internal_mesh.block(i,j,k);
         if( mesh.size() < 10 ) continue; // do not clip small meshes
 

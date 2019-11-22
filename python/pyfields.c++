@@ -27,7 +27,7 @@ namespace fields{
 
   
 // generator for damped tile for various directions
-template<size_t D>
+template<int D>
 auto declare_tile(
     py::module& m,
     const std::string& pyclass_name) 
@@ -40,7 +40,7 @@ auto declare_tile(
               corgi::Tile<D>, 
               std::shared_ptr<fields::Tile<D>>
             >(m, pyclass_name.c_str() )
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     //.def_readwrite("dx",       &fields::Tile<D>::dx)
     .def_readwrite("cfl",      &fields::Tile<D>::cfl)
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
@@ -71,7 +71,7 @@ auto declare_tile(
 
 
 // generator for damped tile for various directions
-template<size_t D, int S>
+template<int D, int S>
 auto declare_TileDamped(
     py::module& m,
     const std::string& pyclass_name) 
@@ -85,7 +85,7 @@ auto declare_TileDamped(
              fields::Tile<D>,
              std::shared_ptr<fields::damping::Tile<D,S>>
           >(m, pyclass_name.c_str() )
-  .def(py::init<size_t, size_t, size_t>())
+  .def(py::init<int, int, int>())
   .def_readwrite("ex_ref",   &fields::damping::Tile<D,S>::ex_ref, py::return_value_policy::reference)
   .def_readwrite("ey_ref",   &fields::damping::Tile<D,S>::ey_ref, py::return_value_policy::reference)
   .def_readwrite("ez_ref",   &fields::damping::Tile<D,S>::ez_ref, py::return_value_policy::reference)
@@ -99,7 +99,7 @@ auto declare_TileDamped(
 
 
 /// trampoline class for fields Propagator
-template<size_t D>
+template<int D>
 class PyPropagator : public Propagator<D>
 {
   void push_e( Tile<D>& tile ) override {
@@ -124,7 +124,7 @@ class PyPropagator : public Propagator<D>
 
 
 /// trampoline class for fields Filter
-template<size_t D>
+template<int D>
 class PyFilter : public Filter<D>
 {
   using Filter<D>::Filter;
@@ -145,7 +145,9 @@ void bind_fields(py::module& m_sub)
 {
     
   //--------------------------------------------------
-
+  //py::init([](Container::size_type s, const T &t) { return Container(s, t); })
+  //py::init([](const std::binary_function<double, double, bool> & other) { return new std::binary_function<double, double, bool>(other); })
+  //
   py::class_<
     fields::YeeLattice,
     //std::shared_ptr<fields::YeeLattice>
@@ -178,7 +180,7 @@ void bind_fields(py::module& m_sub)
     fields::PlasmaMomentLattice,
     std::shared_ptr<fields::PlasmaMomentLattice> 
             >(m_sub, "PlasmaMomentLattice")
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho)
     .def_readwrite("edens",    &fields::PlasmaMomentLattice::edens)
     .def_readwrite("temp",     &fields::PlasmaMomentLattice::temp)
@@ -264,7 +266,7 @@ void bind_fields(py::module& m_sub)
   //m.def("make_bell", []() { return new Bell; }, return_value_policy::reference);
   m_3d.def("make_and_add_tile", [](
         corgi::Grid<3>& grid,
-        size_t nx, size_t ny, size_t nz,
+        int nx, int ny, int nz,
         corgi::internals::tuple_of<3, size_t> indices
         ) {
 
@@ -357,14 +359,14 @@ void bind_fields(py::module& m_sub)
   // 2D Filter bindings
   py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
   fieldsfilter2d
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def("solve", &fields::Filter<2>::solve);
 
   // digital filter
   // FIXME: remove hack where we explicitly define solve (instead of use trampoline class)
   // overwriting the solve function from trampoline does not work atm for some weird reason.
   py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<2>::solve);
 
 

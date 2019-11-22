@@ -42,7 +42,7 @@ auto declare_tile(
              fields::Tile<D>,
              std::shared_ptr<pic::Tile<D>>
              >(m, pyclass_name.c_str())
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def_readwrite("cfl",       &pic::Tile<D>::cfl)
     //.def_readwrite("container", &pic::Tile<D>::container);
     .def("get_container",       &pic::Tile<D>::get_container, 
@@ -73,7 +73,7 @@ namespace wall {
       fields::damping::Tile<D, S>,
       std::shared_ptr<pic::wall::Tile<D,S>>
         >(m, pyclass_name.c_str() )
-    .def(py::init<size_t, size_t, size_t>());
+    .def(py::init<int, int, int>());
 
     }
 }

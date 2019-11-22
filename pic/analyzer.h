@@ -41,7 +41,7 @@ class Analyzator {
     auto maxs = tile.maxs;
 
     // analysis lattice reference
-    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+    for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
       ParticleContainer& container = tile.get_container(ispc);
       auto& analysis = tile.analysis[ispc];
 

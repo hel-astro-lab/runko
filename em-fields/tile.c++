@@ -23,7 +23,7 @@ void Tile<D>::deposit_current()
 
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
-YeeLattice& Tile<D>::get_yee(size_t /*i*/) 
+YeeLattice& Tile<D>::get_yee(int /*i*/) 
 {
   //return this->yee[0];
   return this->yee;
@@ -51,7 +51,7 @@ std::shared_ptr<YeeLattice> Tile<D>::get_yeeptr()
 }
 
 template<std::size_t D>
-const YeeLattice& Tile<D>::get_const_yee(size_t /*i*/) const 
+const YeeLattice& Tile<D>::get_const_yee(int /*i*/) const 
 {
   //return this->yee.at(0);
   return this->yee;
@@ -60,13 +60,13 @@ const YeeLattice& Tile<D>::get_const_yee(size_t /*i*/) const
 
 /// Get analysis lattice of i:th species
 template<std::size_t D>
-PlasmaMomentLattice& Tile<D>::get_analysis(size_t i) 
+PlasmaMomentLattice& Tile<D>::get_analysis(int i) 
 {
   return this->analysis.at(i);
 }
 
 template<std::size_t D>
-const PlasmaMomentLattice& Tile<D>::get_const_analysis(size_t i) const 
+const PlasmaMomentLattice& Tile<D>::get_const_analysis(int i) const 
 {
   return this->analysis.at(i);
 }

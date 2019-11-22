@@ -33,7 +33,7 @@ h5io::Reader::read(
   k  << gr1["k"]; 
 
   // loop over species and add (individually) all particles
-  for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+  for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
     pic::ParticleContainer& container = tile.get_container(ispc);
 
     auto gr = gr1["sp-" + std::to_string(ispc)];

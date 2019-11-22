@@ -23,7 +23,7 @@ h5io::Writer::write(
   gr1["k"] = static_cast<int>( std::get<2>(my_ind) );
 
   // loop over different particle species 
-  for(size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
+  for(int ispc=0; ispc<tile.Nspecies(); ispc++) {
 
     // group for species + tile metainfo
     auto gr = gr1["sp-" + std::to_string(ispc)];

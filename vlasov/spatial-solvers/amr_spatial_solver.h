@@ -325,9 +325,9 @@ class AmrSpatialLagrangianSolver :
 
 
       // initialize new step
-      for (size_t s=0; s<block0.Nz; s++) {
-        for(size_t r=0; r<block0.Ny; r++) {
-          for(size_t q=0; q<block0.Nx; q++) {
+      for (int s=0; s<block0.Nz; s++) {
+        for(int r=0; r<block0.Ny; r++) {
+          for(int q=0; q<block0.Nx; q++) {
             const auto& M = block0.block(q,r,s); // f_i
             auto& N       = block1.block(q,r,s); // f_i^t+dt
             N = M;

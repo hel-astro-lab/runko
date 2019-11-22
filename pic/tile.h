@@ -43,19 +43,19 @@ public:
   // normal container methods
      
   /// get i:th container
-  ParticleContainer& get_container(size_t i) { return containers[i]; };
+  ParticleContainer& get_container(int i) { return containers[i]; };
 
-  const ParticleContainer& get_const_container(size_t i) const { return containers[i]; };
+  const ParticleContainer& get_const_container(int i) const { return containers[i]; };
 
   /// set i:th container
   void set_container(const ParticleContainer& block) { containers.push_back(block); };
 
-  size_t Nspecies() const { return containers.size(); };
+  int Nspecies() const { return containers.size(); };
 
 
 
   /// constructor
-  Tile(size_t nx, size_t ny, size_t nz) :
+  Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
     fields::Tile<D>(nx,ny,nz)
   { }

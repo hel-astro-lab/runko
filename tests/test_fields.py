@@ -433,12 +433,12 @@ class Communications(unittest.TestCase):
 
         conf = Conf()
 
-        conf.Nx = 3
-        conf.Ny = 3
-        conf.Nz = 3
-        conf.NxMesh = 10
-        conf.NyMesh = 10
-        conf.NzMesh = 10
+        conf.Nx = 4
+        conf.Ny = 5
+        conf.Nz = 6
+        conf.NxMesh = 20
+        conf.NyMesh = 20
+        conf.NzMesh = 20
 
         print("\n mem bug --------")
         #print("grid")
@@ -476,7 +476,7 @@ class Communications(unittest.TestCase):
         #print("ending yee2")
 
 
-        if True:
+        if False:
             print("getting yee p0")
             yee0 = tile.get_yee()
             #yee0 = tile.yee
@@ -491,8 +491,7 @@ class Communications(unittest.TestCase):
             print("size was", nt)
 
             nx = ex0.Nx
-            #ny = ex0.Ny
-            ny = ex0.get_Ny()
+            ny = ex0.Ny
             nz = ex0.Nz
             print("nx ny nz ", nx,ny,nz)
 
@@ -502,33 +501,43 @@ class Communications(unittest.TestCase):
             print("end of getting yee p0")
 
         # now re-ask for the tile to test handling of multiple copies of same object
-        print("---phase 2---")
-        print("fetching another copy of the same tile")
-        #print("getting 000")
-        c = grid.get_tile(0,0,1)
-        print(c.cid)
-        print(c.mins) 
-        print(c.maxs) 
-        print(c.index) 
+        if True:
+            print("---phase 2---")
+            print("fetching another copy of the same tile")
+            #print("getting 000")
+            c = grid.get_tile(0,0,1)
+            print(c.cid)
+            print(c.mins) 
+            print(c.maxs) 
+            print(c.index) 
 
-        print("ref count tile:", sys.getrefcount(c))
+            print("ref count tile:", sys.getrefcount(c))
 
-        print("getting yee p1")
-        yee = c.get_yee()
-        print("ref count yee:", sys.getrefcount(yee))
-        #yee = c.yee
-        #yee = c.get_yeeptr()
-        print("getting ex")
-        ex = yee.ex
-        print("ref count ex:", sys.getrefcount(ex))
-        #ex = yee.get_ex()
-        print("getting corner")
-        val = yee.ex[1,1,1]
-        print("getting size")
-        nx = ex.size()
-        print("size from yee", nx)
-        #print("size from tile directly", c.yee.ex.nx)
-        self.assertEqual(nx, conf.NxMesh)
+            print("getting yee p1")
+            yee = c.get_yee()
+            print("ref count yee:", sys.getrefcount(yee))
+            #yee = c.yee
+            #yee = c.get_yeeptr()
+            print("getting ex")
+            ex = yee.ex
+            print("ref count ex:", sys.getrefcount(ex))
+            #ex = yee.get_ex()
+
+            nt = ex.size()
+            print("size was", nt)
+            nx = ex.Nx
+            ny = ex.Ny
+            nz = ex.Nz
+            print("nx ny nz ", nx,ny,nz)
+
+
+            print("getting corner")
+            val = yee.ex[1,1,1]
+            print("getting size")
+            nx = ex.size()
+            print("size from yee", nx)
+            #print("size from tile directly", c.yee.ex.nx)
+            #self.assertEqual(nx, conf.NxMesh)
 
         #analysis = c.get_analysis()
 

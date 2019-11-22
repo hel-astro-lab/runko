@@ -85,7 +85,7 @@ void Tile<2>::get_incoming_particles(
 
       // loop over all containers
         
-      for(size_t ispc=0; ispc<Nspecies(); ispc++) {
+      for(int ispc=0; ispc<Nspecies(); ispc++) {
         auto& container = get_container(ispc);
         auto& neigh = external_tile.get_container(ispc);
 
@@ -152,7 +152,7 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
     int tag)
 {
   std::vector<mpi::request> reqs;
-  for(size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for(int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
 
     reqs.emplace_back(
@@ -173,7 +173,7 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
     int tag)
 {
   std::vector<mpi::request> reqs;
-  for(size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for(int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
 
     if(!container.outgoing_extra_particles.empty()) {
@@ -215,7 +215,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
     int tag)
 {
   std::vector<mpi::request> reqs;
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for (int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
     container.incoming_particles.resize( container.optimal_message_size );
 
@@ -243,7 +243,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
 
   // normal particles
   int extra_size=0;
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for (int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
     //container.incoming_extra_particles.clear();
       
