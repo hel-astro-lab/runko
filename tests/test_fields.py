@@ -62,6 +62,8 @@ def loadTiles3D(n, conf):
                 #print("putting", i,j,k)
                 #if n.get_mpi_grid(i,j) == n.rank:
                 c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c.lengths = [conf.Nx, conf.Ny, conf.Nz]
+
                 n.add_tile(c, (i,j,k) ) 
         
                 #c = pyrunko.fields.threeD.make_and_add_tile( n, 
@@ -631,7 +633,7 @@ class Communications(unittest.TestCase):
                         self.assertEqual(k, indx3[2])
 
 
-    def skip_updateBoundaries3D(self):
+    def test_updateBoundaries3D(self):
 
         conf = Conf()
 
@@ -662,6 +664,12 @@ class Communications(unittest.TestCase):
                         indx = c.index
                         #indx2 = c.communication.indices
                         #indx = c.get_index(grid)
+                        
+                        lens = c.lengths
+                        print(lens)
+                        self.assertEqual(lens[0], conf.Nx)
+                        self.assertEqual(lens[1], conf.Ny)
+                        self.assertEqual(lens[2], conf.Nz)
 
                         #print("what got out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
                         #print("what got out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
@@ -729,7 +737,11 @@ class Communications(unittest.TestCase):
         #update boundaries
         print("update boundaries")
         for cid in grid.get_tile_ids():
+            print("getting tile")
             c = grid.get_tile( cid )
+            print("got tile ", c.cid)
+            i,j,k = c.index
+            print("i,j,k {},{},{}".format(i,j,k))
             c.update_boundaries(grid)
 
         #for i in [1]:

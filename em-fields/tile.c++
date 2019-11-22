@@ -470,6 +470,8 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
 template<>
 void Tile<3>::update_boundaries(corgi::Grid<3>& grid) 
 {
+  std::cout << "upB: updating boundaries\n";
+
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
@@ -483,14 +485,15 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
       for(int kn=-1; kn <= 1; kn++) {
+
+        std::cout << "upB: " << in << "," << jn << "," << kn << "\n";
+
         if (in == 0 && jn == 0 && kn == 0) continue;
 
         // continue only if the tile exists (get_tileptr return nullptr otherwise)
         tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
         if (tpr) {
           auto& mpr = tpr->get_yee();
-
-          //TODO: implement 3D
 
           /* diagonal rules are:
           if + then to   n
@@ -512,7 +515,11 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
           //if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
           //else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
           //else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
+
+          std::cout << "upB: " << in << "," << jn << "," << kn << " "
+            << "(" << ito << "/" << jto << "/" << kto << "  " << ifro << "/" << jfro << "/" << kfro << ")\n";
           
+
           // generalized halo >= 1 loops
 
           // 2D case; kn == 0; no tiles behind or infront
