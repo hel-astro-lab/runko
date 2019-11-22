@@ -25,19 +25,19 @@ class Mesh
   public:
 
     /// grid size along x
-    size_t Nx;
+    int Nx;
       
     /// grid size along y
-    size_t Ny;
+    int Ny;
 
     /// grid size along z
-    size_t Nz;
+    int Nz;
 
     /// internal storage
     std::vector<T> mat;
 
     /// Internal indexing with halo region padding of width H
-    inline size_t indx(int i, int j, int k) const {
+    inline int indx(int i, int j, int k) const {
       assert( (i >= -H) && (i <  (int)Nx + H)  );
       assert( (j >= -H) && (j <  (int)Ny + H)  );
       assert( (k >= -H) && (k <  (int)Nz + H)  );
@@ -70,21 +70,26 @@ class Mesh
       Nx(1),
       Ny(1),
       Nz(1),
-      mat( (Nx + 2*(size_t)H)*(Ny + 2*(size_t)H)*(Nz + 2*(size_t)H) )
+      mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
       mat.resize( 1 );
       std::cout << "Mesh ctor empty\n";
     }
 
     /// standard initialization
-    Mesh(size_t nx, size_t ny, size_t nz) : 
-      Nx(nx), 
-      Ny(ny), 
-      Nz(nz),
-      mat( (Nx + 2*(size_t)H)*(Ny + 2*(size_t)H)*(Nz + 2*(size_t)H) )
+    Mesh(int Nx, int Ny, int Nz) : 
+      Nx(Nx), 
+      Ny(Ny), 
+      Nz(Nz),
+      mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
       std::cout << "Mesh ctor: 0  " << Nx << " " << Ny << " " << Nz << " s:" << mat.size() << "\n";
       try {
+
+        if(Nx > 256) throw std::range_error ("Mesh nx too big");
+        if(Ny > 256) throw std::range_error ("Mesh ny too big");
+        if(Nz > 256) throw std::range_error ("Mesh nz too big");
+
         //mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) ); //automatically done at construction
         std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
       } catch ( std::exception& e) {
@@ -99,12 +104,12 @@ class Mesh
     };
 
     // 2D shortcut
-    Mesh(size_t Nx_in, size_t Ny_in) :
-      Nx(Nx_in), Ny(Ny_in), Nz(1) { Mesh(Nx, Ny, Nz); }
+    Mesh(int Nx, int Ny) :
+      Nx(Nx), Ny(Ny), Nz(1) { Mesh(Nx, Ny, Nz); }
 
     // 1D shortcut
-    Mesh(size_t Nx_in) : 
-      Nx(Nx_in), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
+    Mesh(int Nx) : 
+      Nx(Nx), Ny(1), Nz(1)     { Mesh(Nx, Ny, Nz); }
 
 
     // explicit default copy operator
@@ -193,13 +198,13 @@ class Mesh
     // TODO: vec or vec& ?
     void unserialize(
         std::vector<T>& vec, 
-        size_t Nx_in, size_t Ny_in, size_t Nz_in
+        int Nx_in, int Ny_in, int Nz_in
         ) {
 
       Nx = Nx_in;
       Ny = Ny_in;
       Nz = Nz_in;
-      mat.resize( (Nx + 2*(size_t)H)*(Ny + 2*(size_t)H)*(Nz + 2*(size_t)H) );
+      mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
 
       int q = 0;
       for(int k=0; k<int(Nz); k++)
@@ -336,9 +341,9 @@ template <int H2>
 Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
   validateDims(rhs);
 
-  for(size_t k=0;  k<this->Nz; k++) {
-    for(size_t j=0;  j<this->Ny; j++) {
-      for(size_t i=0;  i<this->Nx; i++) {
+  for(int k=0;  k<this->Nz; k++) {
+    for(int j=0;  j<this->Ny; j++) {
+      for(int i=0;  i<this->Nx; i++) {
         this->operator()(i,j,k) = rhs(i,j,k);
       }
     }
@@ -351,7 +356,7 @@ Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
 template <class T, int H>
 Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
   // overwriting internal container with a scalar
-  for(size_t i=0; i<this->mat.size(); i++) {
+  for(int i=0; i<this->mat.size(); i++) {
     this->mat[i] = rhs;
   }
   return *this;
@@ -362,14 +367,14 @@ template<typename T, int H>
 Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
 
-  //for(size_t i=0; i<this->mat.size(); i++) {
+  //for(int i=0; i<this->mat.size(); i++) {
   //  this->mat[i] += rhs.mat[i];
   //}
 
   // TODO: do not operate on halo regions
-  for(size_t k=0;  k<this->Nz; k++) {
-    for(size_t j=0;  j<this->Ny; j++) {
-      for(size_t i=0;  i<this->Nx; i++) {
+  for(int k=0;  k<this->Nz; k++) {
+    for(int j=0;  j<this->Ny; j++) {
+      for(int i=0;  i<this->Nx; i++) {
         this->operator()(i,j,k) += rhs(i,j,k);
       }
     }
@@ -383,9 +388,9 @@ template <int H2>
 Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H2>& rhs) {
   validateDims(rhs);
 
-  for(size_t k=0;  k<this->Nz; k++) {
-    for(size_t j=0;  j<this->Ny; j++) {
-      for(size_t i=0;  i<this->Nx; i++) {
+  for(int k=0;  k<this->Nz; k++) {
+    for(int j=0;  j<this->Ny; j++) {
+      for(int i=0;  i<this->Nx; i++) {
         this->operator()(i,j,k) += rhs(i,j,k);
       }
     }
@@ -400,16 +405,16 @@ Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
 
   // purely vectorized version
-  //for(size_t i=0; i<this->mat.size(); i++) {
+  //for(int i=0; i<this->mat.size(); i++) {
   //  this->mat[i] -= rhs.mat[i];
   //}
 
   // Version that does not operate on halo regions
   // this is more correct but every so slightly slower
   // because vectorization is interrupted.
-  for(size_t k=0;  k<this->Nz; k++) {
-    for(size_t j=0;  j<this->Ny; j++) {
-      for(size_t i=0;  i<this->Nx; i++) {
+  for(int k=0;  k<this->Nz; k++) {
+    for(int j=0;  j<this->Ny; j++) {
+      for(int i=0;  i<this->Nx; i++) {
         this->operator()(i,j,k) -= rhs(i,j,k);
       }
     }
@@ -422,9 +427,9 @@ template <int H2>
 Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H2>& rhs) {
   validateDims(rhs);
 
-  for(size_t k=0;  k<this->Nz; k++) {
-    for(size_t j=0;  j<this->Ny; j++) {
-      for(size_t i=0;  i<this->Nx; i++) {
+  for(int k=0;  k<this->Nz; k++) {
+    for(int j=0;  j<this->Ny; j++) {
+      for(int i=0;  i<this->Nx; i++) {
         this->operator()(i,j,k) -= rhs(i,j,k);
       }
     }
