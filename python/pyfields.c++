@@ -53,9 +53,9 @@ auto declare_tile(
     .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
     .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
 
-    .def("get_yee",             &fields::Tile<D>::get_yee, 
+    .def("get_yee",             &fields::Tile<D>::get_yee,
         py::arg("i")=0,
-        py::return_value_policy::reference,
+        py::return_value_policy::reference_internal,
         // keep alive for the lifetime of the grid
         //
         // pybind11:
@@ -167,6 +167,8 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("jy",   &fields::YeeLattice::jy   ,py::return_value_policy::reference_internal)
     .def_readwrite("jz",   &fields::YeeLattice::jz   ,py::return_value_policy::reference_internal)
     .def_readwrite("jx1",  &fields::YeeLattice::jx1  ,py::return_value_policy::reference_internal)
+    .def_readwrite("jy1",  &fields::YeeLattice::jy1  ,py::return_value_policy::reference_internal)
+    .def_readwrite("jz1",  &fields::YeeLattice::jz1  ,py::return_value_policy::reference_internal)
     .def_readwrite("rho",  &fields::YeeLattice::rho  ,py::return_value_policy::reference_internal)
     .def_property("ex2",   
         [](YeeLattice& self) { return self.ex; },

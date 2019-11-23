@@ -20,7 +20,7 @@ class Particle
 public:
 
   /// actual particle data
-  std::array<double,7> data = {-1,-2,-3,-4,-5,-7};
+  std::array<float_tp, 7> data = {-1,-2,-3,-4,-5,-7};
 
   /// particle id
   int _id = 0;
@@ -31,22 +31,22 @@ public:
   Particle() {};
 
   /// standard ctor
-  Particle(double x,  double y,  double z,
-           double ux, double uy, double uz,
-           double wgt,
+  Particle(float_tp x,  float_tp y,  float_tp z,
+           float_tp ux, float_tp uy, float_tp uz,
+           float_tp wgt,
            int __ind, int __proc
            );
 
   /// special ctor for info prtcl
   Particle(size_t number_of_particles);
 
-  inline double& x()   { return data[0]; };
-  inline double& y()   { return data[1]; };
-  inline double& z()   { return data[2]; };
-  inline double& ux()  { return data[3]; };
-  inline double& uy()  { return data[4]; };
-  inline double& uz()  { return data[5]; };
-  inline double& wgt() { return data[6]; };
+  inline float_tp& x()   { return data[0]; };
+  inline float_tp& y()   { return data[1]; };
+  inline float_tp& z()   { return data[2]; };
+  inline float_tp& ux()  { return data[3]; };
+  inline float_tp& uy()  { return data[4]; };
+  inline float_tp& uz()  { return data[5]; };
+  inline float_tp& wgt() { return data[6]; };
 
   inline int& id()   { return _id;   };
   inline int& proc() { return _proc; };
@@ -88,10 +88,10 @@ class ParticleContainer {
 
   size_t Nprtcls = 0;
 
-  std::vector< std::vector<double> > locArr;
-  std::vector< std::vector<double> > velArr;
+  std::vector< std::vector<float_tp> > locArr;
+  std::vector< std::vector<float_tp> > velArr;
   std::vector< std::vector<int> > indArr;
-  std::vector<double> wgtArr;
+  std::vector<float_tp> wgtArr;
 
   public:
     
@@ -118,10 +118,10 @@ class ParticleContainer {
   int optimal_message_size = 3000;
 
   //! particle specific electric field components
-  std::vector<double> Epart;
+  std::vector<float_tp> Epart;
 
   //! particle specific magnetic field components
-  std::vector<double> Bpart;
+  std::vector<float_tp> Bpart;
 
   //! multimap of particles going to other tiles
   typedef std::multimap<std::tuple<int,int,int>, int> mapType;
@@ -134,7 +134,6 @@ class ParticleContainer {
   size_t Nz;
 
   double q = 1.0; // normalization factor
-
 
   /// Constructor 
   ParticleContainer();
@@ -160,66 +159,66 @@ class ParticleContainer {
 
   //--------------------------------------------------
   // locations
-  virtual inline double loc( size_t idim, size_t iprtcl ) const
+  virtual inline float_tp loc( size_t idim, size_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline double& loc( size_t idim, size_t iprtcl )       
+  virtual inline float_tp& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<double> loc(size_t idim) const 
+  virtual inline std::vector<float_tp> loc(size_t idim) const 
   {
     return locArr[idim];
   }
 
-  virtual inline std::vector<double>& loc(size_t idim)
+  virtual inline std::vector<float_tp>& loc(size_t idim)
   {
     return locArr[idim];
   }
 
   //--------------------------------------------------
   // velocities
-  virtual inline double vel( size_t idim, size_t iprtcl ) const
+  virtual inline float_tp vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline double& vel( size_t idim, size_t iprtcl )       
+  virtual inline float_tp& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<double> vel(size_t idim) const 
+  virtual inline std::vector<float_tp> vel(size_t idim) const 
   {
     return velArr[idim];
   }
 
-  virtual inline std::vector<double>& vel(size_t idim)
+  virtual inline std::vector<float_tp>& vel(size_t idim)
   {
     return velArr[idim];
   }
 
   //--------------------------------------------------
   // weights
-  virtual inline double wgt( size_t iprtcl ) const
+  virtual inline float_tp wgt( size_t iprtcl ) const
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline double& wgt( size_t iprtcl )       
+  virtual inline float_tp& wgt( size_t iprtcl )       
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline std::vector<double> wgt() const
+  virtual inline std::vector<float_tp> wgt() const
   {
     return wgtArr;
   }
 
-  virtual inline std::vector<double>& wgt()
+  virtual inline std::vector<float_tp>& wgt()
   {
     return wgtArr;
   }
@@ -248,15 +247,15 @@ class ParticleContainer {
 
   // particle creation
   virtual void add_particle (
-      std::vector<double> prtcl_loc,
-      std::vector<double> prtcl_vel,
-      double prtcl_wgt);
+      std::vector<float_tp> prtcl_loc,
+      std::vector<float_tp> prtcl_vel,
+      float_tp prtcl_wgt);
 
   // particle creation
   virtual void add_identified_particle (
-      std::vector<double> prtcl_loc,
-      std::vector<double> prtcl_vel,
-      double prtcl_wgt, 
+      std::vector<float_tp> prtcl_loc,
+      std::vector<float_tp> prtcl_vel,
+      float_tp prtcl_wgt, 
       int _ind, int _proc);
 
 

@@ -141,15 +141,13 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
     auto& tile = dynamic_cast<pic::Tile<2>&>(grid.get_tile( cid ));
     auto& container = tile.get_container( ispc );
 
-    double* loc[3];
-    for( int i=0; i<3; i++)
-      loc[i] = &( container.loc(i,0) );
+    float_tp* loc[3];
+    for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    double* vel[3];
-    for( int i=0; i<3; i++)
-      vel[i] = &( container.vel(i,0) );
+    float_tp* vel[3];
+    for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-    double* ch;
+    float_tp* ch;
     ch = &( container.wgt(0) );
 
     // reference the ids 

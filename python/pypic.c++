@@ -166,8 +166,8 @@ void bind_pic(py::module& m_sub)
     .def("size",          &pic::ParticleContainer::size)
     .def("add_particle",  &pic::ParticleContainer::add_particle)
     .def("add_particle2", [](pic::ParticleContainer& s, 
-                            Realf xx, Realf yy, Realf zz,
-                            Realf vx, Realf vy, Realf vz, Realf wgt)
+                            float_tp xx, float_tp yy, float_tp zz,
+                            float_tp vx, float_tp vy, float_tp vz, float_tp wgt)
         {
           s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
         })

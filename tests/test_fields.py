@@ -82,7 +82,7 @@ def wrap(ii, N):
 
 class FLD_inits(unittest.TestCase):
 
-    def test_propagators_1d(self):
+    def ttest_propagators_1d(self):
         conf = Conf()
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
@@ -93,7 +93,7 @@ class FLD_inits(unittest.TestCase):
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
         
-    def test_propagators_2d(self):
+    def ttest_propagators_2d(self):
         conf = Conf()
         conf.NzMesh = 1 #force 2D
 
@@ -113,7 +113,7 @@ class Communications(unittest.TestCase):
         update boundaries, check that every tile
         has correct boundaries.
     """
-    def test_updateBoundaries(self):
+    def ttest_updateBoundaries(self):
 
         conf = Conf()
         conf.NyMesh = 1 #force 1D
@@ -224,7 +224,7 @@ class Communications(unittest.TestCase):
                 
 
 
-    def test_updateBoundaries2D(self):
+    def ttest_updateBoundaries2D(self):
 
         conf = Conf()
 
@@ -359,7 +359,7 @@ class Communications(unittest.TestCase):
                 self.assertEqual(ref2[i,j], arr[i,j])
 
     # testing a spesific seg fault with loading of yee lattices. This same test fails with 3D
-    def test_2D_tile_memory_bug(self):
+    def ttest_2D_tile_memory_bug(self):
         conf = Conf()
         conf.Nx = 3
         conf.Ny = 3
@@ -384,7 +384,7 @@ class Communications(unittest.TestCase):
 
         #print("mem bug +++++++")
 
-    def test_3D_mesh_memory_bug(self):
+    def ttest_3D_mesh_memory_bug(self):
         conf = Conf()
         conf.NxMesh = 10
         conf.NyMesh = 10
@@ -404,7 +404,7 @@ class Communications(unittest.TestCase):
     # Captures memory bug with mesh initialization; when internal meshes in YeeLattice
     # are too big, compiler tires to over-optimize. Then some stuff never gets allocated.
     # This is fixed now by a copy-and-swap algorithm in toolbox::Mesh.
-    def test_3D_tile_memory_bug(self):
+    def ttest_3D_tile_memory_bug(self):
 
         conf = Conf()
 
@@ -541,7 +541,7 @@ class Communications(unittest.TestCase):
 
         #print("mem bug +++++++")
 
-    def test_tile_indices2D(self):
+    def ttest_tile_indices2D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -585,7 +585,7 @@ class Communications(unittest.TestCase):
                     self.assertEqual(j, indx3[1])
 
 
-    def test_tile_indices3D(self):
+    def ttest_tile_indices3D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -648,6 +648,11 @@ class Communications(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
         loadTiles3D(grid, conf)
 
+        print("debug testing yee lifetime")
+        c = grid.get_tile(1,1,1)
+        yee = c.get_yee() #FIXME: yee does not exist here
+        yee.ex[0,0,0] = 1.0
+
         # lets put values into Yee lattice
         print("3D boundary test")
 
@@ -660,6 +665,7 @@ class Communications(unittest.TestCase):
                     if True:
                         #print("get tile", i,j,k)
                         c = grid.get_tile(i,j,k)
+                        yee = c.get_yee() #FIXME: yee does not exist here
 
                         indx = c.index
                         #indx2 = c.communication.indices
@@ -675,12 +681,11 @@ class Communications(unittest.TestCase):
                         #print("what got out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
                         #print("what got out 3:",c.cid," <-> ", i,j,k," vs. indx ", indx3)
 
-                        #self.assertEqual(i, indx[0])
-                        #self.assertEqual(j, indx[1])
-                        #self.assertEqual(k, indx[2])
+                        self.assertEqual(i, indx[0])
+                        self.assertEqual(j, indx[1])
+                        self.assertEqual(k, indx[2])
 
                         #print("get yee")
-                        yee = c.get_yee()
 
                         for s in range(conf.NzMesh):
                             for r in range(conf.NyMesh):
@@ -839,5 +844,37 @@ class Communications(unittest.TestCase):
                     for k in range(nz):
                         if iarrs == 0:
                             self.assertEqual(ref2[i,j,k], arr[i,j,k])
+
+
+    def test_neighs3D(self):
+
+        conf = Conf()
+
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 3
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.NzMesh = 3 
+
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+        loadTiles3D(grid, conf)
+
+
+        tile = grid.get_tile(1,1,1)
+        for ii in [-1, 0, 1]:
+            for jj in [-1, 0, 1]:
+                for kk in [-1, 0, 1]:
+                    if (ii == 0 and jj == 0 and kk == 0): continue
+
+                    yee = tile.get_yee()
+                    ind = tile.neighs(ii,jj,kk)
+
+
+
+
+
+
 
 

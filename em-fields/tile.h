@@ -15,8 +15,8 @@ namespace fields {
 
 
 /// Yee lattice of plasma quantities
-class YeeLattice 
-//  public std::enable_shared_from_this<YeeLattice>
+class YeeLattice
+// : public std::enable_shared_from_this<YeeLattice>
 {
 
   public:
@@ -152,7 +152,9 @@ class YeeLattice
 
 
 /// Lattice to hold plasma moment values of separate species
-class PlasmaMomentLattice {
+class PlasmaMomentLattice 
+//  : public std::enable_shared_from_this<PlasmaMomentLattice>
+{
 
   public:
 
@@ -250,8 +252,7 @@ class PlasmaMomentLattice {
  */
 template<std::size_t D>
 class Tile : 
-  virtual public corgi::Tile<D>,
-  public std::enable_shared_from_this<Tile<D>>
+  virtual public corgi::Tile<D>
 {
 
   public:

@@ -23,6 +23,21 @@ using creal = const double;
 using double_t = double;
 using float_t = float;
 
+// Separate short float type for particles. In most applications it is enough
+// to keep this as float. However, some special cases might require extra
+// resolution so fall-back to double might be needed.
+//
+// NOTE: Some calculations are still mixed-precision, as before, because critical
+// numerical parts are still done via double_t precision.
+//
+// NOTE: To force a purely single-precision particle algorithms make 
+// double_t also float.
+using float_tp = float;
+
+// corresponding MPI datatype for particle communications; MPI_FLOAT or MPI_DOUBLE
+#define MPI_FLOAT_TP MPI_FLOAT
+
+
 
 // FIXME: These should be cleaned away also at some point and moved to 
 // relevant modules instead (like vlv).

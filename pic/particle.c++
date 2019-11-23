@@ -12,9 +12,9 @@
 namespace pic {
 
 inline Particle::Particle(
-    double x, double y, double z,
-    double ux, double uy, double uz, 
-    double wgt,
+    float_tp x, float_tp y, float_tp z,
+    float_tp ux, float_tp uy, float_tp uz, 
+    float_tp wgt,
     int __ind, int __proc
     ) : 
   _id(__ind),
@@ -32,7 +32,7 @@ inline Particle::Particle(
 
 inline Particle::Particle( size_t number_of_particles) 
 {
-  data[0] = static_cast<double>(number_of_particles);
+  data[0] = static_cast<float_tp>(number_of_particles);
 }
 
 /// special method for info particle that re-uses x mem location
@@ -123,9 +123,9 @@ std::pair<int,int> pic::ParticleContainer::keygen()
 
 
 void ParticleContainer::add_particle (
-    std::vector<double> prtcl_loc,
-    std::vector<double> prtcl_vel,
-    double prtcl_wgt)
+    std::vector<float_tp> prtcl_loc,
+    std::vector<float_tp> prtcl_vel,
+    float_tp prtcl_wgt)
 {
 
   assert(prtcl_loc.size() == 3);
@@ -144,9 +144,9 @@ void ParticleContainer::add_particle (
 }
 
 void ParticleContainer::add_identified_particle (
-    std::vector<double> prtcl_loc,
-    std::vector<double> prtcl_vel,
-    double prtcl_wgt,
+    std::vector<float_tp> prtcl_loc,
+    std::vector<float_tp> prtcl_vel,
+    float_tp prtcl_wgt,
     int _id, int _proc)
 {
   assert(prtcl_loc.size() == 3);
@@ -181,10 +181,10 @@ void ParticleContainer::check_outgoing_particles(
     zmax = maxs[2];
 
   // shortcut for particle locations
-  double* locn[3];
+  float_tp* locn[3];
   for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
-  double x0, y0, z0;
+  double_t x0, y0, z0;
 
   int i,j,k; // relative indices
   for(size_t n=0; n<size(); n++) {
@@ -192,9 +192,9 @@ void ParticleContainer::check_outgoing_particles(
     j = 0;
     k = 0;
 
-    x0 = locn[0][n];
-    y0 = locn[1][n];
-    z0 = locn[2][n];
+    x0 = static_cast<double_t>( locn[0][n] );
+    y0 = static_cast<double_t>( locn[1][n] );
+    z0 = static_cast<double_t>( locn[2][n] );
 
     if(x0 <  xmin) i--; // left wrap
     if(x0 >= xmax) i++; // right wrap
@@ -222,10 +222,10 @@ void ParticleContainer::delete_particles(std::vector<int> to_be_deleted)
 {
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
-  double* locn[3];
+  float_tp* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
-  double* veln[3];
+  float_tp* veln[3];
   for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
 
   int* idn[2];
@@ -272,7 +272,11 @@ void ParticleContainer::transfer_and_wrap_particles(
     std::array<double,3>& global_maxs
     )
 {
-  double locx, locy, locz, velx, vely, velz, wgt;
+
+  // particle overflow from tiles is done in shortest precision
+  // to avoid rounding off errors and particles left in a limbo
+  // between tiles.
+  float_tp locx, locy, locz, velx, vely, velz, wgt;
   int id, proc;
 
   int i;
@@ -290,9 +294,9 @@ void ParticleContainer::transfer_and_wrap_particles(
 
       i = elem.second;
 
-      locx = wrap( neigh.loc(0, i), global_mins[0], global_maxs[0] );
-      locy = wrap( neigh.loc(1, i), global_mins[1], global_maxs[1] );
-      locz = wrap( neigh.loc(2, i), global_mins[2], global_maxs[2] );
+      locx = wrap( neigh.loc(0, i), static_cast<float_tp>(global_mins[0]), static_cast<float_tp>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<float_tp>(global_mins[1]), static_cast<float_tp>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<float_tp>(global_mins[2]), static_cast<float_tp>(global_maxs[2]) );
 
       velx = neigh.vel(0, i);
       vely = neigh.vel(1, i);
@@ -401,7 +405,7 @@ void ParticleContainer::pack_outgoing_particles()
 
 void ParticleContainer::unpack_incoming_particles()
 {
-  double locx, locy, locz, velx, vely, velz, wgts;
+  float_tp locx, locy, locz, velx, vely, velz, wgts;
   int ids, proc;
 
   // get real number of incoming particles

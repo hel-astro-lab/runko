@@ -31,7 +31,7 @@ class PhotonContainer :
   virtual ~PhotonContainer() = default;
 
   /// particle energy (h\nu in m_e c^2)
-  std::vector< double > eneArr;
+  std::vector< float_tp > eneArr;
 
 
   /// initializes internal arrays
@@ -51,10 +51,10 @@ class PhotonContainer :
 
   /// special method 
   void add_particle(
-    std::vector<double> prtcl_loc,
-    std::vector<double> prtcl_vel,
-    double weight,
-    double energy) 
+    std::vector<float_tp> prtcl_loc,
+    std::vector<float_tp> prtcl_vel,
+    float_tp weight,
+    float_tp energy) 
   {
     eneArr.push_back(energy);
     pic::ParticleContainer::add_particle(prtcl_loc, prtcl_vel, weight);

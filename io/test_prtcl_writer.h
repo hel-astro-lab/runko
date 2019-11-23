@@ -25,10 +25,10 @@ class TestPrtclWriter {
     std::string fname;
 
     /// meshes
-    std::vector< toolbox::Mesh<double> > arrs;
+    std::vector< toolbox::Mesh<float_t> > arrs;
 
     /// mpi receive buffer
-    std::vector< toolbox::Mesh<double> > rbuf;
+    std::vector< toolbox::Mesh<float_t> > rbuf;
 
     // temporary test arrays
     std::vector< toolbox::Mesh<int> > arrs2;

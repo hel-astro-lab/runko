@@ -26,52 +26,54 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     // initialize pointers to particle arrays
     int nparts = container.size();
       
-    double* loc[3];
+    float_tp* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    double* vel[3];
+    float_tp* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-    double invgam;
-    double c = tile.cfl;
-    double q = container.q;
-    // TODO: remove
-    //std::cout << " q = " << q << " ispc: " << ispc << '\n';
-
-    double x0, y0, z0, x1, x2, y1, y2, z1, z2;
+    double_t invgam;
+    double_t c = tile.cfl;
+    double_t q = container.q;
+    double_t x0, y0, z0, x1, x2, y1, y2, z1, z2;
 
     int i1,i2,j1,j2,k1,k2;
 
-    double xr, yr, zr;
-
-    double Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-    double Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+    double_t xr, yr, zr;
+    double_t Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+    double_t Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
 
     // loop and check particles
     int n1 = 0;
     int n2 = nparts;
 
+    double_t loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
+
 
     // TODO: think SIMD (not possible due to ijk writing to yee)
     for(int n=n1; n<n2; n++) {
 
-      invgam = 1.0/sqrt(1.0 + 
-          vel[0][n]*vel[0][n] + 
-          vel[1][n]*vel[1][n] + 
-          vel[2][n]*vel[2][n]);
+      loc0n = static_cast<double_t>(loc[0][n]);
+      loc1n = static_cast<double_t>(loc[1][n]);
+      loc2n = static_cast<double_t>(loc[2][n]);
 
-      x0 = loc[0][n] - vel[0][n]*invgam*c;
-      y0 = loc[1][n] - vel[1][n]*invgam*c;
-      z0 = loc[2][n] - vel[2][n]*invgam*c; 
+      vel0n = static_cast<double_t>(vel[0][n]);
+      vel1n = static_cast<double_t>(vel[1][n]);
+      vel2n = static_cast<double_t>(vel[2][n]);
 
+      invgam = 1.0/sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
+
+      x0 = loc0n - vel0n*invgam*c;
+      y0 = loc1n - vel1n*invgam*c;
+      z0 = loc2n - vel2n*invgam*c; 
 
       // normalized location w.r.t. tile
-      x1 = D >= 1 ? x0         - mins[0] : x0;
-      x2 = D >= 1 ? loc[0][n]  - mins[0] : loc[0][n];
-      y1 = D >= 2 ? y0         - mins[1] : y0;
-      y2 = D >= 2 ? loc[1][n]  - mins[1] : loc[1][n];
-      z1 = D >= 3 ? z0         - mins[2] : z0;
-      z2 = D >= 3 ? loc[2][n]  - mins[2] : loc[2][n];
+      x1 = D >= 1 ? x0     - mins[0] : x0;
+      x2 = D >= 1 ? loc0n  - mins[0] : loc0n;
+      y1 = D >= 2 ? y0     - mins[1] : y0;
+      y2 = D >= 2 ? loc1n  - mins[1] : loc1n;
+      z1 = D >= 3 ? z0     - mins[2] : z0;
+      z2 = D >= 3 ? loc2n  - mins[2] : loc2n;
 
       // TODO: is this correctly aligned
   	  i1  = D >= 1 ? static_cast<int>(floor( x1 )) : 0;
@@ -82,9 +84,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   	  k2  = D >= 3 ? static_cast<int>(floor( z2 )) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      xr = min( double(min(i1,i2)+1), max( double(max(i1,i2)), 0.5*(double(x1+x2)) ) );
-      yr = min( double(min(j1,j2)+1), max( double(max(j1,j2)), 0.5*(double(y1+y2)) ) );
-      zr = min( double(min(k1,k2)+1), max( double(max(k1,k2)), 0.5*(double(z1+z2)) ) );
+      xr = min( double_t(min(i1,i2)+1), max( double_t(max(i1,i2)), 0.5*(double_t(x1+x2)) ) );
+      yr = min( double_t(min(j1,j2)+1), max( double_t(max(j1,j2)), 0.5*(double_t(y1+y2)) ) );
+      zr = min( double_t(min(k1,k2)+1), max( double_t(max(k1,k2)), 0.5*(double_t(z1+z2)) ) );
 
       // +q since - sign is already included in the Ampere's equation
       //q = weight*qe;

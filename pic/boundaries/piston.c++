@@ -13,21 +13,21 @@ using std::max;
 template<size_t D>
 void pic::Piston<D>::zigzag(
     pic::Tile<D>& tile,
-    double x2glob, 
-    double y2glob, 
-    double z2glob, 
-    double x1glob, 
-    double y1glob, 
-    double z1glob, 
-    double q)
+    double_t x2glob, 
+    double_t y2glob, 
+    double_t z2glob, 
+    double_t x1glob, 
+    double_t y1glob, 
+    double_t z1glob, 
+    double_t q)
 {
   int i1,i2,j1,j2,k1,k2;
 
-  double x1,x2,y1,y2,z1,z2;
-  double xr,yr,zr;
+  double_t x1,x2,y1,y2,z1,z2;
+  double_t xr,yr,zr;
 
-  double Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-  double Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+  double_t Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+  double_t Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
 
   auto& yee = tile.get_yee();
   auto mins = tile.mins;
@@ -58,9 +58,9 @@ void pic::Piston<D>::zigzag(
 
 
   // relay point; +1 is equal to +\Delta x
-  xr = min( (double)(min(i1,i2)+1), max( (double)max(i1,i2), static_cast<double>(0.5)*(x1+x2) ) );
-  yr = min( (double)(min(j1,j2)+1), max( (double)max(j1,j2), static_cast<double>(0.5)*(y1+y2) ) );
-  zr = min( (double)(min(k1,k2)+1), max( (double)max(k1,k2), static_cast<double>(0.5)*(z1+z2) ) );
+  xr = min( (double_t)(min(i1,i2)+1), max( (double_t)max(i1,i2), static_cast<double_t>(0.5)*(x1+x2) ) );
+  yr = min( (double_t)(min(j1,j2)+1), max( (double_t)max(j1,j2), static_cast<double_t>(0.5)*(y1+y2) ) );
+  zr = min( (double_t)(min(k1,k2)+1), max( (double_t)max(k1,k2), static_cast<double_t>(0.5)*(z1+z2) ) );
 
 
   // -q to include -j in the Ampere's equation
@@ -134,51 +134,53 @@ void pic::Piston<D>::solve(
     int nparts = container.size();
 
     // initialize pointers to particle arrays
-    double* loc[3];
-    for( int i=0; i<3; i++)
-      loc[i] = &( container.loc(i,0) );
+    float_tp* loc[3];
+    for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    double* vel[3];
-    for( int i=0; i<3; i++)
-      vel[i] = &( container.vel(i,0) );
+    float_tp* vel[3];
+    for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
     // loop over particles
     int n1 = 0;
     int n2 = nparts;
 
-    double c = tile.cfl;
-    //double qm = sign(container.q);
+    double_t c = tile.cfl;
+    double_t loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
+    double_t x0, y0, z0, gamma, tfrac, walloc0;
+    double_t xcolis, ycolis, zcolis;
 
-    double x0, y0, z0, gamma, tfrac, walloc0;
-    double xcolis, ycolis, zcolis;
     for(int n=n1; n<n2; n++) {
 
       // left side of the wall boundary
-      if(loc[0][n] < walloc) {
+      if( static_cast<double_t>(loc[0][n]) < walloc) {
+
+        loc0n = static_cast<double_t>( loc[0][n] );
+        loc1n = static_cast<double_t>( loc[1][n] );
+        loc2n = static_cast<double_t>( loc[2][n] );
+                                                     
+        vel0n = static_cast<double_t>( vel[0][n] );
+        vel1n = static_cast<double_t>( vel[1][n] );
+        vel2n = static_cast<double_t>( vel[2][n] );
 
         // this can not be reflected particle; remove 
         // equals to right boundary outflow as they wrap particles here
-        if(walloc - loc[0][n] > 1.0) {
+        if(walloc - loc0n > 1.0) {
           //std::cout << "reflected?" << n << "x:" << loc[0][n] << "\n";
           to_be_deleted.push_back(n);
           continue;
         }
 
-        gamma = sqrt(1.0
-            + vel[0][n]*vel[0][n]
-            + vel[1][n]*vel[1][n]
-            + vel[2][n]*vel[2][n]);
-
-        x0 = loc[0][n] - vel[0][n]/gamma*c;
-        y0 = loc[1][n];
-        z0 = loc[2][n];
+        gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
+        x0 = loc0n - vel0n/gamma*c;
+        y0 = loc1n;
+        z0 = loc2n;
 
         // unwind wall location
         walloc0 = walloc - betawall*c;
 
         // compute crossing point
-        tfrac = abs((x0-walloc0)/(betawall*c - vel[0][n]/gamma*c));
-        xcolis = x0 + vel[0][n]/gamma*c*tfrac;
+        tfrac = abs((x0-walloc0)/(betawall*c - vel0n/gamma*c));
+        xcolis = x0 + vel0n/gamma*c*tfrac;
         ycolis = y0;
         zcolis = z0;
           
@@ -186,15 +188,15 @@ void pic::Piston<D>::solve(
         zigzag(tile, xcolis, ycolis, zcolis, x0, y0, z0, container.q);
 
         // reset particle momentum, getting kick from the wall
-        vel[0][n] = gammawall*gammawall*gamma
-          *(2.*betawall - vel[0][n]/gamma*(1.0+betawall*betawall));
+        vel0n = gammawall*gammawall*gamma
+          *(2.*betawall - vel0n/gamma*(1.0+betawall*betawall));
 
-        tfrac = std::min(std::abs((vel[0][n]-xcolis)/std::max(std::abs(vel[0][n]-x0), 1.0e-9)), 1.0);
+        tfrac = std::min(std::abs((vel0n-xcolis)/std::max(std::abs(vel0n-x0), 1.0e-9)), 1.0);
 
         // move particle from the location of the wall with new velocity
-        loc[0][n] = xcolis + vel[0][n]/gamma*c * tfrac;
-        loc[1][n] = ycolis;
-        loc[2][n] = zcolis;
+        loc0n = xcolis + vel0n/gamma*c * tfrac;
+        loc1n = ycolis;
+        loc2n = zcolis;
 
         // clean up the part of trajectory behind the wall
         // that will be added by the deposition routine that unwinds
@@ -202,10 +204,19 @@ void pic::Piston<D>::solve(
         zigzag(
             tile, 
             xcolis, ycolis, zcolis,
-            loc[0][n] - vel[0][n]/gamma*c,
-            loc[1][n] - vel[1][n]/gamma*c,
-            loc[2][n] - vel[2][n]/gamma*c,
+            loc0n - vel0n/gamma*c,
+            loc1n - vel1n/gamma*c,
+            loc2n - vel2n/gamma*c,
             -container.q);
+
+        // lastly; store particle back to the container
+        loc[0][n] = static_cast<float_tp>( loc0n );
+        loc[1][n] = static_cast<float_tp>( loc1n );
+        loc[2][n] = static_cast<float_tp>( loc2n );
+
+        vel[0][n] = static_cast<float_tp>( vel0n );
+        vel[1][n] = static_cast<float_tp>( vel1n );
+        vel[2][n] = static_cast<float_tp>( vel2n );
       }
     }
 

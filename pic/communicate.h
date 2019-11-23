@@ -53,9 +53,10 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
     member_offsets[2] - base,
   };
 
-  // introduce datatypes
+  // introduce datatypes; 
+  // NOTE: MPI_FLOAT_TP is defined in runko/definitions.h
   std::array<MPI_Datatype, 3> datatypes{
-    {MPI_DOUBLE, MPI_INT, MPI_INT}
+    {MPI_FLOAT_TP, MPI_INT, MPI_INT}
   };
 
   //--------------------------------------------------
