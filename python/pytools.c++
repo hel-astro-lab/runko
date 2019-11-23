@@ -16,8 +16,8 @@ namespace tools{
 
 //--------------------------------------------------
 // Different solver orders
-using AM1d = toolbox::AdaptiveMesh<double_t, 1>;
-using AM3d = toolbox::AdaptiveMesh<double_t, 3>;
+using AM1d = toolbox::AdaptiveMesh<real_long, 1>;
+using AM3d = toolbox::AdaptiveMesh<real_long, 3>;
 
 
 
@@ -71,7 +71,7 @@ void declare_mesh(
 
         return s(i,j,k);
       }, py::return_value_policy::reference)
-    .def("__setitem__", [](Class &s, py::tuple indx, float_t val) 
+    .def("__setitem__", [](Class &s, py::tuple indx, real_short val) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
@@ -105,9 +105,9 @@ void bind_tools(pybind11::module& m)
 {
 
   // declare Mesh with various halo sizes
-  declare_mesh<float_t, 0>(m, "Mesh_H0" );
-  declare_mesh<float_t, 1>(m, "Mesh_H1" );
-  declare_mesh<float_t, 3>(m, "Mesh_H3" );
+  declare_mesh<real_short, 0>(m, "Mesh_H0" );
+  declare_mesh<real_short, 1>(m, "Mesh_H1" );
+  declare_mesh<real_short, 3>(m, "Mesh_H3" );
 
 
 
@@ -145,7 +145,7 @@ void bind_tools(pybind11::module& m)
 
         return s.get_from_roots(cid);
         })
-    .def("__setitem__", [](AM3d &s, py::tuple indx, float_t v) 
+    .def("__setitem__", [](AM3d &s, py::tuple indx, real_short v) 
         { 
         auto i = indx[0].cast<uint64_t>();
         auto j = indx[1].cast<uint64_t>();

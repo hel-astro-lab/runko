@@ -26,27 +26,27 @@ class YeeLattice
   int Nz;
 
   /// Electric field 
-  toolbox::Mesh<float_t, 3> ex;
-  toolbox::Mesh<float_t, 3> ey;
-  toolbox::Mesh<float_t, 3> ez;
+  toolbox::Mesh<real_short, 3> ex;
+  toolbox::Mesh<real_short, 3> ey;
+  toolbox::Mesh<real_short, 3> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<float_t, 3> bx;
-  toolbox::Mesh<float_t, 3> by;
-  toolbox::Mesh<float_t, 3> bz;
+  toolbox::Mesh<real_short, 3> bx;
+  toolbox::Mesh<real_short, 3> by;
+  toolbox::Mesh<real_short, 3> bz;
     
   /// Charge density
-  toolbox::Mesh<float_t, 1> rho;
+  toolbox::Mesh<real_short, 1> rho;
 
   /// Current vector 
-  toolbox::Mesh<float_t, 3> jx;
-  toolbox::Mesh<float_t, 3> jy;
-  toolbox::Mesh<float_t, 3> jz;
+  toolbox::Mesh<real_short, 3> jx;
+  toolbox::Mesh<real_short, 3> jy;
+  toolbox::Mesh<real_short, 3> jz;
 
   /// temporary current
-  toolbox::Mesh<float_t, 3> jx1;
-  toolbox::Mesh<float_t, 3> jy1;
-  toolbox::Mesh<float_t, 3> jz1;
+  toolbox::Mesh<real_short, 3> jx1;
+  toolbox::Mesh<real_short, 3> jy1;
+  toolbox::Mesh<real_short, 3> jz1;
 
 
   // default empty constructor
@@ -163,33 +163,33 @@ class PlasmaMomentLattice
   int Nz;
 
   // density
-  toolbox::Mesh<float_t, 0> rho;
+  toolbox::Mesh<real_short, 0> rho;
 
   /// energy density
-  toolbox::Mesh<float_t, 0> edens;
+  toolbox::Mesh<real_short, 0> edens;
 
   /// temperature
-  toolbox::Mesh<float_t, 0> temp;
+  toolbox::Mesh<real_short, 0> temp;
 
   /// (mean) flow speed
-  toolbox::Mesh<float_t, 0> Vx;
-  toolbox::Mesh<float_t, 0> Vy;
-  toolbox::Mesh<float_t, 0> Vz;
+  toolbox::Mesh<real_short, 0> Vx;
+  toolbox::Mesh<real_short, 0> Vy;
+  toolbox::Mesh<real_short, 0> Vz;
 
   /// momentum density
-  toolbox::Mesh<float_t, 0> momx;
-  toolbox::Mesh<float_t, 0> momy;
-  toolbox::Mesh<float_t, 0> momz;
+  toolbox::Mesh<real_short, 0> momx;
+  toolbox::Mesh<real_short, 0> momy;
+  toolbox::Mesh<real_short, 0> momz;
 
   /// pressure
-  toolbox::Mesh<float_t, 0> pressx;
-  toolbox::Mesh<float_t, 0> pressy;
-  toolbox::Mesh<float_t, 0> pressz;
+  toolbox::Mesh<real_short, 0> pressx;
+  toolbox::Mesh<real_short, 0> pressy;
+  toolbox::Mesh<real_short, 0> pressz;
 
   /// shear
-  toolbox::Mesh<float_t, 0> shearxy;
-  toolbox::Mesh<float_t, 0> shearxz;
-  toolbox::Mesh<float_t, 0> shearyz;
+  toolbox::Mesh<real_short, 0> shearxy;
+  toolbox::Mesh<real_short, 0> shearxz;
+  toolbox::Mesh<real_short, 0> shearyz;
 
   // default empty constructor
   PlasmaMomentLattice() {};
@@ -274,10 +274,10 @@ class Tile :
 
 
   /// CFL number (corresponds to simulation light speed c)
-  double_t cfl;
+  real_long cfl;
 
   /// grid size (assuming cubical cells)
-  //double_t dx = 1.0;
+  //real_long dx = 1.0;
 
   //--------------------------------------------------
   // constructor with internal mesh dimensions

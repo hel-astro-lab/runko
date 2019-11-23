@@ -41,7 +41,7 @@ h5io::Reader::read(
 
     // read into explicitly initialized arrays; otherwise, some -OX option
     // tries to optimize these away and we don't read anything.
-    std::vector<float_tp> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
+    std::vector<real_prtcl> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
     arr1  << gr["x"];
     arr2  << gr["y"];
     arr3  << gr["z"];

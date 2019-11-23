@@ -27,17 +27,17 @@ void pic::BorisPusherDrag<D,V>::push_container(
   int nparts = container.size();
 
   // initialize pointers to particle arrays
-  float_tp* loc[3];
+  real_prtcl* loc[3];
   for( int i=0; i<3; i++)
     loc[i] = &( container.loc(i,0) );
 
-  float_tp* vel[3];
+  real_prtcl* vel[3];
   for( int i=0; i<3; i++)
     vel[i] = &( container.vel(i,0) );
 
 
-  double_t ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-  double_t bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+  real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
+  real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
   // make sure E and B tmp arrays are of correct size
   if(container.Epart.size() != (size_t)3*nparts)
@@ -45,7 +45,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
   if(container.Bpart.size() != (size_t)3*nparts)
     container.Bpart.resize(3*nparts);
 
-  float_tp *ex, *ey, *ez, *bx, *by, *bz;
+  real_prtcl *ex, *ey, *ez, *bx, *by, *bz;
   ex = &( container.Epart[0*nparts] );
   ey = &( container.Epart[1*nparts] );
   ez = &( container.Epart[2*nparts] );
@@ -58,36 +58,36 @@ void pic::BorisPusherDrag<D,V>::push_container(
   int n1 = 0;
   int n2 = nparts;
 
-  double_t u0, v0, w0;
-  double_t uxt, uyt, uzt;
-  double_t u1, v1, w1;
-  double_t g, f, ginv, kncorr, gamt, ut;
+  real_long u0, v0, w0;
+  real_long uxt, uyt, uzt;
+  real_long u1, v1, w1;
+  real_long g, f, ginv, kncorr, gamt, ut;
 
-  double_t c = cfl;
-  double_t cinv = 1.0/c;
+  real_long c = cfl;
+  real_long cinv = 1.0/c;
 
   // charge (sign only)
-  double_t qm = sign(container.q);
+  real_long qm = sign(container.q);
 
-  double_t vel0n, vel1n, vel2n;
+  real_long vel0n, vel1n, vel2n;
 
   for(int n=n1; n<n2; n++) {
 
-    vel0n = static_cast<double_t>( vel[0][n] );
-    vel1n = static_cast<double_t>( vel[1][n] );
-    vel2n = static_cast<double_t>( vel[2][n] );
+    vel0n = static_cast<real_long>( vel[0][n] );
+    vel1n = static_cast<real_long>( vel[1][n] );
+    vel2n = static_cast<real_long>( vel[2][n] );
 
     //--------------------------------------------------
     // Boris algorithm
 
     // read particle-specific fields
-    ex0 = static_cast<double_t>( ex[n]*(0.5*qm) );
-    ey0 = static_cast<double_t>( ey[n]*(0.5*qm) );
-    ez0 = static_cast<double_t>( ez[n]*(0.5*qm) );
+    ex0 = static_cast<real_long>( ex[n]*(0.5*qm) );
+    ey0 = static_cast<real_long>( ey[n]*(0.5*qm) );
+    ez0 = static_cast<real_long>( ez[n]*(0.5*qm) );
 
-    bx0 = static_cast<double_t>( bx[n]*(0.5*qm*cinv) );
-    by0 = static_cast<double_t>( by[n]*(0.5*qm*cinv) );
-    bz0 = static_cast<double_t>( bz[n]*(0.5*qm*cinv) );
+    bx0 = static_cast<real_long>( bx[n]*(0.5*qm*cinv) );
+    by0 = static_cast<real_long>( by[n]*(0.5*qm*cinv) );
+    bz0 = static_cast<real_long>( bz[n]*(0.5*qm*cinv) );
 
     // first half electric acceleration
     u0 = c*vel0n + ex0;
@@ -124,9 +124,9 @@ void pic::BorisPusherDrag<D,V>::push_container(
     // subtract drag with Klein-Nishina reduction
     // A g^2 beta = A g^2 u/g = A g u
     kncorr = kn(3.0*gamt*temp);
-    vel[0][n] = static_cast<float_tp>( u0*cinv - c*drag*kncorr*ut*ut*(uxt/gamt) );
-    vel[1][n] = static_cast<float_tp>( v0*cinv - c*drag*kncorr*ut*ut*(uyt/gamt) );
-    vel[2][n] = static_cast<float_tp>( w0*cinv - c*drag*kncorr*ut*ut*(uzt/gamt) );
+    vel[0][n] = static_cast<real_prtcl>( u0*cinv - c*drag*kncorr*ut*ut*(uxt/gamt) );
+    vel[1][n] = static_cast<real_prtcl>( v0*cinv - c*drag*kncorr*ut*ut*(uyt/gamt) );
+    vel[2][n] = static_cast<real_prtcl>( w0*cinv - c*drag*kncorr*ut*ut*(uzt/gamt) );
 
     // position advance
     // NOTE: no mixed-precision calc here. Can be problematic.

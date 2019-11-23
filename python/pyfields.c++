@@ -172,7 +172,7 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("rho",  &fields::YeeLattice::rho  ,py::return_value_policy::reference_internal)
     .def_property("ex2",   
         [](YeeLattice& self) { return self.ex; },
-        [](YeeLattice& self, toolbox::Mesh<float_t,3>& v) { self.ex = v; },
+        [](YeeLattice& self, toolbox::Mesh<real_short,3>& v) { self.ex = v; },
         py::return_value_policy::reference_internal, 
         py::keep_alive<1,0>() 
         );

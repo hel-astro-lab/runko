@@ -51,18 +51,18 @@ class Analyzator {
       // initialize pointers to particle arrays
       int nparts = container.size();
         
-      float_tp* loc[3];
+      real_prtcl* loc[3];
       for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-      float_tp* vel[3];
+      real_prtcl* vel[3];
       for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
       //double c = tile.cfl;
-      double_t gam;
-      double_t q = container.q; // TODO: split into species
-      double_t x0, y0, z0;
-      double_t u0, v0, w0;
+      real_long gam;
+      real_long q = container.q; // TODO: split into species
+      real_long x0, y0, z0;
+      real_long u0, v0, w0;
       int i,j,k;
 
 
@@ -74,9 +74,9 @@ class Analyzator {
       for(int n=n1; n<n2; n++) {
           
         // grid coordinate location; cast to double for the duration of this algorithm
-        x0 = static_cast<double_t>( loc[0][n] );
-        y0 = static_cast<double_t>( loc[1][n] );
-        z0 = static_cast<double_t>( loc[2][n] );
+        x0 = static_cast<real_long>( loc[0][n] );
+        y0 = static_cast<real_long>( loc[1][n] );
+        z0 = static_cast<real_long>( loc[2][n] );
           
         // fixed grid form assuming dx = 1
   	    i = D >= 1 ? static_cast<int>(floor( x0 - mins[0] ) ) : 0;
@@ -135,15 +135,15 @@ class Analyzator {
           assert(false);
         }
 
-        u0 = static_cast<double_t>(vel[0][n]);
-        v0 = static_cast<double_t>(vel[1][n]);
-        w0 = static_cast<double_t>(vel[2][n]);
+        u0 = static_cast<real_long>(vel[0][n]);
+        v0 = static_cast<real_long>(vel[1][n]);
+        w0 = static_cast<real_long>(vel[2][n]);
 
         gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
 
         // --------------------------------------------------
         // general quantities
-        double_t mass = abs(q);
+        real_long mass = abs(q);
         yee.rho(i,j,k) += mass; // total number density
 
         // --------------------------------------------------

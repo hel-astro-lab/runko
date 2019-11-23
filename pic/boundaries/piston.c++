@@ -13,21 +13,21 @@ using std::max;
 template<size_t D>
 void pic::Piston<D>::zigzag(
     pic::Tile<D>& tile,
-    double_t x2glob, 
-    double_t y2glob, 
-    double_t z2glob, 
-    double_t x1glob, 
-    double_t y1glob, 
-    double_t z1glob, 
-    double_t q)
+    real_long x2glob, 
+    real_long y2glob, 
+    real_long z2glob, 
+    real_long x1glob, 
+    real_long y1glob, 
+    real_long z1glob, 
+    real_long q)
 {
   int i1,i2,j1,j2,k1,k2;
 
-  double_t x1,x2,y1,y2,z1,z2;
-  double_t xr,yr,zr;
+  real_long x1,x2,y1,y2,z1,z2;
+  real_long xr,yr,zr;
 
-  double_t Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-  double_t Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+  real_long Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+  real_long Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
 
   auto& yee = tile.get_yee();
   auto mins = tile.mins;
@@ -58,9 +58,9 @@ void pic::Piston<D>::zigzag(
 
 
   // relay point; +1 is equal to +\Delta x
-  xr = min( (double_t)(min(i1,i2)+1), max( (double_t)max(i1,i2), static_cast<double_t>(0.5)*(x1+x2) ) );
-  yr = min( (double_t)(min(j1,j2)+1), max( (double_t)max(j1,j2), static_cast<double_t>(0.5)*(y1+y2) ) );
-  zr = min( (double_t)(min(k1,k2)+1), max( (double_t)max(k1,k2), static_cast<double_t>(0.5)*(z1+z2) ) );
+  xr = min( (real_long)(min(i1,i2)+1), max( (real_long)max(i1,i2), static_cast<real_long>(0.5)*(x1+x2) ) );
+  yr = min( (real_long)(min(j1,j2)+1), max( (real_long)max(j1,j2), static_cast<real_long>(0.5)*(y1+y2) ) );
+  zr = min( (real_long)(min(k1,k2)+1), max( (real_long)max(k1,k2), static_cast<real_long>(0.5)*(z1+z2) ) );
 
 
   // -q to include -j in the Ampere's equation
@@ -134,33 +134,33 @@ void pic::Piston<D>::solve(
     int nparts = container.size();
 
     // initialize pointers to particle arrays
-    float_tp* loc[3];
+    real_prtcl* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    float_tp* vel[3];
+    real_prtcl* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
     // loop over particles
     int n1 = 0;
     int n2 = nparts;
 
-    double_t c = tile.cfl;
-    double_t loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
-    double_t x0, y0, z0, gamma, tfrac, walloc0;
-    double_t xcolis, ycolis, zcolis;
+    real_long c = tile.cfl;
+    real_long loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
+    real_long x0, y0, z0, gamma, tfrac, walloc0;
+    real_long xcolis, ycolis, zcolis;
 
     for(int n=n1; n<n2; n++) {
 
       // left side of the wall boundary
-      if( static_cast<double_t>(loc[0][n]) < walloc) {
+      if( static_cast<real_long>(loc[0][n]) < walloc) {
 
-        loc0n = static_cast<double_t>( loc[0][n] );
-        loc1n = static_cast<double_t>( loc[1][n] );
-        loc2n = static_cast<double_t>( loc[2][n] );
+        loc0n = static_cast<real_long>( loc[0][n] );
+        loc1n = static_cast<real_long>( loc[1][n] );
+        loc2n = static_cast<real_long>( loc[2][n] );
                                                      
-        vel0n = static_cast<double_t>( vel[0][n] );
-        vel1n = static_cast<double_t>( vel[1][n] );
-        vel2n = static_cast<double_t>( vel[2][n] );
+        vel0n = static_cast<real_long>( vel[0][n] );
+        vel1n = static_cast<real_long>( vel[1][n] );
+        vel2n = static_cast<real_long>( vel[2][n] );
 
         // this can not be reflected particle; remove 
         // equals to right boundary outflow as they wrap particles here
@@ -191,7 +191,8 @@ void pic::Piston<D>::solve(
         vel0n = gammawall*gammawall*gamma
           *(2.*betawall - vel0n/gamma*(1.0+betawall*betawall));
 
-        tfrac = std::min(std::abs((vel0n-xcolis)/std::max(std::abs(vel0n-x0), 1.0e-9)), 1.0);
+        tfrac = std::min(
+            std::abs((vel0n-xcolis)/std::max(std::abs(vel0n-x0), (real_long)1.0e-6)), (real_long)1.0);
 
         // move particle from the location of the wall with new velocity
         loc0n = xcolis + vel0n/gamma*c * tfrac;
@@ -210,13 +211,13 @@ void pic::Piston<D>::solve(
             -container.q);
 
         // lastly; store particle back to the container
-        loc[0][n] = static_cast<float_tp>( loc0n );
-        loc[1][n] = static_cast<float_tp>( loc1n );
-        loc[2][n] = static_cast<float_tp>( loc2n );
+        loc[0][n] = static_cast<real_prtcl>( loc0n );
+        loc[1][n] = static_cast<real_prtcl>( loc1n );
+        loc[2][n] = static_cast<real_prtcl>( loc2n );
 
-        vel[0][n] = static_cast<float_tp>( vel0n );
-        vel[1][n] = static_cast<float_tp>( vel1n );
-        vel[2][n] = static_cast<float_tp>( vel2n );
+        vel[0][n] = static_cast<real_prtcl>( vel0n );
+        vel[1][n] = static_cast<real_prtcl>( vel1n );
+        vel[2][n] = static_cast<real_prtcl>( vel2n );
       }
     }
 

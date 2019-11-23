@@ -26,40 +26,40 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     // initialize pointers to particle arrays
     int nparts = container.size();
       
-    float_tp* loc[3];
+    real_prtcl* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    float_tp* vel[3];
+    real_prtcl* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-    double_t invgam;
-    double_t c = tile.cfl;
-    double_t q = container.q;
-    double_t x0, y0, z0, x1, x2, y1, y2, z1, z2;
+    real_long invgam;
+    real_long c = tile.cfl;
+    real_long q = container.q;
+    real_long x0, y0, z0, x1, x2, y1, y2, z1, z2;
 
     int i1,i2,j1,j2,k1,k2;
 
-    double_t xr, yr, zr;
-    double_t Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-    double_t Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+    real_long xr, yr, zr;
+    real_long Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+    real_long Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
 
     // loop and check particles
     int n1 = 0;
     int n2 = nparts;
 
-    double_t loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
+    real_long loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
 
 
     // TODO: think SIMD (not possible due to ijk writing to yee)
     for(int n=n1; n<n2; n++) {
 
-      loc0n = static_cast<double_t>(loc[0][n]);
-      loc1n = static_cast<double_t>(loc[1][n]);
-      loc2n = static_cast<double_t>(loc[2][n]);
+      loc0n = static_cast<real_long>(loc[0][n]);
+      loc1n = static_cast<real_long>(loc[1][n]);
+      loc2n = static_cast<real_long>(loc[2][n]);
 
-      vel0n = static_cast<double_t>(vel[0][n]);
-      vel1n = static_cast<double_t>(vel[1][n]);
-      vel2n = static_cast<double_t>(vel[2][n]);
+      vel0n = static_cast<real_long>(vel[0][n]);
+      vel1n = static_cast<real_long>(vel[1][n]);
+      vel2n = static_cast<real_long>(vel[2][n]);
 
       invgam = 1.0/sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
 
@@ -84,9 +84,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   	  k2  = D >= 3 ? static_cast<int>(floor( z2 )) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      xr = min( double_t(min(i1,i2)+1), max( double_t(max(i1,i2)), 0.5*(double_t(x1+x2)) ) );
-      yr = min( double_t(min(j1,j2)+1), max( double_t(max(j1,j2)), 0.5*(double_t(y1+y2)) ) );
-      zr = min( double_t(min(k1,k2)+1), max( double_t(max(k1,k2)), 0.5*(double_t(z1+z2)) ) );
+      xr = min( real_long(min(i1,i2)+1), max( (real_long)max(i1,i2), (real_long)0.5*(x1+x2) ) );
+      yr = min( real_long(min(j1,j2)+1), max( (real_long)max(j1,j2), (real_long)0.5*(y1+y2) ) );
+      zr = min( real_long(min(k1,k2)+1), max( (real_long)max(k1,k2), (real_long)0.5*(z1+z2) ) );
 
       // +q since - sign is already included in the Ampere's equation
       //q = weight*qe;

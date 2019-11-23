@@ -9,7 +9,7 @@ void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
 {
   // 2D 1st order binomial coefficients
-  float_t winv=1./16.,
+  real_short winv=1./16.,
           wtm=4.*winv, //middle
           wts=2.*winv, //side
           wtc=1.*winv; //corner
