@@ -140,7 +140,8 @@ auto declare_tile(
 
     .def("clip",           &vlv::Tile<D>::clip)
     .def("clip_neighbors", &vlv::Tile<D>::clip_neighbors)
-    .def("cycle",          &vlv::Tile<D>::cycle);
+    .def("cycle",          &vlv::Tile<D>::cycle)
+    .def("cycle_current",  &vlv::Tile<D>::cycle_current);
 
 }
 

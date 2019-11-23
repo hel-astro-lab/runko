@@ -16,8 +16,8 @@ using iter::zip;
 template< typename T, int D, int V>
 void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cfl)
 {
-  auto& yee = tile.get_yee();
-  yee.jx1.clear();
+  //auto& yee = tile.get_yee();
+  tile.jx1.clear();
 
   auto& step0 = tile.steps.get(0);
   for(auto&& block0 : step0) {
@@ -38,7 +38,7 @@ void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cf
           // NOTE: needs to be given in units of grid speed 
           //       so we scale with dt/dx
           //yee.jx1(q,r,s) += qm*
-          yee.jx1(q,r,s) += qm*cfl*
+          tile.jx1(q,r,s) += qm*cfl*
             integrate_moment(
                 M,
                 [](std::array<T,3> uvel) -> T 

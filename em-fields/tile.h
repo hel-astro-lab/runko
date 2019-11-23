@@ -43,12 +43,6 @@ class YeeLattice
   toolbox::Mesh<real_short, 3> jy;
   toolbox::Mesh<real_short, 3> jz;
 
-  /// temporary current
-  toolbox::Mesh<real_short, 3> jx1;
-  toolbox::Mesh<real_short, 3> jy1;
-  toolbox::Mesh<real_short, 3> jz1;
-
-
   // default empty constructor
   YeeLattice()  = default;
 
@@ -64,10 +58,7 @@ class YeeLattice
     rho(Nx, Ny, Nz),
     jx(Nx, Ny, Nz),
     jy(Nx, Ny, Nz),
-    jz(Nx, Ny, Nz),
-    jx1(Nx, Ny, Nz),
-    jy1(Nx, Ny, Nz),
-    jz1(Nx, Ny, Nz)
+    jz(Nx, Ny, Nz)
     { }
 
   // copy ctor
@@ -84,10 +75,7 @@ class YeeLattice
     rho(other.rho),
     jx(other.jx),
     jy(other.jy),
-    jz(other.jz),
-    jx1(other.jx1),
-    jy1(other.jy1),
-    jz1(other.jz1)
+    jz(other.jz)
   { }
 
   YeeLattice(const YeeLattice& other) :
@@ -103,10 +91,7 @@ class YeeLattice
     rho(other.rho),
     jx(other.jx),
     jy(other.jy),
-    jz(other.jz),
-    jx1(other.jx1),
-    jy1(other.jy1),
-    jz1(other.jz1)
+    jz(other.jz)
   { }
 
   // move constructor
@@ -134,9 +119,6 @@ class YeeLattice
     swap(first.jx , second.jx);
     swap(first.jy , second.jy);
     swap(first.jz , second.jz);
-    swap(first.jx1, second.jx1);
-    swap(first.jy1, second.jy1);
-    swap(first.jz1, second.jz1);
   }
 
   // copy-and-swap algorithm

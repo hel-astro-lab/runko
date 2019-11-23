@@ -74,6 +74,11 @@ class Tile :
   //    stored in a local block
   toolbox::Rotator< std::vector<PlasmaBlock>, 2 > steps;
 
+  /// temporary current
+  toolbox::Mesh<real_short, 3> jx1;
+  toolbox::Mesh<real_short, 3> jy1;
+  toolbox::Mesh<real_short, 3> jz1;
+
 
   /// constructor
   Tile(int nx, int ny, int nz) :
@@ -190,6 +195,7 @@ class Tile :
   // TODO: separate into own communication module/header
   PlasmaBlock& get_external_data(corgi::Grid<D>&, int, int);
 
+  void cycle_current();
 
 };
 

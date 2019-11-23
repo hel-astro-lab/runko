@@ -764,17 +764,6 @@ void Tile<D>::cycle_yee()
   // do nothing since Yee's are not in a container atm
 }
 
-/// cycle temporary and true current arrays
-template<std::size_t D>
-void Tile<D>::cycle_current() 
-{
-  auto& yee = this->get_yee();
-
-  std::swap( yee.jx.mat, yee.jx1.mat );
-  std::swap( yee.jy.mat, yee.jy1.mat );
-  std::swap( yee.jz.mat, yee.jz1.mat );
-
-}
 
 
 template<std::size_t D>
