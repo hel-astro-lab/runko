@@ -33,8 +33,8 @@ void declare_mesh(
     //py::class_<Class>(m, pyclass_name.c_str())
 
     py::class_<
-      toolbox::Mesh<T,H>
-      //std::shared_ptr<toolbox::Mesh<T,H>>
+      toolbox::Mesh<T,H>,
+      std::shared_ptr<toolbox::Mesh<T,H>>
       //std::unique_ptr<toolbox::Mesh<T,H>,py::nodelete>
             >(m, pyclass_name.c_str())
     .def(py::init<int, int, int>())
@@ -70,7 +70,7 @@ void declare_mesh(
         return val;
 
         return s(i,j,k);
-      }, py::return_value_policy::reference)
+      }) //, py::return_value_policy::reference)
     .def("__setitem__", [](Class &s, py::tuple indx, real_short val) 
       {
         auto i = indx[0].cast<int>();

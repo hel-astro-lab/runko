@@ -59,7 +59,11 @@ class YeeLattice
     jx(Nx, Ny, Nz),
     jy(Nx, Ny, Nz),
     jz(Nx, Ny, Nz)
-    { }
+  {
+    Nx = Nx; 
+    Ny = Ny; 
+    Nz = Nz; 
+  }
 
   // copy ctor
   YeeLattice(YeeLattice& other) :
@@ -76,7 +80,11 @@ class YeeLattice
     jx(other.jx),
     jy(other.jy),
     jz(other.jz)
-  { }
+  {
+    Nx = other.Nx; 
+    Ny = other.Ny; 
+    Nz = other.Nz; 
+  }
 
   YeeLattice(const YeeLattice& other) :
     Nx(other.Nx),
@@ -92,7 +100,11 @@ class YeeLattice
     jx(other.jx),
     jy(other.jy),
     jz(other.jz)
-  { }
+  { 
+    Nx = other.Nx; 
+    Ny = other.Ny; 
+    Nz = other.Nz; 
+  }
 
   // move constructor
   YeeLattice(YeeLattice&& other)

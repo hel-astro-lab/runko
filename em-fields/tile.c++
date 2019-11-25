@@ -25,7 +25,7 @@ void Tile<D>::deposit_current()
 template<std::size_t D>
 YeeLattice& Tile<D>::get_yee(int /*i*/) 
 {
-  return this->yee[0];
+  return this->yee.at(0);
   //return this->yee;
 }
   

@@ -101,7 +101,14 @@ class Mesh
       Ny(other.Ny),
       Nz(other.Nz),
       mat(other.mat)
-    { }
+    { 
+      Nx = other.Nx; 
+      Ny = other.Ny; 
+      Nz = other.Nz; 
+      mat.resize(other.mat.size());
+      for(size_t i=0; i<other.mat.size(); i++) mat[i] = other.mat[i];
+
+    }
 
     // Mesh(const Mesh& other) = default;
     Mesh(const Mesh& other) :
@@ -109,13 +116,18 @@ class Mesh
       Ny(other.Ny),
       Nz(other.Nz),
       mat(other.mat)
-    { }
+    { 
+      Nx = other.Nx; 
+      Ny = other.Ny; 
+      Nz = other.Nz; 
+      mat.resize(other.mat.size());
+      for(size_t i=0; i<other.mat.size(); i++) mat[i] = other.mat[i];
+    }
     
     // public swap for efficient memory management
     friend void swap(Mesh& first, Mesh& second)
     {
         using std::swap;
-
         swap(first.Nx, second.Nx);
         swap(first.Ny, second.Ny);
         swap(first.Nz, second.Nz);

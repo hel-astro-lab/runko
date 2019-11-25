@@ -54,7 +54,7 @@ auto declare_tile(
 
     .def("get_yee",             &fields::Tile<D>::get_yee,
         py::arg("i")=0,
-        py::return_value_policy::reference_internal,
+        py::return_value_policy::reference_internal
         // keep alive for the lifetime of the grid
         //
         // pybind11:
@@ -62,7 +62,7 @@ auto declare_tile(
         // value. For methods, index one refers to the implicit this pointer, 
         // while regular arguments begin at index two. 
         // py::keep_alive<nurse,patient>()
-        py::keep_alive<1,0>()
+        //py::keep_alive<1,0>()
         )
     .def("add_analysis_species",&fields::Tile<D>::add_analysis_species)
     .def("get_analysis",        &fields::Tile<D>::get_analysis, 
@@ -151,24 +151,21 @@ void bind_fields(py::module& m_sub)
   //py::init([](const std::binary_function<double, double, bool> & other) { return new std::binary_function<double, double, bool>(other); })
   //
   py::class_<
-    fields::YeeLattice
-    //std::shared_ptr<fields::YeeLattice>
+    fields::YeeLattice,
+    std::shared_ptr<fields::YeeLattice>
     //std::unique_ptr<fields::YeeLattice, py::nodelete>
             >(m_sub, "YeeLattice")
     .def(py::init<int, int, int>())
-    .def_readwrite("ex",   &fields::YeeLattice::ex   ,py::return_value_policy::reference_internal)
-    .def_readwrite("ey",   &fields::YeeLattice::ey   ,py::return_value_policy::reference_internal)
-    .def_readwrite("ez",   &fields::YeeLattice::ez   ,py::return_value_policy::reference_internal)
-    .def_readwrite("bx",   &fields::YeeLattice::bx   ,py::return_value_policy::reference_internal)
-    .def_readwrite("by",   &fields::YeeLattice::by   ,py::return_value_policy::reference_internal)
-    .def_readwrite("bz",   &fields::YeeLattice::bz   ,py::return_value_policy::reference_internal)
-    .def_readwrite("jx",   &fields::YeeLattice::jx   ,py::return_value_policy::reference_internal)
-    .def_readwrite("jy",   &fields::YeeLattice::jy   ,py::return_value_policy::reference_internal)
-    .def_readwrite("jz",   &fields::YeeLattice::jz   ,py::return_value_policy::reference_internal)
-    //.def_readwrite("jx1",  &fields::YeeLattice::jx1  ,py::return_value_policy::reference_internal)
-    //.def_readwrite("jy1",  &fields::YeeLattice::jy1  ,py::return_value_policy::reference_internal)
-    //.def_readwrite("jz1",  &fields::YeeLattice::jz1  ,py::return_value_policy::reference_internal)
-    .def_readwrite("rho",  &fields::YeeLattice::rho  ,py::return_value_policy::reference_internal)
+    .def_readwrite("ex",   &fields::YeeLattice::ex , py::return_value_policy::reference_internal)
+    .def_readwrite("ey",   &fields::YeeLattice::ey , py::return_value_policy::reference_internal)
+    .def_readwrite("ez",   &fields::YeeLattice::ez , py::return_value_policy::reference_internal)
+    .def_readwrite("bx",   &fields::YeeLattice::bx , py::return_value_policy::reference_internal)
+    .def_readwrite("by",   &fields::YeeLattice::by , py::return_value_policy::reference_internal)
+    .def_readwrite("bz",   &fields::YeeLattice::bz , py::return_value_policy::reference_internal)
+    .def_readwrite("jx",   &fields::YeeLattice::jx , py::return_value_policy::reference_internal)
+    .def_readwrite("jy",   &fields::YeeLattice::jy , py::return_value_policy::reference_internal)
+    .def_readwrite("jz",   &fields::YeeLattice::jz , py::return_value_policy::reference_internal)
+    .def_readwrite("rho",  &fields::YeeLattice::rho, py::return_value_policy::reference_internal)
     .def_property("ex2",   
         [](YeeLattice& self) { return self.ex; },
         [](YeeLattice& self, toolbox::Mesh<real_short,3>& v) { self.ex = v; },
@@ -221,8 +218,9 @@ void bind_fields(py::module& m_sub)
     &fields::Tile<3>::set_yee,
     py::return_value_policy::reference_internal, 
     py::keep_alive<0,1>());
-  t3.def("get_yeeptr",           &fields::Tile<3>::get_yeeptr,
-        py::return_value_policy::reference_internal);
+  t3.def("get_yeeptr", &fields::Tile<3>::get_yeeptr
+      );
+       // py::return_value_policy::reference_internal);
 
 
 

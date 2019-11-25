@@ -649,9 +649,15 @@ class Communications(unittest.TestCase):
         loadTiles3D(grid, conf)
 
         print("debug testing yee lifetime")
+
+        print("get tile")
         c = grid.get_tile(1,1,1)
-        yee = c.get_yee() #FIXME: yee does not exist here
-        yee.ex[0,0,0] = 1.0
+        print("get yee")
+        yee = c.get_yeeptr() #FIXME: yee does not exist here
+        print("get ex")
+        ex = yee.ex
+        print("set ex")
+        ex[0,0,0] = 1.0
 
         # lets put values into Yee lattice
         print("3D boundary test")
@@ -665,8 +671,8 @@ class Communications(unittest.TestCase):
                     if True:
                         #print("get tile", i,j,k)
                         c = grid.get_tile(i,j,k)
-                        yee = c.get_yee() #FIXME: yee does not exist here
 
+                        print("ref count c:", sys.getrefcount(c))
                         indx = c.index
                         #indx2 = c.communication.indices
                         #indx = c.get_index(grid)
@@ -686,12 +692,21 @@ class Communications(unittest.TestCase):
                         self.assertEqual(k, indx[2])
 
                         #print("get yee")
+                        yee = c.get_yee() #FIXME: yee return NoneType
+                        #yee = c.yee
+                        print(yee)
+
+                        print("ref count c:", sys.getrefcount(c))
+                        print("ref count yee:", sys.getrefcount(yee))
 
                         for s in range(conf.NzMesh):
                             for r in range(conf.NyMesh):
                                 for q in range(conf.NxMesh):
+                                    print("ref count yee:", sys.getrefcount(yee))
+                                    ex = yee.ex
+
                                     #print("set yee")
-                                    yee.ex[q,r,s] = val
+                                    ex[q,r,s] = val
                                     yee.ey[q,r,s] = val
                                     yee.ez[q,r,s] = val
 
@@ -703,6 +718,10 @@ class Communications(unittest.TestCase):
                                     yee.jy[q,r,s] = val
                                     yee.jz[q,r,s] = val
                                     val += 1
+
+                        #try keeping yee alive 
+                        #nt = yee.size()
+
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
 
