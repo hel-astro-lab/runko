@@ -53,7 +53,7 @@ def sobol_method(T):
 
 #Box-Muller sampling
 def BoxMuller_method(T):
-    vth = np.sqrt(T)
+    vth = np.sqrt(2.0*T)
 
     #Box-Muller sampling
     rr1 = np.random.rand()
@@ -75,7 +75,7 @@ def boosted_maxwellian(theta, Gamma, direction=1, dims=2):
 
     #For relativistic case we use Sobol method, inverse method otherwise
     if theta > 0.2:
-        u = sobol_method(theta/np.sqrt(2.0))
+        u = sobol_method(theta)
     else:
         u = BoxMuller_method(theta)
 

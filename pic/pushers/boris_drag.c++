@@ -62,6 +62,11 @@ void pic::BorisPusherDrag<D,V>::push_container(
   double uxt, uyt, uzt;
   double u1, v1, w1;
   double g, f, ginv, kncorr, gamt, ut;
+  double dragx, dragy, dragz, dragv;
+  double thr;
+
+  // maximum drag force experienced by particle
+  double dragthr = 0.1; 
 
   double c = cfl;
   double cinv = 1.0/c;
@@ -123,9 +128,21 @@ void pic::BorisPusherDrag<D,V>::push_container(
     // subtract drag with Klein-Nishina reduction
     // A g^2 beta = A g^2 u/g = A g u
     kncorr = kn(3.0*gamt*temp);
-    vel[0][n] = u0*cinv - c*drag*kncorr*ut*ut*(uxt/gamt);
-    vel[1][n] = v0*cinv - c*drag*kncorr*ut*ut*(uyt/gamt);
-    vel[2][n] = w0*cinv - c*drag*kncorr*ut*ut*(uzt/gamt);
+
+    // drag components
+    dragx = c*drag*kncorr*gamt*gamt*(uxt/gamt);
+    dragy = c*drag*kncorr*gamt*gamt*(uyt/gamt);
+    dragz = c*drag*kncorr*gamt*gamt*(uzt/gamt);
+
+    // limit drag to maximum of dragthr of velocity
+    dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut;
+    thr = 1.0;
+    if (dragv > dragthr) thr = dragthr/dragv;
+
+    // apply drag
+    vel[0][n] = u0*cinv - thr*dragx;
+    vel[1][n] = v0*cinv - thr*dragy;
+    vel[2][n] = w0*cinv - thr*dragz;
 
 
     // position advance
