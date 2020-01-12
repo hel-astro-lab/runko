@@ -180,11 +180,15 @@ void ParticleContainer::check_outgoing_particles(
     ymax = maxs[1],
     zmax = maxs[2];
 
+  int lenx = static_cast<int>( xmax - xmin );
+  int leny = static_cast<int>( ymax - ymin );
+  int lenz = static_cast<int>( zmax - zmin );
+
   // shortcut for particle locations
   double* locn[3];
   for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
-  double x0, y0, z0;
+  int i0, j0, k0;
 
   int i,j,k; // relative indices
   for(size_t n=0; n<size(); n++) {
@@ -192,18 +196,18 @@ void ParticleContainer::check_outgoing_particles(
     j = 0;
     k = 0;
 
-    x0 = locn[0][n];
-    y0 = locn[1][n];
-    z0 = locn[2][n];
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+    k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
 
-    if(x0 <  xmin) i--; // left wrap
-    if(x0 >= xmax) i++; // right wrap
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
 
-    if(y0 <  ymin) j--; // bottom wrap
-    if(y0 >= ymax) j++; // top wrap
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
 
-    if(z0 <  zmin) k--; // back
-    if(z0 >= zmax) k++; // front
+    if(k0 <  0)    k--; // back
+    if(k0 >= lenz) k++; // front
 
     // FIXME: hack to make this work with 2D 
     if ((i == 0) && (j == 0)) continue; 
