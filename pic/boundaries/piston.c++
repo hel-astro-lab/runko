@@ -40,12 +40,20 @@ void pic::Piston<D>::zigzag(
   z1 = D >= 3 ? z1glob - mins[2] : z1glob;
   z2 = D >= 3 ? z2glob - mins[2] : z2glob;
 
-  i1  = D >= 1 ? static_cast<int>(floor( x1 ) ) : 0;
-  i2  = D >= 1 ? static_cast<int>(floor( x2 ) ) : 0;
-  j1  = D >= 2 ? static_cast<int>(floor( y1 ) ) : 0;
-  j2  = D >= 2 ? static_cast<int>(floor( y2 ) ) : 0;
-  k1  = D >= 3 ? static_cast<int>(floor( z1 ) ) : 0;
-  k2  = D >= 3 ? static_cast<int>(floor( z2 ) ) : 0;
+  //XXX: floor to int rounding
+  //i1  = D >= 1 ? static_cast<int>(floor( x1 ) ) : 0;
+  //i2  = D >= 1 ? static_cast<int>(floor( x2 ) ) : 0;
+  //j1  = D >= 2 ? static_cast<int>(floor( y1 ) ) : 0;
+  //j2  = D >= 2 ? static_cast<int>(floor( y2 ) ) : 0;
+  //k1  = D >= 3 ? static_cast<int>(floor( z1 ) ) : 0;
+  //k2  = D >= 3 ? static_cast<int>(floor( z2 ) ) : 0;
+  i1  = D >= 1 ? static_cast<int>(x1) : 0;
+  i2  = D >= 1 ? static_cast<int>(x2) : 0;
+  j1  = D >= 2 ? static_cast<int>(y1) : 0;
+  j2  = D >= 2 ? static_cast<int>(y2) : 0;
+  k1  = D >= 3 ? static_cast<int>(z1) : 0;
+  k2  = D >= 3 ? static_cast<int>(z2) : 0;
+
 
   // index checking
   if(D >= 1 ) assert(i1 >= -3 && i1 < static_cast<int>(tile.mesh_lengths[0]+3)) ;

@@ -136,7 +136,7 @@ def insert_em(grid, conf):
 
 if __name__ == "__main__":
 
-    do_plots = False
+    do_plots = True
     do_print = False
 
     if MPI.COMM_WORLD.Get_rank() == 0:

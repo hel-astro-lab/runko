@@ -57,6 +57,7 @@ void pic::LinearInterpolator<D,V>::solve(
       // A more elegant solution most probably exists.
       // Alternatively this might imply that some < > comparison operators
       // are wrong somewhere and should be <= or >=, or vice versa.
+      /*
       if (D >= 1) {
         if(loc[0][n] == maxs[0]) loc[0][n] -= 1.0e-5;
 
@@ -77,6 +78,26 @@ void pic::LinearInterpolator<D,V>::solve(
 	      k  = (int)floor( loc[2][n]-mins[2] );
 	      dz = (loc[2][n]-mins[2]) - k;
       }
+      */
+
+      // XXX: particle mapping to grid indices 
+	    //if (D >= 1) i  = static_cast<int>(floor( loc[0][n]-mins[0] ));
+	    //if (D >= 2) j  = static_cast<int>(floor( loc[1][n]-mins[1] ));
+	    //if (D >= 3) k  = static_cast<int>(floor( loc[2][n]-mins[2] ));
+	    if (D >= 1) i  = static_cast<int>(loc[0][n]-mins[0]);
+	    if (D >= 2) j  = static_cast<int>(loc[1][n]-mins[1]);
+	    if (D >= 3) k  = static_cast<int>(loc[2][n]-mins[2]);
+
+	    if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
+	    if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
+	    if (D >= 3) dz = (loc[2][n]-mins[2]) - k;
+
+      //Fortran
+      // | 1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 - 10|
+      //C++
+      // | 0 - 1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 |
+
+
 
       /*
       std::cout << '\n';
