@@ -81,12 +81,12 @@ void pic::LinearInterpolator<D,V>::solve(
       */
 
       // XXX: particle mapping to grid indices 
-	    //if (D >= 1) i  = static_cast<int>(floor( loc[0][n]-mins[0] ));
-	    //if (D >= 2) j  = static_cast<int>(floor( loc[1][n]-mins[1] ));
-	    //if (D >= 3) k  = static_cast<int>(floor( loc[2][n]-mins[2] ));
-	    if (D >= 1) i  = static_cast<int>(loc[0][n]-mins[0]);
-	    if (D >= 2) j  = static_cast<int>(loc[1][n]-mins[1]);
-	    if (D >= 3) k  = static_cast<int>(loc[2][n]-mins[2]);
+	    if (D >= 1) i  = static_cast<int>(floor( loc[0][n]-mins[0] ));
+	    if (D >= 2) j  = static_cast<int>(floor( loc[1][n]-mins[1] ));
+	    if (D >= 3) k  = static_cast<int>(floor( loc[2][n]-mins[2] ));
+	    //if (D >= 1) i  = static_cast<int>(loc[0][n]-mins[0]);
+	    //if (D >= 2) j  = static_cast<int>(loc[1][n]-mins[1]);
+	    //if (D >= 3) k  = static_cast<int>(loc[2][n]-mins[2]);
 
 	    if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
 	    if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
@@ -110,9 +110,9 @@ void pic::LinearInterpolator<D,V>::solve(
 
       // check section; TODO; remove
       bool debug_flag = false;
-      if(D >= 1) { if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
-      if(D >= 2) { if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
-      if(D >= 3) { if(! (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
+      if(D >= 1) { if(! (i >= 0 && i <= static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
+      if(D >= 2) { if(! (j >= 0 && j <= static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
+      if(D >= 3) { if(! (k >= 0 && k <= static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
 
       if(debug_flag) {
         std::cout << "--------------------------------------------------\n";

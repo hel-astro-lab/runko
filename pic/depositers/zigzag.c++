@@ -74,18 +74,18 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       z2 = D >= 3 ? loc[2][n]  - mins[2] : loc[2][n];
 
       // XXX: original algorithm has int(float(x)) != floor(x)
-  	  //i1  = D >= 1 ? static_cast<int>(floor( x1 )) : 0;
-  	  //i2  = D >= 1 ? static_cast<int>(floor( x2 )) : 0;
-  	  //j1  = D >= 2 ? static_cast<int>(floor( y1 )) : 0;
-  	  //j2  = D >= 2 ? static_cast<int>(floor( y2 )) : 0;
-  	  //k1  = D >= 3 ? static_cast<int>(floor( z1 )) : 0;
-  	  //k2  = D >= 3 ? static_cast<int>(floor( z2 )) : 0;
-  	  i1  = D >= 1 ? static_cast<int>(x1) : 0;
-  	  i2  = D >= 1 ? static_cast<int>(x2) : 0;
-  	  j1  = D >= 2 ? static_cast<int>(y1) : 0;
-  	  j2  = D >= 2 ? static_cast<int>(y2) : 0;
-  	  k1  = D >= 3 ? static_cast<int>(z1) : 0;
-  	  k2  = D >= 3 ? static_cast<int>(z2) : 0;
+  	  i1  = D >= 1 ? static_cast<int>(floor( x1 )) : 0;
+  	  i2  = D >= 1 ? static_cast<int>(floor( x2 )) : 0;
+  	  j1  = D >= 2 ? static_cast<int>(floor( y1 )) : 0;
+  	  j2  = D >= 2 ? static_cast<int>(floor( y2 )) : 0;
+  	  k1  = D >= 3 ? static_cast<int>(floor( z1 )) : 0;
+  	  k2  = D >= 3 ? static_cast<int>(floor( z2 )) : 0;
+  	  //i1  = D >= 1 ? static_cast<int>(x1) : 0;
+  	  //i2  = D >= 1 ? static_cast<int>(x2) : 0;
+  	  //j1  = D >= 2 ? static_cast<int>(y1) : 0;
+  	  //j2  = D >= 2 ? static_cast<int>(y2) : 0;
+  	  //k1  = D >= 3 ? static_cast<int>(z1) : 0;
+  	  //k2  = D >= 3 ? static_cast<int>(z2) : 0;
 
       // relay point; +1 is equal to +\Delta x
       xr = min( double(min(i1,i2)+1), max( double(max(i1,i2)), 0.5*(double(x1+x2)) ) );
