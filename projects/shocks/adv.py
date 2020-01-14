@@ -287,10 +287,20 @@ if __name__ == "__main__":
     analyzer = pypic.Analyzator()
     #flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
-    flt      = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-    fltC     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-    flt.alpha  = 0.5 #make binomial
-    fltC.alpha = 1.5 #make binomial compensator
+
+    do_compensator = False
+
+    #binomial + compensator filter
+    if not(do_compensator):
+        flt      = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fltC     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt.alpha  = 0.5 #make binomial
+        fltC.alpha = conf.npasses/2 + 1 #binomial compensation is n/2 + 1
+    else:
+        #strided filters
+        flt      = pyfld.General3pStrided(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt.alpha  = 0.5 #make binomial
+        flt.stride = 2   #make binomial
 
 
     #enhance numerical speed of light slightly to suppress numerical Cherenkov instability
@@ -659,6 +669,23 @@ if __name__ == "__main__":
                 flt.solve(tile)
 
             MPI.COMM_WORLD.barrier() # sync everybody 
+
+        if do_compensator:
+
+            #update global neighbors (mpi)
+            grid.send_data(0)
+            grid.recv_data(0) 
+            grid.wait_data(0)
+
+            #get halo boundaries
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                tile.update_boundaries(grid)
+
+            #do one full compensation pass lastly
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                fltC.solve(tile)
 
         #--------------------------------------------------
         timer.stop_comp("filter")
