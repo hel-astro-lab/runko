@@ -117,7 +117,7 @@ def insert_em(grid, conf):
 
 if __name__ == "__main__":
 
-    do_plots = False
+    do_plots = True
     do_print = False
 
     if MPI.COMM_WORLD.Get_rank() == 0:
@@ -285,7 +285,13 @@ if __name__ == "__main__":
     fintp    = pypic.LinearInterpolator()
     currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
-    flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+    #flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+    flt      = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+    fltC     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+    flt.alpha  = 0.5 #make binomial
+    fltC.alpha = 1.5 #make binomial compensator
+
 
     #enhance numerical speed of light slightly to suppress numerical Cherenkov instability
     fldprop.corr = 1.02

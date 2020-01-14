@@ -3,7 +3,7 @@
 #include <cmath>
 
 
-/// single 2D 2nd order binomial filter pass
+/// single 2D 2nd order 3-point binomial filter 
 template<>
 void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
@@ -85,10 +85,90 @@ void fields::Binomial2<2>::solve(
   }
   mesh.jz = tmp; // then copy from scratch to original arrays
 
+}
+
+
+
+/// single 2D 3-point general filter pass
+template<>
+void fields::General3p<2>::solve(
+    fields::Tile<2>& tile)
+{
+  // 2D general coefficients
+  double winv=1./4.;                         //normalization
+  double wtm=winv * 4.0*alpha*alpha,         //middle
+         wts=winv * 2.0*alpha*(1.0-alpha),   //side
+         wtc=winv * (1.0-alpha)*(1.0-alpha); //corner
+
+  auto& mesh = tile.get_yee();
+
+
+  //--------------------------------------------------
+  // Jx
+  int k = 0;
+  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
+  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+    tmp(i,j,k) = 
+      mesh.jx(i-1, j-1, k)*wtc + 
+      mesh.jx(i  , j-1, k)*wts + 
+      mesh.jx(i+1, j-1, k)*wtc + 
+
+      mesh.jx(i-1, j  , k)*wts + 
+      mesh.jx(i  , j  , k)*wtm + 
+      mesh.jx(i+1, j  , k)*wts + 
+
+      mesh.jx(i-1, j+1, k)*wtc + 
+      mesh.jx(i  , j+1, k)*wts + 
+      mesh.jx(i+1, j+1, k)*wtc;
+  }
+  mesh.jx = tmp; // then copy from scratch to original arrays
+
+  // Jy
+  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
+  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+    tmp(i,j,k) = 
+      mesh.jy(i-1, j-1, k)*wtc + 
+      mesh.jy(i  , j-1, k)*wts + 
+      mesh.jy(i+1, j-1, k)*wtc + 
+
+      mesh.jy(i-1, j  , k)*wts + 
+      mesh.jy(i  , j  , k)*wtm + 
+      mesh.jy(i+1, j  , k)*wts + 
+
+      mesh.jy(i-1, j+1, k)*wtc + 
+      mesh.jy(i  , j+1, k)*wts + 
+      mesh.jy(i+1, j+1, k)*wtc;
+  }
+  mesh.jy = tmp; // then copy from scratch to original arrays
+
+  // Jz
+  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
+  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+    tmp(i,j,k) = 
+      mesh.jz(i-1, j-1, k)*wtc + 
+      mesh.jz(i  , j-1, k)*wts + 
+      mesh.jz(i+1, j-1, k)*wtc + 
+
+      mesh.jz(i-1, j  , k)*wts + 
+      mesh.jz(i  , j  , k)*wtm + 
+      mesh.jz(i+1, j  , k)*wts + 
+
+      mesh.jz(i-1, j+1, k)*wtc + 
+      mesh.jz(i  , j+1, k)*wts + 
+      mesh.jz(i+1, j+1, k)*wtc;
+  }
+  mesh.jz = tmp; // then copy from scratch to original arrays
 
 }
+
+
+
+
 
 
 //template class fields::Binomial2<1>; // 1D
 template class fields::Binomial2<2>; // 2D
 //template class fields::Binomial2<3>; // 3D
+  
+
+template class fields::General3p<2>; // 2D
