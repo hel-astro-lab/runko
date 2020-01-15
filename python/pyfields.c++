@@ -236,6 +236,16 @@ void bind_fields(py::module& m_sub)
     .def(py::init<size_t, size_t, size_t>())
     .def("solve",      &fields::Binomial2<2>::solve);
 
+  py::class_<fields::General3p<2>>(m_2d, "General3p", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("alpha",    &fields::General3p<2>::alpha)
+    .def("solve",              &fields::General3p<2>::solve);
+
+  py::class_<fields::General3pStrided<2>>(m_2d, "General3pStrided", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("alpha",    &fields::General3pStrided<2>::alpha)
+    .def_readwrite("stride",   &fields::General3pStrided<2>::stride)
+    .def("solve",              &fields::General3pStrided<2>::solve);
 
 
   //--------------------------------------------------
