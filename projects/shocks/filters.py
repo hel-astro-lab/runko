@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 from visualize import imshow
 
+from timer import Timer
 
 
 np.random.seed(1)
@@ -21,8 +22,7 @@ class Conf:
     NyMesh = 100
     NzMesh = 1
 
-    npasses = 20
-
+    npasses = 60
 
 
 def read_tile(tile, conf):
@@ -63,47 +63,74 @@ if __name__ == "__main__":
 
 
     conf = Conf()
-
-    do_compensator = False
-
-    #binomial + compensator filter
-    if do_compensator:
-        flt      = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        fltC     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        flt.alpha  = 0.5 #make binomial
-        fltC.alpha = conf.npasses/2 + 1 #binomial compensation is n/2 + 1
-    else:
-        #strided filters
-        flt      = pyfld.General3pStrided(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        flt.alpha  = 0.5 #make binomial
-        flt.stride = 3   #make binomial
-
-
     tile = pypic.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
     yee = tile.get_yee(0)
     yee.jx[50,50,0] = 1.0
 
+    timer = Timer()
+    timer.start("filter")
+    timer.do_print = True
 
-    #--------------------------------------------------
-    #sweep over npasses times
-    for fj in range(conf.npasses):
-        print("pass ", fj)
-        flt.solve(tile)
 
-    if do_compensator:
-        print("compensator ")
+    #binomial + compensator filter
+    if False:
+        conf.npasses = 60
+        print("Binomial+compensator filter")
+        flt      = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fltC     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt.alpha  = 0.5 #make binomial
+        fltC.alpha = conf.npasses/2 + 1 #binomial compensation is n/2 + 1
+
+        for fj in range(conf.npasses):
+            flt.solve(tile)
         fltC.solve(tile)
 
-    #--------------------------------------------------
+    #strided filters
+    elif True:
+        conf.npasses = 5
+        print("Strided filter")
+        flt      = pyfld.General3pStrided(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt.alpha  = 0.5 #make binomial
+        flt.stride = 3   #make binomial
 
+        for fj in range(conf.npasses):
+            flt.solve(tile)
+
+    #strided filters + binomial
+    elif False:
+        print("Strided + binomial")
+        flt      = pyfld.General3pStrided(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt.alpha  = 0.5 #make binomial
+        flt.stride = 3   #make binomial
+
+        flt2     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt2.alpha  = 0.5 #make binomial
+
+        fltC     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fltC.alpha = conf.npasses/2 + 1 #binomial compensation is n/2 + 1
+
+        #strided passes
+        for fj in range(conf.npasses):
+            flt.solve(tile)
+        #extra binomial pass
+        flt2.solve(tile)
+
+    timer.stop("filter") 
+    timer.stats("filter") 
+
+
+    #--------------------------------------------------
     arr = read_tile(tile, conf)
 
-    print(arr)
-
     x = np.arange(conf.NxMesh)
-    
-    axs[0].plot(x, arr[50,:,0], "k-", alpha=0.6)
-    axs[0].plot(x, arr[:,50,0], "r--", alpha=0.6)
+    xd = np.sqrt(2.0*x*x)
+    xmid = 50.0
+
+    axs[0].plot(x - xmid, arr[50,:,0], "k-", alpha=0.6)
+    axs[0].plot(x - xmid, arr[:,50,0], "r--", alpha=0.6)
+
+    arrd = arr.diagonal()[0]
+    axs[0].plot(xd-np.sqrt(2.0)*xmid, arrd, "b:", alpha=0.6)
 
 
     xmin = 0
@@ -126,26 +153,42 @@ if __name__ == "__main__":
     nx = conf.NxMesh//2
 
     freq = np.fft.fftfreq(conf.NxMesh, d = 1.0)
+
     farr = np.fft.fft2(arr[:,:,0])
     #farr = np.abs(farr)*np.abs(farr) #power
-    farr = np.real(farr)**2
+    #farr = np.real(farr)**2
+    farr = np.abs(farr)
 
+    #im = imshow(axs[3], 
+    #       farr[:nx,:nx],
+    #       freq[0], freq[nx], freq[0], freq[nx],
+    #       cmap = 'viridis',
+    #       vmin = np.min(farr),
+    #       vmax = np.max(farr),
+    #       clip = False,
+    #       aspect=1,
+    #       )
     im = imshow(axs[3], 
-           farr[:nx,:nx],
+           np.log10(farr[:nx,:nx]),
            freq[0], freq[nx], freq[0], freq[nx],
            cmap = 'viridis',
-           vmin = np.min(farr),
-           vmax = np.max(farr),
-           clip = False,
+           vmin = -11.0,
+           vmax = 1.0,
+           clip = None,
            aspect=1,
            )
 
     gainx = farr[:nx,0]
     gainy = farr[0,:nx]
     freqs = freq[:nx]
+    ks = 1.0/freqs
 
-    axs[2].plot(freqs, gainx, "k-", alpha=0.6)
-    axs[2].plot(freqs, gainy, "r--", alpha=0.6)
+    ksd = np.sqrt(2.0*ks*ks)
+    gaind = farr[:nx,:].diagonal()
+
+    axs[2].plot(ks, gainx, "k-", alpha=0.6)
+    axs[2].plot(ks, gainy, "r--", alpha=0.6)
+    axs[2].plot(ksd, gaind, "b:", alpha=0.6)
 
     axs[2].set_xscale('log')
     axs[2].set_yscale('log')
