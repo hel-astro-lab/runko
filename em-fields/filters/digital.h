@@ -67,6 +67,33 @@ class General3pStrided :
 
 };
 
+/// 2D 3-point compensator filter from Birdsall & Langdon
+template<size_t D>
+class Compensator2 :
+  public virtual Filter<D>
+{
+  public:
+
+  using Filter<D>::Filter;
+
+  void solve(fields::Tile<D>& tile) override;
+
+};
+
+
+/// outrolled 2-strided digital 3-point filter
+//
+template<size_t D>
+class Binomial2Strided2 :
+  public virtual Filter<D>
+{
+  public:
+
+  using Filter<D>::Filter;
+
+  void solve(fields::Tile<D>& tile) override;
+
+};
 
 
 } // end of namespace fields

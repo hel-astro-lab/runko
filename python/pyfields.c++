@@ -248,6 +248,16 @@ void bind_fields(py::module& m_sub)
     .def("solve",              &fields::General3pStrided<2>::solve);
 
 
+  py::class_<fields::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",              &fields::Binomial2Strided2<2>::solve);
+
+  py::class_<fields::Compensator2<2>>(m_2d, "Compensator2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",              &fields::Compensator2<2>::solve);
+
+
+
   //--------------------------------------------------
   // Quick IO 
 
