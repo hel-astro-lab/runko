@@ -9,7 +9,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
     ffe::ExtraLattice& tmp
     )
 {
-  const double dx=0.0, dy=0.0, dz=0.0;
+  double dx=0.0, dy=0.0, dz=0.0;
   double f,g;
 
   //int iz = 1;
@@ -19,15 +19,21 @@ void ffe::DriftCurrent<2>::interpolate_b(
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
 
+    dx=+0.5;
+    dy=-0.5;
+    //dz=-0.5;
     f = yee.bx(i,j-1,k)  +yee.bx(i,j-1,k-iz )   +dz*(yee.bx(i,j-1,k+iz)   - yee.bx(i,j-1,k-iz));
-    f = yee.bx(i,j,k)    +yee.bx(i,j,k-iz)      +dz*(yee.bx(i,j,k+iz)     - yee.bx(i,j,k-iz))+f+dy 
-      *(yee.bx(i,j+1,k)  +yee.bx(i,j+1,k-iz)    +dz*(yee.bx(i,j+1,k+iz)   - yee.bx(i,j+1,k-iz))-f);
+    f = yee.bx(i,j,k)    +yee.bx(i,j,k-iz)      +dz*(yee.bx(i,j,k+iz)     - yee.bx(i,j,k-iz))+f + 
+     dy*(yee.bx(i,j+1,k) +yee.bx(i,j+1,k-iz)    +dz*(yee.bx(i,j+1,k+iz)   - yee.bx(i,j+1,k-iz))-f);
     g = yee.bx(i+1,j-1,k)+yee.bx(i+1,j-1,k-iz)  +dz*(yee.bx(i+1,j-1,k+iz) - yee.bx(i+1,j-1,k-iz));
     g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)    +dz*(yee.bx(i+1,j,k+iz)   - yee.bx(i+1,j,k-iz))
                                          +g     +dy*(yee.bx(i+1,j+1,k)    + yee.bx(i+1,j+1,k-iz)
                                                 +dz*(yee.bx(i+1,j+1,k+iz) - yee.bx(i+1,j+1,k-iz))-g);
     tmp.bxf(i,j,k)=(f+dx*(g-f))*(.25);
 
+    dx=-0.5;
+    dy=+0.5;
+    //dz=-0.5;
     f = yee.by(i,j,k-iz)+yee.by(i-1,j,k-iz)     +dx*(yee.by(i+1,j,k-iz)   - yee.by(i-1,j,k-iz));
     f = yee.by(i,j,k)+yee.by(i-1,j,k)           +dx*(yee.by(i+1,j,k)      - yee.by(i-1,j,k))+f+dz 
       *(yee.by(i,j,k+iz)+yee.by(i-1,j,k+iz)     +dx*(yee.by(i+1,j,k+iz)   - yee.by(i-1,j,k+iz))-f);
@@ -37,6 +43,9 @@ void ffe::DriftCurrent<2>::interpolate_b(
                                                 +dx*(yee.by(i+1,j+1,k+iz) - yee.by(i-1,j+1,k+iz))-g);
     tmp.byf(i,j,k)=(f+dy*(g-f))*(.25);
 
+    dx=-0.5;
+    dy=-0.5;
+    //dz=+0.5;
     f = yee.bz(i-1,j,k)+yee.bz(i-1,j-1,k )      +dy*(yee.bz(i-1,j+1,k)    - yee.bz(i-1,j-1,k));
     f = yee.bz(i,j,k)+yee.bz(i,j-1,k)           +dy*(yee.bz(i,j+1,k)      - yee.bz(i,j-1,k))+f+dx 
       * (yee.bz(i+1,j,k)+yee.bz(i+1,j-1,k)      +dy*(yee.bz(i+1,j+1,k)    - yee.bz(i+1,j-1,k))-f);
