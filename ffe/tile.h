@@ -52,11 +52,14 @@ class Tile :
 
   public:
 
-  /// explicitly variables import what we need
+  // explicitly imported variables 
+    
+  // tile & mesh limits
   using corgi::Tile<D>::mins;
   using corgi::Tile<D>::maxs;
-
   using fields::Tile<D>::mesh_lengths;
+
+  // physical parameters
   using fields::Tile<D>::cfl;
   using fields::Tile<D>::dx;
   //using fields::Tile<D>::yee;
