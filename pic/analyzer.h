@@ -82,10 +82,6 @@ class Analyzator {
   	    i = D >= 1 ? static_cast<int>(floor( loc[0][n] - mins[0] ) ) : 0;
   	    j = D >= 2 ? static_cast<int>(floor( loc[1][n] - mins[1] ) ) : 0;
   	    k = D >= 3 ? static_cast<int>(floor( loc[2][n] - mins[2] ) ) : 0;
-  	    //i = D >= 1 ? static_cast<int>(loc[0][n] - mins[0]) : 0;
-  	    //j = D >= 2 ? static_cast<int>(loc[1][n] - mins[1]) : 0;
-  	    //k = D >= 3 ? static_cast<int>(loc[2][n] - mins[2]) : 0;
-
 
         /*
         std::cout << "----------------------\n";
