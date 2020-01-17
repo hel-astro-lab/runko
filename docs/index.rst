@@ -14,6 +14,8 @@ Runko is a modern numerical toolkit for simulating astrophysical plasmas. It is 
 
 
 
+
+
 The framework consists of various physics modules that can be run independently or combined to create multi-physics simulations. 
 
 .. toctree::
@@ -32,6 +34,14 @@ The framework consists of various physics modules that can be run independently 
    APIs/fields
    APIs/pic
    APIs/vlv
+
+
+.. toctree::
+   :caption: Tutorials:
+   :maxdepth: 2
+   :hidden:
+
+   shocks
 
 See also full :ref:`genindex` of the code components.
 

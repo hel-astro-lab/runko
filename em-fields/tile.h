@@ -24,14 +24,14 @@ class YeeLattice {
   size_t Nz;
 
   /// Electric field 
-  toolbox::Mesh<Realf, 1> ex;
-  toolbox::Mesh<Realf, 1> ey;
-  toolbox::Mesh<Realf, 1> ez;
+  toolbox::Mesh<Realf, 3> ex;
+  toolbox::Mesh<Realf, 3> ey;
+  toolbox::Mesh<Realf, 3> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<Realf, 1> bx;
-  toolbox::Mesh<Realf, 1> by;
-  toolbox::Mesh<Realf, 1> bz;
+  toolbox::Mesh<Realf, 3> bx;
+  toolbox::Mesh<Realf, 3> by;
+  toolbox::Mesh<Realf, 3> bz;
     
   /// Charge density
   toolbox::Mesh<Realf, 1> rho;
@@ -73,8 +73,7 @@ class YeeLattice {
     jz1(Nx, Ny, Nz)
     { }
 
-  ~YeeLattice() = default;
-
+  virtual ~YeeLattice() = default;
 };
 
 
@@ -138,9 +137,9 @@ class PlasmaMomentLattice {
     shearyz( Nx, Ny, Nz )
   { }
 
+  virtual ~PlasmaMomentLattice() = default;
 
-  ~PlasmaMomentLattice() = default;
-
+  // clear all internal storages
   void clear() 
   {
     rho    .clear();
@@ -217,10 +216,7 @@ class Tile :
     //add_yee_lattice();
   }
 
-
-  /// destructor
-  virtual ~Tile() override = default;
-
+  // avoid copies; TODO: is this needed?
   Tile(Tile& ) = delete;
 
   //--------------------------------------------------
@@ -244,7 +240,6 @@ class Tile :
   virtual const YeeLattice& get_const_yee(size_t i=0) const; 
 
   virtual const PlasmaMomentLattice& get_const_analysis(size_t i) const;
-
 
   virtual void cycle_yee();
 

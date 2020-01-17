@@ -7,8 +7,13 @@
 
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
+
 #include "../em-fields/propagator/propagator.h"
 #include "../em-fields/propagator/fdtd2.h"
+#include "../em-fields/propagator/fdtd4.h"
+
+#include "../em-fields/filters/filter.h"
+#include "../em-fields/filters/digital.h"
 
 #include "../io/quick_writer.h"
 
@@ -103,11 +108,21 @@ class PyPropagator : public Propagator<D>
 };
 
 
+/// trampoline class for fields Filter
+template<size_t D>
+class PyFilter : public Filter<D>
+{
+  using Filter<D>::Filter;
 
-
-
-
-
+  void solve( fields::Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Filter<D>,
+      solve,
+      tile
+      );
+  }
+};
 
 
 
@@ -186,7 +201,8 @@ void bind_fields(py::module& m_sub)
 
   // fdtd2 propagator
   py::class_<fields::FDTD2<1>>(m_1d, "FDTD2", fieldspropag1d)
-    .def(py::init<>());
+    .def(py::init<>())
+    .def_readwrite("corr",     &fields::FDTD2<1>::corr);
 
 
   //--------------------------------------------------
@@ -199,7 +215,48 @@ void bind_fields(py::module& m_sub)
 
   // fdtd2 propagator
   py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
+    .def_readwrite("corr",     &fields::FDTD2<2>::corr)
     .def(py::init<>());
+
+  // fdtd4 propagator
+  py::class_<fields::FDTD4<2>>(m_2d, "FDTD4", fieldspropag2d)
+    .def_readwrite("corr",     &fields::FDTD4<2>::corr)
+    .def(py::init<>());
+
+
+  //--------------------------------------------------
+  // 2D Filter bindings
+  py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
+  fieldsfilter2d
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve", &fields::Filter<2>::solve);
+
+  // digital filter
+  // TODO: remove hack where we explicitly define solve (instead of use trampoline class)
+  // overwriting the solve function from trampoline does not work atm for some weird reason.
+  py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",      &fields::Binomial2<2>::solve);
+
+  py::class_<fields::General3p<2>>(m_2d, "General3p", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("alpha",    &fields::General3p<2>::alpha)
+    .def("solve",              &fields::General3p<2>::solve);
+
+  py::class_<fields::General3pStrided<2>>(m_2d, "General3pStrided", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("alpha",    &fields::General3pStrided<2>::alpha)
+    .def_readwrite("stride",   &fields::General3pStrided<2>::stride)
+    .def("solve",              &fields::General3pStrided<2>::solve);
+
+
+  py::class_<fields::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",              &fields::Binomial2Strided2<2>::solve);
+
+  py::class_<fields::Compensator2<2>>(m_2d, "Compensator2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",              &fields::Compensator2<2>::solve);
 
 
 

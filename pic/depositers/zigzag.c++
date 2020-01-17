@@ -32,14 +32,13 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     double* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-
     double invgam;
     double c = tile.cfl;
     double q = container.q;
+    // TODO: remove
+    //std::cout << " q = " << q << " ispc: " << ispc << '\n';
 
     double x0, y0, z0, x1, x2, y1, y2, z1, z2;
-
-    //std::cout << " q = " << q << " ispc: " << ispc << '\n';
 
     int i1,i2,j1,j2,k1,k2;
 
@@ -65,8 +64,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       y0 = loc[1][n] - vel[1][n]*invgam*c;
       z0 = loc[2][n] - vel[2][n]*invgam*c; 
 
-      //q = weight*qe;
-      //q = 1.0;
 
       // normalized location w.r.t. tile
       x1 = D >= 1 ? x0         - mins[0] : x0;
@@ -76,22 +73,20 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       z1 = D >= 3 ? z0         - mins[2] : z0;
       z2 = D >= 3 ? loc[2][n]  - mins[2] : loc[2][n];
 
-      // FIXME defaults to 1 in Fortran scheme
-  	  i1  = D >= 1 ? static_cast<int>(floor( x1 ) ) : 0;
-  	  i2  = D >= 1 ? static_cast<int>(floor( x2 ) ) : 0;
-  	  j1  = D >= 2 ? static_cast<int>(floor( y1 ) ) : 0;
-  	  j2  = D >= 2 ? static_cast<int>(floor( y2 ) ) : 0;
-  	  k1  = D >= 3 ? static_cast<int>(floor( z1 ) ) : 0;
-  	  k2  = D >= 3 ? static_cast<int>(floor( z2 ) ) : 0;
+  	  i1  = D >= 1 ? static_cast<int>(floor( x1 )) : 0;
+  	  i2  = D >= 1 ? static_cast<int>(floor( x2 )) : 0;
+  	  j1  = D >= 2 ? static_cast<int>(floor( y1 )) : 0;
+  	  j2  = D >= 2 ? static_cast<int>(floor( y2 )) : 0;
+  	  k1  = D >= 3 ? static_cast<int>(floor( z1 )) : 0;
+  	  k2  = D >= 3 ? static_cast<int>(floor( z2 )) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      xr = min( (double)(min(i1,i2)+1), max( (double)max(i1,i2), static_cast<double>(0.5)*(x1+x2) ) );
-      yr = min( (double)(min(j1,j2)+1), max( (double)max(j1,j2), static_cast<double>(0.5)*(y1+y2) ) );
-      zr = min( (double)(min(k1,k2)+1), max( (double)max(k1,k2), static_cast<double>(0.5)*(z1+z2) ) );
+      xr = min( double(min(i1,i2)+1), max( double(max(i1,i2)), 0.5*(double(x1+x2)) ) );
+      yr = min( double(min(j1,j2)+1), max( double(max(j1,j2)), 0.5*(double(y1+y2)) ) );
+      zr = min( double(min(k1,k2)+1), max( double(max(k1,k2)), 0.5*(double(z1+z2)) ) );
 
-
-      // -q to include -j in the Ampere's equation
-      // FIXME: opposite; +q to have -j explicitly in Ampere's law
+      // +q since - sign is already included in the Ampere's equation
+      //q = weight*qe;
       Fx1 = +q*(xr - x1);
       Fy1 = +q*(yr - y1);
       Fz1 = +q*(zr - z1);
@@ -104,34 +99,11 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     	Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
   	  Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
-
       Fx2 = +q*(x2-xr);
       Fy2 = +q*(y2-yr);
       Fz2 = +q*(z2-zr);
 
-      /*
-      onemWx1 = 1.0 - Wx1;
-      onemWx2 = 1.0 - Wx2;
-      onemWy1 = 1.0 - Wy1;
-      onemWy2 = 1.0 - Wy2;
-      onemWz1 = 1.0 - Wz1;
-      onemWz2 = 1.0 - Wz2;
-      */
-
-      //i1p1 = i1 + 1;
-      //i2p1 = i2 + 1;
-      //j1p1 = j1 + 1;
-      //j2p1 = j2 + 1;
-      //k1p1 = k1 + 1;
-      //k2p1 = k2 + 1;
-
-      //twoD mode
-      //k1p1 = 0;
-      //k2p1 = 0;
-
-
-      //fmt::print("n={} i1:{} i2:{} Fx1:{} Fx2:{}\n",n,i1,i2,Fx1,Fx2);
-
+      // Fall into this debug section if something is very wrong; TODO: remove
       bool debug_flag = false;
       if (!( (i1 >= -3 && i1 < static_cast<int>(tile.mesh_lengths[0]+3)) )) debug_flag=true;
       if (!( (j1 >= -3 && j1 < static_cast<int>(tile.mesh_lengths[1]+3)) )) debug_flag=true;
@@ -191,49 +163,44 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
         std::cout << "\n";
 
         std::cout << std::flush;
-        // always fail
+
+        // always fail if we end here
         assert(false);
       }
 
-      /*
-      i1--;
-      j1--;
-      i2--;
-      j2--;
-      */
-
       //--------------------------------------------------
       // index checking
-      if(D >= 1 ) assert(i1   >= -3 && i1   < static_cast<int>(tile.mesh_lengths[0]+3)) ;
-      if(D >= 2 ) assert(j1   >= -3 && j1   < static_cast<int>(tile.mesh_lengths[1]+3)) ;
-      if(D >= 3 ) assert(k1   >= -3 && k1   < static_cast<int>(tile.mesh_lengths[2]+3)) ;
+      // another check; TODO: remove
+      if(D >= 1 ) assert(i1   >= -3 && i1   < int(tile.mesh_lengths[0]+3)) ;
+      if(D >= 2 ) assert(j1   >= -3 && j1   < int(tile.mesh_lengths[1]+3)) ;
+      if(D >= 3 ) assert(k1   >= -3 && k1   < int(tile.mesh_lengths[2]+3)) ;
 
-      if (D >= 1) assert(i2   >= -3 && i2   < static_cast<int>(tile.mesh_lengths[0]+3));
-      if (D >= 2) assert(j2   >= -3 && j2   < static_cast<int>(tile.mesh_lengths[1]+3));
-      if (D >= 3) assert(k2   >= -3 && k2   < static_cast<int>(tile.mesh_lengths[2]+3));
+      if (D >= 1) assert(i2   >= -3 && i2   < int(tile.mesh_lengths[0]+3));
+      if (D >= 2) assert(j2   >= -3 && j2   < int(tile.mesh_lengths[1]+3));
+      if (D >= 3) assert(k2   >= -3 && k2   < int(tile.mesh_lengths[2]+3));
 
 
       // jx
       if (D >= 1) yee.jx(i1,  j1,   k1)   += Fx1 * (1.0-Wy1) * (1.0-Wz1);
       if (D >= 2) yee.jx(i1,  j1+1, k1)   += Fx1 * Wy1       * (1.0-Wz1);
       if (D >= 3) yee.jx(i1,  j1,   k1+1) += Fx1 * (1.0-Wy1) * Wz1;
-      if (D >= 3) yee.jx(i1,  j1+1, k1+1) += Fx1 * Wy1     * Wz1;
+      if (D >= 3) yee.jx(i1,  j1+1, k1+1) += Fx1 * Wy1       * Wz1;
 
       if (D >= 1) yee.jx(i2,  j2,   k2)   += Fx2 * (1.0-Wy2) * (1.0-Wz2);
       if (D >= 2) yee.jx(i2,  j2+1, k2)   += Fx2 * Wy2       * (1.0-Wz2);
       if (D >= 3) yee.jx(i2,  j2,   k2+1) += Fx2 * (1.0-Wy2) * Wz2;
-      if (D >= 3) yee.jx(i2,  j2+1, k2+1) += Fx2 * Wy2     * Wz2;
+      if (D >= 3) yee.jx(i2,  j2+1, k2+1) += Fx2 * Wy2       * Wz2;
 
       // jy
       if (D >= 1) yee.jy(i1,  j1,   k1)   += Fy1 * (1.0-Wx1) * (1.0-Wz1);
       if (D >= 2) yee.jy(i1+1,j1,   k1)   += Fy1 * Wx1       * (1.0-Wz1);
       if (D >= 3) yee.jy(i1  ,j1,   k1+1) += Fy1 * (1.0-Wx1) * Wz1;
-      if (D >= 3) yee.jy(i1+1,j1,   k1+1) += Fy1 * Wx1     * Wz1;
+      if (D >= 3) yee.jy(i1+1,j1,   k1+1) += Fy1 * Wx1       * Wz1;
       
       if (D >= 1) yee.jy(i2,  j2,   k2)   += Fy2 * (1.0-Wx2) * (1.0-Wz2);
       if (D >= 2) yee.jy(i2+1,j2,   k2)   += Fy2 * Wx2       * (1.0-Wz2);
       if (D >= 3) yee.jy(i2,  j2,   k2+1) += Fy2 * (1.0-Wx2) * Wz2;
-      if (D >= 3) yee.jy(i2+1,j2,   k2+1) += Fy2 * Wx2     * Wz2;
+      if (D >= 3) yee.jy(i2+1,j2,   k2+1) += Fy2 * Wx2       * Wz2;
                             
       // jz
       yee.jz(i1,  j1,   k1)   += Fz1 * (1.0-Wx1) * (1.0-Wy1);
@@ -256,7 +223,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
 //--------------------------------------------------
 // explicit template instantiation
-//template class pic::ZigZag<1,3>; // 1D3V
+template class pic::ZigZag<1,3>; // 1D3V
 template class pic::ZigZag<2,3>; // 2D3V
-//template class pic::ZigZag<3,3>; // 3D3V
+template class pic::ZigZag<3,3>; // 3D3V
 

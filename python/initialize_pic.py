@@ -74,22 +74,14 @@ def initialize_tile(c, i, j, n, conf):
     c.cfl = conf.cfl
     
     ppc = conf.ppc #/ conf.Nspecies
-    
-    #normalization factors
-    omp = conf.cfl/conf.c_omp #plasma reaction
-    #gamma0 = 1.0      #relativistic dilatation
-    gamma0 = np.sqrt(1.0/(1.0-conf.gamma_e**2.0)) #relativistic dilatation
-    #betaN = np.sqrt(1.0 - 1.0/gamma0**2.0)
-    q0 = -(gamma0*omp**2.0)/(ppc*(1.0 + np.abs(conf.me/conf.mi)) )
-    #print("normalization factor: {}".format(q0))
-    
+
     # load particle containers
     for sps in range(conf.Nspecies):
         container = pypic.ParticleContainer()
         if sps % 2 == 0:
-            container.q = conf.me*q0
-        else:
-            container.q = conf.mi*q0
+            container.q = -conf.qe
+        else: 
+            container.q = -conf.qi
         
         #reserve memory for particles
         Nprtcls = conf.NxMesh*conf.NyMesh*conf.NzMesh*conf.ppc
@@ -136,7 +128,7 @@ def initialize_virtuals(n, conf):
         c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         n.add_tile(c, (i,j)) 
 
-        c_orig.communication.local = False;
+        #c_orig.communication.local = False;
         c.load_metainfo(c_orig.communication)
         #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
         

@@ -23,10 +23,10 @@ class QuickWriter {
     std::string fname;
 
     /// meshes
-    std::vector< toolbox::Mesh<double> > arrs;
+    std::vector< toolbox::Mesh<float> > arrs;
 
     /// mpi receive buffer
-    std::vector< toolbox::Mesh<double> > rbuf;
+    std::vector< toolbox::Mesh<float> > rbuf;
 
     /// internal image size
     int nx,ny,nz;

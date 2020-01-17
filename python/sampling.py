@@ -53,7 +53,7 @@ def sobol_method(T):
 
 #Box-Muller sampling
 def BoxMuller_method(T):
-    vth = np.sqrt(T)
+    vth = np.sqrt(2.0*T)
 
     #Box-Muller sampling
     rr1 = np.random.rand()
@@ -75,7 +75,7 @@ def boosted_maxwellian(theta, Gamma, direction=1, dims=2):
 
     #For relativistic case we use Sobol method, inverse method otherwise
     if theta > 0.2:
-        u = sobol_method(theta/np.sqrt(2.0))
+        u = sobol_method(theta)
     else:
         u = BoxMuller_method(theta)
 
@@ -91,13 +91,14 @@ def boosted_maxwellian(theta, Gamma, direction=1, dims=2):
     if Gamma == 0:
         return ux, uy, uz, u
 
-    #We interpret this as v/c = beta
     if Gamma < 1.0:
+        #We interpret this as v/c = beta
         beta = Gamma
         Gamma = 1.0/np.sqrt(1.0 - beta*beta)
-    else: #else as bulk lorentz factor
-        beta = 1.0/np.sqrt(1.0 + Gamma*Gamma)
-    
+    else: 
+        #else as bulk lorentz factor
+        beta = np.sqrt(1.0 - 1.0/Gamma/Gamma)
+
     #beta = 1.0/sqrt(1.0 + Gamma*Gamma)
     X8 = np.random.rand()
     vx = ux/np.sqrt(1.0 + u*u)
@@ -152,46 +153,85 @@ if __name__ == "__main__":
         axs.append( plt.subplot(gs[ai]) )
 
 
+    #testing sobol vs box-muller
+    if False:
+        Gamma = 0.0
+        #T = 2.0e-4
+        T = 0.2
 
-    Gamma = 0.5
-    T = 2.0e-4
-    #T = 0.2
+        N = 10000
+        n1 = np.zeros(N)
+        n2 = np.zeros(N)
+        n3 = np.zeros(N)
+        for n in range(N):
+        
+            #n1[n] = rejection_sampling(A)
+        
+            #Sobol for relativistic
+            #vx, vy, vz, u = sobol_method(T)
+            #n2[n] = u
+        
+        
+            #non rel maxwell with rejection method
+            #vx, vy, vz = thermal_plasma(T)
+            #u = sqrt(vx*vx + vy*vy + vz*vz)
+            #n3[n] = u
+        
+            #n1[n] = drifting_rejection(A, drift)
+        
+            ux, uy, uz, u = boosted_maxwellian(T, Gamma, direction=-1)
+            #p = u/sqrt(1.0-u*u)
+            n2[n] = uy
+        
+            ux, uy, uz, u = boosted_maxwellian(T+0.0001, Gamma, direction=-1)
+            #p = u/sqrt(1.0-u*u)
+            n1[n] = uy
+        
+        #plot
+        #print n2
+        
+        axs[0].hist(n1, 100, color="black", alpha=0.3, density=True)
+        axs[0].hist(n2, 100, color="red"  , alpha=0.3, density=True)
+    
 
-    N = 10000
-    n1 = np.zeros(N)
-    n2 = np.zeros(N)
-    n3 = np.zeros(N)
-    for n in range(N):
+    #testing Sobol with relativistic temperatures
+    if True:
+        from scipy.special import kn
+
+        Gamma = 0.0
+        #T = 2.0e-4
+        T = 0.3
+
+        N = 10000
+        n1 = np.zeros(N)
+        n2 = np.zeros(N)
+        n3 = np.zeros(N)
+        for n in range(N):
+            ux, uy, uz, u = boosted_maxwellian(T, Gamma, direction=-1)
+            gamma = np.sqrt(1.0 + ux*ux + uy*uy + uz*uz)
+            n1[n] = gamma
+        
+            ux, uy, uz, u = boosted_maxwellian(T+0.0001, Gamma, direction=-1)
+            gamma = np.sqrt(1.0 + ux*ux + uy*uy + uz*uz)
+            n2[n] = gamma
+        
+
+        axs[0].set_xscale('log')
+        #axs[0].set_yscale('log')
+        axs[0].set_xlim((1.0, 10.0))
+
+        axs[0].hist(n1, 100, color="black", alpha=0.3, density=True)
+        axs[0].hist(n2, 100, color="red", alpha=0.3, density=True)
     
-        #n1[n] = rejection_sampling(A)
-    
-        #Sobol for relativistic
-        #vx, vy, vz, u = sobol_method(T)
-        #n2[n] = u
-    
-    
-        #non rel maxwell with rejection method
-        #vx, vy, vz = thermal_plasma(T)
-        #u = sqrt(vx*vx + vy*vy + vz*vz)
-        #n3[n] = u
-    
-        #n1[n] = drifting_rejection(A, drift)
-    
-        ux, uy, uz, u = boosted_maxwellian(T, Gamma, direction=-1)
-        #p = u/sqrt(1.0-u*u)
-        n2[n] = uy
-    
-        ux, uy, uz, u = boosted_maxwellian(T+0.0001, Gamma, direction=-1)
-        #p = u/sqrt(1.0-u*u)
-        n1[n] = uy
-    
-    
-    #plot
-    #print n2
-    
-    axs[0].hist(n1, 100, color="black", alpha=0.3, density=True)
-    axs[0].hist(n2, 100, color="red"  , alpha=0.3, density=True)
-    
+        #gamma grid (with beta)
+        gs = np.logspace(0.0, 2.0, 100) + 0.01
+        beta = np.sqrt(1.0 - 1.0/gs**2)
+
+        #maxwell-juttner distribution
+        K2T = kn(2, 1.0/T) #modified Bessel function of the second kind (with integer order 2)
+        mwj = (gs**2 * beta)/(T*K2T)*np.exp(-gs/T)
+
+        axs[0].plot(gs, mwj, 'r-')
     
     
     fname = 'maxwells.pdf'

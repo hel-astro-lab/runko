@@ -136,6 +136,9 @@ class AdaptiveMesh {
     update_last_cid(); 
   }
 
+  // explicit assignment operator
+  AdaptiveMesh& operator= (AdaptiveMesh& m) = default;
+  AdaptiveMesh& operator= (const AdaptiveMesh& m) = default;
 
 
   /// create mesh object with same meta info but no data

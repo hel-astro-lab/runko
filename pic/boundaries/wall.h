@@ -29,8 +29,6 @@ class Tile :
     pic::Tile<D>(nx,ny,nz)
   { }
 
-  ~Tile() override = default;
-
   /// wall location
   using fields::damping::Tile<D, S>::fld1;
   using fields::damping::Tile<D, S>::fld2;

@@ -14,6 +14,8 @@ set (FIELDS_FILES
      ../em-fields/tile.c++ 
      ../em-fields/damping_tile.c++
      ../em-fields/propagator/fdtd2.c++ 
+     ../em-fields/propagator/fdtd4.c++ 
+     ../em-fields/filters/digital.c++
      )
 
 set (VLV_FILES 
@@ -34,6 +36,7 @@ set (PIC_FILES
      ../pic/boundaries/piston.c++
      ../pic/pushers/boris.c++
      ../pic/pushers/boris_drag.c++
+     ../pic/pushers/vay.c++
      ../pic/interpolators/linear.c++
      ../pic/depositers/zigzag.c++
      )
@@ -70,8 +73,10 @@ pybind11_add_module(pyrunko
                     ${IO_FILES}
                     )
 
+#target_link_libraries(pyrunko PRIVATE -lhdf5)
+target_link_libraries(pyrunko PRIVATE ${HDF5_C_LIBRARIES})
+target_include_directories(pyrunko PRIVATE ${HDF5_INCLUDE_DIRS})
 
-target_link_libraries(pyrunko PRIVATE -lhdf5)
 #target_link_libraries(pyrunko PRIVATE -lfftw3)
 #target_link_libraries(pyrunko PRIVATE -lfftw3f)
 target_link_libraries(pyrunko PUBLIC coverage_config)

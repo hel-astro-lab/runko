@@ -26,12 +26,9 @@ def inject(grid, ffunc, conf):
                 cid    = grid.id(i,j)
                 c      = grid.get_tile(cid) #get cell ptr
 
-                #if not(1 <= i <= 2 and j == 1):
-                #do_inject = False
-                #if (2 <= i <= 3):
-                #    do_inject = True
-                #if not(2 <= i <= 3):
-                #    continue
+                #if not(3 <= i <= 4):
+                #    if not(3 <= j <= 4):
+                #        continue
 
                 # inject particles
                 # even species are on their own; odd species are located on 

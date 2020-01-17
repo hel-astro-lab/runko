@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "../pic/pushers/pusher.h"
 #include "../pic/pushers/boris.h"
 #include "../pic/pushers/boris_drag.h"
+#include "../pic/pushers/vay.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
@@ -55,7 +56,8 @@ auto declare_tile(
     .def("pack_outgoing_particles",      &pic::Tile<D>::pack_outgoing_particles)
     .def("pack_all_particles",           &pic::Tile<D>::pack_all_particles)
     .def("unpack_incoming_particles",    &pic::Tile<D>::unpack_incoming_particles)
-    .def("delete_all_particles",         &pic::Tile<D>::delete_all_particles);
+    .def("delete_all_particles",         &pic::Tile<D>::delete_all_particles)
+    .def("shrink_to_fit_all_particles",  &pic::Tile<D>::shrink_to_fit_all_particles);
 }
 
 
@@ -259,6 +261,9 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("temp", &pic::BorisPusherDrag<2,3>::temp)
     .def(py::init<>());
 
+  // Vay pusher
+  py::class_<pic::VayPusher<2,3>>(m_2d, "VayPusher", picpusher2d)
+    .def(py::init<>());
 
   //--------------------------------------------------
 

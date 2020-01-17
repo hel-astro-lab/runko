@@ -426,7 +426,7 @@ def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
 
     vmin, vmax = np.min(arr), np.max(arr)
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
-    print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
+    #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 
 
     imshow(ax, arr,
@@ -436,6 +436,7 @@ def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
            vmax =  vminmax,
            clip = None,
           )
+
     if label_title:
         ax.set_ylabel(val)
     else:

@@ -2,10 +2,12 @@ from mpi4py import MPI
 import unittest
 
 import sys
+import os
 import numpy as np
 
 import pycorgi
 import pyrunko.pic.twoD as pypic
+import pyrunko.fields.twoD as pyfld
 import pyrunko.tools.twoD as pytools
 
 
@@ -208,6 +210,9 @@ class Conf:
     outdir = "out"
 
     vel = 0.1
+
+    qe = 1.0
+    qi =-1.0
 
     #def __init__(self):
     #    print("initialized...")
@@ -818,8 +823,6 @@ class PIC(unittest.TestCase):
                         #self.assertEqual(yee.jy[l,m,0], 0.0 )
                         #self.assertEqual(yee.jz[l,m,0], 0.0 )
 
-
-
     def test_test_particle_initialization(self):
 
         conf = Conf()
@@ -840,5 +843,222 @@ class PIC(unittest.TestCase):
 
 
 
+    def test_current_array_aligning(self):
+        #test current deposition + interpolation to see array aligning in practise
+        #this is also closest test we have for a full integration test (non-mpi)
 
+        do_plots = False
+        try:
+            if do_plots:
+                plt.fig = plt.figure(1, figsize=(8,10))
+                plt.rc('font', family='serif', size=8)
+                plt.rc('xtick')
+                plt.rc('ytick')
+                
+                gs = plt.GridSpec(4, 3)
+                gs.update(hspace = 0.0)
+                
+                axs = []
+                for ai in range(12):
+                    axs.append( plt.subplot(gs[ai]) )
+        except:
+            #print()
+            pass
+
+        conf = Conf()
+
+        conf.outdir = "align_test"
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 1
+        conf.ppc = 1
+        conf.npasses = 0
+        conf.Nt = 2
+        conf.update_bbox()
+
+        if not os.path.exists( conf.outdir ):
+            os.makedirs(conf.outdir)
+
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        loadTiles(grid, conf)
+
+        #inject(grid, filler_xvel, conf) #injecting plasma particles
+        #inject by hand
+        #-------------------------------------------------- 
+        cid    = grid.id(0,0)
+        c      = grid.get_tile(cid) #get cell ptr
+
+        container = c.get_container(0) #ispcs
+        container.set_keygen_state(0, 0) #number, rank
+
+        #inject random tricky points 
+        
+        #x moving
+        x0 = [0.0, 0.0, 0.5]
+        u0 = [+0.9, 0.0, 0.0]
+        container.add_particle(x0, u0, 1.0)
+
+        x0 = [0.0, 2.99, 0.5]
+        u0 = [-0.9, 0.0, 0.0]
+        container.add_particle(x0, u0, 1.0)
+
+        #y moving
+        x0 = [2.99, 2.99, 0.5]
+        u0 = [0.0,-0.9, 0.0]
+        container.add_particle(x0, u0, 1.0)
+
+        x0 = [0.0, 0.00, 0.5]
+        u0 = [0.0,+0.9, 0.0]
+        container.add_particle(x0, u0, 1.0)
+
+        #z moving
+        x0 = [2.99, 2.99, 0.5]
+        u0 = [0.0, 0.0,-0.9]
+        container.add_particle(x0, u0, 1.0)
+
+        x0 = [2.0, 0.0, 0.5]
+        u0 = [0.0, 0.0,+0.9]
+        container.add_particle(x0, u0, 1.0)
+
+        #x0 = [0.5, 0.5, 0.5]
+        #for u0 in [
+        #        [ 0.9, 0.0, 0.0],
+        #        [-0.9, 0.0, 0.0],
+        #        [ 0.0, 0.9, 0.0],
+        #        [ 0.0,-0.9, 0.0]]:
+        #    container.add_particle(x0, u0, 1.0)
+
+        #-------------------------------------------------- 
+
+        pusher   = pypic.BorisPusher()
+        fldprop  = pyfld.FDTD2()
+        fintp    = pypic.LinearInterpolator()
+        currint  = pypic.ZigZag()
+        analyzer = pypic.Analyzator()
+        flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        lap = 0
+        for lap in range(lap, conf.Nt):
+
+            #update tile boundaries
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                tile.update_boundaries(grid)
+    
+            #interpolate fields
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                fintp.solve(tile)
+    
+            #push
+            #for cid in grid.get_local_tiles():
+            #    tile = grid.get_tile(cid)
+            #    pusher.solve(tile)
+    
+            #push half B
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                fldprop.push_half_b(tile)
+    
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                tile.update_boundaries(grid)
+    
+            #push full E
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                fldprop.push_e(tile)
+    
+            #current
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                currint.solve(tile)
+    
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                tile.exchange_currents(grid)
+    
+            #particle movement
+            #for cid in grid.get_local_tiles():
+            #    tile = grid.get_tile(cid)
+            #    tile.check_outgoing_particles()
+    
+            #for cid in grid.get_local_tiles():
+            #    tile = grid.get_tile(cid)
+            #    tile.get_incoming_particles(grid)
+    
+            #for cid in grid.get_local_tiles():
+            #    tile = grid.get_tile(cid)
+            #    tile.delete_transferred_particles()
+    
+            #filtering
+            #for fj in range(conf.npasses):
+    
+            #    #filter each tile
+            #    for cid in grid.get_local_tiles():
+            #        tile = grid.get_tile(cid)
+            #        flt.solve(tile)
+    
+            #    #get halo boundaries
+            #    for cid in grid.get_local_tiles():
+            #        tile = grid.get_tile(cid)
+            #        tile.update_boundaries(grid)
+    
+            for cid in grid.get_tile_ids():
+                tile = grid.get_tile(cid)
+                tile.deposit_current()
+    
+            #--------------------------------------------------
+            # end of cycle // analyzing next
+    
+            #build analysis statistics
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                analyzer.analyze2d(tile)
+
+
+            xx = container.loc(0)
+            if do_plots:
+                for i in range(len(xx)):
+                    print("i = ", i)
+                    print("container ex:", container.ex(i))
+                    print("container ey:", container.ey(i))
+                    print("container ez:", container.ez(i))
+                    print("container bx:", container.bx(i))
+                    print("container by:", container.by(i))
+                    print("container bz:", container.bz(i))
+    
+            #plot
+            yee = getYee2D(grid, conf)
+
+
+            if do_plots:
+                print("jx:", yee['jx'])
+                print("jy:", yee['jy'])
+                print("jz:", yee['jz'])
+                print("sum of current jx:", np.sum(yee['jx']))
+                print("sum of current jy:", np.sum(yee['jy']))
+                print("sum of current jz:", np.sum(yee['jz']))
+                plotNode(axs[0], grid, conf)
+                plot2dYee(axs[1],  yee, grid, conf, 'rho', label_title=True)
+
+                plot2dYee(axs[3],  yee, grid, conf, 'jx' , label_title=True)
+                plot2dYee(axs[4],  yee, grid, conf, 'jy' , label_title=True)
+                plot2dYee(axs[5],  yee, grid, conf, 'jz' , label_title=True)
+                plot2dYee(axs[6],  yee, grid, conf, 'ex' , label_title=True)
+                plot2dYee(axs[7],  yee, grid, conf, 'ey' , label_title=True)
+                plot2dYee(axs[8],  yee, grid, conf, 'ez' , label_title=True)
+                plot2dYee(axs[9],  yee, grid, conf, 'bx' , label_title=True)
+                plot2dYee(axs[10], yee, grid, conf, 'by' , label_title=True)
+                plot2dYee(axs[11], yee, grid, conf, 'bz' , label_title=True)
+                saveVisz(lap, grid, conf)
+    
+            #assert that arrays are zero (i.e., scheme is charge conserving)
+            self.assertTrue( np.abs(np.sum(yee['jx'])) < 1.e7)
+            self.assertTrue( np.abs(np.sum(yee['jy'])) < 1.e7)
+            self.assertTrue( np.abs(np.sum(yee['jz'])) < 1.e7)
 

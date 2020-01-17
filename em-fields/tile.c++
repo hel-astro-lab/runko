@@ -114,6 +114,10 @@ void copy_vert_yee(
   lhs.by.copy_vert(rhs.by, lhsI, rhsI); 
   lhs.bz.copy_vert(rhs.bz, lhsI, rhsI); 
 
+  //TODO: separate into own function
+  lhs.jx.copy_vert(rhs.jx, lhsI, rhsI); 
+  lhs.jy.copy_vert(rhs.jy, lhsI, rhsI); 
+  lhs.jz.copy_vert(rhs.jz, lhsI, rhsI); 
 }
 
 
@@ -144,7 +148,12 @@ void copy_horz_yee(
   lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
   lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
   lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
-}
+
+  //TODO: separate into own function
+  lhs.jx.copy_horz(rhs.jx, lhsJ, rhsJ); 
+  lhs.jy.copy_horz(rhs.jy, lhsJ, rhsJ); 
+  lhs.jz.copy_horz(rhs.jz, lhsJ, rhsJ); 
+}                       
 
 
 /// Quick helper function to add everything inside Yee lattice 
@@ -171,6 +180,11 @@ void copy_face_yee(
   lhs.bx.copy_face(rhs.bx, lhsK, rhsK); 
   lhs.by.copy_face(rhs.by, lhsK, rhsK); 
   lhs.bz.copy_face(rhs.bz, lhsK, rhsK); 
+
+  //TODO: separate into own function
+  lhs.jx.copy_face(rhs.jx, lhsK, rhsK); 
+  lhs.jy.copy_face(rhs.jy, lhsK, rhsK); 
+  lhs.jz.copy_face(rhs.jz, lhsK, rhsK); 
 }
 
 
@@ -200,6 +214,11 @@ void copy_z_pencil_yee(
   lhs.bx.copy_z_pencil(rhs.bx, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.by.copy_z_pencil(rhs.by, lhsI, lhsJ, rhsI, rhsJ); 
   lhs.bz.copy_z_pencil(rhs.bz, lhsI, lhsJ, rhsI, rhsJ); 
+
+  //TODO: separate into own function
+  lhs.jx.copy_z_pencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jy.copy_z_pencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
+  lhs.jz.copy_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
 }
 
 void add_z_pencil_yee(
@@ -255,6 +274,8 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
 
   auto& mesh = get_yee(); // target as a reference to update into
 
+  int halo = 3; // halo region size for fields
+
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
       if (in == 0 && jn == 0) continue;
@@ -277,29 +298,27 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
         if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
         if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
 
-        // copy
-        if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
-        else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
-        else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
+        // copy (halo = 1) assignment
+        //if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
+        //else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
+        //else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
         
+        // generalized halo >= 1 loops
+        if (jn == 0) { // vertical
+          for(int h=0; h<halo; h++)
+            copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
 
-        /*
-FIXME: this is how we should loop over H>1 halo boundaries
-        for(int h=1; h<= halo; h++)
-        copy_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
+        } else if (in == 0) { // horizontal
+          for(int g=0; g<halo; g++)
+            copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
 
-        for(int h=1; h<= halo; h++)
-        copy_horz_yee(mesh, mtop, mesh.Ny+h-1, h-1); 
-
-        for(int h=1; h<= halo; h++)
-        for(int g=1; g<= halo; g++)
-        copy_z_pencil_yee(mesh, mtopleft, -h, mesh.Ny +g-1, mtopleft.Nx-h, +g-1);
-
-        for(int h=1; h<= halo; h++)
-        for(int g=1; g<= halo; g++)
-        copy_z_pencil_yee(mesh, mtopright, mesh.Nx +h-1, mesh.Ny +g-1, +h-1,+g-1);
-        */
-
+        } else { // diagonal
+          for(int h=0; h<halo; h++) {
+            for(int g=0; g<halo; g++) {
+              copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+            }
+          }
+        }
 
       } // end of if(tpr)
     }

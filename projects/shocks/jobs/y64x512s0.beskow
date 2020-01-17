@@ -1,0 +1,18 @@
+#!/bin/bash
+#SBATCH -A 2018-2-41
+#SBATCH -J y64x512s0
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -t 0-23:00:00
+#SBATCH --nodes 8
+#SBATCH --ntasks-per-node=32
+
+# activate threading
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+# go to working directory
+cd $RUNKODIR/projects/shocks/
+
+srun -n 256 python3 pic.py --conf y64x512s0.ini

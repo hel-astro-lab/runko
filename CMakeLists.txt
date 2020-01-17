@@ -13,7 +13,20 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=haswell -mtune=haswell") #latest optimization
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=haswell -mtune=haswell") #latest optimization
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native") #general optimization
+
+
+# AddressSanitizer
+set(CMAKE_CXX_FLAGS_ASAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g -O1")
+
+# LeakSanitizer
+set(CMAKE_CXX_FLAGS_LSAN "-fsanitize=leak -fno-omit-frame-pointer -g -O1")
+
+# MemorySanitizer
+set(CMAKE_CXX_FLAGS_MSAN "-fsanitize=memory -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -g -O2")
+
+
 
 # set location of python libraries
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)

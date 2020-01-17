@@ -46,7 +46,7 @@ Before proceeding to compilation, check that your system has these requirements 
 
 .. note::
 
-    Note that g++-8 does not work because of a (known) compiler bug. Therefore, g++-9 is the recommended choice.
+    Note that g++-8 does not work because of a (known) compiler bug. Therefore, g++-9 is the current recommended choice.
 
 
 MacOS
@@ -56,7 +56,31 @@ On MacOS these should be easily installed by using `homebrew <https://brew.sh/>`
 
 .. code-block:: bash
 
-   brew install gcc@9 hdf5 python3 open-mpi cmake fftw
+   brew install gcc@9 hdf5 python3 open-mpi cmake fftw fmt
+
+MPI needs to be compiled separately because by default it uses the AppleClang compiler (instead of the g++-9 just installed). This can be done by running
+
+.. code-block:: bash
+
+   export MPI_IMPL=openmpi40
+   mkdir $HOME/local/$MPI_IMPL/bin
+   cd $HOME/local/$MPI_IMPL/bin
+   mkdir -p openmpi && cd openmpi
+   wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-4.0.0.tar.bz2
+   tar -xjf openmpi-4.0.0.tar.bz2
+   cd openmpi-4.0.0
+   export OMPI_CC=gcc-9
+   export OMPI_CXX=g++-9
+   ./configure CC=gcc-9 CXX=g++-9 --prefix=$HOME/local/$MPI_IMPL > /dev/null 2>&1
+   make -j 4 > /dev/null 2>&1
+   make install > /dev/null 2>&1
+   make clean > /dev/null 2>&1
+   cd ../../
+
+   export PATH=$PATH:$HOME/local/$MPI_IMPL/bin
+   export PATH=$PATH:$HOME/local/$MPI_IMPL/include
+   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI_IMPL/lib
+
 
 
 Linux
@@ -67,30 +91,56 @@ On Linux (assuming Ubuntu) run:
 .. code-block:: bash
 
    sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
-   sudo apt-get install install clang-5.0 g++-9 hdf5-tools python3 python3-pip openmpi-bin libopenmpi-dev
+   sudo apt-get install libopenmpi-dev libhdf5-serial-dev hdf5-helpers openmpi-bin libblas-dev liblapack-dev python3 python3-pip
+
+.. note::
+
+   Recent Ubuntu (bionic) comes with gcc-7 which makes the installation easier. For previous versions you, additionally, need to install gcc-7 (or 9) and manually compile MPI similar to MacOS.
+
+You also need to export the HDF5 library location (since it is non-standard at least in Ubuntu) with
+
+.. code-block:: bash
+
+   export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial
+
+
 
 Python libraries
 ================
 
-All the python requirements can be installed via pip as
+All the python requirements can be installed via `pip` as
 
 .. code-block:: bash
 
    pip3 install -r requirements.txt
+
+.. note::
+
+    If you had to manually install MPI in the previous section, then you need to remove mpi4py (`pip3 uninstall mpi4py`) and re-install it.
 
 
 
 Compiling
 =========
 
-After installing all the pre-requisites, you can proceed to compiling. First you need to configure the build. To use your (freshly installed) modern C++ compiler we need to export it as
+After installing all the pre-requisites, you can proceed to compiling. First you need to configure the build. To use your (freshly installed) modern C++ compiler we need to export them as
 
 .. code-block:: bash
 
-   export CC=gcc-9
-   export CXX=g++-9
+   export CC=mpicc
+   export CXX=mpic++
 
-You can also put this part into your `~/.bashrc` (or `~/.bash_profile` on MacOS) so correct compilers are automatically exported in the startup.
+Then make sure that everything works, check the output of
+
+.. code-block:: bash
+
+   $CC --version
+   $CXX --version
+
+This should indicate that the newly installed compilers are used.
+
+
+You should also put this part into your `~/.bashrc` (or `~/.bash_profile` on MacOS) so correct compilers are automatically exported in the startup.
 
 You should also add the python script directories into `PYTHONPATH` environment variable. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `runko` libraries to the path by exporting
 
@@ -114,7 +164,7 @@ Next we can proceed to compiling. Out-of-source builds are recommended so inside
    cd build
    cmake ..
 
-And make sure that CMake finishes successfully. After that, you can try and compile the complete framework with
+And make sure that `CMake` finishes successfully. After that, you can try and compile the complete framework with
 
 .. code-block:: bash
 

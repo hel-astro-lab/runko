@@ -25,6 +25,8 @@ class Conf:
     ymin = 0.0
     ymax = 1.0
 
+    qe = 1.0
+
     #def __init__(self):
     #    print("initialized...")
 
@@ -224,9 +226,9 @@ class Communications(unittest.TestCase):
                     c = grid.get_tile(i,j)
                     yee = c.get_yee(0)
 
-                    for q in range(conf.NxMesh):
+                    for s in range(conf.NzMesh):
                         for r in range(conf.NyMesh):
-                            for s in range(conf.NzMesh):
+                            for q in range(conf.NxMesh):
                                 yee.ex[q,r,s] = val
                                 yee.ey[q,r,s] = val
                                 yee.ez[q,r,s] = val
@@ -280,15 +282,16 @@ class Communications(unittest.TestCase):
 
         ref = np.zeros((conf.Nx*conf.Ny*conf.Nz, conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
+
         m = 0
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j) = c.index
             yee = c.get_yee(0)
 
-            for s in range(-1, conf.NzMesh+1, 1):
-                for r in range(-1, conf.NyMesh+1, 1):
-                    for q in range(-1, conf.NxMesh+1, 1):
+            for s in range(-3, conf.NzMesh+3, 1):
+                for r in range(-3, conf.NyMesh+3, 1):
+                    for q in range(-3, conf.NxMesh+3, 1):
                         #print("q k r ({},{},{})".format(q,k,r))
 
                         qq = wrap( i*conf.NxMesh + q, conf.Nx*conf.NxMesh )
@@ -319,6 +322,19 @@ class Communications(unittest.TestCase):
                             self.assertEqual( ref[m,i,j,k], data[i,j,k,tp] )
                 
 
+        #print("--------------------------------------------------")
+        #check halo regions of the middle tile
 
+        c = grid.get_tile(1,1)
+        yee = c.get_yee(0)
+        arr = np.zeros((conf.NxMesh+6, conf.NyMesh+6))
+        for r in range(-3, conf.NyMesh+3, 1):
+            for q in range(-3, conf.NxMesh+3, 1):
+                arr[q+3, r+3] = yee.ex[q,r,0]
 
+        ref2 = data[1:-1, 1:-1, 0,0] #strip outer boundaries away
+        nx,ny=np.shape(ref2)
+        for i in range(nx):
+            for j in range(ny):
+                self.assertEqual(ref2[i,j], arr[i,j])
 

@@ -34,14 +34,15 @@ h5io::Writer::write(
     gr["x"]   = container.loc(0);
     gr["y"]   = container.loc(1);
     gr["z"]   = container.loc(2);
+
     gr["vx"]  = container.vel(0);
     gr["vy"]  = container.vel(1);
     gr["vz"]  = container.vel(2);
+
     gr["wgt"] = container.wgt();
 
     gr["id"]  = container.id(0);
     gr["proc"]= container.id(1);
-
 
   } // end of species
 

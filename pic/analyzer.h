@@ -125,6 +125,9 @@ class Analyzator {
           std::cout << " x0: " << x0;
           std::cout << " y0: " << y0;
           std::cout << " z0: " << z0;
+          std::cout << " u0: " << vel[0][n];
+          std::cout << " v0: " << vel[1][n];
+          std::cout << " w0: " << vel[2][n];
           std::cout << "\n";
           
           std::cout << std::flush;

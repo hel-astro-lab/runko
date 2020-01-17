@@ -111,6 +111,12 @@ class Configuration(object):
                 self.stride = 1
 
 
+        #default normalization for charge & mass
+        self.omp=self.cfl/self.c_omp
+        gamma = 1.0
+        self.qe = -(self.omp**2.*gamma)/((self.ppc)*(1.+np.abs(self.me/self.mi) )) 
+
+
 #load default 
 #conf = Configuration('config.ini')
 
