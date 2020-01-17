@@ -52,46 +52,20 @@ void pic::LinearInterpolator<D,V>::solve(
     for(int n=n1; n<n2; n++) {
 
       // particle location in the grid
-      //
-      // FIXME: atm we have a hack here to prevent x = max case.
-      // A more elegant solution most probably exists.
-      // Alternatively this might imply that some < > comparison operators
-      // are wrong somewhere and should be <= or >=, or vice versa.
-      if (D >= 1) {
-        if(loc[0][n] == maxs[0]) loc[0][n] -= 1.0e-5;
+	    if (D >= 1) i  = static_cast<int>(floor( loc[0][n] - mins[0] ));
+	    if (D >= 2) j  = static_cast<int>(floor( loc[1][n] - mins[1] ));
+	    if (D >= 3) k  = static_cast<int>(floor( loc[2][n] - mins[2] ));
 
-	      i  = (int)floor( loc[0][n]-mins[0] );
-	      dx = (loc[0][n]-mins[0]) - i;
-      }
+	    if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
+	    if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
+	    if (D >= 3) dz = (loc[2][n]-mins[2]) - k;
 
-      if (D >= 2) {
-        if(loc[1][n] == maxs[1]) loc[1][n] -= 1.0e-5;
-
-	      j  = (int)floor( loc[1][n]-mins[1] );
-	      dy = (loc[1][n]-mins[1]) - j;
-      }
-
-      if (D >= 3) {
-        if(loc[2][n] == maxs[2]) loc[2][n] -= 1.0e-5;
-
-	      k  = (int)floor( loc[2][n]-mins[2] );
-	      dz = (loc[2][n]-mins[2]) - k;
-      }
-
-      /*
-      std::cout << '\n';
-      std::cout << "x: " << loc[0][n] << " y: " << loc[1][n] << " z:" << loc[2][n] << '\n';
-      std::cout << " ijk " << i << "," << j << "," << k << '\n';
-      std::cout << " ds " << dx << "," << dy << "," << dz << '\n';
-      */
-        
-	    //l = i; // + iy*(j-1) + iz*(k-1);
 
       // check section; TODO; remove
       bool debug_flag = false;
-      if(D >= 1) { if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
-      if(D >= 2) { if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
-      if(D >= 3) { if(! (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
+      if(D >= 1) { if(! (i >= 0 && i <= static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
+      if(D >= 2) { if(! (j >= 0 && j <= static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
+      if(D >= 3) { if(! (k >= 0 && k <= static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
 
       if(debug_flag) {
         std::cout << "--------------------------------------------------\n";
