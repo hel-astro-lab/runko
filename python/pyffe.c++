@@ -35,7 +35,6 @@ auto declare_tile(
 template<size_t D>
 class PyCurrent : public Current<D>
 {
-
   using Current<D>::Current;
 
   void comp_drift_cur( Tile<D>& tile ) override {
@@ -56,6 +55,33 @@ class PyCurrent : public Current<D>
       );
   }
 };
+
+
+template<size_t D>
+class PyDriftCurrent : public DriftCurrent<D>
+{
+  using DriftCurrent<D>::DriftCurrent;
+
+  void comp_drift_cur( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      DriftCurrent<D>,
+      comp_drift_cur,
+      tile
+      );
+  }
+
+  void comp_parallel_cur( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      DriftCurrent<D>,
+      comp_parallel_cur,
+      tile
+      );
+  }
+};
+
+
 
 
 // python bindings for plasma classes & functions
@@ -86,7 +112,7 @@ void bind_ffe(py::module& m_sub)
     .def("comp_parallel_cur",   &ffe::Current<2>::comp_parallel_cur);
 
   // Drift current solver
-  py::class_<ffe::DriftCurrent<2>>(m_2d, "DriftCurrent", currentcalc2d)
+  py::class_<ffe::DriftCurrent<2>, ffe::Current<2>, PyDriftCurrent<2> >(m_2d, "DriftCurrent")
     .def(py::init<int,int,int>());
 
 

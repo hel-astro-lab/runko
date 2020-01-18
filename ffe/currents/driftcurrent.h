@@ -7,8 +7,10 @@ namespace ffe {
 /// Reduced system where only drift currents are solved
 template<size_t D>
 class DriftCurrent :
-  public virtual Current<D>
+  public Current<D>
 {
+
+  // base-class initialization needed to initialize bf meshes
   using Current<D>::Current;
 
   void interpolate_b(fields::YeeLattice& yee);

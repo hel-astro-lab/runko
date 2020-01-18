@@ -18,7 +18,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
 
-    // XXX: lengths
+    // XXX: lengths; debug in python to verify and streamline interpolation
     dx=+0.5;
     dy=-0.5;
     //dz=-0.5;
@@ -79,17 +79,18 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
     // div E
+    // nabla E = dEx/dx + dEy/dx + dEz/dx
     //
-    // XXX: norm fac
-    dive = 1.0*(
-        mesh.ex(i+1,j,k) - mesh.ex(i-1,j,k) 
-      + mesh.ey(i,j+1,k) - mesh.ey(i,j-1,k)
-      // + mesh.ez(i,j,k+1) - mesh.ez(i,j,k-1)
-      );
+    // NOTE: dx = 1.0 by definition
+    // NOTE: dEz = 0 in 2D
+    dive = 0.5*( mesh.ex(i+1,j,k) - mesh.ex(i-1,j,k) 
+               + mesh.ey(i,j+1,k) - mesh.ey(i,j-1,k)
+            // + mesh.ez(i,j,k+1) - mesh.ez(i,j,k-1)
+               );
 
     // E x B
     crossx = mesh.ey(i,j,k)*bzf(i,j,k) - mesh.ez(i,j,k)*byf(i,j,k);
-    crossy =-mesh.ex(i,j,k)*bzf(i,j,k) - mesh.ez(i,j,k)*bxf(i,j,k);
+    crossy =-mesh.ex(i,j,k)*bzf(i,j,k) + mesh.ez(i,j,k)*bxf(i,j,k);
     crossz = mesh.ex(i,j,k)*byf(i,j,k) - mesh.ey(i,j,k)*bxf(i,j,k);
 
     // B^2

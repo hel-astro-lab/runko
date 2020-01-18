@@ -301,7 +301,7 @@ if __name__ == "__main__":
             pass
 
     fldprop  = pyfld.FDTD2()
-    driftcur = pyffe.DriftCurrent()
+    driftcur = pyffe.DriftCurrent(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     # quick field snapshots
     qwriter  = pyfld.QuickWriter(conf.outdir, 
@@ -567,8 +567,6 @@ if __name__ == "__main__":
             timer.start("step") #refresh lap counter (avoids IO profiling)
 
             sys.stdout.flush()
-
-            sys.exit()
 
         #MPI.COMM_WORLD.barrier()
         #sleep(0.2)
