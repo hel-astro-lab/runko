@@ -8,7 +8,7 @@ namespace fields {
 // Maxwell's field equation solver.
 template<size_t D>
 class FDTD2 :
-  public virtual Propagator<D>
+  public Propagator<D>
 {
   public:
 

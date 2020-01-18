@@ -381,47 +381,47 @@ if __name__ == "__main__":
 
             timer.stop_comp(t1)
 
+            #--------------------------------------------------
+            #add current to E
+            t1 = timer.start_comp("add_cur")
+
+            for tile in tiles_all(grid): 
+                tile.deposit_current()
+
+            timer.stop_comp(t1)
 
 
-            #XXX on-going debugging
+            #--------------------------------------------------
+            #push E
+            t1 = timer.start_comp("push_e")
+
+            fldprop.dt = 1.0 #XXX time step 
+            for tile in tiles_all(grid): 
+                fldprop.push_e(tile)
+
+            timer.stop_comp(t1)
+
+            #--------------------------------------------------
+            # comm E
+            t1 = timer.start_comp("mpi_e0")
+
+            grid.send_data(1) 
+            grid.recv_data(1) 
+            grid.wait_data(1) 
+
+            timer.stop_comp(t1)
+
+            #--------------------------------------------------
+            #update boundaries
+            t1 = timer.start_comp("upd_bc1")
+
+            for tile in tiles_all(grid): 
+                tile.update_boundaries(grid)
+
+            timer.stop_comp(t1)
+
+
             if False:
-                #--------------------------------------------------
-                #add current to E
-                timer.start_comp("add_cur")
-
-                for tile in tiles_all(grid): 
-                    tile.deposit_current()
-
-                timer.stop_comp("add_cur")
-
-                #--------------------------------------------------
-                #push E
-                timer.start_comp("push_e")
-
-                for tile in tiles_all(grid): 
-                    fldprop.push_e(tile)
-
-                timer.stop_comp("push_e")
-
-                #--------------------------------------------------
-                # comm E
-                timer.start_comp("mpi_e0")
-
-                grid.send_data(1) 
-                grid.recv_data(1) 
-                grid.wait_data(1) 
-
-                timer.stop_comp("mpi_e0")
-
-                #--------------------------------------------------
-                #update boundaries
-                timer.start_comp("upd_bc1")
-
-                for tile in tiles_all(grid): 
-                    tile.update_boundaries(grid)
-
-                timer.stop_comp("upd_bc1")
-
 
                 #--------------------------------------------------
                 #push B half

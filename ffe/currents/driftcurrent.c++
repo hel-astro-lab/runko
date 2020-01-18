@@ -70,9 +70,9 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
 
   //Realf C = 1.0 * tile.cfl;
 
-  double dive=0;
-  double crossx=0, crossy=0, crossz=0;
-  double b2=0;
+  double dive;
+  double crossx, crossy, crossz;
+  double b2;
 
   int k = 0;
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
