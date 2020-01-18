@@ -5,8 +5,7 @@
 
 template<>
 void ffe::DriftCurrent<2>::interpolate_b(
-    fields::YeeLattice& yee,
-    ffe::ExtraLattice& tmp
+    fields::YeeLattice& yee
     )
 {
   double dx=0.0, dy=0.0, dz=0.0;
@@ -19,6 +18,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
 
+    // XXX: lengths
     dx=+0.5;
     dy=-0.5;
     //dz=-0.5;
@@ -29,7 +29,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
     g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)    +dz*(yee.bx(i+1,j,k+iz)   - yee.bx(i+1,j,k-iz))
                                          +g     +dy*(yee.bx(i+1,j+1,k)    + yee.bx(i+1,j+1,k-iz)
                                                 +dz*(yee.bx(i+1,j+1,k+iz) - yee.bx(i+1,j+1,k-iz))-g);
-    tmp.bxf(i,j,k)=(f+dx*(g-f))*(.25);
+    bxf(i,j,k)=(f+dx*(g-f))*(.25);
 
     dx=-0.5;
     dy=+0.5;
@@ -41,7 +41,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
     g = yee.by(i,j+1,k)+yee.by(i-1,j+1,k)       +dx*(yee.by(i+1,j+1,k)    - yee.by(i-1,j+1,k))
                                              +g +dz*(yee.by(i,j+1,k+iz)   + yee.by(i-1,j+1,k+iz)
                                                 +dx*(yee.by(i+1,j+1,k+iz) - yee.by(i-1,j+1,k+iz))-g);
-    tmp.byf(i,j,k)=(f+dy*(g-f))*(.25);
+    byf(i,j,k)=(f+dy*(g-f))*(.25);
 
     dx=-0.5;
     dy=-0.5;
@@ -53,7 +53,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
     g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )    +dy*(yee.bz(i,j+1,k+iz)   - yee.bz(i,j-1,k+iz))
                                              +g +dx*(yee.bz(i+1,j,k+iz)   + yee.bz(i+1,j-1,k+iz)
                                                 +dy*(yee.bz(i+1,j+1,k+iz) - yee.bz(i+1,j-1,k+iz))-g);
-    tmp.bzf(i,j,k)=(f+dz*(g-f))*(.25);
+    bzf(i,j,k)=(f+dz*(g-f))*(.25);
   }
 }
 
@@ -63,10 +63,10 @@ template<>
 void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
 {
   fields::YeeLattice& mesh = tile.get_yee();
-  ffe::ExtraLattice& tmp = tile.tmp;
 
   // half stagger B; stored in (bxf, byf, bzf)
-  interpolate_b(mesh, tmp);
+  interpolate_b(mesh);
+
 
   //Realf C = 1.0 * tile.cfl;
 
@@ -79,21 +79,23 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
     // div E
-    dive = 0.5*(
+    //
+    // XXX: norm fac
+    dive = 1.0*(
         mesh.ex(i+1,j,k) - mesh.ex(i-1,j,k) 
       + mesh.ey(i,j+1,k) - mesh.ey(i,j-1,k)
       // + mesh.ez(i,j,k+1) - mesh.ez(i,j,k-1)
       );
 
     // E x B
-    crossx = mesh.ey(i,j,k)*tmp.bzf(i,j,k) - mesh.ez(i,j,k)*tmp.byf(i,j,k);
-    crossy =-mesh.ex(i,j,k)*tmp.bzf(i,j,k) - mesh.ez(i,j,k)*tmp.bxf(i,j,k);
-    crossz = mesh.ex(i,j,k)*tmp.byf(i,j,k) - mesh.ey(i,j,k)*tmp.bxf(i,j,k);
+    crossx = mesh.ey(i,j,k)*bzf(i,j,k) - mesh.ez(i,j,k)*byf(i,j,k);
+    crossy =-mesh.ex(i,j,k)*bzf(i,j,k) - mesh.ez(i,j,k)*bxf(i,j,k);
+    crossz = mesh.ex(i,j,k)*byf(i,j,k) - mesh.ey(i,j,k)*bxf(i,j,k);
 
     // B^2
-    b2 = tmp.bxf(i,j,k)*tmp.bxf(i,j,k) 
-       + tmp.byf(i,j,k)*tmp.byf(i,j,k) 
-       + tmp.bzf(i,j,k)*tmp.bzf(i,j,k);
+    b2 = bxf(i,j,k)*bxf(i,j,k) 
+       + byf(i,j,k)*byf(i,j,k) 
+       + bzf(i,j,k)*bzf(i,j,k);
 
     // perp current
     mesh.jx(i,j,k) = dive*crossx/b2;
@@ -106,9 +108,12 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
               << " crosy " << crossy
               << " crosz " << crossz
               << " b2 " << b2
-              << " bxf " << tmp.bxf(i,j,k)
-              << " byf " << tmp.byf(i,j,k)
-              << " bzf " << tmp.bzf(i,j,k)
+              << " bxf " << bxf(i,j,k)
+              << " byf " << byf(i,j,k)
+              << " bzf " << bzf(i,j,k)
+              << " jx  " << mesh.jx(i,j,k)
+              << " jy  " << mesh.jy(i,j,k)
+              << " jz  " << mesh.jz(i,j,k)
               << "\n";
     */
 
@@ -123,10 +128,9 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
     )
 {
   fields::YeeLattice& mesh = tile.get_yee();
-  ffe::ExtraLattice& tmp = tile.tmp;
 
   // half stagger B; stored in (bxf, byf, bzf)
-  interpolate_b(mesh, tmp);
+  interpolate_b(mesh);
 
   double spara;
   double jparax, jparay, jparaz;
@@ -138,19 +142,19 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
 
     // E.B
     spara = 
-        mesh.ex(i,j,k)*tmp.bxf(i,j,k)
-      + mesh.ey(i,j,k)*tmp.byf(i,j,k)
-      + mesh.ez(i,j,k)*tmp.bzf(i,j,k);
+        mesh.ex(i,j,k)*bxf(i,j,k)
+      + mesh.ey(i,j,k)*byf(i,j,k)
+      + mesh.ez(i,j,k)*bzf(i,j,k);
 
     // B^2
-    b2 = tmp.bxf(i,j,k)*tmp.bxf(i,j,k) 
-       + tmp.byf(i,j,k)*tmp.byf(i,j,k) 
-       + tmp.bzf(i,j,k)*tmp.bzf(i,j,k);
+    b2 = bxf(i,j,k)*bxf(i,j,k) 
+       + byf(i,j,k)*byf(i,j,k) 
+       + bzf(i,j,k)*bzf(i,j,k);
 
     // J_parallel
-    jparax = spara*tmp.bxf(i,j,k)/b2;
-    jparay = spara*tmp.byf(i,j,k)/b2;
-    jparaz = spara*tmp.bzf(i,j,k)/b2;
+    jparax = spara*bxf(i,j,k)/b2;
+    jparay = spara*byf(i,j,k)/b2;
+    jparaz = spara*bzf(i,j,k)/b2;
 
     // Add J_parallel to E
     mesh.ex(i,j,k) -= jparax;

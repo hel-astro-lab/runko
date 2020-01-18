@@ -125,6 +125,8 @@ class Timer:
 
         self.components[name].append( t0 )
 
+        return name
+
     def stop_comp(self, name):
         t0 = time.time() #stop before lookup
         #indx = self._look_comp(name)

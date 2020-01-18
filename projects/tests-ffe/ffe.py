@@ -365,134 +365,138 @@ if __name__ == "__main__":
 
             #--------------------------------------------------
             #update boundaries
-            timer.start_comp("upd_bc0")
+            t1 = timer.start_comp("upd_bc0")
 
             for tile in tiles_all(grid): 
                 tile.update_boundaries(grid)
 
-            timer.stop_comp("upd_bc0")
+            timer.stop_comp(t1)
 
             #--------------------------------------------------
             #compute drift current
-            timer.start_comp("compute_current")
+            t1 = timer.start_comp("compute_current")
 
             for tile in tiles_all(grid): 
                 driftcur.comp_drift_cur(tile)
 
-            timer.stop_comp("compute_current")
-
-            #--------------------------------------------------
-            #add current to E
-            timer.start_comp("add_cur")
-
-            for tile in tiles_all(grid): 
-                tile.deposit_current()
-
-            timer.stop_comp("add_cur")
-
-            #--------------------------------------------------
-            #push E
-            timer.start_comp("push_e")
-
-            for tile in tiles_all(grid): 
-                fldprop.push_e(tile)
-
-            timer.stop_comp("push_e")
-
-            #--------------------------------------------------
-            # comm E
-            timer.start_comp("mpi_e0")
-
-            grid.send_data(1) 
-            grid.recv_data(1) 
-            grid.wait_data(1) 
-
-            timer.stop_comp("mpi_e0")
-
-            #--------------------------------------------------
-            #update boundaries
-            timer.start_comp("upd_bc1")
-
-            for tile in tiles_all(grid): 
-                tile.update_boundaries(grid)
-
-            timer.stop_comp("upd_bc1")
+            timer.stop_comp(t1)
 
 
-            #--------------------------------------------------
-            #push B half
-            timer.start_comp("push_b0")
 
-            for tile in tiles_all(grid): 
-                tile.cfl *= 2.0
-                fldprop.push_half_b(tile)
-                tile.cfl *= 0.5
+            #XXX on-going debugging
+            if False:
+                #--------------------------------------------------
+                #add current to E
+                timer.start_comp("add_cur")
 
-            timer.stop_comp("push_b0")
+                for tile in tiles_all(grid): 
+                    tile.deposit_current()
 
+                timer.stop_comp("add_cur")
 
-            #--------------------------------------------------
-            # comm B
-            timer.start_comp("mpi_b1")
+                #--------------------------------------------------
+                #push E
+                timer.start_comp("push_e")
 
-            grid.send_data(2) 
-            grid.recv_data(2) 
-            grid.wait_data(2) 
+                for tile in tiles_all(grid): 
+                    fldprop.push_e(tile)
 
-            timer.stop_comp("mpi_b1")
+                timer.stop_comp("push_e")
 
-            #--------------------------------------------------
-            #update boundaries
-            timer.start_comp("upd_bc2")
+                #--------------------------------------------------
+                # comm E
+                timer.start_comp("mpi_e0")
 
-            for tile in tiles_all(grid): 
-                tile.update_boundaries(grid)
+                grid.send_data(1) 
+                grid.recv_data(1) 
+                grid.wait_data(1) 
 
-            timer.stop_comp("upd_bc2")
+                timer.stop_comp("mpi_e0")
 
-            #TODO: enforce E.B=0
-            #TODO: enforce E <= B
+                #--------------------------------------------------
+                #update boundaries
+                timer.start_comp("upd_bc1")
 
-            #--------------------------------------------------
-            #compute drift current
-            timer.start_comp("compute_para_current")
+                for tile in tiles_all(grid): 
+                    tile.update_boundaries(grid)
 
-            for tile in tiles_all(grid): 
-                driftcur.comp_parallel_cur(tile)
-
-            timer.stop_comp("compute_para_current")
-
-            #--------------------------------------------------
-            # comm B
-            timer.start_comp("mpi_e1")
-
-            grid.send_data(1) 
-            grid.recv_data(1) 
-            grid.wait_data(1) 
-
-            timer.stop_comp("mpi_e1")
+                timer.stop_comp("upd_bc1")
 
 
-            #TODO XXX --------------------------------------
+                #--------------------------------------------------
+                #push B half
+                timer.start_comp("push_b0")
 
-            #--------------------------------------------------
-            #current calculation; charge conserving current deposition
-            #timer.start_comp("comp_curr")
+                for tile in tiles_all(grid): 
+                    tile.cfl *= 2.0
+                    fldprop.push_half_b(tile)
+                    tile.cfl *= 0.5
 
-            #for cid in grid.get_local_tiles():
-            #    tile = grid.get_tile(cid)
-            #    currint.solve(tile)
+                timer.stop_comp("push_b0")
 
-            #timer.stop_comp("comp_curr")
 
-            #--------------------------------------------------
-            #timer.start_comp("clear_vir_cur")
+                #--------------------------------------------------
+                # comm B
+                timer.start_comp("mpi_b1")
 
-            #for cid in grid.get_virtual_tiles():
-            #    tile = grid.get_tile(cid)
-            #    tile.clear_current()
+                grid.send_data(2) 
+                grid.recv_data(2) 
+                grid.wait_data(2) 
 
-            #timer.stop_comp("clear_vir_cur")
+                timer.stop_comp("mpi_b1")
+
+                #--------------------------------------------------
+                #update boundaries
+                timer.start_comp("upd_bc2")
+
+                for tile in tiles_all(grid): 
+                    tile.update_boundaries(grid)
+
+                timer.stop_comp("upd_bc2")
+
+                #TODO: enforce E.B=0
+                #TODO: enforce E <= B
+
+                #--------------------------------------------------
+                #compute drift current
+                timer.start_comp("compute_para_current")
+
+                for tile in tiles_all(grid): 
+                    driftcur.comp_parallel_cur(tile)
+
+                timer.stop_comp("compute_para_current")
+
+                #--------------------------------------------------
+                # comm B
+                timer.start_comp("mpi_e1")
+
+                grid.send_data(1) 
+                grid.recv_data(1) 
+                grid.wait_data(1) 
+
+                timer.stop_comp("mpi_e1")
+
+
+                #TODO XXX --------------------------------------
+
+                #--------------------------------------------------
+                #current calculation; charge conserving current deposition
+                #timer.start_comp("comp_curr")
+
+                #for cid in grid.get_local_tiles():
+                #    tile = grid.get_tile(cid)
+                #    currint.solve(tile)
+
+                #timer.stop_comp("comp_curr")
+
+                #--------------------------------------------------
+                #timer.start_comp("clear_vir_cur")
+
+                #for cid in grid.get_virtual_tiles():
+                #    tile = grid.get_tile(cid)
+                #    tile.clear_current()
+
+                #timer.stop_comp("clear_vir_cur")
 
 
 
@@ -563,6 +567,8 @@ if __name__ == "__main__":
             timer.start("step") #refresh lap counter (avoids IO profiling)
 
             sys.stdout.flush()
+
+            sys.exit()
 
         #MPI.COMM_WORLD.barrier()
         #sleep(0.2)

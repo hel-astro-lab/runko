@@ -12,34 +12,6 @@
 
 namespace ffe {
 
-/// Storage for temporary lattice values
-class ExtraLattice {
-
-  public:
-
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
-
-  /// half-cell staggered B
-  toolbox::Mesh<double, 1> bxf;
-  toolbox::Mesh<double, 1> byf;
-  toolbox::Mesh<double, 1> bzf;
-
-  /// divergence of E
-  //toolbox::Mesh<double, 1> dive;
-
-  ExtraLattice(size_t Nx, size_t Ny, size_t Nz) : 
-    Nx(Nx), Ny(Ny), Nz(Nz),
-    bxf(Nx, Ny, Nz),
-    byf(Nx, Ny, Nz),
-    bzf(Nx, Ny, Nz)
-    //dive(Nx, Ny, Nz)
-    { }
-
-};
-
-
 
 /*! \brief Force-Free electrodynamics methods
  *
@@ -76,13 +48,12 @@ class Tile :
   void add_yee_lattice() override;
 
 
-  ExtraLattice tmp;
+  //ExtraLattice tmp;
 
   /// constructor
   Tile(size_t nx, size_t ny, size_t nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>(nx,ny,nz),
-    tmp(nx,ny,nz)
+    fields::Tile<D>(nx,ny,nz)
   { 
   
     // preinitialize arrays for 4-stage RK

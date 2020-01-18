@@ -12,7 +12,22 @@ class Current
 {
   public:
 
-  Current() {};
+  int Nx;
+  int Ny;
+  int Nz;
+
+  /// half-cell staggered B
+  toolbox::Mesh<double, 1> bxf;
+  toolbox::Mesh<double, 1> byf;
+  toolbox::Mesh<double, 1> bzf;
+
+
+  Current(int Nx, int Ny, int Nz) :
+    Nx(Nx), Ny(Ny), Nz(Nz),
+    bxf(Nx, Ny, Nz),
+    byf(Nx, Ny, Nz),
+    bzf(Nx, Ny, Nz)
+  {};
 
   virtual ~Current() = default;
 
