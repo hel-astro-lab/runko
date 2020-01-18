@@ -98,7 +98,9 @@ def insert_em_harris_sheet(grid, conf):
                             triggerz = 1.0
                             #triggerz = cosh(2.0*pi*(kglob - mzhalf)*dvstripe) #3D
 
-                            velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe)
+                            #velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe)
+                            velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe) \
+                                    /(cosh(2.*pi*(jglob-myhalf)*dvstripe)*cosh(2.*pi*(iglob-mxhalf)*dvstripe))
 
                             if not(conf.periodicx):
                                 stripetanh = tanh(2.*pi*(iglob-mxhalf)*dstripe)
@@ -421,39 +423,38 @@ if __name__ == "__main__":
             timer.stop_comp(t1)
 
 
+            #--------------------------------------------------
+            #push B half
+            t1 = timer.start_comp("push_b0")
+
+            fldprop.dt = 2.0 #XXX time step; twice to compensate half push
+            for tile in tiles_all(grid): 
+                fldprop.push_half_b(tile)
+
+            timer.stop_comp(t1)
+
+            #--------------------------------------------------
+            # comm B
+            t1 = timer.start_comp("mpi_b1")
+
+            grid.send_data(2) 
+            grid.recv_data(2) 
+            grid.wait_data(2) 
+
+            timer.stop_comp(t1)
+
+            #--------------------------------------------------
+            #update boundaries
+            t1 = timer.start_comp("upd_bc2")
+
+            for tile in tiles_all(grid): 
+                tile.update_boundaries(grid)
+
+            timer.stop_comp(t1)
+
+
+
             if False:
-
-                #--------------------------------------------------
-                #push B half
-                timer.start_comp("push_b0")
-
-                for tile in tiles_all(grid): 
-                    tile.cfl *= 2.0
-                    fldprop.push_half_b(tile)
-                    tile.cfl *= 0.5
-
-                timer.stop_comp("push_b0")
-
-
-                #--------------------------------------------------
-                # comm B
-                timer.start_comp("mpi_b1")
-
-                grid.send_data(2) 
-                grid.recv_data(2) 
-                grid.wait_data(2) 
-
-                timer.stop_comp("mpi_b1")
-
-                #--------------------------------------------------
-                #update boundaries
-                timer.start_comp("upd_bc2")
-
-                for tile in tiles_all(grid): 
-                    tile.update_boundaries(grid)
-
-                timer.stop_comp("upd_bc2")
-
                 #TODO: enforce E.B=0
                 #TODO: enforce E <= B
 
