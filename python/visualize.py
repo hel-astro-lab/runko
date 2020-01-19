@@ -414,7 +414,16 @@ def plotDens(ax, n, conf):
 
 
 
-def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
+def plot2dYee(
+        ax, 
+        yee, 
+        n, 
+        conf, 
+        val = 'jx', 
+        vmin=None,
+        vmax=None,
+        label_title=False,
+        ):
 
     #ax.clear()
     ax.cla()
@@ -424,7 +433,11 @@ def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
     arr = yee[val]
     arr = np.ma.masked_where(arr == -np.inf, arr)
 
-    vmin, vmax = np.min(arr), np.max(arr)
+    if vmin == None:
+        vmin = np.min(arr)
+    if vmax == None:
+        vmax = np.max(arr)
+
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
     #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 

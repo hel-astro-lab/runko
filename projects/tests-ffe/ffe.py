@@ -65,10 +65,11 @@ def insert_em(grid, conf):
 # Field initialization   
 def insert_em_harris_sheet(grid, conf):
 
-    delta  = conf.sheet_thickness/(2.0*pi) #sheet thickness incl. 2pi 
-    pwid = conf.pinch_width
-    eta  = conf.sheet_density
-    beta = conf.beta #sheet bulk flow
+    delta       = conf.sheet_thickness/(2.0*pi) #sheet thickness incl. 2pi 
+    pinch_delta = conf.pinch_width/(2.0*pi)     #pinch thickness incl. 2pi
+    eta  = conf.sheet_density 
+    beta = 0.0 #conf.beta #sheet bulk flow; NOTE: for force-free setup no flow
+    sigma = conf.sigma #magnetization
 
 
     #binit  = conf.binit
@@ -103,7 +104,7 @@ def insert_em_harris_sheet(grid, conf):
 
                             # trigger field modulation in z coordinate
                             if do_3D:
-                                triggerz = cosh((kglob - mzhalf)/delta) #3D
+                                triggerz = cosh((kglob - mzhalf)/pinch_delta) #3D
                             else:
                                 triggerz = 1.0
 
@@ -114,116 +115,55 @@ def insert_em_harris_sheet(grid, conf):
                                 stripetanh = tanh(Lx*sin(2.*pi*(iglob - mxhalf)/Lx)/delta/2.0/pi)
 
                             #FIXME
-                            #velstripe = tanh((iglob-mxhalf)/delta)/cosh((iglob-mxhalf)/delta)
-                            #velstripe = tanh((iglob-mxhalf)/delta)
-                            velstripe = 1.0
+
+                            #plasma bulk velocity modulation factor; 
+                            #NOTE: true velocity v/c= velstripe*beta
+
+                            #velstripe = tanh((iglob-mxhalf)/pinch_delta)/cosh((iglob-mxhalf)/pinch_delta)
+                            #velstripe = tanh((iglob-mxhalf)/pinch_delta) #/(cosh((jglob-myhalf)/pinch_delta)*cosh((iglob-mxhalf)/pinch_delta))
+                            velstripe = tanh((iglob-mxhalf)/pinch_delta)
+
 
 
                             if conf.trigger:
-
-                                #FIXME: delta -> pwid (check dvstripe vs dstripe)
-                                pinch_corr = (1.-1./(cosh((jglob-myhalf)/delta) \
-                                                    *cosh((iglob-mxhalf)/delta)*triggerz))
+                                pinch_corr = (1./(cosh((jglob-myhalf)/pinch_delta) \
+                                                 *cosh((iglob-mxhalf)/delta)*triggerz))
 
                                 yee.by[l,m,n] = binit*stripetanh
-                                yee.bz[l,m,n] = binit*stripetanh*pinch_corr
+                                yee.bz[l,m,n] = binit*stripetanh*(1.0 - pinch_corr)
 
                                 yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
 
                                 #drive to trigger reconnection in the middle of the box; 
                                 #the coefficient should be the desired ExB speed
-                                yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n]  \
-                                 + conf.trigger_field *  \
-                                      abs(yee.by[l,m,n])/(cosh((jglob-myhalf)/delta)*
-                                                          cosh((iglob-mxhalf)/delta)*triggerz)
+                                yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n] #+ conf.trigger_field*abs(yee.by[l,m,n])*pinch_corr
+
                             else:
                                 yee.by[l,m,n] = binit*stripetanh 
-                                yee.bz[l,m,n] = 0.0
+                                yee.bz[l,m,n] = binit*np.sqrt(conf.sigma_ext) #add guide field
 
                                 yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
                                 yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n]
-                                                       
 
                             yee.ex[l,m,n] = 0.0
-                            yee.bz[l,m,n] += binit*np.sqrt(conf.sigma_ext) #add guide field
 
 
-
-
-##################################################
-# Field initialization   
-def insert_em_harris_sheet2(grid, conf):
-    dvstripe = conf.dvstripe
-    dstripe  = conf.dstripe
-    nstripe  = conf.nstripe
-
-    binit  = conf.binit
-    btheta = conf.btheta
-    bphi   = conf.bphi
-
-    beta = conf.beta
-
-    mxhalf  = conf.mxhalf
-    myhalf  = conf.myhalf
-    mzhalf  = conf.mzhalf
-    lstripe = conf.lstripe
-
-    kk = 0
-    for jj in range(grid.get_Ny()):
-        for ii in range(grid.get_Nx()):
-            if grid.get_mpi_grid(ii,jj) == grid.rank():
-                c = grid.get_tile(ii,jj)
-                yee = c.get_yee(0)
-
-                for n in range(conf.NzMesh):
-                    for m in range(conf.NyMesh):
-                        for l in range(conf.NxMesh):
-
-                            # get global coordinates
-                            iglob, jglob, kglob = globalIndx( (ii,jj), (l,m,n), conf)
-
-                            triggerz = 1.0
-                            #triggerz = cosh(2.0*pi*(kglob - mzhalf)*dvstripe) #3D
-
-                            #velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe)
-                            #velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe) \
-                            #        /(cosh(2.*pi*(jglob-myhalf)*dvstripe)*cosh(2.*pi*(iglob-mxhalf)*dvstripe))
-                            velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe) \
-                                    /cosh(2.*pi*(iglob-mxhalf)*dvstripe)
-
-
+                            #hot current sheet
+                            #beta_drift = sqrt(sigma)
+                            beta_drift = 0.5
                             if not(conf.periodicx):
-                                stripetanh = tanh(2.*pi*(iglob-mxhalf)*dstripe)
+                                num_plasma = 1.0/(cosh((iglob-mxhalf)/delta))**2.
                             else:
-                                stripetanh = tanh(dstripe*lstripe*sin(2.*pi*(iglob - mxhalf)/lstripe))
+                                #num_plasma = 1.0/(cosh(dstripe*lstripe*sin(2.*pi*(iglob-mxhalf)/lstripe)))**2.*stripecosh
+                                num_plasma = 1.0/cosh(Lx*sin(2.*pi*(iglob - mxhalf)/Lx)/delta/2.0/pi)**2.
 
-                            yee.bx[l,m,n] = conf.bxinit*conf.binit   
+                            gamma_drift = sqrt(1./(1.-beta_drift**2.))
+                            if conf.periodicx:
+                                gamma_drift = gamma_drift * np.sign(cos(2.*pi*(iglob-mxhalf)/Lx))
+                                beta_drift = sqrt(1.-1./gamma_drift**2) * np.sign(gamma_drift)
 
-                            if conf.trigger:
-                                yee.by[l,m,n] = binit*sin(bphi)*stripetanh +  binit*btheta*cos(bphi)* \
-             (1.-1./(cosh(2.*pi*(jglob-myhalf)*dvstripe)*cosh(2.*pi*(iglob-mxhalf)*dstripe)*triggerz))
+                            yee.ez[l,m,n] += beta_drift*num_plasma*binit
 
-                                yee.bz[l,m,n] = binit*cos(bphi)*stripetanh + binit*btheta*sin(bphi)*    \
-             (1.-1./(cosh(2.*pi*(jglob-myhalf)*dvstripe)*cosh(2.*pi*(iglob-mxhalf)*dstripe)*triggerz))
-
-                                yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
-
-                                #drive to trigger reconnection in the middle of the box; 
-                                #the coefficient should be the desired ExB speed
-                                yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n]  \
-                                 + conf.trigger_field *  \
-                                      abs(yee.by[l,m,n])/(cosh(2.*pi*(jglob-myhalf)*dvstripe)*
-                                                          cosh(2.*pi*(iglob-mxhalf)*dstripe)*triggerz)
-                            else:
-                                yee.by[l,m,n] = binit*sin(bphi)*stripetanh + binit*btheta*cos(bphi)             
-                                yee.bz[l,m,n] = binit*cos(bphi)*stripetanh + binit*btheta*sin(bphi)               
-                                yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
-                                yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n]
-                                                       
-                            yee.ex[l,m,n] = 0.0
-
-                            #print("ijk {}/{}/{} binit: {} stripetanh: {} beta: {} velstripe {}".format(
-                            #        iglob, jglob,kglob,binit, stripetanh, beta, velstripe))
 
 
                 # copy values to boundary cells
@@ -389,20 +329,28 @@ if __name__ == "__main__":
         try:
             #plotNode( axs[0], grid, conf)
             yee = getYee2D(grid, conf)
-            plot2dYee(axs[0],  yee, grid, conf, 'jx1')
-            plot2dYee(axs[1],  yee, grid, conf, 'jy1')
-            plot2dYee(axs[2],  yee, grid, conf, 'jz1')
-            plot2dYee(axs[3],  yee, grid, conf, 'jx')
-            plot2dYee(axs[4],  yee, grid, conf, 'jy')
-            plot2dYee(axs[5],  yee, grid, conf, 'jz')
-            plot2dYee(axs[6],  yee, grid, conf, 'ex')
-            plot2dYee(axs[7],  yee, grid, conf, 'ey')
-            plot2dYee(axs[8],  yee, grid, conf, 'ez')
-            plot2dYee(axs[9],  yee, grid, conf, 'bx')
-            plot2dYee(axs[10], yee, grid, conf, 'by')
-            plot2dYee(axs[11], yee, grid, conf, 'bz')
+            curval = 0.1
+            plot2dYee(axs[0],  yee, grid, conf, 'jx1', vmin=-curval, vmax=curval)
+            plot2dYee(axs[1],  yee, grid, conf, 'jy1', vmin=-curval, vmax=curval)
+            plot2dYee(axs[2],  yee, grid, conf, 'jz1', vmin=-curval, vmax=curval)
+
+            plot2dYee(axs[3],  yee, grid, conf, 'jx' , vmin=-curval, vmax=curval)
+            plot2dYee(axs[4],  yee, grid, conf, 'jy' , vmin=-curval, vmax=curval)
+            plot2dYee(axs[5],  yee, grid, conf, 'jz' , vmin=-curval, vmax=curval)
+
+            elval = 0.5
+            plot2dYee(axs[6],  yee, grid, conf, 'ex' , vmin=-elval, vmax=elval)
+            plot2dYee(axs[7],  yee, grid, conf, 'ey' , vmin=-elval, vmax=elval)
+            plot2dYee(axs[8],  yee, grid, conf, 'ez' , vmin=-elval, vmax=elval)
+
+            bfval = 0.5
+            plot2dYee(axs[9],  yee, grid, conf, 'bx' , vmin=-bfval, vmax=bfval)
+            plot2dYee(axs[10], yee, grid, conf, 'by' , vmin=-bfval, vmax=bfval)
+            plot2dYee(axs[11], yee, grid, conf, 'bz' , vmin=-bfval, vmax=bfval)
+            saveVisz(lap, grid, conf)
             saveVisz(-1, grid, conf)
         except:
+
             pass
 
     fldprop  = pyfld.FDTD2()
@@ -648,20 +596,26 @@ if __name__ == "__main__":
                     #plotNode(axs[0], grid, conf)
 
                     yee = getYee2D(grid, conf)
-                    plot2dYee(axs[0],  yee, grid, conf, 'jx1')
-                    plot2dYee(axs[1],  yee, grid, conf, 'jy1')
-                    plot2dYee(axs[2],  yee, grid, conf, 'jz1')
-                    plot2dYee(axs[2],  yee, grid, conf, 'rho')
-                    plot2dYee(axs[3],  yee, grid, conf, 'jx')
-                    plot2dYee(axs[4],  yee, grid, conf, 'jy')
-                    plot2dYee(axs[5],  yee, grid, conf, 'jz')
-                    plot2dYee(axs[6],  yee, grid, conf, 'ex')
-                    plot2dYee(axs[7],  yee, grid, conf, 'ey')
-                    plot2dYee(axs[8],  yee, grid, conf, 'ez')
-                    plot2dYee(axs[9],  yee, grid, conf, 'bx')
-                    plot2dYee(axs[10], yee, grid, conf, 'by')
-                    plot2dYee(axs[11], yee, grid, conf, 'bz')
+                    curval = 0.1
+                    plot2dYee(axs[0],  yee, grid, conf, 'jx1', vmin=-curval, vmax=curval)
+                    plot2dYee(axs[1],  yee, grid, conf, 'jy1', vmin=-curval, vmax=curval)
+                    plot2dYee(axs[2],  yee, grid, conf, 'jz1', vmin=-curval, vmax=curval)
+
+                    plot2dYee(axs[3],  yee, grid, conf, 'jx' , vmin=-curval, vmax=curval)
+                    plot2dYee(axs[4],  yee, grid, conf, 'jy' , vmin=-curval, vmax=curval)
+                    plot2dYee(axs[5],  yee, grid, conf, 'jz' , vmin=-curval, vmax=curval)
+
+                    elval = 0.5
+                    plot2dYee(axs[6],  yee, grid, conf, 'ex' , vmin=-elval, vmax=elval)
+                    plot2dYee(axs[7],  yee, grid, conf, 'ey' , vmin=-elval, vmax=elval)
+                    plot2dYee(axs[8],  yee, grid, conf, 'ez' , vmin=-elval, vmax=elval)
+
+                    bfval = 0.5
+                    plot2dYee(axs[9],  yee, grid, conf, 'bx' , vmin=-bfval, vmax=bfval)
+                    plot2dYee(axs[10], yee, grid, conf, 'by' , vmin=-bfval, vmax=bfval)
+                    plot2dYee(axs[11], yee, grid, conf, 'bz' , vmin=-bfval, vmax=bfval)
                     saveVisz(lap, grid, conf)
+
             #except:
             #    print()
             #    pass

@@ -75,8 +75,8 @@ class Configuration_Reconnection(Configuration):
             print("init: Alfven (outflow) three-velocity: ",sqrt(sigmaeff/(1.+sigmaeff)))
             print("init: sheet thickness ",    self.sheet_thickness )
             print("init: sheet density ", self.sheet_density )
-            print("init: pinch width ", self.pinch_width )
             print("init: trigger B", self.trigger )
+            print("init: pinch width ", self.pinch_width )
             print("init: trigger Ex", self.trigger_field )
 
         #-------------------------------------------------- 
