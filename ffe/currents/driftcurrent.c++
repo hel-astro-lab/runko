@@ -103,6 +103,11 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
     mesh.jy(i,j,k) = dive*crossy/b2;
     mesh.jz(i,j,k) = dive*crossz/b2;
 
+    mesh.ex(i,j,k) -= mesh.jx(i,j,k);
+    mesh.ey(i,j,k) -= mesh.jy(i,j,k);
+    mesh.ez(i,j,k) -= mesh.jz(i,j,k);
+
+
     /*
     std::cout << " dive  " << dive 
               << " crosx " << crossx
@@ -167,15 +172,50 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
     mesh.jy1(i,j,k) = jparay;
     mesh.jz1(i,j,k) = jparaz;
 
+  }
+}
+
+
+/// 2D Drift current solver
+template<>
+void ffe::DriftCurrent<2>::limiter(
+    ffe::Tile<2>& tile
+    )
+{
+  fields::YeeLattice& mesh = tile.get_yee();
+  interpolate_b(mesh);
+
+  double norm;
+  double e2, b2;
+
+  int k = 0;
+  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
+  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+
+    //ex = mesh.ex(i,j,k);
+    //ex = mesh.ey(i,j,k);
+    //ex = mesh.ez(i,j,k);
+
+    //if(abs(ex) > abs(bxf(i,j,k))) mesh.ex(i,j,k) = sign(ex)*bfx(i,j,k);
+    //if(abs(ey) > abs(byf(i,j,k))) mesh.ey(i,j,k) = sign(ey)*bfy(i,j,k);
+    //if(abs(ez) > abs(bzf(i,j,k))) mesh.ez(i,j,k) = sign(ez)*bfz(i,j,k);
+
     // E^2
     e2 = mesh.ex(i,j,k)*mesh.ex(i,j,k) 
        + mesh.ey(i,j,k)*mesh.ey(i,j,k) 
        + mesh.ez(i,j,k)*mesh.ez(i,j,k);
 
-    // enforce E < B; E -> sqrt(B^2/E^2) E
-    mesh.ex(i,j,k) *= sqrt(b2/e2);
-    mesh.ey(i,j,k) *= sqrt(b2/e2);
-    mesh.ez(i,j,k) *= sqrt(b2/e2);
+    // B^2
+    b2 = bxf(i,j,k)*bxf(i,j,k) 
+       + byf(i,j,k)*byf(i,j,k) 
+       + bzf(i,j,k)*bzf(i,j,k);
+
+    if(e2 > b2) {
+      mesh.ex(i,j,k) *= sqrt(b2/e2);
+      mesh.ey(i,j,k) *= sqrt(b2/e2);
+      mesh.ez(i,j,k) *= sqrt(b2/e2);
+    }
+
 
   }
 }

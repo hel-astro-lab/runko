@@ -19,6 +19,8 @@ class DriftCurrent :
 
   void comp_parallel_cur(Tile<D>& tile) override;
 
+  void limiter(Tile<D>& tile) override;
+
 
 };
 

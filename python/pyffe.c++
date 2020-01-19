@@ -54,6 +54,16 @@ class PyCurrent : public Current<D>
       tile
       );
   }
+
+  void limiter( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      Current<D>,
+      limiter,
+      tile
+      );
+  }
+
 };
 
 
@@ -76,6 +86,15 @@ class PyDriftCurrent : public DriftCurrent<D>
       void,
       DriftCurrent<D>,
       comp_parallel_cur,
+      tile
+      );
+  }
+
+  void limiter( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE(
+      void,
+      DriftCurrent<D>,
+      limiter,
       tile
       );
   }
@@ -109,7 +128,8 @@ void bind_ffe(py::module& m_sub)
   currentcalc2d
     .def(py::init<int, int, int>())
     .def("comp_drift_cur",      &ffe::Current<2>::comp_drift_cur)
-    .def("comp_parallel_cur",   &ffe::Current<2>::comp_parallel_cur);
+    .def("comp_parallel_cur",   &ffe::Current<2>::comp_parallel_cur)
+    .def("limiter",             &ffe::Current<2>::limiter);
 
   // Drift current solver
   py::class_<ffe::DriftCurrent<2>, ffe::Current<2>, PyDriftCurrent<2> >(m_2d, "DriftCurrent")

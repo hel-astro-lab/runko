@@ -35,6 +35,8 @@ class Current
 
   virtual void comp_parallel_cur(Tile<D>& tile) = 0;
 
+  virtual void limiter(Tile<D>& tile) = 0;
+
 };
 
 

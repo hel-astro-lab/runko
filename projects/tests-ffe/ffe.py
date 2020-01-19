@@ -427,32 +427,32 @@ if __name__ == "__main__":
 
             #--------------------------------------------------
             #compute drift current
-            t1 = timer.start_comp("compute_current")
+            if True:
+                t1 = timer.start_comp("compute_current")
 
-            for tile in tiles_all(grid): 
-                driftcur.comp_drift_cur(tile)
+                for tile in tiles_all(grid): 
+                    driftcur.comp_drift_cur(tile)
 
-            timer.stop_comp(t1)
+                timer.stop_comp(t1)
 
             #--------------------------------------------------
             #add current to E
-            t1 = timer.start_comp("add_cur")
-
-            for tile in tiles_all(grid): 
-                tile.deposit_current()
-
-            timer.stop_comp(t1)
+            #t1 = timer.start_comp("add_cur")
+            #for tile in tiles_all(grid): 
+            #    tile.deposit_current()
+            #timer.stop_comp(t1)
 
 
             #--------------------------------------------------
             #push E
-            t1 = timer.start_comp("push_e")
+            if True:
+                t1 = timer.start_comp("push_e")
 
-            fldprop.dt = 1.0 #XXX time step 
-            for tile in tiles_all(grid): 
-                fldprop.push_e(tile)
+                fldprop.dt = 1.0 #XXX time step 
+                for tile in tiles_all(grid): 
+                    fldprop.push_e(tile)
 
-            timer.stop_comp(t1)
+                timer.stop_comp(t1)
 
             #--------------------------------------------------
             # comm E
@@ -476,13 +476,14 @@ if __name__ == "__main__":
 
             #--------------------------------------------------
             #push B half
-            t1 = timer.start_comp("push_b0")
+            if True:
+                t1 = timer.start_comp("push_b0")
 
-            fldprop.dt = 2.0 #XXX time step; twice to compensate half push
-            for tile in tiles_all(grid): 
-                fldprop.push_half_b(tile)
+                fldprop.dt = 2.0 #XXX time step; twice to compensate half push
+                for tile in tiles_all(grid): 
+                    fldprop.push_half_b(tile)
 
-            timer.stop_comp(t1)
+                timer.stop_comp(t1)
 
             #--------------------------------------------------
             # comm B
@@ -506,10 +507,19 @@ if __name__ == "__main__":
 
             #--------------------------------------------------
             #correct for parallel current
-            t1 = timer.start_comp("compute_para_current")
+            if True:
+                t1 = timer.start_comp("compute_para_current")
+
+                for tile in tiles_all(grid): 
+                    driftcur.comp_parallel_cur(tile)
+
+                timer.stop_comp(t1)
+
+
+            t1 = timer.start_comp("limiter")
 
             for tile in tiles_all(grid): 
-                driftcur.comp_parallel_cur(tile)
+                driftcur.limiter(tile)
 
             timer.stop_comp(t1)
 
