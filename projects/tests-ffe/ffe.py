@@ -62,10 +62,97 @@ def insert_em(grid, conf):
                     yee.by[l,m,n] = 0.0
                     yee.bz[l,m,n] = conf.binit   
 
+# Field initialization   
+def insert_em_harris_sheet(grid, conf):
+
+    delta  = conf.sheet_thickness/(2.0*pi) #sheet thickness incl. 2pi 
+    pwid = conf.pinch_width
+    eta  = conf.sheet_density
+    beta = conf.beta #sheet bulk flow
+
+
+    #binit  = conf.binit
+    #btheta = conf.btheta
+    #bphi   = conf.bphi
+
+    do_3D = False
+
+    #note: if periodicx then mxhalf is 1/4 of Lx else 1/2
+    mxhalf  = conf.mxhalf
+    myhalf  = conf.myhalf
+    mzhalf  = conf.mzhalf
+
+    lstripe = conf.lstripe #FIXME del
+    Lx      = conf.lstripe
+
+    binit = conf.binit #initial B_0
+
+    kk = 0
+    for jj in range(grid.get_Ny()):
+        for ii in range(grid.get_Nx()):
+            if grid.get_mpi_grid(ii,jj) == grid.rank():
+                c = grid.get_tile(ii,jj)
+                yee = c.get_yee(0)
+
+                for n in range(conf.NzMesh):
+                    for m in range(conf.NyMesh):
+                        for l in range(conf.NxMesh):
+
+                            # get global coordinates
+                            iglob, jglob, kglob = globalIndx( (ii,jj), (l,m,n), conf)
+
+                            # trigger field modulation in z coordinate
+                            if do_3D:
+                                triggerz = cosh((kglob - mzhalf)/delta) #3D
+                            else:
+                                triggerz = 1.0
+
+                            # flipping harris sheet stripe
+                            if not(conf.periodicx):
+                                stripetanh = tanh((iglob-mxhalf)/delta)
+                            else:
+                                stripetanh = tanh(Lx*sin(2.*pi*(iglob - mxhalf)/Lx)/delta/2.0/pi)
+
+                            #FIXME
+                            #velstripe = tanh((iglob-mxhalf)/delta)/cosh((iglob-mxhalf)/delta)
+                            #velstripe = tanh((iglob-mxhalf)/delta)
+                            velstripe = 1.0
+
+
+                            if conf.trigger:
+
+                                #FIXME: delta -> pwid (check dvstripe vs dstripe)
+                                pinch_corr = (1.-1./(cosh((jglob-myhalf)/delta) \
+                                                    *cosh((iglob-mxhalf)/delta)*triggerz))
+
+                                yee.by[l,m,n] = binit*stripetanh
+                                yee.bz[l,m,n] = binit*stripetanh*pinch_corr
+
+                                yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
+
+                                #drive to trigger reconnection in the middle of the box; 
+                                #the coefficient should be the desired ExB speed
+                                yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n]  \
+                                 + conf.trigger_field *  \
+                                      abs(yee.by[l,m,n])/(cosh((jglob-myhalf)/delta)*
+                                                          cosh((iglob-mxhalf)/delta)*triggerz)
+                            else:
+                                yee.by[l,m,n] = binit*stripetanh 
+                                yee.bz[l,m,n] = 0.0
+
+                                yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
+                                yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n]
+                                                       
+
+                            yee.ex[l,m,n] = 0.0
+                            yee.bz[l,m,n] += binit*np.sqrt(conf.sigma_ext) #add guide field
+
+
+
 
 ##################################################
 # Field initialization   
-def insert_em_harris_sheet(grid, conf):
+def insert_em_harris_sheet2(grid, conf):
     dvstripe = conf.dvstripe
     dstripe  = conf.dstripe
     nstripe  = conf.nstripe
@@ -99,8 +186,11 @@ def insert_em_harris_sheet(grid, conf):
                             #triggerz = cosh(2.0*pi*(kglob - mzhalf)*dvstripe) #3D
 
                             #velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe)
+                            #velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe) \
+                            #        /(cosh(2.*pi*(jglob-myhalf)*dvstripe)*cosh(2.*pi*(iglob-mxhalf)*dvstripe))
                             velstripe = tanh(2.*pi*(iglob-mxhalf)*dvstripe) \
-                                    /(cosh(2.*pi*(jglob-myhalf)*dvstripe)*cosh(2.*pi*(iglob-mxhalf)*dvstripe))
+                                    /cosh(2.*pi*(iglob-mxhalf)*dvstripe)
+
 
                             if not(conf.periodicx):
                                 stripetanh = tanh(2.*pi*(iglob-mxhalf)*dstripe)
@@ -108,6 +198,7 @@ def insert_em_harris_sheet(grid, conf):
                                 stripetanh = tanh(dstripe*lstripe*sin(2.*pi*(iglob - mxhalf)/lstripe))
 
                             yee.bx[l,m,n] = conf.bxinit*conf.binit   
+
                             if conf.trigger:
                                 yee.by[l,m,n] = binit*sin(bphi)*stripetanh +  binit*btheta*cos(bphi)* \
              (1.-1./(cosh(2.*pi*(jglob-myhalf)*dvstripe)*cosh(2.*pi*(iglob-mxhalf)*dstripe)*triggerz))
@@ -296,8 +387,20 @@ if __name__ == "__main__":
     # visualize initial condition
     if do_plots:
         try:
-            plotNode( axs[0], grid, conf)
-            #plotXmesh(axs[1], grid, conf, 0, "x")
+            #plotNode( axs[0], grid, conf)
+            yee = getYee2D(grid, conf)
+            plot2dYee(axs[0],  yee, grid, conf, 'jx1')
+            plot2dYee(axs[1],  yee, grid, conf, 'jy1')
+            plot2dYee(axs[2],  yee, grid, conf, 'jz1')
+            plot2dYee(axs[3],  yee, grid, conf, 'jx')
+            plot2dYee(axs[4],  yee, grid, conf, 'jy')
+            plot2dYee(axs[5],  yee, grid, conf, 'jz')
+            plot2dYee(axs[6],  yee, grid, conf, 'ex')
+            plot2dYee(axs[7],  yee, grid, conf, 'ey')
+            plot2dYee(axs[8],  yee, grid, conf, 'ez')
+            plot2dYee(axs[9],  yee, grid, conf, 'bx')
+            plot2dYee(axs[10], yee, grid, conf, 'by')
+            plot2dYee(axs[11], yee, grid, conf, 'bz')
             saveVisz(-1, grid, conf)
         except:
             pass
@@ -453,32 +556,30 @@ if __name__ == "__main__":
             timer.stop_comp(t1)
 
 
+            #--------------------------------------------------
+            #correct for parallel current
+            t1 = timer.start_comp("compute_para_current")
 
+            for tile in tiles_all(grid): 
+                driftcur.comp_parallel_cur(tile)
+
+            timer.stop_comp(t1)
+
+            #--------------------------------------------------
+            # comm B
+            t1 = timer.start_comp("mpi_e1")
+
+            grid.send_data(1) 
+            grid.recv_data(1) 
+            grid.wait_data(1) 
+
+            timer.stop_comp(t1)
+
+
+
+            #TODO XXX --------------------------------------
             if False:
-                #TODO: enforce E.B=0
-                #TODO: enforce E <= B
-
-                #--------------------------------------------------
-                #compute drift current
-                timer.start_comp("compute_para_current")
-
-                for tile in tiles_all(grid): 
-                    driftcur.comp_parallel_cur(tile)
-
-                timer.stop_comp("compute_para_current")
-
-                #--------------------------------------------------
-                # comm B
-                timer.start_comp("mpi_e1")
-
-                grid.send_data(1) 
-                grid.recv_data(1) 
-                grid.wait_data(1) 
-
-                timer.stop_comp("mpi_e1")
-
-
-                #TODO XXX --------------------------------------
+                print("not implemented")
 
                 #--------------------------------------------------
                 #current calculation; charge conserving current deposition
@@ -544,9 +645,12 @@ if __name__ == "__main__":
             #try:
             if True:
                 if do_plots:
-                    plotNode(axs[0], grid, conf)
+                    #plotNode(axs[0], grid, conf)
 
                     yee = getYee2D(grid, conf)
+                    plot2dYee(axs[0],  yee, grid, conf, 'jx1')
+                    plot2dYee(axs[1],  yee, grid, conf, 'jy1')
+                    plot2dYee(axs[2],  yee, grid, conf, 'jz1')
                     plot2dYee(axs[2],  yee, grid, conf, 'rho')
                     plot2dYee(axs[3],  yee, grid, conf, 'jx')
                     plot2dYee(axs[4],  yee, grid, conf, 'jy')
