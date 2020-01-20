@@ -58,7 +58,7 @@ if __name__ == "__main__":
     #--------------------------------------------------
     # set up plot
     tmin = -0.6
-    tmax =  1.6
+    tmax =  1.3
 
     ymin = -1
     global ycur
@@ -75,15 +75,24 @@ if __name__ == "__main__":
     ax.set_ylabel(r"Sub-cycles")
 
 
+    #variables = \
+    #{
+    #        'J':{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
+    #        'B':{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
+    #        'E':{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
+    #        'x':{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
+    #        'v':{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
+    #}
+
+    #opposite staggering
     variables = \
     {
-            'J':{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
-            'B':{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
-            'E':{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
+            'J':{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
+            'B':{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
+            'E':{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
             'x':{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
             'v':{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
     }
-
 
     def get_tile_type(regime):
         ts = []
@@ -108,6 +117,7 @@ if __name__ == "__main__":
     #visualize_vars = ['in', 'vir','in_bc','out_bc','ext']
     visualize_vars = ['in', 'vir','in_bc','out_bc']
     #visualize_vars = ['in']
+
 
     #shift variable in time completely; done to counter sub-cycle shifts
     def shift_variable(var, dt):
@@ -233,136 +243,158 @@ if __name__ == "__main__":
         return t0, y0
 
             
+    #PIC loop
+    if True:
 
-    #--------------------------------------------------
-    for lap in range(0,1):
+        #--------------------------------------------------
+        for lap in range(0,1):
 
-        #update half b
-        step1 = [
-                {'name':'mpi_b1','var':['B', ]    , 'regime':'mpi',  'dt':0,   'copy':True  , },
-                {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
-                {'name':'f_bc'  ,'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
-                {'name':'f_bc'  ,'var':['B','E']  , 'regime':'local',   'dt':0.0, 'copy':False , },
-                {'name':'push_b','var':['B',]     , 'regime':'local','dt':0.5, 'copy':False , },
-                {'name':'mpi_b2','var':['B',]     , 'regime':'mpi',  'dt':0,   'copy':True  , },
-                {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
-        ]
-        for algo in step1:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+            #update half b
+            step1 = [
+                    {'name':'mpi_b1','var':['B', ]    , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    {'name':'f_bc'  ,'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    {'name':'f_bc'  ,'var':['B','E']  , 'regime':'local',   'dt':0.0, 'copy':False , },
+                    {'name':'push_b','var':['B',]     , 'regime':'local','dt':0.5, 'copy':False , },
+                    {'name':'mpi_b2','var':['B',]     , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
+            ]
+            for algo in step1:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
-        #push prtcls
-        step2 = [
-                {'name':'f_bc'  ,    'var':['B','E'] , 'regime':'bc',    'dt':0, 'copy':False , }           ,
-                {'name':'interp_em', 'var':['E','B',], 'regime':'local', 'dt':0, 'copy':False},
-                {'name':'push',      'var':['x','v',], 'regime':'local', 'dt':1, 'copy':False},
-                ]
-        for algo in step2:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+            #push prtcls
+            step2 = [
+                    {'name':'f_bc'  ,    'var':['B','E'] , 'regime':'bc',    'dt':0, 'copy':False , }           ,
+                    {'name':'interp_em', 'var':['E','B',], 'regime':'local', 'dt':0, 'copy':False},
+                    {'name':'push',      'var':['v','x',], 'regime':'local', 'dt':1, 'copy':False},
+                    ]
+            for algo in step2:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
-        step3 = [
-                {'name':'push_b', 'var':['B',],     'regime':'local','dt':0.5, 'copy':False,},
-                ]
-        for algo in step3:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+            step3 = [
+                    {'name':'push_b', 'var':['B',],     'regime':'local','dt':0.5, 'copy':False,},
+                    ]
+            for algo in step3:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
-        #push e
-        step4 = [
-                {'name':'mpi_e1',  'var':['B',],     'regime':'mpi',  'dt':0  , 'copy':True ,},
-                {'name':'upd_bc2', 'var':['E','B',], 'regime':'bc',   'dt':0  , 'copy':True ,},
-                {'name':'f_bc'  ,  'var':['B','E'] , 'regime':'bc',    'dt':0, 'copy':False , }           ,
-                {'name':'f_bc'  ,  'var':['B','E'] , 'regime':'local', 'dt':0, 'copy':False , }           ,
-                {'name':'push_e',  'var':['E',],      'regime':'local','dt':1.0, 'copy':False,},
-                ]
-        for algo in step4:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+            #push e
+            step4 = [
+                    {'name':'mpi_e1',  'var':['B',],     'regime':'mpi',  'dt':0  , 'copy':True ,},
+                    {'name':'upd_bc2', 'var':['E','B',], 'regime':'bc',   'dt':0  , 'copy':True ,},
+                    {'name':'f_bc'  ,  'var':['B','E'] , 'regime':'bc',    'dt':0, 'copy':False , }           ,
+                    {'name':'f_bc'  ,  'var':['B','E'] , 'regime':'local', 'dt':0, 'copy':False , }           ,
+                    {'name':'push_e',  'var':['E',],      'regime':'local','dt':1.0, 'copy':False,},
+                    ]
+            for algo in step4:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
-        #current
-        step5 = [
-                {'name':'j_bc'  ,    'var':['v'] , 'regime':'bc',    'dt':0, 'copy':False , }           ,
-                {'name':'comp_curr', 'var':['J',], 'regime':'local',  'dt':1  , 'copy':False ,},
-                {'name':'mpi_curr',  'var':['J',], 'regime':'mpi',    'dt':0  , 'copy':True ,},
-                {'name':'exc_cur',   'var':['J'],  'regime':'bc',     'dt':0  , 'copy':True ,},
-                ]
-        for algo in step5:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
-
-
-        #mpi prtcls
-        step6 = [
-                {'name':'outg_prtcls', 'var':['x','v',], 'regime':'bc',   'dt':0  , 'copy':True ,},
-                {'name':'mpi_prtcls', 'var':['x','v'],   'regime':'mpi',  'dt':0  , 'copy':True ,},
-                {'name':'get_inc_prtcls', 'var':['x','v',],  'regime':'bc',   'dt':0  , 'copy':True ,},
-                {'name':'del_trnsf_prtcls', 'var':['x','v',], 'regime':'local',   'dt':0  , 'copy':False ,},
-                {'name':'del_vir_prtcls',   'var':['x','v',], 'regime':'vir',     'dt':0  , 'copy':False ,},
-                ]
-        for algo in step6:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
-
-        #filter
-        #add current
-        step7 = [
-                {'name':'mpi_j0',  'var':['J',],      'regime':'mpi',   'dt':0  ,'copy':True ,},
-                {'name':'upd_bc0', 'var':['J',],      'regime':'bc',   'dt':0  , 'copy':True ,},
-                {'name':'j_bc'  ,  'var':['J'],       'regime':'bc',    'dt':0,  'copy':False , }           ,
-                {'name':'filter',  'var':['J',],      'regime':'local', 'dt':0.10  ,'copy':False ,},
-                ]
-        for algo in step7:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
-
-        #second pass
-        for algo in step7:
-            apply_routine(algo)
-
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
-
-        #shift back
-        shift_variable('J', -0.2)
+            #current
+            step5 = [
+                    {'name':'j_bc'  ,    'var':['v'] , 'regime':'bc',    'dt':0  , 'copy':False , }           ,
+                    {'name':'j_bc'  ,    'var':['v','x'] , 'regime':'local', 'dt':0  , 'copy':False , }           ,
+                    {'name':'comp_curr', 'var':['J',], 'regime':'local', 'dt':1  , 'copy':False ,},
+                    {'name':'mpi_curr',  'var':['J',], 'regime':'mpi',   'dt':0  , 'copy':True ,},
+                    {'name':'exc_cur',   'var':['J'],  'regime':'bc',    'dt':0  , 'copy':True ,},
+                    ]
+            for algo in step5:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
 
+            #mpi prtcls
+            step6 = [
+                    {'name':'outg_prtcls', 'var':['x','v',], 'regime':'bc',   'dt':0  , 'copy':True ,},
+                    {'name':'mpi_prtcls', 'var':['x','v'],   'regime':'mpi',  'dt':0  , 'copy':True ,},
+                    {'name':'get_inc_prtcls', 'var':['x','v',],  'regime':'bc',   'dt':0  , 'copy':True ,},
+                    {'name':'del_trnsf_prtcls', 'var':['x','v',], 'regime':'local',   'dt':0  , 'copy':False ,},
+                    {'name':'del_vir_prtcls',   'var':['x','v',], 'regime':'vir',     'dt':0  , 'copy':False ,},
+                    ]
+            for algo in step6:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
-        #add current
-        step8 = [
-                {'name':'j_bc'  ,  'var':['J','E',],  'regime':'bc',    'dt':0, 'copy':False , }           ,
-                {'name':'add_cur', 'var':['E',],      'regime':'local', 'dt':0.1,'copy':False ,},
-                {'name':'mpi_e2',  'var':['E',],      'regime':'mpi',   'dt':0  ,'copy':True ,},
-                ]
-        for algo in step8:
-            apply_routine(algo)
-        ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+            #filter
+            #add current
+            step7 = [
+                    {'name':'mpi_j0',  'var':['J',],      'regime':'mpi',   'dt':0  ,'copy':True ,},
+                    {'name':'upd_bc0', 'var':['J',],      'regime':'bc',   'dt':0  , 'copy':True ,},
+                    {'name':'j_bc'  ,  'var':['J'],       'regime':'bc',    'dt':0,  'copy':False , }           ,
+                    {'name':'filter',  'var':['J',],      'regime':'local', 'dt':0.10  ,'copy':False ,},
+                    ]
+            for algo in step7:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
-        #shift back
-        shift_variable('E', -0.1)
+            #second pass
+            for algo in step7:
+                apply_routine(algo)
 
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
-        #print out of current state
-        ax.axhline(ycur-ydt/2, linestyle='solid', alpha=0.8)
-
-        step9 = [
-                {'name':'io_halos', 'var':['B', 'E', 'J', 'x','v',], 'regime':'bc',    'dt':0  , 'copy':False ,},
-                {'name':'io_virs',  'var':['B', 'E', 'J', 'x','v',], 'regime':'vir',   'dt':0  , 'copy':False ,},
-                {'name':'io_tiles', 'var':['B', 'E', 'J', 'x','v',], 'regime':'local', 'dt':0  , 'copy':False ,},
-                ]
-        for algo in step9:
-            apply_routine(algo)
-
-        ax.axhline(ycur-ydt/2, linestyle='solid', alpha=0.8)
+            #shift back
+            shift_variable('J', -0.2)
 
 
 
+            #add current
+            step8 = [
+                    {'name':'j_bc'  ,  'var':['J','E',],  'regime':'bc',    'dt':0, 'copy':False , }           ,
+                    {'name':'j_bc'  ,  'var':['J',],      'regime':'local', 'dt':0, 'copy':False , }           ,
+                    {'name':'add_cur', 'var':['E',],      'regime':'local', 'dt':0.1,'copy':False ,},
+                    {'name':'mpi_e2',  'var':['E',],      'regime':'mpi',   'dt':0  ,'copy':True ,},
+                    ]
+            for algo in step8:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+
+            #shift back
+            shift_variable('E', -0.1)
+
+
+            #print out of current state
+            ax.axhline(ycur-ydt/2, linestyle='solid', alpha=0.8)
+
+            step9 = [
+                    {'name':'io_halos', 'var':['B', 'E', 'J', 'x','v',], 'regime':'bc',    'dt':0  , 'copy':False ,},
+                    {'name':'io_virs',  'var':['B', 'E', 'J', 'x','v',], 'regime':'vir',   'dt':0  , 'copy':False ,},
+                    {'name':'io_tiles', 'var':['B', 'E', 'J', 'x','v',], 'regime':'local', 'dt':0  , 'copy':False ,},
+                    ]
+            for algo in step9:
+                apply_routine(algo)
+
+            ax.axhline(ycur-ydt/2, linestyle='solid', alpha=0.8)
+
+
+    #FFE loop
+    else:
+
+        #--------------------------------------------------
+        for lap in range(0,1):
+
+            #update half b
+            step1 = [
+                    {'name':'mpi_b1','var':['B', ]    , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    {'name':'f_bc'  ,'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    {'name':'f_bc'  ,'var':['B','E']  , 'regime':'local',   'dt':0.0, 'copy':False , },
+                    {'name':'push_b','var':['B',]     , 'regime':'local','dt':0.5, 'copy':False , },
+                    {'name':'mpi_b2','var':['B',]     , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
+            ]
+            for algo in step1:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
 
     ax.set_ylim((ymin, ycur))
 
     #--------------------------------------------------    
     axleft    = 0.08
     axbottom  = 0.06
-    axright   = 0.85
+    axright   = 0.82
     axtop     = 0.98
 
     pos1 = axs[0].get_position()
