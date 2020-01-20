@@ -153,6 +153,45 @@ if True:
     print(simplify(Ez.subs( [ (iz,1), (dz,0.5), (dx,0.0), (dy,0.0), ])))
 
 
+if True:
+    # TODO
+    # interpolate staggered grid to corners
+    # then apply linear interp
+    #
+    #ex is at  0.5, 0,   0
+    #ey is at  0  , 0.5, 0
+    #ez is at  0  , 0, 0.5
+    #
+    #bx is at  0  , 0.5, 0.5
+    #by is at  0.5, 0.5, 0.5
+    #bz is at  0.5, 0.5, 0
+    #
+    # see also smilei that has (I think) opposite staggering
+
+    #ex000
+    #ex100
+    #ex010
+    #ex001
+
+    #ex110
+    #ex101
+    #ex011
+    #ex111
+
+    #c00 = c000(1-dx) + c100 dx
+    #c01 = c001(1-dx) + c101 dx
+    #c10 = c010(1-dx) + c110 dx
+    #c11 = c011(1-dx) + c111 dx
+
+    #c0 = c00(1-dy) + c10 dy
+    #c1 = c01(1-dy) + c11 dy
+
+    #c = c0 (1-dz) + c1 dz
+
+
+
+
+
 
 #------------------------------------------------
 if False:
