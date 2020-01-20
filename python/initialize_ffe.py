@@ -47,7 +47,7 @@ def initialize_virtuals(n, conf):
         c = pyffe.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         n.add_tile(c, (i,j)) 
 
-        c_orig.communication.local = False;
+        #c_orig.communication.local = False;
         c.load_metainfo(c_orig.communication)
         initialize_tile(c, i,j,n, conf)
 

@@ -63,6 +63,28 @@ def insert_em(grid, conf):
                     yee.bz[l,m,n] = conf.binit   
 
 # Field initialization   
+def insert_guide_field(grid, conf):
+    binit = conf.binit #initial B_0
+
+    kk = 0
+    for jj in range(grid.get_Ny()):
+        for ii in range(grid.get_Nx()):
+            if grid.get_mpi_grid(ii,jj) == grid.rank():
+                c = grid.get_tile(ii,jj)
+                yee = c.get_yee(0)
+
+                for n in range(conf.NzMesh):
+                    for m in range(conf.NyMesh):
+                        for l in range(conf.NxMesh):
+
+                            # get global coordinates
+                            iglob, jglob, kglob = globalIndx( (ii,jj), (l,m,n), conf)
+
+                            yee.bz[l,m,n] = binit
+
+
+
+# Field initialization   
 def insert_em_harris_sheet(grid, conf):
 
     delta       = conf.sheet_thickness/(2.0*pi) #sheet thickness incl. 2pi 
@@ -309,7 +331,8 @@ if __name__ == "__main__":
         lap = 0
         np.random.seed(1)
         #insert_em(grid, conf)
-        insert_em_harris_sheet(grid, conf)
+        #insert_em_harris_sheet(grid, conf)
+        insert_guide_field(grid, conf)
 
     #static load balancing setup; communicate neighbor info once
     grid.analyze_boundaries()
@@ -368,7 +391,10 @@ if __name__ == "__main__":
     if do_initialization:
 
         # direct B_{x,y} perturbation
-        if False:
+        if True:
+            conf.min_mode = 1
+            conf.max_mode = 4
+            conf.drive_ampl = 1.
             antenna = Antenna(conf.min_mode, conf.max_mode, conf)
             for tile in tiles_local(grid): 
                 antenna.add_driving(tile)

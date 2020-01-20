@@ -8,52 +8,80 @@ void ffe::DriftCurrent<2>::interpolate_b(
     fields::YeeLattice& yee
     )
 {
-  double dx=0.0, dy=0.0, dz=0.0;
   double f,g;
-
-  //int iz = 1;
-  int iz = 0; // for D<=2; flip switch for making array queries 2D
 
   int k = 0;
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
 
-    // XXX: lengths; debug in python to verify and streamline interpolation
-    dx=+0.5;
-    dy=-0.5;
-    //dz=-0.5;
-    f = yee.bx(i,j-1,k)  +yee.bx(i,j-1,k-iz )   +dz*(yee.bx(i,j-1,k+iz)   - yee.bx(i,j-1,k-iz));
-    f = yee.bx(i,j,k)    +yee.bx(i,j,k-iz)      +dz*(yee.bx(i,j,k+iz)     - yee.bx(i,j,k-iz))+f + 
-     dy*(yee.bx(i,j+1,k) +yee.bx(i,j+1,k-iz)    +dz*(yee.bx(i,j+1,k+iz)   - yee.bx(i,j+1,k-iz))-f);
-    g = yee.bx(i+1,j-1,k)+yee.bx(i+1,j-1,k-iz)  +dz*(yee.bx(i+1,j-1,k+iz) - yee.bx(i+1,j-1,k-iz));
-    g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)    +dz*(yee.bx(i+1,j,k+iz)   - yee.bx(i+1,j,k-iz))
-                                         +g     +dy*(yee.bx(i+1,j+1,k)    + yee.bx(i+1,j+1,k-iz)
-                                                +dz*(yee.bx(i+1,j+1,k+iz) - yee.bx(i+1,j+1,k-iz))-g);
-    bxf(i,j,k)=(f+dx*(g-f))*(.25);
+    bxf(i,j,k)=0.25*(
+      yee.bx(i,   j,   k) + 
+      yee.bx(i,   j-1, k) +
+      yee.bx(i+1, j,   k) +
+      yee.bx(i+1, j-1, k) 
+      );
 
-    dx=-0.5;
-    dy=+0.5;
-    //dz=-0.5;
-    f = yee.by(i,j,k-iz)+yee.by(i-1,j,k-iz)     +dx*(yee.by(i+1,j,k-iz)   - yee.by(i-1,j,k-iz));
-    f = yee.by(i,j,k)+yee.by(i-1,j,k)           +dx*(yee.by(i+1,j,k)      - yee.by(i-1,j,k))+f+dz 
-      *(yee.by(i,j,k+iz)+yee.by(i-1,j,k+iz)     +dx*(yee.by(i+1,j,k+iz)   - yee.by(i-1,j,k+iz))-f);
-    g = yee.by(i,j+1,k-iz)+yee.by(i-1,j+1,k-iz) +dx*(yee.by(i+1,j+1,k-iz) - yee.by(i-1,j+1,k-iz));
-    g = yee.by(i,j+1,k)+yee.by(i-1,j+1,k)       +dx*(yee.by(i+1,j+1,k)    - yee.by(i-1,j+1,k))
-                                             +g +dz*(yee.by(i,j+1,k+iz)   + yee.by(i-1,j+1,k+iz)
-                                                +dx*(yee.by(i+1,j+1,k+iz) - yee.by(i-1,j+1,k+iz))-g);
-    byf(i,j,k)=(f+dy*(g-f))*(.25);
+    byf(i,j,k) = 0.25*(
+        yee.by(i,   j,   k) + 
+        yee.by(i,   j+1, k) + 
+        yee.by(i-1, j,   k) + 
+        yee.by(i-1, j+1, k)
+        );
 
-    dx=-0.5;
-    dy=-0.5;
-    //dz=+0.5;
-    f = yee.bz(i-1,j,k)+yee.bz(i-1,j-1,k )      +dy*(yee.bz(i-1,j+1,k)    - yee.bz(i-1,j-1,k));
-    f = yee.bz(i,j,k)+yee.bz(i,j-1,k)           +dy*(yee.bz(i,j+1,k)      - yee.bz(i,j-1,k))+f+dx 
-      * (yee.bz(i+1,j,k)+yee.bz(i+1,j-1,k)      +dy*(yee.bz(i+1,j+1,k)    - yee.bz(i+1,j-1,k))-f);
-    g = yee.bz(i-1,j, k+iz)+yee.bz(i-1,j-1,k+iz)+dy*(yee.bz(i-1,j+1,k+iz) - yee.bz(i-1,j-1,k+iz));
-    g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )    +dy*(yee.bz(i,j+1,k+iz)   - yee.bz(i,j-1,k+iz))
-                                             +g +dx*(yee.bz(i+1,j,k+iz)   + yee.bz(i+1,j-1,k+iz)
-                                                +dy*(yee.bz(i+1,j+1,k+iz) - yee.bz(i+1,j-1,k+iz))-g);
-    bzf(i,j,k)=(f+dz*(g-f))*(.25);
+    bzf(i,j,k) = 0.25*(
+        yee.bz(i,   j,   k) + 
+        yee.bz(i,   j-1, k) + 
+        yee.bz(i-1, j,   k) + 
+        yee.bz(i-1, j-1, k)
+        );
+  }
+}
+
+
+template<>
+void ffe::DriftCurrent<3>::interpolate_b(
+    fields::YeeLattice& yee
+    )
+{
+  double f,g;
+
+  for(int k=0; k<static_cast<int>(yee.Nz); k++) 
+  for(int j=0; j<static_cast<int>(yee.Ny); j++) 
+  for(int i=0; i<static_cast<int>(yee.Nx); i++) {
+
+  bxf(i,j,k) = 0.125*(
+    yee.bx(i,   j,   k  ) + 
+    yee.bx(i,   j,   k-1) + 
+    yee.bx(i,   j-1, k  ) + 
+    yee.bx(i,   j-1, k-1) + 
+    yee.bx(i+1, j,   k  ) + 
+    yee.bx(i+1, j,   k-1) + 
+    yee.bx(i+1, j-1, k  ) + 
+    yee.bx(i+1, j-1, k-1)
+  );
+
+  byf(i,j,k) = 0.125*(
+    yee.by(i,   j,   k)   + 
+    yee.by(i,   j,   k-1) + 
+    yee.by(i,   j+1, k)   + 
+    yee.by(i,   j+1, k-1) + 
+    yee.by(i-1, j,   k)   + 
+    yee.by(i-1, j,   k-1) + 
+    yee.by(i-1, j+1, k)   + 
+    yee.by(i-1, j+1, k-1)
+  );
+
+  bzf(i,j,k) = 0.125*(
+    yee.bz(i,   j,   k)   + 
+    yee.bz(i,   j,   k+1) + 
+    yee.bz(i,   j-1, k)   + 
+    yee.bz(i,   j-1, k+1) + 
+    yee.bz(i-1, j,   k)   + 
+    yee.bz(i-1, j,   k+1) + 
+    yee.bz(i-1, j-1, k)   + 
+    yee.bz(i-1, j-1, k+1)
+  );
+
   }
 }
 
