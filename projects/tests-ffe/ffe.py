@@ -349,27 +349,25 @@ if __name__ == "__main__":
 
     # visualize initial condition
     if do_plots:
+        plconf = dict(curval = 0.05, elval=0.2, bfval = 0.4)
         try:
             #plotNode( axs[0], grid, conf)
             yee = getYee2D(grid, conf)
-            curval = 0.1
-            plot2dYee(axs[0],  yee, grid, conf, 'jx1', vmin=-curval, vmax=curval)
-            plot2dYee(axs[1],  yee, grid, conf, 'jy1', vmin=-curval, vmax=curval)
-            plot2dYee(axs[2],  yee, grid, conf, 'jz1', vmin=-curval, vmax=curval)
+            plot2dYee(axs[0],  yee, grid, conf, 'jx1', vmin=-plconf['curval'], vmax=plconf['curval'])
+            plot2dYee(axs[1],  yee, grid, conf, 'jy1', vmin=-plconf['curval'], vmax=plconf['curval'])
+            plot2dYee(axs[2],  yee, grid, conf, 'jz1', vmin=-plconf['curval'], vmax=plconf['curval'])
 
-            plot2dYee(axs[3],  yee, grid, conf, 'jx' , vmin=-curval, vmax=curval)
-            plot2dYee(axs[4],  yee, grid, conf, 'jy' , vmin=-curval, vmax=curval)
-            plot2dYee(axs[5],  yee, grid, conf, 'jz' , vmin=-curval, vmax=curval)
+            plot2dYee(axs[3],  yee, grid, conf, 'jx' , vmin=-plconf['curval'], vmax=plconf['curval'])
+            plot2dYee(axs[4],  yee, grid, conf, 'jy' , vmin=-plconf['curval'], vmax=plconf['curval'])
+            plot2dYee(axs[5],  yee, grid, conf, 'jz' , vmin=-plconf['curval'], vmax=plconf['curval'])
 
-            elval = 0.5
-            plot2dYee(axs[6],  yee, grid, conf, 'ex' , vmin=-elval, vmax=elval)
-            plot2dYee(axs[7],  yee, grid, conf, 'ey' , vmin=-elval, vmax=elval)
-            plot2dYee(axs[8],  yee, grid, conf, 'ez' , vmin=-elval, vmax=elval)
+            plot2dYee(axs[6],  yee, grid, conf, 'ex' , vmin=-plconf['elval'], vmax=plconf['elval'])
+            plot2dYee(axs[7],  yee, grid, conf, 'ey' , vmin=-plconf['elval'], vmax=plconf['elval'])
+            plot2dYee(axs[8],  yee, grid, conf, 'ez' , vmin=-plconf['elval'], vmax=plconf['elval'])
 
-            bfval = 0.5
-            plot2dYee(axs[9],  yee, grid, conf, 'bx' , vmin=-bfval, vmax=bfval)
-            plot2dYee(axs[10], yee, grid, conf, 'by' , vmin=-bfval, vmax=bfval)
-            plot2dYee(axs[11], yee, grid, conf, 'bz' , vmin=-bfval, vmax=bfval)
+            plot2dYee(axs[9],  yee, grid, conf, 'bx' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
+            plot2dYee(axs[10], yee, grid, conf, 'by' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
+            plot2dYee(axs[11], yee, grid, conf, 'bz' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
             saveVisz(lap, grid, conf)
             saveVisz(-1, grid, conf)
         except:
@@ -455,6 +453,10 @@ if __name__ == "__main__":
 
             ################################################## 
             # compute drift current
+
+            #empty current arrays
+            for tile in tiles_all(grid): 
+                tile.clear_current()
 
             #update boundaries
             t1 = timer.start_comp("upd_bc0")
@@ -599,24 +601,21 @@ if __name__ == "__main__":
                     #plotNode(axs[0], grid, conf)
 
                     yee = getYee2D(grid, conf)
-                    curval = 0.1
-                    plot2dYee(axs[0],  yee, grid, conf, 'jx1', vmin=-curval, vmax=curval)
-                    plot2dYee(axs[1],  yee, grid, conf, 'jy1', vmin=-curval, vmax=curval)
-                    plot2dYee(axs[2],  yee, grid, conf, 'jz1', vmin=-curval, vmax=curval)
+                    plot2dYee(axs[0],  yee, grid, conf, 'jx1', vmin=-plconf['curval'], vmax=plconf['curval'])
+                    plot2dYee(axs[1],  yee, grid, conf, 'jy1', vmin=-plconf['curval'], vmax=plconf['curval'])
+                    plot2dYee(axs[2],  yee, grid, conf, 'jz1', vmin=-plconf['curval'], vmax=plconf['curval'])
 
-                    plot2dYee(axs[3],  yee, grid, conf, 'jx' , vmin=-curval, vmax=curval)
-                    plot2dYee(axs[4],  yee, grid, conf, 'jy' , vmin=-curval, vmax=curval)
-                    plot2dYee(axs[5],  yee, grid, conf, 'jz' , vmin=-curval, vmax=curval)
+                    plot2dYee(axs[3],  yee, grid, conf, 'jx' , vmin=-plconf['curval'], vmax=plconf['curval'])
+                    plot2dYee(axs[4],  yee, grid, conf, 'jy' , vmin=-plconf['curval'], vmax=plconf['curval'])
+                    plot2dYee(axs[5],  yee, grid, conf, 'jz' , vmin=-plconf['curval'], vmax=plconf['curval'])
 
-                    elval = 0.5
-                    plot2dYee(axs[6],  yee, grid, conf, 'ex' , vmin=-elval, vmax=elval)
-                    plot2dYee(axs[7],  yee, grid, conf, 'ey' , vmin=-elval, vmax=elval)
-                    plot2dYee(axs[8],  yee, grid, conf, 'ez' , vmin=-elval, vmax=elval)
+                    plot2dYee(axs[6],  yee, grid, conf, 'ex' , vmin=-plconf['elval'], vmax=plconf['elval'])
+                    plot2dYee(axs[7],  yee, grid, conf, 'ey' , vmin=-plconf['elval'], vmax=plconf['elval'])
+                    plot2dYee(axs[8],  yee, grid, conf, 'ez' , vmin=-plconf['elval'], vmax=plconf['elval'])
 
-                    bfval = 0.5
-                    plot2dYee(axs[9],  yee, grid, conf, 'bx' , vmin=-bfval, vmax=bfval)
-                    plot2dYee(axs[10], yee, grid, conf, 'by' , vmin=-bfval, vmax=bfval)
-                    plot2dYee(axs[11], yee, grid, conf, 'bz' , vmin=-bfval, vmax=bfval)
+                    plot2dYee(axs[9],  yee, grid, conf, 'bx' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
+                    plot2dYee(axs[10], yee, grid, conf, 'by' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
+                    plot2dYee(axs[11], yee, grid, conf, 'bz' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
                     saveVisz(lap, grid, conf)
 
             #except:
