@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
             
     #PIC loop
-    if True:
+    if False:
 
         #--------------------------------------------------
         for lap in range(0,1):
@@ -371,23 +371,101 @@ if __name__ == "__main__":
 
     #FFE loop
     else:
+        variables = \
+        {
+                'J' :{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
+                'J1':{'in':+0.0, 'in_bc':+0.0, 'out_bc':+0.0, 'vir':+0.0, 'ext':+0.0},
+                'B' :{'in':-0.5, 'in_bc':-0.5, 'out_bc':-0.5, 'vir':-0.5, 'ext':-0.5},
+                'E' :{'in':-0.0, 'in_bc':-0.0, 'out_bc':-0.0, 'vir':-0.0, 'ext':-0.0},
+        }
 
         #--------------------------------------------------
         for lap in range(0,1):
 
-            #update half b
+            #push b
             step1 = [
-                    {'name':'mpi_b1','var':['B', ]    , 'regime':'mpi',  'dt':0,   'copy':True  , },
-                    {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
-                    {'name':'f_bc'  ,'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
-                    {'name':'f_bc'  ,'var':['B','E']  , 'regime':'local',   'dt':0.0, 'copy':False , },
-                    {'name':'push_b','var':['B',]     , 'regime':'local','dt':0.5, 'copy':False , },
-                    {'name':'mpi_b2','var':['B',]     , 'regime':'mpi',  'dt':0,   'copy':True  , },
-                    {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    #{'name':'f_bc'  ,'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    #{'name':'f_bc'  ,'var':['B','E']  , 'regime':'local','dt':0.0, 'copy':False , },
+                    {'name':'push_b','var':['B',]     , 'regime':'all','dt':0.5, 'copy':False , },
             ]
             for algo in step1:
                 apply_routine(algo)
             ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+
+            #drift perp current
+            step3 = [
+                    #{'name':'mpi_b2','var':['B',]        , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',]    , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    {'name':'f_bc'  ,   'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    #{'name':'f_bc'  ,   'var':['B','E']  , 'regime':'local','dt':0.0, 'copy':False , },
+                    {'name':'drift_cur','var':['J',]     , 'regime':'all','dt':0.1, 'copy':False , },
+                    {'name':'deposit_j','var':['E',]     , 'regime':'all','dt':0.1, 'copy':False , },
+            ]
+            for algo in step3:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+            shift_variable('J', -0.1)
+
+            # parallel current
+            step4 = [
+                    {'name':'upd_bc','var':['E','B',]    , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    {'name':'f_bc'  ,   'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    #{'name':'f_bc'  ,   'var':['B','E']  , 'regime':'local','dt':0.0, 'copy':False , },
+                    {'name':'para_cur', 'var':['J1',]    , 'regime':'all','dt':0.1, 'copy':False , },
+                    {'name':'deposit_j','var':['E',]     , 'regime':'all','dt':0.1, 'copy':False , },
+            ]
+            for algo in step4:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+            shift_variable('J1', -0.1)
+
+            #limiter
+            step4 = [
+                    {'name':'upd_bc','var':['E','B',]    , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    {'name':'f_bc'  ,   'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    #{'name':'f_bc'  ,   'var':['B','E']  , 'regime':'local','dt':0.0, 'copy':False , },
+                    {'name':'limiter',  'var':['E']  , 'regime':'local','dt':0.1, 'copy':False , },
+            ]
+            for algo in step4:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+
+            shift_variable('E', -0.3)
+
+
+            #push b
+            step1 = [
+                    {'name':'mpi_e1','var':['E',]        , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',]    , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    #{'name':'f_bc'  ,'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    #{'name':'f_bc'  ,'var':['B','E']  , 'regime':'local','dt':0.0, 'copy':False , },
+                    {'name':'push_b','var':['B',]     , 'regime':'local',   'dt':0.5, 'copy':False , },
+            ]
+            for algo in step1:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+
+            #push e
+            step2 = [
+                    {'name':'mpi_b1','var':['B',]        , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',]    , 'regime':'bc',   'dt':0,   'copy':True , } ,
+                    #{'name':'f_bc'  ,'var':['B','E']  , 'regime':'bc',   'dt':0.0, 'copy':False , },
+                    #{'name':'f_bc'  ,'var':['B',]     , 'regime':'local','dt':0.0, 'copy':False , },
+                    {'name':'push_e','var':['E',]     , 'regime':'all','dt':1.0, 'copy':False , },
+                    #{'name':'mpi_e1','var':['E', ]    , 'regime':'mpi',  'dt':0,   'copy':True  , },
+                    {'name':'upd_bc','var':['E','B',] , 'regime':'bc',   'dt':0,   'copy':True , } ,
+            ]
+            for algo in step2:
+                apply_routine(algo)
+            ax.axhline(ycur-ydt/2, linestyle='dashed', alpha=0.6)
+
+            ax.axhline(ycur-ydt/2, linestyle='solid', alpha=0.8)
+
+
+            #step drift current one time step (artificial since they are computed in place)
+            shift_variable('J',  1.0)
+            shift_variable('J1', 1.0)
+
 
     ax.set_ylim((ymin, ycur))
 
