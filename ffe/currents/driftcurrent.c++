@@ -1,7 +1,10 @@
 #include "driftcurrent.h"
 #include "../../em-fields/tile.h"
+#include "../../tools/signum.h"
 
 #include <cmath>
+
+
 
 template<>
 void ffe::DriftCurrent<2>::interpolate_b(
@@ -220,29 +223,27 @@ void ffe::DriftCurrent<2>::limiter(
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
-    //ex = mesh.ex(i,j,k);
-    //ex = mesh.ey(i,j,k);
-    //ex = mesh.ez(i,j,k);
+    // parallel magnetic field suppression
+    if( abs(mesh.ex(i,j,k) ) > abs(bxf(i,j,k))) mesh.ex(i,j,k) = toolbox::sign(mesh.ex(i,j,k))*bxf(i,j,k);
+    if( abs(mesh.ey(i,j,k) ) > abs(byf(i,j,k))) mesh.ey(i,j,k) = toolbox::sign(mesh.ey(i,j,k))*byf(i,j,k);
+    if( abs(mesh.ez(i,j,k) ) > abs(bzf(i,j,k))) mesh.ez(i,j,k) = toolbox::sign(mesh.ez(i,j,k))*bzf(i,j,k);
 
-    //if(abs(ex) > abs(bxf(i,j,k))) mesh.ex(i,j,k) = sign(ex)*bfx(i,j,k);
-    //if(abs(ey) > abs(byf(i,j,k))) mesh.ey(i,j,k) = sign(ey)*bfy(i,j,k);
-    //if(abs(ez) > abs(bzf(i,j,k))) mesh.ez(i,j,k) = sign(ez)*bfz(i,j,k);
 
     // E^2
-    e2 = mesh.ex(i,j,k)*mesh.ex(i,j,k) 
-       + mesh.ey(i,j,k)*mesh.ey(i,j,k) 
-       + mesh.ez(i,j,k)*mesh.ez(i,j,k);
+    //e2 = mesh.ex(i,j,k)*mesh.ex(i,j,k) 
+    //   + mesh.ey(i,j,k)*mesh.ey(i,j,k) 
+    //   + mesh.ez(i,j,k)*mesh.ez(i,j,k);
 
-    // B^2
-    b2 = bxf(i,j,k)*bxf(i,j,k) 
-       + byf(i,j,k)*byf(i,j,k) 
-       + bzf(i,j,k)*bzf(i,j,k);
+    //// B^2
+    //b2 = bxf(i,j,k)*bxf(i,j,k) 
+    //   + byf(i,j,k)*byf(i,j,k) 
+    //   + bzf(i,j,k)*bzf(i,j,k);
 
-    if(e2 > b2) {
-      mesh.ex(i,j,k) *= sqrt(b2/e2);
-      mesh.ey(i,j,k) *= sqrt(b2/e2);
-      mesh.ez(i,j,k) *= sqrt(b2/e2);
-    }
+    //if(e2 > b2) {
+    //  mesh.ex(i,j,k) *= sqrt(b2/e2);
+    //  mesh.ey(i,j,k) *= sqrt(b2/e2);
+    //  mesh.ez(i,j,k) *= sqrt(b2/e2);
+    //}
 
 
   }
