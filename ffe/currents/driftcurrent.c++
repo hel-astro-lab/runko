@@ -11,8 +11,6 @@ void ffe::DriftCurrent<2>::interpolate_b(
     fields::YeeLattice& yee
     )
 {
-  double f,g;
-
   int k = 0;
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
@@ -46,8 +44,6 @@ void ffe::DriftCurrent<3>::interpolate_b(
     fields::YeeLattice& yee
     )
 {
-  double f,g;
-
   for(int k=0; k<static_cast<int>(yee.Nz); k++) 
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
@@ -98,8 +94,6 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
 
-
-  //Realf C = 1.0 * tile.cfl;
   double dt = tile.cfl; 
 
   double dive;
@@ -138,22 +132,6 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
     mesh.ex(i,j,k) -= mesh.jx(i,j,k)*dt;
     mesh.ey(i,j,k) -= mesh.jy(i,j,k)*dt;
     mesh.ez(i,j,k) -= mesh.jz(i,j,k)*dt;
-
-
-    /*
-    std::cout << " dive  " << dive 
-              << " crosx " << crossx
-              << " crosy " << crossy
-              << " crosz " << crossz
-              << " b2 " << b2
-              << " bxf " << bxf(i,j,k)
-              << " byf " << byf(i,j,k)
-              << " bzf " << bzf(i,j,k)
-              << " jx  " << mesh.jx(i,j,k)
-              << " jy  " << mesh.jy(i,j,k)
-              << " jz  " << mesh.jz(i,j,k)
-              << "\n";
-    */
 
   }
 }
@@ -272,23 +250,6 @@ void ffe::DriftCurrent<2>::limiter(
     mesh.jx1(i,j,k) = jxd/dt;
     mesh.jy1(i,j,k) = jyd/dt;
     mesh.jz1(i,j,k) = jzd/dt;
-
-    // E^2
-    //e2 = mesh.ex(i,j,k)*mesh.ex(i,j,k) 
-    //   + mesh.ey(i,j,k)*mesh.ey(i,j,k) 
-    //   + mesh.ez(i,j,k)*mesh.ez(i,j,k);
-
-    //// B^2
-    //b2 = bxf(i,j,k)*bxf(i,j,k) 
-    //   + byf(i,j,k)*byf(i,j,k) 
-    //   + bzf(i,j,k)*bzf(i,j,k);
-
-    //if(e2 > b2) {
-    //  mesh.ex(i,j,k) *= sqrt(b2/e2);
-    //  mesh.ey(i,j,k) *= sqrt(b2/e2);
-    //  mesh.ez(i,j,k) *= sqrt(b2/e2);
-    //}
-
 
   }
 }
