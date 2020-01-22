@@ -3,14 +3,12 @@
 #include <vector>
 #include <array>
 
-#include "../corgi/tile.h"
-#include "../corgi/corgi.h"
-#include "../em-fields/tile.h"
 #include "../tools/mesh.h"
-#include "../tools/snapshots.h"
+#include "skinny_yee.h"
 
 
 namespace ffe {
+
 
 
 /*! \brief Force-Free electrodynamics methods
@@ -34,52 +32,33 @@ class Tile :
   // physical parameters
   using fields::Tile<D>::cfl;
   using fields::Tile<D>::dx;
-  //using fields::Tile<D>::yee;
 
-  // explicitly import EM methods
-  //using fields::Tile<D>::push_e;
-  //using fields::Tile<D>::push_half_b;
+  // main working storage grid
+  using fields::Tile<D>::yee;
 
-  toolbox::IntegratorSnapshots<
-    fields::YeeLattice> yee_snapshots;
+  // RK temporary sub-stage storages
+  SkinnyYeeLattice step0;
+  SkinnyYeeLattice step1;
+  SkinnyYeeLattice step2;
+  SkinnyYeeLattice step3;
 
   fields::YeeLattice& get_yee(size_t i=0) override;
-
-  void add_yee_lattice() override;
-
-
-  //ExtraLattice tmp;
 
   /// constructor
   Tile(size_t nx, size_t ny, size_t nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>(nx,ny,nz)
-  { 
-  
-    // preinitialize arrays for 4-stage RK
-    for(size_t nstages=0; nstages < 4; nstages++)
-      add_yee_lattice();
-
-  }
+    fields::Tile<D>(nx,ny,nz),
+    step0(nx,ny,nz),
+    step1(nx,ny,nz),
+    step2(nx,ny,nz),
+    step3(nx,ny,nz)
+  { }
 
 
   /// destructor
   ~Tile() override = default;
 
-  /// Compute perpendicular component of the force-free current.
-  void compute_perp_current();
-
-  /// subtract parallel E field component to enforce E.B=0
-  void subtract_parallel_e();
-
-
 };
 
 
-
 } // end of namespace ffe
-
-
-
-
-

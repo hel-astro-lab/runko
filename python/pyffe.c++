@@ -6,6 +6,7 @@ namespace py = pybind11;
 
 #include "../ffe/currents/current.h"
 #include "../ffe/currents/driftcurrent.h"
+#include "../ffe/skinny_yee.h"
 
 
 namespace ffe {
@@ -25,8 +26,18 @@ auto declare_tile(
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",        &ffe::Tile<D>::dx)
     .def_readwrite("cfl",       &ffe::Tile<D>::cfl)
-    .def("compute_perp_current",    &ffe::Tile<D>::compute_perp_current)
-    .def("subtract_parallel_e",     &ffe::Tile<D>::subtract_parallel_e);
+    .def("get_step", [](ffe::Tile<D>& s, int n) {
+        if     (n == 0) return s.step0; 
+        else if(n == 1) return s.step1; 
+        else if(n == 2) return s.step2; 
+        else if(n == 3) return s.step3; 
+
+        // else
+        throw py::index_error();
+        },
+          py::return_value_policy::reference
+    );
+
 }
 
 //--------------------------------------------------
@@ -106,6 +117,29 @@ class PyDriftCurrent : public DriftCurrent<D>
 // python bindings for plasma classes & functions
 void bind_ffe(py::module& m_sub)
 {
+
+  // skinny version of the Yee lattice with only (e and b meshes)
+  py::class_<ffe::SkinnyYeeLattice>(m_sub, "SkinnyYeeLattice")
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("ex",   &ffe::SkinnyYeeLattice::ex)
+    .def_readwrite("ey",   &ffe::SkinnyYeeLattice::ey)
+    .def_readwrite("ez",   &ffe::SkinnyYeeLattice::ez)
+    .def_readwrite("bx",   &ffe::SkinnyYeeLattice::bx)
+    .def_readwrite("by",   &ffe::SkinnyYeeLattice::by)
+    .def_readwrite("bz",   &ffe::SkinnyYeeLattice::bz);
+
+  /*
+    .def(py::self +  py::self)
+    .def(py::self += py::self)
+    .def(py::self -  py::self)
+    .def(py::self -= py::self);
+    .def(py::self *  py::self)
+    .def(py::self *= py::self)
+    .def(py::self /  py::self)
+    .def(py::self /= py::self);
+  */
+
+
   //--------------------------------------------------
   // 1D bindings
   //py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
@@ -134,6 +168,7 @@ void bind_ffe(py::module& m_sub)
   // Drift current solver
   py::class_<ffe::DriftCurrent<2>, ffe::Current<2>, PyDriftCurrent<2> >(m_2d, "DriftCurrent")
     .def(py::init<int,int,int>());
+
 
 
 
