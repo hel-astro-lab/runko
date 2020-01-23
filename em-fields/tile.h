@@ -9,10 +9,8 @@
 #include "../tools/rotator.h"
 #include "../definitions.h"
 
-
 namespace fields {
   namespace mpi = mpi4cpp::mpi;
-
 
 /// Yee lattice of plasma quantities
 class YeeLattice {
@@ -74,6 +72,11 @@ class YeeLattice {
     { }
 
   virtual ~YeeLattice() = default;
+
+
+  // copy from skinny to fat Yee lattice storage;
+  // this scares jx,jy,jz, jx1,jy1,jz1,rho arrays away
+  //SkinnyYeeLattice& set_step(const SkinnyYeeLattice& skyee);
 };
 
 
@@ -257,7 +260,6 @@ class Tile :
   virtual std::vector<mpi::request> 
   recv_data( mpi::communicator&, int dest, int mode, int tag) override;
 };
-
 
 
 } // end of namespace fields

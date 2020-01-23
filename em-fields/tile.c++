@@ -569,7 +569,6 @@ std::vector<mpi::request> Tile<D>::recv_data(
 
 
 
-
 //--------------------------------------------------
 // explicit template instantiation
 

@@ -5,6 +5,7 @@ import numpy as np
 import sys, os
 import h5py
 
+from pyrunko.ffe import set_step
 import pyrunko.ffe.twoD as pyffe
 import pycorgi.twoD as corgi
 import pyrunko.vlv.twoD as pyvlv
@@ -433,14 +434,37 @@ if __name__ == "__main__":
         # vy[i] = y = y + (k1 + k2 + k2 + k3 + k3 + k4) / 6
 
         #Coefficients correspond to (dt, dy, y_i)
-        for (dti, dyi, yi) in [
-                (0.0, 0.0, 0),
-                (0.5, 0.5, 1),
-                (0.5, 0.5, 2),
-                (1.0, 1.0, 3)]:
+        #for (dti, dyi, yi) in [
+        #        (0.0, 0.0, 0),
+        #        (0.5, 0.5, 1),
+        #        (0.5, 0.5, 2),
+        #        (1.0, 1.0, 3)]:
 
-            #dt = 0.0 + dti
-            #y = y0 + dyi*ys[yi]
+        # Euler stepping
+        for (rk_alpha, rk_beta, rk_i) in [ (1.0, 0.0, 0), ]:
+
+
+            ################################################## 
+            # Initialize Runge-Kutta variables
+            t1 = timer.start_comp("RK_init")
+
+            dt = 0.0 + rk_alpha
+            for tile in tiles_local(grid): 
+                yee  = tile.get_yee(0)    #get current working storage
+                
+                if rk_i == 0:
+                    #store y_n step to Y_0 at the beginning of the lap
+                    yee_0 = tile.get_step(rk_i) #get reference to rk_i:th RK sub-step storage
+                    yee_0.set_yee(yee)
+                else:
+                    # set initial starting point according to RK scheme
+                    #
+                    # RK formula applied is y = y0 + rk_beta*ys[rk_i]
+                    yee_m1 = tile.get_step(rk_i-1) 
+                    set_step(yee, yee_0 + rk_beta*yee_m1)
+
+
+            timer.stop_comp(t1)
 
 
             ################################################## 
@@ -554,6 +578,42 @@ if __name__ == "__main__":
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
+
+            #FIXME: check that it is not a copy
+            #for tile in tiles_local(grid): 
+            #    ystep = tile.get_step(rk_i) #get reference to rk_i:th RK sub-step storage
+            #    yee = tile.get_yee(0)
+            #    for j in range(conf.NyMesh):
+            #        for i in range(conf.NxMesh):
+            #            if yee.ex[i,j,0] == ystep.ex[i,j,0]:
+            #                print("warning at {},{}: n+1 {} vs n {}".format(i,j,yee.ex[i,j,0], ystep.ex[i,j,0]))
+
+            # save current RK substep 
+            for tile in tiles_local(grid): 
+                yee_i = tile.get_step(rk_i) #get reference to rk_i:th RK sub-step storage
+                yee_i.set_yee(yee)
+
+
+        # RK reduction step
+        t1 = timer.start_comp("RK_sum")
+        for tile in tiles_local(grid): 
+            ynp1 = tile.get_yee() #get reference to working storage
+
+            #get reference to rk_i:th RK sub-step storage
+            y0 = tile.get_step(0) 
+            y1 = tile.get_step(1) 
+            y2 = tile.get_step(2)
+            y3 = tile.get_step(3)
+
+            #RK4 summation
+            y0 *= 1.0/6.0
+            y1 *= 2.0/6.0
+            y2 *= 2.0/6.0
+            y2 *= 1.0/6.0
+
+            set_step(ynp1, (y0 + y1 + y2 + y3) )
+
+        timer.stop_comp(t1)
 
 
         ##################################################

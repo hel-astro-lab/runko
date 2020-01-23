@@ -1,5 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/operators.h>
+
 namespace py = pybind11;
 
 #include "../ffe/tile.h"
@@ -26,11 +28,10 @@ auto declare_tile(
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("dx",        &ffe::Tile<D>::dx)
     .def_readwrite("cfl",       &ffe::Tile<D>::cfl)
-    .def("get_step", [](ffe::Tile<D>& s, int n) {
-        if     (n == 0) return s.step0; 
-        else if(n == 1) return s.step1; 
-        else if(n == 2) return s.step2; 
-        else if(n == 3) return s.step3; 
+    .def("get_step", [](ffe::Tile<D>& s, int n)
+        -> SkinnyYeeLattice& 
+        {
+        if(n < 4) return s.get_step(n);
 
         // else
         throw py::index_error();
@@ -126,18 +127,31 @@ void bind_ffe(py::module& m_sub)
     .def_readwrite("ez",   &ffe::SkinnyYeeLattice::ez)
     .def_readwrite("bx",   &ffe::SkinnyYeeLattice::bx)
     .def_readwrite("by",   &ffe::SkinnyYeeLattice::by)
-    .def_readwrite("bz",   &ffe::SkinnyYeeLattice::bz);
-
-  /*
-    .def(py::self +  py::self)
+    .def_readwrite("bz",   &ffe::SkinnyYeeLattice::bz)
+    .def("set_yee",        &ffe::SkinnyYeeLattice::set_yee)
     .def(py::self += py::self)
+    .def(py::self -= py::self)
+    .def(py::self *= float())
+    .def(py::self /= float())
+    .def(py::self +  py::self)
     .def(py::self -  py::self)
-    .def(py::self -= py::self);
-    .def(py::self *  py::self)
-    .def(py::self *= py::self)
-    .def(py::self /  py::self)
-    .def(py::self /= py::self);
-  */
+    .def(py::self *  float())
+    .def(py::self /  float());
+
+
+  m_sub.def("set_step", [](fields::YeeLattice& yee, ffe::SkinnyYeeLattice skyee)
+      -> void 
+      {
+        yee.ex = skyee.ex;
+        yee.ey = skyee.ey;
+        yee.ez = skyee.ez;
+        
+        yee.bx = skyee.bx;
+        yee.by = skyee.by;
+        yee.bz = skyee.bz;
+        return;
+      }
+  );
 
 
   //--------------------------------------------------

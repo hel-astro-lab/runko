@@ -205,6 +205,7 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("jz1",  &fields::YeeLattice::jz1)
     .def_readwrite("rho",  &fields::YeeLattice::rho);
 
+
   //--------------------------------------------------
 
   py::class_<fields::PlasmaMomentLattice>(m_sub, "PlasmaMomentLattice")

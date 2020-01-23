@@ -58,6 +58,8 @@ class Tile :
   /// destructor
   ~Tile() override = default;
 
+  SkinnyYeeLattice& get_step(int n);
+
 };
 
 
