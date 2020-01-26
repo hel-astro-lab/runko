@@ -25,8 +25,7 @@ auto declare_tile(
              fields::Tile<D>,
              std::shared_ptr<ffe::Tile<D>>
              >(m, pyclass_name.c_str())
-    .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("dx",        &ffe::Tile<D>::dx)
+    .def(py::init<int, int, int>())
     .def_readwrite("cfl",       &ffe::Tile<D>::cfl)
     .def("get_step", [](ffe::Tile<D>& s, int n)
         -> SkinnyYeeLattice& 
@@ -121,7 +120,7 @@ void bind_ffe(py::module& m_sub)
 
   // skinny version of the Yee lattice with only (e and b meshes)
   py::class_<ffe::SkinnyYeeLattice>(m_sub, "SkinnyYeeLattice")
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def_readwrite("ex",   &ffe::SkinnyYeeLattice::ex)
     .def_readwrite("ey",   &ffe::SkinnyYeeLattice::ey)
     .def_readwrite("ez",   &ffe::SkinnyYeeLattice::ez)

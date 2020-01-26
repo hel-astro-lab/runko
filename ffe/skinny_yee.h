@@ -22,26 +22,26 @@ class SkinnyYeeLattice {
 
   public:
 
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
+  int Nx;
+  int Ny;
+  int Nz;
 
   /// TODO: can be fiddled to be even cheaper by changing halo H=1
   // then we, however, need to implement H_i = H_j mesh copy operators
 
   /// Electric field 
-  toolbox::Mesh<Realf, 3> ex;
-  toolbox::Mesh<Realf, 3> ey;
-  toolbox::Mesh<Realf, 3> ez;
+  toolbox::Mesh<real_short, 3> ex;
+  toolbox::Mesh<real_short, 3> ey;
+  toolbox::Mesh<real_short, 3> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<Realf, 3> bx;
-  toolbox::Mesh<Realf, 3> by;
-  toolbox::Mesh<Realf, 3> bz;
+  toolbox::Mesh<real_short, 3> bx;
+  toolbox::Mesh<real_short, 3> by;
+  toolbox::Mesh<real_short, 3> bz;
 
 
   // real initializer constructor
-  SkinnyYeeLattice(size_t Nx, size_t Ny, size_t Nz) : 
+  SkinnyYeeLattice(int Nx, int Ny, int Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
 
     ex(Nx, Ny, Nz),
@@ -53,7 +53,7 @@ class SkinnyYeeLattice {
     bz(Nx, Ny, Nz)
     { }
 
-  virtual ~SkinnyYeeLattice() = default;
+  ~SkinnyYeeLattice() = default;
 
 
   // basic arithmetics 
@@ -84,24 +84,24 @@ class SkinnyYeeLattice {
 
   SkinnyYeeLattice& operator *=(double rhs) 
   {
-    ex *= rhs;
-    ey *= rhs;
-    ez *= rhs;
-    bx *= rhs;
-    by *= rhs;
-    bz *= rhs;
+    ex *= static_cast<real_short>(rhs);
+    ey *= static_cast<real_short>(rhs);
+    ez *= static_cast<real_short>(rhs);
+    bx *= static_cast<real_short>(rhs);
+    by *= static_cast<real_short>(rhs);
+    bz *= static_cast<real_short>(rhs);
 
     return *this;
   }
 
   SkinnyYeeLattice& operator /=(double rhs) 
   {
-    ex /= rhs;
-    ey /= rhs;
-    ez /= rhs;
-    bx /= rhs;
-    by /= rhs;
-    bz /= rhs;
+    ex /= static_cast<real_short>(rhs);
+    ey /= static_cast<real_short>(rhs);
+    ez /= static_cast<real_short>(rhs);
+    bx /= static_cast<real_short>(rhs);
+    by /= static_cast<real_short>(rhs);
+    bz /= static_cast<real_short>(rhs);
 
     return *this;
   }

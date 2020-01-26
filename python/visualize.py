@@ -251,7 +251,7 @@ def get_yee(n, conf):
             data['jy'][indx] = yee.jy[s, 0, 0]
             data['jz'][indx] = yee.jz[s, 0, 0]
 
-            data['jx1'][indx] = yee.jx1[s, 0, 0]
+            #data['jx1'][indx] = yee.jx1[s, 0, 0]
 
             data['rho'][indx] = yee.rho[s, 0, 0]
 
@@ -300,9 +300,9 @@ def getYee2D(n, conf):
                 data['jy'][indx, jndx] = yee.jy[q, r, 0]
                 data['jz'][indx, jndx] = yee.jz[q, r, 0]
 
-                data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
-                data['jy1'][indx, jndx] = yee.jy1[q, r, 0]
-                data['jz1'][indx, jndx] = yee.jz1[q, r, 0]
+                #data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
+                #data['jy1'][indx, jndx] = yee.jy1[q, r, 0]
+                #data['jz1'][indx, jndx] = yee.jz1[q, r, 0]
 
                 data['rho'][indx, jndx] = yee.rho[q, r, 0]
 

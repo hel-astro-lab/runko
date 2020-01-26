@@ -8,10 +8,11 @@ namespace ffe {
 
 
 /// Get current integration time snapshot of Yee lattice
+// FIXME: does not need to be overloaded
 template<std::size_t D>
-fields::YeeLattice& Tile<D>::get_yee(size_t /*i*/) 
+fields::YeeLattice& Tile<D>::get_yee(int /*i*/) 
 {
-  return this->yee;
+  return this->yee.at(0);
 }
 
 

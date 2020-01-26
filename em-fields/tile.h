@@ -317,7 +317,7 @@ class Tile :
 
   virtual void cycle_yee();
 
-  virtual void cycle_current();
+  //virtual void cycle_current();
 
   virtual void clear_current();
 

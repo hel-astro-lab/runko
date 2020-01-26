@@ -246,10 +246,10 @@ void ffe::DriftCurrent<2>::limiter(
       jzd = 0.0;
     }
 
-    // store into mesh
-    mesh.jx1(i,j,k) = jxd/dt;
-    mesh.jy1(i,j,k) = jyd/dt;
-    mesh.jz1(i,j,k) = jzd/dt;
+    // store into mesh for inspection
+    //mesh.jx1(i,j,k) = jxd/dt;
+    //mesh.jy1(i,j,k) = jyd/dt;
+    //mesh.jz1(i,j,k) = jzd/dt;
 
   }
 }
