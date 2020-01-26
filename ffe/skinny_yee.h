@@ -134,6 +134,17 @@ inline SkinnyYeeLattice operator -(SkinnyYeeLattice lhs, const SkinnyYeeLattice&
   return lhs;
 }
 
+inline SkinnyYeeLattice operator *(SkinnyYeeLattice lhs, double rhs)
+{
+  lhs *= rhs;
+  return lhs;
+}
+
+inline SkinnyYeeLattice operator /(SkinnyYeeLattice lhs, double rhs)
+{
+  lhs *= rhs;
+  return lhs;
+}
 
 
 }
