@@ -82,7 +82,7 @@ def wrap(ii, N):
 
 class FLD_inits(unittest.TestCase):
 
-    def ttest_propagators_1d(self):
+    def test_propagators_1d(self):
         conf = Conf()
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
@@ -93,7 +93,7 @@ class FLD_inits(unittest.TestCase):
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
         
-    def ttest_propagators_2d(self):
+    def test_propagators_2d(self):
         conf = Conf()
         conf.NzMesh = 1 #force 2D
 
@@ -113,7 +113,7 @@ class Communications(unittest.TestCase):
         update boundaries, check that every tile
         has correct boundaries.
     """
-    def ttest_updateBoundaries(self):
+    def test_updateBoundaries(self):
 
         conf = Conf()
         conf.NyMesh = 1 #force 1D
@@ -224,7 +224,7 @@ class Communications(unittest.TestCase):
                 
 
 
-    def ttest_updateBoundaries2D(self):
+    def test_updateBoundaries2D(self):
 
         conf = Conf()
 
@@ -359,7 +359,7 @@ class Communications(unittest.TestCase):
                 self.assertEqual(ref2[i,j], arr[i,j])
 
     # testing a spesific seg fault with loading of yee lattices. This same test fails with 3D
-    def ttest_2D_tile_memory_bug(self):
+    def test_2D_tile_memory_bug(self):
         conf = Conf()
         conf.Nx = 3
         conf.Ny = 3
@@ -384,7 +384,7 @@ class Communications(unittest.TestCase):
 
         #print("mem bug +++++++")
 
-    def ttest_3D_mesh_memory_bug(self):
+    def test_3D_mesh_memory_bug(self):
         conf = Conf()
         conf.NxMesh = 10
         conf.NyMesh = 10
@@ -404,7 +404,7 @@ class Communications(unittest.TestCase):
     # Captures memory bug with mesh initialization; when internal meshes in YeeLattice
     # are too big, compiler tires to over-optimize. Then some stuff never gets allocated.
     # This is fixed now by a copy-and-swap algorithm in toolbox::Mesh.
-    def ttest_3D_tile_memory_bug(self):
+    def test_3D_tile_memory_bug(self):
 
         conf = Conf()
 
@@ -541,7 +541,7 @@ class Communications(unittest.TestCase):
 
         #print("mem bug +++++++")
 
-    def ttest_tile_indices2D(self):
+    def test_tile_indices2D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -585,7 +585,7 @@ class Communications(unittest.TestCase):
                     self.assertEqual(j, indx3[1])
 
 
-    def ttest_tile_indices3D(self):
+    def test_tile_indices3D(self):
 
         conf = Conf()
         conf.Nx = 3
@@ -650,14 +650,15 @@ class Communications(unittest.TestCase):
 
         print("debug testing yee lifetime")
 
-        print("get tile")
+        #print("get tile")
         c = grid.get_tile(1,1,1)
-        print("get yee")
-        yee = c.get_yeeptr() #FIXME: yee does not exist here
-        print("get ex")
-        ex = yee.ex
-        print("set ex")
-        ex[0,0,0] = 1.0
+        #print("get yee")
+        #yee = c.get_yeeptr() #FIXME: yee does not exist here
+        yee = c.get_yee() #FIXME: yee does not exist here
+        #print("get ex")
+        #ex = yee.ex
+        #print("set ex")
+        #ex[0,0,0] = 1.0
 
         # lets put values into Yee lattice
         print("3D boundary test")
@@ -672,13 +673,13 @@ class Communications(unittest.TestCase):
                         #print("get tile", i,j,k)
                         c = grid.get_tile(i,j,k)
 
-                        print("ref count c:", sys.getrefcount(c))
+                        #print("ref count c:", sys.getrefcount(c))
                         indx = c.index
                         #indx2 = c.communication.indices
                         #indx = c.get_index(grid)
                         
                         lens = c.lengths
-                        print(lens)
+                        #print(lens)
                         self.assertEqual(lens[0], conf.Nx)
                         self.assertEqual(lens[1], conf.Ny)
                         self.assertEqual(lens[2], conf.Nz)
@@ -694,19 +695,21 @@ class Communications(unittest.TestCase):
                         #print("get yee")
                         yee = c.get_yee() #FIXME: yee return NoneType
                         #yee = c.yee
-                        print(yee)
 
-                        print("ref count c:", sys.getrefcount(c))
-                        print("ref count yee:", sys.getrefcount(yee))
+                        #FIXME
+                        #print(yee)
+                        #print("ref count c:", sys.getrefcount(c))
+                        #print("ref count yee:", sys.getrefcount(yee))
 
                         for s in range(conf.NzMesh):
                             for r in range(conf.NyMesh):
                                 for q in range(conf.NxMesh):
-                                    print("ref count yee:", sys.getrefcount(yee))
-                                    ex = yee.ex
+                                    #print("ref count yee:", sys.getrefcount(yee))
+                                    #print(yee)
+                                    #ex = yee.ex
 
                                     #print("set yee")
-                                    ex[q,r,s] = val
+                                    yee.ex[q,r,s] = val
                                     yee.ey[q,r,s] = val
                                     yee.ez[q,r,s] = val
 
@@ -718,14 +721,14 @@ class Communications(unittest.TestCase):
                                     yee.jy[q,r,s] = val
                                     yee.jz[q,r,s] = val
                                     val += 1
-
+                        #print("ijk {},{},{}".format(i,j,k))
                         #try keeping yee alive 
                         #nt = yee.size()
 
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
 
-        print("get values")
+        #print("get values")
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.index
@@ -759,13 +762,13 @@ class Communications(unittest.TestCase):
         #print(data[:,:,2,0])
 
         #update boundaries
-        print("update boundaries")
+        #print("update boundaries")
         for cid in grid.get_tile_ids():
-            print("getting tile")
+            #print("getting tile")
             c = grid.get_tile( cid )
-            print("got tile ", c.cid)
+            #print("got tile ", c.cid)
             i,j,k = c.index
-            print("i,j,k {},{},{}".format(i,j,k))
+            #print("i,j,k {},{},{}".format(i,j,k))
             c.update_boundaries(grid)
 
         #for i in [1]:
@@ -780,7 +783,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.get_index(grid)
-            yee = c.get_yee(0)
+            yee = c.get_yee()
 
             for s in range(-3, conf.NzMesh+3, 1):
                 for r in range(-3, conf.NyMesh+3, 1):
@@ -819,8 +822,10 @@ class Communications(unittest.TestCase):
         #print("--------------------------------------------------")
         #check halo regions of the middle tile
 
+
+        #print("re-loading yee")
         c = grid.get_tile(1,1,1)
-        yee = c.get_yee(0)
+        yee = c.get_yee()
 
         print("check halo regions")
         #loop over ex,ey,...
@@ -864,6 +869,9 @@ class Communications(unittest.TestCase):
                         if iarrs == 0:
                             self.assertEqual(ref2[i,j,k], arr[i,j,k])
 
+            print("---------------------------SUCCESS!-----------------------------")
+
+
 
     def test_neighs3D(self):
 
@@ -889,11 +897,4 @@ class Communications(unittest.TestCase):
 
                     yee = tile.get_yee()
                     ind = tile.neighs(ii,jj,kk)
-
-
-
-
-
-
-
 

@@ -32,19 +32,12 @@ auto declare_tile(
     py::module& m,
     const std::string& pyclass_name) 
 {
-
-
-  //py::init([](Container::size_type s, const T &t) { return Container(s, t); })
-  //py::init([](const std::binary_function<double, double, bool> & other) { return new std::binary_function<double, double, bool>(other); })
-    
   return py::class_<
              fields::Tile<D>,
               corgi::Tile<D>, 
               std::shared_ptr<fields::Tile<D>>
             >(m, pyclass_name.c_str() )
     .def(py::init<int, int, int>())
-    //.def(py::init([](int nx, int ny, int nz){return new fields::Tile<D>(nx,ny,nz);}))
-    //.def_readwrite("dx",       &fields::Tile<D>::dx)
     .def_readwrite("cfl",      &fields::Tile<D>::cfl)
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("clear_current",       &fields::Tile<D>::clear_current)
@@ -54,7 +47,7 @@ auto declare_tile(
 
     .def("get_yee",             &fields::Tile<D>::get_yee,
         py::arg("i")=0,
-        py::return_value_policy::reference_internal
+        py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
         //
         // pybind11:
@@ -62,7 +55,7 @@ auto declare_tile(
         // value. For methods, index one refers to the implicit this pointer, 
         // while regular arguments begin at index two. 
         // py::keep_alive<nurse,patient>()
-        //py::keep_alive<1,0>()
+        py::keep_alive<1,0>()
         )
     .def("add_analysis_species",&fields::Tile<D>::add_analysis_species)
     .def("get_analysis",        &fields::Tile<D>::get_analysis, 
@@ -92,12 +85,12 @@ auto declare_TileDamped(
             py::multiple_inheritance()
             )
   .def(py::init<int, int, int>())
-  .def_readwrite("ex_ref",   &fields::damping::Tile<D,S>::ex_ref, py::return_value_policy::reference)
-  .def_readwrite("ey_ref",   &fields::damping::Tile<D,S>::ey_ref, py::return_value_policy::reference)
-  .def_readwrite("ez_ref",   &fields::damping::Tile<D,S>::ez_ref, py::return_value_policy::reference)
-  .def_readwrite("bx_ref",   &fields::damping::Tile<D,S>::bx_ref, py::return_value_policy::reference)
-  .def_readwrite("by_ref",   &fields::damping::Tile<D,S>::by_ref, py::return_value_policy::reference)
-  .def_readwrite("bz_ref",   &fields::damping::Tile<D,S>::bz_ref, py::return_value_policy::reference)
+  .def_readwrite("ex_ref",   &fields::damping::Tile<D,S>::ex_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("ey_ref",   &fields::damping::Tile<D,S>::ey_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("ez_ref",   &fields::damping::Tile<D,S>::ez_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("bx_ref",   &fields::damping::Tile<D,S>::bx_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("by_ref",   &fields::damping::Tile<D,S>::by_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("bz_ref",   &fields::damping::Tile<D,S>::bz_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
   .def_readwrite("fld1",     &fields::damping::Tile<D,S>::fld1)
   .def_readwrite("fld2",     &fields::damping::Tile<D,S>::fld2)
   .def("damp_fields",         &fields::damping::Tile<D,S>::damp_fields);
@@ -208,60 +201,45 @@ class PyFilter : public Filter<D>
 void bind_fields(py::module& m_sub)
 {
     
-  //--------------------------------------------------
-  //py::init([](Container::size_type s, const T &t) { return Container(s, t); })
-  //py::init([](const std::binary_function<double, double, bool> & other) { return new std::binary_function<double, double, bool>(other); })
-  //
-
-  // FIXME: reference_internal -> reference?
   py::class_<
     fields::YeeLattice,
     std::shared_ptr<fields::YeeLattice>
-    //std::unique_ptr<fields::YeeLattice, py::nodelete>
             >(m_sub, "YeeLattice")
     .def(py::init<int, int, int>())
-    .def_readwrite("ex",   &fields::YeeLattice::ex , py::return_value_policy::reference_internal)
-    .def_readwrite("ey",   &fields::YeeLattice::ey , py::return_value_policy::reference_internal)
-    .def_readwrite("ez",   &fields::YeeLattice::ez , py::return_value_policy::reference_internal)
-    .def_readwrite("bx",   &fields::YeeLattice::bx , py::return_value_policy::reference_internal)
-    .def_readwrite("by",   &fields::YeeLattice::by , py::return_value_policy::reference_internal)
-    .def_readwrite("bz",   &fields::YeeLattice::bz , py::return_value_policy::reference_internal)
-    .def_readwrite("jx",   &fields::YeeLattice::jx , py::return_value_policy::reference_internal)
-    .def_readwrite("jy",   &fields::YeeLattice::jy , py::return_value_policy::reference_internal)
-    .def_readwrite("jz",   &fields::YeeLattice::jz , py::return_value_policy::reference_internal)
-    .def_readwrite("rho",  &fields::YeeLattice::rho, py::return_value_policy::reference_internal)
-    .def_property("ex2",   
-        [](YeeLattice& self) { return self.ex; },
-        [](YeeLattice& self, toolbox::Mesh<real_short,3>& v) { self.ex = v; },
-        py::return_value_policy::reference_internal, 
-        py::keep_alive<1,0>() 
-        );
+    .def_readwrite("ex",   &fields::YeeLattice::ex , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("ey",   &fields::YeeLattice::ey , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("ez",   &fields::YeeLattice::ez , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("bx",   &fields::YeeLattice::bx , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("by",   &fields::YeeLattice::by , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("bz",   &fields::YeeLattice::bz , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jx",   &fields::YeeLattice::jx , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jy",   &fields::YeeLattice::jy , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jz",   &fields::YeeLattice::jz , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("rho",  &fields::YeeLattice::rho, py::return_value_policy::reference, py::keep_alive<1,0>());
 
 
   //--------------------------------------------------
 
-  // TODO: can use unique here too?
   py::class_<
-    fields::PlasmaMomentLattice
-    //std::unique_ptr<fields::PlasmaMomentLattice, py::nodelete>
-    //std::shared_ptr<fields::PlasmaMomentLattice> 
+    fields::PlasmaMomentLattice,
+    std::shared_ptr<fields::PlasmaMomentLattice> 
             >(m_sub, "PlasmaMomentLattice")
     .def(py::init<int, int, int>())
-    .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho    ,py::return_value_policy::reference_internal)
-    .def_readwrite("edens",    &fields::PlasmaMomentLattice::edens  ,py::return_value_policy::reference_internal)
-    .def_readwrite("temp",     &fields::PlasmaMomentLattice::temp   ,py::return_value_policy::reference_internal)
-    .def_readwrite("Vx",       &fields::PlasmaMomentLattice::Vx     ,py::return_value_policy::reference_internal)
-    .def_readwrite("Vy",       &fields::PlasmaMomentLattice::Vy     ,py::return_value_policy::reference_internal)
-    .def_readwrite("Vz",       &fields::PlasmaMomentLattice::Vz     ,py::return_value_policy::reference_internal)
-    .def_readwrite("momx",     &fields::PlasmaMomentLattice::momx   ,py::return_value_policy::reference_internal)
-    .def_readwrite("momy",     &fields::PlasmaMomentLattice::momy   ,py::return_value_policy::reference_internal)
-    .def_readwrite("momz",     &fields::PlasmaMomentLattice::momz   ,py::return_value_policy::reference_internal)
-    .def_readwrite("pressx",   &fields::PlasmaMomentLattice::pressx ,py::return_value_policy::reference_internal)
-    .def_readwrite("pressy",   &fields::PlasmaMomentLattice::pressy ,py::return_value_policy::reference_internal)
-    .def_readwrite("pressz",   &fields::PlasmaMomentLattice::pressz ,py::return_value_policy::reference_internal)
-    .def_readwrite("shearxy",  &fields::PlasmaMomentLattice::shearxy,py::return_value_policy::reference_internal)
-    .def_readwrite("shearxz",  &fields::PlasmaMomentLattice::shearxz,py::return_value_policy::reference_internal)
-    .def_readwrite("shearyz",  &fields::PlasmaMomentLattice::shearyz,py::return_value_policy::reference_internal);
+    .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho    ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("edens",    &fields::PlasmaMomentLattice::edens  ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("temp",     &fields::PlasmaMomentLattice::temp   ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("Vx",       &fields::PlasmaMomentLattice::Vx     ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("Vy",       &fields::PlasmaMomentLattice::Vy     ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("Vz",       &fields::PlasmaMomentLattice::Vz     ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("momx",     &fields::PlasmaMomentLattice::momx   ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("momy",     &fields::PlasmaMomentLattice::momy   ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("momz",     &fields::PlasmaMomentLattice::momz   ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("pressx",   &fields::PlasmaMomentLattice::pressx ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("pressy",   &fields::PlasmaMomentLattice::pressy ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("pressz",   &fields::PlasmaMomentLattice::pressz ,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("shearxy",  &fields::PlasmaMomentLattice::shearxy,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("shearxz",  &fields::PlasmaMomentLattice::shearxz,py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("shearyz",  &fields::PlasmaMomentLattice::shearyz,py::return_value_policy::reference, py::keep_alive<1,0>());
 
 
 
@@ -277,18 +255,17 @@ void bind_fields(py::module& m_sub)
 
 
   // FIXME extra debug additions/tests
-  t3.def_property("yee", 
-    &fields::Tile<3>::get_yee2,
-    &fields::Tile<3>::set_yee,
-    py::return_value_policy::reference_internal, 
-    py::keep_alive<0,1>());
-  t3.def("get_yeeptr", &fields::Tile<3>::get_yeeptr
-      );
-       // py::return_value_policy::reference_internal);
+  //t3.def_property("yee", 
+  //  &fields::Tile<3>::get_yee2,
+  //  &fields::Tile<3>::set_yee,
+  //  py::return_value_policy::reference_internal, 
+  //  py::keep_alive<0,1>());
+  //t3.def("get_yeeptr", &fields::Tile<3>::get_yeeptr
+  //    );
+  //     // py::return_value_policy::reference_internal);
 
 
-
-
+  // FIXME
   // Declare manually instead because there are too many differences
   //py::class_<fields::Tile<3>, corgi::Tile<3>, 
   //           std::shared_ptr<fields::Tile<3>>
@@ -326,43 +303,44 @@ void bind_fields(py::module& m_sub)
   //  .def("add_analysis_species", &fields::Tile<3>::add_analysis_species);
 
 
+  // FIXME
   // TODO: testing grid-based tile generator instead
   //
   // example:
   //m.def("make_bell", []() { return new Bell; }, return_value_policy::reference);
-  m_3d.def("make_and_add_tile", [](
-        corgi::Grid<3>& grid,
-        int nx, int ny, int nz,
-        corgi::internals::tuple_of<3, size_t> indices
-        ) {
+  //m_3d.def("make_and_add_tile", [](
+  //      corgi::Grid<3>& grid,
+  //      int nx, int ny, int nz,
+  //      corgi::internals::tuple_of<3, size_t> indices
+  //      ) {
 
-        //auto p = new fields::Tile<3>(nx,ny,nz);
-        //std::shared_ptr<fields::Tile<3>> sp(p);
-        //sp->index = indices;
-        //grid.add_tile(sp, indices);
-          
-        std::shared_ptr<fields::Tile<3>> sp(new fields::Tile<3>(nx,ny,nz));
-        grid.add_tile(sp, indices);
+  //      //auto p = new fields::Tile<3>(nx,ny,nz);
+  //      //std::shared_ptr<fields::Tile<3>> sp(p);
+  //      //sp->index = indices;
+  //      //grid.add_tile(sp, indices);
+  //        
+  //      std::shared_ptr<fields::Tile<3>> sp(new fields::Tile<3>(nx,ny,nz));
+  //      grid.add_tile(sp, indices);
 
-        //fields::Tile<3> ti(nx,ny,nz);
-        //std::shared_ptr<fields::Tile<3>> sp(&ti);
-        //grid.add_tile(sp, indices);
+  //      //fields::Tile<3> ti(nx,ny,nz);
+  //      //std::shared_ptr<fields::Tile<3>> sp(&ti);
+  //      //grid.add_tile(sp, indices);
 
-        return sp;
+  //      return sp;
 
-        //auto t = grid.get_tileptr(indices);
-        //return t;
-      },
-        py::return_value_policy::reference,
-        // keep alive for the lifetime of the grid
-        //
-        // pybind11:
-        // argument indices start at one, while zero refers to the return 
-        // value. For methods, index one refers to the implicit this pointer, 
-        // while regular arguments begin at index two. 
-        // py::keep_alive<nurse,patient>()
-        py::keep_alive<1,0>()
-      ); 
+  //      //auto t = grid.get_tileptr(indices);
+  //      //return t;
+  //    },
+  //      py::return_value_policy::reference,
+  //      // keep alive for the lifetime of the grid
+  //      //
+  //      // pybind11:
+  //      // argument indices start at one, while zero refers to the return 
+  //      // value. For methods, index one refers to the implicit this pointer, 
+  //      // while regular arguments begin at index two. 
+  //      // py::keep_alive<nurse,patient>()
+  //      py::keep_alive<1,0>()
+  //    ); 
 
 
   //--------------------------------------------------

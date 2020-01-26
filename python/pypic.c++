@@ -48,9 +48,8 @@ auto declare_tile(
                )
     .def(py::init<int, int, int>())
     .def_readwrite("cfl",       &pic::Tile<D>::cfl)
-    //.def_readwrite("container", &pic::Tile<D>::container);
     .def("get_container",       &pic::Tile<D>::get_container, 
-        py::return_value_policy::reference)
+        py::return_value_policy::reference, py::keep_alive<1,0>())
     .def("set_container",       &pic::Tile<D>::set_container)
 
     .def("check_outgoing_particles",     &pic::Tile<D>::check_outgoing_particles)

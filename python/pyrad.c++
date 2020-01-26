@@ -23,7 +23,7 @@ auto declare_tile(
                pyclass_name.c_str(),
                py::multiple_inheritance()
                )
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def("get_bucket",       &rad::Tile<D>::get_bucket, 
         py::return_value_policy::reference)
     .def("push_back",       &rad::Tile<D>::push_back);
@@ -36,12 +36,6 @@ auto declare_tile(
 // python bindings for radiation classes & functions
 void bind_rad(py::module& m_sub)
 {
-
-  // example of binding polymorphic classes
-  //py::class_<Pet>(m, "Pet")
-  //   .def(py::init<const std::string &, int>())
-  //   .def("set", (void (Pet::*)(int)) &Pet::set, "Set the pet's age")
-  //   .def("set", (void (Pet::*)(const std::string &)) &Pet::set, "Set the pet's name");
 
   py::class_<rad::PhotonContainer, pic::ParticleContainer>(m_sub, "PhotonContainer")
     .def(py::init<>())
