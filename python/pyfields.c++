@@ -85,8 +85,12 @@ auto declare_TileDamped(
   return py::class_<
              fields::damping::Tile<D,S>,
              fields::Tile<D>,
+             corgi::Tile<D>, 
              std::shared_ptr<fields::damping::Tile<D,S>>
-          >(m, pyclass_name.c_str() )
+          >(m, 
+            pyclass_name.c_str(),
+            py::multiple_inheritance()
+            )
   .def(py::init<int, int, int>())
   .def_readwrite("ex_ref",   &fields::damping::Tile<D,S>::ex_ref, py::return_value_policy::reference)
   .def_readwrite("ey_ref",   &fields::damping::Tile<D,S>::ey_ref, py::return_value_policy::reference)
@@ -208,6 +212,8 @@ void bind_fields(py::module& m_sub)
   //py::init([](Container::size_type s, const T &t) { return Container(s, t); })
   //py::init([](const std::binary_function<double, double, bool> & other) { return new std::binary_function<double, double, bool>(other); })
   //
+
+  // FIXME: reference_internal -> reference?
   py::class_<
     fields::YeeLattice,
     std::shared_ptr<fields::YeeLattice>
@@ -412,7 +418,12 @@ void bind_fields(py::module& m_sub)
     .def("push_half_b", &fields::Propagator<3>::push_half_b);
 
   // fdtd2 propagator
-  py::class_<fields::FDTD2<3>>(m_3d, "FDTD3", fieldspropag3d)
+  py::class_<fields::FDTD2<3>>(m_3d, "FDTD2", fieldspropag3d)
+    .def(py::init<>());
+
+  // fdtd4 propagator
+  py::class_<fields::FDTD4<3>, Propagator<3>, PyFDTD4<3> >(m_3d, "FDTD4")
+    .def_readwrite("corr",     &fields::FDTD4<3>::corr)
     .def(py::init<>());
 
 
@@ -424,7 +435,7 @@ void bind_fields(py::module& m_sub)
     .def("solve", &fields::Filter<2>::solve);
 
   // digital filter
-  // FIXME: remove hack where we explicitly define solve (instead of use trampoline class)
+  // TODO: remove hack where we explicitly define solve (instead of use trampoline class)
   // overwriting the solve function from trampoline does not work atm for some weird reason.
   py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
     .def(py::init<int, int, int>())

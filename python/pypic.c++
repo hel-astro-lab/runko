@@ -40,8 +40,12 @@ auto declare_tile(
   return 
   py::class_<pic::Tile<D>, 
              fields::Tile<D>,
+             corgi::Tile<D>, 
              std::shared_ptr<pic::Tile<D>>
-             >(m, pyclass_name.c_str())
+             >(m, 
+               pyclass_name.c_str(),
+               py::multiple_inheritance()
+               )
     .def(py::init<int, int, int>())
     .def_readwrite("cfl",       &pic::Tile<D>::cfl)
     //.def_readwrite("container", &pic::Tile<D>::container);
@@ -69,10 +73,15 @@ namespace wall {
     {
       return
         py::class_<pic::wall::Tile<D, S>,
-      pic::Tile<D>,
-      fields::damping::Tile<D, S>,
-      std::shared_ptr<pic::wall::Tile<D,S>>
-        >(m, pyclass_name.c_str() )
+                   pic::Tile<D>,
+                   fields::damping::Tile<D, S>,
+                   fields::Tile<D>,
+                   corgi::Tile<D>, 
+                   std::shared_ptr<pic::wall::Tile<D,S>>
+        >(m, 
+          pyclass_name.c_str(),
+          py::multiple_inheritance()
+          )
     .def(py::init<int, int, int>());
 
     }
@@ -268,6 +277,7 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::VayPusher<2,3>>(m_2d, "VayPusher", picpusher2d)
     .def(py::init<>());
 
+
   // 3D version
   py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
   picpusher3d
@@ -277,6 +287,9 @@ void bind_pic(py::module& m_sub)
   // Boris pusher
   py::class_<pic::BorisPusher<3,3>>(m_3d, "BorisPusher", picpusher3d)
     .def(py::init<>());
+
+  // TODO: add 3D Vay
+  // TODO: add 3D BorisDrag
 
 
   //--------------------------------------------------
@@ -348,10 +361,11 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("walloc",   &pic::Piston<2>::walloc)
     .def_readwrite("gammawall",&pic::Piston<2>::gammawall)
     .def_readwrite("betawall", &pic::Piston<2>::betawall)
-    .def("solve",    &pic::Piston<2>::solve)
-    .def("field_bc", &pic::Piston<2>::field_bc);
+    .def("solve",              &pic::Piston<2>::solve)
+    .def("field_bc",           &pic::Piston<2>::field_bc);
 
   //TODO: 3D piston
+
 
   //--------------------------------------------------
   // wall

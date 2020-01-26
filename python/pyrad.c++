@@ -17,8 +17,12 @@ auto declare_tile(
   py::class_<rad::Tile<D>,
              pic::Tile<D>, 
              fields::Tile<D>,
+             corgi::Tile<D>, 
              std::shared_ptr<rad::Tile<D>>
-             >(m, pyclass_name.c_str())
+             >(m, 
+               pyclass_name.c_str(),
+               py::multiple_inheritance()
+               )
     .def(py::init<size_t, size_t, size_t>())
     .def("get_bucket",       &rad::Tile<D>::get_bucket, 
         py::return_value_policy::reference)

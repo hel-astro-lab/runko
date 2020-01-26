@@ -273,8 +273,9 @@ class Tile :
   //--------------------------------------------------
   // constructor with internal mesh dimensions
   Tile(int nx, int ny, int nz) :
-    mesh_lengths {{nx, ny, nz}}
-    //yee(nx, ny, nz)
+     corgi::Tile<D>(),
+     mesh_lengths {{nx, ny, nz}},
+     yee{nx, ny, nz}
   {
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);

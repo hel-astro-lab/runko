@@ -89,24 +89,6 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
 };
 
 
-//--------------------------------------------------
-// generator for vlv::Grid 
-
-//template<size_t D>
-//auto declare_grid(
-//    py::module& m,
-//    const std::string& pyclass_name,
-//    const std::string& pycorgi_name
-//    ) 
-//{
-//  py::object corgi_node = 
-//    (py::object) py::module::import("pycorgi").attr(pycorgi_name.c_str());
-//
-//  return 
-//    py::class_<vlv::Grid<D> >(m, pyclass_name.c_str(), corgi_node);
-//      //.def()
-//}
-
 
 //--------------------------------------------------
 // generator for vlv::Tile 
@@ -121,8 +103,12 @@ auto declare_tile(
   return
     py::class_<vlv::Tile<D>, 
              fields::Tile<D>,
+             corgi::Tile<D>, 
              std::shared_ptr<vlv::Tile<D> >
-             >(m, pyclass_name.c_str())
+             >(m, 
+               pyclass_name.c_str(),
+               py::multiple_inheritance()
+              )
     .def(py::init<size_t, size_t, size_t>())
     //.def_readwrite("dx",        &vlv::Tile<D>::dx)
     .def_readwrite("threshold", &vlv::Tile<D>::threshold)
@@ -156,11 +142,16 @@ namespace outflow {
     {
       return
         py::class_<
-        vlv::outflow::Tile<D, S>,
-          fields::damping::Tile<D, S>,
+          vlv::outflow::Tile<D, S>,
           vlv::Tile<D>,
-        std::shared_ptr<vlv::outflow::Tile<D,S>>
-        >(m, pyclass_name.c_str() )
+          fields::damping::Tile<D, S>,
+          fields::Tile<D>,
+          corgi::Tile<D>, 
+          std::shared_ptr<vlv::outflow::Tile<D,S>>
+        >(m, 
+          pyclass_name.c_str(),
+          py::multiple_inheritance()
+          )
     .def(py::init<size_t, size_t, size_t>())
     .def_readwrite("advance", &vlv::outflow::Tile<D,S>::advance);
     }
@@ -175,10 +166,16 @@ namespace piston {
         const std::string& pyclass_name) 
     {
       return
-        py::class_<vlv::piston::Tile<D>,
-        vlv::Tile<D>,
-      std::shared_ptr<vlv::piston::Tile<D>>
-        >(m, pyclass_name.c_str() )
+        py::class_<
+          vlv::piston::Tile<D>,
+          vlv::Tile<D>,
+          fields::Tile<D>,
+          corgi::Tile<D>, 
+          std::shared_ptr<vlv::piston::Tile<D>>
+        >(m, 
+          pyclass_name.c_str(),
+          py::multiple_inheritance()
+          )
     .def(py::init<size_t, size_t, size_t>())
     .def("reflect", &vlv::piston::Tile<D>::reflect);
     }

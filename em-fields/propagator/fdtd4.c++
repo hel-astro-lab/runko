@@ -131,5 +131,5 @@ void fields::FDTD4<3>::push_half_b(fields::Tile<3>& tile)
 
 //template class fields::FDTD4<1>;
 template class fields::FDTD4<2>;
-//template class fields::FDTD4<3>;
+template class fields::FDTD4<3>;
   

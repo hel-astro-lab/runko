@@ -57,7 +57,7 @@ public:
   /// constructor
   Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>(nx,ny,nz)
+    fields::Tile<D>{nx,ny,nz}
   { }
 
 

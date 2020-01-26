@@ -23,8 +23,12 @@ auto declare_tile(
   return 
   py::class_<ffe::Tile<D>, 
              fields::Tile<D>,
+             corgi::Tile<D>, 
              std::shared_ptr<ffe::Tile<D>>
-             >(m, pyclass_name.c_str())
+             >(m, 
+               pyclass_name.c_str(),
+               py::multiple_inheritance()
+               )
     .def(py::init<int, int, int>())
     .def_readwrite("cfl",       &ffe::Tile<D>::cfl)
     .def("get_step", [](ffe::Tile<D>& s, int n)
