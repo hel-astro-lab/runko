@@ -84,25 +84,6 @@ def filler(xloc, ispcs, conf):
     return x0, u0
 
 
-def initialize_piston(grid, piston, conf):
-
-    gam = conf.wallgamma
-    beta = np.sqrt(1.-1./gam**2.)
-
-    piston.gammawall = gam
-    piston.betawall = beta
-    piston.walloc = 5.0
-
-    #print("wall gamma:", piston.gammawall)
-    #print("wall beta:", piston.betawall)
-
-    for cid in grid.get_local_tiles():
-        tile = grid.get_tile(cid)
-
-        #TODO: remove prtcls inside the wall
-
-
-
 
 # Field initialization (guide field)
 def insert_em(grid, conf):
@@ -136,7 +117,7 @@ def insert_em(grid, conf):
 
 if __name__ == "__main__":
 
-    do_plots = False
+    do_plots = True
     do_print = False
 
     if MPI.COMM_WORLD.Get_rank() == 0:
@@ -304,15 +285,27 @@ if __name__ == "__main__":
     fintp    = pypic.LinearInterpolator()
     currint  = pypic.ZigZag()
     analyzer = pypic.Analyzator()
-    flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+    #flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+
+    do_compensator = False
+
+    #binomial + compensator filter
+    if not(do_compensator):
+        flt      = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fltC     = pyfld.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt.alpha  = 0.5 #make binomial
+        fltC.alpha = conf.npasses/2 + 1 #binomial compensation is n/2 + 1
+    else:
+        #strided filters
+        flt      = pyfld.General3pStrided(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt.alpha  = 0.5 #make binomial
+        flt.stride = 2   #make binomial
+
 
     #enhance numerical speed of light slightly to suppress numerical Cherenkov instability
     fldprop.corr = 1.02
 
-
-    #moving walls
-    piston   = pypic.Piston()
-    initialize_piston(grid, piston, conf)
 
 
     # quick field snapshots
@@ -387,7 +380,6 @@ if __name__ == "__main__":
         for cid in grid.get_tile_ids():
             tile = grid.get_tile(cid)
             fldprop.push_half_b(tile)
-            piston.field_bc(tile)
 
         timer.stop_comp("push_half_b1")
 
@@ -446,7 +438,6 @@ if __name__ == "__main__":
         debug_print(grid, "walls")
         for cid in grid.get_local_tiles():
             tile = grid.get_tile(cid)
-            piston.solve(tile)
 
         timer.stop_comp("walls")
         ##################################################
@@ -460,7 +451,6 @@ if __name__ == "__main__":
         for cid in grid.get_tile_ids():
             tile = grid.get_tile(cid)
             fldprop.push_half_b(tile)
-            piston.field_bc(tile)
 
         timer.stop_comp("push_half_b2")
 
@@ -499,7 +489,6 @@ if __name__ == "__main__":
         for cid in grid.get_tile_ids():
             tile = grid.get_tile(cid)
             fldprop.push_e(tile)
-            piston.field_bc(tile)
 
         timer.stop_comp("push_e")
 
@@ -681,11 +670,22 @@ if __name__ == "__main__":
 
             MPI.COMM_WORLD.barrier() # sync everybody 
 
-        #clean current behind piston
-        if conf.npasses > 0:
+        if do_compensator:
+
+            #update global neighbors (mpi)
+            grid.send_data(0)
+            grid.recv_data(0) 
+            grid.wait_data(0)
+
+            #get halo boundaries
             for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
-                piston.field_bc(tile)
+                tile.update_boundaries(grid)
+
+            #do one full compensation pass lastly
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                fltC.solve(tile)
 
         #--------------------------------------------------
         timer.stop_comp("filter")
@@ -812,23 +812,6 @@ if __name__ == "__main__":
             timer.start("step") #refresh lap counter (avoids IO profiling)
 
             sys.stdout.flush()
-
-        #move grid
-        #for cid in grid.get_tile_ids():
-        #    tile = grid.get_tile(cid)
-
-        #    #get current loc and advance
-        #    (i,j) = tile.index
-        #    mins = spatialLoc(grid, [i,j], [0,0,0], conf)
-        #    maxs = spatialLoc(grid, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
-
-        #    #increase x
-        #    mins[0] = +1.0
-        #    maxs[0] = +1.0
-
-        #    tile.set_tile_mins(mins[0:2])
-        #    tile.set_tile_maxs(maxs[0:2])
-
 
         #next step
         time += conf.cfl/conf.c_omp

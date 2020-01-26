@@ -45,6 +45,12 @@ set (RAD_FILES
      pyrad.c++
      )
 
+set (FFE_FILES 
+     pyffe.c++
+     ../ffe/tile.c++
+     ../ffe/currents/driftcurrent.c++
+     )
+
 set (IO_FILES 
      ../io/writer.c++
      ../io/reader.c++
@@ -63,6 +69,7 @@ pybind11_add_module(pyrunko
                     ${VLV_FILES}
                     ${PIC_FILES}
                     ${RAD_FILES}
+                    ${FFE_FILES}
                     ${IO_FILES}
                     )
 

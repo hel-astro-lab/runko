@@ -228,8 +228,9 @@ def plot2d_shock_single(
 
     #--------------------------------------------------
     # colorbar
-    #ax.set_xlim((600.0, 900.0))
-    #ax.set_ylim((300.0, 600.0))
+    #ax.set_xlim((200.0, 600.0))
+    ax.set_xlim((0.0, 400.0))
+    ax.set_ylim((0.0, 64.0))
 
 
     if do_dark:

@@ -154,16 +154,16 @@ def combine_tiles(ff, fvar, conf, isp=None ):
     for dset in f:
 
         if not(isp==None):
-            if not(f[dset]['ispcs'].value == isp):
+            if not(f[dset]['ispcs'][()] == isp):
                 continue
 
-        i = f[dset]['i'].value
-        j = f[dset]['j'].value
-        k = f[dset]['k'].value
+        i = f[dset]['i'][()]
+        j = f[dset]['j'][()]
+        k = f[dset]['k'][()]
 
-        NxMesh = f[dset]['Nx'].value
-        NyMesh = f[dset]['Ny'].value
-        NzMesh = f[dset]['Nz'].value
+        NxMesh = f[dset]['Nx'][()]
+        NyMesh = f[dset]['Ny'][()]
+        NzMesh = f[dset]['Nz'][()]
     
         ii = int( i*NxMesh )
         jj = int( j*NyMesh )

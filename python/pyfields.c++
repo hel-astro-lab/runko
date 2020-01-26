@@ -104,6 +104,8 @@ auto declare_TileDamped(
 template<int D>
 class PyPropagator : public Propagator<D>
 {
+  using Propagator<D>::Propagator;
+
   void push_e( Tile<D>& tile ) override {
   PYBIND11_OVERLOAD_PURE(
       void,
@@ -121,8 +123,64 @@ class PyPropagator : public Propagator<D>
       tile
       );
   }
-
 };
+
+
+template<size_t D>
+class PyFDTD2 : public FDTD2<D>
+{
+  using FDTD2<D>::FDTD2;
+
+  void push_e( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTD2<D>, push_e, tile);
+  }
+
+  void push_half_b( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTD2<D>, push_half_b, tile);
+  }
+};
+
+template<size_t D>
+class PyFDTD4 : public FDTD4<D>
+{
+  using FDTD4<D>::FDTD4;
+
+  void push_e( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTD4<D>, push_e, tile);
+  }
+
+  void push_half_b( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTD4<D>, push_half_b, tile);
+  }
+};
+
+
+// templated base-class for Propagator; 
+// see https://github.com/pybind/pybind11/blob/master/tests/test_virtual_functions.cpp
+//template <class Base = Propagator<1>, size_t D=1>
+//class PyPropagator : public Base
+//{
+//  using Base::Base; // inherit constructor
+//
+//  void push_e( Tile<D>& tile ) override {
+//  PYBIND11_OVERLOAD_PURE(
+//      void,
+//      Base,
+//      push_e,
+//      tile
+//      );
+//  }
+//
+//  void push_half_b( Tile<D>& tile ) override {
+//  PYBIND11_OVERLOAD_PURE(
+//      void,
+//      Base,
+//      push_half_b,
+//      tile
+//      );
+//  }
+//};
+
 
 
 /// trampoline class for fields Filter
@@ -315,33 +373,32 @@ void bind_fields(py::module& m_sub)
 
   //--------------------------------------------------
   // 1D Propagator bindings
-  py::class_< fields::Propagator<1>, PyPropagator<1> > fieldspropag1d(m_1d, "Propagator");
-  fieldspropag1d
+  py::class_< fields::Propagator<1>, PyPropagator<1> >(m_1d, "Propagator")
     .def(py::init<>())
     .def("push_e",      &fields::Propagator<1>::push_e)
     .def("push_half_b", &fields::Propagator<1>::push_half_b);
 
   // fdtd2 propagator
-  py::class_<fields::FDTD2<1>>(m_1d, "FDTD2", fieldspropag1d)
+  py::class_<fields::FDTD2<1>, Propagator<1>, PyFDTD2<1>>(m_1d, "FDTD2")
     .def(py::init<>())
     .def_readwrite("corr",     &fields::FDTD2<1>::corr);
 
 
   //--------------------------------------------------
   // 2D Propagator bindings
-  py::class_< fields::Propagator<2>, PyPropagator<2> > fieldspropag2d(m_2d, "Propagator");
-  fieldspropag2d
+  py::class_< fields::Propagator<2>, PyPropagator<2> >(m_2d, "Propagator")
     .def(py::init<>())
+    .def_readwrite("dt",&fields::Propagator<2>::dt)
     .def("push_e",      &fields::Propagator<2>::push_e)
     .def("push_half_b", &fields::Propagator<2>::push_half_b);
 
   // fdtd2 propagator
-  py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
+  py::class_<fields::FDTD2<2>, Propagator<2>, PyFDTD2<2> >(m_2d, "FDTD2")
     .def_readwrite("corr",     &fields::FDTD2<2>::corr)
     .def(py::init<>());
 
   // fdtd4 propagator
-  py::class_<fields::FDTD4<2>>(m_2d, "FDTD4", fieldspropag2d)
+  py::class_<fields::FDTD4<2>, Propagator<2>, PyFDTD4<2> >(m_2d, "FDTD4")
     .def_readwrite("corr",     &fields::FDTD4<2>::corr)
     .def(py::init<>());
 
@@ -372,6 +429,26 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
     .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<2>::solve);
+
+  py::class_<fields::General3p<2>>(m_2d, "General3p", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("alpha",    &fields::General3p<2>::alpha)
+    .def("solve",              &fields::General3p<2>::solve);
+
+  py::class_<fields::General3pStrided<2>>(m_2d, "General3pStrided", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def_readwrite("alpha",    &fields::General3pStrided<2>::alpha)
+    .def_readwrite("stride",   &fields::General3pStrided<2>::stride)
+    .def("solve",              &fields::General3pStrided<2>::solve);
+
+
+  py::class_<fields::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",              &fields::Binomial2Strided2<2>::solve);
+
+  py::class_<fields::Compensator2<2>>(m_2d, "Compensator2", fieldsfilter2d)
+    .def(py::init<size_t, size_t, size_t>())
+    .def("solve",              &fields::Compensator2<2>::solve);
 
 
   // TODO: 3D filters

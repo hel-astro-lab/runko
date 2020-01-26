@@ -9,10 +9,8 @@
 #include "../tools/rotator.h"
 #include "../definitions.h"
 
-
 namespace fields {
   namespace mpi = mpi4cpp::mpi;
-
 
 /// Yee lattice of plasma quantities
 class YeeLattice
@@ -141,7 +139,6 @@ class YeeLattice
   }
 
   ~YeeLattice() = default;
-
 };
 
 
@@ -318,13 +315,13 @@ class Tile :
 
   virtual const PlasmaMomentLattice& get_const_analysis(int i) const;
 
-  void cycle_yee();
+  virtual void cycle_yee();
 
-  void cycle_current();
+  virtual void cycle_current();
 
-  void clear_current();
+  virtual void clear_current();
 
-  void add_yee_lattice();
+  virtual void add_yee_lattice();
 
   void add_analysis_species();
 
@@ -334,7 +331,6 @@ class Tile :
   virtual std::vector<mpi::request> 
   recv_data( mpi::communicator&, int dest, int mode, int tag) override;
 };
-
 
 
 } // end of namespace fields

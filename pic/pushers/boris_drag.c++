@@ -62,6 +62,11 @@ void pic::BorisPusherDrag<D,V>::push_container(
   real_long uxt, uyt, uzt;
   real_long u1, v1, w1;
   real_long g, f, ginv, kncorr, gamt, ut;
+  real_long dragx, dragy, dragz, dragv;
+  real_long thr;
+
+  // maximum drag force experienced by particle
+  real_long dragthr = 0.1; 
 
   real_long c = cfl;
   real_long cinv = 1.0/c;
@@ -81,13 +86,13 @@ void pic::BorisPusherDrag<D,V>::push_container(
     // Boris algorithm
 
     // read particle-specific fields
-    ex0 = static_cast<real_long>( ex[n]*(0.5*qm) );
-    ey0 = static_cast<real_long>( ey[n]*(0.5*qm) );
-    ez0 = static_cast<real_long>( ez[n]*(0.5*qm) );
+    ex0 = static_cast<real_long>( ex[n] )*0.5*qm;
+    ey0 = static_cast<real_long>( ey[n] )*0.5*qm;
+    ez0 = static_cast<real_long>( ez[n] )*0.5*qm;
 
-    bx0 = static_cast<real_long>( bx[n]*(0.5*qm*cinv) );
-    by0 = static_cast<real_long>( by[n]*(0.5*qm*cinv) );
-    bz0 = static_cast<real_long>( bz[n]*(0.5*qm*cinv) );
+    bx0 = static_cast<real_long>( bx[n] )*0.5*qm*cinv;
+    by0 = static_cast<real_long>( by[n] )*0.5*qm*cinv;
+    bz0 = static_cast<real_long>( bz[n] )*0.5*qm*cinv;
 
     // first half electric acceleration
     u0 = c*vel0n + ex0;
@@ -124,9 +129,22 @@ void pic::BorisPusherDrag<D,V>::push_container(
     // subtract drag with Klein-Nishina reduction
     // A g^2 beta = A g^2 u/g = A g u
     kncorr = kn(3.0*gamt*temp);
-    vel[0][n] = static_cast<real_prtcl>( u0*cinv - c*drag*kncorr*ut*ut*(uxt/gamt) );
-    vel[1][n] = static_cast<real_prtcl>( v0*cinv - c*drag*kncorr*ut*ut*(uyt/gamt) );
-    vel[2][n] = static_cast<real_prtcl>( w0*cinv - c*drag*kncorr*ut*ut*(uzt/gamt) );
+
+    // drag components
+    dragx = c*drag*kncorr*gamt*gamt*(uxt/gamt);
+    dragy = c*drag*kncorr*gamt*gamt*(uyt/gamt);
+    dragz = c*drag*kncorr*gamt*gamt*(uzt/gamt);
+
+    // limit drag to maximum of dragthr of velocity
+    dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut;
+    thr = 1.0;
+    if (dragv > dragthr) thr = dragthr/dragv;
+
+    // apply drag
+    vel[0][n] = static_cast<real_prtcl>( u0*cinv - thr*dragx );
+    vel[1][n] = static_cast<real_prtcl>( v0*cinv - thr*dragy );
+    vel[2][n] = static_cast<real_prtcl>( w0*cinv - thr*dragz );
+
 
     // position advance
     // NOTE: no mixed-precision calc here. Can be problematic.

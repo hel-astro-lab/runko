@@ -75,7 +75,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       z1 = D >= 3 ? z0     - mins[2] : z0;
       z2 = D >= 3 ? loc2n  - mins[2] : loc2n;
 
-      // TODO: is this correctly aligned
   	  i1  = D >= 1 ? static_cast<int>(floor( x1 )) : 0;
   	  i2  = D >= 1 ? static_cast<int>(floor( x2 )) : 0;
   	  j1  = D >= 2 ? static_cast<int>(floor( y1 )) : 0;

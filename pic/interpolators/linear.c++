@@ -47,7 +47,7 @@ void pic::LinearInterpolator<D,V>::solve(
     if (D<=2) iz = 0; // flip switch for making array queries 2D
 
     auto mins = tile.mins;
-    auto maxs = tile.maxs;
+    //auto maxs = tile.maxs;
 
     // TODO: think SIMD (not possible due to ijk writing to yee)
     for(int n=n1; n<n2; n++) {
@@ -57,46 +57,20 @@ void pic::LinearInterpolator<D,V>::solve(
       loc2n = static_cast<real_long>( loc[2][n] );
 
       // particle location in the grid
-      //
-      // FIXME: atm we have a hack here to prevent x = max case.
-      // A more elegant solution most probably exists.
-      // Alternatively this might imply that some < > comparison operators
-      // are wrong somewhere and should be <= or >=, or vice versa.
-      if (D >= 1) {
-        if(loc0n == maxs[0]) loc0n -= 1.0e-4;
+	    if (D >= 1) i  = static_cast<int>(floor( loc[0][n] - mins[0] ));
+	    if (D >= 2) j  = static_cast<int>(floor( loc[1][n] - mins[1] ));
+	    if (D >= 3) k  = static_cast<int>(floor( loc[2][n] - mins[2] ));
 
-	      i  = (int)floor( loc0n-mins[0] );
-	      dx = (loc0n-mins[0]) - i;
-      }
+	    if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
+	    if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
+	    if (D >= 3) dz = (loc[2][n]-mins[2]) - k;
 
-      if (D >= 2) {
-        if(loc1n == maxs[1]) loc1n -= 1.0e-4;
-
-	      j  = (int)floor( loc1n-mins[1] );
-	      dy = (loc1n-mins[1]) - j;
-      }
-
-      if (D >= 3) {
-        if(loc2n == maxs[2]) loc2n -= 1.0e-4;
-
-	      k  = (int)floor( loc2n-mins[2] );
-	      dz = (loc2n-mins[2]) - k;
-      }
-
-      /*
-      std::cout << '\n';
-      std::cout << "x: " << loc[0][n] << " y: " << loc[1][n] << " z:" << loc[2][n] << '\n';
-      std::cout << " ijk " << i << "," << j << "," << k << '\n';
-      std::cout << " ds " << dx << "," << dy << "," << dz << '\n';
-      */
-        
-	    //l = i; // + iy*(j-1) + iz*(k-1);
 
       // check section; TODO; remove
       bool debug_flag = false;
-      if(D >= 1) { if(! (i >= 0 && i < static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
-      if(D >= 2) { if(! (j >= 0 && j < static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
-      if(D >= 3) { if(! (k >= 0 && k < static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
+      if(D >= 1) { if(! (i >= 0 && i <= static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
+      if(D >= 2) { if(! (j >= 0 && j <= static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
+      if(D >= 3) { if(! (k >= 0 && k <= static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
 
       if(debug_flag) {
         std::cout << "--------------------------------------------------\n";
