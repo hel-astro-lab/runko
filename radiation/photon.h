@@ -19,7 +19,7 @@ namespace rad {
  *
  */
 class PhotonContainer : 
-  virtual public pic::ParticleContainer
+  public pic::ParticleContainer
 {
   public:
 
@@ -28,7 +28,7 @@ class PhotonContainer :
     pic::ParticleContainer()
   { };
 
-  virtual ~PhotonContainer() = default;
+  //virtual ~PhotonContainer() = default;
 
   /// particle energy (h\nu in m_e c^2)
   std::vector< real_prtcl > eneArr;

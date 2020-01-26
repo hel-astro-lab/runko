@@ -25,38 +25,38 @@ void Tile<D>::deposit_current()
 template<std::size_t D>
 YeeLattice& Tile<D>::get_yee(int /*i*/) 
 {
-  return this->yee.at(0);
-  //return this->yee;
+  //return this->yee.at(0);
+  return this->yee;
 }
   
 /// Get current time snapshot of Yee lattice
 template<std::size_t D>
 YeeLattice& Tile<D>::get_yee2() 
 {
-  return this->yee[0];
-  //return this->yee;
+  //return this->yee[0];
+  return this->yee;
 }
 
 /// Set current time snapshot of Yee lattice
 template<std::size_t D>
 void Tile<D>::set_yee(YeeLattice& val)
 {
-  this->yee[0] = val;
-  //this->yee = val;
+  //this->yee[0] = val;
+  this->yee = val;
 }
 
 template<std::size_t D>
 std::shared_ptr<YeeLattice> Tile<D>::get_yeeptr() 
 {
-  return std::shared_ptr<YeeLattice>(&this->yee[0]);
-  //return std::shared_ptr<YeeLattice>(&yee);
+  //return std::shared_ptr<YeeLattice>(&this->yee[0]);
+  return std::shared_ptr<YeeLattice>(&yee);
 }
 
 template<std::size_t D>
 const YeeLattice& Tile<D>::get_const_yee(int /*i*/) const 
 {
-  return this->yee.at(0);
-  //return this->yee;
+  //return this->yee.at(0);
+  return this->yee;
 }
 
 
@@ -104,20 +104,20 @@ void Tile<3>::add_analysis_species()
 template<>
 void Tile<1>::add_yee_lattice() 
 {
-  yee.emplace_back( mesh_lengths[0], 1, 1);
+  //yee.emplace_back( mesh_lengths[0], 1, 1);
 }
 
 template<>
 void Tile<2>::add_yee_lattice() 
 {
-  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
+  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
   //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], 1);
 }
 
 template<>
 void Tile<3>::add_yee_lattice() 
 {
-  yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
+  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
   //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
 }
 
@@ -470,7 +470,7 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
 template<>
 void Tile<3>::update_boundaries(corgi::Grid<3>& grid) 
 {
-  std::cout << "upB: updating boundaries\n";
+  //std::cout << "upB: updating boundaries\n";
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -486,7 +486,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
     for(int jn=-1; jn <= 1; jn++) {
       for(int kn=-1; kn <= 1; kn++) {
 
-        std::cout << "upB: " << in << "," << jn << "," << kn << "\n";
+        //std::cout << "upB: " << in << "," << jn << "," << kn << "\n";
 
         if (in == 0 && jn == 0 && kn == 0) continue;
 
@@ -516,8 +516,8 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
           //else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
           //else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
 
-          std::cout << "upB: " << in << "," << jn << "," << kn << " "
-            << "(" << ito << "/" << jto << "/" << kto << "  " << ifro << "/" << jfro << "/" << kfro << ")\n";
+          //std::cout << "upB: " << in << "," << jn << "," << kn << " "
+          //  << "(" << ito << "/" << jto << "/" << kto << "  " << ifro << "/" << jfro << "/" << kfro << ")\n";
           
 
           // generalized halo >= 1 loops

@@ -7,15 +7,6 @@ namespace ffe {
   using namespace mpi4cpp;
 
 
-/// Get current integration time snapshot of Yee lattice
-// FIXME: does not need to be overloaded
-template<std::size_t D>
-fields::YeeLattice& Tile<D>::get_yee(int /*i*/) 
-{
-  return this->yee.at(0);
-}
-
-
 template<std::size_t D>
 ffe::SkinnyYeeLattice& Tile<D>::get_step(int n) 
 {

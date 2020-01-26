@@ -28,15 +28,15 @@ class Tile :
 
 public:
 
-  /// Size of the internal grid
-  //size_t NxGrid;
-  //size_t NyGrid;
-  //size_t NzGrid;
-
+  using corgi::Tile<D>::mins;
+  using corgi::Tile<D>::maxs;
   using fields::Tile<D>::mesh_lengths;
 
+  using fields::Tile<D>::yee;
+  using fields::Tile<D>::analysis;
 
-  //ParticleContainer container;
+  using fields::Tile<D>::cfl;
+
   std::vector<ParticleContainer> containers;
 
   //--------------------------------------------------
@@ -53,17 +53,12 @@ public:
   int Nspecies() const { return containers.size(); };
 
 
-
   /// constructor
   Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
     fields::Tile<D>{nx,ny,nz}
   { }
 
-
-  /// tile temporal and spatial scales
-  using fields::Tile<D>::cfl;
-  //using fields::Tile<D>::dx;
 
   //--------------------------------------------------
   // MPI send

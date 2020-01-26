@@ -14,7 +14,6 @@ namespace fields {
 
 /// Yee lattice of plasma quantities
 class YeeLattice
-// : public std::enable_shared_from_this<YeeLattice>
 {
 
   public:
@@ -46,22 +45,18 @@ class YeeLattice
 
   // real initializer constructor
   YeeLattice(int Nx, int Ny, int Nz) : 
-    Nx(Nx), Ny(Ny), Nz(Nz),
-    ex(Nx, Ny, Nz),
-    ey(Nx, Ny, Nz),
-    ez(Nx, Ny, Nz),
-    bx(Nx, Ny, Nz),
-    by(Nx, Ny, Nz),
-    bz(Nx, Ny, Nz),
-    rho(Nx, Ny, Nz),
-    jx(Nx, Ny, Nz),
-    jy(Nx, Ny, Nz),
-    jz(Nx, Ny, Nz)
-  {
-    Nx = Nx; 
-    Ny = Ny; 
-    Nz = Nz; 
-  }
+    Nx{Nx}, Ny{Ny}, Nz{Nz},
+    ex{Nx, Ny, Nz},
+    ey{Nx, Ny, Nz},
+    ez{Nx, Ny, Nz},
+    bx{Nx, Ny, Nz},
+    by{Nx, Ny, Nz},
+    bz{Nx, Ny, Nz},
+    rho{Nx, Ny, Nz},
+    jx{Nx, Ny, Nz},
+    jy{Nx, Ny, Nz},
+    jz{Nx, Ny, Nz}
+  { }
 
   // copy ctor
   YeeLattice(YeeLattice& other) :
@@ -78,11 +73,7 @@ class YeeLattice
     jx(other.jx),
     jy(other.jy),
     jz(other.jz)
-  {
-    Nx = other.Nx; 
-    Ny = other.Ny; 
-    Nz = other.Nz; 
-  }
+  { }
 
   YeeLattice(const YeeLattice& other) :
     Nx(other.Nx),
@@ -98,15 +89,12 @@ class YeeLattice
     jx(other.jx),
     jy(other.jy),
     jz(other.jz)
-  { 
-    Nx = other.Nx; 
-    Ny = other.Ny; 
-    Nz = other.Nz; 
-  }
+  { }
 
   // move constructor
-  YeeLattice(YeeLattice&& other)
-      : YeeLattice() // initialize via default constructor, C++11 only
+  YeeLattice(YeeLattice&& other) :
+      //YeeLattice() // initialize via default constructor, C++11 only
+      YeeLattice{other.Nx, other.Ny, other.Nz} // initialize via allocating constructor
   {
     swap(*this, other);
   }
@@ -144,7 +132,6 @@ class YeeLattice
 
 /// Lattice to hold plasma moment values of separate species
 class PlasmaMomentLattice 
-//  : public std::enable_shared_from_this<PlasmaMomentLattice>
 {
 
   public:
@@ -252,9 +239,7 @@ class Tile :
   std::array<int, 3> mesh_lengths;
 
   /// Yee lattice of plasma quantities (with 1 timestep)
-  //toolbox::Rotator<YeeLattice, 1> yee;
-  //YeeLattice yee;
-  std::vector<YeeLattice> yee;
+  YeeLattice yee;
 
   /// species-specific analysis results
   std::vector<PlasmaMomentLattice> analysis;
@@ -263,12 +248,8 @@ class Tile :
   using corgi::Tile<D>::mins;
   using corgi::Tile<D>::maxs;
 
-
   /// CFL number (corresponds to simulation light speed c)
   real_long cfl;
-
-  /// grid size (assuming cubical cells)
-  //real_long dx = 1.0;
 
   //--------------------------------------------------
   // constructor with internal mesh dimensions
@@ -280,16 +261,8 @@ class Tile :
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);
 
-    // initialize one Yee lattice into the grid 
-    // TODO: into data rotator?
-
-    add_yee_lattice();
   }
 
-  // avoid copies; TODO: is this needed?
-  //Tile(Tile& ) = delete;
-
-  //~Tile() = default;
   virtual ~Tile() = default;
 
   //--------------------------------------------------
