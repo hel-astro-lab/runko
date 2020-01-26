@@ -26,5 +26,8 @@ namespace rad {
   void bind_rad(py::module& m);
 }
 
+namespace ffe {
+  void bind_ffe(py::module& m);
+}
 
 

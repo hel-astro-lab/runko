@@ -813,6 +813,23 @@ if __name__ == "__main__":
 
             sys.stdout.flush()
 
+        #move grid
+        #for cid in grid.get_tile_ids():
+        #    tile = grid.get_tile(cid)
+
+        #    #get current loc and advance
+        #    (i,j) = tile.index
+        #    mins = spatialLoc(grid, [i,j], [0,0,0], conf)
+        #    maxs = spatialLoc(grid, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
+
+        #    #increase x
+        #    mins[0] = +1.0
+        #    maxs[0] = +1.0
+
+        #    tile.set_tile_mins(mins[0:2])
+        #    tile.set_tile_maxs(maxs[0:2])
+
+
         #next step
         time += conf.cfl/conf.c_omp
     #end of loop

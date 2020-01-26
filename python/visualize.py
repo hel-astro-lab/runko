@@ -273,6 +273,8 @@ def getYee2D(n, conf):
             'jy':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'jz':   -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'jx1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jy1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
+            'jz1':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
             'rho':  -np.inf * np.ones( (conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh) ),
            }
 
@@ -299,6 +301,8 @@ def getYee2D(n, conf):
                 data['jz'][indx, jndx] = yee.jz[q, r, 0]
 
                 data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
+                data['jy1'][indx, jndx] = yee.jy1[q, r, 0]
+                data['jz1'][indx, jndx] = yee.jz1[q, r, 0]
 
                 data['rho'][indx, jndx] = yee.rho[q, r, 0]
 
@@ -410,7 +414,16 @@ def plotDens(ax, n, conf):
 
 
 
-def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
+def plot2dYee(
+        ax, 
+        yee, 
+        n, 
+        conf, 
+        val = 'jx', 
+        vmin=None,
+        vmax=None,
+        label_title=False,
+        ):
 
     #ax.clear()
     ax.cla()
@@ -420,7 +433,11 @@ def plot2dYee(ax, yee, n, conf, val = 'jx', label_title=False):
     arr = yee[val]
     arr = np.ma.masked_where(arr == -np.inf, arr)
 
-    vmin, vmax = np.min(arr), np.max(arr)
+    if vmin == None:
+        vmin = np.min(arr)
+    if vmax == None:
+        vmax = np.max(arr)
+
     vminmax = np.maximum( np.abs(vmin), np.abs(vmax) )
     #print("2D {} min{} max {} minmax {}".format(val, vmin, vmax, vminmax))
 

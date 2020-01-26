@@ -12,6 +12,9 @@ class Propagator
 {
   public:
 
+  /// time step length for more multi-stage schemes
+  double dt = 1.0;
+
   Propagator() {};
 
   virtual ~Propagator() = default;

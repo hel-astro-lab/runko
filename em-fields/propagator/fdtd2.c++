@@ -24,7 +24,7 @@ template<>
 void fields::FDTD2<1>::push_e(fields::Tile<1>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
-  Realf C = 1.0 * tile.cfl * corr;
+  Realf C = 1.0 * tile.cfl * dt * corr;
 
   int k = 0;
   int j = 0;
@@ -51,7 +51,7 @@ void fields::FDTD2<2>::push_e(fields::Tile<2>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
 
-  Realf C = 1.0 * tile.cfl * corr;
+  Realf C = 1.0 * tile.cfl * dt * corr;
 
   int k = 0;
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
@@ -79,7 +79,7 @@ template<>
 void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
-  Realf C = 1.0 * tile.cfl * corr;
+  Realf C = 1.0 * tile.cfl * dt * corr;
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
@@ -126,7 +126,7 @@ template<>
 void fields::FDTD2<1>::push_half_b(fields::Tile<1>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
-  Realf C = 0.5 * tile.cfl * corr;
+  Realf C = 0.5 * tile.cfl * dt * corr;
 
   int k = 0;
   int j = 0;
@@ -152,7 +152,7 @@ void fields::FDTD2<2>::push_half_b(fields::Tile<2>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
 
-  Realf C = 0.5 * tile.cfl * corr;
+  Realf C = 0.5 * tile.cfl * dt * corr;
 
   int k = 0;
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
@@ -181,7 +181,7 @@ template<>
 void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
-  Realf C = 0.5 * tile.cfl * corr;
+  Realf C = 0.5 * tile.cfl * dt * corr;
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 

@@ -127,3 +127,4 @@ def insert_em(grid, conf, ffunc):
                         yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
                         yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
                         yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+
