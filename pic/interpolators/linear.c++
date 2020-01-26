@@ -46,7 +46,7 @@ void pic::LinearInterpolator<D,V>::solve(
     if (D<=2) iz = 0; // flip switch for making array queries 2D
 
     auto mins = tile.mins;
-    auto maxs = tile.maxs;
+    //auto maxs = tile.maxs;
 
     // TODO: think SIMD (not possible due to ijk writing to yee)
     for(int n=n1; n<n2; n++) {
