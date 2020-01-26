@@ -56,10 +56,10 @@ def get_mesh(f5, conf):
     # maxs
     # number_of_cells
 
-    length = dset["length"].value.tolist()
-    mins   = dset["mins"].value.tolist()
-    maxs   = dset["maxs"].value.tolist()
-    tref   = dset["top_refinement_level"].value
+    length = dset["length"][()]
+    mins   = dset["mins"][()]
+    maxs   = dset["maxs"][()]
+    tref   = dset["top_refinement_level"][()]
 
     # create empty mesh with metadata
     vmesh = pytools.AdaptiveMesh3D()
@@ -72,8 +72,8 @@ def get_mesh(f5, conf):
     #cids
     #vals
     
-    cids = dset["cids"].value
-    vals = dset["vals"].value
+    cids = dset["cids"][()]
+    vals = dset["vals"][()]
 
     # build mesh
     for c, cid in enumerate(cids):
