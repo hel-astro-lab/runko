@@ -18,9 +18,9 @@ Current main physics simulation modules include:
 - **FDTD electromagnetic field module** based on staggered Yee lattices (`fields/`)
 - **2D3V Particle-In-Cell module** (`pic/`)
 - **1D3V Relativistic Vlasov module** (`vlasov/`)
+- **2D Force-free electrodynamics** module (`ffe/`)
 
 Additionally, modules under construction include:
-- **Force-free MHD** module (`ffe/`)
 - Non-linear Monte Carlo **radiation module** (`radiation/`)
 - Full **3D3V Vlasov module**
 
