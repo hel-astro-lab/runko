@@ -648,17 +648,8 @@ class Communications(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
         loadTiles3D(grid, conf)
 
-        print("debug testing yee lifetime")
-
-        #print("get tile")
         c = grid.get_tile(1,1,1)
-        #print("get yee")
-        #yee = c.get_yeeptr() #FIXME: yee does not exist here
         yee = c.get_yee() #FIXME: yee does not exist here
-        #print("get ex")
-        #ex = yee.ex
-        #print("set ex")
-        #ex[0,0,0] = 1.0
 
         orig = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
@@ -669,45 +660,24 @@ class Communications(unittest.TestCase):
                 for i in range(grid.get_Nx()):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
-                        #print("get tile", i,j,k)
                         c = grid.get_tile(i,j,k)
 
-                        #print("ref count c:", sys.getrefcount(c))
                         indx = c.index
-                        #indx2 = c.communication.indices
-                        #indx = c.get_index(grid)
                         
                         lens = c.lengths
-                        #print(lens)
                         self.assertEqual(lens[0], conf.Nx)
                         self.assertEqual(lens[1], conf.Ny)
                         self.assertEqual(lens[2], conf.Nz)
-
-                        #print("what got out 1:",c.cid," <-> ", i,j,k," vs. indx ", indx1)
-                        #print("what got out 2:",c.cid," <-> ", i,j,k," vs. indx ", indx2)
-                        #print("what got out 3:",c.cid," <-> ", i,j,k," vs. indx ", indx3)
 
                         self.assertEqual(i, indx[0])
                         self.assertEqual(j, indx[1])
                         self.assertEqual(k, indx[2])
 
-                        #print("get yee")
                         yee = c.get_yee()
-
-                        #print(yee)
-                        #print("ref count c:", sys.getrefcount(c))
-                        #print("ref count yee:", sys.getrefcount(yee))
 
                         for s in range(conf.NzMesh):
                             for r in range(conf.NyMesh):
                                 for q in range(conf.NxMesh):
-                                    #print("ref count yee:", sys.getrefcount(yee))
-                                    #print(yee)
-                                    #ex = yee.ex
-
-                                    #print("set yee")
-
-
                                     ix = i*conf.NxMesh + q 
                                     jy = j*conf.NyMesh + r 
                                     kz = k*conf.NzMesh + s
@@ -726,66 +696,18 @@ class Communications(unittest.TestCase):
                                     yee.jy[q,r,s] = val
                                     yee.jz[q,r,s] = val
                                     val += 1
-                        #print("ijk {},{},{}".format(i,j,k))
-                        #try keeping yee alive 
-                        #nt = yee.size()
-
-        #re-collect them back to array
-
-        #print("get values")
-        if False:
-            data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
-            for cid in grid.get_tile_ids():
-                c = grid.get_tile( cid )
-                (i, j, k) = c.index
-                #(i, j, k) = c.get_index(grid)
-
-                yee = c.get_yee(0)
-                for s in range(conf.NzMesh):
-                    for r in range(conf.NyMesh):
-                        for q in range(conf.NxMesh):
-                            ix = i*conf.NxMesh + q 
-                            jy = j*conf.NyMesh + r 
-                            kz = k*conf.NzMesh + s
-                            data[ ix, jy, kz, 0] = yee.ex[q,r,s]
-                            data[ ix, jy, kz, 1] = yee.ey[q,r,s]
-                            data[ ix, jy, kz, 2] = yee.ez[q,r,s]
-                                                               
-                            data[ ix, jy, kz, 3] = yee.bx[q,r,s]
-                            data[ ix, jy, kz, 4] = yee.by[q,r,s]
-                            data[ ix, jy, kz, 5] = yee.bz[q,r,s]
-                                                               
-                            data[ ix, jy, kz, 6] = yee.jx[q,r,s]
-                            data[ ix, jy, kz, 7] = yee.jy[q,r,s]
-                            data[ ix, jy, kz, 8] = yee.jz[q,r,s]
-
-        #print("r=0-------")
-        #print(data[:,:,0,0])
-        #print("r=1-------")
-        #print(data[:,:,1,0])
-        #print("r=2-------")
-        #print(data[:,:,2,0])
 
 
         #update boundaries
-        #print("update boundaries")
         for cid in grid.get_tile_ids():
-            #print("getting tile")
             c = grid.get_tile( cid )
-            #print("got tile ", c.cid)
-            #i,j,k = c.index
-            #print("i,j,k {},{},{}".format(i,j,k))
             c.update_boundaries(grid)
 
-        #for i in [1]:
-        #    for j in [1]:
-        #        c = grid.get_tile(i,j)
-        #        c.update_boundaries_2d(grid)
-
+        #collect back to this array; default its values to -2 to see errors better
         ref = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
         ref[:,:,:,:,] = -2.0
 
-        print("build check boundaries array")
+        #print("build check boundaries array")
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.get_index(grid)
@@ -822,14 +744,10 @@ class Communications(unittest.TestCase):
                         ref[qq, rr, ss, 8] = yee.jz[q,r,s]
 
 
-
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.index
             yee = c.get_yee(0)
-            #for s in range(-3,conf.NzMesh+3):
-            #    for r in range(-3,conf.NyMesh+3):
-            #        for q in range(-3,conf.NxMesh+3):
             for s in range(conf.NzMesh):
                 for r in range(conf.NyMesh):
                     for q in range(conf.NxMesh):
@@ -838,120 +756,24 @@ class Communications(unittest.TestCase):
                         kz = k*conf.NzMesh + s
 
                         val = 0
-    
-                        #comparison value
-                        #if (s >= 0 and s < conf.NzMesh) and (r >= 0 and r < conf.NyMesh) and (q >= 0 and q < conf.NxMesh):
-                        #    val = orig[ix,jy,kz]
-
-                        #qq = wrap( ix, conf.Nx*conf.NxMesh )
-                        #rr = wrap( jy, conf.Ny*conf.NyMesh )
-                        #ss = wrap( kz, conf.Nz*conf.NzMesh )
-                        #val = orig[qq,rr,ss]
-
                         val = orig[ix,jy,kz]
-
 
                         #inner regions should be the default -2
                         if (s >= 3 and s < conf.NzMesh-3) or (r >= 3 and r < conf.NyMesh-3) or (q >= 3 and q < conf.NxMesh-3):
-                            #print(q,r,s,ix,jy,kz,qq,rr,ss)
                             val = -2.0
-                            #ref[ix,jy,kz,0] = -3
 
                         for iarr in range(9):
                             self.assertEqual( ref[ix,jy,kz,iarr], val )
 
-
-        large_width = 400
-        with np.printoptions(linewidth=large_width):
-            print("yee")
-            print(ref[:,:,2,0].astype(int))
-            print("orig")
-            print(orig[:,:,2].astype(int))
+        #print for debug
+        if False:
+            large_width = 400
+            with np.printoptions(linewidth=large_width):
+                print("yee")
+                print(ref[:,:,2,0].astype(int))
+                print("orig")
+                print(orig[:,:,2].astype(int))
         
-        print("---------------------------SUCCESS!-----------------------------")
-
-
-        #print("--------------------------------------------------")
-        #print("cid = 0")
-        #print(ref[4,:,:,0])
-        #print(ref[4,:,:,1])
-        #print(ref[4,:,:,2])
-
-
-
-
-        # check every tile separately
-        if False:
-            print("check boundaries array")
-            for m in range(conf.Nx*conf.Ny):
-                for i in range(conf.Nx*conf.NxMesh):
-                    for j in range(conf.Ny*conf.NyMesh):
-                        for k in range(conf.Nz*conf.NzMesh):
-                            if ref[m,i,j,k] == 0:
-                                continue
-
-                            #loop over ex, ey, ez,...
-                            for tp in range(9):
-                                self.assertEqual( ref[m,i,j,k], data[i,j,k,tp] )
-                
-
-        #print("--------------------------------------------------")
-        #check halo regions of the middle tile
-
-
-        #print("re-loading yee")
-        if False:
-            c = grid.get_tile(1,1,1)
-            yee = c.get_yee()
-
-            print("check halo regions")
-            #loop over ex,ey,...
-            for iarrs in range(9):
-                arr = np.zeros((conf.NxMesh+6, conf.NyMesh+6, conf.NzMesh+6))
-
-                for s in range(-3, conf.NzMesh+3, 1):
-                    for r in range(-3, conf.NyMesh+3, 1):
-                        for q in range(-3, conf.NxMesh+3, 1):
-
-                            #e
-                            if iarrs == 0:
-                                arr[q+3, r+3, s+3] = yee.ex[q,r,s]
-                            if iarrs == 1:
-                                arr[q+3, r+3, s+3] = yee.ey[q,r,s]
-                            if iarrs == 2:
-                                arr[q+3, r+3, s+3] = yee.ez[q,r,s]
-
-                            #b
-                            if iarrs == 3:
-                                arr[q+3, r+3, s+3] = yee.bx[q,r,s]
-                            if iarrs == 4:
-                                arr[q+3, r+3, s+3] = yee.by[q,r,s]
-                            if iarrs == 5:
-                                arr[q+3, r+3, s+3] = yee.bz[q,r,s]
-
-                            #j
-                            if iarrs == 6:
-                                arr[q+3, r+3, s+3] = yee.jx[q,r,s]
-                            if iarrs == 7:
-                                arr[q+3, r+3, s+3] = yee.jy[q,r,s]
-                            if iarrs == 8:
-                                arr[q+3, r+3, s+3] = yee.jz[q,r,s]
-
-
-                ref2 = data[1:-1, 1:-1, 1:-1, iarrs] #strip outer boundaries away
-
-                print(ref2[:,:,0])
-                print(arr[:,:,0])
-
-                nx,ny,nz=np.shape(ref2)
-                for i in range(nx):
-                    for j in range(ny):
-                        for k in range(nz):
-                            if iarrs == 0:
-                                self.assertEqual(ref2[i,j,k], arr[i,j,k])
-
-                print("---------------------------SUCCESS!-----------------------------")
-
 
 
     def test_neighs3D(self):
