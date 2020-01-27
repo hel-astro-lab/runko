@@ -26,8 +26,8 @@ class Filter
   toolbox::Mesh<real_short, 3> tmp;
 
   Filter(size_t Nx, size_t Ny, size_t Nz) : 
-    Nx(Nx), Ny(Ny), Nz(Nz),
-    tmp(Nx,Ny,Nz)
+    Nx{Nx}, Ny{Ny}, Nz{Nz},
+    tmp{Nx,Ny,Nz}
   {}
 
   virtual ~Filter() = default;

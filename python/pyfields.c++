@@ -451,6 +451,18 @@ void bind_fields(py::module& m_sub)
     .def("write",   &h5io::QuickWriter<2>::write);
 
   // TODO: 3D IO
+  //
+  py::class_< fields::Filter<3>, PyFilter<3> > fieldsfilter3d(m_3d, "Filter");
+  fieldsfilter3d
+    .def(py::init<int, int, int>())
+    .def("solve", &fields::Filter<3>::solve);
+
+  // digital filter
+  py::class_<fields::Binomial2<3>>(m_3d, "Binomial2", fieldsfilter3d)
+    .def(py::init<int, int, int>())
+    .def("solve",      &fields::Binomial2<3>::solve);
+
+
 
 
 }
