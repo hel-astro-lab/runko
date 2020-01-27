@@ -328,7 +328,6 @@ inline void copy_point(
     int rhsI, int rhsJ, int rhsK) 
 {
   lhs(lhsI, lhsJ, lhsK) = rhs(rhsI, rhsJ, rhsK);
-  return;
 }
 
 inline void copy_point_yee(
@@ -360,7 +359,6 @@ inline void add_point(
     int rhsI, int rhsJ, int rhsK) 
 {
   lhs(lhsI, lhsJ, lhsK) += rhs(rhsI, rhsJ, rhsK);
-  return;
 }
 
 inline void add_point_yee(
@@ -741,14 +739,102 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
       for(int kn=-1; kn <= 1; kn++) {
         if (in == 0 && jn == 0) continue;
 
+        if (in == 0 && jn == 0 && kn == 0) continue;
+
         tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
         if (tpr) {
           auto& mpr = tpr->get_yee();
 
-          //TODO: implement 3D
-          assert(false);
+          /* diagonal rules are:
+          if + then to   n
+          if + then from 0
 
-        }
+          if - then to   -1
+          if - then from n-1
+          */
+
+          if (in == +1) { ito = mesh.Nx; ifro = 0; }
+          if (jn == +1) { jto = mesh.Ny; jfro = 0; }
+          if (kn == +1) { kto = mesh.Nz; kfro = 0; }
+
+          if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
+          if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
+          if (kn == -1) { kto = -1;      kfro = mpr.Nz-1; }
+
+
+          // generalized halo >= 1 loops
+
+          // 2D case; kn == 0; no tiles behind or infront
+          if (kn == 0) {
+
+            // vertical
+            if (jn == 0) { 
+              for(int h=1; h<=halo; h++)
+                add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
+
+            // horizontal
+            } else if (in == 0) { 
+              for(int g=1; g<=halo; g++)
+                add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
+
+            // diagonal
+            } else { 
+              for(int h=1; h<=halo; h++) {
+                for(int g=1; g<=halo; g++) {
+                  add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
+                }
+              }
+            } 
+         
+          // 3D case with kn != 0
+          } else {
+            
+            // infront/behind directions
+            if (in == 0 && jn == 0) { 
+              for(int g=1; g<=halo; g++)
+                add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
+
+            // 3D generalized diagonal locations
+            // If the finite-difference scheme is purely non-diagonal
+            // then these can be dropped off.
+              
+            // vertical wedges
+            } else if (jn == 0) {
+
+              // y pencils
+              for(int h=1; h<=halo; h++) {
+                for(int g=1; g<=halo; g++) {
+                  add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
+                }
+              }
+
+            // horizontal wedges
+            } else if (in == 0) {
+
+              // x pencils
+              for(int h=1; h<=halo; h++) {
+                for(int g=1; g<=halo; g++) {
+                  add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
+                }
+              }
+
+            // corners
+            } else {
+
+              // pointwise
+              for(int h=1; h<=halo; h++) {
+                for(int g=1; g<=halo; g++) {
+                  for(int f=1; f<=halo; f++) {
+                    add_point_yee(mesh, mpr, 
+                        ito -in*h, jto -jn*g, kto -kn*f,
+                        ifro-in*h, jfro-jn*g, kfro-kn*f);
+                  }
+                }
+              }
+            } 
+
+          } // 3D cases with kn != 0
+        } // if tpr
       }
     }
   }

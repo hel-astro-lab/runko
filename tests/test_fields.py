@@ -640,9 +640,9 @@ class Communications(unittest.TestCase):
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 3
-        conf.NxMesh = 7
-        conf.NyMesh = 7
-        conf.NzMesh = 7
+        conf.NxMesh = 10
+        conf.NyMesh = 10
+        conf.NzMesh = 10
 
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
@@ -801,3 +801,133 @@ class Communications(unittest.TestCase):
                     yee = tile.get_yee()
                     ind = tile.neighs(ii,jj,kk)
 
+
+    def test_exchangeCurrents3D(self):
+
+        conf = Conf()
+
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 3
+        conf.NxMesh = 6
+        conf.NyMesh = 6
+        conf.NzMesh = 6
+
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+        loadTiles3D(grid, conf)
+
+        orig = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
+
+        #insert running values into Yee
+        val = 1.0 #base value that is summed 
+
+        for k in range(grid.get_Nz()):
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    #if n.get_mpi_grid(i,j) == n.rank:
+                    if True:
+                        c = grid.get_tile(i,j,k)
+                        yee = c.get_yee()
+
+                        #loop over only halos
+                        for s in range(-3, conf.NzMesh+3, 1):
+                            for r in range(-3, conf.NyMesh+3, 1):
+                                for q in range(-3, conf.NxMesh+3, 1):
+
+                                    overlapx = 0
+                                    overlapy = 0
+                                    overlapz = 0
+
+                                    if s < 0 or s >= conf.NzMesh:
+                                        overlapz += 1
+
+                                    if r < 0 or r >= conf.NyMesh:
+                                        overlapy += 1
+
+                                    if q < 0 or q >= conf.NxMesh:
+                                        overlapx += 1
+
+                                    #consider values only outside inner regime 
+                                    olap = overlapx + overlapy + overlapz
+                                    if olap == 0:
+                                        continue
+
+                                    #corresponding true location 
+                                    ix = i*conf.NxMesh + q 
+                                    jy = j*conf.NyMesh + r 
+                                    kz = k*conf.NzMesh + s
+                                    qq = wrap( ix, conf.Nx*conf.NxMesh )
+                                    rr = wrap( jy, conf.Ny*conf.NyMesh )
+                                    ss = wrap( kz, conf.Nz*conf.NzMesh )
+
+                                    #print("ijk {},{},{} | qrs {},{},{} | ii,jj,kk {},{},{} | qq rr ss {},{},{} | multxyz {},{},{}".format(i,j,k, q,r,s, ix,jy,kz, qq,rr,ss, i*conf.NxMesh, j*conf.NyMesh, k*conf.NzMesh))
+
+                                    #add to halos
+                                    yee.jx[q,r,s] = 1.0
+                                    yee.jy[q,r,s] = 1.0
+                                    yee.jz[q,r,s] = 1.0
+
+                                    orig[qq,rr,ss] += 1
+
+
+        #subtract one because the tile itself never contributes to sums
+        orig[:,:,:] -= 1
+
+
+        #update boundaries
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
+            (i, j, k) = c.get_index(grid)
+            c.exchange_currents(grid)
+
+        #collect back to this array; default its values to -2 to see errors better
+        ref = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 3))
+
+        #print("build check boundaries array")
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
+            (i, j, k) = c.get_index(grid)
+            yee = c.get_yee()
+
+            #loop over internals where summation is put
+            for s in range(conf.NzMesh):
+                for r in range(conf.NyMesh):
+                    for q in range(conf.NxMesh):
+                        ix = i*conf.NxMesh + q 
+                        jy = j*conf.NyMesh + r 
+                        kz = k*conf.NzMesh + s
+
+                        ref[ix,jy,kz, 0] = yee.jx[q,r,s]
+                        ref[ix,jy,kz, 1] = yee.jy[q,r,s]
+                        ref[ix,jy,kz, 2] = yee.jz[q,r,s]
+
+
+        #print for debug
+        if False:
+            large_width = 400
+            with np.printoptions(linewidth=large_width):
+                print("yee")
+                print(ref[:,:,3,0].astype(int))
+                print("orig")
+                print(orig[:,:,3].astype(int))
+
+        for cid in grid.get_tile_ids():
+            c = grid.get_tile( cid )
+            (i, j, k) = c.index
+            for s in range(conf.NzMesh):
+                for r in range(conf.NyMesh):
+                    for q in range(conf.NxMesh):
+                        ix = i*conf.NxMesh + q 
+                        jy = j*conf.NyMesh + r 
+                        kz = k*conf.NzMesh + s
+
+                        val = orig[ix,jy,kz]
+
+                        #print("{},{},{}={}".format(ix,jy,kz,val))
+
+                        for iarr in range(3):
+                            self.assertEqual( ref[ix,jy,kz,iarr], val )
+
+
+        
