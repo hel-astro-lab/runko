@@ -113,9 +113,9 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
 
 
 
-template<>
-inline void h5io::TestPrtclWriter<2>::read_tiles(
-    corgi::Grid<2>& grid)
+template<size_t D>
+inline void h5io::TestPrtclWriter<D>::read_tiles(
+    corgi::Grid<D>& grid)
 {
   // clear target arrays
   for(auto& arr : arrs ) arr.clear();
@@ -138,7 +138,7 @@ inline void h5io::TestPrtclWriter<2>::read_tiles(
 
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
-    auto& tile = dynamic_cast<pic::Tile<2>&>(grid.get_tile( cid ));
+    auto& tile = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
     auto& container = tile.get_container( ispc );
 
     real_prtcl* loc[3];
@@ -326,8 +326,7 @@ inline bool h5io::TestPrtclWriter<D>::write(
 
 
 
-
-
 //--------------------------------------------------
 // explicit template class instantiations
 template class h5io::TestPrtclWriter<2>;
+template class h5io::TestPrtclWriter<3>;

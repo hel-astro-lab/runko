@@ -396,7 +396,9 @@ void bind_pic(py::module& m_sub)
     .def("write",   &h5io::TestPrtclWriter<2>::write);
 
   //TODO: 3D test particles
-
+  py::class_<h5io::TestPrtclWriter<3>>(m_3d, "TestPrtclWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::TestPrtclWriter<3>::write);
 
 
   //--------------------------------------------------
