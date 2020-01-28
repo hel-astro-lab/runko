@@ -14,18 +14,18 @@ class Filter
   public:
 
   /// grid size along x
-  size_t Nx;
+  int Nx;
     
   /// grid size along y
-  size_t Ny;
+  int Ny;
 
   /// grid size along z
-  size_t Nz;
+  int Nz;
 
   ///internal scratch container (size equal to jx/jy/jz)
   toolbox::Mesh<real_short, 3> tmp;
 
-  Filter(size_t Nx, size_t Ny, size_t Nz) : 
+  Filter(int Nx, int Ny, int Nz) : 
     Nx{Nx}, Ny{Ny}, Nz{Nz},
     tmp{Nx,Ny,Nz}
   {}
