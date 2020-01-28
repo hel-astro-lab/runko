@@ -198,14 +198,21 @@ void bind_tools(pybind11::module& m)
 
 
 
-
+  // 2D Hilbert generator
   py::class_<hilbert::Hilbert2D>(m_2d, "HilbertGen")
     .def(py::init<int, int>())
     .def("hindex", &hilbert::Hilbert2D::hindex)
     .def("inv",    &hilbert::Hilbert2D::inv);
 
 
-  // TODO: 3D Hilbert generator
+  py::module m_3d = m.def_submodule("threeD", "3D specializations");
+
+  // 3D Hilbert generator
+  py::class_<hilbert::Hilbert3D>(m_3d, "HilbertGen")
+    .def(py::init<int, int, int>())
+    .def("hindex", &hilbert::Hilbert3D::hindex)
+    .def("inv",    &hilbert::Hilbert3D::inv);
+
 
 
 }

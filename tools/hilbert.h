@@ -6,10 +6,39 @@
 namespace hilbert {
 
 
-unsigned int generalhilbertindex(unsigned int m0, unsigned int m1,  int x,  int y);
-unsigned int generalhilbertindex(unsigned int m0, unsigned int m1, unsigned int m2,  int x,  int y,  int z);
-void generalhilbertindexinv(unsigned int m0, unsigned int m1, unsigned int* x, unsigned int* y, unsigned int h);
-void generalhilbertindexinv(unsigned int m0, unsigned int m1, unsigned int m2, unsigned int* x, unsigned int* y, unsigned int* z, unsigned int h);
+unsigned int 
+  generalhilbertindex(
+      unsigned int m0, 
+      unsigned int m1,  
+      int x,  
+      int y);
+
+unsigned int 
+  generalhilbertindex(
+      unsigned int m0, 
+      unsigned int m1, 
+      unsigned int m2,  
+      int x,  
+      int y,  
+      int z);
+
+void 
+  generalhilbertindexinv(
+      unsigned int m0, 
+      unsigned int m1,
+      unsigned int* x,
+      unsigned int* y,
+      unsigned int h);
+
+void 
+  generalhilbertindexinv(
+      unsigned int m0,
+      unsigned int m1,
+      unsigned int m2,
+      unsigned int* x,
+      unsigned int* y,
+      unsigned int* z,
+      unsigned int h);
 
 
 
