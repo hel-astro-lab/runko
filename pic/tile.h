@@ -38,20 +38,19 @@ public:
 
   using fields::Tile<D>::cfl;
 
-  std::vector<ParticleContainer> containers;
+  std::vector<ParticleContainer<D>> containers;
 
   //--------------------------------------------------
   // normal container methods
      
   /// get i:th container
-  ParticleContainer& get_container(int i) { return containers[i]; };
+  ParticleContainer<D>& get_container(int i) { return containers[i]; }
 
-  const ParticleContainer& get_const_container(int i) const { return containers[i]; };
+  const ParticleContainer<D>& get_const_container(int i) const { return containers[i]; };
 
   /// set i:th container
-  void set_container(ParticleContainer& block) 
+  void set_container(ParticleContainer<D>& block) 
   { 
-    block.wrapper_dimension = D; // set wrapper dimension based on tile dimension
     containers.push_back(block); 
   };
 

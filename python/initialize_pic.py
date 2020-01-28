@@ -79,7 +79,10 @@ def initialize_tile(c, indx, n, conf, D=2):
 
     # load particle containers
     for sps in range(conf.Nspecies):
-        container = pypic.ParticleContainer()
+        if D == 2:
+            container = pypic.twoD.ParticleContainer()
+        elif D == 3:
+            container = pypic.threeD.ParticleContainer()
         if sps % 2 == 0:
             container.q = -conf.qe
         else: 

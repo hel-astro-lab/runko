@@ -7,7 +7,7 @@ using toolbox::sign;
 
 template<size_t D, size_t V>
 void pic::BorisPusher<D,V>::push_container(
-    pic::ParticleContainer& container, 
+    pic::ParticleContainer<D>& container, 
     double cfl) 
 {
   int nparts = container.size();

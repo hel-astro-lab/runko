@@ -450,7 +450,7 @@ class PIC(unittest.TestCase):
         # push particles couple of times to make them leak into neighboring tiles
         pusher = pyrunko.pic.threeD.BorisPusher()
 
-        for lap in range(1):
+        for lap in range(40):
             #plot2dParticles(axs[0], grid, conf)
             #saveVisz(lap, grid, conf)
 

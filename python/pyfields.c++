@@ -19,6 +19,9 @@
 
 #include "../io/quick_writer.h"
 
+#include "../io/tasker.h"
+
+
 //--------------------------------------------------
   
 namespace fields{
@@ -420,23 +423,23 @@ void bind_fields(py::module& m_sub)
     .def("solve",      &fields::Binomial2<2>::solve);
 
   py::class_<fields::General3p<2>>(m_2d, "General3p", fieldsfilter2d)
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def_readwrite("alpha",    &fields::General3p<2>::alpha)
     .def("solve",              &fields::General3p<2>::solve);
 
   py::class_<fields::General3pStrided<2>>(m_2d, "General3pStrided", fieldsfilter2d)
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def_readwrite("alpha",    &fields::General3pStrided<2>::alpha)
     .def_readwrite("stride",   &fields::General3pStrided<2>::stride)
     .def("solve",              &fields::General3pStrided<2>::solve);
 
 
   py::class_<fields::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", fieldsfilter2d)
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def("solve",              &fields::Binomial2Strided2<2>::solve);
 
   py::class_<fields::Compensator2<2>>(m_2d, "Compensator2", fieldsfilter2d)
-    .def(py::init<size_t, size_t, size_t>())
+    .def(py::init<int, int, int>())
     .def("solve",              &fields::Compensator2<2>::solve);
 
 
@@ -461,6 +464,27 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::Binomial2<3>>(m_3d, "Binomial2", fieldsfilter3d)
     .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<3>::solve);
+
+
+  //--------------------------------------------------
+  // Full IO 
+
+  // 1D
+  m_1d.def("read_yee",        &fields::read_yee<1>);
+  m_1d.def("write_yee",       &fields::write_yee<1>);
+  m_1d.def("write_analysis",  &fields::write_analysis<1>);
+
+
+  // 2D
+  m_2d.def("write_yee",        &fields::write_yee<2>);
+  m_2d.def("write_analysis",   &fields::write_analysis<2>);
+  m_2d.def("read_yee",         &fields::read_yee<2>);
+
+
+  // 3D
+  //m_3d.def("write_yee",        &3ields::write_yee<3>);
+  //m_3d.def("read_yee",         &fields::read_yee<3>);
+
 
 
 

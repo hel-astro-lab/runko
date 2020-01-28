@@ -176,6 +176,14 @@ void ParticleContainer<D>::add_identified_particle (
   Nprtcls++;
 }
 
+template<>
+void ParticleContainer<1>::check_outgoing_particles(
+    std::array<double,3>& /*mins*/,
+    std::array<double,3>& /*maxs*/)
+{
+  // TODO implement
+  assert(false);
+}
 
 template<>
 void ParticleContainer<2>::check_outgoing_particles(
@@ -322,6 +330,18 @@ void ParticleContainer<D>::delete_transferred_particles()
   for(auto& elem : to_other_tiles) to_be_deleted.push_back( elem.second );
 
   delete_particles(to_be_deleted);
+}
+
+template<>
+void ParticleContainer<1>::transfer_and_wrap_particles( 
+    ParticleContainer&    /*neigh*/,
+    std::array<int,3>     /*dirs*/, 
+    std::array<double,3>& /*global_mins*/, 
+    std::array<double,3>& /*global_maxs*/
+    )
+{
+  // TODO not implemented
+  assert(false);
 }
 
 
@@ -575,5 +595,6 @@ void ParticleContainer<D>::set_keygen_state(int __key, int __rank)
 } // end ns pic
 
 
+template class pic::ParticleContainer<1>;
 template class pic::ParticleContainer<2>;
 template class pic::ParticleContainer<3>;

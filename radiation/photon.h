@@ -17,15 +17,17 @@ namespace rad {
  *   wgt
  *   qm
  *
+ *   Based on pic::Container<3> i.e., assuming 3D geometry
+ *   by default. This is to simplify the algorithm.
  */
 class PhotonContainer : 
-  public pic::ParticleContainer
+  public pic::ParticleContainer<3>
 {
   public:
 
   /// Constructor 
   PhotonContainer() : 
-    pic::ParticleContainer()
+    pic::ParticleContainer<3>()
   { };
 
   //virtual ~PhotonContainer() = default;
@@ -38,7 +40,7 @@ class PhotonContainer :
   virtual void reserve(size_t N) override
   {
     eneArr.reserve(N);
-    pic::ParticleContainer::reserve(N);
+    pic::ParticleContainer<3>::reserve(N);
   }
 
 
@@ -46,7 +48,7 @@ class PhotonContainer :
   void resize(size_t N) override
   {
     eneArr.resize(N);
-    pic::ParticleContainer::resize(N);
+    pic::ParticleContainer<3>::resize(N);
   }
 
   /// special method 
@@ -57,12 +59,12 @@ class PhotonContainer :
     real_prtcl energy) 
   {
     eneArr.push_back(energy);
-    pic::ParticleContainer::add_particle(prtcl_loc, prtcl_vel, weight);
+    pic::ParticleContainer<3>::add_particle(prtcl_loc, prtcl_vel, weight);
   }
 
   // explicitly disallow the usage of base class member
   private:
-    using pic::ParticleContainer::add_particle;
+    using pic::ParticleContainer<3>::add_particle;
 
 };
 

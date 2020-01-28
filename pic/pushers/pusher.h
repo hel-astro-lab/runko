@@ -17,7 +17,7 @@ class Pusher
 
   virtual ~Pusher() = default;
 
-  virtual void push_container(pic::ParticleContainer& container, double cfl) 
+  virtual void push_container(pic::ParticleContainer<D>& container, double cfl) 
   {
     // check that this is never used or that the user must know it
     assert(false);

@@ -42,7 +42,7 @@ class Analyzator {
 
     // analysis lattice reference
     for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
-      ParticleContainer& container = tile.get_container(ispc);
+      ParticleContainer<D>& container = tile.get_container(ispc);
       auto& analysis = tile.analysis[ispc];
 
       analysis.clear();

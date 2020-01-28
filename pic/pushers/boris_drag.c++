@@ -20,7 +20,7 @@ double pic::BorisPusherDrag<D,V>::kn(double x)
 
 template<size_t D, size_t V>
 void pic::BorisPusherDrag<D,V>::push_container(
-    pic::ParticleContainer& container, 
+    pic::ParticleContainer<D>& container, 
     double cfl)
 {
 
