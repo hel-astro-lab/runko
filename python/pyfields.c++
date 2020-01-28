@@ -443,18 +443,8 @@ void bind_fields(py::module& m_sub)
     .def("solve",              &fields::Compensator2<2>::solve);
 
 
-  // TODO: 3D filters
+  // 3D filters
 
-
-  //--------------------------------------------------
-  // Quick IO 
-
-  py::class_<h5io::QuickWriter<2>>(m_2d, "QuickWriter")
-    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::QuickWriter<2>::write);
-
-  // TODO: 3D IO
-  //
   py::class_< fields::Filter<3>, PyFilter<3> > fieldsfilter3d(m_3d, "Filter");
   fieldsfilter3d
     .def(py::init<int, int, int>())
@@ -464,6 +454,20 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::Binomial2<3>>(m_3d, "Binomial2", fieldsfilter3d)
     .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<3>::solve);
+
+
+  //--------------------------------------------------
+  // Quick IO 
+
+  // 2D 
+  py::class_<h5io::QuickWriter<2>>(m_2d, "QuickWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::QuickWriter<2>::write);
+
+  // 3D 
+  py::class_<h5io::QuickWriter<3>>(m_3d, "QuickWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::QuickWriter<3>::write);
 
 
   //--------------------------------------------------
