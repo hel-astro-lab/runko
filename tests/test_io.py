@@ -544,7 +544,7 @@ class IO(unittest.TestCase):
                     c.fld1 = iglob
                     c.fld2 = iglob
                 
-                init.initialize_tile(c, i,j, grid, conf)
+                init.initialize_tile(c, (i,j), grid, conf)
 
                 #add it to the grid
                 grid.add_tile(c, (i,)) 
@@ -612,7 +612,7 @@ class IO(unittest.TestCase):
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
                 c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                initialize_tile(c, i, j, grid, conf)
+                initialize_tile(c, (i, j), grid, conf)
                 grid.add_tile(c, (i,j)) 
 
         inject(grid, test_filler, conf)
@@ -630,7 +630,7 @@ class IO(unittest.TestCase):
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
                 c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                initialize_tile(c, i, j, node2, conf)
+                initialize_tile(c, (i, j), node2, conf)
                 node2.add_tile(c, (i,j)) 
 
         pyrunko.vlv.twoD.read_particles(node2, 0, conf.outdir)

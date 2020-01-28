@@ -269,8 +269,8 @@ class radiation(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         c = pyrad.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        init_pic.initialize_tile(c, 0, 0, grid, conf)
-        init_rad.initialize_tile(c, 0, 0, grid, conf)
+        init_pic.initialize_tile(c, (0, 0), grid, conf)
+        init_rad.initialize_tile(c, (0, 0), grid, conf)
 
 
 

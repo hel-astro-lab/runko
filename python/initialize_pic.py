@@ -65,12 +65,14 @@ def spatialLoc(grid, Ncoords, Mcoords, conf):
     return [x, y, z]
 
 
-def initialize_tile(c, i, j, n, conf):
+def initialize_tile(c, indx, n, conf, D=2):
 
-    #initialize tile dimensions 
-    #c.dt  = conf.dt
-    #c.dx  = conf.dx
-    #c.dx  = 1.0
+    # try 3d unpacking; if not, fallback to 2D
+    try:
+        i,j,k = indx
+    except:
+        i,j = indx
+
     c.cfl = conf.cfl
     
     ppc = conf.ppc #/ conf.Nspecies
@@ -92,46 +94,58 @@ def initialize_tile(c, i, j, n, conf):
     #set bounding box of the tile 
     mins = spatialLoc(n, [i,j], [0,0,0], conf)
     maxs = spatialLoc(n, [i,j], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
-    c.set_tile_mins(mins[0:2])
-    c.set_tile_maxs(maxs[0:2])
+    c.set_tile_mins(mins[0:D])
+    c.set_tile_maxs(maxs[0:D])
     
     # initialize analysis tiles ready for incoming simulation data
-    for ip in range(conf.Nspecies):
-        c.add_analysis_species()
+    #NOTE: only 2D tiles have room for analysis species
+    if D <= 2:
+        for ip in range(conf.Nspecies):
+            c.add_analysis_species()
+
 
 
 #load tiles into each grid
-def loadTiles(n, conf):
+def loadTiles(n, conf, D=2):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
+            for k in range(n.get_Nz()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
-            if n.get_mpi_grid(i,j) == n.rank():
-                c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                
-                initialize_tile(c, i, j, n, conf)
+                if D == 2:
+                    if n.get_mpi_grid(i,j) == n.rank():
+                        c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                        initialize_tile(c, (i, j, 0), n, conf, D=2)
+                        n.add_tile(c, (i,j)) 
 
-                #add it to the grid
-                n.add_tile(c, (i,j)) 
-
+                if D == 3:
+                    if n.get_mpi_grid(i,j,k) == n.rank():
+                        c = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                        initialize_tile(c, (i, j, k), n, conf, D=3)
+                        n.add_tile(c, (i,j,k)) 
 
 
 # make all tiles same type 
-def initialize_virtuals(n, conf):
+def initialize_virtuals(n, conf, D=2):
 
     for cid in n.get_virtual_tiles():
         c_orig = n.get_tile(cid)
-        (i,j) = c_orig.index
+        ind = c_orig.index
 
         # new prtcl tile;
         # TODO: load_metainfo *HAS* to be after add_tile
-        c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        n.add_tile(c, (i,j)) 
+
+        if D == 2:
+            c = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        if D == 3:
+            c = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        n.add_tile(c, ind) 
 
         #c_orig.communication.local = False;
         c.load_metainfo(c_orig.communication)
         #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
         
-        initialize_tile(c, i,j,n, conf)
+        initialize_tile(c, ind, n, conf, D=D)
 
 

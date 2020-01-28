@@ -94,8 +94,17 @@ def rand3Dvel(vabs):
 
 
 
-def initialize_tile(c, i, j, n, conf):
-    
+def initialize_tile(c, indx, n, conf):
+
+    # try 3d unpacking; if not, fallback to 2D
+    try:
+        i,j,k = indx
+    except:
+        try:
+            i,j = indx
+        except:
+            i = indx
+
     # load particle containers
     bucket = pyrad.PhotonContainer()
         
