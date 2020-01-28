@@ -70,6 +70,7 @@ public:
 *   qm
 *
 */
+template<std::size_t D>
 class ParticleContainer {
 
   private:
@@ -128,12 +129,8 @@ class ParticleContainer {
   mapType to_other_tiles;
 
 
-  // size of the internal mesh
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
-
-  double q = 1.0; // normalization factor
+  // normalization factor
+  double q = 1.0; 
 
   /// Constructor 
   ParticleContainer();

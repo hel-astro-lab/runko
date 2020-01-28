@@ -26,6 +26,7 @@ class Tile :
   virtual public  corgi::Tile<D> 
 {
 
+
 public:
 
   using corgi::Tile<D>::mins;
@@ -48,7 +49,11 @@ public:
   const ParticleContainer& get_const_container(int i) const { return containers[i]; };
 
   /// set i:th container
-  void set_container(const ParticleContainer& block) { containers.push_back(block); };
+  void set_container(ParticleContainer& block) 
+  { 
+    block.wrapper_dimension = D; // set wrapper dimension based on tile dimension
+    containers.push_back(block); 
+  };
 
   int Nspecies() const { return containers.size(); };
 
@@ -114,6 +119,10 @@ public:
 
   /// shrink to fit all internal containers
   void shrink_to_fit_all_particles();
+
+
+private:
+  std::size_t dim = D;
 };
 
 

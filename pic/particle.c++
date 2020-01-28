@@ -41,7 +41,14 @@ size_t Particle::number_of_particles() {
 }
 
 
-ParticleContainer::ParticleContainer()
+
+//--------------------------------------------------
+//--------------------------------------------------
+// ParticleContainer methods
+
+
+template<std::size_t D>
+ParticleContainer<D>::ParticleContainer()
 { 
   locArr.resize(3);
   velArr.resize(3);
@@ -61,7 +68,8 @@ ParticleContainer::ParticleContainer()
 }
 
 
-void ParticleContainer::reserve(size_t N) {
+template<std::size_t D>
+void ParticleContainer<D>::reserve(size_t N) {
 
   // always reserve at least 1 element to ensure proper array initialization
   if (N <= 0) N = 1;
@@ -76,7 +84,8 @@ void ParticleContainer::reserve(size_t N) {
   Bpart.reserve(N*3);
 }
 
-void ParticleContainer::resize(size_t N)
+template<std::size_t D>
+void ParticleContainer<D>::resize(size_t N)
 {
   for(size_t i=0; i<3; i++) locArr[i].resize(N);
   for(size_t i=0; i<3; i++) velArr[i].resize(N);
@@ -85,7 +94,8 @@ void ParticleContainer::resize(size_t N)
   Nprtcls = N;
 }
 
-void ParticleContainer::shrink_to_fit()
+template<std::size_t D>
+void ParticleContainer<D>::shrink_to_fit()
 {
   for(size_t i=0; i<3; i++) locArr[i].shrink_to_fit();
   for(size_t i=0; i<3; i++) velArr[i].shrink_to_fit();
@@ -94,7 +104,8 @@ void ParticleContainer::shrink_to_fit()
 }
 
 
-size_t ParticleContainer::size() 
+template<std::size_t D>
+size_t ParticleContainer<D>::size() 
 { 
   assert(locArr[0].size() == Nprtcls);
   assert(locArr[1].size() == Nprtcls);
@@ -112,7 +123,8 @@ size_t ParticleContainer::size()
   return Nprtcls; 
 }
 
-std::pair<int,int> pic::ParticleContainer::keygen() 
+template<std::size_t D>
+std::pair<int,int> pic::ParticleContainer<D>::keygen() 
 {
     // get running key and increment internal counter
   int unique_key = _key;
@@ -122,7 +134,8 @@ std::pair<int,int> pic::ParticleContainer::keygen()
 }
 
 
-void ParticleContainer::add_particle (
+template<std::size_t D>
+void ParticleContainer<D>::add_particle (
     std::vector<real_prtcl> prtcl_loc,
     std::vector<real_prtcl> prtcl_vel,
     real_prtcl prtcl_wgt)
@@ -143,7 +156,8 @@ void ParticleContainer::add_particle (
   Nprtcls++;
 }
 
-void ParticleContainer::add_identified_particle (
+template<std::size_t D>
+void ParticleContainer<D>::add_identified_particle (
     std::vector<real_prtcl> prtcl_loc,
     std::vector<real_prtcl> prtcl_vel,
     real_prtcl prtcl_wgt,
@@ -163,8 +177,56 @@ void ParticleContainer::add_identified_particle (
 }
 
 
-//template<size_t D>
-void ParticleContainer::check_outgoing_particles(
+template<>
+void ParticleContainer<2>::check_outgoing_particles(
+    std::array<double,3>& mins,
+    std::array<double,3>& maxs)
+{
+  to_other_tiles.clear();
+
+  // unpack limits
+  double 
+    xmin = mins[0],
+    ymin = mins[1],
+
+    xmax = maxs[0],
+    ymax = maxs[1];
+
+  int lenx = static_cast<int>( xmax - xmin );
+  int leny = static_cast<int>( ymax - ymin );
+
+  int i0, j0;
+
+  // shortcut for particle locations
+  real_prtcl* locn[3];
+  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
+
+  int i,j,k; // relative indices
+  for(size_t n=0; n<size(); n++) {
+    i = 0;
+    j = 0;
+
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
+
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
+
+    // collapse z dimension
+    if ((i == 0) && (j == 0)) continue; 
+
+    if ( (i != 0) || (j != 0) || (k != 0) ) 
+      to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
+  }
+}
+
+
+
+template<>
+void ParticleContainer<3>::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)
 {
@@ -209,20 +271,13 @@ void ParticleContainer::check_outgoing_particles(
     if(k0 <  0)    k--; // back
     if(k0 >= lenz) k++; // front
 
-    // FIXME: hack to make this work with 2D 
-    if ((i == 0) && (j == 0)) continue; 
-    //if (D == 2) {
-    //  if ((i == 0) && (j == 0)) continue; 
-    //}
-
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
   }
 }
 
-
-
-void ParticleContainer::delete_particles(std::vector<int> to_be_deleted) 
+template<std::size_t D>
+void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted) 
 {
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
@@ -258,7 +313,8 @@ void ParticleContainer::delete_particles(std::vector<int> to_be_deleted)
 }
 
 
-void ParticleContainer::delete_transferred_particles()
+template<std::size_t D>
+void ParticleContainer<D>::delete_transferred_particles()
 {
   std::vector<int> to_be_deleted;
 
@@ -269,7 +325,8 @@ void ParticleContainer::delete_transferred_particles()
 }
 
 
-void ParticleContainer::transfer_and_wrap_particles( 
+template<>
+void ParticleContainer<2>::transfer_and_wrap_particles( 
     ParticleContainer& neigh,
     std::array<int,3>    dirs, 
     std::array<double,3>& global_mins, 
@@ -285,14 +342,11 @@ void ParticleContainer::transfer_and_wrap_particles(
 
   int i;
   for (auto&& elem : neigh.to_other_tiles) {
-      
-    //TODO: collapsed z-dimension due to 2D corgi tiles
-    if (std::get<0>(elem.first) == 0 &&
-        std::get<1>(elem.first) == 0 ) 
-    { continue; }
+    if(std::get<0>(elem.first) == 0 && std::get<1>(elem.first) == 0) continue; 
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
+
     if (std::get<0>(elem.first) == -dirs[0] &&
         std::get<1>(elem.first) == -dirs[1] ) {
 
@@ -319,8 +373,59 @@ void ParticleContainer::transfer_and_wrap_particles(
 }
 
 
+template<>
+void ParticleContainer<3>::transfer_and_wrap_particles( 
+    ParticleContainer& neigh,
+    std::array<int,3>    dirs, 
+    std::array<double,3>& global_mins, 
+    std::array<double,3>& global_maxs
+    )
+{
 
-void ParticleContainer::pack_all_particles()
+  // particle overflow from tiles is done in shortest precision
+  // to avoid rounding off errors and particles left in a limbo
+  // between tiles.
+  real_prtcl locx, locy, locz, velx, vely, velz, wgt;
+  int id, proc;
+
+  int i;
+  for (auto&& elem : neigh.to_other_tiles) {
+      
+    if(std::get<0>(elem.first) == 0 && 
+       std::get<1>(elem.first) == 0 &&
+       std::get<2>(elem.first) == 0) continue; 
+
+    // NOTE: directions are flipped (- sign) so that they are
+    // in directions in respect to the current tile
+
+    if (std::get<0>(elem.first) == -dirs[0] &&
+        std::get<1>(elem.first) == -dirs[1] &&
+        std::get<2>(elem.first) == -dirs[2] ) {
+
+      i = elem.second;
+
+      locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
+
+      velx = neigh.vel(0, i);
+      vely = neigh.vel(1, i);
+      velz = neigh.vel(2, i);
+
+      wgt  = neigh.wgt(i);
+
+      id   = neigh.id(0,i);
+      proc = neigh.id(1,i);
+
+      add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
+    }
+  }
+
+  return;
+}
+
+template<std::size_t D>
+void ParticleContainer<D>::pack_all_particles()
 {
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
@@ -359,8 +464,8 @@ void ParticleContainer::pack_all_particles()
 }
 
 
-
-void ParticleContainer::pack_outgoing_particles()
+template<std::size_t D>
+void ParticleContainer<D>::pack_outgoing_particles()
 {
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
@@ -407,7 +512,8 @@ void ParticleContainer::pack_outgoing_particles()
 }
 
 
-void ParticleContainer::unpack_incoming_particles()
+template<std::size_t D>
+void ParticleContainer<D>::unpack_incoming_particles()
 {
   real_prtcl locx, locy, locz, velx, vely, velz, wgts;
   int ids, proc;
@@ -458,7 +564,8 @@ void ParticleContainer::unpack_incoming_particles()
 }
 
 
-void ParticleContainer::set_keygen_state(int __key, int __rank)
+template<std::size_t D>
+void ParticleContainer<D>::set_keygen_state(int __key, int __rank)
 {
   _key  = __key;
   _rank = __rank;
@@ -468,5 +575,5 @@ void ParticleContainer::set_keygen_state(int __key, int __rank)
 } // end ns pic
 
 
-//template<> void pic::ParticleContainer::check_outgoing_particles<2>;
-//template<> void pic::ParticleContainer::check_outgoing_particles<3>;
+template class pic::ParticleContainer<2>;
+template class pic::ParticleContainer<3>;

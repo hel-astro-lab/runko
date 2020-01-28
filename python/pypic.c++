@@ -62,6 +62,83 @@ auto declare_tile(
     .def("shrink_to_fit_all_particles",  &pic::Tile<D>::shrink_to_fit_all_particles);
 }
 
+template<size_t D>
+auto declare_prtcl_container(
+    py::module& m,
+    const std::string& pyclass_name) 
+{
+
+  return py::class_<
+    pic::ParticleContainer<D>>(m_sub, "ParticleContainer")
+    .def(py::init<>())
+    .def_readwrite("q",   &pic::ParticleContainer<D>::q)
+    .def("reserve",       &pic::ParticleContainer<D>::reserve)
+    .def("size",          &pic::ParticleContainer<D>::size)
+    .def("add_particle",  &pic::ParticleContainer<D>::add_particle)
+    .def("add_particle2", [](pic::ParticleContainer<D>& s, 
+                            real_prtcl xx, real_prtcl yy, real_prtcl zz,
+                            real_prtcl vx, real_prtcl vy, real_prtcl vz, real_prtcl wgt)
+        {
+          s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
+        })
+    .def("set_keygen_state", &pic::ParticleContainer<D>::set_keygen_state)
+    .def("loc",          [](pic::ParticleContainer<D>& s, size_t idim) 
+        {
+          return s.loc(idim); 
+        }, py::return_value_policy::reference)
+    .def("vel",          [](pic::ParticleContainer<D>& s, size_t idim) 
+        {
+          return s.vel(idim); 
+        }, py::return_value_policy::reference)
+    .def("wgt",          [](pic::ParticleContainer<D>& s) 
+        {
+          return s.wgt(); 
+        }, py::return_value_policy::reference)
+    .def("id",           [](pic::ParticleContainer<D>& s, size_t idim) 
+        {
+          return s.id(idim); 
+        }, py::return_value_policy::reference)
+
+    //temporary binding; only needed for unit tests
+    .def("ex",          [](pic::ParticleContainer<D>& s, int i) 
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Epart[i];
+        }, py::return_value_policy::reference)
+    .def("ey",          [](pic::ParticleContainer<D>& s, int i) 
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Epart[i + 1*nparts];
+        }, py::return_value_policy::reference)
+    .def("ez",          [](pic::ParticleContainer<D>& s, int i) 
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Epart[i + 2*nparts];
+        }, py::return_value_policy::reference)
+    .def("bx",          [](pic::ParticleContainer<D>& s, int i)
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Bpart[i];
+        }, py::return_value_policy::reference)
+    .def("by",          [](pic::ParticleContainer<D>& s, int i) 
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Bpart[i + 1*nparts];
+        }, py::return_value_policy::reference)
+    .def("bz",          [](pic::ParticleContainer<D>& s, int i) 
+        {
+          int nparts = s.size();
+          assert(i < nparts);
+          return s.Bpart[i + 2*nparts];
+        }, py::return_value_policy::reference);
+
+}
+
 
 namespace wall {
   // generator for wall tile
@@ -166,76 +243,6 @@ void bind_pic(py::module& m_sub)
 {
 
 
-  py::class_<pic::ParticleContainer> prtcl_con(m_sub, "ParticleContainer");
-  prtcl_con
-    .def(py::init<>())
-    .def_readwrite("q",   &pic::ParticleContainer::q)
-    .def("reserve",       &pic::ParticleContainer::reserve)
-    .def("size",          &pic::ParticleContainer::size)
-    .def("add_particle",  &pic::ParticleContainer::add_particle)
-    .def("add_particle2", [](pic::ParticleContainer& s, 
-                            real_prtcl xx, real_prtcl yy, real_prtcl zz,
-                            real_prtcl vx, real_prtcl vy, real_prtcl vz, real_prtcl wgt)
-        {
-          s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
-        })
-    .def("set_keygen_state", &pic::ParticleContainer::set_keygen_state)
-    .def("loc",          [](pic::ParticleContainer& s, size_t idim) 
-        {
-          return s.loc(idim); 
-        }, py::return_value_policy::reference)
-    .def("vel",          [](pic::ParticleContainer& s, size_t idim) 
-        {
-          return s.vel(idim); 
-        }, py::return_value_policy::reference)
-    .def("wgt",          [](pic::ParticleContainer& s) 
-        {
-          return s.wgt(); 
-        }, py::return_value_policy::reference)
-    .def("id",           [](pic::ParticleContainer& s, size_t idim) 
-        {
-          return s.id(idim); 
-        }, py::return_value_policy::reference)
-
-    //temporary binding; only needed for unit tests
-    .def("ex",          [](pic::ParticleContainer& s, int i) 
-        {
-          int nparts = s.size();
-          assert(i < nparts);
-          return s.Epart[i];
-        }, py::return_value_policy::reference)
-    .def("ey",          [](pic::ParticleContainer& s, int i) 
-        {
-          int nparts = s.size();
-          assert(i < nparts);
-          return s.Epart[i + 1*nparts];
-        }, py::return_value_policy::reference)
-    .def("ez",          [](pic::ParticleContainer& s, int i) 
-        {
-          int nparts = s.size();
-          assert(i < nparts);
-          return s.Epart[i + 2*nparts];
-        }, py::return_value_policy::reference)
-    .def("bx",          [](pic::ParticleContainer& s, int i)
-        {
-          int nparts = s.size();
-          assert(i < nparts);
-          return s.Bpart[i];
-        }, py::return_value_policy::reference)
-    .def("by",          [](pic::ParticleContainer& s, int i) 
-        {
-          int nparts = s.size();
-          assert(i < nparts);
-          return s.Bpart[i + 1*nparts];
-        }, py::return_value_policy::reference)
-    .def("bz",          [](pic::ParticleContainer& s, int i) 
-        {
-          int nparts = s.size();
-          assert(i < nparts);
-          return s.Bpart[i + 2*nparts];
-        }, py::return_value_policy::reference);
-    
-
 
   //--------------------------------------------------
   // 1D bindings
@@ -246,11 +253,13 @@ void bind_pic(py::module& m_sub)
   // 2D bindings
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
   auto t2 = pic::declare_tile<2>(m_2d, "Tile");
+  auto pc2 =pic::declare_prtcl_container<2>(m_2d, "ParticleContainer");
 
   //--------------------------------------------------
   // 3D bindings
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
   auto t3 = pic::declare_tile<3>(m_3d, "Tile");
+  auto pc3 =pic::declare_prtcl_container<3>(m_3d, "ParticleContainer");
 
 
   //--------------------------------------------------

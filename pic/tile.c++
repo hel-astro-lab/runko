@@ -118,11 +118,22 @@ void Tile<3>::get_incoming_particles(
   for(int i=-1; i<=1; i++) {
     for(int j=-1; j<=1; j++) {
       for(int k=-1; k<=1; k++) {
+          
+        // get neighboring tile
+        auto ind = this->neighs(i, j, k); 
+        uint64_t cid = grid.id( std::get<0>(ind), std::get<1>(ind), std::get<2>(ind) );
+        Tile& external_tile = dynamic_cast<Tile&>( grid.get_tile(cid) );
 
-        //TODO 3D
-        assert(false);
+        // loop over all containers
+        for(int ispc=0; ispc<Nspecies(); ispc++) {
+          auto& container = get_container(ispc);
+          auto& neigh = external_tile.get_container(ispc);
 
-      }
+          container.transfer_and_wrap_particles(
+              neigh, {i,j,k}, global_mins, global_maxs);
+        }
+
+        }
     }
   }
 
