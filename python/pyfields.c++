@@ -482,8 +482,8 @@ void bind_fields(py::module& m_sub)
 
 
   // 3D
-  //m_3d.def("write_yee",        &3ields::write_yee<3>);
-  //m_3d.def("read_yee",         &fields::read_yee<3>);
+  m_3d.def("write_yee",        &fields::write_yee<3>);
+  m_3d.def("read_yee",         &fields::read_yee<3>);
 
 
 
