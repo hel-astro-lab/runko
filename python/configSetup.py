@@ -13,7 +13,7 @@ section_names = 'io', 'simulation', 'grid', 'vmesh', 'particles', 'problem'
 # after this it is modified to automatically typecast into safe python datatypes
 class Configuration(object):
 
-    def __init__(self, *file_names):
+    def __init__(self, *file_names, **kwargs):
         parser = ConfigParser()
         parser.optionxform = str  # make option names case sensitive
 
