@@ -37,7 +37,7 @@ auto declare_tile(
 void bind_rad(py::module& m_sub)
 {
 
-  py::class_<rad::PhotonContainer, pic::ParticleContainer>(m_sub, "PhotonContainer")
+  py::class_<rad::PhotonContainer, pic::ParticleContainer<3>>(m_sub, "PhotonContainer")
     .def(py::init<>())
     .def("add_particle",  (void (rad::PhotonContainer::*)
           ( std::vector<real_prtcl>, std::vector<real_prtcl>, real_prtcl, real_prtcl ) ) 

@@ -212,7 +212,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(grid, conf)
         fill_yee(grid, ref, conf)
 
-        pyrunko.vlv.oneD.write_yee(grid, 0, conf.outdir)
+        pyrunko.fields.oneD.write_yee(grid, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -243,7 +243,7 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyrunko.vlv.oneD.read_yee(node2, 0, "io_test_1D")
+        pyrunko.fields.oneD.read_yee(node2, 0, "io_test_1D")
 
         yee1 = get_yee(grid,  conf)
         yee2 = get_yee(node2, conf)
@@ -290,7 +290,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(grid, conf)
         fill_yee(grid, ref, conf)
 
-        pyrunko.vlv.twoD.write_yee(grid, 0, conf.outdir)
+        pyrunko.fields.twoD.write_yee(grid, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
@@ -321,7 +321,7 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyrunko.vlv.twoD.read_yee(node2, 0, "io_test_2D")
+        pyrunko.fields.twoD.read_yee(node2, 0, "io_test_2D")
 
         yee1 = getYee2D(grid,  conf)
         yee2 = getYee2D(node2, conf)
@@ -617,7 +617,7 @@ class IO(unittest.TestCase):
 
         inject(grid, test_filler, conf)
 
-        pyrunko.vlv.twoD.write_particles(grid, 0, conf.outdir)
+        pyrunko.pic.twoD.write_particles(grid, 0, conf.outdir)
 
         # TODO: read with h5py
 
@@ -633,7 +633,7 @@ class IO(unittest.TestCase):
                 initialize_tile(c, (i, j), node2, conf)
                 node2.add_tile(c, (i,j)) 
 
-        pyrunko.vlv.twoD.read_particles(node2, 0, conf.outdir)
+        pyrunko.pic.twoD.read_particles(node2, 0, conf.outdir)
 
         #assert
         for i in range(node2.get_Nx()):

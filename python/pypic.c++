@@ -26,6 +26,11 @@ namespace py = pybind11;
 
 #include "../io/test_prtcl_writer.h"
 
+#include "../io/tasker.h"
+
+
+
+
 
 namespace pic {
 
@@ -69,7 +74,7 @@ auto declare_prtcl_container(
 {
 
   return py::class_<
-    pic::ParticleContainer<D>>(m_sub, "ParticleContainer")
+    pic::ParticleContainer<D>>(m, pyclass_name.c_str())
     .def(py::init<>())
     .def_readwrite("q",   &pic::ParticleContainer<D>::q)
     .def("reserve",       &pic::ParticleContainer<D>::reserve)
@@ -391,6 +396,21 @@ void bind_pic(py::module& m_sub)
     .def("write",   &h5io::TestPrtclWriter<2>::write);
 
   //TODO: 3D test particles
+
+
+
+  //--------------------------------------------------
+  // Full IO
+
+
+  // 2D
+  m_2d.def("write_particles",  &pic::write_particles<2>);
+  m_2d.def("read_particles",   &pic::read_particles<2>);
+
+  // 3D
+  m_3d.def("write_particles",  &pic::write_particles<3>);
+  m_3d.def("read_particles",   &pic::read_particles<3>);
+
 
 }
 
