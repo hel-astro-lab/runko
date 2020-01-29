@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
         # read restart files
         pyrunko.fields.threeD.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
-        pyrunko.pic.threeD.read_prtcls(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyrunko.pic.threeD.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # step one step ahead
         lap = io_stat["lap"] + 1
