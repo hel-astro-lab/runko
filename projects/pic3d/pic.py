@@ -12,7 +12,7 @@ import pycorgi  # corgi c++ bindings
 import pyrunko  # runko c++ bindings
 import pytools  # runko python tools
 
-from pytools import tiles_all, tiles_local, tiles_virtual
+from pytools import tiles_all, tiles_local, tiles_virtual, tiles_boundary
 
 
 # problem specific modules
@@ -50,8 +50,9 @@ def velocity_profile(xloc, ispcs, conf):
     # velocity sampling
     gamma = conf.gamma
     direction = -1
-    # ux, uy, uz, uu = boosted_maxwellian(delgam, gamma, direction=direction, dims=3)
-    ux, uy, uz, uu = 0.0, 0.0, 0.0, 0.0
+    ux, uy, uz, uu = pytools.pic.boosted_maxwellian(
+        delgam, gamma, direction=direction, dims=3
+    )
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
@@ -199,7 +200,7 @@ if __name__ == "__main__":
 
     timer.stop("init")
     timer.stats("init")
-    timer.verbose = 3 #0 normal; 3 - debug mode
+    #timer.verbose = 1  # 0 normal; 1 - debug mode
 
     # --------------------------------------------------
     # load physics solvers
@@ -256,6 +257,10 @@ if __name__ == "__main__":
     piston.gammawall = conf.wallgamma
     piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
     piston.walloc = 5.0  # leave 5 cell spacing between the wall for boundary conditions
+
+    print(piston.gammawall)
+    print(piston.betawall)
+    print(piston.walloc)
 
     # --------------------------------------------------
     # sync e and b fields
@@ -324,7 +329,7 @@ if __name__ == "__main__":
 
         # --------------------------------------------------
         # apply moving/reflecting walls
-        timer.start_comp("walls")
+        t1 = timer.start_comp("walls")
         for tile in tiles_local(grid):
             piston.solve(tile)
         timer.stop_comp(t1)
@@ -334,7 +339,7 @@ if __name__ == "__main__":
 
         # --------------------------------------------------
         # push B half
-        timer.start_comp("push_half_b2")
+        t1 = timer.start_comp("push_half_b2")
         for tile in tiles_all(grid):
             fldprop.push_half_b(tile)
             piston.field_bc(tile)
@@ -368,7 +373,7 @@ if __name__ == "__main__":
 
         # --------------------------------------------------
         # current calculation; charge conserving current deposition
-        timer.start_comp("comp_curr")
+        t1 = timer.start_comp("comp_curr")
         for tile in tiles_local(grid):
             currint.solve(tile)
         timer.stop_comp(t1)
@@ -400,7 +405,7 @@ if __name__ == "__main__":
 
         # --------------------------------------------------
         # local particle exchange (independent)
-        timer.start_comp("check_outg_prtcls")
+        t1 = timer.start_comp("check_outg_prtcls")
         for tile in tiles_local(grid):
             tile.check_outgoing_particles()
         timer.stop_comp("check_outg_prtcls")
@@ -569,7 +574,7 @@ if __name__ == "__main__":
                 MPI.COMM_WORLD.barrier()  # sync everybody in case of failure before write
                 if grid.rank() == 0:
                     with open(conf.outdir + "/restart/laps.txt", "a") as lapfile:
-                        lapfile.write("{},{}\n".format(lap, deep_io_switch))
+                        lapfile.write("{},{}\n".format(lap, io_stat['deep_io_switch']))
 
             timer.stop("io")
 
