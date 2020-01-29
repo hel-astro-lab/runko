@@ -55,6 +55,35 @@ def density_profile(xloc, ispcs, conf):
     return conf.ppc
 
 
+# Field initialization 
+def insert_em_fields(grid, conf):
+
+    #into radians
+    btheta = conf.btheta/180.*np.pi
+    bphi   = conf.bphi/180.*np.pi
+    beta   = conf.beta
+
+    for cid in grid.get_tile_ids():
+        tile = grid.get_tile(cid)
+        yee = tile.get_yee(0)
+
+        ii,jj,kk = tile.index
+
+        for n in range(conf.NzMesh):
+            for m in range(-3, conf.NyMesh+3):
+                for l in range(-3, conf.NxMesh+3):
+                    # get global coordinates
+                    iglob, jglob, kglob = pytools.pic.threeD.ind2loc( (ii,jj,kk), (l,m,n), conf)
+
+                    yee.bx[l,m,n] = conf.binit*np.cos(btheta) 
+                    yee.by[l,m,n] = conf.binit*np.sin(btheta)*np.sin(bphi)
+                    yee.bz[l,m,n] = conf.binit*np.sin(btheta)*np.cos(bphi)   
+
+                    yee.ex[l,m,n] = 0.0
+                    yee.ey[l,m,n] =-beta*yee.bz[l,m,n]
+                    yee.ez[l,m,n] = beta*yee.by[l,m,n]
+    return
+
 
 if __name__ == "__main__":
 
@@ -85,15 +114,8 @@ if __name__ == "__main__":
 
     # --------------------------------------------------
     # setup grid
-    xmin = 0.0
-    ymin = 0.0
-    zmin = 0.0
-    xmax = conf.Nx * conf.NxMesh
-    ymax = conf.Ny * conf.NyMesh
-    zmax = conf.Nz * conf.NzMesh
-
     grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
-    grid.set_grid_lims(xmin, xmax, ymin, ymax, zmin, zmax)
+    grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
     # compute initial mpi ranks using Hilbert's curve partitioning
     pytools.balance_mpi_3D(grid)
@@ -127,7 +149,7 @@ if __name__ == "__main__":
             print("    e+ prtcls: {}".format(prtcl_stat[1]))
 
         # inserting em grid
-        #insert_em(grid, conf)
+        insert_em_fields(grid, conf)
 
     else:
         if do_print:
