@@ -258,9 +258,6 @@ if __name__ == "__main__":
     piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
     piston.walloc = 5.0  # leave 5 cell spacing between the wall for boundary conditions
 
-    print(piston.gammawall)
-    print(piston.betawall)
-    print(piston.walloc)
 
     # --------------------------------------------------
     # sync e and b fields

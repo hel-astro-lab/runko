@@ -75,16 +75,12 @@ class Mesh
       mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
       try {
-
-        if(Nx > 256) throw std::range_error ("Mesh nx too big");
-        if(Ny > 256) throw std::range_error ("Mesh ny too big");
-        if(Nz > 256) throw std::range_error ("Mesh nz too big");
-
+        //if(Nx > 256) throw std::range_error ("Mesh nx too big");
+        //if(Ny > 256) throw std::range_error ("Mesh ny too big");
+        //if(Nz > 256) throw std::range_error ("Mesh nz too big");
         //mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) ); //automatically done at construction
-          
         std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
       } catch ( std::exception& e) {
-
         // whoops... if control reaches here, a memory allocation
         // failure occurred somewhere.
         std::cerr << "Standard exception: " << e.what() << std::endl;
