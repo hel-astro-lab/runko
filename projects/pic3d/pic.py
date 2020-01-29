@@ -29,11 +29,6 @@ if __name__ == "__main__":
     if do_print:
         print("Running pic.py with {} MPI processes.".format(MPI.COMM_WORLD.Get_size()))
 
-    # print(pytools.__name__)
-    # print(dir(pytools))
-    # print(pytools.pic.__name__)
-    # print(dir(pytools.pic))
-
     # --------------------------------------------------
     # Timer for profiling
     timer = pytools.Timer()
@@ -49,6 +44,10 @@ if __name__ == "__main__":
     # create conf object with simulation parameters based on them
     conf = Configuration(args.conf_filename, do_print=do_print)
 
+    # create output folders
+    if grid.master():
+        pytools.create_output_folders(conf)
+
     # --------------------------------------------------
     # setup grid
     xmin = 0.0
@@ -61,11 +60,39 @@ if __name__ == "__main__":
     grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
     grid.set_grid_lims(xmin, xmax, ymin, ymax, zmin, zmax)
 
-    # init.loadMpi3D(grid)
+    # compute initial mpi ranks using Hilbert's curve partitioning
+    pytools.balance_mpi_3D(grid)
 
+    # load pic tiles into grid
     pytools.pic.threeD.load_tiles(grid, conf)
 
     # --------------------------------------------------
+    # simulation restart
+
+    # get current restart file status
+    io_stat = pytools.check_for_restart(conf)
+
+    # no restart file; initialize simulation
+    if io_stat["do_initialization"]:
+        if do_print:
+            print("initializing simulation...")
+
+        lap = 0
+        np.random.seed(1)
+        inject(grid, filler, conf)  # injecting plasma particles
+        insert_em(grid, conf)
+    else:
+        if do_print:
+            print("restarting simulation from lap {}...".format(io_stat["lap"]))
+
+        pyrunko.fields.threeD.read_yee(grid, io_stat['read_lap'], io_stat['read_dir'])
+        pyrunko.pic.threeD.read_prtcls(grid, io_stat['read_lap'], io_stat['read_dir'])
+
+        lap = io_stat["lap"] + 1  # step one step ahead
+
+
+
+
 
     timer.stop("total")
     timer.stats("total")
