@@ -51,12 +51,13 @@ def check_for_restart(conf):
     # restart from latest file
     io_status["deep_io_switch"] = 0
     if conf.laprestart >= 0:
-        #io_status["do_initialization"] = False
+        io_status["do_initialization"] = False
 
         # switch between automatic restart and user-defined lap
 
         # zero signals automatic checking of latest lap
         if conf.laprestart == 0:
+            print("restarting automatically...")
 
             # get latest restart file from housekeeping file
             with open(conf.outdir + "/restart/laps.txt", "r") as lapfile:
@@ -66,7 +67,7 @@ def check_for_restart(conf):
                 io_status["lap"] = int(slap)
                 io_status["deep_io_switch"] = int(sdeep_io_switch)
 
-            io_status["read_lap"] = deep_io_switch
+            io_status["read_lap"] = io_status['deep_io_switch']
             io_status["read_dir"] = conf.outdir + "/restart"
 
         # >0 lap means that we need to restart from full_output
