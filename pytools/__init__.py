@@ -1,4 +1,5 @@
-#load timer on the top level
+# -*- coding: utf-8 -*- 
+
 from .timer import *
 from .cli import *
 from .conf import *

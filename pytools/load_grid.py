@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*- 
+
 import numpy as np
 
 import pycorgi
@@ -37,7 +39,7 @@ def balance_mpi_3D(n, comm_size=None):
         for i in range(nx):
             for j in range(ny):
                 for k in range(nz):
-                    grid[i, j, k] = hgen.hindex(i, j)
+                    grid[i, j, k] = hgen.hindex(i, j, k)
 
         # print(grid)
         hmin, hmax = np.min(grid), np.max(grid)

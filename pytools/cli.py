@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*- 
+
 import argparse
 import os
 
@@ -73,13 +75,5 @@ def check_for_restart(conf):
             io_status["read_lap"] = lap
             io_status["read_dir"] = conf.outdir + "/full_output"
 
-        debug_print(grid, "read")
-        if do_print:
-            print("...reading Yee lattices (lap {}) from {}".format(read_lap, odir))
-        pyvlv.read_yee(grid, read_lap, odir)
 
-        if do_print:
-            print("...reading particles (lap {}) from {}".format(read_lap, odir))
-        pyvlv.read_particles(grid, read_lap, odir)
-
-        lap += 1  # step one step ahead
+    return io_status
