@@ -264,10 +264,43 @@ void pic::Piston<2>::field_bc(
 }
 
 
+template<>
+void pic::Piston<3>::field_bc(
+    pic::Tile<3>& tile)
+{
+  // skip if piston head is not inside tile boundaries
+  auto mins = tile.mins;
+  auto maxs = tile.maxs;
+
+  // make left side of piston conductor
+  if(walloc < maxs[0]) {
+    auto& yee = tile.get_yee();
+
+    // wall location 
+    int iw = walloc - mins[0]; 
+    if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
+
+    // set transverse directions to zero to make this conductor
+    for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+3; k++) 
+    for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) 
+    for(int i=-3; i<=iw; i++) {
+      yee.ey(i,j,k) = 0.0;
+      yee.ez(i,j,k) = 0.0;
+
+      yee.jx(i,j,k) = 0.0;
+      yee.jy(i,j,k) = 0.0;
+      yee.jz(i,j,k) = 0.0;
+    }
+
+  } // end if inside piston
+
+}
+
+
 //--------------------------------------------------
 // explicit template instantiation
 
 //template class pic::Piston<1>; // 1D3V
 template class pic::Piston<2>; // 2D3V
-//template class pic::Piston<3>; // 3D3V
+template class pic::Piston<3>; // 3D3V
 

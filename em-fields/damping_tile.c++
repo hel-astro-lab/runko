@@ -6,49 +6,6 @@ using std::max;
 using std::exp;
 
 
-
-/*
-void fields::PlasmaTileDamped::push_e() {
-
-  // this->push_e_1d();
-  this->push_e_2d_damped();
-  // this->push_e_3d();
-}
-*/
-
-
-/*
-/// 2D E pusher
-void fields::PlasmaTileDamped::push_e_2d_damped() {
-
-  fields::YeeLattice& mesh = this->get_yee();
-
-  //std::cout << "Calling DAMPED E update\n";
-  Realf C = 1.0 * cfl;
- 
-  int k = 0;
-  for(int j=0; j<(int)NyMesh; j++) {
-    for(int i=0; i<(int)NxMesh; i++) {
-
-      // Ex
-      mesh.ex(i,j,k) += 
-        + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
-
-      // Ey
-      mesh.ey(i,j,k) += 
-        + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
-
-      // Ez
-      mesh.ez(i,j,k) += 
-        + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
-        + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
-
-    }
-  }
-}
-*/
-
-
 // deposit current with some resistivity
 //template<
 //  std::size_t D, 

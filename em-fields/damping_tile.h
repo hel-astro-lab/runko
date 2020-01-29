@@ -38,16 +38,16 @@ class Tile :
 
 
   /// constructor
-  Tile(size_t nx, size_t ny, size_t nz) :
-    fields::Tile<D>(nx,ny,nz),
+  Tile(int nx, int ny, int nz) :
+    fields::Tile<D>{nx,ny,nz},
 
-    ex_ref(nx,ny,nz),
-    ey_ref(nx,ny,nz),
-    ez_ref(nx,ny,nz),
+    ex_ref{nx,ny,nz},
+    ey_ref{nx,ny,nz},
+    ez_ref{nx,ny,nz},
 
-    bx_ref(nx,ny,nz),
-    by_ref(nx,ny,nz),
-    bz_ref(nx,ny,nz)
+    bx_ref{nx,ny,nz},
+    by_ref{nx,ny,nz},
+    bz_ref{nx,ny,nz}
   { }
 
   //void push_e() override;
