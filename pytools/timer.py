@@ -14,6 +14,8 @@ class Timer:
     do_print = True
     error_index = 99
 
+    verbose = 0
+
     def __init__(self, names=[], components=[]):
         # self.names = names
         # self.n = len(names)
@@ -68,6 +70,8 @@ class Timer:
         # purge old list
         self.names[name] = []
         self.names[name].append(t0)
+
+
 
     def purge(self, name):
         # indx = self._look_name(name)
@@ -126,6 +130,8 @@ class Timer:
             self.components[name] = []
 
         self.components[name].append(t0)
+
+        if self.verbose > 0: print(name) 
 
         return name
 
