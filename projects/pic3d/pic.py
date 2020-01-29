@@ -203,6 +203,87 @@ if __name__ == "__main__":
     # load physics solvers
 
 
+    #pusher   = pypic.BorisPusher()
+    pusher   = pypic.VayPusher()
+
+    #fldprop  = pyfld.FDTD2()
+    fldprop  = pyfld.FDTD4()
+
+    fintp    = pypic.LinearInterpolator()
+    currint  = pypic.ZigZag()
+    flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+    #analyzer = pypic.Analyzator()
+
+    #enhance numerical speed of light slightly to suppress numerical Cherenkov instability
+    fldprop.corr = 1.02
+
+
+    # --------------------------------------------------
+    # I/O objects
+
+    # quick field snapshots
+    debug_print(grid, "qwriter")
+    qwriter  = pyfld.QuickWriter(
+            conf.outdir, 
+            conf.Nx, conf.NxMesh,
+            conf.Ny, conf.NyMesh,
+            conf.Nz, conf.NzMesh,
+            conf.stride)
+
+    # test particles
+    debug_print(grid, "tpwriter")
+    tpwriter = pypic.TestPrtclWriter(
+            conf.outdir, 
+            conf.Nx, conf.NxMesh,
+            conf.Ny, conf.NyMesh,
+            conf.Nz, conf.NzMesh,
+            conf.ppc, len(grid.get_local_tiles()),
+            conf.n_test_prtcls)
+
+    # --------------------------------------------------
+    #reflecting leftmost wall
+    piston   = pyrunko.pic.threeD.Piston()
+
+    # set piston wall speed (for standard reflection non-moving and so 0)
+    piston.gammawall = conf.wallgamma
+    piston.betawall = np.sqrt(1.-1./conf.wallgamma**2.)
+    piston.walloc = 5.0 #leave 5 cell spacing between the wall for boundary conditions
+
+
+    # --------------------------------------------------
+    # sync e and b fields
+
+    #mpi e
+    grid.send_data(1) 
+    grid.recv_data(1) 
+    grid.wait_data(1) 
+
+    #mpi b
+    grid.send_data(2) 
+    grid.recv_data(2) 
+    grid.wait_data(2) 
+
+    ################################################## 
+    # simulation time step loop
+
+    sys.stdout.flush()
+
+    #simulation loop
+    time = lap*(conf.cfl/conf.c_omp)
+    for lap in range(lap, conf.Nt+1):
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
