@@ -176,4 +176,3 @@ void pic::BorisPusherDrag<D,V>::push_container(
 template class pic::BorisPusherDrag<1,3>; // 1D3V
 template class pic::BorisPusherDrag<2,3>; // 2D3V
 template class pic::BorisPusherDrag<3,3>; // 3D3V
-

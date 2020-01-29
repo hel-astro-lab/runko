@@ -300,9 +300,16 @@ void bind_pic(py::module& m_sub)
   // Boris pusher
   py::class_<pic::BorisPusher<3,3>>(m_3d, "BorisPusher", picpusher3d)
     .def(py::init<>());
+    
+  // Boris pusher with drag force
+  py::class_<pic::BorisPusherDrag<3,3>>(m_3d, "BorisDragPusher", picpusher3d)
+    .def_readwrite("drag", &pic::BorisPusherDrag<3,3>::drag)
+    .def_readwrite("temp", &pic::BorisPusherDrag<3,3>::temp)
+    .def(py::init<>());
 
-  // TODO: add 3D Vay
-  // TODO: add 3D BorisDrag
+  // Vay
+  py::class_<pic::VayPusher<3,3>>(m_3d, "VayPusher", picpusher3d)
+    .def(py::init<>());
 
 
   //--------------------------------------------------
@@ -368,7 +375,7 @@ void bind_pic(py::module& m_sub)
   //m_2d.def("read_particles",   &pic::read_particles<2>);
 
   //--------------------------------------------------
-  // piston
+  //2 D piston
   py::class_<pic::Piston<2>>(m_2d, "Piston")
     .def(py::init<>())
     .def_readwrite("walloc",   &pic::Piston<2>::walloc)
@@ -377,7 +384,15 @@ void bind_pic(py::module& m_sub)
     .def("solve",              &pic::Piston<2>::solve)
     .def("field_bc",           &pic::Piston<2>::field_bc);
 
-  //TODO: 3D piston
+  //3D piston
+  py::class_<pic::Piston<3>>(m_3d, "Piston")
+    .def(py::init<>())
+    .def_readwrite("walloc",   &pic::Piston<3>::walloc)
+    .def_readwrite("gammawall",&pic::Piston<3>::gammawall)
+    .def_readwrite("betawall", &pic::Piston<3>::betawall)
+    .def("solve",              &pic::Piston<3>::solve)
+    .def("field_bc",           &pic::Piston<3>::field_bc);
+
 
 
   //--------------------------------------------------
