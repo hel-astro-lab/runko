@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 # system libraries
 from __future__ import print_function
@@ -8,9 +8,9 @@ import sys, os
 import h5py
 
 # runko + auxiliary modules
-import pycorgi
-import pyrunko
-import pytools
+import pycorgi # corgi c++ bindings
+import pyrunko # runko c++ bindings
+import pytools # runko python tools
 
 # problem specific modules
 from problem import Configuration_Problem as Configuration
@@ -20,68 +20,83 @@ from problem import Configuration_Problem as Configuration
 np.random.seed(1)
 
 
+# Prtcl velocity (and location modulation inside cell) 
+# 
+# NOTE: Cell extents are from xloc to xloc + 1, i.e., dx = 1 in all dims. 
+#       Therefore, typically we use position as x0 + RUnif[0,1).
+#
+# NOTE: Default injector changes odd ispcs's loc to (ispcs-1)'s prtcl loc.
+#       This means that positrons/ions are on top of electrons to guarantee
+#       charge conservation (because zero charge density initially).
+#
 def velocity_profile(xloc, ispcs, conf):
 
-    #electrons
+    # electrons
     if ispcs == 0:
-        delgam  = conf.delgam #* np.abs(conf.mi / conf.me) * conf.temp_ratio
+        delgam = conf.delgam  # * np.abs(conf.mi / conf.me) * conf.temp_ratio
 
-    #positrons/ions/second species
+    # positrons/ions/second species
     elif ispcs == 1:
-        delgam  = conf.delgam
-
+        delgam = conf.delgam
 
     # perturb position between x0 + RUnif[0,1)
-    # NOTE: Default injector changes odd ispcs's loc to (ispcs-1) prtcl loc
-    #       This means that positrons/ions are on top of electrons to guarantee 
-    #       charge conservation (because zero charge density initially)
     xx = xloc[0] + np.random.rand(1)
     yy = xloc[1] + np.random.rand(1)
     zz = xloc[2] + np.random.rand(1)
 
-
+    # velocity sampling 
     gamma = conf.gamma
     direction = -1
-    #ux, uy, uz, uu = boosted_maxwellian(delgam, gamma, direction=direction, dims=3)
-    ux, uy, uz, uu = 0., 0., 0., 0.
+    # ux, uy, uz, uu = boosted_maxwellian(delgam, gamma, direction=direction, dims=3)
+    ux, uy, uz, uu = 0.0, 0.0, 0.0, 0.0
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
     return x0, u0
 
 
+# number of prtcls of species 'ispcs' to be added to cell at location 'xloc'
+#
+# NOTE: Plasma frequency is adjusted based on conf.ppc (and prtcl charge conf.qe/qi 
+#       and mass conf.me/mi are computed accordingly) so modulate density in respect
+#       to conf.ppc only.
+#
 def density_profile(xloc, ispcs, conf):
+
     # uniform plasma with default n_0 number density
     return conf.ppc
 
 
-# Field initialization 
+# Field initialization
 def insert_em_fields(grid, conf):
 
-    #into radians
-    btheta = conf.btheta/180.*np.pi
-    bphi   = conf.bphi/180.*np.pi
-    beta   = conf.beta
+    # into radians
+    btheta = conf.btheta / 180.0 * np.pi
+    bphi = conf.bphi / 180.0 * np.pi
+    beta = conf.beta
 
     for cid in grid.get_tile_ids():
         tile = grid.get_tile(cid)
         yee = tile.get_yee(0)
 
-        ii,jj,kk = tile.index
+        ii, jj, kk = tile.index
 
-        for n in range(conf.NzMesh):
-            for m in range(-3, conf.NyMesh+3):
-                for l in range(-3, conf.NxMesh+3):
+        # insert values into Yee lattices; includes halos from -3 to n+3
+        for n in range(-3, conf.NzMesh + 3):
+            for m in range(-3, conf.NyMesh + 3):
+                for l in range(-3, conf.NxMesh + 3):
                     # get global coordinates
-                    iglob, jglob, kglob = pytools.pic.threeD.ind2loc( (ii,jj,kk), (l,m,n), conf)
+                    iglob, jglob, kglob = pytools.pic.threeD.ind2loc(
+                        (ii, jj, kk), (l, m, n), conf
+                    )
 
-                    yee.bx[l,m,n] = conf.binit*np.cos(btheta) 
-                    yee.by[l,m,n] = conf.binit*np.sin(btheta)*np.sin(bphi)
-                    yee.bz[l,m,n] = conf.binit*np.sin(btheta)*np.cos(bphi)   
+                    yee.bx[l, m, n] = conf.binit * np.cos(btheta)
+                    yee.by[l, m, n] = conf.binit * np.sin(btheta) * np.sin(bphi)
+                    yee.bz[l, m, n] = conf.binit * np.sin(btheta) * np.cos(bphi)
 
-                    yee.ex[l,m,n] = 0.0
-                    yee.ey[l,m,n] =-beta*yee.bz[l,m,n]
-                    yee.ez[l,m,n] = beta*yee.by[l,m,n]
+                    yee.ex[l, m, n] = 0.0
+                    yee.ey[l, m, n] = -beta * yee.bz[l, m, n]
+                    yee.ez[l, m, n] = beta * yee.by[l, m, n]
     return
 
 
@@ -111,7 +126,6 @@ if __name__ == "__main__":
     # create conf object with simulation parameters based on them
     conf = Configuration(args.conf_filename, do_print=do_print)
 
-
     # --------------------------------------------------
     # setup grid
     grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
@@ -139,10 +153,12 @@ if __name__ == "__main__":
             print("initializing simulation...")
         lap = 0
 
-        np.random.seed(1) #sync rnd generator seed for different mpi ranks 
+        np.random.seed(1)  # sync rnd generator seed for different mpi ranks
 
         # injecting plasma particles
-        prtcl_stat = pytools.pic.threeD.inject(grid, velocity_profile, density_profile, conf)  
+        prtcl_stat = pytools.pic.threeD.inject(
+            grid, velocity_profile, density_profile, conf
+        )
         if do_print:
             print("injected:")
             print("    e- prtcls: {}".format(prtcl_stat[0]))
@@ -155,14 +171,43 @@ if __name__ == "__main__":
         if do_print:
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
 
-        pyrunko.fields.threeD.read_yee(grid, io_stat['read_lap'], io_stat['read_dir'])
-        pyrunko.pic.threeD.read_prtcls(grid, io_stat['read_lap'], io_stat['read_dir'])
+        # read restart files
+        pyrunko.fields.threeD.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyrunko.pic.threeD.read_prtcls(grid, io_stat["read_lap"], io_stat["read_dir"])
 
-        lap = io_stat["lap"] + 1  # step one step ahead
+        # step one step ahead
+        lap = io_stat["lap"] + 1
+
+    # --------------------------------------------------
+    #static load balancing setup; communicate neighborhood info once
+
+    grid.analyze_boundaries()
+    grid.send_tiles()
+    grid.recv_tiles()
+    MPI.COMM_WORLD.barrier()
+
+    # load virtual mpi halo tiles
+    pytools.pic.threeD.load_virtual_tiles(grid, conf)
+
+
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # end of initialization
+    
+    timer.stop("init") 
+    timer.stats("init") 
+
+
+    # --------------------------------------------------
+    # load physics solvers
 
 
 
 
+
+    # --------------------------------------------------
+    # end of simulation
 
     timer.stop("total")
     timer.stats("total")

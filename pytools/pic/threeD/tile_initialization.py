@@ -72,6 +72,32 @@ def initialize_tile(tile, indx, n, conf):
     return
 
 
+# load virtual tiles
+def load_virtual_tiles(n, conf):
+
+    for cid in n.get_virtual_tiles():
+        tile_orig = n.get_tile(cid)
+        ind = tile_orig.index
+
+        # new prtcl tile;
+        # TODO: load_metainfo *HAS* to be after add_tile because
+        # add_tile modifies tile content.
+
+        tile = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        n.add_tile(tile, ind) 
+
+        # load new metainfo
+        # FIXME: is this necessary?
+        tile.load_metainfo(tile_orig.communication)
+
+        #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
+        
+        initialize_tile(tile, ind, n, conf)
+
+    return 
+
+
+
 # 3D loading of pic tiles into grid
 def load_tiles(n, conf):
 
