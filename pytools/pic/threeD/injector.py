@@ -53,7 +53,7 @@ def inject(grid, vel_func, den_func, conf):
                                 for l in range(conf.NxMesh):
 
                                     # print(" sub mesh: ({},{},{})".format(l,m,n))
-                                    xloc = ind2loc(grid, (i, j, k), (l, m, n), conf)
+                                    xloc = ind2loc((i, j, k), (l, m, n), conf)
                                     
                                     # calculate how many prtcls per species to inject in this loc
                                     ppc = den_func(xloc, ispcs, conf)

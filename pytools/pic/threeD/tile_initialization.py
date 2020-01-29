@@ -3,7 +3,7 @@
 import pyrunko.pic as pypic
 
 
-def ind2loc(grid, gridI, tileI, conf):
+def ind2loc(gridI, tileI, conf):
 
     # grid coordinates
     i, j, k = gridI
@@ -17,10 +17,10 @@ def ind2loc(grid, gridI, tileI, conf):
     NyMesh = conf.NyMesh
     NzMesh = conf.NzMesh
 
-    # grid spacing
-    xmin = grid.get_xmin()
-    ymin = grid.get_ymin()
-    zmin = grid.get_zmin()
+    # grid spacing; start point + step
+    xmin = conf.xmin
+    ymin = conf.ymin
+    zmin = conf.zmin
 
     dx = 1.0  # conf.dx
     dy = 1.0  # conf.dy
@@ -58,8 +58,8 @@ def initialize_tile(tile, indx, n, conf):
         tile.set_container(container)
 
     # set bounding box of the tile
-    mins = ind2loc(n, [i, j, k], [0, 0, 0], conf)
-    maxs = ind2loc(n, [i, j, k], [conf.NxMesh, conf.NyMesh, conf.NzMesh], conf)
+    mins = ind2loc((i, j, k), (0, 0, 0), conf)
+    maxs = ind2loc((i, j, k), (conf.NxMesh, conf.NyMesh, conf.NzMesh), conf)
 
     tile.set_tile_mins(mins[0:3])
     tile.set_tile_maxs(maxs[0:3])
