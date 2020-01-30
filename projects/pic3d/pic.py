@@ -93,6 +93,7 @@ def insert_em_fields(grid, conf):
                     iglob, jglob, kglob = pytools.pic.threeD.ind2loc(
                         (ii, jj, kk), (l, m, n), conf
                     )
+                    r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
                     yee.bx[l, m, n] = conf.binit * np.cos(btheta)
                     yee.by[l, m, n] = conf.binit * np.sin(btheta) * np.sin(bphi)
@@ -177,7 +178,9 @@ if __name__ == "__main__":
 
         # read restart files
         pyrunko.fields.threeD.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
-        pyrunko.pic.threeD.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyrunko.pic.threeD.read_particles(
+            grid, io_stat["read_lap"], io_stat["read_dir"]
+        )
 
         # step one step ahead
         lap = io_stat["lap"] + 1
@@ -200,7 +203,7 @@ if __name__ == "__main__":
 
     timer.stop("init")
     timer.stats("init")
-    #timer.verbose = 1  # 0 normal; 1 - debug mode
+    # timer.verbose = 1  # 0 normal; 1 - debug mode
 
     # --------------------------------------------------
     # load physics solvers
@@ -257,7 +260,6 @@ if __name__ == "__main__":
     piston.gammawall = conf.wallgamma
     piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
     piston.walloc = 5.0  # leave 5 cell spacing between the wall for boundary conditions
-
 
     # --------------------------------------------------
     # sync e and b fields
@@ -571,7 +573,7 @@ if __name__ == "__main__":
                 MPI.COMM_WORLD.barrier()  # sync everybody in case of failure before write
                 if grid.rank() == 0:
                     with open(conf.outdir + "/restart/laps.txt", "a") as lapfile:
-                        lapfile.write("{},{}\n".format(lap, io_stat['deep_io_switch']))
+                        lapfile.write("{},{}\n".format(lap, io_stat["deep_io_switch"]))
 
             timer.stop("io")
 

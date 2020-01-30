@@ -21,12 +21,19 @@ def read_h5_array(f5, var_name):
     ny = f5['Ny'].value
     nz = f5['Nz'].value
 
+    # column-ordered data with image convention (x horizontal, y vertical, ..)
+    # i.e., so-called fortran ordering
     val = f5[var_name][:]
 
     print("reshaping 1D array of {} into multiD with {} {} {}".format(len(val), nx,ny,nz))
 
-    val = np.reshape(val, (nx, ny, nz))
-    val = np.fliplr(val)
+
+    # reshape to python format; from Fortran image to C matrix
+    val = np.reshape(val, (nz, ny, nx))
+    val = val.ravel(order='F').reshape((nx,ny,nz))
+
+    #val = val.ravel(order='C').reshape((nx,ny,nz))
+    #val = val.reshape(-1) #F to C
 
     return val
 
@@ -75,14 +82,19 @@ if __name__ == "__main__":
     fname_prtcls = "test-prtcls"
     
     #args.lap
-    lap = 20
+    lap = 80
 
     fields_file   = conf.outdir + '/'+fname_fld+'_'+str(lap)+'.h5'
 
     f5 = h5.File(fields_file,'r')
     data = read_h5_array(f5, 'jz')
 
+    #cut reflector out
+    data = data[6:,:,:]
+
+    #limit box length
     data = data[0:128,:,:]
+
     print(np.shape(data))
 
     nx, ny, nz = np.shape(data)
@@ -98,33 +110,38 @@ if __name__ == "__main__":
     box.dy = 1.0
     box.dz = 1.5
 
+    #box.set_data(np.log10(data))
     box.set_data(data)
-
+    box.vmin = -0.05
+    box.vmax = +0.05
     cmap = cm.get_cmap('RdBu')
 
+
     #surface rendering
-    box.draw_top(  cmap=cmap)
     box.draw_left( cmap=cmap)
-
-    box.draw_right(cmap=cmap)
-
+    box.draw_front(cmap=cmap)
+    box.draw_top(  cmap=cmap)
     box.draw_outline()
+
 
 
     #back exploded panels
     if True:
-        off_bot  = 1.7
-        off_left = 1.7
-        off_right= 0.7
-
+        off_bot    = 1.7
+        off_back   = 1.7
+        off_left   = 0.7
+        off_right  = 0.7
 
         box.draw_exploded_panels_outline("bottom", off=off_bot)
-        #box.draw_exploded_panels_outline("left",   off=off_left)
-        box.draw_exploded_panels_outline("right",  off=off_right)
+        box.draw_exploded_panels_outline("left",   off=off_left)
+        #box.draw_exploded_panels_outline("right",  off=off_right)
+        box.draw_exploded_panels_outline("back",   off=off_back)
         
         box.draw_exploded_bottom(off=off_bot,   cmap=cmap)
-        #box.draw_exploded_left(  off=off_left,  cmap=cmap)
-        box.draw_exploded_right( off=off_right, cmap=cmap)
+        box.draw_exploded_back( off=off_back, cmap=cmap)
+
+        box.draw_exploded_left(  off=off_left,  cmap=cmap)
+        #box.draw_exploded_right( off=off_right, cmap=cmap)
 
     if False:
         #front exploded panels
@@ -140,7 +157,9 @@ if __name__ == "__main__":
 
 
     axs[0].set_axis_off()
-    axs[0].view_init(45.0, 70.0)
+    axs[0].view_init(45.0, -110.0)
+
+    #axs[0].view_init(45.0, 100.0)
 
 
     if False:
@@ -172,11 +191,13 @@ if __name__ == "__main__":
 
     #axs[0].set_title('Step {}'.format(lap+1))
 
-
-    lap = 20
     slap = str(lap).rjust(4, '0')
-    fname = '3d_'+slap
-    plt.subplots_adjust(left=-0.45, bottom=-0.45, right=1.45, top=1.45)
+    fname = conf.outdir + '/3d_'+slap
+    plt.subplots_adjust(left=-0.45, bottom=-0.45, right=1.35, top=1.45)
+
+    axs[0].set_xlabel('x')
+    axs[0].set_ylabel('y')
+    axs[0].set_zlabel('z')
 
     #plt.savefig(fname+'.pdf')
     plt.savefig(fname+'.png')
