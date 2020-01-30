@@ -42,3 +42,15 @@ class Configuration(object):
         self.xmax = self.Nx * self.NxMesh
         self.ymax = self.Ny * self.NyMesh
         self.zmax = self.Nz * self.NzMesh
+
+        # dimensionality switches
+        self.oneD = False
+        self.twoD = False
+        self.threeD = False
+
+        if self.Nz > 1:
+            self.threeD = True
+        elif self.Ny > 1:
+            self.twoD = True
+        elif self.Nx > 1:
+            self.oneD = True

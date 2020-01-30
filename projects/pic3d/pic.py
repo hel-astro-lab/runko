@@ -10,11 +10,6 @@ import h5py
 # runko + auxiliary modules
 import pytools  # runko python tools
 
-# 3D modules
-import pycorgi.threeD as pycorgi  # corgi ++ bindings
-import pyrunko.pic.threeD as pypic # runko pic c++ bindings
-import pyrunko.fields.threeD as pyfld # runko fld c++ bindings
-import pytools.pic.threeD as pypictools # auxiliary python pic tools
 
 
 # problem specific modules
@@ -128,6 +123,24 @@ if __name__ == "__main__":
 
     # create conf object with simulation parameters based on them
     conf = Configuration(args.conf_filename, do_print=do_print)
+
+
+    # --------------------------------------------------
+    # load runko
+
+    if conf.threeD:
+        # 3D modules
+        import pycorgi.threeD as pycorgi  # corgi ++ bindings
+        import pyrunko.pic.threeD as pypic # runko pic c++ bindings
+        import pyrunko.fields.threeD as pyfld # runko fld c++ bindings
+        import pytools.pic.threeD as pypictools # auxiliary python pic tools
+
+    elif conf.twoD:
+        # 2D modules
+        import pycorgi.threeD as pycorgi  # corgi ++ bindings
+        import pyrunko.pic.threeD as pypic # runko pic c++ bindings
+        import pyrunko.fields.threeD as pyfld # runko fld c++ bindings
+        import pytools.pic.threeD as pypictools # auxiliary python pic tools
 
     # --------------------------------------------------
     # setup grid
