@@ -15,30 +15,6 @@ import pytools
 from problem import Configuration_Problem as Configuration
 
 
-def read_h5_array(f5, var_name):
-
-    nx = f5['Nx'].value
-    ny = f5['Ny'].value
-    nz = f5['Nz'].value
-
-    # column-ordered data with image convention (x horizontal, y vertical, ..)
-    # i.e., so-called fortran ordering
-    val = f5[var_name][:]
-
-    print("reshaping 1D array of {} into multiD with {} {} {}".format(len(val), nx,ny,nz))
-
-
-    # reshape to python format; from Fortran image to C matrix
-    val = np.reshape(val, (nz, ny, nx))
-    val = val.ravel(order='F').reshape((nx,ny,nz))
-
-    #val = val.ravel(order='C').reshape((nx,ny,nz))
-    #val = val.reshape(-1) #F to C
-
-    return val
-
-
-
 if __name__ == "__main__":
 
     do_print = True
@@ -87,7 +63,7 @@ if __name__ == "__main__":
     fields_file   = conf.outdir + '/'+fname_fld+'_'+str(lap)+'.h5'
 
     f5 = h5.File(fields_file,'r')
-    data = read_h5_array(f5, 'jz')
+    data = pytools.read_h5_array(f5, 'jz')
 
     #cut reflector out
     data = data[6:,:,:]
@@ -112,8 +88,8 @@ if __name__ == "__main__":
 
     #box.set_data(np.log10(data))
     box.set_data(data)
-    box.vmin = -0.05
-    box.vmax = +0.05
+    box.vmin = -0.02
+    box.vmax = +0.02
     cmap = cm.get_cmap('RdBu')
 
 
@@ -127,6 +103,16 @@ if __name__ == "__main__":
 
     #back exploded panels
     if True:
+        data = pytools.read_h5_array(f5, 'bz')
+        data = data[6:,:,:] #cut off reflector
+        data = data[0:128,:,:] #limit box length
+        bz2 = data**2
+
+        box.set_data(bz2)
+        box.vmin = 0.0
+        box.vmax = 0.20
+        cmap = cm.get_cmap('viridis')
+
         off_bot    = 1.7
         off_back   = 1.7
         off_left   = 0.7

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pyrunko.pic as pypic
-
 import numpy as np
-
 from .tile_initialization import ind2loc
 
 
