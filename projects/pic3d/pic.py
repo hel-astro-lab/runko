@@ -92,9 +92,6 @@ def insert_em_fields(grid, conf):
                     yee.by[l, m, n] = conf.binit * np.sin(bphi) * np.sin(btheta)
                     yee.bz[l, m, n] = conf.binit * np.sin(bphi) * np.cos(btheta)
 
-                    print("bx ", np.cos(bphi))
-                    print("bz ", np.sin(bphi)*np.cos(btheta))
-
                     yee.ex[l, m, n] = 0.0
                     yee.ey[l, m, n] = -beta * yee.bz[l, m, n]
                     yee.ez[l, m, n] = beta * yee.by[l, m, n]
