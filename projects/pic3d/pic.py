@@ -88,9 +88,12 @@ def insert_em_fields(grid, conf):
                     iglob, jglob, kglob = pytools.ind2loc( (ii, jj, kk), (l, m, n), conf)
                     r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
-                    yee.bx[l, m, n] = conf.binit * np.cos(btheta)
-                    yee.by[l, m, n] = conf.binit * np.sin(btheta) * np.sin(bphi)
-                    yee.bz[l, m, n] = conf.binit * np.sin(btheta) * np.cos(bphi)
+                    yee.bx[l, m, n] = conf.binit * np.cos(bphi)
+                    yee.by[l, m, n] = conf.binit * np.sin(bphi) * np.sin(btheta)
+                    yee.bz[l, m, n] = conf.binit * np.sin(bphi) * np.cos(btheta)
+
+                    print("bx ", np.cos(bphi))
+                    print("bz ", np.sin(bphi)*np.cos(btheta))
 
                     yee.ex[l, m, n] = 0.0
                     yee.ey[l, m, n] = -beta * yee.bz[l, m, n]
