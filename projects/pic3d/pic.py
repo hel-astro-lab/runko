@@ -137,10 +137,10 @@ if __name__ == "__main__":
 
     elif conf.twoD:
         # 2D modules
-        import pycorgi.threeD as pycorgi  # corgi ++ bindings
-        import pyrunko.pic.threeD as pypic # runko pic c++ bindings
-        import pyrunko.fields.threeD as pyfld # runko fld c++ bindings
-        import pytools.pic.threeD as pypictools # auxiliary python pic tools
+        import pycorgi.twoD as pycorgi  # corgi ++ bindings
+        import pyrunko.pic.twoD as pypic # runko pic c++ bindings
+        import pyrunko.fields.twoD as pyfld # runko fld c++ bindings
+        import pytools.pic.twoD as pypictools # auxiliary python pic tools
 
     # --------------------------------------------------
     # setup grid
