@@ -8,6 +8,8 @@ from .generators import tiles_all, tiles_local, tiles_virtual, tiles_boundary
 from .iotools import read_h5_array
 from . import pic 
 from .pybox import box as pybox3d
+from . import visualize
+
 
 #FIXME: this function should be defined in this level instead of pic submodule
 from .pic.tile_initialization import ind2loc

@@ -5,25 +5,18 @@ import sys
 import os
 import numpy as np
 
+import pytools  # runko python tools
 import pycorgi
 import pyrunko
-import pyrunko.pic.twoD as pypic
-import pyrunko.fields.twoD as pyfld
-import pyrunko.tools.twoD as pytools
 
 
+#from visualize_pic import Particles
+#from visualize_pic import plot2dParticles
+#from visualize import plotNode
+#from visualize import plot2dYee
+#from visualize import pytools.visualize.get_yee_2D
+#from visualize import saveVisz
 
-from initialize_pic import loadTiles
-from initialize_pic import spatialLoc
-from injector_pic import inject
-
-
-from visualize_pic import Particles
-from visualize_pic import plot2dParticles
-from visualize import plotNode
-from visualize import plot2dYee
-from visualize import getYee2D
-from visualize import saveVisz
 
 try:
     import matplotlib.pyplot as plt
@@ -158,12 +151,12 @@ def insert_em(grid, conf, ffunc):
                         for n in range(conf.NzMesh):
 
                             # get x_i,j,k
-                            xloc0 = spatialLoc(grid, (i,j), (l,m,n), conf)
+                            xloc0 = pytools.ind2loc(grid, (i,j,k), (l,m,n), conf)
 
                             #get x_i+1/2, x_j+1/2, x_k+1/2
-                            xloc1 = spatialLoc(grid, (i,j), (l+1,m,  n),   conf)
-                            yloc1 = spatialLoc(grid, (i,j), (l,  m+1,n),   conf)
-                            zloc1 = spatialLoc(grid, (i,j), (l,  m,  n+1), conf)
+                            xloc1 = pytools.ind2loc(grid, (i,j,k), (l+1,m,  n),   conf)
+                            yloc1 = pytools.ind2loc(grid, (i,j,k), (l,  m+1,n),   conf)
+                            zloc1 = pytools.ind2loc(grid, (i,j,k), (l,  m,  n+1), conf)
 
                             # values in Yee lattice corners
                             xcor = xloc0[0]
@@ -294,12 +287,12 @@ class PIC(unittest.TestCase):
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, const_field)
-        inject(grid, filler, conf) #injecting plasma particles
+        pytools.pic.inject(grid, filler, conf) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
-        pusher   = pypic.BorisPusher()
+        pusher   = pyrunko.pic.twoD.BorisPusher()
 
         for lap in range(40):
             #plot2dParticles(axs[0], grid, conf)
@@ -443,9 +436,9 @@ class PIC(unittest.TestCase):
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
-        loadTiles(grid, conf, D=3)
+        pytools.pic.load_tiles(grid, conf, D=3)
         insert_em(grid, conf, const_field)
-        inject(grid, filler3D, conf, D=3) #injecting plasma particles
+        pytools.pic.inject(grid, filler3D, conf, D=3) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
         pusher = pyrunko.pic.threeD.BorisPusher()
@@ -569,9 +562,9 @@ class PIC(unittest.TestCase):
         conf = Conf()
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, const_field)
-        inject(grid, filler_no_velocity, conf) #injecting plasma particles
+        pytools.pic.inject(grid, filler_no_velocity, conf) #pytools.pic.injecting plasma particles
 
         ##update boundaries
         for j in range(grid.get_Ny()):
@@ -580,7 +573,7 @@ class PIC(unittest.TestCase):
                 tile.update_boundaries(grid)
 
         #interpolate fields
-        fintp = pypic.LinearInterpolator()
+        fintp = pyrunko.pic.twoD.LinearInterpolator()
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
                 tile = grid.get_tile(i,j)
@@ -627,9 +620,9 @@ class PIC(unittest.TestCase):
 
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, linear_field)
-        inject(grid, filler_no_velocity, conf) #injecting plasma particles
+        pytools.pic.inject(grid, filler_no_velocity, conf) #pytools.pic.injecting plasma particles
 
         ##update boundaries
         for j in range(grid.get_Ny()):
@@ -638,7 +631,7 @@ class PIC(unittest.TestCase):
                 tile.update_boundaries(grid)
 
         #interpolate fields
-        fintp = pypic.LinearInterpolator()
+        fintp = pyrunko.pic.twoD.LinearInterpolator()
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
                 tile = grid.get_tile(i,j)
@@ -710,16 +703,16 @@ class PIC(unittest.TestCase):
 
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
         #insert_em(grid, conf, linear_field)
         insert_em(grid, conf, zero_field)
-        inject(grid, filler, conf) #injecting plasma particles
-        #inject(grid, filler_xvel, conf) #injecting plasma particles
+        pytools.pic.inject(grid, filler, conf) #pytools.pic.injecting plasma particles
+        #pytools.pic.inject(grid, filler_xvel, conf) #pytools.pic.injecting plasma particles
 
-        #pusher   = pypic.BorisPusher()
-        #fintp    = pypic.LinearInterpolator()
-        currint  = pypic.ZigZag()
-        analyzer = pypic.Analyzator()
+        #pusher   = pyrunko.pic.twoD.BorisPusher()
+        #fintp    = pyrunko.pic.twoD.LinearInterpolator()
+        currint  = pyrunko.pic.twoD.ZigZag()
+        analyzer = pyrunko.pic.twoD.Analyzator()
 
         flt =  pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(1.0, 1.0)
@@ -752,17 +745,17 @@ class PIC(unittest.TestCase):
                     tile = grid.get_tile(i,j)
                     tile.exchange_currents(grid)
 
-            try:
-                plotNode(axs[0], grid, conf)
-                #plot2dParticles(axs[0], grid, conf, downsample=0.1)
-                plot2dYee(axs[1], grid, conf, 'rho')
-                plot2dYee(axs[2], grid, conf, 'jx')
-                plot2dYee(axs[3], grid, conf, 'jy')
-                plot2dYee(axs[4], grid, conf, 'jz')
-            except:
-                pass
+            #try:
+            #    #plotNode(axs[0], grid, conf)
+            #    #plot2dParticles(axs[0], grid, conf, downsample=0.1)
+            #    #plot2dYee(axs[1], grid, conf, 'rho')
+            #    #plot2dYee(axs[2], grid, conf, 'jx')
+            #    #plot2dYee(axs[3], grid, conf, 'jy')
+            #    #plot2dYee(axs[4], grid, conf, 'jz')
+            #except:
+            #    pass
 
-            yee_ref = getYee2D(grid, conf)
+            yee_ref = pytools.visualize.get_yee_2D(grid, conf)
 
             #filter
             for j in range(grid.get_Ny()):
@@ -787,15 +780,15 @@ class PIC(unittest.TestCase):
                     tile = grid.get_tile(i,j)
                     tile.cycle_current()
 
-            yee = getYee2D(grid, conf)
+            yee = pytools.visualize.get_yee_2D(grid, conf)
 
-            try:
-                plot2dYee(axs[5], grid, conf, 'jx')
-                plot2dYee(axs[6], grid, conf, 'jy')
-                plot2dYee(axs[7], grid, conf, 'jz')
-                #saveVisz(lap, grid, conf)
-            except:
-                pass
+            #try:
+            #    plot2dYee(axs[5], grid, conf, 'jx')
+            #    plot2dYee(axs[6], grid, conf, 'jy')
+            #    plot2dYee(axs[7], grid, conf, 'jz')
+            #    #saveVisz(lap, grid, conf)
+            #except:
+            #    pass
 
             for j in range(conf.Ny*conf.NyMesh):
                 for i in range(conf.Nx*conf.NxMesh):
@@ -839,15 +832,15 @@ class PIC(unittest.TestCase):
 
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
         #insert_em(grid, conf, linear_field)
         insert_em(grid, conf, const_field)
-        inject(grid, filler_xvel, conf) #injecting plasma particles
+        pytools.pic.inject(grid, filler_xvel, conf) #pytools.pic.injecting plasma particles
 
-        #pusher   = pypic.BorisPusher()
-        #fintp    = pypic.LinearInterpolator()
-        currint  = pypic.ZigZag()
-        analyzer = pypic.Analyzator()
+        #pusher   = pyrunko.pic.twoD.BorisPusher()
+        #fintp    = pyrunko.pic.twoD.LinearInterpolator()
+        currint  = pyrunko.pic.twoD.ZigZag()
+        analyzer = pyrunko.pic.twoD.Analyzator()
 
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
@@ -945,14 +938,14 @@ class PIC(unittest.TestCase):
 
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
         #insert_em(grid, conf, const_field)
-        inject(grid, filler_xvel, conf) #injecting plasma particles
+        pytools.pic.inject(grid, filler_xvel, conf) #pytools.pic.injecting plasma particles
 
-        #pusher   = pypic.BorisPusher()
-        #fintp    = pypic.LinearInterpolator()
-        currint  = pypic.ZigZag()
-        analyzer = pypic.Analyzator()
+        #pusher   = pyrunko.pic.twoD.BorisPusher()
+        #fintp    = pyrunko.pic.twoD.LinearInterpolator()
+        currint  = pyrunko.pic.twoD.ZigZag()
+        analyzer = pyrunko.pic.twoD.Analyzator()
 
 
         #deposit current
@@ -970,16 +963,16 @@ class PIC(unittest.TestCase):
                 tile.exchange_currents(grid)
 
 
-        try:
-            #plotNode(axs[0], grid, conf)
-            plot2dParticles(axs[0], grid, conf, downsample=0.1)
-            plot2dYee(axs[1], grid, conf, 'rho')
-            plot2dYee(axs[2], grid, conf, 'jx')
-            plot2dYee(axs[3], grid, conf, 'jy')
-            plot2dYee(axs[4], grid, conf, 'jz')
-            #saveVisz(-2, grid, conf)
-        except:
-            pass
+        #try:
+        #    #plotNode(axs[0], grid, conf)
+        #    #plot2dParticles(axs[0], grid, conf, downsample=0.1)
+        #    plot2dYee(axs[1], grid, conf, 'rho')
+        #    plot2dYee(axs[2], grid, conf, 'jx')
+        #    plot2dYee(axs[3], grid, conf, 'jy')
+        #    plot2dYee(axs[4], grid, conf, 'jz')
+        #    #saveVisz(-2, grid, conf)
+        #except:
+        #    pass
 
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
@@ -1010,7 +1003,7 @@ class PIC(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         # this calls internally test particle addition
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
 
 
 
@@ -1055,10 +1048,10 @@ class PIC(unittest.TestCase):
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        loadTiles(grid, conf)
+        pytools.pic.load_tiles(grid, conf)
 
-        #inject(grid, filler_xvel, conf) #injecting plasma particles
-        #inject by hand
+        #pytools.pic.inject(grid, filler_xvel, conf) #pytools.pic.injecting plasma particles
+        #pytools.pic.inject by hand
         #-------------------------------------------------- 
         cid    = grid.id(0,0)
         c      = grid.get_tile(cid) #get cell ptr
@@ -1066,7 +1059,7 @@ class PIC(unittest.TestCase):
         container = c.get_container(0) #ispcs
         container.set_keygen_state(0, 0) #number, rank
 
-        #inject random tricky points 
+        #pytools.pic.inject random tricky points 
         
         #x moving
         x0 = [0.0, 0.0, 0.5]
@@ -1105,12 +1098,12 @@ class PIC(unittest.TestCase):
 
         #-------------------------------------------------- 
 
-        pusher   = pypic.BorisPusher()
-        fldprop  = pyfld.FDTD2()
-        fintp    = pypic.LinearInterpolator()
-        currint  = pypic.ZigZag()
-        analyzer = pypic.Analyzator()
-        flt      = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        pusher   = pyrunko.pic.twoD.BorisPusher()
+        fldprop  = pyrunko.fields.twoD.FDTD2()
+        fintp    = pyrunko.pic.twoD.LinearInterpolator()
+        currint  = pyrunko.pic.twoD.ZigZag()
+        analyzer = pyrunko.pic.twoD.Analyzator()
+        flt      = pyrunko.fields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         lap = 0
         for lap in range(lap, conf.Nt):
@@ -1204,7 +1197,7 @@ class PIC(unittest.TestCase):
                     print("container bz:", container.bz(i))
     
             #plot
-            yee = getYee2D(grid, conf)
+            yee = pytools.visualize.get_yee_2D(grid, conf)
 
 
             if do_plots:
@@ -1214,19 +1207,19 @@ class PIC(unittest.TestCase):
                 print("sum of current jx:", np.sum(yee['jx']))
                 print("sum of current jy:", np.sum(yee['jy']))
                 print("sum of current jz:", np.sum(yee['jz']))
-                plotNode(axs[0], grid, conf)
-                plot2dYee(axs[1],  yee, grid, conf, 'rho', label_title=True)
+                #plotNode(axs[0], grid, conf)
+                #plot2dYee(axs[1],  yee, grid, conf, 'rho', label_title=True)
 
-                plot2dYee(axs[3],  yee, grid, conf, 'jx' , label_title=True)
-                plot2dYee(axs[4],  yee, grid, conf, 'jy' , label_title=True)
-                plot2dYee(axs[5],  yee, grid, conf, 'jz' , label_title=True)
-                plot2dYee(axs[6],  yee, grid, conf, 'ex' , label_title=True)
-                plot2dYee(axs[7],  yee, grid, conf, 'ey' , label_title=True)
-                plot2dYee(axs[8],  yee, grid, conf, 'ez' , label_title=True)
-                plot2dYee(axs[9],  yee, grid, conf, 'bx' , label_title=True)
-                plot2dYee(axs[10], yee, grid, conf, 'by' , label_title=True)
-                plot2dYee(axs[11], yee, grid, conf, 'bz' , label_title=True)
-                saveVisz(lap, grid, conf)
+                #plot2dYee(axs[3],  yee, grid, conf, 'jx' , label_title=True)
+                #plot2dYee(axs[4],  yee, grid, conf, 'jy' , label_title=True)
+                #plot2dYee(axs[5],  yee, grid, conf, 'jz' , label_title=True)
+                #plot2dYee(axs[6],  yee, grid, conf, 'ex' , label_title=True)
+                #plot2dYee(axs[7],  yee, grid, conf, 'ey' , label_title=True)
+                #plot2dYee(axs[8],  yee, grid, conf, 'ez' , label_title=True)
+                #plot2dYee(axs[9],  yee, grid, conf, 'bx' , label_title=True)
+                #plot2dYee(axs[10], yee, grid, conf, 'by' , label_title=True)
+                #plot2dYee(axs[11], yee, grid, conf, 'bz' , label_title=True)
+                #saveVisz(lap, grid, conf)
     
             #assert that arrays are zero (i.e., scheme is charge conserving)
             self.assertTrue( np.abs(np.sum(yee['jx'])) < 1.e7)
