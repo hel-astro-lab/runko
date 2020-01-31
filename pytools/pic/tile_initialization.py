@@ -123,15 +123,16 @@ def load_tiles(n, conf):
                 if conf.threeD:
                     if n.get_mpi_grid(i, j, k) == n.rank():
                         tile = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                    ind = (i, j, k)
+
+                        ind = (i, j, k)
+                        initialize_tile(tile, (i,j,k), n, conf)
 
                 elif conf.twoD:
                     if n.get_mpi_grid(i, j) == n.rank():
                         tile = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                    ind = (i, j)
+                        ind = (i, j)
 
-
-                initialize_tile(tile, (i,j,k), n, conf)
-                n.add_tile(tile, ind)
+                        initialize_tile(tile, (i,j,k), n, conf)
+                        n.add_tile(tile, ind)
 
     return
