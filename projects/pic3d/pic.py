@@ -5,7 +5,6 @@ from __future__ import print_function
 from mpi4py import MPI
 import numpy as np
 import sys, os
-import h5py
 
 # runko + auxiliary modules
 import pytools  # runko python tools

@@ -13,6 +13,6 @@ export PYTHONDONTWRITEBYTECODE=true
 export HDF5_USE_FILE_LOCKING=FALSE
 
 # go to working directory
-cd $RUNKODIR/projects/shocks/
+cd $RUNKODIR/projects/pic3d/
 
 srun -n 512 python3 pic.py --conf shockS.ini
