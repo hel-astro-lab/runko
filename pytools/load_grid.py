@@ -62,7 +62,7 @@ def balance_mpi_2D(n, comm_size=None):
         hmin, hmax = np.min(grid), np.max(grid)
         for i in range(nx):
             for j in range(ny):
-                igrid[i, j] = np.floor(comm_size * grid[i, j, k] / (hmax + 1))
+                igrid[i, j] = np.floor(comm_size * grid[i, j] / (hmax + 1))
 
         # check that nodes get about same work load
         # y = np.bincount(igrid.flatten())

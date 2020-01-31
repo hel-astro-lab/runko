@@ -10,7 +10,6 @@ import sys, os
 import pytools  # runko python tools
 
 
-
 # problem specific modules
 from problem import Configuration_Problem as Configuration
 
@@ -46,7 +45,9 @@ def velocity_profile(xloc, ispcs, conf):
     # velocity sampling
     gamma = conf.gamma
     direction = -1
-    ux, uy, uz, uu = pytools.boosted_maxwellian( delgam, gamma, direction=direction, dims=3)
+    ux, uy, uz, uu = pytools.boosted_maxwellian(
+        delgam, gamma, direction=direction, dims=3
+    )
 
     x0 = [xx, yy, zz]
     u0 = [ux, uy, uz]
@@ -84,7 +85,7 @@ def insert_em_fields(grid, conf):
             for m in range(-3, conf.NyMesh + 3):
                 for l in range(-3, conf.NxMesh + 3):
                     # get global coordinates
-                    iglob, jglob, kglob = pytools.ind2loc( (ii, jj, kk), (l, m, n), conf)
+                    iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
                     r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
                     yee.bx[l, m, n] = conf.binit * np.cos(bphi)
@@ -123,23 +124,22 @@ if __name__ == "__main__":
     # create conf object with simulation parameters based on them
     conf = Configuration(args.conf_filename, do_print=do_print)
 
-
     # --------------------------------------------------
     # load runko
 
     if conf.threeD:
         # 3D modules
         import pycorgi.threeD as pycorgi  # corgi ++ bindings
-        import pyrunko.pic.threeD as pypic # runko pic c++ bindings
-        import pyrunko.fields.threeD as pyfld # runko fld c++ bindings
-        import pytools.pic.threeD as pypictools # auxiliary python pic tools
+        import pyrunko.pic.threeD as pypic  # runko pic c++ bindings
+        import pyrunko.fields.threeD as pyfld  # runko fld c++ bindings
+        import pytools.pic.threeD as pypictools  # auxiliary python pic tools
 
     elif conf.twoD:
         # 2D modules
         import pycorgi.twoD as pycorgi  # corgi ++ bindings
-        import pyrunko.pic.twoD as pypic # runko pic c++ bindings
-        import pyrunko.fields.twoD as pyfld # runko fld c++ bindings
-        import pytools.pic.twoD as pypictools # auxiliary python pic tools
+        import pyrunko.pic.twoD as pypic  # runko pic c++ bindings
+        import pyrunko.fields.twoD as pyfld  # runko fld c++ bindings
+        import pytools.pic.twoD as pypictools  # auxiliary python pic tools
 
     # --------------------------------------------------
     # setup grid
@@ -171,9 +171,7 @@ if __name__ == "__main__":
         np.random.seed(1)  # sync rnd generator seed for different mpi ranks
 
         # injecting plasma particles
-        prtcl_stat = pypictools.inject(
-            grid, velocity_profile, density_profile, conf
-        )
+        prtcl_stat = pypictools.inject(grid, velocity_profile, density_profile, conf)
         if do_print:
             print("injected:")
             print("    e- prtcls: {}".format(prtcl_stat[0]))
@@ -188,7 +186,7 @@ if __name__ == "__main__":
 
         # read restart files
         pyflds.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
-        pypic.read_particles( grid, io_stat["read_lap"], io_stat["read_dir"])
+        pypic.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # step one step ahead
         lap = io_stat["lap"] + 1
@@ -556,12 +554,8 @@ if __name__ == "__main__":
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
-                pyfld.write_yee(
-                    grid, lap, conf.outdir + "/full_output/"
-                )
-                pypic.write_particles(
-                    grid, lap, conf.outdir + "/full_output/"
-                )
+                pyfld.write_yee(grid, lap, conf.outdir + "/full_output/")
+                pypic.write_particles(grid, lap, conf.outdir + "/full_output/")
                 # pypic.write_analysis(grid, lap, conf.outdir + "/full_output/")
 
             # restart IO (overwrites)
