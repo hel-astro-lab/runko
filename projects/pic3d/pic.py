@@ -78,7 +78,11 @@ def insert_em_fields(grid, conf):
         tile = grid.get_tile(cid)
         yee = tile.get_yee(0)
 
-        ii, jj, kk = tile.index
+        if conf.twoD:
+            ii, jj = tile.index
+            kk = 0
+        elif conf.threeD:
+            ii, jj, kk = tile.index
 
         # insert values into Yee lattices; includes halos from -3 to n+3
         for n in range(-3, conf.NzMesh + 3):
@@ -145,7 +149,7 @@ if __name__ == "__main__":
     grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
     # compute initial mpi ranks using Hilbert's curve partitioning
-    pytools.balance_mpi(grid)
+    pytools.balance_mpi(grid, conf)
 
     # load pic tiles into grid
     pytools.pic.load_tiles(grid, conf)

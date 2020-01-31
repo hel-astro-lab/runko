@@ -7,26 +7,11 @@ import pyrunko
 
 
 
-def balance_mpi(n, comm_size=None):
-
-    nx = n.get_Nx()
-    ny = n.get_Ny()
-    nz = n.get_Nz()
-
-    if nz > 1:
-        D = 3
-    elif ny > 1:
-        D = 2
-    elif nx > 1:
-        D = 1
-
-    print("Dimensionality of grid: {}".format(D))
-
-    if D == 2:
+def balance_mpi(n, conf, comm_size=None):
+    if conf.twoD:
         return balance_mpi_2D(n, comm_size=comm_size)
-    elif D == 3:
+    elif conf.threeD:
         return balance_mpi_3D(n, comm_size=comm_size)
-
 
 
 # load nodes using 2D Hilbert curve
