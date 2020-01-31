@@ -126,6 +126,7 @@ def load_tiles(n, conf):
 
                         ind = (i, j, k)
                         initialize_tile(tile, (i,j,k), n, conf)
+                        n.add_tile(tile, ind)
 
                 elif conf.twoD:
                     if n.get_mpi_grid(i, j) == n.rank():
