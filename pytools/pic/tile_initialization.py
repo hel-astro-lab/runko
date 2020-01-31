@@ -36,7 +36,6 @@ def ind2loc(gridI, tileI, conf):
 
 
 def initialize_tile(tile, indx, n, conf):
-    i, j, k = indx
 
     # set parameters
     tile.cfl = conf.cfl
@@ -44,7 +43,11 @@ def initialize_tile(tile, indx, n, conf):
 
     # load particle containers
     for sps in range(conf.Nspecies):
-        container = pypic.threeD.ParticleContainer()
+
+        if conf.threeD:
+            container = pypic.threeD.ParticleContainer()
+        elif conf.twoD:
+            container = pypic.twoD.ParticleContainer()
 
         # alternate injection between - and + charged prtcls
         if sps % 2 == 0:
@@ -59,11 +62,17 @@ def initialize_tile(tile, indx, n, conf):
         tile.set_container(container)
 
     # set bounding box of the tile
-    mins = ind2loc((i, j, k), (0, 0, 0), conf)
-    maxs = ind2loc((i, j, k), (conf.NxMesh, conf.NyMesh, conf.NzMesh), conf)
+    mins = ind2loc(indx, (0, 0, 0), conf)
+    maxs = ind2loc(indx, (conf.NxMesh, conf.NyMesh, conf.NzMesh), conf)
 
-    tile.set_tile_mins(mins[0:3])
-    tile.set_tile_maxs(maxs[0:3])
+
+    if conf.threeD:
+        tile.set_tile_mins(mins[0:3])
+        tile.set_tile_maxs(maxs[0:3])
+    elif conf.twoD:
+        tile.set_tile_mins(mins[0:2])
+        tile.set_tile_maxs(maxs[0:2])
+
 
     # initialize analysis tiles ready for incoming simulation data
     # NOTE: only 2D tiles have room for analysis species
@@ -84,7 +93,11 @@ def load_virtual_tiles(n, conf):
         # TODO: load_metainfo *HAS* to be after add_tile because
         # add_tile modifies tile content.
 
-        tile = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        if conf.threeD:
+            tile = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        elif conf.twoD:
+            tile = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
         n.add_tile(tile, ind) 
 
         # load new metainfo
@@ -108,7 +121,10 @@ def load_tiles(n, conf):
                 # print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
                 if n.get_mpi_grid(i, j, k) == n.rank():
-                    tile = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    if conf.threeD:
+                        tile = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    elif conf.twoD:
+                        tile = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
                     ind = (i, j, k)
                     initialize_tile(tile, ind, n, conf)

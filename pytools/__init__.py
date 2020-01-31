@@ -10,7 +10,7 @@ from . import pic
 from .pybox import box as pybox3d
 
 #FIXME: this function should be defined in this level instead of pic submodule
-from .pic.threeD.tile_initialization import ind2loc
+from .pic.tile_initialization import ind2loc
 
 #FIXME: not clear if sampling should be under main or pic 
 from .sampling import boosted_maxwellian

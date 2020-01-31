@@ -17,14 +17,18 @@ def inject(grid, vel_func, den_func, conf):
             for k in range(grid.get_Nz()):
 
                 # check that we own this tile
-                pass_flag = grid.get_mpi_grid(i, j, k) == grid.rank()
-                ind = (i, j, k)
+                if conf.threeD:
+                    pass_flag = grid.get_mpi_grid(i, j, k) == grid.rank()
+                elif conf.twoD:
+                    pass_flag = grid.get_mpi_grid(i, j) == grid.rank()
 
                 if pass_flag:
                     # print("creating ({},{})".format(i,j))
 
                     # get cell & its content
-                    cid  = grid.id(i, j, k)
+                    if conf.threeD: cid  = grid.id(i, j, k)
+                    elif conf.twoD: cid  = grid.id(i, j)
+
                     tile = grid.get_tile(cid)  # get cell ptr
 
                     # inject particles

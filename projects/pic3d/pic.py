@@ -132,14 +132,12 @@ if __name__ == "__main__":
         import pycorgi.threeD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.threeD as pypic  # runko pic c++ bindings
         import pyrunko.fields.threeD as pyfld  # runko fld c++ bindings
-        import pytools.pic.threeD as pypictools  # auxiliary python pic tools
 
     elif conf.twoD:
         # 2D modules
         import pycorgi.twoD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.twoD as pypic  # runko pic c++ bindings
         import pyrunko.fields.twoD as pyfld  # runko fld c++ bindings
-        import pytools.pic.twoD as pypictools  # auxiliary python pic tools
 
     # --------------------------------------------------
     # setup grid
@@ -150,7 +148,7 @@ if __name__ == "__main__":
     pytools.balance_mpi(grid)
 
     # load pic tiles into grid
-    pypictools.load_tiles(grid, conf)
+    pytools.pic.load_tiles(grid, conf)
 
     # --------------------------------------------------
     # simulation restart
@@ -171,7 +169,7 @@ if __name__ == "__main__":
         np.random.seed(1)  # sync rnd generator seed for different mpi ranks
 
         # injecting plasma particles
-        prtcl_stat = pypictools.inject(grid, velocity_profile, density_profile, conf)
+        prtcl_stat = pytools.pic.inject(grid, velocity_profile, density_profile, conf)
         if do_print:
             print("injected:")
             print("    e- prtcls: {}".format(prtcl_stat[0]))
@@ -200,7 +198,7 @@ if __name__ == "__main__":
     MPI.COMM_WORLD.barrier()
 
     # load virtual mpi halo tiles
-    pypictools.load_virtual_tiles(grid, conf)
+    pytools.pic.load_virtual_tiles(grid, conf)
 
     # --------------------------------------------------
     # --------------------------------------------------
