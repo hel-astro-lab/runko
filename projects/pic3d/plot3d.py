@@ -35,6 +35,7 @@ if __name__ == "__main__":
         plt.rc('xtick', labelsize=8)
         plt.rc('ytick', labelsize=8)
         plt.rc('axes',  labelsize=8)
+        #plt.style.use('dark_background')
     
 
     gs = plt.GridSpec(1, 1)
@@ -58,95 +59,123 @@ if __name__ == "__main__":
     fname_prtcls = "test-prtcls"
     
     #args.lap
-    lap = 80
+    lap = 1000
 
-    fields_file   = conf.outdir + '/'+fname_fld+'_'+str(lap)+'.h5'
+    box_offset = 0
+    for lap in [100, 1000, 2000]:
 
-    f5 = h5.File(fields_file,'r')
-    data = pytools.read_h5_array(f5, 'jz')
+        fields_file   = conf.outdir + '/'+fname_fld+'_'+str(lap)+'.h5'
 
-    #cut reflector out
-    data = data[6:,:,:]
+        f5 = h5.File(fields_file,'r')
+        data = pytools.read_h5_array(f5, 'jz')
 
-    #limit box length
-    data = data[0:128,:,:]
+        #cut reflector out
+        data = data[6:,:,:]
 
-    print(np.shape(data))
+        #limit box length
+        xlen = 512
+        if lap <= 100:
+            xlen = 128
+        elif lap <= 1000:
+            xlen = 256+64
 
-    nx, ny, nz = np.shape(data)
+        #data = data[0:256,:,:]
+        #data = data[0:512,:,:]
+        data = data[0:xlen,:,:]
 
-    #--------------------------------------------------
-    # create box
+        print(np.shape(data))
 
-    box = pytools.pybox3d.Box(axs[0])
+        nx, ny, nz = np.shape(data)
 
-    aspect_ratio = nx/ny
-    print("box aspect ratio: {}".format(aspect_ratio))
-    box.dx = aspect_ratio
-    box.dy = 1.0
-    box.dz = 1.5
+        #--------------------------------------------------
+        # create box
 
-    #box.set_data(np.log10(data))
-    box.set_data(data)
-    box.vmin = -0.02
-    box.vmax = +0.02
-    cmap = cm.get_cmap('RdBu')
+        box = pytools.pybox3d.Box(axs[0])
 
+        box.z0 -= box_offset
 
-    #surface rendering
-    box.draw_left( cmap=cmap)
-    box.draw_front(cmap=cmap)
-    box.draw_top(  cmap=cmap)
-    box.draw_outline()
+        aspect_ratio = nx/ny
+        print("box aspect ratio: {}".format(aspect_ratio))
+        box.dx = aspect_ratio
+        box.dy = 1.0
+        box.dz = 1.5
 
-
-
-    #back exploded panels
-    if True:
-        data = pytools.read_h5_array(f5, 'bz')
-        data = data[6:,:,:] #cut off reflector
-        data = data[0:128,:,:] #limit box length
-        bz2 = data**2
-
-        box.set_data(bz2)
-        box.vmin = 0.0
-        box.vmax = 0.20
-        cmap = cm.get_cmap('viridis')
-
-        off_bot    = 1.7
-        off_back   = 1.7
-        off_left   = 0.7
-        off_right  = 0.7
-
-        box.draw_exploded_panels_outline("bottom", off=off_bot)
-        box.draw_exploded_panels_outline("left",   off=off_left)
-        #box.draw_exploded_panels_outline("right",  off=off_right)
-        box.draw_exploded_panels_outline("back",   off=off_back)
-        
-        box.draw_exploded_bottom(off=off_bot,   cmap=cmap)
-        box.draw_exploded_back( off=off_back, cmap=cmap)
-
-        box.draw_exploded_left(  off=off_left,  cmap=cmap)
-        #box.draw_exploded_right( off=off_right, cmap=cmap)
-
-    if False:
-        #front exploded panels
-        off = -1.95 #this puts them in front of the box
-        cmap = plt.cm.RdBu
-        box.draw_exploded_panels_outline("bottom", off=off)
-        box.draw_exploded_panels_outline("left",   off=off)
-        box.draw_exploded_panels_outline("right",  off=off)
-        
-        box.draw_exploded_bottom(off=off, cmap=cmap)
-        box.draw_exploded_left(  off=off, cmap=cmap)
-        box.draw_exploded_right( off=off, cmap=cmap)
+        #box.set_data(np.log10(data))
+        box.set_data(data)
+        #box.vmin = -0.02
+        #box.vmax = +0.02
+        cmap = cm.get_cmap('RdBu')
 
 
-    axs[0].set_axis_off()
-    axs[0].view_init(45.0, -110.0)
+        #surface rendering
+        box.draw_left( cmap=cmap)
+        box.draw_front(cmap=cmap)
+        box.draw_top(  cmap=cmap)
+        box.draw_outline()
 
-    #axs[0].view_init(45.0, 100.0)
 
+
+        #back exploded panels
+        if False:
+            data = pytools.read_h5_array(f5, 'bz')
+            data = data[6:,:,:] #cut off reflector
+            data = data[0:xlen,:,:] #limit box length
+            bz2 = data**2
+
+            box.set_data(bz2)
+            box.vmin = 0.0
+            #box.vmax = 0.20
+            cmap = cm.get_cmap('viridis')
+
+            off_bot    = 1.7
+            off_back   = 1.7
+            off_left   = 0.7
+            off_right  = 0.7
+
+            box.draw_exploded_panels_outline("bottom", off=off_bot)
+            box.draw_exploded_panels_outline("left",   off=off_left)
+            #box.draw_exploded_panels_outline("right",  off=off_right)
+            box.draw_exploded_panels_outline("back",   off=off_back)
+            
+            box.draw_exploded_bottom(off=off_bot,   cmap=cmap)
+            box.draw_exploded_back( off=off_back, cmap=cmap)
+
+            box.draw_exploded_left(  off=off_left,  cmap=cmap)
+            #box.draw_exploded_right( off=off_right, cmap=cmap)
+
+        if False:
+            #front exploded panels
+            off = -1.95 #this puts them in front of the box
+            cmap = plt.cm.RdBu
+            box.draw_exploded_panels_outline("bottom", off=off)
+            box.draw_exploded_panels_outline("left",   off=off)
+            box.draw_exploded_panels_outline("right",  off=off)
+            
+            box.draw_exploded_bottom(off=off, cmap=cmap)
+            box.draw_exploded_left(  off=off, cmap=cmap)
+            box.draw_exploded_right( off=off, cmap=cmap)
+
+
+        if True:
+
+            #last lap exploded slices
+            if lap == 2000:
+                for loc in np.linspace(0.2, 0.8, 8):
+
+                    locx = loc*aspect_ratio
+                    print("slize at:", locx)
+                    box.draw_exploded_slice("left-front", locx, 2.2, cmap=cmap)
+
+
+
+        axs[0].set_axis_off()
+        #axs[0].view_init(45.0, -110.0)
+
+        axs[0].view_init(45.0, -130.0)
+
+        box_offset += 3.1
+
+    #end of lap loop
 
     if False:
         #colorbars
@@ -178,7 +207,7 @@ if __name__ == "__main__":
     #axs[0].set_title('Step {}'.format(lap+1))
 
     slap = str(lap).rjust(4, '0')
-    fname = conf.outdir + '/3d_'+slap
+    fname = conf.outdir + '/3d_long_'+slap
     plt.subplots_adjust(left=-0.45, bottom=-0.45, right=1.35, top=1.45)
 
     axs[0].set_xlabel('x')
