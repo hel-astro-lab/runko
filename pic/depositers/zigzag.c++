@@ -17,7 +17,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();
-
+  yee.rho.clear();
 
   auto mins = tile.mins;
 
@@ -67,7 +67,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       y0 = loc1n - vel1n*invgam*c;
       z0 = loc2n - vel2n*invgam*c; 
 
-      // normalized location w.r.t. tile
+      // normalized location w.r.t. tile; previous loc (x1) and current loc (x2)
       x1 = D >= 1 ? x0     - mins[0] : x0;
       x2 = D >= 1 ? loc0n  - mins[0] : loc0n;
       y1 = D >= 2 ? y0     - mins[1] : y0;
@@ -215,6 +215,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       yee.jz(i2,  j2+1, k2)   += Fz2 * (1.0-Wx2) * Wy2;
       yee.jz(i2+1,j2+1, k2)   += Fz2 * Wx2       * Wy2;
 
+
+      // finally; store prtcl number density
+      yee.rho(i2, j2, k2) += abs(q);
     }
 
   }//end of loop over species
