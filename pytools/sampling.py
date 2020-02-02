@@ -72,7 +72,7 @@ def BoxMuller_method(T):
 # Gamma = Lorentz boosting factor (or if G<1 it is interpreted as beta)
 # direction = -1/+1 for -/+x; -2/+2 for -/+y; -3/+3 for -/+z
 # dimensionality = 2 for xy; 3 for xyz
-def boosted_maxwellian(theta, Gamma, direction=1, dims=2):
+def sample_boosted_maxwellian(theta, Gamma, direction=1, dims=2):
 
     #For relativistic case we use Sobol method, inverse method otherwise
     if theta > 0.2:
@@ -182,11 +182,11 @@ if __name__ == "__main__":
         
             #n1[n] = drifting_rejection(A, drift)
         
-            ux, uy, uz, u = boosted_maxwellian(T, Gamma, direction=-1)
+            ux, uy, uz, u = sample_boosted_maxwellian(T, Gamma, direction=-1)
             #p = u/sqrt(1.0-u*u)
             n2[n] = uy
         
-            ux, uy, uz, u = boosted_maxwellian(T+0.0001, Gamma, direction=-1)
+            ux, uy, uz, u = sample_boosted_maxwellian(T+0.0001, Gamma, direction=-1)
             #p = u/sqrt(1.0-u*u)
             n1[n] = uy
         
@@ -210,11 +210,11 @@ if __name__ == "__main__":
         n2 = np.zeros(N)
         n3 = np.zeros(N)
         for n in range(N):
-            ux, uy, uz, u = boosted_maxwellian(T, Gamma, direction=-1)
+            ux, uy, uz, u = sample_boosted_maxwellian(T, Gamma, direction=-1)
             gamma = np.sqrt(1.0 + ux*ux + uy*uy + uz*uz)
             n1[n] = gamma
         
-            ux, uy, uz, u = boosted_maxwellian(T+0.0001, Gamma, direction=-1)
+            ux, uy, uz, u = sample_boosted_maxwellian(T+0.0001, Gamma, direction=-1)
             gamma = np.sqrt(1.0 + ux*ux + uy*uy + uz*uz)
             n2[n] = gamma
         

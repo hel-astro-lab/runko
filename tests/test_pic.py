@@ -28,6 +28,9 @@ except:
 np.random.seed(0)
 
 
+def density_profile(xloc, ispcs, conf):
+    return conf.ppc
+
 
 def filler_no_velocity(xloc, ispcs, conf):
 
@@ -151,12 +154,12 @@ def insert_em(grid, conf, ffunc):
                         for n in range(conf.NzMesh):
 
                             # get x_i,j,k
-                            xloc0 = pytools.ind2loc(grid, (i,j,k), (l,m,n), conf)
+                            xloc0 = pytools.ind2loc((i,j,k), (l,m,n), conf)
 
                             #get x_i+1/2, x_j+1/2, x_k+1/2
-                            xloc1 = pytools.ind2loc(grid, (i,j,k), (l+1,m,  n),   conf)
-                            yloc1 = pytools.ind2loc(grid, (i,j,k), (l,  m+1,n),   conf)
-                            zloc1 = pytools.ind2loc(grid, (i,j,k), (l,  m,  n+1), conf)
+                            xloc1 = pytools.ind2loc((i,j,k), (l+1,m,  n),   conf)
+                            yloc1 = pytools.ind2loc((i,j,k), (l,  m+1,n),   conf)
+                            zloc1 = pytools.ind2loc((i,j,k), (l,  m,  n+1), conf)
 
                             # values in Yee lattice corners
                             xcor = xloc0[0]
@@ -294,7 +297,7 @@ class PIC(unittest.TestCase):
 
         pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, const_field)
-        pytools.pic.inject(grid, filler, conf) #pytools.pic.injecting plasma particles
+        pytools.pic.inject(grid, filler, density_profile, conf) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
         pusher   = pyrunko.pic.twoD.BorisPusher()
@@ -442,9 +445,9 @@ class PIC(unittest.TestCase):
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
-        pytools.pic.load_tiles(grid, conf, D=3)
+        pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, const_field)
-        pytools.pic.inject(grid, filler3D, conf, D=3) #pytools.pic.injecting plasma particles
+        pytools.pic.inject(grid, filler3D, density_profile, conf) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
         pusher = pyrunko.pic.threeD.BorisPusher()
@@ -571,7 +574,7 @@ class PIC(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, const_field)
-        pytools.pic.inject(grid, filler_no_velocity, conf) #pytools.pic.injecting plasma particles
+        pytools.pic.inject(grid, filler_no_velocity, density_profile, conf) #pytools.pic.injecting plasma particles
 
         ##update boundaries
         for j in range(grid.get_Ny()):
@@ -630,7 +633,7 @@ class PIC(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, linear_field)
-        pytools.pic.inject(grid, filler_no_velocity, conf) #pytools.pic.injecting plasma particles
+        pytools.pic.inject(grid, filler_no_velocity, density_profile, conf) #pytools.pic.injecting plasma particles
 
         ##update boundaries
         for j in range(grid.get_Ny()):
@@ -715,13 +718,12 @@ class PIC(unittest.TestCase):
         pytools.pic.load_tiles(grid, conf)
         #insert_em(grid, conf, linear_field)
         insert_em(grid, conf, zero_field)
-        pytools.pic.inject(grid, filler, conf) #pytools.pic.injecting plasma particles
+        pytools.pic.inject(grid, filler, density_profile, conf) #pytools.pic.injecting plasma particles
         #pytools.pic.inject(grid, filler_xvel, conf) #pytools.pic.injecting plasma particles
 
         #pusher   = pyrunko.pic.twoD.BorisPusher()
         #fintp    = pyrunko.pic.twoD.LinearInterpolator()
         currint  = pyrunko.pic.twoD.ZigZag()
-        analyzer = pyrunko.pic.twoD.Analyzator()
 
         flt =  pytools.Filter(conf.NxMesh, conf.NyMesh)
         flt.init_gaussian_kernel(1.0, 1.0)
@@ -729,12 +731,6 @@ class PIC(unittest.TestCase):
 
         #for lap in range(0, conf.Nt):
         for lap in range(1):
-
-            #analyze
-            for j in range(grid.get_Ny()):
-                for i in range(grid.get_Nx()):
-                    tile = grid.get_tile(i,j)
-                    analyzer.analyze2d(tile)
 
             #update boundaries
             for j in range(grid.get_Ny()):
@@ -845,12 +841,11 @@ class PIC(unittest.TestCase):
         pytools.pic.load_tiles(grid, conf)
         #insert_em(grid, conf, linear_field)
         insert_em(grid, conf, const_field)
-        pytools.pic.inject(grid, filler_xvel, conf) #pytools.pic.injecting plasma particles
+        pytools.pic.inject(grid, filler_xvel, density_profile, conf) #pytools.pic.injecting plasma particles
 
         #pusher   = pyrunko.pic.twoD.BorisPusher()
         #fintp    = pyrunko.pic.twoD.LinearInterpolator()
         currint  = pyrunko.pic.twoD.ZigZag()
-        analyzer = pyrunko.pic.twoD.Analyzator()
 
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
@@ -951,12 +946,11 @@ class PIC(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         pytools.pic.load_tiles(grid, conf)
         #insert_em(grid, conf, const_field)
-        pytools.pic.inject(grid, filler_xvel, conf) #pytools.pic.injecting plasma particles
+        pytools.pic.inject(grid, filler_xvel, density_profile, conf) #pytools.pic.injecting plasma particles
 
         #pusher   = pyrunko.pic.twoD.BorisPusher()
         #fintp    = pyrunko.pic.twoD.LinearInterpolator()
         currint  = pyrunko.pic.twoD.ZigZag()
-        analyzer = pyrunko.pic.twoD.Analyzator()
 
 
         #deposit current
@@ -1115,7 +1109,6 @@ class PIC(unittest.TestCase):
         fldprop  = pyrunko.fields.twoD.FDTD2()
         fintp    = pyrunko.pic.twoD.LinearInterpolator()
         currint  = pyrunko.pic.twoD.ZigZag()
-        analyzer = pyrunko.pic.twoD.Analyzator()
         flt      = pyrunko.fields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         lap = 0
@@ -1192,10 +1185,10 @@ class PIC(unittest.TestCase):
             #--------------------------------------------------
             # end of cycle // analyzing next
     
+            # TODO can this be removed?
             #build analysis statistics
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                analyzer.analyze2d(tile)
+            #for cid in grid.get_local_tiles():
+            #    tile = grid.get_tile(cid)
 
 
             xx = container.loc(0)

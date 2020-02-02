@@ -1,12 +1,11 @@
-import numpy as np
+# -*- coding: utf-8 -*- 
 
-import pycorgi
-import pyrunko.rad as pyrad
+import numpy as np
 
 
 
 # Sample from blackbody distribution
-def bbodySample(kTbb):
+def sample_blackbody(kTbb):
     
     xi1=np.random.rand()
     xi2=np.random.rand()
@@ -32,7 +31,7 @@ def bbodySample(kTbb):
 
 
 # Sample from Maxwellian distribution
-def maxwellSample(kTe):
+def sample_maxwellian(kTe):
     pel = 0.0
     if kTe < 0.29:
         while True:
@@ -66,7 +65,7 @@ def randab(a, b):
     return a + (b-a)*np.random.rand()
 
 # Cartesian 3D location
-def rand3Dloc(conf):
+def rand_3D_loc(conf):
     x = randab(conf.xmin, conf.xmax)
     y = randab(conf.ymin, conf.ymax)
     z = randab(conf.zmin, conf.zmax)
@@ -75,7 +74,7 @@ def rand3Dloc(conf):
 
 
 #random 3D direction in terms of angles phi and theta
-def randUnitSphere():
+def rand_unit_sphere():
     vphi = randab( 0.0, 2.0*np.pi ) #azimuth
     vthe = randab(-np.pi/2.0, np.pi/2.0 ) #latitude
     return (vphi, vthe)
@@ -86,30 +85,10 @@ def sph2cart(vr, vphi, vthe):
     vz = vr * np.cos(vthe)
     return vx, vy, vz
 
-def rand3Dvel(vabs):
-    (vphi, vthe) = randUnitSphere()
+def rand_3D_vel(vabs):
+    (vphi, vthe) = rand_unit_sphere()
     vx, vy, vz = sph2cart(vabs, vphi, vthe)
     return [vx, vy, vz]
 
 
 
-
-def initialize_tile(c, indx, n, conf):
-
-    # try 3d unpacking; if not, fallback to 2D
-    try:
-        i,j,k = indx
-    except:
-        try:
-            i,j = indx
-        except:
-            i = indx
-
-    # load particle containers
-    bucket = pyrad.PhotonContainer()
-        
-    #reserve memory for particles
-    Nprtcls = conf.ppt
-    bucket.reserve(Nprtcls)
-    c.push_back( bucket )
-    

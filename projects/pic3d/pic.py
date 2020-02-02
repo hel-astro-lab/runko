@@ -45,7 +45,7 @@ def velocity_profile(xloc, ispcs, conf):
     # velocity sampling
     gamma = conf.gamma
     direction = -1
-    ux, uy, uz, uu = pytools.boosted_maxwellian(
+    ux, uy, uz, uu = pytools.sample_boosted_maxwellian(
         delgam, gamma, direction=direction, dims=3
     )
 

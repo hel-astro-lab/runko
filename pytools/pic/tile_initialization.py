@@ -73,12 +73,6 @@ def initialize_tile(tile, indx, n, conf):
         tile.set_tile_mins(mins[0:2])
         tile.set_tile_maxs(maxs[0:2])
 
-
-    # initialize analysis tiles ready for incoming simulation data
-    # NOTE: only 2D tiles have room for analysis species
-    # for ip in range(conf.Nspecies):
-    #    c.add_analysis_species()
-
     return
 
 
