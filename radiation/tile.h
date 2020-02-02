@@ -34,8 +34,6 @@ public:
   using fields::Tile<D>::mesh_lengths;
 
   using fields::Tile<D>::yee;
-  using fields::Tile<D>::analysis;
-
   using fields::Tile<D>::cfl;
 
   using pic::Tile<D>::containers;

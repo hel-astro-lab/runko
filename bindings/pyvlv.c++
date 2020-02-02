@@ -9,30 +9,17 @@
 // Vlasov module
   
 #include "../vlasov/tile.h"
-//#include "../vlasov/grid.h"
-
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
-
 #include "../vlasov/amr/mesh.h"
-//#include "../vlasov/amr/numerics.h"
 #include "../vlasov/amr/refiner.h"
 #include "../vlasov/amr/operators.h"
-
 #include "../vlasov/momentum-solvers/amr_momentum_solver.h"
 #include "../vlasov/momentum-solvers/bwd_lagrangian.h"
 #include "../vlasov/momentum-solvers/bwd_lagrangian_gravity.h"
-
 #include "../vlasov/spatial-solvers/amr_spatial_solver.h"
-#include "../vlasov/amr_analyzator.h"
-
 #include "../vlasov/tasker.h"
-
 #include "../io/tasker.h"
-
-
-
-// boundaries
 #include "../vlasov/boundaries/outflow.h"
 #include "../vlasov/boundaries/piston.h"
 
@@ -304,8 +291,8 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
   /// Vlasov tile analyzator
-  py::class_<vlv::Analyzator<Realf> >(m_1d, "Analyzator")
-    .def(py::init<>());
+  //py::class_<vlv::Analyzator<Realf> >(m_1d, "Analyzator")
+  //  .def(py::init<>());
 
 
   //--------------------------------------------------
@@ -314,7 +301,7 @@ void bind_vlv(py::module& m_sub)
   m_1d.def("step_velocity",   &vlv::step_velocity<1>);
   m_1d.def("step_velocity_with_gravity",   &vlv::step_velocity_with_gravity<1>);
 
-  m_1d.def("analyze",         &vlv::analyze);
+  //m_1d.def("analyze",         &vlv::analyze);
   m_1d.def("write_mesh",      &vlv::write_mesh<1>);
   m_1d.def("read_mesh",       &vlv::read_mesh<1>);
 

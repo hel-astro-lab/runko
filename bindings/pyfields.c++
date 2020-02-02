@@ -59,11 +59,7 @@ auto declare_tile(
         // while regular arguments begin at index two. 
         // py::keep_alive<nurse,patient>()
         py::keep_alive<1,0>()
-        )
-    .def("add_analysis_species",&fields::Tile<D>::add_analysis_species)
-    .def("get_analysis",        &fields::Tile<D>::get_analysis, 
-                                py::arg("i")=0,
-                                py::return_value_policy::reference);
+        );
 }
 
 
@@ -221,30 +217,6 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("rho",  &fields::YeeLattice::rho, py::return_value_policy::reference, py::keep_alive<1,0>());
 
 
-  //--------------------------------------------------
-
-  py::class_<
-    fields::PlasmaMomentLattice,
-    std::shared_ptr<fields::PlasmaMomentLattice> 
-            >(m_sub, "PlasmaMomentLattice")
-    .def(py::init<int, int, int>())
-    .def_readwrite("rho",      &fields::PlasmaMomentLattice::rho    ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("edens",    &fields::PlasmaMomentLattice::edens  ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("temp",     &fields::PlasmaMomentLattice::temp   ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("Vx",       &fields::PlasmaMomentLattice::Vx     ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("Vy",       &fields::PlasmaMomentLattice::Vy     ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("Vz",       &fields::PlasmaMomentLattice::Vz     ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("momx",     &fields::PlasmaMomentLattice::momx   ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("momy",     &fields::PlasmaMomentLattice::momy   ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("momz",     &fields::PlasmaMomentLattice::momz   ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("pressx",   &fields::PlasmaMomentLattice::pressx ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("pressy",   &fields::PlasmaMomentLattice::pressy ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("pressz",   &fields::PlasmaMomentLattice::pressz ,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("shearxy",  &fields::PlasmaMomentLattice::shearxy,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("shearxz",  &fields::PlasmaMomentLattice::shearxz,py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("shearyz",  &fields::PlasmaMomentLattice::shearyz,py::return_value_policy::reference, py::keep_alive<1,0>());
-
-
 
   //--------------------------------------------------
   py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
@@ -303,7 +275,6 @@ void bind_fields(py::module& m_sub)
   //      // py::keep_alive<nurse,patient>()
   //      py::keep_alive<1,0>()
   //      )
-  //  .def("add_analysis_species", &fields::Tile<3>::add_analysis_species);
 
 
   // FIXME
@@ -476,12 +447,10 @@ void bind_fields(py::module& m_sub)
   // 1D
   m_1d.def("read_yee",        &fields::read_yee<1>);
   m_1d.def("write_yee",       &fields::write_yee<1>);
-  m_1d.def("write_analysis",  &fields::write_analysis<1>);
 
 
   // 2D
   m_2d.def("write_yee",        &fields::write_yee<2>);
-  m_2d.def("write_analysis",   &fields::write_analysis<2>);
   m_2d.def("read_yee",         &fields::read_yee<2>);
 
 

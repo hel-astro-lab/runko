@@ -10,7 +10,6 @@
 #include "../amr/refiner.h"
 #include "../amr/operators.h"
 #include "../../tools/signum.h"
-#include "../amr_analyzator.h"
 
 #include "../../tools/cppitertools/zip.hpp"
 using iter::zip;
@@ -24,7 +23,6 @@ using std::max;
 
 
 namespace vlv {
-
 
 
 

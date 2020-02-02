@@ -19,6 +19,17 @@
 namespace vlv {
 
 
+/// Relativistic gamma from velocity
+template<typename T, int V>
+inline T gamma(std::array<T,V>& uvel) 
+{
+  T gammasq = 1.0;
+  for(size_t i=0; i<V; i++) gammasq += uvel[i]*uvel[i];
+  return std::sqrt(gammasq);
+}
+
+
+
 /*! \brief Block of Vlasov fluid's inside the tile
 *
 * Container to hold a plasma species block

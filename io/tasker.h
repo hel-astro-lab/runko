@@ -75,24 +75,24 @@ inline void write_yee(
 }
 
 
-template<size_t D>
-inline void write_analysis( 
-    corgi::Grid<D>& grid, 
-    int lap,
-    const std::string& dir
-    )
-{
-
-  std::string prefix = dir + "analysis-"; 
-  prefix += std::to_string(grid.comm.rank());
-  h5io::Writer writer(prefix, lap);
-
-  for(auto cid : grid.get_local_tiles() ){
-    const auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
-    writer.write2(tile);
-  }
-}
+//template<size_t D>
+//inline void write_analysis( 
+//    corgi::Grid<D>& grid, 
+//    int lap,
+//    const std::string& dir
+//    )
+//{
+//
+//  std::string prefix = dir + "analysis-"; 
+//  prefix += std::to_string(grid.comm.rank());
+//  h5io::Writer writer(prefix, lap);
+//
+//  for(auto cid : grid.get_local_tiles() ){
+//    const auto& tile 
+//      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+//    writer.write2(tile);
+//  }
+//}
 
 template<size_t D>
 inline void read_yee( 

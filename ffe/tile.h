@@ -24,11 +24,9 @@ class Tile :
 
   using corgi::Tile<D>::mins;
   using corgi::Tile<D>::maxs;
+
   using fields::Tile<D>::mesh_lengths;
-
   using fields::Tile<D>::yee;
-  using fields::Tile<D>::analysis;
-
   using fields::Tile<D>::cfl;
 
   // RK temporary sub-stage storages

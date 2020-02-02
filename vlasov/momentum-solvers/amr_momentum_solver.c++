@@ -4,7 +4,6 @@
 #include <Eigen/Dense>
 
 #include "../../tools/cppitertools/zip.hpp"
-#include "../amr_analyzator.h"
 #include "../../definitions.h"
 
 

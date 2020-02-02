@@ -60,45 +60,6 @@ const YeeLattice& Tile<D>::get_const_yee(int /*i*/) const
 }
 
 
-/// Get analysis lattice of i:th species
-template<std::size_t D>
-PlasmaMomentLattice& Tile<D>::get_analysis(int i) 
-{
-  return this->analysis.at(i);
-}
-
-template<std::size_t D>
-const PlasmaMomentLattice& Tile<D>::get_const_analysis(int i) const 
-{
-  return this->analysis.at(i);
-}
-
-//--------------------------------------------------
-// Specialize analysis species grid extension
-template<>
-void Tile<1>::add_analysis_species() 
-{
-  analysis.emplace_back(mesh_lengths[0], 1, 1);
-}
-
-template<>
-void Tile<2>::add_analysis_species() 
-{
-  analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], 1);
-}
-
-template<>
-void Tile<3>::add_analysis_species() 
-{
-  // 3D tile can not have PlasmaMomentLattice because it is too big to
-  // fit into the memory.
-  assert(false);
-
-  //analysis.push_back(PlasmaMomentLattice(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]));
-  //analysis.emplace_back(mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
-}
-
-
 //--------------------------------------------------
 // Specialize Yee Lattice insertion
 template<>

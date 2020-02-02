@@ -6,7 +6,6 @@
 
 #include "momentum-solvers/amr_momentum_solver.h"
 #include "spatial-solvers/amr_spatial_solver.h"
-#include "amr_analyzator.h"
 
 namespace vlv{
 
@@ -124,29 +123,29 @@ void step_velocity_with_gravity(
 }
 
 
-inline void analyze( corgi::Grid<1>& grid )
-{
-  vlv::Analyzator<Realf> analyzator;
-
-  #pragma omp parallel
-  {
-    #pragma omp single
-    {
-
-      for(auto cid : grid.get_local_tiles()) {
-        #pragma omp task firstprivate(analyzator)
-        {
-          auto& tile 
-            = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
-          analyzator.analyze(tile);
-        }// end of omp task
-      }
-
-
-    }// end of omp single
-  }// end of omp parallel
-
-}
+//inline void analyze( corgi::Grid<1>& grid )
+//{
+//  vlv::Analyzator<Realf> analyzator;
+//
+//  #pragma omp parallel
+//  {
+//    #pragma omp single
+//    {
+//
+//      for(auto cid : grid.get_local_tiles()) {
+//        #pragma omp task firstprivate(analyzator)
+//        {
+//          auto& tile 
+//            = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
+//          analyzator.analyze(tile);
+//        }// end of omp task
+//      }
+//
+//
+//    }// end of omp single
+//  }// end of omp parallel
+//
+//}
 
 
 }// end of namespace vlv

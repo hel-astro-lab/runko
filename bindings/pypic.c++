@@ -19,7 +19,6 @@ namespace py = pybind11;
 #include "../pic/depositers/zigzag.h"
 
 #include "../pic/communicate.h"
-#include "../pic/analyzer.h"
 
 #include "../pic/boundaries/wall.h"
 #include "../pic/boundaries/piston.h"
@@ -247,8 +246,6 @@ class PyDepositer : public Depositer3V<D>
 void bind_pic(py::module& m_sub)
 {
 
-
-
   //--------------------------------------------------
   // 1D bindings
   //py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
@@ -359,20 +356,7 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
 
-  //--------------------------------------------------
 
-  /// Pic tile analyzator
-  py::class_<pic::Analyzator>(m_2d, "Analyzator")
-    .def(py::init<>())
-    .def("analyze1d", &pic::Analyzator::analyze<1>)
-    .def("analyze2d", &pic::Analyzator::analyze<2>)
-    .def("analyze3d", &pic::Analyzator::analyze<3>);
-
-  //TODO: 3D analyzator
-
-  /// IO bindings
-  //m_2d.def("write_particles",  &pic::write_particles<2>);
-  //m_2d.def("read_particles",   &pic::read_particles<2>);
 
   //--------------------------------------------------
   //2 D piston
@@ -410,7 +394,7 @@ void bind_pic(py::module& m_sub)
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
     .def("write",   &h5io::TestPrtclWriter<2>::write);
 
-  //TODO: 3D test particles
+  // 3D test particles
   py::class_<h5io::TestPrtclWriter<3>>(m_3d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
     .def("write",   &h5io::TestPrtclWriter<3>::write);
@@ -418,7 +402,6 @@ void bind_pic(py::module& m_sub)
 
   //--------------------------------------------------
   // Full IO
-
 
   // 2D
   m_2d.def("write_particles",  &pic::write_particles<2>);
