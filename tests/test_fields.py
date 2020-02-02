@@ -17,6 +17,10 @@ class Conf:
     Ny = 3
     Nz = 1
 
+    one = False
+    twoD = False
+    threeD = False
+
     NxMesh = 5
     NyMesh = 5
     NzMesh = 5
@@ -84,6 +88,7 @@ class FLD_inits(unittest.TestCase):
 
     def test_propagators_1d(self):
         conf = Conf()
+        conf.oneD = True
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
@@ -95,6 +100,7 @@ class FLD_inits(unittest.TestCase):
         
     def test_propagators_2d(self):
         conf = Conf()
+        conf.twoD = True
         conf.NzMesh = 1 #force 2D
 
         fdtd2 = pyrunko.fields.twoD.FDTD2()
@@ -116,6 +122,7 @@ class Communications(unittest.TestCase):
     def test_updateBoundaries(self):
 
         conf = Conf()
+        conf.oneD = True
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
@@ -227,6 +234,7 @@ class Communications(unittest.TestCase):
     def test_updateBoundaries2D(self):
 
         conf = Conf()
+        conf.twoD = True
 
         conf.NxMesh = 4
         conf.NyMesh = 4
@@ -361,6 +369,8 @@ class Communications(unittest.TestCase):
     # testing a spesific seg fault with loading of yee lattices. This same test fails with 3D
     def test_2D_tile_memory_bug(self):
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 3
         conf.Ny = 3
         conf.NxMesh = 40
@@ -386,6 +396,8 @@ class Communications(unittest.TestCase):
 
     def test_3D_mesh_memory_bug(self):
         conf = Conf()
+        conf.threeD = True
+
         conf.NxMesh = 10
         conf.NyMesh = 10
         conf.NzMesh = 10
@@ -407,6 +419,7 @@ class Communications(unittest.TestCase):
     def test_3D_tile_memory_bug(self):
 
         conf = Conf()
+        conf.threeD = True
 
         conf.Nx = 3
         conf.Ny = 3
@@ -544,6 +557,8 @@ class Communications(unittest.TestCase):
     def test_tile_indices2D(self):
 
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 1
@@ -588,6 +603,8 @@ class Communications(unittest.TestCase):
     def test_tile_indices3D(self):
 
         conf = Conf()
+        conf.threeD = True
+
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 3
@@ -636,6 +653,7 @@ class Communications(unittest.TestCase):
     def test_updateBoundaries3D(self):
 
         conf = Conf()
+        conf.threeD = True
 
         conf.Nx = 3
         conf.Ny = 3
@@ -779,6 +797,7 @@ class Communications(unittest.TestCase):
     def test_neighs3D(self):
 
         conf = Conf()
+        conf.threeD = True
 
         conf.Nx = 3
         conf.Ny = 3
@@ -805,6 +824,7 @@ class Communications(unittest.TestCase):
     def test_exchangeCurrents3D(self):
 
         conf = Conf()
+        conf.threeD = True
 
         conf.Nx = 3
         conf.Ny = 3
