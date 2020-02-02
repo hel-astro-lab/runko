@@ -64,6 +64,8 @@ def balance_mpi_2D(n, comm_size=None):
     # broadcast calculation to everybody
     n.bcast_mpi_grid()
 
+    return
+
 
 # load nodes using 3D Hilbert curve
 def balance_mpi_3D(n, comm_size=None):
@@ -122,3 +124,56 @@ def balance_mpi_3D(n, comm_size=None):
 
     # broadcast calculation to everybody
     n.bcast_mpi_grid()
+
+    return
+
+
+#make random starting order
+def load_mpi_randomly(n):
+    np.random.seed(0)
+    if n.master:
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
+                val = np.random.randint( n.size() )
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
+    return
+
+
+#load nodes to be in stripe formation (splitted in X=horizontal direction)
+def load_mpi_x_strides(n):
+    if n.master: #only master initializes; then sends
+        stride = np.zeros( (n.get_Nx()), np.int64)
+        dx = np.float(n.get_Nx()) / np.float(n.size() ) 
+        for i in range(n.get_Nx()):
+            val = np.int( i/dx )
+            stride[i] = val
+
+        for j in range(n.get_Ny()):
+            for i in range(n.get_Nx()):
+                val = stride[i]
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
+    return
+
+
+#load nodes to be in stripe formation (splitted in Y=vertical direction)
+def load_mpi_y_strides(n):
+    if n.master: #only master initializes; then sends
+        stride = np.zeros( (n.get_Ny()), np.int64)
+        dy = np.float(n.get_Ny()) / np.float(n.Nrank) 
+        for j in range(n.get_Ny()):
+            val = np.int( j/dy )
+            stride[j] = val
+
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
+                val = stride[j]
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
+    return
+
+
+
+
+
