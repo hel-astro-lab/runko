@@ -231,6 +231,9 @@ class Conf:
     qe = 1.0
     qi =-1.0
 
+    twoD   = False
+    threeD = False
+
     #def __init__(self):
     #    print("initialized...")
 
@@ -277,12 +280,14 @@ class PIC(unittest.TestCase):
         conf.NxMesh = 3
         conf.NyMesh = 3
 
+        conf.twoD = True
         conf.Nx = 3
         conf.Ny = 3
         conf.Ny = 1
         conf.update_bbox()
 
         conf.vel = 0.3
+
 
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
@@ -422,6 +427,7 @@ class PIC(unittest.TestCase):
         #    axs.append( plt.subplot(gs[ai]) )
 
         conf = Conf()
+        conf.threeD = True
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.NzMesh = 3
@@ -560,6 +566,7 @@ class PIC(unittest.TestCase):
     def test_const_field_interpolation(self):
 
         conf = Conf()
+        conf.twoD = True
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         pytools.pic.load_tiles(grid, conf)
@@ -615,6 +622,7 @@ class PIC(unittest.TestCase):
     def test_linear_field_interpolation(self):
 
         conf = Conf()
+        conf.twoD = True
         conf.Nx = 3
         conf.Ny = 3
 
@@ -691,6 +699,7 @@ class PIC(unittest.TestCase):
 
 
         conf = Conf()
+        conf.twoD = True
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 1
@@ -816,6 +825,7 @@ class PIC(unittest.TestCase):
 
 
         conf = Conf()
+        conf.twoD = True
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 1
@@ -922,6 +932,7 @@ class PIC(unittest.TestCase):
 
 
         conf = Conf()
+        conf.twoD = True
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 1
@@ -990,6 +1001,7 @@ class PIC(unittest.TestCase):
     def test_test_particle_initialization(self):
 
         conf = Conf()
+        conf.twoD = True
 
         conf.NxMesh = 3
         conf.NyMesh = 3
@@ -1030,6 +1042,7 @@ class PIC(unittest.TestCase):
             pass
 
         conf = Conf()
+        conf.twoD = True
 
         conf.outdir = "align_test"
         conf.NxMesh = 3
