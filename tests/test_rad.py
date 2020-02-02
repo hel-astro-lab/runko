@@ -36,6 +36,10 @@ class Conf:
     Ny = 1
     Nz = 1
 
+    oneD = False
+    twoD = False
+    threeD = False
+
     NxMesh = 10
     NyMesh = 10
     NzMesh = 1
@@ -110,6 +114,8 @@ class radiation(unittest.TestCase):
         #    axs.append( plt.subplot(gs[ai]) )
 
         conf = Conf()
+        conf.twoD = True
+
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.Nx = 3
@@ -189,6 +195,8 @@ class radiation(unittest.TestCase):
                 pass
 
         conf = Conf()
+        conf.twoD = True
+
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.ppc = 1
@@ -256,6 +264,8 @@ class radiation(unittest.TestCase):
     def test_initialization(self):
 
         conf = Conf()
+        conf.twoD = True
+
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.NzMesh = 1

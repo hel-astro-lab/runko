@@ -24,6 +24,10 @@ class Conf:
     Ny = 3
     Nz = 1
 
+    oneD = False
+    twoD = False
+    threeD = False
+
     NxMesh = 5
     NyMesh = 5
     NzMesh = 5
@@ -193,6 +197,8 @@ class IO(unittest.TestCase):
         ##################################################
         # write
         conf = Conf()
+        conf.oneD = True
+
         conf.Nx = 3
         conf.Ny = 1
         conf.Nz = 1
@@ -271,6 +277,8 @@ class IO(unittest.TestCase):
         # write
 
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 3
         conf.Ny = 4
         conf.Nz = 1
@@ -381,6 +389,8 @@ class IO(unittest.TestCase):
         ##################################################
         # write
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 2
         conf.Ny = 1
         conf.Nz = 1
@@ -508,6 +518,8 @@ class IO(unittest.TestCase):
     def skip_test_restart(self):
 
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 5
         conf.Ny = 1
         conf.Nz = 1
@@ -583,6 +595,8 @@ class IO(unittest.TestCase):
         # write
 
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 3
         conf.Ny = 4
         conf.Nz = 1
