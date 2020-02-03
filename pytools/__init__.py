@@ -15,6 +15,7 @@ from .sampling import sample_boosted_maxwellian #FIXME: not clear if sampling sh
 # physics modules
 from . import pic 
 from . import rad
+from . import vlv
 
 
 # visualization module
