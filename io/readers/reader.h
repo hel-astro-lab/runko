@@ -3,11 +3,11 @@
 #include <vector>
 #include <string>
 
-#include "../tools/ezh5/src/ezh5.hpp"
+#include "../../tools/ezh5/src/ezh5.hpp"
 
-#include "../em-fields/tile.h"
-#include "../vlasov/tile.h"
-#include "../pic/tile.h"
+#include "../../em-fields/tile.h"
+#include "../../vlasov/tile.h"
+#include "../../pic/tile.h"
 
 namespace h5io {
 
@@ -71,8 +71,8 @@ class Reader
 //--------------------------------------------------
 // template implementations
 
-#include "input_fields.h"
-#include "input_vlasov.h"
-#include "input_pic.h"
+#include "fields.h"
+#include "vlasov.h"
+#include "pic.h"
 
 

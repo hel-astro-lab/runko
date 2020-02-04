@@ -52,10 +52,10 @@ set (FFE_FILES
      )
 
 set (IO_FILES 
-     ../io/writer.c++
-     ../io/reader.c++
-     ../io/quick_writer.c++
-     ../io/test_prtcl_writer.c++
+     ../io/writers/writer.c++
+     ../io/readers/reader.c++
+     ../io/snapshots/fields.c++
+     ../io/snapshots/test_prtcls.c++
     )
 
 

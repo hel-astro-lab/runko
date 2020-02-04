@@ -2,11 +2,8 @@
 
 #include <string>
 
-#include "../io/writer.h"
-#include "../io/reader.h"
-#include "../io/write_tags.h"
-
-
+#include "writers/writer.h"
+#include "readers/reader.h"
 
 
 namespace vlv{

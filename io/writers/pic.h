@@ -1,7 +1,7 @@
 #pragma once
 
-#include "namer.h"
-#include "../pic/tile.h"
+#include "../namer.h"
+#include "../../pic/tile.h"
 #include "write_tags.h"
 
 

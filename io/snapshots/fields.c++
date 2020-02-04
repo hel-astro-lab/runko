@@ -1,11 +1,7 @@
-#include "quick_writer.h"
-
+#include "fields.h"
 #include <mpi4cpp/mpi.h>
-#include "../tools/mesh.h"
-#include "../em-fields/tile.h"
-#include "../tools/ezh5/src/ezh5.hpp"
-#include "../tools/fastlog.h"
-#include "namer.h"
+#include "../../tools/ezh5/src/ezh5.hpp"
+#include "../../tools/fastlog.h"
 
 using namespace mpi4cpp;
 using ezh5::File;

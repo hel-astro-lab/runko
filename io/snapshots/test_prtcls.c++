@@ -1,10 +1,7 @@
-#include "test_prtcl_writer.h"
-
+#include "test_prtcls.h"
 #include <mpi4cpp/mpi.h>
 #include <mpi.h>
-#include "../tools/mesh.h"
 #include "../tools/ezh5/src/ezh5.hpp"
-#include "namer.h"
 #include "../tools/fastlog.h"
 
 

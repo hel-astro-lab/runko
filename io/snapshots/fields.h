@@ -3,9 +3,9 @@
 #include <vector>
 #include <string>
 
-#include "namer.h"
-#include "../corgi/corgi.h"
-#include "../tools/mesh.h"
+#include "../namer.h"
+#include "../../corgi/corgi.h"
+#include "../../tools/mesh.h"
 
 
 namespace h5io { 

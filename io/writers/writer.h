@@ -3,14 +3,14 @@
 #include <vector>
 #include <string>
 
-#include "namer.h"
-#include "write_tags.h"
+#include "../namer.h"
+#include "../write_tags.h"
 
-#include "../tools/mesh.h"
-#include "../em-fields/tile.h"
-#include "../vlasov/tile.h"
-#include "../vlasov/amr/mesh.h"
-#include "../pic/tile.h"
+#include "../../tools/mesh.h"
+#include "../../em-fields/tile.h"
+#include "../../vlasov/tile.h"
+#include "../../vlasov/amr/mesh.h"
+#include "../../pic/tile.h"
 
 #include "../tools/ezh5/src/ezh5.hpp"
 
@@ -101,8 +101,7 @@ class Writer {
 //--------------------------------------------------
 // template implementations
 
-#include "output_fields.h"
-//#include "output_analysis.h"
-#include "output_vlasov.h"
-#include "output_pic.h"
+#include "fields.h"
+#include "vlasov.h"
+#include "pic.h"
 
