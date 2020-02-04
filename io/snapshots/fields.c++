@@ -8,7 +8,7 @@ using ezh5::File;
 
 
 template<>
-inline void h5io::QuickWriter<2>::read_tiles(
+inline void h5io::FieldsWriter<2>::read_tiles(
     corgi::Grid<2>& grid)
 {
 
@@ -85,7 +85,7 @@ inline void h5io::QuickWriter<2>::read_tiles(
 
 
 template<>
-inline void h5io::QuickWriter<3>::read_tiles(
+inline void h5io::FieldsWriter<3>::read_tiles(
     corgi::Grid<3>& grid)
 {
 
@@ -166,7 +166,7 @@ inline void h5io::QuickWriter<3>::read_tiles(
 
 
 template<size_t D>
-inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
+inline void h5io::FieldsWriter<D>::mpi_reduce_snapshots(
     corgi::Grid<D>& grid)
 {
   /* based on https://gist.github.com/rmcgibbo/7178576
@@ -227,7 +227,7 @@ inline void h5io::QuickWriter<D>::mpi_reduce_snapshots(
 
 
 template<size_t D>
-inline bool h5io::QuickWriter<D>::write(
+inline bool h5io::FieldsWriter<D>::write(
     corgi::Grid<D>& grid, int lap)
 {
   read_tiles(grid);
@@ -277,6 +277,6 @@ inline bool h5io::QuickWriter<D>::write(
 
 //--------------------------------------------------
 // explicit template class instantiations
-//template class h5io::QuickWriter<1>;
-template class h5io::QuickWriter<2>;
-template class h5io::QuickWriter<3>;
+//template class h5io::FieldsWriter<1>;
+template class h5io::FieldsWriter<2>;
+template class h5io::FieldsWriter<3>;

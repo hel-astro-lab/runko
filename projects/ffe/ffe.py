@@ -379,7 +379,7 @@ if __name__ == "__main__":
     driftcur = pyffe.DriftCurrent(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     # quick field snapshots
-    qwriter  = pyfld.QuickWriter(conf.outdir, 
+    fld_writer  = pyfld.FieldsWriter(conf.outdir, 
             conf.Nx, conf.NxMesh,
             conf.Ny, conf.NyMesh,
             conf.Nz, conf.NzMesh,
@@ -634,7 +634,7 @@ if __name__ == "__main__":
 
 
             #shallow IO
-            qwriter.write(grid, lap) #quick field snapshots
+            fld_writer.write(grid, lap) #quick field snapshots
 
             #deep IO
             if (conf.full_interval != -1 and (lap % conf.full_interval == 0) and (lap > 0)):

@@ -17,7 +17,7 @@
 #include "../em-fields/filters/filter.h"
 #include "../em-fields/filters/digital.h"
 
-#include "../io/quick_writer.h"
+#include "../io/fld_writer.h"
 
 #include "../io/tasker.h"
 
@@ -431,14 +431,14 @@ void bind_fields(py::module& m_sub)
   // Quick IO 
 
   // 2D 
-  py::class_<h5io::QuickWriter<2>>(m_2d, "QuickWriter")
+  py::class_<h5io::FieldsWriter<2>>(m_2d, "FieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::QuickWriter<2>::write);
+    .def("write",   &h5io::FieldsWriter<2>::write);
 
   // 3D 
-  py::class_<h5io::QuickWriter<3>>(m_3d, "QuickWriter")
+  py::class_<h5io::FieldsWriter<3>>(m_3d, "FieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::QuickWriter<3>::write);
+    .def("write",   &h5io::FieldsWriter<3>::write);
 
 
   //--------------------------------------------------

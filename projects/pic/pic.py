@@ -235,7 +235,7 @@ if __name__ == "__main__":
     # I/O objects
 
     # quick field snapshots
-    qwriter = pyfld.QuickWriter(
+    fld_writer = pyfld.FieldsWriter(
         conf.outdir,
         conf.Nx,
         conf.NxMesh,
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     )
 
     # test particles
-    tpwriter = pypic.TestPrtclWriter(
+    prtcl_writer = pypic.TestPrtclWriter(
         conf.outdir,
         conf.Nx,
         conf.NxMesh,
@@ -551,8 +551,8 @@ if __name__ == "__main__":
             MPI.COMM_WORLD.barrier()
 
             # shallow IO
-            qwriter.write(grid, lap)  # quick field snapshots
-            tpwriter.write(grid, lap)  # test particles
+            fld_writer.write(grid, lap)  # quick field snapshots
+            prtcl_writer.write(grid, lap)  # test particles
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):

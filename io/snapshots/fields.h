@@ -12,7 +12,7 @@ namespace h5io {
 
 
 template<size_t D>
-class QuickWriter {
+class FieldsWriter {
 
   private:
 
@@ -38,7 +38,7 @@ class QuickWriter {
     int stride = 1;
 
     /// constructor that creates a name and opens the file handle
-    QuickWriter(
+    FieldsWriter(
         const std::string& prefix, 
         int Nx, int NxMesh,
         int Ny, int NyMesh,
