@@ -1,11 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <array>
 #include <string>
 
-#include "../../definitions.h"
-#include "../namer.h"
+#include "snapshot.h"
 #include "../../corgi/corgi.h"
 #include "../../tools/mesh.h"
 
@@ -14,26 +12,25 @@ namespace h5io {
 
 
 template<size_t D>
-class TestPrtclWriter {
+class TestPrtclWriter :
+  public SnapshotWriter<D>
+{
 
-  private:
+  public:
 
-    /// general file extension to be appended to file names
-    const string extension = ".h5";
-    
-    /// Object to handle file names and extensions
-    std::string fname;
+    using SnapshotWriter<D>::fname;
+    using SnapshotWriter<D>::extension;
+    using SnapshotWriter<D>::arrs;
+    using SnapshotWriter<D>::rbuf;
 
-    /// meshes
-    std::vector< toolbox::Mesh<real_short> > arrs;
+  public:
 
-    /// mpi receive buffer
-    std::vector< toolbox::Mesh<real_short> > rbuf;
-
-    // temporary test arrays
     std::vector< toolbox::Mesh<int> > arrs2;
     std::vector< toolbox::Mesh<int> > rbuf2;
 
+
+    /// general file name used for outputs
+    const string file_name = "test-prtcls";
 
     /// do not consider particles beyond this id
     long cutoff_id;
@@ -46,9 +43,6 @@ class TestPrtclWriter {
 
     /// how many ranks/categories of particles (second id parameter)
     long nr;
-
-
-  public:
 
     /// particle species/container to read/write
     int ispc = 0;
@@ -67,13 +61,16 @@ class TestPrtclWriter {
 
 
     /// read tile meshes into memory
-    void read_tiles(corgi::Grid<D>& grid);
-
-    /// communicate snapshots with a B-tree cascade to rank 0
-    void mpi_reduce_snapshots(corgi::Grid<D>& grid);
+    void read_tiles(corgi::Grid<D>& grid) override;
 
     /// write hdf5 file
-    bool write(corgi::Grid<D>& grid, int lap);
+    bool write(corgi::Grid<D>& grid, int lap) override;
+
+    /// communicate snapshots with a B-tree cascade to rank 0
+    // NOTE: this is modified to send 2 sets of arrays because we need
+    // float + int separately
+    void mpi_reduce_snapshots(corgi::Grid<D>& grid) override;
+
 };
 
 

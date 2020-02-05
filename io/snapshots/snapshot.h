@@ -47,9 +47,8 @@ class SnapshotWriter {
     /// write hdf5 file
     virtual bool write(corgi::Grid<D>& grid, int lap) = 0;
 
-
     /// communicate snapshots with a B-tree cascade to rank 0
-    void mpi_reduce_snapshots(corgi::Grid<D>& grid)
+    virtual void mpi_reduce_snapshots(corgi::Grid<D>& grid)
     {
       /* based on https://gist.github.com/rmcgibbo/7178576
       */

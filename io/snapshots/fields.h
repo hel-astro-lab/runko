@@ -4,9 +4,7 @@
 #include <string>
 
 #include "snapshot.h"
-#include "../namer.h"
 #include "../../corgi/corgi.h"
-#include "../../tools/mesh.h"
 
 
 namespace h5io { 
@@ -26,6 +24,7 @@ class FieldsWriter :
 
     using SnapshotWriter<D>::mpi_reduce_snapshots;
 
+  public:
 
     /// general file name used for outputs
     const string file_name = "flds";

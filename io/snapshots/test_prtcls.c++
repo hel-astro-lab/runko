@@ -1,18 +1,11 @@
 #include "test_prtcls.h"
-#include <mpi4cpp/mpi.h>
-#include <mpi.h>
 
 #include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../tools/fastlog.h"
 #include "../../pic/particle.h"
 #include "../../pic/tile.h"
-
-
-using namespace mpi4cpp;
-
+#include <mpi4cpp/mpi.h>
 
 using ezh5::File;
-
 
 template<size_t D>
 h5io::TestPrtclWriter<D>::TestPrtclWriter(
@@ -21,7 +14,8 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
         int Ny_in, int NyMesh_in,
         int Nz_in, int NzMesh_in,
         int ppc_in, int n_local_tiles_in,
-        int n_test_particles_approx_in) : fname(prefix)
+        int n_test_particles_approx_in) :
+  SnapshotWriter<D>{prefix}
 {
 
   // enforce long accuracy due to persistent overflows
@@ -105,7 +99,7 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   for(size_t i=0; i<8; i++) arrs.emplace_back(nt, np, nr);
   for(size_t i=0; i<8; i++) rbuf.emplace_back(nt, np, nr);
 
-  // +2 int arrays
+  // int arrays
   for(size_t i=0; i<2; i++) arrs2.emplace_back(nt, np, nr);
   for(size_t i=0; i<2; i++) rbuf2.emplace_back(nt, np, nr);
 }
@@ -216,7 +210,7 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
   // need to downshift their data, since the binary tree reduction below
   // only works when N is a power of two.
   
-  std::vector<mpi::request> reqs;
+  std::vector<mpi4cpp::mpi::request> reqs;
   for (int i = lastpower; i < size; i++) {
     if (rank == i) {
       for(size_t els=0; els<arrs.size(); els++) {
@@ -244,7 +238,7 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
 
     }
   }
-  mpi::wait_all(reqs.begin(), reqs.end());
+  mpi4cpp::mpi::wait_all(reqs.begin(), reqs.end());
 
 
   for (int d = 0; d < fastlog2(lastpower); d++) {
@@ -292,9 +286,8 @@ inline bool h5io::TestPrtclWriter<D>::write(
 
     // build filename
     std::string full_filename = 
-      fname + 
-      "/test-prtcls" +
-      /*std::to_string(grid.comm.rank()) + */
+      fname + "/" +
+      file_name + 
       "_" +
       std::to_string(lap) +
       extension;
