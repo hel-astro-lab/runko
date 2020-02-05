@@ -88,19 +88,20 @@ def load_virtual_tiles(n, conf):
         # add_tile modifies tile content.
 
         if conf.threeD:
+            i,j,k = ind
             tile = pypic.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+            n.add_tile(tile, ind) 
+            tile.load_metainfo(tile_orig.communication)
+            initialize_tile(tile, (i,j,k), n, conf)
+
         elif conf.twoD:
+            i,j = ind
             tile = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
-        n.add_tile(tile, ind) 
-
-        # load new metainfo
-        # FIXME: is this necessary?
-        tile.load_metainfo(tile_orig.communication)
-
-        #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
-        
-        initialize_tile(tile, ind, n, conf)
+            n.add_tile(tile, ind) 
+            tile.load_metainfo(tile_orig.communication)
+            initialize_tile(tile, (i,j,0), n, conf)
 
     return 
 
