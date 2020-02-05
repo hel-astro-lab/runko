@@ -187,7 +187,7 @@ if __name__ == "__main__":
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
 
         # read restart files
-        pyflds.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyfld.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
         pypic.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # step one step ahead
@@ -258,6 +258,17 @@ if __name__ == "__main__":
         conf.ppc,
         len(grid.get_local_tiles()),
         conf.n_test_prtcls,
+    )
+
+    mom_writer = pypic.PicMomentsWriter(
+        conf.outdir,
+        conf.Nx,
+        conf.NxMesh,
+        conf.Ny,
+        conf.NyMesh,
+        conf.Nz,
+        conf.NzMesh,
+        conf.stride,
     )
 
     # --------------------------------------------------
@@ -553,6 +564,7 @@ if __name__ == "__main__":
             # shallow IO
             fld_writer.write(grid, lap)  # quick field snapshots
             prtcl_writer.write(grid, lap)  # test particles
+            mom_writer.write(grid, lap)  # quick field snapshots
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):

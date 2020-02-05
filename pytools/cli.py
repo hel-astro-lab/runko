@@ -17,6 +17,18 @@ def parse_args():
         default=None,
         help="Name of the configuration file (default: None)",
     )
+    parser.add_argument('-l', '--lap', 
+            dest='lap', 
+            default=None,
+            type=int,
+            help='Specific lap to analyze (default: all that can be found)')
+
+    parser.add_argument('-v', '--var', 
+            dest='var', 
+            default=None,
+            type=str,
+            help='Variable to analyze')
+
 
     # --------------------------------------------------
     # first high level parse
