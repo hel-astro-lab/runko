@@ -10,6 +10,7 @@
 namespace h5io { 
 
 
+/// IO object for storing (compressed) snapshots of basic Yee lattice quantities
 template<size_t D>
 class FieldsWriter :
   public SnapshotWriter<D>

@@ -11,6 +11,12 @@
 namespace h5io { 
 
 
+/// IO object for handling and storing sub-selection of particles 
+//
+// Particles are selected evenly from the initial condition. This is done
+// by collecting their ids and then tagging those that are multiples of
+// some stride value. Full history of these pre-identified particles is
+// then saved to disk.
 template<size_t D>
 class TestPrtclWriter :
   public SnapshotWriter<D>

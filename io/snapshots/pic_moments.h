@@ -9,6 +9,10 @@
 
 namespace h5io { 
 
+/// IO for calculating particle distribution moments
+//
+// Calculates full stress tensor, bulk velocites, and number densities
+//
 template<size_t D>
 class PicMomentsWriter :
   public SnapshotWriter<D>
@@ -26,7 +30,7 @@ class PicMomentsWriter :
   public:
 
     /// general file name used for outputs
-    const string file_name = "full_moms";
+    const string file_name = "full-moms";
 
     // internal mesh size
     int nx;

@@ -15,6 +15,10 @@
 namespace h5io { 
 
 
+/// template for IO object 
+// Takes grid, processes it tile-by-tile
+// and then writes to disk. Main usage is to create various analysis
+// snapshots of simulations live.
 template<size_t D>
 class SnapshotWriter {
 
@@ -175,7 +179,7 @@ class SnapshotWriter {
                   rbuf[0].size()
                   );
                 
-            // proceed here only after receive is succesful
+            // proceed here only after receive is successful
             arrs[els] += rbuf[0]; // reduction operation
           }
         }
@@ -203,7 +207,7 @@ class SnapshotWriter {
                   rbuf[0].size()
                   );
 
-              // proceed here only after receive is succesful
+              // proceed here only after receive is successful
               arrs[els] += rbuf[0]; // reduction operation
             }
             else if (rank == sender) {
