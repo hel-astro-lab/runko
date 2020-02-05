@@ -23,8 +23,9 @@ namespace py = pybind11;
 #include "../pic/boundaries/wall.h"
 #include "../pic/boundaries/piston.h"
 
-#include "../io/test_prtcl_writer.h"
-
+#include "../io/writers/writer.h"
+#include "../io/writers/pic.h"
+#include "../io/snapshots/test_prtcls.h"
 #include "../io/tasker.h"
 
 

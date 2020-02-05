@@ -2,8 +2,6 @@
 
 #include "../namer.h"
 #include "../../pic/tile.h"
-#include "write_tags.h"
-
 
 template<size_t D>
 bool

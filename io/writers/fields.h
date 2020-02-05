@@ -2,7 +2,6 @@
 
 #include "../namer.h"
 #include "../../em-fields/tile.h"
-#include "write_tags.h"
 
 
 /// Write PlasmaTile content into a hdf5 data group

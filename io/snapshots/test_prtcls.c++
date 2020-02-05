@@ -1,8 +1,11 @@
 #include "test_prtcls.h"
 #include <mpi4cpp/mpi.h>
 #include <mpi.h>
-#include "../tools/ezh5/src/ezh5.hpp"
-#include "../tools/fastlog.h"
+
+#include "../../tools/ezh5/src/ezh5.hpp"
+#include "../../tools/fastlog.h"
+#include "../../pic/particle.h"
+#include "../../pic/tile.h"
 
 
 using namespace mpi4cpp;

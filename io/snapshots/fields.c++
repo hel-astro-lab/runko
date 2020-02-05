@@ -1,7 +1,10 @@
 #include "fields.h"
 #include <mpi4cpp/mpi.h>
+
 #include "../../tools/ezh5/src/ezh5.hpp"
 #include "../../tools/fastlog.h"
+#include "../../em-fields/tile.h"
+
 
 using namespace mpi4cpp;
 using ezh5::File;

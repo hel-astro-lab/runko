@@ -17,8 +17,9 @@
 #include "../em-fields/filters/filter.h"
 #include "../em-fields/filters/digital.h"
 
-#include "../io/fld_writer.h"
-
+#include "../io/writers/writer.h"
+#include "../io/writers/fields.h"
+#include "../io/snapshots/fields.h"
 #include "../io/tasker.h"
 
 
@@ -428,7 +429,7 @@ void bind_fields(py::module& m_sub)
 
 
   //--------------------------------------------------
-  // Quick IO 
+  // Snapshot IO 
 
   // 2D 
   py::class_<h5io::FieldsWriter<2>>(m_2d, "FieldsWriter")
@@ -457,8 +458,6 @@ void bind_fields(py::module& m_sub)
   // 3D
   m_3d.def("write_yee",        &fields::write_yee<3>);
   m_3d.def("read_yee",         &fields::read_yee<3>);
-
-
 
 
 

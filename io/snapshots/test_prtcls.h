@@ -1,13 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <string>
 
+#include "../../definitions.h"
 #include "../namer.h"
 #include "../../corgi/corgi.h"
 #include "../../tools/mesh.h"
-#include "../../pic/particle.h"
-#include "../../pic/tile.h"
 
 
 namespace h5io { 
