@@ -1,11 +1,15 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <string>
 
+#include <mpi4cpp/mpi.h>
+#include "../../definitions.h"
 #include "../../corgi/corgi.h"
 #include "../../tools/mesh.h"
 #include "../namer.h"
+#include "../../tools/fastlog.h"
 
 
 namespace h5io { 
@@ -14,7 +18,7 @@ namespace h5io {
 template<size_t D>
 class SnapshotWriter {
 
-  private:
+  public:
 
     /// general file extension to be appended to file names
     const string extension = ".h5";
@@ -28,15 +32,14 @@ class SnapshotWriter {
     /// mpi receive buffer
     std::vector< toolbox::Mesh<real_short> > rbuf;
 
-  public:
 
     /// data stride length
     int stride = 1;
 
     /// constructor that creates a name and opens the file handle
-    SnapshotWriter( const std::string& prefix ) :
-      fname{prefix},
-    { }
+    SnapshotWriter( const std::string& prefix ) : fname{prefix} { }
+
+    // NOTE: modify these 2 functions to make your own snapshot io
 
     /// read tile meshes into memory
     virtual void read_tiles(corgi::Grid<D>& grid) = 0;
@@ -44,8 +47,9 @@ class SnapshotWriter {
     /// write hdf5 file
     virtual bool write(corgi::Grid<D>& grid, int lap) = 0;
 
+
     /// communicate snapshots with a B-tree cascade to rank 0
-    virtual void mpi_reduce_snapshots(corgi::Grid<D>& grid 
+    void mpi_reduce_snapshots(corgi::Grid<D>& grid)
     {
       /* based on https://gist.github.com/rmcgibbo/7178576
       */
@@ -61,7 +65,7 @@ class SnapshotWriter {
       // need to downshift their data, since the binary tree reduction below
       // only works when N is a power of two.
 
-      std::vector<mpi::request> reqs;
+      std::vector<mpi4cpp::mpi::request> reqs;
       for (int i = lastpower; i < size; i++) {
         if (rank == i) {
           for(size_t els=0; els<arrs.size(); els++) {
@@ -89,7 +93,7 @@ class SnapshotWriter {
           }
         }
       }
-      mpi::wait_all(reqs.begin(), reqs.end());
+      mpi4cpp::mpi::wait_all(reqs.begin(), reqs.end());
 
 
       for (int d = 0; d < fastlog2(lastpower); d++) {
