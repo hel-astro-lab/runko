@@ -9,9 +9,8 @@
 
 namespace h5io { 
 
-
 template<size_t D>
-class FieldsWriter :
+class PicMomentsWriter :
   public SnapshotWriter<D>
 {
 
@@ -27,7 +26,7 @@ class FieldsWriter :
   public:
 
     /// general file name used for outputs
-    const string file_name = "flds";
+    const string file_name = "full_moms";
 
     // internal mesh size
     int nx;
@@ -38,7 +37,7 @@ class FieldsWriter :
     int stride = 1;
 
     /// constructor that creates a name and opens the file handle
-    FieldsWriter(
+    PicMomentsWriter(
         const std::string& prefix, 
         int Nx, int NxMesh,
         int Ny, int NyMesh,
@@ -47,7 +46,6 @@ class FieldsWriter :
       SnapshotWriter<D>{prefix},
       stride{stride}
     {
-
       //fname = prefix + "-" + to_string(lap) + extension;
       nx = Nx*NxMesh/stride;
       ny = Ny*NyMesh/stride;
@@ -57,9 +55,9 @@ class FieldsWriter :
       ny = ny == 0 ? 1 : ny;
       nz = nz == 0 ? 1 : nz;
 
-      for(size_t i=0; i<10; i++) arrs.emplace_back(nx, ny, nz);
-      rbuf.emplace_back(nx, ny, nz); // only one collective receive buffer
-
+      // add correct amount of data containers
+      for(size_t i=0; i<14; i++) arrs.emplace_back(nx, ny, nz);
+      rbuf.emplace_back(nx, ny, nz);
     }
 
     /// read tile meshes into memory

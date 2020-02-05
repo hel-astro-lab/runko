@@ -26,6 +26,7 @@ namespace py = pybind11;
 #include "../io/writers/writer.h"
 #include "../io/writers/pic.h"
 #include "../io/snapshots/test_prtcls.h"
+#include "../io/snapshots/pic_moments.h"
 #include "../io/tasker.h"
 
 
@@ -399,6 +400,20 @@ void bind_pic(py::module& m_sub)
   py::class_<h5io::TestPrtclWriter<3>>(m_3d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
     .def("write",   &h5io::TestPrtclWriter<3>::write);
+
+  //--------------------------------------------------
+  // physical moments of distribution
+
+  // 2D
+  py::class_<h5io::PicMomentsWriter<2>>(m_2d, "PicMomentsWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write", &h5io::PicMomentsWriter<2>::write);
+
+  // 3D
+  py::class_<h5io::PicMomentsWriter<3>>(m_3d, "PicMomentsWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write", &h5io::PicMomentsWriter<3>::write);
+
 
 
   //--------------------------------------------------

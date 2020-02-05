@@ -56,6 +56,7 @@ set (IO_FILES
      ../io/readers/reader.c++
      ../io/snapshots/fields.c++
      ../io/snapshots/test_prtcls.c++
+     ../io/snapshots/pic_moments.c++
     )
 
 
