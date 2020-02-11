@@ -13,9 +13,7 @@ import pytools  # runko python tools
 # problem specific modules
 from problem import Configuration_Problem as Configuration
 
-
-# global simulation seed
-np.random.seed(1)
+np.random.seed(1)  # global simulation seed
 
 
 # Prtcl velocity (and location modulation inside cell)
@@ -74,15 +72,10 @@ def insert_em_fields(grid, conf):
     bphi = conf.bphi / 180.0 * np.pi
     beta = conf.beta
 
-    for cid in grid.get_tile_ids():
-        tile = grid.get_tile(cid)
+    for tile in pytools.tiles_all(grid):
         yee = tile.get_yee(0)
 
-        if conf.twoD:
-            ii, jj = tile.index
-            kk = 0
-        elif conf.threeD:
-            ii, jj, kk = tile.index
+        ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
 
         # insert values into Yee lattices; includes halos from -3 to n+3
         for n in range(-3, conf.NzMesh + 3):
@@ -205,15 +198,6 @@ if __name__ == "__main__":
     pytools.pic.load_virtual_tiles(grid, conf)
 
     # --------------------------------------------------
-    # --------------------------------------------------
-    # --------------------------------------------------
-    # end of initialization
-
-    timer.stop("init")
-    timer.stats("init")
-    # timer.verbose = 1  # 0 normal; 1 - debug mode
-
-    # --------------------------------------------------
     # load physics solvers
 
     # pusher   = pypic.BorisPusher()
@@ -279,6 +263,15 @@ if __name__ == "__main__":
     piston.gammawall = conf.wallgamma
     piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
     piston.walloc = 5.0  # leave 5 cell spacing between the wall for boundary conditions
+
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # end of initialization
+
+    timer.stop("init")
+    timer.stats("init")
+    # timer.verbose = 1  # 0 normal; 1 - debug mode
 
     # --------------------------------------------------
     # sync e and b fields

@@ -1,5 +1,5 @@
 from __future__ import print_function
-from configSetup import Configuration
+from pytools import Configuration
 
 from numpy import sqrt, pi
 import numpy as np
