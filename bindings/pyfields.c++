@@ -372,7 +372,9 @@ void bind_fields(py::module& m_sub)
 
   // fdtd2 propagator
   py::class_<fields::FDTD2<3>>(m_3d, "FDTD2", fieldspropag3d)
-    .def(py::init<>());
+    .def(py::init<>())
+    .def_readwrite("corr",     &fields::FDTD2<3>::corr);
+
 
   // fdtd4 propagator
   py::class_<fields::FDTD4<3>, Propagator<3>, PyFDTD4<3> >(m_3d, "FDTD4")

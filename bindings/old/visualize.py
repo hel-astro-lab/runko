@@ -281,7 +281,12 @@ def getYee2D(n, conf):
     #for cid in n.get_local_tiles():
     for cid in n.get_tile_ids():
         c = n.get_tile(cid)
-        i,j = c.index
+
+        try:
+            i,j = c.index
+        except:
+            i,j,k = c.index
+
         yee = c.get_yee(0)
         for r in range(conf.NyMesh):
             for q in range(conf.NxMesh):

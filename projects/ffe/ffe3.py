@@ -24,21 +24,19 @@ try:
     from visualize import plotNode
     from visualize import plotJ, plotE
     from visualize import saveVisz
-    
+
     from visualize import getYee2D
     from visualize import plot2dYee
 except:
     pass
 
 
-
-
 # Field initialization
 def insert_em_fields(grid, conf):
 
     # into radians
-    #btheta = conf.btheta / 180.0 * np.pi
-    #bphi = conf.bphi / 180.0 * np.pi
+    # btheta = conf.btheta / 180.0 * np.pi
+    # bphi = conf.bphi / 180.0 * np.pi
     beta = conf.beta
 
     for cid in grid.get_tile_ids():
@@ -52,16 +50,16 @@ def insert_em_fields(grid, conf):
             ii, jj, kk = tile.index
 
         # insert values into Yee lattices; includes halos from -3 to n+3
-        for n in range(-3, conf.NzMesh + 3):
-            for m in range(-3, conf.NyMesh + 3):
-                for l in range(-3, conf.NxMesh + 3):
+        for n in range(conf.NzMesh):
+            for m in range(conf.NyMesh):
+                for l in range(conf.NxMesh):
                     # get global coordinates
-                    #iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
-                    #r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
+                    # iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
+                    # r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
-                    yee.bx[l, m, n] = 0.0 #conf.binit * np.cos(bphi)
-                    yee.by[l, m, n] = 0.0 #conf.binit * np.sin(bphi) * np.sin(btheta)
-                    yee.bz[l, m, n] = conf.binit #* np.sin(bphi) * np.cos(btheta)
+                    yee.bx[l, m, n] = 0.0  # conf.binit * np.cos(bphi)
+                    yee.by[l, m, n] = 0.0  # conf.binit * np.sin(bphi) * np.sin(btheta)
+                    yee.bz[l, m, n] = conf.binit  # * np.sin(bphi) * np.cos(btheta)
 
                     yee.ex[l, m, n] = 0.0
                     yee.ey[l, m, n] = -beta * yee.bz[l, m, n]
@@ -69,104 +67,125 @@ def insert_em_fields(grid, conf):
     return
 
 
-# Field initialization   
+# Field initialization
 def insert_em_harris_sheet(grid, conf):
     from numpy import pi, tanh, sin, cos, sinh, cosh, sqrt
 
-    delta       = conf.sheet_thickness/(2.0*pi) #sheet thickness incl. 2pi 
-    pinch_delta = conf.pinch_width/(2.0*pi)     #pinch thickness incl. 2pi
-    eta  = conf.sheet_density 
-    beta = 0.0 #conf.beta #sheet bulk flow; NOTE: for force-free setup no flow
-    sigma = conf.sigma #magnetization
+    delta = conf.sheet_thickness / (2.0 * pi)  # sheet thickness incl. 2pi
+    pinch_delta = conf.pinch_width / (2.0 * pi)  # pinch thickness incl. 2pi
+    eta = conf.sheet_density
+    beta = 0.0  # conf.beta #sheet bulk flow; NOTE: for force-free setup no flow
+    sigma = conf.sigma  # magnetization
 
-    do_3D = False #3D simulation setup on/off flag
+    # note: if periodicx then mxhalf is actually Lx/4 else Lx/2
+    mxhalf = conf.mxhalf
+    myhalf = conf.myhalf
+    mzhalf = conf.mzhalf
+    Lx = conf.lstripe
 
-    #note: if periodicx then mxhalf is actually Lx/4 else Lx/2
-    mxhalf  = conf.mxhalf
-    myhalf  = conf.myhalf
-    mzhalf  = conf.mzhalf
-    Lx      = conf.lstripe
-
-    binit = conf.binit #initial B_0
+    binit = conf.binit  # initial B_0
 
     for tile in pytools.tiles_all(grid):
-        ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
+        ii, jj, kk = tile.index if conf.threeD else (*tile.index, 0)
         yee = tile.get_yee(0)
 
         # insert values into Yee lattices; includes halos from -3 to n+3
-        for n in range(-3, conf.NzMesh + 3):
-            for m in range(-3, conf.NyMesh + 3):
-                for l in range(-3, conf.NxMesh + 3):
+        for n in range(conf.NzMesh):
+            for m in range(conf.NyMesh):
+                for l in range(conf.NxMesh):
 
                     # get global coordinates
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
 
                     # trigger field modulation in z coordinate
-                    if do_3D:
-                        triggerz = cosh((kglob - mzhalf)/pinch_delta) #3D
+                    if conf.threeD:
+                        triggerz = cosh((kglob - mzhalf) / pinch_delta)  # 3D
                     else:
                         triggerz = 1.0
 
                     # flipping harris sheet stripe
-                    if not(conf.periodicx):
-                        stripetanh = tanh((iglob-mxhalf)/delta)
+                    if not (conf.periodicx):
+                        stripetanh = tanh((iglob - mxhalf) / delta)
                     else:
-                        stripetanh = tanh(Lx*sin(2.*pi*(iglob - mxhalf)/Lx)/delta/2.0/pi)
-
-                    #FIXME
-
-                    #plasma bulk velocity modulation factor; 
-                    #NOTE: true velocity v/c= velstripe*beta
-
-                    #velstripe = tanh((iglob-mxhalf)/pinch_delta)/cosh((iglob-mxhalf)/pinch_delta)
-                    velstripe = tanh((iglob-mxhalf)/pinch_delta)/(cosh((jglob-myhalf)/pinch_delta)*cosh((iglob-mxhalf)/pinch_delta))
-                    #velstripe = tanh((iglob-mxhalf)/pinch_delta)
+                        stripetanh = tanh(
+                            Lx
+                            * sin(2.0 * pi * (iglob - mxhalf) / Lx)
+                            / delta
+                            / 2.0
+                            / pi
+                        )
 
                     if conf.trigger:
-                        pinch_corr = (1./(cosh((jglob-myhalf)/pinch_delta) \
-                                         *cosh((iglob-mxhalf)/delta)*triggerz))
 
-                        yee.by[l,m,n] = binit*stripetanh
-                        yee.bz[l,m,n] = binit*stripetanh*(1.0 - pinch_corr)
+                        # plasma bulk velocity modulation factor;
+                        # NOTE: true velocity v/c= velstripe*beta
 
-                        yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
+                        # velstripe = tanh((iglob-mxhalf)/pinch_delta)/cosh((iglob-mxhalf)/pinch_delta)
+                        # velstripe = tanh((iglob-mxhalf)/pinch_delta)
+                        velstripe = tanh((iglob - mxhalf) / pinch_delta) / (
+                            cosh((jglob - myhalf) / pinch_delta)
+                            * cosh((iglob - mxhalf) / pinch_delta)
+                        )
 
-                        #drive to trigger reconnection in the middle of the box; 
-                        #the coefficient should be the desired ExB speed
-                        yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n] + conf.trigger_field*abs(yee.by[l,m,n])*pinch_corr
+                        pinch_corr = (
+                            cosh((jglob - myhalf) / pinch_delta)
+                            * cosh((iglob - mxhalf) / delta)
+                            * triggerz
+                        )
+
+                        yee.by[l, m, n] = binit * stripetanh
+                        yee.bz[l, m, n] = binit * stripetanh * (1.0 - 1.0 / pinch_corr)
+
+                        yee.ey[l, m, n] = (-beta) * yee.bz[l, m, n]
+
+                        # drive to trigger reconnection in the middle of the box;
+                        # the coefficient should be the desired ExB speed
+                        yee.ez[l, m, n] = (+beta) * yee.by[l, m, n]
+
+                        yee.ez[l, m, n] += conf.trigger_field * yee.by[l, m, n] / pinch_corr
 
                     else:
-                        yee.by[l,m,n] = binit*stripetanh 
-                        yee.bz[l,m,n] = binit*np.sqrt(conf.sigma_ext) #add guide field
+                        yee.by[l, m, n] = binit * stripetanh
+                        yee.bz[l, m, n] = binit * sqrt(conf.sigma_ext)
 
-                        yee.ey[l,m,n] = (-beta)*velstripe*yee.bz[l,m,n] 
-                        yee.ez[l,m,n] = (+beta)*velstripe*yee.by[l,m,n]
+                        yee.ey[l, m, n] = (-beta) * yee.bz[l, m, n]
+                        yee.ez[l, m, n] = (+beta) * yee.by[l, m, n]
 
-                    yee.ex[l,m,n] = 0.0
+                    yee.ex[l, m, n] = 0.0
 
-
-                    #hot current sheet
-                    #beta_drift = sqrt(sigma)
+                    # hot current sheet
+                    # beta_drift = sqrt(sigma)
                     beta_drift = 0.5
-                    if not(conf.periodicx):
-                        num_plasma = 1.0/(cosh((iglob-mxhalf)/delta))**2.
+                    if not (conf.periodicx):
+                        num_plasma = 1.0 / (cosh((iglob - mxhalf) / delta)) ** 2.0
                     else:
-                        #num_plasma = 1.0/(cosh(dstripe*lstripe*sin(2.*pi*(iglob-mxhalf)/lstripe)))**2.*stripecosh
-                        num_plasma = 1.0/cosh(Lx*sin(2.*pi*(iglob - mxhalf)/Lx)/delta/2.0/pi)**2.
+                        # num_plasma = 1.0/(cosh(dstripe*lstripe*sin(2.*pi*(iglob-mxhalf)/lstripe)))**2.*stripecosh
+                        num_plasma = (
+                            1.0
+                            / cosh(
+                                Lx
+                                * sin(2.0 * pi * (iglob - mxhalf) / Lx)
+                                / delta
+                                / 2.0
+                                / pi
+                            )
+                            ** 2.0
+                        )
 
-
-                    gamma_drift = sqrt(1./(1.-beta_drift**2.))
+                    gamma_drift = sqrt(1.0 / (1.0 - beta_drift ** 2.0))
                     if conf.periodicx:
-                        gamma_drift = gamma_drift * np.sign(cos(2.*pi*(iglob-mxhalf)/Lx))
-                        beta_drift = sqrt(1.-1./gamma_drift**2) * np.sign(gamma_drift)
+                        gamma_drift = gamma_drift * np.sign(
+                            cos(2.0 * pi * (iglob - mxhalf) / Lx)
+                        )
+                        beta_drift = sqrt(1.0 - 1.0 / gamma_drift ** 2) * np.sign(
+                            gamma_drift
+                        )
 
-                    yee.ez[l,m,n] += beta_drift*num_plasma*binit
-
-
+                    yee.ez[l, m, n] += beta_drift * num_plasma * binit
 
             # copy values to boundary cells
             # FIXME
-            #try:
+            # try:
             #    for n in range(conf.NzMesh):
             #        for m in range(conf.NyMesh):
             #            for l in range(conf.NxMesh):
@@ -177,38 +196,34 @@ def insert_em_harris_sheet(grid, conf):
             #                c.bx_ref[l,m,n] = yee.bx[l,m,n]
             #                c.by_ref[l,m,n] = yee.by[l,m,n]
             #                c.bz_ref[l,m,n] = yee.bz[l,m,n]
-            #except:
+            # except:
             #    #print("cell ({},{}) is not boundary cell".format(ii,jj))
             #    pass
 
 
-
 if __name__ == "__main__":
 
-
-
-    ################################################## 
+    ##################################################
     # set up plotting and figure
     # TODO: remove
     do_plots = True
     try:
-        plconf = dict(curval = 0.05, elval=0.2, bfval = 0.4)
+        plconf = dict(curval=0.05, elval=0.2, bfval=0.4)
         if do_plots:
-            plt.fig = plt.figure(1, figsize=(8,10))
-            plt.rc('font', family='serif', size=12)
-            plt.rc('xtick')
-            plt.rc('ytick')
-            
+            plt.fig = plt.figure(1, figsize=(8, 10))
+            plt.rc("font", family="serif", size=12)
+            plt.rc("xtick")
+            plt.rc("ytick")
+
             gs = plt.GridSpec(4, 3)
-            gs.update(hspace = 0.5)
-            
+            gs.update(hspace=0.5)
+
             axs = []
             for ai in range(12):
-                axs.append( plt.subplot(gs[ai]) )
+                axs.append(plt.subplot(gs[ai]))
     except:
-        #print()
+        # print()
         pass
-
 
     # --------------------------------------------------
     # initial setup
@@ -233,7 +248,6 @@ if __name__ == "__main__":
 
     # create conf object with simulation parameters based on them
     conf = Configuration(args.conf_filename, do_print=do_print)
-
 
     # --------------------------------------------------
     # load runko
@@ -261,7 +275,6 @@ if __name__ == "__main__":
     # load ffe tiles into grid
     pytools.ffe.load_tiles(grid, conf)
 
-
     # --------------------------------------------------
     # simulation restart
 
@@ -281,7 +294,7 @@ if __name__ == "__main__":
         np.random.seed(1)  # sync rnd generator seed for different mpi ranks
 
         # inserting em grid
-        #insert_em_fields(grid, conf)
+        # insert_em_fields(grid, conf)
         insert_em_harris_sheet(grid, conf)
 
     else:
@@ -305,17 +318,16 @@ if __name__ == "__main__":
     # load virtual mpi halo tiles
     pytools.ffe.load_virtual_tiles(grid, conf)
 
-
     # --------------------------------------------------
     # load physics solvers
 
-    fldprop  = pyfld.FDTD2()
-    #fldprop = pyfld.FDTD4()
+    fldprop = pyfld.FDTD2()
+    # fldprop = pyfld.FDTD4()
 
     driftcur = pyffe.DriftCurrent(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     # enhance numerical speed of light slightly to suppress numerical Cherenkov instability
-    fldprop.corr = 1.02
+    fldprop.corr = 1.0
 
     # --------------------------------------------------
     # I/O objects
@@ -332,17 +344,16 @@ if __name__ == "__main__":
         conf.stride,
     )
 
-
-    ################################################## 
+    ##################################################
     # Langeving antenna
     if io_stat["do_initialization"]:
         # direct B_{x,y} perturbation
         if False:
             conf.min_mode = 1
             conf.max_mode = 4
-            conf.drive_ampl = 1.
+            conf.drive_ampl = 1.0
             antenna = Antenna(conf.min_mode, conf.max_mode, conf)
-            for tile in pytools.tiles_local(grid): 
+            for tile in pytools.tiles_local(grid):
                 antenna.add_driving(tile)
 
     # --------------------------------------------------
@@ -353,7 +364,6 @@ if __name__ == "__main__":
     timer.stop("init")
     timer.stats("init")
     # timer.verbose = 1  # 0 normal; 1 - debug mode
-
 
     # --------------------------------------------------
     # sync e and b fields
@@ -376,11 +386,9 @@ if __name__ == "__main__":
 
     sys.stdout.flush()
 
-
     # simulation loop
     time = lap * (conf.cfl / conf.c_omp)
     for lap in range(lap, conf.Nt + 1):
-
 
         # RK4 scheme
         #
@@ -392,259 +400,343 @@ if __name__ == "__main__":
         #        (1.0, 1.0, 3, False)]:
 
         # Leapfrog stepping
-        for (rk_alpha, rk_beta, rk_i, rk_highorder) in [ (1.0, 0.0, 0, False), ]:
+        for (rk_alpha, rk_beta, rk_i, rk_highorder) in [(1.0, 0.0, 0, False)]:
 
             if rk_highorder:
-                ################################################## 
+                ##################################################
                 # Initialize Runge-Kutta variables
                 t1 = timer.start_comp("RK_init")
 
                 dt = 0.0 + rk_alpha
-                for tile in pytools.tiles_local(grid): 
-                    yee  = tile.get_yee(0)    #get current working storage
-                    
+                for tile in pytools.tiles_local(grid):
+                    yee = tile.get_yee(0)  # get current working storage
+
                     if rk_i == 0:
-                        #store y_n step to Y_0 at the beginning of the lap
-                        yee_0 = tile.get_step(rk_i) #get reference to rk_i:th RK sub-step storage
+                        # store y_n step to Y_0 at the beginning of the lap
+                        yee_0 = tile.get_step(
+                            rk_i
+                        )  # get reference to rk_i:th RK sub-step storage
                         yee_0.set_yee(yee)
                     else:
                         # set initial starting point according to RK scheme
                         #
                         # RK formula applied is y = y0 + rk_beta*ys[rk_i]
-                        yee_m1 = tile.get_step(rk_i-1) 
-                        set_step(yee, yee_0 + rk_beta*yee_m1)
+                        yee_m1 = tile.get_step(rk_i - 1)
+                        set_step(yee, yee_0 + rk_beta * yee_m1)
 
                 timer.stop_comp(t1)
 
-            ################################################## 
-            #push B half
+            ##################################################
+            # push B half
             t1 = timer.start_comp("push_half_b0")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 fldprop.push_half_b(tile)
             timer.stop_comp(t1)
 
-
-            ################################################## 
+            ##################################################
             # compute drift current
 
-            #empty current arrays
-            for tile in pytools.tiles_all(grid): 
+            # empty current arrays
+            for tile in pytools.tiles_all(grid):
                 tile.clear_current()
 
-            #update boundaries
+            # update boundaries
             t1 = timer.start_comp("upd_bc0")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
-
             t1 = timer.start_comp("compute_current")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 driftcur.comp_drift_cur(tile)
             timer.stop_comp(t1)
 
-
-            ################################################## 
+            ##################################################
             # compute parallel current
 
-            #update boundaries
+            # update boundaries
             t1 = timer.start_comp("upd_bc1")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
-            #parallel current
+            # parallel current
             t1 = timer.start_comp("compute_para_current")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 driftcur.comp_parallel_cur(tile)
             timer.stop_comp(t1)
 
-
-            ################################################## 
+            ##################################################
             # limiter (local)
 
-            #update boundaries
+            # update boundaries
             t1 = timer.start_comp("upd_bc2")
-            for tile in pytools.tiles_local(grid): 
+            for tile in pytools.tiles_local(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
-            #apply limiter
+            # apply limiter
             t1 = timer.start_comp("limiter")
-            for tile in pytools.tiles_local(grid): 
+            for tile in pytools.tiles_local(grid):
                 driftcur.limiter(tile)
             timer.stop_comp(t1)
 
-
-            ################################################## 
+            ##################################################
             # push half B (local)
 
             # comm E
             t1 = timer.start_comp("mpi_e0")
-            grid.send_data(1) 
-            grid.recv_data(1) 
-            grid.wait_data(1) 
+            grid.send_data(1)
+            grid.recv_data(1)
+            grid.wait_data(1)
             timer.stop_comp(t1)
 
-            #update boundaries
+            # update boundaries
             t1 = timer.start_comp("upd_bc3")
-            for tile in pytools.tiles_local(grid): 
+            for tile in pytools.tiles_local(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
-            #push B half
+            # push B half
             t1 = timer.start_comp("push_half_b0")
-            for tile in pytools.tiles_local(grid): 
+            for tile in pytools.tiles_local(grid):
                 fldprop.push_half_b(tile)
             timer.stop_comp(t1)
 
-
-            ################################################## 
+            ##################################################
             # push E (all)
 
             # comm B
             t1 = timer.start_comp("mpi_b1")
-            grid.send_data(2) 
-            grid.recv_data(2) 
-            grid.wait_data(2) 
+            grid.send_data(2)
+            grid.recv_data(2)
+            grid.wait_data(2)
             timer.stop_comp(t1)
 
-            #update boundaries
+            # update boundaries
             t1 = timer.start_comp("upd_bc4")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
-            #push B half
+            # push B half
             t1 = timer.start_comp("push_e")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 fldprop.push_e(tile)
             timer.stop_comp(t1)
 
-            #update boundaries
+            # update boundaries
             t1 = timer.start_comp("upd_bc5")
-            for tile in pytools.tiles_all(grid): 
+            for tile in pytools.tiles_all(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
-            # save current RK substep 
+            # save current RK substep
             if rk_highorder:
-                for tile in tiles_local(grid): 
-                    yee_i = tile.get_step(rk_i) #get reference to rk_i:th RK sub-step storage
+                for tile in tiles_local(grid):
+                    # get reference to rk_i:th RK sub-step storage
+                    yee_i = tile.get_step(rk_i)
                     yee_i.set_yee(yee)
-
 
         # RK reduction step
         if rk_highorder:
             t1 = timer.start_comp("RK_sum")
-            for tile in tiles_local(grid): 
-                ynp1 = tile.get_yee() #get reference to working storage
+            for tile in tiles_local(grid):
+                ynp1 = tile.get_yee()  # get reference to working storage
 
-                #get reference to rk_i:th RK sub-step storage
-                y0 = tile.get_step(0) 
-                y1 = tile.get_step(1) 
+                # get reference to rk_i:th RK sub-step storage
+                y0 = tile.get_step(0)
+                y1 = tile.get_step(1)
                 y2 = tile.get_step(2)
                 y3 = tile.get_step(3)
 
-                #RK4 summation
-                y0 *= 1.0/6.0
-                y1 *= 2.0/6.0
-                y2 *= 2.0/6.0
-                y2 *= 1.0/6.0
+                # RK4 summation
+                y0 *= 1.0 / 6.0
+                y1 *= 2.0 / 6.0
+                y2 *= 2.0 / 6.0
+                y2 *= 1.0 / 6.0
 
-                set_step(ynp1, (y0 + y1 + y2 + y3) )
+                set_step(ynp1, (y0 + y1 + y2 + y3))
 
             timer.stop_comp(t1)
-
 
         ##################################################
         # data reduction and I/O
 
         timer.lap("step")
-        if (lap % conf.interval == 0):
+        if lap % conf.interval == 0:
             if do_print:
                 print("--------------------------------------------------")
-                print("------ lap: {} / t: {}".format(lap, time)) 
+                print("------ lap: {} / t: {}".format(lap, time))
 
             timer.stats("step")
             timer.comp_stats()
             timer.purge_comps()
-            
-            #analyze (independent)
+
+            # analyze (independent)
             timer.start("io")
 
-            #shallow IO
-            fld_writer.write(grid, lap) #quick field snapshots
+            # shallow IO
+            fld_writer.write(grid, lap)  # quick field snapshots
 
-            #deep IO
-            if (conf.full_interval != -1 and (lap % conf.full_interval == 0) and (lap > 0)):
-                pyfld.write_yee(grid, lap, conf.outdir + "/full_output/" )
+            # deep IO
+            if (
+                conf.full_interval != -1
+                and (lap % conf.full_interval == 0)
+                and (lap > 0)
+            ):
+                pyfld.write_yee(grid, lap, conf.outdir + "/full_output/")
 
-            #restart IO (overwrites)
-            if ((lap % conf.restart == 0) and (lap > 0)):
-                #flip between two sets of files
+            # restart IO (overwrites)
+            if (lap % conf.restart == 0) and (lap > 0):
+                # flip between two sets of files
                 io_stat["deep_io_switch"] = 1 if io_stat["deep_io_switch"] == 0 else 0
 
                 pyfld.write_yee(
                     grid, io_stat["deep_io_switch"], conf.outdir + "/restart/"
                 )
 
-                #if successful adjust info file
+                # if successful adjust info file
                 MPI.COMM_WORLD.barrier()
                 if grid.rank() == 0:
                     with open(conf.outdir + "/restart/laps.txt", "a") as lapfile:
                         lapfile.write("{},{}\n".format(lap, io_stat["deep_io_switch"]))
 
-
-            #--------------------------------------------------
-            #2D plots
-            #try:
+            # --------------------------------------------------
+            # 2D plots
+            # try:
             if True:
                 if do_plots:
-                    #plotNode(axs[0], grid, conf)
+                    # plotNode(axs[0], grid, conf)
 
                     yee = getYee2D(grid, conf)
-                    plot2dYee(axs[0],  yee, grid, conf, 'jx1', vmin=-plconf['curval'], vmax=plconf['curval'])
-                    plot2dYee(axs[1],  yee, grid, conf, 'jy1', vmin=-plconf['curval'], vmax=plconf['curval'])
-                    plot2dYee(axs[2],  yee, grid, conf, 'jz1', vmin=-plconf['curval'], vmax=plconf['curval'])
+                    plot2dYee(
+                        axs[0],
+                        yee,
+                        grid,
+                        conf,
+                        "jx1",
+                        vmin=-plconf["curval"],
+                        vmax=+plconf["curval"],
+                    )
+                    plot2dYee(
+                        axs[1],
+                        yee,
+                        grid,
+                        conf,
+                        "jy1",
+                        vmin=-plconf["curval"],
+                        vmax=+plconf["curval"],
+                    )
+                    plot2dYee(
+                        axs[2],
+                        yee,
+                        grid,
+                        conf,
+                        "jz1",
+                        vmin=-plconf["curval"],
+                        vmax=+plconf["curval"],
+                    )
 
-                    plot2dYee(axs[3],  yee, grid, conf, 'jx' , vmin=-plconf['curval'], vmax=plconf['curval'])
-                    plot2dYee(axs[4],  yee, grid, conf, 'jy' , vmin=-plconf['curval'], vmax=plconf['curval'])
-                    plot2dYee(axs[5],  yee, grid, conf, 'jz' , vmin=-plconf['curval'], vmax=plconf['curval'])
+                    plot2dYee(
+                        axs[3],
+                        yee,
+                        grid,
+                        conf,
+                        "jx",
+                        vmin=-plconf["curval"],
+                        vmax=+plconf["curval"],
+                    )
+                    plot2dYee(
+                        axs[4],
+                        yee,
+                        grid,
+                        conf,
+                        "jy",
+                        vmin=-plconf["curval"],
+                        vmax=+plconf["curval"],
+                    )
+                    plot2dYee(
+                        axs[5],
+                        yee,
+                        grid,
+                        conf,
+                        "jz",
+                        vmin=-plconf["curval"],
+                        vmax=+plconf["curval"],
+                    )
 
-                    plot2dYee(axs[6],  yee, grid, conf, 'ex' , vmin=-plconf['elval'], vmax=plconf['elval'])
-                    plot2dYee(axs[7],  yee, grid, conf, 'ey' , vmin=-plconf['elval'], vmax=plconf['elval'])
-                    plot2dYee(axs[8],  yee, grid, conf, 'ez' , vmin=-plconf['elval'], vmax=plconf['elval'])
+                    plot2dYee(
+                        axs[6],
+                        yee,
+                        grid,
+                        conf,
+                        "ex",
+                        vmin=-plconf["elval"],
+                        vmax=+plconf["elval"],
+                    )
+                    plot2dYee(
+                        axs[7],
+                        yee,
+                        grid,
+                        conf,
+                        "ey",
+                        vmin=-plconf["elval"],
+                        vmax=+plconf["elval"],
+                    )
+                    plot2dYee(
+                        axs[8],
+                        yee,
+                        grid,
+                        conf,
+                        "ez",
+                        vmin=-plconf["elval"],
+                        vmax=+plconf["elval"],
+                    )
 
-                    plot2dYee(axs[9],  yee, grid, conf, 'bx' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
-                    plot2dYee(axs[10], yee, grid, conf, 'by' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
-                    plot2dYee(axs[11], yee, grid, conf, 'bz' , vmin=-plconf['bfval'], vmax=plconf['bfval'])
+                    plot2dYee(
+                        axs[9],
+                        yee,
+                        grid,
+                        conf,
+                        "bx",
+                        vmin=-plconf["bfval"],
+                        vmax=+plconf["bfval"],
+                    )
+                    plot2dYee(
+                        axs[10],
+                        yee,
+                        grid,
+                        conf,
+                        "by",
+                        vmin=-plconf["bfval"],
+                        vmax=+plconf["bfval"],
+                    )
+                    plot2dYee(
+                        axs[11],
+                        yee,
+                        grid,
+                        conf,
+                        "bz",
+                        vmin=-plconf["bfval"],
+                        vmax=+plconf["bfval"],
+                    )
                     saveVisz(lap, grid, conf)
 
-            #except:
+            # except:
             #    print()
             #    pass
             timer.stop("io")
 
-
             timer.stats("io")
-            timer.start("step") #refresh lap counter (avoids IO profiling)
+            timer.start("step")  # refresh lap counter (avoids IO profiling)
 
             sys.stdout.flush()
 
-        #MPI.COMM_WORLD.barrier()
-        #sleep(0.2)
-        time += conf.cfl/conf.c_omp
-    #end of loop
-
+        # MPI.COMM_WORLD.barrier()
+        # sleep(0.2)
+        time += conf.cfl / conf.c_omp
+    # end of loop
 
     timer.stop("total")
     timer.stats("total")
-
-
-
-
-
-
-
-
