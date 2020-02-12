@@ -110,7 +110,6 @@ void bind_tools(pybind11::module& m)
   declare_mesh<real_short, 3>(m, "Mesh_H3" );
 
 
-
   //--------------------------------------------------
 
   py::class_<AM3d >(m, "AdaptiveMesh3D")

@@ -48,6 +48,7 @@ set (RAD_FILES
 set (FFE_FILES 
      pyffe.c++
      ../ffe/tile.c++
+     ../ffe/skinny_yee.c++
      ../ffe/currents/driftcurrent.c++
      )
 

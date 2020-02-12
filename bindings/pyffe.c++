@@ -169,8 +169,8 @@ void bind_ffe(py::module& m_sub)
 
   //--------------------------------------------------
   // 3D bindings
-  //py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
-  //auto t3 = ffe::declare_tile<3>(m_2d, "Tile");
+  py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
+  auto t3 = ffe::declare_tile<3>(m_3d, "Tile");
 
 
   //--------------------------------------------------
@@ -186,6 +186,19 @@ void bind_ffe(py::module& m_sub)
   py::class_<ffe::DriftCurrent<2>, ffe::Current<2>, PyDriftCurrent<2> >(m_2d, "DriftCurrent")
     .def(py::init<int,int,int>());
 
+
+  //--------------------------------------------------
+  // 3D Current solver bindings
+  py::class_< ffe::Current<3>, PyCurrent<3> > currentcalc3d(m_3d, "Current");
+  currentcalc3d
+    .def(py::init<int, int, int>())
+    .def("comp_drift_cur",      &ffe::Current<3>::comp_drift_cur)
+    .def("comp_parallel_cur",   &ffe::Current<3>::comp_parallel_cur)
+    .def("limiter",             &ffe::Current<3>::limiter);
+
+  // Drift current solver
+  py::class_<ffe::DriftCurrent<3>, ffe::Current<3>, PyDriftCurrent<3> >(m_3d, "DriftCurrent")
+    .def(py::init<int,int,int>());
 
 
 

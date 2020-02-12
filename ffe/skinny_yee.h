@@ -1,12 +1,11 @@
 #pragma once
 
-#include <vector>
 #include <array>
+#include <vector>
 
-#include "../corgi/tile.h"
-#include "../corgi/corgi.h"
-#include "../em-fields/tile.h"
 #include "../tools/mesh.h"
+#include "../definitions.h"
+#include "../em-fields/tile.h"
 
 
 namespace ffe {
@@ -57,94 +56,24 @@ class SkinnyYeeLattice {
 
 
   // basic arithmetics 
-
-  SkinnyYeeLattice& operator +=(const SkinnyYeeLattice& rhs)
-  {
-    ex += rhs.ex;
-    ey += rhs.ey;
-    ez += rhs.ez;
-    bx += rhs.bx;
-    by += rhs.by;
-    bz += rhs.bz;
-
-    return *this;
-  }
-
-  SkinnyYeeLattice& operator -=(const SkinnyYeeLattice& rhs) 
-  {
-    ex -= rhs.ex;
-    ey -= rhs.ey;
-    ez -= rhs.ez;
-    bx -= rhs.bx;
-    by -= rhs.by;
-    bz -= rhs.bz;
-
-    return *this;
-  }
-
-  SkinnyYeeLattice& operator *=(double rhs) 
-  {
-    ex *= static_cast<real_short>(rhs);
-    ey *= static_cast<real_short>(rhs);
-    ez *= static_cast<real_short>(rhs);
-    bx *= static_cast<real_short>(rhs);
-    by *= static_cast<real_short>(rhs);
-    bz *= static_cast<real_short>(rhs);
-
-    return *this;
-  }
-
-  SkinnyYeeLattice& operator /=(double rhs) 
-  {
-    ex /= static_cast<real_short>(rhs);
-    ey /= static_cast<real_short>(rhs);
-    ez /= static_cast<real_short>(rhs);
-    bx /= static_cast<real_short>(rhs);
-    by /= static_cast<real_short>(rhs);
-    bz /= static_cast<real_short>(rhs);
-
-    return *this;
-  }
+  SkinnyYeeLattice& operator +=(const SkinnyYeeLattice& rhs);
+  SkinnyYeeLattice& operator -=(const SkinnyYeeLattice& rhs);
+  SkinnyYeeLattice& operator *=(double rhs);
+  SkinnyYeeLattice& operator /=(double rhs);
 
 
-  // copy yee grid to skinny yee
-  void set_yee(const fields::YeeLattice& yee)
-  {
-    ex = yee.ex;
-    ey = yee.ey;
-    ez = yee.ez;
-    bx = yee.bx;
-    by = yee.by;
-    bz = yee.bz;
-  }
-
+  void set_yee(const fields::YeeLattice& yee);
 
 };
 
+SkinnyYeeLattice operator +(SkinnyYeeLattice lhs, const SkinnyYeeLattice& rhs);
+SkinnyYeeLattice operator -(SkinnyYeeLattice lhs, const SkinnyYeeLattice& rhs);
+SkinnyYeeLattice operator *(SkinnyYeeLattice lhs, double rhs);
+SkinnyYeeLattice operator /(SkinnyYeeLattice lhs, double rhs);
 
-inline SkinnyYeeLattice operator +(SkinnyYeeLattice lhs, const SkinnyYeeLattice& rhs)
-{
-  lhs += rhs;
-  return lhs;
-}
-
-inline SkinnyYeeLattice operator -(SkinnyYeeLattice lhs, const SkinnyYeeLattice& rhs)
-{
-  lhs -= rhs;
-  return lhs;
-}
-
-inline SkinnyYeeLattice operator *(SkinnyYeeLattice lhs, double rhs)
-{
-  lhs *= rhs;
-  return lhs;
-}
-
-inline SkinnyYeeLattice operator /(SkinnyYeeLattice lhs, double rhs)
-{
-  lhs *= rhs;
-  return lhs;
-}
 
 
 }
+
+//ffe::SkinnyYeeLattice operator /(ffe::SkinnyYeeLattice lhs, double rhs);
+

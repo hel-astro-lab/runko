@@ -3,13 +3,10 @@
 #include <vector>
 #include <array>
 
-#include "../tools/mesh.h"
 #include "skinny_yee.h"
 
 
 namespace ffe {
-
-
 
 /*! \brief Force-Free electrodynamics methods
  *

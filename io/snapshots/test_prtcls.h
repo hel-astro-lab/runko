@@ -31,8 +31,8 @@ class TestPrtclWriter :
 
   public:
 
-    std::vector< toolbox::Mesh<int> > arrs2;
-    std::vector< toolbox::Mesh<int> > rbuf2;
+    std::vector< toolbox::Mesh<int,0> > arrs2;
+    std::vector< toolbox::Mesh<int,0> > rbuf2;
 
 
     /// general file name used for outputs

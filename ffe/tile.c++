@@ -24,6 +24,6 @@ ffe::SkinnyYeeLattice& Tile<D>::get_step(int n)
 //--------------------------------------------------
 // explicit template instantiation
 template class Tile<2>;
-//template class Tile<3>;
+template class Tile<3>;
 
 } // end of ns ffe
