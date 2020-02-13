@@ -255,6 +255,86 @@ def insert_em_harris_sheet(grid, conf):
             # except:
             #    #print("cell ({},{}) is not boundary cell".format(ii,jj))
             #    pass
+    return 
+
+
+# Field initialization
+def insert_em_waves(grid, conf):
+
+    # into radians
+    # btheta = conf.btheta / 180.0 * np.pi
+    # bphi = conf.bphi / 180.0 * np.pi
+    #beta = conf.beta
+    #beta = 0.1
+
+    bpar  = 1.0
+    bperp = 0.5
+    Lx = conf.NxMesh*conf.Nx
+
+    modes = 1.
+    kx = 2.0*np.pi*modes/Lx
+
+
+    for cid in grid.get_tile_ids():
+        tile = grid.get_tile(cid)
+        yee = tile.get_yee(0)
+
+        if conf.twoD:
+            ii, jj = tile.index
+            kk = 0
+        elif conf.threeD:
+            ii, jj, kk = tile.index
+
+        # insert values into Yee lattices; includes halos from -3 to n+3
+        for n in range(conf.NzMesh):
+            for m in range(conf.NyMesh):
+                for l in range(conf.NxMesh):
+                    # get global coordinates
+                    iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
+                    # r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
+
+                    if False:
+                        # 1D Alfven wave packet
+                        yee.bx[l, m, n] = bpar
+                        if 0 <= iglob <= 0.5*Lx:
+                            yee.bz[l, m, n] = bperp*np.sin(kx*iglob) 
+                            yee.ey[l, m, n] = bperp*np.sin(kx*iglob)  
+
+                    # fast mode wave packet
+                    if True:
+                        if 0 <= iglob <= 0.5*Lx:
+                            yee.by[l, m, n] = bperp*np.sin(kx*iglob) 
+                            yee.ez[l, m, n] = bperp*np.sin(kx*iglob)  
+
+
+
+
+
+
+    return
+
+def plot_waves(ax, yee, mode):
+
+    ax.cla()
+    ax.set_ylim((-1,1))
+
+    if mode == 'x':
+        e = yee['ex']
+        b = yee['bx']
+        j = yee['jx']
+    if mode == 'y':
+        e = yee['ey']
+        b = yee['by']
+        j = yee['jy']
+    if mode == 'z':
+        e = yee['ez']
+        b = yee['bz']
+        j = yee['jz']
+
+    ax.plot(e, "b")
+    ax.plot(b, "r")
+    ax.plot(j, "g")
+
 
 
 if __name__ == "__main__":
@@ -351,7 +431,8 @@ if __name__ == "__main__":
 
         # inserting em grid
         # insert_em_fields(grid, conf)
-        insert_em_harris_sheet(grid, conf)
+        #insert_em_harris_sheet(grid, conf)
+        insert_em_waves(grid, conf)
 
     else:
         if do_print:
@@ -757,34 +838,39 @@ if __name__ == "__main__":
                     # plotNode(axs[0], grid, conf)
 
                     yee = getYee2D(grid, conf)
-                    plot2dYee(
-                        axs[0],
-                        yee,
-                        grid,
-                        conf,
-                        "jx1",
-                        vmin=-plconf["curval"],
-                        vmax=+plconf["curval"],
-                    )
-                    plot2dYee(
-                        axs[1],
-                        yee,
-                        grid,
-                        conf,
-                        "jy1",
-                        vmin=-plconf["curval"],
-                        vmax=+plconf["curval"],
-                    )
-                    plot2dYee(
-                        axs[2],
-                        yee,
-                        grid,
-                        conf,
-                        "jz1",
-                        vmin=-plconf["curval"],
-                        vmax=+plconf["curval"],
-                    )
 
+                    #plot2dYee(
+                    #    axs[0],
+                    #    yee,
+                    #    grid,
+                    #    conf,
+                    #    "jx1",
+                    #    vmin=-plconf["curval"],
+                    #    vmax=+plconf["curval"],
+                    #)
+                    #plot2dYee(
+                    #    axs[1],
+                    #    yee,
+                    #    grid,
+                    #    conf,
+                    #    "jy1",
+                    #    vmin=-plconf["curval"],
+                    #    vmax=+plconf["curval"],
+                    #)
+                    #plot2dYee(
+                    #    axs[2],
+                    #    yee,
+                    #    grid,
+                    #    conf,
+                    #    "jz1",
+                    #    vmin=-plconf["curval"],
+                    #    vmax=+plconf["curval"],
+                    #)
+
+                    plot_waves(axs[0], yee, 'x')
+                    plot_waves(axs[1], yee, 'y')
+                    plot_waves(axs[2], yee, 'z')
+                        
                     plot2dYee(
                         axs[3],
                         yee,
