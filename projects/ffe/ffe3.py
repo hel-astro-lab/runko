@@ -145,11 +145,21 @@ def insert_em_harris_sheet(grid, conf):
                         #    * cosh((iglob - mxhalf) / pinch_delta)
                         # )
 
-                        pinch_corr = (
-                            cosh((jglob - myhalf) / pinch_delta)
-                            * cosh((iglob - mxhalf) / delta)
-                            * triggerz
-                        )
+                        if conf.sheet_thickness == 0.0:
+                            pinch_corr = (
+                                cosh((jglob - myhalf) / pinch_delta)
+                                * triggerz
+                            )
+                            if iglob != mxhalf + 1: #or iglob == 3.0 * mxhalf + 1:
+                                pinch_corr = 1.0
+
+
+                        else:
+                            pinch_corr = (
+                                cosh((jglob - myhalf) / pinch_delta)
+                                * cosh((iglob - mxhalf) / delta)
+                                * triggerz
+                            )
 
                         # by
                         yee.by[l, m, n] = binit * sin(bphi) * stripetanh
