@@ -124,14 +124,20 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
        + byf(i,j,k)*byf(i,j,k) 
        + bzf(i,j,k)*bzf(i,j,k);
 
-    // perp current
-    mesh.jx(i,j,k) += dive*crossx/b2;
-    mesh.jy(i,j,k) += dive*crossy/b2;
-    mesh.jz(i,j,k) += dive*crossz/b2;
+    if(b2 == 0.0) continue;
 
-    mesh.ex(i,j,k) -= mesh.jx(i,j,k)*dt;
-    mesh.ey(i,j,k) -= mesh.jy(i,j,k)*dt;
-    mesh.ez(i,j,k) -= mesh.jz(i,j,k)*dt;
+    // perp current
+    mesh.jx(i,j,k) +=   dive*crossx/b2;
+    mesh.jy(i,j,k) +=   dive*crossy/b2;
+    mesh.jz(i,j,k) +=   dive*crossz/b2;
+
+    mesh.ex(i,j,k) -=dt*dive*crossx/b2;
+    mesh.ey(i,j,k) -=dt*dive*crossy/b2;
+    mesh.ez(i,j,k) -=dt*dive*crossz/b2;
+
+    //mesh.ex(i,j,k) -= mesh.jx(i,j,k)*dt;
+    //mesh.ey(i,j,k) -= mesh.jy(i,j,k)*dt;
+    //mesh.ez(i,j,k) -= mesh.jz(i,j,k)*dt;
 
   }
 }
@@ -175,14 +181,16 @@ void ffe::DriftCurrent<3>::comp_drift_cur(ffe::Tile<3>& tile)
        + byf(i,j,k)*byf(i,j,k) 
        + bzf(i,j,k)*bzf(i,j,k);
 
+    if(b2 == 0.0) continue;
+
     // perp current
     mesh.jx(i,j,k) += dive*crossx/b2;
     mesh.jy(i,j,k) += dive*crossy/b2;
     mesh.jz(i,j,k) += dive*crossz/b2;
 
-    mesh.ex(i,j,k) -= mesh.jx(i,j,k)*dt;
-    mesh.ey(i,j,k) -= mesh.jy(i,j,k)*dt;
-    mesh.ez(i,j,k) -= mesh.jz(i,j,k)*dt;
+    mesh.ex(i,j,k) -=dt*dive*crossx/b2;
+    mesh.ey(i,j,k) -=dt*dive*crossy/b2;
+    mesh.ez(i,j,k) -=dt*dive*crossz/b2;
 
   }
 }
@@ -218,6 +226,8 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
     b2 = bxf(i,j,k)*bxf(i,j,k) 
        + byf(i,j,k)*byf(i,j,k) 
        + bzf(i,j,k)*bzf(i,j,k);
+
+    if(b2 == 0.0) continue;
 
     // J_parallel x dt
     jparax = spara*bxf(i,j,k)/b2;
@@ -268,6 +278,8 @@ void ffe::DriftCurrent<3>::comp_parallel_cur(
     b2 = bxf(i,j,k)*bxf(i,j,k) 
        + byf(i,j,k)*byf(i,j,k) 
        + bzf(i,j,k)*bzf(i,j,k);
+
+    if(b2 == 0.0) continue;
 
     // J_parallel x dt
     jparax = spara*bxf(i,j,k)/b2;
@@ -334,6 +346,10 @@ void ffe::DriftCurrent<2>::limiter(
       mesh.ey(i,j,k) -= jyd;
       mesh.ez(i,j,k) -= jzd;
 
+      mesh.jx(i,j,k) += jxd/dt;
+      mesh.jy(i,j,k) += jyd/dt;
+      mesh.jz(i,j,k) += jzd/dt;
+
     } else {
       jxd = 0.0;
       jyd = 0.0;
@@ -391,6 +407,10 @@ void ffe::DriftCurrent<3>::limiter(
       mesh.ex(i,j,k) -= jxd;
       mesh.ey(i,j,k) -= jyd;
       mesh.ez(i,j,k) -= jzd;
+
+      mesh.jx(i,j,k) += jxd/dt;
+      mesh.jy(i,j,k) += jyd/dt;
+      mesh.jz(i,j,k) += jzd/dt;
 
     } else {
       jxd = 0.0;
