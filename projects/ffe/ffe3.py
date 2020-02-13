@@ -268,8 +268,9 @@ def insert_em_waves(grid, conf):
     #beta = 0.1
 
     bpar  = 1.0
-    bperp = 0.5
+    bperp = 1.0
     Lx = conf.NxMesh*conf.Nx
+    beta = 0.1
 
     modes = 1.
     kx = 2.0*np.pi*modes/Lx
@@ -293,25 +294,109 @@ def insert_em_waves(grid, conf):
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
                     # r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
-                    if False:
-                        # 1D Alfven wave packet
-                        yee.bx[l, m, n] = bpar
-                        if 0 <= iglob <= 0.5*Lx:
-                            yee.bz[l, m, n] = bperp*np.sin(kx*iglob) 
-                            yee.ey[l, m, n] = bperp*np.sin(kx*iglob)  
-
-                    # fast mode wave packet
                     if True:
+                        # 1D Alfven wave packet
+                        yee.bx[l, m, n] = 0.0 #bpar
                         if 0 <= iglob <= 0.5*Lx:
+                            #yee.bz[l, m, n] = bperp*np.sin(kx*iglob) 
+                            #yee.ey[l, m, n] = bperp*np.sin(kx*iglob)  
+
                             yee.by[l, m, n] = bperp*np.sin(kx*iglob) 
                             yee.ez[l, m, n] = bperp*np.sin(kx*iglob)  
 
+                    # fast mode wave packet
+                    if False:
+                        if 0 <= iglob <= 0.5*Lx:
+                            yee.by[l, m, n] = bperp*np.sin(kx*iglob) 
+                            #yee.ez[l, m, n] = bperp*np.sin(kx*iglob)  
+
+                    if False:
+                        # 1D Alfven wave packet collisions
+                        yee.bx[l, m, n] = bpar
+                        if 0 <= iglob <  0.5*Lx:
+                            yee.bz[l, m, n] = bperp*np.sin(kx*iglob) 
+                            yee.ey[l, m, n] = bperp*np.sin(kx*iglob)  
+
+                        if 0.5*Lx <= iglob <  Lx:
+                            yee.bz[l, m, n] =  bperp*np.sin(kx*iglob) 
+                            yee.ey[l, m, n] = -bperp*np.sin(kx*iglob)  
+
+    return
 
 
+# Field initialization
+def insert_em_3D_wave_packet(grid, conf):
 
+    b0  = 1.0
+
+    #bperp = 1.0
+    #Lx = conf.NxMesh*conf.Nx
+    #beta = 0.1
+    #modes = 1.
+    #kx = 2.0*np.pi*modes/Lx
+
+
+    # middle of the box
+    x0 = conf.Nx*conf.NxMesh*0.5
+    y0 = conf.Ny*conf.NyMesh*0.5
+
+    z1 = 0.0 #conf.Ny*conf.NyMesh*0.25
+    z2 = conf.Ny*conf.NyMesh*0.75
+    
+    zeta = 0.5 # perturbation amplitude
+    ell = 10.0 # perturbation length
+
+    for cid in grid.get_tile_ids():
+        tile = grid.get_tile(cid)
+        yee = tile.get_yee(0)
+
+        if conf.twoD:
+            ii, jj = tile.index
+            kk = 0
+        elif conf.threeD:
+            ii, jj, kk = tile.index
+
+        # insert values into Yee lattices; includes halos from -3 to n+3
+        for n in range(conf.NzMesh):
+            for m in range(conf.NyMesh):
+                for l in range(conf.NxMesh):
+                    # get global coordinates
+                    iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
+
+                    #r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
+
+                    #spherical coordinate from packet center
+                    r1 = np.sqrt( (x0-iglob)** 2 + (y0-jglob) ** 2 + (z1 - kglob) ** 2)
+
+                    #cylindrical coordinate radius
+                    w = np.sqrt( (x0-iglob)**2 + (y0-jglob)**2)
+
+                    # guide field
+                    yee.bz[l, m, n] = b0
+
+                    #amplitude
+                    gauss = zeta*ell*np.exp(-r1**2/ell**2)
+                    bphi = (2.0*b0*w/ell**2)*gauss
+
+                    xv = (x0 - iglob)
+                    yv = (y0 - jglob)
+
+                    yee.bx[l,m,n] = bphi*yv
+                    yee.by[l,m,n] = bphi*xv
+
+                    yee.ex[l,m,n] =-bphi*xv
+                    yee.ey[l,m,n] = bphi*yv
+
+                    #yee.by[l, m, n] = bperp*np.sin(kx*iglob) 
+                    #yee.ez[l, m, n] = bperp*np.sin(kx*iglob)  
 
 
     return
+
+
+
+
+
 
 def plot_waves(ax, yee, mode):
 
@@ -432,7 +517,8 @@ if __name__ == "__main__":
         # inserting em grid
         # insert_em_fields(grid, conf)
         #insert_em_harris_sheet(grid, conf)
-        insert_em_waves(grid, conf)
+        #insert_em_waves(grid, conf)
+        insert_em_3D_wave_packet(grid, conf)
 
     else:
         if do_print:
@@ -838,34 +924,6 @@ if __name__ == "__main__":
                     # plotNode(axs[0], grid, conf)
 
                     yee = getYee2D(grid, conf)
-
-                    #plot2dYee(
-                    #    axs[0],
-                    #    yee,
-                    #    grid,
-                    #    conf,
-                    #    "jx1",
-                    #    vmin=-plconf["curval"],
-                    #    vmax=+plconf["curval"],
-                    #)
-                    #plot2dYee(
-                    #    axs[1],
-                    #    yee,
-                    #    grid,
-                    #    conf,
-                    #    "jy1",
-                    #    vmin=-plconf["curval"],
-                    #    vmax=+plconf["curval"],
-                    #)
-                    #plot2dYee(
-                    #    axs[2],
-                    #    yee,
-                    #    grid,
-                    #    conf,
-                    #    "jz1",
-                    #    vmin=-plconf["curval"],
-                    #    vmax=+plconf["curval"],
-                    #)
 
                     plot_waves(axs[0], yee, 'x')
                     plot_waves(axs[1], yee, 'y')
