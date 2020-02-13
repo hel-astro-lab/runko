@@ -77,6 +77,10 @@ def insert_em_harris_sheet(grid, conf):
     beta = 0.0  # conf.beta #sheet bulk flow; NOTE: for force-free setup no flow
     sigma = conf.sigma  # magnetization
 
+    # field angles
+    btheta = 1.0
+    bphi = pi/2.  # conf.bphi/180. * pi
+
     # note: if periodicx then mxhalf is actually Lx/4 else Lx/2
     mxhalf = conf.mxhalf
     myhalf = conf.myhalf
@@ -103,17 +107,31 @@ def insert_em_harris_sheet(grid, conf):
                     else:
                         triggerz = 1.0
 
+                    # inifnitely small thickness
+                    if conf.sheet_thickness == 0.0:
+                        if iglob <= mxhalf:
+                            stripetanh = -1.0
+                        elif mxhalf < iglob <= 3.0 * mxhalf:
+                            stripetanh = +1.0
+                        elif 3.0 * mxhalf < iglob:
+                            stripetanh = -1.0
+
+                        # one cell flip of zero
+                        # if iglob == mxhalf or iglob == 3.*mxhalf:
+                        #    stripetanh = 0.0
+
                     # flipping harris sheet stripe
-                    if not (conf.periodicx):
-                        stripetanh = tanh((iglob - mxhalf) / delta)
                     else:
-                        stripetanh = tanh(
-                            Lx
-                            * sin(2.0 * pi * (iglob - mxhalf) / Lx)
-                            / delta
-                            / 2.0
-                            / pi
-                        )
+                        if not (conf.periodicx):
+                            stripetanh = tanh((iglob - mxhalf) / delta)
+                        else:
+                            stripetanh = tanh(
+                                Lx
+                                * sin(2.0 * pi * (iglob - mxhalf) / Lx)
+                                / delta
+                                / 2.0
+                                / pi
+                            )
 
                     if conf.trigger:
 
@@ -121,11 +139,11 @@ def insert_em_harris_sheet(grid, conf):
                         # NOTE: true velocity v/c= velstripe*beta
 
                         # velstripe = tanh((iglob-mxhalf)/pinch_delta)/cosh((iglob-mxhalf)/pinch_delta)
-                        # velstripe = tanh((iglob-mxhalf)/pinch_delta)
-                        velstripe = tanh((iglob - mxhalf) / pinch_delta) / (
-                            cosh((jglob - myhalf) / pinch_delta)
-                            * cosh((iglob - mxhalf) / pinch_delta)
-                        )
+                        velstripe = tanh((iglob - mxhalf) / pinch_delta)
+                        # velstripe = tanh((iglob - mxhalf) / pinch_delta) / (
+                        #    cosh((jglob - myhalf) / pinch_delta)
+                        #    * cosh((iglob - mxhalf) / pinch_delta)
+                        # )
 
                         pinch_corr = (
                             cosh((jglob - myhalf) / pinch_delta)
@@ -133,55 +151,83 @@ def insert_em_harris_sheet(grid, conf):
                             * triggerz
                         )
 
-                        yee.by[l, m, n] = binit * stripetanh
-                        yee.bz[l, m, n] = binit * stripetanh * (1.0 - 1.0 / pinch_corr)
+                        # by
+                        yee.by[l, m, n] = binit * sin(bphi) * stripetanh
+                        yee.by[l, m, n] +=binit * cos(bphi) * btheta * cos(bphi) * (1.0 - 1.0 / pinch_corr)
 
-                        yee.ey[l, m, n] = (-beta) * yee.bz[l, m, n]
+                        # bz
+                        yee.bz[l, m, n] = binit * cos(bphi) * stripetanh
+                        yee.bz[l, m, n] +=binit * sin(bphi) * btheta * (1.0 - 1.0 / pinch_corr)
+
+                        # ey
+                        yee.ey[l, m, n] = (-beta) * velstripe * yee.bz[l, m, n]
+
+                        # ez
+                        yee.ez[l, m, n] = (+beta) * velstripe * yee.by[l, m, n]
 
                         # drive to trigger reconnection in the middle of the box;
                         # the coefficient should be the desired ExB speed
-                        yee.ez[l, m, n] = (+beta) * yee.by[l, m, n]
+                        yee.ez[l, m, n] += (
+                            conf.trigger_field * yee.by[l, m, n] / pinch_corr
+                        )
 
-                        yee.ez[l, m, n] += conf.trigger_field * yee.by[l, m, n] / pinch_corr
+                        # trigger point
+                        if conf.sheet_thickness == 0.0:
+                            if jglob == myhalf:
+                                if iglob == mxhalf + 1 or iglob == 3.0 * mxhalf + 1:
+                                    yee.ez[l, m, n] += conf.trigger_field
 
                     else:
-                        yee.by[l, m, n] = binit * stripetanh
-                        yee.bz[l, m, n] = binit * sqrt(conf.sigma_ext)
+                        yee.by[l, m, n] = binit * sin(bphi) * stripetanh
+                        yee.by[l, m, n] += binit * cos(bphi) * btheta
 
-                        yee.ey[l, m, n] = (-beta) * yee.bz[l, m, n]
-                        yee.ez[l, m, n] = (+beta) * yee.by[l, m, n]
+                        yee.bz[l, m, n] = binit * cos(bphi) * stripetanh
+                        yee.bz[l, m, n] += binit * sin(bphi) * btheta
+
+                        yee.ey[l, m, n] = (-beta) * velstripe * yee.bz[l, m, n]
+                        yee.ez[l, m, n] = (+beta) * velstripe * yee.by[l, m, n]
 
                     yee.ex[l, m, n] = 0.0
 
-                    # hot current sheet
-                    # beta_drift = sqrt(sigma)
-                    beta_drift = 0.5
-                    if not (conf.periodicx):
-                        num_plasma = 1.0 / (cosh((iglob - mxhalf) / delta)) ** 2.0
-                    else:
-                        # num_plasma = 1.0/(cosh(dstripe*lstripe*sin(2.*pi*(iglob-mxhalf)/lstripe)))**2.*stripecosh
-                        num_plasma = (
-                            1.0
-                            / cosh(
-                                Lx
-                                * sin(2.0 * pi * (iglob - mxhalf) / Lx)
-                                / delta
-                                / 2.0
-                                / pi
+                    # add external non-evolving guide field
+                    yee.bz[l, m, n] += binit * sqrt(conf.sigma_ext)
+
+                    # one zell thin current sheet to balance the flip
+                    # if iglob == mxhalf or iglob == 3.*mxhalf:
+                    #    yee.ez[l, m, n] +=  binit
+                    # if iglob == mxhalf+1 or iglob == 3.*mxhalf+1:
+                    #    yee.ez[l, m, n] +=  binit
+
+                    if False:
+                        # hot current sheet
+                        # beta_drift = sqrt(sigma)
+                        beta_drift = 0.5
+                        if not (conf.periodicx):
+                            num_plasma = 1.0 / (cosh((iglob - mxhalf) / delta)) ** 2.0
+                        else:
+                            # num_plasma = 1.0/(cosh(dstripe*lstripe*sin(2.*pi*(iglob-mxhalf)/lstripe)))**2.*stripecosh
+                            num_plasma = (
+                                1.0
+                                / cosh(
+                                    Lx
+                                    * sin(2.0 * pi * (iglob - mxhalf) / Lx)
+                                    / delta
+                                    / 2.0
+                                    / pi
+                                )
+                                ** 2.0
                             )
-                            ** 2.0
-                        )
 
-                    gamma_drift = sqrt(1.0 / (1.0 - beta_drift ** 2.0))
-                    if conf.periodicx:
-                        gamma_drift = gamma_drift * np.sign(
-                            cos(2.0 * pi * (iglob - mxhalf) / Lx)
-                        )
-                        beta_drift = sqrt(1.0 - 1.0 / gamma_drift ** 2) * np.sign(
-                            gamma_drift
-                        )
+                        gamma_drift = sqrt(1.0 / (1.0 - beta_drift ** 2.0))
+                        if conf.periodicx:
+                            gamma_drift = gamma_drift * np.sign(
+                                cos(2.0 * pi * (iglob - mxhalf) / Lx)
+                            )
+                            beta_drift = sqrt(1.0 - 1.0 / gamma_drift ** 2) * np.sign(
+                                gamma_drift
+                            )
 
-                    yee.ez[l, m, n] += beta_drift * num_plasma * binit
+                        yee.ez[l, m, n] += beta_drift * num_plasma * binit
 
             # copy values to boundary cells
             # FIXME
@@ -386,6 +432,96 @@ if __name__ == "__main__":
 
     sys.stdout.flush()
 
+    if True:
+        if do_plots:
+            # plotNode(axs[0], grid, conf)
+
+            yee = getYee2D(grid, conf)
+            plot2dYee(
+                axs[3],
+                yee,
+                grid,
+                conf,
+                "jx",
+                vmin=-plconf["curval"],
+                vmax=+plconf["curval"],
+            )
+            plot2dYee(
+                axs[4],
+                yee,
+                grid,
+                conf,
+                "jy",
+                vmin=-plconf["curval"],
+                vmax=+plconf["curval"],
+            )
+            plot2dYee(
+                axs[5],
+                yee,
+                grid,
+                conf,
+                "jz",
+                vmin=-plconf["curval"],
+                vmax=+plconf["curval"],
+            )
+
+            plot2dYee(
+                axs[6],
+                yee,
+                grid,
+                conf,
+                "ex",
+                vmin=-plconf["elval"],
+                vmax=+plconf["elval"],
+            )
+            plot2dYee(
+                axs[7],
+                yee,
+                grid,
+                conf,
+                "ey",
+                vmin=-plconf["elval"],
+                vmax=+plconf["elval"],
+            )
+            plot2dYee(
+                axs[8],
+                yee,
+                grid,
+                conf,
+                "ez",
+                vmin=-plconf["elval"],
+                vmax=+plconf["elval"],
+            )
+
+            plot2dYee(
+                axs[9],
+                yee,
+                grid,
+                conf,
+                "bx",
+                vmin=-plconf["bfval"],
+                vmax=+plconf["bfval"],
+            )
+            plot2dYee(
+                axs[10],
+                yee,
+                grid,
+                conf,
+                "by",
+                vmin=-plconf["bfval"],
+                vmax=+plconf["bfval"],
+            )
+            plot2dYee(
+                axs[11],
+                yee,
+                grid,
+                conf,
+                "bz",
+                vmin=-plconf["bfval"],
+                vmax=+plconf["bfval"],
+            )
+            saveVisz(-1, grid, conf)
+
     # simulation loop
     time = lap * (conf.cfl / conf.c_omp)
     for lap in range(lap, conf.Nt + 1):
@@ -446,6 +582,7 @@ if __name__ == "__main__":
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
+            # drift current
             t1 = timer.start_comp("compute_current")
             for tile in pytools.tiles_all(grid):
                 driftcur.comp_drift_cur(tile)
@@ -475,7 +612,7 @@ if __name__ == "__main__":
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
 
-            # apply limiter
+            # limiter
             t1 = timer.start_comp("limiter")
             for tile in pytools.tiles_local(grid):
                 driftcur.limiter(tile)
