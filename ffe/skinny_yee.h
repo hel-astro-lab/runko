@@ -33,7 +33,7 @@ class SkinnyYeeLattice {
   toolbox::Mesh<real_short, 3> ey;
   toolbox::Mesh<real_short, 3> ez;
   
-  /// Magnetic field 
+  ///  Magnetic field 
   toolbox::Mesh<real_short, 3> bx;
   toolbox::Mesh<real_short, 3> by;
   toolbox::Mesh<real_short, 3> bz;

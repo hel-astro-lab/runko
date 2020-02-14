@@ -26,20 +26,17 @@ class Tile :
   using fields::Tile<D>::yee;
   using fields::Tile<D>::cfl;
 
+
   // RK temporary sub-stage storages
-  SkinnyYeeLattice step0;
-  SkinnyYeeLattice step1;
-  SkinnyYeeLattice step2;
-  SkinnyYeeLattice step3;
+  SkinnyYeeLattice dF;
+  SkinnyYeeLattice Fn;
 
   /// constructor
   Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
     fields::Tile<D>{nx,ny,nz},
-    step0{nx,ny,nz},
-    step1{nx,ny,nz},
-    step2{nx,ny,nz},
-    step3{nx,ny,nz}
+    dF{nx,ny,nz},
+    Fn{nx,ny,nz},
   { }
 
 

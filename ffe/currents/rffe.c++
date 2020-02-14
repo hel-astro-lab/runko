@@ -86,7 +86,19 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice& mesh = tile.get_yee();
+  // refs to storages
+  fields::YeeLattice&     m = tile.get_yee();
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
+
+  // refs to fields for easier access
+  auto& ex  = m.ex;
+  auto& ey  = m.ey;
+  auto& ez  = m.ez;
+
+  auto& bx  = m.bx;
+  auto& by  = m.by;
+  auto& bz  = m.bz;
+
   real_short c = tile.cfl;
 
   // dt / dx
@@ -99,14 +111,14 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
         // dB = curl E
-        dbx(i,j,k) = cz*( ey(i,  j,  k+1) - ey(i,j,k) ) - cy*( ez(i,  j+1,k) - ez(i,j,k) );
-        dby(i,j,k) = cx*( ez(i+1,j,  k  ) - ez(i,j,k) ) - cz*( ex(i,  j,k+1) - ex(i,j,k) );
-        dbz(i,j,k) = cy*( ex(i,  j+1,k  ) - ex(i,j,k) ) - cx*( ey(i+1,j,k  ) - ey(i,j,k) );
+        dm.bx(i,j,k) = cz*( ey(i,  j,  k+1) - ey(i,j,k) ) - cy*( ez(i,  j+1,k) - ez(i,j,k) );
+        dm.by(i,j,k) = cx*( ez(i+1,j,  k  ) - ez(i,j,k) ) - cz*( ex(i,  j,k+1) - ex(i,j,k) );
+        dm.bz(i,j,k) = cy*( ex(i,  j+1,k  ) - ex(i,j,k) ) - cx*( ey(i+1,j,k  ) - ey(i,j,k) );
 
         // dE = curl B - curl B_0
-        dex(i,j,k) = cz*( by(i,  j,  k-1) - by(i,j,k) ) - cy*( bz( i,  j-1,k  ) - bz(i,j,k) );
-        dey(i,j,k) = cx*( bz(i-1,j,  k  ) - bz(i,j,k) ) - cz*( bx( i,  j,  k-1) - bx(i,j,k) );
-        dez(i,j,k) = cy*( bx(i,  j-1,k  ) - bx(i,j,k) ) - cx*( by( i-1,j,  k  ) - by(i,j,k) );
+        dm.ex(i,j,k) = cz*( by(i,  j,  k-1) - by(i,j,k) ) - cy*( bz( i,  j-1,k  ) - bz(i,j,k) );
+        dm.ey(i,j,k) = cx*( bz(i-1,j,  k  ) - bz(i,j,k) ) - cz*( bx( i,  j,  k-1) - bx(i,j,k) );
+        dm.ez(i,j,k) = cy*( bx(i,  j-1,k  ) - bx(i,j,k) ) - cx*( by( i-1,j,  k  ) - by(i,j,k) );
       }
     }
   }
@@ -153,7 +165,13 @@ void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
 template<>
 void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice& m = tile.get_yee();
+  fields::YeeLattice&     m = tile.get_yee();
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
+
+  auto& jx  = m.jx;
+  auto& jy  = m.jy;
+  auto& jz  = m.jz;
+
 
   interpolate(m.rh, this->rhf, {{1,1,1}}, {{1,1,0}} );
   stagger_x_eb(m);
@@ -164,7 +182,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
         b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
 
         jx(i,j,k) = dt *rhf * (eyf * bzf - byf*ezf)/b2;
-        dex(ijk) -= jx(i,j,k);
+        dm.ex(ijk) -= jx(i,j,k);
       }
     }
   }
@@ -178,7 +196,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
         b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
 
         jy(i,j,k) = dt *rhf * (ezf*bxf - exf*bzf)/b2;
-        dey(ijk) -= jy(i,j,k);
+        dm.ey(ijk) -= jy(i,j,k);
       }
     }
   }
@@ -192,7 +210,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
         b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
 
         jz(i,j,k) = dt *rhf * (exf*byf - bxf*eyf)/b2;
-        dez(ijk) -= jz(i,j,k);
+        dm.ez(ijk) -= jz(i,j,k);
       }
     }
   }
@@ -207,27 +225,28 @@ void ffe::rFFE2<3>::update_eb(
     real_short c1, real_short c2, real_short c3
     )
 {
-  fields::YeeLattice& m = tile.get_yee();
-  //fields::YeeLattice& n = tile.get_skinny_yee();
+  fields::YeeLattice&    m = tile.get_yee();
+  ffe::SkinnyYeeLattice& n = tile.Fn; 
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
         // RK3 E update
-        m.ex(i,j,k) = c1 * n.enx(i,j,k) + c2 * m.ex(i,j,k) + c3 * n.dex(i,j,k);
-        m.ey(i,j,k) = c1 * n.eny(i,j,k) + c2 * m.ey(i,j,k) + c3 * n.dey(i,j,k);
-        m.ez(i,j,k) = c1 * n.enz(i,j,k) + c2 * m.ez(i,j,k) + c3 * n.dez(i,j,k);
+        m.ex(i,j,k) = c1 * n.ex(i,j,k) + c2 * m.ex(i,j,k) + c3 * dm.ex(i,j,k);
+        m.ey(i,j,k) = c1 * n.ey(i,j,k) + c2 * m.ey(i,j,k) + c3 * dm.ey(i,j,k);
+        m.ez(i,j,k) = c1 * n.ez(i,j,k) + c2 * m.ez(i,j,k) + c3 * dm.ez(i,j,k);
 
         // active variable switch 
-        n.dex(i,j,k) = m.ex(i,j,k);
-        n.dey(i,j,k) = m.ey(i,j,k);
-        n.dez(i,j,k) = m.ez(i,j,k);
+        dm.ex(i,j,k) = m.ex(i,j,k);
+        dm.ey(i,j,k) = m.ey(i,j,k);
+        dm.ez(i,j,k) = m.ez(i,j,k);
 
         // RK3 B update
-        m.bx(i,j,k) = c1 * n.bnx(i,j,k) + c2 * m.bx(i,j,k) + c3 * n.dbx(i,j,k);
-        m.by(i,j,k) = c1 * n.bny(i,j,k) + c2 * m.by(i,j,k) + c3 * n.dby(i,j,k);
-        m.bz(i,j,k) = c1 * n.bnz(i,j,k) + c2 * m.bz(i,j,k) + c3 * n.dbz(i,j,k);
+        m.bx(i,j,k) = c1 * n.bx(i,j,k) + c2 * m.bx(i,j,k) + c3 * dm.bx(i,j,k);
+        m.by(i,j,k) = c1 * n.by(i,j,k) + c2 * m.by(i,j,k) + c3 * dm.by(i,j,k);
+        m.bz(i,j,k) = c1 * n.bz(i,j,k) + c2 * m.bz(i,j,k) + c3 * dm.bz(i,j,k);
       }
     }
   }
@@ -239,44 +258,50 @@ void ffe::rFFE2<3>::update_eb(
 template<>
 void ffe::rFFE2<3>::remove_epar(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice& m = tile.get_yee();
+  fields::YeeLattice&     m = tile.get_yee();
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
+
+  real_short jpar;
+
+
+  stagger_x_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
+        jpar = (exf*bxf + eyf*byf + ezf*bzf)*bxf /b2;
 
-        iex = interpolate(ex, i,j,k, {{1,1,0}}, {{1,1,0}} );
-        iey = interpolate(ey, i,j,k, {{1,0,1}}, {{1,1,0}} );
-        iez = interpolate(ez, i,j,k, {{0,1,1}}, {{1,1,0}} );
-        ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{1,1,0}} );
-        iby = interpolate(by, i,j,k, {{0,1,0}}, {{1,1,0}} );
-        ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{1,1,0}} );
+        m.jx(i,j,k) += jpar;
+        dm.ex(i,j,k) = m.ex(i,j,k) - jpar;
+      }
+    }
+  }
 
-        b2 = ibx*ibx + iby*iby + ibz*ibz + EPS;
-        dex(i,j,k) = ex(i,j,k) - (iex*ibx + iey*iby + iex*ibz)*ibx /b2;
+  stagger_y_eb(m);
 
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
+        jpar = (exf*bxf + eyf*byf + ezf*bzf)*byf /b2;
 
-        iex = interpolate(ex, i,j,k, {{1,1,0}}, {{1,0,1}} );
-        iey = interpolate(ey, i,j,k, {{1,0,1}}, {{1,0,1}} );
-        iez = interpolate(ez, i,j,k, {{0,1,1}}, {{1,0,1}} );
-        ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{1,0,1}} );
-        iby = interpolate(by, i,j,k, {{0,1,0}}, {{1,0,1}} );
-        ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{1,0,1}} );
+        m.jy(i,j,k) += jpar;
+        dm.ey(i,j,k) = m.ey(i,j,k) - jpar;
+      }
+    }
+  }
 
-        b2 = ibx*ibx + iby*iby + ibz*ibz + EPS;
-        dey(i,j,k) = ey(i,j,k) - (iex*ibx + iey*iby + iex*ibz)*iby /b2;
+  stagger_z_eb(m);
 
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
+        jpar = (exf*bxf + eyf*byf + ezf*bzf)*bzf /b2;
 
-        iex = interpolate(ex, i,j,k, {{1,1,0}}, {{0,1,1}} );
-        iey = interpolate(ey, i,j,k, {{1,0,1}}, {{0,1,1}} );
-        iez = interpolate(ez, i,j,k, {{0,1,1}}, {{0,1,1}} );
-        ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{0,1,1}} );
-        iby = interpolate(by, i,j,k, {{0,1,0}}, {{0,1,1}} );
-        ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{0,1,1}} );
-
-        b2 = ibx*ibx + iby*iby + ibz*ibz + EPS;
-        dez(i,j,k) = ez(i,j,k) - (iex*ibx + iey*iby + iex*ibz)*ibz /b2;
-
+        m.jz(i,j,k) += jpar;
+        dm.ez(i,j,k) = m.ez(i,j,k) - jpar;
       }
     }
   }
@@ -289,53 +314,63 @@ void ffe::rFFE2<3>::remove_epar(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice& m = tile.get_yee();
+  fields::YeeLattice&     m = tile.get_yee();
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
+
+  real_short e2, b2, diss;
+
+
+  stagger_x_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        e2 = exf*exf + eyf*eyf + ezf*ezf;
+        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
 
-        iex = interpolate(ex, i,j,k, {{1,1,0}}, {{1,1,0}} );
-        iey = interpolate(ey, i,j,k, {{1,0,1}}, {{1,1,0}} );
-        iez = interpolate(ez, i,j,k, {{0,1,1}}, {{1,1,0}} );
-        ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{1,1,0}} );
-        iby = interpolate(by, i,j,k, {{0,1,0}}, {{1,1,0}} );
-        ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{1,1,0}} );
+        diss = 1.0
+        if (e2 > b2) diss = sqrt(b2/e2); 
 
-        e2 = iex*iex + iey*iey + iez*iez;
-        b2 = ibx*ibx + iby*iby + ibz*ibz + EPS;
+        // NOTE: uses dm because j_par calcs are put into that
+        m.jx(i,j,k) += (1.-diss)*dm.ex(i,j,k);
+
+        m.ex(i,j,k) = diss*dm.ex(i,j,k);
+      }
+    }
+  }
+
+  stagger_y_eb(m);
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        e2 = exf*exf + eyf*eyf + ezf*ezf;
+        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
 
         diss = 1.0
         if (e2 > b2) diss = sqrt(b2/e2);
-        // TODO: dex or ex
-        ex(i,j,k) = diss*dex(i,j,k);
 
-        iex = interpolate(ex, i,j,k, {{1,1,0}}, {{1,0,1}} );
-        iey = interpolate(ey, i,j,k, {{1,0,1}}, {{1,0,1}} );
-        iez = interpolate(ez, i,j,k, {{0,1,1}}, {{1,0,1}} );
-        ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{1,0,1}} );
-        iby = interpolate(by, i,j,k, {{0,1,0}}, {{1,0,1}} );
-        ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{1,0,1}} );
+        m.jy(i,j,k) += (1. - diss)*dm.ey(i,j,k);
 
-        e2 = iex*iex + iey*iey + iez*iez;
-        b2 = ibx*ibx + iby*iby + ibz*ibz + EPS;
+        m.ey(i,j,k) = diss*dm.ey(i,j,k);
+      }
+    }
+  }
+
+  stagger_z_eb(m);
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        e2 = exf*exf + eyf*eyf + ezf*ezf;
+        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
+
+        diss = 1.0
         if (e2 > b2) diss = sqrt(b2/e2);
-        ey(i,j,k) = diss*dey(i,j,k);
 
+        m.jz(i,j,k) += (1.-diss)*dm.ez(i,j,k);
 
-        iex = interpolate(ex, i,j,k, {{1,1,0}}, {{0,1,1}} );
-        iey = interpolate(ey, i,j,k, {{1,0,1}}, {{0,1,1}} );
-        iez = interpolate(ez, i,j,k, {{0,1,1}}, {{0,1,1}} );
-        ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{0,1,1}} );
-        iby = interpolate(by, i,j,k, {{0,1,0}}, {{0,1,1}} );
-        ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{0,1,1}} );
-
-        e2 = iex*iex + iey*iey + iez*iez;
-        b2 = ibx*ibx + iby*iby + ibz*ibz + EPS;
-        if (e2 > b2) diss = sqrt(b2/e2);
-        ez(i,j,k) = diss*dez(i,j,k);
-
-
+        m.ez(i,j,k) = diss*dm.ez(i,j,k);
       }
     }
   }
@@ -343,3 +378,37 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
   return;
 }
+
+
+
+template<>
+void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
+{
+  fields::YeeLattice&    m = tile.get_yee();
+  ffe::SkinnyYeeLattice& n = tile.Fn; 
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+
+        n.ex(i,j,k) = m.ex(i,j,k);
+        n.ey(i,j,k) = m.ey(i,j,k);
+        n.ez(i,j,k) = m.ez(i,j,k);
+
+        n.bx(i,j,k) = m.bx(i,j,k);
+        n.by(i,j,k) = m.by(i,j,k);
+        n.bz(i,j,k) = m.bz(i,j,k);
+
+      }
+    }
+  }
+
+  return;
+}
+
+
+//--------------------------------------------------
+// explicit template instantiation
+//template class ffe::rFFE2<2>; // 2D
+template class ffe::rFFE2<3>; // 3D
