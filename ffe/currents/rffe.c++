@@ -7,7 +7,7 @@
 
 // general bilinear interpolation
 //template<>
-//inline void ffe::rFFE<2>::interpolate(
+//void ffe::rFFE<2>::interpolate(
 //  toolbox::Mesh<real_short,3>& f,
 //  int i, int j,
 //  std::array<int,2>& in,
@@ -29,9 +29,8 @@ template<>
 void ffe::rFFE2<3>::interpolate(
   toolbox::Mesh<real_short,3>& f,
   toolbox::Mesh<real_short,0>& fi,
-  std::array<int,3>& in,
-  std::array<int,3>& out
-    )
+  std::array<int,3> in,
+  std::array<int,3> out)
 {
   int im = in[0] == out[0] ? 0 :  -out[0];
   int ip = in[0] == out[0] ? 0 : 1-out[0];
@@ -99,24 +98,54 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
-      // dB = curl E
-      dbx(i,j,k) =  cz*( ey(i,  j,  k+1) - ey(i,j,k)  ) - cy*( ez(i,  j+1,k) - ez(i,j,k) );
-      dby(i,j,k) =  cx*( ez(i+1,j,  k  ) - ez(i,j,k)  ) - cz*( ex(i,  j,k+1) - ex(i,j,k) );
-      dbz(i,j,k) =  cy*( ex(i,  j+1,k  ) - ex(i,j,k)  ) - cx*( ey(i+1,j,k  ) - ey(i,j,k) );
+        // dB = curl E
+        dbx(i,j,k) = cz*( ey(i,  j,  k+1) - ey(i,j,k) ) - cy*( ez(i,  j+1,k) - ez(i,j,k) );
+        dby(i,j,k) = cx*( ez(i+1,j,  k  ) - ez(i,j,k) ) - cz*( ex(i,  j,k+1) - ex(i,j,k) );
+        dbz(i,j,k) = cy*( ex(i,  j+1,k  ) - ex(i,j,k) ) - cx*( ey(i+1,j,k  ) - ey(i,j,k) );
 
-      // dE = curl B - curl B_0
-      dex(i,j,k) = (cz*( by( i,  j,  k-1) - by( i,j,k)) - cy*( bz( i,  j-1,k  ) - bz( i,j,k)));
-                   //(cz*( by0(i,  j,  k-1) - by0(i,j,k)) - cy*( bz0(i,  j-1,k  ) - bz0(i,j,k)));
-      dey(i,j,k) = (cx*( bz( i-1,j,  k  ) - bz( i,j,k)) - cz*( bx( i,  j,  k-1) - bx( i,j,k)));
-                   //(cx*( bz0(i-1,j,  k  ) - bz0(i,j,k)) - cz*( bx0(i,  j,  k-1) - bx0(i,j,k)));
-      dez(i,j,k) = (cy*( bx( i,  j-1,k  ) - bx( i,j,k)) - cx*( by( i-1,j,  k  ) - by( i,j,k)));
-                   //(cy*( bx0(i,  j-1,k  ) - bx0(i,j,k)) - cx*( by0(i-1,j,  k  ) - by0(i,j,k)));
-
+        // dE = curl B - curl B_0
+        dex(i,j,k) = cz*( by(i,  j,  k-1) - by(i,j,k) ) - cy*( bz( i,  j-1,k  ) - bz(i,j,k) );
+        dey(i,j,k) = cx*( bz(i-1,j,  k  ) - bz(i,j,k) ) - cz*( bx( i,  j,  k-1) - bx(i,j,k) );
+        dez(i,j,k) = cy*( bx(i,  j-1,k  ) - bx(i,j,k) ) - cx*( by( i-1,j,  k  ) - by(i,j,k) );
       }
     }
   }
 
   return;
+}
+
+
+template<>
+void ffe::rFFE2<3>::stagger_x_eb(fields::YeeLattice& m)
+{
+  interpolate(m.ex, this->exf, {{1,1,0}}, {{1,1,0}} );
+  interpolate(m.ey, this->eyf, {{1,0,1}}, {{1,1,0}} );
+  interpolate(m.ez, this->ezf, {{0,1,1}}, {{1,1,0}} );
+  interpolate(m.bx, this->bxf, {{0,0,1}}, {{1,1,0}} );
+  interpolate(m.by, this->byf, {{0,1,0}}, {{1,1,0}} );
+  interpolate(m.bz, this->bzf, {{1,0,0}}, {{1,1,0}} );
+}
+
+template<>
+void ffe::rFFE2<3>::stagger_y_eb(fields::YeeLattice& m)
+{
+  interpolate(m.ex, this->exf, {{1,1,0}}, {{1,0,1}} );
+  interpolate(m.ey, this->eyf, {{1,0,1}}, {{1,0,1}} );
+  interpolate(m.ez, this->ezf, {{0,1,1}}, {{1,0,1}} );
+  interpolate(m.bx, this->bxf, {{0,0,1}}, {{1,0,1}} );
+  interpolate(m.by, this->byf, {{0,1,0}}, {{1,0,1}} );
+  interpolate(m.bz, this->bzf, {{1,0,0}}, {{1,0,1}} );
+}
+
+template<>
+void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
+{
+  interpolate(m.ex, this->exf, {{1,1,0}}, {{0,1,1}} );
+  interpolate(m.ey, this->eyf, {{1,0,1}}, {{0,1,1}} );
+  interpolate(m.ez, this->ezf, {{0,1,1}}, {{0,1,1}} );
+  interpolate(m.bx, this->bxf, {{0,0,1}}, {{0,1,1}} );
+  interpolate(m.by, this->byf, {{0,1,0}}, {{0,1,1}} );
+  interpolate(m.bz, this->bzf, {{1,0,0}}, {{0,1,1}} );
 }
 
 
@@ -127,52 +156,43 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   fields::YeeLattice& m = tile.get_yee();
 
   interpolate(m.rh, this->rhf, {{1,1,1}}, {{1,1,0}} );
-  interpolate(m.ex, this->exf, {{1,1,0}}, {{1,1,0}} );
-  interpolate(m.ey, this->eyf, {{1,0,1}}, {{1,1,0}} );
-  interpolate(m.ez, this->ezf, {{0,1,1}}, {{1,1,0}} );
-  interpolate(m.bx, this->bxf, {{0,0,1}}, {{1,1,0}} );
-  interpolate(m.by, this->byf, {{0,1,0}}, {{1,1,0}} );
-  interpolate(m.bz, this->bzf, {{1,0,0}}, {{1,1,0}} );
-
+  stagger_x_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
 
-      irh = interpolate(rh, i,j,k, {{1,1,1}}, {{1,1,0}} );
-      iex = interpolate(ex, i,j,k, {{1,1,0}}, {{1,1,0}} );
-      iey = interpolate(ey, i,j,k, {{1,0,1}}, {{1,1,0}} );
-      iez = interpolate(ez, i,j,k, {{0,1,1}}, {{1,1,0}} );
-      ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{1,1,0}} );
-      iby = interpolate(by, i,j,k, {{0,1,0}}, {{1,1,0}} );
-      ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{1,1,0}} );
+        jx(i,j,k) = dt *rhf * (eyf * bzf - byf*ezf)/b2;
+        dex(ijk) -= jx(i,j,k);
+      }
+    }
+  }
 
-      jx = dt *irh * (iey * ibz - iby*ez)/(ibx*ibx + iby*iby + ibz*ibz + EPS);
+  interpolate(m.rh, this->rhf, {{1,1,1}}, {{1,0,1}} );
+  stagger_y_eb(m);
 
-      irh = interpolate(rh, i,j,k, {{1,1,1}}, {{1,0,1}} );
-      iex = interpolate(ex, i,j,k, {{1,1,0}}, {{1,0,1}} );
-      iey = interpolate(ey, i,j,k, {{1,0,1}}, {{1,0,1}} );
-      iez = interpolate(ez, i,j,k, {{0,1,1}}, {{1,0,1}} );
-      ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{1,0,1}} );
-      iby = interpolate(by, i,j,k, {{0,1,0}}, {{1,0,1}} );
-      ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{1,0,1}} );
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
 
-      jy = dt *irh * (iez*ibx - iex*ibz)/(ibx*ibx + iby*iby + ibz*ibz + EPS);
+        jy(i,j,k) = dt *rhf * (ezf*bxf - exf*bzf)/b2;
+        dey(ijk) -= jy(i,j,k);
+      }
+    }
+  }
 
-      irh = interpolate(rh, i,j,k, {{1,1,1}}, {{0,1,1}} );
-      iex = interpolate(ex, i,j,k, {{1,1,0}}, {{0,1,1}} );
-      iey = interpolate(ey, i,j,k, {{1,0,1}}, {{0,1,1}} );
-      iez = interpolate(ez, i,j,k, {{0,1,1}}, {{0,1,1}} );
-      ibx = interpolate(bx, i,j,k, {{0,0,1}}, {{0,1,1}} );
-      iby = interpolate(by, i,j,k, {{0,1,0}}, {{0,1,1}} );
-      ibz = interpolate(bz, i,j,k, {{1,0,0}}, {{0,1,1}} );
+  interpolate(m.rh, this->rhf, {{1,1,1}}, {{0,1,1}} );
+  stagger_z_eb(m);
 
-      jz = dt *irh * (iex*iby - ibx*iey)/(ibx*ibx + iby*iby + ibz*ibz + EPS);
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
 
-      dex(ijk) -= jx;
-      dey(ijk) -= jy;
-      dez(ijk) -= jz;
-
+        jz(i,j,k) = dt *rhf * (exf*byf - bxf*eyf)/b2;
+        dez(ijk) -= jz(i,j,k);
       }
     }
   }
