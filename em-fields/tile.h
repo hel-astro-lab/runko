@@ -33,7 +33,7 @@ class YeeLattice
   toolbox::Mesh<real_short, 3> bz;
     
   /// Charge density
-  toolbox::Mesh<real_short, 1> rho;
+  toolbox::Mesh<real_short, 3> rho;
 
   /// Current vector 
   toolbox::Mesh<real_short, 3> jx;

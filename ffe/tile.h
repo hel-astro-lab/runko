@@ -36,14 +36,12 @@ class Tile :
      corgi::Tile<D>(),
     fields::Tile<D>{nx,ny,nz},
     dF{nx,ny,nz},
-    Fn{nx,ny,nz},
+    Fn{nx,ny,nz}
   { }
 
 
   /// destructor
   ~Tile() override = default;
-
-  SkinnyYeeLattice& get_step(int n);
 
 };
 

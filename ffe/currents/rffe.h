@@ -9,6 +9,7 @@ namespace ffe {
 template<size_t D>
 class rFFE2
 {
+  public:
 
   int Nx;
   int Ny;
@@ -30,7 +31,7 @@ class rFFE2
     Nx(Nx), Ny(Ny), Nz(Nz),
     bxf(Nx, Ny, Nz),
     byf(Nx, Ny, Nz),
-    bzf(Nx, Ny, Nz)
+    bzf(Nx, Ny, Nz),
     exf(Nx, Ny, Nz),
     eyf(Nx, Ny, Nz),
     ezf(Nx, Ny, Nz),
@@ -44,8 +45,8 @@ class rFFE2
   void interpolate( 
         toolbox::Mesh<real_short,3>& f,
         toolbox::Mesh<real_short,0>& fi,
-        std::array<int,D>& in,
-        std::array<int,D>& out
+        const std::array<int,D>& in,
+        const std::array<int,D>& out
       );
 
   /// auxiliary functions to stagger e and b

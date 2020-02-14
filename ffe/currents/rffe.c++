@@ -29,8 +29,8 @@ template<>
 void ffe::rFFE2<3>::interpolate(
   toolbox::Mesh<real_short,3>& f,
   toolbox::Mesh<real_short,0>& fi,
-  std::array<int,3> in,
-  std::array<int,3> out)
+  const std::array<int,3> in,
+  const std::array<int,3> out)
 {
   int im = in[0] == out[0] ? 0 :  -out[0];
   int ip = in[0] == out[0] ? 0 : 1-out[0];
@@ -172,45 +172,58 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   auto& jy  = m.jy;
   auto& jz  = m.jz;
 
+  real_short b2;
 
-  interpolate(m.rh, this->rhf, {{1,1,1}}, {{1,1,0}} );
+  interpolate(m.rho, this->rhf, {{1,1,1}}, {{1,1,0}} );
   stagger_x_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) 
+          + byf(i,j,k)*byf(i,j,k) 
+          + bzf(i,j,k)*bzf(i,j,k) 
+          + EPS);
 
-        jx(i,j,k) = dt *rhf * (eyf * bzf - byf*ezf)/b2;
-        dm.ex(ijk) -= jx(i,j,k);
+        jx(i,j,k) = dt *rhf(i,j,k) * (eyf(i,j,k)*bzf(i,j,k) - byf(i,j,k)*ezf(i,j,k) )/b2;
+        dm.ex(i,j,k) -= jx(i,j,k);
       }
     }
   }
 
-  interpolate(m.rh, this->rhf, {{1,1,1}}, {{1,0,1}} );
+  interpolate(m.rho, this->rhf, {{1,1,1}}, {{1,0,1}} );
   stagger_y_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
 
-        jy(i,j,k) = dt *rhf * (ezf*bxf - exf*bzf)/b2;
-        dm.ey(ijk) -= jy(i,j,k);
+        jy(i,j,k) = dt *rhf(i,j,k) * (ezf(i,j,k)*bxf(i,j,k) - exf(i,j,k)*bzf(i,j,k))/b2;
+        dm.ey(i,j,k) -= jy(i,j,k);
       }
     }
   }
 
-  interpolate(m.rh, this->rhf, {{1,1,1}}, {{0,1,1}} );
+  interpolate(m.rho, this->rhf, {{1,1,1}}, {{0,1,1}} );
   stagger_z_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        b2 = (bxf*bxf + byf*byf + bzf*bzf + EPS);
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
 
-        jz(i,j,k) = dt *rhf * (exf*byf - bxf*eyf)/b2;
-        dm.ez(ijk) -= jz(i,j,k);
+        jz(i,j,k) = dt *rhf(i,j,k) * (exf(i,j,k)*byf(i,j,k) - bxf(i,j,k)*eyf(i,j,k))/b2;
+        dm.ez(i,j,k) -= jz(i,j,k);
       }
     }
   }
@@ -261,7 +274,7 @@ void ffe::rFFE2<3>::remove_epar(ffe::Tile<3>& tile)
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  real_short jpar;
+  real_short jpar, b2;
 
 
   stagger_x_eb(m);
@@ -269,8 +282,12 @@ void ffe::rFFE2<3>::remove_epar(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
-        jpar = (exf*bxf + eyf*byf + ezf*bzf)*bxf /b2;
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
+        jpar = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bxf(i,j,k) /b2;
 
         m.jx(i,j,k) += jpar;
         dm.ex(i,j,k) = m.ex(i,j,k) - jpar;
@@ -283,8 +300,12 @@ void ffe::rFFE2<3>::remove_epar(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
-        jpar = (exf*bxf + eyf*byf + ezf*bzf)*byf /b2;
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
+        jpar = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*byf(i,j,k) /b2;
 
         m.jy(i,j,k) += jpar;
         dm.ey(i,j,k) = m.ey(i,j,k) - jpar;
@@ -297,8 +318,12 @@ void ffe::rFFE2<3>::remove_epar(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
-        jpar = (exf*bxf + eyf*byf + ezf*bzf)*bzf /b2;
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
+        jpar = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bzf(i,j,k) /b2;
 
         m.jz(i,j,k) += jpar;
         dm.ez(i,j,k) = m.ez(i,j,k) - jpar;
@@ -325,10 +350,10 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        e2 = exf*exf + eyf*eyf + ezf*ezf;
-        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
+        e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k);
+        b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
-        diss = 1.0
+        diss = 1.0;
         if (e2 > b2) diss = sqrt(b2/e2); 
 
         // NOTE: uses dm because j_par calcs are put into that
@@ -344,10 +369,10 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        e2 = exf*exf + eyf*eyf + ezf*ezf;
-        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
+        e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k);
+        b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
-        diss = 1.0
+        diss = 1.0;
         if (e2 > b2) diss = sqrt(b2/e2);
 
         m.jy(i,j,k) += (1. - diss)*dm.ey(i,j,k);
@@ -362,10 +387,10 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        e2 = exf*exf + eyf*eyf + ezf*ezf;
-        b2 = bxf*bxf + byf*byf + bzf*bzf + EPS;
+        e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k);
+        b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
-        diss = 1.0
+        diss = 1.0;
         if (e2 > b2) diss = sqrt(b2/e2);
 
         m.jz(i,j,k) += (1.-diss)*dm.ez(i,j,k);

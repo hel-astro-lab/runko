@@ -7,19 +7,6 @@ namespace ffe {
   using namespace mpi4cpp;
 
 
-template<std::size_t D>
-ffe::SkinnyYeeLattice& Tile<D>::get_step(int n) 
-{
-  if     (n == 0) return this->step0; 
-  else if(n == 1) return this->step1; 
-  else if(n == 2) return this->step2; 
-  else if(n == 3) return this->step3; 
-
-  // silently return step0 else; 
-  // in reality bindings captures this and throw
-  return this->step0;
-}
-
 
 //--------------------------------------------------
 // explicit template instantiation

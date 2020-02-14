@@ -29,17 +29,8 @@ auto declare_tile(
                py::multiple_inheritance()
                )
     .def(py::init<int, int, int>())
-    .def_readwrite("cfl",       &ffe::Tile<D>::cfl)
-    .def("get_step", [](ffe::Tile<D>& s, int n)
-        -> SkinnyYeeLattice& 
-        {
-        if(n < 4) return s.get_step(n);
+    .def_readwrite("cfl",       &ffe::Tile<D>::cfl);
 
-        // else
-        throw py::index_error();
-        },
-          py::return_value_policy::reference
-    );
 
 }
 
