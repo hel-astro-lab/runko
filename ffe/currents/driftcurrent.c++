@@ -109,7 +109,7 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
     //
     // NOTE: dx = 1.0 by definition
     // NOTE: dEz = 0 in 2D
-    dive = 0.5*( mesh.ex(i+1,j,k) - mesh.ex(i-1,j,k) 
+    divE = 0.5*( mesh.ex(i+1,j,k) - mesh.ex(i-1,j,k) 
                + mesh.ey(i,j+1,k) - mesh.ey(i,j-1,k)
             // + mesh.ez(i,j,k+1) - mesh.ez(i,j,k-1)
                );
@@ -127,13 +127,13 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
     if(b2 == 0.0) continue;
 
     // perp current
-    mesh.jx(i,j,k) +=   dive*crossx/b2;
-    mesh.jy(i,j,k) +=   dive*crossy/b2;
-    mesh.jz(i,j,k) +=   dive*crossz/b2;
+    mesh.jx(i,j,k) +=   divE*crossx/b2;
+    mesh.jy(i,j,k) +=   divE*crossy/b2;
+    mesh.jz(i,j,k) +=   divE*crossz/b2;
 
-    mesh.ex(i,j,k) -=dt*dive*crossx/b2;
-    mesh.ey(i,j,k) -=dt*dive*crossy/b2;
-    mesh.ez(i,j,k) -=dt*dive*crossz/b2;
+    mesh.ex(i,j,k) -=dt*divE*crossx/b2;
+    mesh.ey(i,j,k) -=dt*divE*crossy/b2;
+    mesh.ez(i,j,k) -=dt*divE*crossz/b2;
 
     //mesh.ex(i,j,k) -= mesh.jx(i,j,k)*dt;
     //mesh.ey(i,j,k) -= mesh.jy(i,j,k)*dt;

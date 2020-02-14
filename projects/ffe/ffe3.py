@@ -343,7 +343,7 @@ def insert_em_3D_wave_packet(grid, conf):
     z1 = 0.0 #conf.Ny*conf.NyMesh*0.25
     z2 = conf.Ny*conf.NyMesh*0.75
     
-    zeta = 0.5 # perturbation amplitude
+    zeta = 0.1 # perturbation amplitude
     ell = 10.0 # perturbation length
 
     for cid in grid.get_tile_ids():
