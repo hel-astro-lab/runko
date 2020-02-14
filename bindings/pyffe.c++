@@ -6,8 +6,7 @@ namespace py = pybind11;
 
 #include "../ffe/tile.h"
 
-#include "../ffe/currents/current.h"
-#include "../ffe/currents/driftcurrent.h"
+#include "../ffe/currents/rffe.h"
 #include "../ffe/skinny_yee.h"
 
 
@@ -47,75 +46,40 @@ auto declare_tile(
 //--------------------------------------------------
 //
 /// trampoline class for Current solver
-template<size_t D>
-class PyCurrent : public Current<D>
-{
-  using Current<D>::Current;
-
-  void comp_drift_cur( Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      Current<D>,
-      comp_drift_cur,
-      tile
-      );
-  }
-
-  void comp_parallel_cur( Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      Current<D>,
-      comp_parallel_cur,
-      tile
-      );
-  }
-
-  void limiter( Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      Current<D>,
-      limiter,
-      tile
-      );
-  }
-
-};
-
-
-template<size_t D>
-class PyDriftCurrent : public DriftCurrent<D>
-{
-  using DriftCurrent<D>::DriftCurrent;
-
-  void comp_drift_cur( Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      DriftCurrent<D>,
-      comp_drift_cur,
-      tile
-      );
-  }
-
-  void comp_parallel_cur( Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      DriftCurrent<D>,
-      comp_parallel_cur,
-      tile
-      );
-  }
-
-  void limiter( Tile<D>& tile ) override {
-  PYBIND11_OVERLOAD_PURE(
-      void,
-      DriftCurrent<D>,
-      limiter,
-      tile
-      );
-  }
-};
-
-
+//template<size_t D>
+//class PyCurrent : public Current<D>
+//{
+//  using Current<D>::Current;
+//
+//  void comp_drift_cur( Tile<D>& tile ) override {
+//  PYBIND11_OVERLOAD_PURE(
+//      void,
+//      Current<D>,
+//      comp_drift_cur,
+//      tile
+//      );
+//  }
+//
+//  void comp_parallel_cur( Tile<D>& tile ) override {
+//  PYBIND11_OVERLOAD_PURE(
+//      void,
+//      Current<D>,
+//      comp_parallel_cur,
+//      tile
+//      );
+//  }
+//
+//  void limiter( Tile<D>& tile ) override {
+//  PYBIND11_OVERLOAD_PURE(
+//      void,
+//      Current<D>,
+//      limiter,
+//      tile
+//      );
+//  }
+//
+//};
+//
 
 
 // python bindings for plasma classes & functions
@@ -175,30 +139,20 @@ void bind_ffe(py::module& m_sub)
 
   //--------------------------------------------------
   // 2D Current solver bindings
-  py::class_< ffe::Current<2>, PyCurrent<2> > currentcalc2d(m_2d, "Current");
-  currentcalc2d
-    .def(py::init<int, int, int>())
-    .def("comp_drift_cur",      &ffe::Current<2>::comp_drift_cur)
-    .def("comp_parallel_cur",   &ffe::Current<2>::comp_parallel_cur)
-    .def("limiter",             &ffe::Current<2>::limiter);
-
-  // Drift current solver
-  py::class_<ffe::DriftCurrent<2>, ffe::Current<2>, PyDriftCurrent<2> >(m_2d, "DriftCurrent")
-    .def(py::init<int,int,int>());
 
 
   //--------------------------------------------------
   // 3D Current solver bindings
-  py::class_< ffe::Current<3>, PyCurrent<3> > currentcalc3d(m_3d, "Current");
+  py::class_< ffe::rFFE2<3> > currentcalc3d(m_3d, "rFFE2");
   currentcalc3d
     .def(py::init<int, int, int>())
-    .def("comp_drift_cur",      &ffe::Current<3>::comp_drift_cur)
-    .def("comp_parallel_cur",   &ffe::Current<3>::comp_parallel_cur)
-    .def("limiter",             &ffe::Current<3>::limiter);
-
-  // Drift current solver
-  py::class_<ffe::DriftCurrent<3>, ffe::Current<3>, PyDriftCurrent<3> >(m_3d, "DriftCurrent")
-    .def(py::init<int,int,int>());
+    .def("copy_eb",      &ffe::rFFE2<3>::copy_eb)
+    .def("comp_rho",     &ffe::rFFE2<3>::comp_rho)
+    .def("push_eb",      &ffe::rFFE2<3>::push_eb)
+    .def("add_jperp",    &ffe::rFFE2<3>::add_jperp)
+    .def("update_eb",    &ffe::rFFE2<3>::update_eb)
+    .def("remove_epar",  &ffe::rFFE2<3>::remove_epar)
+    .def("limit_e",      &ffe::rFFE2<3>::limit_e);
 
 
 
