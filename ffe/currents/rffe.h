@@ -67,7 +67,7 @@ class rFFE2
   void update_eb(Tile<D>& tile, real_short c1, real_short c2, real_short c3);
 
   /// set E_par = 0
-  void remove_epar(Tile<D>& tile);
+  void remove_jpar(Tile<D>& tile);
 
   /// limit E < B
   void limit_e(Tile<D>& tile);

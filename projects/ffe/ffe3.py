@@ -516,9 +516,9 @@ if __name__ == "__main__":
 
         # inserting em grid
         # insert_em_fields(grid, conf)
-        #insert_em_harris_sheet(grid, conf)
+        insert_em_harris_sheet(grid, conf)
         #insert_em_waves(grid, conf)
-        insert_em_3D_wave_packet(grid, conf)
+        #insert_em_3D_wave_packet(grid, conf)
 
     else:
         if do_print:
@@ -777,7 +777,7 @@ if __name__ == "__main__":
 
         # update boundaries
         t1 = timer.start_comp("upd_bc0")
-        for tile in pytools.tiles_all(grid):
+        for tile in pytools.tiles_local(grid):
             tile.update_boundaries(grid)
         timer.stop_comp(t1)
 
