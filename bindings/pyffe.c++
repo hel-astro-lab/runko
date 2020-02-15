@@ -142,7 +142,7 @@ void bind_ffe(py::module& m_sub)
     .def("push_eb",      &ffe::rFFE2<3>::push_eb)
     .def("add_jperp",    &ffe::rFFE2<3>::add_jperp)
     .def("update_eb",    &ffe::rFFE2<3>::update_eb)
-    .def("remove_epar",  &ffe::rFFE2<3>::remove_epar)
+    .def("remove_jpar",  &ffe::rFFE2<3>::remove_jpar)
     .def("limit_e",      &ffe::rFFE2<3>::limit_e);
 
 

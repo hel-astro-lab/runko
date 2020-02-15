@@ -544,13 +544,9 @@ if __name__ == "__main__":
     # --------------------------------------------------
     # load physics solvers
 
-    fldprop = pyfld.FDTD2()
-    # fldprop = pyfld.FDTD4()
+    # reduced 2nd order FFE algorithm
+    algo = pyffe.rFFE2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
-    driftcur = pyffe.DriftCurrent(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-
-    # enhance numerical speed of light slightly to suppress numerical Cherenkov instability
-    fldprop.corr = 1.0
 
     # --------------------------------------------------
     # I/O objects
@@ -703,176 +699,90 @@ if __name__ == "__main__":
     time = lap * (conf.cfl / conf.c_omp)
     for lap in range(lap, conf.Nt + 1):
 
-        # RK4 scheme
-        #
-        # coefficients correspond to (dt, dy, y_i)
-        # for (dti, dyi, yi, rk_highorder) in [
-        #        (0.0, 0.0, 0, False),
-        #        (0.5, 0.5, 1, False),
-        #        (0.5, 0.5, 2, False),
-        #        (1.0, 1.0, 3, False)]:
+        # initialize Y^n-1 = Y
+        t1 = timer.start_comp("copy_eb")
+        for tile in pytools.tiles_local(grid):
+            algo.copy_eb(tile)
+        timer.stop_comp(t1)
 
-        # Leapfrog stepping
-        for (rk_alpha, rk_beta, rk_i, rk_highorder) in [(1.0, 0.0, 0, False)]:
 
-            if rk_highorder:
-                ##################################################
-                # Initialize Runge-Kutta variables
-                t1 = timer.start_comp("RK_init")
+        ###################################################
+        # rk steps
 
-                dt = 0.0 + rk_alpha
-                for tile in pytools.tiles_local(grid):
-                    yee = tile.get_yee(0)  # get current working storage
+        # dts = 1, 0.5, 1
+        rk_c1, rk_c2, rk_c3, dt = 1.0, 0.0, 1.0, 1.0
+        #rk_c1, rk_c2, rk_c3, dt = 0.75, 0.25, 0.25, 0.5
+        #rk_c1, rk_c2, rk_c3, dt = 1./.3, 2./3., 2../3., 1.0
 
-                    if rk_i == 0:
-                        # store y_n step to Y_0 at the beginning of the lap
-                        yee_0 = tile.get_step(
-                            rk_i
-                        )  # get reference to rk_i:th RK sub-step storage
-                        yee_0.set_yee(yee)
-                    else:
-                        # set initial starting point according to RK scheme
-                        #
-                        # RK formula applied is y = y0 + rk_beta*ys[rk_i]
-                        yee_m1 = tile.get_step(rk_i - 1)
-                        set_step(yee, yee_0 + rk_beta * yee_m1)
 
-                timer.stop_comp(t1)
+        # rho = div E
+        t1 = timer.start_comp("comp_rho")
+        for tile in pytools.tiles_local(grid):
+            algo.comp_rho(tile)
+        timer.stop_comp(t1)
 
-            ##################################################
-            # push B half
-            t1 = timer.start_comp("push_half_b0")
-            for tile in pytools.tiles_all(grid):
-                fldprop.push_half_b(tile)
-            timer.stop_comp(t1)
+        # dE = dt * curl B
+        # dB = dt * curl E
+        t1 = timer.start_comp("push_eb")
+        for tile in pytools.tiles_local(grid):
+            algo.push_eb(tile)
+        timer.stop_comp(t1)
 
-            ##################################################
-            # compute drift current
+        # drift current j_perp
+        # dE -= dt*j_perp
+        t1 = timer.start_comp("add_jperp")
+        for tile in pytools.tiles_local(grid):
+            algo.add_jperp(tile)
+        timer.stop_comp(t1)
 
-            # empty current arrays
-            for tile in pytools.tiles_all(grid):
-                tile.clear_current()
+        # update fields according to RK scheme
+        # Y^n+1 = c1 * Y^n-1 + c2 * Y^n + c3 * dY
+        t1 = timer.start_comp("update_eb")
+        for tile in pytools.tiles_local(grid):
+            algo.update_eb(tile, rk_c1, rk_c2, rk_c3)
+        timer.stop_comp(t1)
 
-            # update boundaries
-            t1 = timer.start_comp("upd_bc0")
-            for tile in pytools.tiles_all(grid):
-                tile.update_boundaries(grid)
-            timer.stop_comp(t1)
+        # parallel current j_par
+        # dE -= j_par
+        t1 = timer.start_comp("remove_jpar")
+        for tile in pytools.tiles_local(grid):
+            algo.remove_jpar(tile)
+        timer.stop_comp(t1)
 
-            # drift current
-            t1 = timer.start_comp("compute_current")
-            for tile in pytools.tiles_all(grid):
-                driftcur.comp_drift_cur(tile)
-            timer.stop_comp(t1)
+        # force E < B
+        # dE = dE_lim
+        t1 = timer.start_comp("limit_e")
+        for tile in pytools.tiles_local(grid):
+            algo.limit_e(tile)
+        timer.stop_comp(t1)
 
-            ##################################################
-            # compute parallel current
+        ##################################################
+        # TODO: boundary conditions
 
-            # update boundaries
-            t1 = timer.start_comp("upd_bc1")
-            for tile in pytools.tiles_all(grid):
-                tile.update_boundaries(grid)
-            timer.stop_comp(t1)
 
-            # parallel current
-            t1 = timer.start_comp("compute_para_current")
-            for tile in pytools.tiles_all(grid):
-                driftcur.comp_parallel_cur(tile)
-            timer.stop_comp(t1)
+        ##################################################
+        # update field halos
 
-            ##################################################
-            # limiter (local)
+        # comm E
+        t1 = timer.start_comp("mpi_eb0")
+        grid.send_data(1)
+        grid.recv_data(1)
 
-            # update boundaries
-            t1 = timer.start_comp("upd_bc2")
-            for tile in pytools.tiles_local(grid):
-                tile.update_boundaries(grid)
-            timer.stop_comp(t1)
+        grid.send_data(2)
+        grid.recv_data(2)
 
-            # limiter
-            t1 = timer.start_comp("limiter")
-            for tile in pytools.tiles_local(grid):
-                driftcur.limiter(tile)
-            timer.stop_comp(t1)
+        grid.wait_data(1)
+        grid.wait_data(2)
+        timer.stop_comp(t1)
 
-            ##################################################
-            # push half B (local)
+        # update boundaries
+        t1 = timer.start_comp("upd_bc0")
+        for tile in pytools.tiles_all(grid):
+            tile.update_boundaries(grid)
+        timer.stop_comp(t1)
 
-            # comm E
-            t1 = timer.start_comp("mpi_e0")
-            grid.send_data(1)
-            grid.recv_data(1)
-            grid.wait_data(1)
-            timer.stop_comp(t1)
 
-            # update boundaries
-            t1 = timer.start_comp("upd_bc3")
-            for tile in pytools.tiles_local(grid):
-                tile.update_boundaries(grid)
-            timer.stop_comp(t1)
 
-            # push B half
-            t1 = timer.start_comp("push_half_b0")
-            for tile in pytools.tiles_local(grid):
-                fldprop.push_half_b(tile)
-            timer.stop_comp(t1)
-
-            ##################################################
-            # push E (all)
-
-            # comm B
-            t1 = timer.start_comp("mpi_b1")
-            grid.send_data(2)
-            grid.recv_data(2)
-            grid.wait_data(2)
-            timer.stop_comp(t1)
-
-            # update boundaries
-            t1 = timer.start_comp("upd_bc4")
-            for tile in pytools.tiles_all(grid):
-                tile.update_boundaries(grid)
-            timer.stop_comp(t1)
-
-            # push B half
-            t1 = timer.start_comp("push_e")
-            for tile in pytools.tiles_all(grid):
-                fldprop.push_e(tile)
-            timer.stop_comp(t1)
-
-            # update boundaries
-            t1 = timer.start_comp("upd_bc5")
-            for tile in pytools.tiles_all(grid):
-                tile.update_boundaries(grid)
-            timer.stop_comp(t1)
-
-            # save current RK substep
-            if rk_highorder:
-                for tile in tiles_local(grid):
-                    # get reference to rk_i:th RK sub-step storage
-                    yee_i = tile.get_step(rk_i)
-                    yee_i.set_yee(yee)
-
-        # RK reduction step
-        if rk_highorder:
-            t1 = timer.start_comp("RK_sum")
-            for tile in tiles_local(grid):
-                ynp1 = tile.get_yee()  # get reference to working storage
-
-                # get reference to rk_i:th RK sub-step storage
-                y0 = tile.get_step(0)
-                y1 = tile.get_step(1)
-                y2 = tile.get_step(2)
-                y3 = tile.get_step(3)
-
-                # RK4 summation
-                y0 *= 1.0 / 6.0
-                y1 *= 2.0 / 6.0
-                y2 *= 2.0 / 6.0
-                y2 *= 1.0 / 6.0
-
-                set_step(ynp1, (y0 + y1 + y2 + y3))
-
-            timer.stop_comp(t1)
 
         ##################################################
         # data reduction and I/O
