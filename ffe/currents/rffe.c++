@@ -26,11 +26,12 @@
 
 // general trilinear interpolation
 template<>
-void ffe::rFFE2<3>::interpolate(
-  toolbox::Mesh<real_short,3>& f,
-  toolbox::Mesh<real_short,0>& fi,
-  const std::array<int,3> in,
-  const std::array<int,3> out)
+void ffe::rFFE2<3>::interpolate( 
+        toolbox::Mesh<real_short,3>& f,
+        toolbox::Mesh<real_short,0>& fi,
+        const std::array<int,3>& in,
+        const std::array<int,3>& out
+      )
 {
   int im = in[0] == out[0] ? 0 :  -out[0];
   int ip = in[0] == out[0] ? 0 : 1-out[0];
@@ -41,13 +42,13 @@ void ffe::rFFE2<3>::interpolate(
 
   real_short f11, f10, f01, f00, f1, f0;
 
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        f11 = f[i+ip, j+jp, k+km] + f[i+ip, j+jp, k+kp];
-        f10 = f[i+ip, j+jm, k+km] + f[i+ip, j+jm, k+kp];
-        f01 = f[i+im, j+jp, k+km] + f[i+im, j+jp, k+kp];
-        f00 = f[i+im, j+jm, k+km] + f[i+im, j+jm, k+kp];
+  for(int k=0; k<f.Nz; k++) {
+    for(int j=0; j<f.Ny; j++) {
+      for(int i=0; i<f.Nx; i++) {
+        f11 = f(i+ip, j+jp, k+km) + f(i+ip, j+jp, k+kp);
+        f10 = f(i+ip, j+jm, k+km) + f(i+ip, j+jm, k+kp);
+        f01 = f(i+im, j+jp, k+km) + f(i+im, j+jp, k+kp);
+        f00 = f(i+im, j+jm, k+km) + f(i+im, j+jm, k+kp);
         f1  = f11 + f10;
         f0  = f01 + f00;
 
@@ -172,6 +173,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   auto& jy  = m.jy;
   auto& jz  = m.jz;
 
+  real_short dt = tile.cfl;
   real_short b2;
 
   interpolate(m.rho, this->rhf, {{1,1,1}}, {{1,1,0}} );
@@ -411,7 +413,7 @@ void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
 {
   fields::YeeLattice&    m = tile.get_yee();
   ffe::SkinnyYeeLattice& n = tile.Fn; 
-  ffe::SkinnyYeeLattice& dm = tile.dF; 
+  //ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
