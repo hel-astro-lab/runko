@@ -115,12 +115,12 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
-        // dB = curl E
+        // dB = dt*curl E
         dm.bx(i,j,k) = cz*( ey(i,  j,  k+1) - ey(i,j,k) ) - cy*( ez(i,  j+1,k) - ez(i,j,k) );
         dm.by(i,j,k) = cx*( ez(i+1,j,  k  ) - ez(i,j,k) ) - cz*( ex(i,  j,k+1) - ex(i,j,k) );
         dm.bz(i,j,k) = cy*( ex(i,  j+1,k  ) - ex(i,j,k) ) - cx*( ey(i+1,j,k  ) - ey(i,j,k) );
 
-        // dE = curl B 
+        // dE = dt*curl B 
         dm.ex(i,j,k) = cz*( by(i,  j,  k-1) - by(i,j,k) ) - cy*( bz( i,  j-1,k  ) - bz(i,j,k) );
         dm.ey(i,j,k) = cx*( bz(i-1,j,  k  ) - bz(i,j,k) ) - cz*( bx( i,  j,  k-1) - bx(i,j,k) );
         dm.ez(i,j,k) = cy*( bx(i,  j-1,k  ) - bx(i,j,k) ) - cx*( by( i-1,j,  k  ) - by(i,j,k) );
@@ -135,34 +135,34 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE2<3>::stagger_x_eb(fields::YeeLattice& m)
 {
-  interpolate(m.ex, this->exf, {{1,1,0}}, {{1,1,0}} ); //x
-  interpolate(m.ey, this->eyf, {{1,0,1}}, {{1,1,0}} );
-  interpolate(m.ez, this->ezf, {{0,1,1}}, {{1,1,0}} );
-  interpolate(m.bx, this->bxf, {{0,0,1}}, {{1,1,0}} );
-  interpolate(m.by, this->byf, {{0,1,0}}, {{1,1,0}} );
-  interpolate(m.bz, this->bzf, {{1,0,0}}, {{1,1,0}} );
+  interpolate(m.ex, exf, {{1,1,0}}, {{1,1,0}} ); //x
+  interpolate(m.ey, eyf, {{1,0,1}}, {{1,1,0}} );
+  interpolate(m.ez, ezf, {{0,1,1}}, {{1,1,0}} );
+  interpolate(m.bx, bxf, {{0,0,1}}, {{1,1,0}} );
+  interpolate(m.by, byf, {{0,1,0}}, {{1,1,0}} );
+  interpolate(m.bz, bzf, {{1,0,0}}, {{1,1,0}} );
 }
 
 template<>
 void ffe::rFFE2<3>::stagger_y_eb(fields::YeeLattice& m)
 {
-  interpolate(m.ex, this->exf, {{1,1,0}}, {{1,0,1}} );
-  interpolate(m.ey, this->eyf, {{1,0,1}}, {{1,0,1}} ); //y
-  interpolate(m.ez, this->ezf, {{0,1,1}}, {{1,0,1}} );
-  interpolate(m.bx, this->bxf, {{0,0,1}}, {{1,0,1}} );
-  interpolate(m.by, this->byf, {{0,1,0}}, {{1,0,1}} );
-  interpolate(m.bz, this->bzf, {{1,0,0}}, {{1,0,1}} );
+  interpolate(m.ex, exf, {{1,1,0}}, {{1,0,1}} );
+  interpolate(m.ey, eyf, {{1,0,1}}, {{1,0,1}} ); //y
+  interpolate(m.ez, ezf, {{0,1,1}}, {{1,0,1}} );
+  interpolate(m.bx, bxf, {{0,0,1}}, {{1,0,1}} );
+  interpolate(m.by, byf, {{0,1,0}}, {{1,0,1}} );
+  interpolate(m.bz, bzf, {{1,0,0}}, {{1,0,1}} );
 }
 
 template<>
 void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
 {
-  interpolate(m.ex, this->exf, {{1,1,0}}, {{0,1,1}} );
-  interpolate(m.ey, this->eyf, {{1,0,1}}, {{0,1,1}} );
-  interpolate(m.ez, this->ezf, {{0,1,1}}, {{0,1,1}} ); //z
-  interpolate(m.bx, this->bxf, {{0,0,1}}, {{0,1,1}} );
-  interpolate(m.by, this->byf, {{0,1,0}}, {{0,1,1}} );
-  interpolate(m.bz, this->bzf, {{1,0,0}}, {{0,1,1}} );
+  interpolate(m.ex, exf, {{1,1,0}}, {{0,1,1}} );
+  interpolate(m.ey, eyf, {{1,0,1}}, {{0,1,1}} );
+  interpolate(m.ez, ezf, {{0,1,1}}, {{0,1,1}} ); //z
+  interpolate(m.bx, bxf, {{0,0,1}}, {{0,1,1}} );
+  interpolate(m.by, byf, {{0,1,0}}, {{0,1,1}} );
+  interpolate(m.bz, bzf, {{1,0,0}}, {{0,1,1}} );
 }
 
 
@@ -180,7 +180,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   real_short dt = tile.cfl;
   real_short b2;
 
-  interpolate(m.rho, this->rhf, {{1,1,1}}, {{1,1,0}} );
+  interpolate(m.rho, rhf, {{1,1,1}}, {{1,1,0}} );
   stagger_x_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
@@ -198,7 +198,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
     }
   }
 
-  interpolate(m.rho, this->rhf, {{1,1,1}}, {{1,0,1}} );
+  interpolate(m.rho, rhf, {{1,1,1}}, {{1,0,1}} );
   stagger_y_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
@@ -216,7 +216,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
     }
   }
 
-  interpolate(m.rho, this->rhf, {{1,1,1}}, {{0,1,1}} );
+  interpolate(m.rho, rhf, {{1,1,1}}, {{0,1,1}} );
   stagger_z_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
