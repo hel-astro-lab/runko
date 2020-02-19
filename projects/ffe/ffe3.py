@@ -330,6 +330,7 @@ def insert_em_waves(grid, conf):
 
 # Field initialization
 def insert_em_3D_wave_packet(grid, conf):
+    from numpy import arctan2, sin, cos
 
     b0 = 1.0
 
@@ -345,6 +346,10 @@ def insert_em_3D_wave_packet(grid, conf):
 
     z1 = 0.0  # conf.Ny*conf.NyMesh*0.25
     z2 = conf.Ny * conf.NyMesh * 0.75
+
+    # position of the centers as Stagger objects
+    pkg_loc1 = pytools.Stagger(x0, y0, z1)
+    pkg_loc2 = pytools.Stagger(x0, y0, z2)
 
     zeta = 0.1  # perturbation amplitude
     ell = 10.0  # perturbation length
@@ -365,32 +370,69 @@ def insert_em_3D_wave_packet(grid, conf):
                 for l in range(conf.NxMesh):
                     # get global coordinates
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
+                    loc = pytools.Stagger(iglob, jglob, kglob)
+
+                    #print("i,j,k= ({},{},{})  {} {} {}".format(
+                    #        iglob, jglob, kglob, 
+                    #        loc.at("ex")[0],
+                    #        loc.at("ex")[1],
+                    #        loc.at("ex")[2]))
 
                     # r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
                     # spherical coordinate from packet center
-                    r1 = np.sqrt(
-                        (x0 - iglob) ** 2 + (y0 - jglob) ** 2 + (z1 - kglob) ** 2
-                    )
+                    #r1 = np.sqrt(
+                    #    (x0 - iglob) ** 2 + (y0 - jglob) ** 2 + (z1 - kglob) ** 2
+                    #)
+                    #r1 = ( (x0 - loc.x() )**2 + (y0 - loc.y() )**2 + (z1 - loc.z() )**2)
+                    #r2_1 = (x0 - iglob)**2 + (y0 - jglob)**2 + (z1 - kglob)**2
+
+                    # distance from the center of the packets
+                    d1 = pkg_loc1 - loc
+                    d2 = pkg_loc2 - loc
 
                     # cylindrical coordinate radius
-                    w = np.sqrt((x0 - iglob) ** 2 + (y0 - jglob) ** 2)
+                    #w2 = (x0 - iglob) ** 2 + (y0 - jglob)
+                    #w = ( (x0-loc.x() )**2 + (y0-loc.y() )**2 )**0.5
+
 
                     # guide field
                     yee.bz[l, m, n] = b0
 
                     # amplitude
-                    gauss = zeta * ell * np.exp(-r1 ** 2 / ell ** 2)
-                    bphi = (2.0 * b0 * w / ell ** 2) * gauss
+                    #gauss = zeta * ell * np.exp(-r1 / ell ** 2)
+                    #bphi = (2.0 * b0 * w / ell ** 2) * gauss
 
-                    xv = x0 - iglob
-                    yv = y0 - jglob
+                    # amplitude (bx staggered location)
 
-                    yee.bx[l, m, n] = bphi * yv
-                    yee.by[l, m, n] = bphi * xv
+                    # spherical distance
+                    r1 = d1.at("rh").x**2 + d1.at("rh").y**2 + d1.at("rh").z**2
+                    r2 = d2.at("rh").x**2 + d2.at("rh").y**2 + d2.at("rh").z**2
 
-                    yee.ex[l, m, n] = -bphi * xv
-                    yee.ey[l, m, n] = bphi * yv
+                    # cylindrical coordinate radius
+                    w1 = d1.at("rh").x**2 + d1.at("rh").y**2
+                    w2 = d2.at("rh").x**2 + d2.at("rh").y**2
+
+                    gauss_profile = zeta * ell * np.exp(-r1/ell**2)
+                    bphi = (2.0 * b0 * w1/ell**2 ) * gauss_profile
+
+                    # angle between dy and dx
+                    theta = arctan2(d1.y, d1.x)
+
+                    yee.bx[l, m, n] = +bphi * cos(theta)
+                    yee.by[l, m, n] = +bphi * sin(theta)
+
+                    yee.ex[l, m, n] = -bphi * cos(theta)
+                    yee.ey[l, m, n] = +bphi * sin(theta)
+
+                    #xv = x0 - iglob
+                    #yv = y0 - jglob
+
+                    #yee.bx[l, m, n] = bphi_bx * yv.at("bx").x
+                    #yee.by[l, m, n] = bphi_by * xv.at("by").y
+
+                    #yee.ex[l, m, n] = -bphi_ex * xv.at("ex").x
+                    #yee.ey[l, m, n] = +bphi_ey * yv.at("ey").y
 
                     # yee.by[l, m, n] = bperp*np.sin(kx*iglob)
                     # yee.ez[l, m, n] = bperp*np.sin(kx*iglob)
