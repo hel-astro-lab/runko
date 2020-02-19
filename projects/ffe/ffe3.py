@@ -87,7 +87,8 @@ def insert_em_harris_sheet(grid, conf):
     mzhalf = conf.mzhalf
     Lx = conf.lstripe
 
-    binit = conf.binit  # initial B_0
+    #binit = conf.binit  # initial B_0
+    binit = 0.01
 
     for tile in pytools.tiles_all(grid):
         ii, jj, kk = tile.index if conf.threeD else (*tile.index, 0)
@@ -194,8 +195,8 @@ def insert_em_harris_sheet(grid, conf):
                         yee.bz[l, m, n] = binit * cos(bphi) * stripetanh
                         yee.bz[l, m, n] += binit * sin(bphi) * btheta
 
-                        yee.ey[l, m, n] = (-beta) * velstripe * yee.bz[l, m, n]
-                        yee.ez[l, m, n] = (+beta) * velstripe * yee.by[l, m, n]
+                        yee.ey[l, m, n] = (-beta) * yee.bz[l, m, n]
+                        yee.ez[l, m, n] = (+beta) * yee.by[l, m, n]
 
                     yee.ex[l, m, n] = 0.0
 
@@ -701,7 +702,7 @@ if __name__ == "__main__":
 
         # initialize Y^n-1 = Y
         t1 = timer.start_comp("copy_eb")
-        for tile in pytools.tiles_local(grid):
+        for tile in pytools.tiles_all(grid):
             algo.copy_eb(tile)
         timer.stop_comp(t1)
 
@@ -709,16 +710,18 @@ if __name__ == "__main__":
         ###################################################
         # rk steps
 
-        # dts = 1, 0.5, 1
-        #rk_c1, rk_c2, rk_c3, dt = 1.0, 0.0, 1.0, 1.0
-        #rk_c1, rk_c2, rk_c3, dt = 0.75, 0.25, 0.25, 0.5
-        #rk_c1, rk_c2, rk_c3, dt = 1./.3, 2./3., 2../3., 1.0
+        #for (rk_c1, rk_c2, rk_c3, rk_dt) in [
+        #    (1.0,   0.0,   1.0,   1.0),
+        #    ]:
 
+        rks = 0
         for (rk_c1, rk_c2, rk_c3, rk_dt) in [
             (1.0,   0.0,   1.0,   1.0),
-            (0.75,  0.25,  0.25,  0.5),
+            (3./4., 1./4., 1./4., 0.5),
             (1./.3, 2./3., 2./3., 1.0),
             ]:
+            rks += 1
+
 
             # rho = div E
             t1 = timer.start_comp("comp_rho")
@@ -747,19 +750,61 @@ if __name__ == "__main__":
                 algo.update_eb(tile, rk_c1, rk_c2, rk_c3)
             timer.stop_comp(t1)
 
-            # parallel current j_par
-            # dE -= j_par
-            t1 = timer.start_comp("remove_jpar")
-            for tile in pytools.tiles_local(grid):
-                algo.remove_jpar(tile)
-            timer.stop_comp(t1)
+            #if rks == 3:
+            if False:
 
-            # force E < B
-            # dE = dE_lim
-            t1 = timer.start_comp("limit_e")
-            for tile in pytools.tiles_local(grid):
-                algo.limit_e(tile)
-            timer.stop_comp(t1)
+                # comm e & b
+                t1 = timer.start_comp("mpi_eb3")
+                grid.send_data(1)
+                grid.recv_data(1)
+
+                grid.send_data(2)
+                grid.recv_data(2)
+
+                grid.wait_data(1)
+                grid.wait_data(2)
+                timer.stop_comp(t1)
+
+                # update boundaries
+                t1 = timer.start_comp("upd_bc3")
+                for tile in pytools.tiles_local(grid):
+                    tile.update_boundaries(grid)
+                timer.stop_comp(t1)
+
+                # parallel current j_par
+                # dE -= j_par
+                t1 = timer.start_comp("remove_jpar")
+                for tile in pytools.tiles_local(grid):
+                    algo.remove_jpar(tile)
+                timer.stop_comp(t1)
+
+
+            if False:
+                # comm E
+                t1 = timer.start_comp("mpi_eb1")
+                grid.send_data(1)
+                grid.recv_data(1)
+
+                grid.send_data(2)
+                grid.recv_data(2)
+
+                grid.wait_data(1)
+                grid.wait_data(2)
+                timer.stop_comp(t1)
+
+                # update boundaries
+                t1 = timer.start_comp("upd_bc1")
+                for tile in pytools.tiles_local(grid):
+                    tile.update_boundaries(grid)
+                timer.stop_comp(t1)
+
+
+                # enforce E < B
+                # dE = dE_lim
+                t1 = timer.start_comp("limit_e")
+                for tile in pytools.tiles_local(grid):
+                    algo.limit_e(tile)
+                timer.stop_comp(t1)
 
             ##################################################
             # TODO: boundary conditions
@@ -768,8 +813,8 @@ if __name__ == "__main__":
             ##################################################
             # update field halos
 
-            # comm E
-            t1 = timer.start_comp("mpi_eb0")
+            # comm e & b
+            t1 = timer.start_comp("mpi_eb2")
             grid.send_data(1)
             grid.recv_data(1)
 
@@ -781,7 +826,7 @@ if __name__ == "__main__":
             timer.stop_comp(t1)
 
             # update boundaries
-            t1 = timer.start_comp("upd_bc0")
+            t1 = timer.start_comp("upd_bc2")
             for tile in pytools.tiles_local(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
@@ -840,9 +885,19 @@ if __name__ == "__main__":
 
                     yee = getYee2D(grid, conf)
 
-                    plot_waves(axs[0], yee, 'x')
+                    #plot_waves(axs[0], yee, 'x')
                     plot_waves(axs[1], yee, 'y')
                     plot_waves(axs[2], yee, 'z')
+
+                    plot2dYee(
+                        axs[0],
+                        yee,
+                        grid,
+                        conf,
+                        "rho",
+                        #vmin=-plconf["curval"],
+                        #vmax=+plconf["curval"],
+                    )
                         
                     plot2dYee(
                         axs[3],
