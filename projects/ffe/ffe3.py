@@ -79,7 +79,7 @@ def insert_em_harris_sheet(grid, conf):
 
     # field angles
     btheta = 1.0
-    bphi = pi/2.  # conf.bphi/180. * pi
+    bphi = pi / 2.0  # conf.bphi/180. * pi
 
     # note: if periodicx then mxhalf is actually Lx/4 else Lx/2
     mxhalf = conf.mxhalf
@@ -87,8 +87,8 @@ def insert_em_harris_sheet(grid, conf):
     mzhalf = conf.mzhalf
     Lx = conf.lstripe
 
-    #binit = conf.binit  # initial B_0
-    binit = 0.01
+    # binit = conf.binit  # initial B_0
+    binit = 0.1
 
     for tile in pytools.tiles_all(grid):
         ii, jj, kk = tile.index if conf.threeD else (*tile.index, 0)
@@ -147,13 +147,9 @@ def insert_em_harris_sheet(grid, conf):
                         # )
 
                         if conf.sheet_thickness == 0.0:
-                            pinch_corr = (
-                                cosh((jglob - myhalf) / pinch_delta)
-                                * triggerz
-                            )
-                            if iglob != mxhalf + 1: #or iglob == 3.0 * mxhalf + 1:
+                            pinch_corr = cosh((jglob - myhalf) / pinch_delta) * triggerz
+                            if iglob != mxhalf + 1:  # or iglob == 3.0 * mxhalf + 1:
                                 pinch_corr = 1.0
-
 
                         else:
                             pinch_corr = (
@@ -164,11 +160,19 @@ def insert_em_harris_sheet(grid, conf):
 
                         # by
                         yee.by[l, m, n] = binit * sin(bphi) * stripetanh
-                        yee.by[l, m, n] +=binit * cos(bphi) * btheta * cos(bphi) * (1.0 - 1.0 / pinch_corr)
+                        yee.by[l, m, n] += (
+                            binit
+                            * cos(bphi)
+                            * btheta
+                            * cos(bphi)
+                            * (1.0 - 1.0 / pinch_corr)
+                        )
 
                         # bz
                         yee.bz[l, m, n] = binit * cos(bphi) * stripetanh
-                        yee.bz[l, m, n] +=binit * sin(bphi) * btheta * (1.0 - 1.0 / pinch_corr)
+                        yee.bz[l, m, n] += (
+                            binit * sin(bphi) * btheta * (1.0 - 1.0 / pinch_corr)
+                        )
 
                         # ey
                         yee.ey[l, m, n] = (-beta) * velstripe * yee.bz[l, m, n]
@@ -256,7 +260,7 @@ def insert_em_harris_sheet(grid, conf):
             # except:
             #    #print("cell ({},{}) is not boundary cell".format(ii,jj))
             #    pass
-    return 
+    return
 
 
 # Field initialization
@@ -265,17 +269,16 @@ def insert_em_waves(grid, conf):
     # into radians
     # btheta = conf.btheta / 180.0 * np.pi
     # bphi = conf.bphi / 180.0 * np.pi
-    #beta = conf.beta
-    #beta = 0.1
+    # beta = conf.beta
+    # beta = 0.1
 
-    bpar  = 1.0
+    bpar = 1.0
     bperp = 1.0
-    Lx = conf.NxMesh*conf.Nx
+    Lx = conf.NxMesh * conf.Nx
     beta = 0.1
 
-    modes = 1.
-    kx = 2.0*np.pi*modes/Lx
-
+    modes = 1.0
+    kx = 2.0 * np.pi * modes / Lx
 
     for cid in grid.get_tile_ids():
         tile = grid.get_tile(cid)
@@ -297,30 +300,30 @@ def insert_em_waves(grid, conf):
 
                     if True:
                         # 1D Alfven wave packet
-                        yee.bx[l, m, n] = 0.0 #bpar
-                        if 0 <= iglob <= 0.5*Lx:
-                            #yee.bz[l, m, n] = bperp*np.sin(kx*iglob) 
-                            #yee.ey[l, m, n] = bperp*np.sin(kx*iglob)  
+                        yee.bx[l, m, n] = 0.0  # bpar
+                        if 0 <= iglob <= 0.5 * Lx:
+                            # yee.bz[l, m, n] = bperp*np.sin(kx*iglob)
+                            # yee.ey[l, m, n] = bperp*np.sin(kx*iglob)
 
-                            yee.by[l, m, n] = bperp*np.sin(kx*iglob) 
-                            yee.ez[l, m, n] = bperp*np.sin(kx*iglob)  
+                            yee.by[l, m, n] = bperp * np.sin(kx * iglob)
+                            yee.ez[l, m, n] = bperp * np.sin(kx * iglob)
 
                     # fast mode wave packet
                     if False:
-                        if 0 <= iglob <= 0.5*Lx:
-                            yee.by[l, m, n] = bperp*np.sin(kx*iglob) 
-                            #yee.ez[l, m, n] = bperp*np.sin(kx*iglob)  
+                        if 0 <= iglob <= 0.5 * Lx:
+                            yee.by[l, m, n] = bperp * np.sin(kx * iglob)
+                            # yee.ez[l, m, n] = bperp*np.sin(kx*iglob)
 
                     if False:
                         # 1D Alfven wave packet collisions
                         yee.bx[l, m, n] = bpar
-                        if 0 <= iglob <  0.5*Lx:
-                            yee.bz[l, m, n] = bperp*np.sin(kx*iglob) 
-                            yee.ey[l, m, n] = bperp*np.sin(kx*iglob)  
+                        if 0 <= iglob < 0.5 * Lx:
+                            yee.bz[l, m, n] = bperp * np.sin(kx * iglob)
+                            yee.ey[l, m, n] = bperp * np.sin(kx * iglob)
 
-                        if 0.5*Lx <= iglob <  Lx:
-                            yee.bz[l, m, n] =  bperp*np.sin(kx*iglob) 
-                            yee.ey[l, m, n] = -bperp*np.sin(kx*iglob)  
+                        if 0.5 * Lx <= iglob < Lx:
+                            yee.bz[l, m, n] = bperp * np.sin(kx * iglob)
+                            yee.ey[l, m, n] = -bperp * np.sin(kx * iglob)
 
     return
 
@@ -328,24 +331,23 @@ def insert_em_waves(grid, conf):
 # Field initialization
 def insert_em_3D_wave_packet(grid, conf):
 
-    b0  = 1.0
+    b0 = 1.0
 
-    #bperp = 1.0
-    #Lx = conf.NxMesh*conf.Nx
-    #beta = 0.1
-    #modes = 1.
-    #kx = 2.0*np.pi*modes/Lx
-
+    # bperp = 1.0
+    # Lx = conf.NxMesh*conf.Nx
+    # beta = 0.1
+    # modes = 1.
+    # kx = 2.0*np.pi*modes/Lx
 
     # middle of the box
-    x0 = conf.Nx*conf.NxMesh*0.5
-    y0 = conf.Ny*conf.NyMesh*0.5
+    x0 = conf.Nx * conf.NxMesh * 0.5
+    y0 = conf.Ny * conf.NyMesh * 0.5
 
-    z1 = 0.0 #conf.Ny*conf.NyMesh*0.25
-    z2 = conf.Ny*conf.NyMesh*0.75
-    
-    zeta = 0.1 # perturbation amplitude
-    ell = 10.0 # perturbation length
+    z1 = 0.0  # conf.Ny*conf.NyMesh*0.25
+    z2 = conf.Ny * conf.NyMesh * 0.75
+
+    zeta = 0.1  # perturbation amplitude
+    ell = 10.0  # perturbation length
 
     for cid in grid.get_tile_ids():
         tile = grid.get_tile(cid)
@@ -364,63 +366,59 @@ def insert_em_3D_wave_packet(grid, conf):
                     # get global coordinates
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
 
-                    #r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
+                    # r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
-                    #spherical coordinate from packet center
-                    r1 = np.sqrt( (x0-iglob)** 2 + (y0-jglob) ** 2 + (z1 - kglob) ** 2)
+                    # spherical coordinate from packet center
+                    r1 = np.sqrt(
+                        (x0 - iglob) ** 2 + (y0 - jglob) ** 2 + (z1 - kglob) ** 2
+                    )
 
-                    #cylindrical coordinate radius
-                    w = np.sqrt( (x0-iglob)**2 + (y0-jglob)**2)
+                    # cylindrical coordinate radius
+                    w = np.sqrt((x0 - iglob) ** 2 + (y0 - jglob) ** 2)
 
                     # guide field
                     yee.bz[l, m, n] = b0
 
-                    #amplitude
-                    gauss = zeta*ell*np.exp(-r1**2/ell**2)
-                    bphi = (2.0*b0*w/ell**2)*gauss
+                    # amplitude
+                    gauss = zeta * ell * np.exp(-r1 ** 2 / ell ** 2)
+                    bphi = (2.0 * b0 * w / ell ** 2) * gauss
 
-                    xv = (x0 - iglob)
-                    yv = (y0 - jglob)
+                    xv = x0 - iglob
+                    yv = y0 - jglob
 
-                    yee.bx[l,m,n] = bphi*yv
-                    yee.by[l,m,n] = bphi*xv
+                    yee.bx[l, m, n] = bphi * yv
+                    yee.by[l, m, n] = bphi * xv
 
-                    yee.ex[l,m,n] =-bphi*xv
-                    yee.ey[l,m,n] = bphi*yv
+                    yee.ex[l, m, n] = -bphi * xv
+                    yee.ey[l, m, n] = bphi * yv
 
-                    #yee.by[l, m, n] = bperp*np.sin(kx*iglob) 
-                    #yee.ez[l, m, n] = bperp*np.sin(kx*iglob)  
-
+                    # yee.by[l, m, n] = bperp*np.sin(kx*iglob)
+                    # yee.ez[l, m, n] = bperp*np.sin(kx*iglob)
 
     return
-
-
-
-
 
 
 def plot_waves(ax, yee, mode):
 
     ax.cla()
-    ax.set_ylim((-1,1))
+    ax.set_ylim((-1, 1))
 
-    if mode == 'x':
-        e = yee['ex']
-        b = yee['bx']
-        j = yee['jx']
-    if mode == 'y':
-        e = yee['ey']
-        b = yee['by']
-        j = yee['jy']
-    if mode == 'z':
-        e = yee['ez']
-        b = yee['bz']
-        j = yee['jz']
+    if mode == "x":
+        e = yee["ex"]
+        b = yee["bx"]
+        j = yee["jx"]
+    if mode == "y":
+        e = yee["ey"]
+        b = yee["by"]
+        j = yee["jy"]
+    if mode == "z":
+        e = yee["ez"]
+        b = yee["bz"]
+        j = yee["jz"]
 
     ax.plot(e, "b")
     ax.plot(b, "r")
     ax.plot(j, "g")
-
 
 
 if __name__ == "__main__":
@@ -517,9 +515,9 @@ if __name__ == "__main__":
 
         # inserting em grid
         # insert_em_fields(grid, conf)
-        insert_em_harris_sheet(grid, conf)
-        #insert_em_waves(grid, conf)
-        #insert_em_3D_wave_packet(grid, conf)
+        # insert_em_harris_sheet(grid, conf)
+        # insert_em_waves(grid, conf)
+        insert_em_3D_wave_packet(grid, conf)
 
     else:
         if do_print:
@@ -547,7 +545,6 @@ if __name__ == "__main__":
 
     # reduced 2nd order FFE algorithm
     algo = pyffe.rFFE2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-
 
     # --------------------------------------------------
     # I/O objects
@@ -706,22 +703,28 @@ if __name__ == "__main__":
             algo.copy_eb(tile)
         timer.stop_comp(t1)
 
-
         ###################################################
         # rk steps
-
-        #for (rk_c1, rk_c2, rk_c3, rk_dt) in [
-        #    (1.0,   0.0,   1.0,   1.0),
-        #    ]:
-
         rks = 0
-        for (rk_c1, rk_c2, rk_c3, rk_dt) in [
-            (1.0,   0.0,   1.0,   1.0),
-            (3./4., 1./4., 1./4., 0.5),
-            (1./.3, 2./3., 2./3., 1.0),
-            ]:
-            rks += 1
 
+        # RK1
+        # rk_coeffs = [(1.0,   0.0,   1.0,   1.0),]
+
+        # RK2
+        # rk_coeffs = [(1.0,   0.0,   1.0,   1.0),
+        #             (0.5,   0.5,   0.5,   1.0),]
+
+        # RK3
+        rk_coeffs = [
+            (1.0, 0.0, 1.0, 1.0),
+            (0.75, 0.25, 0.25, 0.5),
+            (1 / 3, 2 / 3, 2 / 3, 1.0),
+        ]
+
+        for (rk_c1, rk_c2, rk_c3, rk_dt) in rk_coeffs:
+
+            # RK substep
+            rks += 1
 
             # rho = div E
             t1 = timer.start_comp("comp_rho")
@@ -750,8 +753,7 @@ if __name__ == "__main__":
                 algo.update_eb(tile, rk_c1, rk_c2, rk_c3)
             timer.stop_comp(t1)
 
-            #if rks == 3:
-            if False:
+            if True:
 
                 # comm e & b
                 t1 = timer.start_comp("mpi_eb3")
@@ -778,8 +780,7 @@ if __name__ == "__main__":
                     algo.remove_jpar(tile)
                 timer.stop_comp(t1)
 
-
-            if False:
+            if True:
                 # comm E
                 t1 = timer.start_comp("mpi_eb1")
                 grid.send_data(1)
@@ -798,7 +799,6 @@ if __name__ == "__main__":
                     tile.update_boundaries(grid)
                 timer.stop_comp(t1)
 
-
                 # enforce E < B
                 # dE = dE_lim
                 t1 = timer.start_comp("limit_e")
@@ -808,7 +808,6 @@ if __name__ == "__main__":
 
             ##################################################
             # TODO: boundary conditions
-
 
             ##################################################
             # update field halos
@@ -830,9 +829,6 @@ if __name__ == "__main__":
             for tile in pytools.tiles_local(grid):
                 tile.update_boundaries(grid)
             timer.stop_comp(t1)
-
-
-
 
         ##################################################
         # data reduction and I/O
@@ -885,9 +881,9 @@ if __name__ == "__main__":
 
                     yee = getYee2D(grid, conf)
 
-                    #plot_waves(axs[0], yee, 'x')
-                    plot_waves(axs[1], yee, 'y')
-                    plot_waves(axs[2], yee, 'z')
+                    # plot_waves(axs[0], yee, 'x')
+                    plot_waves(axs[1], yee, "y")
+                    plot_waves(axs[2], yee, "z")
 
                     plot2dYee(
                         axs[0],
@@ -895,10 +891,10 @@ if __name__ == "__main__":
                         grid,
                         conf,
                         "rho",
-                        #vmin=-plconf["curval"],
-                        #vmax=+plconf["curval"],
+                        # vmin=-plconf["curval"],
+                        # vmax=+plconf["curval"],
                     )
-                        
+
                     plot2dYee(
                         axs[3],
                         yee,
