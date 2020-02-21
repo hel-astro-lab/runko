@@ -330,7 +330,7 @@ def insert_em_waves(grid, conf):
 
 # Field initialization
 def insert_em_3D_wave_packet(grid, conf):
-    from numpy import arctan2, sin, cos
+    from numpy import arctan2, sin, cos, sqrt
 
     b0 = 1.0
 
@@ -351,7 +351,7 @@ def insert_em_3D_wave_packet(grid, conf):
     pkg_loc1 = pytools.Stagger(x0, y0, z1)
     pkg_loc2 = pytools.Stagger(x0, y0, z2)
 
-    zeta = 0.1  # perturbation amplitude
+    zeta = 1.0  # perturbation amplitude
     ell = 10.0  # perturbation length
 
     for cid in grid.get_tile_ids():
@@ -372,70 +372,50 @@ def insert_em_3D_wave_packet(grid, conf):
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
                     loc = pytools.Stagger(iglob, jglob, kglob)
 
-                    #print("i,j,k= ({},{},{})  {} {} {}".format(
-                    #        iglob, jglob, kglob, 
-                    #        loc.at("ex")[0],
-                    #        loc.at("ex")[1],
-                    #        loc.at("ex")[2]))
-
-                    # r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
-
-                    # spherical coordinate from packet center
-                    #r1 = np.sqrt(
-                    #    (x0 - iglob) ** 2 + (y0 - jglob) ** 2 + (z1 - kglob) ** 2
-                    #)
-                    #r1 = ( (x0 - loc.x() )**2 + (y0 - loc.y() )**2 + (z1 - loc.z() )**2)
-                    #r2_1 = (x0 - iglob)**2 + (y0 - jglob)**2 + (z1 - kglob)**2
-
                     # distance from the center of the packets
                     d1 = pkg_loc1 - loc
                     d2 = pkg_loc2 - loc
 
-                    # cylindrical coordinate radius
-                    #w2 = (x0 - iglob) ** 2 + (y0 - jglob)
-                    #w = ( (x0-loc.x() )**2 + (y0-loc.y() )**2 )**0.5
-
-
-                    # guide field
+                    # add stationary guide field
                     yee.bz[l, m, n] = b0
 
-                    # amplitude
-                    #gauss = zeta * ell * np.exp(-r1 / ell ** 2)
-                    #bphi = (2.0 * b0 * w / ell ** 2) * gauss
 
-                    # amplitude (bx staggered location)
+                    # amplitude for the perturbations
+                    #
+                    # gauss = zeta * ell * np.exp(-r1 / ell ** 2)
+                    # bphi = (2.0 * b0 * w / ell ** 2) * gauss
 
-                    # spherical distance
-                    r1 = d1.at("rh").x**2 + d1.at("rh").y**2 + d1.at("rh").z**2
-                    r2 = d2.at("rh").x**2 + d2.at("rh").y**2 + d2.at("rh").z**2
+                    #bphi = {}
+                    #theta = {}
 
-                    # cylindrical coordinate radius
-                    w1 = d1.at("rh").x**2 + d1.at("rh").y**2
-                    w2 = d2.at("rh").x**2 + d2.at("rh").y**2
+                    bpkg1 = {}
+                    bpkg2 = {}
 
-                    gauss_profile = zeta * ell * np.exp(-r1/ell**2)
-                    bphi = (2.0 * b0 * w1/ell**2 ) * gauss_profile
+                    # build exact initial amplitude for different staggered grid locations
+                    for st in [
+                            'rh', 
+                            'bx', 'by', 'bz',
+                            'ex', 'ey', 'ez',
+                            #'jx', 'jy', 'jz',
+                              ]:
 
-                    # angle between dy and dx
-                    theta = arctan2(d1.y, d1.x)
+                        # spherical distance
+                        r1 = d1.at(st).x**2 + d1.at(st).y**2 + d1.at(st).z**2
+                        r2 = d2.at(st).x**2 + d2.at(st).y**2 + d2.at(st).z**2
 
-                    yee.bx[l, m, n] = +bphi * cos(theta)
-                    yee.by[l, m, n] = +bphi * sin(theta)
+                        gauss_profile1 = zeta * ell * np.exp(-r1/ell**2)
+                        gauss_profile2 = zeta * ell * np.exp(-r2/ell**2)
 
-                    yee.ex[l, m, n] = -bphi * cos(theta)
-                    yee.ey[l, m, n] = +bphi * sin(theta)
+                        bpkg1[st] = (2*b0/ell**2)*gauss_profile1
+                        bpkg2[st] = (2*b0/ell**2)*gauss_profile2
 
-                    #xv = x0 - iglob
-                    #yv = y0 - jglob
 
-                    #yee.bx[l, m, n] = bphi_bx * yv.at("bx").x
-                    #yee.by[l, m, n] = bphi_by * xv.at("by").y
+                    # add fields
+                    yee.bx[l, m, n] = -bpkg1['bx'] * d1.at('bx').y
+                    yee.by[l, m, n] = +bpkg1['by'] * d1.at('by').x
 
-                    #yee.ex[l, m, n] = -bphi_ex * xv.at("ex").x
-                    #yee.ey[l, m, n] = +bphi_ey * yv.at("ey").y
-
-                    # yee.by[l, m, n] = bperp*np.sin(kx*iglob)
-                    # yee.ez[l, m, n] = bperp*np.sin(kx*iglob)
+                    yee.ex[l, m, n] = -bpkg1['ex'] * d1.at('ex').x
+                    yee.ey[l, m, n] = -bpkg1['ey'] * d1.at('ey').y
 
     return
 
