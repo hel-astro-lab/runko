@@ -18,7 +18,7 @@ class AmrMomentumLagrangianSolver :
     using typename MomentumSolver<T,D,V>::Vec3E;
 
 
-    AmrMomentumLagrangianSolver() {};
+    AmrMomentumLagrangianSolver() = default;
 
     virtual ~AmrMomentumLagrangianSolver() = default;
 

@@ -59,37 +59,9 @@ class YeeLattice
   { }
 
   // copy ctor
-  YeeLattice(YeeLattice& other) :
-    Nx(other.Nx),
-    Ny(other.Ny),
-    Nz(other.Nz),
-    ex(other.ex),
-    ey(other.ey),
-    ez(other.ez),
-    bx(other.bx),
-    by(other.by),
-    bz(other.bz),
-    rho(other.rho),
-    jx(other.jx),
-    jy(other.jy),
-    jz(other.jz)
-  { }
+  YeeLattice(YeeLattice& other) = default;
 
-  YeeLattice(const YeeLattice& other) :
-    Nx(other.Nx),
-    Ny(other.Ny),
-    Nz(other.Nz),
-    ex(other.ex),
-    ey(other.ey),
-    ez(other.ez),
-    bx(other.bx),
-    by(other.by),
-    bz(other.bz),
-    rho(other.rho),
-    jx(other.jx),
-    jy(other.jy),
-    jz(other.jz)
-  { }
+  YeeLattice(const YeeLattice& other) = default;
 
   // move constructor
   YeeLattice(YeeLattice&& other) :

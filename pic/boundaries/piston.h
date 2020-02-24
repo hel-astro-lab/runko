@@ -12,7 +12,7 @@ class Piston
 
   public:
 
-  Piston() {};
+  Piston() = default;
 
   double walloc = 0.0;     // x location of the wall
   double gammawall = 1.0;  // gamma of the moving wall

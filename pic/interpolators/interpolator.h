@@ -14,7 +14,7 @@ class Interpolator
 
   public:
 
-  Interpolator() {};
+  Interpolator() = default;
 
   virtual ~Interpolator() = default;
 

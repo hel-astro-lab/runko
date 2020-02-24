@@ -39,7 +39,7 @@ class MomentumSolver {
     //typedef Vector3f Vec3E;
     typedef Vector3d Vec3E;
 
-    MomentumSolver() {};
+    MomentumSolver() = default;
 
     virtual ~MomentumSolver() = default;
 

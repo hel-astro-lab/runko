@@ -28,7 +28,7 @@ public:
   /// mpi rank separator
   int _proc = 0;
 
-  Particle() {};
+  Particle() = default;
 
   /// standard ctor
   Particle(real_prtcl x,  real_prtcl y,  real_prtcl z,

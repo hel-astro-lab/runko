@@ -52,7 +52,7 @@ class SpatialSolver {
 
   public:
 
-    SpatialSolver() {};
+    SpatialSolver() = default;
 
     virtual ~SpatialSolver() = default;
 
@@ -74,7 +74,7 @@ class AmrSpatialLagrangianSolver :
 
   public:
 
-    AmrSpatialLagrangianSolver() {};
+    AmrSpatialLagrangianSolver() = default;
 
     virtual ~AmrSpatialLagrangianSolver() = default;
       
