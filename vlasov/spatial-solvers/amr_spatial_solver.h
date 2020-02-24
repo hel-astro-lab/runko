@@ -76,7 +76,7 @@ class AmrSpatialLagrangianSolver :
 
     AmrSpatialLagrangianSolver() = default;
 
-    virtual ~AmrSpatialLagrangianSolver() = default;
+    ~AmrSpatialLagrangianSolver() override = default;
       
 
     //using SpatialSolver<T>::get_external_data;

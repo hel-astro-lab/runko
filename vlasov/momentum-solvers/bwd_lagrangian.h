@@ -20,7 +20,7 @@ class AmrMomentumLagrangianSolver :
 
     AmrMomentumLagrangianSolver() = default;
 
-    virtual ~AmrMomentumLagrangianSolver() = default;
+    ~AmrMomentumLagrangianSolver() override = default;
 
     void solve_mesh( 
         toolbox::AdaptiveMesh<T, 3>& mesh0,

@@ -65,7 +65,7 @@ public:
 
   //--------------------------------------------------
   // MPI send
-  virtual std::vector<mpi::request> 
+  std::vector<mpi::request> 
   send_data( mpi::communicator&, int orig, int mode, int tag) override;
 
   /// actual tag=0 send
@@ -79,7 +79,7 @@ public:
 
   //--------------------------------------------------
   // MPI recv
-  virtual std::vector<mpi::request> 
+  std::vector<mpi::request> 
   recv_data(mpi::communicator&, int dest, int mode, int tag) override;
 
   /// actual tag=0 recv

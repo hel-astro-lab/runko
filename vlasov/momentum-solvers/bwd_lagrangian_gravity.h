@@ -28,7 +28,7 @@ class GravityAmrMomentumLagrangianSolver :
       g0(g0), Lx(Lx)
     {};
 
-    virtual ~GravityAmrMomentumLagrangianSolver() = default;
+    ~GravityAmrMomentumLagrangianSolver() override = default;
 
     /// Gravity
     inline Vec3E other_forces(

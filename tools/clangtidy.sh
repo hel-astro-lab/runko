@@ -11,10 +11,11 @@ python3 tools/run-clang-tidy.py -p=build/ \
 	-checks=-*,\
 modernize-use-emplace,\
 modernize-use-equals-default,\
-
-#modernize-use-equals-delete,\
-#modernize-use-nodiscard,\
-#modernize-use-noexcept
+modernize-use-equals-delete,\
+modernize-use-nodiscard,\
+modernize-use-noexcept,\
+modernize-use-nullptr,\
+modernize-use-override,\
 
 # -checks=-*,modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays
 

@@ -140,7 +140,7 @@ class Tile :
 
   }
 
-  virtual ~Tile() = default;
+  ~Tile() override = default;
 
   //--------------------------------------------------
 
@@ -170,10 +170,10 @@ class Tile :
 
   virtual void add_yee_lattice();
 
-  virtual std::vector<mpi::request> 
+  std::vector<mpi::request> 
   send_data( mpi::communicator&, int orig, int mode, int tag) override;
 
-  virtual std::vector<mpi::request> 
+  std::vector<mpi::request> 
   recv_data( mpi::communicator&, int dest, int mode, int tag) override;
 };
 
