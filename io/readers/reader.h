@@ -1,13 +1,13 @@
 #pragma once
 
-#include <vector>
-#include <string>
-
-#include "../../tools/ezh5/src/ezh5.hpp"
-
 #include "../../em-fields/tile.h"
-#include "../../vlasov/tile.h"
 #include "../../pic/tile.h"
+#include "../../tools/ezh5/src/ezh5.hpp"
+#include "../../vlasov/tile.h"
+
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace h5io {
 
@@ -30,8 +30,8 @@ class Reader
 
   public:
 
-  Reader(const std::string& folder, int lap, int rank) : 
-    folder(folder),
+  Reader(std::string  folder, int lap, int rank) : 
+    folder{std::move(folder)},
     lap(lap),
     my_rank(rank)
   {};
