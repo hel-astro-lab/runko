@@ -25,13 +25,13 @@ class Mesh
   public:
 
     /// grid size along x
-    int Nx;
+    int Nx{0};
       
     /// grid size along y
-    int Ny;
+    int Ny{0};
 
     /// grid size along z
-    int Nz;
+    int Nz{0};
 
     /// internal storage
     std::vector<T> mat;
@@ -61,9 +61,6 @@ class Mesh
     /// empty default constructor
     //Mesh() = default;
     Mesh() :
-      Nx(0),
-      Ny(0),
-      Nz(0),
       mat(0)
     { }
 
