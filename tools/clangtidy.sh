@@ -9,13 +9,10 @@ python3 tools/run-clang-tidy.py -p=build/ \
 	-header-filter=/home/natj/runko \
 	-fix \
 	-checks=-*,\
-modernize-use-emplace,\
-modernize-use-equals-default,\
-modernize-use-equals-delete,\
-modernize-use-nodiscard,\
-modernize-use-noexcept,\
-modernize-use-nullptr,\
-modernize-use-override,\
+modernize-use-using,\
+modernize-use-uncaught-exceptions,\
+
+#modernize-use-using
 
 # -checks=-*,modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays
 
@@ -25,6 +22,7 @@ modernize-use-override,\
 # modernize-use-equals-default
 # modernize-use-default-member-init
 # modernize-use-using
+
 
 # checks already run
 #modernize-avoid-bind,\
@@ -43,5 +41,13 @@ modernize-use-override,\
 #modernize-use-auto,\
 #modernize-use-default-member-init,\
 #modernize-use-bool-literals,\
+#modernize-use-emplace,\
+#modernize-use-equals-default,\
+#modernize-use-equals-delete,\
+#modernize-use-nodiscard,\
+#modernize-use-noexcept,\
+#modernize-use-nullptr,\
+#modernize-use-override,\
+#modernize-use-transparent-functors,\
 
 
