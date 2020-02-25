@@ -84,6 +84,10 @@ def get_tidy_invocation(f, clang_tidy_binary, checks, tmpdir, build_path,
   start = [clang_tidy_binary]
   if header_filter is not None:
     start.append('-header-filter=' + header_filter)
+  else:
+    # Show warnings in all in-project headers by default.
+    start.append('-header-filter=^' + build_path + '/.*')
+
   if checks:
     start.append('-checks=' + checks)
   if tmpdir is not None:
@@ -112,6 +116,7 @@ def merge_replacement_files(tmpdir, mergefile):
   # the top level key 'Diagnostics' in the output yaml files
   mergekey="Diagnostics"
   merged=[]
+
   for replacefile in glob.iglob(os.path.join(tmpdir, '*.yaml')):
     content = yaml.safe_load(open(replacefile, 'r'))
     if not content:
@@ -124,6 +129,16 @@ def merge_replacement_files(tmpdir, mergefile):
     # is actually never used inside clang-apply-replacements,
     # so we set it to '' here.
     output = { 'MainSourceFile': '', mergekey: merged }
+
+    # Eliminate duplicates
+    diagnostics = output['Diagnostics']
+    cleaned = {}
+    for x in diagnostics:
+        msg = x['DiagnosticMessage']
+
+        cleaned[(msg['FilePath'], msg['FileOffset'], x['DiagnosticName'])] = x
+    output['Diagnostics']=[x for x in cleaned.values()]
+
     with open(mergefile, 'w') as out:
       yaml.safe_dump(output, out)
   else:
@@ -205,6 +220,9 @@ def main():
                       'headers to output diagnostics from. Diagnostics from '
                       'the main file of each translation unit are always '
                       'displayed.')
+  parser.add_argument('-target-filter', default=None,
+                      help='regular expression matching the names of the '
+                      'cmake targets to output diagnostics from.')
   if yaml:
     parser.add_argument('-export-fixes', metavar='filename', dest='export_fixes',
                         help='Create a yaml file to store suggested fixes in, '
@@ -258,6 +276,24 @@ def main():
 
   # Load the database and extract all files.
   database = json.load(open(os.path.join(build_path, db_path)))
+
+  if args.target_filter is not None:
+
+    full_filter = '-o CMakeFiles.(' + args.target_filter + ').dir'
+    target_filter_re = re.compile(full_filter)
+
+    #target_filter_re = re.compile('-o CMakeFiles.' + args.target_filter)
+    database2 = [entry for entry in database if target_filter_re.search(entry['command'])]
+    print("After -target-filter, there are", len(database2), "targets to be processed")
+
+    # Filter out -fconcepts
+    for x in range(0, len(database2)):
+      database2[x]['command'] = database2[x]['command'].replace('-fconcepts', '')
+      #print(database2[x])
+    if database != database2:
+      #json.dump(database2, open(os.path.join(build_path, db_path), 'wt'))
+      database = database2
+
   files = [make_absolute(entry['file'], entry['directory'])
            for entry in database]
 
@@ -322,8 +358,9 @@ def main():
       traceback.print_exc()
       return_code=1
 
-  if tmpdir:
-    shutil.rmtree(tmpdir)
+  #XXX
+  #if tmpdir:
+  #  shutil.rmtree(tmpdir)
   sys.exit(return_code)
 
 if __name__ == '__main__':

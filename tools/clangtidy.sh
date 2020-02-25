@@ -5,15 +5,24 @@
 #	-checks=-*,modernize-* 
 
 # pick only runko headers
+#python3 tools/run-clang-tidy.py -p=build/ \
+#	-header-filter=/home/natj/runko \
+#	-fix \
+#	-export-fixes=cfixes.yaml \
+#	-target-filter=/home/natj/runko \
+#	-checks=-*,\
+#modernize-use-using,\
+
 python3 tools/run-clang-tidy.py -p=build/ \
-	-header-filter=/home/natj/runko \
 	-fix \
+	-export-fixes=cfixes.yaml \
+	-target-filter='pyrunko|pyprtcls|pygol|pycorgitest' \
+	-header-filter=/home/natj/runko \
 	-checks=-*,\
-modernize-use-using,\
-modernize-use-uncaught-exceptions,\
+modernize-use-equals-default,\
 
-#modernize-use-using
 
+#modernize-use-using,\
 # -checks=-*,modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays
 
 #checks not to be run
