@@ -17,6 +17,7 @@ class Stagger:
             'jz':[0,0,1],
 
             'rh':[0,0,0],
+
                }
 
     # compute transformation indices for going from
@@ -27,9 +28,9 @@ class Stagger:
         offs2 = self.staggers[loc2]  
         
         ret = [
-                0.5*(offs2[0] - offs1[0]),
-                0.5*(offs2[1] - offs1[1]),
-                0.5*(offs2[2] - offs1[2]),
+                -0.5*(offs2[0] - offs1[0]),
+                -0.5*(offs2[1] - offs1[1]),
+                -0.5*(offs2[2] - offs1[2]),
               ]
 
         return ret

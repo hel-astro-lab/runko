@@ -344,8 +344,12 @@ def insert_em_3D_wave_packet(grid, conf):
     x0 = conf.Nx * conf.NxMesh * 0.5
     y0 = conf.Ny * conf.NyMesh * 0.5
 
+
     z1 = 0.0  # conf.Ny*conf.NyMesh*0.25
     z2 = conf.Ny * conf.NyMesh * 0.75
+
+    print("x0 {} {} {}".format(x0, y0, z1))
+
 
     # position of the centers as Stagger objects
     pkg_loc1 = pytools.Stagger(x0, y0, z1)
@@ -379,44 +383,53 @@ def insert_em_3D_wave_packet(grid, conf):
                     # add stationary guide field
                     yee.bz[l, m, n] = b0
 
-
                     # amplitude for the perturbations
                     #
                     # gauss = zeta * ell * np.exp(-r1 / ell ** 2)
                     # bphi = (2.0 * b0 * w / ell ** 2) * gauss
 
-                    #bphi = {}
-                    #theta = {}
+                    # bphi = {}
+                    # theta = {}
 
                     bpkg1 = {}
                     bpkg2 = {}
 
                     # build exact initial amplitude for different staggered grid locations
                     for st in [
-                            'rh', 
-                            'bx', 'by', 'bz',
-                            'ex', 'ey', 'ez',
-                            #'jx', 'jy', 'jz',
-                              ]:
+                        "rh",
+                        "bx",
+                        "by",
+                        "bz",
+                        "ex",
+                        "ey",
+                        "ez",
+                        #'jx', 'jy', 'jz',
+                    ]:
 
                         # spherical distance
-                        r1 = d1.at(st).x**2 + d1.at(st).y**2 + d1.at(st).z**2
-                        r2 = d2.at(st).x**2 + d2.at(st).y**2 + d2.at(st).z**2
+                        r1 = d1.at(st).x ** 2 + d1.at(st).y ** 2 + d1.at(st).z ** 2
+                        r2 = d2.at(st).x ** 2 + d2.at(st).y ** 2 + d2.at(st).z ** 2
 
-                        gauss_profile1 = zeta * ell * np.exp(-r1/ell**2)
-                        gauss_profile2 = zeta * ell * np.exp(-r2/ell**2)
+                        gauss_profile1 = zeta * ell * np.exp(-r1 / ell ** 2)
+                        gauss_profile2 = zeta * ell * np.exp(-r2 / ell ** 2)
 
-                        bpkg1[st] = (2*b0/ell**2)*gauss_profile1
-                        bpkg2[st] = (2*b0/ell**2)*gauss_profile2
+                        bpkg1[st] = (2 * b0 / ell ** 2) * gauss_profile1
+                        bpkg2[st] = (2 * b0 / ell ** 2) * gauss_profile2
 
+                    # add fields (staggered)
+                    yee.bx[l, m, n] = -bpkg1["bx"] * d1.at("bx").y
+                    yee.by[l, m, n] = +bpkg1["by"] * d1.at("by").x
 
-                    # add fields
-                    yee.bx[l, m, n] = -bpkg1['bx'] * d1.at('bx').y
-                    yee.by[l, m, n] = +bpkg1['by'] * d1.at('by').x
+                    yee.ex[l, m, n] = -bpkg1["ex"] * d1.at("ex").x
+                    yee.ey[l, m, n] = -bpkg1["ey"] * d1.at("ey").y
 
-                    yee.ex[l, m, n] = -bpkg1['ex'] * d1.at('ex').x
-                    yee.ey[l, m, n] = -bpkg1['ey'] * d1.at('ey').y
+                    # non staggered
+                    #st = 'rh'
+                    #yee.bx[l, m, n] = -bpkg1[st] * d1.at(st).y
+                    #yee.by[l, m, n] = +bpkg1[st] * d1.at(st).x
 
+                    #yee.ex[l, m, n] = -bpkg1[st] * d1.at(st).x
+                    #yee.ey[l, m, n] = -bpkg1[st] * d1.at(st).y
     return
 
 
