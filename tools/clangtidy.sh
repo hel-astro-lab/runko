@@ -19,7 +19,7 @@ python3 tools/run-clang-tidy.py -p=build/ \
 	-target-filter='pyrunko|pyprtcls|pygol|pycorgitest' \
 	-header-filter=/home/natj/runko \
 	-checks=-*,\
-modernize-use-equals-default,\
+modernize-use-trailing-return-type,\
 
 
 #modernize-use-using,\

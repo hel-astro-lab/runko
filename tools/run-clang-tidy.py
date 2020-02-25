@@ -135,8 +135,9 @@ def merge_replacement_files(tmpdir, mergefile):
     cleaned = {}
     for x in diagnostics:
         msg = x['DiagnosticMessage']
+        fpath = os.path.abspath(msg['FilePath'])
 
-        cleaned[(msg['FilePath'], msg['FileOffset'], x['DiagnosticName'])] = x
+        cleaned[(fpath, msg['FileOffset'], x['DiagnosticName'])] = x
     output['Diagnostics']=[x for x in cleaned.values()]
 
     with open(mergefile, 'w') as out:
