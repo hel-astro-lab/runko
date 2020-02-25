@@ -150,6 +150,10 @@ def apply_fixes(args, tmpdir):
   if args.style:
     invocation.append('-style=' + args.style)
   invocation.append(tmpdir)
+
+  #invocation.append("-fix-errors")
+  print("applying fixes with call:", invocation)
+
   subprocess.call(invocation)
 
 
