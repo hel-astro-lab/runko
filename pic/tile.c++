@@ -30,7 +30,6 @@ int get_extra_tag(int tag, int extra_param)
 
 
 
-
 //--------------------------------------------------
 
 template<std::size_t D>
