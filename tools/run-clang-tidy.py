@@ -110,7 +110,7 @@ def get_tidy_invocation(f, clang_tidy_binary, checks, tmpdir, build_path,
   return start
 
 
-def merge_replacement_files(tmpdir, mergedir):
+def merge_replacement_files(tmpdir, mergedir, args):
   """Merge all replacement files in a directory into a single file"""
   # The fixes suggested by clang-tidy >= 4.0.0 are given under
   # the top level key 'Diagnostics' in the output yaml files
@@ -134,6 +134,11 @@ def merge_replacement_files(tmpdir, mergedir):
     # so we set it to '' here.
     output = { 'MainSourceFile': '', mergekey: merged }
 
+    # build filter to get rid off bad files
+    if args.exclude_files:
+        fflt = '(' + args.exclude_files + ')'
+        file_filter_re = re.compile(fflt)
+
     print('merging...')
 
     # Eliminate duplicates
@@ -142,6 +147,9 @@ def merge_replacement_files(tmpdir, mergedir):
     for x in diagnostics:
         msg = x['DiagnosticMessage']
         fpath = os.path.abspath(msg['FilePath'])
+
+        # fix file path that is written
+        x['DiagnosticMessage']['FilePath'] = fpath
 
         #replcs = msg['Replacements']
         #offs = 1e7
@@ -155,6 +163,11 @@ def merge_replacement_files(tmpdir, mergedir):
         offs = msg['FileOffset']
         key = (fpath, offs, x['DiagnosticName'])
         #print(key)
+
+        # check if file is to be excluded
+        if args.exclude_files:
+            if file_filter_re.search(fpath):
+                continue
 
         cleaned[key] = x
         #cleaned[(fpath, msg['FileOffset'], x['DiagnosticName'])] = x
@@ -245,6 +258,9 @@ def main():
   parser.add_argument('-target-filter', default=None,
                       help='regular expression matching the names of the '
                       'cmake targets to output diagnostics from.')
+  parser.add_argument('-exclude-files', default=None,
+                      help='regular expression matching used to filter out '
+                      'files from final fixes.')
   if yaml:
     parser.add_argument('-export-fixes', metavar='filename', dest='export_fixes',
                         help='Create a yaml file to store suggested fixes in, '
@@ -311,13 +327,13 @@ def main():
     # Filter out -fconcepts
     for x in range(0, len(database2)):
       database2[x]['command'] = database2[x]['command'].replace('-fconcepts', '')
-      #print(database2[x])
     if database != database2:
       #json.dump(database2, open(os.path.join(build_path, db_path), 'wt'))
       database = database2
 
   files = [make_absolute(entry['file'], entry['directory'])
            for entry in database]
+
 
   max_task = args.j
   if max_task == 0:
@@ -365,7 +381,7 @@ def main():
   if yaml and args.export_fixes:
     print('Writing fixes to ' + args.export_fixes + ' ...')
     try:
-      merge_replacement_files(tmpdir, args.export_fixes)
+      merge_replacement_files(tmpdir, args.export_fixes, args)
     except:
       print('Error exporting fixes.\n', file=sys.stderr)
       traceback.print_exc()

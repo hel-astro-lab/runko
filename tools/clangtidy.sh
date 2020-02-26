@@ -17,6 +17,7 @@ python3 tools/run-clang-tidy.py -p=build/ \
 	-fix \
 	-export-fixes=fixits \
 	-target-filter='pyrunko|pyprtcls|pygol|pycorgitest' \
+	-exclude-files='Eigen|optional-lite|pybind' \
 	-header-filter=/home/natj/runko \
 	-checks=-*,\
 modernize-use-using,\
