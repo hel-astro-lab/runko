@@ -84,7 +84,7 @@ class Mesh
         assert(false);
       }
 
-      if(mat.size() < 1) assert(false);
+      if(mat.empty()) assert(false);
     };
 
     // explicit default copy operator

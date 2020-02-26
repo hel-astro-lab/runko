@@ -171,10 +171,10 @@ class Tile :
   virtual void add_yee_lattice();
 
   std::vector<mpi::request> 
-  send_data( mpi::communicator&, int orig, int mode, int tag) override;
+  send_data( mpi::communicator& /*comm*/, int dest, int mode, int tag) override;
 
   std::vector<mpi::request> 
-  recv_data( mpi::communicator&, int dest, int mode, int tag) override;
+  recv_data( mpi::communicator& /*comm*/, int orig, int mode, int tag) override;
 };
 
 

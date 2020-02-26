@@ -476,7 +476,7 @@ class AmrSpatialLagrangianSolver :
             //       we do not scale back to speed of light with (qm/cfl)
             T jx = qm*integrate_moment( 
                 flux,
-                [](std::array<T,3>& ) -> T { return 1.0;}
+                [](std::array<T,3>&  /*unused*/) -> T { return 1.0;}
                 );
               
 

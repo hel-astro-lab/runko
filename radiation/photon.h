@@ -26,8 +26,8 @@ class PhotonContainer :
   public:
 
   /// Constructor 
-  PhotonContainer() : 
-    pic::ParticleContainer<3>()
+  PhotonContainer()  
+    
   { };
 
   //virtual ~PhotonContainer() = default;

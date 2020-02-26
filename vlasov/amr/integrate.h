@@ -59,5 +59,5 @@ T integrate_moment(
 template< typename T>
 T integrate_moment( const toolbox::AdaptiveMesh<T,3>& m)
 {
-  return integrate_moment(m, [](std::array<T,3>&) -> T { return static_cast<T>(1); });
+  return integrate_moment(m, [](std::array<T,3>& /*unused*/) -> T { return static_cast<T>(1); });
 }

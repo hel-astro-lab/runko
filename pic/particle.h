@@ -252,7 +252,7 @@ class ParticleContainer {
       std::vector<real_prtcl> prtcl_loc,
       std::vector<real_prtcl> prtcl_vel,
       real_prtcl prtcl_wgt, 
-      int _ind, int _proc);
+      int _id, int _proc);
 
 
 
@@ -271,7 +271,7 @@ class ParticleContainer {
   void delete_transferred_particles();
 
   /// process through an index list and delete particles in it
-  void delete_particles(std::vector<int> l);
+  void delete_particles(std::vector<int> to_be_deleted);
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(
