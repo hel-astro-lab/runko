@@ -110,12 +110,16 @@ def get_tidy_invocation(f, clang_tidy_binary, checks, tmpdir, build_path,
   return start
 
 
-def merge_replacement_files(tmpdir, mergefile):
+def merge_replacement_files(tmpdir, mergedir):
   """Merge all replacement files in a directory into a single file"""
   # The fixes suggested by clang-tidy >= 4.0.0 are given under
   # the top level key 'Diagnostics' in the output yaml files
   mergekey="Diagnostics"
   merged=[]
+
+  if not os.path.exists(mergedir):
+    os.makedirs(mergedir)
+  mergefile=mergedir +'/' + 'fixes.yaml'
 
   for replacefile in glob.iglob(os.path.join(tmpdir, '*.yaml')):
     content = yaml.safe_load(open(replacefile, 'r'))
@@ -130,6 +134,8 @@ def merge_replacement_files(tmpdir, mergefile):
     # so we set it to '' here.
     output = { 'MainSourceFile': '', mergekey: merged }
 
+    print('merging...')
+
     # Eliminate duplicates
     diagnostics = output['Diagnostics']
     cleaned = {}
@@ -137,7 +143,22 @@ def merge_replacement_files(tmpdir, mergefile):
         msg = x['DiagnosticMessage']
         fpath = os.path.abspath(msg['FilePath'])
 
-        cleaned[(fpath, msg['FileOffset'], x['DiagnosticName'])] = x
+        #replcs = msg['Replacements']
+        #offs = 1e7
+        #txt = 'dummy'
+        #for repl in replcs:
+        #    if repl['Offset'] < offs:
+        #        offs = repl['Offset']
+        #        txt = repl['ReplacementText']
+        #key = (fpath, offs, txt, x['DiagnosticName'])
+
+        offs = msg['FileOffset']
+        key = (fpath, offs, x['DiagnosticName'])
+        #print(key)
+
+        cleaned[key] = x
+        #cleaned[(fpath, msg['FileOffset'], x['DiagnosticName'])] = x
+
     output['Diagnostics']=[x for x in cleaned.values()]
 
     with open(mergefile, 'w') as out:
@@ -353,7 +374,13 @@ def main():
   if args.fix:
     print('Applying fixes ...')
     try:
-      apply_fixes(args, tmpdir)
+      if args.export_fixes:
+        print('reading dir: ', args.export_fixes)
+        apply_fixes(args, args.export_fixes)
+      else:
+        print('reading tmpdir: ', tmpdir)
+        apply_fixes(args, tmpdir)
+
     except:
       print('Error applying fixes.\n', file=sys.stderr)
       traceback.print_exc()

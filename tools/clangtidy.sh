@@ -15,12 +15,16 @@
 
 python3 tools/run-clang-tidy.py -p=build/ \
 	-fix \
-	-export-fixes=cfixes.yaml \
+	-export-fixes=fixits \
 	-target-filter='pyrunko|pyprtcls|pygol|pycorgitest' \
 	-header-filter=/home/natj/runko \
 	-checks=-*,\
-modernize-use-trailing-return-type,\
+modernize-use-using,\
 
+
+#modernize-use-default-member-init
+#modernize-use-equals-default
+#modernize-use-trailing-return-type,\
 
 #modernize-use-using,\
 # -checks=-*,modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays
