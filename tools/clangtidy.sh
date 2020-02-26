@@ -19,9 +19,8 @@ python3 tools/run-clang-tidy.py -p=build/ \
 	-exclude-files='Eigen|optional-lite|pybind|cppitertools' \
 	-header-filter=/home/natj/runko \
 	-checks=-*,\
-misc-*,\
--misc-non-private-member-variables-in-classes
-> ctidy.hist
+performance-* \
+| tee ctidy.hist
 
 
 #clang analyzer:
