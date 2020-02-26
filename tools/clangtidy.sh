@@ -14,14 +14,18 @@
 #modernize-use-using,\
 
 python3 tools/run-clang-tidy.py -p=build/ \
-	-fix \
 	-export-fixes=fixits \
 	-target-filter='pyrunko|pyprtcls|pygol|pycorgitest' \
-	-exclude-files='Eigen|optional-lite|pybind' \
+	-exclude-files='Eigen|optional-lite|pybind|cppitertools' \
 	-header-filter=/home/natj/runko \
 	-checks=-*,\
-modernize-use-using,\
+misc-*,\
+-misc-non-private-member-variables-in-classes
+> ctidy.hist
 
+
+#clang analyzer:
+#hilbert 496 localh
 
 #modernize-use-default-member-init
 #modernize-use-equals-default
@@ -36,7 +40,6 @@ modernize-use-using,\
 # modernize-use-equals-default
 # modernize-use-default-member-init
 # modernize-use-using
-
 
 # checks already run
 #modernize-avoid-bind,\
