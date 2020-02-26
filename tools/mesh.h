@@ -141,7 +141,7 @@ class Mesh
     }
 
     // move constructor
-    Mesh(Mesh&& other)
+    Mesh(Mesh&& other) noexcept
         : Mesh() // initialize via default constructor, C++11 only
     {
         swap(*this, other);

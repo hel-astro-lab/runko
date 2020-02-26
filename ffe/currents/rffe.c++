@@ -379,7 +379,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
         diss = 1.0;
-        if (e2 > b2) diss = sqrt(b2/e2); 
+        if (e2 > b2) diss = std::sqrt(b2/e2); 
 
         // NOTE: uses dm because j_par updates are put into that
         //m.jx(i,j,k) += (1.-diss)*dm.ex(i,j,k)/dt;
@@ -402,7 +402,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
         diss = 1.0;
-        if (e2 > b2) diss = sqrt(b2/e2);
+        if (e2 > b2) diss = std::sqrt(b2/e2);
 
         //m.jy(i,j,k) += (1. - diss)*dm.ey(i,j,k)/dt;
         //m.ey(i,j,k) = diss*dm.ey(i,j,k);
@@ -424,7 +424,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
         diss = 1.0;
-        if (e2 > b2) diss = sqrt(b2/e2);
+        if (e2 > b2) diss = std::sqrt(b2/e2);
 
         //m.jz(i,j,k) += (1.-diss)*dm.ez(i,j,k)/dt;
         //m.ez(i,j,k) = diss*dm.ez(i,j,k);

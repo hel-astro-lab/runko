@@ -64,7 +64,7 @@ class YeeLattice
   YeeLattice(const YeeLattice& other) = default;
 
   // move constructor
-  YeeLattice(YeeLattice&& other) :
+  YeeLattice(YeeLattice&& other) noexcept :
       //YeeLattice() // initialize via default constructor, C++11 only
       YeeLattice{other.Nx, other.Ny, other.Nz} // initialize via allocating constructor
   {
