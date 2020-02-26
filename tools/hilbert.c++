@@ -72,7 +72,7 @@ unsigned int tsb(unsigned int i)
 {
   unsigned int k;
   k = 0;
-  while ((i & 1) != 0u) {
+  while ((i & 1) != 0U) {
     i = i>>1;
     k++;
   }
@@ -83,7 +83,7 @@ unsigned int tsb(unsigned int i)
 unsigned int direction(unsigned int i, unsigned int dim)
 {
   if (i == 0)     return 0;
-  else if ((i & 1) != 0u) return tsb(i)%dim;
+  else if ((i & 1) != 0U) return tsb(i)%dim;
   else            return tsb(i-1)%dim;
 }
 
