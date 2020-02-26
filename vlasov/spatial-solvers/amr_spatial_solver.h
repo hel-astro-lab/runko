@@ -56,8 +56,7 @@ class SpatialSolver {
 
     virtual ~SpatialSolver() = default;
 
-
-    typedef std::array<T, 3> vec;
+    using vec = std::array<T, 3>;
 
     /// Actual solver implementation
     virtual void solve( vlv::Tile<1>& tile, corgi::Grid<1>& grid) = 0;

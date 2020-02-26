@@ -35,8 +35,7 @@ template< typename T, int D, int V >
 class MomentumSolver {
 
   public:
-    typedef std::array<T, 3> vec;
-    //typedef Vector3f Vec3E;
+    using vec = std::array<T, 3>;
     using Vec3E = Vector3d;
 
     MomentumSolver() = default;

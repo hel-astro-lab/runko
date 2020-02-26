@@ -47,8 +47,7 @@ using real_prtcl = float; /// particle storage type; NOTE: don't forget MPI type
 #define NBLOCKS 20     /// default cube size
 #define BLOCK_WID 4    /// block width
 
-typedef std::array<size_t, 3> indices_t;
-
-typedef std::array<Real, BLOCK_WID> vblock_t;
+using indices_t = std::array<size_t, 3>;
+using vblock_t = std::array<Real, BLOCK_WID>;
 
 

@@ -35,7 +35,7 @@ inline T gamma(std::array<T,V>& uvel)
 * Container to hold a plasma species block
 */
 class PlasmaBlock {
-  typedef toolbox::Mesh< toolbox::AdaptiveMesh<Realf,3>, 3> T;
+  using T = toolbox::Mesh< toolbox::AdaptiveMesh<Realf,3>, 3>;
 
   public:
 

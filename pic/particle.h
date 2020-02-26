@@ -125,9 +125,8 @@ class ParticleContainer {
   std::vector<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
-  typedef std::multimap<std::tuple<int,int,int>, int> mapType;
+  using mapType = std::multimap<std::tuple<int,int,int>, int>;
   mapType to_other_tiles;
-
 
   // normalization factor
   double q = 1.0; 
