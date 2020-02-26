@@ -556,8 +556,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
     } // jn
   } // in
 
-  return;
-}
+  }
 
 
 template<>

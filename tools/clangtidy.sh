@@ -19,21 +19,22 @@ python3 tools/run-clang-tidy.py -p=build/ \
 	-exclude-files='Eigen|optional-lite|pybind|cppitertools' \
 	-header-filter=/home/natj/runko \
 	-checks=-*,\
+readability-redundant-control-flow \
+| tee ctidy.hist
+
+#-readability-else-after-return,\
+
+# readability
 readability-*,\
 -readability-braces-around-statements,\
 -readability-magic-numbers,\
 -readability-convert-member-functions-to-static,\
 -readability-redundant-control-flow,\
 -readability-else-after-return,\
+-readability-misleading-indentation,\
+-readability-inconsistent-declaration-parameter-name,\
 -readability-isolate-declaration \
-| tee ctidy.hist
 
-
-#redunant member init
-
-
-#clang analyzer:
-#hilbert 496 localh
 
 #modernize-use-default-member-init
 #modernize-use-equals-default

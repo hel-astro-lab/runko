@@ -226,8 +226,7 @@ void pic::Piston<D>::solve(
 
   } // end of loop over species
 
-  return;
-}
+  }
 
 
 template<>

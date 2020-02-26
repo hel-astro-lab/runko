@@ -84,8 +84,7 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
       }
     }
   }
-  return;
-}
+  }
 
 /// 3D 
 template<>
@@ -128,8 +127,7 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     }
   }
 
-  return;
-}
+  }
 
 
 template<>
@@ -237,8 +235,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
     }
   }
 
- return;
-}
+ }
 
 
 template<>
@@ -279,8 +276,7 @@ void ffe::rFFE2<3>::update_eb(
     }
   }
 
-  return;
-}
+  }
 
 
 template<>
@@ -356,8 +352,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
   }
 
 
-  return;
-}
+  }
 
 
 template<>
@@ -438,8 +433,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   }
 
 
-  return;
-}
+  }
 
 
 
@@ -466,8 +460,7 @@ void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
     }
   }
 
-  return;
-}
+  }
 
 
 //--------------------------------------------------

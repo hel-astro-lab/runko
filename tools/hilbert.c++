@@ -23,7 +23,6 @@ unsigned int bit(unsigned int i, unsigned int k)
 void setbit(unsigned int* i, unsigned int k, unsigned int value)
 {
   *i = (*i & ~(1<<k)) | (value<<k);
-  return;
 }
 
 //Bitwise rotation operators.
@@ -99,13 +98,11 @@ unsigned int direction(unsigned int i, unsigned int dim)
 void ted(unsigned int e, unsigned int d, unsigned int *b, unsigned int dim)
 {
   *b = rotr( *b ^ e, d+1, dim );
-  return;
 }
 
 void tedinv(unsigned int e, unsigned int d, unsigned int *b, unsigned int dim)
 {
   *b = rotl( *b , d+1, dim ) ^ e;
-  return;
 }
 
 //!Hilbert index2D calculates the Hilbert index h of a patch of coordinates x,y for a 
@@ -188,8 +185,7 @@ void hilbertindexinv(
     e = e ^ (rotl(entry(w), d+1, 2));
     d = (d + direction(w, 2) +1 )%2 ;
   }
-  return;
-}
+  }
 
 void hilbertindexinv(
     unsigned int m,
@@ -217,8 +213,7 @@ void hilbertindexinv(
     e = e ^ (rotl(entry(w), d+1, 3));
     d = (d + direction(w, 3) +1 )%3 ;
   }
-  return;
-}
+  }
 
 
 //The "general" versions of the functions allow a different number of patch in each direction.
@@ -435,8 +430,6 @@ void generalhilbertindexinv(
     //Shift the appropriate coordinate by the necessary value.
     *target += shift;
 
-    return;
-
 }
 
 //3D version
@@ -524,8 +517,6 @@ void generalhilbertindexinv(
     *localp[dimmax] += tempp[dimmax];
     *localp[dimmed] += tempp[dimmed];
     *localp[dimmin] += tempp[dimmin];
-
-    return;
 }
 
 
