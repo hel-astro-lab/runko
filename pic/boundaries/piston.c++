@@ -245,7 +245,7 @@ void pic::Piston<2>::field_bc(
     auto& yee = tile.get_yee();
 
     // wall location 
-    int iw = walloc - mins[0]; 
+    auto iw = static_cast<int>(walloc - mins[0]);
     if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
 
     // set transverse directions to zero
@@ -277,7 +277,7 @@ void pic::Piston<3>::field_bc(
     auto& yee = tile.get_yee();
 
     // wall location 
-    int iw = walloc - mins[0]; 
+    auto iw = static_cast<int>(walloc - mins[0]);
     if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
 
     // set transverse directions to zero to make this conductor
