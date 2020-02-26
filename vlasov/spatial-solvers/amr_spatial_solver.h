@@ -184,20 +184,20 @@ class AmrSpatialLagrangianSolver :
       if (fp1 >= f0){ 
         T fmin = fminf(fm2, fm1, f0, fp1, fp2);
         return min<T>( T(2)*(f0 - fmin), fp1 - f0);
-      } else {
+      } 
         T fmax = fmaxf(fm2, fm1, f0, fp1, fp2);
         return max<T>( T(2)*(f0 - fmax), fp1 - f0);
-      }
+      
     }
 
     inline T Lmf(T fm2, T fm1, T f0, T fp1, T fp2) {
       if (f0 >= fm1){ 
         T fmax = fmaxf(fm2, fm1, f0, fp1, fp2);
         return min<T>( T(2)*(fmax - f0), f0 - fm1);
-      } else {
+      } 
         T fmin = fminf(fm2, fm1, f0, fp1, fp2);
         return max<T>( T(2)*(fmin - f0), f0 - fm1);
-      }
+      
     }
 
 

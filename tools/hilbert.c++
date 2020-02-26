@@ -81,16 +81,18 @@ unsigned int tsb(unsigned int i)
 // Direction computes the sequence of intra sub-hypercube direction, d(i) for 0 <= i < 2^dim.
 unsigned int direction(unsigned int i, unsigned int dim)
 {
-  if (i == 0)     return 0;
-  else if ((i & 1) != 0U) return tsb(i)%dim;
-  else            return tsb(i-1)%dim;
+  if (i == 0)        return 0;
+  if ((i & 1) != 0U) return tsb(i)%dim;
+
+  return tsb(i-1)%dim;
 }
 
 // Entry computes the sequence of entry points, e(i) for 0 <= i < 2^dim.
     unsigned int entry(unsigned int i)
 {
   if (i == 0) return 0;
-  else        return gc(2*((i-1)/2));
+
+  return gc(2*((i-1)/2));
 }
 
 //!Ted is the transformation such that the gc ordering of sub-hypercubes in the Hilbert 
