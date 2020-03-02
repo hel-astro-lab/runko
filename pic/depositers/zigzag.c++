@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <math.h>
+#include <cmath>
 
 using std::min;
 using std::max;

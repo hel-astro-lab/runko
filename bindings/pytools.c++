@@ -47,7 +47,7 @@ void declare_mesh(
     .def("get_Ny", [](Class &s){ return s.Ny;})
     .def("indx",         &Class::indx)
     .def("size",         &Class::size)
-    .def("__getitem__", [](Class &s, py::tuple indx) 
+    .def("__getitem__", [](Class &s, const py::tuple& indx) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
@@ -71,7 +71,7 @@ void declare_mesh(
 
         return s(i,j,k);
       }) //, py::return_value_policy::reference)
-    .def("__setitem__", [](Class &s, py::tuple indx, real_short val) 
+    .def("__setitem__", [](Class &s, const py::tuple& indx, real_short val) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();

@@ -1,8 +1,6 @@
 #include "damping_tile.h"
 
 
-using std::min;
-using std::max;
 using std::exp;
 
 

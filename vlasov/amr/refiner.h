@@ -22,8 +22,8 @@ class Adapter {
 
   public:
 
-  typedef typename AdaptiveMesh<T,V>::indices_t indices_t;
-  typedef typename AdaptiveMesh<T,V>::value_array_t value_array_t;
+  using indices_t = typename AdaptiveMesh<T,V>::indices_t;
+  using value_array_t = typename AdaptiveMesh<T,V>::value_array_t;
   
   // std::vector<uint64_t> cells_to_refine;
   // std::vector<uint64_t> cells_to_unrefine;

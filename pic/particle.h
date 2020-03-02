@@ -28,7 +28,7 @@ public:
   /// mpi rank separator
   int _proc = 0;
 
-  Particle() {};
+  Particle() = default;
 
   /// standard ctor
   Particle(real_prtcl x,  real_prtcl y,  real_prtcl z,
@@ -125,9 +125,8 @@ class ParticleContainer {
   std::vector<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
-  typedef std::multimap<std::tuple<int,int,int>, int> mapType;
+  using mapType = std::multimap<std::tuple<int,int,int>, int>;
   mapType to_other_tiles;
-
 
   // normalization factor
   double q = 1.0; 
@@ -253,7 +252,7 @@ class ParticleContainer {
       std::vector<real_prtcl> prtcl_loc,
       std::vector<real_prtcl> prtcl_vel,
       real_prtcl prtcl_wgt, 
-      int _ind, int _proc);
+      int _id, int _proc);
 
 
 
@@ -272,7 +271,7 @@ class ParticleContainer {
   void delete_transferred_particles();
 
   /// process through an index list and delete particles in it
-  void delete_particles(std::vector<int> l);
+  void delete_particles(std::vector<int> to_be_deleted);
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(

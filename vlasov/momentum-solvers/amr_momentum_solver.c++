@@ -49,8 +49,7 @@ void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cf
 
   }// end of loop over species
 
-  return;
-}
+  }
 
 
 
@@ -150,8 +149,7 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
   //
   
 
-  return;
-}
+  }
 
 //--------------------------------------------------
 // explicit template instantiation

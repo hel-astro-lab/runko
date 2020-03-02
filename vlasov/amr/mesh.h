@@ -35,8 +35,8 @@ class AdaptiveMesh {
 
   public:
 
-  typedef std::array<uint64_t, 3> indices_t;
-  typedef std::array<T, 3> value_array_t;
+  using indices_t = std::array<uint64_t, 3>;
+  using value_array_t = std::array<T, 3>;
 
   using iterator       = typename std::unordered_map<uint64_t, T>::iterator;
   using const_iterator = typename std::unordered_map<uint64_t, T>::const_iterator;

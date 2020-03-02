@@ -26,8 +26,8 @@ class PhotonContainer :
   public:
 
   /// Constructor 
-  PhotonContainer() : 
-    pic::ParticleContainer<3>()
+  PhotonContainer()  
+    
   { };
 
   //virtual ~PhotonContainer() = default;
@@ -37,7 +37,7 @@ class PhotonContainer :
 
 
   /// initializes internal arrays
-  virtual void reserve(size_t N) override
+  void reserve(size_t N) override
   {
     eneArr.reserve(N);
     pic::ParticleContainer<3>::reserve(N);

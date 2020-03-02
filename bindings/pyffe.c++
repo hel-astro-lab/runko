@@ -107,8 +107,7 @@ void bind_ffe(py::module& m_sub)
         yee.bx = skyee.bx;
         yee.by = skyee.by;
         yee.bz = skyee.bz;
-        return;
-      }
+     }
   );
 
 

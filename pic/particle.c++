@@ -316,8 +316,6 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
-
-  return;
 }
 
 
@@ -389,8 +387,7 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
     }
   }
 
-  return;
-}
+  }
 
 
 template<>
@@ -441,8 +438,7 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
     }
   }
 
-  return;
-}
+  }
 
 template<std::size_t D>
 void ParticleContainer<D>::pack_all_particles()
@@ -528,8 +524,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
 
-  return;
-}
+  }
 
 
 template<std::size_t D>
@@ -580,8 +575,7 @@ void ParticleContainer<D>::unpack_incoming_particles()
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
 
-  return;
-}
+  }
 
 
 template<std::size_t D>

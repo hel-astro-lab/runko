@@ -25,13 +25,13 @@ class Mesh
   public:
 
     /// grid size along x
-    int Nx;
+    int Nx{0};
       
     /// grid size along y
-    int Ny;
+    int Ny{0};
 
     /// grid size along z
-    int Nz;
+    int Nz{0};
 
     /// internal storage
     std::vector<T> mat;
@@ -61,9 +61,6 @@ class Mesh
     /// empty default constructor
     //Mesh() = default;
     Mesh() :
-      Nx(0),
-      Ny(0),
-      Nz(0),
       mat(0)
     { }
 
@@ -87,7 +84,7 @@ class Mesh
         assert(false);
       }
 
-      if(mat.size() < 1) assert(false);
+      if(mat.empty()) assert(false);
     };
 
     // explicit default copy operator
@@ -144,7 +141,7 @@ class Mesh
     }
 
     // move constructor
-    Mesh(Mesh&& other)
+    Mesh(Mesh&& other) noexcept
         : Mesh() // initialize via default constructor, C++11 only
     {
         swap(*this, other);

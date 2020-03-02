@@ -65,30 +65,30 @@ public:
 
   //--------------------------------------------------
   // MPI send
-  virtual std::vector<mpi::request> 
-  send_data( mpi::communicator&, int orig, int mode, int tag) override;
+  std::vector<mpi::request> 
+  send_data( mpi::communicator& /*comm*/, int dest, int mode, int tag) override;
 
   /// actual tag=0 send
   std::vector<mpi::request> 
-  send_particle_data( mpi::communicator&, int orig, int tag);
+  send_particle_data( mpi::communicator& /*comm*/, int dest, int tag);
 
   /// actual tag=1 send
   std::vector<mpi::request> 
-  send_particle_extra_data( mpi::communicator&, int orig, int tag);
+  send_particle_extra_data( mpi::communicator& /*comm*/, int dest, int tag);
 
 
   //--------------------------------------------------
   // MPI recv
-  virtual std::vector<mpi::request> 
-  recv_data(mpi::communicator&, int dest, int mode, int tag) override;
+  std::vector<mpi::request> 
+  recv_data(mpi::communicator& /*comm*/, int orig, int mode, int tag) override;
 
   /// actual tag=0 recv
   std::vector<mpi::request> 
-  recv_particle_data(mpi::communicator&, int dest, int tag);
+  recv_particle_data(mpi::communicator& /*comm*/, int orig, int tag);
 
   /// actual tag=1 recv
   std::vector<mpi::request> 
-  recv_particle_extra_data(mpi::communicator&, int dest, int tag);
+  recv_particle_extra_data(mpi::communicator& /*comm*/, int orig, int tag);
   //--------------------------------------------------
 
 

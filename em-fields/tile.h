@@ -59,40 +59,12 @@ class YeeLattice
   { }
 
   // copy ctor
-  YeeLattice(YeeLattice& other) :
-    Nx(other.Nx),
-    Ny(other.Ny),
-    Nz(other.Nz),
-    ex(other.ex),
-    ey(other.ey),
-    ez(other.ez),
-    bx(other.bx),
-    by(other.by),
-    bz(other.bz),
-    rho(other.rho),
-    jx(other.jx),
-    jy(other.jy),
-    jz(other.jz)
-  { }
+  YeeLattice(YeeLattice& other) = default;
 
-  YeeLattice(const YeeLattice& other) :
-    Nx(other.Nx),
-    Ny(other.Ny),
-    Nz(other.Nz),
-    ex(other.ex),
-    ey(other.ey),
-    ez(other.ez),
-    bx(other.bx),
-    by(other.by),
-    bz(other.bz),
-    rho(other.rho),
-    jx(other.jx),
-    jy(other.jy),
-    jz(other.jz)
-  { }
+  YeeLattice(const YeeLattice& other) = default;
 
   // move constructor
-  YeeLattice(YeeLattice&& other) :
+  YeeLattice(YeeLattice&& other) noexcept :
       //YeeLattice() // initialize via default constructor, C++11 only
       YeeLattice{other.Nx, other.Ny, other.Nz} // initialize via allocating constructor
   {
@@ -168,7 +140,7 @@ class Tile :
 
   }
 
-  virtual ~Tile() = default;
+  ~Tile() override = default;
 
   //--------------------------------------------------
 
@@ -198,11 +170,11 @@ class Tile :
 
   virtual void add_yee_lattice();
 
-  virtual std::vector<mpi::request> 
-  send_data( mpi::communicator&, int orig, int mode, int tag) override;
+  std::vector<mpi::request> 
+  send_data( mpi::communicator& /*comm*/, int dest, int mode, int tag) override;
 
-  virtual std::vector<mpi::request> 
-  recv_data( mpi::communicator&, int dest, int mode, int tag) override;
+  std::vector<mpi::request> 
+  recv_data( mpi::communicator& /*comm*/, int orig, int mode, int tag) override;
 };
 
 

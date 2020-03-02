@@ -30,7 +30,6 @@ int get_extra_tag(int tag, int extra_param)
 
 
 
-
 //--------------------------------------------------
 
 template<std::size_t D>
@@ -146,13 +145,14 @@ std::vector<mpi::request> Tile<D>::send_data(
     int mode,
     int tag)
 {
-  if     (mode == 0) return fields::Tile<D>::send_data(comm, dest, mode, tag);
-  else if(mode == 1) return fields::Tile<D>::send_data(comm, dest, mode, tag);
-  else if(mode == 2) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  if(mode == 0) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  if(mode == 1) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  if(mode == 2) return fields::Tile<D>::send_data(comm, dest, mode, tag);
 
-  else if(mode == 3) return send_particle_data(comm,dest,tag);
-  else if(mode == 4) return send_particle_extra_data(comm,dest,tag);
-  else assert(false);
+  if(mode == 3) return send_particle_data(comm,dest,tag);
+  if(mode == 4) return send_particle_extra_data(comm,dest,tag);
+
+  assert(false);
 }
 
 
@@ -209,13 +209,14 @@ std::vector<mpi::request> Tile<D>::recv_data(
     int mode,
     int tag)
 {
-  if     (mode == 0) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
-  else if(mode == 1) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
-  else if(mode == 2) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  if(mode == 0) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  if(mode == 1) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  if(mode == 2) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
 
-  else if(mode == 3) return recv_particle_data(comm,orig,tag);
-  else if(mode == 4) return recv_particle_extra_data(comm,orig,tag);
-  else assert(false);
+  if(mode == 3) return recv_particle_data(comm,orig,tag);
+  if(mode == 4) return recv_particle_extra_data(comm,orig,tag);
+
+  assert(false);
 }
 
 

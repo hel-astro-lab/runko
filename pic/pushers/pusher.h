@@ -13,7 +13,7 @@ class Pusher
 
   public:
 
-  Pusher() {};
+  Pusher() = default;
 
   virtual ~Pusher() = default;
 

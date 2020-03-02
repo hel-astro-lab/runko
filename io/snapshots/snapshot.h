@@ -1,15 +1,16 @@
 #pragma once
 
-#include <vector>
-#include <array>
-#include <string>
-
-#include <mpi4cpp/mpi.h>
-#include "../../definitions.h"
 #include "../../corgi/corgi.h"
+#include "../../definitions.h"
+#include "../../tools/fastlog.h"
 #include "../../tools/mesh.h"
 #include "../namer.h"
-#include "../../tools/fastlog.h"
+
+#include <array>
+#include <mpi4cpp/mpi.h>
+#include <string>
+#include <utility>
+#include <vector>
 
 
 namespace h5io { 
@@ -41,7 +42,7 @@ class SnapshotWriter {
     int stride = 1;
 
     /// constructor that creates a name and opens the file handle
-    SnapshotWriter( const std::string& prefix ) : fname{prefix} { }
+    SnapshotWriter( std::string  prefix ) : fname{std::move(prefix)} { }
 
     // NOTE: modify these 2 functions to make your own snapshot io
 
@@ -222,8 +223,7 @@ class SnapshotWriter {
         }
       } // end of array loop
 
-      return;
-    }
+         }
 
 };
 

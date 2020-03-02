@@ -157,8 +157,7 @@ void pic::LinearInterpolator<D,V>::solve(
 
   } // end of loop over species
 
-  return;
-}
+  }
 
 
 //--------------------------------------------------
