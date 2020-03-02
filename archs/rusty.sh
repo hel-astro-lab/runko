@@ -25,7 +25,7 @@ export HDF5_USE_FILE_LOCKING=FALSE
 export PYTHONDONTWRITEBYTECODE=true
 
 # pybind installation
-export LUSTREDIR=/mnt/home/$USER/ceph/runko/archs
+export LUSTREDIR=/mnt/home/$USER/ceph
 
 #unset PYTHONPATH
 #eval "$(/cfs/klemming/nobackup/j/jnattila/miniconda3/bin/conda shell.bash hook)"
