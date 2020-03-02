@@ -24,3 +24,4 @@
 [submodule "pytools/pybox"]
 	path = pytools/pybox
 	url = https://github.com/natj/pyBox.git
+	branch = master

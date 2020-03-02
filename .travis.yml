@@ -61,7 +61,7 @@ before_install:
   #pre-install mpi
   - export CXX=${COMP_CXX}
   - export CC=${COMP_CC}
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install hdf5 open-mpi fftw fmt; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install open-mpi fftw fmt; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libopenmpi-dev libhdf5-serial-dev hdf5-helpers openmpi-bin libblas-dev liblapack-dev; fi
   - export MPI="openmpi40"
   - export CC=mpicc
@@ -85,10 +85,10 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "linux"]; then export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial; fi
   #configure runko env variables
   - export RUNKO=$(pwd)
-  - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
+  - export PYTHONPATH=$PYTHONPATH:$RUNKO
   - export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
-  - export PYTHONPATH=$PYTHONPATH:$RUNKO/python
-  - export PYTHONPATH=$PYTHONPATH:$RUNKO/analysis
+  - export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
+  - export PYTHONPATH=$PYTHONPATH:$RUNKO/bindings/old
   - echo $PYTHONPATH
 
 script:
