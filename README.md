@@ -15,8 +15,8 @@ Design and usage of the code is described in detail in the accompanying [paper](
 
 ## Available modules
 Current main physics simulation modules include:
-- **3D FDTD electromagnetics module** based on staggered Yee lattice (`fields/`)
 - **3D3V Particle-In-Cell module** (`pic/`)
+- **3D FDTD electromagnetics module** based on staggered Yee lattice (`fields/`)
 - **3D Force-free electrodynamics** module (`ffe/`)
 - **1D3V Relativistic Vlasov module** (`vlasov/`)
 
@@ -36,27 +36,27 @@ Additionally, modules under construction include:
 <img align="right" src="https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/turb_small.gif">	
 
 ### Relativistic kinetic turbulence 	
-PIC module has been used to simulate formation of turbulence in collisionless magnetically-dominated pair plasma.
+PIC module has been used to simulate the formation of turbulence in collisionless magnetically-dominated pair plasma.
 
-We start by perturbing the initial magnetic field in an otherwise uniform box of plasma. Magnetic eddies are quickly seen to develop. When the eddies collide, thin current sheets are formed. These thin sheets are unstable for magnetic reconnection that starts to tear the sheets and produce plasmoid.
+We start by perturbing the initial magnetic field with harmonic sinusoidal modes. Magnetic eddies are quickly seen to develop. When the eddies collide, thin current sheets are formed. These thin sheets are unstable to magnetic reconnection that starts to tear the sheets and produce plasmoid.
 
 </br>
 </br>
 </br>
 
 ### Collisionless shocks
-<img align="center" src="https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/shock.gif">
+<img align="center" src="https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/shock_small.gif">
 
-PIC module has also been used in simulating collisionless shocks. These simulations are based on the common piston setup where plasma is reflected from the leftmost simulation wall and made to collide with itself. A collisionless shock quickly forms stopping the counter streaming plasma.
+PIC module has been used to simulate collisionless shocks in 2 and 3D. These simulations use the common reflecting wall setup where moving plasma is reflected from the leftmost simulation wall and made to collide with itself. A collisionless shock is quickly formed stopping the counter streaming plasmas.
 
 
 ### Plasma instabilities
 
 <img align="right" src="https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/beam.gif">	
 
-Vlasov module has been used to simulate the development of beam instability in a stratified medium. 
+Vlasov module has been used to simulate the development of beam instabilities in a stratified medium. 
 
-In this 1D1V simulation we track the development of stratified beam instability starting from a relative density of ~10^-5 as the incoming beam enters the box. At higher densities of ~1 the beam excites Langmuir wave turbulence and heats the background plasma. This is a density contrast of over 100000!
+In this 1D1V simulation setup we track the development of stratified beam instability in an atmosphere with a density contrast of over 5 orders of magnitude. Deep in the atmosphere the penetrating beam excites Langmuir wave turbulence and heats the background plasma. 
 
 ## How to cite?
 
