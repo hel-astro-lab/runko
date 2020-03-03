@@ -30,7 +30,7 @@ class PicMomentsWriter :
   public:
 
     /// general file name used for outputs
-    const string file_name = "full-moms";
+    const string file_name = "moms";
 
     // internal mesh size
     int nx;
@@ -51,13 +51,9 @@ class PicMomentsWriter :
       stride{stride}
     {
       //fname = prefix + "-" + to_string(lap) + extension;
-      nx = Nx*NxMesh/stride;
-      ny = Ny*NyMesh/stride;
-      nz = Nz*NzMesh/stride;
-
-      nx = nx == 0 ? 1 : nx;
-      ny = ny == 0 ? 1 : ny;
-      nz = nz == 0 ? 1 : nz;
+      nx = Nx*NxMesh/stride + 1;
+      ny = Ny*NyMesh/stride + 1;
+      nz = Nz*NzMesh/stride + 1;
 
       // add correct amount of data containers
       for(size_t i=0; i<14; i++) arrs.emplace_back(nx, ny, nz);

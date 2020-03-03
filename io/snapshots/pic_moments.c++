@@ -4,6 +4,7 @@
 #include "../../pic/particle.h"
 #include "../../pic/tile.h"
 #include "../../tools/signum.h"
+#include "../../tools/wrap.h"
 
 
 using ezh5::File;
@@ -32,7 +33,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   auto& pressy = arrs[9];
   auto& pressz = arrs[10];
 
-  auto& shearxy = arrs[11];
+  auto& shearxy= arrs[11];
   auto& shearxz= arrs[12];
   auto& shearyz= arrs[13];
 
@@ -88,10 +89,10 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   	    j = D >= 2 ? static_cast<int>(floor( y0 ) ) : 0;
   	    k = D >= 3 ? static_cast<int>(floor( z0 ) ) : 0;
 
-        // reduce by a factor of stride
-        i = i / stride;
-        j = j / stride;
-        k = k / stride;
+        // reduce by a factor of stride and wrap just in case
+        i = wrap(i/stride, 0, nx+1);
+        j = wrap(j/stride, 0, ny+1);
+        k = wrap(k/stride, 0, nz+1);
 
         u0 = static_cast<real_long>(vel[0][n]);
         v0 = static_cast<real_long>(vel[1][n]);

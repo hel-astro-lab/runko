@@ -39,7 +39,7 @@ matrix:
         - libblas-dev
         - liblapack-dev
     env: COMP_EVAL="OS=linux && COMP_CC=clang-5.0 && COMP_CXX=clang++-5.0"
-    python: 3.7
+    python: 3.8
 
     allow_failures:
     - env: COMP_EVAL="OS=linux && COMP_CC=gcc-7 && COMP_CXX=g++-7"
