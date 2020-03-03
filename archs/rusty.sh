@@ -8,7 +8,7 @@ module load cmake/3.14.5
 module load modules-nix/20200227-37
 module load nix/ffmpeg/3.4.7
 module load nix/fftw/3.3.8
-module load lib/hdf5/1.10.5-openmpi2
+module load lib/hdf5/1.8.21-openmpi2
 
 
 # cray environment

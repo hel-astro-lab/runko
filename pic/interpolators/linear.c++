@@ -57,13 +57,13 @@ void pic::LinearInterpolator<D,V>::solve(
       loc2n = static_cast<real_long>( loc[2][n] );
 
       // particle location in the grid
-	    if (D >= 1) i  = static_cast<int>(floor( loc[0][n] - mins[0] ));
-	    if (D >= 2) j  = static_cast<int>(floor( loc[1][n] - mins[1] ));
-	    if (D >= 3) k  = static_cast<int>(floor( loc[2][n] - mins[2] ));
+      if (D >= 1) i  = static_cast<int>(floor( loc[0][n] - mins[0] ));
+      if (D >= 2) j  = static_cast<int>(floor( loc[1][n] - mins[1] ));
+      if (D >= 3) k  = static_cast<int>(floor( loc[2][n] - mins[2] ));
 
-	    if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
-	    if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
-	    if (D >= 3) dz = (loc[2][n]-mins[2]) - k;
+      if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
+      if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
+      if (D >= 3) dz = (loc[2][n]-mins[2]) - k;
 
 
       // check section; TODO; remove

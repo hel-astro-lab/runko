@@ -69,6 +69,7 @@ before_install:
   #test mpi compiler wrappers
   - $CC --version
   - $CXX --version
+  - echo $CXX 
   - mpicc --version
   - mpic++ --version
     #- if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CC=mpicc; fi
