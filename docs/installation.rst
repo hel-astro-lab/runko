@@ -1,13 +1,13 @@
 Installation
 ############
 
-This section describes the basic installation of the framework.
+This section describes the basic installation of the framework. See also the :doc:`clusters` page in case you are installing the code to some computing cluster.
 
 
 Downloading/Cloning
 ===================
 
-The framework relies on various small template libraries that are automatically obtained along the main code as submodules. Because of this, remember to always issue a recursive clone:
+The framework relies on various small (template) libraries that are automatically obtained along the main code as submodules. Because of this, remember to always issue a recursive clone:
 
 .. code-block:: bash
 
@@ -22,7 +22,7 @@ You also need to update all the submodules (so that other branches are also in s
 External libraries
 ==================
 
-Current external libraries shipped together with the framework are:
+External libraries installed together with the framework include:
 
 * `corgi <https://github.com/natj/corgi>`_ massively-parallel grid infrastructure
 * `PyBind11 <https://github.com/pybind/pybind11>`_ binding library for seamless operability between C++ and Python
@@ -37,7 +37,7 @@ Requirements
 Before proceeding to compilation, check that your system has these requirements installed:
 
 * Modern C++ compiler (such as `Clang++ <https://clang.llvm.org/>`_, g++, ...)
-* python3 
+* python3 (with mpi4py)
 * `HDF5 <https://support.hdfgroup.org/HDF5/>`_ for I/O (serial mode is enough)
 * `CMake <https://cmake.org/>`_ (>v3.0) for building and compiling
 * `FFTW <http://www.fftw.org/>`_ for Fourier transforms
@@ -49,16 +49,21 @@ Before proceeding to compilation, check that your system has these requirements 
     Note that g++-8 does not work because of a (known) compiler bug. Therefore, g++-9 is the current recommended choice.
 
 
+
+
+
 MacOS
 -----
 
-On MacOS these should be easily installed by using `homebrew <https://brew.sh/>`_ and running:
+On MacOS these are easily installed with `homebrew <https://brew.sh/>`_ by running:
 
 .. code-block:: bash
 
-   brew install gcc@9 hdf5 python3 open-mpi cmake fftw fmt
+   brew install gcc hdf5 python3 open-mpi cmake fftw fmt
 
-MPI needs to be compiled separately because by default it uses the AppleClang compiler (instead of the g++-9 just installed). This can be done by running
+MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the g++-9 just installed). 
+
+Compiling e.g., OpenMPI can be done fully via the terminal by running:
 
 .. code-block:: bash
 
@@ -81,7 +86,7 @@ MPI needs to be compiled separately because by default it uses the AppleClang co
    export PATH=$PATH:$HOME/local/$MPI_IMPL/include
    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI_IMPL/lib
 
-
+This installs OpenMPI 4.0 to `~/bin` and exports the correct directories so that `mpic++` compiler wrapper becomes available. You should put the last 3 export commands to your `.bash_profile` for easier usage, in case you need to recompile Runko at some point.
 
 Linux
 -----
@@ -95,7 +100,7 @@ On Linux (assuming Ubuntu) run:
 
 .. note::
 
-   Recent Ubuntu (bionic) comes with gcc-7 which makes the installation easier. For previous versions you, additionally, need to install gcc-7 (or 9) and manually compile MPI similar to MacOS.
+   Recent Ubuntu (bionic) comes with gcc-7 which makes the installation easier. For previous versions you, additionally, need to install gcc-7 (or 9) and manually compile MPI similar to the MacOS discussed above.
 
 You also need to export the HDF5 library location (since it is non-standard at least in Ubuntu) with
 
@@ -146,17 +151,17 @@ You should also add the python script directories into `PYTHONPATH` environment 
 
 .. code-block:: bash
 
-   export RUNKO=/path2repo/
-   export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
+   export RUNKO=/path2repo
+   export PYTHONPATH=$PYTHONPATH:$RUNKO
    export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
-   export PYTHONPATH=$PYTHONPATH:$RUNKO/python
-   export PYTHONPATH=$PYTHONPATH:$RUNKO/analysis
+   export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
+   export PYTHONPATH=$PYTHONPATH:$RUNKO/bindings/old
 
 
-where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory).
+where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory). Note that there is no trailing slash `/`. As an example, the path can be e.g., `/Users/natj/runko`.
 
 
-Next we can proceed to compiling. Out-of-source builds are recommended so inside the repository run:
+Next we can proceed to compiling. Out-of-source builds are recommended so inside the repository make a new build directory, go into that and only then run the CMake. This can be done by running:
 
 .. code-block:: bash
 
@@ -164,7 +169,7 @@ Next we can proceed to compiling. Out-of-source builds are recommended so inside
    cd build
    cmake ..
 
-And make sure that `CMake` finishes successfully. After that, you can try and compile the complete framework with
+And make sure to check that `CMake` finishes successfully. After that, you are ready to compile the framework with
 
 .. code-block:: bash
 
