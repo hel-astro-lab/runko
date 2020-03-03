@@ -7,17 +7,14 @@ import matplotlib.ticker as ticker
 from scipy.stats import mstats
 from scipy.optimize import curve_fit
 
-from visualize import imshow
+from pytools.visualize import imshow
+from pytools.conf import Configuration
 
-from configSetup import Configuration
-from combine_files import get_file_list
-from combine_files import combine_tiles
+#from combine_files import get_file_list
 
-from scipy.ndimage.filters import gaussian_filter
-
-from parser import parse_input
+from pytools import read_h5_array
+from pytools.cli import parse_args
 import argparse
-
 
 
 # trick to make nice colorbars
@@ -71,39 +68,35 @@ default_shock_values = {
                'cmap': "RdBu",
                'vsymmetric':True,
                 },
+        'Gammae': {'title': r"$\Gamma_e$",
+                'vmin': 0.0,
+                'vmax': 15.0,
+                'derived':True
+                },
 }
 
 
-
-def read_var(f5F, var):
-    try:
-        val = f5F[var][:,:,0]
-    except:
-        nx = f5F['Nx'].value
-        ny = f5F['Ny'].value
-        nz = f5F['Nz'].value
-        print("reshaping 1D array into multiD with {} {} {}".format(nx,ny,nz))
-
-        val = f5F[var][:]
-        val = np.reshape(val, (ny, nx, nz))
-        val = np.transpose(val[:,:,0])
-
-    return val
-
-
 def build_bdens(f5F):
-    bx = read_var(f5F, "bx")
-    by = read_var(f5F, "by")
-    bz = read_var(f5F, "bz")
+    bx = read_h5_array(f5F, "bx")
+    by = read_h5_array(f5F, "by")
+    bz = read_h5_array(f5F, "bz")
 
     return bx*bx + by*by + bz*bz
 
 def build_edens(f5F):
-    ex = read_var(f5F, "ex")
-    ey = read_var(f5F, "ey")
-    ez = read_var(f5F, "ez")
+    ex = read_h5_array(f5F, "ex")
+    ey = read_h5_array(f5F, "ey")
+    ez = read_h5_array(f5F, "ez")
 
     return ex*ex + ey*ey + ez*ez
+
+def build_gamma(f5F):
+    vx = read_h5_array(f5F, "Vxp")
+    vy = read_h5_array(f5F, "Vyp")
+    vz = read_h5_array(f5F, "Vzp")
+
+    gam = 1.0/np.sqrt(1.0 - vx**2 + vy**2 + vz**2)
+    return gam
 
 
 def nandiv(x, y):
@@ -154,7 +147,7 @@ def plot2d_shock_single(
 
     # normal singular variables
     if not(args['derived']):
-        val = read_var(f5F, var)
+        val = read_h5_array(f5F, var)
 
     # composite quantities
     else:
@@ -164,11 +157,25 @@ def plot2d_shock_single(
             val = build_bdens(f5F)
         if var == "edens":
             val = build_edens(f5F)
+        if var == "Gammae":
+            val = build_gamma(f5F)
+
+
+
+    #drop z direction
+    val = val[:,:,0]
+
+    print("corner000", val[0,0])
+    print("cornerNNN", val[-1,-1])
+    print("min val", np.min(val))
+    print("max val", np.max(val))
+    print("avg val", np.average(val))
+
 
     #--------------------------------------------------
     # get shape
     nx, ny = np.shape(val)
-    #print("nx={} ny={}".format(nx, ny))
+    print("nx={} ny={}".format(nx, ny))
 
     walloc = 5.0
     xmin =-(walloc)/info['skindepth']
@@ -229,8 +236,8 @@ def plot2d_shock_single(
     #--------------------------------------------------
     # colorbar
     #ax.set_xlim((200.0, 600.0))
-    ax.set_xlim((0.0, 400.0))
-    ax.set_ylim((0.0, 64.0))
+    #ax.set_xlim((0.0, 400.0))
+    #ax.set_ylim((0.0, 64.0))
 
 
     if do_dark:
@@ -453,18 +460,19 @@ def plot2d_particles(ax, info, args):
 
 #--------------------------------------------------
 
-def build_info(fdir, lap):
-    info = {}
-    info['lap'] = lap
-    info['fields_file']   = fdir + 'fields_'+str(args.lap)+'.h5'
-    info['analysis_file'] = fdir + 'analysis'+str(args.lap)+'.h5'
-    
-    return info
+#def build_info(fdir, lap):
+#    info = {}
+#    info['lap'] = lap
+#    info['fields_file']   = fdir + 'fields_'+str(args.lap)+'.h5'
+#    info['analysis_file'] = fdir + 'analysis'+str(args.lap)+'.h5'
+#    
+#    return info
     
 def quick_build_info(fdir, lap):
     info = {}
     info['lap'] = lap
-    info['fields_file']   = fdir + 'flds_'+str(args.lap)+'.h5'
+    #info['fields_file']   = fdir + 'flds_'+str(args.lap)+'.h5'
+    info['fields_file']   = fdir + 'full_moms_'+str(args.lap)+'.h5'
     info['analysis_file'] = fdir + 'analysis_'+str(args.lap)+'.h5'
     info['particle_file'] = fdir + 'test-prtcls'
     
@@ -507,14 +515,18 @@ if __name__ == "__main__":
     #--------------------------------------------------
     # command line driven version
 
-    conf, fdir, args = parse_input()
+    #conf, fdir, args = parse_input()
+    args = parse_args()
+    conf = Configuration(args.conf_filename, do_print=True)
+    fdir = conf.outdir
 
     fdir += '/'
     print("plotting {}".format(fdir))
     
-    fname_F = "flds"
-    fname_A = "analysis"
-    fname_P = "test-prtcls"
+    #fname_F = "flds"
+    #fname_F = "moments"
+    #fname_A = "analysis"
+    #fname_P = "test-prtcls"
 
     if do_dark:
         plt.style.use('dark_background')
@@ -528,6 +540,7 @@ if __name__ == "__main__":
 
         #info = build_info(fdir, args.lap)
         info = quick_build_info(fdir, args.lap)
+
         info['skindepth'] = conf.c_omp/conf.stride
         if do_prtcls:
             for hlaps in range(args.lap-5*conf.interval, args.lap+1, conf.interval):
@@ -541,9 +554,10 @@ if __name__ == "__main__":
     # FIXME
     else:
     
-        files_F = get_file_list(fdir, fname_F)
-        files_A = get_file_list(fdir, fname_A)
-        files_P = get_file_list(fdir, fname_P)
+        #files_F = get_file_list(fdir, fname_F)
+        #files_A = get_file_list(fdir, fname_A)
+        #files_P = get_file_list(fdir, fname_P)
+        # FIXME and use loop instead
     
         for lap, f in enumerate(files_F):
 
