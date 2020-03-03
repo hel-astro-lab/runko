@@ -10,7 +10,6 @@
 #include "../amr/refiner.h"
 #include "../amr/operators.h"
 #include "../../tools/signum.h"
-#include "../amr_analyzator.h"
 
 #include "../../tools/cppitertools/zip.hpp"
 using iter::zip;
@@ -24,7 +23,6 @@ using std::max;
 
 
 namespace vlv {
-
 
 
 
@@ -54,12 +52,11 @@ class SpatialSolver {
 
   public:
 
-    SpatialSolver() {};
+    SpatialSolver() = default;
 
     virtual ~SpatialSolver() = default;
 
-
-    typedef std::array<T, 3> vec;
+    using vec = std::array<T, 3>;
 
     /// Actual solver implementation
     virtual void solve( vlv::Tile<1>& tile, corgi::Grid<1>& grid) = 0;
@@ -76,9 +73,9 @@ class AmrSpatialLagrangianSolver :
 
   public:
 
-    AmrSpatialLagrangianSolver() {};
+    AmrSpatialLagrangianSolver() = default;
 
-    virtual ~AmrSpatialLagrangianSolver() = default;
+    ~AmrSpatialLagrangianSolver() override = default;
       
 
     //using SpatialSolver<T>::get_external_data;
@@ -187,20 +184,20 @@ class AmrSpatialLagrangianSolver :
       if (fp1 >= f0){ 
         T fmin = fminf(fm2, fm1, f0, fp1, fp2);
         return min<T>( T(2)*(f0 - fmin), fp1 - f0);
-      } else {
+      } 
         T fmax = fmaxf(fm2, fm1, f0, fp1, fp2);
         return max<T>( T(2)*(f0 - fmax), fp1 - f0);
-      }
+      
     }
 
     inline T Lmf(T fm2, T fm1, T f0, T fp1, T fp2) {
       if (f0 >= fm1){ 
         T fmax = fmaxf(fm2, fm1, f0, fp1, fp2);
         return min<T>( T(2)*(fmax - f0), f0 - fm1);
-      } else {
+      } 
         T fmin = fminf(fm2, fm1, f0, fp1, fp2);
         return max<T>( T(2)*(fmin - f0), f0 - fm1);
-      }
+      
     }
 
 
@@ -325,9 +322,9 @@ class AmrSpatialLagrangianSolver :
 
 
       // initialize new step
-      for (size_t s=0; s<block0.Nz; s++) {
-        for(size_t r=0; r<block0.Ny; r++) {
-          for(size_t q=0; q<block0.Nx; q++) {
+      for (int s=0; s<block0.Nz; s++) {
+        for(int r=0; r<block0.Ny; r++) {
+          for(int q=0; q<block0.Nx; q++) {
             const auto& M = block0.block(q,r,s); // f_i
             auto& N       = block1.block(q,r,s); // f_i^t+dt
             N = M;
@@ -479,7 +476,7 @@ class AmrSpatialLagrangianSolver :
             //       we do not scale back to speed of light with (qm/cfl)
             T jx = qm*integrate_moment( 
                 flux,
-                [](std::array<T,3>& ) -> T { return 1.0;}
+                [](std::array<T,3>&  /*unused*/) -> T { return 1.0;}
                 );
               
 

@@ -12,9 +12,9 @@
 namespace pic {
 
 inline Particle::Particle(
-    double x, double y, double z,
-    double ux, double uy, double uz, 
-    double wgt,
+    real_prtcl x, real_prtcl y, real_prtcl z,
+    real_prtcl ux, real_prtcl uy, real_prtcl uz, 
+    real_prtcl wgt,
     int __ind, int __proc
     ) : 
   _id(__ind),
@@ -32,7 +32,7 @@ inline Particle::Particle(
 
 inline Particle::Particle( size_t number_of_particles) 
 {
-  data[0] = static_cast<double>(number_of_particles);
+  data[0] = static_cast<real_prtcl>(number_of_particles);
 }
 
 /// special method for info particle that re-uses x mem location
@@ -41,7 +41,14 @@ size_t Particle::number_of_particles() {
 }
 
 
-ParticleContainer::ParticleContainer()
+
+//--------------------------------------------------
+//--------------------------------------------------
+// ParticleContainer methods
+
+
+template<std::size_t D>
+ParticleContainer<D>::ParticleContainer()
 { 
   locArr.resize(3);
   velArr.resize(3);
@@ -61,7 +68,8 @@ ParticleContainer::ParticleContainer()
 }
 
 
-void ParticleContainer::reserve(size_t N) {
+template<std::size_t D>
+void ParticleContainer<D>::reserve(size_t N) {
 
   // always reserve at least 1 element to ensure proper array initialization
   if (N <= 0) N = 1;
@@ -76,7 +84,8 @@ void ParticleContainer::reserve(size_t N) {
   Bpart.reserve(N*3);
 }
 
-void ParticleContainer::resize(size_t N)
+template<std::size_t D>
+void ParticleContainer<D>::resize(size_t N)
 {
   for(size_t i=0; i<3; i++) locArr[i].resize(N);
   for(size_t i=0; i<3; i++) velArr[i].resize(N);
@@ -85,7 +94,8 @@ void ParticleContainer::resize(size_t N)
   Nprtcls = N;
 }
 
-void ParticleContainer::shrink_to_fit()
+template<std::size_t D>
+void ParticleContainer<D>::shrink_to_fit()
 {
   for(size_t i=0; i<3; i++) locArr[i].shrink_to_fit();
   for(size_t i=0; i<3; i++) velArr[i].shrink_to_fit();
@@ -94,7 +104,8 @@ void ParticleContainer::shrink_to_fit()
 }
 
 
-size_t ParticleContainer::size() 
+template<std::size_t D>
+size_t ParticleContainer<D>::size() 
 { 
   assert(locArr[0].size() == Nprtcls);
   assert(locArr[1].size() == Nprtcls);
@@ -112,7 +123,8 @@ size_t ParticleContainer::size()
   return Nprtcls; 
 }
 
-std::pair<int,int> pic::ParticleContainer::keygen() 
+template<std::size_t D>
+std::pair<int,int> pic::ParticleContainer<D>::keygen() 
 {
     // get running key and increment internal counter
   int unique_key = _key;
@@ -122,10 +134,11 @@ std::pair<int,int> pic::ParticleContainer::keygen()
 }
 
 
-void ParticleContainer::add_particle (
-    std::vector<double> prtcl_loc,
-    std::vector<double> prtcl_vel,
-    double prtcl_wgt)
+template<std::size_t D>
+void ParticleContainer<D>::add_particle (
+    std::vector<real_prtcl> prtcl_loc,
+    std::vector<real_prtcl> prtcl_vel,
+    real_prtcl prtcl_wgt)
 {
 
   assert(prtcl_loc.size() == 3);
@@ -143,10 +156,11 @@ void ParticleContainer::add_particle (
   Nprtcls++;
 }
 
-void ParticleContainer::add_identified_particle (
-    std::vector<double> prtcl_loc,
-    std::vector<double> prtcl_vel,
-    double prtcl_wgt,
+template<std::size_t D>
+void ParticleContainer<D>::add_identified_particle (
+    std::vector<real_prtcl> prtcl_loc,
+    std::vector<real_prtcl> prtcl_vel,
+    real_prtcl prtcl_wgt,
     int _id, int _proc)
 {
   assert(prtcl_loc.size() == 3);
@@ -162,9 +176,65 @@ void ParticleContainer::add_identified_particle (
   Nprtcls++;
 }
 
+template<>
+void ParticleContainer<1>::check_outgoing_particles(
+    std::array<double,3>& /*mins*/,
+    std::array<double,3>& /*maxs*/)
+{
+  // TODO implement
+  assert(false);
+}
+
+template<>
+void ParticleContainer<2>::check_outgoing_particles(
+    std::array<double,3>& mins,
+    std::array<double,3>& maxs)
+{
+  to_other_tiles.clear();
+
+  // unpack limits
+  double 
+    xmin = mins[0],
+    ymin = mins[1],
+
+    xmax = maxs[0],
+    ymax = maxs[1];
+
+  int lenx = static_cast<int>( xmax - xmin );
+  int leny = static_cast<int>( ymax - ymin );
+
+  int i0, j0;
+
+  // shortcut for particle locations
+  real_prtcl* locn[3];
+  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
+
+  int i,j,k; // relative indices
+  for(size_t n=0; n<size(); n++) {
+    i = 0;
+    j = 0;
+
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
+
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
+
+    // collapse z dimension
+    if ((i == 0) && (j == 0)) continue; 
+
+    if ( (i != 0) || (j != 0) || (k != 0) ) 
+      to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
+  }
+}
 
 
-void ParticleContainer::check_outgoing_particles(
+
+template<>
+void ParticleContainer<3>::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)
 {
@@ -184,11 +254,11 @@ void ParticleContainer::check_outgoing_particles(
   int leny = static_cast<int>( ymax - ymin );
   int lenz = static_cast<int>( zmax - zmin );
 
-  // shortcut for particle locations
-  double* locn[3];
-  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
-
   int i0, j0, k0;
+
+  // shortcut for particle locations
+  real_prtcl* locn[3];
+  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
   int i,j,k; // relative indices
   for(size_t n=0; n<size(); n++) {
@@ -209,23 +279,20 @@ void ParticleContainer::check_outgoing_particles(
     if(k0 <  0)    k--; // back
     if(k0 >= lenz) k++; // front
 
-    // FIXME: hack to make this work with 2D 
-    if ((i == 0) && (j == 0)) continue; 
-
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
   }
 }
 
-
-void ParticleContainer::delete_particles(std::vector<int> to_be_deleted) 
+template<std::size_t D>
+void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted) 
 {
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
-  double* locn[3];
+  real_prtcl* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
-  double* veln[3];
+  real_prtcl* veln[3];
   for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
 
   int* idn[2];
@@ -249,12 +316,11 @@ void ParticleContainer::delete_particles(std::vector<int> to_be_deleted)
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
-
-  return;
 }
 
 
-void ParticleContainer::delete_transferred_particles()
+template<std::size_t D>
+void ParticleContainer<D>::delete_transferred_particles()
 {
   std::vector<int> to_be_deleted;
 
@@ -264,35 +330,49 @@ void ParticleContainer::delete_transferred_particles()
   delete_particles(to_be_deleted);
 }
 
+template<>
+void ParticleContainer<1>::transfer_and_wrap_particles( 
+    ParticleContainer&    /*neigh*/,
+    std::array<int,3>     /*dirs*/, 
+    std::array<double,3>& /*global_mins*/, 
+    std::array<double,3>& /*global_maxs*/
+    )
+{
+  // TODO not implemented
+  assert(false);
+}
 
-void ParticleContainer::transfer_and_wrap_particles( 
+
+template<>
+void ParticleContainer<2>::transfer_and_wrap_particles( 
     ParticleContainer& neigh,
     std::array<int,3>    dirs, 
     std::array<double,3>& global_mins, 
     std::array<double,3>& global_maxs
     )
 {
-  double locx, locy, locz, velx, vely, velz, wgt;
+
+  // particle overflow from tiles is done in shortest precision
+  // to avoid rounding off errors and particles left in a limbo
+  // between tiles.
+  real_prtcl locx, locy, locz, velx, vely, velz, wgt;
   int id, proc;
 
   int i;
   for (auto&& elem : neigh.to_other_tiles) {
-      
-    //TODO: collapsed z-dimension due to 2D corgi tiles
-    if (std::get<0>(elem.first) == 0 &&
-        std::get<1>(elem.first) == 0 ) 
-    { continue; }
+    if(std::get<0>(elem.first) == 0 && std::get<1>(elem.first) == 0) continue; 
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
+
     if (std::get<0>(elem.first) == -dirs[0] &&
         std::get<1>(elem.first) == -dirs[1] ) {
 
       i = elem.second;
 
-      locx = wrap( neigh.loc(0, i), global_mins[0], global_maxs[0] );
-      locy = wrap( neigh.loc(1, i), global_mins[1], global_maxs[1] );
-      locz = wrap( neigh.loc(2, i), global_mins[2], global_maxs[2] );
+      locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
 
       velx = neigh.vel(0, i);
       vely = neigh.vel(1, i);
@@ -307,12 +387,61 @@ void ParticleContainer::transfer_and_wrap_particles(
     }
   }
 
-  return;
-}
+  }
 
 
+template<>
+void ParticleContainer<3>::transfer_and_wrap_particles( 
+    ParticleContainer& neigh,
+    std::array<int,3>    dirs, 
+    std::array<double,3>& global_mins, 
+    std::array<double,3>& global_maxs
+    )
+{
 
-void ParticleContainer::pack_all_particles()
+  // particle overflow from tiles is done in shortest precision
+  // to avoid rounding off errors and particles left in a limbo
+  // between tiles.
+  real_prtcl locx, locy, locz, velx, vely, velz, wgt;
+  int id, proc;
+
+  int i;
+  for (auto&& elem : neigh.to_other_tiles) {
+      
+    if(std::get<0>(elem.first) == 0 && 
+       std::get<1>(elem.first) == 0 &&
+       std::get<2>(elem.first) == 0) continue; 
+
+    // NOTE: directions are flipped (- sign) so that they are
+    // in directions in respect to the current tile
+
+    if (std::get<0>(elem.first) == -dirs[0] &&
+        std::get<1>(elem.first) == -dirs[1] &&
+        std::get<2>(elem.first) == -dirs[2] ) {
+
+      i = elem.second;
+
+      locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
+
+      velx = neigh.vel(0, i);
+      vely = neigh.vel(1, i);
+      velz = neigh.vel(2, i);
+
+      wgt  = neigh.wgt(i);
+
+      id   = neigh.id(0,i);
+      proc = neigh.id(1,i);
+
+      add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
+    }
+  }
+
+  }
+
+template<std::size_t D>
+void ParticleContainer<D>::pack_all_particles()
 {
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
@@ -351,8 +480,8 @@ void ParticleContainer::pack_all_particles()
 }
 
 
-
-void ParticleContainer::pack_outgoing_particles()
+template<std::size_t D>
+void ParticleContainer<D>::pack_outgoing_particles()
 {
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
@@ -395,13 +524,13 @@ void ParticleContainer::pack_outgoing_particles()
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
 
-  return;
-}
+  }
 
 
-void ParticleContainer::unpack_incoming_particles()
+template<std::size_t D>
+void ParticleContainer<D>::unpack_incoming_particles()
 {
-  double locx, locy, locz, velx, vely, velz, wgts;
+  real_prtcl locx, locy, locz, velx, vely, velz, wgts;
   int ids, proc;
 
   // get real number of incoming particles
@@ -446,11 +575,11 @@ void ParticleContainer::unpack_incoming_particles()
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
 
-  return;
-}
+  }
 
 
-void ParticleContainer::set_keygen_state(int __key, int __rank)
+template<std::size_t D>
+void ParticleContainer<D>::set_keygen_state(int __key, int __rank)
 {
   _key  = __key;
   _rank = __rank;
@@ -458,3 +587,8 @@ void ParticleContainer::set_keygen_state(int __key, int __rank)
 
 
 } // end ns pic
+
+
+template class pic::ParticleContainer<1>;
+template class pic::ParticleContainer<2>;
+template class pic::ParticleContainer<3>;

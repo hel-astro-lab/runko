@@ -19,22 +19,33 @@
 namespace vlv {
 
 
+/// Relativistic gamma from velocity
+template<typename T, int V>
+inline T gamma(std::array<T,V>& uvel) 
+{
+  T gammasq = 1.0;
+  for(size_t i=0; i<V; i++) gammasq += uvel[i]*uvel[i];
+  return std::sqrt(gammasq);
+}
+
+
+
 /*! \brief Block of Vlasov fluid's inside the tile
 *
 * Container to hold a plasma species block
 */
 class PlasmaBlock {
-  typedef toolbox::Mesh< toolbox::AdaptiveMesh<Realf,3>, 3> T;
+  using T = toolbox::Mesh< toolbox::AdaptiveMesh<Realf,3>, 3>;
 
   public:
 
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
+  int Nx;
+  int Ny;
+  int Nz;
 
   T block;
 
-  PlasmaBlock(size_t Nx, size_t Ny, size_t Nz) : 
+  PlasmaBlock(int Nx, int Ny, int Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
     block(Nx, Ny, Nz) 
   { }
@@ -62,9 +73,9 @@ class Tile :
   /// Size of the internal grid
   using fields::Tile<D>::mesh_lengths;
 
-  size_t Nspecies = 2;
+  int Nspecies = 2;
 
-  size_t Nsteps   = 2;
+  int Nsteps   = 2;
 
   /// Simulation data container (2 steps long)
   // 
@@ -74,9 +85,14 @@ class Tile :
   //    stored in a local block
   toolbox::Rotator< std::vector<PlasmaBlock>, 2 > steps;
 
+  /// temporary current
+  toolbox::Mesh<real_short, 3> jx1;
+  toolbox::Mesh<real_short, 3> jy1;
+  toolbox::Mesh<real_short, 3> jz1;
+
 
   /// constructor
-  Tile(size_t nx, size_t ny, size_t nz) :
+  Tile(int nx, int ny, int nz) :
     fields::Tile<D>(nx,ny,nz)
   { 
 
@@ -103,7 +119,7 @@ class Tile :
 
   /// tile temporal and spatial scales
   using fields::Tile<D>::cfl;
-  using fields::Tile<D>::dx;
+  //using fields::Tile<D>::dx;
 
 
   /// General clipping threshold
@@ -118,9 +134,9 @@ class Tile :
 
     for(auto&& internal_mesh : species) {
 
-      for (size_t k=0; k<mesh_lengths[2]; k++)
-      for (size_t j=0; j<mesh_lengths[1]; j++)
-      for (size_t i=0; i<mesh_lengths[0]; i++) {
+      for (int k=0; k<mesh_lengths[2]; k++)
+      for (int j=0; j<mesh_lengths[1]; j++)
+      for (int i=0; i<mesh_lengths[0]; i++) {
         auto& mesh = internal_mesh.block(i,j,k);
         if( mesh.size() < 10 ) continue; // do not clip small meshes
 
@@ -149,9 +165,9 @@ class Tile :
 
     auto& species = steps.get();
     for(auto&& internal_mesh : species) {
-      for (size_t k=0; k<mesh_lengths[2]; k++)
-      for (size_t j=0; j<mesh_lengths[1]; j++)
-      for (size_t i=0; i<mesh_lengths[0]; i++) {
+      for (int k=0; k<mesh_lengths[2]; k++)
+      for (int j=0; j<mesh_lengths[1]; j++)
+      for (int i=0; i<mesh_lengths[0]; i++) {
         auto& mesh = internal_mesh.block(i,j,k);
         if( mesh.size() < 10 ) continue; // do not clip small meshes
 
@@ -190,6 +206,7 @@ class Tile :
   // TODO: separate into own communication module/header
   PlasmaBlock& get_external_data(corgi::Grid<D>&, int, int);
 
+  void cycle_current();
 
 };
 

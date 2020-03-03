@@ -21,3 +21,7 @@
 	path = tools/eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
 	branch = master
+[submodule "pytools/pybox"]
+	path = pytools/pybox
+	url = https://github.com/natj/pyBox.git
+	branch = master

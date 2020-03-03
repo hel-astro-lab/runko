@@ -13,21 +13,21 @@ class Pusher
 
   public:
 
-  Pusher() {};
+  Pusher() = default;
 
   virtual ~Pusher() = default;
 
-  virtual void push_container(pic::ParticleContainer& container, double cfl) 
+  virtual void push_container(pic::ParticleContainer<D>& container, double cfl) 
   {
     // check that this is never used or that the user must know it
     assert(false);
 
     // initialize pointers to particle arrays
-    double* loc[3];
+    real_prtcl* loc[3];
     for( int i=0; i<3; i++)
       loc[i] = &( container.loc(i,0) );
 
-    double* vel[3];
+    real_prtcl* vel[3];
     for( int i=0; i<3; i++)
       vel[i] = &( container.vel(i,0) );
 

@@ -15,7 +15,7 @@ class Propagator
   /// time step length for more multi-stage schemes
   double dt = 1.0;
 
-  Propagator() {};
+  Propagator() = default;
 
   virtual ~Propagator() = default;
 

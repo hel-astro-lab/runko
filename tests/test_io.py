@@ -6,23 +6,65 @@ import os
 import numpy as np
 import pycorgi
 import pyrunko
+import pytools
 import h5py
 
-from visualize import get_yee
-from visualize import getYee2D
-from combine_files import combine_tiles
+#from visualize import get_yee
+#from visualize import getYee2D
+#from combine_files import combine_tiles
+#import injector
+#from read_mesh import TileInfo
+#from read_mesh import get_mesh
+#import initialize as init
 
-import injector
-from read_mesh import TileInfo
-from read_mesh import get_mesh
 
-import initialize as init
+
+# combine tiles inside grid together into one array
+def combine_tiles(ff, fvar, conf, isp=None ):
+
+    arr = np.zeros((conf.Nx*conf.NxMesh, 
+                    conf.Ny*conf.NyMesh, 
+                    conf.Nz*conf.NzMesh))
+
+    f = h5py.File(ff,'r')
+    for dset in f:
+
+        if not(isp==None):
+            if not(f[dset]['ispcs'][()] == isp):
+                continue
+
+        i = f[dset]['i'][()]
+        j = f[dset]['j'][()]
+        k = f[dset]['k'][()]
+
+        NxMesh = f[dset]['Nx'][()]
+        NyMesh = f[dset]['Ny'][()]
+        NzMesh = f[dset]['Nz'][()]
+    
+        ii = int( i*NxMesh )
+        jj = int( j*NyMesh )
+        kk = int( k*NzMesh )
+
+        tile = f[dset][fvar][()]
+        tile = np.reshape(tile, (NzMesh, NyMesh, NxMesh))
+
+        for s in range(NzMesh):
+            for r in range(NyMesh):
+                for q in range(NxMesh):
+                    arr[ii+q, jj+r, kk+s] = tile[s,r,q]
+
+    return arr
+
 
 class Conf:
 
     Nx = 3
     Ny = 3
     Nz = 1
+
+    oneD = False
+    twoD = False
+    threeD = False
 
     NxMesh = 5
     NyMesh = 5
@@ -34,6 +76,9 @@ class Conf:
     ymin = 0.0
     ymax = 1.0
 
+    zmin = 0.0
+    zmax = 1.0
+
     me = -1.0
     mi =  1.0
 
@@ -44,6 +89,8 @@ class Conf:
     #    print("initialized...")
 
 
+def density_profile(xloc, ispcs, conf):
+    return conf.ppc
 
 #load tiles into each grid
 def loadTiles1D(n, conf):
@@ -193,6 +240,8 @@ class IO(unittest.TestCase):
         ##################################################
         # write
         conf = Conf()
+        conf.oneD = True
+
         conf.Nx = 3
         conf.Ny = 1
         conf.Nz = 1
@@ -212,7 +261,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(grid, conf)
         fill_yee(grid, ref, conf)
 
-        pyrunko.vlv.oneD.write_yee(grid, 0, conf.outdir)
+        pyrunko.fields.oneD.write_yee(grid, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -243,10 +292,10 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyrunko.vlv.oneD.read_yee(node2, 0, "io_test_1D")
+        pyrunko.fields.oneD.read_yee(node2, 0, "io_test_1D")
 
-        yee1 = get_yee(grid,  conf)
-        yee2 = get_yee(node2, conf)
+        yee1 = pytools.visualize.get_yee(grid,  conf)
+        yee2 = pytools.visualize.get_yee(node2, conf)
 
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -271,6 +320,8 @@ class IO(unittest.TestCase):
         # write
 
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 3
         conf.Ny = 4
         conf.Nz = 1
@@ -290,7 +341,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(grid, conf)
         fill_yee(grid, ref, conf)
 
-        pyrunko.vlv.twoD.write_yee(grid, 0, conf.outdir)
+        pyrunko.fields.twoD.write_yee(grid, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
@@ -321,10 +372,10 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyrunko.vlv.twoD.read_yee(node2, 0, "io_test_2D")
+        pyrunko.fields.twoD.read_yee(node2, 0, "io_test_2D")
 
-        yee1 = getYee2D(grid,  conf)
-        yee2 = getYee2D(node2, conf)
+        yee1 = pytools.visualize.get_yee_2D(grid,  conf)
+        yee2 = pytools.visualize.get_yee_2D(node2, conf)
 
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -381,6 +432,8 @@ class IO(unittest.TestCase):
         ##################################################
         # write
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 2
         conf.Ny = 1
         conf.Nz = 1
@@ -418,7 +471,7 @@ class IO(unittest.TestCase):
                 #if n.get_mpi_grid(i) == n.rank:
                 c = pyrunko.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 grid.add_tile(c, (i,) ) 
-        injector.inject(grid, filler, conf ) #injecting plasma
+        pytools.vlv.inject(grid, filler, conf) #inject plasma into vlv mesh
 
         pyrunko.vlv.oneD.write_mesh(grid, 0, conf.outdir)
 
@@ -440,7 +493,7 @@ class IO(unittest.TestCase):
                             for q in range(conf.NxMesh):
                                 for r in range(conf.NyMesh):
                                     for s in range(conf.NzMesh):
-                                        tinfo = TileInfo()
+                                        tinfo = pytools.vlv.TileInfo()
                                         tinfo.i = i
                                         tinfo.j = j
                                         tinfo.k = k
@@ -450,7 +503,7 @@ class IO(unittest.TestCase):
                                         tinfo.ispcs = ispcs
 
                                         #now assert 
-                                        vm = get_mesh(f, tinfo)
+                                        vm = pytools.vlv.get_mesh(f, tinfo)
                                         ref = block[q,r,s]
                                         self.compareMeshes(vm, ref)
 
@@ -467,7 +520,7 @@ class IO(unittest.TestCase):
                 #if n.get_mpi_grid(i) == n.rank:
                 c = pyrunko.vlv.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 node2.add_tile(c, (i,) ) 
-        injector.inject(node2, injector.empty_filler, conf, empty=True) #injecting empty meshes
+        pytools.vlv.inject(node2, pytools.vlv.empty_filler, conf, empty=True) #injecting empty meshes
 
         #pyrunko.vlv.oneD.write_mesh(node2, 1, conf.outdir)
         pyrunko.vlv.oneD.read_mesh(node2,  0, "io_test_mesh")
@@ -488,7 +541,7 @@ class IO(unittest.TestCase):
                             for q in range(conf.NxMesh):
                                 for r in range(conf.NyMesh):
                                     for s in range(conf.NzMesh):
-                                        tinfo = TileInfo()
+                                        tinfo = pytools.vlv.TileInfo()
                                         tinfo.i = i
                                         tinfo.j = j
                                         tinfo.k = k
@@ -508,6 +561,8 @@ class IO(unittest.TestCase):
     def skip_test_restart(self):
 
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 5
         conf.Ny = 1
         conf.Nz = 1
@@ -522,7 +577,7 @@ class IO(unittest.TestCase):
         grid = pycorgi.oneD.Grid(conf.Nx, conf.Ny)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
-        init.loadTiles(grid, conf)
+        pytools.vlv.loadTiles(grid, conf)
     
         #load boundaries
         for i in [0, grid.get_Nx()-1]:
@@ -544,7 +599,7 @@ class IO(unittest.TestCase):
                     c.fld1 = iglob
                     c.fld2 = iglob
                 
-                init.initialize_tile(c, i,j, grid, conf)
+                pytools.vlv.initialize_tile(c, (i,j), grid, conf)
 
                 #add it to the grid
                 grid.add_tile(c, (i,)) 
@@ -576,13 +631,13 @@ class IO(unittest.TestCase):
             return x0, u0
 
 
-        from initialize_pic import initialize_tile
-        from injector_pic import inject
 
         ##################################################
         # write
 
         conf = Conf()
+        conf.twoD = True
+
         conf.Nx = 3
         conf.Ny = 4
         conf.Nz = 1
@@ -611,13 +666,14 @@ class IO(unittest.TestCase):
 
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
-                c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                initialize_tile(c, i, j, grid, conf)
-                grid.add_tile(c, (i,j)) 
+                for k in range(grid.get_Nz()):
+                    c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    pytools.pic.initialize_tile(c, (i, j, k), grid, conf)
+                    grid.add_tile(c, (i,j)) 
 
-        inject(grid, test_filler, conf)
+        pytools.pic.inject(grid, test_filler, density_profile, conf)
 
-        pyrunko.vlv.twoD.write_particles(grid, 0, conf.outdir)
+        pyrunko.pic.twoD.write_particles(grid, 0, conf.outdir)
 
         # TODO: read with h5py
 
@@ -629,11 +685,12 @@ class IO(unittest.TestCase):
 
         for i in range(node2.get_Nx()):
             for j in range(node2.get_Ny()):
-                c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-                initialize_tile(c, i, j, node2, conf)
-                node2.add_tile(c, (i,j)) 
+                for k in range(node2.get_Nz()):
+                    c = pyrunko.pic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                    pytools.pic.initialize_tile(c, (i, j,k), node2, conf)
+                    node2.add_tile(c, (i,j)) 
 
-        pyrunko.vlv.twoD.read_particles(node2, 0, conf.outdir)
+        pyrunko.pic.twoD.read_particles(node2, 0, conf.outdir)
 
         #assert
         for i in range(node2.get_Nx()):

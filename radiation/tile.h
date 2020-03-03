@@ -29,30 +29,31 @@ class Tile :
 
 public:
 
+  using corgi::Tile<D>::mins;
+  using corgi::Tile<D>::maxs;
   using fields::Tile<D>::mesh_lengths;
-  using fields::Tile<D>::cfl;
-  using fields::Tile<D>::dx;
 
+  using fields::Tile<D>::yee;
+  using fields::Tile<D>::cfl;
+
+  using pic::Tile<D>::containers;
 
   /// constructor
-  Tile(size_t nx, size_t ny, size_t nz) :
+  Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>(nx,ny,nz),
-       pic::Tile<D>(nx,ny,nz)
+    fields::Tile<D>{nx,ny,nz},
+       pic::Tile<D>{nx,ny,nz}
   { }
 
-  /// destructor
-  ~Tile() override = default;
 
   //PhotonContainer container/storage
   std::vector<PhotonContainer> buckets;
 
   /// get i:th bucket
-  PhotonContainer& get_bucket(size_t i) { return buckets[i]; };
+  PhotonContainer& get_bucket(int i) { return buckets[i]; };
 
   /// push_back new bucket
   void push_back(const PhotonContainer& bucket) {buckets.push_back(bucket);};
-
 
 
 }; // end of tile class

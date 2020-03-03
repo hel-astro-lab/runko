@@ -17,9 +17,9 @@ class Current
   int Nz;
 
   /// half-cell staggered B
-  toolbox::Mesh<double, 1> bxf;
-  toolbox::Mesh<double, 1> byf;
-  toolbox::Mesh<double, 1> bzf;
+  toolbox::Mesh<double, 0> bxf;
+  toolbox::Mesh<double, 0> byf;
+  toolbox::Mesh<double, 0> bzf;
 
 
   Current(int Nx, int Ny, int Nz) :
