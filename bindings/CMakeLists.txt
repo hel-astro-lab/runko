@@ -58,6 +58,7 @@ set (IO_FILES
      ../io/snapshots/fields.c++
      ../io/snapshots/test_prtcls.c++
      ../io/snapshots/pic_moments.c++
+     ../io/snapshots/field_slices.c++
     )
 
 

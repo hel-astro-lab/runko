@@ -20,6 +20,7 @@
 #include "../io/writers/writer.h"
 #include "../io/writers/fields.h"
 #include "../io/snapshots/fields.h"
+#include "../io/snapshots/field_slices.h"
 #include "../io/tasker.h"
 
 
@@ -442,6 +443,12 @@ void bind_fields(py::module& m_sub)
   py::class_<h5io::FieldsWriter<3>>(m_3d, "FieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write",   &h5io::FieldsWriter<3>::write);
+
+
+  // slice writer; only in 3D
+  py::class_<h5io::FieldSliceWriter>(m_3d, "FieldSliceWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::FieldSliceWriter::write);
 
 
   //--------------------------------------------------
