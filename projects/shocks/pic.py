@@ -258,9 +258,17 @@ if __name__ == "__main__":
     piston = pypic.Piston()
 
     # set piston wall speed (for standard reflector it is non-moving so gam = 0)
-    piston.gammawall = conf.wallgamma
-    piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
     piston.walloc = 5.0  # leave 5 cell spacing between the wall for boundary conditions
+
+    if conf.wallgamma > 0.0:
+        #moving wall
+        piston.gammawall = conf.wallgamma
+        piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
+    else:
+        #stationary wall
+        piston.betawall = 0.0
+        piston.gammawall = 1.0
+
 
     # --------------------------------------------------
     # --------------------------------------------------
@@ -525,6 +533,9 @@ if __name__ == "__main__":
         for tile in pytools.tiles_all(grid):
             tile.update_boundaries(grid)
         timer.stop_comp(t1)
+
+        # moving walls
+        #piston.walloc += piston.betawall*conf.cfl
 
         ##################################################
         # data reduction and I/O

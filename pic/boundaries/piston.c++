@@ -47,6 +47,7 @@ void pic::Piston<D>::zigzag(
   k1  = D >= 3 ? static_cast<int>(floor( z1 ) ) : 0;
   k2  = D >= 3 ? static_cast<int>(floor( z2 ) ) : 0;
 
+
   // index checking
   if(D >= 1 ) assert(i1 >= -3 && i1 < static_cast<int>(tile.mesh_lengths[0]+3)) ;
   if(D >= 2 ) assert(j1 >= -3 && j1 < static_cast<int>(tile.mesh_lengths[1]+3)) ;
@@ -179,10 +180,21 @@ void pic::Piston<D>::solve(
         walloc0 = walloc - betawall*c;
 
         // compute crossing point
-        tfrac = abs((x0-walloc0)/(betawall*c - vel0n/gamma*c));
+        tfrac = std::min(abs((x0-walloc0)/(betawall*c - vel0n/gamma*c)), (real_long)1.0);
+
         xcolis = x0 + vel0n/gamma*c*tfrac;
         ycolis = y0;
         zcolis = z0;
+
+        /*
+        std::cout << "current up to intersection point:\n"
+          << " x0      " << x0
+          << " xcolis  " << xcolis
+          << " tfrac   " << tfrac
+          << " walloc  " << walloc
+          << " walloc0 " << walloc0
+          << "\n";
+        */
           
         // deposit current up to intersection point
         zigzag(tile, xcolis, ycolis, zcolis, x0, y0, z0, container.q);
@@ -191,6 +203,9 @@ void pic::Piston<D>::solve(
         vel0n = gammawall*gammawall*gamma
           *(2.*betawall - vel0n/gamma*(1.0+betawall*betawall));
 
+        // recompute gamma
+        gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
+
         tfrac = std::min(
             std::abs((vel0n-xcolis)/std::max(std::abs(vel0n-x0), (real_long)1.0e-6)), (real_long)1.0);
 
@@ -198,6 +213,15 @@ void pic::Piston<D>::solve(
         loc0n = xcolis + vel0n/gamma*c * tfrac;
         loc1n = ycolis;
         loc2n = zcolis;
+
+        /*
+        std::cout << "current cleaning behind wall:\n"
+          << " xcolis  " << xcolis
+          << " x0      " << loc0n - vel0n/gamma*c
+          << " tfrac   " << tfrac
+          << " gamma   " << gamma
+          << "\n";
+        */
 
         // clean up the part of trajectory behind the wall
         // that will be added by the deposition routine that unwinds
@@ -250,9 +274,15 @@ void pic::Piston<2>::field_bc(
     // set transverse directions to zero
     for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) {
       for(int i=-3; i<=iw; i++) {
+
+        // transverse components of electric field to zero (only parallel comp allowed)
         yee.ey(i,j,k) = 0.0;
         yee.ez(i,j,k) = 0.0;
 
+        // parallel comp to zero (conductor repels B field)
+        yee.bx(i,j,k) = 0.0;
+
+        // clean all current behind piston head
         yee.jx(i,j,k) = 0.0;
         yee.jy(i,j,k) = 0.0;
         yee.jz(i,j,k) = 0.0;
@@ -283,9 +313,15 @@ void pic::Piston<3>::field_bc(
     for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+3; k++) 
     for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) 
     for(int i=-3; i<=iw; i++) {
+
+      // transverse components of electric field to zero (only parallel comp allowed)
       yee.ey(i,j,k) = 0.0;
       yee.ez(i,j,k) = 0.0;
 
+      // parallel comp to zero (conductor repels B field)
+      yee.bx(i,j,k) = 0.0;
+
+      // clean all current behind piston head
       yee.jx(i,j,k) = 0.0;
       yee.jy(i,j,k) = 0.0;
       yee.jz(i,j,k) = 0.0;
