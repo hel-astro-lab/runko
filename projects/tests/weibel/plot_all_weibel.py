@@ -1,20 +1,14 @@
 import numpy as np
 import h5py as h5
 import sys, os
-#import argparse
 
 import matplotlib.pyplot as plt
-#from mpl_toolkits.axes_grid1 import make_axes_locatable
-#from matplotlib.colors import Normalize
-#from matplotlib.cm import get_cmap
-#from matplotlib import colorbar
-#from scipy.optimize import minimize
  
 from configSetup import Configuration
-from problem import Configuration_Problem
-#from testprtcls import TestParticles
 
-from problem import lap2time
+sys.path.insert(0,'../')
+from setup_tests import Configuration_Test
+from setup_tests import lap2time
 
 import pytools
 
@@ -56,13 +50,17 @@ if __name__ == "__main__":
     confs = [
             "gam3.ini",
             "gam10.ini",
-            "gam50.ini",
+            "gam100.ini",
             ]
 
 
     for conf_filename in confs:
-        conf = Configuration_Problem(conf_filename)
-        fdir = conf.outdir + '/'
+        conf = Configuration_Test(conf_filename)
+
+        # restructure path to point to this dir
+        fdir = conf.outdir 
+        fdir = fdir.split('/')[1] + '/'
+        print(fdir)
 
 
         #--------------------------------------------------

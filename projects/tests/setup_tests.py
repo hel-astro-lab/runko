@@ -14,7 +14,7 @@ def lap2time(lap, conf, do_print=False):
 
 
 # extend default conf class with problem specific parameters
-class Configuration_Problem(Configuration):
+class Configuration_Test(Configuration):
     def __init__(self, *file_names, do_print=False):
         Configuration.__init__(self, *file_names)
 
