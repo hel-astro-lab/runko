@@ -1,12 +1,13 @@
 # Physical Test Suite
---------------------------------------------------
 
 Simple physical plasma tests are presented here. 
+
+--------------------------------------------------
 
 ## Weibel instability
 
 Counter-flowing relativistic pair plasma is prone to a current filamentation instability. 
-In the case that both beams are symmetric this simplifies to a completely transverse growing modes with simple analytical growth rates.
+In the case that the beams are completely symmetric this simplifies to a purely transverse growing modes with simple analytical growth rates.
 
 In order perform a PIC simulation with Weibel setup, execute the code with 4 processors (or less) with
 

@@ -61,12 +61,17 @@ if __name__ == "__main__":
     # --------------------------------------------------
     # load problem setup
     
-    # weibel
-    if True:
+    # Weibel
+    if False:
         from weibel import velocity_profile
         from weibel import density_profile
         from weibel import insert_em_fields
 
+    # Langmuir
+    if True:
+        from langmuir import velocity_profile
+        from langmuir import density_profile
+        from langmuir import insert_em_fields
 
 
     # --------------------------------------------------
