@@ -44,9 +44,16 @@ default_turbulence_values = {
                 },
         'dens': {'title': r"$n/n_0$",
                 'vmin': 0.0,
-                'vmax': 4.0,
+                'vmax': 6.0,
                 'derived':True,
                 'file':'moms',
+                },
+        'logdens': {'title': r"$\log_{10} n/n_0$",
+                'vmin':-2.0,
+                'vmax': 1.0,
+                'derived':True,
+                'file':'moms',
+                'log':'True',
                 },
         'jz': {'title': r"$J_z$",
                'cmap': "RdBu",
@@ -100,7 +107,7 @@ def get_normalization(var, conf):
 
     if var == 'rho': # or var == 'dens':
         norm = qe*n0
-    if var == 'dens':
+    if var == 'dens' or var == 'logdens':
         norm = n0
     if var == 'jz':
         norm = qe*n0*conf.cfl**2
@@ -194,7 +201,7 @@ def load_data(var, args, lap):
             vy = read_h5(conf.outdir, fname_fld, "Vye", lap)
             vz = read_h5(conf.outdir, fname_fld, "Vze", lap)
             data = 1.0/np.sqrt(1.0 - vx**2 + vy**2 + vz**2)
-        if var == 'dens':
+        if var == 'dens' or var == 'logdens':
             de = read_h5(conf.outdir, fname_fld, "dense", lap)
             dp = read_h5(conf.outdir, fname_fld, "densp", lap)
             data = de + dp
@@ -291,20 +298,18 @@ if __name__ == "__main__":
         data = load_data(var, args, lap)
 
         # limit box size
-        data = data[6:,:,:] #cut out reflector
+        data = data[1:,:,:] #cut out reflector
 
-        xlen = 800.0
-        xleni = np.int(xlen*conf.c_omp) #into units of cells
+        #xlen = 800.0
+        #xlen = 1300.0
+        xlen = 700.0
+        xleni = np.int(xlen*conf.c_omp/conf.stride) #into units of cells
         data = data[0:xleni,:,:]
 
         #manual striding
-        stride = 10
+        stride = 5
         #data = data[::stride,::stride,::stride]
-        
 
-
-        if args['log']:
-            data = np.log10(data)
 
         print(np.shape(data))
         nx, ny, nz = np.shape(data)
@@ -319,6 +324,8 @@ if __name__ == "__main__":
             norm = get_normalization(var, conf)
             data = data / norm
 
+        if args['log']:
+            data = np.log10(data)
 
         print("corner value: {}".format(data[0,0,0]))
         print("min value: {}".format(np.min(data)))
