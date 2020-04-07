@@ -62,13 +62,13 @@ if __name__ == "__main__":
     # load problem setup
     
     # Weibel
-    if False:
+    if True:
         from weibel import velocity_profile
         from weibel import density_profile
         from weibel import insert_em_fields
 
     # Langmuir
-    if True:
+    if False:
         from langmuir import velocity_profile
         from langmuir import density_profile
         from langmuir import insert_em_fields
@@ -470,9 +470,9 @@ if __name__ == "__main__":
             MPI.COMM_WORLD.barrier()
 
             # shallow IO
+            mom_writer.write(grid, lap)  # prtcl moments from vel distribution
             fld_writer.write(grid, lap)  # quick field snapshots
             prtcl_writer.write(grid, lap)  # test particles
-            mom_writer.write(grid, lap)  # quick field snapshots
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):

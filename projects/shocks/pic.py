@@ -575,9 +575,10 @@ if __name__ == "__main__":
             MPI.COMM_WORLD.barrier()
 
             # shallow IO
+            # NOTE: do moms before other IOs to keep rho up-to-date
+            mom_writer.write(grid, lap)  # pic distribution moments; 
             fld_writer.write(grid, lap)  # quick field snapshots
             prtcl_writer.write(grid, lap)  # test particles
-            mom_writer.write(grid, lap)  # quick field snapshots
             
             #box peripheries 
             slice_xy_writer.write(grid, lap)

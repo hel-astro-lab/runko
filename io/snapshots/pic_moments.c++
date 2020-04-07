@@ -46,11 +46,18 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   real_long u0, v0, w0;
   int nparts;
   int i,j,k;
+  int iff,jff,kff;
 
 
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
+    auto mins = tile.mins;
+
+    // update also yee
+    auto& yee = tile.get_yee();
+    yee.rho.clear();
+
 
     // loop over species
     for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
@@ -79,12 +86,15 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         y0 = static_cast<real_long>( loc[1][n] );
         z0 = static_cast<real_long>( loc[2][n] );
 
-        // prtcl index; assuming dx = 1; tile coordinates
-  	    //i = D >= 1 ? static_cast<int>(floor( x0 - mins[0] ) ) : 0;
-  	    //j = D >= 2 ? static_cast<int>(floor( y0 - mins[1] ) ) : 0;
-  	    //k = D >= 3 ? static_cast<int>(floor( z0 - mins[2] ) ) : 0;
+        // rel prtcl index; assuming dx = 1; tile coordinates
+        iff = D >= 1 ? static_cast<int>(floor( x0 - mins[0] ) ) : 0;
+        jff = D >= 2 ? static_cast<int>(floor( y0 - mins[1] ) ) : 0;
+        kff = D >= 3 ? static_cast<int>(floor( z0 - mins[2] ) ) : 0;
+        
+        // update rho arrays
+        yee.rho(iff,jff,kff) += mass;
 
-        // prtcl index; assuming dx = 1; global grid coordinates
+        // full prtcl index; assuming dx = 1; global grid coordinates
   	    i = D >= 1 ? static_cast<int>(floor( x0 ) ) : 0;
   	    j = D >= 2 ? static_cast<int>(floor( y0 ) ) : 0;
   	    k = D >= 3 ? static_cast<int>(floor( z0 ) ) : 0;
