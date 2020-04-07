@@ -253,6 +253,17 @@ if __name__ == "__main__":
         conf.stride,
     )
 
+    # 3D box peripherals
+    slice_xy_writer = pyfld.FieldSliceWriter( conf.outdir, 
+            conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+            0, 1)
+    slice_xz_writer = pyfld.FieldSliceWriter( conf.outdir, 
+            conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+            1, 1)
+    slice_yz_writer = pyfld.FieldSliceWriter( conf.outdir, 
+            conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+            2, 1)
+
     # --------------------------------------------------
     # reflecting leftmost wall
     piston = pypic.Piston()
@@ -567,6 +578,11 @@ if __name__ == "__main__":
             fld_writer.write(grid, lap)  # quick field snapshots
             prtcl_writer.write(grid, lap)  # test particles
             mom_writer.write(grid, lap)  # quick field snapshots
+            
+            #box peripheries 
+            slice_xy_writer.write(grid, lap)
+            slice_xz_writer.write(grid, lap)
+            slice_yz_writer.write(grid, lap)
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
