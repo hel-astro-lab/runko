@@ -180,7 +180,10 @@ void pic::Piston<D>::solve(
         walloc0 = walloc - betawall*c;
 
         // compute crossing point
-        tfrac = std::min(abs((x0-walloc0)/(betawall*c - vel0n/gamma*c)), (real_long)1.0);
+        tfrac = std::min(
+            std::abs((x0-walloc0)/(betawall*c - vel0n/gamma*c)), 
+            (real_long)1.0
+            );
 
         xcolis = x0 + vel0n/gamma*c*tfrac;
         ycolis = y0;
@@ -207,7 +210,9 @@ void pic::Piston<D>::solve(
         gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
 
         tfrac = std::min(
-            std::abs((vel0n-xcolis)/std::max(std::abs(vel0n-x0), (real_long)1.0e-6)), (real_long)1.0);
+            std::abs((vel0n-xcolis)/std::max(std::abs(vel0n-x0), (real_long)1.0e-6)), 
+            (real_long)1.0
+            );
 
         // move particle from the location of the wall with new velocity
         loc0n = xcolis + vel0n/gamma*c * tfrac;

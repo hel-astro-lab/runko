@@ -215,9 +215,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       yee.jz(i2,  j2+1, k2)   += Fz2 * (1.0-Wx2) * Wy2;
       yee.jz(i2+1,j2+1, k2)   += Fz2 * Wx2       * Wy2;
 
-
-      // finally; store prtcl number density
-      yee.rho(i2, j2, k2) += abs(q);
     }
 
   }//end of loop over species

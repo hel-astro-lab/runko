@@ -87,7 +87,7 @@ default_turbulence_values = {
                 },
         'gamma': {'title': r"$\Gamma_e$",
                 'vmin': 0.0,
-                'vmax': 10.0,
+                'vmax': 20.0,
                 'derived':True,
                 'file':'moms',
                 },
@@ -169,7 +169,7 @@ def read_periphery(outdir, fname, var, lap):
     data = np.zeros((nx,ny,3))
     data[:,:,0] = data_xy[:,:,0]
     data[:,:,1] = data_xz[:,:,0]
-    data[:,:,2] = data_yz[:,:,0]
+    #data[:,:,2] = data_yz[:,:,0]
 
     return data
 
@@ -314,9 +314,10 @@ if __name__ == "__main__":
         print(np.shape(data))
         nx, ny, nz = np.shape(data)
 
+        #XXX TODO remove
         #skim top of due to mom error
-        if args['file'] == 'moms':
-            data = data[:,:,:-1]
+        #if args['file'] == 'moms':
+        #    data = data[:,:,:-1]
 
         #--------------------------------------------------
         # normalization

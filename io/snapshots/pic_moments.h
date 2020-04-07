@@ -51,9 +51,9 @@ class PicMomentsWriter :
       stride{stride}
     {
       //fname = prefix + "-" + to_string(lap) + extension;
-      nx = Nx*NxMesh/stride + 1;
-      ny = Ny*NyMesh/stride + 1;
-      nz = Nz*NzMesh/stride + 1;
+      nx = Nx*NxMesh/stride;
+      ny = Ny*NyMesh/stride;
+      nz = Nz*NzMesh/stride;
 
       // add correct amount of data containers
       for(size_t i=0; i<14; i++) arrs.emplace_back(nx, ny, nz);

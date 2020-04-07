@@ -47,9 +47,9 @@ void h5io::FieldSliceWriter::read_tiles(
     nzt = nzt == 0 ? 1 : nzt;
 
     // starting location
-    int i0 = (yee.Nx/stride)*std::get<0>(index);
-    int j0 = (yee.Ny/stride)*std::get<1>(index);
-    int k0 = (yee.Nz/stride)*std::get<2>(index);
+    int i0 = nxt*std::get<0>(index);
+    int j0 = nyt*std::get<1>(index);
+    int k0 = nzt*std::get<2>(index);
 
 
     // x-y plane, z = 0

@@ -555,9 +555,9 @@ if __name__ == "__main__":
             MPI.COMM_WORLD.barrier()
 
             # shallow IO
+            mom_writer.write(grid, lap)  # prtcl moments from vel distribution
             fld_writer.write(grid, lap)  # quick field snapshots
             prtcl_writer.write(grid, lap)  # test particles
-            mom_writer.write(grid, lap)  # quick field snapshots
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
