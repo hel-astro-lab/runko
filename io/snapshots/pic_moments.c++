@@ -4,7 +4,7 @@
 #include "../../pic/particle.h"
 #include "../../pic/tile.h"
 #include "../../tools/signum.h"
-#include "../../tools/wrap.h"
+#include "../../tools/limit.h"
 
 
 using ezh5::File;
@@ -90,9 +90,15 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         iff = D >= 1 ? static_cast<int>(floor( x0 - mins[0] ) ) : 0;
         jff = D >= 2 ? static_cast<int>(floor( y0 - mins[1] ) ) : 0;
         kff = D >= 3 ? static_cast<int>(floor( z0 - mins[2] ) ) : 0;
-        
+
+        // limit to 0 Nx just in case
+        if(D >= 1) iff = limit(iff, 0, tile.mesh_lengths[0]-1);
+        if(D >= 2) jff = limit(jff, 0, tile.mesh_lengths[1]-1);
+        if(D >= 3) kff = limit(kff, 0, tile.mesh_lengths[2]-1);
+
         // update rho arrays
         yee.rho(iff,jff,kff) += mass;
+
 
         // full prtcl index; assuming dx = 1; global grid coordinates
   	    i = D >= 1 ? static_cast<int>(floor( x0 ) ) : 0;
@@ -100,9 +106,9 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   	    k = D >= 3 ? static_cast<int>(floor( z0 ) ) : 0;
 
         // reduce by a factor of stride; floating point arithmetics takes care of rounding
-        i = i/stride;
-        j = j/stride;
-        k = k/stride;
+        if(D >= 1) i = limit(i/stride, 0, nx-1);
+        if(D >= 2) j = limit(j/stride, 0, ny-1);
+        if(D >= 3) k = limit(k/stride, 0, nz-1);
 
         u0 = static_cast<real_long>(vel[0][n]);
         v0 = static_cast<real_long>(vel[1][n]);

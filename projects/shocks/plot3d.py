@@ -551,6 +551,9 @@ if __name__ == "__main__":
 
     slap = str(lap).rjust(4, "0")
     fname = conf.outdir + "/3d_" + var + "_" + slap
+    if do_periphery:
+        fname += '_perip'
+
     #plt.subplots_adjust(left=-0.45, bottom=-0.45, right=1.35, top=1.45)
     plt.subplots_adjust(left=-0.45, bottom=-0.7, right=1.45, top=1.6)
 
