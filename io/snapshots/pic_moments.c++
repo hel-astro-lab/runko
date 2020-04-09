@@ -1,5 +1,6 @@
-#include "pic_moments.h"
+#include <cmath>
 
+#include "pic_moments.h"
 #include "../../tools/ezh5/src/ezh5.hpp"
 #include "../../pic/particle.h"
 #include "../../pic/tile.h"
@@ -79,7 +80,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       int n1 = 0;
       int n2 = nparts;
       for(int n=n1; n<n2; n++) {
-        mass = abs(charge);
+        mass = std::abs(charge);
 
         // prtcl coordinate location; cast to double for the duration of this algorithm
         x0 = static_cast<real_long>( loc[0][n] );
