@@ -67,10 +67,10 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       nparts = container.size();
 
       real_prtcl* loc[3];
-      for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
+      for( i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
       real_prtcl* vel[3];
-      for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
+      for( i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
       //real_prtcl* ch;
       //ch = &( container.wgt(0) );
