@@ -84,13 +84,19 @@ There are four tools provided for use in studying the results:
 1. Particle spectra
 -------------------
 
-This script will output a spectra of the particles Lorentz factor (gamma) over the time period of the simulation. It will plot all simulation laps by default, however, a lap can also be designated. If all laps are plotted, it will also find the 10 most energetic particles at the end of the simulation and write their details to file in `10_prtcls.txt`.
+This script will output a spectra of the particles Lorentz factor (gamma, :math:`\gamma = (1-\beta^2)^{-1/2}`) over the time period of the simulation. It will plot all simulation laps by default, however, a lap can also be designated. If all laps are plotted, it will also find the 10 most energetic particles at the end of the simulation and write their details to file in `10_prtcls.txt`.
 
 To run, use the command:
 
 .. code-block:: bash
 
    python3 prtcl_spec.py --conf shock_mini.ini [--lap lap_no]
+   
+Note that the particle spectra is typically computed with a logarithmic binning so that
+
+.. math::
+
+   \frac{dN}{d\log \gamma} = \gamma \frac{dN}{d\gamma}
 
 2. Particle paths
 -----------------
