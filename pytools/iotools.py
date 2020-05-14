@@ -10,7 +10,8 @@ def read_h5_array(f5, var_name):
         nz = f5['Nz'].value
     except:
         nx,ny,nz = np.shape(f5[var_name])
-        return f5[var_name]
+        val = f5[var_name][:]
+        return val
 
     # column-ordered data with image convention (x horizontal, y vertical, ..)
     # i.e., so-called fortran ordering
