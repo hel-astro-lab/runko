@@ -69,6 +69,9 @@ class Tile :
   /// end index of the slope
   real_short fld2;
 
+  // damping parameter
+  real_short ksupp = 10; 
+
 
 };
 

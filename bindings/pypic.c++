@@ -165,7 +165,6 @@ namespace wall {
           py::multiple_inheritance()
           )
     .def(py::init<int, int, int>());
-
     }
 }
 

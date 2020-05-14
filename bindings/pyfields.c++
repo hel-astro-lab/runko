@@ -94,7 +94,8 @@ auto declare_TileDamped(
   .def_readwrite("bz_ref",   &fields::damping::Tile<D,S>::bz_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
   .def_readwrite("fld1",     &fields::damping::Tile<D,S>::fld1)
   .def_readwrite("fld2",     &fields::damping::Tile<D,S>::fld2)
-  .def("damp_fields",         &fields::damping::Tile<D,S>::damp_fields);
+  .def_readwrite("ksupp",    &fields::damping::Tile<D,S>::ksupp)
+  .def("damp_fields",        &fields::damping::Tile<D,S>::damp_fields);
 }
 
 

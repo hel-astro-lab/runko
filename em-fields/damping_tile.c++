@@ -49,7 +49,6 @@ void fields::damping::Tile<D,S>::damp_fields()
 
   //Realf lambda, lambda1;
   real_short lambda2;
-  real_short ksupp = 10; // damping parameter
 
 
   // moving injector position
