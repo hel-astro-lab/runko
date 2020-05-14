@@ -94,7 +94,7 @@ To run, use the command:
    
 Note that the particle spectra is typically computed with a logarithmic binning so that
 
-.. math
+.. math::
 
    \frac{dN}{d\log \gamma} = \gamma \frac{dN}{d\gamma}
 
