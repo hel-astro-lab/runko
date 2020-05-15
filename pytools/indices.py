@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*- 
 
 
+# dig out indices from inside the tile
+def get_index(tile, conf):
+    ind = tile.index
+    if conf.threeD:
+        i,j,k = ind
+    elif conf.twoD:
+        i,j = ind
+        k = 0
+
+    return i,j,k
+
+
 class Stagger:
 
     staggers = {
