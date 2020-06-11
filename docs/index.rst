@@ -11,6 +11,7 @@ Runko is a modern numerical toolkit for simulating astrophysical plasmas. It is 
    :hidden:
 
    installation
+   clusters
 
 
 

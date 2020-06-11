@@ -1,52 +1,7 @@
 #include "damping_tile.h"
 
 
-using std::min;
-using std::max;
 using std::exp;
-
-
-
-/*
-void fields::PlasmaTileDamped::push_e() {
-
-  // this->push_e_1d();
-  this->push_e_2d_damped();
-  // this->push_e_3d();
-}
-*/
-
-
-/*
-/// 2D E pusher
-void fields::PlasmaTileDamped::push_e_2d_damped() {
-
-  fields::YeeLattice& mesh = this->get_yee();
-
-  //std::cout << "Calling DAMPED E update\n";
-  Realf C = 1.0 * cfl;
- 
-  int k = 0;
-  for(int j=0; j<(int)NyMesh; j++) {
-    for(int i=0; i<(int)NxMesh; i++) {
-
-      // Ex
-      mesh.ex(i,j,k) += 
-        + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
-
-      // Ey
-      mesh.ey(i,j,k) += 
-        + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k));
-
-      // Ez
-      mesh.ez(i,j,k) += 
-        + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
-        + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
-
-    }
-  }
-}
-*/
 
 
 // deposit current with some resistivity
@@ -93,8 +48,8 @@ void fields::damping::Tile<D,S>::damp_fields()
   auto& yee = this->get_yee();
 
   //Realf lambda, lambda1;
-  Realf lambda2;
-  Realf ksupp = 10; // damping parameter
+  real_short lambda2;
+  real_short ksupp = 10; // damping parameter
 
 
   // moving injector position
@@ -119,12 +74,12 @@ void fields::damping::Tile<D,S>::damp_fields()
 
 
   int k = 0; // XXX: 2D hack
-  Realf iglob, jglob;
+  real_short iglob, jglob;
   //Realf kglob;
   //kglob = (Realf)k + fields::Tile<D>::mins[2];
 
   for(int j = jstr; j<jfin; j++) {
-    jglob = (Realf)j + fields::Tile<D>::mins[1];
+    jglob = (real_short)j + fields::Tile<D>::mins[1];
 
     // damping region for Y direction or if not, then just continue
     if ( (ydir && (
@@ -142,7 +97,7 @@ void fields::damping::Tile<D,S>::damp_fields()
 
 
       for(int i=istr; i<ifin; i++) {
-        iglob = (Realf)i + fields::Tile<D>::mins[0];
+        iglob = (real_short)i + fields::Tile<D>::mins[0];
 
         // damping region for X direction or if not, then just continue
         if ( (xdir && (
@@ -176,7 +131,7 @@ void fields::damping::Tile<D,S>::damp_fields()
     // Ydir: left || right
     if (( ydir && ( (left && (jglob <= fld1)) || (right && (jglob > fld1)) )) || !ydir ) {
       for(int i=istr; i<ifin; i++) {
-        iglob = (Realf)i + fields::Tile<D>::mins[0];
+        iglob = (real_short)i + fields::Tile<D>::mins[0];
         // Xdir: left || right
         if (( xdir && ( (left && (iglob <= fld1)) || (right && (iglob > fld1)) )) || !xdir ) {
           yee.ex(i,j,k) = ex_ref(i,j,k);

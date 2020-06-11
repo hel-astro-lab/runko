@@ -26,71 +26,69 @@ class Tile :
   virtual public  corgi::Tile<D> 
 {
 
+
 public:
 
-  /// Size of the internal grid
-  //size_t NxGrid;
-  //size_t NyGrid;
-  //size_t NzGrid;
-
+  using corgi::Tile<D>::mins;
+  using corgi::Tile<D>::maxs;
   using fields::Tile<D>::mesh_lengths;
 
+  using fields::Tile<D>::yee;
 
-  //ParticleContainer container;
-  std::vector<ParticleContainer> containers;
+  using fields::Tile<D>::cfl;
+
+  std::vector<ParticleContainer<D>> containers;
 
   //--------------------------------------------------
   // normal container methods
      
   /// get i:th container
-  ParticleContainer& get_container(size_t i) { return containers[i]; };
+  ParticleContainer<D>& get_container(int i) { return containers[i]; }
 
-  const ParticleContainer& get_const_container(size_t i) const { return containers[i]; };
+  const ParticleContainer<D>& get_const_container(int i) const { return containers[i]; };
 
   /// set i:th container
-  void set_container(const ParticleContainer& block) { containers.push_back(block); };
+  void set_container(ParticleContainer<D>& block) 
+  { 
+    containers.push_back(block); 
+  };
 
-  size_t Nspecies() const { return containers.size(); };
-
+  int Nspecies() const { return containers.size(); };
 
 
   /// constructor
-  Tile(size_t nx, size_t ny, size_t nz) :
+  Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>(nx,ny,nz)
+    fields::Tile<D>{nx,ny,nz}
   { }
 
 
-  /// tile temporal and spatial scales
-  using fields::Tile<D>::cfl;
-  using fields::Tile<D>::dx;
-
   //--------------------------------------------------
   // MPI send
-  virtual std::vector<mpi::request> 
-  send_data( mpi::communicator&, int orig, int mode, int tag) override;
+  std::vector<mpi::request> 
+  send_data( mpi::communicator& /*comm*/, int dest, int mode, int tag) override;
 
   /// actual tag=0 send
   std::vector<mpi::request> 
-  send_particle_data( mpi::communicator&, int orig, int tag);
+  send_particle_data( mpi::communicator& /*comm*/, int dest, int tag);
 
   /// actual tag=1 send
   std::vector<mpi::request> 
-  send_particle_extra_data( mpi::communicator&, int orig, int tag);
+  send_particle_extra_data( mpi::communicator& /*comm*/, int dest, int tag);
 
 
   //--------------------------------------------------
   // MPI recv
-  virtual std::vector<mpi::request> 
-  recv_data(mpi::communicator&, int dest, int mode, int tag) override;
+  std::vector<mpi::request> 
+  recv_data(mpi::communicator& /*comm*/, int orig, int mode, int tag) override;
 
   /// actual tag=0 recv
   std::vector<mpi::request> 
-  recv_particle_data(mpi::communicator&, int dest, int tag);
+  recv_particle_data(mpi::communicator& /*comm*/, int orig, int tag);
 
   /// actual tag=1 recv
   std::vector<mpi::request> 
-  recv_particle_extra_data(mpi::communicator&, int dest, int tag);
+  recv_particle_extra_data(mpi::communicator& /*comm*/, int orig, int tag);
   //--------------------------------------------------
 
 
@@ -119,6 +117,10 @@ public:
 
   /// shrink to fit all internal containers
   void shrink_to_fit_all_particles();
+
+
+private:
+  std::size_t dim = D;
 };
 
 

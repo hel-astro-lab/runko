@@ -30,7 +30,6 @@ int get_extra_tag(int tag, int extra_param)
 
 
 
-
 //--------------------------------------------------
 
 template<std::size_t D>
@@ -85,7 +84,7 @@ void Tile<2>::get_incoming_particles(
 
       // loop over all containers
         
-      for(size_t ispc=0; ispc<Nspecies(); ispc++) {
+      for(int ispc=0; ispc<Nspecies(); ispc++) {
         auto& container = get_container(ispc);
         auto& neigh = external_tile.get_container(ispc);
 
@@ -97,6 +96,48 @@ void Tile<2>::get_incoming_particles(
 }
 
 
+template<>
+void Tile<3>::get_incoming_particles(
+    corgi::Grid<3>& grid)
+{
+
+  std::array<double,3> global_mins = {
+    static_cast<double>( grid.get_xmin() ),
+    static_cast<double>( grid.get_ymin() ),
+    static_cast<double>( grid.get_zmin() )
+  };
+
+  std::array<double,3> global_maxs = {
+    static_cast<double>( grid.get_xmax() ),
+    static_cast<double>( grid.get_ymax() ),
+    static_cast<double>( grid.get_zmax() )
+  };
+
+  // fetch incoming particles from neighbors around me
+  for(int i=-1; i<=1; i++) {
+    for(int j=-1; j<=1; j++) {
+      for(int k=-1; k<=1; k++) {
+          
+        // get neighboring tile
+        auto ind = this->neighs(i, j, k); 
+        uint64_t cid = grid.id( std::get<0>(ind), std::get<1>(ind), std::get<2>(ind) );
+        Tile& external_tile = dynamic_cast<Tile&>( grid.get_tile(cid) );
+
+        // loop over all containers
+        for(int ispc=0; ispc<Nspecies(); ispc++) {
+          auto& container = get_container(ispc);
+          auto& neigh = external_tile.get_container(ispc);
+
+          container.transfer_and_wrap_particles(
+              neigh, {i,j,k}, global_mins, global_maxs);
+        }
+
+        }
+    }
+  }
+
+}
+
 template<std::size_t D>
 std::vector<mpi::request> Tile<D>::send_data( 
     mpi::communicator& comm, 
@@ -104,13 +145,14 @@ std::vector<mpi::request> Tile<D>::send_data(
     int mode,
     int tag)
 {
-  if     (mode == 0) return fields::Tile<D>::send_data(comm, dest, mode, tag);
-  else if(mode == 1) return fields::Tile<D>::send_data(comm, dest, mode, tag);
-  else if(mode == 2) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  if(mode == 0) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  if(mode == 1) return fields::Tile<D>::send_data(comm, dest, mode, tag);
+  if(mode == 2) return fields::Tile<D>::send_data(comm, dest, mode, tag);
 
-  else if(mode == 3) return send_particle_data(comm,dest,tag);
-  else if(mode == 4) return send_particle_extra_data(comm,dest,tag);
-  else assert(false);
+  if(mode == 3) return send_particle_data(comm,dest,tag);
+  if(mode == 4) return send_particle_extra_data(comm,dest,tag);
+
+  assert(false);
 }
 
 
@@ -121,7 +163,7 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
     int tag)
 {
   std::vector<mpi::request> reqs;
-  for(size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for(int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
 
     reqs.emplace_back(
@@ -142,7 +184,7 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
     int tag)
 {
   std::vector<mpi::request> reqs;
-  for(size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for(int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
 
     if(!container.outgoing_extra_particles.empty()) {
@@ -167,13 +209,14 @@ std::vector<mpi::request> Tile<D>::recv_data(
     int mode,
     int tag)
 {
-  if     (mode == 0) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
-  else if(mode == 1) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
-  else if(mode == 2) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  if(mode == 0) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  if(mode == 1) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
+  if(mode == 2) return fields::Tile<D>::recv_data(comm, orig, mode, tag);
 
-  else if(mode == 3) return recv_particle_data(comm,orig,tag);
-  else if(mode == 4) return recv_particle_extra_data(comm,orig,tag);
-  else assert(false);
+  if(mode == 3) return recv_particle_data(comm,orig,tag);
+  if(mode == 4) return recv_particle_extra_data(comm,orig,tag);
+
+  assert(false);
 }
 
 
@@ -184,7 +227,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
     int tag)
 {
   std::vector<mpi::request> reqs;
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for (int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
     container.incoming_particles.resize( container.optimal_message_size );
 
@@ -212,7 +255,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
 
   // normal particles
   int extra_size=0;
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for (int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
     //container.incoming_extra_particles.clear();
       
@@ -310,4 +353,4 @@ void Tile<D>::shrink_to_fit_all_particles()
 
 //template class pic::Tile<1>;
 template class pic::Tile<2>;
-//template class pic::Tile<3>;
+template class pic::Tile<3>;

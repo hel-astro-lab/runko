@@ -6,14 +6,15 @@ import numpy as np
 
 import pycorgi
 import pyrunko.rad as pyrad
+import pytools
 
 
-import initialize_pic as init_pic
-import initialize_rad as init_rad
+#import initialize_pic as init_pic
+#import initialize_rad as init_rad
 
-from initialize_rad import bbodySample
-from initialize_rad import rand3Dloc
-from initialize_rad import rand3Dvel
+#from initialize_rad import bbodySample
+#from initialize_rad import rand3Dloc
+#from initialize_rad import rand3Dvel
 
 
 do_plots = True
@@ -35,6 +36,10 @@ class Conf:
     Nx = 1
     Ny = 1
     Nz = 1
+
+    oneD = False
+    twoD = False
+    threeD = False
 
     NxMesh = 10
     NyMesh = 10
@@ -110,6 +115,8 @@ class radiation(unittest.TestCase):
         #    axs.append( plt.subplot(gs[ai]) )
 
         conf = Conf()
+        conf.twoD = True
+
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.Nx = 3
@@ -133,10 +140,10 @@ class radiation(unittest.TestCase):
         u0_ref  = np.zeros((Nprtcls,3))
 
         for ip in range(Nprtcls):
-            ene = bbodySample(kT)
+            ene = pytools.rad.sample_blackbody(kT)
 
-            x0 = rand3Dloc(conf)
-            u0 = rand3Dvel(1.0)
+            x0 = pytools.rad.rand_3D_loc(conf)
+            u0 = pytools.rad.rand_3D_vel(1.0)
         
             container.add_particle(x0, u0, weight, ene)
         
@@ -189,6 +196,8 @@ class radiation(unittest.TestCase):
                 pass
 
         conf = Conf()
+        conf.twoD = True
+
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.ppc = 1
@@ -204,10 +213,10 @@ class radiation(unittest.TestCase):
 
         weight = 1.0
         for ip in range(Nprtcls):
-            ene = bbodySample(kTbb)
+            ene = pytools.rad.sample_blackbody(kTbb)
 
-            x0 = rand3Dloc(conf)
-            u0 = rand3Dvel(1.0)
+            x0 = pytools.rad.rand_3D_loc(conf)
+            u0 = pytools.rad.rand_3D_vel(1.0)
         
             container.add_particle(x0, u0, weight, ene)
         
@@ -256,6 +265,8 @@ class radiation(unittest.TestCase):
     def test_initialization(self):
 
         conf = Conf()
+        conf.twoD = True
+
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.NzMesh = 1
@@ -269,8 +280,8 @@ class radiation(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         c = pyrad.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        init_pic.initialize_tile(c, 0, 0, grid, conf)
-        init_rad.initialize_tile(c, 0, 0, grid, conf)
+        pytools.pic.initialize_tile(c, (0, 0, 0), grid, conf)
 
+        pytools.rad.initialize_tile(c, (0,0,0), grid, conf)
 
 

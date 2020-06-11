@@ -148,7 +148,7 @@ add_subdirectory(corgi)
 #add_subdirectory(io)
 #add_subdirectory(tests)
 
-add_subdirectory(python)
+add_subdirectory(bindings)
 add_subdirectory(docs)
 
 

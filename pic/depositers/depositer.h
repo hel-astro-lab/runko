@@ -13,7 +13,7 @@ class Depositer
 
   public:
 
-  Depositer() {};
+  Depositer() = default;
 
   virtual ~Depositer() = default;
 

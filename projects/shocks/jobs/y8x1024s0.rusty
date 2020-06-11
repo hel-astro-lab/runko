@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -p cca
+#SBATCH -J y8x1024s0
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -t 7-00:00:00
+#SBATCH --nodes 20
+#SBATCH --ntasks-per-node=40
+#SBATCH --exclusive
+#SBATCH --constraint=skylake
+
+# activate threading
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+# go to working directory
+cd $RUNKODIR/projects/shocks/
+
+mpirun python3 pic.py --conf y8x1024s0.ini

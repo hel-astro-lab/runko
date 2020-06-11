@@ -4,7 +4,6 @@
 #include <Eigen/Dense>
 
 #include "../../tools/cppitertools/zip.hpp"
-#include "../amr_analyzator.h"
 #include "../../definitions.h"
 
 
@@ -16,8 +15,8 @@ using iter::zip;
 template< typename T, int D, int V>
 void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cfl)
 {
-  auto& yee = tile.get_yee();
-  yee.jx1.clear();
+  //auto& yee = tile.get_yee();
+  tile.jx1.clear();
 
   auto& step0 = tile.steps.get(0);
   for(auto&& block0 : step0) {
@@ -38,7 +37,7 @@ void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cf
           // NOTE: needs to be given in units of grid speed 
           //       so we scale with dt/dx
           //yee.jx1(q,r,s) += qm*
-          yee.jx1(q,r,s) += qm*cfl*
+          tile.jx1(q,r,s) += qm*cfl*
             integrate_moment(
                 M,
                 [](std::array<T,3> uvel) -> T 
@@ -50,8 +49,7 @@ void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cf
 
   }// end of loop over species
 
-  return;
-}
+  }
 
 
 
@@ -102,9 +100,9 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
 
       
 
-    for(size_t q=0; q<block0.Nx; q++) {
-      for(size_t r=0; r<block0.Ny; r++) {
-        for (size_t s=0; s<block0.Nz; s++) {
+    for(int q=0; q<block0.Nx; q++) {
+      for(int r=0; r<block0.Ny; r++) {
+        for(int s=0; s<block0.Nz; s++) {
           T qm = 1.0 / block0.qm;  // charge to mass ratio
 
 
@@ -151,8 +149,7 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
   //
   
 
-  return;
-}
+  }
 
 //--------------------------------------------------
 // explicit template instantiation

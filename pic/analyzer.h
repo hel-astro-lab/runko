@@ -41,8 +41,8 @@ class Analyzator {
     auto maxs = tile.maxs;
 
     // analysis lattice reference
-    for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-      ParticleContainer& container = tile.get_container(ispc);
+    for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
+      ParticleContainer<D>& container = tile.get_container(ispc);
       auto& analysis = tile.analysis[ispc];
 
       analysis.clear();
@@ -51,18 +51,18 @@ class Analyzator {
       // initialize pointers to particle arrays
       int nparts = container.size();
         
-      double* loc[3];
+      real_prtcl* loc[3];
       for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-      double* vel[3];
+      real_prtcl* vel[3];
       for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-      double gam;
       //double c = tile.cfl;
-      double q = container.q; // TODO: split into species
-      double x0, y0, z0;
-      double u0, v0, w0;
+      real_long gam;
+      real_long q = container.q; // TODO: split into species
+      real_long x0, y0, z0;
+      real_long u0, v0, w0;
       int i,j,k;
 
 
@@ -73,15 +73,15 @@ class Analyzator {
       // TODO: think SIMD (not possible atm due to ijk writing to yee
       for(int n=n1; n<n2; n++) {
           
-        // grid coordinate location
-        x0 = loc[0][n];
-        y0 = loc[1][n];
-        z0 = loc[2][n];
+        // grid coordinate location; cast to double for the duration of this algorithm
+        x0 = static_cast<real_long>( loc[0][n] );
+        y0 = static_cast<real_long>( loc[1][n] );
+        z0 = static_cast<real_long>( loc[2][n] );
           
         // fixed grid form assuming dx = 1
-  	    i = D >= 1 ? static_cast<int>(floor( loc[0][n] - mins[0] ) ) : 0;
-  	    j = D >= 2 ? static_cast<int>(floor( loc[1][n] - mins[1] ) ) : 0;
-  	    k = D >= 3 ? static_cast<int>(floor( loc[2][n] - mins[2] ) ) : 0;
+  	    i = D >= 1 ? static_cast<int>(floor( x0 - mins[0] ) ) : 0;
+  	    j = D >= 2 ? static_cast<int>(floor( y0 - mins[1] ) ) : 0;
+  	    k = D >= 3 ? static_cast<int>(floor( z0 - mins[2] ) ) : 0;
 
         /*
         std::cout << "----------------------\n";
@@ -135,16 +135,15 @@ class Analyzator {
           assert(false);
         }
 
-
-        u0 = vel[0][n];
-        v0 = vel[1][n];
-        w0 = vel[2][n];
+        u0 = static_cast<real_long>(vel[0][n]);
+        v0 = static_cast<real_long>(vel[1][n]);
+        w0 = static_cast<real_long>(vel[2][n]);
 
         gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
 
         // --------------------------------------------------
         // general quantities
-        double mass = abs(q);
+        real_long mass = abs(q);
         yee.rho(i,j,k) += mass; // total number density
 
         // --------------------------------------------------

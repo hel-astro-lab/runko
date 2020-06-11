@@ -20,7 +20,7 @@ class Particle
 public:
 
   /// actual particle data
-  std::array<double,7> data = {-1,-2,-3,-4,-5,-7};
+  std::array<real_prtcl, 7> data = {-1,-2,-3,-4,-5,-7};
 
   /// particle id
   int _id = 0;
@@ -28,25 +28,25 @@ public:
   /// mpi rank separator
   int _proc = 0;
 
-  Particle() {};
+  Particle() = default;
 
   /// standard ctor
-  Particle(double x,  double y,  double z,
-           double ux, double uy, double uz,
-           double wgt,
+  Particle(real_prtcl x,  real_prtcl y,  real_prtcl z,
+           real_prtcl ux, real_prtcl uy, real_prtcl uz,
+           real_prtcl wgt,
            int __ind, int __proc
            );
 
   /// special ctor for info prtcl
   Particle(size_t number_of_particles);
 
-  inline double& x()   { return data[0]; };
-  inline double& y()   { return data[1]; };
-  inline double& z()   { return data[2]; };
-  inline double& ux()  { return data[3]; };
-  inline double& uy()  { return data[4]; };
-  inline double& uz()  { return data[5]; };
-  inline double& wgt() { return data[6]; };
+  inline real_prtcl& x()   { return data[0]; };
+  inline real_prtcl& y()   { return data[1]; };
+  inline real_prtcl& z()   { return data[2]; };
+  inline real_prtcl& ux()  { return data[3]; };
+  inline real_prtcl& uy()  { return data[4]; };
+  inline real_prtcl& uz()  { return data[5]; };
+  inline real_prtcl& wgt() { return data[6]; };
 
   inline int& id()   { return _id;   };
   inline int& proc() { return _proc; };
@@ -70,6 +70,7 @@ public:
 *   qm
 *
 */
+template<std::size_t D>
 class ParticleContainer {
 
   private:
@@ -88,10 +89,10 @@ class ParticleContainer {
 
   size_t Nprtcls = 0;
 
-  std::vector< std::vector<double> > locArr;
-  std::vector< std::vector<double> > velArr;
+  std::vector< std::vector<real_prtcl> > locArr;
+  std::vector< std::vector<real_prtcl> > velArr;
   std::vector< std::vector<int> > indArr;
-  std::vector<double> wgtArr;
+  std::vector<real_prtcl> wgtArr;
 
   public:
     
@@ -118,23 +119,17 @@ class ParticleContainer {
   int optimal_message_size = 3000;
 
   //! particle specific electric field components
-  std::vector<double> Epart;
+  std::vector<real_prtcl> Epart;
 
   //! particle specific magnetic field components
-  std::vector<double> Bpart;
+  std::vector<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
-  typedef std::multimap<std::tuple<int,int,int>, int> mapType;
+  using mapType = std::multimap<std::tuple<int,int,int>, int>;
   mapType to_other_tiles;
 
-
-  // size of the internal mesh
-  size_t Nx;
-  size_t Ny;
-  size_t Nz;
-
-  double q = 1.0; // normalization factor
-
+  // normalization factor
+  double q = 1.0; 
 
   /// Constructor 
   ParticleContainer();
@@ -160,66 +155,66 @@ class ParticleContainer {
 
   //--------------------------------------------------
   // locations
-  virtual inline double loc( size_t idim, size_t iprtcl ) const
+  virtual inline real_prtcl loc( size_t idim, size_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline double& loc( size_t idim, size_t iprtcl )       
+  virtual inline real_prtcl& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<double> loc(size_t idim) const 
+  virtual inline std::vector<real_prtcl> loc(size_t idim) const 
   {
     return locArr[idim];
   }
 
-  virtual inline std::vector<double>& loc(size_t idim)
+  virtual inline std::vector<real_prtcl>& loc(size_t idim)
   {
     return locArr[idim];
   }
 
   //--------------------------------------------------
   // velocities
-  virtual inline double vel( size_t idim, size_t iprtcl ) const
+  virtual inline real_prtcl vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline double& vel( size_t idim, size_t iprtcl )       
+  virtual inline real_prtcl& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<double> vel(size_t idim) const 
+  virtual inline std::vector<real_prtcl> vel(size_t idim) const 
   {
     return velArr[idim];
   }
 
-  virtual inline std::vector<double>& vel(size_t idim)
+  virtual inline std::vector<real_prtcl>& vel(size_t idim)
   {
     return velArr[idim];
   }
 
   //--------------------------------------------------
   // weights
-  virtual inline double wgt( size_t iprtcl ) const
+  virtual inline real_prtcl wgt( size_t iprtcl ) const
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline double& wgt( size_t iprtcl )       
+  virtual inline real_prtcl& wgt( size_t iprtcl )       
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline std::vector<double> wgt() const
+  virtual inline std::vector<real_prtcl> wgt() const
   {
     return wgtArr;
   }
 
-  virtual inline std::vector<double>& wgt()
+  virtual inline std::vector<real_prtcl>& wgt()
   {
     return wgtArr;
   }
@@ -248,16 +243,16 @@ class ParticleContainer {
 
   // particle creation
   virtual void add_particle (
-      std::vector<double> prtcl_loc,
-      std::vector<double> prtcl_vel,
-      double prtcl_wgt);
+      std::vector<real_prtcl> prtcl_loc,
+      std::vector<real_prtcl> prtcl_vel,
+      real_prtcl prtcl_wgt);
 
   // particle creation
   virtual void add_identified_particle (
-      std::vector<double> prtcl_loc,
-      std::vector<double> prtcl_vel,
-      double prtcl_wgt, 
-      int _ind, int _proc);
+      std::vector<real_prtcl> prtcl_loc,
+      std::vector<real_prtcl> prtcl_vel,
+      real_prtcl prtcl_wgt, 
+      int _id, int _proc);
 
 
 
@@ -265,6 +260,7 @@ class ParticleContainer {
   // particle boundary checks
 
   /// check and mark particles exceeding given limits
+  //template <size_t D> 
   void check_outgoing_particles(
       std::array<double,3>&,
       std::array<double,3>& );
@@ -275,7 +271,7 @@ class ParticleContainer {
   void delete_transferred_particles();
 
   /// process through an index list and delete particles in it
-  void delete_particles(std::vector<int> l);
+  void delete_particles(std::vector<int> to_be_deleted);
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(

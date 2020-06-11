@@ -147,8 +147,7 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solve_mesh(
   //          );
   //mesh1 *= norm0/norm1;
 
-  return;
-}
+  }
 
 // backward advected Lorentz force
 template<typename T, int D, int V>
