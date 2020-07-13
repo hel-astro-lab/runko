@@ -163,27 +163,41 @@ void pic::Piston<D>::solve(
         vel1n = static_cast<real_long>( vel[1][n] );
         vel2n = static_cast<real_long>( vel[2][n] );
 
-        // this can not be reflected particle; remove 
-        // equals to right boundary outflow as they wrap particles here
-        if(walloc - loc0n > 1.0) {
-          //std::cout << "reflected?" << n << "x:" << loc[0][n] << "\n";
-          to_be_deleted.push_back(n);
-          continue;
-        }
+
+        // unwind wall location
+        walloc0 = walloc - betawall*c;
 
         gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
         x0 = loc0n - vel0n/gamma*c;
         y0 = loc1n;
         z0 = loc2n;
 
-        // unwind wall location
-        walloc0 = walloc - betawall*c;
+        // this can not be reflected particle; remove 
+        // equals to right boundary outflow as they wrap particles here
+        if(walloc0 - x0 > c) {
+          //std::cout << "reflected?" << n << "x:" << loc[0][n] << "\n";
+          to_be_deleted.push_back(n);
+          continue;
+        }
 
         // compute crossing point
-        tfrac = std::min(
-            std::abs((x0-walloc0)/(betawall*c - vel0n/gamma*c)), 
-            (real_long)1.0
-            );
+        //tfrac = std::min(
+        //    std::abs((x0-walloc0)/(betawall*c - vel0n/gamma*c)), 
+        //    (real_long)1.0
+        //    );
+        tfrac = std::abs((x0-walloc0)/(betawall*c - vel0n/gamma*c));
+        if (tfrac > 1.0) {
+           // std::cout << "current up to intersection point:\n"
+           //   << " x0      " << x0
+           //   << " vel0n   " << vel0n/gamma
+           //   << " tfrac   " << tfrac
+           //   << " walloc  " << walloc
+           //   << " walloc0 " << walloc0
+           //   << "\n";
+
+            to_be_deleted.push_back(n);
+            continue;
+        }
 
         xcolis = x0 + vel0n/gamma*c*tfrac;
         ycolis = y0;
