@@ -95,13 +95,13 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   np = min_n_prtcls;
   nr = n_comm_size;
 
-  // 8 variables per particle to save
-  for(size_t i=0; i<8; i++) arrs.emplace_back(nt, np, nr);
-  for(size_t i=0; i<8; i++) rbuf.emplace_back(nt, np, nr);
+  // 7+6 (loc, vel, wgt and ex,ey,ez,bz,by,bz), variables per particle to save
+  for(size_t i=0; i<=12; i++) arrs.emplace_back(nt, np, nr);
+  for(size_t i=0; i<=12; i++) rbuf.emplace_back(nt, np, nr);
 
   // int arrays
-  for(size_t i=0; i<2; i++) arrs2.emplace_back(nt, np, nr);
-  for(size_t i=0; i<2; i++) rbuf2.emplace_back(nt, np, nr);
+  for(size_t i=0; i<=1; i++) arrs2.emplace_back(nt, np, nr);
+  for(size_t i=0; i<=1; i++) rbuf2.emplace_back(nt, np, nr);
 }
 
 
@@ -124,6 +124,13 @@ inline void h5io::TestPrtclWriter<D>::read_tiles(
   auto& uz   = arrs[5];
   auto& wgt  = arrs[6];
 
+  auto& exp  = arrs[7];
+  auto& eyp  = arrs[8];
+  auto& ezp  = arrs[9];
+  auto& bxp  = arrs[10];
+  auto& byp  = arrs[11];
+  auto& bzp  = arrs[12];
+
   auto& ids   = arrs2[0];
   auto& procs = arrs2[1];
 
@@ -134,6 +141,7 @@ inline void h5io::TestPrtclWriter<D>::read_tiles(
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
     auto& container = tile.get_container( ispc );
+    int nparts = container.size();
 
     real_prtcl* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
@@ -143,6 +151,15 @@ inline void h5io::TestPrtclWriter<D>::read_tiles(
 
     real_prtcl* ch;
     ch = &( container.wgt(0) );
+
+    real_prtcl *ex, *ey, *ez, *bx, *by, *bz;
+    ex = &( container.Epart[0*nparts] );
+    ey = &( container.Epart[1*nparts] );
+    ez = &( container.Epart[2*nparts] );
+
+    bx = &( container.Bpart[0*nparts] );
+    by = &( container.Bpart[1*nparts] );
+    bz = &( container.Bpart[2*nparts] );
 
     // reference the ids 
     int* idn[2];
@@ -182,6 +199,15 @@ inline void h5io::TestPrtclWriter<D>::read_tiles(
         wgt(  tstep, ip, ir) = ch[n];
         ids(  tstep, ip, ir) = idn[0][n];
         procs(tstep, ip, ir) = idn[1][n];
+
+        exp(  tstep, ip, ir) = ex[n];
+        eyp(  tstep, ip, ir) = ey[n];
+        ezp(  tstep, ip, ir) = ez[n];
+
+        bxp(  tstep, ip, ir) = bx[n];
+        byp(  tstep, ip, ir) = by[n];
+        bzp(  tstep, ip, ir) = bz[n];
+
       }
     }
 
@@ -218,7 +244,7 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
       }
 
       for(size_t els=0; els<arrs2.size(); els++) {
-        reqs.push_back( grid.comm.isend(i-lastpower, tag+els+10, arrs2[els].data(), arrs2[els].size()) );
+        reqs.push_back( grid.comm.isend(i-lastpower, tag+els+20, arrs2[els].data(), arrs2[els].size()) );
       }
 
     }
@@ -232,7 +258,7 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
       }
 
       for(size_t els=0; els<arrs2.size(); els++) {
-        grid.comm.recv(i+lastpower, tag+els+10, rbuf2[els].data(), rbuf2[els].size());
+        grid.comm.recv(i+lastpower, tag+els+20, rbuf2[els].data(), rbuf2[els].size());
         arrs2[els] += rbuf2[els];
       }
 
@@ -253,7 +279,7 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
         }
 
         for(size_t els=0; els<arrs2.size(); els++) {
-          grid.comm.recv(sender, tag+els+10, rbuf2[els].data(), rbuf2[els].size());
+          grid.comm.recv(sender, tag+els+20, rbuf2[els].data(), rbuf2[els].size());
           arrs2[els] += rbuf2[els];
         }
 
@@ -264,7 +290,7 @@ inline void h5io::TestPrtclWriter<D>::mpi_reduce_snapshots(
         }
 
         for(size_t els=0; els<arrs2.size(); els++) {
-          grid.comm.send(receiver, tag+els+10, arrs2[els].data(), arrs2[els].size());
+          grid.comm.send(receiver, tag+els+20, arrs2[els].data(), arrs2[els].size());
         }
 
 
@@ -307,6 +333,14 @@ inline bool h5io::TestPrtclWriter<D>::write(
     file["vy"]  = arrs[4].serialize();
     file["vz"]  = arrs[5].serialize();
     file["wgt"] = arrs[6].serialize();
+
+    file["ex"]  = arrs[7].serialize();
+    file["ey"]  = arrs[8].serialize();
+    file["ez"]  = arrs[9].serialize();
+
+    file["bx"]  = arrs[10].serialize();
+    file["by"]  = arrs[11].serialize();
+    file["bz"]  = arrs[12].serialize();
 
     file["id"]   = arrs2[0].serialize();
     file["proc"] = arrs2[1].serialize();
