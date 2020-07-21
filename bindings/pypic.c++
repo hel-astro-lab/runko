@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include "../pic/pushers/pusher.h"
 #include "../pic/pushers/boris.h"
 #include "../pic/pushers/boris_drag.h"
+#include "../pic/pushers/boris_rad.h"
 #include "../pic/pushers/vay.h"
 
 #include "../pic/interpolators/interpolator.h"
@@ -283,6 +284,13 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("drag", &pic::BorisPusherDrag<2,3>::drag)
     .def_readwrite("temp", &pic::BorisPusherDrag<2,3>::temp)
     .def(py::init<>());
+    
+  // Boris pusher with radiative pressure force
+  py::class_<pic::BorisPusherRad<2,3>>(m_2d, "BorisRadPusher", picpusher2d)
+    .def_readwrite("drag",      &pic::BorisPusherRad<2,3>::drag)
+    .def_readwrite("beam_locx", &pic::BorisPusherRad<2,3>::beam_locx)
+    .def(py::init<>());
+
 
   // Vay pusher
   py::class_<pic::VayPusher<2,3>>(m_2d, "VayPusher", picpusher2d)
@@ -303,6 +311,12 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::BorisPusherDrag<3,3>>(m_3d, "BorisDragPusher", picpusher3d)
     .def_readwrite("drag", &pic::BorisPusherDrag<3,3>::drag)
     .def_readwrite("temp", &pic::BorisPusherDrag<3,3>::temp)
+    .def(py::init<>());
+    
+  // Boris pusher with radiative pressure force
+  py::class_<pic::BorisPusherRad<3,3>>(m_3d, "BorisRadPusher", picpusher3d)
+    .def_readwrite("drag",      &pic::BorisPusherRad<3,3>::drag)
+    .def_readwrite("beam_locx", &pic::BorisPusherRad<3,3>::beam_locx)
     .def(py::init<>());
 
   // Vay
