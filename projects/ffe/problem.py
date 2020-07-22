@@ -1,11 +1,12 @@
 from __future__ import print_function
 from pytools import Configuration
+import pytools
 
 from numpy import sqrt, pi
 import numpy as np
 
 
-class Configuration_Reconnection(Configuration):
+class Configuration_Packets(Configuration):
 
     def __init__(self, *file_names, do_print=False):
         Configuration.__init__(self, *file_names)
@@ -25,9 +26,10 @@ class Configuration_Reconnection(Configuration):
         ppc = self.ppc*2.0 #multiply x2 to account for 2 species/pair plasma
 
         # if gammas < 1, we interpret them as beta/c
-        if(self.gamma < 1.):
-            self.gamma = sqrt(1./(1.-self.gamma**2.)) 
-        self.beta = sqrt(1.-1./self.gamma**2.)
+        self.gamma = 1.0
+        #if(self.gamma < 1.):
+        #    self.gamma = sqrt(1./(1.-self.gamma**2.)) 
+        #self.beta = sqrt(1.-1./self.gamma**2.)
         
         #plasma reaction & subsequent normalization
         omp=c/self.c_omp
@@ -41,43 +43,6 @@ class Configuration_Reconnection(Configuration):
         self.delgam_e = self.delgam
         self.delgam_i = self.delgam_e
         
-        #--------------------------------------------------
-        # problem related
-        #FIXME
-        #self.dstripe  = 1.0/(self.dstripe*self.c_omp)
-        #self.dvstripe = 1.0/(self.dvstripe*self.c_omp)
-
-        self.sheet_thickness = self.sheet_thickness*self.c_omp #skind into cells
-        self.pinch_width = self.pinch_width*self.c_omp         #skind into cells
-
-
-        #box center
-        self.mx = self.Nx*self.NxMesh
-        self.my = self.Ny*self.NyMesh
-        self.mz = self.Nz*self.NzMesh
-
-        #middle of the box
-        if not(self.periodicx):
-            self.mxhalf  = int(0.5*self.mx)
-            self.lstripe = 1.0 #FIXME delete
-        else:
-            self.mxhalf  = int(0.25*self.mx)
-            self.lstripe = int(self.mx) #FIXME delete
-        self.myhalf = int(0.5*self.my)
-        self.mzhalf = int(0.5*self.mz)
-
-
-        #--------------------------------------------------
-        # printing 
-
-        if do_print:
-            sigmaeff = self.sigma #* temperature corrections
-            print("init: Alfven (outflow) three-velocity: ",sqrt(sigmaeff/(1.+sigmaeff)))
-            print("init: sheet thickness ",    self.sheet_thickness )
-            print("init: sheet density ", self.sheet_density )
-            print("init: trigger B", self.trigger )
-            print("init: pinch width ", self.pinch_width )
-            print("init: trigger Ex", self.trigger_field )
 
         #-------------------------------------------------- 
         # field initialization
@@ -92,29 +57,79 @@ class Configuration_Reconnection(Configuration):
         #this definition works even for nonrelativistic flows. 
         self.binit = sqrt((self.gamma)*ppc*.5*c**2.*(mi+me)*self.sigma)
 
+        # Alfven speed
+        #NOTE: FFE Alfven speed is 1
+        #self.beta = np.sqrt(self.sigma/(self.sigma + 1.0))
+        self.beta = 1.0
 
-        #FIXME
-        if False:
 
-            #hot plasma version
-            corrdelgam_qe = 1.0
-            corrdelgam_sig = 1.0
+        #-------------------------------------------------- 
+        # special setups for colliding packets
+        if True:
+            Lx = self.Nx*self.NxMesh
+            Ly = self.Ny*self.NyMesh
+            Lz = self.Nz*self.NzMesh
 
-            delgam_i = self.delgam_i
-            delgam_e = self.delgam_e
+            #b0 = self.binit   # equilibrium magnetic field
+            #zeta = self.zeta  # perturbation amplitude
 
-            zeta=delgam_i/(0.24 + delgam_i)
-            gad_i=1./3.*(5 - 1.21937*zeta + 0.18203*zeta**2 - 0.96583*zeta**3 + 2.32513*zeta**4 - 2.39332*zeta**5 + 1.07136*zeta**6)
-            delgam_e=self.delgam*mi/me*self.temperature_ratio 
-            zeta=delgam_e/(0.24 + delgam_e)
-            gad_e=1./3.*(5 - 1.21937*zeta + 0.18203*zeta**2 - 0.96583*zeta**3 + 2.32513*zeta**4 - 2.39332*zeta**5 + 1.07136*zeta**6)
+            # maximum perpendicular and parallel wavenumbers
+            #kperp = 1.0*pi/Lx #half of the sine only
+            #kpar  = 2.0*pi/Lz
 
-            self.binit=1.*sqrt(ppc*.5*c**2.* \
-                    (mi*(1.+corrdelgam_sig*gad_i/(gad_i-1.)*self.delgam_i)+me*(1.+ \
-                    corrdelgam_sig*gad_e/(gad_e-1.)*self.delgam_e))*self.sigma)
+            #phase shift
+            #om0 = 0.0 
 
-            self.bphi = self.bphi/180.*pi
+            #amplitude; TODO
+            #self.A = b0*zeta/2.0
 
-            if do_print:
-                print("sin(bphi:", np.sin(self.bphi))
+            #-------------------------------------------------- 
+            # packet centers
+            
+            # middle of the box
+            x0 = Lx*0.5
+            y0 = Ly*0.5
+
+            # distort packet centers
+            x1 = x0 - 0.5*self.impact_param
+            x2 = x0 + 0.5*self.impact_param
+
+            # z center of both pkgs
+            z1 = Lz*0.25
+            z2 = Lz*0.75
+
+            #print("x0 {} {} {}".format(x0, y0, z1))
+
+            # position of the centers as Stagger objects
+            self.pkg_loc1 = pytools.Stagger(x1, y0, z1)
+            self.pkg_loc2 = pytools.Stagger(x2, y0, z2)
+
+
+        if do_print:
+            print("init: sigma:             ", self.sigma)
+            print("init: mass term:         ", sqrt(mi+me))
+            print("init: B_guide (manual) : ", self.binit)
+            print("init: beta (Alfven vel): ", self.beta)
+
+
+        #forcing scale in units of skin depth
+        self.l0 = self.Nx*self.NxMesh/self.c_omp  
+        self.l1 = self.ell/self.c_omp  
+
+        #thermal larmor radius
+        self.gammath = 1.0 # cool plasma
+        lth = self.gammath / np.sqrt(self.sigma)*np.sqrt(self.gammath) #gamma_0
+
+        #reconnection radius; gam ~ sigma
+        lsig = self.sigma / np.sqrt(self.sigma)*np.sqrt(self.gammath) #gamma_0
+        self.g0 = self.l0*np.sqrt(self.sigma)*np.sqrt(self.gammath) #gamma_0
+
+        if do_print:
+            print("init: ell:", self.ell, 'dx ', self.ell/self.c_omp, 'comp ', self.ell/(self.Nx*self.NxMesh), '%')
+            print("init: l_0:", self.l0)
+            print("init: l_1:", self.l1)
+            print("init: l_th:", lth)
+            print("init: l_sig:", lsig)
+            print("init: gamma_0: ", self.g0)
+            #print("init: A = {}".format(A))
 
