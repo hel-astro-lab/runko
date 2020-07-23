@@ -3,10 +3,14 @@
 #include <iostream>
 
 #include<algorithm>
-#include <vector>
+//#include <vector>
 #include <stdexcept>
 #include <cassert>
 #include <exception>
+
+#include <cuda_runtime_api.h>
+
+#include "managed_alloc.h"
 
 
 namespace toolbox {
@@ -22,6 +26,13 @@ template <class T, int H>
 class Mesh 
 {
 
+  private:
+    /// internal storage
+    //std::vector<T, ManagedAlloc<T>> mat;
+
+    T *ptr;
+    bool allocated = false;
+    int count = 0;
   public:
 
     /// grid size along x
@@ -33,10 +44,8 @@ class Mesh
     /// grid size along z
     int Nz{0};
 
-    /// internal storage
-    std::vector<T> mat;
-
     /// Internal indexing with halo region padding of width H
+    __device__ __host__
     inline int indx(int i, int j, int k) const {
       assert( (i >= -H) && (i <  (int)Nx + H)  );
       assert( (j >= -H) && (j <  (int)Ny + H)  );
@@ -44,39 +53,42 @@ class Mesh
 
       int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
 
-      assert( (indx >= 0) && (indx <  (int)mat.size() ) );
+      //assert( (indx >= 0) && (indx <  (int)mat.size() ) );
 
       return indx;
     }
 
     /// standard (i,j,k) syntax
+    __device__ __host__
     T& operator()(int i, int j, int k) { 
-      return mat[ indx(i,j,k) ];
+      int ind = indx(i,j,k);
+      return ptr[ind];
     }
-
+    __device__ __host__
     const T& operator()(int i, int j, int k) const { 
-      return mat[ indx(i,j,k) ];
+      int ind = indx(i,j,k);
+      return ptr[ind];
     }
 
     /// empty default constructor
     //Mesh() = default;
-    Mesh() :
-      mat(0)
+    Mesh() 
     { }
 
     /// standard initialization
     Mesh(int Nx, int Ny, int Nz) : 
       Nx(Nx), 
       Ny(Ny), 
-      Nz(Nz),
-      mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
+      Nz(Nz)
+      //mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
+      alloc( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H));
       try {
         //if(Nx > 256) throw std::range_error ("Mesh nx too big");
         //if(Ny > 256) throw std::range_error ("Mesh ny too big");
         //if(Nz > 256) throw std::range_error ("Mesh nz too big");
         //mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) ); //automatically done at construction
-        std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
+        std::fill(ptr, ptr+count, T() ); // fill with zeros
       } catch ( std::exception& e) {
         // whoops... if control reaches here, a memory allocation
         // failure occurred somewhere.
@@ -84,7 +96,7 @@ class Mesh
         assert(false);
       }
 
-      if(mat.empty()) assert(false);
+      //if(mat.empty()) assert(false);
     };
 
     // explicit default copy operator
@@ -92,14 +104,15 @@ class Mesh
     Mesh(Mesh& other) :
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz),
-      mat(other.mat)
+      Nz(other.Nz)
+      //mat(other.mat)
     { 
       Nx = other.Nx; 
       Ny = other.Ny; 
       Nz = other.Nz; 
-      mat.resize(other.mat.size());
-      for(size_t i=0; i<other.mat.size(); i++) mat[i] = other.mat[i];
+      alloc(other.size());
+      //mat.resize(other.mat.size());
+      for(size_t i=0; i<other.size(); i++) ptr[i] = other.ptr[i];
 
     }
 
@@ -107,14 +120,14 @@ class Mesh
     Mesh(const Mesh& other) :
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz),
-      mat(other.mat)
+      Nz(other.Nz)
+      //mat(other.mat)
     { 
-      Nx = other.Nx; 
+            Nx = other.Nx; 
       Ny = other.Ny; 
       Nz = other.Nz; 
-      mat.resize(other.mat.size());
-      for(size_t i=0; i<other.mat.size(); i++) mat[i] = other.mat[i];
+      alloc(other.size());
+      for(size_t i=0; i<other.size(); i++) ptr[i] = other.ptr[i];
     }
     
     // public swap for efficient memory management
@@ -124,7 +137,7 @@ class Mesh
         swap(first.Nx, second.Nx);
         swap(first.Ny, second.Ny);
         swap(first.Nz, second.Nz);
-        swap(first.mat, second.mat);
+        swap(first.ptr, second.ptr);
     }
 
     //Mesh& operator=(const Mesh& other) = default;
@@ -150,16 +163,16 @@ class Mesh
     ~Mesh() = default;
 
     /// address to data
-    T* data() { return mat.data(); }
+    T* data() { return ptr; }
 
-    const T* data() const {return mat.data(); }
+    const T* data() const {return ptr; }
 
     /// internal storage size
-    size_t size() const { return mat.size(); }
+    size_t size() const { return count; }
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
-      std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
+      std::fill(ptr, ptr+count, T() ); // fill with zeros
     }
 
 
@@ -171,7 +184,7 @@ class Mesh
       for(int k=0; k<int(Nz); k++)
       for(int j=0; j<int(Ny); j++)
       for(int i=0; i<int(Nx); i++)
-        ret.push_back(mat[ indx(i,j,k) ] );
+        ret.push_back(ptr[ indx(i,j,k) ] );
 
       return ret;
     }
@@ -186,20 +199,35 @@ class Mesh
       Nx = Nx_in;
       Ny = Ny_in;
       Nz = Nz_in;
-      mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
+      alloc( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
 
       int q = 0;
       for(int k=0; k<int(Nz); k++)
       for(int j=0; j<int(Ny); j++)
       for(int i=0; i<int(Nx); i++) 
       {
-        mat[ indx(i,j,k) ] = vec[q];
+        ptr[ indx(i,j,k) ] = vec[q];
         q++;
       }
 
+      
+
     }
 
-
+void alloc(int count_){
+        if(allocated)
+        {
+          cudaFree(ptr);
+        }
+        auto err = cudaMallocManaged((void**)&ptr, count_ * sizeof(T));
+        if (err == cudaSuccess)
+        {
+          allocated = true;
+          count = count_;
+			    return;
+        }
+		    throw std::bad_alloc();
+      }
 
 
     // Mesh arithmetics
@@ -399,16 +427,16 @@ inline Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H2>& rhs) {
 
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator*=(const T& rhs) {
-  for(size_t i=0; i<this->mat.size(); i++) {
-    this->mat[i] *= rhs;
+  for(size_t i=0; i<this->size(); i++) {
+    this->ptr[i] *= rhs;
   }
   return *this;
 }
 
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator/=(const T& rhs) {
-  for(size_t i=0; i<this->mat.size(); i++) {
-    this->mat[i] /= rhs;
+  for(size_t i=0; i<this->size(); i++) {
+    this->ptr[i] /= rhs;
   }
   return *this;
 }
