@@ -4,6 +4,7 @@
 
 #include <cmath>
 
+#include "inter.cuh"
 
 // general bilinear interpolation
 //template<>
@@ -33,6 +34,9 @@ void ffe::rFFE2<3>::interpolate(
         const std::array<int,3>& out
       )
 {
+  interpolateDevEntry(f, fi, in, out);
+  
+  /*
   int im = in[2] == out[2] ? 0 :  -out[2];
   int ip = in[2] == out[2] ? 0 : 1-out[2];
 
@@ -58,6 +62,7 @@ void ffe::rFFE2<3>::interpolate(
       }
     }
   }
+  */
 }
 
 
@@ -180,6 +185,8 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
   interpolate(m.rho, rhf, {{1,1,1}}, {{1,1,0}} );
   stagger_x_eb(m);
+  cudaDeviceSynchronize();
+
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
@@ -199,7 +206,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
   interpolate(m.rho, rhf, {{1,1,1}}, {{1,0,1}} );
   stagger_y_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -218,7 +225,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
   interpolate(m.rho, rhf, {{1,1,1}}, {{0,1,1}} );
   stagger_z_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -289,7 +296,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
   real_short dt = tile.cfl;
 
   stagger_x_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -310,7 +317,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
   }
 
   stagger_y_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -331,7 +338,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
   }
 
   stagger_z_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -366,7 +373,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
 
   stagger_x_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -389,7 +396,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   }
 
   stagger_y_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -411,7 +418,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   }
 
   stagger_z_eb(m);
-
+  cudaDeviceSynchronize();
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {

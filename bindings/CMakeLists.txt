@@ -1,4 +1,4 @@
-project (pyrunko)
+project (pyrunko LANGUAGES CUDA CXX C)
 
 
 #find_package(PYBIND11 REQUIRED) #loaded externally from corgi
@@ -62,10 +62,13 @@ set (IO_FILES
      ../io/snapshots/field_slices.c++
     )
 
-
+set (ACC_FILES 
+     ../ffe/currents/inter.cu
+)
 
 # python module creation
 #--------------------------------------------------
+# https://stackoverflow.com/questions/51907755/building-a-pybind11-module-with-cpp-and-cuda-sources-using-cmake
 pybind11_add_module(pyrunko 
                     runko.c++ 
                     ${TOOLS_FILES}
@@ -75,6 +78,7 @@ pybind11_add_module(pyrunko
                     ${RAD_FILES}
                     ${FFE_FILES}
                     ${IO_FILES}
+                    ${ACC_FILES}
                     )
 
 #target_link_libraries(pyrunko PRIVATE -lhdf5)
@@ -85,9 +89,14 @@ target_include_directories(pyrunko PRIVATE ${HDF5_INCLUDE_DIRS})
 #target_link_libraries(pyrunko PRIVATE -lfftw3f)
 target_link_libraries(pyrunko PUBLIC coverage_config)
 
+
+find_package(CUDA 11.0 REQUIRED)
+target_link_libraries(pyrunko PRIVATE ${CUDA_LIBRARIES})
+
 target_compile_options(pyrunko PRIVATE ${WARNING_FLAGS})
 
 
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
 
 
 # installation

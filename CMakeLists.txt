@@ -1,10 +1,14 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.12)
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
-project (runko)
+project (runko LANGUAGES CUDA CXX C)
+# https://cliutils.gitlab.io/modern-cmake/chapters/packages/CUDA.html
+
+include(CheckLanguage)
+check_language(CUDA)
 
 # Add the cmake folder to get FindPkg files
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -13,7 +17,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=haswell -mtune=haswell") #latest optimization
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=haswell -mtune=haswell -g") #latest optimization
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native") #general optimization
 
 
@@ -46,6 +50,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #    INCLUDE_DIRECTORIES (SYSTEM "$ENV{EIGEN3_INCLUDE_DIR}" )
 #endif()
 include_directories(tools/eigen/)
+
+
+include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 
 # fmt preinstallation fails with intel compilers
@@ -102,14 +109,14 @@ endif()
 
 #-------------------------------------------------- 
 # Warning flags based on the compiler
-set (WARNING_FLAGS
-    $<$<CXX_COMPILER_ID:GNU>:
-        -Wall -Wextra -Wpedantic
-    >
-    $<$<CXX_COMPILER_ID:Clang>:
-        -Wall -Wextra -Wpedantic -Wno-missing-braces -g
-    >
-)
+#set (WARNING_FLAGS
+#    $<$<CXX_COMPILER_ID:GNU>:
+#        -Wall -Wextra -Wpedantic
+#    >
+#    $<$<CXX_COMPILER_ID:Clang>:
+#        -Wall -Wextra -Wpedantic -Wno-missing-braces -g
+#    >
+#)
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -h gnu")
 
 # add code coverage testing for GGC
