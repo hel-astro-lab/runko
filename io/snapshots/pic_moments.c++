@@ -199,24 +199,25 @@ inline bool h5io::PicMomentsWriter<D>::write(
     file["Ny"] = arrs[0].Ny;
     file["Nz"] = arrs[0].Nz;
 
-    file["dense"] = arrs[0].mat;
-    file["densp"] = arrs[1].mat;
 
-    file["Vxe"]   = arrs[2].mat;
-    file["Vye"]   = arrs[3].mat;
-    file["Vze"]   = arrs[4].mat;
+    file["dense"] = arrs[0].serialize();
+    file["densp"] = arrs[1].serialize();
 
-    file["Vxp"]   = arrs[5].mat;
-    file["Vyp"]   = arrs[6].mat;
-    file["Vzp"]   = arrs[7].mat;
+    file["Vxe"]   = arrs[2].serialize();
+    file["Vye"]   = arrs[3].serialize();
+    file["Vze"]   = arrs[4].serialize();
 
-    file["pressx"]   = arrs[8].mat;
-    file["pressy"]   = arrs[9].mat;
-    file["pressz"]   = arrs[10].mat;
+    file["Vxp"]   = arrs[5].serialize();
+    file["Vyp"]   = arrs[6].serialize();
+    file["Vzp"]   = arrs[7].serialize();
 
-    file["shearxy"]   = arrs[11].mat;
-    file["shearxz"]   = arrs[12].mat;
-    file["shearyz"]   = arrs[13].mat;
+    file["pressx"]   = arrs[8].serialize();
+    file["pressy"]   = arrs[9].serialize();
+    file["pressz"]   = arrs[10].serialize();
+
+    file["shearxy"]   = arrs[11].serialize();
+    file["shearxz"]   = arrs[12].serialize();
+    file["shearyz"]   = arrs[13].serialize();
 
   }
 
