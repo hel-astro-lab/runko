@@ -31,8 +31,8 @@ class Mesh
     //std::vector<T, ManagedAlloc<T>> mat;
 
     T *ptr;
-    bool allocated = false;
-    int count = 0;
+    bool allocated;
+    int count;
   public:
 
     /// grid size along x
@@ -66,20 +66,23 @@ class Mesh
     }
     __device__ __host__
     const T& operator()(int i, int j, int k) const { 
+
       int ind = indx(i,j,k);
       return ptr[ind];
     }
 
     /// empty default constructor
     //Mesh() = default;
-    Mesh() 
+    Mesh() :
+    allocated(false), count(0)
     { }
 
     /// standard initialization
     Mesh(int Nx, int Ny, int Nz) : 
       Nx(Nx), 
       Ny(Ny), 
-      Nz(Nz)
+      Nz(Nz),
+      allocated(false), count(0)
       //mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
       alloc( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H));
@@ -104,7 +107,8 @@ class Mesh
     Mesh(Mesh& other) :
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz)
+      Nz(other.Nz),
+      allocated(false), count(0)
       //mat(other.mat)
     { 
       Nx = other.Nx; 
@@ -120,7 +124,8 @@ class Mesh
     Mesh(const Mesh& other) :
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz)
+      Nz(other.Nz),
+      allocated(false), count(0)
       //mat(other.mat)
     { 
             Nx = other.Nx; 
@@ -160,7 +165,21 @@ class Mesh
         swap(*this, other);
     }
 
-    ~Mesh() = default;
+    ~Mesh()
+    {
+      // todo fix this 
+      if(allocated)
+      {
+        if(ptr)
+        {
+          cudaFree(ptr);
+        }
+      }
+
+      allocated = false;
+      count = 0;
+      
+    }
 
     /// address to data
     T* data() { return ptr; }
@@ -226,7 +245,6 @@ void alloc(int count_){
           count = count_;
 			    return;
         }
-		    throw std::bad_alloc();
       }
 
 
