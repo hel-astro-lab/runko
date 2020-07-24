@@ -6,3 +6,7 @@ void interpolateDevEntry(
         const std::array<int,3>& in,
         const std::array<int,3>& out
       );
+
+void push_ebDevEntry(ffe::Tile<3>& tile);
+
+//void add_jperpXDevEntry(fields::YeeLattice& m, ffe::SkinnyYeeLattice& dm);

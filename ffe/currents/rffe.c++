@@ -6,6 +6,8 @@
 
 #include "inter.cuh"
 
+#include <nvtx3/nvToolsExt.h> 
+
 // general bilinear interpolation
 //template<>
 //void ffe::rFFE<2>::interpolate(
@@ -34,6 +36,8 @@ void ffe::rFFE2<3>::interpolate(
         const std::array<int,3>& out
       )
 {
+  nvtxRangePush(__FUNCTION__);
+
   interpolateDevEntry(f, fi, in, out);
   
   /*
@@ -63,6 +67,8 @@ void ffe::rFFE2<3>::interpolate(
     }
   }
   */
+  nvtxRangePop();
+
 }
 
 
@@ -71,6 +77,7 @@ void ffe::rFFE2<3>::interpolate(
 template<>
 void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
   fields::YeeLattice& mesh = tile.get_yee();
   auto& rho = mesh.rho;
   auto& ex  = mesh.ex;
@@ -89,12 +96,17 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
       }
     }
   }
+  nvtxRangePop();
   }
 
 /// 3D 
 template<>
 void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
+
+  push_ebDevEntry(tile);
+  /*
   // refs to storages
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
@@ -131,41 +143,51 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
       }
     }
   }
-
+*/
+nvtxRangePop();
   }
 
 
 template<>
 void ffe::rFFE2<3>::stagger_x_eb(fields::YeeLattice& m)
 {
+  nvtxRangePush(__FUNCTION__);
+
   interpolate(m.ex, exf, {{1,1,0}}, {{1,1,0}} ); //x
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,1,0}} );
   interpolate(m.ez, ezf, {{0,1,1}}, {{1,1,0}} );
   interpolate(m.bx, bxf, {{0,0,1}}, {{1,1,0}} );
   interpolate(m.by, byf, {{0,1,0}}, {{1,1,0}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,1,0}} );
+  nvtxRangePop();
 }
 
 template<>
 void ffe::rFFE2<3>::stagger_y_eb(fields::YeeLattice& m)
 {
+  nvtxRangePush(__FUNCTION__);
+
   interpolate(m.ex, exf, {{1,1,0}}, {{1,0,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,0,1}} ); //y
   interpolate(m.ez, ezf, {{0,1,1}}, {{1,0,1}} );
   interpolate(m.bx, bxf, {{0,0,1}}, {{1,0,1}} );
   interpolate(m.by, byf, {{0,1,0}}, {{1,0,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,0,1}} );
+  nvtxRangePop();
 }
 
 template<>
 void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
 {
+  nvtxRangePush(__FUNCTION__);
+
   interpolate(m.ex, exf, {{1,1,0}}, {{0,1,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{0,1,1}} );
   interpolate(m.ez, ezf, {{0,1,1}}, {{0,1,1}} ); //z
   interpolate(m.bx, bxf, {{0,0,1}}, {{0,1,1}} );
   interpolate(m.by, byf, {{0,1,0}}, {{0,1,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{0,1,1}} );
+  nvtxRangePop();
 }
 
 
@@ -173,6 +195,8 @@ void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
 template<>
 void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
@@ -185,9 +209,11 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
   interpolate(m.rho, rhf, {{1,1,1}}, {{1,1,0}} );
   stagger_x_eb(m);
-  cudaDeviceSynchronize();
+  //cudaDeviceSynchronize();
 
+  add_jperpXDevEntry(tile);
 
+/*
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -203,10 +229,12 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
       }
     }
   }
-
+*/
   interpolate(m.rho, rhf, {{1,1,1}}, {{1,0,1}} );
   stagger_y_eb(m);
-  cudaDeviceSynchronize();
+  //cudaDeviceSynchronize();
+add_jperpYDevEntry(tile);
+  /*
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -222,10 +250,13 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
       }
     }
   }
-
+*/
   interpolate(m.rho, rhf, {{1,1,1}}, {{0,1,1}} );
   stagger_z_eb(m);
-  cudaDeviceSynchronize();
+//  cudaDeviceSynchronize();
+  add_jperpZDevEntry(tile);
+
+  /*
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -241,7 +272,9 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
       }
     }
   }
-
+*/
+cudaDeviceSynchronize();
+nvtxRangePop();
  }
 
 
@@ -253,6 +286,8 @@ void ffe::rFFE2<3>::update_eb(
     real_short c3
     )
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice&    m = tile.get_yee();
   ffe::SkinnyYeeLattice& n = tile.Fn; 
   ffe::SkinnyYeeLattice& dm = tile.dF; 
@@ -282,13 +317,15 @@ void ffe::rFFE2<3>::update_eb(
       }
     }
   }
-
+nvtxRangePop();
   }
 
 
 template<>
 void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
@@ -358,13 +395,15 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
     }
   }
 
-
+nvtxRangePop();
   }
 
 
 template<>
 void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
@@ -439,7 +478,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
     }
   }
 
-
+nvtxRangePop();
   }
 
 
@@ -447,6 +486,8 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice&    m = tile.get_yee();
   ffe::SkinnyYeeLattice& n = tile.Fn; 
   //ffe::SkinnyYeeLattice& dm = tile.dF; 
@@ -466,7 +507,7 @@ void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
       }
     }
   }
-
+nvtxRangePop();
   }
 
 

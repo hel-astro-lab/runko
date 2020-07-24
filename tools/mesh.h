@@ -75,7 +75,8 @@ class Mesh
     //Mesh() = default;
     Mesh() :
     allocated(false), count(0)
-    { }
+    { 
+    }
 
     /// standard initialization
     Mesh(int Nx, int Ny, int Nz) : 
@@ -117,7 +118,6 @@ class Mesh
       alloc(other.size());
       //mat.resize(other.mat.size());
       for(size_t i=0; i<other.size(); i++) ptr[i] = other.ptr[i];
-
     }
 
     // Mesh(const Mesh& other) = default;
@@ -165,6 +165,7 @@ class Mesh
         swap(*this, other);
     }
 
+__device__ __host__
     ~Mesh()
     {
       // todo fix this 

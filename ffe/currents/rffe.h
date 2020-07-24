@@ -75,6 +75,10 @@ class rFFE2
   /// copy Y^n to Y^n-1
   void copy_eb(Tile<D>& tile);
 
+  void add_jperpXDevEntry(ffe::Tile<3>& tile);
+  void add_jperpYDevEntry(ffe::Tile<3>& tile);
+  void add_jperpZDevEntry(ffe::Tile<3>& tile);
+
 };
 
 
