@@ -96,6 +96,7 @@ target_link_libraries(pyrunko PRIVATE ${CUDA_LIBRARIES})
 target_compile_options(pyrunko PRIVATE ${WARNING_FLAGS})
 
 
+set(CUDA_NVCC_FLAGS "--extended-lambda")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
 
 

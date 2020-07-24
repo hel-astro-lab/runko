@@ -24,7 +24,7 @@ using real_long  = double; /// some spesific algorithmic manipulations are done 
 using real_short = float;  /// mainly used for mesh storage types
 
 // nan prevention tolerance
-#define EPS 1e-7
+#define EPS 1e-7f
 
 // Separate short float type for particles. In most applications it is enough
 // to keep this as float. However, some special cases might require extra
