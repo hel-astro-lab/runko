@@ -79,6 +79,8 @@ class rFFE2
   void add_jperpYDevEntry(ffe::Tile<3>& tile);
   void add_jperpZDevEntry(ffe::Tile<3>& tile);
 
+  void remove_jparDevEntry(ffe::Tile<3>& tile);
+
 };
 
 
