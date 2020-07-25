@@ -324,6 +324,9 @@ nvtxRangePop();
 template<>
 void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
 {
+
+  remove_jparDevEntry(tile);
+  /*
   nvtxRangePush(__FUNCTION__);
 
   fields::YeeLattice&     m = tile.get_yee();
@@ -396,6 +399,8 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
   }
 
 nvtxRangePop();
+
+*/
   }
 
 
