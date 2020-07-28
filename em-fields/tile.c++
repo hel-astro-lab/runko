@@ -514,8 +514,11 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 
             // horizontal
             } else if (in == 0) { 
+              copy_horz_yeeDevEntry(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn);
+              /*
               for(int g=0; g<halo; g++)
               {
+
                 //copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
                 mesh.ex.copy_horz(mpr.ex, jto+jn*g, jfro+jn*g); 
                 mesh.ey.copy_horz(mpr.ey, jto+jn*g, jfro+jn*g); 
@@ -529,9 +532,10 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
                 mesh.jy.copy_horz(mpr.jy, jto+jn*g, jfro+jn*g); 
                 mesh.jz.copy_horz(mpr.jz, jto+jn*g, jfro+jn*g); 
               }
-
+              */
             // diagonal
             } else { 
+              /*
               for(int h=0; h<halo; h++) {
                 for(int g=0; g<halo; g++) 
                 {
@@ -549,6 +553,8 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
                     mesh.jz.copy_z_pencil(mpr.jz, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
                 }
               }
+              */
+             copy_z_pencil_yeeDevEntry(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn);
             } 
          
           // 3D case with kn != 0
@@ -556,6 +562,8 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
             
             // infront/behind directions
             if (in == 0 && jn == 0) { 
+              copy_face_yeeDevEntry(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn);
+              /*
               for(int g=0; g<halo; g++)
               {
                 //copy_face_yee(mesh, mpr, kto+kn*g, kfro+kn*g);   
@@ -571,7 +579,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
                 mesh.jy.copy_face(mpr.jy, kto+kn*g, kfro+kn*g);
                 mesh.jz.copy_face(mpr.jz, kto+kn*g, kfro+kn*g);
               }
-
+              */
             // 3D generalized diagonal locations
             // If the finite-difference scheme is purely non-diagonal
             // then these can be dropped off.
@@ -579,7 +587,9 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
             // vertical wedges
             } else if (jn == 0) {
 
+              copy_y_pencil_yeeDevEntry(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn);
               // y pencils
+              /*
               for(int h=0; h<halo; h++) {
                 for(int g=0; g<halo; g++) 
                 {
@@ -597,11 +607,12 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
                   mesh.jz.copy_y_pencil(mpr.jz, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
                 }
               }
-
+              */
             // horizontal wedges
             } else if (in == 0) {
-
+              copy_x_pencil_yeeDevEntry(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn);
               // x pencils
+              /*
               for(int h=0; h<halo; h++) {
                 for(int g=0; g<halo; g++) 
                 {
@@ -619,10 +630,11 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
                   mesh.jz.copy_x_pencil(mpr.jz, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
                 }
               }
-
+              */
             // corners
             } else {
-
+              copy_point_yeeDevEntry(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn);
+/*
               // pointwise
               for(int h=0; h<halo; h++) {
                 for(int g=0; g<halo; g++) {
@@ -643,6 +655,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
                   }
                 }
               }
+              */
             } 
 
           } // 3D cases with kn != 0
