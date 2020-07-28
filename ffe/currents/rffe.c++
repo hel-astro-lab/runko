@@ -78,6 +78,9 @@ template<>
 void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
 {
   nvtxRangePush(__FUNCTION__);
+  comp_rhoDevEntry(tile);
+  
+  /*
   fields::YeeLattice& mesh = tile.get_yee();
   auto& rho = mesh.rho;
   auto& ex  = mesh.ex;
@@ -86,16 +89,17 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
 
   // NOTE: compute rho from -1 to +1 because later on re-stagger it 
   // and need the guard zones for interpolation
-  for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2]+1); k++) {
-    for(int j=-1; j<static_cast<int>(tile.mesh_lengths[1]+1); j++) {
-      for(int i=-1; i<static_cast<int>(tile.mesh_lengths[0]+1); i++) {
-        rho(i,j,k) = 
-          (ex(i,j,k) - ex(i-1,j,  k  )) +
-          (ey(i,j,k) - ey(i  ,j-1,k  )) + 
-          (ez(i,j,k) - ez(i  ,j,  k-1));
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]+2); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]+2); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]+2); i++) {
+        rho(i-1,j-1,k-1) = 
+          (ex(i-1,j-1,k-1) - ex(i-1-1,j-1,  k-1  )) +
+          (ey(i-1,j-1,k-1) - ey(i-1  ,j-1-1,k-1  )) + 
+          (ez(i-1,j-1,k-1) - ez(i-1  ,j-1,  k-1-1));
       }
     }
   }
+  */
   nvtxRangePop();
   }
 
@@ -287,7 +291,8 @@ void ffe::rFFE2<3>::update_eb(
     )
 {
   nvtxRangePush(__FUNCTION__);
-
+  update_ebDevEntry(tile, c1, c2, c3);
+/*
   fields::YeeLattice&    m = tile.get_yee();
   ffe::SkinnyYeeLattice& n = tile.Fn; 
   ffe::SkinnyYeeLattice& dm = tile.dF; 
@@ -317,6 +322,7 @@ void ffe::rFFE2<3>::update_eb(
       }
     }
   }
+  */
 nvtxRangePop();
   }
 
@@ -408,7 +414,8 @@ template<>
 void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 {
   nvtxRangePush(__FUNCTION__);
-
+  limit_eDevEntry(tile);
+/*
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
@@ -483,7 +490,9 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
     }
   }
 
+*/
 nvtxRangePop();
+
   }
 
 
@@ -492,7 +501,8 @@ template<>
 void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
 {
   nvtxRangePush(__FUNCTION__);
-
+  copy_ebDevEntry(tile);
+  /*
   fields::YeeLattice&    m = tile.get_yee();
   ffe::SkinnyYeeLattice& n = tile.Fn; 
   //ffe::SkinnyYeeLattice& dm = tile.dF; 
@@ -512,6 +522,7 @@ void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
       }
     }
   }
+  */
 nvtxRangePop();
   }
 
