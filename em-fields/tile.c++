@@ -2,7 +2,9 @@
 #include <cmath>
 
 #include "tile.h"
+#include <nvtx3/nvToolsExt.h> 
 
+#include "tile.cuh"
 
 namespace fields {
   using namespace mpi4cpp;
@@ -430,6 +432,7 @@ template<>
 void Tile<3>::update_boundaries(corgi::Grid<3>& grid) 
 {
   //std::cout << "upB: updating boundaries\n";
+  nvtxRangePush(__FUNCTION__);
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -486,19 +489,64 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 
             // vertical
             if (jn == 0) { 
+              copy_vert_yeeDevEntry(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in);
+              /*
               for(int h=0; h<halo; h++)
-                copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
+              {
+                //copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
+                for(int k=0; k<(int)mesh.ex.Nz; k++) {
+                  for(int j=0; j<(int)mesh.ex.Ny; j++) { 
+                    mesh.ex(ito+in*h, j, k) = mpr.ex(ifro+in*h, j, k);
+                    mesh.ey(ito+in*h, j, k) = mpr.ey(ifro+in*h, j, k);
+                    mesh.ez(ito+in*h, j, k) = mpr.ez(ifro+in*h, j, k);
+
+                    mesh.bx(ito+in*h, j, k) = mpr.bx(ifro+in*h, j, k);
+                    mesh.by(ito+in*h, j, k) = mpr.by(ifro+in*h, j, k);
+                    mesh.bz(ito+in*h, j, k) = mpr.bz(ifro+in*h, j, k);
+
+                    mesh.jx(ito+in*h, j, k) = mpr.jx(ifro+in*h, j, k);
+                    mesh.jy(ito+in*h, j, k) = mpr.jy(ifro+in*h, j, k);
+                    mesh.jz(ito+in*h, j, k) = mpr.jz(ifro+in*h, j, k);
+                  }
+                }
+              }
+              */
 
             // horizontal
             } else if (in == 0) { 
               for(int g=0; g<halo; g++)
-                copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
+              {
+                //copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
+                mesh.ex.copy_horz(mpr.ex, jto+jn*g, jfro+jn*g); 
+                mesh.ey.copy_horz(mpr.ey, jto+jn*g, jfro+jn*g); 
+                mesh.ez.copy_horz(mpr.ez, jto+jn*g, jfro+jn*g); 
+
+                mesh.bx.copy_horz(mpr.bx, jto+jn*g, jfro+jn*g); 
+                mesh.by.copy_horz(mpr.by, jto+jn*g, jfro+jn*g); 
+                mesh.bz.copy_horz(mpr.bz, jto+jn*g, jfro+jn*g); 
+
+                mesh.jx.copy_horz(mpr.jx, jto+jn*g, jfro+jn*g); 
+                mesh.jy.copy_horz(mpr.jy, jto+jn*g, jfro+jn*g); 
+                mesh.jz.copy_horz(mpr.jz, jto+jn*g, jfro+jn*g); 
+              }
 
             // diagonal
             } else { 
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
-                  copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+                for(int g=0; g<halo; g++) 
+                {
+                  //copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+                    mesh.ex.copy_z_pencil(mpr.ex, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+                    mesh.ey.copy_z_pencil(mpr.ey, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+                    mesh.ez.copy_z_pencil(mpr.ez, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+
+                    mesh.bx.copy_z_pencil(mpr.bx, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+                    mesh.by.copy_z_pencil(mpr.by, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+                    mesh.bz.copy_z_pencil(mpr.bz, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+
+                    mesh.jx.copy_z_pencil(mpr.jx, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+                    mesh.jy.copy_z_pencil(mpr.jy, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
+                    mesh.jz.copy_z_pencil(mpr.jz, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g);
                 }
               }
             } 
@@ -509,7 +557,20 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
             // infront/behind directions
             if (in == 0 && jn == 0) { 
               for(int g=0; g<halo; g++)
-                copy_face_yee(mesh, mpr, kto+kn*g, kfro+kn*g);   
+              {
+                //copy_face_yee(mesh, mpr, kto+kn*g, kfro+kn*g);   
+                mesh.ex.copy_face(mpr.ex, kto+kn*g, kfro+kn*g);
+                mesh.ey.copy_face(mpr.ey, kto+kn*g, kfro+kn*g);
+                mesh.ez.copy_face(mpr.ez, kto+kn*g, kfro+kn*g);
+
+                mesh.bx.copy_face(mpr.bx, kto+kn*g, kfro+kn*g);
+                mesh.by.copy_face(mpr.by, kto+kn*g, kfro+kn*g);
+                mesh.bz.copy_face(mpr.bz, kto+kn*g, kfro+kn*g);
+
+                mesh.jx.copy_face(mpr.jx, kto+kn*g, kfro+kn*g);
+                mesh.jy.copy_face(mpr.jy, kto+kn*g, kfro+kn*g);
+                mesh.jz.copy_face(mpr.jz, kto+kn*g, kfro+kn*g);
+              }
 
             // 3D generalized diagonal locations
             // If the finite-difference scheme is purely non-diagonal
@@ -520,8 +581,20 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 
               // y pencils
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
-                  copy_y_pencil_yee(mesh, mpr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                for(int g=0; g<halo; g++) 
+                {
+                  //copy_y_pencil_yee(mesh, mpr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                  mesh.ex.copy_y_pencil(mpr.ex, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                  mesh.ey.copy_y_pencil(mpr.ey, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                  mesh.ez.copy_y_pencil(mpr.ez, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+
+                  mesh.bx.copy_y_pencil(mpr.bx, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                  mesh.by.copy_y_pencil(mpr.by, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                  mesh.bz.copy_y_pencil(mpr.bz, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+
+                  mesh.jx.copy_y_pencil(mpr.jx, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                  mesh.jy.copy_y_pencil(mpr.jy, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+                  mesh.jz.copy_y_pencil(mpr.jz, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
                 }
               }
 
@@ -530,8 +603,20 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 
               // x pencils
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
-                  copy_x_pencil_yee(mesh, mpr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                for(int g=0; g<halo; g++) 
+                {
+                  //copy_x_pencil_yee(mesh, mpr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                  mesh.ex.copy_x_pencil(mpr.ex, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                  mesh.ey.copy_x_pencil(mpr.ey, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                  mesh.ez.copy_x_pencil(mpr.ez, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                                                     
+                  mesh.bx.copy_x_pencil(mpr.bx, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                  mesh.by.copy_x_pencil(mpr.by, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                  mesh.bz.copy_x_pencil(mpr.bz, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                                                     
+                  mesh.jx.copy_x_pencil(mpr.jx, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                  mesh.jy.copy_x_pencil(mpr.jy, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+                  mesh.jz.copy_x_pencil(mpr.jz, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
                 }
               }
 
@@ -541,10 +626,20 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
               // pointwise
               for(int h=0; h<halo; h++) {
                 for(int g=0; g<halo; g++) {
-                  for(int f=0; f<halo; f++) {
-                    copy_point_yee(mesh, mpr, 
-                        ito +in*h, jto +jn*g, kto +kn*f,
-                        ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  for(int f=0; f<halo; f++) 
+                  {
+                    //copy_point_yee(mesh, mpr, ito +in*h, jto +jn*g, kto +kn*f, ifro+in*h, jfro+jn*g, kfro+kn*f);
+                    mesh.ex(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                    mesh.ey(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                    mesh.ez(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
+
+                    mesh.bx(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                    mesh.by(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                    mesh.bz(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
+
+                    mesh.jx(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                    mesh.jy(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                    mesh.jz(ito +in*h, jto +jn*g, kto +kn*f) =  mpr.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   }
                 }
               }
@@ -555,7 +650,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
       } // kn
     } // jn
   } // in
-
+  nvtxRangePop();
   }
 
 
@@ -628,6 +723,7 @@ void Tile<1>::exchange_currents(corgi::Grid<1>& grid)
 template<>
 void Tile<2>::exchange_currents(corgi::Grid<2>& grid) 
 {
+
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
@@ -684,6 +780,8 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 template<>
 void Tile<3>::exchange_currents(corgi::Grid<3>& grid) 
 {
+  nvtxRangePush(__FUNCTION__);
+
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
@@ -798,7 +896,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
       }
     }
   }
-
+  nvtxRangePop();
 }
 
 
