@@ -4,6 +4,7 @@
 
 #include <cmath>
 
+#include <nvtx3/nvToolsExt.h> 
 
 
 template<>
@@ -11,6 +12,8 @@ void ffe::DriftCurrent<2>::interpolate_b(
     fields::YeeLattice& yee
     )
 {
+  nvtxRangePush(__FUNCTION__);
+
   int k = 0;
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
@@ -36,6 +39,8 @@ void ffe::DriftCurrent<2>::interpolate_b(
         yee.bz(i-1, j-1, k)
         );
   }
+  nvtxRangePop();
+
 }
 
 
@@ -44,6 +49,8 @@ void ffe::DriftCurrent<3>::interpolate_b(
     fields::YeeLattice& yee
     )
 {
+  nvtxRangePush(__FUNCTION__);
+
   for(int k=0; k<static_cast<int>(yee.Nz); k++) 
   for(int j=0; j<static_cast<int>(yee.Ny); j++) 
   for(int i=0; i<static_cast<int>(yee.Nx); i++) {
@@ -82,6 +89,8 @@ void ffe::DriftCurrent<3>::interpolate_b(
   );
 
   }
+  nvtxRangePop();
+
 }
 
 
@@ -89,6 +98,8 @@ void ffe::DriftCurrent<3>::interpolate_b(
 template<>
 void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
@@ -140,6 +151,8 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
     //mesh.ez(i,j,k) -= mesh.jz(i,j,k)*dt;
 
   }
+  nvtxRangePop();
+
 }
 
 
@@ -147,6 +160,8 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
 template<>
 void ffe::DriftCurrent<3>::comp_drift_cur(ffe::Tile<3>& tile)
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
@@ -193,6 +208,8 @@ void ffe::DriftCurrent<3>::comp_drift_cur(ffe::Tile<3>& tile)
     mesh.ez(i,j,k) -=dt*dive*crossz/b2;
 
   }
+  nvtxRangePop();
+
 }
 
 /// 2D Drift current solver
@@ -201,6 +218,8 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
     ffe::Tile<2>& tile
     )
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
@@ -245,6 +264,8 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
     mesh.jz(i,j,k) += jparaz/dt;
 
   }
+  nvtxRangePop();
+
 }
 
 /// 3D Drift current solver
@@ -253,6 +274,8 @@ void ffe::DriftCurrent<3>::comp_parallel_cur(
     ffe::Tile<3>& tile
     )
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
@@ -297,6 +320,8 @@ void ffe::DriftCurrent<3>::comp_parallel_cur(
     mesh.jz(i,j,k) += jparaz/dt;
 
   }
+  nvtxRangePop();
+
 }
 
 /// 2D Drift current solver
@@ -305,6 +330,8 @@ void ffe::DriftCurrent<2>::limiter(
     ffe::Tile<2>& tile
     )
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice& mesh = tile.get_yee();
   interpolate_b(mesh);
 
@@ -357,6 +384,8 @@ void ffe::DriftCurrent<2>::limiter(
     }
 
   }
+  nvtxRangePop();
+
 }
 
 
@@ -367,6 +396,8 @@ void ffe::DriftCurrent<3>::limiter(
     ffe::Tile<3>& tile
     )
 {
+  nvtxRangePush(__FUNCTION__);
+
   fields::YeeLattice& mesh = tile.get_yee();
   interpolate_b(mesh);
 
@@ -419,6 +450,8 @@ void ffe::DriftCurrent<3>::limiter(
     }
 
   }
+  nvtxRangePop();
+
 }
 
 

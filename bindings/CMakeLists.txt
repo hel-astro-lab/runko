@@ -64,6 +64,7 @@ set (IO_FILES
 
 set (ACC_FILES 
      ../ffe/currents/inter.cu
+     ../em-fields/tile.cu
 )
 
 # python module creation
