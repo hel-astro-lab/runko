@@ -68,6 +68,8 @@ void ffe::rFFE2<3>::interpolate(
   }
   */
   nvtxRangePop();
+cudaDeviceSynchronize();
+
 
 }
 
@@ -101,6 +103,8 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
   }
   */
   nvtxRangePop();
+cudaDeviceSynchronize();
+
   }
 
 /// 3D 
@@ -149,6 +153,8 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
   }
 */
 nvtxRangePop();
+cudaDeviceSynchronize();
+
   }
 
 
@@ -164,6 +170,8 @@ void ffe::rFFE2<3>::stagger_x_eb(fields::YeeLattice& m)
   interpolate(m.by, byf, {{0,1,0}}, {{1,1,0}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,1,0}} );
   nvtxRangePop();
+cudaDeviceSynchronize();
+
 }
 
 template<>
@@ -178,6 +186,8 @@ void ffe::rFFE2<3>::stagger_y_eb(fields::YeeLattice& m)
   interpolate(m.by, byf, {{0,1,0}}, {{1,0,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,0,1}} );
   nvtxRangePop();
+cudaDeviceSynchronize();
+
 }
 
 template<>
@@ -192,6 +202,8 @@ void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
   interpolate(m.by, byf, {{0,1,0}}, {{0,1,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{0,1,1}} );
   nvtxRangePop();
+cudaDeviceSynchronize();
+
 }
 
 
@@ -277,8 +289,9 @@ add_jperpYDevEntry(tile);
     }
   }
 */
-cudaDeviceSynchronize();
 nvtxRangePop();
+  cudaDeviceSynchronize();
+
  }
 
 
@@ -324,6 +337,8 @@ void ffe::rFFE2<3>::update_eb(
   }
   */
 nvtxRangePop();
+  cudaDeviceSynchronize();
+
   }
 
 
@@ -332,8 +347,9 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
 {
 
   remove_jparDevEntry(tile);
-  /*
   nvtxRangePush(__FUNCTION__);
+
+  /*
 
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
@@ -403,10 +419,11 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
       }
     }
   }
+*/
 
 nvtxRangePop();
+  cudaDeviceSynchronize();
 
-*/
   }
 
 
@@ -492,6 +509,8 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
 */
 nvtxRangePop();
+  cudaDeviceSynchronize();
+
 
   }
 
@@ -524,6 +543,8 @@ void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
   }
   */
 nvtxRangePop();
+  cudaDeviceSynchronize();
+
   }
 
 

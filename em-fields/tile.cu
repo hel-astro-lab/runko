@@ -85,7 +85,6 @@ void copy_vert_yeeDevEntry(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int
       lhs_in->jz(ito+in*h, j, k) = rhs_in->jz(ifro+in*h, j, k);
     }, Ny, Nz, halo, lhs_dev, rhs_dev);
 
-    cudaDeviceSynchronize();
 
 }
 
@@ -124,7 +123,6 @@ void copy_horz_yeeDevEntry(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int
       lhs_in->jz(i, jto+jn*g, k) = rhs_in->jz(i, jfro+jn*g, k);
     }, Nx, Nz, halo, lhs_dev, rhs_dev);
 
-    cudaDeviceSynchronize();
 }
 
 
@@ -155,7 +153,6 @@ void copy_face_yeeDevEntry(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int
         lhs_in->jz(i, j, kto+kn*g) = rhs_in->jz(i, j, kfro+kn*g);
     }, Nx, Ny, halo, lhs_dev, rhs_dev);
 
-    cudaDeviceSynchronize();
 }
 
 

@@ -636,7 +636,6 @@ void
     eyf_dev,
     ezf_dev);
 
-  cudaDeviceSynchronize();
 }
 
 
@@ -814,7 +813,6 @@ dim3 grid  = { 1 + (static_cast<int>(tile.mesh_lengths[2]) / 4),
     exf_dev,
     eyf_dev,
     ezf_dev);
-  cudaDeviceSynchronize();
 }
 
 
@@ -890,7 +888,6 @@ void
     dm_dev,
     n_dev);
 
-  cudaDeviceSynchronize();
 }
 
 template<>
