@@ -8,6 +8,10 @@
 #include <cmath>
 #include <iostream>
 
+auto getDimms(){
+  
+}
+
 template<typename F, typename... Args>
 __global__ void
   interateXYZKernVari(F fun, int xMax, int yMax, int zMax, Args... args)
@@ -42,8 +46,8 @@ __global__ void
 }
 
 
-void
-  interpolateDevEntry(
+template<>
+void ffe::rFFE2<3>::interpolateDevEntry(
     toolbox::Mesh<real_short, 3> &f,
     toolbox::Mesh<real_short, 0> &fi,
     const std::array<int, 3> &in,
@@ -107,24 +111,14 @@ void
 }
 
 
-void
-  push_ebDevEntry(ffe::Tile<3> &tile)
+template<>
+void ffe::rFFE2<3>::push_ebDevEntry(ffe::Tile<3> &tile)
 {
   //
   // refs to storages
   fields::YeeLattice &m     = tile.get_yee();
   ffe::SkinnyYeeLattice &dm = tile.dF;
 
-  // refs to fields for easier access
-  /*
-  auto& ex  = m.ex;
-  auto& ey  = m.ey;
-  auto& ez  = m.ez;
-
-  auto& bx  = m.bx;
-  auto& by  = m.by;
-  auto& bz  = m.bz;
-*/
   real_short c = tile.cfl;
 
   // dt / dx
@@ -184,19 +178,16 @@ if (err != cudaSuccess)
 */
 }
 
-
 template<>
-void
-  ffe::rFFE2<3>::add_jperpXDevEntry(ffe::Tile<3> &tile)
+void ffe::rFFE2<3>::add_jperpDevEntry(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice &m     = tile.get_yee();
-  ffe::SkinnyYeeLattice &dm = tile.dF;
+  //
 
-  auto &jx = m.jx;
-  // auto& jy  = m.jy;
-  // auto& jz  = m.jz;
+  fields::YeeLattice&     m = tile.get_yee();
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   real_short dt = tile.cfl;
+  real_short b2, cur;
 
   dim3 block = { 4, 4, 4 };
   dim3 grid  = { 1 + (static_cast<int>(tile.mesh_lengths[2]) / 4),
@@ -204,7 +195,7 @@ void
                 1 + (static_cast<int>(tile.mesh_lengths[0]) / 4) };
 
   cudaHostRegister(&dm, sizeof(ffe::SkinnyYeeLattice), cudaHostRegisterMapped);
-  cudaHostRegister(&jx, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
+  cudaHostRegister(&m, sizeof(fields::YeeLattice), cudaHostRegisterMapped);
 
   cudaHostRegister(&bxf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
   cudaHostRegister(&byf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
@@ -215,7 +206,7 @@ void
   cudaHostRegister(&rhf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
 
   ffe::SkinnyYeeLattice *dm_dev;
-  toolbox::Mesh<real_short, 3> *jx_dev;
+  fields::YeeLattice *m_dev;
 
   toolbox::Mesh<real_short, 0> *bxf_dev;
   toolbox::Mesh<real_short, 0> *byf_dev;
@@ -227,7 +218,7 @@ void
 
 
   cudaHostGetDevicePointer(&dm_dev, &dm, 0);
-  cudaHostGetDevicePointer(&jx_dev, &jx, 0);
+  cudaHostGetDevicePointer(&m_dev, &m, 0);
 
   cudaHostGetDevicePointer(&bxf_dev, &bxf, 0);
   cudaHostGetDevicePointer(&byf_dev, &byf, 0);
@@ -237,14 +228,18 @@ void
   cudaHostGetDevicePointer(&ezf_dev, &ezf, 0);
   cudaHostGetDevicePointer(&rhf_dev, &rhf, 0);
 
-  // https://developer.nvidia.com/blog/new-compiler-features-cuda-8/
+  interpolate(m.rho, rhf, {{1,1,1}}, {{1,1,0}} );
+  stagger_x_eb(m);
+  //cudaDeviceSynchronize();
+
+  
   interateXYZKernVari<<<grid, block>>>(
     [=] __device__ __host__(
       int i,
       int j,
       int k,
       ffe::SkinnyYeeLattice *dm_in,
-      toolbox::Mesh<real_short, 3> *jx_in,
+      fields::YeeLattice *m_in,
       toolbox::Mesh<real_short, 0> *bxf_in,
       toolbox::Mesh<real_short, 0> *byf_in,
       toolbox::Mesh<real_short, 0> *bzf_in,
@@ -262,14 +257,14 @@ void
             ((*eyf_in)(i, j, k) * (*bzf_in)(i, j, k) -
              (*byf_in)(i, j, k) * (*ezf_in)(i, j, k)) /
             b2;
-      (*jx_in)(i, j, k) = cur;
+      m_in->jx(i, j, k) = cur;
       dm_in->ex(i, j, k) -= dt * cur;
     },
     static_cast<int>(tile.mesh_lengths[2]),
     static_cast<int>(tile.mesh_lengths[1]),
     static_cast<int>(tile.mesh_lengths[0]),
     dm_dev,
-    jx_dev,
+    m_dev,
     bxf_dev,
     byf_dev,
     bzf_dev,
@@ -277,74 +272,18 @@ void
     eyf_dev,
     ezf_dev,
     rhf_dev);
-  /*
-    auto err = cudaDeviceSynchronize();
-    if (err != cudaSuccess)
-    {
-       fprintf(stderr,"GPUassert: %s add_jperpXDevEntry %d\n", cudaGetErrorString(err));
-    }
-    */
-}
 
-template<>
-void
-  ffe::rFFE2<3>::add_jperpYDevEntry(ffe::Tile<3> &tile)
-{
-  fields::YeeLattice &m     = tile.get_yee();
-  ffe::SkinnyYeeLattice &dm = tile.dF;
 
-  // auto& jx  = m.jx;
-  auto &jy = m.jy;
-  // auto& jz  = m.jz;
-
-  real_short dt = tile.cfl;
-
-  dim3 block = { 4, 4, 4 };
-  dim3 grid  = { 1 + (static_cast<int>(tile.mesh_lengths[2]) / 4),
-                1 + (static_cast<int>(tile.mesh_lengths[1]) / 4),
-                1 + (static_cast<int>(tile.mesh_lengths[0]) / 4) };
-
-  cudaHostRegister(&dm, sizeof(ffe::SkinnyYeeLattice), cudaHostRegisterMapped);
-  cudaHostRegister(&jy, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-
-  cudaHostRegister(&bxf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&byf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&bzf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&exf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&eyf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&ezf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&rhf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-
-  ffe::SkinnyYeeLattice *dm_dev;
-  toolbox::Mesh<real_short, 3> *jy_dev;
-
-  toolbox::Mesh<real_short, 0> *bxf_dev;
-  toolbox::Mesh<real_short, 0> *byf_dev;
-  toolbox::Mesh<real_short, 0> *bzf_dev;
-  toolbox::Mesh<real_short, 0> *exf_dev;
-  toolbox::Mesh<real_short, 0> *eyf_dev;
-  toolbox::Mesh<real_short, 0> *ezf_dev;
-  toolbox::Mesh<real_short, 0> *rhf_dev;
-
-  cudaHostGetDevicePointer(&dm_dev, &dm, 0);
-  cudaHostGetDevicePointer(&jy_dev, &jy, 0);
-
-  cudaHostGetDevicePointer(&bxf_dev, &bxf, 0);
-  cudaHostGetDevicePointer(&byf_dev, &byf, 0);
-  cudaHostGetDevicePointer(&bzf_dev, &bzf, 0);
-  cudaHostGetDevicePointer(&exf_dev, &exf, 0);
-  cudaHostGetDevicePointer(&eyf_dev, &eyf, 0);
-  cudaHostGetDevicePointer(&ezf_dev, &ezf, 0);
-  cudaHostGetDevicePointer(&rhf_dev, &rhf, 0);
-
-  // https://developer.nvidia.com/blog/new-compiler-features-cuda-8/
+  interpolate(m.rho, rhf, {{1,1,1}}, {{1,0,1}} );
+  stagger_y_eb(m);
+  //cudaDeviceSynchronize();
   interateXYZKernVari<<<grid, block>>>(
     [=] __device__ __host__(
       int i,
       int j,
       int k,
       ffe::SkinnyYeeLattice *dm_in,
-      toolbox::Mesh<real_short, 3> *jy_in,
+      fields::YeeLattice *m_in,
       toolbox::Mesh<real_short, 0> *bxf_in,
       toolbox::Mesh<real_short, 0> *byf_in,
       toolbox::Mesh<real_short, 0> *bzf_in,
@@ -352,24 +291,24 @@ void
       toolbox::Mesh<real_short, 0> *eyf_in,
       toolbox::Mesh<real_short, 0> *ezf_in,
       toolbox::Mesh<real_short, 0> *rhf_in) {
-      real_short b2, cur;
-      b2 =
-        ((*bxf_in)(i, j, k) * (*bxf_in)(i, j, k) +
-         (*byf_in)(i, j, k) * (*byf_in)(i, j, k) +
-         (*bzf_in)(i, j, k) * (*bzf_in)(i, j, k) + EPS);
-
-      cur = (*rhf_in)(i, j, k) *
-            ((*ezf_in)(i, j, k) * (*bxf_in)(i, j, k) -
-             (*exf_in)(i, j, k) * (*bzf_in)(i, j, k)) /
-            b2;
-      (*jy_in)(i, j, k) = cur;
-      dm_in->ey(i, j, k) -= dt * cur;
+        real_short b2, cur;
+        b2 =
+          ((*bxf_in)(i, j, k) * (*bxf_in)(i, j, k) +
+           (*byf_in)(i, j, k) * (*byf_in)(i, j, k) +
+           (*bzf_in)(i, j, k) * (*bzf_in)(i, j, k) + EPS);
+  
+        cur = (*rhf_in)(i, j, k) *
+              ((*ezf_in)(i, j, k) * (*bxf_in)(i, j, k) -
+               (*exf_in)(i, j, k) * (*bzf_in)(i, j, k)) /
+              b2;
+        m_in->jy(i, j, k) = cur;
+        dm_in->ey(i, j, k) -= dt * cur;
     },
     static_cast<int>(tile.mesh_lengths[2]),
     static_cast<int>(tile.mesh_lengths[1]),
     static_cast<int>(tile.mesh_lengths[0]),
     dm_dev,
-    jy_dev,
+    m_dev,
     bxf_dev,
     byf_dev,
     bzf_dev,
@@ -377,74 +316,24 @@ void
     eyf_dev,
     ezf_dev,
     rhf_dev);
-}
 
-template<>
-void
-  ffe::rFFE2<3>::add_jperpZDevEntry(ffe::Tile<3> &tile)
-{
-  fields::YeeLattice &m     = tile.get_yee();
-  ffe::SkinnyYeeLattice &dm = tile.dF;
-
-  // auto& jx  = m.jx;
-  // auto& jy  = m.jy;
-  auto &jz = m.jz;
-
-  real_short dt = tile.cfl;
-
-  dim3 block = { 4, 4, 4 };
-  dim3 grid  = { 1 + (static_cast<int>(tile.mesh_lengths[2]) / 4),
-                1 + (static_cast<int>(tile.mesh_lengths[1]) / 4),
-                1 + (static_cast<int>(tile.mesh_lengths[0]) / 4) };
-
-  cudaHostRegister(&dm, sizeof(ffe::SkinnyYeeLattice), cudaHostRegisterMapped);
-  cudaHostRegister(&jz, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-
-  cudaHostRegister(&bxf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&byf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&bzf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&exf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&eyf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&ezf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-  cudaHostRegister(&rhf, sizeof(toolbox::Mesh<real_short, 3>), cudaHostRegisterMapped);
-
-  ffe::SkinnyYeeLattice *dm_dev;
-  toolbox::Mesh<real_short, 3> *jz_dev;
-
-  toolbox::Mesh<real_short, 0> *bxf_dev;
-  toolbox::Mesh<real_short, 0> *byf_dev;
-  toolbox::Mesh<real_short, 0> *bzf_dev;
-  toolbox::Mesh<real_short, 0> *exf_dev;
-  toolbox::Mesh<real_short, 0> *eyf_dev;
-  toolbox::Mesh<real_short, 0> *ezf_dev;
-  toolbox::Mesh<real_short, 0> *rhf_dev;
-
-  cudaHostGetDevicePointer(&dm_dev, &dm, 0);
-  cudaHostGetDevicePointer(&jz_dev, &jz, 0);
-
-  cudaHostGetDevicePointer(&bxf_dev, &bxf, 0);
-  cudaHostGetDevicePointer(&byf_dev, &byf, 0);
-  cudaHostGetDevicePointer(&bzf_dev, &bzf, 0);
-  cudaHostGetDevicePointer(&exf_dev, &exf, 0);
-  cudaHostGetDevicePointer(&eyf_dev, &eyf, 0);
-  cudaHostGetDevicePointer(&ezf_dev, &ezf, 0);
-  cudaHostGetDevicePointer(&rhf_dev, &rhf, 0);
-
-  // https://developer.nvidia.com/blog/new-compiler-features-cuda-8/
-  interateXYZKernVari<<<grid, block>>>(
-    [=] __device__ __host__(
-      int i,
-      int j,
-      int k,
-      ffe::SkinnyYeeLattice *dm_in,
-      toolbox::Mesh<real_short, 3> *jz_in,
-      toolbox::Mesh<real_short, 0> *bxf_in,
-      toolbox::Mesh<real_short, 0> *byf_in,
-      toolbox::Mesh<real_short, 0> *bzf_in,
-      toolbox::Mesh<real_short, 0> *exf_in,
-      toolbox::Mesh<real_short, 0> *eyf_in,
-      toolbox::Mesh<real_short, 0> *ezf_in,
-      toolbox::Mesh<real_short, 0> *rhf_in) {
+  interpolate(m.rho, rhf, {{1,1,1}}, {{0,1,1}} );
+  stagger_z_eb(m);
+//  cudaDeviceSynchronize();
+interateXYZKernVari<<<grid, block>>>(
+  [=] __device__ __host__(
+    int i,
+    int j,
+    int k,
+    ffe::SkinnyYeeLattice *dm_in,
+    fields::YeeLattice *m_in,
+    toolbox::Mesh<real_short, 0> *bxf_in,
+    toolbox::Mesh<real_short, 0> *byf_in,
+    toolbox::Mesh<real_short, 0> *bzf_in,
+    toolbox::Mesh<real_short, 0> *exf_in,
+    toolbox::Mesh<real_short, 0> *eyf_in,
+    toolbox::Mesh<real_short, 0> *ezf_in,
+    toolbox::Mesh<real_short, 0> *rhf_in) {
       real_short b2, cur;
       b2 =
         ((*bxf_in)(i, j, k) * (*bxf_in)(i, j, k) +
@@ -455,21 +344,23 @@ void
             ((*exf_in)(i, j, k) * (*byf_in)(i, j, k) -
              (*bxf_in)(i, j, k) * (*eyf_in)(i, j, k)) /
             b2;
-      (*jz_in)(i, j, k) = cur;
+      m_in->jz(i, j, k) = cur;
       dm_in->ez(i, j, k) -= dt * cur;
-    },
-    static_cast<int>(tile.mesh_lengths[2]),
-    static_cast<int>(tile.mesh_lengths[1]),
-    static_cast<int>(tile.mesh_lengths[0]),
-    dm_dev,
-    jz_dev,
-    bxf_dev,
-    byf_dev,
-    bzf_dev,
-    exf_dev,
-    eyf_dev,
-    ezf_dev,
-    rhf_dev);
+  },
+  static_cast<int>(tile.mesh_lengths[2]),
+  static_cast<int>(tile.mesh_lengths[1]),
+  static_cast<int>(tile.mesh_lengths[0]),
+  dm_dev,
+  m_dev,
+  bxf_dev,
+  byf_dev,
+  bzf_dev,
+  exf_dev,
+  eyf_dev,
+  ezf_dev,
+  rhf_dev);
+
+
 }
 
 

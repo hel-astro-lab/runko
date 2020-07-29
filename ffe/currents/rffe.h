@@ -79,12 +79,24 @@ class rFFE2
   void add_jperpYDevEntry(ffe::Tile<3>& tile);
   void add_jperpZDevEntry(ffe::Tile<3>& tile);
 
+  void add_jperpDevEntry(ffe::Tile<3>& tile);
+
   void remove_jparDevEntry(ffe::Tile<3>& tile);
   void limit_eDevEntry(ffe::Tile<3>& tile);
   void update_ebDevEntry(ffe::Tile<3>& tile, real_short c1, real_short c2, real_short c3);
 
   void copy_ebDevEntry( ffe::Tile<3>& tile);
   void comp_rhoDevEntry(ffe::Tile<3>& tile);
+
+  void interpolateDevEntry( 
+        toolbox::Mesh<real_short,3>& f,
+        toolbox::Mesh<real_short,0>& fi,
+        const std::array<int,3>& in,
+        const std::array<int,3>& out
+      );
+
+void push_ebDevEntry(ffe::Tile<3>& tile);
+
 };
 
 

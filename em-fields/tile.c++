@@ -433,7 +433,6 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
 {
   //std::cout << "upB: updating boundaries\n";
   nvtxRangePush(__FUNCTION__);
-  cudaDeviceSynchronize();
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
