@@ -68,7 +68,6 @@ void ffe::rFFE2<3>::interpolate(
   }
   */
   nvtxRangePop();
-cudaDeviceSynchronize();
 
 
 }
@@ -170,7 +169,6 @@ void ffe::rFFE2<3>::stagger_x_eb(fields::YeeLattice& m)
   interpolate(m.by, byf, {{0,1,0}}, {{1,1,0}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,1,0}} );
   nvtxRangePop();
-cudaDeviceSynchronize();
 
 }
 
@@ -186,7 +184,6 @@ void ffe::rFFE2<3>::stagger_y_eb(fields::YeeLattice& m)
   interpolate(m.by, byf, {{0,1,0}}, {{1,0,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,0,1}} );
   nvtxRangePop();
-cudaDeviceSynchronize();
 
 }
 
@@ -202,7 +199,6 @@ void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
   interpolate(m.by, byf, {{0,1,0}}, {{0,1,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{0,1,1}} );
   nvtxRangePop();
-cudaDeviceSynchronize();
 
 }
 
@@ -212,6 +208,9 @@ template<>
 void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 {
   nvtxRangePush(__FUNCTION__);
+  add_jperpDevEntry(tile);
+
+  /*
 
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
@@ -227,9 +226,6 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   stagger_x_eb(m);
   //cudaDeviceSynchronize();
 
-  add_jperpXDevEntry(tile);
-
-/*
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -245,12 +241,9 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
       }
     }
   }
-*/
   interpolate(m.rho, rhf, {{1,1,1}}, {{1,0,1}} );
   stagger_y_eb(m);
   //cudaDeviceSynchronize();
-add_jperpYDevEntry(tile);
-  /*
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -266,13 +259,9 @@ add_jperpYDevEntry(tile);
       }
     }
   }
-*/
   interpolate(m.rho, rhf, {{1,1,1}}, {{0,1,1}} );
   stagger_z_eb(m);
 //  cudaDeviceSynchronize();
-  add_jperpZDevEntry(tile);
-
-  /*
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
@@ -346,8 +335,8 @@ template<>
 void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
 {
 
-  remove_jparDevEntry(tile);
   nvtxRangePush(__FUNCTION__);
+  remove_jparDevEntry(tile);
 
   /*
 
