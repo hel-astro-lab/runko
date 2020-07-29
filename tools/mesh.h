@@ -31,8 +31,8 @@ class Mesh
     //std::vector<T, ManagedAlloc<T>> mat;
 
     T *ptr;
-    bool allocated;
-    int count;
+    bool allocated{false};
+    int count{0};
   public:
 
     /// grid size along x
@@ -143,6 +143,8 @@ class Mesh
         swap(first.Ny, second.Ny);
         swap(first.Nz, second.Nz);
         swap(first.ptr, second.ptr);
+        swap(first.count, second.count);
+        swap(first.allocated, second.allocated);
     }
 
     //Mesh& operator=(const Mesh& other) = default;
@@ -169,6 +171,7 @@ __device__ __host__
     ~Mesh()
     {
       // todo fix this 
+
       if(allocated)
       {
         if(ptr)
@@ -234,7 +237,18 @@ __device__ __host__
 
     }
 
-void alloc(int count_){
+    void alloc(int count_){
+      /*
+        if(allocated)
+        {
+          delete[] ptr;
+        }
+        ptr = new T[count_];
+          allocated = true;
+          count = count_;
+			    return;
+*/
+  
         if(allocated)
         {
           cudaFree(ptr);
@@ -246,6 +260,7 @@ void alloc(int count_){
           count = count_;
 			    return;
         }
+        
       }
 
 
