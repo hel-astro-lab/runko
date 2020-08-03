@@ -8,10 +8,7 @@
 #include <cassert>
 #include <exception>
 
-#include <cuda_runtime_api.h>
-
-#include "managed_alloc.h"
-
+#include "iter/iter.h"
 
 namespace toolbox {
 
@@ -45,7 +42,7 @@ class Mesh
     int Nz{0};
 
     /// Internal indexing with halo region padding of width H
-    __device__ __host__
+    DEVCALLABLE
     inline int indx(int i, int j, int k) const {
       assert( (i >= -H) && (i <  (int)Nx + H)  );
       assert( (j >= -H) && (j <  (int)Ny + H)  );
@@ -59,12 +56,12 @@ class Mesh
     }
 
     /// standard (i,j,k) syntax
-    __device__ __host__
+    DEVCALLABLE
     T& operator()(int i, int j, int k) { 
       int ind = indx(i,j,k);
       return ptr[ind];
     }
-    __device__ __host__
+    DEVCALLABLE
     const T& operator()(int i, int j, int k) const { 
 
       int ind = indx(i,j,k);
@@ -167,7 +164,6 @@ class Mesh
         swap(*this, other);
     }
 
-__device__ __host__
     ~Mesh()
     {
       // todo fix this 
@@ -176,7 +172,7 @@ __device__ __host__
       {
         if(ptr)
         {
-          cudaFree(ptr);
+          UniIter::deallocate(ptr);
         }
       }
 
@@ -232,37 +228,18 @@ __device__ __host__
         ptr[ indx(i,j,k) ] = vec[q];
         q++;
       }
-
-      
-
     }
 
     void alloc(int count_){
-      /*
         if(allocated)
         {
-          delete[] ptr;
+          UniIter::deallocate(ptr);
         }
-        ptr = new T[count_];
-          allocated = true;
-          count = count_;
-			    return;
-*/
-  
-        if(allocated)
-        {
-          cudaFree(ptr);
-        }
-        auto err = cudaMallocManaged((void**)&ptr, count_ * sizeof(T));
-        if (err == cudaSuccess)
-        {
-          allocated = true;
-          count = count_;
-			    return;
-        }
-        
+        ptr = UniIter::allocate<T>(count_);
+        allocated = true;
+        count = count_;
+			  return;
       }
-
 
     // Mesh arithmetics
     //=
