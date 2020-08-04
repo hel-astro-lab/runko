@@ -8,7 +8,8 @@
 #include <cassert>
 #include <exception>
 
-#include "iter/iter.h"
+#include "iter/allocator.h"
+#include "iter/devcall.h"
 
 namespace toolbox {
 
@@ -170,10 +171,7 @@ class Mesh
 
       if(allocated)
       {
-        if(ptr)
-        {
-          UniIter::deallocate(ptr);
-        }
+        UniAllocator::deallocate(ptr);
       }
 
       allocated = false;
@@ -233,9 +231,9 @@ class Mesh
     void alloc(int count_){
         if(allocated)
         {
-          UniIter::deallocate(ptr);
+          UniAllocator::deallocate(ptr);
         }
-        ptr = UniIter::allocate<T>(count_);
+        ptr = UniAllocator::allocate<T>(count_);
         allocated = true;
         count = count_;
 			  return;
