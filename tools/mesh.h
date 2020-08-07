@@ -180,8 +180,10 @@ class Mesh
     }
 
     /// address to data
+    DEVCALLABLE
     T* data() { return ptr; }
-
+    
+    DEVCALLABLE
     const T* data() const {return ptr; }
 
     /// internal storage size

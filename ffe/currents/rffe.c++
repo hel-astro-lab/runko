@@ -60,11 +60,9 @@ void ffe::rFFE2<3>::interpolate(
       f0  = f01 + f00;
 
       fi(i,j,k) = 0.125*(f1 + f0);
-    }, 
+    }, {std::tuple{8,8,4}},
     f.Nx, f.Ny, f.Nz, f, fi);
   //nvtxRangePop();
-
-
 }
 
 
@@ -90,7 +88,6 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
     mesh);
 
   //nvtxRangePop();
-  UniIter::sync();
 
   }
 
@@ -131,7 +128,6 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0]),
     dm, m);
     //nvtxRangePop();
-    UniIter::sync();
   }
 
 
@@ -269,7 +265,6 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
 
 //nvtxRangePop();
-  UniIter::sync();
 
  }
 
@@ -320,7 +315,6 @@ void ffe::rFFE2<3>::update_eb(
     dm, m, n);
 
 //nvtxRangePop();
-    UniIter::sync();
 
   }
 
@@ -328,7 +322,7 @@ void ffe::rFFE2<3>::update_eb(
 template<>
 void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
 {
-
+UniIter::sync();
   //nvtxRangePush(__FUNCTION__);
 
   fields::YeeLattice&     m = tile.get_yee();
@@ -419,7 +413,6 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
     dm, m, bxf, byf, bzf, exf, eyf, ezf, rhf);
 
 //nvtxRangePop();
-    UniIter::sync();
 
   }
 
@@ -527,7 +520,6 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
 
 //nvtxRangePop();
-  UniIter::sync();
 
   }
 
@@ -557,7 +549,6 @@ void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0]),
     m, n);
 //nvtxRangePop();
-  UniIter::sync();
 
   }
 

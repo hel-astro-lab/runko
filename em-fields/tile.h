@@ -40,6 +40,33 @@ class YeeLattice
   toolbox::Mesh<real_short, 3> jy;
   toolbox::Mesh<real_short, 3> jz;
 
+  real_short* ex_comm;
+  real_short* ey_comm;
+  real_short* ez_comm;
+  
+  /// Magnetic field 
+  real_short* bx_comm;
+  real_short* by_comm;
+  real_short* bz_comm;
+    
+  /// Current vector 
+  real_short* jx_comm;
+  real_short* jy_comm;
+  real_short* jz_comm;
+
+  real_short* x_commHost;
+  real_short* y_commHost;
+  real_short* z_commHost;
+
+  real_short* x_commDev;
+  real_short* y_commDev;
+  real_short* z_commDev;
+
+  int *commIndexesArr;
+  int commSize = 0;
+
+  real_short *data_ptrs[9];
+
   // default empty constructor
   YeeLattice()  = default;
 
@@ -56,7 +83,20 @@ class YeeLattice
     jx{Nx, Ny, Nz},
     jy{Nx, Ny, Nz},
     jz{Nx, Ny, Nz}
-  { }
+  { 
+    generateCommIndexes();
+
+
+    data_ptrs[0] = ex.data();
+    data_ptrs[1] = ey.data();
+    data_ptrs[2] = ez.data();
+    data_ptrs[3] = bx.data();
+    data_ptrs[4] = by.data();
+    data_ptrs[5] = bz.data();
+    data_ptrs[6] = jx.data();
+    data_ptrs[7] = jy.data();
+    data_ptrs[8] = jz.data();
+  }
 
   // copy ctor
   YeeLattice(YeeLattice& other) = default;
@@ -89,6 +129,23 @@ class YeeLattice
     swap(first.jx , second.jx);
     swap(first.jy , second.jy);
     swap(first.jz , second.jz);
+
+
+    swap(first.ex_comm , second.ex_comm);
+    swap(first.ey_comm , second.ey_comm);
+    swap(first.ez_comm , second.ez_comm);
+    swap(first.bx_comm , second.bx_comm);
+    swap(first.by_comm , second.by_comm);
+    swap(first.bz_comm , second.bz_comm);
+    swap(first.jx_comm , second.jx_comm);
+    swap(first.jy_comm , second.jy_comm);
+    swap(first.jz_comm , second.jz_comm);
+
+    swap(first.data_ptrs , second.data_ptrs);
+
+    swap(first.commSize , second.commSize);
+    swap(first.commIndexesArr , second.commIndexesArr);
+
   }
 
   // copy-and-swap algorithm
@@ -98,7 +155,14 @@ class YeeLattice
     return *this;
   }
 
-  ~YeeLattice() = default;
+  ~YeeLattice()
+  {
+
+  };
+
+  void generateCommIndexes();
+  void gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer);
+  void scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer);
 };
 
 
@@ -175,6 +239,7 @@ class Tile :
 
   std::vector<mpi::request> 
   recv_data( mpi::communicator& /*comm*/, int orig, int mode, int tag) override;
+
 };
 
 
