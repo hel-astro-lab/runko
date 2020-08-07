@@ -88,6 +88,7 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
     mesh);
 
   //nvtxRangePop();
+  UniIter::sync();
 
   }
 
@@ -128,6 +129,7 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0]),
     dm, m);
     //nvtxRangePop();
+    UniIter::sync();
   }
 
 
@@ -265,6 +267,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
 
 //nvtxRangePop();
+  UniIter::sync();
 
  }
 
@@ -315,6 +318,7 @@ void ffe::rFFE2<3>::update_eb(
     dm, m, n);
 
 //nvtxRangePop();
+    UniIter::sync();
 
   }
 
@@ -413,6 +417,7 @@ UniIter::sync();
     dm, m, bxf, byf, bzf, exf, eyf, ezf, rhf);
 
 //nvtxRangePop();
+    UniIter::sync();
 
   }
 
@@ -520,6 +525,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
 
 //nvtxRangePop();
+  UniIter::sync();
 
   }
 
@@ -549,6 +555,7 @@ void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0]),
     m, n);
 //nvtxRangePop();
+  UniIter::sync();
 
   }
 
