@@ -62,6 +62,7 @@ void ffe::rFFE2<3>::interpolate(
       fi(i,j,k) = 0.125*(f1 + f0);
     }, {std::tuple{8,8,4}},
     f.Nx, f.Ny, f.Nz, f, fi);
+    
   //nvtxRangePop();
 }
 
