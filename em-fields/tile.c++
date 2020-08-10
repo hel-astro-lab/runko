@@ -966,39 +966,20 @@ std::vector<mpi::request> Tile<D>::send_data(
   //  << "\n";
   std::vector<mpi::request> reqs;
   UniIter::sync();
-
   if (mode == 0) {
-    
-    yee.gatherCommData(yee.jx, yee.jx_comm);
-    yee.gatherCommData(yee.jy, yee.jy_comm);
-    yee.gatherCommData(yee.jz, yee.jz_comm);
-    UniIter::sync();
-
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.jx_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), yee.jy_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 2), yee.jz_comm, yee.commSize) );
-
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), yee.jy.data(), yee.jy.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 2), yee.jz.data(), yee.jz.size()) );
   } else if (mode == 1) {
-    yee.gatherCommData(yee.ex, yee.ex_comm);
-    yee.gatherCommData(yee.ey, yee.ey_comm);
-    yee.gatherCommData(yee.ez, yee.ez_comm);
-    UniIter::sync();
-
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 3), yee.ex_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 4), yee.ey_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 5), yee.ez_comm, yee.commSize) );
-
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 3), yee.ex.data(), yee.ex.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 4), yee.ey.data(), yee.ey.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 5), yee.ez.data(), yee.ez.size()) );
   } else if (mode == 2) {
-
-    yee.gatherCommData(yee.bx, yee.bx_comm);
-    yee.gatherCommData(yee.by, yee.by_comm);
-    yee.gatherCommData(yee.bz, yee.bz_comm);
-    UniIter::sync();
-
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 6), yee.bx_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 7), yee.by_comm, yee.commSize) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), yee.bz_comm, yee.commSize) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 6), yee.bx.data(), yee.bx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 7), yee.by.data(), yee.by.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
   }
+
   nvtxRangePop();
 
   return reqs;
@@ -1026,109 +1007,22 @@ std::vector<mpi::request> Tile<D>::recv_data(
   UniIter::sync();
 
   if (mode == 0) {
-    ( comm.recv(orig, get_tag(tag, 0), yee.jx_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 1), yee.jy_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 2), yee.jz_comm, yee.commSize) );
-    UniIter::sync();
-
-    yee.scatterCommData(yee.jx, yee.jx_comm);
-    yee.scatterCommData(yee.jy, yee.jy_comm);
-    yee.scatterCommData(yee.jz, yee.jz_comm);
-UniIter::sync();
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 1), yee.jy.data(), yee.jy.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 2), yee.jz.data(), yee.jz.size()) );
   } else if (mode == 1) {
-    ( comm.recv(orig, get_tag(tag, 3), yee.ex_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 4), yee.ey_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 5), yee.ez_comm, yee.commSize) );
-    UniIter::sync();
-
-    yee.scatterCommData(yee.ex, yee.ex_comm);
-    yee.scatterCommData(yee.ey, yee.ey_comm);
-    yee.scatterCommData(yee.ez, yee.ez_comm);
-UniIter::sync();
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 3), yee.ex.data(), yee.ex.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 4), yee.ey.data(), yee.ey.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 5), yee.ez.data(), yee.ez.size()) );
   } else if (mode == 2) {
-    ( comm.recv(orig, get_tag(tag, 6), yee.bx_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 7), yee.by_comm, yee.commSize) );
-    ( comm.recv(orig, get_tag(tag, 8), yee.bz_comm, yee.commSize) );
-    UniIter::sync();
-
-    yee.scatterCommData(yee.bx, yee.bx_comm);
-    yee.scatterCommData(yee.by, yee.by_comm);
-    yee.scatterCommData(yee.bz, yee.bz_comm);
-UniIter::sync();
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 6), yee.bx.data(), yee.bx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 7), yee.by.data(), yee.by.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
   }
 
   nvtxRangePop();
 
   return reqs;
-}
-
-void YeeLattice::generateCommIndexes()
-{
-  //
-  //commSize =  (Nx*Ny*Nz) - ((Nx-6)*(Ny-6)*(Nz-6));
-  //if (commSize > (Nx*Ny*Nz))
-  //  commSize = (Nx*Ny*Nz);
-  
-  commSize = 0;
-  for(int z = 0; z < Nz; z++) { 
-    for(int y = 0; y < Ny; y++) {
-      for(int x = 0; x < Nx; x++) {
-        //
-        if(x < 3 || y < 3 || z < 3 || x >=(Nx-3)|| y >=(Ny-3)|| z >=(Nz-3))
-        {
-          commSize ++;
-        }
-      }
-    }
-  }
-  //std::cout << (Nx*Ny*Nz) << " " << commSize << " " << commSize << std::endl;
-  //std::cout << " " << Nx <<  " " << Ny << " " << Nz << " " << commIndexes.size() << std::endl;
-  commIndexes = UniAllocator::allocate<int>(commSize);
-
-  int i = 0;
-  for(int z = 0; z < Nz; z++) { 
-    for(int y = 0; y < Ny; y++) {
-      for(int x = 0; x < Nx; x++) {
-        //
-        if(x < 3 || y < 3 || z < 3 || x >=(Nx-3)|| y >=(Ny-3)|| z >=(Nz-3))
-        {
-          int indx = ex.indx(x,y,z);
-          commIndexes[i] = indx;
-          i++;
-        }
-      }
-    }
-  }
-
-// todo: these need to be freeed
-  ex_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  ey_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  ez_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  bx_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  by_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  bz_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  jx_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  jy_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  jz_comm = UniAllocator::allocateScratch<real_short>(commSize);
-}
-
-
-void YeeLattice::gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer)
-{
-  real_short *dataPrt = inMesh.data();
-  UniIter::iterate([] DEVCALLABLE (int i, int *indexes, real_short *inData, real_short* commBuffer){
-    commBuffer[i] = inData[indexes[i]];
-  }, commSize, commIndexes, dataPrt, commBuffer);
-
-}
-
-void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer)
-{
-  real_short *dataPrt = inMesh.data();
-  UniIter::iterate([] DEVCALLABLE (int i, int* indexes, real_short *inData, real_short* commBuffer){
-    inData[indexes[i]] = commBuffer[i];
-  }, commSize, commIndexes, dataPrt, commBuffer);
-
 }
 
 //--------------------------------------------------
