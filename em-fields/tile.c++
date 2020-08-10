@@ -344,110 +344,10 @@ inline void add_point_yee(
 
 // further collapsed helper functions 
 
-    __global__ void vert_yee_haloKernel(YeeLattice* lhs, YeeLattice* rhs, int Ny, int Nz, int halo, int ito, int ifro, int in)
-    {
-        int j = blockIdx.x * blockDim.x + threadIdx.x;
-        int k = blockIdx.y * blockDim.y + threadIdx.y;
-        int h = threadIdx.z; //blockIdx.z * blockDim.z + 
-        if(j >= Ny) return;
-        if(k >= Nz) return;
-        if(h >= halo) return;
-
-        int ptrInd = blockIdx.z;
-        int lhs_ind = lhs->ex.indx(ito+in*h, j, k);
-        int rhs_ind = rhs->ex.indx(ifro+in*h, j, k);
-        lhs->data_ptrs[ptrInd][lhs_ind] = rhs->data_ptrs[ptrInd][rhs_ind];
-
-    }
-
-    __global__ void horz_yee_haloKernel(YeeLattice* lhs, YeeLattice* rhs, int Nx, int Nz, int halo, int jto, int jfro, int jn)
-    {
-      
-        int i = blockIdx.x * blockDim.x + threadIdx.x;
-        int k = blockIdx.y * blockDim.y + threadIdx.y;
-        int g = threadIdx.z; //blockIdx.z * blockDim.z + 
-        if(i >= Nx) return;
-        if(k >= Nz) return;
-        if(g >= halo) return;
-
-        int ptrInd = blockIdx.z;
-        int lhs_ind = lhs->ex.indx(i, jto+jn*g, k);
-        int rhs_ind = rhs->ex.indx(i, jfro+jn*g, k);
-        lhs->data_ptrs[ptrInd][lhs_ind] = rhs->data_ptrs[ptrInd][rhs_ind];
-
-    }
-
-    __global__ void face_yee_haloKernel(YeeLattice* lhs, YeeLattice* rhs, int Nx, int Ny, int halo, int kto, int kfro, int kn)
-    {
-      
-        int i = blockIdx.x * blockDim.x + threadIdx.x;
-        int j = blockIdx.y * blockDim.y + threadIdx.y;
-        int g = threadIdx.z; //blockIdx.z * blockDim.z + 
-        if(i >= Nx) return;
-        if(j >= Ny) return;
-        if(g >= halo) return;
-
-        int ptrInd = blockIdx.z;
-        int lhs_ind = lhs->ex.indx(i, j, kto+kn*g);
-        int rhs_ind = rhs->ex.indx(i, j, kfro+kn*g);
-        lhs->data_ptrs[ptrInd][lhs_ind] = rhs->data_ptrs[ptrInd][rhs_ind];
-
-    }
-
-
-__global__ void x_pencil_yee_haloKernel(YeeLattice* lhs, YeeLattice* rhs, int Nx, int halo, int jto, int jfro, int kto, int kfro, int jn, int kn)
-{
-        int i = blockIdx.x * blockDim.x + threadIdx.x;
-        int h = threadIdx.y; //blockIdx.y * blockDim.y + threadIdx.y;
-        int g = threadIdx.z; //blockIdx.z * blockDim.z + 
-        if(i >= Nx) return;
-        if(h >= halo) return;
-        if(g >= halo) return;
-
-        int ptrInd = blockIdx.y;
-        int lhs_ind = lhs->ex.indx(i, jto+jn*h, kto+kn*g);
-        int rhs_ind = rhs->ex.indx(i, jfro+jn*h, kfro+kn*g);
-        lhs->data_ptrs[ptrInd][lhs_ind] = rhs->data_ptrs[ptrInd][rhs_ind];
-}
-__global__ void y_pencil_yee_haloKernel(YeeLattice* lhs, YeeLattice* rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn)
-{
-        int j = blockIdx.x * blockDim.x + threadIdx.x;
-        int h = threadIdx.y; //blockIdx.y * blockDim.y + threadIdx.y;
-        int g = threadIdx.z; //blockIdx.z * blockDim.z + 
-        if(j >= Ny) return;
-        if(h >= halo) return;
-        if(g >= halo) return;
-
-        int ptrInd = blockIdx.y;
-        int lhs_ind = lhs->ex.indx(ito+in*h, j, kto+kn*g);
-        int rhs_ind = rhs->ex.indx(ifro+in*h, j, kfro+kn*g);
-        lhs->data_ptrs[ptrInd][lhs_ind] = rhs->data_ptrs[ptrInd][rhs_ind];
-}
-__global__ void z_pencil_yee_haloKernel(YeeLattice* lhs, YeeLattice* rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn)
-{
-        int k = blockIdx.x * blockDim.x + threadIdx.x;
-        int h = threadIdx.y; //blockIdx.y * blockDim.y + threadIdx.y;
-        int g = threadIdx.z; //blockIdx.z * blockDim.z + 
-        if(k >= Nz) return;
-        if(h >= halo) return;
-        if(g >= halo) return;
-
-        int ptrInd = blockIdx.y;
-        int lhs_ind = lhs->ex.indx(ito+in*h, jto+jn*g, k);
-        int rhs_ind = rhs->ex.indx(ifro+in*h, jfro+jn*g, k);
-        lhs->data_ptrs[ptrInd][lhs_ind] = rhs->data_ptrs[ptrInd][rhs_ind];
-}
 
 void copy_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int halo, int ito, int ifro, int in, int ind=0)
 {
     //
-    #ifdef GPU
-
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-
-    vert_yee_haloKernel<<<{1+(Ny/8),1+(Nz/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Ny, Nz, halo, ito, ifro, in);
-    #else
     UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       //
       lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
@@ -462,19 +362,11 @@ void copy_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int ha
       lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
       lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
     }, Ny, Nz, halo, lhs, rhs);
-    #endif
 }
 
 
 void copy_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int halo, int jto, int jfro, int jn, int ind=0)
 {
-    #ifdef GPU
-
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-
-    horz_yee_haloKernel<<<{1+(Nx/8),1+(Nz/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Nx, Nz, halo, jto, jfro, jn);
-    #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
       lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
@@ -488,19 +380,11 @@ void copy_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int ha
       lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
       lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
     }, Nx, Nz, halo, lhs, rhs);
-    #endif
 }
 
 
 void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int halo, int kto, int kfro, int kn, int ind=0)
 {
-    #ifdef GPU
-
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-
-    face_yee_haloKernel<<<{1+(Nx/8),1+(Ny/8),9},{8,8,halo}>>>(lhs_ptr, rhs_ptr, Nx, Ny, halo, kto, kfro, kn);
-    #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
         lhs_in.ex(i, j, kto+kn*g) = rhs_in.ex(i, j, kfro+kn*g);
         lhs_in.ey(i, j, kto+kn*g) = rhs_in.ey(i, j, kfro+kn*g);
@@ -514,18 +398,12 @@ void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int ha
         lhs_in.jy(i, j, kto+kn*g) = rhs_in.jy(i, j, kfro+kn*g);
         lhs_in.jz(i, j, kto+kn*g) = rhs_in.jz(i, j, kfro+kn*g);
     }, Nx, Ny, halo, lhs, rhs);
-#endif
 }
 
 
 
 void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, int jto, int jfro, int kto, int kfro, int jn, int kn, int ind=0)
 {   
-    #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    x_pencil_yee_haloKernel<<<{1+(Nx/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Nx, halo, jto, jfro, kto, kfro, jn, kn);
-    #else
     UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
       lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
@@ -539,16 +417,10 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
       lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
       lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
     }, Nx, halo, halo, lhs, rhs);
-    #endif
   }
 
   void copy_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
 {   
-      #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    y_pencil_yee_haloKernel<<<{1+(Ny/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Ny, halo, ito, ifro, kto, kfro, in, kn);
-    #else
     UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
 
       lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
@@ -563,16 +435,10 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
       lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
       lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
     }, Ny, halo, halo, lhs, rhs);
-    #endif
   }
 
   void copy_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
 {
-      #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-    z_pencil_yee_haloKernel<<<{1+(Nz/8),9,1},{8,halo,halo}>>>(lhs_ptr, rhs_ptr, Nz, halo, ito, ifro, jto, jfro, in, jn);
-    #else
     UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
       lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
@@ -587,35 +453,10 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
       lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
   
     }, Nz, halo, halo, lhs, rhs);
-    #endif
   }
-
-
-    __global__ void pointKernel(YeeLattice* lhs, YeeLattice* rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn)
-    {
-        int h = threadIdx.x; //blockIdx.x * blockDim.x + 
-        int g = threadIdx.y; //blockIdx.y * blockDim.y + 
-        int f = threadIdx.z; //blockIdx.z * blockDim.z + 
-        if(h >= halo) return;
-        if(g >= halo) return;
-        if(f >= halo) return;
-
-        int ptrInd = blockIdx.x;
-        int lhs_ind = lhs->ex.indx(ito +in*h, jto +jn*g, kto +kn*f);
-        int rhs_ind = rhs->ex.indx(ifro+in*h, jfro+jn*g, kfro+kn*f);  
-        lhs->data_ptrs[ptrInd][lhs_ind] = rhs->data_ptrs[ptrInd][rhs_ind];
-
-    }
 
   void copy_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
   {
-    #ifdef GPU
-    auto lhs_ptr = UniIter::UniIterCU::reg(lhs);
-    auto rhs_ptr = UniIter::UniIterCU::reg(rhs);
-
-    pointKernel<<<{9},{halo,halo,halo}>>>(lhs_ptr, rhs_ptr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn);
-
-    #else
     UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
       lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -629,7 +470,6 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
       lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
       lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
     }, halo, halo, halo, lhs, rhs);
-    #endif
   }
 
 
@@ -815,24 +655,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
             } else {
               // pointwise
               copy_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
-              /*
-              corners[indCorner].active = true;
-              corners[indCorner].ito = ito;
-              corners[indCorner].ifro = ifro;
-              corners[indCorner].jto = jto;
-              corners[indCorner].jfro = jfro;
-              corners[indCorner].kto = kto;
-              corners[indCorner].kfro = kfro;
-              corners[indCorner].in = in;
-              corners[indCorner].jn = jn;
-              corners[indCorner].kn = kn;
-              corners[indCorner].yeePtrFrom = &mesh; 
-              UniIter::UniIterCU::reg(mesh); 
-              UniIter::UniIterCU::reg(mpr); 
-              corners[indCorner].yeePtrTo = &mpr;
-              corners[indCorner].yeePtrTo = &mpr;
-              indCorner++;
-              */
+
             } 
             ind++;
           } // 3D cases with kn != 0
@@ -840,55 +663,6 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
       } // kn
     } // jn
   } // in
-/*
-  UniIter::sync();
-
-    UniIter::iterate3D([=] DEVCALLABLE (int f8, int g ,int h, BlockCopyParam *corners){
-      int f = f8%halo;
-      int targetParam = f8/halo;
-
-
-      int ito = corners[targetParam].ito;
-      int ifro = corners[targetParam].ifro;
-      int jto = corners[targetParam].jto;
-      int jfro = corners[targetParam].jfro;
-      int kto  = corners[targetParam].kto ;
-      int kfro = corners[targetParam].kfro;
-      int in = corners[targetParam].in;
-      int jn = corners[targetParam].jn;
-      int kn = corners[targetParam].kn;
-
-      YeeLattice &rhs_in = *(corners[targetParam].yeePtrTo);
-      YeeLattice &lhs_in = *(corners[targetParam].yeePtrFrom);
-
-      
-      lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-    }, halo*8, halo, halo, corners);
-
-/*
-  for (int i = 0; i < 8; i++)
-  {
-      YeeLattice *yeePtrFrom = corners[i].yeePtrFrom;
-      YeeLattice *yeePtrTo = corners[i].yeePtrTo;
-    copy_point_yee_halo(
-      *yeePtrFrom, 
-      *yeePtrTo, 
-      halo, 
-      corners[i].ito, corners[i].ifro, corners[i].jto, corners[i].jfro, corners[i].kto, 
-      corners[i].kfro, corners[i].in, corners[i].jn, corners[i].kn, ind);
-    ind++;
-  }
-  */
   
   UniIter::sync();
 
@@ -1198,48 +972,22 @@ std::vector<mpi::request> Tile<D>::send_data(
     yee.gatherCommData(yee.jx, yee.jx_comm);
     yee.gatherCommData(yee.jy, yee.jy_comm);
     yee.gatherCommData(yee.jz, yee.jz_comm);
-
-/*
-    real_short *dataPrtX = yee.jx.data();
-    real_short *dataPrtY = yee.jy.data();
-    real_short *dataPrtZ = yee.jz.data();
-
-    UniIter::iterate([] DEVCALLABLE (int i, int *indexes, 
-      real_short *inDataX, real_short *inDataY, real_short *inDataZ, 
-      real_short* commBufferX, real_short* commBufferY, real_short* commBufferZ){
-      commBufferX[i] = inDataY[indexes[i]];
-      commBufferY[i] = inDataY[indexes[i]];
-      commBufferZ[i] = inDataZ[indexes[i]];
-    }, yee.commSize, yee.commIndexesArr, dataPrtX,dataPrtY,dataPrtZ, yee.jx_comm,yee.jy_comm,yee.jz_comm);
-*/
     UniIter::sync();
 
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.jx_comm, yee.commSize) );
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), yee.jy_comm, yee.commSize) );
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 2), yee.jz_comm, yee.commSize) );
+
   } else if (mode == 1) {
     yee.gatherCommData(yee.ex, yee.ex_comm);
     yee.gatherCommData(yee.ey, yee.ey_comm);
     yee.gatherCommData(yee.ez, yee.ez_comm);
-
-/*
-    real_short *dataPrtX = yee.ex.data();
-    real_short *dataPrtY = yee.ey.data();
-    real_short *dataPrtZ = yee.ez.data();
-
-    UniIter::iterate([] DEVCALLABLE (int i, int *indexes, 
-      real_short *inDataX, real_short *inDataY, real_short *inDataZ, 
-      real_short* commBufferX, real_short* commBufferY, real_short* commBufferZ){
-      commBufferX[i] = inDataY[indexes[i]];
-      commBufferY[i] = inDataY[indexes[i]];
-      commBufferZ[i] = inDataZ[indexes[i]];
-    }, yee.commSize, yee.commIndexesArr, dataPrtX,dataPrtY,dataPrtZ, yee.ex_comm,yee.ey_comm,yee.ez_comm);
-  */
     UniIter::sync();
 
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 3), yee.ex_comm, yee.commSize) );
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 4), yee.ey_comm, yee.commSize) );
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 5), yee.ez_comm, yee.commSize) );
+
   } else if (mode == 2) {
 
     yee.gatherCommData(yee.bx, yee.bx_comm);
@@ -1275,11 +1023,13 @@ std::vector<mpi::request> Tile<D>::recv_data(
   //  << "\n";
 
   std::vector<mpi::request> reqs;
+  UniIter::sync();
 
   if (mode == 0) {
     ( comm.recv(orig, get_tag(tag, 0), yee.jx_comm, yee.commSize) );
     ( comm.recv(orig, get_tag(tag, 1), yee.jy_comm, yee.commSize) );
     ( comm.recv(orig, get_tag(tag, 2), yee.jz_comm, yee.commSize) );
+    UniIter::sync();
 
     yee.scatterCommData(yee.jx, yee.jx_comm);
     yee.scatterCommData(yee.jy, yee.jy_comm);
@@ -1289,6 +1039,7 @@ UniIter::sync();
     ( comm.recv(orig, get_tag(tag, 3), yee.ex_comm, yee.commSize) );
     ( comm.recv(orig, get_tag(tag, 4), yee.ey_comm, yee.commSize) );
     ( comm.recv(orig, get_tag(tag, 5), yee.ez_comm, yee.commSize) );
+    UniIter::sync();
 
     yee.scatterCommData(yee.ex, yee.ex_comm);
     yee.scatterCommData(yee.ey, yee.ey_comm);
@@ -1298,6 +1049,7 @@ UniIter::sync();
     ( comm.recv(orig, get_tag(tag, 6), yee.bx_comm, yee.commSize) );
     ( comm.recv(orig, get_tag(tag, 7), yee.by_comm, yee.commSize) );
     ( comm.recv(orig, get_tag(tag, 8), yee.bz_comm, yee.commSize) );
+    UniIter::sync();
 
     yee.scatterCommData(yee.bx, yee.bx_comm);
     yee.scatterCommData(yee.by, yee.by_comm);
@@ -1331,7 +1083,7 @@ void YeeLattice::generateCommIndexes()
   }
   //std::cout << (Nx*Ny*Nz) << " " << commSize << " " << commSize << std::endl;
   //std::cout << " " << Nx <<  " " << Ny << " " << Nz << " " << commIndexes.size() << std::endl;
-  commIndexesArr = UniAllocator::allocate<int>(commSize);
+  commIndexes = UniAllocator::allocate<int>(commSize);
 
   int i = 0;
   for(int z = 0; z < Nz; z++) { 
@@ -1341,7 +1093,7 @@ void YeeLattice::generateCommIndexes()
         if(x < 3 || y < 3 || z < 3 || x >=(Nx-3)|| y >=(Ny-3)|| z >=(Nz-3))
         {
           int indx = ex.indx(x,y,z);
-          commIndexesArr[i] = indx;
+          commIndexes[i] = indx;
           i++;
         }
       }
@@ -1352,13 +1104,9 @@ void YeeLattice::generateCommIndexes()
   ex_comm = UniAllocator::allocateScratch<real_short>(commSize);
   ey_comm = UniAllocator::allocateScratch<real_short>(commSize);
   ez_comm = UniAllocator::allocateScratch<real_short>(commSize);
-  
-  /// Magnetic field 
   bx_comm = UniAllocator::allocateScratch<real_short>(commSize);
   by_comm = UniAllocator::allocateScratch<real_short>(commSize);
   bz_comm = UniAllocator::allocateScratch<real_short>(commSize);
-    
-  /// Current vector 
   jx_comm = UniAllocator::allocateScratch<real_short>(commSize);
   jy_comm = UniAllocator::allocateScratch<real_short>(commSize);
   jz_comm = UniAllocator::allocateScratch<real_short>(commSize);
@@ -1370,7 +1118,8 @@ void YeeLattice::gatherCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short
   real_short *dataPrt = inMesh.data();
   UniIter::iterate([] DEVCALLABLE (int i, int *indexes, real_short *inData, real_short* commBuffer){
     commBuffer[i] = inData[indexes[i]];
-  }, commSize, commIndexesArr, dataPrt, commBuffer);
+  }, commSize, commIndexes, dataPrt, commBuffer);
+
 }
 
 void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_short* commBuffer)
@@ -1378,7 +1127,8 @@ void YeeLattice::scatterCommData(toolbox::Mesh<real_short, 3> &inMesh, real_shor
   real_short *dataPrt = inMesh.data();
   UniIter::iterate([] DEVCALLABLE (int i, int* indexes, real_short *inData, real_short* commBuffer){
     inData[indexes[i]] = commBuffer[i];
-  }, commSize, commIndexesArr, dataPrt, commBuffer);
+  }, commSize, commIndexes, dataPrt, commBuffer);
+
 }
 
 //--------------------------------------------------

@@ -42,30 +42,16 @@ class YeeLattice
 
   real_short* ex_comm;
   real_short* ey_comm;
-  real_short* ez_comm;
-  
-  /// Magnetic field 
+  real_short* ez_comm;  
   real_short* bx_comm;
   real_short* by_comm;
-  real_short* bz_comm;
-    
-  /// Current vector 
+  real_short* bz_comm;  
   real_short* jx_comm;
   real_short* jy_comm;
-  real_short* jz_comm;
+  real_short* jz_comm;  
 
-  real_short* x_commHost;
-  real_short* y_commHost;
-  real_short* z_commHost;
-
-  real_short* x_commDev;
-  real_short* y_commDev;
-  real_short* z_commDev;
-
-  int *commIndexesArr;
+  int *commIndexes;
   int commSize = 0;
-
-  real_short *data_ptrs[9];
 
   // default empty constructor
   YeeLattice()  = default;
@@ -85,17 +71,6 @@ class YeeLattice
     jz{Nx, Ny, Nz}
   { 
     generateCommIndexes();
-
-
-    data_ptrs[0] = ex.data();
-    data_ptrs[1] = ey.data();
-    data_ptrs[2] = ez.data();
-    data_ptrs[3] = bx.data();
-    data_ptrs[4] = by.data();
-    data_ptrs[5] = bz.data();
-    data_ptrs[6] = jx.data();
-    data_ptrs[7] = jy.data();
-    data_ptrs[8] = jz.data();
   }
 
   // copy ctor
@@ -141,10 +116,8 @@ class YeeLattice
     swap(first.jy_comm , second.jy_comm);
     swap(first.jz_comm , second.jz_comm);
 
-    swap(first.data_ptrs , second.data_ptrs);
-
     swap(first.commSize , second.commSize);
-    swap(first.commIndexesArr , second.commIndexesArr);
+    swap(first.commIndexes , second.commIndexes);
 
   }
 
