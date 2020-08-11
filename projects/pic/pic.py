@@ -9,90 +9,11 @@ import sys, os
 # runko + auxiliary modules
 import pytools  # runko python tools
 
-
 # problem specific modules
-from problem import Configuration_Problem as Configuration
+from problem import Configuration_Turbulence as Configuration
 
 np.random.seed(1)  # global simulation seed
 
-
-# Prtcl velocity (and location modulation inside cell)
-#
-# NOTE: Cell extents are from xloc to xloc + 1, i.e., dx = 1 in all dims.
-#       Therefore, typically we use position as x0 + RUnif[0,1).
-#
-# NOTE: Default injector changes odd ispcs's loc to (ispcs-1)'s prtcl loc.
-#       This means that positrons/ions are on top of electrons to guarantee
-#       charge conservation (because zero charge density initially).
-#
-def velocity_profile(xloc, ispcs, conf):
-
-    # electrons
-    if ispcs == 0:
-        delgam = conf.delgam  # * np.abs(conf.mi / conf.me) * conf.temp_ratio
-
-    # positrons/ions/second species
-    elif ispcs == 1:
-        delgam = conf.delgam
-
-    # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
-    zz = xloc[2] + np.random.rand(1)
-
-    # velocity sampling
-    gamma = conf.gamma
-    direction = -1
-    ux, uy, uz, uu = pytools.sample_boosted_maxwellian(
-        delgam, gamma, direction=direction, dims=3
-    )
-
-    x0 = [xx, yy, zz]
-    u0 = [ux, uy, uz]
-    return x0, u0
-
-
-# number of prtcls of species 'ispcs' to be added to cell at location 'xloc'
-#
-# NOTE: Plasma frequency is adjusted based on conf.ppc (and prtcl charge conf.qe/qi
-#       and mass conf.me/mi are computed accordingly) so modulate density in respect
-#       to conf.ppc only.
-#
-def density_profile(xloc, ispcs, conf):
-
-    # uniform plasma with default n_0 number density
-    return conf.ppc
-
-
-# Field initialization
-def insert_em_fields(grid, conf):
-
-    # into radians
-    btheta = conf.btheta / 180.0 * np.pi
-    bphi = conf.bphi / 180.0 * np.pi
-    beta = conf.beta
-
-    for tile in pytools.tiles_all(grid):
-        yee = tile.get_yee(0)
-
-        ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
-
-        # insert values into Yee lattices; includes halos from -3 to n+3
-        for n in range(-3, conf.NzMesh + 3):
-            for m in range(-3, conf.NyMesh + 3):
-                for l in range(-3, conf.NxMesh + 3):
-                    # get global coordinates
-                    iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
-                    r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
-
-                    yee.bx[l, m, n] = conf.binit * np.cos(bphi)
-                    yee.by[l, m, n] = conf.binit * np.sin(bphi) * np.sin(btheta)
-                    yee.bz[l, m, n] = conf.binit * np.sin(bphi) * np.cos(btheta)
-
-                    yee.ex[l, m, n] = 0.0
-                    yee.ey[l, m, n] = -beta * yee.bz[l, m, n]
-                    yee.ez[l, m, n] = beta * yee.by[l, m, n]
-    return
 
 
 if __name__ == "__main__":
@@ -136,6 +57,14 @@ if __name__ == "__main__":
         import pyrunko.pic.twoD as pypic  # runko pic c++ bindings
         import pyrunko.fields.twoD as pyfld  # runko fld c++ bindings
 
+
+    # --------------------------------------------------
+    # problem setup
+    if True:
+        from problem import velocity_profile
+        from problem import density_profile
+        from problem import insert_em_fields
+
     # --------------------------------------------------
     # setup grid
     grid = pycorgi.Grid(conf.Nx, conf.Ny, conf.Nz)
@@ -166,7 +95,9 @@ if __name__ == "__main__":
         np.random.seed(1)  # sync rnd generator seed for different mpi ranks
 
         # injecting plasma particles
+
         prtcl_stat = pytools.pic.inject(grid, velocity_profile, density_profile, conf)
+
         if do_print:
             print("injected:")
             print("    e- prtcls: {}".format(prtcl_stat[0]))
@@ -174,7 +105,6 @@ if __name__ == "__main__":
 
         # inserting em grid
         insert_em_fields(grid, conf)
-
     else:
         if do_print:
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
@@ -200,20 +130,12 @@ if __name__ == "__main__":
     # --------------------------------------------------
     # load physics solvers
 
-    # pusher   = pypic.BorisPusher()
-    pusher = pypic.VayPusher()
+    pusher  = pypic.BorisPusher() #particle pusher
+    fldprop = pyfld.FDTD2() #em field propagator
+    fintp = pypic.LinearInterpolator() # particle em interpolator
+    currint = pypic.ZigZag() # particle current deposition
+    flt = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh) # current filter
 
-    # fldprop  = pyfld.FDTD2()
-    fldprop = pyfld.FDTD4()
-
-    fintp = pypic.LinearInterpolator()
-    currint = pypic.ZigZag()
-    flt = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-
-    # analyzer = pypic.Analyzator()
-
-    # enhance numerical speed of light slightly to suppress numerical Cherenkov instability
-    fldprop.corr = 1.02
 
     # --------------------------------------------------
     # I/O objects
@@ -244,6 +166,7 @@ if __name__ == "__main__":
         conf.n_test_prtcls,
     )
 
+    # prtcl distribution moments (fluid quantities)
     mom_writer = pypic.PicMomentsWriter(
         conf.outdir,
         conf.Nx,
@@ -255,26 +178,39 @@ if __name__ == "__main__":
         conf.stride,
     )
 
-    # --------------------------------------------------
-    # reflecting leftmost wall
-    piston = pypic.Piston()
+    # 3D box peripherals
+    if conf.threeD:
+        slice_xy_writer = pyfld.FieldSliceWriter( conf.outdir, 
+                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+                0, 1)
+        slice_xz_writer = pyfld.FieldSliceWriter( conf.outdir, 
+                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+                1, 1)
+        slice_yz_writer = pyfld.FieldSliceWriter( conf.outdir, 
+                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+                2, 1)
 
-    # set piston wall speed (for standard reflector it is non-moving so gam = 0)
-    piston.gammawall = conf.wallgamma
-    piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
-    piston.walloc = 5.0  # leave 5 cell spacing between the wall for boundary conditions
-
-    # --------------------------------------------------
-    # --------------------------------------------------
-    # --------------------------------------------------
-    # end of initialization
-
-    timer.stop("init")
-    timer.stats("init")
-    # timer.verbose = 1  # 0 normal; 1 - debug mode
 
     # --------------------------------------------------
-    # sync e and b fields
+    # add sinusoidal perturbations with antenna
+    if io_stat["do_initialization"]:
+        timer.start("antenna")
+
+        if conf.twoD:
+            from antenna2d import Antenna
+            antenna = Antenna(conf.min_mode, conf.max_mode, conf)
+            for tile in pytools.tiles_local(grid):
+                antenna.add_driving(tile)
+
+        elif conf.threeD:
+            from antenna3d import Antenna
+            antenna = Antenna(conf.max_mode, 2, conf)
+
+            for tile in pytools.tiles_local(grid):
+                antenna.add_driving(tile)
+
+    # --------------------------------------------------
+    # sync e and b fields 
 
     # mpi e
     grid.send_data(1)
@@ -289,21 +225,30 @@ if __name__ == "__main__":
     for tile in pytools.tiles_all(grid):
         tile.update_boundaries(grid)
 
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # --------------------------------------------------
+    # end of initialization
+
+    timer.stop("init")
+    timer.stats("init")
+    # timer.verbose = 1  # 0 normal; 1 - debug mode
+
     ##################################################
     # simulation time step loop
 
     sys.stdout.flush()
+
 
     # simulation loop
     time = lap * (conf.cfl / conf.c_omp)
     for lap in range(lap, conf.Nt + 1):
 
         # --------------------------------------------------
-        # push B half
+        # push half B 
         t1 = timer.start_comp("push_half_b1")
         for tile in pytools.tiles_all(grid):
             fldprop.push_half_b(tile)
-            piston.field_bc(tile)
         timer.stop_comp(t1)
 
         # --------------------------------------------------
@@ -338,22 +283,14 @@ if __name__ == "__main__":
             pusher.solve(tile)
         timer.stop_comp(t1)
 
-        # --------------------------------------------------
-        # apply moving/reflecting walls
-        t1 = timer.start_comp("walls")
-        for tile in pytools.tiles_local(grid):
-            piston.solve(tile)
-        timer.stop_comp(t1)
-
         ##################################################
-        # advance B half
+        # advance second half B 
 
         # --------------------------------------------------
         # push B half
         t1 = timer.start_comp("push_half_b2")
         for tile in pytools.tiles_all(grid):
             fldprop.push_half_b(tile)
-            piston.field_bc(tile)
         timer.stop_comp(t1)
 
         # --------------------------------------------------
@@ -379,11 +316,10 @@ if __name__ == "__main__":
         t1 = timer.start_comp("push_e")
         for tile in pytools.tiles_all(grid):
             fldprop.push_e(tile)
-            piston.field_bc(tile)
         timer.stop_comp(t1)
 
         # --------------------------------------------------
-        # current calculation; charge conserving current deposition
+        # current calculation; charge conserving current deposition (only local tiles)
         t1 = timer.start_comp("comp_curr")
         for tile in pytools.tiles_local(grid):
             currint.solve(tile)
@@ -415,14 +351,14 @@ if __name__ == "__main__":
         # particle communication (only local/boundary tiles)
 
         # --------------------------------------------------
-        # local particle exchange (independent)
+        # local particle exchange (independent operation)
         t1 = timer.start_comp("check_outg_prtcls")
         for tile in pytools.tiles_local(grid):
             tile.check_outgoing_particles()
         timer.stop_comp("check_outg_prtcls")
 
         # --------------------------------------------------
-        # global mpi exchange (independent)
+        # global mpi exchange (independent operation)
         t1 = timer.start_comp("pack_outg_prtcls")
         for tile in pytools.tiles_boundary(grid):
             tile.pack_outgoing_particles()
@@ -443,7 +379,7 @@ if __name__ == "__main__":
         timer.stop_comp(t1)
 
         # --------------------------------------------------
-        # global unpacking (independent)
+        # global unpacking (independent operation)
         t1 = timer.start_comp("unpack_vir_prtcls")
         for tile in pytools.tiles_virtual(grid):
             tile.unpack_incoming_particles()
@@ -465,7 +401,7 @@ if __name__ == "__main__":
         timer.stop_comp(t1)
 
         # --------------------------------------------------
-        # delete all virtual particles (because new prtcls will come)
+        # delete all virtual particles (because new prtcls replace these)
         t1 = timer.start_comp("del_vir_prtcls")
         for tile in pytools.tiles_virtual(grid):
             tile.delete_all_particles()
@@ -483,18 +419,13 @@ if __name__ == "__main__":
             grid.recv_data(0)
             grid.wait_data(0)
 
-            # get halo boundaries and filter
+            # get halo boundaries and filter (only local tiles)
             for tile in pytools.tiles_local(grid):
                 tile.update_boundaries(grid)
             for tile in pytools.tiles_local(grid):
                 flt.solve(tile)
 
             MPI.COMM_WORLD.barrier()  # sync everybody
-
-        # clean current behind piston
-        if conf.npasses > 0:
-            for tile in pytools.tiles_local(grid):
-                piston.field_bc(tile)
 
         # --------------------------------------------------
         timer.stop_comp("filter")
@@ -548,22 +479,27 @@ if __name__ == "__main__":
             for tile in pytools.tiles_all(grid):
                 tile.shrink_to_fit_all_particles()
 
-            # analyze
-            # for tile in pytools.tiles_local(grid): analyzer.analyze2d(tile)
-
             # barrier for quick writers
             MPI.COMM_WORLD.barrier()
 
             # shallow IO
-            mom_writer.write(grid, lap)  # prtcl moments from vel distribution
-            fld_writer.write(grid, lap)  # quick field snapshots
+            mom_writer.write(grid, lap)    # prtcl moments from vel distribution
+            fld_writer.write(grid, lap)    # quick field snapshots
+
+            #interpolate ex,ey,ez and bx,by,bz to prtcl locations and save
+            for tile in pytools.tiles_local(grid):
+                fintp.solve(tile)
             prtcl_writer.write(grid, lap)  # test particles
+
+            if conf.threeD:
+                slice_xy_writer.write(grid, lap)
+                slice_xz_writer.write(grid, lap)
+                slice_yz_writer.write(grid, lap)
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
                 pyfld.write_yee(grid, lap, conf.outdir + "/full_output/")
                 pypic.write_particles(grid, lap, conf.outdir + "/full_output/")
-                # pypic.write_analysis(grid, lap, conf.outdir + "/full_output/")
 
             # restart IO (overwrites)
             if (lap % conf.restart == 0) and (lap > 0):
