@@ -36,7 +36,9 @@ class rFFE2
     eyf(Nx, Ny, Nz),
     ezf(Nx, Ny, Nz),
     rhf(Nx, Ny, Nz)
-  {};
+  {
+    DEV_REGISTER
+  };
 
   virtual ~rFFE2() = default;
 
