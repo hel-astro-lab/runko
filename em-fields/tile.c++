@@ -2,13 +2,11 @@
 #include <cmath>
 
 #include "tile.h"
-#include <nvtx3/nvToolsExt.h> 
+//#include <nvtx3/nvToolsExt.h> 
 
 
 #include "../tools/iter/iter.h"
 #include "../tools/iter/allocator.h"
-
-#include <mpi.h>
 
 namespace fields {
   using namespace mpi4cpp;
@@ -576,7 +574,7 @@ template<>
 void Tile<3>::update_boundaries(corgi::Grid<3>& grid) 
 {
   //std::cout << "upB: updating boundaries\n";
-  nvtxRangePush(__FUNCTION__);
+  //nvtxRangePush(__FUNCTION__);
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -666,7 +664,7 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
   
   UniIter::sync();
 
-  nvtxRangePop();
+  //nvtxRangePop();
   }
 
 
@@ -956,7 +954,7 @@ std::vector<mpi::request> Tile<D>::send_data(
     int mode,
     int tag)
 {
-  nvtxRangePush(__FUNCTION__);
+  //nvtxRangePush(__FUNCTION__);
 
   auto& yee = get_yee(); 
   //std::cout << "SEND field to " << dest 
@@ -980,7 +978,7 @@ std::vector<mpi::request> Tile<D>::send_data(
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
   }
 
-  nvtxRangePop();
+  //nvtxRangePop();
 
   return reqs;
 }
@@ -993,7 +991,7 @@ std::vector<mpi::request> Tile<D>::recv_data(
     int mode,
     int tag)
 {
-  nvtxRangePush(__FUNCTION__);
+  //nvtxRangePush(__FUNCTION__);
 
   //std::cout << "RECV from " << orig << "\n";
   auto& yee = get_yee(); 
@@ -1020,7 +1018,7 @@ std::vector<mpi::request> Tile<D>::recv_data(
     reqs.emplace_back( comm.irecv(orig, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
   }
 
-  nvtxRangePop();
+  //nvtxRangePop();
 
   return reqs;
 }

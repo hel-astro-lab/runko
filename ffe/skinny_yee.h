@@ -50,7 +50,9 @@ class SkinnyYeeLattice {
     bx(Nx, Ny, Nz),
     by(Nx, Ny, Nz),
     bz(Nx, Ny, Nz)
-    { }
+    { 
+      DEV_REGISTER
+    }
 
   ~SkinnyYeeLattice() = default;
 
