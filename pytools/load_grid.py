@@ -133,6 +133,7 @@ def balance_mpi_3D(n, comm_size=None):
 def load_catepillar_track_mpi(
         n, 
         nx_track_len,
+        conf,
         comm_size=None):
 
 
@@ -144,35 +145,48 @@ def load_catepillar_track_mpi(
         #nx = 2**3
         nx = nx_track_len
         ny = n.get_Ny()
+        nz = n.get_Nz()
 
         m0 = np.log2(nx)
         m1 = np.log2(ny)
+        m2 = np.log2(nz)
 
         if not (m0.is_integer()):
             raise ValueError("Nx is not power of 2 (i.e. 2^m)")
 
         if not (m1.is_integer()):
             raise ValueError("Ny is not power of 2 (i.e. 2^m)")
+        
+        if conf.threeD and not( m2.is_integer() ):
+            raise ValueError("Nz is not power of 2 (i.e. 2^m)")
 
         # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        hgen = pyrunko.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
-        grid = np.zeros((nx, ny))  # , np.int64)
+        if conf.twoD:
+            hgen = pyrunko.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
+        elif conf.threeD:
+            hgen = pyrunko.tools.threeD.HilbertGen(np.int(m0), np.int(m1), np.int(m2) )
+        grid = np.zeros((nx, ny, nz))  # , np.int64)
 
         for i in range(nx):
             for j in range(ny):
-                grid[i, j] = hgen.hindex(i, j)
+                for k in range(nz):
+                    if conf.twoD:
+                        grid[i, j, k] = hgen.hindex(i, j)
+                    elif conf.threeD:
+                        grid[i, j, k] = hgen.hindex(i, j, k)
 
         # print(grid)
         hmin, hmax = np.min(grid), np.max(grid)
 
         # create alternating true grid
         nxt = n.get_Nx()
-        igrid = np.zeros((nxt, ny), np.int64)
+        igrid = np.zeros((nxt, ny, nz), np.int64)
 
         for i in range(nxt):
             for j in range(ny):
-                ic = i % nx
-                igrid[i, j] = np.floor(comm_size * grid[ic, j] / (hmax + 1))
+                for k in range(nz):
+                    ic = i % nx
+                    igrid[i, j, k] = np.floor(comm_size * grid[ic, j, k] / (hmax + 1))
 
         # check that nodes get about same work load
         y = np.bincount(igrid.flatten())
@@ -183,8 +197,13 @@ def load_catepillar_track_mpi(
 
         for i in range(nxt):
             for j in range(ny):
-                val = igrid[i, j]
-                n.set_mpi_grid(i, j, val)
+                for k in range(nz):
+                    val = igrid[i, j, k]
+
+                    if conf.twoD:
+                        n.set_mpi_grid(i, j, val)
+                    elif conf.threeD:
+                        n.set_mpi_grid(i, j, k, val)
 
     # broadcast calculation to everybody
     n.bcast_mpi_grid()
