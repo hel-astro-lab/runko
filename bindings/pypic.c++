@@ -440,6 +440,14 @@ void bind_pic(py::module& m_sub)
   m_3d.def("write_particles",  &pic::write_particles<3>);
   m_3d.def("read_particles",   &pic::read_particles<3>);
 
+  //--------------------------------------------------
+  // wall
+  auto tw13d = pic::wall::declare_tile<3, -1>(m_3d, "Tile_wall_LX");
+  auto tw23d = pic::wall::declare_tile<3, +1>(m_3d, "Tile_wall_RX");
+  auto tw33d = pic::wall::declare_tile<3, -2>(m_3d, "Tile_wall_LY");
+  auto tw43d = pic::wall::declare_tile<3, +2>(m_3d, "Tile_wall_RY");
+  auto tw53d = pic::wall::declare_tile<3, -3>(m_3d, "Tile_wall_LZ");
+  auto tw63d = pic::wall::declare_tile<3, +3>(m_3d, "Tile_wall_RZ");
 
 }
 
