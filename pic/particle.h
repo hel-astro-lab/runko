@@ -9,6 +9,8 @@
 
 #include "../definitions.h"
 
+#include "../tools/iter/dynArray.h"
+
 
 
 namespace pic {
@@ -89,9 +91,9 @@ class ParticleContainer {
 
   size_t Nprtcls = 0;
 
-  std::vector< std::vector<real_prtcl> > locArr;
-  std::vector< std::vector<real_prtcl> > velArr;
-  std::vector< std::vector<int> > indArr;
+  std::array<DevVec<real_prtcl>, 3 > locArr;
+  std::array<DevVec<real_prtcl>, 3 > velArr;
+  std::array<DevVec<int>, 2 > indArr;
   std::vector<real_prtcl> wgtArr;
 
   public:
@@ -167,14 +169,15 @@ class ParticleContainer {
 
   virtual inline std::vector<real_prtcl> loc(size_t idim) const 
   {
-    return locArr[idim];
+    return locArr[idim].toVector();
   }
 
+/*
   virtual inline std::vector<real_prtcl>& loc(size_t idim)
   {
     return locArr[idim];
   }
-
+*/
   //--------------------------------------------------
   // velocities
   virtual inline real_prtcl vel( size_t idim, size_t iprtcl ) const
@@ -189,14 +192,14 @@ class ParticleContainer {
 
   virtual inline std::vector<real_prtcl> vel(size_t idim) const 
   {
-    return velArr[idim];
+    return velArr[idim].toVector();
   }
-
+/*
   virtual inline std::vector<real_prtcl>& vel(size_t idim)
   {
     return velArr[idim];
   }
-
+*/
   //--------------------------------------------------
   // weights
   virtual inline real_prtcl wgt( size_t iprtcl ) const
@@ -214,11 +217,12 @@ class ParticleContainer {
     return wgtArr;
   }
 
+/*
   virtual inline std::vector<real_prtcl>& wgt()
   {
     return wgtArr;
   }
-
+*/
   //--------------------------------------------------
   // id
   virtual inline int id( size_t idim, size_t iprtcl ) const
@@ -233,14 +237,15 @@ class ParticleContainer {
 
   virtual inline std::vector<int> id(size_t idim) const 
   {
-    return indArr[idim];
+    return indArr[idim].toVector();
   }
 
+/*
   virtual inline std::vector<int>& id(size_t idim)
   {
     return indArr[idim];
   }
-
+*/
   // particle creation
   virtual void add_particle (
       std::vector<real_prtcl> prtcl_loc,

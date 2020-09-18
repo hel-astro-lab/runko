@@ -25,6 +25,7 @@ namespace
         // register values passed in
         static void registerClass(T &t)
         {
+            #ifdef GPU
             //std::cout << "found value registering " << std::endl;
             void* addrHost = &t;
             auto search = registeredAddesses.find(addrHost);
@@ -59,6 +60,7 @@ namespace
                     std::cout << "other error while registering memory" << std::endl;
                 }
             }
+            #endif
         }
         
         template<class T>
@@ -118,5 +120,7 @@ namespace
     };
 
     std::map<void*, void*> UniAllocator::registeredAddesses = std::map<void*, void*>();
+
+
 
 }

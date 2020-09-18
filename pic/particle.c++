@@ -50,9 +50,7 @@ size_t Particle::number_of_particles() {
 template<std::size_t D>
 ParticleContainer<D>::ParticleContainer()
 { 
-  locArr.resize(3);
-  velArr.resize(3);
-  indArr.resize(2);
+
 
   // Get the number of processes
   //MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);

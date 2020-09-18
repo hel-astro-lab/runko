@@ -12,7 +12,6 @@
 #include <map>
 #include <optional>
 //#define DEBUG_DEV
-#define GPU
 
 #include "devcall.h"
 
