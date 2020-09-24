@@ -37,6 +37,7 @@ set (PIC_FILES
      ../pic/pushers/boris.c++
      ../pic/pushers/boris_drag.c++
      ../pic/pushers/boris_rad.c++
+     ../pic/pushers/boris_grav.c++
      ../pic/pushers/vay.c++
      ../pic/interpolators/linear.c++
      ../pic/depositers/zigzag.c++

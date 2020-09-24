@@ -11,6 +11,7 @@ namespace py = pybind11;
 #include "../pic/pushers/boris.h"
 #include "../pic/pushers/boris_drag.h"
 #include "../pic/pushers/boris_rad.h"
+#include "../pic/pushers/boris_grav.h"
 #include "../pic/pushers/vay.h"
 
 #include "../pic/interpolators/interpolator.h"
@@ -291,6 +292,12 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("beam_locx", &pic::BorisPusherRad<2,3>::beam_locx)
     .def(py::init<>());
 
+  // Boris pusher with additional gravity towards cenx 
+  py::class_<pic::BorisPusherGrav<2,3>>(m_2d, "BorisGravPusher", picpusher2d)
+    .def_readwrite("g0",   &pic::BorisPusherGrav<2,3>::g0)
+    .def_readwrite("cenx", &pic::BorisPusherGrav<2,3>::cenx)
+    .def(py::init<>());
+
 
   // Vay pusher
   py::class_<pic::VayPusher<2,3>>(m_2d, "VayPusher", picpusher2d)
@@ -317,6 +324,12 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::BorisPusherRad<3,3>>(m_3d, "BorisRadPusher", picpusher3d)
     .def_readwrite("drag",      &pic::BorisPusherRad<3,3>::drag)
     .def_readwrite("beam_locx", &pic::BorisPusherRad<3,3>::beam_locx)
+    .def(py::init<>());
+
+  // Boris pusher with additional gravity towards cenx 
+  py::class_<pic::BorisPusherGrav<3,3>>(m_3d, "BorisGravPusher", picpusher3d)
+    .def_readwrite("g0",   &pic::BorisPusherGrav<3,3>::g0)
+    .def_readwrite("cenx", &pic::BorisPusherGrav<3,3>::cenx)
     .def(py::init<>());
 
   // Vay

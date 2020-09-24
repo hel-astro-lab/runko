@@ -426,7 +426,6 @@ void bind_fields(py::module& m_sub)
 
 
   // 3D filters
-
   py::class_< fields::Filter<3>, PyFilter<3> > fieldsfilter3d(m_3d, "Filter");
   fieldsfilter3d
     .def(py::init<int, int, int>())
