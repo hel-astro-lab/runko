@@ -48,6 +48,10 @@ class Stagger:
         return ret
 
     def at(self, stg, stg0='rh'):
+
+        if stg == 'no': #no staggering at all; just dummy copy of self 
+            ret = Stagger(self.x, self.y ,self.z)
+
         offs = self.x2y(stg0, stg)
 
         ret = Stagger(self.x, self.y ,self.z)
