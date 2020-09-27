@@ -346,7 +346,6 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
   }
 
 
-  //FIXME: additional update for Yn solution (m mesh)?
   //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
@@ -387,7 +386,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         //m.jx(i,j,k) += (1.-diss)*dm.ex(i,j,k)/dt;
         //m.ex(i,j,k) = diss*dm.ex(i,j,k);
 
-        cur = (1.-diss)*dm.ex(i,j,k)/dt;
+        cur = (1.-diss)*m.ex(i,j,k)/dt;
         m.jx(i,j,k) += cur;
 
         // OLD VERSION
@@ -412,7 +411,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         //m.jy(i,j,k) += (1. - diss)*dm.ey(i,j,k)/dt;
         //m.ey(i,j,k) = diss*dm.ey(i,j,k);
 
-        cur = (1.-diss)*dm.ey(i,j,k)/dt;
+        cur = (1.-diss)*m.ey(i,j,k)/dt;
         m.jy(i,j,k) += cur;
         
         //m.ey(i,j,k) = diss*dm.ey(i,j,k);
@@ -435,7 +434,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         //m.jz(i,j,k) += (1.-diss)*dm.ez(i,j,k)/dt;
         //m.ez(i,j,k) = diss*dm.ez(i,j,k);
 
-        cur = (1.-diss)*dm.ez(i,j,k)/dt;
+        cur = (1.-diss)*m.ez(i,j,k)/dt;
         m.jz(i,j,k) += cur;
 
         //m.ez(i,j,k) = diss*dm.ez(i,j,k);
@@ -445,7 +444,6 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   }
 
 
-  //FIXME: additional update for Yn solution (m mesh)?
   //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
