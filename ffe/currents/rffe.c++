@@ -265,13 +265,6 @@ void ffe::rFFE2<3>::update_eb(
         m.by(i,j,k) = c1*n.by(i,j,k) + c2*m.by(i,j,k) + c3*dm.by(i,j,k);
         m.bz(i,j,k) = c1*n.bz(i,j,k) + c2*m.bz(i,j,k) + c3*dm.bz(i,j,k);
 
-        // variable switch for 1) e > b and 2) j_par calcs.
-        // Enables to calculate both of the above as independent
-        // corrections because interpolation is done via m.ex
-        // meshes and results are stored in dm.ex meshes:
-        dm.ex(i,j,k) = m.ex(i,j,k);
-        dm.ey(i,j,k) = m.ey(i,j,k);
-        dm.ez(i,j,k) = m.ez(i,j,k);
       }
     }
   }
@@ -303,7 +296,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
         cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bxf(i,j,k) /b2/dt;
 
         m.jx(i,j,k) += cur;
-
+        //dm.ex(i,j,k) -= cur;
         dm.ex(i,j,k) = m.ex(i,j,k) - cur*dt;
       }
     }
@@ -322,6 +315,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
         cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*byf(i,j,k) /b2/dt;
 
         m.jy(i,j,k) += cur;
+        //dm.ey(i,j,k) -= cur;
         dm.ey(i,j,k) = m.ey(i,j,k) - cur*dt;
       }
     }
@@ -340,6 +334,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
         cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bzf(i,j,k) /b2/dt;
 
         m.jz(i,j,k) += cur;
+        //dm.ez(i,j,k) -= cur;
         dm.ez(i,j,k) = m.ez(i,j,k) - cur*dt;
       }
     }
@@ -382,16 +377,8 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         diss = 1.0;
         if (e2 > b2) diss = std::sqrt(b2/e2); 
 
-        // NOTE: uses dm because j_par updates are put into that
-        //m.jx(i,j,k) += (1.-diss)*dm.ex(i,j,k)/dt;
-        //m.ex(i,j,k) = diss*dm.ex(i,j,k);
-
         cur = (1.-diss)*m.ex(i,j,k)/dt;
         m.jx(i,j,k) += cur;
-
-        // OLD VERSION
-        //m.ex(i,j,k) = diss*dm.ex(i,j,k);
-        // NEW safely updating version
         dm.ex(i,j,k) = diss*m.ex(i,j,k);
       }
     }
@@ -408,13 +395,8 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         diss = 1.0;
         if (e2 > b2) diss = std::sqrt(b2/e2);
 
-        //m.jy(i,j,k) += (1. - diss)*dm.ey(i,j,k)/dt;
-        //m.ey(i,j,k) = diss*dm.ey(i,j,k);
-
         cur = (1.-diss)*m.ey(i,j,k)/dt;
         m.jy(i,j,k) += cur;
-        
-        //m.ey(i,j,k) = diss*dm.ey(i,j,k);
         dm.ey(i,j,k) = diss*m.ey(i,j,k);
       }
     }
@@ -431,13 +413,8 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         diss = 1.0;
         if (e2 > b2) diss = std::sqrt(b2/e2);
 
-        //m.jz(i,j,k) += (1.-diss)*dm.ez(i,j,k)/dt;
-        //m.ez(i,j,k) = diss*dm.ez(i,j,k);
-
         cur = (1.-diss)*m.ez(i,j,k)/dt;
         m.jz(i,j,k) += cur;
-
-        //m.ez(i,j,k) = diss*dm.ez(i,j,k);
         dm.ez(i,j,k) = diss*m.ez(i,j,k);
       }
     }
