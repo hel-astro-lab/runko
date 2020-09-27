@@ -29,48 +29,11 @@ auto declare_tile(
                py::multiple_inheritance()
                )
     .def(py::init<int, int, int>())
-    .def_readwrite("cfl",       &ffe::Tile<D>::cfl);
-
+    .def_readwrite("cfl",       &ffe::Tile<D>::cfl)
+    .def("copy_eb",             &ffe::Tile<D>::copy_eb)
+    .def("rk3_update",          &ffe::Tile<D>::rk3_update);
 
 }
-
-//--------------------------------------------------
-//
-/// trampoline class for Current solver
-//template<size_t D>
-//class PyCurrent : public Current<D>
-//{
-//  using Current<D>::Current;
-//
-//  void comp_drift_cur( Tile<D>& tile ) override {
-//  PYBIND11_OVERLOAD_PURE(
-//      void,
-//      Current<D>,
-//      comp_drift_cur,
-//      tile
-//      );
-//  }
-//
-//  void comp_parallel_cur( Tile<D>& tile ) override {
-//  PYBIND11_OVERLOAD_PURE(
-//      void,
-//      Current<D>,
-//      comp_parallel_cur,
-//      tile
-//      );
-//  }
-//
-//  void limiter( Tile<D>& tile ) override {
-//  PYBIND11_OVERLOAD_PURE(
-//      void,
-//      Current<D>,
-//      limiter,
-//      tile
-//      );
-//  }
-//
-//};
-//
 
 
 // python bindings for plasma classes & functions
@@ -117,8 +80,8 @@ void bind_ffe(py::module& m_sub)
 
   //--------------------------------------------------
   // 2D bindings
-  py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
-  auto t2 = ffe::declare_tile<2>(m_2d, "Tile");
+  //py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
+  //auto t2 = ffe::declare_tile<2>(m_2d, "Tile");
 
 
   //--------------------------------------------------
@@ -136,13 +99,20 @@ void bind_ffe(py::module& m_sub)
   py::class_< ffe::rFFE2<3> > currentcalc3d(m_3d, "rFFE2");
   currentcalc3d
     .def(py::init<int, int, int>())
-    .def("copy_eb",      &ffe::rFFE2<3>::copy_eb)
     .def("comp_rho",     &ffe::rFFE2<3>::comp_rho)
     .def("push_eb",      &ffe::rFFE2<3>::push_eb)
     .def("add_jperp",    &ffe::rFFE2<3>::add_jperp)
-    .def("update_eb",    &ffe::rFFE2<3>::update_eb)
     .def("remove_jpar",  &ffe::rFFE2<3>::remove_jpar)
     .def("limit_e",      &ffe::rFFE2<3>::limit_e);
+
+  // fields:
+  //    push_eb
+  //
+  // currents:
+  //    comp_rho
+  //    jperp
+  //    jpar
+  //    limit_e
 
 
 

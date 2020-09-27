@@ -72,7 +72,7 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
   auto& ey  = mesh.ey;
   auto& ez  = mesh.ez;
 
-  // NOTE: compute rho from -1 to +1 because later on re-stagger it 
+  // NOTE: compute rho from -1 to +1 because later on we re-stagger it 
   // and need the guard zones for interpolation
   for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2]+1); k++) {
     for(int j=-1; j<static_cast<int>(tile.mesh_lengths[1]+1); j++) {
@@ -127,7 +127,7 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     }
   }
 
-  }
+}
 
 
 template<>
@@ -237,39 +237,6 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
  }
 
-
-template<>
-void ffe::rFFE2<3>::update_eb(
-    ffe::Tile<3>& tile,
-    real_short c1, 
-    real_short c2, 
-    real_short c3
-    )
-{
-  fields::YeeLattice&    m = tile.get_yee();
-  ffe::SkinnyYeeLattice& n = tile.Fn; 
-  ffe::SkinnyYeeLattice& dm = tile.dF; 
-  //real_short dt = tile.cfl;
-
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-
-        // RK3 E update
-        m.ex(i,j,k) = c1*n.ex(i,j,k) + c2*m.ex(i,j,k) + c3*dm.ex(i,j,k);
-        m.ey(i,j,k) = c1*n.ey(i,j,k) + c2*m.ey(i,j,k) + c3*dm.ey(i,j,k);
-        m.ez(i,j,k) = c1*n.ez(i,j,k) + c2*m.ez(i,j,k) + c3*dm.ez(i,j,k);
-
-        // RK3 B update
-        m.bx(i,j,k) = c1*n.bx(i,j,k) + c2*m.bx(i,j,k) + c3*dm.bx(i,j,k);
-        m.by(i,j,k) = c1*n.by(i,j,k) + c2*m.by(i,j,k) + c3*dm.by(i,j,k);
-        m.bz(i,j,k) = c1*n.bz(i,j,k) + c2*m.bz(i,j,k) + c3*dm.bz(i,j,k);
-
-      }
-    }
-  }
-
-  }
 
 
 template<>
@@ -432,35 +399,9 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
     }
   }
 
-
 }
 
 
-
-template<>
-void ffe::rFFE2<3>::copy_eb( ffe::Tile<3>& tile)
-{
-  fields::YeeLattice&    m = tile.get_yee();
-  ffe::SkinnyYeeLattice& n = tile.Fn; 
-  //ffe::SkinnyYeeLattice& dm = tile.dF; 
-
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-
-        n.ex(i,j,k) = m.ex(i,j,k);
-        n.ey(i,j,k) = m.ey(i,j,k);
-        n.ez(i,j,k) = m.ez(i,j,k);
-
-        n.bx(i,j,k) = m.bx(i,j,k);
-        n.by(i,j,k) = m.by(i,j,k);
-        n.bz(i,j,k) = m.bz(i,j,k);
-
-      }
-    }
-  }
-
-  }
 
 
 //--------------------------------------------------
