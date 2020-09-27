@@ -7,7 +7,7 @@ matrix:
   include:
   - os: osx
     osx_image: xcode10.1
-    env: COMP_EVAL="OS=osx && COMP_CC=gcc-9 && COMP_CXX=g++-9"
+    env: COMP_EVAL="OS=osx && COMP_CC=gcc-10 && COMP_CXX=g++-9"
     language: generic
 
   - os: linux
@@ -61,7 +61,7 @@ before_install:
   #pre-install mpi
   - export CXX=${COMP_CXX}
   - export CC=${COMP_CC}
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install open-mpi fftw fmt; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc@10 open-mpi fftw fmt; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libopenmpi-dev libhdf5-serial-dev hdf5-helpers openmpi-bin libblas-dev liblapack-dev; fi
   - export MPI="openmpi40"
   - export CC=mpicc
