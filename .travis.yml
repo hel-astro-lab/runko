@@ -7,7 +7,7 @@ matrix:
   include:
   - os: osx
     osx_image: xcode10.1
-    env: COMP_EVAL="OS=osx && COMP_CC=gcc-10 && COMP_CXX=g++-9"
+    env: COMP_EVAL="OS=osx && COMP_CC=gcc-10 && COMP_CXX=g++-10"
     language: generic
 
   - os: linux
