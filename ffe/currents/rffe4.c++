@@ -187,7 +187,6 @@ void ffe::rFFE4<3>::add_jperp(ffe::Tile<3>& tile)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
-        //TODO
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) 
           + byf(i,j,k)*byf(i,j,k) 
@@ -207,7 +206,6 @@ void ffe::rFFE4<3>::add_jperp(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
           
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
@@ -228,7 +226,7 @@ void ffe::rFFE4<3>::add_jperp(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
+
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -262,7 +260,7 @@ void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
+
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -282,7 +280,7 @@ void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
+
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -302,7 +300,7 @@ void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
+
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -348,7 +346,7 @@ void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
+
         e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k) + EPS;
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
@@ -367,7 +365,7 @@ void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
+
         e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k) + EPS;
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
@@ -386,7 +384,7 @@ void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        //TODO
+
         e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k) + EPS;
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
 
