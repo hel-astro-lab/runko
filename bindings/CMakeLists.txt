@@ -52,6 +52,7 @@ set (FFE_FILES
      ../ffe/tile.c++
      ../ffe/skinny_yee.c++
      ../ffe/currents/rffe.c++
+     ../ffe/currents/rffe4.c++
      )
 
 set (IO_FILES 

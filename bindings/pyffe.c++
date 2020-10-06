@@ -7,6 +7,7 @@ namespace py = pybind11;
 #include "../ffe/tile.h"
 
 #include "../ffe/currents/rffe.h"
+#include "../ffe/currents/rffe4.h"
 #include "../ffe/skinny_yee.h"
 
 
@@ -96,8 +97,8 @@ void bind_ffe(py::module& m_sub)
 
   //--------------------------------------------------
   // 3D Current solver bindings
-  py::class_< ffe::rFFE2<3> > currentcalc3d(m_3d, "rFFE2");
-  currentcalc3d
+  py::class_< ffe::rFFE2<3> > brffe2(m_3d, "rFFE2");
+  brffe2
     .def(py::init<int, int, int>())
     .def("comp_rho",     &ffe::rFFE2<3>::comp_rho)
     .def("push_eb",      &ffe::rFFE2<3>::push_eb)
@@ -114,6 +115,15 @@ void bind_ffe(py::module& m_sub)
   //    jpar
   //    limit_e
 
+
+  py::class_< ffe::rFFE4<3> > brffe4(m_3d, "rFFE4");
+  brffe4
+    .def(py::init<int, int, int>())
+    .def("comp_rho",     &ffe::rFFE4<3>::comp_rho)
+    .def("push_eb",      &ffe::rFFE4<3>::push_eb)
+    .def("add_jperp",    &ffe::rFFE4<3>::add_jperp)
+    .def("remove_jpar",  &ffe::rFFE4<3>::remove_jpar)
+    .def("limit_e",      &ffe::rFFE4<3>::limit_e);
 
 
 }
