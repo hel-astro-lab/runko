@@ -347,7 +347,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         cur = (1.-diss)*m.ex(i,j,k)/dt;
         m.jx(i,j,k) += cur;
         //dm.ex(i,j,k) = diss*m.ex(i,j,k);
-        m.ex(i,j,k) = diss*dm.ex(i,j,k); // new
+        m.ex(i,j,k) = diss*dm.ex(i,j,k);
       }
     }
   }
@@ -366,7 +366,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         cur = (1.-diss)*m.ey(i,j,k)/dt;
         m.jy(i,j,k) += cur;
         //dm.ey(i,j,k) = diss*m.ey(i,j,k);
-        m.ey(i,j,k) = diss*dm.ey(i,j,k); //new
+        m.ey(i,j,k) = diss*dm.ey(i,j,k);
       }
     }
   }
