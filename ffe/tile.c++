@@ -28,6 +28,11 @@ void Tile<D>::rk3_update(
         m.ey(i,j,k) = c1*n.ey(i,j,k) + c2*m.ey(i,j,k) + c3*dm.ey(i,j,k);
         m.ez(i,j,k) = c1*n.ez(i,j,k) + c2*m.ez(i,j,k) + c3*dm.ez(i,j,k);
 
+        // tmp storage
+        dm.ex(i,j,k) = m.ex(i,j,k);
+        dm.ey(i,j,k) = m.ey(i,j,k);
+        dm.ez(i,j,k) = m.ez(i,j,k);
+
         // RK3 B update
         m.bx(i,j,k) = c1*n.bx(i,j,k) + c2*m.bx(i,j,k) + c3*dm.bx(i,j,k);
         m.by(i,j,k) = c1*n.by(i,j,k) + c2*m.by(i,j,k) + c3*dm.by(i,j,k);

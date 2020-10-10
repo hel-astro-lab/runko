@@ -317,15 +317,15 @@ void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
 
 
   //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        m.ex(i,j,k) = dm.ex(i,j,k);
-        m.ey(i,j,k) = dm.ey(i,j,k);
-        m.ez(i,j,k) = dm.ez(i,j,k);
-      }
-    }
-  }
+  //for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+  //  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+  //    for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+  //      m.ex(i,j,k) = dm.ex(i,j,k);
+  //      m.ey(i,j,k) = dm.ey(i,j,k);
+  //      m.ez(i,j,k) = dm.ez(i,j,k);
+  //    }
+  //  }
+  //}
 
 
 }
@@ -355,7 +355,9 @@ void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
 
         cur = (1.-diss)*m.ex(i,j,k)/dt;
         m.jx(i,j,k) += cur;
-        dm.ex(i,j,k) = diss*m.ex(i,j,k);
+
+        //dm.ex(i,j,k) = diss*m.ex(i,j,k); old
+        m.ex(i,j,k) = diss*dm.ex(i,j,k); // new
       }
     }
   }
@@ -374,7 +376,8 @@ void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
 
         cur = (1.-diss)*m.ey(i,j,k)/dt;
         m.jy(i,j,k) += cur;
-        dm.ey(i,j,k) = diss*m.ey(i,j,k);
+        //dm.ey(i,j,k) = diss*m.ey(i,j,k);
+        m.ey(i,j,k) = diss*dm.ey(i,j,k); //new
       }
     }
   }
@@ -393,22 +396,22 @@ void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
 
         cur = (1.-diss)*m.ez(i,j,k)/dt;
         m.jz(i,j,k) += cur;
-        dm.ez(i,j,k) = diss*m.ez(i,j,k);
+        //dm.ez(i,j,k) = diss*m.ez(i,j,k);
+        m.ez(i,j,k) = diss*dm.ez(i,j,k); //new
       }
     }
   }
-
 
   //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        m.ex(i,j,k) = dm.ex(i,j,k);
-        m.ey(i,j,k) = dm.ey(i,j,k);
-        m.ez(i,j,k) = dm.ez(i,j,k);
-      }
-    }
-  }
+  //for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+  //  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+  //    for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+  //      m.ex(i,j,k) = dm.ex(i,j,k);
+  //      m.ey(i,j,k) = dm.ey(i,j,k);
+  //      m.ez(i,j,k) = dm.ez(i,j,k);
+  //    }
+  //  }
+  //}
 
 }
 
