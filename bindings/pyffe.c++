@@ -8,6 +8,7 @@ namespace py = pybind11;
 
 #include "../ffe/currents/rffe.h"
 #include "../ffe/currents/rffe4.h"
+#include "../ffe/currents/ffe2.h"
 #include "../ffe/skinny_yee.h"
 
 
@@ -125,6 +126,16 @@ void bind_ffe(py::module& m_sub)
     .def("remove_jpar",  &ffe::rFFE4<3>::remove_jpar)
     .def("limit_e",      &ffe::rFFE4<3>::limit_e);
 
+
+
+  py::class_< ffe::FFE2<3> > bffe2(m_3d, "FFE2");
+  bffe2
+    .def(py::init<int, int, int>())
+    .def("comp_rho",     &ffe::FFE2<3>::comp_rho)
+    .def("push_eb",      &ffe::FFE2<3>::push_eb)
+    .def("add_jperp",    &ffe::FFE2<3>::add_jperp)
+    .def("add_jpar",     &ffe::FFE2<3>::add_jpar)
+    .def("limit_e",      &ffe::FFE2<3>::limit_e);
 
 }
 
