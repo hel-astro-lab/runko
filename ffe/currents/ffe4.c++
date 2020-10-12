@@ -178,23 +178,29 @@ void ffe::FFE4<3>::push_eb(ffe::Tile<3>& tile)
 
         // dB = dt*curl E
 		dm.bx(i,j,k) =
-            C1*(ey(i,j,k+1)-ey(i,j,k)  - ez(i,j+1,k)+ez(i,j,k)) + C2*(ey(i,j,k+2)-ey(i,j,k-1)- ez(i,j+2,k)+ez(i,j-1,k));
+            C1*(ey(i,j,k+1)-ey(i,j,k)  - ez(i,j+1,k)+ez(i,j,k)) 
+          + C2*(ey(i,j,k+2)-ey(i,j,k-1)- ez(i,j+2,k)+ez(i,j-1,k));
 
 		dm.by(i,j,k) =
-            C1*(ez(i+1,j,k)-ez(i,j,k)  - ex(i,j,k+1)+ex(i,j,k)) + C2*(ez(i+2,j,k)-ez(i-1,j,k)- ex(i,j,k+2)+ex(i,j,k-1));
+            C1*(ez(i+1,j,k)-ez(i,j,k)  - ex(i,j,k+1)+ex(i,j,k)) 
+          + C2*(ez(i+2,j,k)-ez(i-1,j,k)- ex(i,j,k+2)+ex(i,j,k-1));
 
 		dm.bz(i,j,k) =
-            C1*(ex(i,j+1,k)-ex(i,j,k)  - ey(i+1,j,k)+ey(i,j,k)) + C2*(ex(i,j+2,k)-ex(i,j-1,k)- ey(i+2,j,k)+ey(i-1,j,k));
+            C1*(ex(i,j+1,k)-ex(i,j,k)  - ey(i+1,j,k)+ey(i,j,k)) 
+          + C2*(ex(i,j+2,k)-ex(i,j-1,k)- ey(i+2,j,k)+ey(i-1,j,k));
 
         // dE = dt*curl B 
         dm.ex(i,j,k) =
-            C1*(by(i,j,k-1)-by(i,j,k)  - bz(i,j-1,k)+bz(i,j,k)) + C2*(by(i,j,k-2)-by(i,j,k+1)- bz(i,j-2,k)+bz(i,j+1,k));
+            C1*(by(i,j,k-1)-by(i,j,k)  - bz(i,j-1,k)+bz(i,j,k)) 
+          + C2*(by(i,j,k-2)-by(i,j,k+1)- bz(i,j-2,k)+bz(i,j+1,k));
 
         dm.ey(i,j,k) =
-            C1*(bz(i-1,j,k)-bz(i,j,k)  - bx(i,j,k-1)+bx(i,j,k)) + C2*(bz(i-2,j,k)-bz(i+1,j,k)- bx(i,j,k-2)+bx(i,j,k+1));
+            C1*(bz(i-1,j,k)-bz(i,j,k)  - bx(i,j,k-1)+bx(i,j,k)) 
+          + C2*(bz(i-2,j,k)-bz(i+1,j,k)- bx(i,j,k-2)+bx(i,j,k+1));
 
         dm.ez(i,j,k) =
-            C1*(bx(i,j-1,k)-bx(i,j,k)  - by(i-1,j,k)+by(i,j,k)) + C2*(bx(i,j-2,k)-bx(i,j+1,k)- by(i-2,j,k)+by(i+1,j,k));
+            C1*(bx(i,j-1,k)-bx(i,j,k)  - by(i-1,j,k)+by(i,j,k)) 
+          + C2*(bx(i,j-2,k)-bx(i,j+1,k)- by(i-2,j,k)+by(i+1,j,k));
       }
     }
   }
@@ -302,14 +308,13 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
   real_short dt = tile.cfl;
 
   // high-order curl operator coefficients
-  real_short C1 = -9.0/8.0;
-  real_short C2 = +1.0/24.0;
+  real_short C1 = 9.0/8.0;
+  real_short C2 = 1.0/24.0;
 
   // dissipation
-  real_short G  = 1.0;
+  real_short G  = 1.0/dt;
 
   real_short ecurle, bcurlb, eb;
-
 
   // pre-step 
   // compute curlE and curlB
@@ -323,37 +328,35 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
     //  x( dy(ez) - dz(ey) = x( dy(ez) - dz(ey) 
     // -y( dx(ez) - dz(ex) = y( dz(ex) - dx(ez)
     //  z( dx(ey) - dy(ex) = z( dx(ey) - dy(ex)
-    //
 
     // curl E staggered at B loc
-    //curlex(i,j,k) = -(ey(i,  j,  k+1) - ey(i,j,k) ) + (ez(i,  j+1,k  ) - ez(i,j,k) );
-    //curley(i,j,k) = -(ez(i+1,j,  k  ) - ez(i,j,k) ) + (ex(i,  j,  k+1) - ex(i,j,k) );
-    //curlez(i,j,k) = -(ex(i,  j+1,k  ) - ex(i,j,k) ) + (ey(i+1,j,  k  ) - ey(i,j,k) );
-
     // curl B staggered at E loc
-    //curlbx(i,j,k) = -(by(i,  j,  k-1) - by(i,j,k) ) + (bz(i,  j-1,k  ) - bz(i,j,k) );
-    //curlby(i,j,k) = -(bz(i-1,j,  k  ) - bz(i,j,k) ) + (bx(i,  j,  k-1) - bx(i,j,k) );
-    //curlbz(i,j,k) = -(bx(i,  j-1,k  ) - bx(i,j,k) ) + (by(i-1,j,  k  ) - by(i,j,k) );
 
-    // dB = dt*curl E
+    // dB = +dt*curl E
 	curlex(i,j,k) =
-         C1*(ey(i,j,k+1)-ey(i,j,k)  - ez(i,j+1,k)+ez(i,j,k)) + C2*(ey(i,j,k+2)-ey(i,j,k-1)- ez(i,j+2,k)+ez(i,j-1,k));
+         -C1*(ey(i,j,k+1)-ey(i,j,k)  - ez(i,j+1,k)+ez(i,j,k)) 
+        + C2*(ey(i,j,k+2)-ey(i,j,k-1)- ez(i,j+2,k)+ez(i,j-1,k));
 
 	curley(i,j,k) =
-         C1*(ez(i+1,j,k)-ez(i,j,k)  - ex(i,j,k+1)+ex(i,j,k)) + C2*(ez(i+2,j,k)-ez(i-1,j,k)- ex(i,j,k+2)+ex(i,j,k-1));
+         -C1*(ez(i+1,j,k)-ez(i,j,k)  - ex(i,j,k+1)+ex(i,j,k)) 
+        + C2*(ez(i+2,j,k)-ez(i-1,j,k)- ex(i,j,k+2)+ex(i,j,k-1));
 
 	curlez(i,j,k) =
-         C1*(ex(i,j+1,k)-ex(i,j,k)  - ey(i+1,j,k)+ey(i,j,k)) + C2*(ex(i,j+2,k)-ex(i,j-1,k)- ey(i+2,j,k)+ey(i-1,j,k));
+         -C1*(ex(i,j+1,k)-ex(i,j,k)  - ey(i+1,j,k)+ey(i,j,k)) 
+        + C2*(ex(i,j+2,k)-ex(i,j-1,k)- ey(i+2,j,k)+ey(i-1,j,k));
 
-    // dE = dt*curl B 
+    // dE = -dt*curl B 
     curlbx(i,j,k) =
-         C1*(by(i,j,k-1)-by(i,j,k)  - bz(i,j-1,k)+bz(i,j,k)) + C2*(by(i,j,k-2)-by(i,j,k+1)- bz(i,j-2,k)+bz(i,j+1,k));
+         C1*(by(i,j,k-1)-by(i,j,k)  - bz(i,j-1,k)+bz(i,j,k))    
+        -C2*(by(i,j,k-2)-by(i,j,k+1)- bz(i,j-2,k)+bz(i,j+1,k));
 
     curlby(i,j,k) =
-         C1*(bz(i-1,j,k)-bz(i,j,k)  - bx(i,j,k-1)+bx(i,j,k)) + C2*(bz(i-2,j,k)-bz(i+1,j,k)- bx(i,j,k-2)+bx(i,j,k+1));
+         C1*(bz(i-1,j,k)-bz(i,j,k)  - bx(i,j,k-1)+bx(i,j,k))   
+        -C2*(bz(i-2,j,k)-bz(i+1,j,k)- bx(i,j,k-2)+bx(i,j,k+1));
 
     curlbz(i,j,k) =
-         C1*(bx(i,j-1,k)-bx(i,j,k)  - by(i-1,j,k)+by(i,j,k)) + C2*(bx(i,j-2,k)-bx(i,j+1,k)- by(i-2,j,k)+by(i+1,j,k));
+         C1*(bx(i,j-1,k)-bx(i,j,k)  - by(i-1,j,k)+by(i,j,k)) 
+       - C2*(bx(i,j-2,k)-bx(i,j+1,k)- by(i-2,j,k)+by(i+1,j,k));
 
   }}}
 
@@ -372,7 +375,7 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
     ecurle = exf(i,j,k)*curlexf(i,j,k) + eyf(i,j,k)*curleyf(i,j,k) + ezf(i,j,k)*curlezf(i,j,k);
     eb = exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k);
 
-    cur = (-bcurlb - ecurle + G*eb)*bxf(i,j,k)/b2;
+    cur = (bcurlb - ecurle + G*eb)*bxf(i,j,k)/b2;
 
     jx(i,j,k) += cur;
     dm.ex(i,j,k) -= dt*cur;
@@ -392,7 +395,7 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
     ecurle = exf(i,j,k)*curlexf(i,j,k) + eyf(i,j,k)*curleyf(i,j,k) + ezf(i,j,k)*curlezf(i,j,k);
     eb = exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k);
 
-    cur = (-bcurlb - ecurle + G*eb)*byf(i,j,k)/b2;
+    cur = (bcurlb - ecurle + G*eb)*byf(i,j,k)/b2;
 
     jy(i,j,k) += cur;
     dm.ey(i,j,k) -= dt*cur;
@@ -412,7 +415,7 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
     ecurle = exf(i,j,k)*curlexf(i,j,k) + eyf(i,j,k)*curleyf(i,j,k) + ezf(i,j,k)*curlezf(i,j,k);
     eb = exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k);
 
-    cur = (-bcurlb - ecurle + G*eb)*bzf(i,j,k)/b2;
+    cur = (bcurlb - ecurle + G*eb)*bzf(i,j,k)/b2;
 
     jz(i,j,k) += cur;
     dm.ez(i,j,k) -= dt*cur;
