@@ -108,16 +108,6 @@ void bind_ffe(py::module& m_sub)
     .def("remove_jpar",  &ffe::rFFE2<3>::remove_jpar)
     .def("limit_e",      &ffe::rFFE2<3>::limit_e);
 
-  // fields:
-  //    push_eb
-  //
-  // currents:
-  //    comp_rho
-  //    jperp
-  //    jpar
-  //    limit_e
-
-
   py::class_< ffe::rFFE4<3> > brffe4(m_3d, "rFFE4");
   brffe4
     .def(py::init<int, int, int>())
@@ -126,8 +116,6 @@ void bind_ffe(py::module& m_sub)
     .def("add_jperp",    &ffe::rFFE4<3>::add_jperp)
     .def("remove_jpar",  &ffe::rFFE4<3>::remove_jpar)
     .def("limit_e",      &ffe::rFFE4<3>::limit_e);
-
-
 
   py::class_< ffe::FFE2<3> > bffe2(m_3d, "FFE2");
   bffe2
@@ -146,7 +134,8 @@ void bind_ffe(py::module& m_sub)
     .def("push_eb",      &ffe::FFE4<3>::push_eb)
     .def("add_jperp",    &ffe::FFE4<3>::add_jperp)
     .def("add_jpar",     &ffe::FFE4<3>::add_jpar)
-    .def("limit_e",      &ffe::FFE4<3>::limit_e);
+    .def("limit_e",      &ffe::FFE4<3>::limit_e)
+    .def("add_diffusion",&ffe::FFE4<3>::add_diffusion);
 
 
 

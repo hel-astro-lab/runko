@@ -503,6 +503,61 @@ void ffe::FFE4<3>::limit_e(ffe::Tile<3>& tile)
 }
 
 
+template<>
+void ffe::FFE4<3>::add_diffusion(ffe::Tile<3>& tile)
+{
+  fields::YeeLattice&     m = tile.get_yee();
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
+
+  real_short dt = tile.cfl;
+  real_short eta = 1.0e-3;
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+
+        dm.ex(i,j,k) = 
+                m.ex(i + 1, j, k) 
+              + m.ex(i - 1, j, k)
+              + m.ex(i, j + 1, k)
+              + m.ex(i, j - 1, k)
+              + m.ex(i, j, k + 1)
+              + m.ex(i, j, k - 1)
+           - 6* m.ex(i, j, k);
+
+        dm.ey(i,j,k) = 
+                m.ey(i + 1, j, k)
+              + m.ey(i - 1, j, k)
+              + m.ey(i, j + 1, k) 
+              + m.ey(i, j - 1, k) 
+              + m.ey(i, j, k + 1) 
+              + m.ey(i, j, k - 1) 
+          - 6 * m.ey(i, j, k);
+
+        dm.ez(i, j, k) =
+              + m.ez(i + 1, j, k)  
+              + m.ez(i - 1, j, k)      
+              + m.ez(i, j + 1, k)  
+              + m.ez(i, j - 1, k)  
+              + m.ez(i, j, k + 1)  
+              + m.ez(i, j, k - 1) 
+          - 6 * m.ez(i, j, k);
+
+      }
+    }
+  }
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        m.ex(i, j, k) += dt*eta*dm.ex(i, j, k);
+        m.ey(i, j, k) += dt*eta*dm.ey(i, j, k);
+        m.ez(i, j, k) += dt*eta*dm.ez(i, j, k);
+      }
+    }
+  }
+
+}
 
 
 //--------------------------------------------------

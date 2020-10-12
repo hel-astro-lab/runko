@@ -102,6 +102,8 @@ class FFE4
   /// limit E < B
   void limit_e(Tile<D>& tile);
 
+  ///  diffuse
+  void add_diffusion(Tile<D>& tile);
 
 };
 
