@@ -6,7 +6,7 @@ namespace py = pybind11;
 
 #include "../ffe/tile.h"
 
-#include "../ffe/currents/rffe.h"
+#include "../ffe/currents/rffe2.h"
 #include "../ffe/currents/rffe4.h"
 #include "../ffe/currents/ffe2.h"
 #include "../ffe/currents/ffe4.h"
