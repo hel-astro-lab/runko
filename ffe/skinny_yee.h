@@ -29,14 +29,14 @@ class SkinnyYeeLattice {
   // then we, however, need to implement H_i = H_j mesh copy operators
 
   /// Electric field 
-  toolbox::Mesh<real_short, 3> ex;
-  toolbox::Mesh<real_short, 3> ey;
-  toolbox::Mesh<real_short, 3> ez;
+  toolbox::Mesh<real_short, 0> ex;
+  toolbox::Mesh<real_short, 0> ey;
+  toolbox::Mesh<real_short, 0> ez;
   
   ///  Magnetic field 
-  toolbox::Mesh<real_short, 3> bx;
-  toolbox::Mesh<real_short, 3> by;
-  toolbox::Mesh<real_short, 3> bz;
+  toolbox::Mesh<real_short, 0> bx;
+  toolbox::Mesh<real_short, 0> by;
+  toolbox::Mesh<real_short, 0> bz;
 
 
   // real initializer constructor
