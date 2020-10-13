@@ -18,6 +18,7 @@
  * Contains a dimension switch for solvers depending on internal mesh dimensions
  */
 
+#include <nvtx3/nvToolsExt.h> 
 
 /// 1D E pusher
 template<>
@@ -78,6 +79,8 @@ void fields::FDTD2<2>::push_e(fields::Tile<2>& tile)
 template<>
 void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   YeeLattice& mesh = tile.get_yee();
   Realf C = 1.0 * tile.cfl * dt * corr;
 
@@ -101,6 +104,7 @@ void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
       + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
 
   }
+nvtxRangePop();
 
 }
 
@@ -180,6 +184,8 @@ void fields::FDTD2<2>::push_half_b(fields::Tile<2>& tile)
 template<>
 void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   YeeLattice& mesh = tile.get_yee();
   Realf C = 0.5 * tile.cfl * dt * corr;
 
@@ -203,6 +209,8 @@ void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
       + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
   }
+nvtxRangePop();
+
 }
 
 

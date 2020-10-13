@@ -7,12 +7,13 @@
 using std::min;
 using std::max;
 
+#include <nvtx3/nvToolsExt.h> 
 
 // TODO: optimize for cases when we know D; now specialized for D=2
 template<size_t D, size_t V>
 void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 {
-
+nvtxRangePush(__PRETTY_FUNCTION__);
   auto& yee = tile.get_yee();
   yee.jx.clear();
   yee.jy.clear();
@@ -218,7 +219,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     }
 
   }//end of loop over species
-
+nvtxRangePop();
 }
 
 

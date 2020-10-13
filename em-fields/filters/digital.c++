@@ -1,7 +1,11 @@
 #include "digital.h"
 
 #include <cmath>
+#include "../../tools/iter/devcall.h"
+#include "../../tools/iter/iter.h"
+#include "../../tools/iter/allocator.h"
 
+#include <nvtx3/nvToolsExt.h> 
 
 /// single 2D 2nd order 3-point binomial filter 
 template<>
@@ -99,6 +103,7 @@ void fields::Binomial2<3>::solve(
              wtos = 2.*winv, // outer side
              wtis = 4.*winv, // inner side
              wt   = 8.*winv; // center
+nvtxRangePush(__PRETTY_FUNCTION__);
 
   auto& mesh = tile.get_yee();
 
@@ -109,133 +114,147 @@ void fields::Binomial2<3>::solve(
 
   //--------------------------------------------------
   // Jx
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-		tmp(i,j,k) =
-      mesh.jx(i-1, j-1, k-1)*wtd  + 
-      mesh.jx(i  , j-1, k-1)*wtos + 
-      mesh.jx(i+1, j-1, k-1)*wtd  +
+  DEV_REGISTER
+  UniIter::iterate3D(
+  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jx, toolbox::Mesh<real_short, 3> &tmp)
+  {
+    //
+    		tmp(i,j,k) =
+      jx(i-1, j-1, k-1)*wtd  + 
+      jx(i  , j-1, k-1)*wtos + 
+      jx(i+1, j-1, k-1)*wtd  +
 
-      mesh.jx(i-1, j  , k-1)*wtos +
-      mesh.jx(i  , j  , k-1)*wtis +
-      mesh.jx(i+1, j  , k-1)*wtos +
+      jx(i-1, j  , k-1)*wtos +
+      jx(i  , j  , k-1)*wtis +
+      jx(i+1, j  , k-1)*wtos +
 
-      mesh.jx(i-1, j+1, k-1)*wtd  + 
-      mesh.jx(i  , j+1, k-1)*wtos +
-      mesh.jx(i+1, j+1, k-1)*wtd  +
+      jx(i-1, j+1, k-1)*wtd  + 
+      jx(i  , j+1, k-1)*wtos +
+      jx(i+1, j+1, k-1)*wtd  +
 
-      mesh.jx(i-1, j-1, k  )*wtos +
-      mesh.jx(i  , j-1, k  )*wtis +
-      mesh.jx(i+1, j-1, k  )*wtos +
+      jx(i-1, j-1, k  )*wtos +
+      jx(i  , j-1, k  )*wtis +
+      jx(i+1, j-1, k  )*wtos +
 
-      mesh.jx(i-1, j  , k  )*wtis +
-      mesh.jx(i  , j  , k  )*wt   +
-      mesh.jx(i+1, j  , k  )*wtis +
+      jx(i-1, j  , k  )*wtis +
+      jx(i  , j  , k  )*wt   +
+      jx(i+1, j  , k  )*wtis +
 
-      mesh.jx(i-1, j+1, k  )*wtos +
-      mesh.jx(i  , j+1, k  )*wtis +
-      mesh.jx(i+1, j+1, k  )*wtos +
+      jx(i-1, j+1, k  )*wtos +
+      jx(i  , j+1, k  )*wtis +
+      jx(i+1, j+1, k  )*wtos +
 
-      mesh.jx(i-1, j-1, k+1)*wtd  +
-      mesh.jx(i  , j-1, k+1)*wtos +
-      mesh.jx(i+1, j-1, k+1)*wtd  +
+      jx(i-1, j-1, k+1)*wtd  +
+      jx(i  , j-1, k+1)*wtos +
+      jx(i+1, j-1, k+1)*wtd  +
 
-      mesh.jx(i-1, j  , k+1)*wtos +
-      mesh.jx(i  , j  , k+1)*wtis +
-      mesh.jx(i+1, j  , k+1)*wtos +
+      jx(i-1, j  , k+1)*wtos +
+      jx(i  , j  , k+1)*wtis +
+      jx(i+1, j  , k+1)*wtos +
 
-      mesh.jx(i-1, j+1, k+1)*wtd  +
-      mesh.jx(i  , j+1, k+1)*wtos +
-      mesh.jx(i+1, j+1, k+1)*wtd;
-  }
+      jx(i-1, j+1, k+1)*wtd  +
+      jx(i  , j+1, k+1)*wtos +
+      jx(i+1, j+1, k+1)*wtd;
+  },    static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
+
+  UniIter::sync();
   mesh.jx = tmp; // then copy from scratch to original arrays
 
+  UniIter::iterate3D(
+  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jy, toolbox::Mesh<real_short, 3> &tmp)
+  {
+    		tmp(i,j,k) =
+      jy(i-1, j-1, k-1)*wtd  + 
+      jy(i  , j-1, k-1)*wtos + 
+      jy(i+1, j-1, k-1)*wtd  +
+             
+      jy(i-1, j  , k-1)*wtos +
+      jy(i  , j  , k-1)*wtis +
+      jy(i+1, j  , k-1)*wtos +
+             
+      jy(i-1, j+1, k-1)*wtd  + 
+      jy(i  , j+1, k-1)*wtos +
+      jy(i+1, j+1, k-1)*wtd  +
+             
+      jy(i-1, j-1, k  )*wtos +
+      jy(i  , j-1, k  )*wtis +
+      jy(i+1, j-1, k  )*wtos +
+             
+      jy(i-1, j  , k  )*wtis +
+      jy(i  , j  , k  )*wt   +
+      jy(i+1, j  , k  )*wtis +
+             
+      jy(i-1, j+1, k  )*wtos +
+      jy(i  , j+1, k  )*wtis +
+      jy(i+1, j+1, k  )*wtos +
+             
+      jy(i-1, j-1, k+1)*wtd  +
+      jy(i  , j-1, k+1)*wtos +
+      jy(i+1, j-1, k+1)*wtd  +
+             
+      jy(i-1, j  , k+1)*wtos +
+      jy(i  , j  , k+1)*wtis +
+      jy(i+1, j  , k+1)*wtos +
+             
+      jy(i-1, j+1, k+1)*wtd  +
+      jy(i  , j+1, k+1)*wtos +
+      jy(i+1, j+1, k+1)*wtd;
+  },    static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
 
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-		tmp(i,j,k) =
-      mesh.jy(i-1, j-1, k-1)*wtd  + 
-      mesh.jy(i  , j-1, k-1)*wtos + 
-      mesh.jy(i+1, j-1, k-1)*wtd  +
-             
-      mesh.jy(i-1, j  , k-1)*wtos +
-      mesh.jy(i  , j  , k-1)*wtis +
-      mesh.jy(i+1, j  , k-1)*wtos +
-             
-      mesh.jy(i-1, j+1, k-1)*wtd  + 
-      mesh.jy(i  , j+1, k-1)*wtos +
-      mesh.jy(i+1, j+1, k-1)*wtd  +
-             
-      mesh.jy(i-1, j-1, k  )*wtos +
-      mesh.jy(i  , j-1, k  )*wtis +
-      mesh.jy(i+1, j-1, k  )*wtos +
-             
-      mesh.jy(i-1, j  , k  )*wtis +
-      mesh.jy(i  , j  , k  )*wt   +
-      mesh.jy(i+1, j  , k  )*wtis +
-             
-      mesh.jy(i-1, j+1, k  )*wtos +
-      mesh.jy(i  , j+1, k  )*wtis +
-      mesh.jy(i+1, j+1, k  )*wtos +
-             
-      mesh.jy(i-1, j-1, k+1)*wtd  +
-      mesh.jy(i  , j-1, k+1)*wtos +
-      mesh.jy(i+1, j-1, k+1)*wtd  +
-             
-      mesh.jy(i-1, j  , k+1)*wtos +
-      mesh.jy(i  , j  , k+1)*wtis +
-      mesh.jy(i+1, j  , k+1)*wtos +
-             
-      mesh.jy(i-1, j+1, k+1)*wtd  +
-      mesh.jy(i  , j+1, k+1)*wtos +
-      mesh.jy(i+1, j+1, k+1)*wtd;
-  }
+  UniIter::sync();
   mesh.jy = tmp; // then copy from scratch to original arrays
 
 
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-		tmp(i,j,k) =
-      mesh.jz(i-1, j-1, k-1)*wtd  + 
-      mesh.jz(i  , j-1, k-1)*wtos + 
-      mesh.jz(i+1, j-1, k-1)*wtd  +
+  UniIter::iterate3D(
+  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jz, toolbox::Mesh<real_short, 3> &tmp)
+  {
+    		tmp(i,j,k) =
+      jz(i-1, j-1, k-1)*wtd  + 
+      jz(i  , j-1, k-1)*wtos + 
+      jz(i+1, j-1, k-1)*wtd  +
              
-      mesh.jz(i-1, j  , k-1)*wtos +
-      mesh.jz(i  , j  , k-1)*wtis +
-      mesh.jz(i+1, j  , k-1)*wtos +
+      jz(i-1, j  , k-1)*wtos +
+      jz(i  , j  , k-1)*wtis +
+      jz(i+1, j  , k-1)*wtos +
              
-      mesh.jz(i-1, j+1, k-1)*wtd  + 
-      mesh.jz(i  , j+1, k-1)*wtos +
-      mesh.jz(i+1, j+1, k-1)*wtd  +
+      jz(i-1, j+1, k-1)*wtd  + 
+      jz(i  , j+1, k-1)*wtos +
+      jz(i+1, j+1, k-1)*wtd  +
              
-      mesh.jz(i-1, j-1, k  )*wtos +
-      mesh.jz(i  , j-1, k  )*wtis +
-      mesh.jz(i+1, j-1, k  )*wtos +
+      jz(i-1, j-1, k  )*wtos +
+      jz(i  , j-1, k  )*wtis +
+      jz(i+1, j-1, k  )*wtos +
              
-      mesh.jz(i-1, j  , k  )*wtis +
-      mesh.jz(i  , j  , k  )*wt   +
-      mesh.jz(i+1, j  , k  )*wtis +
+      jz(i-1, j  , k  )*wtis +
+      jz(i  , j  , k  )*wt   +
+      jz(i+1, j  , k  )*wtis +
              
-      mesh.jz(i-1, j+1, k  )*wtos +
-      mesh.jz(i  , j+1, k  )*wtis +
-      mesh.jz(i+1, j+1, k  )*wtos +
+      jz(i-1, j+1, k  )*wtos +
+      jz(i  , j+1, k  )*wtis +
+      jz(i+1, j+1, k  )*wtos +
              
-      mesh.jz(i-1, j-1, k+1)*wtd  +
-      mesh.jz(i  , j-1, k+1)*wtos +
-      mesh.jz(i+1, j-1, k+1)*wtd  +
+      jz(i-1, j-1, k+1)*wtd  +
+      jz(i  , j-1, k+1)*wtos +
+      jz(i+1, j-1, k+1)*wtd  +
              
-      mesh.jz(i-1, j  , k+1)*wtos +
-      mesh.jz(i  , j  , k+1)*wtis +
-      mesh.jz(i+1, j  , k+1)*wtos +
+      jz(i-1, j  , k+1)*wtos +
+      jz(i  , j  , k+1)*wtis +
+      jz(i+1, j  , k+1)*wtos +
              
-      mesh.jz(i-1, j+1, k+1)*wtd  +
-      mesh.jz(i  , j+1, k+1)*wtos +
-      mesh.jz(i+1, j+1, k+1)*wtd;
-  }
+      jz(i-1, j+1, k+1)*wtd  +
+      jz(i  , j+1, k+1)*wtos +
+      jz(i+1, j+1, k+1)*wtd;
+  },    static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
+
+  UniIter::sync();
   mesh.jz = tmp; // then copy from scratch to original arrays
+nvtxRangePop();
 
 }
 

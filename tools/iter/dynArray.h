@@ -17,7 +17,7 @@
         inline void realloc(size_t newCap)
         {
             //
-            std::cout << "reallocing to " << newCap << std::endl;
+            //std::cout << "reallocing to " << newCap << std::endl;
             T *ptrTemp;// = new T[newCap];
             getErrorCuda((cudaMallocManaged((void**)&ptrTemp, newCap * sizeof(T))));
 
@@ -59,7 +59,7 @@
 
         inline void reserve(size_t newCap)
         {
-            std::cout << "reserve" << std::endl;
+            //std::cout << "reserve" << std::endl;
             if(newCap > cap)
                 realloc(newCap);
         }
@@ -107,7 +107,7 @@
         inline std::vector<T> toVector() const
         {
             //
-            std::cout << "getting vector" << std::endl;
+            //std::cout << "getting vector" << std::endl;
             std::vector<T> ret;
             for (size_t i = 0; i < count; i++)
             {

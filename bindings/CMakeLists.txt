@@ -108,12 +108,14 @@ if(ENABLE_CUDA)
      set_target_properties(pyrunko PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
      set_source_files_properties(../ffe/currents/rffe.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../em-fields/tile.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../em-fields/filters/digital.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
      target_compile_definitions(pyrunko PUBLIC GPU)
 
      set_property(TARGET pyrunko PROPERTY CUDA_STANDARD 17)
 
      # need extended lambda support to be able to pass lambdas to interation functions
-     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda -std=c++17")
+     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr -std=c++17")
 endif()
 
 
