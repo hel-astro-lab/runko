@@ -99,6 +99,9 @@ class FFE4
   /// compute jpar and add to E
   void add_jpar(Tile<D>& tile);
 
+  /// remove jpar
+  void remove_jpar(Tile<D>& tile);
+
   /// limit E < B
   void limit_e(Tile<D>& tile);
 

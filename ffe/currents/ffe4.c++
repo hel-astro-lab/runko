@@ -560,6 +560,90 @@ void ffe::FFE4<3>::add_diffusion(ffe::Tile<3>& tile)
 }
 
 
+template<>
+void ffe::FFE4<3>::remove_jpar(ffe::Tile<3>& tile)
+{
+  fields::YeeLattice&     m = tile.get_yee();
+  ffe::SkinnyYeeLattice& dm = tile.dF; 
+
+  real_short cur, b2;
+  real_short dt = tile.cfl;
+
+  // NOTE: updates done via dm array to avoid cross contamination between x/y/z diretions
+
+  stagger_x_eb(m);
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
+        cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bxf(i,j,k) /b2/dt;
+
+        m.jx(i,j,k) += cur;
+        dm.ex(i,j,k) = m.ex(i,j,k) - cur*dt;
+      }
+    }
+  }
+
+  stagger_y_eb(m);
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
+        cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*byf(i,j,k) /b2/dt;
+
+        m.jy(i,j,k) += cur;
+        dm.ey(i,j,k) = m.ey(i,j,k) - cur*dt;
+      }
+    }
+  }
+
+  stagger_z_eb(m);
+
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+
+        b2 = (
+            bxf(i,j,k)*bxf(i,j,k) + 
+            byf(i,j,k)*byf(i,j,k) + 
+            bzf(i,j,k)*bzf(i,j,k) + 
+            EPS);
+        cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bzf(i,j,k) /b2/dt;
+
+        m.jz(i,j,k) += cur;
+        dm.ez(i,j,k) = m.ez(i,j,k) - cur*dt;
+      }
+    }
+  }
+
+  //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        m.ex(i,j,k) = dm.ex(i,j,k);
+        m.ey(i,j,k) = dm.ey(i,j,k);
+        m.ez(i,j,k) = dm.ez(i,j,k);
+      }
+    }
+  }
+
+
+}
+
+
+
 //--------------------------------------------------
 // explicit template instantiation
 template class ffe::FFE4<3>; // 3D

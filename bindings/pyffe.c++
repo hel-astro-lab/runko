@@ -134,6 +134,7 @@ void bind_ffe(py::module& m_sub)
     .def("push_eb",      &ffe::FFE4<3>::push_eb)
     .def("add_jperp",    &ffe::FFE4<3>::add_jperp)
     .def("add_jpar",     &ffe::FFE4<3>::add_jpar)
+    .def("remove_jpar",  &ffe::FFE4<3>::remove_jpar)
     .def("limit_e",      &ffe::FFE4<3>::limit_e)
     .def("add_diffusion",&ffe::FFE4<3>::add_diffusion);
 
