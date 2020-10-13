@@ -15,6 +15,10 @@ class FFE4
   int Ny;
   int Nz;
 
+  real_short eta = 1.0e-3; //resistivity for diffusion
+  real_short reltime = 1.0; // e.b relaxation time (in units of dt)
+
+
   /// interpolated arrays
   toolbox::Mesh<real_short, 0> bxf;
   toolbox::Mesh<real_short, 0> byf;

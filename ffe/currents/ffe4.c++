@@ -311,9 +311,6 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
   real_short C1 = 9.0/8.0;
   real_short C2 = 1.0/24.0;
 
-  // dissipation
-  real_short G  = 1.0/dt;
-
   real_short ecurle, bcurlb, eb;
 
   // pre-step 
@@ -375,7 +372,8 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
     ecurle = exf(i,j,k)*curlexf(i,j,k) + eyf(i,j,k)*curleyf(i,j,k) + ezf(i,j,k)*curlezf(i,j,k);
     eb = exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k);
 
-    cur = (bcurlb - ecurle + G*eb)*bxf(i,j,k)/b2;
+    cur  = (bcurlb - ecurle)*bxf(i,j,k)/b2;
+    cur += eb*bxf(i,j,k)/b2/dt/reltime;
 
     jx(i,j,k) += cur;
     dm.ex(i,j,k) -= dt*cur;
@@ -395,7 +393,8 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
     ecurle = exf(i,j,k)*curlexf(i,j,k) + eyf(i,j,k)*curleyf(i,j,k) + ezf(i,j,k)*curlezf(i,j,k);
     eb = exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k);
 
-    cur = (bcurlb - ecurle + G*eb)*byf(i,j,k)/b2;
+    cur  = (bcurlb - ecurle)*byf(i,j,k)/b2;
+    cur += eb*byf(i,j,k)/b2/dt/reltime;
 
     jy(i,j,k) += cur;
     dm.ey(i,j,k) -= dt*cur;
@@ -415,7 +414,8 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
     ecurle = exf(i,j,k)*curlexf(i,j,k) + eyf(i,j,k)*curleyf(i,j,k) + ezf(i,j,k)*curlezf(i,j,k);
     eb = exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k);
 
-    cur = (bcurlb - ecurle + G*eb)*bzf(i,j,k)/b2;
+    cur  = (bcurlb - ecurle)*bzf(i,j,k)/b2;
+    cur += eb*bzf(i,j,k)/b2/dt/reltime;
 
     jz(i,j,k) += cur;
     dm.ez(i,j,k) -= dt*cur;
@@ -510,49 +510,44 @@ void ffe::FFE4<3>::add_diffusion(ffe::Tile<3>& tile)
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   real_short dt = tile.cfl;
-  real_short eta = 1.0e-3;
 
+  // finite difference tables for derivatives D order O as cDoO
+  //real_short c2o4[7] = {  0.0, -1./12.,  4./3., -5./2.,   4./3., -1./12., 0.0 };
+  //real_short c3o4[7] = { 1./8, -1.0,    13./8.,  0.0,   -13./8.,  1.0,  -1./8.};
+  //real_short c4o4[7] = {-1./6,  2.0,   -13./2., 28./3., -13./2.,  2.0,  -1./6.};
+  //real_short c5o2[7] = { -0.5,  2.0,    -5./2.,  0.0,    5./2., -2.0,    0.5  };
+  real_short c6o1[7] = {  1.0, -6.0,     15.0,  -20.,    15.,   -6.0,    1.0  };
+
+  // NOTE: no need to interpolate becase only adding e_i = dm.e_i components
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
       for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
-        dm.ex(i,j,k) = 
-                m.ex(i + 1, j, k) 
-              + m.ex(i - 1, j, k)
-              + m.ex(i, j + 1, k)
-              + m.ex(i, j - 1, k)
-              + m.ex(i, j, k + 1)
-              + m.ex(i, j, k - 1)
-           - 6* m.ex(i, j, k);
+        // 3-point Dxx operator (order 2)
+        //dm.ex(i,j,k) += dt*eta*(
+        //        m.ex(i + 1, j, k) + m.ex(i - 1, j, k) 
+        //      + m.ex(i, j + 1, k) + m.ex(i, j - 1, k) 
+        //      + m.ex(i, j, k + 1) + m.ex(i, j, k - 1)
+        //     -6*m.ex(i, j, k));
 
-        dm.ey(i,j,k) = 
-                m.ey(i + 1, j, k)
-              + m.ey(i - 1, j, k)
-              + m.ey(i, j + 1, k) 
-              + m.ey(i, j - 1, k) 
-              + m.ey(i, j, k + 1) 
-              + m.ey(i, j, k - 1) 
-          - 6 * m.ey(i, j, k);
+        //dm.ey(i,j,k) += dt*eta*(
+        //        m.ey(i + 1, j, k) + m.ey(i - 1, j, k) 
+        //      + m.ey(i, j + 1, k) + m.ey(i, j - 1, k) 
+        //      + m.ey(i, j, k + 1) + m.ey(i, j, k - 1) 
+        //    - 6*m.ey(i, j, k));
 
-        dm.ez(i, j, k) =
-              + m.ez(i + 1, j, k)  
-              + m.ez(i - 1, j, k)      
-              + m.ez(i, j + 1, k)  
-              + m.ez(i, j - 1, k)  
-              + m.ez(i, j, k + 1)  
-              + m.ez(i, j, k - 1) 
-          - 6 * m.ez(i, j, k);
+        //dm.ez(i,j,k) += dt*eta*(
+        //      + m.ez(i + 1, j, k) + m.ez(i - 1, j, k) 
+        //      + m.ez(i, j + 1, k) + m.ez(i, j - 1, k) 
+        //      + m.ez(i, j, k + 1) + m.ez(i, j, k - 1) 
+        //    - 6*m.ez(i, j, k));
 
-      }
-    }
-  }
-
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-        m.ex(i, j, k) += dt*eta*dm.ex(i, j, k);
-        m.ey(i, j, k) += dt*eta*dm.ey(i, j, k);
-        m.ez(i, j, k) += dt*eta*dm.ez(i, j, k);
+        // generalized FD laplacian
+        for(int s=-3; s<=3; s++) {
+            dm.ex(i,j,k) += dt*eta*( c6o1[s+3]*m.ex(i+s,j,k) + c6o1[s+3]*m.ex(i,j+s,k) + c6o1[s+3]*m.ex(i,j,k+s) );
+            dm.ey(i,j,k) += dt*eta*( c6o1[s+3]*m.ey(i+s,j,k) + c6o1[s+3]*m.ey(i,j+s,k) + c6o1[s+3]*m.ey(i,j,k+s) );
+            dm.ez(i,j,k) += dt*eta*( c6o1[s+3]*m.ez(i+s,j,k) + c6o1[s+3]*m.ez(i,j+s,k) + c6o1[s+3]*m.ez(i,j,k+s) );
+        }
       }
     }
   }
