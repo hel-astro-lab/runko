@@ -7,6 +7,7 @@
 
 #include "../tools/iter/iter.h"
 #include "../tools/iter/allocator.h"
+#include <nvtx3/nvToolsExt.h> 
 
 namespace fields {
   using namespace mpi4cpp;
@@ -16,11 +17,36 @@ namespace fields {
 template<std::size_t D>
 void Tile<D>::deposit_current() 
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   YeeLattice& mesh = get_yee();
 
-  mesh.ex -= mesh.jx;
-  mesh.ey -= mesh.jy;
-  mesh.ez -= mesh.jz;
+  UniIter::iterate3D(
+    [=] DEVCALLABLE (int i, int j, int k, YeeLattice& mesh)
+    {
+      mesh.ex(i,j,k) -= mesh.jx(i,j,k);
+      mesh.ey(i,j,k) -= mesh.jy(i,j,k);
+      mesh.ez(i,j,k) -= mesh.jz(i,j,k);
+    },mesh.ex.Nx, mesh.ex.Ny, mesh.ex.Nz, mesh);
+/*
+  for(int k=0;  k<mesh.Nz; k++) {
+    for(int j=0;  j<mesh.Ny; j++) {
+      for(int i=0;  i<mesh.Nx; i++) {
+        //this->operator()(i,j,k) += rhs(i,j,k);
+          mesh.ex(i,j,k) -= mesh.jx(i,j,k);
+          mesh.ey(i,j,k) -= mesh.jy(i,j,k);
+          mesh.ez(i,j,k) -= mesh.jz(i,j,k);
+
+      }
+    }
+  }
+*/
+
+  //mesh.ex -= mesh.jx;
+  //mesh.ey -= mesh.jy;
+  //mesh.ez -= mesh.jz;
+nvtxRangePop();
+UniIter::sync();
 
 }
 
