@@ -61,6 +61,14 @@ public:
 };
 
 
+struct to_other_tiles_struct{
+  //
+  int i;
+  int j;
+  int k;
+  int n;
+};
+
 /*! \brief Container of particles inside the tile
 *
 * Container to hold plasma particles 
@@ -127,7 +135,7 @@ class ParticleContainer {
   DevVec<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
-  using mapType = std::multimap<std::tuple<int,int,int>, int>;
+  using mapType = DevVec<to_other_tiles_struct>;
   mapType to_other_tiles;
 
   // normalization factor

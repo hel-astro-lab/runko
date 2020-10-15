@@ -225,7 +225,7 @@ void ParticleContainer<2>::check_outgoing_particles(
     if ((i == 0) && (j == 0)) continue; 
 
     if ( (i != 0) || (j != 0) || (k != 0) ) 
-      to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
+      to_other_tiles.push_back( {i,j,k,n} );
   }
 }
 
@@ -278,7 +278,7 @@ void ParticleContainer<3>::check_outgoing_particles(
     if(k0 >= lenz) k++; // front
 
     if ( (i != 0) || (j != 0) || (k != 0) ) 
-      to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
+      to_other_tiles.push_back( {i,j,k,n} );
   }
 }
 
@@ -323,7 +323,13 @@ void ParticleContainer<D>::delete_transferred_particles()
   std::vector<int> to_be_deleted;
 
   // get transferred 
-  for(auto& elem : to_other_tiles) to_be_deleted.push_back( elem.second );
+  //for(auto& elem : to_other_tiles) 
+  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  {
+    const auto &elem = to_other_tiles[ii];
+
+    to_be_deleted.push_back( elem.n );
+  }
 
   delete_particles(to_be_deleted);
 }
@@ -357,16 +363,20 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
   int id, proc;
 
   int i;
-  for (auto&& elem : neigh.to_other_tiles) {
-    if(std::get<0>(elem.first) == 0 && std::get<1>(elem.first) == 0) continue; 
+  //for (auto&& elem : neigh.to_other_tiles) {
+  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
+  {
+    const auto &elem = neigh.to_other_tiles[ii];
+
+    if(elem.i == 0 && elem.j == 0) continue; 
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
 
-    if (std::get<0>(elem.first) == -dirs[0] &&
-        std::get<1>(elem.first) == -dirs[1] ) {
+    if (elem.i == -dirs[0] &&
+        elem.j == -dirs[1] ) {
 
-      i = elem.second;
+      i = elem.n;
 
       locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
       locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
@@ -404,20 +414,24 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
   int id, proc;
 
   int i;
-  for (auto&& elem : neigh.to_other_tiles) {
+  //for (auto&& elem : neigh.to_other_tiles) {
+  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
+  {
+    const auto &elem = neigh.to_other_tiles[ii];
+
       
-    if(std::get<0>(elem.first) == 0 && 
-       std::get<1>(elem.first) == 0 &&
-       std::get<2>(elem.first) == 0) continue; 
+    if(elem.i == 0 && 
+       elem.j == 0 &&
+       elem.k == 0) continue; 
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
 
-    if (std::get<0>(elem.first) == -dirs[0] &&
-        std::get<1>(elem.first) == -dirs[1] &&
-        std::get<2>(elem.first) == -dirs[2] ) {
+    if (elem.i == -dirs[0] &&
+        elem.j == -dirs[1] &&
+        elem.k == -dirs[2] ) {
 
-      i = elem.second;
+      i = elem.n;
 
       locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
       locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
@@ -497,8 +511,13 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
   // next, pack all other particles
   int i=1, ind;
-  for (auto&& elem : to_other_tiles) {
-    ind = elem.second;
+  
+//  for (auto&& elem : to_other_tiles) {
+  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  {
+    const auto &elem = to_other_tiles[ii];
+
+    ind = elem.n;
 
     if(i < optimal_message_size) {
       outgoing_particles.emplace_back( 

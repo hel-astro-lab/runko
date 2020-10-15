@@ -61,7 +61,7 @@
             count = 0;
         }
 
-        inline void push_back(T &val)
+        inline void push_back(T val)
         {
             //
             if(count+1 <= cap)
@@ -122,6 +122,17 @@
         {
             return cap;
         }
+        inline void clear()
+        {
+            count = 0;
+        }
+
+        // used to fix the size
+        inline void set_size(size_t newSize)
+        {
+            count = newSize;
+        }
+
 
         inline std::vector<T> toVector() const
         {
