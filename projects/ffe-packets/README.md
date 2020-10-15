@@ -1,6 +1,6 @@
-# FFE
+# FFE Alfven wave collisions
 
-Force-free electrodynamics code. Uses solvers from `ffe` and `em-fields` modules to time step the system.
+This project uses the force-free electrodynamics module to simulate Alfven wave packet collisions. The code uses solvers from `ffe` and `em-fields` modules to time step the system.
 
 A small test case can be run with
 

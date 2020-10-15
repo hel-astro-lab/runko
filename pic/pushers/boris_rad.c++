@@ -46,9 +46,9 @@ void pic::BorisPusherRad<D,V>::push_container(
   int n2 = nparts;
 
   real_long u0, v0, w0;
-  real_long uxt, uyt, uzt;
+  real_long uxt;
   real_long u1, v1, w1;
-  real_long g, f, ginv, gamt, ut;
+  real_long g, f, ginv;
   real_long pressx, pressy, pressz;
   real_long gamx;
 
