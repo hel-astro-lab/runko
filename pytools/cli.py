@@ -69,7 +69,7 @@ def check_for_restart(conf):
 
         # zero signals automatic checking of latest lap
         if conf.laprestart == 0:
-            print("restarting automatically...")
+            #print("restarting automatically...")
 
             # get latest restart file from housekeeping file
             with open(conf.outdir + "/restart/laps.txt", "r") as lapfile:
