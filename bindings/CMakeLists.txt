@@ -51,7 +51,10 @@ set (FFE_FILES
      pyffe.c++
      ../ffe/tile.c++
      ../ffe/skinny_yee.c++
-     ../ffe/currents/rffe.c++
+     ../ffe/currents/rffe2.c++
+     ../ffe/currents/rffe4.c++
+     ../ffe/currents/ffe2.c++
+     ../ffe/currents/ffe4.c++
      )
 
 set (IO_FILES 

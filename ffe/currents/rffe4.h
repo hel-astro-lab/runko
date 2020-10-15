@@ -5,9 +5,9 @@
 
 namespace ffe {
 
-/// Combined RK3 reduced FFE 2nd order solver 
+/// Reduced FFE 4th order solver 
 template<size_t D>
-class rFFE2
+class rFFE4
 {
   public:
 
@@ -27,7 +27,7 @@ class rFFE2
   toolbox::Mesh<real_short, 0> rhf;
 
 
-  rFFE2(int Nx, int Ny, int Nz) :
+  rFFE4(int Nx, int Ny, int Nz) :
     Nx(Nx), Ny(Ny), Nz(Nz),
     bxf(Nx, Ny, Nz),
     byf(Nx, Ny, Nz),
@@ -38,7 +38,7 @@ class rFFE2
     rhf(Nx, Ny, Nz)
   {};
 
-  virtual ~rFFE2() = default;
+  virtual ~rFFE4() = default;
 
 
   // interpolation routine
@@ -63,17 +63,12 @@ class rFFE2
   /// compute and add jperp to E
   void add_jperp(Tile<D>& tile);
 
-  /// update E and B
-  void update_eb(Tile<D>& tile, real_short c1, real_short c2, real_short c3);
-
   /// set E_par = 0
   void remove_jpar(Tile<D>& tile);
 
   /// limit E < B
   void limit_e(Tile<D>& tile);
 
-  /// copy Y^n to Y^n-1
-  void copy_eb(Tile<D>& tile);
 
 };
 

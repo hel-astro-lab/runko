@@ -117,7 +117,12 @@ if __name__ == "__main__":
     # load physics solvers
 
     # reduced 2nd order FFE algorithm
-    algo = pyffe.rFFE2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+    #algo = pyffe.rFFE2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+    #algo = pyffe.rFFE2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+    #algo = pyffe.FFE2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+    algo = pyffe.FFE4(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     # --------------------------------------------------
     # I/O objects
@@ -173,7 +178,7 @@ if __name__ == "__main__":
         # initialize Y^n-1 = Y
         t1 = timer.start_comp("copy_eb")
         for tile in pytools.tiles_all(grid):
-            algo.copy_eb(tile)
+            tile.copy_eb()
         timer.stop_comp(t1)
 
         ###################################################
@@ -195,9 +200,28 @@ if __name__ == "__main__":
         ]
 
         for (rk_c1, rk_c2, rk_c3, rk_dt) in rk_coeffs:
+            rks += 1 # RK substep
 
-            # RK substep
-            rks += 1
+            #--------------------------------------------------
+            # comm E/B
+            t1 = timer.start_comp("mpi_loop")
+            grid.send_data(1)
+            grid.recv_data(1)
+
+            grid.send_data(2)
+            grid.recv_data(2)
+
+            grid.wait_data(1)
+            grid.wait_data(2)
+            timer.stop_comp(t1)
+
+            ## update boundaries
+            t1 = timer.start_comp("upd_bc_loop")
+            for tile in pytools.tiles_local(grid):
+                tile.update_boundaries(grid)
+            timer.stop_comp(t1)
+
+            #--------------------------------------------------
 
             # rho = div E
             t1 = timer.start_comp("comp_rho")
@@ -219,17 +243,37 @@ if __name__ == "__main__":
                 algo.add_jperp(tile)
             timer.stop_comp(t1)
 
+            # parallel current j_par
+            # dE -= dt*j_par
+            t1 = timer.start_comp("add_jpar")
+            for tile in pytools.tiles_local(grid):
+                algo.add_jpar(tile)
+            timer.stop_comp(t1)
+
+            # diffusion
+            if True:
+                algo.eta = 1.0e-3
+
+                # dE += eta*dt*nabla^2 E
+                t1 = timer.start_comp("diffuse")
+                for tile in pytools.tiles_local(grid):
+                    algo.add_diffusion(tile)
+                timer.stop_comp(t1)
+
             # update fields according to RK scheme
             # Y^n+1 = c1 * Y^n-1 + c2 * Y^n + c3 * dY
             t1 = timer.start_comp("update_eb")
             for tile in pytools.tiles_local(grid):
-                algo.update_eb(tile, rk_c1, rk_c2, rk_c3)
+                tile.rk3_update(     rk_c1, rk_c2, rk_c3)
+                #algo.update_eb(tile, rk_c1, rk_c2, rk_c3)
             timer.stop_comp(t1)
 
-            # remove j_par component
-            if True:
-                # comm e & b
-                t1 = timer.start_comp("mpi_eb3")
+            # jpar
+            #if True:
+            #if rks == 3:
+            if False:
+                # comm e & b (NOTE: need mpi here because Y^n is updated above)
+                t1 = timer.start_comp("mpi_jpar")
                 grid.send_data(1)
                 grid.recv_data(1)
 
@@ -240,8 +284,8 @@ if __name__ == "__main__":
                 grid.wait_data(2)
                 timer.stop_comp(t1)
 
-                # update boundaries
-                t1 = timer.start_comp("upd_bc3")
+                ## update boundaries
+                t1 = timer.start_comp("upd_bc_jpar")
                 for tile in pytools.tiles_local(grid):
                     tile.update_boundaries(grid)
                 timer.stop_comp(t1)
@@ -253,10 +297,12 @@ if __name__ == "__main__":
                     algo.remove_jpar(tile)
                 timer.stop_comp(t1)
 
-            #limit e < b
+            # eGTb
+            #if False:
+            #if rks == 3:
             if True:
-                # comm E
-                t1 = timer.start_comp("mpi_eb1")
+                # comm E/B comm e & b (NOTE: need mpi here because Y^n is updated above)
+                t1 = timer.start_comp("mpi_egtb")
                 grid.send_data(1)
                 grid.recv_data(1)
 
@@ -267,8 +313,8 @@ if __name__ == "__main__":
                 grid.wait_data(2)
                 timer.stop_comp(t1)
 
-                # update boundaries
-                t1 = timer.start_comp("upd_bc1")
+                ## update boundaries
+                t1 = timer.start_comp("upd_bc_egtb")
                 for tile in pytools.tiles_local(grid):
                     tile.update_boundaries(grid)
                 timer.stop_comp(t1)
@@ -279,10 +325,6 @@ if __name__ == "__main__":
                 for tile in pytools.tiles_local(grid):
                     algo.limit_e(tile)
                 timer.stop_comp(t1)
-
-            ##################################################
-            # boundary conditions
-
 
             ##################################################
             # update field halos

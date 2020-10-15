@@ -24,11 +24,11 @@ void fields::FDTD4<2>::push_e(fields::Tile<2>& tile)
 
 		mesh.ex(i,j,k) +=
           C1*(-mesh.bz(i,j-1,k)+mesh.bz(i,j,k))   +
-				  C2*(-mesh.bz(i,j-2,k)+mesh.bz(i,j+1,k));
+		  C2*(-mesh.bz(i,j-2,k)+mesh.bz(i,j+1,k));
 
 		mesh.ey(i,j,k) += 
           C1*(mesh.bz(i-1,j,k)-mesh.bz(i,j,k))+      
-				  C2*(mesh.bz(i-2,j,k)-mesh.bz(i+1,j,k));
+		  C2*(mesh.bz(i-2,j,k)-mesh.bz(i+1,j,k));
 
 		mesh.ez(i,j,k) += 
           C1*(mesh.bx(i,j-1,k)-mesh.bx(i,j,k) - mesh.by(i-1,j,k)+mesh.by(i,j,k))+
@@ -86,11 +86,11 @@ void fields::FDTD4<2>::push_half_b(fields::Tile<2>& tile)
 
 		mesh.bx(i,j,k) += 
       C1*(-mesh.ez(i,j+1,k)+mesh.ez(i,j,k))+ 
-			C2*(-mesh.ez(i,j+2,k)+mesh.ez(i,j-1,k));
+	  C2*(-mesh.ez(i,j+2,k)+mesh.ez(i,j-1,k));
 
 		mesh.by(i,j,k) +=
       C1*(mesh.ez(i+1,j,k)-mesh.ez(i,j,k))+ 
-			C2*(mesh.ez(i+2,j,k)-mesh.ez(i-1,j,k));
+	  C2*(mesh.ez(i+2,j,k)-mesh.ez(i-1,j,k));
 
 		mesh.bz(i,j,k) +=
       C1*(mesh.ex(i,j+1,k)- mesh.ex(i,j,k)  -mesh.ey(i+1,j,k)+ mesh.ey(i,j,k))+

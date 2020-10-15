@@ -6,7 +6,10 @@ namespace py = pybind11;
 
 #include "../ffe/tile.h"
 
-#include "../ffe/currents/rffe.h"
+#include "../ffe/currents/rffe2.h"
+#include "../ffe/currents/rffe4.h"
+#include "../ffe/currents/ffe2.h"
+#include "../ffe/currents/ffe4.h"
 #include "../ffe/skinny_yee.h"
 
 
@@ -29,48 +32,11 @@ auto declare_tile(
                py::multiple_inheritance()
                )
     .def(py::init<int, int, int>())
-    .def_readwrite("cfl",       &ffe::Tile<D>::cfl);
-
+    .def_readwrite("cfl",       &ffe::Tile<D>::cfl)
+    .def("copy_eb",             &ffe::Tile<D>::copy_eb)
+    .def("rk3_update",          &ffe::Tile<D>::rk3_update);
 
 }
-
-//--------------------------------------------------
-//
-/// trampoline class for Current solver
-//template<size_t D>
-//class PyCurrent : public Current<D>
-//{
-//  using Current<D>::Current;
-//
-//  void comp_drift_cur( Tile<D>& tile ) override {
-//  PYBIND11_OVERLOAD_PURE(
-//      void,
-//      Current<D>,
-//      comp_drift_cur,
-//      tile
-//      );
-//  }
-//
-//  void comp_parallel_cur( Tile<D>& tile ) override {
-//  PYBIND11_OVERLOAD_PURE(
-//      void,
-//      Current<D>,
-//      comp_parallel_cur,
-//      tile
-//      );
-//  }
-//
-//  void limiter( Tile<D>& tile ) override {
-//  PYBIND11_OVERLOAD_PURE(
-//      void,
-//      Current<D>,
-//      limiter,
-//      tile
-//      );
-//  }
-//
-//};
-//
 
 
 // python bindings for plasma classes & functions
@@ -117,8 +83,8 @@ void bind_ffe(py::module& m_sub)
 
   //--------------------------------------------------
   // 2D bindings
-  py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
-  auto t2 = ffe::declare_tile<2>(m_2d, "Tile");
+  //py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
+  //auto t2 = ffe::declare_tile<2>(m_2d, "Tile");
 
 
   //--------------------------------------------------
@@ -133,16 +99,46 @@ void bind_ffe(py::module& m_sub)
 
   //--------------------------------------------------
   // 3D Current solver bindings
-  py::class_< ffe::rFFE2<3> > currentcalc3d(m_3d, "rFFE2");
-  currentcalc3d
+  py::class_< ffe::rFFE2<3> > brffe2(m_3d, "rFFE2");
+  brffe2
     .def(py::init<int, int, int>())
-    .def("copy_eb",      &ffe::rFFE2<3>::copy_eb)
     .def("comp_rho",     &ffe::rFFE2<3>::comp_rho)
     .def("push_eb",      &ffe::rFFE2<3>::push_eb)
     .def("add_jperp",    &ffe::rFFE2<3>::add_jperp)
-    .def("update_eb",    &ffe::rFFE2<3>::update_eb)
     .def("remove_jpar",  &ffe::rFFE2<3>::remove_jpar)
     .def("limit_e",      &ffe::rFFE2<3>::limit_e);
+
+  py::class_< ffe::rFFE4<3> > brffe4(m_3d, "rFFE4");
+  brffe4
+    .def(py::init<int, int, int>())
+    .def("comp_rho",     &ffe::rFFE4<3>::comp_rho)
+    .def("push_eb",      &ffe::rFFE4<3>::push_eb)
+    .def("add_jperp",    &ffe::rFFE4<3>::add_jperp)
+    .def("remove_jpar",  &ffe::rFFE4<3>::remove_jpar)
+    .def("limit_e",      &ffe::rFFE4<3>::limit_e);
+
+  py::class_< ffe::FFE2<3> > bffe2(m_3d, "FFE2");
+  bffe2
+    .def(py::init<int, int, int>())
+    .def("comp_rho",     &ffe::FFE2<3>::comp_rho)
+    .def("push_eb",      &ffe::FFE2<3>::push_eb)
+    .def("add_jperp",    &ffe::FFE2<3>::add_jperp)
+    .def("add_jpar",     &ffe::FFE2<3>::add_jpar)
+    .def("limit_e",      &ffe::FFE2<3>::limit_e);
+
+
+  py::class_< ffe::FFE4<3> > bffe4(m_3d, "FFE4");
+  bffe4
+    .def(py::init<int, int, int>())
+    .def_readwrite("eta",    &ffe::FFE4<3>::eta)
+    .def_readwrite("reltime",&ffe::FFE4<3>::reltime)
+    .def("comp_rho",     &ffe::FFE4<3>::comp_rho)
+    .def("push_eb",      &ffe::FFE4<3>::push_eb)
+    .def("add_jperp",    &ffe::FFE4<3>::add_jperp)
+    .def("add_jpar",     &ffe::FFE4<3>::add_jpar)
+    .def("remove_jpar",  &ffe::FFE4<3>::remove_jpar)
+    .def("limit_e",      &ffe::FFE4<3>::limit_e)
+    .def("add_diffusion",&ffe::FFE4<3>::add_diffusion);
 
 
 

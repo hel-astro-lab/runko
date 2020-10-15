@@ -43,6 +43,13 @@ class Tile :
   /// destructor
   ~Tile() override = default;
 
+
+  /// update E and B
+  void rk3_update(real_short c1, real_short c2, real_short c3);
+
+  /// copy Y^n to Y^n-1
+  void copy_eb();
+
 };
 
 

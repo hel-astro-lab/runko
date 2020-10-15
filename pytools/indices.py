@@ -35,6 +35,8 @@ class Stagger:
     # compute transformation indices for going from
     # variable at loc1 staggering to loc2 staggering
     def x2y(self, loc1, loc2):
+        if loc2 == 'no':
+            return [0.0, 0.0, 0.0]
 
         offs1 = self.staggers[loc1]
         offs2 = self.staggers[loc2]  
@@ -48,9 +50,8 @@ class Stagger:
         return ret
 
     def at(self, stg, stg0='rh'):
-
-        if stg == 'no': #no staggering at all; just dummy copy of self 
-            ret = Stagger(self.x, self.y ,self.z)
+        #if stg == 'no' or stg0 == 'no': #no staggering at all; just dummy copy of self 
+        #    ret = Stagger(self.x, self.y ,self.z)
 
         offs = self.x2y(stg0, stg)
 
