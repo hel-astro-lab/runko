@@ -288,6 +288,8 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
   real_short cur, b2;
   real_short dt = tile.cfl;
 
+  // NOTE: updates done via dm array to avoid cross contamination between x/y/z diretions
+
   stagger_x_eb(m);
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
@@ -301,9 +303,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
         cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bxf(i,j,k) /b2/dt;
 
         m.jx(i,j,k) += cur;
-        //dm.ex(i,j,k) = m.ex(i,j,k) - cur;
-          
-        //m.ex(i,j,k) -= cur*dt;
+
         dm.ex(i,j,k) = m.ex(i,j,k) - cur*dt;
       }
     }
@@ -322,9 +322,6 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
         cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*byf(i,j,k) /b2/dt;
 
         m.jy(i,j,k) += cur;
-        //dm.ey(i,j,k) = m.ey(i,j,k) - cur;
-        //m.ey(i,j,k) -= cur*dt;
-        
         dm.ey(i,j,k) = m.ey(i,j,k) - cur*dt;
       }
     }
@@ -343,16 +340,25 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
         cur = (exf(i,j,k)*bxf(i,j,k) + eyf(i,j,k)*byf(i,j,k) + ezf(i,j,k)*bzf(i,j,k))*bzf(i,j,k) /b2/dt;
 
         m.jz(i,j,k) += cur;
-        //dm.ez(i,j,k) = m.ez(i,j,k) - cur;
-        //m.ez(i,j,k) -= cur*dt;
-
         dm.ez(i,j,k) = m.ez(i,j,k) - cur*dt;
       }
     }
   }
 
 
+  //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        m.ex(i,j,k) = dm.ex(i,j,k);
+        m.ey(i,j,k) = dm.ey(i,j,k);
+        m.ez(i,j,k) = dm.ez(i,j,k);
+      }
+    }
   }
+
+
+}
 
 
 template<>
@@ -380,10 +386,13 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         //m.jx(i,j,k) += (1.-diss)*dm.ex(i,j,k)/dt;
         //m.ex(i,j,k) = diss*dm.ex(i,j,k);
 
-        cur = (1.-diss)*dm.ex(i,j,k)/dt;
+        cur = (1.-diss)*m.ex(i,j,k)/dt;
         m.jx(i,j,k) += cur;
-        //m.ex(i,j,k) -= cur*dt;
-        m.ex(i,j,k) = diss*dm.ex(i,j,k);
+
+        // OLD VERSION
+        //m.ex(i,j,k) = diss*dm.ex(i,j,k);
+        // NEW safely updating version
+        dm.ex(i,j,k) = diss*m.ex(i,j,k);
       }
     }
   }
@@ -402,10 +411,11 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         //m.jy(i,j,k) += (1. - diss)*dm.ey(i,j,k)/dt;
         //m.ey(i,j,k) = diss*dm.ey(i,j,k);
 
-        cur = (1.-diss)*dm.ey(i,j,k)/dt;
+        cur = (1.-diss)*m.ey(i,j,k)/dt;
         m.jy(i,j,k) += cur;
-        //m.ey(i,j,k) -= cur*dt;
-        m.ey(i,j,k) = diss*dm.ey(i,j,k);
+        
+        //m.ey(i,j,k) = diss*dm.ey(i,j,k);
+        dm.ey(i,j,k) = diss*m.ey(i,j,k);
       }
     }
   }
@@ -424,16 +434,29 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
         //m.jz(i,j,k) += (1.-diss)*dm.ez(i,j,k)/dt;
         //m.ez(i,j,k) = diss*dm.ez(i,j,k);
 
-        cur = (1.-diss)*dm.ez(i,j,k)/dt;
+        cur = (1.-diss)*m.ez(i,j,k)/dt;
         m.jz(i,j,k) += cur;
-        //m.ez(i,j,k) -= cur*dt;
-        m.ez(i,j,k) = diss*dm.ez(i,j,k);
+
+        //m.ez(i,j,k) = diss*dm.ez(i,j,k);
+        dm.ez(i,j,k) = diss*m.ez(i,j,k);
       }
     }
   }
 
 
+  //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
+  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
+    for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
+      for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+        m.ex(i,j,k) = dm.ex(i,j,k);
+        m.ey(i,j,k) = dm.ey(i,j,k);
+        m.ez(i,j,k) = dm.ez(i,j,k);
+      }
+    }
   }
+
+
+}
 
 
 

@@ -5,9 +5,7 @@ import sys
 
 from numpy import pi 
 
-
-# 
-#
+# 2D magnetic antenna
 class Antenna:
 
 
@@ -27,9 +25,6 @@ class Antenna:
         self.L  = self.Lx                        #assuming L = Lx=Ly=Lz box
         #print("L = ({},{},{})".format(self.Lx, self.Ly, self.Lz))
 
-        self.min_mode = min_mode
-        self.max_mode = max_mode
-
         # m,n \in {1,...,N}
         self.ms = np.arange(1,max_mode+1)
         self.ns = np.arange(1,max_mode+1)
@@ -37,6 +32,8 @@ class Antenna:
         # absolute driving amplitude
         self.A0 = conf.binit*conf.drive_ampl
 
+        self.min_mode = min_mode
+        self.max_mode = max_mode
 
         # power in different modes
         self.beta = np.zeros((max_mode, max_mode))
@@ -69,9 +66,6 @@ class Antenna:
         self.kx = 2.0*np.pi / (conf.c_omp*self.Lx)
         self.ky = 2.0*np.pi / (conf.c_omp*self.Ly)
         self.kz = 2.0*np.pi / (conf.c_omp*self.Lz)
-
-
-
 
 
     # step driver coefficient according to eq. 14
@@ -186,7 +180,6 @@ class Antenna:
                             self.By_rms[q,s,r] += By
 
 
-
     def add_driving(self, tile):
         yee = tile.get_yee(0)
         #self.get_Brms(tile)
@@ -201,10 +194,4 @@ class Antenna:
         #for mode in self.modes:
         #    self.get_current(mode, tile)
         #    yee.jz += self.Jext
-
-
-
-
-
-
 

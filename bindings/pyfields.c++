@@ -94,7 +94,8 @@ auto declare_TileDamped(
   .def_readwrite("bz_ref",   &fields::damping::Tile<D,S>::bz_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
   .def_readwrite("fld1",     &fields::damping::Tile<D,S>::fld1)
   .def_readwrite("fld2",     &fields::damping::Tile<D,S>::fld2)
-  .def("damp_fields",         &fields::damping::Tile<D,S>::damp_fields);
+  .def_readwrite("ksupp",    &fields::damping::Tile<D,S>::ksupp)
+  .def("damp_fields",        &fields::damping::Tile<D,S>::damp_fields);
 }
 
 
@@ -330,6 +331,12 @@ void bind_fields(py::module& m_sub)
   auto td2_m2 = declare_TileDamped<2, -2>(m_2d, "TileDamped2D_LY");
   auto td2_p2 = declare_TileDamped<2, +2>(m_2d, "TileDamped2D_RY");
 
+  auto td3_m1 = declare_TileDamped<3, -1>(m_3d, "TileDamped3D_LX");
+  auto td3_p1 = declare_TileDamped<3, +1>(m_3d, "TileDamped3D_RX");
+  auto td3_m2 = declare_TileDamped<3, -2>(m_3d, "TileDamped3D_LY");
+  auto td3_p2 = declare_TileDamped<3, +2>(m_3d, "TileDamped3D_RY");
+  auto td3_m3 = declare_TileDamped<3, -3>(m_3d, "TileDamped3D_LZ");
+  auto td3_p3 = declare_TileDamped<3, +3>(m_3d, "TileDamped3D_RZ");
 
   //--------------------------------------------------
   // 1D Propagator bindings
@@ -419,7 +426,6 @@ void bind_fields(py::module& m_sub)
 
 
   // 3D filters
-
   py::class_< fields::Filter<3>, PyFilter<3> > fieldsfilter3d(m_3d, "Filter");
   fieldsfilter3d
     .def(py::init<int, int, int>())

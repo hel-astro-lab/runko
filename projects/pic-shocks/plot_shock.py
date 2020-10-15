@@ -218,7 +218,7 @@ def plot1D_rho(
 #    args['vmin'] = default_shock_values[var]['vmin'] if not(vmin == None) else args['vmin']
 #    args['vmax'] = default_shock_values[var]['vmax'] if not(vmax == None) else args['vmax']
     
-    print("Plotting Density and Magnetic Internal energy...")
+    #print("Plotting Density and Magnetic Internal energy...")
     #ax.clf()
     ax.cla()
     #ax2 = ax.twinx()
@@ -613,7 +613,7 @@ if __name__ == "__main__":
         plt.rc('axes',  labelsize=8)
     
 
-    gs = plt.GridSpec(4, 1)
+    gs = plt.GridSpec(3, 1)
     gs.update(hspace = 0.0)
     gs.update(wspace = 0.0)
     
@@ -621,9 +621,8 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[0,0]) )
     axs.append( plt.subplot(gs[1,0]) )
     axs.append( plt.subplot(gs[2,0]) )
-    axs.append( plt.subplot(gs[3,0]) )
-    
-    ax2 = axs[3].twinx() #Creating a split axis for last panel
+    #axs.append( plt.subplot(gs[3,0]) )
+    #ax2 = axs[3].twinx() #Creating a split axis for last panel
     
     #ax.set_xlabel(r"$x$ $(c/\omega_p)$")
     #ax.set_ylabel(r"$y$ $(c/\omega_p)$")
@@ -643,7 +642,7 @@ if __name__ == "__main__":
     if do_dark:
         plt.style.use('dark_background')
 
-    do_prtcls = True
+    do_prtcls = False
     prtcl_file = fdir + "10_prtcls.txt"
 
 
@@ -663,8 +662,7 @@ if __name__ == "__main__":
         plot2d_shock_single(axs[0], "rho", info, do_prtcls=do_prtcls)
         plot2d_shock_single(axs[1], "bz", info)
         plot2d_shock_single(axs[2], "jz", info)
-        plot1D_rho(axs[3], ax2, "rho", info)
-        
+        #plot1D_rho(axs[3], ax2, "rho", info)
         
         slap = str(info['lap']).rjust(4, '0')
         if do_dark:
@@ -673,13 +671,8 @@ if __name__ == "__main__":
         else:
             fname = fdir + 'shock_{}.pdf'.format(slap)
             plt.savefig(fname)
-        #plot to axs2
-        #plot to ax3
-        #...
-        #savefig
         
     # else plot every file that there is
-    # FIXME
     else:
     
         files_F = get_file_list(fdir, fname_F)
@@ -708,15 +701,16 @@ if __name__ == "__main__":
             im1, cb1 = plot2d_shock_single(axs[0], "rho", info, do_prtcls=do_prtcls)
             im2, cb2 = plot2d_shock_single(axs[1], "bz", info)
             im3, cb3 = plot2d_shock_single(axs[2], "jz", info)
-            rho1dx, rho1dy = plot1D_rho(axs[3], ax2, "rho", info)
+            #rho1dx, rho1dy = plot1D_rho(axs[3], ax2, "rho", info)
             
             slap = str(info['lap']).rjust(4, '0')
             
             #Write 1D Rho data to file for RH_shk
-            w = open(fdir + 'rho1_{}.csv'.format(slap), "w+")
-            for i in range(len(rho1dy)):
-                w.write("{},{}\n".format(rho1dx[i],rho1dy[i]))
-            w.close
+            if False:
+                w = open(fdir + 'rho1_{}.csv'.format(slap), "w+")
+                for i in range(len(rho1dy)):
+                    w.write("{},{}\n".format(rho1dx[i],rho1dy[i]))
+                w.close
             
             if do_dark:
                 fname = fdir + 'shock_{}.png'.format(slap)

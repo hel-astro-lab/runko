@@ -49,21 +49,13 @@ void fields::damping::Tile<D,S>::damp_fields()
 
   //Realf lambda, lambda1;
   real_short lambda2;
-  real_short ksupp = 10; // damping parameter
-
-
-  // moving injector position
-  //int ntimes = 10; // filter width
-  //int iback = 10 + max(50, ntimes);
-  //int istr = max(0,  (int)(xinject-iback) );
-  //int ifin = min(mx, (int)(xinject+iback) );
 
   bool left  = S < 0;
   bool right = S > 0;
     
   bool xdir  = abs(S) == 1;
   bool ydir  = abs(S) == 2;
-  //bool zdir  = abs(S) == 3;
+  bool zdir  = abs(S) == 3;
 
   // fixed position
   int istr = 0;
@@ -72,68 +64,68 @@ void fields::damping::Tile<D,S>::damp_fields()
   int jstr = 0;
   int jfin = fields::Tile<D>::mesh_lengths[1];
 
+  int kstr = 0;
+  int kfin = fields::Tile<D>::mesh_lengths[2];
 
-  int k = 0; // XXX: 2D hack
-  real_short iglob, jglob;
-  //Realf kglob;
-  //kglob = (Realf)k + fields::Tile<D>::mins[2];
+  real_short iglob, jglob, kglob, glob_coord;
+  real_short t1, t2;
 
-  for(int j = jstr; j<jfin; j++) {
-    jglob = (real_short)j + fields::Tile<D>::mins[1];
+  bool inside_damping_zone = false;
 
-    // damping region for Y direction or if not, then just continue
-    if ( (ydir && (
-         (left  && ((jglob >= fld1) && (jglob < fld2))) || 
-         (right && ((jglob <= fld1) && (jglob > fld2))) ))
-        || !ydir)
-    {
-      if (ydir) {
-        //lambda1 = kappa*pow( (fld2-jglob)/(fld2 - fld1), 3);
-        //lambda  = (1.0 - 0.5*lambda1)/(1.0 + 0.5*lambda1); //second order
+  // loop over all values in mesh
+  for(int k = kstr; k<kfin; k++) {
+    kglob = (real_short)k + fields::Tile<D>::mins[2];
 
-        if (left ) lambda2 = ksupp*pow(1.*(fld2-jglob)/(fld2-fld1), 3); 
-        if (right) lambda2 = ksupp*pow(1.*(fld1-jglob)/(fld1-fld2), 3);
-      }
-
+    for(int j = jstr; j<jfin; j++) {
+      jglob = (real_short)j + fields::Tile<D>::mins[1];
 
       for(int i=istr; i<ifin; i++) {
         iglob = (real_short)i + fields::Tile<D>::mins[0];
 
-        // damping region for X direction or if not, then just continue
-        if ( (xdir && (
-             (left  && ((iglob >= fld1) && (iglob < fld2))) || 
-             (right && ((iglob <= fld1) && (iglob > fld2))) ))
-            || !xdir)
-        {
+        inside_damping_zone = false;
 
-          if (xdir) {
-            //lambda1 = kappa*pow( (fld2-iglob)/(fld2 - fld1), 3);
-            //lambda  = (1.0 - 0.5*lambda1)/(1.0 + 0.5*lambda1); //second order
+        // select active coordinate to reference against
+        if(xdir) glob_coord = iglob;
+        if(ydir) glob_coord = jglob;
+        if(zdir) glob_coord = kglob;
 
-            if (left ) lambda2 = ksupp*pow(1.*(fld2-iglob)/(fld2-fld1), 3); 
-            if (right) lambda2 = ksupp*pow(1.*(fld1-iglob)/(fld1-fld2), 3);
-          }
+        // left direction; 
+        // fld1 < x < fld2 | <- incoming wave
+        // <<< << <
+        if(left  && ((glob_coord >= fld1) && (glob_coord < fld2))) {
+          lambda2 = ksupp*pow(1.*(fld2-glob_coord)/(fld2-fld1), 3); 
+          //lambda  = (1.0 - 0.5*lambda1)/(1.0 + 0.5*lambda1); //second order
+          inside_damping_zone = true;
 
-          yee.ex(i,j,k) = exp(-lambda2)*yee.ex(i,j,k) + (1.0 - exp(-lambda2))*ex_ref(i,j,k);
-          yee.ey(i,j,k) = exp(-lambda2)*yee.ey(i,j,k) + (1.0 - exp(-lambda2))*ey_ref(i,j,k);
-          yee.ez(i,j,k) = exp(-lambda2)*yee.ez(i,j,k) + (1.0 - exp(-lambda2))*ez_ref(i,j,k);
-
-          yee.bx(i,j,k) = exp(-lambda2)*yee.bx(i,j,k) + (1.0 - exp(-lambda2))*bx_ref(i,j,k);
-          yee.by(i,j,k) = exp(-lambda2)*yee.by(i,j,k) + (1.0 - exp(-lambda2))*by_ref(i,j,k);
-          yee.bz(i,j,k) = exp(-lambda2)*yee.bz(i,j,k) + (1.0 - exp(-lambda2))*bz_ref(i,j,k);
-
+          t1 = exp(-lambda2);
+          t2 = 1.0-exp(-lambda2);
         }
-      }
-    }
 
-    // already damped region
-      
-    // Ydir: left || right
-    if (( ydir && ( (left && (jglob <= fld1)) || (right && (jglob > fld1)) )) || !ydir ) {
-      for(int i=istr; i<ifin; i++) {
-        iglob = (real_short)i + fields::Tile<D>::mins[0];
-        // Xdir: left || right
-        if (( xdir && ( (left && (iglob <= fld1)) || (right && (iglob > fld1)) )) || !xdir ) {
+        // right direction; 
+        // incoming wave -> | fld2 < x < fld1 
+        // > >> >>>
+        if(right && ((glob_coord <= fld1) && (glob_coord > fld2))) {
+          lambda2 = ksupp*pow(1.*(fld1-glob_coord)/(fld1-fld2), 3);
+          //lambda  = (1.0 - 0.5*lambda1)/(1.0 + 0.5*lambda1); //second order
+          inside_damping_zone = true;
+
+          t1 = 1.0-exp(-lambda2);
+          t2 = exp(-lambda2);
+        }
+
+        if(inside_damping_zone){
+            yee.ex(i,j,k) = t1*yee.ex(i,j,k) + t2*ex_ref(i,j,k);
+            yee.ey(i,j,k) = t1*yee.ey(i,j,k) + t2*ey_ref(i,j,k);
+            yee.ez(i,j,k) = t1*yee.ez(i,j,k) + t2*ez_ref(i,j,k);
+
+            yee.bx(i,j,k) = t1*yee.bx(i,j,k) + t2*bx_ref(i,j,k);
+            yee.by(i,j,k) = t1*yee.by(i,j,k) + t2*by_ref(i,j,k);
+            yee.bz(i,j,k) = t1*yee.bz(i,j,k) + t2*bz_ref(i,j,k);
+        }
+
+        // fully damped to reference; behind the damping zone
+        if ( (left &&  (glob_coord <= fld1)) 
+          || (right && (glob_coord >  fld1)) ) {
           yee.ex(i,j,k) = ex_ref(i,j,k);
           yee.ey(i,j,k) = ey_ref(i,j,k);
           yee.ez(i,j,k) = ez_ref(i,j,k);
@@ -149,7 +141,6 @@ void fields::damping::Tile<D,S>::damp_fields()
 }
 
 
-
 //--------------------------------------------------
 //--------------------------------------------------
 
@@ -162,3 +153,9 @@ template class fields::damping::Tile<2,+1>;
 template class fields::damping::Tile<2,-2>;
 template class fields::damping::Tile<2,+2>;
   
+template class fields::damping::Tile<3,-1>;
+template class fields::damping::Tile<3,+1>;
+template class fields::damping::Tile<3,-2>;
+template class fields::damping::Tile<3,+2>;
+template class fields::damping::Tile<3,-3>;
+template class fields::damping::Tile<3,+3>;

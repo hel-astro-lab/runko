@@ -254,15 +254,16 @@ if __name__ == "__main__":
     )
 
     # 3D box peripherals
-    slice_xy_writer = pyfld.FieldSliceWriter( conf.outdir, 
-            conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
-            0, 1)
-    slice_xz_writer = pyfld.FieldSliceWriter( conf.outdir, 
-            conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
-            1, 1)
-    slice_yz_writer = pyfld.FieldSliceWriter( conf.outdir, 
-            conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
-            2, 1)
+    if conf.threeD:
+        slice_xy_writer = pyfld.FieldSliceWriter( conf.outdir, 
+                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+                0, 1)
+        slice_xz_writer = pyfld.FieldSliceWriter( conf.outdir, 
+                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+                1, 1)
+        slice_yz_writer = pyfld.FieldSliceWriter( conf.outdir, 
+                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
+                2, 1)
 
     # --------------------------------------------------
     # reflecting leftmost wall
@@ -581,9 +582,10 @@ if __name__ == "__main__":
             prtcl_writer.write(grid, lap)  # test particles
             
             #box peripheries 
-            slice_xy_writer.write(grid, lap)
-            slice_xz_writer.write(grid, lap)
-            slice_yz_writer.write(grid, lap)
+            if conf.threeD:
+                slice_xy_writer.write(grid, lap)
+                slice_xz_writer.write(grid, lap)
+                slice_yz_writer.write(grid, lap)
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):

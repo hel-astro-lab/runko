@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*- 
 
 
+# dig out indices from inside the tile
+def get_index(tile, conf):
+    ind = tile.index
+    if conf.threeD:
+        i,j,k = ind
+    elif conf.twoD:
+        i,j = ind
+        k = 0
+
+    return i,j,k
+
+
 class Stagger:
 
     staggers = {
@@ -36,6 +48,10 @@ class Stagger:
         return ret
 
     def at(self, stg, stg0='rh'):
+
+        if stg == 'no': #no staggering at all; just dummy copy of self 
+            ret = Stagger(self.x, self.y ,self.z)
+
         offs = self.x2y(stg0, stg)
 
         ret = Stagger(self.x, self.y ,self.z)

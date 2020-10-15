@@ -98,7 +98,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       Wz1 = D >= 3 ? 0.5*(z1 + zr) - k1 : 0.0;
 
       Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
-    	Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
+      Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
   	  Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
       Fx2 = +q*(x2-xr);
