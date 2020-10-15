@@ -11,6 +11,11 @@
 #include "iter/allocator.h"
 #include "iter/devcall.h"
 
+#ifdef GPU
+#include <cuda_runtime_api.h>
+#else
+#endif
+
 namespace toolbox {
 
 
@@ -191,7 +196,12 @@ class Mesh
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
-      std::fill(ptr, ptr+count, T() ); // fill with zeros
+      T val();
+      #ifdef GPU
+        cudaMemset ( ptr, 0, count*sizeof(T) );
+      #else
+        std::fill(ptr, ptr+count, val ); // fill with zeros
+      #endif
     }
 
 
