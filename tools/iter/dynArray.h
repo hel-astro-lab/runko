@@ -19,16 +19,31 @@
             //
             //std::cout << "reallocing to " << newCap << std::endl;
             T *ptrTemp;// = new T[newCap];
+            #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptrTemp, newCap * sizeof(T))));
+            #else
+            ptrTemp = new T[newCap];
+            #endif
 
             size_t toCopyCount = cap;
 
             if(newCap < cap)
                 toCopyCount = newCap;
             
+            #ifdef GPU
+            cudaMemcpy(ptrTemp, ptr, sizeof(T)*toCopyCount, cudaMemcpyDefault);
+            #else
             std::memcpy(ptrTemp, ptr, sizeof(T)*toCopyCount);
+            #endif
+
             cap = newCap;
+            
+            #ifdef GPU
             cudaFree(ptr);
+            #else
+            delete[] ptr;
+            #endif
+
             ptr = ptrTemp;
         }
 
@@ -37,7 +52,11 @@
         DevVec(){
             //
             cap = DEFAULTSIZE / sizeof(T);
+            #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
+            #else
+            ptrTemp = new T[cap];
+            #endif
 
             count = 0;
         }
