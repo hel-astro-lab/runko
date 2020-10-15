@@ -55,7 +55,7 @@
             #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
             #else
-            ptrTemp = new T[cap];
+            ptr = new T[cap];
             #endif
 
             count = 0;
@@ -118,6 +118,7 @@
         {
             return count;
         }
+        DEVCALLABLE
         inline size_t capacity()
         {
             return cap;
@@ -125,6 +126,11 @@
         inline void clear()
         {
             count = 0;
+        }
+        DEVCALLABLE
+        inline T* data()
+        {
+            return ptr;
         }
 
         // used to fix the size

@@ -200,7 +200,7 @@ class Mesh
       #ifdef GPU
         cudaMemset ( ptr, 0, count*sizeof(T) );
       #else
-        std::fill(ptr, ptr+count, val ); // fill with zeros
+        std::fill(ptr, ptr+count, T() ); // fill with zeros
       #endif
     }
 
