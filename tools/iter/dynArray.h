@@ -25,7 +25,7 @@
             ptrTemp = new T[newCap];
             #endif
 
-            size_t toCopyCount = cap;
+            size_t toCopyCount = count;
 
             if(newCap < cap)
                 toCopyCount = newCap;
@@ -41,7 +41,7 @@
             #ifdef GPU
             cudaFree(ptr);
             #else
-            delete[] ptr;
+            delete ptr;
             #endif
 
             ptr = ptrTemp;
@@ -50,8 +50,8 @@
         public:
         //
         DevVec(){
-            //
-            cap = DEFAULTSIZE / sizeof(T);
+            // Todo: fails with small default sizes ?, related to Epart, or at least switching it to an std::vector fixes it too....
+            cap = 42;//DEFAULTSIZE / sizeof(T);
             #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
             #else
@@ -86,7 +86,7 @@
         inline void resize(size_t newCap)
         {
             //
-            if(newCap < cap)
+            if(newCap <= cap)
             {
                 count = newCap;
                 // todo go clear unused elements
@@ -138,7 +138,7 @@
         {
             count = newSize;
         }
-
+        
 
         inline std::vector<T> toVector() const
         {

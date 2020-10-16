@@ -115,7 +115,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   //--------------------------------------------------
   // Jx
   DEV_REGISTER
-  UniIter::iterate3D(
+  UniIter::UniIterHost::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jx, toolbox::Mesh<real_short, 3> &tmp)
   {
     //
@@ -160,13 +160,13 @@ nvtxRangePush(__PRETTY_FUNCTION__);
         static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
 
   UniIter::sync();
-  std::swap(mesh.jx, tmp);
+  //std::swap(mesh.jx, tmp);
 nvtxRangePush("copy over tmp");
 
-  //mesh.jx = tmp; // then copy from scratch to original arrays
+  mesh.jx = tmp; // then copy from scratch to original arrays
 nvtxRangePop();
 
-  UniIter::iterate3D(
+  UniIter::UniIterHost::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jy, toolbox::Mesh<real_short, 3> &tmp)
   {
     		tmp(i,j,k) =
@@ -210,11 +210,11 @@ nvtxRangePop();
         static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
 
   UniIter::sync();
-  //mesh.jy = tmp; // then copy from scratch to original arrays
-  std::swap(mesh.jy, tmp);
+  mesh.jy = tmp; // then copy from scratch to original arrays
+  //std::swap(mesh.jy, tmp);
 
 
-  UniIter::iterate3D(
+  UniIter::UniIterHost::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jz, toolbox::Mesh<real_short, 3> &tmp)
   {
     		tmp(i,j,k) =
@@ -258,8 +258,8 @@ nvtxRangePop();
         static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
 
   UniIter::sync();
-  //mesh.jz = tmp; // then copy from scratch to original arrays // calls the copy constructor and the data from tmp is actually copied back, a possibly better solution is to just swap the pointers
-  std::swap(mesh.jz, tmp);
+  mesh.jz = tmp; // then copy from scratch to original arrays // calls the copy constructor and the data from tmp is actually copied back, a possibly better solution is to just swap the pointers
+  //std::swap(mesh.jz, tmp);
 
 nvtxRangePop();
 
