@@ -87,7 +87,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   Realf C = 1.0 * tile.cfl * dt * corr;
 
 
-    UniIter::UniIterHost::iterate3D(
+    UniIter::iterate3D(
     [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
     {
 

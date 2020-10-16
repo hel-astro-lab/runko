@@ -44,7 +44,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     //auto maxs = tile.maxs;
 
 
-UniIter::UniIterHost::iterate([=] DEVCALLABLE (int n, fields::YeeLattice &yee){
+UniIter::iterate([=] DEVCALLABLE (int n, fields::YeeLattice &yee){
   //
       int i=0, j=0, k=0;
     real_long dx=0.0, dy=0.0, dz=0.0;

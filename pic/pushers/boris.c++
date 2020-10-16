@@ -55,7 +55,7 @@ void pic::BorisPusher<D,V>::push_container(
   #pragma omp parallel for
   for(int n=  n1; n<n2; n++) {
     */
-UniIter::UniIterHost::iterate([=] DEVCALLABLE (int n){
+UniIter::iterate([=] DEVCALLABLE (int n){
 
     real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
     real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;

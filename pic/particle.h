@@ -61,6 +61,13 @@ public:
 
 };
 
+struct to_other_tiles_struct{
+  //
+  int i;
+  int j;
+  int k;
+  size_t n;
+};
 
 /*! \brief Container of particles inside the tile
 *
@@ -86,6 +93,8 @@ class ParticleContainer {
 
   /// unique key generator
   std::pair<int,int> keygen();
+
+  int outgoing_count;
 
 
   protected:

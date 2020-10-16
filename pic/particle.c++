@@ -1,12 +1,17 @@
 
 #include "particle.h"
 #include "../tools/wrap.h"
+#include "../tools/iter/iter.h"
+#include "../tools/iter/devcall.h"
 
 #include <algorithm>
 #include <map>
 #include <utility>
 #include <mpi.h>
 #include <functional>
+
+#include <cuda_runtime_api.h>
+#include <nvtx3/nvToolsExt.h> 
 
 
 namespace pic {
@@ -63,6 +68,8 @@ ParticleContainer<D>::ParticleContainer()
 
   outgoing_particles.resize(optimal_message_size);
   outgoing_extra_particles.resize(optimal_message_size);
+
+  DEV_REGISTER
 }
 
 
@@ -225,7 +232,7 @@ void ParticleContainer<2>::check_outgoing_particles(
     if ((i == 0) && (j == 0)) continue; 
 
     if ( (i != 0) || (j != 0) || (k != 0) ) 
-      to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
+      to_other_tiles.push_back( {i,j,k,n} );
   }
 }
 
@@ -236,7 +243,10 @@ void ParticleContainer<3>::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   to_other_tiles.clear();
+  outgoing_count = 0;
 
   // unpack limits
   double 
@@ -252,18 +262,78 @@ void ParticleContainer<3>::check_outgoing_particles(
   int leny = static_cast<int>( ymax - ymin );
   int lenz = static_cast<int>( zmax - zmin );
 
-  int i0, j0, k0;
+  DEV_REGISTER
 
   // shortcut for particle locations
   real_prtcl* locn[3];
-  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
+  for( int i=0; i<3; i++) 
+    locn[i] = &( loc(i,0) );
 
-  int i,j,k; // relative indices
+/*
+  //getErrorCuda((cudaMallocManaged((void**)&count, sizeof(int))));
+  int maxCap = to_other_tiles.capacity();
+  // 
+  to_other_tiles.resize(to_other_tiles.capacity());
+  auto listPtr = to_other_tiles.data();
+  UniIter::sync();
+  UniIter::UniIterCU::iterate(
+    [=] __device__ (int n, int &count)
+    {
+      int i = 0;
+      int j = 0;
+      int k = 0;
+
+      int i0, j0, k0;
+      i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+      j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+      k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
+
+      if(i0 <  0)    i--; // left wrap
+      if(i0 >= lenx) i++; // right wrap
+
+      if(j0 <  0)    j--; // bottom wrap
+      if(j0 >= leny) j++; // top wrap
+
+      if(k0 <  0)    k--; // back
+      if(k0 >= lenz) k++; // front
+
+      if ( (i != 0) || (j != 0) || (k != 0) ) 
+      {
+        //to_other_tiles.push_back( {i,j,k,n} );
+        int pos = atomicAdd(&count, 1);
+//        int pos;
+//        #pragma omp atomic capture 
+//        {
+//          pos = count;
+//          count++;
+//        }
+        if(pos < maxCap)
+          listPtr[pos] = {i,j,k,n};
+      }
+    },size(), outgoing_count);
+    UniIter::sync();
+    // check outgoing_count and react to it...
+    if(outgoing_count > maxCap)
+    {
+      UniIter::sync();
+      std::cout << outgoing_count << " outgoing count over cap " << maxCap << std::endl;
+      to_other_tiles.clear();
+      to_other_tiles.reserve((outgoing_count));
+
+      // clear, realloc and recall
+      check_outgoing_particles(mins, maxs);
+    }
+    else{
+      to_other_tiles.resize(outgoing_count);
+    }
+    */
   for(size_t n=0; n<size(); n++) {
+    int i,j,k; // relative indices
     i = 0;
     j = 0;
     k = 0;
 
+    int i0, j0, k0;
     i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
     j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
     k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
@@ -278,8 +348,11 @@ void ParticleContainer<3>::check_outgoing_particles(
     if(k0 >= lenz) k++; // front
 
     if ( (i != 0) || (j != 0) || (k != 0) ) 
-      to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
+      to_other_tiles.push_back( {i,j,k,n} );
   }
+
+nvtxRangePop();
+
 }
 
 template<std::size_t D>
@@ -323,7 +396,13 @@ void ParticleContainer<D>::delete_transferred_particles()
   std::vector<int> to_be_deleted;
 
   // get transferred 
-  for(auto& elem : to_other_tiles) to_be_deleted.push_back( elem.second );
+  //for(auto& elem : to_other_tiles) 
+  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  {
+    const auto &elem = to_other_tiles[ii];
+
+    to_be_deleted.push_back( elem.n );
+  }
 
   delete_particles(to_be_deleted);
 }
@@ -357,16 +436,20 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
   int id, proc;
 
   int i;
-  for (auto&& elem : neigh.to_other_tiles) {
-    if(std::get<0>(elem.first) == 0 && std::get<1>(elem.first) == 0) continue; 
+  //for (auto&& elem : neigh.to_other_tiles) {
+  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
+  {
+    const auto &elem = neigh.to_other_tiles[ii];
+
+    if(elem.i == 0 && elem.j == 0) continue; 
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
 
-    if (std::get<0>(elem.first) == -dirs[0] &&
-        std::get<1>(elem.first) == -dirs[1] ) {
+    if (elem.i == -dirs[0] &&
+        elem.j == -dirs[1] ) {
 
-      i = elem.second;
+      i = elem.n;
 
       locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
       locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
@@ -404,20 +487,24 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
   int id, proc;
 
   int i;
-  for (auto&& elem : neigh.to_other_tiles) {
+  //for (auto&& elem : neigh.to_other_tiles) {
+  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
+  {
+    const auto &elem = neigh.to_other_tiles[ii];
+
       
-    if(std::get<0>(elem.first) == 0 && 
-       std::get<1>(elem.first) == 0 &&
-       std::get<2>(elem.first) == 0) continue; 
+    if(elem.i == 0 && 
+       elem.j == 0 &&
+       elem.k == 0) continue; 
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
 
-    if (std::get<0>(elem.first) == -dirs[0] &&
-        std::get<1>(elem.first) == -dirs[1] &&
-        std::get<2>(elem.first) == -dirs[2] ) {
+    if (elem.i == -dirs[0] &&
+        elem.j == -dirs[1] &&
+        elem.k == -dirs[2] ) {
 
-      i = elem.second;
+      i = elem.n;
 
       locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
       locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
@@ -497,8 +584,13 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
   // next, pack all other particles
   int i=1, ind;
-  for (auto&& elem : to_other_tiles) {
-    ind = elem.second;
+  
+//  for (auto&& elem : to_other_tiles) {
+  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  {
+    const auto &elem = to_other_tiles[ii];
+
+    ind = elem.n;
 
     if(i < optimal_message_size) {
       outgoing_particles.emplace_back( 
