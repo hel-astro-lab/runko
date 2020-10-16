@@ -10,6 +10,7 @@
 #include "../definitions.h"
 
 #include "../tools/iter/dynArray.h"
+#include "../tools/iter/allocator.h"
 
 
 
@@ -99,16 +100,16 @@ class ParticleContainer {
 
   size_t Nprtcls = 0;
 
-  std::array<DevVec<real_prtcl>, 3 > locArr;
-  std::array<DevVec<real_prtcl>, 3 > velArr;
-  std::array<DevVec<int>, 2 > indArr;
-  std::vector<real_prtcl> wgtArr;
+  std::array<std::vector<real_prtcl, ManagedAlloc<real_prtcl>>, 3 > locArr;
+  std::array<std::vector<real_prtcl, ManagedAlloc<real_prtcl>>, 3 > velArr;
+  std::array<std::vector<int, ManagedAlloc<int>>, 2 > indArr;
+  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> wgtArr;
 
   public:
     
   /// packed outgoing particles
-  std::vector<Particle> outgoing_particles;
-  std::vector<Particle> outgoing_extra_particles;
+  std::vector<Particle, ManagedAlloc<Particle>> outgoing_particles;
+  std::vector<Particle, ManagedAlloc<Particle>> outgoing_extra_particles;
 
   /// pack all particles in the container
   void pack_all_particles();
@@ -117,8 +118,8 @@ class ParticleContainer {
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  std::vector<Particle> incoming_particles;
-  std::vector<Particle> incoming_extra_particles;
+  std::vector<Particle, ManagedAlloc<Particle>> incoming_particles;
+  std::vector<Particle, ManagedAlloc<Particle>> incoming_extra_particles;
 
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();
@@ -129,13 +130,13 @@ class ParticleContainer {
   int optimal_message_size = 3000;
 
   //! particle specific electric field components
-  DevVec<real_prtcl> Epart;
+  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> Epart;
 
   //! particle specific magnetic field components
-  DevVec<real_prtcl> Bpart;
+  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> Bpart;
 
   //! multimap of particles going to other tiles
-  using mapType = DevVec<to_other_tiles_struct>;
+  using mapType = std::vector<to_other_tiles_struct, ManagedAlloc<to_other_tiles_struct>>;
   mapType to_other_tiles;
 
   // normalization factor
@@ -177,7 +178,10 @@ class ParticleContainer {
 
   virtual inline std::vector<real_prtcl> loc(size_t idim) const 
   {
-    return locArr[idim].toVector();
+    std::vector<real_prtcl> ret;
+    for(const auto& e: locArr[idim])
+      ret.push_back(e);
+    return ret;//locArr[idim];
   }
 
 /*
@@ -200,7 +204,11 @@ class ParticleContainer {
 
   virtual inline std::vector<real_prtcl> vel(size_t idim) const 
   {
-    return velArr[idim].toVector();
+    //return velArr[idim];
+    std::vector<real_prtcl> ret;
+    for(const auto& e: velArr[idim])
+      ret.push_back(e);
+    return ret;
   }
 /*
   virtual inline std::vector<real_prtcl>& vel(size_t idim)
@@ -222,7 +230,11 @@ class ParticleContainer {
 
   virtual inline std::vector<real_prtcl> wgt() const
   {
-    return wgtArr;
+    //return wgtArr;
+    std::vector<real_prtcl> ret;
+    for(const auto& e: wgtArr)
+      ret.push_back(e);
+    return ret;
   }
 
 /*
@@ -245,7 +257,11 @@ class ParticleContainer {
 
   virtual inline std::vector<int> id(size_t idim) const 
   {
-    return indArr[idim].toVector();
+    //return indArr[idim];
+    std::vector<int> ret;
+    for(const auto& e: indArr[idim])
+      ret.push_back(e);
+    return ret;
   }
 
 /*
