@@ -91,8 +91,8 @@ void fields::Binomial2<2>::solve(
 
 }
 
-#define GPU
-#ifdef GPU
+//#define GPU
+#ifdef GPU_1
 
     template<class F, class... Args>
     __global__ void iterate3dShared(F fun, int xMax, int yMax, int zMax, toolbox::Mesh<real_short, 3> *jj, toolbox::Mesh<real_short, 3> *tmp)

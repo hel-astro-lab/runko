@@ -6,7 +6,7 @@
 #define DEVCALLABLE
 #endif
 
-
+#define DEBUG_DEV
 #ifdef DEBUG_DEV
 #define getErrorCuda(command)\
 		command;\

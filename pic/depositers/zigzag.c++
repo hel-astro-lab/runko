@@ -41,7 +41,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     real_long c = tile.cfl;
     real_long q = container.q;
 
-    #ifdef GPU
+    #ifdef GPU_1
 
     UniIter::UniIterCU::iterate([=] __device__ (int n, fields::YeeLattice &yee){
       real_long invgam;
@@ -150,7 +150,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 UniIter::sync();
     #else
     // TODO: think SIMD (not possible due to ijk writing to yee)
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int n=n1; n<n2; n++) {
       real_long invgam;
       real_long x0, y0, z0, x1, x2, y1, y2, z1, z2;
@@ -230,60 +230,60 @@ UniIter::sync();
 
 
       // jx
-      #pragma omp atomic
+//      #pragma omp atomic
       yee.jx(i1,  j1,   k1)   += Fx1 * (1.0-Wy1) * (1.0-Wz1);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jx(i1,  j1+1, k1)   += Fx1 * Wy1       * (1.0-Wz1);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jx(i1,  j1,   k1+1) += Fx1 * (1.0-Wy1) * Wz1;
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jx(i1,  j1+1, k1+1) += Fx1 * Wy1       * Wz1;
 
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jx(i2,  j2,   k2)   += Fx2 * (1.0-Wy2) * (1.0-Wz2);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jx(i2,  j2+1, k2)   += Fx2 * Wy2       * (1.0-Wz2);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jx(i2,  j2,   k2+1) += Fx2 * (1.0-Wy2) * Wz2;
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jx(i2,  j2+1, k2+1) += Fx2 * Wy2       * Wz2;
 
       // jy
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i1,  j1,   k1)   += Fy1 * (1.0-Wx1) * (1.0-Wz1);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i1+1,j1,   k1)   += Fy1 * Wx1       * (1.0-Wz1);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i1  ,j1,   k1+1) += Fy1 * (1.0-Wx1) * Wz1;
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i1+1,j1,   k1+1) += Fy1 * Wx1       * Wz1;
       
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i2,  j2,   k2)   += Fy2 * (1.0-Wx2) * (1.0-Wz2);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i2+1,j2,   k2)   += Fy2 * Wx2       * (1.0-Wz2);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i2,  j2,   k2+1) += Fy2 * (1.0-Wx2) * Wz2;
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jy(i2+1,j2,   k2+1) += Fy2 * Wx2       * Wz2;
                             
       // jz
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i1,  j1,   k1)   += Fz1 * (1.0-Wx1) * (1.0-Wy1);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i1+1,j1,   k1)   += Fz1 * Wx1       * (1.0-Wy1);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i1,  j1+1, k1)   += Fz1 * (1.0-Wx1) * Wy1;
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i1+1,j1+1, k1)   += Fz1 * Wx1       * Wy1;
 
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i2,  j2,   k2)   += Fz2 * (1.0-Wx2) * (1.0-Wy2);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i2+1,j2,   k2)   += Fz2 * Wx2       * (1.0-Wy2);
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i2,  j2+1, k2)   += Fz2 * (1.0-Wx2) * Wy2;
-      #pragma omp atomic
+      //#pragma omp atomic
       yee.jz(i2+1,j2+1, k2)   += Fz2 * Wx2       * Wy2;
 
     }

@@ -245,6 +245,7 @@ class Mesh
         {
           UniAllocator::deallocate(ptr);
         }
+        std::cout << "allocating" << std::endl;
         ptr = UniAllocator::allocate<T>(count_);
         allocated = true;
         count = count_;

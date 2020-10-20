@@ -8,7 +8,7 @@
 #include <map>
 
 #ifdef GPU
-#define DEV_REGISTER UniAllocator::registerClass(*this);
+#define DEV_REGISTER //UniAllocator::registerClass(*this);
 #else
 #define DEV_REGISTER
 #endif
@@ -85,7 +85,7 @@ namespace
         static void deallocate(T *ptr)
         {
             #ifdef GPU
-            auto err = cudaFree(ptr);
+            getErrorCuda(cudaFree(ptr));
             // todo: check the error code
             #else
             delete[] ptr;
