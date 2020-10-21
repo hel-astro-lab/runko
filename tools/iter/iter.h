@@ -252,12 +252,13 @@ public:
     static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
     {
         //
-        //std::cout << "3d iterate" << std::endl;
-    #ifdef GPU_1
+        //std::cout << "3d iterate in " << __PRETTY_FUNCTION__ << std::endl;
+    #ifdef GPU
         UniIterCU::iterate3D(fun, xMax, yMax, zMax, args...);
     #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
     #endif
+        //std::cout << "3d iterate out " << __PRETTY_FUNCTION__ << std::endl;
     }
 
     template<class F, class... Args>
@@ -265,11 +266,15 @@ public:
     {
         //
         //std::cout << "3d iterate w plan" << std::endl;
-    #ifdef GPU_1
+        //std::cout << "3d iterate plan in " << __PRETTY_FUNCTION__ << std::endl;
+
+    #ifdef GPU
         UniIterCU::iterate3D(fun, plan, xMax, yMax, zMax, args...);
     #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
     #endif
+        //std::cout << "3d iterate plan out " << __PRETTY_FUNCTION__ << std::endl;
+
     }
     
     template<class F, class... Args>
@@ -277,11 +282,14 @@ public:
     {
         //
         //std::cout << "1d iterate" << std::endl;
-    #ifdef GPU_1
+        //std::cout << "iterate in " << __PRETTY_FUNCTION__ << std::endl;
+
+    #ifdef GPU
         UniIterCU::iterate(fun, max, args...);
     #else
         UniIterHost::iterate(fun, max, args...);
     #endif
+        //std::cout << "iterate out " << __PRETTY_FUNCTION__ << std::endl;
     }
 
     static void sync(){

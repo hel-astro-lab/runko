@@ -6,14 +6,14 @@
 #define DEVCALLABLE
 #endif
 
-#define DEBUG_DEV
+//#define DEBUG_DEV
 #ifdef DEBUG_DEV
 #define getErrorCuda(command)\
 		command;\
 		cudaDeviceSynchronize();\
 		if (cudaPeekAtLastError() != cudaSuccess){\
 			std::cout << #command << " : " << cudaGetErrorString(cudaGetLastError())\
-			 << " in file " << __FILE__ << " at line " << __LINE__ << std::endl;\
+			 << " in file " << __FILE__ << " at line " << __LINE__ << " in function " << __PRETTY_FUNCTION__ << std::endl;\
              exit((1));\
 		}
 #endif

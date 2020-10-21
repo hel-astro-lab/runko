@@ -197,7 +197,7 @@ class Mesh
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
       T val();
-      #ifdef GPU_1
+      #ifdef GPU
         cudaMemset ( ptr, 0, count*sizeof(T) );
       #else
         std::fill(ptr, ptr+count, T() ); // fill with zeros
@@ -245,7 +245,6 @@ class Mesh
         {
           UniAllocator::deallocate(ptr);
         }
-        std::cout << "allocating" << std::endl;
         ptr = UniAllocator::allocate<T>(count_);
         allocated = true;
         count = count_;

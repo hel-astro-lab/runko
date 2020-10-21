@@ -113,13 +113,15 @@ if(ENABLE_CUDA)
      set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../pic/particle.c++ PROPERTIES LANGUAGE CUDA)
+     # this will give wrong results if the file passed to nvcc 
+     # set_source_files_properties(../pic/particle.c++ PROPERTIES LANGUAGE CUDA)
      target_compile_definitions(pyrunko PUBLIC GPU)
 
      set_property(TARGET pyrunko PROPERTY CUDA_STANDARD 17)
 
      # need extended lambda support to be able to pass lambdas to interation functions
      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr -std=c++17")
+     message( ${CMAKE_CUDA_FLAGS} )
 endif()
 
 

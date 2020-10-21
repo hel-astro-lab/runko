@@ -41,7 +41,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     real_long c = tile.cfl;
     real_long q = container.q;
 
-    #ifdef GPU_1
+    #ifdef GPU
 
     UniIter::UniIterCU::iterate([=] __device__ (int n, fields::YeeLattice &yee){
       real_long invgam;

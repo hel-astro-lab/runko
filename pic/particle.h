@@ -11,6 +11,7 @@
 
 #include "../tools/iter/dynArray.h"
 #include "../tools/iter/allocator.h"
+#include "../tools/iter/managed_alloc.h"
 
 
 
@@ -109,8 +110,8 @@ class ParticleContainer {
   public:
     
   /// packed outgoing particles
-  std::vector<Particle, ManagedAlloc<Particle>> outgoing_particles;
-  std::vector<Particle, ManagedAlloc<Particle>> outgoing_extra_particles;
+  std::vector<Particle> outgoing_particles;
+  std::vector<Particle> outgoing_extra_particles;
 
   /// pack all particles in the container
   void pack_all_particles();
@@ -119,8 +120,8 @@ class ParticleContainer {
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  std::vector<Particle, ManagedAlloc<Particle>> incoming_particles;
-  std::vector<Particle, ManagedAlloc<Particle>> incoming_extra_particles;
+  std::vector<Particle> incoming_particles;
+  std::vector<Particle> incoming_extra_particles;
 
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();
@@ -137,7 +138,7 @@ class ParticleContainer {
   std::vector<real_prtcl, ManagedAlloc<real_prtcl>> Bpart;
 
   //! multimap of particles going to other tiles
-  using mapType = std::vector<to_other_tiles_struct, ManagedAlloc<to_other_tiles_struct>>;
+  using mapType = std::vector<to_other_tiles_struct>;
   mapType to_other_tiles;
 
   // normalization factor
