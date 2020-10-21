@@ -92,7 +92,7 @@ void fields::Binomial2<2>::solve(
 }
 
 //#define GPU
-#ifdef GPU_1
+#ifdef GPU
 
     template<class F, class... Args>
     __global__ void iterate3dShared(F fun, int xMax, int yMax, int zMax, toolbox::Mesh<real_short, 3> *jj, toolbox::Mesh<real_short, 3> *tmp)
@@ -252,7 +252,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   auto gridArgs = UniIter::UniIterCU::getGrid3({
         static_cast<int>(tile.mesh_lengths[2]),
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0])},{4,4,4});
+        static_cast<int>(tile.mesh_lengths[0])},{8,8,4});
 
   getErrorCuda(((iterate3dShared<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, 
         static_cast<int>(tile.mesh_lengths[2]),
@@ -285,6 +285,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   UniIter::sync();
   //mesh.jz = tmp; // then copy from scratch to original arrays // calls the copy constructor and the data from tmp is actually copied back, a possibly better solution is to just swap the pointers
   std::swap(mesh.jz, tmp);
+
 */
 
 
@@ -312,6 +313,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   UniIter::sync();
   //mesh.jz = tmp; // then copy from scratch to original arrays // calls the copy constructor and the data from tmp is actually copied back, a possibly better solution is to just swap the pointers
   std::swap(mesh.jz, tmp);
+  
 
 nvtxRangePop();
 

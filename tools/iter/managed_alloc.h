@@ -31,7 +31,7 @@ struct ManagedAlloc
 		auto err = cudaMallocManaged((void**)&ptr, n * sizeof(T));
 		if (err == cudaSuccess)
 			return ptr;
-
+		std::cout << "failed to alloc " << err << std::endl;
 		throw std::bad_alloc();
 	}
 	void deallocate(T* p, std::size_t) noexcept 
