@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*- 
 
+import numpy as np
 import pyrunko.pic as pypic
 
 
@@ -50,10 +51,15 @@ def initialize_tile(tile, indx, n, conf):
             container = pypic.twoD.ParticleContainer()
 
         # alternate injection between - and + charged prtcls
+        # mass is normalized to units of m_e
         if sps % 2 == 0:
             container.q = -conf.qe
+            container.m = np.abs(conf.me)
         else:
             container.q = -conf.qi
+            container.m = np.abs(conf.mi)
+
+        #print('container charge/mass', container.q, container.m)
 
         # reserve memory for particles
         Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc

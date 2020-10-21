@@ -54,8 +54,9 @@ void pic::BorisPusherGrav<D,V>::push_container(
   real_long c = cfl;
   real_long cinv = 1.0/c;
 
-  // charge (sign only)
-  real_long qm = sign(container.q);
+  // charge-to-mass ratio (sign only because fields are in units of q)
+  real_long qm = sign(container.q)/container.m;
+  real_long m = container.m;
 
   real_long loc0n;
   real_long vel0n, vel1n, vel2n;
@@ -113,8 +114,7 @@ void pic::BorisPusherGrav<D,V>::push_container(
     gamt = sqrt(1.0 + uxt*uxt + uyt*uyt + uzt*uzt);
       
     //gravx = c*g0*gamt*(cenx - loc0n);
-    //TODO: add mass
-    gravx = c*g0*gamt*sign(cenx - loc0n);
+    gravx = c*g0*m*gamt*sign(cenx - loc0n);
     gravy = 0;
     gravz = 0;
 

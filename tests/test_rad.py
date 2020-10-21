@@ -74,6 +74,7 @@ class Conf:
     outdir = "out"
 
     qe = 1.0
+    qi = 1.0
 
     #def __init__(self):
     #    print("initialized...")

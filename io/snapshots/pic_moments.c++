@@ -42,7 +42,6 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   // local variables
   real_long gam;
   real_long mass;
-  real_long charge;
   real_long x0, y0, z0;
   real_long u0, v0, w0;
   int nparts;
@@ -63,7 +62,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
     // loop over species
     for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
       auto& container = tile.get_container(ispc);
-      charge = container.q; // species charge
+      mass = container.m; // species mass
       nparts = container.size();
 
       real_prtcl* loc[3];
@@ -80,7 +79,6 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       int n1 = 0;
       int n2 = nparts;
       for(int n=n1; n<n2; n++) {
-        mass = std::abs(charge);
 
         // prtcl coordinate location; cast to double for the duration of this algorithm
         x0 = static_cast<real_long>( loc[0][n] );
@@ -97,7 +95,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         if(D >= 2) jff = limit(jff, 0, tile.mesh_lengths[1]-1);
         if(D >= 3) kff = limit(kff, 0, tile.mesh_lengths[2]-1);
 
-        // update rho arrays
+        // update rho arrays; this is interpreted as mass density
         yee.rho(iff,jff,kff) += mass;
 
 

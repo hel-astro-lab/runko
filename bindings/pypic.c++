@@ -80,6 +80,7 @@ auto declare_prtcl_container(
     pic::ParticleContainer<D>>(m, pyclass_name.c_str())
     .def(py::init<>())
     .def_readwrite("q",   &pic::ParticleContainer<D>::q)
+    .def_readwrite("m",   &pic::ParticleContainer<D>::m)
     .def("reserve",       &pic::ParticleContainer<D>::reserve)
     .def("size",          &pic::ParticleContainer<D>::size)
     .def("add_particle",  &pic::ParticleContainer<D>::add_particle)

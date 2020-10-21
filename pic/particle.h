@@ -128,8 +128,11 @@ class ParticleContainer {
   using mapType = std::multimap<std::tuple<int,int,int>, int>;
   mapType to_other_tiles;
 
-  // normalization factor
+  // particle charge 
   double q = 1.0; 
+
+  // particle mass
+  double m = 1.0; 
 
   /// Constructor 
   ParticleContainer();

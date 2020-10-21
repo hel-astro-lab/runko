@@ -48,8 +48,8 @@ void pic::BorisPusher<D,V>::push_container(
   real_long c = cfl;
   real_long cinv = 1.0/c;
 
-  // charge (sign only)
-  real_long qm = sign(container.q);
+  // charge-to-mass ratio (sign only because fields are in units of q)
+  real_long qm = sign(container.q)/container.m;
 
   real_long vel0n, vel1n, vel2n;
 
