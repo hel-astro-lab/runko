@@ -497,6 +497,90 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   }
 
 
+// add versions
+
+void add_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int halo, int ito, int ifro, int in, int ind=0)
+{
+    //
+    UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+      h++;
+      lhs_in.jx(ito-in*h, j, k) += rhs_in.jx(ifro-in*h, j, k);
+      lhs_in.jy(ito-in*h, j, k) += rhs_in.jy(ifro-in*h, j, k);
+      lhs_in.jz(ito-in*h, j, k) += rhs_in.jz(ifro-in*h, j, k);
+    }, Ny, Nz, halo, lhs, rhs);
+}
+
+
+void add_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int halo, int jto, int jfro, int jn, int ind=0)
+{
+    UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+      g++;
+      lhs_in.jx(i, jto-jn*g, k) += rhs_in.jx(i, jfro-jn*g, k);
+      lhs_in.jy(i, jto-jn*g, k) += rhs_in.jy(i, jfro-jn*g, k);
+      lhs_in.jz(i, jto-jn*g, k) += rhs_in.jz(i, jfro-jn*g, k);
+    }, Nx, Nz, halo, lhs, rhs);
+}
+
+
+void add_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int halo, int kto, int kfro, int kn, int ind=0)
+{
+  UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
+      g++;
+      lhs_in.jx(i, j, kto-kn*g) += rhs_in.jx(i, j, kfro-kn*g);
+      lhs_in.jy(i, j, kto-kn*g) += rhs_in.jy(i, j, kfro-kn*g);
+      lhs_in.jz(i, j, kto-kn*g) += rhs_in.jz(i, j, kfro-kn*g);
+  }, Nx, Ny, halo, lhs, rhs);
+}
+
+
+
+void add_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, int jto, int jfro, int kto, int kfro, int jn, int kn, int ind=0)
+{   
+    UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+      g++;
+      h++;
+      lhs_in.jx(i, jto-jn*h, kto-kn*g) += rhs_in.jx(i, jfro-jn*h, kfro-kn*g);
+      lhs_in.jy(i, jto-jn*h, kto-kn*g) += rhs_in.jy(i, jfro-jn*h, kfro-kn*g);
+      lhs_in.jz(i, jto-jn*h, kto-kn*g) += rhs_in.jz(i, jfro-jn*h, kfro-kn*g);
+    }, Nx, halo, halo, lhs, rhs);
+  }
+
+  void add_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
+{   
+    UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+      g++;
+      h++;
+      lhs_in.jx(ito-in*h, j, kto-kn*g) += rhs_in.jx(ifro-in*h, j, kfro-kn*g);
+      lhs_in.jy(ito-in*h, j, kto-kn*g) += rhs_in.jy(ifro-in*h, j, kfro-kn*g);
+      lhs_in.jz(ito-in*h, j, kto-kn*g) += rhs_in.jz(ifro-in*h, j, kfro-kn*g);
+    }, Ny, halo, halo, lhs, rhs);
+  }
+
+  void add_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
+{
+    UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+      g++;
+      h++;
+      lhs_in.jx(ito-in*h, jto-jn*g, k) += rhs_in.jx(ifro-in*h, jfro-jn*g, k);
+      lhs_in.jy(ito-in*h, jto-jn*g, k) += rhs_in.jy(ifro-in*h, jfro-jn*g, k);
+      lhs_in.jz(ito-in*h, jto-jn*g, k) += rhs_in.jz(ifro-in*h, jfro-jn*g, k);
+  
+    }, Nz, halo, halo, lhs, rhs);
+  }
+
+  void add_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
+  {
+    UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+      f++;
+      g++;
+      h++;
+      lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f);
+      lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f);
+      lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f);
+    }, halo, halo, halo, lhs, rhs);
+  }
+
+
 /// Update Yee grid boundaries
 template<>
 void Tile<1>::update_boundaries(corgi::Grid<1>& grid) 
@@ -820,7 +904,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 template<>
 void Tile<3>::exchange_currents(corgi::Grid<3>& grid) 
 {
-  //nvtxRangePush(__FUNCTION__);
+  nvtxRangePush(__PRETTY_FUNCTION__);
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -829,6 +913,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
   Tileptr tpr; 
 
   int halo = 3;
+  int ind = 0;
 
   auto& mesh = get_yee(); // target as a reference to update into
 
@@ -867,21 +952,14 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
             // vertical
             if (jn == 0) { 
-              for(int h=1; h<=halo; h++)
-                add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
-
+              add_vert_yee_halo(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in, ind);
             // horizontal
             } else if (in == 0) { 
-              for(int g=1; g<=halo; g++)
-                add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
-
+             add_horz_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn, ind);
             // diagonal
             } else { 
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
-                }
-              }
+              add_z_pencil_yee_halo(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn, ind);
+
             } 
          
           // 3D case with kn != 0
@@ -889,54 +967,36 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             
             // infront/behind directions
             if (in == 0 && jn == 0) { 
-              for(int g=1; g<=halo; g++)
-                add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
-
+              add_face_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn, ind);
             // 3D generalized diagonal locations
             // If the finite-difference scheme is purely non-diagonal
             // then these can be dropped off.
               
             // vertical wedges
             } else if (jn == 0) {
+              add_y_pencil_yee_halo(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
 
-              // y pencils
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
-                }
-              }
 
             // horizontal wedges
             } else if (in == 0) {
-
               // x pencils
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
-                }
-              }
+              add_x_pencil_yee_halo(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
 
             // corners
             } else {
+              add_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
 
-              // pointwise
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  for(int f=1; f<=halo; f++) {
-                    add_point_yee(mesh, mpr, 
-                        ito -in*h, jto -jn*g, kto -kn*f,
-                        ifro-in*h, jfro-jn*g, kfro-kn*f);
-                  }
-                }
-              }
             } 
+            ind++;
 
           } // 3D cases with kn != 0
         } // if tpr
       }
     }
   }
-  //nvtxRangePop();
+  UniIter::sync();
+
+  nvtxRangePop();
 }
 
 
@@ -953,10 +1013,14 @@ void Tile<D>::cycle_yee()
 template<std::size_t D>
 void Tile<D>::clear_current() 
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   auto& yee = this->get_yee();
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();
+nvtxRangePop();
+
 }
 
 
