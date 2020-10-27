@@ -162,6 +162,24 @@ class Mesh
       std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
     }
 
+    /// fill halos with zeros
+    void clear_halos() {
+
+        for(int k=-H;  k<this->Nz+H; k++) {
+        for(int j=-H;  j<this->Ny+H; j++) {
+        for(int i=-H;  i<this->Nx+H; i++) {
+
+            if(
+                (i >= 0 && i < this->Nx) &&  
+                (j >= 0 && j < this->Ny) &&  
+                (k >= 0 && k < this->Nz) 
+              ) { continue; }
+
+            mat[ indx(i,j,k) ] = 0.0;
+        }}}
+
+    }
+
 
     /// serialize 3D data cube into 1D vector
     std::vector<T> serialize() const {
@@ -456,10 +474,9 @@ inline void Mesh<T,H>::copy_vert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
   for(int k=0; k<(int)this->Nz; k++) {
-    for(int j=0; j<(int)this->Ny; j++) { 
-      this->operator()(lhsI, j, k) = rhs(rhsI, j, k);
-    }
-  }
+  for(int j=0; j<(int)this->Ny; j++) { 
+    this->operator()(lhsI, j, k) = rhs(rhsI, j, k);
+  }}
 }
 
 /// Add vertical slice
@@ -470,10 +487,9 @@ inline void Mesh<T,H>::add_vert(Mesh<T,H2>& rhs, int lhsI, int rhsI) {
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
   for(int k=0; k<(int)this->Nz; k++) {
-    for(int j=0; j<(int)this->Ny; j++) { 
-      this->operator()(lhsI, j, k) += rhs(rhsI, j, k);
-    }
-  }
+  for(int j=0; j<(int)this->Ny; j++) { 
+    this->operator()(lhsI, j, k) += rhs(rhsI, j, k);
+  }}
 }
 
 
@@ -485,10 +501,9 @@ inline void Mesh<T,H>::copy_horz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 
   for(int k=0; k<(int)this->Nz; k++) {
-    for(int i=0; i<(int)this->Nx; i++) { 
-      this->operator()(i, lhsJ, k) = rhs(i, rhsJ, k);
-    }
-  }
+  for(int i=0; i<(int)this->Nx; i++) { 
+    this->operator()(i, lhsJ, k) = rhs(i, rhsJ, k);
+  }}
 }
   
 /// Add horizontal slice 
@@ -499,10 +514,9 @@ inline void Mesh<T,H>::add_horz(Mesh<T,H2>& rhs, int lhsJ, int rhsJ) {
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 
   for(int k=0; k<(int)this->Nz; k++) {
-    for(int i=0; i<(int)this->Nx; i++) { 
-      this->operator()(i, lhsJ, k) += rhs(i, rhsJ, k);
-    }
-  }
+  for(int i=0; i<(int)this->Nx; i++) { 
+    this->operator()(i, lhsJ, k) += rhs(i, rhsJ, k);
+  }}
 }
 
 
@@ -514,10 +528,9 @@ inline void Mesh<T,H>::copy_face(Mesh<T,H2>& rhs, int lhsK, int rhsK) {
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
   for(int j=0; j<(int)this->Ny; j++) {
-    for(int i=0; i<(int)this->Nx; i++) { 
-      this->operator()(i, j, lhsK) = rhs(i, j, rhsK);
-    }
-  }
+  for(int i=0; i<(int)this->Nx; i++) { 
+    this->operator()(i, j, lhsK) = rhs(i, j, rhsK);
+  }}
 }
   
 /// Add face slice 
@@ -528,10 +541,9 @@ inline void Mesh<T,H>::add_face(Mesh<T,H2>& rhs, int lhsK, int rhsK) {
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
   for(int j=0; j<(int)this->Ny; j++) {
-    for(int i=0; i<(int)this->Nx; i++) { 
-      this->operator()(i, j, lhsK) += rhs(i, j, rhsK);
-    }
-  }
+  for(int i=0; i<(int)this->Nx; i++) { 
+    this->operator()(i, j, lhsK) += rhs(i, j, rhsK);
+  }}
 }
 
 //--------------------------------------------------
