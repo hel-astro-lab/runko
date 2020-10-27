@@ -15,6 +15,9 @@ class FFE2
   int Ny;
   int Nz;
 
+  real_short eta = 1.0e-3; //resistivity for diffusion
+  real_short reltime = 1.0; // e.b relaxation time (in units of dt)
+
   /// interpolated arrays
   toolbox::Mesh<real_short, 0> bxf;
   toolbox::Mesh<real_short, 0> byf;
@@ -102,6 +105,8 @@ class FFE2
   /// limit E < B
   void limit_e(Tile<D>& tile);
 
+  /// diffusion
+  void add_diffusion(Tile<D>& tile);
 
 };
 

@@ -120,11 +120,14 @@ void bind_ffe(py::module& m_sub)
   py::class_< ffe::FFE2<3> > bffe2(m_3d, "FFE2");
   bffe2
     .def(py::init<int, int, int>())
+    .def_readwrite("eta",    &ffe::FFE2<3>::eta)
+    .def_readwrite("reltime",&ffe::FFE2<3>::reltime)
     .def("comp_rho",     &ffe::FFE2<3>::comp_rho)
     .def("push_eb",      &ffe::FFE2<3>::push_eb)
     .def("add_jperp",    &ffe::FFE2<3>::add_jperp)
     .def("add_jpar",     &ffe::FFE2<3>::add_jpar)
-    .def("limit_e",      &ffe::FFE2<3>::limit_e);
+    .def("limit_e",      &ffe::FFE2<3>::limit_e)
+    .def("add_diffusion",&ffe::FFE2<3>::add_diffusion);
 
 
   py::class_< ffe::FFE4<3> > bffe4(m_3d, "FFE4");

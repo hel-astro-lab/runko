@@ -14,10 +14,17 @@ void Tile<D>::deposit_current()
 {
   YeeLattice& mesh = get_yee();
 
-  mesh.ex -= mesh.jx;
-  mesh.ey -= mesh.jy;
-  mesh.ez -= mesh.jz;
+  for(int k=0; k<mesh.Nz; k++) {
+  for(int j=0; j<mesh.Ny; j++) {
+  for(int i=0; i<mesh.Nx; i++) {
+    mesh.ex(i,j,k) -= mesh.jx(i,j,k);
+    mesh.ey(i,j,k) -= mesh.jy(i,j,k);
+    mesh.ez(i,j,k) -= mesh.jz(i,j,k);
+  }}}
 
+  //mesh.ex -= mesh.jx;
+  //mesh.ey -= mesh.jy;
+  //mesh.ez -= mesh.jz;
 }
 
 
@@ -662,12 +669,14 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 
         // add
         if (jn == 0) { // vertical
-          for(int h=1; h<=halo; h++)
+          for(int h=1; h<=halo; h++) {
             add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
+          }
 
         } else if (in == 0) { // horizontal
-          for(int g=1; g<=halo; g++)
+          for(int g=1; g<=halo; g++) {
             add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
+          }
 
         } else { // diagonal
           for(int h=1; h<=halo; h++) {

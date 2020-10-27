@@ -512,11 +512,12 @@ void ffe::FFE4<3>::add_diffusion(ffe::Tile<3>& tile)
   real_short dt = tile.cfl;
 
   // finite difference tables for derivatives D order O as cDoO
-  //real_short c2o4[7] = {  0.0, -1./12.,  4./3., -5./2.,   4./3., -1./12., 0.0 };
-  //real_short c3o4[7] = { 1./8, -1.0,    13./8.,  0.0,   -13./8.,  1.0,  -1./8.};
-  //real_short c4o4[7] = {-1./6,  2.0,   -13./2., 28./3., -13./2.,  2.0,  -1./6.};
-  //real_short c5o2[7] = { -0.5,  2.0,    -5./2.,  0.0,    5./2., -2.0,    0.5  };
-  real_short c6o1[7] = {  1.0, -6.0,     15.0,  -20.,    15.,   -6.0,    1.0  };
+  //real_short coef[7] = {  0.0, -1./12.,  4./3., -5./2.,   4./3., -1./12., 0.0 }; //c2o4
+  //real_short coef[7] = { 1./8, -1.0,    13./8.,  0.0,   -13./8.,  1.0,  -1./8.}; //c3o4
+    real_short coef[7] = {  0.,   1.,     -4.,     6.,     -4.,     1.0,   0.   };   //c4o2
+  //real_short coef[7] = {-1./6,  2.0,   -13./2., 28./3., -13./2.,  2.0,  -1./6.}; //c4o4
+  //real_short coef[7] = { -0.5,  2.0,    -5./2.,  0.0,    5./2., -2.0,    0.5  }; //c5o2
+  //real_short coef[7] = {  1.0, -6.0,     15.0,  -20.,    15.,   -6.0,    1.0  }; //c6o1
 
   // NOTE: no need to interpolate becase only adding e_i = dm.e_i components
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
@@ -544,9 +545,9 @@ void ffe::FFE4<3>::add_diffusion(ffe::Tile<3>& tile)
 
         // generalized FD laplacian
         for(int s=-3; s<=3; s++) {
-            dm.ex(i,j,k) += dt*eta*( c6o1[s+3]*m.ex(i+s,j,k) + c6o1[s+3]*m.ex(i,j+s,k) + c6o1[s+3]*m.ex(i,j,k+s) );
-            dm.ey(i,j,k) += dt*eta*( c6o1[s+3]*m.ey(i+s,j,k) + c6o1[s+3]*m.ey(i,j+s,k) + c6o1[s+3]*m.ey(i,j,k+s) );
-            dm.ez(i,j,k) += dt*eta*( c6o1[s+3]*m.ez(i+s,j,k) + c6o1[s+3]*m.ez(i,j+s,k) + c6o1[s+3]*m.ez(i,j,k+s) );
+            dm.ex(i,j,k) += dt*eta*( coef[s+3]*m.ex(i+s,j,k) + coef[s+3]*m.ex(i,j+s,k) + coef[s+3]*m.ex(i,j,k+s) );
+            dm.ey(i,j,k) += dt*eta*( coef[s+3]*m.ey(i+s,j,k) + coef[s+3]*m.ey(i,j+s,k) + coef[s+3]*m.ey(i,j,k+s) );
+            dm.ez(i,j,k) += dt*eta*( coef[s+3]*m.ez(i+s,j,k) + coef[s+3]*m.ez(i,j+s,k) + coef[s+3]*m.ez(i,j,k+s) );
         }
       }
     }
