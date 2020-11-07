@@ -1,5 +1,8 @@
 #pragma once
 
+// math constants
+#define PI 3.14159265358979323846 
+
 
 // Old type definitions
 // FIXME: remove completely and switch to the new one below.
