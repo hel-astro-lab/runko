@@ -17,6 +17,8 @@
 #include "../em-fields/filters/filter.h"
 #include "../em-fields/filters/digital.h"
 
+#include "../em-fields/boundaries/conductor.h"
+
 #include "../io/writers/writer.h"
 #include "../io/writers/fields.h"
 #include "../io/snapshots/fields.h"
@@ -435,6 +437,26 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::Binomial2<3>>(m_3d, "Binomial2", fieldsfilter3d)
     .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<3>::solve);
+
+
+  //--------------------------------------------------
+  // EM boundary conditions
+
+  // 3D rotating conductor
+  py::class_<fields::Conductor<3>>(m_3d, "Conductor")
+    .def(py::init<>())
+    .def_readwrite("B0",    &fields::Conductor<3>::B0)
+    .def_readwrite("radius",&fields::Conductor<3>::radius)
+    .def_readwrite("period",&fields::Conductor<3>::period)
+    .def_readwrite("chi",   &fields::Conductor<3>::chi)
+    .def_readwrite("phase", &fields::Conductor<3>::phase)
+    .def_readwrite("cenx",  &fields::Conductor<3>::cenx)
+    .def_readwrite("ceny",  &fields::Conductor<3>::ceny)
+    .def_readwrite("cenz",  &fields::Conductor<3>::cenz)
+    .def("insert_em",       &fields::Conductor<3>::insert_em)
+    .def("update_e",        &fields::Conductor<3>::update_e)
+    .def("update_b",        &fields::Conductor<3>::update_b);
+
 
 
   //--------------------------------------------------
