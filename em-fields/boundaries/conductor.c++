@@ -38,6 +38,24 @@ double fields::Conductor<3>::dipole(
 //real_short S(real_short r, real_short r0, real_short delta) { return 0.5 * (1.0 - tanh((r - r0) / delta)); }
 
 
+class StaggeredSphericalCoordinates
+{
+  double cx, cy, cz;
+  double r;
+
+  public:
+
+  StaggeredSphericalCoordinates( double cenx, double ceny, double cenz, double radius) 
+      : cx(cenx), cy(ceny), cz(cenz),r(radius)
+  {}
+
+  double x(double i, double stg) { return (i - cx + stg)/r; }
+  double y(double j, double stg) { return (j - cy + stg)/r; }
+  double z(double k, double stg) { return (k - cz + stg)/r; }
+};
+
+
+
 
 template<>
 void fields::Conductor<3>::insert_em(
@@ -54,37 +72,47 @@ void fields::Conductor<3>::insert_em(
   real_short iglob, jglob, kglob;
   real_short xr,yr,zr;
 
+  // helper class for staggered grid positions
+  StaggeredSphericalCoordinates coord(cenx,ceny,cenz,radius);
+
+
   // set transverse directions to zero to make this conductor
   for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+3; k++) 
   for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) 
   for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+3; i++) {
 
     //-----------
-    // coordinates
-    // TODO staggering
-      
+    // global grid coordinates
     iglob = static_cast<real_short>(i) + mins[0];
     jglob = static_cast<real_short>(j) + mins[1];
     kglob = static_cast<real_short>(k) + mins[2];
 
-    // x coord: 1,0,0
-    // y coord: 0,1,0
-    // z coord: 0,0,1
-    
-    xr = (iglob - cenx)/radius;
-    yr = (jglob - ceny)/radius;
-    zr = (kglob - cenz)/radius;
 
     //-----------
     // magnetic field
     
+    // x coord staggering for B: 1,0,0
+    xr = coord.x(iglob, 0.5);
+    yr = coord.y(jglob, 0.0);
+    zr = coord.z(kglob, 0.0);
     bxd = B0*dipole(xr,yr,zr,0);
+
+    // y coord staggering for B: 0,1,0
+    xr = coord.x(iglob, 0.0);
+    yr = coord.y(jglob, 0.5);
+    zr = coord.z(kglob, 0.0);
     byd = B0*dipole(xr,yr,zr,1);
+
+    // y coord staggering for B: 0,1,0
+    xr = coord.x(iglob, 0.0);
+    yr = coord.y(jglob, 0.0);
+    zr = coord.z(kglob, 0.5);
     bzd = B0*dipole(xr,yr,zr,2);
 
     yee.bx(i,j,k) = bxd;
     yee.by(i,j,k) = byd;
     yee.bz(i,j,k) = bzd;
+
 
     //-----------
     // electric field
