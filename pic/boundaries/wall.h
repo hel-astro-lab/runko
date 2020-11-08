@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "../../pic/tile.h"
-#include "../../em-fields/damping_tile.h"
+#include "../../em-fields/boundaries/damping_tile.h"
 
 
 namespace pic {

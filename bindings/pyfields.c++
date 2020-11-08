@@ -8,7 +8,6 @@
 #include "../tools/mesh.h"
 
 #include "../em-fields/tile.h"
-#include "../em-fields/damping_tile.h"
 
 #include "../em-fields/propagator/propagator.h"
 #include "../em-fields/propagator/fdtd2.h"
@@ -17,6 +16,7 @@
 #include "../em-fields/filters/filter.h"
 #include "../em-fields/filters/digital.h"
 
+#include "../em-fields/boundaries/damping_tile.h"
 #include "../em-fields/boundaries/conductor.h"
 
 #include "../io/writers/writer.h"

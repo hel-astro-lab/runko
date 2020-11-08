@@ -12,10 +12,10 @@ set (TOOLS_FILES
 set (FIELDS_FILES 
      pyfields.c++
      ../em-fields/tile.c++ 
-     ../em-fields/damping_tile.c++
      ../em-fields/propagator/fdtd2.c++ 
      ../em-fields/propagator/fdtd4.c++ 
      ../em-fields/filters/digital.c++
+     ../em-fields/boundaries/damping_tile.c++
      ../em-fields/boundaries/conductor.c++
      )
 
