@@ -11,6 +11,7 @@
 
 #include "../em-fields/propagator/propagator.h"
 #include "../em-fields/propagator/fdtd2.h"
+#include "../em-fields/propagator/fdtd2_pml.h"
 #include "../em-fields/propagator/fdtd4.h"
 
 #include "../em-fields/filters/filter.h"
@@ -384,6 +385,20 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::FDTD2<3>>(m_3d, "FDTD2", fieldspropag3d)
     .def(py::init<>())
     .def_readwrite("corr",     &fields::FDTD2<3>::corr);
+
+  // fdtd2 propagator with perfectly matched ouer layer
+  py::class_<fields::FDTD2_pml<3>>(m_3d, "FDTD2_pml", fieldspropag3d)
+    .def(py::init<>())
+    .def_readwrite("cenx",     &fields::FDTD2_pml<3>::cenx)
+    .def_readwrite("ceny",     &fields::FDTD2_pml<3>::ceny)
+    .def_readwrite("cenz",     &fields::FDTD2_pml<3>::cenz)
+    .def_readwrite("radx",     &fields::FDTD2_pml<3>::radx)
+    .def_readwrite("rady",     &fields::FDTD2_pml<3>::rady)
+    .def_readwrite("radz",     &fields::FDTD2_pml<3>::radz)
+    .def_readwrite("rad_lim",  &fields::FDTD2_pml<3>::rad_lim)
+    .def_readwrite("norm_abs", &fields::FDTD2_pml<3>::norm_abs)
+    .def_readwrite("corr",     &fields::FDTD2_pml<3>::corr)
+    .def("push_eb",            &fields::FDTD2_pml<3>::push_eb);
 
 
   // fdtd4 propagator
