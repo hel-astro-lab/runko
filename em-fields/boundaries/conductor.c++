@@ -191,10 +191,10 @@ void fields::Conductor<3>::update_b(
 
   // smoothing scales for different components
   real_short delta = 2.0; 
-  //real_short delta_erad   = 1.0; 
-  //real_short delta_eperp  = 0.5;
-  //real_short delta_brad   = 1.0;
-  //real_short delta_bperp  = 1.0;
+  //real_short delta_erad   = 1.0*delta; 
+  //real_short delta_eperp  = 0.5*delta;
+  //real_short delta_brad   = 1.0*delta;
+  //real_short delta_bperp  = 1.0*delta;
 
   // Tile limits
   auto mins = tile.mins;
@@ -244,15 +244,11 @@ void fields::Conductor<3>::update_b(
       //s = shape(r, radius-offs_brad, delta_brad);
       //bxrad =     s*(bxd - (bxd*xr + byd*yr + bzd*zr)*xr/r/r)
       //        (1-s)*(bxi - (bxi*xr + byi*yr + bzi*zr)*xr/r/r);
+      //
       //s = shape(r, radius-offs_bperp, delta_bperp);
       // Bx perp  component 
       //bxperp =      s*(bxd*xr + byd*yr + bzd*zr)*xr/r/r 
       //        + (1-s)*(bxi*xr + byi*yr + bzi*zr)*xr/r/r;
-
-      //// Bx radial  component 
-      //s = shape(r, radius-offs_brad, delta_brad);
-      //bxrad =     s*(bxd - (bxd*xr + byd*yr + bzd*zr)*xr/r/r)
-      //        (1-s)*(bxi - (bxi*xr + byi*yr + bzi*zr)*xr/r/r);
 
 
       //--------------------------------------------------
@@ -263,7 +259,9 @@ void fields::Conductor<3>::update_b(
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       // interior diple field
+      //bxd = B0*dipole(xr,yr,zr,0);
       byd = B0*dipole(xr,yr,zr,1);
+      //bzd = B0*dipole(xr,yr,zr,2);
       byi = yee.by(i,j,k);
       s = shape(r, radius, delta);
       bynew = s*byd  + (1-s)*byi;
@@ -277,6 +275,8 @@ void fields::Conductor<3>::update_b(
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       // interior diple field
+      //bxd = B0*dipole(xr,yr,zr,0);
+      //byd = B0*dipole(xr,yr,zr,1);
       bzd = B0*dipole(xr,yr,zr,2);
       bzi = yee.bz(i,j,k);
       s = shape(r, radius, delta);
@@ -288,9 +288,7 @@ void fields::Conductor<3>::update_b(
       yee.by(i,j,k) = bynew;
       yee.bz(i,j,k) = bznew;
     }
-
   }
-
 }
 
 
@@ -315,19 +313,18 @@ void fields::Conductor<3>::update_e(
 
   // angular velocity
   real_short Omega = 2.0*PI/period;
-
   if(period < EPS) Omega = 0.0; // reality check
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
 
-  // smoothing scales for different components
+  // smoothing scales for Brad/Bperp components
   real_short delta = 2.0; 
-  //real_short delta_erad   = 1.0; 
-  //real_short delta_eperp  = 0.5;
-  //real_short delta_brad   = 1.0;
-  //real_short delta_bperp  = 1.0;
+  //real_short delta_erad   = 1.0*delta; 
+  //real_short delta_eperp  = 0.5*delta;
+  //real_short delta_brad   = 1.0*delta;
+  //real_short delta_bperp  = 1.0*delta;
 
   // Tile limits
   auto mins = tile.mins;
@@ -372,7 +369,7 @@ void fields::Conductor<3>::update_e(
 
       bzd = B0*dipole(xr,yr,zr,2);
       
-      vx = -Omega*yr;
+      //vx = -Omega*yr;
       vy = +Omega*xr;
       exd = -vy*bzd;
       exi = yee.ex(i,j,k);
@@ -393,7 +390,7 @@ void fields::Conductor<3>::update_e(
       bzd = B0*dipole(xr,yr,zr,2);
 
       vx = -Omega*yr;
-      vy = +Omega*xr;
+      //vy = +Omega*xr;
       eyd = vx*bzd;
       eyi = yee.ey(i,j,k);
 
