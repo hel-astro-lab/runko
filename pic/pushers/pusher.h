@@ -36,12 +36,19 @@ class Pusher
     }
   }
 
+  /// push all containers in tile
   void solve(pic::Tile<D>& tile)
   {
     for(auto&& container : tile.containers)
       push_container(container, tile.cfl);
   }
 
+
+  /// push spesific containers in tile
+  void solve(pic::Tile<D>& tile, int ispc)
+  {
+    push_container(tile.containers[ispc], tile.cfl);
+  }
 
 };
 

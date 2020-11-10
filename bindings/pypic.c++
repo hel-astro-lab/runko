@@ -275,7 +275,8 @@ void bind_pic(py::module& m_sub)
   py::class_< pic::Pusher<2,3>> picpusher2d(m_2d, "Pusher");
   picpusher2d
     .def(py::init<>())
-    .def("solve", &pic::Pusher<2,3>::solve);
+    .def("solve", py::overload_cast<pic::Tile<2>&>(     &pic::Pusher<2,3>::solve))
+    .def("solve", py::overload_cast<pic::Tile<2>&, int>(&pic::Pusher<2,3>::solve));
 
   // Boris pusher
   py::class_<pic::BorisPusher<2,3>>(m_2d, "BorisPusher", picpusher2d)
@@ -309,7 +310,9 @@ void bind_pic(py::module& m_sub)
   py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
   picpusher3d
     .def(py::init<>())
-    .def("solve", &pic::Pusher<3,3>::solve);
+    //.def("solve", &pic::Pusher<3,3>::solve);
+    .def("solve", py::overload_cast<pic::Tile<3>&>(     &pic::Pusher<3,3>::solve))
+    .def("solve", py::overload_cast<pic::Tile<3>&, int>(&pic::Pusher<3,3>::solve));
 
   // Boris pusher
   py::class_<pic::BorisPusher<3,3>>(m_3d, "BorisPusher", picpusher3d)
