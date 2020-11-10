@@ -311,12 +311,26 @@ inline bool h5io::TestPrtclWriter<D>::write(
   if( grid.comm.rank() == 0 ) {
 
     // build filename
-    std::string full_filename = 
-      fname + "/" +
-      file_name + 
-      "_" +
-      std::to_string(lap) +
-      extension;
+    std::string full_filename;
+
+    if(ispc == 0) {
+        full_filename = 
+          fname + "/" +
+          file_name + 
+          "_" +
+          std::to_string(lap) +
+          extension;
+    } else {
+        full_filename = 
+          fname + "/" +
+          file_name + 
+          "-" +
+          std::to_string(ispc) +
+          "_" +
+          std::to_string(lap) +
+          extension;
+    }
+
     //std::cout << "QW: " << full_filename << std::endl;
 
     // open file and write

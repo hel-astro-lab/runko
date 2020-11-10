@@ -424,12 +424,14 @@ void bind_pic(py::module& m_sub)
 
   py::class_<h5io::TestPrtclWriter<2>>(m_2d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::TestPrtclWriter<2>::write);
+    .def("write",   &h5io::TestPrtclWriter<2>::write)
+    .def_readwrite("ispc", &h5io::TestPrtclWriter<2>::ispc);
 
   // 3D test particles
   py::class_<h5io::TestPrtclWriter<3>>(m_3d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::TestPrtclWriter<3>::write);
+    .def("write",   &h5io::TestPrtclWriter<3>::write)
+    .def_readwrite("ispc", &h5io::TestPrtclWriter<3>::ispc);
 
   //--------------------------------------------------
   // physical moments of distribution
