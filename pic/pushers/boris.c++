@@ -3,6 +3,7 @@
 #include <cmath> 
 #include "../../tools/signum.h"
 #include "../../tools/iter/iter.h"
+#include <nvtx3/nvToolsExt.h> 
 
 using toolbox::sign;
 
@@ -11,6 +12,8 @@ void pic::BorisPusher<D,V>::push_container(
     pic::ParticleContainer<D>& container, 
     double cfl) 
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   int nparts = container.size();
 
   // initialize pointers to particle arrays
@@ -116,6 +119,7 @@ UniIter::iterate([=] DEVCALLABLE (int n){
   }, nparts);
 
 UniIter::sync();
+nvtxRangePop();
 
 }
 

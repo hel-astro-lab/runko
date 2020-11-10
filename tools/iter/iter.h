@@ -296,7 +296,11 @@ public:
         #ifdef GPU
         auto err = cudaDeviceSynchronize();
         // todo: check the error code
-        //std::cout << err << std::endl;
+        if(err != cudaSuccess)
+        {
+            std::cout << "sync error " << err << std::endl;
+            exit(-1);
+        }
         #else
         #endif
         //

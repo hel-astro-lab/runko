@@ -8,6 +8,7 @@
 #include "../corgi/corgi.h"
 #include "../em-fields/tile.h"
 #include "particle.h"
+#include"../tools/iter/allocator.h"
 
 
 namespace pic {
@@ -23,7 +24,7 @@ using namespace mpi4cpp;
 template<std::size_t D>
 class Tile :
   virtual public fields::Tile<D>, 
-  virtual public  corgi::Tile<D> 
+  virtual public  corgi::Tile<D>
 {
 
 

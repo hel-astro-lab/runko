@@ -55,6 +55,7 @@ template<std::size_t D>
 ParticleContainer<D>::ParticleContainer()
 { 
 
+nvtxRangePush(__PRETTY_FUNCTION__);
 
   // Get the number of processes
   //MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
@@ -69,11 +70,13 @@ ParticleContainer<D>::ParticleContainer()
   outgoing_extra_particles.resize(optimal_message_size);
 
   DEV_REGISTER
+nvtxRangePop();
 }
 
 
 template<std::size_t D>
 void ParticleContainer<D>::reserve(size_t N) {
+nvtxRangePush(__PRETTY_FUNCTION__);
 
   // always reserve at least 1 element to ensure proper array initialization
   if (N <= 0) N = 1;
@@ -86,25 +89,30 @@ void ParticleContainer<D>::reserve(size_t N) {
   // reserve 1d N x D array for particle-specific fields
   Epart.reserve(N*3);
   Bpart.reserve(N*3);
+nvtxRangePop();
 }
 
 template<std::size_t D>
 void ParticleContainer<D>::resize(size_t N)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   for(size_t i=0; i<3; i++) locArr[i].resize(N);
   for(size_t i=0; i<3; i++) velArr[i].resize(N);
   for(size_t i=0; i<2; i++) indArr[i].resize(N);
   wgtArr.resize(N);
   Nprtcls = N;
+nvtxRangePop();
 }
 
 template<std::size_t D>
 void ParticleContainer<D>::shrink_to_fit()
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   for(size_t i=0; i<3; i++) locArr[i].shrink_to_fit();
   for(size_t i=0; i<3; i++) velArr[i].shrink_to_fit();
   for(size_t i=0; i<2; i++) indArr[i].shrink_to_fit();
   wgtArr.shrink_to_fit();
+nvtxRangePop();
 }
 
 
@@ -167,6 +175,7 @@ void ParticleContainer<D>::add_identified_particle (
     real_prtcl prtcl_wgt,
     int _id, int _proc)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   assert(prtcl_loc.size() == 3);
   assert(prtcl_vel.size() == 3);
 
@@ -178,6 +187,7 @@ void ParticleContainer<D>::add_identified_particle (
   indArr[1].push_back(_proc);
 
   Nprtcls++;
+nvtxRangePop();
 }
 
 template<>
@@ -194,6 +204,7 @@ void ParticleContainer<2>::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   to_other_tiles.clear();
 
   // unpack limits
@@ -233,6 +244,7 @@ void ParticleContainer<2>::check_outgoing_particles(
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.push_back( {i,j,k,n} );
   }
+nvtxRangePop();
 }
 
 
@@ -241,6 +253,7 @@ void ParticleContainer<2>::check_outgoing_particles(
 template<std::size_t D>
 void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted) 
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
   real_prtcl* locn[3];
@@ -270,12 +283,14 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
+nvtxRangePop();
 }
 
 
 template<std::size_t D>
 void ParticleContainer<D>::delete_transferred_particles()
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   std::vector<int> to_be_deleted;
 
   // get transferred 
@@ -288,6 +303,7 @@ void ParticleContainer<D>::delete_transferred_particles()
   }
 
   delete_particles(to_be_deleted);
+nvtxRangePop();
 }
 
 template<>
@@ -311,6 +327,7 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
     std::array<double,3>& global_maxs
     )
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
 
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
@@ -350,67 +367,17 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
       add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
     }
   }
+nvtxRangePop();
 
   }
 
 
-template<>
-void ParticleContainer<3>::transfer_and_wrap_particles( 
-    ParticleContainer& neigh,
-    std::array<int,3>    dirs, 
-    std::array<double,3>& global_mins, 
-    std::array<double,3>& global_maxs
-    )
-{
 
-  // particle overflow from tiles is done in shortest precision
-  // to avoid rounding off errors and particles left in a limbo
-  // between tiles.
-  real_prtcl locx, locy, locz, velx, vely, velz, wgt;
-  int id, proc;
-
-  int i;
-  //for (auto&& elem : neigh.to_other_tiles) {
-  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
-  {
-    const auto &elem = neigh.to_other_tiles[ii];
-
-      
-    if(elem.i == 0 && 
-       elem.j == 0 &&
-       elem.k == 0) continue; 
-
-    // NOTE: directions are flipped (- sign) so that they are
-    // in directions in respect to the current tile
-
-    if (elem.i == -dirs[0] &&
-        elem.j == -dirs[1] &&
-        elem.k == -dirs[2] ) {
-
-      i = elem.n;
-
-      locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
-
-      velx = neigh.vel(0, i);
-      vely = neigh.vel(1, i);
-      velz = neigh.vel(2, i);
-
-      wgt  = neigh.wgt(i);
-
-      id   = neigh.id(0,i);
-      proc = neigh.id(1,i);
-
-      add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
-    }
-  }
-
-  }
 
 template<std::size_t D>
 void ParticleContainer<D>::pack_all_particles()
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
@@ -423,26 +390,27 @@ void ParticleContainer<D>::pack_all_particles()
   }
 
   // first particle is always the message info
-  outgoing_particles.emplace_back(np);
+  outgoing_particles.push_back({np});
 
   // next, pack all other particles
   int i=1;
   for(size_t ind=0; ind < size(); ind++) {
     if(i < optimal_message_size) {
-      outgoing_particles.emplace_back( 
+      outgoing_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
         wgt(ind), 
-        id(0, ind), id(1, ind) );
+        id(0, ind), id(1, ind) });
     } else {
-      outgoing_extra_particles.emplace_back( 
+      outgoing_extra_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
         wgt(ind), 
-        id(0, ind), id(1, ind) );
+        id(0, ind), id(1, ind) });
     }
     i++;
   }
+nvtxRangePop();
 
   //outgoing_extra_particles.shrink_to_fit();
 }
@@ -451,6 +419,7 @@ void ParticleContainer<D>::pack_all_particles()
 template<std::size_t D>
 void ParticleContainer<D>::pack_outgoing_particles()
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
@@ -463,7 +432,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
   }
 
   // first particle is always the message info
-  outgoing_particles.emplace_back(np);
+  outgoing_particles.push_back({np});
 
   // next, pack all other particles
   int i=1, ind;
@@ -476,17 +445,17 @@ void ParticleContainer<D>::pack_outgoing_particles()
     ind = elem.n;
 
     if(i < optimal_message_size) {
-      outgoing_particles.emplace_back( 
+      outgoing_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
         wgt(ind), 
-        id(0, ind), id(1, ind) );
+        id(0, ind), id(1, ind) });
     } else {
-      outgoing_extra_particles.emplace_back( 
+      outgoing_extra_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
         wgt(ind), 
-        id(0, ind), id(1, ind) );
+        id(0, ind), id(1, ind) });
     }
 
     i++;
@@ -496,6 +465,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
+nvtxRangePop();
 
   }
 
@@ -503,6 +473,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
 template<std::size_t D>
 void ParticleContainer<D>::unpack_incoming_particles()
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
   real_prtcl locx, locy, locz, velx, vely, velz, wgts;
   int ids, proc;
 
@@ -547,6 +518,7 @@ void ParticleContainer<D>::unpack_incoming_particles()
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
+nvtxRangePop();
 
   }
 

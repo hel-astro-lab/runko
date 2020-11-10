@@ -110,8 +110,8 @@ class ParticleContainer {
   public:
     
   /// packed outgoing particles
-  std::vector<Particle> outgoing_particles;
-  std::vector<Particle> outgoing_extra_particles;
+  DevVec<Particle> outgoing_particles;
+  DevVec<Particle> outgoing_extra_particles;
 
   /// pack all particles in the container
   void pack_all_particles();

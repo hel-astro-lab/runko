@@ -13,6 +13,7 @@
         T *ptr;
         size_t count;
         size_t cap;
+        float overAllocFactor = 1.2;
 
         inline void realloc(size_t newCap)
         {
@@ -50,8 +51,7 @@
         public:
         //
         DevVec(){
-            // Todo: fails with small default sizes ?, related to Epart, or at least switching it to an std::vector fixes it too....
-            cap = 42;//DEFAULTSIZE / sizeof(T);
+            cap = DEFAULTSIZE / sizeof(T);
             #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
             #else
@@ -71,7 +71,7 @@
                 return;
             }
             else{
-                realloc(cap*2);
+                realloc((cap+1)*overAllocFactor);
                 push_back(val);
             }
         }
@@ -85,7 +85,7 @@
 
         inline void resize(size_t newCap)
         {
-            //
+            //std::cout << "resize " << std::endl;
             if(newCap <= cap)
             {
                 count = newCap;
@@ -93,8 +93,10 @@
             }
             else
             {
-                realloc(newCap);
+                // here used to be a bug, resizing only happened to curent cap ....
+                realloc((newCap+1)*overAllocFactor);
             }
+            count = newCap;
         }
 
         inline void shrink_to_fit()
@@ -137,6 +139,10 @@
         inline void set_size(size_t newSize)
         {
             count = newSize;
+        }
+        inline bool empty()
+        {
+            return count == 0;
         }
         
 

@@ -120,9 +120,22 @@ namespace
     };
 
     std::map<void*, void*> UniAllocator::registeredAddesses = std::map<void*, void*>();
-
-
     //https://howardhinnant.github.io/allocator_boilerplate.html
 
-
 }
+
+
+class ManagedParent {
+    public:
+#ifdef GPU
+    void *operator new(size_t len) {
+        void *ptr;
+        std::cout << "managed alloc " << __PRETTY_FUNCTION__ << std::endl;
+        cudaMallocManaged(&ptr, len);
+        return ptr;
+    }
+    void operator delete(void *ptr) {
+        cudaFree(ptr);
+    }
+#endif
+};
