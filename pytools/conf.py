@@ -22,6 +22,10 @@ class Configuration(object):
         parser = ConfigParser()
         parser.optionxform = str  # make option names case sensitive
 
+        # store filename
+        self.conf_filename = file_names[0]
+
+
         found = parser.read(file_names)
 
         if not found:

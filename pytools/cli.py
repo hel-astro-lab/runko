@@ -46,6 +46,17 @@ def create_output_folders(conf):
     if not os.path.exists(conf.outdir + "/full_output"):
         os.makedirs(conf.outdir + "/full_output")
 
+    # finally, copy current configuration to the folder
+    #if True:
+    try:
+        # only try this because we dont want to require shutils
+        import shutil
+        shutil.copyfile(
+                conf.conf_filename, 
+                conf.outdir + "/" + conf.conf_filename)
+    except:
+        pass
+
 
 # check for existing restart files; 
 # manage io_status object accordingly with current lap, restart directory, etc...
