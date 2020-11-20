@@ -69,7 +69,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   outgoing_particles.resize(optimal_message_size);
   outgoing_extra_particles.resize(optimal_message_size);
 
-  DEV_REGISTER
+  //DEV_REGISTER
 nvtxRangePop();
 }
 

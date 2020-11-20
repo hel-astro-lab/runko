@@ -110,8 +110,8 @@ class ParticleContainer {
   public:
     
   /// packed outgoing particles
-  DevVec<Particle> outgoing_particles;
-  DevVec<Particle> outgoing_extra_particles;
+  std::vector<Particle> outgoing_particles;
+  std::vector<Particle> outgoing_extra_particles;
 
   /// pack all particles in the container
   void pack_all_particles();
@@ -132,13 +132,13 @@ class ParticleContainer {
   int optimal_message_size = 3000;
 
   //! particle specific electric field components
-  DevVec<real_prtcl> Epart;
+  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> Epart;
 
   //! particle specific magnetic field components
-  DevVec<real_prtcl> Bpart;
+  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> Bpart;
 
   //! multimap of particles going to other tiles
-  using mapType = DevVec<to_other_tiles_struct>;
+  using mapType = std::vector<to_other_tiles_struct, ManagedAlloc<to_other_tiles_struct>>;
   mapType to_other_tiles;
 
   // normalization factor

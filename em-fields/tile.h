@@ -59,7 +59,7 @@ class YeeLattice
     jy{Nx, Ny, Nz},
     jz{Nx, Ny, Nz}
   { 
-    DEV_REGISTER
+    //DEV_REGISTER
   }
 
   // copy ctor

@@ -204,7 +204,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
   //--------------------------------------------------
   // Jx
-  DEV_REGISTER
+  //DEV_REGISTER
 
 // make with shared memory 
     auto fun = 

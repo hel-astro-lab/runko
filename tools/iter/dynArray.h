@@ -1,11 +1,21 @@
+//
+// Created by Fredrik Robertsen on 07/11/2020.
+//
+
+#ifndef PHELL_DEVVEC_H
+#define PHELL_DEVVEC_H
+
+
 // default size in bytes
 #define DEFAULTSIZE 4096
 
 #include <cstring>
 #include <iostream>
 
+#ifdef GPU_no
 #include <cuda_runtime_api.h>
-#include "devcall.h"
+#endif
+//#include "devcall.h"
 
     template <class T>
     class DevVec{
@@ -14,13 +24,14 @@
         size_t count;
         size_t cap;
         float overAllocFactor = 1.2;
+        bool allocated;
 
         inline void realloc(size_t newCap)
         {
             //
             //std::cout << "reallocing to " << newCap << std::endl;
             T *ptrTemp;// = new T[newCap];
-            #ifdef GPU
+            #ifdef GPU_no
             getErrorCuda((cudaMallocManaged((void**)&ptrTemp, newCap * sizeof(T))));
             #else
             ptrTemp = new T[newCap];
@@ -30,36 +41,98 @@
 
             if(newCap < cap)
                 toCopyCount = newCap;
-            
-            #ifdef GPU
+
+            #ifdef GPU_no
             cudaMemcpy(ptrTemp, ptr, sizeof(T)*toCopyCount, cudaMemcpyDefault);
             #else
             std::memcpy(ptrTemp, ptr, sizeof(T)*toCopyCount);
             #endif
 
             cap = newCap;
+
+            for (size_t i = toCopyCount; i < newCap; i++)
+            {
+                ptrTemp[i] = T{};
+            }
             
-            #ifdef GPU
+
+            #ifdef GPU_no
             cudaFree(ptr);
             #else
-            delete ptr;
+            delete[] ptr;
             #endif
 
             ptr = ptrTemp;
+            //std::cout << "reallocing out " << std::endl;
+
         }
 
         public:
         //
-        DevVec(){
+        DevVec(): allocated(true){
+            //std::cout << "devVec create " << std::endl;
+
             cap = DEFAULTSIZE / sizeof(T);
-            #ifdef GPU
+            #ifdef GPU_no
             getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
             #else
             ptr = new T[cap];
             #endif
 
             count = 0;
+            //std::cout << "devVec create out" << std::endl;
         }
+        ~DevVec(){
+            //std::cout << "devVec deconstruct " << std::endl;
+
+            if(allocated)
+            {
+                #ifdef GPU_no
+                cudaFree(ptr);
+                #else
+                delete[] ptr;
+                #endif
+            }
+            //std::cout << "devVec deconstruct out" << std::endl;
+        }
+
+        // copy constructor
+        DevVec (const DevVec &old_obj)
+        {
+            //
+            //std::cout << "devVec copy ctr "<< old_obj.count << " " << old_obj.cap << std::endl;
+
+            cap = old_obj.cap;
+            count = old_obj.count;
+            allocated = old_obj.allocated;
+
+            #ifdef GPU_no
+            getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
+            cudaMemcpy(ptr, old_obj.ptr, sizeof(T)*count, cudaMemcpyDefault);
+            #else
+            ptr = new T[cap];
+            std::memcpy(ptr, old_obj.ptr, sizeof(T)*count);
+            #endif
+            
+            for (size_t i = count; i < cap; i++)
+            {
+                ptr[i] = T{};
+            }
+            
+        }
+
+        // move constructor
+        DevVec ( DevVec && other) :allocated(false)
+        {
+            //std::cout << "devVec move ctr "<< other.count << " " << other.cap << std::endl;
+            count = 0;
+            cap = 0;
+            std::swap(count, other.count);
+            std::swap(cap, other.cap);
+            std::swap(ptr, other.ptr);
+            std::swap(allocated, other.allocated);
+        }
+
 
         inline void push_back(T val)
         {
@@ -85,7 +158,6 @@
 
         inline void resize(size_t newCap)
         {
-            //std::cout << "resize " << std::endl;
             if(newCap <= cap)
             {
                 count = newCap;
@@ -93,8 +165,7 @@
             }
             else
             {
-                // here used to be a bug, resizing only happened to curent cap ....
-                realloc((newCap+1)*overAllocFactor);
+                realloc(newCap);
             }
             count = newCap;
         }
@@ -104,33 +175,47 @@
             // does f all since it does not have to...
         }
 
-        inline T & operator[](size_t ind)
+        //DEVCALLABLE
+        inline T & operator[](const size_t &ind)
         {
             //
+            
+            //if(ind >= cap)
+            //    std::cout << "error " << ind << " " << cap << std::endl;
+                
             return ptr[ind];
         }
 
-        inline const T &operator[](size_t ind) const
+        //DEVCALLABLE
+        inline const T &operator[](const size_t &ind) const
         {
             //
+            
+            //if(ind >= cap)
+            //    std::cout << "error " << ind << " " << cap << std::endl;
+                
             return ptr[ind];
         }
 
+        //DEVCALLABLE
         inline size_t size()
         {
             return count;
         }
-        DEVCALLABLE
+
+        //DEVCALLABLE
         inline size_t capacity()
         {
             return cap;
         }
+
         inline void clear()
         {
             count = 0;
         }
-        DEVCALLABLE
-        inline T* data()
+
+        //DEVCALLABLE
+        inline T*& data()
         {
             return ptr;
         }
@@ -140,11 +225,25 @@
         {
             count = newSize;
         }
+
+        //DEVCALLABLE
         inline bool empty()
         {
             return count == 0;
         }
-        
+
+        //DEVCALLABLE
+        inline T* begin()
+        {
+            return ptr;
+        }
+
+        //DEVCALLABLE
+        inline T* end()
+        {
+            return ptr+count;
+        }
+
 
         inline std::vector<T> toVector() const
         {
@@ -158,3 +257,5 @@
             return ret;
         }
     };
+
+#endif

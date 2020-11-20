@@ -2,6 +2,8 @@
 
 #include <cuda_runtime_api.h>
 
+#include "allocator.h"
+
 template <class T>
 struct ManagedAlloc
 {
@@ -27,16 +29,20 @@ struct ManagedAlloc
 
 	[[nodiscard]] T* allocate(std::size_t n) 
     {
+		return UniAllocator::allocate<T>(n);
+		/*
 		T* ptr;
 		auto err = cudaMallocManaged((void**)&ptr, n * sizeof(T));
 		if (err == cudaSuccess)
 			return ptr;
 		std::cout << "failed to alloc " << err << std::endl;
 		throw std::bad_alloc();
+		*/
 	}
 	void deallocate(T* p, std::size_t) noexcept 
     {
-		cudaFree(p);
+		//cudaFree(p);
+		UniAllocator::deallocate(p);
 	}
 
 //     value_type*

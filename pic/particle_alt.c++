@@ -40,7 +40,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   int leny = static_cast<int>( ymax - ymin );
   int lenz = static_cast<int>( zmax - zmin );
 
-  DEV_REGISTER
+  //DEV_REGISTER
 
   // shortcut for particle locations
   real_prtcl* locn[3];

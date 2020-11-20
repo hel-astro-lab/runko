@@ -12,6 +12,7 @@
 #include <map>
 #include <optional>
 //#define DEBUG_DEV
+//#define GPU
 
 #include "devcall.h"
 
@@ -24,18 +25,18 @@ namespace {
 namespace DevKernels
 {
     template<class F, class... Args>
-    __global__ void iterateKern(F fun, int max, Args* ... args)
+    __global__ void iterateKern(F fun, int max, Args& ... args)
     {
         //
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
         if(idx >= max) return;
 
-        fun(idx, *args...);
+        fun(idx, args...);
     }
 
     template<class F, class... Args>
-    __global__ void iterate3dKern(F fun, int xMax, int yMax, int zMax, Args* ... args)
+    __global__ void iterate3dKern(F fun, int xMax, int yMax, int zMax, Args& ... args)
     {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         int idy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -44,7 +45,7 @@ namespace DevKernels
         if(idy >= yMax) return;
         if(idz >= zMax) return;
 
-        fun(idx, idy, idz, *args...);
+        fun(idx, idy, idz, args...);
     }
 
     template<class T>
@@ -109,23 +110,6 @@ class UniIter{
         static std::map<void*, void*> registeredAddesses;
 
 
-
-        template<class T>
-        static T *getDevPtr(T &t)
-        {
-          //printf("getting %p \n", &t);
-          //std::cout << "getting dev ptr" << std::endl;
-          T *ptr;
-          auto err = cudaHostGetDevicePointer(&ptr, &t, 0);
-          if(err != cudaSuccess) {
-            std::cout << cudaGetErrorString(cudaGetLastError()) << " in file "
-                      << __FILE__ << " at line " << __LINE__ << std::endl;
-            //return reg(t);
-
-            }
-          return ptr;
-        }
-
         static auto getGrid3(std::tuple<int, int, int> max)
         {
             dim3 block = { 8, 8, 1 };
@@ -155,7 +139,7 @@ class UniIter{
         {
             auto [block, grid] = getGrid({max});
 
-            getErrorCuda(((DevKernels::iterateKern<<<grid, block>>>(fun, max, getDevPtr(args)...))));
+            getErrorCuda(((DevKernels::iterateKern<<<grid, block>>>(fun, max, args...))));
 
          }
 
@@ -164,7 +148,7 @@ class UniIter{
         {
             auto [block, grid] = getGrid3({xMax, yMax, zMax});
 
-            getErrorCuda(((DevKernels::iterate3dKern<<<grid, block>>>(fun, xMax, yMax, zMax, getDevPtr(args)...))));
+            getErrorCuda(((DevKernels::iterate3dKern<<<grid, block>>>(fun, xMax, yMax, zMax, args...))));
 
         }
         template<class F, class... Args>
@@ -186,7 +170,7 @@ class UniIter{
             {
                 // default stream
                 //std::cout << "Using default stream using it" << std::endl;
-                getErrorCuda(((DevKernels::iterate3dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, xMax, yMax, zMax, getDevPtr(args)...))));
+                getErrorCuda(((DevKernels::iterate3dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, xMax, yMax, zMax, args...))));
             }
             else
             {
@@ -202,7 +186,7 @@ class UniIter{
                     cudaStreamCreate(&streams[plan.stream]);
                     std::cout << "Not found stream crated" << std::endl;
                 }
-                getErrorCuda(((DevKernels::iterate3dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs), 0, streams[plan.stream]>>>(fun, xMax, yMax, zMax, getDevPtr(args)...))));
+                getErrorCuda(((DevKernels::iterate3dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs), 0, streams[plan.stream]>>>(fun, xMax, yMax, zMax, args...))));
     
             }
         }
@@ -252,13 +236,12 @@ public:
     static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
     {
         //
-        //std::cout << "3d iterate in " << __PRETTY_FUNCTION__ << std::endl;
-    #ifdef GPU
+        //std::cout << "3d iterate" << std::endl;
+    #ifdef GPU_no
         UniIterCU::iterate3D(fun, xMax, yMax, zMax, args...);
     #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
     #endif
-        //std::cout << "3d iterate out " << __PRETTY_FUNCTION__ << std::endl;
     }
 
     template<class F, class... Args>
@@ -266,15 +249,11 @@ public:
     {
         //
         //std::cout << "3d iterate w plan" << std::endl;
-        //std::cout << "3d iterate plan in " << __PRETTY_FUNCTION__ << std::endl;
-
-    #ifdef GPU
+    #ifdef GPU_no
         UniIterCU::iterate3D(fun, plan, xMax, yMax, zMax, args...);
     #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
     #endif
-        //std::cout << "3d iterate plan out " << __PRETTY_FUNCTION__ << std::endl;
-
     }
     
     template<class F, class... Args>
@@ -282,25 +261,18 @@ public:
     {
         //
         //std::cout << "1d iterate" << std::endl;
-        //std::cout << "iterate in " << __PRETTY_FUNCTION__ << std::endl;
-
-    #ifdef GPU
+    #ifdef GPU_no
         UniIterCU::iterate(fun, max, args...);
     #else
         UniIterHost::iterate(fun, max, args...);
     #endif
-        //std::cout << "iterate out " << __PRETTY_FUNCTION__ << std::endl;
     }
 
     static void sync(){
-        #ifdef GPU
+        #ifdef GPU_no
         auto err = cudaDeviceSynchronize();
         // todo: check the error code
-        if(err != cudaSuccess)
-        {
-            std::cout << "sync error " << err << std::endl;
-            exit(-1);
-        }
+        //std::cout << err << std::endl;
         #else
         #endif
         //
@@ -309,7 +281,6 @@ public:
 
 #ifdef GPU
 std::unordered_map<std::string, cudaStream_t> UniIter::UniIterCU::streams = std::unordered_map<std::string, cudaStream_t>();
-std::map<void*, void*> UniIter::UniIterCU::registeredAddesses = std::map<void*, void*>();
 #endif
 }
 
