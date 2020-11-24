@@ -56,7 +56,8 @@ class Mesh
 
       int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
 
-      //assert( (indx >= 0) && (indx <  (int)mat.size() ) );
+      assert( (indx >= 0) && (indx <  (int)count ) );
+      assert(allocated);
 
       return indx;
     }
@@ -65,12 +66,13 @@ class Mesh
     DEVCALLABLE
     T& operator()(int i, int j, int k) { 
       int ind = indx(i,j,k);
+      assert(ind < count);
       return ptr[ind];
     }
     DEVCALLABLE
     const T& operator()(int i, int j, int k) const { 
-
       int ind = indx(i,j,k);
+      assert(ind < count);
       return ptr[ind];
     }
 
@@ -95,7 +97,8 @@ class Mesh
         //if(Ny > 256) throw std::range_error ("Mesh ny too big");
         //if(Nz > 256) throw std::range_error ("Mesh nz too big");
         //mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) ); //automatically done at construction
-        std::fill(ptr, ptr+count, T() ); // fill with zeros
+        //std::fill(ptr, ptr+count, T() ); // fill with zeros
+        clear();
       } catch ( std::exception& e) {
         // whoops... if control reaches here, a memory allocation
         // failure occurred somewhere.
@@ -196,12 +199,17 @@ class Mesh
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
-      T val();
-      #ifdef GPU
-        cudaMemset ( ptr, 0, count*sizeof(T) );
-      #else
-        std::fill(ptr, ptr+count, T() ); // fill with zeros
-      #endif
+      //T val();
+      //#ifdef GPU
+      //  cudaMemset ( ptr, 0, count*sizeof(T) );
+      //#else
+        //std::fill(ptr, ptr+count, T() ); // fill with zeros
+      //#endif
+      for (size_t i = 0; i < count; i++)
+      {
+        ptr[i] = T();
+      }
+      
     }
 
 

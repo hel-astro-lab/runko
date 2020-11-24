@@ -3,13 +3,14 @@
 #include "../tile.h"
 #include "../../tools/mesh.h"
 #include "../../definitions.h"
+#include "../../tools/iter/managed_alloc.h"
 
 
 namespace fields {
 
 /// General interface for filters
 template<size_t D>
-class Filter
+class Filter: public ManagedParent
 {
   public:
 

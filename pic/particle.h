@@ -110,8 +110,8 @@ class ParticleContainer {
   public:
     
   /// packed outgoing particles
-  std::vector<Particle> outgoing_particles;
-  std::vector<Particle> outgoing_extra_particles;
+  std::vector<Particle, ManagedAlloc<Particle> > outgoing_particles;
+  std::vector<Particle, ManagedAlloc<Particle> > outgoing_extra_particles;
 
   /// pack all particles in the container
   void pack_all_particles();
@@ -120,8 +120,8 @@ class ParticleContainer {
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  std::vector<Particle> incoming_particles;
-  std::vector<Particle> incoming_extra_particles;
+  std::vector<Particle, ManagedAlloc<Particle> > incoming_particles;
+  std::vector<Particle, ManagedAlloc<Particle> > incoming_extra_particles;
 
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();

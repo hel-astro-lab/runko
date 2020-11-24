@@ -12,10 +12,10 @@
 #include <cstring>
 #include <iostream>
 
-#ifdef GPU_no
+#ifdef GPU
 #include <cuda_runtime_api.h>
 #endif
-//#include "devcall.h"
+#include "devcall.h"
 
     template <class T>
     class DevVec{
@@ -31,7 +31,7 @@
             //
             //std::cout << "reallocing to " << newCap << std::endl;
             T *ptrTemp;// = new T[newCap];
-            #ifdef GPU_no
+            #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptrTemp, newCap * sizeof(T))));
             #else
             ptrTemp = new T[newCap];
@@ -42,7 +42,7 @@
             if(newCap < cap)
                 toCopyCount = newCap;
 
-            #ifdef GPU_no
+            #ifdef GPU
             cudaMemcpy(ptrTemp, ptr, sizeof(T)*toCopyCount, cudaMemcpyDefault);
             #else
             std::memcpy(ptrTemp, ptr, sizeof(T)*toCopyCount);
@@ -56,7 +56,7 @@
             }
             
 
-            #ifdef GPU_no
+            #ifdef GPU
             cudaFree(ptr);
             #else
             delete[] ptr;
@@ -73,7 +73,7 @@
             //std::cout << "devVec create " << std::endl;
 
             cap = DEFAULTSIZE / sizeof(T);
-            #ifdef GPU_no
+            #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
             #else
             ptr = new T[cap];
@@ -87,7 +87,7 @@
 
             if(allocated)
             {
-                #ifdef GPU_no
+                #ifdef GPU
                 cudaFree(ptr);
                 #else
                 delete[] ptr;
@@ -106,7 +106,7 @@
             count = old_obj.count;
             allocated = old_obj.allocated;
 
-            #ifdef GPU_no
+            #ifdef GPU
             getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
             cudaMemcpy(ptr, old_obj.ptr, sizeof(T)*count, cudaMemcpyDefault);
             #else

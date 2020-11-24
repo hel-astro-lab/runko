@@ -71,23 +71,16 @@ namespace
 class ManagedParent {
     public:
     void *operator new(size_t len) {
+        //void *ptr;
+        //ptr = malloc(len);
         void *ptr = UniAllocator::allocate<unsigned char>(len);
         return ptr;
+
+        
     }
     void operator delete(void *ptr) {
         UniAllocator::deallocate<unsigned char>((unsigned char*)ptr);
+        //free(ptr);
     }
 };
 
-
-class ManagedParent2 {
-    public:
-    void *operator new(size_t len) {
-        std::cout << "allocating " << std::endl;
-        void *ptr = UniAllocator::allocate<unsigned char>(len);
-        return ptr;
-    }
-    void operator delete(void *ptr) {
-        UniAllocator::deallocate<unsigned char>((unsigned char*)ptr);
-    }
-};

@@ -237,7 +237,7 @@ public:
     {
         //
         //std::cout << "3d iterate" << std::endl;
-    #ifdef GPU_no
+    #ifdef GPU
         UniIterCU::iterate3D(fun, xMax, yMax, zMax, args...);
     #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
@@ -249,7 +249,7 @@ public:
     {
         //
         //std::cout << "3d iterate w plan" << std::endl;
-    #ifdef GPU_no
+    #ifdef GPU
         UniIterCU::iterate3D(fun, plan, xMax, yMax, zMax, args...);
     #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
@@ -261,7 +261,7 @@ public:
     {
         //
         //std::cout << "1d iterate" << std::endl;
-    #ifdef GPU_no
+    #ifdef GPU
         UniIterCU::iterate(fun, max, args...);
     #else
         UniIterHost::iterate(fun, max, args...);
@@ -269,7 +269,7 @@ public:
     }
 
     static void sync(){
-        #ifdef GPU_no
+        #ifdef GPU
         auto err = cudaDeviceSynchronize();
         // todo: check the error code
         //std::cout << err << std::endl;
