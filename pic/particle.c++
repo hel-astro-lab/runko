@@ -266,6 +266,10 @@ void ParticleContainer<3>::check_outgoing_particles(
     j = 0;
     k = 0;
 
+    // TODO: should wrap here already before checking for bounds with:
+    // however, this requires global grid limits that would break the current API.
+    //locx = wrap( locn[0][n], static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
+
     i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
     j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
     k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
@@ -370,6 +374,7 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
 
       i = elem.second;
 
+      // NOTE: wrap bounds to [min, max)
       locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
       locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
       locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );

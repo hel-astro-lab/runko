@@ -1232,3 +1232,277 @@ class PIC(unittest.TestCase):
             self.assertTrue( np.abs(np.sum(yee['jy'])) < 1.e7)
             self.assertTrue( np.abs(np.sum(yee['jz'])) < 1.e7)
 
+
+
+
+
+
+
+    def test_problematic_prtcls(self):
+
+        # test pic loop behavior when particle is located in wrong container
+
+        conf = Conf()
+        conf.twoD = False
+        conf.threeD = True
+        conf.Nx = 2
+        conf.Ny = 2
+        conf.Nz = 2
+
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.NzMesh = 3
+
+        conf.Nt = 3
+        conf.update_bbox()
+
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+
+        pytools.pic.load_tiles(grid, conf)
+        insert_em(grid, conf, zero_field)
+
+        print("============================================================")
+
+        #--------------------------------------------------
+        cid    = grid.id(0,0,0)
+        c      = grid.get_tile(cid) #get cell ptr
+
+        container = c.get_container(0) #ispcs
+        container.set_keygen_state(0, 0) #number, rank
+
+        u0 = [0.0, 0.0, 0.0]
+
+        # problematic prtcl set 1 (at minimum boundary)
+        #x0 = [0.0, 1.0, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, 0.0, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, 1.0, 0.0]
+        #container.add_particle(x0, u0, 1.0)
+
+
+        # problematic prtcl set 2 (at maximum boundary)
+        #x0 = [3.0, 1.0, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, 3.0, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, 1.0, 3.0]
+        #container.add_particle(x0, u0, 1.0)
+
+
+        # problematic prtcl set 3 (completely outside)
+        #x0 = [3.1, 1.0, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, 3.1, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, 1.0, 3.1]
+        #container.add_particle(x0, u0, 1.0)
+
+
+        #x0 = [-0.1, 1.0, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, -0.1, 1.0]
+        #container.add_particle(x0, u0, 1.0)
+
+        #x0 = [1.0, 1.0, -0.1]
+        #container.add_particle(x0, u0, 1.0)
+
+
+        # last tile
+        cid    = grid.id(1,1,1)
+        c      = grid.get_tile(cid) #get cell ptr
+        container = c.get_container(0) #ispcs
+        container.set_keygen_state(0, 0) #number, rank
+
+        x0 = [6.0, 5.0, 5.0]
+        container.add_particle(x0, u0, 1.0)
+
+        x0 = [0.0, 5.0, 5.0]
+        container.add_particle(x0, u0, 1.0)
+
+
+        #--------------------------------------------------
+        pusher   = pyrunko.pic.threeD.BorisPusher()
+        fldprop  = pyrunko.fields.threeD.FDTD2()
+        fintp    = pyrunko.pic.threeD.LinearInterpolator()
+        currint  = pyrunko.pic.threeD.ZigZag()
+        flt      = pyrunko.fields.threeD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+        lap = 0
+        for lap in range(lap, conf.Nt):
+
+            # --------------------------------------------------
+            # push B half
+            for tile in pytools.tiles_all(grid):
+                fldprop.push_half_b(tile)
+    
+            # --------------------------------------------------
+            # comm B
+            grid.send_data(2)
+            grid.recv_data(2)
+            grid.wait_data(2)
+    
+            # --------------------------------------------------
+            # update boundaries
+            for tile in pytools.tiles_all(grid):
+                tile.update_boundaries(grid)
+    
+            ##################################################
+            # move particles (only locals tiles)
+    
+            # --------------------------------------------------
+            # interpolate fields
+            for tile in pytools.tiles_local(grid):
+                fintp.solve(tile)
+            #print('successful interp')
+    
+            # --------------------------------------------------
+            # push particles in x and u
+            #for tile in pytools.tiles_local(grid):
+            #    pusher.solve(tile)
+    
+            ##################################################
+            # advance B half
+    
+            # --------------------------------------------------
+            # push B half
+            for tile in pytools.tiles_all(grid):
+                fldprop.push_half_b(tile)
+    
+            # --------------------------------------------------
+            # comm B
+            grid.send_data(1)
+            grid.recv_data(1)
+            grid.wait_data(1)
+    
+            # --------------------------------------------------
+            # update boundaries
+            for tile in pytools.tiles_all(grid):
+                tile.update_boundaries(grid)
+    
+            ##################################################
+            # advance E
+    
+            # --------------------------------------------------
+            # push E
+            for tile in pytools.tiles_all(grid):
+                fldprop.push_e(tile)
+    
+            # --------------------------------------------------
+            # current calculation; charge conserving current deposition
+            for tile in pytools.tiles_local(grid):
+                currint.solve(tile)
+            #print('successful currint')
+    
+            # --------------------------------------------------
+            # clear virtual current arrays for boundary addition after mpi
+            for tile in pytools.tiles_virtual(grid):
+                tile.clear_current()
+    
+            # --------------------------------------------------
+            # mpi send currents
+            grid.send_data(0)
+            grid.recv_data(0)
+            grid.wait_data(0)
+    
+            # --------------------------------------------------
+            # exchange currents
+            for tile in pytools.tiles_all(grid):
+                tile.exchange_currents(grid)
+    
+            ##################################################
+            # particle communication (only local/boundary tiles)
+    
+            # --------------------------------------------------
+            # local particle exchange (independent)
+            for tile in pytools.tiles_local(grid):
+                tile.check_outgoing_particles()
+    
+            # --------------------------------------------------
+            # global mpi exchange (independent)
+            for tile in pytools.tiles_boundary(grid):
+                tile.pack_outgoing_particles()
+    
+            # --------------------------------------------------
+            # MPI global particle exchange
+            # transfer primary and extra data
+            grid.send_data(3)
+            grid.recv_data(3)
+            grid.wait_data(3)
+    
+            # orig just after send3
+            grid.send_data(4)
+            grid.recv_data(4)
+            grid.wait_data(4)
+    
+            # --------------------------------------------------
+            # global unpacking (independent)
+            for tile in pytools.tiles_virtual(grid):
+                tile.unpack_incoming_particles()
+                tile.check_outgoing_particles()
+    
+            # --------------------------------------------------
+            # transfer local + global
+            for tile in pytools.tiles_local(grid):
+                tile.get_incoming_particles(grid)
+    
+            # --------------------------------------------------
+            # delete local transferred particles
+            for tile in pytools.tiles_local(grid):
+                tile.delete_transferred_particles()
+    
+            # --------------------------------------------------
+            # delete all virtual particles (because new prtcls will come)
+            for tile in pytools.tiles_virtual(grid):
+                tile.delete_all_particles()
+    
+            # --------------------------------------------------
+            # add current to E
+            for tile in pytools.tiles_all(grid):
+                tile.deposit_current()
+    
+            # comm E
+            grid.send_data(1)
+            grid.recv_data(1)
+            grid.wait_data(1)
+    
+            # --------------------------------------------------
+            # comm B
+            grid.send_data(2)
+            grid.recv_data(2)
+            grid.wait_data(2)
+    
+            # --------------------------------------------------
+            # update boundaries
+            for tile in pytools.tiles_all(grid):
+                tile.update_boundaries(grid)
+    
+
+        # --------------------------------------------------
+        ip = 0
+        prtcls = {}
+        for tile in pytools.tiles_all(grid):
+            container = tile.get_container(0) #ispcs
+
+            xp = container.loc(0)
+            yp = container.loc(1)
+            zp = container.loc(2)
+
+            for i in range(len(xp)):
+                prtcls[ip] = (xp[i],yp[i],zp[i], tile.cid)
+                ip += 1
+
+        #for p in prtcls.keys():
+        #    print(prtcls[p])
+
+
+
+

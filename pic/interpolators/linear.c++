@@ -57,9 +57,12 @@ void pic::LinearInterpolator<D,V>::solve(
       loc2n = static_cast<real_long>( loc[2][n] );
 
       // particle location in the grid
-      if (D >= 1) i  = static_cast<int>(floor( loc[0][n] - mins[0] ));
-      if (D >= 2) j  = static_cast<int>(floor( loc[1][n] - mins[1] ));
-      if (D >= 3) k  = static_cast<int>(floor( loc[2][n] - mins[2] ));
+      // NOTE: trunc() ensures that prtcls outside the tile do not crash this loop 
+      // (because it rounds e.g. xloc=-0.1 => i=0 and dx=-0.1). They should be
+      // automatically cleaned on next time step to their real tiles.
+      if (D >= 1) i  = static_cast<int>(trunc( loc[0][n] - mins[0] ));
+      if (D >= 2) j  = static_cast<int>(trunc( loc[1][n] - mins[1] ));
+      if (D >= 3) k  = static_cast<int>(trunc( loc[2][n] - mins[2] ));
 
       if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
       if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
@@ -73,30 +76,41 @@ void pic::LinearInterpolator<D,V>::solve(
       if(D >= 3) { if(! (k >= 0 && k <= static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
 
       if(debug_flag) {
-        std::cout << "--------------------------------------------------\n";
-        std::cout << "n=" << n;
-        std::cout << " i: " << i;
-        std::cout << " j: " << j;
-        std::cout << " k: " << k;
-        std::cout << "\n";
+        std::cerr << "--------------------------------------------------\n";
+        std::cerr << "n=" << n;
+        std::cerr << " i: " << i;
+        std::cerr << " j: " << j;
+        std::cerr << " k: " << k;
+        std::cerr << "\n";
 
-        std::cout << " mins0: " << mins[0];
-        std::cout << " mins1: " << mins[1];
-        std::cout << " mins2: " << mins[2];
+        std::cerr << " mins0: " << mins[0];
+        std::cerr << " mins1: " << mins[1];
+        std::cerr << " mins2: " << mins[2];
 
-        std::cout << " x: " << loc0n;
-        std::cout << " y: " << loc1n;
-        std::cout << " z: " << loc2n;
-        std::cout << "\n";
+        std::cerr << " x: " << loc0n;
+        std::cerr << " y: " << loc1n;
+        std::cerr << " z: " << loc2n;
+        std::cerr << "\n";
 
-        std::cout << " dx: " << dx;
-        std::cout << " dy: " << dy;
-        std::cout << " dz: " << dz;
-        std::cout << "\n";
+        std::cerr << " dx: " << dx;
+        std::cerr << " dy: " << dy;
+        std::cerr << " dz: " << dz;
+        std::cerr << "\n";
 
-        std::cout << std::flush;
+        std::cerr << std::flush;
         // always fail
-        assert(false);
+        //assert(false);
+          
+        // NOTE: ignore problematic prtcls; ensures that simulations do not crash if 
+        // something goes wrong for one prtcl
+        continue;
+
+        //i = tile.mesh_lengths[0];
+        //j = tile.mesh_lengths[1];
+        //k = tile.mesh_lengths[2];
+        //dx = 1.0;
+        //dy = 1.0;
+        //dz = 1.0;
       }
 
 
