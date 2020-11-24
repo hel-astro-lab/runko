@@ -39,8 +39,8 @@ def inject(grid, vel_func, den_func, conf):
                         container.set_keygen_state(prtcl_tot[ispcs], rank)
 
                         # open and read previously made particle species (for location reference)
-                        if ispcs % 2 == 1:
-                            ref_container = tile.get_container(ispcs - 1)
+                        if ispcs > 0:
+                            ref_container = tile.get_container(0)
                             xxs = ref_container.loc(0)
                             yys = ref_container.loc(1)
                             zzs = ref_container.loc(2)
@@ -60,9 +60,11 @@ def inject(grid, vel_func, den_func, conf):
                                     # calculate how many prtcls per species to inject in this loc
                                     ppc = den_func(xloc, ispcs, conf)
 
+                                    #TODO: pair loading factor
+
                                     for ip in range(ppc):
                                         x0, u0 = vel_func(xloc, ispcs, conf)
-                                        if ispcs % 2 == 1:
+                                        if ispcs > 0:
                                             xx = xxs[ip_mesh]
                                             yy = yys[ip_mesh]
                                             zz = zzs[ip_mesh]
