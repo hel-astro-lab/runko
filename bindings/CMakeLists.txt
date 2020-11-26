@@ -115,8 +115,8 @@ if(ENABLE_CUDA)
      set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)
      # this will give wrong results if the file passed to nvcc 
-     # set_source_files_properties(../pic/particle.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../pic/particle_alt.c++ PROPERTIES LANGUAGE CUDA)
+      set_source_files_properties(../pic/particle.c++ PROPERTIES LANGUAGE CUDA)
+     #set_source_files_properties(../pic/particle_alt.c++ PROPERTIES LANGUAGE CUDA)
      target_compile_definitions(pyrunko PUBLIC GPU)
 
      set_property(TARGET pyrunko PROPERTY CUDA_STANDARD 17)

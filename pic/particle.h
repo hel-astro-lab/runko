@@ -82,7 +82,7 @@ struct to_other_tiles_struct{
 *
 */
 template<std::size_t D>
-class ParticleContainer {
+class ParticleContainer : public ManagedParent {
 
   private:
 
@@ -132,10 +132,10 @@ class ParticleContainer {
   int optimal_message_size = 3000;
 
   //! particle specific electric field components
-  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> Epart;
+  DevVec<real_prtcl> Epart;
 
   //! particle specific magnetic field components
-  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> Bpart;
+  DevVec<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
   using mapType = std::vector<to_other_tiles_struct, ManagedAlloc<to_other_tiles_struct>>;

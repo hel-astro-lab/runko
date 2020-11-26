@@ -8,6 +8,7 @@
 #include "../tools/mesh.h"
 #include "../tools/rotator.h"
 #include "../definitions.h"
+#include"../tools/iter/allocator.h"
 
 namespace fields {
   namespace mpi = mpi4cpp::mpi;
@@ -120,7 +121,8 @@ class YeeLattice
  */
 template<std::size_t D>
 class Tile : 
-  virtual public corgi::Tile<D>
+  virtual public corgi::Tile<D>,
+  virtual public ManagedParent
 {
 
   public:

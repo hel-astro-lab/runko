@@ -5,6 +5,7 @@
 
 #include "skinny_yee.h"
 
+#include"../tools/iter/allocator.h"
 
 namespace ffe {
 
@@ -14,7 +15,8 @@ namespace ffe {
 template<std::size_t D>
 class Tile : 
   virtual public fields::Tile<D>, 
-  virtual public corgi::Tile<D> 
+  virtual public corgi::Tile<D>, 
+  virtual public ManagedParent
 {
 
   public:

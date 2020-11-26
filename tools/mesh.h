@@ -199,16 +199,12 @@ class Mesh
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
-      //T val();
-      //#ifdef GPU
-      //  cudaMemset ( ptr, 0, count*sizeof(T) );
-      //#else
-        //std::fill(ptr, ptr+count, T() ); // fill with zeros
-      //#endif
-      for (size_t i = 0; i < count; i++)
-      {
-        ptr[i] = T();
-      }
+      #ifdef GPU
+        cudaMemset ( ptr, 0, count*sizeof(T) );
+      #else
+        std::fill(ptr, ptr+count, T() ); // fill with zeros
+      #endif
+
       
     }
 
