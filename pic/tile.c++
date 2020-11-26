@@ -1,6 +1,7 @@
 #include "tile.h"
 #include "communicate.h"
 #include <cmath>
+#include <nvtx3/nvToolsExt.h> 
 
 
 namespace pic {
@@ -162,6 +163,8 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
     int dest,
     int tag)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   std::vector<mpi::request> reqs;
   for(int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
@@ -172,6 +175,7 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
           container.outgoing_particles.size())
         );
   }
+nvtxRangePop();
 
   return reqs;
 }
@@ -183,6 +187,8 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
     int dest,
     int tag)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   std::vector<mpi::request> reqs;
   for(int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
@@ -197,6 +203,7 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
 
     //std::cout << this->communication.cid << " send " << container.outgoing_particles.size() << " + " << container.outgoing_extra_particles.size() << " particles\n";
   }
+nvtxRangePop();
 
   return reqs;
 }
@@ -226,6 +233,8 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
     int orig,
     int tag)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   std::vector<mpi::request> reqs;
   for (int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
@@ -237,6 +246,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
           container.optimal_message_size)
         );
   }
+nvtxRangePop();
 
   return reqs;
 }
@@ -248,6 +258,8 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     int orig,
     int tag)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   std::vector<mpi::request> reqs;
 
   // this assumes that wait for the first message is already called
@@ -286,6 +298,7 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     //TODO: dynamic optimal_message_size here
     //container.optimal_message_size = msginfo.size();
   }
+nvtxRangePop();
 
   return reqs;
 }

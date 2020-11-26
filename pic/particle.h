@@ -82,7 +82,7 @@ struct to_other_tiles_struct{
 *
 */
 template<std::size_t D>
-class ParticleContainer : public ManagedParent {
+class ParticleContainer{
 
   private:
 

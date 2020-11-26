@@ -561,14 +561,19 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   for( int i=0; i<3; i++) 
     locn[i] = &( loc(i,0) );
 
-  #ifdef GPU
+  //#ifdef GPU
 
-  //getErrorCuda((cudaMallocManaged((void**)&count, sizeof(int))));
+/*
   int maxCap = to_other_tiles.capacity();
   // 
   to_other_tiles.resize(to_other_tiles.capacity());
   auto listPtr = to_other_tiles.data();
   
+  // redesigned for parallelism
+  // first try and add particle to to_other_tiles as long as there is space
+  // if we run out of space keep counting
+  // if count is larger than the space, reallocate for count, clear the whole thign and rerun.
+/*
   UniIter::iterate(
     [=] DEVFUNIFGPU (int n, int &count)
     {
@@ -595,14 +600,12 @@ nvtxRangePush(__PRETTY_FUNCTION__);
         //to_other_tiles.push_back( {i,j,k,n} );
         #ifdef GPU
           int pos = atomicAdd(&count, 1);
-        
         #else
         int pos;
           #pragma omp atomic capture 
           {
             pos = count;
             count++;
-            std::cout << count << std::endl;
           }
         #endif
         
@@ -625,8 +628,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     else{
       to_other_tiles.resize(outgoing_count);
     }
-
-   #else
+    */
   for(size_t n=0; n<size(); n++) {
     int i,j,k; // relative indices
     i = 0;
@@ -650,7 +652,6 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.push_back( {i,j,k,n} );
   }
-  #endif
   
 
 nvtxRangePop();

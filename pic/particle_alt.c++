@@ -13,9 +13,9 @@
 #include <cuda_runtime_api.h>
 //#include <nvtx3/nvToolsExt.h> 
 
+#include <nvtx3/nvToolsExt.h> 
 
 namespace pic {
-
 
 template<>
 void ParticleContainer<3>::transfer_and_wrap_particles( 
@@ -26,7 +26,7 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
     )
 {
 
-//nvtxRangePush(__PRETTY_FUNCTION__);
+nvtxRangePush(__PRETTY_FUNCTION__);
 
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
@@ -58,6 +58,7 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
       locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
       locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
 
+
       velx = neigh.vel(0, i);
       vely = neigh.vel(1, i);
       velz = neigh.vel(2, i);
@@ -67,6 +68,7 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
       id   = neigh.id(0,i);
       proc = neigh.id(1,i);
 
+      //std::cout << locx << " " << locy << " " << locz << " " <<  velx << " " << vely << " " << velz << " " <<  wgt << " " <<  id << " " <<  proc << std::endl;
       //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
       
       
@@ -90,7 +92,7 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
       
     }
   }
-//nvtxRangePop();
+nvtxRangePop();
 
   }
 
