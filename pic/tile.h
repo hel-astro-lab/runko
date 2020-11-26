@@ -39,7 +39,7 @@ public:
 
   using fields::Tile<D>::cfl;
 
-  std::vector<ParticleContainer<D>, ManagedAlloc<ParticleContainer<D>>> containers;
+  std::vector<ParticleContainer<D>> containers;
 
   //--------------------------------------------------
   // normal container methods
