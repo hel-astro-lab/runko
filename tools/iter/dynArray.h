@@ -2,8 +2,8 @@
 // Created by Fredrik Robertsen on 07/11/2020.
 //
 
-#ifndef PHELL_DEVVEC_H
-#define PHELL_DEVVEC_H
+#ifndef PHELL_MANVEC_H
+#define PHELL_MANVEC_H
 
 
 // default size in bytes
@@ -18,7 +18,7 @@
 #include "devcall.h"
 
     template <class T>
-    class DevVec{
+    class ManVec{
 
         T *ptr;
         size_t count;
@@ -69,8 +69,8 @@
 
         public:
         //
-        DevVec(): allocated(true){
-            //std::cout << "devVec create " << std::endl;
+        ManVec(): allocated(true){
+            //std::cout << "ManVec create " << std::endl;
 
             cap = DEFAULTSIZE / sizeof(T);
             #ifdef GPU
@@ -80,10 +80,10 @@
             #endif
 
             count = 0;
-            //std::cout << "devVec create out" << std::endl;
+            //std::cout << "ManVec create out" << std::endl;
         }
-        ~DevVec(){
-            //std::cout << "devVec deconstruct " << std::endl;
+        ~ManVec(){
+            //std::cout << "ManVec deconstruct " << std::endl;
 
             if(allocated)
             {
@@ -93,14 +93,14 @@
                 delete[] ptr;
                 #endif
             }
-            //std::cout << "devVec deconstruct out" << std::endl;
+            //std::cout << "ManVec deconstruct out" << std::endl;
         }
 
         // copy constructor
-        DevVec (const DevVec &old_obj)
+        ManVec (const ManVec &old_obj)
         {
             //
-            //std::cout << "devVec copy ctr "<< old_obj.count << " " << old_obj.cap << std::endl;
+            //std::cout << "ManVec copy ctr "<< old_obj.count << " " << old_obj.cap << std::endl;
 
             cap = old_obj.cap;
             count = old_obj.count;
@@ -122,9 +122,9 @@
         }
 
         // move constructor
-        DevVec ( DevVec && other) :allocated(false)
+        ManVec ( ManVec && other) :allocated(false)
         {
-            //std::cout << "devVec move ctr "<< other.count << " " << other.cap << std::endl;
+            //std::cout << "ManVec move ctr "<< other.count << " " << other.cap << std::endl;
             count = 0;
             cap = 0;
             std::swap(count, other.count);
@@ -134,7 +134,7 @@
         }
 
 
-        inline void push_back(T val)
+        inline void push_back(T &val)
         {
             //
             if(count+1 <= cap)

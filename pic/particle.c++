@@ -563,7 +563,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
   //#ifdef GPU
 
-/*
+
   int maxCap = to_other_tiles.capacity();
   // 
   to_other_tiles.resize(to_other_tiles.capacity());
@@ -573,7 +573,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   // first try and add particle to to_other_tiles as long as there is space
   // if we run out of space keep counting
   // if count is larger than the space, reallocate for count, clear the whole thign and rerun.
-/*
+
   UniIter::iterate(
     [=] DEVFUNIFGPU (int n, int &count)
     {
@@ -628,7 +628,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     else{
       to_other_tiles.resize(outgoing_count);
     }
-    */
+    /*
   for(size_t n=0; n<size(); n++) {
     int i,j,k; // relative indices
     i = 0;
@@ -652,7 +652,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.push_back( {i,j,k,n} );
   }
-  
+  */
 
 nvtxRangePop();
 

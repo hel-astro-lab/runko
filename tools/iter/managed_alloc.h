@@ -44,6 +44,7 @@ struct ManagedAlloc
     {
 		//cudaFree(p);
 		UniAllocator::deallocate(p);
+		
 	}
 
 //     value_type*

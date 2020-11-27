@@ -21,7 +21,7 @@ namespace
             getErrorCuda((cudaMallocManaged((void**)&ptr, count * sizeof(T))));
             // todo: check the error code
             #else
-            ptr = new T[count];
+            ptr = (T*)malloc(count * sizeof(T));
             #endif
             //
             return ptr;
@@ -33,7 +33,7 @@ namespace
             getErrorCuda(cudaFree(ptr));
             // todo: check the error code
             #else
-            delete[] ptr;
+            free(ptr);
             #endif
         }
 

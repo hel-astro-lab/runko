@@ -132,10 +132,10 @@ class ParticleContainer{
   int optimal_message_size = 3000;
 
   //! particle specific electric field components
-  DevVec<real_prtcl> Epart;
+  ManVec<real_prtcl> Epart;
 
   //! particle specific magnetic field components
-  DevVec<real_prtcl> Bpart;
+  ManVec<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
   using mapType = std::vector<to_other_tiles_struct, ManagedAlloc<to_other_tiles_struct>>;
