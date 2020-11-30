@@ -101,6 +101,7 @@ template<>
 void Tile<3>::get_incoming_particles(
     corgi::Grid<3>& grid)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
 
   std::array<double,3> global_mins = {
     static_cast<double>( grid.get_xmin() ),
@@ -136,6 +137,7 @@ void Tile<3>::get_incoming_particles(
         }
     }
   }
+nvtxRangePop();
 
 }
 

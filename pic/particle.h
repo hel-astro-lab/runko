@@ -102,16 +102,16 @@ class ParticleContainer{
 
   size_t Nprtcls = 0;
 
-  std::array<std::vector<real_prtcl, ManagedAlloc<real_prtcl>>, 3 > locArr;
-  std::array<std::vector<real_prtcl, ManagedAlloc<real_prtcl>>, 3 > velArr;
-  std::array<std::vector<int, ManagedAlloc<int>>, 2 > indArr;
-  std::vector<real_prtcl, ManagedAlloc<real_prtcl>> wgtArr;
+  std::array<ManVec<real_prtcl>, 3 > locArr;
+  std::array<ManVec<real_prtcl>, 3 > velArr;
+  std::array<ManVec<int>, 2 > indArr;
+  ManVec<real_prtcl> wgtArr;
 
   public:
     
   /// packed outgoing particles
-  std::vector<Particle, ManagedAlloc<Particle> > outgoing_particles;
-  std::vector<Particle, ManagedAlloc<Particle> > outgoing_extra_particles;
+  ManVec<Particle> outgoing_particles;
+  ManVec<Particle> outgoing_extra_particles;
 
   /// pack all particles in the container
   void pack_all_particles();
@@ -120,8 +120,8 @@ class ParticleContainer{
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  std::vector<Particle, ManagedAlloc<Particle> > incoming_particles;
-  std::vector<Particle, ManagedAlloc<Particle> > incoming_extra_particles;
+  ManVec<Particle> incoming_particles;
+  ManVec<Particle> incoming_extra_particles;
 
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();
@@ -138,7 +138,7 @@ class ParticleContainer{
   ManVec<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
-  using mapType = std::vector<to_other_tiles_struct, ManagedAlloc<to_other_tiles_struct>>;
+  using mapType = ManVec<to_other_tiles_struct>;
   mapType to_other_tiles;
 
   // normalization factor
@@ -163,22 +163,24 @@ class ParticleContainer{
   virtual void shrink_to_fit();
 
   /// size of the container (in terms of particles)
+  DEVCALLABLE
   size_t size();
 
 
   //--------------------------------------------------
   // locations
-  virtual inline real_prtcl loc( size_t idim, size_t iprtcl ) const
+  DEVCALLABLE
+  inline real_prtcl loc( size_t idim, size_t iprtcl ) const
+  {
+    return locArr[idim][iprtcl];
+  }
+  DEVCALLABLE
+  inline real_prtcl& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline real_prtcl& loc( size_t idim, size_t iprtcl )       
-  {
-    return locArr[idim][iprtcl];
-  }
-
-  virtual inline std::vector<real_prtcl> loc(size_t idim) const 
+  inline std::vector<real_prtcl> loc(size_t idim) 
   {
     std::vector<real_prtcl> ret;
     for(const auto& e: locArr[idim])
@@ -194,17 +196,19 @@ class ParticleContainer{
 */
   //--------------------------------------------------
   // velocities
-  virtual inline real_prtcl vel( size_t idim, size_t iprtcl ) const
+  DEVCALLABLE
+  inline real_prtcl vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline real_prtcl& vel( size_t idim, size_t iprtcl )       
+  DEVCALLABLE
+  inline real_prtcl& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<real_prtcl> vel(size_t idim) const 
+  inline std::vector<real_prtcl> vel(size_t idim) 
   {
     //return velArr[idim];
     std::vector<real_prtcl> ret;
@@ -220,17 +224,19 @@ class ParticleContainer{
 */
   //--------------------------------------------------
   // weights
-  virtual inline real_prtcl wgt( size_t iprtcl ) const
+  DEVCALLABLE
+  inline real_prtcl wgt( size_t iprtcl ) const
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline real_prtcl& wgt( size_t iprtcl )       
+  DEVCALLABLE
+  inline real_prtcl& wgt( size_t iprtcl )       
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline std::vector<real_prtcl> wgt() const
+  inline std::vector<real_prtcl> wgt()
   {
     //return wgtArr;
     std::vector<real_prtcl> ret;
@@ -247,17 +253,19 @@ class ParticleContainer{
 */
   //--------------------------------------------------
   // id
-  virtual inline int id( size_t idim, size_t iprtcl ) const
+  DEVCALLABLE
+  inline int id( size_t idim, size_t iprtcl ) const
   {
     return indArr[idim][iprtcl];
   }
 
-  virtual inline int& id( size_t idim, size_t iprtcl )       
+  DEVCALLABLE
+  inline int& id( size_t idim, size_t iprtcl )       
   {
     return indArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<int> id(size_t idim) const 
+  inline std::vector<int> id(size_t idim) 
   {
     //return indArr[idim];
     std::vector<int> ret;

@@ -292,18 +292,46 @@ template<std::size_t D>
 void ParticleContainer<D>::delete_transferred_particles()
 {
 nvtxRangePush(__PRETTY_FUNCTION__);
-  std::vector<int> to_be_deleted;
 
-  // get transferred 
-  //for(auto& elem : to_other_tiles) 
-  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
-  {
-    const auto &elem = to_other_tiles[ii];
+  //std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](auto a, auto b){return a.n > b.n;} );
 
-    to_be_deleted.push_back( elem.n );
-  }
+  real_prtcl* locn[3];
+  for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
-  delete_particles(to_be_deleted);
+  real_prtcl* veln[3];
+  for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
+
+  int* idn[2];
+  for(int i=0; i<2; i++) idn[i] = &( id(i,0) );
+
+
+  // overwrite particles with the last one on the array and 
+  // then resize the array
+  int last = size()-to_other_tiles.size();
+
+  UniIter::iterate([=] DEVCALLABLE (int i, ManVec<to_other_tiles_struct> &to_other_tiles){
+    int other = last+i;////size() - 1 - i;
+    int indx = to_other_tiles[i].n;
+
+  //int last = size();
+  //for(auto elem : to_other_tiles) {
+  //  int indx = elem.n;
+  //  last--;
+    if(indx >= last) return;
+    //std::cout << "deleting " << indx 
+    //          << " by putting it to " << last << '\n';
+    for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
+    for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
+    wgtArr[indx] = wgtArr[other];
+    for(int i=0; i<2; i++) idn[i][indx] = idn[i][other];
+  }, to_other_tiles.size(), to_other_tiles);
+  UniIter::sync();
+
+
+  // resize if needed and take care of the size
+  last = last < 0 ? 0 : last;
+  if ((last != (int)size()) && (size() > 0)) 
+    resize(last);
 nvtxRangePop();
 }
 
@@ -561,9 +589,6 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   for( int i=0; i<3; i++) 
     locn[i] = &( loc(i,0) );
 
-  //#ifdef GPU
-
-
   int maxCap = to_other_tiles.capacity();
   // 
   to_other_tiles.resize(to_other_tiles.capacity());
@@ -573,9 +598,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   // first try and add particle to to_other_tiles as long as there is space
   // if we run out of space keep counting
   // if count is larger than the space, reallocate for count, clear the whole thign and rerun.
+  // make sure adding to count in the lambda is atomic, atomic capture for OMP and atomicAdd on the GPU
 
   UniIter::iterate(
-    [=] DEVFUNIFGPU (int n, int &count)
+    [=] DEVFUNIFGPU (int n, int &count, ManVec<to_other_tiles_struct> &to_other_tiles)
     {
       int i = 0;
       int j = 0;
@@ -610,9 +636,9 @@ nvtxRangePush(__PRETTY_FUNCTION__);
         #endif
         
         if(pos < maxCap)
-          listPtr[pos] = {i,j,k,n};
+          to_other_tiles[pos] = {i,j,k,n};
       }
-    },size(), outgoing_count);
+    },size(), outgoing_count, to_other_tiles);
     UniIter::sync();
     // check outgoing_count and react to it...
     if(outgoing_count > maxCap)
@@ -657,6 +683,134 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 nvtxRangePop();
 
 }
+
+
+
+template<>
+void ParticleContainer<3>::transfer_and_wrap_particles(
+    ParticleContainer& neigh,
+    std::array<int,3>    dirs,
+    std::array<double,3>& global_mins,
+    std::array<double,3>& global_maxs
+    )
+{
+  
+nvtxRangePush(__PRETTY_FUNCTION__);
+
+  // particle overflow from tiles is done in shortest precision
+  // to avoid rounding off errors and particles left in a limbo
+  // between tiles.
+
+  //cudaPointerAttributes attributes;
+  //cudaPointerGetAttributes( &attributes, &neigh.id);
+  //std::cout << attributes.type << std::endl;
+
+  int NprtclsBefore = Nprtcls;
+
+  int maxCap = locArr[0].capacity();
+
+  locArr[0].resize(maxCap);
+  locArr[1].resize(maxCap);
+  locArr[2].resize(maxCap);
+  velArr[0].resize(maxCap);
+  velArr[1].resize(maxCap);
+  velArr[2].resize(maxCap);
+  wgtArr.resize(maxCap);
+  indArr[0].resize(maxCap);
+  indArr[1].resize(maxCap);
+  
+  UniIter::iterate(
+ [=] DEVFUNIFGPU (int n, size_t &limit,
+ ParticleContainer& neigh,
+ ParticleContainer& self)
+  {
+    const auto &elem = neigh.to_other_tiles[n];
+
+    real_prtcl locx, locy, locz, velx, vely, velz, wgt;
+    int id, proc;
+
+    int i;
+
+    if(elem.i == 0 &&
+       elem.j == 0 &&
+       elem.k == 0) return;
+
+    // NOTE: directions are flipped (- sign) so that they are
+    // in directions in respect to the current tile
+
+    if (elem.i == -dirs[0] &&
+        elem.j == -dirs[1] &&
+        elem.k == -dirs[2] ) {
+
+      i = elem.n;
+
+      locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
+
+
+      velx = neigh.vel(0, i);
+      vely = neigh.vel(1, i);
+      velz = neigh.vel(2, i);
+
+      wgt  = neigh.wgt(i);
+
+      id   = neigh.id(0,i);
+      proc = neigh.id(1,i);
+
+      //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
+
+        int ind = 0;
+        #ifdef GPU
+          ind = atomicAdd((unsigned long long int*)&limit,(unsigned long long int)1);
+        #else
+          #pragma omp atomic capture 
+          {
+            ind = limit;
+            limit++;
+          }
+        #endif
+        
+
+        if(ind < maxCap)
+        {
+          self.locArr[0][ind] = locx;
+          self.locArr[1][ind] = locy;
+          self.locArr[2][ind] = locz;
+          self.velArr[0][ind] = velx;
+          self.velArr[1][ind] = vely;
+          self.velArr[2][ind] = velz;
+          self.wgtArr[ind] = wgt;
+          self.indArr[0][ind] = id;
+          self.indArr[1][ind] = proc;
+        }
+
+    }
+  },neigh.to_other_tiles.size(), Nprtcls, neigh, *this);
+  UniIter::sync();
+
+  locArr[0].resize(Nprtcls);
+  locArr[1].resize(Nprtcls);
+  locArr[2].resize(Nprtcls);
+  velArr[0].resize(Nprtcls);
+  velArr[1].resize(Nprtcls);
+  velArr[2].resize(Nprtcls);
+  indArr[0].resize(Nprtcls);
+  indArr[1].resize(Nprtcls);
+  wgtArr.resize(Nprtcls);
+
+  if(Nprtcls > maxCap)
+  {
+    // resize and fix ...
+    //std::cout << "count over cap" << std::endl;
+    Nprtcls = NprtclsBefore;
+    transfer_and_wrap_particles(neigh, dirs, global_mins, global_maxs);
+  }
+
+  //std::cout << NprtclsBefore << " " << Nprtcls << " " << to_other_tiles.size() << std::endl;
+nvtxRangePop();
+
+  }
 
 } // end ns pic
 

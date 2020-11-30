@@ -50,12 +50,13 @@
 
             cap = newCap;
 
+/*
             for (size_t i = toCopyCount; i < newCap; i++)
             {
                 ptrTemp[i] = T{};
             }
             
-
+*/
             #ifdef GPU
             cudaFree(ptr);
             #else
@@ -114,10 +115,12 @@
             std::memcpy(ptr, old_obj.ptr, sizeof(T)*count);
             #endif
             
+            /*
             for (size_t i = count; i < cap; i++)
             {
                 ptr[i] = T{};
             }
+            */
             
         }
 
@@ -134,7 +137,7 @@
         }
 
 
-        inline void push_back(T &val)
+        inline void push_back(T val)
         {
             //
             if(count+1 <= cap)
@@ -165,7 +168,8 @@
             }
             else
             {
-                realloc(newCap);
+                //std::cout << "reallocing " << newCap << " old cap " << cap << std::endl;
+                realloc((newCap+1)*overAllocFactor);
             }
             count = newCap;
         }
@@ -175,7 +179,7 @@
             // does f all since it does not have to...
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline T & operator[](const size_t &ind)
         {
             //
@@ -186,7 +190,7 @@
             return ptr[ind];
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline const T &operator[](const size_t &ind) const
         {
             //
@@ -197,13 +201,13 @@
             return ptr[ind];
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline size_t size()
         {
             return count;
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline size_t capacity()
         {
             return cap;
@@ -214,7 +218,7 @@
             count = 0;
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline T*& data()
         {
             return ptr;
@@ -226,19 +230,19 @@
             count = newSize;
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline bool empty()
         {
             return count == 0;
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline T* begin()
         {
             return ptr;
         }
 
-        //DEVCALLABLE
+        DEVCALLABLE
         inline T* end()
         {
             return ptr+count;
