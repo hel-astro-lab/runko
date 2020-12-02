@@ -95,7 +95,6 @@ class ParticleContainer{
   /// unique key generator
   std::pair<int,int> keygen();
 
-  int outgoing_count;
 
 
   protected:
@@ -122,6 +121,22 @@ class ParticleContainer{
   /// packed incoming particles
   ManVec<Particle> incoming_particles;
   ManVec<Particle> incoming_extra_particles;
+
+  // incomming indexes, to optimize transfer_and_wrap_particles for GPUs
+  int incomming_count;
+  ManVec<int> incomming_particleIndexes;
+  ManVec<int> particleIndexesA;
+  ManVec<int> particleIndexesB;
+  int pCount;
+
+
+  void     *d_temp_storage = NULL;
+  size_t   temp_storage_bytes = 0;
+
+  // incomming indexes, to optimize transfer_and_wrap_particles for GPUs
+  int outgoing_count;
+  ManVec<int> outgoing_particleIndexes;
+
 
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();

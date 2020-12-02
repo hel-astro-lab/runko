@@ -13,6 +13,7 @@
 #include <cuda_runtime_api.h>
 #include <nvtx3/nvToolsExt.h> 
 
+#include "../tools/cub/cub.cuh"
 
 namespace pic {
 
@@ -51,7 +52,6 @@ size_t Particle::number_of_particles() {
 //--------------------------------------------------
 // ParticleContainer methods
 
-
 template<std::size_t D>
 ParticleContainer<D>::ParticleContainer()
 { 
@@ -71,6 +71,11 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   outgoing_extra_particles.resize(optimal_message_size);
 
   //DEV_REGISTER
+  temp_storage_bytes = 10000;
+  //std::cout << temp_storage_bytes << std::endl;
+  cudaMalloc(&d_temp_storage, temp_storage_bytes);
+
+
 nvtxRangePop();
 }
 
@@ -292,6 +297,9 @@ template<std::size_t D>
 void ParticleContainer<D>::delete_transferred_particles()
 {
 nvtxRangePush(__PRETTY_FUNCTION__);
+  std::vector<int> to_be_deleted;
+
+  // get transferred 
 
   //std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](auto a, auto b){return a.n > b.n;} );
 
@@ -332,6 +340,18 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) 
     resize(last);
+
+    /*
+
+  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  {
+    const auto &elem = to_other_tiles[ii];
+
+    to_be_deleted.push_back( elem.n );
+  }
+
+  delete_particles(to_be_deleted);
+  */
 nvtxRangePop();
 }
 
@@ -589,6 +609,9 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   for( int i=0; i<3; i++) 
     locn[i] = &( loc(i,0) );
 
+  //#ifdef GPU
+
+/*
   int maxCap = to_other_tiles.capacity();
   // 
   to_other_tiles.resize(to_other_tiles.capacity());
@@ -598,10 +621,9 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   // first try and add particle to to_other_tiles as long as there is space
   // if we run out of space keep counting
   // if count is larger than the space, reallocate for count, clear the whole thign and rerun.
-  // make sure adding to count in the lambda is atomic, atomic capture for OMP and atomicAdd on the GPU
-
+/*
   UniIter::iterate(
-    [=] DEVFUNIFGPU (int n, int &count, ManVec<to_other_tiles_struct> &to_other_tiles)
+    [=] DEVFUNIFGPU (int n, int &count)
     {
       int i = 0;
       int j = 0;
@@ -636,9 +658,9 @@ nvtxRangePush(__PRETTY_FUNCTION__);
         #endif
         
         if(pos < maxCap)
-          to_other_tiles[pos] = {i,j,k,n};
+          listPtr[pos] = {i,j,k,n};
       }
-    },size(), outgoing_count, to_other_tiles);
+    },size(), outgoing_count);
     UniIter::sync();
     // check outgoing_count and react to it...
     if(outgoing_count > maxCap)
@@ -654,7 +676,64 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     else{
       to_other_tiles.resize(outgoing_count);
     }
-    /*
+    */
+
+
+/*
+  outgoing_particleIndexes.clear();
+  
+  for(size_t n=0; n<size(); n++) {
+      int i,j,k; // relative indices
+    i = 0;
+    j = 0;
+    k = 0;
+
+    int i0, j0, k0;
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+    k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
+
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
+
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
+
+    if(k0 <  0)    k--; // back
+    if(k0 >= lenz) k++; // front
+
+    if ( (i != 0) || (j != 0) || (k != 0) ) 
+      outgoing_particleIndexes.push_back(n);
+  }
+
+  to_other_tiles.resize(outgoing_particleIndexes.size());
+  for (size_t ii = 0; ii < outgoing_particleIndexes.size(); ii++)
+  {
+    int n = outgoing_particleIndexes[ii];
+    int i,j,k; // relative indices
+    i = 0;
+    j = 0;
+    k = 0;
+
+    int i0, j0, k0;
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+    k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
+
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
+
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
+
+    if(k0 <  0)    k--; // back
+    if(k0 >= lenz) k++; // front
+
+    to_other_tiles[ii] =  {i,j,k,n} ;
+  }
+  */
+  
+  /*
   for(size_t n=0; n<size(); n++) {
     int i,j,k; // relative indices
     i = 0;
@@ -679,61 +758,126 @@ nvtxRangePush(__PRETTY_FUNCTION__);
       to_other_tiles.push_back( {i,j,k,n} );
   }
   */
+  
+
+
+#ifdef GPU
+  particleIndexesA.resize(size());
+  particleIndexesB.resize(size());
+  UniIter::iterate([=] DEVCALLABLE (int ii, ParticleContainer<3> &self){
+    self.particleIndexesA[ii] = ii;
+  }, size(), *this);
+  
+    cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, particleIndexesA.data(), particleIndexesB.data(), 
+    &pCount, size(), 
+     [=]__device__ (int n){
+           int i,j,k; // relative indices
+    i = 0;
+    j = 0;
+    k = 0;
+
+    int i0, j0, k0;
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+    k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
+
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
+
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
+
+    if(k0 <  0)    k--; // back
+    if(k0 >= lenz) k++; // front
+
+    return ( (i != 0) || (j != 0) || (k != 0) ) ;
+     });
+
+  cudaDeviceSynchronize();
+  
+  to_other_tiles.resize(pCount);
+  
+  UniIter::iterate([=] DEVCALLABLE (int ii, ParticleContainer<3> &self){
+    int n = self.particleIndexesB[ii];
+    int i,j,k; // relative indices
+    i = 0;
+    j = 0;
+    k = 0;
+
+    int i0, j0, k0;
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+    k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
+
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
+
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
+
+    if(k0 <  0)    k--; // back
+    if(k0 >= lenz) k++; // front
+
+    self.to_other_tiles[ii] =  {i,j,k,n} ;
+  }, pCount, *this);
+#else
+  for(size_t n=0; n<size(); n++) {
+    int i,j,k; // relative indices
+    i = 0;
+    j = 0;
+    k = 0;
+
+    int i0, j0, k0;
+    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+    k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
+
+    if(i0 <  0)    i--; // left wrap
+    if(i0 >= lenx) i++; // right wrap
+
+    if(j0 <  0)    j--; // bottom wrap
+    if(j0 >= leny) j++; // top wrap
+
+    if(k0 <  0)    k--; // back
+    if(k0 >= lenz) k++; // front
+
+    if ( (i != 0) || (j != 0) || (k != 0) ) 
+      to_other_tiles.push_back( {i,j,k,n} );
+  }
+#endif
+
 
 nvtxRangePop();
 
 }
 
-
-
 template<>
-void ParticleContainer<3>::transfer_and_wrap_particles(
+void ParticleContainer<3>::transfer_and_wrap_particles( 
     ParticleContainer& neigh,
-    std::array<int,3>    dirs,
-    std::array<double,3>& global_mins,
+    std::array<int,3>    dirs, 
+    std::array<double,3>& global_mins, 
     std::array<double,3>& global_maxs
     )
 {
-  
+
 nvtxRangePush(__PRETTY_FUNCTION__);
 
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
+  real_prtcl locx, locy, locz, velx, vely, velz, wgt;
+  int id, proc;
 
-  //cudaPointerAttributes attributes;
-  //cudaPointerGetAttributes( &attributes, &neigh.id);
-  //std::cout << attributes.type << std::endl;
+  int i;
+  for (auto&& elem : neigh.to_other_tiles) {
+//  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
+//  {
+//    const auto &elem = neigh.to_other_tiles[ii];
 
-  int NprtclsBefore = Nprtcls;
-
-  int maxCap = locArr[0].capacity();
-
-  locArr[0].resize(maxCap);
-  locArr[1].resize(maxCap);
-  locArr[2].resize(maxCap);
-  velArr[0].resize(maxCap);
-  velArr[1].resize(maxCap);
-  velArr[2].resize(maxCap);
-  wgtArr.resize(maxCap);
-  indArr[0].resize(maxCap);
-  indArr[1].resize(maxCap);
-  
-  UniIter::iterate(
- [=] DEVFUNIFGPU (int n, size_t &limit,
- ParticleContainer& neigh,
- ParticleContainer& self)
-  {
-    const auto &elem = neigh.to_other_tiles[n];
-
-    real_prtcl locx, locy, locz, velx, vely, velz, wgt;
-    int id, proc;
-
-    int i;
-
-    if(elem.i == 0 &&
+      
+    if(elem.i == 0 && 
        elem.j == 0 &&
-       elem.k == 0) return;
+       elem.k == 0) continue; 
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
@@ -758,56 +902,30 @@ nvtxRangePush(__PRETTY_FUNCTION__);
       id   = neigh.id(0,i);
       proc = neigh.id(1,i);
 
+      //std::cout << locx << " " << locy << " " << locz << " " <<  velx << " " << vely << " " << velz << " " <<  wgt << " " <<  id << " " <<  proc << std::endl;
       //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
+      
+      
+        //assert(prtcl_loc.size() == 3);
+        //assert(prtcl_vel.size() == 3);
 
-        int ind = 0;
-        #ifdef GPU
-          ind = atomicAdd((unsigned long long int*)&limit,(unsigned long long int)1);
-        #else
-          #pragma omp atomic capture 
-          {
-            ind = limit;
-            limit++;
-          }
-        #endif
-        
+        //for (size_t i=0; i<3; i++) 
+        locArr[0].push_back(locx);
+        locArr[1].push_back(locy);
+        locArr[2].push_back(locz);
+        //for (size_t i=0; i<3; i++) 
+        velArr[0].push_back(velx);
+        velArr[1].push_back(vely);
+        velArr[2].push_back(velz);
+        wgtArr.push_back(wgt);
 
-        if(ind < maxCap)
-        {
-          self.locArr[0][ind] = locx;
-          self.locArr[1][ind] = locy;
-          self.locArr[2][ind] = locz;
-          self.velArr[0][ind] = velx;
-          self.velArr[1][ind] = vely;
-          self.velArr[2][ind] = velz;
-          self.wgtArr[ind] = wgt;
-          self.indArr[0][ind] = id;
-          self.indArr[1][ind] = proc;
-        }
+        indArr[0].push_back(id);
+        indArr[1].push_back(proc);
 
+        Nprtcls++;
+      
     }
-  },neigh.to_other_tiles.size(), Nprtcls, neigh, *this);
-  UniIter::sync();
-
-  locArr[0].resize(Nprtcls);
-  locArr[1].resize(Nprtcls);
-  locArr[2].resize(Nprtcls);
-  velArr[0].resize(Nprtcls);
-  velArr[1].resize(Nprtcls);
-  velArr[2].resize(Nprtcls);
-  indArr[0].resize(Nprtcls);
-  indArr[1].resize(Nprtcls);
-  wgtArr.resize(Nprtcls);
-
-  if(Nprtcls > maxCap)
-  {
-    // resize and fix ...
-    //std::cout << "count over cap" << std::endl;
-    Nprtcls = NprtclsBefore;
-    transfer_and_wrap_particles(neigh, dirs, global_mins, global_maxs);
   }
-
-  //std::cout << NprtclsBefore << " " << Nprtcls << " " << to_other_tiles.size() << std::endl;
 nvtxRangePop();
 
   }
