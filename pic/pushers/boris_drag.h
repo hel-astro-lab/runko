@@ -15,6 +15,8 @@ class BorisPusherDrag :
   double drag; // = gamma_rad^-2
   double temp; // = 3\Theta
 
+  double freezing_factor = 1.0; // [0,1] parameter to define how much particles move
+
   // Klein-Nishina cross-section
   double kn(double x);
 

@@ -275,6 +275,12 @@ void bind_pic(py::module& m_sub)
   py::class_< pic::Pusher<2,3>> picpusher2d(m_2d, "Pusher");
   picpusher2d
     .def(py::init<>())
+    .def_readwrite("bx_ext",  &pic::Pusher<2,3>::bx_ext)
+    .def_readwrite("by_ext",  &pic::Pusher<2,3>::by_ext)
+    .def_readwrite("bz_ext",  &pic::Pusher<2,3>::bz_ext)
+    .def_readwrite("ex_ext",  &pic::Pusher<2,3>::ex_ext)
+    .def_readwrite("ey_ext",  &pic::Pusher<2,3>::ey_ext)
+    .def_readwrite("ez_ext",  &pic::Pusher<2,3>::ez_ext)
     .def("solve", py::overload_cast<pic::Tile<2>&>(     &pic::Pusher<2,3>::solve))
     .def("solve", py::overload_cast<pic::Tile<2>&, int>(&pic::Pusher<2,3>::solve));
 
@@ -310,6 +316,12 @@ void bind_pic(py::module& m_sub)
   py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
   picpusher3d
     .def(py::init<>())
+    .def_readwrite("bx_ext",  &pic::Pusher<3,3>::bx_ext)
+    .def_readwrite("by_ext",  &pic::Pusher<3,3>::by_ext)
+    .def_readwrite("bz_ext",  &pic::Pusher<3,3>::bz_ext)
+    .def_readwrite("ex_ext",  &pic::Pusher<3,3>::ex_ext)
+    .def_readwrite("ey_ext",  &pic::Pusher<3,3>::ey_ext)
+    .def_readwrite("ez_ext",  &pic::Pusher<3,3>::ez_ext)
     //.def("solve", &pic::Pusher<3,3>::solve);
     .def("solve", py::overload_cast<pic::Tile<3>&>(     &pic::Pusher<3,3>::solve))
     .def("solve", py::overload_cast<pic::Tile<3>&, int>(&pic::Pusher<3,3>::solve));
@@ -322,6 +334,7 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::BorisPusherDrag<3,3>>(m_3d, "BorisDragPusher", picpusher3d)
     .def_readwrite("drag", &pic::BorisPusherDrag<3,3>::drag)
     .def_readwrite("temp", &pic::BorisPusherDrag<3,3>::temp)
+    .def_readwrite("freezing_factor", &pic::BorisPusherDrag<3,3>::freezing_factor)
     .def(py::init<>());
     
   // Boris pusher with radiative pressure force

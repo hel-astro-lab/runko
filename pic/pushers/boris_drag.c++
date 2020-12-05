@@ -74,9 +74,14 @@ void pic::BorisPusherDrag<D,V>::push_container(
   // charge-to-mass ratio (sign only because fields are in units of q)
   real_long qm = sign(container.q)/container.m;
 
+  real_long loc0n, loc1n, loc2n;
   real_long vel0n, vel1n, vel2n;
 
   for(int n=n1; n<n2; n++) {
+
+    loc0n = static_cast<real_long>( loc[0][n] );
+    loc1n = static_cast<real_long>( loc[1][n] );
+    loc2n = static_cast<real_long>( loc[2][n] );
 
     vel0n = static_cast<real_long>( vel[0][n] );
     vel1n = static_cast<real_long>( vel[1][n] );
@@ -86,13 +91,13 @@ void pic::BorisPusherDrag<D,V>::push_container(
     // Boris algorithm
 
     // read particle-specific fields
-    ex0 = static_cast<real_long>( ex[n] )*0.5*qm;
-    ey0 = static_cast<real_long>( ey[n] )*0.5*qm;
-    ez0 = static_cast<real_long>( ez[n] )*0.5*qm;
+    ex0 = static_cast<real_long>( ex[n] + this->get_ex_ext(loc0n, loc1n, loc2n) )*0.5*qm;
+    ey0 = static_cast<real_long>( ey[n] + this->get_ey_ext(loc0n, loc1n, loc2n) )*0.5*qm;
+    ez0 = static_cast<real_long>( ez[n] + this->get_ez_ext(loc0n, loc1n, loc2n) )*0.5*qm;
 
-    bx0 = static_cast<real_long>( bx[n] )*0.5*qm*cinv;
-    by0 = static_cast<real_long>( by[n] )*0.5*qm*cinv;
-    bz0 = static_cast<real_long>( bz[n] )*0.5*qm*cinv;
+    bx0 = static_cast<real_long>( bx[n] + this->get_bx_ext(loc0n, loc1n, loc2n) )*0.5*qm*cinv;
+    by0 = static_cast<real_long>( by[n] + this->get_by_ext(loc0n, loc1n, loc2n) )*0.5*qm*cinv;
+    bz0 = static_cast<real_long>( bz[n] + this->get_bz_ext(loc0n, loc1n, loc2n) )*0.5*qm*cinv;
 
     // first half electric acceleration
     u0 = c*vel0n + ex0;
@@ -153,7 +158,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
         vel[1][n]*vel[1][n] +
         vel[2][n]*vel[2][n]);
 
-    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c;
+    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c*freezing_factor;
   }
 }
 
