@@ -9,9 +9,9 @@ real_short fields::FDTD2_pml<3>::lambda( real_short sx, real_short sy, real_shor
 {
   // normalized unit radius 
   real_short r = std::sqrt( 
-          pow( (sx - cenx)/radx, 2) + 
-          pow( (sy - ceny)/rady, 2) + 
-          pow( (sz - cenz)/radz, 2) 
+            pow( (sx - cenx)/radx, 2) 
+          + pow( (sy - ceny)/rady, 2) 
+          //+ pow( (sz - cenz)/radz, 2) 
                );
 
   if(r > rad_lim) {
@@ -66,24 +66,52 @@ void fields::FDTD2_pml<3>::push_e(fields::Tile<3>& tile)
   YeeLattice& mesh = tile.get_yee();
   Realf C = 1.0 * tile.cfl * dt * corr;
 
+  auto mins = tile.mins;
+  real_short lam, iglob, jglob, kglob;
+
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
     // Ex
-    mesh.ex(i,j,k) += 
-      + C*( mesh.by(i,j,  k-1) - mesh.by(i,j,k))
-      + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
+    //mesh.ex(i,j,k) += 
+    //  + C*( mesh.by(i,j,  k-1) - mesh.by(i,j,k))
+    //  + C*(-mesh.bz(i,j-1,k  ) + mesh.bz(i,j,k));
 
     // Ey
-    mesh.ey(i,j,k) += 
-      + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k))
-      + C*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k));
+    //mesh.ey(i,j,k) += 
+    //  + C*( mesh.bz(i-1,j, k  ) - mesh.bz(i,j,k))
+    //  + C*(-mesh.bx(i,  j, k-1) + mesh.bx(i,j,k));
 
     // Ez
-    mesh.ez(i,j,k) += 
-      + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
-      + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
+    //mesh.ez(i,j,k) += 
+    //  + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
+    //  + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
+
+    //-----------
+    // global grid coordinates
+    iglob = static_cast<real_short>(i) + mins[0];
+    jglob = static_cast<real_short>(j) + mins[1];
+    kglob = static_cast<real_short>(k) + mins[2];
+
+    // dE = dt*curl B  (1/2)
+	lam = 0.5*lambda(iglob+0.5, jglob, kglob);
+    mesh.ex(i,j,k) = (
+            mesh.ex(i,j,k)*(1+lam) + 
+            C*(mesh.by(i,j,k-1)-mesh.by(i,j,k)  - mesh.bz(i,j-1,k)+mesh.bz(i,j,k)) 
+            )/(1-lam);
+
+	lam = 0.5*lambda(iglob, jglob+0.5, kglob);
+    mesh.ey(i,j,k) = (
+            mesh.ey(i,j,k)*(1+lam) + 
+            C*(mesh.bz(i-1,j,k)-mesh.bz(i,j,k)  - mesh.bx(i,j,k-1)+mesh.bx(i,j,k)) 
+            )/(1-lam);
+
+	lam = 0.5*lambda(iglob, jglob, kglob+0.5);
+    mesh.ez(i,j,k) = (
+            mesh.ez(i,j,k)*(1+lam) + 
+            C*(mesh.bx(i,j-1,k)-mesh.bx(i,j,k)  - mesh.by(i-1,j,k)+mesh.by(i,j,k)) 
+            )/(1-lam);
 
   }
 }
@@ -127,25 +155,50 @@ void fields::FDTD2_pml<3>::push_half_b(fields::Tile<3>& tile)
   YeeLattice& mesh = tile.get_yee();
   Realf C = 0.5 * tile.cfl * dt * corr;
 
+  auto mins = tile.mins;
+  real_short lam, iglob, jglob, kglob;
+
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
     // Bx
-    mesh.bx(i,j,k) += 
-      + C*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k))
-      + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
+    //mesh.bx(i,j,k) += 
+    //  + C*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k))
+    //  + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));
 
     // By
-    mesh.by(i,j,k) += 
-      + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k))
-      + C*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k));
+    //mesh.by(i,j,k) += 
+    //  + C*( mesh.ez(i+1,j, k  ) - mesh.ez(i,j,k))
+    //  + C*(-mesh.ex(i,  j, k+1) + mesh.ex(i,j,k));
 
     // Bz
-    mesh.bz(i,j,k) += 
-      + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
-      + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
+    //mesh.bz(i,j,k) += 
+    //  + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
+    //  + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
+    //-----------
+    // global grid coordinates
+    iglob = static_cast<real_short>(i) + mins[0];
+    jglob = static_cast<real_short>(j) + mins[1];
+    kglob = static_cast<real_short>(k) + mins[2];
+
+    // dB = -dt*curl E  (1/4)
+	lam = 0.25*lambda(iglob, jglob+0.5, kglob+0.5);
+	mesh.bx(i,j,k) = ( mesh.bx(i,j,k)*(1+lam)
+            + C*(mesh.ey(i,j,k+1)-mesh.ey(i,j,k)  - mesh.ez(i,j+1,k)+mesh.ez(i,j,k)) 
+            )/(1-lam);
+
+	lam = 0.25*lambda(iglob+0.5, jglob, kglob+0.5);
+	mesh.by(i,j,k) = ( mesh.by(i,j,k)*(1+lam)
+            + C*(mesh.ez(i+1,j,k)-mesh.ez(i,j,k)  - mesh.ex(i,j,k+1)+mesh.ex(i,j,k)) 
+            )/(1-lam);
+
+	lam = 0.25*lambda(iglob+0.5, jglob+0.5, kglob);
+	mesh.bz(i,j,k) = ( mesh.bz(i,j,k)*(1+lam)
+            + C*(mesh.ex(i,j+1,k)-mesh.ex(i,j,k)  - mesh.ey(i+1,j,k)+mesh.ey(i,j,k)) 
+            )/(1-lam);
+      
   }
 }
 
@@ -204,13 +257,13 @@ void fields::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
         // simultaneous E & B update with perfectly matched layer damping
 
         // dB = -dt*curl E  (1/4)
-		lam = 0.25*lambda(iglob, jglob+0.5, kglob+0.5);
+		lam = 0.5*lambda(iglob, jglob+0.5, kglob+0.5);
 		dm.bx(i,j,k) = (bx(i,j,k)*lam + C1*(ey(i,j,k+1)-ey(i,j,k)  - ez(i,j+1,k)+ez(i,j,k)) )/(1-lam);
 
-	    lam = 0.25*lambda(iglob+0.5, jglob, kglob+0.5);
+	    lam = 0.5*lambda(iglob+0.5, jglob, kglob+0.5);
 		dm.by(i,j,k) = (by(i,j,k)*lam + C1*(ez(i+1,j,k)-ez(i,j,k)  - ex(i,j,k+1)+ex(i,j,k)) )/(1-lam);
 
-	    lam = 0.25*lambda(iglob+0.5, jglob+0.5, kglob);
+	    lam = 0.5*lambda(iglob+0.5, jglob+0.5, kglob);
 		dm.bz(i,j,k) = (bz(i,j,k)*lam + C1*(ex(i,j+1,k)-ex(i,j,k)  - ey(i+1,j,k)+ey(i,j,k)) )/(1-lam);
 
 
