@@ -91,214 +91,205 @@ void fields::Binomial2<2>::solve(
 }
 
 
+void sweep_in_x(
+        toolbox::Mesh<real_short,3>& arr,
+        int lenx,
+        int leny,
+        int lenz,
+        int sub_cycle
+        ) {
+
+  int imin, imax, jmin, jmax, kmin, kmax;
+  real_short tmp1, tmp2;
+    
+  for(int npass=1; npass<=sub_cycle; npass++){
+    imin = -3 + npass;
+    imax = lenx + 3 - 1 - npass;
+
+    jmin = -3 + npass;
+    jmax = leny + 3 - 1 - npass;
+
+    kmin = -3 + npass;
+    kmax = lenz + 3 - 1 - npass;
+
+    for(int k=kmin; k<kmax; k++) {
+      for(int j=jmin; j<jmax; j++) {
+
+        tmp2 = arr(imin-1, j, k);
+        tmp2 = arr(imin-1, j, k);
+        for(int i=imin; i<imax-1; i=i+2) {
+        //for i = imin, imax - 1, 2 //mod 2 imax-imin
+        //for i = imin, imax, 2     //non mod2 
+
+          tmp1 = 0.25 * arr(i - 1, j, k) + 0.5 * arr(i, j, k) + 0.25 * arr(i + 1, j, k);
+
+          arr(i - 1, j, k) = tmp2;
+          tmp2 = 0.25 * arr(i, j, k) + 0.5 * arr(i + 1, j, k) + 0.25 * arr(i + 2, j, k);
+          arr(i, j, k) = tmp1;
+          }
+
+        // extra manual step for uneven grids
+        tmp1 = 0.25 * arr(imax - 1, j, k) + 0.5 * arr(imax, j, k) + 0.25 * arr(imax + 1, j, k);
+        arr(imax - 1, j, k) = tmp2;
+
+        arr(imax, j, k) = tmp1;
+      }//j
+    }//k
+  } // end of npass
+}
+
+
+
+/// Single 3D 2nd order 3-point Binomial filter
+// NOTE: optimized to slide in x/y/z dimensions to enable vectorization
+// TODO: not fully implemented but frame is there
+template<>
+void fields::OptBinomial2<3>::solve(
+    fields::Tile<3>& tile)
+{
+  auto& mesh = tile.get_yee();
+
+  sweep_in_x(mesh.jx, tile.mesh_lengths[0], tile.mesh_lengths[1], tile.mesh_lengths[2], 1);
+  sweep_in_x(mesh.jy, tile.mesh_lengths[0], tile.mesh_lengths[1], tile.mesh_lengths[2], 1);
+  sweep_in_x(mesh.jz, tile.mesh_lengths[0], tile.mesh_lengths[1], tile.mesh_lengths[2], 1);
+
+  //sweep_in_y(mesh.jx, 1);
+  //sweep_in_y(mesh.jy, 1);
+  //sweep_in_y(mesh.jz, 1);
+
+  //sweep_in_z(mesh.jx, 1);
+  //sweep_in_z(mesh.jy, 1);
+  //sweep_in_z(mesh.jz, 1);
+
+}
+
+
+
+/// roll-out last convolution
+void operate_3d(
+        toolbox::Mesh<real_short, 3>& in,
+        toolbox::Mesh<real_short, 3>& out,
+        int imin, int imax,
+        int jmin, int jmax,
+        int kmin, int kmax
+        ){
+
+  // 3D 3-point binomial coefficients
+  real_short winv  = 1./64., // normalization
+             wtd  = 1.*winv, // diagnoal
+             wtos = 2.*winv, // outer side
+             wtis = 4.*winv, // inner side
+             wt   = 8.*winv; // center
+
+  for(int k=kmin; k<kmax; k++) 
+  for(int j=jmin; j<jmax; j++) {
+
+    // NOTE: assisting compiler vectorization by rolling out the convolution loops
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j-1, k-1)*wtd;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j-1, k-1)*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j-1, k-1)*wtd;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j  , k-1)*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j  , k-1)*wtis;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j  , k-1)*wtos;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j+1, k-1)*wtd;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j+1, k-1)*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j+1, k-1)*wtd;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j-1, k  )*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j-1, k  )*wtis;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j-1, k  )*wtos;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j  , k  )*wtis;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j  , k  )*wt;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j  , k  )*wtis;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j+1, k  )*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j+1, k  )*wtis;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j+1, k  )*wtos;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j-1, k+1)*wtd;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j-1, k+1)*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j-1, k+1)*wtd;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j  , k+1)*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j  , k+1)*wtis;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j  , k+1)*wtos;
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j+1, k+1)*wtd;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j+1, k+1)*wtos;
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j+1, k+1)*wtd;
+  }
+}
+
+
 /// single 3D 2nd order 3-point binomial filter 
 template<>
 void fields::Binomial2<3>::solve(
     fields::Tile<3>& tile)
 {
-  // 3D 3-point binomial coefficients
-  //real_short winv  = 1./64., // normalization
-  //           wtd  = 1.*winv, // diagnoal
-  //           wtos = 2.*winv, // outer side
-  //           wtis = 4.*winv, // inner side
-  //           wt   = 8.*winv; // center
-
-  real_short C3[3][3][3] = 
-        { { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} },
-          { {2, 4, 2}, {4, 8, 4}, {2, 4, 2} },
-          { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} } };
 
   auto& mesh = tile.get_yee();
 
-  // using tmp as scratch arrays
-  //
-  // can be optimized by changing to 3x loops and using 3x3x3 array; 
-  // this should vectorize easier. 
-  //
-  // JN: I tried this with ver1/ver2 but ver3 (no-loop) is still 2x faster
+  int halo = 2;
 
+  int imin = 0 - halo;
+  int imax = tile.mesh_lengths[0] + halo;
+
+  int jmin = 0 - halo;
+  int jmax = tile.mesh_lengths[1] + halo;
+
+  int kmin = 0 - halo;
+  int kmax = tile.mesh_lengths[2] + halo;
+
+  // NOTE: using tmp as scratch arrays
+    
   //--------------------------------------------------
   // Jx
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-
-    //ver 1
-	tmp(i,j,k) = 0.0;
-    for(int ks=-1; ks<=1; ks++) {
-    for(int js=-1; js<=1; js++) {
-    for(int is=-1; is<=1; is++) {
-		tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
-    }}}
-
-    //ver 2
-	//tmp(i,j,k) = 0.0;
-    //for(int ks=-1; ks<=1; ks++) {
-    //for(int js=-1; js<=1; js++) {
-	//	tmp(i,j,k) += mesh.jx(i-1, j+js, k+ks)*C3[0][js+1][ks+1]/64.0;
-	//	tmp(i,j,k) += mesh.jx(i  , j+js, k+ks)*C3[1][js+1][ks+1]/64.0;
-	//	tmp(i,j,k) += mesh.jx(i+1, j+js, k+ks)*C3[2][js+1][ks+1]/64.0;
-    //}}
-
-    //ver 3
-	//tmp(i,j,k) = 
-    //    mesh.jx(i-1, j-1, k-1)*wtd  + 
-    //    mesh.jx(i  , j-1, k-1)*wtos + 
-    //    mesh.jx(i+1, j-1, k-1)*wtd  +
-
-    //    mesh.jx(i-1, j  , k-1)*wtos +
-    //    mesh.jx(i  , j  , k-1)*wtis +
-    //    mesh.jx(i+1, j  , k-1)*wtos +
-
-    //    mesh.jx(i-1, j+1, k-1)*wtd  + 
-    //    mesh.jx(i  , j+1, k-1)*wtos +
-    //    mesh.jx(i+1, j+1, k-1)*wtd  +
-
-    //    mesh.jx(i-1, j-1, k  )*wtos +
-    //    mesh.jx(i  , j-1, k  )*wtis +
-    //    mesh.jx(i+1, j-1, k  )*wtos +
-
-    //    mesh.jx(i-1, j  , k  )*wtis +
-    //    mesh.jx(i  , j  , k  )*wt   +
-    //    mesh.jx(i+1, j  , k  )*wtis +
-
-    //    mesh.jx(i-1, j+1, k  )*wtos +
-    //    mesh.jx(i  , j+1, k  )*wtis +
-    //    mesh.jx(i+1, j+1, k  )*wtos +
-
-    //    mesh.jx(i-1, j-1, k+1)*wtd  +
-    //    mesh.jx(i  , j-1, k+1)*wtos +
-    //    mesh.jx(i+1, j-1, k+1)*wtd  +
-
-    //    mesh.jx(i-1, j  , k+1)*wtos +
-    //    mesh.jx(i  , j  , k+1)*wtis +
-    //    mesh.jx(i+1, j  , k+1)*wtos +
-
-    //    mesh.jx(i-1, j+1, k+1)*wtd  +
-    //    mesh.jx(i  , j+1, k+1)*wtos +
-    //    mesh.jx(i+1, j+1, k+1)*wtd;
-  }
-  //mesh.jx = tmp; // then copy from scratch to original arrays
+  //tmp(i,j,k) = 0.0;
+  tmp.clear();
+  operate_3d(mesh.jx, tmp, imin, imax, jmin, jmax, kmin, kmax);
   swap(mesh.jx, tmp);
 
-
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-
-	tmp(i,j,k) = 0.0;
-    for(int ks=-1; ks<=1; ks++) {
-    for(int js=-1; js<=1; js++) {
-    for(int is=-1; is<=1; is++) {
-		tmp(i,j,k) += mesh.jy(i+is,j+js,k+ks)*C3[is+1][js+1][ks+1]/64.0;
-    }}}
-
-	//tmp(i,j,k) = 0.0;
-    //for(int ks=-1; ks<=1; ks++) {
-    //for(int js=-1; js<=1; js++) {
-	//	tmp(i,j,k) += mesh.jy(i-1 , j+js, k+ks)*C3[0][js+1][ks+1]/64.0;
-	//	tmp(i,j,k) += mesh.jy(i   , j+js, k+ks)*C3[1][js+1][ks+1]/64.0;
-	//	tmp(i,j,k) += mesh.jy(i+1 , j+js, k+ks)*C3[2][js+1][ks+1]/64.0;
-    //}}
-
-	//tmp(i,j,k) = 
-    //  mesh.jy(i-1, j-1, k-1)*wtd  + 
-    //  mesh.jy(i  , j-1, k-1)*wtos + 
-    //  mesh.jy(i+1, j-1, k-1)*wtd  +
-    //         
-    //  mesh.jy(i-1, j  , k-1)*wtos +
-    //  mesh.jy(i  , j  , k-1)*wtis +
-    //  mesh.jy(i+1, j  , k-1)*wtos +
-    //         
-    //  mesh.jy(i-1, j+1, k-1)*wtd  + 
-    //  mesh.jy(i  , j+1, k-1)*wtos +
-    //  mesh.jy(i+1, j+1, k-1)*wtd  +
-    //         
-    //  mesh.jy(i-1, j-1, k  )*wtos +
-    //  mesh.jy(i  , j-1, k  )*wtis +
-    //  mesh.jy(i+1, j-1, k  )*wtos +
-    //         
-    //  mesh.jy(i-1, j  , k  )*wtis +
-    //  mesh.jy(i  , j  , k  )*wt   +
-    //  mesh.jy(i+1, j  , k  )*wtis +
-    //         
-    //  mesh.jy(i-1, j+1, k  )*wtos +
-    //  mesh.jy(i  , j+1, k  )*wtis +
-    //  mesh.jy(i+1, j+1, k  )*wtos +
-    //         
-    //  mesh.jy(i-1, j-1, k+1)*wtd  +
-    //  mesh.jy(i  , j-1, k+1)*wtos +
-    //  mesh.jy(i+1, j-1, k+1)*wtd  +
-    //         
-    //  mesh.jy(i-1, j  , k+1)*wtos +
-    //  mesh.jy(i  , j  , k+1)*wtis +
-    //  mesh.jy(i+1, j  , k+1)*wtos +
-    //         
-    //  mesh.jy(i-1, j+1, k+1)*wtd  +
-    //  mesh.jy(i  , j+1, k+1)*wtos +
-    //  mesh.jy(i+1, j+1, k+1)*wtd;
-  }
-  //mesh.jy = tmp; // then copy from scratch to original arrays
+  //--------------------------------------------------
+  // Jy
+  tmp.clear();
+  operate_3d(mesh.jy, tmp, imin, imax, jmin, jmax, kmin, kmax);
   swap(mesh.jy, tmp);
 
-
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-
-	tmp(i,j,k) = 0.0;
-    for(int ks=-1; ks<=1; ks++) {
-    for(int js=-1; js<=1; js++) {
-    for(int is=-1; is<=1; is++) {
-		tmp(i,j,k) += mesh.jz(i+is,j+js,k+ks)*C3[is+1][js+1][ks+1]/64.0;
-    }}}
-
-	//tmp(i,j,k) = 0.0;
-    //for(int ks=-1; ks<=1; ks++) {
-    //for(int js=-1; js<=1; js++) {
-	//	tmp(i,j,k) += mesh.jz(i-1 , j+js, k+ks)*C3[0][js+1][ks+1]/64.0;
-	//	tmp(i,j,k) += mesh.jz(i   , j+js, k+ks)*C3[1][js+1][ks+1]/64.0;
-	//	tmp(i,j,k) += mesh.jz(i+1 , j+js, k+ks)*C3[2][js+1][ks+1]/64.0;
-    //}}
-
-	//tmp(i,j,k) = 
-    //  mesh.jz(i-1, j-1, k-1)*wtd  + 
-    //  mesh.jz(i  , j-1, k-1)*wtos + 
-    //  mesh.jz(i+1, j-1, k-1)*wtd  +
-    //         
-    //  mesh.jz(i-1, j  , k-1)*wtos +
-    //  mesh.jz(i  , j  , k-1)*wtis +
-    //  mesh.jz(i+1, j  , k-1)*wtos +
-    //         
-    //  mesh.jz(i-1, j+1, k-1)*wtd  + 
-    //  mesh.jz(i  , j+1, k-1)*wtos +
-    //  mesh.jz(i+1, j+1, k-1)*wtd  +
-    //         
-    //  mesh.jz(i-1, j-1, k  )*wtos +
-    //  mesh.jz(i  , j-1, k  )*wtis +
-    //  mesh.jz(i+1, j-1, k  )*wtos +
-    //         
-    //  mesh.jz(i-1, j  , k  )*wtis +
-    //  mesh.jz(i  , j  , k  )*wt   +
-    //  mesh.jz(i+1, j  , k  )*wtis +
-    //         
-    //  mesh.jz(i-1, j+1, k  )*wtos +
-    //  mesh.jz(i  , j+1, k  )*wtis +
-    //  mesh.jz(i+1, j+1, k  )*wtos +
-    //         
-    //  mesh.jz(i-1, j-1, k+1)*wtd  +
-    //  mesh.jz(i  , j-1, k+1)*wtos +
-    //  mesh.jz(i+1, j-1, k+1)*wtd  +
-    //         
-    //  mesh.jz(i-1, j  , k+1)*wtos +
-    //  mesh.jz(i  , j  , k+1)*wtis +
-    //  mesh.jz(i+1, j  , k+1)*wtos +
-    //         
-    //  mesh.jz(i-1, j+1, k+1)*wtd  +
-    //  mesh.jz(i  , j+1, k+1)*wtos +
-    //  mesh.jz(i+1, j+1, k+1)*wtd;
-  }
-  //mesh.jz = tmp; // then copy from scratch to original arrays
+  //--------------------------------------------------
+  // Jz
+  tmp.clear();
+  operate_3d(mesh.jz, tmp, imin, imax, jmin, jmax, kmin, kmax);
   swap(mesh.jz, tmp);
 
 }

@@ -18,6 +18,19 @@ class Binomial2 :
 };
 
 
+/// Optimized digital 2nd order one-pass binomial filter
+template<size_t D>
+class OptBinomial2 :
+  public virtual Filter<D>
+{
+  public:
+
+  using Filter<D>::Filter;
+
+  void solve(fields::Tile<D>& tile) override;
+
+};
+
 /// Digital 3-point general filter with variable weight.
 //
 // Can be made digital filter with alpha = 1/2
