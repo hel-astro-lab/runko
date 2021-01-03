@@ -97,16 +97,16 @@ void fields::Binomial2<3>::solve(
     fields::Tile<3>& tile)
 {
   // 3D 3-point binomial coefficients
-  real_short winv  = 1./64., // normalization
-             wtd  = 1.*winv, // diagnoal
-             wtos = 2.*winv, // outer side
-             wtis = 4.*winv, // inner side
-             wt   = 8.*winv; // center
+  //real_short winv  = 1./64., // normalization
+  //           wtd  = 1.*winv, // diagnoal
+  //           wtos = 2.*winv, // outer side
+  //           wtis = 4.*winv, // inner side
+  //           wt   = 8.*winv; // center
 
-  //real_short C3[3][3][3] = 
-  //      { { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} },
-  //        { {2, 4, 2}, {4, 8, 4}, {2, 4, 2} },
-  //        { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} } };
+  real_short C3[3][3][3] = 
+        { { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} },
+          { {2, 4, 2}, {4, 8, 4}, {2, 4, 2} },
+          { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} } };
 
   auto& mesh = tile.get_yee();
 
@@ -124,12 +124,12 @@ void fields::Binomial2<3>::solve(
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
     //ver 1
-	//tmp(i,j,k) = 0.0;
-    //for(int ks=-1; ks<=1; ks++) {
-    //for(int js=-1; js<=1; js++) {
-    //for(int is=-1; is<=1; is++) {
-	//	tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
-    //}}}
+	tmp(i,j,k) = 0.0;
+    for(int ks=-1; ks<=1; ks++) {
+    for(int js=-1; js<=1; js++) {
+    for(int is=-1; is<=1; is++) {
+		tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
+    }}}
 
     //ver 2
 	//tmp(i,j,k) = 0.0;
@@ -141,57 +141,57 @@ void fields::Binomial2<3>::solve(
     //}}
 
     //ver 3
-	tmp(i,j,k) = 
-        mesh.jx(i-1, j-1, k-1)*wtd  + 
-        mesh.jx(i  , j-1, k-1)*wtos + 
-        mesh.jx(i+1, j-1, k-1)*wtd  +
+	//tmp(i,j,k) = 
+    //    mesh.jx(i-1, j-1, k-1)*wtd  + 
+    //    mesh.jx(i  , j-1, k-1)*wtos + 
+    //    mesh.jx(i+1, j-1, k-1)*wtd  +
 
-        mesh.jx(i-1, j  , k-1)*wtos +
-        mesh.jx(i  , j  , k-1)*wtis +
-        mesh.jx(i+1, j  , k-1)*wtos +
+    //    mesh.jx(i-1, j  , k-1)*wtos +
+    //    mesh.jx(i  , j  , k-1)*wtis +
+    //    mesh.jx(i+1, j  , k-1)*wtos +
 
-        mesh.jx(i-1, j+1, k-1)*wtd  + 
-        mesh.jx(i  , j+1, k-1)*wtos +
-        mesh.jx(i+1, j+1, k-1)*wtd  +
+    //    mesh.jx(i-1, j+1, k-1)*wtd  + 
+    //    mesh.jx(i  , j+1, k-1)*wtos +
+    //    mesh.jx(i+1, j+1, k-1)*wtd  +
 
-        mesh.jx(i-1, j-1, k  )*wtos +
-        mesh.jx(i  , j-1, k  )*wtis +
-        mesh.jx(i+1, j-1, k  )*wtos +
+    //    mesh.jx(i-1, j-1, k  )*wtos +
+    //    mesh.jx(i  , j-1, k  )*wtis +
+    //    mesh.jx(i+1, j-1, k  )*wtos +
 
-        mesh.jx(i-1, j  , k  )*wtis +
-        mesh.jx(i  , j  , k  )*wt   +
-        mesh.jx(i+1, j  , k  )*wtis +
+    //    mesh.jx(i-1, j  , k  )*wtis +
+    //    mesh.jx(i  , j  , k  )*wt   +
+    //    mesh.jx(i+1, j  , k  )*wtis +
 
-        mesh.jx(i-1, j+1, k  )*wtos +
-        mesh.jx(i  , j+1, k  )*wtis +
-        mesh.jx(i+1, j+1, k  )*wtos +
+    //    mesh.jx(i-1, j+1, k  )*wtos +
+    //    mesh.jx(i  , j+1, k  )*wtis +
+    //    mesh.jx(i+1, j+1, k  )*wtos +
 
-        mesh.jx(i-1, j-1, k+1)*wtd  +
-        mesh.jx(i  , j-1, k+1)*wtos +
-        mesh.jx(i+1, j-1, k+1)*wtd  +
+    //    mesh.jx(i-1, j-1, k+1)*wtd  +
+    //    mesh.jx(i  , j-1, k+1)*wtos +
+    //    mesh.jx(i+1, j-1, k+1)*wtd  +
 
-        mesh.jx(i-1, j  , k+1)*wtos +
-        mesh.jx(i  , j  , k+1)*wtis +
-        mesh.jx(i+1, j  , k+1)*wtos +
+    //    mesh.jx(i-1, j  , k+1)*wtos +
+    //    mesh.jx(i  , j  , k+1)*wtis +
+    //    mesh.jx(i+1, j  , k+1)*wtos +
 
-        mesh.jx(i-1, j+1, k+1)*wtd  +
-        mesh.jx(i  , j+1, k+1)*wtos +
-        mesh.jx(i+1, j+1, k+1)*wtd;
+    //    mesh.jx(i-1, j+1, k+1)*wtd  +
+    //    mesh.jx(i  , j+1, k+1)*wtos +
+    //    mesh.jx(i+1, j+1, k+1)*wtd;
   }
-  mesh.jx = tmp; // then copy from scratch to original arrays
-  //swap(mesh.jx, tmp);
+  //mesh.jx = tmp; // then copy from scratch to original arrays
+  swap(mesh.jx, tmp);
 
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
-	//tmp(i,j,k) = 0.0;
-    //for(int ks=-1; ks<=1; ks++) {
-    //for(int js=-1; js<=1; js++) {
-    //for(int is=-1; is<=1; is++) {
-	//	tmp(i,j,k) += mesh.jy(i+is,j+js,k+ks)*C3[is+1][js+1][ks+1]/64.0;
-    //}}}
+	tmp(i,j,k) = 0.0;
+    for(int ks=-1; ks<=1; ks++) {
+    for(int js=-1; js<=1; js++) {
+    for(int is=-1; is<=1; is++) {
+		tmp(i,j,k) += mesh.jy(i+is,j+js,k+ks)*C3[is+1][js+1][ks+1]/64.0;
+    }}}
 
 	//tmp(i,j,k) = 0.0;
     //for(int ks=-1; ks<=1; ks++) {
@@ -201,57 +201,57 @@ void fields::Binomial2<3>::solve(
 	//	tmp(i,j,k) += mesh.jy(i+1 , j+js, k+ks)*C3[2][js+1][ks+1]/64.0;
     //}}
 
-	tmp(i,j,k) = 
-      mesh.jy(i-1, j-1, k-1)*wtd  + 
-      mesh.jy(i  , j-1, k-1)*wtos + 
-      mesh.jy(i+1, j-1, k-1)*wtd  +
-             
-      mesh.jy(i-1, j  , k-1)*wtos +
-      mesh.jy(i  , j  , k-1)*wtis +
-      mesh.jy(i+1, j  , k-1)*wtos +
-             
-      mesh.jy(i-1, j+1, k-1)*wtd  + 
-      mesh.jy(i  , j+1, k-1)*wtos +
-      mesh.jy(i+1, j+1, k-1)*wtd  +
-             
-      mesh.jy(i-1, j-1, k  )*wtos +
-      mesh.jy(i  , j-1, k  )*wtis +
-      mesh.jy(i+1, j-1, k  )*wtos +
-             
-      mesh.jy(i-1, j  , k  )*wtis +
-      mesh.jy(i  , j  , k  )*wt   +
-      mesh.jy(i+1, j  , k  )*wtis +
-             
-      mesh.jy(i-1, j+1, k  )*wtos +
-      mesh.jy(i  , j+1, k  )*wtis +
-      mesh.jy(i+1, j+1, k  )*wtos +
-             
-      mesh.jy(i-1, j-1, k+1)*wtd  +
-      mesh.jy(i  , j-1, k+1)*wtos +
-      mesh.jy(i+1, j-1, k+1)*wtd  +
-             
-      mesh.jy(i-1, j  , k+1)*wtos +
-      mesh.jy(i  , j  , k+1)*wtis +
-      mesh.jy(i+1, j  , k+1)*wtos +
-             
-      mesh.jy(i-1, j+1, k+1)*wtd  +
-      mesh.jy(i  , j+1, k+1)*wtos +
-      mesh.jy(i+1, j+1, k+1)*wtd;
+	//tmp(i,j,k) = 
+    //  mesh.jy(i-1, j-1, k-1)*wtd  + 
+    //  mesh.jy(i  , j-1, k-1)*wtos + 
+    //  mesh.jy(i+1, j-1, k-1)*wtd  +
+    //         
+    //  mesh.jy(i-1, j  , k-1)*wtos +
+    //  mesh.jy(i  , j  , k-1)*wtis +
+    //  mesh.jy(i+1, j  , k-1)*wtos +
+    //         
+    //  mesh.jy(i-1, j+1, k-1)*wtd  + 
+    //  mesh.jy(i  , j+1, k-1)*wtos +
+    //  mesh.jy(i+1, j+1, k-1)*wtd  +
+    //         
+    //  mesh.jy(i-1, j-1, k  )*wtos +
+    //  mesh.jy(i  , j-1, k  )*wtis +
+    //  mesh.jy(i+1, j-1, k  )*wtos +
+    //         
+    //  mesh.jy(i-1, j  , k  )*wtis +
+    //  mesh.jy(i  , j  , k  )*wt   +
+    //  mesh.jy(i+1, j  , k  )*wtis +
+    //         
+    //  mesh.jy(i-1, j+1, k  )*wtos +
+    //  mesh.jy(i  , j+1, k  )*wtis +
+    //  mesh.jy(i+1, j+1, k  )*wtos +
+    //         
+    //  mesh.jy(i-1, j-1, k+1)*wtd  +
+    //  mesh.jy(i  , j-1, k+1)*wtos +
+    //  mesh.jy(i+1, j-1, k+1)*wtd  +
+    //         
+    //  mesh.jy(i-1, j  , k+1)*wtos +
+    //  mesh.jy(i  , j  , k+1)*wtis +
+    //  mesh.jy(i+1, j  , k+1)*wtos +
+    //         
+    //  mesh.jy(i-1, j+1, k+1)*wtd  +
+    //  mesh.jy(i  , j+1, k+1)*wtos +
+    //  mesh.jy(i+1, j+1, k+1)*wtd;
   }
-  mesh.jy = tmp; // then copy from scratch to original arrays
-  //swap(mesh.jy, tmp);
+  //mesh.jy = tmp; // then copy from scratch to original arrays
+  swap(mesh.jy, tmp);
 
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
   for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
 
-	//tmp(i,j,k) = 0.0;
-    //for(int ks=-1; ks<=1; ks++) {
-    //for(int js=-1; js<=1; js++) {
-    //for(int is=-1; is<=1; is++) {
-	//	tmp(i,j,k) += mesh.jz(i+is,j+js,k+ks)*C3[is+1][js+1][ks+1]/64.0;
-    //}}}
+	tmp(i,j,k) = 0.0;
+    for(int ks=-1; ks<=1; ks++) {
+    for(int js=-1; js<=1; js++) {
+    for(int is=-1; is<=1; is++) {
+		tmp(i,j,k) += mesh.jz(i+is,j+js,k+ks)*C3[is+1][js+1][ks+1]/64.0;
+    }}}
 
 	//tmp(i,j,k) = 0.0;
     //for(int ks=-1; ks<=1; ks++) {
@@ -261,45 +261,45 @@ void fields::Binomial2<3>::solve(
 	//	tmp(i,j,k) += mesh.jz(i+1 , j+js, k+ks)*C3[2][js+1][ks+1]/64.0;
     //}}
 
-	tmp(i,j,k) = 
-      mesh.jz(i-1, j-1, k-1)*wtd  + 
-      mesh.jz(i  , j-1, k-1)*wtos + 
-      mesh.jz(i+1, j-1, k-1)*wtd  +
-             
-      mesh.jz(i-1, j  , k-1)*wtos +
-      mesh.jz(i  , j  , k-1)*wtis +
-      mesh.jz(i+1, j  , k-1)*wtos +
-             
-      mesh.jz(i-1, j+1, k-1)*wtd  + 
-      mesh.jz(i  , j+1, k-1)*wtos +
-      mesh.jz(i+1, j+1, k-1)*wtd  +
-             
-      mesh.jz(i-1, j-1, k  )*wtos +
-      mesh.jz(i  , j-1, k  )*wtis +
-      mesh.jz(i+1, j-1, k  )*wtos +
-             
-      mesh.jz(i-1, j  , k  )*wtis +
-      mesh.jz(i  , j  , k  )*wt   +
-      mesh.jz(i+1, j  , k  )*wtis +
-             
-      mesh.jz(i-1, j+1, k  )*wtos +
-      mesh.jz(i  , j+1, k  )*wtis +
-      mesh.jz(i+1, j+1, k  )*wtos +
-             
-      mesh.jz(i-1, j-1, k+1)*wtd  +
-      mesh.jz(i  , j-1, k+1)*wtos +
-      mesh.jz(i+1, j-1, k+1)*wtd  +
-             
-      mesh.jz(i-1, j  , k+1)*wtos +
-      mesh.jz(i  , j  , k+1)*wtis +
-      mesh.jz(i+1, j  , k+1)*wtos +
-             
-      mesh.jz(i-1, j+1, k+1)*wtd  +
-      mesh.jz(i  , j+1, k+1)*wtos +
-      mesh.jz(i+1, j+1, k+1)*wtd;
+	//tmp(i,j,k) = 
+    //  mesh.jz(i-1, j-1, k-1)*wtd  + 
+    //  mesh.jz(i  , j-1, k-1)*wtos + 
+    //  mesh.jz(i+1, j-1, k-1)*wtd  +
+    //         
+    //  mesh.jz(i-1, j  , k-1)*wtos +
+    //  mesh.jz(i  , j  , k-1)*wtis +
+    //  mesh.jz(i+1, j  , k-1)*wtos +
+    //         
+    //  mesh.jz(i-1, j+1, k-1)*wtd  + 
+    //  mesh.jz(i  , j+1, k-1)*wtos +
+    //  mesh.jz(i+1, j+1, k-1)*wtd  +
+    //         
+    //  mesh.jz(i-1, j-1, k  )*wtos +
+    //  mesh.jz(i  , j-1, k  )*wtis +
+    //  mesh.jz(i+1, j-1, k  )*wtos +
+    //         
+    //  mesh.jz(i-1, j  , k  )*wtis +
+    //  mesh.jz(i  , j  , k  )*wt   +
+    //  mesh.jz(i+1, j  , k  )*wtis +
+    //         
+    //  mesh.jz(i-1, j+1, k  )*wtos +
+    //  mesh.jz(i  , j+1, k  )*wtis +
+    //  mesh.jz(i+1, j+1, k  )*wtos +
+    //         
+    //  mesh.jz(i-1, j-1, k+1)*wtd  +
+    //  mesh.jz(i  , j-1, k+1)*wtos +
+    //  mesh.jz(i+1, j-1, k+1)*wtd  +
+    //         
+    //  mesh.jz(i-1, j  , k+1)*wtos +
+    //  mesh.jz(i  , j  , k+1)*wtis +
+    //  mesh.jz(i+1, j  , k+1)*wtos +
+    //         
+    //  mesh.jz(i-1, j+1, k+1)*wtd  +
+    //  mesh.jz(i  , j+1, k+1)*wtos +
+    //  mesh.jz(i+1, j+1, k+1)*wtd;
   }
-  mesh.jz = tmp; // then copy from scratch to original arrays
-  //swap(mesh.jz, tmp);
+  //mesh.jz = tmp; // then copy from scratch to original arrays
+  swap(mesh.jz, tmp);
 
 }
 
