@@ -164,99 +164,17 @@ void fields::OptBinomial2<3>::solve(
 }
 
 
-
-/// roll-out last convolution
-void operate_3d(
-        toolbox::Mesh<real_short, 3>& in,
-        toolbox::Mesh<real_short, 3>& out,
-        int imin, int imax,
-        int jmin, int jmax,
-        int kmin, int kmax
-        ){
-
-  // 3D 3-point binomial coefficients
-  real_short winv  = 1./64., // normalization
-             wtd  = 1.*winv, // diagnoal
-             wtos = 2.*winv, // outer side
-             wtis = 4.*winv, // inner side
-             wt   = 8.*winv; // center
-
-  for(int k=kmin; k<kmax; k++) 
-  for(int j=jmin; j<jmax; j++) {
-
-    // NOTE: assisting compiler vectorization by rolling out the convolution loops
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j-1, k-1)*wtd;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j-1, k-1)*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j-1, k-1)*wtd;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j  , k-1)*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j  , k-1)*wtis;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j  , k-1)*wtos;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j+1, k-1)*wtd;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j+1, k-1)*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j+1, k-1)*wtd;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j-1, k  )*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j-1, k  )*wtis;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j-1, k  )*wtos;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j  , k  )*wtis;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j  , k  )*wt;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j  , k  )*wtis;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j+1, k  )*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j+1, k  )*wtis;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j+1, k  )*wtos;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j-1, k+1)*wtd;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j-1, k+1)*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j-1, k+1)*wtd;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j  , k+1)*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j  , k+1)*wtis;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j  , k+1)*wtos;
-
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i-1, j+1, k+1)*wtd;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i  , j+1, k+1)*wtos;
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) out(i,j,k) += in(i+1, j+1, k+1)*wtd;
-  }
-}
-
-
 /// single 3D 2nd order 3-point binomial filter 
 template<>
 void fields::Binomial2<3>::solve(
     fields::Tile<3>& tile)
 {
+
+  // 3D 3-point binomial coefficients
+  real_short C3[3][3][3] = 
+        { { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} },
+          { {2, 4, 2}, {4, 8, 4}, {2, 4, 2} },
+          { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} } };
 
   auto& mesh = tile.get_yee();
 
@@ -277,19 +195,55 @@ void fields::Binomial2<3>::solve(
   // Jx
   //tmp(i,j,k) = 0.0;
   tmp.clear();
-  operate_3d(mesh.jx, tmp, imin, imax, jmin, jmax, kmin, kmax);
+  for(int k=kmin; k<kmax; k++) {
+    for(int j=jmin; j<jmax; j++) {
+
+      for(int ks=-1; ks<=1; ks++) {
+      for(int js=-1; js<=1; js++) {
+      for(int is=-1; is<=1; is++) {
+
+        #pragma omp simd
+        for(int i=imin; i<imax; i++) {
+          tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
+        }
+      }}}
+  }}
   swap(mesh.jx, tmp);
 
   //--------------------------------------------------
   // Jy
   tmp.clear();
-  operate_3d(mesh.jy, tmp, imin, imax, jmin, jmax, kmin, kmax);
+  for(int k=kmin; k<kmax; k++) {
+    for(int j=jmin; j<jmax; j++) {
+
+      for(int ks=-1; ks<=1; ks++) {
+      for(int js=-1; js<=1; js++) {
+      for(int is=-1; is<=1; is++) {
+
+        #pragma omp simd
+        for(int i=imin; i<imax; i++) {
+          tmp(i,j,k) += mesh.jy(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
+        }
+      }}}
+  }}
   swap(mesh.jy, tmp);
 
   //--------------------------------------------------
   // Jz
   tmp.clear();
-  operate_3d(mesh.jz, tmp, imin, imax, jmin, jmax, kmin, kmax);
+  for(int k=kmin; k<kmax; k++) {
+    for(int j=jmin; j<jmax; j++) {
+
+      for(int ks=-1; ks<=1; ks++) {
+      for(int js=-1; js<=1; js++) {
+      for(int is=-1; is<=1; is++) {
+
+        #pragma omp simd
+        for(int i=imin; i<imax; i++) {
+          tmp(i,j,k) += mesh.jz(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
+        }
+      }}}
+  }}
   swap(mesh.jz, tmp);
 
 }
