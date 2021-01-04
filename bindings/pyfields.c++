@@ -468,6 +468,7 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("cenx",  &fields::Conductor<3>::cenx)
     .def_readwrite("ceny",  &fields::Conductor<3>::ceny)
     .def_readwrite("cenz",  &fields::Conductor<3>::cenz)
+    .def_readwrite("delta", &fields::Conductor<3>::delta)
     .def("insert_em",       &fields::Conductor<3>::insert_em)
     .def("update_e",        &fields::Conductor<3>::update_e)
     .def("update_b",        &fields::Conductor<3>::update_b);
