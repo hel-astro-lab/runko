@@ -86,9 +86,9 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         z0 = static_cast<real_long>( loc[2][n] );
 
         // rel prtcl index; assuming dx = 1; tile coordinates
-        iff = D >= 1 ? static_cast<int>(floor( x0 - mins[0] ) ) : 0;
-        jff = D >= 2 ? static_cast<int>(floor( y0 - mins[1] ) ) : 0;
-        kff = D >= 3 ? static_cast<int>(floor( z0 - mins[2] ) ) : 0;
+        iff = D >= 1 ? static_cast<int>(trunc( x0 - mins[0] ) ) : 0;
+        jff = D >= 2 ? static_cast<int>(trunc( y0 - mins[1] ) ) : 0;
+        kff = D >= 3 ? static_cast<int>(trunc( z0 - mins[2] ) ) : 0;
 
         // limit to 0 Nx just in case
         if(D >= 1) iff = limit(iff, 0, tile.mesh_lengths[0]-1);
@@ -100,9 +100,9 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
 
 
         // full prtcl index; assuming dx = 1; global grid coordinates
-  	    i = D >= 1 ? static_cast<int>(floor( x0 ) ) : 0;
-  	    j = D >= 2 ? static_cast<int>(floor( y0 ) ) : 0;
-  	    k = D >= 3 ? static_cast<int>(floor( z0 ) ) : 0;
+  	    i = D >= 1 ? static_cast<int>(trunc( x0 ) ) : 0;
+  	    j = D >= 2 ? static_cast<int>(trunc( y0 ) ) : 0;
+  	    k = D >= 3 ? static_cast<int>(trunc( z0 ) ) : 0;
 
         // reduce by a factor of stride; floating point arithmetics takes care of rounding
         if(D >= 1) i = limit(i/stride, 0, nx-1);
