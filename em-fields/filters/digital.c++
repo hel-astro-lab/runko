@@ -193,14 +193,14 @@ void fields::Binomial2<3>::solve(
     
   //--------------------------------------------------
   // Jx
-  //tmp(i,j,k) = 0.0;
   tmp.clear();
   for(int k=kmin; k<kmax; k++) {
     for(int j=jmin; j<jmax; j++) {
 
-      for(int ks=-1; ks<=1; ks++) {
-      for(int js=-1; js<=1; js++) {
+      //NOTE: C3 array varies fastest with nested i(j(k( ...))) looping 
       for(int is=-1; is<=1; is++) {
+      for(int js=-1; js<=1; js++) {
+      for(int ks=-1; ks<=1; ks++) {
 
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
@@ -216,9 +216,9 @@ void fields::Binomial2<3>::solve(
   for(int k=kmin; k<kmax; k++) {
     for(int j=jmin; j<jmax; j++) {
 
-      for(int ks=-1; ks<=1; ks++) {
-      for(int js=-1; js<=1; js++) {
       for(int is=-1; is<=1; is++) {
+      for(int js=-1; js<=1; js++) {
+      for(int ks=-1; ks<=1; ks++) {
 
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
@@ -234,9 +234,9 @@ void fields::Binomial2<3>::solve(
   for(int k=kmin; k<kmax; k++) {
     for(int j=jmin; j<jmax; j++) {
 
-      for(int ks=-1; ks<=1; ks++) {
-      for(int js=-1; js<=1; js++) {
       for(int is=-1; is<=1; is++) {
+      for(int js=-1; js<=1; js++) {
+      for(int ks=-1; ks<=1; ks++) {
 
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
