@@ -38,15 +38,14 @@ class Mesh
 
     /// Internal indexing with halo region padding of width H
     inline int indx(int i, int j, int k) const {
-      assert( (i >= -H) && (i <  (int)Nx + H)  );
-      assert( (j >= -H) && (j <  (int)Ny + H)  );
-      assert( (k >= -H) && (k <  (int)Nz + H)  );
+      //assert( (i >= -H) && (i <  (int)Nx + H)  );
+      //assert( (j >= -H) && (j <  (int)Ny + H)  );
+      //assert( (k >= -H) && (k <  (int)Nz + H)  );
+      //int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+      //assert( (indx >= 0) && (indx <  (int)mat.size() ) );
 
-      int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
-
-      assert( (indx >= 0) && (indx <  (int)mat.size() ) );
-
-      return indx;
+      //return indx;
+      return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
     }
 
     /// standard (i,j,k) syntax
