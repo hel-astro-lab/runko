@@ -12,9 +12,11 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # optimization flags
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=haswell -mtune=haswell") #latest optimization
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=haswell -ftree-vectorize -fopt-info-all-all=all.all")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native") #general optimization
+
+# epyc rome
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -fomit-frame-pointer -fopt-info-all-all=all.all")
 
 
 # AddressSanitizer
@@ -26,6 +28,8 @@ set(CMAKE_CXX_FLAGS_LSAN "-fsanitize=leak -fno-omit-frame-pointer -g -O1")
 # MemorySanitizer
 set(CMAKE_CXX_FLAGS_MSAN "-fsanitize=memory -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -g -O2")
 
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
 
 
 # set location of python libraries
