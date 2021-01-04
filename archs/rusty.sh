@@ -1,13 +1,13 @@
 #modules
-module load slurm/18.08.8
+module load slurm
 module load gcc/7.4.0
 module load openmpi2/2.1.6-hfi
 module load python3/3.7.3
 module load python3-mpi4py/3.7.3-openmpi2
 module load cmake/3.14.5
-module load modules-nix/20200227-37
-module load nix/ffmpeg/3.4.7
-module load nix/fftw/3.3.8
+module load modules-nix
+module load nix/ffmpeg
+module load nix/fftw
 module load lib/hdf5/1.8.21-openmpi2
 
 

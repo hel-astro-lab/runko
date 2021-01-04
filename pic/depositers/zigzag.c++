@@ -75,12 +75,12 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       z1 = D >= 3 ? z0     - mins[2] : z0;
       z2 = D >= 3 ? loc2n  - mins[2] : loc2n;
 
-  	  i1  = D >= 1 ? static_cast<int>(floor( x1 )) : 0;
-  	  i2  = D >= 1 ? static_cast<int>(floor( x2 )) : 0;
-  	  j1  = D >= 2 ? static_cast<int>(floor( y1 )) : 0;
-  	  j2  = D >= 2 ? static_cast<int>(floor( y2 )) : 0;
-  	  k1  = D >= 3 ? static_cast<int>(floor( z1 )) : 0;
-  	  k2  = D >= 3 ? static_cast<int>(floor( z2 )) : 0;
+  	  i1  = D >= 1 ? static_cast<int>(trunc( x1 )) : 0;
+  	  i2  = D >= 1 ? static_cast<int>(trunc( x2 )) : 0;
+  	  j1  = D >= 2 ? static_cast<int>(trunc( y1 )) : 0;
+  	  j2  = D >= 2 ? static_cast<int>(trunc( y2 )) : 0;
+  	  k1  = D >= 3 ? static_cast<int>(trunc( z1 )) : 0;
+  	  k2  = D >= 3 ? static_cast<int>(trunc( z2 )) : 0;
 
       // relay point; +1 is equal to +\Delta x
       xr = min( real_long(min(i1,i2)+1), max( (real_long)max(i1,i2), (real_long)0.5*(x1+x2) ) );
@@ -116,58 +116,59 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       if (!( (k2 >= -3 && k2 < static_cast<int>(tile.mesh_lengths[2]+3)) )) debug_flag=true;
 
       if (debug_flag) {
-        std::cout << "--------------------------------------------------\n";
-        std::cout << "n=" << n;
-        std::cout << " i1: " << i1;
-        std::cout << " j1: " << j1;
-        std::cout << " k1: " << k1;
-        std::cout << " ||| ";
-        std::cout << " i2: " << i2;
-        std::cout << " j2: " << j2;
-        std::cout << " k2: " << k2;
-        std::cout << "\n";
+        std::cerr << "--------------------------------------------------\n";
+        std::cerr << "n=" << n;
+        std::cerr << " i1: " << i1;
+        std::cerr << " j1: " << j1;
+        std::cerr << " k1: " << k1;
+        std::cerr << " ||| ";
+        std::cerr << " i2: " << i2;
+        std::cerr << " j2: " << j2;
+        std::cerr << " k2: " << k2;
+        std::cerr << "\n";
 
-        std::cout << " x1sp: " << x1;
-        std::cout << " y1sp: " << y1;
-        std::cout << " z1sp: " << z1;
-        std::cout << " ||| ";
-        std::cout << " x2sp: " << x2;
-        std::cout << " y2sp: " << y2;
-        std::cout << " z2sp: " << z2;
-        std::cout << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
-        std::cout << "\n";
+        std::cerr << " x1sp: " << x1;
+        std::cerr << " y1sp: " << y1;
+        std::cerr << " z1sp: " << z1;
+        std::cerr << " ||| ";
+        std::cerr << " x2sp: " << x2;
+        std::cerr << " y2sp: " << y2;
+        std::cerr << " z2sp: " << z2;
+        std::cerr << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
+        std::cerr << "\n";
 
-        std::cout << " vx: " <<  vel[0][n];
-        std::cout << " vy: " <<  vel[1][n];
-        std::cout << " vz: " <<  vel[2][n];
-        std::cout << " gam: "<<  invgam;
-        std::cout << "\n";
+        std::cerr << " vx: " <<  vel[0][n];
+        std::cerr << " vy: " <<  vel[1][n];
+        std::cerr << " vz: " <<  vel[2][n];
+        std::cerr << " gam: "<<  invgam;
+        std::cerr << "\n";
 
-        std::cout << " xr: " <<  xr;
-        std::cout << " yr: " <<  yr;
-        std::cout << " zr: " <<  zr;
-        std::cout << "\n";
+        std::cerr << " xr: " <<  xr;
+        std::cerr << " yr: " <<  yr;
+        std::cerr << " zr: " <<  zr;
+        std::cerr << "\n";
 
-        std::cout << " Fx1: " <<  Fx1;
-        std::cout << " Fy1: " <<  Fy1;
-        std::cout << " Fz1: " <<  Fz1;
-        std::cout << " Wx1: " <<  Wx1;
-        std::cout << " Wy1: " <<  Wy1;
-        std::cout << " Wz1: " <<  Wz1;
-        std::cout << "\n";
+        std::cerr << " Fx1: " <<  Fx1;
+        std::cerr << " Fy1: " <<  Fy1;
+        std::cerr << " Fz1: " <<  Fz1;
+        std::cerr << " Wx1: " <<  Wx1;
+        std::cerr << " Wy1: " <<  Wy1;
+        std::cerr << " Wz1: " <<  Wz1;
+        std::cerr << "\n";
 
-        std::cout << " Fx2: " <<  Fx2;
-        std::cout << " Fy2: " <<  Fy2;
-        std::cout << " Fz2: " <<  Fz2;
-        std::cout << " Wx2: " <<  Wx2;
-        std::cout << " Wy2: " <<  Wy2;
-        std::cout << " Wz2: " <<  Wz2;
-        std::cout << "\n";
+        std::cerr << " Fx2: " <<  Fx2;
+        std::cerr << " Fy2: " <<  Fy2;
+        std::cerr << " Fz2: " <<  Fz2;
+        std::cerr << " Wx2: " <<  Wx2;
+        std::cerr << " Wy2: " <<  Wy2;
+        std::cerr << " Wz2: " <<  Wz2;
+        std::cerr << "\n";
 
-        std::cout << std::flush;
+        std::cerr << std::flush;
 
         // always fail if we end here
-        assert(false);
+        //assert(false);
+        continue;
       }
 
       //--------------------------------------------------
