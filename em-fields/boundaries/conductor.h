@@ -22,6 +22,8 @@ class Conductor
   double phase = 0.0; /// rotator phase
   double cenx, ceny, cenz; // center of the sphere
 
+  double delta = 1.0;
+
   // derived global quantities
   double angular_velocity;
 

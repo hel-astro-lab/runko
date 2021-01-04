@@ -190,7 +190,8 @@ void fields::Conductor<3>::update_b(
 
 
   // smoothing scales for different components
-  real_short delta = 2.0; 
+  //real_short delta = 1.0;  //from conductor.h
+  //
   //real_short delta_erad   = 1.0*delta; 
   //real_short delta_eperp  = 0.5*delta;
   //real_short delta_brad   = 1.0*delta;
@@ -320,7 +321,8 @@ void fields::Conductor<3>::update_e(
 
 
   // smoothing scales for Brad/Bperp components
-  real_short delta = 2.0; 
+  //real_short delta = 2.0;  // from conductor.h
+  //
   //real_short delta_erad   = 1.0*delta; 
   //real_short delta_eperp  = 0.5*delta;
   //real_short delta_brad   = 1.0*delta;
