@@ -116,7 +116,7 @@ inline void read_yee(
   prefix += std::to_string(grid.comm.rank());
 
   h5io::Reader reader(prefix, lap);
-  ezh5::File file(reader.fname.name, H5F_ACC_RDWR);
+  ezh5::File file(reader.fname.name, H5F_ACC_RDONLY);
 
   for(auto cid : grid.get_tile_ids() ){
     auto& tile 
