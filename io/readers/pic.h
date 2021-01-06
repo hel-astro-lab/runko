@@ -12,13 +12,13 @@ h5io::Reader::read(
 {
   //--------------------------------------------------
   // open file
-  int frank = locate_rank(tile); // find what rank had this tile
+  //int frank = locate_rank(tile); // find what rank had this tile
 
-  std::string fname = 
-    folder + "/particles-" + to_string(frank) + "_" + to_string(lap) + ".h5";
-  //std::cout << "reading file " << fname << std::endl;
-    
-  ezh5::File file(fname, H5F_ACC_RDONLY);
+  //std::string fname = 
+  //  folder + "/particles-" + to_string(frank) + "_" + to_string(lap) + ".h5";
+  ////std::cout << "reading file " << fname << std::endl;
+  //  
+  //ezh5::File file(fname, H5F_ACC_RDONLY);
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );

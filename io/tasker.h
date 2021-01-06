@@ -35,8 +35,12 @@ inline void read_mesh(
     const std::string& dir 
     )
 {
-  h5io::Reader reader(dir, lap, grid.comm.rank());
+  //h5io::Reader reader(dir, lap, grid.comm.rank());
 
+  std::string prefix = dir + "meshes-"; 
+  prefix += std::to_string(grid.comm.rank());
+
+  h5io::Reader reader(prefix, lap);
   for(auto cid : grid.get_tile_ids() ){
     auto& tile 
       = dynamic_cast<vlv::Tile<D>&>(grid.get_tile( cid ));
@@ -98,8 +102,10 @@ inline void read_yee(
     const std::string& dir 
     )
 {
+  std::string prefix = dir + "fields-"; 
+  prefix += std::to_string(grid.comm.rank());
 
-  h5io::Reader reader(dir, lap, grid.comm.rank());
+  h5io::Reader reader(prefix, lap);
 
   for(auto cid : grid.get_tile_ids() ){
     auto& tile 
@@ -144,7 +150,12 @@ inline void read_particles(
     const std::string& dir 
     )
 {
-  h5io::Reader reader(dir, lap, grid.comm.rank());
+  //h5io::Reader reader(dir, lap, grid.comm.rank());
+
+  std::string prefix = dir + "particles-"; 
+  prefix += std::to_string(grid.comm.rank());
+
+  h5io::Reader reader(prefix, lap);
 
   for(auto cid : grid.get_tile_ids() ){
     auto& tile 
