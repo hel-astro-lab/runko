@@ -73,6 +73,8 @@ def check_for_restart(conf):
 
     # restart from latest file
     io_status["deep_io_switch"] = 0
+    io_status["restart_num"] = 0
+
     if conf.laprestart >= 0:
         io_status["do_initialization"] = False
 
@@ -87,6 +89,18 @@ def check_for_restart(conf):
                 # lapfile.write("{},{}\n".format(lap, deep_io_switch))
                 lines = lapfile.readlines()
                 slap, sdeep_io_switch = lines[-1].strip().split(",")
+
+                # keep track of number of restarts by encoding them to deep io switch
+                max_ios = 0
+                for line in lines:
+                    a, b = line.strip().split(",")
+                    if int(b) > max_ios:
+                        max_ios = int(b)
+
+                io_status["restart_num"] = max_ios + 1
+
+                #TODO think about some way to cycle restart_num to save disk space
+
                 io_status["lap"] = int(slap)
                 io_status["deep_io_switch"] = int(sdeep_io_switch)
 
