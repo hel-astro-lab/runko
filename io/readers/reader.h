@@ -14,20 +14,20 @@
 
 namespace h5io {
 
-using ezh5::File;
-
+//using ezh5::File;
 
 class Reader 
 {
 
-  private:
-    /// Object to handle file names and extensions
-    Namer fname;
+  public:
 
     /// actual iostream of hdf5 file
-    File file;
+    //File file;
 
   public:
+
+  /// Object to handle file names and extensions
+  Namer fname;
 
   // folder to read
   //std::string folder;
@@ -49,11 +49,14 @@ class Reader
   //  my_rank(rank)
   //{};
 
-  Reader(string& prefix, int lap) : 
-      fname(prefix, lap),
-      file(fname.name, H5F_ACC_RDONLY) 
-  {};
+  //Reader(string& prefix, int lap) : 
+  //    fname(prefix, lap),
+  //    file(fname.name, H5F_ACC_RDONLY) 
+  //{};
 
+  Reader(string& prefix, int lap) : 
+      fname(prefix, lap)
+  {};
 
   /// read directory and locate what rank holds the given tile
   // FIXME: implement this
@@ -73,13 +76,13 @@ class Reader
 
 
   template<size_t D>
-  bool read(fields::Tile<D>& tile);
+  bool read(fields::Tile<D>& tile, ezh5::File& file);
 
   template<size_t D>
-  bool read(vlv::Tile<D>& tile);
+  bool read(   vlv::Tile<D>& tile, ezh5::File& file);
 
   template<size_t D>
-  bool read(pic::Tile<D>& tile);
+  bool read(   pic::Tile<D>& tile, ezh5::File& file);
 
 };
 

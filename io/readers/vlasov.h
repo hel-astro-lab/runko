@@ -7,7 +7,8 @@
 template<size_t D>
 bool 
 h5io::Reader::read( 
-  vlv::Tile<D>& tile
+  vlv::Tile<D>& tile,
+  ezh5::File& file
   )
 {
   //--------------------------------------------------
@@ -104,7 +105,7 @@ h5io::Reader::read(
 
   // file handle is closed automatically here as it goes out-of-scope
   // TODO: seems that it does not...
-  file.~File();
+  //file.~File();
 
   return true;
 }

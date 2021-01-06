@@ -6,7 +6,8 @@
 template<size_t D>
 bool
 h5io::Writer::write(
-  const pic::Tile<D>& tile
+  const pic::Tile<D>& tile,
+  ezh5::File& file
   ) 
 {
   // internal tile numbering 

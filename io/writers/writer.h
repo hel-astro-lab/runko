@@ -17,7 +17,7 @@
 
 namespace h5io {
 
-using ezh5::File;
+//using ezh5::File;
 
 /// data struct for location information about tiles
 class TileInfo {
@@ -34,34 +34,38 @@ class TileInfo {
 class Writer {
 
   private:
-    
-    /// Object to handle file names and extensions
-    Namer fname;
-
     /// actual iostream of hdf5 file
-    File file;
+    //File file;
 
   public:
 
+    /// Object to handle file names and extensions
+    Namer fname;
+
     /// constructor that creates a name and opens the file handle
-    Writer(string& prefix) : 
-      fname(prefix),
-      file(fname.name, H5F_ACC_TRUNC) 
-    {};
+    //Writer(string& prefix) : 
+    //  fname(prefix),
+    //  file(fname.name, H5F_ACC_TRUNC) 
+    //{};
+
+    //Writer(string& prefix, int lap) : 
+    //  fname(prefix, lap),
+    //  file(fname.name, H5F_ACC_TRUNC) 
+    //{};
 
     Writer(string& prefix, int lap) : 
-      fname(prefix, lap),
-      file(fname.name, H5F_ACC_TRUNC) 
+      fname(prefix, lap)
     {};
+
 
     /// Destructor that explicitly closes the file handle
     //~Writer() {
     //  file.~File(); // call destructor explicitly
     //}
     
-    void close() {
-        file.~File();
-    }
+    //void close() {
+    //    file.~File();
+    //}
 
 
     // FIXME: use SFINAE to pick the right specialization without
@@ -81,16 +85,16 @@ class Writer {
     // }
 
     template<size_t D>
-    bool write(const fields::Tile<D>& tile);
+    bool write(const fields::Tile<D>& tile, ezh5::File& file);
 
     //template<size_t D>
     //bool write2(const fields::Tile<D>& tile);
 
     template<size_t D>
-    bool write(const vlv::Tile<D>& tile);
+    bool write(const vlv::Tile<D>& tile, ezh5::File& file);
 
     template<size_t D>
-    bool write(const pic::Tile<D>& tile);
+    bool write(const pic::Tile<D>& tile, ezh5::File& file);
 
 
 };
