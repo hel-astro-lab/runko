@@ -102,11 +102,6 @@ h5io::Reader::read(
   auto& step1 = tile.steps.get(1);
   step1 = step0;
 
-
-  // file handle is closed automatically here as it goes out-of-scope
-  // TODO: seems that it does not...
-  //file.~File();
-
   return true;
 }
 

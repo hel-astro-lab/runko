@@ -84,8 +84,6 @@ h5io::Reader::read(
     }
   }
 
-  file.~File();
-
   return true;
 }
 
