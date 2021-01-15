@@ -9,12 +9,20 @@ void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
 {
   // 2D 3-point binomial coefficients
-  real_short winv=1./16.,
-          wtm=4.*winv, //middle
-          wts=2.*winv, //side
-          wtc=1.*winv; //corner
+  //real_short winv=1./16.,
+  //        wtm=4.*winv, //middle
+  //        wts=2.*winv, //side
+  //        wtc=1.*winv; //corner
+    
+  // 2D 3-point binomial coefficients
+  const real_short C2[3][3] = 
+        { {1./16., 2./16., 1./16.},
+          {2./16., 4./16., 2./16.},
+          {1./16., 2./16., 1./16.} };
 
   auto& mesh = tile.get_yee();
+
+  real_short C;
 
   // using tmp as scratch arrays
   //
@@ -31,63 +39,63 @@ void fields::Binomial2<2>::solve(
 
   //--------------------------------------------------
   // Jx
-  int k = 0;
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-    tmp(i,j,k) = 
-      mesh.jx(i-1, j-1, k)*wtc + 
-      mesh.jx(i  , j-1, k)*wts + 
-      mesh.jx(i+1, j-1, k)*wtc + 
 
-      mesh.jx(i-1, j  , k)*wts + 
-      mesh.jx(i  , j  , k)*wtm + 
-      mesh.jx(i+1, j  , k)*wts + 
+  const int halo = 2;
 
-      mesh.jx(i-1, j+1, k)*wtc + 
-      mesh.jx(i  , j+1, k)*wts + 
-      mesh.jx(i+1, j+1, k)*wtc;
+  const int imin = 0 - halo;
+  const int imax = tile.mesh_lengths[0] + halo;
+
+  const int jmin = 0 - halo;
+  const int jmax = tile.mesh_lengths[1] + halo;
+
+  // NOTE: using tmp as scratch arrays
+    
+  //--------------------------------------------------
+  // Jx
+  tmp.clear();
+  for(int is=-1; is<=1; is++) 
+  for(int js=-1; js<=1; js++) {
+    C = C2[is+1][js+1];
+
+    for(int j=jmin; j<jmax; j++) {
+        #pragma omp simd
+        for(int i=imin; i<imax; i++) {
+          tmp(i,j,0) += mesh.jx(i+is, j+js, 0)*C;
+        }
+      }
   }
-  mesh.jx = tmp; // then copy from scratch to original arrays
-  //swap(mesh.jx, tmp);
+  swap(mesh.jx, tmp);
 
   // Jy
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-    tmp(i,j,k) = 
-      mesh.jy(i-1, j-1, k)*wtc + 
-      mesh.jy(i  , j-1, k)*wts + 
-      mesh.jy(i+1, j-1, k)*wtc + 
+  tmp.clear();
+  for(int is=-1; is<=1; is++) 
+  for(int js=-1; js<=1; js++) {
+    C = C2[is+1][js+1];
 
-      mesh.jy(i-1, j  , k)*wts + 
-      mesh.jy(i  , j  , k)*wtm + 
-      mesh.jy(i+1, j  , k)*wts + 
-
-      mesh.jy(i-1, j+1, k)*wtc + 
-      mesh.jy(i  , j+1, k)*wts + 
-      mesh.jy(i+1, j+1, k)*wtc;
+    for(int j=jmin; j<jmax; j++) {
+        #pragma omp simd
+        for(int i=imin; i<imax; i++) {
+          tmp(i,j,0) += mesh.jy(i+is, j+js, 0)*C;
+        }
+      }
   }
-  mesh.jy = tmp; // then copy from scratch to original arrays
-  //swap(mesh.jy, tmp);
+  swap(mesh.jy, tmp);
 
   // Jz
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-    tmp(i,j,k) = 
-      mesh.jz(i-1, j-1, k)*wtc + 
-      mesh.jz(i  , j-1, k)*wts + 
-      mesh.jz(i+1, j-1, k)*wtc + 
+  tmp.clear();
+  for(int is=-1; is<=1; is++) 
+  for(int js=-1; js<=1; js++) {
+    C = C2[is+1][js+1];
 
-      mesh.jz(i-1, j  , k)*wts + 
-      mesh.jz(i  , j  , k)*wtm + 
-      mesh.jz(i+1, j  , k)*wts + 
-
-      mesh.jz(i-1, j+1, k)*wtc + 
-      mesh.jz(i  , j+1, k)*wts + 
-      mesh.jz(i+1, j+1, k)*wtc;
+    for(int j=jmin; j<jmax; j++) {
+        #pragma omp simd
+        for(int i=imin; i<imax; i++) {
+          tmp(i,j,0) += mesh.jz(i+is, j+js, 0)*C;
+        }
+      }
   }
-  mesh.jz = tmp; // then copy from scratch to original arrays
-  //swap(mesh.jz, tmp);
-
+  swap(mesh.jz, tmp);
+  
 }
 
 
@@ -171,80 +179,81 @@ void fields::Binomial2<3>::solve(
 {
 
   // 3D 3-point binomial coefficients
-  real_short C3[3][3][3] = 
-        { { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} },
-          { {2, 4, 2}, {4, 8, 4}, {2, 4, 2} },
-          { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} } };
-  real_short norm = 1.0/64.0;
+  const real_short C3[3][3][3] = 
+        { { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} },
+          { {2./64., 4./64., 2./64.}, {4./64., 8./64., 4./64.}, {2./64., 4./64., 2./64.} },
+          { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
+  real_short C;
 
   auto& mesh = tile.get_yee();
 
-  int halo = 2;
+  const int halo = 2;
 
-  int imin = 0 - halo;
-  int imax = tile.mesh_lengths[0] + halo;
+  const int imin = 0 - halo;
+  const int imax = tile.mesh_lengths[0] + halo;
 
-  int jmin = 0 - halo;
-  int jmax = tile.mesh_lengths[1] + halo;
+  const int jmin = 0 - halo;
+  const int jmax = tile.mesh_lengths[1] + halo;
 
-  int kmin = 0 - halo;
-  int kmax = tile.mesh_lengths[2] + halo;
+  const int kmin = 0 - halo;
+  const int kmax = tile.mesh_lengths[2] + halo;
 
   // NOTE: using tmp as scratch arrays
     
   //--------------------------------------------------
   // Jx
+  //NOTE: C3 array varies fastest with nested i(j(k( ...))) looping 
+    
   tmp.clear();
-  for(int k=kmin; k<kmax; k++) {
-    for(int j=jmin; j<jmax; j++) {
+  for(int is=-1; is<=1; is++) {
+  for(int js=-1; js<=1; js++) {
+  for(int ks=-1; ks<=1; ks++) {
+    C = C3[is+1][js+1][ks+1];
 
-      //NOTE: C3 array varies fastest with nested i(j(k( ...))) looping 
-      for(int is=-1; is<=1; is++) {
-      for(int js=-1; js<=1; js++) {
-      for(int ks=-1; ks<=1; ks++) {
-
+    for(int k=kmin; k<kmax; k++) {
+      for(int j=jmin; j<jmax; j++) {
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
-          tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]*norm;
+          tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C;
         }
-      }}}
-  }}
+      }}
+  }}}
   swap(mesh.jx, tmp);
 
   //--------------------------------------------------
   // Jy
   tmp.clear();
-  for(int k=kmin; k<kmax; k++) {
-    for(int j=jmin; j<jmax; j++) {
+  for(int is=-1; is<=1; is++) {
+  for(int js=-1; js<=1; js++) {
+  for(int ks=-1; ks<=1; ks++) {
+    C = C3[is+1][js+1][ks+1];
 
-      for(int is=-1; is<=1; is++) {
-      for(int js=-1; js<=1; js++) {
-      for(int ks=-1; ks<=1; ks++) {
-
+    for(int k=kmin; k<kmax; k++) {
+      for(int j=jmin; j<jmax; j++) {
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
-          tmp(i,j,k) += mesh.jy(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]*norm;
+          tmp(i,j,k) += mesh.jy(i+is, j+js, k+ks)*C;
         }
-      }}}
-  }}
+      }}
+  }}}
   swap(mesh.jy, tmp);
 
   //--------------------------------------------------
   // Jz
   tmp.clear();
-  for(int k=kmin; k<kmax; k++) {
-    for(int j=jmin; j<jmax; j++) {
+  for(int is=-1; is<=1; is++) {
+  for(int js=-1; js<=1; js++) {
+  for(int ks=-1; ks<=1; ks++) {
+    C = C3[is+1][js+1][ks+1];
 
-      for(int is=-1; is<=1; is++) {
-      for(int js=-1; js<=1; js++) {
-      for(int ks=-1; ks<=1; ks++) {
-
+    for(int k=kmin; k<kmax; k++) {
+      for(int j=jmin; j<jmax; j++) {
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
-          tmp(i,j,k) += mesh.jz(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]*norm;
+          tmp(i,j,k) += mesh.jz(i+is, j+js, k+ks)*C;
         }
-      }}}
-  }}
+      }}
+  }}}
   swap(mesh.jz, tmp);
 
 }
