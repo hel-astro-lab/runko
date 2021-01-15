@@ -175,6 +175,7 @@ void fields::Binomial2<3>::solve(
         { { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} },
           { {2, 4, 2}, {4, 8, 4}, {2, 4, 2} },
           { {1, 2, 1}, {2, 4, 2}, {1, 2, 1} } };
+  real_short norm = 1.0/64.0;
 
   auto& mesh = tile.get_yee();
 
@@ -204,7 +205,7 @@ void fields::Binomial2<3>::solve(
 
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
-          tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
+          tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]*norm;
         }
       }}}
   }}
@@ -222,7 +223,7 @@ void fields::Binomial2<3>::solve(
 
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
-          tmp(i,j,k) += mesh.jy(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
+          tmp(i,j,k) += mesh.jy(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]*norm;
         }
       }}}
   }}
@@ -240,7 +241,7 @@ void fields::Binomial2<3>::solve(
 
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
-          tmp(i,j,k) += mesh.jz(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]/64.0;
+          tmp(i,j,k) += mesh.jz(i+is, j+js, k+ks)*C3[is+1][js+1][ks+1]*norm;
         }
       }}}
   }}
