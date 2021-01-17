@@ -167,8 +167,8 @@ void pic::Piston<D>::solve(
         // unwind wall location
         walloc0 = walloc - betawall*c;
 
-        gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
-        x0 = loc0n - vel0n/gamma*c;
+        gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n) + EPS;
+        x0 = loc0n - c*vel0n/gamma;
         y0 = loc1n;
         z0 = loc2n;
 
@@ -185,7 +185,7 @@ void pic::Piston<D>::solve(
         //    std::abs((x0-walloc0)/(betawall*c - vel0n/gamma*c)), 
         //    (real_long)1.0
         //    );
-        tfrac = std::abs((x0-walloc0)/(betawall*c - vel0n/gamma*c));
+        tfrac = std::abs((x0-walloc0)/(betawall*c - c*vel0n/gamma + EPS));
         if (tfrac > 1.0) {
            // std::cout << "current up to intersection point:\n"
            //   << " x0      " << x0
@@ -199,7 +199,7 @@ void pic::Piston<D>::solve(
             continue;
         }
 
-        xcolis = x0 + vel0n/gamma*c*tfrac;
+        xcolis = x0 + c*tfrac*vel0n/gamma;
         ycolis = y0;
         zcolis = z0;
 
@@ -221,15 +221,18 @@ void pic::Piston<D>::solve(
           *(2.*betawall - vel0n/gamma*(1.0+betawall*betawall));
 
         // recompute gamma
-        gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
+        gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n) + EPS;
 
         tfrac = std::min(
-            std::abs((vel0n-xcolis)/std::max(std::abs(vel0n-x0), (real_long)1.0e-6)), 
-            (real_long)1.0
+            (real_long)1.0,
+            std::abs(
+                (vel0n-xcolis)/
+                (std::max( (real_long)1.0e-6, std::abs(vel0n-x0) ) + EPS)
+                    )
             );
 
         // move particle from the location of the wall with new velocity
-        loc0n = xcolis + vel0n/gamma*c * tfrac;
+        loc0n = xcolis + c*tfrac*vel0n/gamma;
         loc1n = ycolis;
         loc2n = zcolis;
 
