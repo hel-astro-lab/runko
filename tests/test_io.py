@@ -623,7 +623,7 @@ class IO(unittest.TestCase):
         
             ux = xx*100.0
             uy = yy*1000.0
-            uz = xx*yy*10000.0
+            uz =-xx*yy*1.0
         
             x0 = [xx, yy, zz]
             u0 = [ux, uy, uz]
@@ -673,6 +673,7 @@ class IO(unittest.TestCase):
 
         pytools.pic.inject(grid, test_filler, density_profile, conf)
 
+        print("write prtcls")
         pyrunko.pic.twoD.write_particles(grid, 0, conf.outdir)
 
         # TODO: read with h5py
@@ -690,6 +691,7 @@ class IO(unittest.TestCase):
                     pytools.pic.initialize_tile(c, (i, j,k), node2, conf)
                     node2.add_tile(c, (i,j)) 
 
+        print("read prtcls")
         pyrunko.pic.twoD.read_particles(node2, 0, conf.outdir)
 
         #assert
