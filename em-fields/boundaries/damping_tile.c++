@@ -58,6 +58,8 @@ void fields::damping::Tile<D,S>::damp_fields()
   bool zdir  = abs(S) == 3;
 
   // fixed position
+  const int halo = 1;
+
   int istr = 0;
   int ifin = fields::Tile<D>::mesh_lengths[0];
 
@@ -66,6 +68,17 @@ void fields::damping::Tile<D,S>::damp_fields()
 
   int kstr = 0;
   int kfin = fields::Tile<D>::mesh_lengths[2];
+
+  // reset also halo regions
+  if(D >= 1) istr -= halo;
+  if(D >= 1) ifin += halo;
+
+  if(D >= 2) jstr -= halo;
+  if(D >= 2) jfin += halo;
+
+  if(D >= 3) kstr -= halo;
+  if(D >= 3) kfin += halo;
+
 
   real_short iglob, jglob, kglob, glob_coord;
   real_short t1, t2;
