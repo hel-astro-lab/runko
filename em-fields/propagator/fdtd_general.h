@@ -19,8 +19,16 @@ class FDTDGen :
   double corr = 1.0; 
 
   // high-order curl operator coefficients
-	double coeff1= 9./ 8.0;
-	double coeff2=-1./24.0;
+  //const real_short[6][6][6] = { }
+  toolbox::Mesh<real_short,0> CXs;
+  toolbox::Mesh<real_short,0> CYs;
+  toolbox::Mesh<real_short,0> CZs;
+
+  FDTDGen() :
+      CXs(3,3,3),
+      CYs(3,3,3),
+      CZs(3,3,3)
+  {}
 
   void push_e(Tile<D>& tile) override;
 

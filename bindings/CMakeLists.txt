@@ -15,6 +15,7 @@ set (FIELDS_FILES
      ../em-fields/propagator/fdtd2.c++ 
      ../em-fields/propagator/fdtd2_pml.c++ 
      ../em-fields/propagator/fdtd4.c++ 
+     ../em-fields/propagator/fdtd_general.c++ 
      ../em-fields/filters/digital.c++
      ../em-fields/boundaries/damping_tile.c++
      ../em-fields/boundaries/conductor.c++

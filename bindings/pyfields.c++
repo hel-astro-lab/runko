@@ -13,6 +13,7 @@
 #include "../em-fields/propagator/fdtd2.h"
 #include "../em-fields/propagator/fdtd2_pml.h"
 #include "../em-fields/propagator/fdtd4.h"
+#include "../em-fields/propagator/fdtd_general.h"
 
 #include "../em-fields/filters/filter.h"
 #include "../em-fields/filters/digital.h"
@@ -156,6 +157,20 @@ class PyFDTD4 : public FDTD4<D>
   }
 };
 
+
+template<size_t D>
+class PyFDTDGen : public FDTDGen<D>
+{
+  using FDTDGen<D>::FDTDGen;
+
+  void push_e( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTDGen<D>, push_e, tile);
+  }
+
+  void push_half_b( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTDGen<D>, push_half_b, tile);
+  }
+};
 
 // templated base-class for Propagator; 
 // see https://github.com/pybind/pybind11/blob/master/tests/test_virtual_functions.cpp
@@ -404,6 +419,18 @@ void bind_fields(py::module& m_sub)
   // fdtd4 propagator
   py::class_<fields::FDTD4<3>, Propagator<3>, PyFDTD4<3> >(m_3d, "FDTD4")
     .def_readwrite("corr",     &fields::FDTD4<3>::corr)
+    .def(py::init<>());
+
+
+  // fdtd general propagator
+  //py::class_<fields::FDTDGen<3>, Propagator<3>, PyFDTDGen<3> >(m_3d, "FDTDGen")
+  py::class_<fields::FDTDGen<3>>(m_3d, "FDTDGen")
+    .def_readwrite("corr",     &fields::FDTDGen<3>::corr)
+    .def_readwrite("CXs",      &fields::FDTDGen<3>::CXs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def_readwrite("CYs",      &fields::FDTDGen<3>::CYs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def_readwrite("CZs",      &fields::FDTDGen<3>::CZs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def("push_e",             &fields::FDTDGen<3>::push_e)
+    .def("push_half_b",        &fields::FDTDGen<3>::push_half_b)
     .def(py::init<>());
 
 
