@@ -25,9 +25,9 @@ class FDTDGen :
   toolbox::Mesh<real_short,0> CZs;
 
   FDTDGen() :
-      CXs(3,3,3),
-      CYs(3,3,3),
-      CZs(3,3,3)
+      CXs(4,4,4),
+      CYs(4,4,4),
+      CZs(4,4,4)
   {}
 
   void push_e(Tile<D>& tile) override;

@@ -19,36 +19,53 @@ void fields::FDTDGen<3>::push_e(fields::Tile<3>& tile)
   
   real_short Cx, Cy, Cz;
   
-  for(int is=1; is<=3; is++) 
-  for(int js=1; js<=3; js++) 
-  for(int ks=1; ks<=3; ks++) {
+  for(int is=0; is<=3; is++) 
+  for(int js=0; js<=3; js++) 
+  for(int ks=0; ks<=3; ks++) {
+    if(is == 0 && js == 0 && ks == 0) continue;
 
-    Cx = CXs(is-1, js-1, ks-1)*corr*tile.cfl;
-    Cy = CYs(is-1, js-1, ks-1)*corr*tile.cfl;
-    Cz = CZs(is-1, js-1, ks-1)*corr*tile.cfl;
+    Cx = CXs(is, js, ks)*corr*tile.cfl;
+    Cy = CYs(is, js, ks)*corr*tile.cfl;
+    Cz = CZs(is, js, ks)*corr*tile.cfl;
 
+    if(Cx == 0.0 && Cy == 0.0 && Cz == 0.0) continue;
+
+    //Cx(1,0,0) = C1;
+    //Cy(0,1,0) = C1;
+    //Cz(0,0,1) = C1;
+    //
+    //Cx(2,0,0) = C2;
+    //Cy(0,2,0) = C2;
+    //Cz(0,0,2) = C2;
+
+    // dE/dt = +curlB
     for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
     for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-      mesh.ex(i,j,k) += Cx*(
-              mesh.by(i-is, j-js, k-ks) - mesh.by(i+is-1, j+js-1, k+ks-1)
-           -( mesh.bz(i-is, j-js, k-ks) - mesh.bz(i+is-1, j+js-1, k+ks-1) ));
+
+      //-Cy*((mesh.bz(i,j-1,k)-mesh.bz(i,j,k)) )
+      //+Cz*( mesh.by(i,j,k-1)-mesh.by(i,j,k)  )
+      // DONE inverse signs
+
+      mesh.ex(i,j,k) += 
+           +Cy*( mesh.bz(i+is-1, j+js-1, k+ks-1) - mesh.bz(i-is, j-js, k-ks) )
+           -Cz*( mesh.by(i+is-1, j+js-1, k+ks-1) - mesh.by(i-is, j-js, k-ks) );
     } 
 
     for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
     for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-      mesh.ey(i,j,k) += Cy*(
-              mesh.bz(i-is, j-js, k-ks) - mesh.bz(i+is-1, j+js-1, k+ks-1)
-           -( mesh.bx(i-is, j-js, k-ks) - mesh.bx(i+is-1, j+js-1, k+ks-1) ));
+      mesh.ey(i,j,k) += 
+           -Cx*( mesh.bz(i+is-1, j+js-1, k+ks-1) - mesh.bz(i-is, j-js, k-ks) )
+           +Cz*( mesh.bx(i+is-1, j+js-1, k+ks-1) - mesh.bx(i-is, j-js, k-ks) );
     } 
 
     for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
     for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-      mesh.ez(i,j,k) += Cz*(
-              mesh.bx(i-is, j-js, k-ks) - mesh.bx(i+is-1, j+js-1, k+ks-1)
-           -( mesh.by(i-is, j-js, k-ks) - mesh.by(i+is-1, j+js-1, k+ks-1) ));
+      mesh.ez(i,j,k) += 
+           -Cx*( mesh.by(i+is-1, j+js-1, k+ks-1) - mesh.by(i-is, j-js, k-ks) )
+           +Cy*( mesh.bx(i+is-1, j+js-1, k+ks-1) - mesh.bx(i-is, j-js, k-ks) );
     } 
   }
 
@@ -116,36 +133,46 @@ void fields::FDTDGen<3>::push_half_b(fields::Tile<3>& tile)
   //      << Cz << std::endl;
   //}
   
-  for(int is=1; is<=3; is++) 
-  for(int js=1; js<=3; js++) 
-  for(int ks=1; ks<=3; ks++) {
+  for(int is=0; is<=3; is++) 
+  for(int js=0; js<=3; js++) 
+  for(int ks=0; ks<=3; ks++) {
+    if(is == 0 && js == 0 && ks == 0) continue;
 
-    Cx = CXs(is-1, js-1, ks-1)*corr*tile.cfl;
-    Cy = CYs(is-1, js-1, ks-1)*corr*tile.cfl;
-    Cz = CZs(is-1, js-1, ks-1)*corr*tile.cfl;
+    Cx = 0.5*CXs(is, js, ks)*corr*tile.cfl;
+    Cy = 0.5*CYs(is, js, ks)*corr*tile.cfl;
+    Cz = 0.5*CZs(is, js, ks)*corr*tile.cfl;
 
+    if(Cx == 0.0 && Cy == 0.0 && Cz == 0.0) continue;
+
+    // dB/dt = -curlE
     for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
     for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-      mesh.bx(i,j,k) += Cx*(
-              mesh.ey(i+is, j+js, k+ks) - mesh.ey(i-is+1, j-js+1, k-ks+1)
-           -( mesh.ez(i+is, j+js, k+ks) - mesh.ez(i-is+1, j-js+1, k-ks+1) ));
+
+            // DONE
+            //-=
+            //+Cy*(mesh.ez(i,j+1,k)-mesh.ez(i,j,k) )
+            //-Cz*(mesh.ey(i,j,k+1)-mesh.ey(i,j,k) )
+
+      mesh.bx(i,j,k) -= 
+           +Cy*( mesh.ez(i+is, j+js, k+ks) - mesh.ez(i-is+1, j-js+1, k-ks+1) )
+           -Cz*( mesh.ey(i+is, j+js, k+ks) - mesh.ey(i-is+1, j-js+1, k-ks+1) );
     } 
 
     for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
     for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-      mesh.by(i,j,k) += Cy*(
-              mesh.ez(i+is, j+js, k+ks) - mesh.ez(i-is+1, j-js+1, k-ks+1)
-           -( mesh.ex(i+is, j+js, k+ks) - mesh.ex(i-is+1, j-js+1, k-ks+1) ));
+      mesh.by(i,j,k) -= 
+           -Cx*( mesh.ez(i+is, j+js, k+ks) - mesh.ez(i-is+1, j-js+1, k-ks+1) )
+           +Cz*( mesh.ex(i+is, j+js, k+ks) - mesh.ex(i-is+1, j-js+1, k-ks+1) );
     } 
 
     for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
     for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-      mesh.bz(i,j,k) += Cz*(
-              mesh.ex(i+is, j+js, k+ks) - mesh.ex(i-is+1, j-js+1, k-ks+1)
-           -( mesh.ey(i+is, j+js, k+ks) - mesh.ey(i-is+1, j-js+1, k-ks+1) ));
+      mesh.bz(i,j,k) -= 
+           +Cx*( mesh.ey(i+is, j+js, k+ks) - mesh.ey(i-is+1, j-js+1, k-ks+1) )
+           -Cy*( mesh.ex(i+is, j+js, k+ks) - mesh.ex(i-is+1, j-js+1, k-ks+1) );
     } 
   }
 
