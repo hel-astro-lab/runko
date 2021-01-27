@@ -136,7 +136,7 @@ h5io::Reader::read(
           );
 
       } else {
-        std::cout << "skipping prtcl"
+        std::cerr << "skipping prtcl"
                   << " n=" << n
                   << " x=" << xloc
                   << " y=" << yloc
@@ -148,7 +148,7 @@ h5io::Reader::read(
                   << " loc_flag=" << loc_flag
                   << " vel_flag=" << vel_flag
                   << std::endl;
-        assert(false);
+        //assert(false);
       }
     }
   }
