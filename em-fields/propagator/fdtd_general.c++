@@ -65,8 +65,8 @@ void fields::FDTDGen<3>::push_e(fields::Tile<3>& tile)
     }
 
     //legs with n-offset
-    //for(int bi : {-3,-2,-1,+1,+2,+3}) {
-    for(int bi : {-1,+1}) {
+    //for(int bi : {-1,+1}) {
+    for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
         // hand-coded beta fetching from array
         Cx = CXs(ai, 1, 1)*corr*tile.cfl;
@@ -139,8 +139,8 @@ void fields::FDTDGen<3>::push_half_b(fields::Tile<3>& tile)
     }
 
     //legs with n-offset
-    //for(int bi : {-3,-2,-1,+1,+2,+3}) {
-    for(int bi : {-1,+1}) {
+    //for(int bi : {-1,+1}) {
+    for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
         // hand-coded beta fetching from array
         Cx = 0.5*CXs(ai, 1, 1)*corr*tile.cfl;
