@@ -201,7 +201,10 @@ class Timer:
         cnts = len(ts) - 1
         t0tot = ts[-1] - ts[0]
         if t0tot == 0.0:
-            t0tot = 1.0
+            for name in self.components:
+                ts = np.array(self.components[name])
+                t0tot += np.sum(ts)
+
 
         totper = 0.0
 
