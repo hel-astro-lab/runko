@@ -41,6 +41,8 @@ auto declare_tile(
     py::module& m,
     const std::string& pyclass_name) 
 {
+  std::vector<int> iarr{0,1,2};
+
   return py::class_<
              fields::Tile<D>,
               corgi::Tile<D>, 
@@ -51,9 +53,10 @@ auto declare_tile(
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("clear_current",       &fields::Tile<D>::clear_current)
     .def("deposit_current",     &fields::Tile<D>::deposit_current)
-    .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
     .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
-
+    .def("update_boundaries",   &fields::Tile<D>::update_boundaries,
+            py::arg("grid"),
+            py::arg("iarr")=iarr)
     .def("get_yee",             &fields::Tile<D>::get_yee,
         py::arg("i")=0,
         py::return_value_policy::reference,

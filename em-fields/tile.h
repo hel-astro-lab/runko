@@ -144,7 +144,10 @@ class Tile :
 
   //--------------------------------------------------
 
-  virtual void update_boundaries(  corgi::Grid<D>& grid);
+  virtual void update_boundaries(  
+          corgi::Grid<D>& grid,
+          std::vector<int> iarr = {0,1,2}
+          );
 
   virtual void exchange_currents(  corgi::Grid<D>& grid);
 
