@@ -13,6 +13,7 @@ namespace py = pybind11;
 #include "../pic/pushers/boris_rad.h"
 #include "../pic/pushers/boris_grav.h"
 #include "../pic/pushers/vay.h"
+#include "../pic/pushers/higuera_cary.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
@@ -311,6 +312,10 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::VayPusher<2,3>>(m_2d, "VayPusher", picpusher2d)
     .def(py::init<>());
 
+  // Hiuera-Cary pusher
+  py::class_<pic::HigueraCaryPusher<2,3>>(m_2d, "HigueraCaryPusher", picpusher2d)
+    .def(py::init<>());
+
 
   // 3D version
   py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
@@ -351,6 +356,10 @@ void bind_pic(py::module& m_sub)
 
   // Vay
   py::class_<pic::VayPusher<3,3>>(m_3d, "VayPusher", picpusher3d)
+    .def(py::init<>());
+
+  // Higuera-Cary
+  py::class_<pic::HigueraCaryPusher<3,3>>(m_3d, "HigueraCaryPusher", picpusher3d)
     .def(py::init<>());
 
 
