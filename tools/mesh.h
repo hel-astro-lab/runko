@@ -38,11 +38,12 @@ class Mesh
 
     /// Internal indexing with halo region padding of width H
     inline int indx(int i, int j, int k) const {
-      //assert( (i >= -H) && (i <  (int)Nx + H)  );
-      //assert( (j >= -H) && (j <  (int)Ny + H)  );
-      //assert( (k >= -H) && (k <  (int)Nz + H)  );
-      //int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
-      //assert( (indx >= 0) && (indx <  (int)mat.size() ) );
+
+      assert( (i >= -H) && (i <  (int)Nx + H)  );
+      assert( (j >= -H) && (j <  (int)Ny + H)  );
+      assert( (k >= -H) && (k <  (int)Nz + H)  );
+      int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+      assert( (indx >= 0) && (indx <  (int)mat.size() ) );
 
       //return indx;
       return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
@@ -316,6 +317,7 @@ template<typename T, int H>
 template <int H2>
 inline Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
   validateDims(rhs);
+  //for(size_t i=0; i<this->mat.size(); i++) this->mat[i] = rhs.mat[i];
 
   for(int k=0;  k<this->Nz; k++) {
     for(int j=0;  j<this->Ny; j++) {
@@ -328,11 +330,11 @@ inline Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
   return *this;
 }
 
-
+/// + with same halo size
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
   // overwriting internal container with a scalar
-  for(int i=0; i<this->mat.size(); i++) {
+  for(size_t i=0; i<this->mat.size(); i++) {
     this->mat[i] = rhs;
   }
   return *this;
@@ -342,19 +344,16 @@ inline Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
 template<typename T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
-
-  //for(int i=0; i<this->mat.size(); i++) {
-  //  this->mat[i] += rhs.mat[i];
-  //}
+  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] += rhs.mat[i];
 
   // TODO: do not operate on halo regions
-  for(int k=0;  k<this->Nz; k++) {
-    for(int j=0;  j<this->Ny; j++) {
-      for(int i=0;  i<this->Nx; i++) {
-        this->operator()(i,j,k) += rhs(i,j,k);
-      }
-    }
-  }
+  //for(int k=0;  k<this->Nz; k++) {
+  //  for(int j=0;  j<this->Ny; j++) {
+  //    for(int i=0;  i<this->Nx; i++) {
+  //      this->operator()(i,j,k) += rhs(i,j,k);
+  //    }
+  //  }
+  //}
 
   return *this;
 }
@@ -363,6 +362,7 @@ template<typename T, int H>
 template <int H2>
 inline Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H2>& rhs) {
   validateDims(rhs);
+  //for(size_t i=0; i<this->mat.size(); i++) this->mat[i] += rhs.mat[i];
 
   for(int k=0;  k<this->Nz; k++) {
     for(int j=0;  j<this->Ny; j++) {
@@ -381,27 +381,27 @@ inline Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
 
   // purely vectorized version
-  //for(int i=0; i<this->mat.size(); i++) {
-  //  this->mat[i] -= rhs.mat[i];
-  //}
+  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] -= rhs.mat[i];
 
   // Version that does not operate on halo regions
   // this is more correct but every so slightly slower
   // because vectorization is interrupted.
-  for(int k=0;  k<this->Nz; k++) {
-    for(int j=0;  j<this->Ny; j++) {
-      for(int i=0;  i<this->Nx; i++) {
-        this->operator()(i,j,k) -= rhs(i,j,k);
-      }
-    }
-  }
+  //for(int k=0;  k<this->Nz; k++) {
+  //  for(int j=0;  j<this->Ny; j++) {
+  //    for(int i=0;  i<this->Nx; i++) {
+  //      this->operator()(i,j,k) -= rhs(i,j,k);
+  //    }
+  //  }
+  //}
   return *this;
 }
 
+// -= for differing halos
 template<typename T, int H>
 template <int H2>
 inline Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H2>& rhs) {
   validateDims(rhs);
+  //for(size_t i=0; i<this->mat.size(); i++) this->mat[i] -= rhs.mat[i];
 
   for(int k=0;  k<this->Nz; k++) {
     for(int j=0;  j<this->Ny; j++) {
@@ -416,17 +416,13 @@ inline Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H2>& rhs) {
 
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator*=(const T& rhs) {
-  for(size_t i=0; i<this->mat.size(); i++) {
-    this->mat[i] *= rhs;
-  }
+  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] *= rhs;
   return *this;
 }
 
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator/=(const T& rhs) {
-  for(size_t i=0; i<this->mat.size(); i++) {
-    this->mat[i] /= rhs;
-  }
+  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] /= rhs; 
   return *this;
 }
 
