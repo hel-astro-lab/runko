@@ -187,7 +187,7 @@ void fields::Binomial2<3>::solve(
 
   auto& mesh = tile.get_yee();
 
-  const int halo = 2; // FIXME
+  const int halo = 2; 
 
   const int imin = 0 - halo;
   const int imax = tile.mesh_lengths[0] + halo;
@@ -204,6 +204,7 @@ void fields::Binomial2<3>::solve(
   //--------------------------------------------------
   // Jx
   //NOTE: C3 array varies fastest with nested i(j(k( ...))) looping 
+  //const int st = 1;
 
   tmp.clear();
   for(int is=-1; is<=1; is++) {
@@ -216,6 +217,7 @@ void fields::Binomial2<3>::solve(
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
           tmp(i,j,k) += mesh.jx(i+is, j+js, k+ks)*C;
+          //tmp(i,j,k) += mesh.jx(i+is*st, j+js*st, k+ks*st)*C;
         }
       }}
   }}}
@@ -234,6 +236,7 @@ void fields::Binomial2<3>::solve(
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
           tmp(i,j,k) += mesh.jy(i+is, j+js, k+ks)*C;
+          //tmp(i,j,k) += mesh.jy(i+is*st, j+js*st, k+ks*st)*C;
         }
       }}
   }}}
@@ -252,6 +255,7 @@ void fields::Binomial2<3>::solve(
         #pragma omp simd
         for(int i=imin; i<imax; i++) {
           tmp(i,j,k) += mesh.jz(i+is, j+js, k+ks)*C;
+          //tmp(i,j,k) += mesh.jz(i+is*st, j+js*st, k+ks*st)*C;
         }
       }}
   }}}
