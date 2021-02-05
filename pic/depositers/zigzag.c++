@@ -83,9 +83,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   	  k2  = D >= 3 ? static_cast<int>(trunc( z2 )) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      xr = min( real_long(min(i1,i2)+1), max( (real_long)max(i1,i2), (real_long)0.5*(x1+x2) ) );
-      yr = min( real_long(min(j1,j2)+1), max( (real_long)max(j1,j2), (real_long)0.5*(y1+y2) ) );
-      zr = min( real_long(min(k1,k2)+1), max( (real_long)max(k1,k2), (real_long)0.5*(z1+z2) ) );
+      xr = min( real_long(min(i1,i2)+1), max( real_long(max(i1,i2)), real_long(0.5*(x1+x2)) ) );
+      yr = min( real_long(min(j1,j2)+1), max( real_long(max(j1,j2)), real_long(0.5*(y1+y2)) ) );
+      zr = min( real_long(min(k1,k2)+1), max( real_long(max(k1,k2)), real_long(0.5*(z1+z2)) ) );
 
       // +q since - sign is already included in the Ampere's equation
       //q = weight*qe;
@@ -167,7 +167,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
         std::cerr << std::flush;
 
         // always fail if we end here
-        //assert(false);
+        assert(false);
         continue;
       }
 
