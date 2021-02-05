@@ -11,7 +11,7 @@ real_short fields::FDTD2_pml<3>::lambda( real_short sx, real_short sy, real_shor
   real_short r = std::sqrt( 
             pow( (sx - cenx)/radx, 2) 
           + pow( (sy - ceny)/rady, 2) 
-          //+ pow( (sz - cenz)/radz, 2) 
+          + pow( (sz - cenz)/radz, 2) 
                );
 
   if(r > rad_lim) {
