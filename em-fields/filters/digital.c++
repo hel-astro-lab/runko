@@ -187,7 +187,7 @@ void fields::Binomial2<3>::solve(
 
   auto& mesh = tile.get_yee();
 
-  const int halo = 2;
+  const int halo = 2; // FIXME
 
   const int imin = 0 - halo;
   const int imax = tile.mesh_lengths[0] + halo;
@@ -198,12 +198,13 @@ void fields::Binomial2<3>::solve(
   const int kmin = 0 - halo;
   const int kmax = tile.mesh_lengths[2] + halo;
 
+
   // NOTE: using tmp as scratch arrays
     
   //--------------------------------------------------
   // Jx
   //NOTE: C3 array varies fastest with nested i(j(k( ...))) looping 
-    
+
   tmp.clear();
   for(int is=-1; is<=1; is++) {
   for(int js=-1; js<=1; js++) {
@@ -336,7 +337,7 @@ void fields::General3p<2>::solve(
 //
 // Filter is (20,-1,-1) with normalization 1/12
 //
-//  NOTE: Main difference to a binomial compensator is 
+//  NOTE: Main difference to a binomial compensator are
 //  the suppressed corners
 //
 template<>
@@ -511,7 +512,7 @@ void fields::Binomial2Strided2<2>::solve(
     fields::Tile<2>& tile)
 {
   // 2D general coefficients
-  const double wn=1./16.0/16.0;                  //normalization
+  const double wn=1./16.0/16.0;  //normalization
 
   auto& mesh = tile.get_yee();
 
