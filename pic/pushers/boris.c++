@@ -43,7 +43,7 @@ void pic::BorisPusher<D,V>::push_container(
 
   real_long u0, v0, w0;
   real_long u1, v1, w1;
-  real_long g, f;
+  real_long ginv, f;
 
   real_long c = cfl;
   real_long cinv = 1.0/c;
@@ -80,10 +80,13 @@ void pic::BorisPusher<D,V>::push_container(
     w0 = c*vel2n + ez0;
 
     // first half magnetic rotation
-    g = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
-    bx0 *= g;
-    by0 *= g;
-    bz0 *= g;
+    ginv = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+    bx0 *= ginv;
+    by0 *= ginv;
+    bz0 *= ginv;
+
+    //std::cout << "g_ vs gnew " << 1.0/ginv << "\n";
+    //std::cout << "bx prior rot" << bx0 << " " << by0 << " " << bz0 << "\n";
 
     f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
     u1 = (u0 + v0*bz0 - w0*by0)*f;
@@ -102,8 +105,8 @@ void pic::BorisPusher<D,V>::push_container(
 
     // position advance; 
     // NOTE: no mixed-precision calc here. Can be problematic.
-    g = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
-    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*g*c;
+    ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c;
 
   }
 }
