@@ -78,7 +78,8 @@ void pic::HigueraCaryPusher<D,V>::push_container(
 
     //-------------------------------------------------- 
     // intermediate gamma
-    g2 = ( 1.0 + u0*u0 + v0*v0 + w0*w0 );
+    //g2 = ( 1.0 + u0*u0 + v0*v0 + w0*w0 );
+    g2 = (c*c + u0*u0 + v0*v0 + w0*w0)/(c*c);
     b2 = bx0*bx0 + by0*by0 + bz0*bz0;
 
     // FIXME alternatively if cinv is in B_i terms
@@ -87,14 +88,13 @@ void pic::HigueraCaryPusher<D,V>::push_container(
 
     ginv = 1./sqrt( 0.5*(g2-b2 + sqrt( (g2-b2)*(g2-b2) + 4.0*(b2 + (bx0*u0 + by0*v0 + bz0*w0)*(bx0*u0 + by0*v0 + bz0*w0)))));
 
-    //std::cout << "g_ vs gnew " << sqrt(g2) << " " << 1/ginv << "\n";
-
     //-------------------------------------------------- 
     // first half magnetic rotation
-    bx0 *= ginv;
-    by0 *= ginv;
-    bz0 *= ginv;
+    bx0 *= ginv*cinv;
+    by0 *= ginv*cinv;
+    bz0 *= ginv*cinv;
 
+    //std::cout << "g_ vs gnew " << sqrt(g2) << " " << 1/ginv << "\n";
     //std::cout << "bx prior rot" << bx0 << " " << by0 << " " << bz0 << "\n";
 
     f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
