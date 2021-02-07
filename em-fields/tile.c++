@@ -583,47 +583,45 @@ void Tile<3>::update_boundaries(
           } else {
             
             // infront/behind directions
-            if (in == 0 && jn == 0) { 
-              for(int g=0; g<halo; g++)
+            if (in == 0 && jn == 0 && kn != 0) { 
+              for(int g=0; g<halo; g++) {
                 copy_face_yee(mesh, mpr, iarr, kto+kn*g, kfro+kn*g);   
+              }
 
             // 3D generalized diagonal locations
             // If the finite-difference scheme is purely non-diagonal
             // then these can be dropped off.
               
             // vertical wedges
-            } else if (jn == 0) {
+            } else if (in != 0 && jn == 0 && kn != 0) {
 
               // y pencils
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
+              for(int g=0; g<halo; g++) {
                   copy_y_pencil_yee(mesh, mpr, iarr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
-                }
-              }
+              }}
 
             // horizontal wedges
-            } else if (in == 0) {
+            } else if (in == 0 && jn != 0 && kn != 0) {
 
               // x pencils
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
+              for(int g=0; g<halo; g++) {
                   copy_x_pencil_yee(mesh, mpr, iarr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
-                }
-              }
+              }}
 
             // corners
-            } else {
+            } else if (in != 0 && jn != 0 && kn != 0) {
 
-              // pointwise
+              //pointwise
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
-                  for(int f=0; f<halo; f++) {
-                    copy_point_yee(mesh, mpr, iarr,
+              for(int g=0; g<halo; g++) {
+              for(int f=0; f<halo; f++) {
+                copy_point_yee(mesh, mpr, iarr,
                         ito +in*h, jto +jn*g, kto +kn*f,
                         ifro+in*h, jfro+jn*g, kfro+kn*f);
-                  }
-                }
-              }
+              }}}
+
             } 
 
           } // 3D cases with kn != 0
@@ -828,47 +826,45 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
           } else {
             
             // infront/behind directions
-            if (in == 0 && jn == 0) { 
-              for(int g=1; g<=halo; g++)
+            if (in == 0 && jn == 0 && kn != 0) { 
+              for(int g=1; g<=halo; g++) {
                 add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
+              }
 
             // 3D generalized diagonal locations
             // If the finite-difference scheme is purely non-diagonal
             // then these can be dropped off.
               
             // vertical wedges
-            } else if (jn == 0) {
+            } else if (in != 0 && jn == 0 && kn != 0) {
 
               // y pencils
               for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
-                }
-              }
+              for(int g=1; g<=halo; g++) {
+                add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
+              }}
 
             // horizontal wedges
-            } else if (in == 0) {
+            } else if (in == 0 && jn != 0 && kn != 0) {
 
               // x pencils
               for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
-                }
-              }
+              for(int g=1; g<=halo; g++) {
+                add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
+              }}
 
             // corners
-            } else {
+            } else if (in != 0 && jn != 0 && kn != 0) {
 
               // pointwise
               for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  for(int f=1; f<=halo; f++) {
-                    add_point_yee(mesh, mpr, 
+              for(int g=1; g<=halo; g++) {
+              for(int f=1; f<=halo; f++) {
+                add_point_yee(mesh, mpr, 
                         ito -in*h, jto -jn*g, kto -kn*f,
                         ifro-in*h, jfro-jn*g, kfro-kn*f);
-                  }
-                }
-              }
+              }}}
+
             } 
 
           } // 3D cases with kn != 0
