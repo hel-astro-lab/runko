@@ -241,20 +241,19 @@ void ParticleContainer<3>::check_outgoing_particles(
   to_other_tiles.clear();
 
   // unpack limits
-  double 
-    xmin = mins[0],
-    ymin = mins[1],
-    zmin = mins[2],
+  //double 
+  //  xmin = mins[0],
+  //  ymin = mins[1],
+  //  zmin = mins[2],
 
-    xmax = maxs[0],
-    ymax = maxs[1],
-    zmax = maxs[2];
+  //  xmax = maxs[0],
+  //  ymax = maxs[1],
+  //  zmax = maxs[2];
 
-  int lenx = static_cast<int>( xmax - xmin );
-  int leny = static_cast<int>( ymax - ymin );
-  int lenz = static_cast<int>( zmax - zmin );
-
-  int i0, j0, k0;
+  //int lenx = static_cast<int>( round(xmax - xmin) );
+  //int leny = static_cast<int>( round(ymax - ymin) );
+  //int lenz = static_cast<int>( round(zmax - zmin) );
+  //int i0, j0, k0;
 
   // shortcut for particle locations
   real_prtcl* locn[3];
@@ -270,18 +269,26 @@ void ParticleContainer<3>::check_outgoing_particles(
     // however, this requires global grid limits that would break the current API.
     //locx = wrap( locn[0][n], static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
 
-    i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
-    j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
-    k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
 
-    if(i0 <  0)    i--; // left wrap
-    if(i0 >= lenx) i++; // right wrap
+    if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
+    if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
 
-    if(j0 <  0)    j--; // bottom wrap
-    if(j0 >= leny) j++; // top wrap
+    if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
+    if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
 
-    if(k0 <  0)    k--; // back
-    if(k0 >= lenz) k++; // front
+    if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
+    if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
+
+    //i0 = static_cast<int>( floor(locn[0][n] - mins[0]) );
+    //j0 = static_cast<int>( floor(locn[1][n] - mins[1]) );
+    //k0 = static_cast<int>( floor(locn[2][n] - mins[2]) );
+
+    //if(i0 <  0)    i--; // left wrap
+    //if(i0 >= lenx) i++; // right wrap
+    //if(j0 <  0)    j--; // bottom wrap
+    //if(j0 >= leny) j++; // top wrap
+    //if(k0 <  0)    k--; // back
+    //if(k0 >= lenz) k++; // front
 
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.insert( std::make_pair( std::make_tuple(i,j,k), n) );
