@@ -37,7 +37,7 @@ class Mesh
     std::vector<T> mat;
 
     /// Internal indexing with halo region padding of width H
-    inline int indx(int i, int j, int k) const {
+    inline size_t indx(int i, int j, int k) const {
 
       assert( (i >= -H) && (i <  (int)Nx + H)  );
       assert( (j >= -H) && (j <  (int)Ny + H)  );
@@ -47,6 +47,11 @@ class Mesh
 
       //return indx;
       return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+    }
+
+    /// 1D index 
+    T& operator()(size_t ind) { 
+      return mat[ ind ];
     }
 
     /// standard (i,j,k) syntax
