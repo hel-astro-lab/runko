@@ -48,13 +48,24 @@ class Configuration(object):
         self.zmax = self.Nz * self.NzMesh
 
         # dimensionality switches
-        self.oneD = False
-        self.twoD = False
-        self.threeD = False
+        if not("twoD" in self.__dict__ or "threeD" in self.__dict__):
+            self.oneD = False
+            self.twoD = False
+            self.threeD = False
 
-        if self.Nz > 1:
-            self.threeD = True
-        elif self.Ny > 1:
-            self.twoD = True
-        elif self.Nx > 1:
-            self.oneD = True
+            if self.Nz > 1:
+                self.threeD = True
+            elif self.Ny > 1:
+                self.twoD = True
+            elif self.Nx > 1:
+                self.oneD = True
+        elif "twoD" in self.__dict__:
+            if self.twoD:
+                self.oneD = False
+                self.threeD = False
+        elif "threeD" in self.__dict__:
+            if self.threeD:
+                self.oneD = False
+                self.twoD = False
+
+
