@@ -138,6 +138,7 @@ void add_vert_yee(
     YeeLattice& rhs, 
     int lhsI, int rhsI) 
 {
+
   lhs.jx.add_vert(rhs.jx, lhsI, rhsI); 
   lhs.jy.add_vert(rhs.jy, lhsI, rhsI); 
   lhs.jz.add_vert(rhs.jz, lhsI, rhsI); 
@@ -789,13 +790,14 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
           if - then from n-1
           */
 
-          if (in == +1) { ito = mesh.Nx; ifro = 0; }
-          if (jn == +1) { jto = mesh.Ny; jfro = 0; }
-          if (kn == +1) { kto = mesh.Nz; kfro = 0; }
+          if (in == +1) { ito = mesh.Nx-1; ifro = -1; }
+          if (jn == +1) { jto = mesh.Ny-1; jfro = -1; }
+          if (kn == +1) { kto = mesh.Nz-1; kfro = -1; }
 
-          if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
-          if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
-          if (kn == -1) { kto = -1;      kfro = mpr.Nz-1; }
+          // FIXME error is here
+          if (in == -1) { ito = 0;         ifro = mpr.Nx; }
+          if (jn == -1) { jto = 0;         jfro = mpr.Ny; }
+          if (kn == -1) { kto = 0;         kfro = mpr.Nz; }
 
 
           // generalized halo >= 1 loops
@@ -805,29 +807,34 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
             // vertical
             if (jn == 0) { 
-              for(int h=1; h<=halo; h++)
+              //for(int h=1; h<=halo; h++)
+              for(int h=0; h<halo; h++)
                 add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
 
             // horizontal
             } else if (in == 0) { 
-              for(int g=1; g<=halo; g++)
+              //for(int g=1; g<=halo; g++)
+              for(int g=0; g<halo; g++)
                 add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
 
             // diagonal
             } else { 
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
+              //for(int h=1; h<=halo; h++) {
+              //  for(int g=1; g<=halo; g++) {
+              for(int h=0; h<halo; h++) {
+                for(int g=0; g<halo; g++) {
                   add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
                 }
               }
             } 
-         
+
           // 3D case with kn != 0
           } else {
             
             // infront/behind directions
             if (in == 0 && jn == 0 && kn != 0) { 
-              for(int g=1; g<=halo; g++) {
+              //for(int g=1; g<=halo; g++) {
+              for(int g=0; g<halo; g++) {
                 add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
               }
 
@@ -839,27 +846,33 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             } else if (in != 0 && jn == 0 && kn != 0) {
 
               // y pencils
-              for(int h=1; h<=halo; h++) {
-              for(int g=1; g<=halo; g++) {
+              //for(int h=1; h<=halo; h++) {
+              //for(int g=1; g<=halo; g++) {
+              for(int h=0; h<halo; h++) {
+              for(int g=0; g<halo; g++) {
                 add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
               }}
-
-            // horizontal wedges
             } else if (in == 0 && jn != 0 && kn != 0) {
 
+                // FIXME
               // x pencils
-              for(int h=1; h<=halo; h++) {
-              for(int g=1; g<=halo; g++) {
+              //for(int h=1; h<=halo; h++) {
+              //for(int g=1; g<=halo; g++) {
+              for(int h=0; h<halo; h++) {
+              for(int g=0; g<halo; g++) {
                 add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
               }}
-
-            // corners
+            //// corners
             } else if (in != 0 && jn != 0 && kn != 0) {
 
               // pointwise
-              for(int h=1; h<=halo; h++) {
-              for(int g=1; g<=halo; g++) {
-              for(int f=1; f<=halo; f++) {
+              //for(int h=1; h<=halo; h++) {
+              //for(int g=1; g<=halo; g++) {
+              //for(int f=1; f<=halo; f++) {
+                
+              for(int h=0; h<halo; h++) {
+              for(int g=0; g<halo; g++) {
+              for(int f=0; f<halo; f++) {
                 add_point_yee(mesh, mpr, 
                         ito -in*h, jto -jn*g, kto -kn*f,
                         ifro-in*h, jfro-jn*g, kfro-kn*f);
@@ -868,6 +881,8 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             } 
 
           } // 3D cases with kn != 0
+
+
         } // if tpr
       }
     }
