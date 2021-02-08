@@ -3,6 +3,30 @@
 #include <cmath> 
 #include <cassert>
 
+
+inline real_long _lerp(
+      real_long c000,
+      real_long c100,
+      real_long c010,
+      real_long c110,
+      real_long c001,
+      real_long c101,
+      real_long c011,
+      real_long c111,
+      real_long dx, real_long dy, real_long dz
+      ) 
+{
+      real_long c00 = c000 * (1.0-dx) + c100 * dx;
+      real_long c10 = c010 * (1.0-dx) + c110 * dx;
+      real_long c0  = c00  * (1.0-dy) + c10  * dy;
+      real_long c01 = c001 * (1.0-dx) + c101 * dx;
+      real_long c11 = c011 * (1.0-dx) + c111 * dx;
+      real_long c1  = c01  * (1.0-dy) + c11  * dy;
+      real_long c   = c0   * (1.0-dz) + c1   * dz;
+      return c;
+}
+
+
 template<size_t D, size_t V>
 void pic::LinearInterpolator<D,V>::solve(
     pic::Tile<D>& tile)
@@ -10,6 +34,16 @@ void pic::LinearInterpolator<D,V>::solve(
 
   // get reference to the Yee grid 
   auto& yee = tile.get_yee();
+
+  auto& ex = yee.ex;
+  auto& ey = yee.ey;
+  auto& ez = yee.ez;
+
+  auto& bx = yee.bx;
+  auto& by = yee.by;
+  auto& bz = yee.bz;
+
+  real_long c000, c100, c010, c110, c001, c101, c011, c111;
 
   for(auto&& container : tile.containers) {
 
@@ -23,15 +57,14 @@ void pic::LinearInterpolator<D,V>::solve(
     container.Epart.resize(3*nparts);
     container.Bpart.resize(3*nparts);
       
-    real_prtcl *ex, *ey, *ez, *bx, *by, *bz;
-    ex = &( container.Epart[0*nparts] );
-    ey = &( container.Epart[1*nparts] );
-    ez = &( container.Epart[2*nparts] );
+    real_prtcl *exn, *eyn, *ezn, *bxn, *byn, *bzn;
+    exn = &( container.Epart[0*nparts] );
+    eyn = &( container.Epart[1*nparts] );
+    ezn = &( container.Epart[2*nparts] );
 
-    bx = &( container.Bpart[0*nparts] );
-    by = &( container.Bpart[1*nparts] );
-    bz = &( container.Bpart[2*nparts] );
-
+    bxn = &( container.Bpart[0*nparts] );
+    byn = &( container.Bpart[1*nparts] );
+    bzn = &( container.Bpart[2*nparts] );
 
     // loop over particles
     int n1 = 0;
@@ -39,13 +72,12 @@ void pic::LinearInterpolator<D,V>::solve(
 
     int i=0, j=0, k=0;
     real_long dx=0.0, dy=0.0, dz=0.0;
-    real_long f,g;
+
+    // mesh sizes for 1D indexing
+    const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
+    const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
 
     real_long loc0n, loc1n, loc2n;
-
-    int iz = 1;
-    if (D<=2) iz = 0; // flip switch for making array queries 2D
-
     auto mins = tile.mins;
     //auto maxs = tile.maxs;
 
@@ -60,13 +92,18 @@ void pic::LinearInterpolator<D,V>::solve(
       // NOTE: trunc() ensures that prtcls outside the tile do not crash this loop 
       // (because it rounds e.g. xloc=-0.1 => i=0 and dx=-0.1). They should be
       // automatically cleaned on next time step to their real tiles.
-      if (D >= 1) i  = static_cast<int>(trunc( loc[0][n] - mins[0] ));
-      if (D >= 2) j  = static_cast<int>(trunc( loc[1][n] - mins[1] ));
-      if (D >= 3) k  = static_cast<int>(trunc( loc[2][n] - mins[2] ));
+      if(D >= 1) i  = static_cast<int>(floor(loc0n));
+      if(D >= 2) j  = static_cast<int>(floor(loc1n));
+      if(D >= 3) k  = static_cast<int>(floor(loc2n));
 
-      if (D >= 1) dx = (loc[0][n]-mins[0]) - i;
-      if (D >= 2) dy = (loc[1][n]-mins[1]) - j;
-      if (D >= 3) dz = (loc[2][n]-mins[2]) - k;
+      if(D >= 1) dx = loc0n - i;
+      if(D >= 2) dy = loc1n - j;
+      if(D >= 3) dz = loc2n - k;
+
+      // normalize to tile units
+      if(D >= 1) i -= mins[0];
+      if(D >= 2) j -= mins[1];
+      if(D >= 3) k -= mins[2];
 
 
       // check section; TODO; remove
@@ -113,60 +150,78 @@ void pic::LinearInterpolator<D,V>::solve(
         //dz = 1.0;
       }
 
+      // one-dimensional index
+      const size_t ind = yee.ex.indx(i,j,k);
 
-      // TODO: these can be optimized further when we know D
-      // TODO: can also be optimized by using 1D indexing (since we can pre-compute index with
-      // l = i + iy*(j-1)+iz*(k-1)
-      f = yee.ex(i,j,k) + yee.ex(i-1,j,k) +    dx*(yee.ex(i+1,j  ,k   ) - yee.ex(i-1,j  ,k  ));
-      f+=                                      dy*(yee.ex(i  ,j+1,k   ) + yee.ex(i-1,j+1,k  )+
-                                               dx*(yee.ex(i+1,j+1,k   ) - yee.ex(i-1,j+1,k  ))-f);
-      g = yee.ex(i,j,k+1)+yee.ex(i-1,j,k+iz)+  dx*(yee.ex(i+1,j  ,k+iz) - yee.ex(i-1,j  ,k+iz));
-      g+=                                      dy*(yee.ex(i  ,j+1,k+iz) + yee.ex(i-1,j+1,k+iz)
-                                           +   dx*(yee.ex(i+1,j+1,k+iz) - yee.ex(i-1,j+1,k+iz))-g);
-      ex[n] = static_cast<real_prtcl>( 0.5*(f+dz*(g-f)) );
+      //ex
+      c000 = 0.5*(ex(ind       ) +ex(ind-1      ));
+      c100 = 0.5*(ex(ind       ) +ex(ind+1      ));
+      c010 = 0.5*(ex(ind+iy    ) +ex(ind-1+iy   ));
+      c110 = 0.5*(ex(ind+iy    ) +ex(ind+1+iy   ));
+      c001 = 0.5*(ex(ind+iz    ) +ex(ind-1+iz   ));
+      c101 = 0.5*(ex(ind+iz    ) +ex(ind+1+iz   ));
+      c011 = 0.5*(ex(ind+iy+iz ) +ex(ind-1+iy+iz));
+      c111 = 0.5*(ex(ind+iy+iz ) +ex(ind+1+iy+iz));
+      exn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
 
-      f = yee.ey(i,j,k)+yee.ey(i,j-1,k)+       dy*(yee.ey(i  ,j+1,k   ) - yee.ey(i  ,j-1,k  ));
-      f+=                                      dz*(yee.ey(i  ,j  ,k+iz) + yee.ey(i  ,j-1,k+iz)+      
-                                               dy*(yee.ey(i  ,j+1,k+iz) - yee.ey(i  ,j-1,k+iz))-f);
-      g = yee.ey(i+1,j,k)+yee.ey(i+1,j-1,k)+   dy*(yee.ey(i+1,j+1,k   ) - yee.ey(i+1,j-1,k   ));
-      g+=                                      dz*(yee.ey(i+1,j  ,k+iz) + yee.ey(i+1,j-1,k+iz)+ 
-                                               dy*(yee.ey(i+1,j+1,k+iz) - yee.ey(i+1,j-1,k+iz))-g);
-      ey[n] = static_cast<real_prtcl>( 0.5*(f+dx*(g-f)) );
+      //ey
+      c000 = 0.5*(ey(ind      ) +ey(ind-iy     ));
+      c100 = 0.5*(ey(ind+1    ) +ey(ind+1-iy   ));
+      c010 = 0.5*(ey(ind      ) +ey(ind+iy     ));
+      c110 = 0.5*(ey(ind+1    ) +ey(ind+1+iy   ));
+      c001 = 0.5*(ey(ind+iz   ) +ey(ind-iy+iz  ));
+      c101 = 0.5*(ey(ind+1+iz ) +ey(ind+1-iy+iz));
+      c011 = 0.5*(ey(ind+iz   ) +ey(ind+iy+iz  ));
+      c111 = 0.5*(ey(ind+1+iz ) +ey(ind+1+iy+iz));
+      eyn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
 
-      f = yee.ez(i,j,k)+yee.ez(i,j,k-iz)+      dz*(yee.ez(i  ,j  ,k+iz) - yee.ez(i  ,j  ,k-iz));
-      f+=                                      dx*(yee.ez(i+1,j  ,k   ) + yee.ez(i+1,j  ,k-iz)+
-                                               dz*(yee.ez(i+1,j  ,k+iz) - yee.ez(i+1,j  ,k-iz))-f);
-      g = yee.ez(i,j+1,k)+ yee.ez(i,j+1,k-iz)+ dz*(yee.ez(i  ,j+1,k+iz) - yee.ez(i  ,j+1,k-iz));
-      g+=                                      dx*(yee.ez(i+1,j+1,k   ) + yee.ez(i+1,j+1,k-iz)+
-                                               dz*(yee.ez(i+1,j+1,k+iz) - yee.ez(i+1,j+1,k-iz))-g);
-      ez[n] = static_cast<real_prtcl>( 0.5*(f+dy*(g-f)) );
+      //ez
+      c000 = 0.5*(ez(ind      ) + ez(ind-iz     ));
+      c100 = 0.5*(ez(ind+1    ) + ez(ind+1-iz   ));
+      c010 = 0.5*(ez(ind+iy   ) + ez(ind+iy-iz  ));
+      c110 = 0.5*(ez(ind+1+iy ) + ez(ind+1+iy-iz));
+      c001 = 0.5*(ez(ind      ) + ez(ind+iz     ));
+      c101 = 0.5*(ez(ind+1    ) + ez(ind+1+iz   ));
+      c011 = 0.5*(ez(ind+iy   ) + ez(ind+iy+iz  ));
+      c111 = 0.5*(ez(ind+1+iy ) + ez(ind+1+iy+iz));
+      ezn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
 
-      f = yee.bx(i,j-1,k)  +yee.bx(i,j-1,k-iz )   +dz*(yee.bx(i,j-1,k+iz)   - yee.bx(i,j-1,k-iz));
-      f = yee.bx(i,j,k)    +yee.bx(i,j,k-iz)      +dz*(yee.bx(i,j,k+iz)     - yee.bx(i,j,k-iz))+f+dy 
-        *(yee.bx(i,j+1,k)  +yee.bx(i,j+1,k-iz)    +dz*(yee.bx(i,j+1,k+iz)   - yee.bx(i,j+1,k-iz))-f);
-      g = yee.bx(i+1,j-1,k)+yee.bx(i+1,j-1,k-iz)  +dz*(yee.bx(i+1,j-1,k+iz) - yee.bx(i+1,j-1,k-iz));
-      g = yee.bx(i+1,j,k)  +yee.bx(i+1,j,k-iz)    +dz*(yee.bx(i+1,j,k+iz)   - yee.bx(i+1,j,k-iz))
-                                           +g     +dy*(yee.bx(i+1,j+1,k)    + yee.bx(i+1,j+1,k-iz)
-                                                  +dz*(yee.bx(i+1,j+1,k+iz) - yee.bx(i+1,j+1,k-iz))-g);
-      bx[n] = static_cast<real_prtcl>( 0.25*(f+dx*(g-f)) );
 
-      f = yee.by(i,j,k-iz)+yee.by(i-1,j,k-iz)     +dx*(yee.by(i+1,j,k-iz)   - yee.by(i-1,j,k-iz));
-      f = yee.by(i,j,k)+yee.by(i-1,j,k)           +dx*(yee.by(i+1,j,k)      - yee.by(i-1,j,k))+f+dz 
-        *(yee.by(i,j,k+iz)+yee.by(i-1,j,k+iz)     +dx*(yee.by(i+1,j,k+iz)   - yee.by(i-1,j,k+iz))-f);
-      g = yee.by(i,j+1,k-iz)+yee.by(i-1,j+1,k-iz) +dx*(yee.by(i+1,j+1,k-iz) - yee.by(i-1,j+1,k-iz));
-      g = yee.by(i,j+1,k)+yee.by(i-1,j+1,k)       +dx*(yee.by(i+1,j+1,k)    - yee.by(i-1,j+1,k))
-                                               +g +dz*(yee.by(i,j+1,k+iz)   + yee.by(i-1,j+1,k+iz)
-                                                  +dx*(yee.by(i+1,j+1,k+iz) - yee.by(i-1,j+1,k+iz))-g);
-      by[n] = static_cast<real_prtcl>( 0.25*(f+dy*(g-f)) );
+      //-------------------------------------------------- 
 
-      f = yee.bz(i-1,j,k)+yee.bz(i-1,j-1,k )      +dy*(yee.bz(i-1,j+1,k)    - yee.bz(i-1,j-1,k));
-      f = yee.bz(i,j,k)+yee.bz(i,j-1,k)           +dy*(yee.bz(i,j+1,k)      - yee.bz(i,j-1,k))+f+dx 
-        * (yee.bz(i+1,j,k)+yee.bz(i+1,j-1,k)      +dy*(yee.bz(i+1,j+1,k)    - yee.bz(i+1,j-1,k))-f);
-      g = yee.bz(i-1,j, k+iz)+yee.bz(i-1,j-1,k+iz)+dy*(yee.bz(i-1,j+1,k+iz) - yee.bz(i-1,j-1,k+iz));
-      g = yee.bz(i,j,k+iz)+yee.bz(i,j-1,k+iz )    +dy*(yee.bz(i,j+1,k+iz)   - yee.bz(i,j-1,k+iz))
-                                               +g +dx*(yee.bz(i+1,j,k+iz)   + yee.bz(i+1,j-1,k+iz)
-                                                  +dy*(yee.bz(i+1,j+1,k+iz) - yee.bz(i+1,j-1,k+iz))-g);
-      bz[n] = static_cast<real_prtcl>( 0.25*(f+dz*(g-f)) );
+      // bx
+      c000 = 0.25*( bx(ind)+   bx(ind-iy)+   bx(ind-iz)+      bx(ind-iy-iz));
+      c100 = 0.25*( bx(ind+1)+ bx(ind+1-iy)+ bx(ind+1-iz)+    bx(ind+1-iy-iz));
+      c001 = 0.25*( bx(ind)+   bx(ind+iz)+   bx(ind-iy)+      bx(ind-iy+iz));
+      c101 = 0.25*( bx(ind+1)+ bx(ind+1+iz)+ bx(ind+1-iy)+    bx(ind+1-iy+iz));
+      c010 = 0.25*( bx(ind)+   bx(ind+iy)+   bx(ind-iz)+      bx(ind+iy-iz));
+      c110 = 0.25*( bx(ind+1)+ bx(ind+1-iz)+ bx(ind+1+iy-iz)+ bx(ind+1+iy));
+      c011 = 0.25*( bx(ind)+   bx(ind+iy)+   bx(ind+iy+iz)+   bx(ind+iz));
+      c111 = 0.25*( bx(ind+1)+ bx(ind+1+iy)+ bx(ind+1+iy+iz)+ bx(ind+1+iz));
+      bxn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+
+      // by
+      c000 = 0.25*( by(ind-1-iz)+    by(ind-1)+       by(ind-iz)+      by(ind));
+      c100 = 0.25*( by(ind-iz)+      by(ind)+         by(ind+1-iz)+    by(ind+1));
+      c001 = 0.25*( by(ind-1)+       by(ind-1+iz)+    by(ind)+         by(ind+iz));
+      c101 = 0.25*( by(ind)+         by(ind+iz)+      by(ind+1)+       by(ind+1+iz));
+      c010 = 0.25*( by(ind-1+iy-iz)+ by(ind-1+iy)+    by(ind+iy-iz)+   by(ind+iy));
+      c110 = 0.25*( by(ind+iy-iz)+   by(ind+iy)+      by(ind+1+iy-iz)+ by(ind+1+iy));
+      c011 = 0.25*( by(ind-1+iy)+    by(ind-1+iy+iz)+ by(ind+iy)+      by(ind+iy+iz));
+      c111 = 0.25*( by(ind+iy)+      by(ind+iy+iz)+   by(ind+1+iy)+    by(ind+1+iy+iz));
+      byn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+
+      // bz
+      c000 = 0.25*( bz(ind-1-iy)+    bz(ind-1)+       bz(ind-iy)+      bz(ind));
+      c100 = 0.25*( bz(ind-iy)+      bz(ind)+         bz(ind+1-iy)+    bz(ind+1));
+      c001 = 0.25*( bz(ind-1-iy+iz)+ bz(ind-1+iz)+    bz(ind-iy+iz)+   bz(ind+iz));
+      c101 = 0.25*( bz(ind-iy+iz)+   bz(ind+iz)+      bz(ind+1-iy+iz)+ bz(ind+1+iz));
+      c010 = 0.25*( bz(ind-1)+       bz(ind-1+iy)+    bz(ind)+         bz(ind+iy));
+      c110 = 0.25*( bz(ind)+         bz(ind+iy)+      bz(ind+1)+       bz(ind+1+iy));
+      c011 = 0.25*( bz(ind-1+iz)+    bz(ind-1+iy+iz)+ bz(ind+iz)+      bz(ind+iy+iz));
+      c111 = 0.25*( bz(ind+iz)+      bz(ind+iy+iz)+   bz(ind+1+iz)+    bz(ind+1+iy+iz));
+      bzn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+
     }
 
   } // end of loop over species
