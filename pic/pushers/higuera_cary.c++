@@ -78,18 +78,12 @@ void pic::HigueraCaryPusher<D,V>::push_container(
 
     //-------------------------------------------------- 
     // intermediate gamma
-    //g2 = ( 1.0 + u0*u0 + v0*v0 + w0*w0 );
     g2 = (c*c + u0*u0 + v0*v0 + w0*w0)/(c*c);
     b2 = bx0*bx0 + by0*by0 + bz0*bz0;
-
-    // FIXME alternatively if cinv is in B_i terms
-    //g2= (c*c + u0*u0 + v0*v0 + w0*w0)/(c*c);
-    //b2 = (bx0*bx0 + by0*by0 + bz0*bz0)/c2;
-
     ginv = 1./sqrt( 0.5*(g2-b2 + sqrt( (g2-b2)*(g2-b2) + 4.0*(b2 + (bx0*u0 + by0*v0 + bz0*w0)*(bx0*u0 + by0*v0 + bz0*w0)))));
 
     //-------------------------------------------------- 
-    // first half magnetic rotation
+    // first half magnetic rotation; cinv is multiplied to B field only here
     bx0 *= ginv*cinv;
     by0 *= ginv*cinv;
     bz0 *= ginv*cinv;
