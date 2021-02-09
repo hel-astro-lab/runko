@@ -53,11 +53,11 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
     auto mins = tile.mins;
+    auto maxs = tile.maxs;
 
     // update also yee
     auto& yee = tile.get_yee();
     yee.rho.clear();
-
 
     // loop over species
     for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
@@ -86,28 +86,21 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         z0 = static_cast<real_long>( loc[2][n] );
 
         // rel prtcl index; assuming dx = 1; tile coordinates
-        iff = D >= 1 ? static_cast<int>(trunc( x0 - mins[0] ) ) : 0;
-        jff = D >= 2 ? static_cast<int>(trunc( y0 - mins[1] ) ) : 0;
-        kff = D >= 3 ? static_cast<int>(trunc( z0 - mins[2] ) ) : 0;
-
-        // limit to 0 Nx just in case
-        if(D >= 1) iff = limit(iff, 0, tile.mesh_lengths[0]-1);
-        if(D >= 2) jff = limit(jff, 0, tile.mesh_lengths[1]-1);
-        if(D >= 3) kff = limit(kff, 0, tile.mesh_lengths[2]-1);
+        // limit to 0 Nx-1 just in case to avoid crashes
+        iff = D >= 1 ? limit( floor(x0-mins[0]), 0.0, maxs[0]-mins[0]-1.0) : 0;
+        jff = D >= 2 ? limit( floor(y0-mins[1]), 0.0, maxs[1]-mins[1]-1.0) : 0;
+        kff = D >= 3 ? limit( floor(z0-mins[2]), 0.0, maxs[2]-mins[2]-1.0) : 0;
 
         // update rho arrays; this is interpreted as mass density
         yee.rho(iff,jff,kff) += mass;
 
+        //-------------------------------------------------- 
 
         // full prtcl index; assuming dx = 1; global grid coordinates
-  	    i = D >= 1 ? static_cast<int>(trunc( x0 ) ) : 0;
-  	    j = D >= 2 ? static_cast<int>(trunc( y0 ) ) : 0;
-  	    k = D >= 3 ? static_cast<int>(trunc( z0 ) ) : 0;
-
-        // reduce by a factor of stride; floating point arithmetics takes care of rounding
-        if(D >= 1) i = limit(i/stride, 0, nx-1);
-        if(D >= 2) j = limit(j/stride, 0, ny-1);
-        if(D >= 3) k = limit(k/stride, 0, nz-1);
+        // reduce by a factor of stride 
+        i = D >= 1 ? limit( floor(x0/stride), 0.0, double(nx)-1.0) : 0;
+        j = D >= 2 ? limit( floor(y0/stride), 0.0, double(ny)-1.0) : 0;
+        k = D >= 3 ? limit( floor(z0/stride), 0.0, double(nz)-1.0) : 0;
 
         u0 = static_cast<real_long>(vel[0][n]);
         v0 = static_cast<real_long>(vel[1][n]);
