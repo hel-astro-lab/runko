@@ -774,7 +774,6 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
       for(int kn=-1; kn <= 1; kn++) {
-        if (in == 0 && jn == 0) continue;
 
         if (in == 0 && jn == 0 && kn == 0) continue;
 
@@ -790,15 +789,14 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
           if - then from n-1
           */
 
+          //shifted neg's from vals with -1
           if (in == +1) { ito = mesh.Nx-1; ifro = -1; }
           if (jn == +1) { jto = mesh.Ny-1; jfro = -1; }
           if (kn == +1) { kto = mesh.Nz-1; kfro = -1; }
 
-          // FIXME error is here
-          if (in == -1) { ito = 0;         ifro = mpr.Nx; }
-          if (jn == -1) { jto = 0;         jfro = mpr.Ny; }
-          if (kn == -1) { kto = 0;         kfro = mpr.Nz; }
-
+          if (in == -1) { ito = 0;       ifro = mpr.Nx; }
+          if (jn == -1) { jto = 0;       jfro = mpr.Ny; }
+          if (kn == -1) { kto = 0;       kfro = mpr.Nz; }
 
           // generalized halo >= 1 loops
 
@@ -807,20 +805,16 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
             // vertical
             if (jn == 0) { 
-              //for(int h=1; h<=halo; h++)
               for(int h=0; h<halo; h++)
                 add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
 
             // horizontal
             } else if (in == 0) { 
-              //for(int g=1; g<=halo; g++)
               for(int g=0; g<halo; g++)
                 add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
 
             // diagonal
             } else { 
-              //for(int h=1; h<=halo; h++) {
-              //  for(int g=1; g<=halo; g++) {
               for(int h=0; h<halo; h++) {
                 for(int g=0; g<halo; g++) {
                   add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
@@ -833,43 +827,33 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             
             // infront/behind directions
             if (in == 0 && jn == 0 && kn != 0) { 
-              //for(int g=1; g<=halo; g++) {
               for(int g=0; g<halo; g++) {
                 add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
               }
 
-            // 3D generalized diagonal locations
-            // If the finite-difference scheme is purely non-diagonal
-            // then these can be dropped off.
-              
-            // vertical wedges
+            //// 3D generalized diagonal locations
+            //// If the finite-difference scheme is purely non-diagonal
+            //// then these can be dropped off.
+                
+            //// vertical wedges
             } else if (in != 0 && jn == 0 && kn != 0) {
 
               // y pencils
-              //for(int h=1; h<=halo; h++) {
-              //for(int g=1; g<=halo; g++) {
               for(int h=0; h<halo; h++) {
               for(int g=0; g<halo; g++) {
                 add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
               }}
             } else if (in == 0 && jn != 0 && kn != 0) {
-
-                // FIXME
               // x pencils
-              //for(int h=1; h<=halo; h++) {
-              //for(int g=1; g<=halo; g++) {
               for(int h=0; h<halo; h++) {
               for(int g=0; g<halo; g++) {
                 add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
               }}
+
             //// corners
             } else if (in != 0 && jn != 0 && kn != 0) {
 
               // pointwise
-              //for(int h=1; h<=halo; h++) {
-              //for(int g=1; g<=halo; g++) {
-              //for(int f=1; f<=halo; f++) {
-                
               for(int h=0; h<halo; h++) {
               for(int g=0; g<halo; g++) {
               for(int f=0; f<halo; f++) {
