@@ -108,9 +108,9 @@ void pic::LinearInterpolator<D,V>::solve(
 
       // check section; TODO; remove
       bool debug_flag = false;
-      if(D >= 1) { if(! (i >= 0 && i <= static_cast<int>(tile.mesh_lengths[0]) )) debug_flag = true;}
-      if(D >= 2) { if(! (j >= 0 && j <= static_cast<int>(tile.mesh_lengths[1]) )) debug_flag = true;}
-      if(D >= 3) { if(! (k >= 0 && k <= static_cast<int>(tile.mesh_lengths[2]) )) debug_flag = true;}
+      if(D >= 1) { if(! (i >= -3 && i <= static_cast<int>(tile.mesh_lengths[0]) +2 )) debug_flag = true;}
+      if(D >= 2) { if(! (j >= -3 && j <= static_cast<int>(tile.mesh_lengths[1]) +2 )) debug_flag = true;}
+      if(D >= 3) { if(! (k >= -3 && k <= static_cast<int>(tile.mesh_lengths[2]) +2 )) debug_flag = true;}
 
       if(debug_flag) {
         std::cerr << "--------------------------------------------------\n";
