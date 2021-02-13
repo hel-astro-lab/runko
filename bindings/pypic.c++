@@ -14,6 +14,7 @@ namespace py = pybind11;
 #include "../pic/pushers/boris_grav.h"
 #include "../pic/pushers/vay.h"
 #include "../pic/pushers/higuera_cary.h"
+#include "../pic/pushers/rgca.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
@@ -145,7 +146,58 @@ auto declare_prtcl_container(
           int nparts = s.size();
           assert(i < nparts);
           return s.Bpart[i + 2*nparts];
-        }, py::return_value_policy::reference);
+        }, py::return_value_policy::reference)
+    .def("__getitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx)
+      {
+        auto ip = indx[0].cast<int>();
+        auto v = indx[1].cast<int>();
+        int nparts = s.size();
+
+        if (ip >= nparts) throw py::index_error();
+        if ( v >= 12)     throw py::index_error();
+
+        if(v == 0) return s.loc(0, ip);
+        if(v == 1) return s.loc(1, ip);
+        if(v == 2) return s.loc(2, ip);
+
+        if(v == 3) return s.vel(0, ip);
+        if(v == 4) return s.vel(1, ip);
+        if(v == 5) return s.vel(2, ip);
+
+        if(v == 6) return s.Epart[ip + 0*nparts];
+        if(v == 7) return s.Epart[ip + 1*nparts];
+        if(v == 8) return s.Epart[ip + 2*nparts];
+
+        if(v == 9) return s.Bpart[ip + 0*nparts];
+        if(v ==10) return s.Bpart[ip + 1*nparts];
+        if(v ==11) return s.Bpart[ip + 2*nparts];
+
+      })
+    .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, real_prtcl val)
+      {
+        auto ip = indx[0].cast<int>();
+        auto v = indx[1].cast<int>();
+        int nparts = s.size();
+
+        if (ip >= nparts) throw py::index_error();
+        if ( v >= 12)     throw py::index_error();
+
+        if(v == 0) s.loc(0, ip) = val;
+        if(v == 1) s.loc(1, ip) = val;
+        if(v == 2) s.loc(2, ip) = val;
+
+        if(v == 3) s.vel(0, ip) = val;
+        if(v == 4) s.vel(1, ip) = val;
+        if(v == 5) s.vel(2, ip) = val;
+
+        if(v == 6) s.Epart[ip + 0*nparts] = val;
+        if(v == 7) s.Epart[ip + 1*nparts] = val;
+        if(v == 8) s.Epart[ip + 2*nparts] = val;
+
+        if(v == 9) s.Bpart[ip + 0*nparts] = val;
+        if(v ==10) s.Bpart[ip + 1*nparts] = val;
+        if(v ==11) s.Bpart[ip + 2*nparts] = val;
+      });
 
 }
 
@@ -360,6 +412,10 @@ void bind_pic(py::module& m_sub)
 
   // Higuera-Cary
   py::class_<pic::HigueraCaryPusher<3,3>>(m_3d, "HigueraCaryPusher", picpusher3d)
+    .def(py::init<>());
+
+  // reduced guiding center approximation
+  py::class_<pic::rGCAPusher<3,3>>(m_3d, "rGCAPusher", picpusher3d)
     .def(py::init<>());
 
 
