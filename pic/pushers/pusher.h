@@ -36,7 +36,10 @@ class Pusher
   virtual double get_ez_ext(double /*x*/, double /*y*/, double /*z*/) { return ez_ext; };
 
 
-  virtual void push_container(pic::ParticleContainer<D>& container, double cfl) 
+  virtual void push_container(
+          pic::ParticleContainer<D>& container, 
+          pic::Tile<D>& /*tile*/
+          ) 
   {
     // check that this is never used or that the user must know it
     assert(false);
@@ -51,7 +54,7 @@ class Pusher
       vel[i] = &( container.vel(i,0) );
 
     for(size_t n=0; n<container.size(); n++) {
-      for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*cfl;
+      for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n];
     }
   }
 
@@ -59,14 +62,14 @@ class Pusher
   void solve(pic::Tile<D>& tile)
   {
     for(auto&& container : tile.containers)
-      push_container(container, tile.cfl);
+      push_container(container, tile);
   }
 
 
   /// push spesific containers in tile
   void solve(pic::Tile<D>& tile, int ispc)
   {
-    push_container(tile.containers[ispc], tile.cfl);
+    push_container(tile.containers[ispc], tile);
   }
 
 };

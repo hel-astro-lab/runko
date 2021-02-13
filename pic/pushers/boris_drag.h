@@ -20,7 +20,9 @@ class BorisPusherDrag :
   // Klein-Nishina cross-section
   double kn(double x);
 
-  void push_container( pic::ParticleContainer<D>& /*container*/, double cfl) override;
+  void push_container(
+          pic::ParticleContainer<D>& container, 
+          pic::Tile<D>& tile) override;
 };
 
 } // end of namespace pic

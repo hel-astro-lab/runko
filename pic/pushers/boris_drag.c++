@@ -21,7 +21,7 @@ double pic::BorisPusherDrag<D,V>::kn(double x)
 template<size_t D, size_t V>
 void pic::BorisPusherDrag<D,V>::push_container(
     pic::ParticleContainer<D>& container, 
-    double cfl)
+    pic::Tile<D>& tile)
 {
 
   int nparts = container.size();
@@ -68,7 +68,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
   // maximum drag force experienced by particle
   real_long dragthr = 0.1; 
 
-  real_long c = cfl;
+  real_long c = tile.cfl;
   real_long cinv = 1.0/c;
 
   // charge-to-mass ratio (sign only because fields are in units of q)

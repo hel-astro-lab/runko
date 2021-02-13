@@ -12,7 +12,9 @@ template<size_t D, size_t V>
 class HigueraCaryPusher :
   public Pusher<D,V>
 {
-  void push_container( pic::ParticleContainer<D>& /*container*/, double cfl) override;
+  void push_container(
+          pic::ParticleContainer<D>& container, 
+          pic::Tile<D>& tile) override;
 };
 
 } // end of namespace pic

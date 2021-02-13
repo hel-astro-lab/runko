@@ -8,7 +8,7 @@ using toolbox::sign;
 template<size_t D, size_t V>
 void pic::BorisPusherRad<D,V>::push_container(
     pic::ParticleContainer<D>& container, 
-    double cfl)
+    pic::Tile<D>& tile)
 {
 
   int nparts = container.size();
@@ -52,7 +52,7 @@ void pic::BorisPusherRad<D,V>::push_container(
   real_long pressx, pressy, pressz;
   real_long gamx;
 
-  real_long c = cfl;
+  real_long c = tile.cfl;
   real_long cinv = 1.0/c;
 
   // charge-to-mass ratio (sign only because fields are in units of q)

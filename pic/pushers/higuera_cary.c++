@@ -8,7 +8,7 @@ using toolbox::sign;
 template<size_t D, size_t V>
 void pic::HigueraCaryPusher<D,V>::push_container(
     pic::ParticleContainer<D>& container, 
-    double cfl) 
+    pic::Tile<D>& tile)
 {
   int nparts = container.size();
 
@@ -42,7 +42,7 @@ void pic::HigueraCaryPusher<D,V>::push_container(
   int n1 = 0;
   int n2 = nparts;
 
-  real_long c = cfl;
+  real_long c = tile.cfl;
   real_long cinv = 1.0/c;
 
   // half charge-to-mass ratio (sign only because fields are in units of q)
