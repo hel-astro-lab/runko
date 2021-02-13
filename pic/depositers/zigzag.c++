@@ -108,82 +108,83 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       Fz2 = +q*(z2-zr);
 
       // Fall into this debug section if something is very wrong; TODO: remove
+      // NOTE: algorithm below has +1 on some indices so max ind is N + H-1 (hence 2 here)
       bool debug_flag = false;
-      if (!( (i1 >= -3 && i1 < static_cast<int>(tile.mesh_lengths[0]+3)) )) debug_flag=true;
-      if (!( (j1 >= -3 && j1 < static_cast<int>(tile.mesh_lengths[1]+3)) )) debug_flag=true;
-      if (!( (k1 >= -3 && k1 < static_cast<int>(tile.mesh_lengths[2]+3)) )) debug_flag=true;
+      if (!( (i1 >= -3 && i1 < static_cast<int>(tile.mesh_lengths[0]+2)) )) debug_flag=true;
+      if (!( (j1 >= -3 && j1 < static_cast<int>(tile.mesh_lengths[1]+2)) )) debug_flag=true;
+      if (!( (k1 >= -3 && k1 < static_cast<int>(tile.mesh_lengths[2]+2)) )) debug_flag=true;
 
-      if (!( (i2 >= -3 && i2 < static_cast<int>(tile.mesh_lengths[0]+3)) )) debug_flag=true;
-      if (!( (j2 >= -3 && j2 < static_cast<int>(tile.mesh_lengths[1]+3)) )) debug_flag=true;
-      if (!( (k2 >= -3 && k2 < static_cast<int>(tile.mesh_lengths[2]+3)) )) debug_flag=true;
+      if (!( (i2 >= -3 && i2 < static_cast<int>(tile.mesh_lengths[0]+2)) )) debug_flag=true;
+      if (!( (j2 >= -3 && j2 < static_cast<int>(tile.mesh_lengths[1]+2)) )) debug_flag=true;
+      if (!( (k2 >= -3 && k2 < static_cast<int>(tile.mesh_lengths[2]+2)) )) debug_flag=true;
 
       if (debug_flag) {
-        std::cerr << "--------------------------------------------------\n";
-        std::cerr << "n=" << n;
-        std::cerr << " i1: " << i1;
-        std::cerr << " j1: " << j1;
-        std::cerr << " k1: " << k1;
-        std::cerr << " ||| ";
-        std::cerr << " i2: " << i2;
-        std::cerr << " j2: " << j2;
-        std::cerr << " k2: " << k2;
-        std::cerr << "\n";
+        std::cout << "--------------------------------------------------\n";
+        std::cout << "n=" << n;
+        std::cout << " i1: " << i1;
+        std::cout << " j1: " << j1;
+        std::cout << " k1: " << k1;
+        std::cout << " ||| ";
+        std::cout << " i2: " << i2;
+        std::cout << " j2: " << j2;
+        std::cout << " k2: " << k2;
+        std::cout << "\n";
 
-        std::cerr << " x1sp: " << x1;
-        std::cerr << " y1sp: " << y1;
-        std::cerr << " z1sp: " << z1;
-        std::cerr << " ||| ";
-        std::cerr << " x2sp: " << x2;
-        std::cerr << " y2sp: " << y2;
-        std::cerr << " z2sp: " << z2;
-        std::cerr << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
-        std::cerr << "\n";
+        std::cout << " x1sp: " << x1;
+        std::cout << " y1sp: " << y1;
+        std::cout << " z1sp: " << z1;
+        std::cout << " ||| ";
+        std::cout << " x2sp: " << x2;
+        std::cout << " y2sp: " << y2;
+        std::cout << " z2sp: " << z2;
+        std::cout << " minxyz: " << mins[0] << " " << mins[1] << " " << mins[2];
+        std::cout << " tilelen:" << tile.mesh_lengths[0] << " " << tile.mesh_lengths[1] << " " << tile.mesh_lengths[2];
+        std::cout << "\n";
 
-        std::cerr << " vx: " <<  vel[0][n];
-        std::cerr << " vy: " <<  vel[1][n];
-        std::cerr << " vz: " <<  vel[2][n];
-        std::cerr << " gam: "<<  invgam;
-        std::cerr << "\n";
+        std::cout << " vx: " <<  vel[0][n];
+        std::cout << " vy: " <<  vel[1][n];
+        std::cout << " vz: " <<  vel[2][n];
+        std::cout << " gam: "<<  1.0/invgam;
+        std::cout << "\n";
 
-        std::cerr << " xr: " <<  xr;
-        std::cerr << " yr: " <<  yr;
-        std::cerr << " zr: " <<  zr;
-        std::cerr << "\n";
+        std::cout << " xr: " <<  xr;
+        std::cout << " yr: " <<  yr;
+        std::cout << " zr: " <<  zr;
+        std::cout << "\n";
 
-        std::cerr << " Fx1: " <<  Fx1;
-        std::cerr << " Fy1: " <<  Fy1;
-        std::cerr << " Fz1: " <<  Fz1;
-        std::cerr << " Wx1: " <<  Wx1;
-        std::cerr << " Wy1: " <<  Wy1;
-        std::cerr << " Wz1: " <<  Wz1;
-        std::cerr << "\n";
+        std::cout << " Fx1: " <<  Fx1;
+        std::cout << " Fy1: " <<  Fy1;
+        std::cout << " Fz1: " <<  Fz1;
+        std::cout << " Wx1: " <<  Wx1;
+        std::cout << " Wy1: " <<  Wy1;
+        std::cout << " Wz1: " <<  Wz1;
+        std::cout << "\n";
 
-        std::cerr << " Fx2: " <<  Fx2;
-        std::cerr << " Fy2: " <<  Fy2;
-        std::cerr << " Fz2: " <<  Fz2;
-        std::cerr << " Wx2: " <<  Wx2;
-        std::cerr << " Wy2: " <<  Wy2;
-        std::cerr << " Wz2: " <<  Wz2;
-        std::cerr << "\n";
+        std::cout << " Fx2: " <<  Fx2;
+        std::cout << " Fy2: " <<  Fy2;
+        std::cout << " Fz2: " <<  Fz2;
+        std::cout << " Wx2: " <<  Wx2;
+        std::cout << " Wy2: " <<  Wy2;
+        std::cout << " Wz2: " <<  Wz2;
+        std::cout << "\n";
 
-        std::cerr << std::flush;
+        std::cout << std::flush;
 
         // always fail if we end here
-        assert(false);
+        assert(true);
         continue;
       }
 
       //--------------------------------------------------
       // index checking
       // another check; TODO: remove
-      if(D >= 1 ) assert(i1 >= -3 && i1 < int(tile.mesh_lengths[0]+3)) ;
-      if(D >= 2 ) assert(j1 >= -3 && j1 < int(tile.mesh_lengths[1]+3)) ;
-      if(D >= 3 ) assert(k1 >= -3 && k1 < int(tile.mesh_lengths[2]+3)) ;
-
-      if (D >= 1) assert(i2 >= -3 && i2 < int(tile.mesh_lengths[0]+3));
-      if (D >= 2) assert(j2 >= -3 && j2 < int(tile.mesh_lengths[1]+3));
-      if (D >= 3) assert(k2 >= -3 && k2 < int(tile.mesh_lengths[2]+3));
-
+      //if(D >= 1 ) assert(i1 >= -3 && i1 < int(tile.mesh_lengths[0]+3)) ;
+      //if(D >= 2 ) assert(j1 >= -3 && j1 < int(tile.mesh_lengths[1]+3)) ;
+      //if(D >= 3 ) assert(k1 >= -3 && k1 < int(tile.mesh_lengths[2]+3)) ;
+      //if (D >= 1) assert(i2 >= -3 && i2 < int(tile.mesh_lengths[0]+3));
+      //if (D >= 2) assert(j2 >= -3 && j2 < int(tile.mesh_lengths[1]+3));
+      //if (D >= 3) assert(k2 >= -3 && k2 < int(tile.mesh_lengths[2]+3));
+        
       // jx
       if(D>=1) yee.jx(i1  , j1  , k1  ) += Fx1 * (1-Wy1) * (1-Wz1);
       if(D>=2) yee.jx(i1  , j1+1, k1  ) += Fx1 * Wy1     * (1-Wz1);
