@@ -859,13 +859,13 @@ class Communications(unittest.TestCase):
                                     overlapy = 0
                                     overlapz = 0
 
-                                    if s < 0 or s >= conf.NzMesh:
+                                    if s < 0 or s > conf.NzMesh-1:
                                         overlapz += 1
 
-                                    if r < 0 or r >= conf.NyMesh:
+                                    if r < 0 or r > conf.NyMesh-1:
                                         overlapy += 1
 
-                                    if q < 0 or q >= conf.NxMesh:
+                                    if q < 0 or q > conf.NxMesh-1:
                                         overlapx += 1
 
                                     #consider values only outside inner regime 

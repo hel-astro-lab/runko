@@ -184,9 +184,9 @@ class FilterTests(unittest.TestCase):
 
         conf = Conf()
         conf.threeD = True
-        conf.NxMesh = 5
-        conf.NyMesh = 5
-        conf.NzMesh = 5
+        conf.NxMesh = 6
+        conf.NyMesh = 6
+        conf.NzMesh = 6
 
         tile = pyfields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
@@ -195,9 +195,10 @@ class FilterTests(unittest.TestCase):
         # get current arrays and sum (only internal values #to avoid garbage on boundaries
 
         jx, jy, jz = get_js(tile, conf)
-        sumx = np.sum(jx[1:-1, 1:-1, 1:-1])
-        sumy = np.sum(jy[1:-1, 1:-1, 1:-1])
-        sumz = np.sum(jz[1:-1, 1:-1, 1:-1])
+        st = 2
+        sumx = np.sum(jx[st:-st, st:-st, st:-st])
+        sumy = np.sum(jy[st:-st, st:-st, st:-st])
+        sumz = np.sum(jz[st:-st, st:-st, st:-st])
 
         # should be 25,50,75 (now 9,12,27 without boundaries)
         # print("sumx {} sumy {} sumz {}".format(sumx, sumy, sumz))
@@ -210,9 +211,9 @@ class FilterTests(unittest.TestCase):
         flt.solve(tile)
 
         jx1, jy1, jz1 = get_js(tile, conf)
-        sumx1 = np.sum(jx1[1:-1, 1:-1, 1:-1])
-        sumy1 = np.sum(jy1[1:-1, 1:-1, 1:-1])
-        sumz1 = np.sum(jz1[1:-1, 1:-1, 1:-1])
+        sumx1 = np.sum(jx1[st:-st, st:-st, st:-st])
+        sumy1 = np.sum(jy1[st:-st, st:-st, st:-st])
+        sumz1 = np.sum(jz1[st:-st, st:-st, st:-st])
 
         # print(jx1[:,:,0])
         # print(jy1[:,:,0])
