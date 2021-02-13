@@ -43,6 +43,7 @@ set (PIC_FILES
      ../pic/pushers/boris_grav.c++
      ../pic/pushers/vay.c++
      ../pic/pushers/higuera_cary.c++
+     ../pic/pushers/rgca.c++
      ../pic/interpolators/linear.c++
      ../pic/depositers/zigzag.c++
      )
