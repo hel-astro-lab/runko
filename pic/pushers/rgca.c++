@@ -43,9 +43,9 @@ inline auto ExB_drift(
     real_long vez = (ex*by - ey*bx)/(b*b + EPS);
 
     real_long ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
-    real_long kappainv = sqrt(1. - ve2); // gamma^{-1} factor
+    real_long kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
 
-    return {vex, vey, vez, kappainv, 0.};
+    return {vex, vey, vez, kappa, 0.};
 }
     
 
@@ -70,9 +70,9 @@ inline auto ExB_drift_rel(
     vez *= ginv;
 
     real_long ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
-    real_long kappainv = sqrt(1. - ve2); // gamma^{-1} factor
+    real_long kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
 
-    return {vex, vey, vez, kappainv, we2};
+    return {vex, vey, vez, kappa, we2};
 }
 
 
@@ -120,10 +120,11 @@ inline auto mag_unit_vec_rel(
     real_long bnz = zeta*eperpz + eta*bz;
 
     // normalize to unit vector
-    real_long bn = sqrt( bnx*bnx + bny*bny + bnz*bnz );
-    bnx *= 1.0/(bn + EPS);
-    bny *= 1.0/(bn + EPS);
-    bnz *= 1.0/(bn + EPS);
+    //real_long bn = sqrt( bnx*bnx + bny*bny + bnz*bnz );
+    //std::cout << bn << "\n";
+    //bnx *= 1.0/(bn + EPS);
+    //bny *= 1.0/(bn + EPS);
+    //bnz *= 1.0/(bn + EPS);
 
     return {bnx, bny, bnz};
 }
@@ -218,6 +219,7 @@ void pic::rGCAPusher<D,V>::push_container(
 
   // loop over prtcls
   for(int n=n1; n<n2; n++) {
+      bool crash_flag = false;
 
     loc0n = static_cast<real_long>( loc[0][n] );
     loc1n = static_cast<real_long>( loc[1][n] );
@@ -228,12 +230,12 @@ void pic::rGCAPusher<D,V>::push_container(
     vel2n = static_cast<real_long>( vel[2][n] );
 
     // read particle-specific fields
-    ex0 = static_cast<real_long>( (exP[n] + this->get_ex_ext(0,0,0)) );
-    ey0 = static_cast<real_long>( (eyP[n] + this->get_ey_ext(0,0,0)) );
-    ez0 = static_cast<real_long>( (ezP[n] + this->get_ez_ext(0,0,0)) );
-    bx0 = static_cast<real_long>( (bxP[n] + this->get_bx_ext(0,0,0)) );
-    by0 = static_cast<real_long>( (byP[n] + this->get_by_ext(0,0,0)) );
-    bz0 = static_cast<real_long>( (bzP[n] + this->get_bz_ext(0,0,0)) );
+    ex0 = static_cast<real_long>( (exP[n] + this->get_ex_ext(0,0,0))*cinv );
+    ey0 = static_cast<real_long>( (eyP[n] + this->get_ey_ext(0,0,0))*cinv );
+    ez0 = static_cast<real_long>( (ezP[n] + this->get_ez_ext(0,0,0))*cinv );
+    bx0 = static_cast<real_long>( (bxP[n] + this->get_bx_ext(0,0,0))*cinv );
+    by0 = static_cast<real_long>( (byP[n] + this->get_by_ext(0,0,0))*cinv );
+    bz0 = static_cast<real_long>( (bzP[n] + this->get_bz_ext(0,0,0))*cinv );
 
     //-------------------------------------------------- 
     // iterate: step0
@@ -249,8 +251,8 @@ void pic::rGCAPusher<D,V>::push_container(
     //ExB in units of c
 
     // non-rel / rel ExB drift velocity
-    //auto [vex0, vey0, vez0, kappainv0, we2] = ExB_drift( ex0, ey0, ez0, bx0, by0, bz0 );
-    auto [vex0, vey0, vez0, kappainv0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
+    //auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift( ex0, ey0, ez0, bx0, by0, bz0 );
+    auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
 
     //-------------------------------------------------- 
     // magnetic field unit vector b
@@ -260,35 +262,36 @@ void pic::rGCAPusher<D,V>::push_container(
 
     //--------------------------------------------------
     // epar = e.b
-    real_long eparx = ex0*bnx0;
-    real_long epary = ey0*bny0;
-    real_long eparz = ez0*bnz0;
+    real_long epar = ex0*bnx0 + ey0*bny0 + ez0*bnz0;
 
-    // project velocity to the b field; upar at t_n-1/2 
-    real_long uparx01 = vel0n*bnx0;
-    real_long upary01 = vel1n*bny0;
-    real_long uparz01 = vel2n*bnz0;
+    // project velocity to the b field; upar at t_n-1/2 via u_par = (u . b)b
+    real_long upar01  = vel0n*bnx0 + vel1n*bny0 + vel2n*bnz0;
+
 
     //--------------------------------------------------
-    // gyro motion velocity
-    ugx = vel0n - uparx01 - vex0/kappainv0;
-    ugy = vel1n - upary01 - vey0/kappainv0;
-    ugz = vel2n - uparz01 - vez0/kappainv0;
+    // gyro motion four-velocity
+      
+    // NOTE: assuming full gamma factor here from previous step
+    G0 = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n );
+
+    ugx = vel0n - upar01*bnx0 - vex0*G0;
+    ugy = vel1n - upar01*bny0 - vey0*G0;
+    ugz = vel2n - upar01*bnz0 - vez0*G0;
     ug2 = ugx*ugx + ugy*ugy + ugz*ugz;
 
     // magnetic moment = m u_g^2/2 B_0 \gamma
-    mu = me*ug2/(2.0*b0/kappainv0);
+    // FIXME: this is taken as kappa0 in paper eqs; correct?
+    //mu = me*ug2/(2.0*b0*G);
+    mu = me*ug2/(2.0*b0*kappa0);
 
     //--------------------------------------------------
     // upar at t_n+1/2
     // increase velocity with parallel E field: u += q/m dt Epar
     // NOTE: standard c * vel + qm*epar changed to vel + qm*epar/c
-    uparx01 += cinv*qm*eparx;
-    upary01 += cinv*qm*epary;
-    uparz01 += cinv*qm*eparz;
-    real_long upar01 = sqrt(uparx01*uparx01 + upary01*upary01 + uparz01*uparz01);  //|u|
-    const real_long kinv0 = 1.0/(sqrt(1.0 + upar01*upar01 + ug2 ) + EPS);     // gamma^{-1} 
-
+    // NOTE: cinv is multiplied to b0 in the beginning
+    // FIXME: or multiply cinv here?
+    upar01 += qm*epar;
+    const real_long k0 = sqrt(1.0 + upar01*upar01 + ug2 );     // gamma
 
     //--------------------------------------------------
     // step1
@@ -404,6 +407,13 @@ void pic::rGCAPusher<D,V>::push_container(
         c111 = 0.25*( bzM(ind+iz)+      bzM(ind+iy+iz)+   bzM(ind+1+iz)+    bzM(ind+1+iy+iz));
         bz1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         bz1 += this->get_bz_ext(0,0,0);
+
+        ex1 *= cinv;
+        ey1 *= cinv;
+        ez1 *= cinv;
+        bx1 *= cinv;
+        by1 *= cinv;
+        bz1 *= cinv;
       }
 
       //-------------------------------------------------- 
@@ -412,8 +422,8 @@ void pic::rGCAPusher<D,V>::push_container(
       //ExB in units of c at new location
 
       // non-rel / rel ExB drift velocity at the new location
-      //auto [vex1, vey1, vez1, kappainv1, we2] = ExB_drift(     ex1, ey1, ez1, bx1, by1, bz1 );
-      auto [vex1, vey1, vez1, kappainv1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
+      //auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift(     ex1, ey1, ez1, bx1, by1, bz1 );
+      auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
 
       //-------------------------------------------------- 
       // magnetic field unit vector b at new location
@@ -424,36 +434,36 @@ void pic::rGCAPusher<D,V>::push_container(
       //-------------------------------------------------- 
       // location update
       // NOTE: assuming mu -> 0 zero during the time step
-      const real_long kinv1 = 1.0/(sqrt(1.0 + upar01*upar01 + ug2 ) + EPS);     // gamma^{-1} 
-
-      G0 = kinv0*kappainv0; // inv Gamma at t = n
-      G1 = kinv1*kappainv1; // inv Gamma at t = n+1
-
-      // GCA coordinate-velocity at v_n+1/2 
-      vn1x = 0.5*upar01*( bnx0*G0 + bnx1*G1 ) + 0.5*(vex0 + vex1);
-      vn1y = 0.5*upar01*( bny0*G0 + bny1*G1 ) + 0.5*(vey0 + vey1);
-      vn1z = 0.5*upar01*( bnz0*G0 + bnz1*G1 ) + 0.5*(vez0 + vez1);
-
-      //-------------------------------------------------- 
-      // newest GCA four velocity at u_n+1 (for velocity update)
 
       // Construct new gyrovelocity from conservation of magnetic moment
       // magnetic moment = m u_g^2/2 B_0 \gamma
+        
       mu = 0.0; // NOTE: synchrotron losses are assumed to bring mag. mom. to zero
-
       real_long b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
-      ug2n = mu*2.0*(b1/kappainv1)/container.m;
+      ug2n = mu*2.0*b1*kappa1/container.m;
 
-      un1x = upar01*bnx1 + vex1/kappainv1/kinv1 + ug2n*ugx/sqrt(ug2);
-      un1y = upar01*bny1 + vey1/kappainv1/kinv1 + ug2n*ugy/sqrt(ug2);
-      un1z = upar01*bnz1 + vez1/kappainv1/kinv1 + ug2n*ugz/sqrt(ug2);
+      const real_long k1 = sqrt(1.0 + upar01*upar01 + ug2n);     // gamma
 
+      G0 = k0*kappa0; // inv Gamma at t = n FIXME: or previous G0?
+      G1 = k1*kappa1; // inv Gamma at t = n+1
+
+      // GCA coordinate-velocity at v_n+1/2 
+      vn1x = 0.5*upar01*( bnx0/G0 + bnx1/G1 ) + 0.5*(vex0 + vex1);
+      vn1y = 0.5*upar01*( bny0/G0 + bny1/G1 ) + 0.5*(vey0 + vey1);
+      vn1z = 0.5*upar01*( bnz0/G0 + bnz1/G1 ) + 0.5*(vez0 + vez1);
+
+      //-------------------------------------------------- 
+      // newest GCA four velocity at u_n+1 (for velocity update)
+      // gyromotion is taken to be same direction as in the previous step (hence ug_i/sqrt(ug2))
+      un1x = upar01*bnx1 + vex1*G1 + ug2n*ugx/sqrt(ug2);
+      un1y = upar01*bny1 + vey1*G1 + ug2n*ugy/sqrt(ug2);
+      un1z = upar01*bnz1 + vez1*G1 + ug2n*ugz/sqrt(ug2);
 
       //-------------------------------------------------- 
       // location error
-      real_long Hx = R1x - R0x - c*vn1x;
-      real_long Hy = R1y - R0y - c*vn1y;
-      real_long Hz = R1z - R0z - c*vn1z;
+      real_long Hx = R1x - (R0x + c*vn1x);
+      real_long Hy = R1y - (R0y + c*vn1y);
+      real_long Hz = R1z - (R0z + c*vn1z);
       real_long H = sqrt(Hx*Hx + Hy*Hy + Hz*Hz);
 
       //-------------------------------------------------- 
@@ -464,7 +474,11 @@ void pic::rGCAPusher<D,V>::push_container(
 
 
       //-------------------------------------------------- 
-      if(n == 0) {
+      if(false) {
+      //if(n == 0) {
+      //if(mu > 1.0) {
+        //crash_flag = true;
+          
         real_long b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
         real_long e1 = sqrt( ex1*ex1 + ey1*ey1 + ez1*ez1 );
 
@@ -479,7 +493,7 @@ void pic::rGCAPusher<D,V>::push_container(
 
         std::cout 
         << "iter:" << iter << " H:" << H << " E.B:" << EB0 << " " << EB1
-        << " e/b" << egtb0 << " e/b" << egtb1
+        << " e/b0:" << egtb0 << " e/b1:" << egtb1
         << "\n"
         << " R0x:" << R0x << " R0y:" << R0y << " R0z:" << R0z 
         << "\n"
@@ -496,22 +510,28 @@ void pic::rGCAPusher<D,V>::push_container(
         << " bnx1:" << bnx1 << " bny:" << bny1 << " bnz:" << bnz1 << " b: " << bn1
         << "\n"
         //<< " eparx:" << eparx << " epary:" << epary << " eparz:" << eparz
-        << " uparx:" << uparx01 << " upary:" << upary01 << " uparz:" << uparz01
-        << " upar:" << upar01
-        << " kinv0:" << 1./kinv0 
-        << " kinv1:" << 1./kinv1 
+        //<< " uparx:" << uparx01 << " upary:" << upary01 << " uparz:" << uparz01 << 
+        " upar:" << upar01
+        << " k0:" << k0 
+        << " k1:" << k1 
         << "\n"
-        << " vex0:" << vex0 << " vey:" << vey0 << " vez:" << vez0 << " kinv:" << 1/kappainv0
+        << " mu:" << mu 
+        << " ug:" << sqrt(ug2) << " ugn:" << sqrt(ug2n)
         << "\n"
-        << " vex1:" << vex1 << " vey:" << vey1 << " vez:" << vez1 << " kinv:" << 1/kappainv1
+        << " vex0:" << vex0 << " vey:" << vey0 << " vez:" << vez0 << " kappa0:" << kappa0
+        << "\n"
+        << " vex1:" << vex1 << " vey:" << vey1 << " vez:" << vez1 << " kappa1:" << kappa1
         << "\n\n";
       std::cout << std::flush;
+
       }
 
       // exit if converged
-      if(H < 1e-6) break;
+      if(H < 1e-5) break;
 
     }//end of iteration
+
+    if(crash_flag) assert(false);
 
 
     vel[0][n] = static_cast<real_prtcl>( un1x );
@@ -540,7 +560,6 @@ void pic::rGCAPusher<D,V>::push_container(
     std::isnan(loc[2][n]);   
 
     //if(1./kinv01 > 30.0) debug_flag = true;
-
     if(debug_flag){
       std::cout 
         << " loc0n:" << loc[0][n] << " loc1n:" << loc[1][n] << " loc2n:" << loc[2][n]
@@ -548,13 +567,13 @@ void pic::rGCAPusher<D,V>::push_container(
         << " bx0:" << bx0 << " by0:" << by0 << " bz0:" << bz0
         << " bnx0:" << bnx0 << " bny:" << bny0 << " bnz:" << bnz0
         //<< " bnx1:" << bnx1 << " bny:" << bny1 << " bnz:" << bnz1
-        << " eparx:" << eparx << " epary:" << epary << " eparz:" << eparz
-        << " uparx:" << uparx01 << " upary:" << upary01 << " uparz:" << uparz01
+        //<< " eparx:" << eparx << " epary:" << epary << " eparz:" << eparz
+        //<< " uparx:" << uparx01 << " upary:" << upary01 << " uparz:" << uparz01
         << " upar:" << upar01
-        << " kinv0:" << 1./kinv0 
-        //<< " kinv1:" << 1./kinv1 
-        << " vex0:" << vex0 << " vey:" << vey0 << " vez:" << vez0 << " kappainv0:" << 1/kappainv0
-        //<< " vex1:" << vex1 << " vey:" << vey1 << " vez:" << vez1 << " kappainv1:" << 1/kappainv1
+        << " k0:" << k0 
+        //<< " k1:" << k1 
+        << " vex0:" << vex0 << " vey:" << vey0 << " vez:" << vez0 << " kappa0:" << kappa0
+        //<< " vex1:" << vex1 << " vey:" << vey1 << " vez:" << vez1 << " kappa1:" << kappa1
         << "\n";
       std::cout << std::flush;
       assert(false);
