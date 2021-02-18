@@ -120,11 +120,10 @@ inline auto mag_unit_vec_rel(
     real_long bnz = zeta*eperpz + eta*bz;
 
     // normalize to unit vector
-    //real_long bn = sqrt( bnx*bnx + bny*bny + bnz*bnz );
-    //std::cout << bn << "\n";
-    //bnx *= 1.0/(bn + EPS);
-    //bny *= 1.0/(bn + EPS);
-    //bnz *= 1.0/(bn + EPS);
+    real_long bn = sqrt( bnx*bnx + bny*bny + bnz*bnz );
+    bnx *= 1.0/(bn + EPS);
+    bny *= 1.0/(bn + EPS);
+    bnz *= 1.0/(bn + EPS);
 
     return {bnx, bny, bnz};
 }
