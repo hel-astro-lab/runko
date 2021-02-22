@@ -4,9 +4,12 @@
 
 namespace pic {
 
-/// Boris pusher
+/// Reduced guiding center approximation pusher
+//
+// https://arxiv.org/abs/1701.05605
+//
 template<size_t D, size_t V>
-class BorisPusher :
+class rGCAPusher :
   public Pusher<D,V>
 {
   void push_container(

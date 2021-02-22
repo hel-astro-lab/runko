@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 #include "tile.h"
 
@@ -8,23 +9,34 @@ namespace fields {
   using namespace mpi4cpp;
 
 
+template<class T>
+bool has_key(std::vector<T>& v, T x){
+  if(std::find(v.begin(), v.end(), x) != v.end()) {
+      return true;
+  } else {
+      return false;
+  }
+}
+
+
+
 /// Deposit current into electric field
 template<std::size_t D>
 void Tile<D>::deposit_current() 
 {
   YeeLattice& mesh = get_yee();
 
-  for(int k=0; k<mesh.Nz; k++) {
-  for(int j=0; j<mesh.Ny; j++) {
-  for(int i=0; i<mesh.Nx; i++) {
-    mesh.ex(i,j,k) -= mesh.jx(i,j,k);
-    mesh.ey(i,j,k) -= mesh.jy(i,j,k);
-    mesh.ez(i,j,k) -= mesh.jz(i,j,k);
-  }}}
+  //for(int k=0; k<mesh.Nz; k++) {
+  //for(int j=0; j<mesh.Ny; j++) {
+  //for(int i=0; i<mesh.Nx; i++) {
+  //  mesh.ex(i,j,k) -= mesh.jx(i,j,k);
+  //  mesh.ey(i,j,k) -= mesh.jy(i,j,k);
+  //  mesh.ez(i,j,k) -= mesh.jz(i,j,k);
+  //}}}
 
-  //mesh.ex -= mesh.jx;
-  //mesh.ey -= mesh.jy;
-  //mesh.ez -= mesh.jz;
+  mesh.ex -= mesh.jx;
+  mesh.ey -= mesh.jy;
+  mesh.ez -= mesh.jz;
 }
 
 
@@ -95,21 +107,28 @@ void Tile<3>::add_yee_lattice()
 void copy_vert_yee(
     YeeLattice& lhs, 
     YeeLattice& rhs, 
+    std::vector<int> iarr,
     int lhsI, int rhsI) 
 {
 
-  lhs.ex.copy_vert(rhs.ex, lhsI, rhsI); 
-  lhs.ey.copy_vert(rhs.ey, lhsI, rhsI); 
-  lhs.ez.copy_vert(rhs.ez, lhsI, rhsI); 
+  if(has_key(iarr, 0)) {
+    lhs.jx.copy_vert(rhs.jx, lhsI, rhsI); 
+    lhs.jy.copy_vert(rhs.jy, lhsI, rhsI); 
+    lhs.jz.copy_vert(rhs.jz, lhsI, rhsI); 
+  }
 
-  lhs.bx.copy_vert(rhs.bx, lhsI, rhsI); 
-  lhs.by.copy_vert(rhs.by, lhsI, rhsI); 
-  lhs.bz.copy_vert(rhs.bz, lhsI, rhsI); 
+  if(has_key(iarr, 1)) {
+    lhs.ex.copy_vert(rhs.ex, lhsI, rhsI); 
+    lhs.ey.copy_vert(rhs.ey, lhsI, rhsI); 
+    lhs.ez.copy_vert(rhs.ez, lhsI, rhsI); 
+  }
 
-  //TODO: separate into own function
-  lhs.jx.copy_vert(rhs.jx, lhsI, rhsI); 
-  lhs.jy.copy_vert(rhs.jy, lhsI, rhsI); 
-  lhs.jz.copy_vert(rhs.jz, lhsI, rhsI); 
+  if(has_key(iarr, 2)) {
+    lhs.bx.copy_vert(rhs.bx, lhsI, rhsI); 
+    lhs.by.copy_vert(rhs.by, lhsI, rhsI); 
+    lhs.bz.copy_vert(rhs.bz, lhsI, rhsI); 
+  }
+
 }
 
 
@@ -119,6 +138,7 @@ void add_vert_yee(
     YeeLattice& rhs, 
     int lhsI, int rhsI) 
 {
+
   lhs.jx.add_vert(rhs.jx, lhsI, rhsI); 
   lhs.jy.add_vert(rhs.jy, lhsI, rhsI); 
   lhs.jz.add_vert(rhs.jz, lhsI, rhsI); 
@@ -131,20 +151,26 @@ void add_vert_yee(
 void copy_horz_yee(
     YeeLattice& lhs, 
     YeeLattice& rhs, 
+    std::vector<int> iarr,
     int lhsJ, int rhsJ) 
 {
-  lhs.ex.copy_horz(rhs.ex, lhsJ, rhsJ); 
-  lhs.ey.copy_horz(rhs.ey, lhsJ, rhsJ); 
-  lhs.ez.copy_horz(rhs.ez, lhsJ, rhsJ); 
-                                    
-  lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
-  lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
-  lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
+  if(has_key(iarr, 0)) {
+    lhs.jx.copy_horz(rhs.jx, lhsJ, rhsJ); 
+    lhs.jy.copy_horz(rhs.jy, lhsJ, rhsJ); 
+    lhs.jz.copy_horz(rhs.jz, lhsJ, rhsJ); 
+  }
 
-  //TODO: separate into own function
-  lhs.jx.copy_horz(rhs.jx, lhsJ, rhsJ); 
-  lhs.jy.copy_horz(rhs.jy, lhsJ, rhsJ); 
-  lhs.jz.copy_horz(rhs.jz, lhsJ, rhsJ); 
+  if(has_key(iarr, 1)) {
+    lhs.ex.copy_horz(rhs.ex, lhsJ, rhsJ); 
+    lhs.ey.copy_horz(rhs.ey, lhsJ, rhsJ); 
+    lhs.ez.copy_horz(rhs.ez, lhsJ, rhsJ); 
+  }                                  
+
+  if(has_key(iarr, 2)) {
+    lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
+    lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
+    lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
+  }
 }                       
 
 
@@ -163,20 +189,26 @@ void add_horz_yee(
 void copy_face_yee(
     YeeLattice& lhs, 
     YeeLattice& rhs, 
+    std::vector<int> iarr,
     int lhsK, int rhsK) 
 {
-  lhs.ex.copy_face(rhs.ex, lhsK, rhsK); 
-  lhs.ey.copy_face(rhs.ey, lhsK, rhsK); 
-  lhs.ez.copy_face(rhs.ez, lhsK, rhsK); 
-                                    
-  lhs.bx.copy_face(rhs.bx, lhsK, rhsK); 
-  lhs.by.copy_face(rhs.by, lhsK, rhsK); 
-  lhs.bz.copy_face(rhs.bz, lhsK, rhsK); 
+  if(has_key(iarr, 0)) {
+    lhs.jx.copy_face(rhs.jx, lhsK, rhsK); 
+    lhs.jy.copy_face(rhs.jy, lhsK, rhsK); 
+    lhs.jz.copy_face(rhs.jz, lhsK, rhsK); 
+  }
 
-  //TODO: separate into own function
-  lhs.jx.copy_face(rhs.jx, lhsK, rhsK); 
-  lhs.jy.copy_face(rhs.jy, lhsK, rhsK); 
-  lhs.jz.copy_face(rhs.jz, lhsK, rhsK); 
+  if(has_key(iarr, 1)) {
+    lhs.ex.copy_face(rhs.ex, lhsK, rhsK); 
+    lhs.ey.copy_face(rhs.ey, lhsK, rhsK); 
+    lhs.ez.copy_face(rhs.ez, lhsK, rhsK); 
+  }
+
+  if(has_key(iarr, 2)) {
+    lhs.bx.copy_face(rhs.bx, lhsK, rhsK); 
+    lhs.by.copy_face(rhs.by, lhsK, rhsK); 
+    lhs.bz.copy_face(rhs.bz, lhsK, rhsK); 
+  }
 }
 
 
@@ -195,21 +227,28 @@ void add_face_yee(
 void copy_x_pencil_yee(
     YeeLattice& lhs, 
     YeeLattice& rhs, 
+    std::vector<int> iarr,
     int lhsJ, int lhsK,
     int rhsJ, int rhsK) 
 {
-  lhs.ex.copy_x_pencil(rhs.ex, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.ey.copy_x_pencil(rhs.ey, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.ez.copy_x_pencil(rhs.ez, lhsJ, lhsK, rhsJ, rhsK); 
-                                                     
-  lhs.bx.copy_x_pencil(rhs.bx, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.by.copy_x_pencil(rhs.by, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.bz.copy_x_pencil(rhs.bz, lhsJ, lhsK, rhsJ, rhsK); 
-                                                     
-  //TODO: separate into own function                 
-  lhs.jx.copy_x_pencil(rhs.jx, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.jy.copy_x_pencil(rhs.jy, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.jz.copy_x_pencil(rhs.jz, lhsJ, lhsK, rhsJ, rhsK); 
+
+  if(has_key(iarr, 0)) {
+    lhs.jx.copy_x_pencil(rhs.jx, lhsJ, lhsK, rhsJ, rhsK); 
+    lhs.jy.copy_x_pencil(rhs.jy, lhsJ, lhsK, rhsJ, rhsK); 
+    lhs.jz.copy_x_pencil(rhs.jz, lhsJ, lhsK, rhsJ, rhsK); 
+  }
+
+  if(has_key(iarr, 1)) {
+    lhs.ex.copy_x_pencil(rhs.ex, lhsJ, lhsK, rhsJ, rhsK); 
+    lhs.ey.copy_x_pencil(rhs.ey, lhsJ, lhsK, rhsJ, rhsK); 
+    lhs.ez.copy_x_pencil(rhs.ez, lhsJ, lhsK, rhsJ, rhsK); 
+  }                                                   
+
+  if(has_key(iarr, 2)) {
+    lhs.bx.copy_x_pencil(rhs.bx, lhsJ, lhsK, rhsJ, rhsK); 
+    lhs.by.copy_x_pencil(rhs.by, lhsJ, lhsK, rhsJ, rhsK); 
+    lhs.bz.copy_x_pencil(rhs.bz, lhsJ, lhsK, rhsJ, rhsK); 
+  }                                                   
 }
 
 void add_x_pencil_yee(
@@ -227,21 +266,28 @@ void add_x_pencil_yee(
 void copy_y_pencil_yee(
     YeeLattice& lhs, 
     YeeLattice& rhs, 
+    std::vector<int> iarr,
     int lhsI, int lhsK,
     int rhsI, int rhsK) 
 {           
-  lhs.ex.copy_y_pencil(rhs.ex, lhsI, lhsK, rhsI, rhsK); 
-  lhs.ey.copy_y_pencil(rhs.ey, lhsI, lhsK, rhsI, rhsK); 
-  lhs.ez.copy_y_pencil(rhs.ez, lhsI, lhsK, rhsI, rhsK); 
-                                                     
-  lhs.bx.copy_y_pencil(rhs.bx, lhsI, lhsK, rhsI, rhsK); 
-  lhs.by.copy_y_pencil(rhs.by, lhsI, lhsK, rhsI, rhsK); 
-  lhs.bz.copy_y_pencil(rhs.bz, lhsI, lhsK, rhsI, rhsK); 
-                                                     
-  //TODO: separate into own function                 
-  lhs.jx.copy_y_pencil(rhs.jx, lhsI, lhsK, rhsI, rhsK); 
-  lhs.jy.copy_y_pencil(rhs.jy, lhsI, lhsK, rhsI, rhsK); 
-  lhs.jz.copy_y_pencil(rhs.jz, lhsI, lhsK, rhsI, rhsK); 
+
+  if(has_key(iarr, 0)) {
+    lhs.jx.copy_y_pencil(rhs.jx, lhsI, lhsK, rhsI, rhsK); 
+    lhs.jy.copy_y_pencil(rhs.jy, lhsI, lhsK, rhsI, rhsK); 
+    lhs.jz.copy_y_pencil(rhs.jz, lhsI, lhsK, rhsI, rhsK); 
+  }
+
+  if(has_key(iarr, 1)) {
+    lhs.ex.copy_y_pencil(rhs.ex, lhsI, lhsK, rhsI, rhsK); 
+    lhs.ey.copy_y_pencil(rhs.ey, lhsI, lhsK, rhsI, rhsK); 
+    lhs.ez.copy_y_pencil(rhs.ez, lhsI, lhsK, rhsI, rhsK); 
+  }                                                   
+
+  if(has_key(iarr, 2)) {
+    lhs.bx.copy_y_pencil(rhs.bx, lhsI, lhsK, rhsI, rhsK); 
+    lhs.by.copy_y_pencil(rhs.by, lhsI, lhsK, rhsI, rhsK); 
+    lhs.bz.copy_y_pencil(rhs.bz, lhsI, lhsK, rhsI, rhsK); 
+  }                                                   
 }
 
 void add_y_pencil_yee(
@@ -259,21 +305,28 @@ void add_y_pencil_yee(
 void copy_z_pencil_yee(
     YeeLattice& lhs, 
     YeeLattice& rhs, 
+    std::vector<int> iarr,
     int lhsI, int lhsJ,
     int rhsI, int rhsJ) 
 {
-  lhs.ex.copy_z_pencil(rhs.ex, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.ey.copy_z_pencil(rhs.ey, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.ez.copy_z_pencil(rhs.ez, lhsI, lhsJ, rhsI, rhsJ); 
 
-  lhs.bx.copy_z_pencil(rhs.bx, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.by.copy_z_pencil(rhs.by, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.bz.copy_z_pencil(rhs.bz, lhsI, lhsJ, rhsI, rhsJ); 
+  if(has_key(iarr, 0)) {
+    lhs.jx.copy_z_pencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
+    lhs.jy.copy_z_pencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
+    lhs.jz.copy_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
+  }
 
-  //TODO: separate into own function
-  lhs.jx.copy_z_pencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.jy.copy_z_pencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.jz.copy_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
+  if(has_key(iarr, 1)) {
+    lhs.ex.copy_z_pencil(rhs.ex, lhsI, lhsJ, rhsI, rhsJ); 
+    lhs.ey.copy_z_pencil(rhs.ey, lhsI, lhsJ, rhsI, rhsJ); 
+    lhs.ez.copy_z_pencil(rhs.ez, lhsI, lhsJ, rhsI, rhsJ); 
+  }
+
+  if(has_key(iarr, 2)) {
+    lhs.bx.copy_z_pencil(rhs.bx, lhsI, lhsJ, rhsI, rhsJ); 
+    lhs.by.copy_z_pencil(rhs.by, lhsI, lhsJ, rhsI, rhsJ); 
+    lhs.bz.copy_z_pencil(rhs.bz, lhsI, lhsJ, rhsI, rhsJ); 
+  }
 }
 
 void add_z_pencil_yee(
@@ -301,20 +354,28 @@ inline void copy_point(
 inline void copy_point_yee(
     YeeLattice& lhs, 
     YeeLattice& rhs, 
+    std::vector<int> iarr,
     int lhsI, int lhsJ, int lhsK,
     int rhsI, int rhsJ, int rhsK) 
 {
-  copy_point(lhs.ex, rhs.ex, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  copy_point(lhs.ey, rhs.ey, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  copy_point(lhs.ez, rhs.ez, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
 
-  copy_point(lhs.bx, rhs.bx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  copy_point(lhs.by, rhs.by, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  copy_point(lhs.bz, rhs.bz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  if(has_key(iarr, 0)) {
+    copy_point(lhs.jx, rhs.jx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+    copy_point(lhs.jy, rhs.jy, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+    copy_point(lhs.jz, rhs.jz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  }
 
-  copy_point(lhs.jx, rhs.jx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  copy_point(lhs.jy, rhs.jy, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  copy_point(lhs.jz, rhs.jz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  if(has_key(iarr, 1)) {
+    copy_point(lhs.ex, rhs.ex, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+    copy_point(lhs.ey, rhs.ey, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+    copy_point(lhs.ez, rhs.ez, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  }
+
+  if(has_key(iarr, 2)) {
+    copy_point(lhs.bx, rhs.bx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+    copy_point(lhs.by, rhs.by, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+    copy_point(lhs.bz, rhs.bz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
+  }
 
 }
 
@@ -344,7 +405,10 @@ inline void add_point_yee(
 
 /// Update Yee grid boundaries
 template<>
-void Tile<1>::update_boundaries(corgi::Grid<1>& grid) 
+void Tile<1>::update_boundaries(
+        corgi::Grid<1>& grid,
+        std::vector<int> iarr
+        ) 
 {
   // target
   YeeLattice& mesh = get_yee();
@@ -356,7 +420,7 @@ void Tile<1>::update_boundaries(corgi::Grid<1>& grid)
   YeeLattice& mleft = cleft->get_yee();
 
   // copy from right side to left
-  copy_vert_yee(mesh, mleft, -1, mleft.Nx-1); 
+  copy_vert_yee(mesh, mleft, iarr, -1, mleft.Nx-1); 
 
   // right
   auto cright = 
@@ -365,13 +429,16 @@ void Tile<1>::update_boundaries(corgi::Grid<1>& grid)
   YeeLattice& mright = cright->get_yee();
     
   // copy from left side to right
-  copy_vert_yee(mesh, mright, mesh.Nx, 0); 
+  copy_vert_yee(mesh, mright, iarr, mesh.Nx, 0); 
 
 }
 
 
 template<>
-void Tile<2>::update_boundaries(corgi::Grid<2>& grid) 
+void Tile<2>::update_boundaries(
+        corgi::Grid<2>& grid,
+        std::vector<int> iarr
+        ) 
 {
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -413,16 +480,16 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
         // generalized halo >= 1 loops
         if (jn == 0) { // vertical
           for(int h=0; h<halo; h++)
-            copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
+            copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
 
         } else if (in == 0) { // horizontal
           for(int g=0; g<halo; g++)
-            copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
+            copy_horz_yee(mesh, mpr, iarr, jto+jn*g, jfro+jn*g);   
 
         } else { // diagonal
           for(int h=0; h<halo; h++) {
             for(int g=0; g<halo; g++) {
-              copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+              copy_z_pencil_yee(mesh, mpr,iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
             }
           }
         }
@@ -434,7 +501,10 @@ void Tile<2>::update_boundaries(corgi::Grid<2>& grid)
 
 
 template<>
-void Tile<3>::update_boundaries(corgi::Grid<3>& grid) 
+void Tile<3>::update_boundaries(
+        corgi::Grid<3>& grid,
+        std::vector<int> iarr
+        )
 {
   //std::cout << "upB: updating boundaries\n";
 
@@ -494,18 +564,18 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
             // vertical
             if (jn == 0) { 
               for(int h=0; h<halo; h++)
-                copy_vert_yee(mesh, mpr, ito+in*h, ifro+in*h);   
+                copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
 
             // horizontal
             } else if (in == 0) { 
               for(int g=0; g<halo; g++)
-                copy_horz_yee(mesh, mpr, jto+jn*g, jfro+jn*g);   
+                copy_horz_yee(mesh, mpr,iarr, jto+jn*g, jfro+jn*g);   
 
             // diagonal
             } else { 
               for(int h=0; h<halo; h++) {
                 for(int g=0; g<halo; g++) {
-                  copy_z_pencil_yee(mesh, mpr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+                  copy_z_pencil_yee(mesh, mpr, iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
                 }
               }
             } 
@@ -514,47 +584,45 @@ void Tile<3>::update_boundaries(corgi::Grid<3>& grid)
           } else {
             
             // infront/behind directions
-            if (in == 0 && jn == 0) { 
-              for(int g=0; g<halo; g++)
-                copy_face_yee(mesh, mpr, kto+kn*g, kfro+kn*g);   
+            if (in == 0 && jn == 0 && kn != 0) { 
+              for(int g=0; g<halo; g++) {
+                copy_face_yee(mesh, mpr, iarr, kto+kn*g, kfro+kn*g);   
+              }
 
             // 3D generalized diagonal locations
             // If the finite-difference scheme is purely non-diagonal
             // then these can be dropped off.
               
             // vertical wedges
-            } else if (jn == 0) {
+            } else if (in != 0 && jn == 0 && kn != 0) {
 
               // y pencils
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
-                  copy_y_pencil_yee(mesh, mpr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
-                }
-              }
+              for(int g=0; g<halo; g++) {
+                  copy_y_pencil_yee(mesh, mpr, iarr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+              }}
 
             // horizontal wedges
-            } else if (in == 0) {
+            } else if (in == 0 && jn != 0 && kn != 0) {
 
               // x pencils
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
-                  copy_x_pencil_yee(mesh, mpr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
-                }
-              }
+              for(int g=0; g<halo; g++) {
+                  copy_x_pencil_yee(mesh, mpr, iarr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+              }}
 
             // corners
-            } else {
+            } else if (in != 0 && jn != 0 && kn != 0) {
 
-              // pointwise
+              //pointwise
               for(int h=0; h<halo; h++) {
-                for(int g=0; g<halo; g++) {
-                  for(int f=0; f<halo; f++) {
-                    copy_point_yee(mesh, mpr, 
+              for(int g=0; g<halo; g++) {
+              for(int f=0; f<halo; f++) {
+                copy_point_yee(mesh, mpr, iarr,
                         ito +in*h, jto +jn*g, kto +kn*f,
                         ifro+in*h, jfro+jn*g, kfro+kn*f);
-                  }
-                }
-              }
+              }}}
+
             } 
 
           } // 3D cases with kn != 0
@@ -699,14 +767,13 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
   int ito, jto, kto, ifro, jfro, kfro;
   Tileptr tpr; 
 
-  int halo = 3;
+  const int halo = 3;
 
   auto& mesh = get_yee(); // target as a reference to update into
 
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
       for(int kn=-1; kn <= 1; kn++) {
-        if (in == 0 && jn == 0) continue;
 
         if (in == 0 && jn == 0 && kn == 0) continue;
 
@@ -722,14 +789,14 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
           if - then from n-1
           */
 
-          if (in == +1) { ito = mesh.Nx; ifro = 0; }
-          if (jn == +1) { jto = mesh.Ny; jfro = 0; }
-          if (kn == +1) { kto = mesh.Nz; kfro = 0; }
+          //shifted neg's from vals with -1
+          if (in == +1) { ito = mesh.Nx-1; ifro = -1; }
+          if (jn == +1) { jto = mesh.Ny-1; jfro = -1; }
+          if (kn == +1) { kto = mesh.Nz-1; kfro = -1; }
 
-          if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
-          if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
-          if (kn == -1) { kto = -1;      kfro = mpr.Nz-1; }
-
+          if (in == -1) { ito = 0;       ifro = mpr.Nx; }
+          if (jn == -1) { jto = 0;       jfro = mpr.Ny; }
+          if (kn == -1) { kto = 0;       kfro = mpr.Nz; }
 
           // generalized halo >= 1 loops
 
@@ -738,71 +805,68 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
             // vertical
             if (jn == 0) { 
-              for(int h=1; h<=halo; h++)
+              for(int h=0; h<halo; h++)
                 add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
 
             // horizontal
             } else if (in == 0) { 
-              for(int g=1; g<=halo; g++)
+              for(int g=0; g<halo; g++)
                 add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
 
             // diagonal
             } else { 
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
+              for(int h=0; h<halo; h++) {
+                for(int g=0; g<halo; g++) {
                   add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
                 }
               }
             } 
-         
+
           // 3D case with kn != 0
           } else {
             
             // infront/behind directions
-            if (in == 0 && jn == 0) { 
-              for(int g=1; g<=halo; g++)
+            if (in == 0 && jn == 0 && kn != 0) { 
+              for(int g=0; g<halo; g++) {
                 add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
+              }
 
-            // 3D generalized diagonal locations
-            // If the finite-difference scheme is purely non-diagonal
-            // then these can be dropped off.
-              
-            // vertical wedges
-            } else if (jn == 0) {
+            //// 3D generalized diagonal locations
+            //// If the finite-difference scheme is purely non-diagonal
+            //// then these can be dropped off.
+                
+            //// vertical wedges
+            } else if (in != 0 && jn == 0 && kn != 0) {
 
               // y pencils
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
-                }
-              }
-
-            // horizontal wedges
-            } else if (in == 0) {
-
+              for(int h=0; h<halo; h++) {
+              for(int g=0; g<halo; g++) {
+                add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
+              }}
+            } else if (in == 0 && jn != 0 && kn != 0) {
               // x pencils
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
-                }
-              }
+              for(int h=0; h<halo; h++) {
+              for(int g=0; g<halo; g++) {
+                add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
+              }}
 
-            // corners
-            } else {
+            //// corners
+            } else if (in != 0 && jn != 0 && kn != 0) {
 
               // pointwise
-              for(int h=1; h<=halo; h++) {
-                for(int g=1; g<=halo; g++) {
-                  for(int f=1; f<=halo; f++) {
-                    add_point_yee(mesh, mpr, 
+              for(int h=0; h<halo; h++) {
+              for(int g=0; g<halo; g++) {
+              for(int f=0; f<halo; f++) {
+                add_point_yee(mesh, mpr, 
                         ito -in*h, jto -jn*g, kto -kn*f,
                         ifro-in*h, jfro-jn*g, kfro-kn*f);
-                  }
-                }
-              }
+              }}}
+
             } 
 
           } // 3D cases with kn != 0
+
+
         } // if tpr
       }
     }

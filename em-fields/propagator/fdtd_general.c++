@@ -1,6 +1,32 @@
-#include "fdtd4.h"
+#include "fdtd_general.h"
 
 #include <cmath>
+
+
+inline real_short Dm_x( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
+    return f(i+ai-1, j+bj, k+bk) -f(i-ai, j+bj, k+bk);
+}
+
+inline real_short Dm_y( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
+    return f(i+bi, j+ai-1, k+bk) -f(i+bi, j-ai, k+bk);
+}
+
+inline real_short Dm_z( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
+    return f(i+bi, j+bj, k+ai-1) -f(i+bi, j+bj, k-ai);
+}
+
+//-------------------------------------------------- 
+inline real_short Dp_x( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
+    return f(i+ai, j+bj, k+bk) - f(i-ai+1, j+bj, k+bk);
+}
+
+inline real_short Dp_y( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
+    return f(i+bi, j+ai, k+bk) - f(i+bi, j-ai+1, k+bk);
+}
+
+inline real_short Dp_z( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
+    return f(i+bi, j+bj, k+ai) - f(i+bi, j+bj, k-ai+1);
+}
 
 
 /*! \brief Update E field with full step
@@ -8,96 +34,77 @@
  * Contains a dimension switch for solvers depending on internal mesh dimensions
  */
 
-
-/// 2D E pusher
-template<>
-void fields::FDTDGen<2>::push_e(fields::Tile<2>& tile)
-{
-  YeeLattice& mesh = tile.get_yee();
-
-	double C1 = coeff1*corr*tile.cfl;
-	double C2 = coeff2*corr*tile.cfl;
-
-  int k = 0;
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-
-		mesh.ex(i,j,k) +=
-          C1*(-mesh.bz(i,j-1,k)+mesh.bz(i,j,k))   +
-				  C2*(-mesh.bz(i,j-2,k)+mesh.bz(i,j+1,k));
-
-		mesh.ey(i,j,k) += 
-          C1*(mesh.bz(i-1,j,k)-mesh.bz(i,j,k))+      
-				  C2*(mesh.bz(i-2,j,k)-mesh.bz(i+1,j,k));
-
-		mesh.ez(i,j,k) += 
-          C1*(mesh.bx(i,j-1,k)-mesh.bx(i,j,k) - mesh.by(i-1,j,k)+mesh.by(i,j,k))+
-          C2*(mesh.bx(i,j-2,k)-mesh.bx(i,j+1,k)-mesh.by(i-2,j,k)+mesh.by(i+1,j,k));
-
-  }
-}
-
-
 /// 3D E pusher
 template<>
 void fields::FDTDGen<3>::push_e(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
+  
+  real_short Cx, Cy, Cz;
 
-	double C1 = coeff1*corr*tile.cfl;
-	double C2 = coeff2*corr*tile.cfl;
+  const int Nx = tile.mesh_lengths[0];
+  const int Ny = tile.mesh_lengths[1];
+  const int Nz = tile.mesh_lengths[2];
 
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+  // dE/dt = +curlB
+  for(int ai=1; ai<=3; ai++) { //alphas
+    Cx = CXs(ai, 0, 0)*corr*tile.cfl;
+    Cy = CYs(0, ai, 0)*corr*tile.cfl;
+    Cz = CZs(0,  0,ai)*corr*tile.cfl;
 
-    mesh.ex(i,j,k)+=
-      C1*(mesh.by(i,j,k-1)-mesh.by(i,j,k)  - mesh.bz(i,j-1,k)+mesh.bz(i,j,k))+
-      C2*(mesh.by(i,j,k-2)-mesh.by(i,j,k+1)- mesh.bz(i,j-2,k)+mesh.bz(i,j+1,k));
+    for(int k=0; k<Nz; k++) 
+    for(int j=0; j<Ny; j++) 
+    for(int i=0; i<Nx; i++){
+        //legs with 0-offset
+        mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, 0,0,0); 
+        mesh.ex(i,j,k) += -Cz*Dm_z(mesh.by,i,j,k, ai, 0,0,0);
+        mesh.ey(i,j,k) += -Cx*Dm_x(mesh.bz,i,j,k, ai, 0,0,0);
+        mesh.ey(i,j,k) += +Cz*Dm_z(mesh.bx,i,j,k, ai, 0,0,0);
+        mesh.ez(i,j,k) += +Cx*Dm_x(mesh.by,i,j,k, ai, 0,0,0);
+        mesh.ez(i,j,k) += -Cy*Dm_y(mesh.bx,i,j,k, ai, 0,0,0);
+    }
 
-    mesh.ey(i,j,k)+=
-      C1*(mesh.bz(i-1,j,k)-mesh.bz(i,j,k)  - mesh.bx(i,j,k-1)+mesh.bx(i,j,k))+
-      C2*(mesh.bz(i-2,j,k)-mesh.bz(i+1,j,k)- mesh.bx(i,j,k-2)+mesh.bx(i,j,k+1));
+    //legs with n-offset
+    //for(int bi : {-1,+1}) {
+    for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
-    mesh.ez(i,j,k)+=
-      C1*(mesh.bx(i,j-1,k)-mesh.bx(i,j,k)  - mesh.by(i-1,j,k)+mesh.by(i,j,k))+
-      C2*(mesh.bx(i,j-2,k)-mesh.bx(i,j+1,k)- mesh.by(i-2,j,k)+mesh.by(i+1,j,k));
+        // hand-coded beta fetching from array
+        Cx = CXs(ai, 1, 1)*corr*tile.cfl;
+        Cy = CYs(1, ai, 1)*corr*tile.cfl;
+        Cz = CZs(1,  1,ai)*corr*tile.cfl;
 
+        for(int k=0; k<Nz; k++) 
+        for(int j=0; j<Ny; j++) 
+        for(int i=0; i<Nx; i++){
+            // curl_x
+            mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, bi,0,0); //beta_yx
+            mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, 0,0,bi); //beta_yz
+
+            mesh.ex(i,j,k) += -Cz*Dm_z(mesh.by,i,j,k, ai, bi,0,0);
+            mesh.ex(i,j,k) += -Cz*Dm_z(mesh.by,i,j,k, ai, 0,bi,0);
+
+            // curl_y
+            mesh.ey(i,j,k) += -Cx*Dm_x(mesh.bz,i,j,k, ai, 0,bi,0);
+            mesh.ey(i,j,k) += -Cx*Dm_x(mesh.bz,i,j,k, ai, 0,0,bi);
+
+            mesh.ey(i,j,k) += +Cz*Dm_z(mesh.bx,i,j,k, ai, bi,0,0);
+            mesh.ey(i,j,k) += +Cz*Dm_z(mesh.bx,i,j,k, ai, 0,bi,0);
+
+            // curl_z
+            mesh.ez(i,j,k) += +Cx*Dm_x(mesh.by,i,j,k, ai, 0,bi,0);
+            mesh.ez(i,j,k) += +Cx*Dm_x(mesh.by,i,j,k, ai, 0,0,bi);
+
+            mesh.ez(i,j,k) += -Cy*Dm_y(mesh.bx,i,j,k, ai, bi,0,0);
+            mesh.ez(i,j,k) += -Cy*Dm_y(mesh.bx,i,j,k, ai, 0,0,bi);
+        }
+    }
   }
+
 }
 
 
 //--------------------------------------------------
-
 /// Update B field with a half step
-
-/// 2D B pusher
-template<>
-void fields::FDTDGen<2>::push_half_b(fields::Tile<2>& tile)
-{
-  YeeLattice& mesh = tile.get_yee();
-
-	double C1 = 0.5*coeff1*corr*tile.cfl;
-	double C2 = 0.5*coeff2*corr*tile.cfl;
-
-  int k = 0;
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
-
-		mesh.bx(i,j,k) += 
-      C1*(-mesh.ez(i,j+1,k)+mesh.ez(i,j,k))+ 
-			C2*(-mesh.ez(i,j+2,k)+mesh.ez(i,j-1,k));
-
-		mesh.by(i,j,k) +=
-      C1*(mesh.ez(i+1,j,k)-mesh.ez(i,j,k))+ 
-			C2*(mesh.ez(i+2,j,k)-mesh.ez(i-1,j,k));
-
-		mesh.bz(i,j,k) +=
-      C1*(mesh.ex(i,j+1,k)- mesh.ex(i,j,k)  -mesh.ey(i+1,j,k)+ mesh.ey(i,j,k))+
-      C2*(mesh.ex(i,j+2,k)- mesh.ex(i,j-1,k)-mesh.ey(i+2,j,k)+ mesh.ey(i-1,j,k));
-  }
-}
-
 
 /// 3D B pusher
 template<>
@@ -105,31 +112,72 @@ void fields::FDTDGen<3>::push_half_b(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
 
-	double C1 = 0.5*coeff1*corr*tile.cfl;
-	double C2 = 0.5*coeff2*corr*tile.cfl;
+  real_short Cx, Cy, Cz;
 
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+  const int Nx = tile.mesh_lengths[0];
+  const int Ny = tile.mesh_lengths[1];
+  const int Nz = tile.mesh_lengths[2];
 
-		mesh.bx(i,j,k)+=
-      C1*(mesh.ey(i,j,k+1)-mesh.ey(i,j,k)  - mesh.ez(i,j+1,k)+mesh.ez(i,j,k))+
-      C2*(mesh.ey(i,j,k+2)-mesh.ey(i,j,k-1)- mesh.ez(i,j+2,k)+mesh.ez(i,j-1,k));
+  // dB/dt = -curlE
+  for(int ai=1; ai<=3; ai++) { //alphas
+    Cx = 0.5*CXs(ai, 0, 0)*corr*tile.cfl;
+    Cy = 0.5*CYs(0, ai, 0)*corr*tile.cfl;
+    Cz = 0.5*CZs(0,  0,ai)*corr*tile.cfl;
 
-		mesh.by(i,j,k)+=
-      C1*(mesh.ez(i+1,j,k)-mesh.ez(i,j,k)  - mesh.ex(i,j,k+1)+mesh.ex(i,j,k))+
-      C2*(mesh.ez(i+2,j,k)-mesh.ez(i-1,j,k)- mesh.ex(i,j,k+2)+mesh.ex(i,j,k-1));
+    for(int k=0; k<Nz; k++) 
+    for(int j=0; j<Ny; j++) 
+    for(int i=0; i<Nx; i++){
+        //legs with 0-offset
+        mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, 0,0,0); 
+        mesh.bx(i,j,k) -= -Cz*Dp_z(mesh.ey,i,j,k, ai, 0,0,0);
+                        
+        mesh.by(i,j,k) -= -Cx*Dp_x(mesh.ez,i,j,k, ai, 0,0,0);
+        mesh.by(i,j,k) -= +Cz*Dp_z(mesh.ex,i,j,k, ai, 0,0,0);
+                        
+        mesh.bz(i,j,k) -= +Cx*Dp_x(mesh.ey,i,j,k, ai, 0,0,0);
+        mesh.bz(i,j,k) -= -Cy*Dp_y(mesh.ex,i,j,k, ai, 0,0,0);
+    }
 
-		mesh.bz(i,j,k)+=
-      C1*(mesh.ex(i,j+1,k)-mesh.ex(i,j,k)  - mesh.ey(i+1,j,k)+mesh.ey(i,j,k))+
-      C2*(mesh.ex(i,j+2,k)-mesh.ex(i,j-1,k)- mesh.ey(i+2,j,k)+mesh.ey(i-1,j,k));
+    //legs with n-offset
+    //for(int bi : {-1,+1}) {
+    for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
+        // hand-coded beta fetching from array
+        Cx = 0.5*CXs(ai, 1, 1)*corr*tile.cfl;
+        Cy = 0.5*CYs(1, ai, 1)*corr*tile.cfl;
+        Cz = 0.5*CZs(1,  1,ai)*corr*tile.cfl;
+
+        for(int k=0; k<Nz; k++) 
+        for(int j=0; j<Ny; j++) 
+        for(int i=0; i<Nx; i++){
+            // curl_x
+            mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, bi,0,0); //beta_yx
+            mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, 0,0,bi); //beta_yz
+                            
+            mesh.bx(i,j,k) -= -Cz*Dp_z(mesh.ey,i,j,k, ai, bi,0,0);
+            mesh.bx(i,j,k) -= -Cz*Dp_z(mesh.ey,i,j,k, ai, 0,bi,0);
+                            
+            // curl_y       
+            mesh.by(i,j,k) -= -Cx*Dp_x(mesh.ez,i,j,k, ai, 0,bi,0);
+            mesh.by(i,j,k) -= -Cx*Dp_x(mesh.ez,i,j,k, ai, 0,0,bi);
+                            
+            mesh.by(i,j,k) -= +Cz*Dp_z(mesh.ex,i,j,k, ai, bi,0,0);
+            mesh.by(i,j,k) -= +Cz*Dp_z(mesh.ex,i,j,k, ai, 0,bi,0);
+                            
+            // curl_z       
+            mesh.bz(i,j,k) -= +Cx*Dp_x(mesh.ey,i,j,k, ai, 0,bi,0);
+            mesh.bz(i,j,k) -= +Cx*Dp_x(mesh.ey,i,j,k, ai, 0,0,bi);
+                            
+            mesh.bz(i,j,k) -= -Cy*Dp_y(mesh.ex,i,j,k, ai, bi,0,0);
+            mesh.bz(i,j,k) -= -Cy*Dp_y(mesh.ex,i,j,k, ai, 0,0,bi);
+        }
+    }
   }
+
 }
 
 
-
 //template class fields::FDTDGen<1>;
-template class fields::FDTDGen<2>;
-//template class fields::FDTDGen<3>;
+//template class fields::FDTDGen<2>;
+template class fields::FDTDGen<3>;
   

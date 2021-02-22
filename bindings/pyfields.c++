@@ -8,14 +8,18 @@
 #include "../tools/mesh.h"
 
 #include "../em-fields/tile.h"
-#include "../em-fields/damping_tile.h"
 
 #include "../em-fields/propagator/propagator.h"
 #include "../em-fields/propagator/fdtd2.h"
+#include "../em-fields/propagator/fdtd2_pml.h"
 #include "../em-fields/propagator/fdtd4.h"
+#include "../em-fields/propagator/fdtd_general.h"
 
 #include "../em-fields/filters/filter.h"
 #include "../em-fields/filters/digital.h"
+
+#include "../em-fields/boundaries/damping_tile.h"
+#include "../em-fields/boundaries/conductor.h"
 
 #include "../io/writers/writer.h"
 #include "../io/writers/fields.h"
@@ -37,6 +41,8 @@ auto declare_tile(
     py::module& m,
     const std::string& pyclass_name) 
 {
+  std::vector<int> iarr{0,1,2};
+
   return py::class_<
              fields::Tile<D>,
               corgi::Tile<D>, 
@@ -47,9 +53,10 @@ auto declare_tile(
     .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("clear_current",       &fields::Tile<D>::clear_current)
     .def("deposit_current",     &fields::Tile<D>::deposit_current)
-    .def("update_boundaries",   &fields::Tile<D>::update_boundaries)
     .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
-
+    .def("update_boundaries",   &fields::Tile<D>::update_boundaries,
+            py::arg("grid"),
+            py::arg("iarr")=iarr)
     .def("get_yee",             &fields::Tile<D>::get_yee,
         py::arg("i")=0,
         py::return_value_policy::reference,
@@ -153,6 +160,20 @@ class PyFDTD4 : public FDTD4<D>
   }
 };
 
+
+template<size_t D>
+class PyFDTDGen : public FDTDGen<D>
+{
+  using FDTDGen<D>::FDTDGen;
+
+  void push_e( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTDGen<D>, push_e, tile);
+  }
+
+  void push_half_b( Tile<D>& tile ) override {
+  PYBIND11_OVERLOAD_PURE( void, FDTDGen<D>, push_half_b, tile);
+  }
+};
 
 // templated base-class for Propagator; 
 // see https://github.com/pybind/pybind11/blob/master/tests/test_virtual_functions.cpp
@@ -383,10 +404,36 @@ void bind_fields(py::module& m_sub)
     .def(py::init<>())
     .def_readwrite("corr",     &fields::FDTD2<3>::corr);
 
+  // fdtd2 propagator with perfectly matched ouer layer
+  py::class_<fields::FDTD2_pml<3>>(m_3d, "FDTD2_pml", fieldspropag3d)
+    .def(py::init<>())
+    .def_readwrite("cenx",     &fields::FDTD2_pml<3>::cenx)
+    .def_readwrite("ceny",     &fields::FDTD2_pml<3>::ceny)
+    .def_readwrite("cenz",     &fields::FDTD2_pml<3>::cenz)
+    .def_readwrite("radx",     &fields::FDTD2_pml<3>::radx)
+    .def_readwrite("rady",     &fields::FDTD2_pml<3>::rady)
+    .def_readwrite("radz",     &fields::FDTD2_pml<3>::radz)
+    .def_readwrite("rad_lim",  &fields::FDTD2_pml<3>::rad_lim)
+    .def_readwrite("norm_abs", &fields::FDTD2_pml<3>::norm_abs)
+    .def_readwrite("corr",     &fields::FDTD2_pml<3>::corr)
+    .def("push_eb",            &fields::FDTD2_pml<3>::push_eb);
+
 
   // fdtd4 propagator
   py::class_<fields::FDTD4<3>, Propagator<3>, PyFDTD4<3> >(m_3d, "FDTD4")
     .def_readwrite("corr",     &fields::FDTD4<3>::corr)
+    .def(py::init<>());
+
+
+  // fdtd general propagator
+  //py::class_<fields::FDTDGen<3>, Propagator<3>, PyFDTDGen<3> >(m_3d, "FDTDGen")
+  py::class_<fields::FDTDGen<3>>(m_3d, "FDTDGen")
+    .def_readwrite("corr",     &fields::FDTDGen<3>::corr)
+    .def_readwrite("CXs",      &fields::FDTDGen<3>::CXs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def_readwrite("CYs",      &fields::FDTDGen<3>::CYs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def_readwrite("CZs",      &fields::FDTDGen<3>::CZs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def("push_e",             &fields::FDTDGen<3>::push_e)
+    .def("push_half_b",        &fields::FDTDGen<3>::push_half_b)
     .def(py::init<>());
 
 
@@ -435,6 +482,27 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::Binomial2<3>>(m_3d, "Binomial2", fieldsfilter3d)
     .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<3>::solve);
+
+
+  //--------------------------------------------------
+  // EM boundary conditions
+
+  // 3D rotating conductor
+  py::class_<fields::Conductor<3>>(m_3d, "Conductor")
+    .def(py::init<>())
+    .def_readwrite("B0",    &fields::Conductor<3>::B0)
+    .def_readwrite("radius",&fields::Conductor<3>::radius)
+    .def_readwrite("period",&fields::Conductor<3>::period)
+    .def_readwrite("chi",   &fields::Conductor<3>::chi)
+    .def_readwrite("phase", &fields::Conductor<3>::phase)
+    .def_readwrite("cenx",  &fields::Conductor<3>::cenx)
+    .def_readwrite("ceny",  &fields::Conductor<3>::ceny)
+    .def_readwrite("cenz",  &fields::Conductor<3>::cenz)
+    .def_readwrite("delta", &fields::Conductor<3>::delta)
+    .def("insert_em",       &fields::Conductor<3>::insert_em)
+    .def("update_e",        &fields::Conductor<3>::update_e)
+    .def("update_b",        &fields::Conductor<3>::update_b);
+
 
 
   //--------------------------------------------------

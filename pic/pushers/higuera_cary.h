@@ -4,9 +4,12 @@
 
 namespace pic {
 
-/// Boris pusher
+/// Higuera-Cary pusher
+//
+// https://arxiv.org/pdf/1701.05605.pdf
+//
 template<size_t D, size_t V>
-class BorisPusher :
+class HigueraCaryPusher :
   public Pusher<D,V>
 {
   void push_container(

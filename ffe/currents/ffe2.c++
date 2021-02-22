@@ -140,7 +140,8 @@ void ffe::FFE2<3>::comp_rho(ffe::Tile<3>& tile)
       }
     }
   }
-  }
+}
+
 
 /// 3D 
 template<>

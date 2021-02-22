@@ -52,12 +52,15 @@ def initialize_tile(tile, indx, n, conf):
 
         # alternate injection between - and + charged prtcls
         # mass is normalized to units of m_e
-        if sps % 2 == 0:
+        if sps == 0:
             container.q = -conf.qe
             container.m = np.abs(conf.me)
-        else:
+        elif sps == 1:
             container.q = -conf.qi
             container.m = np.abs(conf.mi)
+        elif sps == 2:
+            container.q = -conf.qp
+            container.m = np.abs(conf.mp)
 
         #print('container charge/mass', container.q, container.m)
 

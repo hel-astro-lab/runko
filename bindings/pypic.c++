@@ -13,6 +13,8 @@ namespace py = pybind11;
 #include "../pic/pushers/boris_rad.h"
 #include "../pic/pushers/boris_grav.h"
 #include "../pic/pushers/vay.h"
+#include "../pic/pushers/higuera_cary.h"
+#include "../pic/pushers/rgca.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear.h"
@@ -144,7 +146,58 @@ auto declare_prtcl_container(
           int nparts = s.size();
           assert(i < nparts);
           return s.Bpart[i + 2*nparts];
-        }, py::return_value_policy::reference);
+        }, py::return_value_policy::reference)
+    .def("__getitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx)
+      {
+        auto ip = indx[0].cast<int>();
+        auto v = indx[1].cast<int>();
+        int nparts = s.size();
+
+        if (ip >= nparts) throw py::index_error();
+        if ( v >= 12)     throw py::index_error();
+
+        if(v == 0) return s.loc(0, ip);
+        if(v == 1) return s.loc(1, ip);
+        if(v == 2) return s.loc(2, ip);
+
+        if(v == 3) return s.vel(0, ip);
+        if(v == 4) return s.vel(1, ip);
+        if(v == 5) return s.vel(2, ip);
+
+        if(v == 6) return s.Epart[ip + 0*nparts];
+        if(v == 7) return s.Epart[ip + 1*nparts];
+        if(v == 8) return s.Epart[ip + 2*nparts];
+
+        if(v == 9) return s.Bpart[ip + 0*nparts];
+        if(v ==10) return s.Bpart[ip + 1*nparts];
+        if(v ==11) return s.Bpart[ip + 2*nparts];
+
+      })
+    .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, real_prtcl val)
+      {
+        auto ip = indx[0].cast<int>();
+        auto v = indx[1].cast<int>();
+        int nparts = s.size();
+
+        if (ip >= nparts) throw py::index_error();
+        if ( v >= 12)     throw py::index_error();
+
+        if(v == 0) s.loc(0, ip) = val;
+        if(v == 1) s.loc(1, ip) = val;
+        if(v == 2) s.loc(2, ip) = val;
+
+        if(v == 3) s.vel(0, ip) = val;
+        if(v == 4) s.vel(1, ip) = val;
+        if(v == 5) s.vel(2, ip) = val;
+
+        if(v == 6) s.Epart[ip + 0*nparts] = val;
+        if(v == 7) s.Epart[ip + 1*nparts] = val;
+        if(v == 8) s.Epart[ip + 2*nparts] = val;
+
+        if(v == 9) s.Bpart[ip + 0*nparts] = val;
+        if(v ==10) s.Bpart[ip + 1*nparts] = val;
+        if(v ==11) s.Bpart[ip + 2*nparts] = val;
+      });
 
 }
 
@@ -275,7 +328,14 @@ void bind_pic(py::module& m_sub)
   py::class_< pic::Pusher<2,3>> picpusher2d(m_2d, "Pusher");
   picpusher2d
     .def(py::init<>())
-    .def("solve", &pic::Pusher<2,3>::solve);
+    .def_readwrite("bx_ext",  &pic::Pusher<2,3>::bx_ext)
+    .def_readwrite("by_ext",  &pic::Pusher<2,3>::by_ext)
+    .def_readwrite("bz_ext",  &pic::Pusher<2,3>::bz_ext)
+    .def_readwrite("ex_ext",  &pic::Pusher<2,3>::ex_ext)
+    .def_readwrite("ey_ext",  &pic::Pusher<2,3>::ey_ext)
+    .def_readwrite("ez_ext",  &pic::Pusher<2,3>::ez_ext)
+    .def("solve", py::overload_cast<pic::Tile<2>&>(     &pic::Pusher<2,3>::solve))
+    .def("solve", py::overload_cast<pic::Tile<2>&, int>(&pic::Pusher<2,3>::solve));
 
   // Boris pusher
   py::class_<pic::BorisPusher<2,3>>(m_2d, "BorisPusher", picpusher2d)
@@ -304,12 +364,24 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::VayPusher<2,3>>(m_2d, "VayPusher", picpusher2d)
     .def(py::init<>());
 
+  // Hiuera-Cary pusher
+  py::class_<pic::HigueraCaryPusher<2,3>>(m_2d, "HigueraCaryPusher", picpusher2d)
+    .def(py::init<>());
+
 
   // 3D version
   py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
   picpusher3d
     .def(py::init<>())
-    .def("solve", &pic::Pusher<3,3>::solve);
+    .def_readwrite("bx_ext",  &pic::Pusher<3,3>::bx_ext)
+    .def_readwrite("by_ext",  &pic::Pusher<3,3>::by_ext)
+    .def_readwrite("bz_ext",  &pic::Pusher<3,3>::bz_ext)
+    .def_readwrite("ex_ext",  &pic::Pusher<3,3>::ex_ext)
+    .def_readwrite("ey_ext",  &pic::Pusher<3,3>::ey_ext)
+    .def_readwrite("ez_ext",  &pic::Pusher<3,3>::ez_ext)
+    //.def("solve", &pic::Pusher<3,3>::solve);
+    .def("solve", py::overload_cast<pic::Tile<3>&>(     &pic::Pusher<3,3>::solve))
+    .def("solve", py::overload_cast<pic::Tile<3>&, int>(&pic::Pusher<3,3>::solve));
 
   // Boris pusher
   py::class_<pic::BorisPusher<3,3>>(m_3d, "BorisPusher", picpusher3d)
@@ -319,6 +391,7 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::BorisPusherDrag<3,3>>(m_3d, "BorisDragPusher", picpusher3d)
     .def_readwrite("drag", &pic::BorisPusherDrag<3,3>::drag)
     .def_readwrite("temp", &pic::BorisPusherDrag<3,3>::temp)
+    .def_readwrite("freezing_factor", &pic::BorisPusherDrag<3,3>::freezing_factor)
     .def(py::init<>());
     
   // Boris pusher with radiative pressure force
@@ -335,6 +408,14 @@ void bind_pic(py::module& m_sub)
 
   // Vay
   py::class_<pic::VayPusher<3,3>>(m_3d, "VayPusher", picpusher3d)
+    .def(py::init<>());
+
+  // Higuera-Cary
+  py::class_<pic::HigueraCaryPusher<3,3>>(m_3d, "HigueraCaryPusher", picpusher3d)
+    .def(py::init<>());
+
+  // reduced guiding center approximation
+  py::class_<pic::rGCAPusher<3,3>>(m_3d, "rGCAPusher", picpusher3d)
     .def(py::init<>());
 
 
@@ -421,12 +502,14 @@ void bind_pic(py::module& m_sub)
 
   py::class_<h5io::TestPrtclWriter<2>>(m_2d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::TestPrtclWriter<2>::write);
+    .def("write",   &h5io::TestPrtclWriter<2>::write)
+    .def_readwrite("ispc", &h5io::TestPrtclWriter<2>::ispc);
 
   // 3D test particles
   py::class_<h5io::TestPrtclWriter<3>>(m_3d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::TestPrtclWriter<3>::write);
+    .def("write",   &h5io::TestPrtclWriter<3>::write)
+    .def_readwrite("ispc", &h5io::TestPrtclWriter<3>::ispc);
 
   //--------------------------------------------------
   // physical moments of distribution

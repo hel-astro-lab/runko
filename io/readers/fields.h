@@ -7,18 +7,18 @@
 template<size_t D>
 bool 
 h5io::Reader::read( 
-  fields::Tile<D>& tile
+  fields::Tile<D>& tile,
+  ezh5::File& file
   )
 {
   //--------------------------------------------------
   // open file
-  int frank = locate_rank(tile); // find what rank had this tile
+  //int frank = locate_rank(tile); // find what rank had this tile
 
-  std::string fname = 
-    folder + "/fields-" + to_string(frank) + "_" + to_string(lap) + ".h5";
+  //fname = folder + "/fields-" + to_string(frank) + "_" + to_string(lap) + ".h5";
   //std::cout << "reading file " << fname << std::endl;
     
-  ezh5::File file(fname, H5F_ACC_RDONLY);
+  //ezh5::File file(fname, H5F_ACC_RDONLY);
 
   //--------------------------------------------------
   // open group
@@ -81,10 +81,6 @@ h5io::Reader::read(
   yee.by.unserialize(arr8,   Nx, Ny, Nz);
   yee.bz.unserialize(arr9,   Nx, Ny, Nz);
   yee.rho.unserialize(arr10, Nx, Ny, Nz);
-
-  // file handle is closed automatically here as it goes out-of-scope
-  // TODO: seems that it does not...
-  file.~File();
 
   return true;
 }

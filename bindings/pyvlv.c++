@@ -10,7 +10,7 @@
   
 #include "../vlasov/tile.h"
 #include "../em-fields/tile.h"
-#include "../em-fields/damping_tile.h"
+#include "../em-fields/boundaries/damping_tile.h"
 #include "../vlasov/amr/mesh.h"
 #include "../vlasov/amr/refiner.h"
 #include "../vlasov/amr/operators.h"

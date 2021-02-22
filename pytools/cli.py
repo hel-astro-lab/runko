@@ -46,6 +46,17 @@ def create_output_folders(conf):
     if not os.path.exists(conf.outdir + "/full_output"):
         os.makedirs(conf.outdir + "/full_output")
 
+    # finally, copy current configuration to the folder
+    #if True:
+    try:
+        # only try this because we dont want to require shutils
+        import shutil
+        shutil.copyfile(
+                conf.conf_filename, 
+                conf.outdir + "/" + conf.conf_filename)
+    except:
+        pass
+
 
 # check for existing restart files; 
 # manage io_status object accordingly with current lap, restart directory, etc...
@@ -62,6 +73,8 @@ def check_for_restart(conf):
 
     # restart from latest file
     io_status["deep_io_switch"] = 0
+    io_status["restart_num"] = 0
+
     if conf.laprestart >= 0:
         io_status["do_initialization"] = False
 
@@ -76,6 +89,18 @@ def check_for_restart(conf):
                 # lapfile.write("{},{}\n".format(lap, deep_io_switch))
                 lines = lapfile.readlines()
                 slap, sdeep_io_switch = lines[-1].strip().split(",")
+
+                # keep track of number of restarts by encoding them to deep io switch
+                max_ios = 0
+                for line in lines:
+                    a, b = line.strip().split(",")
+                    if int(b) > max_ios:
+                        max_ios = int(b)
+
+                io_status["restart_num"] = max_ios + 1
+
+                #TODO think about some way to cycle restart_num to save disk space
+
                 io_status["lap"] = int(slap)
                 io_status["deep_io_switch"] = int(sdeep_io_switch)
 

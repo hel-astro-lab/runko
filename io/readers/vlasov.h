@@ -7,18 +7,19 @@
 template<size_t D>
 bool 
 h5io::Reader::read( 
-  vlv::Tile<D>& tile
+  vlv::Tile<D>& tile,
+  ezh5::File& file
   )
 {
   //--------------------------------------------------
   // open file
-  int frank = locate_rank(tile); // find what rank had this tile
+  //int frank = locate_rank(tile); // find what rank had this tile
 
-  std::string fname = 
-    folder + "/meshes-" + to_string(frank) + "_" + to_string(lap) + ".h5";
-  //std::cout << "reading file " << fname << std::endl;
-    
-  ezh5::File file(fname, H5F_ACC_RDONLY);
+  //std::string fname = 
+  //  folder + "/meshes-" + to_string(frank) + "_" + to_string(lap) + ".h5";
+  ////std::cout << "reading file " << fname << std::endl;
+  //  
+  //ezh5::File file(fname, H5F_ACC_RDONLY);
 
   //--------------------------------------------------
   // open group
@@ -100,11 +101,6 @@ h5io::Reader::read(
   //       This only fixes boundary tile behavior.
   auto& step1 = tile.steps.get(1);
   step1 = step0;
-
-
-  // file handle is closed automatically here as it goes out-of-scope
-  // TODO: seems that it does not...
-  file.~File();
 
   return true;
 }

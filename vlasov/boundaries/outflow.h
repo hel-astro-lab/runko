@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../corgi/corgi.h"
-#include "../../em-fields/damping_tile.h"
+#include "../../em-fields/boundaries/damping_tile.h"
 #include "../../vlasov/tile.h"
 
 #include "../spatial-solvers/amr_spatial_solver.h"

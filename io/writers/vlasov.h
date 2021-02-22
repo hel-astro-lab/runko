@@ -8,7 +8,8 @@
 template<size_t D>
 bool
 h5io::Writer::write(
-  const vlv::Tile<D>& tile
+  const vlv::Tile<D>& tile,
+  ezh5::File& file
   ) 
 {
 

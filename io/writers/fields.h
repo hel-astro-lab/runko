@@ -8,7 +8,8 @@
 template<size_t D>
 bool 
 h5io::Writer::write( 
-  const fields::Tile<D>& tile
+  const fields::Tile<D>& tile,
+  ezh5::File& file
   )
 {
   const auto& yee = tile.get_const_yee();
