@@ -829,9 +829,9 @@ class Communications(unittest.TestCase):
         conf.Nx = 3
         conf.Ny = 3
         conf.Nz = 3
-        conf.NxMesh = 6
-        conf.NyMesh = 6
-        conf.NzMesh = 6
+        conf.NxMesh = 10
+        conf.NyMesh = 10
+        conf.NzMesh = 10
 
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
@@ -888,11 +888,12 @@ class Communications(unittest.TestCase):
                                     yee.jy[q,r,s] = 1.0
                                     yee.jz[q,r,s] = 1.0
 
-                                    orig[qq,rr,ss] += 1
+                                    orig[qq,rr,ss] += 1.0
 
 
         #subtract one because the tile itself never contributes to sums
-        orig[:,:,:] -= 1
+        # NOTE: not true, this was a bug in exchange_currents<3>
+        #orig[:,:,:] -= 1
 
 
         #update boundaries
@@ -928,9 +929,11 @@ class Communications(unittest.TestCase):
             large_width = 400
             with np.printoptions(linewidth=large_width):
                 print("yee")
-                print(ref[:,:,3,0].astype(int))
+                print(ref[:,:,0,0].astype(int))
+
                 print("orig")
-                print(orig[:,:,3].astype(int))
+                print(orig[:,:,0].astype(int))
+
 
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
@@ -946,6 +949,7 @@ class Communications(unittest.TestCase):
 
                         #print("{},{},{}={}".format(ix,jy,kz,val))
 
+                        #print(cid, i,j,k, q,r,s, 'read/inserted', val, ref[ix,jy,kz, 0])
                         for iarr in range(3):
                             self.assertEqual( ref[ix,jy,kz,iarr], val )
 
