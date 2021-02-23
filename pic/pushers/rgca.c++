@@ -250,14 +250,14 @@ void pic::rGCAPusher<D,V>::push_container(
     //ExB in units of c
 
     // non-rel / rel ExB drift velocity
-    //auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift( ex0, ey0, ez0, bx0, by0, bz0 );
-    auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
+    auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift( ex0, ey0, ez0, bx0, by0, bz0 );
+    //auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
 
     //-------------------------------------------------- 
     // magnetic field unit vector b
       
-    //auto [bnx0, bny0, bnz0] = mag_unit_vec(bx0, by0, bz0);
-    auto [bnx0, bny0, bnz0] = mag_unit_vec_rel( ex0, ey0, ez0, bx0, by0, bz0, we2);
+    auto [bnx0, bny0, bnz0] = mag_unit_vec(bx0, by0, bz0);
+    //auto [bnx0, bny0, bnz0] = mag_unit_vec_rel( ex0, ey0, ez0, bx0, by0, bz0, we2);
 
     //--------------------------------------------------
     // epar = e.b
@@ -421,14 +421,14 @@ void pic::rGCAPusher<D,V>::push_container(
       //ExB in units of c at new location
 
       // non-rel / rel ExB drift velocity at the new location
-      //auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift(     ex1, ey1, ez1, bx1, by1, bz1 );
-      auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
+      auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift(     ex1, ey1, ez1, bx1, by1, bz1 );
+      //auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
 
       //-------------------------------------------------- 
       // magnetic field unit vector b at new location
 
-      //auto [bnx1, bny1, bnz1] = mag_unit_vec(bx1, by1, bz1);
-      auto [bnx1, bny1, bnz1] = mag_unit_vec_rel( ex1, ey1, ez1, bx1, by1, bz1, we2);
+      auto [bnx1, bny1, bnz1] = mag_unit_vec(bx1, by1, bz1);
+      //auto [bnx1, bny1, bnz1] = mag_unit_vec_rel( ex1, ey1, ez1, bx1, by1, bz1, we2);
 
       //-------------------------------------------------- 
       // location update
