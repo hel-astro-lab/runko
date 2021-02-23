@@ -51,9 +51,9 @@ h5io::TestPrtclWriter<D>::TestPrtclWriter(
   // avoid under/overflows
   if(stride > NxMesh*NyMesh*NzMesh*ppc) {
     if(my_rank == 0) {
-      std::cout << "WARNING TestPrtclWriter underflow; fallbacking to maximum number of particles\n";
+      std::cout << "WARNING TestPrtclWriter underflow; fallbacking to minimum number of particles\n";
     }
-    stride = 1; //NxMesh*NyMesh*NzMesh*ppc;
+    stride = NxMesh*NyMesh*NzMesh*ppc;
   }
   //stride = stride > NxMesh*NyMesh*NzMesh*ppc ? NxMesh*NyMesh*NzMesh*ppc : stride;
 
