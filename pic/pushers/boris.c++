@@ -2,6 +2,8 @@
 
 #include <cmath> 
 #include "../../tools/signum.h"
+#include "../../tools/iter/iter.h"
+#include <nvtx3/nvToolsExt.h> 
 
 using toolbox::sign;
 
@@ -10,6 +12,8 @@ void pic::BorisPusher<D,V>::push_container(
     pic::ParticleContainer<D>& container, 
     pic::Tile<D>& tile)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   int nparts = container.size();
 
   // initialize pointers to particle arrays
@@ -19,8 +23,6 @@ void pic::BorisPusher<D,V>::push_container(
   real_prtcl* vel[3];
   for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-  real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-  real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
   // make sure E and B tmp arrays are of correct size
   if(container.Epart.size() != (size_t)3*nparts)
@@ -41,22 +43,24 @@ void pic::BorisPusher<D,V>::push_container(
   int n1 = 0;
   int n2 = nparts;
 
-  real_long u0, v0, w0;
-  real_long u1, v1, w1;
-  real_long ginv, f;
-
   real_long c = tile.cfl;
   real_long cinv = 1.0/c;
 
   // charge-to-mass ratio (sign only because fields are in units of q)
   real_long qm = sign(container.q)/container.m;
 
-  real_long vel0n, vel1n, vel2n;
 
-  // add division by m_s to simulate multiple species
+  // loop over particles
+  UniIter::iterate([=] DEVCALLABLE (int n){
 
-  //TODO: SIMD
-  for(int n=  n1; n<n2; n++) {
+    real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
+    real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+
+    real_long vel0n, vel1n, vel2n;
+    real_long u0, v0, w0;
+    real_long u1, v1, w1;
+    real_long ginv, g, f;
+
     vel0n = static_cast<real_long>( vel[0][n] );
     vel1n = static_cast<real_long>( vel[1][n] );
     vel2n = static_cast<real_long>( vel[2][n] );
@@ -108,7 +112,11 @@ void pic::BorisPusher<D,V>::push_container(
     ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
     for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c;
 
-  }
+  }, nparts);
+
+UniIter::sync();
+nvtxRangePop();
+
 }
 
 

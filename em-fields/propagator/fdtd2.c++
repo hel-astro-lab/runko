@@ -18,6 +18,9 @@
  * Contains a dimension switch for solvers depending on internal mesh dimensions
  */
 
+#include <nvtx3/nvToolsExt.h> 
+
+#include "../../tools/iter/iter.h"
 
 /// 1D E pusher
 template<>
@@ -78,12 +81,15 @@ void fields::FDTD2<2>::push_e(fields::Tile<2>& tile)
 template<>
 void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   YeeLattice& mesh = tile.get_yee();
   Realf C = 1.0 * tile.cfl * dt * corr;
 
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+
+    UniIter::iterate3D(
+    [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+    {
 
     // Ex
     mesh.ex(i,j,k) += 
@@ -99,8 +105,10 @@ void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
     mesh.ez(i,j,k) += 
       + C*( mesh.bx(i,  j-1, k) - mesh.bx(i,j,k))
       + C*(-mesh.by(i-1,j,   k) + mesh.by(i,j,k));
-
-  }
+    }, static_cast<int>(tile.mesh_lengths[2]), static_cast<int>(tile.mesh_lengths[1]), static_cast<int>(tile.mesh_lengths[0]), mesh);
+UniIter::sync();
+    
+nvtxRangePop();
 
 }
 
@@ -180,12 +188,14 @@ void fields::FDTD2<2>::push_half_b(fields::Tile<2>& tile)
 template<>
 void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
+
   YeeLattice& mesh = tile.get_yee();
   Realf C = 0.5 * tile.cfl * dt * corr;
 
-  for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+    UniIter::iterate3D(
+    [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+    {
 
     // Bx
     mesh.bx(i,j,k) += 
@@ -202,7 +212,11 @@ void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
       + C*( mesh.ex(i,  j+1, k) - mesh.ex(i,j,k))
       + C*(-mesh.ey(i+1,j,   k) + mesh.ey(i,j,k));
 
-  }
+      }, static_cast<int>(tile.mesh_lengths[2]), static_cast<int>(tile.mesh_lengths[1]), static_cast<int>(tile.mesh_lengths[0]), mesh);
+UniIter::sync();
+    
+nvtxRangePop();
+
 }
 
 

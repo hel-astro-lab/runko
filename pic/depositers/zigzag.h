@@ -9,7 +9,7 @@ template<size_t D, size_t V>
 class ZigZag :
   public virtual Depositer<D,V>
 {
-
+public:
   void solve(pic::Tile<D>& tile) override;
 
 };

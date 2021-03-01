@@ -2,6 +2,8 @@
 
 #include <cmath> 
 #include <cassert>
+#include <nvtx3/nvToolsExt.h> 
+#include "../../tools/iter/iter.h"
 
 
 inline real_long _lerp(
@@ -31,6 +33,7 @@ template<size_t D, size_t V>
 void pic::LinearInterpolator<D,V>::solve(
     pic::Tile<D>& tile)
 {
+nvtxRangePush(__PRETTY_FUNCTION__);
 
   // get reference to the Yee grid 
   auto& yee = tile.get_yee();
@@ -51,7 +54,8 @@ void pic::LinearInterpolator<D,V>::solve(
 
     // initialize pointers to particle arrays
     real_prtcl* loc[3];
-    for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
+    for( int i=0; i<3; i++) 
+      loc[i] = &( container.loc(i,0) );
 
     /// resize internal arrays
     container.Epart.resize(3*nparts);
@@ -70,20 +74,20 @@ void pic::LinearInterpolator<D,V>::solve(
     int n1 = 0;
     int n2 = nparts;
 
-    int i=0, j=0, k=0;
-    real_long dx=0.0, dy=0.0, dz=0.0;
+    auto mins = tile.mins;
+    //auto maxs = tile.maxs;
 
     // mesh sizes for 1D indexing
     const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
     const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
 
-    real_long loc0n, loc1n, loc2n;
-    auto mins = tile.mins;
-    //auto maxs = tile.maxs;
 
-    // TODO: think SIMD (not possible due to ijk writing to yee)
-    for(int n=n1; n<n2; n++) {
+    // loop over particles
+    UniIter::iterate([=] DEVCALLABLE (int n, fields::YeeLattice &yee){
+      int i=0, j=0, k=0;
+      real_long dx=0.0, dy=0.0, dz=0.0;
     
+      real_long loc0n, loc1n, loc2n;
       loc0n = static_cast<real_long>( loc[0][n] );
       loc1n = static_cast<real_long>( loc[1][n] );
       loc2n = static_cast<real_long>( loc[2][n] );
@@ -104,51 +108,6 @@ void pic::LinearInterpolator<D,V>::solve(
       if(D >= 1) i -= mins[0];
       if(D >= 2) j -= mins[1];
       if(D >= 3) k -= mins[2];
-
-
-      // check section; TODO; remove
-      bool debug_flag = false;
-      if(D >= 1) { if(! (i >= -3 && i <= static_cast<int>(tile.mesh_lengths[0]) +2 )) debug_flag = true;}
-      if(D >= 2) { if(! (j >= -3 && j <= static_cast<int>(tile.mesh_lengths[1]) +2 )) debug_flag = true;}
-      if(D >= 3) { if(! (k >= -3 && k <= static_cast<int>(tile.mesh_lengths[2]) +2 )) debug_flag = true;}
-
-      if(debug_flag) {
-        std::cerr << "--------------------------------------------------\n";
-        std::cerr << "n=" << n;
-        std::cerr << " i: " << i;
-        std::cerr << " j: " << j;
-        std::cerr << " k: " << k;
-        std::cerr << "\n";
-
-        std::cerr << " mins0: " << mins[0];
-        std::cerr << " mins1: " << mins[1];
-        std::cerr << " mins2: " << mins[2];
-
-        std::cerr << " x: " << loc0n;
-        std::cerr << " y: " << loc1n;
-        std::cerr << " z: " << loc2n;
-        std::cerr << "\n";
-
-        std::cerr << " dx: " << dx;
-        std::cerr << " dy: " << dy;
-        std::cerr << " dz: " << dz;
-        std::cerr << "\n";
-
-        std::cerr << std::flush;
-        // always fail
-        //assert(false);
-          
-        // NOTE: ignore problematic prtcls; ensures that simulations do not crash if 
-        // something goes wrong for one prtcl
-        continue;
-
-        //i = tile.mesh_lengths[0];
-        //j = tile.mesh_lengths[1];
-        //k = tile.mesh_lengths[2];
-        //dx = 1.0;
-        //dy = 1.0;
-        //dz = 1.0;
-      }
 
       // one-dimensional index
       const size_t ind = yee.ex.indx(i,j,k);
@@ -221,12 +180,13 @@ void pic::LinearInterpolator<D,V>::solve(
       c011 = 0.25*( bz(ind-1+iz)+    bz(ind-1+iy+iz)+ bz(ind+iz)+      bz(ind+iy+iz));
       c111 = 0.25*( bz(ind+iz)+      bz(ind+iy+iz)+   bz(ind+1+iz)+    bz(ind+1+iy+iz));
       bzn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
-
-    }
+    
+    }, nparts, yee);
+    UniIter::sync();
 
   } // end of loop over species
-
-  }
+  nvtxRangePop();
+}
 
 
 //--------------------------------------------------

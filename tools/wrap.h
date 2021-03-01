@@ -17,7 +17,7 @@ inline double wrap(double x, double min, double max)
 inline float wrap_max(float x, float max)
 {
     //return std::fmod(max + std::fmod(x, max), max);
-    return fmod(max + fmod(x, max), max);
+    return fmod((double)max + fmod((double)x, (double)max), (double)max);
 }
 /* wrap x -> [min,max) */
 inline float wrap(float x, float min, float max)

@@ -28,7 +28,8 @@ h5io::Writer::write(
     auto gr = gr1["sp-" + std::to_string(ispc)];
     gr["sp"] = static_cast<int>( ispc );
 
-    const pic::ParticleContainer<D>& container = tile.get_const_container(ispc);
+    // todo set back to const ref at some point...
+    pic::ParticleContainer<D> container = tile.get_const_container(ispc);
 
     gr["x"]   = container.loc(0);
     gr["y"]   = container.loc(1);

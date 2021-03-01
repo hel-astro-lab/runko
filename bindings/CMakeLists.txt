@@ -1,4 +1,4 @@
-project (pyrunko)
+project (pyrunko LANGUAGES CXX C)
 
 
 #find_package(PYBIND11 REQUIRED) #loaded externally from corgi
@@ -71,10 +71,12 @@ set (IO_FILES
      ../io/snapshots/field_slices.c++
     )
 
-
+set (ACC_FILES 
+)
 
 # python module creation
 #--------------------------------------------------
+# https://stackoverflow.com/questions/51907755/building-a-pybind11-module-with-cpp-and-cuda-sources-using-cmake
 pybind11_add_module(pyrunko 
                     runko.c++ 
                     ${TOOLS_FILES}
@@ -84,6 +86,7 @@ pybind11_add_module(pyrunko
                     ${RAD_FILES}
                     ${FFE_FILES}
                     ${IO_FILES}
+                    ${ACC_FILES}
                     )
 
 #target_link_libraries(pyrunko PRIVATE -lhdf5)
@@ -94,7 +97,41 @@ target_include_directories(pyrunko PRIVATE ${HDF5_INCLUDE_DIRS})
 #target_link_libraries(pyrunko PRIVATE -lfftw3f)
 target_link_libraries(pyrunko PUBLIC coverage_config)
 
+include(CheckLanguage)
+
+option(ENABLE_CUDA "Enable CUDA" OFF)
+if(ENABLE_CUDA)
+     check_language(CUDA REQUIRED)
+     enable_language(CUDA)
+
+     find_package(CUDA 11.0 REQUIRED)
+     target_link_libraries(pyrunko PRIVATE ${CUDA_LIBRARIES})
+endif()
+
+
+
 target_compile_options(pyrunko PRIVATE ${WARNING_FLAGS})
+
+if(ENABLE_CUDA)
+     
+     set_target_properties(pyrunko PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
+     set_source_files_properties(../ffe/currents/rffe.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../em-fields/tile.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../em-fields/filters/digital.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../em-fields/propagator/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)
+     # this will give wrong results if the file passed to nvcc 
+      set_source_files_properties(../pic/particle.c++ PROPERTIES LANGUAGE CUDA)
+     target_compile_definitions(pyrunko PUBLIC GPU)
+
+     set_property(TARGET pyrunko PROPERTY CUDA_STANDARD 17)
+
+     # need extended lambda support to be able to pass lambdas to interation functions
+     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr -std=c++17")
+     message( ${CMAKE_CUDA_FLAGS} )
+endif()
 
 
 

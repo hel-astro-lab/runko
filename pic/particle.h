@@ -9,6 +9,10 @@
 
 #include "../definitions.h"
 
+#include "../tools/iter/dynArray.h"
+#include "../tools/iter/allocator.h"
+#include "../tools/iter/managed_alloc.h"
+
 
 
 namespace pic {
@@ -58,6 +62,13 @@ public:
 
 };
 
+struct to_other_tiles_struct{
+  //
+  int i;
+  int j;
+  int k;
+  size_t n;
+};
 
 /*! \brief Container of particles inside the tile
 *
@@ -71,7 +82,7 @@ public:
 *
 */
 template<std::size_t D>
-class ParticleContainer {
+class ParticleContainer{
 
   private:
 
@@ -85,20 +96,21 @@ class ParticleContainer {
   std::pair<int,int> keygen();
 
 
+
   protected:
 
   size_t Nprtcls = 0;
 
-  std::vector< std::vector<real_prtcl> > locArr;
-  std::vector< std::vector<real_prtcl> > velArr;
-  std::vector< std::vector<int> > indArr;
-  std::vector<real_prtcl> wgtArr;
+  std::array<ManVec<real_prtcl>, 3 > locArr;
+  std::array<ManVec<real_prtcl>, 3 > velArr;
+  std::array<ManVec<int>, 2 > indArr;
+  ManVec<real_prtcl> wgtArr;
 
   public:
     
   /// packed outgoing particles
-  std::vector<Particle> outgoing_particles;
-  std::vector<Particle> outgoing_extra_particles;
+  ManVec<Particle> outgoing_particles;
+  ManVec<Particle> outgoing_extra_particles;
 
   /// pack all particles in the container
   void pack_all_particles();
@@ -107,8 +119,24 @@ class ParticleContainer {
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  std::vector<Particle> incoming_particles;
-  std::vector<Particle> incoming_extra_particles;
+  ManVec<Particle> incoming_particles;
+  ManVec<Particle> incoming_extra_particles;
+
+  // incomming indexes, to optimize transfer_and_wrap_particles for GPUs
+  int incomming_count;
+  ManVec<int> incomming_particleIndexes;
+  ManVec<int> particleIndexesA;
+  ManVec<int> particleIndexesB;
+  int pCount;
+
+
+  void     *d_temp_storage = NULL;
+  size_t   temp_storage_bytes = 0;
+
+  // incomming indexes, to optimize transfer_and_wrap_particles for GPUs
+  int outgoing_count;
+  ManVec<int> outgoing_particleIndexes;
+
 
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();
@@ -119,13 +147,13 @@ class ParticleContainer {
   int optimal_message_size = 3000;
 
   //! particle specific electric field components
-  std::vector<real_prtcl> Epart;
+  ManVec<real_prtcl> Epart;
 
   //! particle specific magnetic field components
-  std::vector<real_prtcl> Bpart;
+  ManVec<real_prtcl> Bpart;
 
   //! multimap of particles going to other tiles
-  using mapType = std::multimap<std::tuple<int,int,int>, int>;
+  using mapType = ManVec<to_other_tiles_struct>;
   mapType to_other_tiles;
 
   // particle charge 
@@ -153,97 +181,123 @@ class ParticleContainer {
   virtual void shrink_to_fit();
 
   /// size of the container (in terms of particles)
+  DEVCALLABLE
   size_t size();
 
 
   //--------------------------------------------------
   // locations
-  virtual inline real_prtcl loc( size_t idim, size_t iprtcl ) const
+  DEVCALLABLE
+  inline real_prtcl loc( size_t idim, size_t iprtcl ) const
+  {
+    return locArr[idim][iprtcl];
+  }
+  DEVCALLABLE
+  inline real_prtcl& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  virtual inline real_prtcl& loc( size_t idim, size_t iprtcl )       
+  inline std::vector<real_prtcl> loc(size_t idim) 
   {
-    return locArr[idim][iprtcl];
+    std::vector<real_prtcl> ret;
+    for(const auto& e: locArr[idim])
+      ret.push_back(e);
+    return ret;//locArr[idim];
   }
 
-  virtual inline std::vector<real_prtcl> loc(size_t idim) const 
-  {
-    return locArr[idim];
-  }
-
+/*
   virtual inline std::vector<real_prtcl>& loc(size_t idim)
   {
     return locArr[idim];
   }
-
+*/
   //--------------------------------------------------
   // velocities
-  virtual inline real_prtcl vel( size_t idim, size_t iprtcl ) const
+  DEVCALLABLE
+  inline real_prtcl vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline real_prtcl& vel( size_t idim, size_t iprtcl )       
+  DEVCALLABLE
+  inline real_prtcl& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<real_prtcl> vel(size_t idim) const 
+  inline std::vector<real_prtcl> vel(size_t idim) 
   {
-    return velArr[idim];
+    //return velArr[idim];
+    std::vector<real_prtcl> ret;
+    for(const auto& e: velArr[idim])
+      ret.push_back(e);
+    return ret;
   }
-
+/*
   virtual inline std::vector<real_prtcl>& vel(size_t idim)
   {
     return velArr[idim];
   }
-
+*/
   //--------------------------------------------------
   // weights
-  virtual inline real_prtcl wgt( size_t iprtcl ) const
+  DEVCALLABLE
+  inline real_prtcl wgt( size_t iprtcl ) const
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline real_prtcl& wgt( size_t iprtcl )       
+  DEVCALLABLE
+  inline real_prtcl& wgt( size_t iprtcl )       
   {
     return wgtArr[iprtcl];
   }
 
-  virtual inline std::vector<real_prtcl> wgt() const
+  inline std::vector<real_prtcl> wgt()
   {
-    return wgtArr;
+    //return wgtArr;
+    std::vector<real_prtcl> ret;
+    for(const auto& e: wgtArr)
+      ret.push_back(e);
+    return ret;
   }
 
+/*
   virtual inline std::vector<real_prtcl>& wgt()
   {
     return wgtArr;
   }
-
+*/
   //--------------------------------------------------
   // id
-  virtual inline int id( size_t idim, size_t iprtcl ) const
+  DEVCALLABLE
+  inline int id( size_t idim, size_t iprtcl ) const
   {
     return indArr[idim][iprtcl];
   }
 
-  virtual inline int& id( size_t idim, size_t iprtcl )       
+  DEVCALLABLE
+  inline int& id( size_t idim, size_t iprtcl )       
   {
     return indArr[idim][iprtcl];
   }
 
-  virtual inline std::vector<int> id(size_t idim) const 
+  inline std::vector<int> id(size_t idim) 
   {
-    return indArr[idim];
+    //return indArr[idim];
+    std::vector<int> ret;
+    for(const auto& e: indArr[idim])
+      ret.push_back(e);
+    return ret;
   }
 
+/*
   virtual inline std::vector<int>& id(size_t idim)
   {
     return indArr[idim];
   }
-
+*/
   // particle creation
   virtual void add_particle (
       std::vector<real_prtcl> prtcl_loc,

@@ -1,7 +1,11 @@
 #include "digital.h"
 
 #include <cmath>
+#include "../../tools/iter/devcall.h"
+#include "../../tools/iter/iter.h"
+#include "../../tools/iter/allocator.h"
 
+#include <nvtx3/nvToolsExt.h> 
 
 /// single 2D 2nd order 3-point binomial filter 
 template<>
@@ -171,6 +175,94 @@ void fields::OptBinomial2<3>::solve(
 
 }
 
+#ifdef GPU
+    template<class F, class... Args>
+    __global__ void iterate3dShared(F fun, int xMax, int yMax, int zMax, toolbox::Mesh<real_short, 3> *jj, toolbox::Mesh<real_short, 3> *tmp)
+    {
+        real_short winv  = 1./64., // normalization
+             wtd  = 1.*winv, // diagnoal
+             wtos = 2.*winv, // outer side
+             wtis = 4.*winv, // inner side
+             wt   = 8.*winv; // center
+
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        int idy = blockIdx.y * blockDim.y + threadIdx.y;
+        int idz = blockIdx.z * blockDim.z + threadIdx.z;
+
+        int locIdx = threadIdx.x;
+        int locIdy = threadIdx.y;
+        int locIdz = threadIdx.z;
+
+        __shared__ real_short local[10][10][10];
+
+
+          for (int x = threadIdx.x; x < (blockDim.x+2); x += blockDim.x)
+          for (int y = threadIdx.y; y < (blockDim.y+2); y += blockDim.y)
+          for (int z = threadIdx.z; z < (blockDim.z+2); z += blockDim.z)
+        {
+          int targetX = (blockIdx.x * blockDim.x) + (x-1);
+          int targetY = (blockIdx.y * blockDim.y) + (y-1);
+          int targetZ = (blockIdx.z * blockDim.z) + (z-1);
+          local[x][y][z] = (*jj)(
+            targetX, 
+            targetY, 
+            targetZ);
+        }
+        
+      
+        __syncthreads();
+        
+        if(idx >= xMax) return;
+        if(idy >= yMax) return;
+        if(idz >= zMax) return;
+
+        locIdx++;
+        locIdy++;
+        locIdz++;
+
+        int i = blockIdx.x * blockDim.x + threadIdx.x;
+        int j = blockIdx.y * blockDim.y + threadIdx.y;
+        int k = blockIdx.z * blockDim.z + threadIdx.z;
+
+    		(*tmp)(idx,idy,idz) =
+          local[locIdx-1][locIdy-1][locIdz-1]*wtd  + 
+          local[locIdx  ][locIdy-1][locIdz-1]*wtos + 
+          local[locIdx+1][locIdy-1][locIdz-1]*wtd  +
+             
+          local[locIdx-1][locIdy  ][locIdz-1]*wtos +
+          local[locIdx  ][locIdy  ][locIdz-1]*wtis +
+          local[locIdx+1][locIdy  ][locIdz-1]*wtos +
+             
+          local[locIdx-1][locIdy+1][locIdz-1]*wtd  + 
+          local[locIdx  ][locIdy+1][locIdz-1]*wtos +
+          local[locIdx+1][locIdy+1][locIdz-1]*wtd  +
+             
+          local[locIdx-1][locIdy-1][locIdz  ]*wtos +
+          local[locIdx  ][locIdy-1][locIdz  ]*wtis +
+          local[locIdx+1][locIdy-1][locIdz  ]*wtos +
+             
+          local[locIdx-1][locIdy  ][locIdz  ]*wtis +
+          local[locIdx  ][locIdy  ][locIdz  ]*wt   +
+          local[locIdx+1][locIdy  ][locIdz  ]*wtis +
+             
+          local[locIdx-1][locIdy+1][locIdz  ]*wtos +
+          local[locIdx  ][locIdy+1][locIdz  ]*wtis +
+          local[locIdx+1][locIdy+1][locIdz  ]*wtos +
+             
+          local[locIdx-1][locIdy-1][locIdz+1]*wtd  +
+          local[locIdx  ][locIdy-1][locIdz+1]*wtos +
+          local[locIdx+1][locIdy-1][locIdz+1]*wtd  +
+             
+          local[locIdx-1][locIdy  ][locIdz+1]*wtos +
+          local[locIdx  ][locIdy  ][locIdz+1]*wtis +
+          local[locIdx+1][locIdy  ][locIdz+1]*wtos +
+             
+          local[locIdx-1][locIdy+1][locIdz+1]*wtd  +
+          local[locIdx  ][locIdy+1][locIdz+1]*wtos +
+          local[locIdx+1][locIdy+1][locIdz+1]*wtd;
+          
+    }
+#endif
 
 /// single 3D 2nd order 3-point binomial filter 
 template<>
@@ -185,8 +277,16 @@ void fields::Binomial2<3>::solve(
           { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
   real_short C;
 
-  auto& mesh = tile.get_yee();
+  //real_short winv  = 1./64., // normalization
+  //           wtd  = 1.*winv, // diagnoal
+  //           wtos = 2.*winv, // outer side
+  //           wtis = 4.*winv, // inner side
+  //           wt   = 8.*winv; // center
+  //
 
+  nvtxRangePush(__PRETTY_FUNCTION__);
+
+  auto& mesh = tile.get_yee();
   const int halo = 2; 
 
   const int imin = 0 - halo;
@@ -198,7 +298,65 @@ void fields::Binomial2<3>::solve(
   const int kmin = 0 - halo;
   const int kmax = tile.mesh_lengths[2] + halo;
 
+  //--------------------------------------------------
+  // Jx
 
+  // make 3d loop with shared memory 
+    auto fun = 
+  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jj, toolbox::Mesh<real_short, 3> &tmp)
+  {
+    //tmp(i,j,k) =
+    //  jj(i-1, j-1, k-1)*wtd  + 
+    //  jj(i  , j-1, k-1)*wtos + 
+    //  jj(i+1, j-1, k-1)*wtd  +
+    //         
+    //  jj(i-1, j  , k-1)*wtos +
+    //  jj(i  , j  , k-1)*wtis +
+    //  jj(i+1, j  , k-1)*wtos +
+    //         
+    //  jj(i-1, j+1, k-1)*wtd  + 
+    //  jj(i  , j+1, k-1)*wtos +
+    //  jj(i+1, j+1, k-1)*wtd  +
+    //         
+    //  jj(i-1, j-1, k  )*wtos +
+    //  jj(i  , j-1, k  )*wtis +
+    //  jj(i+1, j-1, k  )*wtos +
+    //         
+    //  jj(i-1, j  , k  )*wtis +
+    //  jj(i  , j  , k  )*wt   +
+    //  jj(i+1, j  , k  )*wtis +
+    //         
+    //  jj(i-1, j+1, k  )*wtos +
+    //  jj(i  , j+1, k  )*wtis +
+    //  jj(i+1, j+1, k  )*wtos +
+    //         
+    //  jj(i-1, j-1, k+1)*wtd  +
+    //  jj(i  , j-1, k+1)*wtos +
+    //  jj(i+1, j-1, k+1)*wtd  +
+    //         
+    //  jj(i-1, j  , k+1)*wtos +
+    //  jj(i  , j  , k+1)*wtis +
+    //  jj(i+1, j  , k+1)*wtos +
+    //         
+    //  jj(i-1, j+1, k+1)*wtd  +
+    //  jj(i  , j+1, k+1)*wtos +
+    //  jj(i+1, j+1, k+1)*wtd;
+
+    for(int is=-1; is<=1; is++) {
+    for(int js=-1; js<=1; js++) {
+    for(int ks=-1; ks<=1; ks++) {
+      tmp(i,j,k) += jj(i+is, j+js, k+ks) * C3[is+1][js+1][ks+1];
+    }}}
+
+  };
+
+/*
+  auto gridArgs = UniIter::UniIterCU::getGrid3({
+        static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0])},{8,8,4});
+
+<<<<<<< HEAD
   // NOTE: using tmp as scratch arrays
     
   //--------------------------------------------------
@@ -260,8 +418,72 @@ void fields::Binomial2<3>::solve(
       }}
   }}}
   swap(mesh.jz, tmp);
+=======
+  getErrorCuda(((iterate3dShared<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, 
+        static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), 
+        UniIter::UniIterCU::getDevPtr(mesh.jx), UniIter::UniIterCU::getDevPtr(tmp)))));
+  UniIter::sync();
+  //mesh.jx = tmp; // then copy from scratch to original arrays
+  std::swap(mesh.jx, tmp);
 
+  getErrorCuda(((iterate3dShared<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, 
+        static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), 
+        UniIter::UniIterCU::getDevPtr(mesh.jy), UniIter::UniIterCU::getDevPtr(tmp)))));
+
+
+  UniIter::sync();
+  //mesh.jy = tmp; // then copy from scratch to original arrays
+  std::swap(mesh.jy, tmp);
+
+
+  getErrorCuda(((iterate3dShared<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, 
+        static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), 
+        UniIter::UniIterCU::getDevPtr(mesh.jz), UniIter::UniIterCU::getDevPtr(tmp)))));
+
+
+  UniIter::sync();
+  //mesh.jz = tmp; // then copy from scratch to original arrays // calls the copy constructor and the data from tmp is actually copied back, a possibly better solution is to just swap the pointers
+  std::swap(mesh.jz, tmp);
+
+*/
+
+  // TODO: check that new 3x3x3 loop is equal to previous version
+  tmp.clear();
+  UniIter::iterate3D(fun, static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
+
+  UniIter::sync();
+  std::swap(mesh.jx, tmp);
+
+
+  tmp.clear();
+  UniIter::iterate3D(fun, static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
+
+  UniIter::sync();
+  std::swap(mesh.jy, tmp);
+
+
+  tmp.clear();
+  UniIter::iterate3D(fun, static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
+
+  UniIter::sync();
+  std::swap(mesh.jz, tmp);
+  
+
+  nvtxRangePop();
 }
+
 
 
 /// single 2D 3-point general filter pass

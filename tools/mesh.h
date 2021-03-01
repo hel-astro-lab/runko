@@ -3,11 +3,18 @@
 #include <iostream>
 
 #include<algorithm>
-#include <vector>
+//#include <vector>
 #include <stdexcept>
 #include <cassert>
 #include <exception>
 
+#include "iter/allocator.h"
+#include "iter/devcall.h"
+
+#ifdef GPU
+#include <cuda_runtime_api.h>
+#else
+#endif
 
 namespace toolbox {
 
@@ -22,6 +29,13 @@ template <class T, int H>
 class Mesh 
 {
 
+  private:
+    /// internal storage
+    //std::vector<T, ManagedAlloc<T>> mat;
+
+    T *ptr;
+    bool allocated{false};
+    int count{0};
   public:
 
     /// grid size along x
@@ -33,55 +47,66 @@ class Mesh
     /// grid size along z
     int Nz{0};
 
-    /// internal storage
-    std::vector<T> mat;
-
     /// Internal indexing with halo region padding of width H
     inline size_t indx(int i, int j, int k) const {
 
+    DEVCALLABLE
+    inline int indx(int i, int j, int k) const {
       assert( (i >= -H) && (i <  (int)Nx + H)  );
       assert( (j >= -H) && (j <  (int)Ny + H)  );
       assert( (k >= -H) && (k <  (int)Nz + H)  );
       int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
-      assert( (indx >= 0) && (indx <  (int)mat.size() ) );
+
+      assert( (indx >= 0) && (indx <  (int)count ) );
+      assert(allocated);
 
       //return indx;
       return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
     }
 
     /// 1D index 
+    DEVCALLABLE
     T& operator()(size_t ind) { 
-      return mat[ ind ];
+      return ptr[ ind ];
     }
 
     /// standard (i,j,k) syntax
+    DEVCALLABLE
     T& operator()(int i, int j, int k) { 
-      return mat[ indx(i,j,k) ];
+      int ind = indx(i,j,k);
+      assert(ind < count);
+      return ptr[ind];
     }
-
+    DEVCALLABLE
     const T& operator()(int i, int j, int k) const { 
-      return mat[ indx(i,j,k) ];
+      int ind = indx(i,j,k);
+      assert(ind < count);
+      return ptr[ind];
     }
 
     /// empty default constructor
     //Mesh() = default;
     Mesh() :
-      mat(0)
-    { }
+    allocated(false), count(0)
+    { 
+    }
 
     /// standard initialization
     Mesh(int Nx, int Ny, int Nz) : 
       Nx(Nx), 
       Ny(Ny), 
       Nz(Nz),
-      mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
+      allocated(false), count(0)
+      //mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
+      alloc( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H));
       try {
         //if(Nx > 256) throw std::range_error ("Mesh nx too big");
         //if(Ny > 256) throw std::range_error ("Mesh ny too big");
         //if(Nz > 256) throw std::range_error ("Mesh nz too big");
         //mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) ); //automatically done at construction
-        std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
+        //std::fill(ptr, ptr+count, T() ); // fill with zeros
+        clear();
       } catch ( std::exception& e) {
         // whoops... if control reaches here, a memory allocation
         // failure occurred somewhere.
@@ -89,7 +114,7 @@ class Mesh
         assert(false);
       }
 
-      if(mat.empty()) assert(false);
+      //if(mat.empty()) assert(false);
     };
 
     // explicit default copy operator
@@ -98,14 +123,15 @@ class Mesh
       Nx(other.Nx),
       Ny(other.Ny),
       Nz(other.Nz),
-      mat(other.mat)
+      allocated(false), count(0)
+      //mat(other.mat)
     { 
       Nx = other.Nx; 
       Ny = other.Ny; 
       Nz = other.Nz; 
-      mat.resize(other.mat.size());
-      for(size_t i=0; i<other.mat.size(); i++) mat[i] = other.mat[i];
-
+      alloc(other.size());
+      //mat.resize(other.mat.size());
+      for(size_t i=0; i<other.size(); i++) ptr[i] = other.ptr[i];
     }
 
     // Mesh(const Mesh& other) = default;
@@ -113,13 +139,14 @@ class Mesh
       Nx(other.Nx),
       Ny(other.Ny),
       Nz(other.Nz),
-      mat(other.mat)
+      allocated(false), count(0)
+      //mat(other.mat)
     { 
-      Nx = other.Nx; 
+            Nx = other.Nx; 
       Ny = other.Ny; 
       Nz = other.Nz; 
-      mat.resize(other.mat.size());
-      for(size_t i=0; i<other.mat.size(); i++) mat[i] = other.mat[i];
+      alloc(other.size());
+      for(size_t i=0; i<other.size(); i++) ptr[i] = other.ptr[i];
     }
     
     // public swap for efficient memory management
@@ -129,7 +156,9 @@ class Mesh
         swap(first.Nx, second.Nx);
         swap(first.Ny, second.Ny);
         swap(first.Nz, second.Nz);
-        swap(first.mat, second.mat);
+        swap(first.ptr, second.ptr);
+        swap(first.count, second.count);
+        swap(first.allocated, second.allocated);
     }
 
     //Mesh& operator=(const Mesh& other) = default;
@@ -152,19 +181,39 @@ class Mesh
         swap(*this, other);
     }
 
-    ~Mesh() = default;
+    ~Mesh()
+    {
+      // todo fix this 
+
+      if(allocated)
+      {
+        UniAllocator::deallocate(ptr);
+      }
+
+      allocated = false;
+      count = 0;
+      
+    }
 
     /// address to data
-    T* data() { return mat.data(); }
-
-    const T* data() const {return mat.data(); }
+    DEVCALLABLE
+    T* data() { return ptr; }
+    
+    DEVCALLABLE
+    const T* data() const {return ptr; }
 
     /// internal storage size
-    size_t size() const { return mat.size(); }
+    size_t size() const { return count; }
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
-      std::fill(mat.begin(), mat.end(), T() ); // fill with zeros
+      //T val();
+      #ifdef GPU
+        cudaMemset ( ptr, 0, count*sizeof(T) );
+      #else
+        std::fill(ptr, ptr+count, T() ); // fill with zeros
+      #endif
+      
     }
 
     /// fill halos with zeros
@@ -180,7 +229,7 @@ class Mesh
                 (k >= 0 && k < this->Nz) 
               ) { continue; }
 
-            mat[ indx(i,j,k) ] = 0.0;
+            ptr[ indx(i,j,k) ] = 0.0;
         }}}
 
     }
@@ -194,7 +243,7 @@ class Mesh
       for(int k=0; k<int(Nz); k++)
       for(int j=0; j<int(Ny); j++)
       for(int i=0; i<int(Nx); i++)
-        ret.push_back(mat[ indx(i,j,k) ] );
+        ret.push_back(ptr[ indx(i,j,k) ] );
 
       return ret;
     }
@@ -209,21 +258,28 @@ class Mesh
       Nx = Nx_in;
       Ny = Ny_in;
       Nz = Nz_in;
-      mat.resize( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
+      alloc( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) );
 
       int q = 0;
       for(int k=0; k<int(Nz); k++)
       for(int j=0; j<int(Ny); j++)
       for(int i=0; i<int(Nx); i++) 
       {
-        mat[ indx(i,j,k) ] = vec[q];
+        ptr[ indx(i,j,k) ] = vec[q];
         q++;
       }
-
     }
 
-
-
+    void alloc(int count_){
+        if(allocated)
+        {
+          UniAllocator::deallocate(ptr);
+        }
+        ptr = UniAllocator::allocate<T>(count_);
+        allocated = true;
+        count = count_;
+			  return;
+      }
 
     // Mesh arithmetics
     //=
@@ -339,8 +395,8 @@ inline Mesh<T,H>& Mesh<T,H>::operator=(const Mesh<T,H2>& rhs) {
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
   // overwriting internal container with a scalar
-  for(size_t i=0; i<this->mat.size(); i++) {
-    this->mat[i] = rhs;
+  for(size_t i=0; i<this->size(); i++) {
+    this->ptr[i] = rhs;
   }
   return *this;
 }
@@ -349,7 +405,7 @@ inline Mesh<T,H>& Mesh<T,H>::operator=(const T& rhs) {
 template<typename T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator+=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
-  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] += rhs.mat[i];
+  for(size_t i=0; i<this->size(); i++) this->ptr[i] += rhs.ptr[i];
 
   // TODO: do not operate on halo regions
   //for(int k=0;  k<this->Nz; k++) {
@@ -386,7 +442,7 @@ inline Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H>& rhs) {
   validateDims(rhs);
 
   // purely vectorized version
-  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] -= rhs.mat[i];
+  for(size_t i=0; i<this->size(); i++) this->ptr[i] -= rhs.ptr[i];
 
   // Version that does not operate on halo regions
   // this is more correct but every so slightly slower
@@ -421,13 +477,17 @@ inline Mesh<T,H>& Mesh<T,H>::operator-=(const Mesh<T,H2>& rhs) {
 
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator*=(const T& rhs) {
-  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] *= rhs;
+  for(size_t i=0; i<this->size(); i++) {
+    this->ptr[i] *= rhs;
+  }
   return *this;
 }
 
 template <class T, int H>
 inline Mesh<T,H>& Mesh<T,H>::operator/=(const T& rhs) {
-  for(size_t i=0; i<this->mat.size(); i++) this->mat[i] /= rhs; 
+  for(size_t i=0; i<this->size(); i++) {
+    this->ptr[i] /= rhs;
+  }
   return *this;
 }
 

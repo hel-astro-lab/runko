@@ -175,19 +175,21 @@ bool h5io::FieldSliceWriter::write(
 
     // avoid extra copy by using internal container reference;
     // this works because writer meshes don't have halos
-    file["ex"] = arrs[0].mat;
-    file["ey"] = arrs[1].mat;
-    file["ez"] = arrs[2].mat;
+    
+    file["ex"] = arrs[0].serialize();
+    file["ey"] = arrs[1].serialize();
+    file["ez"] = arrs[2].serialize();
 
-    file["bx"] = arrs[3].mat;
-    file["by"] = arrs[4].mat;
-    file["bz"] = arrs[5].mat;
+    file["bx"] = arrs[3].serialize();
+    file["by"] = arrs[4].serialize();
+    file["bz"] = arrs[5].serialize();
 
-    file["jx"] = arrs[6].mat;
-    file["jy"] = arrs[7].mat;
-    file["jz"] = arrs[8].mat;
+    file["jx"] = arrs[6].serialize();
+    file["jy"] = arrs[7].serialize();
+    file["jz"] = arrs[8].serialize();
 
-    file["rho"]= arrs[9].mat;
+    file["rho"]= arrs[9].serialize();
+    
   }
 
   return true;

@@ -36,9 +36,10 @@ template<std::size_t D>
 void Tile<D>::cycle_current() 
 {
   auto& yee = this->get_yee();
-  std::swap( yee.jx.mat, jx1.mat );
-  std::swap( yee.jy.mat, jy1.mat );
-  std::swap( yee.jz.mat, jz1.mat );
+  // fix these accessing mat 
+//  std::swap( yee.jx.mat, jx1.mat );
+//  std::swap( yee.jy.mat, jy1.mat );
+//  std::swap( yee.jz.mat, jz1.mat );
 }
 
 
