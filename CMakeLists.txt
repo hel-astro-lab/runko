@@ -4,8 +4,9 @@ set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
-project (runko LANGUAGES CUDA CXX C)
 # https://cliutils.gitlab.io/modern-cmake/chapters/packages/CUDA.html
+project (runko LANGUAGES CXX C)
+#project (runko LANGUAGES CUDA CXX C)
 
 include(CheckLanguage)
 check_language(CUDA)
