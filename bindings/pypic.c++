@@ -368,7 +368,12 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::HigueraCaryPusher<2,3>>(m_2d, "HigueraCaryPusher", picpusher2d)
     .def(py::init<>());
 
+  // reduced guiding center approximation
+  py::class_<pic::rGCAPusher<2,3>>(m_2d, "rGCAPusher", picpusher2d)
+    .def(py::init<>());
 
+
+   //--------------------------------------------------
   // 3D version
   py::class_< pic::Pusher<3,3>> picpusher3d(m_3d, "Pusher");
   picpusher3d
