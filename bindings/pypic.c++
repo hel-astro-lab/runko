@@ -334,8 +334,12 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("ex_ext",  &pic::Pusher<2,3>::ex_ext)
     .def_readwrite("ey_ext",  &pic::Pusher<2,3>::ey_ext)
     .def_readwrite("ez_ext",  &pic::Pusher<2,3>::ez_ext)
-    .def("solve", py::overload_cast<pic::Tile<2>&>(     &pic::Pusher<2,3>::solve))
-    .def("solve", py::overload_cast<pic::Tile<2>&, int>(&pic::Pusher<2,3>::solve));
+    // NOTE: intel compiler has trouble with new overload_cast since its c++14 feature; hence we use the old & nasty c cast
+    //.def("solve", py::overload_cast<pic::Tile<2>&>(     &pic::Pusher<2,3>::solve))
+    //.def("solve", py::overload_cast<pic::Tile<2>&, int>(&pic::Pusher<2,3>::solve));
+    .def("solve", static_cast<void(pic::Pusher<2,3>::*)(pic::Tile<2>&     )>(&pic::Pusher<2,3>::solve))
+    .def("solve", static_cast<void(pic::Pusher<2,3>::*)(pic::Tile<2>&, int)>(&pic::Pusher<2,3>::solve));
+
 
   // Boris pusher
   py::class_<pic::BorisPusher<2,3>>(m_2d, "BorisPusher", picpusher2d)
@@ -385,8 +389,11 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("ey_ext",  &pic::Pusher<3,3>::ey_ext)
     .def_readwrite("ez_ext",  &pic::Pusher<3,3>::ez_ext)
     //.def("solve", &pic::Pusher<3,3>::solve);
-    .def("solve", py::overload_cast<pic::Tile<3>&>(     &pic::Pusher<3,3>::solve))
-    .def("solve", py::overload_cast<pic::Tile<3>&, int>(&pic::Pusher<3,3>::solve));
+    //.def("solve", py::overload_cast<pic::Tile<3>&>(     &pic::Pusher<3,3>::solve))
+    //.def("solve", py::overload_cast<pic::Tile<3>&, int>(&pic::Pusher<3,3>::solve));
+    .def("solve", static_cast<void(pic::Pusher<3,3>::*)(pic::Tile<3>&     )>(&pic::Pusher<3,3>::solve))
+    .def("solve", static_cast<void(pic::Pusher<3,3>::*)(pic::Tile<3>&, int)>(&pic::Pusher<3,3>::solve));
+
 
   // Boris pusher
   py::class_<pic::BorisPusher<3,3>>(m_3d, "BorisPusher", picpusher3d)
