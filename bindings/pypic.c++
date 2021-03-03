@@ -172,6 +172,9 @@ auto declare_prtcl_container(
         if(v ==10) return s.Bpart[ip + 1*nparts];
         if(v ==11) return s.Bpart[ip + 2*nparts];
 
+        // we should not end up here;
+        throw py::index_error();
+        return 0.0f;
       })
     .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, real_prtcl val)
       {
@@ -197,6 +200,10 @@ auto declare_prtcl_container(
         if(v == 9) s.Bpart[ip + 0*nparts] = val;
         if(v ==10) s.Bpart[ip + 1*nparts] = val;
         if(v ==11) s.Bpart[ip + 2*nparts] = val;
+
+        // we should not end up here;
+        throw py::index_error();
+        return;
       });
 
 }
