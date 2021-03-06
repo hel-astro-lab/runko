@@ -201,8 +201,6 @@ auto declare_prtcl_container(
         if(v ==10) s.Bpart[ip + 1*nparts] = val;
         if(v ==11) s.Bpart[ip + 2*nparts] = val;
 
-        // we should not end up here;
-        throw py::index_error();
         return;
       });
 
