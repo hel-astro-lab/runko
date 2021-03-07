@@ -16,6 +16,7 @@
 #else
 #endif
 
+
 namespace toolbox {
 
 
@@ -25,14 +26,12 @@ namespace toolbox {
  *
  */
 
-template <class T, int H> 
+template <typename T, int H> 
 class Mesh 
 {
 
   private:
     /// internal storage
-    //std::vector<T, ManagedAlloc<T>> mat;
-
     T *ptr;
     bool allocated{false};
     int count{0};
@@ -48,10 +47,8 @@ class Mesh
     int Nz{0};
 
     /// Internal indexing with halo region padding of width H
-    inline size_t indx(int i, int j, int k) const {
-
     DEVCALLABLE
-    inline int indx(int i, int j, int k) const {
+    inline size_t indx(int i, int j, int k) const {
       assert( (i >= -H) && (i <  (int)Nx + H)  );
       assert( (j >= -H) && (j <  (int)Ny + H)  );
       assert( (k >= -H) && (k <  (int)Nz + H)  );
@@ -66,20 +63,27 @@ class Mesh
 
     /// 1D index 
     DEVCALLABLE
-    T& operator()(size_t ind) { 
+    inline T& operator()(size_t ind) { 
+      return ptr[ ind ];
+    }
+
+    DEVCALLABLE
+    inline const T& operator()(size_t ind) const { 
       return ptr[ ind ];
     }
 
     /// standard (i,j,k) syntax
     DEVCALLABLE
-    T& operator()(int i, int j, int k) { 
-      int ind = indx(i,j,k);
+    inline T& operator()(int i, int j, int k) { 
+      size_t ind = indx(i,j,k);
       assert(ind < count);
       return ptr[ind];
     }
+
+
     DEVCALLABLE
-    const T& operator()(int i, int j, int k) const { 
-      int ind = indx(i,j,k);
+    inline const T& operator()(int i, int j, int k) const { 
+      size_t ind = indx(i,j,k);
       assert(ind < count);
       return ptr[ind];
     }
@@ -88,8 +92,8 @@ class Mesh
     //Mesh() = default;
     Mesh() :
     allocated(false), count(0)
-    { 
-    }
+    { }
+
 
     /// standard initialization
     Mesh(int Nx, int Ny, int Nz) : 
