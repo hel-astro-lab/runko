@@ -45,307 +45,6 @@ void Tile<D>::deposit_current()
 }
 
 
-//--------------------------------------------------
-
-/// Quick helper function to copy everything inside Yee lattice 
-void copy_vert_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    std::vector<int> iarr,
-    int lhsI, int rhsI) 
-{
-
-  if(has_elem(iarr, 0)) {
-    lhs.jx.copy_vert(rhs.jx, lhsI, rhsI); 
-    lhs.jy.copy_vert(rhs.jy, lhsI, rhsI); 
-    lhs.jz.copy_vert(rhs.jz, lhsI, rhsI); 
-  }
-
-  if(has_elem(iarr, 1)) {
-    lhs.ex.copy_vert(rhs.ex, lhsI, rhsI); 
-    lhs.ey.copy_vert(rhs.ey, lhsI, rhsI); 
-    lhs.ez.copy_vert(rhs.ez, lhsI, rhsI); 
-  }
-
-  if(has_elem(iarr, 2)) {
-    lhs.bx.copy_vert(rhs.bx, lhsI, rhsI); 
-    lhs.by.copy_vert(rhs.by, lhsI, rhsI); 
-    lhs.bz.copy_vert(rhs.bz, lhsI, rhsI); 
-  }
-
-}
-
-
-/// Quick helper function to add everything inside Yee lattice 
-void add_vert_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    int lhsI, int rhsI) 
-{
-
-  lhs.jx.add_vert(rhs.jx, lhsI, rhsI); 
-  lhs.jy.add_vert(rhs.jy, lhsI, rhsI); 
-  lhs.jz.add_vert(rhs.jz, lhsI, rhsI); 
-
-}
-
-
-
-/// Quick helper function to copy everything inside Yee lattice 
-void copy_horz_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    std::vector<int> iarr,
-    int lhsJ, int rhsJ) 
-{
-  if(has_elem(iarr, 0)) {
-    lhs.jx.copy_horz(rhs.jx, lhsJ, rhsJ); 
-    lhs.jy.copy_horz(rhs.jy, lhsJ, rhsJ); 
-    lhs.jz.copy_horz(rhs.jz, lhsJ, rhsJ); 
-  }
-
-  if(has_elem(iarr, 1)) {
-    lhs.ex.copy_horz(rhs.ex, lhsJ, rhsJ); 
-    lhs.ey.copy_horz(rhs.ey, lhsJ, rhsJ); 
-    lhs.ez.copy_horz(rhs.ez, lhsJ, rhsJ); 
-  }                                  
-
-  if(has_elem(iarr, 2)) {
-    lhs.bx.copy_horz(rhs.bx, lhsJ, rhsJ); 
-    lhs.by.copy_horz(rhs.by, lhsJ, rhsJ); 
-    lhs.bz.copy_horz(rhs.bz, lhsJ, rhsJ); 
-  }
-}                       
-
-
-/// Quick helper function to add everything inside Yee lattice 
-void add_horz_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    int lhsJ, int rhsJ) 
-{
-  lhs.jx.add_horz(rhs.jx, lhsJ, rhsJ); 
-  lhs.jy.add_horz(rhs.jy, lhsJ, rhsJ); 
-  lhs.jz.add_horz(rhs.jz, lhsJ, rhsJ); 
-}
-
-/// Quick helper function to copy everything inside Yee lattice 
-void copy_face_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    std::vector<int> iarr,
-    int lhsK, int rhsK) 
-{
-  if(has_elem(iarr, 0)) {
-    lhs.jx.copy_face(rhs.jx, lhsK, rhsK); 
-    lhs.jy.copy_face(rhs.jy, lhsK, rhsK); 
-    lhs.jz.copy_face(rhs.jz, lhsK, rhsK); 
-  }
-
-  if(has_elem(iarr, 1)) {
-    lhs.ex.copy_face(rhs.ex, lhsK, rhsK); 
-    lhs.ey.copy_face(rhs.ey, lhsK, rhsK); 
-    lhs.ez.copy_face(rhs.ez, lhsK, rhsK); 
-  }
-
-  if(has_elem(iarr, 2)) {
-    lhs.bx.copy_face(rhs.bx, lhsK, rhsK); 
-    lhs.by.copy_face(rhs.by, lhsK, rhsK); 
-    lhs.bz.copy_face(rhs.bz, lhsK, rhsK); 
-  }
-}
-
-
-/// Quick helper function to add everything inside Yee lattice 
-void add_face_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    int lhsK, int rhsK) 
-{
-  lhs.jx.add_face(rhs.jx, lhsK, rhsK); 
-  lhs.jy.add_face(rhs.jy, lhsK, rhsK); 
-  lhs.jz.add_face(rhs.jz, lhsK, rhsK); 
-}
-
-
-void copy_x_pencil_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    std::vector<int> iarr,
-    int lhsJ, int lhsK,
-    int rhsJ, int rhsK) 
-{
-
-  if(has_elem(iarr, 0)) {
-    lhs.jx.copy_x_pencil(rhs.jx, lhsJ, lhsK, rhsJ, rhsK); 
-    lhs.jy.copy_x_pencil(rhs.jy, lhsJ, lhsK, rhsJ, rhsK); 
-    lhs.jz.copy_x_pencil(rhs.jz, lhsJ, lhsK, rhsJ, rhsK); 
-  }
-
-  if(has_elem(iarr, 1)) {
-    lhs.ex.copy_x_pencil(rhs.ex, lhsJ, lhsK, rhsJ, rhsK); 
-    lhs.ey.copy_x_pencil(rhs.ey, lhsJ, lhsK, rhsJ, rhsK); 
-    lhs.ez.copy_x_pencil(rhs.ez, lhsJ, lhsK, rhsJ, rhsK); 
-  }                                                   
-
-  if(has_elem(iarr, 2)) {
-    lhs.bx.copy_x_pencil(rhs.bx, lhsJ, lhsK, rhsJ, rhsK); 
-    lhs.by.copy_x_pencil(rhs.by, lhsJ, lhsK, rhsJ, rhsK); 
-    lhs.bz.copy_x_pencil(rhs.bz, lhsJ, lhsK, rhsJ, rhsK); 
-  }                                                   
-}
-
-void add_x_pencil_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    int lhsJ, int lhsK,
-    int rhsJ, int rhsK) 
-{
-  lhs.jx.add_x_pencil(rhs.jx, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.jy.add_x_pencil(rhs.jy, lhsJ, lhsK, rhsJ, rhsK); 
-  lhs.jz.add_x_pencil(rhs.jz, lhsJ, lhsK, rhsJ, rhsK); 
-}
-
-
-void copy_y_pencil_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    std::vector<int> iarr,
-    int lhsI, int lhsK,
-    int rhsI, int rhsK) 
-{           
-
-  if(has_elem(iarr, 0)) {
-    lhs.jx.copy_y_pencil(rhs.jx, lhsI, lhsK, rhsI, rhsK); 
-    lhs.jy.copy_y_pencil(rhs.jy, lhsI, lhsK, rhsI, rhsK); 
-    lhs.jz.copy_y_pencil(rhs.jz, lhsI, lhsK, rhsI, rhsK); 
-  }
-
-  if(has_elem(iarr, 1)) {
-    lhs.ex.copy_y_pencil(rhs.ex, lhsI, lhsK, rhsI, rhsK); 
-    lhs.ey.copy_y_pencil(rhs.ey, lhsI, lhsK, rhsI, rhsK); 
-    lhs.ez.copy_y_pencil(rhs.ez, lhsI, lhsK, rhsI, rhsK); 
-  }                                                   
-
-  if(has_elem(iarr, 2)) {
-    lhs.bx.copy_y_pencil(rhs.bx, lhsI, lhsK, rhsI, rhsK); 
-    lhs.by.copy_y_pencil(rhs.by, lhsI, lhsK, rhsI, rhsK); 
-    lhs.bz.copy_y_pencil(rhs.bz, lhsI, lhsK, rhsI, rhsK); 
-  }                                                   
-}
-
-void add_y_pencil_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    int lhsI, int lhsK,
-    int rhsI, int rhsK) 
-{
-  lhs.jx.add_y_pencil(rhs.jx, lhsI, lhsK, rhsI, rhsK); 
-  lhs.jy.add_y_pencil(rhs.jy, lhsI, lhsK, rhsI, rhsK); 
-  lhs.jz.add_y_pencil(rhs.jz, lhsI, lhsK, rhsI, rhsK); 
-}
-
-
-void copy_z_pencil_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    std::vector<int> iarr,
-    int lhsI, int lhsJ,
-    int rhsI, int rhsJ) 
-{
-
-  if(has_elem(iarr, 0)) {
-    lhs.jx.copy_z_pencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
-    lhs.jy.copy_z_pencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
-    lhs.jz.copy_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
-  }
-
-  if(has_elem(iarr, 1)) {
-    lhs.ex.copy_z_pencil(rhs.ex, lhsI, lhsJ, rhsI, rhsJ); 
-    lhs.ey.copy_z_pencil(rhs.ey, lhsI, lhsJ, rhsI, rhsJ); 
-    lhs.ez.copy_z_pencil(rhs.ez, lhsI, lhsJ, rhsI, rhsJ); 
-  }
-
-  if(has_elem(iarr, 2)) {
-    lhs.bx.copy_z_pencil(rhs.bx, lhsI, lhsJ, rhsI, rhsJ); 
-    lhs.by.copy_z_pencil(rhs.by, lhsI, lhsJ, rhsI, rhsJ); 
-    lhs.bz.copy_z_pencil(rhs.bz, lhsI, lhsJ, rhsI, rhsJ); 
-  }
-}
-
-void add_z_pencil_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    int lhsI, int lhsJ,
-    int rhsI, int rhsJ) 
-{
-  lhs.jx.add_z_pencil(rhs.jx, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.jy.add_z_pencil(rhs.jy, lhsI, lhsJ, rhsI, rhsJ); 
-  lhs.jz.add_z_pencil(rhs.jz, lhsI, lhsJ, rhsI, rhsJ); 
-}
-
-
-template<class T, int H>
-inline void copy_point(
-    toolbox::Mesh<T,H>& lhs, 
-    toolbox::Mesh<T,H>& rhs, 
-    int lhsI, int lhsJ, int lhsK,
-    int rhsI, int rhsJ, int rhsK) 
-{
-  lhs(lhsI, lhsJ, lhsK) = rhs(rhsI, rhsJ, rhsK);
-}
-
-inline void copy_point_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    std::vector<int> iarr,
-    int lhsI, int lhsJ, int lhsK,
-    int rhsI, int rhsJ, int rhsK) 
-{
-
-  if(has_elem(iarr, 0)) {
-    copy_point(lhs.jx, rhs.jx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-    copy_point(lhs.jy, rhs.jy, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-    copy_point(lhs.jz, rhs.jz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  }
-
-  if(has_elem(iarr, 1)) {
-    copy_point(lhs.ex, rhs.ex, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-    copy_point(lhs.ey, rhs.ey, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-    copy_point(lhs.ez, rhs.ez, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  }
-
-  if(has_elem(iarr, 2)) {
-    copy_point(lhs.bx, rhs.bx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-    copy_point(lhs.by, rhs.by, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-    copy_point(lhs.bz, rhs.bz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  }
-
-}
-
-
-template<class T, int H>
-inline void add_point(
-    toolbox::Mesh<T,H>& lhs, 
-    toolbox::Mesh<T,H>& rhs, 
-    int lhsI, int lhsJ, int lhsK,
-    int rhsI, int rhsJ, int rhsK) 
-{
-  lhs(lhsI, lhsJ, lhsK) += rhs(rhsI, rhsJ, rhsK);
-}
-
-inline void add_point_yee(
-    YeeLattice& lhs, 
-    YeeLattice& rhs, 
-    int lhsI, int lhsJ, int lhsK,
-    int rhsI, int rhsJ, int rhsK) 
-{
-  add_point(lhs.jx, rhs.jx, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  add_point(lhs.jy, rhs.jy, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-  add_point(lhs.jz, rhs.jz, lhsI, lhsJ, lhsK, rhsI, rhsJ, rhsK);
-}
-
-
 
 /// Update Yee grid boundaries
 template<>
@@ -354,26 +53,62 @@ void Tile<1>::update_boundaries(
         std::vector<int> iarr
         ) 
 {
+  using Tile_t  = Tile<1>;
+  using Tileptr = std::shared_ptr<Tile_t>;
+
+  int ito, ifro;
+  const int halo = 3; // halo region size for fields
+  Tileptr tpr; 
+
   // target
-  YeeLattice& mesh = get_yee();
+  YeeLattice& lhs = get_yee();
 
-  // left 
-  auto cleft = 
-    std::dynamic_pointer_cast<Tile<1> >(
-        grid.get_tileptr( neighs(-1) ));
-  YeeLattice& mleft = cleft->get_yee();
+  const int Nx = lhs.Nx;
 
-  // copy from right side to left
-  copy_vert_yee(mesh, mleft, iarr, -1, mleft.Nx-1); 
 
-  // right
-  auto cright = 
-    std::dynamic_pointer_cast<Tile<1> >(
-        grid.get_tileptr( neighs(+1) ));
-  YeeLattice& mright = cright->get_yee();
-    
-  // copy from left side to right
-  copy_vert_yee(mesh, mright, iarr, mesh.Nx, 0); 
+  for(int in=-1; in <= 1; in++) {
+    if (in == 0) continue;
+
+    tpr = std::dynamic_pointer_cast<Tile<1>>(grid.get_tileptr( neighs(in) ));
+
+    if (tpr) {
+      auto& rhs = tpr->get_yee();
+
+      // copy from right side to left
+      //copy_vert_yee(mesh, mleft, iarr, -1, mleft.Nx-1); 
+        
+      // copy from left side to right
+      //copy_vert_yee(mesh, mright, iarr, mesh.Nx, 0); 
+
+      if (in == +1) { ito = Nx; ifro = 0; }
+      if (in == -1) { ito = -1; ifro = Nx-1; }
+
+      if(has_elem(iarr, 0)) {
+        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+          lhs_in.ex(ito+in*h, 0, 0) = rhs_in.ex(ifro+in*h, 0, 0);
+          lhs_in.ey(ito+in*h, 0, 0) = rhs_in.ey(ifro+in*h, 0, 0);
+          lhs_in.ez(ito+in*h, 0, 0) = rhs_in.ez(ifro+in*h, 0, 0);
+        }, halo, lhs, rhs);
+      }
+
+      if(has_elem(iarr, 1)) {
+        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+          lhs_in.bx(ito+in*h, 0, 0) = rhs_in.bx(ifro+in*h, 0, 0);
+          lhs_in.by(ito+in*h, 0, 0) = rhs_in.by(ifro+in*h, 0, 0);
+          lhs_in.bz(ito+in*h, 0, 0) = rhs_in.bz(ifro+in*h, 0, 0);
+        }, halo, lhs, rhs);
+      }
+
+      if(has_elem(iarr, 2)) {
+        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+          lhs_in.jx(ito+in*h, 0, 0) = rhs_in.jx(ifro+in*h, 0, 0);
+          lhs_in.jy(ito+in*h, 0, 0) = rhs_in.jy(ifro+in*h, 0, 0);
+          lhs_in.jz(ito+in*h, 0, 0) = rhs_in.jz(ifro+in*h, 0, 0);
+        }, halo, lhs, rhs);
+      }
+
+    }
+  }
 
 }
 
@@ -390,7 +125,11 @@ void Tile<2>::update_boundaries(
   int ito, jto, ifro, jfro;
   Tileptr tpr;
 
-  auto& mesh = get_yee(); // target as a reference to update into
+  auto& lhs = get_yee(); // target as a reference to update into
+
+  const int Nx = lhs.Nx;
+  const int Ny = lhs.Ny;
+  const int Nz = lhs.Nz;
 
   const int halo = 3; // halo region size for fields
 
@@ -400,7 +139,7 @@ void Tile<2>::update_boundaries(
 
       tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn) ));
       if (tpr) {
-        auto& mpr = tpr->get_yee();
+        auto& rhs = tpr->get_yee();
 
         /* diagonal rules are:
         if + then to   n
@@ -410,11 +149,11 @@ void Tile<2>::update_boundaries(
         if - then from n-1
         */
 
-        if (in == +1) { ito = mesh.Nx; ifro = 0; }
-        if (jn == +1) { jto = mesh.Ny; jfro = 0; }
+        if (in == +1) { ito = Nx; ifro = 0; }
+        if (jn == +1) { jto = Ny; jfro = 0; }
 
-        if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
-        if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
+        if (in == -1) { ito = -1; ifro = Nx-1; }
+        if (jn == -1) { jto = -1; jfro = Ny-1; }
 
         // copy (halo = 1) assignment
         //if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
@@ -423,25 +162,100 @@ void Tile<2>::update_boundaries(
         
         // generalized halo >= 1 loops
         if (jn == 0) { // vertical
-          for(int h=0; h<halo; h++)
-            copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
+          //for(int h=0; h<halo; h++) copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
+
+          if(has_elem(iarr, 0)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.ex(ito+in*h, j, 0) = rhs_in.ex(ifro+in*h, j, 0);
+              lhs_in.ey(ito+in*h, j, 0) = rhs_in.ey(ifro+in*h, j, 0);
+              lhs_in.ez(ito+in*h, j, 0) = rhs_in.ez(ifro+in*h, j, 0);
+            }, Ny, halo, lhs, rhs);
+          }
+
+          if(has_elem(iarr, 1)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.bx(ito+in*h, j, 0) = rhs_in.bx(ifro+in*h, j, 0);
+              lhs_in.by(ito+in*h, j, 0) = rhs_in.by(ifro+in*h, j, 0);
+              lhs_in.bz(ito+in*h, j, 0) = rhs_in.bz(ifro+in*h, j, 0);
+            }, Ny, halo, lhs, rhs);
+          }
+
+          if(has_elem(iarr, 2)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.jx(ito+in*h, j, 0) = rhs_in.jx(ifro+in*h, j, 0);
+              lhs_in.jy(ito+in*h, j, 0) = rhs_in.jy(ifro+in*h, j, 0);
+              lhs_in.jz(ito+in*h, j, 0) = rhs_in.jz(ifro+in*h, j, 0);
+            }, Ny, halo, lhs, rhs);
+          }
+
+
 
         } else if (in == 0) { // horizontal
-          for(int g=0; g<halo; g++)
-            copy_horz_yee(mesh, mpr, iarr, jto+jn*g, jfro+jn*g);   
+          //for(int g=0; g<halo; g++) copy_horz_yee(mesh, mpr, iarr, jto+jn*g, jfro+jn*g);   
+            
+          if(has_elem(iarr, 0)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.ex(i, jto+jn*g, 0) = rhs_in.ex(i, jfro+jn*g, 0);
+              lhs_in.ey(i, jto+jn*g, 0) = rhs_in.ey(i, jfro+jn*g, 0);
+              lhs_in.ez(i, jto+jn*g, 0) = rhs_in.ez(i, jfro+jn*g, 0);
+            }, Nx, halo, lhs, rhs);
+          }
+
+          if(has_elem(iarr, 1)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.bx(i, jto+jn*g, 0) = rhs_in.bx(i, jfro+jn*g, 0);
+              lhs_in.by(i, jto+jn*g, 0) = rhs_in.by(i, jfro+jn*g, 0);
+              lhs_in.bz(i, jto+jn*g, 0) = rhs_in.bz(i, jfro+jn*g, 0);
+            }, Nx, halo, lhs, rhs);
+          }
+
+          if(has_elem(iarr, 2)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.jx(i, jto+jn*g, 0) = rhs_in.jx(i, jfro+jn*g, 0);
+              lhs_in.jy(i, jto+jn*g, 0) = rhs_in.jy(i, jfro+jn*g, 0);
+              lhs_in.jz(i, jto+jn*g, 0) = rhs_in.jz(i, jfro+jn*g, 0);
+            }, Nx, halo, lhs, rhs);
+          }
+
 
         } else { // diagonal
-          for(int h=0; h<halo; h++) {
-            for(int g=0; g<halo; g++) {
-              copy_z_pencil_yee(mesh, mpr,iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
-            }
+          //for(int h=0; h<halo; h++) {
+          //  for(int g=0; g<halo; g++) {
+          //    copy_z_pencil_yee(mesh, mpr,iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+          //  }
+          //}
+            
+          if(has_elem(iarr, 0)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.ex(ito+in*h, jto+jn*g, 0) = rhs_in.ex(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.ey(ito+in*h, jto+jn*g, 0) = rhs_in.ey(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.ez(ito+in*h, jto+jn*g, 0) = rhs_in.ez(ifro+in*h, jfro+jn*g, 0);
+            }, halo, halo, lhs, rhs);
           }
-        }
 
+          if(has_elem(iarr, 1)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.bx(ito+in*h, jto+jn*g, 0) = rhs_in.bx(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.by(ito+in*h, jto+jn*g, 0) = rhs_in.by(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.bz(ito+in*h, jto+jn*g, 0) = rhs_in.bz(ifro+in*h, jfro+jn*g, 0);
+            }, halo, halo, lhs, rhs);
+          }
+
+          if(has_elem(iarr, 2)) {
+            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.jx(ito+in*h, jto+jn*g, 0) = rhs_in.jx(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.jy(ito+in*h, jto+jn*g, 0) = rhs_in.jy(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.jz(ito+in*h, jto+jn*g, 0) = rhs_in.jz(ifro+in*h, jfro+jn*g, 0);
+            }, halo, halo, lhs, rhs);
+          }
+
+
+        }
       } // end of if(tpr)
     }
   }
 }
+
 
 struct BlockCopyParam
 {
@@ -451,6 +265,7 @@ struct BlockCopyParam
   YeeLattice *yeePtrFrom;
   YeeLattice *yeePtrTo;
 };
+
 
 template<>
 void Tile<3>::update_boundaries(
@@ -764,34 +579,45 @@ template<>
 void Tile<1>::exchange_currents(corgi::Grid<1>& grid) 
 {
 
+  using Tile_t  = Tile<1>;
+  using Tileptr = std::shared_ptr<Tile_t>;
+
+  int ito, ifro;
+  Tileptr tpr; 
+
+  int halo = 3; // halo region size for currents
+
   // target
   YeeLattice& mesh = get_yee();
 
-  int halo = 1; // halo region size for currents
-
-
-  // left 
-  auto cleft = 
-    std::dynamic_pointer_cast<Tile<1> >(
-        grid.get_tileptr( neighs(-1) ));
-  YeeLattice& mleft = cleft->get_yee();
+  auto& lhs = get_yee(); // target as a reference to update into
+  const int Nx = lhs.Nx;
 
   // add from right side to left
-  for(int h=1; h<= halo; h++)
-  add_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
-
-
-  // right
-  auto cright = 
-    std::dynamic_pointer_cast<Tile<1> >(
-        grid.get_tileptr( neighs(+1) ));
-  YeeLattice& mright = cright->get_yee();
-    
+  //for(int h=1; h<= halo; h++) add_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
   // add from left side to right
-  for(int h=1; h<= halo; h++)
-  add_vert_yee(mesh, mright, mesh.Nx+h-1, h-1); 
+  //for(int h=1; h<= halo; h++) add_vert_yee(mesh, mright, mesh.Nx+h-1, h-1); 
 
+  for(int in=-1; in <= 1; in++) {
+    if (in == 0) continue;
+    tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in) ));
+
+    if (tpr) {
+      auto& rhs = tpr->get_yee();
+
+      //shifted neg's from vals with -1
+      if (in == +1) { ito = Nx-1; ifro = -1; }
+
+        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+          lhs_in.jx(ito-in*h, 0, 0) += rhs_in.jx(ifro-in*h, 0, 0);
+          lhs_in.jy(ito-in*h, 0, 0) += rhs_in.jy(ifro-in*h, 0, 0);
+          lhs_in.jz(ito-in*h, 0, 0) += rhs_in.jz(ifro-in*h, 0, 0);
+        }, halo, lhs, rhs);
+
+    }
+  }
 }
+
 
 
 /// Update currents on Yee grid boundaries
@@ -836,9 +662,13 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
   int ito, jto, ifro, jfro;
   Tileptr tpr; 
 
-  int halo = 3;
+  const int halo = 3;
 
-  auto& mesh = get_yee(); // target as a reference to update into
+  auto& lhs = get_yee(); // target as a reference to update into
+
+  const int Nx = lhs.Nx;
+  const int Ny = lhs.Ny;
+  const int Nz = lhs.Nz;
 
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
@@ -846,7 +676,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 
       tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn) ));
       if (tpr) {
-        auto& mpr = tpr->get_yee();
+        auto& rhs = tpr->get_yee();
 
         /* diagonal rules are:
         if + then to   n
@@ -856,29 +686,48 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
         if - then from n-1
         */
 
-        if (in == +1) { ito = mesh.Nx; ifro = 0; }
-        if (jn == +1) { jto = mesh.Ny; jfro = 0; }
+        //shifted neg's from vals with -1
+        if (in == +1) { ito = Nx-1; ifro = -1; }
+        if (jn == +1) { jto = Ny-1; jfro = -1; }
 
-        if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
-        if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
+        if (in == -1) { ito = 0;    ifro = Nx; }
+        if (jn == -1) { jto = 0;    jfro = Ny; }
 
         // add
         if (jn == 0) { // vertical
-          for(int h=1; h<=halo; h++) {
-            add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
-          }
+          //for(int h=1; h<=halo; h++) add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
+
+          UniIter::iterate2D([=] DEVCALLABLE (int j,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+            lhs_in.jx(ito-in*h, j, 0) += rhs_in.jx(ifro-in*h, j, 0);
+            lhs_in.jy(ito-in*h, j, 0) += rhs_in.jy(ifro-in*h, j, 0);
+            lhs_in.jz(ito-in*h, j, 0) += rhs_in.jz(ifro-in*h, j, 0);
+          }, Ny, halo, lhs, rhs);
+
 
         } else if (in == 0) { // horizontal
-          for(int g=1; g<=halo; g++) {
-            add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
-          }
+          //for(int g=1; g<=halo; g++) add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
+
+          UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            lhs_in.jx(i, jto-jn*g, 0) += rhs_in.jx(i, jfro-jn*g, 0);
+            lhs_in.jy(i, jto-jn*g, 0) += rhs_in.jy(i, jfro-jn*g, 0);
+            lhs_in.jz(i, jto-jn*g, 0) += rhs_in.jz(i, jfro-jn*g, 0);
+          }, Nx, halo, lhs, rhs);
+
 
         } else { // diagonal
-          for(int h=1; h<=halo; h++) {
-            for(int g=1; g<=halo; g++) {
-              add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
-            }
-          }
+          //for(int h=1; h<=halo; h++) {
+          //  for(int g=1; g<=halo; g++) {
+          //    add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
+          //  }
+          //}
+
+          UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            lhs_in.jx(ito-in*h, jto-jn*g, 0) += rhs_in.jx(ifro-in*h, jfro-jn*g, 0);
+            lhs_in.jy(ito-in*h, jto-jn*g, 0) += rhs_in.jy(ifro-in*h, jfro-jn*g, 0);
+            lhs_in.jz(ito-in*h, jto-jn*g, 0) += rhs_in.jz(ifro-in*h, jfro-jn*g, 0);
+          }, halo, halo, lhs, rhs);
+
+
         }
       } // end of if(tpr)
     }
@@ -1146,13 +995,7 @@ std::vector<mpi::request> Tile<D>::recv_data(
   nvtxRangePush(__FUNCTION__);
 #endif
 
-  //std::cout << "RECV from " << orig << "\n";
   auto& yee = get_yee(); 
-  //std::cout << "RECV field to " << orig
-  //  << "nx " << yee.jx.size()
-  //  << "ny " << yee.jy.size()
-  //  << "nz " << yee.jz.size()
-  //  << "\n";
 
   std::vector<mpi::request> reqs;
 
