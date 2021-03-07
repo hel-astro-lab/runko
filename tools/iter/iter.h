@@ -208,18 +208,16 @@ class UniIter{
         static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
         {
             #pragma omp parallel for
-            for (int x = 0; x < xMax; x++)
-            {
-                for (int y = 0; y < yMax; y++)
-                {
+            for (int z = 0; z < zMax; z++) {
+                for (int y = 0; y < yMax; y++) {
                     #pragma omp simd
-                    for (int z = 0; z < zMax; z++)
-                    {
+                    for (int x = 0; x < xMax; x++) {
                         fun(x, y, z, args...);
                     }
                 }
             }
         }
+
         template<class F, class... Args>
         static void iterate(F fun, int max, Args& ... args)
         {
