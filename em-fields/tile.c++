@@ -56,11 +56,12 @@ nvtxRangePush(__PRETTY_FUNCTION__);
       mesh.ez(i,j,k) -= mesh.jz(i,j,k);
     },mesh.ex.Nx, mesh.ex.Ny, mesh.ex.Nz, mesh);
 
+  UniIter::sync();
+
+
 #ifdef GPU
 nvtxRangePop();
-UniIter::sync();
 #endif 
-
 }
 
 
@@ -428,224 +429,6 @@ inline void add_point_yee(
 }
 
 
-// further collapsed helper functions 
-
-
-void copy_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int halo, int ito, int ifro, int in, int ind=0)
-{
-    //
-    UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      //
-      lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
-      lhs_in.ey(ito+in*h, j, k) = rhs_in.ey(ifro+in*h, j, k);
-      lhs_in.ez(ito+in*h, j, k) = rhs_in.ez(ifro+in*h, j, k);
-    
-      lhs_in.bx(ito+in*h, j, k) = rhs_in.bx(ifro+in*h, j, k);
-      lhs_in.by(ito+in*h, j, k) = rhs_in.by(ifro+in*h, j, k);
-      lhs_in.bz(ito+in*h, j, k) = rhs_in.bz(ifro+in*h, j, k);
-    
-      lhs_in.jx(ito+in*h, j, k) = rhs_in.jx(ifro+in*h, j, k);
-      lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
-      lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
-    }, Ny, Nz, halo, lhs, rhs);
-}
-
-
-void copy_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int halo, int jto, int jfro, int jn, int ind=0)
-{
-    UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
-      lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
-      lhs_in.ez(i, jto+jn*g, k) = rhs_in.ez(i, jfro+jn*g, k);
-
-      lhs_in.bx(i, jto+jn*g, k) = rhs_in.bx(i, jfro+jn*g, k);
-      lhs_in.by(i, jto+jn*g, k) = rhs_in.by(i, jfro+jn*g, k);
-      lhs_in.bz(i, jto+jn*g, k) = rhs_in.bz(i, jfro+jn*g, k);
-
-      lhs_in.jx(i, jto+jn*g, k) = rhs_in.jx(i, jfro+jn*g, k);
-      lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
-      lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
-    }, Nx, Nz, halo, lhs, rhs);
-}
-
-
-void copy_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int halo, int kto, int kfro, int kn, int ind=0)
-{
-    UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
-        lhs_in.ex(i, j, kto+kn*g) = rhs_in.ex(i, j, kfro+kn*g);
-        lhs_in.ey(i, j, kto+kn*g) = rhs_in.ey(i, j, kfro+kn*g);
-        lhs_in.ez(i, j, kto+kn*g) = rhs_in.ez(i, j, kfro+kn*g);
-
-        lhs_in.bx(i, j, kto+kn*g) = rhs_in.bx(i, j, kfro+kn*g);
-        lhs_in.by(i, j, kto+kn*g) = rhs_in.by(i, j, kfro+kn*g);
-        lhs_in.bz(i, j, kto+kn*g) = rhs_in.bz(i, j, kfro+kn*g);
-
-        lhs_in.jx(i, j, kto+kn*g) = rhs_in.jx(i, j, kfro+kn*g);
-        lhs_in.jy(i, j, kto+kn*g) = rhs_in.jy(i, j, kfro+kn*g);
-        lhs_in.jz(i, j, kto+kn*g) = rhs_in.jz(i, j, kfro+kn*g);
-    }, Nx, Ny, halo, lhs, rhs);
-}
-
-
-
-void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, int jto, int jfro, int kto, int kfro, int jn, int kn, int ind=0)
-{   
-    UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
-      lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
-      lhs_in.ez(i, jto+jn*h, kto+kn*g) = rhs_in.ez(i, jfro+jn*h, kfro+kn*g);
-
-      lhs_in.bx(i, jto+jn*h, kto+kn*g) = rhs_in.bx(i, jfro+jn*h, kfro+kn*g);
-      lhs_in.by(i, jto+jn*h, kto+kn*g) = rhs_in.by(i, jfro+jn*h, kfro+kn*g);
-      lhs_in.bz(i, jto+jn*h, kto+kn*g) = rhs_in.bz(i, jfro+jn*h, kfro+kn*g);
-
-      lhs_in.jx(i, jto+jn*h, kto+kn*g) = rhs_in.jx(i, jfro+jn*h, kfro+kn*g);
-      lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
-      lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
-    }, Nx, halo, halo, lhs, rhs);
-  }
-
-
-void copy_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
-{   
-    UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-
-      lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
-      lhs_in.ey(ito+in*h, j, kto+kn*g) = rhs_in.ey(ifro+in*h, j, kfro+kn*g);
-      lhs_in.ez(ito+in*h, j, kto+kn*g) = rhs_in.ez(ifro+in*h, j, kfro+kn*g);
-
-      lhs_in.bx(ito+in*h, j, kto+kn*g) = rhs_in.bx(ifro+in*h, j, kfro+kn*g);
-      lhs_in.by(ito+in*h, j, kto+kn*g) = rhs_in.by(ifro+in*h, j, kfro+kn*g);
-      lhs_in.bz(ito+in*h, j, kto+kn*g) = rhs_in.bz(ifro+in*h, j, kfro+kn*g);
-
-      lhs_in.jx(ito+in*h, j, kto+kn*g) = rhs_in.jx(ifro+in*h, j, kfro+kn*g);
-      lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
-      lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
-    }, Ny, halo, halo, lhs, rhs);
-  }
-
-
-void copy_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
-{
-    UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
-      lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
-      lhs_in.ez(ito+in*h, jto+jn*g, k) = rhs_in.ez(ifro+in*h, jfro+jn*g, k);
-
-      lhs_in.bx(ito+in*h, jto+jn*g, k) = rhs_in.bx(ifro+in*h, jfro+jn*g, k);
-      lhs_in.by(ito+in*h, jto+jn*g, k) = rhs_in.by(ifro+in*h, jfro+jn*g, k);
-      lhs_in.bz(ito+in*h, jto+jn*g, k) = rhs_in.bz(ifro+in*h, jfro+jn*g, k);
-
-      lhs_in.jx(ito+in*h, jto+jn*g, k) = rhs_in.jx(ifro+in*h, jfro+jn*g, k);
-      lhs_in.jy(ito+in*h, jto+jn*g, k) = rhs_in.jy(ifro+in*h, jfro+jn*g, k);
-      lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
-  
-    }, Nz, halo, halo, lhs, rhs);
-  }
-
-
-void copy_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
-  {
-    UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-
-      lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
-      lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
-    }, halo, halo, halo, lhs, rhs);
-  }
-
-
-
-void add_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int halo, int ito, int ifro, int in, int ind=0)
-{
-    //
-    UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
-      h++;
-      lhs_in.jx(ito-in*h, j, k) += rhs_in.jx(ifro-in*h, j, k);
-      lhs_in.jy(ito-in*h, j, k) += rhs_in.jy(ifro-in*h, j, k);
-      lhs_in.jz(ito-in*h, j, k) += rhs_in.jz(ifro-in*h, j, k);
-    }, Ny, Nz, halo, lhs, rhs);
-}
-
-
-void add_horz_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Nz, int halo, int jto, int jfro, int jn, int ind=0)
-{
-    UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      g++;
-      lhs_in.jx(i, jto-jn*g, k) += rhs_in.jx(i, jfro-jn*g, k);
-      lhs_in.jy(i, jto-jn*g, k) += rhs_in.jy(i, jfro-jn*g, k);
-      lhs_in.jz(i, jto-jn*g, k) += rhs_in.jz(i, jfro-jn*g, k);
-    }, Nx, Nz, halo, lhs, rhs);
-}
-
-
-void add_face_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int Ny, int halo, int kto, int kfro, int kn, int ind=0)
-{
-  UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
-      g++;
-      lhs_in.jx(i, j, kto-kn*g) += rhs_in.jx(i, j, kfro-kn*g);
-      lhs_in.jy(i, j, kto-kn*g) += rhs_in.jy(i, j, kfro-kn*g);
-      lhs_in.jz(i, j, kto-kn*g) += rhs_in.jz(i, j, kfro-kn*g);
-  }, Nx, Ny, halo, lhs, rhs);
-}
-
-
-
-void add_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, int jto, int jfro, int kto, int kfro, int jn, int kn, int ind=0)
-{   
-    UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      g++;
-      h++;
-      lhs_in.jx(i, jto-jn*h, kto-kn*g) += rhs_in.jx(i, jfro-jn*h, kfro-kn*g);
-      lhs_in.jy(i, jto-jn*h, kto-kn*g) += rhs_in.jy(i, jfro-jn*h, kfro-kn*g);
-      lhs_in.jz(i, jto-jn*h, kto-kn*g) += rhs_in.jz(i, jfro-jn*h, kfro-kn*g);
-    }, Nx, halo, halo, lhs, rhs);
-  }
-
-void add_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
-{   
-    UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      g++;
-      h++;
-      lhs_in.jx(ito-in*h, j, kto-kn*g) += rhs_in.jx(ifro-in*h, j, kfro-kn*g);
-      lhs_in.jy(ito-in*h, j, kto-kn*g) += rhs_in.jy(ifro-in*h, j, kfro-kn*g);
-      lhs_in.jz(ito-in*h, j, kto-kn*g) += rhs_in.jz(ifro-in*h, j, kfro-kn*g);
-    }, Ny, halo, halo, lhs, rhs);
-  }
-
-
-void add_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
-{
-    UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      g++;
-      h++;
-      lhs_in.jx(ito-in*h, jto-jn*g, k) += rhs_in.jx(ifro-in*h, jfro-jn*g, k);
-      lhs_in.jy(ito-in*h, jto-jn*g, k) += rhs_in.jy(ifro-in*h, jfro-jn*g, k);
-      lhs_in.jz(ito-in*h, jto-jn*g, k) += rhs_in.jz(ifro-in*h, jfro-jn*g, k);
-  
-    }, Nz, halo, halo, lhs, rhs);
-  }
-
-
-void add_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
-  {
-    UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
-      f++;
-      g++;
-      h++;
-      lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f);
-      lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f);
-      lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f);
-    }, halo, halo, halo, lhs, rhs);
-  }
-
 
 /// Update Yee grid boundaries
 template<>
@@ -692,7 +475,7 @@ void Tile<2>::update_boundaries(
 
   auto& mesh = get_yee(); // target as a reference to update into
 
-  int halo = 3; // halo region size for fields
+  const int halo = 3; // halo region size for fields
 
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
@@ -769,11 +552,12 @@ void Tile<3>::update_boundaries(
   int ito, jto, kto, ifro, jfro, kfro;
   Tileptr tpr;
 
-  auto& mesh = get_yee(); // target as a reference to update into
+  auto& lhs = get_yee(); // target as a reference to update into
+  const int halo = 3; // halo region size for fields
 
-  int halo = 3; // halo region size for fields
-
-  int ind = 0;
+  const int Nx = lhs.Nx;
+  const int Ny = lhs.Ny;
+  const int Nz = lhs.Nz;
 
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
@@ -784,7 +568,7 @@ void Tile<3>::update_boundaries(
         // continue only if the tile exists (get_tileptr return nullptr otherwise)
         tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
         if (tpr) {
-          auto& mpr = tpr->get_yee();
+          auto& rhs = tpr->get_yee();
 
           /* diagonal rules are:
           if + then to   n
@@ -794,13 +578,13 @@ void Tile<3>::update_boundaries(
           if - then from n-1
           */
 
-          if (in == +1) { ito = mesh.Nx; ifro = 0; }
-          if (jn == +1) { jto = mesh.Ny; jfro = 0; }
-          if (kn == +1) { kto = mesh.Nz; kfro = 0; }
+          if (in == +1) { ito = Nx; ifro = 0; }
+          if (jn == +1) { jto = Ny; jfro = 0; }
+          if (kn == +1) { kto = Nz; kfro = 0; }
 
-          if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
-          if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
-          if (kn == -1) { kto = -1;      kfro = mpr.Nz-1; }
+          if (in == -1) { ito = -1; ifro = Nx-1; }
+          if (jn == -1) { jto = -1; jfro = Ny-1; }
+          if (kn == -1) { kto = -1; kfro = Nz-1; }
 
           // generalized halo >= 1 loops
 
@@ -809,12 +593,62 @@ void Tile<3>::update_boundaries(
             // vertical
             if (jn == 0) { 
               //for(int h=0; h<halo; h++) copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
-              copy_vert_yee_halo(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in, ind);
+              //copy_vert_yee_halo(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in, ind);
+
+              if(has_key(iarr, 0)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
+                  lhs_in.ey(ito+in*h, j, k) = rhs_in.ey(ifro+in*h, j, k);
+                  lhs_in.ez(ito+in*h, j, k) = rhs_in.ez(ifro+in*h, j, k);
+                }, Ny, Nz, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 1)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito+in*h, j, k) = rhs_in.bx(ifro+in*h, j, k);
+                  lhs_in.by(ito+in*h, j, k) = rhs_in.by(ifro+in*h, j, k);
+                  lhs_in.bz(ito+in*h, j, k) = rhs_in.bz(ifro+in*h, j, k);
+                }, Ny, Nz, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 2)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito+in*h, j, k) = rhs_in.jx(ifro+in*h, j, k);
+                  lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
+                  lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
+                }, Ny, Nz, halo, lhs, rhs);
+              }
+
 
             // horizontal
             } else if (in == 0) { 
-              for(int g=0; g<halo; g++) copy_horz_yee(mesh, mpr,iarr, jto+jn*g, jfro+jn*g);   
-              copy_horz_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn, ind);
+              //for(int g=0; g<halo; g++) copy_horz_yee(mesh, mpr,iarr, jto+jn*g, jfro+jn*g);   
+              //copy_horz_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn, ind);
+
+              if(has_key(iarr, 0)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
+                  lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
+                  lhs_in.ez(i, jto+jn*g, k) = rhs_in.ez(i, jfro+jn*g, k);
+                }, Nx, Nz, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 1)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(i, jto+jn*g, k) = rhs_in.bx(i, jfro+jn*g, k);
+                  lhs_in.by(i, jto+jn*g, k) = rhs_in.by(i, jfro+jn*g, k);
+                  lhs_in.bz(i, jto+jn*g, k) = rhs_in.bz(i, jfro+jn*g, k);
+                }, Nx, Nz, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 2)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(i, jto+jn*g, k) = rhs_in.jx(i, jfro+jn*g, k);
+                  lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
+                  lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
+                }, Nx, Nz, halo, lhs, rhs);
+              }
+
 
             // diagonal
             } else { 
@@ -822,7 +656,32 @@ void Tile<3>::update_boundaries(
               //  for(int g=0; g<halo; g++) {
               //    copy_z_pencil_yee(mesh, mpr, iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
               //} }
-             copy_z_pencil_yee_halo(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn, ind);
+             //copy_z_pencil_yee_halo(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn, ind);
+
+              if(has_key(iarr, 0)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.ez(ito+in*h, jto+jn*g, k) = rhs_in.ez(ifro+in*h, jfro+jn*g, k);
+                }, Nz, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 1)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito+in*h, jto+jn*g, k) = rhs_in.bx(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.by(ito+in*h, jto+jn*g, k) = rhs_in.by(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.bz(ito+in*h, jto+jn*g, k) = rhs_in.bz(ifro+in*h, jfro+jn*g, k);
+                }, Nz, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 2)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito+in*h, jto+jn*g, k) = rhs_in.jx(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.jy(ito+in*h, jto+jn*g, k) = rhs_in.jy(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
+                }, Nz, halo, halo, lhs, rhs);
+              }
+
             } 
          
           // 3D case with kn != 0
@@ -830,8 +689,32 @@ void Tile<3>::update_boundaries(
             
             // infront/behind directions
             if (in == 0 && jn == 0 && kn != 0) { 
-              for(int g=0; g<halo; g++) copy_face_yee(mesh, mpr, iarr, kto+kn*g, kfro+kn*g);   
-              copy_face_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn, ind);
+              //for(int g=0; g<halo; g++) copy_face_yee(mesh, mpr, iarr, kto+kn*g, kfro+kn*g);   
+              //copy_face_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn, ind);
+
+              if(has_key(iarr, 0)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(i, j, kto +kn*f) =  rhs_in.ex(i, j, kfro+kn*f);
+                  lhs_in.ey(i, j, kto +kn*f) =  rhs_in.ey(i, j, kfro+kn*f);
+                  lhs_in.ez(i, j, kto +kn*f) =  rhs_in.ez(i, j, kfro+kn*f);
+                }, Nx, Ny, halo, lhs, rhs);
+              }
+              if(has_key(iarr, 1)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(i, j, kto +kn*f) =  rhs_in.bx(i, j, kfro+kn*f);
+                  lhs_in.by(i, j, kto +kn*f) =  rhs_in.by(i, j, kfro+kn*f);
+                  lhs_in.bz(i, j, kto +kn*f) =  rhs_in.bz(i, j, kfro+kn*f);
+                }, Nx, Ny, halo, lhs, rhs);
+              }
+              if(has_key(iarr, 2)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(i, j, kto +kn*f) =  rhs_in.jx(i, j, kfro+kn*f);
+                  lhs_in.jy(i, j, kto +kn*f) =  rhs_in.jy(i, j, kfro+kn*f);
+                  lhs_in.jz(i, j, kto +kn*f) =  rhs_in.jz(i, j, kfro+kn*f);
+                }, Nx, Ny, halo, lhs, rhs);
+              }
+
+
 
             // 3D generalized diagonal locations
             // If the finite-difference scheme is purely non-diagonal
@@ -845,7 +728,32 @@ void Tile<3>::update_boundaries(
               //for(int g=0; g<halo; g++) {
               //    copy_y_pencil_yee(mesh, mpr, iarr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
               //}}
-              copy_y_pencil_yee_halo(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
+              //copy_y_pencil_yee_halo(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
+
+              if(has_key(iarr, 0)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.ey(ito+in*h, j, kto+kn*g) = rhs_in.ey(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.ez(ito+in*h, j, kto+kn*g) = rhs_in.ez(ifro+in*h, j, kfro+kn*g);
+                }, Ny, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 1)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito+in*h, j, kto+kn*g) = rhs_in.bx(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.by(ito+in*h, j, kto+kn*g) = rhs_in.by(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.bz(ito+in*h, j, kto+kn*g) = rhs_in.bz(ifro+in*h, j, kfro+kn*g);
+                }, Ny, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 2)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito+in*h, j, kto+kn*g) = rhs_in.jx(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
+                }, Ny, halo, halo, lhs, rhs);
+              }
+
 
             // horizontal wedges
             } else if (in == 0 && jn != 0 && kn != 0) {
@@ -855,7 +763,31 @@ void Tile<3>::update_boundaries(
               //for(int g=0; g<halo; g++) {
               //    copy_x_pencil_yee(mesh, mpr, iarr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
               //}}
-              copy_x_pencil_yee_halo(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
+              //copy_x_pencil_yee_halo(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
+
+              if(has_key(iarr, 0)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.ez(i, jto+jn*h, kto+kn*g) = rhs_in.ez(i, jfro+jn*h, kfro+kn*g);
+                }, Nx, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 1)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(i, jto+jn*h, kto+kn*g) = rhs_in.bx(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.by(i, jto+jn*h, kto+kn*g) = rhs_in.by(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.bz(i, jto+jn*h, kto+kn*g) = rhs_in.bz(i, jfro+jn*h, kfro+kn*g);
+                }, Nx, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 2)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(i, jto+jn*h, kto+kn*g) = rhs_in.jx(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
+                }, Nx, halo, halo, lhs, rhs);
+              }
 
             // corners
             } else if (in != 0 && jn != 0 && kn != 0) {
@@ -868,10 +800,35 @@ void Tile<3>::update_boundaries(
               //          ito +in*h, jto +jn*g, kto +kn*f,
               //          ifro+in*h, jfro+jn*g, kfro+kn*f);
               //}}}
-              copy_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
+              //copy_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
+
+              if(has_key(iarr, 0)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                }, halo, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 1)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                }, halo, halo, halo, lhs, rhs);
+              }
+
+              if(has_key(iarr, 2)) {
+                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                }, halo, halo, halo, lhs, rhs);
+              }
+
+
             }
 
-            ind++;
           } // 3D cases with kn != 0
         } // if tpr
       } // kn
@@ -1026,9 +983,11 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
   Tileptr tpr; 
 
   const int halo = 3;
-  int ind = 0;
 
-  auto& mesh = get_yee(); // target as a reference to update into
+  auto& lhs = get_yee(); // target as a reference to update into
+  const int Nx = lhs.Nx;
+  const int Ny = lhs.Ny;
+  const int Nz = lhs.Nz;
 
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
@@ -1038,7 +997,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
         tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
         if (tpr) {
-          auto& mpr = tpr->get_yee();
+          auto& rhs = tpr->get_yee();
 
           /* diagonal rules are:
           if + then to   n
@@ -1049,13 +1008,13 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
           */
 
           //shifted neg's from vals with -1
-          if (in == +1) { ito = mesh.Nx-1; ifro = -1; }
-          if (jn == +1) { jto = mesh.Ny-1; jfro = -1; }
-          if (kn == +1) { kto = mesh.Nz-1; kfro = -1; }
+          if (in == +1) { ito = Nx-1; ifro = -1; }
+          if (jn == +1) { jto = Ny-1; jfro = -1; }
+          if (kn == +1) { kto = Nz-1; kfro = -1; }
 
-          if (in == -1) { ito = 0;       ifro = mpr.Nx; }
-          if (jn == -1) { jto = 0;       jfro = mpr.Ny; }
-          if (kn == -1) { kto = 0;       kfro = mpr.Nz; }
+          if (in == -1) { ito = 0;    ifro = Nx; }
+          if (jn == -1) { jto = 0;    jfro = Ny; }
+          if (kn == -1) { kto = 0;    kfro = Nz; }
 
           // generalized halo >= 1 loops
 
@@ -1065,12 +1024,23 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             // vertical
             if (jn == 0) { 
               //for(int h=0; h<halo; h++) add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
-              add_vert_yee_halo(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in, ind);
+
+              UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+                lhs_in.jx(ito-in*h, j, k) += rhs_in.jx(ifro-in*h, j, k);
+                lhs_in.jy(ito-in*h, j, k) += rhs_in.jy(ifro-in*h, j, k);
+                lhs_in.jz(ito-in*h, j, k) += rhs_in.jz(ifro-in*h, j, k);
+              }, Ny, Nz, halo, lhs, rhs);
+
 
             // horizontal
             } else if (in == 0) { 
               //for(int g=0; g<halo; g++) add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
-              add_horz_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn, ind);
+                
+              UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(i, jto-jn*g, k) += rhs_in.jx(i, jfro-jn*g, k);
+                lhs_in.jy(i, jto-jn*g, k) += rhs_in.jy(i, jfro-jn*g, k);
+                lhs_in.jz(i, jto-jn*g, k) += rhs_in.jz(i, jfro-jn*g, k);
+              }, Nx, Nz, halo, lhs, rhs);
 
             // diagonal
             } else { 
@@ -1078,7 +1048,13 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //  for(int g=0; g<halo; g++) {
               //    add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
               //} }
-              add_z_pencil_yee_halo(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn, ind);
+
+              UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(ito-in*h, jto-jn*g, k) += rhs_in.jx(ifro-in*h, jfro-jn*g, k);
+                lhs_in.jy(ito-in*h, jto-jn*g, k) += rhs_in.jy(ifro-in*h, jfro-jn*g, k);
+                lhs_in.jz(ito-in*h, jto-jn*g, k) += rhs_in.jz(ifro-in*h, jfro-jn*g, k);
+              }, Nz, halo, halo, lhs, rhs);
+
             } 
 
           // 3D case with kn != 0
@@ -1087,7 +1063,14 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             // infront/behind directions
             if (in == 0 && jn == 0 && kn != 0) { 
               //for(int g=0; g<halo; g++) add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
-              add_face_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn, ind);
+              //add_face_yee_halo(mesh, mpr, Nx, Ny, halo, kto, kfro, kn, ind);
+
+              UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
+                  lhs_in.jx(i, j, kto-kn*g) += rhs_in.jx(i, j, kfro-kn*g);
+                  lhs_in.jy(i, j, kto-kn*g) += rhs_in.jy(i, j, kfro-kn*g);
+                  lhs_in.jz(i, j, kto-kn*g) += rhs_in.jz(i, j, kfro-kn*g);
+              }, Nx, Ny, halo, lhs, rhs);
+
 
             //// 3D generalized diagonal locations
             //// If the finite-difference scheme is purely non-diagonal
@@ -1101,7 +1084,14 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //for(int g=0; g<halo; g++) {
               //  add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
               //}}
-              add_y_pencil_yee_halo(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
+              //add_y_pencil_yee_halo(mesh, mpr, Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
+
+              UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(ito-in*h, j, kto-kn*g) += rhs_in.jx(ifro-in*h, j, kfro-kn*g);
+                lhs_in.jy(ito-in*h, j, kto-kn*g) += rhs_in.jy(ifro-in*h, j, kfro-kn*g);
+                lhs_in.jz(ito-in*h, j, kto-kn*g) += rhs_in.jz(ifro-in*h, j, kfro-kn*g);
+              }, Ny, halo, halo, lhs, rhs);
+
 
             } else if (in == 0 && jn != 0 && kn != 0) {
               // x pencils
@@ -1109,7 +1099,13 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //for(int g=0; g<halo; g++) {
               //  add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
               //}}
-              add_x_pencil_yee_halo(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
+              //add_x_pencil_yee_halo(lhs, rhs, Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
+
+              UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(i, jto-jn*h, kto-kn*g) += rhs_in.jx(i, jfro-jn*h, kfro-kn*g);
+                lhs_in.jy(i, jto-jn*h, kto-kn*g) += rhs_in.jy(i, jfro-jn*h, kfro-kn*g);
+                lhs_in.jz(i, jto-jn*h, kto-kn*g) += rhs_in.jz(i, jfro-jn*h, kfro-kn*g);
+              }, Nx, halo, halo, lhs, rhs);
 
             //// corners
             } else if (in != 0 && jn != 0 && kn != 0) {
@@ -1122,10 +1118,17 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //          ito -in*h, jto -jn*g, kto -kn*f,
               //          ifro-in*h, jfro-jn*g, kfro-kn*f);
               //}}}
-              add_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
+              //add_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
+                
+              UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f);
+                lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f);
+                lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f) +=  rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f);
+              }, halo, halo, halo, lhs, rhs);
+
             } 
 
-            ind++;
+            //ind++;
           } // 3D cases with kn != 0
 
 
