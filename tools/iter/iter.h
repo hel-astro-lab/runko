@@ -36,6 +36,17 @@ namespace DevKernels
     }
 
     template<class F, class... Args>
+    __global__ void iterate2dKern(F fun, int xMax, int yMax, Args& ... args)
+    {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        int idy = blockIdx.y * blockDim.y + threadIdx.y;
+        if(idx >= xMax) return;
+        if(idy >= yMax) return;
+
+        fun(idx, idy, args...);
+    }
+
+    template<class F, class... Args>
     __global__ void iterate3dKern(F fun, int xMax, int yMax, int zMax, Args& ... args)
     {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -144,6 +155,15 @@ class UniIter{
          }
 
         template<class F, class... Args>
+        static void iterate2D(F fun, int xMax, int yMax, Args& ... args)
+        {
+            auto [block, grid] = getGrid2({xMax, yMax});
+
+            getErrorCuda(((DevKernels::iterate2dKern<<<grid, block>>>(fun, xMax, yMax, args...))));
+
+        }
+
+        template<class F, class... Args>
         static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
         {
             auto [block, grid] = getGrid3({xMax, yMax, zMax});
@@ -151,6 +171,7 @@ class UniIter{
             getErrorCuda(((DevKernels::iterate3dKern<<<grid, block>>>(fun, xMax, yMax, zMax, args...))));
 
         }
+
         template<class F, class... Args>
         static void iterate3D(F fun, ExecPlan plan, int xMax, int yMax, int zMax, Args& ... args)
         {
@@ -205,6 +226,18 @@ class UniIter{
     public:
 
         template<class F, class... Args>
+        static void iterate2D(F fun, int xMax, int yMax, Args& ... args)
+        {
+          #pragma omp parallel for
+          for (int y = 0; y < yMax; y++) {
+            #pragma omp simd
+            for (int x = 0; x < xMax; x++) {
+              fun(x, y, args...);
+            }
+          }
+        }
+
+        template<class F, class... Args>
         static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
         {
             #pragma omp parallel for
@@ -230,6 +263,31 @@ class UniIter{
     };
 
 public:
+
+    template<class F, class... Args>
+    static void iterate2D(F fun, int xMax, int yMax, Args& ... args)
+    {
+        //
+        //std::cout << "3d iterate" << std::endl;
+    #ifdef GPU
+        UniIterCU::iterate2D(fun, xMax, yMax, args...);
+    #else
+        UniIterHost::iterate2D(fun, xMax, yMax, args...);
+    #endif
+    }
+
+    template<class F, class... Args>
+    static void iterate2D(F fun, ExecPlan plan, int xMax, int yMax, Args& ... args)
+    {
+        //std::cout << "2d iterate w plan" << std::endl;
+    #ifdef GPU
+        UniIterCU::iterate2D(fun, plan, xMax, yMax, args...);
+    #else
+        UniIterHost::iterate2D(fun, xMax, yMax, args...);
+    #endif
+    }
+
+
     template<class F, class... Args>
     static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
     {
