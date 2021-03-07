@@ -2,6 +2,7 @@
 
 #include "tile.h"
 
+#include "../../tools/iter/iter.h"
 
 namespace ffe {
   using namespace mpi4cpp;
@@ -19,10 +20,16 @@ void Tile<D>::rk3_update(
   ffe::SkinnyYeeLattice& dm = this->dF; 
   //real_short dt = tile.cfl;
 
-  for(int k=0; k<static_cast<int>(this->mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(this->mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(this->mesh_lengths[0]); i++) {
 
+  UniIter::iterate3D(
+    [=] DEVCALLABLE(
+      int i,
+      int j,
+      int k,
+      ffe::SkinnyYeeLattice& dm,
+      fields::YeeLattice& m,
+      ffe::SkinnyYeeLattice& n)
+      {
         // RK3 E update
         m.ex(i,j,k) = c1*n.ex(i,j,k) + c2*m.ex(i,j,k) + c3*dm.ex(i,j,k);
         m.ey(i,j,k) = c1*n.ey(i,j,k) + c2*m.ey(i,j,k) + c3*dm.ey(i,j,k);
@@ -33,17 +40,22 @@ void Tile<D>::rk3_update(
         m.by(i,j,k) = c1*n.by(i,j,k) + c2*m.by(i,j,k) + c3*dm.by(i,j,k);
         m.bz(i,j,k) = c1*n.bz(i,j,k) + c2*m.bz(i,j,k) + c3*dm.bz(i,j,k);
 
-        // tmp storage for 1) e > b and 2) j_par calcs.
+        // variable switch for 1) e > b and 2) j_par calcs.
         // Enables to calculate both of the above as independent
         // corrections because interpolation is done via m.ex
         // meshes and results are stored in dm.ex meshes:
         dm.ex(i,j,k) = m.ex(i,j,k);
         dm.ey(i,j,k) = m.ey(i,j,k);
         dm.ez(i,j,k) = m.ez(i,j,k);
+      },
+    static_cast<int>(mesh_lengths[2]),
+    static_cast<int>(mesh_lengths[1]),
+    static_cast<int>(mesh_lengths[0]),
+    dm, m, n);
 
-      } 
-    } 
-  }
+#ifdef GPU
+    UniIter::sync();
+#endif
 
 }
 
@@ -54,10 +66,9 @@ void Tile<D>::copy_eb()
   fields::YeeLattice&    m = this->get_yee();
   ffe::SkinnyYeeLattice& n = this->Fn; 
 
-  for(int k=0; k<static_cast<int>(this->mesh_lengths[2]); k++) {
-    for(int j=0; j<static_cast<int>(this->mesh_lengths[1]); j++) {
-      for(int i=0; i<static_cast<int>(this->mesh_lengths[0]); i++) {
-
+  UniIter::iterate3D(
+    [=] DEVCALLABLE( int i, int j, int k, fields::YeeLattice& m, ffe::SkinnyYeeLattice& n)
+    {
         n.ex(i,j,k) = m.ex(i,j,k);
         n.ey(i,j,k) = m.ey(i,j,k);
         n.ez(i,j,k) = m.ez(i,j,k);
@@ -65,10 +76,16 @@ void Tile<D>::copy_eb()
         n.bx(i,j,k) = m.bx(i,j,k);
         n.by(i,j,k) = m.by(i,j,k);
         n.bz(i,j,k) = m.bz(i,j,k);
+  },
+    static_cast<int>(mesh_lengths[2]),
+    static_cast<int>(mesh_lengths[1]),
+    static_cast<int>(mesh_lengths[0]),
+    m, n);
 
-      }
-    }
-  }
+#ifdef GPU
+//nvtxRangePop();
+  UniIter::sync();
+#endif
 
 }
 
