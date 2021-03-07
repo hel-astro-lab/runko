@@ -165,25 +165,22 @@ class Tile :
 
   virtual void deposit_current();
 
-  virtual YeeLattice& get_yee(int i=0);
+  /// Get current time snapshot of Yee lattice
+  virtual YeeLattice& get_yee(int i=0){ return this->yee; }
 
-  virtual YeeLattice& get_yee2();
+  /// Get current time snapshot of Yee lattice
+  virtual YeeLattice& get_yee2(){ return this->yee; }
 
-  virtual void set_yee(YeeLattice& v);
+  /// Set current time snapshot of Yee lattice
+  virtual void set_yee(YeeLattice& v){ this->yee = v; }
 
-  virtual std::shared_ptr<YeeLattice> get_yeeptr();
+  virtual std::shared_ptr<YeeLattice> get_yeeptr(){ return std::shared_ptr<YeeLattice>(&yee); }
 
   //FIXME: naming is wrong because of pybind: it can not deduce correct function
   //       with only constness difference.
-  virtual const YeeLattice& get_const_yee(int i=0) const; 
-
-  virtual void cycle_yee();
-
-  //virtual void cycle_current();
+  virtual const YeeLattice& get_const_yee(int i=0) const { return this->yee; }
 
   virtual void clear_current();
-
-  virtual void add_yee_lattice();
 
   std::vector<mpi::request> 
   send_data( mpi::communicator& /*comm*/, int dest, int mode, int tag) override;

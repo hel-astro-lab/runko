@@ -2,8 +2,6 @@
 #include <cmath>
 
 #include "tile.h"
-//#include <nvtx3/nvToolsExt.h> 
-
 
 #include "../tools/has_element.h"
 #include "../tools/iter/iter.h"
@@ -25,7 +23,7 @@ void Tile<D>::deposit_current()
 {
 
 #ifdef GPU
-nvtxRangePush(__PRETTY_FUNCTION__);
+  nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
   YeeLattice& mesh = get_yee();
@@ -42,73 +40,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
 
 #ifdef GPU
-nvtxRangePop();
+  nvtxRangePop();
 #endif 
 }
 
-
-/// Get current time snapshot of Yee lattice
-template<std::size_t D>
-YeeLattice& Tile<D>::get_yee(int /*i*/) 
-{
-  //return this->yee.at(0);
-  return this->yee;
-}
-  
-/// Get current time snapshot of Yee lattice
-template<std::size_t D>
-YeeLattice& Tile<D>::get_yee2() 
-{
-  //return this->yee[0];
-  return this->yee;
-}
-
-/// Set current time snapshot of Yee lattice
-template<std::size_t D>
-void Tile<D>::set_yee(YeeLattice& val)
-{
-  //this->yee[0] = val;
-  this->yee = val;
-}
-
-template<std::size_t D>
-std::shared_ptr<YeeLattice> Tile<D>::get_yeeptr() 
-{
-  //return std::shared_ptr<YeeLattice>(&this->yee[0]);
-  return std::shared_ptr<YeeLattice>(&yee);
-}
-
-template<std::size_t D>
-const YeeLattice& Tile<D>::get_const_yee(int /*i*/) const 
-{
-  //return this->yee.at(0);
-  return this->yee;
-}
-
-
-
-
-//--------------------------------------------------
-// Specialize Yee Lattice insertion
-template<>
-void Tile<1>::add_yee_lattice() 
-{
-  //yee.emplace_back( mesh_lengths[0], 1, 1);
-}
-
-template<>
-void Tile<2>::add_yee_lattice() 
-{
-  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], 1);
-  //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], 1);
-}
-
-template<>
-void Tile<3>::add_yee_lattice() 
-{
-  //yee.emplace_back( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
-  //yee = YeeLattice( mesh_lengths[0], mesh_lengths[1], mesh_lengths[2]);
-}
 
 //--------------------------------------------------
 
@@ -815,9 +750,10 @@ void Tile<3>::update_boundaries(
       } // kn
     } // jn
   } // in
+
+  UniIter::sync();
   
 #ifdef GPU
-  UniIter::sync();
   nvtxRangePop();
 #endif
 
@@ -1117,22 +1053,12 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
       }
     }
   }
+  UniIter::sync();
 
 #ifdef GPU
-  UniIter::sync();
   nvtxRangePop();
 #endif
 }
-
-
-
-template<std::size_t D>
-void Tile<D>::cycle_yee() 
-{
-  //yee.cycle();
-  // do nothing since Yee's are not in a container atm
-}
-
 
 
 template<std::size_t D>
@@ -1140,7 +1066,7 @@ void Tile<D>::clear_current()
 {
 
 #ifdef GPU
-nvtxRangePush(__PRETTY_FUNCTION__);
+  nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
   auto& yee = this->get_yee();
@@ -1150,7 +1076,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
 
 #ifdef GPU
-nvtxRangePop();
+  nvtxRangePop();
 #endif
 
 }
@@ -1181,19 +1107,10 @@ std::vector<mpi::request> Tile<D>::send_data(
   nvtxRangePush(__FUNCTION__);
 #endif
 
-
   auto& yee = get_yee(); 
-  //std::cout << "SEND field to " << dest 
-  //  << "nx " << yee.jx.size()
-  //  << "ny " << yee.jy.size()
-  //  << "nz " << yee.jz.size()
-  //  << "\n";
   std::vector<mpi::request> reqs;
 
-
-#ifdef GPU
   UniIter::sync();
-#endif
 
   if (mode == 0) {
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );
@@ -1239,9 +1156,7 @@ std::vector<mpi::request> Tile<D>::recv_data(
 
   std::vector<mpi::request> reqs;
 
-#ifdef GPU
   UniIter::sync();
-#endif
 
   if (mode == 0) {
     reqs.emplace_back( comm.irecv(orig, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );

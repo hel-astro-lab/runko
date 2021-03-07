@@ -50,7 +50,6 @@ auto declare_tile(
             >(m, pyclass_name.c_str() )
     .def(py::init<int, int, int>())
     .def_readwrite("cfl",      &fields::Tile<D>::cfl)
-    .def("cycle_yee",           &fields::Tile<D>::cycle_yee)
     .def("clear_current",       &fields::Tile<D>::clear_current)
     .def("deposit_current",     &fields::Tile<D>::deposit_current)
     .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
