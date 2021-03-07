@@ -2,8 +2,12 @@
 
 #include <cmath> 
 #include <cassert>
-#include <nvtx3/nvToolsExt.h> 
+
 #include "../../tools/iter/iter.h"
+
+#ifdef GPU
+#include <nvtx3/nvToolsExt.h> 
+#endif
 
 
 inline real_long _lerp(
@@ -33,7 +37,10 @@ template<size_t D, size_t V>
 void pic::LinearInterpolator<D,V>::solve(
     pic::Tile<D>& tile)
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   // get reference to the Yee grid 
   auto& yee = tile.get_yee();
@@ -46,7 +53,6 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   auto& by = yee.by;
   auto& bz = yee.bz;
 
-  real_long c000, c100, c010, c110, c001, c101, c011, c111;
 
   for(auto&& container : tile.containers) {
 
@@ -111,6 +117,8 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
       // one-dimensional index
       const size_t ind = yee.ex.indx(i,j,k);
+
+      real_long c000, c100, c010, c110, c001, c101, c011, c111;
 
       //ex
       c000 = 0.5*(ex(ind       ) +ex(ind-1      ));
@@ -182,10 +190,17 @@ nvtxRangePush(__PRETTY_FUNCTION__);
       bzn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
     
     }, nparts, yee);
+
+#ifdef GPU
     UniIter::sync();
+#endif
 
   } // end of loop over species
+
+#ifdef GPU
   nvtxRangePop();
+#endif
+
 }
 
 

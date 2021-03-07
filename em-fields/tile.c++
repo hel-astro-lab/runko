@@ -8,7 +8,11 @@
 
 #include "../tools/iter/iter.h"
 #include "../tools/iter/allocator.h"
+
+#ifdef GPU
 #include <nvtx3/nvToolsExt.h> 
+#endif
+
 
 namespace fields {
   using namespace mpi4cpp;
@@ -29,7 +33,10 @@ bool has_key(std::vector<T>& v, T x){
 template<std::size_t D>
 void Tile<D>::deposit_current() 
 {
+
+#ifdef GPU
 nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   YeeLattice& mesh = get_yee();
 
@@ -49,8 +56,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
       mesh.ez(i,j,k) -= mesh.jz(i,j,k);
     },mesh.ex.Nx, mesh.ex.Ny, mesh.ex.Nz, mesh);
 
+#ifdef GPU
 nvtxRangePop();
 UniIter::sync();
+#endif 
 
 }
 
@@ -496,7 +505,8 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
     }, Nx, halo, halo, lhs, rhs);
   }
 
-  void copy_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
+
+void copy_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
 {   
     UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
 
@@ -514,7 +524,8 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
     }, Ny, halo, halo, lhs, rhs);
   }
 
-  void copy_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
+
+void copy_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
 {
     UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
@@ -532,7 +543,8 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
     }, Nz, halo, halo, lhs, rhs);
   }
 
-  void copy_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
+
+void copy_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
   {
     UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -550,7 +562,6 @@ void copy_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, 
   }
 
 
-// add versions
 
 void add_vert_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int Nz, int halo, int ito, int ifro, int in, int ind=0)
 {
@@ -598,7 +609,7 @@ void add_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, i
     }, Nx, halo, halo, lhs, rhs);
   }
 
-  void add_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
+void add_y_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Ny, int halo, int ito, int ifro, int kto, int kfro, int in, int kn, int ind=0)
 {   
     UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       g++;
@@ -609,7 +620,8 @@ void add_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, i
     }, Ny, halo, halo, lhs, rhs);
   }
 
-  void add_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
+
+void add_z_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nz, int halo, int ito, int ifro, int jto, int jfro, int in, int jn, int ind=0)
 {
     UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       g++;
@@ -621,7 +633,8 @@ void add_x_pencil_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int Nx, int halo, i
     }, Nz, halo, halo, lhs, rhs);
   }
 
-  void add_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
+
+void add_point_yee_halo(YeeLattice& lhs, YeeLattice& rhs, int halo, int ito, int ifro, int jto, int jfro, int kto, int kfro, int in, int jn, int kn, int ind=0)
   {
     UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
       f++;
@@ -746,7 +759,9 @@ void Tile<3>::update_boundaries(
         )
 {
   //std::cout << "upB: updating boundaries\n";
+#ifdef GPU
   nvtxRangePush(__FUNCTION__);
+#endif
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -863,10 +878,12 @@ void Tile<3>::update_boundaries(
     } // jn
   } // in
   
+#ifdef GPU
   UniIter::sync();
-
   nvtxRangePop();
-  }
+#endif
+
+}
 
 
 template<>
@@ -997,7 +1014,10 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 template<>
 void Tile<3>::exchange_currents(corgi::Grid<3>& grid) 
 {
+
+#ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -1113,9 +1133,11 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
       }
     }
   }
-  UniIter::sync();
 
+#ifdef GPU
+  UniIter::sync();
   nvtxRangePop();
+#endif
 }
 
 
@@ -1132,13 +1154,20 @@ void Tile<D>::cycle_yee()
 template<std::size_t D>
 void Tile<D>::clear_current() 
 {
+
+#ifdef GPU
 nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   auto& yee = this->get_yee();
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();
+
+
+#ifdef GPU
 nvtxRangePop();
+#endif
 
 }
 
@@ -1163,7 +1192,11 @@ std::vector<mpi::request> Tile<D>::send_data(
     int mode,
     int tag)
 {
+
+#ifdef GPU
   nvtxRangePush(__FUNCTION__);
+#endif
+
 
   auto& yee = get_yee(); 
   //std::cout << "SEND field to " << dest 
@@ -1172,7 +1205,12 @@ std::vector<mpi::request> Tile<D>::send_data(
   //  << "nz " << yee.jz.size()
   //  << "\n";
   std::vector<mpi::request> reqs;
+
+
+#ifdef GPU
   UniIter::sync();
+#endif
+
   if (mode == 0) {
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), yee.jy.data(), yee.jy.size()) );
@@ -1187,7 +1225,9 @@ std::vector<mpi::request> Tile<D>::send_data(
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
   }
 
+#ifdef GPU
   nvtxRangePop();
+#endif
 
   return reqs;
 }
@@ -1200,7 +1240,10 @@ std::vector<mpi::request> Tile<D>::recv_data(
     int mode,
     int tag)
 {
+
+#ifdef GPU
   nvtxRangePush(__FUNCTION__);
+#endif
 
   //std::cout << "RECV from " << orig << "\n";
   auto& yee = get_yee(); 
@@ -1211,7 +1254,10 @@ std::vector<mpi::request> Tile<D>::recv_data(
   //  << "\n";
 
   std::vector<mpi::request> reqs;
+
+#ifdef GPU
   UniIter::sync();
+#endif
 
   if (mode == 0) {
     reqs.emplace_back( comm.irecv(orig, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );
@@ -1227,7 +1273,9 @@ std::vector<mpi::request> Tile<D>::recv_data(
     reqs.emplace_back( comm.irecv(orig, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
   }
 
+#ifdef GPU
   nvtxRangePop();
+#endif
 
   return reqs;
 }

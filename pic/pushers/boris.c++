@@ -3,7 +3,11 @@
 #include <cmath> 
 #include "../../tools/signum.h"
 #include "../../tools/iter/iter.h"
+
+#ifdef GPU
 #include <nvtx3/nvToolsExt.h> 
+#endif
+
 
 using toolbox::sign;
 
@@ -12,7 +16,10 @@ void pic::BorisPusher<D,V>::push_container(
     pic::ParticleContainer<D>& container, 
     pic::Tile<D>& tile)
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   int nparts = container.size();
 
@@ -114,9 +121,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
   }, nparts);
 
-UniIter::sync();
-nvtxRangePop();
-
+#ifdef GPU
+  UniIter::sync();
+  nvtxRangePop();
+#endif
 }
 
 

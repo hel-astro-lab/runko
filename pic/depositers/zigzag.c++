@@ -7,16 +7,21 @@
 using std::min;
 using std::max;
 
-#include <nvtx3/nvToolsExt.h> 
-
 #include "../../tools/iter/iter.h"
+
+#ifdef GPU
+#include <nvtx3/nvToolsExt.h> 
+#endif
+
 
 
 template<size_t D, size_t V>
 void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 {
 
+#ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   auto& yee = tile.get_yee();
   yee.jx.clear();
@@ -316,7 +321,10 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
   }//end of loop over species
 
+#ifdef GPU
   nvtxRangePop();
+#endif
+
 }
 
 

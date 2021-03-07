@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cuda_runtime_api.h>
 #ifdef GPU 
+#include <cuda_runtime_api.h>
 #include "devcall.h"
 #endif
 

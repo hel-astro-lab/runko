@@ -5,7 +5,11 @@
 #include "../../tools/iter/iter.h"
 #include "../../tools/iter/allocator.h"
 
+
+#ifdef GPU
 #include <nvtx3/nvToolsExt.h> 
+#endif
+
 
 /// single 2D 2nd order 3-point binomial filter 
 template<>
@@ -176,9 +180,9 @@ void fields::OptBinomial2<3>::solve(
 }
 
 #ifdef GPU
-    template<class F, class... Args>
-    __global__ void iterate3dShared(F fun, int xMax, int yMax, int zMax, toolbox::Mesh<real_short, 3> *jj, toolbox::Mesh<real_short, 3> *tmp)
-    {
+template<class F, class... Args>
+__global__ void iterate3dShared(F fun, int xMax, int yMax, int zMax, toolbox::Mesh<real_short, 3> *jj, toolbox::Mesh<real_short, 3> *tmp)
+{
         real_short winv  = 1./64., // normalization
              wtd  = 1.*winv, // diagnoal
              wtos = 2.*winv, // outer side
@@ -284,7 +288,9 @@ void fields::Binomial2<3>::solve(
   //           wt   = 8.*winv; // center
   //
 
+#ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   auto& mesh = tile.get_yee();
   const int halo = 2; 
@@ -302,7 +308,7 @@ void fields::Binomial2<3>::solve(
   // Jx
 
   // make 3d loop with shared memory 
-    auto fun = 
+  auto fun = 
   [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jj, toolbox::Mesh<real_short, 3> &tmp)
   {
     //tmp(i,j,k) =
@@ -458,8 +464,10 @@ void fields::Binomial2<3>::solve(
   UniIter::iterate3D(fun, static_cast<int>(tile.mesh_lengths[2]),
         static_cast<int>(tile.mesh_lengths[1]),
         static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
-
+ 
+#ifdef GPU
   UniIter::sync();
+#endif
   std::swap(mesh.jx, tmp);
 
 
@@ -468,7 +476,9 @@ void fields::Binomial2<3>::solve(
         static_cast<int>(tile.mesh_lengths[1]),
         static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
 
+#ifdef GPU
   UniIter::sync();
+#endif
   std::swap(mesh.jy, tmp);
 
 
@@ -477,11 +487,14 @@ void fields::Binomial2<3>::solve(
         static_cast<int>(tile.mesh_lengths[1]),
         static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
 
+#ifdef GPU
   UniIter::sync();
+#endif
   std::swap(mesh.jz, tmp);
   
-
+#ifdef GPU
   nvtxRangePop();
+#endif
 }
 
 

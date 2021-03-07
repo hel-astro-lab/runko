@@ -1,6 +1,8 @@
 #pragma once
 
+#ifdef GPU
 #include <cuda_runtime_api.h>
+#endif
 
 #include "allocator.h"
 

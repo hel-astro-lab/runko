@@ -10,10 +10,12 @@
 #include <mpi.h>
 #include <functional>
 
+#ifdef GPU
 #include <cuda_runtime_api.h>
 #include <nvtx3/nvToolsExt.h> 
-
 #include "../tools/cub/cub.cuh"
+#endif
+
 
 namespace pic {
 
@@ -56,7 +58,9 @@ template<std::size_t D>
 ParticleContainer<D>::ParticleContainer()
 { 
 
-nvtxRangePush(__PRETTY_FUNCTION__);
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   // Get the number of processes
   //MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
@@ -70,19 +74,26 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   outgoing_particles.resize(optimal_message_size);
   outgoing_extra_particles.resize(optimal_message_size);
 
+#ifdef GPU
   //DEV_REGISTER
   temp_storage_bytes = 10000;
   //std::cout << temp_storage_bytes << std::endl;
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
+#endif
 
 
-nvtxRangePop();
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
 template<std::size_t D>
 void ParticleContainer<D>::reserve(size_t N) {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   // always reserve at least 1 element to ensure proper array initialization
   if (N <= 0) N = 1;
@@ -95,30 +106,47 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   // reserve 1d N x D array for particle-specific fields
   Epart.reserve(N*3);
   Bpart.reserve(N*3);
-nvtxRangePop();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 template<std::size_t D>
 void ParticleContainer<D>::resize(size_t N)
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   for(size_t i=0; i<3; i++) locArr[i].resize(N);
   for(size_t i=0; i<3; i++) velArr[i].resize(N);
   for(size_t i=0; i<2; i++) indArr[i].resize(N);
   wgtArr.resize(N);
   Nprtcls = N;
-nvtxRangePop();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 template<std::size_t D>
 void ParticleContainer<D>::shrink_to_fit()
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   for(size_t i=0; i<3; i++) locArr[i].shrink_to_fit();
   for(size_t i=0; i<3; i++) velArr[i].shrink_to_fit();
   for(size_t i=0; i<2; i++) indArr[i].shrink_to_fit();
   wgtArr.shrink_to_fit();
-nvtxRangePop();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
@@ -181,7 +209,11 @@ void ParticleContainer<D>::add_identified_particle (
     real_prtcl prtcl_wgt,
     int _id, int _proc)
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   assert(prtcl_loc.size() == 3);
   assert(prtcl_vel.size() == 3);
 
@@ -193,7 +225,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   indArr[1].push_back(_proc);
 
   Nprtcls++;
-nvtxRangePop();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 template<>
@@ -210,7 +245,11 @@ void ParticleContainer<2>::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   to_other_tiles.clear();
 
   // unpack limits
@@ -250,7 +289,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     if ( (i != 0) || (j != 0) || (k != 0) ) 
       to_other_tiles.push_back( {i,j,k,n} );
   }
-nvtxRangePop();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
@@ -321,7 +363,11 @@ nvtxRangePop();
 template<std::size_t D>
 void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted) 
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
   real_prtcl* locn[3];
@@ -351,14 +397,21 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
-nvtxRangePop();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
 template<std::size_t D>
 void ParticleContainer<D>::delete_transferred_particles()
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   std::vector<int> to_be_deleted;
 
   // get transferred 
@@ -395,7 +448,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     wgtArr[indx] = wgtArr[other];
     for(int i=0; i<2; i++) idn[i][indx] = idn[i][other];
   }, to_other_tiles.size(), to_other_tiles);
+
+#ifdef GPU
   UniIter::sync();
+#endif
 
 
   // resize if needed and take care of the size
@@ -414,7 +470,10 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
   delete_particles(to_be_deleted);
   */
-nvtxRangePop();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 template<>
@@ -438,7 +497,10 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
     std::array<double,3>& global_maxs
     )
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
@@ -479,9 +541,11 @@ nvtxRangePush(__PRETTY_FUNCTION__);
       add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
     }
   }
-nvtxRangePop();
 
-  }
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
 
 
 
@@ -489,12 +553,17 @@ nvtxRangePop();
 template<std::size_t D>
 void ParticleContainer<D>::pack_all_particles()
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
   // +1 for info particle
-  int np = size() + 1;
+  size_t np = size() + 1;
 
   outgoing_particles.reserve(optimal_message_size);
   if(np-optimal_message_size > 0) {
@@ -522,21 +591,27 @@ nvtxRangePush(__PRETTY_FUNCTION__);
     }
     i++;
   }
-nvtxRangePop();
-
   //outgoing_extra_particles.shrink_to_fit();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
 template<std::size_t D>
 void ParticleContainer<D>::pack_outgoing_particles()
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
   // +1 for info particle
-  int np = to_other_tiles.size() + 1;
+  size_t np = to_other_tiles.size() + 1;
 
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
@@ -577,15 +652,21 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
-nvtxRangePop();
-
-  }
+  //
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
 
 
 template<std::size_t D>
 void ParticleContainer<D>::unpack_incoming_particles()
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   real_prtcl locx, locy, locz, velx, vely, velz, wgts;
   int ids, proc;
 
@@ -630,9 +711,11 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
-nvtxRangePop();
 
-  }
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
 
 
 template<std::size_t D>
@@ -648,7 +731,9 @@ void ParticleContainer<3>::check_outgoing_particles(
     std::array<double,3>& mins,
     std::array<double,3>& maxs)
 {
-nvtxRangePush(__PRETTY_FUNCTION__);
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   to_other_tiles.clear();
   outgoing_count = 0;
@@ -896,8 +981,9 @@ nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
 
-nvtxRangePop();
-
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 template<>
@@ -909,7 +995,9 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
     )
 {
 
-nvtxRangePush(__PRETTY_FUNCTION__);
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
@@ -975,9 +1063,13 @@ nvtxRangePush(__PRETTY_FUNCTION__);
       
     }
   }
-nvtxRangePop();
 
-  }
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
+
 
 } // end ns pic
 
