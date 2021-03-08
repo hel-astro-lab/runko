@@ -140,7 +140,7 @@ def linear_field(x, y, z):
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
-def insert_em(grid, conf, ffunc):
+def insert_em(grid, conf, ffunc, zero_field=False):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
     for i in range(grid.get_Nx()):
@@ -175,19 +175,24 @@ def insert_em(grid, conf, ffunc):
 
                             # enforce Yee lattice structure
                             yee.ex[l,m,n] = ffunc(xmid, ycor, zcor)
-                            yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)+1.0
-                            #yee.ez[l,m,n] = ffunc(xcor, ycor, zmid)+2.0
-                            yee.ez[l,m,n] = ffunc(xcor, ycor, zcor)+2.0  #2D hack
+                            yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)
+                            yee.ez[l,m,n] = ffunc(xcor, ycor, zcor)
 
-                            #yee.bx[l,m,n] = ffunc(xcor, ymid, zmid)+3.0
-                            yee.bx[l,m,n] = ffunc(xcor, ymid, zcor)+3.0  #2D hack
-                            #yee.by[l,m,n] = ffunc(xmid, ycor, zmid)+4.0 #2D hack
-                            yee.by[l,m,n] = ffunc(xmid, ycor, zcor)+4.0
-                            yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)+5.0
+                            yee.bx[l,m,n] = ffunc(xcor, ymid, zcor)
+                            yee.by[l,m,n] = ffunc(xmid, ycor, zcor)
+                            yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)
 
                             yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
                             yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
                             yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+
+                            if not(zero_field):
+                                yee.ex[l,m,n] += +0.0
+                                yee.ey[l,m,n] += +1.0
+                                yee.ez[l,m,n] += +2.0 
+                                yee.bx[l,m,n] += +3.0
+                                yee.by[l,m,n] += +4.0
+                                yee.bz[l,m,n] += +5.0
 
 
 
@@ -277,8 +282,6 @@ class PIC(unittest.TestCase):
         #for ai in range(1):
         #    axs.append( plt.subplot(gs[ai]) )
 
-
-
         conf = Conf()
         conf.NxMesh = 3
         conf.NyMesh = 3
@@ -291,18 +294,24 @@ class PIC(unittest.TestCase):
 
         conf.vel = 0.3
 
-
         grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         pytools.pic.load_tiles(grid, conf)
-        insert_em(grid, conf, const_field)
+        insert_em(grid, conf, zero_field, zero_field=True)
         pytools.pic.inject(grid, filler, density_profile, conf) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
-        pusher   = pyrunko.pic.twoD.BorisPusher()
+        pusher = pyrunko.pic.twoD.BorisPusher()
+        fintp  = pyrunko.pic.twoD.LinearInterpolator()
+
 
         for lap in range(40):
+
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                fintp.solve(tile)
+
             #plot2dParticles(axs[0], grid, conf)
             #saveVisz(lap, grid, conf)
 
@@ -406,12 +415,6 @@ class PIC(unittest.TestCase):
                         conf.Nz*conf.NzMesh *
                         conf.ppc)
 
-        #tot_particles =(conf.NxMesh *
-        #                conf.NyMesh *
-        #                conf.NzMesh *
-        #                conf.ppc)
-
-
         # assert that there is equal number of particles as we began with
         self.assertEqual( tot_particles, n_particles )
 
@@ -446,13 +449,20 @@ class PIC(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
         pytools.pic.load_tiles(grid, conf)
-        insert_em(grid, conf, const_field)
+        insert_em(grid, conf, zero_field, zero_field=True)
         pytools.pic.inject(grid, filler3D, density_profile, conf) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
         pusher = pyrunko.pic.threeD.BorisPusher()
 
+        fintp  = pyrunko.pic.threeD.LinearInterpolator()
+
         for lap in range(40):
+
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                fintp.solve(tile)
+
             #plot2dParticles(axs[0], grid, conf)
             #saveVisz(lap, grid, conf)
 

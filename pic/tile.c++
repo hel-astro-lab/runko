@@ -106,7 +106,7 @@ void Tile<3>::get_incoming_particles(
 {
 
 #ifdef GPU
-nvtxRangePush(__PRETTY_FUNCTION__);
+  nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
   std::array<double,3> global_mins = {
@@ -145,7 +145,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   }
 
 #ifdef GPU
-nvtxRangePop();
+  nvtxRangePop();
 #endif
 
 }
@@ -176,7 +176,7 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
 {
 
 #ifdef GPU
-nvtxRangePush(__PRETTY_FUNCTION__);
+  nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
   std::vector<mpi::request> reqs;
@@ -191,7 +191,7 @@ nvtxRangePush(__PRETTY_FUNCTION__);
   }
 
 #ifdef GPU
-nvtxRangePop();
+  nvtxRangePop();
 #endif
 
   return reqs;

@@ -155,8 +155,7 @@
         inline void reserve(size_t newCap)
         {
             //std::cout << "reserve" << std::endl;
-            if(newCap > cap)
-                realloc(newCap);
+            if(newCap > cap) realloc(newCap);
         }
 
         inline void resize(size_t newCap)
