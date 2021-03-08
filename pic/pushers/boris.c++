@@ -13,7 +13,7 @@ using toolbox::sign;
 
 template<size_t D, size_t V>
 void pic::BorisPusher<D,V>::push_container(
-    pic::ParticleContainer<D>& container, 
+    pic::ParticleContainer<D>& con, 
     pic::Tile<D>& tile)
 {
 
@@ -21,108 +21,71 @@ void pic::BorisPusher<D,V>::push_container(
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  int nparts = container.size();
-
-  // initialize pointers to particle arrays
-  real_prtcl* loc[3];
-  for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
-
-  real_prtcl* vel[3];
-  for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
-
-
+  const real_long c   = tile.cfl;
+  const real_long qm  = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
+  
   // make sure E and B tmp arrays are of correct size
-  if(container.Epart.size() != (size_t)3*nparts)
-    container.Epart.resize(3*nparts);
-  if(container.Bpart.size() != (size_t)3*nparts)
-    container.Bpart.resize(3*nparts);
-
-  real_prtcl *ex, *ey, *ez, *bx, *by, *bz;
-  ex = &( container.Epart[0*nparts] );
-  ey = &( container.Epart[1*nparts] );
-  ez = &( container.Epart[2*nparts] );
-
-  bx = &( container.Bpart[0*nparts] );
-  by = &( container.Bpart[1*nparts] );
-  bz = &( container.Bpart[2*nparts] );
-
-  // loop over particles
-  int n1 = 0;
-  int n2 = nparts;
-
-  real_long c = tile.cfl;
-  real_long cinv = 1.0/c;
-
-  // charge-to-mass ratio (sign only because fields are in units of q)
-  real_long qm = sign(container.q)/container.m;
+  if(con.Epart.size() != 3*con.size()) assert(false); //con.Epart.resize(3*nparts);
+  if(con.Bpart.size() != 3*con.size()) assert(false); //con.Bpart.resize(3*nparts);
 
 
   // loop over particles
-  UniIter::iterate([=] DEVCALLABLE (int n){
+  UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+    real_long vel0n = con.vel(0,n)*c;
+    real_long vel1n = con.vel(1,n)*c;
+    real_long vel2n = con.vel(2,n)*c;
 
-    real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-    real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+    // read particle-specific fields
+    real_long ex0 = ( con.ex(n) + this->get_ex_ext(0,0,0) )*0.5*qm;
+    real_long ey0 = ( con.ey(n) + this->get_ey_ext(0,0,0) )*0.5*qm;
+    real_long ez0 = ( con.ez(n) + this->get_ez_ext(0,0,0) )*0.5*qm;
 
-    real_long vel0n, vel1n, vel2n;
-    real_long u0, v0, w0;
-    real_long u1, v1, w1;
-    real_long ginv, g, f;
-
-    vel0n = static_cast<real_long>( vel[0][n] );
-    vel1n = static_cast<real_long>( vel[1][n] );
-    vel2n = static_cast<real_long>( vel[2][n] );
+    real_long bx0 = ( con.bx(n) + this->get_bx_ext(0,0,0) )*0.5*qm/c;
+    real_long by0 = ( con.by(n) + this->get_by_ext(0,0,0) )*0.5*qm/c;
+    real_long bz0 = ( con.bz(n) + this->get_bz_ext(0,0,0) )*0.5*qm/c;
 
     //--------------------------------------------------
     // Boris algorithm
 
-    // read particle-specific fields
-    ex0 = static_cast<real_long>( ex[n]*(0.5*qm) );
-    ey0 = static_cast<real_long>( ey[n]*(0.5*qm) );
-    ez0 = static_cast<real_long>( ez[n]*(0.5*qm) );
-
-    bx0 = static_cast<real_long>( bx[n]*(0.5*qm*cinv) );
-    by0 = static_cast<real_long>( by[n]*(0.5*qm*cinv) );
-    bz0 = static_cast<real_long>( bz[n]*(0.5*qm*cinv) );
-
-
     // first half electric acceleration
-    u0 = c*vel0n + ex0;
-    v0 = c*vel1n + ey0;
-    w0 = c*vel2n + ez0;
+    real_long u0 = vel0n + ex0;
+    real_long v0 = vel1n + ey0;
+    real_long w0 = vel2n + ez0;
 
     // first half magnetic rotation
-    ginv = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+    real_long ginv = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
     bx0 *= ginv;
     by0 *= ginv;
     bz0 *= ginv;
 
-    //std::cout << "g_ vs gnew " << 1.0/ginv << "\n";
-    //std::cout << "bx prior rot" << bx0 << " " << by0 << " " << bz0 << "\n";
-
-    f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
-    u1 = (u0 + v0*bz0 - w0*by0)*f;
-    v1 = (v0 + w0*bx0 - u0*bz0)*f;
-    w1 = (w0 + u0*by0 - v0*bx0)*f;
+    real_long f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
+    real_long u1 = (u0 + v0*bz0 - w0*by0)*f;
+    real_long v1 = (v0 + w0*bx0 - u0*bz0)*f;
+    real_long w1 = (w0 + u0*by0 - v0*bx0)*f;
 
     // second half of magnetic rotation & electric acceleration
     u0 = u0 + v1*bz0 - w1*by0 + ex0;
     v0 = v0 + w1*bx0 - u1*bz0 + ey0;
     w0 = w0 + u1*by0 - v1*bx0 + ez0;
 
+
+    //--------------------------------------------------
     // normalized 4-velocity advance
-    vel[0][n] = static_cast<real_prtcl>( u0*cinv );
-    vel[1][n] = static_cast<real_prtcl>( v0*cinv );
-    vel[2][n] = static_cast<real_prtcl>( w0*cinv );
+    con.vel(0,n) = u0/c;
+    con.vel(1,n) = v0/c;
+    con.vel(2,n) = w0/c;
 
     // position advance; 
     // NOTE: no mixed-precision calc here. Can be problematic.
     ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
-    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c;
+    for(size_t i=0; i<D; i++) con.loc(i,n) += con.vel(i,n)*ginv*c;
 
-  }, nparts);
+  }, con.size(), con);
+
+
+  UniIter::sync();
 
 #ifdef GPU
-  UniIter::sync();
   nvtxRangePop();
 #endif
 }
