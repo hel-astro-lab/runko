@@ -10,7 +10,8 @@
 #endif
 
 
-inline real_long _lerp(
+
+DEVCALLABLE inline real_long _lerp(
       real_long c000,
       real_long c100,
       real_long c010,
@@ -19,8 +20,9 @@ inline real_long _lerp(
       real_long c101,
       real_long c011,
       real_long c111,
-      real_long dx, real_long dy, real_long dz
-      ) 
+      real_long dx, 
+      real_long dy, 
+      real_long dz) 
 {
       real_long c00 = c000 * (1.0-dx) + c100 * dx;
       real_long c10 = c010 * (1.0-dx) + c110 * dx;
@@ -31,6 +33,7 @@ inline real_long _lerp(
       real_long c   = c0   * (1.0-dz) + c1   * dz;
       return c;
 }
+
 
 
 template<size_t D, size_t V>
@@ -45,43 +48,13 @@ void pic::LinearInterpolator<D,V>::solve(
   // get reference to the Yee grid 
   auto& yee = tile.get_yee();
 
-  auto& ex = yee.ex;
-  auto& ey = yee.ey;
-  auto& ez = yee.ez;
-
-  auto& bx = yee.bx;
-  auto& by = yee.by;
-  auto& bz = yee.bz;
-
-
-  for(auto&& container : tile.containers) {
-
-    int nparts = container.size();
-
-    // initialize pointers to particle arrays
-    real_prtcl* loc[3];
-    for( int i=0; i<3; i++) 
-      loc[i] = &( container.loc(i,0) );
+  for(auto&& con : tile.containers) {
 
     /// resize internal arrays
-    container.Epart.resize(3*nparts);
-    container.Bpart.resize(3*nparts);
-      
-    real_prtcl *exn, *eyn, *ezn, *bxn, *byn, *bzn;
-    exn = &( container.Epart[0*nparts] );
-    eyn = &( container.Epart[1*nparts] );
-    ezn = &( container.Epart[2*nparts] );
-
-    bxn = &( container.Bpart[0*nparts] );
-    byn = &( container.Bpart[1*nparts] );
-    bzn = &( container.Bpart[2*nparts] );
-
-    // loop over particles
-    int n1 = 0;
-    int n2 = nparts;
+    con.Epart.resize(3*con.size());
+    con.Bpart.resize(3*con.size());
 
     auto mins = tile.mins;
-    //auto maxs = tile.maxs;
 
     // mesh sizes for 1D indexing
     const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
@@ -89,14 +62,18 @@ void pic::LinearInterpolator<D,V>::solve(
 
 
     // loop over particles
-    UniIter::iterate([=] DEVCALLABLE (int n, fields::YeeLattice &yee){
+    UniIter::iterate([=] DEVCALLABLE( 
+                size_t n, 
+                fields::YeeLattice& yee,
+                pic::ParticleContainer<D>& con){
+
       int i=0, j=0, k=0;
       real_long dx=0.0, dy=0.0, dz=0.0;
     
-      real_long loc0n, loc1n, loc2n;
-      loc0n = static_cast<real_long>( loc[0][n] );
-      loc1n = static_cast<real_long>( loc[1][n] );
-      loc2n = static_cast<real_long>( loc[2][n] );
+      real_long loc0n = con.loc(0, n);
+      real_long loc1n = con.loc(1, n);
+      real_long loc2n = con.loc(2, n);
+
 
       // particle location in the grid
       // NOTE: trunc() ensures that prtcls outside the tile do not crash this loop 
@@ -117,85 +94,82 @@ void pic::LinearInterpolator<D,V>::solve(
 
       // one-dimensional index
       const size_t ind = yee.ex.indx(i,j,k);
-
       real_long c000, c100, c010, c110, c001, c101, c011, c111;
 
       //ex
-      c000 = 0.5*(ex(ind       ) +ex(ind-1      ));
-      c100 = 0.5*(ex(ind       ) +ex(ind+1      ));
-      c010 = 0.5*(ex(ind+iy    ) +ex(ind-1+iy   ));
-      c110 = 0.5*(ex(ind+iy    ) +ex(ind+1+iy   ));
-      c001 = 0.5*(ex(ind+iz    ) +ex(ind-1+iz   ));
-      c101 = 0.5*(ex(ind+iz    ) +ex(ind+1+iz   ));
-      c011 = 0.5*(ex(ind+iy+iz ) +ex(ind-1+iy+iz));
-      c111 = 0.5*(ex(ind+iy+iz ) +ex(ind+1+iy+iz));
-      exn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+      c000 = 0.5*(yee.ex(ind       ) +yee.ex(ind-1      ));
+      c100 = 0.5*(yee.ex(ind       ) +yee.ex(ind+1      ));
+      c010 = 0.5*(yee.ex(ind+iy    ) +yee.ex(ind-1+iy   ));
+      c110 = 0.5*(yee.ex(ind+iy    ) +yee.ex(ind+1+iy   ));
+      c001 = 0.5*(yee.ex(ind+iz    ) +yee.ex(ind-1+iz   ));
+      c101 = 0.5*(yee.ex(ind+iz    ) +yee.ex(ind+1+iz   ));
+      c011 = 0.5*(yee.ex(ind+iy+iz ) +yee.ex(ind-1+iy+iz));
+      c111 = 0.5*(yee.ex(ind+iy+iz ) +yee.ex(ind+1+iy+iz));
+      con.ex(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       //ey
-      c000 = 0.5*(ey(ind      ) +ey(ind-iy     ));
-      c100 = 0.5*(ey(ind+1    ) +ey(ind+1-iy   ));
-      c010 = 0.5*(ey(ind      ) +ey(ind+iy     ));
-      c110 = 0.5*(ey(ind+1    ) +ey(ind+1+iy   ));
-      c001 = 0.5*(ey(ind+iz   ) +ey(ind-iy+iz  ));
-      c101 = 0.5*(ey(ind+1+iz ) +ey(ind+1-iy+iz));
-      c011 = 0.5*(ey(ind+iz   ) +ey(ind+iy+iz  ));
-      c111 = 0.5*(ey(ind+1+iz ) +ey(ind+1+iy+iz));
-      eyn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+      c000 = 0.5*(yee.ey(ind       ) +yee.ey(ind-iy     ));
+      c100 = 0.5*(yee.ey(ind+1     ) +yee.ey(ind+1-iy   ));
+      c010 = 0.5*(yee.ey(ind       ) +yee.ey(ind+iy     ));
+      c110 = 0.5*(yee.ey(ind+1     ) +yee.ey(ind+1+iy   ));
+      c001 = 0.5*(yee.ey(ind+iz    ) +yee.ey(ind-iy+iz  ));
+      c101 = 0.5*(yee.ey(ind+1+iz  ) +yee.ey(ind+1-iy+iz));
+      c011 = 0.5*(yee.ey(ind+iz    ) +yee.ey(ind+iy+iz  ));
+      c111 = 0.5*(yee.ey(ind+1+iz  ) +yee.ey(ind+1+iy+iz));
+      con.ey(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       //ez
-      c000 = 0.5*(ez(ind      ) + ez(ind-iz     ));
-      c100 = 0.5*(ez(ind+1    ) + ez(ind+1-iz   ));
-      c010 = 0.5*(ez(ind+iy   ) + ez(ind+iy-iz  ));
-      c110 = 0.5*(ez(ind+1+iy ) + ez(ind+1+iy-iz));
-      c001 = 0.5*(ez(ind      ) + ez(ind+iz     ));
-      c101 = 0.5*(ez(ind+1    ) + ez(ind+1+iz   ));
-      c011 = 0.5*(ez(ind+iy   ) + ez(ind+iy+iz  ));
-      c111 = 0.5*(ez(ind+1+iy ) + ez(ind+1+iy+iz));
-      ezn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+      c000 = 0.5*(yee.ez(ind       ) + yee.ez(ind-iz     ));
+      c100 = 0.5*(yee.ez(ind+1     ) + yee.ez(ind+1-iz   ));
+      c010 = 0.5*(yee.ez(ind+iy    ) + yee.ez(ind+iy-iz  ));
+      c110 = 0.5*(yee.ez(ind+1+iy  ) + yee.ez(ind+1+iy-iz));
+      c001 = 0.5*(yee.ez(ind       ) + yee.ez(ind+iz     ));
+      c101 = 0.5*(yee.ez(ind+1     ) + yee.ez(ind+1+iz   ));
+      c011 = 0.5*(yee.ez(ind+iy    ) + yee.ez(ind+iy+iz  ));
+      c111 = 0.5*(yee.ez(ind+1+iy  ) + yee.ez(ind+1+iy+iz));
+      con.ez(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
 
       //-------------------------------------------------- 
 
       // bx
-      c000 = 0.25*( bx(ind)+   bx(ind-iy)+   bx(ind-iz)+      bx(ind-iy-iz));
-      c100 = 0.25*( bx(ind+1)+ bx(ind+1-iy)+ bx(ind+1-iz)+    bx(ind+1-iy-iz));
-      c001 = 0.25*( bx(ind)+   bx(ind+iz)+   bx(ind-iy)+      bx(ind-iy+iz));
-      c101 = 0.25*( bx(ind+1)+ bx(ind+1+iz)+ bx(ind+1-iy)+    bx(ind+1-iy+iz));
-      c010 = 0.25*( bx(ind)+   bx(ind+iy)+   bx(ind-iz)+      bx(ind+iy-iz));
-      c110 = 0.25*( bx(ind+1)+ bx(ind+1-iz)+ bx(ind+1+iy-iz)+ bx(ind+1+iy));
-      c011 = 0.25*( bx(ind)+   bx(ind+iy)+   bx(ind+iy+iz)+   bx(ind+iz));
-      c111 = 0.25*( bx(ind+1)+ bx(ind+1+iy)+ bx(ind+1+iy+iz)+ bx(ind+1+iz));
-      bxn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+      c000 = 0.25*( yee.bx(ind)+   yee.bx(ind-iy)+   yee.bx(ind-iz)+      yee.bx(ind-iy-iz));
+      c100 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1-iy)+ yee.bx(ind+1-iz)+    yee.bx(ind+1-iy-iz));
+      c001 = 0.25*( yee.bx(ind)+   yee.bx(ind+iz)+   yee.bx(ind-iy)+      yee.bx(ind-iy+iz));
+      c101 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1+iz)+ yee.bx(ind+1-iy)+    yee.bx(ind+1-iy+iz));
+      c010 = 0.25*( yee.bx(ind)+   yee.bx(ind+iy)+   yee.bx(ind-iz)+      yee.bx(ind+iy-iz));
+      c110 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1-iz)+ yee.bx(ind+1+iy-iz)+ yee.bx(ind+1+iy));
+      c011 = 0.25*( yee.bx(ind)+   yee.bx(ind+iy)+   yee.bx(ind+iy+iz)+   yee.bx(ind+iz));
+      c111 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1+iy)+ yee.bx(ind+1+iy+iz)+ yee.bx(ind+1+iz));
+      con.bx(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       // by
-      c000 = 0.25*( by(ind-1-iz)+    by(ind-1)+       by(ind-iz)+      by(ind));
-      c100 = 0.25*( by(ind-iz)+      by(ind)+         by(ind+1-iz)+    by(ind+1));
-      c001 = 0.25*( by(ind-1)+       by(ind-1+iz)+    by(ind)+         by(ind+iz));
-      c101 = 0.25*( by(ind)+         by(ind+iz)+      by(ind+1)+       by(ind+1+iz));
-      c010 = 0.25*( by(ind-1+iy-iz)+ by(ind-1+iy)+    by(ind+iy-iz)+   by(ind+iy));
-      c110 = 0.25*( by(ind+iy-iz)+   by(ind+iy)+      by(ind+1+iy-iz)+ by(ind+1+iy));
-      c011 = 0.25*( by(ind-1+iy)+    by(ind-1+iy+iz)+ by(ind+iy)+      by(ind+iy+iz));
-      c111 = 0.25*( by(ind+iy)+      by(ind+iy+iz)+   by(ind+1+iy)+    by(ind+1+iy+iz));
-      byn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
+      c000 = 0.25*( yee.by(ind-1-iz)+    yee.by(ind-1)+       yee.by(ind-iz)+      yee.by(ind));
+      c100 = 0.25*( yee.by(ind-iz)+      yee.by(ind)+         yee.by(ind+1-iz)+    yee.by(ind+1));
+      c001 = 0.25*( yee.by(ind-1)+       yee.by(ind-1+iz)+    yee.by(ind)+         yee.by(ind+iz));
+      c101 = 0.25*( yee.by(ind)+         yee.by(ind+iz)+      yee.by(ind+1)+       yee.by(ind+1+iz));
+      c010 = 0.25*( yee.by(ind-1+iy-iz)+ yee.by(ind-1+iy)+    yee.by(ind+iy-iz)+   yee.by(ind+iy));
+      c110 = 0.25*( yee.by(ind+iy-iz)+   yee.by(ind+iy)+      yee.by(ind+1+iy-iz)+ yee.by(ind+1+iy));
+      c011 = 0.25*( yee.by(ind-1+iy)+    yee.by(ind-1+iy+iz)+ yee.by(ind+iy)+      yee.by(ind+iy+iz));
+      c111 = 0.25*( yee.by(ind+iy)+      yee.by(ind+iy+iz)+   yee.by(ind+1+iy)+    yee.by(ind+1+iy+iz));
+      con.by(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       // bz
-      c000 = 0.25*( bz(ind-1-iy)+    bz(ind-1)+       bz(ind-iy)+      bz(ind));
-      c100 = 0.25*( bz(ind-iy)+      bz(ind)+         bz(ind+1-iy)+    bz(ind+1));
-      c001 = 0.25*( bz(ind-1-iy+iz)+ bz(ind-1+iz)+    bz(ind-iy+iz)+   bz(ind+iz));
-      c101 = 0.25*( bz(ind-iy+iz)+   bz(ind+iz)+      bz(ind+1-iy+iz)+ bz(ind+1+iz));
-      c010 = 0.25*( bz(ind-1)+       bz(ind-1+iy)+    bz(ind)+         bz(ind+iy));
-      c110 = 0.25*( bz(ind)+         bz(ind+iy)+      bz(ind+1)+       bz(ind+1+iy));
-      c011 = 0.25*( bz(ind-1+iz)+    bz(ind-1+iy+iz)+ bz(ind+iz)+      bz(ind+iy+iz));
-      c111 = 0.25*( bz(ind+iz)+      bz(ind+iy+iz)+   bz(ind+1+iz)+    bz(ind+1+iy+iz));
-      bzn[n] = static_cast<real_prtcl>( _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz) );
-    
-    }, nparts, yee);
+      c000 = 0.25*( yee.bz(ind-1-iy)+    yee.bz(ind-1)+       yee.bz(ind-iy)+      yee.bz(ind));
+      c100 = 0.25*( yee.bz(ind-iy)+      yee.bz(ind)+         yee.bz(ind+1-iy)+    yee.bz(ind+1));
+      c001 = 0.25*( yee.bz(ind-1-iy+iz)+ yee.bz(ind-1+iz)+    yee.bz(ind-iy+iz)+   yee.bz(ind+iz));
+      c101 = 0.25*( yee.bz(ind-iy+iz)+   yee.bz(ind+iz)+      yee.bz(ind+1-iy+iz)+ yee.bz(ind+1+iz));
+      c010 = 0.25*( yee.bz(ind-1)+       yee.bz(ind-1+iy)+    yee.bz(ind)+         yee.bz(ind+iy));
+      c110 = 0.25*( yee.bz(ind)+         yee.bz(ind+iy)+      yee.bz(ind+1)+       yee.bz(ind+1+iy));
+      c011 = 0.25*( yee.bz(ind-1+iz)+    yee.bz(ind-1+iy+iz)+ yee.bz(ind+iz)+      yee.bz(ind+iy+iz));
+      c111 = 0.25*( yee.bz(ind+iz)+      yee.bz(ind+iy+iz)+   yee.bz(ind+1+iz)+    yee.bz(ind+1+iy+iz));
+      con.bz(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
-#ifdef GPU
+    }, con.size(), yee, con);
+
     UniIter::sync();
-#endif
-
   } // end of loop over species
+
 
 #ifdef GPU
   nvtxRangePop();
@@ -207,7 +181,7 @@ void pic::LinearInterpolator<D,V>::solve(
 //--------------------------------------------------
 // explicit template instantiation
 
-//template class pic::LinearInterpolator<1,3>; // 1D3V
+template class pic::LinearInterpolator<1,3>; // 1D3V
 template class pic::LinearInterpolator<2,3>; // 2D3V
-template class pic::LinearInterpolator<3,3>; // 3D3V //TODO; validate
+template class pic::LinearInterpolator<3,3>; // 3D3V
 
