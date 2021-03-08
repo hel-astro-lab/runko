@@ -181,9 +181,8 @@ class ParticleContainer{
   virtual void shrink_to_fit();
 
   /// size of the container (in terms of particles)
-  DEVCALLABLE
-  size_t size();
-
+  //DEVCALLABLE size_t size() {return Nprtcls; };
+  DEVCALLABLE size_t size() const { return Nprtcls; }
 
   //--------------------------------------------------
   // locations
@@ -192,6 +191,7 @@ class ParticleContainer{
   {
     return locArr[idim][iprtcl];
   }
+
   DEVCALLABLE
   inline real_prtcl& loc( size_t idim, size_t iprtcl )       
   {
@@ -298,6 +298,26 @@ class ParticleContainer{
     return indArr[idim];
   }
 */
+
+  //--------------------------------------------------
+  // EM fields
+  DEVCALLABLE inline real_prtcl& ex(size_t iprtcl ) { return Epart[0*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl& ey(size_t iprtcl ) { return Epart[1*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl& ez(size_t iprtcl ) { return Epart[2*size() + iprtcl]; };
+
+  DEVCALLABLE inline real_prtcl& bx(size_t iprtcl ) { return Bpart[0*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl& by(size_t iprtcl ) { return Bpart[1*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl& bz(size_t iprtcl ) { return Bpart[2*size() + iprtcl]; };
+
+  DEVCALLABLE inline real_prtcl ex(size_t iprtcl ) const {return Epart[0*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl ey(size_t iprtcl ) const {return Epart[1*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl ez(size_t iprtcl ) const {return Epart[2*size() + iprtcl]; };
+
+  DEVCALLABLE inline real_prtcl bx(size_t iprtcl ) const {return Bpart[0*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl by(size_t iprtcl ) const {return Bpart[1*size() + iprtcl]; };
+  DEVCALLABLE inline real_prtcl bz(size_t iprtcl ) const {return Bpart[2*size() + iprtcl]; };
+
+
   // particle creation
   virtual void add_particle (
       std::vector<real_prtcl> prtcl_loc,
