@@ -50,8 +50,8 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
   for(auto&& con: tile.containers) {
 
-    const real_long c = tile.cfl;    // speed of light
-    const real_long q = con.q; // charge
+    const double c = tile.cfl;    // speed of light
+    const double q = con.q; // charge
 
 #ifdef GPU
     UniIter::UniIterCU::iterate([=] __device__ (
@@ -59,27 +59,28 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
                 fields::YeeLattice &yee,
                 pic::ParticleContainer<D>& con){
 #else
+    // NOTE: no vectorization here since we dont use the general iterator
     for(size_t n=0; n<con.size(); n++) {
 #endif
 
       //--------------------------------------------------
-      real_long loc0n = con.loc(0,n);
-      real_long loc1n = con.loc(1,n);
-      real_long loc2n = con.loc(2,n);
+      double loc0n = con.loc(0,n);
+      double loc1n = con.loc(1,n);
+      double loc2n = con.loc(2,n);
 
-      real_long vel0n = con.vel(0,n);
-      real_long vel1n = con.vel(1,n);
-      real_long vel2n = con.vel(2,n);
+      double vel0n = con.vel(0,n);
+      double vel1n = con.vel(1,n);
+      double vel2n = con.vel(2,n);
 
-      real_long invgam = 1.0/sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
+      double invgam = 1.0/sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
 
       //--------------------------------------------------
-      real_long x0 = loc0n - vel0n*invgam*c;
-      real_long y0 = loc1n - vel1n*invgam*c;
-      real_long z0 = loc2n - vel2n*invgam*c; 
+      double x0 = loc0n - vel0n*invgam*c;
+      double y0 = loc1n - vel1n*invgam*c;
+      double z0 = loc2n - vel2n*invgam*c; 
 
       // normalized location w.r.t. tile; previous loc (x1) and current loc (x2)
-      real_long x1, x2, y1, y2, z1, z2;
+      double x1, x2, y1, y2, z1, z2;
       x1 = D >= 1 ? x0     - mins[0] : x0;
       x2 = D >= 1 ? loc0n  - mins[0] : loc0n;
       y1 = D >= 2 ? y0     - mins[1] : y0;
@@ -95,29 +96,29 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   	  int k2  = D >= 3 ? floor(z2) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      real_long xr = min( real_long(min(i1,i2)+1), max( (real_long)max(i1,i2), (real_long)0.5*(x1+x2) ) );
-      real_long yr = min( real_long(min(j1,j2)+1), max( (real_long)max(j1,j2), (real_long)0.5*(y1+y2) ) );
-      real_long zr = min( real_long(min(k1,k2)+1), max( (real_long)max(k1,k2), (real_long)0.5*(z1+z2) ) );
+      double xr = min( double(min(i1,i2)+1), max( (double)max(i1,i2), (double)0.5*(x1+x2) ) );
+      double yr = min( double(min(j1,j2)+1), max( (double)max(j1,j2), (double)0.5*(y1+y2) ) );
+      double zr = min( double(min(k1,k2)+1), max( (double)max(k1,k2), (double)0.5*(z1+z2) ) );
 
 
       //--------------------------------------------------
       // +q since - sign is already included in the Ampere's equation
       //q = weight*qe;
-      real_long Fx1 = +q*(xr - x1);
-      real_long Fy1 = +q*(yr - y1);
-      real_long Fz1 = +q*(zr - z1);
+      double Fx1 = +q*(xr - x1);
+      double Fy1 = +q*(yr - y1);
+      double Fz1 = +q*(zr - z1);
 
-      real_long Wx1 = D >= 1 ? 0.5*(x1 + xr) - i1 : 0.0;
-      real_long Wy1 = D >= 2 ? 0.5*(y1 + yr) - j1 : 0.0;
-      real_long Wz1 = D >= 3 ? 0.5*(z1 + zr) - k1 : 0.0;
+      double Wx1 = D >= 1 ? 0.5*(x1 + xr) - i1 : 0.0;
+      double Wy1 = D >= 2 ? 0.5*(y1 + yr) - j1 : 0.0;
+      double Wz1 = D >= 3 ? 0.5*(z1 + zr) - k1 : 0.0;
 
-      real_long Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
-      real_long Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
-  	  real_long Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
+      double Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
+      double Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
+  	  double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
-      real_long Fx2 = +q*(x2-xr);
-      real_long Fy2 = +q*(y2-yr);
-      real_long Fz2 = +q*(z2-zr);
+      double Fx2 = +q*(x2-xr);
+      double Fy2 = +q*(y2-yr);
+      double Fz2 = +q*(z2-zr);
 
       //--------------------------------------------------
       // jx

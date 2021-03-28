@@ -17,13 +17,13 @@ void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
 {
   // 2D 3-point binomial coefficients
-  //real_short winv=1./16.,
+  //float_m winv=1./16.,
   //        wtm=4.*winv, //middle
   //        wts=2.*winv, //side
   //        wtc=1.*winv; //corner
     
   // 2D 3-point binomial coefficients
-  const real_short C2[3][3] = 
+  const float_m C2[3][3] = 
         { {1./16., 2./16., 1./16.},
           {2./16., 4./16., 2./16.},
           {1./16., 2./16., 1./16.} };
@@ -60,7 +60,7 @@ void fields::Binomial2<2>::solve(
   tmp.clear();
   for(int is=-1; is<=1; is++) 
   for(int js=-1; js<=1; js++) {
-    real_short C = C2[is+1][js+1];
+    float_m C = C2[is+1][js+1];
 
     for(int j=jmin; j<jmax; j++) {
         #pragma omp simd
@@ -84,13 +84,13 @@ void fields::Binomial2<3>::solve(
 {
 
   // 3D 3-point binomial coefficients
-  const real_short C3[3][3][3] = 
+  const float_m C3[3][3][3] = 
         { { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} },
           { {2./64., 4./64., 2./64.}, {4./64., 8./64., 4./64.}, {2./64., 4./64., 2./64.} },
           { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
-  real_short C;
+  float_m C;
 
-  //real_short winv  = 1./64., // normalization
+  //float_m winv  = 1./64., // normalization
   //           wtd  = 1.*winv, // diagnoal
   //           wtos = 2.*winv, // outer side
   //           wtis = 4.*winv, // inner side
@@ -118,7 +118,7 @@ void fields::Binomial2<3>::solve(
 
   // make 3d loop with shared memory 
   auto fun = 
-  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<real_short, 3> &jj, toolbox::Mesh<real_short, 3> &tmp)
+  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<float_m, 3> &jj, toolbox::Mesh<float_m, 3> &tmp)
   {
     for(int is=-1; is<=1; is++) {
     for(int js=-1; js<=1; js++) {

@@ -69,7 +69,7 @@ h5io::Reader::read(
           //for (size_t ijk=0; ijk<3; ijk++) length[ijk] = len_vec[ijk];
           //mesh.resize(length);
           
-          std::vector<Realf> mins_vec, maxs_vec;
+          std::vector<float_m> mins_vec, maxs_vec;
           mins_vec << gr["mins"];
           maxs_vec << gr["maxs"];
           mesh.set_min({{ mins_vec[0], mins_vec[1], mins_vec[2]}} );
@@ -81,7 +81,7 @@ h5io::Reader::read(
           //len << gr["number_of_cells"];
 
           std::vector<uint64_t> cids;
-          std::vector<Realf>    vals;
+          std::vector<float_m>  vals;
           //cids.reserve( len );
           //vals.reserve( len );
 

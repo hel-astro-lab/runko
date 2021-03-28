@@ -58,7 +58,7 @@ h5io::Reader::read(
   //std::cout << "tile Nz=" << yee.Nz << "vs read value: " << Nz << "\n";
 
   // meshes
-  std::vector<real_short> arr1, arr2, arr3, arr4, arr5, arr6, arr7, arr8, arr9, arr10;
+  std::vector<float_m> arr1, arr2, arr3, arr4, arr5, arr6, arr7, arr8, arr9, arr10;
 
   arr1  << gr["jx"];
   arr2  << gr["jy"];

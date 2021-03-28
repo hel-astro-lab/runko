@@ -45,11 +45,11 @@ class Pusher
     assert(false);
 
     // initialize pointers to particle arrays
-    real_prtcl* loc[3];
+    float_p* loc[3];
     for( int i=0; i<3; i++)
       loc[i] = &( container.loc(i,0) );
 
-    real_prtcl* vel[3];
+    float_p* vel[3];
     for( int i=0; i<3; i++)
       vel[i] = &( container.vel(i,0) );
 

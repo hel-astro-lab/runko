@@ -69,7 +69,7 @@ h5io::Writer::write(
           //--------------------------------------------------
           // save actual mesh points
           std::vector<uint64_t> cids;
-          std::vector<Realf>    vals;
+          std::vector<float_m>    vals;
           cids.reserve( len );
           vals.reserve( len );
 

@@ -143,16 +143,16 @@ inline void h5io::TestPrtclWriter<D>::read_tiles(
     auto& container = tile.get_container( ispc );
     int nparts = container.size();
 
-    real_prtcl* loc[3];
+    float_p* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    real_prtcl* vel[3];
+    float_p* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-    real_prtcl* ch;
+    float_p* ch;
     ch = &( container.wgt(0) );
 
-    real_prtcl *ex, *ey, *ez, *bx, *by, *bz;
+    float_p *ex, *ey, *ez, *bx, *by, *bz;
     ex = &( container.Epart[0*nparts] );
     ey = &( container.Epart[1*nparts] );
     ez = &( container.Epart[2*nparts] );

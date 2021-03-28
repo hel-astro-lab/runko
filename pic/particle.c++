@@ -20,9 +20,9 @@
 namespace pic {
 
 inline Particle::Particle(
-    real_prtcl x, real_prtcl y, real_prtcl z,
-    real_prtcl ux, real_prtcl uy, real_prtcl uz, 
-    real_prtcl wgt,
+    float_p x,  float_p y,  float_p z,
+    float_p ux, float_p uy, float_p uz, 
+    float_p wgt,
     int __ind, int __proc
     ) : 
   _id(__ind),
@@ -40,7 +40,7 @@ inline Particle::Particle(
 
 inline Particle::Particle( size_t number_of_particles) 
 {
-  data[0] = static_cast<real_prtcl>(number_of_particles);
+  data[0] = static_cast<float_p>(number_of_particles);
 }
 
 /// special method for info particle that re-uses x mem location
@@ -187,9 +187,9 @@ std::pair<int,int> pic::ParticleContainer<D>::keygen()
 
 template<std::size_t D>
 void ParticleContainer<D>::add_particle (
-    std::vector<real_prtcl> prtcl_loc,
-    std::vector<real_prtcl> prtcl_vel,
-    real_prtcl prtcl_wgt)
+    std::vector<float_p> prtcl_loc,
+    std::vector<float_p> prtcl_vel,
+    float_p prtcl_wgt)
 {
 
   assert(prtcl_loc.size() == 3);
@@ -209,9 +209,9 @@ void ParticleContainer<D>::add_particle (
 
 template<std::size_t D>
 void ParticleContainer<D>::add_identified_particle (
-    std::vector<real_prtcl> prtcl_loc,
-    std::vector<real_prtcl> prtcl_vel,
-    real_prtcl prtcl_wgt,
+    std::vector<float_p> prtcl_loc,
+    std::vector<float_p> prtcl_vel,
+    float_p prtcl_wgt,
     int _id, int _proc)
 {
 
@@ -271,7 +271,7 @@ void ParticleContainer<2>::check_outgoing_particles(
   int i0, j0;
 
   // shortcut for particle locations
-  real_prtcl* locn[3];
+  float_p* locn[3];
   for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
   int i,j,k; // relative indices
@@ -312,10 +312,10 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
 
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
 
-  real_prtcl* locn[3];
+  float_p* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
-  real_prtcl* veln[3];
+  float_p* veln[3];
   for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
 
   int* idn[2];
@@ -360,10 +360,10 @@ void ParticleContainer<D>::delete_transferred_particles()
 
   //std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](auto a, auto b){return a.n > b.n;} );
 
-  real_prtcl* locn[3];
+  float_p* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
-  real_prtcl* veln[3];
+  float_p* veln[3];
   for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
 
   int* idn[2];
@@ -442,7 +442,7 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
-  real_prtcl locx, locy, locz, velx, vely, velz, wgt;
+  float_p locx, locy, locz, velx, vely, velz, wgt;
   int id, proc;
 
   int i;
@@ -462,9 +462,9 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
       i = elem.n;
 
       // NOTE: wrap bounds to [min, max)
-      locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
+      locx = wrap( neigh.loc(0, i), static_cast<float_p>(global_mins[0]), static_cast<float_p>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
 
       velx = neigh.vel(0, i);
       vely = neigh.vel(1, i);
@@ -604,7 +604,7 @@ void ParticleContainer<D>::unpack_incoming_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  real_prtcl locx, locy, locz, velx, vely, velz, wgts;
+  float_p locx, locy, locz, velx, vely, velz, wgts;
   int ids, proc;
 
   // get real number of incoming particles
@@ -676,7 +676,7 @@ void ParticleContainer<3>::check_outgoing_particles(
   outgoing_count = 0;
 
   // shortcut for particle locations
-  real_prtcl* locn[3];
+  float_p* locn[3];
   for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
 
@@ -847,7 +847,7 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
-  real_prtcl locx, locy, locz, velx, vely, velz, wgt;
+  float_p locx, locy, locz, velx, vely, velz, wgt;
   int id, proc;
 
   int i;
@@ -870,9 +870,9 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
 
       i = elem.n;
 
-      locx = wrap( neigh.loc(0, i), static_cast<real_prtcl>(global_mins[0]), static_cast<real_prtcl>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<real_prtcl>(global_mins[1]), static_cast<real_prtcl>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<real_prtcl>(global_mins[2]), static_cast<real_prtcl>(global_maxs[2]) );
+      locx = wrap( neigh.loc(0, i), static_cast<float_p>(global_mins[0]), static_cast<float_p>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
 
       velx = neigh.vel(0, i);
       vely = neigh.vel(1, i);

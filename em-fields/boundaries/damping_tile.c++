@@ -17,7 +17,7 @@ using std::exp;
 //
 //  //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDy*yeeDz) <<"\n";
 //  
-//  Realf resistivity = 10.0;
+//  float_m resistivity = 10.0;
 //
 //  yee.ex -= yee.jx / resistivity;
 //  yee.ey -= yee.jy / resistivity;
@@ -47,8 +47,7 @@ void fields::damping::Tile<D,S>::damp_fields()
 
   auto& yee = this->get_yee();
 
-  //Realf lambda, lambda1;
-  real_short lambda2;
+  float_m lambda2;
 
   bool left  = S < 0;
   bool right = S > 0;
@@ -80,20 +79,20 @@ void fields::damping::Tile<D,S>::damp_fields()
   if(D >= 3) kfin += halo;
 
 
-  real_short iglob, jglob, kglob, glob_coord;
-  real_short t1, t2;
+  float_m iglob, jglob, kglob, glob_coord;
+  float_m t1, t2;
 
   bool inside_damping_zone = false;
 
   // loop over all values in mesh
   for(int k = kstr; k<kfin; k++) {
-    kglob = (real_short)k + fields::Tile<D>::mins[2];
+    kglob = (float_m)k + fields::Tile<D>::mins[2];
 
     for(int j = jstr; j<jfin; j++) {
-      jglob = (real_short)j + fields::Tile<D>::mins[1];
+      jglob = (float_m)j + fields::Tile<D>::mins[1];
 
       for(int i=istr; i<ifin; i++) {
-        iglob = (real_short)i + fields::Tile<D>::mins[0];
+        iglob = (float_m)i + fields::Tile<D>::mins[0];
 
         inside_damping_zone = false;
 

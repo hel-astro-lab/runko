@@ -40,10 +40,10 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
 
 
   // local variables
-  real_long gam;
-  real_long mass;
-  real_long x0, y0, z0;
-  real_long u0, v0, w0;
+  double gam;
+  double mass;
+  double x0, y0, z0;
+  double u0, v0, w0;
   int nparts;
   int i,j,k;
   int iff,jff,kff;
@@ -65,13 +65,13 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       mass = container.m; // species mass
       nparts = container.size();
 
-      real_prtcl* loc[3];
+      float_p* loc[3];
       for( i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-      real_prtcl* vel[3];
+      float_p* vel[3];
       for( i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-      //real_prtcl* ch;
+      //float_p* ch;
       //ch = &( container.wgt(0) );
 
 
@@ -81,9 +81,9 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       for(int n=n1; n<n2; n++) {
 
         // prtcl coordinate location; cast to double for the duration of this algorithm
-        x0 = static_cast<real_long>( loc[0][n] );
-        y0 = static_cast<real_long>( loc[1][n] );
-        z0 = static_cast<real_long>( loc[2][n] );
+        x0 = static_cast<double>( loc[0][n] );
+        y0 = static_cast<double>( loc[1][n] );
+        z0 = static_cast<double>( loc[2][n] );
 
         // rel prtcl index; assuming dx = 1; tile coordinates
         // limit to 0 Nx-1 just in case to avoid crashes
@@ -102,9 +102,9 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         j = D >= 2 ? limit( floor(y0/stride), 0.0, double(ny)-1.0) : 0;
         k = D >= 3 ? limit( floor(z0/stride), 0.0, double(nz)-1.0) : 0;
 
-        u0 = static_cast<real_long>(vel[0][n]);
-        v0 = static_cast<real_long>(vel[1][n]);
-        w0 = static_cast<real_long>(vel[2][n]);
+        u0 = static_cast<double>(vel[0][n]);
+        v0 = static_cast<double>(vel[1][n]);
+        w0 = static_cast<double>(vel[2][n]);
 
         gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
 

@@ -11,26 +11,18 @@
 
 
 
-DEVCALLABLE inline real_long _lerp(
-      real_long c000,
-      real_long c100,
-      real_long c010,
-      real_long c110,
-      real_long c001,
-      real_long c101,
-      real_long c011,
-      real_long c111,
-      real_long dx, 
-      real_long dy, 
-      real_long dz) 
+DEVCALLABLE inline double _lerp(
+      double c000, double c100, double c010, double c110,
+      double c001, double c101, double c011, double c111,
+      double dx, double dy, double dz) 
 {
-      real_long c00 = c000 * (1.0-dx) + c100 * dx;
-      real_long c10 = c010 * (1.0-dx) + c110 * dx;
-      real_long c0  = c00  * (1.0-dy) + c10  * dy;
-      real_long c01 = c001 * (1.0-dx) + c101 * dx;
-      real_long c11 = c011 * (1.0-dx) + c111 * dx;
-      real_long c1  = c01  * (1.0-dy) + c11  * dy;
-      real_long c   = c0   * (1.0-dz) + c1   * dz;
+      double c00 = c000 * (1.0-dx) + c100 * dx;
+      double c10 = c010 * (1.0-dx) + c110 * dx;
+      double c0  = c00  * (1.0-dy) + c10  * dy;
+      double c01 = c001 * (1.0-dx) + c101 * dx;
+      double c11 = c011 * (1.0-dx) + c111 * dx;
+      double c1  = c01  * (1.0-dy) + c11  * dy;
+      double c   = c0   * (1.0-dz) + c1   * dz;
       return c;
 }
 
@@ -68,20 +60,20 @@ void pic::LinearInterpolator<D,V>::solve(
                 pic::ParticleContainer<D>& con){
 
       int i=0, j=0, k=0;
-      real_long dx=0.0, dy=0.0, dz=0.0;
+      double dx=0.0, dy=0.0, dz=0.0;
     
-      real_long loc0n = con.loc(0, n);
-      real_long loc1n = con.loc(1, n);
-      real_long loc2n = con.loc(2, n);
+      double loc0n = con.loc(0, n);
+      double loc1n = con.loc(1, n);
+      double loc2n = con.loc(2, n);
 
 
       // particle location in the grid
       // NOTE: trunc() ensures that prtcls outside the tile do not crash this loop 
       // (because it rounds e.g. xloc=-0.1 => i=0 and dx=-0.1). They should be
       // automatically cleaned on next time step to their real tiles.
-      if(D >= 1) i  = static_cast<int>(floor(loc0n));
-      if(D >= 2) j  = static_cast<int>(floor(loc1n));
-      if(D >= 3) k  = static_cast<int>(floor(loc2n));
+      if(D >= 1) i = static_cast<int>(floor(loc0n));
+      if(D >= 2) j = static_cast<int>(floor(loc1n));
+      if(D >= 3) k = static_cast<int>(floor(loc2n));
 
       if(D >= 1) dx = loc0n - i;
       if(D >= 2) dy = loc1n - j;
@@ -94,7 +86,7 @@ void pic::LinearInterpolator<D,V>::solve(
 
       // one-dimensional index
       const size_t ind = yee.ex.indx(i,j,k);
-      real_long c000, c100, c010, c110, c001, c101, c011, c111;
+      double c000, c100, c010, c110, c001, c101, c011, c111;
 
       //ex
       c000 = 0.5*(yee.ex(ind       ) +yee.ex(ind-1      ));
@@ -131,7 +123,6 @@ void pic::LinearInterpolator<D,V>::solve(
 
 
       //-------------------------------------------------- 
-
       // bx
       c000 = 0.25*( yee.bx(ind)+   yee.bx(ind-iy)+   yee.bx(ind-iz)+      yee.bx(ind-iy-iz));
       c100 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1-iy)+ yee.bx(ind+1-iz)+    yee.bx(ind+1-iy-iz));

@@ -32,10 +32,10 @@ class SnapshotWriter {
     std::string fname;
 
     /// meshes
-    std::vector< toolbox::Mesh<real_short,0> > arrs;
+    std::vector< toolbox::Mesh<float_m,0> > arrs;
 
     /// mpi receive buffer
-    std::vector< toolbox::Mesh<real_short,0> > rbuf;
+    std::vector< toolbox::Mesh<float_m,0> > rbuf;
 
 
     /// data stride length

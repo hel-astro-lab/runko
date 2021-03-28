@@ -24,22 +24,22 @@ class YeeLattice
   int Nz;
 
   /// Electric field 
-  toolbox::Mesh<real_short, 3> ex;
-  toolbox::Mesh<real_short, 3> ey;
-  toolbox::Mesh<real_short, 3> ez;
+  toolbox::Mesh<float_m, 3> ex;
+  toolbox::Mesh<float_m, 3> ey;
+  toolbox::Mesh<float_m, 3> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<real_short, 3> bx;
-  toolbox::Mesh<real_short, 3> by;
-  toolbox::Mesh<real_short, 3> bz;
+  toolbox::Mesh<float_m, 3> bx;
+  toolbox::Mesh<float_m, 3> by;
+  toolbox::Mesh<float_m, 3> bz;
     
   /// Charge density
-  toolbox::Mesh<real_short, 3> rho;
+  toolbox::Mesh<float_m, 3> rho;
 
   /// Current vector 
-  toolbox::Mesh<real_short, 3> jx;
-  toolbox::Mesh<real_short, 3> jy;
-  toolbox::Mesh<real_short, 3> jz;
+  toolbox::Mesh<float_m, 3> jx;
+  toolbox::Mesh<float_m, 3> jy;
+  toolbox::Mesh<float_m, 3> jz;
 
 
 
@@ -138,7 +138,7 @@ class Tile :
   using corgi::Tile<D>::maxs;
 
   /// CFL number (corresponds to simulation light speed c)
-  real_long cfl;
+  double cfl;
 
   //--------------------------------------------------
   // constructor with internal mesh dimensions

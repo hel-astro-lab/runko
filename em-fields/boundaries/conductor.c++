@@ -35,7 +35,7 @@ double fields::Conductor<3>::dipole(
 }
 
 
-real_short shape(real_short r, real_short r0, real_short delta) 
+float_m shape(float_m r, float_m r0, float_m delta) 
 { 
   return 0.5 * (1.0 - tanh((r - r0) / delta)); 
 }
@@ -71,13 +71,13 @@ void fields::Conductor<3>::insert_em(
 
   auto& yee = tile.get_yee();
 
-  real_short bxd, byd, bzd, exd, eyd, ezd;
-  real_short iglob, jglob, kglob;
-  real_short xr,yr,zr;
-  real_short vx,vy;
+  float_m bxd, byd, bzd, exd, eyd, ezd;
+  float_m iglob, jglob, kglob;
+  float_m xr,yr,zr;
+  float_m vx,vy;
 
   // angular velocity
-  real_short Omega = 2.0*PI/period;
+  float_m Omega = 2.0*PI/period;
 
   if(period < EPS) Omega = 0.0; // reality check
 
@@ -92,9 +92,9 @@ void fields::Conductor<3>::insert_em(
 
     //-----------
     // global grid coordinates
-    iglob = static_cast<real_short>(i) + mins[0];
-    jglob = static_cast<real_short>(j) + mins[1];
-    kglob = static_cast<real_short>(k) + mins[2];
+    iglob = static_cast<float_m>(i) + mins[0];
+    jglob = static_cast<float_m>(j) + mins[1];
+    kglob = static_cast<float_m>(k) + mins[2];
 
 
     //--------------------------------------------------
@@ -174,28 +174,28 @@ void fields::Conductor<3>::update_b(
     fields::Tile<3>& tile)
 {
 
-  real_short bxd, byd, bzd;
-  real_short bxi, byi, bzi;
-  real_short bxnew, bynew, bznew;
+  float_m bxd, byd, bzd;
+  float_m bxi, byi, bzi;
+  float_m bxnew, bynew, bznew;
 
-  real_short iglob, jglob, kglob;
+  float_m iglob, jglob, kglob;
 
-  real_short xr0,yr0,zr0;
-  real_short xr,yr,zr;
+  float_m xr0,yr0,zr0;
+  float_m xr,yr,zr;
 
-  real_short s,r;
+  float_m s,r;
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
 
   // smoothing scales for different components
-  //real_short delta = 1.0;  //from conductor.h
+  //float_m delta = 1.0;  //from conductor.h
   //
-  //real_short delta_erad   = 1.0*delta; 
-  //real_short delta_eperp  = 0.5*delta;
-  //real_short delta_brad   = 1.0*delta;
-  //real_short delta_bperp  = 1.0*delta;
+  //float_m delta_erad   = 1.0*delta; 
+  //float_m delta_eperp  = 0.5*delta;
+  //float_m delta_brad   = 1.0*delta;
+  //float_m delta_bperp  = 1.0*delta;
 
   // Tile limits
   auto mins = tile.mins;
@@ -210,9 +210,9 @@ void fields::Conductor<3>::update_b(
 
     //-----------
     // global grid coordinates
-    iglob = static_cast<real_short>(i) + mins[0];
-    jglob = static_cast<real_short>(j) + mins[1];
-    kglob = static_cast<real_short>(k) + mins[2];
+    iglob = static_cast<float_m>(i) + mins[0];
+    jglob = static_cast<float_m>(j) + mins[1];
+    kglob = static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates 
     xr0 = coord.x(iglob, 0.5);
@@ -298,22 +298,22 @@ void fields::Conductor<3>::update_e(
     fields::Tile<3>& tile)
 {
 
-  real_short exd, eyd, ezd;
-  real_short bxd, byd, bzd;
-  real_short exi, eyi, ezi;
-  real_short exnew, eynew, eznew;
+  float_m exd, eyd, ezd;
+  float_m bxd, byd, bzd;
+  float_m exi, eyi, ezi;
+  float_m exnew, eynew, eznew;
 
-  real_short iglob, jglob, kglob;
+  float_m iglob, jglob, kglob;
 
-  real_short xr0,yr0,zr0;
-  real_short xr,yr,zr;
+  float_m xr0,yr0,zr0;
+  float_m xr,yr,zr;
 
-  real_short vx,vy;
-  real_short s,r;
+  float_m vx,vy;
+  float_m s,r;
 
 
   // angular velocity
-  real_short Omega = 2.0*PI/period;
+  float_m Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
 
   // helper class for staggered grid positions
@@ -321,12 +321,12 @@ void fields::Conductor<3>::update_e(
 
 
   // smoothing scales for Brad/Bperp components
-  //real_short delta = 2.0;  // from conductor.h
+  //float_m delta = 2.0;  // from conductor.h
   //
-  //real_short delta_erad   = 1.0*delta; 
-  //real_short delta_eperp  = 0.5*delta;
-  //real_short delta_brad   = 1.0*delta;
-  //real_short delta_bperp  = 1.0*delta;
+  //float_m delta_erad   = 1.0*delta; 
+  //float_m delta_eperp  = 0.5*delta;
+  //float_m delta_brad   = 1.0*delta;
+  //float_m delta_bperp  = 1.0*delta;
 
   // Tile limits
   auto mins = tile.mins;
@@ -341,9 +341,9 @@ void fields::Conductor<3>::update_e(
 
     //-----------
     // global grid coordinates
-    iglob = static_cast<real_short>(i) + mins[0];
-    jglob = static_cast<real_short>(j) + mins[1];
-    kglob = static_cast<real_short>(k) + mins[2];
+    iglob = static_cast<float_m>(i) + mins[0];
+    jglob = static_cast<float_m>(j) + mins[1];
+    kglob = static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates
     xr0 = coord.x(iglob, 0.5);
