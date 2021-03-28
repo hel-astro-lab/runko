@@ -121,11 +121,30 @@ class UniIter{
         static std::map<void*, void*> registeredAddesses;
 
 
+        static auto getGrid2(std::tuple<int, int> max)
+        {
+            dim3 block = { 8, 8 }; // TODO: 8x8 for 2D?
+            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 
+                           1 + (std::get<1>(max) / block.y) };
+
+            return std::make_tuple(block, grid);
+        }
+
         static auto getGrid3(std::tuple<int, int, int> max)
         {
             dim3 block = { 8, 8, 1 };
-            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 1 + (std::get<1>(max) / block.y), 1 + (std::get<2>(max) / block.z) };
+            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 
+                           1 + (std::get<1>(max) / block.y), 
+                           1 + (std::get<2>(max) / block.z) };
 
+            return std::make_tuple(block, grid);
+        }
+
+        static auto getGrid2(std::tuple<int, int> max, std::tuple<int, int> block_)
+        {
+            dim3 block = { std::get<0>(block_), std::get<1>(block_) };
+            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 
+                           1 + (std::get<1>(max) / block.y) };
             return std::make_tuple(block, grid);
         }
 
@@ -170,6 +189,40 @@ class UniIter{
 
             getErrorCuda(((DevKernels::iterate3dKern<<<grid, block>>>(fun, xMax, yMax, zMax, args...))));
 
+        }
+
+
+        template<class F, class... Args>
+        static void iterate2D(F fun, ExecPlan plan, int xMax, int yMax, Args& ... args)
+        {
+            std::tuple<dim3, dim3> gridArgs;
+
+            if(plan.block) { gridArgs = getGrid2({xMax, yMax, zMax}, plan.block.value()); }
+            else { gridArgs = getGrid2({xMax, yMax}); }
+
+            // unpack and handle exec plan here
+            if (plan.stream == "default")
+            {
+                // default stream
+                //std::cout << "Using default stream using it" << std::endl;
+                getErrorCuda(((DevKernels::iterate2dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, xMax, yMax, args...))));
+            }
+            else {
+                // non default stream
+                // check if it exsists
+                // if not create it
+                auto search = streams.find(plan.stream);
+                if (search != streams.end()) {
+                    //
+                    std::cout << "stream found using it" << std::endl;
+                } else {
+                    streams[plan.stream] = cudaStream_t();
+                    cudaStreamCreate(&streams[plan.stream]);
+                    std::cout << "Not found stream crated" << std::endl;
+                }
+                getErrorCuda(((DevKernels::iterate2dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs), 0, streams[plan.stream]>>>(fun, xMax, yMax, args...))));
+    
+            }
         }
 
         template<class F, class... Args>
