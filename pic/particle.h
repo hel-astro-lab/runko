@@ -196,13 +196,13 @@ class ParticleContainer{
     return locArr[idim][iprtcl];
   }
 
-  //inline std::vector<float_p> loc(size_t idim) 
-  //{
-  //  std::vector<float_p> ret;
-  //  for(const auto& e: locArr[idim])
-  //    ret.push_back(e);
-  //  return ret;//locArr[idim];
-  //}
+  inline std::vector<float_p> loc(size_t idim) 
+  {
+    std::vector<float_p> ret;
+    for(const auto& e: locArr[idim])
+      ret.push_back(e);
+    return ret;//locArr[idim];
+  }
 
   //--------------------------------------------------
   // velocities
@@ -218,14 +218,14 @@ class ParticleContainer{
     return velArr[idim][iprtcl];
   }
 
-  //inline std::vector<float_p> vel(size_t idim) 
-  //{
-  //  //return velArr[idim];
-  //  std::vector<float_p> ret;
-  //  for(const auto& e: velArr[idim])
-  //    ret.push_back(e);
-  //  return ret;
-  //}
+  inline std::vector<float_p> vel(size_t idim) 
+  {
+    //return velArr[idim];
+    std::vector<float_p> ret;
+    for(const auto& e: velArr[idim])
+      ret.push_back(e);
+    return ret;
+  }
 /*
   virtual inline std::vector<float_p>& vel(size_t idim)
   {
@@ -246,14 +246,14 @@ class ParticleContainer{
     return wgtArr[iprtcl];
   }
 
-  //inline std::vector<float_p> wgt()
-  //{
-  //  //return wgtArr;
-  //  std::vector<float_p> ret;
-  //  for(const auto& e: wgtArr)
-  //    ret.push_back(e);
-  //  return ret;
-  //}
+  inline std::vector<float_p> wgt()
+  {
+    //return wgtArr;
+    std::vector<float_p> ret;
+    for(const auto& e: wgtArr)
+      ret.push_back(e);
+    return ret;
+  }
 
 /*
   virtual inline std::vector<float_p>& wgt()
@@ -275,14 +275,14 @@ class ParticleContainer{
     return indArr[idim][iprtcl];
   }
 
-  //inline std::vector<int> id(size_t idim) 
-  //{
-  //  //return indArr[idim];
-  //  std::vector<int> ret;
-  //  for(const auto& e: indArr[idim])
-  //    ret.push_back(e);
-  //  return ret;
-  //}
+  inline std::vector<int> id(size_t idim) 
+  {
+    //return indArr[idim];
+    std::vector<int> ret;
+    for(const auto& e: indArr[idim])
+      ret.push_back(e);
+    return ret;
+  }
 
 /*
   virtual inline std::vector<int>& id(size_t idim)

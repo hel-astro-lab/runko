@@ -29,7 +29,7 @@ class FDTD2_pml :
   double norm_abs = 0.1;
 
   /// damping function
-  real_short lambda(real_short sx, real_short sy, real_short sz);
+  float_m lambda(float_m sx, float_m sy, float_m sz);
 
 
 

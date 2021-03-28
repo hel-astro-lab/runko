@@ -277,4 +277,4 @@ inline Vec3E vlv::FullAmrMomentumLagrangianSolver<T,D,V>::other_forces(
 
 //--------------------------------------------------
 // explicit template instantiation
-template class vlv::AmrMomentumLagrangianSolver<Realf, 1, 3>; //1D3V
+template class vlv::AmrMomentumLagrangianSolver<float_m, 1, 3>; //1D3V

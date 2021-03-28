@@ -12,7 +12,7 @@
 
 
 void sweep_in_x(
-        toolbox::Mesh<real_short,3>& arr,
+        toolbox::Mesh<float_m,3>& arr,
         int lenx,
         int leny,
         int lenz,
@@ -20,7 +20,7 @@ void sweep_in_x(
         ) {
 
   int imin, imax, jmin, jmax, kmin, kmax;
-  real_short tmp1, tmp2;
+  float_m tmp1, tmp2;
     
   for(int npass=1; npass<=sub_cycle; npass++){
     imin = -3 + npass;

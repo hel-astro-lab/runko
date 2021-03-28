@@ -3,28 +3,28 @@
 #include <cmath>
 
 
-inline real_short Dm_x( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
+inline float_m Dm_x( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
     return f(i+ai-1, j+bj, k+bk) -f(i-ai, j+bj, k+bk);
 }
 
-inline real_short Dm_y( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
+inline float_m Dm_y( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
     return f(i+bi, j+ai-1, k+bk) -f(i+bi, j-ai, k+bk);
 }
 
-inline real_short Dm_z( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
+inline float_m Dm_z( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
     return f(i+bi, j+bj, k+ai-1) -f(i+bi, j+bj, k-ai);
 }
 
 //-------------------------------------------------- 
-inline real_short Dp_x( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
+inline float_m Dp_x( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
     return f(i+ai, j+bj, k+bk) - f(i-ai+1, j+bj, k+bk);
 }
 
-inline real_short Dp_y( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
+inline float_m Dp_y( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
     return f(i+bi, j+ai, k+bk) - f(i+bi, j-ai+1, k+bk);
 }
 
-inline real_short Dp_z( toolbox::Mesh<real_short, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
+inline float_m Dp_z( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
     return f(i+bi, j+bj, k+ai) - f(i+bi, j+bj, k-ai+1);
 }
 
@@ -40,7 +40,7 @@ void fields::FDTDGen<3>::push_e(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
   
-  real_short Cx, Cy, Cz;
+  float_m Cx, Cy, Cz;
 
   const int Nx = tile.mesh_lengths[0];
   const int Ny = tile.mesh_lengths[1];
@@ -112,7 +112,7 @@ void fields::FDTDGen<3>::push_half_b(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
 
-  real_short Cx, Cy, Cz;
+  float_m Cx, Cy, Cz;
 
   const int Nx = tile.mesh_lengths[0];
   const int Ny = tile.mesh_lengths[1];

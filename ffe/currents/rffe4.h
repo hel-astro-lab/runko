@@ -16,15 +16,15 @@ class rFFE4
   int Nz;
 
   /// interpolated arrays
-  toolbox::Mesh<real_short, 0> bxf;
-  toolbox::Mesh<real_short, 0> byf;
-  toolbox::Mesh<real_short, 0> bzf;
+  toolbox::Mesh<float_m, 0> bxf;
+  toolbox::Mesh<float_m, 0> byf;
+  toolbox::Mesh<float_m, 0> bzf;
 
-  toolbox::Mesh<real_short, 0> exf;
-  toolbox::Mesh<real_short, 0> eyf;
-  toolbox::Mesh<real_short, 0> ezf;
+  toolbox::Mesh<float_m, 0> exf;
+  toolbox::Mesh<float_m, 0> eyf;
+  toolbox::Mesh<float_m, 0> ezf;
 
-  toolbox::Mesh<real_short, 0> rhf;
+  toolbox::Mesh<float_m, 0> rhf;
 
 
   rFFE4(int Nx, int Ny, int Nz) :
@@ -43,8 +43,8 @@ class rFFE4
 
   // interpolation routine
   void interpolate( 
-        toolbox::Mesh<real_short,3>& f,
-        toolbox::Mesh<real_short,0>& fi,
+        toolbox::Mesh<float_m,3>& f,
+        toolbox::Mesh<float_m,0>& fi,
         const std::array<int,D>& in,
         const std::array<int,D>& out
       );

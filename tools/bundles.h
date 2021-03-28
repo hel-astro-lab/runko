@@ -14,10 +14,10 @@ namespace toolbox {
   class Bundle {
 
     /// values along the pencil
-    std::vector<Realf> pencil;
+    std::vector<float_m> pencil;
 
     /// guiding grid for the pencil
-    std::vector<Realf> grid;
+    std::vector<float_m> grid;
 
     public:
 
@@ -29,17 +29,17 @@ namespace toolbox {
 
     void load_block(size_t q, vblock_t block);
 
-    void load_grid(size_t q, Realf val);
+    void load_grid(size_t q, float_m val);
 
-    std::vector<Realf> get_grid();
+    std::vector<float_m> get_grid();
 
-    std::vector<Realf> get_pencil();
+    std::vector<float_m> get_pencil();
 
     bool is_non_zero(size_t q);
 
     vblock_t get_slice(size_t q);
 
-    Realf get_dx(size_t q);
+    float_m get_dx(size_t q);
 
   }; // end of Bundle class
 
@@ -55,10 +55,10 @@ namespace toolbox {
       Bundle delta;
 
       /// time step
-      Realf dt = 0.0;
+      float_m dt = 0.0;
 
       /// numerical zero
-      Realf nzero = 1.0e-4;
+      float_m nzero = 1.0e-4;
 
 
       virtual ~BundleInterpolator() { };

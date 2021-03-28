@@ -26,14 +26,14 @@ namespace py = pybind11;
 #include "../vlasov/tasker.h"
 
 
-using Realf = float;
-// typedef toolbox::AdaptiveMesh<Realf, 1> AM1d;
-typedef toolbox::AdaptiveMesh<Realf, 3> AM3d;
-typedef toolbox::Adapter<Realf, 3> Adapter3d;
+using float_m = float;
+// typedef toolbox::AdaptiveMesh<float_m, 1> AM1d;
+typedef toolbox::AdaptiveMesh<float_m, 3> AM3d;
+typedef toolbox::Adapter<float_m, 3> Adapter3d;
 
 
 /// trampoline class for VlasovVelocitySolver
-typedef vlasov::MomentumSolver<Realf,3> momsol; // PYBIND preprocessor macro freaks out 
+typedef vlasov::MomentumSolver<float_m,3> momsol; // PYBIND preprocessor macro freaks out 
                                                 // of commas so we hide them with typedef
                                                   
 class PyMomentumSolver : public momsol {
@@ -45,11 +45,11 @@ class PyMomentumSolver : public momsol {
     void solve_mesh( 
         AM3d& mesh0, 
         AM3d& mesh1, 
-        std::array<Realf, 3>& E,
-        std::array<Realf, 3>& B,
-        Realf qm,
-        Realf dt,
-        Realf cfl
+        std::array<float_m, 3>& E,
+        std::array<float_m, 3>& B,
+        float_m qm,
+        float_m dt,
+        float_m cfl
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
@@ -62,7 +62,7 @@ class PyMomentumSolver : public momsol {
 
 
 /// trampoline class for VlasovSpatialSolver
-class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
+class PySpatialSolver : public vlasov::SpatialSolver<float_m> {
   public:
 
     void solve(
@@ -71,7 +71,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
       ) override {
       PYBIND11_OVERLOAD_PURE(
           void,
-          vlasov::SpatialSolver<Realf>,
+          vlasov::SpatialSolver<float_m>,
           solve,
           tile, grid
           );
@@ -114,7 +114,7 @@ class PySpatialSolver : public vlasov::SpatialSolver<Realf> {
 
           return s(i,j,k);
         })
-      .def("__setitem__", [](Class &s, py::tuple indx, Realf val) 
+      .def("__setitem__", [](Class &s, py::tuple indx, float_m val) 
         {
           auto i = indx[0].cast<int>();
           auto j = indx[1].cast<int>();
@@ -290,7 +290,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
         return s.get_from_roots(cid);
         })
-    .def("__setitem__", [](AM3d &s, py::tuple indx, Realf v) 
+    .def("__setitem__", [](AM3d &s, py::tuple indx, float_m v) 
         { 
         auto i = indx[0].cast<uint64_t>();
         auto j = indx[1].cast<uint64_t>();
@@ -316,10 +316,10 @@ PYBIND11_MODULE(pyplasma, m) {
     // -------------------------------------------------- 
     // AMR numerics
       
-  //m.def("deriv", &toolbox::deriv<Realf, 3>);
-  //m.def("grad",  &toolbox::grad<Realf, 3>);
-  //m.def("interp_linear", &toolbox::interp_linear<Realf,3>);
-  //m.def("interp_cubic", &toolbox::interp_cubic<Realf,3>);
+  //m.def("deriv", &toolbox::deriv<float_m, 3>);
+  //m.def("grad",  &toolbox::grad<float_m, 3>);
+  //m.def("interp_linear", &toolbox::interp_linear<float_m,3>);
+  //m.def("interp_cubic", &toolbox::interp_cubic<float_m,3>);
 
 
   py::class_<Adapter3d>(m, "Adapter")
@@ -338,41 +338,41 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   // general interface for momentum solvers
-  py::class_<vlasov::MomentumSolver<Realf,3>, PyMomentumSolver > vvsol(m, "MomentumSolver");
+  py::class_<vlasov::MomentumSolver<float_m,3>, PyMomentumSolver > vvsol(m, "MomentumSolver");
   vvsol
     .def(py::init<>())
-    .def("solve",     &vlasov::MomentumSolver<Realf,3>::solve)
-    .def("solve_mesh", &vlasov::MomentumSolver<Realf,3>::solve_mesh);
+    .def("solve",     &vlasov::MomentumSolver<float_m,3>::solve)
+    .def("solve_mesh", &vlasov::MomentumSolver<float_m,3>::solve_mesh);
 
   // AMR Lagrangian solver
-  py::class_<vlasov::AmrMomentumLagrangianSolver<Realf,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlasov::AmrMomentumLagrangianSolver<float_m,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
-  py::class_<vlasov::GravityAmrMomentumLagrangianSolver<Realf,3>>(m, "GravityAmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlasov::GravityAmrMomentumLagrangianSolver<float_m,3>>(m, "GravityAmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
 
 
   // general interface for spatial solvers
-  py::class_<vlasov::SpatialSolver<Realf>, PySpatialSolver> vssol(m, "SpatialSolver");
+  py::class_<vlasov::SpatialSolver<float_m>, PySpatialSolver> vssol(m, "SpatialSolver");
   vssol
     .def(py::init<>())
-    .def("solve", &vlasov::SpatialSolver<Realf>::solve);
+    .def("solve", &vlasov::SpatialSolver<float_m>::solve);
 
 
   // AMR Lagrangian solver
-  py::class_<vlasov::AmrSpatialLagrangianSolver<Realf>>(m, "AmrSpatialLagrangianSolver", vssol)
+  py::class_<vlasov::AmrSpatialLagrangianSolver<float_m>>(m, "AmrSpatialLagrangianSolver", vssol)
     .def(py::init<>());
 
 
   /// Vlasov tile analyzator
-  py::class_<vlasov::Analyzator<Realf> >(m, "Analyzator")
+  py::class_<vlasov::Analyzator<float_m> >(m, "Analyzator")
     .def(py::init<>());
 
 
-  declare_mesh<Realf, 0>(m, std::string("Mesh0") );
-  declare_mesh<Realf, 1>(m, std::string("Mesh1") );
-  declare_mesh<Realf, 3>(m, std::string("Mesh3") );
+  declare_mesh<float_m, 0>(m, std::string("Mesh0") );
+  declare_mesh<float_m, 1>(m, std::string("Mesh1") );
+  declare_mesh<float_m, 3>(m, std::string("Mesh3") );
 
 
 

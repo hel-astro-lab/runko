@@ -10,15 +10,15 @@ namespace ffe {
 
 template<std::size_t D>
 void Tile<D>::rk3_update(
-    real_short c1, 
-    real_short c2, 
-    real_short c3
+    float_m c1, 
+    float_m c2, 
+    float_m c3
     )
 {
   fields::YeeLattice&    m  = this->get_yee();
   ffe::SkinnyYeeLattice& n  = this->Fn; 
   ffe::SkinnyYeeLattice& dm = this->dF; 
-  //real_short dt = tile.cfl;
+  //float_m dt = tile.cfl;
 
 
   UniIter::iterate3D(

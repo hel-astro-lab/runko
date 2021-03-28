@@ -13,15 +13,15 @@ void pic::VayPusher<D,V>::push_container(
   int nparts = container.size();
 
   // initialize pointers to particle arrays
-  real_prtcl* loc[3];
+  float_p* loc[3];
   for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-  real_prtcl* vel[3];
+  float_p* vel[3];
   for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-  real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-  real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+  double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
+  double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
   // make sure E and B tmp arrays are of correct size
   if(container.Epart.size() != (size_t)3*nparts)
@@ -29,7 +29,7 @@ void pic::VayPusher<D,V>::push_container(
   if(container.Bpart.size() != (size_t)3*nparts)
     container.Bpart.resize(3*nparts);
 
-  real_prtcl *ex, *ey, *ez, *bx, *by, *bz;
+  float_p *ex, *ey, *ez, *bx, *by, *bz;
   ex = &( container.Epart[0*nparts] );
   ey = &( container.Epart[1*nparts] );
   ez = &( container.Epart[2*nparts] );
@@ -42,35 +42,35 @@ void pic::VayPusher<D,V>::push_container(
   int n1 = 0;
   int n2 = nparts;
 
-  real_long u0, v0, w0;
-  real_long u1, v1, w1;
-  real_long g, f;
-  real_long ustar, sig, tx, ty, tz, vx0, vy0, vz0;
+  double u0, v0, w0;
+  double u1, v1, w1;
+  double g, f;
+  double ustar, sig, tx, ty, tz, vx0, vy0, vz0;
 
-  real_long c = tile.cfl;
-  real_long cinv = 1.0/c;
+  double c = tile.cfl;
+  double cinv = 1.0/c;
 
   // charge-to-mass ratio (sign only because fields are in units of q)
-  real_long qm = sign(container.q)/container.m;
+  double qm = sign(container.q)/container.m;
 
-  real_long vel0n, vel1n, vel2n;
+  double vel0n, vel1n, vel2n;
 
   // add division by m_s to simulate multiple species
 
   //TODO: SIMD
   for(int n=n1; n<n2; n++) {
-    vel0n = static_cast<real_long>( vel[0][n] );
-    vel1n = static_cast<real_long>( vel[1][n] );
-    vel2n = static_cast<real_long>( vel[2][n] );
+    vel0n = static_cast<double>( vel[0][n] );
+    vel1n = static_cast<double>( vel[1][n] );
+    vel2n = static_cast<double>( vel[2][n] );
 
     // read particle-specific fields
-    ex0 = static_cast<real_long>( ex[n]*(0.5*qm) );
-    ey0 = static_cast<real_long>( ey[n]*(0.5*qm) );
-    ez0 = static_cast<real_long>( ez[n]*(0.5*qm) );
+    ex0 = static_cast<double>( ex[n]*(0.5*qm) );
+    ey0 = static_cast<double>( ey[n]*(0.5*qm) );
+    ez0 = static_cast<double>( ez[n]*(0.5*qm) );
 
-    bx0 = static_cast<real_long>( bx[n]*(0.5*qm*cinv) );
-    by0 = static_cast<real_long>( by[n]*(0.5*qm*cinv) );
-    bz0 = static_cast<real_long>( bz[n]*(0.5*qm*cinv) );
+    bx0 = static_cast<double>( bx[n]*(0.5*qm*cinv) );
+    by0 = static_cast<double>( by[n]*(0.5*qm*cinv) );
+    bz0 = static_cast<double>( bz[n]*(0.5*qm*cinv) );
 
     //--------------------------------------------------
     // Vay algorithm
@@ -103,9 +103,9 @@ void pic::VayPusher<D,V>::push_container(
 		w0 = f*(w1 + (u1*tx + v1*ty + w1*tz)*tz + u1*ty - v1*tx);
 
     // normalized 4-velocity advance
-    vel[0][n] = static_cast<real_prtcl>( u0*cinv );
-    vel[1][n] = static_cast<real_prtcl>( v0*cinv );
-    vel[2][n] = static_cast<real_prtcl>( w0*cinv );
+    vel[0][n] = static_cast<float_p>( u0*cinv );
+    vel[1][n] = static_cast<float_p>( v0*cinv );
+    vel[2][n] = static_cast<float_p>( w0*cinv );
 
     // position advance
     // NOTE: no mixed-precision calc here. Can be problematic.

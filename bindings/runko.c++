@@ -24,8 +24,8 @@ PYBIND11_MODULE(pyrunko, m_base) {
   fields::bind_fields(m_fields);
 
   /// vlv
-  py::module m_vlv = m_base.def_submodule("vlv", "Runko Vlasov module");
-  vlv::bind_vlv(m_vlv);
+  //py::module m_vlv = m_base.def_submodule("vlv", "Runko Vlasov module");
+  //vlv::bind_vlv(m_vlv);
 
   /// pic
   py::module m_pic = m_base.def_submodule("pic", "Runko PIC module");

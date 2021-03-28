@@ -43,17 +43,17 @@ void Bundle::load_block(size_t q, vblock_t block) {
 };
 
 /// load values to the grid and transform the incoming cube according to dim
-void Bundle::load_grid(size_t q, Realf val) {
+void Bundle::load_grid(size_t q, float_m val) {
     grid[q] = val;
 };
 
 /// return the guiding grid
-std::vector<Realf> Bundle::get_grid() {
+std::vector<float_m> Bundle::get_grid() {
     return grid;
 };
 
 /// return the pencil values
-std::vector<Realf> Bundle::get_pencil() {
+std::vector<float_m> Bundle::get_pencil() {
     return pencil;
 };
 
@@ -73,7 +73,7 @@ vblock_t Bundle::get_slice(size_t q) {
 };
 
 /// get grid size
-Realf Bundle::get_dx(size_t q) {
+float_m Bundle::get_dx(size_t q) {
     return std::abs( grid[q+1] - grid[q] );
 };
 
@@ -177,17 +177,17 @@ Bundle BundleInterpolator4PIC::interpolate( ) {
 
   // compute flux (inner region)
   vblock_t block;
-  Realf fp2, fp1, fp0, fm1, fm2;
+  float_m fp2, fp1, fp0, fm1, fm2;
 
 
   // temporary variables for loop
-  Realf aa, as, aa1, aa2, aa3;
+  float_m aa, as, aa1, aa2, aa3;
   int fa, ss, j1;
 
-  Realf hmax1, hmax2, hmin1, hmin2;
-  Realf hmax, hmin;
-  Realf ep1, ep2, ep3;
-  Realf flux;
+  float_m hmax1, hmax2, hmin1, hmin2;
+  float_m hmax, hmin;
+  float_m ep1, ep2, ep3;
+  float_m flux;
 
 
   ret.load_zero_block(0);
@@ -229,16 +229,16 @@ Bundle BundleInterpolator4PIC::interpolate( ) {
     hmin2 = min( min(fp1,fp0), max(fp0*2-fm1,fp1*2-fp2) );
         
     hmax = max(hmax1,hmax2);
-    hmin = max( (Realf)0.0, min(hmin1,hmin2));
+    hmin = max( (float_m)0.0, min(hmin1,hmin2));
 
-    ep3=-min(fm1-fp0, (Realf) 2.4*(fp0-hmin))*(fp0<=fm1)
-        +min(fp0-fm1, (Realf) 4.0*(hmax-fp0))*(fp0> fm1);
-    ep2= min(fp1-fp0, (Realf) 1.6*(fp0-hmin))*(fp1>=fp0)
-        -min(fp0-fp1, (Realf) 1.6*(hmax-fp0))*(fp1< fp0);
-    ep1= min(fp2-fp1, (Realf) 2.0*(fp0-hmin))*(fp2>=fp1)*(ep2>=ep3) 
-        -min(fp1-fp2, (Realf) 1.1*(fp0-hmin))*(fp2< fp1)*(ep2>=ep3) 
-        +min(fp2-fp1, (Realf) 0.8*(hmax-fp0))*(fp2>=fp1)*(ep2< ep3) 
-        -min(fp1-fp2, (Realf) 1.9*(hmax-fp0))*(fp2< fp1)*(ep2< ep3);
+    ep3=-min(fm1-fp0, (float_m) 2.4*(fp0-hmin))*(fp0<=fm1)
+        +min(fp0-fm1, (float_m) 4.0*(hmax-fp0))*(fp0> fm1);
+    ep2= min(fp1-fp0, (float_m) 1.6*(fp0-hmin))*(fp1>=fp0)
+        -min(fp0-fp1, (float_m) 1.6*(hmax-fp0))*(fp1< fp0);
+    ep1= min(fp2-fp1, (float_m) 2.0*(fp0-hmin))*(fp2>=fp1)*(ep2>=ep3) 
+        -min(fp1-fp2, (float_m) 1.1*(fp0-hmin))*(fp2< fp1)*(ep2>=ep3) 
+        +min(fp2-fp1, (float_m) 0.8*(hmax-fp0))*(fp2>=fp1)*(ep2< ep3) 
+        -min(fp1-fp2, (float_m) 1.9*(hmax-fp0))*(fp2< fp1)*(ep2< ep3);
 
     flux = aa*((ep1*aa1 + ep2*aa2 + ep3*aa3)/24+fp0);
     block[0] = flux;

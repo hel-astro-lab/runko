@@ -7,7 +7,7 @@ namespace vlv {
 template<std::size_t D>
 void Tile<D>::step_location(corgi::Grid<D>& grid)
 {
-  AmrSpatialLagrangianSolver<Realf> ssol;
+  AmrSpatialLagrangianSolver<float_m> ssol;
   ssol.solve(*this, grid);
 }
 

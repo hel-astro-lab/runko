@@ -47,7 +47,7 @@ class Tile :
 
 
   /// update E and B
-  void rk3_update(real_short c1, real_short c2, real_short c3);
+  void rk3_update(float_m c1, float_m c2, float_m c3);
 
   /// copy Y^n to Y^n-1
   void copy_eb();

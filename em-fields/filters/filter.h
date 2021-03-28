@@ -24,7 +24,7 @@ class Filter: public ManagedParent
   int Nz;
 
   ///internal scratch container (size equal to jx/jy/jz)
-  toolbox::Mesh<real_short, 3> tmp;
+  toolbox::Mesh<float_m, 3> tmp;
 
   Filter(int Nx, int Ny, int Nz) : 
     Nx{Nx}, Ny{Ny}, Nz{Nz},

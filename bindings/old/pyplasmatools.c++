@@ -45,7 +45,7 @@ PYBIND11_MODULE(plasmatools, m) {
   // .def("__imul__",               &sheets::Sheet::operator*= )
   .def("__imul__",             [](sheets::Sheet const& self, sheets::Sheet const other)
         { return self * other; }, py::is_operator())
-  .def("__mul__",              [](sheets::Sheet const & self, Realf const other) 
+  .def("__mul__",              [](sheets::Sheet const & self, float_m const other) 
         { return self * other; }, py::is_operator())
   .def("resize",                 &sheets::Sheet::resize)
     .def("load_value",            &sheets::Sheet::load_value)

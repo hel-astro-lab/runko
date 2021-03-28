@@ -40,7 +40,7 @@ void bind_rad(py::module& m_sub)
   py::class_<rad::PhotonContainer, pic::ParticleContainer<3>>(m_sub, "PhotonContainer")
     .def(py::init<>())
     .def("add_particle",  (void (rad::PhotonContainer::*)
-          ( std::vector<real_prtcl>, std::vector<real_prtcl>, real_prtcl, real_prtcl ) ) 
+          ( std::vector<float_p>, std::vector<float_p>, float_p, float_p ) ) 
             &rad::PhotonContainer::add_particle)
     .def("ene", [](rad::PhotonContainer& s) {return s.eneArr;}, py::return_value_policy::reference)
     // FIXME: use base class definition via getter/setter members to avoid this redefinition

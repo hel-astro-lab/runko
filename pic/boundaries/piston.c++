@@ -13,21 +13,21 @@ using std::max;
 template<size_t D>
 void pic::Piston<D>::zigzag(
     pic::Tile<D>& tile,
-    real_long x2glob, 
-    real_long y2glob, 
-    real_long z2glob, 
-    real_long x1glob, 
-    real_long y1glob, 
-    real_long z1glob, 
-    real_long q)
+    double x2glob, 
+    double y2glob, 
+    double z2glob, 
+    double x1glob, 
+    double y1glob, 
+    double z1glob, 
+    double q)
 {
   int i1,i2,j1,j2,k1,k2;
 
-  real_long x1,x2,y1,y2,z1,z2;
-  real_long xr,yr,zr;
+  double x1,x2,y1,y2,z1,z2;
+  double xr,yr,zr;
 
-  real_long Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
-  real_long Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
+  double Fx1, Fy1, Fz1, Fx2, Fy2, Fz2;
+  double Wx1, Wy1, Wz1, Wx2, Wy2, Wz2;
 
   auto& yee = tile.get_yee();
   auto mins = tile.mins;
@@ -59,9 +59,9 @@ void pic::Piston<D>::zigzag(
 
 
   // relay point; +1 is equal to +\Delta x
-  xr = min( (real_long)(min(i1,i2)+1), max( (real_long)max(i1,i2), static_cast<real_long>(0.5)*(x1+x2) ) );
-  yr = min( (real_long)(min(j1,j2)+1), max( (real_long)max(j1,j2), static_cast<real_long>(0.5)*(y1+y2) ) );
-  zr = min( (real_long)(min(k1,k2)+1), max( (real_long)max(k1,k2), static_cast<real_long>(0.5)*(z1+z2) ) );
+  xr = min( (double)(min(i1,i2)+1), max( (double)max(i1,i2), static_cast<double>(0.5)*(x1+x2) ) );
+  yr = min( (double)(min(j1,j2)+1), max( (double)max(j1,j2), static_cast<double>(0.5)*(y1+y2) ) );
+  zr = min( (double)(min(k1,k2)+1), max( (double)max(k1,k2), static_cast<double>(0.5)*(z1+z2) ) );
 
 
   // -q to include -j in the Ampere's equation
@@ -135,33 +135,33 @@ void pic::Piston<D>::solve(
     int nparts = container.size();
 
     // initialize pointers to particle arrays
-    real_prtcl* loc[3];
+    float_p* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    real_prtcl* vel[3];
+    float_p* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
     // loop over particles
     int n1 = 0;
     int n2 = nparts;
 
-    real_long c = tile.cfl;
-    real_long loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
-    real_long x0, y0, z0, gamma, tfrac, walloc0;
-    real_long xcolis, ycolis, zcolis;
+    double c = tile.cfl;
+    double loc0n, loc1n, loc2n, vel0n, vel1n, vel2n;
+    double x0, y0, z0, gamma, tfrac, walloc0;
+    double xcolis, ycolis, zcolis;
 
     for(int n=n1; n<n2; n++) {
 
       // left side of the wall boundary
-      if( static_cast<real_long>(loc[0][n]) < walloc) {
+      if( static_cast<double>(loc[0][n]) < walloc) {
 
-        loc0n = static_cast<real_long>( loc[0][n] );
-        loc1n = static_cast<real_long>( loc[1][n] );
-        loc2n = static_cast<real_long>( loc[2][n] );
+        loc0n = static_cast<double>( loc[0][n] );
+        loc1n = static_cast<double>( loc[1][n] );
+        loc2n = static_cast<double>( loc[2][n] );
                                                      
-        vel0n = static_cast<real_long>( vel[0][n] );
-        vel1n = static_cast<real_long>( vel[1][n] );
-        vel2n = static_cast<real_long>( vel[2][n] );
+        vel0n = static_cast<double>( vel[0][n] );
+        vel1n = static_cast<double>( vel[1][n] );
+        vel2n = static_cast<double>( vel[2][n] );
 
 
         // unwind wall location
@@ -183,7 +183,7 @@ void pic::Piston<D>::solve(
         // compute crossing point
         //tfrac = std::min(
         //    std::abs((x0-walloc0)/(betawall*c - vel0n/gamma*c)), 
-        //    (real_long)1.0
+        //    (double)1.0
         //    );
         tfrac = std::abs((x0-walloc0)/(betawall*c - c*vel0n/gamma + EPS));
         if (tfrac > 1.0) {
@@ -224,10 +224,10 @@ void pic::Piston<D>::solve(
         gamma = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n) + EPS;
 
         tfrac = std::min(
-            (real_long)1.0,
+            (double)1.0,
             std::abs(
                 (vel0n-xcolis)/
-                (std::max( (real_long)1.0e-6, std::abs(vel0n-x0) ) + EPS)
+                (std::max( (double)1.0e-6, std::abs(vel0n-x0) ) + EPS)
                     )
             );
 
@@ -257,13 +257,13 @@ void pic::Piston<D>::solve(
             -container.q);
 
         // lastly; store particle back to the container
-        loc[0][n] = static_cast<real_prtcl>( loc0n );
-        loc[1][n] = static_cast<real_prtcl>( loc1n );
-        loc[2][n] = static_cast<real_prtcl>( loc2n );
+        loc[0][n] = static_cast<float_p>( loc0n );
+        loc[1][n] = static_cast<float_p>( loc1n );
+        loc[2][n] = static_cast<float_p>( loc2n );
 
-        vel[0][n] = static_cast<real_prtcl>( vel0n );
-        vel[1][n] = static_cast<real_prtcl>( vel1n );
-        vel[2][n] = static_cast<real_prtcl>( vel2n );
+        vel[0][n] = static_cast<float_p>( vel0n );
+        vel[1][n] = static_cast<float_p>( vel1n );
+        vel[2][n] = static_cast<float_p>( vel2n );
       }
     }
 

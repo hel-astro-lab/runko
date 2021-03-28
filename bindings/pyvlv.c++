@@ -24,17 +24,15 @@
 #include "../vlasov/boundaries/piston.h"
 
 
-
 namespace vlv {
 
-
-using Adapter3d = toolbox::Adapter<Realf, 3>;
-using AM1d = toolbox::AdaptiveMesh<Realf, 1>;
-using AM3d = toolbox::AdaptiveMesh<Realf, 3>;
+using Adapter3d = toolbox::Adapter<float_m, 3>;
+using AM1d = toolbox::AdaptiveMesh<float_m, 1>;
+using AM3d = toolbox::AdaptiveMesh<float_m, 3>;
 
 //--------------------------------------------------
 /// trampoline class for VlasovVelocitySolver
-using momsol = vlv::MomentumSolver<Realf,1,1>; // PYBIND preprocessor macro freaks out 
+using momsol = vlv::MomentumSolver<float_m,1,1>; // PYBIND preprocessor macro freaks out 
                                              // of commas so we hide them with typedef
 
                                                   
@@ -47,9 +45,9 @@ class PyMomentumSolver : public momsol {
     void solve_mesh( 
         AM3d& mesh0, 
         AM3d& mesh1, 
-        std::array<Realf, 3>& E,
-        std::array<Realf, 3>& B,
-        vlv::tools::Params<Realf>& params
+        std::array<float_m, 3>& E,
+        std::array<float_m, 3>& B,
+        vlv::tools::Params<float_m>& params
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
@@ -62,7 +60,7 @@ class PyMomentumSolver : public momsol {
 
 
 /// trampoline class for VlasovSpatialSolver
-class PySpatialSolver : public vlv::SpatialSolver<Realf> {
+class PySpatialSolver : public vlv::SpatialSolver<float_m> {
   public:
 
     void solve(
@@ -71,7 +69,7 @@ class PySpatialSolver : public vlv::SpatialSolver<Realf> {
       ) override {
       PYBIND11_OVERLOAD_PURE(
           void,
-          vlv::SpatialSolver<Realf>,
+          vlv::SpatialSolver<float_m>,
           solve,
           tile, grid
           );
@@ -252,31 +250,31 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
   // general interface for momentum solvers
-  py::class_<vlv::MomentumSolver<Realf,1,1>, PyMomentumSolver > vvsol(m_1d, "MomentumSolver");
+  py::class_<vlv::MomentumSolver<float_m,1,1>, PyMomentumSolver > vvsol(m_1d, "MomentumSolver");
   vvsol
     .def(py::init<>())
-    .def("solve",     &vlv::MomentumSolver<Realf,1,1>::solve)
-    .def("solve_mesh", &vlv::MomentumSolver<Realf,1,1>::solve_mesh);
+    .def("solve",     &vlv::MomentumSolver<float_m,1,1>::solve)
+    .def("solve_mesh", &vlv::MomentumSolver<float_m,1,1>::solve_mesh);
 
   // AMR Lagrangian solver
-  py::class_<vlv::AmrMomentumLagrangianSolver<Realf,1,1>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlv::AmrMomentumLagrangianSolver<float_m,1,1>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
-  py::class_<vlv::GravityAmrMomentumLagrangianSolver<Realf,1,1>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
-     .def(py::init<Realf,Realf>());
+  py::class_<vlv::GravityAmrMomentumLagrangianSolver<float_m,1,1>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
+     .def(py::init<float_m,float_m>());
 
 
   //--------------------------------------------------
 
   // general interface for spatial solvers
-  py::class_<vlv::SpatialSolver<Realf>, PySpatialSolver> vssol(m_1d, "SpatialSolver");
+  py::class_<vlv::SpatialSolver<float_m>, PySpatialSolver> vssol(m_1d, "SpatialSolver");
   vssol
     .def(py::init<>())
-    .def("solve", &vlv::SpatialSolver<Realf>::solve);
+    .def("solve", &vlv::SpatialSolver<float_m>::solve);
 
 
   // AMR Lagrangian solver
-  py::class_<vlv::AmrSpatialLagrangianSolver<Realf>>(m_1d, "AmrSpatialLagrangianSolver", vssol)
+  py::class_<vlv::AmrSpatialLagrangianSolver<float_m>>(m_1d, "AmrSpatialLagrangianSolver", vssol)
     .def(py::init<>());
 
 
@@ -291,7 +289,7 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
   /// Vlasov tile analyzator
-  //py::class_<vlv::Analyzator<Realf> >(m_1d, "Analyzator")
+  //py::class_<vlv::Analyzator<float_m> >(m_1d, "Analyzator")
   //  .def(py::init<>());
 
 

@@ -19,10 +19,10 @@ class FDTDGen :
   double corr = 1.0; 
 
   // high-order curl operator coefficients
-  //const real_short[6][6][6] = { }
-  toolbox::Mesh<real_short,0> CXs;
-  toolbox::Mesh<real_short,0> CYs;
-  toolbox::Mesh<real_short,0> CZs;
+  //const float_m[6][6][6] = { }
+  toolbox::Mesh<float_m,0> CXs;
+  toolbox::Mesh<float_m,0> CYs;
+  toolbox::Mesh<float_m,0> CZs;
 
   FDTDGen() :
       CXs(4,4,4),

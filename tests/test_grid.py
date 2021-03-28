@@ -10,20 +10,19 @@ import pyrunko
 
 class Initialization(unittest.TestCase):
 
+    #TODO add 1d pic
+    #def test_node1D(self):
+    #    grid = pycorgi.oneD.Grid(3,1,1)
+    #    grid.set_grid_lims(0.0, 1.0)
 
-    def test_node1D(self):
+    #    #c = pyrunko.fields.Tile1D(10)
+    #    c = pyrunko.pic.oneD.Tile(10,1,1)
+    #    grid.add_tile(c, (1,) ) 
 
-        grid = pycorgi.oneD.Grid(3,1,1)
-        grid.set_grid_lims(0.0, 1.0)
+    #    c2 = grid.get_tile(1)
 
-        #c = pyrunko.fields.Tile1D(10)
-        c = pyrunko.vlv.oneD.Tile(10,1,1)
-        grid.add_tile(c, (1,) ) 
-
-        c2 = grid.get_tile(1)
-
-        (i,) = c2.index
-        self.assertEqual( 1, i )
+    #    (i,) = c2.index
+    #    self.assertEqual( 1, i )
 
 
     def test_node2D(self):

@@ -26,9 +26,9 @@ class Piston
 
   /// Small current deposition routine for individual particles 
   void zigzag(pic::Tile<D>& /*tile*/, 
-      real_long x2glob, real_long y2glob, real_long z2glob, 
-      real_long x1, real_long y1, real_long z1, 
-      real_long q);
+      double x2glob, double y2glob, double z2glob, 
+      double x1, double y1, double z1, 
+      double q);
 };
 
 

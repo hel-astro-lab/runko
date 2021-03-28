@@ -31,12 +31,12 @@ ffe::SkinnyYeeLattice&
 ffe::SkinnyYeeLattice& 
   ffe::SkinnyYeeLattice::operator *=(double rhs) 
 {
-  ex *= static_cast<real_short>(rhs);
-  ey *= static_cast<real_short>(rhs);
-  ez *= static_cast<real_short>(rhs);
-  bx *= static_cast<real_short>(rhs);
-  by *= static_cast<real_short>(rhs);
-  bz *= static_cast<real_short>(rhs);
+  ex *= static_cast<float_m>(rhs);
+  ey *= static_cast<float_m>(rhs);
+  ez *= static_cast<float_m>(rhs);
+  bx *= static_cast<float_m>(rhs);
+  by *= static_cast<float_m>(rhs);
+  bz *= static_cast<float_m>(rhs);
 
   return *this;
 }
@@ -44,12 +44,12 @@ ffe::SkinnyYeeLattice&
 ffe::SkinnyYeeLattice& 
   ffe::SkinnyYeeLattice::operator /=(double rhs) 
 {
-  ex /= static_cast<real_short>(rhs);
-  ey /= static_cast<real_short>(rhs);
-  ez /= static_cast<real_short>(rhs);
-  bx /= static_cast<real_short>(rhs);
-  by /= static_cast<real_short>(rhs);
-  bz /= static_cast<real_short>(rhs);
+  ex /= static_cast<float_m>(rhs);
+  ey /= static_cast<float_m>(rhs);
+  ez /= static_cast<float_m>(rhs);
+  bx /= static_cast<float_m>(rhs);
+  by /= static_cast<float_m>(rhs);
+  bz /= static_cast<float_m>(rhs);
 
   return *this;
 }

@@ -5,10 +5,10 @@
 
 /// PML damping coefficient profile
 template<>
-real_short fields::FDTD2_pml<3>::lambda( real_short sx, real_short sy, real_short sz )
+float_m fields::FDTD2_pml<3>::lambda( float_m sx, float_m sy, float_m sz )
 {
   // normalized unit radius 
-  real_short r = std::sqrt( 
+  float_m r = std::sqrt( 
             pow( (sx - cenx)/radx, 2) 
           + pow( (sy - ceny)/rady, 2) 
           + pow( (sz - cenz)/radz, 2) 
@@ -37,7 +37,7 @@ real_short fields::FDTD2_pml<3>::lambda( real_short sx, real_short sy, real_shor
 //{
 //  YeeLattice& mesh = tile.get_yee();
 //
-//  Realf C = 1.0 * tile.cfl * dt * corr;
+//  float_m C = 1.0 * tile.cfl * dt * corr;
 //
 //  int k = 0;
 //  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
@@ -64,10 +64,10 @@ template<>
 void fields::FDTD2_pml<3>::push_e(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
-  Realf C = 1.0 * tile.cfl * dt * corr;
+  float_m C = 1.0 * tile.cfl * dt * corr;
 
   auto mins = tile.mins;
-  real_short lam, iglob, jglob, kglob;
+  float_m lam, iglob, jglob, kglob;
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++)
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
@@ -90,9 +90,9 @@ void fields::FDTD2_pml<3>::push_e(fields::Tile<3>& tile)
 
     //-----------
     // global grid coordinates
-    iglob = static_cast<real_short>(i) + mins[0];
-    jglob = static_cast<real_short>(j) + mins[1];
-    kglob = static_cast<real_short>(k) + mins[2];
+    iglob = static_cast<float_m>(i) + mins[0];
+    jglob = static_cast<float_m>(j) + mins[1];
+    kglob = static_cast<float_m>(k) + mins[2];
 
     // dE = dt*curl B  (1/2)
 	lam = 0.5*lambda(iglob+0.5, jglob, kglob);
@@ -125,7 +125,7 @@ void fields::FDTD2_pml<3>::push_e(fields::Tile<3>& tile)
 //{
 //  YeeLattice& mesh = tile.get_yee();
 //
-//  Realf C = 0.5 * tile.cfl * dt * corr;
+//  float_m C = 0.5 * tile.cfl * dt * corr;
 //
 //  int k = 0;
 //  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++)
@@ -153,10 +153,10 @@ template<>
 void fields::FDTD2_pml<3>::push_half_b(fields::Tile<3>& tile)
 {
   YeeLattice& mesh = tile.get_yee();
-  Realf C = 0.5 * tile.cfl * dt * corr;
+  float_m C = 0.5 * tile.cfl * dt * corr;
 
   auto mins = tile.mins;
-  real_short lam, iglob, jglob, kglob;
+  float_m lam, iglob, jglob, kglob;
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) 
   for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
@@ -179,9 +179,9 @@ void fields::FDTD2_pml<3>::push_half_b(fields::Tile<3>& tile)
 
     //-----------
     // global grid coordinates
-    iglob = static_cast<real_short>(i) + mins[0];
-    jglob = static_cast<real_short>(j) + mins[1];
-    kglob = static_cast<real_short>(k) + mins[2];
+    iglob = static_cast<float_m>(i) + mins[0];
+    jglob = static_cast<float_m>(j) + mins[1];
+    kglob = static_cast<float_m>(k) + mins[2];
 
     // dB = -dt*curl E  (1/4)
 	lam = 0.25*lambda(iglob, jglob+0.5, kglob+0.5);
@@ -225,13 +225,13 @@ void fields::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
   auto& bz  = m.bz;
 
   // dt / dx
-  real_short c = tile.cfl;
+  float_m c = tile.cfl;
 
   // high-order curl operator coefficients
-  real_short C1 =  c;
+  float_m C1 =  c;
 
   // pml parameters
-  real_short lam, iglob, jglob, kglob;
+  float_m lam, iglob, jglob, kglob;
 
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
@@ -249,9 +249,9 @@ void fields::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 
         //-----------
         // global grid coordinates
-        iglob = static_cast<real_short>(i) + mins[0];
-        jglob = static_cast<real_short>(j) + mins[1];
-        kglob = static_cast<real_short>(k) + mins[2];
+        iglob = static_cast<float_m>(i) + mins[0];
+        jglob = static_cast<float_m>(j) + mins[1];
+        kglob = static_cast<float_m>(k) + mins[2];
 
         //-----------
         // simultaneous E & B update with perfectly matched layer damping

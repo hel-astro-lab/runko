@@ -18,13 +18,13 @@ namespace toolbox {
     public:
 
       /// guiding grid along horizontal dimensions of the sheet (i.e., x)
-      std::vector<Realf> iGrid;
+      std::vector<float_m> iGrid;
 
       // sheet size in horizontal dim
       size_t Ni = 0;
 
       /// guiding grid along vertical dimensions of the sheet (i.e., y)
-      std::vector<Realf> jGrid;
+      std::vector<float_m> jGrid;
 
       // sheet size in horizontal dim
       size_t Nj = 0;
@@ -33,14 +33,14 @@ namespace toolbox {
       double slice_value;
 
       /// Value storage of the sheet
-      std::vector<Realf> values;
+      std::vector<float_m> values;
 
 
       void resize(size_t Ni_, size_t Nj_);
 
       size_t get_index(size_t i, size_t j);
 
-      void load_value(size_t i, size_t j, Realf val);
+      void load_value(size_t i, size_t j, float_m val);
 
       void load_zero_block(size_t i, size_t j);
 
@@ -52,7 +52,7 @@ namespace toolbox {
 
       void check_size(const Sheet& s);
 
-      Realf sum();
+      float_m sum();
 
       // Sheet diff();
 
@@ -90,25 +90,25 @@ namespace toolbox {
 
   template<typename T>
   inline Sheet operator*(Sheet lhs, const T rhs) {
-    lhs *= (Realf) rhs;
+    lhs *= (float_m) rhs;
     return lhs;
   };
 
   template<typename T>
   inline Sheet operator*(const T rhs, Sheet lhs)  {
-    lhs *= (Realf) rhs;
+    lhs *= (float_m) rhs;
     return lhs;
   };
 
   template<typename T>
   inline Sheet operator/(Sheet lhs, const T rhs) {
-    lhs /= (Realf) rhs;
+    lhs /= (float_m) rhs;
     return lhs;
   };
 
   template<typename T>
   inline Sheet operator/(const T rhs, Sheet lhs)  {
-    lhs /= (Realf) rhs;
+    lhs /= (float_m) rhs;
     return lhs;
   };
 
@@ -136,7 +136,7 @@ inline size_t toolbox::Sheet::get_index(size_t i, size_t j) {
 }
 
 /// Load scalar to the sheet
-inline void toolbox::Sheet::load_value(size_t i, size_t j, Realf val) {
+inline void toolbox::Sheet::load_value(size_t i, size_t j, float_m val) {
   size_t indx = get_index(i, j);
   values[indx] = val;
 }
@@ -188,8 +188,8 @@ Sheet Sheet::diff() {
 */
 
 /// 
-inline Realf toolbox::Sheet::sum() {
-  Realf sum = 0.0;
+inline float_m toolbox::Sheet::sum() {
+  float_m sum = 0.0;
   for(auto v : values) { sum += v; }
 
   return sum;
@@ -214,13 +214,13 @@ inline toolbox::Sheet& toolbox::Sheet::operator-=(const Sheet& rhs) {
 
 template<typename T>
 inline toolbox::Sheet& toolbox::Sheet::operator*=(const T rhs) {
-  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] *= (Realf) rhs;
+  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] *= (float_m) rhs;
   return *this;
 }
 
 template<typename T>
 inline toolbox::Sheet& toolbox::Sheet::operator/=(const T rhs) {
-  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] /= (Realf) rhs;
+  for(size_t q=0; q<(this->Ni*this->Nj); q++) this->values[q] /= (float_m) rhs;
   return *this;
 }
 

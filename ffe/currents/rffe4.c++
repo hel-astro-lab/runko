@@ -8,8 +8,8 @@
 // general trilinear interpolation
 template<>
 void ffe::rFFE4<3>::interpolate( 
-        toolbox::Mesh<real_short,3>& f,
-        toolbox::Mesh<real_short,0>& fi,
+        toolbox::Mesh<float_m,3>& f,
+        toolbox::Mesh<float_m,0>& fi,
         const std::array<int,3>& in,
         const std::array<int,3>& out
       )
@@ -23,7 +23,7 @@ void ffe::rFFE4<3>::interpolate(
   int km = in[0] == out[0] ? 0 :  -out[0];
   int kp = in[0] == out[0] ? 0 : 1-out[0];
 
-  real_short f11, f10, f01, f00, f1, f0;
+  float_m f11, f10, f01, f00, f1, f0;
 
   for(int k=0; k<f.Nz; k++) {
     for(int j=0; j<f.Ny; j++) {
@@ -87,8 +87,8 @@ void ffe::rFFE4<3>::comp_rho(ffe::Tile<3>& tile)
   auto& ez  = mesh.ez;
 
   // high-order curl operator coefficients
-  real_short C1 = 9.0/8.0;
-  real_short C2 = 1.0/24.0;
+  float_m C1 = 9.0/8.0;
+  float_m C2 = 1.0/24.0;
 
   // NOTE: compute rho from -1 to +1 because later on we re-stagger it 
   // and need the guard zones for interpolation
@@ -122,12 +122,12 @@ void ffe::rFFE4<3>::push_eb(ffe::Tile<3>& tile)
   auto& by  = m.by;
   auto& bz  = m.bz;
 
-  real_short c = tile.cfl;
+  float_m c = tile.cfl;
 
   // dt / dx
   // high-order curl operator coefficients
-  real_short C1 = c*9.0/8.0;
-  real_short C2 = c*1.0/24.0;
+  float_m C1 = c*9.0/8.0;
+  float_m C2 = c*1.0/24.0;
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
@@ -177,8 +177,8 @@ void ffe::rFFE4<3>::add_jperp(ffe::Tile<3>& tile)
   auto& jy  = m.jy;
   auto& jz  = m.jz;
 
-  real_short dt = tile.cfl;
-  real_short b2, cur;
+  float_m dt = tile.cfl;
+  float_m b2, cur;
 
   interpolate(m.rho, rhf, {{1,1,1}}, {{1,1,0}} );
   stagger_x_eb(m);
@@ -250,8 +250,8 @@ void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  real_short cur, b2;
-  real_short dt = tile.cfl;
+  float_m cur, b2;
+  float_m dt = tile.cfl;
 
   // NOTE: updates done via dm array to avoid cross contamination between x/y/z diretions
 
@@ -337,8 +337,8 @@ void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  real_short dt = tile.cfl;
-  real_short e2, b2, diss, cur;
+  float_m dt = tile.cfl;
+  float_m e2, b2, diss, cur;
 
 
   stagger_x_eb(m);

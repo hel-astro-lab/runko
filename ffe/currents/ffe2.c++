@@ -8,8 +8,8 @@
 // general trilinear interpolation
 template<>
 void ffe::FFE2<3>::interpolate( 
-        toolbox::Mesh<real_short,3>& f,
-        toolbox::Mesh<real_short,0>& fi,
+        toolbox::Mesh<float_m,3>& f,
+        toolbox::Mesh<float_m,0>& fi,
         const std::array<int,3>& in,
         const std::array<int,3>& out
       )
@@ -23,7 +23,7 @@ void ffe::FFE2<3>::interpolate(
   int km = in[0] == out[0] ? 0 :  -out[0];
   int kp = in[0] == out[0] ? 0 : 1-out[0];
 
-  real_short f11, f10, f01, f00, f1, f0;
+  float_m f11, f10, f01, f00, f1, f0;
 
   for(int k=0; k<f.Nz; k++) {
     for(int j=0; j<f.Ny; j++) {
@@ -161,10 +161,10 @@ void ffe::FFE2<3>::push_eb(ffe::Tile<3>& tile)
   auto& bz  = m.bz;
 
   // dt / dx
-  real_short c = tile.cfl;
+  float_m c = tile.cfl;
 
   // high-order curl operator coefficients
-  real_short C1 =  c;
+  float_m C1 =  c;
 
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
     for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
@@ -197,9 +197,9 @@ void ffe::FFE2<3>::add_jperp(ffe::Tile<3>& tile)
   auto& jy  = m.jy;
   auto& jz  = m.jz;
 
-  real_short dt = tile.cfl;
-  real_short b2, eh2, cur;
-  //real_short e2, eb, chi;
+  float_m dt = tile.cfl;
+  float_m b2, eh2, cur;
+  //float_m e2, eb, chi;
 
   interpolate(m.rho, rhf, {{1,1,1}}, {{1,1,0}} );
   stagger_x_eb(m);
@@ -283,11 +283,11 @@ void ffe::FFE2<3>::add_jpar(ffe::Tile<3>& tile)
   auto& jy  = m.jy;
   auto& jz  = m.jz;
 
-  real_short cur, b2;
-  real_short dt = tile.cfl;
+  float_m cur, b2;
+  float_m dt = tile.cfl;
 
-  real_short ecurle, bcurlb;
-  real_short eb;
+  float_m ecurle, bcurlb;
+  float_m eb;
 
   // pre-step 
   // compute curlE and curlB
@@ -377,8 +377,8 @@ void ffe::FFE2<3>::limit_e(ffe::Tile<3>& tile)
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  real_short dt = tile.cfl;
-  real_short e2, b2, diss, cur;
+  float_m dt = tile.cfl;
+  float_m e2, b2, diss, cur;
 
 
   stagger_x_eb(m);
@@ -457,16 +457,16 @@ void ffe::FFE2<3>::add_diffusion(ffe::Tile<3>& tile)
   fields::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  real_short dt = tile.cfl;
+  float_m dt = tile.cfl;
 
   // finite difference tables for derivatives D order O as cDoO
-  // real_short coef[7] = {  0.0,  0.0,     1.0,   -2.0,     1.0,    0.0,    0.0 }; //c2o2
-  //real_short coef[7] = {  0.0, -1./12.,  4./3., -5./2.,   4./3., -1./12., 0.0 }; //c2o4
-  //real_short coef[7] = { 1./8, -1.0,    13./8.,  0.0,   -13./8.,  1.0,  -1./8.}; //c3o4
-  //real_short coef[7] = {  0.,   1.,     -4.,     6.,     -4.,     1.0,   0.   }; //c4o2
-  //real_short coef[7] = {-1./6,  2.0,   -13./2., 28./3., -13./2.,  2.0,  -1./6.}; //c4o4
-  //real_short coef[7] = { -0.5,  2.0,    -5./2.,  0.0,    5./2., -2.0,    0.5  }; //c5o2
-  real_short coef[7] = {  1.0, -6.0,     15.0,  -20.,    15.,   -6.0,    1.0  }; //c6o1
+  // float_m coef[7] = {  0.0,  0.0,     1.0,   -2.0,     1.0,    0.0,    0.0 }; //c2o2
+  //float_m coef[7] = {  0.0, -1./12.,  4./3., -5./2.,   4./3., -1./12., 0.0 }; //c2o4
+  //float_m coef[7] = { 1./8, -1.0,    13./8.,  0.0,   -13./8.,  1.0,  -1./8.}; //c3o4
+  //float_m coef[7] = {  0.,   1.,     -4.,     6.,     -4.,     1.0,   0.   }; //c4o2
+  //float_m coef[7] = {-1./6,  2.0,   -13./2., 28./3., -13./2.,  2.0,  -1./6.}; //c4o4
+  //float_m coef[7] = { -0.5,  2.0,    -5./2.,  0.0,    5./2., -2.0,    0.5  }; //c5o2
+  float_m coef[7] = {  1.0, -6.0,     15.0,  -20.,    15.,   -6.0,    1.0  }; //c6o1
 
   // NOTE: no need to interpolate becase only adding e_i = dm.e_i components
   for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {

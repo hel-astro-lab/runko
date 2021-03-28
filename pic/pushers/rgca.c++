@@ -7,43 +7,43 @@ using toolbox::sign;
 
 
 
-inline real_long _lerp(
-      real_long c000,
-      real_long c100,
-      real_long c010,
-      real_long c110,
-      real_long c001,
-      real_long c101,
-      real_long c011,
-      real_long c111,
-      real_long dx, real_long dy, real_long dz
+inline double _lerp(
+      double c000,
+      double c100,
+      double c010,
+      double c110,
+      double c001,
+      double c101,
+      double c011,
+      double c111,
+      double dx, double dy, double dz
       ) 
 {
-      real_long c00 = c000 * (1.0-dx) + c100 * dx;
-      real_long c10 = c010 * (1.0-dx) + c110 * dx;
-      real_long c0  = c00  * (1.0-dy) + c10  * dy;
-      real_long c01 = c001 * (1.0-dx) + c101 * dx;
-      real_long c11 = c011 * (1.0-dx) + c111 * dx;
-      real_long c1  = c01  * (1.0-dy) + c11  * dy;
-      real_long c   = c0   * (1.0-dz) + c1   * dz;
+      double c00 = c000 * (1.0-dx) + c100 * dx;
+      double c10 = c010 * (1.0-dx) + c110 * dx;
+      double c0  = c00  * (1.0-dy) + c10  * dy;
+      double c01 = c001 * (1.0-dx) + c101 * dx;
+      double c11 = c011 * (1.0-dx) + c111 * dx;
+      double c1  = c01  * (1.0-dy) + c11  * dy;
+      double c   = c0   * (1.0-dz) + c1   * dz;
       return c;
 }
 
 
 //-------------------------------------------------- 
 inline auto ExB_drift( 
-            real_long  ex,  real_long  ey,  real_long  ez,
-            real_long  bx,  real_long  by,  real_long  bz
-                     ) -> std::tuple<real_long, real_long, real_long, real_long, real_long>
+            double  ex,  double  ey,  double  ez,
+            double  bx,  double  by,  double  bz
+                     ) -> std::tuple<double, double, double, double, double>
 {
-    const real_long b = sqrt( bx*bx + by*by + bz*bz );
+    const double b = sqrt( bx*bx + by*by + bz*bz );
 
-    real_long vex = (ey*bz - ez*by)/(b*b + EPS);
-    real_long vey = (ez*bx - ex*bz)/(b*b + EPS);
-    real_long vez = (ex*by - ey*bx)/(b*b + EPS);
+    double vex = (ey*bz - ez*by)/(b*b + EPS);
+    double vey = (ez*bx - ex*bz)/(b*b + EPS);
+    double vez = (ex*by - ey*bx)/(b*b + EPS);
 
-    real_long ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
-    real_long kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
+    double ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
+    double kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
 
     return {vex, vey, vez, kappa, 0.};
 }
@@ -51,26 +51,26 @@ inline auto ExB_drift(
 
 //ExB in units of c with E.B !=  correction
 inline auto ExB_drift_rel( 
-            real_long  ex,  real_long  ey,  real_long  ez,
-            real_long  bx,  real_long  by,  real_long  bz
-                     ) -> std::tuple<real_long, real_long, real_long, real_long, real_long>
+            double  ex,  double  ey,  double  ez,
+            double  bx,  double  by,  double  bz
+                     ) -> std::tuple<double, double, double, double, double>
 {
-    const real_long b = sqrt( bx*bx + by*by + bz*bz );
-    const real_long e = sqrt( ex*ex + ey*ey + ez*ez );
+    const double b = sqrt( bx*bx + by*by + bz*bz );
+    const double e = sqrt( ex*ex + ey*ey + ez*ez );
 
-    real_long vex = (ey*bz - ez*by)/(b*b + e*e + EPS);
-    real_long vey = (ez*bx - ex*bz)/(b*b + e*e + EPS);
-    real_long vez = (ex*by - ey*bx)/(b*b + e*e + EPS);
-    real_long we2  = vex*vex + vey*vey + vez*vez; //|u|^2
+    double vex = (ey*bz - ez*by)/(b*b + e*e + EPS);
+    double vey = (ez*bx - ex*bz)/(b*b + e*e + EPS);
+    double vez = (ex*by - ey*bx)/(b*b + e*e + EPS);
+    double we2  = vex*vex + vey*vey + vez*vez; //|u|^2
 
     //// we -> ve
-    real_long ginv = (1. - sqrt(1. - 4.*we2))/(2.*we2 + EPS);
+    double ginv = (1. - sqrt(1. - 4.*we2))/(2.*we2 + EPS);
     vex *= ginv;
     vey *= ginv;
     vez *= ginv;
 
-    real_long ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
-    real_long kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
+    double ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
+    double kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
 
     return {vex, vey, vez, kappa, we2};
 }
@@ -78,14 +78,14 @@ inline auto ExB_drift_rel(
 
 // b: normal unit vector 
 inline auto mag_unit_vec( 
-            real_long  bx,  real_long  by,  real_long  bz
-                     ) -> std::tuple< real_long, real_long, real_long>
+            double  bx,  double  by,  double  bz
+                     ) -> std::tuple< double, double, double>
 {
-    const real_long b = sqrt( bx*bx + by*by + bz*bz );
+    const double b = sqrt( bx*bx + by*by + bz*bz );
 
-    real_long bnx = bx/(b + EPS); 
-    real_long bny = by/(b + EPS); 
-    real_long bnz = bz/(b + EPS); 
+    double bnx = bx/(b + EPS); 
+    double bny = by/(b + EPS); 
+    double bnz = bz/(b + EPS); 
 
     return {bnx, bny, bnz};
 }
@@ -93,34 +93,34 @@ inline auto mag_unit_vec(
 
 // b*: exact, E.B corrected "relativistic" unit B field vector
 inline auto mag_unit_vec_rel( 
-            real_long  ex,  real_long  ey,  real_long  ez,
-            real_long  bx,  real_long  by,  real_long  bz,
-            real_long we2
-                     ) -> std::tuple< real_long, real_long, real_long>
+            double  ex,  double  ey,  double  ez,
+            double  bx,  double  by,  double  bz,
+            double we2
+                     ) -> std::tuple< double, double, double>
 {
-    const real_long b = sqrt( bx*bx + by*by + bz*bz );
-    const real_long e = sqrt( ex*ex + ey*ey + ez*ez );
+    const double b = sqrt( bx*bx + by*by + bz*bz );
+    const double e = sqrt( ex*ex + ey*ey + ez*ez );
 
-    real_long edotb = ex*bx + ey*by + ez*bz;
-    real_long eperpx = ex - edotb*bx/(b*b + EPS);
-    real_long eperpy = ey - edotb*by/(b*b + EPS);
-    real_long eperpz = ez - edotb*bz/(b*b + EPS);
-    real_long eperp = eperpx*eperpx + eperpy*eperpy + eperpz*eperpz;
+    double edotb = ex*bx + ey*by + ez*bz;
+    double eperpx = ex - edotb*bx/(b*b + EPS);
+    double eperpy = ey - edotb*by/(b*b + EPS);
+    double eperpz = ez - edotb*bz/(b*b + EPS);
+    double eperp = eperpx*eperpx + eperpy*eperpy + eperpz*eperpz;
 
-    real_long bp = sqrt(0.5*(b*b - e*e + (e*e + b*b)*sqrt(1.0 - 4.*we2))); // eq6
-    real_long ep = edotb/(bp + EPS); //eq 5
+    double bp = sqrt(0.5*(b*b - e*e + (e*e + b*b)*sqrt(1.0 - 4.*we2))); // eq6
+    double ep = edotb/(bp + EPS); //eq 5
 
-    real_long psi = ep*(b*b - bp*bp)/(bp*eperp*eperp + EPS);
-    real_long eta = 1.0/(b*sqrt( psi*psi*eperp*eperp/(b*b + EPS) + 1.) + EPS);
-    real_long zeta = psi*eta;
+    double psi = ep*(b*b - bp*bp)/(bp*eperp*eperp + EPS);
+    double eta = 1.0/(b*sqrt( psi*psi*eperp*eperp/(b*b + EPS) + 1.) + EPS);
+    double zeta = psi*eta;
 
     // rotation giving b* 
-    real_long bnx = zeta*eperpx + eta*bx;
-    real_long bny = zeta*eperpy + eta*by;
-    real_long bnz = zeta*eperpz + eta*bz;
+    double bnx = zeta*eperpx + eta*bx;
+    double bny = zeta*eperpy + eta*by;
+    double bnz = zeta*eperpz + eta*bz;
 
     // normalize to unit vector
-    real_long bn = sqrt( bnx*bnx + bny*bny + bnz*bnz );
+    double bn = sqrt( bnx*bnx + bny*bny + bnz*bnz );
     bnx *= 1.0/(bn + EPS);
     bny *= 1.0/(bn + EPS);
     bnz *= 1.0/(bn + EPS);
@@ -139,15 +139,15 @@ void pic::rGCAPusher<D,V>::push_container(
   int nparts = container.size();
 
   // initialize pointers to particle arrays
-  real_prtcl* loc[3];
+  float_p* loc[3];
   for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-  real_prtcl* vel[3];
+  float_p* vel[3];
   for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-  real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-  real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+  double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
+  double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
   // make sure E and B tmp arrays are of correct size
   if(container.Epart.size() != (size_t)3*nparts)
@@ -156,7 +156,7 @@ void pic::rGCAPusher<D,V>::push_container(
     container.Bpart.resize(3*nparts);
 
   // fields at prtcl loc
-  real_prtcl *exP, *eyP, *ezP, *bxP, *byP, *bzP;
+  float_p *exP, *eyP, *ezP, *bxP, *byP, *bzP;
   exP = &( container.Epart[0*nparts] );
   eyP = &( container.Epart[1*nparts] );
   ezP = &( container.Epart[2*nparts] );
@@ -184,67 +184,67 @@ void pic::rGCAPusher<D,V>::push_container(
   int n1 = 0;
   int n2 = nparts;
 
-  real_long c = tile.cfl;
-  real_long cinv = 1.0/c; 
+  double c = tile.cfl;
+  double cinv = 1.0/c; 
 
   // half charge-to-mass ratio (sign only because fields are in units of q)
-  real_long qm = sign(container.q)/container.m;
-  real_long me = container.m;
+  double qm = sign(container.q)/container.m;
+  double me = container.m;
 
-  real_long loc0n, loc1n, loc2n;
-  real_long vel0n, vel1n, vel2n;
+  double loc0n, loc1n, loc2n;
+  double vel0n, vel1n, vel2n;
 
-  //real_long edotb, eperpx, eperpy, eperpz, eperp, bp, ep, psi, eta, zeta;
-  real_long ugx, ugy, ugz, ug2, ug2n;
-  real_long G0, G1;
-  real_long mu;
+  //double edotb, eperpx, eperpy, eperpz, eperp, bp, ep, psi, eta, zeta;
+  double ugx, ugy, ugz, ug2, ug2n;
+  double G0, G1;
+  double mu;
 
   // work variables
-  real_long bx1, by1, bz1;
-  real_long ex1, ey1, ez1;
+  double bx1, by1, bz1;
+  double ex1, ey1, ez1;
 
-  real_long vn1x, vn1y, vn1z;
-  real_long un1x, un1y, un1z;
+  double vn1x, vn1y, vn1z;
+  double un1x, un1y, un1z;
 
-  real_long c000, c100, c010, c110, c001, c101, c011, c111;
+  double c000, c100, c010, c110, c001, c101, c011, c111;
 
   // mesh sizes for 1D indexing
   const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
   const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
   auto mins = tile.mins;
 
-  real_long dx=0.0, dy=0.0, dz=0.0;
+  double dx=0.0, dy=0.0, dz=0.0;
   int i=0, j=0, k=0;
 
   // loop over prtcls
   for(int n=n1; n<n2; n++) {
       bool crash_flag = false;
 
-    loc0n = static_cast<real_long>( loc[0][n] );
-    loc1n = static_cast<real_long>( loc[1][n] );
-    loc2n = static_cast<real_long>( loc[2][n] );
+    loc0n = static_cast<double>( loc[0][n] );
+    loc1n = static_cast<double>( loc[1][n] );
+    loc2n = static_cast<double>( loc[2][n] );
 
-    vel0n = static_cast<real_long>( vel[0][n] );
-    vel1n = static_cast<real_long>( vel[1][n] );
-    vel2n = static_cast<real_long>( vel[2][n] );
+    vel0n = static_cast<double>( vel[0][n] );
+    vel1n = static_cast<double>( vel[1][n] );
+    vel2n = static_cast<double>( vel[2][n] );
 
     // read particle-specific fields
-    ex0 = static_cast<real_long>( (exP[n] + this->get_ex_ext(0,0,0))*cinv );
-    ey0 = static_cast<real_long>( (eyP[n] + this->get_ey_ext(0,0,0))*cinv );
-    ez0 = static_cast<real_long>( (ezP[n] + this->get_ez_ext(0,0,0))*cinv );
-    bx0 = static_cast<real_long>( (bxP[n] + this->get_bx_ext(0,0,0))*cinv );
-    by0 = static_cast<real_long>( (byP[n] + this->get_by_ext(0,0,0))*cinv );
-    bz0 = static_cast<real_long>( (bzP[n] + this->get_bz_ext(0,0,0))*cinv );
+    ex0 = static_cast<double>( (exP[n] + this->get_ex_ext(0,0,0))*cinv );
+    ey0 = static_cast<double>( (eyP[n] + this->get_ey_ext(0,0,0))*cinv );
+    ez0 = static_cast<double>( (ezP[n] + this->get_ez_ext(0,0,0))*cinv );
+    bx0 = static_cast<double>( (bxP[n] + this->get_bx_ext(0,0,0))*cinv );
+    by0 = static_cast<double>( (byP[n] + this->get_by_ext(0,0,0))*cinv );
+    bz0 = static_cast<double>( (bzP[n] + this->get_bz_ext(0,0,0))*cinv );
 
     //-------------------------------------------------- 
     // iterate: step0
       
-    const real_long R0x = loc0n;
-    const real_long R0y = loc1n;
-    const real_long R0z = loc2n;
+    const double R0x = loc0n;
+    const double R0y = loc1n;
+    const double R0z = loc2n;
 
-    const real_long b0 = sqrt( bx0*bx0 + by0*by0 + bz0*bz0 );
-    const real_long e0 = sqrt( ex0*ex0 + ey0*ey0 + ez0*ez0 );
+    const double b0 = sqrt( bx0*bx0 + by0*by0 + bz0*bz0 );
+    const double e0 = sqrt( ex0*ex0 + ey0*ey0 + ez0*ez0 );
 
     //-------------------------------------------------- 
     //ExB in units of c
@@ -261,10 +261,10 @@ void pic::rGCAPusher<D,V>::push_container(
 
     //--------------------------------------------------
     // epar = e.b
-    real_long epar = ex0*bnx0 + ey0*bny0 + ez0*bnz0;
+    double epar = ex0*bnx0 + ey0*bny0 + ez0*bnz0;
 
     // project velocity to the b field; upar at t_n-1/2 via u_par = (u . b)b
-    real_long upar01  = vel0n*bnx0 + vel1n*bny0 + vel2n*bnz0;
+    double upar01  = vel0n*bnx0 + vel1n*bny0 + vel2n*bnz0;
 
 
     //--------------------------------------------------
@@ -290,13 +290,13 @@ void pic::rGCAPusher<D,V>::push_container(
     // NOTE: cinv is multiplied to b0 in the beginning
     // FIXME: or multiply cinv here?
     upar01 += qm*epar;
-    const real_long k0 = sqrt(1.0 + upar01*upar01 + ug2 );     // gamma
+    const double k0 = sqrt(1.0 + upar01*upar01 + ug2 );     // gamma
 
     //--------------------------------------------------
     // step1
-    real_long R1x = R0x;
-    real_long R1y = R0y;
-    real_long R1z = R0z;
+    double R1x = R0x;
+    double R1y = R0y;
+    double R1z = R0z;
 
 
     for(size_t iter=0; iter<5; iter++){
@@ -438,10 +438,10 @@ void pic::rGCAPusher<D,V>::push_container(
       // magnetic moment = m u_g^2/2 B_0 \gamma
         
       mu = 0.0; // NOTE: synchrotron losses are assumed to bring mag. mom. to zero
-      real_long b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
+      double b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
       ug2n = mu*2.0*b1*kappa1/container.m;
 
-      const real_long k1 = sqrt(1.0 + upar01*upar01 + ug2n);     // gamma
+      const double k1 = sqrt(1.0 + upar01*upar01 + ug2n);     // gamma
 
       G0 = k0*kappa0; // inv Gamma at t = n FIXME: or previous G0?
       G1 = k1*kappa1; // inv Gamma at t = n+1
@@ -460,10 +460,10 @@ void pic::rGCAPusher<D,V>::push_container(
 
       //-------------------------------------------------- 
       // location error
-      real_long Hx = R1x - (R0x + c*vn1x);
-      real_long Hy = R1y - (R0y + c*vn1y);
-      real_long Hz = R1z - (R0z + c*vn1z);
-      real_long H = sqrt(Hx*Hx + Hy*Hy + Hz*Hz);
+      double Hx = R1x - (R0x + c*vn1x);
+      double Hy = R1y - (R0y + c*vn1y);
+      double Hz = R1z - (R0z + c*vn1z);
+      double H = sqrt(Hx*Hx + Hy*Hy + Hz*Hz);
 
       //-------------------------------------------------- 
       // guiding center location update
@@ -478,17 +478,17 @@ void pic::rGCAPusher<D,V>::push_container(
       //if(mu > 1.0) {
         //crash_flag = true;
           
-        real_long b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
-        real_long e1 = sqrt( ex1*ex1 + ey1*ey1 + ez1*ez1 );
+        double b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
+        double e1 = sqrt( ex1*ex1 + ey1*ey1 + ez1*ez1 );
 
         // E.B violation; i.e .how bad is the pure ExB drift assumption
-        real_long EB0 = (ex0*bx0 + ey0*by0 + ez0*bz0)/b0/b0;
-        real_long EB1 = (ex1*bx1 + ey1*by1 + ez1*bz1)/b1/b1;
-        real_long bn0 = bnx0*bnx0 + bny0*bny0 + bnz0*bnz0;
-        real_long bn1 = bnx1*bnx1 + bny1*bny1 + bnz1*bnz1;
+        double EB0 = (ex0*bx0 + ey0*by0 + ez0*bz0)/b0/b0;
+        double EB1 = (ex1*bx1 + ey1*by1 + ez1*bz1)/b1/b1;
+        double bn0 = bnx0*bnx0 + bny0*bny0 + bnz0*bnz0;
+        double bn1 = bnx1*bnx1 + bny1*bny1 + bnz1*bnz1;
 
-        real_long egtb0 = e0/b0;
-        real_long egtb1 = e1/b1;
+        double egtb0 = e0/b0;
+        double egtb1 = e1/b1;
 
         std::cout 
         << "iter:" << iter << " H:" << H << " E.B:" << EB0 << " " << EB1
@@ -533,9 +533,9 @@ void pic::rGCAPusher<D,V>::push_container(
     if(crash_flag) assert(false);
 
 
-    vel[0][n] = static_cast<real_prtcl>( un1x );
-    vel[1][n] = static_cast<real_prtcl>( un1y );
-    vel[2][n] = static_cast<real_prtcl>( un1z );
+    vel[0][n] = static_cast<float_p>( un1x );
+    vel[1][n] = static_cast<float_p>( un1y );
+    vel[2][n] = static_cast<float_p>( un1z );
 
     // position update from iteration, new location is following gyro center position
     if(D>=1) loc[0][n] = R1x;
@@ -543,12 +543,12 @@ void pic::rGCAPusher<D,V>::push_container(
     if(D>=3) loc[2][n] = R1z;  
 
     // store also the field values at the new point 
-    exP[n] = static_cast<real_prtcl>( ex1 );
-    eyP[n] = static_cast<real_prtcl>( ey1 );
-    ezP[n] = static_cast<real_prtcl>( ez1 );
-    bxP[n] = static_cast<real_prtcl>( bx1 );
-    byP[n] = static_cast<real_prtcl>( by1 );
-    bzP[n] = static_cast<real_prtcl>( bz1 );
+    exP[n] = static_cast<float_p>( ex1 );
+    eyP[n] = static_cast<float_p>( ey1 );
+    ezP[n] = static_cast<float_p>( ez1 );
+    bxP[n] = static_cast<float_p>( bx1 );
+    byP[n] = static_cast<float_p>( by1 );
+    bzP[n] = static_cast<float_p>( bz1 );
 
     bool debug_flag = 
     std::isnan(vel[0][n]) ||

@@ -13,15 +13,15 @@ void pic::HigueraCaryPusher<D,V>::push_container(
   int nparts = container.size();
 
   // initialize pointers to particle arrays
-  real_prtcl* loc[3];
+  float_p* loc[3];
   for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-  real_prtcl* vel[3];
+  float_p* vel[3];
   for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 
-  real_long ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-  real_long bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
+  double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
+  double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
 
   // make sure E and B tmp arrays are of correct size
   if(container.Epart.size() != (size_t)3*nparts)
@@ -29,7 +29,7 @@ void pic::HigueraCaryPusher<D,V>::push_container(
   if(container.Bpart.size() != (size_t)3*nparts)
     container.Bpart.resize(3*nparts);
 
-  real_prtcl *ex, *ey, *ez, *bx, *by, *bz;
+  float_p *ex, *ey, *ez, *bx, *by, *bz;
   ex = &( container.Epart[0*nparts] );
   ey = &( container.Epart[1*nparts] );
   ez = &( container.Epart[2*nparts] );
@@ -42,33 +42,33 @@ void pic::HigueraCaryPusher<D,V>::push_container(
   int n1 = 0;
   int n2 = nparts;
 
-  real_long c = tile.cfl;
-  real_long cinv = 1.0/c;
+  double c = tile.cfl;
+  double cinv = 1.0/c;
 
   // half charge-to-mass ratio (sign only because fields are in units of q)
-  real_long qm2 = 0.5*sign(container.q)/container.m;
+  double qm2 = 0.5*sign(container.q)/container.m;
 
-  real_long vel0n, vel1n, vel2n;
-  real_long u0, v0, w0;
-  real_long u1, v1, w1;
-  real_long g2, b2;
-  real_long ginv, f;
+  double vel0n, vel1n, vel2n;
+  double u0, v0, w0;
+  double u1, v1, w1;
+  double g2, b2;
+  double ginv, f;
 
 
   for(int n=n1; n<n2; n++) {
-    vel0n = static_cast<real_long>( vel[0][n] );
-    vel1n = static_cast<real_long>( vel[1][n] );
-    vel2n = static_cast<real_long>( vel[2][n] );
+    vel0n = static_cast<double>( vel[0][n] );
+    vel1n = static_cast<double>( vel[1][n] );
+    vel2n = static_cast<double>( vel[2][n] );
 
     // read particle-specific fields
-    ex0 = static_cast<real_long>( (ex[n] + this->get_ex_ext(0,0,0))*qm2 );
-    ey0 = static_cast<real_long>( (ey[n] + this->get_ey_ext(0,0,0))*qm2 );
-    ez0 = static_cast<real_long>( (ez[n] + this->get_ez_ext(0,0,0))*qm2 );
+    ex0 = static_cast<double>( (ex[n] + this->get_ex_ext(0,0,0))*qm2 );
+    ey0 = static_cast<double>( (ey[n] + this->get_ey_ext(0,0,0))*qm2 );
+    ez0 = static_cast<double>( (ez[n] + this->get_ez_ext(0,0,0))*qm2 );
 
     //NOTE no cinv multiplied yet; see later
-    bx0 = static_cast<real_long>( (bx[n] + this->get_bx_ext(0,0,0))*qm2 );
-    by0 = static_cast<real_long>( (by[n] + this->get_by_ext(0,0,0))*qm2 );
-    bz0 = static_cast<real_long>( (bz[n] + this->get_bz_ext(0,0,0))*qm2 );
+    bx0 = static_cast<double>( (bx[n] + this->get_bx_ext(0,0,0))*qm2 );
+    by0 = static_cast<double>( (by[n] + this->get_by_ext(0,0,0))*qm2 );
+    bz0 = static_cast<double>( (bz[n] + this->get_bz_ext(0,0,0))*qm2 );
 
     //-------------------------------------------------- 
     // first half electric acceleration
@@ -105,9 +105,9 @@ void pic::HigueraCaryPusher<D,V>::push_container(
 
     //-------------------------------------------------- 
     // normalized 4-velocity advance
-    vel[0][n] = static_cast<real_prtcl>( u0*cinv );
-    vel[1][n] = static_cast<real_prtcl>( v0*cinv );
-    vel[2][n] = static_cast<real_prtcl>( w0*cinv );
+    vel[0][n] = static_cast<float_p>( u0*cinv );
+    vel[1][n] = static_cast<float_p>( v0*cinv );
+    vel[2][n] = static_cast<float_p>( w0*cinv );
 
     // position advance; 
     // NOTE: no mixed-precision calc here. Can be problematic.
