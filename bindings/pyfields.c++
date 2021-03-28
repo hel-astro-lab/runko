@@ -16,7 +16,7 @@
 #include "../em-fields/propagator/fdtd_general.h"
 
 #include "../em-fields/filters/filter.h"
-#include "../em-fields/filters/digital.h"
+#include "../em-fields/filters/binomial2.h"
 
 #include "../em-fields/boundaries/damping_tile.h"
 #include "../em-fields/boundaries/conductor.h"
@@ -450,25 +450,25 @@ void bind_fields(py::module& m_sub)
     .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<2>::solve);
 
-  py::class_<fields::General3p<2>>(m_2d, "General3p", fieldsfilter2d)
-    .def(py::init<int, int, int>())
-    .def_readwrite("alpha",    &fields::General3p<2>::alpha)
-    .def("solve",              &fields::General3p<2>::solve);
+  //py::class_<fields::General3p<2>>(m_2d, "General3p", fieldsfilter2d)
+  //  .def(py::init<int, int, int>())
+  //  .def_readwrite("alpha",    &fields::General3p<2>::alpha)
+  //  .def("solve",              &fields::General3p<2>::solve);
 
-  py::class_<fields::General3pStrided<2>>(m_2d, "General3pStrided", fieldsfilter2d)
-    .def(py::init<int, int, int>())
-    .def_readwrite("alpha",    &fields::General3pStrided<2>::alpha)
-    .def_readwrite("stride",   &fields::General3pStrided<2>::stride)
-    .def("solve",              &fields::General3pStrided<2>::solve);
+  //py::class_<fields::General3pStrided<2>>(m_2d, "General3pStrided", fieldsfilter2d)
+  //  .def(py::init<int, int, int>())
+  //  .def_readwrite("alpha",    &fields::General3pStrided<2>::alpha)
+  //  .def_readwrite("stride",   &fields::General3pStrided<2>::stride)
+  //  .def("solve",              &fields::General3pStrided<2>::solve);
 
 
-  py::class_<fields::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", fieldsfilter2d)
-    .def(py::init<int, int, int>())
-    .def("solve",              &fields::Binomial2Strided2<2>::solve);
+  //py::class_<fields::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", fieldsfilter2d)
+  //  .def(py::init<int, int, int>())
+  //  .def("solve",              &fields::Binomial2Strided2<2>::solve);
 
-  py::class_<fields::Compensator2<2>>(m_2d, "Compensator2", fieldsfilter2d)
-    .def(py::init<int, int, int>())
-    .def("solve",              &fields::Compensator2<2>::solve);
+  //py::class_<fields::Compensator2<2>>(m_2d, "Compensator2", fieldsfilter2d)
+  //  .def(py::init<int, int, int>())
+  //  .def("solve",              &fields::Compensator2<2>::solve);
 
 
   // 3D filters
@@ -481,6 +481,7 @@ void bind_fields(py::module& m_sub)
   py::class_<fields::Binomial2<3>>(m_3d, "Binomial2", fieldsfilter3d)
     .def(py::init<int, int, int>())
     .def("solve",      &fields::Binomial2<3>::solve);
+
 
 
   //--------------------------------------------------
@@ -501,7 +502,6 @@ void bind_fields(py::module& m_sub)
     .def("insert_em",       &fields::Conductor<3>::insert_em)
     .def("update_e",        &fields::Conductor<3>::update_e)
     .def("update_b",        &fields::Conductor<3>::update_b);
-
 
 
   //--------------------------------------------------

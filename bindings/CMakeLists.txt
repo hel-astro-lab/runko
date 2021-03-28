@@ -16,7 +16,7 @@ set (FIELDS_FILES
      ../em-fields/propagator/fdtd2_pml.c++ 
      ../em-fields/propagator/fdtd4.c++ 
      ../em-fields/propagator/fdtd_general.c++ 
-     ../em-fields/filters/digital.c++
+     ../em-fields/filters/binomial2.c++
      ../em-fields/boundaries/damping_tile.c++
      ../em-fields/boundaries/conductor.c++
      )
@@ -117,12 +117,13 @@ if(ENABLE_CUDA)
      set_target_properties(pyrunko PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
      set_source_files_properties(../ffe/currents/rffe.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../em-fields/tile.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../em-fields/filters/digital.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../em-fields/filters/binomial2.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../em-fields/propagator/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)
-     # this will give wrong results if the file passed to nvcc 
+
+     #TODO this will give wrong results if the file passed to nvcc 
       set_source_files_properties(../pic/particle.c++ PROPERTIES LANGUAGE CUDA)
      target_compile_definitions(pyrunko PUBLIC GPU)
 

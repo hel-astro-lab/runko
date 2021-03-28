@@ -804,7 +804,6 @@ void ParticleContainer<3>::check_outgoing_particles(
 
 
 #else
-
   for(size_t n=0; n<size(); n++) {
     int i,j,k; // relative indices
     i = 0;

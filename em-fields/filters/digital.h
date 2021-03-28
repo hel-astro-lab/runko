@@ -4,9 +4,9 @@
 
 namespace fields {
 
-/// Digital 2nd order one-pass binomial filter
+/// 2D 3-point compensator filter from Birdsall & Langdon
 template<size_t D>
-class Binomial2 :
+class Compensator2 :
   public virtual Filter<D>
 {
   public:
@@ -75,19 +75,6 @@ class General3pStrided :
 
   /// stride parameter s; s=1 gives standard non-strided
   int stride = 1;
-
-  void solve(fields::Tile<D>& tile) override;
-
-};
-
-/// 2D 3-point compensator filter from Birdsall & Langdon
-template<size_t D>
-class Compensator2 :
-  public virtual Filter<D>
-{
-  public:
-
-  using Filter<D>::Filter;
 
   void solve(fields::Tile<D>& tile) override;
 
