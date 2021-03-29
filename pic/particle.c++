@@ -291,8 +291,7 @@ void ParticleContainer<2>::check_outgoing_particles(
     // collapse z dimension
     if ((i == 0) && (j == 0)) continue; 
 
-    if ( (i != 0) || (j != 0) || (k != 0) ) 
-      to_other_tiles.push_back( {i,j,k,n} );
+    if ( (i != 0) || (j != 0) || (k != 0) ) to_other_tiles.push_back( {i,j,k,n} );
   }
 
 #ifdef GPU
@@ -383,8 +382,7 @@ void ParticleContainer<D>::delete_transferred_particles()
   //  int indx = elem.n;
   //  last--;
     if(indx >= last) return;
-    //std::cout << "deleting " << indx 
-    //          << " by putting it to " << last << '\n';
+    //std::cout << "deleting " << indx << " by putting it to " << last << '\n';
     for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
     for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
     wgtArr[indx] = wgtArr[other];
@@ -549,11 +547,11 @@ void ParticleContainer<D>::pack_outgoing_particles()
   // +1 for info particle
   size_t np = to_other_tiles.size() + 1;
 
-  std::cout << "reserving1" << optimal_message_size << "\n";
-  std::cout << "reserving2" << np-optimal_message_size << "\n";
+  //std::cout << "reserving1: " << optimal_message_size << "\n";
+  //std::cout << "reserving2: " << np <<" minus " << np-optimal_message_size << "\n";
 
   outgoing_particles.reserve(optimal_message_size);
-  if (np-optimal_message_size > 0) {
+  if (np > optimal_message_size) {
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
@@ -567,7 +565,6 @@ void ParticleContainer<D>::pack_outgoing_particles()
   for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
   {
     const auto &elem = to_other_tiles[ii];
-
     ind = elem.n;
 
     if(i < optimal_message_size) {
@@ -787,10 +784,7 @@ void ParticleContainer<3>::check_outgoing_particles(
 
   UniIter::iterate([=] DEVCALLABLE (int ii, ParticleContainer<3> &self){
     int n = self.particleIndexesB[ii];
-    int i,j,k; // relative indices
-    i = 0;
-    j = 0;
-    k = 0;
+    int i=0,j=0,k=0; // relative indices
 
     if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
     if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
@@ -801,16 +795,13 @@ void ParticleContainer<3>::check_outgoing_particles(
     if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
     if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
 
-    self.to_other_tiles[ii] =  {i,j,k,n} ;
+    self.to_other_tiles[ii] =  {i,j,k,n};
   }, pCount, *this);
 
 
 #else
   for(size_t n=0; n<size(); n++) {
-    int i,j,k; // relative indices
-    i = 0;
-    j = 0;
-    k = 0;
+    int i=0,j=0,k=0; // relative indices
 
     if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
     if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
@@ -821,9 +812,13 @@ void ParticleContainer<3>::check_outgoing_particles(
     if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
     if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
 
-    if ( (i != 0) || (j != 0) || (k != 0) ) 
-      to_other_tiles.push_back( {i,j,k,n} );
+    if ( (i != 0) || (j != 0) || (k != 0) ) {
+        to_other_tiles.push_back( {i,j,k,n} );
+        outgoing_count++;
+    }
   }
+
+  //std::cout << "outgoing count:" << outgoing_count << "\n";
 #endif
 
 
@@ -849,15 +844,13 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
-  float_p locx, locy, locz, velx, vely, velz, wgt;
-  int id, proc;
+  float_p locx, locy, locz;
 
-  int i;
-  for (auto&& elem : neigh.to_other_tiles) {
+  int ind;
 //  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
 //  {
 //    const auto &elem = neigh.to_other_tiles[ii];
-
+  for (auto&& elem : neigh.to_other_tiles) {
       
     if(elem.i == 0 && 
        elem.j == 0 &&
@@ -870,43 +863,29 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
         elem.j == -dirs[1] &&
         elem.k == -dirs[2] ) {
 
-      i = elem.n;
+      ind = elem.n;
 
-      locx = wrap( neigh.loc(0, i), static_cast<float_p>(global_mins[0]), static_cast<float_p>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
+      locx = wrap( neigh.loc(0, ind), static_cast<float_p>(global_mins[0]), static_cast<float_p>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, ind), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, ind), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
 
-      velx = neigh.vel(0, i);
-      vely = neigh.vel(1, i);
-      velz = neigh.vel(2, i);
-
-      wgt  = neigh.wgt(i);
-
-      id   = neigh.id(0,i);
-      proc = neigh.id(1,i);
-
-      //std::cout << locx << " " << locy << " " << locz << " " <<  velx << " " << vely << " " << velz << " " <<  wgt << " " <<  id << " " <<  proc << std::endl;
-      //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
-      
-      
-      //assert(prtcl_loc.size() == 3);
-      //assert(prtcl_vel.size() == 3);
-
-      //for (size_t i=0; i<3; i++) 
       locArr[0].push_back(locx);
       locArr[1].push_back(locy);
       locArr[2].push_back(locz);
-      //for (size_t i=0; i<3; i++) 
-      velArr[0].push_back(velx);
-      velArr[1].push_back(vely);
-      velArr[2].push_back(velz);
-      wgtArr.push_back(wgt);
 
-      indArr[0].push_back(id);
-      indArr[1].push_back(proc);
+      //std::cout << locx << " " << locy << " " << locz << " " <<  velx << " " << vely << " " << velz << " " <<  wgt << " " <<  id << " " <<  proc << std::endl;
+      //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
+
+      velArr[0].push_back( neigh.vel(0, ind) );
+      velArr[1].push_back( neigh.vel(1, ind) );
+      velArr[2].push_back( neigh.vel(2, ind) );
+
+      wgtArr.push_back( neigh.wgt(ind));
+
+      indArr[0].push_back(neigh.id(0,ind));
+      indArr[1].push_back(neigh.id(1,ind));
 
       Nprtcls++;
-      
     }
   }
 

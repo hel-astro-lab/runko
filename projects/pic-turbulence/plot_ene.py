@@ -13,9 +13,9 @@ import pytools
 def read_prtcls(fname):
     f5F = h5.File(fname,'r')
 
-    nx = f5F['Nx'].value
-    ny = f5F['Ny'].value
-    nz = f5F['Nz'].value
+    nx = f5F['Nx'][()]
+    ny = f5F['Ny'][()]
+    nz = f5F['Nz'][()]
 
     #flatten time away
     xloc = (f5F['x'][:]   ).flatten() 

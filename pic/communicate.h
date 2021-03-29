@@ -36,9 +36,7 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
   MPI_Get_address( &obj, &base ); 
 
   // how many elements per each type
-  std::array<int, 3> block_lengths{
-    { 7, 1, 1} 
-  };
+  std::array<int, 3> block_lengths{ { 7, 1, 1} };
 
   // and then the actual members
   std::array<MPI_Aint, 3> member_offsets; // relative offsets
