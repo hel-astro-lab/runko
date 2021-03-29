@@ -168,7 +168,8 @@
             else
             {
                 //std::cout << "reallocing " << newCap << " old cap " << cap << std::endl;
-                realloc((newCap+1)*overAllocFactor);
+                //realloc((newCap+1)*overAllocFactor); // resize with overAllocFactor // NOTE: this is a bug; not a feature
+                realloc(newCap);  // resize strictly what is requested
             }
             count = newCap;
         }
@@ -176,13 +177,15 @@
         inline void shrink_to_fit()
         {
             // does f all since it does not have to...
+
+            // TODO: check if it works
+            realloc(count);
         }
 
         DEVCALLABLE
         inline T & operator[](const size_t &ind)
         {
             //
-            
             //if(ind >= cap)
             //    std::cout << "error " << ind << " " << cap << std::endl;
                 
@@ -201,13 +204,13 @@
         }
 
         DEVCALLABLE
-        inline size_t size()
+        inline size_t size() const
         {
             return count;
         }
 
         DEVCALLABLE
-        inline size_t capacity()
+        inline size_t capacity() const
         {
             return cap;
         }

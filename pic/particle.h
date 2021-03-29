@@ -57,7 +57,7 @@ public:
 
   virtual ~Particle() = default;
 
-  /// special method for info particle that re-uses x mem location
+  /// special method for info particle that re-uses x loc mem slot
   size_t number_of_particles();
 
 };
@@ -72,13 +72,7 @@ struct to_other_tiles_struct{
 
 /*! \brief Container of particles inside the tile
 *
-* Container to hold plasma particles 
-*
-* includes:
-*   pos/loc
-*   vel
-*   wgt
-*   qm
+* Container to hold plasma particles . Includes: pos/loc vel wgt qm.
 *
 */
 template<std::size_t D>
@@ -179,8 +173,8 @@ class ParticleContainer{
   virtual void shrink_to_fit();
 
   /// size of the container (in terms of particles)
-  //DEVCALLABLE size_t size() {return Nprtcls; };
-  DEVCALLABLE size_t size() const { return Nprtcls; }
+  //DEVCALLABLE size_t size() const { return Nprtcls; }
+  DEVCALLABLE size_t size() const { return locArr[0].size(); }
 
   //--------------------------------------------------
   // locations

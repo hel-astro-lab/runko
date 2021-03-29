@@ -395,8 +395,7 @@ void ParticleContainer<D>::delete_transferred_particles()
 
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
-  if ((last != (int)size()) && (size() > 0)) 
-    resize(last);
+  if ((last != (int)size()) && (size() > 0)) resize(last);
 
   /*
   for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
@@ -549,6 +548,9 @@ void ParticleContainer<D>::pack_outgoing_particles()
     
   // +1 for info particle
   size_t np = to_other_tiles.size() + 1;
+
+  std::cout << "reserving1" << optimal_message_size << "\n";
+  std::cout << "reserving2" << np-optimal_message_size << "\n";
 
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
