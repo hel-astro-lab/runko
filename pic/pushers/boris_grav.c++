@@ -2,100 +2,67 @@
 
 #include <cmath> 
 #include "../../tools/signum.h"
+#include "../../tools/iter/iter.h"
+
+#ifdef GPU
+#include <nvtx3/nvToolsExt.h> 
+#endif
 
 using toolbox::sign;
 
 template<size_t D, size_t V>
 void pic::BorisPusherGrav<D,V>::push_container(
-    pic::ParticleContainer<D>& container, 
+    pic::ParticleContainer<D>& con, 
     pic::Tile<D>& tile)
 {
 
-  int nparts = container.size();
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
-  // initialize pointers to particle arrays
-  float_p* loc[3];
-  for( int i=0; i<3; i++)
-    loc[i] = &( container.loc(i,0) );
-
-  float_p* vel[3];
-  for( int i=0; i<3; i++)
-    vel[i] = &( container.vel(i,0) );
-
-
-  double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-  double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
-
-  // make sure E and B tmp arrays are of correct size
-  if(container.Epart.size() != (size_t)3*nparts)
-    container.Epart.resize(3*nparts);
-  if(container.Bpart.size() != (size_t)3*nparts)
-    container.Bpart.resize(3*nparts);
-
-  float_p *ex, *ey, *ez, *bx, *by, *bz;
-  ex = &( container.Epart[0*nparts] );
-  ey = &( container.Epart[1*nparts] );
-  ez = &( container.Epart[2*nparts] );
-
-  bx = &( container.Bpart[0*nparts] );
-  by = &( container.Bpart[1*nparts] );
-  bz = &( container.Bpart[2*nparts] );
+  const double c  = tile.cfl;
+  const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
+  const double m  = con.m; // mass
+  
 
   // loop over particles
-  int n1 = 0;
-  int n2 = nparts;
+  UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
 
-  double u0, v0, w0;
-  double uxt, uyt, uzt;
-  double u1, v1, w1;
-  double g, f, ginv, gamt; //, ut;
-  double gravx, gravy, gravz;
+    double loc0n = con.loc(0,n);
+    //double loc1n = con.loc(1,n);
+    //double loc2n = con.loc(2,n);
 
-  double c = tile.cfl;
-  double cinv = 1.0/c;
+    double vel0n = con.vel(0,n);
+    double vel1n = con.vel(1,n);
+    double vel2n = con.vel(2,n);
 
-  // charge-to-mass ratio (sign only because fields are in units of q)
-  double qm = sign(container.q)/container.m;
-  double m = container.m;
+    // read particle-specific fields
+    double ex0 = ( con.ex(n) + this->get_ex_ext(0,0,0) )*0.5*qm;
+    double ey0 = ( con.ey(n) + this->get_ey_ext(0,0,0) )*0.5*qm;
+    double ez0 = ( con.ez(n) + this->get_ez_ext(0,0,0) )*0.5*qm;
 
-  double loc0n;
-  double vel0n, vel1n, vel2n;
-
-  for(int n=n1; n<n2; n++) {
-
-    loc0n = static_cast<double>( loc[0][n] ); // x position
-
-    vel0n = static_cast<double>( vel[0][n] );
-    vel1n = static_cast<double>( vel[1][n] );
-    vel2n = static_cast<double>( vel[2][n] );
+    double bx0 = ( con.bx(n) + this->get_bx_ext(0,0,0) )*0.5*qm/c;
+    double by0 = ( con.by(n) + this->get_by_ext(0,0,0) )*0.5*qm/c;
+    double bz0 = ( con.bz(n) + this->get_bz_ext(0,0,0) )*0.5*qm/c;
 
     //--------------------------------------------------
     // Boris algorithm
 
-    // read particle-specific fields
-    ex0 = static_cast<double>( ex[n] )*0.5*qm;
-    ey0 = static_cast<double>( ey[n] )*0.5*qm;
-    ez0 = static_cast<double>( ez[n] )*0.5*qm;
-
-    bx0 = static_cast<double>( bx[n] )*0.5*qm*cinv;
-    by0 = static_cast<double>( by[n] )*0.5*qm*cinv;
-    bz0 = static_cast<double>( bz[n] )*0.5*qm*cinv;
-
     // first half electric acceleration
-    u0 = c*vel0n + ex0;
-    v0 = c*vel1n + ey0;
-    w0 = c*vel2n + ez0;
+    double u0 = vel0n*c + ex0;
+    double v0 = vel1n*c + ey0;
+    double w0 = vel2n*c + ez0;
 
     // first half magnetic rotation
-    g = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
-    bx0 *= g;
-    by0 *= g;
-    bz0 *= g;
+    double ginv = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+    bx0 *= ginv;
+    by0 *= ginv;
+    bz0 *= ginv;
 
-    f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
-    u1 = (u0 + v0*bz0 - w0*by0)*f;
-    v1 = (v0 + w0*bx0 - u0*bz0)*f;
-    w1 = (w0 + u0*by0 - v0*bx0)*f;
+    double f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
+    double u1 = (u0 + v0*bz0 - w0*by0)*f;
+    double v1 = (v0 + w0*bx0 - u0*bz0)*f;
+    double w1 = (w0 + u0*by0 - v0*bx0)*f;
 
     // second half of magnetic rotation & electric acceleration
     u0 = u0 + v1*bz0 - w1*by0 + ex0;
@@ -107,44 +74,37 @@ void pic::BorisPusherGrav<D,V>::push_container(
 
     // addition of radiation pressure (gamma at half time step)
     // u at t + dt/2
-    uxt  = (u0*cinv + vel0n)*0.5;
-    uyt  = (v0*cinv + vel1n)*0.5;
-    uzt  = (w0*cinv + vel2n)*0.5;
+    double uxt  = (u0/c + vel0n)*0.5;
+    double uyt  = (v0/c + vel1n)*0.5;
+    double uzt  = (w0/c + vel2n)*0.5;
     //ut   = sqrt(uxt*uxt + uyt*uyt + uzt*uzt);
-    gamt = sqrt(1.0 + uxt*uxt + uyt*uyt + uzt*uzt);
+    double gamt = sqrt(1.0 + uxt*uxt + uyt*uyt + uzt*uzt);
       
     //gravx = c*g0*gamt*(cenx - loc0n);
-    gravx = c*g0*m*gamt*sign(cenx - loc0n);
-    gravy = 0;
-    gravz = 0;
+    double gravx = c*g0*m*gamt*sign(cenx - loc0n);
+    double gravy = 0;
+    double gravz = 0;
 
-    // apply pressure
-    vel[0][n] = static_cast<float_p>( u0*cinv + gravx );
-    vel[1][n] = static_cast<float_p>( v0*cinv + gravy );
-    vel[2][n] = static_cast<float_p>( w0*cinv + gravz );
+    //--------------------------------------------------
+    // normalized 4-velocity advance
+    con.vel(0,n) = u0/c + gravx;
+    con.vel(1,n) = v0/c + gravy;
+    con.vel(2,n) = w0/c + gravz;
 
     // position advance
     // NOTE: no mixed-precision calc here. Can be problematic.
-    ginv = 1.0/sqrt(1.0 + 
-        vel[0][n]*vel[0][n] +
-        vel[1][n]*vel[1][n] +
-        vel[2][n]*vel[2][n]);
+    ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+    for(size_t i=0; i<D; i++) con.loc(i,n) += con.vel(i,n)*ginv*c;
 
-    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c;
-  }
+  }, con.size(), con);
+
+  UniIter::sync();
+
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
-
-
-//template<size_t D, size_t V>
-//void pic::BorisPusherDrag<D,V>::solve(
-//    pic::Tile<D>& tile)
-//{
-//
-//  for(auto&& container : tile.containers)
-//    push_container(container, tile.cfl);
-//
-//}
-
 
 
 //--------------------------------------------------

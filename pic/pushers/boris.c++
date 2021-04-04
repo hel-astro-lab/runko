@@ -21,13 +21,8 @@ void pic::BorisPusher<D,V>::push_container(
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  const double c   = tile.cfl;
-  const double qm  = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
-  
-  // make sure E and B tmp arrays are of correct size
-  if(con.Epart.size() != 3*con.size()) assert(false); //con.Epart.resize(3*nparts);
-  if(con.Bpart.size() != 3*con.size()) assert(false); //con.Bpart.resize(3*nparts);
-
+  const double c  = tile.cfl;
+  const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
 
   // loop over particles
   UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){

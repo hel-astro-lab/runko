@@ -2,10 +2,13 @@
 
 #include <cmath> 
 #include "../../tools/signum.h"
+#include "../../tools/iter/iter.h"
+
+#ifdef GPU
+#include <nvtx3/nvToolsExt.h> 
+#endif
 
 using toolbox::sign;
-
-
 
 inline double _lerp(
       double c000,
@@ -132,46 +135,21 @@ inline auto mag_unit_vec_rel(
 
 template<size_t D, size_t V>
 void pic::rGCAPusher<D,V>::push_container(
-    pic::ParticleContainer<D>& container, 
+    pic::ParticleContainer<D>& con, 
     pic::Tile<D>& tile
     )
 {
-  int nparts = container.size();
 
-  // initialize pointers to particle arrays
-  float_p* loc[3];
-  for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
-  float_p* vel[3];
-  for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
+  const double c    = tile.cfl;
+  const double qm   = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
+  const double m    = con.m; //mass
 
-
-  double ex0 = 0.0, ey0 = 0.0, ez0 = 0.0;
-  double bx0 = 0.0, by0 = 0.0, bz0 = 0.0;
-
-  // make sure E and B tmp arrays are of correct size
-  if(container.Epart.size() != (size_t)3*nparts)
-    container.Epart.resize(3*nparts);
-  if(container.Bpart.size() != (size_t)3*nparts)
-    container.Bpart.resize(3*nparts);
-
-  // fields at prtcl loc
-  float_p *exP, *eyP, *ezP, *bxP, *byP, *bzP;
-  exP = &( container.Epart[0*nparts] );
-  eyP = &( container.Epart[1*nparts] );
-  ezP = &( container.Epart[2*nparts] );
-
-  bxP = &( container.Bpart[0*nparts] );
-  byP = &( container.Bpart[1*nparts] );
-  bzP = &( container.Bpart[2*nparts] );
-
-  const int Nx = tile.mesh_lengths[0];
-  const int Ny = tile.mesh_lengths[1];
-  const int Nz = tile.mesh_lengths[2];
-
-  // fields at grid
-  auto& yee = tile.get_yee();
-
+  // fields at the grid
+  auto& yee = tile.get_yee(); 
   auto& exM = yee.ex;
   auto& eyM = yee.ey;
   auto& ezM = yee.ez;
@@ -180,61 +158,42 @@ void pic::rGCAPusher<D,V>::push_container(
   auto& byM = yee.by;
   auto& bzM = yee.bz;
 
-  // loop over particles
-  int n1 = 0;
-  int n2 = nparts;
-
-  double c = tile.cfl;
-  double cinv = 1.0/c; 
-
-  // half charge-to-mass ratio (sign only because fields are in units of q)
-  double qm = sign(container.q)/container.m;
-  double me = container.m;
-
-  double loc0n, loc1n, loc2n;
-  double vel0n, vel1n, vel2n;
-
-  //double edotb, eperpx, eperpy, eperpz, eperp, bp, ep, psi, eta, zeta;
-  double ugx, ugy, ugz, ug2, ug2n;
-  double G0, G1;
-  double mu;
-
-  // work variables
-  double bx1, by1, bz1;
-  double ex1, ey1, ez1;
-
-  double vn1x, vn1y, vn1z;
-  double un1x, un1y, un1z;
-
-  double c000, c100, c010, c110, c001, c101, c011, c111;
+  const int Nx = tile.mesh_lengths[0];
+  const int Ny = tile.mesh_lengths[1];
+  const int Nz = tile.mesh_lengths[2];
 
   // mesh sizes for 1D indexing
   const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
   const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
   auto mins = tile.mins;
 
-  double dx=0.0, dy=0.0, dz=0.0;
-  int i=0, j=0, k=0;
 
-  // loop over prtcls
-  for(int n=n1; n<n2; n++) {
-      bool crash_flag = false;
+  // loop over particles
+  UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
 
-    loc0n = static_cast<double>( loc[0][n] );
-    loc1n = static_cast<double>( loc[1][n] );
-    loc2n = static_cast<double>( loc[2][n] );
+    // local tmp variables that carry over post iteration
+    double G0, G1;
+    double vn1x, vn1y, vn1z;
+    double un1x, un1y, un1z;
+    //--------------------------------------------------
 
-    vel0n = static_cast<double>( vel[0][n] );
-    vel1n = static_cast<double>( vel[1][n] );
-    vel2n = static_cast<double>( vel[2][n] );
+    bool crash_flag = false;
+
+    double loc0n = con.loc(0,n);
+    double loc1n = con.loc(1,n);
+    double loc2n = con.loc(2,n);
+
+    double vel0n = con.vel(0,n);
+    double vel1n = con.vel(1,n);
+    double vel2n = con.vel(2,n);
 
     // read particle-specific fields
-    ex0 = static_cast<double>( (exP[n] + this->get_ex_ext(0,0,0))*cinv );
-    ey0 = static_cast<double>( (eyP[n] + this->get_ey_ext(0,0,0))*cinv );
-    ez0 = static_cast<double>( (ezP[n] + this->get_ez_ext(0,0,0))*cinv );
-    bx0 = static_cast<double>( (bxP[n] + this->get_bx_ext(0,0,0))*cinv );
-    by0 = static_cast<double>( (byP[n] + this->get_by_ext(0,0,0))*cinv );
-    bz0 = static_cast<double>( (bzP[n] + this->get_bz_ext(0,0,0))*cinv );
+    double ex0 = ( con.ex(n) + this->get_ex_ext(0,0,0) )/c; //TODO: why cinv here in E?
+    double ey0 = ( con.ey(n) + this->get_ey_ext(0,0,0) )/c;
+    double ez0 = ( con.ez(n) + this->get_ez_ext(0,0,0) )/c;
+    double bx0 = ( con.bx(n) + this->get_bx_ext(0,0,0) )/c;
+    double by0 = ( con.by(n) + this->get_by_ext(0,0,0) )/c;
+    double bz0 = ( con.bz(n) + this->get_bz_ext(0,0,0) )/c;
 
     //-------------------------------------------------- 
     // iterate: step0
@@ -273,22 +232,21 @@ void pic::rGCAPusher<D,V>::push_container(
     // NOTE: assuming full gamma factor here from previous step
     G0 = sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n );
 
-    ugx = vel0n - upar01*bnx0 - vex0*G0;
-    ugy = vel1n - upar01*bny0 - vey0*G0;
-    ugz = vel2n - upar01*bnz0 - vez0*G0;
-    ug2 = ugx*ugx + ugy*ugy + ugz*ugz;
+    double ugx = vel0n - upar01*bnx0 - vex0*G0;
+    double ugy = vel1n - upar01*bny0 - vey0*G0;
+    double ugz = vel2n - upar01*bnz0 - vez0*G0;
+    double ug2 = ugx*ugx + ugy*ugy + ugz*ugz;
 
     // magnetic moment = m u_g^2/2 B_0 \gamma
-    // FIXME: this is taken as kappa0 in paper eqs; correct?
+    // TODO: this is taken as kappa0 in paper eqs; correct?
     //mu = me*ug2/(2.0*b0*G);
-    mu = me*ug2/(2.0*b0*kappa0);
+    double mu = m*ug2/(2.0*b0*kappa0);
 
     //--------------------------------------------------
     // upar at t_n+1/2
     // increase velocity with parallel E field: u += q/m dt Epar
     // NOTE: standard c * vel + qm*epar changed to vel + qm*epar/c
     // NOTE: cinv is multiplied to b0 in the beginning
-    // FIXME: or multiply cinv here?
     upar01 += qm*epar;
     const double k0 = sqrt(1.0 + upar01*upar01 + ug2 );     // gamma
 
@@ -298,6 +256,12 @@ void pic::rGCAPusher<D,V>::push_container(
     double R1y = R0y;
     double R1z = R0z;
 
+    // tmp variables
+    double ex1, ey1, ez1, bx1, by1, bz1;
+    double dx,dy,dz;
+    double c000, c100, c010, c110, c001, c101, c011, c111;
+  
+    int i,j,k;
 
     for(size_t iter=0; iter<5; iter++){
 
@@ -330,7 +294,6 @@ void pic::rGCAPusher<D,V>::push_container(
         if(D >= 1) { if(i >= Nx+1 ) { dx += i-Nx-1; i = Nx+1; } }
         if(D >= 2) { if(j >= Ny+1 ) { dy += j-Ny-1; j = Ny+1; } }
         if(D >= 3) { if(k >= Nz+1 ) { dz += k-Nz-1; k = Nz+1; } }
-
 
         const size_t ind = yee.ex.indx(i,j,k);
 
@@ -407,12 +370,12 @@ void pic::rGCAPusher<D,V>::push_container(
         bz1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         bz1 += this->get_bz_ext(0,0,0);
 
-        ex1 *= cinv;
-        ey1 *= cinv;
-        ez1 *= cinv;
-        bx1 *= cinv;
-        by1 *= cinv;
-        bz1 *= cinv;
+        ex1 *= 1.0/c;
+        ey1 *= 1.0/c;
+        ez1 *= 1.0/c;
+        bx1 *= 1.0/c;
+        by1 *= 1.0/c;
+        bz1 *= 1.0/c;
       }
 
       //-------------------------------------------------- 
@@ -439,7 +402,7 @@ void pic::rGCAPusher<D,V>::push_container(
         
       mu = 0.0; // NOTE: synchrotron losses are assumed to bring mag. mom. to zero
       double b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
-      ug2n = mu*2.0*b1*kappa1/container.m;
+      double ug2n = mu*2.0*b1*kappa1/m;
 
       const double k1 = sqrt(1.0 + upar01*upar01 + ug2n);     // gamma
 
@@ -526,42 +489,42 @@ void pic::rGCAPusher<D,V>::push_container(
       }
 
       // exit if converged
-      if(H < 1e-5) break;
+      // FIXME cant break because of SIMD 
+      //if(H < 1e-5) break;
 
     }//end of iteration
 
     if(crash_flag) assert(false);
 
-
-    vel[0][n] = static_cast<float_p>( un1x );
-    vel[1][n] = static_cast<float_p>( un1y );
-    vel[2][n] = static_cast<float_p>( un1z );
+    con.vel(0,n) = un1x;
+    con.vel(1,n) = un1y;
+    con.vel(2,n) = un1z;
 
     // position update from iteration, new location is following gyro center position
-    if(D>=1) loc[0][n] = R1x;
-    if(D>=2) loc[1][n] = R1y;
-    if(D>=3) loc[2][n] = R1z;  
+    if(D>=1) con.loc(0,n) = R1x;
+    if(D>=2) con.loc(1,n) = R1y;
+    if(D>=3) con.loc(2,n) = R1z;  
 
     // store also the field values at the new point 
-    exP[n] = static_cast<float_p>( ex1 );
-    eyP[n] = static_cast<float_p>( ey1 );
-    ezP[n] = static_cast<float_p>( ez1 );
-    bxP[n] = static_cast<float_p>( bx1 );
-    byP[n] = static_cast<float_p>( by1 );
-    bzP[n] = static_cast<float_p>( bz1 );
+    con.ex(n) = ex1;
+    con.ey(n) = ey1;
+    con.ez(n) = ez1;
+    con.bx(n) = bx1;
+    con.by(n) = by1;
+    con.bz(n) = bz1;
 
     bool debug_flag = 
-    std::isnan(vel[0][n]) ||
-    std::isnan(vel[1][n]) ||
-    std::isnan(vel[2][n]) ||
-    std::isnan(loc[0][n]) ||
-    std::isnan(loc[1][n]) ||
-    std::isnan(loc[2][n]);   
+    std::isnan(con.vel(0,n)) ||
+    std::isnan(con.vel(1,n)) ||
+    std::isnan(con.vel(2,n)) ||
+    std::isnan(con.loc(0,n)) ||
+    std::isnan(con.loc(1,n)) ||
+    std::isnan(con.loc(2,n));   
 
     //if(1./kinv01 > 30.0) debug_flag = true;
     if(debug_flag){
       std::cout 
-        << " loc0n:" << loc[0][n] << " loc1n:" << loc[1][n] << " loc2n:" << loc[2][n]
+        << " loc0n:" << con.loc(0,n) << " loc1n:" << con.loc(1,n) << " loc2n:" << con.loc(2,n)
         << " ex0:" << ex0 << " ey0:" << ey0 << " ez0:" << ez0
         << " bx0:" << bx0 << " by0:" << by0 << " bz0:" << bz0
         << " bnx0:" << bnx0 << " bny:" << bny0 << " bnz:" << bnz0
@@ -577,8 +540,13 @@ void pic::rGCAPusher<D,V>::push_container(
       std::cout << std::flush;
       assert(false);
     }
-  }
+  }, con.size(), con);
 
+  UniIter::sync();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
