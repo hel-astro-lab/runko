@@ -23,7 +23,7 @@ DEVCALLABLE inline void atomic_add(T& lhs, S rhs)
     atomicAdd(&lhs, static_cast<T>(rhs));
 #else
     //NOTE: need to use #pragma omp atomic if vectorizing these
-    // #pragma omp atomic add
+#pragma omp atomic update
     lhs += static_cast<S>(rhs);
 #endif
 }
@@ -53,15 +53,14 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
-#ifdef GPU
-    UniIter::UniIterCU::iterate([=] __device__ (
+//    // NOTE: no vectorization here since we dont use the general iterator
+//    for(size_t n=0; n<con.size(); n++) {
+
+    UniIter::iterate([=] DEVCALLABLE (
                 size_t n, 
                 fields::YeeLattice &yee,
-                pic::ParticleContainer<D>& con){
-#else
-    // NOTE: no vectorization here since we dont use the general iterator
-    for(size_t n=0; n<con.size(); n++) {
-#endif
+                pic::ParticleContainer<D>& con
+                ){
 
       //--------------------------------------------------
       double loc0n = con.loc(0,n);
@@ -154,15 +153,10 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       if(D>=1) atomic_add( yee.jz(i2  , j2+1, k2  ), Fz2*(1.0f-Wx2)*Wy2        );
       if(D>=1) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2       *Wy2        );
 
-#ifdef GPU
     }, con.size(), yee, con);
-#else
-    }
-#endif
 
     UniIter::sync();
   }//end of loop over species
-
 
 
 #ifdef GPU
