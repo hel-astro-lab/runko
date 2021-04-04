@@ -16,11 +16,6 @@ template<>
 void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
 {
-  // 2D 3-point binomial coefficients
-  //float_m winv=1./16.,
-  //        wtm=4.*winv, //middle
-  //        wts=2.*winv, //side
-  //        wtc=1.*winv; //corner
     
   // 2D 3-point binomial coefficients
   const float_m C2[3][3] = 
@@ -29,6 +24,15 @@ void fields::Binomial2<2>::solve(
           {1./16., 2./16., 1./16.} };
 
   auto& mesh = tile.get_yee();
+
+  const int halo = 2; 
+
+  const int imin = 0 - halo;
+  const int jmin = 0 - halo;
+
+  const int imax = tile.mesh_lengths[0] + halo;
+  const int jmax = tile.mesh_lengths[1] + halo;
+
 
   // using tmp as scratch arrays
   //
@@ -45,35 +49,54 @@ void fields::Binomial2<2>::solve(
   //--------------------------------------------------
   // Jx
 
-  const int halo = 2;
-
-  const int imin = 0 - halo;
-  const int imax = tile.mesh_lengths[0] + halo;
-
-  const int jmin = 0 - halo;
-  const int jmax = tile.mesh_lengths[1] + halo;
-
   // NOTE: using tmp as scratch arrays
+    
+  // make 2d loop with shared memory 
+  auto fun = 
+  [=] DEVCALLABLE (int i, int j, 
+                   toolbox::Mesh<float_m, 3> &jj, 
+                   toolbox::Mesh<float_m, 3> &tmp)
+  {
+    for(int is=-1; is<=1; is++) {
+    for(int js=-1; js<=1; js++) {
+      tmp(i,j,0) += jj(i+is, j+js, 0)*C2[is+1][js+1];
+    }}
+  };
     
   //--------------------------------------------------
   // Jx
   tmp.clear();
-  for(int is=-1; is<=1; is++) 
-  for(int js=-1; js<=1; js++) {
-    float_m C = C2[is+1][js+1];
+  UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
+ 
+  UniIter::sync();
+  std::swap(mesh.jx, tmp);
 
-    for(int j=jmin; j<jmax; j++) {
-        #pragma omp simd
-        for(int i=imin; i<imax; i++) {
-          tmp(i,j,0) += mesh.jx(i+is, j+js, 0)*C;
-        }
-      }
-  }
-  swap(mesh.jx, tmp);
-  
-  //TODO: implement
-  //assert(false);
+  //--------------------------------------------------
+  // Jy
+  tmp.clear();
+  UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
+ 
+  UniIter::sync();
+  std::swap(mesh.jy, tmp);
 
+  //--------------------------------------------------
+  // Jz
+  tmp.clear();
+  UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[1]),
+        static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
+ 
+  UniIter::sync();
+  std::swap(mesh.jz, tmp);
+
+  //--------------------------------------------------
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
@@ -82,35 +105,27 @@ template<>
 void fields::Binomial2<3>::solve(
     fields::Tile<3>& tile)
 {
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
 
   // 3D 3-point binomial coefficients
   const float_m C3[3][3][3] = 
         { { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} },
           { {2./64., 4./64., 2./64.}, {4./64., 8./64., 4./64.}, {2./64., 4./64., 2./64.} },
           { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
-  float_m C;
-
-  //float_m winv  = 1./64., // normalization
-  //           wtd  = 1.*winv, // diagnoal
-  //           wtos = 2.*winv, // outer side
-  //           wtis = 4.*winv, // inner side
-  //           wt   = 8.*winv; // center
-  //
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   auto& mesh = tile.get_yee();
+
   const int halo = 2; 
 
   const int imin = 0 - halo;
-  const int imax = tile.mesh_lengths[0] + halo;
-
   const int jmin = 0 - halo;
-  const int jmax = tile.mesh_lengths[1] + halo;
-
   const int kmin = 0 - halo;
+
+  const int imax = tile.mesh_lengths[0] + halo;
+  const int jmax = tile.mesh_lengths[1] + halo;
   const int kmax = tile.mesh_lengths[2] + halo;
 
   //--------------------------------------------------
@@ -130,7 +145,8 @@ void fields::Binomial2<3>::solve(
 
   // TODO: check that new 3x3x3 loop is equal to previous version
   tmp.clear();
-  UniIter::iterate3D(fun, static_cast<int>(tile.mesh_lengths[2]),
+  UniIter::iterate3D(fun, 
+        static_cast<int>(tile.mesh_lengths[2]),
         static_cast<int>(tile.mesh_lengths[1]),
         static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
  

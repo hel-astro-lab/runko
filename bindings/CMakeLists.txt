@@ -17,6 +17,10 @@ set (FIELDS_FILES
      ../em-fields/propagator/fdtd4.c++ 
      ../em-fields/propagator/fdtd_general.c++ 
      ../em-fields/filters/binomial2.c++
+     ../em-fields/filters/compensator.c++
+     ../em-fields/filters/general_binomial.c++
+     ../em-fields/filters/strided_binomial.c++
+     #../em-fields/filters/sweeping_binomial.c++
      ../em-fields/boundaries/damping_tile.c++
      ../em-fields/boundaries/conductor.c++
      )
