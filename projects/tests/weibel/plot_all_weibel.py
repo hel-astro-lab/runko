@@ -54,7 +54,7 @@ if __name__ == "__main__":
             ]
 
 
-    for conf_filename in confs:
+    for ii, conf_filename in enumerate(confs):
         conf = Configuration_Test(conf_filename)
 
         # restructure path to point to this dir
@@ -62,6 +62,7 @@ if __name__ == "__main__":
         fdir = fdir.split('/')[1] + '/'
         print(fdir)
 
+        col = "C"+str(ii)
 
         #--------------------------------------------------
         # theoretical growth rate
@@ -73,7 +74,7 @@ if __name__ == "__main__":
 
         tt = np.linspace(5.0, 70., 100)
         yy = np.exp(delta*tt) * 2.0e-6
-        axs[0].plot(tt, yy, "k--")
+        axs[0].plot(tt, yy, "--", color=col, linspace=1.0, alpha=0.6)
 
 
         #--------------------------------------------------
@@ -163,7 +164,7 @@ if __name__ == "__main__":
         ls_Bpar = 'dashdot'
 
         #line_fld_e, = axs[0].plot(flds_time, flds_E,  color='darkblue', linestyle=ls_E, linewidth=0.7)
-        line_fld_b, = axs[0].plot(flds_time, flds_B,  color='blue',      linestyle=ls_B, linewidth=0.9)
+        line_fld_b, = axs[0].plot(flds_time, flds_B,  color=col, linestyle=ls_B, linewidth=1.0)
 
 
 
