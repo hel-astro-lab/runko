@@ -67,8 +67,9 @@ void fields::Binomial2<2>::solve(
   // Jx
   tmp.clear();
   UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
+        mesh.jx, tmp);
  
   UniIter::sync();
   std::swap(mesh.jx, tmp);
@@ -77,8 +78,9 @@ void fields::Binomial2<2>::solve(
   // Jy
   tmp.clear();
   UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
+        mesh.jy, tmp);
  
   UniIter::sync();
   std::swap(mesh.jy, tmp);
@@ -87,8 +89,9 @@ void fields::Binomial2<2>::solve(
   // Jz
   tmp.clear();
   UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
+        mesh.jz, tmp);
  
   UniIter::sync();
   std::swap(mesh.jz, tmp);
@@ -146,27 +149,32 @@ void fields::Binomial2<3>::solve(
   // TODO: check that new 3x3x3 loop is equal to previous version
   tmp.clear();
   UniIter::iterate3D(fun, 
-        static_cast<int>(tile.mesh_lengths[2]),
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
+        static_cast<int>(tile.mesh_lengths[2]),
+        mesh.jx, tmp);
  
   UniIter::sync();
   std::swap(mesh.jx, tmp);
 
   //--------------------------------------------------
   tmp.clear();
-  UniIter::iterate3D(fun, static_cast<int>(tile.mesh_lengths[2]),
+  UniIter::iterate3D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
+        static_cast<int>(tile.mesh_lengths[2]),
+        mesh.jy, tmp);
 
   UniIter::sync();
   std::swap(mesh.jy, tmp);
 
   //--------------------------------------------------
   tmp.clear();
-  UniIter::iterate3D(fun, static_cast<int>(tile.mesh_lengths[2]),
+  UniIter::iterate3D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
+        static_cast<int>(tile.mesh_lengths[2]),
+        mesh.jz, tmp);
 
   UniIter::sync();
   std::swap(mesh.jz, tmp);

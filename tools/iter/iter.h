@@ -158,7 +158,7 @@ class UniIter{
 
         static auto getGrid(std::tuple<int> max)
         {
-            dim3 block = { 128};
+            dim3 block = { 128 };
             dim3 grid  = { 1 + (std::get<0>(max) / block.x)};
 
             return std::make_tuple(block, grid);

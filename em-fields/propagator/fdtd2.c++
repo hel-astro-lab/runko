@@ -64,8 +64,8 @@ void fields::FDTD2<2>::push_e(fields::Tile<2>& tile)
                            -mesh.by(i-1,j,  0) + mesh.by(i,j,0));
 
   }, 
-    tile.mesh_lengths[1], 
     tile.mesh_lengths[0], 
+    tile.mesh_lengths[1], 
     mesh);
 
   UniIter::sync();
@@ -98,9 +98,9 @@ void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
     mesh.ez(i,j,k) += + C*( mesh.bx(i,  j-1,k  ) - mesh.bx(i,j,k))
                       + C*(-mesh.by(i-1,j,  k  ) + mesh.by(i,j,k));
   }, 
-    tile.mesh_lengths[2], 
-    tile.mesh_lengths[1], 
     tile.mesh_lengths[0], 
+    tile.mesh_lengths[1], 
+    tile.mesh_lengths[2], 
     mesh);
 
   UniIter::sync();
@@ -164,8 +164,8 @@ void fields::FDTD2<2>::push_half_b(fields::Tile<2>& tile)
                            -mesh.ey(i+1,j,  0) + mesh.ey(i,j,0));
 
   }, 
-    tile.mesh_lengths[1], 
     tile.mesh_lengths[0], 
+    tile.mesh_lengths[1], 
     mesh);
 
   UniIter::sync();
@@ -198,9 +198,9 @@ void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
     mesh.bz(i,j,k) += + C*( mesh.ex(i,  j+1,k  ) - mesh.ex(i,j,k))
                       + C*(-mesh.ey(i+1,j,  k  ) + mesh.ey(i,j,k));
   }, 
-    tile.mesh_lengths[2], 
-    tile.mesh_lengths[1], 
     tile.mesh_lengths[0], 
+    tile.mesh_lengths[1], 
+    tile.mesh_lengths[2], 
     mesh);
 
   UniIter::sync();
@@ -215,4 +215,3 @@ void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
 template class fields::FDTD2<1>;
 template class fields::FDTD2<2>;
 template class fields::FDTD2<3>;
-  
