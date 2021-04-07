@@ -163,6 +163,7 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[1]),
     static_cast<int>(tile.mesh_lengths[0]),
     dm, m);
+
     //nvtxRangePop();
     UniIter::sync();
 }

@@ -23,9 +23,7 @@ void Tile<D>::rk3_update(
 
   UniIter::iterate3D(
     [=] DEVCALLABLE(
-      int i,
-      int j,
-      int k,
+      int i, int j, int k,
       ffe::SkinnyYeeLattice& dm,
       fields::YeeLattice& m,
       ffe::SkinnyYeeLattice& n)

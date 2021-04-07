@@ -66,6 +66,8 @@ set (FFE_FILES
      ../ffe/currents/ffe4.c++
      )
 
+
+
 set (IO_FILES 
      ../io/writers/writer.c++
      ../io/readers/reader.c++
@@ -76,7 +78,14 @@ set (IO_FILES
     )
 
 set (ACC_FILES 
-)
+    )
+
+
+set (MISC_FILES 
+     pycpl.c++
+     ../coupling/tile.c++
+    )
+
 
 # python module creation
 #--------------------------------------------------
@@ -91,6 +100,7 @@ pybind11_add_module(pyrunko
                     ${FFE_FILES}
                     ${IO_FILES}
                     ${ACC_FILES}
+                    ${MISC_FILES}
                     )
 
 #target_link_libraries(pyrunko PRIVATE -lhdf5)
@@ -137,8 +147,6 @@ if(ENABLE_CUDA)
      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr -std=c++17")
      message( ${CMAKE_CUDA_FLAGS} )
 endif()
-
-
 
 
 # installation
