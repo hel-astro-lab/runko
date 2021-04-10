@@ -6,10 +6,11 @@
 namespace fields {
 
 /// Second order staggered finite difference time domain 
-// Maxwell's field equation solver.
+// Maxwell's field equation solver with spherical PML damping 
+// boundaries
 template<size_t D>
 class FDTD2_pml :
-  public Propagator<D>
+  public virtual Propagator<D>
 {
   public:
 
@@ -28,10 +29,11 @@ class FDTD2_pml :
   /// absorption coefficient (should be cfl/3)
   double norm_abs = 0.1;
 
+  /// damp mode; 0 - radial; 1 - cylindrical
+  int mode = 0; 
+
   /// damping function
-  float_m lambda(float_m sx, float_m sy, float_m sz);
-
-
+  virtual float_m lambda(float_m sx, float_m sy, float_m sz);
 
   void push_e(Tile<D>& tile) override;
 
@@ -39,6 +41,22 @@ class FDTD2_pml :
 
   /// FFE simultaneous E & B update with PML damping
   void push_eb(::ffe::Tile<D>& tile);
+};
+
+
+// Cylindrical version
+template<size_t D>
+class FDTD2_pml_cylinder :
+  public virtual FDTD2_pml<D>
+{
+  public:
+
+  /// cylindrical damping function
+  float_m lambda(float_m sx, float_m sy, float_m sz) override;
+
+  using FDTD2_pml<D>::push_e;
+  using FDTD2_pml<D>::push_half_b;
+  using FDTD2_pml<D>::push_eb;
 };
 
 
