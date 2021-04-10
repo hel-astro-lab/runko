@@ -137,8 +137,28 @@ class FilterTests(unittest.TestCase):
     # test loading of different filters
     def test_init(self):
         conf = Conf()
+        conf.NxMesh = 10
+        conf.NyMesh = 15
+        conf.NzMesh = 1
 
-        flt1 = pyfields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        conf.oneD  = False
+        conf.twoD  = True
+        conf.threeD= False
+
+        flts = []
+        flts.append( pyfields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        flts.append( pyfields.twoD.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        flts.append( pyfields.twoD.General3pStrided(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        flts.append( pyfields.twoD.Binomial2Strided2(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        flts.append( pyfields.twoD.Compensator2(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+
+
+        tile = pyfields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        insert_em_tile(tile, conf, const_field)
+
+        for flt in flts:
+            flt.solve(tile)
+
 
     def test_normalization(self):
 
@@ -146,7 +166,6 @@ class FilterTests(unittest.TestCase):
         conf.twoD = True
 
         tile = pyfields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-
         insert_em_tile(tile, conf, const_field)
 
         # get current arrays and sum (only internal values #to avoid garbage on boundaries
@@ -180,13 +199,39 @@ class FilterTests(unittest.TestCase):
         self.assertAlmostEqual(sumy, sumy1, places=5)
         self.assertAlmostEqual(sumz, sumz1, places=5)
 
+    def test_init3D(self):
+
+        conf = Conf()
+        conf.NxMesh = 10
+        conf.NyMesh = 15
+        conf.NzMesh = 20
+
+        conf.oneD = False
+        conf.twoD = False
+        conf.threeD = True
+
+        flts = []
+        flts.append( pyfields.threeD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        #flts.append( pyfields.threeD.General3p(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        #flts.append( pyfields.threeD.General3pStrided(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        #flts.append( pyfields.threeD.Binomial2Strided2(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+        #flts.append( pyfields.threeD.Compensator2(conf.NxMesh, conf.NyMesh, conf.NzMesh) )
+
+
+        tile = pyfields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        insert_em_tile(tile, conf, const_field)
+
+        for flt in flts:
+            flt.solve(tile)
+
+
     def test_normalization3D(self):
 
         conf = Conf()
         conf.threeD = True
         conf.NxMesh = 6
-        conf.NyMesh = 6
-        conf.NzMesh = 6
+        conf.NyMesh = 7
+        conf.NzMesh = 8
 
         tile = pyfields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 

@@ -64,8 +64,9 @@ void fields::Compensator2<2>::solve(
   // Jx
   tmp.clear();
   UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jx, tmp);
+        mesh.jx, tmp);
  
   UniIter::sync();
   std::swap(mesh.jx, tmp);
@@ -74,8 +75,9 @@ void fields::Compensator2<2>::solve(
   // Jy
   tmp.clear();
   UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jy, tmp);
+        mesh.jy, tmp);
  
   UniIter::sync();
   std::swap(mesh.jy, tmp);
@@ -84,8 +86,9 @@ void fields::Compensator2<2>::solve(
   // Jz
   tmp.clear();
   UniIter::iterate2D(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
         static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[0]), mesh.jz, tmp);
+        mesh.jz, tmp);
  
   UniIter::sync();
   std::swap(mesh.jz, tmp);
