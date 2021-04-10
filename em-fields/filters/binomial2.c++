@@ -22,25 +22,22 @@ void fields::Binomial2<1>::solve(
 
   auto& mesh = tile.get_yee();
 
-  const int halo = 2; 
-
-  const int imin = 0 - halo;
-  const int imax = tile.mesh_lengths[0] + halo;
-
-
-  //--------------------------------------------------
-  // Jx
+  // halo width
+  const int H = 2; 
 
   // NOTE: using tmp as scratch arrays
     
+
   // make 2d loop with shared memory 
+  // NOTE: shifted with -H to iterate over halos
+  // NOTE: similarly, limits are expanded by 2*H
   auto fun = 
   [=] DEVCALLABLE (int i,  
                    toolbox::Mesh<float_m, 3> &jj, 
                    toolbox::Mesh<float_m, 3> &tmp)
   {
     for(int is=-1; is<=1; is++) {
-      tmp(i,0,0) += jj(i+is, 0, 0)*C1[is+1];
+      tmp(i-H,0,0) += jj(i+is-H, 0, 0)*C1[is+1];
     }
   };
     
@@ -48,7 +45,7 @@ void fields::Binomial2<1>::solve(
   // Jx
   tmp.clear();
   UniIter::iterate(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
+        tile.mesh_lengths[0] + 2*H, 
         mesh.jx, 
         tmp);
  
@@ -59,7 +56,7 @@ void fields::Binomial2<1>::solve(
   // Jy
   tmp.clear();
   UniIter::iterate(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
+        tile.mesh_lengths[0] + 2*H, 
         mesh.jy, 
         tmp);
  
@@ -70,7 +67,7 @@ void fields::Binomial2<1>::solve(
   // Jz
   tmp.clear();
   UniIter::iterate(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
+        tile.mesh_lengths[0] + 2*H, 
         mesh.jz, 
         tmp);
  
@@ -98,14 +95,7 @@ void fields::Binomial2<2>::solve(
 
   auto& mesh = tile.get_yee();
 
-  const int halo = 2; 
-
-  const int imin = 0 - halo;
-  const int jmin = 0 - halo;
-
-  const int imax = tile.mesh_lengths[0] + halo;
-  const int jmax = tile.mesh_lengths[1] + halo;
-
+  const int H = 2; 
 
   // using tmp as scratch arrays
   //
@@ -119,8 +109,6 @@ void fields::Binomial2<2>::solve(
   // ...,1,2,3,....,4,5,6,....,7,8,9,.....
   // for the target array memory.
 
-  //--------------------------------------------------
-  // Jx
 
   // NOTE: using tmp as scratch arrays
     
@@ -132,7 +120,7 @@ void fields::Binomial2<2>::solve(
   {
     for(int is=-1; is<=1; is++) {
     for(int js=-1; js<=1; js++) {
-      tmp(i,j,0) += jj(i+is, j+js, 0)*C2[is+1][js+1];
+      tmp(i-H,j-H,0) += jj(i+is-H, j+js-H, 0)*C2[is+1][js+1];
     }}
   };
     
@@ -140,8 +128,8 @@ void fields::Binomial2<2>::solve(
   // Jx
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jx, tmp);
  
   UniIter::sync();
@@ -151,8 +139,8 @@ void fields::Binomial2<2>::solve(
   // Jy
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jy, tmp);
  
   UniIter::sync();
@@ -162,8 +150,8 @@ void fields::Binomial2<2>::solve(
   // Jz
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jz, tmp);
  
   UniIter::sync();
@@ -193,19 +181,8 @@ void fields::Binomial2<3>::solve(
           { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
 
   auto& mesh = tile.get_yee();
+  const int H = 2; 
 
-  const int halo = 2; 
-
-  const int imin = 0 - halo;
-  const int jmin = 0 - halo;
-  const int kmin = 0 - halo;
-
-  const int imax = tile.mesh_lengths[0] + halo;
-  const int jmax = tile.mesh_lengths[1] + halo;
-  const int kmax = tile.mesh_lengths[2] + halo;
-
-  //--------------------------------------------------
-  // Jx
 
   // make 3d loop with shared memory 
   auto fun = 
@@ -214,17 +191,16 @@ void fields::Binomial2<3>::solve(
     for(int is=-1; is<=1; is++) {
     for(int js=-1; js<=1; js++) {
     for(int ks=-1; ks<=1; ks++) {
-      tmp(i,j,k) += jj(i+is, j+js, k+ks) * C3[is+1][js+1][ks+1];
+      tmp(i-H,j-H,k-H) += jj(i+is-H, j+js-H, k+ks-H) * C3[is+1][js+1][ks+1];
     }}}
 
   };
 
-  // TODO: check that new 3x3x3 loop is equal to previous version
   tmp.clear();
   UniIter::iterate3D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[2]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
+        tile.mesh_lengths[2] + 2*H,
         mesh.jx, tmp);
  
   UniIter::sync();
@@ -233,9 +209,9 @@ void fields::Binomial2<3>::solve(
   //--------------------------------------------------
   tmp.clear();
   UniIter::iterate3D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[2]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
+        tile.mesh_lengths[2] + 2*H,
         mesh.jy, tmp);
 
   UniIter::sync();
@@ -244,9 +220,9 @@ void fields::Binomial2<3>::solve(
   //--------------------------------------------------
   tmp.clear();
   UniIter::iterate3D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
-        static_cast<int>(tile.mesh_lengths[2]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
+        tile.mesh_lengths[2] + 2*H,
         mesh.jz, tmp);
 
   UniIter::sync();

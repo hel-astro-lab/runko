@@ -23,16 +23,7 @@ void fields::General3p<2>::solve(
                wtc=winv*(1.0-alpha)*(1.0-alpha); //corner
 
   auto& mesh = tile.get_yee();
-
-  const int halo = 2; 
-
-  const int imin = 0 - halo;
-  const int jmin = 0 - halo;
-
-  const int imax = tile.mesh_lengths[0] + halo;
-  const int jmax = tile.mesh_lengths[1] + halo;
-
-
+  const int H = 2; 
   const int k = 0;
 
   //--------------------------------------------------
@@ -43,24 +34,24 @@ void fields::General3p<2>::solve(
                    toolbox::Mesh<float_m, 3> &jj, 
                    toolbox::Mesh<float_m, 3> &tmp)
   {
-    tmp(i,j,k) = 
-        jj(i-1, j-1, k)*wtc + 
-        jj(i  , j-1, k)*wts + 
-        jj(i+1, j-1, k)*wtc + 
-        jj(i-1, j  , k)*wts + 
-        jj(i  , j  , k)*wtm + 
-        jj(i+1, j  , k)*wts + 
-        jj(i-1, j+1, k)*wtc + 
-        jj(i  , j+1, k)*wts + 
-        jj(i+1, j+1, k)*wtc;
+    tmp(i-H,j-H,k) = 
+        jj(i-1-H, j-1-H, k)*wtc + 
+        jj(i  -H, j-1-H, k)*wts + 
+        jj(i+1-H, j-1-H, k)*wtc + 
+        jj(i-1-H, j  -H, k)*wts + 
+        jj(i  -H, j  -H, k)*wtm + 
+        jj(i+1-H, j  -H, k)*wts + 
+        jj(i-1-H, j+1-H, k)*wtc + 
+        jj(i  -H, j+1-H, k)*wts + 
+        jj(i+1-H, j+1-H, k)*wtc;
   };
 
   //--------------------------------------------------
   // Jx
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jx, tmp);
  
   UniIter::sync();
@@ -70,8 +61,8 @@ void fields::General3p<2>::solve(
   // Jy
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jy, tmp);
  
   UniIter::sync();
@@ -81,8 +72,8 @@ void fields::General3p<2>::solve(
   // Jz
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jz, tmp);
  
   UniIter::sync();

@@ -23,14 +23,7 @@ void fields::General3pStrided<2>::solve(
     
   auto& mesh = tile.get_yee();
 
-  const int halo = 2; 
-
-  const int imin = 0 - halo;
-  const int jmin = 0 - halo;
-
-  const int imax = tile.mesh_lengths[0] + halo;
-  const int jmax = tile.mesh_lengths[1] + halo;
-
+  const int H = 0; 
   const int k = 0;
     
   // make 2d loop with shared memory 
@@ -40,18 +33,18 @@ void fields::General3pStrided<2>::solve(
                    toolbox::Mesh<float_m, 3> &tmp)
   {
     for(int istr = 1; istr < stride; istr++){
-      tmp(i,j,k) = 
-          jj(i-istr, j-istr, k)*wtc + 
-          jj(i     , j-istr, k)*wts + 
-          jj(i+istr, j-istr, k)*wtc + 
+      tmp(i-H,j-H,k) = 
+          jj(i-istr-H, j-istr-H, k)*wtc + 
+          jj(i     -H, j-istr-H, k)*wts + 
+          jj(i+istr-H, j-istr-H, k)*wtc + 
 
-          jj(i-istr, j     , k)*wts + 
-          jj(i     , j     , k)*wtm + 
-          jj(i+istr, j     , k)*wts + 
+          jj(i-istr-H, j     -H, k)*wts + 
+          jj(i     -H, j     -H, k)*wtm + 
+          jj(i+istr-H, j     -H, k)*wts + 
 
-          jj(i-istr, j+istr, k)*wtc + 
-          jj(i     , j+istr, k)*wts + 
-          jj(i+istr, j+istr, k)*wtc;
+          jj(i-istr-H, j+istr-H, k)*wtc + 
+          jj(i     -H, j+istr-H, k)*wts + 
+          jj(i+istr-H, j+istr-H, k)*wtc;
       }
   };
     
@@ -59,8 +52,8 @@ void fields::General3pStrided<2>::solve(
   // Jx
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jx, tmp);
  
   UniIter::sync();
@@ -70,8 +63,8 @@ void fields::General3pStrided<2>::solve(
   // Jy
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jy, tmp);
  
   UniIter::sync();
@@ -81,8 +74,8 @@ void fields::General3pStrided<2>::solve(
   // Jz
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jz, tmp);
  
   UniIter::sync();
@@ -119,15 +112,7 @@ void fields::Binomial2Strided2<2>::solve(
   const double wn=1./16.0/16.0;  //normalization
     
   auto& mesh = tile.get_yee();
-
-  const int halo = 2; 
-
-  const int imin = 0 - halo;
-  const int jmin = 0 - halo;
-
-  const int imax = tile.mesh_lengths[0] + halo;
-  const int jmax = tile.mesh_lengths[1] + halo;
-
+  const int H = 0; 
   const int k = 0;
     
   // make 2d loop with shared memory 
@@ -136,64 +121,64 @@ void fields::Binomial2Strided2<2>::solve(
                    toolbox::Mesh<float_m, 3> &jj, 
                    toolbox::Mesh<float_m, 3> &tmp)
   {
-    tmp(i,j,k) = 
-        jj(i-3, j-3, 0)*1.0*wn +
-        jj(i-2, j-3, 0)*2.0*wn +
-        jj(i-1, j-3, 0)*3.0*wn +
-        jj(i+0, j-3, 0)*4.0*wn +
-        jj(i+1, j-3, 0)*3.0*wn +
-        jj(i+2, j-3, 0)*2.0*wn +
-        jj(i+3, j-3, 0)*1.0*wn +
-        jj(i-3, j-2, 0)*2.0*wn +
-        jj(i-2, j-2, 0)*4.0*wn +
-        jj(i-1, j-2, 0)*6.0*wn +
-        jj(i+0, j-2, 0)*8.0*wn +
-        jj(i+1, j-2, 0)*6.0*wn +
-        jj(i+2, j-2, 0)*4.0*wn +
-        jj(i+3, j-2, 0)*2.0*wn +
-        jj(i-3, j-1, 0)*3.0*wn +
-        jj(i-2, j-1, 0)*6.0*wn +
-        jj(i-1, j-1, 0)*9.0*wn +
-        jj(i+0, j-1, 0)*12.*wn +
-        jj(i+1, j-1, 0)*9.0*wn +
-        jj(i+2, j-1, 0)*6.0*wn +
-        jj(i+3, j-1, 0)*3.0*wn +
-        jj(i-3, j+0, 0)*4.0*wn +
-        jj(i-2, j+0, 0)*8.0*wn +
-        jj(i-1, j+0, 0)*12.*wn +
-        jj(i+0, j+0, 0)*16.*wn +
-        jj(i+1, j+0, 0)*12.*wn +
-        jj(i+2, j+0, 0)*8.0*wn +
-        jj(i+3, j+0, 0)*4.0*wn +
-        jj(i-3, j+1, 0)*3.0*wn +
-        jj(i-2, j+1, 0)*6.0*wn +
-        jj(i-1, j+1, 0)*9.0*wn +
-        jj(i+0, j+1, 0)*12.*wn +
-        jj(i+1, j+1, 0)*9.0*wn +
-        jj(i+2, j+1, 0)*6.0*wn +
-        jj(i+3, j+1, 0)*3.0*wn +
-        jj(i-3, j+2, 0)*2.0*wn +
-        jj(i-2, j+2, 0)*4.0*wn +
-        jj(i-1, j+2, 0)*6.0*wn +
-        jj(i+0, j+2, 0)*8.0*wn +
-        jj(i+1, j+2, 0)*6.0*wn +
-        jj(i+2, j+2, 0)*4.0*wn +
-        jj(i+3, j+2, 0)*2.0*wn +
-        jj(i-3, j+3, 0)*1.0*wn +
-        jj(i-2, j+3, 0)*2.0*wn +
-        jj(i-1, j+3, 0)*3.0*wn +
-        jj(i+0, j+3, 0)*4.0*wn +
-        jj(i+1, j+3, 0)*3.0*wn +
-        jj(i+2, j+3, 0)*2.0*wn +
-        jj(i+3, j+3, 0)*1.0*wn;
+    tmp(i-H,j-H,k) = 
+        jj(i-3-H, j-3-H, 0)*1.0*wn +
+        jj(i-2-H, j-3-H, 0)*2.0*wn +
+        jj(i-1-H, j-3-H, 0)*3.0*wn +
+        jj(i+0-H, j-3-H, 0)*4.0*wn +
+        jj(i+1-H, j-3-H, 0)*3.0*wn +
+        jj(i+2-H, j-3-H, 0)*2.0*wn +
+        jj(i+3-H, j-3-H, 0)*1.0*wn +
+        jj(i-3-H, j-2-H, 0)*2.0*wn +
+        jj(i-2-H, j-2-H, 0)*4.0*wn +
+        jj(i-1-H, j-2-H, 0)*6.0*wn +
+        jj(i+0-H, j-2-H, 0)*8.0*wn +
+        jj(i+1-H, j-2-H, 0)*6.0*wn +
+        jj(i+2-H, j-2-H, 0)*4.0*wn +
+        jj(i+3-H, j-2-H, 0)*2.0*wn +
+        jj(i-3-H, j-1-H, 0)*3.0*wn +
+        jj(i-2-H, j-1-H, 0)*6.0*wn +
+        jj(i-1-H, j-1-H, 0)*9.0*wn +
+        jj(i+0-H, j-1-H, 0)*12.*wn +
+        jj(i+1-H, j-1-H, 0)*9.0*wn +
+        jj(i+2-H, j-1-H, 0)*6.0*wn +
+        jj(i+3-H, j-1-H, 0)*3.0*wn +
+        jj(i-3-H, j+0-H, 0)*4.0*wn +
+        jj(i-2-H, j+0-H, 0)*8.0*wn +
+        jj(i-1-H, j+0-H, 0)*12.*wn +
+        jj(i+0-H, j+0-H, 0)*16.*wn +
+        jj(i+1-H, j+0-H, 0)*12.*wn +
+        jj(i+2-H, j+0-H, 0)*8.0*wn +
+        jj(i+3-H, j+0-H, 0)*4.0*wn +
+        jj(i-3-H, j+1-H, 0)*3.0*wn +
+        jj(i-2-H, j+1-H, 0)*6.0*wn +
+        jj(i-1-H, j+1-H, 0)*9.0*wn +
+        jj(i+0-H, j+1-H, 0)*12.*wn +
+        jj(i+1-H, j+1-H, 0)*9.0*wn +
+        jj(i+2-H, j+1-H, 0)*6.0*wn +
+        jj(i+3-H, j+1-H, 0)*3.0*wn +
+        jj(i-3-H, j+2-H, 0)*2.0*wn +
+        jj(i-2-H, j+2-H, 0)*4.0*wn +
+        jj(i-1-H, j+2-H, 0)*6.0*wn +
+        jj(i+0-H, j+2-H, 0)*8.0*wn +
+        jj(i+1-H, j+2-H, 0)*6.0*wn +
+        jj(i+2-H, j+2-H, 0)*4.0*wn +
+        jj(i+3-H, j+2-H, 0)*2.0*wn +
+        jj(i-3-H, j+3-H, 0)*1.0*wn +
+        jj(i-2-H, j+3-H, 0)*2.0*wn +
+        jj(i-1-H, j+3-H, 0)*3.0*wn +
+        jj(i+0-H, j+3-H, 0)*4.0*wn +
+        jj(i+1-H, j+3-H, 0)*3.0*wn +
+        jj(i+2-H, j+3-H, 0)*2.0*wn +
+        jj(i+3-H, j+3-H, 0)*1.0*wn;
   };
     
   //--------------------------------------------------
   // Jx
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jx, tmp);
  
   UniIter::sync();
@@ -203,8 +188,8 @@ void fields::Binomial2Strided2<2>::solve(
   // Jy
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jy, tmp);
  
   UniIter::sync();
@@ -214,8 +199,8 @@ void fields::Binomial2Strided2<2>::solve(
   // Jz
   tmp.clear();
   UniIter::iterate2D(fun, 
-        static_cast<int>(tile.mesh_lengths[0]), 
-        static_cast<int>(tile.mesh_lengths[1]),
+        tile.mesh_lengths[0] + 2*H, 
+        tile.mesh_lengths[1] + 2*H,
         mesh.jz, tmp);
  
   UniIter::sync();
