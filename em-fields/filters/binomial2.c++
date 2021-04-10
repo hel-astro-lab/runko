@@ -13,6 +13,79 @@
 
 /// single 2D 2nd order 3-point binomial filter 
 template<>
+void fields::Binomial2<1>::solve(
+    fields::Tile<1>& tile)
+{
+    
+  // 2D 3-point binomial coefficients
+  const float_m C1[3] = {1./4., 2./4., 1./4.};
+
+  auto& mesh = tile.get_yee();
+
+  const int halo = 2; 
+
+  const int imin = 0 - halo;
+  const int imax = tile.mesh_lengths[0] + halo;
+
+
+  //--------------------------------------------------
+  // Jx
+
+  // NOTE: using tmp as scratch arrays
+    
+  // make 2d loop with shared memory 
+  auto fun = 
+  [=] DEVCALLABLE (int i,  
+                   toolbox::Mesh<float_m, 3> &jj, 
+                   toolbox::Mesh<float_m, 3> &tmp)
+  {
+    for(int is=-1; is<=1; is++) {
+      tmp(i,0,0) += jj(i+is, 0, 0)*C1[is+1];
+    }
+  };
+    
+  //--------------------------------------------------
+  // Jx
+  tmp.clear();
+  UniIter::iterate(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
+        mesh.jx, 
+        tmp);
+ 
+  UniIter::sync();
+  std::swap(mesh.jx, tmp);
+
+  //--------------------------------------------------
+  // Jy
+  tmp.clear();
+  UniIter::iterate(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
+        mesh.jy, 
+        tmp);
+ 
+  UniIter::sync();
+  std::swap(mesh.jy, tmp);
+
+  //--------------------------------------------------
+  // Jz
+  tmp.clear();
+  UniIter::iterate(fun, 
+        static_cast<int>(tile.mesh_lengths[0]), 
+        mesh.jz, 
+        tmp);
+ 
+  UniIter::sync();
+  std::swap(mesh.jz, tmp);
+
+  //--------------------------------------------------
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
+
+
+/// single 2D 2nd order 3-point binomial filter 
+template<>
 void fields::Binomial2<2>::solve(
     fields::Tile<2>& tile)
 {
@@ -187,6 +260,6 @@ void fields::Binomial2<3>::solve(
 }
 
 
-//template class fields::Binomial2<1>; // 1D
+template class fields::Binomial2<1>; // 1D
 template class fields::Binomial2<2>; // 2D
 template class fields::Binomial2<3>; // 3D
