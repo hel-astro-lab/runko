@@ -22,7 +22,7 @@ void fields::FDTD2<1>::push_e(fields::Tile<1>& tile)
 #endif
 
   YeeLattice& mesh = tile.get_yee();
-  float_m C = 1.0 * tile.cfl * dt * corr;
+  const float_m C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate(
   [=] DEVCALLABLE (int i, YeeLattice &mesh)
@@ -52,7 +52,7 @@ void fields::FDTD2<2>::push_e(fields::Tile<2>& tile)
 #endif
 
   YeeLattice& mesh = tile.get_yee();
-  float_m C = 1.0 * tile.cfl * dt * corr;
+  const float_m C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate2D(
   [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
@@ -86,7 +86,7 @@ void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
 #endif
 
   YeeLattice& mesh = tile.get_yee();
-  float_m C = 1.0 * tile.cfl * dt * corr;
+  const float_m C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
@@ -124,7 +124,7 @@ void fields::FDTD2<1>::push_half_b(fields::Tile<1>& tile)
 #endif
 
   YeeLattice& mesh = tile.get_yee();
-  float_m C = 0.5 * tile.cfl * dt * corr;
+  const float_m C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate(
   [=] DEVCALLABLE (int i, YeeLattice &mesh)
@@ -153,7 +153,7 @@ void fields::FDTD2<2>::push_half_b(fields::Tile<2>& tile)
 #endif
 
   YeeLattice& mesh = tile.get_yee();
-  float_m C = 0.5 * tile.cfl * dt * corr;
+  const float_m C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate2D(
   [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
@@ -186,7 +186,7 @@ void fields::FDTD2<3>::push_half_b(fields::Tile<3>& tile)
 #endif
 
   YeeLattice& mesh = tile.get_yee();
-  float_m C = 0.5 * tile.cfl * dt * corr;
+  const float_m C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
