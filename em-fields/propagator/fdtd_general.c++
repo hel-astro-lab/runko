@@ -1,6 +1,11 @@
 #include "fdtd_general.h"
 
 #include <cmath>
+#include "../../tools/iter/iter.h"
+
+#ifdef GPU
+#include <nvtx3/nvToolsExt.h> 
+#endif
 
 
 inline float_m Dm_x( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
@@ -38,68 +43,75 @@ inline float_m Dp_z( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, 
 template<>
 void fields::FDTDGen<3>::push_e(fields::Tile<3>& tile)
 {
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   YeeLattice& mesh = tile.get_yee();
-  
-  float_m Cx, Cy, Cz;
 
-  const int Nx = tile.mesh_lengths[0];
-  const int Ny = tile.mesh_lengths[1];
-  const int Nz = tile.mesh_lengths[2];
+  UniIter::iterate3D(
+  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  {
 
-  // dE/dt = +curlB
-  for(int ai=1; ai<=3; ai++) { //alphas
-    Cx = CXs(ai, 0, 0)*corr*tile.cfl;
-    Cy = CYs(0, ai, 0)*corr*tile.cfl;
-    Cz = CZs(0,  0,ai)*corr*tile.cfl;
+    // dE/dt = +curlB
+    for(int ai=1; ai<=3; ai++) { //alphas
+      const float_m Cx = CXs(ai, 0, 0)*corr*tile.cfl;
+      const float_m Cy = CYs(0, ai, 0)*corr*tile.cfl;
+      const float_m Cz = CZs(0,  0,ai)*corr*tile.cfl;
 
-    for(int k=0; k<Nz; k++) 
-    for(int j=0; j<Ny; j++) 
-    for(int i=0; i<Nx; i++){
-        //legs with 0-offset
-        mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, 0,0,0); 
-        mesh.ex(i,j,k) += -Cz*Dm_z(mesh.by,i,j,k, ai, 0,0,0);
-        mesh.ey(i,j,k) += -Cx*Dm_x(mesh.bz,i,j,k, ai, 0,0,0);
-        mesh.ey(i,j,k) += +Cz*Dm_z(mesh.bx,i,j,k, ai, 0,0,0);
-        mesh.ez(i,j,k) += +Cx*Dm_x(mesh.by,i,j,k, ai, 0,0,0);
-        mesh.ez(i,j,k) += -Cy*Dm_y(mesh.bx,i,j,k, ai, 0,0,0);
-    }
+      //legs with 0-offset
+      mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, 0,0,0); 
+      mesh.ex(i,j,k) += -Cz*Dm_z(mesh.by,i,j,k, ai, 0,0,0);
+      mesh.ey(i,j,k) += -Cx*Dm_x(mesh.bz,i,j,k, ai, 0,0,0);
+      mesh.ey(i,j,k) += +Cz*Dm_z(mesh.bx,i,j,k, ai, 0,0,0);
+      mesh.ez(i,j,k) += +Cx*Dm_x(mesh.by,i,j,k, ai, 0,0,0);
+      mesh.ez(i,j,k) += -Cy*Dm_y(mesh.bx,i,j,k, ai, 0,0,0);
 
-    //legs with n-offset
-    //for(int bi : {-1,+1}) {
-    for(int bi : {-3,-2,-1,+1,+2,+3}) {
+      //legs with n-offset
+      //for(int bi : {-1,+1}) {
+      for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
-        // hand-coded beta fetching from array
-        Cx = CXs(ai, 1, 1)*corr*tile.cfl;
-        Cy = CYs(1, ai, 1)*corr*tile.cfl;
-        Cz = CZs(1,  1,ai)*corr*tile.cfl;
+          // hand-coded beta fetching from array
+          const float_m Cx2 = CXs(ai, 1, 1)*corr*tile.cfl;
+          const float_m Cy2 = CYs(1, ai, 1)*corr*tile.cfl;
+          const float_m Cz2 = CZs(1,  1,ai)*corr*tile.cfl;
 
-        for(int k=0; k<Nz; k++) 
-        for(int j=0; j<Ny; j++) 
-        for(int i=0; i<Nx; i++){
-            // curl_x
-            mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, bi,0,0); //beta_yx
-            mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, 0,0,bi); //beta_yz
+          // curl_x
+          mesh.ex(i,j,k) += +Cy2*Dm_y(mesh.bz,i,j,k, ai, bi,0,0); //beta_yx
+          mesh.ex(i,j,k) += +Cy2*Dm_y(mesh.bz,i,j,k, ai, 0,0,bi); //beta_yz
 
-            mesh.ex(i,j,k) += -Cz*Dm_z(mesh.by,i,j,k, ai, bi,0,0);
-            mesh.ex(i,j,k) += -Cz*Dm_z(mesh.by,i,j,k, ai, 0,bi,0);
+          mesh.ex(i,j,k) += -Cz2*Dm_z(mesh.by,i,j,k, ai, bi,0,0);
+          mesh.ex(i,j,k) += -Cz2*Dm_z(mesh.by,i,j,k, ai, 0,bi,0);
 
-            // curl_y
-            mesh.ey(i,j,k) += -Cx*Dm_x(mesh.bz,i,j,k, ai, 0,bi,0);
-            mesh.ey(i,j,k) += -Cx*Dm_x(mesh.bz,i,j,k, ai, 0,0,bi);
+          // curl_y
+          mesh.ey(i,j,k) += -Cx2*Dm_x(mesh.bz,i,j,k, ai, 0,bi,0);
+          mesh.ey(i,j,k) += -Cx2*Dm_x(mesh.bz,i,j,k, ai, 0,0,bi);
 
-            mesh.ey(i,j,k) += +Cz*Dm_z(mesh.bx,i,j,k, ai, bi,0,0);
-            mesh.ey(i,j,k) += +Cz*Dm_z(mesh.bx,i,j,k, ai, 0,bi,0);
+          mesh.ey(i,j,k) += +Cz2*Dm_z(mesh.bx,i,j,k, ai, bi,0,0);
+          mesh.ey(i,j,k) += +Cz2*Dm_z(mesh.bx,i,j,k, ai, 0,bi,0);
 
-            // curl_z
-            mesh.ez(i,j,k) += +Cx*Dm_x(mesh.by,i,j,k, ai, 0,bi,0);
-            mesh.ez(i,j,k) += +Cx*Dm_x(mesh.by,i,j,k, ai, 0,0,bi);
+          // curl_z
+          mesh.ez(i,j,k) += +Cx2*Dm_x(mesh.by,i,j,k, ai, 0,bi,0);
+          mesh.ez(i,j,k) += +Cx2*Dm_x(mesh.by,i,j,k, ai, 0,0,bi);
 
-            mesh.ez(i,j,k) += -Cy*Dm_y(mesh.bx,i,j,k, ai, bi,0,0);
-            mesh.ez(i,j,k) += -Cy*Dm_y(mesh.bx,i,j,k, ai, 0,0,bi);
-        }
-    }
-  }
+          mesh.ez(i,j,k) += -Cy2*Dm_y(mesh.bx,i,j,k, ai, bi,0,0);
+          mesh.ez(i,j,k) += -Cy2*Dm_y(mesh.bx,i,j,k, ai, 0,0,bi);
 
+      }// end of bi
+    } //end of ai
+
+  },
+    tile.mesh_lengths[0], 
+    tile.mesh_lengths[1], 
+    tile.mesh_lengths[2], 
+    mesh);
+
+  UniIter::sync();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
@@ -110,69 +122,74 @@ void fields::FDTDGen<3>::push_e(fields::Tile<3>& tile)
 template<>
 void fields::FDTDGen<3>::push_half_b(fields::Tile<3>& tile)
 {
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
   YeeLattice& mesh = tile.get_yee();
 
-  float_m Cx, Cy, Cz;
+  UniIter::iterate3D(
+  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  {
+    // dB/dt = -curlE
+    for(int ai=1; ai<=3; ai++) { //alphas
+      const float_m Cx = 0.5*CXs(ai, 0, 0)*corr*tile.cfl;
+      const float_m Cy = 0.5*CYs(0, ai, 0)*corr*tile.cfl;
+      const float_m Cz = 0.5*CZs(0,  0,ai)*corr*tile.cfl;
 
-  const int Nx = tile.mesh_lengths[0];
-  const int Ny = tile.mesh_lengths[1];
-  const int Nz = tile.mesh_lengths[2];
+      //legs with 0-offset
+      mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, 0,0,0); 
+      mesh.bx(i,j,k) -= -Cz*Dp_z(mesh.ey,i,j,k, ai, 0,0,0);
+                      
+      mesh.by(i,j,k) -= -Cx*Dp_x(mesh.ez,i,j,k, ai, 0,0,0);
+      mesh.by(i,j,k) -= +Cz*Dp_z(mesh.ex,i,j,k, ai, 0,0,0);
+                      
+      mesh.bz(i,j,k) -= +Cx*Dp_x(mesh.ey,i,j,k, ai, 0,0,0);
+      mesh.bz(i,j,k) -= -Cy*Dp_y(mesh.ex,i,j,k, ai, 0,0,0);
 
-  // dB/dt = -curlE
-  for(int ai=1; ai<=3; ai++) { //alphas
-    Cx = 0.5*CXs(ai, 0, 0)*corr*tile.cfl;
-    Cy = 0.5*CYs(0, ai, 0)*corr*tile.cfl;
-    Cz = 0.5*CZs(0,  0,ai)*corr*tile.cfl;
 
-    for(int k=0; k<Nz; k++) 
-    for(int j=0; j<Ny; j++) 
-    for(int i=0; i<Nx; i++){
-        //legs with 0-offset
-        mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, 0,0,0); 
-        mesh.bx(i,j,k) -= -Cz*Dp_z(mesh.ey,i,j,k, ai, 0,0,0);
-                        
-        mesh.by(i,j,k) -= -Cx*Dp_x(mesh.ez,i,j,k, ai, 0,0,0);
-        mesh.by(i,j,k) -= +Cz*Dp_z(mesh.ex,i,j,k, ai, 0,0,0);
-                        
-        mesh.bz(i,j,k) -= +Cx*Dp_x(mesh.ey,i,j,k, ai, 0,0,0);
-        mesh.bz(i,j,k) -= -Cy*Dp_y(mesh.ex,i,j,k, ai, 0,0,0);
-    }
-
-    //legs with n-offset
-    //for(int bi : {-1,+1}) {
-    for(int bi : {-3,-2,-1,+1,+2,+3}) {
+      //legs with n-offset
+      //for(int bi : {-1,+1}) {
+      for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
         // hand-coded beta fetching from array
-        Cx = 0.5*CXs(ai, 1, 1)*corr*tile.cfl;
-        Cy = 0.5*CYs(1, ai, 1)*corr*tile.cfl;
-        Cz = 0.5*CZs(1,  1,ai)*corr*tile.cfl;
+        const float_m Cx2 = 0.5*CXs(ai, 1, 1)*corr*tile.cfl;
+        const float_m Cy2 = 0.5*CYs(1, ai, 1)*corr*tile.cfl;
+        const float_m Cz2 = 0.5*CZs(1,  1,ai)*corr*tile.cfl;
 
-        for(int k=0; k<Nz; k++) 
-        for(int j=0; j<Ny; j++) 
-        for(int i=0; i<Nx; i++){
-            // curl_x
-            mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, bi,0,0); //beta_yx
-            mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, 0,0,bi); //beta_yz
-                            
-            mesh.bx(i,j,k) -= -Cz*Dp_z(mesh.ey,i,j,k, ai, bi,0,0);
-            mesh.bx(i,j,k) -= -Cz*Dp_z(mesh.ey,i,j,k, ai, 0,bi,0);
-                            
-            // curl_y       
-            mesh.by(i,j,k) -= -Cx*Dp_x(mesh.ez,i,j,k, ai, 0,bi,0);
-            mesh.by(i,j,k) -= -Cx*Dp_x(mesh.ez,i,j,k, ai, 0,0,bi);
-                            
-            mesh.by(i,j,k) -= +Cz*Dp_z(mesh.ex,i,j,k, ai, bi,0,0);
-            mesh.by(i,j,k) -= +Cz*Dp_z(mesh.ex,i,j,k, ai, 0,bi,0);
-                            
-            // curl_z       
-            mesh.bz(i,j,k) -= +Cx*Dp_x(mesh.ey,i,j,k, ai, 0,bi,0);
-            mesh.bz(i,j,k) -= +Cx*Dp_x(mesh.ey,i,j,k, ai, 0,0,bi);
-                            
-            mesh.bz(i,j,k) -= -Cy*Dp_y(mesh.ex,i,j,k, ai, bi,0,0);
-            mesh.bz(i,j,k) -= -Cy*Dp_y(mesh.ex,i,j,k, ai, 0,0,bi);
-        }
-    }
-  }
+        // curl_x
+        mesh.bx(i,j,k) -= +Cy2*Dp_y(mesh.ez,i,j,k, ai, bi,0,0); //beta_yx
+        mesh.bx(i,j,k) -= +Cy2*Dp_y(mesh.ez,i,j,k, ai, 0,0,bi); //beta_yz
+                        
+        mesh.bx(i,j,k) -= -Cz2*Dp_z(mesh.ey,i,j,k, ai, bi,0,0);
+        mesh.bx(i,j,k) -= -Cz2*Dp_z(mesh.ey,i,j,k, ai, 0,bi,0);
+                        
+        // curl_y       
+        mesh.by(i,j,k) -= -Cx2*Dp_x(mesh.ez,i,j,k, ai, 0,bi,0);
+        mesh.by(i,j,k) -= -Cx2*Dp_x(mesh.ez,i,j,k, ai, 0,0,bi);
+                        
+        mesh.by(i,j,k) -= +Cz2*Dp_z(mesh.ex,i,j,k, ai, bi,0,0);
+        mesh.by(i,j,k) -= +Cz2*Dp_z(mesh.ex,i,j,k, ai, 0,bi,0);
+                        
+        // curl_z       
+        mesh.bz(i,j,k) -= +Cx2*Dp_x(mesh.ey,i,j,k, ai, 0,bi,0);
+        mesh.bz(i,j,k) -= +Cx2*Dp_x(mesh.ey,i,j,k, ai, 0,0,bi);
+                        
+        mesh.bz(i,j,k) -= -Cy2*Dp_y(mesh.ex,i,j,k, ai, bi,0,0);
+        mesh.bz(i,j,k) -= -Cy2*Dp_y(mesh.ex,i,j,k, ai, 0,0,bi);
+      } //end of bi
+    } //end of ai
+  },
+    tile.mesh_lengths[0], 
+    tile.mesh_lengths[1], 
+    tile.mesh_lengths[2], 
+    mesh);
+
+  UniIter::sync();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 
 }
 
