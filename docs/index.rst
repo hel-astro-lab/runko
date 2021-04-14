@@ -96,9 +96,8 @@ Key contributors that provided additional features and/or improvements include
    :caption: Tutorials:
    :maxdepth: 2
 
+   usage
    shocks
-   showcase
-   user-defined modules
 
 
 .. toctree::
