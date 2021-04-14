@@ -39,7 +39,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 #endif
 
   auto& yee = tile.get_yee();
-  auto mins = tile.mins;
+  const auto mins = tile.mins;
 
   //clear arrays before new update
   yee.jx.clear();
@@ -53,7 +53,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
-//    // NOTE: no vectorization here since we dont use the general iterator
+//    // no vectorization here since we dont use the general iterator
 //    for(size_t n=0; n<con.size(); n++) {
 
     UniIter::iterate([=] DEVCALLABLE (
@@ -80,24 +80,24 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       // normalized location w.r.t. tile; previous loc (x1) and current loc (x2)
       double x1, x2, y1, y2, z1, z2;
-      x1 = D >= 1 ? x0     - mins[0] : x0;
-      x2 = D >= 1 ? loc0n  - mins[0] : loc0n;
-      y1 = D >= 2 ? y0     - mins[1] : y0;
-      y2 = D >= 2 ? loc1n  - mins[1] : loc1n;
-      z1 = D >= 3 ? z0     - mins[2] : z0;
-      z2 = D >= 3 ? loc2n  - mins[2] : loc2n;
+      x1 = D >= 1 ? x0    - mins[0] : x0;
+      x2 = D >= 1 ? loc0n - mins[0] : loc0n;
+      y1 = D >= 2 ? y0    - mins[1] : y0;
+      y2 = D >= 2 ? loc1n - mins[1] : loc1n;
+      z1 = D >= 3 ? z0    - mins[2] : z0;
+      z2 = D >= 3 ? loc2n - mins[2] : loc2n;
 
-  	  int i1  = D >= 1 ? floor(x1) : 0;
-  	  int i2  = D >= 1 ? floor(x2) : 0;
-  	  int j1  = D >= 2 ? floor(y1) : 0;
-  	  int j2  = D >= 2 ? floor(y2) : 0;
-  	  int k1  = D >= 3 ? floor(z1) : 0;
-  	  int k2  = D >= 3 ? floor(z2) : 0;
+      int i1  = D >= 1 ? floor(x1) : 0;
+      int i2  = D >= 1 ? floor(x2) : 0;
+      int j1  = D >= 2 ? floor(y1) : 0;
+      int j2  = D >= 2 ? floor(y2) : 0;
+      int k1  = D >= 3 ? floor(z1) : 0;
+      int k2  = D >= 3 ? floor(z2) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      double xr = min( double(min(i1,i2)+1), max( (double)max(i1,i2), (double)0.5*(x1+x2) ) );
-      double yr = min( double(min(j1,j2)+1), max( (double)max(j1,j2), (double)0.5*(y1+y2) ) );
-      double zr = min( double(min(k1,k2)+1), max( (double)max(k1,k2), (double)0.5*(z1+z2) ) );
+      double xr = min( (double)min(i1,i2)+1.0, max( (double)max(i1,i2), 0.5*(x1+x2) ) );
+      double yr = min( (double)min(j1,j2)+1.0, max( (double)max(j1,j2), 0.5*(y1+y2) ) );
+      double zr = min( (double)min(k1,k2)+1.0, max( (double)max(k1,k2), 0.5*(z1+z2) ) );
 
 
       //--------------------------------------------------
@@ -113,7 +113,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       double Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
       double Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
-  	  double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
+      double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
       double Fx2 = +q*(x2-xr);
       double Fy2 = +q*(y2-yr);
