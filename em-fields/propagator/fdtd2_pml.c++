@@ -22,8 +22,15 @@ DEVCALLABLE float_m fields::FDTD2_pml<3>::lambda( float_m sx, float_m sy, float_
           + pow( (sz - cenz)/radz, 2) 
                );
 
-  // cylindrical 
+  // cylindrical in x
   } else if(mode == 1) {
+    r = std::sqrt( 
+          + pow( (sy - ceny)/rady, 2) 
+          + pow( (sz - cenz)/radz, 2) 
+               );
+
+  // cylindrical in z
+  } else if(mode == 2) {
     r = std::sqrt( 
             pow( (sx - cenx)/radx, 2) 
           + pow( (sy - ceny)/rady, 2) 
