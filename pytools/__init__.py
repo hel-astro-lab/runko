@@ -12,6 +12,7 @@ from .pic.tile_initialization import ind2loc #FIXME: this function should be def
 from .sampling import sample_boosted_maxwellian #FIXME: not clear if sampling should be under main or pic 
 from .indices import Stagger
 from .indices import get_index
+from .scheduler import Scheduler
 
 
 # physics modules

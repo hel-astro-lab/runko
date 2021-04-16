@@ -3,7 +3,7 @@
 from configparser import ConfigParser
 import ast
 
-section_names = "io", "simulation", "grid", "vmesh", "particles", "problem"
+section_names = "io", "simulation", "grid", "problem", "particles"
 
 
 # Class for parsing and holding all configuration files
