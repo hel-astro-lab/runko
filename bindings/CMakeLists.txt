@@ -50,6 +50,7 @@ set (PIC_FILES
      ../pic/pushers/rgca.c++
      ../pic/interpolators/linear.c++
      ../pic/depositers/zigzag.c++
+     ../pic/depositers/zigzag_2nd.c++
      )
 
 set (RAD_FILES 

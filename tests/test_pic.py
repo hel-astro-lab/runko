@@ -109,7 +109,7 @@ def filler_xvel(xloc, ispcs, conf):
 
     #xx = xloc[0] #+ 0.5
     #yy = xloc[1] #+ 0.5
-    zz = 0.5
+    zz = 0.0
 
     x0 = [xx, yy, zz]
 
@@ -122,6 +122,18 @@ def filler_xvel(xloc, ispcs, conf):
     #u0 = [-1.0, -1.0, -1.0]
 
     return x0, u0
+
+
+def filler_xvel3D(xloc, ispcs, conf):
+
+    # perturb position between x0 + RUnif[0,1)
+    xx = xloc[0] + np.random.rand(1)
+    yy = xloc[1] + np.random.rand(1)
+    zz = xloc[2] + np.random.rand(1)
+    x0 = [xx, yy, zz]
+    u0 = [+1.0, +1.0, +1.0]
+    return x0, u0
+
 
 def zero_field(x,y,z):
     return 0.0
@@ -916,10 +928,8 @@ class PIC(unittest.TestCase):
 
 
     def test_current_deposit(self):
-        """
-        test that current deposit of + and - particles with same x and v
-        produce zero current in total.
-        """
+        #test that current deposit of + and - particles with same x and v
+        #produce zero current in total.
 
 
         try:
@@ -960,47 +970,108 @@ class PIC(unittest.TestCase):
 
         #pusher   = pyrunko.pic.twoD.BorisPusher()
         #fintp    = pyrunko.pic.twoD.LinearInterpolator()
-        currint  = pyrunko.pic.twoD.ZigZag()
+        currints = []
+        currints.append( pyrunko.pic.twoD.ZigZag() )
+        #currints.append( pyrunko.pic.twoD.ZigZag_2nd() )
+        
+        for currint in currints:
 
+            #deposit current
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    tile = grid.get_tile(i,j)
+                    currint.solve(tile)
 
-        #deposit current
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                tile = grid.get_tile(i,j)
-                currint.solve(tile)
+            #exchange currents for all tiles
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    tile = grid.get_tile(i,j)
+                    tile.exchange_currents(grid)
 
-        #exchange currents for the middle one only
-        #for j in [1]:
-        #    for i in [1]:
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                tile = grid.get_tile(i,j)
-                tile.exchange_currents(grid)
+            #try:
+            #    #plotNode(axs[0], grid, conf)
+            #    #plot2dParticles(axs[0], grid, conf, downsample=0.1)
+            #    plot2dYee(axs[1], grid, conf, 'rho')
+            #    plot2dYee(axs[2], grid, conf, 'jx')
+            #    plot2dYee(axs[3], grid, conf, 'jy')
+            #    plot2dYee(axs[4], grid, conf, 'jz')
+            #    #saveVisz(-2, grid, conf)
+            #except:
+            #    pass
 
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    c = grid.get_tile(i,j)
+                    yee = c.get_yee(0)
+                    for l in range(conf.NxMesh):
+                        for m in range(conf.NyMesh):
+                            self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=5 )
+                            self.assertAlmostEqual(yee.jy[l,m,0], 0.0, places=5 )
+                            self.assertAlmostEqual(yee.jz[l,m,0], 0.0, places=5 )
+                            #self.assertEqual(yee.jx[l,m,0], 0.0 )
+                            #self.assertEqual(yee.jy[l,m,0], 0.0 )
+                            #self.assertEqual(yee.jz[l,m,0], 0.0 )
 
-        #try:
-        #    #plotNode(axs[0], grid, conf)
-        #    #plot2dParticles(axs[0], grid, conf, downsample=0.1)
-        #    plot2dYee(axs[1], grid, conf, 'rho')
-        #    plot2dYee(axs[2], grid, conf, 'jx')
-        #    plot2dYee(axs[3], grid, conf, 'jy')
-        #    plot2dYee(axs[4], grid, conf, 'jz')
-        #    #saveVisz(-2, grid, conf)
-        #except:
-        #    pass
+    def test_current_deposit3D(self):
+        #test that current deposit of + and - particles with same x and v
+        #produce zero current in total.
 
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                c = grid.get_tile(i,j)
-                yee = c.get_yee(0)
-                for l in range(conf.NxMesh):
-                    for m in range(conf.NyMesh):
-                        self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=5 )
-                        self.assertAlmostEqual(yee.jy[l,m,0], 0.0, places=5 )
-                        self.assertAlmostEqual(yee.jz[l,m,0], 0.0, places=5 )
-                        #self.assertEqual(yee.jx[l,m,0], 0.0 )
-                        #self.assertEqual(yee.jy[l,m,0], 0.0 )
-                        #self.assertEqual(yee.jz[l,m,0], 0.0 )
+        conf = Conf()
+        conf.threeD = True
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 3
+        conf.NxMesh = 6
+        conf.NyMesh = 7
+        conf.NzMesh = 8
+
+        conf.ppc = 1
+        conf.vel = 0.1
+        conf.Nspecies = 2
+        conf.me = -1.0        #electron mass-to-charge
+        conf.mi =  1.0        #ion mass-to-charge
+
+        conf.update_bbox()
+
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+        pytools.pic.load_tiles(grid, conf)
+        pytools.pic.inject(grid, filler_xvel3D, density_profile, conf) #pytools.pic.injecting plasma particles
+
+        currints = []
+        currints.append( pyrunko.pic.threeD.ZigZag() )
+        currints.append( pyrunko.pic.threeD.ZigZag_2nd() )
+
+        # loop over different depositers
+        for currint in currints:
+            print(currint)
+
+            #deposit current
+            for k in range(grid.get_Nz()):
+                for j in range(grid.get_Ny()):
+                    for i in range(grid.get_Nx()):
+                        tile = grid.get_tile(i,j,k)
+                        currint.solve(tile)
+
+            #exchange currents for all tiles
+            for k in range(grid.get_Nz()):
+                for j in range(grid.get_Ny()):
+                    for i in range(grid.get_Nx()):
+                        tile = grid.get_tile(i,j,k)
+                        tile.exchange_currents(grid)
+
+            for k in range(grid.get_Nz()):
+                for j in range(grid.get_Ny()):
+                    for i in range(grid.get_Nx()):
+                        c = grid.get_tile(i,j,k)
+                        yee = c.get_yee(0)
+                        for l in range(conf.NxMesh):
+                            for m in range(conf.NyMesh):
+                                for n in range(conf.NzMesh):
+                                    self.assertAlmostEqual(yee.jx[l,m,n], 0.0, places=5 )
+                                    self.assertAlmostEqual(yee.jy[l,m,n], 0.0, places=5 )
+                                    self.assertAlmostEqual(yee.jz[l,m,n], 0.0, places=5 )
+
 
     def test_test_particle_initialization(self):
 
