@@ -63,30 +63,24 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
                 ){
 
       //--------------------------------------------------
-      double loc0n = con.loc(0,n);
-      double loc1n = con.loc(1,n);
-      double loc2n = con.loc(2,n);
-
+      // NOTE: performing velocity calculations via doubles to retain accuracy
       double vel0n = con.vel(0,n);
       double vel1n = con.vel(1,n);
       double vel2n = con.vel(2,n);
-
       double invgam = 1.0/sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
 
       //--------------------------------------------------
-      double x0 = loc0n - vel0n*invgam*c;
-      double y0 = loc1n - vel1n*invgam*c;
-      double z0 = loc2n - vel2n*invgam*c; 
+      // new (normalized) location, x_{n+1}
+      float_m x2 = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
+      float_m y2 = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
+      float_m z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
-      // normalized location w.r.t. tile; previous loc (x1) and current loc (x2)
-      double x1, x2, y1, y2, z1, z2;
-      x1 = D >= 1 ? x0    - mins[0] : x0;
-      x2 = D >= 1 ? loc0n - mins[0] : loc0n;
-      y1 = D >= 2 ? y0    - mins[1] : y0;
-      y2 = D >= 2 ? loc1n - mins[1] : loc1n;
-      z1 = D >= 3 ? z0    - mins[2] : z0;
-      z2 = D >= 3 ? loc2n - mins[2] : loc2n;
+      // previos location, x_n
+      float_m x1 = x2 - vel0n*invgam*c;
+      float_m y1 = y2 - vel1n*invgam*c;
+      float_m z1 = z2 - vel2n*invgam*c; 
 
+      //--------------------------------------------------
       int i1  = D >= 1 ? floor(x1) : 0;
       int i2  = D >= 1 ? floor(x2) : 0;
       int j1  = D >= 2 ? floor(y1) : 0;
@@ -95,29 +89,30 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       int k2  = D >= 3 ? floor(z2) : 0;
 
       // relay point; +1 is equal to +\Delta x
-      double xr = min( (double)min(i1,i2)+1.0, max( (double)max(i1,i2), 0.5*(x1+x2) ) );
-      double yr = min( (double)min(j1,j2)+1.0, max( (double)max(j1,j2), 0.5*(y1+y2) ) );
-      double zr = min( (double)min(k1,k2)+1.0, max( (double)max(k1,k2), 0.5*(z1+z2) ) );
-
+      float_m xr = min( float_m(min(i1,i2)+1), max( float_m(max(i1,i2)), float_m(0.5*(x1+x2)) ) );
+      float_m yr = min( float_m(min(j1,j2)+1), max( float_m(max(j1,j2)), float_m(0.5*(y1+y2)) ) );
+      float_m zr = min( float_m(min(k1,k2)+1), max( float_m(max(k1,k2)), float_m(0.5*(z1+z2)) ) );
 
       //--------------------------------------------------
       // +q since - sign is already included in the Ampere's equation
       //q = weight*qe;
-      double Fx1 = +q*(xr - x1);
-      double Fy1 = +q*(yr - y1);
-      double Fz1 = +q*(zr - z1);
+      float_m Fx1 = +q*(xr - x1);
+      float_m Fy1 = +q*(yr - y1);
+      float_m Fz1 = +q*(zr - z1);
+      
+      float_m Fx2 = +q*(x2 - xr);
+      float_m Fy2 = +q*(y2 - yr);
+      float_m Fz2 = +q*(z2 - zr);
 
-      double Wx1 = D >= 1 ? 0.5*(x1 + xr) - i1 : 0.0;
-      double Wy1 = D >= 2 ? 0.5*(y1 + yr) - j1 : 0.0;
-      double Wz1 = D >= 3 ? 0.5*(z1 + zr) - k1 : 0.0;
 
-      double Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
-      double Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
-      double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
+      float_m Wx1 = D >= 1 ? 0.5*(x1 + xr) - i1 : 0.0;
+      float_m Wy1 = D >= 2 ? 0.5*(y1 + yr) - j1 : 0.0;
+      float_m Wz1 = D >= 3 ? 0.5*(z1 + zr) - k1 : 0.0;
 
-      double Fx2 = +q*(x2-xr);
-      double Fy2 = +q*(y2-yr);
-      double Fz2 = +q*(z2-zr);
+      float_m Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
+      float_m Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
+      float_m Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
+
 
       //--------------------------------------------------
       // jx
@@ -131,7 +126,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       if(D>=3) atomic_add( yee.jx(i2  , j2  , k2+1), Fx2*(1.0f-Wy2)*Wz2        );
       if(D>=3) atomic_add( yee.jx(i2  , j2+1, k2+1), Fx2*Wy2       *Wz2        );
 
-      //// jy
+      // jy
       if(D>=1) atomic_add( yee.jy(i1  , j1  , k1  ), Fy1*(1.0f-Wx1)*(1.0f-Wz1) );
       if(D>=2) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1       *(1.0f-Wz1) );
       if(D>=3) atomic_add( yee.jy(i1  , j1  , k1+1), Fy1*(1.0f-Wx1)*Wz1        );
@@ -142,7 +137,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       if(D>=3) atomic_add( yee.jy(i2  , j2  , k2+1), Fy2*(1.0f-Wx2)*Wz2        );
       if(D>=3) atomic_add( yee.jy(i2+1, j2  , k2+1), Fy2*Wx2       *Wz2        );
 
-      //// jz
+      // jz
       if(D>=1) atomic_add( yee.jz(i1  , j1  , k1  ), Fz1*(1.0f-Wx1)*(1.0f-Wy1) );
       if(D>=2) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0f-Wy1) );
       if(D>=3) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0f-Wx1)*Wy1        );
@@ -150,8 +145,8 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       if(D>=1) atomic_add( yee.jz(i2  , j2  , k2  ), Fz2*(1.0f-Wx2)*(1.0f-Wy2) );
       if(D>=1) atomic_add( yee.jz(i2+1, j2  , k2  ), Fz2*Wx2       *(1.0f-Wy2) );
-      if(D>=1) atomic_add( yee.jz(i2  , j2+1, k2  ), Fz2*(1.0f-Wx2)*Wy2        );
-      if(D>=1) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2       *Wy2        );
+      if(D>=2) atomic_add( yee.jz(i2  , j2+1, k2  ), Fz2*(1.0f-Wx2)*Wy2        );
+      if(D>=2) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2       *Wy2        );
 
     }, con.size(), yee, con);
 
@@ -171,4 +166,3 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 template class pic::ZigZag<1,3>; // 1D3V
 template class pic::ZigZag<2,3>; // 2D3V
 template class pic::ZigZag<3,3>; // 3D3V
-
