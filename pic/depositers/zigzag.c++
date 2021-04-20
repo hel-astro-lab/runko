@@ -14,22 +14,6 @@ using std::max;
 #endif
 
 
-// vectorization is broken at the point where we add values back to the grid.
-// This auxiliary function tries to hide that complexity.
-template<typename T, typename S>
-DEVCALLABLE inline void atomic_add(T& lhs, S rhs) 
-{
-#ifdef GPU
-    atomicAdd(&lhs, static_cast<T>(rhs));
-#else
-    //NOTE: need to use #pragma omp atomic if vectorizing these
-#pragma omp atomic update
-    lhs += static_cast<S>(rhs);
-#endif
-}
-
-
-
 template<size_t D, size_t V>
 void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 {
@@ -64,10 +48,10 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       //--------------------------------------------------
       // NOTE: performing velocity calculations via doubles to retain accuracy
-      double vel0n = con.vel(0,n);
-      double vel1n = con.vel(1,n);
-      double vel2n = con.vel(2,n);
-      double invgam = 1.0/sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
+      double u = con.vel(0,n);
+      double v = con.vel(1,n);
+      double w = con.vel(2,n);
+      double invgam = 1.0/sqrt(1.0 + u*u + v*v + w*w);
 
       //--------------------------------------------------
       // new (normalized) location, x_{n+1}
@@ -76,9 +60,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       float_m z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
       // previos location, x_n
-      float_m x1 = x2 - vel0n*invgam*c;
-      float_m y1 = y2 - vel1n*invgam*c;
-      float_m z1 = z2 - vel2n*invgam*c; 
+      float_m x1 = x2 - u*invgam*c;
+      float_m y1 = y2 - v*invgam*c;
+      float_m z1 = z2 - w*invgam*c; 
 
       //--------------------------------------------------
       int i1  = D >= 1 ? floor(x1) : 0;

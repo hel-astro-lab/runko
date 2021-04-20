@@ -14,20 +14,6 @@ using std::min;
 using std::max;
 
 
-// vectorization is broken at the point where we add values back to the grid.
-// This auxiliary function tries to hide that complexity.
-template<typename T, typename S>
-DEVCALLABLE inline void atomic_add(T& lhs, S rhs) 
-{
-#ifdef GPU
-    atomicAdd(&lhs, static_cast<T>(rhs));
-#else
-    //NOTE: need to use #pragma omp atomic if vectorizing these
-#pragma omp atomic update
-    lhs += static_cast<S>(rhs);
-#endif
-}
-
 inline auto W2nd(float_m x, float_m xr, int i
         ) -> std::tuple<float_m,float_m,float_m>
 {
