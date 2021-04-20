@@ -54,10 +54,10 @@ void pic::PistonZdir<D>::zigzag(
   int k1  = D >= 3 ? floor( z1 ) : 0;
   int k2  = D >= 3 ? floor( z2 ) : 0;
 
-   // relay point; +1 is equal to +\Delta x
-   float_m xr = min( float_m(min(i1,i2)+1), max( float_m(max(i1,i2)), float_m(0.5*(x1+x2)) ) );
-   float_m yr = min( float_m(min(j1,j2)+1), max( float_m(max(j1,j2)), float_m(0.5*(y1+y2)) ) );
-   float_m zr = min( float_m(min(k1,k2)+1), max( float_m(max(k1,k2)), float_m(0.5*(z1+z2)) ) );
+  // relay point; +1 is equal to +\Delta x
+  float_m xr = min( float_m(min(i1,i2)+1), max( float_m(max(i1,i2)), float_m(0.5*(x1+x2)) ) );
+  float_m yr = min( float_m(min(j1,j2)+1), max( float_m(max(j1,j2)), float_m(0.5*(y1+y2)) ) );
+  float_m zr = min( float_m(min(k1,k2)+1), max( float_m(max(k1,k2)), float_m(0.5*(z1+z2)) ) );
 
   //--------------------------------------------------
   // +q since - sign is already included in the Ampere's equation
@@ -134,11 +134,9 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
   // if wall crossing is not inside tile, skip further analysis
   if( !tile_between_z ) return;
 
-
   for(auto&& con : tile.containers) {
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
-
 
     UniIter::iterate([=] DEVCALLABLE (
                 size_t n, 
@@ -159,7 +157,6 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
       if(do_reflect) {
 
         //--------------------------------------------------
-
         double u1 = con.vel(0,n);
         double v1 = con.vel(1,n);
         double w1 = con.vel(2,n);
@@ -175,8 +172,7 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
         // compute crossing point
 
         // time fraction between previos position and wall
-        double dt = std::min(1.0, std::abs((z0-wallocz)/( -wdir*c*w1/gam + EPS )));
-
+        double dt = std::min(1.0, std::abs((z0-wallocz)/(-wdir*c*w1/gam + EPS)));
         double xcol = x0 + c*dt*u1/gam;
         double ycol = y0 + c*dt*v1/gam;
         double zcol = z0 + c*dt*w1/gam;
@@ -188,7 +184,7 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
         // perform reflection
 
         // reflect particle getting kick from the wall
-        //w = gamw*gamw*gam*(2.*wdirz*betawallz - w/gam*(1.0 + betawallz*betawallz));
+        //w1 = gamw*gamw*gam*(2.*wdirz*betawallz - w/gam*(1.0 + betawallz*betawallz));
         w1 = - w1;
 
         // time fraction between current position and collision point
@@ -210,12 +206,15 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
         // that will be added by the deposition routine that unwinds
         // the particle location by a full time step.
         zigzag(tile, 
-               /*new loc:*/ 
-               xnew, ynew, znew, 
-               /*old loc:*/ 
-               xcol, ycol, zcol, 
-               -q);
+            xnew - c*u1/gam,
+            ynew - c*v1/gam,
+            znew - c*w1/gam,
+            xcol, ycol, zcol, 
+            -q);
+
         }
+
+
       }, 
         con.size(), 
         tile,
@@ -284,10 +283,52 @@ void pic::PistonZdir<3>::field_bc(
       //yee.jz(i,j,k) = 0.0;
     }
   }
-
 }
 
 
+template<size_t D>
+void pic::PistonZdir<D>::clean_prtcls( pic::Tile<D>& tile)
+{
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+  const auto mins = tile.mins;
+  const auto maxs = tile.maxs;
+
+  // unwind wall location
+  double wz0 = wallocz; // - wdirz*betawallz*c;
+  bool tile_between_z = (mins[2] <= wz0 && wz0 <= maxs[2]);
+
+  // if wall crossing is not inside tile, skip further analysis
+  if( !tile_between_z ) return;
+
+  // outflowing particles
+  std::vector<int> to_be_deleted;
+
+
+  for(auto&& con : tile.containers) {
+    const double c = tile.cfl;    // speed of light
+    to_be_deleted.clear();
+
+    for(int n=0; n<con.size(); n++) {
+
+      //particle location and velocity
+      double z1 = con.loc(2,n);
+
+      bool behind_wall = false;
+      if( wdir > 0.0 && z1 < wallocz ) behind_wall = true;
+      if( wdir < 0.0 && z1 > wallocz ) behind_wall = true;
+
+      // skip if we dont reflect
+      if(behind_wall) to_be_deleted.push_back(n);
+    }
+
+    con.delete_particles(to_be_deleted);
+  }
+
+}
 
 //template class pic::Piston<1>; // 1D3V
 //template class pic::PistonZdir<2>; // 2D3V

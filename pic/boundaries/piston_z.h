@@ -28,6 +28,10 @@ class PistonZdir
       double x1, double y1, double z1, 
       double x2, double y2, double z2, 
       double q);
+
+  /// clean particles inside the wall
+  void clean_prtcls(pic::Tile<D>& tile);
+
 };
 
 

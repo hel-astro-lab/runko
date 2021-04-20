@@ -514,6 +514,7 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("walloc",   &pic::PistonZdir<3>::wallocz)
     .def_readwrite("wdir",     &pic::PistonZdir<3>::wdir)
     .def("solve",              &pic::PistonZdir<3>::solve)
+    .def("clean_prtcls",       &pic::PistonZdir<3>::clean_prtcls)
     .def("field_bc",           &pic::PistonZdir<3>::field_bc);
 
 
