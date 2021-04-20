@@ -41,6 +41,7 @@ set (PIC_FILES
      ../pic/particle.c++
      ../pic/boundaries/wall.c++
      ../pic/boundaries/piston.c++
+     ../pic/boundaries/piston_z.c++
      ../pic/pushers/boris.c++
      ../pic/pushers/boris_drag.c++
      ../pic/pushers/boris_rad.c++

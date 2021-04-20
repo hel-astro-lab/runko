@@ -27,6 +27,7 @@ namespace py = pybind11;
 
 #include "../pic/boundaries/wall.h"
 #include "../pic/boundaries/piston.h"
+#include "../pic/boundaries/piston_z.h"
 
 #include "../io/writers/writer.h"
 #include "../io/writers/pic.h"
@@ -507,6 +508,13 @@ void bind_pic(py::module& m_sub)
     .def("solve",              &pic::Piston<3>::solve)
     .def("field_bc",           &pic::Piston<3>::field_bc);
 
+  //3D piston
+  py::class_<pic::PistonZdir<3>>(m_3d, "PistonZdir")
+    .def(py::init<>())
+    .def_readwrite("walloc",   &pic::PistonZdir<3>::wallocz)
+    .def_readwrite("wdir",     &pic::PistonZdir<3>::wdir)
+    .def("solve",              &pic::PistonZdir<3>::solve)
+    .def("field_bc",           &pic::PistonZdir<3>::field_bc);
 
 
   //--------------------------------------------------
