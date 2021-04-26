@@ -44,20 +44,5 @@ class FDTD2_pml :
 };
 
 
-// Cylindrical version
-template<size_t D>
-class FDTD2_pml_cylinder :
-  public virtual FDTD2_pml<D>
-{
-  public:
-
-  /// cylindrical damping function
-  float_m lambda(float_m sx, float_m sy, float_m sz) override;
-
-  using FDTD2_pml<D>::push_e;
-  using FDTD2_pml<D>::push_half_b;
-  using FDTD2_pml<D>::push_eb;
-};
-
 
 } // end of namespace fields

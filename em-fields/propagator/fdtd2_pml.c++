@@ -232,10 +232,4 @@ void fields::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 
 //template class fields::FDTD2_pml<1>;
 //template class fields::FDTD2_pml<2>;
-template class fields::FDTD2_pml<3>;
-
-
-//template class fields::FDTD2_pml_cylinder<1>;
-//template class fields::FDTD2_pml_cylinder<2>;
-template class fields::FDTD2_pml_cylinder<3>;
-  
+template class fields::FDTD2_pml<3>; 
