@@ -49,12 +49,18 @@ class Mesh
     /// Internal indexing with halo region padding of width H
     DEVCALLABLE
     inline size_t indx(int i, int j, int k) const {
-      assert( (i >= -H) && (i <  (int)Nx + H)  );
-      assert( (j >= -H) && (j <  (int)Ny + H)  );
-      assert( (k >= -H) && (k <  (int)Nz + H)  );
-      int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+      //if(not( (i >= -H) && (i <  (int)Nx + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
+      //if(not( (j >= -H) && (j <  (int)Ny + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
+      //if(not( (k >= -H) && (k <  (int)Nz + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
 
-      assert( (indx >= 0) && (indx <  (int)count ) );
+      assert( (i >= -H) && (i < (int)Nx + H)  );
+      assert( (j >= -H) && (j < (int)Ny + H)  );
+      assert( (k >= -H) && (k < (int)Nz + H)  );
+
+      // this is true if above is true
+      //int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+      //assert( (indx >= 0) && (indx < (int)count ) );
+
       assert(allocated);
 
       //return indx;
