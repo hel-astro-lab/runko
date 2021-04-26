@@ -15,16 +15,16 @@ using std::max;
 
 
 // Triangular 2nd order charge fluxes
-inline void W2nd(float_m x, float_m xr, int i, float_m* out)
+inline void W2nd(double x, double xr, int i, double* out)
 {
     // W_{i+1)^(1) 
-    float_m xm = 0.5f*(x + xr) - i; 
+    double xm = 0.5*(x + xr) - i; 
     out[0] = xm;
       
     // charge fluxes for triangular shapes
-    out[1] = 0.50f*(0.5f - xm)*(0.5f - xm); //W2_im1 
-    out[2] = 0.75f - xm*xm;                 //W2_i   
-    out[3] = 0.50f*(0.5f + xm)*(0.5f + xm); //W2_ip1 
+    out[1] = 0.50*(0.5 - xm)*(0.5 - xm); //W2_im1 
+    out[2] = 0.75 - xm*xm;                 //W2_i   
+    out[3] = 0.50*(0.5 + xm)*(0.5 + xm); //W2_ip1 
 }
 
 
@@ -49,7 +49,7 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
   for(auto&& con : tile.containers) {
 
     const double c = tile.cfl;    // speed of light
-    const float_m q = con.q; // charge
+    const double q = con.q; // charge
 
     //UniIter::iterate([=] DEVCALLABLE (
     //            size_t n, 
@@ -67,15 +67,15 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       //--------------------------------------------------
       // new (normalized) location, x_{n+1}
         
-      //float_m x1, y1, z1;
-      float_m x2 = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
-      float_m y2 = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
-      float_m z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
+      //double x1, y1, z1;
+      double x2 = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
+      double y2 = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
+      double z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
       // previos location, x_n
-      float_m x1 = x2 - u*invgam*c;
-      float_m y1 = y2 - v*invgam*c;
-      float_m z1 = z2 - w*invgam*c; 
+      double x1 = x2 - u*invgam*c;
+      double y1 = y2 - v*invgam*c;
+      double z1 = z2 - w*invgam*c; 
 
       //--------------------------------------------------
       int i1  = D >= 1 ? floor(x1) : 0;
@@ -86,18 +86,18 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       int k2  = D >= 3 ? floor(z2) : 0;
 
       // 1st order relay point; +1 is equal to +\Delta x
-      //float_m xr = min( float_m(min(i1,i2)+1), max( float_m(max(i1,i2)), float_m(0.5*(x1+x2)) ) );
-      //float_m yr = min( float_m(min(j1,j2)+1), max( float_m(max(j1,j2)), float_m(0.5*(y1+y2)) ) );
-      //float_m zr = min( float_m(min(k1,k2)+1), max( float_m(max(k1,k2)), float_m(0.5*(z1+z2)) ) );
+      //double xr = min( double(min(i1,i2)+1), max( double(max(i1,i2)), double(0.5*(x1+x2)) ) );
+      //double yr = min( double(min(j1,j2)+1), max( double(max(j1,j2)), double(0.5*(y1+y2)) ) );
+      //double zr = min( double(min(k1,k2)+1), max( double(max(k1,k2)), double(0.5*(z1+z2)) ) );
         
       // 2nd order relay point; +1 is equal to +\Delta x
-      float_m xr = min( float_m(min(i1,i2)+1), max( float_m(i1+i2)*0.5f, float_m(0.5f*(x1+x2)) ) );
-      float_m yr = min( float_m(min(j1,j2)+1), max( float_m(j1+j2)*0.5f, float_m(0.5f*(y1+y2)) ) );
-      float_m zr = min( float_m(min(k1,k2)+1), max( float_m(k1+k2)*0.5f, float_m(0.5f*(z1+z2)) ) );
+      double xr = min( double(min(i1,i2)+1), max( double(i1+i2)*0.5, double(0.5*(x1+x2)) ) );
+      double yr = min( double(min(j1,j2)+1), max( double(j1+j2)*0.5, double(0.5*(y1+y2)) ) );
+      double zr = min( double(min(k1,k2)+1), max( double(k1+k2)*0.5, double(0.5*(z1+z2)) ) );
 
       //--------------------------------------------------
       // particle weights 
-      float_m Wxx1[4], Wxx2[4], Wyy1[4], Wyy2[4], Wzz1[4], Wzz2[4];
+      double Wxx1[4], Wxx2[4], Wyy1[4], Wyy2[4], Wzz1[4], Wzz2[4];
 
       W2nd(x1, xr, i1, Wxx1);
       W2nd(x2, xr, i2, Wxx2);
@@ -133,13 +133,13 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       // NOTE: +q since - sign is already included in the Ampere's equation
       // NOTE: extra c to introduce time step immediately; therefore we store on grid J -> J\Delta t
       // NOTE: More generally we should have: q = weight*qe;
-      float_m qvx1 = +q*(xr - x1);
-      float_m qvy1 = +q*(yr - y1);
-      float_m qvz1 = +q*(zr - z1);
+      double qvx1 = +q*(xr - x1);
+      double qvy1 = +q*(yr - y1);
+      double qvz1 = +q*(zr - z1);
 
-      float_m qvx2 = +q*(x2 - xr);
-      float_m qvy2 = +q*(y2 - yr);
-      float_m qvz2 = +q*(z2 - zr);
+      double qvx2 = +q*(x2 - xr);
+      double qvy2 = +q*(y2 - yr);
+      double qvz2 = +q*(z2 - zr);
         
       //current deposited at xmid = 0.5(x2-x1)
       //or think this is the relay pt
@@ -161,12 +161,12 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2   <<","<< j2+yi <<","<< k2+zi <<") " << "\n";
 
         //first part of trajectory
-        atomic_add( yee.jx(i1-1, j1+yi, k1+zi), qvx1*(0.5f - Wxx1[0])*Wyy1[yi+2]*Wzz1[zi+2] );
-        atomic_add( yee.jx(i1  , j1+yi, k1+zi), qvx1*(0.5f + Wxx1[0])*Wyy1[yi+2]*Wzz1[zi+2] );
+        atomic_add( yee.jx(i1-1, j1+yi, k1+zi), qvx1*(0.5 - Wxx1[0])*Wyy1[yi+2]*Wzz1[zi+2] );
+        atomic_add( yee.jx(i1  , j1+yi, k1+zi), qvx1*(0.5 + Wxx1[0])*Wyy1[yi+2]*Wzz1[zi+2] );
 
         //second part of trajectory
-        atomic_add( yee.jx(i2-1, j2+yi, k2+zi), qvx2*(0.5f - Wxx2[0])*Wyy2[yi+2]*Wzz2[zi+2] );
-        atomic_add( yee.jx(i2,   j2+yi, k2+zi), qvx2*(0.5f + Wxx2[0])*Wyy2[yi+2]*Wzz2[zi+2] );
+        atomic_add( yee.jx(i2-1, j2+yi, k2+zi), qvx2*(0.5 - Wxx2[0])*Wyy2[yi+2]*Wzz2[zi+2] );
+        atomic_add( yee.jx(i2,   j2+yi, k2+zi), qvx2*(0.5 + Wxx2[0])*Wyy2[yi+2]*Wzz2[zi+2] );
       }
 
       //jy
@@ -178,11 +178,11 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2+xi <<","<< j2-1 <<","<< k2+zi <<") " <<
         //"(" << i2+xi <<","<< j2   <<","<< k2+zi <<") " << "\n";
 
-        atomic_add( yee.jy(i1+xi, j1-1, k1+zi), qvy1*(0.5f - Wyy1[0])*Wxx1[xi+2]*Wzz1[zi+2] );
-        atomic_add( yee.jy(i1+xi, j1,   k1+zi), qvy1*(0.5f + Wyy1[0])*Wxx1[xi+2]*Wzz1[zi+2] );
+        atomic_add( yee.jy(i1+xi, j1-1, k1+zi), qvy1*(0.5 - Wyy1[0])*Wxx1[xi+2]*Wzz1[zi+2] );
+        atomic_add( yee.jy(i1+xi, j1,   k1+zi), qvy1*(0.5 + Wyy1[0])*Wxx1[xi+2]*Wzz1[zi+2] );
 
-        atomic_add( yee.jy(i2+xi, j2-1, k2+zi), qvy2*(0.5f - Wyy2[0])*Wxx2[xi+2]*Wzz2[zi+2] );
-        atomic_add( yee.jy(i2+xi, j2,   k2+zi), qvy2*(0.5f + Wyy2[0])*Wxx2[xi+2]*Wzz2[zi+2] );
+        atomic_add( yee.jy(i2+xi, j2-1, k2+zi), qvy2*(0.5 - Wyy2[0])*Wxx2[xi+2]*Wzz2[zi+2] );
+        atomic_add( yee.jy(i2+xi, j2,   k2+zi), qvy2*(0.5 + Wyy2[0])*Wxx2[xi+2]*Wzz2[zi+2] );
       }
 
       //jz
@@ -194,11 +194,11 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2+xi <<","<< j2+yi <<","<< k2-1 <<") " <<
         //"(" << i2+xi <<","<< j2+yi <<","<< k2   <<") " << "\n";
 
-        atomic_add( yee.jz(i1+xi, j1+yi, k1-1), qvz1*(0.5f - Wzz1[0])*Wxx1[xi+2]*Wyy1[yi+2] );
-        atomic_add( yee.jz(i1+xi, j1+yi, k1  ), qvz1*(0.5f + Wzz1[0])*Wxx1[xi+2]*Wyy1[yi+2] );
+        atomic_add( yee.jz(i1+xi, j1+yi, k1-1), qvz1*(0.5 - Wzz1[0])*Wxx1[xi+2]*Wyy1[yi+2] );
+        atomic_add( yee.jz(i1+xi, j1+yi, k1  ), qvz1*(0.5 + Wzz1[0])*Wxx1[xi+2]*Wyy1[yi+2] );
 
-        atomic_add( yee.jz(i2+xi, j2+yi, k2-1), qvz2*(0.5f - Wzz2[0])*Wxx2[xi+2]*Wyy2[yi+2] );
-        atomic_add( yee.jz(i2+xi, j2+yi, k2  ), qvz2*(0.5f + Wzz2[0])*Wxx2[xi+2]*Wyy2[yi+2] );
+        atomic_add( yee.jz(i2+xi, j2+yi, k2-1), qvz2*(0.5 - Wzz2[0])*Wxx2[xi+2]*Wyy2[yi+2] );
+        atomic_add( yee.jz(i2+xi, j2+yi, k2  ), qvz2*(0.5 + Wzz2[0])*Wxx2[xi+2]*Wyy2[yi+2] );
       }
 
     }
