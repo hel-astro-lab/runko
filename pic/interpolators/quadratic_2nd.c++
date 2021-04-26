@@ -10,6 +10,15 @@
 #endif
 
 
+// Cloud-in-cell shape
+// 1st order weight
+//inline void compute_coeffs(double d, double* coeff){
+//  coeff[0] = 0.0;
+//  coeff[1] = 1.0-d;
+//  coeff[2] = d;
+//}
+
+
 // Triangular shaped cloud;
 // 2nd order quadratic spline
 /*      -
@@ -26,21 +35,25 @@
   //   1/8 (3-2x)^2 
   // = 0.5*( 1.5-x )^2  
   // = 0.5*( x^2 - 3x + 2.25)
-inline void compute_coeffs(double dx, double* coeff){
+inline void compute_coeffs(double d, double* coeff){
+  //NOTE: d at wings includes +-1 so W2_mp1 -> 0.5*(3/2 +- d)^2
+  coeff[0] = 0.50f*(0.5f - d)*(0.5f - d); //W2_im1 
+  coeff[1] = 0.75f - d*d;                 //W2_i   
+  coeff[2] = 0.50f*(0.5f + d)*(0.5f + d); //W2_ip1 
 
-  //float_m dx2 = dx*dx;
-  //coeff[0] = 0.50f * ( dx2 - dx + 0.25f );
-  //coeff[1] = 0.75f - dx2;
-  //coeff[2] = 0.50f * ( dx2 + dx + 0.25f );
+}
 
-  //NOTE: dx at wings includes +-1 so W2_mp1 -> 0.5*(3/2 +- dx)^2
-  coeff[0] = 0.50f*(0.5f - dx)*(0.5f - dx); //W2_im1 
-  coeff[1] = 0.75f - dx*dx;                 //W2_i   
-  coeff[2] = 0.50f*(0.5f + dx)*(0.5f + dx); //W2_ip1 
 
-  //coeff[0] = 0.25f * pow( 1.5f - dx, 2);
-  //coeff[1] = 0.75f - dx*dx;
-  //coeff[2] = 0.25f * pow( 1.5f + dx, 2);
+// 1st order weight for Sokolov's alternating scheme
+inline void compute_lower_coeffs(double d, double* coeff){
+  coeff[0] = 0.0;
+  coeff[1] = 1.0-d;
+  coeff[2] = d;
+
+  // Sokolov higher
+  // 0.5*(1-d)^2 ok
+  // 3/4 - (0.5 - d)^2
+  // d^2
 }
 
 
@@ -220,9 +233,9 @@ void pic::QuadraticInterpolator<D,V>::solve(
       //compute_coeffs( zpn - kd + 0.5f, &czd[0] );
 
       //FIXME ver2
-      if(D >= 1) compute_coeffs( xpn-ip,      &cxp[0] );
-      if(D >= 2) compute_coeffs( ypn-jp,      &cyp[0] );
-      if(D >= 3) compute_coeffs( zpn-kp,      &czp[0] );
+      if(D >= 1) compute_lower_coeffs( xpn-ip,      &cxp[0] );
+      if(D >= 2) compute_lower_coeffs( ypn-jp,      &cyp[0] );
+      if(D >= 3) compute_lower_coeffs( zpn-kp,      &czp[0] );
       if(D >= 1) compute_coeffs( xpn-id-0.5f, &cxd[0] );
       if(D >= 2) compute_coeffs( ypn-jd-0.5f, &cyd[0] );
       if(D >= 3) compute_coeffs( zpn-kd-0.5f, &czd[0] );
