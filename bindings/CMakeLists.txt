@@ -49,7 +49,8 @@ set (PIC_FILES
      ../pic/pushers/vay.c++
      ../pic/pushers/higuera_cary.c++
      ../pic/pushers/rgca.c++
-     ../pic/interpolators/linear.c++
+     ../pic/interpolators/linear_1st.c++
+     ../pic/interpolators/quadratic_2nd.c++
      ../pic/depositers/zigzag.c++
      ../pic/depositers/zigzag_2nd.c++
      )
