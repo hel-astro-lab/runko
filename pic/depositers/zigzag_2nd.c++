@@ -14,16 +14,17 @@ using std::min;
 using std::max;
 
 
-inline auto W2nd(float_m x, float_m xr, int i
-        ) -> std::tuple<float_m,float_m,float_m>
+// Triangular 2nd order charge fluxes
+inline void W2nd(float_m x, float_m xr, int i, float_m* out)
 {
-    float_m xm = 0.5f*(x + xr) - i; // TODO: has +1 in it?
-
-    float_m W1 = 0.125f*( 2.0f*( (xm+1.0f)-3.0f)*( (xm+1.0f)-3.0f) );
-    float_m W2 = 0.75f- xm*xm;
-    float_m W3 = 0.125f*( 2.0f*(-(xm-1.0f)-3.0f)*(-(xm-1.0f)-3.0f) );
-
-    return { W1, W2, W3 };
+    // W_{i+1)^(1) 
+    float_m xm = 0.5f*(x + xr) - i; 
+    out[0] = xm;
+      
+    // charge fluxes for triangular shapes
+    out[1] = 0.50f*(0.5f - xm)*(0.5f - xm); //W2_im1 
+    out[2] = 0.75f - xm*xm;                 //W2_i   
+    out[3] = 0.50f*(0.5f + xm)*(0.5f + xm); //W2_ip1 
 }
 
 
@@ -50,17 +51,18 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
     const double c = tile.cfl;    // speed of light
     const float_m q = con.q; // charge
 
-    UniIter::iterate([=] DEVCALLABLE (
-                size_t n, 
-                fields::YeeLattice &yee,
-                pic::ParticleContainer<D>& con
-                ){
+    //UniIter::iterate([=] DEVCALLABLE (
+    //            size_t n, 
+    //            fields::YeeLattice &yee,
+    //            pic::ParticleContainer<D>& con
+    //            ){
+    for(size_t n=0; n<con.size(); n++) {
 
       //--------------------------------------------------
-      double vel0n = con.vel(0,n);
-      double vel1n = con.vel(1,n);
-      double vel2n = con.vel(2,n);
-      double invgam = 1.0/sqrt(1.0 + vel0n*vel0n + vel1n*vel1n + vel2n*vel2n);
+      double u = con.vel(0,n);
+      double v = con.vel(1,n);
+      double w = con.vel(2,n);
+      double invgam = 1.0/sqrt(1.0 + u*u + v*v + w*w);
 
       //--------------------------------------------------
       // new (normalized) location, x_{n+1}
@@ -71,9 +73,9 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       float_m z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
       // previos location, x_n
-      float_m x1 = x2 - vel0n*invgam*c;
-      float_m y1 = y2 - vel1n*invgam*c;
-      float_m z1 = z2 - vel2n*invgam*c; 
+      float_m x1 = x2 - u*invgam*c;
+      float_m y1 = y2 - v*invgam*c;
+      float_m z1 = z2 - w*invgam*c; 
 
       //--------------------------------------------------
       int i1  = D >= 1 ? floor(x1) : 0;
@@ -83,143 +85,124 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       int k1  = D >= 3 ? floor(z1) : 0;
       int k2  = D >= 3 ? floor(z2) : 0;
 
-      // relay point; +1 is equal to +\Delta x
-      float_m xr = min( float_m(min(i1,i2)+1), max( float_m(max(i1,i2)), float_m(0.5*(x1+x2)) ) );
-      float_m yr = min( float_m(min(j1,j2)+1), max( float_m(max(j1,j2)), float_m(0.5*(y1+y2)) ) );
-      float_m zr = min( float_m(min(k1,k2)+1), max( float_m(max(k1,k2)), float_m(0.5*(z1+z2)) ) );
-
-
-      //--------------------------------------------------
-      // +q since - sign is already included in the Ampere's equation
-      //q = weight*qe;
-      float_m Fx1 = +q*(xr - x1);
-      float_m Fy1 = +q*(yr - y1);
-      float_m Fz1 = +q*(zr - z1);
-
-      float_m Fx2 = +q*(x2 - xr);
-      float_m Fy2 = +q*(y2 - yr);
-      float_m Fz2 = +q*(z2 - zr);
-
-      auto [Wx1a, Wx2a, Wx3a] = W2nd(x1, xr, i1);
-      auto [Wx1b, Wx2b, Wx3b] = W2nd(x2, xr, i2);
-
-      auto [Wy1a, Wy2a, Wy3a] = W2nd(y1, yr, j1);
-      auto [Wy1b, Wy2b, Wy3b] = W2nd(y2, yr, j2);
-
-      auto [Wz1a, Wz2a, Wz3a] = W2nd(z1, zr, k1);
-      auto [Wz1b, Wz2b, Wz3b] = W2nd(z2, zr, k2);
-
-      //--------------------------------------------------
-      //reduce dimension if needed
-      if(D <= 1) {
-        Wy1a, Wy2a, Wy3a = 1.0;
-        Wy1b, Wy2b, Wy3b = 1.0;
-      }
-
-      if(D <= 2) {
-        Wz1a, Wz2a, Wz3a = 1.0;
-        Wz1b, Wz2b, Wz3b = 1.0;
-      }
-
-      // TODO need dimensionality switches to these too to optimize them
+      // 1st order relay point; +1 is equal to +\Delta x
+      //float_m xr = min( float_m(min(i1,i2)+1), max( float_m(max(i1,i2)), float_m(0.5*(x1+x2)) ) );
+      //float_m yr = min( float_m(min(j1,j2)+1), max( float_m(max(j1,j2)), float_m(0.5*(y1+y2)) ) );
+      //float_m zr = min( float_m(min(k1,k2)+1), max( float_m(max(k1,k2)), float_m(0.5*(z1+z2)) ) );
         
-      const float_m Wxx1[3] = {Wx1a, Wx2a, Wx3a};
-      const float_m Wxx2[3] = {Wx1a, Wx2a, Wx3a};
+      // 2nd order relay point; +1 is equal to +\Delta x
+      float_m xr = min( float_m(min(i1,i2)+1), max( float_m(i1+i2)*0.5f, float_m(0.5f*(x1+x2)) ) );
+      float_m yr = min( float_m(min(j1,j2)+1), max( float_m(j1+j2)*0.5f, float_m(0.5f*(y1+y2)) ) );
+      float_m zr = min( float_m(min(k1,k2)+1), max( float_m(k1+k2)*0.5f, float_m(0.5f*(z1+z2)) ) );
 
-      const float_m Wyy1[3] = {Wy1a, Wy2a, Wy3a};
-      const float_m Wyy2[3] = {Wy1a, Wy2a, Wy3a};
+      //--------------------------------------------------
+      // particle weights 
+      float_m Wxx1[4], Wxx2[4], Wyy1[4], Wyy2[4], Wzz1[4], Wzz2[4];
 
-      const float_m Wzz1[3] = {Wz1a, Wz2a, Wz3a};
-      const float_m Wzz2[3] = {Wz1a, Wz2a, Wz3a};
+      W2nd(x1, xr, i1, Wxx1);
+      W2nd(x2, xr, i2, Wxx2);
 
+      W2nd(y1, yr, j1, Wyy1);
+      W2nd(y2, yr, j2, Wyy2);
+
+      W2nd(z1, zr, k1, Wzz1);
+      W2nd(z2, zr, k2, Wzz2);
+
+      //reduce dimension if needed
+      //if(D <= 1) {
+      //  Wy1a, Wy2a, Wy3a = 1.0;
+      //  Wy1b, Wy2b, Wy3b = 1.0;
+      //}
+      //if(D <= 2) {
+      //  Wz1a, Wz2a, Wz3a = 1.0;
+      //  Wz1b, Wz2b, Wz3b = 1.0;
+      //}
+
+
+      //Wx1_ip1 = 0.5f*(x + xr) - i; 
+      //jx(i-1, j-1, k) = qvx * (0.5 - Wx1_ip1)*W2_jm1
+      //jx(i  , j-1, k) = qvx * (0.5 + Wx1_ip1)*W2_jm1
+      //jx(i-1, j  , k) = qvx * (0.5 - Wx1_ip1)*W2_j  
+      //jx(i  , j  , k) = qvx * (0.5 + Wx1_ip1)*W2_j  
+      //jx(i-1, j+1, k) = qvx * (0.5 - Wx1_ip1)*W2_jp1
+      //jx(i  , j+1, k) = qvx * (0.5 + Wx1_ip1)*W2_jp1
+
+      //--------------------------------------------------
+      // q v = q (x_{i+1} - x_i)/dt
+      //
+      // NOTE: +q since - sign is already included in the Ampere's equation
+      // NOTE: extra c to introduce time step immediately; therefore we store on grid J -> J\Delta t
+      // NOTE: More generally we should have: q = weight*qe;
+      float_m qvx1 = +q*(xr - x1);
+      float_m qvy1 = +q*(yr - y1);
+      float_m qvz1 = +q*(zr - z1);
+
+      float_m qvx2 = +q*(x2 - xr);
+      float_m qvy2 = +q*(y2 - yr);
+      float_m qvz2 = +q*(z2 - zr);
+        
+      //current deposited at xmid = 0.5(x2-x1)
+      //or think this is the relay pt
+      //in its own frame prtcl prtcl footpoitn is same
+      //in lab frame ftpnt is compressed by 1/gam
+      //edge at i-1 experiences inv gam less charge
+      //edge at i   experiences inv gam less charge
+
+
+      //--------------------------------------------------
+        
       //jx
       for(int zi=-1; zi <=1; zi++)
       for(int yi=-1; yi <=1; yi++){
-        atomic_add( yee.jx(i1, j1+yi, k1+zi), Fx1*Wyy1[yi+1]*Wzz1[zi+1] );
-        atomic_add( yee.jx(i2, j2+yi, k2+zi), Fx2*Wyy2[yi+1]*Wzz2[zi+1] );
+        //std::cout << "jx: injecting into" <<
+        //"(" << i1-1 <<","<< j1+yi <<","<< k1+zi <<") " <<
+        //"(" << i1   <<","<< j1+yi <<","<< k1+zi <<") " <<
+        //"(" << i2-1 <<","<< j2+yi <<","<< k2+zi <<") " <<
+        //"(" << i2   <<","<< j2+yi <<","<< k2+zi <<") " << "\n";
+
+        //first part of trajectory
+        atomic_add( yee.jx(i1-1, j1+yi, k1+zi), qvx1*(0.5f - Wxx1[0])*Wyy1[yi+2]*Wzz1[zi+2] );
+        atomic_add( yee.jx(i1  , j1+yi, k1+zi), qvx1*(0.5f + Wxx1[0])*Wyy1[yi+2]*Wzz1[zi+2] );
+
+        //second part of trajectory
+        atomic_add( yee.jx(i2-1, j2+yi, k2+zi), qvx2*(0.5f - Wxx2[0])*Wyy2[yi+2]*Wzz2[zi+2] );
+        atomic_add( yee.jx(i2,   j2+yi, k2+zi), qvx2*(0.5f + Wxx2[0])*Wyy2[yi+2]*Wzz2[zi+2] );
       }
 
       //jy
       for(int zi=-1; zi <=1; zi++)
       for(int xi=-1; xi <=1; xi++){
-        atomic_add( yee.jy(i1+xi, j1, k1+zi), Fy1*Wxx1[xi+1]*Wzz1[zi+1] );
-        atomic_add( yee.jy(i2+xi, j2, k2+zi), Fy2*Wxx2[xi+1]*Wzz2[zi+1] );
+        //std::cout << "jy: injecting into" <<
+        //"(" << i1+xi <<","<< j1-1 <<","<< k1+zi <<") " <<
+        //"(" << i1+xi <<","<< j1   <<","<< k1+zi <<") " <<
+        //"(" << i2+xi <<","<< j2-1 <<","<< k2+zi <<") " <<
+        //"(" << i2+xi <<","<< j2   <<","<< k2+zi <<") " << "\n";
+
+        atomic_add( yee.jy(i1+xi, j1-1, k1+zi), qvy1*(0.5f - Wyy1[0])*Wxx1[xi+2]*Wzz1[zi+2] );
+        atomic_add( yee.jy(i1+xi, j1,   k1+zi), qvy1*(0.5f + Wyy1[0])*Wxx1[xi+2]*Wzz1[zi+2] );
+
+        atomic_add( yee.jy(i2+xi, j2-1, k2+zi), qvy2*(0.5f - Wyy2[0])*Wxx2[xi+2]*Wzz2[zi+2] );
+        atomic_add( yee.jy(i2+xi, j2,   k2+zi), qvy2*(0.5f + Wyy2[0])*Wxx2[xi+2]*Wzz2[zi+2] );
       }
 
       //jz
       for(int yi=-1; yi <=1; yi++)
       for(int xi=-1; xi <=1; xi++){
-        atomic_add( yee.jz(i1+xi, j1+yi, k1), Fz1*Wxx1[xi+1]*Wyy1[yi+1] );
-        atomic_add( yee.jz(i2+xi, j2+yi, k2), Fz2*Wxx2[xi+1]*Wyy2[yi+1] );
+        //std::cout << "jz: injecting into" <<
+        //"(" << i1+xi <<","<< j1+yi <<","<< k1-1 <<") " <<
+        //"(" << i1+xi <<","<< j1+yi <<","<< k1   <<") " <<
+        //"(" << i2+xi <<","<< j2+yi <<","<< k2-1 <<") " <<
+        //"(" << i2+xi <<","<< j2+yi <<","<< k2   <<") " << "\n";
+
+        atomic_add( yee.jz(i1+xi, j1+yi, k1-1), qvz1*(0.5f - Wzz1[0])*Wxx1[xi+2]*Wyy1[yi+2] );
+        atomic_add( yee.jz(i1+xi, j1+yi, k1  ), qvz1*(0.5f + Wzz1[0])*Wxx1[xi+2]*Wyy1[yi+2] );
+
+        atomic_add( yee.jz(i2+xi, j2+yi, k2-1), qvz2*(0.5f - Wzz2[0])*Wxx2[xi+2]*Wyy2[yi+2] );
+        atomic_add( yee.jz(i2+xi, j2+yi, k2  ), qvz2*(0.5f + Wzz2[0])*Wxx2[xi+2]*Wyy2[yi+2] );
       }
 
-
-      //jx
-      //atomic_add( yee.jx(i1  ,j1-1, k1-1), Fx1*Wy1a*Wz1a);
-      //atomic_add( yee.jx(i1  ,j1  , k1-1), Fx1*Wy2a*Wz1a);
-      //atomic_add( yee.jx(i1  ,j1+1, k1-1), Fx1*Wy3a*Wz1a);
-      //atomic_add( yee.jx(i1  ,j1-1, k1  ), Fx1*Wy1a*Wz2a);
-      //atomic_add( yee.jx(i1  ,j1  , k1  ), Fx1*Wy2a*Wz2a);
-      //atomic_add( yee.jx(i1  ,j1+1, k1  ), Fx1*Wy3a*Wz2a);
-      //atomic_add( yee.jx(i1  ,j1-1, k1+1), Fx1*Wy1a*Wz3a);
-      //atomic_add( yee.jx(i1  ,j1  , k1+1), Fx1*Wy2a*Wz3a);
-      //atomic_add( yee.jx(i1  ,j1+1, k1+1), Fx1*Wy3a*Wz3a);
-
-      //atomic_add( yee.jx(i2  ,j2-1, k2-1), Fx2*Wy1b*Wz1b);
-      //atomic_add( yee.jx(i2  ,j2  , k2-1), Fx2*Wy2b*Wz1b);
-      //atomic_add( yee.jx(i2  ,j2+1, k2-1), Fx2*Wy3b*Wz1b);
-      //atomic_add( yee.jx(i2  ,j2-1, k2  ), Fx2*Wy1b*Wz2b);
-      //atomic_add( yee.jx(i2  ,j2  , k2  ), Fx2*Wy2b*Wz2b);
-      //atomic_add( yee.jx(i2  ,j2+1, k2  ), Fx2*Wy3b*Wz2b);
-      //atomic_add( yee.jx(i2  ,j2-1, k2+1), Fx2*Wy1b*Wz3b);
-      //atomic_add( yee.jx(i2  ,j2  , k2+1), Fx2*Wy2b*Wz3b);
-      //atomic_add( yee.jx(i2  ,j2+1, k2+1), Fx2*Wy3b*Wz3b);
-
-
-      ////jy
-      //atomic_add( yee.jy(i1-1,j1  , k1-1), Fy1*Wx1a*Wz1a);
-      //atomic_add( yee.jy(i1  ,j1  , k1-1), Fy1*Wx2a*Wz1a);
-      //atomic_add( yee.jy(i1+1,j1  , k1-1), Fy1*Wx3a*Wz1a);
-      //atomic_add( yee.jy(i1-1,j1  , k1  ), Fy1*Wx1a*Wz2a);
-      //atomic_add( yee.jy(i1  ,j1  , k1  ), Fy1*Wx2a*Wz2a);
-      //atomic_add( yee.jy(i1+1,j1  , k1  ), Fy1*Wx3a*Wz2a);
-      //atomic_add( yee.jy(i1-1,j1  , k1+1), Fy1*Wx1a*Wz3a);
-      //atomic_add( yee.jy(i1  ,j1  , k1+1), Fy1*Wx2a*Wz3a);
-      //atomic_add( yee.jy(i1+1,j1  , k1+1), Fy1*Wx3a*Wz3a);
-
-      //atomic_add( yee.jy(i2-1,j2  , k2-1), Fy2*Wx1b*Wz1b);
-      //atomic_add( yee.jy(i2  ,j2  , k2-1), Fy2*Wx2b*Wz1b);
-      //atomic_add( yee.jy(i2+1,j2  , k2-1), Fy2*Wx3b*Wz1b);
-      //atomic_add( yee.jy(i2-1,j2  , k2  ), Fy2*Wx1b*Wz2b);
-      //atomic_add( yee.jy(i2  ,j2  , k2  ), Fy2*Wx2b*Wz2b);
-      //atomic_add( yee.jy(i2+1,j2  , k2  ), Fy2*Wx3b*Wz2b);
-      //atomic_add( yee.jy(i2-1,j2  , k2+1), Fy2*Wx1b*Wz3b);
-      //atomic_add( yee.jy(i2  ,j2  , k2+1), Fy2*Wx2b*Wz3b);
-      //atomic_add( yee.jy(i2+1,j2  , k2+1), Fy2*Wx3b*Wz3b);
-
-
-      ////jz
-      //atomic_add( yee.jy(i1-1,j1-1, k1  ), Fz1*Wx1a*Wy1a);
-      //atomic_add( yee.jy(i1  ,j1-1, k1  ), Fz1*Wx2a*Wy1a);
-      //atomic_add( yee.jy(i1+1,j1-1, k1  ), Fz1*Wx3a*Wy1a);
-      //atomic_add( yee.jy(i1-1,j1  , k1  ), Fz1*Wx1a*Wy2a);
-      //atomic_add( yee.jy(i1  ,j1  , k1  ), Fz1*Wx2a*Wy2a);
-      //atomic_add( yee.jy(i1+1,j1  , k1  ), Fz1*Wx3a*Wy2a);
-      //atomic_add( yee.jy(i1-1,j1+1, k1  ), Fz1*Wx1a*Wy3a);
-      //atomic_add( yee.jy(i1  ,j1+1, k1  ), Fz1*Wx2a*Wy3a);
-      //atomic_add( yee.jy(i1+1,j1+1, k1  ), Fz1*Wx3a*Wy3a);
-
-      //atomic_add( yee.jy(i2-1,j2-1, k2  ), Fz2*Wx1b*Wy1b);
-      //atomic_add( yee.jy(i2  ,j2-1, k2  ), Fz2*Wx2b*Wy1b);
-      //atomic_add( yee.jy(i2+1,j2-1, k2  ), Fz2*Wx3b*Wy1b);
-      //atomic_add( yee.jy(i2-1,j2  , k2  ), Fz2*Wx1b*Wy2b);
-      //atomic_add( yee.jy(i2  ,j2  , k2  ), Fz2*Wx2b*Wy2b);
-      //atomic_add( yee.jy(i2+1,j2  , k2  ), Fz2*Wx3b*Wy2b);
-      //atomic_add( yee.jy(i2-1,j2+1, k2  ), Fz2*Wx1b*Wy3b);
-      //atomic_add( yee.jy(i2  ,j2+1, k2  ), Fz2*Wx2b*Wy3b);
-      //atomic_add( yee.jy(i2+1,j2+1, k2  ), Fz2*Wx3b*Wy3b);
-
-    }, con.size(), yee, con);
+    }
+    //}, con.size(), yee, con);
 
   }//end of loop over species
 
