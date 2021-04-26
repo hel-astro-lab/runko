@@ -44,6 +44,16 @@ def filler_no_velocity(xloc, ispcs, conf):
     u0 = [0.0, 0.0, 0.0]
     return x0, u0
 
+def filler_no_velocity_3d(xloc, ispcs, conf):
+    # perturb position between x0 + RUnif[0,1)
+    xx = xloc[0] + np.random.rand(1)
+    yy = xloc[1] + np.random.rand(1)
+    zz = xloc[2] + np.random.rand(1)
+
+    x0 = [xx, yy, zz]
+    u0 = [0.0, 0.0, 0.0]
+    return x0, u0
+
 
 # random number between [xmin, xmax]
 def randab(xmin, xmax):
@@ -143,60 +153,82 @@ def const_field(x, y, z):
 
 def linear_field(x, y, z):
     #print("x = {} y = {} z = {}".format(x,y,z))
-    #return 1.0*x  
     return 1.0*x + 1.0*y
-    #return 10.0*y 
-    #return 100.0*z 
-    #return 1.0*x + 10.0*y 
-    return 1.0*x + 10.0*y + 100.0*z
+
+def linear_field_3d(x, y, z):
+    return 1.0*x + 2.0*y + 3.0*z
+
+def qudratic_field_3d(x, y, z):
+    return 1.0*x*x + 2.0*y*y + 3.0*z*z + 4.*x + 5*y + 6*z + 7
 
 
 # insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em(grid, conf, ffunc, zero_field=False):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for i in range(grid.get_Nx()):
+    for k in range(grid.get_Nz()):
         for j in range(grid.get_Ny()):
-            for k in range(grid.get_Nz()):
+            for i in range(grid.get_Nx()):
                 c = grid.get_tile(i,j,k)
                 yee = c.get_yee()
 
-                for l in range(conf.NxMesh):
+                for n in range(conf.NzMesh):
                     for m in range(conf.NyMesh):
-                        for n in range(conf.NzMesh):
-
+                        for l in range(conf.NxMesh):
                             # get x_i,j,k
                             xloc0 = pytools.ind2loc((i,j,k), (l,m,n), conf)
 
                             #get x_i+1/2, x_j+1/2, x_k+1/2
-                            xloc1 = pytools.ind2loc((i,j,k), (l+1,m,  n),   conf)
-                            yloc1 = pytools.ind2loc((i,j,k), (l,  m+1,n),   conf)
-                            zloc1 = pytools.ind2loc((i,j,k), (l,  m,  n+1), conf)
+                            #xloc1 = pytools.ind2loc((i,j,k), (l+1,m,  n),   conf)
+                            #yloc1 = pytools.ind2loc((i,j,k), (l,  m+1,n),   conf)
+                            #zloc1 = pytools.ind2loc((i,j,k), (l,  m,  n+1), conf)
 
                             # values in Yee lattice corners
-                            xcor = xloc0[0]
-                            ycor = xloc0[1]
-                            zcor = xloc0[2]
+                            #xcor = xloc0[0]
+                            #ycor = xloc0[1]
+                            #zcor = xloc0[2]
 
                             # values in Yee lattice mids
-                            xmid = 0.5*(xloc0[0] + xloc1[0])
-                            ymid = 0.5*(xloc0[1] + yloc1[1])
-                            zmid = 0.5*(xloc0[2] + zloc1[2])
+                            #xmid = 0.5*(xloc0[0] + xloc1[0])
+                            #ymid = 0.5*(xloc0[1] + yloc1[1])
+                            #zmid = 0.5*(xloc0[2] + zloc1[2])
 
                             #val = ffunc(xmid, ymid, zmid)
 
                             # enforce Yee lattice structure
-                            yee.ex[l,m,n] = ffunc(xmid, ycor, zcor)
-                            yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)
-                            yee.ez[l,m,n] = ffunc(xcor, ycor, zcor)
+                            #yee.ex[l,m,n] = ffunc(xmid, ycor, zcor)
+                            #yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)
+                            #yee.ez[l,m,n] = ffunc(xcor, ycor, zmid)
 
-                            yee.bx[l,m,n] = ffunc(xcor, ymid, zcor)
-                            yee.by[l,m,n] = ffunc(xmid, ycor, zcor)
-                            yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)
+                            #yee.bx[l,m,n] = ffunc(xcor, ymid, zmid)
+                            #yee.by[l,m,n] = ffunc(xmid, ycor, zmid)
+                            #yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)
 
-                            yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
-                            yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
-                            yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+                            #yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
+                            #yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
+                            #yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+
+                            #TODO
+                            xc = xloc0[0]
+                            yc = xloc0[1]
+                            zc = xloc0[2]
+                            #yee.ex[l,m,n] = ffunc(xc,yc-0.5,zc-0.5)
+                            #yee.ey[l,m,n] = ffunc(xc-0.5,yc,zc-0.5)
+                            #yee.ez[l,m,n] = ffunc(xc-0.5,yc-0.5,zc)
+                            #yee.bx[l,m,n] = ffunc(xc-0.5,yc,zc)
+                            #yee.by[l,m,n] = ffunc(xc,yc-0.5,zc)
+                            #yee.bz[l,m,n] = ffunc(xc,yc,zc-0.5)
+
+                            yee.ex[l,m,n] = ffunc(xc+0.5,yc,    zc)
+                            yee.ey[l,m,n] = ffunc(xc,    yc+0.5,zc)
+                            yee.ez[l,m,n] = ffunc(xc,    yc,    zc+0.5)
+                            yee.bx[l,m,n] = ffunc(xc,    yc+0.5,zc+0.5)
+                            yee.by[l,m,n] = ffunc(xc+0.5,yc,    zc+0.5)
+                            yee.bz[l,m,n] = ffunc(xc+0.5,yc+0.5,zc)
+
+                            yee.jx[l,m,n] = ffunc(xc,yc,zc)
+                            yee.jy[l,m,n] = ffunc(xc,yc,zc)
+                            yee.jz[l,m,n] = ffunc(xc,yc,zc)
 
                             if not(zero_field):
                                 yee.ex[l,m,n] += +0.0
@@ -205,6 +237,8 @@ def insert_em(grid, conf, ffunc, zero_field=False):
                                 yee.bx[l,m,n] += +3.0
                                 yee.by[l,m,n] += +4.0
                                 yee.bz[l,m,n] += +5.0
+
+
 
 
 
@@ -588,7 +622,7 @@ class PIC(unittest.TestCase):
 
 
 
-    def test_const_field_interpolation(self):
+    def test_const_field_interpolation_2d(self):
 
         conf = Conf()
         conf.twoD = True
@@ -605,19 +639,89 @@ class PIC(unittest.TestCase):
                 tile.update_boundaries(grid)
 
         #interpolate fields
-        fintp = pyrunko.pic.twoD.LinearInterpolator()
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                tile = grid.get_tile(i,j)
+        fintps = []
+
+        fintps.append( pyrunko.pic.twoD.LinearInterpolator() )
+        fintps.append( pyrunko.pic.twoD.QuadraticInterpolator() )
+
+        for fintp in fintps:
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    tile = grid.get_tile(i,j)
+                    fintp.solve(tile)
+
+            #test results
+            for i in range(conf.Nx):
+                for j in range(conf.Ny):
+
+                    cid = grid.id(i,j)
+                    c = grid.get_tile(cid)
+                    container = c.get_container(0)
+
+                    xx = container.loc(0)
+                    yy = container.loc(1)
+                    zz = container.loc(2)
+
+                    ux = container.vel(0)
+                    uy = container.vel(1)
+                    uz = container.vel(2)
+
+                    for i, x in enumerate(xx):
+                        #print(i)
+                        ex_ref = 1.0
+                        ey_ref = 2.0
+                        ez_ref = 3.0
+                        self.assertAlmostEqual(container.ex(i), ex_ref, places=5)
+                        self.assertAlmostEqual(container.ey(i), ey_ref, places=5)
+                        self.assertAlmostEqual(container.ez(i), ez_ref, places=5)
+
+                        bx_ref = 4.0
+                        by_ref = 5.0
+                        bz_ref = 6.0
+                        self.assertAlmostEqual(container.bx(i), bx_ref, places=5)
+                        self.assertAlmostEqual(container.by(i), by_ref, places=5)
+                        self.assertAlmostEqual(container.bz(i), bz_ref, places=5)
+
+
+    def test_const_field_interpolation_3d(self):
+        conf = Conf()
+
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 3
+
+        conf.NxMesh = 6
+        conf.NyMesh = 6
+        conf.NzMesh = 6
+
+        conf.threeD = True
+        conf.update_bbox()
+
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+
+
+        pytools.pic.load_tiles(grid, conf)
+        insert_em(grid, conf, const_field)
+        pytools.pic.inject(grid, filler_no_velocity_3d, density_profile, conf) #pytools.pic.injecting plasma particles
+
+        ##update boundaries
+        for tile in pytools.tiles_local(grid):
+            tile.update_boundaries(grid)
+
+        #interpolate fields
+        fintps = []
+        fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+
+        for fintp in fintps:
+            #interpolate
+            for tile in pytools.tiles_local(grid):
                 fintp.solve(tile)
 
-        #test results
-        for i in range(conf.Nx):
-            for j in range(conf.Ny):
-
-                cid = grid.id(i,j)
-                c = grid.get_tile(cid)
-                container = c.get_container(0)
+            #test results
+            for tile in pytools.tiles_local(grid):
+                container = tile.get_container(0)
 
                 xx = container.loc(0)
                 yy = container.loc(1)
@@ -632,19 +736,19 @@ class PIC(unittest.TestCase):
                     ex_ref = 1.0
                     ey_ref = 2.0
                     ez_ref = 3.0
-                    self.assertEqual(container.ex(i), ex_ref)
-                    self.assertEqual(container.ey(i), ey_ref)
-                    self.assertEqual(container.ez(i), ez_ref)
+                    self.assertAlmostEqual(container.ex(i), ex_ref, places=5)
+                    self.assertAlmostEqual(container.ey(i), ey_ref, places=5)
+                    self.assertAlmostEqual(container.ez(i), ez_ref, places=5)
 
                     bx_ref = 4.0
                     by_ref = 5.0
                     bz_ref = 6.0
-                    self.assertEqual(container.bx(i), bx_ref)
-                    self.assertEqual(container.by(i), by_ref)
-                    self.assertEqual(container.bz(i), bz_ref)
+                    self.assertAlmostEqual(container.bx(i), bx_ref, places=5)
+                    self.assertAlmostEqual(container.by(i), by_ref, places=5)
+                    self.assertAlmostEqual(container.bz(i), bz_ref, places=5)
 
 
-    def test_linear_field_interpolation(self):
+    def test_linear_field_interpolation_2d(self):
 
         conf = Conf()
         conf.twoD = True
@@ -664,45 +768,108 @@ class PIC(unittest.TestCase):
                 tile.update_boundaries(grid)
 
         #interpolate fields
-        fintp = pyrunko.pic.twoD.LinearInterpolator()
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                tile = grid.get_tile(i,j)
+        fintps = []
+
+        fintps.append( pyrunko.pic.twoD.LinearInterpolator() )
+        fintps.append( pyrunko.pic.twoD.QuadraticInterpolator() )
+
+        for fintp in fintps:
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    tile = grid.get_tile(i,j)
+                    fintp.solve(tile)
+
+
+            #test results; avoid boundaries because they are cyclic
+            for i in range(1,conf.Nx-1):
+                for j in range(1,conf.Ny-1):
+
+                    cid = grid.id(i,j)
+                    c = grid.get_tile(cid)
+                    container = c.get_container(0)
+
+                    xx = container.loc(0)
+                    yy = container.loc(1)
+                    zz = container.loc(2)
+
+                    for i, x in enumerate(xx):
+                        #print(i)
+
+                        ref = linear_field(xx[i], yy[i], zz[i]) #exact/true solution
+
+                        #print("asserting {} {} {} vs {}".format(xx[i], yy[i], zz[i], ref))
+                        self.assertAlmostEqual(container.ex(i), ref+0.0, places=4)
+                        self.assertAlmostEqual(container.ey(i), ref+1.0, places=4)
+                        self.assertAlmostEqual(container.ez(i), ref+2.0, places=4)
+                        self.assertAlmostEqual(container.bx(i), ref+3.0, places=4)
+                        self.assertAlmostEqual(container.by(i), ref+4.0, places=4)
+                        self.assertAlmostEqual(container.bz(i), ref+5.0, places=4)
+
+
+    def test_linear_field_interpolation_3d(self):
+        conf = Conf()
+
+        conf.Nx = 3
+        conf.Ny = 3
+        conf.Nz = 3
+
+        conf.NxMesh = 6
+        conf.NyMesh = 6
+        conf.NzMesh = 6
+
+        conf.threeD = True
+        conf.update_bbox()
+
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, 
+                           conf.ymin, conf.ymax, 
+                           conf.zmin, conf.zmax)
+        pytools.pic.load_tiles( grid, conf)
+        insert_em( grid, conf, linear_field_3d)
+        pytools.pic.inject(grid, filler3D, density_profile, conf) #pytools.pic.injecting plasma particles
+
+        ##update boundaries
+        for tile in pytools.tiles_local(grid):
+            tile.update_boundaries(grid, iarr=[0,1,2])
+
+        #interpolate fields
+        fintps = []
+        fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+
+        for fintp in fintps:
+            #interpolate
+            for tile in pytools.tiles_local(grid):
                 fintp.solve(tile)
 
+            #test results
+            #for tile in pytools.tiles_local(grid):
+            #avoid boundaries because the test function does not wrap nicely
+            for i in range(1,conf.Nx-1):
+                for j in range(1,conf.Ny-1):
+                    for k in range(1,conf.Nz-1):
+                        cid = grid.id(i,j,k)
+                        tile = grid.get_tile(cid)
 
-        #test results; avoid boundaries because they are cyclic
-        for i in range(1,conf.Nx-1):
-            for j in range(1,conf.Ny-1):
+                        container = tile.get_container(0)
+                        xx = container.loc(0)
+                        yy = container.loc(1)
+                        zz = container.loc(2)
+                        ux = container.vel(0)
+                        uy = container.vel(1)
+                        uz = container.vel(2)
 
-                cid = grid.id(i,j)
-                c = grid.get_tile(cid)
-                container = c.get_container(0)
+                        for i, _ in enumerate(xx):
+                            ref = linear_field_3d(xx[i], yy[i], zz[i]) #exact/true solution
 
-                xx = container.loc(0)
-                yy = container.loc(1)
-                zz = container.loc(2)
-
-                for i, x in enumerate(xx):
-                    #print(i)
-
-                    ref = linear_field(xx[i], yy[i], zz[i]) #exact/true solution
-                    ex_ref = ref + 0.0
-                    ey_ref = ref + 1.0
-                    ez_ref = ref + 2.0
-
-                    #print("asserting {} {} {} vs {}".format(xx[i], yy[i], zz[i], ref))
-                    self.assertAlmostEqual(container.ex(i), ex_ref, places=5)
-                    self.assertAlmostEqual(container.ey(i), ey_ref, places=5)
-                    self.assertAlmostEqual(container.ez(i), ez_ref, places=5)
-
-                    bx_ref = ref + 3.0
-                    by_ref = ref + 4.0
-                    bz_ref = ref + 5.0
-                    self.assertAlmostEqual(container.bx(i), bx_ref, places=5)
-                    self.assertAlmostEqual(container.by(i), by_ref, places=5)
-                    self.assertAlmostEqual(container.bz(i), bz_ref, places=5)
-
+                            #print("asserting {} {} {} vs {}".format(xx[i], yy[i], zz[i], ref))
+                            self.assertAlmostEqual( container.ex(i), ref+0.0, places=4 )
+                            self.assertAlmostEqual( container.ey(i), ref+1.0, places=4 )
+                            self.assertAlmostEqual( container.ez(i), ref+2.0, places=4 )
+                                                                                      
+                            self.assertAlmostEqual( container.bx(i), ref+3.0, places=4 )
+                            self.assertAlmostEqual( container.by(i), ref+4.0, places=4 )
+                            self.assertAlmostEqual( container.bz(i), ref+5.0, places=4 )
 
 
     def skip_test_filters(self):
@@ -1047,19 +1214,22 @@ class PIC(unittest.TestCase):
             print(currint)
 
             #deposit current
+            #print('deposit')
             for k in range(grid.get_Nz()):
                 for j in range(grid.get_Ny()):
                     for i in range(grid.get_Nx()):
                         tile = grid.get_tile(i,j,k)
                         currint.solve(tile)
 
+            #print('exchange')
             #exchange currents for all tiles
-            for k in range(grid.get_Nz()):
-                for j in range(grid.get_Ny()):
-                    for i in range(grid.get_Nx()):
-                        tile = grid.get_tile(i,j,k)
-                        tile.exchange_currents(grid)
+            #for k in range(grid.get_Nz()):
+            #    for j in range(grid.get_Ny()):
+            #        for i in range(grid.get_Nx()):
+            #            tile = grid.get_tile(i,j,k)
+            #            tile.exchange_currents(grid)
 
+            #print('assert')
             for k in range(grid.get_Nz()):
                 for j in range(grid.get_Ny()):
                     for i in range(grid.get_Nx()):
