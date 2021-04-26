@@ -1,4 +1,4 @@
-#include "linear.h"
+#include "linear_1st.h"
 
 #include <cmath> 
 #include <cassert>
@@ -71,9 +71,9 @@ void pic::LinearInterpolator<D,V>::solve(
       // NOTE: trunc() ensures that prtcls outside the tile do not crash this loop 
       // (because it rounds e.g. xloc=-0.1 => i=0 and dx=-0.1). They should be
       // automatically cleaned on next time step to their real tiles.
-      if(D >= 1) i = static_cast<int>(floor(loc0n));
-      if(D >= 2) j = static_cast<int>(floor(loc1n));
-      if(D >= 3) k = static_cast<int>(floor(loc2n));
+      if(D >= 1) i = floor(loc0n);
+      if(D >= 2) j = floor(loc1n);
+      if(D >= 3) k = floor(loc2n);
 
       if(D >= 1) dx = loc0n - i;
       if(D >= 2) dy = loc1n - j;
