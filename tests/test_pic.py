@@ -1139,7 +1139,7 @@ class PIC(unittest.TestCase):
         #fintp    = pyrunko.pic.twoD.LinearInterpolator()
         currints = []
         currints.append( pyrunko.pic.twoD.ZigZag() )
-        #currints.append( pyrunko.pic.twoD.ZigZag_2nd() )
+        currints.append( pyrunko.pic.twoD.ZigZag_2nd() )
         
         for currint in currints:
 

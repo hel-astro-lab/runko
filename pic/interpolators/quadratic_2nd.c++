@@ -36,16 +36,18 @@
   // = 0.5*( 1.5-x )^2  
   // = 0.5*( x^2 - 3x + 2.25)
 inline void compute_coeffs(double d, double* coeff){
+
   //NOTE: d at wings includes +-1 so W2_mp1 -> 0.5*(3/2 +- d)^2
-  coeff[0] = 0.50f*(0.5f - d)*(0.5f - d); //W2_im1 
-  coeff[1] = 0.75f - d*d;                 //W2_i   
-  coeff[2] = 0.50f*(0.5f + d)*(0.5f + d); //W2_ip1 
+  coeff[0] = 0.50*(0.5 - d)*(0.5 - d); //W2_im1 
+  coeff[1] = 0.75 - d*d;                 //W2_i   
+  coeff[2] = 0.50*(0.5 + d)*(0.5 + d); //W2_ip1 
 
 }
 
 
 // 1st order weight for Sokolov's alternating scheme
 inline void compute_lower_coeffs(double d, double* coeff){
+
   coeff[0] = 0.0;
   coeff[1] = 1.0-d;
   coeff[2] = d;
@@ -191,6 +193,11 @@ void pic::QuadraticInterpolator<D,V>::solve(
       double ypn = con.loc(1, n) - mins[1];
       double zpn = con.loc(2, n) - mins[2];
 
+      double u = con.vel(0,n);
+      double v = con.vel(1,n);
+      double w = con.vel(2,n);
+
+
       // particle location in the primary and dual 1/2-shifted grid
       // TODO: round or floor (=corrected int() for neg numbers)
       // TODO: if(D >= 1) switches
@@ -223,7 +230,12 @@ void pic::QuadraticInterpolator<D,V>::solve(
 
       //--------------------------------------------------
       // coefficients on both prime and dual (staggered +0.5) grids
-      double cxd[3], cxp[3], cyd[3], cyp[3], czd[3], czp[3];
+      double cxd[3] = {0.0}, 
+             cxp[3] = {0.0}, 
+             cyd[3] = {0.0}, 
+             cyp[3] = {0.0}, 
+             czd[3] = {0.0}, 
+             czp[3] = {0.0};
 
       //compute_coeffs( xpn - ip,        &cxp[0] );
       //compute_coeffs( ypn - jp,        &cyp[0] );
@@ -231,14 +243,35 @@ void pic::QuadraticInterpolator<D,V>::solve(
       //compute_coeffs( xpn - id + 0.5f, &cxd[0] );
       //compute_coeffs( ypn - jd + 0.5f, &cyd[0] );
       //compute_coeffs( zpn - kd + 0.5f, &czd[0] );
+        
+      
+      // \Delta x from primary and staggered grid points
+      double dxp = xpn-ip;
+      double dyp = ypn-jp;
+      double dzp = zpn-kp;
 
-      //FIXME ver2
-      if(D >= 1) compute_lower_coeffs( xpn-ip,      &cxp[0] );
-      if(D >= 2) compute_lower_coeffs( ypn-jp,      &cyp[0] );
-      if(D >= 3) compute_lower_coeffs( zpn-kp,      &czp[0] );
-      if(D >= 1) compute_coeffs( xpn-id-0.5f, &cxd[0] );
-      if(D >= 2) compute_coeffs( ypn-jd-0.5f, &cyd[0] );
-      if(D >= 3) compute_coeffs( zpn-kd-0.5f, &czd[0] );
+      double dxd = xpn-id-0.5;
+      double dyd = ypn-jd-0.5;
+      double dzd = zpn-kd-0.5;
+        
+      //double gam = sqrt(1.0 + u*u + v*v + w*w);
+
+      //DONE ver2: DONE: sokolov
+      if(D >= 1) compute_lower_coeffs(dxp, &cxp[0] );
+      if(D >= 2) compute_lower_coeffs(dyp, &cyp[0] );
+      if(D >= 3) compute_lower_coeffs(dzp, &czp[0] );
+      if(D >= 1) compute_coeffs(      dxd, &cxd[0] );
+      if(D >= 2) compute_coeffs(      dyd, &cyd[0] );
+      if(D >= 3) compute_coeffs(      dzd, &czd[0] );
+
+      // default
+      //if(D >= 1) compute_coeffs(dxp, &cxp[0] );
+      //if(D >= 2) compute_coeffs(dyp, &cyp[0] );
+      //if(D >= 3) compute_coeffs(dzp, &czp[0] );
+      //if(D >= 1) compute_coeffs(dxd, &cxd[0] );
+      //if(D >= 2) compute_coeffs(dyd, &cyd[0] );
+      //if(D >= 3) compute_coeffs(dzd, &czd[0] );
+
 
       //std::cout 
       //    << " xyz: " << "(" << xpn << "," << ypn << "," << zpn << ")"

@@ -483,6 +483,9 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::ZigZag<2,3>>(m_2d, "ZigZag", picdeposit2d)
     .def(py::init<>());
 
+  py::class_<pic::ZigZag_2nd<2,3>>(m_2d, "ZigZag_2nd", picdeposit2d)
+    .def(py::init<>());
+
 
   // 3D version
   py::class_< pic::Depositer<3,3>, PyDepositer<3> > picdeposit3d(m_3d, "Depositer");
