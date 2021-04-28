@@ -19,6 +19,8 @@ namespace py = pybind11;
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear_1st.h"
 #include "../pic/interpolators/quadratic_2nd.h"
+#include "../pic/interpolators/cubic_3rd.h"
+#include "../pic/interpolators/quartic_4th.h"
 
 #include "../pic/depositers/depositer.h"
 #include "../pic/depositers/zigzag.h"
@@ -452,7 +454,7 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
   // 2nd order quadratic
-  py::class_<pic::QuadraticInterpolator<2,3>>(m_2d, "QuadraticInterpolator", picinterp2d)
+  py::class_<pic::QuadraticInterpolator<2>>(m_2d, "QuadraticInterpolator", picinterp2d)
     .def(py::init<>());
 
 
@@ -467,9 +469,16 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
   // 2nd order quadratic
-  py::class_<pic::QuadraticInterpolator<3,3>>(m_3d, "QuadraticInterpolator", picinterp3d)
+  py::class_<pic::QuadraticInterpolator<3>>(m_3d, "QuadraticInterpolator", picinterp3d)
     .def(py::init<>());
 
+  // 3rd order cubic
+  py::class_<pic::CubicInterpolator<3>>(m_3d, "CubicInterpolator", picinterp3d)
+    .def(py::init<>());
+
+  // 4th order quartic
+  py::class_<pic::QuarticInterpolator<3>>(m_3d, "QuarticInterpolator", picinterp3d)
+    .def(py::init<>());
 
   //--------------------------------------------------
     

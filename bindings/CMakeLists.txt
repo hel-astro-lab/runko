@@ -51,6 +51,8 @@ set (PIC_FILES
      ../pic/pushers/rgca.c++
      ../pic/interpolators/linear_1st.c++
      ../pic/interpolators/quadratic_2nd.c++
+     ../pic/interpolators/cubic_3rd.c++
+     ../pic/interpolators/quartic_4th.c++
      ../pic/depositers/zigzag.c++
      ../pic/depositers/zigzag_2nd.c++
      )

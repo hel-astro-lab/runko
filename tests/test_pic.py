@@ -711,8 +711,10 @@ class PIC(unittest.TestCase):
 
         #interpolate fields
         fintps = []
-        fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
-        fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.CubicInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
 
         for fintp in fintps:
             #interpolate
@@ -834,8 +836,10 @@ class PIC(unittest.TestCase):
 
         #interpolate fields
         fintps = []
-        fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
-        fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.CubicInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
 
         for fintp in fintps:
             #interpolate
