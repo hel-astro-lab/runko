@@ -6,7 +6,7 @@ from .tile_initialization import ind2loc
 
 
 # inject plasma into (individual) cells
-def inject(grid, vel_func, den_func, conf):
+def inject(grid, vel_func, den_func, conf, align_species=True):
     rank = grid.rank()
 
     prtcl_tot = np.zeros(conf.Nspecies, dtype=np.int64)
@@ -40,10 +40,11 @@ def inject(grid, vel_func, den_func, conf):
 
                         # open and read previously made particle species (for location reference)
                         if ispcs > 0:
+                            #EPS = 1.0e-5
                             ref_container = tile.get_container(0)
-                            xxs = ref_container.loc(0)
-                            yys = ref_container.loc(1)
-                            zzs = ref_container.loc(2)
+                            xxs = ref_container.loc(0) #+ EPS*np.random.rand(1)
+                            yys = ref_container.loc(1) #+ EPS*np.random.rand(1)
+                            zzs = ref_container.loc(2) #+ EPS*np.random.rand(1)
 
                             vxs = ref_container.vel(0)
                             vys = ref_container.vel(1)
@@ -64,7 +65,7 @@ def inject(grid, vel_func, den_func, conf):
 
                                     for ip in range(ppc):
                                         x0, u0 = vel_func(xloc, ispcs, conf)
-                                        if ispcs > 0:
+                                        if align_species and ispcs > 0:
                                             xx = xxs[ip_mesh]
                                             yy = yys[ip_mesh]
                                             zz = zzs[ip_mesh]
