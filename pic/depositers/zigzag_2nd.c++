@@ -4,7 +4,9 @@
 #include <cassert>
 #include <cmath>
 
+#include "../shapes.h"
 #include "../../tools/iter/iter.h"
+
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 
@@ -12,31 +14,6 @@
 
 using std::min;
 using std::max;
-
-
-// Triangular 2nd order charge fluxes
-//inline void W2nd(double x, double xr, int i, double* out)
-//{
-//    // W_{i+1)^(1) 
-//    //double xm = 0.5*(x + xr) - i; 
-//    double xm = 0.5*(x + xr) - i; 
-//
-//    out[0] = xm;
-//      
-//    // charge fluxes for triangular shapes
-//    out[1] = 0.50*(0.5 - xm)*(0.5 - xm); //W2_im1 
-//    out[2] = 0.75 - xm*xm;                 //W2_i   
-//    out[3] = 0.50*(0.5 + xm)*(0.5 + xm); //W2_ip1 
-//}
-
-inline void W2nd(double d, double* coeff){
-
-  //NOTE: d at wings includes +-1 so W2_mp1 -> 0.5*(3/2 +- d)^2
-  coeff[0] = 0.50*(0.5 - d)*(0.5 - d); //W2_im1 
-  coeff[1] = 0.75 - d*d;                 //W2_i   
-  coeff[2] = 0.50*(0.5 + d)*(0.5 + d); //W2_ip1 
-}
-
 
 
 
@@ -76,10 +53,9 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       double w = con.vel(2,n);
       double invgam = 1.0/sqrt(1.0 + u*u + v*v + w*w);
 
-
-      double gamx = sqrt(1.0 + u*u);
-      double gamy = sqrt(1.0 + v*v);
-      double gamz = sqrt(1.0 + w*w);
+      //double gamx = sqrt(1.0 + u*u);
+      //double gamy = sqrt(1.0 + v*v);
+      //double gamz = sqrt(1.0 + w*w);
 
       //--------------------------------------------------
       // new (normalized) location, x_{n+1}
@@ -126,20 +102,22 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
 
       //--------------------------------------------------
       // Lorentz contract lenghts
-      double gam = sqrt(1.0 + u*u + v*v + w*w); // \gamma
-      double betax2 = pow(u/gam, 2);            // v_x^2
-      double betay2 = pow(v/gam, 2);            // v_y^2
-      double betaz2 = pow(w/gam, 2);            // v_z^2
-      double beta2  = betax2 + betay2 + betaz2; // |v|^2
+      // https://physics.stackexchange.com/questions/56078/lorentz-boost-matrix-for-an-arbitrary-direction-in-terms-of-rapidity/588284
+      //double gam = sqrt(1.0 + u*u + v*v + w*w); // \gamma
+      //double betax2 = pow(u/gam, 2);            // v_x^2
+      //double betay2 = pow(v/gam, 2);            // v_y^2
+      //double betaz2 = pow(w/gam, 2);            // v_z^2
+      //double beta2  = betax2 + betay2 + betaz2; // |v|^2
 
-      dx1 = dx1/(1.0 + (gam-1.0)*betax2/beta2);
-      dx2 = dx2/(1.0 + (gam-1.0)*betax2/beta2);
-                
-      dy1 = dy1/(1.0 + (gam-1.0)*betay2/beta2);
-      dy2 = dy2/(1.0 + (gam-1.0)*betay2/beta2);
-                
-      dz1 = dz1/(1.0 + (gam-1.0)*betaz2/beta2);
-      dz2 = dz2/(1.0 + (gam-1.0)*betaz2/beta2);
+      //dx1 = dx1/(1.0 + (gam-1.0)*betax2/(beta2 + EPS));
+      //dx2 = dx2/(1.0 + (gam-1.0)*betax2/(beta2 + EPS));
+      //          
+      //dy1 = dy1/(1.0 + (gam-1.0)*betay2/(beta2 + EPS));
+      //dy2 = dy2/(1.0 + (gam-1.0)*betay2/(beta2 + EPS));
+      //          
+      //dz1 = dz1/(1.0 + (gam-1.0)*betaz2/(beta2 + EPS));
+      //dz2 = dz2/(1.0 + (gam-1.0)*betaz2/(beta2 + EPS));
+
 
       //--------------------------------------------------
       // particle weights 
@@ -159,25 +137,6 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       if(D >= 3) W2nd(dz1, Wzz1);
       if(D >= 3) W2nd(dz2, Wzz2);
 
-      //reduce dimension if needed
-      //if(D <= 1) {
-      //  Wy1a, Wy2a, Wy3a = 1.0;
-      //  Wy1b, Wy2b, Wy3b = 1.0;
-      //}
-      //if(D <= 2) {
-      //  Wz1a, Wz2a, Wz3a = 1.0;
-      //  Wz1b, Wz2b, Wz3b = 1.0;
-      //}
-
-
-      //Wx1_ip1 = 0.5f*(x + xr) - i; 
-      //jx(i-1, j-1, k) = qvx * (0.5 - Wx1_ip1)*W2_jm1
-      //jx(i  , j-1, k) = qvx * (0.5 + Wx1_ip1)*W2_jm1
-      //jx(i-1, j  , k) = qvx * (0.5 - Wx1_ip1)*W2_j  
-      //jx(i  , j  , k) = qvx * (0.5 + Wx1_ip1)*W2_j  
-      //jx(i-1, j+1, k) = qvx * (0.5 - Wx1_ip1)*W2_jp1
-      //jx(i  , j+1, k) = qvx * (0.5 + Wx1_ip1)*W2_jp1
-
       //--------------------------------------------------
       // q v = q (x_{i+1} - x_i)/dt
       //
@@ -192,15 +151,23 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       double qvy2 = D >= 2 ? +q*(y2 - yr) : +q*c;
       double qvz2 = D >= 3 ? +q*(z2 - zr) : +q*c;
 
-
       //--------------------------------------------------
       // dimension dependent loop boundaries
       const int xlim = D >= 1 ? 1 : 0;
       const int ylim = D >= 2 ? 1 : 0;
       const int zlim = D >= 3 ? 1 : 0;
 
-      // NOTE: incrementing loop counter with ++i to enforce at least 1 iteration always
 
+      //Wx1_ip1 = 0.5f*(x + xr) - i; 
+      //jx(i-1, j-1, k) = qvx * (0.5 - Wx1_ip1)*W2_jm1
+      //jx(i  , j-1, k) = qvx * (0.5 + Wx1_ip1)*W2_jm1
+      //jx(i-1, j  , k) = qvx * (0.5 - Wx1_ip1)*W2_j  
+      //jx(i  , j  , k) = qvx * (0.5 + Wx1_ip1)*W2_j  
+      //jx(i-1, j+1, k) = qvx * (0.5 - Wx1_ip1)*W2_jp1
+      //jx(i  , j+1, k) = qvx * (0.5 + Wx1_ip1)*W2_jp1
+        
+
+      // NOTE: incrementing loop counter with ++i to enforce at least 1 iteration always
       //jx
       for(int zi=-zlim; zi <=zlim; ++zi)
       for(int yi=-ylim; yi <=ylim; ++yi){
