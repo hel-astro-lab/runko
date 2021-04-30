@@ -55,6 +55,7 @@ set (PIC_FILES
      ../pic/interpolators/quartic_4th.c++
      ../pic/depositers/zigzag.c++
      ../pic/depositers/zigzag_2nd.c++
+     ../pic/depositers/zigzag_3rd.c++
      )
 
 set (RAD_FILES 
