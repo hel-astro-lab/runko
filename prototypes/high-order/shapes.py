@@ -70,14 +70,20 @@ if __name__ == "__main__":
     axs[0].set_ylim((0.0, 1.0))
 
     #--------------------------------------------------
-
     #d = 0.261488
-    d = -0.238512
+    d = 0.2
 
     c1 = np.zeros(2)
     x1 = np.array([0, 1])
     c1 = W1st(d, c1)
     print("W1", c1, np.sum(c1))
+
+
+    dx1 = 0.2 - 0.5
+    fx1 = 0.5 - dx1 
+    fx2 = 0.5 + dx1 
+    print('F1', fx1, fx2)
+
 
     c2 = np.zeros(3)
     x2 = np.array([-1, 0, 1])
@@ -96,25 +102,27 @@ if __name__ == "__main__":
     print("W4", c4, np.sum(c4))
 
 
-    dx=0.261488
-    dy=-0.393028
-    dz=-0.380409
 
-    c4x = np.zeros(5)
-    c4x = W4th(dx, c4x)
+    if False:
+        dx=0.261488
+        dy=-0.393028
+        dz=-0.380409
 
-    c4y = np.zeros(5)
-    c4y = W4th(dy, c4y)
+        c4x = np.zeros(5)
+        c4x = W4th(dx, c4x)
 
-    c4z = np.zeros(5)
-    c4z = W4th(dz, c4z)
+        c4y = np.zeros(5)
+        c4y = W4th(dy, c4y)
 
-    res = 0.0
-    for il in [-2,-1,0,1,2]:
-        for jl in [-2,-1,0,1,2]:
-            for kl in [-2,-1,0,1,2]:
-                res += c4x[il+2]*c4y[jl+2]*c4z[kl+2]
-    print('res', res)
+        c4z = np.zeros(5)
+        c4z = W4th(dz, c4z)
+
+        res = 0.0
+        for il in [-2,-1,0,1,2]:
+            for jl in [-2,-1,0,1,2]:
+                for kl in [-2,-1,0,1,2]:
+                    res += c4x[il+2]*c4y[jl+2]*c4z[kl+2]
+        print('res', res)
 
 
 

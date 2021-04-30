@@ -137,6 +137,27 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       if(D >= 3) W2nd(dz1, Wzz1);
       if(D >= 3) W2nd(dz2, Wzz2);
 
+
+      //--------------------------------------------------
+      // staggered grid along the motion
+      double Wx1[3] = {1.0}, 
+             Wx2[3] = {1.0},
+             Wy1[3] = {1.0},
+             Wy2[3] = {1.0},
+             Wz1[3] = {1.0},
+             Wz2[3] = {1.0};
+
+      // Shifting \Delta x by -0.5 to accommodate staggering
+      if(D >= 1) W1st(dx1-0.5, Wx1);
+      if(D >= 1) W1st(dx2-0.5, Wx2);
+
+      if(D >= 2) W1st(dy1-0.5, Wy1);
+      if(D >= 2) W1st(dy2-0.5, Wy2);
+
+      if(D >= 3) W1st(dz1-0.5, Wz1);
+      if(D >= 3) W1st(dz2-0.5, Wz2);
+
+
       //--------------------------------------------------
       // q v = q (x_{i+1} - x_i)/dt
       //
@@ -177,13 +198,17 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2-1 <<","<< j2+yi <<","<< k2+zi <<") " <<
         //"(" << i2   <<","<< j2+yi <<","<< k2+zi <<") " << "\n";
 
-        //first part of trajectory
-        if(D >= 1) atomic_add( yee.jx(i1-1, j1+yi, k1+zi), qvx1*(0.5 - dx1)*Wyy1[yi+1]*Wzz1[zi+1] );
-        if(D >= 1) atomic_add( yee.jx(i1  , j1+yi, k1+zi), qvx1*(0.5 + dx1)*Wyy1[yi+1]*Wzz1[zi+1] );
+        if(D >= 1) atomic_add( yee.jx(i1-1, j1+yi, k1+zi), qvx1* Wx1[1]* Wyy1[yi+1]*Wzz1[zi+1] );
+        if(D >= 1) atomic_add( yee.jx(i1  , j1+yi, k1+zi), qvx1* Wx1[2]* Wyy1[yi+1]*Wzz1[zi+1] );
+        if(D >= 1) atomic_add( yee.jx(i2-1, j2+yi, k2+zi), qvx2* Wx2[1]* Wyy2[yi+1]*Wzz2[zi+1] );
+        if(D >= 1) atomic_add( yee.jx(i2,   j2+yi, k2+zi), qvx2* Wx2[2]* Wyy2[yi+1]*Wzz2[zi+1] );
 
-        //second part of trajectory
-        if(D >= 1) atomic_add( yee.jx(i2-1, j2+yi, k2+zi), qvx2*(0.5 - dx2)*Wyy2[yi+1]*Wzz2[zi+1] );
-        if(D >= 1) atomic_add( yee.jx(i2,   j2+yi, k2+zi), qvx2*(0.5 + dx2)*Wyy2[yi+1]*Wzz2[zi+1] );
+
+        // TODO: why not (i, i+1) for Wx here???
+        //if(D >= 1) atomic_add( yee.jx(i1  , j1+yi, k1+zi), qvx1* Wx1[1]* Wyy1[yi+1]*Wzz1[zi+1] );
+        //if(D >= 1) atomic_add( yee.jx(i1+1, j1+yi, k1+zi), qvx1* Wx1[2]* Wyy1[yi+1]*Wzz1[zi+1] );
+        //if(D >= 1) atomic_add( yee.jx(i2  , j2+yi, k2+zi), qvx2* Wx2[1]* Wyy2[yi+1]*Wzz2[zi+1] );
+        //if(D >= 1) atomic_add( yee.jx(i2+1, j2+yi, k2+zi), qvx2* Wx2[2]* Wyy2[yi+1]*Wzz2[zi+1] );
       }
 
       //jy
@@ -195,11 +220,17 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2+xi <<","<< j2-1 <<","<< k2+zi <<") " <<
         //"(" << i2+xi <<","<< j2   <<","<< k2+zi <<") " << "\n";
 
-        if(D >= 2) atomic_add( yee.jy(i1+xi, j1-1, k1+zi), qvy1*(0.5 - dy1)*Wxx1[xi+1]*Wzz1[zi+1] );
-        if(D >= 1) atomic_add( yee.jy(i1+xi, j1,   k1+zi), qvy1*(0.5 + dy1)*Wxx1[xi+1]*Wzz1[zi+1] );
+        if(D >= 2) atomic_add( yee.jy(i1+xi, j1-1, k1+zi), qvy1* Wy1[1] *Wxx1[xi+1]*Wzz1[zi+1] );
+        if(D >= 1) atomic_add( yee.jy(i1+xi, j1,   k1+zi), qvy1* Wy1[2] *Wxx1[xi+1]*Wzz1[zi+1] );
+        if(D >= 2) atomic_add( yee.jy(i2+xi, j2-1, k2+zi), qvy2* Wy2[1] *Wxx2[xi+1]*Wzz2[zi+1] );
+        if(D >= 1) atomic_add( yee.jy(i2+xi, j2,   k2+zi), qvy2* Wy2[2] *Wxx2[xi+1]*Wzz2[zi+1] );
 
-        if(D >= 2) atomic_add( yee.jy(i2+xi, j2-1, k2+zi), qvy2*(0.5 - dy2)*Wxx2[xi+1]*Wzz2[zi+1] );
-        if(D >= 1) atomic_add( yee.jy(i2+xi, j2,   k2+zi), qvy2*(0.5 + dy2)*Wxx2[xi+1]*Wzz2[zi+1] );
+        // TODO
+        //if(D >= 2) atomic_add( yee.jy(i1+xi, j1  , k1+zi), qvy1* Wy1[1] *Wxx1[xi+1]*Wzz1[zi+1] );
+        //if(D >= 1) atomic_add( yee.jy(i1+xi, j1+1, k1+zi), qvy1* Wy1[2] *Wxx1[xi+1]*Wzz1[zi+1] );
+        //if(D >= 2) atomic_add( yee.jy(i2+xi, j2  , k2+zi), qvy2* Wy2[1] *Wxx2[xi+1]*Wzz2[zi+1] );
+        //if(D >= 1) atomic_add( yee.jy(i2+xi, j2+1, k2+zi), qvy2* Wy2[2] *Wxx2[xi+1]*Wzz2[zi+1] );
+
       }                                                                                
                                                                                        
       //jz                                                                             
@@ -211,11 +242,17 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2+xi <<","<< j2+yi <<","<< k2-1 <<") " <<                            
         //"(" << i2+xi <<","<< j2+yi <<","<< k2   <<") " << "\n";                      
                                                                                        
-        if(D >= 3) atomic_add( yee.jz(i1+xi, j1+yi, k1-1), qvz1*(0.5 - dz1)*Wxx1[xi+1]*Wyy1[yi+1] );
-        if(D >= 1) atomic_add( yee.jz(i1+xi, j1+yi, k1  ), qvz1*(0.5 + dz1)*Wxx1[xi+1]*Wyy1[yi+1] );
+        if(D >= 3) atomic_add( yee.jz(i1+xi, j1+yi, k1-1), qvz1* Wz1[1] *Wxx1[xi+1]*Wyy1[yi+1] );
+        if(D >= 1) atomic_add( yee.jz(i1+xi, j1+yi, k1  ), qvz1* Wz1[2] *Wxx1[xi+1]*Wyy1[yi+1] );
+        if(D >= 3) atomic_add( yee.jz(i2+xi, j2+yi, k2-1), qvz2* Wz2[1] *Wxx2[xi+1]*Wyy2[yi+1] );
+        if(D >= 1) atomic_add( yee.jz(i2+xi, j2+yi, k2  ), qvz2* Wz2[2] *Wxx2[xi+1]*Wyy2[yi+1] );
 
-        if(D >= 3) atomic_add( yee.jz(i2+xi, j2+yi, k2-1), qvz2*(0.5 - dz2)*Wxx2[xi+1]*Wyy2[yi+1] );
-        if(D >= 1) atomic_add( yee.jz(i2+xi, j2+yi, k2  ), qvz2*(0.5 + dz2)*Wxx2[xi+1]*Wyy2[yi+1] );
+        // TODO
+        //if(D >= 3) atomic_add( yee.jz(i1+xi, j1+yi, k1  ), qvz1* Wz1[1] *Wxx1[xi+1]*Wyy1[yi+1] );
+        //if(D >= 1) atomic_add( yee.jz(i1+xi, j1+yi, k1+1), qvz1* Wz1[2] *Wxx1[xi+1]*Wyy1[yi+1] );
+        //if(D >= 3) atomic_add( yee.jz(i2+xi, j2+yi, k2  ), qvz2* Wz2[1] *Wxx2[xi+1]*Wyy2[yi+1] );
+        //if(D >= 1) atomic_add( yee.jz(i2+xi, j2+yi, k2+1), qvz2* Wz2[2] *Wxx2[xi+1]*Wyy2[yi+1] );
+
       }
 
     }

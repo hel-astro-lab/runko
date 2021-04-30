@@ -141,6 +141,7 @@ void pic::QuarticInterpolator<D>::solve(
       if(D >= 1) W3rd(dxp, &cxp[0] );
       if(D >= 2) W3rd(dyp, &cyp[0] );
       if(D >= 3) W3rd(dzp, &czp[0] );
+
       if(D >= 1) W4th(dxd, &cxd[0] );
       if(D >= 2) W4th(dyd, &cyd[0] );
       if(D >= 3) W4th(dzd, &czd[0] );

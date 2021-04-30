@@ -1144,6 +1144,7 @@ class PIC(unittest.TestCase):
         currints = []
         currints.append( pyrunko.pic.twoD.ZigZag() )
         currints.append( pyrunko.pic.twoD.ZigZag_2nd() )
+        currints.append( pyrunko.pic.twoD.ZigZag_3rd() )
         
         for currint in currints:
 
@@ -1212,6 +1213,7 @@ class PIC(unittest.TestCase):
         currints = []
         currints.append( pyrunko.pic.threeD.ZigZag() )
         currints.append( pyrunko.pic.threeD.ZigZag_2nd() )
+        currints.append( pyrunko.pic.threeD.ZigZag_3rd() )
 
         # loop over different depositers
         for currint in currints:

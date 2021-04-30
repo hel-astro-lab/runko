@@ -25,7 +25,7 @@ double pic::QuadraticInterpolator<2>::compute(
         int i, int j, int /*k*/)
 {
   const size_t ind = f.indx(i,j,0);
-  float_p res = 0.0f;
+  double res = 0.0;
 
   for( int jl=-1 ; jl<=1 ; jl++ ) {
   for( int il=-1 ; il<=1 ; il++ ) {
@@ -48,13 +48,13 @@ double pic::QuadraticInterpolator<3>::compute(
         int i, int j, int k)
 {
   const size_t ind = f.indx(i,j,k);
-  float_p res = 0.0f;
+  double res = 0.0;
 
   for( int kl=-1 ; kl<=1 ; kl++ ) {
   for( int jl=-1 ; jl<=1 ; jl++ ) {
   for( int il=-1 ; il<=1 ; il++ ) {
-    //res += cx[il]*cy[jl]*cz[kl] * f(idx + il, idy + jl, idz + kl);
-    res += cx[il]*cy[jl]*cz[kl] * f(ind + il + (jl*iy) + (kl*iz) );
+    res += cx[il]*cy[jl]*cz[kl] * f(i+il, j+jl, k+kl);
+    //res += cx[il]*cy[jl]*cz[kl] * f(ind + il + (jl*iy) + (kl*iz) );
   }}}
   return res;
 };
