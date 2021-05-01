@@ -29,7 +29,8 @@ double pic::QuadraticInterpolator<2>::compute(
 
   for( int jl=-1 ; jl<=1 ; jl++ ) {
   for( int il=-1 ; il<=1 ; il++ ) {
-    res += cx[il]*cy[jl] * f(ind + il + (jl*iy) );
+    res += cx[il]*cy[jl] * f(i+il, j+jl, 0);
+    //res += cx[il]*cy[jl] * f(ind + il + (jl*iy) );
   }}
   return res;
 };
@@ -50,9 +51,9 @@ double pic::QuadraticInterpolator<3>::compute(
   const size_t ind = f.indx(i,j,k);
   double res = 0.0;
 
-  for( int kl=-1 ; kl<=1 ; kl++ ) {
-  for( int jl=-1 ; jl<=1 ; jl++ ) {
-  for( int il=-1 ; il<=1 ; il++ ) {
+  for( int kl=-1 ; kl<=1 ; kl++ ){
+  for( int jl=-1 ; jl<=1 ; jl++ ){
+  for( int il=-1 ; il<=1 ; il++ ){
     res += cx[il]*cy[jl]*cz[kl] * f(i+il, j+jl, k+kl);
     //res += cx[il]*cy[jl]*cz[kl] * f(ind + il + (jl*iy) + (kl*iz) );
   }}}
@@ -69,9 +70,6 @@ void pic::QuadraticInterpolator<D>::solve(
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
-
-  //NOTE: we need this dummy to enforce template D specialization later on
-  std::array<int, D> dummy; 
 
   // get reference to the Yee grid 
   auto& yee = tile.get_yee();
@@ -97,9 +95,9 @@ void pic::QuadraticInterpolator<D>::solve(
     for(size_t n=0; n<con.size(); n++) {
       //--------------------------------------------------
       // indices & locs to grid
-      double xpn = con.loc(0, n) - mins[0];
-      double ypn = con.loc(1, n) - mins[1];
-      double zpn = con.loc(2, n) - mins[2];
+      double xpn = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
+      double ypn = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
+      double zpn = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
       double u = con.vel(0,n);
       double v = con.vel(1,n);
@@ -107,40 +105,22 @@ void pic::QuadraticInterpolator<D>::solve(
 
 
       // particle location in the primary and dual 1/2-shifted grid
-      // TODO: round or floor (=corrected int() for neg numbers)
-      // TODO: if(D >= 1) switches
-      // TODO: stagger up or down?
-      
-      // TODO ver
+
+      // DONE: default scheme
       //int ip = round(xpn);
       //int jp = round(ypn);
       //int kp = round(zpn);
-      //int id = round(xpn + 0.5f);
-      //int jd = round(ypn + 0.5f);
-      //int kd = round(zpn + 0.5f);
+      //int id = round(xpn-0.5f);
+      //int jd = round(ypn-0.5f);
+      //int kd = round(zpn-0.5f);
 
-      // DONE ver2 prev version
-      //int ip = floor(xpn)-1.0f;
-      //int jp = floor(ypn)-1.0f;
-      //int kp = floor(zpn)-1.0f;
-      //int id = floor(xpn);
-      //int jd = floor(ypn);
-      //int kd = floor(zpn);
-
-      //TODO ver3
-      //int ip = floor(xpn);
-      //int jp = floor(ypn);
-      //int kp = floor(zpn);
-      //int id = floor(xpn)+1.0f;
-      //int jd = floor(ypn)+1.0f;
-      //int kd = floor(zpn)+1.0f;
-
+      // Sokolov version
       int ip = round(xpn);
       int jp = round(ypn);
       int kp = round(zpn);
-      int id = round(xpn-0.5f);
-      int jd = round(ypn-0.5f);
-      int kd = round(zpn-0.5f);
+      int id = floor(xpn-0.5);
+      int jd = floor(ypn-0.5);
+      int kd = floor(zpn-0.5);
 
       //--------------------------------------------------
       // coefficients on both prime and dual (staggered +0.5) grids
@@ -153,13 +133,22 @@ void pic::QuadraticInterpolator<D>::solve(
 
       
       // \Delta x from primary and staggered grid points
-      double dxp = xpn-ip;
-      double dyp = ypn-jp;
-      double dzp = zpn-kp;
+        
+      // Default scheme
+      //double dxp = xpn-ip;
+      //double dyp = ypn-jp;
+      //double dzp = zpn-kp;
+      //double dxd = xpn-id-0.5;
+      //double dyd = ypn-jd-0.5;
+      //double dzd = zpn-kd-0.5;
 
-      double dxd = xpn-id-0.5;
-      double dyd = ypn-jd-0.5;
-      double dzd = zpn-kd-0.5;
+      //Sokolov alternating scheme
+      double dxp = xpn     - ip;
+      double dyp = ypn     - jp;
+      double dzp = zpn     - kp;
+      double dxd = xpn-0.5 - id;
+      double dyd = ypn-0.5 - jd;
+      double dzd = zpn-0.5 - kd;
 
       //--------------------------------------------------
       // Lorentz contract lenghts
@@ -179,29 +168,22 @@ void pic::QuadraticInterpolator<D>::solve(
       //--------------------------------------------------
       // compute shape function weights
         
-      //ver2: Eneryg conserving Sokolov alternating shape function scheme
-      //if(D >= 1) W1st(dxp, &cxp[0] );
-      //if(D >= 2) W1st(dyp, &cyp[0] );
-      //if(D >= 3) W1st(dzp, &czp[0] );
+      // Default scheme
+      //if(D >= 1) W2nd(dxp, &cxp[0] );
+      //if(D >= 2) W2nd(dyp, &cyp[0] );
+      //if(D >= 3) W2nd(dzp, &czp[0] );
       //if(D >= 1) W2nd(dxd, &cxd[0] );
       //if(D >= 2) W2nd(dyd, &cyd[0] );
       //if(D >= 3) W2nd(dzd, &czd[0] );
 
-      // TODO: test this with proper staggered dual
-      //if(D >= 1) W2nd(dxp, &cxp[0] );
-      //if(D >= 2) W2nd(dyp, &cyp[0] );
-      //if(D >= 3) W2nd(dzp, &czp[0] );
-      //if(D >= 1) W1st(dxd, &cxd[0] );
-      //if(D >= 2) W1st(dyd, &cyd[0] );
-      //if(D >= 3) W1st(dzd, &czd[0] );
+      //ver2: Eneryg conserving Sokolov alternating shape function scheme
+      W2nd(dxp, &cxp[0] );
+      W2nd(dyp, &cyp[0] );
+      W2nd(dzp, &czp[0] );
 
-      // DONE default scheme
-      if(D >= 1) W2nd(dxp, &cxp[0] );
-      if(D >= 2) W2nd(dyp, &cyp[0] );
-      if(D >= 3) W2nd(dzp, &czp[0] );
-      if(D >= 1) W2nd(dxd, &cxd[0] );
-      if(D >= 2) W2nd(dyd, &cyd[0] );
-      if(D >= 3) W2nd(dzd, &czd[0] );
+      W1st(dxd, &cxd[0] );
+      W1st(dyd, &cyd[0] );
+      W1st(dzd, &czd[0] );
 
 
       bool debug = false;
@@ -214,13 +196,18 @@ void pic::QuadraticInterpolator<D>::solve(
 
           if(czp[iii] < 0.0)  debug = true;
           if(czd[iii] < 0.0)  debug = true;
-      }
-      
 
+          if(cxp[iii] > 1.0)  debug = true;
+          if(cxd[iii] > 1.0)  debug = true;
+          if(cyp[iii] > 1.0)  debug = true;
+          if(cyd[iii] > 1.0)  debug = true;
+          if(czp[iii] > 1.0)  debug = true;
+          if(czd[iii] > 1.0)  debug = true;
+      }
 
       if(debug){
         std::cout 
-          << "interp xyz: " << "(" << xpn << "," << ypn << "," << zpn << ")"
+          << "\n\ninterp xyz: " << "(" << xpn << "," << ypn << "," << zpn << ")"
           << " ip: "  << "(" << ip << "," << jp << "," << kp << ")"
           << " id: "  << "(" << id << "," << jd << "," << kd << ")"
           << " dxp: " << "(" << xpn - ip << "," << ypn - jp << "," << zpn - kp << ")"

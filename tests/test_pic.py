@@ -153,7 +153,7 @@ def const_field(x, y, z):
 
 def linear_field(x, y, z):
     #print("x = {} y = {} z = {}".format(x,y,z))
-    return 1.0*x + 1.0*y
+    return 1.1*x + 1.2*y
 
 def linear_field_3d(x, y, z):
     return 1.0*x + 2.0*y + 3.0*z
@@ -711,10 +711,10 @@ class PIC(unittest.TestCase):
 
         #interpolate fields
         fintps = []
-        #fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
-        #fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+        fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
         #fintps.append( pyrunko.pic.threeD.CubicInterpolator() )
-        fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
 
         for fintp in fintps:
             #interpolate
@@ -836,10 +836,10 @@ class PIC(unittest.TestCase):
 
         #interpolate fields
         fintps = []
-        #fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
-        #fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
+        fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
         #fintps.append( pyrunko.pic.threeD.CubicInterpolator() )
-        fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
+        #fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
 
         for fintp in fintps:
             #interpolate
