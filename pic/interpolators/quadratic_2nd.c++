@@ -119,13 +119,13 @@ void pic::QuadraticInterpolator<D>::solve(
       //int jd = round(ypn + 0.5f);
       //int kd = round(zpn + 0.5f);
 
-      // TODO ver2
-      int ip = floor(xpn)-1.0f;
-      int jp = floor(ypn)-1.0f;
-      int kp = floor(zpn)-1.0f;
-      int id = floor(xpn);
-      int jd = floor(ypn);
-      int kd = floor(zpn);
+      // DONE ver2 prev version
+      //int ip = floor(xpn)-1.0f;
+      //int jp = floor(ypn)-1.0f;
+      //int kp = floor(zpn)-1.0f;
+      //int id = floor(xpn);
+      //int jd = floor(ypn);
+      //int kd = floor(zpn);
 
       //TODO ver3
       //int ip = floor(xpn);
@@ -135,6 +135,12 @@ void pic::QuadraticInterpolator<D>::solve(
       //int jd = floor(ypn)+1.0f;
       //int kd = floor(zpn)+1.0f;
 
+      int ip = round(xpn);
+      int jp = round(ypn);
+      int kp = round(zpn);
+      int id = round(xpn-0.5f);
+      int jd = round(ypn-0.5f);
+      int kd = round(zpn-0.5f);
 
       //--------------------------------------------------
       // coefficients on both prime and dual (staggered +0.5) grids
@@ -154,7 +160,6 @@ void pic::QuadraticInterpolator<D>::solve(
       double dxd = xpn-id-0.5;
       double dyd = ypn-jd-0.5;
       double dzd = zpn-kd-0.5;
-        
 
       //--------------------------------------------------
       // Lorentz contract lenghts
@@ -175,30 +180,59 @@ void pic::QuadraticInterpolator<D>::solve(
       // compute shape function weights
         
       //ver2: Eneryg conserving Sokolov alternating shape function scheme
-      if(D >= 1) W1st(dxp, &cxp[0] );
-      if(D >= 2) W1st(dyp, &cyp[0] );
-      if(D >= 3) W1st(dzp, &czp[0] );
-
-      if(D >= 1) W2nd(dxd, &cxd[0] );
-      if(D >= 2) W2nd(dyd, &cyd[0] );
-      if(D >= 3) W2nd(dzd, &czd[0] );
-
-      // default scheme
-      //if(D >= 1) W2nd(dxp, &cxp[0] );
-      //if(D >= 2) W2nd(dyp, &cyp[0] );
-      //if(D >= 3) W2nd(dzp, &czp[0] );
+      //if(D >= 1) W1st(dxp, &cxp[0] );
+      //if(D >= 2) W1st(dyp, &cyp[0] );
+      //if(D >= 3) W1st(dzp, &czp[0] );
       //if(D >= 1) W2nd(dxd, &cxd[0] );
       //if(D >= 2) W2nd(dyd, &cyd[0] );
       //if(D >= 3) W2nd(dzd, &czd[0] );
 
+      // TODO: test this with proper staggered dual
+      //if(D >= 1) W2nd(dxp, &cxp[0] );
+      //if(D >= 2) W2nd(dyp, &cyp[0] );
+      //if(D >= 3) W2nd(dzp, &czp[0] );
+      //if(D >= 1) W1st(dxd, &cxd[0] );
+      //if(D >= 2) W1st(dyd, &cyd[0] );
+      //if(D >= 3) W1st(dzd, &czd[0] );
 
-      //std::cout 
-      //    << " xyz: " << "(" << xpn << "," << ypn << "," << zpn << ")"
-      //    << " ip: "  << "(" << ip << "," << jp << "," << kp << ")"
-      //    << " id: "  << "(" << id << "," << jd << "," << kd << ")"
-      //    << " dxp: " << "(" << xpn - ip << "," << ypn - jp << "," << zpn - kp << ")"
-      //    << " dxd: " << "(" << xpn - id + 0.5f << "," << ypn - jd + 0.5f << "," << zpn - kd + 0.5f << ")"
-      //    << "\n";
+      // DONE default scheme
+      if(D >= 1) W2nd(dxp, &cxp[0] );
+      if(D >= 2) W2nd(dyp, &cyp[0] );
+      if(D >= 3) W2nd(dzp, &czp[0] );
+      if(D >= 1) W2nd(dxd, &cxd[0] );
+      if(D >= 2) W2nd(dyd, &cyd[0] );
+      if(D >= 3) W2nd(dzd, &czd[0] );
+
+
+      bool debug = false;
+      for(int iii=0; iii<3; iii++){
+          if(cxp[iii] < 0.0)  debug = true;
+          if(cxd[iii] < 0.0)  debug = true;
+
+          if(cyp[iii] < 0.0)  debug = true;
+          if(cyd[iii] < 0.0)  debug = true;
+
+          if(czp[iii] < 0.0)  debug = true;
+          if(czd[iii] < 0.0)  debug = true;
+      }
+      
+
+
+      if(debug){
+        std::cout 
+          << "interp xyz: " << "(" << xpn << "," << ypn << "," << zpn << ")"
+          << " ip: "  << "(" << ip << "," << jp << "," << kp << ")"
+          << " id: "  << "(" << id << "," << jd << "," << kd << ")"
+          << " dxp: " << "(" << xpn - ip << "," << ypn - jp << "," << zpn - kp << ")"
+          << " dxd: " << "(" << xpn - id + 0.5f << "," << ypn - jd + 0.5f << "," << zpn - kd + 0.5f << ")"
+          << " W1x: " << "(" << cxp[0] << "," << cxp[1] << "," << cxp[2] << /* "," << cxp[3] << */ ")"
+          << " W2x: " << "(" << cxd[0] << "," << cxd[1] << "," << cxd[2] << /* "," << cxd[3] << */ ")"
+          << " W1y: " << "(" << cyp[0] << "," << cyp[1] << "," << cyp[2] << /* "," << cyp[3] << */ ")"
+          << " W2y: " << "(" << cyd[0] << "," << cyd[1] << "," << cyd[2] << /* "," << cyd[3] << */ ")"
+          << " W1z: " << "(" << czp[0] << "," << czp[1] << "," << czp[2] << /* "," << czp[3] << */ ")"
+          << " W2z: " << "(" << czd[0] << "," << czd[1] << "," << czd[2] << /* "," << czd[3] << */ ")"
+          << "\n";
+      }
 
       //--------------------------------------------------
       // integrate over shape function, i.e. interpolate
