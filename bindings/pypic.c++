@@ -26,6 +26,7 @@ namespace py = pybind11;
 #include "../pic/depositers/zigzag.h"
 #include "../pic/depositers/zigzag_2nd.h"
 #include "../pic/depositers/zigzag_3rd.h"
+#include "../pic/depositers/zigzag_4th.h"
 
 #include "../pic/communicate.h"
 
@@ -499,6 +500,10 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::ZigZag_3rd<2,3>>(m_2d, "ZigZag_3rd", picdeposit2d)
     .def(py::init<>());
 
+  py::class_<pic::ZigZag_4th<2,3>>(m_2d, "ZigZag_4th", picdeposit2d)
+    .def(py::init<>());
+
+
 
   // 3D version
   py::class_< pic::Depositer<3,3>, PyDepositer<3> > picdeposit3d(m_3d, "Depositer");
@@ -514,6 +519,9 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
   py::class_<pic::ZigZag_3rd<3,3>>(m_3d, "ZigZag_3rd", picdeposit3d)
+    .def(py::init<>());
+
+  py::class_<pic::ZigZag_4th<3,3>>(m_3d, "ZigZag_4th", picdeposit3d)
     .def(py::init<>());
 
 
