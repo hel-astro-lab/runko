@@ -714,7 +714,7 @@ class PIC(unittest.TestCase):
         fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
         fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
         #fintps.append( pyrunko.pic.threeD.CubicInterpolator() )
-        #fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
 
         for fintp in fintps:
             #interpolate
@@ -839,7 +839,7 @@ class PIC(unittest.TestCase):
         fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
         fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
         #fintps.append( pyrunko.pic.threeD.CubicInterpolator() )
-        #fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
+        fintps.append( pyrunko.pic.threeD.QuarticInterpolator() )
 
         for fintp in fintps:
             #interpolate
@@ -1145,6 +1145,7 @@ class PIC(unittest.TestCase):
         currints.append( pyrunko.pic.twoD.ZigZag() )
         currints.append( pyrunko.pic.twoD.ZigZag_2nd() )
         currints.append( pyrunko.pic.twoD.ZigZag_3rd() )
+        currints.append( pyrunko.pic.twoD.ZigZag_4th() )
         
         for currint in currints:
 
@@ -1214,6 +1215,7 @@ class PIC(unittest.TestCase):
         currints.append( pyrunko.pic.threeD.ZigZag() )
         currints.append( pyrunko.pic.threeD.ZigZag_2nd() )
         currints.append( pyrunko.pic.threeD.ZigZag_3rd() )
+        currints.append( pyrunko.pic.threeD.ZigZag_4th() )
 
         # loop over different depositers
         for currint in currints:

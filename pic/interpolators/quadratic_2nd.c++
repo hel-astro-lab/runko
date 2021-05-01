@@ -177,14 +177,13 @@ void pic::QuadraticInterpolator<D>::solve(
       //if(D >= 3) W2nd(dzd, &czd[0] );
 
       //ver2: Eneryg conserving Sokolov alternating shape function scheme
-      W2nd(dxp, &cxp[0] );
-      W2nd(dyp, &cyp[0] );
-      W2nd(dzp, &czp[0] );
-
       W1st(dxd, &cxd[0] );
       W1st(dyd, &cyd[0] );
       W1st(dzd, &czd[0] );
 
+      W2nd(dxp, &cxp[0] );
+      W2nd(dyp, &cyp[0] );
+      W2nd(dzp, &czp[0] );
 
       bool debug = false;
       for(int iii=0; iii<3; iii++){
