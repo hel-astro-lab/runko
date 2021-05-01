@@ -115,12 +115,12 @@ void pic::CubicInterpolator<D>::solve(
 
       //--------------------------------------------------
       // coefficients on both prime and dual (staggered +0.5) grids
-      double cxd[4] = {0.0}, 
-             cxp[4] = {0.0}, 
-             cyd[4] = {0.0}, 
-             cyp[4] = {0.0}, 
-             czd[4] = {0.0}, 
-             czp[4] = {0.0};
+      double cxd[5] = {0.0}, 
+             cxp[5] = {0.0}, 
+             cyd[5] = {0.0}, 
+             cyp[5] = {0.0}, 
+             czd[5] = {0.0}, 
+             czp[5] = {0.0};
 
       
       // \Delta x from primary and staggered grid points
@@ -155,12 +155,12 @@ void pic::CubicInterpolator<D>::solve(
       //--------------------------------------------------
       // integrate over shape function, i.e. interpolate
       // NOTE: we shift coefficient array pointers +1 to take into account -1,0,+1 access pattern
-      con.ex(n) = compute( &cxd[1], &cyp[1], &czp[1], yee.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
-      con.ey(n) = compute( &cxp[1], &cyd[1], &czp[1], yee.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
-      con.ez(n) = compute( &cxp[1], &cyp[1], &czd[1], yee.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
-      con.bx(n) = compute( &cxp[1], &cyd[1], &czd[1], yee.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
-      con.by(n) = compute( &cxd[1], &cyp[1], &czd[1], yee.by, iy,iz,  id,jp,kd); // By(d,p,d)
-      con.bz(n) = compute( &cxd[1], &cyd[1], &czp[1], yee.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
+      con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], yee.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
+      con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], yee.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
+      con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], yee.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
+      con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], yee.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
+      con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], yee.by, iy,iz,  id,jp,kd); // By(d,p,d)
+      con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], yee.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
 
     //}, con.size(), yee, con);
     }
