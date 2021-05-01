@@ -4,8 +4,7 @@
 
 namespace pic {
 
-/// Second order current depositer applying the ZigZag method
-// Uses triangle particle shape for deposition.
+/// Fourth order current depositer applying the ZigZag method
 template<size_t D, size_t V>
 class ZigZag_2nd :
   public virtual Depositer<D,V>

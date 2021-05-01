@@ -100,7 +100,6 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
 
 
       //--------------------------------------------------
-
       // \Delta x from grid points
       double dx1 = D >= 1 ? 0.5*(x1 + xr) - i1p : 0.5; 
       double dx2 = D >= 1 ? 0.5*(x2 + xr) - i2p : 0.5; 
@@ -110,6 +109,16 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
 
       double dz1 = D >= 3 ? 0.5*(z1 + zr) - k1p : 0.5; 
       double dz2 = D >= 3 ? 0.5*(z2 + zr) - k2p : 0.5; 
+
+      //--------------------------------------------------
+      // staggered grid
+      // note: relay point already has staggering so no -0.5 factor here
+      double dx1d = D >= 1 ? 0.5*(x1 + xrd) - i1d : 0.0; 
+      double dx2d = D >= 1 ? 0.5*(x2 + xrd) - i2d : 0.0; 
+      double dy1d = D >= 2 ? 0.5*(y1 + yrd) - j1d : 0.0; 
+      double dy2d = D >= 2 ? 0.5*(y2 + yrd) - j2d : 0.0; 
+      double dz1d = D >= 3 ? 0.5*(z1 + zrd) - k1d : 0.0; 
+      double dz2d = D >= 3 ? 0.5*(z2 + zrd) - k2d : 0.0; 
 
       //--------------------------------------------------
       // Lorentz contract lenghts
@@ -122,12 +131,17 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
 
       //dx1 = dx1/(1.0 + (gam-1.0)*betax2/(beta2 + EPS));
       //dx2 = dx2/(1.0 + (gam-1.0)*betax2/(beta2 + EPS));
-      //          
       //dy1 = dy1/(1.0 + (gam-1.0)*betay2/(beta2 + EPS));
       //dy2 = dy2/(1.0 + (gam-1.0)*betay2/(beta2 + EPS));
-      //          
       //dz1 = dz1/(1.0 + (gam-1.0)*betaz2/(beta2 + EPS));
       //dz2 = dz2/(1.0 + (gam-1.0)*betaz2/(beta2 + EPS));
+
+      //dx1d = dx1d/(1.0 + (gam-1.0)*betax2/(beta2 + EPS));
+      //dx2d = dx2d/(1.0 + (gam-1.0)*betax2/(beta2 + EPS));
+      //dy1d = dy1d/(1.0 + (gam-1.0)*betay2/(beta2 + EPS));
+      //dy2d = dy2d/(1.0 + (gam-1.0)*betay2/(beta2 + EPS));
+      //dz1d = dz1d/(1.0 + (gam-1.0)*betaz2/(beta2 + EPS));
+      //dz2d = dz2d/(1.0 + (gam-1.0)*betaz2/(beta2 + EPS));
 
       //--------------------------------------------------
       // particle weights on primary grid
@@ -146,13 +160,6 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       // staggered grid along the motion
       double Wx1[3] = {1.0}, Wx2[3] = {1.0}, Wy1[3] = {1.0}, Wy2[3] = {1.0}, Wz1[3] = {1.0}, Wz2[3] = {1.0};
 
-      // note: relay point already has staggering so no -0.5 factor here
-      double dx1d = D >= 1 ? 0.5*(x1 + xrd) - i1d : 0.0; 
-      double dx2d = D >= 1 ? 0.5*(x2 + xrd) - i2d : 0.0; 
-      double dy1d = D >= 2 ? 0.5*(y1 + yrd) - j1d : 0.0; 
-      double dy2d = D >= 2 ? 0.5*(y2 + yrd) - j2d : 0.0; 
-      double dz1d = D >= 3 ? 0.5*(z1 + zrd) - k1d : 0.0; 
-      double dz2d = D >= 3 ? 0.5*(z2 + zrd) - k2d : 0.0; 
 
       // Shifting \Delta x by -0.5 to accommodate staggering
       // DONE working ver
