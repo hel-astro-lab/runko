@@ -181,7 +181,7 @@ auto declare_prtcl_container(
 
         // we should not end up here;
         throw py::index_error();
-        return 0.0f;
+        return float_p(0.0);
       })
     .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, float_p val)
       {

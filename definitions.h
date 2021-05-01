@@ -11,10 +11,12 @@
 // It is also worth mentioning that most IO files are already manually set 
 // to float type to reduce storage requirements.
 using float_m = float;  /// mesh/grid floating point accuracy
+//using float_m = double;  /// mesh/grid floating point accuracy
 
 
 // nan prevention tolerance
 #define EPS 1e-7f
+//#define EPS 1e-14
 
 // Separate short float type for particles. In most applications it is enough
 // to keep this as float. However, some special cases might require extra
@@ -25,9 +27,11 @@ using float_m = float;  /// mesh/grid floating point accuracy
 // numerical parts are still done via double precision.
 //
 using float_p = float; /// particle storage type; NOTE: don't forget MPI type below
+//using float_p = double; /// particle storage type; NOTE: don't forget MPI type below
 
 // corresponding MPI datatype for particle communications; MPI_FLOAT or MPI_DOUBLE
 #define MPI_FLOAT_TP MPI_FLOAT
+//#define MPI_FLOAT_TP MPI_DOUBLE
 
 
 

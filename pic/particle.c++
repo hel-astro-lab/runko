@@ -803,14 +803,12 @@ void ParticleContainer<3>::check_outgoing_particles(
   for(size_t n=0; n<size(); n++) {
     int i=0,j=0,k=0; // relative indices
 
-    if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
-    if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
-
-    if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
-    if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
-
-    if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
-    if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
+    if( loc(0,n) - float_p( mins[0] ) <  0.0 ) i--; // left wrap
+    if( loc(0,n) - float_p( maxs[0] ) >= 0.0 ) i++; // right wrap
+    if( loc(1,n) - float_p( mins[1] ) <  0.0 ) j--; // bottom wrap
+    if( loc(1,n) - float_p( maxs[1] ) >= 0.0 ) j++; // top wrap
+    if( loc(2,n) - float_p( mins[2] ) <  0.0 ) k--; // back wrap
+    if( loc(2,n) - float_p( maxs[2] ) >= 0.0 ) k++; // front wrap
 
     if ( (i != 0) || (j != 0) || (k != 0) ) {
         to_other_tiles.push_back( {i,j,k,n} );
