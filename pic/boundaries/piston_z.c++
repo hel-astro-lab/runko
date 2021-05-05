@@ -36,14 +36,14 @@ void pic::PistonZdir<D>::zigzag(
   const double c = tile.cfl;    // speed of light
 
   // normalized location w.r.t. tile
-  float_m x1 = D >= 1 ? x1glob - mins[0] : x1glob;
-  float_m x2 = D >= 1 ? x2glob - mins[0] : x2glob;
+  double x1 = D >= 1 ? x1glob - mins[0] : x1glob;
+  double x2 = D >= 1 ? x2glob - mins[0] : x2glob;
 
-  float_m y1 = D >= 2 ? y1glob - mins[1] : y1glob;
-  float_m y2 = D >= 2 ? y2glob - mins[1] : y2glob;
+  double y1 = D >= 2 ? y1glob - mins[1] : y1glob;
+  double y2 = D >= 2 ? y2glob - mins[1] : y2glob;
 
-  float_m z1 = D >= 3 ? z1glob - mins[2] : z1glob;
-  float_m z2 = D >= 3 ? z2glob - mins[2] : z2glob;
+  double z1 = D >= 3 ? z1glob - mins[2] : z1glob;
+  double z2 = D >= 3 ? z2glob - mins[2] : z2glob;
 
   int i1  = D >= 1 ? floor( x1 ) : 0;
   int i2  = D >= 1 ? floor( x2 ) : 0;
@@ -55,27 +55,27 @@ void pic::PistonZdir<D>::zigzag(
   int k2  = D >= 3 ? floor( z2 ) : 0;
 
   // relay point; +1 is equal to +\Delta x
-  float_m xr = min( float_m(min(i1,i2)+1), max( float_m(max(i1,i2)), float_m(0.5*(x1+x2)) ) );
-  float_m yr = min( float_m(min(j1,j2)+1), max( float_m(max(j1,j2)), float_m(0.5*(y1+y2)) ) );
-  float_m zr = min( float_m(min(k1,k2)+1), max( float_m(max(k1,k2)), float_m(0.5*(z1+z2)) ) );
+  double xr = min( double(min(i1,i2)+1), max( double(max(i1,i2)), double(0.5*(x1+x2)) ) );
+  double yr = min( double(min(j1,j2)+1), max( double(max(j1,j2)), double(0.5*(y1+y2)) ) );
+  double zr = min( double(min(k1,k2)+1), max( double(max(k1,k2)), double(0.5*(z1+z2)) ) );
 
   //--------------------------------------------------
   // +q since - sign is already included in the Ampere's equation
-  float_m Fx1 = +q*(xr - x1);
-  float_m Fy1 = +q*(yr - y1);
-  float_m Fz1 = +q*(zr - z1);
+  double Fx1 = +q*(xr - x1);
+  double Fy1 = +q*(yr - y1);
+  double Fz1 = +q*(zr - z1);
   
-  float_m Fx2 = +q*(x2 - xr);
-  float_m Fy2 = +q*(y2 - yr);
-  float_m Fz2 = +q*(z2 - zr);
+  double Fx2 = +q*(x2 - xr);
+  double Fy2 = +q*(y2 - yr);
+  double Fz2 = +q*(z2 - zr);
 
-  float_m Wx1 = D >= 1 ? 0.5*(x1 + xr) - i1 : 0.0;
-  float_m Wy1 = D >= 2 ? 0.5*(y1 + yr) - j1 : 0.0;
-  float_m Wz1 = D >= 3 ? 0.5*(z1 + zr) - k1 : 0.0;
+  double Wx1 = D >= 1 ? 0.5*(x1 + xr) - i1 : 0.0;
+  double Wy1 = D >= 2 ? 0.5*(y1 + yr) - j1 : 0.0;
+  double Wz1 = D >= 3 ? 0.5*(z1 + zr) - k1 : 0.0;
 
-  float_m Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
-  float_m Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
-  float_m Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
+  double Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
+  double Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
+  double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
 
   //--------------------------------------------------
@@ -90,6 +90,7 @@ void pic::PistonZdir<D>::zigzag(
   if(D>=3) atomic_add( yee.jx(i2  , j2  , k2+1), Fx2*(1.0f-Wy2)*Wz2        );
   if(D>=3) atomic_add( yee.jx(i2  , j2+1, k2+1), Fx2*Wy2       *Wz2        );
 
+  //--------------------------------------------------
   // jy
   if(D>=1) atomic_add( yee.jy(i1  , j1  , k1  ), Fy1*(1.0f-Wx1)*(1.0f-Wz1) );
   if(D>=2) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1       *(1.0f-Wz1) );
@@ -101,11 +102,12 @@ void pic::PistonZdir<D>::zigzag(
   if(D>=3) atomic_add( yee.jy(i2  , j2  , k2+1), Fy2*(1.0f-Wx2)*Wz2        );
   if(D>=3) atomic_add( yee.jy(i2+1, j2  , k2+1), Fy2*Wx2       *Wz2        );
 
+  //--------------------------------------------------
   // jz
   if(D>=1) atomic_add( yee.jz(i1  , j1  , k1  ), Fz1*(1.0f-Wx1)*(1.0f-Wy1) );
-  if(D>=2) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0f-Wy1) );
-  if(D>=3) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0f-Wx1)*Wy1        );
-  if(D>=3) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1       *Wy1        );
+  if(D>=1) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0f-Wy1) );
+  if(D>=2) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0f-Wx1)*Wy1        );
+  if(D>=2) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1       *Wy1        );
 
   if(D>=1) atomic_add( yee.jz(i2  , j2  , k2  ), Fz2*(1.0f-Wx2)*(1.0f-Wy2) );
   if(D>=1) atomic_add( yee.jz(i2+1, j2  , k2  ), Fz2*Wx2       *(1.0f-Wy2) );
@@ -213,7 +215,6 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
             -q);
 
         }
-
 
       }, 
         con.size(), 
