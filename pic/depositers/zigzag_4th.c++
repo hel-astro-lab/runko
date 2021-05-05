@@ -40,12 +40,13 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
-    //UniIter::iterate([=] DEVCALLABLE (
-    //            size_t n, 
-    //            fields::YeeLattice &yee,
-    //            pic::ParticleContainer<D>& con
-    //            ){
-    for(size_t n=0; n<con.size(); n++) {
+    //for(size_t n=0; n<con.size(); n++) {
+      
+    UniIter::iterate([=] DEVCALLABLE (
+                size_t n, 
+                fields::YeeLattice &yee,
+                pic::ParticleContainer<D>& con
+                ){
 
       //--------------------------------------------------
       double u = con.vel(0,n);
@@ -248,7 +249,6 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
       const int zlim = D >= 3 ? 2 : 0;
 
       // TODO: this still lacks -1/2 staggering which is strange
-
 
       // NOTE: incrementing loop counter with ++i to enforce at least 1 iteration always
       //jx

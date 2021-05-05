@@ -62,15 +62,12 @@ void pic::LinearInterpolator<D,V>::solve(
       int i=0, j=0, k=0;
       double dx=0.0, dy=0.0, dz=0.0;
     
-      double loc0n = con.loc(0, n);
-      double loc1n = con.loc(1, n);
-      double loc2n = con.loc(2, n);
-
+      // normalize to tile units
+      double loc0n = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
+      double loc1n = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
+      double loc2n = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
       // particle location in the grid
-      // NOTE: trunc() ensures that prtcls outside the tile do not crash this loop 
-      // (because it rounds e.g. xloc=-0.1 => i=0 and dx=-0.1). They should be
-      // automatically cleaned on next time step to their real tiles.
       if(D >= 1) i = floor(loc0n);
       if(D >= 2) j = floor(loc1n);
       if(D >= 3) k = floor(loc2n);
@@ -78,11 +75,6 @@ void pic::LinearInterpolator<D,V>::solve(
       if(D >= 1) dx = loc0n - i;
       if(D >= 2) dy = loc1n - j;
       if(D >= 3) dz = loc2n - k;
-
-      // normalize to tile units
-      if(D >= 1) i -= mins[0];
-      if(D >= 2) j -= mins[1];
-      if(D >= 3) k -= mins[2];
 
       // one-dimensional index
       const size_t ind = yee.ex.indx(i,j,k);
