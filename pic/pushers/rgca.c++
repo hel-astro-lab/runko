@@ -46,6 +46,8 @@ inline auto ExB_drift(
     double vez = (ex*by - ey*bx)/(b*b + EPS);
 
     double ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
+    ve2 = std::min(1.0, ve2); // prevent NaN/overflow
+
     double kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
 
     return {vex, vey, vez, kappa, 0.};
