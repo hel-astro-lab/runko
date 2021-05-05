@@ -37,7 +37,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
-//    // no vectorization here since we dont use the general iterator
+    // no vectorization here since we dont use the general iterator
     //for(size_t n=0; n<con.size(); n++) {
 
     UniIter::iterate([=] DEVCALLABLE (
@@ -51,6 +51,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       double u = con.vel(0,n);
       double v = con.vel(1,n);
       double w = con.vel(2,n);
+
       double invgam = 1.0/sqrt(1.0 + u*u + v*v + w*w);
 
       //--------------------------------------------------
@@ -97,7 +98,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       double Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
       double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
-
       //--------------------------------------------------
       // jx
       if(D>=1) atomic_add( yee.jx(i1  , j1  , k1  ), Fx1*(1.0-Wy1)*(1.0-Wz1) );
@@ -123,9 +123,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       // jz
       if(D>=1) atomic_add( yee.jz(i1  , j1  , k1  ), Fz1*(1.0-Wx1)*(1.0-Wy1) );
-      if(D>=2) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0-Wy1) );
-      if(D>=3) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0-Wx1)*Wy1        );
-      if(D>=3) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1       *Wy1        );
+      if(D>=1) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0-Wy1) );
+      if(D>=2) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0-Wx1)*Wy1        );
+      if(D>=2) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1       *Wy1        );
 
       if(D>=1) atomic_add( yee.jz(i2  , j2  , k2  ), Fz2*(1.0-Wx2)*(1.0-Wy2) );
       if(D>=1) atomic_add( yee.jz(i2+1, j2  , k2  ), Fz2*Wx2       *(1.0-Wy2) );
@@ -133,6 +133,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       if(D>=2) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2       *Wy2        );
 
     }, con.size(), yee, con);
+
 
     UniIter::sync();
   }//end of loop over species
