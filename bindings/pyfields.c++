@@ -422,6 +422,8 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("norm_abs", &fields::FDTD2_pml<3>::norm_abs)
     .def_readwrite("corr",     &fields::FDTD2_pml<3>::corr)
     .def_readwrite("mode",     &fields::FDTD2_pml<3>::mode)
+    .def("push_e",             &fields::FDTD2_pml<3>::push_e)
+    .def("push_half_b",        &fields::FDTD2_pml<3>::push_half_b)
     .def("push_eb",            &fields::FDTD2_pml<3>::push_eb);
 
 

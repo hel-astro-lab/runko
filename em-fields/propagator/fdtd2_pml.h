@@ -30,7 +30,7 @@ class FDTD2_pml :
   double norm_abs = 0.1;
 
   /// damp mode; 0 - radial; 1 - cylindrical
-  int mode = 0; 
+  int mode = 2; 
 
   /// damping function
   virtual float_m lambda(float_m sx, float_m sy, float_m sz);
