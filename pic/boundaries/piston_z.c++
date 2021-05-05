@@ -255,13 +255,17 @@ void pic::PistonZdir<3>::field_bc(
     for(int i=-3; i<tile.mesh_lengths[0]+3; i++) {
 
       // transverse components of electric field to zero (only parallel comp allowed)
-      yee.ex(i,j,k) = 0.0;
-      yee.ey(i,j,k) = 0.0;
+      //yee.ex(i,j,k) = 0.0;
+      //yee.ey(i,j,k) = 0.0;
 
       // clean all current behind piston head
-      //yee.jx(i,j,k) = 0.0;
-      //yee.jy(i,j,k) = 0.0;
-      //yee.jz(i,j,k) = 0.0;
+      yee.jx(i,j,k) = 0.0;
+      yee.jy(i,j,k) = 0.0;
+      yee.jz(i,j,k) = 0.0;
+
+      //yee.bx(i,j,k) = 0.0;
+      //yee.by(i,j,k) = 0.0;
+      //yee.bz(i,j,k) = 0.0;
     }
   } else if(wdir < 0 && wallocz > mins[2]) {
 
@@ -274,13 +278,17 @@ void pic::PistonZdir<3>::field_bc(
     for(int i=-3; i<tile.mesh_lengths[0]+3; i++) {
 
       // transverse components of electric field to zero (only parallel comp allowed)
-      yee.ex(i,j,k) = 0.0;
-      yee.ey(i,j,k) = 0.0;
+      //yee.ex(i,j,k) = 0.0;
+      //yee.ey(i,j,k) = 0.0;
 
       // clean all current behind piston head
-      //yee.jx(i,j,k) = 0.0;
-      //yee.jy(i,j,k) = 0.0;
-      //yee.jz(i,j,k) = 0.0;
+      yee.jx(i,j,k) = 0.0;
+      yee.jy(i,j,k) = 0.0;
+      yee.jz(i,j,k) = 0.0;
+
+      //yee.bx(i,j,k) = 0.0;
+      //yee.by(i,j,k) = 0.0;
+      //yee.bz(i,j,k) = 0.0;
     }
   }
 }
