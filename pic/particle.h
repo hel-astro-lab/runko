@@ -138,7 +138,7 @@ class ParticleContainer{
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 
   // in hand with the corresponding receiver side.
-  int optimal_message_size = 3000;
+  const int optimal_message_size = 4096; 
 
   //! particle specific electric field components
   ManVec<float_p> Epart;

@@ -499,7 +499,8 @@ void ParticleContainer<D>::pack_all_particles()
   // +1 for info particle
   size_t np = size() + 1;
 
-  outgoing_particles.reserve(optimal_message_size);
+  // FIXME
+  //outgoing_particles.reserve(optimal_message_size);
   if(np-optimal_message_size > 0) {
     outgoing_extra_particles.reserve( np-optimal_message_size );
   }
@@ -550,9 +551,12 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //std::cout << "reserving1: " << optimal_message_size << "\n";
   //std::cout << "reserving2: " << np <<" minus " << np-optimal_message_size << "\n";
 
-  outgoing_particles.reserve(optimal_message_size);
+
+  // FIXME altered here
+  //outgoing_particles.reserve(optimal_message_size);
   if (np > optimal_message_size) {
-    outgoing_extra_particles.reserve( np-optimal_message_size);
+    // FIXME altered here
+    outgoing_extra_particles.resize( np-optimal_message_size );
   }
 
   // first particle is always the message info
