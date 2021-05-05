@@ -278,8 +278,7 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
         }
       }
 
-    }
-    //}, con.size(), yee, con);
+    }, con.size(), yee, con);
 
   }//end of loop over species
 
