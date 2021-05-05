@@ -54,8 +54,8 @@ inline auto ExB_drift(
 }
     
 
-//ExB in units of c with E.B !=  correction
-inline auto ExB_drift_rel( 
+//ExB in units of c with E.B != 0 correction
+inline auto ExB_drift_rel_approx( 
             double  ex,  double  ey,  double  ez,
             double  bx,  double  by,  double  bz
                      ) -> std::tuple<double, double, double, double, double>
@@ -67,6 +67,7 @@ inline auto ExB_drift_rel(
     double vey = (ez*bx - ex*bz)/(b*b + e*e + EPS);
     double vez = (ex*by - ey*bx)/(b*b + e*e + EPS);
     double we2  = vex*vex + vey*vey + vez*vez; //|u|^2
+    we2 = std::min(0.5, we2); // prevent NaN/overflow
 
     //// we -> ve
     double ginv = (1. - sqrt(1. - 4.*we2))/(2.*we2 + EPS);
@@ -74,12 +75,40 @@ inline auto ExB_drift_rel(
     vey *= ginv;
     vez *= ginv;
 
-    double ve2 = vex*vex + vey*vey + vez*vez; //|u|^2
+    double ve2 = vex*vex + vey*vey + vez*vez; //|v|^2
     double kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
 
     return {vex, vey, vez, kappa, we2};
 }
 
+
+//ExB in units of c with full E.B != 0  correction
+//
+// From Landau & Lifshitz: Classical theory of fields; pg 65
+inline auto ExB_drift_rel( 
+            double  ex,  double  ey,  double  ez,
+            double  bx,  double  by,  double  bz
+                     ) -> std::tuple<double, double, double, double, double>
+{
+    const double b = sqrt( bx*bx + by*by + bz*bz );
+    const double e = sqrt( ex*ex + ey*ey + ez*ez );
+
+    // four velocities
+    double vex = (ey*bz - ez*by)/(b*b + e*e + EPS);
+    double vey = (ez*bx - ex*bz)/(b*b + e*e + EPS);
+    double vez = (ex*by - ey*bx)/(b*b + e*e + EPS);
+    double we2  = vex*vex + vey*vey + vez*vez; //|u|^2
+
+    // lorentz factor of the drift
+    double kappa = sqrt(1.0 + we2);
+
+    //// we -> ve; into 3-velocities
+    vex *= 1.0/kappa;
+    vey *= 1.0/kappa;
+    vez *= 1.0/kappa;
+
+    return {vex, vey, vez, kappa, we2};
+}
 
 // b: normal unit vector 
 inline auto mag_unit_vec( 
@@ -96,8 +125,8 @@ inline auto mag_unit_vec(
 }
 
 
-// b*: exact, E.B corrected "relativistic" unit B field vector
-inline auto mag_unit_vec_rel( 
+// b*: E.B corrected "relativistic" unit B field vector
+inline auto mag_unit_vec_rel_approx( 
             double  ex,  double  ey,  double  ez,
             double  bx,  double  by,  double  bz,
             double we2
@@ -111,6 +140,7 @@ inline auto mag_unit_vec_rel(
     double eperpy = ey - edotb*by/(b*b + EPS);
     double eperpz = ez - edotb*bz/(b*b + EPS);
     double eperp = eperpx*eperpx + eperpy*eperpy + eperpz*eperpz;
+
 
     double bp = sqrt(0.5*(b*b - e*e + (e*e + b*b)*sqrt(1.0 - 4.*we2))); // eq6
     double ep = edotb/(bp + EPS); //eq 5
@@ -132,6 +162,40 @@ inline auto mag_unit_vec_rel(
 
     return {bnx, bny, bnz};
 }
+
+
+// b*: unit B field vector in relativistic drift frame
+//
+// i.e., \vec{B}/|B| field in the frame where ExB drift is zero
+//
+// From Landau & Lifshitz: Classical theory of fields; pg 62
+inline auto mag_unit_vec_rel( 
+            double  ex,  double  ey,  double  ez,
+            double  bx,  double  by,  double  bz,
+            double vex,  double vey,  double vez, 
+            double kappa
+                     ) -> std::tuple< double, double, double>
+{
+    const double b = sqrt( bx*bx + by*by + bz*bz );
+    const double e = sqrt( ex*ex + ey*ey + ez*ez );
+
+    // dift . u
+    double vdotb = vex*bx + vey*by + vez*bz;
+
+    // boosted B field; g*(B - VxE) - g^2/(g + 1)*V* (V.B)
+    double bnx = kappa*(bx - (vey*ez - vez*ey)) - kappa*kappa/(kappa + 1.0)*vex*vdotb;
+    double bny = kappa*(by - (vez*ex - vex*ez)) - kappa*kappa/(kappa + 1.0)*vey*vdotb;
+    double bnz = kappa*(bz - (vex*ey - vey*ex)) - kappa*kappa/(kappa + 1.0)*vez*vdotb;
+
+    // normalize to unit vector
+    double bn = sqrt( bnx*bnx + bny*bny + bnz*bnz );
+    bnx *= 1.0/(bn + EPS);
+    bny *= 1.0/(bn + EPS);
+    bnz *= 1.0/(bn + EPS);
+
+    return {bnx, bny, bnz};
+}
+
 
 
 
@@ -171,7 +235,8 @@ void pic::rGCAPusher<D,V>::push_container(
 
 
   // loop over particles
-  UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+  //UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+  for(size_t n=0; n<con.size(); n++){
 
     // local tmp variables that carry over post iteration
     double G0, G1;
@@ -211,14 +276,14 @@ void pic::rGCAPusher<D,V>::push_container(
     //ExB in units of c
 
     // non-rel / rel ExB drift velocity
-    auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift( ex0, ey0, ez0, bx0, by0, bz0 );
-    //auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
+    //auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift( ex0, ey0, ez0, bx0, by0, bz0 );
+    auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
 
     //-------------------------------------------------- 
     // magnetic field unit vector b
       
-    auto [bnx0, bny0, bnz0] = mag_unit_vec(bx0, by0, bz0);
-    //auto [bnx0, bny0, bnz0] = mag_unit_vec_rel( ex0, ey0, ez0, bx0, by0, bz0, we2);
+    //auto [bnx0, bny0, bnz0] = mag_unit_vec(bx0, by0, bz0);
+    auto [bnx0, bny0, bnz0] = mag_unit_vec_rel( ex0, ey0, ez0, bx0, by0, bz0, vex0, vey0, vez0, kappa0);
 
     //--------------------------------------------------
     // epar = e.b
@@ -386,14 +451,14 @@ void pic::rGCAPusher<D,V>::push_container(
       //ExB in units of c at new location
 
       // non-rel / rel ExB drift velocity at the new location
-      auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift(     ex1, ey1, ez1, bx1, by1, bz1 );
-      //auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
+      //auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift(     ex1, ey1, ez1, bx1, by1, bz1 );
+      auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
 
       //-------------------------------------------------- 
       // magnetic field unit vector b at new location
 
-      auto [bnx1, bny1, bnz1] = mag_unit_vec(bx1, by1, bz1);
-      //auto [bnx1, bny1, bnz1] = mag_unit_vec_rel( ex1, ey1, ez1, bx1, by1, bz1, we2);
+      //auto [bnx1, bny1, bnz1] = mag_unit_vec(bx1, by1, bz1);
+      auto [bnx1, bny1, bnz1] = mag_unit_vec_rel( ex1, ey1, ez1, bx1, by1, bz1, vex1, vey1, vez1, kappa1);
 
       //-------------------------------------------------- 
       // location update
@@ -439,9 +504,10 @@ void pic::rGCAPusher<D,V>::push_container(
 
       //-------------------------------------------------- 
       if(false) {
-      //if(n == 0) {
+      //if(n == 5661) {
       //if(mu > 1.0) {
         //crash_flag = true;
+      //if(debug_flag2) {
           
         double b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
         double e1 = sqrt( ex1*ex1 + ey1*ey1 + ez1*ez1 );
@@ -478,6 +544,8 @@ void pic::rGCAPusher<D,V>::push_container(
         " upar:" << upar01
         << " k0:" << k0 
         << " k1:" << k1 
+        << " G0:" << G0 
+        << " G1:" << G1 
         << "\n"
         << " mu:" << mu 
         << " ug:" << sqrt(ug2) << " ugn:" << sqrt(ug2n)
@@ -486,8 +554,7 @@ void pic::rGCAPusher<D,V>::push_container(
         << "\n"
         << " vex1:" << vex1 << " vey:" << vey1 << " vez:" << vez1 << " kappa1:" << kappa1
         << "\n\n";
-      std::cout << std::flush;
-
+        std::cout << std::flush;
       }
 
       // exit if converged
@@ -501,6 +568,12 @@ void pic::rGCAPusher<D,V>::push_container(
     con.vel(0,n) = un1x;
     con.vel(1,n) = un1y;
     con.vel(2,n) = un1z;
+
+
+    double dxp = std::abs( con.loc(0,n) - R1x );
+    double dyp = std::abs( con.loc(1,n) - R1y );
+    double dzp = std::abs( con.loc(2,n) - R1z );
+
 
     // position update from iteration, new location is following gyro center position
     if(D>=1) con.loc(0,n) = R1x;
@@ -523,10 +596,15 @@ void pic::rGCAPusher<D,V>::push_container(
     std::isnan(con.loc(1,n)) ||
     std::isnan(con.loc(2,n));   
 
+    // test that we do not move too far
+    if( (dxp > c) || (dyp > c) || (dzp > c) ) debug_flag = true;
+
     //if(1./kinv01 > 30.0) debug_flag = true;
     if(debug_flag){
       std::cout 
+        << " n:" << n
         << " loc0n:" << con.loc(0,n) << " loc1n:" << con.loc(1,n) << " loc2n:" << con.loc(2,n)
+        << " dx:" << dxp << " " << dyp << " " << dzp 
         << " ex0:" << ex0 << " ey0:" << ey0 << " ez0:" << ez0
         << " bx0:" << bx0 << " by0:" << by0 << " bz0:" << bz0
         << " bnx0:" << bnx0 << " bny:" << bny0 << " bnz:" << bnz0
@@ -542,7 +620,9 @@ void pic::rGCAPusher<D,V>::push_container(
       std::cout << std::flush;
       assert(false);
     }
-  }, con.size(), con);
+  //}, con.size(), con);
+  }
+
 
   UniIter::sync();
 
