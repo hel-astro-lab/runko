@@ -55,6 +55,8 @@ inline auto ExB_drift(
     
 
 //ExB in units of c with E.B != 0 correction
+//
+// Based on Beklemieshev & Tessarotto 1999 and assumes B > E
 inline auto ExB_drift_rel_approx( 
             double  ex,  double  ey,  double  ez,
             double  bx,  double  by,  double  bz
@@ -85,6 +87,7 @@ inline auto ExB_drift_rel_approx(
 //ExB in units of c with full E.B != 0  correction
 //
 // From Landau & Lifshitz: Classical theory of fields; pg 65
+// Smoothly connects drift (B > E) and acceleration regimes (B < E)
 inline auto ExB_drift_rel( 
             double  ex,  double  ey,  double  ez,
             double  bx,  double  by,  double  bz
@@ -167,6 +170,7 @@ inline auto mag_unit_vec_rel_approx(
 // b*: unit B field vector in relativistic drift frame
 //
 // i.e., \vec{B}/|B| field in the frame where ExB drift is zero
+// Not strictly correct when in acc. regime (E > B).
 //
 // From Landau & Lifshitz: Classical theory of fields; pg 62
 inline auto mag_unit_vec_rel( 
