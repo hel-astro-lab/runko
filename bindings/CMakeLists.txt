@@ -57,6 +57,8 @@ set (PIC_FILES
      ../pic/depositers/zigzag_2nd.c++
      ../pic/depositers/zigzag_3rd.c++
      ../pic/depositers/zigzag_4th.c++
+     ../pic/depositers/esikerpov_2nd.c++
+     ../pic/depositers/esikerpov_4th.c++
      )
 
 set (RAD_FILES 

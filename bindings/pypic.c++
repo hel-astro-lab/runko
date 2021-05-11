@@ -27,6 +27,8 @@ namespace py = pybind11;
 #include "../pic/depositers/zigzag_2nd.h"
 #include "../pic/depositers/zigzag_3rd.h"
 #include "../pic/depositers/zigzag_4th.h"
+#include "../pic/depositers/esikerpov_2nd.h"
+#include "../pic/depositers/esikerpov_4th.h"
 
 #include "../pic/communicate.h"
 
@@ -524,6 +526,11 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::ZigZag_4th<3,3>>(m_3d, "ZigZag_4th", picdeposit3d)
     .def(py::init<>());
 
+  py::class_<pic::Esikerpov_2nd<3,3>>(m_3d, "Esikerpov_2nd", picdeposit3d)
+    .def(py::init<>());
+
+  py::class_<pic::Esikerpov_4th<3,3>>(m_3d, "Esikerpov_4th", picdeposit3d)
+    .def(py::init<>());
 
   //--------------------------------------------------
   //2 D piston
