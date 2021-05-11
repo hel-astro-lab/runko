@@ -107,20 +107,20 @@ void pic::QuadraticInterpolator<D>::solve(
       // particle location in the primary and dual 1/2-shifted grid
 
       // DONE: default scheme
-      //int ip = round(xpn);
-      //int jp = round(ypn);
-      //int kp = round(zpn);
-      //int id = round(xpn-0.5f);
-      //int jd = round(ypn-0.5f);
-      //int kd = round(zpn-0.5f);
-
-      // Sokolov version
       int ip = round(xpn);
       int jp = round(ypn);
       int kp = round(zpn);
-      int id = floor(xpn-0.5);
-      int jd = floor(ypn-0.5);
-      int kd = floor(zpn-0.5);
+      int id = round(xpn-0.5);
+      int jd = round(ypn-0.5);
+      int kd = round(zpn-0.5);
+
+      // Sokolov version
+      //int ip = round(xpn);
+      //int jp = round(ypn);
+      //int kp = round(zpn);
+      //int id = floor(xpn-0.5);
+      //int jd = floor(ypn-0.5);
+      //int kd = floor(zpn-0.5);
 
       //--------------------------------------------------
       // coefficients on both prime and dual (staggered +0.5) grids
@@ -130,25 +130,16 @@ void pic::QuadraticInterpolator<D>::solve(
              cyp[3] = {0.0}, 
              czd[3] = {0.0}, 
              czp[3] = {0.0};
-
       
       // \Delta x from primary and staggered grid points
         
       // Default scheme
-      //double dxp = xpn-ip;
-      //double dyp = ypn-jp;
-      //double dzp = zpn-kp;
-      //double dxd = xpn-id-0.5;
-      //double dyd = ypn-jd-0.5;
-      //double dzd = zpn-kd-0.5;
-
-      //Sokolov alternating scheme
-      double dxp = xpn     - ip;
-      double dyp = ypn     - jp;
-      double dzp = zpn     - kp;
-      double dxd = xpn-0.5 - id;
-      double dyd = ypn-0.5 - jd;
-      double dzd = zpn-0.5 - kd;
+      double dxp = xpn-ip;
+      double dyp = ypn-jp;
+      double dzp = zpn-kp;
+      double dxd = xpn-id-0.5;
+      double dyd = ypn-jd-0.5;
+      double dzd = zpn-kd-0.5;
 
       //--------------------------------------------------
       // Lorentz contract lenghts
@@ -169,21 +160,20 @@ void pic::QuadraticInterpolator<D>::solve(
       // compute shape function weights
         
       // Default scheme
-      //if(D >= 1) W2nd(dxp, &cxp[0] );
-      //if(D >= 2) W2nd(dyp, &cyp[0] );
-      //if(D >= 3) W2nd(dzp, &czp[0] );
-      //if(D >= 1) W2nd(dxd, &cxd[0] );
-      //if(D >= 2) W2nd(dyd, &cyd[0] );
-      //if(D >= 3) W2nd(dzd, &czd[0] );
+      if(D >= 1) W2nd(dxp, &cxp[0] );
+      if(D >= 2) W2nd(dyp, &cyp[0] );
+      if(D >= 3) W2nd(dzp, &czp[0] );
+      if(D >= 1) W2nd(dxd, &cxd[0] );
+      if(D >= 2) W2nd(dyd, &cyd[0] );
+      if(D >= 3) W2nd(dzd, &czd[0] );
 
       //ver2: Eneryg conserving Sokolov alternating shape function scheme
-      W1st(dxd, &cxd[0] );
-      W1st(dyd, &cyd[0] );
-      W1st(dzd, &czd[0] );
-
-      W2nd(dxp, &cxp[0] );
-      W2nd(dyp, &cyp[0] );
-      W2nd(dzp, &czp[0] );
+      //W1st(dxd, &cxd[0] );
+      //W1st(dyd, &cyd[0] );
+      //W1st(dzd, &czd[0] );
+      //W2nd(dxp, &cxp[0] );
+      //W2nd(dyp, &cyp[0] );
+      //W2nd(dzp, &czp[0] );
 
       bool debug = false;
       for(int iii=0; iii<3; iii++){

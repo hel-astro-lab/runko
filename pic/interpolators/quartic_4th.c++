@@ -109,20 +109,20 @@ void pic::QuarticInterpolator<D>::solve(
       // particle location in the primary and dual 1/2-shifted grid
 
       // Default scheme
-      //int ip = round(xpn);
-      //int jp = round(ypn);
-      //int kp = round(zpn);
-      //int id = round(xpn-0.5);
-      //int jd = round(ypn-0.5);
-      //int kd = round(zpn-0.5);
-
-      // Sokolev scheme
       int ip = round(xpn);
       int jp = round(ypn);
       int kp = round(zpn);
-      int id = floor(xpn-0.5);
-      int jd = floor(ypn-0.5);
-      int kd = floor(zpn-0.5);
+      int id = round(xpn-0.5);
+      int jd = round(ypn-0.5);
+      int kd = round(zpn-0.5);
+
+      // Sokolev scheme
+      //int ip = round(xpn);
+      //int jp = round(ypn);
+      //int kp = round(zpn);
+      //int id = floor(xpn-0.5);
+      //int jd = floor(ypn-0.5);
+      //int kd = floor(zpn-0.5);
 
       //--------------------------------------------------
       // coefficients on both prime and dual (staggered +0.5) grids
@@ -136,40 +136,31 @@ void pic::QuarticInterpolator<D>::solve(
       // \Delta x from primary and staggered grid points
         
       // Default scheme
-      //double dxp = xpn-ip;
-      //double dyp = ypn-jp;
-      //double dzp = zpn-kp;
-      //double dxd = xpn-id-0.5;
-      //double dyd = ypn-jd-0.5;
-      //double dzd = zpn-kd-0.5;
-
-      //Sokolov alternating scheme
-      double dxp = xpn     - ip;
-      double dyp = ypn     - jp;
-      double dzp = zpn     - kp;
-      double dxd = xpn-0.5 - id;
-      double dyd = ypn-0.5 - jd;
-      double dzd = zpn-0.5 - kd;
+      double dxp = xpn-ip;
+      double dyp = ypn-jp;
+      double dzp = zpn-kp;
+      double dxd = xpn-id-0.5;
+      double dyd = ypn-jd-0.5;
+      double dzd = zpn-kd-0.5;
 
       //--------------------------------------------------
       // compute shape function weights
         
       // default scheme
-      //if(D >= 1) W4th(dxp, &cxp[0] );
-      //if(D >= 2) W4th(dyp, &cyp[0] );
-      //if(D >= 3) W4th(dzp, &czp[0] );
-      //if(D >= 1) W4th(dxd, &cxd[0] );
-      //if(D >= 2) W4th(dyd, &cyd[0] );
-      //if(D >= 3) W4th(dzd, &czd[0] );
-      
-      //ver2: Eneryg conserving Sokolov alternating shape function scheme
-      if(D >= 1) W3rd(dxd, &cxd[0] );
-      if(D >= 2) W3rd(dyd, &cyd[0] );
-      if(D >= 3) W3rd(dzd, &czd[0] );
-
       if(D >= 1) W4th(dxp, &cxp[0] );
       if(D >= 2) W4th(dyp, &cyp[0] );
       if(D >= 3) W4th(dzp, &czp[0] );
+      if(D >= 1) W4th(dxd, &cxd[0] );
+      if(D >= 2) W4th(dyd, &cyd[0] );
+      if(D >= 3) W4th(dzd, &czd[0] );
+      
+      //ver2: Eneryg conserving Sokolov alternating shape function scheme
+      //if(D >= 1) W3rd(dxd, &cxd[0] );
+      //if(D >= 2) W3rd(dyd, &cyd[0] );
+      //if(D >= 3) W3rd(dzd, &czd[0] );
+      //if(D >= 1) W4th(dxp, &cxp[0] );
+      //if(D >= 2) W4th(dyp, &cyp[0] );
+      //if(D >= 3) W4th(dzp, &czp[0] );
 
       bool debug = false;
       for(int iii=0; iii<5; iii++){
@@ -213,20 +204,20 @@ void pic::QuarticInterpolator<D>::solve(
       // 4th order -2,-1,0,1,2 access pattern
         
       // default scheme
-      //con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], yee.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
-      //con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], yee.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
-      //con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], yee.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
-      //con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], yee.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
-      //con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], yee.by, iy,iz,  id,jp,kd); // By(d,p,d)
-      //con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], yee.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
-
-      // Sokolov
       con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], yee.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
       con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], yee.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
       con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], yee.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
       con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], yee.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
       con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], yee.by, iy,iz,  id,jp,kd); // By(d,p,d)
       con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], yee.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
+
+      // Sokolov
+      //con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], yee.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
+      //con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], yee.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
+      //con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], yee.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
+      //con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], yee.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
+      //con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], yee.by, iy,iz,  id,jp,kd); // By(d,p,d)
+      //con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], yee.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
 
     //}, con.size(), yee, con);
     }
