@@ -22,6 +22,13 @@ inline T clamp(T x, T xmin, T xmax) {
   return x;
 }
 
+// capped index so that it does not overflow tile from max side; 
+// stencil offset is baked in via the -3 terms; N+2 is maximum of tile with halo
+size_t cap(int ip, size_t i, int N) {
+  //return i + size_t(clamp(ip+int(i)-3, -3, N+2)) - size_t(ip); 
+  return 3 + std::min(ip+int(i)-3, N+2) - ip;
+}
+
 
 
 template<size_t D, size_t V>
@@ -48,30 +55,32 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
   //--------------------------------------------------
   // vectorized arrays
 
-  const int vec_size = 16; 
-  unsigned int batch_size = 7*7*7*vec_size; // = 22 Mbytes (16 vec)
+  const int vec_size = 8; 
+  //unsigned int batch_size = 7*7*7*vec_size; // = 22 Mbytes (16 vec)
+  unsigned int bs = 7*vec_size;
 
-  float batch_J[ batch_size ] __attribute__( ( aligned( 64 ) ) );
-  float Sx0_v[48]             __attribute__( ( aligned( 64 ) ) );
-  float Sy0_v[48]             __attribute__( ( aligned( 64 ) ) );
-  float Sz0_v[48]             __attribute__( ( aligned( 64 ) ) );
-  float DSx_v[56]             __attribute__( ( aligned( 64 ) ) );
-  float DSy_v[56]             __attribute__( ( aligned( 64 ) ) );
-  float DSz_v[56]             __attribute__( ( aligned( 64 ) ) );
+  //double batch_J[ batch_size ] __attribute__( ( aligned( 64 ) ) );
+  double Sx0_v[bs]  __attribute__( ( aligned( 64 ) ) );
+  double Sy0_v[bs]  __attribute__( ( aligned( 64 ) ) );
+  double Sz0_v[bs]  __attribute__( ( aligned( 64 ) ) );
+  double DSx_v[bs]  __attribute__( ( aligned( 64 ) ) );
+  double DSy_v[bs]  __attribute__( ( aligned( 64 ) ) );
+  double DSz_v[bs]  __attribute__( ( aligned( 64 ) ) );
+  double sum_v[bs]  __attribute__( ( aligned( 64 ) ) );
 
 
-  static constexpr float one_third    = 1.0/3.0;
-  static constexpr float f_1_ov_384   = 1.0/384.0;
-  static constexpr float f_1_ov_48    = 1.0/48.0;
-  static constexpr float f_1_ov_16    = 1.0/16.0;
-  static constexpr float f_1_ov_12    = 1.0/12.0;
-  static constexpr float f_1_ov_24    = 1.0/24.0;
-  static constexpr float f_19_ov_96   = 19.0/96.0;
-  static constexpr float f_11_ov_24   = 11.0/24.0;
-  static constexpr float f_1_ov_4     = 1.0/4.0;
-  static constexpr float f_1_ov_6     = 1.0/6.0;
-  static constexpr float f_115_ov_192 = 115.0/192.0;
-  static constexpr float f_5_ov_8     = 5.0/8.0;
+  static constexpr double one_third   = 1.0/3.0;
+  static constexpr double f1_ov_384   = 1.0/384.0;
+  static constexpr double f1_ov_48    = 1.0/48.0;
+  static constexpr double f1_ov_16    = 1.0/16.0;
+  static constexpr double f1_ov_12    = 1.0/12.0;
+  static constexpr double f1_ov_24    = 1.0/24.0;
+  static constexpr double f19_ov_96   = 19.0/96.0;
+  static constexpr double f11_ov_24   = 11.0/24.0;
+  static constexpr double f1_ov_4     = 1.0/4.0;
+  static constexpr double f1_ov_6     = 1.0/6.0;
+  static constexpr double f115_ov_192 = 115.0/192.0;
+  static constexpr double f5_ov_8     = 5.0/8.0;
 
 
   for(auto&& con : tile.containers) {
@@ -80,103 +89,102 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
     int iend   = con.size();
     int nparts = iend-istart;
 
-
-    // Closest multiple of vec_size higher or equal to npart = iend-istart.
-    //int num_vecs = ( iend-istart+(nparts-1)-( (iend-istart-1)&(nparts-1)))/vec_size;
-    //if(num_vecs*vec_size != nparts) num_vecs++;
+    // mesh sizes for 1D indexing
+    const size_t iy = D >= 2 ? yee.jx.indx(0,1,0) - yee.jx.indx(0,0,0) : 0;
+    const size_t iz = D >= 3 ? yee.jx.indx(0,0,1) - yee.jx.indx(0,0,0) : 0;
 
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
 
-    #pragma omp simd
-    for( unsigned int j=0; j<batch_size; j++ ) batch_J[j] = 0.;
-
-
     // loop over batches of particles; each batch holds vec_size x particles
     // that are processed simultaneously.
+    //
+    // NOTE: ivect is the index of the first prtcl of the batch
     for(int ivect=0; ivect < nparts; ivect += vec_size) {
 
       // process either vec_size prtcls or up to the end of array
-      int np_computed = min(nparts-ivect, vec_size);
+      int batch_size = min(nparts-ivect, vec_size);
 
       #pragma omp simd
-      for( int ip=0 ; ip<np_computed; ip++ ) {
+      for(int ip=0 ; ip<batch_size; ip++ ) {
 
         //--------------------------------------------------
         // particle locations
         
-        int n = ip + ivect*nparts; // actual running prtcl loop index
-        float u = con.vel(0,n);
-        float v = con.vel(1,n);
-        float w = con.vel(2,n);
-        float invgam = 1.0/sqrt(1.0 + u*u + v*v + w*w);
+        int n = ip + ivect; // actual running prtcl loop index
+        double u = con.vel(0,n);
+        double v = con.vel(1,n);
+        double w = con.vel(2,n);
+        double invgam = 1.0/sqrt(1.0 + u*u + v*v + w*w);
           
         // new (normalized) location, x_{n+1}
-        float x2 = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
-        float y2 = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
-        float z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
+        double x2 = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
+        double y2 = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
+        double z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
         // previous location, x_n
-        float x1 = x2 - u*invgam*c;
-        float y1 = y2 - v*invgam*c;
-        float z1 = z2 - w*invgam*c; 
+        double x1 = x2 - u*invgam*c;
+        double y1 = y2 - v*invgam*c;
+        double z1 = z2 - w*invgam*c; 
 
         // primary grid; -1/2 to +1/2
         int i1p = D >= 1 ? round(x1) : 0;
-        int i2p = D >= 1 ? round(x2) : 0;
         int j1p = D >= 2 ? round(y1) : 0;
-        int j2p = D >= 2 ? round(y2) : 0;
         int k1p = D >= 3 ? round(z1) : 0;
+
+        int i2p = D >= 1 ? round(x2) : 0;
+        int j2p = D >= 2 ? round(y2) : 0;
         int k2p = D >= 3 ? round(z2) : 0;
+
 
         //--------------------------------------------------
         // calculate shape coefficients at former time step
-        float d;
+        double d;
           
-        d = x1 - float(i1p);
-        Sx0_v[            ip] = f1_ov_384   - f1_ov_48  * d  + f1_ov_16 * d*d - f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        Sx0_v[1*vec_size +ip] = f19_ov_96   - f11_ov_24 * d  + f1_ov_4  * d*d + f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        Sx0_v[2*vec_size +ip] = f115_ov_192                  - f5_ov_8  * d*d                    + f1_ov_4  * d*d*d*d;
-        Sx0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24 * d  + f1_ov_4  * d*d - f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        Sx0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48  * d  + f1_ov_16 * d*d + f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        Sx0_v[5*vec_size +ip] = 0.0f;
+        d = x1 - double(i1p);
+        Sx0_v[            ip] = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        Sx0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        Sx0_v[2*vec_size +ip] = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
+        Sx0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        Sx0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        Sx0_v[5*vec_size +ip] = 0.0;
+
+        d = y1 - double(j1p);
+        Sy0_v[            ip] = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        Sy0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        Sy0_v[2*vec_size +ip] = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
+        Sy0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        Sy0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        Sy0_v[5*vec_size +ip] = 0.0;
         
-        //                             Y                                 //
-        d = y1 - float(j1p);
-        Sy0_v[            ip] = f1_ov_384   - f1_ov_48  * d  + f1_ov_16 * d*d - f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        Sy0_v[1*vec_size +ip] = f19_ov_96   - f11_ov_24 * d  + f1_ov_4  * d*d + f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        Sy0_v[2*vec_size +ip] = f115_ov_192                  - f5_ov_8  * d*d                    + f1_ov_4  * d*d*d*d;
-        Sy0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24 * d  + f1_ov_4  * d*d - f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        Sy0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48  * d  + f1_ov_16 * d*d + f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        Sy0_v[5*vec_size +ip] = 0.0f;
-        
-        //                             Z                                 //
-        d = z1 - float(k1p);
-        Sz0_v[            ip] = f1_ov_384   - f1_ov_48  * d  + f1_ov_16 * d*d - f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        Sz0_v[1*vec_size +ip] = f19_ov_96   - f11_ov_24 * d  + f1_ov_4  * d*d + f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        Sz0_v[2*vec_size +ip] = f115_ov_192                  - f5_ov_8  * d*d                    + f1_ov_4  * d*d*d*d;
-        Sz0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24 * d  + f1_ov_4  * d*d - f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        Sz0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48  * d  + f1_ov_16 * d*d + f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        Sz0_v[5*vec_size +ip] = 0.0f;
+        d = z1 - double(k1p);
+        Sz0_v[            ip] = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        Sz0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        Sz0_v[2*vec_size +ip] = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
+        Sz0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        Sz0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        Sz0_v[5*vec_size +ip] = 0.0;
+
 
         //--------------------------------------------------
         // calculate shape coefficients at new time step
 
-        float S0, S1, S2, S3, S4, m1, c0, p1; // temporary variables
+        double S0, S1, S2, S3, S4, m1, c0, p1; // temporary variables
         int cell_shift;
 
-        d = x2 - float(i2p), 
+        d = x2 - double(i2p), 
         cell_shift = i2p - i1p; 
 
         m1 = ( cell_shift == -1 );
         c0 = ( cell_shift ==  0 );
         p1 = ( cell_shift ==  1 );
 
-        S1 = f19_ov_96   - f11_ov_24 * d  + f1_ov_4  * d*d + f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        S2 = f115_ov_192                  - f5_ov_8  * d*d                    + f1_ov_4  * d*d*d*d;
-        S3 = f19_ov_96   + f11_ov_24 * d  + f1_ov_4  * d*d - f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        S4 = f1_ov_384   + f1_ov_48  * d  + f1_ov_16 * d*d + f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
+        S0 = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        S1 = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        S2 = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
+        S3 = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        S4 = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
 
         DSx_v[            ip] = m1*S0;
         DSx_v[  vec_size +ip] = c0*S0 + m1*S1                         - Sx0_v[           ip];
@@ -189,17 +197,17 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
 
         //--------------------------------------------------
         // y
-        d = y2 - float(j2p), 
+        d = y2 - double(j2p), 
         cell_shift = j2p - j1p; 
         m1 = ( cell_shift == -1 );
         c0 = ( cell_shift ==  0 );
         p1 = ( cell_shift ==  1 );
 
-        S0 = f1_ov_384   - f1_ov_48  * d  + f1_ov_16 * d*d - f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        S1 = f19_ov_96   - f11_ov_24 * d  + f1_ov_4  * d*d + f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        S2 = f115_ov_192                  - f5_ov_8  * d*d                    + f1_ov_4  * d*d*d*d;
-        S3 = f19_ov_96   + f11_ov_24 * d  + f1_ov_4  * d*d - f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        S4 = f1_ov_384   + f1_ov_48  * d  + f1_ov_16 * d*d + f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
+        S0 = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        S1 = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        S2 = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
+        S3 = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        S4 = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
 
         DSy_v[            ip] = m1*S0;
         DSy_v[  vec_size +ip] = c0*S0 + m1*S1                         - Sy0_v[           ip];
@@ -212,17 +220,17 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
 
         //--------------------------------------------------
         // z
-        d = z2 - float(k2p), 
+        d = z2 - double(k2p), 
         cell_shift = k2p - k1p; 
         m1 = ( cell_shift == -1 );
         c0 = ( cell_shift ==  0 );
         p1 = ( cell_shift ==  1 );
 
-        S0 = f1_ov_384   - f1_ov_48  * d  + f1_ov_16 * d*d - f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
-        S1 = f19_ov_96   - f11_ov_24 * d  + f1_ov_4  * d*d + f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        S2 = f115_ov_192 - f5_ov_8   * d*d + f1_ov_4  * d*d*d*d;
-        S3 = f19_ov_96   + f11_ov_24 * d  + f1_ov_4  * d*d - f1_ov_6  * d*d*d - f1_ov_6  * d*d*d*d;
-        S4 = f1_ov_384   + f1_ov_48  * d  + f1_ov_16 * d*d + f1_ov_12 * d*d*d + f1_ov_24 * d*d*d*d;
+        S0 = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        S1 = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        S2 = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
+        S3 = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
+        S4 = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
 
         DSz_v[            ip] = m1*S0;
         DSz_v[  vec_size +ip] = c0*S0 + m1*S1                         - Sz0_v[           ip];
@@ -230,225 +238,143 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
         DSz_v[3*vec_size +ip] =         p1*S1 + c0*S2 + m1*S3         - Sz0_v[2*vec_size+ip];
         DSz_v[4*vec_size +ip] =                 p1*S2 + c0*S3 + m1*S4 - Sz0_v[3*vec_size+ip];
         DSz_v[5*vec_size +ip] =                         p1*S3 + c0*S4 - Sz0_v[4*vec_size+ip];
-        DSz_v[6*vec_size +ip] =                                    p1 * S4;
+        DSz_v[6*vec_size +ip] =                                 p1*S4;
     
 
-      //} // end if ip // FIXME not in GPU
-      //// Jx^(d,p,p)
-      //#pragma omp simd
-      //for( int ip=0 ; ip<np_computed; ip++ ) {
+        //std::cout << "index1" << i1p << " " << j1p << " " << k1p 
+        //          << "index2" << i2p << " " << j2p << " " << k2p << "\n";
+        //std::cout 
+        //  << "cur " 
+        //  << " i1: "  << "(" << i1p << "," << j1p << "," << k1p << ")"
+        //  << " i2: "  << "(" << i2p << "," << j2p << "," << k2p << ")"
+        //  << " x1: " << "(" << x1 << "," << y1 << "," << z1 << ")"
+        //  << " x2: " << "(" << x2 << "," << y2 << "," << z2 << ")"
+        //  << "\n";
+
+        //size_t ind = yee.jx.indx(i2p,j2p,k2p);  // TODO wrong
+        //std::cout << "done" << ind << "\n";
+
+        //size_t ind = yee.jx.indx(i1p,j1p,k1p); 
+
 
         //--------------------------------------------------
         //// Jx^(d,p,p)
-        float sum[7] = {0.0f};
-        for(int k=1; k<7; k++) sum[k] = sum[k-1]-DSx_v[( k-1 )*vec_size+ip];
-        
-        float tmp = q*c*one_third*DSy_v[ip]*DSz_v[ip];
-        for(int i=1; i<7; i++) batch_J [ i*49*vec_size + ip ] += sum[i]*tmp;
-        
+        sum_v[ip+0*vec_size] = 0.0;
+        // FIXME changed
+        for(size_t k=1; k<7; k++) sum_v[ip + k*vec_size] = sum_v[ip+(k-1)*vec_size] - q*c*DSx_v[ip+(k-1)*vec_size];
 
-        for(int k=1 ; k<7 ; k++ ) {
-          tmp = q*c*(0.5f*DSy_v[ip]*Sz0_buff_vect[ (k-1)*vec_size + ip] + one_third*DSy_v[ip]*DSz_v[k*vec_size + ip] );
-          int index = k*vec_size + ip;
+        //int  z_size0 = nprimz;
+        //int yz_size0 = nprimz*nprimy;
+        //int linindex0 = iold[ipart+0*nparts]*yz_size0+iold[ipart+1*nparts]*z_size0+iold[ipart+2*nparts];
 
-          for(int i=1; i<7; i++) batch_J[ index + 49*i*vec_size ] += sum[i]*tmp;
-        }
+        // one-dimensional index
+        size_t ind0 = yee.jx.indx(i1p,j1p,k1p); 
 
-        for(int j=1 ; j<7 ; j++ ) {
-          tmp = crx_p * ( 0.5f*DSz_v[ip]*Sy0_buff_vect[( j-1 )*vec_size+ip] + one_third*DSy_v[j*vec_size+ip]*DSz_v[ip] );
-          int index = j*7*vec_size+ip;
+        for(size_t k=0; k<7; k++ ) {
+          size_t k0 = cap(k1p, k, Nz);
 
-          for(int i=1; i<7; i++) batch_J[ index+49*i*vec_size ] += sum[i]*tmp;
-        }
+          for(size_t j=0; j<7; j++ ) {
+            size_t j0 = cap(j1p, j, Ny);
 
-        for( int j=1 ; j<7 ; j++ ) {
-          for( int k=1 ; k<7 ; k++ ) {
-            tmp = q*c*( Sy0_buff_vect[( j-1 )*vec_size+ip]*Sz0_buff_vect[( k-1 )*vec_size+ip]
-                                + 0.5f*DSy_v[j*vec_size+ip]*Sz0_buff_vect[( k-1 )*vec_size+ip]
-                                + 0.5f*DSz_v[k*vec_size+ip]*Sy0_buff_vect[( j-1 )*vec_size+ip]
-                                + one_third*DSy_v[j*vec_size+ip]*DSz_v[k*vec_size+ip] );
-            int index = (j*7 + k)*vec_size + ip;
-            for(int i=1; i<7; i++) batch_J[ index + 49*i*vec_size ] += sum[i]*tmp;
+            double tmp =             Sy0_v[ip + j*vec_size]*Sz0_v[ip + k*vec_size] 
+                         +       0.5*DSy_v[ip + j*vec_size]*Sz0_v[ip + k*vec_size] 
+                         +       0.5*DSz_v[ip + k*vec_size]*Sy0_v[ip + j*vec_size] 
+                         + one_third*DSy_v[ip + j*vec_size]*DSz_v[ip + k*vec_size];
+
+            for(size_t i=1; i<7; i++) {
+              size_t i0 = cap(i1p, i, Nx);
+
+              double val = sum_v[ip + i*vec_size]*tmp;
+              size_t idx = ind0 + (i0-3) + (j0-3)*iy + (k0-3)*iz;
+
+              assert(val < 1.0);
+
+              atomic_add( yee.jx(idx), val );
+              //yee.jx(idx) += val;
+            }
           }
         }
 
 
-    // FIXME not in GPU
-    //  } // end of ip
-    //} // end of ivect
+        //--------------------------------------------------
+        // Jy^(p,d,p)
+        sum_v[ip+0*vec_size] = 0.0;
+        for(size_t k=1; k<7; k++) sum_v[ip+k*vec_size] = sum_v[ip+(k-1)*vec_size] - q*c*DSy_v[ip+(k-1)*vec_size];
 
-    //-------------------------------------------------- 
-    // deposit cached jx current to grid
-    int iloc0 = ipom2*nprimy*nprimz+jpom2*nprimz+kpom2;
+        //int  z_size1 = nprimz;
+        //int yz_size1 = nprimz*( nprimy+1 ); // TODO: has nprimy+1
+        //int linindex1 = iold[ipart+0*nparts]*yz_size1+iold[ipart+1*nparts]*z_size1+iold[ipart+2*nparts];
 
-    int iloc  = iloc0;
-    for( int i=1 ; i<7 ; i++ ) {
-      iloc += nprimy*nprimz;
-      for( int j=0 ; j<7 ; j++ ) {
+        size_t ind1 = yee.jx.indx(i1p,j1p+1,k1p); 
 
-        #pragma omp simd
-        for( int k=0 ; k<7 ; k++ ) {
-          float tmpJx = 0.;
-          int ilocal = ( ( i )*49+j*7+k )*vec_size;
+        for(size_t k=0; k<7; k++ ) {
+          size_t k0 = cap(k1p, k, Nz);
 
-          #pragma unroll(8)
-          for( int ip=0 ; ip<8; ip++ ) tmpJx += batch_J[ilocal + ip];
+          for(size_t i=0; i<7; i++ ) {
+            size_t i0 = cap(i1p, i, Nx);
 
-          //Jx[iloc+j*nprimz+k] += tmpJx;
-          //atomic_add( yee.jx(iloc, jloc, kloc), tmpJx[j][k] );
-          yee.jx(iloc, jloc, kloc) += tmpJx[j][k];
+            double tmp =             Sz0_v[ip+k*vec_size]*Sx0_v[ip+i*vec_size] 
+                         +       0.5*DSz_v[ip+k*vec_size]*Sx0_v[ip+i*vec_size] 
+                         +       0.5*DSx_v[ip+i*vec_size]*Sz0_v[ip+k*vec_size] 
+                         + one_third*DSz_v[ip+k*vec_size]*DSx_v[ip+i*vec_size];
+
+            for(size_t j=1; j<7; j++ ) {
+              size_t j0 = cap(j1p, j, Ny);
+              //size_t idx = ind + i0 + j0*iy + k0*iz; //linindex1 + k + i*yz_size1;
+                
+              double val = sum_v[ip + j*vec_size]*tmp;
+              //size_t idx = ind + (i0-3) + (j0-3)*iy + (k0-3)*iz;
+              size_t idx = ind1 + (i0-3) + (j0-3)*(iy+1) + (k0-3)*iz; // FIXME
+
+              assert(val < 1.0);
+              atomic_add( yee.jy(idx), val ); // NOTE: jumps of j*iy
+              //yee.jy(idx) += val;
+            }
+          }
         }
-      }
-    }
-
-    // TODO: why all calcs are repeated???
-    //  why not just compute these inside the loop?
-
-    //-------------------------------------------------- 
-    //-------------------------------------------------- 
-    //-------------------------------------------------- 
-    // Jy^(p,d,p)
-
-    #pragma omp simd
-    for( int j=0; j<batch_size; j++ ) batch_J[j] = 0.0f;
 
 
+        //--------------------------------------------------
+        // Jz^(p,p,d)
+        sum_v[ip+0*vec_size] = 0.0;
+        for(size_t k=1; k<7; k++) sum_v[ip+k*vec_size] = sum_v[ip+(k-1)*vec_size] - q*c*DSz_v[ip+(k-1)*vec_size];
 
-    nparts = ( int )iend-( int )istart;
-    for( int ivect=0 ; ivect < nparts; ivect += vec_size ) {
-      int np_computed( min( nparts-ivect, vec_size ) );
-        
+        //int z_size2 =  nprimz+1; // TODO has nprimz+1
+        //int yz_size2 = ( nprimz+1 )*nprimy; // TODO has nprimz+1
+        //int linindex2 = iold[ipart+0*nparts]*yz_size2+iold[ipart+1*nparts]*z_size2+iold[ipart+2*nparts];
 
-      #pragma omp simd
-      for( int ip=0 ; ip<np_computed; ip++ ) {
-        float sum[7] = {0.0f};
+        size_t ind2 = yee.jx.indx(i1p,j1p,k1p+1); 
+        for(size_t k=1; k<7; k++ ) {
+          size_t k0 = cap(k1p, k, Nz);
 
-        for( int k=1 ; k<7 ; k++ ) sum[k] = sum[k-1]-DSy[( k-1 )*vec_size+ip];
-        
-        float tmp( cry_p *one_third*DSz[ip]*DSx[ip] );
-        for( int j=1 ; j<7 ; j++ ) batch_J [( ( j )*7 )*vec_size+ip] += sum[j]*tmp;
+          for(size_t i=0; i<7; i++ ) {
+            size_t i0 = cap(i1p, i, Nx);
 
+            for(size_t j=0; j<7; j++ ) {
+              size_t j0 = cap(j1p, j, Ny);
 
-        for( int k=1 ; k<7 ; k++ ) {
-            tmp = cry_p * ( 0.5*DSx[0]*Sz0_buff_vect[( k-1 )*vec_size+ip] + one_third*DSz[k*vec_size+ip]*DSx[ip] );
-            int index( ( k )*vec_size+ip );
+              double tmp =             Sx0_v[ip+i*vec_size]*Sy0_v[ip+j*vec_size] 
+                           +       0.5*DSx_v[ip+i*vec_size]*Sy0_v[ip+j*vec_size] 
+                           +       0.5*DSy_v[ip+j*vec_size]*Sx0_v[ip+i*vec_size] 
+                           + one_third*DSx_v[ip+i*vec_size]*DSy_v[ip+j*vec_size];
 
-            for( int j=1 ; j<7 ; j++ ) batch_J [ index+7*j*vec_size ] += sum[j]*tmp;
+              //size_t idx = linindex2 + j*z_size2 + i*yz_size2;
+
+              double val = sum_v[ip + k*vec_size]*tmp;
+              //size_t idx = ind + (i0-3) + (j0-3)*iy + (k0-3)*(iz);
+              size_t idx = ind2 + (i0-3) + (j0-3)*iy + (k0-3)*(iz+1); // FIXME
+
+              //std::cout << sum_v[ip + k*vec_size] << " " << tmp;
+              assert(val < 1.0);
+              atomic_add( yee.jz(idx), val ); // NOTE: jumps of k*iz
+              //yee.jz(idx) += val; 
+            }
+          }
         }
-        for( int i=1 ; i<7 ; i++ ) {
-            tmp = cry_p * ( 0.5*DSz[ip]*Sx0_buff_vect[( i-1 )*vec_size+ip] + one_third*DSz[0]*DSx[i*vec_size+ip] );
-            int index( ( i*49 )*vec_size+ip );
-
-            for( int j=1 ; j<7 ; j++ ) batch_J [ index+7*j*vec_size ] += sum[j]*tmp;
-        }
-        for( int i=1 ; i<7 ; i++ ) {
-            for( int k=1 ; k<7 ; k++ ) {
-                tmp = cry_p * ( Sz0_buff_vect[( k-1 )*vec_size+ip]*Sx0_buff_vect[( i-1 )*vec_size+ip]
-                                + 0.5*DSz[k*vec_size+ip]*Sx0_buff_vect[( i-1 )*vec_size+ip]
-                                + 0.5*DSx[i*vec_size+ip]*Sz0_buff_vect[( k-1 )*vec_size+ip]
-                                + one_third*DSz[k*vec_size+ip]*DSx[i*vec_size+ip] );
-                int index( ( i*49 + k )*vec_size+ip );
-
-                for( int j=1 ; j<7 ; j++ ) batch_J [ index+7*j*vec_size ] += sum[j]*tmp;
-            }
-        }//i
-      }
-    } // end of ivect
 
 
-    iloc = iloc0+ipom2*nprimz;
-    for( int i=0 ; i<7 ; i++ ) {
-        for( int j=1 ; j<7 ; j++ ) {
-            #pragma omp simd
-            for( int k=0 ; k<7 ; k++ ) {
-                float tmpJy = 0.;
-                int ilocal = ( ( i )*49+j*7+k )*vec_size;
-
-                #pragma unroll(8)
-                for( int ip=0 ; ip<8; ip++ ) tmpJy += batch_J [ilocal+ip];
-
-                Jy[iloc+j*nprimz+k] += tmpJy;
-            }
-        }
-        iloc += ( nprimy+1 )*nprimz;
-    }
-
-
-    //-------------------------------------------------- 
-    //-------------------------------------------------- 
-    //-------------------------------------------------- 
-    // Jz^(p,p,d)
-
-    nparts = ( int )iend-( int )istart;
-    #pragma omp simd
-    for( int j=0; j<batch_size; j++ ) batch_J[j] = 0.;
-
-
-    for( int ivect=0 ; ivect < nparts; ivect += vec_size ) {
-        int np_computed( min( nparts-ivect, vec_size ) );
-
-
-        #pragma omp simd
-        for( int ip=0 ; ip<np_computed; ip++ ) {
-            
-            float sum[7] = {0.0f};
-            for( int k=1 ; k<7 ; k++ ) sum[k] = sum[k-1]-DSz[( k-1 )*vec_size+ip];
-            
-
-            float tmp = q*c*one_third*DSx[ip]*DSy[ip];
-            for( int k=1 ; k<7 ; k++ ) batch_J[( k )*vec_size+ip] += sum[k]*tmp;
-
-            for( int j=1 ; j<7 ; j++ ) {
-                tmp = q*c*( 0.5f*DSx[ip]*Sy0_buff_vect[( j-1 )*vec_size+ip] + one_third*DSx[ip]*DSy[j*vec_size+ip] );
-
-                int index = j*7*vec_size + ip;
-                for( int k=1 ; k<7 ; k++ ) batch_J [ index+k*vec_size ] += sum[k]*tmp;
-            }
-
-            for( int i=1 ; i<7 ; i++ ) {
-                tmp = q*c*( 0.5f*DSy[ip]*Sx0_buff_vect[( i-1 )*vec_size+ip] + one_third*DSx[i*vec_size+ip]*DSy[ip] );
-                int index = (i*49)*vec_size + ip;
-
-                for( int k=1 ; k<7 ; k++ ) batch_J [ index+k*vec_size ] += sum[k]*tmp;
-            }
-
-            for( int i=1 ; i<7 ; i++ ) {
-                for( int j=1 ; j<7 ; j++ ) {
-                    tmp = q*c*d( Sx0_buff_vect[( i-1 )*vec_size+ip]*Sy0_buff_vect[( j-1 )*vec_size+ip]
-                                    + 0.5f*DSx[i*vec_size+ip]*Sy0_buff_vect[( j-1 )*vec_size+ip]
-                                    + 0.5f*DSy[j*vec_size+ip]*Sx0_buff_vect[( i-1 )*vec_size+ip]
-                                    + one_third*DSx[i*vec_size+ip]*DSy[j*vec_size+ip] );
-                    int index( ( i*49 + j*7 )*vec_size+ip );
-
-                    for( int k=1 ; k<7 ; k++ ) batch_J [ index+k*vec_size ] += sum[k]*tmp;
-                }
-            }
-            
-        } // end of ip
-    }// end of ivect
-
-
-
-    iloc = iloc0  + jpom2 +ipom2*nprimy;
-    for( int i=0 ; i<7 ; i++ ) {
-        for( int j=0 ; j<7 ; j++ ) {
-
-            #pragma omp simd
-            for( int k=1 ; k<7 ; k++ ) {
-                float tmpJz = 0.;
-                int ilocal = ( ( i )*49+j*7+k )*vec_size;
-
-                #pragma unroll(8)
-                for( int ip=0 ; ip<8; ip++ ) tmpJz +=  batch_J[ilocal+ip];
-
-                Jz [iloc + ( j )*( nprimz+1 ) + k] +=  tmpJz;
-            }
-        }
-        iloc += nprimy*( nprimz+1 );
-    }
-
-
-
+      }// end ip
+    } //end ivect
   }//end of loop over species
 
 }
