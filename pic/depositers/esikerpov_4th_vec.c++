@@ -140,105 +140,109 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
 
         //--------------------------------------------------
         // calculate shape coefficients at former time step
-        double d;
-          
-        d = x1 - double(i1p);
-        Sx0_v[            ip] = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
-        Sx0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        Sx0_v[2*vec_size +ip] = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
-        Sx0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        Sx0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        double dx = x1 - double(i1p);
+        Sx0_v[            ip] = f1_ov_384   - f1_ov_48 *dx  + f1_ov_16*dx*dx - f1_ov_12*dx*dx*dx + f1_ov_24*dx*dx*dx*dx;
+        Sx0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*dx  + f1_ov_4 *dx*dx + f1_ov_6 *dx*dx*dx - f1_ov_6 *dx*dx*dx*dx;
+        Sx0_v[2*vec_size +ip] = f115_ov_192                 - f5_ov_8 *dx*dx                     + f1_ov_4 *dx*dx*dx*dx;
+        Sx0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*dx  + f1_ov_4 *dx*dx - f1_ov_6 *dx*dx*dx - f1_ov_6 *dx*dx*dx*dx;
+        Sx0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *dx  + f1_ov_16*dx*dx + f1_ov_12*dx*dx*dx + f1_ov_24*dx*dx*dx*dx;
         Sx0_v[5*vec_size +ip] = 0.0;
+        Sx0_v[6*vec_size +ip] = 0.0;
 
-        d = y1 - double(j1p);
-        Sy0_v[            ip] = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
-        Sy0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        Sy0_v[2*vec_size +ip] = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
-        Sy0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        Sy0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        double dy = y1 - double(j1p);
+        Sy0_v[            ip] = f1_ov_384   - f1_ov_48 *dy  + f1_ov_16*dy*dy - f1_ov_12*dy*dy*dy + f1_ov_24*dy*dy*dy*dy;
+        Sy0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*dy  + f1_ov_4 *dy*dy + f1_ov_6 *dy*dy*dy - f1_ov_6 *dy*dy*dy*dy;
+        Sy0_v[2*vec_size +ip] = f115_ov_192                 - f5_ov_8 *dy*dy                     + f1_ov_4 *dy*dy*dy*dy;
+        Sy0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*dy  + f1_ov_4 *dy*dy - f1_ov_6 *dy*dy*dy - f1_ov_6 *dy*dy*dy*dy;
+        Sy0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *dy  + f1_ov_16*dy*dy + f1_ov_12*dy*dy*dy + f1_ov_24*dy*dy*dy*dy;
         Sy0_v[5*vec_size +ip] = 0.0;
+        Sy0_v[6*vec_size +ip] = 0.0;
         
-        d = z1 - double(k1p);
-        Sz0_v[            ip] = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
-        Sz0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        Sz0_v[2*vec_size +ip] = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
-        Sz0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        Sz0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        double dz = z1 - double(k1p);
+        Sz0_v[            ip] = f1_ov_384   - f1_ov_48 *dz  + f1_ov_16*dz*dz - f1_ov_12*dz*dz*dz + f1_ov_24*dz*dz*dz*dz;
+        Sz0_v[  vec_size +ip] = f19_ov_96   - f11_ov_24*dz  + f1_ov_4 *dz*dz + f1_ov_6 *dz*dz*dz - f1_ov_6 *dz*dz*dz*dz;
+        Sz0_v[2*vec_size +ip] = f115_ov_192                 - f5_ov_8 *dz*dz                     + f1_ov_4 *dz*dz*dz*dz;
+        Sz0_v[3*vec_size +ip] = f19_ov_96   + f11_ov_24*dz  + f1_ov_4 *dz*dz - f1_ov_6 *dz*dz*dz - f1_ov_6 *dz*dz*dz*dz;
+        Sz0_v[4*vec_size +ip] = f1_ov_384   + f1_ov_48 *dz  + f1_ov_16*dz*dz + f1_ov_12*dz*dz*dz + f1_ov_24*dz*dz*dz*dz;
         Sz0_v[5*vec_size +ip] = 0.0;
+        Sz0_v[6*vec_size +ip] = 0.0;
 
 
         //--------------------------------------------------
         // calculate shape coefficients at new time step
 
-        double S0, S1, S2, S3, S4, m1, c0, p1; // temporary variables
-        int cell_shift;
+        double S0x, S1x, S2x, S3x, S4x;
+        double S0y, S1y, S2y, S3y, S4y;
+        double S0z, S1z, S2z, S3z, S4z;
 
-        d = x2 - double(i2p), 
-        cell_shift = i2p - i1p; 
+        dx = x2 - double(i2p);
+        int cell_shiftx = i2p - i1p; 
 
-        m1 = ( cell_shift == -1 );
-        c0 = ( cell_shift ==  0 );
-        p1 = ( cell_shift ==  1 );
+        double m1x = ( cell_shiftx == -1 );
+        double c0x = ( cell_shiftx ==  0 );
+        double p1x = ( cell_shiftx ==  1 );
 
-        S0 = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
-        S1 = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        S2 = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
-        S3 = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        S4 = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        S0x = f1_ov_384   - f1_ov_48 *dx  + f1_ov_16*dx*dx - f1_ov_12*dx*dx*dx + f1_ov_24*dx*dx*dx*dx;
+        S1x = f19_ov_96   - f11_ov_24*dx  + f1_ov_4 *dx*dx + f1_ov_6 *dx*dx*dx - f1_ov_6 *dx*dx*dx*dx;
+        S2x = f115_ov_192                - f5_ov_8 *dx*dx                  + f1_ov_4 *dx*dx*dx*dx;
+        S3x = f19_ov_96   + f11_ov_24*dx  + f1_ov_4 *dx*dx - f1_ov_6 *dx*dx*dx - f1_ov_6 *dx*dx*dx*dx;
+        S4x = f1_ov_384   + f1_ov_48 *dx  + f1_ov_16*dx*dx + f1_ov_12*dx*dx*dx + f1_ov_24*dx*dx*dx*dx;
 
-        DSx_v[            ip] = m1*S0;
-        DSx_v[  vec_size +ip] = c0*S0 + m1*S1                         - Sx0_v[           ip];
-        DSx_v[2*vec_size +ip] = p1*S0 + c0*S1 + m1*S2                 - Sx0_v[  vec_size+ip];
-        DSx_v[3*vec_size +ip] =         p1*S1 + c0*S2 + m1*S3         - Sx0_v[2*vec_size+ip];
-        DSx_v[4*vec_size +ip] =                 p1*S2 + c0*S3 + m1*S4 - Sx0_v[3*vec_size+ip];
-        DSx_v[5*vec_size +ip] =                         p1*S3 + c0*S4 - Sx0_v[4*vec_size+ip];
-        DSx_v[6*vec_size +ip] =                                 p1*S4;
+        DSx_v[            ip] = m1x*S0x;
+        DSx_v[  vec_size +ip] = c0x*S0x + m1x*S1x                           - Sx0_v[           ip];
+        DSx_v[2*vec_size +ip] = p1x*S0x + c0x*S1x + m1x*S2x                  - Sx0_v[  vec_size+ip];
+        DSx_v[3*vec_size +ip] =           p1x*S1x + c0x*S2x + m1x*S3x         - Sx0_v[2*vec_size+ip];
+        DSx_v[4*vec_size +ip] =                     p1x*S2x + c0x*S3x + m1x*S4x - Sx0_v[3*vec_size+ip];
+        DSx_v[5*vec_size +ip] =                               p1x*S3x + c0x*S4x - Sx0_v[4*vec_size+ip];
+        DSx_v[6*vec_size +ip] =                                         p1x*S4x;
 
 
         //--------------------------------------------------
         // y
-        d = y2 - double(j2p), 
-        cell_shift = j2p - j1p; 
-        m1 = ( cell_shift == -1 );
-        c0 = ( cell_shift ==  0 );
-        p1 = ( cell_shift ==  1 );
+        dy = y2 - double(j2p);
+        int cell_shifty = j2p - j1p; 
 
-        S0 = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
-        S1 = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        S2 = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
-        S3 = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        S4 = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        double m1y = ( cell_shifty == -1 );
+        double c0y = ( cell_shifty ==  0 );
+        double p1y = ( cell_shifty ==  1 );
 
-        DSy_v[            ip] = m1*S0;
-        DSy_v[  vec_size +ip] = c0*S0 + m1*S1                         - Sy0_v[           ip];
-        DSy_v[2*vec_size +ip] = p1*S0 + c0*S1 + m1*S2                 - Sy0_v[  vec_size+ip];
-        DSy_v[3*vec_size +ip] =         p1*S1 + c0*S2 + m1*S3         - Sy0_v[2*vec_size+ip];
-        DSy_v[4*vec_size +ip] =                 p1*S2 + c0*S3 + m1*S4 - Sy0_v[3*vec_size+ip];
-        DSy_v[5*vec_size +ip] =                         p1*S3 + c0*S4 - Sy0_v[4*vec_size+ip];
-        DSy_v[6*vec_size +ip] =                                 p1*S4;
+        S0y = f1_ov_384   - f1_ov_48 *dy  + f1_ov_16*dy*dy - f1_ov_12*dy*dy*dy + f1_ov_24*dy*dy*dy*dy;
+        S1y = f19_ov_96   - f11_ov_24*dy  + f1_ov_4 *dy*dy + f1_ov_6 *dy*dy*dy - f1_ov_6 *dy*dy*dy*dy;
+        S2y = f115_ov_192                - f5_ov_8 *dy*dy                  + f1_ov_4 *dy*dy*dy*dy;
+        S3y = f19_ov_96   + f11_ov_24*dy  + f1_ov_4 *dy*dy - f1_ov_6 *dy*dy*dy - f1_ov_6 *dy*dy*dy*dy;
+        S4y = f1_ov_384   + f1_ov_48 *dy  + f1_ov_16*dy*dy + f1_ov_12*dy*dy*dy + f1_ov_24*dy*dy*dy*dy;
+
+        DSy_v[            ip] = m1y*S0y;
+        DSy_v[  vec_size +ip] = c0y*S0y + m1y*S1y                         - Sy0_v[           ip];
+        DSy_v[2*vec_size +ip] = p1y*S0y + c0y*S1y + m1y*S2y                 - Sy0_v[  vec_size+ip];
+        DSy_v[3*vec_size +ip] =           p1y*S1y + c0y*S2y + m1y*S3y         - Sy0_v[2*vec_size+ip];
+        DSy_v[4*vec_size +ip] =                     p1y*S2y + c0y*S3y + m1y*S4y - Sy0_v[3*vec_size+ip];
+        DSy_v[5*vec_size +ip] =                               p1y*S3y + c0y*S4y - Sy0_v[4*vec_size+ip];
+        DSy_v[6*vec_size +ip] =                                         p1y*S4y;
 
 
         //--------------------------------------------------
         // z
-        d = z2 - double(k2p), 
-        cell_shift = k2p - k1p; 
-        m1 = ( cell_shift == -1 );
-        c0 = ( cell_shift ==  0 );
-        p1 = ( cell_shift ==  1 );
+        dz = z2 - double(k2p);
+        int cell_shiftz = k2p - k1p; 
 
-        S0 = f1_ov_384   - f1_ov_48 *d  + f1_ov_16*d*d - f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
-        S1 = f19_ov_96   - f11_ov_24*d  + f1_ov_4 *d*d + f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        S2 = f115_ov_192                - f5_ov_8 *d*d                  + f1_ov_4 *d*d*d*d;
-        S3 = f19_ov_96   + f11_ov_24*d  + f1_ov_4 *d*d - f1_ov_6 *d*d*d - f1_ov_6 *d*d*d*d;
-        S4 = f1_ov_384   + f1_ov_48 *d  + f1_ov_16*d*d + f1_ov_12*d*d*d + f1_ov_24*d*d*d*d;
+        double m1z = ( cell_shiftz == -1 );
+        double c0z = ( cell_shiftz ==  0 );
+        double p1z = ( cell_shiftz ==  1 );
 
-        DSz_v[            ip] = m1*S0;
-        DSz_v[  vec_size +ip] = c0*S0 + m1*S1                         - Sz0_v[           ip];
-        DSz_v[2*vec_size +ip] = p1*S0 + c0*S1 + m1*S2                 - Sz0_v[  vec_size+ip];
-        DSz_v[3*vec_size +ip] =         p1*S1 + c0*S2 + m1*S3         - Sz0_v[2*vec_size+ip];
-        DSz_v[4*vec_size +ip] =                 p1*S2 + c0*S3 + m1*S4 - Sz0_v[3*vec_size+ip];
-        DSz_v[5*vec_size +ip] =                         p1*S3 + c0*S4 - Sz0_v[4*vec_size+ip];
-        DSz_v[6*vec_size +ip] =                                 p1*S4;
+        S0z = f1_ov_384   - f1_ov_48 *dz  + f1_ov_16*dz*dz - f1_ov_12*dz*dz*dz + f1_ov_24*dz*dz*dz*dz;
+        S1z = f19_ov_96   - f11_ov_24*dz  + f1_ov_4 *dz*dz + f1_ov_6 *dz*dz*dz - f1_ov_6 *dz*dz*dz*dz;
+        S2z = f115_ov_192                - f5_ov_8 *dz*dz                  + f1_ov_4 *dz*dz*dz*dz;
+        S3z = f19_ov_96   + f11_ov_24*dz  + f1_ov_4 *dz*dz - f1_ov_6 *dz*dz*dz - f1_ov_6 *dz*dz*dz*dz;
+        S4z = f1_ov_384   + f1_ov_48 *dz  + f1_ov_16*dz*dz + f1_ov_12*dz*dz*dz + f1_ov_24*dz*dz*dz*dz;
+
+        DSz_v[            ip] = m1z*S0z;
+        DSz_v[  vec_size +ip] = c0z*S0z + m1z*S1z                         - Sz0_v[           ip];
+        DSz_v[2*vec_size +ip] = p1z*S0z + c0z*S1z + m1z*S2z                 - Sz0_v[  vec_size+ip];
+        DSz_v[3*vec_size +ip] =           p1z*S1z + c0z*S2z + m1z*S3z         - Sz0_v[2*vec_size+ip];
+        DSz_v[4*vec_size +ip] =                     p1z*S2z + c0z*S3z + m1z*S4z - Sz0_v[3*vec_size+ip];
+        DSz_v[5*vec_size +ip] =                               p1z*S3z + c0z*S4z - Sz0_v[4*vec_size+ip];
+        DSz_v[6*vec_size +ip] =                                         p1z*S4z;
     
 
         //std::cout << "index1" << i1p << " " << j1p << " " << k1p 
@@ -287,7 +291,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
               double val = sum_v[ip + i*vec_size]*tmp;
               size_t idx = ind0 + (i0-3) + (j0-3)*iy + (k0-3)*iz;
 
-              assert(val < 1.0);
+              //assert(val < 1.0);
 
               atomic_add( yee.jx(idx), val );
               //yee.jx(idx) += val;
@@ -326,7 +330,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
               //size_t idx = ind + (i0-3) + (j0-3)*iy + (k0-3)*iz;
               size_t idx = ind1 + (i0-3) + (j0-3)*(iy+1) + (k0-3)*iz; // FIXME
 
-              assert(val < 1.0);
+              //assert(val < 1.0);
               atomic_add( yee.jy(idx), val ); // NOTE: jumps of j*iy
               //yee.jy(idx) += val;
             }
@@ -365,7 +369,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
               size_t idx = ind2 + (i0-3) + (j0-3)*iy + (k0-3)*(iz+1); // FIXME
 
               //std::cout << sum_v[ip + k*vec_size] << " " << tmp;
-              assert(val < 1.0);
+              //assert(val < 1.0);
               atomic_add( yee.jz(idx), val ); // NOTE: jumps of k*iz
               //yee.jz(idx) += val; 
             }

@@ -132,6 +132,9 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
     
       //-------------------------------------------------- 
 
+      // TODO deposit to prev or cur time step?
+
+
       // current calculation
       int iloc, jloc, kloc; //, linindex;
       const int offset = 3; // -3 comes from 4th order scheme
@@ -149,7 +152,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
             iloc = i + i2p - offset; 
             iloc = clamp(iloc, -3, Nx+2);
 
-            tmpJx[j][k] -= q*c * DSx[i-1]*( Sy1[j] * Sz1[k] 
+            tmpJx[j][k] -= q*c * DSx[i-1]*( 
+                             Sy1[j] * Sz1[k] 
                            + DSy[j]*Sz1[k]/2.
                            + DSz[k]*Sy1[j]/2.
                            + DSy[j]*DSz[k]/3.);
@@ -173,7 +177,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
             iloc = i + i2p - offset; 
             iloc = clamp(iloc, -3, Nx+2);
 
-            tmpJy[i][k] -= q*c * DSy[j-1] * ( Sz1[k]*Sx1[i] 
+            tmpJy[i][k] -= q*c * DSy[j-1] * ( 
+                             Sz1[k]*Sx1[i] 
                            + DSz[k]*Sx1[i]/2.
                            + DSx[i]*Sz1[k]/2.
                            + DSz[k]*DSx[i]/3.);
@@ -198,7 +203,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
             iloc = i + i2p - offset; 
             iloc = clamp(iloc, -3, Nx+2);
 
-            tmpJz[i][j] -= q*c * DSz[k-1] * ( Sx1[i]*Sy1[j] 
+            tmpJz[i][j] -= q*c * DSz[k-1] * ( 
+                             Sx1[i]*Sy1[j] 
                            + DSx[i]*Sy1[j]/2. 
                            + DSy[j]*Sx1[i]/2. 
                            + DSx[i]*DSy[j]/3.);

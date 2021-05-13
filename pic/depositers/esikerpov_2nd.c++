@@ -127,11 +127,11 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
 
       // Jx^(d,p,p)
       for(int k=0 ; k<5 ; k++){
-        kloc = k + k2p - offset;
+        kloc = k + k1p - offset;
         for(int j=0 ; j<5 ; j++){
-          jloc = j + j2p - offset;
+          jloc = j + j1p - offset;
           for(int i=1 ; i<5 ; i++){
-            iloc = i + i2p - offset; 
+            iloc = i + i1p - offset; 
 
             tmpJx[j][k] -= q*c * DSx[i-1]*( Sy1[j] * Sz1[k] 
                            + DSy[j]*Sz1[k]/2.
@@ -146,11 +146,11 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
       //-------------------------------------------------- 
       // Jy^(p,d,p)
       for(int k=0 ; k<5 ; k++){
-        kloc = k + k2p - offset;
+        kloc = k + k1p - offset;
         for(int j=1 ; j<5 ; j++){
-          jloc = j + j2p - offset;
+          jloc = j + j1p - offset;
           for(int i=0 ; i<5 ; i++){
-            iloc = i + i2p - offset; 
+            iloc = i + i1p - offset; 
 
             tmpJy[i][k] -= q*c * DSy[j-1] * ( Sz1[k]*Sx1[i] 
                            + DSz[k]*Sx1[i]/2.
@@ -166,11 +166,11 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
       //-------------------------------------------------- 
       // Jz^(p,p,d)
       for(int k=1 ; k<5 ; k++){
-        kloc = k + k2p - offset;
+        kloc = k + k1p - offset;
         for(int j=0 ; j<5 ; j++){
-          jloc = j + j2p - offset;
+          jloc = j + j1p - offset;
           for(int i=0 ; i<5 ; i++){
-            iloc = i + i2p - offset; 
+            iloc = i + i1p - offset; 
 
             tmpJz[i][j] -= q*c * DSz[k-1] * ( Sx1[i]*Sy1[j] 
                            + DSx[i]*Sy1[j]/2. 

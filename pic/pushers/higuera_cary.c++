@@ -74,7 +74,6 @@ void pic::HigueraCaryPusher<D,V>::push_container(
     con.vel(1,n) = v0/c;
     con.vel(2,n) = w0/c;
 
-
     // position advance
     // NOTE: no mixed-precision calc here. Can be problematic.
     ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);

@@ -106,7 +106,7 @@ void pic::QuadraticInterpolator<D>::solve(
 
       // particle location in the primary and dual 1/2-shifted grid
 
-      // DONE: default scheme
+      // default 2nd order scheme
       int ip = round(xpn);
       int jp = round(ypn);
       int kp = round(zpn);
@@ -114,7 +114,7 @@ void pic::QuadraticInterpolator<D>::solve(
       int jd = round(ypn-0.5);
       int kd = round(zpn-0.5);
 
-      // Sokolov version
+      // Sokolov version; NOTE: no effect for 2nd order; maybe too narrow stencil
       //int ip = round(xpn);
       //int jp = round(ypn);
       //int kp = round(zpn);
@@ -132,8 +132,6 @@ void pic::QuadraticInterpolator<D>::solve(
              czp[3] = {0.0};
       
       // \Delta x from primary and staggered grid points
-        
-      // Default scheme
       double dxp = xpn-ip;
       double dyp = ypn-jp;
       double dzp = zpn-kp;
@@ -175,40 +173,40 @@ void pic::QuadraticInterpolator<D>::solve(
       //W2nd(dyp, &cyp[0] );
       //W2nd(dzp, &czp[0] );
 
-      bool debug = false;
-      for(int iii=0; iii<3; iii++){
-          if(cxp[iii] < 0.0)  debug = true;
-          if(cxd[iii] < 0.0)  debug = true;
+      //bool debug = false;
+      //for(int iii=0; iii<3; iii++){
+      //    if(cxp[iii] < 0.0)  debug = true;
+      //    if(cxd[iii] < 0.0)  debug = true;
 
-          if(cyp[iii] < 0.0)  debug = true;
-          if(cyd[iii] < 0.0)  debug = true;
+      //    if(cyp[iii] < 0.0)  debug = true;
+      //    if(cyd[iii] < 0.0)  debug = true;
 
-          if(czp[iii] < 0.0)  debug = true;
-          if(czd[iii] < 0.0)  debug = true;
+      //    if(czp[iii] < 0.0)  debug = true;
+      //    if(czd[iii] < 0.0)  debug = true;
 
-          if(cxp[iii] > 1.0)  debug = true;
-          if(cxd[iii] > 1.0)  debug = true;
-          if(cyp[iii] > 1.0)  debug = true;
-          if(cyd[iii] > 1.0)  debug = true;
-          if(czp[iii] > 1.0)  debug = true;
-          if(czd[iii] > 1.0)  debug = true;
-      }
+      //    if(cxp[iii] > 1.0)  debug = true;
+      //    if(cxd[iii] > 1.0)  debug = true;
+      //    if(cyp[iii] > 1.0)  debug = true;
+      //    if(cyd[iii] > 1.0)  debug = true;
+      //    if(czp[iii] > 1.0)  debug = true;
+      //    if(czd[iii] > 1.0)  debug = true;
+      //}
 
-      if(debug){
-        std::cout 
-          << "\n\ninterp xyz: " << "(" << xpn << "," << ypn << "," << zpn << ")"
-          << " ip: "  << "(" << ip << "," << jp << "," << kp << ")"
-          << " id: "  << "(" << id << "," << jd << "," << kd << ")"
-          << " dxp: " << "(" << xpn - ip << "," << ypn - jp << "," << zpn - kp << ")"
-          << " dxd: " << "(" << xpn - id + 0.5f << "," << ypn - jd + 0.5f << "," << zpn - kd + 0.5f << ")"
-          << " W1x: " << "(" << cxp[0] << "," << cxp[1] << "," << cxp[2] << /* "," << cxp[3] << */ ")"
-          << " W2x: " << "(" << cxd[0] << "," << cxd[1] << "," << cxd[2] << /* "," << cxd[3] << */ ")"
-          << " W1y: " << "(" << cyp[0] << "," << cyp[1] << "," << cyp[2] << /* "," << cyp[3] << */ ")"
-          << " W2y: " << "(" << cyd[0] << "," << cyd[1] << "," << cyd[2] << /* "," << cyd[3] << */ ")"
-          << " W1z: " << "(" << czp[0] << "," << czp[1] << "," << czp[2] << /* "," << czp[3] << */ ")"
-          << " W2z: " << "(" << czd[0] << "," << czd[1] << "," << czd[2] << /* "," << czd[3] << */ ")"
-          << "\n";
-      }
+      //if(debug){
+      //  std::cout 
+      //    << "\n\ninterp xyz: " << "(" << xpn << "," << ypn << "," << zpn << ")"
+      //    << " ip: "  << "(" << ip << "," << jp << "," << kp << ")"
+      //    << " id: "  << "(" << id << "," << jd << "," << kd << ")"
+      //    << " dxp: " << "(" << xpn - ip << "," << ypn - jp << "," << zpn - kp << ")"
+      //    << " dxd: " << "(" << xpn - id + 0.5f << "," << ypn - jd + 0.5f << "," << zpn - kd + 0.5f << ")"
+      //    << " W1x: " << "(" << cxp[0] << "," << cxp[1] << "," << cxp[2] << /* "," << cxp[3] << */ ")"
+      //    << " W2x: " << "(" << cxd[0] << "," << cxd[1] << "," << cxd[2] << /* "," << cxd[3] << */ ")"
+      //    << " W1y: " << "(" << cyp[0] << "," << cyp[1] << "," << cyp[2] << /* "," << cyp[3] << */ ")"
+      //    << " W2y: " << "(" << cyd[0] << "," << cyd[1] << "," << cyd[2] << /* "," << cyd[3] << */ ")"
+      //    << " W1z: " << "(" << czp[0] << "," << czp[1] << "," << czp[2] << /* "," << czp[3] << */ ")"
+      //    << " W2z: " << "(" << czd[0] << "," << czd[1] << "," << czd[2] << /* "," << czd[3] << */ ")"
+      //    << "\n";
+      //}
 
       //--------------------------------------------------
       // integrate over shape function, i.e. interpolate
