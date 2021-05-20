@@ -18,8 +18,7 @@ def configureDoxyfile(input_dir, output_dir):
 
 # Check if we're running on Read the Docs' servers
 read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
- 
-breathe_projects = {}
+#breathe_projects = {}
  
 if read_the_docs_build:
     input_dir = '../'
@@ -43,7 +42,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = 'Runko'
-copyright = '2019, Joonas Nättilä'
+copyright = '2021, Joonas Nättilä'
 author = 'Joonas Nättilä'
 
 
@@ -52,10 +51,12 @@ author = 'Joonas Nättilä'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["breathe"]
+#extensions = ["breathe"]
+extensions = []
 
 # Breathe Configuration
-breathe_default_project = "Runko"
+#breathe_default_project = "Runko"
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -78,3 +79,6 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ['runko_theme.css']
+
+

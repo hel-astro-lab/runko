@@ -1,0 +1,19 @@
+@import url("theme.css");
+
+/* change global webpage max span */
+.wy-nav-content {
+    max-width: 90%;
+}
+
+
+/* unit tool  */
+.value {
+    width:70px;
+}
+
+
+.column {
+    width:24%;
+    float:left;
+}
+
