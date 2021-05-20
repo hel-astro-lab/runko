@@ -39,8 +39,8 @@ if __name__ == "__main__":
 
     axs[0].set_yscale('log')
 
-    axs[0].set_xlabel(r'$t \omega_{pp}$')
-    axs[0].set_ylabel(r'$\epsilon_B/h_\gamma$')
+    axs[0].set_xlabel(r'$t \omega_{p}$')
+    axs[0].set_ylabel(r'$\frac{B^2}{8\pi n_0 \gamma_b m_e c^2}$')
 
     axs[0].set_ylim((1.0e-5, 1.0))
 
@@ -72,9 +72,18 @@ if __name__ == "__main__":
         delta = 1.0*beta*np.sqrt(2/gam)
         print("growth rate:", delta)
 
-        tt = np.linspace(5.0, 70., 100)
-        yy = np.exp(delta*tt) * 2.0e-6
-        axs[0].plot(tt, yy, "--", color=col, linspace=1.0, alpha=0.6)
+        tt = np.linspace(5.0, 70.0, 100)
+        yy = np.exp(delta*tt)*2.0e-6
+
+        print(tt)
+        print(yy)
+        axs[0].plot(tt, yy, linestyle="--", color='k', alpha=0.9)
+        if ii == 0:
+            axs[0].text(10.0, 0.1, r'$\gamma_{\mathrm{b}} = 3$', rotation=80, fontsize = 7, ha='center', va='center')
+        if ii == 1:
+            axs[0].text(23.0, 0.3, r'$\gamma_{\mathrm{b}} = 10$', rotation=75, fontsize = 7, ha='center', va='center')
+        if ii == 2:
+            axs[0].text(50.0, 0.004, r'$\gamma_{\mathrm{b}} = 100$', rotation=48, fontsize = 7, ha='center', va='center')
 
 
         #--------------------------------------------------
@@ -154,10 +163,9 @@ if __name__ == "__main__":
             #end of this time step; close f5
             f5_fld.close()
 
-
         #--------------------------------------------------    
         #plot field energy
-        col = 'r'
+        #col = 'r'
 
         ls_E = 'solid'
         ls_B = 'solid'
@@ -165,8 +173,6 @@ if __name__ == "__main__":
 
         #line_fld_e, = axs[0].plot(flds_time, flds_E,  color='darkblue', linestyle=ls_E, linewidth=0.7)
         line_fld_b, = axs[0].plot(flds_time, flds_B,  color=col, linestyle=ls_B, linewidth=1.0)
-
-
 
 
     #--------------------------------------------------    
@@ -192,7 +198,7 @@ if __name__ == "__main__":
 
     fig.subplots_adjust(left=axleft, bottom=axbottom, right=axright, top=axtop)
 
-    fname = 'weibel.pdf'
+    fname = 'weibel_v2.pdf'
     plt.savefig(fname)
 
 

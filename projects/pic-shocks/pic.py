@@ -75,7 +75,7 @@ def insert_em_fields(grid, conf):
     for tile in pytools.tiles_all(grid):
         yee = tile.get_yee(0)
 
-        ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
+        ii, jj, kk = tile.index if conf.threeD else (*tile.index, 0)
 
         # insert values into Yee lattices; includes halos from -3 to n+3
         for n in range(-3, conf.NzMesh + 3):
@@ -255,15 +255,42 @@ if __name__ == "__main__":
 
     # 3D box peripherals
     if conf.threeD:
-        slice_xy_writer = pyfld.FieldSliceWriter( conf.outdir, 
-                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
-                0, 1)
-        slice_xz_writer = pyfld.FieldSliceWriter( conf.outdir, 
-                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
-                1, 1)
-        slice_yz_writer = pyfld.FieldSliceWriter( conf.outdir, 
-                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, 1, 
-                2, 1)
+        slice_xy_writer = pyfld.FieldSliceWriter(
+            conf.outdir,
+            conf.Nx,
+            conf.NxMesh,
+            conf.Ny,
+            conf.NyMesh,
+            conf.Nz,
+            conf.NzMesh,
+            1,
+            0,
+            1,
+        )
+        slice_xz_writer = pyfld.FieldSliceWriter(
+            conf.outdir,
+            conf.Nx,
+            conf.NxMesh,
+            conf.Ny,
+            conf.NyMesh,
+            conf.Nz,
+            conf.NzMesh,
+            1,
+            1,
+            1,
+        )
+        slice_yz_writer = pyfld.FieldSliceWriter(
+            conf.outdir,
+            conf.Nx,
+            conf.NxMesh,
+            conf.Ny,
+            conf.NyMesh,
+            conf.Nz,
+            conf.NzMesh,
+            1,
+            2,
+            1,
+        )
 
     # --------------------------------------------------
     # reflecting leftmost wall
@@ -273,14 +300,13 @@ if __name__ == "__main__":
     piston.walloc = 5.0  # leave 5 cell spacing between the wall for boundary conditions
 
     if conf.wallgamma > 0.0:
-        #moving wall
+        # moving wall
         piston.gammawall = conf.wallgamma
         piston.betawall = np.sqrt(1.0 - 1.0 / conf.wallgamma ** 2.0)
     else:
-        #stationary wall
+        # stationary wall
         piston.betawall = 0.0
         piston.gammawall = 1.0
-
 
     # --------------------------------------------------
     # --------------------------------------------------
@@ -547,7 +573,7 @@ if __name__ == "__main__":
         timer.stop_comp(t1)
 
         # moving walls
-        #piston.walloc += piston.betawall*conf.cfl
+        # piston.walloc += piston.betawall*conf.cfl
 
         ##################################################
         # data reduction and I/O
@@ -577,11 +603,11 @@ if __name__ == "__main__":
 
             # shallow IO
             # NOTE: do moms before other IOs to keep rho up-to-date
-            mom_writer.write(grid, lap)  # pic distribution moments; 
+            mom_writer.write(grid, lap)  # pic distribution moments;
             fld_writer.write(grid, lap)  # quick field snapshots
             prtcl_writer.write(grid, lap)  # test particles
-            
-            #box peripheries 
+
+            # box peripheries
             if conf.threeD:
                 slice_xy_writer.write(grid, lap)
                 slice_xz_writer.write(grid, lap)
