@@ -1,7 +1,7 @@
 Tutorial: Collisionless shocks
 ##############################
 
-In this tutorial we use Runko to run a small nonmagnetized collisionless shock simulation.
+In this tutorial we use Runko to run a small non-magnetized collisionless shock simulation.
 
 .. image:: https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/shock.gif
 
