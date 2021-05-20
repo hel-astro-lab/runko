@@ -162,16 +162,10 @@ Numerical simulation variables
         </div>
       </div>
     </div>
-  </div>
-  
 
   <div style="width:100%;float:left;"> </div>
 
-
-
 ------
-
-.
 
 Physical scales 
 ^^^^^^^^^^^^^^^
@@ -211,7 +205,7 @@ Physical scales
       </div>
     </div>
 
-  <div style="width:100%;float:left;"> </div>
+    <div style="width:100%;float:left;"> </div>
 
     <div class="row">
       <div class="column" style="width:50%">
@@ -243,7 +237,7 @@ Physical scales
       </div>
     </div>
 
-  <div style="width:100%;float:left;"> </div>
+    <div style="width:100%;float:left;"> </div>
 
     <div class="row">
 
@@ -273,9 +267,9 @@ Physical scales
 
           </div>
         </div>
-      </div>
+    </div>
 
-      <div class="column" style="width:33%">
+    <div class="column" style="width:33%">
         <div id="nphys-output" class="dependent-value getvalue-group col-xs-12">
           <div class="value-output">
             
