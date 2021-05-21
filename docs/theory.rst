@@ -31,7 +31,7 @@ Evolution of `f_s` is governed by the relativistic Boltzmann/Vlasov equation
 
     \frac{\partial f_s}{\partial t} + \mathbf{v} \cdot \nabla_{\mathbf{x}} f_s + \mathbf{a}_{\mathrm{s}} \cdot \nabla_{\mathbf{u}} f_s  = \mathcal{C},
 
-where `\nabla_{\mathbf{x}} = \frac{\partial}{\partial \mathbf{x}}` and `\nabla_{\mathbf{u}} = \frac{\partial}{\partial \mathbf{u}}` are the spatial and momentum parts of the differential operator `\nabla`, respectively.
+where `\nabla_{\mathbf{x}} = \frac{d}{d \mathbf{x}}` and `\nabla_{\mathbf{u}} = \frac{d}{d \mathbf{u}}` are the spatial and momentum parts of the differential operator `\nabla`, respectively.
 The term in the right-hand side, defined as `\mathcal{C} \equiv \partial_t f_s ~|_{\mathrm{coll}}`, is the collision operator.
 For Vlasov equation `\mathcal{C} = 0`, i.e., the plasma is collisionless.
 

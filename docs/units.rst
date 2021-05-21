@@ -19,16 +19,16 @@ Electromagnetic field
 Faraday's and Ampere's laws are
 
 .. math::
-    \frac{\partial E}{\partial t} =+c \nabla \times B - 4\pi J
+    \frac{\partial E}{\partial t} &=+c \nabla \times B - 4\pi J
 
-    \frac{\partial B}{\partial t} =-c \nabla \times E
+    \frac{\partial B}{\partial t} &=-c \nabla \times E
 
 that in code units corresponds to solving
 
 .. math::
-    \Delta_t \hat{E} =+\hat{c} \nabla \times \hat{B} - \hat{J}\Delta t
+    \Delta_t \hat{E} &=+\hat{c} \nabla \times \hat{B} - \hat{c} \hat{J}
 
-    \Delta_t \hat{B} =-\hat{c} \nabla \times \hat{E}
+    \Delta_t \hat{B} &=-\hat{c} \nabla \times \hat{E}
 
 
 The benefits are clear:
@@ -48,7 +48,7 @@ The Lorentz force experienced by charged particles is
 that in code units corresponds to solving
 
 .. math::
-    \Delta_t (\gamma \beta) = \frac{1}{\hat{c}} \frac{\hat{q}}{\hat{m}} (\hat{E} + \beta \times \hat{B})
+    \Delta_t (\gamma \beta) = \hat{c} \frac{\hat{q}}{\hat{m}} (\hat{E} + \beta \times \hat{B})
 
 .. note::
     Only the charge-to-mass ratio enters the Lorentz force.
