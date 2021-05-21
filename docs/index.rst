@@ -56,6 +56,7 @@ Key contributors that provided additional features and/or improvements include
 :blue:`Recent changes`
 ----------------------
 
+* :blue:`21/05/2021 Added a PIC algorithm section`
 * :blue:`20/05/2021 Added a theory section for Vlasov-Maxwell systems and FDTD method`
 * :blue:`19/05/2021 Added a unit conversion tool`
 * :blue:`15/05/2021 Launched the improved web manual`
