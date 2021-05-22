@@ -42,7 +42,7 @@ Key contributors that provided additional features and/or improvements include
 * Kristoffer Smedt (Univ. Leeds)
 * Camilia Demidem (Nordita)
 * Maarja Bussov (Univ. Helsinki)
-* Alexanda Veledina (Univ. Turku)
+* Alexandra Veledina (Univ. Turku)
 
 
 
@@ -89,6 +89,7 @@ Key contributors that provided additional features and/or improvements include
    vlv
    ffe
    qed
+   algorithms
 
 
 .. toctree::

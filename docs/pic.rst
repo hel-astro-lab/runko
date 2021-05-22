@@ -171,11 +171,6 @@ Using the connection between the shape and weight functions, this reduces to a s
 
     \mathbf{B}_p = \sum_{\mathbf{x}_c} \mathbf{B}(\mathbf{x}_c) W(\mathbf{x}_c - \mathbf{x}_p)
 
-The projection of the charge current into an arbitrary grid direction `r` (`=x/y/z`) originating from a single particle, `\hat{j}_r`, is an opposite operation,
-
-.. math::
-
-    \hat{j}_r = q \hat{v}_r W_r ~ S_{i \ne r}(\mathbf{x}_c - \mathbf{x}_p )
 
 Current projection
 ^^^^^^^^^^^^^^^^^^
