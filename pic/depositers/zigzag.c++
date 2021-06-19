@@ -209,14 +209,14 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       //// jz
       if(D>=1) yee.jz(i1  , j1  , k1  ) += Fz1 * (1-Wx1) * (1-Wy1);
-      if(D>=2) yee.jz(i1+1, j1  , k1  ) += Fz1 * Wx1     * (1-Wy1);
-      if(D>=3) yee.jz(i1  , j1+1, k1  ) += Fz1 * (1-Wx1) * Wy1;
-      if(D>=3) yee.jz(i1+1, j1+1, k1  ) += Fz1 * Wx1     * Wy1;
+      if(D>=1) yee.jz(i1+1, j1  , k1  ) += Fz1 * Wx1     * (1-Wy1);
+      if(D>=2) yee.jz(i1  , j1+1, k1  ) += Fz1 * (1-Wx1) * Wy1;
+      if(D>=2) yee.jz(i1+1, j1+1, k1  ) += Fz1 * Wx1     * Wy1;
 
       if(D>=1) yee.jz(i2  , j2  , k2  ) += Fz2 * (1-Wx2) * (1-Wy2);
       if(D>=1) yee.jz(i2+1, j2  , k2  ) += Fz2 * Wx2     * (1-Wy2);
-      if(D>=1) yee.jz(i2  , j2+1, k2  ) += Fz2 * (1-Wx2) * Wy2;
-      if(D>=1) yee.jz(i2+1, j2+1, k2  ) += Fz2 * Wx2     * Wy2;
+      if(D>=2) yee.jz(i2  , j2+1, k2  ) += Fz2 * (1-Wx2) * Wy2;
+      if(D>=2) yee.jz(i2+1, j2+1, k2  ) += Fz2 * Wx2     * Wy2;
 
     }
 
