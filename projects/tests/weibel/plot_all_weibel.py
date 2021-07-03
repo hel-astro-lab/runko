@@ -43,6 +43,8 @@ if __name__ == "__main__":
     axs[0].set_ylabel(r'$\frac{B^2}{8\pi n_0 \gamma_b m_e c^2}$')
 
     axs[0].set_ylim((1.0e-5, 1.0))
+    axs[0].set_xlim((0, 100.0))
+
 
     #--------------------------------------------------
     # read and plot data
@@ -50,6 +52,7 @@ if __name__ == "__main__":
     confs = [
             "gam3.ini",
             "gam10.ini",
+            "gam30.ini",
             "gam100.ini",
             ]
 
@@ -72,7 +75,7 @@ if __name__ == "__main__":
         delta = 1.0*beta*np.sqrt(2/gam)
         print("growth rate:", delta)
 
-        tt = np.linspace(5.0, 70.0, 100)
+        tt = np.linspace(5.0, 100.0, 100)
         yy = np.exp(delta*tt)*2.0e-6
 
         print(tt)
@@ -81,9 +84,11 @@ if __name__ == "__main__":
         if ii == 0:
             axs[0].text(10.0, 0.1, r'$\gamma_{\mathrm{b}} = 3$', rotation=80, fontsize = 7, ha='center', va='center')
         if ii == 1:
-            axs[0].text(23.0, 0.3, r'$\gamma_{\mathrm{b}} = 10$', rotation=75, fontsize = 7, ha='center', va='center')
+            axs[0].text(23.0, 0.3, r'$\gamma_{\mathrm{b}} = 10$', rotation=72, fontsize = 7, ha='center', va='center')
         if ii == 2:
-            axs[0].text(50.0, 0.004, r'$\gamma_{\mathrm{b}} = 100$', rotation=48, fontsize = 7, ha='center', va='center')
+            axs[0].text(42.0, 0.3, r'$\gamma_{\mathrm{b}} = 30$', rotation=60, fontsize = 7, ha='center', va='center')
+        if ii == 3:
+            axs[0].text(50.0, 0.004, r'$\gamma_{\mathrm{b}} = 100$', rotation=45, fontsize = 7, ha='center', va='center')
 
 
         #--------------------------------------------------
@@ -123,6 +128,9 @@ if __name__ == "__main__":
 
             print(info['fields_file'])
             if not(os.path.isfile(info['fields_file'])):
+                continue
+            
+            if lap > 800:
                 continue
 
             #print("lap {}".format(lap))
@@ -170,6 +178,10 @@ if __name__ == "__main__":
         ls_E = 'solid'
         ls_B = 'solid'
         ls_Bpar = 'dashdot'
+
+
+        print(flds_time)
+        print(flds_B)
 
         #line_fld_e, = axs[0].plot(flds_time, flds_E,  color='darkblue', linestyle=ls_E, linewidth=0.7)
         line_fld_b, = axs[0].plot(flds_time, flds_B,  color=col, linestyle=ls_B, linewidth=1.0)
