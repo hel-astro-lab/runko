@@ -309,12 +309,34 @@ class UniIter{
         }
 
         template<class F, class... Args>
+        static void iterate2D_nonvec(F fun, int xMax, int yMax, Args& ... args)
+        {
+          for (int y = 0; y < yMax; y++) {
+            for (int x = 0; x < xMax; x++) {
+              fun(x, y, args...);
+            }
+          }
+        }
+
+        template<class F, class... Args>
         static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
         {
             #pragma omp parallel for
             for (int z = 0; z < zMax; z++) {
                 for (int y = 0; y < yMax; y++) {
                     #pragma omp simd
+                    for (int x = 0; x < xMax; x++) {
+                        fun(x, y, z, args...);
+                    }
+                }
+            }
+        }
+
+        template<class F, class... Args>
+        static void iterate3D_nonvec(F fun, int xMax, int yMax, int zMax, Args& ... args)
+        {
+            for (int z = 0; z < zMax; z++) {
+                for (int y = 0; y < yMax; y++) {
                     for (int x = 0; x < xMax; x++) {
                         fun(x, y, z, args...);
                     }

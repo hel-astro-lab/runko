@@ -12,9 +12,19 @@
 #endif
 
 
+// Optional vectorization of tile boundary updates;
+// VEC_FLD controls exchange_boundary routines 
+// VEC_CUR controls exchange_currents routines
+// Latter has atomic_add operations that can be very slow on some platforms
+//#define VEC_FLD2D 
+//#define VEC_FLD3D
+//#define VEC_CUR2D 
+//#define VEC_CUR3D 
+
+
+
 namespace fields {
   using namespace mpi4cpp;
-
 
 
 /// Deposit current into electric field
@@ -165,27 +175,53 @@ void Tile<2>::update_boundaries(
           //for(int h=0; h<halo; h++) copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
 
           if(has_elem(iarr, 0)) {
+
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.jx(ito+in*h, j, 0) = rhs_in.jx(ifro+in*h, j, 0);
               lhs_in.jy(ito+in*h, j, 0) = rhs_in.jy(ifro+in*h, j, 0);
               lhs_in.jz(ito+in*h, j, 0) = rhs_in.jz(ifro+in*h, j, 0);
             }, Ny, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D([=] (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.jx(ito+in*h, j, 0) = rhs_in.jx(ifro+in*h, j, 0);
+              lhs_in.jy(ito+in*h, j, 0) = rhs_in.jy(ifro+in*h, j, 0);
+              lhs_in.jz(ito+in*h, j, 0) = rhs_in.jz(ifro+in*h, j, 0);
+            }, Ny, halo, lhs, rhs);
+            #endif
           }
 
+          // TODO rest of the operations
           if(has_elem(iarr, 1)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.ex(ito+in*h, j, 0) = rhs_in.ex(ifro+in*h, j, 0);
               lhs_in.ey(ito+in*h, j, 0) = rhs_in.ey(ifro+in*h, j, 0);
               lhs_in.ez(ito+in*h, j, 0) = rhs_in.ez(ifro+in*h, j, 0);
             }, Ny, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.ex(ito+in*h, j, 0) = rhs_in.ex(ifro+in*h, j, 0);
+              lhs_in.ey(ito+in*h, j, 0) = rhs_in.ey(ifro+in*h, j, 0);
+              lhs_in.ez(ito+in*h, j, 0) = rhs_in.ez(ifro+in*h, j, 0);
+            }, Ny, halo, lhs, rhs);
+            #endif
           }
 
           if(has_elem(iarr, 2)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.bx(ito+in*h, j, 0) = rhs_in.bx(ifro+in*h, j, 0);
               lhs_in.by(ito+in*h, j, 0) = rhs_in.by(ifro+in*h, j, 0);
               lhs_in.bz(ito+in*h, j, 0) = rhs_in.bz(ifro+in*h, j, 0);
             }, Ny, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.bx(ito+in*h, j, 0) = rhs_in.bx(ifro+in*h, j, 0);
+              lhs_in.by(ito+in*h, j, 0) = rhs_in.by(ifro+in*h, j, 0);
+              lhs_in.bz(ito+in*h, j, 0) = rhs_in.bz(ifro+in*h, j, 0);
+            }, Ny, halo, lhs, rhs);
+            #endif
           }
 
 
@@ -194,27 +230,54 @@ void Tile<2>::update_boundaries(
           //for(int g=0; g<halo; g++) copy_horz_yee(mesh, mpr, iarr, jto+jn*g, jfro+jn*g);   
 
           if(has_elem(iarr, 0)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.jx(i, jto+jn*g, 0) = rhs_in.jx(i, jfro+jn*g, 0);
               lhs_in.jy(i, jto+jn*g, 0) = rhs_in.jy(i, jfro+jn*g, 0);
               lhs_in.jz(i, jto+jn*g, 0) = rhs_in.jz(i, jfro+jn*g, 0);
             }, Nx, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.jx(i, jto+jn*g, 0) = rhs_in.jx(i, jfro+jn*g, 0);
+              lhs_in.jy(i, jto+jn*g, 0) = rhs_in.jy(i, jfro+jn*g, 0);
+              lhs_in.jz(i, jto+jn*g, 0) = rhs_in.jz(i, jfro+jn*g, 0);
+            }, Nx, halo, lhs, rhs);
+
+            #endif
           }
             
           if(has_elem(iarr, 1)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.ex(i, jto+jn*g, 0) = rhs_in.ex(i, jfro+jn*g, 0);
               lhs_in.ey(i, jto+jn*g, 0) = rhs_in.ey(i, jfro+jn*g, 0);
               lhs_in.ez(i, jto+jn*g, 0) = rhs_in.ez(i, jfro+jn*g, 0);
             }, Nx, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.ex(i, jto+jn*g, 0) = rhs_in.ex(i, jfro+jn*g, 0);
+              lhs_in.ey(i, jto+jn*g, 0) = rhs_in.ey(i, jfro+jn*g, 0);
+              lhs_in.ez(i, jto+jn*g, 0) = rhs_in.ez(i, jfro+jn*g, 0);
+            }, Nx, halo, lhs, rhs);
+
+            #endif
           }
 
           if(has_elem(iarr, 2)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.bx(i, jto+jn*g, 0) = rhs_in.bx(i, jfro+jn*g, 0);
               lhs_in.by(i, jto+jn*g, 0) = rhs_in.by(i, jfro+jn*g, 0);
               lhs_in.bz(i, jto+jn*g, 0) = rhs_in.bz(i, jfro+jn*g, 0);
             }, Nx, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.bx(i, jto+jn*g, 0) = rhs_in.bx(i, jfro+jn*g, 0);
+              lhs_in.by(i, jto+jn*g, 0) = rhs_in.by(i, jfro+jn*g, 0);
+              lhs_in.bz(i, jto+jn*g, 0) = rhs_in.bz(i, jfro+jn*g, 0);
+            }, Nx, halo, lhs, rhs);
+
+            #endif
           }
 
         } else { // diagonal
@@ -225,27 +288,54 @@ void Tile<2>::update_boundaries(
           //}
 
           if(has_elem(iarr, 0)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.jx(ito+in*h, jto+jn*g, 0) = rhs_in.jx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jy(ito+in*h, jto+jn*g, 0) = rhs_in.jy(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jz(ito+in*h, jto+jn*g, 0) = rhs_in.jz(ifro+in*h, jfro+jn*g, 0);
             }, halo, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.jx(ito+in*h, jto+jn*g, 0) = rhs_in.jx(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.jy(ito+in*h, jto+jn*g, 0) = rhs_in.jy(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.jz(ito+in*h, jto+jn*g, 0) = rhs_in.jz(ifro+in*h, jfro+jn*g, 0);
+            }, halo, halo, lhs, rhs);
+
+            #endif
           }
             
           if(has_elem(iarr, 1)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.ex(ito+in*h, jto+jn*g, 0) = rhs_in.ex(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ey(ito+in*h, jto+jn*g, 0) = rhs_in.ey(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ez(ito+in*h, jto+jn*g, 0) = rhs_in.ez(ifro+in*h, jfro+jn*g, 0);
             }, halo, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.ex(ito+in*h, jto+jn*g, 0) = rhs_in.ex(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.ey(ito+in*h, jto+jn*g, 0) = rhs_in.ey(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.ez(ito+in*h, jto+jn*g, 0) = rhs_in.ez(ifro+in*h, jfro+jn*g, 0);
+            }, halo, halo, lhs, rhs);
+
+            #endif
           }
 
           if(has_elem(iarr, 2)) {
+            #ifdef VEC_FLD2D
             UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
               lhs_in.bx(ito+in*h, jto+jn*g, 0) = rhs_in.bx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.by(ito+in*h, jto+jn*g, 0) = rhs_in.by(ifro+in*h, jfro+jn*g, 0);
               lhs_in.bz(ito+in*h, jto+jn*g, 0) = rhs_in.bz(ifro+in*h, jfro+jn*g, 0);
             }, halo, halo, lhs, rhs);
+            #else
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              lhs_in.bx(ito+in*h, jto+jn*g, 0) = rhs_in.bx(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.by(ito+in*h, jto+jn*g, 0) = rhs_in.by(ifro+in*h, jfro+jn*g, 0);
+              lhs_in.bz(ito+in*h, jto+jn*g, 0) = rhs_in.bz(ifro+in*h, jfro+jn*g, 0);
+            }, halo, halo, lhs, rhs);
+
+            #endif
           }
 
         }
@@ -326,27 +416,54 @@ void Tile<3>::update_boundaries(
               //copy_vert_yee_halo(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in, ind);
 
               if(has_elem(iarr, 0)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.jx(ito+in*h, j, k) = rhs_in.jx(ifro+in*h, j, k);
                   lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
                   lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
                 }, Ny, Nz, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito+in*h, j, k) = rhs_in.jx(ifro+in*h, j, k);
+                  lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
+                  lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
+                }, Ny, Nz, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 1)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
                   lhs_in.ey(ito+in*h, j, k) = rhs_in.ey(ifro+in*h, j, k);
                   lhs_in.ez(ito+in*h, j, k) = rhs_in.ez(ifro+in*h, j, k);
                 }, Ny, Nz, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
+                  lhs_in.ey(ito+in*h, j, k) = rhs_in.ey(ifro+in*h, j, k);
+                  lhs_in.ez(ito+in*h, j, k) = rhs_in.ez(ifro+in*h, j, k);
+                }, Ny, Nz, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 2)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.bx(ito+in*h, j, k) = rhs_in.bx(ifro+in*h, j, k);
                   lhs_in.by(ito+in*h, j, k) = rhs_in.by(ifro+in*h, j, k);
                   lhs_in.bz(ito+in*h, j, k) = rhs_in.bz(ifro+in*h, j, k);
                 }, Ny, Nz, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito+in*h, j, k) = rhs_in.bx(ifro+in*h, j, k);
+                  lhs_in.by(ito+in*h, j, k) = rhs_in.by(ifro+in*h, j, k);
+                  lhs_in.bz(ito+in*h, j, k) = rhs_in.bz(ifro+in*h, j, k);
+                }, Ny, Nz, halo, lhs, rhs);
+
+                #endif
               }
 
             // horizontal
@@ -355,27 +472,54 @@ void Tile<3>::update_boundaries(
               //copy_horz_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn, ind);
 
               if(has_elem(iarr, 0)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.jx(i, jto+jn*g, k) = rhs_in.jx(i, jfro+jn*g, k);
                   lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
                   lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
                 }, Nx, Nz, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(i, jto+jn*g, k) = rhs_in.jx(i, jfro+jn*g, k);
+                  lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
+                  lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
+                }, Nx, Nz, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 1)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
                   lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
                   lhs_in.ez(i, jto+jn*g, k) = rhs_in.ez(i, jfro+jn*g, k);
                 }, Nx, Nz, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
+                  lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
+                  lhs_in.ez(i, jto+jn*g, k) = rhs_in.ez(i, jfro+jn*g, k);
+                }, Nx, Nz, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 2)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.bx(i, jto+jn*g, k) = rhs_in.bx(i, jfro+jn*g, k);
                   lhs_in.by(i, jto+jn*g, k) = rhs_in.by(i, jfro+jn*g, k);
                   lhs_in.bz(i, jto+jn*g, k) = rhs_in.bz(i, jfro+jn*g, k);
                 }, Nx, Nz, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(i, jto+jn*g, k) = rhs_in.bx(i, jfro+jn*g, k);
+                  lhs_in.by(i, jto+jn*g, k) = rhs_in.by(i, jfro+jn*g, k);
+                  lhs_in.bz(i, jto+jn*g, k) = rhs_in.bz(i, jfro+jn*g, k);
+                }, Nx, Nz, halo, lhs, rhs);
+
+                #endif
               }
 
             // diagonal
@@ -387,27 +531,54 @@ void Tile<3>::update_boundaries(
              //copy_z_pencil_yee_halo(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn, ind);
 
               if(has_elem(iarr, 0)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.jx(ito+in*h, jto+jn*g, k) = rhs_in.jx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jy(ito+in*h, jto+jn*g, k) = rhs_in.jy(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
                 }, Nz, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito+in*h, jto+jn*g, k) = rhs_in.jx(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.jy(ito+in*h, jto+jn*g, k) = rhs_in.jy(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
+                }, Nz, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 1)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ez(ito+in*h, jto+jn*g, k) = rhs_in.ez(ifro+in*h, jfro+jn*g, k);
                 }, Nz, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.ez(ito+in*h, jto+jn*g, k) = rhs_in.ez(ifro+in*h, jfro+jn*g, k);
+                }, Nz, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 2)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.bx(ito+in*h, jto+jn*g, k) = rhs_in.bx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.by(ito+in*h, jto+jn*g, k) = rhs_in.by(ifro+in*h, jfro+jn*g, k);
                   lhs_in.bz(ito+in*h, jto+jn*g, k) = rhs_in.bz(ifro+in*h, jfro+jn*g, k);
                 }, Nz, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito+in*h, jto+jn*g, k) = rhs_in.bx(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.by(ito+in*h, jto+jn*g, k) = rhs_in.by(ifro+in*h, jfro+jn*g, k);
+                  lhs_in.bz(ito+in*h, jto+jn*g, k) = rhs_in.bz(ifro+in*h, jfro+jn*g, k);
+                }, Nz, halo, halo, lhs, rhs);
+
+                #endif
               }
 
             } 
@@ -421,27 +592,54 @@ void Tile<3>::update_boundaries(
               //copy_face_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn, ind);
 
               if(has_elem(iarr, 0)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.jx(i, j, kto +kn*f) =  rhs_in.jx(i, j, kfro+kn*f);
                   lhs_in.jy(i, j, kto +kn*f) =  rhs_in.jy(i, j, kfro+kn*f);
                   lhs_in.jz(i, j, kto +kn*f) =  rhs_in.jz(i, j, kfro+kn*f);
                 }, Nx, Ny, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(i, j, kto +kn*f) =  rhs_in.jx(i, j, kfro+kn*f);
+                  lhs_in.jy(i, j, kto +kn*f) =  rhs_in.jy(i, j, kfro+kn*f);
+                  lhs_in.jz(i, j, kto +kn*f) =  rhs_in.jz(i, j, kfro+kn*f);
+                }, Nx, Ny, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 1)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.ex(i, j, kto +kn*f) =  rhs_in.ex(i, j, kfro+kn*f);
                   lhs_in.ey(i, j, kto +kn*f) =  rhs_in.ey(i, j, kfro+kn*f);
                   lhs_in.ez(i, j, kto +kn*f) =  rhs_in.ez(i, j, kfro+kn*f);
                 }, Nx, Ny, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(i, j, kto +kn*f) =  rhs_in.ex(i, j, kfro+kn*f);
+                  lhs_in.ey(i, j, kto +kn*f) =  rhs_in.ey(i, j, kfro+kn*f);
+                  lhs_in.ez(i, j, kto +kn*f) =  rhs_in.ez(i, j, kfro+kn*f);
+                }, Nx, Ny, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 2)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.bx(i, j, kto +kn*f) =  rhs_in.bx(i, j, kfro+kn*f);
                   lhs_in.by(i, j, kto +kn*f) =  rhs_in.by(i, j, kfro+kn*f);
                   lhs_in.bz(i, j, kto +kn*f) =  rhs_in.bz(i, j, kfro+kn*f);
                 }, Nx, Ny, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(i, j, kto +kn*f) =  rhs_in.bx(i, j, kfro+kn*f);
+                  lhs_in.by(i, j, kto +kn*f) =  rhs_in.by(i, j, kfro+kn*f);
+                  lhs_in.bz(i, j, kto +kn*f) =  rhs_in.bz(i, j, kfro+kn*f);
+                }, Nx, Ny, halo, lhs, rhs);
+
+                #endif
               }
 
 
@@ -460,27 +658,54 @@ void Tile<3>::update_boundaries(
               //copy_y_pencil_yee_halo(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
 
               if(has_elem(iarr, 0)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.jx(ito+in*h, j, kto+kn*g) = rhs_in.jx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
                 }, Ny, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito+in*h, j, kto+kn*g) = rhs_in.jx(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
+                }, Ny, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 1)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ey(ito+in*h, j, kto+kn*g) = rhs_in.ey(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ez(ito+in*h, j, kto+kn*g) = rhs_in.ez(ifro+in*h, j, kfro+kn*g);
                 }, Ny, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.ey(ito+in*h, j, kto+kn*g) = rhs_in.ey(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.ez(ito+in*h, j, kto+kn*g) = rhs_in.ez(ifro+in*h, j, kfro+kn*g);
+                }, Ny, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 2)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.bx(ito+in*h, j, kto+kn*g) = rhs_in.bx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.by(ito+in*h, j, kto+kn*g) = rhs_in.by(ifro+in*h, j, kfro+kn*g);
                   lhs_in.bz(ito+in*h, j, kto+kn*g) = rhs_in.bz(ifro+in*h, j, kfro+kn*g);
                 }, Ny, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito+in*h, j, kto+kn*g) = rhs_in.bx(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.by(ito+in*h, j, kto+kn*g) = rhs_in.by(ifro+in*h, j, kfro+kn*g);
+                  lhs_in.bz(ito+in*h, j, kto+kn*g) = rhs_in.bz(ifro+in*h, j, kfro+kn*g);
+                }, Ny, halo, halo, lhs, rhs);
+
+                #endif
               }
 
 
@@ -495,27 +720,54 @@ void Tile<3>::update_boundaries(
               //copy_x_pencil_yee_halo(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
 
               if(has_elem(iarr, 0)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.jx(i, jto+jn*h, kto+kn*g) = rhs_in.jx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
                 }, Nx, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(i, jto+jn*h, kto+kn*g) = rhs_in.jx(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
+                }, Nx, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 1)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ez(i, jto+jn*h, kto+kn*g) = rhs_in.ez(i, jfro+jn*h, kfro+kn*g);
                 }, Nx, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.ez(i, jto+jn*h, kto+kn*g) = rhs_in.ez(i, jfro+jn*h, kfro+kn*g);
+                }, Nx, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 2)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.bx(i, jto+jn*h, kto+kn*g) = rhs_in.bx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.by(i, jto+jn*h, kto+kn*g) = rhs_in.by(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.bz(i, jto+jn*h, kto+kn*g) = rhs_in.bz(i, jfro+jn*h, kfro+kn*g);
                 }, Nx, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(i, jto+jn*h, kto+kn*g) = rhs_in.bx(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.by(i, jto+jn*h, kto+kn*g) = rhs_in.by(i, jfro+jn*h, kfro+kn*g);
+                  lhs_in.bz(i, jto+jn*h, kto+kn*g) = rhs_in.bz(i, jfro+jn*h, kfro+kn*g);
+                }, Nx, halo, halo, lhs, rhs);
+
+                #endif
               }
 
             // corners
@@ -532,27 +784,54 @@ void Tile<3>::update_boundaries(
               //copy_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
 
               if(has_elem(iarr, 0)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
                 }, halo, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                }, halo, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 1)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
                 }, halo, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                }, halo, halo, halo, lhs, rhs);
+
+                #endif
               }
 
               if(has_elem(iarr, 2)) {
+                #ifdef VEC_FLD3D
                 UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                   lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
                 }, halo, halo, halo, lhs, rhs);
+                #else
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                  lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                  lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
+                }, halo, halo, halo, lhs, rhs);
+
+                #endif
               }
 
 
@@ -694,24 +973,37 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
         // add
         if (jn == 0) { // vertical
           //for(int h=1; h<=halo; h++) add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
-
+          
+          #ifdef VEC_CUR2D
           UniIter::iterate2D([=] DEVCALLABLE (int j,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
             atomic_add( lhs_in.jx(ito-in*h, j, 0), rhs_in.jx(ifro-in*h, j, 0) );
             atomic_add( lhs_in.jy(ito-in*h, j, 0), rhs_in.jy(ifro-in*h, j, 0) );
             atomic_add( lhs_in.jz(ito-in*h, j, 0), rhs_in.jz(ifro-in*h, j, 0) );
           }, Ny, halo, lhs, rhs);
-
+          #else
+          UniIter::UniIterHost::iterate2D_nonvec([=] (int j,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+            lhs_in.jx(ito-in*h, j, 0) += rhs_in.jx(ifro-in*h, j, 0);
+            lhs_in.jy(ito-in*h, j, 0) += rhs_in.jy(ifro-in*h, j, 0);
+            lhs_in.jz(ito-in*h, j, 0) += rhs_in.jz(ifro-in*h, j, 0);
+          }, Ny, halo, lhs, rhs);
+          #endif
 
         } else if (in == 0) { // horizontal
           //for(int g=1; g<=halo; g++) add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
 
+          #ifdef VEC_CUR2D
           UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
             atomic_add( lhs_in.jx(i, jto-jn*g, 0), rhs_in.jx(i, jfro-jn*g, 0) );
             atomic_add( lhs_in.jy(i, jto-jn*g, 0), rhs_in.jy(i, jfro-jn*g, 0) );
             atomic_add( lhs_in.jz(i, jto-jn*g, 0), rhs_in.jz(i, jfro-jn*g, 0) );
           }, Nx, halo, lhs, rhs);
-
-
+          #else
+          UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            lhs_in.jx(i, jto-jn*g, 0) += rhs_in.jx(i, jfro-jn*g, 0);
+            lhs_in.jy(i, jto-jn*g, 0) += rhs_in.jy(i, jfro-jn*g, 0);
+            lhs_in.jz(i, jto-jn*g, 0) += rhs_in.jz(i, jfro-jn*g, 0);
+          }, Nx, halo, lhs, rhs);
+          #endif
         } else { // diagonal
           //for(int h=1; h<=halo; h++) {
           //  for(int g=1; g<=halo; g++) {
@@ -719,13 +1011,19 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
           //  }
           //}
 
+          #ifdef VEC_CUR2D
           UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
             atomic_add( lhs_in.jx(ito-in*h, jto-jn*g, 0), rhs_in.jx(ifro-in*h, jfro-jn*g, 0));
             atomic_add( lhs_in.jy(ito-in*h, jto-jn*g, 0), rhs_in.jy(ifro-in*h, jfro-jn*g, 0));
             atomic_add( lhs_in.jz(ito-in*h, jto-jn*g, 0), rhs_in.jz(ifro-in*h, jfro-jn*g, 0));
           }, halo, halo, lhs, rhs);
-
-
+          #else
+          UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            lhs_in.jx(ito-in*h, jto-jn*g, 0) += rhs_in.jx(ifro-in*h, jfro-jn*g, 0);
+            lhs_in.jy(ito-in*h, jto-jn*g, 0) += rhs_in.jy(ifro-in*h, jfro-jn*g, 0);
+            lhs_in.jz(ito-in*h, jto-jn*g, 0) += rhs_in.jz(ifro-in*h, jfro-jn*g, 0);
+          }, halo, halo, lhs, rhs);
+          #endif
         }
       } // end of if(tpr)
     }
@@ -789,22 +1087,37 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             if (jn == 0) { 
               //for(int h=0; h<halo; h++) add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
 
+              #ifdef VEC_CUR3D
               UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
                 atomic_add( lhs_in.jx(ito-in*h, j, k), rhs_in.jx(ifro-in*h, j, k) );
                 atomic_add( lhs_in.jy(ito-in*h, j, k), rhs_in.jy(ifro-in*h, j, k) );
                 atomic_add( lhs_in.jz(ito-in*h, j, k), rhs_in.jz(ifro-in*h, j, k) );
               }, Ny, Nz, halo, lhs, rhs);
-
+              #else
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+                lhs_in.jx(ito-in*h, j, k) += rhs_in.jx(ifro-in*h, j, k);
+                lhs_in.jy(ito-in*h, j, k) += rhs_in.jy(ifro-in*h, j, k);
+                lhs_in.jz(ito-in*h, j, k) += rhs_in.jz(ifro-in*h, j, k);
+              }, Ny, Nz, halo, lhs, rhs);
+              #endif
 
             // horizontal
             } else if (in == 0) { 
               //for(int g=0; g<halo; g++) add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
                 
+              #ifdef VEC_CUR3D
               UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
                 atomic_add( lhs_in.jx(i, jto-jn*g, k), rhs_in.jx(i, jfro-jn*g, k) );
                 atomic_add( lhs_in.jy(i, jto-jn*g, k), rhs_in.jy(i, jfro-jn*g, k) );
                 atomic_add( lhs_in.jz(i, jto-jn*g, k), rhs_in.jz(i, jfro-jn*g, k) );
               }, Nx, Nz, halo, lhs, rhs);
+              #else
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(i, jto-jn*g, k) += rhs_in.jx(i, jfro-jn*g, k);
+                lhs_in.jy(i, jto-jn*g, k) += rhs_in.jy(i, jfro-jn*g, k);
+                lhs_in.jz(i, jto-jn*g, k) += rhs_in.jz(i, jfro-jn*g, k);
+              }, Nx, Nz, halo, lhs, rhs);
+              #endif
 
             // diagonal
             } else { 
@@ -813,12 +1126,19 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //    add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
               //} }
 
+              #ifdef VEC_CUR3D
               UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                 atomic_add( lhs_in.jx(ito-in*h, jto-jn*g, k), rhs_in.jx(ifro-in*h, jfro-jn*g, k) );
                 atomic_add( lhs_in.jy(ito-in*h, jto-jn*g, k), rhs_in.jy(ifro-in*h, jfro-jn*g, k) );
                 atomic_add( lhs_in.jz(ito-in*h, jto-jn*g, k), rhs_in.jz(ifro-in*h, jfro-jn*g, k) );
               }, Nz, halo, halo, lhs, rhs);
-
+              #else
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(ito-in*h, jto-jn*g, k) += rhs_in.jx(ifro-in*h, jfro-jn*g, k);
+                lhs_in.jy(ito-in*h, jto-jn*g, k) += rhs_in.jy(ifro-in*h, jfro-jn*g, k);
+                lhs_in.jz(ito-in*h, jto-jn*g, k) += rhs_in.jz(ifro-in*h, jfro-jn*g, k);
+              }, Nz, halo, halo, lhs, rhs);
+              #endif
             } 
 
           // 3D case with kn != 0
@@ -829,11 +1149,19 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //for(int g=0; g<halo; g++) add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
               //add_face_yee_halo(mesh, mpr, Nx, Ny, halo, kto, kfro, kn, ind);
 
+              #ifdef VEC_CUR3D
               UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
                   atomic_add( lhs_in.jx(i, j, kto-kn*g), rhs_in.jx(i, j, kfro-kn*g) );
                   atomic_add( lhs_in.jy(i, j, kto-kn*g), rhs_in.jy(i, j, kfro-kn*g) );
                   atomic_add( lhs_in.jz(i, j, kto-kn*g), rhs_in.jz(i, j, kfro-kn*g) );
               }, Nx, Ny, halo, lhs, rhs);
+              #else
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
+                  lhs_in.jx(i, j, kto-kn*g) += rhs_in.jx(i, j, kfro-kn*g);
+                  lhs_in.jy(i, j, kto-kn*g) += rhs_in.jy(i, j, kfro-kn*g);
+                  lhs_in.jz(i, j, kto-kn*g) += rhs_in.jz(i, j, kfro-kn*g);
+              }, Nx, Ny, halo, lhs, rhs);
+              #endif
 
 
             //// 3D generalized diagonal locations
@@ -850,12 +1178,19 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //}}
               //add_y_pencil_yee_halo(mesh, mpr, Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
 
+              #ifdef VEC_CUR3D
               UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                 atomic_add( lhs_in.jx(ito-in*h, j, kto-kn*g), rhs_in.jx(ifro-in*h, j, kfro-kn*g) );
                 atomic_add( lhs_in.jy(ito-in*h, j, kto-kn*g), rhs_in.jy(ifro-in*h, j, kfro-kn*g) );
                 atomic_add( lhs_in.jz(ito-in*h, j, kto-kn*g), rhs_in.jz(ifro-in*h, j, kfro-kn*g) );
               }, Ny, halo, halo, lhs, rhs);
-
+              #else
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(ito-in*h, j, kto-kn*g) += rhs_in.jx(ifro-in*h, j, kfro-kn*g);
+                lhs_in.jy(ito-in*h, j, kto-kn*g) += rhs_in.jy(ifro-in*h, j, kfro-kn*g);
+                lhs_in.jz(ito-in*h, j, kto-kn*g) += rhs_in.jz(ifro-in*h, j, kfro-kn*g);
+              }, Ny, halo, halo, lhs, rhs);
+              #endif
 
             } else if (in == 0 && jn != 0 && kn != 0) {
               // x pencils
@@ -865,11 +1200,19 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //}}
               //add_x_pencil_yee_halo(lhs, rhs, Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
 
+              #ifdef VEC_CUR3D
               UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                 atomic_add( lhs_in.jx(i, jto-jn*h, kto-kn*g), rhs_in.jx(i, jfro-jn*h, kfro-kn*g) );
                 atomic_add( lhs_in.jy(i, jto-jn*h, kto-kn*g), rhs_in.jy(i, jfro-jn*h, kfro-kn*g) );
                 atomic_add( lhs_in.jz(i, jto-jn*h, kto-kn*g), rhs_in.jz(i, jfro-jn*h, kfro-kn*g) );
               }, Nx, halo, halo, lhs, rhs);
+              #else
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(i, jto-jn*h, kto-kn*g) += rhs_in.jx(i, jfro-jn*h, kfro-kn*g);
+                lhs_in.jy(i, jto-jn*h, kto-kn*g) += rhs_in.jy(i, jfro-jn*h, kfro-kn*g);
+                lhs_in.jz(i, jto-jn*h, kto-kn*g) += rhs_in.jz(i, jfro-jn*h, kfro-kn*g);
+              }, Nx, halo, halo, lhs, rhs);
+              #endif
 
             //// corners
             } else if (in != 0 && jn != 0 && kn != 0) {
@@ -884,12 +1227,19 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //}}}
               //add_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
                 
+              #ifdef VEC_CUR3D
               UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
                 atomic_add( lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f) );
                 atomic_add( lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f) );
                 atomic_add( lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f) );
               }, halo, halo, halo, lhs, rhs);
-
+              #else
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f) += rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f);
+                lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f) += rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f);
+                lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f) += rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f);
+              }, halo, halo, halo, lhs, rhs);
+              #endif
             } 
 
             //ind++;
