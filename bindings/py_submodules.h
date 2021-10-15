@@ -22,8 +22,8 @@ namespace pic {
   void bind_pic(py::module& m);
 }
 
-namespace rad {
-  void bind_rad(py::module& m);
+namespace qed {
+  void bind_qed(py::module& m);
 }
 
 namespace ffe {

@@ -1,10 +1,10 @@
 #include "py_submodules.h"
 
-#include "../radiation/photon.h"
-#include "../radiation/tile.h"
+#include "../qed/photon.h"
+#include "../qed/tile.h"
 
 
-namespace rad {
+namespace qed {
 
 //--------------------------------------------------
 template<size_t D>
@@ -14,19 +14,19 @@ auto declare_tile(
 {
 
   return 
-  py::class_<rad::Tile<D>,
+  py::class_<qed::Tile<D>,
              pic::Tile<D>, 
              fields::Tile<D>,
              corgi::Tile<D>, 
-             std::shared_ptr<rad::Tile<D>>
+             std::shared_ptr<qed::Tile<D>>
              >(m, 
                pyclass_name.c_str(),
                py::multiple_inheritance()
                )
     .def(py::init<int, int, int>())
-    .def("get_bucket",       &rad::Tile<D>::get_bucket, 
+    .def("get_bucket",       &qed::Tile<D>::get_bucket, 
         py::return_value_policy::reference)
-    .def("push_back",       &rad::Tile<D>::push_back);
+    .def("push_back",       &qed::Tile<D>::push_back);
 }
 
 
@@ -34,21 +34,21 @@ auto declare_tile(
 //--------------------------------------------------
 
 // python bindings for radiation classes & functions
-void bind_rad(py::module& m_sub)
+void bind_qed(py::module& m_sub)
 {
 
-  py::class_<rad::PhotonContainer, pic::ParticleContainer<3>>(m_sub, "PhotonContainer")
+  py::class_<qed::PhotonContainer, pic::ParticleContainer<3>>(m_sub, "PhotonContainer")
     .def(py::init<>())
-    .def("add_particle",  (void (rad::PhotonContainer::*)
+    .def("add_particle",  (void (qed::PhotonContainer::*)
           ( std::vector<float_p>, std::vector<float_p>, float_p, float_p ) ) 
-            &rad::PhotonContainer::add_particle)
-    .def("ene", [](rad::PhotonContainer& s) {return s.eneArr;}, py::return_value_policy::reference)
+            &qed::PhotonContainer::add_particle)
+    .def("ene", [](qed::PhotonContainer& s) {return s.eneArr;}, py::return_value_policy::reference)
     // FIXME: use base class definition via getter/setter members to avoid this redefinition
-    .def("loc",          [](rad::PhotonContainer& s, size_t idim) 
+    .def("loc",          [](qed::PhotonContainer& s, size_t idim) 
         {
           return s.loc(idim); 
         }, py::return_value_policy::reference)
-    .def("vel",          [](rad::PhotonContainer& s, size_t idim) 
+    .def("vel",          [](qed::PhotonContainer& s, size_t idim) 
         {
           return s.vel(idim); 
         }, py::return_value_policy::reference);
@@ -56,7 +56,7 @@ void bind_rad(py::module& m_sub)
 
   // 2D bindings
   py::module m_2d = m_sub.def_submodule("twoD", "2D specializations");
-  auto t2 = rad::declare_tile<2>(m_2d, "Tile");
+  auto t2 = qed::declare_tile<2>(m_2d, "Tile");
 
 
 
@@ -66,4 +66,4 @@ void bind_rad(py::module& m_sub)
 
 
 
-} // ns rad
+} // ns qed

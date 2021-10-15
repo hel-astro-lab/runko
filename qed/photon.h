@@ -3,8 +3,7 @@
 #include "../pic/particle.h"
 
 
-
-namespace rad {
+namespace qed {
 
 /*! \brief Container of photons inside the tile
  *
@@ -76,4 +75,4 @@ class PhotonContainer :
 
 
 
-} // end of namespace radiation
+} // end of namespace qed

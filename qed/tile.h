@@ -8,7 +8,7 @@
 
 
 
-namespace rad {
+namespace qed {
 
 /*! \brief Radiation tile
  *
@@ -59,4 +59,4 @@ public:
 }; // end of tile class
 
 
-} // ns rad
+} // ns qed

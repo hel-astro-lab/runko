@@ -29,7 +29,7 @@ PYBIND11_MODULE(pyrunko, m_base) {
 
   /// rad
   py::module m_rad = m_base.def_submodule("rad", "Runko radiation module");
-  rad::bind_rad(m_rad);
+  qed::bind_qed(m_rad);
     
   /// ffe
   py::module m_ffe = m_base.def_submodule("ffe", "Runko force-free MHD module");
