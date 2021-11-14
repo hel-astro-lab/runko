@@ -110,7 +110,7 @@ def check_for_restart(conf):
         # >0 lap means that we need to restart from full_output
         elif conf.laprestart > 0:
             io_status["lap"] = conf.laprestart
-            io_status["read_lap"] = lap
+            io_status["read_lap"] = conf.laprestart
             io_status["read_dir"] = conf.outdir + "/full_output"
 
 
