@@ -164,12 +164,12 @@ You should also add the python script directories into `PYTHONPATH` environment 
 
 .. code-block:: bash
 
-   export RUNKO=/path2repo
-   export PYTHONPATH=$PYTHONPATH:$RUNKO
-   export PYTHONPATH=$PYTHONPATH:$RUNKO/lib
-   export PYTHONPATH=$PYTHONPATH:$RUNKO/corgi/lib
-   export PYTHONPATH=$PYTHONPATH:$RUNKO/bindings/old
-
+    export RUNKO=/path2repo
+    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO"
+    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/lib"
+    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/corgi/lib"
+    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/bindings/old"
+    export PYTHONPATH
 
 where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory). Note that there is no trailing slash `/`. As an example, the path can be e.g., `/Users/natj/runko`.
 
