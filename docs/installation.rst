@@ -165,7 +165,7 @@ You should also add the python script directories into `PYTHONPATH` environment 
 .. code-block:: bash
 
     export RUNKO=/path2repo
-    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO"
+    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/"
     PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/lib"
     PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/corgi/lib"
     PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/bindings/old"
