@@ -36,7 +36,7 @@ Requirements
 
 Before proceeding to compilation, check that your system has these requirements installed:
 
-* Modern C++ compiler (such as `Clang++ <https://clang.llvm.org/>`_, g++, ...)
+* Modern C++ compiler (such a`Clang++ <https://clang.llvm.org/>`_, g++, ...)
 * python3 (with mpi4py)
 * `HDF5 <https://support.hdfgroup.org/HDF5/>`_ for I/O (serial mode is enough)
 * `CMake <https://cmake.org/>`_ (>v3.0) for building and compiling
@@ -46,9 +46,7 @@ Before proceeding to compilation, check that your system has these requirements 
 
 .. note::
 
-    Note that g++-8 does not work because of a (known) compiler bug. Therefore, g++-9 is the current recommended choice.
-
-
+    Note that g++-8 does not work because of a (known) compiler bug. Therefore, g++-9 or newer is the current recommended choice.
 
 
 
@@ -59,11 +57,26 @@ On MacOS these are easily installed with `homebrew <https://brew.sh/>`_ by runni
 
 .. code-block:: bash
 
-   brew install gcc hdf5 python3 open-mpi cmake fftw fmt
+   brew install gcc hdf5 python3 cmake 
 
-MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the g++-9 just installed). 
+MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the new g++ just installed). 
 
-Compiling e.g., OpenMPI can be done fully via the terminal by running:
+You can compile OpenMPI via homebrew by first modifying your `~/.bash_profile` to include an info of the new compilers:
+
+.. code-block:: bash
+
+   export HOMEBREW_CC=gcc-11
+   export HOMEBREW_CXX=g++-11
+
+Then restart the terminal to reload your newly added environment variables. After that, install `openmpi` from source with
+
+.. code-block:: bash
+
+    brew reinstall openmpi --build-from-source
+
+
+
+Alternatively, if you want even more control of the operation, you can compile it manually yourself by running:
 
 .. code-block:: bash
 
