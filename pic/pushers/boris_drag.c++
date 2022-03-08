@@ -136,9 +136,14 @@ void pic::BorisPusherDrag<D,V>::push_container(
     kncorr = kn(3.0*gamt*temp);
 
     // drag components
-    dragx = c*drag*kncorr*gamt*gamt*(uxt/gamt);
-    dragy = c*drag*kncorr*gamt*gamt*(uyt/gamt);
-    dragz = c*drag*kncorr*gamt*gamt*(uzt/gamt);
+    //dragx = c*drag*kncorr*gamt*gamt*(uxt/gamt);
+    //dragy = c*drag*kncorr*gamt*gamt*(uyt/gamt);
+    //dragz = c*drag*kncorr*gamt*gamt*(uzt/gamt);
+
+    // TODO test sign
+    dragx = c*drag*kncorr*uxt*uxt;
+    dragy = c*drag*kncorr*uyt*uyt;
+    dragz = c*drag*kncorr*uzt*uzt;
 
     // limit drag to maximum of dragthr of velocity
     dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut;
@@ -158,7 +163,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
         vel[1][n]*vel[1][n] +
         vel[2][n]*vel[2][n]);
 
-    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c*freezing_factor;
+    for(size_t i=0; i<D; i++) loc[i][n] += vel[i][n]*ginv*c; //*freezing_factor;
   }
 }
 
