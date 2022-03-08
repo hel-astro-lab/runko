@@ -39,14 +39,42 @@ class Mesh
     /// Internal indexing with halo region padding of width H
     inline size_t indx(int i, int j, int k) const {
 
-      assert( (i >= -H) && (i <  (int)Nx + H)  );
-      assert( (j >= -H) && (j <  (int)Ny + H)  );
-      assert( (k >= -H) && (k <  (int)Nz + H)  );
-      int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
-      assert( (indx >= 0) && (indx <  (int)mat.size() ) );
-
+      //assert( (i >= -H) && (i <  (int)Nx + H)  );
+      //assert( (j >= -H) && (j <  (int)Ny + H)  );
+      //assert( (k >= -H) && (k <  (int)Nz + H)  );
+      //int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+      //assert( (indx >= 0) && (indx <  (int)mat.size() ) );
       //return indx;
-      return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+      //return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+
+      if( !((i >= -H) && (i <  (int)Nx + H)  )) {
+        std::cerr << "mesh indx error i:" << i << " max:" << Nx+H << "\n";
+        if(i < -H)    i = -H;
+        if(i >= Nx+H) i = Nx+H-1;
+      }
+
+      if( !((j >= -H) && (j <  (int)Ny + H)  )) {
+        std::cerr << "mesh indx error j:" << j << " max:" << Ny+H << "\n";
+        if(j < -H)    j = -H;
+        if(j >= Ny+H) j = Ny+H-1;
+      }
+
+      if( !((k >= -H) && (k <  (int)Nz + H)  )) {
+        std::cerr << "mesh indx error k:" << k << " max:" << Nz+H << "\n";
+        if(k < -H)    k = -H;
+        if(k >= Nz+H) k = Nz+H-1;
+      }
+
+      int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
+
+      if( !((indx >= 0) && (indx <  (int)mat.size() ) )) {
+        std::cerr << "mesh indx error indx:" << indx << " max:" << mat.size() << "\n";
+        if(indx < 0) indx = 0;
+        if(indx >= mat.size()) indx = mat.size()-1;
+      }
+
+      return indx;
+      //return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
     }
 
     /// 1D index 
