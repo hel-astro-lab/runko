@@ -14,9 +14,17 @@ class Piston
 
   Piston() = default;
 
-  double walloc = 0.0;     // x location of the wall
+  double walloc    = 15.0;     // x location of the wall
   double gammawall = 1.0;  // gamma of the moving wall
   double betawall  = 0.0;  // beta of the moving wall
+
+  double bxwall  = 0.0;    // electric x field behind wall
+  double bywall  = 0.0;    // electric y field behind wall
+  double bzwall  = 0.0;    // electric z field behind wall
+
+  double exwall  = 0.0;    // electric x field behind wall
+  double eywall  = 0.0;    // electric y field behind wall
+  double ezwall  = 0.0;    // electric z field behind wall
 
   /// \brief interpolate electromagnetic fields to particle locations
   void solve(pic::Tile<D>&  /*tile*/);
