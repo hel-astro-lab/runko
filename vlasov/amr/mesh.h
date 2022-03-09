@@ -8,6 +8,8 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include <limits>
+
 //#include "../../tools/sparsepp/sparsepp/spp.h"
 
 // #include "reversed_iterator.h"
