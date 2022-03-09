@@ -280,12 +280,14 @@ void pic::Piston<3>::field_bc(
     auto iw = static_cast<int>( floor(walloc0 - mins[0]) ); // to tile units
     if(iw > static_cast<int>(tile.mesh_lengths[0]+3)) iw = tile.mesh_lengths[0]+3;
 
-    //std::cout << "piston field bc: ix" << tile.mins[0] << " iw" << iw << "\n";
 
     // set transverse directions to zero to make this conductor
-    for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+3; k++) 
-    for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) 
     for(int i=-3; i<=iw; i++) {
+
+    //std::cout << "piston field bc: ix" << i + tile.mins[0] << " iw" << iw << "vals" << eywall << " " << ezwall << "\n";
+
+    for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+3; k++) {
+    for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) {
 
       // transverse components of electric field to zero (only parallel comp allowed)
       //yee.ey(i,j,k) = 0.0; // JN: testing what happens 4th of mar
@@ -308,6 +310,7 @@ void pic::Piston<3>::field_bc(
       // JN: TODO test 4
       //yee.ey(i,  j,k) = eywall; 
       //yee.ez(i+1,j,k) = ezwall;
+
       
       // JN: TODO test 5
       yee.ey(i,j,k) = eywall; 
@@ -327,7 +330,7 @@ void pic::Piston<3>::field_bc(
       //yee.jx(i,j,k) = 0.0;
       //yee.jy(i,j,k) = 0.0;
       //yee.jz(i,j,k) = 0.0;
-    }
+    }}}
 
   } // end if inside piston
 
