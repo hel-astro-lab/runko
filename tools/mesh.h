@@ -70,7 +70,7 @@ class Mesh
       if( !((indx >= 0) && (indx <  (int)mat.size() ) )) {
         std::cerr << "mesh indx error indx:" << indx << " max:" << mat.size() << "\n";
         if(indx < 0) indx = 0;
-        if(indx >= mat.size()) indx = mat.size()-1;
+        if( static_cast<size_t>(indx) >= mat.size()) indx = mat.size()-1;
       }
 
       return indx;
