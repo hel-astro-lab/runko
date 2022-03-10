@@ -168,7 +168,7 @@ void pic::Piston<D>::solve(
         real_long zcolis = z0 + c*dt*w1/gamma;
           
         // deposit current from beginning upto intersection w/ wall
-        zigzag(tile, x0, y0, z0, xcolis, ycolis, zcolis, -q);
+        zigzag(tile, x0, y0, z0, xcolis, ycolis, zcolis, +q);
 
         //--------------------------------------------------
         // perform reflection
@@ -202,7 +202,7 @@ void pic::Piston<D>::solve(
             ynew - c*v1/gamma,
             znew - c*w1/gamma,
             xcolis, ycolis, zcolis,
-            +q);
+            -q);
 
         // lastly; store particle back to the container
         container.loc(0,n) = xnew;
