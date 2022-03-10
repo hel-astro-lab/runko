@@ -122,7 +122,7 @@ void pic::Piston<D>::solve(
     const real_long c = tile.cfl;
     const real_long q = container.q;
 
-    for(int n=0; n<container.size(); n++) {
+    for(int n=0; n<static_cast<int>(container.size()); n++) {
 
       // left side of the wall boundary
       if( container.loc(0,n) < walloc+wshf) {
@@ -267,7 +267,7 @@ void pic::Piston<3>::field_bc(
 {
   // skip if piston head is not inside tile boundaries
   auto mins = tile.mins;
-  auto maxs = tile.maxs;
+  //auto maxs = tile.maxs;
       
   // NOTE: fields are set -10 cells behind prtcl reflection boundary
   double walloc0 = walloc - 10.0; // location of conductor 
