@@ -60,7 +60,6 @@ void pic::Piston<D>::zigzag(
   real_long Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
   real_long Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
-  // TODO: changed sign of q
   real_long Fx2 = +q*(x2-xr);
   real_long Fy2 = +q*(y2-yr);
   real_long Fz2 = +q*(z2-zr);
@@ -231,29 +230,26 @@ void pic::Piston<2>::field_bc(
 
   // skip if piston head is not inside tile boundaries
   auto mins = tile.mins;
-  auto maxs = tile.maxs;
+  //auto maxs = tile.maxs;
+
+  // NOTE: fields are set -10 cells behind prtcl reflection boundary
+  double walloc0 = walloc; // - 10.0; // location of conductor 
 
   // make left side of piston conductor
-  if(walloc -10.0 < maxs[0]) {
+  if(mins[0] < walloc0 -3) {
     auto& yee = tile.get_yee();
 
     // wall location 
-    auto iw = static_cast<int>(walloc - mins[0] - 10.0);
-    if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
+    auto iw = static_cast<int>( floor(walloc0 - mins[0]) ); // to tile units
+    if(iw > static_cast<int>(tile.mesh_lengths[0]+3)) iw = tile.mesh_lengths[0]+3;
 
     // set transverse directions to zero
     for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) {
       for(int i=-3; i<=iw; i++) {
 
         // transverse components of electric field to zero (only parallel comp allowed)
-        yee.ey(i,j,k) = 0.0;
-        yee.ez(i,j,k) = 0.0;
-
-        // clean all current behind piston head
-        //yee.ex(i,j,k) = 0.0;
-        //yee.jx(i,j,k) = 0.0;
-        //yee.jy(i,j,k) = 0.0;
-        //yee.jz(i,j,k) = 0.0;
+        yee.ey(i,j,k) = eywall; 
+        yee.ez(i,j,k) = ezwall;
       }
     }
   }
@@ -270,7 +266,7 @@ void pic::Piston<3>::field_bc(
   //auto maxs = tile.maxs;
       
   // NOTE: fields are set -10 cells behind prtcl reflection boundary
-  double walloc0 = walloc - 10.0; // location of conductor 
+  double walloc0 = walloc; // - 10.0; // location of conductor 
 
   // make left side of piston conductor
   if(mins[0] < walloc0 -3) {

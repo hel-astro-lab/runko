@@ -492,6 +492,12 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("walloc",   &pic::Piston<2>::walloc)
     .def_readwrite("gammawall",&pic::Piston<2>::gammawall)
     .def_readwrite("betawall", &pic::Piston<2>::betawall)
+    .def_readwrite("exwall",   &pic::Piston<2>::exwall)
+    .def_readwrite("eywall",   &pic::Piston<2>::eywall)
+    .def_readwrite("ezwall",   &pic::Piston<2>::ezwall)
+    .def_readwrite("bxwall",   &pic::Piston<2>::bxwall)
+    .def_readwrite("bywall",   &pic::Piston<2>::bywall)
+    .def_readwrite("bzwall",   &pic::Piston<2>::bzwall)
     .def("solve",              &pic::Piston<2>::solve)
     .def("field_bc",           &pic::Piston<2>::field_bc);
 
