@@ -1,15 +1,26 @@
-#modules
-module load slurm
-module load gcc/7.4.0
-module load openmpi2/2.1.6-hfi
-module load python3/3.7.3
-module load python3-mpi4py/3.7.3-openmpi2
-module load cmake/3.14.5
-module load modules-nix
-module load nix/ffmpeg
-module load nix/fftw
-module load lib/hdf5/1.8.21-openmpi2
+#old modules
+#module load slurm
+#module load gcc/7.4.0
+#module load openmpi2/2.1.6-hfi
+#module load python3/3.7.3
+#module load python3-mpi4py/3.7.3-openmpi2
+#module load cmake/3.14.5
+#module load modules-nix
+#module load nix/ffmpeg
+#module load nix/fftw
+#module load lib/hdf5/1.8.21-openmpi2
 
+#module load cmake/3.21.4
+#module load gcc/7.5.0
+#module load openmpi/4.0.6
+#module load python-mpi/3.8.12-mpi
+#module load hdf5/1.10.7-mpi
+
+module load gcc/7.5.0
+module load cmake
+module load openmpi
+module load python-mpi
+module load hdf5/mpi-1.10.8
 
 # cray environment
 export CXX=mpic++
@@ -33,8 +44,15 @@ export LUSTREDIR=/mnt/home/$USER/ceph
 
 #add libary paths
 export RUNKODIR=$LUSTREDIR/runko
+#export RUNKODIR=$LUSTREDIR/runko-old
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/lib
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/corgi/lib
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/bindings/old
+
+#required by old installation; comment on if needed
+#export PYTHONPATH=$PYTHONPATH:$RUNKODIR/python
+#export PYTHONPATH=$PYTHONPATH:$RUNKODIR/analysis
+
+
 

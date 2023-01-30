@@ -8,16 +8,18 @@ project (runko)
 
 # Add the cmake folder to get FindPkg files
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+# use the depracated find_package policy for now; until it breaks...
+cmake_policy(SET CMP0074 OLD)
  
 # optimization flags
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=haswell -ftree-vectorize -fopt-info-all-all=all.all")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=haswell -ftree-vectorize -fopt-info-all-all=all.all")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native") #general optimization
 
 # epyc rome
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -fomit-frame-pointer -fopt-info-all-all=all.all")
-
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=znver1 -mtune=znver1 -ftree-vectorize -mfma -mavx2 -m3dnow -fomit-frame-pointer -fopt-info-all-all=all.all")
 
 # AddressSanitizer
 set(CMAKE_CXX_FLAGS_ASAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g -O1")

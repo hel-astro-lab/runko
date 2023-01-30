@@ -19,7 +19,6 @@ bool has_key(std::vector<T>& v, T x){
 }
 
 
-
 /// Deposit current into electric field
 template<std::size_t D>
 void Tile<D>::deposit_current() 
@@ -888,10 +887,12 @@ void Tile<D>::cycle_yee()
 template<std::size_t D>
 void Tile<D>::clear_current() 
 {
-  auto& yee = this->get_yee();
+  YeeLattice& mesh = get_yee();
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();
+
+  yee.rho.clear(); // TODO: this might cause unexpected behavior
 }
 
 
