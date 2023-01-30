@@ -8,6 +8,9 @@ project (runko)
 
 # Add the cmake folder to get FindPkg files
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+# use the depracated find_package policy for now; until it breaks...
+cmake_policy(SET CMP0074 OLD)
  
 # optimization flags
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")

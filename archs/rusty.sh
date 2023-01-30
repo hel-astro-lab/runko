@@ -20,7 +20,7 @@ module load gcc/7.5.0
 module load cmake
 module load openmpi
 module load python-mpi
-module load hdf5/1.10.8-mpi
+module load hdf5/mpi-1.10.8
 
 # cray environment
 export CXX=mpic++
@@ -44,8 +44,15 @@ export LUSTREDIR=/mnt/home/$USER/ceph
 
 #add libary paths
 export RUNKODIR=$LUSTREDIR/runko
+#export RUNKODIR=$LUSTREDIR/runko-old
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/lib
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/corgi/lib
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/bindings/old
+
+#required by old installation; comment on if needed
+#export PYTHONPATH=$PYTHONPATH:$RUNKODIR/python
+#export PYTHONPATH=$PYTHONPATH:$RUNKODIR/analysis
+
+
 
