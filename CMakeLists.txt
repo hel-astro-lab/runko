@@ -47,6 +47,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ##################################################
 # dependencies
 
+# python
+FIND_PACKAGE(Python3)
+
 #FIND_PACKAGE (EIGEN3 REQUIRED NO_MODULE)
 #if(APPLE)
 #    INCLUDE_DIRECTORIES (SYSTEM "$ENV{EIGEN3_INCLUDE_DIR}" )

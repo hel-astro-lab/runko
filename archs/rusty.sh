@@ -27,7 +27,7 @@ export CXX=mpic++
 export CC=mpicc
 
 # python for CMAKE 
-export PYTHON_EXECUTABLE=python
+export PYTHON_EXECUTABLE=python3
 
 #prevent lockfiles
 export HDF5_USE_FILE_LOCKING=FALSE

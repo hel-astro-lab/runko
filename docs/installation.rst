@@ -167,7 +167,7 @@ Next we can proceed to compiling. Out-of-source builds are recommended so inside
 
    mkdir build
    cd build
-   cmake ..
+   cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python3)
 
 And make sure to check that `CMake` finishes successfully. After that, you are ready to compile the framework with
 
