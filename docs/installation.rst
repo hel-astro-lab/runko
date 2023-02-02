@@ -46,8 +46,7 @@ Before proceeding to compilation, check that your system has these requirements 
 
 .. note::
 
-    Note that g++-8 does not work because of a (known) compiler bug. Therefore, g++-9 is the current recommended choice.
-
+    Note that g++-8 does not work because of a (known) compiler bug. 
 
 
 
@@ -59,34 +58,40 @@ On MacOS these are easily installed with `homebrew <https://brew.sh/>`_ by runni
 
 .. code-block:: bash
 
-   brew install gcc hdf5 python3 open-mpi cmake fftw fmt
+   brew install gcc hdf5 python3 open-mpi cmake fftw fmt cmake wget
 
-MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the g++-9 just installed). 
+MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the latest g++ just installed; currently gcc-12). 
 
-Compiling e.g., OpenMPI can be done fully via the terminal by running:
+Make also sure that Xcode developer tools are installed by running
 
 .. code-block:: bash
 
-   export MPI_IMPL=openmpi40
-   mkdir $HOME/local/$MPI_IMPL/bin
+   xcode-select --install
+
+Compiling e.g., OpenMPI can be done fully via the terminal by running (this assumes an installation directory of `~/local/`, `openmpi-4.1.4`, and `gcc-12`; you can alter those if you wish):
+
+.. code-block:: bash
+
+   export MPI_IMPL=openmpi41
+   mkdir -p $HOME/local/$MPI_IMPL/bin
    cd $HOME/local/$MPI_IMPL/bin
    mkdir -p openmpi && cd openmpi
-   wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-4.0.0.tar.bz2
-   tar -xjf openmpi-4.0.0.tar.bz2
-   cd openmpi-4.0.0
-   export OMPI_CC=gcc-9
-   export OMPI_CXX=g++-9
-   ./configure CC=gcc-9 CXX=g++-9 --prefix=$HOME/local/$MPI_IMPL > /dev/null 2>&1
-   make -j 4 > /dev/null 2>&1
-   make install > /dev/null 2>&1
-   make clean > /dev/null 2>&1
+   wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.1/downloads/openmpi-4.1.4.tar.bz2
+   tar -xjf openmpi-4.1.4.tar.bz2
+   cd openmpi-4.1.4
+   export OMPI_CC=gcc-12
+   export OMPI_CXX=g++-12
+   ./configure CC=gcc-12 CXX=g++-12 --prefix=$HOME/local/$MPI_IMPL 
+   make -j 4
+   make install
+   make clean
    cd ../../
 
    export PATH=$PATH:$HOME/local/$MPI_IMPL/bin
    export PATH=$PATH:$HOME/local/$MPI_IMPL/include
    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI_IMPL/lib
 
-This installs OpenMPI 4.0 to `~/bin` and exports the correct directories so that `mpic++` compiler wrapper becomes available. You should put the last 3 export commands to your `.bash_profile` for easier usage, in case you need to recompile Runko at some point.
+This installs OpenMPI to `~/local` and exports the correct directories so that `mpic++` compiler wrapper becomes available. You should put the last 3 export commands to your `.bash_profile` for easier usage, in case you need to recompile Runko at some point.
 
 Linux
 -----
@@ -167,7 +172,7 @@ Next we can proceed to compiling. Out-of-source builds are recommended so inside
 
    mkdir build
    cd build
-   cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python3)
+   cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python3) ..
 
 And make sure to check that `CMake` finishes successfully. After that, you are ready to compile the framework with
 
