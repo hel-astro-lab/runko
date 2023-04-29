@@ -38,6 +38,9 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
 
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
+                            //
+    // skip particle species if zero charge
+    if (q == 0.0); continue;
 
     //UniIter::iterate([=] DEVCALLABLE (
     //            size_t n, 

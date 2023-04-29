@@ -96,6 +96,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
+    // skip particle species if zero charge
+    if (q == 0.0); continue;
 
     // loop over batches of particles; each batch holds vec_size x particles
     // that are processed simultaneously.

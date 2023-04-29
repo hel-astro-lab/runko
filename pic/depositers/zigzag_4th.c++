@@ -39,6 +39,9 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
 
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
+                            //
+    // skip particle species if zero charge
+    if (q == 0.0); continue;
 
     //for(size_t n=0; n<con.size(); n++) {
       
