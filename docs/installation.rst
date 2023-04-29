@@ -75,6 +75,8 @@ You can compile OpenMPI via homebrew by first modifying your `~/.bash_profile` t
 
    export HOMEBREW_CC=gcc-12
    export HOMEBREW_CXX=g++-12
+   export OMPI_CC=gcc-12
+   export OMPI_CXX=g++-12
 
 Then restart the terminal to reload the newly added environment variables. After restarting, install `openmpi` from source with
 
@@ -109,6 +111,13 @@ Alternatively, if you want even more control of the operation, you can compile i
 
 This installs OpenMPI to `~/local` and exports the correct directories so that `mpic++` compiler wrapper becomes available. You should put the last 3 export commands to your `.bash_profile` for easier usage, in case you need to recompile Runko at some point.
 
+After `openmpi` is installed we also need to re-install `mpi4py` as
+
+.. code-block:: bash
+   pip3 uninstall mpi4py
+   pip3 install mpi4py
+
+
 Linux
 -----
 
@@ -142,7 +151,7 @@ All the python requirements can be installed via `pip` as
 
 .. note::
 
-    If you had to manually install MPI in the previous section, then you need to remove mpi4py (`pip3 uninstall mpi4py`) and re-install it.
+    If you had to manually install MPI in the previous section, then remember to re-install mpi4py.
 
 
 
