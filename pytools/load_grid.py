@@ -35,7 +35,7 @@ def balance_mpi_2D(n, comm_size=None):
             raise ValueError("Ny is not power of 2 (i.e. 2^m)")
 
         # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        hgen = pyrunko.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
+        hgen = pyrunko.tools.twoD.HilbertGen(int(m0), int(m1))
 
         igrid = np.zeros((nx, ny), np.int64)
         grid = np.zeros((nx, ny))  # , np.int64)
@@ -93,7 +93,7 @@ def balance_mpi_3D(n, comm_size=None):
             raise ValueError("Nz is not power of 2 (i.e. 2^m)")
 
         # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        hgen = pyrunko.tools.threeD.HilbertGen(np.int(m0), np.int(m1), np.int(m2))
+        hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2))
 
         igrid = np.zeros((nx, ny, nz), np.int64)
         grid = np.zeros((nx, ny, nz))  # , np.int64)
@@ -162,9 +162,9 @@ def load_catepillar_track_mpi(
 
         # print('Generating hilbert with 2^{} {}'.format(m0,m1))
         if conf.twoD:
-            hgen = pyrunko.tools.twoD.HilbertGen(np.int(m0), np.int(m1))
+            hgen = pyrunko.tools.twoD.HilbertGen(int(m0), int(m1))
         elif conf.threeD:
-            hgen = pyrunko.tools.threeD.HilbertGen(np.int(m0), np.int(m1), np.int(m2) )
+            hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2) )
         grid = np.zeros((nx, ny, nz))  # , np.int64)
 
         for i in range(nx):
@@ -230,7 +230,7 @@ def load_mpi_x_strides(n, conf):
         stride = np.zeros( (n.get_Nx()), np.int64)
         dx = np.float(n.get_Nx()) / np.float(n.size() ) 
         for i in range(n.get_Nx()):
-            val = np.int( i/dx )
+            val = int( i/dx )
             stride[i] = val
 
         for j in range(n.get_Ny()):
@@ -247,7 +247,7 @@ def load_mpi_y_strides(n, conf):
         stride = np.zeros( (n.get_Ny()), np.int64)
         dy = np.float(n.get_Ny()) / np.float(n.size() ) 
         for j in range(n.get_Ny()):
-            val = np.int( j/dy )
+            val = int( j/dy )
             stride[j] = val
 
         for i in range(n.get_Nx()):
