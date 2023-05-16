@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 import pycorgi
-import pyrunko.rad as pyrad
+import pyrunko.qed as pyqed
 import pytools
 
 
@@ -102,7 +102,7 @@ class Conf:
 
 class radiation(unittest.TestCase):
 
-    def test_initialization(self):
+    def skip_test_initialization(self): # NOTE: no photon container defined anymore; old code
 
         #plt.fig = plt.figure(1, figsize=(3,3))
         #plt.rc('font', family='serif', size=12)
@@ -130,7 +130,7 @@ class radiation(unittest.TestCase):
 
         Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc
 
-        container = pyrad.PhotonContainer()
+        container = pyqed.PhotonContainer()
         container.reserve(Nprtcls)
 
         weight = 1.0
@@ -178,8 +178,30 @@ class radiation(unittest.TestCase):
             self.assertAlmostEqual( container.vel(1)[ip], u0_ref[ip,1], places=5)
             self.assertAlmostEqual( container.vel(2)[ip], u0_ref[ip,2], places=5)
 
+    
+    # test that tile supports both pic and rad initialization
+    def skip_test_initialization(self): # NOTE: no radiation tile defined anymore; old code
 
-    def test_blackbody(self):
+        conf = Conf()
+        conf.twoD = True
+
+        conf.NxMesh = 3
+        conf.NyMesh = 3
+        conf.NzMesh = 1
+        conf.Nx = 1
+        conf.Ny = 1
+        conf.Nz = 1
+        conf.ppc = 1
+        conf.update_bbox()
+
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+
+        c = pyqed.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        pytools.pic.initialize_tile(c, (0, 0, 0), grid, conf)
+        pytools.rad.initialize_tile(c, (0,0,0), grid, conf)
+
+    def skip_test_blackbody(self): # NOTE: old code; no Photon Container anymore
 
         if do_plots:
             try:
@@ -209,7 +231,7 @@ class radiation(unittest.TestCase):
         #Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc
         Nprtcls = int(1e4)
 
-        container = pyrad.PhotonContainer()
+        container = pyqed.PhotonContainer()
         container.reserve(Nprtcls)
 
         weight = 1.0
@@ -261,28 +283,33 @@ class radiation(unittest.TestCase):
             pass
 
 
-    
-    # test that tile supports both pic and rad initialization
-    def test_initialization(self):
+
+    def test_interactions(self):
 
         conf = Conf()
-        conf.twoD = True
+        conf.threeD = True
 
         conf.NxMesh = 3
         conf.NyMesh = 3
-        conf.NzMesh = 1
+        conf.NzMesh = 3
         conf.Nx = 1
         conf.Ny = 1
         conf.Nz = 1
         conf.ppc = 1
         conf.update_bbox()
 
-        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny, conf.Nz)
-        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
-        c = pyrad.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-        pytools.pic.initialize_tile(c, (0, 0, 0), grid, conf)
+        t1 = 'e-'
+        t2 = 'e+'
+        ux1, uy1, uz1 = 0.0, 0.0, 0.0
+        ux2, uy2, uz2 = 0.0, 0.0, 0.0
 
-        pytools.rad.initialize_tile(c, (0,0,0), grid, conf)
+        intr = pyqed.PairAnn('e-', 'e+')
+        intr.get_minmax_ene('e-', 'e+')
+
+        intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
 
 

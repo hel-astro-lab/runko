@@ -137,6 +137,15 @@ def sample_boosted_maxwellian(theta, Gamma, direction=1, dims=2):
     return ux, uy, uz, u
 
 
+def sample_blackbody(delgam):
+
+    # TODO
+    uu = 1.0
+    ux,uy,uz = velxyz(uu)
+
+    return ux, uy, uz, uu
+
+
 
 ##################################################
 

@@ -27,9 +27,9 @@ PYBIND11_MODULE(pyrunko, m_base) {
   py::module m_pic = m_base.def_submodule("pic", "Runko PIC module");
   pic::bind_pic(m_pic);
 
-  /// rad
-  py::module m_rad = m_base.def_submodule("rad", "Runko radiation module");
-  qed::bind_qed(m_rad);
+  /// qed
+  py::module m_qed = m_base.def_submodule("qed", "Runko QED module");
+  qed::bind_qed(m_qed);
     
   /// ffe
   py::module m_ffe = m_base.def_submodule("ffe", "Runko force-free MHD module");

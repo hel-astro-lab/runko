@@ -10,6 +10,7 @@ from .iotools import read_h5_array
 #from .pybox import box as pybox3d
 from .pic.tile_initialization import ind2loc #FIXME: this function should be defined in this level instead of pic submodule
 from .sampling import sample_boosted_maxwellian #FIXME: not clear if sampling should be under main or pic 
+from .sampling import sample_blackbody 
 from .indices import Stagger
 from .indices import get_index
 from .scheduler import Scheduler
@@ -17,7 +18,7 @@ from .scheduler import Scheduler
 
 # physics modules
 from . import pic 
-from . import rad
+from . import qed
 from . import vlv
 from . import ffe 
 

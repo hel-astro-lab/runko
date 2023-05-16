@@ -62,8 +62,9 @@ set (PIC_FILES
      #../pic/depositers/esikerpov_4th_vec.c++
      )
 
-set (RAD_FILES 
-     pyrad.c++
+set (QED_FILES 
+     pyqed.c++
+     ../qed/interactions/pair_ann.c++
      )
 
 set (FFE_FILES 
@@ -106,7 +107,7 @@ pybind11_add_module(pyrunko
                     ${FIELDS_FILES}
                     ${VLV_FILES}
                     ${PIC_FILES}
-                    ${RAD_FILES}
+                    ${QED_FILES}
                     ${FFE_FILES}
                     ${IO_FILES}
                     ${ACC_FILES}

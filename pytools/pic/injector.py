@@ -5,8 +5,13 @@ import numpy as np
 from .tile_initialization import ind2loc
 
 
+# dummy function that returns always 1 (for weight initialization)
+def unit_w(xloc, ispcs, conf):
+    return 1.0
+
+
 # inject plasma into (individual) cells
-def inject(grid, vel_func, den_func, conf, align_species=True):
+def inject(grid, vel_func, den_func, conf, align_species=True, w_func=unit_w):
     rank = grid.rank()
 
     prtcl_tot = np.zeros(conf.Nspecies, dtype=np.int64)
@@ -41,7 +46,7 @@ def inject(grid, vel_func, den_func, conf, align_species=True):
                         container.set_keygen_state(prtcl_tot[ispcs], rank)
 
                         # open and read previously made particle species (for location reference)
-                        if ispcs > 0:
+                        if ispcs == 1:
                             #EPS = 1.0e-5
                             ref_container = tile.get_container(0)
                             xxs = ref_container.loc(0) #+ EPS*np.random.rand(1)
@@ -71,8 +76,9 @@ def inject(grid, vel_func, den_func, conf, align_species=True):
                                     #TODO: pair loading factor
                                     for ip in range(ppc):
                                         x0, u0 = vel_func(xloc, ispcs, conf)
+                                        w = w_func(xloc, ispcs, conf)
 
-                                        if align_species and ispcs > 0:
+                                        if align_species and ispcs == 1:
                                             xx = xxs[ip_mesh] #+ 1.0e-4 #*np.random.rand(1)
                                             yy = yys[ip_mesh] #+ 1.0e-4 #*np.random.rand(1)
                                             zz = zzs[ip_mesh] #+ 1.0e-4 #*np.random.rand(1)
@@ -88,7 +94,7 @@ def inject(grid, vel_func, den_func, conf, align_species=True):
                                         # print("injecting particle sps={} of # {}:th to ({},{},{})".format(
                                         #        ispcs, ip_mesh, x0[0], x0[1], x0[2]))
                                         ip_mesh += 1
-                                        container.add_particle(x0, u0, 1.0)
+                                        container.add_particle(x0, u0, w)
                                         prtcl_tot[ispcs] += 1
 
                         # less noisy way of injecting particles

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- 
 
-import pyrunko.rad as pyrad
+import pyrunko.qed as pyqed
 
 
 def initialize_tile(tile, indx, n, conf):
