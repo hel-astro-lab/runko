@@ -334,5 +334,3 @@ def save_mpi_grid_to_disk(outdir, lap, grid, conf):
 
         f5.close()
 
-
-

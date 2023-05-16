@@ -12,7 +12,7 @@ You will find the related scripts to run the simulation and the analytical tools
 
 .. code-block:: bash
 
-   /runko/projects/shocks
+   /runko/projects/pic-shocks
 
 
 Configuring the simulation
