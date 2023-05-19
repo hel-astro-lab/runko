@@ -8,6 +8,8 @@ import pycorgi
 import pyrunko.qed as pyqed
 import pytools
 
+from numpy import sqrt
+from math import pi
 
 #import initialize_pic as init_pic
 #import initialize_rad as init_rad
@@ -27,6 +29,163 @@ except:
 
 #make tests deterministic by fixing the RNG seed
 np.random.seed(0)
+
+
+# L2 norm of vector
+def norm(x):
+    return np.sqrt(np.dot(x,x))
+    #return np.sqrt( vec[0]**2 + vec[1]**2 + vec[2]**2 )
+
+#unit vector into direction a x b
+def uCross(vecA, vecB):
+    vecC = np.cross(vecA, vecB)
+
+    nC = norm(vecC) #lenght of new vec
+    if nC == 0.0: return 0.0
+    return vecC / nC 
+
+# perform pair annihilation "scattering" event  
+def _interact(zmvec, zpvec):
+    zm = norm(zmvec) # electron momenta z_-
+    zp = norm(zpvec) # positron momenta z_+
+
+    gamm = sqrt(zm**2 + 1) # electron gamma_-
+    gamp = sqrt(zp**2 + 1) # positron gamma_+
+
+    omm = zmvec/zm # direction of electron momenta Omega_-
+    omp = zpvec/zp # direction of positron momenta Omega_+
+    
+    zeta = np.dot(omm, omp) #angle between electron and positron momenta
+    s0 = gamm + gamp                        #s0 = x + x1 #sqrt(2q) in CoM
+    s  = sqrt(zm**2 + zp**2 + 2*zm*zp*zeta) #s  = sqrt(x**2  + x1**2 + 2*x*x1*mu)
+    q  = gamp*gamm - zp*zm*zeta + 1         #q  = x*x1*(1-mu)
+    #q = s0**2 - s**2
+
+    svec = zp*omp + zm*omm                  #svec = x*om + x1*om1
+
+
+    # CoM frame variables; x_c
+    bc = -svec/s0 #lorentz transform along CoM velocity vector
+    gc = s0/np.sqrt(2*q) # lorentz factor of the boost; CoM vel
+    uv = bc*gc # com four vel
+    v2 = np.dot(bc,bc) # v_c^2
+    vc = np.sqrt(v2)
+
+    # boosted variables in CoM frame; x_cm 
+    gcm = np.sqrt(q/2) # prtcl energies are equal in this frame; photons also have this energy
+    vcm = np.sqrt(1-1/gcm**2) # v_cm
+
+    # angle between b_cm and b_c; electron and CoM 
+    y = (1/vc/vcm)*((gamp - gamm)/(gamp + gamm)) 
+
+    # build new coordinate system along svec
+    kvec = bc/norm(bc) # z axis along b_c vector
+    jvec = uCross(kvec, omm) # y axis to electron direction  # np.cross(omp, omm)/sqrt(1 - zeta**2)
+    ivec = uCross(jvec, kvec) # x axis just orthogonal to others # ( (zp + zm*zeta)*omm - (zm + zp*zeta)*omp )/(s*sqrt(1 - zeta**2))
+    M = np.array([ ivec, jvec, kvec ])  
+
+
+    #--------------------------------------------------
+    # draw angles
+    niter = 0
+    ran1, ran2, ran3 = 0,0,0
+    while True:
+
+        ran1 = np.random.rand()
+        ran2 = np.random.rand()
+        ran3 = np.random.rand()
+
+        # angle between k_cm and b_c; photon and CoM
+        z = -1 + 2*ran1
+        phi   = 2*pi*ran2
+
+        # angle between k_cm and b_cm; photon and electron
+        x = y*z + np.sqrt(1-y**2)*np.sqrt(1-z**2)*np.cos(phi)  
+
+        # four product scalar between electron/positron and primary/secondary photon
+        z1 = (gcm**2)*(1 - vcm*x) 
+        z2 = (gcm**2)*(1 + vcm*x) 
+
+        # differential cross section angle part; F function 
+        F = 0.5*( (z1/z2) + (z2/z1) + 2*( (1/z1) + (1/z2) ) - ( (1/z1) + (1/z2) )**2  )
+        F *= 1/((1+vcm)*gcm**2) # normalize to [0,1]
+
+        if F > ran3:
+            break # accept angles
+        if niter > 1e3:
+            break
+        niter += 1
+
+
+    # new photon vectors in CoM frame
+    sinz = np.sqrt(1-z**2) # sin z
+    omrR = np.array([ sinz*np.cos(phi), sinz*np.sin(phi), z ])
+    #omr1R = -1*omrR # other photon has same but opposite direction
+
+    # rotate back to lab frame angles
+    omr  = np.dot( np.linalg.inv(M), omrR  ) 
+    omr1 = -1*omr # other photon has same but opposite direction # np.dot( np.linalg.inv(M), omr1R ) 
+
+
+    # boost matrix back to lab frame; constructed from b_c vector
+    B = np.array([
+                [gc,     -uv[0],                -uv[1],                -uv[2],                ],
+                [-uv[0], 1+(gc-1)*bc[0]**2/v2,  (gc-1)*bc[1]*bc[0]/v2, (gc-1)*bc[2]*bc[0]/v2, ],
+                [-uv[1], (gc-1)*bc[0]*bc[1]/v2, 1+(gc-1)*bc[1]**2/v2,  (gc-1)*bc[2]*bc[1]/v2, ],
+                [-uv[2], (gc-1)*bc[0]*bc[2]/v2, (gc-1)*bc[1]*bc[2]/v2, 1+(gc-1)*bc[2]**2/v2,  ] 
+                ])
+
+    # four momenta of photons
+    xp  = gcm*np.array([1, omr[0],  omr[1],  omr[2]])
+    xp1 = gcm*np.array([1, omr1[0], omr1[1], omr1[2]])
+         
+    # boost 
+    xpp  = np.dot(B, xp)
+    xpp1 = np.dot(B, xp1)
+
+    x  = 1*xpp[0]  # energy of primary photon
+    x1 = 1*xpp1[0] # energy of secondary photon
+
+    om  = np.array([ xpp[1],  xpp[2],  xpp[3], ])/x
+    om1 = np.array([ xpp1[1], xpp1[2], xpp1[3],])/x1
+
+
+    # test energy conservation
+    enec = gamm + gamp - (x + x1)
+    momc = zmvec + zpvec - (x*om + x1*om1) 
+
+    nom1 = norm(om)
+    nom2 = norm(om1)
+    nom1i = norm(omm)
+    nom2i = norm(omp)
+
+    # FIXME: remove these debug tests
+    t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
+    if np.abs(enec) > 1e-12:    t1 = True
+    if x  < 0.0:                t2 = True
+    if x1 < 0.0:                t3 = True
+    if np.abs(nom1i)-1 > 1e-12: t4 = True
+    if np.abs(nom2i)-1 > 1e-12: t5 = True
+    if np.abs(nom1)-1 > 1e-12:  t6 = True
+    if np.abs(nom2)-1 > 1e-12:  t7 = True
+    if np.abs(np.sum(momc)) > 1e-12: t8 = True
+
+    print('random numbers', ran1, ran2, ran3)
+
+    #if t1 or t2 or t3 or t4 or t5 or t6 or t7 or t8:
+    if True:
+        print('ERROR PAIR-ANN:')
+        print(t1,t2,t3,t4,t5,t6,t7,t8)
+        print('zm, zp   ', zmvec, zpvec)
+        print('gm, gp   ', gamm, gamp)
+        print('z,s0,s,q ', zeta, s0, s, q)
+        print('x,x1,enec', x, x1, enec)
+        print('n(om/om1)', nom1, nom2)
+        print('n(omi)   ', nom1i, nom2i)
+        print('momc     ', np.sum(momc), momc, momc/np.sum(momc))
+        print('th,phi,om', z, phi, om, om1)
+
+    return x,om, x1,om1
 
 
 
@@ -303,13 +462,23 @@ class radiation(unittest.TestCase):
 
         t1 = 'e-'
         t2 = 'e+'
-        ux1, uy1, uz1 = 0.0, 0.0, 0.0
-        ux2, uy2, uz2 = 0.0, 0.0, 0.0
+        ux1, uy1, uz1 = 1.0, 1.1, 1.2
+        ux2, uy2, uz2 = 1.1, 2.2, 1.3
 
         intr = pyqed.PairAnn('e-', 'e+')
         intr.get_minmax_ene('e-', 'e+')
 
-        intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        cs = intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
         intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+
+        #print('cs', cs)
+        #print(t1, ux1, uy1, uz1)
+        #print(t2, ux2, uy2, uz2)
+
+        #a0, avec, b0, bvec = _interact( np.array([ux1, uy1, uz1]), np.array([ux2, uy2, uz2]) )
+        #print('py ver')
+        #print('a', a0, avec)
+        #print('b', b0, bvec)
+
 
 

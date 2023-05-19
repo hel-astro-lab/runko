@@ -148,7 +148,7 @@ class Mesh
       allocated(false), count(0)
       //mat(other.mat)
     { 
-            Nx = other.Nx; 
+      Nx = other.Nx; 
       Ny = other.Ny; 
       Nz = other.Nz; 
       alloc(other.size());
