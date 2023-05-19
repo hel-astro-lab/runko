@@ -223,7 +223,7 @@ class SnapshotWriter {
         }
       } // end of array loop
 
-         }
+    }
 
 };
 
