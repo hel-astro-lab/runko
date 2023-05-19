@@ -552,10 +552,10 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //std::cout << "reserving2: " << np <<" minus " << np-optimal_message_size << "\n";
 
 
-  // FIXME altered here
+  // FIXME altered here from v0 w/ reserve to new ver w/ resize
   //outgoing_particles.reserve(optimal_message_size);
   if (np > optimal_message_size) {
-    // FIXME altered here
+    // FIXME altered here from v0 w/ reserve to new ver w/ resize
     outgoing_extra_particles.resize( np-optimal_message_size );
   }
 
