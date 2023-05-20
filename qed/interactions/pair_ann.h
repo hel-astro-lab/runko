@@ -15,22 +15,22 @@ public:
 
   using Interaction::Interaction;
 
-  tuple<double, double> get_minmax_ene( string t1, string t2 ) override;
+  tuple<float_p, float_p> get_minmax_ene( string t1, string t2 ) override;
 
-  double comp_cross_section(
-    string t1, double ux1, double uy1, double uz1,
-    string t2, double ux2, double uy2, double uz2) override;
+  float_p comp_cross_section(
+    string t1, float_p ux1, float_p uy1, float_p uz1,
+    string t2, float_p ux2, float_p uy2, float_p uz2) override;
 
   //tuple<
-  //  string, double, double, double,
-  //  string, double, double, double>
+  //  string, float_p, float_p, float_p,
+  //  string, float_p, float_p, float_p>
   //    interact(
-  //      string t1, double ux1, double uy1, double uz1,
-  //      string t2, double ux2, double uy2, double uz2) override;
+  //      string t1, float_p ux1, float_p uy1, float_p uz1,
+  //      string t2, float_p ux2, float_p uy2, float_p uz2) override;
 
   void interact(
-        string& t1, double& ux1, double& uy1, double& uz1,
-        string& t2, double& ux2, double& uy2, double& uz2) override;
+        string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
+        string& t2, float_p& ux2, float_p& uy2, float_p& uz2) override;
 
 
 }; // end of PairAnn class

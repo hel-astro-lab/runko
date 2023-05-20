@@ -46,7 +46,7 @@ public:
 
   // trampoline for each  virtual function
  
-  using tuple_pair = std::tuple<double, double>; // following macro does not accept commas so we define this
+  using tuple_pair = std::tuple<float_p, float_p>; // following macro does not accept commas so we define this
 
   tuple_pair get_minmax_ene( string t1, string t2 ) override { 
     PYBIND11_OVERLOAD_PURE(
@@ -58,11 +58,11 @@ public:
         );
   }
 
-  double comp_cross_section( 
-    string t1, double ux1, double uy1, double uz1,
-    string t2, double ux2, double uy2, double uz2) override {
+  float_p comp_cross_section( 
+    string t1, float_p ux1, float_p uy1, float_p uz1,
+    string t2, float_p ux2, float_p uy2, float_p uz2) override {
     PYBIND11_OVERLOAD_PURE(
-        double,                     // return type
+        float_p,                     // return type
         Interaction,                // parent class
         comp_cross_section,         // name of function in C++
         t1, ux1, uy1, uz1, t2, ux2, uy2, uz2
@@ -70,25 +70,25 @@ public:
   }
 
   //std::tuple<
-  //  string, double, double, double,
-  //  string, double, double, double>
+  //  string, float_p, float_p, float_p,
+  //  string, float_p, float_p, float_p>
   //    interact(
-  //      string t1, double ux1, double uy1, double uz1,
-  //      string t2, double ux2, double uy2, double uz2) override {
+  //      string t1, float_p ux1, float_p uy1, float_p uz1,
+  //      string t2, float_p ux2, float_p uy2, float_p uz2) override {
   //  PYBIND11_OVERLOAD_PURE(
-  //      std::tuple<string, double, double, double, string, double, double, double>, // return type
+  //      std::tuple<string, float_p, float_p, float_p, string, float_p, float_p, float_p>, // return type
   //      Interaction,                // parent class
   //      interact,                   // name of function in C++
   //      string, // arguments
-  //      double, double, double,
+  //      float_p, float_p, float_p,
   //      string,
-  //      double, double, double
+  //      float_p, float_p, float_p
   //      );
   //  }
 
   void interact(
-        string& t1, double& ux1, double& uy1, double& uz1,
-        string& t2, double& ux2, double& uy2, double& uz2) override {
+        string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
+        string& t2, float_p& ux2, float_p& uy2, float_p& uz2) override {
     PYBIND11_OVERLOAD_PURE(
         void,                       // return type
         Interaction,                // parent class
@@ -138,8 +138,8 @@ void bind_qed(py::module& m_sub)
     .def("comp_cross_section",  &qed::Interaction::comp_cross_section)
     //.def("interact",            &qed::Interaction::interact);
     .def("interact", [](qed::Interaction &self, 
-          std::string t1, double ux1, double uy1, double uz1,
-          std::string t2, double ux2, double uy2, double uz2) 
+          std::string t1, float_p ux1, float_p uy1, float_p uz1,
+          std::string t2, float_p ux2, float_p uy2, float_p uz2) 
         {
           self.interact(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2); 
           return std::make_tuple(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2);

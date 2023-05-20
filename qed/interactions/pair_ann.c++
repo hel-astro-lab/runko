@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <cassert>
 #include "pair_ann.h"
 #include "../../tools/vector.h"
 
@@ -21,33 +22,33 @@ namespace qed {
   using toolbox::inv;
 
 
-tuple<double, double> PairAnn::get_minmax_ene( string t1, string t2)
+tuple<float_p, float_p> PairAnn::get_minmax_ene( string t1, string t2)
 {
   return {0.0, 3.0};
 }
 
 
-double PairAnn::comp_cross_section(
-    string t1, double ux1, double uy1, double uz1,
-    string t2, double ux2, double uy2, double uz2)
+float_p PairAnn::comp_cross_section(
+    string t1, float_p ux1, float_p uy1, float_p uz1,
+    string t2, float_p ux2, float_p uy2, float_p uz2)
 {
 
-  double zp = norm(ux1, uy1, uz1); // z_+
-  double zm = norm(ux2, uy2, uz2); // z_-
-  double gamp = sqrt(zp*zp + 1.0); // \gamma_+
-  double gamm = sqrt(zm*zm + 1.0); // \gamma_-
+  float_p zp = norm(ux1, uy1, uz1); // z_+
+  float_p zm = norm(ux2, uy2, uz2); // z_-
+  float_p gamp = sqrt(zp*zp + 1.0); // \gamma_+
+  float_p gamm = sqrt(zm*zm + 1.0); // \gamma_-
 
-  double zeta = ( ux1*ux2 + uy1*uy2 + uz1*uz2 )/( zm*zp ); //#angle between pair's momentum
+  float_p zeta = ( ux1*ux2 + uy1*uy2 + uz1*uz2 )/( zm*zp ); //#angle between pair's momentum
   
   //qe = max(1+EPS, gamp*gamm - zp*zm*zeta) 
-  double qe   =  gamp*gamm - zp*zm*zeta; //# product of 4-moms; q_e = z_- . z_+; = 2gamma_cm^2 - 1 = gamma_r
-  double q = qe + 1.0;          //# q_e = q + 1
-  double bcm = sqrt( (q-2.0)/q ); //# \beta_cm; matches beta' in Coppi & Blandford
-  //double gcm = 1.0/sqrt(1.0 - bcm*bcm); //# gamma_cm
+  float_p qe =  gamp*gamm - zp*zm*zeta; //# product of 4-moms; q_e = z_- . z_+; = 2gamma_cm^2 - 1 = gamma_r
+  float_p q = qe + 1.0;          //# q_e = q + 1
+  float_p bcm = sqrt( (q-2.0)/q ); //# \beta_cm; matches beta' in Coppi & Blandford
+  //float_p gcm = 1.0/sqrt(1.0 - bcm*bcm); //# gamma_cm
 
   //# expression via relativistic invariant x = sqrt( p_- . p_+ )
-  double x = bcm;                  //# free variable
-  double s0 = (0.25*(1.0/x*x)*(1.0-x*x))*( (3.0-x*x*x*x)*log((1.0+x)/(1.0-x)) + 2.0*x*(x*x - 2.0)); //# ver2
+  float_p x = bcm;                  //# free variable
+  float_p s0 = (0.25*(1.0/x*x)*(1.0-x*x))*( (3.0-x*x*x*x)*log((1.0+x)/(1.0-x)) + 2.0*x*(x*x - 2.0)); //# ver2
   s0 *= 3.0/8.0; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
 
   //# ver2; matches above
@@ -76,7 +77,8 @@ double PairAnn::comp_cross_section(
   //#fkin2 = bcm*q/(gamm*gamp) # equal expression to above
 
   // kinematic factor based on Svensson 82 Eq 8; qe = q_+ . q_-
-  double fkin = sqrt( qe*qe - 1.0 )/(gamp*gamm);
+  float_p fkin = sqrt( qe*qe - 1.0 )/(gamp*gamm);
+  //float_p fkin = 1.0;
 
   //if qe**2 -1 < 0: print('pair-ann cs:', s0, fkin, qe, gamp, gamm, zeta, x)
   return s0*fkin;
@@ -84,11 +86,11 @@ double PairAnn::comp_cross_section(
 
 
 //tuple<
-//    string, double, double, double,
-//    string, double, double, double>
+//    string, float_p, float_p, float_p,
+//    string, float_p, float_p, float_p>
 //PairAnn::interact(
-//  string t1, double ux1, double uy1, double uz1,
-//  string t2, double ux2, double uy2, double uz2) 
+//  string t1, float_p ux1, float_p uy1, float_p uz1,
+//  string t2, float_p ux2, float_p uy2, float_p uz2) 
 //{
 //
 //  //      particle 1          particle 2
@@ -96,60 +98,60 @@ double PairAnn::comp_cross_section(
 //}
   
 void PairAnn::interact(
-  string& t1, double& ux1, double& uy1, double& uz1,
-  string& t2, double& ux2, double& uy2, double& uz2) 
+  string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
+  string& t2, float_p& ux2, float_p& uy2, float_p& uz2) 
 {
-  Vec3<double> zmvec(ux1, uy1, uz1);
-  Vec3<double> zpvec(ux2, uy2, uz2);
+  Vec3<float_p> zmvec(ux1, uy1, uz1);
+  Vec3<float_p> zpvec(ux2, uy2, uz2);
 
-  double zm = norm(zmvec); // electron momenta z_-
-  double zp = norm(zpvec); // positron momenta z_+
+  float_p zm = norm(zmvec); // electron momenta z_-
+  float_p zp = norm(zpvec); // positron momenta z_+
 
-  double gamm = sqrt(zm*zm + 1.0); // electron gamma_-
-  double gamp = sqrt(zp*zp + 1.0); // positron gamma_+
+  float_p gamm = sqrt(zm*zm + 1.0); // electron gamma_-
+  float_p gamp = sqrt(zp*zp + 1.0); // positron gamma_+
 
-  Vec3<double> omm = zmvec/zm; // direction of electron momenta Omega_-
-  Vec3<double> omp = zpvec/zp; // direction of positron momenta Omega_+
+  Vec3<float_p> omm = zmvec/zm; // direction of electron momenta Omega_-
+  Vec3<float_p> omp = zpvec/zp; // direction of positron momenta Omega_+
         
-  double zeta = dot(omm, omp); //#angle between electron and positron momenta
+  float_p zeta = dot(omm, omp); //#angle between electron and positron momenta
 
-  double s0 = gamm + gamp;                        // s0 = x + x1 #sqrt(2q) in CoM
-  double s  = sqrt(zm*zm + zp*zp + 2*zm*zp*zeta); // s  = sqrt(x**2  + x1**2 + 2*x*x1*mu)
-  double q  = gamp*gamm - zp*zm*zeta + 1.0;       // q  = x*x1*(1-mu)
+  float_p s0 = gamm + gamp;                        // s0 = x + x1 #sqrt(2q) in CoM
+  float_p s  = sqrt(zm*zm + zp*zp + 2*zm*zp*zeta); // s  = sqrt(x**2  + x1**2 + 2*x*x1*mu)
+  float_p q  = gamp*gamm - zp*zm*zeta + 1.0;       // q  = x*x1*(1-mu)
   // alternatively:  q = s0**2 - s**2
 
   //Vec3 svec = zp*omp + zm*omm;                 // svec = x*om + x1*om1
-  Vec3<double> svec_a = zp*omp;                  // part 1
-  Vec3<double> svec_b = zm*omm;                  // part 2
-  Vec3<double> svec = svec_a + svec_b;
+  Vec3<float_p> svec_a = zp*omp;                  // part 1
+  Vec3<float_p> svec_b = zm*omm;                  // part 2
+  Vec3<float_p> svec = svec_a + svec_b;
 
   //# CoM frame variables; x_c
-  Vec3<double> bc = svec/(-1.0*s0); //lorentz transform along CoM velocity vector
-  double gc = s0/sqrt(2.0*q);       // lorentz factor of the boost; CoM vel
-  Vec3<double> uv = gc*bc;          // com four vel
-  double v2 = dot(bc,bc);           // v_c^2
-  double vc = sqrt(v2);
+  Vec3<float_p> bc = svec/(-1.0f*s0); //lorentz transform along CoM velocity vector
+  float_p gc = s0/sqrt(2.0*q);       // lorentz factor of the boost; CoM vel
+  Vec3<float_p> uv = gc*bc;          // com four vel
+  float_p v2 = dot(bc,bc);           // v_c^2
+  float_p vc = sqrt(v2);
 
   //--------------------------------------------------
   // boosted variables in CoM frame; x_cm 
-  double gcm = sqrt(q/2.0); // # prtcl energies are equal in this frame; photons also have this energy
-  double vcm = sqrt(1.0-1.0/(gcm*gcm)); //# v_cm
+  float_p gcm = sqrt(q/2.0); // # prtcl energies are equal in this frame; photons also have this energy
+  float_p vcm = sqrt(1.0-1.0/(gcm*gcm)); //# v_cm
 
   //# angle between b_cm and b_c; electron and CoM 
-  double y = (1.0/vc/vcm)*((gamp - gamm)/(gamp + gamm));
+  float_p y = (1.0/vc/vcm)*((gamp - gamm)/(gamp + gamm));
 
   //# build new coordinate system along svec
-  Vec3<double> kvec = bc/norm(bc);            // z axis along b_c vector
-  Vec3<double> jvec = unit_cross(kvec, omm);  // y axis to electron direction  
-  Vec3<double> ivec = unit_cross(jvec, kvec); // x axis just orthogonal to others 
-  Mat3<double> M(ivec, jvec, kvec);           // 3x3 rotation matrix
+  Vec3<float_p> kvec = bc/norm(bc);            // z axis along b_c vector
+  Vec3<float_p> jvec = unit_cross(kvec, omm);  // y axis to electron direction  
+  Vec3<float_p> ivec = unit_cross(jvec, kvec); // x axis just orthogonal to others 
+  Mat3<float_p> M(ivec, jvec, kvec);           // 3x3 rotation matrix
 
 
   //#--------------------------------------------------
   //# draw angles
   int niter = 0;
 
-  double cosz, phi, xang, z1, z2, F; // temp variables
+  float_p cosz, phi, xang, z1, z2, F; // temp variables
   while(true) {
     //# angle between k_cm and b_c; photon and CoM
     cosz= -1.0 + 2.0*rand();
@@ -167,40 +169,44 @@ void PairAnn::interact(
     F *= 1.0/((1.0 + vcm)*gcm*gcm); //# normalize to [0,1]
 
     if( F > rand() ) break;   // accept angles
-    if( niter > 1000 ) break; // too many iterations
+    if( niter > 10000 ) break; // too many iterations
     niter += 1;
+
   }
 
+  if(niter > 10000) std::cout << "WARNING: too many iterations" << std::endl;
+
+
   //# new photon vectors in CoM frame
-  double sinz = sqrt(1.0 - cosz*cosz); 
-  Vec3<double> omrR( sinz*cos(phi), sinz*sin(phi), cosz );
+  float_p sinz = sqrt(1.0 - cosz*cosz); 
+  Vec3<float_p> omrR( sinz*cos(phi), sinz*sin(phi), cosz );
 
   //# rotate back to lab frame angles
-  Mat3<double> Minv = inv( M );
-  Vec3<double> omr0 = dot( Minv, omrR );
-  Vec3<double> omr1 = -1.0*omr0; // other photon has same but opposite direction 
+  Mat3<float_p> Minv = inv( M );
+  Vec3<float_p> omr0 = dot( Minv, omrR );
+  Vec3<float_p> omr1 = -1.0f*omr0; // other photon has same but opposite direction 
 
 
   //# boost matrix back to lab frame; constructed from b_c vector
-  Vec4<double> B1( gc,       -uv(0),                    -uv(1),                    -uv(2)                 );
-  Vec4<double> B2(-uv(0), 1.+(gc-1.)*bc(0)*bc(0)/v2,    (gc-1.)*bc(1)*bc(0)/v2,    (gc-1.)*bc(2)*bc(0)/v2 );
-  Vec4<double> B3(-uv(1),    (gc-1.)*bc(0)*bc(1)/v2, 1.+(gc-1.)*bc(1)*bc(1)/v2,    (gc-1.)*bc(2)*bc(1)/v2 );
-  Vec4<double> B4(-uv(2),    (gc-1.)*bc(0)*bc(2)/v2,    (gc-1.)*bc(1)*bc(2)/v2, 1.+(gc-1.)*bc(2)*bc(2)/v2 );
-  Mat4<double> B(B1, B2, B3, B4);
+  Vec4<float_p> B1( gc,       -uv(0),                    -uv(1),                    -uv(2)                 );
+  Vec4<float_p> B2(-uv(0), 1.+(gc-1.)*bc(0)*bc(0)/v2,    (gc-1.)*bc(1)*bc(0)/v2,    (gc-1.)*bc(2)*bc(0)/v2 );
+  Vec4<float_p> B3(-uv(1),    (gc-1.)*bc(0)*bc(1)/v2, 1.+(gc-1.)*bc(1)*bc(1)/v2,    (gc-1.)*bc(2)*bc(1)/v2 );
+  Vec4<float_p> B4(-uv(2),    (gc-1.)*bc(0)*bc(2)/v2,    (gc-1.)*bc(1)*bc(2)/v2, 1.+(gc-1.)*bc(2)*bc(2)/v2 );
+  Mat4<float_p> B(B1, B2, B3, B4);
 
   //# four momenta of photons
-  Vec4<double> xp0(gcm, gcm*omr0(0), gcm*omr0(1), gcm*omr0(2));
-  Vec4<double> xp1(gcm, gcm*omr1(0), gcm*omr1(1), gcm*omr1(2));
+  Vec4<float_p> xp0(gcm, gcm*omr0(0), gcm*omr0(1), gcm*omr0(2));
+  Vec4<float_p> xp1(gcm, gcm*omr1(0), gcm*omr1(1), gcm*omr1(2));
 
   //# boost 
-  Vec4<double> xpp0 = dot(B, xp0);
-  Vec4<double> xpp1 = dot(B, xp1);
+  Vec4<float_p> xpp0 = dot(B, xp0);
+  Vec4<float_p> xpp1 = dot(B, xp1);
 
-  double x0 = xpp0(0); // energy of primary photon
-  double x1 = xpp1(0); // energy of secondary photon
+  float_p x0 = xpp0(0); // energy of primary photon
+  float_p x1 = xpp1(0); // energy of secondary photon
 
-  Vec3<double> om0( xpp0(1), xpp0(2), xpp0(3)); // /x
-  Vec3<double> om1( xpp1(1), xpp1(2), xpp1(3)); // /x1
+  Vec3<float_p> om0( xpp0(1), xpp0(2), xpp0(3)); // /x
+  Vec3<float_p> om1( xpp1(1), xpp1(2), xpp1(3)); // /x1
 
   om0 = om0/x0;
   om1 = om1/x1;
@@ -208,27 +214,29 @@ void PairAnn::interact(
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed
   if(true){
-    double enec = gamm + gamp - (x0 + x1);
-    Vec3<double> momc; // zmvec + zpvec; - (x*om + x1*om1);
+    float_p enec = gamm + gamp - (x0 + x1);
+    Vec3<float_p> momc; // zmvec + zpvec; - (x*om + x1*om1);
     for(size_t i=0; i<3; i++) momc(i) = zmvec(i) + zpvec(i) - ( x0*om0(i) + x1*om1(i) );
-    double moms = sum(momc);
+    float_p moms = sum(momc);
 
-    double nom1i = norm(omm);
-    double nom2i = norm(omp);
-    double nom1  = norm(om0);
-    double nom2  = norm(om1);
+    float_p nom1i = norm(omm);
+    float_p nom2i = norm(omp);
+    float_p nom1  = norm(om0);
+    float_p nom2  = norm(om1);
 
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
     for(size_t i=0; i<8; i++)    ts[i] = false; 
 
-    if(abs(enec) > 1.0e-12)      ts[0] = true; 
-    if(x0 < 0.0)                 ts[1] = true;
-    if(x1 < 0.0)                 ts[2] = true;
-    if(abs(nom1i)-1. > 1.0e-12)  ts[3] = true;
-    if(abs(nom2i)-1. > 1.0e-12)  ts[4] = true;
-    if(abs(nom1)-1. > 1.0e-12)   ts[5] = true;
-    if(abs(nom2)-1. > 1.0e-12)   ts[6] = true;
-    if(abs(moms) > 1.0e-12)      ts[7] = true;
+    float_p tol = 3.0e-5;
+
+    if(abs(enec) >     tol) ts[0] = true; 
+    if(x0 < 0.0)            ts[1] = true;
+    if(x1 < 0.0)            ts[2] = true;
+    if(abs(nom1i)-1. > tol) ts[3] = true;
+    if(abs(nom2i)-1. > tol) ts[4] = true;
+    if(abs(nom1)-1.  > tol) ts[5] = true;
+    if(abs(nom2)-1.  > tol) ts[6] = true;
+    if(abs(moms)     > tol) ts[7] = true;
 
     //if(true) {
     if(ts[0] ||
@@ -254,6 +262,8 @@ void PairAnn::interact(
       std::cout << "B         " <<  B      <<                 std::endl;
       std::cout << "omr0,omr1 " <<  omr0  << " " <<  omr1  << std::endl;
       std::cout << "xp0, xp1  " <<  xp0   << " " <<  xp1   << std::endl;
+
+      //assert(false);
     }
   }
 

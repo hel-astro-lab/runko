@@ -231,13 +231,13 @@ inline Vec3<T> operator-(Vec3<T>& v1, Vec3<T>& v2)
 template <class T>
 inline T dot(Vec3<T>& v1, Vec3<T>& v2) 
 {
-  double ret = 0.0;
+  T ret = 0.0;
   for(size_t i=0; i<3; i++) ret += v1(i)*v2(i);
   return ret;  
 }
 
 template <class T>
-inline double sum(Vec3<T>& v)
+inline T sum(Vec3<T>& v)
 {
   return v(0) + v(1) + v(2);
 }
@@ -292,7 +292,7 @@ inline Mat3<T> inv(Mat3<T>& M)
 {
   Mat3<T> ret;
 
-  double det = 0.0;
+  T det = 0.0;
   for(int i=0; i<3; i++) det += (M(0,i) * ( M(1,(i+1)%3) * M(2,(i+2)%3) - M(1,(i+2)%3) * M(2,(i+1)%3) ));
 
   for(int i = 0; i<3; i++) {
@@ -305,7 +305,7 @@ inline Mat3<T> inv(Mat3<T>& M)
 
 //--------------------------------------------------
 // vector norm
-inline double norm(double x, double y, double z)
+inline float norm(float x, float y, float z)
 {
   return std::sqrt(x*x + y*y + z*z);
 }
