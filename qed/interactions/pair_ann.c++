@@ -79,7 +79,6 @@ double PairAnn::comp_cross_section(
   double fkin = sqrt( qe*qe - 1.0 )/(gamp*gamm);
 
   //if qe**2 -1 < 0: print('pair-ann cs:', s0, fkin, qe, gamp, gamm, zeta, x)
-    
   return s0*fkin;
 }
 
@@ -103,36 +102,36 @@ void PairAnn::interact(
   Vec3<double> zmvec(ux1, uy1, uz1);
   Vec3<double> zpvec(ux2, uy2, uz2);
 
-  double zm = norm(zmvec); //# electron momenta z_-
-  double zp = norm(zpvec); //# positron momenta z_+
+  double zm = norm(zmvec); // electron momenta z_-
+  double zp = norm(zpvec); // positron momenta z_+
 
-  double gamm = sqrt(zm*zm + 1.0); //# electron gamma_-
-  double gamp = sqrt(zp*zp + 1.0); //# positron gamma_+
+  double gamm = sqrt(zm*zm + 1.0); // electron gamma_-
+  double gamp = sqrt(zp*zp + 1.0); // positron gamma_+
 
-  Vec3<double> omm = zmvec/zm; //# direction of electron momenta Omega_-
-  Vec3<double> omp = zpvec/zp; //# direction of positron momenta Omega_+
+  Vec3<double> omm = zmvec/zm; // direction of electron momenta Omega_-
+  Vec3<double> omp = zpvec/zp; // direction of positron momenta Omega_+
         
   double zeta = dot(omm, omp); //#angle between electron and positron momenta
 
-  double s0 = gamm + gamp;                        //#s0 = x + x1 #sqrt(2q) in CoM
-  double s  = sqrt(zm*zm + zp*zp + 2*zm*zp*zeta); //#s  = sqrt(x**2  + x1**2 + 2*x*x1*mu)
-  double q  = gamp*gamm - zp*zm*zeta + 1.0;       //#q  = x*x1*(1-mu)
-  //      #q = s0**2 - s**2
+  double s0 = gamm + gamp;                        // s0 = x + x1 #sqrt(2q) in CoM
+  double s  = sqrt(zm*zm + zp*zp + 2*zm*zp*zeta); // s  = sqrt(x**2  + x1**2 + 2*x*x1*mu)
+  double q  = gamp*gamm - zp*zm*zeta + 1.0;       // q  = x*x1*(1-mu)
+  // alternatively:  q = s0**2 - s**2
 
-  //Vec3 svec = zp*omp + zm*omm;                  //#svec = x*om + x1*om1
-  Vec3<double> svec_a = zp*omp;                  //#svec = x*om + x1*om1
-  Vec3<double> svec_b = zm*omm;                  //#svec = x*om + x1*om1
+  //Vec3 svec = zp*omp + zm*omm;                 // svec = x*om + x1*om1
+  Vec3<double> svec_a = zp*omp;                  // part 1
+  Vec3<double> svec_b = zm*omm;                  // part 2
   Vec3<double> svec = svec_a + svec_b;
 
   //# CoM frame variables; x_c
-  Vec3<double> bc = svec/(-1.0*s0); //#lorentz transform along CoM velocity vector
-  double gc = s0/sqrt(2.0*q); //# lorentz factor of the boost; CoM vel
-  Vec3<double> uv = gc*bc; //# com four vel
-  double v2 = dot(bc,bc); //# v_c^2
+  Vec3<double> bc = svec/(-1.0*s0); //lorentz transform along CoM velocity vector
+  double gc = s0/sqrt(2.0*q);       // lorentz factor of the boost; CoM vel
+  Vec3<double> uv = gc*bc;          // com four vel
+  double v2 = dot(bc,bc);           // v_c^2
   double vc = sqrt(v2);
 
   //--------------------------------------------------
-  //# boosted variables in CoM frame; x_cm 
+  // boosted variables in CoM frame; x_cm 
   double gcm = sqrt(q/2.0); // # prtcl energies are equal in this frame; photons also have this energy
   double vcm = sqrt(1.0-1.0/(gcm*gcm)); //# v_cm
 
@@ -140,11 +139,10 @@ void PairAnn::interact(
   double y = (1.0/vc/vcm)*((gamp - gamm)/(gamp + gamm));
 
   //# build new coordinate system along svec
-  Vec3<double> kvec = bc/norm(bc); //# z axis along b_c vector
-  Vec3<double> jvec = unit_cross(kvec, omm); //# y axis to electron direction  # np.cross(omp, omm)/sqrt(1 - zeta**2)
-  Vec3<double> ivec = unit_cross(jvec, kvec); // # x axis just orthogonal to others 
-                                      // # ( (zp + zm*zeta)*omm - (zm + zp*zeta)*omp )/(s*sqrt(1 - zeta**2))
-  Mat3<double> M(ivec, jvec, kvec); // 3x3 rotation vector
+  Vec3<double> kvec = bc/norm(bc);            // z axis along b_c vector
+  Vec3<double> jvec = unit_cross(kvec, omm);  // y axis to electron direction  
+  Vec3<double> ivec = unit_cross(jvec, kvec); // x axis just orthogonal to others 
+  Mat3<double> M(ivec, jvec, kvec);           // 3x3 rotation matrix
 
 
   //#--------------------------------------------------
@@ -168,19 +166,19 @@ void PairAnn::interact(
     F = 0.5*( (z1/z2) + (z2/z1) + 2.0*( (1.0/z1) + (1.0/z2) ) - pow( (1.0/z1) + (1.0/z2), 2)  );
     F *= 1.0/((1.0 + vcm)*gcm*gcm); //# normalize to [0,1]
 
-    if( F > rand() ) break; // accept angles
+    if( F > rand() ) break;   // accept angles
     if( niter > 1000 ) break; // too many iterations
     niter += 1;
   }
 
   //# new photon vectors in CoM frame
-  double sinz = sqrt(1.0 - cosz*cosz); //# sin z
+  double sinz = sqrt(1.0 - cosz*cosz); 
   Vec3<double> omrR( sinz*cos(phi), sinz*sin(phi), cosz );
 
   //# rotate back to lab frame angles
   Mat3<double> Minv = inv( M );
   Vec3<double> omr0 = dot( Minv, omrR );
-  Vec3<double> omr1 = -1.0*omr0; //# other photon has same but opposite direction # np.dot( np.linalg.inv(M), omr1R ) 
+  Vec3<double> omr1 = -1.0*omr0; // other photon has same but opposite direction 
 
 
   //# boost matrix back to lab frame; constructed from b_c vector
@@ -198,11 +196,11 @@ void PairAnn::interact(
   Vec4<double> xpp0 = dot(B, xp0);
   Vec4<double> xpp1 = dot(B, xp1);
 
-  double x0 = xpp0(0);  //# energy of primary photon
-  double x1 = xpp1(0); //# energy of secondary photon
+  double x0 = xpp0(0); // energy of primary photon
+  double x1 = xpp1(0); // energy of secondary photon
 
-  Vec3<double> om0( xpp0(1), xpp0(2), xpp0(3)); ///x
-  Vec3<double> om1( xpp1(1), xpp1(2), xpp1(3)); ///x1
+  Vec3<double> om0( xpp0(1), xpp0(2), xpp0(3)); // /x
+  Vec3<double> om1( xpp1(1), xpp1(2), xpp1(3)); // /x1
 
   om0 = om0/x0;
   om1 = om1/x1;
