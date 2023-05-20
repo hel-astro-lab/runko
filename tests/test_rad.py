@@ -468,12 +468,18 @@ class radiation(unittest.TestCase):
         intr = pyqed.PairAnn('e-', 'e+')
         intr.get_minmax_ene('e-', 'e+')
 
-        cs = intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
-        intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        print('before')
+        print(t1, ux1, uy1, uz1)
+        print(t2, ux2, uy2, uz2)
 
-        #print('cs', cs)
-        #print(t1, ux1, uy1, uz1)
-        #print(t2, ux2, uy2, uz2)
+        cs = intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        #intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        t3, ux3, uy3, uz3, t4, ux4, uy4, uz4 = intr.interact(t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+
+        print('after')
+        print('cs', cs)
+        print(t3, ux3, uy3, uz3)
+        print(t4, ux4, uy4, uz4)
 
         #a0, avec, b0, bvec = _interact( np.array([ux1, uy1, uz1]), np.array([ux2, uy2, uz2]) )
         #print('py ver')

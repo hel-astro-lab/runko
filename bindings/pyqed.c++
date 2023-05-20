@@ -136,8 +136,14 @@ void bind_qed(py::module& m_sub)
     //.def("get_ene",      &qed::Interaction::get_ene);
     .def("get_minmax_ene",      &qed::Interaction::get_minmax_ene)
     .def("comp_cross_section",  &qed::Interaction::comp_cross_section)
-    .def("interact",            &qed::Interaction::interact);
-
+    //.def("interact",            &qed::Interaction::interact);
+    .def("interact", [](qed::Interaction &self, 
+          std::string t1, double ux1, double uy1, double uz1,
+          std::string t2, double ux2, double uy2, double uz2) 
+        {
+          self.interact(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2); 
+          return std::make_tuple(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2);
+        });
 
   // Pair annihilation 
   py::class_<qed::PairAnn>(m_sub, "PairAnn", qedinter)
