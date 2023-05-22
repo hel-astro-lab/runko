@@ -503,6 +503,7 @@ void ParticleContainer<D>::pack_all_particles()
   //outgoing_particles.reserve(optimal_message_size);
   if(np > optimal_message_size+extra_message_size) {
 	std::cerr << "pack_all_particles() in pic/particle.h: number of particles in MPI message exceeds combined maximum of optimal_message_size+extra_message_size. Increase extra_message_size in particle.h to prevent this error. See documentation." << std::endl;
+	assert(false);
   } else if(np-optimal_message_size > 0) {
     outgoing_extra_particles.reserve( np-optimal_message_size );
   }
@@ -558,6 +559,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //outgoing_particles.reserve(optimal_message_size);
   if(np > optimal_message_size+extra_message_size) {
 	std::cerr << "pack_outgoing_particles() in pic/particle.h: number of particles in MPI message exceeds combined maximum of optimal_message_size+extra_message_size. Increase extra_message_size in particle.h to prevent this error. See documentation." << std::endl;
+	assert(false);
   } else if (np > optimal_message_size) {
     // FIXME altered here from v0 w/ reserve to new ver w/ resize
     outgoing_extra_particles.resize( np-optimal_message_size );
