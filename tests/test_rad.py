@@ -45,7 +45,7 @@ def uCross(vecA, vecB):
     return vecC / nC 
 
 # perform pair annihilation "scattering" event  
-def _interact(zmvec, zpvec):
+def _interact_pairann(zmvec, zpvec):
     zm = norm(zmvec) # electron momenta z_-
     zp = norm(zpvec) # positron momenta z_+
 
@@ -443,22 +443,21 @@ class radiation(unittest.TestCase):
 
 
 
-    def test_interactions(self):
+    def test_pairann(self):
 
-        conf = Conf()
-        conf.threeD = True
+        #conf = Conf()
+        #conf.threeD = True
+        #conf.NxMesh = 3
+        #conf.NyMesh = 3
+        #conf.NzMesh = 3
+        #conf.Nx = 1
+        #conf.Ny = 1
+        #conf.Nz = 1
+        #conf.ppc = 1
+        #conf.update_bbox()
 
-        conf.NxMesh = 3
-        conf.NyMesh = 3
-        conf.NzMesh = 3
-        conf.Nx = 1
-        conf.Ny = 1
-        conf.Nz = 1
-        conf.ppc = 1
-        conf.update_bbox()
-
-        grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
-        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+        #grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
+        #grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
         t1 = 'e-'
         t2 = 'e+'
@@ -468,9 +467,39 @@ class radiation(unittest.TestCase):
         intr = pyqed.PairAnn('e-', 'e+')
         intr.get_minmax_ene('e-', 'e+')
 
-        print('before')
-        print(t1, ux1, uy1, uz1)
-        print(t2, ux2, uy2, uz2)
+        #print('before')
+        #print(t1, ux1, uy1, uz1)
+        #print(t2, ux2, uy2, uz2)
+
+        cs = intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        #intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        t3, ux3, uy3, uz3, t4, ux4, uy4, uz4 = intr.interact(t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+
+        #print('after')
+        #print('cs', cs)
+        #print(t3, ux3, uy3, uz3)
+        #print(t4, ux4, uy4, uz4)
+
+        # python version
+        #a0, avec, b0, bvec = _interact_pairann( np.array([ux1, uy1, uz1]), np.array([ux2, uy2, uz2]) )
+        #print('py ver')
+        #print('a', a0, avec)
+        #print('b', b0, bvec)
+
+
+    def test_photann(self):
+
+        t1 = 'ph'
+        t2 = 'ph'
+        ux1, uy1, uz1 = 10.0, 1.1, 1.2
+        ux2, uy2, uz2 = 1.1,  2.6, 1.7
+
+        intr = pyqed.PhotAnn('ph', 'ph')
+        intr.get_minmax_ene('ph', 'ph')
+
+        #print('before')
+        #print(t1, ux1, uy1, uz1)
+        #print(t2, ux2, uy2, uz2)
 
         cs = intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
         #intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
@@ -481,10 +510,12 @@ class radiation(unittest.TestCase):
         print(t3, ux3, uy3, uz3)
         print(t4, ux4, uy4, uz4)
 
-        #a0, avec, b0, bvec = _interact( np.array([ux1, uy1, uz1]), np.array([ux2, uy2, uz2]) )
+        # python version
+        #a0, avec, b0, bvec = _interact_photann( np.array([ux1, uy1, uz1]), np.array([ux2, uy2, uz2]) )
         #print('py ver')
         #print('a', a0, avec)
         #print('b', b0, bvec)
+
 
 
 

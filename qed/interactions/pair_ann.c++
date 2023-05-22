@@ -153,9 +153,8 @@ void PairAnn::interact(
 
   float_p cosz, phi, xang, z1, z2, F; // temp variables
   while(true) {
-    //# angle between k_cm and b_c; photon and CoM
-    cosz= -1.0 + 2.0*rand();
-    phi = 2.0*PI*rand();
+    phi = 2.0*PI*rand(); // azimuthal symmetry angle
+    cosz= -1.0 + 2.0*rand(); //# angle between k_cm and b_c; photon and CoM
 
     //# angle between k_cm and b_cm; photon and electron
     xang = y*cosz + sqrt(1.0 - y*y)*sqrt(1.0 - cosz*cosz)*cos(phi);
@@ -174,7 +173,7 @@ void PairAnn::interact(
 
   }
 
-  if(niter > 10000) std::cout << "WARNING: too many iterations" << std::endl;
+  if(niter > 10000) std::cout << "PAIR-ANN WARNING: too many iterations" << std::endl;
 
 
   //# new photon vectors in CoM frame
@@ -205,11 +204,8 @@ void PairAnn::interact(
   float_p x0 = xpp0(0); // energy of primary photon
   float_p x1 = xpp1(0); // energy of secondary photon
 
-  Vec3<float_p> om0( xpp0(1), xpp0(2), xpp0(3)); // /x
-  Vec3<float_p> om1( xpp1(1), xpp1(2), xpp1(3)); // /x1
-
-  om0 = om0/x0;
-  om1 = om1/x1;
+  Vec3<float_p> om0( xpp0(1)/x0, xpp0(2)/x0, xpp0(3)/x0 ); 
+  Vec3<float_p> om1( xpp1(1)/x1, xpp1(2)/x1, xpp1(3)/x1 ); 
 
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed

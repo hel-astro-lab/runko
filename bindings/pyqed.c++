@@ -5,6 +5,8 @@
 
 #include "../qed/interactions/interaction.h"
 #include "../qed/interactions/pair_ann.h"
+#include "../qed/interactions/phot_ann.h"
+#include "../qed/interactions/compton.h"
 
 
 
@@ -147,9 +149,15 @@ void bind_qed(py::module& m_sub)
 
   // Pair annihilation 
   py::class_<qed::PairAnn>(m_sub, "PairAnn", qedinter)
-    //.def(py::init<string&, string& >());
     .def(py::init<string, string>());
 
+  // Photon annihilation 
+  py::class_<qed::PhotAnn>(m_sub, "PhotAnn", qedinter)
+    .def(py::init<string, string>());
+
+  // Photon annihilation 
+  py::class_<qed::Compton>(m_sub, "Compton", qedinter)
+    .def(py::init<string, string>());
 
 
 }

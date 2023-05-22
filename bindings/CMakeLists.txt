@@ -65,6 +65,8 @@ set (PIC_FILES
 set (QED_FILES 
      pyqed.c++
      ../qed/interactions/pair_ann.c++
+     ../qed/interactions/phot_ann.c++
+     ../qed/interactions/compton.c++
      )
 
 set (FFE_FILES 

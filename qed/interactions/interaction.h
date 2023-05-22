@@ -71,9 +71,14 @@ public:
         string& t2, float_p& ux2, float_p& uy2, float_p& uz2)
       { return; }
 
-  // random numbers between [0, 1]
+  // random numbers between [0, 1[
   float_p rand() { return uni_dis(gen); };
 
+  // random numbers between [a, b[
+  float_p rand_ab(float_p a, float_p b) { 
+    float_p r = rand();
+    return a + (b-a)*r;
+  };
 
 }; // end of class Interaction
 
