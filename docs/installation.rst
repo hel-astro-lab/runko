@@ -114,6 +114,7 @@ This installs OpenMPI to `~/local` and exports the correct directories so that `
 After `openmpi` is installed we also need to re-install `mpi4py` as
 
 .. code-block:: bash
+
    pip3 uninstall mpi4py
    pip3 install mpi4py
 
