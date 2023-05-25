@@ -138,17 +138,17 @@ Overview of algorithms
       - [Umeda2003]_
     * - 
       - 
-      - `\texttt{ZigZag_2nd}`
+      - `\texttt{ZigZag\_2nd}`
       - 2nd-order ZigZag scheme
       - [Umeda2005]_
     * - 
       - 
-      - `\texttt{Esikerpov_2nd}`
+      - `\texttt{Esikerpov\_2nd}`
       - 2nd-order Esikerpov scheme
       - [Esikerpov2001]_
     * - 
       - 
-      - `\texttt{Esikerpov_4th}`
+      - `\texttt{Esikerpov\_4th}`
       - 4th-order Esikerpov scheme
       - [Esikerpov2001]_
 
