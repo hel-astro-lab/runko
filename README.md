@@ -1,12 +1,15 @@
 <img align="top" src="docs/header.png">
 
-# Modern C++14/Python3 toolbox for plasma simulations
+# Modern C++/Python-based CPU/GPU-portable plasma toolbox
 
-[![Build Status](https://travis-ci.com/natj/runko.svg?branch=master)](https://travis-ci.com/natj/runko) [![Documentation Status](https://readthedocs.org/projects/runko/badge/?version=latest)](https://runko.readthedocs.io/en/latest/?badge=latest) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/runko/LICENSE) 
+[![Documentation Status](https://readthedocs.org/projects/runko/badge/?version=latest)](https://runko.readthedocs.io/en/latest/?badge=latest) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/runko/LICENSE) 
 
+R̯̥͎̺͚̙͈̖̝̩̘ͅu̖̩̹̤n̪̰͚̭̬̮̼͎̥͓ͅk̲̟͎͓̭̝o͔͙̗͓͇̺͇̥̜͖̥̹̘̼ i̪̮̠͇̪̯̲͕̪̻̫̹s͕̫͈̲͙͕̻̜ a̙̻̘͎̞͖̮͚̺̲̮͍͇̮͚ m̺̤͍̻̬͕̯̳̣o͙͔̠͕̠͓̥d̝̘̩̟̲̬͎͍̲e̮̭͉̖̣r̯̬̣̫̹̤̖n̼̪̥͚̫̱̜̞̫̼͔̙̯̜ C̹̻̮͎̰̟̻̭̝ͅ++/P̠̬͕y̦̣͎̜̬̯͖̩̬͍͓͈͙t̥̳̦̠h̬͇͕̭o̦͖̲͎̖n͈̟̬͓̤̖̬̬̼̙̳͖͇̤-b̠͙̦̤̙̦̦̫̰a̤̹̫̱̮̻͙s̜͙̠ḙ̩͔͙̺̲͇̻̯̰̤̤͓̙̟̟̪d̪̺͉̞̖̜̥̝̭̯͕ C̯̼͙P̰̮̪͍̖̘͓͙͍U͙̺͚̖̫̖͕̖̥͕̼ͅ/G̞͕̮P̖͔̯͙̻̤̬̙̳͙̙̰U͕̹͓̹͇̻̯̰-p̩̪̙o͍̖̙̱̖̪̯̙͖͉̫̱̣͎̫͈̳ṛ̹̥̖̙̥̦͈͚t̲̭̜̜͚̭̦̺̖͚͍̱̹͍̗̝̖a̪̖̻̩b̠͉̜͕̮͍̥̼l̝̖̳̙͎̲͉̖̣̟̦ͅe̗͙͇̘͕̫̝̪̱͍̣̫ 3D͈̞͖̺̱̯͎̖͖̱͎̰̯̲̦ͅ r̠͍̲̝̖̖͚̪͉͍̙͔̪̟͕̦ͅͅa͕̜̗̮̲̹̜͇̭̗̬͉̭̻̪̲̖ḓ̠̝̺̟͈͖̞̭̼ͅͅi̥̯̦̺͚͚̫̻̟̤a͚͇͈͔ṯ͖̬̙̠̻̦̩̺͖͙͕̝i͉͙ͅv̪̰̤̜̰̲e͓̖̤͉̮̞͚̹̯̭̗̣̭̟͇̣ͅ p̜͈̺̫̣̬̝̭̲̻ͅl̯͚̣̜̹̣̝͍̜ͅa̼̥̹͎͎̲̫̮̮s̳̣͙͖̠̘͈̣͇̹̮ͅm̲͙͖͕̥̫͕̲͎̪͎̜ͅa̭̥̹ c̞͕̗̙͎̞̣͉̥̹o͍͍͎̭̰̦̣̥͖̦d̮̥̙e͔͍̺̼̦͉̘̜̥̜̪̗̟̰ b̗̲̝̘̩̩̫̣̟̮̳̥̰͉̮̲͖ỵ͖͉ a̜͚͉̲̬̲̦̲̝n̠̝̪̮͈̭̹̲͕d̳̫̹̙̤̥̬̬̜̫̙͚ f͔̱̱̥̠̲̟o͔̠̦̠͕̪͍̤ṟ̜̣͉̥̖͓̳̯̳̜͇͓̬̱̖͖ͅ t̪̩̲̺̖̱̯̮̹̯̫̝̳͈̥̤̯̥h̻̫͕̗͍̼̦̰̹͔͙̣̯̱e̜̳͕̖̱̞̠ͅͅ ḁ̹͚͓s̯̖͔̭͍̼͍̺̰̭ͅt͔̫̰͇͍̥̹̺̹̫̠̲͎̠ͅr̰͖̲̟͓̰͇̜̖̼̙͔͖͈o̜̦͈̼͉ͅp̲̬̭͔͕͍̩͇͚͉̮̤̞̥͍ͅh̲͍͉y͉̖̣͔͎͔̥͎̣̮̰s̗͓̳̗͖̯͍̱͖̖̺̣̤̺̬͉̭̣i̩̠̖c̻̹͕̰͚̣̗̳̠̫̖̲̥͇̦̺s͉̩̙̝̰̥͍̙ c͔̥͎̺̜̗̣̱̘̲̝͔͈̥̘̱̪o̞͇̹̘̣͙͓̜̯͖̦̲͕͖̤̠m̭̼̦͎̦̙̭̝̟͓ͅm̝̖͓̮̪̬̰u̖̯̤͕͚̩͓̘͖n̺̜͎̣i̳̻͖̟̩͇̖̥͚̩̻̠̱̹t͎̗̤̲̞͓̤̦͙̰̞̭̭̫͔̫̬̮y̖̩͍͍̫̹͙̜̺͓͉̟̣͈̤̺.
+</br>
+</br>
+</br>
 
-
-Runko is a kinetic plasma simulation framework written in modern C++/Python to simulate astrophysical plasmas. The framework is composed of individual physics modules that can be used independently or combined to create multi-physics simulations. Low-level computing "kernels" are implemented in modern C++, allowing to write modular and high-performance code. High-level usage of the code is controlled with Python scripts exposing the C++ code to Python objects. The hybrid design ensures efficient code, rapid prototyping, and ease of use.
+Runko is a fully open-source simulation framework written in modern C++/Python to simulate astrophysical plasmas. Technologically, the framework is composed of separate physics modules that can be used independently or combined together to create multi-physics simulations. Low-level computing "kernels" are implemented in modern C++, allowing to write modular and high-performance code. High-level usage of the code is controlled with Python scripts exposing the C++ code to Python objects. The hybrid design ensures efficient code, rapid prototyping, and ease of use.
 
 Under the hood, the framework uses the massively parallel grid infrastructure library [corgi](https://github.com/natj/corgi) that decomposes the grid into smaller subregions called tiles. [Corgi](https://github.com/natj/corgi) also automatically parallelizes the simulations and provides dynamic load-balancing capability. Therefore, small simulation setups can be tested locally on laptops and then extended into massively-parallel supercomputer platforms (currently tested up to ~20k cores).
 
