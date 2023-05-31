@@ -487,15 +487,15 @@ class radiation(unittest.TestCase):
         #print('b', b0, bvec)
 
 
-    def test_photann(self):
+    def test_comp(self):
 
-        t1 = 'ph'
+        t1 = 'e-'
         t2 = 'ph'
-        ux1, uy1, uz1 = 10.0, 1.1, 1.2
-        ux2, uy2, uz2 = 1.1,  2.6, 1.7
+        ux1, uy1, uz1 = 1.0, 1.1, 1.2
+        ux2, uy2, uz2 = 0.01, 0.26, 0.17
 
-        intr = pyqed.PhotAnn('ph', 'ph')
-        intr.get_minmax_ene('ph', 'ph')
+        intr = pyqed.Compton('e-', 'ph')
+        intr.get_minmax_ene('e-', 'ph')
 
         #print('before')
         #print(t1, ux1, uy1, uz1)

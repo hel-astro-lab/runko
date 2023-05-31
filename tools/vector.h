@@ -11,26 +11,32 @@ namespace toolbox {
 template <typename T> 
 class Vec3 
 {
-  public:
+public:
 
-    std::array<T, 3> data;
+  std::array<T, 3> data;
 
-    inline T& operator()(size_t ind) { 
-      return data[ ind ];
-    }
+  inline T& operator()(size_t ind) { 
+    return data[ ind ];
+  }
 
-    inline const T& operator()(size_t ind) const { 
-      return data[ ind ];
-    }
+  inline const T& operator()(size_t ind) const { 
+    return data[ ind ];
+  }
 
-    Vec3() {};
+  Vec3() {};
 
-    Vec3(T x, T y, T z) 
-    {
-      data[0] = x;  
-      data[1] = y;  
-      data[2] = z;  
-    }
+  Vec3(T x, T y, T z) 
+  {
+    data[0] = x;  
+    data[1] = y;  
+    data[2] = z;  
+  }
+
+  inline void set(T x, T y, T z){
+    data[0] = x;  
+    data[1] = y;  
+    data[2] = z;  
+  }
 
   friend ostream& operator<<(ostream& os, Vec3<T>& v)
   {

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <cassert>
-#include "pair_ann.h"
+#include "compton.h"
 #include "../../tools/vector.h"
 
 
@@ -32,6 +32,49 @@ float_p Compton::comp_cross_section(
     string t2, float_p ux2, float_p uy2, float_p uz2)
 {
 
+  Vec3<float_p> zv, xv;
+  if( (t1 == "e-" || t1 == "e+") && (t2 == "ph") ) {
+    zv.set(ux1, uy1, uz1); 
+    xv.set(ux2, uy2, uz2); 
+  } else if( (t2 == "e-" || t2 == "e+") && (t1 == "ph") ) {
+    zv.set(ux2, uy2, uz2); 
+    xv.set(ux1, uy1, uz1); 
+  } else {
+    // incompatible particle types
+    assert(false);
+  }
+
+  float_p x = norm(xv);                   // photon energy
+  Vec3<float_p> om = xv/x;                // photon direction vector \omega
+  float_p gam = sqrt(1.0 + dot(zv,zv));   // prtcl gamma
+  Vec3<float_p> beta = zv/gam;            // prtcl 3-velocity \beta
+  float_p beta0 = norm(beta);
+  float_p mu = dot(om, beta)/beta0;       // cosine of angle between incident photon and electron
+  float_p s = 0.5*x*gam*(1.0 - beta0*mu); // relativistic invariant
+
+
+  //# Approximate Taylor expansion for Compton total 
+  // cross-section if xi<0.01, error about 5e-6
+  float_p s0 = 0.0; 
+  if(s < 0.01) {
+    s0 = 1.0 - 2.0*s + 5.2*s*s - 9.1*s*s*s;
+
+    //# higher-order terms, not needed if xi<0.01 
+    //# + 1144.0 * xi**4 / 35.0  - 544.0 * xi**5 / 7. 
+    //#+ 1892.0 * xi**6 / 21.0   
+  } else {
+    // Exact formula for Klein-Nishina cross section in units of sigma_T
+    s0 = (1.0/(s*s))*(4.0 + (s - 2.0 - 2.0/s)*log(1.0 + 2.0*s) + 2.0*s*s*(1.0 + s)/pow(1.0 + 2.0*s, 2) );
+    s0 *= 3.0/8.0;  //change from \sigma_0 to \sigma_T
+  }
+
+  // compton scattering of two particles will have relative velocity:
+  //# vrel = 1-zeta = 1 - \beta mu so that dP/dtau ~ s_0 *(1-beta mu)/2
+  //#vrel =  (1 - beta0*mu)/gam/x # TODO check if correct: normalize number densities with lorentz factors
+  float_p fkin = (1.0 - beta0*mu);
+
+  //std::cout<< "comp s:" << s << " x:" << x << " s0:" << s0 << " beta0:" << beta0 << " mu:" << mu << std::endl;
+
   return s0*fkin;
 }
 
@@ -40,26 +83,150 @@ void Compton::interact(
   string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
   string& t2, float_p& ux2, float_p& uy2, float_p& uz2) 
 {
-  Vec3<float_p> zmvec(ux1, uy1, uz1);
-  Vec3<float_p> zpvec(ux2, uy2, uz2);
+
+  //--------------------------------------------------
+  Vec3<float_p> zv, xv;
+  if( (t1 == "e-" || t1 == "e+") && (t2 == "ph") ) {
+    zv.set(ux1, uy1, uz1); 
+    xv.set(ux2, uy2, uz2); 
+  } else if( (t2 == "e-" || t2 == "e+") && (t1 == "ph") ) {
+    zv.set(ux2, uy2, uz2); 
+    xv.set(ux1, uy1, uz1); 
+  } else {
+    // incompatible particle types
+    assert(false);
+  }
 
 
+  //--------------------------------------------------
+
+  float_p x0 = norm(xv);                  // photon energy
+  Vec3<float_p> om0 = xv/x0;              // photon direction vector \omega
+  float_p gam0 = sqrt(1.0 + dot(zv,zv));  // prtcl gamma
+  Vec3<float_p> beta0 = zv/gam0;          // prtcl 3-velocity \beta
+  Vec3<float_p> bdir = beta0/norm(beta0); // electron direction vector
+
+  //#--------------------------------------------------
+  // boost to electron mom frame
+
+  // NOTE: renaming variables so that B matrix matches with other processes
+  float_p gc = gam0;               //# frame lorentz factor
+  Vec3<float_p> uv = gam0*beta0;  //# momentum 3-vec of the farme
+  Vec3<float_p> bc = beta0;             //# 3-vel vec of the frame
+  float_p v2 = dot(bc,bc);         //# v_c^2
+  //Vec3<float_p> beta_dir = beta0/norm(beta0); // vector into direction of electron velocity FIXME
+          
+  //# boost matrix 
+  Vec4<float_p> B1( gc,       -uv(0),                    -uv(1),                    -uv(2)                 );
+  Vec4<float_p> B2(-uv(0), 1.+(gc-1.)*bc(0)*bc(0)/v2,    (gc-1.)*bc(1)*bc(0)/v2,    (gc-1.)*bc(2)*bc(0)/v2 );
+  Vec4<float_p> B3(-uv(1),    (gc-1.)*bc(0)*bc(1)/v2, 1.+(gc-1.)*bc(1)*bc(1)/v2,    (gc-1.)*bc(2)*bc(1)/v2 );
+  Vec4<float_p> B4(-uv(2),    (gc-1.)*bc(0)*bc(2)/v2,    (gc-1.)*bc(1)*bc(2)/v2, 1.+(gc-1.)*bc(2)*bc(2)/v2 );
+  Mat4<float_p> B(B1, B2, B3, B4);
+
+  //--------------------------------------------------
+
+  Vec4<float_p> k0( x0, x0*om0(0), x0*om0(1), x0*om0(2) );  //# 4-mom of the photon
+  Vec4<float_p> k0_R = dot(B, k0);  //# boosted 4-mom of photon in electron rest frame
+
+  float_p x0_R = k0_R(0); //# energy of photon in R frame
+  Vec3<float_p> om_R(k0_R(1)/x0_R, k0_R(2)/x0_R, k0_R(3)/x0_R);  //# direction of photon in R frame
+
+  // --------------------------------------------------
+  // test that electron becomes at rest after boost
+  // z0 = gam0*np.array([1, beta0[0], beta0[1], beta0[2]])  # 4-mom of the photon
+  // z0_R = np.dot(B, z0) # boosted 4-mom of photon in electron rest frame
+  //  DONE; confirmed to work
+
+  //--------------------------------------------------
+  // choose scattering coordinates (i,j,k); along photon direction
+  Vec3<float_p> kvec = om_R;                       // along photon direction
+  //Vec3<float_p> jvec = unit_cross(kvec, beta0); // k x v; incoming electron is in the (i,k) plane FIXME
+  Vec3<float_p> jvec = unit_cross(kvec, bdir); // k x v; incoming electron is in the (i,k) plane FIXME
+  Vec3<float_p> ivec = unit_cross(jvec, kvec);     // # complement the right-handed basis
+
+  // transformation matrix between lab frame and ijk frame
+  Mat3<float_p> M(ivec, jvec, kvec);           // 3x3 rotation matrix
+
+  //--------------------------------------------------
+  //scatter until physically realistic event is found
+  int niter = 0;
+  float_p phi_R, mu_R, x1_R, F;
+  while(true) {
+    phi_R = 2.0*PI*rand(); // candidate symmetry/azimuth angle in R frame
+    mu_R = -1.0 + 2.0*rand(); // candidate latitude/scattering angle between incident and outg photon
+
+    x1_R = x0_R/(1.0 + x0_R*(1.0 - mu_R)); // scattered photon energy in R frame
+
+    // angle dependent part of differential cross section
+    F = 0.5*pow(x1_R/x0_R, 2)*(-1.0 + (x1_R/x0_R) + (x0_R/x1_R) + mu_R*mu_R );
+
+    if( F > rand() ) break;   // accept angles
+    if( niter > 10000 ) break; // too many iterations
+    niter += 1;
+  }
+        
+  if(niter > 10000) std::cout << "COMPTON WARNING: too many iterations" << std::endl;
 
 
+  //# construct new photon vector based on the angles
+  //      #om1_Rijk  = np.array([mu, sinth*np.cos(phi), sinth*np.sin(phi)])
+  float_p sinz = sqrt(1.0 - mu_R*mu_R);
+  Vec3<float_p> om1_Rijk( sinz*sin(phi_R), sinz*cos(phi_R), mu_R);
+
+  //# rotate back to original axis
+  Mat3<float_p> Minv = inv( M );
+  Vec3<float_p> om1_R = dot( Minv, om1_Rijk );
+
+  //#-------------------------------------------------- 
+  //# transform back to lab frame
 
 
+  // boost matrix back to lab frame; constructed from -b_c vector
+  //float_p gc = gam0; // # frame lorentz factor
+  uv = -1.0f*uv;  // flip momentum 3-vec of the farme
+  bc = -1.0f*bc;  //  3-vel vec of the frame
+  //v2 = np.dot(bc,bc) # v_c^2
+    
+  //# boost matrix 
+  Vec4<float_p> G1( gc,       -uv(0),                    -uv(1),                    -uv(2)                 );
+  Vec4<float_p> G2(-uv(0), 1.+(gc-1.)*bc(0)*bc(0)/v2,    (gc-1.)*bc(1)*bc(0)/v2,    (gc-1.)*bc(2)*bc(0)/v2 );
+  Vec4<float_p> G3(-uv(1),    (gc-1.)*bc(0)*bc(1)/v2, 1.+(gc-1.)*bc(1)*bc(1)/v2,    (gc-1.)*bc(2)*bc(1)/v2 );
+  Vec4<float_p> G4(-uv(2),    (gc-1.)*bc(0)*bc(2)/v2,    (gc-1.)*bc(1)*bc(2)/v2, 1.+(gc-1.)*bc(2)*bc(2)/v2 );
+  Mat4<float_p> G(G1, G2, G3, G4);
+
+  Vec4<float_p> k1_R( x1_R, x1_R*om1_R(0), x1_R*om1_R(1), x1_R*om1_R(2) ); //# construct photon 4-mom to be boosted
+  Vec4<float_p> k1 = dot(G, k1_R); // # de-boost back to lab frame
 
 
+  //# --------------------------------------------------
+  //# construct new scattered quantities
 
-  t1 = "ph";
-  ux1 = xpp0(1);
-  uy1 = xpp0(2);
-  uz1 = xpp0(3);
+  float_p x1 = k1(0);
+  Vec3<float_p>  om1( k1(1)/x1, k1(2)/x1, k1(3)/x1 );
+        
+  //# scattered electon variables from ene and mom conservation
+  float_p gam1 = gam0 + (x0 - x1);
+  //Vec3<float_p> beta1 = (gam0*beta0 + x0*om0 - x1*om1)/gam1;
+  Vec3<float_p> beta1(0.0, 0.0, 0.0);
+  for(size_t i=0; i<3; i++) beta1(i) = (gam0*beta0(i) + x0*om0(i) - x1*om1(i))/gam1;
 
-  t2 = "ph";
-  ux2 = xpp1(1);
-  uy2 = xpp1(2);
-  uz2 = xpp1(3);
+  if( (t1 == "e-" || t1 == "e+") && (t2 == "ph") ) {
+    ux1 = gam1*beta1(0);
+    uy1 = gam1*beta1(1);
+    uz1 = gam1*beta1(2);
+
+    ux2 = x1*om1(0);
+    uy2 = x1*om1(1);
+    uz2 = x1*om1(2);
+  } else if( (t2 == "e-" || t2 == "e+") && (t1 == "ph") ) {
+    ux1 = x1*om1(0);
+    uy1 = x1*om1(1);
+    uz1 = x1*om1(2);
+
+    ux2 = gam1*beta1(0);
+    uy2 = gam1*beta1(1);
+    uz2 = gam1*beta1(2);
+  }
 
   return;
 }
