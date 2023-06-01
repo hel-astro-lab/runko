@@ -7,6 +7,7 @@
 #include "../qed/interactions/pair_ann.h"
 #include "../qed/interactions/phot_ann.h"
 #include "../qed/interactions/compton.h"
+#include "../qed/pairing.h"
 
 
 
@@ -158,6 +159,14 @@ void bind_qed(py::module& m_sub)
   // Photon annihilation 
   py::class_<qed::Compton>(m_sub, "Compton", qedinter)
     .def(py::init<string, string>());
+
+
+  //--------------------------------------------------
+  // Particle pairing routines
+  py::class_<qed::Pairing>(m_sub, "Pairing")
+    .def(py::init<>())
+    .def("solve",  &qed::Pairing::solve<3>);
+
 
 
 }

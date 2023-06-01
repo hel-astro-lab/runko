@@ -67,6 +67,7 @@ set (QED_FILES
      ../qed/interactions/pair_ann.c++
      ../qed/interactions/phot_ann.c++
      ../qed/interactions/compton.c++
+     ../qed/pairing.c++
      )
 
 set (FFE_FILES 
