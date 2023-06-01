@@ -47,6 +47,9 @@ class Configuration(object):
         self.ymax = self.Ny * self.NyMesh
         self.zmax = self.Nz * self.NzMesh
 
+        # generic list of particle types (up to maximum species)
+        self.prtcl_types = ['e-', 'e+', 'p1', 'p2', 'p3', 'p4', 'p5']
+
         # dimensionality switches
         if not("twoD" in self.__dict__ or "threeD" in self.__dict__):
             self.oneD = False

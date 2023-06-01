@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
+#include <string>
 
 #include "../definitions.h"
 
@@ -155,6 +156,9 @@ class ParticleContainer{
 
   // particle mass
   double m = 1.0; 
+
+  // type identifier; default generic type
+  std::string type = "gen";
 
   /// Constructor 
   ParticleContainer();

@@ -288,6 +288,8 @@ class Conf:
     twoD   = False
     threeD = False
 
+    prtcl_types = ['e-', 'e+']
+
     #def __init__(self):
     #    print("initialized...")
 

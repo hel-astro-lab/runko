@@ -81,6 +81,8 @@ class Conf:
 
     qe = 1.0
 
+    prtcl_types = ['e-', 'e+']
+
     # def __init__(self):
     #    print("initialized...")
 

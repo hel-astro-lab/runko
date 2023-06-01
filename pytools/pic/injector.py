@@ -11,7 +11,13 @@ def unit_w(xloc, ispcs, conf):
 
 
 # inject plasma into (individual) cells
-def inject(grid, vel_func, den_func, conf, align_species=True, w_func=unit_w):
+def inject(grid, 
+           vel_func, 
+           den_func, 
+           conf, 
+           align_species=True, 
+           w_func=unit_w,
+           ):
     rank = grid.rank()
 
     prtcl_tot = np.zeros(conf.Nspecies, dtype=np.int64)
@@ -44,6 +50,8 @@ def inject(grid, vel_func, den_func, conf, align_species=True, w_func=unit_w):
                     for ispcs in range(conf.Nspecies):
                         container = tile.get_container(ispcs)
                         container.set_keygen_state(prtcl_tot[ispcs], rank)
+
+                        container.type = conf.prtcl_types[ispcs] # name container
 
                         # open and read previously made particle species (for location reference)
                         if ispcs == 1:
