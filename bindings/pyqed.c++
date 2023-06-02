@@ -132,7 +132,7 @@ void bind_qed(py::module& m_sub)
 
 
 
-  py::class_< qed::Interaction, PyInteraction > qedinter(m_sub, "Interaction");
+  py::class_< qed::Interaction, std::shared_ptr<qed::Interaction>, PyInteraction > qedinter(m_sub, "Interaction");
   qedinter
     //.def(py::init<string&, string& >())
     .def(py::init<string, string>())
@@ -165,7 +165,8 @@ void bind_qed(py::module& m_sub)
   // Particle pairing routines
   py::class_<qed::Pairing>(m_sub, "Pairing")
     .def(py::init<>())
-    .def("solve",  &qed::Pairing::solve<3>);
+    .def("solve",           &qed::Pairing::solve<3>)
+    .def("add_interaction", &qed::Pairing::add_interaction, py::keep_alive<1,2>() );
 
 
 

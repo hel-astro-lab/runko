@@ -3,8 +3,13 @@
 #include <string>
 #include <tuple>
 #include <random>
+#include <memory>
+
+#include "interactions/interaction.h"
 #include "../../definitions.h"
 #include "../../pic/tile.h"
+
+
 
 
 namespace qed {
@@ -21,6 +26,7 @@ private:
   std::mt19937 gen;
   std::uniform_real_distribution<float_p> uni_dis;
 
+  using InteractionPtr = std::shared_ptr<Interaction>;
 
 public:
 
@@ -30,13 +36,34 @@ public:
     uni_dis(0.0, 1.0)       
   { }
 
+  //using Tile_map = std::unordered_map<TileID_t, Tileptr>;
+  //Tile_map tiles; /// Map with tile_id & tile data
+
+
+  // add interactions to internal memory; done via pointers
+  void add_interaction(InteractionPtr iptr)
+  {
+    assert(iptr); // check that we are not appending nullptr
+
+    auto name = iptr->name;
+    auto t1 = iptr->t1;
+    auto t2 = iptr->t2;
+
+    std::cout << " adding:" << name << " of t1/t2 " << t1 << " " << t2 << std::endl;
+  }
+
 
   template<size_t D>
   void solve(pic::Tile<D>& tile)
   {
-    for(auto&& container : tile.containers)
+    for(auto&& con1 : tile.containers)
     {
-      std::cout << "container type:" << container.type << std::endl;
+      auto t1 = con1.type;
+      std::cout << "container type:" << t1 << std::endl;
+      
+
+
+
     }
   }
 

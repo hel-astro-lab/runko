@@ -13,7 +13,11 @@ class Compton :
 {
 public:
 
-  using Interaction::Interaction;
+  Compton(string t1, string t2) : 
+    Interaction(t1, t2)
+  {
+    name = "compton";
+  }
 
   tuple<float_p, float_p> get_minmax_ene( string t1, string t2 ) override;
 

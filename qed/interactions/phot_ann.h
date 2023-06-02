@@ -13,7 +13,11 @@ class PhotAnn :
 {
 public:
 
-  using Interaction::Interaction;
+  PhotAnn(string t1, string t2) : 
+    Interaction(t1, t2)
+  {
+    name = "phot-ann";
+  }
 
   tuple<float_p, float_p> get_minmax_ene( string t1, string t2 ) override;
 
@@ -27,6 +31,7 @@ public:
 
 
 }; // end of PhotAnn class
+
 
 } // end of namespace qed
 

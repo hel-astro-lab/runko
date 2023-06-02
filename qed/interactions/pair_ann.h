@@ -13,7 +13,11 @@ class PairAnn :
 {
 public:
 
-  using Interaction::Interaction;
+  PairAnn(string t1, string t2) : 
+    Interaction(t1, t2)
+  {
+    name = "pair-ann";
+  }
 
   tuple<float_p, float_p> get_minmax_ene( string t1, string t2 ) override;
 
