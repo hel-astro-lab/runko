@@ -13,6 +13,7 @@
 #include "../tools/iter/dynArray.h"
 #include "../tools/iter/allocator.h"
 #include "../tools/iter/managed_alloc.h"
+#include "../tools/sort.h"
 
 
 
@@ -351,7 +352,16 @@ class ParticleContainer{
 
   /// set keygenerator state
   void set_keygen_state(int __key, int __rank);
+  
+  
+  // sort particles in reverse (ascending) energy order
+  void apply_permutation(std::vector<size_t>& indices);
 
+  // sort particles in reverse (ascending) energy order
+  void sort_in_rev_energy();
+
+  // update internal cumulative weight arrays of particles
+  void update_cumulative_arrays();
 };
 
 

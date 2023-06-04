@@ -165,9 +165,9 @@ void bind_qed(py::module& m_sub)
   // Particle pairing routines
   py::class_<qed::Pairing>(m_sub, "Pairing")
     .def(py::init<>())
-    .def("solve",           &qed::Pairing::solve<3>)
-    .def("add_interaction", &qed::Pairing::add_interaction, py::keep_alive<1,2>() );
-
+    .def_readwrite("prob_norm",&qed::Pairing::prob_norm)
+    .def("solve",              &qed::Pairing::solve<3>)
+    .def("add_interaction",    &qed::Pairing::add_interaction, py::keep_alive<1,2>() );
 
 
 }

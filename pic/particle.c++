@@ -898,6 +898,94 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
 }
 
 
+
+template<size_t D>
+void ParticleContainer<D>::sort_in_rev_energy()
+{
+
+  // TODO: sort energy instead wgt
+
+  //--------------------------------------------------
+  // particle mass; zero if photon
+  const float_p mass = (type == "ph") ? 0.0f : 1.0f;
+
+  // construct energy array
+  std::vector<float_p> enes( size() );
+
+  for(size_t n=0; n<size(); n++) {
+    enes[n] = std::sqrt( mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
+  }
+
+  //--------------------------------------------------
+  //sort and apply
+  auto indices = argsort_rev(enes);
+  apply_permutation(indices);
+}
+
+
+template<size_t D>
+void ParticleContainer<D>::apply_permutation( std::vector<size_t>& indices )
+{
+
+  // check that sizes match
+  assert( indices.size() == size() );
+
+  // https://stackoverflow.com/questions/67751784/how-to-do-in-place-sorting-a-list-according-to-a-given-index-in-c
+  // and
+  // https://devblogs.microsoft.com/oldnewthing/20170102-00/?p=95095
+  for (size_t i=0; i<indices.size(); i++) {
+    auto current = i;
+
+    while (i != indices[current]) {
+      auto next = indices[current];
+
+      //swap(v[current], v[next]);
+
+      std::swap( locArr[0][current], locArr[0][next] ); 
+      std::swap( locArr[1][current], locArr[1][next] ); 
+      std::swap( locArr[2][current], locArr[2][next] ); 
+
+      std::swap( velArr[0][current], velArr[0][next] ); 
+      std::swap( velArr[1][current], velArr[1][next] ); 
+      std::swap( velArr[2][current], velArr[2][next] ); 
+
+      std::swap( indArr[0][current], indArr[0][next] ); 
+      std::swap( indArr[1][current], indArr[1][next] ); 
+
+      std::swap( wgtArr[current], wgtArr[next] ); 
+
+      // NOTE: these can be omitted if interpolator is called *after* sort
+      //std::swap( ex[current], ex[next] ); 
+      //std::swap( ey[current], ey[next] ); 
+      //std::swap( ez[current], ez[next] ); 
+
+      //std::swap( bx[current], bx[next] ); 
+      //std::swap( by[current], by[next] ); 
+      //std::swap( bz[current], bz[next] ); 
+
+      indices[current] = current;
+      current = next;
+    }
+
+  indices[current] = current;
+  }
+
+
+  return;
+}
+
+
+template<size_t D>
+void ParticleContainer<D>::update_cumulative_arrays()
+{
+
+  return;
+}
+
+
+
+
+
 } // end ns pic
 
 
