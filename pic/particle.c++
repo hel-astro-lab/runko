@@ -353,7 +353,7 @@ void ParticleContainer<D>::delete_transferred_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  std::vector<int> to_be_deleted;
+  //std::vector<int> to_be_deleted;
 
   // get transferred 
 
@@ -903,15 +903,13 @@ template<size_t D>
 void ParticleContainer<D>::sort_in_rev_energy()
 {
 
-  // TODO: sort energy instead wgt
-
   //--------------------------------------------------
-  // particle mass; zero if photon
-  const float_p mass = (type == "ph") ? 0.0f : 1.0f;
+  // energy array for sorting
+    
+  const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
 
   // construct energy array
-  std::vector<float_p> enes( size() );
-
+  std::vector<float_p> enes( size() ); 
   for(size_t n=0; n<size(); n++) {
     enes[n] = std::sqrt( mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
   }
@@ -978,6 +976,9 @@ void ParticleContainer<D>::apply_permutation( std::vector<size_t>& indices )
 template<size_t D>
 void ParticleContainer<D>::update_cumulative_arrays()
 {
+
+
+
 
   return;
 }
