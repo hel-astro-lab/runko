@@ -263,14 +263,34 @@ void PhotAnn::interact(
   }
 
   t1 = "e-";
+  t2 = "e+";
+
   ux1 = zpp1(1);
   uy1 = zpp1(2);
   uz1 = zpp1(3);
 
-  t2 = "e+";
   ux2 = zpp2(1);
   uy2 = zpp2(2);
   uz2 = zpp2(3);
+
+  // TODO is this flip needed?
+  //if(rand() < 0.5) {
+  //  ux1 = zpp1(1);
+  //  uy1 = zpp1(2);
+  //  uz1 = zpp1(3);
+
+  //  ux2 = zpp2(1);
+  //  uy2 = zpp2(2);
+  //  uz2 = zpp2(3);
+  //} else {
+  //  ux2 = zpp1(1);
+  //  uy2 = zpp1(2);
+  //  uz2 = zpp1(3);
+
+  //  ux1 = zpp2(1);
+  //  uy1 = zpp2(2);
+  //  uz1 = zpp2(3);
+  //}
 
   return;
 }
