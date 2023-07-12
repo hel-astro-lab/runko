@@ -97,7 +97,6 @@ void Compton::interact(
     assert(false);
   }
 
-
   //--------------------------------------------------
 
   float_p x0 = norm(xv);                  // photon energy
@@ -227,6 +226,46 @@ void Compton::interact(
     uy2 = gam1*beta1(1);
     uz2 = gam1*beta1(2);
   }
+
+
+  // --------------------------------------------------
+  // test energy conservation
+  //--------------------------------------------------
+  // # test energy conservation # NOTE: we can remove these debug tests if needed
+  if(true){
+
+    float_p enec = gam1 + x1 - (x0 + gam0);
+
+    Vec3<float_p> momc; 
+    for(size_t i=0; i<3; i++) momc(i) = x1*om1(i) + gam1*beta1(i)  - (x0*om0(i) + gam0*beta0(i) );
+    float_p moms = sum(momc);
+
+    bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
+    for(size_t i = 0; i < 2; i++) ts[i] = false;
+
+    float_p tol = 3.0e-5;
+
+    float_p nom0  = norm(om0);
+    float_p nom1  = norm(om1);
+
+    if(abs(enec)      > tol) ts[0] = true;
+    if(abs(sum(momc)) > tol) ts[1] = true;
+
+    if(ts[0] ||
+       ts[1] ) { 
+
+      std::cout << "ERROR COMPTON:" << std::endl;
+      for(size_t i = 0; i < 2; i++) { std::cout << i << " " << ts[i] << std::endl; }
+
+      std::cout << "x0v, x1v  " <<  xv    << " " <<  k1   << std::endl;
+      std::cout << "g0, g1    " <<  gam0  << " " <<  gam1  << std::endl;
+      //std::cout << "mu,s0,s,q " <<  mu_R  << " " <<  s0    << " " <<  s << " " << q  << std::endl;
+      std::cout << "x,x1,enec " <<  x1    << " " <<  gam1    << " " <<  enec << std::endl;
+      std::cout << "momc      " <<  moms  << " " <<  momc  << std::endl;
+      std::cout << "|om0||om1|" <<  nom0  << " " <<  nom1  << std::endl;
+    }
+  }
+
 
   return;
 }
