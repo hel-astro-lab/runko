@@ -137,10 +137,28 @@ def sample_boosted_maxwellian(theta, Gamma, direction=1, dims=2):
     return ux, uy, uz, u
 
 
-def sample_blackbody(delgam):
+# random sample from blackbody distribution
+def draw_bbody(kTbb):
+    xi1=np.random.rand()
+    xi2=np.random.rand()
+    xi3=np.random.rand()
+    xi4=np.random.rand()
+    
+    if 1.202*xi1 < 1: 
+        xi=1.0
+    else:
+        jj=1.0
+        fsum=jj**(-3)
+        while (1.202*xi1) > (fsum+(jj+1)**(-3)):
+            jj=jj+1.0
+            fsum = fsum + jj**(-3)
+        xi=jj+1.0
+    hv = - kTbb * np.log(xi2*xi3*xi4) / xi
 
-    # TODO
-    uu = 1.0
+    return hv
+
+def sample_blackbody(delgam):
+    uu = draw_bbody(delgam)
     ux,uy,uz = velxyz(uu)
 
     return ux, uy, uz, uu
