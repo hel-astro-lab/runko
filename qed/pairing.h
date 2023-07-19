@@ -283,9 +283,13 @@ public:
 
 
   // energy-dependent weight adapation functions
+  //
+  // value corresponds to number of particles (of type t) produced with given energy x
+  // e.g., constant value means that every interactions splits the particle into that many pieces
   float_p ene_weight_funs(std::string t, float_p x) 
   {
-    if(       t == "ph") { return 1.0/std::pow(x, 0.2); //std::pow(x, -0.5); 
+    //if(       t == "ph") { return 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
+    if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
     } else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
     } else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
     }
@@ -724,9 +728,14 @@ public:
             e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
             e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
 
-            // weight adaptation
-            float_p fw3 = ene_weight_funs(t1, e1)/ene_weight_funs(t3, e3); 
-            float_p fw4 = ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
+            // weight adaptation; original version
+            //float_p fw3 = (e3/e1)*ene_weight_funs(t1, e1)/ene_weight_funs(t3, e3); 
+            //float_p fw4 = (e4/e2)*ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
+
+            // more intuitive version (flipped)
+            float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1);
+            float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t2, e2);
+
 
             // limit particle creation
             float_p n3 = std::min( fw3, 32.0f );
