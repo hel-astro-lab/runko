@@ -62,13 +62,13 @@ public:
         );
   }
 
-  float_p comp_cross_section( 
+  tuple_pair comp_cross_section( 
     string t1, float_p ux1, float_p uy1, float_p uz1,
     string t2, float_p ux2, float_p uy2, float_p uz2) override {
     PYBIND11_OVERLOAD_PURE(
-        float_p,                     // return type
-        Interaction,                // parent class
-        comp_cross_section,         // name of function in C++
+        tuple_pair, // return type
+        Interaction,                  // parent class
+        comp_cross_section,           // name of function in C++
         t1, ux1, uy1, uz1, t2, ux2, uy2, uz2
         );
   }

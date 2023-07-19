@@ -71,6 +71,8 @@ public:
                  
   std::vector<size_t> 
       ids;     // internal id of the interaction in the storage
+
+  std::map<std::string, double> info_max_int_cs;
                  
   //--------------------------------------------------
   //--------------------------------------------------
@@ -91,6 +93,8 @@ public:
 
     std::cout << " adding: " << name << " of t1/t2 " << t1 << " " << t2 << std::endl;
     interactions.push_back(iptr);
+
+    info_max_int_cs[name] = 0.0;
   }
 
   //--------------------------------------------------
@@ -318,7 +322,7 @@ public:
     float_p ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
     float_p ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
     float_p e1, e2;
-    float_p cross_s, wmin, wmax, prob;
+    float_p wmin, wmax, prob;
     float_p p_ini, p_tar;
 
     // loop over interactions
@@ -389,12 +393,12 @@ public:
                 //if(e1 > e2) continue;
 
                 // interaction cross section
-                cross_s = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
+                auto [cm, vrel] = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
                 
                 // interaction probability
                 wmin = min(w1, w2);
                 wmax = max(w1, w2);
-                prob = cross_s*w1*w2/prob_norm;
+                prob = cm*vrel*w1*w2/prob_norm;
                 // NOTE: difference of all2all scheme is here where prob depends on w1*w2
 
                 // exponential waiting time between interactions
@@ -525,8 +529,9 @@ public:
       auto t1 = con.type;
       info_prtcl_num[t1] = con.size();
     }
-    //--------------------------------------------------
 
+
+    //--------------------------------------------------
 
     // initialize temp variable storages
     float_p lx1, ly1, lz1,     lx2, ly2, lz2;
@@ -534,7 +539,7 @@ public:
     float_p ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
     float_p e1, e2;
 
-    float_p cm, wmin, wmax, prob;
+    float_p wmin, wmax, prob;
     float_p p_ini, p_tar;
 
     //--------------------------------------------------
@@ -581,7 +586,14 @@ public:
         double prob_vir_max = 0.0;
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/prob_norm;
         // TODO: no w1 here ???
-        assert(prob_vir_max <= 1.0);
+
+        if(prob_vir_max>=1.0){
+          std::cout << " prob_vir_max:" << prob_vir_max << std::endl;
+          std::cout << " norm" << prob_norm << std::endl;
+          for(size_t i=0; i<ids.size(); i++) std::cout << cmaxs[i] << " " << wsums[i] << std::endl;
+
+          assert(false);
+        }
 
 
         // exponential waiting time between interactions
@@ -642,7 +654,11 @@ public:
           //--------------------------------------------------
           
           // real probablity of interaction
-          cm = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
+          auto [cm, vrel] = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
+
+          // collect max cross section
+          float_p cm_cur = info_max_int_cs[iptr->name];
+          info_max_int_cs[iptr->name] = std::max( cm_cur, cm);
 
 
           // FIXME which max should this prob be compared against?  I think ver3 or 4
@@ -665,13 +681,14 @@ public:
 
           // ver4
           // comparison of interaction to max interaction
-          double prob_vir = cm/(2.0*cmax);
+          double prob_vir = cm*vrel/(2.0*cmax);
 
           // FIXME remove check if sure this works
           if(prob_vir >= 1.0){
             std::cout << " prob_vir > 1: " << prob_vir << std::endl;
             std::cout << " int  " << iptr->name << std::endl;
             std::cout << " cm   " << cm << std::endl;
+            std::cout << " vrel " << vrel << std::endl;
             std::cout << " cmax " << cmax << std::endl;
 
             assert(false);
@@ -773,6 +790,9 @@ public:
     //int n_tot = info_prtcl_num["ph"] - (info_prtcl_kill["e-"] + info_prtcl_kill["e+"]);
     //assert(n_tot == 0);
 
+    //--------------------------------------------------
+    //std::cout << " max cross sections:" << std::endl;
+    //for(auto const& [key, val] : info_max_int_cs) std::cout << "   " << key << " : " << val << std::endl;
 
     //--------------------------------------------------
     // final book keeping routines

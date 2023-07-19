@@ -41,10 +41,11 @@ public:
   virtual tuple<float_p, float_p> get_minmax_ene( string t1, string t2, double ene) { return {0.0, 1.0}; };
 
   // interaction cross section given incident/target particle four-velocities
-  virtual float_p comp_cross_section(
+  using pair_float = std::tuple<float_p, float_p>;
+  virtual pair_float comp_cross_section(
     string t1, float_p ux1, float_p uy1, float_p uz1,
     string t2, float_p ux2, float_p uy2, float_p uz2)
-    { return cross_section; }
+    { return {cross_section, 1.0}; }
 
 
   // main interaction routine; 

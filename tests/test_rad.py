@@ -465,7 +465,7 @@ class radiation(unittest.TestCase):
         ux2, uy2, uz2 = 1.1, 2.2, 1.3
 
         intr = pyqed.PairAnn('e-', 'e+')
-        intr.get_minmax_ene('e-', 'e+')
+        intr.get_minmax_ene('e-', 'e+', 1.0)
 
         #print('before')
         #print(t1, ux1, uy1, uz1)
@@ -495,7 +495,7 @@ class radiation(unittest.TestCase):
         ux2, uy2, uz2 = 0.01, 0.26, 0.17
 
         intr = pyqed.Compton('e-', 'ph')
-        intr.get_minmax_ene('e-', 'ph')
+        intr.get_minmax_ene('e-', 'ph', 1.0)
 
         #print('before')
         #print(t1, ux1, uy1, uz1)

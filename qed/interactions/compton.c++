@@ -27,7 +27,7 @@ tuple<float_p, float_p> Compton::get_minmax_ene( string t1, string t2, double en
   return {0.0, INF};
 }
 
-float_p Compton::comp_cross_section(
+Compton::pair_float Compton::comp_cross_section(
     string t1, float_p ux1, float_p uy1, float_p uz1,
     string t2, float_p ux2, float_p uy2, float_p uz2)
 {
@@ -75,7 +75,7 @@ float_p Compton::comp_cross_section(
 
   //std::cout<< "comp s:" << s << " x:" << x << " s0:" << s0 << " beta0:" << beta0 << " mu:" << mu << std::endl;
 
-  return s0*fkin;
+  return {s0, fkin};
 }
 
   

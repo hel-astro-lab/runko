@@ -47,7 +47,7 @@ tuple<float_p, float_p> PhotAnn::get_minmax_ene( string t1, string t2, double en
 
 // Exact formula for Breit-Wheeler cross section in units of sigma_T
 // NOTE: sigma_T = 8 pi r2/3; this is in units of \pi r_e^2
-float_p PhotAnn::comp_cross_section(
+PhotAnn::pair_float PhotAnn::comp_cross_section(
     string t1, float_p ux1, float_p uy1, float_p uz1,
     string t2, float_p ux2, float_p uy2, float_p uz2)
 {
@@ -72,7 +72,7 @@ float_p PhotAnn::comp_cross_section(
   //    return 0.0, 1.0
 
   // require x_cm = g_cm > 1
-  if(xcm < 1.0) return 0.0;
+  if(xcm < 1.0) return {0.0, 1.0};
 
   //ecm = 1.0*x;                    // e_cm = \gamma_cm
   //bcm = sqrt(1.0 - 1.0/ecm**2);   // \beta_cm
@@ -98,7 +98,7 @@ float_p PhotAnn::comp_cross_section(
   //# pair creation probability dP/dtau = s_gg (1-cosa)
   float_p vrel = 1.0 - mu;
 
-  return s0*vrel;
+  return {s0, vrel};
 }
 
 

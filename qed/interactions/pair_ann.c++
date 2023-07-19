@@ -28,7 +28,7 @@ tuple<float_p, float_p> PairAnn::get_minmax_ene( string t1, string t2, double en
 }
 
 
-float_p PairAnn::comp_cross_section(
+PairAnn::pair_float PairAnn::comp_cross_section(
     string t1, float_p ux1, float_p uy1, float_p uz1,
     string t2, float_p ux2, float_p uy2, float_p uz2)
 {
@@ -81,7 +81,7 @@ float_p PairAnn::comp_cross_section(
   //float_p fkin = 1.0;
 
   //if qe**2 -1 < 0: print('pair-ann cs:', s0, fkin, qe, gamp, gamm, zeta, x)
-  return s0*fkin;
+  return {s0, fkin};
 }
 
 
