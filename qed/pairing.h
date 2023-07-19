@@ -282,6 +282,17 @@ public:
   }
 
 
+  // energy-dependent weight adapation functions
+  float_p ene_weight_funs(std::string t, float_p x) 
+  {
+    if(       t == "ph") { return 1.0/x; //std::pow(x, -0.5); 
+    } else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
+    } else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
+    }
+
+    assert(false);
+  }
+
 
   //--------------------------------------------------
   template<size_t D>
@@ -537,10 +548,10 @@ public:
     float_p lx1, ly1, lz1,     lx2, ly2, lz2;
     float_p ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
     float_p ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
-    float_p e1, e2;
+    float_p e1, e2, e3, e4;
+    float_p m3, m4;
 
     float_p wmin, wmax, prob;
-    float_p p_ini, p_tar;
 
     //--------------------------------------------------
     // loop over incident types
@@ -703,59 +714,223 @@ public:
             // interact and udpate variables in-place
             iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
 
+            // new energies
+            m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+            m4 = (t4 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+            e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
+            e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
+
+            // weight adaptation
+            float_p fw3 = ene_weight_funs(t1, e1)/ene_weight_funs(t3, e3); 
+            float_p fw4 = ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
+
+            // limit particle creation
+            float_p n3 = std::min( fw3, 32.0f );
+            float_p n4 = std::min( fw4, 32.0f );
+
 
             //# NOTE these two expressions are equal: w_i = w_j/wmax == wmin/w_i
             //# this is where the algorithm differs from original LP MC method by Stern95;
             //# here, instead of killing the LP we do not update its energy.
-            //prob_upd3 = wmin/w1 # equal to w2/wmax
-            //prob_upd4 = wmin/w2 # equal to w1/wmax
+            float_p prob_upd3 = wmin/w1; //w2/wmax;
+            float_p prob_upd4 = wmin/w2; //w1/wmax;
 
-            p_ini = wmin/w1; //w2/wmax;
-            p_tar = wmin/w2; //w1/wmax;
+            // redistribute weights among the new copies
+            w3 = w1/n3;
+            w4 = w2/n4;
+
 
             //-------------------------------------------------- 
-            if(rand() < p_ini){
-              if(t1 == t3){ // if type is conserved only update the prtcl info
-                              
-                // NOTE: we keep location the same
-                con1.vel(0,n1) = ux3;
-                con1.vel(1,n1) = uy3;
-                con1.vel(2,n1) = uz3;
-              } else { // else destroy previous and add new 
+            int n_added = 0, ncop = 0;
 
-                // destroy current
+            if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
+
+              double z1 = rand();
+              while(n3 > z1 + ncop) {
+
+                // optimized routine that does not to leave holes in arrays 
+                // it first replaces the original value and only then adds if necessary
+                if(ncop == 0) {
+                  if( rand() < prob_upd3 ) {
+                    //cons[t1].replace(iold, enew, wnew) //# replace with new energy
+                                                         //
+                    // NOTE: we keep location the same
+                    con1.vel(0, n1) = ux3;
+                    con1.vel(1, n1) = uy3;
+                    con1.vel(2, n1) = uz3;
+                    con1.wgt(   n1) = w3;
+                    con1.eneArr[n1] = e3;
+                  } else {
+                    //cons[told].replace(iold, eold, wnew) # replace with old energy
+                    con1.wgt(n1) = w3;
+                  }
+                } else {
+                  if( rand() < prob_upd3 ) {
+                    //cons[tnew].add(enew, wnew) # add new energy
+                    con1.add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+                  } else {
+                    //con1->add(eold, wnew) # add old energy
+                    con1.add_particle( {{lx1, ly1, lz1}}, {{ux1, uy1, uz1}}, w3); // new w
+                  }
+                }
+
+                ncop += 1;
+              } // end of while
+
+              // remove parent prtcl if nothing was added
+              if( ncop == 0 ) {
+                //con1.delete(iold)
                 con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
-
-                // add new
-                cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w1);
-
-                //std::cout << "killing t1" << t1 << std::endl;
-                //std::cout << "adding t3" << t3 << std::endl;
               }
-            }
-            //-------------------------------------------------- 
+
+            //--------------------------------------------------
+            } else { //# different before/after type; kill parent with a prob_upd
+
+              double z1 = rand();
+              while( n3 > z1 + ncop ){
+                //cons[t3].add(enew, wnew)
+                //#cons[tnew].buffer_add(enew, wnew)
+                cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+
+                ncop += 1;
+              }
+
+              // kill parent
+              if( prob_upd3 > rand() ) {
+                //cons[told].delete(iold)
+                //#cons[told].buffer_del(iold)
+
+                con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+                con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
+              }
+
+            } // end of prtcl t1/t3 addition
+
 
             //-------------------------------------------------- 
-            if(rand() < p_tar){
-              if(t2 == t4){ // if type is conserved only update the prtcl info
+            // add prtcl t2/t4
+            n_added = 0; 
+            ncop = 0;
 
-                // NOTE: we keep location the same
-                con2->vel(0,n2) = ux4;
-                con2->vel(1,n2) = uy4;
-                con2->vel(2,n2) = uz4;
-              } else { // else destroy previous and add new 
+            if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
 
-                // destroy current
+              double z1 = rand();
+              while(n4 > z1 + ncop) {
+
+                // optimized routine that does not to leave holes in arrays 
+                // it first replaces the original value and only then adds if necessary
+                if(ncop == 0) {
+                  if( rand() < prob_upd4 ) {
+                    //cons[t1].replace(iold, enew, wnew) //# replace with new energy
+                                                         //
+                    // NOTE: we keep location the same
+                    con2->vel(0, n2) = ux4;
+                    con2->vel(1, n2) = uy4;
+                    con2->vel(2, n2) = uz4;
+                    con2->wgt(   n2) = w4;
+                    con2->eneArr[n2] = e4;
+                  } else {
+                    //cons[told].replace(iold, eold, wnew) # replace with old energy
+                    con2->wgt(n2) = w4;
+                  }
+                } else {
+                  if( rand() < prob_upd4 ) {
+                    //cons[tnew].add(enew, wnew) # add new energy
+                    con2->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                  } else {
+                    //con1->add(eold, wnew) # add old energy
+                    con2->add_particle( {{lx2, ly2, lz2}}, {{ux2, uy2, uz2}}, w4); // new w
+                  }
+                }
+
+                ncop += 1;
+              } // end of while
+
+              // remove parent prtcl if nothing was added
+              if( ncop == 0 ) {
+                //con1.delete(iold)
                 con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
-
-                cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w2);
-
-                //std::cout << "killing t2" << t2 << std::endl;
-                //std::cout << "adding t4" << t4 << std::endl;
               }
-            }
+
+            //--------------------------------------------------
+            } else { //# different before/after type; kill parent with a prob_upd
+
+              double z1 = rand();
+              while( n4 > z1 + ncop ){
+                //cons[t3].add(enew, wnew)
+                //#cons[tnew].buffer_add(enew, wnew)
+                cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+
+                ncop += 1;
+              }
+
+              // kill parent
+              if( prob_upd4 > rand() ) {
+                //cons[told].delete(iold)
+                //#cons[told].buffer_del(iold)
+
+                con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
+                con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
+              }
+
+            } // end of prtcl t1/t3 addition
+
+
+
+
+
+            //--------------------------------------------------
+            // old prtcl add routine
+            //if(false) {
+
+            //  if(rand() < prob_upd3){
+            //    if(t1 == t3){ // if type is conserved only update the prtcl info
+            //                    
+            //      // NOTE: we keep location the same
+            //      con1.vel(0,n1) = ux3;
+            //      con1.vel(1,n1) = uy3;
+            //      con1.vel(2,n1) = uz3;
+            //    } else { // else destroy previous and add new 
+
+            //      // destroy current
+            //      con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+            //      con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
+
+            //      // add new
+            //      cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w1);
+
+            //      //std::cout << "killing t1" << t1 << std::endl;
+            //      //std::cout << "adding t3" << t3 << std::endl;
+            //    }
+            //  }
+            //  //-------------------------------------------------- 
+
+            //  //-------------------------------------------------- 
+            //  if(rand() < prob_upd4){
+            //    if(t2 == t4){ // if type is conserved only update the prtcl info
+
+            //      // NOTE: we keep location the same
+            //      con2->vel(0,n2) = ux4;
+            //      con2->vel(1,n2) = uy4;
+            //      con2->vel(2,n2) = uz4;
+            //    } else { // else destroy previous and add new 
+
+            //      // destroy current
+            //      con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
+            //      con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
+
+            //      cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w2);
+
+            //      //std::cout << "killing t2" << t2 << std::endl;
+            //      //std::cout << "adding t4" << t4 << std::endl;
+            //    }
+            //  }
+            //}
+            //--------------------------------------------------
+
+
             //-------------------------------------------------- 
           }
         }

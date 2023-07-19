@@ -912,7 +912,7 @@ void ParticleContainer<D>::sort_in_rev_energy()
 
   eneArr.resize( size() ); // NOTE: do not create here but assume that the its initialized in constructor
   for(size_t n=0; n<size(); n++) {
-    eneArr[n] = std::sqrt( mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
+    eneArr[n] = std::sqrt( mass*mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
   }
 
   //--------------------------------------------------
