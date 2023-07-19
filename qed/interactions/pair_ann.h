@@ -17,9 +17,10 @@ public:
     Interaction(t1, t2)
   {
     name = "pair-ann";
+    cross_section = 0.35;  //0.68; //0.75; // 2*(3/8)*sigma_T
   }
 
-  tuple<float_p, float_p> get_minmax_ene( string t1, string t2 ) override;
+  tuple<float_p, float_p> get_minmax_ene( string t1, string t2, double ene) override;
 
   float_p comp_cross_section(
     string t1, float_p ux1, float_p uy1, float_p uz1,

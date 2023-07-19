@@ -38,7 +38,7 @@ public:
   { }
 
   // minimum and maximum particle energies required to participate in the interaction
-  virtual tuple<float_p, float_p> get_minmax_ene( string t1, string t2 ) { return {0.0, 1.0}; };
+  virtual tuple<float_p, float_p> get_minmax_ene( string t1, string t2, double ene) { return {0.0, 1.0}; };
 
   // interaction cross section given incident/target particle four-velocities
   virtual float_p comp_cross_section(

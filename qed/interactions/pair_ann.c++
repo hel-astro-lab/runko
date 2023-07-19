@@ -22,9 +22,9 @@ namespace qed {
   using toolbox::inv;
 
 
-tuple<float_p, float_p> PairAnn::get_minmax_ene( string t1, string t2)
+tuple<float_p, float_p> PairAnn::get_minmax_ene( string t1, string t2, double ene)
 {
-  return {0.0, 3.0};
+  return {0.0, INF}; 
 }
 
 

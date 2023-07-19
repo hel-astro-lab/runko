@@ -22,9 +22,26 @@ namespace qed {
   using toolbox::inv;
 
 
-tuple<float_p, float_p> PhotAnn::get_minmax_ene( string t1, string t2)
+tuple<float_p, float_p> PhotAnn::get_minmax_ene( string t1, string t2, double ene)
 {
-  return {0.0, 3.0};
+  if(ene > 0.0){
+
+    // require e1 * e2 >= 1 and use it to get minimum required photon energy e2
+    double e2 = 1.0/ene;
+    return {e2, INF};
+
+    // NOTE: this is wrong; maximum interaction ene is always INF
+    //e1 = ene;
+    //e2 = 1.0/e1; 
+
+    //if( e1 < e2 ){
+    //  return {e2, e1};
+    //} else {
+    //  return {e1, e2};
+    //}
+  }
+
+  return {0.0, INF}; // NOTE: error branch; should not get here
 }
 
 
