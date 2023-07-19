@@ -51,13 +51,14 @@ public:
  
   using tuple_pair = std::tuple<float_p, float_p>; // following macro does not accept commas so we define this
 
-  tuple_pair get_minmax_ene( string t1, string t2 ) override { 
+  tuple_pair get_minmax_ene( string t1, string t2, double ene) override { 
     PYBIND11_OVERLOAD_PURE(
         tuple_pair, // return type
         Interaction,                // parent class
         get_minmax_ene,             // name of function in C++
         t1, // arguments
-        t2  
+        t2,
+        ene
         );
   }
 
@@ -167,6 +168,7 @@ void bind_qed(py::module& m_sub)
     .def(py::init<>())
     .def_readwrite("prob_norm",&qed::Pairing::prob_norm)
     .def("solve",              &qed::Pairing::solve<3>)
+    .def("solve_mc",           &qed::Pairing::solve_mc<3>)
     .def("add_interaction",    &qed::Pairing::add_interaction, py::keep_alive<1,2>() );
 
 
