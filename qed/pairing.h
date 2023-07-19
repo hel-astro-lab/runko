@@ -752,8 +752,6 @@ public:
                 // it first replaces the original value and only then adds if necessary
                 if(ncop == 0) {
                   if( rand() < prob_upd3 ) {
-                    //cons[t1].replace(iold, enew, wnew) //# replace with new energy
-                                                         //
                     // NOTE: we keep location the same
                     con1.vel(0, n1) = ux3;
                     con1.vel(1, n1) = uy3;
@@ -761,15 +759,12 @@ public:
                     con1.wgt(   n1) = w3;
                     con1.eneArr[n1] = e3;
                   } else {
-                    //cons[told].replace(iold, eold, wnew) # replace with old energy
                     con1.wgt(n1) = w3;
                   }
                 } else {
                   if( rand() < prob_upd3 ) {
-                    //cons[tnew].add(enew, wnew) # add new energy
                     con1.add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
                   } else {
-                    //con1->add(eold, wnew) # add old energy
                     con1.add_particle( {{lx1, ly1, lz1}}, {{ux1, uy1, uz1}}, w3); // new w
                   }
                 }
@@ -779,7 +774,6 @@ public:
 
               // remove parent prtcl if nothing was added
               if( ncop == 0 ) {
-                //con1.delete(iold)
                 con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
@@ -789,18 +783,12 @@ public:
 
               double z1 = rand();
               while( n3 > z1 + ncop ){
-                //cons[t3].add(enew, wnew)
-                //#cons[tnew].buffer_add(enew, wnew)
                 cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
-
                 ncop += 1;
               }
 
               // kill parent
               if( prob_upd3 > rand() ) {
-                //cons[told].delete(iold)
-                //#cons[told].buffer_del(iold)
-
                 con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
@@ -822,8 +810,6 @@ public:
                 // it first replaces the original value and only then adds if necessary
                 if(ncop == 0) {
                   if( rand() < prob_upd4 ) {
-                    //cons[t1].replace(iold, enew, wnew) //# replace with new energy
-                                                         //
                     // NOTE: we keep location the same
                     con2->vel(0, n2) = ux4;
                     con2->vel(1, n2) = uy4;
@@ -831,15 +817,12 @@ public:
                     con2->wgt(   n2) = w4;
                     con2->eneArr[n2] = e4;
                   } else {
-                    //cons[told].replace(iold, eold, wnew) # replace with old energy
                     con2->wgt(n2) = w4;
                   }
                 } else {
                   if( rand() < prob_upd4 ) {
-                    //cons[tnew].add(enew, wnew) # add new energy
                     con2->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
                   } else {
-                    //con1->add(eold, wnew) # add old energy
                     con2->add_particle( {{lx2, ly2, lz2}}, {{ux2, uy2, uz2}}, w4); // new w
                   }
                 }
@@ -849,7 +832,6 @@ public:
 
               // remove parent prtcl if nothing was added
               if( ncop == 0 ) {
-                //con1.delete(iold)
                 con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
@@ -859,25 +841,17 @@ public:
 
               double z1 = rand();
               while( n4 > z1 + ncop ){
-                //cons[t3].add(enew, wnew)
-                //#cons[tnew].buffer_add(enew, wnew)
                 cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
-
                 ncop += 1;
               }
 
               // kill parent
               if( prob_upd4 > rand() ) {
-                //cons[told].delete(iold)
-                //#cons[told].buffer_del(iold)
-
                 con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
 
             } // end of prtcl t1/t3 addition
-
-
 
 
 
