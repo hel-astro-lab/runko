@@ -322,6 +322,12 @@ class ParticleContainer{
       std::vector<float_p> prtcl_vel,
       float_p prtcl_wgt);
 
+  // particle creation v2
+  //virtual void add_particle2 (
+  //  float_p lx, float_p ly, float_p lz, 
+  //  float_p ux, float_p uy, float_p uz,
+  //  float_p prtcl_wgt);
+
   // particle creation
   virtual void add_identified_particle (
       std::vector<float_p> prtcl_loc,
@@ -358,6 +364,8 @@ class ParticleContainer{
   /// set keygenerator state
   void set_keygen_state(int __key, int __rank);
   
+  // return energy of i:th particle 
+  float_p get_prtcl_ene(size_t n);
   
   // sort particles in reverse (ascending) energy order
   void apply_permutation(ManVec<size_t>& indices);

@@ -285,7 +285,7 @@ public:
   // energy-dependent weight adapation functions
   float_p ene_weight_funs(std::string t, float_p x) 
   {
-    if(       t == "ph") { return 1.0/x; //std::pow(x, -0.5); 
+    if(       t == "ph") { return 1.0/std::pow(x, 0.2); //std::pow(x, -0.5); 
     } else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
     } else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
     }
@@ -381,7 +381,8 @@ public:
                 uz1 = con1.vel(2,n1);
                 w1  = con1.wgt(n1);
 
-                e1  = con1.eneArr[n1]; 
+                //e1  = con1.eneArr[n1]; 
+                e1  = con1.get_prtcl_ene(n1);
 
                 if(w1 < EPS) continue; // omit zero-w incidents
 
@@ -395,7 +396,8 @@ public:
                 uz2 = con2.vel(2,n2);
                 w2  = con2.wgt(  n2);
 
-                e2  = con2.eneArr[n2]; 
+                //e2  = con2.eneArr[n2]; 
+                e1  = con2.get_prtcl_ene(n2);
 
                 if(w2 < EPS) continue; // omit zero-w targets
 
@@ -560,7 +562,9 @@ public:
       auto t1 = con1.type;
       if(is_empty(t1)) continue; // no interactions with incident type t1
 
-      size_t Ntot1 = con1.size();
+      //size_t Ntot1 = con1.size();
+      size_t Ntot1 = info_prtcl_num[t1]; // read particle number from here; 
+                                         // it changes adaptively and routines assume non-evolving arrays
 
       // create randomized order for particle access
       //std::vector<size_t> inds(Ntot1);
@@ -585,7 +589,7 @@ public:
         uz1 = con1.vel(2,n1);
         w1  = con1.wgt(n1);
 
-        e1  = con1.eneArr[n1]; // TODO or compute here? or call function in container?
+        e1 = con1.get_prtcl_ene(n1);
 
         if(w1 < EPS) continue; // omit zero-w incidents
 
@@ -598,7 +602,7 @@ public:
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/prob_norm;
         // TODO: no w1 here ???
 
-        if(prob_vir_max>=1.0){
+        if(prob_vir_max>=1.01){ // some tolerance here
           std::cout << " prob_vir_max:" << prob_vir_max << std::endl;
           std::cout << " norm" << prob_norm << std::endl;
           for(size_t i=0; i<ids.size(); i++) std::cout << cmaxs[i] << " " << wsums[i] << std::endl;
@@ -646,7 +650,7 @@ public:
           uy2 = con2->vel(1,n2);
           uz2 = con2->vel(2,n2);
           w2  = con2->wgt(  n2);
-          e2  = con2->eneArr[n2]; 
+          e2  = con2->get_prtcl_ene(n2);
 
           if(w2 < EPS) continue; // omit zero-w targets
                                    
@@ -714,7 +718,7 @@ public:
             // interact and udpate variables in-place
             iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
 
-            // new energies
+            // new energies; NOTE: could use container.m to get the mass
             m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
             m4 = (t4 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
             e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
@@ -753,19 +757,18 @@ public:
                 if(ncop == 0) {
                   if( rand() < prob_upd3 ) {
                     // NOTE: we keep location the same
-                    con1.vel(0, n1) = ux3;
-                    con1.vel(1, n1) = uy3;
-                    con1.vel(2, n1) = uz3;
-                    con1.wgt(   n1) = w3;
-                    con1.eneArr[n1] = e3;
+                    cons[t1]->vel(0, n1) = ux3;
+                    cons[t1]->vel(1, n1) = uy3;
+                    cons[t1]->vel(2, n1) = uz3;
+                    cons[t1]->wgt(   n1) = w3;
                   } else {
-                    con1.wgt(n1) = w3;
+                    cons[t1]->wgt(n1) = w3;
                   }
                 } else {
                   if( rand() < prob_upd3 ) {
-                    con1.add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+                    cons[t1]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
                   } else {
-                    con1.add_particle( {{lx1, ly1, lz1}}, {{ux1, uy1, uz1}}, w3); // new w
+                    cons[t1]->add_particle( {{lx1, ly1, lz1}}, {{ux1, uy1, uz1}}, w3); // new w
                   }
                 }
 
@@ -774,8 +777,8 @@ public:
 
               // remove parent prtcl if nothing was added
               if( ncop == 0 ) {
-                con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
-                con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
+                cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+                cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
 
             //--------------------------------------------------
@@ -789,8 +792,8 @@ public:
 
               // kill parent
               if( prob_upd3 > rand() ) {
-                con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
-                con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
+                cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+                cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
 
             } // end of prtcl t1/t3 addition
@@ -811,19 +814,18 @@ public:
                 if(ncop == 0) {
                   if( rand() < prob_upd4 ) {
                     // NOTE: we keep location the same
-                    con2->vel(0, n2) = ux4;
-                    con2->vel(1, n2) = uy4;
-                    con2->vel(2, n2) = uz4;
-                    con2->wgt(   n2) = w4;
-                    con2->eneArr[n2] = e4;
+                    cons[t2]->vel(0, n2) = ux4;
+                    cons[t2]->vel(1, n2) = uy4;
+                    cons[t2]->vel(2, n2) = uz4;
+                    cons[t2]->wgt(   n2) = w4;
                   } else {
-                    con2->wgt(n2) = w4;
+                    cons[t2]->wgt(n2) = w4;
                   }
                 } else {
                   if( rand() < prob_upd4 ) {
-                    con2->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                    cons[t2]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
                   } else {
-                    con2->add_particle( {{lx2, ly2, lz2}}, {{ux2, uy2, uz2}}, w4); // new w
+                    cons[t2]->add_particle( {{lx2, ly2, lz2}}, {{ux2, uy2, uz2}}, w4); // new w
                   }
                 }
 
@@ -832,8 +834,8 @@ public:
 
               // remove parent prtcl if nothing was added
               if( ncop == 0 ) {
-                con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
-                con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
+                cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
+                cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
 
             //--------------------------------------------------
@@ -847,8 +849,8 @@ public:
 
               // kill parent
               if( prob_upd4 > rand() ) {
-                con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
-                con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
+                cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
+                cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
 
             } // end of prtcl t1/t3 addition

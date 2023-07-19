@@ -207,6 +207,32 @@ void ParticleContainer<D>::add_particle (
   Nprtcls++;
 }
 
+
+//template<std::size_t D>
+//void ParticleContainer<D>::add_particle2 (
+//    float_p lx, float_p ly, float_p lz, 
+//    float_p ux, float_p uy, float_p uz,
+//    float_p prtcl_wgt)
+//{
+//  locArr[0].push_back( lx );
+//  locArr[1].push_back( ly );
+//  locArr[2].push_back( lz );
+//
+//  velArr[0].push_back( ux );
+//  velArr[1].push_back( uy );
+//  velArr[2].push_back( uz );
+//
+//  wgtArr.push_back(prtcl_wgt);
+//
+//  // get unique running key
+//  auto unique_key = keygen();
+//  indArr[0].push_back(std::get<0>(unique_key));
+//  indArr[1].push_back(std::get<1>(unique_key));
+//
+//  Nprtcls++;
+//}
+
+
 template<std::size_t D>
 void ParticleContainer<D>::add_identified_particle (
     std::vector<float_p> prtcl_loc,
@@ -898,6 +924,19 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
 }
 
 
+template<size_t D>
+float_p ParticleContainer<D>::get_prtcl_ene(size_t n)
+{
+  //const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+
+  const float_p mass = m; // read mass from class
+  return std::sqrt( 
+      mass*mass + 
+      vel(0,n)*vel(0,n) + 
+      vel(1,n)*vel(1,n) + 
+      vel(2,n)*vel(2,n) 
+      );
+}
 
 template<size_t D>
 void ParticleContainer<D>::sort_in_rev_energy()
@@ -905,14 +944,15 @@ void ParticleContainer<D>::sort_in_rev_energy()
 
   //--------------------------------------------------
   // energy array for sorting
-  const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+  //const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
 
   // construct energy array
   //std::vector<float_p> eneArr( size() );  
 
   eneArr.resize( size() ); // NOTE: do not create here but assume that the its initialized in constructor
   for(size_t n=0; n<size(); n++) {
-    eneArr[n] = std::sqrt( mass*mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
+    //eneArr[n] = std::sqrt( mass*mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
+    eneArr[n] = get_prtcl_ene( n );
   }
 
   //--------------------------------------------------
