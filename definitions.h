@@ -17,6 +17,7 @@ using float_m = float;  /// mesh/grid floating point accuracy
 // nan prevention tolerance
 #define EPS 1e-7f
 //#define EPS 1e-14
+#define INF 1e7f
 
 // Separate short float type for particles. In most applications it is enough
 // to keep this as float. However, some special cases might require extra

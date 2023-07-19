@@ -44,20 +44,28 @@ std::vector<size_t> argsort_rev(std::vector<T> const& values) {
 // GPU version of reverse argsort
 // FIXME: should indices vector std::vector<size_t> be ManVec as well?
 template <typename T>
-DEVCALLABLE std::vector<size_t> argsort_rev(ManVec<T> const& values) {
+DEVCALLABLE ManVec<size_t> argsort_rev(ManVec<T> const& values) {
 
-  std::vector<size_t> indices( values.size() );
+  size_t N = values.size();
 
-  // FIXME iota is not devcallable
+  std::vector<size_t> indices( N );
+
   // linspace from 0 to N 
-  std::iota( std::begin(indices), std::end(indices), static_cast<size_t>(0) );
+  //std::iota( std::begin(indices), std::end(indices), static_cast<size_t>(0) );
+  for(size_t i=0; i<N; i++) indices[i] = i;
 
   // FIXME sort is not devcallable
   std::sort(
     begin(indices), end(indices),
       [&](size_t a, size_t b) { return values[a] > values[b]; } // NOTE: only difference is here
   );
-  return indices;
+
+  // TODO: hack to make this work; we copy to ret of type ManVec
+  ManVec<size_t> ret;
+  ret.resize(N);
+  for(size_t i=0; i<N; i++) ret[i] = indices[i];
+
+  return ret;
 }
 
 
