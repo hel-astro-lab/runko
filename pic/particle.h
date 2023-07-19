@@ -95,12 +95,17 @@ class ParticleContainer{
 
   size_t Nprtcls = 0;
 
-  std::array<ManVec<float_p>, 3 > locArr;
-  std::array<ManVec<float_p>, 3 > velArr;
-  std::array<ManVec<int>, 2 > indArr;
-  ManVec<float_p> wgtArr;
+  std::array<ManVec<float_p>, 3 > locArr; // x y z location
+  std::array<ManVec<float_p>, 3 > velArr; // vx vy vz velocities
+  std::array<ManVec<int>, 2 > indArr;     // cpu,id index
+  ManVec<float_p> wgtArr;                 // weight
 
   public:
+
+  // these arrays are required for QED interactions
+  ManVec<float_p> wgtCumArr;              // cumulative weights; kept 0 if not needed
+  ManVec<float_p> eneArr;                 // particle energies
+
     
   /// packed outgoing particles
   ManVec<Particle> outgoing_particles;
@@ -355,7 +360,7 @@ class ParticleContainer{
   
   
   // sort particles in reverse (ascending) energy order
-  void apply_permutation(std::vector<size_t>& indices);
+  void apply_permutation(ManVec<size_t>& indices);
 
   // sort particles in reverse (ascending) energy order
   void sort_in_rev_energy();

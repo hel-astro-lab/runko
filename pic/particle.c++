@@ -905,25 +905,28 @@ void ParticleContainer<D>::sort_in_rev_energy()
 
   //--------------------------------------------------
   // energy array for sorting
-    
   const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
 
   // construct energy array
-  std::vector<float_p> enes( size() ); 
+  //std::vector<float_p> eneArr( size() );  
+
+  eneArr.resize( size() ); // NOTE: do not create here but assume that the its initialized in constructor
   for(size_t n=0; n<size(); n++) {
-    enes[n] = std::sqrt( mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
+    eneArr[n] = std::sqrt( mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
   }
 
   //--------------------------------------------------
   //sort and apply
-  auto indices = argsort_rev(enes);
+  auto indices = argsort_rev(eneArr);
   apply_permutation(indices);
 }
 
 
 template<size_t D>
-void ParticleContainer<D>::apply_permutation( std::vector<size_t>& indices )
+void ParticleContainer<D>::apply_permutation( ManVec<size_t>& indices )
 {
+
+  //std::cout << "apply_permutation:" << indices.size() << " " << size() << std::endl;
 
   // check that sizes match
   assert( indices.size() == size() );
@@ -952,6 +955,8 @@ void ParticleContainer<D>::apply_permutation( std::vector<size_t>& indices )
 
       std::swap( wgtArr[current], wgtArr[next] ); 
 
+      std::swap( eneArr[current], eneArr[next] ); 
+
       // NOTE: these can be omitted if interpolator is called *after* sort
       //std::swap( ex[current], ex[next] ); 
       //std::swap( ey[current], ey[next] ); 
@@ -968,7 +973,6 @@ void ParticleContainer<D>::apply_permutation( std::vector<size_t>& indices )
   indices[current] = current;
   }
 
-
   return;
 }
 
@@ -976,9 +980,17 @@ void ParticleContainer<D>::apply_permutation( std::vector<size_t>& indices )
 template<size_t D>
 void ParticleContainer<D>::update_cumulative_arrays()
 {
+  size_t N = size(); // number of prtcls
 
+  wgtCumArr.resize(N); 
 
+  // sum over wgt
+  float_p wsum = 0.0;
+  for(size_t i=0; i<N; i++) wsum += wgtArr[i];
 
+  // normalized cumulative sum
+  wgtCumArr[0] = wgtArr[0];
+  for(size_t i=1; i<N; i++) wgtCumArr[i] = wgtArr[i] + wgtCumArr[i-1];
 
   return;
 }
