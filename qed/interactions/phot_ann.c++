@@ -279,8 +279,17 @@ void PhotAnn::interact(
     }
   }
 
-  t1 = "e-";
-  t2 = "e+";
+  // is this flip needed? seems so; makes routine independent of e-/e+
+  if(rand() < 0.5) {
+    t1 = "e-";
+    t2 = "e+";
+  } else {
+    t1 = "e+";
+    t2 = "e-";
+  }
+
+  //t1 = "e-";
+  //t2 = "e+";
 
   ux1 = zpp1(1);
   uy1 = zpp1(2);

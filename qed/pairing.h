@@ -58,6 +58,9 @@ public:
   // normalization factor for probabilities
   float_p prob_norm = 1.0f;
 
+  // force e- e+ to have unit weights irrespective of weighting functions
+  bool force_ep_uni_w = true; 
+
   //--------------------------------------------------
   // auxiliary containers for Monte Carlo sampling 
   std::vector<double> 
@@ -288,10 +291,20 @@ public:
   // e.g., constant value means that every interactions splits the particle into that many pieces
   float_p ene_weight_funs(std::string t, float_p x) 
   {
-    //if(       t == "ph") { return 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
-    if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
-    } else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
-    } else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
+    //if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
+    //} else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
+    //} else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
+    //}
+
+    //if(       t == "ph") { return std::pow(x, +1.0); 
+    //} else if(t == "e-") { return std::pow(x, -1.0);
+    //} else if(t == "e+") { return std::pow(x, -1.0);
+    //}
+
+    //if(       t == "ph") { return x > 0.4 ? 4.0 : (x+0.6); 
+    if(       t == "ph") { return 2.0 + x*x; 
+    } else if(t == "e-") { return 1.0; 
+    } else if(t == "e+") { return 1.0; 
     }
 
     assert(false);
@@ -547,7 +560,6 @@ public:
       info_prtcl_num[t1] = con.size();
     }
 
-
     //--------------------------------------------------
 
     // initialize temp variable storages
@@ -561,7 +573,18 @@ public:
 
     //--------------------------------------------------
     // loop over incident types
-    for(auto&& con1 : tile.containers)
+
+    // ver2
+
+    // random shuffled indices of containers; makes iteration order random in every step
+    //std::vector<std::string> t_inis = { "e-", "e+", "ph" };
+    //std::shuffle(std::begin(t_inis), std::end(t_inis), gen);
+    //for(auto t1 : t_inis)
+    //{
+    //  if(is_empty(t1)) continue; // no interactions with incident type t1
+    //  auto con1 = cons[t1];
+
+    for(auto&& con1 : tile.containers) // ver1
     {
       auto t1 = con1.type;
       if(is_empty(t1)) continue; // no interactions with incident type t1
@@ -736,11 +759,9 @@ public:
             float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1);
             float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t2, e2);
 
-
             // limit particle creation
             float_p n3 = std::min( fw3, 32.0f );
             float_p n4 = std::min( fw4, 32.0f );
-
 
             //# NOTE these two expressions are equal: w_i = w_j/wmax == wmin/w_i
             //# this is where the algorithm differs from original LP MC method by Stern95;
@@ -748,16 +769,28 @@ public:
             float_p prob_upd3 = wmin/w1; //w2/wmax;
             float_p prob_upd4 = wmin/w2; //w1/wmax;
 
-            // redistribute weights among the new copies
-            w3 = w1/n3;
-            w4 = w2/n4;
+            // scattering?
+            //w3 = w1/n3; // redistribute weights among the new copies
+            //w4 = w2/n4; // redistribute weights among the new copies
 
+            // annihilation?
+            //// ver2; only use min(w1, w2) in the interaction
+            //w3 = wmin/n3;
+            //w4 = wmin/n4;
 
             //-------------------------------------------------- 
             int n_added = 0, ncop = 0;
 
             if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
 
+              w3 = w1/n3; // redistribute weights among the new copies
+
+              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
+                w3 = 1.0;
+                n3 = w1/w3;
+              }
+
+            
               double z1 = rand();
               while(n3 > z1 + ncop) {
 
@@ -793,6 +826,13 @@ public:
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
 
+              w3 = wmin/n3;
+
+              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
+                w3 = 1.0;
+                n3 = wmin/w3;
+              }
+
               double z1 = rand();
               while( n3 > z1 + ncop ){
                 cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
@@ -814,6 +854,13 @@ public:
             ncop = 0;
 
             if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
+
+              w4 = w2/n4; // redistribute weights among the new copies
+
+              if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
+                w4 = 1.0;
+                n4 = w2/w4;
+              }
 
               double z1 = rand();
               while(n4 > z1 + ncop) {
@@ -850,6 +897,13 @@ public:
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
 
+              w4 = wmin/n4;
+
+              if( force_ep_uni_w && ( t4 == "e-" || t4 == "e+") ){
+                w4 = 1.0;
+                n4 = wmin/w4;
+              }
+            
               double z1 = rand();
               while( n4 > z1 + ncop ){
                 cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
