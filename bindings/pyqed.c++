@@ -90,6 +90,18 @@ public:
   //      );
   //  }
 
+  float_p accumulate( string t1, float_p e1, string t2, float_p e2) override { 
+    PYBIND11_OVERLOAD_PURE(
+        float_p, // return type
+        Interaction,               // parent class
+        accumulate,                // name of function in C++
+        t1, // arguments
+        e1,
+        t2,
+        e2
+        );
+  }
+
   void interact(
         string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
         string& t2, float_p& ux2, float_p& uy2, float_p& uz2) override {
@@ -135,12 +147,11 @@ void bind_qed(py::module& m_sub)
 
   py::class_< qed::Interaction, std::shared_ptr<qed::Interaction>, PyInteraction > qedinter(m_sub, "Interaction");
   qedinter
-    //.def(py::init<string&, string& >())
+    .def_readwrite("do_accumulate", &qed::Interaction::do_accumulate)
     .def(py::init<string, string>())
-    //.def("get_ene",      &qed::Interaction::get_ene);
     .def("get_minmax_ene",      &qed::Interaction::get_minmax_ene)
     .def("comp_cross_section",  &qed::Interaction::comp_cross_section)
-    //.def("interact",            &qed::Interaction::interact);
+    .def("accumulate",          &qed::Interaction::accumulate)
     .def("interact", [](qed::Interaction &self, 
           std::string t1, float_p ux1, float_p uy1, float_p uz1,
           std::string t2, float_p ux2, float_p uy2, float_p uz2) 
@@ -157,8 +168,10 @@ void bind_qed(py::module& m_sub)
   py::class_<qed::PhotAnn>(m_sub, "PhotAnn", qedinter)
     .def(py::init<string, string>());
 
-  // Photon annihilation 
+  // Compton  
   py::class_<qed::Compton>(m_sub, "Compton", qedinter)
+    .def_readwrite("no_electron_update", &qed::Compton::no_electron_update)
+    .def_readwrite("no_photon_update",   &qed::Compton::no_photon_update)
     .def(py::init<string, string>());
 
 

@@ -66,6 +66,7 @@ public:
   std::vector<double> 
       probs,    // maximum probabillity
       wsums,    // sum over possible target weights
+      faccs,    // w-weighted average target's accumulation factor
       cmaxs;    // maximum cross section
                  
   std::vector<int> 
@@ -75,8 +76,10 @@ public:
   std::vector<size_t> 
       ids;     // internal id of the interaction in the storage
 
-  std::map<std::string, double> info_max_int_cs;
+  std::map<std::string, double> info_max_int_cs; // maximum cross s measured
                  
+  std::map<std::string, double> info_int_nums; // number of interactions performed
+
   //--------------------------------------------------
   //--------------------------------------------------
   //--------------------------------------------------
@@ -93,11 +96,13 @@ public:
     auto name = iptr->name;
     auto t1 = iptr->t1;
     auto t2 = iptr->t2;
+    auto long_name = name + "_" + t1 + "_" + t2;
 
     std::cout << " adding: " << name << " of t1/t2 " << t1 << " " << t2 << std::endl;
     interactions.push_back(iptr);
 
     info_max_int_cs[name] = 0.0;
+    info_int_nums[long_name] = 0.0;
   }
 
   //--------------------------------------------------
@@ -126,6 +131,7 @@ public:
     cmaxs.clear(); // maximum cross section
     jmins.clear(); // minimum indices of prtcls that can particiapte in initeraction
     jmaxs.clear(); // maximum -||-
+    faccs.clear(); // w-weigthed average target's accumulation factor
     ids.clear(); // internal id of the interaction in the storage
                  
     size_t id = 0;
@@ -201,12 +207,46 @@ public:
           wsum2 = con_tar->wgtCumArr[jmax-1] - wsum_min;
         }
 
-        // FIXME: using ver2 now; is it correct?
+        //--------------------------------------------------
+        // average accumulation factor
 
-        //std::cout << "wsum " <<  wsum << " " << wsum2 << " jminmax " << jmin << " " << jmax << std::endl;
-        //assert( std::abs( wsum - wsum2 ) < EPS );
+        double facc = 0.0;
 
+        if(iptr->do_accumulate){
+          double w, wprev, e2, f;
 
+          wprev = jmin == 0 ? 0.0 : con_tar->wgtCumArr[jmin-1];
+          for(size_t j=jmin; j<jmax; j++) {
+            
+            // weight between [j-1, j]
+            //w = con_tar->wgt(j);
+            w = con_tar->wgtCumArr[j] - wprev; // calc via cum array 
+            wprev = con_tar->wgtCumArr[j];
+
+            e2 = con_tar->eneArr[j];
+            f = iptr->accumulate(t1, e1, t2, e2);
+            facc = facc + w*f/wsum2; // w-weighted average
+                               
+            //facc += f; // w-weighted average
+
+            //std::cout << " facc: " << facc;
+            //std::cout << " f: " << f;
+            //std::cout << " w: " << w;
+            //std::cout << " wp: " << wprev;
+            //std::cout << " e1: " << e1;
+            //std::cout << " e2: " << e2;
+            //std::cout << std::endl;
+
+          }
+
+        } else {
+          facc = 1.0;
+        }
+         
+        ////--------------------------------------------------
+        //// debug
+        ////std::cout << "wsum " <<  wsum << " " << wsum2 << " jminmax " << jmin << " " << jmax << std::endl;
+        ////assert( std::abs( wsum - wsum2 ) < EPS );
         //--------------------------------------------------
         //total sum of target weights
         double wtot = 0.0;
@@ -224,6 +264,7 @@ public:
           probs.push_back(par_int_rate);
           cmaxs.push_back(cross_max);
           wsums.push_back(wsum2);
+          faccs.push_back(facc);
 
           jmins.push_back(jmin);
           jmaxs.push_back(jmax);
@@ -236,7 +277,8 @@ public:
           //std::cout << " wsum:" << wsum << " wsum/wtot: " << wsum/wtot;
           //std::cout << " wsum2:" << wsum2;
           //std::cout << " js:" << jmin << " " << jme << " " << jmax;
-          //std::cout << " emin:" << emin << " e1" << e1 << " emax:" << emax;
+          //std::cout << " emin:" << emin << " e1:" << e1 << " emax:" << emax;
+          //std::cout << " facc:" << facc;
           //std::cout << std::endl;
         }
                            
@@ -291,21 +333,28 @@ public:
   // e.g., constant value means that every interactions splits the particle into that many pieces
   float_p ene_weight_funs(std::string t, float_p x) 
   {
-    //if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
-    //} else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
-    //} else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
-    //}
 
-    //if(       t == "ph") { return std::pow(x, +1.0); 
-    //} else if(t == "e-") { return std::pow(x, -1.0);
-    //} else if(t == "e+") { return std::pow(x, -1.0);
+    // standard unit weights
+    //if(       t == "ph") { return 1.0; 
+    //} else if(t == "e-") { return 1.0; 
+    //} else if(t == "e+") { return 1.0; 
     //}
-
-    //if(       t == "ph") { return x > 0.4 ? 4.0 : (x+0.6); 
+      
+    // photon emphasis
     if(       t == "ph") { return 2.0 + x*x; 
     } else if(t == "e-") { return 1.0; 
     } else if(t == "e+") { return 1.0; 
     }
+      
+    // FIXME not useful
+    //if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
+    //} else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
+    //} else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
+    //}
+    //if(       t == "ph") { return std::pow(x, +1.0); 
+    //} else if(t == "e-") { return std::pow(x, -1.0);
+    //} else if(t == "e+") { return std::pow(x, -1.0);
+    //}
 
     assert(false);
   }
@@ -414,7 +463,7 @@ public:
                 w2  = con2.wgt(  n2);
 
                 //e2  = con2.eneArr[n2]; 
-                e1  = con2.get_prtcl_ene(n2);
+                e1 = con2.get_prtcl_ene(n2);
 
                 if(w2 < EPS) continue; // omit zero-w targets
 
@@ -625,16 +674,18 @@ public:
 
         // maximum interaction rate
         //= sigma_max * w2_sum * w1/prob_norm
+
+        // TODO add 1/facc here
         double prob_vir_max = 0.0;
-        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/prob_norm;
-        // TODO: no w1 here ???
+        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/faccs[i]/prob_norm;
+        // NOTE: no w1 here. putting w1 gives different result from uni-weight sim. Hence, its wrong.
+        // instead, it is taken into account later on via prob_update \propto 1/w1
 
         if(prob_vir_max>=1.01){ // some tolerance here
           std::cout << " prob_vir_max:" << prob_vir_max << std::endl;
-          std::cout << " norm" << prob_norm << std::endl;
-          for(size_t i=0; i<ids.size(); i++) std::cout << cmaxs[i] << " " << wsums[i] << std::endl;
-
-          assert(false);
+          std::cout << " norm:" << prob_norm << std::endl;
+          for(size_t i=0; i<ids.size(); i++) std::cout << "c: " << cmaxs[i] << " w: " << wsums[i] << " f: " << faccs[i] << std::endl;
+          //assert(false);
         }
 
 
@@ -654,6 +705,7 @@ public:
           auto jmax = jmaxs[i];
           auto wsum = wsums[i];
           auto cmax = cmaxs[i];
+          auto facc_max = faccs[i];
 
           auto int_id = ids[i];             // id in global array
           auto iptr = interactions[int_id]; // pointer to interaction 
@@ -690,9 +742,6 @@ public:
           //could also put double counting check to comp_pmax
           //--------------------------------------------------
           
-          wmin = min(w1, w2);
-          wmax = max(w1, w2);
-
           //--------------------------------------------------
           
           // real probablity of interaction
@@ -701,7 +750,6 @@ public:
           // collect max cross section
           float_p cm_cur = info_max_int_cs[iptr->name];
           info_max_int_cs[iptr->name] = std::max( cm_cur, cm);
-
 
           // FIXME which max should this prob be compared against?  I think ver3 or 4
 
@@ -725,6 +773,11 @@ public:
           // comparison of interaction to max interaction
           double prob_vir = cm*vrel/(2.0*cmax);
 
+          // correct average accumulation factor with the real value
+          // TODO add 1/facc here?
+          // or facc_real/facc_vir ??
+          float_p facc3 = iptr->do_accumulate ? iptr->accumulate(t1, e1, t2, e2) : 1.0;
+
           // FIXME remove check if sure this works
           if(prob_vir >= 1.0){
             std::cout << " prob_vir > 1: " << prob_vir << std::endl;
@@ -732,12 +785,18 @@ public:
             std::cout << " cm   " << cm << std::endl;
             std::cout << " vrel " << vrel << std::endl;
             std::cout << " cmax " << cmax << std::endl;
-
-            assert(false);
+            std::cout << " facc " << facc3 << " facc_max" << facc_max << std::endl;
+            //assert(false);
           }
+
+          // correct for real/max facc factor
+          prob_vir *= facc_max/facc3;
 
           if(rand() < prob_vir)  // check if this interaction is chosen among the samples ones
           {
+            auto long_name = iptr->name + "_" + t1 + "_" + t2;
+            info_int_nums[long_name] += 1;
+
             // particle values after interaction
             auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
             auto [t4, ux4, uy4, uz4, w4] = duplicate_prtcl(t2, ux2, uy2, uz2, w2);
@@ -751,7 +810,7 @@ public:
             e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
             e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
 
-            // weight adaptation; original version
+            // weight adaptation; original Stern95 version
             //float_p fw3 = (e3/e1)*ene_weight_funs(t1, e1)/ene_weight_funs(t3, e3); 
             //float_p fw4 = (e4/e2)*ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
 
@@ -759,31 +818,63 @@ public:
             float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1);
             float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t2, e2);
 
-            // limit particle creation
+            // limit explosive particle creation
             float_p n3 = std::min( fw3, 32.0f );
             float_p n4 = std::min( fw4, 32.0f );
 
             //# NOTE these two expressions are equal: w_i = w_j/wmax == wmin/w_i
             //# this is where the algorithm differs from original LP MC method by Stern95;
             //# here, instead of killing the LP we do not update its energy.
+
+            // we can think here that only wmin = min(w1, w2) fraction of the LPs weight is 
+            // used in the interaction. If everything is used then (i.e., wmin=w1 for LP1 
+            // or wmin=w2 for LP2)) then prob_upd = 1
+
+            wmin = min(w1, w2);
+            wmax = max(w1, w2);
+
+            // probability for the particle energy to be updated
             float_p prob_upd3 = wmin/w1; //w2/wmax;
             float_p prob_upd4 = wmin/w2; //w1/wmax;
 
-            // scattering?
-            //w3 = w1/n3; // redistribute weights among the new copies
-            //w4 = w2/n4; // redistribute weights among the new copies
+            // probability for the particle to die
+            float_p prob_kill3 = INF;
+            float_p prob_kill4 = INF;
 
-            // annihilation?
-            //// ver2; only use min(w1, w2) in the interaction
-            //w3 = wmin/n3;
-            //w4 = wmin/n4;
+            //--------------------------------------------------
+            // accumulation means that we treat the particles weight as w -> w*f_cc
+            // but consider the interaction less often as prob -> prob/f_acc
+            // to compensate, this means that we need to also genereate n_cop -> ncop/f_acc 
+            // less of particles.
+            //
+            // NOTE: this increases the weight of the new LP3 automatically, i.e., we do not need 
+            // to multiply w -> w*f_acc anymore.
+
+            // TODO
+            //n3 *= 1.0/facc3; // FIXME
+            //n4 *= 1.0/facc4;
+            //prob_upd3 *= facc3;
+
+            // alternatively do not kill accumulated particles
+            //prob_upd3 *= 1.0f/facc3;
 
             //-------------------------------------------------- 
             int n_added = 0, ncop = 0;
 
             if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
+                             
+              // scattering interactions go here
 
               w3 = w1/n3; // redistribute weights among the new copies
+
+              if(facc3 > 1.0f) {
+                w3 *= facc3; // increase weight for accumulated interactions
+                //prob_kill3 = facc3*w1/w2;
+                //n3 *= 1.0f/facc3; // less incidents produced 
+                //n3 *= w2/(w1*facc3);
+                n3 *= 1.0f/facc3;
+                prob_upd3 = 1.0f; // but always updated
+              }
 
               if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
                 w3 = 1.0;
@@ -814,6 +905,26 @@ public:
                   }
                 }
 
+                // ver2; same as above but different order of if statements
+                //if( rand() < prob_upd3 ) {
+                //  if(ncop == 0) {
+                //    // NOTE: we keep location the same
+                //    cons[t1]->vel(0, n1) = ux3;
+                //    cons[t1]->vel(1, n1) = uy3;
+                //    cons[t1]->vel(2, n1) = uz3;
+                //    cons[t1]->wgt(   n1) = w3;
+                //  } else { 
+                //    cons[t1]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+                //  }
+
+                //} else { 
+                //  if(ncop == 0) {
+                //    cons[t1]->wgt(n1) = w3;
+                //  } else {
+                //    cons[t1]->add_particle( {{lx1, ly1, lz1}}, {{ux1, uy1, uz1}}, w3); // new w
+                //  }
+                //}
+
                 ncop += 1;
               } // end of while
 
@@ -823,8 +934,19 @@ public:
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
 
+              // FIXME remove?
+              //if( rand() < 1.0f/prob_kill3) {
+              //  cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+              //  cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
+              //}
+              //if( ncop > 0 ) {
+              //  float_p n5 = facc3*w1/w2;
+              //}
+
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
+
+              // annihilation interactions go here
 
               w3 = wmin/n3;
 
@@ -854,6 +976,8 @@ public:
             ncop = 0;
 
             if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
+
+              // scattering interactions go here
 
               w4 = w2/n4; // redistribute weights among the new copies
 
@@ -896,6 +1020,8 @@ public:
 
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
+                       
+              // annihilation interactions go here
 
               w4 = wmin/n4;
 
@@ -1007,6 +1133,10 @@ public:
     //--------------------------------------------------
     //std::cout << " max cross sections:" << std::endl;
     //for(auto const& [key, val] : info_max_int_cs) std::cout << "   " << key << " : " << val << std::endl;
+      
+    //--------------------------------------------------
+    //std::cout << " interaction evaluations:" << std::endl;
+    //for(auto const& [key, val] : info_int_nums) std::cout << "   " << key << " : " << val << std::endl;
 
     //--------------------------------------------------
     // final book keeping routines

@@ -29,6 +29,9 @@ public:
   string t1; // incident particle type
   string t2; // target particle type
 
+  // use accumulation technique (calls accumulate() function to get facc
+  bool do_accumulate = false;
+
   // constructor with incident/target types
   Interaction(string t1, string t2) :
     t1(t1),
@@ -47,6 +50,8 @@ public:
     string t2, float_p ux2, float_p uy2, float_p uz2)
     { return {cross_section, 1.0}; }
 
+  // interaction accumulation factor
+  virtual float_p accumulate(string t1, float_p e1, string t2, float_p e2) {return 1.0f; };
 
   // main interaction routine; 
   //

@@ -78,6 +78,13 @@ Compton::pair_float Compton::comp_cross_section(
   return {s0, fkin};
 }
 
+
+float_p Compton::accumulate(
+    string t1, float_p e1, string t2, float_p e2)
+{
+  // accumulation factor; forces electron energy changes to be ~0.1
+  return std::max(1.0f, 0.001f/(e1*e2));
+}
   
 void Compton::interact(
   string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
@@ -199,32 +206,57 @@ void Compton::interact(
 
   //# --------------------------------------------------
   //# construct new scattered quantities
-
   float_p x1 = k1(0);
   Vec3<float_p>  om1( k1(1)/x1, k1(2)/x1, k1(3)/x1 );
-        
+
+  // accumulation factor; NOTE: t1/t2 order does not matter here
+  float_p facc = do_accumulate ? accumulate(t1, gam0, t2, x0) : 1.0f;; 
+
+  // TODO which one is right?
   //# scattered electon variables from ene and mom conservation
-  float_p gam1 = gam0 + (x0 - x1);
+  //float_p gam1 = gam0 + facc*(x0 - x1); // ver1
+  float_p gam1 = gam0 + x0 - facc*x1; // ver2
+
+  //gam1 = gam0 + facc*(x0 - x1) 
+  //     = gam0 + facc*x0 - facc*x1 
+  //     = gam0 + 0.1*x0/x0*gam0 - 0.1*x1/x0*gam0
+  //     = gam0 + 0.1*x0/x0*gam0 - 0.1*x1/x0*gam0
+  //     = gam0 + 0.1/gam0 - 0.1*x1/x0*gam0
+  //     = gam0 +~0.1 -~ 0.1*gam0/x0*gam0
+  //     = gam0 +~0.1 -~ 0.1/x0
+
+
   //Vec3<float_p> beta1 = (gam0*beta0 + x0*om0 - x1*om1)/gam1;
   Vec3<float_p> beta1(0.0, 0.0, 0.0);
-  for(size_t i=0; i<3; i++) beta1(i) = (gam0*beta0(i) + x0*om0(i) - x1*om1(i))/gam1;
+  for(size_t i=0; i<3; i++) beta1(i) = (gam0*beta0(i) + (x0*om0(i) - facc*x1*om1(i)) )/gam1;
 
   if( (t1 == "e-" || t1 == "e+") && (t2 == "ph") ) {
-    ux1 = gam1*beta1(0);
-    uy1 = gam1*beta1(1);
-    uz1 = gam1*beta1(2);
 
-    ux2 = x1*om1(0);
-    uy2 = x1*om1(1);
-    uz2 = x1*om1(2);
+    if(! no_electron_update) {
+      ux1 = gam1*beta1(0);
+      uy1 = gam1*beta1(1);
+      uz1 = gam1*beta1(2);
+    }
+
+    if(! no_photon_update) {
+      ux2 = x1*om1(0);
+      uy2 = x1*om1(1);
+      uz2 = x1*om1(2);
+    }
+
   } else if( (t2 == "e-" || t2 == "e+") && (t1 == "ph") ) {
-    ux1 = x1*om1(0);
-    uy1 = x1*om1(1);
-    uz1 = x1*om1(2);
 
-    ux2 = gam1*beta1(0);
-    uy2 = gam1*beta1(1);
-    uz2 = gam1*beta1(2);
+    if(! no_photon_update) {
+      ux1 = x1*om1(0);
+      uy1 = x1*om1(1);
+      uz1 = x1*om1(2);
+    }
+
+    if(! no_electron_update) {
+      ux2 = gam1*beta1(0);
+      uy2 = gam1*beta1(1);
+      uz2 = gam1*beta1(2);
+    }
   }
 
 
@@ -232,7 +264,7 @@ void Compton::interact(
   // test energy conservation
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed
-  if(true){
+  if(true && !(do_accumulate) ){
 
     float_p enec = gam1 + x1 - (x0 + gam0);
 
@@ -241,7 +273,7 @@ void Compton::interact(
     float_p moms = sum(momc);
 
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
-    for(size_t i = 0; i < 2; i++) ts[i] = false;
+    for(size_t i = 0; i < 4; i++) ts[i] = false;
 
     float_p tol = 3.0e-5;
 
@@ -250,9 +282,15 @@ void Compton::interact(
 
     if(abs(enec)      > tol) ts[0] = true;
     if(abs(sum(momc)) > tol) ts[1] = true;
+    if(gam0 < 1.0)           ts[2] = true;
+    if(gam1 < 1.0)           ts[3] = true;
+
+
 
     if(ts[0] ||
-       ts[1] ) { 
+       ts[1] ||
+       ts[2] ||
+       ts[3] ) { 
 
       std::cout << "ERROR COMPTON:" << std::endl;
       for(size_t i = 0; i < 2; i++) { std::cout << i << " " << ts[i] << std::endl; }
