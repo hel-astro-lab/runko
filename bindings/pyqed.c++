@@ -182,8 +182,8 @@ void bind_qed(py::module& m_sub)
     .def_readwrite("prob_norm",&qed::Pairing::prob_norm)
     .def("solve",              &qed::Pairing::solve<3>)
     .def("solve_mc",           &qed::Pairing::solve_mc<3>)
-    .def("add_interaction",    &qed::Pairing::add_interaction, py::keep_alive<1,2>() );
-
+    .def("add_interaction",    &qed::Pairing::add_interaction, py::keep_alive<1,2>() )
+    .def("rescale",            &qed::Pairing::rescale<3>);
 
 }
 

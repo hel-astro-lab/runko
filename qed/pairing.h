@@ -1149,6 +1149,54 @@ public:
     return;
   }
 
+
+
+  //--------------------------------------------------
+  // normalize container of type t1
+  template<size_t D>
+  void rescale(pic::Tile<D>& tile, string& t1, double f_kill)
+  {
+
+    // using raw pointer instead of smart ptrs; it does not take ownership of the object
+    // so the container is not deleted when the temporary storage goes out of scope.
+    using ConPtr = pic::ParticleContainer<D>* ;
+
+    // build pointer map of types to containers; used as a helper to access particle tyeps
+    std::map<std::string, ConPtr> cons;
+    for(auto&& con : tile.containers) cons.emplace(con.type, &con );
+
+    cons[t1]->to_other_tiles.clear(); // clear book keeping array
+
+    size_t N1 = cons[t1]->size(); // read particle number from here; 
+
+    // total weight = sum(ws)
+    float_p wtot = 0.0;
+    for(size_t n1=0; n1<N1; n1++) wtot += cons[t1]->wgt(n1);
+
+    // loop over particles
+    float_p w1, zeta, prob_kill;
+    for(size_t n1=0; n1<N1; n1++) {
+      w1  = cons[t1]->wgt(n1);
+      zeta = rand();
+
+      prob_kill = 1.0f - 1.0f/f_kill;
+
+      if( zeta < prob_kill) {
+        cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU deletion version
+      } else {
+        cons[t1]->wgt(n1) = w1*f_kill; // compensate lost particles by increasing w
+      }
+    }
+
+    // remove annihilated prtcls; this transfer storage 
+    cons[t1]->delete_transferred_particles(); 
+
+    return;
+  }
+
+
+
+
 };
 
 

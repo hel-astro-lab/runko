@@ -11,3 +11,6 @@ template void qed::Pairing::comp_pmax<3>(string, float_p, std::map<std::string, 
 
 template void qed::Pairing::solve_mc<2>(pic::Tile<2>& );
 template void qed::Pairing::solve_mc<3>(pic::Tile<3>& );
+
+template void qed::Pairing::rescale<2>(pic::Tile<2>&, string&, double );
+template void qed::Pairing::rescale<3>(pic::Tile<3>&, string&, double );
