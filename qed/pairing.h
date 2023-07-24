@@ -34,6 +34,7 @@ inline auto duplicate_prtcl(
 
 
 // Binary all2all pairing of particles
+template<size_t D>
 class Pairing
 {
 private:
@@ -119,7 +120,6 @@ public:
 
   // compute maximum partial interaction rates for each process 
   // that LP of type t1 and energy of e1 can experience.
-  template<size_t D>
   void comp_pmax(string t1, float_p e1, 
                  std::map<std::string, pic::ParticleContainer<D>*>& cons)
   {
@@ -361,7 +361,6 @@ public:
 
 
   //--------------------------------------------------
-  template<size_t D>
   void solve(pic::Tile<D>& tile)
   {
 
@@ -573,7 +572,6 @@ public:
 
 
   //--------------------------------------------------
-  template<size_t D>
   void solve_mc(pic::Tile<D>& tile)
   {
 
@@ -1153,7 +1151,6 @@ public:
 
   //--------------------------------------------------
   // normalize container of type t1
-  template<size_t D>
   void rescale(pic::Tile<D>& tile, string& t1, double f_kill)
   {
 

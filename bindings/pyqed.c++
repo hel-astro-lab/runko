@@ -175,15 +175,28 @@ void bind_qed(py::module& m_sub)
     .def(py::init<string, string>());
 
 
+
+  py::module m_2d = m_sub.def_submodule("twoD",   "2D specializations");
+  py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
+
   //--------------------------------------------------
   // Particle pairing routines
-  py::class_<qed::Pairing>(m_sub, "Pairing")
+  py::class_<qed::Pairing<2> >(m_2d, "Pairing")
     .def(py::init<>())
-    .def_readwrite("prob_norm",&qed::Pairing::prob_norm)
-    .def("solve",              &qed::Pairing::solve<3>)
-    .def("solve_mc",           &qed::Pairing::solve_mc<3>)
-    .def("add_interaction",    &qed::Pairing::add_interaction, py::keep_alive<1,2>() )
-    .def("rescale",            &qed::Pairing::rescale<3>);
+    .def_readwrite("prob_norm",&qed::Pairing<2>::prob_norm)
+    .def("solve",              &qed::Pairing<2>::solve)
+    .def("solve_mc",           &qed::Pairing<2>::solve_mc)
+    .def("add_interaction",    &qed::Pairing<2>::add_interaction, py::keep_alive<1,2>() )
+    .def("rescale",            &qed::Pairing<2>::rescale);
+
+
+  py::class_<qed::Pairing<3> >(m_3d, "Pairing")
+    .def(py::init<>())
+    .def_readwrite("prob_norm",&qed::Pairing<3>::prob_norm)
+    .def("solve",              &qed::Pairing<3>::solve)
+    .def("solve_mc",           &qed::Pairing<3>::solve_mc)
+    .def("add_interaction",    &qed::Pairing<3>::add_interaction, py::keep_alive<1,2>() )
+    .def("rescale",            &qed::Pairing<3>::rescale);
 
 }
 
