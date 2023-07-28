@@ -193,10 +193,12 @@ void bind_qed(py::module& m_sub)
   py::class_<qed::Pairing<3> >(m_3d, "Pairing")
     .def(py::init<>())
     .def_readwrite("prob_norm",&qed::Pairing<3>::prob_norm)
-    .def("solve",              &qed::Pairing<3>::solve)
-    .def("solve_mc",           &qed::Pairing<3>::solve_mc)
     .def("add_interaction",    &qed::Pairing<3>::add_interaction, py::keep_alive<1,2>() )
-    .def("rescale",            &qed::Pairing<3>::rescale);
+    .def("rescale",            &qed::Pairing<3>::rescale)
+    .def("inject_photons",     &qed::Pairing<3>::inject_photons)
+    .def("leak_photons",       &qed::Pairing<3>::leak_photons)
+    .def("solve",              &qed::Pairing<3>::solve)
+    .def("solve_mc",           &qed::Pairing<3>::solve_mc);
 
 }
 

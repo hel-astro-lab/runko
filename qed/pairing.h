@@ -7,6 +7,7 @@
 #include <memory>
 #include <map>
 #include <functional>
+#include <cmath>
 
 #include "interactions/interaction.h"
 #include "../../definitions.h"
@@ -43,6 +44,13 @@ private:
   std::uniform_real_distribution<float_p> uni_dis;
 
   using InteractionPtr = std::shared_ptr<qed::Interaction>;
+
+  // using raw pointer instead of smart ptrs; it does not take ownership of the object
+  // so the container is not deleted when the temporary storage goes out of scope.
+  using ConPtr = pic::ParticleContainer<D>* ;
+  //using ConPtr = std::weak_ptr< pic::ParticleContainer<D> >; // this could also work
+  //using ConPtr = std::reference_wrapper< pic::ParticleContainer<D> >; // this maybe as well
+
 public:
 
   // constructor with incident/target types
@@ -363,13 +371,6 @@ public:
   //--------------------------------------------------
   void solve(pic::Tile<D>& tile)
   {
-
-    // using raw pointer instead of smart ptrs; it does not take ownership of the object
-    // so the container is not deleted when the temporary storage goes out of scope.
-    using ConPtr = pic::ParticleContainer<D>* ;
-    //using ConPtr = std::weak_ptr< pic::ParticleContainer<D> >; // this could also work
-    //using ConPtr = std::reference_wrapper< pic::ParticleContainer<D> >; // this maybe as well
-
       
     // build pointer map of types to containers; used as a helper to access particle tyeps
     std::map<std::string, ConPtr> cons;
@@ -574,11 +575,6 @@ public:
   //--------------------------------------------------
   void solve_mc(pic::Tile<D>& tile)
   {
-
-    // using raw pointer instead of smart ptrs; it does not take ownership of the object
-    // so the container is not deleted when the temporary storage goes out of scope.
-    using ConPtr = pic::ParticleContainer<D>* ;
-
     // build pointer map of types to containers; used as a helper to access particle tyeps
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
@@ -686,12 +682,11 @@ public:
           //assert(false);
         }
 
-
         // exponential waiting time between interactions
         double t_free = -log( rand() )/prob_vir_max;
 
         //if np.random.rand() < prob_max: # virtual maximum channel
-        if(t_free < 1.0)  // virtual maximum channel
+        if(t_free < 1.0) // virtual maximum channel
         { 
           // get random interaction
           // NOTE: incident type t1 must be the same as what comp_pmax was called with
@@ -1154,10 +1149,6 @@ public:
   void rescale(pic::Tile<D>& tile, string& t1, double f_kill)
   {
 
-    // using raw pointer instead of smart ptrs; it does not take ownership of the object
-    // so the container is not deleted when the temporary storage goes out of scope.
-    using ConPtr = pic::ParticleContainer<D>* ;
-
     // build pointer map of types to containers; used as a helper to access particle tyeps
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
@@ -1170,16 +1161,19 @@ public:
     float_p wtot = 0.0;
     for(size_t n1=0; n1<N1; n1++) wtot += cons[t1]->wgt(n1);
 
+
     // loop over particles
     float_p w1, zeta, prob_kill;
     for(size_t n1=0; n1<N1; n1++) {
       w1  = cons[t1]->wgt(n1);
-      zeta = rand();
 
       prob_kill = 1.0f - 1.0f/f_kill;
+      //prob_kill = 1.0f - w1/f_kill;
 
+      zeta = rand();
       if( zeta < prob_kill) {
         cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU deletion version
+        cons[t1]->wgt(n1) = 0.0f; 
       } else {
         cons[t1]->wgt(n1) = w1*f_kill; // compensate lost particles by increasing w
       }
@@ -1191,7 +1185,171 @@ public:
     return;
   }
 
+  // inject soft photons
+  void inject_photons(pic::Tile<D>& tile, 
+      float_p temp_inj, 
+      float_p wph_inj,
+      float_p Nph_inj) 
+  {
+    std::map<std::string, ConPtr> cons;
+    for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
+    auto mins = tile.mins;
+    auto maxs = tile.maxs;
+
+    float_p lenx = D >= 1 ? (maxs[0] - mins[0]) : 0.0f;
+    float_p leny = D >= 2 ? (maxs[1] - mins[1]) : 0.0f;
+    float_p lenz = D >= 3 ? (maxs[2] - mins[2]) : 0.0f;
+
+    // inject Nph_inj photons
+    float_p vx, vy, vz, xi;
+    float_p ux, uy, uz, xinj;
+    float_p xloc, yloc, zloc;
+
+    float_p ncop = 0.0f;
+    float_p z1 = rand();
+
+    while(Nph_inj > z1 + ncop)
+    {
+      //--------------------------------------------------
+      // draw random isotropic 3d vector
+      vz = 2.0f*rand() - 1.0f;
+      xi = 2.0f*PI*rand();
+
+      vx = std::sqrt(1.0f-vz*vz)*std::cos(xi);
+      vy = std::sqrt(1.0f-vz*vz)*std::sin(xi);
+
+      // TODO: add mins  here to always correctly sample the location
+      xloc = rand()*lenx;
+      yloc = rand()*leny;
+      zloc = rand()*lenz;
+
+      //--------------------------------------------------
+      // draw energy from a black body distribution
+      float_p xi1 = rand();
+      float_p xi2 = rand();
+      float_p xi3 = rand();
+      float_p xi4 = rand();
+    
+      float_p xi, jj, fsum;
+      if( 1.202f*xi1 < 1.0f ){
+          xi = 1.0f;
+      } else {
+          jj = 1.0f;
+          fsum = std::pow(jj, -3);
+          while( 1.202*xi1 > fsum + std::pow(jj + 1.0f, -3) )
+          {
+              jj   += 1.0f;
+              fsum += std::pow(jj, -3);
+          }
+          xi = jj + 1.0f;
+      }
+      xinj = -temp_inj*std::log( xi2*xi3*xi4 )/xi;
+
+      //--------------------------------------------------
+      ux = xinj*vx;
+      uy = xinj*vy;
+      uz = xinj*vz;
+
+      cons["ph"]->add_particle( {{xloc, yloc, zloc}}, {{ux, uy, uz}}, wph_inj );
+      ncop += 1.0f;
+    }
+
+    return;
+  }
+
+
+
+  //--------------------------------------------------
+  // photon escape from the box w/ escape probability formalism
+  void leak_photons(
+      pic::Tile<D>& tile, 
+      double w2tau_units,
+      double dt_per_tc
+      )
+  {
+
+    // build pointer map of types to containers; used as a helper to access particle tyeps
+    std::map<std::string, ConPtr> cons;
+    for(auto&& con : tile.containers) cons.emplace(con.type, &con );
+
+    //--------------------------------------------------
+    // pair number density
+    float_p wsum_ep = 0.0f;
+    float_p wvrel   = 0.0f;
+    float_p w1, beta, gam;
+
+    size_t Ne = cons["e-"]->size(); 
+    for(size_t n1=0; n1<Ne; n1++) {
+      w1  = cons["e-"]->wgt(n1);
+      gam = cons["e-"]->get_prtcl_ene(n1);
+
+      beta = std::sqrt(1.0f - 1.0f/(gam*gam) );
+      wvrel += beta*w1;
+      wsum_ep += w1;
+    }
+
+    size_t Np = cons["e+"]->size(); 
+    for(size_t n1=0; n1<Np; n1++) {
+      w1  = cons["e+"]->wgt(n1);
+      gam = cons["e+"]->get_prtcl_ene(n1);
+
+      beta = std::sqrt(1.0f - 1.0f/(gam*gam) );
+      wvrel += beta*w1;
+      wsum_ep += w1;
+    }
+    //--------------------------------------------------
+    float_p tauT = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
+
+
+    std::cout << "escape" << std::endl;
+    std::cout << "   tauT: " << tauT << std::endl;
+
+
+
+    //--------------------------------------------------
+    std::string t1 = "ph";
+    size_t Nx = cons[t1]->size(); // read particle number from here; 
+                                  //
+    cons[t1]->to_other_tiles.clear(); // clear book keeping array
+
+    float_p wx, x, f, sKN, P_esc;
+    for(size_t n1=0; n1<Nx; n1++) {
+      w1 = cons[t1]->wgt(n1);
+      x  = cons[t1]->get_prtcl_ene(n1);
+
+      // Klein-Nishina cross section
+      //sKN = 0.75f*( 
+      //    ( (1.0f + x)/x*x*x)*( 2.0f*x*(1.0f + x)/(1.0f + 2.0f*x) - std::log(1.0f + 2.0f*x)) 
+      //      + std::log(1.0f + 2.0f*x)/(2.0f*x)  - (1.0f + 3.0f*x)/pow(1.0f + 2.0f*x, 2) );
+
+      sKN = 1.0f; // Thomson cross-section
+
+      // empirical escape probability function
+      if(        x <= 0.1) { f = 1.0f;
+      } else if (x >  1.0) { f = 0.0f;
+      } else               { f = (1.0f - x)/0.9f; }
+
+      //(c/R)*dt = dt/t_c
+      P_esc = dt_per_tc/( 0.75f + 0.188f*tauT*f*sKN );
+
+      // escape
+      if( rand() < P_esc ){
+
+        // TODO copy to escaped flux
+
+
+        cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU deletion version
+        cons[t1]->wgt(n1) = 0.0f; 
+      }
+
+    }
+
+    //// remove annihilated prtcls; this transfer storage 
+    cons[t1]->delete_transferred_particles(); 
+
+    return;
+  }
 
 
 };
