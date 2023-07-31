@@ -8,6 +8,24 @@
 
 namespace toolbox {
 
+
+template <typename T>
+DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
+
+    //first and smallest value
+    if(val < arr[0]) return 0;
+
+    // value is between array elements
+    for(int i=1; i<arr.size(); i++){
+      if( ( arr[i-1] <= val ) && ( val < arr[i] ) ) {
+        return i;
+      }
+    }
+
+    // last element
+    return static_cast<int>( arr.size() ) - 1; // len(arr)-1 
+}
+
 template <typename T>
 DEVCALLABLE int find_rev_sorted_nearest( ManVec<T> const& arr, T val) {
 

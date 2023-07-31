@@ -1,5 +1,7 @@
 #include "py_submodules.h"
 
+#include <pybind11/numpy.h>
+
 //#include "../qed/photon.h"
 //#include "../qed/tile.h"
 
@@ -197,8 +199,22 @@ void bind_qed(py::module& m_sub)
     .def("rescale",            &qed::Pairing<3>::rescale)
     .def("inject_photons",     &qed::Pairing<3>::inject_photons)
     .def("leak_photons",       &qed::Pairing<3>::leak_photons)
+    .def("update_hist_lims",   &qed::Pairing<3>::update_hist_lims)
+    .def("clear_hist",         &qed::Pairing<3>::clear_hist)
     .def("solve",              &qed::Pairing<3>::solve)
-    .def("solve_mc",           &qed::Pairing<3>::solve_mc);
+    .def("solve_mc",           &qed::Pairing<3>::solve_mc)
+    .def("get_hist_edges",   [](qed::Pairing<3>& s)
+        {
+          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
+          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
+          return v;
+        })
+    .def("get_hist_cnts",    [](qed::Pairing<3>& s)
+        {
+          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
+          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
+          return v;
+        });
 
 }
 

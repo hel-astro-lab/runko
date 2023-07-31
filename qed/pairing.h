@@ -13,6 +13,7 @@
 #include "../../definitions.h"
 #include "../../pic/tile.h"
 #include "../../tools/sample_arrays.h"
+#include "../../tools/linlogspace.h"
 
 
 
@@ -57,7 +58,9 @@ public:
   Pairing() :
     gen(42), // gen(rd() ) 
     uni_dis(0.0, 1.0)       
-  { }
+  { 
+    update_hist_lims(hist_emin, hist_emax, hist_nbin);
+  }
 
   //using Tile_map = std::unordered_map<TileID_t, Tileptr>;
   //Tile_map tiles; /// Map with tile_id & tile data
@@ -69,6 +72,48 @@ public:
 
   // force e- e+ to have unit weights irrespective of weighting functions
   bool force_ep_uni_w = true; 
+
+  //--------------------------------------------------
+  //histogram for the leaking/escaping photons
+  double hist_emin = -4.0; // log10(emin)
+  double hist_emax =  2.0; // log10(emax)
+  int    hist_nbin = 200;
+  
+  ManVec<double> hist;
+  ManVec<double> hist_ene_edges;
+
+  void update_hist_lims(double emin, double emax, int nbin)
+  {
+    hist_emin = emin;
+    hist_emax = emax;
+    hist_nbin = nbin;
+
+    // resize histogram storate
+    hist.resize(nbin);
+    hist_ene_edges.resize(nbin);
+
+    // get logspace edges
+    toolbox::logspace(hist_emin, hist_emax, hist_nbin, hist_ene_edges);   
+
+    //std::cout << "hist init:" << std::endl;
+    //for(size_t i=0; i<hist_nbin; i++) std::cout << "   " << i << " " << hist_ene_edges[i] << std::endl;
+  }
+
+  // update histogram
+  void add_to_histogram(double x, double w)
+  {
+    int i = toolbox::find_sorted_nearest(hist_ene_edges, x);
+    hist[i] += w;
+
+    //std::cout << "adding to hist " << i << " x" << x << " w:" << w << std::endl;
+  }
+
+  // refill histogram with zeros 
+  void clear_hist()
+  {
+    for(size_t i=0; i<hist_nbin; i++) hist[i] = 0.0;
+  }
+
 
   //--------------------------------------------------
   // auxiliary containers for Monte Carlo sampling 
@@ -1302,10 +1347,8 @@ public:
     float_p tauT = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
 
 
-    std::cout << "escape" << std::endl;
-    std::cout << "   tauT: " << tauT << std::endl;
-
-
+    //std::cout << "escape" << std::endl;
+    //std::cout << "   tauT: " << tauT << std::endl;
 
     //--------------------------------------------------
     std::string t1 = "ph";
@@ -1313,10 +1356,10 @@ public:
                                   //
     cons[t1]->to_other_tiles.clear(); // clear book keeping array
 
-    float_p wx, x, f, sKN, P_esc;
+    float_p w, x, f, sKN, P_esc;
     for(size_t n1=0; n1<Nx; n1++) {
-      w1 = cons[t1]->wgt(n1);
-      x  = cons[t1]->get_prtcl_ene(n1);
+      w = cons[t1]->wgt(n1);
+      x = cons[t1]->get_prtcl_ene(n1);
 
       // Klein-Nishina cross section
       //sKN = 0.75f*( 
@@ -1336,8 +1379,8 @@ public:
       // escape
       if( rand() < P_esc ){
 
-        // TODO copy to escaped flux
-
+        // book keeping of escaped flux
+        add_to_histogram(x, w);
 
         cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
