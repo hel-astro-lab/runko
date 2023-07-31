@@ -263,9 +263,19 @@ public:
         // FIXME: switch to this version as it is faster
         // ver2: assumes static targets; value calculated in the beginnig of loop
         double wsum2 = 0.0;
-        if(jmin <= jmax) { // in the opposite case arrays dont span a range and so wsum2 = 0
+        if(jmin < jmax) { // in the opposite case arrays dont span a range and so wsum2 = 0
           double wsum_min = jmin == 0 ? 0.0 : con_tar->wgtCumArr[jmin];
           wsum2 = con_tar->wgtCumArr[jmax-1] - wsum_min;
+
+          if(wsum2 > 1.0e10){
+            std::cout << "ERROR: wsum" << std::endl;
+            std::cout << " wsum:" << wsum << std::endl;
+            std::cout << " wsum2:" << wsum2 << std::endl;
+            std::cout << " jmin:" << jmin << std::endl;
+            std::cout << " jmax:" << jmax << std::endl;
+            std::cout << " wsum_min:" << wsum_min << std::endl;
+            assert(false);
+          }
         }
 
         //--------------------------------------------------
