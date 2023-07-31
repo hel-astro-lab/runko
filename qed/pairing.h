@@ -78,6 +78,10 @@ public:
   double hist_emin = -4.0; // log10(emin)
   double hist_emax =  2.0; // log10(emax)
   int    hist_nbin = 200;
+
+  double leaked_ene  = 0.0;
+  double leaked_wsum = 0.0;
+  int    leaked_pnum = 0;
   
   ManVec<double> hist;
   ManVec<double> hist_ene_edges;
@@ -112,6 +116,10 @@ public:
   void clear_hist()
   {
     for(size_t i=0; i<hist_nbin; i++) hist[i] = 0.0;
+
+    leaked_ene  = 0.0;
+    leaked_wsum = 0.0;
+    leaked_pnum = 0;
   }
 
 
@@ -1378,6 +1386,10 @@ public:
 
       // escape
       if( rand() < P_esc ){
+
+        leaked_ene  += x*w;
+        leaked_wsum += w;
+        leaked_pnum += 1;
 
         // book keeping of escaped flux
         add_to_histogram(x, w);
