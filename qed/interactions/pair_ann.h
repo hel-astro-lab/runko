@@ -18,6 +18,7 @@ public:
   {
     name = "pair-ann";
     cross_section = 0.128; // 0.341;  //0.68; //0.75; // 2*(3/8)*sigma_T
+                               // FIXME 2x or 1/2 or 1?
                             // 0.12782 measured
   }
 

@@ -12,6 +12,8 @@ namespace toolbox {
 template <typename T>
 DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
 
+    if(arr.size() == 0) return 0;
+
     //first and smallest value
     if(val < arr[0]) return 0;
 
@@ -28,6 +30,8 @@ DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
 
 template <typename T>
 DEVCALLABLE int find_rev_sorted_nearest( ManVec<T> const& arr, T val) {
+
+    if(arr.size() == 0) return 0;
 
     //first and largest value
     if(arr[0] < val) return 0;

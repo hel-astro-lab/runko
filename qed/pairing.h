@@ -82,6 +82,11 @@ public:
   double leaked_ene  = 0.0;
   double leaked_wsum = 0.0;
   int    leaked_pnum = 0;
+
+  double inj_ene_ph  = 0.0;
+  double inj_ene_ep  = 0.0;
+
+  double tau_measured = 0.0;
   
   ManVec<double> hist;
   ManVec<double> hist_ene_edges;
@@ -120,6 +125,9 @@ public:
     leaked_ene  = 0.0;
     leaked_wsum = 0.0;
     leaked_pnum = 0;
+
+    inj_ene_ph  = 0.0;
+    inj_ene_ep  = 0.0;
   }
 
 
@@ -215,7 +223,7 @@ public:
         //--------------------------------------------------
         // double counting prevention since we only consider targets with energy more than incident particle
 
-        if(false){
+        if(true){
 
           // require e1 < e2 = e_tar
           // e_tar = [emin, emax]
@@ -229,7 +237,7 @@ public:
           //}
             
           //if(emin < e1) emin = e1; 
-          emin = std::max(e1, emin);
+          emin = std::max(e1, emin); // double counting prevention; only consider LPs with energy larger than incident
           
           // other way around; require e1 > e2 = etarget
           // e_tar = [emin, emax]
@@ -406,16 +414,16 @@ public:
   {
 
     // standard unit weights
-    //if(       t == "ph") { return 1.0; 
-    //} else if(t == "e-") { return 1.0; 
-    //} else if(t == "e+") { return 1.0; 
-    //}
-      
-    // photon emphasis
-    if(       t == "ph") { return 2.0 + x*x; 
+    if(       t == "ph") { return 1.0; 
     } else if(t == "e-") { return 1.0; 
     } else if(t == "e+") { return 1.0; 
     }
+      
+    // photon emphasis
+    //if(       t == "ph") { return std::pow(x/0.01f, 0.5f); 
+    //} else if(t == "e-") { return 1.0; 
+    //} else if(t == "e+") { return 1.0; 
+    //}
       
     // FIXME not useful
     //if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
@@ -540,11 +548,11 @@ public:
                 // interaction probability
                 wmin = min(w1, w2);
                 wmax = max(w1, w2);
-                prob = cm*vrel*w1*w2/prob_norm;
+                prob = cm*vrel*w1*w2;
                 // NOTE: difference of all2all scheme is here where prob depends on w1*w2
 
                 // exponential waiting time between interactions
-                double t_free = -log( rand() )/prob;
+                double t_free = -log( rand() )*prob_norm/prob;
 
                 //-------------------------------------------------- 
                 if(t_free < 1.0){
@@ -729,24 +737,45 @@ public:
         //pre-calculate maximum partial interaction rates
         comp_pmax(t1, e1, cons); 
 
+        if(ids.size() == 0) continue; // no targets to interact with 
+
         // maximum interaction rate
         //= sigma_max * w2_sum * w1/prob_norm
 
         // TODO add 1/facc here
         double prob_vir_max = 0.0;
-        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/faccs[i]/prob_norm;
+        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/faccs[i]; //*prob_norm;
+        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*std::max(wsums[i], static_cast<double>(w1))/faccs[i]; // FIXME max(w1, w2) version
+        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]*w1/faccs[i]; // FIXME additional w1 here
+                                                                                             
+                                                                                             
         // NOTE: no w1 here. putting w1 gives different result from uni-weight sim. Hence, its wrong.
         // instead, it is taken into account later on via prob_update \propto 1/w1
 
-        if(prob_vir_max>=1.01){ // some tolerance here
-          std::cout << " prob_vir_max:" << prob_vir_max << std::endl;
-          std::cout << " norm:" << prob_norm << std::endl;
-          for(size_t i=0; i<ids.size(); i++) std::cout << "c: " << cmaxs[i] << " w: " << wsums[i] << " f: " << faccs[i] << std::endl;
-          //assert(false);
-        }
+        //if(prob_vir_max>=1.01){ // some tolerance here
+        //  std::cout << " prob_vir_max:" << prob_vir_max << std::endl;
+        //  std::cout << " norm:" << prob_norm << std::endl;
+        //  for(size_t i=0; i<ids.size(); i++) std::cout << "c: " << cmaxs[i] << " w: " << wsums[i] << " f: " << faccs[i] << std::endl;
+        //  //assert(false);
+        //}
 
         // exponential waiting time between interactions
-        double t_free = -log( rand() )/prob_vir_max;
+        double t_free = -log( rand() )*prob_norm/prob_vir_max; ///w1; // FIXME added /w1
+
+
+        //if( t_free > 1.0) {
+        //if( true ) {
+        //  std::cout<< "t_free: " << t_free << " N_Q/p_int: " << prob_norm/prob_vir_max << std::endl;
+        //  std::cout<< "prob_vir_max: " << prob_vir_max << std::endl;
+        //  std::cout<< " t1 " << t1 << std::endl;
+        //  std::cout<< " ids " << ids.size() << std::endl;
+
+        //  for(size_t i=0; i<ids.size(); i++) {
+        //  std::cout<< " ints " << i << " " << cmaxs[i] << " " << wsums[i] << " " << faccs[i] << std::endl;
+        //  }
+
+        //  //assert(false);
+        //}
 
         //if np.random.rand() < prob_max: # virtual maximum channel
         if(t_free < 1.0) // virtual maximum channel
@@ -848,7 +877,7 @@ public:
           // correct for real/max facc factor
           prob_vir *= facc_max/facc3;
 
-          if(rand() < prob_vir)  // check if this interaction is chosen among the samples ones
+          if(rand() < prob_vir)  // check if this interaction is chosen among the sampled ones
           {
             auto long_name = iptr->name + "_" + t1 + "_" + t2;
             info_int_nums[long_name] += 1;
@@ -915,7 +944,8 @@ public:
             //prob_upd3 *= 1.0f/facc3;
 
             //-------------------------------------------------- 
-            int n_added = 0, ncop = 0;
+            int n_added = 0; //ncop = 0;
+            double ncop = 0.0;
 
             if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
                              
@@ -943,7 +973,7 @@ public:
 
                 // optimized routine that does not to leave holes in arrays 
                 // it first replaces the original value and only then adds if necessary
-                if(ncop == 0) {
+                if(ncop < EPS) {
                   if( rand() < prob_upd3 ) {
                     // NOTE: we keep location the same
                     cons[t1]->vel(0, n1) = ux3;
@@ -981,11 +1011,11 @@ public:
                 //  }
                 //}
 
-                ncop += 1;
+                ncop += 1.0;
               } // end of while
 
               // remove parent prtcl if nothing was added
-              if( ncop == 0 ) {
+              if( ncop < EPS ) {
                 cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
@@ -1014,7 +1044,7 @@ public:
               double z1 = rand();
               while( n3 > z1 + ncop ){
                 cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
-                ncop += 1;
+                ncop += 1.0;
               }
 
               // kill parent
@@ -1029,7 +1059,7 @@ public:
             //-------------------------------------------------- 
             // add prtcl t2/t4
             n_added = 0; 
-            ncop = 0;
+            ncop = 0.0;
 
             if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
 
@@ -1047,7 +1077,7 @@ public:
 
                 // optimized routine that does not to leave holes in arrays 
                 // it first replaces the original value and only then adds if necessary
-                if(ncop == 0) {
+                if(ncop < EPS) {
                   if( rand() < prob_upd4 ) {
                     // NOTE: we keep location the same
                     cons[t2]->vel(0, n2) = ux4;
@@ -1065,11 +1095,11 @@ public:
                   }
                 }
 
-                ncop += 1;
+                ncop += 1.0;
               } // end of while
 
               // remove parent prtcl if nothing was added
-              if( ncop == 0 ) {
+              if( ncop < EPS ) {
                 cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
@@ -1089,7 +1119,7 @@ public:
               double z1 = rand();
               while( n4 > z1 + ncop ){
                 cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
-                ncop += 1;
+                ncop += 1.0;
               }
 
               // kill parent
@@ -1224,6 +1254,7 @@ public:
     float_p wtot = 0.0;
     for(size_t n1=0; n1<N1; n1++) wtot += cons[t1]->wgt(n1);
 
+    // TODO it is not energy conserving to select particles equally w/o w-weighting
 
     // loop over particles
     float_p w1, zeta, prob_kill;
@@ -1231,7 +1262,6 @@ public:
       w1  = cons[t1]->wgt(n1);
 
       prob_kill = 1.0f - 1.0f/f_kill;
-      //prob_kill = 1.0f - w1/f_kill;
 
       zeta = rand();
       if( zeta < prob_kill) {
@@ -1260,6 +1290,10 @@ public:
     auto mins = tile.mins;
     auto maxs = tile.maxs;
 
+    float_p x_min = D >= 1 ? mins[0] : 0.0f;
+    float_p y_min = D >= 2 ? mins[1] : 0.0f;
+    float_p z_min = D >= 3 ? mins[2] : 0.0f;
+
     float_p lenx = D >= 1 ? (maxs[0] - mins[0]) : 0.0f;
     float_p leny = D >= 2 ? (maxs[1] - mins[1]) : 0.0f;
     float_p lenz = D >= 3 ? (maxs[2] - mins[2]) : 0.0f;
@@ -1282,10 +1316,9 @@ public:
       vx = std::sqrt(1.0f-vz*vz)*std::cos(xi);
       vy = std::sqrt(1.0f-vz*vz)*std::sin(xi);
 
-      // TODO: add mins  here to always correctly sample the location
-      xloc = rand()*lenx;
-      yloc = rand()*leny;
-      zloc = rand()*lenz;
+      xloc = rand()*lenx + x_min;
+      yloc = rand()*leny + y_min;
+      zloc = rand()*lenz + z_min;
 
       //--------------------------------------------------
       // draw energy from a black body distribution
@@ -1316,11 +1349,94 @@ public:
 
       cons["ph"]->add_particle( {{xloc, yloc, zloc}}, {{ux, uy, uz}}, wph_inj );
       ncop += 1.0f;
+
+      inj_ene_ph += wph_inj*xinj; // bookkeeping of injected photon energy
     }
 
     return;
   }
 
+
+  // inject soft photons
+  void inject_plaw_pairs(pic::Tile<D>& tile, 
+      float_p slope, 
+      float_p pmin,
+      float_p pmax,
+      float_p w_inj,
+      float_p N_inj) 
+  {
+
+    //const float_p pmin = 10.0f;
+    //const float_p pmax = 100.0f;
+
+    assert(pmin > 1.0f); // pmin interpreted as gamma 
+    assert(pmax > 1.0f); // pmax interpreted as gamma 
+
+    float_p pminp = std::pow(pmin, 1.0f+slope);  // pmin^(1-g)
+    float_p pmaxp = std::pow(pmax, 1.0f+slope);  // pmax^(1-g)
+
+    std::map<std::string, ConPtr> cons;
+    for(auto&& con : tile.containers) cons.emplace(con.type, &con );
+
+    auto mins = tile.mins;
+    auto maxs = tile.maxs;
+
+    float_p x_min = D >= 1 ? mins[0] : 0.0f;
+    float_p y_min = D >= 2 ? mins[1] : 0.0f;
+    float_p z_min = D >= 3 ? mins[2] : 0.0f;
+
+    float_p lenx = D >= 1 ? (maxs[0] - mins[0]) : 0.0f;
+    float_p leny = D >= 2 ? (maxs[1] - mins[1]) : 0.0f;
+    float_p lenz = D >= 3 ? (maxs[2] - mins[2]) : 0.0f;
+
+    // inject N_inj pairs
+    float_p vx, vy, vz, xi;
+    float_p ux, uy, uz, ginj, pinj;
+    float_p xloc, yloc, zloc;
+
+    float_p ncop = 0.0f;
+    float_p z1 = rand();
+
+    while(N_inj > z1 + ncop)
+    {
+      xloc = rand()*lenx + x_min;
+      yloc = rand()*leny + y_min;
+      zloc = rand()*lenz + z_min;
+
+      // loop over both species
+      for(size_t t=0; t<2; t++){
+
+        //--------------------------------------------------
+        // draw random isotropic 3d vector
+        vz = 2.0f*rand() - 1.0f;
+        xi = 2.0f*PI*rand();
+
+        vx = std::sqrt(1.0f-vz*vz)*std::cos(xi);
+        vy = std::sqrt(1.0f-vz*vz)*std::sin(xi);
+
+        //--------------------------------------------------
+        // get random powerlaw energy
+        ginj = std::pow( pminp + rand()*( pmaxp - pminp ), 1.0f/(1.0f+slope));
+
+        // u = sqrt( gamma^2 - 1)
+        pinj = std::sqrt(ginj*ginj - 1.0f);
+
+        //--------------------------------------------------
+        ux = pinj*vx;
+        uy = pinj*vy;
+        uz = pinj*vz;
+
+        if(t==0) cons["e-"]->add_particle( {{xloc, yloc, zloc}}, {{ux, uy, uz}}, w_inj );
+        if(t==1) cons["e+"]->add_particle( {{xloc, yloc, zloc}}, {{ux, uy, uz}}, w_inj );
+
+        inj_ene_ep += w_inj*ginj; // bookkeeping of injected photon energy
+      }
+
+      ncop += 1.0f;
+    }
+
+    return;
+  }
 
 
   //--------------------------------------------------
@@ -1328,7 +1444,8 @@ public:
   void leak_photons(
       pic::Tile<D>& tile, 
       double w2tau_units,
-      double dt_per_tc
+      double tc_per_dt,
+      double tau_ext
       )
   {
 
@@ -1362,11 +1479,21 @@ public:
       wsum_ep += w1;
     }
     //--------------------------------------------------
-    float_p tauT = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
+    // TODO which one?
+    float_p tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
+    float_p tauT2 = wsum_ep*w2tau_units; // \tau_T = \sigma_T wsum
 
+    tau_measured = tauT; // store for book keeping
 
     //std::cout << "escape" << std::endl;
     //std::cout << "   tauT: " << tauT << std::endl;
+    //std::cout << "   tauT2:" << tauT2 << std::endl;
+    //std::cout << "   wsum: " << wsum_ep << std::endl;
+    //std::cout << "   N_-:  " << cons["e-"]->size() << std::endl;
+    //std::cout << "   N_+:  " << cons["e+"]->size() << std::endl;
+    //std::cout << "   N_w:  " << w2tau_units << std::endl;
+
+    if(tau_ext > 0.0) tauT = tau_ext; // use external tau if given
 
     //--------------------------------------------------
     std::string t1 = "ph";
@@ -1380,22 +1507,50 @@ public:
       x = cons[t1]->get_prtcl_ene(n1);
 
       // Klein-Nishina cross section
-      //sKN = 0.75f*( 
-      //    ( (1.0f + x)/x*x*x)*( 2.0f*x*(1.0f + x)/(1.0f + 2.0f*x) - std::log(1.0f + 2.0f*x)) 
-      //      + std::log(1.0f + 2.0f*x)/(2.0f*x)  - (1.0f + 3.0f*x)/pow(1.0f + 2.0f*x, 2) );
+      sKN = 0.75f*( 
+          ( (1.0f + x)/x*x*x)*( 2.0f*x*(1.0f + x)/(1.0f + 2.0f*x) - std::log(1.0f + 2.0f*x)) 
+            + std::log(1.0f + 2.0f*x)/(2.0f*x)  - (1.0f + 3.0f*x)/pow(1.0f + 2.0f*x, 2) );
 
-      sKN = 1.0f; // Thomson cross-section
+      //sKN = 1.0f; // Thomson cross-section
 
-      // empirical escape probability function
+      // empirical escape probability function to account for forward scattering pile-up
+      // see Lightman \& Zdarskiaki 1987
       if(        x <= 0.1) { f = 1.0f;
       } else if (x >  1.0) { f = 0.0f;
       } else               { f = (1.0f - x)/0.9f; }
 
       //(c/R)*dt = dt/t_c
-      P_esc = dt_per_tc/( 0.75f + 0.188f*tauT*f*sKN );
+      //P_esc = dt_per_tc/( 0.75f + 0.188f*tauT*f*sKN ); // sphere
+      //float_p t_esc = ( 1.0f + tauT*f*sKN ); // slab
+      float_p t_esc = ( 1.0f + tauT*f*sKN + (1.0f-f)*2.886f ); // slab w/ asymptic scaling to 5/sqrt(3)
+                                                               // this mimics pair-production opacity
+                                                               // asymptotic solution to slab geometry
+                                                               // with rad. transf. when tau -> infty
 
-      // escape
-      if( rand() < P_esc ){
+      //P_esc = t_esc/dt_per_tc; // P = R/c / dt for tau -> 0 
+
+      // tc_per_dt = 1/x = 20
+
+      // photon has an escape probability rate of P_esc = 1.0/(t_c*t_esc) to escape
+      // probability is p_esc = P_esc*dt = dt/(t_c*t_esc) 
+
+      // FIXME
+      //tc_per_dt *= w; // compensate by weight; heavier prtcl has less prob of escaping
+
+      //std::cout << "esc:" << 1.0f/tc_per_dt/t_esc << " " << t_esc << " " << tc_per_dt << std::endl;
+
+      if( 1.0f/tc_per_dt/t_esc > rand() ) {
+      //if( 1.0f/(tc_per_dt*t_esc) > rand() ) {
+      //if( 1.0f/rand() > tc_per_dt*t_esc) {
+
+        // escape
+        //if( t_esc/tc_per_dt > rand() ){
+        //if( 1.0f/(t_esc*tc_per_dt) > rand() ){
+        //if( rand() > t_esc*tc_per_dt ){
+        //if( rand() < dt_per_tc/t_esc ){
+        //if( rand() < 1.0f/P_esc ){
+        //if( P_esc  < 1.0f/rand() ){
+        //if( 1.0/rand() > P_esc ){
 
         leaked_ene  += x*w;
         leaked_wsum += w;

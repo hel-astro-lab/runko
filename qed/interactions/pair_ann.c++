@@ -51,6 +51,8 @@ PairAnn::pair_float PairAnn::comp_cross_section(
   float_p s0 = (0.25*(1.0/x*x)*(1.0-x*x))*( (3.0-x*x*x*x)*log((1.0+x)/(1.0-x)) + 2.0*x*(x*x - 2.0)); //# ver2
   s0 *= 3.0/8.0; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
 
+  //s0 *= 2.0; // FIXME ????
+
   //# ver2; matches above
   //#s0 = 1/(4*bcm*gcm**2)*( (1/bcm)*(2 + 2/gcm**2 - 1/gcm**4)*np.log( (1+bcm)/(1-bcm) ) - 2 - 2/gcm**2)
   //#s0 *= 3.0/8.0 # normalization to rates; mathches with Coppi & Blandford eq 3.1
