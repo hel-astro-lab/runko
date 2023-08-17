@@ -92,9 +92,9 @@ public:
   //      );
   //  }
 
-  float_p accumulate( string t1, float_p e1, string t2, float_p e2) override { 
+  tuple_pair accumulate( string t1, float_p e1, string t2, float_p e2) override { 
     PYBIND11_OVERLOAD_PURE(
-        float_p, // return type
+        tuple_pair, // return type
         Interaction,               // parent class
         accumulate,                // name of function in C++
         t1, // arguments

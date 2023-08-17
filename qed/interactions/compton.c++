@@ -79,11 +79,18 @@ Compton::pair_float Compton::comp_cross_section(
 }
 
 
-float_p Compton::accumulate(
+tuple<float_p, float_p> Compton::accumulate(
     string t1, float_p e1, string t2, float_p e2)
 {
   // accumulation factor; forces electron energy changes to be ~0.1
-  return std::max(1.0f, 0.001f/(e1*e2));
+  float_p f = std::max(1.0f, 0.001f/(e1*e2));
+
+  f = std::min(1.0e2f, f); // cap f 
+
+  float_p f1 = t1 == "ph" ? f : 1.0f;
+  float_p f2 = t2 == "ph" ? f : 1.0f;
+
+  return {f1,f2};
 }
   
 void Compton::interact(
@@ -108,7 +115,7 @@ void Compton::interact(
 
   float_p x0 = norm(xv);                  // photon energy
   Vec3<float_p> om0 = xv/x0;              // photon direction vector \omega
-  float_p gam0 = sqrt(1.0 + dot(zv,zv));  // prtcl gamma
+  float_p gam0 = sqrt(1.0f + dot(zv,zv));  // prtcl gamma
   Vec3<float_p> beta0 = zv/gam0;          // prtcl 3-velocity \beta
   Vec3<float_p> bdir = beta0/norm(beta0); // electron direction vector
 
@@ -158,13 +165,13 @@ void Compton::interact(
   int niter = 0;
   float_p phi_R, mu_R, x1_R, F;
   while(true) {
-    phi_R = 2.0*PI*rand(); // candidate symmetry/azimuth angle in R frame
-    mu_R = -1.0 + 2.0*rand(); // candidate latitude/scattering angle between incident and outg photon
+    phi_R = 2.0f*PI*rand(); // candidate symmetry/azimuth angle in R frame
+    mu_R = -1.0f + 2.0f*rand(); // candidate latitude/scattering angle between incident and outg photon
 
-    x1_R = x0_R/(1.0 + x0_R*(1.0 - mu_R)); // scattered photon energy in R frame
+    x1_R = x0_R/(1.0f + x0_R*(1.0f - mu_R)); // scattered photon energy in R frame
 
     // angle dependent part of differential cross section
-    F = 0.5*pow(x1_R/x0_R, 2)*(-1.0 + (x1_R/x0_R) + (x0_R/x1_R) + mu_R*mu_R );
+    F = 0.5f*pow(x1_R/x0_R, 2)*(-1.0f + (x1_R/x0_R) + (x0_R/x1_R) + mu_R*mu_R );
 
     if( F > rand() ) break;   // accept angles
     if( niter > 10000 ) break; // too many iterations
@@ -176,7 +183,7 @@ void Compton::interact(
 
   //# construct new photon vector based on the angles
   //      #om1_Rijk  = np.array([mu, sinth*np.cos(phi), sinth*np.sin(phi)])
-  float_p sinz = sqrt(1.0 - mu_R*mu_R);
+  float_p sinz = sqrt(1.0f - mu_R*mu_R);
   Vec3<float_p> om1_Rijk( sinz*sin(phi_R), sinz*cos(phi_R), mu_R);
 
   //# rotate back to original axis
@@ -210,7 +217,11 @@ void Compton::interact(
   Vec3<float_p>  om1( k1(1)/x1, k1(2)/x1, k1(3)/x1 );
 
   // accumulation factor; NOTE: t1/t2 order does not matter here
-  float_p facc = do_accumulate ? accumulate(t1, gam0, t2, x0) : 1.0f;; 
+  auto [facc1, facc2] = accumulate(t1, gam0, t2, x0);
+  facc1 = do_accumulate ? facc1 : 1.0f;
+  facc2 = do_accumulate ? facc2 : 1.0f;
+  float_p facc = t1 == "ph" ? facc1 : facc2; // pick photon as the accumulated quantity
+  //facc = 1.0f; // FIXME never accumulate losses
 
   // TODO which one is right?
   //# scattered electon variables from ene and mom conservation

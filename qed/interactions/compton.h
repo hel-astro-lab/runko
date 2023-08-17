@@ -30,7 +30,7 @@ public:
     string t1, float_p ux1, float_p uy1, float_p uz1,
     string t2, float_p ux2, float_p uy2, float_p uz2) override;
 
-  float_p accumulate(string t1, float_p e1, string t2, float_p e2) override;
+  pair_float accumulate(string t1, float_p e1, string t2, float_p e2) override;
 
   void interact(
         string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
