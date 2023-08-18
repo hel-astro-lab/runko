@@ -65,6 +65,8 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       mass = container.m; // species mass
       nparts = container.size();
 
+      if(nparts <= 0) continue; // skip zero containers
+
       float_p* loc[3];
       for( i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
@@ -84,6 +86,11 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         x0 = static_cast<double>( loc[0][n] );
         y0 = static_cast<double>( loc[1][n] );
         z0 = static_cast<double>( loc[2][n] );
+
+        // capture NaNs
+        assert(!std::isnan(x0));
+        assert(!std::isnan(y0));
+        assert(!std::isnan(z0));
 
         // rel prtcl index; assuming dx = 1; tile coordinates
         // limit to 0 Nx-1 just in case to avoid crashes
