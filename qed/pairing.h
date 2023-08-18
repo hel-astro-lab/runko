@@ -303,15 +303,15 @@ public:
           }
         }
 
-        if(wsum2 > 1.0e6){
-          std::cout << "ERROR: wsum" << std::endl;
-          std::cout << " wsum:" << wsum << std::endl;
-          std::cout << " wsum2:" << wsum2 << std::endl;
-          std::cout << " jmin:" << jmin << std::endl;
-          std::cout << " jmax:" << jmax << std::endl;
-          //std::cout << " wsum_min:" << wsum_min << std::endl;
-          assert(false);
-        }
+        //if(wsum2 > 1.0e6){
+        //  std::cout << "ERROR: wsum" << std::endl;
+        //  std::cout << " wsum:" << wsum << std::endl;
+        //  std::cout << " wsum2:" << wsum2 << std::endl;
+        //  std::cout << " jmin:" << jmin << std::endl;
+        //  std::cout << " jmax:" << jmax << std::endl;
+        //  //std::cout << " wsum_min:" << wsum_min << std::endl;
+        //  assert(false);
+        //}
 
 
         //--------------------------------------------------
@@ -778,7 +778,9 @@ public:
         //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/faccs[i]; //*prob_norm;
         //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*std::max(wsums[i], static_cast<double>(w1))/faccs[i]; // FIXME max(w1, w2) version
         //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]*w1/faccs[i]; // FIXME additional w1 here
-        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]*w1; // FIXME facc is in wsums
+        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]*w1; // FIXME facc is in wsums
+        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*std::max(wsums[i], w1); // FIXME max(w1, w2) version
+        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]*w1; // FIXME 
                                                                                              
                                                                                              
         // NOTE: no w1 here. putting w1 gives different result from uni-weight sim. Hence, its wrong.
@@ -923,6 +925,9 @@ public:
             auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
             auto [t4, ux4, uy4, uz4, w4] = duplicate_prtcl(t2, ux2, uy2, uz2, w2);
 
+            // enhance incident energy losses if target is heavier
+            //iptr->wtar2wini = std::max(1.0f, wmax/wmin); // FIXME new
+
             // interact and udpate variables in-place
             iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4 );
 
@@ -982,19 +987,20 @@ public:
             // alternatively do not kill accumulated particles
             //prob_upd3 *= 1.0f/facc3;
 
-            if( w3*facc3 > 1.0e8f || w4*facc4 > 1.0e8f) {
-              std::cout << " ERR: pairing" << std::endl;
-              std::cout << " w3: " << w3 << std::endl;
-              std::cout << " w4: " << w4 << std::endl;
-              std::cout << " e3: " << e3 << std::endl;
-              std::cout << " e4: " << e4 << std::endl;
-              std::cout << " n3: " << n3 << std::endl;
-              std::cout << " n4: " << n4 << std::endl;
-              std::cout << " f3: " << facc3 << std::endl;
-              std::cout << " f4: " << facc4 << std::endl;
 
-              assert(false);
-            }
+            //if( w3*facc3 > 1.0e8f || w4*facc4 > 1.0e8f) {
+            //  std::cout << " ERR: pairing" << std::endl;
+            //  std::cout << " w3: " << w3 << std::endl;
+            //  std::cout << " w4: " << w4 << std::endl;
+            //  std::cout << " e3: " << e3 << std::endl;
+            //  std::cout << " e4: " << e4 << std::endl;
+            //  std::cout << " n3: " << n3 << std::endl;
+            //  std::cout << " n4: " << n4 << std::endl;
+            //  std::cout << " f3: " << facc3 << std::endl;
+            //  std::cout << " f4: " << facc4 << std::endl;
+
+            //  assert(false);
+            //}
 
 
 
@@ -1007,23 +1013,24 @@ public:
               // -------------scattering interactions go here----------------
               w3 = w1/n3; // redistribute weights among the new copies
 
-              if(facc3 > 1.0f) {
-                w3 *= facc3; // increase weight for accumulated interactions
-                //prob_kill3 = facc3*w1/w2;
-                //n3 *= 1.0f/facc3; // less incidents produced 
-                //n3 *= w2/(w1*facc3);
+              //if(facc3 > 1.0f) {
+              //  w3 *= facc3; // increase weight for accumulated interactions
+              //  //prob_kill3 = facc3*w1/w2;
+              //  //n3 *= 1.0f/facc3; // less incidents produced 
+              //  //n3 *= w2/(w1*facc3);
 
-                //n3 *= 1.0f/facc3; // FIXME why decrease numbers? to conserve energy, we should increase w
-                //prob_upd3 = 1.0f; // FIXME always update, why?
-              }
+              //  //n3 *= 1.0f/facc3; // FIXME why decrease numbers? to conserve energy, we should increase w
+              //  //prob_upd3 = 1.0f; // FIXME always update, why?
+              //}
 
               if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
                 w3 = 1.0f;
                 n3 = facc3*w1/w3; // remembering to increase prtcl num w/ facc
+                facc3 = 1.0f; // restore facc (since it is taken care of by n3)
               }
 
               // split too big LPs
-              if(w3 > 1.0e3f) {
+              if(w3 > 1.0e5f) {
                 w3 *= 0.5f;
                 n3 *= 2.0f;
               }
@@ -1040,13 +1047,13 @@ public:
                     cons[t1]->vel(0, n1) = ux3;
                     cons[t1]->vel(1, n1) = uy3;
                     cons[t1]->vel(2, n1) = uz3;
-                    cons[t1]->wgt(   n1) = w3;
+                    cons[t1]->wgt(   n1) = w3*facc3;
                   } else {
                     cons[t1]->wgt(n1) = w3;
                   }
                 } else {
                   if( rand() < prob_upd3 ) {
-                    cons[t1]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+                    cons[t1]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3*facc3); // new ene & w
                   } else {
                     cons[t1]->add_particle( {{lx1, ly1, lz1}}, {{ux1, uy1, uz1}}, w3); // new w
                   }
@@ -1128,19 +1135,18 @@ public:
 
               w4 = w2/n4; // redistribute weights among the new copies
 
-              if(facc4 > 1.0f) {
-                w4 *= facc4; // increase weight for accumulated interactions
-              }
+              //if(facc4 > 1.0f) {
+              //  w4 *= facc4; // increase weight for accumulated interactions
+              //}
 
               if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
                 w4 = 1.0f;
                 n4 = facc4*w2/w4; // remembering to increase prtcl num w/ facc
+                facc4 = 1.0f; // restore facc
               }
                 
               // split too big LPs
-              if(w4 > 1.0e3f) {
-                //n4 = w4/1.0e3;
-                //w4 = 1.0e3;
+              if(w4 > 1.0e5f) {
                 w4 *= 0.5f;
                 n4 *= 2.0f;
               }
@@ -1156,13 +1162,13 @@ public:
                     cons[t2]->vel(0, n2) = ux4;
                     cons[t2]->vel(1, n2) = uy4;
                     cons[t2]->vel(2, n2) = uz4;
-                    cons[t2]->wgt(   n2) = w4;
+                    cons[t2]->wgt(   n2) = w4*facc4;
                   } else {
                     cons[t2]->wgt(n2) = w4;
                   }
                 } else {
                   if( rand() < prob_upd4 ) {
-                    cons[t2]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                    cons[t2]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4*facc4); // new ene & w
                   } else {
                     cons[t2]->add_particle( {{lx2, ly2, lz2}}, {{ux2, uy2, uz2}}, w4); // new w
                   }
@@ -1580,10 +1586,17 @@ public:
       x = cons[t1]->get_prtcl_ene(n1);
 
       // Klein-Nishina cross section
-      //sKN = 0.75f*( 
-      //    ( (1.0f + x)/x*x*x)*( 2.0f*x*(1.0f + x)/(1.0f + 2.0f*x) - std::log(1.0f + 2.0f*x)) 
-      //      + std::log(1.0f + 2.0f*x)/(2.0f*x)  - (1.0f + 3.0f*x)/pow(1.0f + 2.0f*x, 2) );
-      sKN = 1.0f; // Thomson cross-section
+      if (x < 0.05f) { //Taylor expansion of KN
+        sKN = (1.0f-(x*(20.0f+x*(133.0f*x-52.0f)))*0.1f);
+      } else { // full cross section
+        sKN = 0.75f*( 
+          ( (1.0f + x)/(x*x*x))*( 2.0f*x*(1.0f + x)/(1.0f + 2.0f*x) - std::log(1.0f + 2.0f*x)) 
+            + std::log(1.0f + 2.0f*x)/(2.0f*x)  - (1.0f + 3.0f*x)/pow(1.0f + 2.0f*x, 2) );
+      }
+
+
+
+      //sKN = 1.0f; // Thomson cross-section
                   //
       // TODO sometimes gives sKN < 0.0 values
 
@@ -1595,8 +1608,8 @@ public:
 
       //(c/R)*dt = dt/t_c
       //P_esc = dt_per_tc/( 0.75f + 0.188f*tauT*f*sKN ); // sphere
-      float_p t_esc = ( 1.0f + tauT*f*sKN ); // slab
-      //float_p t_esc = ( 1.0f + tauT*f*sKN + (1.0f-f)*2.886f ); // slab w/ asymptic scaling to 5/sqrt(3)
+      //float_p t_esc = ( 1.0f + tauT*f*sKN ); // slab
+      float_p t_esc = ( 1.0f + tauT*f*sKN + (1.0f-f)*2.886f ); // slab w/ asymptic scaling to 5/sqrt(3)
                                                                // this mimics pair-production opacity
                                                                // asymptotic solution to slab geometry
                                                                // with rad. transf. when tau -> infty
@@ -1614,16 +1627,29 @@ public:
 
       //std::cout << "esc:" << 1.0f/tc_per_dt/t_esc << " " << t_esc << " " << tc_per_dt << std::endl;
 
-      if( w > 1.0e15 or x > 1.0e4) {
-        std::cout << "ERR: leak ph" << std::endl;
+      if(sKN > 1.0f || sKN < 0.0f){
+        std::cout << "ERR: leak ph KN" << std::endl;
         std::cout << "  x:" << x << std::endl;
-        std::cout << "  w:" << w << std::endl;
-        std::cout << "  f:" << f << std::endl;
-        std::cout << "  t_esc:" << t_esc << std::endl;
-        std::cout << "  sKN   :" << sKN << std::endl;
-        std::cout << "  1/tc_per_dt :" << 1.0f/tc_per_dt << std::endl;
-        assert(false);
+        std::cout << "SKN:" << sKN << std::endl;
+        std::cout<< 1.3333333f*(1.0f-(x*(20.0f+x*(133.0f*x-52.0f)))*0.1f) << std::endl;
+
+        sKN = 0.75f*( 
+          ( (1.0f + x)/x*x*x)*( 2.0f*x*(1.0f + x)/(1.0f + 2.0f*x) - std::log(1.0f + 2.0f*x)) 
+            + std::log(1.0f + 2.0f*x)/(2.0f*x)  - (1.0f + 3.0f*x)/pow(1.0f + 2.0f*x, 2) );
+        std::cout << "KN:" << sKN << std::endl;
       }
+
+
+      //if( w > 1.0e15 or x > 1.0e4) {
+      //  std::cout << "ERR: leak ph" << std::endl;
+      //  std::cout << "  x:" << x << std::endl;
+      //  std::cout << "  w:" << w << std::endl;
+      //  std::cout << "  f:" << f << std::endl;
+      //  std::cout << "  t_esc:" << t_esc << std::endl;
+      //  std::cout << "  sKN   :" << sKN << std::endl;
+      //  std::cout << "  1/tc_per_dt :" << 1.0f/tc_per_dt << std::endl;
+      //  assert(false);
+      //}
 
 
       if( 1.0f/tc_per_dt/t_esc > rand() ) {

@@ -83,9 +83,9 @@ tuple<float_p, float_p> Compton::accumulate(
     string t1, float_p e1, string t2, float_p e2)
 {
   // accumulation factor; forces electron energy changes to be ~0.1
-  float_p f = std::max(1.0f, 0.001f/(e1*e2));
+  float_p f = std::max(1.0f, 0.01f/(e1*e2));
 
-  f = std::min(1.0e2f, f); // cap f 
+  f = std::min(1.0e3f, f); // cap f 
 
   float_p f1 = t1 == "ph" ? f : 1.0f;
   float_p f2 = t2 == "ph" ? f : 1.0f;
@@ -220,13 +220,33 @@ void Compton::interact(
   auto [facc1, facc2] = accumulate(t1, gam0, t2, x0);
   facc1 = do_accumulate ? facc1 : 1.0f;
   facc2 = do_accumulate ? facc2 : 1.0f;
-  float_p facc = t1 == "ph" ? facc1 : facc2; // pick photon as the accumulated quantity
+  float_p facc_in = t1 == "ph" ? facc1 : facc2; // pick photon as the accumulated quantity
   //facc = 1.0f; // FIXME never accumulate losses
+
+  // every energy transcation is is enhanced by this factor
+  //facc *= wtar2wini;
+
+  // limit change to 0.1\gamma_0
+  //facc = std::min(facc, (0.3f*gam0 - x0)/x1);
+  //x1 *= facc;
+
+  // limit facc so that gam1 is > 1
+  // gam1 = gam0 + x0 - facc*x1; 
+  // 1 > gam0 + x0 - facc*x1
+  // 1 -gam0 - x0 > - facc*x1
+  // gam0 + x0 - 1> facc*x1
+  // (gam0 + x0 - 1)/x1 > facc
+  float_p facc_max = (gam0 + x0 - (1.0f + 1e-4f) )/x1;
+  float_p facc = std::min(facc_in, facc_max );
+
+  //minimum limit
+  facc = std::max(1.0f, facc); 
 
   // TODO which one is right?
   //# scattered electon variables from ene and mom conservation
   //float_p gam1 = gam0 + facc*(x0 - x1); // ver1
   float_p gam1 = gam0 + x0 - facc*x1; // ver2
+  //float_p gam1 = gam0 + x0 - x1; // ver3// facc in x1
 
   //gam1 = gam0 + facc*(x0 - x1) 
   //     = gam0 + facc*x0 - facc*x1 
@@ -238,8 +258,10 @@ void Compton::interact(
 
 
   //Vec3<float_p> beta1 = (gam0*beta0 + x0*om0 - x1*om1)/gam1;
-  Vec3<float_p> beta1(0.0, 0.0, 0.0);
-  for(size_t i=0; i<3; i++) beta1(i) = (gam0*beta0(i) + (x0*om0(i) - facc*x1*om1(i)) )/gam1;
+  Vec3<float_p> beta1(0.0f, 0.0f, 0.0f);
+  for(size_t i=0; i<3; i++) beta1(i) = (gam0*beta0(i) + (x0*om0(i) - facc*x1*om1(i)) )/gam1; // FIXME
+  //for(size_t i=0; i<3; i++) beta1(i) = (gam0*beta0(i) + (x0*om0(i) - x1*om1(i)) )/gam1;
+
 
   if( (t1 == "e-" || t1 == "e+") && (t2 == "ph") ) {
 
@@ -275,7 +297,9 @@ void Compton::interact(
   // test energy conservation
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed
-  if(true && !(do_accumulate) ){
+  //if(true && !(do_accumulate) ){
+  //if(true){
+  if(false){
 
     float_p enec = gam1 + x1 - (x0 + gam0);
 
@@ -312,6 +336,10 @@ void Compton::interact(
       std::cout << "x,x1,enec " <<  x1    << " " <<  gam1    << " " <<  enec << std::endl;
       std::cout << "momc      " <<  moms  << " " <<  momc  << std::endl;
       std::cout << "|om0||om1|" <<  nom0  << " " <<  nom1  << std::endl;
+      std::cout << "facc      " <<  facc  << " de" <<  x0-x1  << std::endl;
+      std::cout << "facc lim  " <<  (0.5f*gam0 -x0)/x1  << std::endl;
+      std::cout << "facc max  " <<  facc_max  << std::endl;
+      std::cout << "facc in  "  <<  facc_in  << std::endl;
     }
   }
 

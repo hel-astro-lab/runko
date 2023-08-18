@@ -32,6 +32,9 @@ public:
   // use accumulation technique (calls accumulate() function to get facc
   bool do_accumulate = false;
 
+  // enhance energy transfer by this factor 
+  float_p wtar2wini = 1.0f;
+
   // constructor with incident/target types
   Interaction(string t1, string t2) :
     t1(t1),
