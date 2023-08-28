@@ -451,7 +451,7 @@ public:
     }
       
     // photon emphasis
-    //if(       t == "ph") { return std::pow(x/0.01f, 0.5f); 
+    //if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
     //} else if(t == "e-") { return 1.0; 
     //} else if(t == "e+") { return 1.0; 
     //}
@@ -715,6 +715,7 @@ public:
     float_p m3, m4;
 
     float_p wmin, wmax, prob;
+    float_p prob_upd3, prob_upd4, prob_kill3, prob_kill4;
 
     //--------------------------------------------------
     // loop over incident types
@@ -780,7 +781,9 @@ public:
         //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]*w1/faccs[i]; // FIXME additional w1 here
         //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]*w1; // FIXME facc is in wsums
         //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*std::max(wsums[i], w1); // FIXME max(w1, w2) version
-        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]*w1; // FIXME 
+
+        // total probability
+        for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]; 
                                                                                              
                                                                                              
         // NOTE: no w1 here. putting w1 gives different result from uni-weight sim. Hence, its wrong.
@@ -794,7 +797,7 @@ public:
         //}
 
         // exponential waiting time between interactions
-        double t_free = -log( rand() )*prob_norm/prob_vir_max; ///w1; // FIXME added /w1
+        double t_free = -log( rand() )*prob_norm/(prob_vir_max*w1); ///w1; // FIXME added /w1
 
 
         //if( t_free > 1.0) {
@@ -949,26 +952,110 @@ public:
             float_p n3 = std::min( fw3, 32.0f );
             float_p n4 = std::min( fw4, 32.0f );
 
-            //# NOTE these two expressions are equal: w_i = w_j/wmax == wmin/w_i
-            //# this is where the algorithm differs from original LP MC method by Stern95;
-            //# here, instead of killing the LP we do not update its energy.
 
-            // we can think here that only wmin = min(w1, w2) fraction of the LPs weight is 
-            // used in the interaction. If everything is used then (i.e., wmin=w1 for LP1 
-            // or wmin=w2 for LP2)) then prob_upd = 1
+            // FIXME using new weights to take into account change of prtcl numbers
+            //wmin = min(w3, w4); // minimum available weight
+            //wmax = max(w3, w4); // maximum available weight
 
-            // NOTE: update probability is reduced as if particle weights are w -> w*f_acc
 
-            wmin = min(w1, w2);
-            wmax = max(w1, w2);
+            //--------------------------------------------------
+            if(t1 == t3 && t2 == t4) { // scattering interactions
 
-            // probability for the particle energy to be updated
-            float_p prob_upd3 = wmin/w1; //w2/wmax;
-            float_p prob_upd4 = wmin/w2; //w1/wmax;
+              // redistribute weights among the new copies
+              w3 = w1/n3; 
+              w4 = w2/n4; 
+                
+              wmin = min(w3, w4); // minimum available weight
+              //wmax = max(w3, w4); // maximum available weight
 
-            // probability for the particle to die
-            float_p prob_kill3 = INF;
-            float_p prob_kill4 = INF;
+              //# NOTE these two expressions are equal: w_i = w_j/wmax == wmin/w_i
+              //# this is where the algorithm differs from original LP MC method by Stern95;
+              //# here, instead of killing the LP we do not update its energy.
+
+              // we can think here that only wmin = min(w1, w2) fraction of the LPs weight is 
+              // used in the interaction. If everything is used then (i.e., wmin=w1 for LP1 
+              // or wmin=w2 for LP2)) then prob_upd = 1
+
+              // NOTE: update probability is later reduced as if particle weights are w -> w*f_acc 
+              //       when accumulation is used
+
+              // probability for the particle energy to be updated 
+              // NOTE every new particle has a change of prob_upd of being updated so this rejection sample 
+              // needs to be calculated using the new weights; then multiple evaluations of the rejection sampling
+              // equals the prob_upd calculated with parent weights. Alternatively, we could check prob_upd
+              // once and add all the copies thereafter; this however leads to more MC sampling noise.
+              prob_upd3 = wmin/w3; //w2/wmax;
+              prob_upd4 = wmin/w4; //w1/wmax;
+
+              // check against wrong usage of these
+              prob_kill3 = -1.0f;
+              prob_kill4 = -1.0f;
+            } else { // annihilation interactions
+
+              // weight of the new type is the minimum of the two incident particles
+              wmin = min(w1, w2); // minimum available weight
+              w3 = wmin/n3; 
+              w4 = wmin/n4; 
+
+              // probability to kill the parent (since not all of it may not be used)
+              prob_kill3 = wmin/w1;
+              prob_kill4 = wmin/w2;
+                
+              // check against wrong usage of these
+              prob_upd3 = -1.0f;
+              prob_upd4 = -1.0f;
+            }
+
+
+            //--------------------------------------------------
+            // branch for rescaling electron-positron plasma to have unitary weights
+
+            // t1
+            if(t1 == t3 && t2 == t4) { // scattering interactions
+
+              // t3
+              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){ 
+                w3 = 1.0f;
+                n3 = facc3*w1/w3; // remembering to increase prtcl num w/ facc
+                facc3 = 1.0f; // restore facc (since it is taken care of by n3)
+              }
+                
+              //4
+              if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
+                w4 = 1.0f;
+                n4 = facc4*w2/w4; // remembering to increase prtcl num w/ facc
+                facc4 = 1.0f; // restore facc
+              }
+
+            } else { // annihilation interactions
+                       
+              // t3
+              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
+                w3 = 1.0;
+                n3 = wmin/w3;
+              }
+
+              // t4
+              if(force_ep_uni_w && ( t4 == "e-" || t4 == "e+") ){
+                w4 = 1.0;
+                n4 = wmin/w4;
+              }
+            }
+
+
+            //--------------------------------------------------
+            // split too big LPs
+            //if(w3 > 1.0e5f) {
+            //  w3 *= 0.5f;
+            //  n3 *= 2.0f;
+            //}
+
+            //if(w4 > 1.0e5f) {
+            //  w4 *= 0.5f;
+            //  n4 *= 2.0f;
+            //}
+            //--------------------------------------------------
+
 
             //--------------------------------------------------
             // accumulation means that we treat the particles weight as w -> w*f_cc
@@ -978,14 +1065,6 @@ public:
             //
             // NOTE: this increases the weight of the new LP3 automatically, i.e., we do not need 
             // to multiply w -> w*f_acc anymore.
-
-            // TODO
-            //n3 *= 1.0/facc3; // FIXME
-            //n4 *= 1.0/facc4;
-            //prob_upd3 *= facc3;
-
-            // alternatively do not kill accumulated particles
-            //prob_upd3 *= 1.0f/facc3;
 
 
             //if( w3*facc3 > 1.0e8f || w4*facc4 > 1.0e8f) {
@@ -1002,40 +1081,39 @@ public:
             //  assert(false);
             //}
 
+            //std::cout << " ERR: pairing" << std::endl;
+            //std::cout << " ts: " << t1 << " " << t2 << " " << t3 << " " << t4 << std::endl;
+            //std::cout << " w4: " << w4 << std::endl;
+            //std::cout << " e3: " << e3 << std::endl;
+            //std::cout << " e4: " << e4 << std::endl;
+            //std::cout << " w3: " << w3 << std::endl;
+            //std::cout << " w4: " << w4 << std::endl;
+            //std::cout << " e3: " << e3 << std::endl;
+            //std::cout << " e4: " << e4 << std::endl;
+            //std::cout << " n3: " << n3 << std::endl;
+            //std::cout << " n4: " << n4 << std::endl;
+            //std::cout << " f3: " << facc3 << std::endl;
+            //std::cout << " f4: " << facc4 << std::endl;
+            //std::cout << " prob3:  " << prob_upd3 << std::endl;
+            //std::cout << " prob4:  " << prob_upd4 << std::endl;
+            //std::cout << " prob_k3:" << prob_kill3 << std::endl;
+            //std::cout << " prob_k4:" << prob_kill4 << std::endl;
 
 
             //-------------------------------------------------- 
             int n_added = 0; //ncop = 0;
             double ncop = 0.0;
 
-            if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
+            //if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
+            if(t1 == t3 && t2 == t4) { // scattering interactions
                              
               // -------------scattering interactions go here----------------
-              w3 = w1/n3; // redistribute weights among the new copies
+                
+              // guard against wrong branching; just a double check, can be removed
+              assert(prob_upd3 >= 0.0f);
+              assert(prob_upd4 >= 0.0f);
 
-              //if(facc3 > 1.0f) {
-              //  w3 *= facc3; // increase weight for accumulated interactions
-              //  //prob_kill3 = facc3*w1/w2;
-              //  //n3 *= 1.0f/facc3; // less incidents produced 
-              //  //n3 *= w2/(w1*facc3);
 
-              //  //n3 *= 1.0f/facc3; // FIXME why decrease numbers? to conserve energy, we should increase w
-              //  //prob_upd3 = 1.0f; // FIXME always update, why?
-              //}
-
-              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
-                w3 = 1.0f;
-                n3 = facc3*w1/w3; // remembering to increase prtcl num w/ facc
-                facc3 = 1.0f; // restore facc (since it is taken care of by n3)
-              }
-
-              // split too big LPs
-              if(w3 > 1.0e5f) {
-                w3 *= 0.5f;
-                n3 *= 2.0f;
-              }
-
-            
               double z1 = rand();
               while(n3 > z1 + ncop) {
 
@@ -1088,26 +1166,14 @@ public:
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
 
-              // FIXME remove?
-              //if( rand() < 1.0f/prob_kill3) {
-              //  cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
-              //  cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
-              //}
-              //if( ncop > 0 ) {
-              //  float_p n5 = facc3*w1/w2;
-              //}
-
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
 
               // annihilation interactions go here
-
-              w3 = wmin/n3;
-
-              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
-                w3 = 1.0;
-                n3 = wmin/w3;
-              }
+                
+              // guard against wrong branching; just a double check, can be removed
+              assert(prob_kill3 >= 0.0f);
+              assert(prob_kill4 >= 0.0f);
 
               double z1 = rand();
               while( n3 > z1 + ncop ){
@@ -1116,7 +1182,7 @@ public:
               }
 
               // kill parent
-              if( prob_upd3 > rand() ) {
+              if( prob_kill3 > rand() ) {
                 cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
@@ -1129,27 +1195,10 @@ public:
             n_added = 0; 
             ncop = 0.0;
 
-            if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
+            //if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
+            if(t1 == t3 && t2 == t4) { // scattering interactions
 
               // scattering interactions go here
-
-              w4 = w2/n4; // redistribute weights among the new copies
-
-              //if(facc4 > 1.0f) {
-              //  w4 *= facc4; // increase weight for accumulated interactions
-              //}
-
-              if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
-                w4 = 1.0f;
-                n4 = facc4*w2/w4; // remembering to increase prtcl num w/ facc
-                facc4 = 1.0f; // restore facc
-              }
-                
-              // split too big LPs
-              if(w4 > 1.0e5f) {
-                w4 *= 0.5f;
-                n4 *= 2.0f;
-              }
 
               double z1 = rand();
               while(n4 > z1 + ncop) {
@@ -1187,14 +1236,7 @@ public:
             } else { //# different before/after type; kill parent with a prob_upd
                        
               // annihilation interactions go here
-
-              w4 = wmin/n4;
-
-              if( force_ep_uni_w && ( t4 == "e-" || t4 == "e+") ){
-                w4 = 1.0;
-                n4 = wmin/w4;
-              }
-            
+                
               double z1 = rand();
               while( n4 > z1 + ncop ){
                 cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
@@ -1202,7 +1244,7 @@ public:
               }
 
               // kill parent
-              if( prob_upd4 > rand() ) {
+              if( prob_kill4 > rand() ) {
                 cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
