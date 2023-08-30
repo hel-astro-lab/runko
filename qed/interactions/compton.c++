@@ -25,6 +25,18 @@ namespace qed {
 tuple<float_p, float_p> Compton::get_minmax_ene( string t1, string t2, double ene)
 {
   return {0.0, INF};
+
+
+  // TODO brainstorming here below; routine does not seem possible
+  // skip everything under minimum energy (depending on type)
+  //if( (t1 == "e-" || t1 == "e+") && ene < minz ) return {INF, INF};
+  //if( (t1 == "ph"              ) && ene < minx ) return {INF, INF};
+  //// check also target and make it mininum limit
+  //if(t2 == "e-" || t2 == "e+") return {minz, INF}; // pair
+  //if(t2 == "ph")               return {minx, INF}; // photon
+
+  //// never get here
+  //assert(false); 
 }
 
 Compton::pair_float Compton::comp_cross_section(
@@ -82,6 +94,10 @@ Compton::pair_float Compton::comp_cross_section(
 tuple<float_p, float_p> Compton::accumulate(
     string t1, float_p e1, string t2, float_p e2)
 {
+  if( (t1 == "e-" || t1 == "e+") && e1 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
+  if( (t2 == "e-" || t2 == "e+") && e2 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
+
+
   // accumulation factor; forces electron energy changes to be ~0.1
   float_p f = std::max(1.0f, 0.01f/(e1*e2));
 
@@ -118,6 +134,14 @@ void Compton::interact(
   float_p gam0 = sqrt(1.0f + dot(zv,zv));  // prtcl gamma
   Vec3<float_p> beta0 = zv/gam0;          // prtcl 3-velocity \beta
   Vec3<float_p> bdir = beta0/norm(beta0); // electron direction vector
+
+
+  //#--------------------------------------------------
+  // check for Thomson regime
+  //float_p gam_min = sqrt(1.0f + minz*minz); // min limit from class member
+  bool flag_thomson = false;
+  if( gam0 < ming && gam0*x0 < minx2z ) flag_thomson = true;
+
 
   //#--------------------------------------------------
   // boost to electron mom frame
@@ -298,8 +322,8 @@ void Compton::interact(
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed
   //if(true && !(do_accumulate) ){
-  //if(true){
-  if(false){
+  //if(false){
+  if(true){
 
     float_p enec = gam1 + x1 - (x0 + gam0);
 
@@ -308,7 +332,7 @@ void Compton::interact(
     float_p moms = sum(momc);
 
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
-    for(size_t i = 0; i < 4; i++) ts[i] = false;
+    for(size_t i = 0; i < 5; i++) ts[i] = false;
 
     float_p tol = 3.0e-5;
 
@@ -319,21 +343,22 @@ void Compton::interact(
     if(abs(sum(momc)) > tol) ts[1] = true;
     if(gam0 < 1.0)           ts[2] = true;
     if(gam1 < 1.0)           ts[3] = true;
-
+    //if(flag_thomson)         ts[4] = true; // debug Thomson regime
 
 
     if(ts[0] ||
        ts[1] ||
        ts[2] ||
-       ts[3] ) { 
+       ts[3] ||
+       ts[4] ) { 
 
       std::cout << "ERROR COMPTON:" << std::endl;
-      for(size_t i = 0; i < 2; i++) { std::cout << i << " " << ts[i] << std::endl; }
+      for(size_t i = 0; i < 5; i++) { std::cout << i << " " << ts[i] << std::endl; }
 
       std::cout << "x0v, x1v  " <<  xv    << " " <<  k1   << std::endl;
       std::cout << "g0, g1    " <<  gam0  << " " <<  gam1  << std::endl;
       //std::cout << "mu,s0,s,q " <<  mu_R  << " " <<  s0    << " " <<  s << " " << q  << std::endl;
-      std::cout << "x,x1,enec " <<  x1    << " " <<  gam1    << " " <<  enec << std::endl;
+      std::cout << "x,x1,enec " <<  x0    << " " <<  x1    << " " <<  enec << std::endl;
       std::cout << "momc      " <<  moms  << " " <<  momc  << std::endl;
       std::cout << "|om0||om1|" <<  nom0  << " " <<  nom1  << std::endl;
       std::cout << "facc      " <<  facc  << " de" <<  x0-x1  << std::endl;

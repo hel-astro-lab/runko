@@ -24,6 +24,9 @@ public:
   bool no_electron_update = false; // do not update electrons
   bool no_photon_update   = false; // do not update photons
 
+  double ming = 1.1;      // minimumjj electron energy to classify it "non-relativistic"
+  double minx2z = 1.0e-2; // minimum ph energy needs to be > minx2z*gam 
+
   tuple<float_p, float_p> get_minmax_ene( string t1, string t2, double ene) override;
 
   pair_float comp_cross_section(
