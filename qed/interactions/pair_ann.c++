@@ -35,28 +35,31 @@ PairAnn::pair_float PairAnn::comp_cross_section(
 
   float_p zp = norm(ux1, uy1, uz1); // z_+
   float_p zm = norm(ux2, uy2, uz2); // z_-
-  float_p gamp = sqrt(zp*zp + 1.0); // \gamma_+
-  float_p gamm = sqrt(zm*zm + 1.0); // \gamma_-
+  float_p gamp = sqrt(zp*zp + 1.0f); // \gamma_+
+  float_p gamm = sqrt(zm*zm + 1.0f); // \gamma_-
 
   float_p zeta = ( ux1*ux2 + uy1*uy2 + uz1*uz2 )/( zm*zp ); //#angle between pair's momentum
   
   //qe = max(1+EPS, gamp*gamm - zp*zm*zeta) 
   float_p qe =  gamp*gamm - zp*zm*zeta; //# product of 4-moms; q_e = z_- . z_+; = 2gamma_cm^2 - 1 = gamma_r
-  float_p q = qe + 1.0;          //# q_e = q + 1
-  float_p bcm = sqrt( (q-2.0)/q ); //# \beta_cm; matches beta' in Coppi & Blandford
-  //float_p gcm = 1.0/sqrt(1.0 - bcm*bcm); //# gamma_cm
+  float_p q = qe + 1.0f;          //# q_e = q + 1
+  float_p bcm = sqrt( (q - 2.0f)/q ); //# \beta_cm; matches beta' in Coppi & Blandford
+  float_p gcm = 1.0f/sqrt(1.0f - bcm*bcm); //# gamma_cm
 
   //# expression via relativistic invariant x = sqrt( p_- . p_+ )
   float_p x = bcm;                  //# free variable
-  float_p s0 = (0.25*(1.0/x*x)*(1.0-x*x))*( (3.0-x*x*x*x)*log((1.0+x)/(1.0-x)) + 2.0*x*(x*x - 2.0)); //# ver2
-  s0 *= 3.0/8.0; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
+  //float_p s0 = (0.25f*(1.0f/x/x)*(1.0f-x*x))*( (3.0f-x*x*x*x)*log((1.0f+x)/(1.0f-x)) + 2.0f*x*(x*x - 2.0f)); //# ver2
+  //s0 *= 3.0f/8.0f; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
 
   //s0 *= 2.0; // FIXME ????
 
-  //# ver2; matches above
-  //#s0 = 1/(4*bcm*gcm**2)*( (1/bcm)*(2 + 2/gcm**2 - 1/gcm**4)*np.log( (1+bcm)/(1-bcm) ) - 2 - 2/gcm**2)
-  //#s0 *= 3.0/8.0 # normalization to rates; mathches with Coppi & Blandford eq 3.1
-    
+  //# ver2; Svensson 1992
+  float_p s0 = (0.25f/(bcm*gcm*gcm))*( (1.0f/bcm)*(2.0f + 2.0f/gcm/gcm - 1.0f/pow(gcm,4))*log( (1.0f+bcm)/(1.0f-bcm) ) - 2.0f - 2.0f/gcm/gcm);
+  s0 *= 3.0f/8.0f; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
+     
+  //std::cout << " PAIR-ANN:" << s0 << " " << s1 << std::endl;
+
+  //TODO why Riger notes show gamma-gamma peak at 3/8 sigT???
 
   //#--------------------------------------------------
   //# relative velocity calculation

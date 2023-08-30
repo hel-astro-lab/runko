@@ -17,9 +17,7 @@ public:
     Interaction(t1, t2)
   {
     name = "pair-ann";
-    cross_section = 0.128; // 0.341;  //0.68; //0.75; // 2*(3/8)*sigma_T
-                               // FIXME 2x or 1/2 or 1?
-                            // 0.12782 measured
+    cross_section = 0.256; // 0.206 measured
   }
 
   tuple<float_p, float_p> get_minmax_ene( string t1, string t2, double ene) override;
