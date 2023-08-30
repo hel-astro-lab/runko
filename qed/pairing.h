@@ -445,16 +445,16 @@ public:
   {
 
     // standard unit weights
-    if(       t == "ph") { return 1.0; 
-    } else if(t == "e-") { return 1.0; 
-    } else if(t == "e+") { return 1.0; 
-    }
-      
-    // photon emphasis
-    //if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
+    //if(       t == "ph") { return 1.0; 
     //} else if(t == "e-") { return 1.0; 
     //} else if(t == "e+") { return 1.0; 
     //}
+      
+    // photon emphasis
+    if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
+    } else if(t == "e-") { return 1.0; 
+    } else if(t == "e+") { return 1.0; 
+    }
       
     // FIXME not useful
     //if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
@@ -869,7 +869,7 @@ public:
 
           // collect max cross section
           float_p cm_cur = info_max_int_cs[iptr->name];
-          info_max_int_cs[iptr->name] = std::max( cm_cur, cm);
+          info_max_int_cs[iptr->name] = std::max( cm_cur, cm*vrel/2.0f);
 
           // FIXME which max should this prob be compared against?  I think ver3 or 4
 
@@ -992,7 +992,10 @@ public:
               prob_kill4 = -1.0f;
             } else { // annihilation interactions
 
+              // TODO text and calc wmin from w3 and w4?
+
               // weight of the new type is the minimum of the two incident particles
+              // share mutual weight between outgoing prtcls
               wmin = min(w1, w2); // minimum available weight
               w3 = wmin/n3; 
               w4 = wmin/n4; 
@@ -1018,6 +1021,7 @@ public:
                 w3 = 1.0f;
                 n3 = facc3*w1/w3; // remembering to increase prtcl num w/ facc
                 facc3 = 1.0f; // restore facc (since it is taken care of by n3)
+
               }
                 
               //4
@@ -1025,7 +1029,14 @@ public:
                 w4 = 1.0f;
                 n4 = facc4*w2/w4; // remembering to increase prtcl num w/ facc
                 facc4 = 1.0f; // restore facc
+
               }
+
+              // remember to recalc prob_upd
+              wmin = min(w3, w4); // minimum available weight
+              prob_upd3 = wmin/w3; // FIXME
+              prob_upd4 = wmin/w4; // FIXME
+
 
             } else { // annihilation interactions
                        
@@ -1174,6 +1185,9 @@ public:
               // guard against wrong branching; just a double check, can be removed
               assert(prob_kill3 >= 0.0f);
               assert(prob_kill4 >= 0.0f);
+
+              // TODO are these independent or same draw for prob_kill3
+              // i.e., kill parent and create copies or let parent live and no copies?
 
               double z1 = rand();
               while( n3 > z1 + ncop ){
@@ -1601,8 +1615,8 @@ public:
     }
     //--------------------------------------------------
     // TODO which one?
-    float_p tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
-    float_p tauT2 = wsum_ep*w2tau_units; // \tau_T = \sigma_T wsum
+    //float_p tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
+    float_p tauT = wsum_ep*w2tau_units; // \tau_T = \sigma_T wsum
 
     tau_measured = tauT; // store for book keeping
 
@@ -1636,10 +1650,7 @@ public:
             + std::log(1.0f + 2.0f*x)/(2.0f*x)  - (1.0f + 3.0f*x)/pow(1.0f + 2.0f*x, 2) );
       }
 
-
-
       //sKN = 1.0f; // Thomson cross-section
-                  //
       // TODO sometimes gives sKN < 0.0 values
 
       // empirical escape probability function to account for forward scattering pile-up
@@ -1650,11 +1661,14 @@ public:
 
       //(c/R)*dt = dt/t_c
       //P_esc = dt_per_tc/( 0.75f + 0.188f*tauT*f*sKN ); // sphere
-      //float_p t_esc = ( 1.0f + tauT*f*sKN ); // slab
-      float_p t_esc = ( 1.0f + tauT*f*sKN + (1.0f-f)*2.886f ); // slab w/ asymptic scaling to 5/sqrt(3)
+      float_p t_esc = ( 1.0f + tauT*f*sKN ); // slab
+      //float_p t_esc = ( 1.0f + tauT*f*sKN + (1.0f-f)*2.886f ); // slab w/ asymptic scaling to 5/sqrt(3)
                                                                // this mimics pair-production opacity
                                                                // asymptotic solution to slab geometry
                                                                // with rad. transf. when tau -> infty
+                                                                 
+      // NOTE smaller t_esc means the more likely it is to escape
+      //t_esc *= w; // FIXME
 
 
       //P_esc = t_esc/dt_per_tc; // P = R/c / dt for tau -> 0 
