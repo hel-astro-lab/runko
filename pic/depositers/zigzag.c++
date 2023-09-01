@@ -29,8 +29,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();
-  yee.rho.clear();
-
 
   for(auto&& con: tile.containers) {
 
@@ -38,7 +36,8 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     const double q = con.q; // charge
 
     // skip particle species if zero charge
-    if (q == 0.0); continue;
+    if (q == 0.0) continue;
+    
 
     // no vectorization here since we dont use the general iterator
     //for(size_t n=0; n<con.size(); n++) {

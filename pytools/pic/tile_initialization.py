@@ -62,8 +62,6 @@ def initialize_tile(tile, indx, n, conf):
             container.q = -conf.qp
             container.m = np.abs(conf.mp)
 
-        #print('container charge/mass', container.q, container.m)
-
         # reserve memory for particles
         Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc
         container.reserve(Nprtcls)

@@ -46,7 +46,6 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();
-  yee.rho.clear();
 
   const auto Nx = yee.Nx;
   const auto Ny = yee.Ny;
@@ -97,7 +96,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
     const double q = con.q; // charge
 
     // skip particle species if zero charge
-    if (q == 0.0); continue;
+    if (q == 0.0) continue;
 
     // loop over batches of particles; each batch holds vec_size x particles
     // that are processed simultaneously.

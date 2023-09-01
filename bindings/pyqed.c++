@@ -174,6 +174,8 @@ void bind_qed(py::module& m_sub)
   py::class_<qed::Compton>(m_sub, "Compton", qedinter)
     .def_readwrite("no_electron_update", &qed::Compton::no_electron_update)
     .def_readwrite("no_photon_update",   &qed::Compton::no_photon_update)
+    .def_readwrite("ming",               &qed::Compton::ming)
+    .def_readwrite("minx2z",             &qed::Compton::minx2z)
     .def(py::init<string, string>());
 
 
