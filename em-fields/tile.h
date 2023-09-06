@@ -174,7 +174,8 @@ class Tile :
   /// Set current time snapshot of Yee lattice
   virtual void set_yee(YeeLattice& v){ this->yee = v; }
 
-  virtual std::shared_ptr<YeeLattice> get_yeeptr(){ return std::shared_ptr<YeeLattice>(&yee); }
+  // not needed anymore; also undefined behavior since this can be deleted
+  //virtual std::shared_ptr<YeeLattice> get_yeeptr(){ return std::shared_ptr<YeeLattice>(&yee); }
 
   //FIXME: naming is wrong because of pybind: it can not deduce correct function
   //       with only constness difference.
