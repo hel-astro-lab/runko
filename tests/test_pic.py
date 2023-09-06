@@ -35,9 +35,9 @@ def density_profile(xloc, ispcs, conf):
 def filler_no_velocity(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
-    #zz = xloc[2] + np.random.rand(1)
+    xx = xloc[0] + np.random.rand()
+    yy = xloc[1] + np.random.rand()
+    #zz = xloc[2] + np.random.rand()
     zz = 0.0
 
     x0 = [xx, yy, zz]
@@ -46,9 +46,9 @@ def filler_no_velocity(xloc, ispcs, conf):
 
 def filler_no_velocity_3d(xloc, ispcs, conf):
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
-    zz = xloc[2] + np.random.rand(1)
+    xx = xloc[0] + np.random.rand()
+    yy = xloc[1] + np.random.rand()
+    zz = xloc[2] + np.random.rand()
 
     x0 = [xx, yy, zz]
     u0 = [0.0, 0.0, 0.0]
@@ -57,15 +57,15 @@ def filler_no_velocity_3d(xloc, ispcs, conf):
 
 # random number between [xmin, xmax]
 def randab(xmin, xmax):
-    return xmin + (xmax-xmin)*np.random.rand(1)
+    return xmin + (xmax-xmin)*np.random.rand()
 
 
 def filler(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
-    #zz = xloc[2] + np.random.rand(1)
+    xx = xloc[0] + np.random.rand()
+    yy = xloc[1] + np.random.rand()
+    #zz = xloc[2] + np.random.rand()
     zz = 0.5
 
     ur = conf.vel
@@ -92,9 +92,9 @@ def filler(xloc, ispcs, conf):
 def filler3D(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
-    zz = xloc[2] + np.random.rand(1)
+    xx = xloc[0] + np.random.rand()
+    yy = xloc[1] + np.random.rand()
+    zz = xloc[2] + np.random.rand()
 
     ur = conf.vel
     uc = randab(0.0, 2.0*np.pi) 
@@ -113,9 +113,9 @@ def filler3D(xloc, ispcs, conf):
 def filler_xvel(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
-    #zz = xloc[2] + np.random.rand(1)
+    xx = xloc[0] + np.random.rand()
+    yy = xloc[1] + np.random.rand()
+    #zz = xloc[2] + np.random.rand()
 
     #xx = xloc[0] #+ 0.5
     #yy = xloc[1] #+ 0.5
@@ -137,9 +137,9 @@ def filler_xvel(xloc, ispcs, conf):
 def filler_xvel3D(xloc, ispcs, conf):
 
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand(1)
-    yy = xloc[1] + np.random.rand(1)
-    zz = xloc[2] + np.random.rand(1)
+    xx = xloc[0] + np.random.rand()
+    yy = xloc[1] + np.random.rand()
+    zz = xloc[2] + np.random.rand()
     x0 = [xx, yy, zz]
     u0 = [+1.0, +1.0, +1.0]
     return x0, u0

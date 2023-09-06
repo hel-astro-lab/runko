@@ -102,6 +102,22 @@ def inject(grid,
                                         # print("injecting particle sps={} of # {}:th to ({},{},{})".format(
                                         #        ispcs, ip_mesh, x0[0], x0[1], x0[2]))
                                         ip_mesh += 1
+                                        #print('x', np.shape(x0))
+                                        #print('u', np.shape(u0))
+                                        #print('w', np.shape(w))
+
+                                        try:
+                                            x0 = np.array(x0).flatten().tolist()
+                                            u0 = np.array(u0).flatten().tolist()
+                                        except:
+                                            print('error in injection function:')
+                                            print(x0)
+                                            print(u0)
+                                            sys.exit()
+                                        if not(len(x0) == 3): sys.exit()
+                                        if not(len(u0) == 3): sys.exit()
+                                        if not(np.isscalar(w)): sys.exit()
+
                                         container.add_particle(x0, u0, w)
                                         prtcl_tot[ispcs] += 1
 
