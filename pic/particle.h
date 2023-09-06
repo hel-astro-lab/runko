@@ -44,7 +44,7 @@ public:
            );
 
   /// special ctor for info prtcl
-  Particle(size_t number_of_particles);
+  Particle(int number_of_particles);
 
   inline float_p& x()   { return data[0]; };
   inline float_p& y()   { return data[1]; };
@@ -60,7 +60,7 @@ public:
   virtual ~Particle() = default;
 
   /// special method for info particle that re-uses x loc mem slot
-  size_t number_of_particles();
+  int number_of_particles();
 
 };
 
@@ -142,11 +142,9 @@ class ParticleContainer{
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();
 
-  /// dynamic message size that traces the optimal
-  // message length (i.e., number of particles) hand 
-  // in hand with the corresponding receiver side.
-  const int optimal_message_size = 4096; 
-  const int extra_message_size = 4096; 
+  // size of MPI particle buffers
+  const int first_message_size = 4096; 
+  // NOTE maximum prtcl size during first iteration is 2*first_msg; then resized
 
   //! particle specific electric field components
   ManVec<float_p> Epart;

@@ -38,14 +38,14 @@ inline Particle::Particle(
 }
 
 
-inline Particle::Particle( size_t number_of_particles) 
+inline Particle::Particle( int number_of_particles) 
 {
   data[0] = static_cast<float_p>(number_of_particles);
 }
 
 /// special method for info particle that re-uses x mem location
-size_t Particle::number_of_particles() {
-  return static_cast<size_t>( data[0] );
+int Particle::number_of_particles() {
+  return static_cast<int>( data[0] );
 }
 
 
@@ -68,11 +68,11 @@ ParticleContainer<D>::ParticleContainer()
   // Get the rank of the process
   //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  incoming_particles.resize(optimal_message_size);
-  incoming_extra_particles.resize(extra_message_size);
+  incoming_particles.resize(first_message_size);
+  incoming_extra_particles.resize(first_message_size); // pre-allocating 
 
-  outgoing_particles.resize(optimal_message_size);
-  outgoing_extra_particles.resize(extra_message_size);
+  outgoing_particles.resize(first_message_size);
+  outgoing_extra_particles.resize(first_message_size); // pre-allocating
 
 #ifdef GPU
   //DEV_REGISTER
@@ -523,15 +523,18 @@ void ParticleContainer<D>::pack_all_particles()
   outgoing_extra_particles.clear();
     
   // +1 for info particle
-  size_t np = size() + 1;
+  int np = size() + 1;
 
   // FIXME
-  //outgoing_particles.reserve(optimal_message_size);
-  if(np > optimal_message_size+extra_message_size) {
-	std::cerr << "pack_all_particles() in pic/particle.h: number of particles in MPI message exceeds combined maximum of optimal_message_size+extra_message_size. Increase extra_message_size in particle.h to prevent this error. See documentation." << std::endl;
-	assert(false);
-  } else if(np-optimal_message_size > 0) {
-    outgoing_extra_particles.reserve( np-optimal_message_size );
+  //outgoing_particles.reserve(first_message_size);
+  //if(np > first_message_size + extra_message_size) {
+  //  std::cerr << "Number of particles in MPI message exceeds maximum message size. See documentation." << std::endl;
+  //  exit(1);
+  //} else 
+
+  if(np-first_message_size > 0) {
+    // reserve is needed here; if size is less than capacity, we do nothing
+    outgoing_extra_particles.reserve( np-first_message_size );
   }
 
   // first particle is always the message info
@@ -540,7 +543,7 @@ void ParticleContainer<D>::pack_all_particles()
   // next, pack all other particles
   int i=1;
   for(size_t ind=0; ind < size(); ind++) {
-    if(i < optimal_message_size) {
+    if(i < first_message_size) {
       outgoing_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
@@ -575,20 +578,21 @@ void ParticleContainer<D>::pack_outgoing_particles()
   outgoing_extra_particles.clear();
     
   // +1 for info particle
-  size_t np = to_other_tiles.size() + 1;
+  int np = to_other_tiles.size() + 1;
 
-  //std::cout << "reserving1: " << optimal_message_size << "\n";
-  //std::cout << "reserving2: " << np <<" minus " << np-optimal_message_size << "\n";
+  //std::cout << "reserving1: " << first_message_size << "\n";
+  //std::cout << "reserving2: " << np <<" minus " << np-first_message_size << "\n";
 
 
   // FIXME altered here from v0 w/ reserve to new ver w/ resize
-  //outgoing_particles.reserve(optimal_message_size);
-  if(np > optimal_message_size+extra_message_size) {
-	std::cerr << "pack_outgoing_particles() in pic/particle.h: number of particles in MPI message exceeds combined maximum of optimal_message_size+extra_message_size. Increase extra_message_size in particle.h to prevent this error. See documentation." << std::endl;
-	assert(false);
-  } else if (np > optimal_message_size) {
-    // FIXME altered here from v0 w/ reserve to new ver w/ resize
-    outgoing_extra_particles.resize( np-optimal_message_size );
+  //outgoing_particles.reserve(first_message_size);
+  //if(np > first_message_size + extra_message_size) {
+  //  std::cerr << "Number of particles in MPI message exceeds maximum message size. See documentation." << std::endl;
+  //  exit(1);
+  //} else 
+  if (np > first_message_size) {
+    // reserve is needed here; if size is less than capacity, we do nothing
+    outgoing_extra_particles.reserve( np-first_message_size );
   }
 
   // first particle is always the message info
@@ -603,7 +607,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
     const auto &elem = to_other_tiles[ii];
     ind = elem.n;
 
-    if(i < optimal_message_size) {
+    if(i < first_message_size) {
       outgoing_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
@@ -623,7 +627,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //outgoing_extra_particles.shrink_to_fit();
 
   // TODO: set next message size dynamically according to history
-  //optimal_message_size = np;
+  //first_message_size = np;
   //
 #ifdef GPU
   nvtxRangePop();
@@ -646,8 +650,8 @@ void ParticleContainer<D>::unpack_incoming_particles()
   int number_of_incoming_particles = incoming_particles[0].number_of_particles();
 
   int number_of_primary_particles = 
-    number_of_incoming_particles > optimal_message_size 
-    ? optimal_message_size : number_of_incoming_particles;
+    number_of_incoming_particles > first_message_size 
+    ? first_message_size : number_of_incoming_particles;
 
   int number_of_secondary_particles = incoming_extra_particles.size();
 
