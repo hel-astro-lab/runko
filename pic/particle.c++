@@ -69,10 +69,10 @@ ParticleContainer<D>::ParticleContainer()
   //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   incoming_particles.resize(optimal_message_size);
-  incoming_extra_particles.resize(optimal_message_size);
+  incoming_extra_particles.resize(extra_message_size);
 
   outgoing_particles.resize(optimal_message_size);
-  outgoing_extra_particles.resize(optimal_message_size);
+  outgoing_extra_particles.resize(extra_message_size);
 
 #ifdef GPU
   //DEV_REGISTER
@@ -527,7 +527,10 @@ void ParticleContainer<D>::pack_all_particles()
 
   // FIXME
   //outgoing_particles.reserve(optimal_message_size);
-  if(np-optimal_message_size > 0) {
+  if(np > optimal_message_size+extra_message_size) {
+	std::cerr << "pack_all_particles() in pic/particle.h: number of particles in MPI message exceeds combined maximum of optimal_message_size+extra_message_size. Increase extra_message_size in particle.h to prevent this error. See documentation." << std::endl;
+	assert(false);
+  } else if(np-optimal_message_size > 0) {
     outgoing_extra_particles.reserve( np-optimal_message_size );
   }
 
@@ -580,7 +583,10 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
   // FIXME altered here from v0 w/ reserve to new ver w/ resize
   //outgoing_particles.reserve(optimal_message_size);
-  if (np > optimal_message_size) {
+  if(np > optimal_message_size+extra_message_size) {
+	std::cerr << "pack_outgoing_particles() in pic/particle.h: number of particles in MPI message exceeds combined maximum of optimal_message_size+extra_message_size. Increase extra_message_size in particle.h to prevent this error. See documentation." << std::endl;
+	assert(false);
+  } else if (np > optimal_message_size) {
     // FIXME altered here from v0 w/ reserve to new ver w/ resize
     outgoing_extra_particles.resize( np-optimal_message_size );
   }
