@@ -17,7 +17,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # optimization flags
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=haswell -ftree-vectorize -fopt-info-all-all=all.all")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native") #general optimization
 
