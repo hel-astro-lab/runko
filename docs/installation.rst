@@ -4,6 +4,15 @@ Installation
 This section describes the basic installation of the framework. See also the :doc:`clusters` page in case you are installing the code to some computing cluster.
 
 
+Git + GitHub access with SSH
+============================
+
+Before we start, we need a developer level access to GitHub. Most importantly, you need to ensure that you can access git repositories via the SSH connection. Follow these tutorials to link your SSH key to your GitHub account:
+
+* https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+* https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
+
+
 Downloading/Cloning
 ===================
 
@@ -11,7 +20,7 @@ The framework relies on various small (template) libraries that are automaticall
 
 .. code-block:: bash
 
-   git clone --recursive https://github.com/natj/runko.git
+   git clone --recursive git@github.com:natj/runko.git
 
 You also need to update all the submodules (so that other branches are also in sync) with
 
@@ -67,16 +76,16 @@ Make also sure that Xcode developer tools are installed by running
    xcode-select --install
 
 
-MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the latest `g++` just installed; currently `g++-12`). 
+MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the latest `g++` just installed; currently `g++-13`). 
 
 You can compile OpenMPI via homebrew by first modifying your `~/.bash_profile` to link the new compilers:
 
 .. code-block:: bash
 
-   export HOMEBREW_CC=gcc-12
-   export HOMEBREW_CXX=g++-12
-   export OMPI_CC=gcc-12
-   export OMPI_CXX=g++-12
+   export HOMEBREW_CC=gcc-13
+   export HOMEBREW_CXX=g++-13
+   export OMPI_CC=gcc-13
+   export OMPI_CXX=g++-13
 
 Then restart the terminal to reload the newly added environment variables. After restarting, install `openmpi` from source with
 
@@ -91,27 +100,32 @@ Alternatively, if you want even more control of the operation, you can compile i
 .. code-block:: bash
 
    export MPI_IMPL=openmpi41
-   mkdir -p $HOME/local/$MPI_IMPL/bin
-   cd $HOME/local/$MPI_IMPL/bin
-   mkdir -p openmpi && cd openmpi
-   wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.1/downloads/openmpi-4.1.4.tar.bz2
-   tar -xjf openmpi-4.1.4.tar.bz2
-   cd openmpi-4.1.4
-   export OMPI_CC=gcc-12
-   export OMPI_CXX=g++-12
-   ./configure CC=gcc-12 CXX=g++-12 --prefix=$HOME/local/$MPI_IMPL 
+   mkdir -p $HOME/local/$MPI_IMPL/bin/openmpi
+   cd $HOME/local/$MPI_IMPL/bin/openmpi
+   wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.1/downloads/openmpi-4.1.5.tar.bz2
+   tar -xjf openmpi-4.1.5.tar.bz2
+   cd openmpi-4.1.5
+   export OMPI_CC=gcc-13
+   export OMPI_CXX=g++-13
+   ./configure CC=gcc-13 CXX=g++-13 --prefix=$HOME/bin/$MPI_IMPL 
    make -j 4
    make install
    make clean
-   cd ../../
 
-   export PATH=$PATH:$HOME/local/$MPI_IMPL/bin
-   export PATH=$PATH:$HOME/local/$MPI_IMPL/include
-   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/local/$MPI_IMPL/lib
 
-This installs OpenMPI to `~/local` and exports the correct directories so that `mpic++` compiler wrapper becomes available. You should put the last 3 export commands to your `.bash_profile` for easier usage, in case you need to recompile Runko at some point.
+This installs OpenMPI to `~/bin/` and exports the correct directories so that the `mpic++` compiler wrapper becomes available. You should then add to your `.bash_profile` (or `.zshrc` in latest macs) these exports (in case you need to re-compile the library):
 
-After `openmpi` is installed we also need to re-install `mpi4py` as
+.. code-block:: bash
+
+   export OMPI_CC=gcc-13
+   export OMPI_CXX=g++-13
+   export MPI_IMPL=openmpi41
+   export PATH=$PATH:$HOME/bin/$MPI_IMPL/bin
+   export PATH=$PATH:$HOME/bin/$MPI_IMPL/include
+   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/bin/$MPI_IMPL/lib
+
+
+After `openmpi` is installed we also need to re-install `mpi4py` because it uses the system-default mpi installation
 
 .. code-block:: bash
 
@@ -122,7 +136,7 @@ After `openmpi` is installed we also need to re-install `mpi4py` as
 Linux (Ubuntu)
 --------------
 
-When compiling runko and running runko scripts, it is critical that you always use the same Python interpreter, C/C++ compiler and associated OpenMPI distribution, otherwise this can give several errors during installation. For this reason we recommend using vanilla Python and disabling anaconda (if you are using it) by commenting out its activation in your ``~/.bashrc`` file.
+When compiling runko and running the scripts, it is critical that you always use the same Python interpreter, C/C++ compiler, and associated OpenMPI distribution, otherwise this can give several errors during the installation. For this reason we recommend using vanilla `python` and disabling anaconda (if you are using it) by commenting out its activation in your ``~/.bashrc`` file.
 
 .. code-block:: bash
 
@@ -130,7 +144,7 @@ When compiling runko and running runko scripts, it is critical that you always u
    # ...
    # <<< conda initialize <<<
 
-You may find it necessary to delete folders containing older Python versionsthan your current one at `/usr/bin/python3.*`. In order to get a completely clean OpenMPI distribution first run:
+You may find it necessary to delete folders containing older Python versions than your current one at `/usr/bin/python3.*`. In order to get a completely clean OpenMPI distribution first run:
 
 .. code-block:: bash
 
@@ -154,7 +168,8 @@ You also need to export the HDF5 library location (since it is non-standard at l
 
    export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial
 
-Finally, you can test that your Runko installation in Python is working properly by executing the test described in ``runko/projects/pic-shocks/README.md``.
+Finally, you can test that your Runko installation in Python is working properly by executing the test described in `runko/projects/pic-shocks/README.md`.
+
 
 Python libraries
 ================
@@ -163,7 +178,7 @@ All the python requirements can be installed via `pip` as
 
 .. code-block:: bash
 
-   pip3 install -r requirements.txt
+   pip install -r requirements.txt
 
 .. note::
 
@@ -191,9 +206,9 @@ Then make sure that everything works, check the output of
 This should indicate that the newly installed compilers are used.
 
 
-You should also put this part into your `~/.bashrc` (or `~/.bash_profile` on MacOS) so correct compilers are automatically exported in the startup.
+You should also put this part into your `~/.bashrc` (or `~/.zshrc` in the latest MacOS) so correct compilers are automatically exported during the startup.
 
-You should also add the python script directories into `PYTHONPATH` environment variable. Modify your `~/.bash_profile` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `runko` libraries to the path by exporting
+You should also add the python script directories into `PYTHONPATH` environment variable. Modify your `~/.zshrc` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `runko` libraries to the path by exporting
 
 .. code-block:: bash
 
@@ -204,7 +219,7 @@ You should also add the python script directories into `PYTHONPATH` environment 
     PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/bindings/old"
     export PYTHONPATH
 
-where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory). Note that there is no trailing slash `/`. As an example, the path can be e.g., `/Users/natj/runko`.
+where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory). Note that there is no trailing slash `/` in the commands. As an example, the path can be e.g., `/Users/natj/runko`.
 
 
 Next we can proceed to compiling. Out-of-source builds are recommended so inside the repository make a new build directory, go into that and only then run the CMake. This can be done by running:
