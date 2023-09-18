@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*- 
 
-import pyrunko.ffe as pyffe
+#import pyrunko.ffe as pyffe
+from pyrunko import ffe as pyffe
 
 
 def ind2loc(gridI, tileI, conf):

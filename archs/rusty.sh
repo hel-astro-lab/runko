@@ -1,14 +1,10 @@
 #modules
-module load slurm
-module load gcc/7.4.0
-module load openmpi2/2.1.6-hfi
-module load python3/3.7.3
-module load python3-mpi4py/3.7.3-openmpi2
-module load cmake/3.14.5
-module load modules-nix
-module load nix/ffmpeg
-module load nix/fftw
-module load lib/hdf5/1.8.21-openmpi2
+module load gcc/10.4.0
+module load cmake
+module load openmpi/4.0.7
+module load python-mpi/3.9.15
+module load hdf5/mpi-1.10.9
+module load texlive
 
 
 # cray environment
@@ -16,7 +12,7 @@ export CXX=mpic++
 export CC=mpicc
 
 # python for CMAKE 
-export PYTHON_EXECUTABLE=python
+export PYTHON_EXECUTABLE=python3
 
 #prevent lockfiles
 export HDF5_USE_FILE_LOCKING=FALSE
@@ -32,7 +28,7 @@ export LUSTREDIR=/mnt/home/$USER/ceph
 #export PATH=$PATH:/cfs/klemming/nobackup/j/jnattila/pkgs/lib/
 
 #add libary paths
-export RUNKODIR=$LUSTREDIR/runko
+export RUNKODIR=$LUSTREDIR/runko-gpu
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/lib
 export PYTHONPATH=$PYTHONPATH:$RUNKODIR/corgi/lib
