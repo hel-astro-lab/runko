@@ -72,6 +72,7 @@ def initialize_tile(tile, indx, n, conf):
     mins = ind2loc(indx, (0, 0, 0), conf)
     maxs = ind2loc(indx, (conf.NxMesh, conf.NyMesh, conf.NzMesh), conf)
 
+    #print("adding tile", indx, "minmax:", mins, "/", maxs)
 
     if conf.threeD:
         tile.set_tile_mins(mins[0:3])

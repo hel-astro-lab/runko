@@ -2,6 +2,7 @@
 
 import pyrunko.pic as pypic
 import numpy as np
+import sys, os
 from .tile_initialization import ind2loc
 
 
@@ -70,9 +71,9 @@ def inject(grid,
                         #tot_tiles = conf.Nx*conf.Ny*conf.Nz
                         #np.random.seed(k*conf.Nx*conf.Ny + j*conf.Nx + i + ispcs*tot_tiles) # avoid re-starting the rng cycle
 
-                        xD = 1.0 if conf.NxMesh > 1 else 0.0
-                        yD = 1.0 if conf.NyMesh > 1 else 0.0
-                        zD = 1.0 if conf.NzMesh > 1 else 0.0
+                        #xD = 1.0 if conf.NxMesh > 1 else 0.0
+                        #yD = 1.0 if conf.NyMesh > 1 else 0.0
+                        #zD = 1.0 if conf.NzMesh > 1 else 0.0
 
                         for n in range(conf.NzMesh):
                             for m in range(conf.NyMesh):
@@ -86,6 +87,7 @@ def inject(grid,
                                         x0, u0 = vel_func(xloc, ispcs, conf)
                                         w = w_func(xloc, ispcs, conf)
 
+                                        # select position of previous species
                                         if align_species and ispcs == 1:
                                             xx = xxs[ip_mesh] #+ 1.0e-4 #*np.random.rand(1)
                                             yy = yys[ip_mesh] #+ 1.0e-4 #*np.random.rand(1)
@@ -93,7 +95,6 @@ def inject(grid,
                                             x0 = [xx, yy, zz]  # overwrite location
 
                                         #this step done in velocity function
-                                        #else:
                                         #    xx = xloc[0] + np.random.rand(1)
                                         #    yy = xloc[1] + np.random.rand(1)
                                         #    zz = xloc[2] + np.random.rand(1)
@@ -102,10 +103,9 @@ def inject(grid,
                                         # print("injecting particle sps={} of # {}:th to ({},{},{})".format(
                                         #        ispcs, ip_mesh, x0[0], x0[1], x0[2]))
                                         ip_mesh += 1
-                                        #print('x', np.shape(x0))
-                                        #print('u', np.shape(u0))
-                                        #print('w', np.shape(w))
 
+                                        #--------------------------------------------------
+                                        # sanity checks
                                         try:
                                             x0 = np.array(x0).flatten().tolist()
                                             u0 = np.array(u0).flatten().tolist()
@@ -117,6 +117,17 @@ def inject(grid,
                                         if not(len(x0) == 3): sys.exit()
                                         if not(len(u0) == 3): sys.exit()
                                         if not(np.isscalar(w)): sys.exit()
+
+                                        #if (not( 0 < x0[0] < conf.NxMesh ) or 
+                                        #    not( 0 < x0[1] < conf.NyMesh ) or 
+                                        #    not( 0 < x0[2] < conf.NzMesh ) ):
+                                        #    print("ERROR inj:", ip, "x:", x0, " u:", u0, "w:", w)
+                                        #    print("NM", conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                                        #    print("ijk", i,j,k)
+                                        #    print("lmn", l,m,n)
+                                        #    print("xloc", xloc)
+                                        #    sys.exit()
+                                        #--------------------------------------------------
 
                                         container.add_particle(x0, u0, w)
                                         prtcl_tot[ispcs] += 1

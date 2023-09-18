@@ -103,36 +103,36 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       //--------------------------------------------------
       // jx
       if(D>=1) atomic_add( yee.jx(i1  , j1  , k1  ), Fx1*(1.0-Wy1)*(1.0-Wz1) );
-      if(D>=2) atomic_add( yee.jx(i1  , j1+1, k1  ), Fx1*Wy1       *(1.0-Wz1) );
-      if(D>=3) atomic_add( yee.jx(i1  , j1  , k1+1), Fx1*(1.0-Wy1)*Wz1        );
-      if(D>=3) atomic_add( yee.jx(i1  , j1+1, k1+1), Fx1*Wy1       *Wz1        );
+      if(D>=2) atomic_add( yee.jx(i1  , j1+1, k1  ), Fx1*Wy1      *(1.0-Wz1) );
+      if(D>=3) atomic_add( yee.jx(i1  , j1  , k1+1), Fx1*(1.0-Wy1)*Wz1       );
+      if(D>=3) atomic_add( yee.jx(i1  , j1+1, k1+1), Fx1*Wy1      *Wz1       );
 
       if(D>=1) atomic_add( yee.jx(i2  , j2  , k2  ), Fx2*(1.0-Wy2)*(1.0-Wz2) );
-      if(D>=2) atomic_add( yee.jx(i2  , j2+1, k2  ), Fx2*Wy2       *(1.0-Wz2) );
-      if(D>=3) atomic_add( yee.jx(i2  , j2  , k2+1), Fx2*(1.0-Wy2)*Wz2        );
-      if(D>=3) atomic_add( yee.jx(i2  , j2+1, k2+1), Fx2*Wy2       *Wz2        );
+      if(D>=2) atomic_add( yee.jx(i2  , j2+1, k2  ), Fx2*Wy2      *(1.0-Wz2) );
+      if(D>=3) atomic_add( yee.jx(i2  , j2  , k2+1), Fx2*(1.0-Wy2)*Wz2       );
+      if(D>=3) atomic_add( yee.jx(i2  , j2+1, k2+1), Fx2*Wy2      *Wz2       );
 
       // jy
       if(D>=1) atomic_add( yee.jy(i1  , j1  , k1  ), Fy1*(1.0-Wx1)*(1.0-Wz1) );
-      if(D>=2) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1       *(1.0-Wz1) );
-      if(D>=3) atomic_add( yee.jy(i1  , j1  , k1+1), Fy1*(1.0-Wx1)*Wz1        );
-      if(D>=3) atomic_add( yee.jy(i1+1, j1  , k1+1), Fy1*Wx1       *Wz1        );
+      if(D>=2) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1      *(1.0-Wz1) );
+      if(D>=3) atomic_add( yee.jy(i1  , j1  , k1+1), Fy1*(1.0-Wx1)*Wz1       );
+      if(D>=3) atomic_add( yee.jy(i1+1, j1  , k1+1), Fy1*Wx1      *Wz1       );
 
       if(D>=1) atomic_add( yee.jy(i2  , j2  , k2  ), Fy2*(1.0-Wx2)*(1.0-Wz2) );
-      if(D>=2) atomic_add( yee.jy(i2+1, j2  , k2  ), Fy2*Wx2       *(1.0-Wz2) );
-      if(D>=3) atomic_add( yee.jy(i2  , j2  , k2+1), Fy2*(1.0-Wx2)*Wz2        );
-      if(D>=3) atomic_add( yee.jy(i2+1, j2  , k2+1), Fy2*Wx2       *Wz2        );
+      if(D>=2) atomic_add( yee.jy(i2+1, j2  , k2  ), Fy2*Wx2      *(1.0-Wz2) );
+      if(D>=3) atomic_add( yee.jy(i2  , j2  , k2+1), Fy2*(1.0-Wx2)*Wz2       );
+      if(D>=3) atomic_add( yee.jy(i2+1, j2  , k2+1), Fy2*Wx2      *Wz2       );
 
       // jz
       if(D>=1) atomic_add( yee.jz(i1  , j1  , k1  ), Fz1*(1.0-Wx1)*(1.0-Wy1) );
-      if(D>=1) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0-Wy1) );
-      if(D>=2) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0-Wx1)*Wy1        );
-      if(D>=2) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1       *Wy1        );
+      if(D>=1) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1      *(1.0-Wy1) );
+      if(D>=2) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0-Wx1)*Wy1       );
+      if(D>=2) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1      *Wy1       );
 
       if(D>=1) atomic_add( yee.jz(i2  , j2  , k2  ), Fz2*(1.0-Wx2)*(1.0-Wy2) );
-      if(D>=1) atomic_add( yee.jz(i2+1, j2  , k2  ), Fz2*Wx2       *(1.0-Wy2) );
-      if(D>=2) atomic_add( yee.jz(i2  , j2+1, k2  ), Fz2*(1.0-Wx2)*Wy2        );
-      if(D>=2) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2       *Wy2        );
+      if(D>=1) atomic_add( yee.jz(i2+1, j2  , k2  ), Fz2*Wx2      *(1.0-Wy2) );
+      if(D>=2) atomic_add( yee.jz(i2  , j2+1, k2  ), Fz2*(1.0-Wx2)*Wy2       );
+      if(D>=2) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2      *Wy2       );
 
     }, con.size(), yee, con);
 

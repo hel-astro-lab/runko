@@ -32,6 +32,8 @@ void pic::BorisPusherDrag<D,V>::push_container(
   // maximum drag force experienced by particle
   const double dragthr = 0.1; 
 
+  auto mins = tile.mins;
+  auto maxs = tile.maxs;
   const double c  = tile.cfl;
   const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
 
@@ -110,6 +112,44 @@ void pic::BorisPusherDrag<D,V>::push_container(
     // NOTE: no mixed-precision calc here. Can be problematic.
     ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
     for(size_t i=0; i<D; i++) con.loc(i,n) += con.vel(i,n)*ginv*c*freezing_factor;
+
+    double dx_tmp = con.vel(0,n)*ginv*c;
+    double dy_tmp = con.vel(1,n)*ginv*c;
+    double dz_tmp = con.vel(2,n)*ginv*c;
+
+    //if( dx_tmp > c || dy_tmp > c || dz_tmp > c ){
+
+    //if( con.loc(0,n) < -2.0 + mins[0] ||
+    //    con.loc(1,n) < -2.0 + mins[1] ||
+    //    con.loc(2,n) < -2.0 + mins[2] ||
+    //    con.loc(0,n) >  2.0 + maxs[0] ||
+    //    con.loc(1,n) >  2.0 + maxs[1] ||
+    //    con.loc(2,n) >  2.0 + maxs[2] ) {
+
+    //  std::cout << " ERROR pusher:" << std::endl;
+    //  std::cout << " x0:" << con.loc(0,n) - mins[0] - dx_tmp << " "; 
+    //  std::cout << " y0:" << con.loc(1,n) - mins[1] - dy_tmp << " "; 
+    //  std::cout << " z0:" << con.loc(2,n) - mins[2] - dz_tmp << " "; 
+    //  std::cout << " x1:" << con.loc(0,n) - mins[0] << " "; 
+    //  std::cout << " y1:" << con.loc(1,n) - mins[1] << " "; 
+    //  std::cout << " z1:" << con.loc(2,n) - mins[2] << " "; 
+    //  std::cout << " dx:" << dx_tmp << " "; 
+    //  std::cout << " dy:" << dy_tmp << " "; 
+    //  std::cout << " dz:" << dz_tmp << " "; 
+    //  std::cout << " u:" << u0 << " "; 
+    //  std::cout << " v:" << v0 << " "; 
+    //  std::cout << " w:" << w0 << " "; 
+    //  std::cout << " thr:" << thr << " "; 
+    //  std::cout << " drag:"  << drag  << " "; 
+    //  std::cout << " dragx:" << dragx << " "; 
+    //  std::cout << " dragy:" << dragy << " "; 
+    //  std::cout << " dragz:" << dragz << " "; 
+    //  std::cout << std::endl;
+
+    //  assert(false);
+    //}
+
+
 
   }, con.size(), con);
 

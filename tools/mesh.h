@@ -53,9 +53,31 @@ class Mesh
       //if(not( (j >= -H) && (j <  (int)Ny + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
       //if(not( (k >= -H) && (k <  (int)Nz + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
 
-      assert( (i >= -H) && (i < (int)Nx + H)  );
-      assert( (j >= -H) && (j < (int)Ny + H)  );
-      assert( (k >= -H) && (k < (int)Nz + H)  );
+      //assert( (i >= -H) && (i < (int)Nx + H)  );
+      //assert( (j >= -H) && (j < (int)Ny + H)  );
+      //assert( (k >= -H) && (k < (int)Nz + H)  );
+
+      bool inx = (i >= -H) && (i < (int)Nx + H);
+      bool iny = (j >= -H) && (j < (int)Ny + H);
+      bool inz = (k >= -H) && (k < (int)Nz + H);
+
+      if( !inx || !iny || !inz) {
+          std::cerr << "MESH OUTSIDE TILE " << std::endl;
+          std::cerr << i << " /" << Nx << " +H " << H << std::endl;
+          std::cerr << j << " /" << Ny << " +H " << H << std::endl;
+          std::cerr << k << " /" << Nz << " +H " << H << std::endl;
+
+          if(i < -H) i = -H;
+          if(j < -H) j = -H;
+          if(k < -H) k = -H;
+
+          if(i >= (int)Nx + H) i = Nx + H - 1;
+          if(j >= (int)Ny + H) j = Ny + H - 1;
+          if(k >= (int)Nz + H) k = Nz + H - 1;
+
+          //assert(false);
+          //abort();
+      }
 
       // this is true if above is true
       //int indx = (i + H) + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));

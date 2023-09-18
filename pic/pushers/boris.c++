@@ -21,6 +21,7 @@ void pic::BorisPusher<D,V>::push_container(
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
+  auto mins = tile.mins;
   const double c  = tile.cfl;
   const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
 

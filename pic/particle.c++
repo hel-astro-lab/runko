@@ -850,6 +850,42 @@ void ParticleContainer<3>::check_outgoing_particles(
     if( loc(2,n) - float_p( mins[2] ) <  0.0 ) k--; // back wrap
     if( loc(2,n) - float_p( maxs[2] ) >= 0.0 ) k++; // front wrap
 
+    // ver2
+    //if( loc(0,n) <  float_p( mins[0] ) ) i--; // left wrap
+    //if( loc(0,n) >= float_p( maxs[0] ) ) i++; // right wrap
+    //if( loc(1,n) <  float_p( mins[1] ) ) j--; // bottom wrap
+    //if( loc(1,n) >= float_p( maxs[1] ) ) j++; // top wrap
+    //if( loc(2,n) <  float_p( mins[2] ) ) k--; // back wrap
+    //if( loc(2,n) >= float_p( maxs[2] ) ) k++; // front wrap
+
+    // tests for outflowing prtcls. 
+    // NOTE fiddling w/ prtcl velocities in pusher might change velocities so
+    // that current deposit overflows over tile boundaries.
+    //bool outflow = false;
+    //if( loc(0,n) - float_p( mins[0] ) < -2.0 ) outflow = true; // left wrap
+    //if( loc(0,n) - float_p( maxs[0] ) >= 2.0 ) outflow = true; // right wrap
+    //if( loc(1,n) - float_p( mins[1] ) < -2.0 ) outflow = true; // bottom wrap
+    //if( loc(1,n) - float_p( maxs[1] ) >= 2.0 ) outflow = true; // top wrap
+    //if( loc(2,n) - float_p( mins[2] ) < -2.0 ) outflow = true; // back wrap
+    //if( loc(2,n) - float_p( maxs[2] ) >= 2.0 ) outflow = true; // front wrap
+
+    //if( outflow ){
+    //  std::cout << " ERROR outflow " <<  
+    //    n << " " << 
+    //    loc(0,n) << " " << 
+    //    loc(1,n) << " " << 
+    //    loc(2,n) << " " << 
+    //    loc(0,n) - float_p(mins[0]) << " " << 
+    //    loc(1,n) - float_p(mins[0]) << " " << 
+    //    loc(2,n) - float_p(mins[0]) << " " << 
+    //    " mins:" << float_p(mins[0]) << " " << float_p(mins[1]) << " " << float_p(mins[2]) << 
+    //    " maxs:" << float_p(maxs[0]) << " " << float_p(maxs[1]) << " " << float_p(maxs[2]) << 
+    //    std::endl;
+    //    
+    //  assert(!outflow);
+    //}
+
+
     if ( (i != 0) || (j != 0) || (k != 0) ) {
         to_other_tiles.push_back( {i,j,k,n} );
         outgoing_count++;
