@@ -320,8 +320,9 @@ void bind_pic(py::module& m_sub)
 
   //--------------------------------------------------
   // 1D bindings
-  //py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
-
+  py::module m_1d = m_sub.def_submodule("oneD", "1D specializations");
+  auto t1 = pic::declare_tile<1>(m_1d, "Tile");
+  auto pc1 =pic::declare_prtcl_container<1>(m_1d, "ParticleContainer");
 
   //--------------------------------------------------
   // 2D bindings
@@ -339,6 +340,30 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
 
   // General pusher interface
+  //--------------------------------------------------
+  // 1D version
+  py::class_< pic::Pusher<1,3>> picpusher1d(m_1d, "Pusher");
+  picpusher1d
+    .def(py::init<>())
+    .def_readwrite("bx_ext",  &pic::Pusher<1,3>::bx_ext)
+    .def_readwrite("by_ext",  &pic::Pusher<1,3>::by_ext)
+    .def_readwrite("bz_ext",  &pic::Pusher<1,3>::bz_ext)
+    .def_readwrite("ex_ext",  &pic::Pusher<1,3>::ex_ext)
+    .def_readwrite("ey_ext",  &pic::Pusher<1,3>::ey_ext)
+    .def_readwrite("ez_ext",  &pic::Pusher<1,3>::ez_ext)
+    //.def("solve", &pic::Pusher<1,3>::solve);
+    //.def("solve", py::overload_cast<pic::Tile<1>&>(     &pic::Pusher<1,3>::solve))
+    //.def("solve", py::overload_cast<pic::Tile<1>&, int>(&pic::Pusher<1,3>::solve));
+    .def("solve", static_cast<void(pic::Pusher<1,3>::*)(pic::Tile<1>&     )>(&pic::Pusher<1,3>::solve))
+    .def("solve", static_cast<void(pic::Pusher<1,3>::*)(pic::Tile<1>&, int)>(&pic::Pusher<1,3>::solve));
+
+
+  // Boris pusher
+  py::class_<pic::BorisPusher<1,3>>(m_1d, "BorisPusher", picpusher1d)
+    .def(py::init<>());
+    
+  //--------------------------------------------------
+  // 2D version
   //py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
   py::class_< pic::Pusher<2,3>> picpusher2d(m_2d, "Pusher");
   picpusher2d
@@ -449,6 +474,19 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
 
   // General interpolator interface
+  //--------------------------------------------------
+  // 1D version
+  py::class_< pic::Interpolator<1,3>, PyInterpolator<1> > picinterp1d(m_1d, "Interpolator");
+  picinterp1d
+    .def(py::init<>())
+    .def("solve", &pic::Interpolator<1,3>::solve);
+
+  // Linear pusher
+  py::class_<pic::LinearInterpolator<1,3>>(m_1d, "LinearInterpolator", picinterp1d)
+    .def(py::init<>());
+
+  //--------------------------------------------------
+  // 2D version
   py::class_< pic::Interpolator<2,3>, PyInterpolator<2> > picinterp2d(m_2d, "Interpolator");
   picinterp2d
     .def(py::init<>())
@@ -463,6 +501,7 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
 
+  //--------------------------------------------------
   // 3D version
   py::class_< pic::Interpolator<3,3>, PyInterpolator<3> > picinterp3d(m_3d, "Interpolator");
   picinterp3d
@@ -488,6 +527,19 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
     
   // General current depositer interface
+  //--------------------------------------------------
+  // 1D version
+  py::class_< pic::Depositer<1,3>, PyDepositer<1> > picdeposit1d(m_1d, "Depositer");
+  picdeposit1d
+    .def(py::init<>())
+    .def("solve", &pic::Depositer<1,3>::solve);
+
+  // zigzag depositer
+  py::class_<pic::ZigZag<1,3>>(m_1d, "ZigZag", picdeposit1d)
+    .def(py::init<>());
+
+  //--------------------------------------------------
+  // 2D version
   py::class_< pic::Depositer<2,3>, PyDepositer<2> > picdeposit2d(m_2d, "Depositer");
   picdeposit2d
     .def(py::init<>())
@@ -507,7 +559,7 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
 
-
+  //--------------------------------------------------
   // 3D version
   py::class_< pic::Depositer<3,3>, PyDepositer<3> > picdeposit3d(m_3d, "Depositer");
   picdeposit3d
@@ -573,6 +625,13 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
   // Quick IO 
 
+  // 1D test particles
+  py::class_<h5io::TestPrtclWriter<1>>(m_1d, "TestPrtclWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::TestPrtclWriter<1>::write)
+    .def_readwrite("ispc", &h5io::TestPrtclWriter<1>::ispc);
+  
+  // 2D test particles
   py::class_<h5io::TestPrtclWriter<2>>(m_2d, "TestPrtclWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
     .def("write",   &h5io::TestPrtclWriter<2>::write)
@@ -587,6 +646,11 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
   // physical moments of distribution
 
+  // 1D
+  py::class_<h5io::PicMomentsWriter<1>>(m_1d, "PicMomentsWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write", &h5io::PicMomentsWriter<1>::write);
+  
   // 2D
   py::class_<h5io::PicMomentsWriter<2>>(m_2d, "PicMomentsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
@@ -602,6 +666,10 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
   // Full IO
 
+  // 1D
+  m_1d.def("write_particles",  &pic::write_particles<1>);
+  m_1d.def("read_particles",   &pic::read_particles<1>);
+  
   // 2D
   m_2d.def("write_particles",  &pic::write_particles<2>);
   m_2d.def("read_particles",   &pic::read_particles<2>);
