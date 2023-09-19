@@ -10,6 +10,76 @@ using ezh5::File;
 
 
 template<>
+inline void h5io::FieldsWriter<1>::read_tiles(
+    corgi::Grid<1>& grid)
+{
+
+  // clear target arrays
+  for(auto& arr : arrs) arr.clear();
+
+  // target arrays
+  auto& ex = arrs[0];
+  auto& ey = arrs[1];
+  auto& ez = arrs[2];
+  auto& bx = arrs[3];
+  auto& by = arrs[4];
+  auto& bz = arrs[5];
+  auto& jx = arrs[6];
+  auto& jy = arrs[7];
+  auto& jz = arrs[8];
+  auto& rh = arrs[9];
+
+
+  // read my local tiles
+  for(auto cid : grid.get_local_tiles() ){
+    auto& tile = dynamic_cast<fields::Tile<1>&>(grid.get_tile( cid ));
+    auto& yee = tile.get_yee();
+
+    // get arrays
+    auto index = expand_indices( &tile );
+
+    // starting location
+    int i0 = (yee.Nx/stride)*std::get<0>(index);
+    int j0 = 0 // (yee.Ny/stride)*std::get<1>(index);
+    int k0 = 0 // (yee.Nz/stride)*std::get<2>(index);
+
+    // tile limits taking into account 0 collapsing dimensions
+    int nxt;
+    nxt = (int)yee.Nx/stride;
+
+    nxt = nxt == 0 ? 1 : nxt;
+
+    // copy tile patch by stride hopping; either downsample or average
+    int js = 0;
+    int jstride = 0;
+    int ks = 0;
+    int kstride = 0;
+
+    // field quantities; just downsample by hopping with stride
+    for(int is=0; is<nxt; is++) {
+      ex(i0+is, j0+js, k0+ks) = yee.ex( is*stride, js*stride, ks*stride);
+      ey(i0+is, j0+js, k0+ks) = yee.ey( is*stride, js*stride, ks*stride);
+      ez(i0+is, j0+js, k0+ks) = yee.ez( is*stride, js*stride, ks*stride);
+
+      bx(i0+is, j0+js, k0+ks) = yee.bx( is*stride, js*stride, ks*stride);
+      by(i0+is, j0+js, k0+ks) = yee.by( is*stride, js*stride, ks*stride);
+      bz(i0+is, j0+js, k0+ks) = yee.bz( is*stride, js*stride, ks*stride);
+    }
+
+    // densities; these quantities we average over the volume
+    for(int is=0; is<nxt; is++) 
+    for(int istride=0; istride < stride; istride++) {
+      jx(i0+is, j0+js, k0+ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jy(i0+is, j0+js, k0+ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jz(i0+is, j0+js, k0+ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      rh(i0+is, j0+js, k0+ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+    }
+
+  } // tiles
+}
+
+
+template<>
 inline void h5io::FieldsWriter<2>::read_tiles(
     corgi::Grid<2>& grid)
 {
@@ -211,6 +281,6 @@ inline bool h5io::FieldsWriter<D>::write(
 
 //--------------------------------------------------
 // explicit template class instantiations
-//template class h5io::FieldsWriter<1>;
+template class h5io::FieldsWriter<1>;
 template class h5io::FieldsWriter<2>;
 template class h5io::FieldsWriter<3>;

@@ -369,5 +369,6 @@ inline bool h5io::TestPrtclWriter<D>::write(
 
 //--------------------------------------------------
 // explicit template class instantiations
+template class h5io::TestPrtclWriter<1>;
 template class h5io::TestPrtclWriter<2>;
 template class h5io::TestPrtclWriter<3>;
