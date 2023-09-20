@@ -76,7 +76,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
     u0 = u0 + v1*bz0 - w1*by0 + ex0;
     v0 = v0 + w1*bx0 - u1*bz0 + ey0;
     w0 = w0 + u1*by0 - v1*bx0 + ez0;
-
+    //double ut0 = sqrt(1.0 + u0*u0/c/c + v0*v0/c/c + w0*w0/c/c); // 4-vel after F_Lorentz udpate
 
     //--------------------------------------------------
     // addition of drag (gamma at half time step)
@@ -98,11 +98,13 @@ void pic::BorisPusherDrag<D,V>::push_container(
     double dragz = c*drag*kncorr*gamt*gamt*(uzt/gamt);
 
     // limit drag to maximum of dragthr of velocity (ver1; vector size limit)
-    //double dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut;
+    //double dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut; // ver1a using mid-point vel as reference
+    //double dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut0;  // ver1b using last point (after F_Lorentz) as ref
     double thr = 1.0;
     //if (dragv > dragthr) thr = dragthr/dragv;
 
-    // ver2: vector component limit
+    // ver2: vector component limit; more correct since prevents change of direction 
+    // (=causes trouble in current deposition since particle "cell" can be erraneously calculated)
     if( fabs(dragx*c/u0) > dragthr ) dragx = dragthr*u0/c;
     if( fabs(dragy*c/v0) > dragthr ) dragy = dragthr*v0/c;
     if( fabs(dragz*c/w0) > dragthr ) dragz = dragthr*w0/c;
