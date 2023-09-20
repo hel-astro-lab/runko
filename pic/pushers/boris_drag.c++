@@ -30,7 +30,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
 {
 
   // maximum drag force experienced by particle
-  const double dragthr = 0.1; 
+  const double dragthr = 0.8; 
 
   auto mins = tile.mins;
   auto maxs = tile.maxs;
@@ -97,10 +97,15 @@ void pic::BorisPusherDrag<D,V>::push_container(
     double dragy = c*drag*kncorr*gamt*gamt*(uyt/gamt);
     double dragz = c*drag*kncorr*gamt*gamt*(uzt/gamt);
 
-    // limit drag to maximum of dragthr of velocity
-    double dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut;
+    // limit drag to maximum of dragthr of velocity (ver1; vector size limit)
+    //double dragv = sqrt(dragx*dragx + dragy*dragy + dragz*dragz)/ut;
     double thr = 1.0;
-    if (dragv > dragthr) thr = dragthr/dragv;
+    //if (dragv > dragthr) thr = dragthr/dragv;
+
+    // ver2: vector component limit
+    if( fabs(dragx*c/u0) > dragthr ) dragx = dragthr*u0/c;
+    if( fabs(dragy*c/v0) > dragthr ) dragy = dragthr*v0/c;
+    if( fabs(dragz*c/w0) > dragthr ) dragz = dragthr*w0/c;
 
     //--------------------------------------------------
     // normalized 4-velocity advance with drag

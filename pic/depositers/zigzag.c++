@@ -24,6 +24,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
   auto& yee = tile.get_yee();
   const auto mins = tile.mins;
+  const auto maxs = tile.maxs;
 
   //clear arrays before new update
   yee.jx.clear();
@@ -99,6 +100,34 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       double Wx2 = D >= 1 ? 0.5*(x2 + xr) - i2 : 0.0;
       double Wy2 = D >= 2 ? 0.5*(y2 + yr) - j2 : 0.0;
       double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
+
+
+     //-------------------------------------------------- 
+     // check outflow
+
+      // debug guard
+      if( i1 < -3 || i1 + 1 > maxs[0] + 2 ||
+          i2 < -3 || i2 + 1 > maxs[0] + 2 ||
+          j1 < -3 || j1 + 1 > maxs[1] + 2 ||
+          j2 < -3 || j2 + 1 > maxs[1] + 2 ||
+          k1 < -3 || k1 + 1 > maxs[2] + 2 ||
+          k2 < -3 || k2 + 1 > maxs[2] + 2) {
+
+        std::cerr << "ERROR ZIGZAG:" << std::endl;
+        std::cerr << " i1 " << i1 << " i2 " << i2;
+        std::cerr << " j1 " << j1 << " j2 " << j2;
+        std::cerr << " k1 " << k1 << " k2 " << k2;
+        std::cerr << " x1 " << x1 << " x2 " << x2;
+        std::cerr << " y1 " << y1 << " y2 " << y2;
+        std::cerr << " z1 " << z1 << " z2 " << z2;
+        std::cerr << " v " << u << " " << v << " " << w << std::endl;
+
+        //assert(false);
+        // do not deposit anything
+        Fx1 = 0.0, Fx2 = 0.0, Fy1 = 0.0, Fy2 = 0.0, Fz1 = 0.0, Fz2 = 0.0;
+        i1=0, i2=0, j1=0, j2=0, k1=0, k2=0;
+      }
+
 
       //--------------------------------------------------
       // jx
