@@ -68,13 +68,13 @@ void Tile<1>::get_incoming_particles(
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  std::array<double,1> global_mins = {
+  std::array<double,3> global_mins = {
     static_cast<double>( grid.get_xmin() ),
     static_cast<double>( 0.0 ),
     static_cast<double>( 0.0 )
   };
 
-  std::array<double,1> global_maxs = {
+  std::array<double,3> global_maxs = {
     static_cast<double>( grid.get_xmax() ),
     static_cast<double>( 1.0 ),
     static_cast<double>( 1.0 )
@@ -86,7 +86,7 @@ void Tile<1>::get_incoming_particles(
   for(int i=-1; i<=1; i++) {
         // get neighboring tile
         auto ind = this->neighs(i); 
-        uint64_t cid = grid.id( std::get<0>(ind), std::get<1>(ind));
+        uint64_t cid = grid.id( std::get<0>(ind));
         Tile& external_tile = dynamic_cast<Tile&>( grid.get_tile(cid) );
 
         // loop over all containers

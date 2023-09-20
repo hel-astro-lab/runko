@@ -40,8 +40,8 @@ inline void h5io::FieldsWriter<1>::read_tiles(
 
     // starting location
     int i0 = (yee.Nx/stride)*std::get<0>(index);
-    int j0 = 0 // (yee.Ny/stride)*std::get<1>(index);
-    int k0 = 0 // (yee.Nz/stride)*std::get<2>(index);
+    int j0 = 0; // (yee.Ny/stride)*std::get<1>(index);
+    int k0 = 0; // (yee.Nz/stride)*std::get<2>(index);
 
     // tile limits taking into account 0 collapsing dimensions
     int nxt;
