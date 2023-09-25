@@ -26,15 +26,13 @@ def ind2loc(gridI, tileI, conf):
     dx = 1.0  # conf.dx
     dy = 1.0  # conf.dy
     dz = 1.0  # conf.dz
-
+    
     # calculate coordinate extent
     x = xmin + i * (NxMesh) * dx + l * dx
     y = ymin + j * (NyMesh) * dy + m * dy
     z = zmin + k * (NzMesh) * dz + n * dz
 
     return [x, y, z]
-
-
 
 def initialize_tile(tile, indx, n, conf):
 
@@ -116,8 +114,8 @@ def load_virtual_tiles(n, conf):
             tile.load_metainfo(tile_orig.communication)
             initialize_tile(tile, (i,j,0), n, conf)
         
-        elif conf.twoD:
-            i = ind
+        elif conf.oneD:
+            i, = ind
             tile = pypic.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
             n.add_tile(tile, ind) 
