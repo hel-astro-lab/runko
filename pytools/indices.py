@@ -9,6 +9,10 @@ def get_index(tile, conf):
     elif conf.twoD:
         i,j = ind
         k = 0
+    elif conf.oneD:
+        i = ind
+        j = 0
+        k = 0
 
     return i,j,k
 

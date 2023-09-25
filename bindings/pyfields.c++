@@ -446,6 +446,19 @@ void bind_fields(py::module& m_sub)
 
 
   //--------------------------------------------------
+  // 1D, 2D, and 3D FILTERS
+
+  // 1D filters
+  py::class_< fields::Filter<1>, PyFilter<1> > fieldsfilter1d(m_1d, "Filter");
+  fieldsfilter1d
+    .def(py::init<int, int, int>())
+    .def("solve", &fields::Filter<1>::solve);
+
+  // digital filter
+  py::class_<fields::Binomial2<1>>(m_1d, "Binomial2", fieldsfilter1d)
+    .def(py::init<int, int, int>())
+    .def("solve",      &fields::Binomial2<1>::solve);
+  
   // 2D Filter bindings
   py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
   fieldsfilter2d
@@ -516,6 +529,11 @@ void bind_fields(py::module& m_sub)
 
   //--------------------------------------------------
   // Snapshot IO 
+  
+  // 1D 
+  py::class_<h5io::FieldsWriter<1>>(m_1d, "FieldsWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write",   &h5io::FieldsWriter<1>::write);
 
   // 2D 
   py::class_<h5io::FieldsWriter<2>>(m_2d, "FieldsWriter")
