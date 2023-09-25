@@ -9,11 +9,25 @@ import pyrunko
 
 
 def balance_mpi(n, conf, comm_size=None):
-    if conf.twoD:
+    if conf.oneD:
+        return balance_mpi_1D(n, comm_size=comm_size)
+    elif conf.twoD:
         return balance_mpi_2D(n, comm_size=comm_size)
     elif conf.threeD:
         return balance_mpi_3D(n, comm_size=comm_size)
 
+
+
+#load nodes to be in stripe formation (splitted in X=horizontal direction)
+def balance_mpi_1D(n, comm_size):
+    if n.rank() == 0: #only master initializes; then sends
+        if comm_size == None:
+            comm_size = n.size()
+        for i in range(n.get_Nx()):
+            val = int(np.floor( i / n.get_Nx() * comm_size ))
+            n.set_mpi_grid(i, val)
+    n.bcast_mpi_grid()
+    return
 
 # load nodes using 2D Hilbert curve
 def balance_mpi_2D(n, comm_size=None):
@@ -228,7 +242,7 @@ def load_mpi_randomly(n):
 def load_mpi_x_strides(n, conf):
     if n.rank() == 0: #only master initializes; then sends
         stride = np.zeros( (n.get_Nx()), int)
-        dx = np.float(n.get_Nx()) / np.float(n.size() ) 
+        dx = np.float64(n.get_Nx()) / np.float64(n.size() ) 
         for i in range(n.get_Nx()):
             val = int( i/dx )
             stride[i] = val
@@ -245,7 +259,7 @@ def load_mpi_x_strides(n, conf):
 def load_mpi_y_strides(n, conf):
     if n.rank() == 0: #only master initializes; then sends
         stride = np.zeros( (n.get_Ny()), int)
-        dy = np.float(n.get_Ny()) / np.float(n.size() ) 
+        dy = np.float64(n.get_Ny()) / np.float64(n.size() ) 
         for j in range(n.get_Ny()):
             val = int( j/dy )
             stride[j] = val
