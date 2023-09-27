@@ -8,13 +8,13 @@ import pyrunko
 
 
 
-def balance_mpi(n, conf, comm_size=None):
+def balance_mpi(n, conf, comm_size=None, mpi_master_mode=False):
     if conf.oneD:
         return balance_mpi_1D(n, comm_size=comm_size)
-    elif conf.twoD:
+    if conf.twoD:
         return balance_mpi_2D(n, comm_size=comm_size)
     elif conf.threeD:
-        return balance_mpi_3D(n, comm_size=comm_size)
+        return balance_mpi_3D(n, comm_size=comm_size, mpi_master_mode=mpi_master_mode)
 
 
 
@@ -83,11 +83,16 @@ def balance_mpi_2D(n, comm_size=None):
 
 
 # load nodes using 3D Hilbert curve
-def balance_mpi_3D(n, comm_size=None):
+def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
 
     if n.rank() == 0:  # only master initializes; then sends
+
         if comm_size == None:
             comm_size = n.size()
+
+        # master mode does not allocate any tiles to rank =0
+        if mpi_master_mode:
+            comm_size -= 1
 
         nx = n.get_Nx()
         ny = n.get_Ny()
@@ -124,10 +129,14 @@ def balance_mpi_3D(n, comm_size=None):
                 for k in range(nz):
                     igrid[i, j, k] = np.floor(comm_size * grid[i, j, k] / (hmax + 1))
 
+        if mpi_master_mode:
+            igrid[:,:,:] += 1 # offset by one so that rank=0 is skipped
+
         # check that nodes get about same work load
-        # y = np.bincount(igrid.flatten())
-        # ii = np.nonzero(y)[0]
-        # print(list(zip(ii,y[ii])))
+        y = np.bincount(igrid.flatten())
+        ii = np.nonzero(y)[0]
+        print("work load:")
+        print(list(zip(ii,y[ii])))
 
         # print("grid:")
         for i in range(nx):
