@@ -89,6 +89,7 @@ set (IO_FILES
      ../io/snapshots/test_prtcls.c++
      ../io/snapshots/pic_moments.c++
      ../io/snapshots/field_slices.c++
+     ../io/snapshots/master_only_fields.c++
     )
 
 set (ACC_FILES 
