@@ -9,84 +9,12 @@ using namespace mpi4cpp;
 using ezh5::File;
 
 
-
 template<>
 inline void h5io::MasterFieldsWriter<3>::read_tiles(
     corgi::Grid<3>& grid)
 {
-
   // this function is never used with this class
   assert(false);
-
-
-  // clear target arrays
-  for(auto& arr : arrs) arr.clear();
-
-  // target arrays
-  auto& ex = arrs[0];
-  auto& ey = arrs[1];
-  auto& ez = arrs[2];
-  auto& bx = arrs[3];
-  auto& by = arrs[4];
-  auto& bz = arrs[5];
-  auto& jx = arrs[6];
-  auto& jy = arrs[7];
-  auto& jz = arrs[8];
-  auto& rh = arrs[9];
-
-
-  // read my local tiles
-  for(auto cid : grid.get_local_tiles() ){
-    auto& tile = dynamic_cast<fields::Tile<3>&>(grid.get_tile( cid ));
-    auto& yee = tile.get_yee();
-
-    // get arrays
-    auto index = expand_indices( &tile );
-
-    // starting location
-    int i0 = (yee.Nx/stride)*std::get<0>(index);
-    int j0 = (yee.Ny/stride)*std::get<1>(index);
-    int k0 = (yee.Nz/stride)*std::get<2>(index);
-
-    // tile limits taking into account 0 collapsing dimensions
-    int nxt, nyt, nzt;
-    nxt = (int)yee.Nx/stride;
-    nyt = (int)yee.Ny/stride;
-    nzt = (int)yee.Nz/stride;
-
-    nxt = nxt == 0 ? 1 : nxt;
-    nyt = nyt == 0 ? 1 : nyt;
-    nzt = nzt == 0 ? 1 : nzt;
-
-    // copy tile patch by stride hopping; either downsample or average
-
-    // field quantities; just downsample by hopping with stride
-    for(int ks=0; ks<nzt; ks++) 
-    for(int js=0; js<nyt; js++) 
-    for(int is=0; is<nxt; is++) {
-      ex(i0+is, j0+js, k0+ks) = yee.ex( is*stride, js*stride, ks*stride);
-      ey(i0+is, j0+js, k0+ks) = yee.ey( is*stride, js*stride, ks*stride);
-      ez(i0+is, j0+js, k0+ks) = yee.ez( is*stride, js*stride, ks*stride);
-
-      bx(i0+is, j0+js, k0+ks) = yee.bx( is*stride, js*stride, ks*stride);
-      by(i0+is, j0+js, k0+ks) = yee.by( is*stride, js*stride, ks*stride);
-      bz(i0+is, j0+js, k0+ks) = yee.bz( is*stride, js*stride, ks*stride);
-    }
-
-    // densities; these quantities we average over the volume
-    for(int ks=0; ks<nzt; ks++) 
-    for(int kstride=0; kstride < stride; kstride++) 
-    for(int js=0; js<nyt; js++) 
-    for(int jstride=0; jstride < stride; jstride++) 
-    for(int is=0; is<nxt; is++) 
-    for(int istride=0; istride < stride; istride++) {
-      jx(i0+is, j0+js, k0+ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jy(i0+is, j0+js, k0+ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jz(i0+is, j0+js, k0+ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      rh(i0+is, j0+js, k0+ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
-    }
-
-  } // tiles
 }
 
 
@@ -99,45 +27,40 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
 {
   auto& tile = dynamic_cast<fields::Tile<3>&>(grid.get_tile( cid ));
   auto& yee = tile.get_yee();
-
-  // tile limits taking into account 0 collapsing dimensions
-  //int nxt, nyt, nzt;
-  //nxt = (int)yee.Nx/stride;
-  //nyt = (int)yee.Ny/stride;
-  //nzt = (int)yee.Nz/stride;
-
-  //nxt = nxt == 0 ? 1 : nxt;
-  //nyt = nyt == 0 ? 1 : nyt;
-  //nzt = nzt == 0 ? 1 : nzt;
-
-  // field quantities; just downsample by hopping with stride
-  for(int ks=0; ks<nzM; ks++) 
-  for(int js=0; js<nyM; js++) 
-  for(int is=0; is<nxM; is++) {
-    if(ifea == 0) sbuf[0](is, js, ks) = yee.ex( is*stride, js*stride, ks*stride);
-    if(ifea == 1) sbuf[0](is, js, ks) = yee.ey( is*stride, js*stride, ks*stride);
-    if(ifea == 2) sbuf[0](is, js, ks) = yee.ez( is*stride, js*stride, ks*stride);
-
-    if(ifea == 3) sbuf[0](is, js, ks) = yee.bx( is*stride, js*stride, ks*stride);
-    if(ifea == 4) sbuf[0](is, js, ks) = yee.by( is*stride, js*stride, ks*stride);
-    if(ifea == 5) sbuf[0](is, js, ks) = yee.bz( is*stride, js*stride, ks*stride);
-  }
-
-
+    
   // clear buffer before additive variables
   sbuf[0].clear();
 
-  // densities; these quantities we average over the volume
-  for(int ks=0; ks<nzM; ks++) 
-  for(int kstride=0; kstride < stride; kstride++) 
-  for(int js=0; js<nyM; js++) 
-  for(int jstride=0; jstride < stride; jstride++) 
-  for(int is=0; is<nxM; is++) 
-  for(int istride=0; istride < stride; istride++) {
-    if(ifea == 6) sbuf[0](is, js, ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-    if(ifea == 7) sbuf[0](is, js, ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-    if(ifea == 8) sbuf[0](is, js, ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-    if(ifea == 9) sbuf[0](is, js, ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+  if(ifea <= 5) {
+
+    // field quantities; just downsample by hopping with stride
+    for(int ks=0; ks<nzM; ks++) 
+    for(int js=0; js<nyM; js++) 
+    for(int is=0; is<nxM; is++) {
+      if(ifea == 0) sbuf[0](is, js, ks) = yee.ex( is*stride, js*stride, ks*stride);
+      if(ifea == 1) sbuf[0](is, js, ks) = yee.ey( is*stride, js*stride, ks*stride);
+      if(ifea == 2) sbuf[0](is, js, ks) = yee.ez( is*stride, js*stride, ks*stride);
+
+      if(ifea == 3) sbuf[0](is, js, ks) = yee.bx( is*stride, js*stride, ks*stride);
+      if(ifea == 4) sbuf[0](is, js, ks) = yee.by( is*stride, js*stride, ks*stride);
+      if(ifea == 5) sbuf[0](is, js, ks) = yee.bz( is*stride, js*stride, ks*stride);
+    }
+
+  } else {
+
+    // densities; these quantities we average over the volume
+    for(int ks=0; ks<nzM; ks++) 
+    for(int kstride=0; kstride < stride; kstride++) 
+    for(int js=0; js<nyM; js++) 
+    for(int jstride=0; jstride < stride; jstride++) 
+    for(int is=0; is<nxM; is++) 
+    for(int istride=0; istride < stride; istride++) {
+      if(ifea == 6) sbuf[0](is, js, ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 7) sbuf[0](is, js, ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 8) sbuf[0](is, js, ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 9) sbuf[0](is, js, ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+    }
+
   }
 
   return;
@@ -178,7 +101,6 @@ inline void h5io::MasterFieldsWriter<3>::mpi_reduce_snapshots(
 
       // owner of the tile sends the message
       if(my_msg && !is_master) {
-        //std::cout << "rank:" << rank << "/msgrank " << msg_rank << " sending cid/fea: " << cid << " / " << ifea << std::endl;
 
         // load feature into the sbuf
         read_tile_feature(grid, cid, ifea);
@@ -189,8 +111,6 @@ inline void h5io::MasterFieldsWriter<3>::mpi_reduce_snapshots(
       } else if(my_msg && is_master) {
         // NOTE special branch for root. It does not send or receive
           
-        //std::cout << "rank:" << rank << " sending to myself cid/fea: " << cid << " / " << ifea << std::endl;
-
         // load feature into the sbuf
         read_tile_feature(grid, cid, ifea);
 
@@ -215,8 +135,6 @@ inline void h5io::MasterFieldsWriter<3>::mpi_reduce_snapshots(
         int j0 = nyM*std::get<1>(index);
         int k0 = nzM*std::get<2>(index);
 
-        //std::cout << " root:" << rank << " receiving cid/fea: " << cid << " / " << ifea << std::endl;
-
         // mpi receive; using feature as the mpi tag to distinguish between packets
         // NOTE root does not send nor receive
         if(!my_msg && is_master) {
@@ -224,16 +142,12 @@ inline void h5io::MasterFieldsWriter<3>::mpi_reduce_snapshots(
         }
 
         // unpack to global grid
-        //std::cout << "    done:" << rank << " receiving cid/fea: " << cid << " / " << ifea << " msg:" << rbuf[0](0,0,0) << std::endl;
-
-        // field quantities; just downsample by hopping with stride
         for(int ks=0; ks<nzM; ks++) 
         for(int js=0; js<nyM; js++) 
         for(int is=0; is<nxM; is++) {
           arrs[ifea](i0+is, j0+js, k0+ks) = rbuf[0]( is, js, ks);
         }
       }
-
 
       // everyone waits, tile by tile. Slow but gives minimum memory footprint
       comm.barrier();
@@ -266,11 +180,8 @@ inline bool h5io::MasterFieldsWriter<3>::write(
     for(auto& arr : arrs) arr.clear();
   }
 
-
   //--------------------------------------------------
-  //read_tiles(grid); // called inside mpi_reduce_snapshots
   mpi_reduce_snapshots(grid);
-
 
   // root writes
   if( grid.comm.rank() == 0 ) {
