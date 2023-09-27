@@ -57,6 +57,54 @@ void Tile<D>::delete_transferred_particles()
     container.delete_transferred_particles();
 }
 
+//--------------------------------------------------
+
+template<>
+void Tile<1>::get_incoming_particles(
+    corgi::Grid<1>& grid)
+{
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+  std::array<double,3> global_mins = {
+    static_cast<double>( grid.get_xmin() ),
+    static_cast<double>( 0.0 ),
+    static_cast<double>( 0.0 )
+  };
+
+  std::array<double,3> global_maxs = {
+    static_cast<double>( grid.get_xmax() ),
+    static_cast<double>( 1.0 ),
+    static_cast<double>( 1.0 )
+  };
+
+  // fetch incoming particles from neighbors around me
+  int j = 0;
+  int k = 0;
+  for(int i=-1; i<=1; i++) {
+        // get neighboring tile
+        auto ind = this->neighs(i); 
+        uint64_t cid = grid.id( std::get<0>(ind));
+        Tile& external_tile = dynamic_cast<Tile&>( grid.get_tile(cid) );
+
+        // loop over all containers
+        for(int ispc=0; ispc<Nspecies(); ispc++) {
+          auto& container = get_container(ispc);
+          auto& neigh = external_tile.get_container(ispc);
+
+          container.transfer_and_wrap_particles(
+              neigh, {i,j,k}, global_mins, global_maxs);
+        }
+
+  }
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
+
+}
 
 template<>
 void Tile<2>::get_incoming_particles(
@@ -399,6 +447,6 @@ void Tile<D>::shrink_to_fit_all_particles()
 
 
 
-//template class pic::Tile<1>;
+template class pic::Tile<1>;
 template class pic::Tile<2>;
 template class pic::Tile<3>;

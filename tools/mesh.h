@@ -75,7 +75,7 @@ class Mesh
           if(j >= (int)Ny + H) j = Ny + H - 1;
           if(k >= (int)Nz + H) k = Nz + H - 1;
 
-          //assert(false);
+          assert(false);
           //abort();
       }
 

@@ -227,5 +227,6 @@ inline bool h5io::PicMomentsWriter<D>::write(
 
 //--------------------------------------------------
 // explicit template class instantiations
+template class h5io::PicMomentsWriter<1>;
 template class h5io::PicMomentsWriter<2>;
 template class h5io::PicMomentsWriter<3>;

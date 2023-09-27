@@ -26,15 +26,13 @@ def ind2loc(gridI, tileI, conf):
     dx = 1.0  # conf.dx
     dy = 1.0  # conf.dy
     dz = 1.0  # conf.dz
-
+    
     # calculate coordinate extent
     x = xmin + i * (NxMesh) * dx + l * dx
     y = ymin + j * (NyMesh) * dy + m * dy
     z = zmin + k * (NzMesh) * dz + n * dz
 
     return [x, y, z]
-
-
 
 def initialize_tile(tile, indx, n, conf):
 
@@ -49,6 +47,8 @@ def initialize_tile(tile, indx, n, conf):
             container = pypic.threeD.ParticleContainer()
         elif conf.twoD:
             container = pypic.twoD.ParticleContainer()
+        elif conf.oneD:
+            container = pypic.oneD.ParticleContainer()
 
         # alternate injection between - and + charged prtcls
         # mass is normalized to units of m_e
@@ -80,6 +80,9 @@ def initialize_tile(tile, indx, n, conf):
     elif conf.twoD:
         tile.set_tile_mins(mins[0:2])
         tile.set_tile_maxs(maxs[0:2])
+    elif conf.oneD:
+        tile.set_tile_mins(mins[0:1])
+        tile.set_tile_maxs(maxs[0:1])
 
     return
 
@@ -110,6 +113,14 @@ def load_virtual_tiles(n, conf):
             n.add_tile(tile, ind) 
             tile.load_metainfo(tile_orig.communication)
             initialize_tile(tile, (i,j,0), n, conf)
+        
+        elif conf.oneD:
+            i, = ind
+            tile = pypic.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+            n.add_tile(tile, ind) 
+            tile.load_metainfo(tile_orig.communication)
+            initialize_tile(tile, (i,0,0), n, conf)
 
     return 
 
@@ -135,6 +146,14 @@ def load_tiles(n, conf):
                     if n.get_mpi_grid(i, j) == n.rank():
                         tile = pypic.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                         ind = (i, j)
+
+                        initialize_tile(tile, (i,j,k), n, conf)
+                        n.add_tile(tile, ind)
+                
+                elif conf.oneD:
+                    if n.get_mpi_grid(i) == n.rank():
+                        tile = pypic.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                        ind = (i,)
 
                         initialize_tile(tile, (i,j,k), n, conf)
                         n.add_tile(tile, ind)

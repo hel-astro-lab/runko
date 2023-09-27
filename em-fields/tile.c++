@@ -884,6 +884,7 @@ void Tile<1>::exchange_currents(corgi::Grid<1>& grid)
 
       //shifted neg's from vals with -1
       if (in == +1) { ito = Nx-1; ifro = -1; }
+      if (in == -1) { ito = 0;    ifro = Nx; }
 
         UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
           atomic_add( lhs_in.jx(ito-in*h, 0, 0), rhs_in.jx(ifro-in*h, 0, 0) );

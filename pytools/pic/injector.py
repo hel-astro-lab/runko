@@ -33,13 +33,15 @@ def inject(grid,
                     pass_flag = grid.get_mpi_grid(i, j, k) == grid.rank()
                 elif conf.twoD:
                     pass_flag = grid.get_mpi_grid(i, j) == grid.rank()
-
+                elif conf.oneD:
+                    pass_flag = grid.get_mpi_grid(i) == grid.rank()
                 if pass_flag:
                     # print("creating ({},{})".format(i,j))
 
                     # get cell & its content
                     if conf.threeD: cid  = grid.id(i, j, k)
                     elif conf.twoD: cid  = grid.id(i, j)
+                    elif conf.oneD: cid  = grid.id(i)
 
                     tile = grid.get_tile(cid)  # get cell ptr
 
@@ -74,7 +76,6 @@ def inject(grid,
                         #xD = 1.0 if conf.NxMesh > 1 else 0.0
                         #yD = 1.0 if conf.NyMesh > 1 else 0.0
                         #zD = 1.0 if conf.NzMesh > 1 else 0.0
-
                         for n in range(conf.NzMesh):
                             for m in range(conf.NyMesh):
                                 for l in range(conf.NxMesh):
@@ -110,9 +111,6 @@ def inject(grid,
                                             x0 = np.array(x0).flatten().tolist()
                                             u0 = np.array(u0).flatten().tolist()
                                         except:
-                                            print('error in injection function:')
-                                            print(x0)
-                                            print(u0)
                                             sys.exit()
                                         if not(len(x0) == 3): sys.exit()
                                         if not(len(u0) == 3): sys.exit()

@@ -143,12 +143,12 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       // jy
       if(D>=1) atomic_add( yee.jy(i1  , j1  , k1  ), Fy1*(1.0-Wx1)*(1.0-Wz1) );
-      if(D>=2) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1      *(1.0-Wz1) );
+      if(D>=1) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1      *(1.0-Wz1) );
       if(D>=3) atomic_add( yee.jy(i1  , j1  , k1+1), Fy1*(1.0-Wx1)*Wz1       );
       if(D>=3) atomic_add( yee.jy(i1+1, j1  , k1+1), Fy1*Wx1      *Wz1       );
 
       if(D>=1) atomic_add( yee.jy(i2  , j2  , k2  ), Fy2*(1.0-Wx2)*(1.0-Wz2) );
-      if(D>=2) atomic_add( yee.jy(i2+1, j2  , k2  ), Fy2*Wx2      *(1.0-Wz2) );
+      if(D>=1) atomic_add( yee.jy(i2+1, j2  , k2  ), Fy2*Wx2      *(1.0-Wz2) );
       if(D>=3) atomic_add( yee.jy(i2  , j2  , k2+1), Fy2*(1.0-Wx2)*Wz2       );
       if(D>=3) atomic_add( yee.jy(i2+1, j2  , k2+1), Fy2*Wx2      *Wz2       );
 
