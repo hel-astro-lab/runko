@@ -38,10 +38,10 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   auto& shearxz= arrs[12];
   auto& shearyz= arrs[13];
 
+  auto& densx =  arrs[14];
 
   // local variables
-  double gam;
-  double mass;
+  double gam, mass, wgt;
   double x0, y0, z0;
   double u0, v0, w0;
   int nparts;
@@ -73,8 +73,8 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       float_p* vel[3];
       for( i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-      //float_p* ch;
-      //ch = &( container.wgt(0) );
+      float_p* ch;
+      ch = &( container.wgt(0) );
 
 
       // loop and search over all particles
@@ -83,23 +83,57 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
       for(int n=n1; n<n2; n++) {
 
         // prtcl coordinate location; cast to double for the duration of this algorithm
-        x0 = static_cast<double>( loc[0][n] );
-        y0 = static_cast<double>( loc[1][n] );
-        z0 = static_cast<double>( loc[2][n] );
+        x0  = static_cast<double>( loc[0][n] );
+        y0  = static_cast<double>( loc[1][n] );
+        z0  = static_cast<double>( loc[2][n] );
+        wgt = static_cast<double>(     ch[n] );
+
+        u0  = static_cast<double>( vel[0][n] );
+        v0  = static_cast<double>( vel[1][n] );
+        w0  = static_cast<double>( vel[2][n] );
+
+        gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
 
         // capture NaNs
         assert(!std::isnan(x0));
         assert(!std::isnan(y0));
         assert(!std::isnan(z0));
+        assert(!std::isnan(wgt));
+
+        // check that particles are communicated properly
+        bool flagx = (x0-mins[0] >= -3.0) && (x0 <= maxs[0] +2.0 );
+        bool flagy = (y0-mins[1] >= -3.0) && (y0 <= maxs[1] +2.0 );
+        bool flagz = (z0-mins[2] >= -3.0) && (z0 <= maxs[2] +2.0 );
+
+        if( !flagx || !flagy || !flagz) {
+          std::cout << "ERR IN MOM:" << std::endl;
+          std::cerr << " minx: " << mins[0];
+          std::cerr << " miny: " << mins[1];
+          std::cerr << " minz: " << mins[2] << std::endl;
+          std::cerr << " maxx: " << maxs[0];
+          std::cerr << " maxy: " << maxs[1];
+          std::cerr << " maxz: " << maxs[2] << std::endl;
+          std::cerr << " x: " << x0-mins[0];
+          std::cerr << " y: " << y0-mins[1];
+          std::cerr << " z: " << z0-mins[2] << std::endl;
+          std::cerr << " vx: " << u0;
+          std::cerr << " vy: " << v0;
+          std::cerr << " vz: " << w0 << std::endl;
+          std::cerr << " fx: " << flagx;
+          std::cerr << " fy: " << flagy;
+          std::cerr << " fz: " << flagz;
+          assert(false);
+        }
+
 
         // rel prtcl index; assuming dx = 1; tile coordinates
         // limit to 0 Nx-1 just in case to avoid crashes
-        iff = D >= 1 ? limit( floor(x0-mins[0]), 0.0, maxs[0]-mins[0]-1.0) : 0;
-        jff = D >= 2 ? limit( floor(y0-mins[1]), 0.0, maxs[1]-mins[1]-1.0) : 0;
-        kff = D >= 3 ? limit( floor(z0-mins[2]), 0.0, maxs[2]-mins[2]-1.0) : 0;
+        iff = D >= 1 ? limit( floor(x0-mins[0]), -3., maxs[0]-mins[0] +2.) : 0;
+        jff = D >= 2 ? limit( floor(y0-mins[1]), -3., maxs[1]-mins[1] +2.) : 0;
+        kff = D >= 3 ? limit( floor(z0-mins[2]), -3., maxs[2]-mins[2] +2.) : 0;
 
         // update rho arrays; this is interpreted as mass density
-        yee.rho(iff,jff,kff) += mass;
+        yee.rho(iff,jff,kff) += mass*wgt;
 
         //-------------------------------------------------- 
 
@@ -109,29 +143,25 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         j = D >= 2 ? limit( floor(y0/stride), 0.0, double(ny)-1.0) : 0;
         k = D >= 3 ? limit( floor(z0/stride), 0.0, double(nz)-1.0) : 0;
 
-        u0 = static_cast<double>(vel[0][n]);
-        v0 = static_cast<double>(vel[1][n]);
-        w0 = static_cast<double>(vel[2][n]);
-
-        gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
 
         //--------------------------------------------------
         // next, physics quantities
 
         // number density 
-        if(ispc == 0) dense(i,j,k) += 1.; 
-        if(ispc == 1) densp(i,j,k) += 1.; 
+        if(ispc == 0) dense(i,j,k) += wgt; 
+        if(ispc == 1) densp(i,j,k) += wgt; 
+        if(ispc == 2) densx(i,j,k) += wgt; 
 
         // bulk flows
         if(ispc == 0) {
-          Vxe(i,j,k) += u0/gam; 
-          Vye(i,j,k) += v0/gam;
-          Vze(i,j,k) += w0/gam;
+          Vxe(i,j,k) += wgt*u0/gam; 
+          Vye(i,j,k) += wgt*v0/gam;
+          Vze(i,j,k) += wgt*w0/gam;
         }
         if(ispc == 1) {
-          Vxp(i,j,k) += u0/gam; 
-          Vyp(i,j,k) += v0/gam;
-          Vzp(i,j,k) += w0/gam;
+          Vxp(i,j,k) += wgt*u0/gam; 
+          Vyp(i,j,k) += wgt*v0/gam;
+          Vzp(i,j,k) += wgt*w0/gam;
         }
 
         // momentum density (flux of mass)
@@ -140,14 +170,14 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         // momz(i,j,k)    += w0*mass;
           
         // pressure (flux of momentum)
-        pressx(i,j,k)  += u0*u0*mass/gam;
-        pressy(i,j,k)  += v0*v0*mass/gam;
-        pressz(i,j,k)  += w0*w0*mass/gam;
+        pressx(i,j,k)  += wgt*u0*u0*mass/gam;
+        pressy(i,j,k)  += wgt*v0*v0*mass/gam;
+        pressz(i,j,k)  += wgt*w0*w0*mass/gam;
 
         // off-diagonal shear terms 
-        shearxy(i,j,k) += u0*v0*mass/gam;
-        shearxz(i,j,k) += u0*w0*mass/gam;
-        shearyz(i,j,k) += v0*w0*mass/gam;
+        shearxy(i,j,k) += wgt*u0*v0*mass/gam;
+        shearxz(i,j,k) += wgt*u0*w0*mass/gam;
+        shearyz(i,j,k) += wgt*v0*w0*mass/gam;
 
       } // end of prtcls
     } // end of species
@@ -200,6 +230,7 @@ inline bool h5io::PicMomentsWriter<D>::write(
 
     file["dense"] = arrs[0].serialize();
     file["densp"] = arrs[1].serialize();
+    file["densx"] = arrs[14].serialize(); // NOTE index
 
     file["Vxe"]   = arrs[2].serialize();
     file["Vye"]   = arrs[3].serialize();
