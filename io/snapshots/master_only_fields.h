@@ -31,7 +31,7 @@ class MasterFieldsWriter :
     /// general file name used for outputs
     const string file_name = "flds";
 
-    // internal global mesh size
+    // global mesh size
     int nx;
     int ny;
     int nz;
