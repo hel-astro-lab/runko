@@ -5,7 +5,7 @@ import h5py as h5
 
 import pycorgi
 import pyrunko
-
+import scipy
 
 
 def balance_mpi(n, conf, comm_size=None, mpi_master_mode=False):
@@ -86,7 +86,6 @@ def balance_mpi_2D(n, comm_size=None):
 def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
 
     if n.rank() == 0:  # only master initializes; then sends
-
         if comm_size == None:
             comm_size = n.size()
 
@@ -135,8 +134,17 @@ def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
         # check that nodes get about same work load
         y = np.bincount(igrid.flatten())
         ii = np.nonzero(y)[0]
-        #print("work load:")
-        #print(list(zip(ii,y[ii])))
+        grid_tile_list = list(zip(ii,y[ii]))
+
+        tiles_owned = {}
+        for (rank, nt) in zip(ii, y[ii]):
+            try:
+                tiles_owned[nt] += 1
+            except:
+                tiles_owned[nt] = 1
+
+        print('tiles_owned', tiles_owned)
+        
 
         # print("grid:")
         for i in range(nx):
@@ -150,6 +158,140 @@ def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
     n.bcast_mpi_grid()
 
     return
+
+
+# load nodes using 3D Hilbert curve
+# Leaves i_drop_rank first ranks to be empty. In addition, prints analysis of the grid state.
+# Can be used to balance the memory impact of the first node that has rank0 (which can have large arrays due to IO).
+def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None):
+
+    if n.rank() == 0:  # only master initializes; then sends
+        if comm_size == None:
+            comm_size = n.size()
+
+        print("loadbalancing grid with ", i_drop_rank, " empty ranks...")
+
+        #for i_drop_rank in range(1, mpi_master_mode+1):
+        if True:
+
+            # master mode does not allocate any tiles to rank =0
+            new_comm_size = comm_size - i_drop_rank
+
+            nx = n.get_Nx()
+            ny = n.get_Ny()
+            nz = n.get_Nz()
+
+            m0 = np.log2(nx)
+            m1 = np.log2(ny)
+            m2 = np.log2(nz)
+
+            if not (m0.is_integer()):
+                raise ValueError("Nx is not power of 2 (i.e. 2^m)")
+
+            if not (m1.is_integer()):
+                raise ValueError("Ny is not power of 2 (i.e. 2^m)")
+
+            if not (m2.is_integer()):
+                raise ValueError("Nz is not power of 2 (i.e. 2^m)")
+
+            # print('Generating hilbert with 2^{} {}'.format(m0,m1))
+            hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2))
+
+            igrid = np.zeros((nx, ny, nz), int)
+            grid = np.zeros((nx, ny, nz))  # , int)
+
+            for i in range(nx):
+                for j in range(ny):
+                    for k in range(nz):
+                        grid[i, j, k] = hgen.hindex(i, j, k)
+
+            # print(grid)
+            hmin, hmax = np.min(grid), np.max(grid)
+            for i in range(nx):
+                for j in range(ny):
+                    for k in range(nz):
+                        igrid[i, j, k] = np.floor(new_comm_size * grid[i, j, k] / (hmax + 1))
+
+            igrid[:,:,:] += i_drop_rank  # offset by one so that rank=0 is skipped
+
+            # check that nodes get about same work load
+            y = np.bincount(igrid.flatten())
+            ii = np.nonzero(y)[0]
+            grid_tile_list = list(zip(ii,y[ii]))
+
+            tiles_owned = {}
+            for (rank, nt) in zip(ii, y[ii]):
+                try:
+                    tiles_owned[nt] += 1
+                except:
+                    tiles_owned[nt] = 1
+
+            tile_nbors = {}
+
+            # count neighbors
+            val  = np.zeros((nx,ny,nz), dtype='int')
+            mask = np.zeros((nx,ny,nz), dtype='int')
+
+            # count how many neighbors each rank has
+            # https://stackoverflow.com/questions/12612663/counting-of-adjacent-cells-in-a-numpy-array
+            kernel = np.ones((3,3,3), dtype='int')
+            tot_nbors = 0
+
+            nbors_per_rank = np.zeros(comm_size)
+            tiles_per_rank = np.zeros(comm_size)
+            for r in range(0, comm_size):
+                ii = np.where(igrid[:] == r)
+
+                # outside cells have value of 1
+                val[:] = 1 
+                val[ii] = 0
+
+                mask[:] = 0 
+                mask[ii] = 1
+
+                # convolve
+                c = scipy.signal.convolve(val, kernel, mode='same')
+                ns = np.sum( c[:,:,:]*mask[:,:,:] ) # sum over values that are inside the rank
+
+                #print(r, c[:,:,:]*mask[:,:,:])
+                try:
+                    tile_nbors[ns] += 1
+                except:
+                    tile_nbors[ns] = 1
+                tot_nbors += ns
+
+                nbors_per_rank[r] = ns
+                tiles_per_rank[r] = len(ii)
+
+            #print('  tile_nbors', tile_nbors)
+            #print('  avg nbors per tile', tot_nbors/(nx*ny*nz))
+            #avg_tiles_per_node = nx*ny*nz/new_comm_size
+            #print('tiles_owned', i_drop_rank, tiles_owned, tot_nbors/(nx*ny*nz))
+
+            #print('analysis: {:3d} mean(nbors): {:5.3f} mean(nbor/tiles): {5.3f}'.format(
+            print('analysis: {:3d} mean(nbors): {:6.3f} min(nbors) {:6.3f} max(nbors) {:6.3f} mode(nbors) {:6.3f} mean(nbor/tile) {:6.3f}'.format(
+                i_drop_rank,
+                np.mean(nbors_per_rank),
+                np.min(nbors_per_rank),
+                np.max(nbors_per_rank),
+                np.median(nbors_per_rank),
+                np.mean(nbors_per_rank[1:]/tiles_per_rank[1:]),
+                                           ))
+
+        # print("grid:")
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    val = igrid[i, j, k]
+                    n.set_mpi_grid(i, j, k, val)
+                    # print("({},{}) = {}".format(i,j,val))
+        
+
+    # broadcast calculation to everybody
+    n.bcast_mpi_grid()
+
+    return
+
 
 
 # load nodes in a recursive "catepillar track" type grid.
