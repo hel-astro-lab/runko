@@ -135,8 +135,8 @@ def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
         # check that nodes get about same work load
         y = np.bincount(igrid.flatten())
         ii = np.nonzero(y)[0]
-        print("work load:")
-        print(list(zip(ii,y[ii])))
+        #print("work load:")
+        #print(list(zip(ii,y[ii])))
 
         # print("grid:")
         for i in range(nx):
