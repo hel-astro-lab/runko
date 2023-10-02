@@ -86,7 +86,7 @@ public:
   double inj_ene_ph  = 0.0;
   double inj_ene_ep  = 0.0;
 
-  double tau_measured = 0.0;
+  double tau_global = 0.0;
   
   ManVec<double> hist;
   ManVec<double> hist_ene_edges;
@@ -168,7 +168,7 @@ public:
     auto t2 = iptr->t2;
     auto long_name = name + "_" + t1 + "_" + t2;
 
-    std::cout << " adding: " << name << " of t1/t2 " << t1 << " " << t2 << std::endl;
+    //std::cout << " adding: " << name << " of t1/t2 " << t1 << " " << t2 << std::endl;
     interactions.push_back(iptr);
 
     info_max_int_cs[name] = 0.0;
@@ -222,24 +222,15 @@ public:
 
         //--------------------------------------------------
         // double counting prevention since we only consider targets with energy more than incident particle
-
         if(true){
 
           // require e1 < e2 = e_tar
           // e_tar = [emin, emax]
           // therefore, if e1 > emin we need to set emin' = max(e1, emin)
           // also, if e1 > emax -> interaction is not possible
-            
-          // NOTE: not needed 
-          //if(e1 > emax) {
-          //  id++; // remembering to increase counter nevertheless
-          //  continue; // no possible targets to interact with
-          //}
-            
-          //if(emin < e1) emin = e1; 
-          emin = std::max(e1, emin); // double counting prevention; only consider LPs with energy larger than incident
+          emin = std::max(e1, emin); 
           
-          // other way around; require e1 > e2 = etarget
+          // ver2: other way around; require e1 > e2 = etarget
           // e_tar = [emin, emax]
           //
           // therefore emax' = min(e1, emax)
@@ -262,14 +253,15 @@ public:
         //jmin = 0;
         //jmax = N2;
                 
+        // ver1
         // total weight of prtcls between jmin-jmax
         // ver1: calculates total weight for every particle; value evolves dynamically
-        float_p wsum = 0.0f;
-        for(size_t j=jmin; j<jmax; j++) wsum += con_tar->wgt( j ); // sum( w[jmin:jmax] )
+        //float_p wsum = 0.0f;
+        //for(size_t j=jmin; j<jmax; j++) wsum += con_tar->wgt( j ); // sum( w[jmin:jmax] )
 
-        // FIXME: switch to this version as it is faster
-        // ver2: assumes static targets; value calculated in the beginnig of loop
-
+        // ver2
+        // NOTE switching to this version as it is faster
+        // assumes static targets; value calculated in the beginnig of loop
         float_p wsum2 = 0.0f;
           
         //--------------------------------------------------
@@ -295,24 +287,11 @@ public:
 
             e2 = con_tar->eneArr[j];
             auto [f1,f2] = iptr->accumulate(t1, e1, t2, e2);
-            f = f1*f2; //std::max(f1,f2);  // FIXME is max ok here? or product?
+            f = f1*f2; //std::max(f1,f2);  // TODO is max ok here? or product?
 
-            //facc += f; // w-weighted average
-            //facc += w*f/wsum2; // w-weighted average // ver1
             wsum2 += w/f; 
           }
         }
-
-        //if(wsum2 > 1.0e6){
-        //  std::cout << "ERROR: wsum" << std::endl;
-        //  std::cout << " wsum:" << wsum << std::endl;
-        //  std::cout << " wsum2:" << wsum2 << std::endl;
-        //  std::cout << " jmin:" << jmin << std::endl;
-        //  std::cout << " jmax:" << jmax << std::endl;
-        //  //std::cout << " wsum_min:" << wsum_min << std::endl;
-        //  assert(false);
-        //}
-
 
         //--------------------------------------------------
         // average accumulation factor
@@ -335,8 +314,8 @@ public:
         //    //facc += f; // w-weighted average
         //    facc += w*f/wsum2; // w-weighted average // ver1
         //    
-        //    // or max
-        //    //facc = std::max(facc, f);                        // ver2
+        //    // or max // ver2
+        //    //facc = std::max(facc, f);                        
 
         //    //std::cout << " facc: " << facc;
         //    //std::cout << " f: " << f;
@@ -345,7 +324,6 @@ public:
         //    //std::cout << " e1: " << e1;
         //    //std::cout << " e2: " << e2;
         //    //std::cout << std::endl;
-
         //  }
 
         //} else {
@@ -354,9 +332,10 @@ public:
          
 
         ////--------------------------------------------------
-        //// debug
+        //// debug; thest how much wsum and wsum2 deviate
         ////std::cout << "wsum " <<  wsum << " " << wsum2 << " jminmax " << jmin << " " << jmax << std::endl;
         ////assert( std::abs( wsum - wsum2 ) < EPS );
+           
         //--------------------------------------------------
         //total sum of target weights
         float_p wtot = 0.0f;
@@ -381,6 +360,7 @@ public:
 
           ids.push_back(id); // update interaction numbering
                            
+          // debug prints
           //std::cout << "comp_pmax: " << id << " " << iptr->name << " " << t1 << "/" << t2;
           //std::cout << " cmaxs:" << cross_max;
           //std::cout << " probs:" << par_int_rate << " prob: " << par_int_rate/prob_norm;
@@ -420,18 +400,6 @@ public:
     // draw random interaction from cumulative distribution
     int reti = toolbox::sample_prob(cumsum_int_probs, rand() );
 
-    //std::cout << "draw_rand_proc: ";
-    //std::cout << " ptot:" << ptot;
-    //std::cout << " reti:" << reti;
-
-    //std::cout << " probs:";
-    //for(size_t i=0; i<N; i++) std::cout << probs[i] << " , ";
-
-    //std::cout << " cumsum:";
-    //for(size_t i=0; i<N; i++) std::cout << cumsum_int_probs[i] << " , ";
-
-    //std::cout << std::endl;
-
     // get corresponding id
     return reti;
   }
@@ -450,21 +418,11 @@ public:
     //} else if(t == "e+") { return 1.0; 
     //}
       
-    // photon emphasis
+    //// photon emphasis
     if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
     } else if(t == "e-") { return 1.0; 
     } else if(t == "e+") { return 1.0; 
     }
-      
-    // FIXME not useful
-    //if(       t == "ph") { return x > 1.0 ? 2.0 : 1.0; //std::pow(x, 0.2); //std::pow(x, -0.5); 
-    //} else if(t == "e-") { return 1.0; //std::pow(x, +0.2);
-    //} else if(t == "e+") { return 1.0; //std::pow(x, +0.2);
-    //}
-    //if(       t == "ph") { return std::pow(x, +1.0); 
-    //} else if(t == "e-") { return std::pow(x, -1.0);
-    //} else if(t == "e+") { return std::pow(x, -1.0);
-    //}
 
     assert(false);
   }
@@ -478,15 +436,8 @@ public:
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
-    // test cons storage calling
-    //std::cout << "calling cons with e- and returns:" << cons["e-"]->type << " " << cons["e-"]->size() << std::endl;
-    //std::cout << "calling cons with e+ and returns:" << cons["e+"]->type << " " << cons["e+"]->size() << std::endl;
-    //std::cout << "calling cons with ph and returns:" << cons["ph"]->type << " " << cons["ph"]->size() << std::endl;
-
-
     //--------------------------------------------------
     // call pre-iteration functions to update internal arrays 
-    // TODO
     for(auto&& con : tile.containers)
     {
       con.sort_in_rev_energy();
@@ -530,11 +481,11 @@ public:
             //          pic::ParticleContainer<D>& con
             //          ){
             //for(int n1=con1.size()-1; n1>=0; n1--) {
-            for(size_t n1=0; n1<con1.size(); n1++) { // FIXME
+            for(size_t n1=0; n1<con1.size(); n1++) { 
 
               // loop over targets
               //for(int n2=con2.size()-1; n2>=0; n2--) {
-              for(size_t n2=0; n2<con2.size(); n2++) { // FIXME
+              for(size_t n2=0; n2<con2.size(); n2++) { 
 
                 // NOTE: incident needs to be unpacked in the innermost loop, since 
                 // some interactions modify its value during the iteration
@@ -615,7 +566,6 @@ public:
                       con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
 
                       // add new
-                      // TODO add_particle
                       cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w1);
 
                       //std::cout << "killing t1" << t1 << std::endl;
@@ -638,7 +588,7 @@ public:
                       con2.to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                       con2.wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
 
-                      // TODO add_particle
+                      // add_particle
                       cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w2);
 
                       //std::cout << "killing t2" << t2 << std::endl;
@@ -694,9 +644,6 @@ public:
       con.update_cumulative_arrays();
     }
 
-    // FIXME: is it better to keep the cumulative wgt array in Particles container or create/destroy it here?
-
-
     //--------------------------------------------------
     // collect statistics for bookkeeping
     std::map<std::string, int> info_prtcl_num;
@@ -720,9 +667,7 @@ public:
     //--------------------------------------------------
     // loop over incident types
 
-    // ver2
-
-    // random shuffled indices of containers; makes iteration order random in every step
+    // ver2: random shuffled indices of containers; makes iteration order random in every step
     //std::vector<std::string> t_inis = { "e-", "e+", "ph" };
     //std::shuffle(std::begin(t_inis), std::end(t_inis), gen);
     //for(auto t1 : t_inis)
@@ -730,7 +675,9 @@ public:
     //  if(is_empty(t1)) continue; // no interactions with incident type t1
     //  auto con1 = cons[t1];
 
-    for(auto&& con1 : tile.containers) // ver1
+
+    // ver1: ordered iteration over prtcls
+    for(auto&& con1 : tile.containers) 
     {
       auto t1 = con1.type;
       if(is_empty(t1)) continue; // no interactions with incident type t1
@@ -739,6 +686,7 @@ public:
       size_t Ntot1 = info_prtcl_num[t1]; // read particle number from here; 
                                          // it changes adaptively and routines assume non-evolving arrays
 
+      // ver2
       // create randomized order for particle access
       //std::vector<size_t> inds(Ntot1);
       //for(size_t n1=0; n1<Ntot1; n1++) inds[n1] = n1;
@@ -750,7 +698,7 @@ public:
       //          pic::ParticleContainer<D>& con
       //          ){
       for(size_t n1=0; n1<Ntot1; n1++) {
-      //for(int n1=con1.size()-1; n1>=0; n1--) {
+      //for(int n1=con1.size()-1; n1>=0; n1--) { // reverse iteration
 
         //unpack incident 
         lx1 = con1.loc(0,n1);
@@ -771,23 +719,12 @@ public:
 
         if(ids.size() == 0) continue; // no targets to interact with 
 
-        // maximum interaction rate
-        //= sigma_max * w2_sum * w1/prob_norm
-
-        // TODO add 1/facc here
-        double prob_vir_max = 0.0;
-        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]/faccs[i]; //*prob_norm;
-        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*std::max(wsums[i], static_cast<double>(w1))/faccs[i]; // FIXME max(w1, w2) version
-        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0*cmaxs[i]*wsums[i]*w1/faccs[i]; // FIXME additional w1 here
-        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]*w1; // FIXME facc is in wsums
-        //for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*std::max(wsums[i], w1); // FIXME max(w1, w2) version
 
         // total probability
+        // NOTE: maximum interaction rate = sigma_max * w2_sum * w1/prob_norm
+        double prob_vir_max = 0.0;
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]; 
                                                                                              
-                                                                                             
-        // NOTE: no w1 here. putting w1 gives different result from uni-weight sim. Hence, its wrong.
-        // instead, it is taken into account later on via prob_update \propto 1/w1
 
         //if(prob_vir_max>=1.01){ // some tolerance here
         //  std::cout << " prob_vir_max:" << prob_vir_max << std::endl;
@@ -797,9 +734,8 @@ public:
         //}
 
         // exponential waiting time between interactions
-        double t_free = -log( rand() )*prob_norm/(prob_vir_max*w1); ///w1; // FIXME added /w1
-
-
+        double t_free = -log( rand() )*prob_norm/(prob_vir_max*w1); //NOTE w1 here
+                                                                    //
         //if( t_free > 1.0) {
         //if( true ) {
         //  std::cout<< "t_free: " << t_free << " N_Q/p_int: " << prob_norm/prob_vir_max << std::endl;
@@ -871,39 +807,16 @@ public:
           float_p cm_cur = info_max_int_cs[iptr->name];
           info_max_int_cs[iptr->name] = std::max( cm_cur, cm*vrel/2.0f);
 
-          // FIXME which max should this prob be compared against?  I think ver3 or 4
-
-          // ver1
-          // maximum partial interaction rate of current interaction type;
-          // NOTE: should be sum of all interactions
-          //double prob_int_max = 2.0*cmax*wsum*w1/prob_norm; // fac 2 from v_rel = 2c
-          //prob = cm*wsum*w1/prob_norm; 
-          //double prob_vir = prob/prob_int_max
-
-          // ver2
-          //prob = cm*wsum*w1/prob_norm; 
-          //double prob_vir = prob/prob_vir_max;
-
-          // ver3
-          //double cm_hat_max = 0.0;
-          //for(size_t i=0; i<ids.size(); i++) cm_hat_max += 2.0*cmaxs[i];
-          //double prob_vir = cm/cm_hat_max;
-
-          // ver4
           // comparison of interaction to max interaction 
           double prob_vir = cm*vrel/(2.0*cmax);
 
           // correct average accumulation factor with the real value
-          // TODO add 1/facc here?
-          // or facc_real/facc_vir ??
-          //auto [facc3, facc4] = iptr->do_accumulate ? iptr->accumulate(t1, e1, t2, e2) : 1.0;
           auto [facc3, facc4] = iptr->accumulate(t1, e1, t2, e2);
           facc3 = iptr->do_accumulate ? facc3 : 1.0f;
           facc4 = iptr->do_accumulate ? facc4 : 1.0f;
 
 
           // FIXME remove check if sure this works
-          //if(true){
           if(prob_vir >= 1.0){
             std::cout << " prob_vir > 1: " << prob_vir << std::endl;
             std::cout << " int  " << iptr->name << std::endl;
@@ -915,9 +828,6 @@ public:
             //assert(false);
           }
 
-          // correct for real/max facc factor
-          //prob_vir *= facc_max/std::max(facc3, facc4); // NOTE: prob \propto 1/facc 
-          // NOTE: not needed anymore since facc is in wsum -> \sum w/facc
 
           if(rand() < prob_vir)  // check if this interaction is chosen among the sampled ones
           {
@@ -927,9 +837,6 @@ public:
             // particle values after interaction
             auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
             auto [t4, ux4, uy4, uz4, w4] = duplicate_prtcl(t2, ux2, uy2, uz2, w2);
-
-            // enhance incident energy losses if target is heavier
-            //iptr->wtar2wini = std::max(1.0f, wmax/wmin); // FIXME new
 
             // interact and udpate variables in-place
             iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4 );
@@ -951,12 +858,6 @@ public:
             // limit explosive particle creation
             float_p n3 = std::min( fw3, 32.0f );
             float_p n4 = std::min( fw4, 32.0f );
-
-
-            // FIXME using new weights to take into account change of prtcl numbers
-            //wmin = min(w3, w4); // minimum available weight
-            //wmax = max(w3, w4); // maximum available weight
-
 
             //--------------------------------------------------
             if(t1 == t3 && t2 == t4) { // scattering interactions
@@ -991,8 +892,6 @@ public:
               prob_kill3 = -1.0f;
               prob_kill4 = -1.0f;
             } else { // annihilation interactions
-
-              // TODO text and calc wmin from w3 and w4?
 
               // weight of the new type is the minimum of the two incident particles
               // share mutual weight between outgoing prtcls
@@ -1034,9 +933,8 @@ public:
 
               // remember to recalc prob_upd
               wmin = min(w3, w4); // minimum available weight
-              prob_upd3 = wmin/w3; // FIXME
-              prob_upd4 = wmin/w4; // FIXME
-
+              prob_upd3 = wmin/w3; 
+              prob_upd4 = wmin/w4; 
 
             } else { // annihilation interactions
                        
@@ -1088,7 +986,6 @@ public:
             //  std::cout << " n4: " << n4 << std::endl;
             //  std::cout << " f3: " << facc3 << std::endl;
             //  std::cout << " f4: " << facc4 << std::endl;
-
             //  assert(false);
             //}
 
@@ -1265,58 +1162,6 @@ public:
 
             } // end of prtcl t1/t3 addition
 
-
-
-            //--------------------------------------------------
-            // old prtcl add routine
-            //if(false) {
-
-            //  if(rand() < prob_upd3){
-            //    if(t1 == t3){ // if type is conserved only update the prtcl info
-            //                    
-            //      // NOTE: we keep location the same
-            //      con1.vel(0,n1) = ux3;
-            //      con1.vel(1,n1) = uy3;
-            //      con1.vel(2,n1) = uz3;
-            //    } else { // else destroy previous and add new 
-
-            //      // destroy current
-            //      con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
-            //      con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
-
-            //      // add new
-            //      cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w1);
-
-            //      //std::cout << "killing t1" << t1 << std::endl;
-            //      //std::cout << "adding t3" << t3 << std::endl;
-            //    }
-            //  }
-            //  //-------------------------------------------------- 
-
-            //  //-------------------------------------------------- 
-            //  if(rand() < prob_upd4){
-            //    if(t2 == t4){ // if type is conserved only update the prtcl info
-
-            //      // NOTE: we keep location the same
-            //      con2->vel(0,n2) = ux4;
-            //      con2->vel(1,n2) = uy4;
-            //      con2->vel(2,n2) = uz4;
-            //    } else { // else destroy previous and add new 
-
-            //      // destroy current
-            //      con2->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
-            //      con2->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
-
-            //      cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w2);
-
-            //      //std::cout << "killing t2" << t2 << std::endl;
-            //      //std::cout << "adding t4" << t4 << std::endl;
-            //    }
-            //  }
-            //}
-            //--------------------------------------------------
-
-
             //-------------------------------------------------- 
           }
         }
@@ -1340,6 +1185,7 @@ public:
       auto t1 = con.type;
       info_prtcl_kill[t1] = cons[t1]->to_other_tiles.size();
     }
+
 
     // print
     //std::cout << "-------prtcl statistics----------\n";
@@ -1574,13 +1420,10 @@ public:
   }
 
 
-  //--------------------------------------------------
-  // photon escape from the box w/ escape probability formalism
-  void leak_photons(
+
+  void comp_tau(
       pic::Tile<D>& tile, 
-      double w2tau_units,
-      double tc_per_dt,
-      double tau_ext
+      double w2tau_units
       )
   {
 
@@ -1618,8 +1461,6 @@ public:
     //float_p tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
     float_p tauT = wsum_ep*w2tau_units; // \tau_T = \sigma_T wsum
 
-    tau_measured = tauT; // store for book keeping
-
     //std::cout << "escape" << std::endl;
     //std::cout << "   tauT: " << tauT << std::endl;
     //std::cout << "   tauT2:" << tauT2 << std::endl;
@@ -1627,6 +1468,31 @@ public:
     //std::cout << "   N_-:  " << cons["e-"]->size() << std::endl;
     //std::cout << "   N_+:  " << cons["e+"]->size() << std::endl;
     //std::cout << "   N_w:  " << w2tau_units << std::endl;
+
+    // increase global tau measure
+    tau_global += tauT; 
+
+    return;
+  }
+
+  //--------------------------------------------------
+  // photon escape from the box w/ escape probability formalism
+  void leak_photons(
+      pic::Tile<D>& tile, 
+      double tc_per_dt,
+      double tau_ext
+      )
+  {
+
+    // build pointer map of types to containers; used as a helper to access particle tyeps
+    std::map<std::string, ConPtr> cons;
+    for(auto&& con : tile.containers) cons.emplace(con.type, &con );
+
+    //--------------------------------------------------
+    // NOTE two variants; TODO which one is more correct for escape prob. formalism?
+      
+    //float_p tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
+    float_p tauT = tau_global; // global optical depth of whole domain
 
     if(tau_ext > 0.0) tauT = tau_ext; // use external tau if given
 
@@ -1651,7 +1517,6 @@ public:
       }
 
       //sKN = 1.0f; // Thomson cross-section
-      // TODO sometimes gives sKN < 0.0 values
 
       // empirical escape probability function to account for forward scattering pile-up
       // see Lightman \& Zdarskiaki 1987
@@ -1666,20 +1531,10 @@ public:
                                                                // this mimics pair-production opacity
                                                                // asymptotic solution to slab geometry
                                                                // with rad. transf. when tau -> infty
-                                                                 
-      // NOTE smaller t_esc means the more likely it is to escape
-      //t_esc *= w; // FIXME
-
-
       //P_esc = t_esc/dt_per_tc; // P = R/c / dt for tau -> 0 
 
-      // tc_per_dt = 1/x = 20
-
-      // photon has an escape probability rate of P_esc = 1.0/(t_c*t_esc) to escape
-      // probability is p_esc = P_esc*dt = dt/(t_c*t_esc) 
-
-      // FIXME
-      //tc_per_dt *= w; // compensate by weight; heavier prtcl has less prob of escaping
+      // photon has an escape probability rate of P_esc = 1.0/(t_c*t_esc) to escape.
+      // Probability is p_esc = P_esc*dt = dt/(t_c*t_esc) 
 
       //std::cout << "esc:" << 1.0f/tc_per_dt/t_esc << " " << t_esc << " " << tc_per_dt << std::endl;
 
@@ -1696,31 +1551,7 @@ public:
       }
 
 
-      //if( w > 1.0e15 or x > 1.0e4) {
-      //  std::cout << "ERR: leak ph" << std::endl;
-      //  std::cout << "  x:" << x << std::endl;
-      //  std::cout << "  w:" << w << std::endl;
-      //  std::cout << "  f:" << f << std::endl;
-      //  std::cout << "  t_esc:" << t_esc << std::endl;
-      //  std::cout << "  sKN   :" << sKN << std::endl;
-      //  std::cout << "  1/tc_per_dt :" << 1.0f/tc_per_dt << std::endl;
-      //  assert(false);
-      //}
-
-
       if( 1.0f/tc_per_dt/t_esc > rand() ) {
-      //if( 1.0f/(tc_per_dt*t_esc) > rand() ) {
-      //if( 1.0f/rand() > tc_per_dt*t_esc) {
-
-        // escape
-        //if( t_esc/tc_per_dt > rand() ){
-        //if( 1.0f/(t_esc*tc_per_dt) > rand() ){
-        //if( rand() > t_esc*tc_per_dt ){
-        //if( rand() < dt_per_tc/t_esc ){
-        //if( rand() < 1.0f/P_esc ){
-        //if( P_esc  < 1.0f/rand() ){
-        //if( 1.0/rand() > P_esc ){
-
         leaked_ene  += x*w;
         leaked_wsum += w;
         leaked_pnum += 1;
