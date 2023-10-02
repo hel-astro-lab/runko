@@ -15,6 +15,7 @@ namespace py = pybind11;
 #include "../pic/pushers/vay.h"
 #include "../pic/pushers/higuera_cary.h"
 #include "../pic/pushers/rgca.h"
+#include "../pic/pushers/photon.h"
 
 #include "../pic/interpolators/interpolator.h"
 #include "../pic/interpolators/linear_1st.h"
@@ -40,6 +41,7 @@ namespace py = pybind11;
 #include "../io/writers/pic.h"
 #include "../io/snapshots/test_prtcls.h"
 #include "../io/snapshots/pic_moments.h"
+#include "../io/snapshots/master_only_moments.h"
 #include "../io/tasker.h"
 
 
@@ -362,6 +364,10 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::BorisPusher<1,3>>(m_1d, "BorisPusher", picpusher1d)
     .def(py::init<>());
     
+  // Photon pusher
+  py::class_<pic::PhotonPusher<1,3>>(m_1d, "PhotonPusher", picpusher1d)
+    .def(py::init<>());
+
   //--------------------------------------------------
   // 2D version
   //py::class_< pic::Pusher<2,3>, PyPusher<2> > picpusher2d(m_2d, "Pusher");
@@ -416,6 +422,9 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::rGCAPusher<2,3>>(m_2d, "rGCAPusher", picpusher2d)
     .def(py::init<>());
 
+  // Photon pusher
+  py::class_<pic::PhotonPusher<2,3>>(m_2d, "PhotonPusher", picpusher2d)
+    .def(py::init<>());
 
    //--------------------------------------------------
   // 3D version
@@ -470,6 +479,9 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::rGCAPusher<3,3>>(m_3d, "rGCAPusher", picpusher3d)
     .def(py::init<>());
 
+  // Photon pusher
+  py::class_<pic::PhotonPusher<3,3>>(m_3d, "PhotonPusher", picpusher3d)
+    .def(py::init<>());
 
   //--------------------------------------------------
 
@@ -661,6 +673,10 @@ void bind_pic(py::module& m_sub)
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write", &h5io::PicMomentsWriter<3>::write);
 
+  // 3D
+  py::class_<h5io::MasterPicMomentsWriter<3>>(m_3d, "MasterPicMomentsWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write", &h5io::MasterPicMomentsWriter<3>::write);
 
 
   //--------------------------------------------------
