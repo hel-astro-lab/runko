@@ -1,4 +1,5 @@
 #include <string>
+#include <pybind11/numpy.h>
 
 #include "py_submodules.h"
 
@@ -554,8 +555,15 @@ void bind_fields(py::module& m_sub)
   // slice writer; only in 3D
   py::class_<h5io::FieldSliceWriter>(m_3d, "FieldSliceWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::FieldSliceWriter::write);
-
+    .def("write",        &h5io::FieldSliceWriter::write)
+    .def("get_slice", [](h5io::FieldSliceWriter &s, int k)
+            {
+                //const auto N = static_cast<pybind11::ssize_t>(s.arrs[k].size());
+                const auto nx = static_cast<pybind11::ssize_t>( s.nx );
+                const auto ny = static_cast<pybind11::ssize_t>( s.ny );
+                auto v = pybind11::array_t<float_m>( {nx, ny}, s.arrs[k].data() );
+                return v;
+            });
 
   //--------------------------------------------------
   // Full IO 
