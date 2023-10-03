@@ -14,6 +14,7 @@ from .sampling import sample_blackbody
 from .indices import Stagger
 from .indices import get_index
 from .scheduler import Scheduler
+from .terminal_plot import TerminalPlot
 
 
 # physics modules
