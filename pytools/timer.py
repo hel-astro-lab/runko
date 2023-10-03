@@ -17,17 +17,6 @@ class Timer:
     verbose = 0
 
     def __init__(self, names=[], components=[]):
-        # self.names = names
-        # self.n = len(names)
-
-        # for i in range(self.n):
-        #    self.times.append( [] )
-
-        # self.components = components
-        # self.nc = len(self.components)
-
-        # for i in range(self.nc):
-        #    self.ctimes.append( [] )
 
         self.names = {}
         for name in names:
@@ -37,35 +26,8 @@ class Timer:
         for name in components:
             self.components[name] = []
 
-    # def _look_name(self, name):
-    #    #for i, ref_name in enumerate(self.names):
-    #    #    if name == ref_name:
-    #    #        return i
-    #    #return self.error_index
-    #    return self.names[name]
-
-    # def _look_comp(self, name):
-    #    for i, ref_name in enumerate(self.components):
-    #        if name == ref_name:
-    #            return i
-    #    return self.error_index
-
     def start(self, name):
         t0 = time.time()  # stop before lookup
-
-        # add name if it does not exist
-        # indx = self._look_name(name)
-        # if indx == self.error_index:
-        #    self.names.append(name)
-        #    self.n += 1
-        #    self.times.append( [] )
-        #    indx = self._look_name(name)
-
-        # self.times[indx] = [] #purge old list
-        # self.times[indx].append( t0 )
-
-        # if not(name in self.names):
-        #    self.names[name] = []
 
         # purge old list
         self.names[name] = []
@@ -74,30 +36,20 @@ class Timer:
 
 
     def purge(self, name):
-        # indx = self._look_name(name)
-        # self.times[indx] = [] #purge old list
-        # self.times[indx].append( time.time() )
-
         self.names[name] = []
 
     def purge_comps(self):
-        # for name in self.components:
-        #    indx = self._look_comp(name)
-        #    self.ctimes[indx] = []
+
         for name in self.components:
             self.components[name] = []
 
     def stop(self, name):
         t0 = time.time()  # stop before lookup
-        # indx = self._look_name(name)
-        # self.times[indx].append( t0 )
 
         self.names[name].append(t0)
 
     def lap(self, name):
         t0 = time.time()  # stop before lookup
-        # indx = self._look_name(name)
-        # self.times[indx].append( t0 )
 
         if not (name in self.names):
             self.names[name] = []
@@ -113,19 +65,6 @@ class Timer:
     def start_comp(self, name):
         t0 = time.time()  # stop before lookup
 
-        # add comp name if it does not exist
-        # indx = self._look_comp(name)
-        # if indx == self.error_index:
-        #    self.components.append(name)
-        #    self.nc += 1
-        #    self.ctimes.append( [] )
-        #    indx = self._look_comp(name)
-        #    print("adding {} into {}".format(name, indx))
-        #    print(self.components)
-        #    print(self.ctimes)
-
-        # self.ctimes[indx].append( t0 )
-
         if not (name in self.components):
             self.components[name] = []
 
@@ -137,17 +76,10 @@ class Timer:
 
     def stop_comp(self, name):
         t0 = time.time()  # stop before lookup
-        # indx = self._look_comp(name)
-        # print("stopping {} indx {}".format(name, indx))
-        # self.ctimes[indx][-1] =  t0 - self.ctimes[indx][-1]
 
         self.components[name][-1] = t0 - self.components[name][-1]
 
     def stats(self, name):
-
-        # print("timer len:", len(self.times), len(self.ctimes) )
-        # indx = self._look_name(name)
-        # ts = np.array( self.times[indx] )
 
         ts = np.array(self.names[name])
         cnts = len(ts) - 1
