@@ -8,13 +8,20 @@ import pyrunko
 import scipy
 
 
-def balance_mpi(n, conf, comm_size=None, mpi_master_mode=False):
+def balance_mpi(n, conf, comm_size=None):
+
+    # test if conf has task mode defined; do not crash if it doesnt
+    try: 
+        mpi_task_mode = conf.mpi_task_mode
+    except:
+        mpi_task_mode = False
+
     if conf.oneD:
         return balance_mpi_1D(n, comm_size=comm_size)
     if conf.twoD:
         return balance_mpi_2D(n, comm_size=comm_size)
     elif conf.threeD:
-        return balance_mpi_3D(n, comm_size=comm_size, mpi_master_mode=mpi_master_mode)
+        return balance_mpi_3D(n, comm_size=comm_size, mpi_task_mode=conf.mpi_task_mode)
 
 
 
@@ -83,14 +90,14 @@ def balance_mpi_2D(n, comm_size=None):
 
 
 # load nodes using 3D Hilbert curve
-def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
+def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False):
 
     if n.rank() == 0:  # only master initializes; then sends
         if comm_size == None:
             comm_size = n.size()
 
         # master mode does not allocate any tiles to rank =0
-        if mpi_master_mode:
+        if mpi_task_mode:
             comm_size -= 1
 
         nx = n.get_Nx()
@@ -128,7 +135,7 @@ def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
                 for k in range(nz):
                     igrid[i, j, k] = np.floor(comm_size * grid[i, j, k] / (hmax + 1))
 
-        if mpi_master_mode:
+        if mpi_task_mode:
             igrid[:,:,:] += 1 # offset by one so that rank=0 is skipped
 
         # check that nodes get about same work load
@@ -143,7 +150,7 @@ def balance_mpi_3D(n, comm_size=None, mpi_master_mode=False):
             except:
                 tiles_owned[nt] = 1
 
-        print('tiles_owned', tiles_owned)
+        print('lba : tiles owned per rank', tiles_owned, " (#tiles, #ranks)")
         
 
         # print("grid:")
@@ -169,9 +176,9 @@ def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None):
         if comm_size == None:
             comm_size = n.size()
 
-        print("loadbalancing grid with ", i_drop_rank, " empty ranks...")
+        print("lba: loadbalancing grid with ", i_drop_rank, " empty ranks...")
 
-        #for i_drop_rank in range(1, mpi_master_mode+1):
+        #for i_drop_rank in range(1, mpi_task_mode+1):
         if True:
 
             # master mode does not allocate any tiles to rank =0
@@ -269,7 +276,7 @@ def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None):
             #print('tiles_owned', i_drop_rank, tiles_owned, tot_nbors/(nx*ny*nz))
 
             #print('analysis: {:3d} mean(nbors): {:5.3f} mean(nbor/tiles): {5.3f}'.format(
-            print('analysis: {:3d} mean(nbors): {:6.3f} min(nbors) {:6.3f} max(nbors) {:6.3f} mode(nbors) {:6.3f} mean(nbor/tile) {:6.3f}'.format(
+            print('lba: analysis: {:3d} mean(nbors): {:6.3f} min(nbors) {:6.3f} max(nbors) {:6.3f} mode(nbors) {:6.3f} mean(nbor/tile) {:6.3f}'.format(
                 i_drop_rank,
                 np.mean(nbors_per_rank),
                 np.min(nbors_per_rank),

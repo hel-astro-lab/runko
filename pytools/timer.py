@@ -26,6 +26,7 @@ class Timer:
         for name in components:
             self.components[name] = []
 
+
     def start(self, name):
         t0 = time.time()  # stop before lookup
 

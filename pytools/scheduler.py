@@ -1,5 +1,7 @@
 import sys, os
 import pytools  # runko python tools
+from mpi4py import MPI
+
 
 
 def str_to_class(classname):
@@ -7,9 +9,47 @@ def str_to_class(classname):
 
 class Scheduler:
 
-    def __init__(self, grid):
+    def __init__(self):
         self.timer = None
-        self.grid = grid
+        self.grid  = None
+
+        self.rank = MPI.COMM_WORLD.Get_rank() 
+        self.mpi_comm_size = MPI.COMM_WORLD.Get_size() 
+
+        # default mode where root prints
+        self.is_master         = True if self.rank == 0 else False # root rank
+        self.is_example_worker = True if self.rank == 0 else False # example work rank
+
+        if self.is_master:
+            print("sch : Running pic.py with {} MPI processes.".format(self.mpi_comm_size))
+
+        self.mpi_task_mode = False
+        self.master_rank       = 0
+        self.example_work_rank = 0
+
+    # swithc from all-in mode to task mode
+    def switch_to_task_mode(self,):
+        self.mpi_task_mode = True
+
+        if self.mpi_comm_size > 1:
+            self.example_work_rank = 1
+
+        if self.is_master:
+            print("sch : operating in task mode; rank {} is master; {} is example worker".format(
+                self.master_rank, self.example_work_rank))
+
+        # set master rank
+        if self.rank == self.master_rank: 
+            self.is_master = True
+        else:
+            self.is_master = False
+
+        # set example worker
+        if self.rank == self.example_work_rank: 
+            self.is_example_worker = True
+        else:
+            self.is_example_worker = False
+
 
     def is_active_tile(self, tile):
         return True
@@ -81,7 +121,6 @@ class Scheduler:
         #-------------------------------------------------- 
         #normal solver
         else:
-    
             #solver = str_to_class(op['solver'])
             solver = getattr(self, op['solver'])
             method = getattr(solver, op['method'])
