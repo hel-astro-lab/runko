@@ -25,3 +25,6 @@
 	path = pytools/pybox
 	url = https://github.com/natj/pyBox.git
 	branch = master
+[submodule "tools/fmt"]
+	path = tools/fmt
+	url = git@github.com:fmtlib/fmt.git

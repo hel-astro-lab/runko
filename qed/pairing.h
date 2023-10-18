@@ -15,6 +15,8 @@
 #include "../../tools/sample_arrays.h"
 #include "../../tools/linlogspace.h"
 
+#define USE_INTERNAL_TIMER // comment this out to remove the profiler
+#include "../../tools/timer/timer.h"
 
 
 namespace qed {
@@ -54,12 +56,18 @@ private:
 
 public:
 
+  Timer timer; // internal timer for profiling
+
   // constructor with incident/target types
   Pairing() :
     gen(42), // gen(rd() ) 
-    uni_dis(0.0, 1.0)       
+    uni_dis(0.0, 1.0),
+    timer("qed pairing")
   { 
     update_hist_lims(hist_emin, hist_emax, hist_nbin);
+
+    timer.do_print = true;
+    timer.verbose = 0;
   }
 
   //using Tile_map = std::unordered_map<TileID_t, Tileptr>;
@@ -627,6 +635,10 @@ public:
   //--------------------------------------------------
   void solve_mc(pic::Tile<D>& tile)
   {
+
+    timer.start(); // start profiling block
+
+
     // build pointer map of types to containers; used as a helper to access particle tyeps
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
@@ -639,10 +651,12 @@ public:
 
     // keep this ordering; initialization of arrays assumes this way of calling the functions
     // NOTE: cannot move this inside the loop because particle removal assumes that indices remain static
+    timer.start_comp("upd_carrs");
     for(auto&& con : tile.containers) {
       con.sort_in_rev_energy();
       con.update_cumulative_arrays();
     }
+    timer.stop_comp("upd_carrs");
 
     //--------------------------------------------------
     // collect statistics for bookkeeping
@@ -715,7 +729,9 @@ public:
         if(w1 < EPS) continue; // omit zero-w incidents
 
         //pre-calculate maximum partial interaction rates
+        timer.start_comp("comp_pmax");
         comp_pmax(t1, e1, cons); 
+        timer.stop_comp("comp_pmax");
 
         if(ids.size() == 0) continue; // no targets to interact with 
 
@@ -753,7 +769,9 @@ public:
         { 
           // get random interaction
           // NOTE: incident type t1 must be the same as what comp_pmax was called with
+          timer.start_comp("draw_proc");
           int i = draw_rand_proc(); // i:th interaction in probs array
+          timer.stop_comp("draw_proc");
           
           //--------------------------------------------------
           // unpack interaction
@@ -772,7 +790,9 @@ public:
           // get random target with energy between jmin/jmax
           // propability is proptional to weight of LPs
 
+          timer.start_comp("sample_prob");
           size_t n2 = toolbox::sample_prob_between(con2->wgtCumArr, rand(), jmin, jmax);
+          timer.stop_comp("sample_prob");
 
           if( (t1 == t2) && (n1 == n2) ) continue; // do not interact with self
 
@@ -801,7 +821,9 @@ public:
           //--------------------------------------------------
           
           // real probablity of interaction
+          timer.start_comp("comp_cs");
           auto [cm, vrel] = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
+          timer.stop_comp("comp_cs");
 
           // collect max cross section
           float_p cm_cur = info_max_int_cs[iptr->name];
@@ -811,9 +833,11 @@ public:
           double prob_vir = cm*vrel/(2.0*cmax);
 
           // correct average accumulation factor with the real value
+          timer.start_comp("acc");
           auto [facc3, facc4] = iptr->accumulate(t1, e1, t2, e2);
           facc3 = iptr->do_accumulate ? facc3 : 1.0f;
           facc4 = iptr->do_accumulate ? facc4 : 1.0f;
+          timer.stop_comp("acc");
 
 
           // FIXME remove check if sure this works
@@ -835,11 +859,15 @@ public:
             info_int_nums[long_name] += 1;
 
             // particle values after interaction
+            timer.start_comp("dupl_prtcl");
             auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
             auto [t4, ux4, uy4, uz4, w4] = duplicate_prtcl(t2, ux2, uy2, uz2, w2);
+            timer.stop_comp("dupl_prtcl");
 
             // interact and udpate variables in-place
+            timer.start_comp("interact");
             iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4 );
+            timer.stop_comp("interact");
 
             // new energies; NOTE: could use container.m to get the mass
             m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
@@ -852,8 +880,10 @@ public:
             //float_p fw4 = (e4/e2)*ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
 
             // more intuitive version (flipped)
+            timer.start_comp("weight_funs");
             float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1);
             float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t2, e2);
+            timer.stop_comp("weight_funs");
 
             // limit explosive particle creation
             float_p n3 = std::min( fw3, 32.0f );
@@ -1022,6 +1052,7 @@ public:
               assert(prob_upd4 >= 0.0f);
 
 
+              timer.start_comp("add_sc_prtcl1");
               double z1 = rand();
               while(n3 > z1 + ncop) {
 
@@ -1067,12 +1098,15 @@ public:
 
                 ncop += 1.0;
               } // end of while
+              timer.stop_comp("add_sc_prtcl1");
 
+              timer.start_comp("del_parent1");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
                 cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent1");
 
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
@@ -1086,17 +1120,21 @@ public:
               // TODO are these independent or same draw for prob_kill3
               // i.e., kill parent and create copies or let parent live and no copies?
 
+              timer.start_comp("add_prtcl1");
               double z1 = rand();
               while( n3 > z1 + ncop ){
                 cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
                 ncop += 1.0;
               }
+              timer.stop_comp("add_prtcl1");
 
+              timer.start_comp("del_parent1");
               // kill parent
               if( prob_kill3 > rand() ) {
                 cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent1");
 
             } // end of prtcl t1/t3 addition
 
@@ -1111,6 +1149,7 @@ public:
 
               // scattering interactions go here
 
+              timer.start_comp("add_sc_prtcl2");
               double z1 = rand();
               while(n4 > z1 + ncop) {
 
@@ -1136,29 +1175,36 @@ public:
 
                 ncop += 1.0;
               } // end of while
+              timer.stop_comp("add_sc_prtcl2");
 
+              timer.start_comp("del_parent2");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
                 cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent2");
 
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
                        
               // annihilation interactions go here
                 
+              timer.start_comp("add_prtcl2");
               double z1 = rand();
               while( n4 > z1 + ncop ){
                 cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
                 ncop += 1.0;
               }
+              timer.stop_comp("add_prtcl2");
 
+              timer.start_comp("del_parent2");
               // kill parent
               if( prob_kill4 > rand() ) {
                 cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent2");
 
             } // end of prtcl t1/t3 addition
 
@@ -1207,12 +1253,16 @@ public:
 
     //--------------------------------------------------
     // final book keeping routines
+    timer.start_comp("del");
     for(auto&& con : tile.containers)
     {
       con.delete_transferred_particles(); // remove annihilated prtcls; this transfer storage 
                                           // is used as a tmp container for storing the indices
     }
+    timer.stop_comp("del");
 
+
+    timer.stop();
     return;
   }
 
