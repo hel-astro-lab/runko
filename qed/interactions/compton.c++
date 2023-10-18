@@ -1,4 +1,4 @@
-#include <iostream>
+../qed/interactions/compton.c++#include <iostream>
 #include <cmath>
 #include <cassert>
 #include "compton.h"
@@ -24,7 +24,7 @@ namespace qed {
 
 tuple<float_p, float_p> Compton::get_minmax_ene( string t1, string t2, double ene)
 {
-  return {0.0, INF};
+  return {0.0f, INF};
 
 
   // TODO brainstorming here below; routine does not seem possible

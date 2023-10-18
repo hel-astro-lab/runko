@@ -29,22 +29,24 @@ DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
 }
 
 template <typename T>
-DEVCALLABLE int find_rev_sorted_nearest( ManVec<T> const& arr, T val) {
+inline int find_rev_sorted_nearest( ManVec<T> const& arr, const T val) {
+  
+  const int arr_size = static_cast<int>( arr.size() );
+  if(arr_size == 0) return 0;
 
-    if(arr.size() == 0) return 0;
+  //first and largest value
+  if(arr[0] < val) return 0;
 
-    //first and largest value
-    if(arr[0] < val) return 0;
-
-    // value is between array elements
-    for(int i=1; i<arr.size(); i++){
-      if( ( arr[i-1] >= val ) && ( val > arr[i] ) ) {
-        return i;
-      }
+  // value is between array elements
+  for(int i=1; i<arr_size; i++){
+    //if( ( arr[i-1] >= val ) && ( val > arr[i] ) ) { // TODO equal to below?
+    if( val > arr[i] ) { // TODO not strictly equivalent to below; more aggressive
+      return i;
     }
+  }
 
-    // last element
-    return static_cast<int>( arr.size() ) - 1; // len(arr)-1 
+  // last element
+  return arr_size - 1; // len(arr)-1 
 }
 
 // Sample between [imin, imax[
@@ -66,7 +68,7 @@ DEVCALLABLE int sample_prob( ManVec<T> const& arr, T val) {
 
 // Sample between [imin, imax[
 template <typename T>
-DEVCALLABLE int sample_prob_between( ManVec<T> const& ws, T val, int imin, int imax) {
+int inline sample_prob_between( ManVec<T> const& ws, const T val, const int imin, const int imax) {
 
     T wmin, wmax;
     if(imin == 0) {
@@ -75,11 +77,13 @@ DEVCALLABLE int sample_prob_between( ManVec<T> const& ws, T val, int imin, int i
         wmin = ws[imin-1];
     }
     wmax = ws[imax-1];
+    //const wminmax = wmax - wmin;
+    const T vminmax = val*(wmax - wmin) + wmin;
 
-
-    //for j in range(imin, imax):
     for(int j=imin; j<imax; j++){
-        if( val < (ws[j] - wmin)/(wmax - wmin) ) return j;
+        //if( val < (ws[j] - wmin)/(wmax - wmin) ) return j;
+        //if( val < (ws[j] - wmin)/wminmax ) return j;
+        if( vminmax < ws[j] ) return j;
     }
     return imax-1;
 }

@@ -27,7 +27,7 @@ tuple<float_p, float_p> PhotAnn::get_minmax_ene( string t1, string t2, double en
   if(ene > 0.0){
 
     // require e1 * e2 >= 1 and use it to get minimum required photon energy e2
-    double e2 = 1.0/ene;
+    float_p e2 = 1.0f/ene;
     return {e2, INF};
 
     // NOTE: this is wrong; maximum interaction ene is always INF
@@ -41,7 +41,7 @@ tuple<float_p, float_p> PhotAnn::get_minmax_ene( string t1, string t2, double en
     //}
   }
 
-  return {0.0, INF}; // NOTE: error branch; should not get here
+  return {0.0f, INF}; // NOTE: error branch; should not get here
 }
 
 

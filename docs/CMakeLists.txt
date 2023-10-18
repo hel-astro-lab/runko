@@ -1,4 +1,4 @@
-find_package(Doxygen)
+#find_package(Doxygen)
 
 #if (NOT DOXYGEN)
 #  message(STATUS "Target 'doxygen' disabled (requires doxygen)")

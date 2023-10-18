@@ -17,6 +17,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # optimization flags
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native") #general optimization
@@ -88,9 +89,9 @@ OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
 
 # Find OpenMP
 if(APPLE AND USE_OpenMP)
-    set (OpenMP_C_FLAGS "-fopenmp")
-    set (OpenMP_CXX_FLAGS "-fopenmp")
-    set (OpenMP_EXE_LINKER_FLAGS "-fopenmp")
+    set (OpenMP_C_FLAGS "-fopenmp-simd")
+    set (OpenMP_CXX_FLAGS "-fopenmp-simd")
+    set (OpenMP_EXE_LINKER_FLAGS "-fopenmp-simd")
 endif()
 
 if(USE_OpenMP)

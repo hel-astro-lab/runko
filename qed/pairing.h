@@ -208,18 +208,18 @@ public:
     cmaxs.clear(); // maximum cross section
     jmins.clear(); // minimum indices of prtcls that can particiapte in initeraction
     jmaxs.clear(); // maximum -||-
-    //faccs.clear(); // w-weigthed average target's accumulation factor // NOTE: not needed; now in wsums
     ids.clear(); // internal id of the interaction in the storage
+    //faccs.clear(); // w-weigthed average target's accumulation factor // NOTE: not needed; now in wsums
                  
     size_t id = 0;
     for(auto iptr : interactions){
       if(t1 == iptr->t1)
       {
-        auto t2 = iptr->t2;      // get target
+        const auto t2 = iptr->t2;      // get target
         auto con_tar = cons[t2]; // target container
-        size_t N2 = con_tar->size(); // total number of particles
+        const size_t N2 = con_tar->size(); // total number of particles
 
-        float_p cross_max = iptr->cross_section; // maximum cross section (including x2 for head-on collisions)
+        const float_p cross_max = iptr->cross_section; // maximum cross section (including x2 for head-on collisions)
 
         // NOTE: assumes that target distribution remains static for the duration of the time step.
         // In that case, no LP changes energy and the limits finding is ok.
@@ -230,32 +230,30 @@ public:
 
         //--------------------------------------------------
         // double counting prevention since we only consider targets with energy more than incident particle
-        if(true){
 
-          // require e1 < e2 = e_tar
-          // e_tar = [emin, emax]
-          // therefore, if e1 > emin we need to set emin' = max(e1, emin)
-          // also, if e1 > emax -> interaction is not possible
-          emin = std::max(e1, emin); 
+        // require e1 < e2 = e_tar
+        // e_tar = [emin, emax]
+        // therefore, if e1 > emin we need to set emin' = max(e1, emin)
+        // also, if e1 > emax -> interaction is not possible
+        emin = std::max(e1, emin); 
           
-          // ver2: other way around; require e1 > e2 = etarget
-          // e_tar = [emin, emax]
-          //
-          // therefore emax' = min(e1, emax)
-          // and if emin > e1 --> not possible
-          //if(emin > e1){
-          //  id++; // remembering to increase counter nevertheless
-          //  continue; // no possible targets to interact with
-          //}
-          //emax = std::min(e1, emax);
-        }
+        // ver2: other way around; require e1 > e2 = etarget
+        // e_tar = [emin, emax]
+        //
+        // therefore emax' = min(e1, emax)
+        // and if emin > e1 --> not possible
+        //if(emin > e1){
+        //  id++; // remembering to increase counter nevertheless
+        //  continue; // no possible targets to interact with
+        //}
+        //emax = std::min(e1, emax);
         //--------------------------------------------------
 
         // NOTE: assuming reverse order here since ene is sorted in decreasing order
         // NOTE: assumes that sort_in_rev_energy is called in the container; this creates eneArr
         int jmin = toolbox::find_rev_sorted_nearest( con_tar->eneArr, emax );
         int jmax = toolbox::find_rev_sorted_nearest( con_tar->eneArr, emin );
-        int jme  = toolbox::find_rev_sorted_nearest( con_tar->eneArr, e1 );
+        //int jme  = toolbox::find_rev_sorted_nearest( con_tar->eneArr, e1 );
 
         // TEST remove energy check
         //jmin = 0;
@@ -273,7 +271,7 @@ public:
         float_p wsum2 = 0.0f;
           
         //--------------------------------------------------
-        if(! iptr->do_accumulate){ // normal mode; no accumulation
+        if(! iptr->do_accumulate ){ // normal mode; no accumulation
 
           if(jmin < jmax) { // in the opposite case arrays dont span a range and so wsum2 = 0
             float_p wsum_min = jmin == 0 ? 0.0f : con_tar->wgtCumArr[jmin];
@@ -345,10 +343,10 @@ public:
         ////assert( std::abs( wsum - wsum2 ) < EPS );
            
         //--------------------------------------------------
-        //total sum of target weights
-        float_p wtot = 0.0f;
-        for(size_t j=0; j<N2; j++) wtot += con_tar->wgt( j ); // sum( w )
-        if(wtot <= 0.0f) wtot = 1.0f; // guard for NaNs
+        //total sum of target weights; TODO can this be removed?
+        //float_p wtot = 0.0f;
+        //for(size_t j=0; j<N2; j++) wtot += con_tar->wgt( j ); // sum( w )
+        //if(wtot <= 0.0f) wtot = 1.0f; // guard for NaNs
 
         //--------------------------------------------------
         // maximum partial interaction rate
@@ -427,7 +425,13 @@ public:
     //}
       
     //// photon emphasis
-    if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
+    //if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
+    //} else if(t == "e-") { return 1.0; 
+    //} else if(t == "e+") { return 1.0; 
+    //}
+
+    //// photon emphasis
+    if(       t == "ph") { return std::pow(x/0.01f, 0.04f); 
     } else if(t == "e-") { return 1.0; 
     } else if(t == "e+") { return 1.0; 
     }
