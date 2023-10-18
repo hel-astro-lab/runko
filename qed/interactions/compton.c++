@@ -1,4 +1,4 @@
-../qed/interactions/compton.c++#include <iostream>
+#include <iostream>
 #include <cmath>
 #include <cassert>
 #include "compton.h"

@@ -1,4 +1,4 @@
-../qed/interactions/pair_ann.h#pragma once
+#pragma once
 
 #include "interaction.h"
 
