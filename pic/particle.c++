@@ -456,22 +456,21 @@ std::array<double,3>& maxs)
   	  particleIndexesB.data(), 
   &pCount, size(), 
   [=]__device__ (int n){
-
-  int i,j,k; // relative indices
-  i = 0;
-  j = 0;
-  k = 0;
-  
-  if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
-  if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
-  
-  if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
-  if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
-  
-  if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
-  if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
-  
-  return ( (i != 0) || (j != 0) || (k != 0) ) ;
+    int i,j,k; // relative indices
+    i = 0;
+    j = 0;
+    k = 0;
+    
+    if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
+    if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
+    
+    if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
+    if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
+    
+    if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
+    if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
+    
+    return ( (i != 0) || (j != 0) || (k != 0) ) ;
   });
   
   cudaDeviceSynchronize();
@@ -480,19 +479,19 @@ std::array<double,3>& maxs)
 
 
   UniIter::iterate([=] DEVCALLABLE (int ii, ParticleContainer<3> &self){
-  int n = self.particleIndexesB[ii];
-  int i=0,j=0,k=0; // relative indices
-  
-  if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
-  if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
-  
-  if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
-  if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
-  
-  if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
-  if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
-  
-  self.to_other_tiles[ii] =  {i,j,k,n};
+    int n = self.particleIndexesB[ii];
+    int i=0,j=0,k=0; // relative indices
+    
+    if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
+    if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
+    
+    if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
+    if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
+    
+    if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
+    if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
+    
+    self.to_other_tiles[ii] =  {i,j,k,n};
   }, pCount, *this);
 
 
@@ -561,9 +560,10 @@ std::array<double,3>& maxs)
 //--------------------------------------------------
 
 template<size_t D>
-float_p ParticleContainer<D>::get_prtcl_ene(size_t n)
+inline DEVCALLABLE float_p ParticleContainer<D>::get_prtcl_ene(size_t n)
 {
-//const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+
+  //const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
 
   const float_p mass = m; // read mass from class
   return std::sqrt( 
@@ -572,11 +572,15 @@ float_p ParticleContainer<D>::get_prtcl_ene(size_t n)
     vel(1,n)*vel(1,n) + 
     vel(2,n)*vel(2,n) 
     );
-  }
+}
 
 template<size_t D>
 void ParticleContainer<D>::sort_in_rev_energy()
 {
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
 
   //--------------------------------------------------
   // energy array for sorting
@@ -586,15 +590,28 @@ void ParticleContainer<D>::sort_in_rev_energy()
   //std::vector<float_p> eneArr( size() );  
   
   eneArr.resize( size() ); // NOTE: do not create here but assume that it is initialized in constructor
-  for(size_t n=0; n<size(); n++) {
-    //eneArr[n] = std::sqrt( mass*mass + vel(0,n)*vel(0,n) + vel(1,n)*vel(1,n) + vel(2,n)*vel(2,n) );
-    eneArr[n] = get_prtcl_ene( n );
-  }
+                             
+  // regular non-simd version
+  //for(size_t n=0; n<size(); n++) {
+  //  eneArr[n] = get_prtcl_ene( n );
+  //}
+
+  UniIter::iterate([=] DEVCALLABLE (size_t n, ParticleContainer<D>& self){
+
+      eneArr[n] = get_prtcl_ene( n );
+
+  }, size(), *this);
+  UniIter::sync();
+
 
   //--------------------------------------------------
   //sort and apply
   auto indices = argsort_rev(eneArr);
   apply_permutation(indices);
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
 }
 
 
@@ -1149,13 +1166,16 @@ void ParticleContainer<D>::apply_permutation( ManVec<size_t>& indices )
 template<size_t D>
 void ParticleContainer<D>::update_cumulative_arrays()
 {
-  size_t N = size(); // number of prtcls
-
+  const size_t N = size(); // number of prtcls
   wgtCumArr.resize(N); 
 
   // sum over wgt
   float_p wsum = 0.0;
-  for(size_t i=0; i<N; i++) wsum += wgtArr[i];
+
+  #pragma omp simd reduction(+:wsum)
+  for(size_t i=0; i<N; i++) {
+    wsum += wgtArr[i];
+  }
 
   // normalized cumulative sum
   wgtCumArr[0] = wgtArr[0];
