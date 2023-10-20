@@ -37,6 +37,8 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
 
   // clear buffer before additive variables
   sbuf[0].clear();
+  if(ifea==0) yee.rho.clear();
+
 
   // local variables
   double gam, mass, wgt;
