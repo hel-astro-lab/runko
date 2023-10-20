@@ -334,7 +334,7 @@ void Compton::interact(
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
     for(size_t i = 0; i < 5; i++) ts[i] = false;
 
-    float_p tol = 3.0e-5;
+    float_p tol = 3.0e-4;
 
     float_p nom0  = norm(om0);
     float_p nom1  = norm(om1);

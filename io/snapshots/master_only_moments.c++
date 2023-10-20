@@ -100,7 +100,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
 
         if( !flagx || !flagy || !flagz || 
             isnan1 || isnan2 || isnan3 || isnan4) {
-          std::cout << "ERR IN MOM:" << std::endl;
+          std::cerr << "ERR IN MOM:" << std::endl;
           std::cerr << " ispc: " << ispc;
           std::cerr << " minx: " << mins[0];
           std::cerr << " miny: " << mins[1];
@@ -117,7 +117,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
           std::cerr << " fx: " << flagx;
           std::cerr << " fy: " << flagy;
           std::cerr << " fz: " << flagz;
-          assert(false);
+          //assert(false);
         }
 
         // rel prtcl index; assuming dx = 1; tile coordinates

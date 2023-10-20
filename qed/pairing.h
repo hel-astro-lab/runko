@@ -257,6 +257,7 @@ public:
         //--------------------------------------------------
         // double counting prevention since we only consider targets with energy more than incident particle
 
+        // TODO
         // require e1 < e2 = e_tar
         // e_tar = [emin, emax]
         // therefore, if e1 > emin we need to set emin' = max(e1, emin)
