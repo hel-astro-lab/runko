@@ -224,7 +224,16 @@ void bind_qed(py::module& m_sub)
           const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
           auto v = pybind11::array_t<double>( {N}, s.hist.data() );
           return v;
+        })
+    .def("timer_stats",    [](qed::Pairing<3>& s)
+        {
+          s.timer.comp_stats();
+        })
+    .def("timer_clear",    [](qed::Pairing<3>& s)
+        {
+          s.timer.clear();
         });
+
 
 }
 

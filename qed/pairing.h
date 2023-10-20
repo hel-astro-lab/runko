@@ -15,6 +15,8 @@
 #include "../../tools/sample_arrays.h"
 #include "../../tools/linlogspace.h"
 
+#define USE_INTERNAL_TIMER // comment this out to remove the profiler
+#include "../../tools/timer/timer.h"
 
 
 namespace qed {
@@ -54,12 +56,18 @@ private:
 
 public:
 
+  Timer timer; // internal timer for profiling
+
   // constructor with incident/target types
   Pairing() :
     gen(42), // gen(rd() ) 
-    uni_dis(0.0, 1.0)       
+    uni_dis(0.0, 1.0),
+    timer("qed pairing")
   { 
     update_hist_lims(hist_emin, hist_emax, hist_nbin);
+
+    timer.do_print = true;
+    timer.verbose = 0;
   }
 
   //using Tile_map = std::unordered_map<TileID_t, Tileptr>;
@@ -173,6 +181,21 @@ public:
 
     info_max_int_cs[name] = 0.0;
     info_int_nums[long_name] = 0.0;
+
+    // pre append arrays 
+    //probs.push_back(0);
+    //wsums.push_back(0);
+    //cmaxs.push_back(0);
+    //jmins.push_back(0);
+    //jmaxs.push_back(0);
+
+    //// make an array of increasing values
+    //if( ids.empty() ) {
+    //  ids.push_back(0);
+    //} else {
+    //  ids.push_back( ids.size() );
+    //}
+
   }
 
   //--------------------------------------------------
@@ -194,24 +217,35 @@ public:
   {
 
     //size_t n_ints = interactions.size(); // get number of interactions
-
     probs.clear(); // maximum probabillity
     wsums.clear(); // sum over possible target weights
     cmaxs.clear(); // maximum cross section
     jmins.clear(); // minimum indices of prtcls that can particiapte in initeraction
     jmaxs.clear(); // maximum -||-
-    //faccs.clear(); // w-weigthed average target's accumulation factor // NOTE: not needed; now in wsums
     ids.clear(); // internal id of the interaction in the storage
+    //faccs.clear(); // w-weigthed average target's accumulation factor // NOTE: not needed; now in wsums
                  
+    //std::fill( probs.begin(), probs.end(), 0); // maximum probabillity
+    //std::fill( wsums.begin(), wsums.end(), 0); // sum over possible target weights
+    //std::fill( cmaxs.begin(), cmaxs.end(), 0); // maximum cross section
+    //std::fill( jmins.begin(), jmins.end(), 0); // minimum indices of prtcls that can particiapte in initeraction
+    //std::fill( jmaxs.begin(), jmaxs.end(), 0); // maximum -||-
+    //std::fill(   ids.begin(),   ids.end(), 0); // internal id of the interaction in the storage
+
+
     size_t id = 0;
     for(auto iptr : interactions){
+
       if(t1 == iptr->t1)
       {
-        auto t2 = iptr->t2;      // get target
-        auto con_tar = cons[t2]; // target container
-        size_t N2 = con_tar->size(); // total number of particles
+        const auto& t2 = iptr->t2;      // get target
+        const auto  con_tar = cons[t2]; // target container
+        //const size_t N2 = con_tar->size(); // total number of particles
 
-        float_p cross_max = iptr->cross_section; // maximum cross section (including x2 for head-on collisions)
+        // skip containers with zero targets
+        if(con_tar->eneArr.size() == 0) continue;
+
+        const float_p cross_max = iptr->cross_section; // maximum cross section (including x2 for head-on collisions)
 
         // NOTE: assumes that target distribution remains static for the duration of the time step.
         // In that case, no LP changes energy and the limits finding is ok.
@@ -222,32 +256,49 @@ public:
 
         //--------------------------------------------------
         // double counting prevention since we only consider targets with energy more than incident particle
-        if(true){
 
-          // require e1 < e2 = e_tar
-          // e_tar = [emin, emax]
-          // therefore, if e1 > emin we need to set emin' = max(e1, emin)
-          // also, if e1 > emax -> interaction is not possible
-          emin = std::max(e1, emin); 
+        // require e1 < e2 = e_tar
+        // e_tar = [emin, emax]
+        // therefore, if e1 > emin we need to set emin' = max(e1, emin)
+        // also, if e1 > emax -> interaction is not possible
+        emin = std::max(e1, emin); 
           
-          // ver2: other way around; require e1 > e2 = etarget
-          // e_tar = [emin, emax]
-          //
-          // therefore emax' = min(e1, emax)
-          // and if emin > e1 --> not possible
-          //if(emin > e1){
-          //  id++; // remembering to increase counter nevertheless
-          //  continue; // no possible targets to interact with
-          //}
-          //emax = std::min(e1, emax);
-        }
+        // ver2: other way around; require e1 > e2 = etarget
+        // e_tar = [emin, emax]
+        //
+        // therefore emax' = min(e1, emax)
+        // and if emin > e1 --> not possible
+        //if(emin > e1){
+        //  id++; // remembering to increase counter nevertheless
+        //  continue; // no possible targets to interact with
+        //}
+        //emax = std::min(e1, emax);
         //--------------------------------------------------
+
+        //if(emax > con_tar->eneArr[0]) jmin = 0;
+        //if(emin > con_tar->eneArr[0]) jmax = 0;
 
         // NOTE: assuming reverse order here since ene is sorted in decreasing order
         // NOTE: assumes that sort_in_rev_energy is called in the container; this creates eneArr
-        int jmin = toolbox::find_rev_sorted_nearest( con_tar->eneArr, emax );
-        int jmax = toolbox::find_rev_sorted_nearest( con_tar->eneArr, emin );
-        int jme  = toolbox::find_rev_sorted_nearest( con_tar->eneArr, e1 );
+        //int jmin = toolbox::find_rev_sorted_nearest( con_tar->eneArr, emax );
+        //int jmax = toolbox::find_rev_sorted_nearest( con_tar->eneArr, emin );
+        //int jme  = toolbox::find_rev_sorted_nearest( con_tar->eneArr, e1 );
+
+        //size_t jmin = toolbox::find_rev_sorted_nearest(    con_tar->eneArr, emax );
+        //size_t jmax = toolbox::revfind_rev_sorted_nearest( con_tar->eneArr, emin );
+
+        // profiled to be fastest
+        size_t jmin = toolbox::find_rev_sorted_nearest_algo2( con_tar->eneArr, emax );
+        size_t jmax = toolbox::find_rev_sorted_nearest_algo2( con_tar->eneArr, emin );
+
+        //std::cout << " efirst last: " << con_tar->eneArr[0] << " " << con_tar->eneArr[N2] << std::endl;
+        //std::cout << "jminjmax " << jmin << " " << jmin2 << " _ " << jmax << " " << jmax2 << " s " << con_tar->eneArr.size() << " e " << emax << " " << emin << std::endl;
+
+        //std::cout << "jmin " << jmin << " " << jmin2 << " s " << con_tar->eneArr.size() << " e " << emax << std::endl;
+        //std::cout << "jmax " << jmax << " " << jmax2 << " s " << con_tar->eneArr.size() << " e " << emin << std::endl;
+        //assert(jmin == static_cast<int>(jmin2));
+        //assert(jmax == static_cast<int>(jmax2));
+
 
         // TEST remove energy check
         //jmin = 0;
@@ -265,7 +316,7 @@ public:
         float_p wsum2 = 0.0f;
           
         //--------------------------------------------------
-        if(! iptr->do_accumulate){ // normal mode; no accumulation
+        if(! iptr->do_accumulate ){ // normal mode; no accumulation
 
           if(jmin < jmax) { // in the opposite case arrays dont span a range and so wsum2 = 0
             float_p wsum_min = jmin == 0 ? 0.0f : con_tar->wgtCumArr[jmin];
@@ -274,20 +325,17 @@ public:
 
         //--------------------------------------------------
         } else { // accumulate interactions; effectively reduces weight
-
-          float_p w, wprev, e2, f;
-
-          wprev = jmin == 0 ? 0.0 : con_tar->wgtCumArr[jmin-1];
+          float_p wprev = jmin == 0 ? 0.0 : con_tar->wgtCumArr[jmin-1];
           for(size_t j=jmin; j<jmax; j++) {
             
             // weight between [j-1, j]
             //w = con_tar->wgt(j); // real weight
-            w = con_tar->wgtCumArr[j] - wprev; // calc via cum array 
+            float_p w = con_tar->wgtCumArr[j] - wprev; // calc via cum array 
             wprev = con_tar->wgtCumArr[j];
 
-            e2 = con_tar->eneArr[j];
+            float_p e2 = con_tar->eneArr[j];
             auto [f1,f2] = iptr->accumulate(t1, e1, t2, e2);
-            f = f1*f2; //std::max(f1,f2);  // TODO is max ok here? or product?
+            float_p f = f1*f2; //std::max(f1,f2);  // TODO is max ok here? or product?
 
             wsum2 += w/f; 
           }
@@ -337,10 +385,10 @@ public:
         ////assert( std::abs( wsum - wsum2 ) < EPS );
            
         //--------------------------------------------------
-        //total sum of target weights
-        float_p wtot = 0.0f;
-        for(size_t j=0; j<N2; j++) wtot += con_tar->wgt( j ); // sum( w )
-        if(wtot <= 0.0f) wtot = 1.0f; // guard for NaNs
+        //total sum of target weights; TODO can this be removed?
+        //float_p wtot = 0.0f;
+        //for(size_t j=0; j<N2; j++) wtot += con_tar->wgt( j ); // sum( w )
+        //if(wtot <= 0.0f) wtot = 1.0f; // guard for NaNs
 
         //--------------------------------------------------
         // maximum partial interaction rate
@@ -349,17 +397,23 @@ public:
         // update/accept interaction only if it has non-zero prob to occur
         if(par_int_rate > 0.0f) {
 
-          // add stuff 
           probs.push_back(par_int_rate);
           cmaxs.push_back(cross_max);
           wsums.push_back(wsum2);
-          //faccs.push_back(facc);
-
           jmins.push_back(jmin);
           jmaxs.push_back(jmax);
+          ids  .push_back(id); // update interaction numbering
 
-          ids.push_back(id); // update interaction numbering
-                           
+          // add stuff 
+          //probs[id] = par_int_rate;
+          //cmaxs[id] = cross_max;
+          //wsums[id] = wsum2;
+          //jmins[id] = jmin;
+          //jmaxs[id] = jmax;
+          //ids[id]   = id; // update interaction numbering
+
+          //faccs.push_back(facc);
+          //
           // debug prints
           //std::cout << "comp_pmax: " << id << " " << iptr->name << " " << t1 << "/" << t2;
           //std::cout << " cmaxs:" << cross_max;
@@ -382,7 +436,7 @@ public:
 
   int draw_rand_proc()
   {
-    size_t N = probs.size();
+    const size_t N = probs.size();
     //double ptot = toolbox::sum(probs); // TODO
     float_p ptot = 0.0;
     for(size_t i=0; i<N; i++) ptot += probs[i];
@@ -419,7 +473,13 @@ public:
     //}
       
     //// photon emphasis
-    if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
+    //if(       t == "ph") { return std::pow(x/0.01f, 0.1f); 
+    //} else if(t == "e-") { return 1.0; 
+    //} else if(t == "e+") { return 1.0; 
+    //}
+
+    //// photon emphasis
+    if(       t == "ph") { return std::pow(x/0.01f, 0.04f); 
     } else if(t == "e-") { return 1.0; 
     } else if(t == "e+") { return 1.0; 
     }
@@ -627,6 +687,10 @@ public:
   //--------------------------------------------------
   void solve_mc(pic::Tile<D>& tile)
   {
+
+    timer.start(); // start profiling block
+
+
     // build pointer map of types to containers; used as a helper to access particle tyeps
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
@@ -639,10 +703,13 @@ public:
 
     // keep this ordering; initialization of arrays assumes this way of calling the functions
     // NOTE: cannot move this inside the loop because particle removal assumes that indices remain static
-    for(auto&& con : tile.containers) {
-      con.sort_in_rev_energy();
-      con.update_cumulative_arrays();
-    }
+    timer.start_comp("sort_ene");
+    for(auto&& con : tile.containers) con.sort_in_rev_energy();
+    timer.stop_comp("sort_ene");
+
+    timer.start_comp("upd_cum_arr");
+    for(auto&& con : tile.containers) con.update_cumulative_arrays();
+    timer.stop_comp("upd_cum_arr");
 
     //--------------------------------------------------
     // collect statistics for bookkeeping
@@ -715,16 +782,19 @@ public:
         if(w1 < EPS) continue; // omit zero-w incidents
 
         //pre-calculate maximum partial interaction rates
+        timer.start_comp("comp_pmax");
         comp_pmax(t1, e1, cons); 
+        timer.stop_comp("comp_pmax");
 
         if(ids.size() == 0) continue; // no targets to interact with 
-
 
         // total probability
         // NOTE: maximum interaction rate = sigma_max * w2_sum * w1/prob_norm
         double prob_vir_max = 0.0;
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]; 
                                                                                              
+        // no targets to interact with
+        if(prob_vir_max < EPS) continue;
 
         //if(prob_vir_max>=1.01){ // some tolerance here
         //  std::cout << " prob_vir_max:" << prob_vir_max << std::endl;
@@ -753,7 +823,11 @@ public:
         { 
           // get random interaction
           // NOTE: incident type t1 must be the same as what comp_pmax was called with
+          timer.start_comp("draw_proc");
           int i = draw_rand_proc(); // i:th interaction in probs array
+          timer.stop_comp("draw_proc");
+
+          // NOTE i = ids[i]; we do not factor this out because in theory ids array could change in size and then this is needed.
           
           //--------------------------------------------------
           // unpack interaction
@@ -772,7 +846,13 @@ public:
           // get random target with energy between jmin/jmax
           // propability is proptional to weight of LPs
 
-          size_t n2 = toolbox::sample_prob_between(con2->wgtCumArr, rand(), jmin, jmax);
+          timer.start_comp("sample_prob");
+          //size_t n2 = toolbox::sample_prob_between(     con2->wgtCumArr, rand(), jmin, jmax);
+          size_t n2 = toolbox::sample_prob_between_algo(con2->wgtCumArr, rand(), jmin, jmax);
+          timer.stop_comp("sample_prob");
+
+          //std::cout << "n2/3" << n2 << " " << n3 << std::endl;
+          //assert(n2 == n3);
 
           if( (t1 == t2) && (n1 == n2) ) continue; // do not interact with self
 
@@ -801,7 +881,9 @@ public:
           //--------------------------------------------------
           
           // real probablity of interaction
+          timer.start_comp("comp_cs");
           auto [cm, vrel] = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
+          timer.stop_comp("comp_cs");
 
           // collect max cross section
           float_p cm_cur = info_max_int_cs[iptr->name];
@@ -811,9 +893,11 @@ public:
           double prob_vir = cm*vrel/(2.0*cmax);
 
           // correct average accumulation factor with the real value
+          timer.start_comp("acc");
           auto [facc3, facc4] = iptr->accumulate(t1, e1, t2, e2);
           facc3 = iptr->do_accumulate ? facc3 : 1.0f;
           facc4 = iptr->do_accumulate ? facc4 : 1.0f;
+          timer.stop_comp("acc");
 
 
           // FIXME remove check if sure this works
@@ -835,11 +919,15 @@ public:
             info_int_nums[long_name] += 1;
 
             // particle values after interaction
+            timer.start_comp("dupl_prtcl");
             auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
             auto [t4, ux4, uy4, uz4, w4] = duplicate_prtcl(t2, ux2, uy2, uz2, w2);
+            timer.stop_comp("dupl_prtcl");
 
             // interact and udpate variables in-place
+            timer.start_comp("interact");
             iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4 );
+            timer.stop_comp("interact");
 
             // new energies; NOTE: could use container.m to get the mass
             m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
@@ -852,8 +940,10 @@ public:
             //float_p fw4 = (e4/e2)*ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
 
             // more intuitive version (flipped)
+            timer.start_comp("weight_funs");
             float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1);
             float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t2, e2);
+            timer.stop_comp("weight_funs");
 
             // limit explosive particle creation
             float_p n3 = std::min( fw3, 32.0f );
@@ -1022,6 +1112,7 @@ public:
               assert(prob_upd4 >= 0.0f);
 
 
+              timer.start_comp("add_sc_prtcl1");
               double z1 = rand();
               while(n3 > z1 + ncop) {
 
@@ -1067,12 +1158,15 @@ public:
 
                 ncop += 1.0;
               } // end of while
+              timer.stop_comp("add_sc_prtcl1");
 
+              timer.start_comp("del_parent1");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
                 cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent1");
 
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
@@ -1086,17 +1180,21 @@ public:
               // TODO are these independent or same draw for prob_kill3
               // i.e., kill parent and create copies or let parent live and no copies?
 
+              timer.start_comp("add_prtcl1");
               double z1 = rand();
               while( n3 > z1 + ncop ){
                 cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
                 ncop += 1.0;
               }
+              timer.stop_comp("add_prtcl1");
 
+              timer.start_comp("del_parent1");
               // kill parent
               if( prob_kill3 > rand() ) {
                 cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent1");
 
             } // end of prtcl t1/t3 addition
 
@@ -1111,6 +1209,7 @@ public:
 
               // scattering interactions go here
 
+              timer.start_comp("add_sc_prtcl2");
               double z1 = rand();
               while(n4 > z1 + ncop) {
 
@@ -1136,29 +1235,36 @@ public:
 
                 ncop += 1.0;
               } // end of while
+              timer.stop_comp("add_sc_prtcl2");
 
+              timer.start_comp("del_parent2");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
                 cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent2");
 
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
                        
               // annihilation interactions go here
                 
+              timer.start_comp("add_prtcl2");
               double z1 = rand();
               while( n4 > z1 + ncop ){
                 cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
                 ncop += 1.0;
               }
+              timer.stop_comp("add_prtcl2");
 
+              timer.start_comp("del_parent2");
               // kill parent
               if( prob_kill4 > rand() ) {
                 cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
+              timer.stop_comp("del_parent2");
 
             } // end of prtcl t1/t3 addition
 
@@ -1207,12 +1313,16 @@ public:
 
     //--------------------------------------------------
     // final book keeping routines
+    timer.start_comp("del");
     for(auto&& con : tile.containers)
     {
       con.delete_transferred_particles(); // remove annihilated prtcls; this transfer storage 
                                           // is used as a tmp container for storing the indices
     }
+    timer.stop_comp("del");
 
+
+    timer.stop();
     return;
   }
 

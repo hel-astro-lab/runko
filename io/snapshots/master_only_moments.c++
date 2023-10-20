@@ -90,18 +90,20 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
       if(ifea == 0) { // only first feature checks these tests and adds rho
 
         // capture NaNs
-        assert(!std::isnan(x0));
-        assert(!std::isnan(y0));
-        assert(!std::isnan(z0));
-        assert(!std::isnan(wgt));
+        bool isnan1 = std::isnan(x0);
+        bool isnan2 = std::isnan(y0);
+        bool isnan3 = std::isnan(z0);
+        bool isnan4 = std::isnan(wgt);
 
         // check that particles are communicated properly
         bool flagx = (x0-mins[0] >= -3.0) && (x0 <= maxs[0] +2.0 );
         bool flagy = (y0-mins[1] >= -3.0) && (y0 <= maxs[1] +2.0 );
         bool flagz = (z0-mins[2] >= -3.0) && (z0 <= maxs[2] +2.0 );
 
-        if( !flagx || !flagy || !flagz) {
+        if( !flagx || !flagy || !flagz || 
+            isnan1 || isnan2 || isnan3 || isnan4) {
           std::cout << "ERR IN MOM:" << std::endl;
+          std::cerr << " ispc: " << ispc;
           std::cerr << " minx: " << mins[0];
           std::cerr << " miny: " << mins[1];
           std::cerr << " minz: " << mins[2] << std::endl;

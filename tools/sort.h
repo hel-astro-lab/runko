@@ -48,24 +48,18 @@ DEVCALLABLE ManVec<size_t> argsort_rev(ManVec<T> const& values) {
 
   size_t N = values.size();
 
-  std::vector<size_t> indices( N );
+  ManVec<size_t> indices;
+  indices.resize(N);
 
   // linspace from 0 to N 
-  //std::iota( std::begin(indices), std::end(indices), static_cast<size_t>(0) );
-  for(size_t i=0; i<N; i++) indices[i] = i;
+  std::iota( indices.begin(), indices.end(), 0u );
 
   // FIXME sort is not devcallable
-  std::sort(
-    begin(indices), end(indices),
+  std::sort( indices.begin(), indices.end(),
       [&](size_t a, size_t b) { return values[a] > values[b]; } // NOTE: only difference is here
   );
 
-  // TODO: hack to make this work; we copy to ret of type ManVec
-  ManVec<size_t> ret;
-  ret.resize(N);
-  for(size_t i=0; i<N; i++) ret[i] = indices[i];
-
-  return ret;
+  return indices;
 }
 
 

@@ -22,7 +22,7 @@ private:
 
 public:
     
-  float_p cross_section = 1.0; // maximum cross section (in units of sigma_T)
+  const float_p cross_section = 1.0; // maximum cross section (in units of sigma_T)
 
   string name = "GenInteraction"; // interaction name
              //

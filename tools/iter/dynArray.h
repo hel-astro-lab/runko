@@ -250,6 +250,17 @@
             return ptr+count;
         }
 
+        DEVCALLABLE
+        inline T const* cbegin() const
+        {
+            return ptr;
+        }
+
+        DEVCALLABLE
+        inline T const* cend() const
+        {
+            return ptr+count;
+        }
 
         inline std::vector<T> toVector() const
         {
