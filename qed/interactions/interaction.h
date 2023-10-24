@@ -35,6 +35,12 @@ public:
   // enhance energy transfer by this factor 
   float_p wtar2wini = 1.0f;
 
+  // error tolerance
+  const float tol = 3.0e-4;
+
+  // maximum Monte Carlo iterations of the differential cross section
+  const int n_max = 10000;
+
   // constructor with incident/target types
   Interaction(string t1, string t2) :
     t1(t1),

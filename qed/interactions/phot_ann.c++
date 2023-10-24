@@ -194,11 +194,11 @@ void PhotAnn::interact(
 
     //#print(z1,z2,F, x,y,z,phi)
     if( F > rand() ) break;   // accept angles
-    if( niter > 1000 ) break; // too many iterations
+    if( niter > n_max ) break; // too many iterations
     niter += 1;
   }
+  if(niter > n_max) std::cerr << "PHOT-ANN WARNING: too many iterations" << std::endl;
 
-  //if(niter > 1000) std::cout << "PHOT-ANN WARNING: too many iterations" << std::endl;
 
   // new primary lepton vectors in CoM frame
   //      #sinz = sqrt(1-z**2) # sin z
@@ -251,8 +251,6 @@ void PhotAnn::interact(
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
     for(size_t i = 0; i < 2; i++) ts[i] = false;
 
-    float_p tol = 3.0e-5;
-
     float_p nom1  = norm(om1);
     float_p nom2  = norm(om2);
 
@@ -262,20 +260,20 @@ void PhotAnn::interact(
     if(ts[0] ||
        ts[1] ) { 
 
-      std::cout << "ERROR PHOT-ANN:" << std::endl;
-      for(size_t i = 0; i < 2; i++) { std::cout << i << " " << ts[i] << std::endl; }
+      std::cerr << "ERROR PHOT-ANN:" << std::endl;
+      for(size_t i = 0; i < 2; i++) { std::cerr << i << " " << ts[i] << std::endl; }
 
-      std::cout << "x1v, x2v  " <<  x1v   << " " <<  x2v << std::endl;
-      std::cout << "gm, gp    " <<  gp1   << " " <<  gp2  << std::endl;
-      std::cout << "mu,s0,s,q " <<  mu    << " " <<  s0    << " " <<  s << " " << q  << std::endl;
-      std::cout << "x,x1,enec " <<  x1    << " " <<  x2    << " " <<  enec << std::endl;
-      std::cout << "momc      " <<  moms  << " " <<  momc  << std::endl;
-      std::cout << "|om|,|om1|" <<  nom1  << " " <<  nom2  << std::endl;
-      std::cout << "|ve| |vp| " <<  ve1   << " " <<  ve2 << std::endl;
-      std::cout << "th,phi,om " <<  siny  << " " <<  phi   << "om1 " << om1 << "om2 " <<  om2  << std::endl;
-      std::cout << "zp1,zp2   " <<  zp1   << " " <<  zp2   << std::endl;
-      std::cout << "B         " <<  B      <<                 std::endl;
-      std::cout << "omr1,omr2 " <<  omr1  << " " <<  omr2  << std::endl;
+      std::cerr << "x1v, x2v  " <<  x1v   << " " <<  x2v << std::endl;
+      std::cerr << "gm, gp    " <<  gp1   << " " <<  gp2  << std::endl;
+      std::cerr << "mu,s0,s,q " <<  mu    << " " <<  s0    << " " <<  s << " " << q  << std::endl;
+      std::cerr << "x,x1,enec " <<  x1    << " " <<  x2    << " " <<  enec << std::endl;
+      std::cerr << "momc      " <<  moms  << " " <<  momc  << std::endl;
+      std::cerr << "|om|,|om1|" <<  nom1  << " " <<  nom2  << std::endl;
+      std::cerr << "|ve| |vp| " <<  ve1   << " " <<  ve2 << std::endl;
+      std::cerr << "th,phi,om " <<  siny  << " " <<  phi   << "om1 " << om1 << "om2 " <<  om2  << std::endl;
+      std::cerr << "zp1,zp2   " <<  zp1   << " " <<  zp2   << std::endl;
+      std::cerr << "B         " <<  B      <<                 std::endl;
+      std::cerr << "omr1,omr2 " <<  omr1  << " " <<  omr2  << std::endl;
     }
   }
 

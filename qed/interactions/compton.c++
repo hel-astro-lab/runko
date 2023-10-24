@@ -198,11 +198,11 @@ void Compton::interact(
     F = 0.5f*pow(x1_R/x0_R, 2)*(-1.0f + (x1_R/x0_R) + (x0_R/x1_R) + mu_R*mu_R );
 
     if( F > rand() ) break;   // accept angles
-    if( niter > 10000 ) break; // too many iterations
+    if( niter > n_max ) break; // too many iterations
     niter += 1;
   }
         
-  if(niter > 10000) std::cout << "COMPTON WARNING: too many iterations" << std::endl;
+  if(niter > n_max) std::cerr << "COMPTON WARNING: too many iterations" << std::endl;
 
 
   //# construct new photon vector based on the angles
@@ -334,8 +334,6 @@ void Compton::interact(
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
     for(size_t i = 0; i < 5; i++) ts[i] = false;
 
-    float_p tol = 3.0e-4;
-
     float_p nom0  = norm(om0);
     float_p nom1  = norm(om1);
 
@@ -352,19 +350,19 @@ void Compton::interact(
        ts[3] ||
        ts[4] ) { 
 
-      std::cout << "ERROR COMPTON:" << std::endl;
-      for(size_t i = 0; i < 5; i++) { std::cout << i << " " << ts[i] << std::endl; }
+      std::cerr << "ERROR COMPTON:" << std::endl;
+      for(size_t i = 0; i < 5; i++) { std::cerr << i << " " << ts[i] << std::endl; }
 
-      std::cout << "x0v, x1v  " <<  xv    << " " <<  k1   << std::endl;
-      std::cout << "g0, g1    " <<  gam0  << " " <<  gam1  << std::endl;
-      //std::cout << "mu,s0,s,q " <<  mu_R  << " " <<  s0    << " " <<  s << " " << q  << std::endl;
-      std::cout << "x,x1,enec " <<  x0    << " " <<  x1    << " " <<  enec << std::endl;
-      std::cout << "momc      " <<  moms  << " " <<  momc  << std::endl;
-      std::cout << "|om0||om1|" <<  nom0  << " " <<  nom1  << std::endl;
-      std::cout << "facc      " <<  facc  << " de" <<  x0-x1  << std::endl;
-      std::cout << "facc lim  " <<  (0.5f*gam0 -x0)/x1  << std::endl;
-      std::cout << "facc max  " <<  facc_max  << std::endl;
-      std::cout << "facc in  "  <<  facc_in  << std::endl;
+      std::cerr << "x0v, x1v  " <<  xv    << " " <<  k1   << std::endl;
+      std::cerr << "g0, g1    " <<  gam0  << " " <<  gam1  << std::endl;
+      //std::cerr << "mu,s0,s,q " <<  mu_R  << " " <<  s0    << " " <<  s << " " << q  << std::endl;
+      std::cerr << "x,x1,enec " <<  x0    << " " <<  x1    << " " <<  enec << std::endl;
+      std::cerr << "momc      " <<  moms  << " " <<  momc  << std::endl;
+      std::cerr << "|om0||om1|" <<  nom0  << " " <<  nom1  << std::endl;
+      std::cerr << "facc      " <<  facc  << " de" <<  x0-x1  << std::endl;
+      std::cerr << "facc lim  " <<  (0.5f*gam0 -x0)/x1  << std::endl;
+      std::cerr << "facc max  " <<  facc_max  << std::endl;
+      std::cerr << "facc in  "  <<  facc_in  << std::endl;
     }
   }
 

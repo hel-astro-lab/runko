@@ -173,12 +173,12 @@ void PairAnn::interact(
     F *= 1.0/((1.0 + vcm)*gcm*gcm); //# normalize to [0,1]
 
     if( F > rand() ) break;   // accept angles
-    if( niter > 10000 ) break; // too many iterations
+    if( niter > n_max ) break; // too many iterations
     niter += 1;
 
   }
 
-  if(niter > 10000) std::cout << "PAIR-ANN WARNING: too many iterations" << std::endl;
+  if(niter > n_max) std::cerr << "PAIR-ANN WARNING: too many iterations" << std::endl;
 
 
   //# new photon vectors in CoM frame
@@ -228,8 +228,6 @@ void PairAnn::interact(
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
     for(size_t i=0; i<8; i++)    ts[i] = false; 
 
-    float_p tol = 3.0e-5;
-
     if(abs(enec) >     tol) ts[0] = true; 
     if(x0 < 0.0)            ts[1] = true;
     if(x1 < 0.0)            ts[2] = true;
@@ -248,21 +246,21 @@ void PairAnn::interact(
        ts[5] ||
        ts[6] ||
        ts[7] ) {
-      std::cout << "ERROR PAIR-ANN:" << std::endl;
-      for(size_t i = 0; i < 8; i++) { std::cout << i << " " << ts[i] << std::endl; }
+      std::cerr << "ERROR PAIR-ANN:" << std::endl;
+      for(size_t i = 0; i < 8; i++) { std::cerr << i << " " << ts[i] << std::endl; }
     
-      std::cout << "zm, zp    " <<  zmvec << " " <<  zpvec << std::endl;
-      std::cout << "gm, gp    " <<  gamm  << " " <<  gamp  << std::endl;
-      std::cout << "z,s0,s,q  " <<  zeta  << " " <<  s0    << " " <<  s << " " << q  << std::endl;
-      std::cout << "x,x1,enec " <<  x0    << " " <<  x1    << " " <<  enec << std::endl;
-      std::cout << "|omi||omi|" <<  nom1i << " " <<  nom2i << std::endl;
-      std::cout << "|om|,|om1|" <<  nom1  << " " <<  nom2  << std::endl;
-      std::cout << "momc      " <<  moms  << " " <<  momc  << std::endl;
-      std::cout << "th,phi,om " <<  cosz  << " " <<  phi   << "om " << om0 << "om1 " <<  om1  << std::endl;
-      std::cout << "xpp0,xpp1 " <<  xpp0  << " " <<  xpp1  << std::endl;
-      std::cout << "B         " <<  B      <<                 std::endl;
-      std::cout << "omr0,omr1 " <<  omr0  << " " <<  omr1  << std::endl;
-      std::cout << "xp0, xp1  " <<  xp0   << " " <<  xp1   << std::endl;
+      std::cerr << "zm, zp    " <<  zmvec << " " <<  zpvec << std::endl;
+      std::cerr << "gm, gp    " <<  gamm  << " " <<  gamp  << std::endl;
+      std::cerr << "z,s0,s,q  " <<  zeta  << " " <<  s0    << " " <<  s << " " << q  << std::endl;
+      std::cerr << "x,x1,enec " <<  x0    << " " <<  x1    << " " <<  enec << std::endl;
+      std::cerr << "|omi||omi|" <<  nom1i << " " <<  nom2i << std::endl;
+      std::cerr << "|om|,|om1|" <<  nom1  << " " <<  nom2  << std::endl;
+      std::cerr << "momc      " <<  moms  << " " <<  momc  << std::endl;
+      std::cerr << "th,phi,om " <<  cosz  << " " <<  phi   << "om " << om0 << "om1 " <<  om1  << std::endl;
+      std::cerr << "xpp0,xpp1 " <<  xpp0  << " " <<  xpp1  << std::endl;
+      std::cerr << "B         " <<  B      <<                 std::endl;
+      std::cerr << "omr0,omr1 " <<  omr0  << " " <<  omr1  << std::endl;
+      std::cerr << "xp0, xp1  " <<  xp0   << " " <<  xp1   << std::endl;
 
       //assert(false);
     }
