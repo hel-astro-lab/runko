@@ -128,7 +128,7 @@ void ParticleContainer<D>::resize(size_t N)
   Epart.resize(N*3);
   Bpart.resize(N*3);
 
-  Nprtcls = N;
+  //std::cout << " INFO: " << cid << " resizing container from " << Nprtcls << " to  " << N << std::endl;
 
 #ifdef GPU
   nvtxRangePop();
@@ -548,7 +548,7 @@ std::array<double,3>& maxs)
     }
   }
 
-//std::cout << "outgoing count:" << outgoing_count << "\n";
+  //std::cout << "INFO " << cid << " outgoing count:" << outgoing_count << "\n";
 #endif
 
 
@@ -635,10 +635,9 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
   int* idn[2];
   for(int i=0; i<2; i++) idn[i] = &( id(i,0) );
 
-
   // overwrite particles with the last one on the array and 
   // then resize the array
-  int last = size();
+  int last = size()-1; // FIXME added -1 here since that is the real last element
   for(int indx : to_be_deleted) {
     last--;
     if(indx == last) continue;
@@ -648,11 +647,15 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
     for(int i=0; i<3; i++) veln[i][indx] = veln[i][last];
     wgtArr[indx] = wgtArr[last];
     for(int i=0; i<2; i++) idn[i][indx] = idn[i][last];
+
   }
 
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
+
+  //std::cout << " INFO: " << cid << " v1: removing prtcls :" << Nprtcls << " - " << to_be_deleted.size() << std::endl;
+  Nprtcls -= to_be_deleted.size();
 
 #ifdef GPU
   nvtxRangePop();
@@ -687,7 +690,7 @@ void ParticleContainer<D>::delete_transferred_particles()
     int last = size()-to_other_tiles.size();
   
     UniIter::iterate([=] DEVCALLABLE (int i, ManVec<to_other_tiles_struct> &to_other_tiles){
-      int other = last+i;////size() - 1 - i;
+      int other = last+i; //size() - 1 - i;
       int indx = to_other_tiles[i].n;
   
       //int last = size();
@@ -718,6 +721,8 @@ void ParticleContainer<D>::delete_transferred_particles()
     delete_particles(to_be_deleted);
     */
 
+    //std::cout << " INFO: " << cid << " v2: removing prtcls :" << Nprtcls << " - " << to_other_tiles.size() << std::endl;
+    Nprtcls -= to_other_tiles.size();
 
 #ifdef GPU
   nvtxRangePop();
@@ -887,23 +892,31 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
       locy = wrap( neigh.loc(1, ind), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
       locz = wrap( neigh.loc(2, ind), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
 
-      locArr[0].push_back(locx);
-      locArr[1].push_back(locy);
-      locArr[2].push_back(locz);
+      //locArr[0].push_back(locx);
+      //locArr[1].push_back(locy);
+      //locArr[2].push_back(locz);
 
       //std::cout << locx << " " << locy << " " << locz << " " <<  velx << " " << vely << " " << velz << " " <<  wgt << " " <<  id << " " <<  proc << std::endl;
       //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
 
-      velArr[0].push_back( neigh.vel(0, ind) );
-      velArr[1].push_back( neigh.vel(1, ind) );
-      velArr[2].push_back( neigh.vel(2, ind) );
+      //velArr[0].push_back( neigh.vel(0, ind) );
+      //velArr[1].push_back( neigh.vel(1, ind) );
+      //velArr[2].push_back( neigh.vel(2, ind) );
 
-      wgtArr.push_back( neigh.wgt(ind));
+      //wgtArr.push_back( neigh.wgt(ind));
 
-      indArr[0].push_back(neigh.id(0,ind));
-      indArr[1].push_back(neigh.id(1,ind));
+      //indArr[0].push_back(neigh.id(0,ind));
+      //indArr[1].push_back(neigh.id(1,ind));
 
-      Nprtcls++;
+      //Nprtcls++;
+
+      add_identified_particle(
+          {locx, locy, locz}, 
+          {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
+          neigh.wgt(ind),
+          neigh.id(0,ind), neigh.id(1,ind)
+          );
+
     }
   }
 
@@ -989,7 +1002,6 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //std::cout << "reserving2: " << np <<" minus " << np-first_message_size << "\n";
 
 
-  // FIXME altered here from v0 w/ reserve to new ver w/ resize
   //outgoing_particles.reserve(first_message_size);
   //if(np > first_message_size + extra_message_size) {
   //  std::cerr << "Number of particles in MPI message exceeds maximum message size. See documentation." << std::endl;

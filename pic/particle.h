@@ -93,14 +93,15 @@ class ParticleContainer{
 
   protected:
 
-  size_t Nprtcls = 0;
-
   std::array<ManVec<float_p>, 3 > locArr; // x y z location
   std::array<ManVec<float_p>, 3 > velArr; // vx vy vz velocities
   std::array<ManVec<int>, 2 > indArr;     // cpu,id index
   ManVec<float_p> wgtArr;                 // weight
 
   public:
+
+  int Nprtcls = 0;
+  int cid = 0; // container identification id (minted with tile id)
 
   // these arrays are required for QED interactions
   ManVec<float_p> wgtCumArr;              // cumulative weights; kept 0 if not needed
@@ -122,9 +123,9 @@ class ParticleContainer{
   ManVec<Particle> incoming_extra_particles;
 
 #ifdef GPU
-  // incomming indexes, to optimize transfer_and_wrap_particles for GPUs
-  //int incomming_count;
-  ManVec<int> incomming_particleIndexes;
+  // incoming indexes, to optimize transfer_and_wrap_particles for GPUs
+  //int incoming_count;
+  ManVec<int> incoming_particleIndexes;
   ManVec<int> particleIndexesA;
   ManVec<int> particleIndexesB;
   int pCount;
@@ -132,7 +133,7 @@ class ParticleContainer{
   void     *d_temp_storage = NULL;
   size_t   temp_storage_bytes = 0;
 
-  // incomming indexes, to optimize transfer_and_wrap_particles for GPUs
+  // incoming indexes, to optimize transfer_and_wrap_particles for GPUs
   ManVec<int> outgoing_particleIndexes;
 #endif
 
@@ -185,7 +186,49 @@ class ParticleContainer{
 
   /// size of the container (in terms of particles)
   //DEVCALLABLE size_t size() const { return Nprtcls; }
-  DEVCALLABLE size_t size() const { return locArr[0].size(); }
+  //DEVCALLABLE size_t size() const { return locArr[0].size(); } // FIXME defaul
+
+  DEVCALLABLE size_t size() const { 
+
+    bool ts[9] = {0,0,0,0,0,0,0,0,0};
+
+    ts[0] = locArr[0].size() == locArr[1].size();
+    ts[1] = locArr[0].size() == locArr[2].size();
+    ts[2] = locArr[0].size() == velArr[0].size();
+    ts[3] = locArr[0].size() == velArr[1].size();
+    ts[4] = locArr[0].size() == velArr[2].size();
+    ts[5] = locArr[0].size() == indArr[0].size();
+    ts[6] = locArr[0].size() == indArr[1].size();
+    ts[7] = locArr[0].size() == wgtArr.size();
+    ts[8] = locArr[0].size() == Nprtcls;
+
+    //bool ts2 = 0;
+    //for(size_t i = 0; i<9; i++) ts2 += !ts[i];
+
+    if( !ts[0] ||
+        !ts[1] ||
+        !ts[2] ||
+        !ts[3] ||
+        !ts[4] ||
+        !ts[5] ||
+        !ts[6] ||
+        !ts[7] ||
+        !ts[8] ){
+      std::cerr << "ERROR: particle number mismatch\n";
+      std::cerr << locArr[1].size() << std::endl;;
+      std::cerr << locArr[2].size() << std::endl;;
+      std::cerr << velArr[0].size() << std::endl;;
+      std::cerr << velArr[1].size() << std::endl;;
+      std::cerr << velArr[2].size() << std::endl;;
+      std::cerr << indArr[0].size() << std::endl;;
+      std::cerr << indArr[1].size() << std::endl;;
+      std::cerr << wgtArr.size()    << std::endl;;
+      std::cerr << Nprtcls          << std::endl;;
+      assert(false);
+    }
+
+    return Nprtcls; //locArr[0].size(); 
+  }
 
   //--------------------------------------------------
   // locations

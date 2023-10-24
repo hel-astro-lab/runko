@@ -173,6 +173,8 @@ void Tile<3>::get_incoming_particles(
   for(int i=-1; i<=1; i++) {
     for(int j=-1; j<=1; j++) {
       for(int k=-1; k<=1; k++) {
+
+        if( i==0 && j==0 && k==0 ) continue;
           
         // get neighboring tile
         auto ind = this->neighs(i, j, k); 
@@ -417,7 +419,10 @@ template<std::size_t D>
 void Tile<D>::delete_all_particles()
 {
   for(auto&& container : containers) 
+  {
     container.resize(0);
+    container.Nprtcls = 0;
+  }
 
 }
 

@@ -33,6 +33,8 @@ public:
 
   using corgi::Tile<D>::mins;
   using corgi::Tile<D>::maxs;
+  using corgi::Tile<D>::cid;
+
   using fields::Tile<D>::mesh_lengths;
 
   using fields::Tile<D>::yee;
@@ -52,6 +54,10 @@ public:
   /// set i:th container
   void set_container(ParticleContainer<D>& block) 
   { 
+    // label container with tile cid; used for identifying containers when debugging
+    block.cid = cid;
+
+    // add 
     containers.push_back(block); 
   };
 
