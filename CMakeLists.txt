@@ -16,11 +16,10 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
  
 # optimization flags
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math -fprofile-generate -fprofile-use")
+
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all") general
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-vec")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native") #general optimization
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all")
 
 # epyc rome
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -fomit-frame-pointer -fopt-info-all-all=all.all")
