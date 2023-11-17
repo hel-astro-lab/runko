@@ -1,8 +1,8 @@
 #modules
-module load gcc/10.4.0
+module load gcc/11.4.0
 module load cmake
 module load openmpi/4.0.7
-module load python-mpi/3.9.15
+module load python-mpi/3.10.10
 module load hdf5/mpi-1.10.9
 module load texlive
 
