@@ -671,46 +671,48 @@ void ParticleContainer<D>::delete_transferred_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  //std::vector<int> to_be_deleted;
-  // get transferred 
-  //std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](auto a, auto b){return a.n > b.n;} );
-  
+  // do nothing if empty
+  if(to_other_tiles.size() == 0) return;
+    
+  // reverse sort so that following algo works
+  std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](const auto& a, const auto& b){return a.n > b.n;} );
+
+
   float_p* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
   
-    float_p* veln[3];
-    for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
+  float_p* veln[3];
+  for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
   
-    int* idn[2];
-    for(int i=0; i<2; i++) idn[i] = &( id(i,0) );
+  int* idn[2];
+  for(int i=0; i<2; i++) idn[i] = &( id(i,0) );
   
   
-    // overwrite particles with the last one on the array and 
-    // then resize the array
-    int last = size()-to_other_tiles.size();
+  // overwrite particles with the last one on the array and 
+  // then resize the array
+  int last = size()-to_other_tiles.size();
+  //std::cout << "del: " << size() << " to be deleted: " << to_other_tiles.size() << std::endl;
   
-    UniIter::iterate([=] DEVCALLABLE (int i, ManVec<to_other_tiles_struct> &to_other_tiles){
-      int other = last+i; //size() - 1 - i;
-      int indx = to_other_tiles[i].n;
+  UniIter::iterate([=] DEVCALLABLE (int ii, ManVec<to_other_tiles_struct> &to_other_tiles){
+    int other = last+ii; //size() - 1 - i;
+    int indx = to_other_tiles[ii].n;
+
+    //if(indx >= last) return;
+    //std::cout << " sw " << indx << " to " << other << " while last " << last << std::endl;
+      
+    //std::cout << "deleting " << indx << " by putting it to " << last << '\n';
+    for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
+    for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
+    for(int i=0; i<2; i++) idn[ i][indx] = idn[ i][other];
+    wgtArr[indx] = wgtArr[other];
+
+  }, to_other_tiles.size(), to_other_tiles);
   
-      //int last = size();
-      //for(auto elem : to_other_tiles) {
-      //  int indx = elem.n;
-      //  last--;
-      //
-      if(indx >= last) return;
-      //std::cout << "deleting " << indx << " by putting it to " << last << '\n';
-      for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
-      for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
-      wgtArr[indx] = wgtArr[other];
-      for(int i=0; i<2; i++) idn[i][indx] = idn[i][other];
-    }, to_other_tiles.size(), to_other_tiles);
+  UniIter::sync();
   
-    UniIter::sync();
-  
-    // resize if needed and take care of the size
-    last = last < 0 ? 0 : last;
-    if ((last != (int)size()) && (size() > 0)) resize(last);
+  // resize if needed and take care of the size
+  last = last < 0 ? 0 : last;
+  if ((last != (int)size()) && (size() > 0)) resize(last);
   
     /*
     for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
@@ -721,8 +723,8 @@ void ParticleContainer<D>::delete_transferred_particles()
     delete_particles(to_be_deleted);
     */
 
-    //std::cout << " INFO: " << cid << " v2: removing prtcls :" << Nprtcls << " - " << to_other_tiles.size() << std::endl;
-    Nprtcls -= to_other_tiles.size();
+  //std::cout << " INFO: " << cid << " v2: removing prtcls :" << Nprtcls << " - " << to_other_tiles.size() << std::endl;
+  Nprtcls -= to_other_tiles.size();
 
 #ifdef GPU
   nvtxRangePop();
