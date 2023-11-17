@@ -80,7 +80,7 @@ h5io::Reader::read(
     assert(iarr2.size() == nparts);
 
     float_p xloc, yloc, zloc;
-    float_p ux, uy, uz;
+    float_p ux, uy, uz, w;
     for(size_t n=0; n<nparts; n++) {
       // generates key
       //container.add_particle(
@@ -97,6 +97,8 @@ h5io::Reader::read(
       ux   = arr4[n];  //gr["vx"];
       uy   = arr5[n];  //gr["vy"];
       uz   = arr6[n];  //gr["vz"];
+                         
+      w    = arr7[n];  
 
       // confirm that these are reasonable values
       size_t nan_flag = 0;
@@ -106,12 +108,13 @@ h5io::Reader::read(
       if(!std::isnan(ux)  ) nan_flag++;
       if(!std::isnan(uy)  ) nan_flag++;
       if(!std::isnan(uz)  ) nan_flag++;
+      if(!std::isnan(w)   ) nan_flag++;
 
       // confirm that we are inside the tile
       size_t loc_flag = 0;
-      if(D>= 1 && mins[0] <= xloc && xloc <= maxs[0]) loc_flag++;
-      if(D>= 2 && mins[1] <= yloc && yloc <= maxs[1]) loc_flag++;
-      if(D>= 3 && mins[2] <= zloc && zloc <= maxs[2]) loc_flag++;
+      if(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) loc_flag++;
+      if(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) loc_flag++;
+      if(D>= 3 && mins[2]-2 <= zloc && zloc <= maxs[2]+2) loc_flag++;
 
       // confirm that velocities are reasonable
       //u = ux*ux + uy*uy + uz*uz;
@@ -122,7 +125,7 @@ h5io::Reader::read(
 
       //finally, check that all checks pass
       bool good_prtcl = true;
-      if( nan_flag  < 6) good_prtcl = false;
+      if( nan_flag  < 7) good_prtcl = false;
       if( loc_flag  < D) good_prtcl = false;
       if( vel_flag  < 3) good_prtcl = false;
 
@@ -144,10 +147,16 @@ h5io::Reader::read(
                   << " ux=" << ux
                   << " uy=" << uy
                   << " uz=" << uz
+                  << " w="  << w
                   << " nan_flag=" << nan_flag
                   << " loc_flag=" << loc_flag
                   << " vel_flag=" << vel_flag
                   << std::endl;
+
+        if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
+        if( !(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) ) std::cerr << "  yloc err: min:" << mins[1] << " p:" << yloc << " max:" << maxs[1] << std::endl;
+        if( !(D>= 3 && mins[2]-2 <= zloc && zloc <= maxs[2]+2) ) std::cerr << "  zloc err: min:" << mins[2] << " p:" << zloc << " max:" << maxs[2] << std::endl;
+
         //assert(false);
       }
     }
