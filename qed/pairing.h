@@ -510,6 +510,7 @@ public:
     //--------------------------------------------------
     // variables inside loop
     float_p lx1, ly1, lz1,     lx2, ly2, lz2;
+    float_p lx3, ly3, lz3,     lx4, ly4, lz4;
     float_p ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
     float_p ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
     float_p e1, e2;
@@ -580,6 +581,7 @@ public:
                 e1 = con2.get_prtcl_ene(n2);
 
                 if(w2 < EPS) continue; // omit zero-w targets
+                                         
 
                 //--------------------------------------------------
                 //avoid double counting by considering only e1 < e2 cases
@@ -623,7 +625,7 @@ public:
                     } else { // else destroy previous and add new 
 
                       // destroy current
-                      con1.to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+                      con1.to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
                       con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
 
                       // add new
@@ -646,7 +648,7 @@ public:
                     } else { // else destroy previous and add new 
 
                       // destroy current
-                      con2.to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
+                      con2.to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
                       con2.wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
 
                       // add_particle
@@ -720,10 +722,14 @@ public:
       info_prtcl_num[t1] = con.size();
     }
 
+    auto mins = tile.mins;
+    auto maxs = tile.maxs;
+
     //--------------------------------------------------
 
     // initialize temp variable storages
     float_p lx1, ly1, lz1,     lx2, ly2, lz2;
+    float_p lx3, ly3, lz3,     lx4, ly4, lz4;
     float_p ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
     float_p ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
     float_p e1, e2, e3, e4;
@@ -878,6 +884,117 @@ public:
           //if(e1 < e2) continue;
           //could also put double counting check to comp_pmax
           //--------------------------------------------------
+            
+          //--------------------------------------------------
+          // confirm that locations are inside tile
+
+          //size_t loc_flag1 = 0;
+          //if(D>= 1 && mins[0]-2 <= lx1 && lx1 <= maxs[0]+2) loc_flag1++;
+          //if(D>= 2 && mins[1]-2 <= ly1 && ly1 <= maxs[1]+2) loc_flag1++;
+          //if(D>= 3 && mins[2]-2 <= lz1 && lz1 <= maxs[2]+2) loc_flag1++;
+          //                         
+          //size_t loc_flag2 = 0;
+          //if(D>= 1 && mins[0]-2 <= lx2 && lx2 <= maxs[0]+2) loc_flag2++;
+          //if(D>= 2 && mins[1]-2 <= ly2 && ly2 <= maxs[1]+2) loc_flag2++;
+          //if(D>= 3 && mins[2]-2 <= lz2 && lz2 <= maxs[2]+2) loc_flag2++;
+
+          lx3 = lx1; //(lx1 + lx2)*0.5; 
+          ly3 = ly1; //(ly1 + ly2)*0.5; 
+          lz3 = lz1; //(lz1 + lz2)*0.5; 
+
+          size_t loc_flag3 = 0;
+          if(D>= 1 && mins[0]-3 <= lx3 && lx3 <= maxs[0]+2) loc_flag3++;
+          if(D>= 2 && mins[1]-3 <= ly3 && ly3 <= maxs[1]+2) loc_flag3++;
+          if(D>= 3 && mins[2]-3 <= lz3 && lz3 <= maxs[2]+2) loc_flag3++;
+
+          lx4 = lx2; //(lx1 + lx2)*0.5; 
+          ly4 = ly2; //(ly1 + ly2)*0.5; 
+          lz4 = lz2; //(lz1 + lz2)*0.5; 
+
+          size_t loc_flag4 = 0;
+          if(D>= 1 && mins[0]-3 <= lx4 && lx4 <= maxs[0]+2) loc_flag4++;
+          if(D>= 2 && mins[1]-3 <= ly4 && ly4 <= maxs[1]+2) loc_flag4++;
+          if(D>= 3 && mins[2]-3 <= lz4 && lz4 <= maxs[2]+2) loc_flag4++;
+
+          //if(loc_flag1 < D ) {
+          //    std::cerr << "PAIRING: loc err 1"
+          //      << " x=" << lx1
+          //      << " y=" << ly1
+          //      << " z=" << lz1
+          //      << " ux=" << ux1
+          //      << " uy=" << uy1
+          //      << " uz=" << uz1
+          //      << " w="  << w1
+          //      << " minsx:" << mins[0] 
+          //      << " minsy:" << mins[1] 
+          //      << " minsz:" << mins[2] 
+          //      << " maxsx:" << maxs[0] 
+          //      << " maxsy:" << maxs[1] 
+          //      << " maxsz:" << maxs[2] 
+          //      << std::endl;
+          //    assert(false);
+          //}
+
+          //if(loc_flag2 < D ) {
+          //    std::cerr << "PAIRING: loc err 2"
+          //      << " x=" << lx2
+          //      << " y=" << ly2
+          //      << " z=" << lz2
+          //      << " ux=" << ux2
+          //      << " uy=" << uy2
+          //      << " uz=" << uz2
+          //      << " w="  << w2
+          //      << " minsx:" << mins[0] 
+          //      << " minsy:" << mins[1] 
+          //      << " minsz:" << mins[2] 
+          //      << " maxsx:" << maxs[0] 
+          //      << " maxsy:" << maxs[1] 
+          //      << " maxsz:" << maxs[2] 
+          //      << std::endl;
+          //    assert(false);
+          //}
+
+          if(loc_flag3 < D ) {
+              std::cerr << "PAIRING: loc err 3"
+                << " t="  << t1
+                << " n="  << n1
+                << " x=" << lx3
+                << " y=" << ly3
+                << " z=" << lz3
+                << " ux=" << ux1
+                << " uy=" << uy1
+                << " uz=" << uz1
+                << " w="  << w1
+                << " minsx:" << mins[0] 
+                << " minsy:" << mins[1] 
+                << " minsz:" << mins[2] 
+                << " maxsx:" << maxs[0] 
+                << " maxsy:" << maxs[1] 
+                << " maxsz:" << maxs[2] 
+                << std::endl;
+                assert(false);
+          }
+
+          if(loc_flag4 < D ) {
+              std::cerr << "PAIRING: loc err 4"
+                << " t="  << t2
+                << " n="  << n2
+                << " x=" << lx4
+                << " y=" << ly4
+                << " z=" << lz4
+                << " ux=" << ux2
+                << " uy=" << uy2
+                << " uz=" << uz2
+                << " w="  << w2
+                << " minsx:" << mins[0] 
+                << " minsy:" << mins[1] 
+                << " minsz:" << mins[2] 
+                << " maxsx:" << maxs[0] 
+                << " maxsy:" << maxs[1] 
+                << " maxsz:" << maxs[2] 
+                << std::endl;
+                assert(false);
+          }
           
           //--------------------------------------------------
           
@@ -1164,7 +1281,7 @@ public:
               timer.start_comp("del_parent1");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
-                cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+                cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent1");
@@ -1184,7 +1301,8 @@ public:
               timer.start_comp("add_prtcl1");
               double z1 = rand();
               while( n3 > z1 + ncop ){
-                cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+                // TODO NOTE lx3 here not lx1
+                cons[t3]->add_particle( {{lx3, ly3, lz3}}, {{ux3, uy3, uz3}}, w3); // new ene & w
                 ncop += 1.0;
               }
               timer.stop_comp("add_prtcl1");
@@ -1192,7 +1310,7 @@ public:
               timer.start_comp("del_parent1");
               // kill parent
               if( prob_kill3 > rand() ) {
-                cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU version
+                cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent1");
@@ -1241,7 +1359,7 @@ public:
               timer.start_comp("del_parent2");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
-                cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
+                cons[t2]->to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent2");
@@ -1249,12 +1367,14 @@ public:
             //--------------------------------------------------
             } else { //# different before/after type; kill parent with a prob_upd
                        
-              // annihilation interactions go here
+              // annihilation interactions go her
                 
               timer.start_comp("add_prtcl2");
               double z1 = rand();
               while( n4 > z1 + ncop ){
-                cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                //cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                // TODO note lx4 here
+                cons[t4]->add_particle( {{lx4, ly4, lz4}}, {{ux4, uy4, uz4}}, w4); // new ene & w
                 ncop += 1.0;
               }
               timer.stop_comp("add_prtcl2");
@@ -1262,7 +1382,7 @@ public:
               timer.start_comp("del_parent2");
               // kill parent
               if( prob_kill4 > rand() ) {
-                cons[t2]->to_other_tiles.push_back( {0,0,0,n2} ); // NOTE: CPU version
+                cons[t2]->to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent2");
@@ -1357,7 +1477,7 @@ public:
 
       zeta = rand();
       if( zeta < prob_kill) {
-        cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU deletion version
+        cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
       } else {
         cons[t1]->wgt(n1) = w1*f_kill; // compensate lost particles by increasing w
@@ -1670,7 +1790,7 @@ public:
         // book keeping of escaped flux
         add_to_histogram(x, w);
 
-        cons[t1]->to_other_tiles.push_back( {0,0,0,n1} ); // NOTE: CPU deletion version
+        cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
       }
 
