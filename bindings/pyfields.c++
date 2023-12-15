@@ -540,7 +540,15 @@ void bind_fields(py::module& m_sub)
   // 2D 
   py::class_<h5io::FieldsWriter<2>>(m_2d, "FieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
-    .def("write",   &h5io::FieldsWriter<2>::write);
+    .def("write",   &h5io::FieldsWriter<2>::write) 
+    .def("get_slice", [](h5io::FieldsWriter<2> &s, int k)
+            {
+                //const auto N = static_cast<pybind11::ssize_t>(s.arrs[k].size());
+                const auto nx = static_cast<pybind11::ssize_t>( s.nx );
+                const auto ny = static_cast<pybind11::ssize_t>( s.ny );
+                auto v = pybind11::array_t<float_m>( {nx, ny}, s.arrs[k].data() );
+                return v;
+            });
 
   // 3D 
   py::class_<h5io::FieldsWriter<3>>(m_3d, "FieldsWriter")
