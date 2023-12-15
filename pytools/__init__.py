@@ -15,6 +15,7 @@ from .indices import Stagger
 from .indices import get_index
 from .scheduler import Scheduler
 from .terminal_plot import TerminalPlot
+from .string_manipulation import simplify_string, simplify_large_num
 
 
 # physics modules
