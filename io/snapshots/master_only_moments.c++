@@ -41,7 +41,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
 
 
   // local variables
-  double gam, mass, wgt;
+  double gam, xene, mass, wgt;
   double x0, y0, z0;
   double u0, v0, w0;
   int nparts;
@@ -83,7 +83,8 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
       v0  = static_cast<double>( vel[1][n] );
       w0  = static_cast<double>( vel[2][n] );
 
-      gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
+      gam  = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
+      xene = sqrt(      u0*u0 + v0*v0 + w0*w0);
 
 
       //--------------------------------------------------
@@ -145,7 +146,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
       // number density 
       if(ifea == 0 && ispc == 0) sbuf[0](i,j,k) += wgt; 
       if(ifea == 1 && ispc == 1) sbuf[0](i,j,k) += wgt; 
-      if(ifea == 2 && ispc == 2) sbuf[0](i,j,k) += wgt; 
+      if(ifea == 2 && ispc == 2) sbuf[0](i,j,k) += wgt*xene;  // energy density for photons
 
       // bulk flows
       if(ifea == 3 && ispc == 0) sbuf[0](i,j,k) += wgt*u0/gam; // Vxe
