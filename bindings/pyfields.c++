@@ -511,22 +511,43 @@ void bind_fields(py::module& m_sub)
 
   //--------------------------------------------------
   // EM boundary conditions
+    
+  // 2D rotating conductor
+  py::class_<fields::Conductor<2>>(m_2d, "Conductor")
+    .def(py::init<>())
+    .def_readwrite("B0",       &fields::Conductor<2>::B0)
+    .def_readwrite("radius",   &fields::Conductor<2>::radius)
+    .def_readwrite("period",   &fields::Conductor<2>::period)
+    .def_readwrite("chi",      &fields::Conductor<2>::chi)
+    .def_readwrite("phase",    &fields::Conductor<2>::phase)
+    .def_readwrite("cenx",     &fields::Conductor<2>::cenx)
+    .def_readwrite("ceny",     &fields::Conductor<2>::ceny)
+    .def_readwrite("cenz",     &fields::Conductor<2>::cenz)
+    .def_readwrite("delta",    &fields::Conductor<2>::delta)
+    .def_readwrite("radius_pc",&fields::Conductor<2>::radius_pc)
+    .def_readwrite("delta_pc", &fields::Conductor<2>::delta_pc)
+    .def("insert_em",          &fields::Conductor<2>::insert_em)
+    .def("update_b",           &fields::Conductor<2>::update_b)
+    .def("update_e",           &fields::Conductor<2>::update_e);
+
 
   // 3D rotating conductor
   py::class_<fields::Conductor<3>>(m_3d, "Conductor")
     .def(py::init<>())
-    .def_readwrite("B0",    &fields::Conductor<3>::B0)
-    .def_readwrite("radius",&fields::Conductor<3>::radius)
-    .def_readwrite("period",&fields::Conductor<3>::period)
-    .def_readwrite("chi",   &fields::Conductor<3>::chi)
-    .def_readwrite("phase", &fields::Conductor<3>::phase)
-    .def_readwrite("cenx",  &fields::Conductor<3>::cenx)
-    .def_readwrite("ceny",  &fields::Conductor<3>::ceny)
-    .def_readwrite("cenz",  &fields::Conductor<3>::cenz)
-    .def_readwrite("delta", &fields::Conductor<3>::delta)
-    .def("insert_em",       &fields::Conductor<3>::insert_em)
-    .def("update_e",        &fields::Conductor<3>::update_e)
-    .def("update_b",        &fields::Conductor<3>::update_b);
+    .def_readwrite("B0",       &fields::Conductor<3>::B0)
+    .def_readwrite("radius",   &fields::Conductor<3>::radius)
+    .def_readwrite("period",   &fields::Conductor<3>::period)
+    .def_readwrite("chi",      &fields::Conductor<3>::chi)
+    .def_readwrite("phase",    &fields::Conductor<3>::phase)
+    .def_readwrite("cenx",     &fields::Conductor<3>::cenx)
+    .def_readwrite("ceny",     &fields::Conductor<3>::ceny)
+    .def_readwrite("cenz",     &fields::Conductor<3>::cenz)
+    .def_readwrite("delta",    &fields::Conductor<3>::delta)
+    .def_readwrite("radius_pc",&fields::Conductor<3>::radius_pc)
+    .def_readwrite("delta_pc", &fields::Conductor<3>::delta_pc)
+    .def("insert_em",          &fields::Conductor<3>::insert_em)
+    .def("update_e",           &fields::Conductor<3>::update_e)
+    .def("update_b",           &fields::Conductor<3>::update_b);
 
 
   //--------------------------------------------------

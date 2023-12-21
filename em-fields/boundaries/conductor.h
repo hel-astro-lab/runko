@@ -27,6 +27,11 @@ class Conductor
   // derived global quantities
   double angular_velocity;
 
+  // additional switches for a possible polar cap 
+  double radius_pc = 1.0; // polar cap radius
+  double delta_pc  = 1.0; // polar smoothing
+
+
 
   /// \brief interpolate electromagnetic fields to particle locations
   //void solve(fields::Tile<D>&  /*tile*/);
