@@ -380,16 +380,36 @@ void bind_fields(py::module& m_sub)
 
   //--------------------------------------------------
   // 2D Propagator bindings
-  py::class_< fields::Propagator<2>, PyPropagator<2> >(m_2d, "Propagator")
+  py::class_< fields::Propagator<2>, PyPropagator<2> > fieldspropag2d(m_2d, "Propagator");
+  fieldspropag2d
     .def(py::init<>())
     .def_readwrite("dt",&fields::Propagator<2>::dt)
     .def("push_e",      &fields::Propagator<2>::push_e)
     .def("push_half_b", &fields::Propagator<2>::push_half_b);
 
   // fdtd2 propagator
-  py::class_<fields::FDTD2<2>, Propagator<2>, PyFDTD2<2> >(m_2d, "FDTD2")
+  py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
     .def_readwrite("corr",     &fields::FDTD2<2>::corr)
     .def(py::init<>());
+    
+  // fdtd2 propagator with perfectly matched ouer layer
+  py::class_<fields::FDTD2_pml<2>> pml2d(m_2d, "FDTD2_pml", fieldspropag2d);
+  pml2d
+    .def(py::init<>())
+    .def_readwrite("cenx",     &fields::FDTD2_pml<2>::cenx)
+    .def_readwrite("ceny",     &fields::FDTD2_pml<2>::ceny)
+    .def_readwrite("cenz",     &fields::FDTD2_pml<2>::cenz)
+    .def_readwrite("radx",     &fields::FDTD2_pml<2>::radx)
+    .def_readwrite("rady",     &fields::FDTD2_pml<2>::rady)
+    .def_readwrite("radz",     &fields::FDTD2_pml<2>::radz)
+    .def_readwrite("rad_lim",  &fields::FDTD2_pml<2>::rad_lim)
+    .def_readwrite("norm_abs", &fields::FDTD2_pml<2>::norm_abs)
+    .def_readwrite("corr",     &fields::FDTD2_pml<2>::corr)
+    .def_readwrite("mode",     &fields::FDTD2_pml<2>::mode)
+    .def("push_e",             &fields::FDTD2_pml<2>::push_e)
+    .def("push_half_b",        &fields::FDTD2_pml<2>::push_half_b);
+    //.def("push_eb",            &fields::FDTD2_pml<2>::push_eb); // TODO not implemented
+
 
   // fdtd4 propagator
   py::class_<fields::FDTD4<2>, Propagator<2>, PyFDTD4<2> >(m_2d, "FDTD4")

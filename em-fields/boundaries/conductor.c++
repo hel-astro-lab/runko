@@ -715,6 +715,17 @@ void fields::Conductor<2>::update_e(
       yee.ex(i,j,k) = exnew;
       yee.ey(i,j,k) = eynew;
       yee.ez(i,j,k) = eznew;
+        
+        
+      // remove everything from bottom cells so that periodic boundaries do not wrap around
+      //--------------------------------------------------
+      if(jglob < 2){
+        yee.ex(i,j,k) = 0.0;
+        yee.ey(i,j,k) = 0.0;
+        yee.ez(i,j,k) = 0.0;
+      }
+
+
     }
   }
 }
