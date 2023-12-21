@@ -113,6 +113,9 @@ class TerminalPlot:
 
     def plot(self, data):
 
+        # transpose and flip to orient the img properly
+        data = np.fliplr(data.T) 
+
         #for i in range(self.ny):
         #    self.screen[i,i] = 1
 
