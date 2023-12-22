@@ -32,6 +32,10 @@ class Conductor
   double delta_pc  = 1.0; // polar smoothing
 
 
+  // grid size (for nulling the sides to prevent periodic bc's)
+  int Nx = 1;
+  int Ny = 1;
+  int Nz = 1;
 
   /// \brief interpolate electromagnetic fields to particle locations
   //void solve(fields::Tile<D>&  /*tile*/);
@@ -43,6 +47,8 @@ class Conductor
   void update_b(fields::Tile<D>&  tile);
 
   void update_e(fields::Tile<D>&  tile);
+
+  void null_edges(fields::Tile<D>& tile, int mode);
 
 };
 

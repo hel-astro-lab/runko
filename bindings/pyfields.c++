@@ -1,4 +1,4 @@
-#include <string>
+../bindings/pyfields.c++#include <string>
 #include <pybind11/numpy.h>
 
 #include "py_submodules.h"
@@ -546,9 +546,13 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("delta",    &fields::Conductor<2>::delta)
     .def_readwrite("radius_pc",&fields::Conductor<2>::radius_pc)
     .def_readwrite("delta_pc", &fields::Conductor<2>::delta_pc)
+    .def_readwrite("Nx",       &fields::Conductor<2>::Nx)
+    .def_readwrite("Ny",       &fields::Conductor<2>::Ny)
+    .def_readwrite("Nz",       &fields::Conductor<2>::Nz)
     .def("insert_em",          &fields::Conductor<2>::insert_em)
     .def("update_b",           &fields::Conductor<2>::update_b)
-    .def("update_e",           &fields::Conductor<2>::update_e);
+    .def("update_e",           &fields::Conductor<2>::update_e)
+    .def("null_edges",         &fields::Conductor<2>::null_edges);
 
 
   // 3D rotating conductor
@@ -565,6 +569,9 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("delta",    &fields::Conductor<3>::delta)
     .def_readwrite("radius_pc",&fields::Conductor<3>::radius_pc)
     .def_readwrite("delta_pc", &fields::Conductor<3>::delta_pc)
+    .def_readwrite("Nx",       &fields::Conductor<3>::Nx)
+    .def_readwrite("Ny",       &fields::Conductor<3>::Ny)
+    .def_readwrite("Nz",       &fields::Conductor<3>::Nz)
     .def("insert_em",          &fields::Conductor<3>::insert_em)
     .def("update_e",           &fields::Conductor<3>::update_e)
     .def("update_b",           &fields::Conductor<3>::update_b);

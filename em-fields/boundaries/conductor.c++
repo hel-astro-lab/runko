@@ -118,8 +118,8 @@ void fields::Conductor<2>::insert_em(
 
   // set transverse directions to zero to make this conductor
   const int k = 0; 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+3; i++) {
+  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
+  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
 
     //-----------
     // global grid coordinates
@@ -238,9 +238,9 @@ void fields::Conductor<3>::insert_em(
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
   // set transverse directions to zero to make this conductor
-  for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+3; k++) 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+3; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+3; i++) {
+  for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+2; k++) 
+  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
+  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
 
     //-----------
     // global grid coordinates
@@ -352,15 +352,28 @@ void fields::Conductor<2>::update_b(
 
   // Tile limits
   auto mins = tile.mins;
-  //auto maxs = tile.maxs;
+  auto maxs = tile.maxs;
 
   auto& yee = tile.get_yee();
+
+  //-------------------------------------------------- 
+  // null sides to prevent periodic bc conditions
+  bool left  = false;
+  bool right = false;
+  bool top   = false;
+  bool bot   = false;
+  
+  if( mins[1] < 1 )    bot   = true; 
+  if( mins[0] < 1 )    left  = true; 
+  if( maxs[1] > Ny-1 ) top   = true; 
+  if( maxs[0] > Nx-1 ) right = true; 
+
 
   // set transverse directions to zero to make this conductor
   int k = 0;
   //for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2])+1; k++) 
-  for(int j=-1; j<static_cast<int>(tile.mesh_lengths[1])+1; j++) 
-  for(int i=-1; i<static_cast<int>(tile.mesh_lengths[0])+1; i++) {
+  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
+  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
 
     //-----------
     // global grid coordinates
@@ -373,8 +386,15 @@ void fields::Conductor<2>::update_b(
     yr0 = coord.y(jglob, 0.5);
     zr0 = 0.0; //coord.z(kglob, 0.5);
 
-    // modify fields if we are inside 2R_* radius
-    if(std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.1*radius) {
+    // check if we are inside star
+    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.03*radius;
+
+    if( inside_star ||
+        (bot    && j < 3) ||
+        (left   && i < 3) ||
+        (top    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) ||
+        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 3) 
+      ) {
 
       //--------------------------------------------------
       // Bx: x coord staggering for B: 1,0,0
@@ -478,9 +498,9 @@ void fields::Conductor<3>::update_b(
   auto& yee = tile.get_yee();
 
   // set transverse directions to zero to make this conductor
-  for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2])+1; k++) 
-  for(int j=-1; j<static_cast<int>(tile.mesh_lengths[1])+1; j++) 
-  for(int i=-1; i<static_cast<int>(tile.mesh_lengths[0])+1; i++) {
+  for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+2; k++) 
+  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
+  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
 
     //-----------
     // global grid coordinates
@@ -609,15 +629,28 @@ void fields::Conductor<2>::update_e(
 
   // Tile limits
   auto mins = tile.mins;
-  //auto maxs = tile.maxs;
+  auto maxs = tile.maxs;
 
   auto& yee = tile.get_yee();
+    
+  //-------------------------------------------------- 
+  // null sides to prevent periodic bc conditions
+  bool left  = false;
+  bool right = false;
+  bool top   = false;
+  bool bot   = false;
+  
+  if( mins[1] < 1 )    bot   = true; 
+  if( mins[0] < 1 )    left  = true; 
+  if( maxs[1] > Ny-1 ) top   = true; 
+  if( maxs[0] > Nx-1 ) right = true; 
+
 
   // set transverse directions to zero to make this conductor
   int k = 0;
   //for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2])+1; k++) 
-  for(int j=-1; j<static_cast<int>(tile.mesh_lengths[1])+1; j++) 
-  for(int i=-1; i<static_cast<int>(tile.mesh_lengths[0])+1; i++) {
+  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
+  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
 
     //-----------
     // global grid coordinates
@@ -630,8 +663,10 @@ void fields::Conductor<2>::update_e(
     yr0 = coord.y(jglob, 0.5);
     zr0 = 0.0; //coord.z(kglob, 0.5);
 
-    // modify fields if we are inside 2R_* radius
-    if(std::sqrt(xr0*xr0 + yr0*yr0 ) < 1.1*radius) {
+    // check if we are inside star
+    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.03*radius;
+
+    if( inside_star ) {
 
       //-------------------------------------------------- 
       // ex
@@ -715,19 +750,146 @@ void fields::Conductor<2>::update_e(
       yee.ex(i,j,k) = exnew;
       yee.ey(i,j,k) = eynew;
       yee.ez(i,j,k) = eznew;
-        
-        
-      // remove everything from bottom cells so that periodic boundaries do not wrap around
-      //--------------------------------------------------
-      if(jglob < 2){
-        yee.ex(i,j,k) = 0.0;
-        yee.ey(i,j,k) = 0.0;
-        yee.ez(i,j,k) = 0.0;
-      }
+    }
+
+    // boundaries
+    if( (bot    && j < 0) ||
+        (left   && i < 3) ||
+        (top    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) ||
+        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 3) 
+      ) {
+      yee.ex(i,j,k) = 0.0;
+      yee.ey(i,j,k) = 0.0;
+      yee.ez(i,j,k) = 0.0;
+    }
 
 
+  }
+}
+
+
+// helper script to iterate yee container
+inline void iterate_yee(
+    fields::YeeLattice& yee,
+    int imin,
+    int imax,
+    int jmin,
+    int jmax,
+    int kmin,
+    int kmax,
+    const float_m val,
+    int mode)
+{
+
+  if( mode == 0 ) {
+
+    for(int k=kmin; k<kmax; k++) 
+    for(int j=jmin; j<jmax; j++) 
+    for(int i=imin; i<imax; i++) {
+      yee.ex(i,j,k) = val;
+      yee.ey(i,j,k) = val;
+      yee.ez(i,j,k) = val;
+    }
+
+  } else if( mode == 1 ) {
+
+    for(int k=kmin; k<kmax; k++) 
+    for(int j=jmin; j<jmax; j++) 
+    for(int i=imin; i<imax; i++) {
+      yee.bx(i,j,k) = val;
+      yee.by(i,j,k) = val;
+      yee.bz(i,j,k) = val;
     }
   }
+
+}
+
+template<>
+void fields::Conductor<2>::null_edges(
+    fields::Tile<2>& tile,
+    int mode
+    )
+{
+  const float_m eval = 0.0f; // edge value
+
+  auto mins = tile.mins;
+  auto maxs = tile.maxs;
+  
+  auto& yee = tile.get_yee();
+
+  const int H = 3;
+    
+  // 2D
+  const int kmin = 0;
+  const int kmax = 1;
+  int imin, imax, jmin, jmax;
+
+  //-------------------------------------------------- 
+  // null sides to prevent periodic bc conditions
+  bool left  = false;
+  bool right = false;
+  bool top   = false;
+  bool bot   = false;
+  
+  if( mins[1] < 1 )    bot   = true; 
+  if( mins[0] < 1 )    left  = true; 
+  if( maxs[1] > Ny-1 ) top   = true; 
+  if( maxs[0] > Nx-1 ) right = true; 
+
+
+  //--------------------------------------------------
+  if(bot) {
+    //std::cout << "bottom " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
+
+    jmin = -H;
+    jmax =  0;
+
+    imin = -H;
+    imax = static_cast<int>(tile.mesh_lengths[0]) + H;
+
+    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
+  }
+
+  //--------------------------------------------------
+  if(left) {
+    //std::cout << "left " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
+
+    jmin = -H;
+    jmax = static_cast<int>(tile.mesh_lengths[1]) + H;
+
+    imin = -H;
+    imax =  0;
+
+    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
+  }
+
+  //--------------------------------------------------
+  if(top) {
+    //std::cout << "top " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
+
+    jmin = static_cast<int>(tile.mesh_lengths[1]);
+    jmax = static_cast<int>(tile.mesh_lengths[1]) + H;
+
+    imin = -H;
+    imax = static_cast<int>(tile.mesh_lengths[0]) + H;
+
+    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
+  }
+
+  //--------------------------------------------------
+  if(right) {
+    //std::cout << "right " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
+
+    jmin = -H;
+    jmax = static_cast<int>(tile.mesh_lengths[1]) + H;
+
+    imin = static_cast<int>(tile.mesh_lengths[0]);
+    imax = static_cast<int>(tile.mesh_lengths[0]) + H;
+
+    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
+  }
+
+  
 }
 
 
@@ -774,9 +936,9 @@ void fields::Conductor<3>::update_e(
   auto& yee = tile.get_yee();
 
   // set transverse directions to zero to make this conductor
-  for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2])+1; k++) 
-  for(int j=-1; j<static_cast<int>(tile.mesh_lengths[1])+1; j++) 
-  for(int i=-1; i<static_cast<int>(tile.mesh_lengths[0])+1; i++) {
+  for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+2; k++) 
+  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
+  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
 
     //-----------
     // global grid coordinates
