@@ -762,9 +762,67 @@ void fields::Conductor<2>::update_e(
       yee.ey(i,j,k) = 0.0;
       yee.ez(i,j,k) = 0.0;
     }
-
-
   }
+
+  //--------------------------------------------------
+  // additionally; null epar in the closed field line region
+
+  // for dipole fields r/Rbc = sin^2(theta) where r and theta are in spherical coordinates 
+
+  // tolerance of 0.95 here so that we start killing the epar earlier
+  float_m sint = radius_pc/radius; // sin\theta = R_pc/R_star
+  float_m Rbc  = radius/sint/sint;  
+
+  float_m rad, bn, bxi, byi, bzi, epar;
+
+  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
+  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
+
+    // global grid coordinates
+    iglob = static_cast<float_m>(i) + mins[0];
+    jglob = static_cast<float_m>(j) + mins[1];
+    //kglob = static_cast<float_m>(k) + mins[2];
+
+    // spherical coordinates; TODO ignoring staggering
+    xr0 = coord.x(iglob, 0.0); 
+    yr0 = coord.y(jglob, 0.0);
+    zr0 = 0.0; //coord.z(kglob, 0.5);
+
+    rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
+    sint = std::abs(xr0)/rad; // sin\theta
+
+    float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
+
+    if( eta < 1.4*sint*sint) {
+      exi = yee.ex(i,j,k);
+      eyi = yee.ey(i,j,k);
+      ezi = yee.ez(i,j,k);
+
+      bxi = yee.bx(i,j,k);
+      byi = yee.by(i,j,k);
+      bzi = yee.bz(i,j,k);
+      bn  = std::sqrt( bxi*bxi + byi*byi + bzi*bzi ) + EPS;
+
+      // E_\parallel
+      epar = exi*bxi + eyi*byi + ezi*bzi;
+
+      // take out eparallel component from electric field
+      exnew = exi - epar*bxi/bn/bn;
+      eynew = eyi - epar*byi/bn/bn;
+      eznew = ezi - epar*bzi/bn/bn;
+
+      // smoothing function
+      s = shape( rad, Rbc*sint*sint, 50.0); // location of the open-closed field line bc
+      //s = 1.0;
+
+      // blend solution in with a smoothing function
+      yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
+      yee.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
+      yee.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
+    }
+  }
+
+
 }
 
 
