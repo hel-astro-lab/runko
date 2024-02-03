@@ -42,6 +42,7 @@ set (PIC_FILES
      ../pic/boundaries/wall.c++
      ../pic/boundaries/piston.c++
      ../pic/boundaries/piston_z.c++
+     ../pic/boundaries/star_surface_injector.c++
      ../pic/pushers/boris.c++
      ../pic/pushers/boris_drag.c++
      ../pic/pushers/boris_rad.c++
@@ -68,6 +69,7 @@ set (QED_FILES
      ../qed/interactions/pair_ann.c++
      ../qed/interactions/phot_ann.c++
      ../qed/interactions/compton.c++
+     ../qed/interactions/synchrotron.c++
      ../qed/pairing.c++
      )
 

@@ -9,6 +9,7 @@
 #include "../qed/interactions/pair_ann.h"
 #include "../qed/interactions/phot_ann.h"
 #include "../qed/interactions/compton.h"
+#include "../qed/interactions/synchrotron.h"
 #include "../qed/pairing.h"
 
 
@@ -147,6 +148,7 @@ void bind_qed(py::module& m_sub)
 
 
 
+
   py::class_< qed::Interaction, std::shared_ptr<qed::Interaction>, PyInteraction > qedinter(m_sub, "Interaction");
   qedinter
     .def_readwrite("do_accumulate", &qed::Interaction::do_accumulate)
@@ -178,6 +180,17 @@ void bind_qed(py::module& m_sub)
     .def_readwrite("minx2z",             &qed::Compton::minx2z)
     .def(py::init<string, string>());
 
+
+  py::class_<qed::Synchrotron>(m_sub, "Synchrotron")
+    .def(py::init<string>())
+    .def("comp_optical_depth",  &qed::Synchrotron::comp_optical_depth)
+    .def("interact", [](qed::Synchrotron &self, 
+          std::string t1, float_p ux1, float_p uy1, float_p uz1,
+          std::string t2, float_p ux2, float_p uy2, float_p uz2) 
+        {
+          self.interact(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2); 
+          return std::make_tuple(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2);
+        });
 
 
   py::module m_2d = m_sub.def_submodule("twoD",   "2D specializations");
