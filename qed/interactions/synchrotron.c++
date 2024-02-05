@@ -32,8 +32,11 @@ tuple<float_p, float_p> Synchrotron::get_minmax_ene( string t1, double ene)
 }
 
 
-Synchrotron::pair_float Synchrotron::comp_optical_depth(
-    string t1, float_p ux1, float_p uy1, float_p uz1)
+float_p Synchrotron::comp_optical_depth(
+    string t1, 
+    float_p ux1, float_p uy1, float_p uz1,
+    float_p ex,  float_p ey,  float_p ez,
+    float_p bx,  float_p by,  float_p bz)
 {
 
   Vec3<float_p> zv;
@@ -48,9 +51,8 @@ Synchrotron::pair_float Synchrotron::comp_optical_depth(
 
   // TODO
   float_p s0   = 1.0f;
-  float_p fkin = 1.0f;
 
-  return {s0, fkin};
+  return s0;
 }
 
 

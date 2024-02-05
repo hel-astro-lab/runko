@@ -73,7 +73,11 @@ public:
   //using Tile_map = std::unordered_map<TileID_t, Tileptr>;
   //Tile_map tiles; /// Map with tile_id & tile data
 
-  std::vector<InteractionPtr> interactions;
+  // one-body single interactions
+  std::vector<InteractionPtr> single_interactions;
+
+  // two-body binary interactions
+  std::vector<InteractionPtr> binary_interactions;
 
   // normalization factor for probabilities
   float_p prob_norm = 1.0f;
@@ -171,39 +175,49 @@ public:
   {
     assert(iptr); // check that we are not appending nullptr
 
-    auto name = iptr->name;
-    auto t1 = iptr->t1;
-    auto t2 = iptr->t2;
-    auto long_name = name + "_" + t1 + "_" + t2;
+    //-------------------------------------------------- 
+    if( iptr->interaction_order == 1 ){ // single-body interactions
 
-    //std::cout << " adding: " << name << " of t1/t2 " << t1 << " " << t2 << std::endl;
-    interactions.push_back(iptr);
+      auto name = iptr->name;
+      auto t1 = iptr->t1;
+      auto long_name = name + "_" + t1;
 
-    info_max_int_cs[name] = 0.0;
-    info_int_nums[long_name] = 0.0;
+      single_interactions.push_back(iptr);
 
-    // pre append arrays 
-    //probs.push_back(0);
-    //wsums.push_back(0);
-    //cmaxs.push_back(0);
-    //jmins.push_back(0);
-    //jmaxs.push_back(0);
+    //-------------------------------------------------- 
+    } else if( iptr->interaction_order == 2 ){ // two-body binary interactions
 
-    //// make an array of increasing values
-    //if( ids.empty() ) {
-    //  ids.push_back(0);
-    //} else {
-    //  ids.push_back( ids.size() );
-    //}
+      auto name = iptr->name;
+      auto t1 = iptr->t1;
+      auto t2 = iptr->t2;
+      auto long_name = name + "_" + t1 + "_" + t2;
+
+      //std::cout << " adding: " << name << " of t1/t2 " << t1 << " " << t2 << std::endl;
+      binary_interactions.push_back(iptr);
+
+      // additionall arrays
+      info_max_int_cs[name] = 0.0;
+      info_int_nums[long_name] = 0.0;
+    }
 
   }
 
   //--------------------------------------------------
   // check if interaction list is empty for type t1
-  bool is_empty(string& t1) 
+
+  bool is_empty_single_int(string& t1) 
   {
     int i=0;
-    for(auto iptr : interactions){
+    for(auto iptr : single_interactions){
+      if(t1 == iptr->t1) i += 1;
+    }
+    return (i > 0) ? false : true; 
+  }
+
+  bool is_empty_binary_int(string& t1) 
+  {
+    int i=0;
+    for(auto iptr : binary_interactions){
       if(t1 == iptr->t1) i += 1;
     }
     return (i > 0) ? false : true; 
@@ -234,7 +248,7 @@ public:
 
 
     size_t id = 0;
-    for(auto iptr : interactions){
+    for(auto iptr : binary_interactions){
 
       if(t1 == iptr->t1)
       {
@@ -518,14 +532,14 @@ public:
     float_p p_ini, p_tar;
 
     // loop over interactions
-    for(auto iptr : interactions){
+    for(auto iptr : binary_interactions){
 
       //--------------------------------------------------
       // loop over incident types
       for(auto&& con1 : tile.containers)
       {
         auto t1 = con1.type;
-        if(is_empty(t1)) continue; // no interactions with incident type t1
+        if(is_empty_binary_int(t1)) continue; // no interactions with incident type t1
 
         //std::cout << "container type:" << t1 << std::endl;
 
@@ -681,10 +695,8 @@ public:
                                           // is used as a tmp container for storing the indices
     }
 
-
     return;
   }
-
 
 
   //--------------------------------------------------
@@ -754,7 +766,7 @@ public:
     for(auto&& con1 : tile.containers) 
     {
       auto t1 = con1.type;
-      if(is_empty(t1)) continue; // no interactions with incident type t1
+      if(is_empty_binary_int(t1)) continue; // no interactions with incident type t1
 
       //size_t Ntot1 = con1.size();
       size_t Ntot1 = info_prtcl_num[t1]; // read particle number from here; 
@@ -844,10 +856,10 @@ public:
           //auto wsum = wsums[i];
           //auto facc_max = faccs[i];
 
-          auto int_id = ids[i];             // id in global array
-          auto iptr = interactions[int_id]; // pointer to interaction 
-          auto t2   = iptr->t2;             // target type
-          auto con2 = cons[t2];             // target container
+          auto int_id = ids[i];                    // id in global array
+          auto iptr = binary_interactions[int_id]; // pointer to interaction 
+          auto t2   = iptr->t2;                    // target type
+          auto con2 = cons[t2];                    // target container
 
           //--------------------------------------------------
           // get random target with energy between jmin/jmax
@@ -1446,6 +1458,137 @@ public:
     timer.stop();
     return;
   }
+
+
+  //--------------------------------------------------
+  // one-body single particle interactions
+  void solve_onebody(pic::Tile<D>& tile)
+  {
+    timer.start(); // start profiling block
+
+    // build pointer map of types to containers; used as a helper to access particle tyeps
+    std::map<std::string, ConPtr> cons;
+    for(auto&& con : tile.containers) cons.emplace(con.type, &con );
+
+    //--------------------------------------------------
+    // call pre-iteration functions to update internal arrays 
+    //for(auto&& con : tile.containers) {
+    //  con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
+    //}
+
+
+    //--------------------------------------------------
+    // collect statistics for bookkeeping
+    std::map<std::string, int> info_prtcl_num;
+    for(auto&& con : tile.containers) {
+      auto t1 = con.type;
+      info_prtcl_num[t1] = con.size();
+    }
+
+    auto mins = tile.mins;
+    auto maxs = tile.maxs;
+
+
+    //--------------------------------------------------
+    // initialize temp variable storages
+    float_p lx1, ly1, lz1, lx2, ly2, lz2;
+    float_p ux1, uy1, uz1, w1;
+    float_p ux3, uy3, uz3, w3;
+    float_p ux4, uy4, uz4, w4;
+    float_p e1, e3, e4;
+
+    float_m ex,ey,ez,bx,by,bz;
+
+
+    // ver1: ordered iteration over prtcls
+    for(auto&& con1 : tile.containers) 
+    {
+      auto t1 = con1.type;
+
+      if(is_empty_single_int(t1)) continue; // no interactions with incident type t1
+
+
+      //--------------------------------------------------
+      // select interaction
+      // TODO assume that each particle type has only one interaction
+      //      in a more general case, we could use the same virtual channel as in binary interactions
+
+      size_t id = 0;
+      for(auto iptr : single_interactions)
+      {
+        if(t1 == iptr->t1) break; // assume only one target
+        id += 1;
+      }
+      auto iptr = single_interactions[id]; // interaction
+
+
+      //--------------------------------------------------
+      // loop over 
+      size_t Ntot1 = info_prtcl_num[t1]; // read particle number 
+      for(size_t n1=0; n1<Ntot1; n1++) {
+
+        //unpack incident 
+        lx1 = con1.loc(0,n1);
+        ly1 = con1.loc(1,n1);
+        lz1 = con1.loc(2,n1);
+
+        ux1 = con1.vel(0,n1);
+        uy1 = con1.vel(1,n1);
+        uz1 = con1.vel(2,n1);
+
+        w1  = con1.wgt(n1);
+        e1  = con1.get_prtcl_ene(n1);
+
+        if(w1 < EPS) continue; // omit zero-w incidents
+
+        //--------------------------------------------------
+        // v1; active interpolation
+          
+        // get E and B field values
+        //if(D >= 1) i  = static_cast<int>(floor(lx1));
+        //if(D >= 2) j  = static_cast<int>(floor(ly1));
+        //if(D >= 3) k  = static_cast<int>(floor(lz1));
+
+        // normalize to tile units
+        //if(D >= 1) i -= mins[0];
+        //if(D >= 2) j -= mins[1];
+        //if(D >= 3) k -= mins[2];
+        //const size_t ind = yee.ex.indx(i,j,k);
+          
+        //--------------------------------------------------
+        // v2; passive fetching; assumes a call has been made to interp before this function
+
+        ex = con1.ex(n1); //TODO: why cinv here in E?
+        ey = con1.ey(n1); 
+        ez = con1.ez(n1); 
+        ex = con1.bx(n1); 
+        ey = con1.by(n1); 
+        ez = con1.bz(n1); 
+
+
+        // local optical depth
+        float_p tau_int = iptr->comp_optical_depth(
+                                  t1, 
+                                  ux1, uy1, uz1, 
+                                  ex, ey, ez, 
+                                  bx, by, bz);
+
+        // exponential waiting time between interactions
+        double t_free = -log( rand() )/tau_int; //NOTE w1 here
+
+        if(t_free < 1.0) // interact
+        { 
+
+
+
+        } // if interact
+      } // end over n1 prtcl loop
+    } // end of con1 loop
+
+
+    timer.stop(); // start profiling block
+  }
+
 
 
 

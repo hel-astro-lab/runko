@@ -65,6 +65,20 @@ public:
         );
   }
 
+  float_p comp_optical_depth( 
+    string t1, 
+    float_p ux1, float_p uy1, float_p uz1,
+    float_p ex,  float_p ey,  float_p ez,
+    float_p bx,  float_p by,  float_p bz
+    ) override {
+    PYBIND11_OVERLOAD_PURE(
+        float_p, // return type
+        Interaction,                  // parent class
+        comp_optical_depth,           // name of function in C++
+        t1, ux1, uy1, uz1, ex,ey,ez,bx,by,bz
+        );
+  }
+
   tuple_pair comp_cross_section( 
     string t1, float_p ux1, float_p uy1, float_p uz1,
     string t2, float_p ux2, float_p uy2, float_p uz2) override {
@@ -180,17 +194,9 @@ void bind_qed(py::module& m_sub)
     .def_readwrite("minx2z",             &qed::Compton::minx2z)
     .def(py::init<string, string>());
 
-
-  py::class_<qed::Synchrotron>(m_sub, "Synchrotron")
-    .def(py::init<string>())
-    .def("comp_optical_depth",  &qed::Synchrotron::comp_optical_depth)
-    .def("interact", [](qed::Synchrotron &self, 
-          std::string t1, float_p ux1, float_p uy1, float_p uz1,
-          std::string t2, float_p ux2, float_p uy2, float_p uz2) 
-        {
-          self.interact(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2); 
-          return std::make_tuple(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2);
-        });
+  // quantum-suppressed synchrotron
+  py::class_<qed::Synchrotron>(m_sub, "Synchrotron", qedinter)
+    .def(py::init<string>());
 
 
   py::module m_2d = m_sub.def_submodule("twoD",   "2D specializations");
@@ -200,12 +206,40 @@ void bind_qed(py::module& m_sub)
   // Particle pairing routines
   py::class_<qed::Pairing<2> >(m_2d, "Pairing")
     .def(py::init<>())
-    .def_readwrite("prob_norm",&qed::Pairing<2>::prob_norm)
+    .def_readwrite("prob_norm",   &qed::Pairing<2>::prob_norm)
+    .def_readwrite("leaked_ene",  &qed::Pairing<2>::leaked_ene)
+    .def_readwrite("leaked_wsum", &qed::Pairing<2>::leaked_wsum)
+    .def_readwrite("leaked_pnum", &qed::Pairing<2>::leaked_pnum)
+    .def_readwrite("inj_ene_ph",  &qed::Pairing<2>::inj_ene_ph)
+    .def_readwrite("inj_ene_ep",  &qed::Pairing<2>::inj_ene_ep)
+    .def_readwrite("tau_global",  &qed::Pairing<2>::tau_global)
+    .def("comp_tau",           &qed::Pairing<2>::comp_tau)
+    .def("leak_photons",       &qed::Pairing<2>::leak_photons)
+    .def("update_hist_lims",   &qed::Pairing<2>::update_hist_lims)
+    .def("clear_hist",         &qed::Pairing<2>::clear_hist)
     .def("solve",              &qed::Pairing<2>::solve)
     .def("solve_mc",           &qed::Pairing<2>::solve_mc)
+    .def("solve_onebody",      &qed::Pairing<2>::solve_onebody)
     .def("add_interaction",    &qed::Pairing<2>::add_interaction, py::keep_alive<1,2>() )
-    .def("rescale",            &qed::Pairing<2>::rescale);
+    .def("rescale",            &qed::Pairing<2>::rescale)
+    .def("get_hist_edges",   [](qed::Pairing<2>& s)
+        {
+          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
+          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
+          return v;
+        })
+    .def("get_hist_cnts",    [](qed::Pairing<2>& s)
+        {
+          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
+          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
+          return v;
+        })
+    .def("timer_stats",    [](qed::Pairing<2>& s) { s.timer.comp_stats(); })
+    .def("timer_clear",    [](qed::Pairing<2>& s) { s.timer.clear(); });
 
+
+    //-------------------------------------------------- 
+    // 3D pairings
 
   py::class_<qed::Pairing<3> >(m_3d, "Pairing")
     .def(py::init<>())
@@ -226,6 +260,7 @@ void bind_qed(py::module& m_sub)
     .def("clear_hist",         &qed::Pairing<3>::clear_hist)
     .def("solve",              &qed::Pairing<3>::solve)
     .def("solve_mc",           &qed::Pairing<3>::solve_mc)
+    .def("solve_onebody",      &qed::Pairing<3>::solve_onebody)
     .def("get_hist_edges",   [](qed::Pairing<3>& s)
         {
           const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
@@ -238,14 +273,8 @@ void bind_qed(py::module& m_sub)
           auto v = pybind11::array_t<double>( {N}, s.hist.data() );
           return v;
         })
-    .def("timer_stats",    [](qed::Pairing<3>& s)
-        {
-          s.timer.comp_stats();
-        })
-    .def("timer_clear",    [](qed::Pairing<3>& s)
-        {
-          s.timer.clear();
-        });
+    .def("timer_stats",    [](qed::Pairing<3>& s) { s.timer.comp_stats(); })
+    .def("timer_clear",    [](qed::Pairing<3>& s) { s.timer.clear(); });
 
 
 }
