@@ -1140,7 +1140,6 @@ public:
                 w3 = 1.0f;
                 n3 = facc3*w1/w3; // remembering to increase prtcl num w/ facc
                 facc3 = 1.0f; // restore facc (since it is taken care of by n3)
-
               }
                 
               //4
@@ -1148,7 +1147,6 @@ public:
                 w4 = 1.0f;
                 n4 = facc4*w2/w4; // remembering to increase prtcl num w/ facc
                 facc4 = 1.0f; // restore facc
-
               }
 
               // remember to recalc prob_upd
@@ -1472,9 +1470,9 @@ public:
 
     //--------------------------------------------------
     // call pre-iteration functions to update internal arrays 
-    //for(auto&& con : tile.containers) {
-    //  con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
-    //}
+    for(auto&& con : tile.containers) {
+      con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
+    }
 
 
     //--------------------------------------------------
@@ -1495,7 +1493,11 @@ public:
     float_p ux1, uy1, uz1, w1;
     float_p ux3, uy3, uz3, w3;
     float_p ux4, uy4, uz4, w4;
+    float_p m3, m4;
     float_p e1, e3, e4;
+    std::string t4;  // type variable for secondary prtcl;
+
+    // interaction proceeds as t1 -> t3 + t4
 
     float_m ex,ey,ez,bx,by,bz;
 
@@ -1541,6 +1543,13 @@ public:
 
         if(w1 < EPS) continue; // omit zero-w incidents
 
+        auto [emin, emax] = iptr->get_minmax_ene(t1, "", e1);
+
+        //std::cout << "emin/emax " << e1 << " " << emin << " " << emax << "\n";
+
+        if( e1 < emin ) continue; // low-energy cutoff
+        if( e1 > emax ) continue; // high-energy cutoff
+
         //--------------------------------------------------
         // v1; active interpolation
           
@@ -1561,12 +1570,19 @@ public:
         ex = con1.ex(n1); //TODO: why cinv here in E?
         ey = con1.ey(n1); 
         ez = con1.ez(n1); 
-        ex = con1.bx(n1); 
-        ey = con1.by(n1); 
-        ez = con1.bz(n1); 
 
+        bx = con1.bx(n1); 
+        by = con1.by(n1); 
+        bz = con1.bz(n1); 
 
-        // local optical depth
+        // TODO add optical depth function 
+        // TODO add calculation of chi function
+        // TODO add 2d interpolation for xi table
+        // TODO add solve_onebody to python loop after interp call
+        // DONE particle addition routines; TODO verify and test
+
+        // local optical depth; 
+        // NOTE: em field is stored during this call and does not need to be called again in interact()
         float_p tau_int = iptr->comp_optical_depth(
                                   t1, 
                                   ux1, uy1, uz1, 
@@ -1579,11 +1595,93 @@ public:
         if(t_free < 1.0) // interact
         { 
 
+          // particle values after interaction
+          auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
 
+          timer.start_comp("interact");
+          iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
+          timer.start_comp("interact");
+
+          // new energies; NOTE: could use container.m to get the mass
+          m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+          m4 = (t4 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+          e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
+          e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
+
+          timer.start_comp("weight_funs");
+          // NOTE both are compared to the same parent t1 
+          //float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1); // t3 does not ever change weight
+          float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t1, e1);  // secondary particle can be however re-weighted
+          timer.stop_comp("weight_funs");
+
+          // limit explosive particle creation
+          //float_p n3 = std::min( fw3, 32.0f );
+          float_p n4 = std::min( fw4, 32.0f );
+
+          //--------------------------------------------------
+          if(t1 == t3){ // single-body emission 
+
+            w4 = w1/n4; // emitted prtcl inherits weight from parent
+                          
+            // NOTE: we keep location the same
+            con1.vel(0,n1) = ux3;
+            con1.vel(1,n1) = uy3;
+            con1.vel(2,n1) = uz3;
+            // NOTE assume that weight w3 does not change; therefore, no need to add via MC  routine
+
+            // add prtcl 4
+            double ncop = 0.0;
+            double z1 = rand();
+            while(n4 > z1 + ncop) {
+              cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4);
+              ncop += 1.0;
+            }
+
+          //--------------------------------------------------
+          } else { // single-body annihilation into t3 and t4 pair
+
+              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){ 
+                w3 = 1.0f;
+                float_p n3 = w1/w3; // remembering to increase prtcl num w/ facc
+              }
+
+              if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
+                w4 = 1.0f;
+                n4 = w1/w4; // NOTE w1 here since parent is same for both t3 and t4
+              }
+
+              // add new particle t3 and t4; particles are assumed to be identical
+              timer.start_comp("add_ann_prtcls");
+              double ncop = 0.0;
+              double z1 = rand();
+              while(n4 > z1 + ncop) {
+                cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); 
+                cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
+                ncop += 1.0;
+              }
+              timer.stop_comp("add_ann_prtcls");
+
+              // remove old parent particle t1
+              timer.start_comp("del_parent");
+              cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
+              cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
+              timer.stop_comp("del_parent");
+          }
 
         } // if interact
       } // end over n1 prtcl loop
     } // end of con1 loop
+
+
+    //--------------------------------------------------
+      
+    timer.start_comp("del");
+    for(auto&& con : tile.containers)
+    {
+      con.delete_transferred_particles(); // remove annihilated prtcls; this transfer storage 
+                                          // is used as a tmp container for storing the indices
+    }
+    timer.stop_comp("del");
 
 
     timer.stop(); // start profiling block

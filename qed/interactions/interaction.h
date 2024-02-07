@@ -80,7 +80,7 @@ private:
 
 public:
 
-  const int interaction_order = 2; // default interaction is 2-body
+  int interaction_order = 2; // default interaction is 2-body
 
   using pair_float = std::tuple<float_p, float_p>;
     

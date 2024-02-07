@@ -169,6 +169,7 @@ void bind_qed(py::module& m_sub)
     .def(py::init<string, string>())
     .def("get_minmax_ene",      &qed::Interaction::get_minmax_ene)
     .def("comp_cross_section",  &qed::Interaction::comp_cross_section)
+    .def("comp_optical_depth",  &qed::Interaction::comp_optical_depth)
     .def("accumulate",          &qed::Interaction::accumulate)
     .def("interact", [](qed::Interaction &self, 
           std::string t1, float_p ux1, float_p uy1, float_p uz1,
@@ -196,6 +197,8 @@ void bind_qed(py::module& m_sub)
 
   // quantum-suppressed synchrotron
   py::class_<qed::Synchrotron>(m_sub, "Synchrotron", qedinter)
+    .def_readwrite("B_QED",    &qed::Synchrotron::B_QED)
+    .def("comp_chi",           &qed::Synchrotron::comp_chi)
     .def(py::init<string>());
 
 

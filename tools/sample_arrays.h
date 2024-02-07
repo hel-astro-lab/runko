@@ -29,6 +29,27 @@ DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
     return static_cast<int>( arr.size() ) - 1; // len(arr)-1 
 }
 
+// find element from sorted array
+// based on https://en.algorithmica.org/hpc/data-structures/binary-search/
+template <typename T>
+inline int find_sorted_nearest_algo2(T* t, T x, const int n) 
+{
+  // limits
+  if(x <= t[0]  ) return 0;
+  if(x >= t[n-1]) return n;
+
+  float *base = t;
+  int len = n;
+  while (len > 1) {
+        int half = len / 2;
+        base += (base[half - 1] < x) * half; // will be replaced with a "cmov"
+        len -= half;
+    }
+  //return *base; // value
+  return base - &t[0]; // index
+}
+
+
 template <typename T>
 inline size_t find_rev_sorted_nearest( ManVec<T> const& arr, const T val) {
 

@@ -243,6 +243,14 @@ inline T dot(Vec3<T>& v1, Vec3<T>& v2)
 }
 
 template <class T>
+inline T dot(Vec4<T>& v1, Vec4<T>& v2) 
+{
+  T ret = 0.0;
+  for(size_t i=0; i<4; i++) ret += v1(i)*v2(i);
+  return ret;  
+}
+
+template <class T>
 inline T sum(Vec3<T>& v)
 {
   return v(0) + v(1) + v(2);
@@ -322,6 +330,11 @@ inline T norm(Vec3<T>& v)
   return std::sqrt( v(0)*v(0) + v(1)*v(1) + v(2)*v(2) );
 }
 
+template <typename T> 
+inline T norm(Vec4<T>& v)
+{
+  return std::sqrt( v(0)*v(0) + v(1)*v(1) + v(2)*v(2) + v(3)*v(3) );
+}
 
 
 
