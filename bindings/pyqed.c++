@@ -10,6 +10,7 @@
 #include "../qed/interactions/phot_ann.h"
 #include "../qed/interactions/compton.h"
 #include "../qed/interactions/synchrotron.h"
+#include "../qed/interactions/multi_phot_ann.h"
 #include "../qed/pairing.h"
 
 
@@ -202,6 +203,16 @@ void bind_qed(py::module& m_sub)
     .def(py::init<string>());
 
 
+  // multi-photon Breit-Wheeler pair creation
+  // a.k.a. magnetic single-photon annihilation 
+  py::class_<qed::MultiPhotAnn>(m_sub, "MultiPhotAnn", qedinter)
+    .def_readwrite("B_QED",    &qed::MultiPhotAnn::B_QED)
+    .def("comp_chi",           &qed::MultiPhotAnn::comp_chi)
+    .def(py::init<string>());
+
+
+
+  //--------------------------------------------------
   py::module m_2d = m_sub.def_submodule("twoD",   "2D specializations");
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 

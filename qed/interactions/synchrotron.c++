@@ -4,6 +4,7 @@
 #include "synchrotron.h"
 #include "../../tools/vector.h"
 #include "../../tools/sample_arrays.h"
+#include "../../tools/bkn_plaw.h"
 
 
 namespace qed {
@@ -22,22 +23,8 @@ namespace qed {
   using toolbox::unit_cross;
   using toolbox::sum;
   using toolbox::inv;
-
+  using toolbox::bkn_plaw;
   using toolbox::find_sorted_nearest_algo2; // binary search for sorted arrays
-
-
-float bkn_plaw(
-    float x,    //value
-    float A,    // norm
-    float x_b,  // x-location of break
-    float a_1,  // index of first slope
-    float a_2,  // index of second slope
-    float delta)// smoothing lenght
-{
-  a_1 *= -1.0f;
-  a_2 *= -1.0f;
-  return A*( pow(x/x_b, -a_1)*pow(0.5f*(1.0f + pow(x/x_b, 1.0f/delta)), (a_1-a_2)*delta));
-}
 
 
 tuple<float_p, float_p> Synchrotron::get_minmax_ene( string t1, string t2, double ene)
@@ -120,7 +107,13 @@ float_p Synchrotron::comp_optical_depth(
   // the expression is accurate to < 1%
   float_p K_app = 3.81108484f / (log(x/1.5746f) - ((x + x) - (-0.11058f / x)));
 
-  // TODO add numerical prefactor
+  //float prefac = 2.0*alphaf/(3*lamC); // classical radiated power
+  float prefac = 1.0; //sqrt(3.0)*alphaf/(2.0*PI*lamC);
+
+
+  // TODO Smilei returns
+  // prefac * (K_asy + K_app) * chi_e/gam;
+
 
   // total time change in the synchrotron optical depth is then
   return K_asy + K_app;

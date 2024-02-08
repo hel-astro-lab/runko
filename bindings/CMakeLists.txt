@@ -70,6 +70,7 @@ set (QED_FILES
      ../qed/interactions/phot_ann.c++
      ../qed/interactions/compton.c++
      ../qed/interactions/synchrotron.c++
+     ../qed/interactions/multi_phot_ann.c++
      ../qed/pairing.c++
      )
 
