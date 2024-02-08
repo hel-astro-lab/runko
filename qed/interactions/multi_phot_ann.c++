@@ -76,13 +76,25 @@ float_p MultiPhotAnn::comp_optical_depth(
     float_p bx,  float_p by,  float_p bz)
 {
     
+
+  float_p x = comp_chi( ux1,uy1,uz1, ex,ey,ez, bx,by,bz); // dimensionless quantum parameter \chi_x
+
+  // asymptotic behavior of the T function
+  float_p T_asy = 1.68f*exp(-2.8f/x)*pow(x,1.7f);
+
+  //--------------------------------------------------
+  // empirical fitting function to correct the behavior at x ~ 1
+  // fit is accurate to <0.2% for x > 1
+
+  // log-gaussian
+  const float_p a1 = 0.275;
+  const float_p mu1 = -0.89846;
+  const float_p sig1 = 7.6766;
+  float_p T_corr = 1.0f - a1*exp(-pow(log(x)-mu1, 2.0f)/sig1);
+
   // TODO add numerical prefactor
-
-  float_p chix = comp_chi( ux1,uy1,uz1, ex,ey,ez, bx,by,bz); // dimensionless quantum parameter \chi_x
-
-  // TODO
-
-  return 1.0;
+    
+  return T_asy*T_corr;
 }
 
 
