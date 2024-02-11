@@ -119,7 +119,10 @@ class TerminalPlot:
     def text_norm(self, x, vmin=0, vmax=1):
         x = abs(x/(vmax - max(vmin,0)))
 
-        symbols = np.flip( ["#", "#", "@", "%", "=", "+", "*", ":", "-", ".", " "] )
+        #symbols = np.flip( ["#", "#", "@", "%", "=", "+", "*", ":", "-", ".", " "] )
+        #symbols = """ .`-_\':,;^=+/"|)\\<>)iv%xclrs{*}I?!][1taeo7zjLunT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0Q"""
+        symbols = """ -:;=+/>iv%xclrs*I?!][1taeo7zjLunT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0Q"""
+
 
         i = int( x*(len(symbols)-1) )
         return symbols[i]
@@ -342,7 +345,7 @@ def print_colorbar():
 if __name__ == "__main__":
 
     tplt = TerminalPlot(15, 15)
-    #tplt.col_mode = False
+    tplt.col_mode = False
 
     data = np.ones((64, 64))
     x = np.linspace(-3, 3, 64)
@@ -354,22 +357,23 @@ if __name__ == "__main__":
     data[:,:] = np.exp(-r**2)
     #print(data)
 
-    #tplt.plot(data, name='ex')
+    tplt.plot(data, name='ex')
 
     #print_format_table()
-    print_colorbar()
+    #print_colorbar()
 
+    tplt.col_mode = True
     tplt.plot_panels(
-            (3,3),
+            (2,3),
             dict(axs=(0,0), data=data, name='ex', cmap='RdBu'   ,vmin=-1, vmax=1),
             dict(axs=(0,1), data=data, name='ey', cmap='RdBu'   ,vmin=-1, vmax=1),
-            dict(axs=(0,2), data=data, name='ez', cmap='RdBu'   ,vmin=-1, vmax=1),
+            #dict(axs=(0,2), data=data, name='ez', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(0,2), data=data, name='ne', cmap='viridis',vmin= 0, vmax=4),
             dict(axs=(1,0), data=data, name='bx', cmap='RdBu'   ,vmin=-1, vmax=1),
             dict(axs=(1,1), data=data, name='by', cmap='RdBu'   ,vmin=-1, vmax=1),
-            dict(axs=(1,2), data=data, name='bz', cmap='RdBu'   ,vmin=-1, vmax=1),
-            dict(axs=(2,0), data=data, name='e-', cmap='viridis',vmin= 0, vmax=4),
-            dict(axs=(2,1), data=data, name='e+', cmap='viridis',vmin= 0, vmax=4),
-            dict(axs=(2,2), data=data, name='ph', cmap='viridis',vmin= 0, vmax=4),
+            #dict(axs=(1,2), data=data, name='bz', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(1,2), data=data, name='ph', cmap='viridis',vmin= 0, vmax=4),
+            #dict(axs=(2,2), data=data, name='ph', cmap='viridis',vmin= 0, vmax=4),
             )
 
 
