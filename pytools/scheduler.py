@@ -22,7 +22,7 @@ class Scheduler:
 
         if self.is_master:
             pytools.print_banner()
-            print("sch : Running pic.py with {} MPI processes.".format(self.mpi_comm_size))
+            print("sch : running runko with {} MPI rank(s)".format(self.mpi_comm_size))
 
         self.mpi_task_mode = False
         self.master_rank       = 0
