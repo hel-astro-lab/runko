@@ -26,6 +26,8 @@ class Timer:
         for name in components:
             self.components[name] = []
 
+    def print_vline(self,):
+        print("--------------------------------------------------------------------------------")
 
     def start(self, name):
         t0 = time.time()  # stop before lookup
@@ -127,7 +129,8 @@ class Timer:
 
     def comp_stats(self):
         if self.do_print:
-            print("--------------------------------------------------")
+            #print("--------------------------------------------------")
+            self.print_vline()
 
         # calculate total duration
         ts = np.array(self.names["step"])
@@ -156,20 +159,20 @@ class Timer:
                 t0 = tavg
                 if t0 < 1.0e-5:
                     print(
-                        "--- {:.20}   {:6.3f}%  |  time: {:8.5f} mus/{:3d}  ({:.8})".format(
-                            name.ljust(20), relt, t0 * 1.0e6, cnts, t0
+                        "--- {:.25}   {:5.2f}%  |  time: {:6.3f} mus/{:3d}    ({:8.5e})".format(
+                            name.ljust(25), relt, t0 * 1.0e6, cnts, t0
                         )
                     )
                 elif 1.0e-5 < t0 < 1.0e-2:
                     print(
-                        "--- {:.20}   {:6.3f}%  |  time: {:8.5f} ms /{:3d}  ({:.8})".format(
-                            name.ljust(20), relt, t0 * 1.0e3, cnts, t0
+                        "--- {:.25}   {:5.2f}%  |  time: {:6.3f} ms /{:3d}    ({:8.5e})".format(
+                            name.ljust(25), relt, t0 * 1.0e3, cnts, t0
                         )
                     )
                 elif 1.0e-2 < t0:
                     print(
-                        "--- {:.20}   {:6.3f}%  |  time: {:8.5f} s  /{:3d}  ({:.8})".format(
-                            name.ljust(20), relt, t0, cnts, t0
+                        "--- {:.25}   {:5.2f}%  |  time: {:6.3f} s  /{:3d}    ({:8.5e})".format(
+                            name.ljust(25), relt, t0, cnts, t0
                         )
                     )
 
@@ -178,13 +181,16 @@ class Timer:
                 #    print("- - -          std: {:8.5f} s   /  {:3d}  ({:.8})".format(tstd, cnts, tstd))
 
         if self.do_print:
-            print("                        += {:6.3f}% ".format(totper))
-            print("--------------------------------------------------")
+            print("                            += {:6.3f}% ".format(totper))
+            #print("--------------------------------------------------")
+            self.print_vline()
 
     def dump(self):
 
         if self.do_print:
-            print("--------------------------------------------------")
+            #print("--------------------------------------------------")
+            self.print_vline()
             for name in self.names:
                 self.stats(name)
-            print("--------------------------------------------------")
+            #print("--------------------------------------------------")
+            self.print_vline()
