@@ -3,6 +3,10 @@ import numpy as np
 #import scipy
 #import skimage
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib import cm
+
 from scipy import ndimage as ndi
 
 # from skimage.transforms; standalone version of the skimage resize methods
@@ -89,23 +93,49 @@ def resize(image, output_shape,
 class TerminalPlot:
 
     def __init__(self, nx, ny):
-        self.nx = nx
+        self.nx = 2*nx # monospace fonts are 2x1 so compensate for that
         self.ny = ny
         self.screen = np.zeros((self.nx, self.ny))
 
-    def norm(self, x):
+        self.col_mode = True
+
+
+    def col_norm(self, x, text=" ",):
+
+        def get_rgb(col_code, text):
+            r,g,b,a = col_code
+            r = int(r*255)
+            g = int(g*255)
+            b = int(b*255)
+
+            color_code = f"\033[48;2;{r};{g};{b}m"
+            return f"{color_code}{text}\033[0m"
+
+        c = self.cmap(self.cmap_norm(x))
+        s = get_rgb(c, text)
+        return s
+
+
+    def text_norm(self, x, vmin=0, vmax=1):
+        x = abs(x/(vmax - max(vmin,0)))
+
+        symbols = np.flip( ["#", "#", "@", "%", "=", "+", "*", ":", "-", ".", " "] )
+
+        i = int( x*(len(symbols)-1) )
+        return symbols[i]
+
         if x < 0.05:
-            return "  "
+            return " "
         elif x < 0.25:
-            return ". "
+            return "."
         elif x < 0.4:
-            return "o "
+            return "o"
         elif x < 0.7:
-            return "x "
+            return "x"
         elif x < 0.9:
-            return "X "
+            return "X"
         else:
-            return "W "
+            return "W"
 
     def rescale(self, im):
         im2 = resize(im, (self.nx, self.ny), order=1)
@@ -148,7 +178,15 @@ class TerminalPlot:
                 for data in all_data:
                     axs = data['axs']
                     if axs[0] == ir and axs[1] == jr:
-                        l1 = self.gen_panel(data['data'], name=data['name']) # get panel
+
+                        # generate panel
+                        l1 = self.gen_panel( 
+                                data['data'], 
+                                name=data['name'],
+                                cmap=data['cmap'],
+                                vmin=data['vmin'],
+                                vmax=data['vmax'],
+                                    ) 
 
                         for i, line in enumerate(l1):
                             irr = ir*(self.ny+1) + i
@@ -170,7 +208,15 @@ class TerminalPlot:
     def gen_panel(self, 
              data, # array to plot
              name='',
+             cmap='RdBu',
+             vmin=-1,
+             vmax=1,
              ):
+
+        if self.col_mode:
+            self.cmap = plt.get_cmap(cmap)
+            self.cmap_norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
 
         # transpose and flip to orient the img properly
         data = np.fliplr(data.T) 
@@ -187,13 +233,13 @@ class TerminalPlot:
         if name == '':
             line = '+'
             for i in range(self.nx):
-                line += "--"
+                line += "-"
             line += '+'
 
             lines.append(line)
         else: # add name
             line = '+'
-            line += '{:-{align}{width}}'.format(name, align='^', width=str(2*self.nx))
+            line += '{:-{align}{width}}'.format(name, align='^', width=str(self.nx))
             line += '+'
 
             lines.append(line)
@@ -208,9 +254,12 @@ class TerminalPlot:
             line += "|"
 
             for i in range(self.nx):
-                line += self.norm(stripe[i])
+                if not(self.col_mode):
+                    line += self.text_norm(stripe[i], vmin=vmin, vmax=vmax)
+                else:
+                    line += self.col_norm(stripe[i])
 
-            line += "|"
+            #line += "|" # NOTE: plotting colorbar instead
 
             lines.append(line)
 
@@ -218,10 +267,26 @@ class TerminalPlot:
         # last line
         line = '+'
         for i in range(self.nx):
-            line += "--"
+            line += "-"
         line += '+'
         lines.append(line)
+
         #--------------------------------------------------
+        # colorbar
+
+        cvals = np.linspace(vmin, vmax, self.ny)
+        cvals = np.flip(cvals) # make cbar grow from bottom to top
+        for i in range(self.ny):
+            if not(self.col_mode):
+                lines[i+1] += self.text_norm(cvals[i]/abs(vmax-max(vmin,0)))
+            else:
+                if i == 0 or i == self.ny-1:
+                    v = abs( int(cvals[i]) )
+                    v = str(v)[0] # unfortunately only use the first digit
+                    lines[i+1] += self.col_norm(cvals[i], text=v)
+                else:
+                    lines[i+1] += self.col_norm(cvals[i]) # no numeric values at the middle of cbar
+
 
         return lines
             
@@ -242,10 +307,42 @@ def print_format_table():
         print('\n')
 
 
+def print_colorbar():
+
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+
+    #def get_rgb(r, g, b):
+    def get_rgb(col_code):
+        r,g,b,a = col_code
+        r = int(r*255)
+        g = int(g*255)
+        b = int(b*255)
+
+        text = "  "
+        color_code = f"\033[48;2;{r};{g};{b}m"
+        return f"{color_code}{text}\033[0m"
+
+    #s = get_rgb(200, 100, 200)
+
+    cmap = plt.get_cmap("RdBu")
+    norm = mpl.colors.Normalize(vmin=-1, vmax=1)
+    #scalarMap = cm.ScalarMappable(norm=self.norm, cmap=self.cmap)
+
+    for x in np.linspace(-1, 1, 20):
+        c = cmap(norm(x))
+        s = get_rgb(c)
+        print(s, end='')
+
+    print()
+
+
 
 if __name__ == "__main__":
 
-    plt = TerminalPlot(12, 12)
+    tplt = TerminalPlot(15, 15)
+    #tplt.col_mode = False
 
     data = np.ones((64, 64))
     x = np.linspace(-3, 3, 64)
@@ -257,21 +354,22 @@ if __name__ == "__main__":
     data[:,:] = np.exp(-r**2)
     #print(data)
 
-    #plt.plot(data, name='ex')
+    #tplt.plot(data, name='ex')
 
     #print_format_table()
+    print_colorbar()
 
-    plt.plot_panels(
+    tplt.plot_panels(
             (3,3),
-            dict(axs=(0,0), data=data, name='ex'),
-            dict(axs=(0,1), data=data, name='ey'),
-            dict(axs=(0,2), data=data, name='ez'),
-            dict(axs=(1,0), data=data, name='bx'),
-            dict(axs=(1,1), data=data, name='by'),
-            dict(axs=(1,2), data=data, name='bz'),
-            dict(axs=(2,0), data=data, name='e-'),
-            dict(axs=(2,1), data=data, name='e+'),
-            dict(axs=(2,2), data=data, name='ph'),
+            dict(axs=(0,0), data=data, name='ex', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(0,1), data=data, name='ey', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(0,2), data=data, name='ez', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(1,0), data=data, name='bx', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(1,1), data=data, name='by', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(1,2), data=data, name='bz', cmap='RdBu'   ,vmin=-1, vmax=1),
+            dict(axs=(2,0), data=data, name='e-', cmap='viridis',vmin= 0, vmax=4),
+            dict(axs=(2,1), data=data, name='e+', cmap='viridis',vmin= 0, vmax=4),
+            dict(axs=(2,2), data=data, name='ph', cmap='viridis',vmin= 0, vmax=4),
             )
 
 
