@@ -111,7 +111,11 @@ class TerminalPlot:
         im2 = resize(im, (self.nx, self.ny), order=1)
         return im2
 
-    def plot(self, data):
+    def plot(self, 
+             data, # array to plot
+             panel=0,
+             name='',
+             ):
 
         # transpose and flip to orient the img properly
         data = np.fliplr(data.T) 
@@ -123,11 +127,18 @@ class TerminalPlot:
 
         #--------------------------------------------------
         # first line
-        line = 'x'
-        for i in range(self.nx):
-            line += "--"
-        line += 'x'
-        print(line)
+        if name == '':
+            line = '+'
+            for i in range(self.nx):
+                line += "--"
+            line += '+'
+            print(line)
+        else: # add name
+            line = '+'
+            line += '{:-{align}{width}}'.format(name, align='^', width=str(2*self.nx))
+            line += '+'
+            print(line)
+
 
         #--------------------------------------------------
         # print content
@@ -144,13 +155,14 @@ class TerminalPlot:
             line += "|"
 
             print(line)
+            #print('line is len(line):', len(line))
 
         #--------------------------------------------------
         # last line
-        line = 'x'
+        line = '+'
         for i in range(self.nx):
             line += "--"
-        line += 'x'
+        line += '+'
         print(line)
         #--------------------------------------------------
             
@@ -173,7 +185,7 @@ def print_format_table():
 
 if __name__ == "__main__":
 
-    plt = TerminalPlot(32, 32)
+    plt = TerminalPlot(31, 31)
 
     data = np.ones((64, 64))
     x = np.linspace(-3, 3, 64)
@@ -185,7 +197,7 @@ if __name__ == "__main__":
     data[:,:] = np.exp(-r**2)
     #print(data)
 
-    plt.plot(data)
+    plt.plot(data, name='ex')
 
     #print_format_table()
 
