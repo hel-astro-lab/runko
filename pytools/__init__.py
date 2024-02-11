@@ -16,6 +16,7 @@ from .indices import get_index
 from .scheduler import Scheduler
 from .terminal_plot import TerminalPlot
 from .string_manipulation import simplify_string, simplify_large_num
+from .banner import print_banner
 
 
 # physics modules
@@ -31,5 +32,6 @@ from . import visualize
 
 #import sys
 #sys.path.insert(0,'../..')
+
 
 

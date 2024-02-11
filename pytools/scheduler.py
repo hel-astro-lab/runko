@@ -21,6 +21,7 @@ class Scheduler:
         self.is_example_worker = True if self.rank == 0 else False # example work rank
 
         if self.is_master:
+            pytools.print_banner()
             print("sch : Running pic.py with {} MPI processes.".format(self.mpi_comm_size))
 
         self.mpi_task_mode = False
