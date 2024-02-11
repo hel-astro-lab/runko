@@ -111,9 +111,64 @@ class TerminalPlot:
         im2 = resize(im, (self.nx, self.ny), order=1)
         return im2
 
+    
+    #--------------------------------------------------
+    # plot single panel
     def plot(self, 
              data, # array to plot
-             panel=0,
+             name='',
+             ):
+        lines = self.gen_panel(data, name=name)
+
+        for line in lines: print(line)
+
+
+    #--------------------------------------------------
+    def plot_panels(self, 
+                    dims, # tuple of (rows, cols)
+                   *all_data, # dictionary of panels):
+                   ): 
+
+        #--------------------------------------------------
+        # prepare fig
+        lines = []
+        nrows, ncols = dims
+
+        for i in range(nrows):
+            for j in range(self.ny+2):
+                lines.append('')
+                #lines.append(str(j))
+
+        #--------------------------------------------------
+        # collect panels
+
+        for ir in range(nrows):
+            for jr in range(ncols):
+
+                for data in all_data:
+                    axs = data['axs']
+                    if axs[0] == ir and axs[1] == jr:
+                        l1 = self.gen_panel(data['data'], name=data['name']) # get panel
+
+                        for i, line in enumerate(l1):
+                            irr = ir*(self.ny+1) + i
+                            
+                            if ir < nrows-1 and i == self.ny+1: continue # skip last horizontal frame
+
+                            if jr == 0: # first col
+                                lines[irr] += line
+                            else:
+                                lines[irr] += line[1:] # skip first vertical frame
+
+
+        #--------------------------------------------------
+        for line in lines: print(line)
+
+
+    #--------------------------------------------------
+    # generate panel to be plotted
+    def gen_panel(self, 
+             data, # array to plot
              name='',
              ):
 
@@ -125,6 +180,8 @@ class TerminalPlot:
 
         self.screen = self.rescale(data)
 
+        lines = [] # screen is collected here
+
         #--------------------------------------------------
         # first line
         if name == '':
@@ -132,13 +189,14 @@ class TerminalPlot:
             for i in range(self.nx):
                 line += "--"
             line += '+'
-            print(line)
+
+            lines.append(line)
         else: # add name
             line = '+'
             line += '{:-{align}{width}}'.format(name, align='^', width=str(2*self.nx))
             line += '+'
-            print(line)
 
+            lines.append(line)
 
         #--------------------------------------------------
         # print content
@@ -154,8 +212,7 @@ class TerminalPlot:
 
             line += "|"
 
-            print(line)
-            #print('line is len(line):', len(line))
+            lines.append(line)
 
         #--------------------------------------------------
         # last line
@@ -163,9 +220,12 @@ class TerminalPlot:
         for i in range(self.nx):
             line += "--"
         line += '+'
-        print(line)
+        lines.append(line)
         #--------------------------------------------------
+
+        return lines
             
+
                 
 def print_format_table():
     """
@@ -185,7 +245,7 @@ def print_format_table():
 
 if __name__ == "__main__":
 
-    plt = TerminalPlot(31, 31)
+    plt = TerminalPlot(12, 12)
 
     data = np.ones((64, 64))
     x = np.linspace(-3, 3, 64)
@@ -197,10 +257,22 @@ if __name__ == "__main__":
     data[:,:] = np.exp(-r**2)
     #print(data)
 
-    plt.plot(data, name='ex')
+    #plt.plot(data, name='ex')
 
     #print_format_table()
 
+    plt.plot_panels(
+            (3,3),
+            dict(axs=(0,0), data=data, name='ex'),
+            dict(axs=(0,1), data=data, name='ey'),
+            dict(axs=(0,2), data=data, name='ez'),
+            dict(axs=(1,0), data=data, name='bx'),
+            dict(axs=(1,1), data=data, name='by'),
+            dict(axs=(1,2), data=data, name='bz'),
+            dict(axs=(2,0), data=data, name='e-'),
+            dict(axs=(2,1), data=data, name='e+'),
+            dict(axs=(2,2), data=data, name='ph'),
+            )
 
 
 
