@@ -120,20 +120,22 @@ float_p Synchrotron::comp_optical_depth(
 }
 
 
-//tuple<float_p, float_p> Synchrotron::accumulate(
-//    string t1, float_p e1, string t2, float_p e2)
-//{
-//
-//  //if( (t1 == "e-" || t1 == "e+") && e1 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
-//  //if( (t2 == "e-" || t2 == "e+") && e2 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
-//
-//  // TODO
-//
-//  float_p f1 = 1.0f;
-//  float_p f2 = 1.0f;
-//
-//  return {f1,f2};
-//}
+tuple<float_p, float_p> Synchrotron::accumulate(
+    string t3, float_p e3, 
+    string t4, float_p e4)
+{
+
+  //if( (t1 == "e-" || t1 == "e+") && e1 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
+  //if( (t2 == "e-" || t2 == "e+") && e2 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
+
+  float_p f1 = 1.0f;
+  float_p f2 = 1.0f;
+
+  // 1/x suppression below threshold
+  if( e4 < 0.01 ) f2 = pow(e4/0.01, -2.0);
+
+  return {f1,f2};
+}
   
 
 

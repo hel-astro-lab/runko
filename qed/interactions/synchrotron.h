@@ -83,7 +83,7 @@ public:
       float_p bx,  float_p by,  float_p bz
       ) override final;
 
-  //pair_float accumulate(string t1, float_p e1 ) override;
+  pair_float accumulate(string t3, float_p e3, string t4, float_p e4) override;
 
   void interact(
         string& t1, float_p& ux1, float_p& uy1, float_p& uz1,

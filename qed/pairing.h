@@ -1100,10 +1100,12 @@ public:
               // NOTE: update probability is later reduced as if particle weights are w -> w*f_acc 
               //       when accumulation is used
 
-              // probability for the particle energy to be updated 
               // NOTE every new particle has a change of prob_upd of being updated so this rejection sample 
               // needs to be calculated using the new weights; then multiple evaluations of the rejection sampling
-              // equals the prob_upd calculated with parent weights. Alternatively, we could check prob_upd
+                
+
+              // probability for the particle energy to be updated 
+              // NOTE: equals the prob_upd calculated with parent weights. Alternatively, we could check prob_upd
               // once and add all the copies thereafter; this however leads to more MC sampling noise.
               prob_upd3 = wmin/w3; //w2/wmax;
               prob_upd4 = wmin/w4; //w1/wmax;
@@ -1567,19 +1569,13 @@ public:
         //--------------------------------------------------
         // v2; passive fetching; assumes a call has been made to interp before this function
 
-        ex = con1.ex(n1); //TODO: why cinv here in E?
+        ex = con1.ex(n1); 
         ey = con1.ey(n1); 
         ez = con1.ez(n1); 
 
         bx = con1.bx(n1); 
         by = con1.by(n1); 
         bz = con1.bz(n1); 
-
-        // TODO add optical depth function 
-        // TODO add calculation of chi function
-        // TODO add 2d interpolation for xi table
-        // TODO add solve_onebody to python loop after interp call
-        // DONE particle addition routines; TODO verify and test
 
         // local optical depth; 
         // NOTE: em field is stored during this call and does not need to be called again in interact()
@@ -1610,17 +1606,37 @@ public:
 
           timer.start_comp("weight_funs");
           // NOTE both are compared to the same parent t1 
-          //float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1); // t3 does not ever change weight
-          float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t1, e1);  // secondary particle can be however re-weighted
+          float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1); // possible re-weighting of the parent particle 
+          float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t1, e1); // re-weighting of the secondary particle 
           timer.stop_comp("weight_funs");
 
           // limit explosive particle creation
-          //float_p n3 = std::min( fw3, 32.0f );
+          float_p n3 = std::min( fw3, 32.0f );
           float_p n4 = std::min( fw4, 32.0f );
+
+          //--------------------------------------------------
+          // accumulation
+          // NOTE: accumulation works differently in onebody interactions than in binary interactions.
+          //       Here, we reduce the number of particles created and increase the weight. In the binary interactions,
+          //       the probability of the process is reduced and the process itself never occurs if accumulated.
+          //       The way accumulation is done here is better for pruning the low-energy synchrotorn photons.
+
+          timer.start_comp("acc");
+          auto [facc3, facc4] = iptr->accumulate(t3, e3, t4, e4); // updated parent and emitted prtcl
+          facc3 = iptr->do_accumulate ? facc3 : 1.0f;
+          facc4 = iptr->do_accumulate ? facc4 : 1.0f;
+          timer.stop_comp("acc");
+
+          //n3 = n4/facc3; // NOTE never modify the parent; could be implemented but then need to change also the 
+                           //      parent update below.
+          n4 = n4/facc4; 
+
+          // NOTE: weight is automatically modified correctly since it is updated based on number of copies
 
           //--------------------------------------------------
           if(t1 == t3){ // single-body emission 
 
+            w3 = w1/n3; // new parent particle weight
             w4 = w1/n4; // emitted prtcl inherits weight from parent
                           
             // NOTE: we keep location the same
@@ -1628,12 +1644,15 @@ public:
             con1.vel(1,n1) = uy3;
             con1.vel(2,n1) = uz3;
             // NOTE assume that weight w3 does not change; therefore, no need to add via MC  routine
+            // TODO ignoring this weight change is correct only when onebody interactions include synch and multiphotann
+            //      if new processes are added (that can have a parent particle that is not electron/positron) then this 
+            //      needs re-updating.
 
             // add prtcl 4
             double ncop = 0.0;
             double z1 = rand();
             while(n4 > z1 + ncop) {
-              cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4);
+              cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
               ncop += 1.0;
             }
 
