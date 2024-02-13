@@ -150,9 +150,11 @@ void Synchrotron::interact(
   //--------------------------------------------------
   // draw photon chi when electron chi is known
 
-  // get minimum chi_x so that the photon energy is <1e-3; this sets the y-axis of XI as logspace(chi,xmin, chi_e, 33)
+  // get minimum chi_x so that the photon energy is <1e-4; 
+  // this sets the y-axis of XI as logspace(chi,xmin, chi_e, 33)
   float_p logchix_min = log10( bkn_plaw(chi_e, 3.0e-10, 1.0, 2.0, 1.0, 1.45) ); // the fitting function is accurate to <3%
 
+  //--------------------------------------------------
 
   const int dim0 = 32;
   const int dim1 = 33;
