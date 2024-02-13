@@ -118,11 +118,13 @@ class TerminalPlot:
 
     def text_norm(self, x, vmin=0, vmax=1):
         x = abs(x/(vmax - max(vmin,0)))
+        x = min(max(x,0),1) # clamp to [0,1]
 
         #symbols = np.flip( ["#", "#", "@", "%", "=", "+", "*", ":", "-", ".", " "] )
         #symbols = """ .`-_\':,;^=+/"|)\\<>)iv%xclrs{*}I?!][1taeo7zjLunT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0Q"""
         symbols = """ -:;=+/>iv%xclrs*I?!][1taeo7zjLunT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U$@KHDBWNMR0Q"""
 
+        #print('text_norm', x, vmin, vmax)
 
         i = int( x*(len(symbols)-1) )
         return symbols[i]
