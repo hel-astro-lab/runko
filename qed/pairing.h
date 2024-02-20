@@ -79,8 +79,11 @@ public:
   // two-body binary interactions
   std::vector<InteractionPtr> binary_interactions;
 
-  // normalization factor for probabilities
+  // normalization factor for two-body interaction probabilities
   float_p prob_norm = 1.0f;
+
+  // normalization factor for single-body interaction probabilities
+  float_p prob_norm_onebody = 1.0f;
 
   // force e- e+ to have unit weights irrespective of weighting functions
   bool force_ep_uni_w = true; 
@@ -1586,7 +1589,9 @@ public:
                                   bx, by, bz);
 
         // exponential waiting time between interactions
-        double t_free = -log( rand() )/tau_int; //NOTE w1 here
+        double t_free = -log( rand() )*prob_norm_onebody/tau_int; //NOTE w1 here
+
+        //std::cout << "oneb: t_free:" << t_free << " tau: " << tau_int << "\n";
 
         if(t_free < 1.0) // interact
         { 

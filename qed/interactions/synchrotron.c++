@@ -96,6 +96,8 @@ float_p Synchrotron::comp_optical_depth(
 
   float_p x = comp_chi( ux1,uy1,uz1, ex,ey,ez, bx,by,bz); // dimensionless quantum parameter \chi_pm = x
 
+  float_p gam = sqrt( 1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
+
   // calculate
   // K(\chi_\pm) = \int_0^\chi_\pm d^2 N_phot / dt d\chi d\chi = \int_0^\chi_pm  S(\chi_\pm, \chi_x)/\chi d\chi
   // where S is known as the Ritus synchrotron emissivity function
@@ -107,16 +109,15 @@ float_p Synchrotron::comp_optical_depth(
   // the expression is accurate to < 1%
   float_p K_app = 3.81108484f / (log(x/1.5746f) - ((x + x) - (-0.11058f / x)));
 
-  //float prefac = 2.0*alphaf/(3*lamC); // classical radiated power
-  float prefac = 1.0; //sqrt(3.0)*alphaf/(2.0*PI*lamC);
+  //--------------------------------------------------
+  // normalization of the K integral
+  float_p prefac_int = 3.0*sqrt(3.0)*x/(4.0*PI*gam);
 
+  // classical radiated power
+  float_p prefac_syn = 2.0*alphaf/(3.0*lamC); 
 
-  // TODO Smilei returns
-  // prefac * (K_asy + K_app) * chi_e/gam;
-
-
-  // total time change in the synchrotron optical depth is then
-  return K_asy + K_app;
+  // total time change in the synchrotron optical depth is 
+  return prefac_syn*prefac_int*(K_asy + K_app);
 }
 
 

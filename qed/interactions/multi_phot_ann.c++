@@ -76,6 +76,7 @@ float_p MultiPhotAnn::comp_optical_depth(
     float_p bx,  float_p by,  float_p bz)
 {
     
+  float_p xene = sqrt( ux1*ux1 + uy1*uy1 + uz1*uz1 ); // photon energy
 
   float_p x = comp_chi( ux1,uy1,uz1, ex,ey,ez, bx,by,bz); // dimensionless quantum parameter \chi_x
 
@@ -83,7 +84,7 @@ float_p MultiPhotAnn::comp_optical_depth(
   float_p T_asy = 1.68f*exp(-2.8f/x)*pow(x,1.7f);
 
   // TODO real analytical asymptotic behavior is
-  // 1.249 exp(-8/3/x) and 2.0678*x^(5/3)
+  // 1.249 exp(-8/3/x)*x^2 and 2.0678*x^(5/3)
   // need to fix this and re-fit
 
   //--------------------------------------------------
@@ -96,11 +97,13 @@ float_p MultiPhotAnn::comp_optical_depth(
   const float_p sig1 = 7.6766;
   float_p T_corr = 1.0f - a1*exp(-pow(log(x)-mu1, 2.0f)/sig1);
 
-  // TODO add numerical prefactor
-
-  //float_p prefac = alpha/(lamC * PI*sqrt(3.0) );
+  // normalization of the T integral
+  float_p prefac_int = 1.0/(PI*sqrt(3.0)*x*xene);
     
-  return T_asy*T_corr;
+  // classical BBW power
+  float_p prefac_bbw = alphaf/lamC; 
+    
+  return prefac_bbw*prefac_int*T_asy*T_corr;
 }
 
 
@@ -213,7 +216,7 @@ void MultiPhotAnn::interact(
 
   //--------------------------------------------------
 
-  //std::cout << " chi x e p" << chi_x << " " << chi_e << " " << chi_p << "\n";
+  std::cout << " multiphoton breit-wheeler: chi x e p" << chi_x << " " << chi_e << " " << chi_p << "\n";
 
 
   // particles are emtited to the direction of the photon
@@ -237,7 +240,7 @@ void MultiPhotAnn::interact(
   
   float_p err_ene = x0 - (sqrt(1.0 + pe*pe) + sqrt(1.0 + pp*pp));
 
-  //std::cout << " enes x/e/p" << x0 << " " << pe << " " << pp << " err:" << err_ene << "\n";
+  ///std::cout << " enes x/e/p" << x0 << " " << pe << " " << pp << " err:" << err_ene << "\n";
   
   // TODO check momentum conservation
 

@@ -78,11 +78,13 @@ private:
   std::mt19937 gen;
   std::uniform_real_distribution<float_p> uni_dis;
 
-  const float alphaf = 1.0/137.0; // fine structure constant
-  //const float lamC = 1.0f; // normalized Compton wavelenegth
-
 
 public:
+
+  // constants used in calculations
+  const float alphaf = 1.0/137.0; // fine structure constant
+  const float lamC = 1.0f; // normalized reduced Compton wavelength (real value is considered in pic.py)
+
 
   int interaction_order = 2; // default interaction is 2-body
 
