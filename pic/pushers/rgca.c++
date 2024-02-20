@@ -62,23 +62,23 @@ inline auto ExB_drift_rel_approx(
             double  bx,  double  by,  double  bz
                      ) -> std::tuple<double, double, double, double, double>
 {
-    const double b = sqrt( bx*bx + by*by + bz*bz );
-    const double e = sqrt( ex*ex + ey*ey + ez*ez );
+    const double b2 = bx*bx + by*by + bz*bz;
+    const double e2 = ex*ex + ey*ey + ez*ez;
 
-    double vex = (ey*bz - ez*by)/(b*b + e*e + EPS);
-    double vey = (ez*bx - ex*bz)/(b*b + e*e + EPS);
-    double vez = (ex*by - ey*bx)/(b*b + e*e + EPS);
+    double vex = (ey*bz - ez*by)/(b2 + e2 + EPS);
+    double vey = (ez*bx - ex*bz)/(b2 + e2 + EPS);
+    double vez = (ex*by - ey*bx)/(b2 + e2 + EPS);
     double we2  = vex*vex + vey*vey + vez*vez; //|u|^2
-    we2 = std::min(0.5, we2); // prevent NaN/overflow
+    we2 = std::min(0.25, we2); // prevent NaN/overflow
 
     //// we -> ve
-    double ginv = (1. - sqrt(1. - 4.*we2))/(2.*we2 + EPS);
+    double ginv = (1.0 - sqrt(1.0 - 4.0*we2 + EPS))/(2.0*we2 + EPS);
     vex *= ginv;
     vey *= ginv;
     vez *= ginv;
 
     double ve2 = vex*vex + vey*vey + vez*vez; //|v|^2
-    double kappa = 1.0/(sqrt(1. - ve2) + EPS); // gamma factor
+    double kappa = 1.0/(sqrt(1.0 - ve2) + EPS); // gamma factor
 
     return {vex, vey, vez, kappa, we2};
 }
@@ -135,21 +135,21 @@ inline auto mag_unit_vec_rel_approx(
             double we2
                      ) -> std::tuple< double, double, double>
 {
-    const double b = sqrt( bx*bx + by*by + bz*bz );
-    const double e = sqrt( ex*ex + ey*ey + ez*ez );
+    const double b2 = bx*bx + by*by + bz*bz;
+    const double e2 = ex*ex + ey*ey + ez*ez;
 
     double edotb = ex*bx + ey*by + ez*bz;
-    double eperpx = ex - edotb*bx/(b*b + EPS);
-    double eperpy = ey - edotb*by/(b*b + EPS);
-    double eperpz = ez - edotb*bz/(b*b + EPS);
-    double eperp = eperpx*eperpx + eperpy*eperpy + eperpz*eperpz;
+    double eperpx = ex - edotb*bx/(b2 + EPS);
+    double eperpy = ey - edotb*by/(b2 + EPS);
+    double eperpz = ez - edotb*bz/(b2 + EPS);
+    double eperp2 = eperpx*eperpx + eperpy*eperpy + eperpz*eperpz;
 
 
-    double bp = sqrt(0.5*(b*b - e*e + (e*e + b*b)*sqrt(1.0 - 4.*we2))); // eq6
-    double ep = edotb/(bp + EPS); //eq 5
+    double bp2 = 0.5*(b2 - e2 + (e2 + b2)*sqrt(1.0 - 4.0*we2)); // eq6
+    double ep = edotb/(sqrt(bp2) + EPS); //eq 5
 
-    double psi = ep*(b*b - bp*bp)/(bp*eperp*eperp + EPS);
-    double eta = 1.0/(b*sqrt( psi*psi*eperp*eperp/(b*b + EPS) + 1.) + EPS);
+    double psi = ( ep/sqrt(bp2) )*(b2 - bp2)/(eperp2 + EPS);
+    double eta = 1.0/(sqrt(b2)*sqrt( psi*psi*eperp2/(b2 + EPS) + 1.0) + EPS);
     double zeta = psi*eta;
 
     // rotation giving b* 
@@ -281,13 +281,15 @@ void pic::rGCAPusher<D,V>::push_container(
 
     // non-rel / rel ExB drift velocity
     //auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift( ex0, ey0, ez0, bx0, by0, bz0 );
-    auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
+    //auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel( ex0, ey0, ez0, bx0, by0, bz0 );
+    auto [vex0, vey0, vez0, kappa0, we2] = ExB_drift_rel_approx( ex0, ey0, ez0, bx0, by0, bz0 );
 
     //-------------------------------------------------- 
     // magnetic field unit vector b
       
     //auto [bnx0, bny0, bnz0] = mag_unit_vec(bx0, by0, bz0);
-    auto [bnx0, bny0, bnz0] = mag_unit_vec_rel( ex0, ey0, ez0, bx0, by0, bz0, vex0, vey0, vez0, kappa0);
+    auto [bnx0, bny0, bnz0] = mag_unit_vec_rel_approx( ex0, ey0, ez0, bx0, by0, bz0, we2);
+    //auto [bnx0, bny0, bnz0] = mag_unit_vec_rel( ex0, ey0, ez0, bx0, by0, bz0, vex0, vey0, vez0, kappa0);
 
     //--------------------------------------------------
     // epar = e.b
@@ -456,13 +458,15 @@ void pic::rGCAPusher<D,V>::push_container(
 
       // non-rel / rel ExB drift velocity at the new location
       //auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift(     ex1, ey1, ez1, bx1, by1, bz1 );
-      auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
+      //auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel( ex1, ey1, ez1, bx1, by1, bz1 );
+      auto [vex1, vey1, vez1, kappa1, we2] = ExB_drift_rel_approx( ex1, ey1, ez1, bx1, by1, bz1 );
 
       //-------------------------------------------------- 
       // magnetic field unit vector b at new location
 
       //auto [bnx1, bny1, bnz1] = mag_unit_vec(bx1, by1, bz1);
-      auto [bnx1, bny1, bnz1] = mag_unit_vec_rel( ex1, ey1, ez1, bx1, by1, bz1, vex1, vey1, vez1, kappa1);
+      auto [bnx1, bny1, bnz1] = mag_unit_vec_rel_approx( ex1, ey1, ez1, bx1, by1, bz1, we2);
+      //auto [bnx1, bny1, bnz1] = mag_unit_vec_rel( ex1, ey1, ez1, bx1, by1, bz1, vex1, vey1, vez1, kappa1);
 
       //-------------------------------------------------- 
       // location update
@@ -506,12 +510,20 @@ void pic::rGCAPusher<D,V>::push_container(
       if(D>=3) R1z = R0z + vn1z*c;
 
 
+      bool debug_flag2 = 
+        std::isnan(un1x) ||
+        std::isnan(un1y) ||
+        std::isnan(un1z) ||
+        std::isnan(R1x) ||
+        std::isnan(R1y) ||
+        std::isnan(R1z);   
+
       //-------------------------------------------------- 
-      if(false) {
+      //if(false) {
       //if(n == 5661) {
       //if(mu > 1.0) {
         //crash_flag = true;
-      //if(debug_flag2) {
+      if(debug_flag2) {
           
         double b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
         double e1 = sqrt( ex1*ex1 + ey1*ey1 + ez1*ez1 );
