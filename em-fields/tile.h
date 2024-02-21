@@ -6,7 +6,6 @@
 #include "../corgi/tile.h"
 #include "../corgi/corgi.h"
 #include "../tools/mesh.h"
-#include "../tools/rotator.h"
 #include "../definitions.h"
 #include"../tools/iter/allocator.h"
 

@@ -10,7 +10,7 @@
 #include "amr/mesh.h"
 #include "amr/integrate.h"
 #include "../tools/mesh.h"
-#include "../tools/rotator.h"
+#include "../tools/deprecated/rotator.h"
 #include "../em-fields/tile.h"
 
 //#include "grid.h"
