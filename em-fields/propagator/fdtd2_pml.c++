@@ -34,14 +34,31 @@ DEVCALLABLE float_m fields::FDTD2_pml<D>::lambda( float_m sx, float_m sy, float_
 
   //std::cout << "r" << r;
 
-  if(r > rad_lim) {
-    return -std::min(
-            norm_abs*pow( (r - rad_lim)/(1.0f - rad_lim), 3),
-            norm_abs
-            );
-  } else {
-    return 0.0;
-  }
+
+  // cylindrical region (left and right sides)
+  //float_m rcyl = std::sqrt( drx*drx + drz*drz );
+  //float_m lam = pow( (rcyl - rad_lim)/(1.0f - rad_lim), 3);
+  //if( rcyl < rad_lim ) lam = 0.0;
+    
+  // NOTE turned off
+  float_m lam = 0.0;
+
+  float_m z    = std::sqrt( dry*dry );
+  float_m lamz = pow( (z - rad_lim)/(1.0f - rad_lim), 3);
+  if( z < rad_lim ) lamz = 0.0;
+
+  return -norm_abs*std::min(lam + lamz, 1.0f - EPS);
+
+
+  // radial
+  //if(r > rad_lim) {
+  //  return -std::min(
+  //          norm_abs*pow( (r - rad_lim)/(1.0f - rad_lim), 3),
+  //          norm_abs
+  //          );
+  //} else {
+  //  return 0.0;
+  //}
 }
 
 
