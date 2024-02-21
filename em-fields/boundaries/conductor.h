@@ -3,6 +3,39 @@
 #include "../../em-fields/tile.h"
 #include "../../definitions.h"
 
+
+class StaggeredSphericalCoordinates
+{
+  double cx, cy, cz;
+  double r;
+
+  public:
+
+  StaggeredSphericalCoordinates( double cenx, double ceny, double cenz, double radius) 
+      : cx(cenx), cy(ceny), cz(cenz),r(radius)
+  {}
+
+  double x(double i, double stg) { return (i - cx + stg)/r; }
+  double y(double j, double stg) { return (j - cy + stg)/r; }
+  double z(double k, double stg) { return (k - cz + stg)/r; }
+};
+
+
+// smooth ramp; half-way is at r = r0; 
+// r0 +- 2*delta is roughly the asymptotic regime of the function as shown below
+//
+// 1 | ----
+//   |      \
+//   |       \
+// 0 |         ------
+//   -------|----------->
+//          r0
+inline float_m shape(float_m r, float_m r0, float_m delta) 
+{ 
+  return 0.5 * (1.0 - tanh( (r - r0) / delta )); 
+}
+
+
 namespace fields {
 
 /// Rotating conductor

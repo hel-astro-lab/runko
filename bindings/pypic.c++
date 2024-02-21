@@ -1,5 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+
 namespace py = pybind11;
 
 
@@ -36,6 +38,7 @@ namespace py = pybind11;
 #include "../pic/boundaries/wall.h"
 #include "../pic/boundaries/piston.h"
 #include "../pic/boundaries/piston_z.h"
+#include "../pic/boundaries/star_surface_injector.h"
 
 #include "../io/writers/writer.h"
 #include "../io/writers/pic.h"
@@ -666,7 +669,14 @@ void bind_pic(py::module& m_sub)
   // 2D
   py::class_<h5io::PicMomentsWriter<2>>(m_2d, "PicMomentsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
-    .def("write", &h5io::PicMomentsWriter<2>::write);
+    .def("write",       &h5io::PicMomentsWriter<2>::write)
+    .def("get_slice", [](h5io::PicMomentsWriter<2> &s, int k)
+            {
+                const auto nx = static_cast<pybind11::ssize_t>( s.nx );
+                const auto ny = static_cast<pybind11::ssize_t>( s.ny );
+                auto v = pybind11::array_t<float_m>( {nx, ny}, s.arrs[k].data() );
+                return v;
+            });
 
   // 3D
   py::class_<h5io::PicMomentsWriter<3>>(m_3d, "PicMomentsWriter")
@@ -702,6 +712,35 @@ void bind_pic(py::module& m_sub)
   auto tw43d = pic::wall::declare_tile<3, +2>(m_3d, "Tile_wall_RY");
   auto tw53d = pic::wall::declare_tile<3, -3>(m_3d, "Tile_wall_LZ");
   auto tw63d = pic::wall::declare_tile<3, +3>(m_3d, "Tile_wall_RZ");
+
+  //--------------------------------------------------
+  // star
+
+
+  // 2D rotating conductor
+  py::class_<pic::Star<2>>(m_2d, "Star")
+    .def(py::init<>())
+    .def_readwrite("B0",       &pic::Star<2>::B0)
+    .def_readwrite("radius",   &pic::Star<2>::radius)
+    .def_readwrite("period",   &pic::Star<2>::period)
+    .def_readwrite("chi",      &pic::Star<2>::chi)
+    .def_readwrite("phase",    &pic::Star<2>::phase)
+    .def_readwrite("cenx",     &pic::Star<2>::cenx)
+    .def_readwrite("ceny",     &pic::Star<2>::ceny)
+    .def_readwrite("cenz",     &pic::Star<2>::cenz)
+    .def_readwrite("delta",    &pic::Star<2>::delta)
+    .def_readwrite("radius_pc",&pic::Star<2>::radius_pc)
+    .def_readwrite("delta_pc", &pic::Star<2>::delta_pc)
+    .def_readwrite("Nx",       &pic::Star<2>::Nx)
+    .def_readwrite("Ny",       &pic::Star<2>::Ny)
+    .def_readwrite("Nz",       &pic::Star<2>::Nz)
+    .def("insert_em",          &pic::Star<2>::insert_em)
+    .def("update_b",           &pic::Star<2>::update_b)
+    .def("update_e",           &pic::Star<2>::update_e)
+    .def("solve",              &pic::Star<2>::solve);
+
+
+
 
 }
 

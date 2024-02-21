@@ -64,30 +64,6 @@ double fields::Conductor<3>::dipole(
 }
 
 
-
-float_m shape(float_m r, float_m r0, float_m delta) 
-{ 
-  return 0.5 * (1.0 - tanh((r - r0) / delta)); 
-}
-
-
-class StaggeredSphericalCoordinates
-{
-  double cx, cy, cz;
-  double r;
-
-  public:
-
-  StaggeredSphericalCoordinates( double cenx, double ceny, double cenz, double radius) 
-      : cx(cenx), cy(ceny), cz(cenz),r(radius)
-  {}
-
-  double x(double i, double stg) { return (i - cx + stg)/r; }
-  double y(double j, double stg) { return (j - cy + stg)/r; }
-  double z(double k, double stg) { return (k - cz + stg)/r; }
-};
-
-
 template<>
 void fields::Conductor<2>::insert_em(
     fields::Tile<2>& tile)
@@ -369,6 +345,11 @@ void fields::Conductor<2>::update_b(
   if( maxs[0] > Nx-1 ) right = true; 
 
 
+  //--------------------------------------------------
+  // additionally, define quantities for the closed field line region
+  float_m sint = radius_pc/radius; // sin\theta = R_pc/R_star
+  float_m Rbc  = radius/sint/sint;  
+
   // set transverse directions to zero to make this conductor
   int k = 0;
   //for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2])+1; k++) 
@@ -389,11 +370,19 @@ void fields::Conductor<2>::update_b(
     // check if we are inside star
     bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.03*radius;
 
+    // closed field line zone
+    float_m rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
+    sint = std::abs(xr0)/rad; // sin\theta
+    float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
+
+    bool closed_field_zone = eta < 0.9*sint*sint; // some tolerance for the boundaries
+    //std::cout << "update_b: z" << closed_field_zone << " rad:" << rad << " sint " << sint << " eta " << eta << "\n";
+
     if( inside_star ||
         (bot    && j < 3) ||
-        (left   && i < 3) ||
-        (top    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) ||
-        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 3) 
+        (top)             || //    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) ||
+        (left   && i < 5) ||
+        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 5) 
       ) {
 
       //--------------------------------------------------
@@ -452,9 +441,30 @@ void fields::Conductor<2>::update_b(
       bznew = s*bzd + (1.0-s)*bzi;
 
       //--------------------------------------------------
-      yee.bx(i,j,k) = bxnew;
-      yee.by(i,j,k) = bynew;
-      yee.bz(i,j,k) = bznew;
+      if(!top) {
+        yee.bx(i,j,k) = bxnew;
+        yee.by(i,j,k) = bynew;
+        yee.bz(i,j,k) = bznew;
+      } else {
+        // manual damping of outgoing waves
+        // poor-man's version of PML absorbing boundary conditions
+
+        float_m tile_len = static_cast<float>(tile.mesh_lengths[1]);
+
+        //float_m radius_ext = Ny - 0.5*tile_len; // halfway of the topmost tile
+        //float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
+        //s = shape(jglob, radius_ext, delta_ext); // tanh
+
+        float_m radius_ext = mins[1]; // some fraction of the topmost tile
+        float_m delta_ext = 1.0*tile_len; // fraction of tile size
+        s = 1.0f - std::max(0.0f, std::min(1.0f, (jglob-radius_ext)/delta_ext) ); // RELU
+
+        //std::cout << "ramp: " << s << " j " << jglob << " - " << radius_ext << " / " << delta_ext << "\n";
+
+        yee.bx(i,j,k) = s*yee.bx(i,j,k) + (1.0f-s)*bxnew;
+        yee.by(i,j,k) = s*yee.by(i,j,k) + (1.0f-s)*bynew;
+        yee.bz(i,j,k) = s*yee.bz(i,j,k) + (1.0f-s)*bznew;
+      }
     }
   }
 }
@@ -666,7 +676,9 @@ void fields::Conductor<2>::update_e(
     // check if we are inside star
     bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.03*radius;
 
-    if( inside_star ) {
+    if( inside_star ||
+        top
+        ) {
 
       //-------------------------------------------------- 
       // ex
@@ -747,16 +759,41 @@ void fields::Conductor<2>::update_e(
       eznew = s*ezd  + (1.0f-s)*ezi;
 
       //--------------------------------------------------
-      yee.ex(i,j,k) = exnew;
-      yee.ey(i,j,k) = eynew;
-      yee.ez(i,j,k) = eznew;
+      if(!top) {
+        yee.ex(i,j,k) = exnew;
+        yee.ey(i,j,k) = eynew;
+        yee.ez(i,j,k) = eznew;
+      } else {
+        // manual damping of outgoing wave//s
+        // poor-man's version of PML absorbing boundary conditions
+
+        float_m tile_len = static_cast<float>(tile.mesh_lengths[1]);
+
+        //float_m radius_ext = Ny - 0.5*tile_len; // halfway of the topmost tile
+        //float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
+        //s = shape(jglob, radius_ext, delta_ext); // tanh
+
+        float_m radius_ext = mins[1]; // some halfway of the topmost tile
+        float_m delta_ext = 1.0*tile_len; // 1/4 of tile size
+        s = 1.0f - std::max(0.0f, std::min(1.0f, (jglob-radius_ext)/delta_ext) ); //RELU
+
+        // damp to vacuum
+        yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0;
+        yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0;
+        yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0;
+
+        yee.jx(i,j,k) = s*yee.jx(i,j,k); 
+        yee.jy(i,j,k) = s*yee.jy(i,j,k); 
+        yee.jz(i,j,k) = s*yee.jz(i,j,k); 
+      }
+
     }
 
     // boundaries
     if( (bot    && j < 0) ||
+        (top    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) || 
         (left   && i < 3) ||
-        (top    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) ||
-        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 3) 
+        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 0) 
       ) {
       yee.ex(i,j,k) = 0.0;
       yee.ey(i,j,k) = 0.0;
@@ -793,7 +830,8 @@ void fields::Conductor<2>::update_e(
 
     float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
 
-    if( eta < 1.4*sint*sint) {
+    //if( eta < 1.4*sint*sint) { // TODO smooth or not?
+    if( eta < 1.0*sint*sint) {
       exi = yee.ex(i,j,k);
       eyi = yee.ey(i,j,k);
       ezi = yee.ez(i,j,k);
@@ -812,8 +850,8 @@ void fields::Conductor<2>::update_e(
       eznew = ezi - epar*bzi/bn/bn;
 
       // smoothing function
-      s = shape( rad, Rbc*sint*sint, 50.0); // location of the open-closed field line bc
-      //s = 1.0;
+      //s = shape( rad, Rbc*sint*sint, 50.0); // location of the open-closed field line bc
+      s = 1.0;
 
       // blend solution in with a smoothing function
       yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
