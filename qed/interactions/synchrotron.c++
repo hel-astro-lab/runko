@@ -132,8 +132,9 @@ tuple<float_p, float_p> Synchrotron::accumulate(
   float_p f1 = 1.0f;
   float_p f2 = 1.0f;
 
-  // 1/x suppression below threshold
-  if( e4 < 0.01 ) f2 = pow(e4/0.01, -2.0);
+  // 1/x^a suppression below threshold
+  float_p thr = 1.0f;
+  if( e4 < thr ) f2 = pow(e4/thr, -2.0);
 
   return {f1,f2};
 }
