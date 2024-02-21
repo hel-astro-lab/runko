@@ -29,11 +29,11 @@ Evolution of `f_s` is governed by the relativistic Boltzmann/Vlasov equation
 
 .. math::
 
-    \frac{\partial f_s}{\partial t} + \mathbf{v} \cdot \nabla_{\mathbf{x}} f_s + \mathbf{a}_{\mathrm{s}} \cdot \nabla_{\mathbf{u}} f_s  = \mathcal{C},
+    \frac{\partial f_s}{\partial t} + \mathbf{v} \cdot \nabla_{\mathbf{x}} f_s + \mathbf{a}_{\mathrm{s}} \cdot \nabla_{\mathbf{u}} f_s  = C,
 
 where `\nabla_{\mathbf{x}} = \frac{d}{d \mathbf{x}}` and `\nabla_{\mathbf{u}} = \frac{d}{d \mathbf{u}}` are the spatial and momentum parts of the differential operator `\nabla`, respectively.
-The term in the right-hand side, defined as `\mathcal{C} \equiv \partial_t f_s ~|_{\mathrm{coll}}`, is the collision operator.
-For Vlasov equation `\mathcal{C} = 0`, i.e., the plasma is collisionless.
+The term in the right-hand side, defined as `C \equiv \partial_t f_s ~|_{\mathrm{coll}}`, is the collision operator.
+For Vlasov equation `C = 0`, i.e., the plasma is collisionless.
 
 Acceleration of a charged particle, `\mathbf{a}_{\mathrm{s}}`, is governed by the Lorentz force
 
@@ -58,7 +58,7 @@ The first moment defines the current (charge flux) vector as
     \mathbf{J}_{\mathrm{s}} \equiv q_{\mathrm{s}} \int f_s \mathbf{v} \, \mathrm{d} \mathbf{u} 
                       = q_{\mathrm{s}} \int f_s \, \frac{ \mathbf{u}}{\gamma} ~\mathrm{d} \mathbf{u}.
 
-Total current is `\mathbf{J} = \sum_{\mathrm{s}} \mathbf{J}_{\mathrm{s}}`.
+Total current is obtained by summing over all the plasma species, `\mathbf{J} = \sum_{\mathrm{s}} \mathbf{J}_{\mathrm{s}}`.
 
 
 Maxwell's equations

@@ -20,7 +20,7 @@ The plasma oscillation frequency, also known as the Langmuir frequency, :math:`\
 .. math::
     \omega_{p,s} = \sqrt{\frac{4\pi n_s q_s^2}{m_s}}
     \quad\mathrm{and}\quad
-    \hat{\omega_p} = \frac{\hat{c}}{\hat{\mathcal{R}}} \frac{1}{\Delta t} 
+    \hat{\omega_p} = \frac{\hat{c}}{\hat{R}} \frac{1}{\Delta t} 
 
 For relativistic bulk flows with Lorentz factor :math:`\Gamma` or relativistically hot plasmas with mean Lorentz factor :math:`\langle \gamma \rangle \gtrsim 1` the plasma frequency becomes :math:`\omega_p \rightarrow \omega_p/\sqrt{\gamma}`.
 
@@ -36,9 +36,9 @@ Plasma perturbations that move with the speed of light :math:`c` and oscillates 
 .. math::
     d_s = \frac{c}{\omega_{p,s}}
     \quad\mathrm{and}\quad
-    \hat{d}_e = \hat{\mathcal{R}} \Delta x
+    \hat{d}_e = \hat{R} \Delta x
 
-One skin depth in the code is :math:`\hat{\mathcal{R}}` grid cells.
+One skin depth in the code is :math:`\hat{R}` grid cells.
 
 
 Plasma magnetization
@@ -55,7 +55,7 @@ The ratio of the magnetic field line tension, :math:`(B \cdot \nabla) B/4\pi \pr
 The magnetization can be used to express the code magnetic field as
 
 .. math::
-    \hat{B} = \frac{ \hat{c}^2 \sqrt{\sigma} }{\hat{\mathcal{R}}} \frac{\Delta x}{\Delta t^2}
+    \hat{B} = \frac{ \hat{c}^2 \sqrt{\sigma} }{\hat{R}} \frac{\Delta x}{\Delta t^2}
 
 
 .. note::
@@ -71,7 +71,7 @@ Angular frequency of a charged particle gyrating around a magnetic field :math:`
 .. math::
     \omega_B = \frac{|q_s| B}{\gamma m_s c}
     \quad\mathrm{and}\quad
-    \hat{\omega_B} = \frac{\hat{c} \sqrt{\sigma} }{\hat{\mathcal{R}}} \frac{1}{\Delta t}
+    \hat{\omega_B} = \frac{\hat{c} \sqrt{\sigma} }{\hat{R}} \frac{1}{\Delta t}
 
 
 Larmor radius
@@ -95,7 +95,7 @@ These definitions also allows a slightly different way of expressing the magneti
     \sigma = \left( \frac{\omega_B}{\omega_p} \right)^2 = \left( \frac{d_e}{r_L} \right)^2
 
 Note that a high magnetization means that the gyrofrequency increases, :math:`\omega_B \propto \sqrt{\sigma}` and Larmor radius decreases, :math:`r_L \propto \gamma/\sqrt{\sigma}`;
-therefore, we need to be careful that the particle gyrations are still resolved, :math:`\Delta x < r_L = \sqrt{\sigma}/\hat{\mathcal{R}} \hat{c}`.
+therefore, we need to be careful that the particle gyrations are still resolved, :math:`\Delta x < r_L = \sqrt{\sigma}/\hat{R} \hat{c}`.
 
 
 

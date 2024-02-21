@@ -16,13 +16,13 @@ Before we start, we need a developer level access to GitHub. Most importantly, y
 Downloading/Cloning
 ===================
 
-The framework relies on various small (template) libraries that are automatically obtained along the main code as submodules. Because of this, remember to always issue a recursive clone:
+The framework relies on various small (template) libraries that are automatically downloaded along the main code as git submodules. Because of this, remember to always issue a recursive clone when downloading the code from GitHub:
 
 .. code-block:: bash
 
    git clone --recursive git@github.com:natj/runko.git
 
-You also need to update all the submodules (so that other branches are also in sync) with
+You also need to update all the submodules (so that various branches are in sync) with
 
 .. code-block:: bash
 
@@ -36,20 +36,19 @@ External libraries installed together with the framework include:
 * `corgi <https://github.com/natj/corgi>`_ massively-parallel grid infrastructure
 * `PyBind11 <https://github.com/pybind/pybind11>`_ binding library for seamless operability between C++ and Python
 * `cppitertools <https://github.com/ryanhaining/cppitertools>`_ for various python-like C++ iterators etc.
-* `ezh5 <https://github.com/natj/ezh5>`_ lazy template interface to HDF5 for easier usage (originally from [mileschen](https://github.com/mileschen360/ezh5))
+* `ezh5 <https://github.com/natj/ezh5>`_ lazy template interface to HDF5 for easier usage (originally from `mileschen <https://github.com/mileschen360/ezh5>'_ )
 * `mpi4cpp <https://github.com/natj/mpi4cpp>`_ high-level interface to MPI library
 
 
 Requirements
 ============
 
-Before proceeding to compilation, check that your system has these requirements installed:
+Before proceeding with the code compilation, check that your system fulfills these requirements:
 
-* Modern C++ compiler (such a`Clang++ <https://clang.llvm.org/>`_, g++, ...)
-* python3 (with mpi4py)
+* Modern C++ compiler (such g++, `Clang++ <https://clang.llvm.org/>`_, etc.)
+* python3 (with mpi4py, numpy, scipy, matplotlib)
 * `HDF5 <https://support.hdfgroup.org/HDF5/>`_ for I/O (serial mode is enough)
 * `CMake <https://cmake.org/>`_ (>v3.0) for building and compiling
-* `FFTW <http://www.fftw.org/>`_ for Fourier transforms
 * MPI message passing interface
 
 
@@ -76,7 +75,7 @@ Make also sure that Xcode developer tools are installed by running
    xcode-select --install
 
 
-MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the latest `g++` just installed; currently `g++-13`). 
+MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the `g++` that you just installed).
 
 You can compile OpenMPI via homebrew by first modifying your `~/.bash_profile` to link the new compilers:
 
@@ -113,7 +112,7 @@ Alternatively, if you want even more control of the operation, you can compile i
    make clean
 
 
-This installs OpenMPI to `~/bin/` and exports the correct directories so that the `mpic++` compiler wrapper becomes available. You should then add to your `.bash_profile` (or `.zshrc` in latest macs) these exports (in case you need to re-compile the library):
+This installs OpenMPI to `~/bin/` and exports the correct directories so that the `mpic++` compiler wrapper becomes available. You should then add to your `.bash_profile` (or `.zshrc` in latest MacOS) these exports (in case you need to re-compile the library):
 
 .. code-block:: bash
 
@@ -144,7 +143,7 @@ When compiling runko and running the scripts, it is critical that you always use
    # ...
    # <<< conda initialize <<<
 
-You may find it necessary to delete folders containing older Python versions than your current one at `/usr/bin/python3.*`. In order to get a completely clean OpenMPI distribution first run:
+You may find it also necessary to delete folders containing the older Python versions than your current one at `/usr/bin/python3.*`. In order to get a completely clean OpenMPI distribution first run:
 
 .. code-block:: bash
 
@@ -189,7 +188,7 @@ All the python requirements can be installed via `pip` as
 Compiling
 =========
 
-After installing all the pre-requisites, you can proceed to compiling. First you need to configure the build. To use your (freshly installed) modern C++ compiler we need to export them as
+After installing all the pre-requisites, you can proceed to compiling. First you need to configure the build. To use your (freshly installed) modern C++ compiler we need to export them as 
 
 .. code-block:: bash
 
@@ -205,8 +204,7 @@ Then make sure that everything works, check the output of
 
 This should indicate that the newly installed compilers are used.
 
-
-You should also put this part into your `~/.bashrc` (or `~/.zshrc` in the latest MacOS) so correct compilers are automatically exported during the startup.
+You should also put this part into your `~/.bashrc` (or `~/.zshrc` in the latest MacOS) so that correct compilers are automatically exported during the startup.
 
 You should also add the python script directories into `PYTHONPATH` environment variable. Modify your `~/.zshrc` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `runko` libraries to the path by exporting
 
@@ -222,7 +220,7 @@ You should also add the python script directories into `PYTHONPATH` environment 
 where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory). Note that there is no trailing slash `/` in the commands. As an example, the path can be e.g., `/Users/natj/runko`.
 
 
-Next we can proceed to compiling. Out-of-source builds are recommended so inside the repository make a new build directory, go into that and only then run the CMake. This can be done by running:
+Next we can proceed to compiling. Out-of-source builds are recommended: inside the repository directory, make a new `build` directory, go into that, and only then run the CMake configuration commands. This can be done by running (inside `runko` directory):
 
 .. code-block:: bash
 

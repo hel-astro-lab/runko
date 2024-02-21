@@ -5,7 +5,7 @@ We typically use four fundamental quantities to characterize the simulations:
 
 * numerical speed of light, :math:`\hat{c}` (``cfl`` or ``c``)
 * particle number density, :math:`\hat{n_{s}}` (``ppc``), 
-* numerical skin-depth resolution, :math:`\hat{\mathcal{R}}` (``c_omp``), and
+* numerical skin-depth resolution, :math:`\hat{R}` (``c_omp``), and
 * plasma magnetization, :math:`\sigma` (``sigma``).
 
 

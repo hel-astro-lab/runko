@@ -90,11 +90,11 @@ All of the updates proceed in a leapfrog-fashion such that a quantity `Q^n` is a
     \mathbf{\hat{J}}^{n+\frac{1}{2}}( \mathbf{\hat{x}}^{n+\frac{1}{2}} ) = \sum_p q_e \mathbf{\hat{u}}^{n+\frac{1}{2}}
 
 
-7. Optionally, smooth the currents with a smoothing operation, `\mathcal{S}`,
+7. Optionally, smooth the currents with a smoothing operation, `S`,
 
 .. math::
 
-    \mathbf{\hat{J}}' = \mathcal{S}[ \mathbf{\hat{J}} ]
+    \mathbf{\hat{J}}' = S[ \mathbf{\hat{J}} ]
 
 8. Add the currents to the electric field,
 
@@ -143,7 +143,7 @@ The fraction of a macro particle in a cell, `x, x+\Delta x`, is described by a w
     W(x) = \int_{x-\frac{1}{2}\Delta x}^{x+\frac{1}{2}\Delta x} S(x - x') dx'
 
 
-The most simple shape function is the delta function `S_0(x) = \delta(x)`.
+The simplest shape function is the delta function `S_0(x) = \delta(x)`.
 It, however, causes rapid bursts of electric current in the grid when a particle moves from one cell to another;
 these current bursts drive unphysical high-frequency electromagnetic radiation.
 Instead, we use higher-order B-splines as particle shapes.

@@ -43,7 +43,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = 'Runko'
-copyright = '2021, Joonas Nättilä'
+copyright = '2023, Joonas Nättilä'
 author = 'Joonas Nättilä'
 
 

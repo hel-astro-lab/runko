@@ -5,7 +5,7 @@ Unit conversion tool
 --------------------
 
 This is an automated unit conversion tool. 
-Fill in the 4 fundamental quantities, `\hat{c}`, (numerical speed of light), `\hat{\mathcal{R}}` (skin depth resolution), `\hat{n}_{ppc}` (particles per cell per species), `\sigma` (magnetization), and the resulting numerical and physical values are automatically updated.
+Fill in the 4 fundamental quantities, `\hat{c}`, (numerical speed of light), `\hat{R}` (skin depth resolution), `\hat{n}_{ppc}` (particles per cell per species), `\sigma` (magnetization), and the resulting numerical and physical values are automatically updated.
 
 Add also a length scale, `\Delta x/1 \mathrm{cm}`, to get the resulting physical values.
 
@@ -28,7 +28,7 @@ Add also a length scale, `\Delta x/1 \mathrm{cm}`, to get the resulting physical
       <div class="column">
         <div id="comp-input" class="independent-value setvalue-group col-xs-12">
           <div class="value-input">
-            <p> <span class="math notranslate nohighlight">\( \hat{\mathcal{R}}= \)</span> <input class="value input-small" value="5"></p>
+            <p> <span class="math notranslate nohighlight">\( \hat{R}= \)</span> <input class="value input-small" value="5"></p>
 
           </div>
         </div>
