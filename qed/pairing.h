@@ -1582,11 +1582,13 @@ public:
 
         // local optical depth; 
         // NOTE: em field is stored during this call and does not need to be called again in interact()
+        timer.start_comp("optical_depth");
         float_p tau_int = iptr->comp_optical_depth(
                                   t1, 
                                   ux1, uy1, uz1, 
                                   ex, ey, ez, 
                                   bx, by, bz);
+        timer.stop_comp("optical_depth");
 
         // exponential waiting time between interactions
         double t_free = -log( rand() )*prob_norm_onebody/tau_int; //NOTE w1 here
@@ -1601,7 +1603,7 @@ public:
 
           timer.start_comp("interact");
           iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
-          timer.start_comp("interact");
+          timer.stop_comp("interact");
 
           // new energies; NOTE: could use container.m to get the mass
           m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
@@ -1654,12 +1656,14 @@ public:
             //      needs re-updating.
 
             // add prtcl 4
+            timer.start_comp("add_ems_prtcls");
             double ncop = 0.0;
             double z1 = rand();
             while(n4 > z1 + ncop) {
               cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
               ncop += 1.0;
             }
+            timer.stop_comp("add_ems_prtcls");
 
           //--------------------------------------------------
           } else { // single-body annihilation into t3 and t4 pair
