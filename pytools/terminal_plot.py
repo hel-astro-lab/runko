@@ -217,6 +217,8 @@ class TerminalPlot:
              vmin=-1,
              vmax=1,
              ):
+        
+        data = np.ma.masked_invalid(data) # mask Infs and NaNs out
 
         if self.col_mode:
             self.cmap = plt.get_cmap(cmap)
