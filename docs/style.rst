@@ -32,7 +32,7 @@ In general, we try to conform to the output of ``black`` as much as possible, bu
 
 Format a python script by running
 
-.. code-block:: bash:
+.. code-block:: bash
 
     black some.py
 
@@ -52,7 +52,7 @@ For details, see [CD1]_, [CD2]_.
 
 To generate the ``compile-commands.json`` with CMake, run it in the ``runko/build/`` directory with
 
-.. code-block:: bash:
+.. code-block:: bash
 
     cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 
@@ -70,14 +70,14 @@ Runko ships with a ``clang-format`` configuration file at the top level of the r
 Currently formatting is **not** applied automatically, but manually using ``clang-format`` for newly developed files is highly encouraged.
 To check if a file needs formatting,
 
-.. code-block:: bash:
+.. code-block:: bash
 
     clang-format -style=file --dry-run some.c++
 
 The output will show what needs to be changed, if any. To automatically apply the changes,
 
 
-.. code-block:: bash:
+.. code-block:: bash
 
     clang-format -style=file -i some.c++
 
@@ -101,7 +101,7 @@ in roughly the given order.
 A helper python script exists in `tools/` to perform the analysis for all files. Run the script (still in the ``runko/build/`` directory) with
 
 
-.. code-block:: bash:
+.. code-block:: bash
 
     python3 ../tools/run-clang-tidy.py -header-filter='.*' -checks='-*,modernize-*'
     python3 ../tools/run-clang-tidy.py -header-filter='.*' -checks='-*,performance-*'
@@ -118,7 +118,7 @@ Include-what-you-use
 
 To run include what you use, install (``brew install include-what-you-use`` on macOS), then run:
 
-.. code-block:: bash:
+.. code-block:: bash
 
     cmake -S . -B build-iwyu -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE=$(which include-what-you-use)
 

@@ -36,7 +36,7 @@ External libraries installed together with the framework include:
 * `corgi <https://github.com/natj/corgi>`_ massively-parallel grid infrastructure
 * `PyBind11 <https://github.com/pybind/pybind11>`_ binding library for seamless operability between C++ and Python
 * `cppitertools <https://github.com/ryanhaining/cppitertools>`_ for various python-like C++ iterators etc.
-* `ezh5 <https://github.com/natj/ezh5>`_ lazy template interface to HDF5 for easier usage (originally from `mileschen <https://github.com/mileschen360/ezh5>'_ )
+* `ezh5 <https://github.com/natj/ezh5>`_ lazy template interface to HDF5 for easier usage (originally from `mileschen <https://github.com/mileschen360/ezh5>`_ )
 * `mpi4cpp <https://github.com/natj/mpi4cpp>`_ high-level interface to MPI library
 
 
