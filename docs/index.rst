@@ -110,6 +110,7 @@ Key contributors that provided additional features and/or improvements include
    messagesize
    versions
    style
+   documentation
    debugging
    publications
 
