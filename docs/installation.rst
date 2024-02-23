@@ -28,6 +28,13 @@ You also need to update all the submodules (so that various branches are in sync
 
    git submodule update --recursive
 
+
+.. note::
+
+    Note that the above git command uses the ssh address of the repository (``git@github.com``) that requires that you have the ssh+GitHub access set. If you want to revert back to the old https access, replace the first command with ``git clone --recursive https://github.com/natj/runko.git``.
+
+
+
 External libraries
 ==================
 
@@ -254,7 +261,7 @@ When compiling and linking is finished, CMake runs few automated tests to check 
 
 
 Testing of the new installation
--------------------------------
+===============================
 
 Runko comes with multiple tests (found in ``runko/tests/``) that are ran after every compilation. In general, if you see "All tests passes.", after the compilation, your installation should be succesfull.
 
