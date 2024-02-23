@@ -90,9 +90,18 @@ Then restart the terminal to reload the newly added environment variables. After
 
 .. code-block:: bash
 
-    brew reinstall openmpi --build-from-source
+    brew reinstall openmpi -cc=gcc-13 --build-from-source
+
+and 
+
+.. code-block:: bash
+
+    brew reinstall mpi4py
 
 
+
+Manual installation of openmpi
+------------------------------
 
 Alternatively, if you want even more control of the operation, you can compile it manually yourself by running:
 
@@ -128,8 +137,11 @@ After `openmpi` is installed we also need to re-install `mpi4py` because it uses
 
 .. code-block:: bash
 
-   pip3 uninstall mpi4py
-   pip3 install mpi4py
+   pip3 uninstall mpi4py --break-system-packages
+   pip3 install mpi4py --break-system-packages
+
+
+Note the additional ``--break-system-packages`` keyword that is needed for the latest python versions ``>3.12`` to install packages with pip and homebrew/apt-get.
 
 
 Linux (Ubuntu)
