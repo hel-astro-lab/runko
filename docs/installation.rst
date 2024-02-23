@@ -9,8 +9,8 @@ Git + GitHub access with SSH
 
 Before we start, we need a developer level access to GitHub. Most importantly, you need to ensure that you can access git repositories via the SSH connection. Follow these tutorials to link your SSH key to your GitHub account:
 
-* https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
-* https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
+* `GitHub: Generating a new SSH key and adding it to the SSH Agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_
+* `GitHub: Adding the new SSH key to your GitHub account <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_
 
 
 Downloading/Cloning
@@ -31,7 +31,7 @@ You also need to update all the submodules (so that various branches are in sync
 
 .. note::
 
-    Note that the above git command uses the ssh address of the repository (``git@github.com``) that requires that you have the ssh+GitHub access set. If you want to revert back to the old https access, replace the first command with ``git clone --recursive https://github.com/natj/runko.git``.
+    Note that the above git command uses the ssh address of the repository (``git@github.com``) that requires that you have the SSH+GitHub access set. If you want to revert back to the old https access, replace the first command with ``git clone --recursive https://github.com/natj/runko.git``.
 
 
 
@@ -42,21 +42,21 @@ External libraries installed together with the framework include:
 
 * `corgi <https://github.com/natj/corgi>`_ massively-parallel grid infrastructure
 * `PyBind11 <https://github.com/pybind/pybind11>`_ binding library for seamless operability between C++ and Python
-* `cppitertools <https://github.com/ryanhaining/cppitertools>`_ for various python-like C++ iterators etc.
-* `ezh5 <https://github.com/natj/ezh5>`_ lazy template interface to HDF5 for easier usage (originally from `mileschen <https://github.com/mileschen360/ezh5>`_ )
 * `mpi4cpp <https://github.com/natj/mpi4cpp>`_ high-level interface to MPI library
+* `ezh5 <https://github.com/natj/ezh5>`_ lazy template interface to HDF5 for easier usage (originally from `mileschen <https://github.com/mileschen360/ezh5>`_ )
+* `cppitertools <https://github.com/ryanhaining/cppitertools>`_ for various python-like C++ iterators etc.
 
 
 Requirements
 ============
 
-Before proceeding with the code compilation, check that your system fulfills these requirements:
+Before proceeding with the code compilation, your system needs to fulfill these requirements:
 
 * Modern C++ compiler (such g++, `Clang++ <https://clang.llvm.org/>`_, etc.)
+* MPI message passing interface
 * python3 (with mpi4py, numpy, scipy, matplotlib)
 * `HDF5 <https://support.hdfgroup.org/HDF5/>`_ for I/O (serial mode is enough)
 * `CMake <https://cmake.org/>`_ (>v3.0) for building and compiling
-* MPI message passing interface
 
 
 .. note::
@@ -82,9 +82,9 @@ Make also sure that Xcode developer tools are installed by running
    xcode-select --install
 
 
-MPI needs to be compiled separately because, by default, it uses the AppleClang compiler (instead of the `g++` that you just installed).
+MPI needs to be compiled separately because, by default, it uses the `AppleClang` compiler (instead of the `g++` that you just installed).
 
-You can compile OpenMPI via homebrew by first modifying your `~/.bash_profile` to link the new compilers:
+You can compile OpenMPI via homebrew by first modifying your ``~/.bash_profile`` to link the new compilers:
 
 .. code-block:: bash
 
@@ -93,7 +93,7 @@ You can compile OpenMPI via homebrew by first modifying your `~/.bash_profile` t
    export OMPI_CC=gcc-13
    export OMPI_CXX=g++-13
 
-Then restart the terminal to reload the newly added environment variables. After restarting, install `openmpi` from source with
+Then restart the terminal to reload the newly added environment variables. After restarting, install `OpenMPI` from source with
 
 .. code-block:: bash
 
@@ -110,7 +110,7 @@ and
 Linux (Ubuntu)
 --------------
 
-When compiling runko and running the scripts, it is critical that you always use the same Python interpreter, C/C++ compiler, and associated OpenMPI distribution, otherwise this can give several errors during the installation. For this reason we recommend using vanilla `python` and disabling anaconda (if you are using it) by commenting out its activation in your ``~/.bashrc`` file.
+When compiling runko and running the scripts, it is critical that you always use the same Python interpreter, C/C++ compiler, and associated OpenMPI distribution, otherwise this can give several errors during the installation. For this reason we recommend using vanilla ``python3`` and disabling anaconda (if you are using it) by commenting out its activation in your ``~/.bashrc`` file.
 
 .. code-block:: bash
 
@@ -118,7 +118,7 @@ When compiling runko and running the scripts, it is critical that you always use
    # ...
    # <<< conda initialize <<<
 
-You may find it also necessary to delete folders containing the older Python versions than your current one at `/usr/bin/python3.*`. In order to get a completely clean OpenMPI distribution first run:
+You may find it also necessary to delete folders containing the older Python versions than your current one at ``/usr/bin/python3.*``. In order to get a completely clean OpenMPI distribution first run:
 
 .. code-block:: bash
 
@@ -164,7 +164,7 @@ Alternatively, if you want even more control of the operation, you can compile i
    make clean
 
 
-This installs OpenMPI to `~/bin/` and exports the correct directories so that the `mpic++` compiler wrapper becomes available. You should then add to your `.bash_profile` (or `.zshrc` in latest MacOS) these exports (in case you need to re-compile the library):
+This installs OpenMPI to ``~/bin/`` and exports the correct directories so that the ``mpic++`` compiler wrapper becomes available. You should then add to your ``.bash_profile`` (or ``.zshrc`` in latest MacOS) these exports (in case you need to re-compile the library):
 
 .. code-block:: bash
 
@@ -176,7 +176,7 @@ This installs OpenMPI to `~/bin/` and exports the correct directories so that th
    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/bin/$MPI_IMPL/lib
 
 
-After `openmpi` is installed we also need to re-install `mpi4py` because it uses the system-default mpi installation
+After `OpenMPI` is installed we also need to re-install ``mpi4py`` because it uses the system-default mpi installation
 
 .. code-block:: bash
 
@@ -190,16 +190,11 @@ Note the additional ``--break-system-packages`` keyword that is needed for the l
 Python libraries
 ================
 
-All the python requirements can be installed via `pip` as
+All the python requirements can be installed via ``pip3`` as
 
 .. code-block:: bash
 
-   pip install -r requirements.txt
-
-.. note::
-
-    If you had to manually install MPI in the previous section, then remember to re-install mpi4py.
-
+   pip3 install -r requirements.txt
 
 
 Compiling
@@ -221,9 +216,9 @@ Then make sure that everything works, check the output of
 
 This should indicate that the newly installed compilers are used.
 
-You should also put this part into your `~/.bashrc` (or `~/.zshrc` in the latest MacOS) so that correct compilers are automatically exported during the startup.
+You should also put this part into your ``~/.bashrc`` (or ``~/.zshrc`` in the latest MacOS) so that correct compilers are automatically exported during the startup.
 
-You should also add the python script directories into `PYTHONPATH` environment variable. Modify your `~/.zshrc` (MacOS) or `~/.bashrc` (Linux) by appending `corgi` and `runko` libraries to the path by exporting
+You should also add the python script directories into ``PYTHONPATH`` environment variable. Modify your ``~/.zshrc`` (MacOS) or ``~/.bashrc`` (Linux) by appending ``corgi`` and ``runko`` libraries to the path by exporting
 
 .. code-block:: bash
 
@@ -234,10 +229,10 @@ You should also add the python script directories into `PYTHONPATH` environment 
     PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/bindings/old"
     export PYTHONPATH
 
-where `path2repo` points to the location where you cloned the repository (i.e. path to `runko` directory). Note that there is no trailing slash `/` in the commands. As an example, the path can be e.g., `/Users/natj/runko`.
+where ``path2repo`` points to the location where you cloned the repository (i.e. path to ``runko`` directory). Note that there is no trailing slash ``/`` symbol in the commands. As an example, the path can be e.g., ``/Users/natj/runko``.
 
 
-Next we can proceed to compiling. Out-of-source builds are recommended: inside the repository directory, make a new `build` directory, go into that, and only then run the CMake configuration commands. This can be done by running (inside `runko` directory):
+Next we can proceed to compiling. Out-of-source builds are recommended: inside the repository directory, make a new ``build`` directory, go into that, and only then run the CMake configuration commands. This can be done by running (inside ``runko`` directory):
 
 .. code-block:: bash
 
@@ -256,13 +251,13 @@ When compiling and linking is finished, CMake runs few automated tests to check 
 
 .. note::
 
-    Since the compiling can take quite a while, you can use the multi-core compilation by passing make the `-j8` option (or whatever number of tasks you want).
+    Since the compiling can take quite a while, you can use the multi-core compilation by ``make -j8`` (or whatever number of tasks you want).
 
 
 
 Testing of the new installation
 ===============================
 
-Runko comes with multiple tests (found in ``runko/tests/``) that are ran after every compilation. In general, if you see "All tests passes.", after the compilation, your installation should be succesfull.
+Runko comes with multiple tests (found in ``runko/tests/``) that are ran after every compilation. In general, if you see "All tests passed.", after the compilation, your installation should be succesfull.
 
 The next step is to run an actual simulation with the code. For that, see the premade projects setups in ``runko/projects/``.
