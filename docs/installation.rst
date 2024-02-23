@@ -100,8 +100,44 @@ and
 
 
 
-Manual installation of openmpi
-------------------------------
+Linux (Ubuntu)
+--------------
+
+When compiling runko and running the scripts, it is critical that you always use the same Python interpreter, C/C++ compiler, and associated OpenMPI distribution, otherwise this can give several errors during the installation. For this reason we recommend using vanilla `python` and disabling anaconda (if you are using it) by commenting out its activation in your ``~/.bashrc`` file.
+
+.. code-block:: bash
+
+   # >>> conda initialize >>>
+   # ...
+   # <<< conda initialize <<<
+
+You may find it also necessary to delete folders containing the older Python versions than your current one at `/usr/bin/python3.*`. In order to get a completely clean OpenMPI distribution first run:
+
+.. code-block:: bash
+
+   sudo apt-get remove mpich libopenmpi-dev openmpi-bin
+   sudo apt-get update && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove
+
+Then run:
+
+.. code-block:: bash
+
+   sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
+   sudo apt-get install libopenmpi-dev libhdf5-serial-dev hdf5-helpers openmpi-bin libblas-dev liblapack-dev python3 python3-pip
+
+.. note::
+
+   Recent Ubuntu (bionic) comes with gcc-7 which makes the installation easier. For previous versions you, additionally, need to install gcc-7 (or 9) and manually compile MPI similar to the MacOS discussed above.
+
+You also need to export the HDF5 library location (since it is non-standard at least in Ubuntu) with
+
+.. code-block:: bash
+
+   export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial
+
+
+Manual installation of OpenMPI (optional)
+-----------------------------------------
 
 Alternatively, if you want even more control of the operation, you can compile it manually yourself by running:
 
@@ -142,44 +178,6 @@ After `openmpi` is installed we also need to re-install `mpi4py` because it uses
 
 
 Note the additional ``--break-system-packages`` keyword that is needed for the latest python versions ``>3.12`` to install packages with pip and homebrew/apt-get.
-
-
-Linux (Ubuntu)
---------------
-
-When compiling runko and running the scripts, it is critical that you always use the same Python interpreter, C/C++ compiler, and associated OpenMPI distribution, otherwise this can give several errors during the installation. For this reason we recommend using vanilla `python` and disabling anaconda (if you are using it) by commenting out its activation in your ``~/.bashrc`` file.
-
-.. code-block:: bash
-
-   # >>> conda initialize >>>
-   # ...
-   # <<< conda initialize <<<
-
-You may find it also necessary to delete folders containing the older Python versions than your current one at `/usr/bin/python3.*`. In order to get a completely clean OpenMPI distribution first run:
-
-.. code-block:: bash
-
-   sudo apt-get remove mpich libopenmpi-dev openmpi-bin
-   sudo apt-get update && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove
-
-Then run:
-
-.. code-block:: bash
-
-   sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
-   sudo apt-get install libopenmpi-dev libhdf5-serial-dev hdf5-helpers openmpi-bin libblas-dev liblapack-dev python3 python3-pip
-
-.. note::
-
-   Recent Ubuntu (bionic) comes with gcc-7 which makes the installation easier. For previous versions you, additionally, need to install gcc-7 (or 9) and manually compile MPI similar to the MacOS discussed above.
-
-You also need to export the HDF5 library location (since it is non-standard at least in Ubuntu) with
-
-.. code-block:: bash
-
-   export HDF5_INCLUDE_PATH=/usr/include/hdf5/serial
-
-Finally, you can test that your Runko installation in Python is working properly by executing the test described in `runko/projects/pic-shocks/README.md`.
 
 
 Python libraries
@@ -254,3 +252,10 @@ When compiling and linking is finished, CMake runs few automated tests to check 
     Since the compiling can take quite a while, you can use the multi-core compilation by passing make the `-j8` option (or whatever number of tasks you want).
 
 
+
+Testing of the new installation
+-------------------------------
+
+Runko comes with multiple tests (found in ``runko/tests/``) that are ran after every compilation. In general, if you see "All tests passes.", after the compilation, your installation should be succesfull.
+
+The next step is to run an actual simulation with the code. For that, see the premade projects setups in ``runko/projects/``.
