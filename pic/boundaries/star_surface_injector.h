@@ -48,11 +48,19 @@ public:
   using fields::Conductor<D>::update_b;
   using fields::Conductor<D>::update_e;
 
+  double temp_pairs = 0.2; // pair injection temperature
+  double temp_phots = 0.001; // photon injection temperature
+
+  double ninj_pairs = 0.05; // pair injection rate (factor in front of E/q
+  double ninj_phots = 0.0;  // photon injection rate per cell per step
+
+  double ninj_min_pairs = 0.01; // minimum pairs per cell per step to inject
+  double ninj_min_phots = 0.0;  // minimum photons per cell per step to inject
+
   Star() :
     gen(42), // gen(rd() ) 
     uni_dis(0.0, 1.0)
   { }
-
 
   // random numbers between [0, 1[
   float_p rand() { return uni_dis(gen); };

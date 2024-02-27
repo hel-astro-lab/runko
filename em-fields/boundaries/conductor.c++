@@ -6,6 +6,8 @@
 
 using std::min;
 using std::max;
+using std::abs;
+using std::sqrt;
 
 // General dipole formula in 2D cartesian coordinates
 template<>
@@ -24,14 +26,14 @@ double fields::Conductor<2>::dipole(
   double muy = p2;
   double muz = p3; //*sin(phase) + p3*cos(phase);
 
-  double rad = std::sqrt(x*x + y*y + z*z);
+  double rad = std::sqrt(x*x + y*y);
 
   // mu . r
-  double mudotr = mux*x + muy*y + muz*z;
+  double mudotr = mux*x + muy*y;
 
    if     (dim == 0) return 3.0*x*mudotr/( pow(rad,5) + EPS) - mux/(pow(rad,3) + EPS); //x
    else if(dim == 1) return 3.0*y*mudotr/( pow(rad,5) + EPS) - muy/(pow(rad,3) + EPS); //y
-   else if(dim == 2) return 0.0; //3.0*z*mudotr/( pow(rad,5) + EPS) - muz/(pow(rad,3) + EPS); //y
+   else if(dim == 2) return 0.0; 
    return 0.0;
 }
 
@@ -64,14 +66,14 @@ double fields::Conductor<3>::dipole(
 }
 
 
-template<>
-void fields::Conductor<2>::insert_em(
-    fields::Tile<2>& tile)
+template<size_t D>
+void fields::Conductor<D>::insert_em(
+    fields::Tile<D>& tile)
 {
 
   // Tile limits
   auto mins = tile.mins;
-  //auto maxs = tile.maxs;
+  auto maxs = tile.maxs;
 
   auto& yee = tile.get_yee();
 
@@ -79,53 +81,55 @@ void fields::Conductor<2>::insert_em(
   float_m iglob, jglob, kglob;
   float_m xr,yr,zr;
   float_m vx,vy;
+  toolbox::Vec3<float_m> r, Bd; // tmp variables
 
   // angular velocity
   float_m Omega = 2.0*PI/period;
-  toolbox::Vec3<float_m> Om(0.0, Omega, 0.0); // Omega unit vector along y-axis
-                                                
-  toolbox::Vec3<float_m> r, Bd; // tmp variables
-
-
   if(period < EPS) Omega = 0.0; // reality check
+                                  
+  toolbox::Vec3<float_m> Om;
+  if(D == 2) Om.set(0.0, Omega, 0.0); // Omega unit vector along y-axis
+  if(D == 3) Om.set(0.0, 0.0, Omega); // Omega unit vector along z-axis
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
-  // set transverse directions to zero to make this conductor
-  const int k = 0; 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
 
-    //-----------
+
+  int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
+  int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
+  int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
+  
+  for(int k=-3; k<nz_tile+2; k++) 
+  for(int j=-3; j<ny_tile+2; j++) 
+  for(int i=-3; i<nx_tile+2; i++) {
+
     // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    //kglob = static_cast<float_m>(k) + mins[2];
-
+    iglob = (D>=1) ? i + mins[0] : 0;
+    jglob = (D>=2) ? j + mins[1] : 0;
+    kglob = (D>=3) ? k + mins[2] : 0;
 
     //--------------------------------------------------
     // magnetic field
     
     // x coord staggering for Bx
-    xr = coord.bx().x(iglob);
-    yr = coord.bx().y(jglob);
-    zr = 0;
+    xr = (D>=1) ? coord.bx().x(iglob) : 0;
+    yr = (D>=2) ? coord.bx().y(jglob) : 0;
+    zr = (D>=3) ? coord.bx().z(kglob) : 0;
     bxd = B0*dipole(xr,yr,zr,0);
 
     // y coord staggering for By
-    xr = coord.by().x(iglob);
-    yr = coord.by().y(jglob);
-    zr = 0;
+    xr = (D>=1) ? coord.by().x(iglob) : 0;
+    yr = (D>=2) ? coord.by().y(jglob) : 0;
+    zr = (D>=3) ? coord.by().z(kglob) : 0;
     byd = B0*dipole(xr,yr,zr,1);
 
     // z coord staggering for Bz
-    xr = coord.bz().x(iglob);
-    yr = coord.bz().y(jglob);
-    zr = 0;
+    xr = (D>=1) ? coord.bz().x(iglob) : 0;
+    yr = (D>=2) ? coord.bz().y(jglob) : 0;
+    zr = (D>=3) ? coord.bz().z(kglob) : 0;
     bzd = B0*dipole(xr,yr,zr,2);
 
-    // NOTE flipping from xyz to xy plane
     yee.bx(i,j,k) = bxd;
     yee.by(i,j,k) = byd;
     yee.bz(i,j,k) = bzd;
@@ -135,50 +139,49 @@ void fields::Conductor<2>::insert_em(
 
     //--------------------------------------------------
     // x coord staggering for Ex
-    xr = coord.ex().x(iglob);
-    yr = coord.ex().y(jglob);
-    zr = 0.0; 
-    r.set(xr,yr,zr);
+    //xr = (D>=1) ? coord.ex().x(iglob) : 0;
+    //yr = (D>=2) ? coord.ex().y(jglob) : 0;
+    //zr = (D>=3) ? coord.ex().z(kglob) : 0;
+    //r.set(xr,yr,zr);
 
-    Bd(0) = B0*dipole(xr,yr,zr,0);
-    Bd(1) = B0*dipole(xr,yr,zr,1);
-    Bd(2) = B0*dipole(xr,yr,zr,2);
+    //Bd(0) = B0*dipole(xr,yr,zr,0);
+    //Bd(1) = B0*dipole(xr,yr,zr,1);
+    //Bd(2) = B0*dipole(xr,yr,zr,2);
 
-    auto vrot1 = cross(Om, r);
-    auto erot1 = -1.0f*cross(vrot1, Bd);
-    exd = erot1(0); // x component
+    //auto vrot1 = cross(Om, r);
+    //auto erot1 = -1.0f*cross(vrot1, Bd);
+    //exd = erot1(0); // x component
 
-    //--------------------------------------------------
-    // y coord staggering for Ey
-    xr = coord.ey().x(iglob);
-    yr = coord.ey().y(jglob);
-    zr = 0; 
-    r.set(xr,yr,zr);
+    ////--------------------------------------------------
+    //// y coord staggering for Ey
+    //xr = (D>=1) ? coord.ey().x(iglob) : 0;
+    //yr = (D>=2) ? coord.ey().y(jglob) : 0;
+    //zr = (D>=3) ? coord.ey().z(kglob) : 0;
+    //r.set(xr,yr,zr);
 
-    Bd(0) = B0*dipole(xr,yr,zr,0);
-    Bd(1) = B0*dipole(xr,yr,zr,1);
-    Bd(2) = B0*dipole(xr,yr,zr,2);
+    //Bd(0) = B0*dipole(xr,yr,zr,0);
+    //Bd(1) = B0*dipole(xr,yr,zr,1);
+    //Bd(2) = B0*dipole(xr,yr,zr,2);
 
-    auto vrot2 = cross(Om, r);
-    auto erot2 = -1.0f*cross(vrot2, Bd);
-    eyd = erot2(1); // x component
+    //auto vrot2 = cross(Om, r);
+    //auto erot2 = -1.0f*cross(vrot2, Bd);
+    //eyd = erot2(1); // y component
 
-    //--------------------------------------------------
-    // z coord staggering for Ez
-    xr = coord.ez().x(iglob);
-    yr = coord.ez().y(jglob);
-    zr = 0; //coord.z(kglob, 0.0);
-    r.set(xr,yr,zr);
-            
-    Bd(0) = B0*dipole(xr,yr,zr,0);
-    Bd(1) = B0*dipole(xr,yr,zr,1);
-    Bd(2) = B0*dipole(xr,yr,zr,2);
-            
-    auto vrot3 = cross(Om, r);
-    auto erot3 = -1.0f*cross(vrot3, Bd);
-    ezd = erot3(2); // x component
+    ////--------------------------------------------------
+    //// z coord staggering for Ez
+    //xr = (D>=1) ? coord.ez().x(iglob) : 0;
+    //yr = (D>=2) ? coord.ez().y(jglob) : 0;
+    //zr = (D>=3) ? coord.ez().z(kglob) : 0;
+    //r.set(xr,yr,zr);
+    //        
+    //Bd(0) = B0*dipole(xr,yr,zr,0);
+    //Bd(1) = B0*dipole(xr,yr,zr,1);
+    //Bd(2) = B0*dipole(xr,yr,zr,2);
+    //        
+    //auto vrot3 = cross(Om, r);
+    //auto erot3 = -1.0f*cross(vrot3, Bd);
+    //ezd = erot3(2); // z component
 
-    // TODO not set
     //yee.ex(i,j,k) = exd;
     //yee.ey(i,j,k) = eyd;
     //yee.ez(i,j,k) = ezd;
@@ -188,119 +191,9 @@ void fields::Conductor<2>::insert_em(
 
 
 
-
-template<>
-void fields::Conductor<3>::insert_em(
-    fields::Tile<3>& tile)
-{
-
-  // Tile limits
-  auto mins = tile.mins;
-  //auto maxs = tile.maxs;
-
-  auto& yee = tile.get_yee();
-
-  float_m bxd, byd, bzd, exd, eyd, ezd;
-  float_m iglob, jglob, kglob;
-  float_m xr,yr,zr;
-  float_m vx,vy;
-
-  // angular velocity
-  float_m Omega = 2.0*PI/period;
-
-  if(period < EPS) Omega = 0.0; // reality check
-
-  // helper class for staggered grid positions
-  StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
-
-  // set transverse directions to zero to make this conductor
-  for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+2; k++) 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
-
-    //-----------
-    // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    kglob = static_cast<float_m>(k) + mins[2];
-
-
-    //--------------------------------------------------
-    // magnetic field
-    
-    // x coord staggering for Bx
-    xr = coord.bx().x(iglob);
-    yr = coord.bx().y(jglob);
-    zr = coord.bx().z(kglob);
-    bxd = B0*dipole(xr,yr,zr,0);
-
-    // y coord staggering for By
-    xr = coord.by().x(iglob);
-    yr = coord.by().y(jglob);
-    zr = coord.by().z(kglob);
-    byd = B0*dipole(xr,yr,zr,1);
-
-    // z coord staggering for Bz
-    xr = coord.bz().x(iglob);
-    yr = coord.bz().y(jglob);
-    zr = coord.bz().z(kglob);
-    bzd = B0*dipole(xr,yr,zr,2);
-
-    yee.bx(i,j,k) = bxd;
-    yee.by(i,j,k) = byd;
-    yee.bz(i,j,k) = bzd;
-
-
-    //--------------------------------------------------
-    // electric field
-
-    // x coord staggering for Ex
-    xr = coord.ex().x(iglob);
-    yr = coord.ex().y(jglob);
-    zr = coord.ex().z(kglob);
-    bzd = B0*dipole(xr,yr,zr,2);
-    
-    vx = -Omega*yr;
-    vy = +Omega*xr;
-    exd = -vy*bzd;
-
-    // y coord staggering for Ey
-    xr = coord.ey().x(iglob);
-    yr = coord.ey().y(jglob);
-    zr = coord.ey().z(kglob);
-    bzd = B0*dipole(xr,yr,zr,2);
-
-    vx = -Omega*yr;
-    vy = +Omega*xr;
-    eyd = vx*bzd;
-
-    // z coord staggering for Ez
-    xr = coord.ez().x(iglob);
-    yr = coord.ez().y(jglob);
-    zr = coord.ez().z(kglob);
-    bxd = B0*dipole(xr,yr,zr,0);
-    byd = B0*dipole(xr,yr,zr,1);
-
-    vx = -Omega*yr;
-    vy = +Omega*xr;
-    ezd = -vx*byd + vy*bxd;
-
-    yee.ex(i,j,k) = exd;
-    yee.ey(i,j,k) = eyd;
-    yee.ez(i,j,k) = ezd;
-
-    //yee.jx(i,j,k) = 0.0;
-    //yee.jy(i,j,k) = 0.0;
-    //yee.jz(i,j,k) = 0.0;
-  }
-
-}
-
-
-
-template<>
-void fields::Conductor<2>::update_b(
-    fields::Tile<2>& tile)
+template<size_t D>
+void fields::Conductor<D>::update_b(
+    fields::Tile<D>& tile)
 {
 
   float_m bxd, byd, bzd;
@@ -318,6 +211,9 @@ void fields::Conductor<2>::update_b(
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
   // smoothing scales for different components
+  //
+  // NOTE: keeping here for historical purposes; not used
+  //
   //float_m delta = 1.0;  //from conductor.h
   //
   //float_m delta_erad   = 1.0*delta; 
@@ -337,57 +233,94 @@ void fields::Conductor<2>::update_b(
   bool right = false;
   bool top   = false;
   bool bot   = false;
-  
-  if( mins[1] < 1 )    bot   = true; 
-  if( mins[0] < 1 )    left  = true; 
-  if( maxs[1] > Ny-1 ) top   = true; 
-  if( maxs[0] > Nx-1 ) right = true; 
+  bool fro   = false;
+  bool bac   = false;
 
+  if(D == 2){
+    if( mins[1] < 1 )    bot   = true; 
+    if( mins[0] < 1 )    left  = true; 
+    if( maxs[1] > Ny-1 ) top   = true; 
+    if( maxs[0] > Nx-1 ) right = true; 
+  } else if (D == 3) {
+    if( mins[0] < 1 )    left  = true; 
+    if( maxs[0] > Nx-1 ) right = true; 
+    if( mins[1] < 1 )    fro   = true; 
+    if( maxs[1] > Ny-1 ) bac   = true; 
+    if( mins[2] < 1 )    bot   = true; 
+    if( maxs[2] > Nz-1 ) top   = true; 
+  }
 
   //--------------------------------------------------
   // additionally, define quantities for the closed field line region
   float_m sint = radius_pc/radius; // sin\theta = R_pc/R_star
   float_m Rbc  = radius/sint/sint;  
+  float_m rad, eta;
 
-  // set transverse directions to zero to make this conductor
-  int k = 0;
-  //for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2])+1; k++) 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
+  //--------------------------------------------------
+  // loop over grid
+  int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
+  int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
+  int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
-    //-----------
+  for(int k=-3; k<nz_tile+2; k++) 
+  for(int j=-3; j<ny_tile+2; j++) 
+  for(int i=-3; i<nx_tile+2; i++) {
+      
     // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    //kglob = static_cast<float_m>(k) + mins[2];
+    iglob = (D>=1) ? i + mins[0] : 0;
+    jglob = (D>=2) ? j + mins[1] : 0;
+    kglob = (D>=3) ? k + mins[2] : 0;
 
     // spherical coordinates 
-    xr0 = coord.rh().x(iglob);
-    yr0 = coord.rh().y(jglob);
-    zr0 = 0;
+    xr0 = (D>=1) ? coord.rh().x(iglob) : 0;
+    yr0 = (D>=2) ? coord.rh().y(jglob) : 0;
+    zr0 = (D>=3) ? coord.rh().z(kglob) : 0;
 
+    //--------------------------------------------------
+    // regional checks
+    
     // check if we are inside star
     bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.1*radius;
 
     // closed field line zone
-    float_m rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
-    sint = std::abs(xr0)/rad; // sin\theta
-    float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
+    rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
+    sint = D == 2 ? abs(xr0)/rad : sqrt(xr0*xr0 + yr0*yr0)/rad; // sin\theta
+    eta  = rad/Rbc; // dimensionless dipole coordinate radius
     bool closed_field_zone = eta < 0.9*sint*sint; // some tolerance for the boundaries
-    //std::cout << "update_b: z" << closed_field_zone << " rad:" << rad << " sint " << sint << " eta " << eta << "\n";
+                                                    
+    //std::cout << "update_b: z" << closed_field_zone 
+    //          << " rad:" << rad 
+    //          << " sint " << sint 
+    //          << " eta " << eta 
+    //          << "\n";
 
-    if( inside_star ||
-        (bot    && j < 3) ||
-        (top)             || //    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) ||
-        (left   && i < 5) ||
-        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 5) 
+    // sides
+    bool inside_bot   = (D == 2) ? jglob < 3    : kglob < 3; // y or z direction flip 
+    bool inside_top   = (D == 2) ? jglob > Ny-1 : kglob > Nz-1; // y or z direction flip 
+
+    bool inside_left  = left  && iglob < 3; 
+    bool inside_right = right && iglob > Nx-2; 
+
+    bool inside_front = fro && jglob < 3; 
+    bool inside_back  = bac && jglob > Ny-2; 
+
+
+    // operate inside the region only
+    if( inside_star  ||
+        inside_bot   ||
+        top          ||  // selecting larger chunk for top since we damp outgoing waves there
+        inside_left  ||
+        inside_right ||
+        inside_front ||
+        inside_back 
       ) {
 
       //--------------------------------------------------
       // Bx: x coord staggering for Bx
-      xr = coord.bx().x(iglob);
-      yr = coord.bx().y(jglob);
-      r = std::sqrt( xr*xr + yr*yr);
+      xr = (D>=1) ? coord.bx().x(iglob) : 0;
+      yr = (D>=2) ? coord.bx().y(jglob) : 0;
+      zr = (D>=3) ? coord.bx().z(kglob) : 0;
+      r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       // interior diple field
       bxd = B0*dipole(xr,yr,zr0,0);
@@ -402,6 +335,9 @@ void fields::Conductor<2>::update_b(
       bxnew = s*bxd + (1.0f-s)*bxi;
 
       // Bx radial  component 
+      // NOTE i've sketched a possible code here to split B_r and B_\perp update
+      //      Seems like it is not needed, though.
+      //
       //s = shape(r, radius-offs_brad, delta_brad);
       //bxrad =     s*(bxd - (bxd*xr + byd*yr + bzd*zr)*xr/r/r)
       //        (1-s)*(bxi - (bxi*xr + byi*yr + bzi*zr)*xr/r/r);
@@ -414,9 +350,10 @@ void fields::Conductor<2>::update_b(
 
       //--------------------------------------------------
       // By: y coord staggering for By
-      xr = coord.by().x(iglob);
-      yr = coord.by().y(jglob);
-      r = std::sqrt( xr*xr + yr*yr );
+      xr = (D>=1) ? coord.by().x(iglob) : 0;
+      yr = (D>=2) ? coord.by().y(jglob) : 0;
+      zr = (D>=3) ? coord.by().z(kglob) : 0;
+      r = std::sqrt( xr*xr + yr*yr +zr*zr );
 
       // interior diple field
       byd = B0*dipole(xr,yr,zr0,1);
@@ -427,9 +364,10 @@ void fields::Conductor<2>::update_b(
 
       //--------------------------------------------------
       // Bz: z coord staggering for Bz
-      xr = coord.bz().x(iglob);
-      yr = coord.bz().y(jglob);
-      r = std::sqrt( xr*xr + yr*yr );
+      xr = (D>=1) ? coord.bz().x(iglob) : 0;
+      yr = (D>=2) ? coord.bz().y(jglob) : 0;
+      zr = (D>=3) ? coord.bz().z(kglob) : 0;
+      r = std::sqrt( xr*xr + yr*yr +zr*zr );
 
       // interior diple field
       bzd = B0*dipole(xr,yr,zr0,2);
@@ -445,22 +383,32 @@ void fields::Conductor<2>::update_b(
         yee.by(i,j,k) = bynew;
         yee.bz(i,j,k) = bznew;
 
-      } else {
+      } else if(top) {
         // manual damping of outgoing waves
         // poor-man's version of PML absorbing boundary conditions
 
-        float_m tile_len = static_cast<float>(tile.mesh_lengths[1]);
+        float_m tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
+        float_m h        = (D == 2 ) ? jglob : kglob; // height
+                                                        
+        // ver 1; tanh
+        float_m radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+        float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
+        s = shape(h, radius_ext, delta_ext); // tanh
 
-        //float_m radius_ext = Ny - 0.5*tile_len; // halfway of the topmost tile
-        //float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
-        //s = shape(jglob, radius_ext, delta_ext); // tanh
+        // ver2
+        //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+        //float_m delta_ext = 1.0*tile_len; // full tile size
+        //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
 
-        float_m radius_ext = mins[1]; // some fraction of the topmost tile
-        float_m delta_ext = 1.0*tile_len; // fraction of tile size
-        s = 1.0f - std::max(0.0f, std::min(1.0f, (jglob-radius_ext)/delta_ext) ); // RELU
+        //ver 3; mimic lambda profile from PML
+        //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+        //s = min(1.0f, lam);
 
-        //std::cout << "ramp: " << s << " j " << jglob << " - " << radius_ext << " / " << delta_ext << "\n";
+        //ver 4; exp profile
+        //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
+        //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
 
+        // damp to dipole solution
         yee.bx(i,j,k) = s*yee.bx(i,j,k) + (1.0f-s)*bxnew;
         yee.by(i,j,k) = s*yee.by(i,j,k) + (1.0f-s)*bynew;
         yee.bz(i,j,k) = s*yee.bz(i,j,k) + (1.0f-s)*bznew;
@@ -471,115 +419,9 @@ void fields::Conductor<2>::update_b(
 
 
 
-
-
-template<>
-void fields::Conductor<3>::update_b(
-    fields::Tile<3>& tile)
-{
-
-  float_m bxd, byd, bzd;
-  float_m bxi, byi, bzi;
-  float_m bxnew, bynew, bznew;
-
-  float_m iglob, jglob, kglob;
-
-  float_m xr0,yr0,zr0;
-  float_m xr,yr,zr;
-
-  float_m s,r;
-
-  // helper class for staggered grid positions
-  StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
-
-
-  // smoothing scales for different components
-  //float_m delta = 1.0;  //from conductor.h
-  //
-  //float_m delta_erad   = 1.0*delta; 
-  //float_m delta_eperp  = 0.5*delta;
-  //float_m delta_brad   = 1.0*delta;
-  //float_m delta_bperp  = 1.0*delta;
-
-  // Tile limits
-  auto mins = tile.mins;
-  //auto maxs = tile.maxs;
-
-  auto& yee = tile.get_yee();
-
-  // set transverse directions to zero to make this conductor
-  for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+2; k++) 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
-
-    //-----------
-    // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    kglob = static_cast<float_m>(k) + mins[2];
-
-    // spherical coordinates 
-    xr0 = coord.rh().x(iglob);
-    yr0 = coord.rh().y(jglob);
-    zr0 = coord.rh().z(kglob);
-
-    // modify fields if we are inside 2R_* radius
-    if(std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) < 2.0*radius) {
-
-      //--------------------------------------------------
-      // Bx: x coord staggering for Bx
-      xr = coord.bx().x(iglob);
-      yr = coord.bx().y(jglob);
-      zr = coord.bx().z(kglob);
-      r = std::sqrt( xr*xr + yr*yr + zr*zr );
-
-      // interior diple field
-      bxd = B0*dipole(xr,yr,zr,0);
-      bxi = yee.bx(i,j,k);
-      s = shape(r, radius, delta);
-      bxnew = s*bxd  + (1-s)*bxi;
-
-      //--------------------------------------------------
-      // By: y coord staggering for By
-      xr = coord.by().x(iglob);
-      yr = coord.by().y(jglob);
-      zr = coord.by().z(kglob);
-      r = std::sqrt( xr*xr + yr*yr + zr*zr );
-
-      // interior diple field
-      byd = B0*dipole(xr,yr,zr,1);
-      byi = yee.by(i,j,k);
-      s = shape(r, radius, delta);
-      bynew = s*byd  + (1-s)*byi;
-
-
-      //--------------------------------------------------
-      // Bz: z coord staggering for Bz
-      xr = coord.bz().x(iglob);
-      yr = coord.bz().y(jglob);
-      zr = coord.bz().z(kglob);
-      r = std::sqrt( xr*xr + yr*yr + zr*zr );
-
-      // interior diple field
-      //bxd = B0*dipole(xr,yr,zr,0);
-      //byd = B0*dipole(xr,yr,zr,1);
-      bzd = B0*dipole(xr,yr,zr,2);
-      bzi = yee.bz(i,j,k);
-      s = shape(r, radius, delta);
-      bznew = s*bzd  + (1-s)*bzi;
-
-
-      //--------------------------------------------------
-      yee.bx(i,j,k) = bxnew;
-      yee.by(i,j,k) = bynew;
-      yee.bz(i,j,k) = bznew;
-    }
-  }
-}
-
-template<>
-void fields::Conductor<2>::update_e(
-    fields::Tile<2>& tile)
+template<size_t D>
+void fields::Conductor<D>::update_e(
+    fields::Tile<D>& tile)
 {
   float_m exd, eyd, ezd;
   float_m bxd, byd, bzd;
@@ -592,23 +434,24 @@ void fields::Conductor<2>::update_e(
   float_m xr,yr,zr;
 
   float_m vx,vy;
-  float_m s;
+  float_m s, rcyl;
 
 
   // angular velocity
+  toolbox::Vec3<float_m> r, Bd, Om; // tmp variables
+                                  
   float_m Omega = 2.0*PI/period;
-  toolbox::Vec3<float_m> Om(0.0, Omega, 0.0); // Omega unit vector along y-axis
-                                                
-  toolbox::Vec3<float_m> r, Bd; // tmp variables
-                                                
-
   if(period < EPS) Omega = 0.0; // reality check
+
+  if(D == 2) Om.set(0.0, Omega, 0.0); // Omega unit vector along y-axis
+  if(D == 3) Om.set(0.0, 0.0, Omega); // Omega unit vector along z-axis
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
-
   // smoothing scales for Brad/Bperp components
+  // NOTE: keeping here for historical purposes; not used
+  //
   //float_m delta = 2.0;  // from conductor.h
   //
   //float_m delta_erad   = 1.0*delta; 
@@ -621,36 +464,50 @@ void fields::Conductor<2>::update_e(
   auto maxs = tile.maxs;
 
   auto& yee = tile.get_yee();
-    
+
   //-------------------------------------------------- 
   // null sides to prevent periodic bc conditions
   bool left  = false;
   bool right = false;
   bool top   = false;
   bool bot   = false;
-  
-  if( mins[1] < 1 )    bot   = true; 
-  if( mins[0] < 1 )    left  = true; 
-  if( maxs[1] > Ny-1 ) top   = true; 
-  if( maxs[0] > Nx-1 ) right = true; 
+  bool fro   = false;
+  bool bac   = false;
+
+  if(D == 2){
+    if( mins[1] < 1 )    bot   = true; 
+    if( mins[0] < 1 )    left  = true; 
+    if( maxs[1] > Ny-1 ) top   = true; 
+    if( maxs[0] > Nx-1 ) right = true; 
+  } else if (D == 3) {
+    if( mins[0] < 1 )    left  = true; 
+    if( maxs[0] > Nx-1 ) right = true; 
+    if( mins[1] < 1 )    fro   = true; 
+    if( maxs[1] > Ny-1 ) bac   = true; 
+    if( mins[2] < 1 )    bot   = true; 
+    if( maxs[2] > Nz-1 ) top   = true; 
+  }
 
 
-  // set transverse directions to zero to make this conductor
-  int k = 0;
-  //for(int k=-1; k<static_cast<int>(tile.mesh_lengths[2])+1; k++) 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
+  //--------------------------------------------------
+  // loop over grid
+  int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
+  int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
+  int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
-    //-----------
+  for(int k=-3; k<nz_tile+2; k++) 
+  for(int j=-3; j<ny_tile+2; j++) 
+  for(int i=-3; i<nx_tile+2; i++) {
+
     // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    //kglob = static_cast<float_m>(k) + mins[2];
+    iglob = (D>=1) ? i + mins[0] : 0;
+    jglob = (D>=2) ? j + mins[1] : 0;
+    kglob = (D>=3) ? k + mins[2] : 0;
 
     // spherical coordinates
-    xr0 = coord.rh().x(iglob);
-    yr0 = coord.rh().y(jglob);
-    zr0 = 0.0; 
+    xr0 = (D>=1) ? coord.rh().x(iglob) : 0;
+    yr0 = (D>=2) ? coord.rh().y(jglob) : 0;
+    zr0 = (D>=3) ? coord.rh().z(kglob) : 0;
 
     // check if we are inside star
     bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.05*radius;
@@ -663,8 +520,9 @@ void fields::Conductor<2>::update_e(
       // ex
       xr = coord.ex().x(iglob);
       yr = coord.ex().y(jglob);
-      zr = 0.0; 
-      r.set(xr,yr,zr);
+      zr = coord.ex().z(kglob);
+      r.set(xr,yr,zr); // spherical radius
+      rcyl = (D == 2) ? abs(xr) : sqrt(xr*xr + yr*yr); // cylindrical radius
 
       Bd(0) = B0*dipole(xr,yr,zr,0);
       Bd(1) = B0*dipole(xr,yr,zr,1);
@@ -676,8 +534,8 @@ void fields::Conductor<2>::update_e(
 
       exi = yee.ex(i,j,k);
 
-      s = shape(norm(r), radius, delta);
-      s *= shape( std::abs(xr), radius_pc, delta_pc); // damp off edges of polar cap
+      s =  shape(norm(r), radius, delta);
+      s *= shape(rcyl, radius_pc, delta_pc); // damp off edges of polar cap
 
       exnew = s*exd  + (1.0f-s)*exi;
 
@@ -686,8 +544,9 @@ void fields::Conductor<2>::update_e(
       // ey
       xr = coord.ey().x(iglob);
       yr = coord.ey().y(jglob);
-      zr = 0.0; 
+      zr = coord.ey().z(kglob);
       r.set(xr,yr,zr);
+      rcyl = (D == 2) ? abs(xr) : sqrt(xr*xr + yr*yr); 
 
       Bd(0) = B0*dipole(xr,yr,zr,0);
       Bd(1) = B0*dipole(xr,yr,zr,1);
@@ -699,8 +558,8 @@ void fields::Conductor<2>::update_e(
 
       eyi = yee.ey(i,j,k);
 
-      s = shape(norm(r), radius, delta);
-      s *= shape( std::abs(xr), radius_pc, delta_pc); // damp off edges of polar cap
+      s =  shape(norm(r), radius, delta);
+      s *= shape(rcyl, radius_pc, delta_pc); // damp off edges of polar cap
 
       eynew = s*eyd  + (1.0f-s)*eyi;
 
@@ -708,8 +567,9 @@ void fields::Conductor<2>::update_e(
       // ez
       xr = coord.ez().x(iglob);
       yr = coord.ez().y(jglob);
-      zr = 0.0; 
+      zr = coord.ez().z(kglob);
       r.set(xr,yr,zr);
+      rcyl = (D == 2) ? abs(xr) : sqrt(xr*xr + yr*yr); 
               
       Bd(0) = B0*dipole(xr,yr,zr,0);
       Bd(1) = B0*dipole(xr,yr,zr,1);
@@ -721,8 +581,8 @@ void fields::Conductor<2>::update_e(
 
       ezi = yee.ez(i,j,k);
 
-      s = shape(norm(r), radius, delta);
-      s *= shape( std::abs(xr), radius_pc, delta_pc); // damp off edges of polar cap
+      s =  shape(norm(r), radius, delta);
+      s *= shape(rcyl, radius_pc, delta_pc); // damp off edges of polar cap
 
       eznew = s*ezd  + (1.0f-s)*ezi;
 
@@ -735,43 +595,68 @@ void fields::Conductor<2>::update_e(
         yee.ey(i,j,k) = eynew;
         yee.ez(i,j,k) = eznew;
 
-      } else {
+      } else if(top) {
         // manual damping of outgoing waves 
         // poor-man's version of PML absorbing boundary conditions
 
-        float_m tile_len = static_cast<float>(tile.mesh_lengths[1]);
+        float_m tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
+        float_m h        = (D == 2 ) ? jglob : kglob; // height
+                                                  
+        // ver 1; tanh
+        float_m radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+        float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
+        s = shape(h, radius_ext, delta_ext); // tanh
 
-        //float_m radius_ext = Ny - 0.5*tile_len; // halfway of the topmost tile
-        //float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
-        //s = shape(jglob, radius_ext, delta_ext); // tanh
+        // ver2; linear
+        //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+        //float_m delta_ext = 1.0*tile_len; // full tile size
+        //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
 
-        float_m radius_ext = mins[1]; // some halfway of the topmost tile
-        float_m delta_ext = 1.0*tile_len; // 1/4 of tile size
-        s = 1.0f - std::max(0.0f, std::min(1.0f, (jglob-radius_ext)/delta_ext) ); //RELU
+        //ver 3; mimic lambda profile from PML
+        //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+        //s = min(1.0f, lam);
+
+        //ver 4; exp profile
+        //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
+        //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
 
         // damp to vacuum
         yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0;
         yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0;
         yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0;
 
-        yee.jx(i,j,k) = s*yee.jx(i,j,k); 
-        yee.jy(i,j,k) = s*yee.jy(i,j,k); 
-        yee.jz(i,j,k) = s*yee.jz(i,j,k); 
+        // null currents; not deposited yet so no effect
+        //yee.jx(i,j,k) = s*yee.jx(i,j,k); 
+        //yee.jy(i,j,k) = s*yee.jy(i,j,k); 
+        //yee.jz(i,j,k) = s*yee.jz(i,j,k); 
       }
 
     }
+      
+    // sides
+    bool inside_bot   = (D == 2) ? jglob < 3    : kglob < 3; // y or z direction flip 
+    bool inside_top   = (D == 2) ? jglob > Ny-2 : kglob > Nz-2; // y or z direction flip 
+
+    bool inside_left  = left  && iglob < 3; 
+    bool inside_right = right && iglob > Nx-2; 
+
+    bool inside_front = fro && jglob < 3; 
+    bool inside_back  = bac && jglob > Ny-2; 
 
     // boundaries
-    if( (bot    && j < 0) ||
-        (top    && j > static_cast<int>(tile.mesh_lengths[1]) - 3) || 
-        (left   && i < 3) ||
-        (right  && i > static_cast<int>(tile.mesh_lengths[0]) - 0) 
+    if( inside_bot   ||
+        inside_top   ||
+        inside_left  ||
+        inside_right ||
+        inside_front ||
+        inside_back 
       ) {
       yee.ex(i,j,k) = 0.0;
       yee.ey(i,j,k) = 0.0;
       yee.ez(i,j,k) = 0.0;
     }
   }
+
 
   //--------------------------------------------------
   // additionally; null epar in the closed field line region
@@ -784,21 +669,22 @@ void fields::Conductor<2>::update_e(
 
   float_m rad, bn, bxi, byi, bzi, epar;
 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
-
+  for(int k=-3; k<nz_tile+2; k++) 
+  for(int j=-3; j<ny_tile+2; j++) 
+  for(int i=-3; i<nx_tile+2; i++) {
+      
     // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    //kglob = static_cast<float_m>(k) + mins[2];
+    iglob = (D>=1) ? i + mins[0] : 0;
+    jglob = (D>=2) ? j + mins[1] : 0;
+    kglob = (D>=3) ? k + mins[2] : 0;
 
     // spherical coordinates; TODO ignoring staggering
-    xr0 = coord.rh().x(iglob);
-    yr0 = coord.rh().y(jglob);
-    zr0 = 0.0; 
+    xr0 = (D>=1) ? coord.rh().x(iglob) : 0;
+    yr0 = (D>=2) ? coord.rh().y(jglob) : 0;
+    zr0 = (D>=3) ? coord.rh().z(kglob) : 0;
 
     rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
-    sint = std::abs(xr0)/rad; // sin\theta
+    sint = D == 2 ? abs(xr0)/rad : sqrt(xr0*xr0 + yr0*yr0)/rad; // sin\theta
 
     float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
 
@@ -823,7 +709,7 @@ void fields::Conductor<2>::update_e(
 
       // smoothing function
       //s = shape( rad, 1.05*Rbc*sint*sint, 50.0); // location of the open-closed field line bc
-      s = 1.0;
+      s = 1.0; // no smoothing along the polar cap rims
 
       // blend solution in with a smoothing function
       yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
@@ -960,139 +846,6 @@ void fields::Conductor<2>::null_edges(
   
 }
 
-
-
-template<>
-void fields::Conductor<3>::update_e(
-    fields::Tile<3>& tile)
-{
-
-  float_m exd, eyd, ezd;
-  float_m bxd, byd, bzd;
-  float_m exi, eyi, ezi;
-  float_m exnew, eynew, eznew;
-
-  float_m iglob, jglob, kglob;
-
-  float_m xr0,yr0,zr0;
-  float_m xr,yr,zr;
-
-  float_m vx,vy;
-  float_m s,r;
-
-
-  // angular velocity
-  float_m Omega = 2.0*PI/period;
-  if(period < EPS) Omega = 0.0; // reality check
-
-  // helper class for staggered grid positions
-  StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
-
-
-  // smoothing scales for Brad/Bperp components
-  //float_m delta = 2.0;  // from conductor.h
-  //
-  //float_m delta_erad   = 1.0*delta; 
-  //float_m delta_eperp  = 0.5*delta;
-  //float_m delta_brad   = 1.0*delta;
-  //float_m delta_bperp  = 1.0*delta;
-
-  // Tile limits
-  auto mins = tile.mins;
-  //auto maxs = tile.maxs;
-
-  auto& yee = tile.get_yee();
-
-  // set transverse directions to zero to make this conductor
-  for(int k=-3; k<static_cast<int>(tile.mesh_lengths[2])+2; k++) 
-  for(int j=-3; j<static_cast<int>(tile.mesh_lengths[1])+2; j++) 
-  for(int i=-3; i<static_cast<int>(tile.mesh_lengths[0])+2; i++) {
-
-    //-----------
-    // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    kglob = static_cast<float_m>(k) + mins[2];
-
-    // spherical coordinates
-    xr0 = coord.rh().x(iglob);
-    yr0 = coord.rh().y(jglob);
-    zr0 = coord.rh().z(kglob);
-
-    // modify fields if we are inside 2R_* radius
-    if(std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) < 2.0*radius) {
-
-      //std::cout << 
-      //    "ig" << iglob 
-      //    "jg" << jglob 
-      //    "kg" << kglob 
-      //    "xr" << xr0 
-      //    "yr" << yr0 
-      //    "zr" << zr0 
-      //    << std::endl;
-
-      //-------------------------------------------------- 
-      // ex
-      xr = coord.ex().x(iglob);
-      yr = coord.ex().y(jglob);
-      zr = coord.ex().z(kglob);
-      r = std::sqrt( xr*xr + yr*yr + zr*zr );
-
-      bzd = B0*dipole(xr,yr,zr,2);
-      
-      //vx = -Omega*yr;
-      vy = +Omega*xr;
-      exd = -vy*bzd;
-      exi = yee.ex(i,j,k);
-
-      s = shape(r, radius, delta);
-      exnew = s*exd  + (1-s)*exi;
-
-
-      //-------------------------------------------------- 
-      // ey
-      xr = coord.ey().x(iglob);
-      yr = coord.ey().y(jglob);
-      zr = coord.ey().z(kglob);
-      r = std::sqrt( xr*xr + yr*yr + zr*zr );
-
-      bzd = B0*dipole(xr,yr,zr,2);
-
-      vx = -Omega*yr;
-      //vy = +Omega*xr;
-      eyd = vx*bzd;
-      eyi = yee.ey(i,j,k);
-
-      s = shape(r, radius, delta);
-      eynew = s*eyd  + (1-s)*eyi;
-
-
-      //-------------------------------------------------- 
-      // ez
-      xr = coord.ez().x(iglob);
-      yr = coord.ez().y(jglob);
-      zr = coord.ez().z(kglob);
-      r = std::sqrt( xr*xr + yr*yr + zr*zr );
-
-      bxd = B0*dipole(xr,yr,zr,0);
-      byd = B0*dipole(xr,yr,zr,1);
-
-      vx = -Omega*yr;
-      vy = +Omega*xr;
-      ezd = -vx*byd + vy*bxd;
-      ezi = yee.ez(i,j,k);
-
-      s = shape(r, radius, delta);
-      eznew = s*ezd  + (1-s)*ezi;
-
-
-      //--------------------------------------------------
-      yee.ex(i,j,k) = exnew;
-      yee.ey(i,j,k) = eynew;
-      yee.ez(i,j,k) = eznew;
-    }
-  }
-}
 
 //--------------------------------------------------
 // explicit template instantiation

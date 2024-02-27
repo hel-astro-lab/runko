@@ -13,11 +13,15 @@ using std::max;
 using std::abs;
 using std::sqrt;
 
+
 // simple pseudo-random floats with C library rand() (outputting int's).
 // note that we do not call srand( seed ) so it is set to seed(1). 
-inline float rand_uni(float a, float b) {
-  return ((b - a) * ((float)rand() / RAND_MAX)) + a;
-}
+//
+// NOTE: we now use the full Mersenne Twister from std
+//
+//inline float rand_uni(float a, float b) {
+//  return ((b - a) * ((float)rand() / RAND_MAX)) + a;
+//}
 
 
 template<size_t D>
@@ -117,7 +121,7 @@ void pic::Star<D>::solve(
       // E is normalized with e n_GJ R_pc from which we can solve n_inj
         
       //ninj = 0.1*std::abs(epar/q/radius_pc);
-      ninj = 0.05*std::abs(epar/q)/radius_pc;
+      ninj = ninj_pairs*std::abs(epar/q)/radius_pc;
       //std::cout << " ninj " << ninj << " epar" << epar << " epar/q" << epar/q << "\n";
 
       //--------------------------------------------------
@@ -134,23 +138,23 @@ void pic::Star<D>::solve(
 
       //std::cout << " ninj " << ninj << " j" << j << " j/q" << j/q << "\n";
         
-      ninj = std::max(0.01f, ninj);
+      ninj = std::max( (float_m)ninj_min_pairs, ninj);
 
       //--------------------------------------------------
       // add ninj pairs with MC injection; results on average in ninj injections
       double ncop = 0.0; // number of pairs added
-      double z1 = rand_uni(0.0, 1.0);
+      double z1 = rand();
 
       while( ninj > z1 + ncop ) {
 
-        float dx = rand_uni(0.0, 1.0); // inject location is set randomly inside the cell
+        float dx = rand(); // inject location is set randomly inside the cell
+        float dy = rand(); // inject location is set randomly inside the cell
 
         //--------------------------------------------------
         // sample velocity from thermal distribution
         // using Box-Muller method to draw thermal velocities; valid for v <~ 0.2c
-        double vth = 0.2;
-        double rr1 = rand_uni(0.0, 1.0);
-        double vr = sqrt( -2.0*log(rr1))*vth;
+        double rr1 = rand();
+        double vr = sqrt( -2.0*log(rr1))*temp_pairs;
         
         // 1D distribution along B-field
         ux1 = vr*bx/b;
@@ -160,15 +164,24 @@ void pic::Star<D>::solve(
         // TODO same "random" velocity taken for both particles
 
         cons["e-"]->add_particle( 
-            {{iglob + dx, jglob , kglob}}, 
+            {{iglob + dx, jglob + dy, kglob}}, 
             {{ux1, uy1, uz1}}, wep); 
 
         cons["e+"]->add_particle( 
-            {{iglob + dx, jglob, kglob}}, 
+            {{iglob + dx, jglob + dy, kglob}}, 
             {{ux1, uy1, uz1}}, wep); 
 
         ncop += 1.0;
       }
+
+      //--------------------------------------------------
+      // TODO add photon injection
+
+
+
+
+
+
 
     }
   }
