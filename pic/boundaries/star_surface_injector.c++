@@ -10,6 +10,8 @@
 
 using std::min;
 using std::max;
+using std::abs;
+using std::sqrt;
 
 // simple pseudo-random floats with C library rand() (outputting int's).
 // note that we do not call srand( seed ) so it is set to seed(1). 
@@ -32,17 +34,16 @@ void pic::Star<D>::solve(
   bool top   = false;
   bool bot   = false;
 
-  if( mins[1] < 1 )    bot   = true; 
-  //if( mins[0] < 1 )    left  = true; 
-  if( maxs[1] > Ny-1 ) top   = true; 
-  //if( maxs[0] > Nx-1 ) right = true; 
-
+  if( D == 2 ) { // 2D boudaries
+    if( mins[1] < 1 )    bot   = true; 
+    if( maxs[1] > Ny-1 ) top   = true; 
+  } else if( D == 3 ){
+    if( mins[2] < 1 )    bot   = true; 
+    if( maxs[2] > Nz-1 ) top   = true; 
+  }
 
   //--------------------------------------------------
   // operate only on roughly correct tiles 
-  //float cenr = std::sqrt( cenx*cenx + ceny*ceny + cenz*cenz );
-  //if(!(cenr + 5 <= maxs[1])) return;
-  //if( maxs[1] - ceny > radius*1.02 ) return;
   if(!(top || bot)) return;
 
 
@@ -52,7 +53,6 @@ void pic::Star<D>::solve(
   // get charge (assume q_- = q_+)
   const float_m q = cons["e-"]->q;
   float_p wep = 1.0f;
-
 
   //--------------------------------------------------
   // main rouutine starts here now that we have the right tile
@@ -68,44 +68,34 @@ void pic::Star<D>::solve(
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
   auto& yee = tile.get_yee();
-
   const double c = tile.cfl;
-  //const double q = container.q; // TODO needed
 
-  // operate only on the bottom-y row tiles
-  // TODO need to be generalized to arbitrary position
-
-  // TODO add the container reference from QED codes
 
   //--------------------------------------------------
-  // inject 
+  // inject to each cell
 
-  const int k = 0; 
-  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) 
-  for(int i=0; i<static_cast<int>(tile.mesh_lengths[0]); i++) {
+  int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
+  int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
+  int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
-    //-----------
+  for(int k=0; k<nz_tile; k++) 
+  for(int j=0; j<ny_tile; j++) 
+  for(int i=0; i<nx_tile; i++) {
+
     // global grid coordinates
-    iglob = static_cast<float_m>(i) + mins[0];
-    jglob = static_cast<float_m>(j) + mins[1];
-    kglob = 0; //static_cast<float_m>(k) + mins[2];
+    iglob = (D>=1) ? i + mins[0] : 0.0;
+    jglob = (D>=2) ? j + mins[1] : 0.0;
+    kglob = (D>=3) ? k + mins[2] : 0.0;
 
     // spherical coordinates 
-    xr0 = coord.rh().x(iglob);
-    yr0 = coord.rh().y(jglob);
-    zr0 = 0.0; 
+    xr0 = (D>=1) ? coord.rh().x(iglob) : 0.0;
+    yr0 = (D>=2) ? coord.rh().y(jglob) : 0.0;
+    zr0 = (D>=3) ? coord.rh().z(kglob) : 0.0;
 
     // check if we are inside star
     bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
     bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 2.0;
-
-    // approximate as flat surface
-    //bool inside_star  = std::sqrt(yr0*yr0) <= 1.0*radius - 0.0;
-    //bool inside_atmos = std::sqrt(yr0*yr0) <= 1.0*radius + 2.0;
-
-    bool inside_pcap = std::abs(xr0) < 1.0*radius_pc;
-
-    //if(xr0 > 0.0) continue;
+    bool inside_pcap = (D == 2) ? abs(xr0) < radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) < radius_pc; // same here
 
     // inside a thin layer above the star
     if( inside_atmos && !inside_star && inside_pcap ) {
@@ -122,18 +112,16 @@ void pic::Star<D>::solve(
       float_m b = sqrt( bx*bx + by*by + bz*bz );
       epar      = ( ex*bx + ey*by + ez*bz )/b;
 
-      // injection rate
+      //--------------------------------------------------
+      // ver 1: 
       // E is normalized with e n_GJ R_pc from which we can solve n_inj
         
       //ninj = 0.1*std::abs(epar/q/radius_pc);
       ninj = 0.05*std::abs(epar/q)/radius_pc;
       //std::cout << " ninj " << ninj << " epar" << epar << " epar/q" << epar/q << "\n";
 
-
-      //ninj = std::max(0.002f, ninj);
-
       //--------------------------------------------------
-      // ver2; current dependent inj
+      // ver2; current dependent inj; NOTE does not work because current arrays are emptied
       //float_m jx = yee.jx(i,j,k);
       //float_m jy = yee.jy(i,j,k);
       //float_m jz = yee.jz(i,j,k);
@@ -145,9 +133,6 @@ void pic::Star<D>::solve(
       //ninj = 10.0*0.45*abs(j/q); 
 
       //std::cout << " ninj " << ninj << " j" << j << " j/q" << j/q << "\n";
-      
-      // TODO no need to smooth since epar is set zero outside polarcap
-      //ninj *= shape( abs(xr0), radius_pc, delta_pc); // damp injection smoothly to zero outside polar cap
         
       ninj = std::max(0.01f, ninj);
 
@@ -199,24 +184,27 @@ void pic::Star<D>::solve(
   for(auto&& container : tile.containers) {
     for(size_t n=0; n<container.size(); n++) {
 
-      iglob  = container.loc(0,n) + mins[0];
-      jglob  = container.loc(1,n) + mins[1];
-      kglob  = container.loc(2,n); // + mins[2];
+      iglob = (D>=1) ? container.loc(0,n) : 0.0;
+      jglob = (D>=2) ? container.loc(1,n) : 0.0;
+      kglob = (D>=3) ? container.loc(2,n) : 0.0;
 
-      xr0 = coord.rh().x(iglob);
-      yr0 = coord.rh().y(jglob);
-      zr0 = 0.0; 
+      xr0 = (D>=1) ? coord.rh().x(iglob) : 0.0;
+      yr0 = (D>=2) ? coord.rh().y(jglob) : 0.0;
+      zr0 = (D>=3) ? coord.rh().z(kglob) : 0.0;
 
-      // remove particles exiting from bottom
-      bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
-      if( //inside_star || 
-          jglob < 3   || 
-          inside_star && (std::abs(xr0) > radius_pc) ) {
+      // remove particles based on following regimes
+      bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
+      bool inside_bot   = (D == 2) ? jglob < 3    : kglob < 3; // y or z direction flip 
+      bool inside_top   = (D == 2) ? jglob > Ny-1 : kglob > Nz-1; // y or z direction flip 
+      bool outside_pcap = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
+
+      if( inside_bot ||
+          inside_star && outside_pcap ) {
         container.to_other_tiles.push_back( {1,1,1,n} );
       }
 
       // remove particles from the very top
-      if( top && jglob > maxs[1]-1 ) {
+      if( top && inside_top ) {
         container.to_other_tiles.push_back( {1,1,1,n} );
       }
 
