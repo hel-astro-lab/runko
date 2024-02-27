@@ -13,6 +13,7 @@ def imshow(ax,
            clip = -1.0,
            cap = None,
            aspect = 'auto',
+           norm = None,
           ):
 
     ax.clear()
@@ -37,7 +38,18 @@ def imshow(ax,
         mgrid = np.clip(mgrid, cap )
     
     mgrid = mgrid.T
-    im = ax.imshow(mgrid,
+
+    if norm != None:
+        im = ax.imshow(mgrid,
+              extent=extent,
+              origin='lower',
+              interpolation='nearest',
+              cmap = cmap,
+              aspect=aspect,
+              norm = norm,
+              )
+    else:
+        im = ax.imshow(mgrid,
               extent=extent,
               origin='lower',
               interpolation='nearest',
@@ -45,8 +57,8 @@ def imshow(ax,
               vmin = vmin,
               vmax = vmax,
               aspect=aspect,
-              #alpha=0.5
               )
+
     return im
 
 
