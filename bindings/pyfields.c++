@@ -610,6 +610,7 @@ void bind_fields(py::module& m_sub)
 
   // slice writer; only in 3D
   py::class_<h5io::FieldSliceWriter>(m_3d, "FieldSliceWriter")
+    .def_readwrite("ind",  &h5io::FieldSliceWriter::ind)
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, int>())
     .def("write",        &h5io::FieldSliceWriter::write)
     .def("get_slice", [](h5io::FieldSliceWriter &s, int k)

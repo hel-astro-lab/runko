@@ -37,6 +37,9 @@ class FieldSliceWriter :
 
     /// slice orientation
     int mode = 0;
+       
+    /// slice index
+    int ind = 0;
 
     /// constructor that creates a name and opens the file handle
     FieldSliceWriter(

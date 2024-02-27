@@ -51,21 +51,28 @@ void h5io::FieldSliceWriter::read_tiles(
     int j0 = nyt*std::get<1>(index);
     int k0 = nzt*std::get<2>(index);
 
+    bool ind_inside_x = tile.mins[0] <= ind && ind < tile.maxs[0];
+    bool ind_inside_y = tile.mins[1] <= ind && ind < tile.maxs[1];
+    bool ind_inside_z = tile.mins[2] <= ind && ind < tile.maxs[2];
 
-    // x-y plane, z = 0
+    // x-y plane, z = ind
     if(mode == 0) {
-      if(k0 != 0) continue;
+
+      //if(k0 != 0) continue;
+      if(!ind_inside_z) continue;
+
+      int I = ind - tile.mins[2]; // location on the tile
 
       // field quantities 
       for(int js=0; js<nyt; js++) 
       for(int is=0; is<nxt; is++) {
-        ex(i0+is, j0+js, 0) = yee.ex( is*stride, js*stride, 0);
-        ey(i0+is, j0+js, 0) = yee.ey( is*stride, js*stride, 0);
-        ez(i0+is, j0+js, 0) = yee.ez( is*stride, js*stride, 0);
+        ex(i0+is, j0+js, 0) = yee.ex( is*stride, js*stride, I);
+        ey(i0+is, j0+js, 0) = yee.ey( is*stride, js*stride, I);
+        ez(i0+is, j0+js, 0) = yee.ez( is*stride, js*stride, I);
 
-        bx(i0+is, j0+js, 0) = yee.bx( is*stride, js*stride, 0);
-        by(i0+is, j0+js, 0) = yee.by( is*stride, js*stride, 0);
-        bz(i0+is, j0+js, 0) = yee.bz( is*stride, js*stride, 0);
+        bx(i0+is, j0+js, 0) = yee.bx( is*stride, js*stride, I);
+        by(i0+is, j0+js, 0) = yee.by( is*stride, js*stride, I);
+        bz(i0+is, j0+js, 0) = yee.bz( is*stride, js*stride, I);
       }
 
       // densities
@@ -73,27 +80,31 @@ void h5io::FieldSliceWriter::read_tiles(
       for(int jstride=0; jstride < stride; jstride++) 
       for(int is=0; is<nxt; is++) 
       for(int istride=0; istride < stride; istride++) {
-        jx(i0+is, j0+js, 0) += yee.jx( is*stride+istride, js*stride+jstride, 0);
-        jy(i0+is, j0+js, 0) += yee.jy( is*stride+istride, js*stride+jstride, 0);
-        jz(i0+is, j0+js, 0) += yee.jz( is*stride+istride, js*stride+jstride, 0);
-        rh(i0+is, j0+js, 0) += yee.rho(is*stride+istride, js*stride+jstride, 0);
+        jx(i0+is, j0+js, 0) += yee.jx( is*stride+istride, js*stride+jstride, I);
+        jy(i0+is, j0+js, 0) += yee.jy( is*stride+istride, js*stride+jstride, I);
+        jz(i0+is, j0+js, 0) += yee.jz( is*stride+istride, js*stride+jstride, I);
+        rh(i0+is, j0+js, 0) += yee.rho(is*stride+istride, js*stride+jstride, I);
       }
 
 
     // x-z plane, y = 0
     } else if(mode == 1) {
-      if(j0 != 0) continue;
+
+      //if(j0 != 0) continue;
+      if(!ind_inside_y) continue;
+
+      int I = ind - tile.mins[1]; // location on the tile
 
       // field quantities
       for(int ks=0; ks<nzt; ks++) 
       for(int is=0; is<nxt; is++) {
-        ex(i0+is, k0+ks, 0) = yee.ex( is*stride, 0, ks*stride);
-        ey(i0+is, k0+ks, 0) = yee.ey( is*stride, 0, ks*stride);
-        ez(i0+is, k0+ks, 0) = yee.ez( is*stride, 0, ks*stride);
+        ex(i0+is, k0+ks, 0) = yee.ex( is*stride, I, ks*stride);
+        ey(i0+is, k0+ks, 0) = yee.ey( is*stride, I, ks*stride);
+        ez(i0+is, k0+ks, 0) = yee.ez( is*stride, I, ks*stride);
 
-        bx(i0+is, k0+ks, 0) = yee.bx( is*stride, 0, ks*stride);
-        by(i0+is, k0+ks, 0) = yee.by( is*stride, 0, ks*stride);
-        bz(i0+is, k0+ks, 0) = yee.bz( is*stride, 0, ks*stride);
+        bx(i0+is, k0+ks, 0) = yee.bx( is*stride, I, ks*stride);
+        by(i0+is, k0+ks, 0) = yee.by( is*stride, I, ks*stride);
+        bz(i0+is, k0+ks, 0) = yee.bz( is*stride, I, ks*stride);
       }
 
       // densities
@@ -101,26 +112,30 @@ void h5io::FieldSliceWriter::read_tiles(
       for(int kstride=0; kstride < stride; kstride++) 
       for(int is=0; is<nxt; is++) 
       for(int istride=0; istride < stride; istride++) {
-        jx(i0+is, k0+ks, 0) += yee.jx( is*stride+istride, 0, ks*stride+kstride);
-        jy(i0+is, k0+ks, 0) += yee.jy( is*stride+istride, 0, ks*stride+kstride);
-        jz(i0+is, k0+ks, 0) += yee.jz( is*stride+istride, 0, ks*stride+kstride);
-        rh(i0+is, k0+ks, 0) += yee.rho(is*stride+istride, 0, ks*stride+kstride);
+        jx(i0+is, k0+ks, 0) += yee.jx( is*stride+istride, I, ks*stride+kstride);
+        jy(i0+is, k0+ks, 0) += yee.jy( is*stride+istride, I, ks*stride+kstride);
+        jz(i0+is, k0+ks, 0) += yee.jz( is*stride+istride, I, ks*stride+kstride);
+        rh(i0+is, k0+ks, 0) += yee.rho(is*stride+istride, I, ks*stride+kstride);
       }
 
     // y-z plane, x = 0
     } else if(mode == 2) {
-      if(i0 != 0) continue;
+
+      //if(i0 != 0) continue;
+      if(!ind_inside_x) continue;
+
+      int I = ind - tile.mins[0]; // location on the tile
 
       // field quantities; just downsample by hopping with stride
       for(int ks=0; ks<nzt; ks++) 
       for(int js=0; js<nyt; js++) {
-        ex(j0+js, k0+ks, 0) = yee.ex(0, js*stride, ks*stride);
-        ey(j0+js, k0+ks, 0) = yee.ey(0, js*stride, ks*stride);
-        ez(j0+js, k0+ks, 0) = yee.ez(0, js*stride, ks*stride);
+        ex(j0+js, k0+ks, 0) = yee.ex(I, js*stride, ks*stride);
+        ey(j0+js, k0+ks, 0) = yee.ey(I, js*stride, ks*stride);
+        ez(j0+js, k0+ks, 0) = yee.ez(I, js*stride, ks*stride);
 
-        bx(j0+js, k0+ks, 0) = yee.bx(0, js*stride, ks*stride);
-        by(j0+js, k0+ks, 0) = yee.by(0, js*stride, ks*stride);
-        bz(j0+js, k0+ks, 0) = yee.bz(0, js*stride, ks*stride);
+        bx(j0+js, k0+ks, 0) = yee.bx(I, js*stride, ks*stride);
+        by(j0+js, k0+ks, 0) = yee.by(I, js*stride, ks*stride);
+        bz(j0+js, k0+ks, 0) = yee.bz(I, js*stride, ks*stride);
       }
 
       // densities; these quantities we average over the volume
@@ -128,10 +143,10 @@ void h5io::FieldSliceWriter::read_tiles(
       for(int kstride=0; kstride < stride; kstride++) 
       for(int js=0; js<nyt; js++) 
       for(int jstride=0; jstride < stride; jstride++) {
-        jx(j0+js, k0+ks, 0) += yee.jx( 0, js*stride+jstride, ks*stride+kstride);
-        jy(j0+js, k0+ks, 0) += yee.jy( 0, js*stride+jstride, ks*stride+kstride);
-        jz(j0+js, k0+ks, 0) += yee.jz( 0, js*stride+jstride, ks*stride+kstride);
-        rh(j0+js, k0+ks, 0) += yee.rho(0, js*stride+jstride, ks*stride+kstride);
+        jx(j0+js, k0+ks, 0) += yee.jx( I, js*stride+jstride, ks*stride+kstride);
+        jy(j0+js, k0+ks, 0) += yee.jy( I, js*stride+jstride, ks*stride+kstride);
+        jz(j0+js, k0+ks, 0) += yee.jz( I, js*stride+jstride, ks*stride+kstride);
+        rh(j0+js, k0+ks, 0) += yee.rho(I, js*stride+jstride, ks*stride+kstride);
       }
     }
   } // tiles
