@@ -3,34 +3,14 @@
 #include <cmath> 
 #include "../../tools/signum.h"
 #include "../../tools/iter/iter.h"
+#include "../../tools/lerp.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 
 #endif
 
 using toolbox::sign;
-
-inline double _lerp(
-      double c000,
-      double c100,
-      double c010,
-      double c110,
-      double c001,
-      double c101,
-      double c011,
-      double c111,
-      double dx, double dy, double dz
-      ) 
-{
-      double c00 = c000 * (1.0-dx) + c100 * dx;
-      double c10 = c010 * (1.0-dx) + c110 * dx;
-      double c0  = c00  * (1.0-dy) + c10  * dy;
-      double c01 = c001 * (1.0-dx) + c101 * dx;
-      double c11 = c011 * (1.0-dx) + c111 * dx;
-      double c1  = c01  * (1.0-dy) + c11  * dy;
-      double c   = c0   * (1.0-dz) + c1   * dz;
-      return c;
-}
+using toolbox::lerp;
 
 
 //-------------------------------------------------- 
@@ -331,10 +311,10 @@ void pic::rGCAPusher<D,V>::push_container(
 
     // tmp variables
     double ex1, ey1, ez1, bx1, by1, bz1;
-    double dx,dy,dz;
+    double dx=0,dy=0,dz=0;
     double c000, c100, c010, c110, c001, c101, c011, c111;
   
-    int i,j,k;
+    int i=0,j=0,k=0;
 
     for(size_t iter=0; iter<5; iter++){
 
@@ -379,7 +359,7 @@ void pic::rGCAPusher<D,V>::push_container(
         c101 = 0.5*(exM(ind+iz    ) +exM(ind+1+iz   ));
         c011 = 0.5*(exM(ind+iy+iz ) +exM(ind-1+iy+iz));
         c111 = 0.5*(exM(ind+iy+iz ) +exM(ind+1+iy+iz));
-        ex1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
+        ex1 = lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         ex1 += this->get_ex_ext(0,0,0);
 
         //ey
@@ -391,7 +371,7 @@ void pic::rGCAPusher<D,V>::push_container(
         c101 = 0.5*(eyM(ind+1+iz ) +eyM(ind+1-iy+iz));
         c011 = 0.5*(eyM(ind+iz   ) +eyM(ind+iy+iz  ));
         c111 = 0.5*(eyM(ind+1+iz ) +eyM(ind+1+iy+iz));
-        ey1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
+        ey1 = lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         ey1 += this->get_ey_ext(0,0,0);
 
         //ez
@@ -403,7 +383,7 @@ void pic::rGCAPusher<D,V>::push_container(
         c101 = 0.5*(ezM(ind+1    ) + ezM(ind+1+iz   ));
         c011 = 0.5*(ezM(ind+iy   ) + ezM(ind+iy+iz  ));
         c111 = 0.5*(ezM(ind+1+iy ) + ezM(ind+1+iy+iz));
-        ez1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
+        ez1 = lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         ez1 += this->get_ez_ext(0,0,0);
 
         //-------------------------------------------------- 
@@ -416,7 +396,7 @@ void pic::rGCAPusher<D,V>::push_container(
         c110 = 0.25*( bxM(ind+1)+ bxM(ind+1-iz)+ bxM(ind+1+iy-iz)+ bxM(ind+1+iy));
         c011 = 0.25*( bxM(ind)+   bxM(ind+iy)+   bxM(ind+iy+iz)+   bxM(ind+iz));
         c111 = 0.25*( bxM(ind+1)+ bxM(ind+1+iy)+ bxM(ind+1+iy+iz)+ bxM(ind+1+iz));
-        bx1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
+        bx1 = lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         bx1 += this->get_bx_ext(0,0,0);
 
         // by
@@ -428,7 +408,7 @@ void pic::rGCAPusher<D,V>::push_container(
         c110 = 0.25*( byM(ind+iy-iz)+   byM(ind+iy)+      byM(ind+1+iy-iz)+ byM(ind+1+iy));
         c011 = 0.25*( byM(ind-1+iy)+    byM(ind-1+iy+iz)+ byM(ind+iy)+      byM(ind+iy+iz));
         c111 = 0.25*( byM(ind+iy)+      byM(ind+iy+iz)+   byM(ind+1+iy)+    byM(ind+1+iy+iz));
-        by1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
+        by1 = lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         by1 += this->get_by_ext(0,0,0);
 
         // bz
@@ -440,7 +420,7 @@ void pic::rGCAPusher<D,V>::push_container(
         c110 = 0.25*( bzM(ind)+         bzM(ind+iy)+      bzM(ind+1)+       bzM(ind+1+iy));
         c011 = 0.25*( bzM(ind-1+iz)+    bzM(ind-1+iy+iz)+ bzM(ind+iz)+      bzM(ind+iy+iz));
         c111 = 0.25*( bzM(ind+iz)+      bzM(ind+iy+iz)+   bzM(ind+1+iz)+    bzM(ind+1+iy+iz));
-        bz1 = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
+        bz1 = lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
         bz1 += this->get_bz_ext(0,0,0);
 
         ex1 *= 1.0/c;
@@ -616,6 +596,7 @@ void pic::rGCAPusher<D,V>::push_container(
     if( (dxp > c) || (dyp > c) || (dzp > c) ) debug_flag = true;
 
     //if(1./kinv01 > 30.0) debug_flag = true;
+    //if(true){
     if(debug_flag){
       std::cout 
         << " n:" << n
@@ -634,7 +615,7 @@ void pic::rGCAPusher<D,V>::push_container(
         //<< " vex1:" << vex1 << " vey:" << vey1 << " vez:" << vez1 << " kappa1:" << kappa1
         << "\n";
       std::cout << std::flush;
-      assert(false);
+      //assert(false);
     }
   //}, con.size(), con);
   }
