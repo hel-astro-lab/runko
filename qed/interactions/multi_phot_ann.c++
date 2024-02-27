@@ -216,7 +216,6 @@ void MultiPhotAnn::interact(
 
   //--------------------------------------------------
 
-  std::cout << " multiphoton breit-wheeler: chi x e p" << chi_x << " " << chi_e << " " << chi_p << "\n";
 
 
   // particles are emtited to the direction of the photon
@@ -240,10 +239,13 @@ void MultiPhotAnn::interact(
   
   float_p err_ene = x0 - (sqrt(1.0 + pe*pe) + sqrt(1.0 + pp*pp));
 
+  //std::cout << " multiphoton breit-wheeler: chi x e p" << chi_x << " " << chi_e << " " << chi_p << "\n";
+  //std::cout << "                            u1:" << ux1 << " " << uy1 << " " << uz1 << "\n";
+  //std::cout << "                            u2:" << ux2 << " " << uy2 << " " << uz2 << "\n";
+
   ///std::cout << " enes x/e/p" << x0 << " " << pe << " " << pp << " err:" << err_ene << "\n";
   
   // TODO check momentum conservation
-
 
   return;
 }
