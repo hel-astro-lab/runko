@@ -51,6 +51,7 @@ set (PIC_FILES
      ../pic/pushers/higuera_cary.c++
      ../pic/pushers/rgca.c++
      ../pic/pushers/photon.c++
+     ../pic/pushers/pulsar.c++
      ../pic/interpolators/linear_1st.c++
      ../pic/interpolators/quadratic_2nd.c++
      ../pic/interpolators/cubic_3rd.c++

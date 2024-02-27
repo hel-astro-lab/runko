@@ -17,6 +17,7 @@ namespace py = pybind11;
 #include "../pic/pushers/vay.h"
 #include "../pic/pushers/higuera_cary.h"
 #include "../pic/pushers/rgca.h"
+#include "../pic/pushers/pulsar.h"
 #include "../pic/pushers/photon.h"
 
 #include "../pic/interpolators/interpolator.h"
@@ -423,6 +424,22 @@ void bind_pic(py::module& m_sub)
 
   // reduced guiding center approximation
   py::class_<pic::rGCAPusher<2,3>>(m_2d, "rGCAPusher", picpusher2d)
+    .def(py::init<>());
+
+  // special rGCA + gravity pusher for pulsars
+  py::class_<pic::PulsarPusher<2,3>>(m_2d, "PulsarPusher", picpusher2d)
+    .def_readwrite("radius",    &pic::PulsarPusher<2,3>::rad_star)
+    .def_readwrite("radius_pc", &pic::PulsarPusher<2,3>::rad_pcap)
+    .def_readwrite("period",    &pic::PulsarPusher<2,3>::period_star)
+    .def_readwrite("cenx",      &pic::PulsarPusher<2,3>::cenx)
+    .def_readwrite("ceny",      &pic::PulsarPusher<2,3>::ceny)
+    .def_readwrite("cenz",      &pic::PulsarPusher<2,3>::cenz)
+    .def_readwrite("grav_const",&pic::PulsarPusher<2,3>::gravity_const)
+    //.def_readwrite("B0",       &pic::PulsarPusher<2>::B0)
+    //.def_readwrite("chi",      &pic::PulsarPusher<2>::chi)
+    //.def_readwrite("phase",    &pic::PulsarPusher<2>::phase)
+    //.def_readwrite("delta",    &pic::PulsarPusher<2>::delta)
+    //.def_readwrite("delta_pc", &pic::PulsarPusher<2>::delta_pc)
     .def(py::init<>());
 
   // Photon pusher
