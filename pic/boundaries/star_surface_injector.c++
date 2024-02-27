@@ -11,6 +11,12 @@
 using std::min;
 using std::max;
 
+// simple pseudo-random floats with C library rand() (outputting int's).
+// note that we do not call srand( seed ) so it is set to seed(1). 
+inline float rand_uni(float a, float b) {
+  return ((b - a) * ((float)rand() / RAND_MAX)) + a;
+}
+
 
 template<size_t D>
 void pic::Star<D>::solve(
@@ -85,22 +91,26 @@ void pic::Star<D>::solve(
     kglob = 0; //static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates 
-    xr0 = coord.x(iglob, 0.0);
-    yr0 = coord.y(jglob, 0.0);
-    zr0 = 0.0; //coord.z(kglob, 0.5);
+    xr0 = coord.rh().x(iglob);
+    yr0 = coord.rh().y(jglob);
+    zr0 = 0.0; 
 
     // check if we are inside star
-    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius - 0.0;
+    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
     bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 2.0;
 
     // approximate as flat surface
     //bool inside_star  = std::sqrt(yr0*yr0) <= 1.0*radius - 0.0;
     //bool inside_atmos = std::sqrt(yr0*yr0) <= 1.0*radius + 2.0;
 
-    // inside a thin layer above the star
-    if( inside_atmos && !inside_star ) {
+    bool inside_pcap = std::abs(xr0) < 1.0*radius_pc;
 
-      // get epar
+    //if(xr0 > 0.0) continue;
+
+    // inside a thin layer above the star
+    if( inside_atmos && !inside_star && inside_pcap ) {
+
+      // get epar (TODO not on the right staggering)
       ex = yee.ex(i,j,k);
       ey = yee.ey(i,j,k);
       ez = yee.ez(i,j,k);
@@ -109,29 +119,67 @@ void pic::Star<D>::solve(
       by = yee.by(i,j,k);
       bz = yee.bz(i,j,k);
 
-      epar = ( ex*bx + ey*by + ez*bz )/( bx*bx + by*by + bz*bz );
+      float_m b = sqrt( bx*bx + by*by + bz*bz );
+      epar      = ( ex*bx + ey*by + ez*bz )/b;
 
       // injection rate
-      ninj = 0.2*std::abs(epar/q);
+      // E is normalized with e n_GJ R_pc from which we can solve n_inj
+        
+      //ninj = 0.1*std::abs(epar/q/radius_pc);
+      ninj = 0.05*std::abs(epar/q)/radius_pc;
       //std::cout << " ninj " << ninj << " epar" << epar << " epar/q" << epar/q << "\n";
 
-      //ninj = 10; // FIXME
 
+      //ninj = std::max(0.002f, ninj);
+
+      //--------------------------------------------------
+      // ver2; current dependent inj
+      //float_m jx = yee.jx(i,j,k);
+      //float_m jy = yee.jy(i,j,k);
+      //float_m jz = yee.jz(i,j,k);
+      //float_m j = sqrt(jx*jx + jy*jy + jz*jz);
+      
+      // current is given as j = e*n_pcc*c so that n_ppc = j*c/e
+      // We supply M_atms = 10x atmospheric particles required to screen the local current
+      // n_atms = M_atms c (j/e)
+      //ninj = 10.0*0.45*abs(j/q); 
+
+      //std::cout << " ninj " << ninj << " j" << j << " j/q" << j/q << "\n";
+      
       // TODO no need to smooth since epar is set zero outside polarcap
       //ninj *= shape( abs(xr0), radius_pc, delta_pc); // damp injection smoothly to zero outside polar cap
-                                                       
+        
+      ninj = std::max(0.01f, ninj);
+
       //--------------------------------------------------
       // add ninj pairs with MC injection; results on average in ninj injections
       double ncop = 0.0; // number of pairs added
-      double z1 = rand();
+      double z1 = rand_uni(0.0, 1.0);
+
       while( ninj > z1 + ncop ) {
 
+        float dx = rand_uni(0.0, 1.0); // inject location is set randomly inside the cell
+
+        //--------------------------------------------------
+        // sample velocity from thermal distribution
+        // using Box-Muller method to draw thermal velocities; valid for v <~ 0.2c
+        double vth = 0.2;
+        double rr1 = rand_uni(0.0, 1.0);
+        double vr = sqrt( -2.0*log(rr1))*vth;
+        
+        // 1D distribution along B-field
+        ux1 = vr*bx/b;
+        uy1 = vr*by/b;
+        uz1 = vr*bz/b;
+
+        // TODO same "random" velocity taken for both particles
+
         cons["e-"]->add_particle( 
-            {{iglob, jglob, kglob}}, 
+            {{iglob + dx, jglob , kglob}}, 
             {{ux1, uy1, uz1}}, wep); 
 
         cons["e+"]->add_particle( 
-            {{iglob, jglob, kglob}}, 
+            {{iglob + dx, jglob, kglob}}, 
             {{ux1, uy1, uz1}}, wep); 
 
         ncop += 1.0;
@@ -155,15 +203,15 @@ void pic::Star<D>::solve(
       jglob  = container.loc(1,n) + mins[1];
       kglob  = container.loc(2,n); // + mins[2];
 
-      xr0 = coord.x(iglob, 0.0);
-      yr0 = coord.y(jglob, 0.0);
-      zr0 = 0.0; //coord.z(kglob, 0.5);
+      xr0 = coord.rh().x(iglob);
+      yr0 = coord.rh().y(jglob);
+      zr0 = 0.0; 
 
       // remove particles exiting from bottom
       bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
       if( //inside_star || 
           jglob < 3   || 
-          inside_star && (abs(xr0) > radius_pc) ) {
+          inside_star && (std::abs(xr0) > radius_pc) ) {
         container.to_other_tiles.push_back( {1,1,1,n} );
       }
 
