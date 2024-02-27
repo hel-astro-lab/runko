@@ -107,22 +107,22 @@ void fields::Conductor<2>::insert_em(
     //--------------------------------------------------
     // magnetic field
     
-    // x coord staggering for B: 1,0,0
-    xr = coord.x(iglob, 0.5);
-    yr = coord.y(jglob, 0.0);
-    zr = 0; //coord.z(kglob, 0.0);
+    // x coord staggering for Bx
+    xr = coord.bx().x(iglob);
+    yr = coord.bx().y(jglob);
+    zr = 0;
     bxd = B0*dipole(xr,yr,zr,0);
 
-    // y coord staggering for B: 0,1,0
-    xr = coord.x(iglob, 0.0);
-    yr = coord.y(jglob, 0.5);
-    zr = 0; //coord.z(kglob, 0.0);
+    // y coord staggering for By
+    xr = coord.by().x(iglob);
+    yr = coord.by().y(jglob);
+    zr = 0;
     byd = B0*dipole(xr,yr,zr,1);
 
-    // z coord staggering for B: 0,0,1
-    xr = coord.x(iglob, 0.0);
-    yr = coord.y(jglob, 0.0);
-    zr = 0; //coord.z(kglob, 0.5);
+    // z coord staggering for Bz
+    xr = coord.bz().x(iglob);
+    yr = coord.bz().y(jglob);
+    zr = 0;
     bzd = B0*dipole(xr,yr,zr,2);
 
     // NOTE flipping from xyz to xy plane
@@ -134,10 +134,10 @@ void fields::Conductor<2>::insert_em(
     // electric field
 
     //--------------------------------------------------
-    // x coord staggering for E: 0,1,1
-    xr = coord.x(iglob, 0.0);
-    yr = coord.y(jglob, 0.5);
-    zr = 0.0; //coord.z(kglob, 0.5);
+    // x coord staggering for Ex
+    xr = coord.ex().x(iglob);
+    yr = coord.ex().y(jglob);
+    zr = 0.0; 
     r.set(xr,yr,zr);
 
     Bd(0) = B0*dipole(xr,yr,zr,0);
@@ -149,10 +149,10 @@ void fields::Conductor<2>::insert_em(
     exd = erot1(0); // x component
 
     //--------------------------------------------------
-    // y coord staggering for E: 1,0,1
-    xr = coord.x(iglob, 0.5);
-    yr = coord.y(jglob, 0.0);
-    zr = 0; //coord.z(kglob, 0.5);
+    // y coord staggering for Ey
+    xr = coord.ey().x(iglob);
+    yr = coord.ey().y(jglob);
+    zr = 0; 
     r.set(xr,yr,zr);
 
     Bd(0) = B0*dipole(xr,yr,zr,0);
@@ -164,9 +164,9 @@ void fields::Conductor<2>::insert_em(
     eyd = erot2(1); // x component
 
     //--------------------------------------------------
-    // z coord staggering for E: 1,1,0
-    xr = coord.x(iglob, 0.5);
-    yr = coord.y(jglob, 0.5);
+    // z coord staggering for Ez
+    xr = coord.ez().x(iglob);
+    yr = coord.ez().y(jglob);
     zr = 0; //coord.z(kglob, 0.0);
     r.set(xr,yr,zr);
             
@@ -178,7 +178,7 @@ void fields::Conductor<2>::insert_em(
     auto erot3 = -1.0f*cross(vrot3, Bd);
     ezd = erot3(2); // x component
 
-    // set 
+    // TODO not set
     //yee.ex(i,j,k) = exd;
     //yee.ey(i,j,k) = eyd;
     //yee.ez(i,j,k) = ezd;
@@ -228,22 +228,22 @@ void fields::Conductor<3>::insert_em(
     //--------------------------------------------------
     // magnetic field
     
-    // x coord staggering for B: 1,0,0
-    xr = coord.x(iglob, 0.5);
-    yr = coord.y(jglob, 0.0);
-    zr = coord.z(kglob, 0.0);
+    // x coord staggering for Bx
+    xr = coord.bx().x(iglob);
+    yr = coord.bx().y(jglob);
+    zr = coord.bx().z(kglob);
     bxd = B0*dipole(xr,yr,zr,0);
 
-    // y coord staggering for B: 0,1,0
-    xr = coord.x(iglob, 0.0);
-    yr = coord.y(jglob, 0.5);
-    zr = coord.z(kglob, 0.0);
+    // y coord staggering for By
+    xr = coord.by().x(iglob);
+    yr = coord.by().y(jglob);
+    zr = coord.by().z(kglob);
     byd = B0*dipole(xr,yr,zr,1);
 
-    // z coord staggering for B: 0,0,1
-    xr = coord.x(iglob, 0.0);
-    yr = coord.y(jglob, 0.0);
-    zr = coord.z(kglob, 0.5);
+    // z coord staggering for Bz
+    xr = coord.bz().x(iglob);
+    yr = coord.bz().y(jglob);
+    zr = coord.bz().z(kglob);
     bzd = B0*dipole(xr,yr,zr,2);
 
     yee.bx(i,j,k) = bxd;
@@ -254,31 +254,30 @@ void fields::Conductor<3>::insert_em(
     //--------------------------------------------------
     // electric field
 
-    // x coord staggering for E: 0,1,1
-    
-    xr = coord.x(iglob, 0.0);
-    yr = coord.y(jglob, 0.5);
-    zr = coord.z(kglob, 0.5);
+    // x coord staggering for Ex
+    xr = coord.ex().x(iglob);
+    yr = coord.ex().y(jglob);
+    zr = coord.ex().z(kglob);
     bzd = B0*dipole(xr,yr,zr,2);
     
     vx = -Omega*yr;
     vy = +Omega*xr;
     exd = -vy*bzd;
 
-    // y coord staggering for E: 1,0,1
-    xr = coord.x(iglob, 0.5);
-    yr = coord.y(jglob, 0.0);
-    zr = coord.z(kglob, 0.5);
+    // y coord staggering for Ey
+    xr = coord.ey().x(iglob);
+    yr = coord.ey().y(jglob);
+    zr = coord.ey().z(kglob);
     bzd = B0*dipole(xr,yr,zr,2);
 
     vx = -Omega*yr;
     vy = +Omega*xr;
     eyd = vx*bzd;
 
-    // z coord staggering for E: 1,1,0
-    xr = coord.x(iglob, 0.5);
-    yr = coord.y(jglob, 0.5);
-    zr = coord.z(kglob, 0.0);
+    // z coord staggering for Ez
+    xr = coord.ez().x(iglob);
+    yr = coord.ez().y(jglob);
+    zr = coord.ez().z(kglob);
     bxd = B0*dipole(xr,yr,zr,0);
     byd = B0*dipole(xr,yr,zr,1);
 
@@ -363,18 +362,17 @@ void fields::Conductor<2>::update_b(
     //kglob = static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates 
-    xr0 = coord.x(iglob, 0.5);
-    yr0 = coord.y(jglob, 0.5);
-    zr0 = 0.0; //coord.z(kglob, 0.5);
+    xr0 = coord.rh().x(iglob);
+    yr0 = coord.rh().y(jglob);
+    zr0 = 0;
 
     // check if we are inside star
-    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.03*radius;
+    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.1*radius;
 
     // closed field line zone
     float_m rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
     sint = std::abs(xr0)/rad; // sin\theta
     float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
-
     bool closed_field_zone = eta < 0.9*sint*sint; // some tolerance for the boundaries
     //std::cout << "update_b: z" << closed_field_zone << " rad:" << rad << " sint " << sint << " eta " << eta << "\n";
 
@@ -386,9 +384,9 @@ void fields::Conductor<2>::update_b(
       ) {
 
       //--------------------------------------------------
-      // Bx: x coord staggering for B: 1,0,0
-      xr = coord.x(iglob, 0.5);
-      yr = coord.y(jglob, 0.0);
+      // Bx: x coord staggering for Bx
+      xr = coord.bx().x(iglob);
+      yr = coord.bx().y(jglob);
       r = std::sqrt( xr*xr + yr*yr);
 
       // interior diple field
@@ -415,26 +413,26 @@ void fields::Conductor<2>::update_b(
 
 
       //--------------------------------------------------
-      // By: y coord staggering for B: 0,1,0
-      xr = coord.x(iglob, 0.0);
-      yr = coord.y(jglob, 0.5);
-      r = std::sqrt( xr*xr + yr*yr);
+      // By: y coord staggering for By
+      xr = coord.by().x(iglob);
+      yr = coord.by().y(jglob);
+      r = std::sqrt( xr*xr + yr*yr );
 
       // interior diple field
-      byd = B0*dipole(xr,yr,0.0,1);
+      byd = B0*dipole(xr,yr,zr0,1);
       byi = yee.by(i,j,k);
 
       s = shape(r, radius, delta);
       bynew = s*byd  + (1.0f-s)*byi;
 
       //--------------------------------------------------
-      // Bz: z coord staggering for B: 0,0,1
-      xr = coord.x(iglob, 0.0);
-      yr = coord.y(jglob, 0.0);
+      // Bz: z coord staggering for Bz
+      xr = coord.bz().x(iglob);
+      yr = coord.bz().y(jglob);
       r = std::sqrt( xr*xr + yr*yr );
 
       // interior diple field
-      bzd = B0*dipole(xr,yr,0.0,2);
+      bzd = B0*dipole(xr,yr,zr0,2);
       bzi = yee.bz(i,j,k);
 
       s = shape(r, radius, delta);
@@ -442,9 +440,11 @@ void fields::Conductor<2>::update_b(
 
       //--------------------------------------------------
       if(!top) {
+
         yee.bx(i,j,k) = bxnew;
         yee.by(i,j,k) = bynew;
         yee.bz(i,j,k) = bznew;
+
       } else {
         // manual damping of outgoing waves
         // poor-man's version of PML absorbing boundary conditions
@@ -519,64 +519,45 @@ void fields::Conductor<3>::update_b(
     kglob = static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates 
-    xr0 = coord.x(iglob, 0.5);
-    yr0 = coord.y(jglob, 0.5);
-    zr0 = coord.z(kglob, 0.5);
+    xr0 = coord.rh().x(iglob);
+    yr0 = coord.rh().y(jglob);
+    zr0 = coord.rh().z(kglob);
 
     // modify fields if we are inside 2R_* radius
     if(std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) < 2.0*radius) {
 
       //--------------------------------------------------
-      // Bx: x coord staggering for B: 1,0,0
-      xr = coord.x(iglob, 0.5);
-      yr = coord.y(jglob, 0.0);
-      zr = coord.z(kglob, 0.0);
+      // Bx: x coord staggering for Bx
+      xr = coord.bx().x(iglob);
+      yr = coord.bx().y(jglob);
+      zr = coord.bx().z(kglob);
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       // interior diple field
       bxd = B0*dipole(xr,yr,zr,0);
-      //byd = B0*dipole(xr,yr,zr,1);
-      //bzd = B0*dipole(xr,yr,zr,2);
-
       bxi = yee.bx(i,j,k);
-      //byi = yee.by(i,j,k); // interpolate to this location
-      //bzi = yee.bz(i,j,k); // interpolate to this location
-
       s = shape(r, radius, delta);
       bxnew = s*bxd  + (1-s)*bxi;
 
-      // Bx radial  component 
-      //s = shape(r, radius-offs_brad, delta_brad);
-      //bxrad =     s*(bxd - (bxd*xr + byd*yr + bzd*zr)*xr/r/r)
-      //        (1-s)*(bxi - (bxi*xr + byi*yr + bzi*zr)*xr/r/r);
-      //
-      //s = shape(r, radius-offs_bperp, delta_bperp);
-      // Bx perp  component 
-      //bxperp =      s*(bxd*xr + byd*yr + bzd*zr)*xr/r/r 
-      //        + (1-s)*(bxi*xr + byi*yr + bzi*zr)*xr/r/r;
-
-
       //--------------------------------------------------
-      // By: y coord staggering for B: 0,1,0
-      xr = coord.x(iglob, 0.0);
-      yr = coord.y(jglob, 0.5);
-      zr = coord.z(kglob, 0.0);
+      // By: y coord staggering for By
+      xr = coord.by().x(iglob);
+      yr = coord.by().y(jglob);
+      zr = coord.by().z(kglob);
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       // interior diple field
-      //bxd = B0*dipole(xr,yr,zr,0);
       byd = B0*dipole(xr,yr,zr,1);
-      //bzd = B0*dipole(xr,yr,zr,2);
       byi = yee.by(i,j,k);
       s = shape(r, radius, delta);
       bynew = s*byd  + (1-s)*byi;
 
 
       //--------------------------------------------------
-      // Bz: z coord staggering for B: 0,0,1
-      xr = coord.x(iglob, 0.0);
-      yr = coord.y(jglob, 0.0);
-      zr = coord.z(kglob, 0.5);
+      // Bz: z coord staggering for Bz
+      xr = coord.bz().x(iglob);
+      yr = coord.bz().y(jglob);
+      zr = coord.bz().z(kglob);
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       // interior diple field
@@ -600,8 +581,6 @@ template<>
 void fields::Conductor<2>::update_e(
     fields::Tile<2>& tile)
 {
-  using std::abs;
-
   float_m exd, eyd, ezd;
   float_m bxd, byd, bzd;
   float_m exi, eyi, ezi;
@@ -669,12 +648,12 @@ void fields::Conductor<2>::update_e(
     //kglob = static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates
-    xr0 = coord.x(iglob, 0.5);
-    yr0 = coord.y(jglob, 0.5);
-    zr0 = 0.0; //coord.z(kglob, 0.5);
+    xr0 = coord.rh().x(iglob);
+    yr0 = coord.rh().y(jglob);
+    zr0 = 0.0; 
 
     // check if we are inside star
-    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.03*radius;
+    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.05*radius;
 
     if( inside_star ||
         top
@@ -682,9 +661,9 @@ void fields::Conductor<2>::update_e(
 
       //-------------------------------------------------- 
       // ex
-      xr = coord.x(iglob, 0.0);
-      yr = coord.y(jglob, 0.5);
-      zr = 0.0; //coord.z(kglob, 0.5);
+      xr = coord.ex().x(iglob);
+      yr = coord.ex().y(jglob);
+      zr = 0.0; 
       r.set(xr,yr,zr);
 
       Bd(0) = B0*dipole(xr,yr,zr,0);
@@ -698,20 +677,16 @@ void fields::Conductor<2>::update_e(
       exi = yee.ex(i,j,k);
 
       s = shape(norm(r), radius, delta);
-
-      // damp off edges of polar cap
-      s *= shape( abs(xr), radius_pc, delta_pc);
+      s *= shape( std::abs(xr), radius_pc, delta_pc); // damp off edges of polar cap
 
       exnew = s*exd  + (1.0f-s)*exi;
 
 
       //-------------------------------------------------- 
       // ey
-
-      // y coord staggering for E: 1,0,1
-      xr = coord.x(iglob, 0.5);
-      yr = coord.y(jglob, 0.0);
-      zr = 0.0f; //coord.z(kglob, 0.5);
+      xr = coord.ey().x(iglob);
+      yr = coord.ey().y(jglob);
+      zr = 0.0; 
       r.set(xr,yr,zr);
 
       Bd(0) = B0*dipole(xr,yr,zr,0);
@@ -720,25 +695,20 @@ void fields::Conductor<2>::update_e(
 
       auto vrot2 = cross(Om, r);
       auto erot2 = -1.0f*cross(vrot2, Bd);
-      eyd = erot2(1); // x component
+      eyd = erot2(1); // y component
 
       eyi = yee.ey(i,j,k);
 
       s = shape(norm(r), radius, delta);
-
-      // damp off edges of polar cap
-      s *= shape( abs(xr), radius_pc, delta_pc);
+      s *= shape( std::abs(xr), radius_pc, delta_pc); // damp off edges of polar cap
 
       eynew = s*eyd  + (1.0f-s)*eyi;
 
       //-------------------------------------------------- 
       // ez
-
-      // z coord staggering for E: 1,1,0
-
-      xr = coord.x(iglob, 0.5);
-      yr = coord.y(jglob, 0.5);
-      zr = 0.0f; //coord.z(kglob, 0.0);
+      xr = coord.ez().x(iglob);
+      yr = coord.ez().y(jglob);
+      zr = 0.0; 
       r.set(xr,yr,zr);
               
       Bd(0) = B0*dipole(xr,yr,zr,0);
@@ -747,24 +717,26 @@ void fields::Conductor<2>::update_e(
               
       auto vrot3 = cross(Om, r);
       auto erot3 = -1.0f*cross(vrot3, Bd);
-      ezd = erot3(2); // x component
+      ezd = erot3(2); // z component
 
       ezi = yee.ez(i,j,k);
 
       s = shape(norm(r), radius, delta);
-        
-      // damp off edges of polar cap
-      s *= shape( abs(xr), radius_pc, delta_pc);
+      s *= shape( std::abs(xr), radius_pc, delta_pc); // damp off edges of polar cap
 
       eznew = s*ezd  + (1.0f-s)*ezi;
 
+      //std::cout << "  ijk" << i << "," << j << "," << k << " r:" << norm(r) << " rad:" << radius << " d:" << delta << " s:" << s << "\n";
+
       //--------------------------------------------------
       if(!top) {
+
         yee.ex(i,j,k) = exnew;
         yee.ey(i,j,k) = eynew;
         yee.ez(i,j,k) = eznew;
+
       } else {
-        // manual damping of outgoing wave//s
+        // manual damping of outgoing waves 
         // poor-man's version of PML absorbing boundary conditions
 
         float_m tile_len = static_cast<float>(tile.mesh_lengths[1]);
@@ -821,9 +793,9 @@ void fields::Conductor<2>::update_e(
     //kglob = static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates; TODO ignoring staggering
-    xr0 = coord.x(iglob, 0.0); 
-    yr0 = coord.y(jglob, 0.0);
-    zr0 = 0.0; //coord.z(kglob, 0.5);
+    xr0 = coord.rh().x(iglob);
+    yr0 = coord.rh().y(jglob);
+    zr0 = 0.0; 
 
     rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
     sint = std::abs(xr0)/rad; // sin\theta
@@ -842,15 +814,15 @@ void fields::Conductor<2>::update_e(
       bn  = std::sqrt( bxi*bxi + byi*byi + bzi*bzi ) + EPS;
 
       // E_\parallel
-      epar = exi*bxi + eyi*byi + ezi*bzi;
+      epar = (exi*bxi + eyi*byi + ezi*bzi)/bn;
 
       // take out eparallel component from electric field
-      exnew = exi - epar*bxi/bn/bn;
-      eynew = eyi - epar*byi/bn/bn;
-      eznew = ezi - epar*bzi/bn/bn;
+      exnew = exi - epar*bxi/bn;
+      eynew = eyi - epar*byi/bn;
+      eznew = ezi - epar*bzi/bn;
 
       // smoothing function
-      //s = shape( rad, Rbc*sint*sint, 50.0); // location of the open-closed field line bc
+      //s = shape( rad, 1.05*Rbc*sint*sint, 50.0); // location of the open-closed field line bc
       s = 1.0;
 
       // blend solution in with a smoothing function
@@ -1043,9 +1015,9 @@ void fields::Conductor<3>::update_e(
     kglob = static_cast<float_m>(k) + mins[2];
 
     // spherical coordinates
-    xr0 = coord.x(iglob, 0.5);
-    yr0 = coord.y(jglob, 0.5);
-    zr0 = coord.z(kglob, 0.5);
+    xr0 = coord.rh().x(iglob);
+    yr0 = coord.rh().y(jglob);
+    zr0 = coord.rh().z(kglob);
 
     // modify fields if we are inside 2R_* radius
     if(std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) < 2.0*radius) {
@@ -1061,9 +1033,9 @@ void fields::Conductor<3>::update_e(
 
       //-------------------------------------------------- 
       // ex
-      xr = coord.x(iglob, 0.0);
-      yr = coord.y(jglob, 0.5);
-      zr = coord.z(kglob, 0.5);
+      xr = coord.ex().x(iglob);
+      yr = coord.ex().y(jglob);
+      zr = coord.ex().z(kglob);
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       bzd = B0*dipole(xr,yr,zr,2);
@@ -1079,11 +1051,9 @@ void fields::Conductor<3>::update_e(
 
       //-------------------------------------------------- 
       // ey
-
-      // y coord staggering for E: 1,0,1
-      xr = coord.x(iglob, 0.5);
-      yr = coord.y(jglob, 0.0);
-      zr = coord.z(kglob, 0.5);
+      xr = coord.ey().x(iglob);
+      yr = coord.ey().y(jglob);
+      zr = coord.ey().z(kglob);
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       bzd = B0*dipole(xr,yr,zr,2);
@@ -1099,11 +1069,9 @@ void fields::Conductor<3>::update_e(
 
       //-------------------------------------------------- 
       // ez
-
-      // z coord staggering for E: 1,1,0
-      xr = coord.x(iglob, 0.5);
-      yr = coord.y(jglob, 0.5);
-      zr = coord.z(kglob, 0.0);
+      xr = coord.ez().x(iglob);
+      yr = coord.ez().y(jglob);
+      zr = coord.ez().z(kglob);
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
       bxd = B0*dipole(xr,yr,zr,0);

@@ -3,22 +3,105 @@
 #include "../../em-fields/tile.h"
 #include "../../definitions.h"
 
+// Helper class to automate the management of a staggered Yee lattice
+// 
+// Returns a field object that has the correct staggering. 
+//
+// Call syntax is:
+//
+//    StaggeredCoordinates coord();
+//    auto x = coord.ex().x(i);
+//
+//class StaggeredCoordinates
+//{
+//  public:
+//
+//  StaggeredCoordinates() {};
+//
+//  inline StaggeredField rh() { return StaggeredField(0, 0, 0); }
+//
+//  inline StaggeredField ex() { return StaggeredField(1, 0, 0); }
+//  inline StaggeredField ey() { return StaggeredField(0, 1, 0); }
+//  inline StaggeredField ez() { return StaggeredField(1, 0, 1); }
+//
+//  inline StaggeredField jx() { return StaggeredField(1, 0, 0); }
+//  inline StaggeredField jy() { return StaggeredField(0, 1, 0); }
+//  inline StaggeredField jz() { return StaggeredField(1, 0, 1); }
+//
+//  inline StaggeredField bx() { return StaggeredField(0, 1, 1); }
+//  inline StaggeredField by() { return StaggeredField(1, 0, 1); }
+//  inline StaggeredField bz() { return StaggeredField(1, 1, 0); }
+//};
+//
+//
+//class StaggeredField
+//{
+//  double sx,sy,sz;
+//
+//  public:
+//
+//  StaggeredField( double sx, double sy, double sz ) 
+//    : sx(sx), sy(sy), sz(sz)
+//  { }
+//
+//  inline double x(double i) { return i + sx; }
+//  inline double y(double j) { return j + sy; }
+//  inline double z(double k) { return k + sz; }
+//};
+
+
+class StaggeredSphericalField
+{
+  double sx,sy,sz;
+  double cx, cy, cz, r;
+
+  public:
+
+  StaggeredSphericalField( 
+      double sx, double sy, double sz,
+      double cenx, double ceny, double cenz, double radius) 
+    : sx(sx), sy(sy), sz(sz),
+      cx(cenx), cy(ceny), cz(cenz), r(radius)
+  { }
+
+  // NOTE there is a flip of staggering direction for negative cartesian coordinates
+  //      not really sure why, but it is needed to get a balanced configuration
+  inline double x(double i) { return i > cx ? (i + sx - cx)/r : (i - sx - cx)/r; }
+  inline double y(double j) { return j > cy ? (j + sy - cy)/r : (j - sy - cy)/r; }
+  inline double z(double k) { return k > cz ? (k + sz - cz)/r : (k - sz - cz)/r; }
+
+  //inline double x(double i) { return (i + sx - cx)/r; }
+  //inline double y(double j) { return (j + sy - cy)/r; }
+  //inline double z(double k) { return (k + sz - cz)/r; }
+};
+
 
 class StaggeredSphericalCoordinates
 {
-  double cx, cy, cz;
-  double r;
+  double cx, cy, cz, r;
 
   public:
 
   StaggeredSphericalCoordinates( double cenx, double ceny, double cenz, double radius) 
-      : cx(cenx), cy(ceny), cz(cenz),r(radius)
+      : cx(cenx), cy(ceny), cz(cenz), r(radius)
   {}
 
-  double x(double i, double stg) { return (i - cx + stg)/r; }
-  double y(double j, double stg) { return (j - cy + stg)/r; }
-  double z(double k, double stg) { return (k - cz + stg)/r; }
+  inline StaggeredSphericalField rh() { return StaggeredSphericalField(0., 0., 0., cx,cy,cz,r); }
+
+  inline StaggeredSphericalField ex() { return StaggeredSphericalField(1., 0., 0., cx,cy,cz,r); }
+  inline StaggeredSphericalField ey() { return StaggeredSphericalField(0., 1., 0., cx,cy,cz,r); }
+  inline StaggeredSphericalField ez() { return StaggeredSphericalField(1., 0., 1., cx,cy,cz,r); }
+
+  inline StaggeredSphericalField jx() { return StaggeredSphericalField(1., 0., 0., cx,cy,cz,r); }
+  inline StaggeredSphericalField jy() { return StaggeredSphericalField(0., 1., 0., cx,cy,cz,r); }
+  inline StaggeredSphericalField jz() { return StaggeredSphericalField(1., 0., 1., cx,cy,cz,r); }
+
+  inline StaggeredSphericalField bx() { return StaggeredSphericalField(0., 1., 1., cx,cy,cz,r); }
+  inline StaggeredSphericalField by() { return StaggeredSphericalField(1., 0., 1., cx,cy,cz,r); }
+  inline StaggeredSphericalField bz() { return StaggeredSphericalField(1., 1., 0., cx,cy,cz,r); }
+
 };
+
 
 
 // smooth ramp; half-way is at r = r0; 
