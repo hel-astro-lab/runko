@@ -499,6 +499,22 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::rGCAPusher<3,3>>(m_3d, "rGCAPusher", picpusher3d)
     .def(py::init<>());
 
+  // special rGCA + gravity pusher for pulsars
+  py::class_<pic::PulsarPusher<3,3>>(m_3d, "PulsarPusher", picpusher3d)
+    .def_readwrite("radius",    &pic::PulsarPusher<3,3>::rad_star)
+    .def_readwrite("radius_pc", &pic::PulsarPusher<3,3>::rad_pcap)
+    .def_readwrite("period",    &pic::PulsarPusher<3,3>::period_star)
+    .def_readwrite("cenx",      &pic::PulsarPusher<3,3>::cenx)
+    .def_readwrite("ceny",      &pic::PulsarPusher<3,3>::ceny)
+    .def_readwrite("cenz",      &pic::PulsarPusher<3,3>::cenz)
+    .def_readwrite("grav_const",&pic::PulsarPusher<3,3>::gravity_const)
+    //.def_readwrite("B0",       &pic::PulsarPusher<3>::B0)
+    //.def_readwrite("chi",      &pic::PulsarPusher<3>::chi)
+    //.def_readwrite("phase",    &pic::PulsarPusher<3>::phase)
+    //.def_readwrite("delta",    &pic::PulsarPusher<3>::delta)
+    //.def_readwrite("delta_pc", &pic::PulsarPusher<3>::delta_pc)
+    .def(py::init<>());
+
   // Photon pusher
   py::class_<pic::PhotonPusher<3,3>>(m_3d, "PhotonPusher", picpusher3d)
     .def(py::init<>());
@@ -763,6 +779,33 @@ void bind_pic(py::module& m_sub)
     .def("solve",                    &pic::Star<2>::solve);
 
 
+  // 3D rotating conductor
+  py::class_<pic::Star<3>>(m_3d, "Star")
+    .def(py::init<>())
+    .def_readwrite("B0",             &pic::Star<3>::B0)
+    .def_readwrite("radius",         &pic::Star<3>::radius)
+    .def_readwrite("period",         &pic::Star<3>::period)
+    .def_readwrite("chi",            &pic::Star<3>::chi)
+    .def_readwrite("phase",          &pic::Star<3>::phase)
+    .def_readwrite("cenx",           &pic::Star<3>::cenx)
+    .def_readwrite("ceny",           &pic::Star<3>::ceny)
+    .def_readwrite("cenz",           &pic::Star<3>::cenz)
+    .def_readwrite("delta",          &pic::Star<3>::delta)
+    .def_readwrite("radius_pc",      &pic::Star<3>::radius_pc)
+    .def_readwrite("delta_pc",       &pic::Star<3>::delta_pc)
+    .def_readwrite("Nx",             &pic::Star<3>::Nx)
+    .def_readwrite("Ny",             &pic::Star<3>::Ny)
+    .def_readwrite("Nz",             &pic::Star<3>::Nz)
+    .def_readwrite("temp_pairs",     &pic::Star<3>::temp_pairs)
+    .def_readwrite("temp_phots",     &pic::Star<3>::temp_phots)
+    .def_readwrite("ninj_pairs",     &pic::Star<3>::ninj_pairs)
+    .def_readwrite("ninj_phots",     &pic::Star<3>::ninj_phots)
+    .def_readwrite("ninj_min_pairs", &pic::Star<3>::ninj_min_pairs)
+    .def_readwrite("ninj_min_phots", &pic::Star<3>::ninj_min_phots)
+    .def("insert_em",                &pic::Star<3>::insert_em)
+    .def("update_b",                 &pic::Star<3>::update_b)
+    .def("update_e",                 &pic::Star<3>::update_e)
+    .def("solve",                    &pic::Star<3>::solve);
 
 
 }
