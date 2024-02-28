@@ -29,7 +29,8 @@ public:
   using fields::Conductor<D>::radius;
   using fields::Conductor<D>::period;
   using fields::Conductor<D>::B0;
-  using fields::Conductor<D>::chi;
+  using fields::Conductor<D>::chi_mu;
+  using fields::Conductor<D>::chi_om;
   using fields::Conductor<D>::phase;
   using fields::Conductor<D>::cenx;
   using fields::Conductor<D>::ceny;

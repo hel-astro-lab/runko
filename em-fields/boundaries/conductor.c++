@@ -8,6 +8,8 @@ using std::min;
 using std::max;
 using std::abs;
 using std::sqrt;
+using toolbox::Vec3;
+
 
 // General dipole formula in 2D cartesian coordinates
 template<>
@@ -18,7 +20,7 @@ double fields::Conductor<2>::dipole(
         int dim) {
 
   //non-rotating magnetic moment vector components
-  double p1 = sin(chi), p2 = cos(chi), p3 = 0.0;   // 2D orientation
+  double p1 = sin(chi_mu), p2 = cos(chi_mu), p3 = 0.0;   // 2D orientation
 
   // final rotating magnetic moment with phase included; rotates in xz plane
   // TODO rotation turned off for 2D; i.e., no phase dependency
@@ -47,7 +49,7 @@ double fields::Conductor<3>::dipole(
         int dim) {
 
   //non-rotating magnetic moment vector components
-  double p1 = sin(chi), p2 = 0.0, p3 = cos(chi);
+  double p1 = sin(chi_mu), p2 = 0.0, p3 = cos(chi_mu);
 
   // final rotating magnetic moment with phase included
   double mux = p1*cos(phase) - p2*sin(phase);
@@ -81,19 +83,18 @@ void fields::Conductor<D>::insert_em(
   float_m iglob, jglob, kglob;
   float_m xr,yr,zr;
   float_m vx,vy;
-  toolbox::Vec3<float_m> r, Bd; // tmp variables
+  Vec3<float_m> r, Bd; // tmp variables
 
   // angular velocity
   float_m Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
                                   
-  toolbox::Vec3<float_m> Om;
-  if(D == 2) Om.set(0.0, Omega, 0.0); // Omega unit vector along y-axis
-  if(D == 3) Om.set(0.0, 0.0, Omega); // Omega unit vector along z-axis
+  Vec3<float_m> Om;
+  if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
+  if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
-
 
 
   int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
@@ -233,8 +234,8 @@ void fields::Conductor<D>::update_b(
   bool right = false;
   bool top   = false;
   bool bot   = false;
-  bool fro   = false;
-  bool bac   = false;
+  bool front = false;
+  bool back  = false;
 
   if(D == 2){
     if( mins[1] < 1 )    bot   = true; 
@@ -244,8 +245,8 @@ void fields::Conductor<D>::update_b(
   } else if (D == 3) {
     if( mins[0] < 1 )    left  = true; 
     if( maxs[0] > Nx-1 ) right = true; 
-    if( mins[1] < 1 )    fro   = true; 
-    if( maxs[1] > Ny-1 ) bac   = true; 
+    if( mins[1] < 1 )    front = true; 
+    if( maxs[1] > Ny-1 ) back  = true; 
     if( mins[2] < 1 )    bot   = true; 
     if( maxs[2] > Nz-1 ) top   = true; 
   }
@@ -301,8 +302,8 @@ void fields::Conductor<D>::update_b(
     bool inside_left  = left  && iglob < 3; 
     bool inside_right = right && iglob > Nx-2; 
 
-    bool inside_front = fro && jglob < 3; 
-    bool inside_back  = bac && jglob > Ny-2; 
+    bool inside_front = front && jglob < 3; 
+    bool inside_back  = back && jglob > Ny-2; 
 
 
     // operate inside the region only
@@ -322,8 +323,13 @@ void fields::Conductor<D>::update_b(
       zr = (D>=3) ? coord.bx().z(kglob) : 0;
       r = std::sqrt( xr*xr + yr*yr + zr*zr );
 
+      // alternative syntax  using internal toolbox::Vec3
+      //xvec = coord.bx().vec(iglob, jglob, kglob); // cartesian position vector in "star's coordinates"
+      //r = norm(xvec);
+
+
       // interior diple field
-      bxd = B0*dipole(xr,yr,zr0,0);
+      bxd = B0*dipole(xr,yr,zr,0);
       //byd = B0*dipole(xr,yr,zr,1);
       //bzd = B0*dipole(xr,yr,zr,2);
 
@@ -356,7 +362,7 @@ void fields::Conductor<D>::update_b(
       r = std::sqrt( xr*xr + yr*yr +zr*zr );
 
       // interior diple field
-      byd = B0*dipole(xr,yr,zr0,1);
+      byd = B0*dipole(xr,yr,zr,1);
       byi = yee.by(i,j,k);
 
       s = shape(r, radius, delta);
@@ -370,7 +376,7 @@ void fields::Conductor<D>::update_b(
       r = std::sqrt( xr*xr + yr*yr +zr*zr );
 
       // interior diple field
-      bzd = B0*dipole(xr,yr,zr0,2);
+      bzd = B0*dipole(xr,yr,zr,2);
       bzi = yee.bz(i,j,k);
 
       s = shape(r, radius, delta);
@@ -438,13 +444,13 @@ void fields::Conductor<D>::update_e(
 
 
   // angular velocity
-  toolbox::Vec3<float_m> r, Bd, Om; // tmp variables
+  Vec3<float_m> r, Bd, Om; // tmp variables
                                   
   float_m Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
 
-  if(D == 2) Om.set(0.0, Omega, 0.0); // Omega unit vector along y-axis
-  if(D == 3) Om.set(0.0, 0.0, Omega); // Omega unit vector along z-axis
+  if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
+  if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
@@ -471,8 +477,8 @@ void fields::Conductor<D>::update_e(
   bool right = false;
   bool top   = false;
   bool bot   = false;
-  bool fro   = false;
-  bool bac   = false;
+  bool front = false;
+  bool back  = false;
 
   if(D == 2){
     if( mins[1] < 1 )    bot   = true; 
@@ -482,8 +488,8 @@ void fields::Conductor<D>::update_e(
   } else if (D == 3) {
     if( mins[0] < 1 )    left  = true; 
     if( maxs[0] > Nx-1 ) right = true; 
-    if( mins[1] < 1 )    fro   = true; 
-    if( maxs[1] > Ny-1 ) bac   = true; 
+    if( mins[1] < 1 )    front = true; 
+    if( maxs[1] > Ny-1 ) back  = true; 
     if( mins[2] < 1 )    bot   = true; 
     if( maxs[2] > Nz-1 ) top   = true; 
   }
@@ -640,8 +646,8 @@ void fields::Conductor<D>::update_e(
     bool inside_left  = left  && iglob < 3; 
     bool inside_right = right && iglob > Nx-2; 
 
-    bool inside_front = fro && jglob < 3; 
-    bool inside_back  = bac && jglob > Ny-2; 
+    bool inside_front = front && jglob < 3; 
+    bool inside_back  = back  && jglob > Ny-2; 
 
     // boundaries
     if( inside_bot   ||

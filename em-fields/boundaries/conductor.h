@@ -2,6 +2,7 @@
 
 #include "../../em-fields/tile.h"
 #include "../../definitions.h"
+#include "../../tools/vector.h"
 
 // Helper class to automate the management of a staggered Yee lattice
 // 
@@ -11,44 +12,6 @@
 //
 //    StaggeredCoordinates coord();
 //    auto x = coord.ex().x(i);
-//
-//class StaggeredCoordinates
-//{
-//  public:
-//
-//  StaggeredCoordinates() {};
-//
-//  inline StaggeredField rh() { return StaggeredField(0, 0, 0); }
-//
-//  inline StaggeredField ex() { return StaggeredField(1, 0, 0); }
-//  inline StaggeredField ey() { return StaggeredField(0, 1, 0); }
-//  inline StaggeredField ez() { return StaggeredField(1, 0, 1); }
-//
-//  inline StaggeredField jx() { return StaggeredField(1, 0, 0); }
-//  inline StaggeredField jy() { return StaggeredField(0, 1, 0); }
-//  inline StaggeredField jz() { return StaggeredField(1, 0, 1); }
-//
-//  inline StaggeredField bx() { return StaggeredField(0, 1, 1); }
-//  inline StaggeredField by() { return StaggeredField(1, 0, 1); }
-//  inline StaggeredField bz() { return StaggeredField(1, 1, 0); }
-//};
-//
-//
-//class StaggeredField
-//{
-//  double sx,sy,sz;
-//
-//  public:
-//
-//  StaggeredField( double sx, double sy, double sz ) 
-//    : sx(sx), sy(sy), sz(sz)
-//  { }
-//
-//  inline double x(double i) { return i + sx; }
-//  inline double y(double j) { return j + sy; }
-//  inline double z(double k) { return k + sz; }
-//};
-
 
 class StaggeredSphericalField
 {
@@ -70,9 +33,19 @@ class StaggeredSphericalField
   inline double y(double j) { return j > cy ? (j + sy - cy)/r : (j - sy - cy)/r; }
   inline double z(double k) { return k > cz ? (k + sz - cz)/r : (k - sz - cz)/r; }
 
+  // TODO template dependency complicates the whole code too much
+  //inline toolbox::Vec3<double> vec(double i, double j, double k) 
+  //{ 
+  //  if(D == 1) return ret( x(i),  0.0,  0.0 );
+  //  if(D == 2) return ret( x(i), y(j),  0.0 );
+  //  if(D == 3) return ret( x(i), y(j), z(k) );
+  //}
+
   //inline double x(double i) { return (i + sx - cx)/r; }
   //inline double y(double j) { return (j + sy - cy)/r; }
   //inline double z(double k) { return (k + sz - cz)/r; }
+
+  //void _dummy(std::array<int, D> in) = 0;
 };
 
 
@@ -101,7 +74,6 @@ class StaggeredSphericalCoordinates
   inline StaggeredSphericalField bz() { return StaggeredSphericalField(1., 1., 0., cx,cy,cz,r); }
 
 };
-
 
 
 // smooth ramp; half-way is at r = r0; 
@@ -133,10 +105,11 @@ class Conductor
   // configuration parameters
   double radius = 10.0;
   double period = 0.0;
-  double B0 = 1.0;  /// Initial magnetic field strength B_0
-  double chi = 0.0; /// Obliquity angle between rotation axis and magnetic moment
-  double phase = 0.0; /// rotator phase
-  double cenx, ceny, cenz; // center of the sphere
+  double B0     = 1.0;  /// Initial magnetic field strength B_0
+  double chi_mu = 0.0; /// Obliquity angle of magnetic dipole from z-axis
+  double chi_om = 0.0; /// Obliquity angle of Omega vector from z-axis
+  double phase  = 0.0; /// rotator phase
+  double cenx = 0, ceny = 0, cenz = 0; // center of the sphere
 
   double delta = 1.0;
 
@@ -165,6 +138,7 @@ class Conductor
   void update_e(fields::Tile<D>&  tile);
 
   void null_edges(fields::Tile<D>& tile, int mode);
+
 
 };
 
