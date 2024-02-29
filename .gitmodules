@@ -27,4 +27,4 @@
 	branch = master
 [submodule "tools/fmt"]
 	path = tools/fmt
-	url = git@github.com:fmtlib/fmt.git
+	url = https://github.com/fmtlib/fmt.git
