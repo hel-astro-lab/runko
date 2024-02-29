@@ -29,6 +29,11 @@ def parse_args():
             type=str,
             help='Variable to analyze')
 
+    parser.add_argument('--view', 
+            dest='view', 
+            default="side",
+            type=str,
+            help='Camera view')
 
     # --------------------------------------------------
     # first high level parse
