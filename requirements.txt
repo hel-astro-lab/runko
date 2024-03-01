@@ -3,3 +3,4 @@ h5py
 scipy
 palettable
 mpi4py
+matplotlib
