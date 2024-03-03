@@ -29,9 +29,9 @@ class StaggeredSphericalField
 
   // NOTE there is a flip of staggering direction for negative cartesian coordinates
   //      not really sure why, but it is needed to get a balanced configuration
-  inline double x(double i) { return i > cx ? (i + sx - cx)/r : (i - sx - cx)/r; }
-  inline double y(double j) { return j > cy ? (j + sy - cy)/r : (j - sy - cy)/r; }
-  inline double z(double k) { return k > cz ? (k + sz - cz)/r : (k - sz - cz)/r; }
+  //inline double x(double i) { return i > cx ? (i + 0.5*sx - cx)/r : (i - 0.5*sx - cx)/r; }
+  //inline double y(double j) { return j > cy ? (j + 0.5*sy - cy)/r : (j - 0.5*sy - cy)/r; }
+  //inline double z(double k) { return k > cz ? (k + 0.5*sz - cz)/r : (k - 0.5*sz - cz)/r; }
 
   // TODO template dependency complicates the whole code too much
   //inline toolbox::Vec3<double> vec(double i, double j, double k) 
@@ -41,9 +41,9 @@ class StaggeredSphericalField
   //  if(D == 3) return ret( x(i), y(j), z(k) );
   //}
 
-  //inline double x(double i) { return (i + sx - cx)/r; }
-  //inline double y(double j) { return (j + sy - cy)/r; }
-  //inline double z(double k) { return (k + sz - cz)/r; }
+  inline double x(double i) { return (i + 0.5*sx - cx)/r; }
+  inline double y(double j) { return (j + 0.5*sy - cy)/r; }
+  inline double z(double k) { return (k + 0.5*sz - cz)/r; }
 
   //void _dummy(std::array<int, D> in) = 0;
 };

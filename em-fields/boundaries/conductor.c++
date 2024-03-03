@@ -516,7 +516,8 @@ void fields::Conductor<D>::update_e(
     zr0 = (D>=3) ? coord.rh().z(kglob) : 0;
 
     // check if we are inside star
-    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.05*radius;
+    //bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.05*radius;
+    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= radius + 2.0*delta_pc + 1.0;
 
     if( inside_star ||
         top
