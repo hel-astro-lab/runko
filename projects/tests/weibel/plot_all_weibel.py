@@ -3,8 +3,6 @@ import h5py as h5
 import sys, os
 
 import matplotlib.pyplot as plt
- 
-from configSetup import Configuration
 
 sys.path.insert(0,'../')
 from setup_tests import Configuration_Test
@@ -52,7 +50,7 @@ if __name__ == "__main__":
     confs = [
             "gam3.ini",
             "gam10.ini",
-            "gam30.ini",
+            #"gam30.ini",
             "gam100.ini",
             ]
 
@@ -85,9 +83,9 @@ if __name__ == "__main__":
             axs[0].text(10.0, 0.1, r'$\gamma_{\mathrm{b}} = 3$', rotation=80, fontsize = 7, ha='center', va='center')
         if ii == 1:
             axs[0].text(23.0, 0.3, r'$\gamma_{\mathrm{b}} = 10$', rotation=72, fontsize = 7, ha='center', va='center')
+        #if ii == 2:
+        #    axs[0].text(42.0, 0.3, r'$\gamma_{\mathrm{b}} = 30$', rotation=60, fontsize = 7, ha='center', va='center')
         if ii == 2:
-            axs[0].text(42.0, 0.3, r'$\gamma_{\mathrm{b}} = 30$', rotation=60, fontsize = 7, ha='center', va='center')
-        if ii == 3:
             axs[0].text(50.0, 0.004, r'$\gamma_{\mathrm{b}} = 100$', rotation=45, fontsize = 7, ha='center', va='center')
 
 

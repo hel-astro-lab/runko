@@ -8,7 +8,7 @@ from scipy.stats import mstats
 from scipy.optimize import curve_fit
 
 from pytools.visualize import imshow
-from pytools.conf import Configuration
+from setup_tests import Configuration_Test as Configuration
 
 #from combine_files import get_file_list
 
@@ -56,13 +56,13 @@ default_values = {
 default_shock_values = {
         'rho': {'title': r"$\rho$",
                 'vmin': 0.0,
-                #'vmax': 0.8,
+                'vmax': 4.0,
                 },
         'jz': {'title': r"$J_z$",
                'cmap': "RdBu",
                'vsymmetric':True,
-               #'vmin': -2.0000,
-               #'vmax':  2.0000,
+               'vmin': -1.0000,
+               'vmax':  1.0000,
                 },
         'bz': {'title': r"$B_z$",
                'cmap': "RdBu",
@@ -220,6 +220,27 @@ def plot2d_shock_single(
     for key in args:
         if not(key == None):
             print(" setting {}: {}".format(key, args[key]))
+
+
+    #--------------------------------------------------
+    # normalization
+    norm = 1.0
+    n0 = conf.ppc*2 #*conf.stride**2 #number density per pixel in n_0 
+    qe = np.abs(conf.qe)
+    me_per_qe = np.abs(conf.me) / qe #for electrons = 1
+    deltax = 1.0/conf.c_omp #\Delta x in units of skin depth
+
+    if var == 'rho':
+        norm = n0
+    if var == 'jz':
+        norm = qe*n0*conf.cfl*conf.cfl
+    if var in ['bz']:
+        norm = (me_per_qe*conf.cfl**2)/deltax
+
+    val = val / norm
+    print("norm factor: {}".format( norm ))
+    print("value at the corner {} / mean val {}".format( val[0,0], np.mean(val)) )
+
 
     #--------------------------------------------------
 

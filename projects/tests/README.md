@@ -15,10 +15,10 @@ In order perform a PIC simulation with Weibel setup, execute the code with 4 pro
 mpirun -n 4 python3 pic.py --conf weibel/gam10.ini
 ```
 
-You can then visualize the resulting simulation files with
+You can then visualize the resulting simulation files by plotting the plasma density with
 
 ```
-python3 plot2d_var.py --conf weibel/gam10.ini
+python3 plot2d_var.py --conf weibel/gam10.ini --var rho
 ```
 
 Growth rate can also be compared to analytical estimate. 
