@@ -192,12 +192,13 @@ class Mat4
 // elementwise arithmetics
   
 template <class T>
-inline Vec3<T> operator/(Vec3<T>& v, T s) 
+inline Vec3<T> operator/(Vec3<T>& v, T s)  // NOTE vector passed as reference
 {
   Vec3<T> ret;
   for(size_t i=0; i<3; i++) ret(i) = v(i)/s;
   return ret;
 }
+
 
 template <class T>
 inline Vec3<T> operator*(T s, Vec3<T>& v) 

@@ -13,6 +13,10 @@ using std::max;
 using std::abs;
 using std::sqrt;
 
+using toolbox::cross;
+using toolbox::dot;
+using toolbox::Vec3;
+
 
 // simple pseudo-random floats with C library rand() (outputting int's).
 // note that we do not call srand( seed ) so it is set to seed(1). 
@@ -66,13 +70,23 @@ void pic::Star<D>::solve(
   float_m ex, ey, ez, bx, by, bz;
   float_m epar, ninj;
 
+  Vec3<float_m> Bv, Ev; // tmp variables
+  Vec3<float_m> r, Om; // tmp variables
+
+  float_m Omega = 2.0*PI/period;
+  if(period < EPS) Omega = 0.0; // reality check
+
+  if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
+  if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
+
+  //--------------------------------------------------
   // four-velocity components of the particles to be injected
   float_p ux1=0.0, uy1=0.0, uz1=0.0;
 
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
   auto& yee = tile.get_yee();
-  const double c = tile.cfl;
+  const float_p c = tile.cfl;
 
 
   //--------------------------------------------------
@@ -97,8 +111,8 @@ void pic::Star<D>::solve(
     zr0 = (D>=3) ? coord.rh().z(kglob) : 0.0;
 
     // check if we are inside star
-    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
-    bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 2.0;
+    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius - 3.0;
+    bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
     bool inside_pcap = (D == 2) ? abs(xr0) < radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) < radius_pc; // same here
 
     // inside a thin layer above the star
@@ -115,6 +129,11 @@ void pic::Star<D>::solve(
 
       float_m b = sqrt( bx*bx + by*by + bz*bz );
       epar      = ( ex*bx + ey*by + ez*bz )/b;
+
+
+      // vectors for calculation of pcap rotation velocity
+      Ev.set(ex, ey, ez);
+      Bv.set(bx, by, bz);
 
       //--------------------------------------------------
       // ver 1: 
@@ -161,6 +180,25 @@ void pic::Star<D>::solve(
         uy1 = vr*by/b;
         uz1 = vr*bz/b;
 
+        //--------------------------------------------------
+        // pcap rotation vector
+        r.set(xr0 + dx, yr0 + dy, zr0);
+        auto vrot = cross(Om, r); 
+
+        // ExB version
+        auto B2E2 = 1.0f/( dot(Bv, Bv) ); //+ dot(Ev, Ev) );
+        auto vrot2 = B2E2*cross(Ev, Bv);
+        // NOTE amtches to about ~30% the surface rotation velocity
+
+        //std::cout << "vrot1: " << vrot  << "\n";
+        //std::cout << "vrot2: " << vrot2 << "\n";
+        //std::cout << "  rat: " << vrot(0)/vrot2(0) << " " << vrot(1)/vrot2(1) << "\n\n";
+
+        // Newtonian boost to the disk frame; should be done with Lorentz boost to be more correct
+        ux1 += vrot2(0);
+        uy1 += vrot2(1);
+        uz1 += vrot2(2);
+
         // TODO same "random" velocity taken for both particles
 
         cons["e-"]->add_particle( 
@@ -176,8 +214,6 @@ void pic::Star<D>::solve(
 
       //--------------------------------------------------
       // TODO add photon injection
-
-
 
 
 
