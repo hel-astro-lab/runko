@@ -1,22 +1,14 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import h5py as h5
 import sys, os
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.ticker as ticker
-from scipy.stats import mstats
-from scipy.optimize import curve_fit
 
-from visualize import imshow
+import pytools
+from problem import Configuration_Problem as Configuration
 
-from configSetup import Configuration
-from combine_files import get_file_list
-from combine_files import combine_tiles
-
-from scipy.ndimage.filters import gaussian_filter
-
-from parser import parse_input
-import argparse
 
 # trick to make nice colorbars
 # see http://joseph-long.com/writing/colorbars/
@@ -57,19 +49,25 @@ default_values = {
 default_shock_values = {
         'rho': {'title': r"$\rho$",
                 'vmin': 0.0,
-                'vmax': 0.80, #adjusted for ffmpeg use 
+                'vmax': 4.0, #adjusted for ffmpeg use 
+                },
+        'jx': {'title': r"$J_x$",
+               'cmap': "RdBu",
+               'vsymmetric':True,
+               'vmin': 0.1,
+               'vmax': 0.1,
                 },
         'jz': {'title': r"$J_z$",
                'cmap': "RdBu",
                'vsymmetric':True,
-               'vmin': -2.e-5,
-               'vmax':  2.e-5,
+               'vmin': 0.1,
+               'vmax': 0.1,
                 },
         'bz': {'title': r"$B_z$",
                'cmap': "BrBG",
                'vsymmetric':True,
-		'vmin': -0.20,
-		'vmax': 0.20, #adjusted for ffmpeg use
+               'vmin':-1e-5,
+               'vmax':+1e-5,
                 },
 }
 
@@ -79,9 +77,9 @@ def read_var(f5F, var):
     try:
         val = f5F[var][:,:,0]
     except:
-        nx = f5F['Nx'].value
-        ny = f5F['Ny'].value
-        nz = f5F['Nz'].value
+        nx = f5F['Nx'][()]
+        ny = f5F['Ny'][()]
+        nz = f5F['Nz'][()]
         #print("reshaping 1D array into multiD with {} {} {}".format(nx,ny,nz))
 
         val = f5F[var][:]
@@ -344,13 +342,38 @@ def plot2d_shock_single(
             print(" setting {}: {}".format(key, args[key]))
 
     #--------------------------------------------------
+    # normalization
+    norm = 1.0
+    n0 = conf.ppc*2 #*conf.stride**2 #number density per pixel in n_0 
+    qe = np.abs(conf.qe)
+    me_per_qe = np.abs(conf.me) / qe #for electrons = 1
+    deltax = 1.0/conf.c_omp #\Delta x in units of skin depth
 
-    im = imshow(ax, val, xmin, xmax, ymin, ymax,
-           cmap = args['cmap'],
-           vmin = args['vmin'],
-           vmax = args['vmax'],
-           clip = args['clip'],
-           aspect=args['aspect'],
+    if var == 'rho':
+        norm = n0
+    if var in ['jx', 'jy', 'jz']:
+        norm = qe*n0*conf.cfl*conf.cfl
+    if var in ['bz']:
+        #norm = (me_per_qe*conf.cfl**2)/deltax
+        norm = conf.binit
+
+    val = val / norm
+
+    print("norm factor: {}".format( norm ))
+    print("value at the corner {} / mean val {}".format( val[0,0], np.mean(val)) )
+
+    #--------------------------------------------------
+
+    im = pytools.visualize.imshow(
+            ax, 
+            val, 
+            xmin, xmax, 
+            ymin, ymax,
+            cmap = args['cmap'],
+            vmin = args['vmin'],
+            vmax = args['vmax'],
+            clip = args['clip'],
+            aspect=args['aspect'],
            )
 
     #cax, cb = colorbar(im)
@@ -372,7 +395,7 @@ def plot2d_shock_single(
     #axbottom  = 0.06
     #axright   = 0.96
     #axtop     = 0.92
-    wskip = 0.0
+    wskip = 0.05
     pad = 0.01
     pos = ax.get_position()
     #print(pos)
@@ -571,20 +594,11 @@ def plot2d_particles(ax, info, args):
 
 
 #--------------------------------------------------
-
 def build_info(fdir, lap):
     info = {}
     info['lap'] = lap
-    info['fields_file']   = fdir + 'fields_'+str(args.lap)+'.h5'
-    info['analysis_file'] = fdir + 'analysis'+str(args.lap)+'.h5'
-    
-    return info
-    
-def quick_build_info(fdir, lap):
-    info = {}
-    info['lap'] = lap
-    info['fields_file']   = fdir + 'flds_'+str(args.lap)+'.h5'
-    info['analysis_file'] = fdir + 'analysis_'+str(args.lap)+'.h5'
+    info['fields_file']   = fdir + 'flds_'+str(lap)+'.h5'
+    info['analysis_file'] = fdir + 'analysis_'+str(lap)+'.h5'
     info['particle_file'] = fdir + 'test-prtcls'
     
     return info
@@ -599,7 +613,7 @@ do_dark = True
 if __name__ == "__main__":
 
     if do_dark:
-        plt.fig = plt.figure(1, figsize=(16,8.0), dpi=300)
+        plt.fig = plt.figure(1, figsize=(8,7), dpi=300)
         
         plt.rc('font', family='serif', size=7)
         plt.rc('xtick')
@@ -630,10 +644,12 @@ if __name__ == "__main__":
     #--------------------------------------------------
     # command line driven version
 
-    conf, fdir, args = parse_input()
 
-    fdir += '/'
-    print("plotting {}".format(fdir))
+    #--------------------------------------------------
+    # command line driven version
+    args = pytools.parse_args()
+    conf = Configuration(args.conf_filename, do_print=False)
+    fdir = conf.outdir + "/"
     
     fname_F = "flds"
     fname_A = "analysis"
@@ -649,8 +665,7 @@ if __name__ == "__main__":
     # if lap is defined, only plot that one individual round
     if not(args.lap == None):
 
-        #info = build_info(fdir, args.lap)
-        info = quick_build_info(fdir, args.lap)
+        info = build_info(fdir, args.lap)
         info['skindepth'] = conf.c_omp/conf.stride
         if do_prtcls:
             for hlaps in range(args.lap-5*conf.interval, args.lap+1, conf.interval):
@@ -660,7 +675,7 @@ if __name__ == "__main__":
 
         print(prtcls.prtcls.keys())
         plot2d_shock_single(axs[0], "rho", info, do_prtcls=do_prtcls)
-        plot2d_shock_single(axs[1], "bz", info)
+        plot2d_shock_single(axs[1], "jx", info)
         plot2d_shock_single(axs[2], "jz", info)
         #plot1D_rho(axs[3], ax2, "rho", info)
         
@@ -675,31 +690,17 @@ if __name__ == "__main__":
     # else plot every file that there is
     else:
     
-        files_F = get_file_list(fdir, fname_F)
-        files_A = get_file_list(fdir, fname_A)
-        files_P = get_file_list(fdir, fname_P)
-    
-        for lap, f in enumerate(files_F):
+        for lap in range(0, conf.Nt+1, conf.interval):
 
-            #info = build_info(fdir, lap)
-            info = {}
-            info['lap'] = lap*conf.interval
-            info['fields_file'  ]   = files_F[lap]
+            info = build_info(fdir, lap)
             info['skindepth'] = conf.c_omp/conf.stride
-            #info['particle_file'  ] = files_P[lap]
 
             if do_prtcls:
                 info['particle_file'] = fdir + 'test-prtcls'
                 prtcls.add_file(info)
 
-            try:
-                info['analysis_file'] = files_A[lap]
-            except:
-                print("no analysis file found...")
-                pass
-
             im1, cb1 = plot2d_shock_single(axs[0], "rho", info, do_prtcls=do_prtcls)
-            im2, cb2 = plot2d_shock_single(axs[1], "bz", info)
+            im2, cb2 = plot2d_shock_single(axs[1], "jx", info)
             im3, cb3 = plot2d_shock_single(axs[2], "jz", info)
             #rho1dx, rho1dy = plot1D_rho(axs[3], ax2, "rho", info)
             
