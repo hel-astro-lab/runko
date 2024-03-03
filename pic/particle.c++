@@ -635,21 +635,32 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
   int* idn[2];
   for(int i=0; i<2; i++) idn[i] = &( id(i,0) );
 
+
   // overwrite particles with the last one on the array and 
   // then resize the array
-  int last = size()-1; // FIXME added -1 here since that is the real last element
-  for(int indx : to_be_deleted) {
-    last--;
-    if(indx == last) continue;
-    //std::cout << "deleting " << indx 
-    //          << " by putting it to " << last << '\n';
-    for(int i=0; i<3; i++) locn[i][indx] = locn[i][last];
-    for(int i=0; i<3; i++) veln[i][indx] = veln[i][last];
-    wgtArr[indx] = wgtArr[last];
-    for(int i=0; i<2; i++) idn[i][indx] = idn[i][last];
+  int last = size()-to_be_deleted.size();
 
-  }
 
+  UniIter::iterate([=] DEVCALLABLE (
+        int ii, 
+        std::vector<int>& to_be_deleted){
+
+    int other = last+ii; //size() - 1 - i;
+    int indx = to_be_deleted[ii];
+
+    //if(indx >= last) return;
+    //std::cout << " sw " << indx << " to " << other << " while last " << last << std::endl;
+      
+    //std::cout << "deleting " << indx << " by putting it to " << last << '\n';
+    for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
+    for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
+    for(int i=0; i<2; i++) idn[ i][indx] = idn[ i][other];
+    wgtArr[indx] = wgtArr[other];
+
+  }, to_be_deleted.size(), to_be_deleted);
+  
+  UniIter::sync();
+  
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
