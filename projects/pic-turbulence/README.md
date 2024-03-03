@@ -12,7 +12,7 @@ The simulation uses 4 cores (`-n 4`).
 
 The simulation can be analyzed by computing the energy evolution with
 ```
-python3 plot_ene.py --conf pkg_small.ini
+python3 plot_ene.py --conf turb_small.ini
 ```
 that creates a plot into `turb1/ene_histor.pdf`.
 

@@ -181,3 +181,6 @@ class Configuration_Turbulence(Configuration):
             print("init: sampling rate:",  self.interval/t0)
 
 
+        # NOTE manually switch off rank memory optimization mode
+        self.mpi_task_mode = False
+

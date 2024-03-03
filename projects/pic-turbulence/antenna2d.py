@@ -50,7 +50,7 @@ class Antenna:
 
 
         #initialize seed (so that this is deterministic)
-        seed = np.int(max_mode)
+        seed = int(max_mode)
         np.random.seed(seed)
 
         # phi_mn and \varphi_mn
@@ -72,7 +72,7 @@ class Antenna:
     def step_driver(self, lap, dt):
         #print("stepping...")
 
-        np.random.seed(np.int(lap))
+        np.random.seed(int(lap))
 
         #delta-correlated uniform random complex number 
         # between Re(un) in [-1/2, 1/2] and Im(un) in [-1/2, 1/2]

@@ -1,6 +1,5 @@
 from __future__ import print_function
-from configSetup import Configuration
-from problem import Configuration_Turbulence
+from problem import Configuration_Turbulence as Configuration
 
 
 from numpy import sqrt, pi

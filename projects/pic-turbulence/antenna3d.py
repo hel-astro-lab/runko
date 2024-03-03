@@ -32,7 +32,7 @@ class Antenna:
         self.n_par = mode_par
 
         # initialize seed (so that this is deterministic)
-        seed = np.int(mode_perp)
+        seed = int(mode_perp)
         np.random.seed(seed)
 
         # phi_mn and \varphi_mn
