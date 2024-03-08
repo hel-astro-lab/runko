@@ -224,9 +224,22 @@ class TerminalPlot:
             self.cmap = plt.get_cmap(cmap)
             self.cmap_norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
-
+        #--------------------------------------------------
         # transpose and flip to orient the img properly
-        data = np.fliplr(data.T) 
+        try:
+            nx, ny = np.shape(data)
+            nz = 1
+        except:
+            nx, ny, nz = np.shape(data)
+
+        # NOTE theese manipulations are black magic but they work
+        data = np.reshape(data, (nz, ny, nx))
+        data = data.ravel(order='F').reshape((nx,ny,nz))
+        data = np.fliplr(data)
+
+        #data = np.fliplr(data.T) 
+
+        #--------------------------------------------------
 
         #for i in range(self.ny):
         #    self.screen[i,i] = 1
