@@ -59,6 +59,8 @@ class StaggeredSphericalCoordinates
       : cx(cenx), cy(ceny), cz(cenz), r(radius)
   {}
 
+  inline StaggeredSphericalField mid(){ return StaggeredSphericalField(1., 1., 1., cx,cy,cz,r); }
+
   inline StaggeredSphericalField rh() { return StaggeredSphericalField(0., 0., 0., cx,cy,cz,r); }
 
   inline StaggeredSphericalField ex() { return StaggeredSphericalField(1., 0., 0., cx,cy,cz,r); }
@@ -103,12 +105,12 @@ class Conductor
   Conductor() = default;
 
   // configuration parameters
-  double radius = 10.0;
-  double period = 0.0;
-  double B0     = 1.0;  /// Initial magnetic field strength B_0
-  double chi_mu = 0.0; /// Obliquity angle of magnetic dipole from z-axis
-  double chi_om = 0.0; /// Obliquity angle of Omega vector from z-axis
-  double phase  = 0.0; /// rotator phase
+  double radius = 10.0; // stellar radius
+  double period = 0.0;  // stellar rotation period
+  double B0     = 1.0; // Initial magnetic field strength B_0
+  double chi_mu = 0.0; // Obliquity angle of magnetic dipole from z-axis
+  double chi_om = 0.0; // Obliquity angle of Omega vector from z-axis
+  double phase  = 0.0; // rotator phase
   double cenx = 0, ceny = 0, cenz = 0; // center of the sphere
 
   double delta = 1.0;

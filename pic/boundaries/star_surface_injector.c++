@@ -42,6 +42,8 @@ void pic::Star<D>::solve(
   bool top   = false;
   bool bot   = false;
 
+  const int H = 2; // halo size
+
   if( D == 2 ) { // 2D boudaries
     if( mins[1] < 1 )    bot   = true; 
     if( maxs[1] > Ny-1 ) top   = true; 
@@ -106,13 +108,25 @@ void pic::Star<D>::solve(
     kglob = (D>=3) ? k + mins[2] : 0.0;
 
     // spherical coordinates 
-    xr0 = (D>=1) ? coord.rh().x(iglob) : 0.0;
-    yr0 = (D>=2) ? coord.rh().y(jglob) : 0.0;
-    zr0 = (D>=3) ? coord.rh().z(kglob) : 0.0;
+    xr0 = (D>=1) ? coord.mid().x(iglob) : 0.0;
+    yr0 = (D>=2) ? coord.mid().y(jglob) : 0.0;
+    zr0 = (D>=3) ? coord.mid().z(kglob) : 0.0;
 
     // check if we are inside star
-    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius - 3.0;
-    bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
+
+    // inject top of star
+    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
+    bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 4.0;
+
+    // inject below surface
+    //bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius - 3.0;
+    //bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
+
+    // flat surface; slab on the top
+    //bool inside_star  = (D==3) ? abs(zr0) <= 1.0*radius + 0.0 : abs(yr0) <= 1.0*radius + 0.0;
+    //bool inside_atmos = (D==3) ? abs(zr0) <= 1.0*radius + 2.0 : abs(yr0) <= 1.0*radius + 2.0;
+
+
     bool inside_pcap = (D == 2) ? abs(xr0) < radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) < radius_pc; // same here
 
     // inside a thin layer above the star
@@ -188,8 +202,11 @@ void pic::Star<D>::solve(
         // ExB version
         auto B2E2 = 1.0f/( dot(Bv, Bv) ); //+ dot(Ev, Ev) );
         auto vrot2 = B2E2*cross(Ev, Bv);
-        // NOTE amtches to about ~30% the surface rotation velocity
+        // NOTE matches to about ~30% the surface rotation velocity
 
+          
+        //std::cout << "xr0  :   " << xr0   << "\n";
+        //std::cout << "u    : " << ux1 << " " << uy1 << " " << uz1  << "\n";
         //std::cout << "vrot1: " << vrot  << "\n";
         //std::cout << "vrot2: " << vrot2 << "\n";
         //std::cout << "  rat: " << vrot(0)/vrot2(0) << " " << vrot(1)/vrot2(1) << "\n\n";
@@ -237,13 +254,13 @@ void pic::Star<D>::solve(
       jglob = (D>=2) ? container.loc(1,n) : 0.0;
       kglob = (D>=3) ? container.loc(2,n) : 0.0;
 
-      xr0 = (D>=1) ? coord.rh().x(iglob) : 0.0;
-      yr0 = (D>=2) ? coord.rh().y(jglob) : 0.0;
-      zr0 = (D>=3) ? coord.rh().z(kglob) : 0.0;
+      xr0 = (D>=1) ? coord.mid().x(iglob) : 0.0;
+      yr0 = (D>=2) ? coord.mid().y(jglob) : 0.0;
+      zr0 = (D>=3) ? coord.mid().z(kglob) : 0.0;
 
       // remove particles based on following regimes
       bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
-      bool inside_bot   = (D == 2) ? jglob < 3    : kglob < 3; // y or z direction flip 
+      bool inside_bot   = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
       bool inside_top   = (D == 2) ? jglob > Ny-1 : kglob > Nz-1; // y or z direction flip 
       bool outside_pcap = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
 
