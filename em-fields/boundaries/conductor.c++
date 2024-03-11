@@ -9,63 +9,68 @@ using std::max;
 using std::abs;
 using std::sqrt;
 using toolbox::Vec3;
+using toolbox::norm;
+using toolbox::norm1d;
+using toolbox::norm2d;
+using fields::StaggeredSphericalCoordinates;
+
 
 
 // General dipole formula in 2D cartesian coordinates
 template<>
-double fields::Conductor<2>::dipole(
-        double x,
-        double y,
-        double z,
-        int dim) {
+Vec3<float> fields::Conductor<2>::dipole(Vec3<float>& xvec)
+{
 
   //non-rotating magnetic moment vector components
-  double p1 = sin(chi_mu), p2 = cos(chi_mu), p3 = 0.0;   // 2D orientation
+  float p1 = sin(chi_mu), p2 = cos(chi_mu), p3 = 0.0;   // 2D orientation
 
   // final rotating magnetic moment with phase included; rotates in xz plane
   // TODO rotation turned off for 2D; i.e., no phase dependency
-  double mux = p1; //*cos(phase) - p3*sin(phase);
-  double muy = p2;
-  double muz = p3; //*sin(phase) + p3*cos(phase);
+  float mux = p1; //*cos(phase) - p3*sin(phase);
+  float muy = p2;
+  float muz = p3; //*sin(phase) + p3*cos(phase);
 
-  double rad = std::sqrt(x*x + y*y);
+  float rad = std::sqrt(xvec(0)*xvec(0) + xvec(1)*xvec(1));
 
   // mu . r
-  double mudotr = mux*x + muy*y;
+  float mudotr = mux*xvec(0) + muy*xvec(1);
 
-   if     (dim == 0) return 3.0*x*mudotr/( pow(rad,5) + EPS) - mux/(pow(rad,3) + EPS); //x
-   else if(dim == 1) return 3.0*y*mudotr/( pow(rad,5) + EPS) - muy/(pow(rad,3) + EPS); //y
-   else if(dim == 2) return 0.0; 
-   return 0.0;
+  Vec3<float> ret(
+        3.0*xvec(0)*mudotr/( pow(rad,5) + EPS) - mux/(pow(rad,3) + EPS), //x
+        3.0*xvec(1)*mudotr/( pow(rad,5) + EPS) - muy/(pow(rad,3) + EPS), //y
+        0.0); 
+
+  return ret;
 }
 
 
 // General dipole formula in 3D cartesian coordinates
 template<>
-double fields::Conductor<3>::dipole(
-        double x,
-        double y,
-        double z,
-        int dim) {
+Vec3<float> fields::Conductor<3>::dipole(Vec3<float>& xvec)
+{
 
   //non-rotating magnetic moment vector components
-  double p1 = sin(chi_mu), p2 = 0.0, p3 = cos(chi_mu);
+  float p1 = sin(chi_mu), p2 = 0.0, p3 = cos(chi_mu);
 
   // final rotating magnetic moment with phase included
-  double mux = p1*cos(phase_mu) - p2*sin(phase_mu);
-  double muy = p1*sin(phase_mu) + p2*cos(phase_mu);
-  double muz = p3;
+  float mux = p1*cos(phase_mu) - p2*sin(phase_mu);
+  float muy = p1*sin(phase_mu) + p2*cos(phase_mu);
+  float muz = p3;
 
-  double rad = std::sqrt(x*x + y*y + z*z);
+  float rad = norm(xvec); 
 
   // mu . r
-  double mudotr = mux*x + muy*y + muz*z;
+  float mudotr = mux*xvec(0) + muy*xvec(1) + muz*xvec(2);
 
-   if     (dim == 0) return 3.0*x*mudotr/( pow(rad,5) + EPS) - mux/(pow(rad,3) + EPS); //x
-   else if(dim == 1) return 3.0*y*mudotr/( pow(rad,5) + EPS) - muy/(pow(rad,3) + EPS); //y
-   else if(dim == 2) return 3.0*z*mudotr/( pow(rad,5) + EPS) - muz/(pow(rad,3) + EPS); //z
-   return 0.0;
+  Vec3<float> ret(
+   3.0*xvec(0)*mudotr/( pow(rad,5) + EPS) - mux/(pow(rad,3) + EPS), //x
+   3.0*xvec(1)*mudotr/( pow(rad,5) + EPS) - muy/(pow(rad,3) + EPS), //y
+   3.0*xvec(2)*mudotr/( pow(rad,5) + EPS) - muz/(pow(rad,3) + EPS)  //z
+   );
+
+  return ret;
 }
+
 
 
 template<size_t D>
@@ -79,12 +84,7 @@ void fields::Conductor<D>::insert_em(
 
   auto& yee = tile.get_yee();
 
-  float_m bxd, byd, bzd, exd, eyd, ezd;
-  float_m iglob, jglob, kglob;
-  float_m xr,yr,zr;
-  float_m vx,vy;
-  Vec3<float_m> r, Bd; // tmp variables
-
+  //--------------------------------------------------
   // angular velocity
   float_m Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
@@ -108,34 +108,30 @@ void fields::Conductor<D>::insert_em(
   for(int i=-3; i<nx_tile+3; i++) {
 
     // global grid coordinates
-    iglob = (D>=1) ? i + mins[0] : 0;
-    jglob = (D>=2) ? j + mins[1] : 0;
-    kglob = (D>=3) ? k + mins[2] : 0;
+    float iglob = (D>=1) ? i + mins[0] : 0;
+    float jglob = (D>=2) ? j + mins[1] : 0;
+    float kglob = (D>=3) ? k + mins[2] : 0;
 
     //--------------------------------------------------
     // magnetic field
     
-    // x coord staggering for Bx
-    xr = (D>=1) ? coord.bx().x(iglob) : 0;
-    yr = (D>=2) ? coord.bx().y(jglob) : 0;
-    zr = (D>=3) ? coord.bx().z(kglob) : 0;
-    bxd = B0*dipole(xr,yr,zr,0);
+    //--------------------------------------------------
+    // bx
+    auto r1  = coord.bx().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+    auto bxd = B0*dipole(r1); // diple field
 
-    // y coord staggering for By
-    xr = (D>=1) ? coord.by().x(iglob) : 0;
-    yr = (D>=2) ? coord.by().y(jglob) : 0;
-    zr = (D>=3) ? coord.by().z(kglob) : 0;
-    byd = B0*dipole(xr,yr,zr,1);
+    // by
+    auto r2  = coord.by().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+    auto byd = B0*dipole(r2); // diple field
 
-    // z coord staggering for Bz
-    xr = (D>=1) ? coord.bz().x(iglob) : 0;
-    yr = (D>=2) ? coord.bz().y(jglob) : 0;
-    zr = (D>=3) ? coord.bz().z(kglob) : 0;
-    bzd = B0*dipole(xr,yr,zr,2);
+    // bz
+    auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+    auto bzd = B0*dipole(r3); // diple field
 
-    yee.bx(i,j,k) = bxd;
-    yee.by(i,j,k) = byd;
-    yee.bz(i,j,k) = bzd;
+    yee.bx(i,j,k) = bxd(0);
+    yee.by(i,j,k) = byd(1);
+    yee.bz(i,j,k) = bzd(2);
+
 
     //--------------------------------------------------
     // electric field
@@ -199,30 +195,8 @@ void fields::Conductor<D>::update_b(
     fields::Tile<D>& tile)
 {
 
-  float_m bxd, byd, bzd;
-  float_m bxi, byi, bzi;
-  float_m bxnew, bynew, bznew;
-
-  float_m iglob, jglob, kglob;
-
-  float_m xr0,yr0,zr0;
-  float_m xr,yr,zr;
-
-  float_m s,r;
-
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
-
-  // smoothing scales for different components
-  //
-  // NOTE: keeping here for historical purposes; not used
-  //
-  //float_m delta = 1.0;  //from conductor.h
-  //
-  //float_m delta_erad   = 1.0*delta; 
-  //float_m delta_eperp  = 0.5*delta;
-  //float_m delta_brad   = 1.0*delta;
-  //float_m delta_bperp  = 1.0*delta;
 
   // Tile limits
   auto mins = tile.mins;
@@ -231,7 +205,7 @@ void fields::Conductor<D>::update_b(
   auto& yee = tile.get_yee();
 
   //-------------------------------------------------- 
-  // null sides to prevent periodic bc conditions
+  // find if this is a corner tile
   bool left  = false;
   bool right = false;
   bool top   = false;
@@ -253,13 +227,7 @@ void fields::Conductor<D>::update_b(
     if( maxs[2] > Nz-1 ) top   = true; 
   }
 
-  const int H = 2;
-
-  //--------------------------------------------------
-  // additionally, define quantities for the closed field line region
-  float_m sint = radius_pc/radius; // sin\theta = R_pc/R_star
-  float_m Rbc  = radius/sint/sint;  
-  float_m rad, eta;
+  const int H = 2; // halo region size for nulling of boundaries
 
   //--------------------------------------------------
   // loop over grid
@@ -267,181 +235,257 @@ void fields::Conductor<D>::update_b(
   int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
   int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
-  for(int k=-3; k<nz_tile+3; k++) 
-  for(int j=-3; j<ny_tile+3; j++) 
-  for(int i=-3; i<nx_tile+3; i++) {
-      
-    // global grid coordinates
-    iglob = (D>=1) ? i + mins[0] : 0;
-    jglob = (D>=2) ? j + mins[1] : 0;
-    kglob = (D>=3) ? k + mins[2] : 0;
+  float tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
 
-    // spherical coordinates 
-    xr0 = (D>=1) ? coord.mid().x(iglob) : 0;
-    yr0 = (D>=2) ? coord.mid().y(jglob) : 0;
-    zr0 = (D>=3) ? coord.mid().z(kglob) : 0;
 
-    //--------------------------------------------------
-    // regional checks
+  //--------------------------------------------------
+  // inside star
+
+  // all 8 of tile corners are compared to radius to find if we are inside the spherical region
+
+  auto x1 = coord.mid().vec(mins[0], mins[1], mins[2], D); 
+  auto x2 = coord.mid().vec(maxs[0], mins[1], mins[2], D); 
+  auto x3 = coord.mid().vec(mins[0], maxs[1], mins[2], D); 
+  auto x4 = coord.mid().vec(mins[0], mins[1], maxs[2], D); 
+  auto x5 = coord.mid().vec(maxs[0], maxs[1], mins[2], D); 
+  auto x6 = coord.mid().vec(maxs[0], mins[1], maxs[2], D); 
+  auto x7 = coord.mid().vec(mins[0], maxs[1], maxs[2], D); 
+  auto x8 = coord.mid().vec(maxs[0], maxs[1], maxs[2], D); 
+
+  // TODO this is not a bulletproof method to find if the star is inside tile;
+  //      if a small star is in the middle of the tile it can be missed...
+  bool inside_star = 
+    norm(x1) < 1.1*radius ||
+    norm(x2) < 1.1*radius ||
+    norm(x3) < 1.1*radius ||
+    norm(x4) < 1.1*radius ||
+    norm(x5) < 1.1*radius ||
+    norm(x6) < 1.1*radius ||
+    norm(x7) < 1.1*radius ||
+    norm(x8) < 1.1*radius;
+
+  if( inside_star) {
+
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
+
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
+
+      //--------------------------------------------------
+      // bx
+      auto r1  = coord.bx().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bxd = B0*dipole(r1); // diple field
+      auto sx  = shape( norm(r1), radius, delta); // radial smoothing parameter
+
+      // by
+      auto r2  = coord.by().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto byd = B0*dipole(r2); // diple field
+      auto sy  = shape( norm(r2), radius, delta); // radial smoothing parameter
+
+      // bz
+      auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bzd = B0*dipole(r3); // diple field
+      auto sz  = shape( norm(r3), radius, delta); // radial smoothing parameter
+
+      //--------------------------------------------------
+      // blending of old + new solution
+      yee.bx(i,j,k) = sx*bxd(0) + (1.0f - sx)*yee.bx(i,j,k); 
+      yee.by(i,j,k) = sy*byd(1) + (1.0f - sy)*yee.by(i,j,k); 
+      yee.bz(i,j,k) = sz*bzd(2) + (1.0f - sz)*yee.bz(i,j,k); 
+    }
+
+  }
+
+
+  //--------------------------------------------------
+  // damping on a cylindrical region around the pcap
     
-    // check if we are inside star
-    bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.1*radius;        // curved surface
-    //bool inside_star  = (D==3) ? abs(zr0) <= 1.1*radius : abs(yr0) <= 1.1*radius + 0.0; // flat surface
+  // norm2d gives the length of the vector x and y components (ignoring z)
+  // this gives us the cylindrical coordinate
+    
+  float rbox = 0.5*Nx-H-1; // half of box size in x direction (not incl halos)
+                              
+  bool inside_cyl_bcs = 
+    norm2d(x1) > rbox ||
+    norm2d(x2) > rbox ||
+    norm2d(x3) > rbox ||
+    norm2d(x4) > rbox ||
+    norm2d(x5) > rbox ||
+    norm2d(x6) > rbox ||
+    norm2d(x7) > rbox ||
+    norm2d(x8) > rbox;
 
-    //--------------------------------------------------
-    // closed field line zone
-    //rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
-    //sint = D == 2 ? abs(xr0)/rad : sqrt(xr0*xr0 + yr0*yr0)/rad; // sin\theta
-    //eta  = rad/Rbc; // dimensionless dipole coordinate radius
-    //bool closed_field_zone = eta < 0.9*sint*sint; // some tolerance for the boundaries
-                                                    
-    //std::cout << "update_b: z" << closed_field_zone 
-    //          << " rad:" << rad 
-    //          << " sint " << sint 
-    //          << " eta " << eta 
-    //          << "\n";
+  if( D == 3 && inside_cyl_bcs ) {
 
-    //--------------------------------------------------
-    // sides
-    bool inside_bot   = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
-    bool inside_top   = (D == 2) ? jglob > Ny-1 : kglob > Nz-1; // y or z direction flip 
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
 
-    bool inside_left  = left  && iglob < H; 
-    bool inside_right = right && iglob > Nx-H-1; 
-
-    bool inside_front = front && jglob < H; 
-    bool inside_back  = back  && jglob > Ny-H-1; 
-
-    // cartesian boundaries
-    bool inside_box_bcs = inside_left  ||
-                          inside_right ||
-                          inside_front ||
-                          inside_back;
-
-    //--------------------------------------------------
-    // cylindrical region
-    float_m rcyl = (D == 2) ? abs(xr0) : sqrt(xr0*xr0 + yr0*yr0); // cylindrical radius
-    float_m rbox = 0.5*Nx-H-1; // half of box size in x direction incl halos
-    bool inside_cyl_bcs = rcyl > rbox;
-
-    //--------------------------------------------------
-
-    // operate inside the region only
-    if( inside_star  ||
-        inside_bot   ||
-        top          ||  // selecting larger chunk for top since we damp outgoing waves there
-        inside_box_bcs ||
-        inside_cyl_bcs
-      ) {
-
-      //--------------------------------------------------
-      // Bx: x coord staggering for Bx
-      xr = (D>=1) ? coord.bx().x(iglob) : 0;
-      yr = (D>=2) ? coord.bx().y(jglob) : 0;
-      zr = (D>=3) ? coord.bx().z(kglob) : 0;
-      r = std::sqrt( xr*xr + yr*yr + zr*zr ); // curved
-      //r = (D == 2) ? abs(yr) : abs(zr); // flat 
-
-      // alternative syntax  using internal toolbox::Vec3
-      //xvec = coord.bx().vec(iglob, jglob, kglob); // cartesian position vector in "star's coordinates"
-      //r = norm(xvec);
-
-
-      // interior diple field
-      bxd = B0*dipole(xr,yr,zr,0);
-      //byd = B0*dipole(xr,yr,zr,1);
-      //bzd = B0*dipole(xr,yr,zr,2);
-
-      bxi = yee.bx(i,j,k);
-      //byi = yee.by(i,j,k); // interpolate to this location
-      //bzi = yee.bz(i,j,k); // interpolate to this location
-
-      s = shape(r, radius, delta);
-      bxnew = s*bxd + (1.0f-s)*bxi;
-
-      // Bx radial  component 
-      // NOTE i've sketched a possible code here to split B_r and B_\perp update
-      //      Seems like it is not needed, though.
-      //
-      //s = shape(r, radius-offs_brad, delta_brad);
-      //bxrad =     s*(bxd - (bxd*xr + byd*yr + bzd*zr)*xr/r/r)
-      //        (1-s)*(bxi - (bxi*xr + byi*yr + bzi*zr)*xr/r/r);
-      //
-      //s = shape(r, radius-offs_bperp, delta_bperp);
-      // Bx perp  component 
-      //bxperp =      s*(bxd*xr + byd*yr + bzd*zr)*xr/r/r 
-      //        + (1-s)*(bxi*xr + byi*yr + bzi*zr)*xr/r/r;
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
 
 
       //--------------------------------------------------
-      // By: y coord staggering for By
-      xr = (D>=1) ? coord.by().x(iglob) : 0;
-      yr = (D>=2) ? coord.by().y(jglob) : 0;
-      zr = (D>=3) ? coord.by().z(kglob) : 0;
-      r = std::sqrt( xr*xr + yr*yr +zr*zr ); // curved
-      //r = (D == 2) ? abs(yr) : abs(zr); // flat 
+      // bx
+      auto r1    = coord.bx().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bxd   = B0*dipole(r1); // diple field
+      auto rcyl1 = norm2d(r1); // cylindrical radius
 
-      // interior diple field
-      byd = B0*dipole(xr,yr,zr,1);
-      byi = yee.by(i,j,k);
+      // by
+      auto r2    = coord.by().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto byd   = B0*dipole(r2); // diple field
+      auto rcyl2 = norm2d(r2); // cylindrical radius
 
-      s = shape(r, radius, delta);
-      bynew = s*byd  + (1.0f-s)*byi;
-
-      //--------------------------------------------------
-      // Bz: z coord staggering for Bz
-      xr = (D>=1) ? coord.bz().x(iglob) : 0;
-      yr = (D>=2) ? coord.bz().y(jglob) : 0;
-      zr = (D>=3) ? coord.bz().z(kglob) : 0;
-      r = std::sqrt( xr*xr + yr*yr +zr*zr ); // curved
-      //r = (D == 2) ? abs(yr) : abs(zr); // flat 
-
-      // interior diple field
-      bzd = B0*dipole(xr,yr,zr,2);
-      bzi = yee.bz(i,j,k);
-
-      s = shape(r, radius, delta);
-      bznew = s*bzd + (1.0-s)*bzi;
+      // bz
+      auto r3    = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bzd   = B0*dipole(r3); // diple field
+      auto rcyl3 = norm2d(r3); // cylindrical radius
 
       //--------------------------------------------------
-      if(!top) {
+      // ver 1; tanh profile
+      auto delta_ext = 0.25f*tile_len; // 1/4 of tile size
 
-        yee.bx(i,j,k) = bxnew;
-        yee.by(i,j,k) = bynew;
-        yee.bz(i,j,k) = bznew;
+      auto sx = shape(rcyl1, rbox, delta_ext); 
+      auto sy = shape(rcyl2, rbox, delta_ext);
+      auto sz = shape(rcyl3, rbox, delta_ext); 
 
-      } else if(top) {
-        // manual damping of outgoing waves
-        // poor-man's version of PML absorbing boundary conditions
 
-        float_m tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
-        float_m h        = (D == 2 ) ? jglob : kglob; // height
-                                                        
-        // ver 1; tanh
-        float_m radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
-        float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
-        s = shape(h, radius_ext, delta_ext); // tanh
-
-        // ver2
-        //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
-        //float_m delta_ext = 1.0*tile_len; // full tile size
-        //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
-
-        //ver 3; mimic lambda profile from PML
-        //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
-        //s = min(1.0f, lam);
-
-        //ver 4; exp profile
-        //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
-        //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
-
-        // damp to dipole solution
-        yee.bx(i,j,k) = s*yee.bx(i,j,k) + (1.0f-s)*bxnew;
-        yee.by(i,j,k) = s*yee.by(i,j,k) + (1.0f-s)*bynew;
-        yee.bz(i,j,k) = s*yee.bz(i,j,k) + (1.0f-s)*bznew;
-      }
+      //--------------------------------------------------
+      // damp to dipole solution
+      yee.bx(i,j,k) = sx*yee.bx(i,j,k) + (1.0f-sx)*bxd(0);
+      yee.by(i,j,k) = sy*yee.by(i,j,k) + (1.0f-sy)*byd(1);
+      yee.bz(i,j,k) = sz*yee.bz(i,j,k) + (1.0f-sz)*bzd(2);
     }
   }
+
+
+  //--------------------------------------------------
+  // top absorping layer
+
+  if(top) {
+
+    float radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+    float delta_ext  = 0.25f*tile_len; // 1/4 of tile size
+                                           
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
+
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
+
+      auto h = (D == 2 ) ? jglob : kglob; // height
+
+      //--------------------------------------------------
+      // bx
+      auto r1  = coord.bx().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bxd = B0*dipole(r1); // diple field
+
+      // by
+      auto r2  = coord.by().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto byd = B0*dipole(r2); // diple field
+
+      // bz
+      auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bzd = B0*dipole(r3); // diple field
+
+      //--------------------------------------------------
+      // ver 1; tanh profile
+      auto s = shape(h, radius_ext, delta_ext); // tanh
+
+      // ver2 linear profile
+      //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+      //float_m delta_ext = 1.0*tile_len; // full tile size
+      //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
+
+      //ver 3; mimic lambda profile from PML
+      //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+      //s = min(1.0f, lam);
+
+      //ver 4; exp profile
+      //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
+      //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
+
+      //--------------------------------------------------
+      // damp to dipole solution
+      yee.bx(i,j,k) = s*yee.bx(i,j,k) + (1.0f-s)*bxd(0);
+      yee.by(i,j,k) = s*yee.by(i,j,k) + (1.0f-s)*byd(1);
+      yee.bz(i,j,k) = s*yee.bz(i,j,k) + (1.0f-s)*bzd(2);
+    }
+
+  }
+
+
+  //--------------------------------------------------
+  // box boundaries
+
+  if( left  ||
+      right || 
+      front ||
+      back  ||
+      bot   ||
+      top
+    ){
+
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
+
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
+
+      //--------------------------------------------------
+      // bx
+      auto r1  = coord.bx().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bxd = B0*dipole(r1); // diple field
+
+      // by
+      auto r2  = coord.by().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto byd = B0*dipole(r2); // diple field
+
+      // bz
+      auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bzd = B0*dipole(r3); // diple field
+
+      //--------------------------------------------------
+      // sides
+      bool inside_bot   = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
+      bool inside_top   = (D == 2) ? jglob > Ny-1 : kglob > Nz-1; // y or z direction flip 
+
+      bool inside_left  = left  && iglob < H; 
+      bool inside_right = right && iglob > Nx-H-1; 
+
+      bool inside_front = front && jglob < H; 
+      bool inside_back  = back  && jglob > Ny-H-1; 
+
+      // cartesian boundaries
+      bool inside_box_bcs = inside_left  ||
+                            inside_right ||
+                            inside_front ||
+                            inside_back  ||
+                            inside_top   ||
+                            inside_bot;
+
+      //--------------------------------------------------
+      // vector friendly application of boolean boundary
+      auto s = static_cast<float_m>(inside_box_bcs);
+
+      yee.bx(i,j,k) = s*bxd(0) + (1.0f-s)*yee.bx(i,j,k);
+      yee.by(i,j,k) = s*byd(1) + (1.0f-s)*yee.by(i,j,k);
+      yee.bz(i,j,k) = s*bzd(2) + (1.0f-s)*yee.bz(i,j,k);
+    }
+  }
+
 }
 
 
@@ -450,23 +494,9 @@ template<size_t D>
 void fields::Conductor<D>::update_e(
     fields::Tile<D>& tile)
 {
-  float_m exd, eyd, ezd;
-  float_m bxd, byd, bzd;
-  float_m exi, eyi, ezi;
-  float_m exnew, eynew, eznew;
-
-  float_m iglob, jglob, kglob;
-
-  float_m xr0,yr0,zr0;
-  float_m xr,yr,zr;
-
-  float_m vx,vy;
-  float_m s, rcyl, h;
-
 
   // angular velocity
-  Vec3<float_m> r, Bd, Om; // tmp variables
-                                  
+  Vec3<float_m> Om; 
   float_m Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
 
@@ -477,31 +507,12 @@ void fields::Conductor<D>::update_e(
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
-  // smoothing scales for Brad/Bperp components
-  // NOTE: keeping here for historical purposes; not used
-  //
-  //float_m delta = 2.0;  // from conductor.h
-  //
-  //float_m delta_erad   = 1.0*delta; 
-  //float_m delta_eperp  = 0.5*delta;
-  //float_m delta_brad   = 1.0*delta;
-  //float_m delta_bperp  = 1.0*delta;
 
   // Tile limits
   auto mins = tile.mins;
   auto maxs = tile.maxs;
 
   auto& yee = tile.get_yee();
-
-  //--------------------------------------------------
-  // values to calculate location of closed/open field line region
-  //
-  // for dipole fields r/Rbc = sin^2(theta) where r and theta are in spherical coordinates 
-  // tolerance of 0.95 here so that we start killing the epar earlier
-  float_m sint = radius_pc/radius; // sin\theta = R_pc/R_star
-  float_m Rbc  = radius/sint/sint;  
-  float_m rad, bn, bxi, byi, bzi, epar;
-
 
   //-------------------------------------------------- 
   // null sides to prevent periodic bc conditions
@@ -534,444 +545,326 @@ void fields::Conductor<D>::update_e(
   int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
   int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
-  for(int k=-3; k<nz_tile+3; k++) 
-  for(int j=-3; j<ny_tile+3; j++) 
-  for(int i=-3; i<nx_tile+3; i++) {
+  float tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
 
-    // global grid coordinates
-    iglob = (D>=1) ? i + mins[0] : 0;
-    jglob = (D>=2) ? j + mins[1] : 0;
-    kglob = (D>=3) ? k + mins[2] : 0;
+  //--------------------------------------------------
+  // inside star
 
-    // spherical coordinates
-    xr0 = (D>=1) ? coord.mid().x(iglob) : 0;
-    yr0 = (D>=2) ? coord.mid().y(jglob) : 0;
-    zr0 = (D>=3) ? coord.mid().z(kglob) : 0;
+  // all 8 of tile corners are compared to radius to find if we are inside the spherical region
 
-    // check if we are inside star
-    //bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.05*radius;
-    //bool inside_star = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= radius + 2.0*delta_pc + 1.0;
-      
-    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.1*radius; // curved
-    //bool inside_star  = (D==3) ? abs(zr0) <= 1.1*radius : abs(yr0) <= 1.0*radius; //flat
+  auto x1 = coord.mid().vec(mins[0], mins[1], mins[2], D); 
+  auto x2 = coord.mid().vec(maxs[0], mins[1], mins[2], D); 
+  auto x3 = coord.mid().vec(mins[0], maxs[1], mins[2], D); 
+  auto x4 = coord.mid().vec(mins[0], mins[1], maxs[2], D); 
+  auto x5 = coord.mid().vec(maxs[0], maxs[1], mins[2], D); 
+  auto x6 = coord.mid().vec(maxs[0], mins[1], maxs[2], D); 
+  auto x7 = coord.mid().vec(mins[0], maxs[1], maxs[2], D); 
+  auto x8 = coord.mid().vec(maxs[0], maxs[1], maxs[2], D); 
 
-    //--------------------------------------------------
-    // closed/open field line zone
-    rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
-    sint = D == 2 ? abs(xr0)/rad : sqrt(xr0*xr0 + yr0*yr0)/rad; // sin\theta
-    float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
-    bool inside_closed_field_region = eta < 1.0*sint*sint;
+  // TODO this is not a bulletproof method to find if the star is inside tile;
+  //      if a small star is in the middle of the tile it can be missed...
+  bool inside_star = 
+    norm(x1) < 1.1*radius ||
+    norm(x2) < 1.1*radius ||
+    norm(x3) < 1.1*radius ||
+    norm(x4) < 1.1*radius ||
+    norm(x5) < 1.1*radius ||
+    norm(x6) < 1.1*radius ||
+    norm(x7) < 1.1*radius ||
+    norm(x8) < 1.1*radius;
 
-    //--------------------------------------------------
-    // sides
-    bool inside_bot   = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
-    bool inside_top   = (D == 2) ? jglob > Ny-2 : kglob > Nz-2; // y or z direction flip 
+  if( inside_star ) {
 
-    bool inside_left  = left  && iglob < H; 
-    bool inside_right = right && iglob > Nx-H-1; 
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
 
-    bool inside_front = front && jglob < H; 
-    bool inside_back  = back  && jglob > Ny-H-1; 
-
-    //--------------------------------------------------
-    // cartesian boundaries
-    bool inside_box_bcs = inside_left  ||
-                          inside_right ||
-                          inside_front ||
-                          inside_back;
-
-    //--------------------------------------------------
-    //  cylindrical boundaries
-    rcyl = (D == 2) ? abs(xr0) : sqrt(xr0*xr0 + yr0*yr0); // cylindrical radius
-    float_m rbox = 0.5*Nx -H-1 ; // half of box size in x direction incl halos
-                                                            
-    bool inside_cyl_bcs = rcyl > rbox;
-    //--------------------------------------------------
-
-
-    //--------------------------------------------------
-    if( inside_star ||
-        top         
-        //inside_closed_field_region
-        ) {
-
-      //-------------------------------------------------- 
-      // ex
-      xr = coord.ex().x(iglob);
-      yr = coord.ex().y(jglob);
-      zr = coord.ex().z(kglob);
-      r.set(xr,yr,zr); // spherical radius
-      rcyl = (D == 2) ? abs(xr) : sqrt(xr*xr + yr*yr); // cylindrical radius
-      h    = (D == 2) ? abs(yr) : abs(zr); // height from center
-
-      Bd(0) = B0*dipole(xr,yr,zr,0);
-      Bd(1) = B0*dipole(xr,yr,zr,1);
-      Bd(2) = B0*dipole(xr,yr,zr,2);
-
-      auto vrot1 = cross(Om, r);
-      auto erot1 = -1.0f*cross(vrot1, Bd);
-      exd = erot1(0); // x component
-
-      exi = yee.ex(i,j,k);
-
-      s =  shape(norm(r), radius, delta); //curved
-      //s =  shape(h, radius, delta); // flat
-      s *= shape(rcyl, radius_pc, delta_pc); // damp off edges of polar cap
-
-      exnew = s*exd  + (1.0f-s)*exi;
-
-
-      //-------------------------------------------------- 
-      // ey
-      xr = coord.ey().x(iglob);
-      yr = coord.ey().y(jglob);
-      zr = coord.ey().z(kglob);
-      r.set(xr,yr,zr);
-      rcyl = (D == 2) ? abs(xr) : sqrt(xr*xr + yr*yr); 
-      h    = (D == 2) ? abs(yr) : abs(zr); // height from center
-
-      Bd(0) = B0*dipole(xr,yr,zr,0);
-      Bd(1) = B0*dipole(xr,yr,zr,1);
-      Bd(2) = B0*dipole(xr,yr,zr,2);
-
-      auto vrot2 = cross(Om, r);
-      auto erot2 = -1.0f*cross(vrot2, Bd);
-      eyd = erot2(1); // y component
-
-      eyi = yee.ey(i,j,k);
-
-      s =  shape(norm(r), radius, delta); //curved
-      //s =  shape(h, radius, delta); // flat // flat
-      s *= shape(rcyl, radius_pc, delta_pc); // damp off edges of polar cap
-
-      eynew = s*eyd  + (1.0f-s)*eyi;
-
-      //-------------------------------------------------- 
-      // ez
-      xr = coord.ez().x(iglob);
-      yr = coord.ez().y(jglob);
-      zr = coord.ez().z(kglob);
-      r.set(xr,yr,zr);
-      rcyl = (D == 2) ? abs(xr) : sqrt(xr*xr + yr*yr); 
-      h    = (D == 2) ? abs(yr) : abs(zr); // height from center
-              
-      Bd(0) = B0*dipole(xr,yr,zr,0);
-      Bd(1) = B0*dipole(xr,yr,zr,1);
-      Bd(2) = B0*dipole(xr,yr,zr,2);
-              
-      auto vrot3 = cross(Om, r);
-      auto erot3 = -1.0f*cross(vrot3, Bd);
-      ezd = erot3(2); // z component
-
-      ezi = yee.ez(i,j,k);
-
-      s =  shape(norm(r), radius, delta); // curved
-      //s =  shape(h, radius, delta); // flat // flat
-      s *= shape(rcyl, radius_pc, delta_pc); // damp off edges of polar cap
-
-      eznew = s*ezd  + (1.0f-s)*ezi;
-
-      //std::cout << "  ijk" << i << "," << j << "," << k << " r:" << norm(r) << " rad:" << radius << " d:" << delta << " s:" << s << "\n";
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
 
       //--------------------------------------------------
-      if(!top) {
+      // ex
+      auto r1  = coord.ex().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bxd = B0*dipole(r1); // diple field
+      auto sx  = shape( norm(r1), radius, delta); // radial smoothing parameter
+                                                         
+      auto rcyl1 = (D == 2) ? norm1d(r1) : norm2d(r1); // cylindrical radius
+      sx        *= shape(rcyl1, radius_pc, delta_pc); // damp off edges of polar cap
+                                                         
+      auto vrot1 = cross(Om, r1); // Omega x r
+      auto erot1 = -1.0f*cross(vrot1, bxd); //-v x B
 
-        yee.ex(i,j,k) = exnew;
-        yee.ey(i,j,k) = eynew;
-        yee.ez(i,j,k) = eznew;
 
-      } else if(top) {
-        // manual damping of outgoing waves 
-        // poor-man's version of PML absorbing boundary conditions
+      //--------------------------------------------------
+      // ey
+      auto r2  = coord.ey().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto byd = B0*dipole(r2); // diple field
+      auto sy  = shape( norm(r2), radius, delta); // radial smoothing parameter
+                                                         
+      auto rcyl2 = (D == 2) ? norm1d(r2) : norm2d(r2); // cylindrical radius
+      sy        *= shape(rcyl2, radius_pc, delta_pc); // damp off edges of polar cap
+                                                         
+      auto vrot2 = cross(Om, r2); // Omega x r
+      auto erot2 = -1.0f*cross(vrot2, byd); //-v x B
 
-        float_m tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
-        float_m h        = (D == 2 ) ? jglob : kglob; // height
-                                                  
-        // ver 1; tanh
-        float_m radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
-        float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
-        s = shape(h, radius_ext, delta_ext); // tanh
 
-        // ver2; linear
-        //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
-        //float_m delta_ext = 1.0*tile_len; // full tile size
-        //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
+      //--------------------------------------------------
+      // ez
+      auto r3  = coord.ez().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto bzd = B0*dipole(r3); // diple field
+      auto sz  = shape( norm(r3), radius, delta); // radial smoothing parameter
+                                                         
+      auto rcyl3 = (D == 2) ? norm1d(r3) : norm2d(r3); // cylindrical radius
+      sz        *= shape(rcyl3, radius_pc, delta_pc); // damp off edges of polar cap
+                                                         
+      auto vrot3 = cross(Om, r3); // Omega x r
+      auto erot3 = -1.0f*cross(vrot3, bzd); //-v x B
 
-        //ver 3; mimic lambda profile from PML
-        //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
-        //s = min(1.0f, lam);
 
-        //ver 4; exp profile
-        //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
-        //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
-
-        // damp to vacuum
-        //yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0;
-        //yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0;
-        //yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0;
-          
-        // damp to co-rotation // TODO debug
-        //yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*exd;
-        //yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*eyd;
-        //yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*ezd;
-
-        // null currents; not deposited yet so no effect
-        yee.jx(i,j,k) = s*yee.jx(i,j,k); 
-        yee.jy(i,j,k) = s*yee.jy(i,j,k); 
-        yee.jz(i,j,k) = s*yee.jz(i,j,k); 
-      }
+      //--------------------------------------------------
+      // blending of old + new solution
+      yee.ex(i,j,k) = sx*erot1(0) + (1.0f - sx)*yee.ex(i,j,k); 
+      yee.ey(i,j,k) = sy*erot2(1) + (1.0f - sy)*yee.ey(i,j,k); 
+      yee.ez(i,j,k) = sz*erot3(2) + (1.0f - sz)*yee.ez(i,j,k); 
 
     }
-
-
-    // boundaries
-    if( inside_bot     ||
-        inside_top     ||
-        inside_box_bcs ||
-        inside_cyl_bcs 
-      ) {
-
-      //-------------------------------------------------- 
-      // remove e-field from box boundaries
-      yee.ex(i,j,k) = 0.0;
-      yee.ey(i,j,k) = 0.0;
-      yee.ez(i,j,k) = 0.0;
-
-    }
-
-    //  // TODO DEBUG set e-field to co-rotation value 
-
-    //  //-------------------------------------------------- 
-    //  // ex
-    //  xr = coord.ex().x(iglob);
-    //  yr = coord.ex().y(jglob);
-    //  zr = coord.ex().z(kglob);
-    //  r.set(xr,yr,zr); // spherical radius
-
-    //  Bd(0) = B0*dipole(xr,yr,zr,0);
-    //  Bd(1) = B0*dipole(xr,yr,zr,1);
-    //  Bd(2) = B0*dipole(xr,yr,zr,2);
-
-    //  auto vrot1 = cross(Om, r);
-    //  auto erot1 = -1.0f*cross(vrot1, Bd);
-    //  exd = erot1(0); // x component
-
-    //  //-------------------------------------------------- 
-    //  // ey
-    //  xr = coord.ey().x(iglob);
-    //  yr = coord.ey().y(jglob);
-    //  zr = coord.ey().z(kglob);
-    //  r.set(xr,yr,zr);
-
-    //  Bd(0) = B0*dipole(xr,yr,zr,0);
-    //  Bd(1) = B0*dipole(xr,yr,zr,1);
-    //  Bd(2) = B0*dipole(xr,yr,zr,2);
-
-    //  auto vrot2 = cross(Om, r);
-    //  auto erot2 = -1.0f*cross(vrot2, Bd);
-    //  eyd = erot2(1); // y component
-
-    //  //-------------------------------------------------- 
-    //  // ez
-    //  xr = coord.ez().x(iglob);
-    //  yr = coord.ez().y(jglob);
-    //  zr = coord.ez().z(kglob);
-    //  r.set(xr,yr,zr);
-    //          
-    //  Bd(0) = B0*dipole(xr,yr,zr,0);
-    //  Bd(1) = B0*dipole(xr,yr,zr,1);
-    //  Bd(2) = B0*dipole(xr,yr,zr,2);
-    //          
-    //  auto vrot3 = cross(Om, r);
-    //  auto erot3 = -1.0f*cross(vrot3, Bd);
-    //  ezd = erot3(2); // z component
-    //                    
-    //  yee.ex(i,j,k) = exd;
-    //  yee.ey(i,j,k) = eyd;
-    //  yee.ez(i,j,k) = ezd;
-
-    //}
   }
 
 
   //--------------------------------------------------
   // additionally; null epar in the closed field line region
 
+  // for dipole fields r/Rbc = sin^2(theta) where r and theta are in spherical coordinates 
+  // tolerance of 0.95 here so that we start killing the epar earlier
+  auto sint = radius_pc/radius; // sin\theta = R_pc/R_star
+  auto Rbc  = radius/sint/sint;  
+
+
   for(int k=-3; k<nz_tile+3; k++) 
   for(int j=-3; j<ny_tile+3; j++) 
   for(int i=-3; i<nx_tile+3; i++) {
       
     // global grid coordinates
-    iglob = (D>=1) ? i + mins[0] : 0;
-    jglob = (D>=2) ? j + mins[1] : 0;
-    kglob = (D>=3) ? k + mins[2] : 0;
+    float iglob = (D>=1) ? i + mins[0] : 0;
+    float jglob = (D>=2) ? j + mins[1] : 0;
+    float kglob = (D>=3) ? k + mins[2] : 0;
 
+
+    //--------------------------------------------------
     // spherical coordinates; TODO ignoring staggering
-    xr0 = (D>=1) ? coord.mid().x(iglob) : 0;
-    yr0 = (D>=2) ? coord.mid().y(jglob) : 0;
-    zr0 = (D>=3) ? coord.mid().z(kglob) : 0;
+    auto rvec = coord.mid().vec(iglob, jglob, kglob, D); //cartesian radius vector in star's coords
+    auto rad = norm(rvec); // length of radius
 
-    rad  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0);
-    sint = D == 2 ? abs(xr0)/rad : sqrt(xr0*xr0 + yr0*yr0)/rad; // sin\theta
+    auto rcycl = D == 2 ? norm1d(rvec) : norm2d(rvec); // cylindrical radius
+    auto sint = rcycl/rad; // \sin\theta
+    auto eta = rad/Rbc; // dimensionless dipole coordinate radius
 
-    float_m eta = rad/Rbc; // dimensionless dipole coordinate radius
+    //bool inside_closed_field_region = eta < 1.4*sint*sint; // larger region for smoothing
+    //bool inside_closed_field_region = eta < 1.1*sint*sint;
 
-    //if( eta < 1.4*sint*sint) { // TODO smooth or not?
-    if( eta < 1.0*sint*sint) {
-      exi = yee.ex(i,j,k);
-      eyi = yee.ey(i,j,k);
-      ezi = yee.ez(i,j,k);
+    //--------------------------------------------------
+    // vector friendly application of boolean boundary
+    //auto s = static_cast<float_m>(inside_closed_field_region);
 
-      bxi = yee.bx(i,j,k);
-      byi = yee.by(i,j,k);
-      bzi = yee.bz(i,j,k);
-      bn  = std::sqrt( bxi*bxi + byi*byi + bzi*bzi ) + EPS;
+    //--------------------------------------------------
+    // smoothing function
+    //s = shape( rad, 1.0*Rbc*sint*sint, 50.0); // location of the open-closed field line bc
 
-      // E_\parallel
-      epar = (exi*bxi + eyi*byi + ezi*bzi)/bn;
+    // condition for closed field line region is
+    //eta = sint*sint
+    //rad/Rbc = (rcycl/rad)^2 = rcyl^2/rad^2
+    //rcycl^2 = (rad^3/Rbc)
+    //rcycl > sqrt( rad^3/Rbc ) = rad*sqrt(rad/Rbc)
+    // Then, we can use a smoothing function similar to that in pcap radius:
+    auto s = 1.0f - shape(rcycl, rad*sqrt(rad/Rbc), delta_pc);
 
-      // take out eparallel component from electric field
-      exnew = exi - epar*bxi/bn;
-      eynew = eyi - epar*byi/bn;
-      eznew = ezi - epar*bzi/bn;
+    //--------------------------------------------------
+    // epar 
+    auto exi = yee.ex(i,j,k);
+    auto eyi = yee.ey(i,j,k);
+    auto ezi = yee.ez(i,j,k);
 
-      // smoothing function
-      //s = shape( rad, 1.05*Rbc*sint*sint, 50.0); // location of the open-closed field line bc
-      s = 1.0; // no smoothing along the polar cap rims
+    auto bxi = yee.bx(i,j,k);
+    auto byi = yee.by(i,j,k);
+    auto bzi = yee.bz(i,j,k);
+    auto bn  = std::sqrt( bxi*bxi + byi*byi + bzi*bzi ) + EPS;
 
-      // blend solution in with a smoothing function
-      yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
-      yee.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
-      yee.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
-    }
+    // E_\parallel
+    auto epar = (exi*bxi + eyi*byi + ezi*bzi)/bn;
+
+    //--------------------------------------------------
+    // take out eparallel component from electric field
+    auto exnew = exi - epar*bxi/bn;
+    auto eynew = eyi - epar*byi/bn;
+    auto eznew = ezi - epar*bzi/bn;
+
+    // blend solution in with a smoothing function
+    yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
+    yee.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
+    yee.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
   }
 
 
-}
-
-
-// helper script to iterate yee container
-inline void iterate_yee(
-    fields::YeeLattice& yee,
-    int imin,
-    int imax,
-    int jmin,
-    int jmax,
-    int kmin,
-    int kmax,
-    const float_m val,
-    int mode)
-{
-
-  if( mode == 0 ) {
-
-    for(int k=kmin; k<kmax; k++) 
-    for(int j=jmin; j<jmax; j++) 
-    for(int i=imin; i<imax; i++) {
-      yee.ex(i,j,k) = val;
-      yee.ey(i,j,k) = val;
-      yee.ez(i,j,k) = val;
-    }
-
-  } else if( mode == 1 ) {
-
-    for(int k=kmin; k<kmax; k++) 
-    for(int j=jmin; j<jmax; j++) 
-    for(int i=imin; i<imax; i++) {
-      yee.bx(i,j,k) = val;
-      yee.by(i,j,k) = val;
-      yee.bz(i,j,k) = val;
-    }
-  }
-
-}
-
-template<>
-void fields::Conductor<2>::null_edges(
-    fields::Tile<2>& tile,
-    int mode
-    )
-{
-  const float_m eval = 0.0f; // edge value
-
-  auto mins = tile.mins;
-  auto maxs = tile.maxs;
-  
-  auto& yee = tile.get_yee();
-
-  const int H = 2;
+  //--------------------------------------------------
+  // damping on a cylindrical region around the pcap
     
-  // 2D
-  const int kmin = 0;
-  const int kmax = 1;
-  int imin, imax, jmin, jmax;
+  // norm2d gives the length of the vector x and y components (ignoring z)
+  // this gives us the cylindrical coordinate
+    
+  float rbox = 0.5*Nx-H-1; // half of box size in x direction (not incl halos)
+                              
+  bool inside_cyl_bcs = 
+    norm2d(x1) > rbox ||
+    norm2d(x2) > rbox ||
+    norm2d(x3) > rbox ||
+    norm2d(x4) > rbox ||
+    norm2d(x5) > rbox ||
+    norm2d(x6) > rbox ||
+    norm2d(x7) > rbox ||
+    norm2d(x8) > rbox;
 
-  //-------------------------------------------------- 
-  // null sides to prevent periodic bc conditions
-  bool left  = false;
-  bool right = false;
-  bool top   = false;
-  bool bot   = false;
-  
-  if( mins[1] < 1 )    bot   = true; 
-  if( mins[0] < 1 )    left  = true; 
-  if( maxs[1] > Ny-1 ) top   = true; 
-  if( maxs[0] > Nx-1 ) right = true; 
+  if( D == 3 && inside_cyl_bcs ) {
 
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
 
-  //--------------------------------------------------
-  if(bot) {
-    //std::cout << "bottom " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
 
-    jmin = -H;
-    jmax =  0;
+      //--------------------------------------------------
+      auto rvec = coord.mid().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
+      auto rcyl = norm2d(rvec); // cylindrical radius
 
-    imin = -H;
-    imax = static_cast<int>(tile.mesh_lengths[0]) + H;
+      //--------------------------------------------------
+      // ver 1; tanh profile
+      auto delta_ext = 0.25f*tile_len; // 1/4 of tile size
+      auto s = shape(rcyl, rbox, delta_ext); 
 
-    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
+      // ver2 linear profile
+      //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+      //float_m delta_ext = 1.0*tile_len; // full tile size
+      //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
+
+      //ver 3; mimic lambda profile from PML
+      //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+      //s = min(1.0f, lam);
+
+      //ver 4; exp profile
+      //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
+      //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
+
+      //--------------------------------------------------
+      // damp to vacuum
+      yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0;
+      yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0;
+      yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0;
+    }
   }
 
   //--------------------------------------------------
-  if(left) {
-    //std::cout << "left " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
+  // inside top
 
-    jmin = -H;
-    jmax = static_cast<int>(tile.mesh_lengths[1]) + H;
-
-    imin = -H;
-    imax =  0;
-
-    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
-  }
-
-  //--------------------------------------------------
   if(top) {
-    //std::cout << "top " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
 
-    jmin = static_cast<int>(tile.mesh_lengths[1]);
-    jmax = static_cast<int>(tile.mesh_lengths[1]) + H;
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
 
-    imin = -H;
-    imax = static_cast<int>(tile.mesh_lengths[0]) + H;
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
 
-    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
+      auto h = (D == 2 ) ? jglob : kglob; // height
+
+      //--------------------------------------------------
+      // ver 1; tanh profile
+      float_m radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+      float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
+      auto s = shape(h, radius_ext, delta_ext); // tanh
+
+      // ver2 linear profile
+      //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+      //float_m delta_ext = 1.0*tile_len; // full tile size
+      //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
+
+      //ver 3; mimic lambda profile from PML
+      //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+      //s = min(1.0f, lam);
+
+      //ver 4; exp profile
+      //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
+      //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
+
+
+      //--------------------------------------------------
+      // damp to vacuum
+      yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0;
+      yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0;
+      yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0;
+
+    }
   }
+
 
   //--------------------------------------------------
-  if(right) {
-    //std::cout << "right " << mins[0] << " " << mins[1] << " " << maxs[0] << " " << maxs[1] << std::endl;
+  // box boundaries
 
-    jmin = -H;
-    jmax = static_cast<int>(tile.mesh_lengths[1]) + H;
+  if( left  ||
+      right || 
+      front ||
+      back  ||
+      bot   ||
+      top
+    ){
 
-    imin = static_cast<int>(tile.mesh_lengths[0]);
-    imax = static_cast<int>(tile.mesh_lengths[0]) + H;
+    for(int k=-3; k<nz_tile+3; k++) 
+    for(int j=-3; j<ny_tile+3; j++) 
+    for(int i=-3; i<nx_tile+3; i++) {
 
-    iterate_yee(yee, imin, imax, jmin, jmax, kmin, kmax, eval, mode);
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float jglob = (D>=2) ? j + mins[1] : 0;
+      float kglob = (D>=3) ? k + mins[2] : 0;
+
+
+      //--------------------------------------------------
+      // sides
+      bool inside_bot   = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
+      bool inside_top   = (D == 2) ? jglob > Ny-1 : kglob > Nz-1; // y or z direction flip 
+
+      bool inside_left  = left  && iglob < H; 
+      bool inside_right = right && iglob > Nx-H-1; 
+
+      bool inside_front = front && jglob < H; 
+      bool inside_back  = back  && jglob > Ny-H-1; 
+
+      // cartesian boundaries
+      bool inside_box_bcs = inside_left  ||
+                            inside_right ||
+                            inside_front ||
+                            inside_back  ||
+                            inside_top   ||
+                            inside_bot;
+
+      //--------------------------------------------------
+      // vector friendly application of boolean boundary
+      auto s = static_cast<float_m>(inside_box_bcs);
+
+      //--------------------------------------------------
+      // damp to vacuum
+      yee.ex(i,j,k) = s*0.0 + (1.0f - s)*yee.ex(i,j,k);
+      yee.ey(i,j,k) = s*0.0 + (1.0f - s)*yee.ey(i,j,k);
+      yee.ez(i,j,k) = s*0.0 + (1.0f - s)*yee.ez(i,j,k);
+
+    }
   }
 
-  
 }
 
 

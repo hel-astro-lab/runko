@@ -553,8 +553,7 @@ void bind_fields(py::module& m_sub)
     .def_readwrite("Nz",       &fields::Conductor<2>::Nz)
     .def("insert_em",          &fields::Conductor<2>::insert_em)
     .def("update_b",           &fields::Conductor<2>::update_b)
-    .def("update_e",           &fields::Conductor<2>::update_e)
-    .def("null_edges",         &fields::Conductor<2>::null_edges);
+    .def("update_e",           &fields::Conductor<2>::update_e);
 
 
   // 3D rotating conductor

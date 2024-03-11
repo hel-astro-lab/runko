@@ -332,6 +332,18 @@ inline T norm(Vec3<T>& v)
 }
 
 template <typename T> 
+inline T norm2d(Vec3<T>& v) // contracted norm in x y direction
+{
+  return std::sqrt( v(0)*v(0) + v(1)*v(1) );
+}
+
+template <typename T> 
+inline T norm1d(Vec3<T>& v) // contracted norm in x direction
+{
+  return std::abs( v(0) );
+}
+
+template <typename T> 
 inline T norm(Vec4<T>& v)
 {
   return std::sqrt( v(0)*v(0) + v(1)*v(1) + v(2)*v(2) + v(3)*v(3) );

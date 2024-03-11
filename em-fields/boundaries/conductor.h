@@ -4,6 +4,12 @@
 #include "../../definitions.h"
 #include "../../tools/vector.h"
 
+
+namespace fields {
+
+using toolbox::Vec3;
+
+
 // Helper class to automate the management of a staggered Yee lattice
 // 
 // Returns a field object that has the correct staggering. 
@@ -15,47 +21,47 @@
 
 class StaggeredSphericalField
 {
-  double sx,sy,sz;
-  double cx, cy, cz, r;
+  float sx,sy,sz;
+  float cx, cy, cz, r;
 
   public:
 
   StaggeredSphericalField( 
-      double sx, double sy, double sz,
-      double cenx, double ceny, double cenz, double radius) 
+      float sx, float sy, float sz,
+      float cenx, float ceny, float cenz, float radius) 
     : sx(sx), sy(sy), sz(sz),
       cx(cenx), cy(ceny), cz(cenz), r(radius)
   { }
 
   // NOTE there is a flip of staggering direction for negative cartesian coordinates
   //      not really sure why, but it is needed to get a balanced configuration
-  //inline double x(double i) { return i > cx ? (i + 0.5*sx - cx)/r : (i - 0.5*sx - cx)/r; }
-  //inline double y(double j) { return j > cy ? (j + 0.5*sy - cy)/r : (j - 0.5*sy - cy)/r; }
-  //inline double z(double k) { return k > cz ? (k + 0.5*sz - cz)/r : (k - 0.5*sz - cz)/r; }
+  //inline float x(float i) { return i > cx ? (i + 0.5*sx - cx)/r : (i - 0.5*sx - cx)/r; }
+  //inline float y(float j) { return j > cy ? (j + 0.5*sy - cy)/r : (j - 0.5*sy - cy)/r; }
+  //inline float z(float k) { return k > cz ? (k + 0.5*sz - cz)/r : (k - 0.5*sz - cz)/r; }
+
+  inline float x(float i) { return (i + 0.5*sx - cx)/r; }
+  inline float y(float j) { return (j + 0.5*sy - cy)/r; }
+  inline float z(float k) { return (k + 0.5*sz - cz)/r; }
 
   // TODO template dependency complicates the whole code too much
-  //inline toolbox::Vec3<double> vec(double i, double j, double k) 
-  //{ 
-  //  if(D == 1) return ret( x(i),  0.0,  0.0 );
-  //  if(D == 2) return ret( x(i), y(j),  0.0 );
-  //  if(D == 3) return ret( x(i), y(j), z(k) );
-  //}
-
-  inline double x(double i) { return (i + 0.5*sx - cx)/r; }
-  inline double y(double j) { return (j + 0.5*sy - cy)/r; }
-  inline double z(double k) { return (k + 0.5*sz - cz)/r; }
-
-  //void _dummy(std::array<int, D> in) = 0;
+  //      feeding D in as a parameter for simplicity
+  inline toolbox::Vec3<float> vec(float i, float j, float k, size_t D) 
+  { 
+    if(D == 1) return Vec3<float>( x(i),  0.0,  0.0 );
+    if(D == 2) return Vec3<float>( x(i), y(j),  0.0 );
+    if(D == 3) return Vec3<float>( x(i), y(j), z(k) );
+    assert(false);
+  }
 };
 
 
 class StaggeredSphericalCoordinates
 {
-  double cx, cy, cz, r;
+  float cx, cy, cz, r;
 
   public:
 
-  StaggeredSphericalCoordinates( double cenx, double ceny, double cenz, double radius) 
+  StaggeredSphericalCoordinates( float cenx, float ceny, float cenz, float radius) 
       : cx(cenx), cy(ceny), cz(cenz), r(radius)
   {}
 
@@ -93,8 +99,6 @@ inline float_m shape(float_m r, float_m r0, float_m delta)
 }
 
 
-namespace fields {
-
 /// Rotating conductor
 template<size_t D>
 class Conductor
@@ -105,23 +109,23 @@ class Conductor
   Conductor() = default;
 
   // configuration parameters
-  double radius = 10.0; // stellar radius
-  double period = 0.0;  // stellar rotation period
-  double B0     = 1.0; // Initial magnetic field strength B_0
-  double chi_mu = 0.0; // Obliquity angle of magnetic dipole from z-axis
-  double chi_om = 0.0; // Obliquity angle of Omega vector from z-axis
-  double phase_mu  = 0.0; // rotator phase of magnetic moment
-  double phase_om  = 0.0; // rotator phase of rotation vector
-  double cenx = 0, ceny = 0, cenz = 0; // center of the sphere
+  float radius = 10.0; // stellar radius
+  float period = 0.0;  // stellar rotation period
+  float B0     = 1.0; // Initial magnetic field strength B_0
+  float chi_mu = 0.0; // Obliquity angle of magnetic dipole from z-axis
+  float chi_om = 0.0; // Obliquity angle of Omega vector from z-axis
+  float phase_mu  = 0.0; // rotator phase of magnetic moment
+  float phase_om  = 0.0; // rotator phase of rotation vector
+  float cenx = 0, ceny = 0, cenz = 0; // center of the sphere
 
-  double delta = 1.0;
+  float delta = 1.0;
 
   // derived global quantities
-  double angular_velocity;
+  float angular_velocity;
 
   // additional switches for a possible polar cap 
-  double radius_pc = 1.0; // polar cap radius
-  double delta_pc  = 1.0; // polar smoothing
+  float radius_pc = 1.0; // polar cap radius
+  float delta_pc  = 1.0; // polar smoothing
 
 
   // grid size (for nulling the sides to prevent periodic bc's)
@@ -132,16 +136,13 @@ class Conductor
   /// \brief interpolate electromagnetic fields to particle locations
   //void solve(fields::Tile<D>&  /*tile*/);
 
-  double dipole(double x, double y, double z, int dim);
+  Vec3<float> dipole(Vec3<float>& xvec);
 
   void insert_em(fields::Tile<D>&  tile);
 
   void update_b(fields::Tile<D>&  tile);
 
   void update_e(fields::Tile<D>&  tile);
-
-  void null_edges(fields::Tile<D>& tile, int mode);
-
 
 };
 
