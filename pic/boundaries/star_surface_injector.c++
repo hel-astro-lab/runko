@@ -79,7 +79,8 @@ void pic::Star<D>::solve(
   if(period < EPS) Omega = 0.0; // reality check
 
   if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
-  if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
+  //if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
+  if(D == 3) Om.set( sin(chi_om)*cos(phase_om)*Omega, sin(chi_om)*sin(phase_om)*Omega, cos(chi_om)*Omega ); 
 
   //--------------------------------------------------
   // four-velocity components of the particles to be injected

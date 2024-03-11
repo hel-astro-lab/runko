@@ -52,8 +52,8 @@ double fields::Conductor<3>::dipole(
   double p1 = sin(chi_mu), p2 = 0.0, p3 = cos(chi_mu);
 
   // final rotating magnetic moment with phase included
-  double mux = p1*cos(phase) - p2*sin(phase);
-  double muy = p1*sin(phase) + p2*cos(phase);
+  double mux = p1*cos(phase_mu) - p2*sin(phase_mu);
+  double muy = p1*sin(phase_mu) + p2*cos(phase_mu);
   double muz = p3;
 
   double rad = std::sqrt(x*x + y*y + z*z);
@@ -91,7 +91,9 @@ void fields::Conductor<D>::insert_em(
                                   
   Vec3<float_m> Om;
   if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
-  if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
+  //if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
+  if(D == 3) Om.set( sin(chi_om)*cos(phase_om)*Omega, sin(chi_om)*sin(phase_om)*Omega, cos(chi_om)*Omega ); 
+
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
@@ -469,7 +471,8 @@ void fields::Conductor<D>::update_e(
   if(period < EPS) Omega = 0.0; // reality check
 
   if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
-  if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
+  //if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
+  if(D == 3) Om.set( sin(chi_om)*cos(phase_om)*Omega, sin(chi_om)*sin(phase_om)*Omega, cos(chi_om)*Omega ); 
 
   // helper class for staggered grid positions
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);

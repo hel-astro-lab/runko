@@ -110,7 +110,8 @@ class Conductor
   double B0     = 1.0; // Initial magnetic field strength B_0
   double chi_mu = 0.0; // Obliquity angle of magnetic dipole from z-axis
   double chi_om = 0.0; // Obliquity angle of Omega vector from z-axis
-  double phase  = 0.0; // rotator phase
+  double phase_mu  = 0.0; // rotator phase of magnetic moment
+  double phase_om  = 0.0; // rotator phase of rotation vector
   double cenx = 0, ceny = 0, cenz = 0; // center of the sphere
 
   double delta = 1.0;
