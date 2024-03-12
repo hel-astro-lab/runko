@@ -2,6 +2,7 @@
 #include "../../em-fields/boundaries/conductor.h"
 
 #include "../../tools/vector.h"
+#include "../../tools/signum.h"
 
 #include <cmath> 
 #include <cassert>
@@ -13,9 +14,15 @@ using std::max;
 using std::abs;
 using std::sqrt;
 
+using toolbox::sign;
+using toolbox::norm;
+using toolbox::norm1d;
+using toolbox::norm2d;
 using toolbox::cross;
 using toolbox::dot;
 using toolbox::Vec3;
+
+using fields::StaggeredSphericalCoordinates;
 
 
 // simple pseudo-random floats with C library rand() (outputting int's).
@@ -48,7 +55,8 @@ void pic::Star<D>::solve(
     if( mins[1] < 1 )    bot   = true; 
     if( maxs[1] > Ny-1 ) top   = true; 
   } else if( D == 3 ){
-    if( mins[2] < 1 )    bot   = true; 
+    //if( mins[2] < 1 )    bot   = true; 
+    if( mins[2] < 1.1*radius - ceny ) bot   = true; 
     if( maxs[2] > Nz-1 ) top   = true; 
   }
 
@@ -67,13 +75,7 @@ void pic::Star<D>::solve(
   //--------------------------------------------------
   // main rouutine starts here now that we have the right tile
     
-  float_m iglob, jglob, kglob;
-  float_m xr0,yr0,zr0;
-  float_m ex, ey, ez, bx, by, bz;
-  float_m epar, ninj;
-
-  Vec3<float_m> Bv, Ev; // tmp variables
-  Vec3<float_m> r, Om; // tmp variables
+  Vec3<float_m> Om; 
 
   float_m Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
@@ -83,14 +85,10 @@ void pic::Star<D>::solve(
   if(D == 3) Om.set( sin(chi_om)*cos(phase_om)*Omega, sin(chi_om)*sin(phase_om)*Omega, cos(chi_om)*Omega ); 
 
   //--------------------------------------------------
-  // four-velocity components of the particles to be injected
-  float_p ux1=0.0, uy1=0.0, uz1=0.0;
-
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
   auto& yee = tile.get_yee();
   const float_p c = tile.cfl;
-
 
   //--------------------------------------------------
   // inject to each cell
@@ -99,64 +97,98 @@ void pic::Star<D>::solve(
   int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
   int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
+
   for(int k=0; k<nz_tile; k++) 
   for(int j=0; j<ny_tile; j++) 
   for(int i=0; i<nx_tile; i++) {
 
     // global grid coordinates
-    iglob = (D>=1) ? i + mins[0] : 0.0;
-    jglob = (D>=2) ? j + mins[1] : 0.0;
-    kglob = (D>=3) ? k + mins[2] : 0.0;
+    float iglob = (D>=1) ? i + mins[0] : 0.0;
+    float jglob = (D>=2) ? j + mins[1] : 0.0;
+    float kglob = (D>=3) ? k + mins[2] : 0.0;
 
     // spherical coordinates 
-    xr0 = (D>=1) ? coord.mid().x(iglob) : 0.0;
-    yr0 = (D>=2) ? coord.mid().y(jglob) : 0.0;
-    zr0 = (D>=3) ? coord.mid().z(kglob) : 0.0;
+    auto rvec = coord.rh().vec(iglob, jglob, kglob, D); //cartesian radius vector in star's coords
 
+    //--------------------------------------------------
     // check if we are inside star
 
     // inject top of star
-    bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
-    bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 4.0;
+    const int height_atms = 2; // height of the atmosphere in cells
+    bool inside_star  = norm(rvec) < 1.0*radius;
+    bool inside_atmos = norm(rvec) < 1.0*radius + height_atms;
 
+    //--------------------------------------------------
+    // inject exactly the given cell thickness
+
+    //int th = 0;
+    //if(!inside_star && inside_atmos) {
+
+    //  // axis of depth
+    //  int dir = 0;
+    //  if(      abs(rvec(0)) > max(abs(rvec(1)), abs(rvec(2))) ) dir = 0; // x dir
+    //  else if( abs(rvec(1)) > max(abs(rvec(0)), abs(rvec(2))) ) dir = 1; // y dir
+    //  else if( abs(rvec(2)) > max(abs(rvec(0)), abs(rvec(1))) ) dir = 2; // z dir
+    //                                                                
+    //  // drill below and check how many cells we can go deeper to be inside star
+    //  auto rtmp = rvec;
+    //  for(int h=0; h<height_atms; h++) {
+    //    rtmp(dir) += -1.0f*sign(rtmp(dir)); // go one below to the direction of negative r
+    //    if( norm(rtmp) < radius) th += 1;
+    //  }
+
+    //  // check if thickness is the wanted value and then inject
+    //  inside_atmos = false;
+    //  if( th-1 < height_atms ) inside_atmos = true;
+    //}
+
+
+    //--------------------------------------------------
     // inject below surface
-    //bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius - 3.0;
-    //bool inside_atmos = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius + 0.0;
+    //bool inside_star  = norm(rvec) <= 1.0*radius - 3.0;
+    //bool inside_atmos = norm(rvec) <= 1.0*radius + 0.0;
 
     // flat surface; slab on the top
     //bool inside_star  = (D==3) ? abs(zr0) <= 1.0*radius + 0.0 : abs(yr0) <= 1.0*radius + 0.0;
     //bool inside_atmos = (D==3) ? abs(zr0) <= 1.0*radius + 2.0 : abs(yr0) <= 1.0*radius + 2.0;
 
 
-    bool inside_pcap = (D == 2) ? abs(xr0) < radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) < radius_pc; // same here
+    //--------------------------------------------------
+    //bool inside_pcap = (D == 2) ? abs(xr0) < radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) < radius_pc; // same here
+    bool inside_pcap = (D==2) ? norm1d(rvec) < radius_pc : norm2d(rvec) < radius_pc;
 
-    // inside a thin layer above the star
+    //--------------------------------------------------
+    // we are inside a thin layer above the star
     if( inside_atmos && !inside_star && inside_pcap ) {
 
+      // debug to show the injection region
+      //yee.ex(i,j,k) = 10.0;
+      //yee.ey(i,j,k) = 10.0;
+      //yee.ez(i,j,k) = 10.0;
+
       // get epar (TODO not on the right staggering)
-      ex = yee.ex(i,j,k);
-      ey = yee.ey(i,j,k);
-      ez = yee.ez(i,j,k);
+      auto ex = yee.ex(i,j,k);
+      auto ey = yee.ey(i,j,k);
+      auto ez = yee.ez(i,j,k);
 
-      bx = yee.bx(i,j,k);
-      by = yee.by(i,j,k);
-      bz = yee.bz(i,j,k);
+      auto bx = yee.bx(i,j,k);
+      auto by = yee.by(i,j,k);
+      auto bz = yee.bz(i,j,k);
 
-      float_m b = sqrt( bx*bx + by*by + bz*bz );
-      epar      = ( ex*bx + ey*by + ez*bz )/b;
-
+      auto b    = sqrt( bx*bx + by*by + bz*bz );
+      auto epar = ( ex*bx + ey*by + ez*bz )/b;
 
       // vectors for calculation of pcap rotation velocity
-      Ev.set(ex, ey, ez);
-      Bv.set(bx, by, bz);
+      Vec3 E(ex, ey, ez);
+      Vec3 B(bx, by, bz);
 
       //--------------------------------------------------
       // ver 1: 
       // E is normalized with e n_GJ R_pc from which we can solve n_inj
         
-      //ninj = 0.1*std::abs(epar/q/radius_pc);
-      ninj = ninj_pairs*std::abs(epar/q)/radius_pc;
+      float ninj = ninj_pairs*abs(epar/q)/radius_pc;
       //std::cout << " ninj " << ninj << " epar" << epar << " epar/q" << epar/q << "\n";
+
 
       //--------------------------------------------------
       // ver2; current dependent inj; NOTE does not work because current arrays are emptied
@@ -171,40 +203,71 @@ void pic::Star<D>::solve(
       //ninj = 10.0*0.45*abs(j/q); 
 
       //std::cout << " ninj " << ninj << " j" << j << " j/q" << j/q << "\n";
-        
-      ninj = std::max( (float_m)ninj_min_pairs, ninj);
+      ninj = max( (float)ninj_min_pairs, ninj);
 
       //--------------------------------------------------
       // add ninj pairs with MC injection; results on average in ninj injections
-      double ncop = 0.0; // number of pairs added
-      double z1 = rand();
+      float ncop = 0.0f; // number of pairs added
+      float z1 = rand();
 
+
+      auto n_to_be_inj = static_cast<size_t>(max(1.0f, std::ceil(ninj)));
+
+      // pre-created arrays for particles; not used
+      //auto x_to_be_inj  = std::vector<float>(n_to_be_inj);
+      //auto y_to_be_inj  = std::vector<float>(n_to_be_inj);
+      //auto z_to_be_inj  = std::vector<float>(n_to_be_inj);
+      //auto ux_to_be_inj = std::vector<float>(n_to_be_inj);
+      //auto uy_to_be_inj = std::vector<float>(n_to_be_inj);
+      //auto uz_to_be_inj = std::vector<float>(n_to_be_inj);
+
+      //--------------------------------------------------
+      // pre-create random values since mersenne twister does not vectorize otherwise
+      //auto zeta1 = std::vector<float>(n_to_be_inj);
+      //auto zeta2 = std::vector<float>(n_to_be_inj);
+      //auto zeta3 = std::vector<float>(n_to_be_inj);
+      //auto zeta4 = std::vector<float>(n_to_be_inj);
+
+      //for(size_t n=0; n<n_to_be_inj; n++) zeta1[n] = rand();
+      //for(size_t n=0; n<n_to_be_inj; n++) zeta2[n] = rand();
+      //for(size_t n=0; n<n_to_be_inj; n++) zeta3[n] = rand();
+      //for(size_t n=0; n<n_to_be_inj; n++) zeta4[n] = rand();
+
+
+      //--------------------------------------------------
+      //add particles
       while( ninj > z1 + ncop ) {
 
-        float dx = rand(); // inject location is set randomly inside the cell
-        float dy = rand(); // inject location is set randomly inside the cell
+        // inject location is set randomly inside the cell
+        float dx = (D >= 1) ? rand() : 0.0f; 
+        float dy = (D >= 2) ? rand() : 0.0f; 
+        float dz = (D >= 3) ? rand() : 0.0f; 
 
         //--------------------------------------------------
         // sample velocity from thermal distribution
         // using Box-Muller method to draw thermal velocities; valid for v <~ 0.2c
-        double rr1 = rand();
-        double vr = sqrt( -2.0*log(rr1))*temp_pairs;
+        float rr1 = rand(); //zeta4[ncop];
+        float vr = sqrt( -2.0f*log(rr1))*temp_pairs;
         
         // 1D distribution along B-field
-        ux1 = vr*bx/b;
-        uy1 = vr*by/b;
-        uz1 = vr*bz/b;
+        // TODO same "random" velocity taken for both particles
+        auto ux1 = vr*bx/b;
+        auto uy1 = vr*by/b;
+        auto uz1 = vr*bz/b;
 
         //--------------------------------------------------
         // pcap rotation vector
-        r.set(xr0 + dx, yr0 + dy, zr0);
+        //r.set(xr0 + dx, yr0 + dy, zr0);
+        auto r = rvec;  // copy
+        r(0) += dx;
+        r(1) += dy;
+        r(2) += dz;
         auto vrot = cross(Om, r); 
 
         // ExB version
-        auto B2E2 = 1.0f/( dot(Bv, Bv) ); //+ dot(Ev, Ev) );
-        auto vrot2 = B2E2*cross(Ev, Bv);
+        auto B2E2 = 1.0f/( dot(B, B) ); //+ dot(Ev, Ev) );
+        auto vrot2 = B2E2*cross(E, B);
         // NOTE matches to about ~30% the surface rotation velocity
-
           
         //std::cout << "xr0  :   " << xr0   << "\n";
         //std::cout << "u    : " << ux1 << " " << uy1 << " " << uz1  << "\n";
@@ -217,18 +280,41 @@ void pic::Star<D>::solve(
         uy1 += vrot2(1);
         uz1 += vrot2(2);
 
-        // TODO same "random" velocity taken for both particles
+
+        //x_to_be_inj[ncop]  = iglob + dx;
+        //y_to_be_inj[ncop]  = jglob + dy;
+        //z_to_be_inj[ncop]  = kglob + dz;
+        //ux_to_be_inj[ncop] = ux1;
+        //uy_to_be_inj[ncop] = uy1;
+        //uz_to_be_inj[ncop] = uz1;
 
         cons["e-"]->add_particle( 
-            {{iglob + dx, jglob + dy, kglob}}, 
+            {{iglob + dx, jglob + dy, kglob + dz}}, 
             {{ux1, uy1, uz1}}, wep); 
 
         cons["e+"]->add_particle( 
-            {{iglob + dx, jglob + dy, kglob}}, 
+            {{iglob + dx, jglob + dy, kglob + dz}}, 
             {{ux1, uy1, uz1}}, wep); 
 
-        ncop += 1.0;
+        ncop += 1;
       }
+
+
+      //--------------------------------------------------
+      // add the pre-created particles; NOTE not used
+      //for(int n=0; n<n_to_be_inj; n++){
+      //  cons["e-"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
+      //                            {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
+      //                          wep); 
+      //}
+
+      //for(int n=0; n<n_to_be_inj; n++){
+      //  cons["e+"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
+      //                            {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
+      //                          wep); 
+      //}
+
+
 
       //--------------------------------------------------
       // TODO add photon injection
@@ -248,25 +334,31 @@ void pic::Star<D>::solve(
       con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
   }
 
+
+  float tile_height = (D==2) ? tile.mesh_lengths[1] : tile.mesh_lengths[2]; // height of the tile
+
   for(auto&& container : tile.containers) {
     for(size_t n=0; n<container.size(); n++) {
 
-      iglob = (D>=1) ? container.loc(0,n) : 0.0;
-      jglob = (D>=2) ? container.loc(1,n) : 0.0;
-      kglob = (D>=3) ? container.loc(2,n) : 0.0;
+      float iglob = (D>=1) ? container.loc(0,n) : 0.0;
+      float jglob = (D>=2) ? container.loc(1,n) : 0.0;
+      float kglob = (D>=3) ? container.loc(2,n) : 0.0;
 
-      xr0 = (D>=1) ? coord.mid().x(iglob) : 0.0;
-      yr0 = (D>=2) ? coord.mid().y(jglob) : 0.0;
-      zr0 = (D>=3) ? coord.mid().z(kglob) : 0.0;
+      float xr0 = (D>=1) ? coord.mid().x(iglob) : 0.0;
+      float yr0 = (D>=2) ? coord.mid().y(jglob) : 0.0;
+      float zr0 = (D>=3) ? coord.mid().z(kglob) : 0.0;
 
       // remove particles based on following regimes
       bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
+      bool below_star   = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius-2; // NOTE hard-coded thickness of 2
       bool inside_bot   = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
-      bool inside_top   = (D == 2) ? jglob > Ny-1 : kglob > Nz-1; // y or z direction flip 
+      bool inside_top   = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
       bool outside_pcap = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
 
       if( inside_bot ||
-          inside_star && outside_pcap ) {
+          inside_star && outside_pcap ||
+          below_star 
+          ) {
         container.to_other_tiles.push_back( {1,1,1,n} );
       }
 
