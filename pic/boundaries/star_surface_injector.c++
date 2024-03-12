@@ -98,6 +98,18 @@ void pic::Star<D>::solve(
   int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
 
+
+  //UniIter::iterate3D(
+  //[=] DEVCALLABLE (int i, int j, int k, 
+  //                YeeLattice &yee)
+  //{
+
+
+  //}, 
+  //  nx_tile, ny_tile, nz_tile,
+  //  yee);
+
+
   for(int k=0; k<nz_tile; k++) 
   for(int j=0; j<ny_tile; j++) 
   for(int i=0; i<nx_tile; i++) {
@@ -154,7 +166,6 @@ void pic::Star<D>::solve(
 
 
     //--------------------------------------------------
-    //bool inside_pcap = (D == 2) ? abs(xr0) < radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) < radius_pc; // same here
     bool inside_pcap = (D==2) ? norm1d(rvec) < radius_pc : norm2d(rvec) < radius_pc;
 
     //--------------------------------------------------
@@ -210,16 +221,15 @@ void pic::Star<D>::solve(
       float ncop = 0.0f; // number of pairs added
       float z1 = rand();
 
-
       auto n_to_be_inj = static_cast<size_t>(max(1.0f, std::ceil(ninj)));
 
       // pre-created arrays for particles; not used
-      //auto x_to_be_inj  = std::vector<float>(n_to_be_inj);
-      //auto y_to_be_inj  = std::vector<float>(n_to_be_inj);
-      //auto z_to_be_inj  = std::vector<float>(n_to_be_inj);
-      //auto ux_to_be_inj = std::vector<float>(n_to_be_inj);
-      //auto uy_to_be_inj = std::vector<float>(n_to_be_inj);
-      //auto uz_to_be_inj = std::vector<float>(n_to_be_inj);
+      auto x_to_be_inj  = std::vector<float>(n_to_be_inj);
+      auto y_to_be_inj  = std::vector<float>(n_to_be_inj);
+      auto z_to_be_inj  = std::vector<float>(n_to_be_inj);
+      auto ux_to_be_inj = std::vector<float>(n_to_be_inj);
+      auto uy_to_be_inj = std::vector<float>(n_to_be_inj);
+      auto uz_to_be_inj = std::vector<float>(n_to_be_inj);
 
       //--------------------------------------------------
       // pre-create random values since mersenne twister does not vectorize otherwise
@@ -257,7 +267,6 @@ void pic::Star<D>::solve(
 
         //--------------------------------------------------
         // pcap rotation vector
-        //r.set(xr0 + dx, yr0 + dy, zr0);
         auto r = rvec;  // copy
         r(0) += dx;
         r(1) += dy;
@@ -280,21 +289,20 @@ void pic::Star<D>::solve(
         uy1 += vrot2(1);
         uz1 += vrot2(2);
 
+        x_to_be_inj[ncop]  = iglob + dx;
+        y_to_be_inj[ncop]  = jglob + dy;
+        z_to_be_inj[ncop]  = kglob + dz;
+        ux_to_be_inj[ncop] = ux1;
+        uy_to_be_inj[ncop] = uy1;
+        uz_to_be_inj[ncop] = uz1;
 
-        //x_to_be_inj[ncop]  = iglob + dx;
-        //y_to_be_inj[ncop]  = jglob + dy;
-        //z_to_be_inj[ncop]  = kglob + dz;
-        //ux_to_be_inj[ncop] = ux1;
-        //uy_to_be_inj[ncop] = uy1;
-        //uz_to_be_inj[ncop] = uz1;
+        //cons["e-"]->add_particle( 
+        //    {{iglob + dx, jglob + dy, kglob + dz}}, 
+        //    {{ux1, uy1, uz1}}, wep); 
 
-        cons["e-"]->add_particle( 
-            {{iglob + dx, jglob + dy, kglob + dz}}, 
-            {{ux1, uy1, uz1}}, wep); 
-
-        cons["e+"]->add_particle( 
-            {{iglob + dx, jglob + dy, kglob + dz}}, 
-            {{ux1, uy1, uz1}}, wep); 
+        //cons["e+"]->add_particle( 
+        //    {{iglob + dx, jglob + dy, kglob + dz}}, 
+        //    {{ux1, uy1, uz1}}, wep); 
 
         ncop += 1;
       }
@@ -302,17 +310,25 @@ void pic::Star<D>::solve(
 
       //--------------------------------------------------
       // add the pre-created particles; NOTE not used
-      //for(int n=0; n<n_to_be_inj; n++){
-      //  cons["e-"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
-      //                            {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
-      //                          wep); 
-      //}
+      for(int n=0; n<ncop; n++){
+        //std::cout <<" x y z " << 
+        //  x_to_be_inj[n] << " " <<
+        //  y_to_be_inj[n] << " " <<
+        //  z_to_be_inj[n] << " " 
+        //  << " ux uy uz " <<
+        //  ux_to_be_inj[n] << " " <<
+        //  uy_to_be_inj[n] << " " <<
+        //  uz_to_be_inj[n] << "\n";
+        cons["e-"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
+                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
+                                wep); 
+      }
 
-      //for(int n=0; n<n_to_be_inj; n++){
-      //  cons["e+"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
-      //                            {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
-      //                          wep); 
-      //}
+      for(int n=0; n<ncop; n++){
+        cons["e+"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
+                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
+                                wep); 
+      }
 
 
 
