@@ -307,19 +307,25 @@ void fields::Conductor<D>::update_b(
   // norm2d gives the length of the vector x and y components (ignoring z)
   // this gives us the cylindrical coordinate
     
-  float rbox = 0.5*Nx-H-1; // half of box size in x direction (not incl halos)
-                              
-  bool inside_cyl_bcs = 
-    norm2d(x1) > rbox ||
-    norm2d(x2) > rbox ||
-    norm2d(x3) > rbox ||
-    norm2d(x4) > rbox ||
-    norm2d(x5) > rbox ||
-    norm2d(x6) > rbox ||
-    norm2d(x7) > rbox ||
-    norm2d(x8) > rbox;
 
-  if( D == 3 && inside_cyl_bcs ) {
+  bool inside_cyl_bcs = false;
+  float rbox = 0.0;
+
+  if(D == 2) {
+    rbox = 0.5*Nx - 0.5*tile_len; // half of box - half tile
+                               
+    inside_cyl_bcs = 
+      norm1d(x1) > rbox || norm1d(x2) > rbox || norm1d(x3) > rbox || norm1d(x4) > rbox ||
+      norm1d(x5) > rbox || norm1d(x6) > rbox || norm1d(x7) > rbox || norm1d(x8) > rbox;
+  } else if(D == 3) {
+    rbox = 0.5*Nx-H-1; // half of box size in x direction (not incl halos)
+                               
+    inside_cyl_bcs = 
+      norm2d(x1) > rbox || norm2d(x2) > rbox || norm2d(x3) > rbox || norm2d(x4) > rbox ||
+      norm2d(x5) > rbox || norm2d(x6) > rbox || norm2d(x7) > rbox || norm2d(x8) > rbox;
+  }
+
+  if( inside_cyl_bcs ) {
 
     for(int k=-3; k<nz_tile+3; k++) 
     for(int j=-3; j<ny_tile+3; j++) 
@@ -335,17 +341,17 @@ void fields::Conductor<D>::update_b(
       // bx
       auto r1    = coord.bx().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
       auto bxd   = B0*dipole(r1); // diple field
-      auto rcyl1 = norm2d(r1); // cylindrical radius
+      auto rcyl1 = (D == 2) ? norm1d(r1) : norm2d(r1); // cylindrical radius
 
       // by
       auto r2    = coord.by().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
       auto byd   = B0*dipole(r2); // diple field
-      auto rcyl2 = norm2d(r2); // cylindrical radius
+      auto rcyl2 = (D == 2) ? norm1d(r2) : norm2d(r2); // cylindrical radius
 
       // bz
       auto r3    = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
       auto bzd   = B0*dipole(r3); // diple field
-      auto rcyl3 = norm2d(r3); // cylindrical radius
+      auto rcyl3 = (D == 2) ? norm1d(r3) : norm2d(r3); // cylindrical radius
 
       //--------------------------------------------------
       // ver 1; tanh profile
@@ -713,19 +719,26 @@ void fields::Conductor<D>::update_e(
   // norm2d gives the length of the vector x and y components (ignoring z)
   // this gives us the cylindrical coordinate
     
-  float rbox = 0.5*Nx-H-1; // half of box size in x direction (not incl halos)
                               
-  bool inside_cyl_bcs = 
-    norm2d(x1) > rbox ||
-    norm2d(x2) > rbox ||
-    norm2d(x3) > rbox ||
-    norm2d(x4) > rbox ||
-    norm2d(x5) > rbox ||
-    norm2d(x6) > rbox ||
-    norm2d(x7) > rbox ||
-    norm2d(x8) > rbox;
+  bool inside_cyl_bcs = false;
+  float rbox = 0.0;
 
-  if( D == 3 && inside_cyl_bcs ) {
+  if(D == 2) {
+    rbox = 0.5*Nx - 0.5*tile_len; // half of box - half tile
+                                        
+    inside_cyl_bcs = 
+      norm1d(x1) > rbox || norm1d(x2) > rbox || norm1d(x3) > rbox || norm1d(x4) > rbox ||
+      norm1d(x5) > rbox || norm1d(x6) > rbox || norm1d(x7) > rbox || norm1d(x8) > rbox;
+  } else if(D == 3) {
+    rbox = 0.5*Nx-H-1; // half of box size in x direction (not incl halos)
+
+    inside_cyl_bcs = 
+      norm2d(x1) > rbox || norm2d(x2) > rbox || norm2d(x3) > rbox || norm2d(x4) > rbox ||
+      norm2d(x5) > rbox || norm2d(x6) > rbox || norm2d(x7) > rbox || norm2d(x8) > rbox;
+  }
+
+
+  if( inside_cyl_bcs ) {
 
     for(int k=-3; k<nz_tile+3; k++) 
     for(int j=-3; j<ny_tile+3; j++) 
@@ -738,7 +751,7 @@ void fields::Conductor<D>::update_e(
 
       //--------------------------------------------------
       auto rvec = coord.mid().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
-      auto rcyl = norm2d(rvec); // cylindrical radius
+      auto rcyl = (D == 2) ? norm1d(rvec) : norm2d(rvec); // cylindrical radius
 
       //--------------------------------------------------
       // ver 1; tanh profile
