@@ -13,6 +13,8 @@ using std::min;
 using std::max;
 using std::abs;
 using std::sqrt;
+using std::sin;
+using std::cos;
 
 using toolbox::sign;
 using toolbox::norm;
@@ -71,6 +73,7 @@ void pic::Star<D>::solve(
   // get charge (assume q_- = q_+)
   const float_m q = cons["e-"]->q;
   float_p wep = 1.0f;
+  float_p wph = 1.0f;
 
   //--------------------------------------------------
   // main rouutine starts here now that we have the right tile
@@ -335,7 +338,60 @@ void pic::Star<D>::solve(
       //--------------------------------------------------
       // TODO add photon injection
 
+      ninj = ninj_phots; //*abs(epar/q)/radius_pc;
+      ninj = max( (float)ninj_min_phots, ninj);
 
+      ncop = 0.0f; // number of phots added
+      z1 = rand();
+
+      //--------------------------------------------------
+      while( ninj > z1 + ncop ) {
+
+        // inject location is set randomly inside the cell
+        // NOTE ignored for photons; they have random angle anyway and will mix quickly
+        //float dx = (D >= 1) ? rand() : 0.0f; 
+        //float dy = (D >= 2) ? rand() : 0.0f; 
+        //float dz = (D >= 3) ? rand() : 0.0f; 
+
+        //--------------------------------------------------
+        // draw random isotropic 3d vector
+        float vz = 2.0f*rand() - 1.0f; // TODO maybe only upper half of the sphere is more realistic?
+        float xi = 2.0f*PI*rand();
+
+        float vx = sqrt(1.0f-vz*vz)*cos(xi);
+        float vy = sqrt(1.0f-vz*vz)*sin(xi);
+
+        //--------------------------------------------------
+        // draw energy from a black body distribution
+        float xi1 = rand();
+        float xi2 = rand();
+        float xi3 = rand();
+        float xi4 = rand();
+    
+        float xi, jj, fsum;
+        if( 1.202f*xi1 < 1.0f ){
+            xi = 1.0f;
+        } else {
+            jj = 1.0f;
+            fsum = std::pow(jj, -3);
+            while( 1.202*xi1 > fsum + std::pow(jj + 1.0f, -3) )
+            {
+                jj   += 1.0f;
+                fsum += std::pow(jj, -3);
+            }
+            xi = jj + 1.0f;
+        }
+        float xinj = -temp_phots*std::log( xi2*xi3*xi4 )/xi;
+
+        //--------------------------------------------------
+        auto ux = xinj*vx;
+        auto uy = xinj*vy;
+        auto uz = xinj*vz;
+
+        cons["ph"]->add_particle( {{iglob, jglob, kglob}}, {{ux, uy, uz}}, wph );
+
+        ncop += 1;
+      }
 
 
 
