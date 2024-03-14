@@ -38,10 +38,15 @@ void pic::PhotonPusher<D,V>::push_container(
     double v0 = vel1n/u;
     double w0 = vel2n/u;
 
+    //std::cout << "pushing " 
+    //<< n << " u:" 
+    //<< u0 << " " << v0 << " " << w0 << " loc:"
+    //<< con.loc(0,n) << " " << con.loc(1,n) << " " << con.loc(2,n) << "\n";
+
     // position advance
-    if(D <= 1) con.loc(0,n) += u0*c;
-    if(D <= 2) con.loc(1,n) += v0*c;
-    if(D <= 3) con.loc(2,n) += w0*c;
+    if(D >= 1) con.loc(0,n) += u0*c;
+    if(D >= 2) con.loc(1,n) += v0*c;
+    if(D >= 3) con.loc(2,n) += w0*c;
 
   }, con.size(), con);
 
