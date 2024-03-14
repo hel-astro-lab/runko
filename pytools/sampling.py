@@ -26,7 +26,7 @@ def velxyz(u):
     #now we have valid u = abs(u_i)
     x1 = np.random.rand()
     x2 = np.random.rand()
-    x3 = np.random.rand()
+    #x3 = np.random.rand()
 
     #3d treatment
     ux = u*(2.0*x1 -1.0)
