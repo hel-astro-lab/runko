@@ -215,15 +215,16 @@ class ParticleContainer{
         !ts[7] ||
         !ts[8] ){
       std::cerr << "ERROR: particle number mismatch\n";
-      std::cerr << locArr[1].size() << std::endl;;
-      std::cerr << locArr[2].size() << std::endl;;
-      std::cerr << velArr[0].size() << std::endl;;
-      std::cerr << velArr[1].size() << std::endl;;
-      std::cerr << velArr[2].size() << std::endl;;
-      std::cerr << indArr[0].size() << std::endl;;
-      std::cerr << indArr[1].size() << std::endl;;
-      std::cerr << wgtArr.size()    << std::endl;;
-      std::cerr << Nprtcls          << std::endl;;
+      std::cerr << locArr[0].size() << std::endl;
+      std::cerr << locArr[1].size() << std::endl;
+      std::cerr << locArr[2].size() << std::endl;
+      std::cerr << velArr[0].size() << std::endl;
+      std::cerr << velArr[1].size() << std::endl;
+      std::cerr << velArr[2].size() << std::endl;
+      std::cerr << indArr[0].size() << std::endl;
+      std::cerr << indArr[1].size() << std::endl;
+      std::cerr << wgtArr.size()    << std::endl;
+      std::cerr << Nprtcls          << std::endl;
       assert(false);
     }
 
