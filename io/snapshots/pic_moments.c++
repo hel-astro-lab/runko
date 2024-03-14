@@ -41,7 +41,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
   auto& densx =  arrs[14];
 
   // local variables
-  double gam, mass, wgt;
+  double gam, xene, mass, wgt;
   double x0, y0, z0;
   double u0, v0, w0;
   int nparts;
@@ -93,6 +93,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         w0  = static_cast<double>( vel[2][n] );
 
         gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
+        xene = sqrt(      u0*u0 + v0*v0 + w0*w0);
 
         // capture NaNs
         assert(!std::isnan(x0));
@@ -150,7 +151,8 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         // number density 
         if(ispc == 0) dense(i,j,k) += wgt; 
         if(ispc == 1) densp(i,j,k) += wgt; 
-        if(ispc == 2) densx(i,j,k) += wgt; 
+        //if(ispc == 2) densx(i,j,k) += wgt; 
+        if(ispc == 2) densx(i,j,k) += wgt*xene;  // energy density for photons
 
         // bulk flows
         if(ispc == 0) {
