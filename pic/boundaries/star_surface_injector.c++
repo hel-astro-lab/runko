@@ -54,11 +54,11 @@ void pic::Star<D>::solve(
   const int H = 2; // halo size
 
   if( D == 2 ) { // 2D boudaries
-    if( mins[1] < 1 )    bot   = true; 
+    if( mins[1] < 1.1*radius - ceny )    bot   = true; 
     if( maxs[1] > Ny-1 ) top   = true; 
   } else if( D == 3 ){
     //if( mins[2] < 1 )    bot   = true; 
-    if( mins[2] < 1.1*radius - ceny ) bot   = true; 
+    if( mins[2] < 1.1*radius - cenz ) bot   = true; 
     if( maxs[2] > Nz-1 ) top   = true; 
   }
 
@@ -226,25 +226,13 @@ void pic::Star<D>::solve(
 
       auto n_to_be_inj = static_cast<size_t>(max(1.0f, std::ceil(ninj)));
 
-      // pre-created arrays for particles; not used
+      // pre-created arrays for particles
       auto x_to_be_inj  = std::vector<float>(n_to_be_inj);
       auto y_to_be_inj  = std::vector<float>(n_to_be_inj);
       auto z_to_be_inj  = std::vector<float>(n_to_be_inj);
       auto ux_to_be_inj = std::vector<float>(n_to_be_inj);
       auto uy_to_be_inj = std::vector<float>(n_to_be_inj);
       auto uz_to_be_inj = std::vector<float>(n_to_be_inj);
-
-      //--------------------------------------------------
-      // pre-create random values since mersenne twister does not vectorize otherwise
-      //auto zeta1 = std::vector<float>(n_to_be_inj);
-      //auto zeta2 = std::vector<float>(n_to_be_inj);
-      //auto zeta3 = std::vector<float>(n_to_be_inj);
-      //auto zeta4 = std::vector<float>(n_to_be_inj);
-
-      //for(size_t n=0; n<n_to_be_inj; n++) zeta1[n] = rand();
-      //for(size_t n=0; n<n_to_be_inj; n++) zeta2[n] = rand();
-      //for(size_t n=0; n<n_to_be_inj; n++) zeta3[n] = rand();
-      //for(size_t n=0; n<n_to_be_inj; n++) zeta4[n] = rand();
 
 
       //--------------------------------------------------
@@ -263,7 +251,7 @@ void pic::Star<D>::solve(
         float vr = sqrt( -2.0f*log(rr1))*temp_pairs;
         
         // 1D distribution along B-field
-        // TODO same "random" velocity taken for both particles
+        // NOTE: same "random" velocity taken for both particles as an approx
         auto ux1 = vr*bx/b;
         auto uy1 = vr*by/b;
         auto uz1 = vr*bz/b;
@@ -312,7 +300,7 @@ void pic::Star<D>::solve(
 
 
       //--------------------------------------------------
-      // add the pre-created particles; NOTE not used
+      // add the pre-created particles
       for(int n=0; n<ncop; n++){
         //std::cout <<" x y z " << 
         //  x_to_be_inj[n] << " " <<
@@ -334,12 +322,27 @@ void pic::Star<D>::solve(
       }
 
 
-
       //--------------------------------------------------
-      // TODO add photon injection
+      // photon injection
 
       ninj = ninj_phots; //*abs(epar/q)/radius_pc;
       ninj = max( (float)ninj_min_phots, ninj);
+
+      // TODO debug
+      //if( !( 210 < iglob && iglob < 220) ) ninj = 0.0;
+
+
+      // maximum amount to be injected
+      n_to_be_inj = static_cast<size_t>(max(1.0f, std::ceil(ninj)));
+
+      // pre-created arrays for particles; not used
+      x_to_be_inj.resize( n_to_be_inj);
+      y_to_be_inj.resize( n_to_be_inj);
+      z_to_be_inj.resize( n_to_be_inj);
+      ux_to_be_inj.resize(n_to_be_inj);
+      uy_to_be_inj.resize(n_to_be_inj);
+      uz_to_be_inj.resize(n_to_be_inj);
+
 
       ncop = 0.0f; // number of phots added
       z1 = rand();
@@ -347,22 +350,22 @@ void pic::Star<D>::solve(
       //--------------------------------------------------
       while( ninj > z1 + ncop ) {
 
-        // inject location is set randomly inside the cell
-        // NOTE ignored for photons; they have random angle anyway and will mix quickly
-        //float dx = (D >= 1) ? rand() : 0.0f; 
-        //float dy = (D >= 2) ? rand() : 0.0f; 
-        //float dz = (D >= 3) ? rand() : 0.0f; 
-
         //--------------------------------------------------
         // draw random isotropic 3d vector
-        float vz = 2.0f*rand() - 1.0f; // TODO maybe only upper half of the sphere is more realistic?
-        float xi = 2.0f*PI*rand();
+        //float vz = 2.0f*rand() - 1.0f; // TODO maybe only upper half of the sphere is more realistic?
+        //float xi0 = 2.0f*PI*rand();
+        //float vx = sqrt(1.0f-vz*vz)*cos(xi0);
+        //float vy = sqrt(1.0f-vz*vz)*sin(xi0);
 
-        float vx = sqrt(1.0f-vz*vz)*cos(xi);
-        float vy = sqrt(1.0f-vz*vz)*sin(xi);
+        // draw random isotropic 3d vector
+        float xia = rand();
+        float xib = rand();
+        float vx = 2.0f*xia -1.0f;
+        float vy = 2.0f*sqrt(xia*(1.0f-xia))*cos(2.0f*PI*xib);
+        float vz = 2.0f*sqrt(xia*(1.0f-xia))*sin(2.0f*PI*xib);
 
         //--------------------------------------------------
-        // draw energy from a black body distribution
+        // draw energy sample from a black body distribution
         float xi1 = rand();
         float xi2 = rand();
         float xi3 = rand();
@@ -374,7 +377,7 @@ void pic::Star<D>::solve(
         } else {
             jj = 1.0f;
             fsum = std::pow(jj, -3);
-            while( 1.202*xi1 > fsum + std::pow(jj + 1.0f, -3) )
+            while( 1.202f*xi1 > fsum + std::pow(jj + 1.0f, -3) )
             {
                 jj   += 1.0f;
                 fsum += std::pow(jj, -3);
@@ -388,9 +391,27 @@ void pic::Star<D>::solve(
         auto uy = xinj*vy;
         auto uz = xinj*vz;
 
-        cons["ph"]->add_particle( {{iglob, jglob, kglob}}, {{ux, uy, uz}}, wph );
+        //auto vl = sqrt( vx*vx + vy*vy + vz*vz );
+        //std::cout << " ph : " << vx << " " << vy << " " << vz << " len: " << vl << "\n";
+
+        //cons["ph"]->add_particle( {{iglob, jglob, kglob}}, {{ux, uy, uz}}, wph );
+
+        x_to_be_inj[ncop]  = iglob;
+        y_to_be_inj[ncop]  = jglob;
+        z_to_be_inj[ncop]  = kglob;
+        ux_to_be_inj[ncop] = ux;
+        uy_to_be_inj[ncop] = uy;
+        uz_to_be_inj[ncop] = uz;
 
         ncop += 1;
+      }
+
+      //--------------------------------------------------
+      // add the pre-created particles
+      for(int n=0; n<ncop; n++){
+        cons["ph"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
+                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
+                                wph); 
       }
 
 
@@ -399,44 +420,49 @@ void pic::Star<D>::solve(
   }
 
   //--------------------------------------------------
-  // remove outflowing 
-    
+  // remove outflowing particles
+
+  float tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
+  float rbox = (D == 2) ? 0.5*Nx - 0.5*tile_len : 0.5*Nx - H - 1; // maximum cylindrical radius
+
+
   // call pre-iteration functions to update internal arrays 
   for(auto&& con : tile.containers) {
       con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
   }
 
-
   float tile_height = (D==2) ? tile.mesh_lengths[1] : tile.mesh_lengths[2]; // height of the tile
 
-  for(auto&& container : tile.containers) {
-    for(size_t n=0; n<container.size(); n++) {
+  for(auto&& con : tile.containers) {
+    for(size_t n=0; n<con.size(); n++) {
 
-      float iglob = (D>=1) ? container.loc(0,n) : 0.0;
-      float jglob = (D>=2) ? container.loc(1,n) : 0.0;
-      float kglob = (D>=3) ? container.loc(2,n) : 0.0;
+      float iglob = (D>=1) ? con.loc(0,n) : 0.0;
+      float jglob = (D>=2) ? con.loc(1,n) : 0.0;
+      float kglob = (D>=3) ? con.loc(2,n) : 0.0;
 
       float xr0 = (D>=1) ? coord.mid().x(iglob) : 0.0;
       float yr0 = (D>=2) ? coord.mid().y(jglob) : 0.0;
       float zr0 = (D>=3) ? coord.mid().z(kglob) : 0.0;
 
       // remove particles based on following regimes
-      bool inside_star  = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
-      bool below_star   = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius-2; // NOTE hard-coded thickness of 2
-      bool inside_bot   = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
-      bool inside_top   = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
-      bool outside_pcap = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
+      bool inside_star    = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
+      bool below_star     = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius-2; // NOTE hard-coded thickness of 2
+      bool inside_bot     = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
+      bool inside_top     = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
+      bool outside_pcap   = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
+      bool inside_cyl_bcs = (D == 2) ? abs(xr0) > rbox : sqrt(xr0*xr0 + yr0*yr0) > rbox; // box sides covering a cylindrical region
 
       if( inside_bot ||
           inside_star && outside_pcap ||
-          below_star 
+          below_star                  ||
+          inside_cyl_bcs
           ) {
-        container.to_other_tiles.push_back( {1,1,1,n} );
+        con.to_other_tiles.push_back( {1,1,1,n} );
       }
 
       // remove particles from the very top
       if( top && inside_top ) {
-        container.to_other_tiles.push_back( {1,1,1,n} );
+        con.to_other_tiles.push_back( {1,1,1,n} );
       }
 
     }
