@@ -448,19 +448,14 @@ void pic::Star<D>::solve(
       bool outside_pcap   = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
       bool inside_cyl_bcs = (D == 2) ? abs(xr0) > rbox : sqrt(xr0*xr0 + yr0*yr0) > rbox; // box sides covering a cylindrical region
 
-      if( inside_bot ||
+      if( inside_bot                  ||
           inside_star && outside_pcap ||
           below_star                  ||
-          inside_cyl_bcs
+          inside_cyl_bcs              || 
+          (top && inside_top)              // particles at the very top
           ) {
         con.to_other_tiles.push_back( {1,1,1,n} );
       }
-
-      // remove particles from the very top
-      if( top && inside_top ) {
-        con.to_other_tiles.push_back( {1,1,1,n} );
-      }
-
     }
   }
 
