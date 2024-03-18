@@ -648,9 +648,14 @@ void fields::Conductor<D>::update_e(
   auto Rbc  = radius/sint/sint;  
 
 
-  for(int k=-3; k<nz_tile+3; k++) 
-  for(int j=-3; j<ny_tile+3; j++) 
-  for(int i=-3; i<nx_tile+3; i++) {
+  // TOOD no full tile boundaries w/ halos for epar removal
+  //for(int k=-3; k<nz_tile+3; k++) 
+  //for(int j=-3; j<ny_tile+3; j++) 
+  //for(int i=-3; i<nx_tile+3; i++) {
+
+  for(int k=0; k<nz_tile; k++) 
+  for(int j=0; j<ny_tile; j++) 
+  for(int i=0; i<nx_tile; i++) {
       
     // global grid coordinates
     float iglob = (D>=1) ? i + mins[0] : 0;
@@ -669,6 +674,7 @@ void fields::Conductor<D>::update_e(
 
     //bool inside_closed_field_region = eta < 1.4*sint*sint; // larger region for smoothing
     //bool inside_closed_field_region = eta < 1.1*sint*sint;
+    bool inside_closed_field_region = eta < 1.0*sint*sint;
 
     //--------------------------------------------------
     // vector friendly application of boolean boundary
@@ -684,32 +690,91 @@ void fields::Conductor<D>::update_e(
     //rcycl^2 = (rad^3/Rbc)
     //rcycl > sqrt( rad^3/Rbc ) = rad*sqrt(rad/Rbc)
     // Then, we can use a smoothing function similar to that in pcap radius:
-    auto s = 1.0f - shape(rcycl, rad*sqrt(rad/Rbc), delta_pc);
+    auto s = 1.0f - shape(rcycl, rad*sqrt(rad/Rbc), delta_pc); 
 
     //--------------------------------------------------
-    // epar 
-    auto exi = yee.ex(i,j,k);
-    auto eyi = yee.ey(i,j,k);
-    auto ezi = yee.ez(i,j,k);
+    // epar; ver 1
+    //auto exi = yee.ex(i,j,k);
+    //auto eyi = yee.ey(i,j,k);
+    //auto ezi = yee.ez(i,j,k);
 
-    auto bxi = yee.bx(i,j,k);
-    auto byi = yee.by(i,j,k);
-    auto bzi = yee.bz(i,j,k);
-    auto bn  = std::sqrt( bxi*bxi + byi*byi + bzi*bzi ) + EPS;
+    //auto bxi = yee.bx(i,j,k);
+    //auto byi = yee.by(i,j,k);
+    //auto bzi = yee.bz(i,j,k);
+    //auto bn  = std::sqrt( bxi*bxi + byi*byi + bzi*bzi ) + EPS;
 
-    // E_\parallel
-    auto epar = (exi*bxi + eyi*byi + ezi*bzi)/bn;
+    //// E_\parallel
+    //auto epar = (exi*bxi + eyi*byi + ezi*bzi)/bn;
 
-    //--------------------------------------------------
-    // take out eparallel component from electric field
-    auto exnew = exi - epar*bxi/bn;
-    auto eynew = eyi - epar*byi/bn;
-    auto eznew = ezi - epar*bzi/bn;
+    ////--------------------------------------------------
+    //// take out eparallel component from electric field
+    //auto exnew = exi - epar*bxi/bn;
+    //auto eynew = eyi - epar*byi/bn;
+    //auto eznew = ezi - epar*bzi/bn;
 
     // blend solution in with a smoothing function
+    //yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
+    //yee.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
+    //yee.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
+
+    //--------------------------------------------------
+    // epar; ver 2 with interpolation
+    //auto exi = yee.ex(i,j,k);
+    
+    float exi, eyi, ezi, bxi, byi, bzi, b2, eparb;
+
+    const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
+    const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
+    const size_t ind = yee.ex.indx(i,j,k);
+
+    // ex
+    exi = yee.ex(ind);
+    eyi = 0.25 *(yee.ey(ind)    + yee.ey(ind+1)     + yee.ey(ind-iy)      + yee.ey(ind+1-iy));
+    ezi = 0.25 *(yee.ez(ind)    + yee.ez(ind+1)     + yee.ez(ind-iz)      + yee.ez(ind+1-iz));
+
+    bxi = 0.125*(yee.bx(ind)    + yee.bx(ind-iy)    + yee.bx(ind+1-iy)    + yee.bx(ind+1) +
+                 yee.bx(ind-iz) + yee.bx(ind-iy-iz) + yee.bx(ind+1-iy-iz) + yee.bx(ind+1-iz));
+    byi = 0.5 * (yee.by(ind)    + yee.by(ind-iz));
+    bzi = 0.5 * (yee.bz(ind)    + yee.bz(ind-iy));
+
+    b2  = bxi*bxi + byi*byi + bzi*bzi + EPS;
+    eparb = exi*bxi + eyi*byi + ezi*bzi;
+    auto exnew = exi-eparb*bxi/b2;
+
     yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
+
+    //--------------------------------------------------
+    // ey
+    exi = 0.25 * (yee.ex(ind)    + yee.ex(ind-1)    + yee.ex(ind+iy)      + yee.ex(ind-1+iy));
+    eyi =         yee.ey(ind);
+    ezi = 0.25 * (yee.ez(ind)    + yee.ez(ind+iy)   + yee.ez(ind-iz)      + yee.ez(ind+iy-iz));
+
+    bxi = 0.5 * ( yee.bx(ind)    + yee.bx(ind-iz));
+    byi = 0.125*( yee.by(ind)    + yee.by(ind-1)    + yee.by(ind-1+iy)    + yee.by(ind+iy) +
+                  yee.by(ind-iz) + yee.by(ind-1-iz) + yee.by(ind-1+iy-iz) + yee.by(ind+iy-iz));
+    bzi = 0.5 * ( yee.bz(ind)    + yee.bz(ind-1));
+
+    b2  = bxi*bxi + byi*byi + bzi*bzi + EPS;
+    eparb = exi*bxi + eyi*byi + ezi*bzi;
+    auto eynew = eyi-eparb*byi/b2;
     yee.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
+
+    //--------------------------------------------------
+    //ez
+    exi = 0.25 * (yee.ex(ind)    + yee.ex(ind-1)   +  yee.ex(ind+iz)      + yee.ex(ind-1+iz ));
+    eyi = 0.25 * (yee.ey(ind)    + yee.ey(ind-iy)  +  yee.ey(ind+iz)      + yee.ey(ind-iy+iz));
+    ezi =         yee.ez(ind);
+
+    bxi = 0.5 * ( yee.bx(ind)    + yee.bx(ind-iy));
+    byi = 0.5 * ( yee.by(ind)    + yee.by(ind-1));
+    bzi = 0.125*( yee.bz(ind)    + yee.bz(ind-1)    + yee.bz(ind-1-iy)    + yee.bz(ind-iy) + 
+                  yee.bz(ind+iz) + yee.bz(ind-1+iz) + yee.bz(ind-1-iy+iz) + yee.bz(ind-iy+iz));
+
+    b2  = bxi*bxi + byi*byi + bzi*bzi + EPS;
+    eparb = exi*bxi + eyi*byi + ezi*bzi;
+    auto eznew = ezi - eparb*bzi/b2;
     yee.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
+
   }
 
 
