@@ -356,10 +356,14 @@ void fields::Conductor<D>::update_b(
       //--------------------------------------------------
       // ver 1; tanh profile
       auto delta_ext = 0.25f*tile_len; // 1/4 of tile size
-
       auto sx = shape(rcyl1, rbox, delta_ext); 
       auto sy = shape(rcyl2, rbox, delta_ext);
       auto sz = shape(rcyl3, rbox, delta_ext); 
+
+      //ver 4; exp profile
+      //auto sx = 1.0f - min(1.0, exp( (rcyl1-rbox)/(3.0*tile_len) ) );
+      //auto sy = 1.0f - min(1.0, exp( (rcyl2-rbox)/(3.0*tile_len) ) );
+      //auto sz = 1.0f - min(1.0, exp( (rcyl3-rbox)/(3.0*tile_len) ) );
 
 
       //--------------------------------------------------
@@ -377,6 +381,7 @@ void fields::Conductor<D>::update_b(
   if(top) {
 
     float radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+    //float radius_ext = (D == 2) ? Ny - H : Nz - H; // exp profile
     float delta_ext  = 0.25f*tile_len; // 1/4 of tile size
                                            
     for(int k=-3; k<nz_tile+3; k++) 
@@ -417,8 +422,7 @@ void fields::Conductor<D>::update_b(
       //s = min(1.0f, lam);
 
       //ver 4; exp profile
-      //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
-      //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
+      //auto s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
 
       //--------------------------------------------------
       // damp to dipole solution
@@ -833,8 +837,8 @@ void fields::Conductor<D>::update_e(
       //s = min(1.0f, lam);
 
       //ver 4; exp profile
-      //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
-      //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
+      //float radius_ext = rbox;
+      //s = 1.0f - min(1.0, exp( (rcyl-radius_ext)/(3.0*tile_len) ) );
 
       //--------------------------------------------------
       // damp to vacuum
@@ -862,8 +866,8 @@ void fields::Conductor<D>::update_e(
 
       //--------------------------------------------------
       // ver 1; tanh profile
-      float_m radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
-      float_m delta_ext = 0.25*tile_len; // 1/4 of tile size
+      float radius_ext = (D == 2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+      float delta_ext = 0.25*tile_len; // 1/4 of tile size
       auto s = shape(h, radius_ext, delta_ext); // tanh
 
       // ver2 linear profile
@@ -876,8 +880,8 @@ void fields::Conductor<D>::update_e(
       //s = min(1.0f, lam);
 
       //ver 4; exp profile
-      //float_m radius_ext = (D == 2) ? Ny - 3 : Nz - 3;
-      //s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
+      //float radius_ext = (D == 2) ? Ny - H : Nz - H;
+      //auto s = 1.0f - min(1.0, exp( (h-radius_ext)/(3.0*tile_len) ) );
 
 
       //--------------------------------------------------

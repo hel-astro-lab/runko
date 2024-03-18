@@ -328,10 +328,6 @@ void pic::Star<D>::solve(
       ninj = ninj_phots; //*abs(epar/q)/radius_pc;
       ninj = max( (float)ninj_min_phots, ninj);
 
-      // TODO debug
-      //if( !( 210 < iglob && iglob < 220) ) ninj = 0.0;
-
-
       // maximum amount to be injected
       n_to_be_inj = static_cast<size_t>(max(1.0f, std::ceil(ninj)));
 
