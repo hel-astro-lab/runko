@@ -688,6 +688,18 @@ void ParticleContainer<D>::delete_transferred_particles()
   // reverse sort so that following algo works
   std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](const auto& a, const auto& b){return a.n > b.n;} );
 
+  //--------------------------------------------------
+  // ensure that the array to be removed is unique
+  auto uniq = std::unique( to_other_tiles.begin(), to_other_tiles.end(), [](const auto& a, const auto& b){return a.n == b.n;} );
+  bool contains_duplicate = uniq != to_other_tiles.end();
+
+  if( contains_duplicate ){
+    std::cerr << " dupl:";
+    for(auto& i : to_other_tiles) std::cerr << "," << i.n;
+    assert(false);
+  }
+  //--------------------------------------------------
+  
 
   float_p* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
