@@ -127,6 +127,7 @@ class Conductor
   float radius_pc = 1.0; // polar cap radius
   float delta_pc  = 1.0; // polar smoothing
 
+  bool flat_surface = true;
 
   // grid size (for nulling the sides to prevent periodic bc's)
   int Nx = 1;

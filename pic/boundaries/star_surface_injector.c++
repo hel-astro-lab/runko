@@ -130,8 +130,19 @@ void pic::Star<D>::solve(
 
     // inject top of star
     const int height_atms = 2; // height of the atmosphere in cells
-    bool inside_star  = norm(rvec) < 1.0*radius;
-    bool inside_atmos = norm(rvec) < 1.0*radius + height_atms;
+    //bool inside_star  = norm(rvec) < 1.0*radius;
+    //bool inside_atmos = norm(rvec) < 1.0*radius + height_atms;
+
+    //--------------------------------------------------
+    // flat surface; slab on the top
+    bool inside_star  = (D==2) ? abs(rvec(1)) <= 1.0*radius + 0.0         : abs(rvec(2)) <= 1.0*radius + 0.0;
+    bool inside_atmos = (D==2) ? abs(rvec(1)) <= 1.0*radius + height_atms : abs(rvec(2)) <= 1.0*radius + height_atms;
+
+    //--------------------------------------------------
+    // inject below surface
+    //bool inside_star  = norm(rvec) <= 1.0*radius - 3.0;
+    //bool inside_atmos = norm(rvec) <= 1.0*radius + 0.0;
+
 
     //--------------------------------------------------
     // inject exactly the given cell thickness
@@ -159,17 +170,8 @@ void pic::Star<D>::solve(
 
 
     //--------------------------------------------------
-    // inject below surface
-    //bool inside_star  = norm(rvec) <= 1.0*radius - 3.0;
-    //bool inside_atmos = norm(rvec) <= 1.0*radius + 0.0;
-
-    // flat surface; slab on the top
-    //bool inside_star  = (D==3) ? abs(zr0) <= 1.0*radius + 0.0 : abs(yr0) <= 1.0*radius + 0.0;
-    //bool inside_atmos = (D==3) ? abs(zr0) <= 1.0*radius + 2.0 : abs(yr0) <= 1.0*radius + 2.0;
-
-
-    //--------------------------------------------------
-    bool inside_pcap = (D==2) ? norm1d(rvec) < radius_pc : norm2d(rvec) < radius_pc;
+    const float offs = delta_pc; // expand polar cap a bit
+    bool inside_pcap = (D==2) ? norm1d(rvec) < radius_pc + offs : norm2d(rvec) < radius_pc + offs;
 
     //--------------------------------------------------
     // we are inside a thin layer above the star
@@ -441,15 +443,20 @@ void pic::Star<D>::solve(
       float zr0 = (D>=3) ? coord.mid().z(kglob) : 0.0;
 
       // remove particles based on following regimes
-      bool inside_star    = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
-      bool below_star     = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius-2; // NOTE hard-coded thickness of 2
+      //bool inside_star    = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius;
+      //bool below_star     = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius-2; // NOTE hard-coded thickness of 2
+
+      // flat surface
+      bool inside_star    = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius; 
+      bool below_star     = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius - 2; 
+                                                                                      
       bool inside_bot     = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
       bool inside_top     = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
       bool outside_pcap   = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
       bool inside_cyl_bcs = (D == 2) ? abs(xr0) > rbox : sqrt(xr0*xr0 + yr0*yr0) > rbox; // box sides covering a cylindrical region
 
       if( inside_bot                  ||
-          inside_star && outside_pcap ||
+          //inside_star && outside_pcap ||
           below_star                  ||
           inside_cyl_bcs              || 
           (top && inside_top)              // particles at the very top
