@@ -6,6 +6,8 @@
 #include "../../tools/sample_arrays.h"
 #include "../../tools/bkn_plaw.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wunused-parameter"
 
 namespace qed {
 
@@ -236,8 +238,8 @@ void MultiPhotAnn::interact(
   uy2 = pp*xv(1)/x0; 
   uz2 = pp*xv(2)/x0; 
                                                                                 
-  
-  float_p err_ene = x0 - (sqrt(1.0 + pe*pe) + sqrt(1.0 + pp*pp));
+#ifdef DEBUG 
+  //float_p err_ene = x0 - (sqrt(1.0 + pe*pe) + sqrt(1.0 + pp*pp));
 
   //std::cout << " multiphoton breit-wheeler: chi x e p" << chi_x << " " << chi_e << " " << chi_p << "\n";
   //std::cout << "                            u1:" << ux1 << " " << uy1 << " " << uz1 << "\n";
@@ -246,9 +248,12 @@ void MultiPhotAnn::interact(
   ///std::cout << " enes x/e/p" << x0 << " " << pe << " " << pp << " err:" << err_ene << "\n";
   
   // TODO check momentum conservation
+#endif
 
   return;
 }
 
 
 } // end of namespace qed
+    
+#pragma GCC diagnostic pop

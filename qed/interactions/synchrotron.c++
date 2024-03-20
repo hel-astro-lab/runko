@@ -6,6 +6,8 @@
 #include "../../tools/sample_arrays.h"
 #include "../../tools/bkn_plaw.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wunused-parameter"
 
 namespace qed {
 
@@ -273,3 +275,5 @@ void Synchrotron::interact(
 
 
 } // end of namespace qed
+
+#pragma GCC diagnostic pop

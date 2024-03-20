@@ -4,6 +4,9 @@
 #include "pair_ann.h"
 #include "../../tools/vector.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wunused-parameter"
+
 
 namespace qed {
   using std::string;
@@ -47,7 +50,7 @@ PairAnn::pair_float PairAnn::comp_cross_section(
   float_p gcm = 1.0f/sqrt(1.0f - bcm*bcm); //# gamma_cm
 
   //# expression via relativistic invariant x = sqrt( p_- . p_+ )
-  float_p x = bcm;                  //# free variable
+  //float_p x = bcm;                  //# free variable
   //float_p s0 = (0.25f*(1.0f/x/x)*(1.0f-x*x))*( (3.0f-x*x*x*x)*log((1.0f+x)/(1.0f-x)) + 2.0f*x*(x*x - 2.0f)); //# ver2
   //s0 *= 3.0f/8.0f; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
 
@@ -212,6 +215,7 @@ void PairAnn::interact(
   Vec3<float_p> om0( xpp0(1)/x0, xpp0(2)/x0, xpp0(3)/x0 ); 
   Vec3<float_p> om1( xpp1(1)/x1, xpp1(2)/x1, xpp1(3)/x1 ); 
 
+#ifdef DEBUG
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed
   if(true){
@@ -265,6 +269,7 @@ void PairAnn::interact(
       //assert(false);
     }
   }
+#endif
 
   //# NOTE flip randomly; does not have an effect because photons are identical
   //# alternate the role of primary/secondary; otherwise algorithm is deterministic
@@ -287,3 +292,5 @@ void PairAnn::interact(
 
 
 } // end of namespace qed
+
+#pragma GCC diagnostic pop

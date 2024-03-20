@@ -4,6 +4,8 @@
 #include "phot_ann.h"
 #include "../../tools/vector.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wunused-parameter"
 
 namespace qed {
   using std::string;
@@ -131,7 +133,7 @@ void PhotAnn::interact(
   float_p gc = s0/sqrt(2.0*q); // lorentz factor of the boost; CoM vel
   Vec3 uv = gc*bc; // com four vel
   float_p v2 = dot(bc,bc); // v_c^2
-  float_p vc = sqrt(v2);
+  //float_p vc = sqrt(v2);
 
   //      #print(bc, gc, uv, v2, vc)
 
@@ -238,6 +240,10 @@ void PhotAnn::interact(
   //      #gp2 = s0 - gp1
   //      #zpp2 = svec - zpp1
 
+
+
+
+#ifdef DEBUG
   // --------------------------------------------------
   // test energy conservation
   //--------------------------------------------------
@@ -276,6 +282,7 @@ void PhotAnn::interact(
       std::cerr << "omr1,omr2 " <<  omr1  << " " <<  omr2  << std::endl;
     }
   }
+#endif
 
   // is this flip needed? seems so; makes routine independent of e-/e+
   if(rand() < 0.5) {
@@ -286,9 +293,6 @@ void PhotAnn::interact(
     t2 = "e-";
   }
 
-  //t1 = "e-";
-  //t2 = "e+";
-
   ux1 = zpp1(1);
   uy1 = zpp1(2);
   uz1 = zpp1(3);
@@ -297,26 +301,9 @@ void PhotAnn::interact(
   uy2 = zpp2(2);
   uz2 = zpp2(3);
 
-  // TODO is this flip needed?
-  //if(rand() < 0.5) {
-  //  ux1 = zpp1(1);
-  //  uy1 = zpp1(2);
-  //  uz1 = zpp1(3);
-
-  //  ux2 = zpp2(1);
-  //  uy2 = zpp2(2);
-  //  uz2 = zpp2(3);
-  //} else {
-  //  ux2 = zpp1(1);
-  //  uy2 = zpp1(2);
-  //  uz2 = zpp1(3);
-
-  //  ux1 = zpp2(1);
-  //  uy1 = zpp2(2);
-  //  uz1 = zpp2(3);
-  //}
-
   return;
 }
 
 } // end of namespace qed
+
+#pragma GCC diagnostic pop

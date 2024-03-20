@@ -4,6 +4,8 @@
 #include "compton.h"
 #include "../../tools/vector.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wunused-parameter"
 
 namespace qed {
   using std::string;
@@ -139,8 +141,8 @@ void Compton::interact(
   //#--------------------------------------------------
   // check for Thomson regime
   //float_p gam_min = sqrt(1.0f + minz*minz); // min limit from class member
-  bool flag_thomson = false;
-  if( gam0 < ming && gam0*x0 < minx2z ) flag_thomson = true;
+  //bool flag_thomson = false;
+  //if( gam0 < ming && gam0*x0 < minx2z ) flag_thomson = true;
 
 
   //#--------------------------------------------------
@@ -372,3 +374,5 @@ void Compton::interact(
 
 
 } // end of namespace qed
+
+#pragma GCC diagnostic pop
