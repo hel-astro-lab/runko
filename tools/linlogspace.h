@@ -41,13 +41,13 @@ DEVCALLABLE void linspace(T start, T stop, int num, ManVec<T>& ret)
   ret.resize(num);
 
   // arange
-  for(size_t i=0; i<num-1; i++) ret[i] = static_cast<T>(i);
+  for(int i=0; i<num-1; i++) ret[i] = static_cast<T>(i);
 
   T delta = stop - start;
   T div   = static_cast<T>(num) - static_cast<T>(1.0); // N - 1
 
   // NOTE: iterating only to n-1; last element is set manualyl to avoid FP rounding efrrors
-  for(size_t i=0; i<num-1; i++) ret[i] = ret[i]*delta/div + start;
+  for(int i=0; i<num-1; i++) ret[i] = ret[i]*delta/div + start;
   ret[num-1] = stop;
 
   return;
@@ -60,7 +60,7 @@ DEVCALLABLE void logspace(T start, T stop, int num, ManVec<T>& ret)
   linspace(start, stop, num, ret);
   T base = static_cast<T>(10.0);
 
-  for(size_t i=0; i<num; i++) ret[i] = std::pow(base, ret[i]);
+  for(size_t i=0; i<static_cast<size_t>(num); i++) ret[i] = std::pow(base, ret[i]);
 
   return;
 }

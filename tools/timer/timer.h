@@ -157,7 +157,7 @@ class Timer {
       
       double tavg = math::mean(ts);
       int    cnts = ts.size();
-      double tstd = math::std(ts);
+      //double tstd = math::std(ts);
 
       double t0 = math::sum(ts);
       double relt = 100.0*t0/t0tot;

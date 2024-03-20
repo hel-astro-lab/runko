@@ -5,6 +5,14 @@
 #include <random>
 #include "../../definitions.h"
 
+// TODO turning compiler warnings off temporarily in this file since 
+//      for symmetry, there are lots of unused variables in the qed API
+// NOTE remember to remove pragma pop at the end of the file when done with these.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wunused-variable"
+#pragma GCC diagnostic warning "-Wunused-parameter"
+#pragma GCC diagnostic warning "-Wunused-but-set-variable"
+
 
 namespace qed {
   using std::string;
@@ -78,7 +86,6 @@ private:
   std::mt19937 gen;
   std::uniform_real_distribution<float_p> uni_dis;
 
-
 public:
 
   // constants used in calculations
@@ -111,10 +118,10 @@ public:
 
   // constructor with incident/target types
   Interaction(string t1, string t2) :
-    t1(t1),
-    t2(t2),
     gen(42), // gen(rd() ) 
-    uni_dis(0.0, 1.0)       
+    uni_dis(0.0, 1.0),
+    t1(t1),
+    t2(t2) 
   { }
 
   // minimum and maximum particle energies required to participate in the interaction
@@ -165,3 +172,5 @@ public:
 
 
 } // end of namespace qed
+    
+#pragma GCC diagnostic pop

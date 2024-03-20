@@ -19,7 +19,7 @@ DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
     if(val < arr[0]) return 0;
 
     // value is between array elements
-    for(int i=1; i<arr.size(); i++){
+    for(size_t i=1; i<arr.size(); i++){
       if( ( arr[i-1] <= val ) && ( val < arr[i] ) ) {
         return i;
       }

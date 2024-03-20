@@ -9,8 +9,6 @@
 #include <functional>
 #include <cmath>
 
-#include "interactions/interaction.h"
-
 #include "../definitions.h"
 #include "../pic/tile.h"
 #include "../tools/sample_arrays.h"
@@ -18,6 +16,19 @@
 
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
 #include "../tools/timer/timer.h"
+
+
+// TODO turning compiler warnings off temporarily in this file since 
+//      for symmetry, there are lots of unused variables in the qed API
+// NOTE remember to remove pragma pop at the end of the file when done with these.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wunused-variable"
+#pragma GCC diagnostic warning "-Wunused-parameter"
+#pragma GCC diagnostic warning "-Wunused-but-set-variable"
+#pragma GCC diagnostic warning "-Warray-bounds"
+
+#include "interactions/interaction.h"
+
 
 
 namespace qed {
@@ -136,7 +147,7 @@ public:
   // refill histogram with zeros 
   void clear_hist()
   {
-    for(size_t i=0; i<hist_nbin; i++) hist[i] = 0.0;
+    for(int i=0; i<hist_nbin; i++) hist[i] = 0.0;
 
     leaked_ene  = 0.0;
     leaked_wsum = 0.0;
@@ -901,6 +912,8 @@ public:
           //could also put double counting check to comp_pmax
           //--------------------------------------------------
             
+
+#ifdef DEBUG
           //--------------------------------------------------
           // confirm that locations are inside tile
 
@@ -1011,6 +1024,7 @@ public:
                 << std::endl;
                 assert(false);
           }
+#endif
           
           //--------------------------------------------------
           
@@ -1496,9 +1510,9 @@ public:
     //--------------------------------------------------
     // initialize temp variable storages
     float_p lx1, ly1, lz1, lx2, ly2, lz2;
-    float_p ux1, uy1, uz1, w1;
-    float_p ux3, uy3, uz3, w3;
-    float_p ux4, uy4, uz4, w4;
+    float_p ux1, uy1, uz1, w1=0.0;
+    float_p ux3, uy3, uz3, w3=0.0;
+    float_p ux4, uy4, uz4, w4=0.0;
     float_p m3, m4;
     float_p e1, e3, e4;
     std::string t4;  // type variable for secondary prtcl;
@@ -2078,3 +2092,5 @@ public:
 
 
 } // end of namespace qed
+    
+#pragma GCC diagnostic pop
