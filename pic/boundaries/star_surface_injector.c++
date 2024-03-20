@@ -135,8 +135,12 @@ void pic::Star<D>::solve(
 
     //--------------------------------------------------
     // flat surface; slab on the top
-    bool inside_star  = (D==2) ? abs(rvec(1)) <= 1.0*radius + 0.0         : abs(rvec(2)) <= 1.0*radius + 0.0;
-    bool inside_atmos = (D==2) ? abs(rvec(1)) <= 1.0*radius + height_atms : abs(rvec(2)) <= 1.0*radius + height_atms;
+    //bool inside_star  = (D==2) ? abs(rvec(1)) <= 1.0*radius + 0.0         : abs(rvec(2)) <= 1.0*radius + 0.0;
+    //bool inside_atmos = (D==2) ? abs(rvec(1)) <= 1.0*radius + height_atms : abs(rvec(2)) <= 1.0*radius + height_atms;
+
+    // flat surface; slab higher up
+    bool inside_star  = (D==2) ? abs(rvec(1)) <= 1.0*radius + 1.0*height_atms : abs(rvec(2)) <= 1.0*radius + 1.0*height_atms;
+    bool inside_atmos = (D==2) ? abs(rvec(1)) <= 1.0*radius + 2.0*height_atms : abs(rvec(2)) <= 1.0*radius + 2.0*height_atms;
 
     //--------------------------------------------------
     // inject below surface
@@ -170,7 +174,7 @@ void pic::Star<D>::solve(
 
 
     //--------------------------------------------------
-    const float offs = delta_pc; // expand polar cap a bit
+    const float offs = 2.0f*delta_pc; // expand polar cap a bit
     bool inside_pcap = (D==2) ? norm1d(rvec) < radius_pc + offs : norm2d(rvec) < radius_pc + offs;
 
     //--------------------------------------------------
@@ -191,7 +195,7 @@ void pic::Star<D>::solve(
       auto by = yee.by(i,j,k);
       auto bz = yee.bz(i,j,k);
 
-      auto b    = sqrt( bx*bx + by*by + bz*bz );
+      auto b    = sqrt( bx*bx + by*by + bz*bz ) + EPS;
       auto epar = ( ex*bx + ey*by + ez*bz )/b;
 
       // vectors for calculation of pcap rotation velocity
@@ -278,9 +282,9 @@ void pic::Star<D>::solve(
         //std::cout << "  rat: " << vrot(0)/vrot2(0) << " " << vrot(1)/vrot2(1) << "\n\n";
 
         // Newtonian boost to the disk frame; should be done with Lorentz boost to be more correct
-        ux1 += vrot2(0);
-        uy1 += vrot2(1);
-        uz1 += vrot2(2);
+        //ux1 += vrot2(0);
+        //uy1 += vrot2(1);
+        //uz1 += vrot2(2);
 
         x_to_be_inj[ncop]  = iglob + dx;
         y_to_be_inj[ncop]  = jglob + dy;
