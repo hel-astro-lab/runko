@@ -17,7 +17,7 @@ void emf::Binomial2<1>::solve(
     emf::Tile<1>& tile)
 {
     
-  // 2D 3-point binomial coefficients
+  // 1D 3-point binomial coefficients
   const float_m C1[3] = {1./4., 2./4., 1./4.};
 
   auto& mesh = tile.get_yee();
@@ -26,9 +26,8 @@ void emf::Binomial2<1>::solve(
   const int H = 2; 
 
   // NOTE: using tmp as scratch arrays
-    
 
-  // make 2d loop with shared memory 
+  // make 1d loop with shared memory 
   // NOTE: shifted with -H to iterate over halos
   // NOTE: similarly, limits are expanded by 2*H
   auto fun = 
