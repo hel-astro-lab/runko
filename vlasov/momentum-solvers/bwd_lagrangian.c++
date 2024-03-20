@@ -19,7 +19,7 @@ template<>
 float modf(float arg, float* iptr) { return modff(arg, iptr); }
 
 template<>
-double modf(double arg, double* iptr) { return modf(arg, iptr); }
+double modf(double arg, double* iptr) { return std::modf(arg, iptr); }
 
 } }
 
