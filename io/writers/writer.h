@@ -6,7 +6,7 @@
 #include "../namer.h"
 
 #include "../../tools/mesh.h"
-#include "../../em-fields/tile.h"
+#include "../../emf/tile.h"
 #include "../../vlasov/tile.h"
 #include "../../vlasov/amr/mesh.h"
 #include "../../pic/tile.h"

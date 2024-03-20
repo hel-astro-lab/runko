@@ -1,5 +1,5 @@
 #include "star_surface_injector.h"
-#include "../../em-fields/boundaries/conductor.h"
+#include "../../emf/boundaries/conductor.h"
 
 #include "../../tools/vector.h"
 #include "../../tools/signum.h"

@@ -4,7 +4,7 @@
 
 #include "tile.h"
 #include "grid.h"
-#include "../em-fields/tile.h"
+#include "../emf/tile.h"
 #include "amr/mesh.h"
 #include "amr/integrate.h"
 

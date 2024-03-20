@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../em-fields/boundaries/conductor.h"
+#include "../../emf/boundaries/conductor.h"
 #include "../tile.h"
 #include <random>
 

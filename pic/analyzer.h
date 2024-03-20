@@ -4,7 +4,7 @@
 #include <cassert>
 
 #include "tile.h"
-#include "../em-fields/tile.h"
+#include "../emf/tile.h"
 
 #include "../tools/signum.h"
 
