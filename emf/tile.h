@@ -178,7 +178,7 @@ class Tile :
 
   //FIXME: naming is wrong because of pybind: it can not deduce correct function
   //       with only constness difference.
-  virtual const YeeLattice& get_const_yee(int i=0) const { return this->yee; }
+  virtual const YeeLattice& get_const_yee(int /*i*/=0) const { return this->yee; }
 
   virtual void clear_current();
 
