@@ -40,15 +40,15 @@ void emf::Compensator2<2>::solve(
                    toolbox::Mesh<float_m, 3> &tmp)
   {
     tmp(i-H,j-H,k) = 
-      mesh.jx(i-1-H, j-1-H, k)*wtc + 
-      mesh.jx(i  -H, j-1-H, k)*wts + 
-      mesh.jx(i+1-H, j-1-H, k)*wtc + 
-      mesh.jx(i-1-H, j  -H, k)*wts + 
-      mesh.jx(i  -H, j  -H, k)*wtm + 
-      mesh.jx(i+1-H, j  -H, k)*wts + 
-      mesh.jx(i-1-H, j+1-H, k)*wtc + 
-      mesh.jx(i  -H, j+1-H, k)*wts + 
-      mesh.jx(i+1-H, j+1-H, k)*wtc;
+      jj(i-1-H, j-1-H, k)*wtc + 
+      jj(i  -H, j-1-H, k)*wts + 
+      jj(i+1-H, j-1-H, k)*wtc + 
+      jj(i-1-H, j  -H, k)*wts + 
+      jj(i  -H, j  -H, k)*wtm + 
+      jj(i+1-H, j  -H, k)*wts + 
+      jj(i-1-H, j+1-H, k)*wtc + 
+      jj(i  -H, j+1-H, k)*wts + 
+      jj(i+1-H, j+1-H, k)*wtc;
   };
     
   //--------------------------------------------------
