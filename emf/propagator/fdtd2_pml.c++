@@ -10,18 +10,19 @@
 
 /// Radial PML damping coefficient profile
 template<size_t D>
-DEVCALLABLE float_m emf::FDTD2_pml<D>::lambda( float_m sx, float_m sy, float_m sz )
+DEVCALLABLE float_m emf::FDTD2_pml<D>::lambda( 
+    float_m sx, 
+    float_m sy, 
+    float_m sz )
 {
   // normalized unit radius 
-  float_m r=0.0f;
-
-  float_m drx = (sx - cenx)/radx;
-  float_m dry = (sy - ceny)/rady;
-  float_m drz = (sz - cenz)/radz;
+  auto drx = (sx - cenx)/radx;
+  auto dry = (sy - ceny)/rady;
+  auto drz = (sz - cenz)/radz;
 
   // radial 
   //if(mode == 0) 
-  r = std::sqrt( drx*drx + dry*dry + drz*drz );
+  auto r = std::sqrt( drx*drx + dry*dry + drz*drz );
 
   // cylindrical in x
   //if(mode == 1) r = std::sqrt( dry*dry + drz*drz );
@@ -34,31 +35,28 @@ DEVCALLABLE float_m emf::FDTD2_pml<D>::lambda( float_m sx, float_m sy, float_m s
 
   //std::cout << "r" << r;
 
-
   // cylindrical region (left and right sides)
   //float_m rcyl = std::sqrt( drx*drx + drz*drz );
   //float_m lam = pow( (rcyl - rad_lim)/(1.0f - rad_lim), 3);
   //if( rcyl < rad_lim ) lam = 0.0;
     
   // NOTE turned off
-  float_m lam = 0.0;
+  //float_m lam = 0.0f;
+  //float_m z    = std::sqrt( dry*dry );
+  //float_m lamz = pow( (z - rad_lim)/(1.0f - rad_lim), 3);
+  //if( z < rad_lim ) lamz = 0.0;
 
-  float_m z    = std::sqrt( dry*dry );
-  float_m lamz = pow( (z - rad_lim)/(1.0f - rad_lim), 3);
-  if( z < rad_lim ) lamz = 0.0;
-
-  return -norm_abs*std::min(lam + lamz, 1.0f - EPS);
-
+  //return -norm_abs*std::min(lam + lamz, 1.0f - EPS);
 
   // radial
-  //if(r > rad_lim) {
-  //  return -std::min(
-  //          norm_abs*pow( (r - rad_lim)/(1.0f - rad_lim), 3),
-  //          norm_abs
-  //          );
-  //} else {
-  //  return 0.0;
-  //}
+  if(r > rad_lim) {
+    return -std::min(
+            norm_abs*pow( (r - rad_lim)/(1.0f - rad_lim), 3),
+            norm_abs
+            );
+  } else {
+    return 0.0;
+  }
 }
 
 
