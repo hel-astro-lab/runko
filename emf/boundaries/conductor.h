@@ -83,16 +83,17 @@ class StaggeredSphericalCoordinates
 
 };
 
-
-// smooth ramp; half-way is at r = r0; 
-// r0 +- 2*delta is roughly the asymptotic regime of the function as shown below
-//
-// 1 | ----
-//   |      \
-//   |       \
-// 0 |         ------
-//   -------|----------->
-//          r0
+/*
+   smooth ramp; half-way is at r = r0; 
+   r0 +- 2*delta is roughly the asymptotic regime of the function as shown below
+  
+   1 | ----
+     |      \
+     |       \
+   0 |         ------
+     -------|----------->
+            r0
+*/
 inline float_m shape(float_m r, float_m r0, float_m delta) 
 { 
   return 0.5 * (1.0 - tanh( (r - r0) / delta )); 
