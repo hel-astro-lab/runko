@@ -28,6 +28,8 @@ class Scheduler:
         self.master_rank       = 0
         self.example_work_rank = 0
 
+        self.debug = False # debug mode
+
     # swithc from all-in mode to task mode
     def switch_to_task_mode(self,):
         self.mpi_task_mode = True
@@ -56,6 +58,10 @@ class Scheduler:
         return True
 
     def operate(self, op):
+
+        if self.debug: # additional debug printing
+            print('R:', self.rank, op) # debug print
+            MPI.COMM_WORLD.Barrier() 
     
         #--------------------------------------------------
         # default values
