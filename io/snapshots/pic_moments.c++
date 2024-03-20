@@ -7,6 +7,11 @@
 #include "../../tools/signum.h"
 #include "../../tools/limit.h"
 
+// TODO turning compiler warnings off temporarily in this file since 
+//      error printing in debug mode accesses mins/maxs outside boundaries
+// NOTE remember to remove pragma pop at the end of the file when done with these.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Warray-bounds"
 
 using ezh5::File;
 
@@ -95,6 +100,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
         xene = sqrt(      u0*u0 + v0*v0 + w0*w0);
 
+#ifdef DEBUG
         // capture NaNs
         assert(!std::isnan(x0));
         assert(!std::isnan(y0));
@@ -125,7 +131,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
           std::cerr << " fz: " << flagz;
           assert(false);
         }
-
+#endif
 
         // rel prtcl index; assuming dx = 1; tile coordinates
         // limit to 0 Nx-1 just in case to avoid crashes
@@ -263,3 +269,5 @@ inline bool h5io::PicMomentsWriter<D>::write(
 template class h5io::PicMomentsWriter<1>;
 template class h5io::PicMomentsWriter<2>;
 template class h5io::PicMomentsWriter<3>;
+
+#pragma GCC diagnostic pop

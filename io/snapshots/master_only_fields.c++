@@ -83,12 +83,12 @@ inline void h5io::MasterFieldsWriter<3>::mpi_reduce_snapshots(
   int nx_tile = lens[0];
   int ny_tile = lens[1];
   int nz_tile = lens[2];
-  int n_tiles = nx_tile*ny_tile*nz_tile;
+  size_t n_tiles = nx_tile*ny_tile*nz_tile;
 
   // sync everyone before going into the loop
   comm.barrier();
 
-  for(uint64_t cid=0; cid<n_tiles; cid++) {
+  for(size_t cid=0; cid<n_tiles; cid++) {
 
     int msg_rank = -1;
     if( grid.is_local(cid) ) msg_rank = rank;
