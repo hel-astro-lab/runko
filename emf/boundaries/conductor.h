@@ -5,7 +5,7 @@
 #include "../../tools/vector.h"
 
 
-namespace fields {
+namespace emf {
 
 using toolbox::Vec3;
 
@@ -135,17 +135,17 @@ class Conductor
   int Nz = 1;
 
   /// \brief interpolate electromagnetic fields to particle locations
-  //void solve(fields::Tile<D>&  /*tile*/);
+  //void solve(emf::Tile<D>&  /*tile*/);
 
   Vec3<float> dipole(Vec3<float>& xvec);
 
-  void insert_em(fields::Tile<D>&  tile);
+  void insert_em(emf::Tile<D>&  tile);
 
-  void update_b(fields::Tile<D>&  tile);
+  void update_b(emf::Tile<D>&  tile);
 
-  void update_e(fields::Tile<D>&  tile);
+  void update_e(emf::Tile<D>&  tile);
 
 };
 
 
-} // end of namespace fields
+} // end of namespace emf

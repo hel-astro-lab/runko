@@ -4,7 +4,7 @@
 #include "../../definitions.h"
 
 
-namespace fields {
+namespace emf {
 
 /// General interface for Maxwell's field equation propagator
 template<size_t D>
@@ -26,5 +26,5 @@ class Propagator
 };
 
 
-} // end of namespace fields
+} // end of namespace emf
 

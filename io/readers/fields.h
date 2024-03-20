@@ -7,7 +7,7 @@
 template<size_t D>
 bool 
 h5io::Reader::read( 
-  fields::Tile<D>& tile,
+  emf::Tile<D>& tile,
   ezh5::File& file
   )
 {

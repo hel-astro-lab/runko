@@ -2,7 +2,7 @@
 
 #include "filter.h"
 
-namespace fields {
+namespace emf {
 
 /// Digital 3-point general filter with variable weight.
 //
@@ -20,8 +20,8 @@ class General3p :
   /// 3-point weight
   double alpha = 0.5;
 
-  void solve(fields::Tile<D>& tile) override;
+  void solve(emf::Tile<D>& tile) override;
 };
 
 
-} // end of namespace fields
+} // end of namespace emf

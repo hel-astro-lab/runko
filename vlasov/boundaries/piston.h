@@ -17,7 +17,7 @@ class Tile :
 
   /// constructor
   Tile(size_t nx, size_t ny, size_t nz) :
-    fields::Tile<D>(nx,ny,nz),
+    emf::Tile<D>(nx,ny,nz),
     vlv::Tile<D>(nx,ny,nz)
   { }
 

@@ -49,13 +49,13 @@ if __name__ == "__main__":
         # 3D modules
         import pycorgi.threeD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.threeD as pypic  # runko pic c++ bindings
-        import pyrunko.fields.threeD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.threeD as pyfld  # runko fld c++ bindings
 
     elif conf.twoD:
         # 2D modules
         import pycorgi.twoD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.twoD as pypic  # runko pic c++ bindings
-        import pyrunko.fields.twoD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.twoD as pyfld  # runko fld c++ bindings
 
 
     # --------------------------------------------------
@@ -210,7 +210,7 @@ if __name__ == "__main__":
                 antenna.add_driving(tile)
 
     # --------------------------------------------------
-    # sync e and b fields 
+    # sync e and b emf 
 
     # mpi e
     grid.send_data(1)
@@ -270,7 +270,7 @@ if __name__ == "__main__":
         # move particles (only locals tiles)
 
         # --------------------------------------------------
-        # interpolate fields
+        # interpolate emf
         t1 = timer.start_comp("interp_em")
         for tile in pytools.tiles_local(grid):
             fintp.solve(tile)

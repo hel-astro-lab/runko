@@ -25,7 +25,7 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
     int ifea
     )
 {
-  auto& tile = dynamic_cast<fields::Tile<3>&>(grid.get_tile( cid ));
+  auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile( cid ));
   auto& yee = tile.get_yee();
     
   // clear buffer before additive variables

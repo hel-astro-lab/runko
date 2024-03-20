@@ -317,7 +317,7 @@ class AmrSpatialLagrangianSolver :
         vlv::PlasmaBlock& block0_right,
         T qm,
         T cfl,
-        fields::YeeLattice& yee)
+        emf::YeeLattice& yee)
     {
 
 

@@ -15,7 +15,7 @@
 
 /// 2D E pusher
 template<>
-void fields::FDTD4<2>::push_e(fields::Tile<2>& tile)
+void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
@@ -55,7 +55,7 @@ void fields::FDTD4<2>::push_e(fields::Tile<2>& tile)
 
 /// 3D E pusher
 template<>
-void fields::FDTD4<3>::push_e(fields::Tile<3>& tile)
+void emf::FDTD4<3>::push_e(emf::Tile<3>& tile)
 {
 
 #ifdef GPU
@@ -104,7 +104,7 @@ void fields::FDTD4<3>::push_e(fields::Tile<3>& tile)
 
 /// 2D B pusher
 template<>
-void fields::FDTD4<2>::push_half_b(fields::Tile<2>& tile)
+void emf::FDTD4<2>::push_half_b(emf::Tile<2>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
@@ -142,7 +142,7 @@ void fields::FDTD4<2>::push_half_b(fields::Tile<2>& tile)
 
 /// 3D B pusher
 template<>
-void fields::FDTD4<3>::push_half_b(fields::Tile<3>& tile)
+void emf::FDTD4<3>::push_half_b(emf::Tile<3>& tile)
 {
 
 #ifdef GPU
@@ -187,7 +187,7 @@ void fields::FDTD4<3>::push_half_b(fields::Tile<3>& tile)
 
 
 
-//template class fields::FDTD4<1>;
-template class fields::FDTD4<2>;
-template class fields::FDTD4<3>;
+//template class emf::FDTD4<1>;
+template class emf::FDTD4<2>;
+template class emf::FDTD4<3>;
   

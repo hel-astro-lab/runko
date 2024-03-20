@@ -56,7 +56,7 @@ void pic::LinearInterpolator<D,V>::solve(
     // loop over particles
     UniIter::iterate([=] DEVCALLABLE( 
                 size_t n, 
-                fields::YeeLattice& yee,
+                emf::YeeLattice& yee,
                 pic::ParticleContainer<D>& con){
 
       int i=0, j=0, k=0;

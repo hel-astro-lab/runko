@@ -10,7 +10,7 @@
 
 /// Radial PML damping coefficient profile
 template<size_t D>
-DEVCALLABLE float_m fields::FDTD2_pml<D>::lambda( float_m sx, float_m sy, float_m sz )
+DEVCALLABLE float_m emf::FDTD2_pml<D>::lambda( float_m sx, float_m sy, float_m sz )
 {
   // normalized unit radius 
   float_m r=0.0f;
@@ -64,7 +64,7 @@ DEVCALLABLE float_m fields::FDTD2_pml<D>::lambda( float_m sx, float_m sy, float_
 
 /// 2D E pusher
 template<>
-void fields::FDTD2_pml<2>::push_e(fields::Tile<2>& tile)
+void emf::FDTD2_pml<2>::push_e(emf::Tile<2>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
@@ -114,7 +114,7 @@ void fields::FDTD2_pml<2>::push_e(fields::Tile<2>& tile)
 
 /// 3D E pusher
 template<>
-void fields::FDTD2_pml<3>::push_e(fields::Tile<3>& tile)
+void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
@@ -197,7 +197,7 @@ void fields::FDTD2_pml<3>::push_e(fields::Tile<3>& tile)
    
 /// 2D B pusher
 template<>
-void fields::FDTD2_pml<2>::push_half_b(fields::Tile<2>& tile)
+void emf::FDTD2_pml<2>::push_half_b(emf::Tile<2>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
@@ -244,7 +244,7 @@ void fields::FDTD2_pml<2>::push_half_b(fields::Tile<2>& tile)
 
 /// 3D B pusher
 template<>
-void fields::FDTD2_pml<3>::push_half_b(fields::Tile<3>& tile)
+void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
@@ -323,14 +323,14 @@ void fields::FDTD2_pml<3>::push_half_b(fields::Tile<3>& tile)
 
 /// 3D E & B coupled pusher (for FFE)
 template<>
-void fields::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
+void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
   // refs to storages
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
     
   // Tile limits
@@ -343,7 +343,7 @@ void fields::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, 
       ffe::SkinnyYeeLattice& dm,
-      fields::YeeLattice& m
+      emf::YeeLattice& m
       )
   {
     //-----------
@@ -392,6 +392,6 @@ void fields::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 }
 
 
-//template class fields::FDTD2_pml<1>;
-template class fields::FDTD2_pml<2>;
-template class fields::FDTD2_pml<3>; 
+//template class emf::FDTD2_pml<1>;
+template class emf::FDTD2_pml<2>;
+template class emf::FDTD2_pml<3>; 

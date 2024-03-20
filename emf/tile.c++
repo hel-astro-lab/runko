@@ -23,7 +23,7 @@
 
 
 
-namespace fields {
+namespace emf {
   using namespace mpi4cpp;
 
 
@@ -1378,4 +1378,4 @@ template class Tile<1>;
 template class Tile<2>;
 template class Tile<3>;
 
-} // end of ns fields
+} // end of ns emf

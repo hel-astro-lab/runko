@@ -2,7 +2,7 @@
 
 #include "filter.h"
 
-namespace fields {
+namespace emf {
 
 /// 2D 3-point compensator filter from Birdsall & Langdon
 template<size_t D>
@@ -13,8 +13,8 @@ class Compensator2 :
 
   using Filter<D>::Filter;
 
-  void solve(fields::Tile<D>& tile) override;
+  void solve(emf::Tile<D>& tile) override;
 
 };
 
-} // end of namespace fields
+} // end of namespace emf

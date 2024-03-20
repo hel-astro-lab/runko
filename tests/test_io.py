@@ -99,7 +99,7 @@ def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
@@ -108,7 +108,7 @@ def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
@@ -263,7 +263,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(grid, conf)
         fill_yee(grid, ref, conf)
 
-        pyrunko.fields.oneD.write_yee(grid, 0, conf.outdir)
+        pyrunko.emf.oneD.write_yee(grid, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -294,7 +294,7 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyrunko.fields.oneD.read_yee(node2, 0, "io_test_1D")
+        pyrunko.emf.oneD.read_yee(node2, 0, "io_test_1D")
 
         yee1 = pytools.visualize.get_yee(grid,  conf)
         yee2 = pytools.visualize.get_yee(node2, conf)
@@ -343,7 +343,7 @@ class IO(unittest.TestCase):
         ref = fill_ref(grid, conf)
         fill_yee(grid, ref, conf)
 
-        pyrunko.fields.twoD.write_yee(grid, 0, conf.outdir)
+        pyrunko.emf.twoD.write_yee(grid, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
@@ -374,7 +374,7 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyrunko.fields.twoD.read_yee(node2, 0, "io_test_2D")
+        pyrunko.emf.twoD.read_yee(node2, 0, "io_test_2D")
 
         yee1 = pytools.visualize.get_yee_2D(grid,  conf)
         yee2 = pytools.visualize.get_yee_2D(node2, conf)

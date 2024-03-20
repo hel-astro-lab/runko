@@ -19,8 +19,8 @@
 //  the suppressed corners
 //
 template<>
-void fields::Compensator2<2>::solve(
-    fields::Tile<2>& tile)
+void emf::Compensator2<2>::solve(
+    emf::Tile<2>& tile)
 {
   // 2D general coefficients
   const double winv=1./12.; //normalization
@@ -92,6 +92,6 @@ void fields::Compensator2<2>::solve(
 
 
 
-//template class fields::Compensator2<1>; // 1D
-  template class fields::Compensator2<2>; // 2D
-//template class fields::Compensator2<3>; // 3D
+//template class emf::Compensator2<1>; // 1D
+  template class emf::Compensator2<2>; // 2D
+//template class emf::Compensator2<3>; // 3D

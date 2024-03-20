@@ -48,13 +48,13 @@ if __name__ == "__main__":
         # 3D modules
         import pycorgi.threeD as pycorgi  # corgi ++ bindings
         import pyrunko.ffe.threeD as pyffe  # runkko ffe c++ bindings
-        import pyrunko.fields.threeD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.threeD as pyfld  # runko fld c++ bindings
 
     elif conf.twoD:
         # 2D modules
         import pycorgi.twoD as pycorgi  # corgi ++ bindings
         import pyrunko.ffe.twoD as pyffe  # runkko ffe c++ bindings
-        import pyrunko.fields.twoD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.twoD as pyfld  # runko fld c++ bindings
 
 
     # --------------------------------------------------

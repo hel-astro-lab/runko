@@ -25,7 +25,7 @@ class Write_mode
     /// Standard/default writing mode
     static struct Standard{} standard;
 
-    /// write only analysis part of fields::Tile
+    /// write only analysis part of emf::Tile
     static struct Analysis{} analysis;
 };
 

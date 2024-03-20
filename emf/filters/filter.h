@@ -6,7 +6,7 @@
 #include "../../tools/iter/managed_alloc.h"
 
 
-namespace fields {
+namespace emf {
 
 /// General interface for filters
 template<size_t D>
@@ -33,11 +33,11 @@ class Filter: public ManagedParent
 
   virtual ~Filter() = default;
 
-  virtual void solve(fields::Tile<D>& tile) = 0;
+  virtual void solve(emf::Tile<D>& tile) = 0;
 
 };
 
 
-} // end of namespace fields
+} // end of namespace emf
 
 

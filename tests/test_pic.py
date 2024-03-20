@@ -640,7 +640,7 @@ class PIC(unittest.TestCase):
                 tile = grid.get_tile(i,j)
                 tile.update_boundaries(grid)
 
-        #interpolate fields
+        #interpolate emf
         fintps = []
 
         fintps.append( pyrunko.pic.twoD.LinearInterpolator() )
@@ -711,7 +711,7 @@ class PIC(unittest.TestCase):
         for tile in pytools.tiles_local(grid):
             tile.update_boundaries(grid)
 
-        #interpolate fields
+        #interpolate emf
         fintps = []
         fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
         fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
@@ -771,7 +771,7 @@ class PIC(unittest.TestCase):
                 tile = grid.get_tile(i,j)
                 tile.update_boundaries(grid)
 
-        #interpolate fields
+        #interpolate emf
         fintps = []
 
         fintps.append( pyrunko.pic.twoD.LinearInterpolator() )
@@ -836,7 +836,7 @@ class PIC(unittest.TestCase):
         for tile in pytools.tiles_local(grid):
             tile.update_boundaries(grid, iarr=[0,1,2])
 
-        #interpolate fields
+        #interpolate emf
         fintps = []
         fintps.append( pyrunko.pic.threeD.LinearInterpolator() )
         fintps.append( pyrunko.pic.threeD.QuadraticInterpolator() )
@@ -1367,10 +1367,10 @@ class PIC(unittest.TestCase):
         #-------------------------------------------------- 
 
         pusher   = pyrunko.pic.twoD.BorisPusher()
-        fldprop  = pyrunko.fields.twoD.FDTD2()
+        fldprop  = pyrunko.emf.twoD.FDTD2()
         fintp    = pyrunko.pic.twoD.LinearInterpolator()
         currint  = pyrunko.pic.twoD.ZigZag()
-        flt      = pyrunko.fields.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt      = pyrunko.emf.twoD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         lap = 0
         for lap in range(lap, conf.Nt):
@@ -1380,7 +1380,7 @@ class PIC(unittest.TestCase):
                 tile = grid.get_tile(cid)
                 tile.update_boundaries(grid)
     
-            #interpolate fields
+            #interpolate emf
             for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
                 fintp.solve(tile)
@@ -1592,10 +1592,10 @@ class PIC(unittest.TestCase):
 
         #--------------------------------------------------
         pusher   = pyrunko.pic.threeD.BorisPusher()
-        fldprop  = pyrunko.fields.threeD.FDTD2()
+        fldprop  = pyrunko.emf.threeD.FDTD2()
         fintp    = pyrunko.pic.threeD.LinearInterpolator()
         currint  = pyrunko.pic.threeD.ZigZag()
-        flt      = pyrunko.fields.threeD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        flt      = pyrunko.emf.threeD.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         lap = 0
         for lap in range(lap, conf.Nt):
@@ -1620,7 +1620,7 @@ class PIC(unittest.TestCase):
             # move particles (only locals tiles)
     
             # --------------------------------------------------
-            # interpolate fields
+            # interpolate emf
             for tile in pytools.tiles_local(grid):
                 fintp.solve(tile)
             #print('successful interp')

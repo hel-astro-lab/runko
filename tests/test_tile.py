@@ -25,7 +25,7 @@ class Initialization(unittest.TestCase):
     NzMesh = 1
 
     def setUp(self):
-        self.tile = pyrunko.fields.twoD.Tile(self.NxMesh, self.NyMesh, self.NzMesh)
+        self.tile = pyrunko.emf.twoD.Tile(self.NxMesh, self.NyMesh, self.NzMesh)
         self.tile.index = (self.i, self.j)
 
     # test that we can inherit from the corgi::Tile base class

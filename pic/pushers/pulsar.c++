@@ -13,7 +13,7 @@ using toolbox::sign;
 using toolbox::lerp;
 
 
-// cubic linear interpolation of the staggered fields to the 
+// cubic linear interpolation of the staggered emf to the 
 // location of ind+dx+dy+dz
 inline auto interpolate_fields(
     const toolbox::Mesh<float_m, 3>& exM,
@@ -182,10 +182,10 @@ void pic::PulsarPusher<D,V>::push_container(
 #endif
 
   const double c  = tile.cfl;
-  const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
+  const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because emf are in units of q)
   const double m  = con.m; //mass
 
-  // fields at the grid
+  // emf at the grid
   auto& yee = tile.get_yee(); 
   auto& exM = yee.ex;
   auto& eyM = yee.ey;

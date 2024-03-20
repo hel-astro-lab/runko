@@ -60,18 +60,18 @@ class PlasmaBlock {
 /*! \brief Vlasov tile 
 *
 * Tile infrastructure methods are inherited from corgi::Tile
-* Maxwell field equation solver is inherited from fields::Tile
+* Maxwell field equation solver is inherited from emf::Tile
 */
 
 template<std::size_t D>
 class Tile : 
-  virtual public fields::Tile<D>
+  virtual public emf::Tile<D>
 {
 
   public:
   
   /// Size of the internal grid
-  using fields::Tile<D>::mesh_lengths;
+  using emf::Tile<D>::mesh_lengths;
 
   int Nspecies = 2;
 
@@ -93,7 +93,7 @@ class Tile :
 
   /// constructor
   Tile(int nx, int ny, int nz) :
-    fields::Tile<D>(nx,ny,nz)
+    emf::Tile<D>(nx,ny,nz)
   { 
 
       // XXX pre-initialize; now done via python
@@ -118,8 +118,8 @@ class Tile :
   Tile(Tile& ) = delete;
 
   /// tile temporal and spatial scales
-  using fields::Tile<D>::cfl;
-  //using fields::Tile<D>::dx;
+  using emf::Tile<D>::cfl;
+  //using emf::Tile<D>::dx;
 
 
   /// General clipping threshold

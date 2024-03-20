@@ -13,8 +13,8 @@
 
 /// single 2D 2nd order 3-point binomial filter 
 template<>
-void fields::Binomial2<1>::solve(
-    fields::Tile<1>& tile)
+void emf::Binomial2<1>::solve(
+    emf::Tile<1>& tile)
 {
     
   // 2D 3-point binomial coefficients
@@ -83,8 +83,8 @@ void fields::Binomial2<1>::solve(
 
 /// single 2D 2nd order 3-point binomial filter 
 template<>
-void fields::Binomial2<2>::solve(
-    fields::Tile<2>& tile)
+void emf::Binomial2<2>::solve(
+    emf::Tile<2>& tile)
 {
     
   // 2D 3-point binomial coefficients
@@ -166,8 +166,8 @@ void fields::Binomial2<2>::solve(
 
 /// single 3D 2nd order 3-point binomial filter 
 template<>
-void fields::Binomial2<3>::solve(
-    fields::Tile<3>& tile)
+void emf::Binomial2<3>::solve(
+    emf::Tile<3>& tile)
 {
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
@@ -236,6 +236,6 @@ void fields::Binomial2<3>::solve(
 }
 
 
-template class fields::Binomial2<1>; // 1D
-template class fields::Binomial2<2>; // 2D
-template class fields::Binomial2<3>; // 3D
+template class emf::Binomial2<1>; // 1D
+template class emf::Binomial2<2>; // 2D
+template class emf::Binomial2<3>; // 3D

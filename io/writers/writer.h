@@ -85,10 +85,10 @@ class Writer {
     // }
 
     template<size_t D>
-    bool write(const fields::Tile<D>& tile, ezh5::File& file);
+    bool write(const emf::Tile<D>& tile, ezh5::File& file);
 
     //template<size_t D>
-    //bool write2(const fields::Tile<D>& tile);
+    //bool write2(const emf::Tile<D>& tile);
 
     template<size_t D>
     bool write(const vlv::Tile<D>& tile, ezh5::File& file);

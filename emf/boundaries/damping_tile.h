@@ -6,7 +6,7 @@
 #include "../tile.h"
 
 
-namespace fields {
+namespace emf {
   namespace damping {
 
 
@@ -18,7 +18,7 @@ template<
   int S
 >
 class Tile : 
-  virtual public fields::Tile<D>
+  virtual public emf::Tile<D>
 {
 
   public:
@@ -39,7 +39,7 @@ class Tile :
 
   /// constructor
   Tile(int nx, int ny, int nz) :
-    fields::Tile<D>{nx,ny,nz},
+    emf::Tile<D>{nx,ny,nz},
 
     ex_ref{nx,ny,nz},
     ey_ref{nx,ny,nz},
@@ -57,7 +57,7 @@ class Tile :
 
   //void deposit_current() override;
 
-  using fields::Tile<D>::cfl;
+  using emf::Tile<D>::cfl;
 
 
   // damp field 
@@ -78,4 +78,4 @@ class Tile :
 
 
   } // end on namespace damping
-} // end on namespace fields
+} // end on namespace emf

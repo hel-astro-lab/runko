@@ -12,13 +12,13 @@ using toolbox::Vec3;
 using toolbox::norm;
 using toolbox::norm1d;
 using toolbox::norm2d;
-using fields::StaggeredSphericalCoordinates;
+using emf::StaggeredSphericalCoordinates;
 
 
 
 // General dipole formula in 2D cartesian coordinates
 template<>
-Vec3<float> fields::Conductor<2>::dipole(Vec3<float>& xvec)
+Vec3<float> emf::Conductor<2>::dipole(Vec3<float>& xvec)
 {
 
   //non-rotating magnetic moment vector components
@@ -46,7 +46,7 @@ Vec3<float> fields::Conductor<2>::dipole(Vec3<float>& xvec)
 
 // General dipole formula in 3D cartesian coordinates
 template<>
-Vec3<float> fields::Conductor<3>::dipole(Vec3<float>& xvec)
+Vec3<float> emf::Conductor<3>::dipole(Vec3<float>& xvec)
 {
 
   //non-rotating magnetic moment vector components
@@ -74,8 +74,8 @@ Vec3<float> fields::Conductor<3>::dipole(Vec3<float>& xvec)
 
 
 template<size_t D>
-void fields::Conductor<D>::insert_em(
-    fields::Tile<D>& tile)
+void emf::Conductor<D>::insert_em(
+    emf::Tile<D>& tile)
 {
 
   // Tile limits
@@ -191,8 +191,8 @@ void fields::Conductor<D>::insert_em(
 
 
 template<size_t D>
-void fields::Conductor<D>::update_b(
-    fields::Tile<D>& tile)
+void emf::Conductor<D>::update_b(
+    emf::Tile<D>& tile)
 {
 
   // helper class for staggered grid positions
@@ -562,8 +562,8 @@ void fields::Conductor<D>::update_b(
 
 
 template<size_t D>
-void fields::Conductor<D>::update_e(
-    fields::Tile<D>& tile)
+void emf::Conductor<D>::update_e(
+    emf::Tile<D>& tile)
 {
 
   // angular velocity
@@ -1068,6 +1068,6 @@ void fields::Conductor<D>::update_e(
 //--------------------------------------------------
 // explicit template instantiation
 
-template class fields::Conductor<2>; // 2D
-template class fields::Conductor<3>; // 3D
+template class emf::Conductor<2>; // 2D
+template class emf::Conductor<3>; // 3D
 

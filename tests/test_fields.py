@@ -45,7 +45,7 @@ def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
@@ -54,7 +54,7 @@ def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
@@ -65,12 +65,12 @@ def loadTiles3D(n, conf):
             for k in range(n.get_Nz()):
                 #print("putting", i,j,k)
                 #if n.get_mpi_grid(i,j) == n.rank:
-                c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.emf.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 c.lengths = [conf.Nx, conf.Ny, conf.Nz]
 
                 n.add_tile(c, (i,j,k) ) 
         
-                #c = pyrunko.fields.threeD.make_and_add_tile( n, 
+                #c = pyrunko.emf.threeD.make_and_add_tile( n, 
                 #        conf.NxMesh, conf.NyMesh, conf.NzMesh, (i,j,k))
 
 
@@ -92,8 +92,8 @@ class FLD_inits(unittest.TestCase):
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
-        fdtd2 = pyrunko.fields.oneD.FDTD2()
-        tile = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fdtd2 = pyrunko.emf.oneD.FDTD2()
+        tile = pyrunko.emf.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
@@ -103,8 +103,8 @@ class FLD_inits(unittest.TestCase):
         conf.twoD = True
         conf.NzMesh = 1 #force 2D
 
-        fdtd2 = pyrunko.fields.twoD.FDTD2()
-        tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fdtd2 = pyrunko.emf.twoD.FDTD2()
+        tile = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
@@ -367,6 +367,10 @@ class Communications(unittest.TestCase):
                 self.assertEqual(ref2[i,j], arr[i,j])
 
     # testing a spesific seg fault with loading of yee lattices. This same test fails with 3D
+    #
+    # NOTE to future generations: this bug is typically triggered when corgi lib is not compiled with 
+    #      with the same compiler version as runko. You can fix this by going to corgi/build and rebuilding.
+    #
     def test_2D_tile_memory_bug(self):
         conf = Conf()
         conf.twoD = True
@@ -383,7 +387,7 @@ class Communications(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         #print("load")
-        tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, 1)
+        tile = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, 1)
         #print("ref count tile 2d:", sys.getrefcount(tile))
         grid.add_tile(tile, (0,0) ) 
         #print("ref count tile 2d:", sys.getrefcount(tile))
@@ -437,7 +441,7 @@ class Communications(unittest.TestCase):
         #Second create mechanism with automatic tying of pointer to grid lifetime
         if False:
             #print("create2")
-            tile = pyrunko.fields.threeD.make_and_add_tile(
+            tile = pyrunko.emf.threeD.make_and_add_tile(
                     grid, 
                     conf.NxMesh, conf.NyMesh, conf.NzMesh,
                     (1,0,0)
@@ -448,7 +452,7 @@ class Communications(unittest.TestCase):
             # NOTE: leads to segfaulting with 3D tiles. Most likely py GC cleans tiles
             # aggressively. FIXED.
             #print("create")
-            tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            tile = pyrunko.emf.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             #print("ref count tile:", sys.getrefcount(tile))
             grid.add_tile(tile, (1,0,0) ) 
             #print("ref count tile:", sys.getrefcount(tile))
@@ -460,7 +464,7 @@ class Communications(unittest.TestCase):
         #tile.add_analysis_species()
 
         #print("creating yee2")
-        #yee2 = pyrunko.fields.YeeLattice(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #yee2 = pyrunko.emf.YeeLattice(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         #print(sys.getrefcount(yee2))
         #print("ending yee2")
 

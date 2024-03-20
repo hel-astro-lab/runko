@@ -9,9 +9,9 @@ using std::exp;
 //  std::size_t D, 
 //  int S
 //>
-//void fields::damping::Tile<D, S>::deposit_current() {
+//void emf::damping::Tile<D, S>::deposit_current() {
 //
-//  auto& yee = ::fields::Tile<D>::get_yee();
+//  auto& yee = ::emf::Tile<D>::get_yee();
 //
 //  //std::cout << "Calling DAMPED J update\n";
 //
@@ -26,7 +26,7 @@ using std::exp;
 //}
 
 
-/// Damp EM fields into the reference field
+/// Damp EM field into the reference field
 //
 // Combined directions:
 //
@@ -42,7 +42,7 @@ template<
   std::size_t D, 
   int S
 >
-void fields::damping::Tile<D,S>::damp_fields()
+void emf::damping::Tile<D,S>::damp_fields()
 {
 
   auto& yee = this->get_yee();
@@ -60,13 +60,13 @@ void fields::damping::Tile<D,S>::damp_fields()
   const int halo = 1;
 
   int istr = 0;
-  int ifin = fields::Tile<D>::mesh_lengths[0];
+  int ifin = emf::Tile<D>::mesh_lengths[0];
 
   int jstr = 0;
-  int jfin = fields::Tile<D>::mesh_lengths[1];
+  int jfin = emf::Tile<D>::mesh_lengths[1];
 
   int kstr = 0;
-  int kfin = fields::Tile<D>::mesh_lengths[2];
+  int kfin = emf::Tile<D>::mesh_lengths[2];
 
   // reset also halo regions
   if(D >= 1) istr -= halo;
@@ -86,13 +86,13 @@ void fields::damping::Tile<D,S>::damp_fields()
 
   // loop over all values in mesh
   for(int k = kstr; k<kfin; k++) {
-    kglob = (float_m)k + fields::Tile<D>::mins[2];
+    kglob = (float_m)k + emf::Tile<D>::mins[2];
 
     for(int j = jstr; j<jfin; j++) {
-      jglob = (float_m)j + fields::Tile<D>::mins[1];
+      jglob = (float_m)j + emf::Tile<D>::mins[1];
 
       for(int i=istr; i<ifin; i++) {
-        iglob = (float_m)i + fields::Tile<D>::mins[0];
+        iglob = (float_m)i + emf::Tile<D>::mins[0];
 
         inside_damping_zone = false;
 
@@ -157,17 +157,17 @@ void fields::damping::Tile<D,S>::damp_fields()
 //--------------------------------------------------
 
 // explicit template instantiation for supported directions
-template class fields::damping::Tile<1,+1>;
-template class fields::damping::Tile<1,-1>;
+template class emf::damping::Tile<1,+1>;
+template class emf::damping::Tile<1,-1>;
 
-template class fields::damping::Tile<2,-1>;
-template class fields::damping::Tile<2,+1>;
-template class fields::damping::Tile<2,-2>;
-template class fields::damping::Tile<2,+2>;
+template class emf::damping::Tile<2,-1>;
+template class emf::damping::Tile<2,+1>;
+template class emf::damping::Tile<2,-2>;
+template class emf::damping::Tile<2,+2>;
   
-template class fields::damping::Tile<3,-1>;
-template class fields::damping::Tile<3,+1>;
-template class fields::damping::Tile<3,-2>;
-template class fields::damping::Tile<3,+2>;
-template class fields::damping::Tile<3,-3>;
-template class fields::damping::Tile<3,+3>;
+template class emf::damping::Tile<3,-1>;
+template class emf::damping::Tile<3,+1>;
+template class emf::damping::Tile<3,-2>;
+template class emf::damping::Tile<3,+2>;
+template class emf::damping::Tile<3,-3>;
+template class emf::damping::Tile<3,+3>;

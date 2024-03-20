@@ -10,7 +10,7 @@ namespace pic {
 /// spherical stellar surface that injects particles close to the surface
 template<size_t D>
 class Star :
-  public fields::Conductor<D>
+  public emf::Conductor<D>
 {
 
 private:
@@ -26,29 +26,29 @@ private:
 public:
 
   // members
-  using fields::Conductor<D>::radius;
-  using fields::Conductor<D>::period;
-  using fields::Conductor<D>::B0;
-  using fields::Conductor<D>::chi_mu;
-  using fields::Conductor<D>::chi_om;
-  using fields::Conductor<D>::phase_mu;
-  using fields::Conductor<D>::phase_om;
-  using fields::Conductor<D>::cenx;
-  using fields::Conductor<D>::ceny;
-  using fields::Conductor<D>::cenz;
-  using fields::Conductor<D>::delta;
-  using fields::Conductor<D>::angular_velocity;
-  using fields::Conductor<D>::radius_pc;
-  using fields::Conductor<D>::delta_pc;
-  using fields::Conductor<D>::Nx;
-  using fields::Conductor<D>::Ny;
-  using fields::Conductor<D>::Nz;
+  using emf::Conductor<D>::radius;
+  using emf::Conductor<D>::period;
+  using emf::Conductor<D>::B0;
+  using emf::Conductor<D>::chi_mu;
+  using emf::Conductor<D>::chi_om;
+  using emf::Conductor<D>::phase_mu;
+  using emf::Conductor<D>::phase_om;
+  using emf::Conductor<D>::cenx;
+  using emf::Conductor<D>::ceny;
+  using emf::Conductor<D>::cenz;
+  using emf::Conductor<D>::delta;
+  using emf::Conductor<D>::angular_velocity;
+  using emf::Conductor<D>::radius_pc;
+  using emf::Conductor<D>::delta_pc;
+  using emf::Conductor<D>::Nx;
+  using emf::Conductor<D>::Ny;
+  using emf::Conductor<D>::Nz;
 
   // methods
-  using fields::Conductor<D>::dipole;
-  using fields::Conductor<D>::insert_em;
-  using fields::Conductor<D>::update_b;
-  using fields::Conductor<D>::update_e;
+  using emf::Conductor<D>::dipole;
+  using emf::Conductor<D>::insert_em;
+  using emf::Conductor<D>::update_b;
+  using emf::Conductor<D>::update_e;
 
   double temp_pairs = 0.2; // pair injection temperature
   double temp_phots = 0.001; // photon injection temperature

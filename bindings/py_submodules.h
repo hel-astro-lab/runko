@@ -30,3 +30,6 @@ namespace ffe {
   void bind_ffe(py::module& m);
 }
 
+namespace cpl {
+  void bind_cpl(py::module& m);
+}

@@ -18,12 +18,12 @@ using namespace mpi4cpp;
 /*! \brief PiC tile
  *
  * Tile infrastructures are inherited from corgi::Tile
- * Maxwell field equation solver is inherited from fields::Tile
+ * Maxwell field equation solver is inherited from emf::Tile
 */
 
 template<std::size_t D>
 class Tile :
-  virtual public fields::Tile<D>, 
+  virtual public emf::Tile<D>, 
   virtual public  corgi::Tile<D>,
   virtual public ManagedParent
 {
@@ -35,11 +35,11 @@ public:
   using corgi::Tile<D>::maxs;
   using corgi::Tile<D>::cid;
 
-  using fields::Tile<D>::mesh_lengths;
+  using emf::Tile<D>::mesh_lengths;
 
-  using fields::Tile<D>::yee;
+  using emf::Tile<D>::yee;
 
-  using fields::Tile<D>::cfl;
+  using emf::Tile<D>::cfl;
 
   std::vector<ParticleContainer<D> , ManagedAlloc<ParticleContainer<D> >> containers;
 
@@ -67,7 +67,7 @@ public:
   /// constructor
   Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>{nx,ny,nz}
+    emf::Tile<D>{nx,ny,nz}
   { }
 
 

@@ -23,7 +23,7 @@ void pic::VayPusher<D,V>::push_container(
 
   const double c   = tile.cfl;
   const double cinv= 1.0/c;
-  const double qm  = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
+  const double qm  = sign(con.q)/con.m; // q_s/m_s (sign only because emf are in units of q)
   
 
   // loop over particles
@@ -33,7 +33,7 @@ void pic::VayPusher<D,V>::push_container(
     double vel1n = con.vel(1,n);
     double vel2n = con.vel(2,n);
 
-    // read particle-specific fields
+    // read particle-specific emf
     double ex0 = ( con.ex(n) + this->get_ex_ext(0,0,0) )*0.5*qm;
     double ey0 = ( con.ey(n) + this->get_ey_ext(0,0,0) )*0.5*qm;
     double ez0 = ( con.ez(n) + this->get_ez_ext(0,0,0) )*0.5*qm;

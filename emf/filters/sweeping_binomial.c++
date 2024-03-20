@@ -64,8 +64,8 @@ void sweep_in_x(
 // NOTE: optimized to slide in x/y/z dimensions to enable vectorization
 // TODO: not fully implemented but frame is presented here
 template<>
-void fields::OptBinomial2<3>::solve(
-    fields::Tile<3>& tile)
+void emf::OptBinomial2<3>::solve(
+    emf::Tile<3>& tile)
 {
   auto& mesh = tile.get_yee();
 
@@ -84,6 +84,6 @@ void fields::OptBinomial2<3>::solve(
 }
 
 
-//template class fields::OptBinomial2<1>; // 1D
-  template class fields::OptBinomial2<2>; // 2D
-//template class fields::OptBinomial2<3>; // 3D
+//template class emf::OptBinomial2<1>; // 1D
+  template class emf::OptBinomial2<2>; // 2D
+//template class emf::OptBinomial2<3>; // 3D

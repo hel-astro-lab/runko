@@ -26,7 +26,7 @@ template<std::size_t D>
 class Tile : 
   virtual public pic::Tile<D>,
   virtual public ffe::Tile<D>,
-  virtual public fields::Tile<D>, 
+  virtual public emf::Tile<D>, 
   virtual public corgi::Tile<D>, 
   virtual public ManagedParent
 {
@@ -37,10 +37,10 @@ class Tile :
   using corgi::Tile<D>::mins;
   using corgi::Tile<D>::maxs;
 
-  // em fields
-  using fields::Tile<D>::mesh_lengths;
-  using fields::Tile<D>::yee;
-  using fields::Tile<D>::cfl;
+  // em emf
+  using emf::Tile<D>::mesh_lengths;
+  using emf::Tile<D>::yee;
+  using emf::Tile<D>::cfl;
 
   // ffe
   using ffe::Tile<D>::dF;
@@ -59,7 +59,7 @@ class Tile :
   /// constructor
   Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
-     fields::Tile<D>{nx,ny,nz},
+     emf::Tile<D>{nx,ny,nz},
      ffe::Tile<D>{nx,ny,nz},
      pic::Tile<D>{nx,ny,nz}
   { }

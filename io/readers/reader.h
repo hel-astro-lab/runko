@@ -76,7 +76,7 @@ class Reader
 
 
   template<size_t D>
-  bool read(fields::Tile<D>& tile, ezh5::File& file);
+  bool read(emf::Tile<D>& tile, ezh5::File& file);
 
   template<size_t D>
   bool read(   vlv::Tile<D>& tile, ezh5::File& file);

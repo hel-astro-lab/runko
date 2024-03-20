@@ -24,7 +24,7 @@ using toolbox::cross;
 using toolbox::dot;
 using toolbox::Vec3;
 
-using fields::StaggeredSphericalCoordinates;
+using emf::StaggeredSphericalCoordinates;
 
 
 // simple pseudo-random floats with C library rand() (outputting int's).

@@ -12,8 +12,8 @@
 
 
 template<>
-void fields::General3pStrided<2>::solve(
-    fields::Tile<2>& tile)
+void emf::General3pStrided<2>::solve(
+    emf::Tile<2>& tile)
 {
   // 2D general coefficients
   const double winv=1./4.;                         //normalization
@@ -105,8 +105,8 @@ void fields::General3pStrided<2>::solve(
 // [ 2.  4.  6.  8.  6.  4.  2. ]
 // [ 1.  2.  3.  4.  3.  2.  1. ]
 template<>
-void fields::Binomial2Strided2<2>::solve(
-    fields::Tile<2>& tile)
+void emf::Binomial2Strided2<2>::solve(
+    emf::Tile<2>& tile)
 {
   // 2D general coefficients
   const double wn=1./16.0/16.0;  //normalization
@@ -214,10 +214,10 @@ void fields::Binomial2Strided2<2>::solve(
 
 
 
-//template class fields::General3pStrided<1>; // 1D
-template class fields::General3pStrided<2>; // 2D
-//template class fields::General3pStrided<3>; // 3D
+//template class emf::General3pStrided<1>; // 1D
+template class emf::General3pStrided<2>; // 2D
+//template class emf::General3pStrided<3>; // 3D
   
-//template class fields::Binomial2Strided2<1>; // 1D
-template class fields::Binomial2Strided2<2>; // 2D
-//template class fields::Binomial2Strided2<3>; // 3D
+//template class emf::Binomial2Strided2<1>; // 1D
+template class emf::Binomial2Strided2<2>; // 2D
+//template class emf::Binomial2Strided2<3>; // 3D

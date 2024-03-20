@@ -380,7 +380,7 @@ void bind_emf(py::module& m_sub)
 
   //--------------------------------------------------
   // 2D Propagator bindings
-  py::class_< emf::Propagator<2>, PyPropagator<2> > emf(m_2d, "Propagator");
+  py::class_< emf::Propagator<2>, PyPropagator<2> > emfpropag2d(m_2d, "Propagator");
   emfpropag2d
     .def(py::init<>())
     .def_readwrite("dt",&emf::Propagator<2>::dt)

@@ -10,7 +10,7 @@ set (TOOLS_FILES
      )
 
 set (FIELDS_FILES 
-     pyfields.c++
+     pyemf.c++
      ../emf/tile.c++ 
      ../emf/propagator/fdtd2.c++ 
      ../emf/propagator/fdtd2_pml.c++ 
@@ -103,8 +103,8 @@ set (ACC_FILES
 
 
 set (MISC_FILES 
-  #     pycpl.c++
-  #   ../coupling/tile.c++
+       pycpl.c++
+     ../coupling/tile.c++
     )
 
 

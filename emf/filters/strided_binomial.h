@@ -2,7 +2,7 @@
 
 #include "filter.h"
 
-namespace fields {
+namespace emf {
 
 /// Strided digital 3-point general filter with variable weight.
 //
@@ -27,7 +27,7 @@ class General3pStrided :
   /// stride parameter s; s=1 gives standard non-strided
   int stride = 1;
 
-  void solve(fields::Tile<D>& tile) override;
+  void solve(emf::Tile<D>& tile) override;
 
 };
 
@@ -42,9 +42,9 @@ class Binomial2Strided2 :
 
   using Filter<D>::Filter;
 
-  void solve(fields::Tile<D>& tile) override;
+  void solve(emf::Tile<D>& tile) override;
 
 };
 
 
-} // end of namespace fields
+} // end of namespace emf

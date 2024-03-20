@@ -44,7 +44,7 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
 
     //UniIter::iterate([=] DEVCALLABLE (
     //            size_t n, 
-    //            fields::YeeLattice &yee,
+    //            emf::YeeLattice &yee,
     //            pic::ParticleContainer<D>& con
     //            ){
     for(size_t n=0; n<con.size(); n++) {

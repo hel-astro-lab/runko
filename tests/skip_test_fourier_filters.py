@@ -12,7 +12,7 @@ from scipy.signal import convolve
 import pycorgi
 import pyrunko.pic.twoD as pypic
 import pyrunko.tools.twoD as pytools
-import pyrunko.fields.twoD as pyfields
+import pyrunko.emf.twoD as pyfields
 
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc

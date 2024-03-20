@@ -59,7 +59,7 @@ inline void read_mesh(
 
 //--------------------------------------------------
 
-namespace fields {
+namespace emf {
 
 template<size_t D>
 inline void write_yee( 
@@ -78,7 +78,7 @@ inline void write_yee(
 
   for(auto cid : grid.get_local_tiles() ){
     const auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+      = dynamic_cast<emf::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile, file);
   }
 }
@@ -98,7 +98,7 @@ inline void write_yee(
 //
 //  for(auto cid : grid.get_local_tiles() ){
 //    const auto& tile 
-//      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+//      = dynamic_cast<emf::Tile<D>&>(grid.get_tile( cid ));
 //    writer.write2(tile);
 //  }
 //}
@@ -120,13 +120,13 @@ inline void read_yee(
 
   for(auto cid : grid.get_tile_ids() ){
     auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+      = dynamic_cast<emf::Tile<D>&>(grid.get_tile( cid ));
     reader.read(tile, file);
   }
 
 }
 
-} // end of ns fields
+} // end of ns emf
 
 
 //--------------------------------------------------

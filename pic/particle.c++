@@ -103,7 +103,7 @@ void ParticleContainer<D>::reserve(size_t N) {
   for(size_t i=0; i<2; i++) indArr[i].reserve(N);
   wgtArr.reserve(N);
     
-  // reserve 1d N x D array for particle-specific fields
+  // reserve 1d N x D array for particle-specific emf
   Epart.reserve(N*3);
   Bpart.reserve(N*3);
 

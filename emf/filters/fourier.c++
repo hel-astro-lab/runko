@@ -13,7 +13,7 @@
 
 
 
-namespace fields {
+namespace emf {
 
 
 
@@ -562,7 +562,7 @@ class Filter {
 
   /// Copy currents from neighbors into fftw array
   void get_padded_current(
-      fields::Tile<2>& tile, 
+      emf::Tile<2>& tile, 
       corgi::Grid<2>& grid
       )
   {
@@ -573,7 +573,7 @@ class Filter {
     int indx;
 
     // copy local patch to filter's memory
-    fields::YeeLattice& mesh = tile.get_yee();
+    emf::YeeLattice& mesh = tile.get_yee();
 
     int s=0;
     int i=0, j=0; //, k=0;
@@ -594,9 +594,9 @@ class Filter {
       if ((i==0)&&(j==0)) continue;
 
       auto cneigh = 
-        std::dynamic_pointer_cast<fields::Tile<2>>(grid.get_tileptr( tile.neighs(i, j) ));
+        std::dynamic_pointer_cast<emf::Tile<2>>(grid.get_tileptr( tile.neighs(i, j) ));
       if (cneigh) {
-        fields::YeeLattice& mesh = cneigh->get_yee();
+        emf::YeeLattice& mesh = cneigh->get_yee();
 
         /*
         std::cout << "--------------------------------------------------\n";
@@ -627,9 +627,9 @@ class Filter {
   /// set (filtered) current back to Yee lattice
   // NOTE: we export the current to jx1/jy1/jz1 instead of jx/jy/jz to 
   //       ensure thread safety
-  void set_current( fields::Tile<2>& tile)
+  void set_current( emf::Tile<2>& tile)
   {
-    fields::YeeLattice& mesh = tile.get_yee();
+    emf::YeeLattice& mesh = tile.get_yee();
 
     int indx;
 
@@ -717,4 +717,4 @@ class Filter {
 
 };
 
-} // end of namespace fields
+} // end of namespace emf

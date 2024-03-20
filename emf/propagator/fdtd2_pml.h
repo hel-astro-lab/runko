@@ -3,7 +3,7 @@
 #include "propagator.h"
 #include "../../ffe/tile.h"
 
-namespace fields {
+namespace emf {
 
 /// Second order staggered finite difference time domain 
 // Maxwell's field equation solver with spherical PML damping 
@@ -45,4 +45,4 @@ class FDTD2_pml :
 
 
 
-} // end of namespace fields
+} // end of namespace emf

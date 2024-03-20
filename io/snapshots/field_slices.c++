@@ -30,7 +30,7 @@ void h5io::FieldSliceWriter::read_tiles(
 
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
-    auto& tile = dynamic_cast<fields::Tile<3>&>(grid.get_tile( cid ));
+    auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile( cid ));
     auto& yee = tile.get_yee();
 
     // get arrays

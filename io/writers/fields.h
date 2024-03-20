@@ -8,7 +8,7 @@
 template<size_t D>
 bool 
 h5io::Writer::write( 
-  const fields::Tile<D>& tile,
+  const emf::Tile<D>& tile,
   ezh5::File& file
   )
 {

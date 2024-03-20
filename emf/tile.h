@@ -9,7 +9,7 @@
 #include "../definitions.h"
 #include"../tools/iter/allocator.h"
 
-namespace fields {
+namespace emf {
   namespace mpi = mpi4cpp::mpi;
 
 /// Yee lattice of plasma quantities
@@ -191,7 +191,7 @@ class Tile :
 };
 
 
-} // end of namespace fields
+} // end of namespace emf
 
 
 

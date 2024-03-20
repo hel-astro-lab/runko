@@ -13,7 +13,7 @@ from math import floor, ceil
 import pycorgi
 import pyrunko.pic as pypic
 import pyrunko.tools as pytools
-import pyrunko.fields as pyfields
+import pyrunko.emf as pyfields
 
 
 def const_field(x, y, z):

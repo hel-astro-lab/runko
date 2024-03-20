@@ -2,7 +2,7 @@
 
 #include "propagator.h"
 
-namespace fields {
+namespace emf {
 
 /// Fourth order staggered finite difference time domain 
 // Maxwell's field equation solver.
@@ -36,4 +36,4 @@ class FDTDGen :
 };
 
 
-} // end of namespace fields
+} // end of namespace emf

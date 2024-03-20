@@ -17,7 +17,7 @@ class Pusher
 
   virtual ~Pusher() = default;
 
-  // external fields that are added to the pusher Lorentz force
+  // external emf that are added to the pusher Lorentz force
   double bx_ext = 0.0;
   double by_ext = 0.0;
   double bz_ext = 0.0;

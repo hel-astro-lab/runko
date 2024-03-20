@@ -12,8 +12,8 @@
 
 
 template<>
-void fields::General3p<2>::solve(
-    fields::Tile<2>& tile)
+void emf::General3p<2>::solve(
+    emf::Tile<2>& tile)
 {
 
   // 2D general coefficients
@@ -86,6 +86,6 @@ void fields::General3p<2>::solve(
 }
 
 
-//template class fields::General3p<1>; // 1D
-template class fields::General3p<2>; // 2D
-//template class fields::General3p<3>; // 3D
+//template class emf::General3p<1>; // 1D
+template class emf::General3p<2>; // 2D
+//template class emf::General3p<3>; // 3D

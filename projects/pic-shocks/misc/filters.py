@@ -4,7 +4,7 @@ import pycorgi.twoD as corgi
 import pyrunko.tools.twoD as pytools
 import pyrunko.vlv.twoD as pyvlv
 import pyrunko.pic.twoD as pypic
-import pyrunko.fields.twoD as pyfld
+import pyrunko.emf.twoD as pyfld
 
 import matplotlib.pyplot as plt
 
