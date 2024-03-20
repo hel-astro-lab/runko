@@ -5,8 +5,6 @@
 #include "../tools/mesh.h"
 #include "../vlasov/amr/mesh.h"
 
-//#include "../em-fields/filters/filters.h"
-
 #include "../tools/hilbert.h"
 
 #include <exception>
@@ -176,24 +174,24 @@ void bind_tools(pybind11::module& m)
 
   py::module m_2d = m.def_submodule("twoD", "2D specializations");
 
-  //py::class_<fields::Filter>(m_2d, "Filter")
+  //py::class_<emf::Filter>(m_2d, "Filter")
   //  .def(py::init<int, int>())
-  //  .def("init_kernel",             &fields::Filter::init_kernel)
-  //  .def("init_gaussian_kernel",    &fields::Filter::init_gaussian_kernel)
-  //  //.def("init_sinc_kernel",      &fields::Filter::init_sinc_kernel)
-  //  .def("init_lowpass_fft_kernel", &fields::Filter::init_lowpass_fft_kernel)
-  //  .def("init_3point",             &fields::Filter::init_3point_kernel)
-  //  .def("fft_kernel",              &fields::Filter::fft_kernel)
-  //  .def("fft_image_forward",       &fields::Filter::fft_image_forward)
-  //  .def("fft_image_backward",      &fields::Filter::fft_image_backward)
-  //  .def("apply_kernel",            &fields::Filter::apply_kernel)
-  //  .def("get_padded_current",      &fields::Filter::get_padded_current)
-  //  .def("set_current",             &fields::Filter::set_current)
-  //  .def("direct_convolve_3point",  &fields::Filter::direct_convolve_3point)
-  //  .def("set_image",               &fields::Filter::set_image)
-  //  .def("set_kernel",              &fields::Filter::set_kernel)
-  //  .def("get_kernel",              &fields::Filter::get_kernel, py::return_value_policy::reference)
-  //  .def("get_image",               &fields::Filter::get_image,  py::return_value_policy::reference);
+  //  .def("init_kernel",             &emf::Filter::init_kernel)
+  //  .def("init_gaussian_kernel",    &emf::Filter::init_gaussian_kernel)
+  //  //.def("init_sinc_kernel",      &emf::Filter::init_sinc_kernel)
+  //  .def("init_lowpass_fft_kernel", &emf::Filter::init_lowpass_fft_kernel)
+  //  .def("init_3point",             &emf::Filter::init_3point_kernel)
+  //  .def("fft_kernel",              &emf::Filter::fft_kernel)
+  //  .def("fft_image_forward",       &emf::Filter::fft_image_forward)
+  //  .def("fft_image_backward",      &emf::Filter::fft_image_backward)
+  //  .def("apply_kernel",            &emf::Filter::apply_kernel)
+  //  .def("get_padded_current",      &emf::Filter::get_padded_current)
+  //  .def("set_current",             &emf::Filter::set_current)
+  //  .def("direct_convolve_3point",  &emf::Filter::direct_convolve_3point)
+  //  .def("set_image",               &emf::Filter::set_image)
+  //  .def("set_kernel",              &emf::Filter::set_kernel)
+  //  .def("get_kernel",              &emf::Filter::get_kernel, py::return_value_policy::reference)
+  //  .def("get_image",               &emf::Filter::get_image,  py::return_value_policy::reference);
 
 
 

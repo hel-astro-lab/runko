@@ -11,18 +11,18 @@ set (TOOLS_FILES
 
 set (FIELDS_FILES 
      pyfields.c++
-     ../em-fields/tile.c++ 
-     ../em-fields/propagator/fdtd2.c++ 
-     ../em-fields/propagator/fdtd2_pml.c++ 
-     ../em-fields/propagator/fdtd4.c++ 
-     ../em-fields/propagator/fdtd_general.c++ 
-     ../em-fields/filters/binomial2.c++
-     ../em-fields/filters/compensator.c++
-     ../em-fields/filters/general_binomial.c++
-     ../em-fields/filters/strided_binomial.c++
-     #../em-fields/filters/sweeping_binomial.c++
-     ../em-fields/boundaries/damping_tile.c++
-     ../em-fields/boundaries/conductor.c++
+     ../emf/tile.c++ 
+     ../emf/propagator/fdtd2.c++ 
+     ../emf/propagator/fdtd2_pml.c++ 
+     ../emf/propagator/fdtd4.c++ 
+     ../emf/propagator/fdtd_general.c++ 
+     ../emf/filters/binomial2.c++
+     ../emf/filters/compensator.c++
+     ../emf/filters/general_binomial.c++
+     ../emf/filters/strided_binomial.c++
+     #../emf/filters/sweeping_binomial.c++
+     ../emf/boundaries/damping_tile.c++
+     ../emf/boundaries/conductor.c++
      )
 
 set (VLV_FILES 
@@ -103,8 +103,8 @@ set (ACC_FILES
 
 
 set (MISC_FILES 
-     pycpl.c++
-     ../coupling/tile.c++
+  #     pycpl.c++
+  #   ../coupling/tile.c++
     )
 
 
@@ -151,9 +151,9 @@ if(ENABLE_CUDA)
      
      set_target_properties(pyrunko PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
      set_source_files_properties(../ffe/currents/rffe.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../em-fields/tile.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../em-fields/filters/binomial2.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../em-fields/propagator/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../emf/tile.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../emf/filters/binomial2.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../emf/propagator/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)

@@ -1,6 +1,6 @@
 #include "rffe2.h"
 #include "../../tools/signum.h"
-#include "../../em-fields/tile.h"
+#include "../../emf/tile.h"
 
 
 #include <cmath>
@@ -74,7 +74,7 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
 {
   //nvtxRangePush(__FUNCTION__);
   
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
 
   // NOTE: compute rho from -1 to +1 because later on we re-stagger it 
   // and need the guard zones for interpolation
@@ -91,7 +91,7 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
     
   // TODO check vs above
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, fields::YeeLattice& m)
+    [=] DEVCALLABLE (int i, int j, int k, emf::YeeLattice& m)
     {
         m.rho(i-1,j-1,k-1) = 
           (m.ex(i-1,j-1,k-1) - m.ex(i-1-1,j-1,  k-1  )) +
@@ -116,10 +116,10 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
   //nvtxRangePush(__FUNCTION__);
 
   // refs to storages
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  // refs to fields for easier access
+  // refs to emf for easier access
 
   float_m c = tile.cfl;
 
@@ -147,7 +147,7 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 
   // TODO check vs above
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice &m)
+    [=] DEVCALLABLE (int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice &m)
     {
       // dB = dt*curl E
       dm.bx(i,j,k) = cz*( m.ey(i,  j,  k+1) - m.ey(i,j,k) ) - cy*( m.ez(i,  j+1,k) - m.ez(i,j,k) );
@@ -171,7 +171,7 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 
 
 template<>
-void ffe::rFFE2<3>::stagger_x_eb(fields::YeeLattice& m)
+void ffe::rFFE2<3>::stagger_x_eb(emf::YeeLattice& m)
 {
   //nvtxRangePush(__FUNCTION__);
 
@@ -186,7 +186,7 @@ void ffe::rFFE2<3>::stagger_x_eb(fields::YeeLattice& m)
 }
 
 template<>
-void ffe::rFFE2<3>::stagger_y_eb(fields::YeeLattice& m)
+void ffe::rFFE2<3>::stagger_y_eb(emf::YeeLattice& m)
 {
   //nvtxRangePush(__FUNCTION__);
 
@@ -201,7 +201,7 @@ void ffe::rFFE2<3>::stagger_y_eb(fields::YeeLattice& m)
 }
 
 template<>
-void ffe::rFFE2<3>::stagger_z_eb(fields::YeeLattice& m)
+void ffe::rFFE2<3>::stagger_z_eb(emf::YeeLattice& m)
 {
   //nvtxRangePush(__FUNCTION__);
 
@@ -222,7 +222,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 {
   //nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m dt = tile.cfl;
@@ -230,7 +230,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   interpolate(m.rho, rhf, { { 1, 1, 1 } }, { { 1, 1, 0 } });
   stagger_x_eb(m);
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -255,7 +255,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   stagger_y_eb(m);
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -281,7 +281,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   stagger_z_eb(m);
 
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -315,7 +315,7 @@ void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
 UniIter::sync();
   //nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m cur, b2;
@@ -326,7 +326,7 @@ UniIter::sync();
   stagger_x_eb(m);
   
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -351,7 +351,7 @@ UniIter::sync();
   stagger_y_eb(m);
   
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -376,7 +376,7 @@ UniIter::sync();
   stagger_z_eb(m);
   
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -421,7 +421,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 {
   //nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m dt = tile.cfl;
@@ -430,7 +430,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   stagger_x_eb(m);
 
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -455,7 +455,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
   stagger_y_eb(m);
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
@@ -482,7 +482,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
   stagger_z_eb(m);
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, fields::YeeLattice& m, 
+    [=] DEVCALLABLE( int i, int j, int k, ffe::SkinnyYeeLattice& dm, emf::YeeLattice& m, 
     toolbox::Mesh<float_m, 0>& bxf,
     toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
     toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,

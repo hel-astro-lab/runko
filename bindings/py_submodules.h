@@ -10,8 +10,8 @@ namespace tools {
   void bind_tools(py::module& m);
 }
 
-namespace fields {
-  void bind_fields(py::module& m);
+namespace emf {
+  void bind_emf(py::module& m);
 }
 
 namespace vlv {
@@ -28,9 +28,5 @@ namespace qed {
 
 namespace ffe {
   void bind_ffe(py::module& m);
-}
-
-namespace cpl {
-  void bind_cpl(py::module& m);
 }
 

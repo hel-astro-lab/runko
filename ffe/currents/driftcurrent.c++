@@ -1,5 +1,5 @@
 #include "driftcurrent.h"
-#include "../../em-fields/tile.h"
+#include "../../emf/tile.h"
 #include "../../tools/signum.h"
 
 #include <cmath>
@@ -9,7 +9,7 @@
 
 template<>
 void ffe::DriftCurrent<2>::interpolate_b(
-    fields::YeeLattice& yee
+     emf::YeeLattice& yee
     )
 {
   nvtxRangePush(__FUNCTION__);
@@ -46,7 +46,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
 
 template<>
 void ffe::DriftCurrent<3>::interpolate_b(
-    fields::YeeLattice& yee
+     emf::YeeLattice& yee
     )
 {
   nvtxRangePush(__FUNCTION__);
@@ -100,7 +100,7 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
 {
   nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -162,7 +162,7 @@ void ffe::DriftCurrent<3>::comp_drift_cur(ffe::Tile<3>& tile)
 {
   nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -220,7 +220,7 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
 {
   nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -276,7 +276,7 @@ void ffe::DriftCurrent<3>::comp_parallel_cur(
 {
   nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -332,7 +332,7 @@ void ffe::DriftCurrent<2>::limiter(
 {
   nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
   interpolate_b(mesh);
 
   double diss;
@@ -398,7 +398,7 @@ void ffe::DriftCurrent<3>::limiter(
 {
   nvtxRangePush(__FUNCTION__);
 
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
   interpolate_b(mesh);
 
   double diss;

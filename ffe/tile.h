@@ -14,7 +14,7 @@ namespace ffe {
  */
 template<std::size_t D>
 class Tile : 
-  virtual public fields::Tile<D>, 
+  virtual public emf::Tile<D>, 
   virtual public corgi::Tile<D>, 
   virtual public ManagedParent
 {
@@ -24,9 +24,9 @@ class Tile :
   using corgi::Tile<D>::mins;
   using corgi::Tile<D>::maxs;
 
-  using fields::Tile<D>::mesh_lengths;
-  using fields::Tile<D>::yee;
-  using fields::Tile<D>::cfl;
+  using emf::Tile<D>::mesh_lengths;
+  using emf::Tile<D>::yee;
+  using emf::Tile<D>::cfl;
 
 
   // RK temporary sub-stage storages
@@ -36,9 +36,9 @@ class Tile :
   /// constructor
   Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
-    fields::Tile<D>{nx,ny,nz},
-    dF{nx,ny,nz},
-    Fn{nx,ny,nz}
+     emf::Tile<D>{nx,ny,nz},
+     dF{nx,ny,nz},
+     Fn{nx,ny,nz}
   { }
 
 

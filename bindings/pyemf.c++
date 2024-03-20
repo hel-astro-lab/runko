@@ -8,24 +8,24 @@
 #include "../definitions.h"
 #include "../tools/mesh.h"
 
-#include "../em-fields/tile.h"
+#include "../emf/tile.h"
 
-#include "../em-fields/propagator/propagator.h"
-#include "../em-fields/propagator/fdtd2.h"
-#include "../em-fields/propagator/fdtd2_pml.h"
-#include "../em-fields/propagator/fdtd4.h"
-#include "../em-fields/propagator/fdtd_general.h"
+#include "../emf/propagator/propagator.h"
+#include "../emf/propagator/fdtd2.h"
+#include "../emf/propagator/fdtd2_pml.h"
+#include "../emf/propagator/fdtd4.h"
+#include "../emf/propagator/fdtd_general.h"
 
-#include "../em-fields/filters/filter.h"
-#include "../em-fields/filters/binomial2.h"
-#include "../em-fields/filters/compensator.h"
-#include "../em-fields/filters/strided_binomial.h"
-#include "../em-fields/filters/general_binomial.h"
-#include "../em-fields/filters/sweeping_binomial.h"
+#include "../emf/filters/filter.h"
+#include "../emf/filters/binomial2.h"
+#include "../emf/filters/compensator.h"
+#include "../emf/filters/strided_binomial.h"
+#include "../emf/filters/general_binomial.h"
+#include "../emf/filters/sweeping_binomial.h"
 
 
-#include "../em-fields/boundaries/damping_tile.h"
-#include "../em-fields/boundaries/conductor.h"
+#include "../emf/boundaries/damping_tile.h"
+#include "../emf/boundaries/conductor.h"
 
 #include "../io/writers/writer.h"
 #include "../io/writers/fields.h"
@@ -37,7 +37,7 @@
 
 //--------------------------------------------------
   
-namespace fields{
+namespace emf{
 
   namespace py = pybind11;
 
@@ -51,19 +51,19 @@ auto declare_tile(
   std::vector<int> iarr{0,1,2};
 
   return py::class_<
-             fields::Tile<D>,
+              emf::Tile<D>,
               corgi::Tile<D>, 
-              std::shared_ptr<fields::Tile<D>>
+              std::shared_ptr<emf::Tile<D>>
             >(m, pyclass_name.c_str() )
     .def(py::init<int, int, int>())
-    .def_readwrite("cfl",      &fields::Tile<D>::cfl)
-    .def("clear_current",       &fields::Tile<D>::clear_current)
-    .def("deposit_current",     &fields::Tile<D>::deposit_current)
-    .def("exchange_currents",   &fields::Tile<D>::exchange_currents)
-    .def("update_boundaries",   &fields::Tile<D>::update_boundaries,
+    .def_readwrite("cfl",       &emf::Tile<D>::cfl)
+    .def("clear_current",       &emf::Tile<D>::clear_current)
+    .def("deposit_current",     &emf::Tile<D>::deposit_current)
+    .def("exchange_currents",   &emf::Tile<D>::exchange_currents)
+    .def("update_boundaries",   &emf::Tile<D>::update_boundaries,
             py::arg("grid"),
             py::arg("iarr")=iarr)
-    .def("get_yee",             &fields::Tile<D>::get_yee,
+    .def("get_yee",             &emf::Tile<D>::get_yee,
         py::arg("i")=0,
         py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
@@ -85,34 +85,34 @@ auto declare_TileDamped(
     py::module& m,
     const std::string& pyclass_name) 
 {
-  // using Class = fields::TileDamped<D,S>; 
+  // using Class = emf::TileDamped<D,S>; 
   // does not function properly; maybe not triggering template?
   // have to use explicit name instead like this
 
   return py::class_<
-             fields::damping::Tile<D,S>,
-             fields::Tile<D>,
+             emf::damping::Tile<D,S>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
-             std::shared_ptr<fields::damping::Tile<D,S>>
+             std::shared_ptr<emf::damping::Tile<D,S>>
           >(m, 
             pyclass_name.c_str(),
             py::multiple_inheritance()
             )
   .def(py::init<int, int, int>())
-  .def_readwrite("ex_ref",   &fields::damping::Tile<D,S>::ex_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
-  .def_readwrite("ey_ref",   &fields::damping::Tile<D,S>::ey_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
-  .def_readwrite("ez_ref",   &fields::damping::Tile<D,S>::ez_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
-  .def_readwrite("bx_ref",   &fields::damping::Tile<D,S>::bx_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
-  .def_readwrite("by_ref",   &fields::damping::Tile<D,S>::by_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
-  .def_readwrite("bz_ref",   &fields::damping::Tile<D,S>::bz_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
-  .def_readwrite("fld1",     &fields::damping::Tile<D,S>::fld1)
-  .def_readwrite("fld2",     &fields::damping::Tile<D,S>::fld2)
-  .def_readwrite("ksupp",    &fields::damping::Tile<D,S>::ksupp)
-  .def("damp_fields",        &fields::damping::Tile<D,S>::damp_fields);
+  .def_readwrite("ex_ref",   &emf::damping::Tile<D,S>::ex_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("ey_ref",   &emf::damping::Tile<D,S>::ey_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("ez_ref",   &emf::damping::Tile<D,S>::ez_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("bx_ref",   &emf::damping::Tile<D,S>::bx_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("by_ref",   &emf::damping::Tile<D,S>::by_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("bz_ref",   &emf::damping::Tile<D,S>::bz_ref, py::return_value_policy::reference,py::keep_alive<1,0>())
+  .def_readwrite("fld1",     &emf::damping::Tile<D,S>::fld1)
+  .def_readwrite("fld2",     &emf::damping::Tile<D,S>::fld2)
+  .def_readwrite("ksupp",    &emf::damping::Tile<D,S>::ksupp)
+  .def("damp_fields",        &emf::damping::Tile<D,S>::damp_fields);
 }
 
 
-/// trampoline class for fields Propagator
+/// trampoline class for emf Propagator
 template<int D>
 class PyPropagator : public Propagator<D>
 {
@@ -209,13 +209,13 @@ class PyFDTDGen : public FDTDGen<D>
 
 
 
-/// trampoline class for fields Filter
+/// trampoline class for emf Filter
 template<int D>
 class PyFilter : public Filter<D>
 {
   using Filter<D>::Filter;
 
-  void solve( fields::Tile<D>& tile ) override {
+  void solve( emf::Tile<D>& tile ) override {
   PYBIND11_OVERLOAD_PURE(
       void,
       Filter<D>,
@@ -227,24 +227,24 @@ class PyFilter : public Filter<D>
 
 
 
-void bind_fields(py::module& m_sub)
+void bind_emf(py::module& m_sub)
 {
     
   py::class_<
-    fields::YeeLattice,
-    std::shared_ptr<fields::YeeLattice>
+    emf::YeeLattice,
+    std::shared_ptr<emf::YeeLattice>
             >(m_sub, "YeeLattice")
     .def(py::init<int, int, int>())
-    .def_readwrite("ex",   &fields::YeeLattice::ex , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("ey",   &fields::YeeLattice::ey , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("ez",   &fields::YeeLattice::ez , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("bx",   &fields::YeeLattice::bx , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("by",   &fields::YeeLattice::by , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("bz",   &fields::YeeLattice::bz , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("jx",   &fields::YeeLattice::jx , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("jy",   &fields::YeeLattice::jy , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("jz",   &fields::YeeLattice::jz , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("rho",  &fields::YeeLattice::rho, py::return_value_policy::reference, py::keep_alive<1,0>());
+    .def_readwrite("ex",   &emf::YeeLattice::ex , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("ey",   &emf::YeeLattice::ey , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("ez",   &emf::YeeLattice::ez , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("bx",   &emf::YeeLattice::bx , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("by",   &emf::YeeLattice::by , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("bz",   &emf::YeeLattice::bz , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jx",   &emf::YeeLattice::jx , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jy",   &emf::YeeLattice::jy , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jz",   &emf::YeeLattice::jz , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("rho",  &emf::YeeLattice::rho, py::return_value_policy::reference, py::keep_alive<1,0>());
 
 
 
@@ -261,39 +261,39 @@ void bind_fields(py::module& m_sub)
 
   // FIXME extra debug additions/tests
   //t3.def_property("yee", 
-  //  &fields::Tile<3>::get_yee2,
-  //  &fields::Tile<3>::set_yee,
+  //  &emf::Tile<3>::get_yee2,
+  //  &emf::Tile<3>::set_yee,
   //  py::return_value_policy::reference_internal, 
   //  py::keep_alive<0,1>());
-  //t3.def("get_yeeptr", &fields::Tile<3>::get_yeeptr
+  //t3.def("get_yeeptr", &emf::Tile<3>::get_yeeptr
   //    );
   //     // py::return_value_policy::reference_internal);
 
 
   // FIXME
   // Declare manually instead because there are too many differences
-  //py::class_<fields::Tile<3>, corgi::Tile<3>, 
-  //           std::shared_ptr<fields::Tile<3>>
+  //py::class_<emf::Tile<3>, corgi::Tile<3>, 
+  //           std::shared_ptr<emf::Tile<3>>
   //          >(m_3d, "Tile")
   //  .def(py::init<size_t, size_t, size_t>())
-  //  .def_readwrite("dx",         &fields::Tile<3>::dx)
-  //  .def_readwrite("cfl",        &fields::Tile<3>::cfl)
-  //  //.def_readwrite("yee",        &fields::Tile<3>::yee,
+  //  .def_readwrite("dx",         &emf::Tile<3>::dx)
+  //  .def_readwrite("cfl",        &emf::Tile<3>::cfl)
+  //  //.def_readwrite("yee",        &emf::Tile<3>::yee,
   //  //    py::return_value_policy::reference_internal, 
   //  //    py::keep_alive<0,1>())
   //  .def_property("yee", 
-  //      &fields::Tile<3>::get_yee2,
-  //      &fields::Tile<3>::set_yee,
+  //      &emf::Tile<3>::get_yee2,
+  //      &emf::Tile<3>::set_yee,
   //      py::return_value_policy::reference_internal, 
   //      py::keep_alive<0,1>())
-  //  .def("cycle_yee",            &fields::Tile<3>::cycle_yee)
-  //  .def("clear_current",        &fields::Tile<3>::clear_current)
-  //  .def("deposit_current",      &fields::Tile<3>::deposit_current)
-  //  .def("update_boundaries",    &fields::Tile<3>::update_boundaries)
-  //  .def("exchange_currents",    &fields::Tile<3>::exchange_currents)
-  //  .def("get_yeeptr",           &fields::Tile<3>::get_yeeptr,
+  //  .def("cycle_yee",            &emf::Tile<3>::cycle_yee)
+  //  .def("clear_current",        &emf::Tile<3>::clear_current)
+  //  .def("deposit_current",      &emf::Tile<3>::deposit_current)
+  //  .def("update_boundaries",    &emf::Tile<3>::update_boundaries)
+  //  .def("exchange_currents",    &emf::Tile<3>::exchange_currents)
+  //  .def("get_yeeptr",           &emf::Tile<3>::get_yeeptr,
   //      py::return_value_policy::reference_internal)
-  //  .def("get_yee",              &fields::Tile<3>::get_yee, 
+  //  .def("get_yee",              &emf::Tile<3>::get_yee, 
   //      py::arg("i")=0,
   //      py::return_value_policy::reference,
   //      // keep alive for the lifetime of the grid
@@ -318,16 +318,16 @@ void bind_fields(py::module& m_sub)
   //      corgi::internals::tuple_of<3, size_t> indices
   //      ) {
 
-  //      //auto p = new fields::Tile<3>(nx,ny,nz);
-  //      //std::shared_ptr<fields::Tile<3>> sp(p);
+  //      //auto p = new emf::Tile<3>(nx,ny,nz);
+  //      //std::shared_ptr<emf::Tile<3>> sp(p);
   //      //sp->index = indices;
   //      //grid.add_tile(sp, indices);
   //        
-  //      std::shared_ptr<fields::Tile<3>> sp(new fields::Tile<3>(nx,ny,nz));
+  //      std::shared_ptr<emf::Tile<3>> sp(new emf::Tile<3>(nx,ny,nz));
   //      grid.add_tile(sp, indices);
 
-  //      //fields::Tile<3> ti(nx,ny,nz);
-  //      //std::shared_ptr<fields::Tile<3>> sp(&ti);
+  //      //emf::Tile<3> ti(nx,ny,nz);
+  //      //std::shared_ptr<emf::Tile<3>> sp(&ti);
   //      //grid.add_tile(sp, indices);
 
   //      return sp;
@@ -367,103 +367,103 @@ void bind_fields(py::module& m_sub)
 
   //--------------------------------------------------
   // 1D Propagator bindings
-  py::class_< fields::Propagator<1>, PyPropagator<1> >(m_1d, "Propagator")
+  py::class_< emf::Propagator<1>, PyPropagator<1> >(m_1d, "Propagator")
     .def(py::init<>())
-    .def("push_e",      &fields::Propagator<1>::push_e)
-    .def("push_half_b", &fields::Propagator<1>::push_half_b);
+    .def("push_e",      &emf::Propagator<1>::push_e)
+    .def("push_half_b", &emf::Propagator<1>::push_half_b);
 
   // fdtd2 propagator
-  py::class_<fields::FDTD2<1>, Propagator<1>, PyFDTD2<1>>(m_1d, "FDTD2")
+  py::class_<emf::FDTD2<1>, Propagator<1>, PyFDTD2<1>>(m_1d, "FDTD2")
     .def(py::init<>())
-    .def_readwrite("corr",     &fields::FDTD2<1>::corr);
+    .def_readwrite("corr",     &emf::FDTD2<1>::corr);
 
 
   //--------------------------------------------------
   // 2D Propagator bindings
-  py::class_< fields::Propagator<2>, PyPropagator<2> > fieldspropag2d(m_2d, "Propagator");
-  fieldspropag2d
+  py::class_< emf::Propagator<2>, PyPropagator<2> > emf(m_2d, "Propagator");
+  emfpropag2d
     .def(py::init<>())
-    .def_readwrite("dt",&fields::Propagator<2>::dt)
-    .def("push_e",      &fields::Propagator<2>::push_e)
-    .def("push_half_b", &fields::Propagator<2>::push_half_b);
+    .def_readwrite("dt",&emf::Propagator<2>::dt)
+    .def("push_e",      &emf::Propagator<2>::push_e)
+    .def("push_half_b", &emf::Propagator<2>::push_half_b);
 
   // fdtd2 propagator
-  py::class_<fields::FDTD2<2>>(m_2d, "FDTD2", fieldspropag2d)
-    .def_readwrite("corr",     &fields::FDTD2<2>::corr)
+  py::class_<emf::FDTD2<2>>(m_2d, "FDTD2", emfpropag2d)
+    .def_readwrite("corr",     &emf::FDTD2<2>::corr)
     .def(py::init<>());
     
   // fdtd2 propagator with perfectly matched ouer layer
-  py::class_<fields::FDTD2_pml<2>> pml2d(m_2d, "FDTD2_pml", fieldspropag2d);
+  py::class_<emf::FDTD2_pml<2>> pml2d(m_2d, "FDTD2_pml", emfpropag2d);
   pml2d
     .def(py::init<>())
-    .def_readwrite("cenx",     &fields::FDTD2_pml<2>::cenx)
-    .def_readwrite("ceny",     &fields::FDTD2_pml<2>::ceny)
-    .def_readwrite("cenz",     &fields::FDTD2_pml<2>::cenz)
-    .def_readwrite("radx",     &fields::FDTD2_pml<2>::radx)
-    .def_readwrite("rady",     &fields::FDTD2_pml<2>::rady)
-    .def_readwrite("radz",     &fields::FDTD2_pml<2>::radz)
-    .def_readwrite("rad_lim",  &fields::FDTD2_pml<2>::rad_lim)
-    .def_readwrite("norm_abs", &fields::FDTD2_pml<2>::norm_abs)
-    .def_readwrite("corr",     &fields::FDTD2_pml<2>::corr)
-    .def_readwrite("mode",     &fields::FDTD2_pml<2>::mode)
-    .def("push_e",             &fields::FDTD2_pml<2>::push_e)
-    .def("push_half_b",        &fields::FDTD2_pml<2>::push_half_b);
-    //.def("push_eb",            &fields::FDTD2_pml<2>::push_eb); // TODO not implemented
+    .def_readwrite("cenx",     &emf::FDTD2_pml<2>::cenx)
+    .def_readwrite("ceny",     &emf::FDTD2_pml<2>::ceny)
+    .def_readwrite("cenz",     &emf::FDTD2_pml<2>::cenz)
+    .def_readwrite("radx",     &emf::FDTD2_pml<2>::radx)
+    .def_readwrite("rady",     &emf::FDTD2_pml<2>::rady)
+    .def_readwrite("radz",     &emf::FDTD2_pml<2>::radz)
+    .def_readwrite("rad_lim",  &emf::FDTD2_pml<2>::rad_lim)
+    .def_readwrite("norm_abs", &emf::FDTD2_pml<2>::norm_abs)
+    .def_readwrite("corr",     &emf::FDTD2_pml<2>::corr)
+    .def_readwrite("mode",     &emf::FDTD2_pml<2>::mode)
+    .def("push_e",             &emf::FDTD2_pml<2>::push_e)
+    .def("push_half_b",        &emf::FDTD2_pml<2>::push_half_b);
+    //.def("push_eb",            &emf::FDTD2_pml<2>::push_eb); // TODO not implemented
 
 
   // fdtd4 propagator
-  py::class_<fields::FDTD4<2>, Propagator<2>, PyFDTD4<2> >(m_2d, "FDTD4")
-    .def_readwrite("corr",     &fields::FDTD4<2>::corr)
+  py::class_<emf::FDTD4<2>, Propagator<2>, PyFDTD4<2> >(m_2d, "FDTD4")
+    .def_readwrite("corr",     &emf::FDTD4<2>::corr)
     .def(py::init<>());
 
 
   //--------------------------------------------------
   // 3D Propagator bindings
-  py::class_< fields::Propagator<3>, PyPropagator<3> > fieldspropag3d(m_3d, "Propagator");
-  fieldspropag3d
+  py::class_< emf::Propagator<3>, PyPropagator<3> > emfpropag3d(m_3d, "Propagator");
+  emfpropag3d
     .def(py::init<>())
-    .def("push_e",      &fields::Propagator<3>::push_e)
-    .def("push_half_b", &fields::Propagator<3>::push_half_b);
+    .def("push_e",      &emf::Propagator<3>::push_e)
+    .def("push_half_b", &emf::Propagator<3>::push_half_b);
 
   // fdtd2 propagator
-  py::class_<fields::FDTD2<3>>(m_3d, "FDTD2", fieldspropag3d)
+  py::class_<emf::FDTD2<3>>(m_3d, "FDTD2", emfpropag3d)
     .def(py::init<>())
-    .def_readwrite("corr",     &fields::FDTD2<3>::corr);
+    .def_readwrite("corr",     &emf::FDTD2<3>::corr);
 
   // fdtd2 propagator with perfectly matched ouer layer
-  py::class_<fields::FDTD2_pml<3>> pml3d(m_3d, "FDTD2_pml", fieldspropag3d);
+  py::class_<emf::FDTD2_pml<3>> pml3d(m_3d, "FDTD2_pml", emfpropag3d);
   pml3d
     .def(py::init<>())
-    .def_readwrite("cenx",     &fields::FDTD2_pml<3>::cenx)
-    .def_readwrite("ceny",     &fields::FDTD2_pml<3>::ceny)
-    .def_readwrite("cenz",     &fields::FDTD2_pml<3>::cenz)
-    .def_readwrite("radx",     &fields::FDTD2_pml<3>::radx)
-    .def_readwrite("rady",     &fields::FDTD2_pml<3>::rady)
-    .def_readwrite("radz",     &fields::FDTD2_pml<3>::radz)
-    .def_readwrite("rad_lim",  &fields::FDTD2_pml<3>::rad_lim)
-    .def_readwrite("norm_abs", &fields::FDTD2_pml<3>::norm_abs)
-    .def_readwrite("corr",     &fields::FDTD2_pml<3>::corr)
-    .def_readwrite("mode",     &fields::FDTD2_pml<3>::mode)
-    .def("push_e",             &fields::FDTD2_pml<3>::push_e)
-    .def("push_half_b",        &fields::FDTD2_pml<3>::push_half_b)
-    .def("push_eb",            &fields::FDTD2_pml<3>::push_eb);
+    .def_readwrite("cenx",     &emf::FDTD2_pml<3>::cenx)
+    .def_readwrite("ceny",     &emf::FDTD2_pml<3>::ceny)
+    .def_readwrite("cenz",     &emf::FDTD2_pml<3>::cenz)
+    .def_readwrite("radx",     &emf::FDTD2_pml<3>::radx)
+    .def_readwrite("rady",     &emf::FDTD2_pml<3>::rady)
+    .def_readwrite("radz",     &emf::FDTD2_pml<3>::radz)
+    .def_readwrite("rad_lim",  &emf::FDTD2_pml<3>::rad_lim)
+    .def_readwrite("norm_abs", &emf::FDTD2_pml<3>::norm_abs)
+    .def_readwrite("corr",     &emf::FDTD2_pml<3>::corr)
+    .def_readwrite("mode",     &emf::FDTD2_pml<3>::mode)
+    .def("push_e",             &emf::FDTD2_pml<3>::push_e)
+    .def("push_half_b",        &emf::FDTD2_pml<3>::push_half_b)
+    .def("push_eb",            &emf::FDTD2_pml<3>::push_eb);
 
 
   // fdtd4 propagator
-  py::class_<fields::FDTD4<3>, Propagator<3>, PyFDTD4<3> >(m_3d, "FDTD4")
-    .def_readwrite("corr",     &fields::FDTD4<3>::corr)
+  py::class_<emf::FDTD4<3>, Propagator<3>, PyFDTD4<3> >(m_3d, "FDTD4")
+    .def_readwrite("corr",     &emf::FDTD4<3>::corr)
     .def(py::init<>());
 
 
   // fdtd general propagator
-  //py::class_<fields::FDTDGen<3>, Propagator<3>, PyFDTDGen<3> >(m_3d, "FDTDGen")
-  py::class_<fields::FDTDGen<3>>(m_3d, "FDTDGen")
-    .def_readwrite("corr",     &fields::FDTDGen<3>::corr)
-    .def_readwrite("CXs",      &fields::FDTDGen<3>::CXs, py::return_value_policy::reference,py::keep_alive<1,0>())
-    .def_readwrite("CYs",      &fields::FDTDGen<3>::CYs, py::return_value_policy::reference,py::keep_alive<1,0>())
-    .def_readwrite("CZs",      &fields::FDTDGen<3>::CZs, py::return_value_policy::reference,py::keep_alive<1,0>())
-    .def("push_e",             &fields::FDTDGen<3>::push_e)
-    .def("push_half_b",        &fields::FDTDGen<3>::push_half_b)
+  //py::class_<emf::FDTDGen<3>, Propagator<3>, PyFDTDGen<3> >(m_3d, "FDTDGen")
+  py::class_<emf::FDTDGen<3>>(m_3d, "FDTDGen")
+    .def_readwrite("corr",     &emf::FDTDGen<3>::corr)
+    .def_readwrite("CXs",      &emf::FDTDGen<3>::CXs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def_readwrite("CYs",      &emf::FDTDGen<3>::CYs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def_readwrite("CZs",      &emf::FDTDGen<3>::CZs, py::return_value_policy::reference,py::keep_alive<1,0>())
+    .def("push_e",             &emf::FDTDGen<3>::push_e)
+    .def("push_half_b",        &emf::FDTDGen<3>::push_half_b)
     .def(py::init<>());
 
 
@@ -471,61 +471,61 @@ void bind_fields(py::module& m_sub)
   // 1D, 2D, and 3D FILTERS
 
   // 1D filters
-  py::class_< fields::Filter<1>, PyFilter<1> > fieldsfilter1d(m_1d, "Filter");
-  fieldsfilter1d
+  py::class_< emf::Filter<1>, PyFilter<1> > emffilter1d(m_1d, "Filter");
+  emffilter1d
     .def(py::init<int, int, int>())
-    .def("solve", &fields::Filter<1>::solve);
+    .def("solve", &emf::Filter<1>::solve);
 
   // digital filter
-  py::class_<fields::Binomial2<1>>(m_1d, "Binomial2", fieldsfilter1d)
+  py::class_<emf::Binomial2<1>>(m_1d, "Binomial2", emffilter1d)
     .def(py::init<int, int, int>())
-    .def("solve",      &fields::Binomial2<1>::solve);
+    .def("solve",      &emf::Binomial2<1>::solve);
   
   // 2D Filter bindings
-  py::class_< fields::Filter<2>, PyFilter<2> > fieldsfilter2d(m_2d, "Filter");
-  fieldsfilter2d
+  py::class_< emf::Filter<2>, PyFilter<2> > emffilter2d(m_2d, "Filter");
+  emffilter2d
     .def(py::init<int, int, int>())
-    .def("solve", &fields::Filter<2>::solve);
+    .def("solve", &emf::Filter<2>::solve);
 
   // digital filter
   // TODO: remove hack where we explicitly define solve (instead of use trampoline class)
   // overwriting the solve function from trampoline does not work atm for some weird reason.
-  py::class_<fields::Binomial2<2>>(m_2d, "Binomial2", fieldsfilter2d)
+  py::class_<emf::Binomial2<2>>(m_2d, "Binomial2", emffilter2d)
     .def(py::init<int, int, int>())
-    .def("solve",      &fields::Binomial2<2>::solve);
+    .def("solve",      &emf::Binomial2<2>::solve);
 
-  py::class_<fields::General3p<2>>(m_2d, "General3p", fieldsfilter2d)
+  py::class_<emf::General3p<2>>(m_2d, "General3p", emffilter2d)
     .def(py::init<int, int, int>())
-    .def_readwrite("alpha",    &fields::General3p<2>::alpha)
-    .def("solve",              &fields::General3p<2>::solve);
+    .def_readwrite("alpha",    &emf::General3p<2>::alpha)
+    .def("solve",              &emf::General3p<2>::solve);
 
-  py::class_<fields::General3pStrided<2>>(m_2d, "General3pStrided", fieldsfilter2d)
+  py::class_<emf::General3pStrided<2>>(m_2d, "General3pStrided", emffilter2d)
     .def(py::init<int, int, int>())
-    .def_readwrite("alpha",    &fields::General3pStrided<2>::alpha)
-    .def_readwrite("stride",   &fields::General3pStrided<2>::stride)
-    .def("solve",              &fields::General3pStrided<2>::solve);
+    .def_readwrite("alpha",    &emf::General3pStrided<2>::alpha)
+    .def_readwrite("stride",   &emf::General3pStrided<2>::stride)
+    .def("solve",              &emf::General3pStrided<2>::solve);
 
 
-  py::class_<fields::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", fieldsfilter2d)
+  py::class_<emf::Binomial2Strided2<2>>(m_2d, "Binomial2Strided2", emffilter2d)
     .def(py::init<int, int, int>())
-    .def("solve",              &fields::Binomial2Strided2<2>::solve);
+    .def("solve",              &emf::Binomial2Strided2<2>::solve);
 
-  py::class_<fields::Compensator2<2>>(m_2d, "Compensator2", fieldsfilter2d)
+  py::class_<emf::Compensator2<2>>(m_2d, "Compensator2", emffilter2d)
     .def(py::init<int, int, int>())
-    .def("solve",              &fields::Compensator2<2>::solve);
+    .def("solve",              &emf::Compensator2<2>::solve);
 
 
 
   // 3D filters
-  py::class_< fields::Filter<3>, PyFilter<3> > fieldsfilter3d(m_3d, "Filter");
-  fieldsfilter3d
+  py::class_< emf::Filter<3>, PyFilter<3> > emffilter3d(m_3d, "Filter");
+  emffilter3d
     .def(py::init<int, int, int>())
-    .def("solve", &fields::Filter<3>::solve);
+    .def("solve", &emf::Filter<3>::solve);
 
   // digital filter
-  py::class_<fields::Binomial2<3>>(m_3d, "Binomial2", fieldsfilter3d)
+  py::class_<emf::Binomial2<3>>(m_3d, "Binomial2", emffilter3d)
     .def(py::init<int, int, int>())
-    .def("solve",      &fields::Binomial2<3>::solve);
+    .def("solve",      &emf::Binomial2<3>::solve);
 
 
 
@@ -533,51 +533,51 @@ void bind_fields(py::module& m_sub)
   // EM boundary conditions
     
   // 2D rotating conductor
-  py::class_<fields::Conductor<2>>(m_2d, "Conductor")
+  py::class_<emf::Conductor<2>>(m_2d, "Conductor")
     .def(py::init<>())
-    .def_readwrite("B0",       &fields::Conductor<2>::B0)
-    .def_readwrite("radius",   &fields::Conductor<2>::radius)
-    .def_readwrite("period",   &fields::Conductor<2>::period)
-    .def_readwrite("chi_om",   &fields::Conductor<2>::chi_om)
-    .def_readwrite("chi_mu",   &fields::Conductor<2>::chi_mu)
-    .def_readwrite("phase_mu", &fields::Conductor<2>::phase_mu)
-    .def_readwrite("phase_om", &fields::Conductor<2>::phase_om)
-    .def_readwrite("cenx",     &fields::Conductor<2>::cenx)
-    .def_readwrite("ceny",     &fields::Conductor<2>::ceny)
-    .def_readwrite("cenz",     &fields::Conductor<2>::cenz)
-    .def_readwrite("delta",    &fields::Conductor<2>::delta)
-    .def_readwrite("radius_pc",&fields::Conductor<2>::radius_pc)
-    .def_readwrite("delta_pc", &fields::Conductor<2>::delta_pc)
-    .def_readwrite("Nx",       &fields::Conductor<2>::Nx)
-    .def_readwrite("Ny",       &fields::Conductor<2>::Ny)
-    .def_readwrite("Nz",       &fields::Conductor<2>::Nz)
-    .def("insert_em",          &fields::Conductor<2>::insert_em)
-    .def("update_b",           &fields::Conductor<2>::update_b)
-    .def("update_e",           &fields::Conductor<2>::update_e);
+    .def_readwrite("B0",       &emf::Conductor<2>::B0)
+    .def_readwrite("radius",   &emf::Conductor<2>::radius)
+    .def_readwrite("period",   &emf::Conductor<2>::period)
+    .def_readwrite("chi_om",   &emf::Conductor<2>::chi_om)
+    .def_readwrite("chi_mu",   &emf::Conductor<2>::chi_mu)
+    .def_readwrite("phase_mu", &emf::Conductor<2>::phase_mu)
+    .def_readwrite("phase_om", &emf::Conductor<2>::phase_om)
+    .def_readwrite("cenx",     &emf::Conductor<2>::cenx)
+    .def_readwrite("ceny",     &emf::Conductor<2>::ceny)
+    .def_readwrite("cenz",     &emf::Conductor<2>::cenz)
+    .def_readwrite("delta",    &emf::Conductor<2>::delta)
+    .def_readwrite("radius_pc",&emf::Conductor<2>::radius_pc)
+    .def_readwrite("delta_pc", &emf::Conductor<2>::delta_pc)
+    .def_readwrite("Nx",       &emf::Conductor<2>::Nx)
+    .def_readwrite("Ny",       &emf::Conductor<2>::Ny)
+    .def_readwrite("Nz",       &emf::Conductor<2>::Nz)
+    .def("insert_em",          &emf::Conductor<2>::insert_em)
+    .def("update_b",           &emf::Conductor<2>::update_b)
+    .def("update_e",           &emf::Conductor<2>::update_e);
 
 
   // 3D rotating conductor
-  py::class_<fields::Conductor<3>>(m_3d, "Conductor")
+  py::class_<emf::Conductor<3>>(m_3d, "Conductor")
     .def(py::init<>())
-    .def_readwrite("B0",       &fields::Conductor<3>::B0)
-    .def_readwrite("radius",   &fields::Conductor<3>::radius)
-    .def_readwrite("period",   &fields::Conductor<3>::period)
-    .def_readwrite("chi_om",   &fields::Conductor<3>::chi_om)
-    .def_readwrite("chi_mu",   &fields::Conductor<3>::chi_mu)
-    .def_readwrite("phase_mu", &fields::Conductor<3>::phase_mu)
-    .def_readwrite("phase_om", &fields::Conductor<3>::phase_om)
-    .def_readwrite("cenx",     &fields::Conductor<3>::cenx)
-    .def_readwrite("ceny",     &fields::Conductor<3>::ceny)
-    .def_readwrite("cenz",     &fields::Conductor<3>::cenz)
-    .def_readwrite("delta",    &fields::Conductor<3>::delta)
-    .def_readwrite("radius_pc",&fields::Conductor<3>::radius_pc)
-    .def_readwrite("delta_pc", &fields::Conductor<3>::delta_pc)
-    .def_readwrite("Nx",       &fields::Conductor<3>::Nx)
-    .def_readwrite("Ny",       &fields::Conductor<3>::Ny)
-    .def_readwrite("Nz",       &fields::Conductor<3>::Nz)
-    .def("insert_em",          &fields::Conductor<3>::insert_em)
-    .def("update_e",           &fields::Conductor<3>::update_e)
-    .def("update_b",           &fields::Conductor<3>::update_b);
+    .def_readwrite("B0",       &emf::Conductor<3>::B0)
+    .def_readwrite("radius",   &emf::Conductor<3>::radius)
+    .def_readwrite("period",   &emf::Conductor<3>::period)
+    .def_readwrite("chi_om",   &emf::Conductor<3>::chi_om)
+    .def_readwrite("chi_mu",   &emf::Conductor<3>::chi_mu)
+    .def_readwrite("phase_mu", &emf::Conductor<3>::phase_mu)
+    .def_readwrite("phase_om", &emf::Conductor<3>::phase_om)
+    .def_readwrite("cenx",     &emf::Conductor<3>::cenx)
+    .def_readwrite("ceny",     &emf::Conductor<3>::ceny)
+    .def_readwrite("cenz",     &emf::Conductor<3>::cenz)
+    .def_readwrite("delta",    &emf::Conductor<3>::delta)
+    .def_readwrite("radius_pc",&emf::Conductor<3>::radius_pc)
+    .def_readwrite("delta_pc", &emf::Conductor<3>::delta_pc)
+    .def_readwrite("Nx",       &emf::Conductor<3>::Nx)
+    .def_readwrite("Ny",       &emf::Conductor<3>::Ny)
+    .def_readwrite("Nz",       &emf::Conductor<3>::Nz)
+    .def("insert_em",          &emf::Conductor<3>::insert_em)
+    .def("update_e",           &emf::Conductor<3>::update_e)
+    .def("update_b",           &emf::Conductor<3>::update_b);
 
 
   //--------------------------------------------------
@@ -629,21 +629,21 @@ void bind_fields(py::module& m_sub)
   // Full IO 
 
   // 1D
-  m_1d.def("read_yee",        &fields::read_yee<1>);
-  m_1d.def("write_yee",       &fields::write_yee<1>);
+  m_1d.def("read_yee",        &emf::read_yee<1>);
+  m_1d.def("write_yee",       &emf::write_yee<1>);
 
 
   // 2D
-  m_2d.def("write_yee",        &fields::write_yee<2>);
-  m_2d.def("read_yee",         &fields::read_yee<2>);
+  m_2d.def("write_yee",        &emf::write_yee<2>);
+  m_2d.def("read_yee",         &emf::read_yee<2>);
 
 
   // 3D
-  m_3d.def("write_yee",        &fields::write_yee<3>);
-  m_3d.def("read_yee",         &fields::read_yee<3>);
+  m_3d.def("write_yee",        &emf::write_yee<3>);
+  m_3d.def("read_yee",         &emf::read_yee<3>);
 
 
 
 }
 
-} // end of namespace fields
+} // end of namespace emf

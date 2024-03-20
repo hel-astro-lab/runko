@@ -64,7 +64,7 @@ auto declare_tile(
 
   return 
   py::class_<pic::Tile<D>, 
-             fields::Tile<D>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
              std::shared_ptr<pic::Tile<D>>
              >(m, 
@@ -233,8 +233,8 @@ namespace wall {
       return
         py::class_<pic::wall::Tile<D, S>,
                    pic::Tile<D>,
-                   fields::damping::Tile<D, S>,
-                   fields::Tile<D>,
+                   emf::damping::Tile<D, S>,
+                   emf::Tile<D>,
                    corgi::Tile<D>, 
                    std::shared_ptr<pic::wall::Tile<D,S>>
         >(m, 

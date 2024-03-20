@@ -20,7 +20,7 @@ auto declare_tile(
   py::class_<cpl::Tile<D>, 
              pic::Tile<D>,
              ffe::Tile<D>,
-             fields::Tile<D>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
              std::shared_ptr<cpl::Tile<D>>
              >(m, 

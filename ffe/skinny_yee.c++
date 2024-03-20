@@ -1,5 +1,5 @@
 #include "skinny_yee.h"
-#include "../em-fields/tile.h"
+#include "../emf/tile.h"
 
 
 ffe::SkinnyYeeLattice& 
@@ -56,7 +56,7 @@ ffe::SkinnyYeeLattice&
 
 
 /// copy yee grid to skinny yee
-void ffe::SkinnyYeeLattice::set_yee(const fields::YeeLattice& yee)
+void ffe::SkinnyYeeLattice::set_yee(const emf::YeeLattice& yee)
 {
   ex = yee.ex;
   ey = yee.ey;

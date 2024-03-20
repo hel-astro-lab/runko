@@ -29,7 +29,7 @@ namespace qed {
 //  return 
 //  py::class_<qed::Tile<D>,
 //             pic::Tile<D>, 
-//             fields::Tile<D>,
+//             emf::Tile<D>,
 //             corgi::Tile<D>, 
 //             std::shared_ptr<qed::Tile<D>>
 //             >(m, 

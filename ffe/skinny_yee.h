@@ -5,7 +5,7 @@
 
 #include "../tools/mesh.h"
 #include "../definitions.h"
-#include "../em-fields/tile.h"
+#include "../emf/tile.h"
 
 
 namespace ffe {
@@ -13,7 +13,7 @@ namespace ffe {
 
 /// Skinny version of the full Yee lattice 
 //
-// Original fat version is in em-fields/tile.h
+// Original fat version is in emf/tile.h
 //
 // Additionally we overload basic arithmetics to the lattice 
 // to ease the implementation of RK substep combinations
@@ -64,7 +64,7 @@ class SkinnyYeeLattice {
   SkinnyYeeLattice& operator /=(double rhs);
 
 
-  void set_yee(const fields::YeeLattice& yee);
+  void set_yee(const emf::YeeLattice& yee);
 
 };
 

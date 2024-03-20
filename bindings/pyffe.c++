@@ -24,7 +24,7 @@ auto declare_tile(
 
   return 
   py::class_<ffe::Tile<D>, 
-             fields::Tile<D>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
              std::shared_ptr<ffe::Tile<D>>
              >(m, 
@@ -63,7 +63,7 @@ void bind_ffe(py::module& m_sub)
     .def(py::self /  float());
 
 
-  m_sub.def("set_step", [](fields::YeeLattice& yee, ffe::SkinnyYeeLattice skyee)
+  m_sub.def("set_step", [](emf::YeeLattice& yee, ffe::SkinnyYeeLattice skyee)
       -> void 
       {
         yee.ex = skyee.ex;

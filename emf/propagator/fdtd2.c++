@@ -76,7 +76,8 @@ void fields::FDTD2<2>::push_e(fields::Tile<2>& tile)
 }
 
 
-/// 3D E pusher
+//SPHINX emf docs pusher example start
+// 3D E pusher
 template<>
 void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
 {
@@ -109,6 +110,7 @@ void fields::FDTD2<3>::push_e(fields::Tile<3>& tile)
   nvtxRangePop();
 #endif
 }
+//SPHINX emf docs pusher example stop
 
 
 //--------------------------------------------------

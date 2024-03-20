@@ -9,8 +9,8 @@
 // Vlasov module
   
 #include "../vlasov/tile.h"
-#include "../em-fields/tile.h"
-#include "../em-fields/boundaries/damping_tile.h"
+#include "../emf/tile.h"
+#include "../emf/boundaries/damping_tile.h"
 #include "../vlasov/amr/mesh.h"
 #include "../vlasov/amr/refiner.h"
 #include "../vlasov/amr/operators.h"
@@ -90,7 +90,7 @@ auto declare_tile(
 
   return
     py::class_<vlv::Tile<D>, 
-             fields::Tile<D>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
              std::shared_ptr<vlv::Tile<D> >
              >(m, 
@@ -132,8 +132,8 @@ namespace outflow {
         py::class_<
           vlv::outflow::Tile<D, S>,
           vlv::Tile<D>,
-          fields::damping::Tile<D, S>,
-          fields::Tile<D>,
+          emf::damping::Tile<D, S>,
+          emf::Tile<D>,
           corgi::Tile<D>, 
           std::shared_ptr<vlv::outflow::Tile<D,S>>
         >(m, 
@@ -157,7 +157,7 @@ namespace piston {
         py::class_<
           vlv::piston::Tile<D>,
           vlv::Tile<D>,
-          fields::Tile<D>,
+          emf::Tile<D>,
           corgi::Tile<D>, 
           std::shared_ptr<vlv::piston::Tile<D>>
         >(m, 

@@ -15,9 +15,9 @@ PYBIND11_MODULE(pyrunko, m_base) {
   py::module m_tools = m_base.def_submodule("tools", "Runko auxiliary tools");
   tools::bind_tools(m_tools);
 
-  /// fields
-  py::module m_fields = m_base.def_submodule("fields", "Runko fields module");
-  fields::bind_fields(m_fields);
+  /// emf
+  py::module m_emf = m_base.def_submodule("emf", "Runko emf module");
+  emf::bind_emf(m_emf);
 
   /// vlv
   //py::module m_vlv = m_base.def_submodule("vlv", "Runko Vlasov module");

@@ -82,9 +82,9 @@ class FFE2
       );
 
   /// auxiliary functions to stagger e and b
-  void stagger_x_eb(fields::YeeLattice& m);
-  void stagger_y_eb(fields::YeeLattice& m);
-  void stagger_z_eb(fields::YeeLattice& m);
+  void stagger_x_eb(emf::YeeLattice& m);
+  void stagger_y_eb(emf::YeeLattice& m);
+  void stagger_z_eb(emf::YeeLattice& m);
 
   void stagger_x_curl();
   void stagger_y_curl();

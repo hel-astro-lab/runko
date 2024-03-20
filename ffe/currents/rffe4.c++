@@ -1,6 +1,6 @@
 #include "rffe4.h"
 #include "../../tools/signum.h"
-#include "../../em-fields/tile.h"
+#include "../../emf/tile.h"
 
 #include <cmath>
 
@@ -42,7 +42,7 @@ void ffe::rFFE4<3>::interpolate(
 }
 
 template<>
-void ffe::rFFE4<3>::stagger_x_eb(fields::YeeLattice& m)
+void ffe::rFFE4<3>::stagger_x_eb(emf::YeeLattice& m)
 {
   interpolate(m.ex, exf, {{1,1,0}}, {{1,1,0}} ); //x
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,1,0}} );
@@ -53,7 +53,7 @@ void ffe::rFFE4<3>::stagger_x_eb(fields::YeeLattice& m)
 }
 
 template<>
-void ffe::rFFE4<3>::stagger_y_eb(fields::YeeLattice& m)
+void ffe::rFFE4<3>::stagger_y_eb(emf::YeeLattice& m)
 {
   interpolate(m.ex, exf, {{1,1,0}}, {{1,0,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,0,1}} ); //y
@@ -64,7 +64,7 @@ void ffe::rFFE4<3>::stagger_y_eb(fields::YeeLattice& m)
 }
 
 template<>
-void ffe::rFFE4<3>::stagger_z_eb(fields::YeeLattice& m)
+void ffe::rFFE4<3>::stagger_z_eb(emf::YeeLattice& m)
 {
   interpolate(m.ex, exf, {{1,1,0}}, {{0,1,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{0,1,1}} );
@@ -80,7 +80,7 @@ void ffe::rFFE4<3>::stagger_z_eb(fields::YeeLattice& m)
 template<>
 void ffe::rFFE4<3>::comp_rho(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice& mesh = tile.get_yee();
+  emf::YeeLattice& mesh = tile.get_yee();
   auto& rho = mesh.rho;
   auto& ex  = mesh.ex;
   auto& ey  = mesh.ey;
@@ -110,10 +110,10 @@ template<>
 void ffe::rFFE4<3>::push_eb(ffe::Tile<3>& tile)
 {
   // refs to storages
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  // refs to fields for easier access
+  // refs to emf for easier access
   auto& ex  = m.ex;
   auto& ey  = m.ey;
   auto& ez  = m.ez;
@@ -170,7 +170,7 @@ void ffe::rFFE4<3>::push_eb(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE4<3>::add_jperp(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   auto& jx  = m.jx;
@@ -247,7 +247,7 @@ void ffe::rFFE4<3>::add_jperp(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m cur, b2;
@@ -334,7 +334,7 @@ void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
 {
-  fields::YeeLattice&     m = tile.get_yee();
+  emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m dt = tile.cfl;
