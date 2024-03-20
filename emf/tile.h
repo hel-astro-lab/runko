@@ -165,7 +165,7 @@ class Tile :
   virtual void deposit_current();
 
   /// Get current time snapshot of Yee lattice
-  virtual YeeLattice& get_yee(int i=0){ return this->yee; }
+  virtual YeeLattice& get_yee(int /*i*/ =0){ return this->yee; }
 
   /// Get current time snapshot of Yee lattice
   virtual YeeLattice& get_yee2(){ return this->yee; }
