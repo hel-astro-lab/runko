@@ -318,7 +318,6 @@ UniIter::sync();
   emf::YeeLattice&     m = tile.get_yee();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
-  float_m cur, b2;
   float_m dt = tile.cfl;
 
   // NOTE: updates done via dm array to avoid cross contamination between x/y/z diretions
