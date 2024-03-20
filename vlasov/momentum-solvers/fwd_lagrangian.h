@@ -26,8 +26,8 @@ class AmrMomentumFwdLagrangianSolver : public MomentumSolver<T, D> {
       mesh1.data.clear();
 
       // create vectors
-      Vec3E B(Binc.data());  
-      Vec3E E(Einc.data());  
+      Vec3E B(Binc);  
+      Vec3E E(Einc);  
 
       Vec3E Fhalf = E/2.0; // construct (1/2) force
 

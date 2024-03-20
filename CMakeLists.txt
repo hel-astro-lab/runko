@@ -52,20 +52,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ##################################################
 # dependencies
 
-#FIND_PACKAGE (EIGEN3 REQUIRED NO_MODULE)
-#if(APPLE)
-#    INCLUDE_DIRECTORIES (SYSTEM "$ENV{EIGEN3_INCLUDE_DIR}" )
-#endif()
-include_directories(tools/eigen/)
-
-
 include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-
 
 # fmt preinstallation fails with intel compilers
 #FIND_PACKAGE (FMT REQUIRED)
 #INCLUDE_DIRECTORIES ( "$ENV{FMT_INCLUDE_DIR}" )
-
 
 # hdf5 for i/o
 #FIND_PACKAGE (HDF5 COMPONENTS CXX REQUIRED)
@@ -73,7 +64,6 @@ include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 FIND_PACKAGE (HDF5)
 
 #FIND_PACKAGE( FFTW3 ) # this does not exists
-
 
 # hpc stuff 
 #find_package (MPI)
@@ -106,8 +96,6 @@ if (USE_OpenMP AND OPENMP_FOUND)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
     #set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
 endif()
-
-
 
 
 

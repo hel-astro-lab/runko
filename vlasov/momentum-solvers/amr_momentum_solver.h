@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Eigen/Dense>
-
 #include "../amr/mesh.h"
 #include "../tile.h"
+#include "../../tools/vector.h"
 
+//#include <Eigen/Dense>
 
 
 namespace vlv {
-using namespace Eigen;
+//using namespace Eigen;
 
 
 /// small container for all the solver parameters
@@ -36,7 +36,8 @@ class MomentumSolver {
 
   public:
     using vec = std::array<T, 3>;
-    using Vec3E = Vector3d;
+    //using Vec3E = Vector3d;
+    using Vec3E = toolbox::Vec3<T>; // replace with own vector type
 
     MomentumSolver() = default;
 

@@ -2,15 +2,13 @@
 
 
 #include <cmath> 
-#include <Eigen/Dense>
+//#include <Eigen/Dense>
 
 #include "../amr/mesh.h"
 #include "../amr/numerics.h"
 #include "../amr/refiner.h"
 
-
-
-using namespace Eigen;
+//using namespace Eigen;
 
 
 namespace vlv { namespace tools {
@@ -48,8 +46,8 @@ void vlv::AmrMomentumLagrangianSolver<T,D,V>::solve_mesh(
   std::array<uint64_t, 3> index;
   // std::array<T, 3> grad;
 
-  Vec3E B(Binc.data());  
-  Vec3E E(Einc.data());  
+  Vec3E B(Binc);  
+  Vec3E E(Einc);  
 
 
   // level zero fill
@@ -167,12 +165,12 @@ T vlv::AmrMomentumLagrangianSolver<T,D,V>::backward_advect(
 
 
   // get shift of the characteristic solution from Lorentz force
-  Vec3E uvel( u.data() );
+  Vec3E uvel( u );
   Vec3E F = lorentz_force(uvel, E, B, params.qm, params.cfl);
 
   // add other forces; default to zero 
   Vec3E Fi = other_forces(uvel, params);
-  F += Fi;
+  F = F + Fi;
 
 
   // advection in units of cells 
@@ -224,7 +222,7 @@ vlv::AmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
   // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
   //
   // with halving taken into account in definition of Ex
-  return -qm*E/cfl;
+  return -(qm/cfl)*E;
 }
 
 
@@ -237,7 +235,7 @@ vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
     tools::Params<T>& /*params*/
     )
 {
-  Vec3E ret = Vec3E::Zero();
+  Vec3E ret = Vec3E();
   return ret;
 }
 

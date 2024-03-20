@@ -2,7 +2,7 @@
 
 #include "tile.h"
 
-#include "../../tools/iter/iter.h"
+#include "../tools/iter/iter.h"
 
 namespace ffe {
   using namespace mpi4cpp;

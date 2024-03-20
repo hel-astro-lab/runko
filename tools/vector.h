@@ -32,6 +32,14 @@ public:
     data[2] = z;  
   }
 
+  Vec3(std::array<T,3>& arr)
+  {
+    data[0] = arr[0];  
+    data[1] = arr[1];  
+    data[2] = arr[2];  
+  }
+
+
   inline void set(T x, T y, T z){
     data[0] = x;  
     data[1] = y;  

@@ -2,7 +2,7 @@
 
 
 #include <cmath> 
-#include <Eigen/Dense>
+//#include <Eigen/Dense>
 
 #include "../amr/mesh.h"
 #include "../amr/numerics.h"
@@ -50,8 +50,8 @@ void vlv::FullAmrMomentumLagrangianSolver<T,D,V>::solve_mesh(
   std::array<uint64_t, 3> index;
   // std::array<T, 3> grad;
 
-  Vec3E B(Binc.data());  
-  Vec3E E(Einc.data());  
+  Vec3E B(Binc);  
+  Vec3E E(Einc);  
 
 
   // level zero fill
@@ -170,12 +170,12 @@ T vlv::FullAmrMomentumLagrangianSolver<T,D,V>::backward_advect(
 
 
   // get shift of the characteristic solution from Lorentz force
-  Vec3E uvel( u.data() );
+  Vec3E uvel( u );
   Vec3E F = lorentz_force(uvel, E, B, params.qm, params.cfl);
 
   // add other forces; default to zero 
   Vec3E Fi = other_forces(uvel, params);
-  F += Fi;
+  F = F + Fi;
 
 
   // advection in units of cells 
@@ -230,7 +230,7 @@ inline Vec3E vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
   // with halving taken into account in definition of Ex
   // electromagnetic combined push
     
-  Vec3E Ehalf = -qm*E/2/cfl; // half step in E
+  Vec3E Ehalf = -(qm/2/cfl)*E; // half step in E
   Vec3E us = uvel - Ehalf;  // P^*, i.e., velocity in the middle of the step
 
   // B-field rotation matrix full rotation
@@ -248,7 +248,7 @@ inline Vec3E vlv::FullAmrMomentumLagrangianSolver<T,D,V>::lorentz_force(
 
   // second order rotation
   T gamma = sqrt(1.0 + us.transpose()*us );
-  Vec3E b = B.normalized() * qm / (cfl*gamma);
+  Vec3E b = B*qm/(cfl*gamma)/toolbox::norm(B);
   Matrix3f Rot;
   Rot <<
     1+b(0)*b(0)-b(1)*b(1)-b(2)*b(2), 2*(b(0)*b(1)+b(2)),              2*(b(0)*b(2)-b(1)), 

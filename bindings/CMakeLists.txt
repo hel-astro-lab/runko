@@ -26,12 +26,12 @@ set (FIELDS_FILES
      )
 
 set (VLV_FILES 
-     # pyvlv.c++
-     # ../vlasov/tile.c++
-     # ../vlasov/boundaries/piston.c++
-     # ../vlasov/boundaries/outflow.c++
-     # ../vlasov/momentum-solvers/amr_momentum_solver.c++
-     # ../vlasov/momentum-solvers/bwd_lagrangian.c++
+      pyvlv.c++
+      ../vlasov/tile.c++
+      ../vlasov/boundaries/piston.c++
+      ../vlasov/boundaries/outflow.c++
+      ../vlasov/momentum-solvers/amr_momentum_solver.c++
+      ../vlasov/momentum-solvers/bwd_lagrangian.c++
      )
 
 
@@ -103,8 +103,6 @@ set (ACC_FILES
 
 
 set (MISC_FILES 
-       pycpl.c++
-     ../coupling/tile.c++
     )
 
 

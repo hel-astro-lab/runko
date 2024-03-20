@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "../corgi/corgi.h"
-#include "../tools/rotator.h"
+#include "../tools/deprecated/rotator.h"
 
 
 

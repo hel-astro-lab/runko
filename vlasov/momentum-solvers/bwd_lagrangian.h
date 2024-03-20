@@ -1,11 +1,11 @@
 #pragma once
 
 #include "amr_momentum_solver.h"
-#include <Eigen/Dense>
+//#include <Eigen/Dense>
 
 namespace vlv {
 
-using namespace Eigen;
+//using namespace Eigen;
 
 /// \brief back-substituting semi-Lagrangian adaptive advection solver
 template<typename T, int D, int V>

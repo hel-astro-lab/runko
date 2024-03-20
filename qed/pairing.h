@@ -10,13 +10,14 @@
 #include <cmath>
 
 #include "interactions/interaction.h"
-#include "../../definitions.h"
-#include "../../pic/tile.h"
-#include "../../tools/sample_arrays.h"
-#include "../../tools/linlogspace.h"
+
+#include "../definitions.h"
+#include "../pic/tile.h"
+#include "../tools/sample_arrays.h"
+#include "../tools/linlogspace.h"
 
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
-#include "../../tools/timer/timer.h"
+#include "../tools/timer/timer.h"
 
 
 namespace qed {

@@ -4,8 +4,7 @@
 
 namespace vlv {
 
-
-using namespace Eigen;
+//using namespace Eigen;
 
 
 /// \brief back-substituting semi-Lagrangian adaptive advection solver with gravity
@@ -36,7 +35,7 @@ class GravityAmrMomentumLagrangianSolver :
         vlv::tools::Params<T>& params) 
     override
     {
-      T gam  = std::sqrt(1.0 + uvel.dot(uvel));
+      T gam  = std::sqrt(1.0 + dot(uvel, uvel) );
       //std::cout << "using special other force at xloc=" << params.xloc << " gam=" << gam;
       //std::cout << " with g0=" << g0 << " and Lx=" << Lx << "\n";
 
@@ -61,7 +60,7 @@ class GravityAmrMomentumLagrangianSolver :
       // u = (cfl*u_0 + e + e)/cfl = u_0 + E/cfl
       //
       // with halving taken into account in definition of Ex
-      return -qm*E/cfl;
+      return -(qm/cfl)*E;
     }
 
 };

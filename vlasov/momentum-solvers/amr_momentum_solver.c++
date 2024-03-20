@@ -1,13 +1,12 @@
 #include "amr_momentum_solver.h"
 
 #include <cmath> 
-#include <Eigen/Dense>
+//#include <Eigen/Dense>
 
 #include "../../tools/cppitertools/zip.hpp"
 #include "../../definitions.h"
 
-
-using namespace Eigen;
+//using namespace Eigen;
 using iter::zip;
 
 
