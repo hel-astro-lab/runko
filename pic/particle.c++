@@ -9,6 +9,7 @@
 #include <utility>
 #include <mpi.h>
 #include <functional>
+#include <type_traits>
 
 #ifdef GPU
 #include <cuda_runtime_api.h>
@@ -19,38 +20,7 @@
 
 namespace pic {
 
-inline Particle::Particle(
-    float_p x,  float_p y,  float_p z,
-    float_p ux, float_p uy, float_p uz, 
-    float_p wgt,
-    int __ind, int __proc
-    ) : 
-  _id(__ind),
-  _proc(__proc)
-{
-  data[0] = x;
-  data[1] = y;
-  data[2] = z;
-  data[3] = ux;
-  data[4] = uy;
-  data[5] = uz;
-  data[6] = wgt;
-}
 
-
-inline Particle::Particle( int number_of_particles) 
-{
-  data[0] = static_cast<float_p>(number_of_particles);
-}
-
-/// special method for info particle that re-uses x mem location
-int Particle::number_of_particles() {
-  return static_cast<int>( data[0] );
-}
-
-
-
-//--------------------------------------------------
 //--------------------------------------------------
 // ParticleContainer methods
 
@@ -67,6 +37,15 @@ ParticleContainer<D>::ParticleContainer()
 
   // Get the rank of the process
   //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+#ifdef DEBUG
+  // NOTE: MPI messaging and storing of particles to our own manual vector 
+  // requires that Particle is a POD and trivially copyable
+  static_assert( std::is_pod_v<Particle>                == true );
+  static_assert( std::is_trivially_copyable_v<Particle> == true );
+  static_assert( std::is_trivial_v<Particle>            == true );
+  static_assert( std::is_standard_layout_v<Particle>    == true );
+#endif
 
   incoming_particles.resize(first_message_size);
   incoming_extra_particles.resize(first_message_size); // pre-allocating 
@@ -154,26 +133,6 @@ void ParticleContainer<D>::shrink_to_fit()
 }
 
 
-//template<std::size_t D>
-//size_t ParticleContainer<D>::size() 
-//{ 
-//  assert(locArr[0].size() == Nprtcls);
-//  assert(locArr[1].size() == Nprtcls);
-//  assert(locArr[2].size() == Nprtcls);
-//
-//  assert(velArr[0].size() == Nprtcls);
-//  assert(velArr[1].size() == Nprtcls);
-//  assert(velArr[2].size() == Nprtcls);
-//
-//  assert(indArr[0].size() == Nprtcls);
-//  assert(indArr[1].size() == Nprtcls);
-//
-//  assert(wgtArr.size() == Nprtcls);
-//
-//  return Nprtcls; 
-//}
-
-
 template<std::size_t D>
 std::pair<int,int> pic::ParticleContainer<D>::keygen() 
 {
@@ -208,31 +167,6 @@ void ParticleContainer<D>::add_particle (
 }
 
 
-//template<std::size_t D>
-//void ParticleContainer<D>::add_particle2 (
-//    float_p lx, float_p ly, float_p lz, 
-//    float_p ux, float_p uy, float_p uz,
-//    float_p prtcl_wgt)
-//{
-//  locArr[0].push_back( lx );
-//  locArr[1].push_back( ly );
-//  locArr[2].push_back( lz );
-//
-//  velArr[0].push_back( ux );
-//  velArr[1].push_back( uy );
-//  velArr[2].push_back( uz );
-//
-//  wgtArr.push_back(prtcl_wgt);
-//
-//  // get unique running key
-//  auto unique_key = keygen();
-//  indArr[0].push_back(std::get<0>(unique_key));
-//  indArr[1].push_back(std::get<1>(unique_key));
-//
-//  Nprtcls++;
-//}
-
-
 template<std::size_t D>
 void ParticleContainer<D>::add_identified_particle (
     std::vector<float_p> prtcl_loc,
@@ -263,8 +197,7 @@ void ParticleContainer<D>::add_identified_particle (
 }
 
 //--------------------------------------------------
-// --- check_outgoing_particles ---
-// --- 1D case ---
+// check_outgoing_particles; 1D case 
 template<>
 void ParticleContainer<1>::check_outgoing_particles(
     std::array<double,3>& mins,
@@ -299,7 +232,6 @@ void ParticleContainer<1>::check_outgoing_particles(
 }
 
 // --- 2D case ---
-
 template<>
 void ParticleContainer<2>::check_outgoing_particles(
     std::array<double,3>& mins,
@@ -370,10 +302,6 @@ std::array<double,3>& maxs)
   to_other_tiles.clear();
   outgoing_count = 0;
 
-  // shortcut for particle locations
-  float_p* locn[3];
-  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
-
 
   /*
   int maxCap = to_other_tiles.capacity();
@@ -443,6 +371,11 @@ std::array<double,3>& maxs)
 
 
 #ifdef GPU
+
+  // shortcut for particle locations
+  float_p* locn[3];
+  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
+
   particleIndexesA.resize(size());
   particleIndexesB.resize(size());
 
@@ -597,9 +530,7 @@ void ParticleContainer<D>::sort_in_rev_energy()
   //}
 
   UniIter::iterate([=] DEVCALLABLE (size_t n, ParticleContainer<D>& self){
-
-      eneArr[n] = get_prtcl_ene( n );
-
+      self.eneArr[n] = get_prtcl_ene( n );
   }, size(), *this);
   UniIter::sync();
 
@@ -689,7 +620,9 @@ void ParticleContainer<D>::delete_transferred_particles()
   std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](const auto& a, const auto& b){return a.n > b.n;} );
 
   //--------------------------------------------------
+#ifdef DEBUG
   // ensure that the array to be removed is unique
+
   auto uniq = std::unique( to_other_tiles.begin(), to_other_tiles.end(), [](const auto& a, const auto& b){return a.n == b.n;} );
   bool contains_duplicate = uniq != to_other_tiles.end();
 
@@ -698,6 +631,7 @@ void ParticleContainer<D>::delete_transferred_particles()
     for(auto& i : to_other_tiles) std::cerr << "," << i.n;
     assert(false);
   }
+#endif
   //--------------------------------------------------
   
 
@@ -755,9 +689,7 @@ void ParticleContainer<D>::delete_transferred_particles()
 }
 
 //--------------------------------------------------
-// --- transfer_and_wrap_particles ---
-// --- 1D case ---
-
+// transfer_and_wrap_particles; 1D case
 template<>
 void ParticleContainer<1>::transfer_and_wrap_particles( 
     ParticleContainer&    neigh,
@@ -815,7 +747,6 @@ void ParticleContainer<1>::transfer_and_wrap_particles(
 
 
 // --- 2D case ---
-
 template<>
 void ParticleContainer<2>::transfer_and_wrap_particles( 
     ParticleContainer& neigh,
@@ -875,7 +806,6 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
 }
 
 // --- 3D case ---
-
 template<>
 void ParticleContainer<3>::transfer_and_wrap_particles( 
     ParticleContainer& neigh,
@@ -917,24 +847,6 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
       locy = wrap( neigh.loc(1, ind), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
       locz = wrap( neigh.loc(2, ind), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
 
-      //locArr[0].push_back(locx);
-      //locArr[1].push_back(locy);
-      //locArr[2].push_back(locz);
-
-      //std::cout << locx << " " << locy << " " << locz << " " <<  velx << " " << vely << " " << velz << " " <<  wgt << " " <<  id << " " <<  proc << std::endl;
-      //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
-
-      //velArr[0].push_back( neigh.vel(0, ind) );
-      //velArr[1].push_back( neigh.vel(1, ind) );
-      //velArr[2].push_back( neigh.vel(2, ind) );
-
-      //wgtArr.push_back( neigh.wgt(ind));
-
-      //indArr[0].push_back(neigh.id(0,ind));
-      //indArr[1].push_back(neigh.id(1,ind));
-
-      //Nprtcls++;
-
       add_identified_particle(
           {locx, locy, locz}, 
           {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
@@ -961,7 +873,6 @@ void ParticleContainer<D>::pack_all_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
@@ -981,7 +892,7 @@ void ParticleContainer<D>::pack_all_particles()
   }
 
   // first particle is always the message info
-  outgoing_particles.push_back({np});
+  outgoing_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}); // store prtcl number in id slot
 
   // next, pack all other particles
   int i=1;
@@ -1026,19 +937,20 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //std::cout << "reserving1: " << first_message_size << "\n";
   //std::cout << "reserving2: " << np <<" minus " << np-first_message_size << "\n";
 
-
   //outgoing_particles.reserve(first_message_size);
   //if(np > first_message_size + extra_message_size) {
   //  std::cerr << "Number of particles in MPI message exceeds maximum message size. See documentation." << std::endl;
   //  exit(1);
   //} else 
+    
   if (np > first_message_size) {
     // reserve is needed here; if size is less than capacity, we do nothing
     outgoing_extra_particles.reserve( np-first_message_size );
   }
 
   // first particle is always the message info
-  outgoing_particles.push_back({np});
+  //outgoing_particles.push_back({np});
+  outgoing_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}); // store prtcl number in id slot
 
   // next, pack all other particles
   int i=1, ind;
@@ -1070,7 +982,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
   // TODO: set next message size dynamically according to history
   //first_message_size = np;
-  //
+    
 #ifdef GPU
   nvtxRangePop();
 #endif
@@ -1089,7 +1001,7 @@ void ParticleContainer<D>::unpack_incoming_particles()
   int ids, proc;
 
   // get real number of incoming particles
-  int number_of_incoming_particles = incoming_particles[0].number_of_particles();
+  int number_of_incoming_particles = incoming_particles[0].id; // number stored in id slot
 
   int number_of_primary_particles = 
     number_of_incoming_particles > first_message_size 
@@ -1099,33 +1011,33 @@ void ParticleContainer<D>::unpack_incoming_particles()
 
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
-    locx = incoming_particles[i].x();
-    locy = incoming_particles[i].y();
-    locz = incoming_particles[i].z();
+    locx = incoming_particles[i].x;
+    locy = incoming_particles[i].y;
+    locz = incoming_particles[i].z;
 
-    velx = incoming_particles[i].ux();
-    vely = incoming_particles[i].uy();
-    velz = incoming_particles[i].uz();
-    wgts = incoming_particles[i].wgt();
+    velx = incoming_particles[i].ux;
+    vely = incoming_particles[i].uy;
+    velz = incoming_particles[i].uz;
+    wgts = incoming_particles[i].w;
 
-    ids  = incoming_particles[i].id();
-    proc = incoming_particles[i].proc();
+    ids  = incoming_particles[i].id;
+    proc = incoming_particles[i].proc;
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
 
   for(int i=0; i<number_of_secondary_particles; i++){
-    locx = incoming_extra_particles[i].x();
-    locy = incoming_extra_particles[i].y();
-    locz = incoming_extra_particles[i].z();
+    locx = incoming_extra_particles[i].x;
+    locy = incoming_extra_particles[i].y;
+    locz = incoming_extra_particles[i].z;
 
-    velx = incoming_extra_particles[i].ux();
-    vely = incoming_extra_particles[i].uy();
-    velz = incoming_extra_particles[i].uz();
-    wgts = incoming_extra_particles[i].wgt();
+    velx = incoming_extra_particles[i].ux;
+    vely = incoming_extra_particles[i].uy;
+    velz = incoming_extra_particles[i].uz;
+    wgts = incoming_extra_particles[i].w;
 
-    ids  = incoming_extra_particles[i].id();
-    proc = incoming_extra_particles[i].proc();
+    ids  = incoming_extra_particles[i].id;
+    proc = incoming_extra_particles[i].proc;
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }

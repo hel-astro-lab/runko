@@ -19,53 +19,34 @@
 
 namespace pic {
 
+/// Particle data struct for communication; designe to be POD
+// NOTE: ParticleContainer checks the validity of this struct in its
+//       own constructor.
+struct Particle {
 
-/// Particle class for easier communication
-class Particle
-{
-public:
+  // location
+  float_p x;
+  float_p y;
+  float_p z;
 
-  /// actual particle data
-  std::array<float_p, 7> data = {-1,-2,-3,-4,-5,-7};
+  // four-momentum
+  float_p ux;
+  float_p uy;
+  float_p uz;
+
+  // weight
+  float_p w;
 
   /// particle id
-  int _id = 0;
+  int id;
 
-  /// mpi rank separator
-  int _proc = 0;
-
-  Particle() = default;
-
-  /// standard ctor
-  Particle(float_p x,  float_p y,  float_p z,
-           float_p ux, float_p uy, float_p uz,
-           float_p wgt,
-           int __ind, int __proc
-           );
-
-  /// special ctor for info prtcl
-  Particle(int number_of_particles);
-
-  inline float_p& x()   { return data[0]; };
-  inline float_p& y()   { return data[1]; };
-  inline float_p& z()   { return data[2]; };
-  inline float_p& ux()  { return data[3]; };
-  inline float_p& uy()  { return data[4]; };
-  inline float_p& uz()  { return data[5]; };
-  inline float_p& wgt() { return data[6]; };
-
-  inline int& id()   { return _id;   };
-  inline int& proc() { return _proc; };
-
-  virtual ~Particle() = default;
-
-  /// special method for info particle that re-uses x loc mem slot
-  int number_of_particles();
-
+  /// mpi rank identifier
+  int proc;
 };
 
+
+// data struct for coupling tile send/recv directions together 
 struct to_other_tiles_struct{
-  //
   int i;
   int j;
   int k;

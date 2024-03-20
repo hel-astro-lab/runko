@@ -36,25 +36,41 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
   MPI_Get_address( &obj, &base ); 
 
   // how many elements per each type
-  std::array<int, 3> block_lengths{ { 7, 1, 1} };
+  std::array<int, 9> block_lengths{ {1,1,1,1,1,1,1,1,1} };
 
   // and then the actual members
-  std::array<MPI_Aint, 3> member_offsets; // relative offsets
-  MPI_Get_address( &obj.data[0], &member_offsets[0]);
-  MPI_Get_address( &obj._id,     &member_offsets[1]);
-  MPI_Get_address( &obj._proc,   &member_offsets[2]);
+  std::array<MPI_Aint, 9> member_offsets; // relative offsets
+  MPI_Get_address( &obj.x,    &member_offsets[0]);
+  MPI_Get_address( &obj.y,    &member_offsets[1]);
+  MPI_Get_address( &obj.z,    &member_offsets[2]);
+  MPI_Get_address( &obj.ux,   &member_offsets[3]);
+  MPI_Get_address( &obj.uy,   &member_offsets[4]);
+  MPI_Get_address( &obj.uz,   &member_offsets[5]);
+  MPI_Get_address( &obj.w,    &member_offsets[6]);
+  MPI_Get_address( &obj.id,   &member_offsets[7]);
+  MPI_Get_address( &obj.proc, &member_offsets[8]);
 
   // create real (absolute) offsets (=rel - base)
-  std::array<MPI_Aint, 3> offsets {
+  std::array<MPI_Aint, 9> offsets {
     member_offsets[0] - base,
     member_offsets[1] - base,
     member_offsets[2] - base,
+    member_offsets[3] - base,
+    member_offsets[4] - base,
+    member_offsets[5] - base,
+    member_offsets[6] - base,
+    member_offsets[7] - base,
+    member_offsets[8] - base,
   };
 
+
   // introduce datatypes; 
-  // NOTE: MPI_FLOAT_TP is defined in runko/definitions.h
-  std::array<MPI_Datatype, 3> datatypes{
-    {MPI_FLOAT_TP, MPI_INT, MPI_INT}
+  std::array<MPI_Datatype, 9> datatypes{
+    {
+      MPI_FLOAT_TP, MPI_FLOAT_TP, MPI_FLOAT_TP, 
+      MPI_FLOAT_TP, MPI_FLOAT_TP, MPI_FLOAT_TP, 
+      MPI_FLOAT_TP, 
+      MPI_INT, MPI_INT}
   };
 
   //--------------------------------------------------

@@ -359,8 +359,9 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
 
     // check if we need to expect extra message
     //extra_size = msginfo.size() - container.first_message_size;
-    extra_size = container.incoming_particles[0].number_of_particles() 
-      - container.first_message_size;
+
+    // NOTE number of particles stored in id slot
+    extra_size = container.incoming_particles[0].id - container.first_message_size;
 
     if(extra_size > 0) {
       container.incoming_extra_particles.resize(extra_size);
