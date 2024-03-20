@@ -32,7 +32,7 @@ class Mesh
 
   private:
     /// internal storage
-    T *ptr;
+    T *ptr{nullptr};
     bool allocated{false};
     size_t count{0};
   public:
