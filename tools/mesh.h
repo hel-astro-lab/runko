@@ -34,7 +34,7 @@ class Mesh
     /// internal storage
     T *ptr;
     bool allocated{false};
-    int count{0};
+    size_t count{0};
   public:
 
     /// grid size along x
@@ -49,14 +49,8 @@ class Mesh
     /// Internal indexing with halo region padding of width H
     DEVCALLABLE
     inline size_t indx(int i, int j, int k) const {
-      //if(not( (i >= -H) && (i <  (int)Nx + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
-      //if(not( (j >= -H) && (j <  (int)Ny + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
-      //if(not( (k >= -H) && (k <  (int)Nz + H)  )) std::cout << "XXX(" << i <<","<< j <<","<< k <<")\n";
 
-      //assert( (i >= -H) && (i < (int)Nx + H)  );
-      //assert( (j >= -H) && (j < (int)Ny + H)  );
-      //assert( (k >= -H) && (k < (int)Nz + H)  );
-
+#ifdef DEBUG
       bool inx = (i >= -H) && (i < (int)Nx + H);
       bool iny = (j >= -H) && (j < (int)Ny + H);
       bool inz = (k >= -H) && (k < (int)Nz + H);
@@ -75,8 +69,7 @@ class Mesh
           if(j >= (int)Ny + H) j = Ny + H - 1;
           if(k >= (int)Nz + H) k = Nz + H - 1;
 
-          //assert(false);
-          //abort();
+          assert(false);
       }
 
       // this is true if above is true
@@ -84,6 +77,7 @@ class Mesh
       //assert( (indx >= 0) && (indx < (int)count ) );
 
       assert(allocated);
+#endif
 
       //return indx;
       return i + H + (Nx + 2*H)*( (j + H) + (Ny + 2*H)*(k + H));
@@ -103,31 +97,38 @@ class Mesh
     /// standard (i,j,k) syntax
     DEVCALLABLE
     inline T& operator()(int i, int j, int k) { 
-      size_t ind = indx(i,j,k);
+      auto ind = indx(i,j,k);
+
+#ifdef DEBUG
       assert(ind < count);
+#endif
       return ptr[ind];
     }
 
     DEVCALLABLE
     inline const T& operator()(int i, int j, int k) const { 
-      size_t ind = indx(i,j,k);
+      auto ind = indx(i,j,k);
+#ifdef DEBUG
       assert(ind < count);
+#endif
       return ptr[ind];
     }
 
     /// empty default constructor
     //Mesh() = default;
     Mesh() :
-    allocated(false), count(0)
+    allocated(false), 
+    count(0)
     { }
 
 
     /// standard initialization
     Mesh(int Nx, int Ny, int Nz) : 
+      allocated(false), 
+      count(0),
       Nx(Nx), 
       Ny(Ny), 
-      Nz(Nz),
-      allocated(false), count(0)
+      Nz(Nz)
       //mat( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H) )
     {
       alloc( (Nx + 2*H)*(Ny + 2*H)*(Nz + 2*H));
@@ -148,10 +149,11 @@ class Mesh
     // explicit default copy operator
     //Mesh(Mesh& other) = default;
     Mesh(Mesh& other) :
+      allocated(false), 
+      count(0),
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz),
-      allocated(false), count(0)
+      Nz(other.Nz)
       //mat(other.mat)
     { 
       Nx = other.Nx; 
@@ -164,10 +166,11 @@ class Mesh
 
     // Mesh(const Mesh& other) = default;
     Mesh(const Mesh& other) :
+      allocated(false), 
+      count(0),
       Nx(other.Nx),
       Ny(other.Ny),
-      Nz(other.Nz),
-      allocated(false), count(0)
+      Nz(other.Nz)
       //mat(other.mat)
     { 
       Nx = other.Nx; 
