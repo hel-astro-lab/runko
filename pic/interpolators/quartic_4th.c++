@@ -19,11 +19,11 @@ double pic::QuarticInterpolator<2>::compute(
         double* /*cz*/, 
         const toolbox::Mesh<float_m, 3>& f, 
         //const size_t ind,
-        const size_t iy, 
+        const size_t /*iy*/, 
         const size_t /*iz*/,
         int i, int j, int /*k*/)
 {
-  const size_t ind = f.indx(i,j,0);
+  //const size_t ind = f.indx(i,j,0);
   double res = 0.0;
 
   for( int jl=-2 ; jl<=2 ; jl++ ) {
@@ -43,11 +43,11 @@ double pic::QuarticInterpolator<3>::compute(
         double* cz, 
         const toolbox::Mesh<float_m, 3>& f, 
         //const size_t ind,
-        const size_t iy, 
-        const size_t iz,
+        const size_t /*iy*/, 
+        const size_t /*iz*/,
         int i, int j, int k)
 {
-  const size_t ind = f.indx(i,j,k);
+  //const size_t ind = f.indx(i,j,k);
   double res = 0.0;
 
   for(int kl=-2; kl<=2; kl++ ) {
@@ -102,9 +102,9 @@ void pic::QuarticInterpolator<D>::solve(
       double ypn = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
       double zpn = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
 
-      double u = con.vel(0,n);
-      double v = con.vel(1,n);
-      double w = con.vel(2,n);
+      //double u = con.vel(0,n);
+      //double v = con.vel(1,n);
+      //double w = con.vel(2,n);
 
       // particle location in the primary and dual 1/2-shifted grid
 

@@ -31,8 +31,8 @@ void pic::BorisPusherRad<D,V>::push_container(
     double uxt, gamx, pressx, pressy, pressz;
 
     double loc0n = con.loc(0,n);
-    double loc1n = con.loc(1,n);
-    double loc2n = con.loc(2,n);
+    //double loc1n = con.loc(1,n);
+    //double loc2n = con.loc(2,n);
 
     double vel0n = con.vel(0,n);
     double vel1n = con.vel(1,n);

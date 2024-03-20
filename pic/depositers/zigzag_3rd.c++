@@ -119,12 +119,12 @@ void pic::ZigZag_3rd<D,V>::solve( pic::Tile<D>& tile )
 
       //--------------------------------------------------
       // particle weights 
-      double Wxx1[4] = {1.0}, 
-             Wxx2[4] = {1.0}, 
-             Wyy1[4] = {1.0}, 
-             Wyy2[4] = {1.0}, 
-             Wzz1[4] = {1.0}, 
-             Wzz2[4] = {1.0};
+      double Wxx1[5] = {1.0}, 
+             Wxx2[5] = {1.0}, 
+             Wyy1[5] = {1.0}, 
+             Wyy2[5] = {1.0}, 
+             Wzz1[5] = {1.0}, 
+             Wzz2[5] = {1.0};
 
       if(D >= 1) W3rd(dx1, Wxx1);
       if(D >= 1) W3rd(dx2, Wxx2);

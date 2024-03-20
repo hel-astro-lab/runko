@@ -121,7 +121,7 @@ void pic::Piston<D>::solve(
     const double c = tile.cfl;
     const double q = container.q;
 
-    for(int n=0; n<container.size(); n++) {
+    for(size_t n=0; n<container.size(); n++) {
 
       // left side of the wall boundary
       if( container.loc(0,n) < walloc) {

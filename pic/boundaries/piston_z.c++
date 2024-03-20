@@ -33,7 +33,7 @@ void pic::PistonZdir<D>::zigzag(
   auto& yee = tile.get_yee();
 
   const auto mins = tile.mins;
-  const double c = tile.cfl;    // speed of light
+  //const auto c = tile.cfl;    // speed of light
 
   // normalized location w.r.t. tile
   double x1 = D >= 1 ? x1glob - mins[0] : x1glob;
@@ -318,10 +318,10 @@ void pic::PistonZdir<D>::clean_prtcls( pic::Tile<D>& tile)
 
 
   for(auto&& con : tile.containers) {
-    const double c = tile.cfl;    // speed of light
+    //const auto c = tile.cfl;    // speed of light
     to_be_deleted.clear();
 
-    for(int n=0; n<con.size(); n++) {
+    for(size_t n=0; n<con.size(); n++) {
 
       //particle location and velocity
       double z1 = con.loc(2,n);

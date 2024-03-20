@@ -160,8 +160,8 @@ inline auto mag_unit_vec_rel(
             double kappa
                      ) -> std::tuple< double, double, double>
 {
-    const double b = sqrt( bx*bx + by*by + bz*bz );
-    const double e = sqrt( ex*ex + ey*ey + ez*ez );
+    //const double b = sqrt( bx*bx + by*by + bz*bz );
+    //const double e = sqrt( ex*ex + ey*ey + ez*ez );
 
     // dift . u
     double vdotb = vex*bx + vey*by + vez*bz;
@@ -489,7 +489,7 @@ void pic::rGCAPusher<D,V>::push_container(
       if(D>=2) R1y = R0y + vn1y*c;
       if(D>=3) R1z = R0z + vn1z*c;
 
-
+#ifdef DEBUG
       bool debug_flag2 = 
         std::isnan(un1x) ||
         std::isnan(un1y) ||
@@ -552,6 +552,7 @@ void pic::rGCAPusher<D,V>::push_container(
         << "\n\n";
         std::cout << std::flush;
       }
+#endif
 
       // exit if converged
       // FIXME cant break because of SIMD 
@@ -584,6 +585,7 @@ void pic::rGCAPusher<D,V>::push_container(
     con.by(n) = by1;
     con.bz(n) = bz1;
 
+#ifdef DEBUG
     bool debug_flag = 
     std::isnan(con.vel(0,n)) ||
     std::isnan(con.vel(1,n)) ||
@@ -617,6 +619,8 @@ void pic::rGCAPusher<D,V>::push_container(
       std::cout << std::flush;
       //assert(false);
     }
+#endif
+
   //}, con.size(), con);
   }
 

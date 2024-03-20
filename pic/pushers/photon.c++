@@ -21,7 +21,6 @@ void pic::PhotonPusher<D,V>::push_container(
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto mins = tile.mins;
   const double c  = tile.cfl;
 
   // loop over particles

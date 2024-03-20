@@ -32,8 +32,6 @@ void pic::BorisPusherDrag<D,V>::push_container(
   // maximum drag force experienced by particle
   const double dragthr = 0.8; 
 
-  auto mins = tile.mins;
-  auto maxs = tile.maxs;
   const double c  = tile.cfl;
   const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because emf are in units of q)
 
@@ -120,9 +118,10 @@ void pic::BorisPusherDrag<D,V>::push_container(
     ginv = c / sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
     for(size_t i=0; i<D; i++) con.loc(i,n) += con.vel(i,n)*ginv*c*freezing_factor;
 
-    double dx_tmp = con.vel(0,n)*ginv*c;
-    double dy_tmp = con.vel(1,n)*ginv*c;
-    double dz_tmp = con.vel(2,n)*ginv*c;
+#ifdef DEBUG
+    //double dx_tmp = con.vel(0,n)*ginv*c;
+    //double dy_tmp = con.vel(1,n)*ginv*c;
+    //double dz_tmp = con.vel(2,n)*ginv*c;
 
     //if( dx_tmp > c || dy_tmp > c || dz_tmp > c ){
 
@@ -155,7 +154,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
 
     //  assert(false);
     //}
-
+#endif
 
 
   }, con.size(), con);

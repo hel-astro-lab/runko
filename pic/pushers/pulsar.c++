@@ -195,16 +195,16 @@ void pic::PulsarPusher<D,V>::push_container(
   auto& byM = yee.by;
   auto& bzM = yee.bz;
 
-  const int Nx = tile.mesh_lengths[0];
-  const int Ny = tile.mesh_lengths[1];
-  const int Nz = tile.mesh_lengths[2];
+  //const int Nx = tile.mesh_lengths[0];
+  //const int Ny = tile.mesh_lengths[1];
+  //const int Nz = tile.mesh_lengths[2];
 
   // mesh sizes for 1D indexing
   const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
   const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
 
   auto mins = tile.mins;
-  auto maxs = tile.maxs;
+  //auto maxs = tile.maxs;
 
   double ii=0.0, jj=0.0, kk=0.0;
   double dx=0.0, dy=0.0, dz=0.0;
@@ -212,9 +212,6 @@ void pic::PulsarPusher<D,V>::push_container(
   // loop over particles
   //UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
   for(size_t n=0; n<con.size(); n++){
-
-    //--------------------------------------------------
-    bool crash_flag = false;
 
     // particle location (assuming location coincides with gyro-center location)
     const auto R0x = con.loc(0,n);
@@ -319,7 +316,6 @@ void pic::PulsarPusher<D,V>::push_container(
     //-------------------------------------------------- 
     // implicit iteration (done in N steps
 
-    double ex1, ey1, ez1, bx1, by1, bz1;
     double vn1x, vn1y, vn1z, un1x, un1y, un1z, G1;
 
     for(size_t iter=0; iter<3; iter++){
@@ -364,7 +360,7 @@ void pic::PulsarPusher<D,V>::push_container(
 
       // field strenghts
       const double b1 = sqrt( bx1*bx1 + by1*by1 + bz1*bz1 );
-      const double e1 = sqrt( ex1*ex1 + ey1*ey1 + ez1*ez1 );
+      //const double e1 = sqrt( ex1*ex1 + ey1*ey1 + ez1*ez1 );
     
       //-------------------------------------------------- 
       //ExB in units of c at new location
@@ -416,6 +412,7 @@ void pic::PulsarPusher<D,V>::push_container(
       if(D>=3) R1z = R0z + vn1z*c;
 
 
+#ifdef DEBUG
       //--------------------------------------------------
       // debug
       bool debug_flag2 = 
@@ -480,8 +477,9 @@ void pic::PulsarPusher<D,V>::push_container(
 
         assert(false);
       }
+#endif
 
-    }
+    } // end of loop over particles
     //}, con.size(), con);
 
     // converged
@@ -499,10 +497,10 @@ void pic::PulsarPusher<D,V>::push_container(
     double zz = 0.5*(R0z + R1z); 
 
     // velocity at the half time step 
-    double uxt = 0.5*(un1x + vel0n);
-    double uyt = 0.5*(un1y + vel1n);
-    double uzt = 0.5*(un1z + vel2n);
-    double gamt = sqrt(1.0 + uxt*uxt + uyt*uyt + uzt*uzt); // gamma at half time step
+    //double uxt = 0.5*(un1x + vel0n);
+    //double uyt = 0.5*(un1y + vel1n);
+    //double uzt = 0.5*(un1z + vel2n);
+    //double gamt = sqrt(1.0 + uxt*uxt + uyt*uyt + uzt*uzt); // gamma at half time step
 
     // distance from the star 
     double rad = sqrt( pow(xx-cenx, 2) + pow(yy-ceny, 2) + pow(zz-cenz, 2) );
@@ -527,8 +525,10 @@ void pic::PulsarPusher<D,V>::push_container(
     if(D>=2) con.loc(1,n) = R1y;
     if(D>=3) con.loc(2,n) = R1z;  
 
-    //std::cout << "PulsarPusher: g0" << gravity_const << " a_g: " << a_grav << " gravy " << gravy << " \n";
 
+#ifdef DEBUG
+    //std::cout << "PulsarPusher: g0" << gravity_const << " a_g: " << a_grav << " gravy " << gravy << " \n";
+      
     //-------------------------------------------------- 
     // debug
 
@@ -569,8 +569,11 @@ void pic::PulsarPusher<D,V>::push_container(
 
       assert(false);
     }
+#endif
+  //--------------------------------------------------
 
-  }
+
+  } // end of loop over containers
 
 
   UniIter::sync();

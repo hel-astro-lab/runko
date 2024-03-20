@@ -91,7 +91,7 @@ void pic::Star<D>::solve(
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
   auto& yee = tile.get_yee();
-  const float_p c = tile.cfl;
+  //const auto c = tile.cfl;
 
   //--------------------------------------------------
   // inject to each cell
@@ -99,7 +99,6 @@ void pic::Star<D>::solve(
   int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
   int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
   int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
-
 
 
   //UniIter::iterate3D(
@@ -264,15 +263,15 @@ void pic::Star<D>::solve(
 
         //--------------------------------------------------
         // pcap rotation vector
-        auto r = rvec;  // copy
-        r(0) += dx;
-        r(1) += dy;
-        r(2) += dz;
-        auto vrot = cross(Om, r); 
+        //auto r = rvec;  // copy
+        //r(0) += dx;
+        //r(1) += dy;
+        //r(2) += dz;
+        //auto vrot = cross(Om, r); 
 
         // ExB version
-        auto B2E2 = 1.0f/( dot(B, B) ); //+ dot(Ev, Ev) );
-        auto vrot2 = B2E2*cross(E, B);
+        //auto B2E2 = 1.0f/( dot(B, B) ); //+ dot(Ev, Ev) );
+        //auto vrot2 = B2E2*cross(E, B);
         // NOTE matches to about ~30% the surface rotation velocity
           
         //std::cout << "xr0  :   " << xr0   << "\n";
@@ -451,12 +450,12 @@ void pic::Star<D>::solve(
       //bool below_star     = std::sqrt(xr0*xr0 + yr0*yr0 + zr0*zr0) <= 1.0*radius-2; // NOTE hard-coded thickness of 2
 
       // flat surface
-      bool inside_star    = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius; 
+      //bool inside_star    = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius; 
       bool below_star     = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius - 2; 
                                                                                       
       bool inside_bot     = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
       bool inside_top     = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
-      bool outside_pcap   = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
+      //bool outside_pcap   = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
       bool inside_cyl_bcs = (D == 2) ? abs(xr0) > rbox : sqrt(xr0*xr0 + yr0*yr0) > rbox; // box sides covering a cylindrical region
 
       if( inside_bot                  ||
