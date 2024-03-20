@@ -22,13 +22,13 @@ Vec3<float> emf::Conductor<2>::dipole(Vec3<float>& xvec)
 {
 
   //non-rotating magnetic moment vector components
-  float p1 = sin(chi_mu), p2 = cos(chi_mu), p3 = 0.0;   // 2D orientation
+  float p1 = sin(chi_mu), p2 = cos(chi_mu); //, p3 = 0.0;   // 2D orientation
 
   // final rotating magnetic moment with phase included; rotates in xz plane
   // TODO rotation turned off for 2D; i.e., no phase dependency
   float mux = p1; //*cos(phase) - p3*sin(phase);
   float muy = p2;
-  float muz = p3; //*sin(phase) + p3*cos(phase);
+  //float muz = p3; //*sin(phase) + p3*cos(phase);
 
   float rad = std::sqrt(xvec(0)*xvec(0) + xvec(1)*xvec(1));
 
@@ -80,7 +80,7 @@ void emf::Conductor<D>::insert_em(
 
   // Tile limits
   auto mins = tile.mins;
-  auto maxs = tile.maxs;
+  //auto maxs = tile.maxs;
 
   auto& yee = tile.get_yee();
 
@@ -213,11 +213,22 @@ void emf::Conductor<D>::update_b(
   bool front = false;
   bool back  = false;
 
+  Vec3<float> x1, x2, x3, x4, x5, x6, x7, x8;
   if(D == 2){
     if( mins[1] < 1 )    bot   = true; 
     if( mins[0] < 1 )    left  = true; 
     if( maxs[1] > Ny-1 ) top   = true; 
     if( maxs[0] > Nx-1 ) right = true; 
+
+    // all 8 of tile corners are compared to radius to find if we are inside the spherical region
+    x1 = coord.mid().vec(mins[0], mins[1], 0.0, D); 
+    x2 = coord.mid().vec(maxs[0], mins[1], 0.0, D); 
+    x3 = coord.mid().vec(mins[0], maxs[1], 0.0, D); 
+    x4 = coord.mid().vec(mins[0], mins[1], 0.0, D); 
+    x5 = coord.mid().vec(maxs[0], maxs[1], 0.0, D); 
+    x6 = coord.mid().vec(maxs[0], mins[1], 0.0, D); 
+    x7 = coord.mid().vec(mins[0], maxs[1], 0.0, D); 
+    x8 = coord.mid().vec(maxs[0], maxs[1], 0.0, D); 
   } else if (D == 3) {
     if( mins[0] < 1 )    left  = true; 
     if( maxs[0] > Nx-1 ) right = true; 
@@ -225,6 +236,16 @@ void emf::Conductor<D>::update_b(
     if( maxs[1] > Ny-1 ) back  = true; 
     if( mins[2] < 1 )    bot   = true; 
     if( maxs[2] > Nz-1 ) top   = true; 
+      
+    // all 8 of tile corners are compared to radius to find if we are inside the spherical region
+    x1 = coord.mid().vec(mins[0], mins[1], mins[2], D); 
+    x2 = coord.mid().vec(maxs[0], mins[1], mins[2], D); 
+    x3 = coord.mid().vec(mins[0], maxs[1], mins[2], D); 
+    x4 = coord.mid().vec(mins[0], mins[1], maxs[2], D); 
+    x5 = coord.mid().vec(maxs[0], maxs[1], mins[2], D); 
+    x6 = coord.mid().vec(maxs[0], mins[1], maxs[2], D); 
+    x7 = coord.mid().vec(mins[0], maxs[1], maxs[2], D); 
+    x8 = coord.mid().vec(maxs[0], maxs[1], maxs[2], D); 
   }
 
   const int H = 2; // halo region size for nulling of boundaries
@@ -241,16 +262,6 @@ void emf::Conductor<D>::update_b(
   //--------------------------------------------------
   // inside star
 
-  // all 8 of tile corners are compared to radius to find if we are inside the spherical region
-
-  auto x1 = coord.mid().vec(mins[0], mins[1], mins[2], D); 
-  auto x2 = coord.mid().vec(maxs[0], mins[1], mins[2], D); 
-  auto x3 = coord.mid().vec(mins[0], maxs[1], mins[2], D); 
-  auto x4 = coord.mid().vec(mins[0], mins[1], maxs[2], D); 
-  auto x5 = coord.mid().vec(maxs[0], maxs[1], mins[2], D); 
-  auto x6 = coord.mid().vec(maxs[0], mins[1], maxs[2], D); 
-  auto x7 = coord.mid().vec(mins[0], maxs[1], maxs[2], D); 
-  auto x8 = coord.mid().vec(maxs[0], maxs[1], maxs[2], D); 
 
   // TODO this is not a bulletproof method to find if the star is inside tile;
   //      if a small star is in the middle of the tile it can be missed...
@@ -594,11 +605,22 @@ void emf::Conductor<D>::update_e(
   bool front = false;
   bool back  = false;
 
+  Vec3<float> x1, x2, x3, x4, x5, x6, x7, x8;
   if(D == 2){
     if( mins[1] < 1 )    bot   = true; 
     if( mins[0] < 1 )    left  = true; 
     if( maxs[1] > Ny-1 ) top   = true; 
     if( maxs[0] > Nx-1 ) right = true; 
+
+    // all 8 of tile corners are compared to radius to find if we are inside the spherical region
+    x1 = coord.mid().vec(mins[0], mins[1], 0.0, D); 
+    x2 = coord.mid().vec(maxs[0], mins[1], 0.0, D); 
+    x3 = coord.mid().vec(mins[0], maxs[1], 0.0, D); 
+    x4 = coord.mid().vec(mins[0], mins[1], 0.0, D); 
+    x5 = coord.mid().vec(maxs[0], maxs[1], 0.0, D); 
+    x6 = coord.mid().vec(maxs[0], mins[1], 0.0, D); 
+    x7 = coord.mid().vec(mins[0], maxs[1], 0.0, D); 
+    x8 = coord.mid().vec(maxs[0], maxs[1], 0.0, D); 
   } else if (D == 3) {
     if( mins[0] < 1 )    left  = true; 
     if( maxs[0] > Nx-1 ) right = true; 
@@ -606,6 +628,16 @@ void emf::Conductor<D>::update_e(
     if( maxs[1] > Ny-1 ) back  = true; 
     if( mins[2] < 1 )    bot   = true; 
     if( maxs[2] > Nz-1 ) top   = true; 
+
+    // all 8 of tile corners are compared to radius to find if we are inside the spherical region
+    x1 = coord.mid().vec(mins[0], mins[1], mins[2], D); 
+    x2 = coord.mid().vec(maxs[0], mins[1], mins[2], D); 
+    x3 = coord.mid().vec(mins[0], maxs[1], mins[2], D); 
+    x4 = coord.mid().vec(mins[0], mins[1], maxs[2], D); 
+    x5 = coord.mid().vec(maxs[0], maxs[1], mins[2], D); 
+    x6 = coord.mid().vec(maxs[0], mins[1], maxs[2], D); 
+    x7 = coord.mid().vec(mins[0], maxs[1], maxs[2], D); 
+    x8 = coord.mid().vec(maxs[0], maxs[1], maxs[2], D); 
   }
 
   const int H = 2;
@@ -620,17 +652,6 @@ void emf::Conductor<D>::update_e(
 
   //--------------------------------------------------
   // inside star
-
-  // all 8 of tile corners are compared to radius to find if we are inside the spherical region
-
-  auto x1 = coord.mid().vec(mins[0], mins[1], mins[2], D); 
-  auto x2 = coord.mid().vec(maxs[0], mins[1], mins[2], D); 
-  auto x3 = coord.mid().vec(mins[0], maxs[1], mins[2], D); 
-  auto x4 = coord.mid().vec(mins[0], mins[1], maxs[2], D); 
-  auto x5 = coord.mid().vec(maxs[0], maxs[1], mins[2], D); 
-  auto x6 = coord.mid().vec(maxs[0], mins[1], maxs[2], D); 
-  auto x7 = coord.mid().vec(mins[0], maxs[1], maxs[2], D); 
-  auto x8 = coord.mid().vec(maxs[0], maxs[1], maxs[2], D); 
 
 
   //--------------------------------------------------
@@ -661,8 +682,8 @@ void emf::Conductor<D>::update_e(
     auto rad = norm(rvec); // length of radius
 
     auto rcycl = D == 2 ? norm1d(rvec) : norm2d(rvec); // cylindrical radius
-    auto sint = rcycl/rad; // \sin\theta
-    auto eta = rad/Rbc; // dimensionless dipole coordinate radius
+    //auto sint = rcycl/rad; // \sin\theta
+    //auto eta = rad/Rbc; // dimensionless dipole coordinate radius
 
     //bool inside_closed_field_region = eta < 1.0*sint*sint;
 
@@ -937,7 +958,7 @@ void emf::Conductor<D>::update_e(
     for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
-      float iglob = (D>=1) ? i + mins[0] : 0;
+      //float iglob = (D>=1) ? i + mins[0] : 0;
       float jglob = (D>=2) ? j + mins[1] : 0;
       float kglob = (D>=3) ? k + mins[2] : 0;
 
