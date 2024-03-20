@@ -65,7 +65,9 @@ Different FDTD solvers can be obtained by defining different discrete curl-opera
 
     TODO
 
-.. literalinclude:: ../em-fields/propagator/fdtd2.c++
+One of the simplest FDTD operators is the second-order ``FDTD2`` solver, implemented as
+
+.. literalinclude:: ../emf/propagator/fdtd2.c++
    :linenos:
    :caption:
    :dedent:
