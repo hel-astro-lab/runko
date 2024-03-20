@@ -6,7 +6,6 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 
 # https://cliutils.gitlab.io/modern-cmake/chapters/packages/CUDA.html
 project (runko LANGUAGES CXX C)
-#project (runko LANGUAGES CUDA CXX C)
 
 include(CheckLanguage)
 check_language(CUDA)
@@ -14,17 +13,25 @@ check_language(CUDA)
 # Add the cmake folder to get FindPkg files
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
  
+##################################################
 # optimization flags
-#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
+#--------------------------------------------------
+# debug mode (default)
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
+set(CMAKE_CXX_FLAGS "-g -O2 -DDEBUG -march=native -ftree-vectorize")
+
+#--------------------------------------------------
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all") general
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=znver1 -mtune=znver1 -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all")
 
-
 # epyc rome
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -fomit-frame-pointer -fopt-info-all-all=all.all")
+
+#--------------------------------------------------
+# other compiliation modes
 
 # AddressSanitizer
 set(CMAKE_CXX_FLAGS_ASAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g -O1")
@@ -35,9 +42,16 @@ set(CMAKE_CXX_FLAGS_LSAN "-fsanitize=leak -fno-omit-frame-pointer -g -O1")
 # MemorySanitizer
 set(CMAKE_CXX_FLAGS_MSAN "-fsanitize=memory -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -g -O2")
 
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
+#--------------------------------------------------
 
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Flags (debug): ${CMAKE_CXX_FLAGS}")
+message(STATUS "Flags RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
+
+
+
+#--------------------------------------------------
+# librarires
 
 # set location of python libraries
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
@@ -75,7 +89,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/corgi/mpi4cpp/tools/optional-li
 #see:
 # - https://stackoverflow.com/questions/46414660/macos-cmake-and-openmp
 OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
-
 
 # Find OpenMP
 if(APPLE AND USE_OpenMP)
@@ -140,57 +153,12 @@ endif(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 
 
 #-------------------------------------------------- 
-
 add_subdirectory(corgi)
-
-
-#add_subdirectory(vlasov)
-#add_subdirectory(em-fields)
-#add_subdirectory(pic)
-#add_subdirectory(io)
-#add_subdirectory(tests)
-
 add_subdirectory(bindings)
 add_subdirectory(docs)
 
-
-
-
-#-------------------------------------------------- 
-# Documentation Target
-#
-#option(BUILD_DOC "Build Doxygen documentation" ON)
-#
-## check if Doxygen is installed
-#find_package(Doxygen)
-#if (DOXYGEN_FOUND)
-#    # set input and output files for autogeneration
-#    set(DOXYGEN_IN ${MAINFOLDER}/docs/Doxyfile.in)
-#    set(DOXYGEN_OUT ${MAINFOLDER}/docs/Doxyfile)
-#
-#    # generate the Doxyfile
-#    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-#
-#    # generate mainpage.md
-#    configure_file(${MAINFOLDER}/docs/mainpage.md.in 
-#                   ${MAINFOLDER}/docs/mainpage.md
-#                  )
-#    
-#    add_custom_target( doc_doxygen ALL
-#                       COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-#                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#                       COMMENT "Generating API documentation with Doxygen"
-#                       VERBATIM )
-#else (DOXYGEN_FOUND)
-#    message(
-#        "Doxygen not found, skipping generation of documentation")
-#endif (DOXYGEN_FOUND)
-
-
-
 #-------------------------------------------------- 
 # unit tests
-#
 add_custom_target(check-runko ALL
                   ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
                   DEPENDS pycorgi pyrunko 
