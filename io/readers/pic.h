@@ -139,6 +139,7 @@ h5io::Reader::read(
           );
 
       } else {
+
         std::cerr << "skipping prtcl"
                   << " n=" << n
                   << " x=" << xloc
@@ -153,12 +154,36 @@ h5io::Reader::read(
                   << " vel_flag=" << vel_flag
                   << std::endl;
 
-        if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
-        if( !(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) ) std::cerr << "  yloc err: min:" << mins[1] << " p:" << yloc << " max:" << maxs[1] << std::endl;
-        if( !(D>= 3 && mins[2]-2 <= zloc && zloc <= maxs[2]+2) ) std::cerr << "  zloc err: min:" << mins[2] << " p:" << zloc << " max:" << maxs[2] << std::endl;
+        if(D == 1) {
+          if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) {
+            std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
+          }
+        }
 
-        //assert(false);
+        if(D == 2) {
+          if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) {
+            std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
+          }
+          if( !(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) ) { 
+            std::cerr << "  yloc err: min:" << mins[1] << " p:" << yloc << " max:" << maxs[1] << std::endl;
+          }
+        }
+
+        if(D == 3) {
+          if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) {
+            std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
+          }
+          if( !(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) ) {
+            std::cerr << "  yloc err: min:" << mins[1] << " p:" << yloc << " max:" << maxs[1] << std::endl;
+          }
+          if( !(D>= 3 && mins[2]-2 <= zloc && zloc <= maxs[2]+2) ) {
+            std::cerr << "  zloc err: min:" << mins[2] << " p:" << zloc << " max:" << maxs[2] << std::endl;
+          }
+        }
+
+        assert(false);
       }
+
     }
   }
 
