@@ -26,8 +26,8 @@
 namespace emf {
   using namespace mpi4cpp;
 
-
-/// Deposit current into electric field
+// SPHINX emf docs addcur start
+// Deposit current into electric field
 template<std::size_t D>
 void Tile<D>::deposit_current() 
 {
@@ -36,7 +36,7 @@ void Tile<D>::deposit_current()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = get_yee();
+  auto& mesh = get_yee();
 
   UniIter::iterate3D(
     [=] DEVCALLABLE (int i, int j, int k, YeeLattice& mesh)
@@ -53,6 +53,7 @@ void Tile<D>::deposit_current()
   nvtxRangePop();
 #endif 
 }
+// SPHINX emf docs addcur stop
 
 
 
@@ -66,12 +67,12 @@ void Tile<1>::update_boundaries(
   using Tile_t  = Tile<1>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
-  int ito, ifro;
+  int ito=0, ifro=0;
   const int halo = 3; // halo region size for fields
   Tileptr tpr; 
 
   // target
-  YeeLattice& lhs = get_yee();
+  auto& lhs = get_yee();
 
   const int Nx = lhs.Nx;
 
@@ -132,14 +133,14 @@ void Tile<2>::update_boundaries(
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
-  int ito, jto, ifro, jfro;
+  int ito=0, jto=0, ifro=0, jfro=0;
   Tileptr tpr;
 
   auto& lhs = get_yee(); // target as a reference to update into
 
   const int Nx = lhs.Nx;
   const int Ny = lhs.Ny;
-  const int Nz = lhs.Nz;
+  //const int Nz = lhs.Nz;
 
   const int halo = 3; // halo region size for fields
 
@@ -345,15 +346,6 @@ void Tile<2>::update_boundaries(
 }
 
 
-struct BlockCopyParam
-{
-  //
-  bool active;
-  int ito, ifro, jto, jfro, kto, kfro, in, jn, kn;
-  YeeLattice *yeePtrFrom;
-  YeeLattice *yeePtrTo;
-};
-
 
 template<>
 void Tile<3>::update_boundaries(
@@ -369,7 +361,7 @@ void Tile<3>::update_boundaries(
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
-  int ito, jto, kto, ifro, jfro, kfro;
+  int ito=0, jto=0, kto=0, ifro=0, jfro=0, kfro=0;
   Tileptr tpr;
 
   auto& lhs = get_yee(); // target as a reference to update into
@@ -859,13 +851,10 @@ void Tile<1>::exchange_currents(corgi::Grid<1>& grid)
   using Tile_t  = Tile<1>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
-  int ito, ifro;
+  int ito=0, ifro=0;
   Tileptr tpr; 
 
   int halo = 3; // halo region size for currents
-
-  // target
-  YeeLattice& mesh = get_yee();
 
   auto& lhs = get_yee(); // target as a reference to update into
   const int Nx = lhs.Nx;
@@ -937,7 +926,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
   using Tile_t  = Tile<2>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
-  int ito, jto, ifro, jfro;
+  int ito=0, jto=0, ifro=0, jfro=0;
   Tileptr tpr; 
 
   const int halo = 3;
@@ -946,7 +935,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 
   const int Nx = lhs.Nx;
   const int Ny = lhs.Ny;
-  const int Nz = lhs.Nz;
+  //const int Nz = lhs.Nz;
 
   for(int in=-1; in <= 1; in++) {
     for(int jn=-1; jn <= 1; jn++) {
@@ -1042,7 +1031,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
 
-  int ito, jto, kto, ifro, jfro, kfro;
+  int ito=0, jto=0, kto=0, ifro=0, jfro=0, kfro=0;
   Tileptr tpr; 
 
   const int halo = 3;
