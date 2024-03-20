@@ -190,6 +190,7 @@ class ParticleContainer{
 
   DEVCALLABLE size_t size() const { 
 
+#ifdef DEBUG
     bool ts[9] = {0,0,0,0,0,0,0,0,0};
 
     ts[0] = locArr[0].size() == locArr[1].size();
@@ -200,7 +201,7 @@ class ParticleContainer{
     ts[5] = locArr[0].size() == indArr[0].size();
     ts[6] = locArr[0].size() == indArr[1].size();
     ts[7] = locArr[0].size() == wgtArr.size();
-    ts[8] = locArr[0].size() == Nprtcls;
+    ts[8] = locArr[0].size() == static_cast<size_t>(Nprtcls);
 
     //bool ts2 = 0;
     //for(size_t i = 0; i<9; i++) ts2 += !ts[i];
@@ -227,6 +228,7 @@ class ParticleContainer{
       std::cerr << Nprtcls          << std::endl;
       assert(false);
     }
+#endif 
 
     return Nprtcls; //locArr[0].size(); 
   }
