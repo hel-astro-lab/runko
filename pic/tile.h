@@ -37,7 +37,7 @@ public:
 
   using emf::Tile<D>::mesh_lengths;
 
-  using emf::Tile<D>::yee;
+  using emf::Tile<D>::grids;
 
   using emf::Tile<D>::cfl;
 

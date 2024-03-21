@@ -130,7 +130,7 @@ class Tile :
   std::array<int, 3> mesh_lengths;
 
   /// Yee lattice of plasma quantities (with 1 timestep)
-  Grids yee;
+  Grids grids;
 
   /// explicitly show that we import tile limits from base class 
   using corgi::Tile<D>::mins;
@@ -144,7 +144,7 @@ class Tile :
   Tile(int nx, int ny, int nz) :
      corgi::Tile<D>(),
      mesh_lengths {{nx, ny, nz}},
-     yee{nx, ny, nz}
+     grids{nx, ny, nz}
   {
     if (D == 1) assert(ny == 1 && nz == 1);
     if (D == 2) assert(nz == 1);
@@ -165,20 +165,20 @@ class Tile :
   virtual void deposit_current();
 
   /// Get current time snapshot of Yee lattice
-  virtual Grids& get_grids(int /*i*/ =0){ return this->yee; }
+  virtual Grids& get_grids(int /*i*/ =0){ return this->grids; }
 
   /// Get current time snapshot of Yee lattice
-  virtual Grids& get_grids2(){ return this->yee; }
+  virtual Grids& get_grids2(){ return this->grids; }
 
   /// Set current time snapshot of Yee lattice
-  virtual void set_grids(Grids& v){ this->yee = v; }
+  virtual void set_grids(Grids& v){ this->grids = v; }
 
   // not needed anymore; also undefined behavior since this can be deleted
-  //virtual std::shared_ptr<Grids> get_grids_ptr(){ return std::shared_ptr<Grids>(&yee); }
+  //virtual std::shared_ptr<Grids> get_grids_ptr(){ return std::shared_ptr<Grids>(&grids); }
 
   //FIXME: naming is wrong because of pybind: it can not deduce correct function
   //       with only constness difference.
-  virtual const Grids& get_const_grids(int /*i*/=0) const { return this->yee; }
+  virtual const Grids& get_const_grids(int /*i*/=0) const { return this->grids; }
 
   virtual void clear_current();
 
