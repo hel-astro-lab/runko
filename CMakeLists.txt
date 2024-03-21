@@ -17,15 +17,18 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # optimization flags
 
 #--------------------------------------------------
-# debug mode (default)
-#set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
-set(CMAKE_CXX_FLAGS "-g -O2 -DDEBUG -march=native -ftree-vectorize")
+# debug mode (default for code development)
+
+#set(CMAKE_CXX_FLAGS "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Werror -Wno-error=unknown-pragmas -Wno-error=unused-parameter")
+set(CMAKE_CXX_FLAGS "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
+#set(CMAKE_CXX_FLAGS "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g3 -O2 -march=native -ftree-vectorize")
+
 
 #--------------------------------------------------
-#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all") general
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-all-all=all.all")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=znver1 -mtune=znver1 -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-all-all=all.all") general
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native -ftree-vectorize")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver1 -mtune=znver1 -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all")
 
 # epyc rome
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -fomit-frame-pointer -fopt-info-all-all=all.all")
@@ -34,13 +37,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -march=native -ftree-vectorize -fopt-info-al
 # other compiliation modes
 
 # AddressSanitizer
-set(CMAKE_CXX_FLAGS_ASAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g -O1")
+set(CMAKE_CXX_FLAGS_ASAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g3 -O2 -march=native -ftree-vectorize")
 
 # LeakSanitizer
-set(CMAKE_CXX_FLAGS_LSAN "-fsanitize=leak -fno-omit-frame-pointer -g -O1")
+set(CMAKE_CXX_FLAGS_LSAN "-fsanitize=leak -fno-omit-frame-pointer -g3 -O2")
 
 # MemorySanitizer
-set(CMAKE_CXX_FLAGS_MSAN "-fsanitize=memory -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -g -O2")
+set(CMAKE_CXX_FLAGS_MSAN "-fsanitize=memory -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -g3 -O2")
 
 #--------------------------------------------------
 
