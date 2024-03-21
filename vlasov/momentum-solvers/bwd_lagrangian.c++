@@ -235,7 +235,7 @@ vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
     tools::Params<T>& /*params*/
     )
 {
-  Vec3E ret = Vec3E();
+  Vec3E ret = Vec3E(0.0,0.0,0.0);
   return ret;
 }
 
