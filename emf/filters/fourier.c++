@@ -573,7 +573,7 @@ class Filter {
     int indx;
 
     // copy local patch to filter's memory
-    emf::YeeLattice& mesh = tile.get_yee();
+    emf::Grids& mesh = tile.get_grids();
 
     int s=0;
     int i=0, j=0; //, k=0;
@@ -596,7 +596,7 @@ class Filter {
       auto cneigh = 
         std::dynamic_pointer_cast<emf::Tile<2>>(grid.get_tileptr( tile.neighs(i, j) ));
       if (cneigh) {
-        emf::YeeLattice& mesh = cneigh->get_yee();
+        emf::Grids& mesh = cneigh->get_grids();
 
         /*
         std::cout << "--------------------------------------------------\n";
@@ -629,7 +629,7 @@ class Filter {
   //       ensure thread safety
   void set_current( emf::Tile<2>& tile)
   {
-    emf::YeeLattice& mesh = tile.get_yee();
+    emf::Grids& mesh = tile.get_grids();
 
     int indx;
 

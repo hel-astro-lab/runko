@@ -16,7 +16,7 @@ from visualize import plotNode
 from visualize_amr import plotXmesh
 from visualize import plotJ, plotE, plotDens
 from visualize import saveVisz
-from visualize import get_yee
+from visualize import get_grids
 
 import injector
 
@@ -100,7 +100,7 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']

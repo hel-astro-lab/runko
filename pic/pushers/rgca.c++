@@ -199,7 +199,7 @@ void pic::rGCAPusher<D,V>::push_container(
   const double m    = con.m; //mass
 
   // emf at the grid
-  auto& yee = tile.get_yee(); 
+  auto& yee = tile.get_grids(); 
   auto& exM = yee.ex;
   auto& eyM = yee.ey;
   auto& ezM = yee.ez;

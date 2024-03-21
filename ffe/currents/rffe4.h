@@ -50,9 +50,9 @@ class rFFE4
       );
 
   /// auxiliary functions to stagger e and b
-  void stagger_x_eb(emf::YeeLattice& m);
-  void stagger_y_eb(emf::YeeLattice& m);
-  void stagger_z_eb(emf::YeeLattice& m);
+  void stagger_x_eb(emf::Grids& m);
+  void stagger_y_eb(emf::Grids& m);
+  void stagger_z_eb(emf::Grids& m);
 
   /// compute rho = div E
   void comp_rho(Tile<D>& tile);

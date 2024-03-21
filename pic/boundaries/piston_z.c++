@@ -30,7 +30,7 @@ void pic::PistonZdir<D>::zigzag(
     double z2glob, 
     double q)
 {
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   const auto mins = tile.mins;
   //const auto c = tile.cfl;    // speed of light
@@ -239,7 +239,7 @@ void pic::PistonZdir<3>::field_bc(
   // skip if piston head is not inside tile boundaries
   const auto mins = tile.mins;
   const auto maxs = tile.maxs;
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   // walloc to relative tile units
   int kw = wallocz - mins[2];

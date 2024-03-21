@@ -62,7 +62,7 @@ inline void read_mesh(
 namespace emf {
 
 template<size_t D>
-inline void write_yee( 
+inline void write_grids( 
     corgi::Grid<D>& grid, 
     int lap,
     std::string dir
@@ -104,7 +104,7 @@ inline void write_yee(
 //}
 
 template<size_t D>
-inline void read_yee( 
+inline void read_grids( 
     corgi::Grid<D>& grid, 
     int lap,
     std::string dir 

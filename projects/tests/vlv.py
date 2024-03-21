@@ -21,7 +21,7 @@ try:
 except:
     pass
 
-from visualize import get_yee
+from visualize import get_grids
 from visualize import get_analysis
 import injector
 
@@ -188,7 +188,7 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
     analysis1 = get_analysis(n, conf, 0)
     analysis2 = get_analysis(n, conf, 1)
 
@@ -211,7 +211,7 @@ def insert_em(grid, conf):
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             c = grid.get_tile(i,j)
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -232,7 +232,7 @@ def insert_em(grid, conf):
 
 
 def solvePoisson(ax, grid, conf):
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
 
     x   = yee['x']
     rho = yee['rho']
@@ -323,7 +323,7 @@ if __name__ == "__main__":
         lap = conf.laprestart + 1
         injector.inject(grid, injector.empty_filler, conf, empty=True) #injecting plasma
 
-        plasma.read_yee( grid, conf.laprestart, conf.outdir)
+        plasma.read_grids( grid, conf.laprestart, conf.outdir)
         plasma.read_mesh(grid, conf.laprestart, conf.outdir)
     else:
         lap = 0
@@ -489,7 +489,7 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            plasma.write_yee(grid,      lap, conf.outdir + "/")
+            plasma.write_grids(grid,      lap, conf.outdir + "/")
             plasma.write_analysis(grid, lap, conf.outdir + "/")
 
             if (lap % conf.restart == 0):

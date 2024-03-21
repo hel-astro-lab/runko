@@ -97,7 +97,7 @@ if __name__ == "__main__":
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
 
         # read restart files
-        pyfld.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyfld.read_grids(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # step one step ahead
         lap = io_stat["lap"] + 1
@@ -373,14 +373,14 @@ if __name__ == "__main__":
                 and (lap % conf.full_interval == 0)
                 and (lap > 0)
             ):
-                pyfld.write_yee(grid, lap, conf.outdir + "/full_output/")
+                pyfld.write_grids(grid, lap, conf.outdir + "/full_output/")
 
             # restart IO (overwrites)
             if (lap % conf.restart == 0) and (lap > 0):
                 # flip between two sets of files
                 io_stat["deep_io_switch"] = 1 if io_stat["deep_io_switch"] == 0 else 0
 
-                pyfld.write_yee(
+                pyfld.write_grids(
                     grid, io_stat["deep_io_switch"], conf.outdir + "/restart/"
                 )
 

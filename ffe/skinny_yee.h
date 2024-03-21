@@ -64,7 +64,7 @@ class SkinnyYeeLattice {
   SkinnyYeeLattice& operator /=(double rhs);
 
 
-  void set_yee(const emf::YeeLattice& yee);
+  void set_grids(const emf::Grids& yee);
 
 };
 

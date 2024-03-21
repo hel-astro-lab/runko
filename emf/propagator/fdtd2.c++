@@ -21,11 +21,11 @@ void emf::FDTD2<1>::push_e(emf::Tile<1>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate(
-  [=] DEVCALLABLE (int i, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, Grids &mesh)
   {
     // Ex NONE
     mesh.ey(i,0,0) += + C*( mesh.bz(i-1,0,0) - mesh.bz(i,0,0));
@@ -51,11 +51,11 @@ void emf::FDTD2<2>::push_e(emf::Tile<2>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, Grids &mesh)
   {
 
     mesh.ex(i,j,0) += + C*(-mesh.bz(i,  j-1,0) + mesh.bz(i,j,0));
@@ -86,11 +86,11 @@ void emf::FDTD2<3>::push_e(emf::Tile<3>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
   {
     mesh.ex(i,j,k) += + C*( mesh.by(i,  j,  k-1) - mesh.by(i,j,k))
                       + C*(-mesh.bz(i,  j-1,k  ) + mesh.bz(i,j,k)); 
@@ -125,11 +125,11 @@ void emf::FDTD2<1>::push_half_b(emf::Tile<1>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate(
-  [=] DEVCALLABLE (int i, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, Grids &mesh)
   {
     // Bx NONE
     mesh.by(i,0,0) += + C*( mesh.ez(i+1,0,0) - mesh.ez(i,0,0));
@@ -154,11 +154,11 @@ void emf::FDTD2<2>::push_half_b(emf::Tile<2>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, Grids &mesh)
   {
     mesh.bx(i,j,0) += + C*(-mesh.ez(i,  j+1,0) + mesh.ez(i,j,0));
     mesh.by(i,j,0) += + C*( mesh.ez(i+1,j,  0) - mesh.ez(i,j,0));
@@ -187,11 +187,11 @@ void emf::FDTD2<3>::push_half_b(emf::Tile<3>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
   {
     mesh.bx(i,j,k) += + C*( mesh.ey(i,  j,  k+1) - mesh.ey(i,j,k))
                       + C*(-mesh.ez(i,  j+1,k  ) + mesh.ez(i,j,k));

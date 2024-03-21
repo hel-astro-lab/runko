@@ -27,7 +27,7 @@ def linear_ramp(x, y, z):
 # insert initial electromagnetic setup (or solve Poisson eq)
 def insert_em_tile(tile, conf, ffunc):
 
-    yee = tile.get_yee(0)
+    yee = tile.get_grids(0)
     for l in range(conf.NxMesh):
         for m in range(conf.NyMesh):
             for n in range(conf.NzMesh):
@@ -122,7 +122,7 @@ def get_js(tile, conf):
     jy = np.zeros((conf.NxMesh, conf.NyMesh, conf.NzMesh))
     jz = np.zeros((conf.NxMesh, conf.NyMesh, conf.NzMesh))
 
-    yee = tile.get_yee()
+    yee = tile.get_grids()
 
     for q in range(conf.NxMesh):
         for r in range(conf.NyMesh):

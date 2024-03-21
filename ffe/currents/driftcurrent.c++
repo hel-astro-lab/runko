@@ -9,7 +9,7 @@
 
 template<>
 void ffe::DriftCurrent<2>::interpolate_b(
-     emf::YeeLattice& yee
+     emf::Grids& yee
     )
 {
   nvtxRangePush(__FUNCTION__);
@@ -46,7 +46,7 @@ void ffe::DriftCurrent<2>::interpolate_b(
 
 template<>
 void ffe::DriftCurrent<3>::interpolate_b(
-     emf::YeeLattice& yee
+     emf::Grids& yee
     )
 {
   nvtxRangePush(__FUNCTION__);
@@ -100,7 +100,7 @@ void ffe::DriftCurrent<2>::comp_drift_cur(ffe::Tile<2>& tile)
 {
   nvtxRangePush(__FUNCTION__);
 
-  emf::YeeLattice& mesh = tile.get_yee();
+  emf::Grids& mesh = tile.get_grids();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -162,7 +162,7 @@ void ffe::DriftCurrent<3>::comp_drift_cur(ffe::Tile<3>& tile)
 {
   nvtxRangePush(__FUNCTION__);
 
-  emf::YeeLattice& mesh = tile.get_yee();
+  emf::Grids& mesh = tile.get_grids();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -220,7 +220,7 @@ void ffe::DriftCurrent<2>::comp_parallel_cur(
 {
   nvtxRangePush(__FUNCTION__);
 
-  emf::YeeLattice& mesh = tile.get_yee();
+  emf::Grids& mesh = tile.get_grids();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -276,7 +276,7 @@ void ffe::DriftCurrent<3>::comp_parallel_cur(
 {
   nvtxRangePush(__FUNCTION__);
 
-  emf::YeeLattice& mesh = tile.get_yee();
+  emf::Grids& mesh = tile.get_grids();
 
   // half stagger B; stored in (bxf, byf, bzf)
   interpolate_b(mesh);
@@ -332,7 +332,7 @@ void ffe::DriftCurrent<2>::limiter(
 {
   nvtxRangePush(__FUNCTION__);
 
-  emf::YeeLattice& mesh = tile.get_yee();
+  emf::Grids& mesh = tile.get_grids();
   interpolate_b(mesh);
 
   double diss;
@@ -398,7 +398,7 @@ void ffe::DriftCurrent<3>::limiter(
 {
   nvtxRangePush(__FUNCTION__);
 
-  emf::YeeLattice& mesh = tile.get_yee();
+  emf::Grids& mesh = tile.get_grids();
   interpolate_b(mesh);
 
   double diss;

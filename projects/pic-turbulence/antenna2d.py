@@ -181,7 +181,7 @@ class Antenna:
 
 
     def add_driving(self, tile):
-        yee = tile.get_yee(0)
+        yee = tile.get_grids(0)
         #self.get_Brms(tile)
         self.get_Brms2(tile)
 

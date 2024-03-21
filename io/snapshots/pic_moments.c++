@@ -61,7 +61,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
     auto maxs = tile.maxs;
 
     // update also yee
-    auto& yee = tile.get_yee();
+    auto& yee = tile.get_grids();
     yee.rho.clear();
 
     // loop over species

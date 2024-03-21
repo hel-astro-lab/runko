@@ -180,13 +180,13 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("dt",   &fields::PlasmaTile::dt)
     .def_readwrite("dx",   &fields::PlasmaTile::dx)
     .def_readwrite("cfl",  &fields::PlasmaTile::cfl)
-    .def("cycle_yee",         &fields::PlasmaTile::cycle_yee)
+    .def("cycle_grids",         &fields::PlasmaTile::cycle_grids)
     .def("cycle_current",     &fields::PlasmaTile::cycle_current)
     .def("cycle_current_2d",   &fields::PlasmaTile::cycle_current_2d)
     .def("push_e",            &fields::PlasmaTile::push_e)
     .def("push_half_b",        &fields::PlasmaTile::push_half_b)
     .def("deposit_current",   &fields::PlasmaTile::deposit_current)
-    .def("get_yee",           &fields::PlasmaTile::get_yee, py::return_value_policy::reference)
+    .def("get_grids",           &fields::PlasmaTile::get_grids, py::return_value_policy::reference)
     .def("get_analysis",      &fields::PlasmaTile::get_analysis, py::return_value_policy::reference)
     .def("add_analysis_species", &fields::PlasmaTile::add_analysis_species)
     .def("update_boundaries",  &fields::PlasmaTile::update_boundaries)
@@ -207,19 +207,19 @@ PYBIND11_MODULE(pyplasma, m) {
   py::class_<vlasov::Grid>(m, "Grid", corgi_node)
     .def(py::init<size_t, size_t>());
 
-  py::class_<fields::YeeLattice>(m, "YeeLattice")
+  py::class_<fields::Grids>(m, "Grids")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("ex",   &fields::YeeLattice::ex)
-    .def_readwrite("ey",   &fields::YeeLattice::ey)
-    .def_readwrite("ez",   &fields::YeeLattice::ez)
-    .def_readwrite("bx",   &fields::YeeLattice::bx)
-    .def_readwrite("by",   &fields::YeeLattice::by)
-    .def_readwrite("bz",   &fields::YeeLattice::bz)
-    .def_readwrite("jx",   &fields::YeeLattice::jx)
-    .def_readwrite("jy",   &fields::YeeLattice::jy)
-    .def_readwrite("jz",   &fields::YeeLattice::jz)
-    .def_readwrite("jx1",  &fields::YeeLattice::jx1)
-    .def_readwrite("rho",  &fields::YeeLattice::rho);
+    .def_readwrite("ex",   &fields::Grids::ex)
+    .def_readwrite("ey",   &fields::Grids::ey)
+    .def_readwrite("ez",   &fields::Grids::ez)
+    .def_readwrite("bx",   &fields::Grids::bx)
+    .def_readwrite("by",   &fields::Grids::by)
+    .def_readwrite("bz",   &fields::Grids::bz)
+    .def_readwrite("jx",   &fields::Grids::jx)
+    .def_readwrite("jy",   &fields::Grids::jy)
+    .def_readwrite("jz",   &fields::Grids::jz)
+    .def_readwrite("jx1",  &fields::Grids::jx1)
+    .def_readwrite("rho",  &fields::Grids::rho);
 
 
   py::class_<fields::PlasmaMomentLattice>(m, "PlasmaMomentLattice")
@@ -429,7 +429,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
     m.def("analyze",      &vlasov::analyze);
 
-    m.def("write_yee", &vlasov::write_yee);
+    m.def("write_grids", &vlasov::write_grids);
 
     m.def("write_analysis", &vlasov::write_analysis);
 

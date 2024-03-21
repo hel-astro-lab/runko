@@ -17,7 +17,7 @@ import initialize as init
 #from visualize_amr import plotXmesh
 #from visualize import plotJ, plotE, plotDens
 #from visualize import saveVisz
-from visualize import get_yee
+from visualize import get_grids
 
 import injector
 
@@ -167,7 +167,7 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
 
     f5['fields/Ex'  ][:,lap] = yee['ex']
     f5['fields/rho' ][:,lap] = yee['rho']
@@ -188,7 +188,7 @@ def insert_em(grid, conf):
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             c = grid.get_tileptr(i,j)
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -209,7 +209,7 @@ def insert_em(grid, conf):
 
 
 def solvePoisson(ax, grid, conf):
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
 
     x   = yee['x']
     rho = yee['rho']
@@ -293,7 +293,7 @@ if __name__ == "__main__":
     #insert_em(grid, conf)
 
     lap = 0
-    plasma.write_yee(grid,      lap)
+    plasma.write_grids(grid,      lap)
     plasma.write_analysis(grid, lap)
     plasma.write_mesh(grid,     lap)
 
@@ -356,7 +356,7 @@ if __name__ == "__main__":
 
 
     lap = 0
-    plasma.write_yee(grid,      lap)
+    plasma.write_grids(grid,      lap)
     plasma.write_analysis(grid, lap)
     plasma.write_mesh(grid,     lap)
 
@@ -431,7 +431,7 @@ if __name__ == "__main__":
 
             timer.start("io")
 
-            plasma.write_yee(grid,      lap)
+            plasma.write_grids(grid,      lap)
             plasma.write_analysis(grid, lap)
             plasma.write_mesh(grid,     lap)
 

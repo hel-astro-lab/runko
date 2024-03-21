@@ -35,7 +35,7 @@ PlasmaBlock& Tile<1>::get_external_data(
 template<std::size_t D>
 void Tile<D>::cycle_current() 
 {
-  //auto& yee = this->get_yee();
+  //auto& yee = this->get_grids();
   // fix these accessing mat 
   // std::swap( yee.jx.mat, jx1.mat );
   // std::swap( yee.jy.mat, jy1.mat );

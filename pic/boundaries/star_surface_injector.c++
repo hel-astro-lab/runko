@@ -90,7 +90,7 @@ void pic::Star<D>::solve(
   //--------------------------------------------------
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
   //const auto c = tile.cfl;
 
   //--------------------------------------------------
@@ -103,7 +103,7 @@ void pic::Star<D>::solve(
 
   //UniIter::iterate3D(
   //[=] DEVCALLABLE (int i, int j, int k, 
-  //                YeeLattice &yee)
+  //                Grids &yee)
   //{
 
 

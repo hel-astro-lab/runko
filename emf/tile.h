@@ -13,7 +13,7 @@ namespace emf {
   namespace mpi = mpi4cpp::mpi;
 
 /// Yee lattice of plasma quantities
-class YeeLattice
+class Grids
 {
 
   public:
@@ -43,10 +43,10 @@ class YeeLattice
 
 
   // default empty constructor
-  YeeLattice()  = default;
+  Grids()  = default;
 
   // real initializer constructor
-  YeeLattice(int Nx, int Ny, int Nz) : 
+  Grids(int Nx, int Ny, int Nz) : 
     Nx{Nx}, Ny{Ny}, Nz{Nz},
     ex{Nx, Ny, Nz},
     ey{Nx, Ny, Nz},
@@ -63,21 +63,21 @@ class YeeLattice
   }
 
   // copy ctor
-  YeeLattice(YeeLattice& other) = default;
+  Grids(Grids& other) = default;
 
-  YeeLattice(const YeeLattice& other) = default;
+  Grids(const Grids& other) = default;
 
   // move constructor
-  YeeLattice(YeeLattice&& other) noexcept :
-      //YeeLattice() // initialize via default constructor, C++11 only
-      YeeLattice{other.Nx, other.Ny, other.Nz} // initialize via allocating constructor
+  Grids(Grids&& other) noexcept :
+      //Grids() // initialize via default constructor, C++11 only
+      Grids{other.Nx, other.Ny, other.Nz} // initialize via allocating constructor
   {
     swap(*this, other);
   }
 
 
   // public swap for efficient memory management
-  friend void swap(YeeLattice& first, YeeLattice& second)
+  friend void swap(Grids& first, Grids& second)
   {
     using std::swap;
     swap(first.Nx,  second.Nx);
@@ -98,13 +98,13 @@ class YeeLattice
   }
 
   // copy-and-swap algorithm
-  YeeLattice& operator=(YeeLattice other) 
+  Grids& operator=(Grids other) 
   {
     swap(*this, other);
     return *this;
   }
 
-  ~YeeLattice()
+  ~Grids()
   {
 
   };
@@ -130,7 +130,7 @@ class Tile :
   std::array<int, 3> mesh_lengths;
 
   /// Yee lattice of plasma quantities (with 1 timestep)
-  YeeLattice yee;
+  Grids yee;
 
   /// explicitly show that we import tile limits from base class 
   using corgi::Tile<D>::mins;
@@ -165,20 +165,20 @@ class Tile :
   virtual void deposit_current();
 
   /// Get current time snapshot of Yee lattice
-  virtual YeeLattice& get_yee(int /*i*/ =0){ return this->yee; }
+  virtual Grids& get_grids(int /*i*/ =0){ return this->yee; }
 
   /// Get current time snapshot of Yee lattice
-  virtual YeeLattice& get_yee2(){ return this->yee; }
+  virtual Grids& get_grids2(){ return this->yee; }
 
   /// Set current time snapshot of Yee lattice
-  virtual void set_yee(YeeLattice& v){ this->yee = v; }
+  virtual void set_grids(Grids& v){ this->yee = v; }
 
   // not needed anymore; also undefined behavior since this can be deleted
-  //virtual std::shared_ptr<YeeLattice> get_yeeptr(){ return std::shared_ptr<YeeLattice>(&yee); }
+  //virtual std::shared_ptr<Grids> get_grids_ptr(){ return std::shared_ptr<Grids>(&yee); }
 
   //FIXME: naming is wrong because of pybind: it can not deduce correct function
   //       with only constness difference.
-  virtual const YeeLattice& get_const_yee(int /*i*/=0) const { return this->yee; }
+  virtual const Grids& get_const_grids(int /*i*/=0) const { return this->yee; }
 
   virtual void clear_current();
 

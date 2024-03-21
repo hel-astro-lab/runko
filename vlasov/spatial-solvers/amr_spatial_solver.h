@@ -317,7 +317,7 @@ class AmrSpatialLagrangianSolver :
         vlv::PlasmaBlock& block0_right,
         T qm,
         T cfl,
-        emf::YeeLattice& yee)
+        emf::Grids& yee)
     {
 
 
@@ -499,7 +499,7 @@ class AmrSpatialLagrangianSolver :
     {
 
       // Yee lattice reference
-      auto& yee = tile.get_yee();
+      auto& yee = tile.get_grids();
       yee.jx.clear();
       yee.jy.clear();
       yee.jz.clear();

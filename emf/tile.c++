@@ -36,10 +36,10 @@ void Tile<D>::deposit_current()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& mesh = get_yee();
+  auto& mesh = get_grids();
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, YeeLattice& mesh)
+    [=] DEVCALLABLE (int i, int j, int k, Grids& mesh)
     {
       mesh.ex(i,j,k) -= mesh.jx(i,j,k);
       mesh.ey(i,j,k) -= mesh.jy(i,j,k);
@@ -72,7 +72,7 @@ void Tile<1>::update_boundaries(
   Tileptr tpr; 
 
   // target
-  auto& lhs = get_yee();
+  auto& lhs = get_grids();
 
   const int Nx = lhs.Nx;
 
@@ -83,19 +83,19 @@ void Tile<1>::update_boundaries(
     tpr = std::dynamic_pointer_cast<Tile<1>>(grid.get_tileptr( neighs(in) ));
 
     if (tpr) {
-      auto& rhs = tpr->get_yee();
+      auto& rhs = tpr->get_grids();
 
       // copy from right side to left
-      //copy_vert_yee(mesh, mleft, iarr, -1, mleft.Nx-1); 
+      //copy_vert_grids(mesh, mleft, iarr, -1, mleft.Nx-1); 
         
       // copy from left side to right
-      //copy_vert_yee(mesh, mright, iarr, mesh.Nx, 0); 
+      //copy_vert_grids(mesh, mright, iarr, mesh.Nx, 0); 
 
       if (in == +1) { ito = Nx; ifro = 0; }
       if (in == -1) { ito = -1; ifro = Nx-1; }
 
       if(has_elem(iarr, 0)) {
-        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){
           lhs_in.jx(ito+in*h, 0, 0) = rhs_in.jx(ifro+in*h, 0, 0);
           lhs_in.jy(ito+in*h, 0, 0) = rhs_in.jy(ifro+in*h, 0, 0);
           lhs_in.jz(ito+in*h, 0, 0) = rhs_in.jz(ifro+in*h, 0, 0);
@@ -103,7 +103,7 @@ void Tile<1>::update_boundaries(
       }
 
       if(has_elem(iarr, 1)) {
-        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){
           lhs_in.ex(ito+in*h, 0, 0) = rhs_in.ex(ifro+in*h, 0, 0);
           lhs_in.ey(ito+in*h, 0, 0) = rhs_in.ey(ifro+in*h, 0, 0);
           lhs_in.ez(ito+in*h, 0, 0) = rhs_in.ez(ifro+in*h, 0, 0);
@@ -111,7 +111,7 @@ void Tile<1>::update_boundaries(
       }
 
       if(has_elem(iarr, 2)) {
-        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){
           lhs_in.bx(ito+in*h, 0, 0) = rhs_in.bx(ifro+in*h, 0, 0);
           lhs_in.by(ito+in*h, 0, 0) = rhs_in.by(ifro+in*h, 0, 0);
           lhs_in.bz(ito+in*h, 0, 0) = rhs_in.bz(ifro+in*h, 0, 0);
@@ -136,7 +136,7 @@ void Tile<2>::update_boundaries(
   int ito=0, jto=0, ifro=0, jfro=0;
   Tileptr tpr;
 
-  auto& lhs = get_yee(); // target as a reference to update into
+  auto& lhs = get_grids(); // target as a reference to update into
 
   const int Nx = lhs.Nx;
   const int Ny = lhs.Ny;
@@ -150,7 +150,7 @@ void Tile<2>::update_boundaries(
 
       tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn) ));
       if (tpr) {
-        auto& rhs = tpr->get_yee();
+        auto& rhs = tpr->get_grids();
 
         /* diagonal rules are:
         if + then to   n
@@ -167,24 +167,24 @@ void Tile<2>::update_boundaries(
         if (jn == -1) { jto = -1; jfro = Ny-1; }
 
         // copy (halo = 1) assignment
-        //if      (jn == 0) copy_vert_yee(    mesh, mpr, ito, ifro);   // vertical
-        //else if (in == 0) copy_horz_yee(    mesh, mpr, jto, jfro);   // horizontal
-        //else              copy_z_pencil_yee(mesh, mpr, ito, jto, ifro, jfro); // diagonal
+        //if      (jn == 0) copy_vert_grids(    mesh, mpr, ito, ifro);   // vertical
+        //else if (in == 0) copy_horz_grids(    mesh, mpr, jto, jfro);   // horizontal
+        //else              copy_z_pencil_grids(mesh, mpr, ito, jto, ifro, jfro); // diagonal
         
         // generalized halo >= 1 loops
         if (jn == 0) { // vertical
-          //for(int h=0; h<halo; h++) copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
+          //for(int h=0; h<halo; h++) copy_vert_grids(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
 
           if(has_elem(iarr, 0)) {
 
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(ito+in*h, j, 0) = rhs_in.jx(ifro+in*h, j, 0);
               lhs_in.jy(ito+in*h, j, 0) = rhs_in.jy(ifro+in*h, j, 0);
               lhs_in.jz(ito+in*h, j, 0) = rhs_in.jz(ifro+in*h, j, 0);
             }, Ny, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D([=] (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D([=] (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(ito+in*h, j, 0) = rhs_in.jx(ifro+in*h, j, 0);
               lhs_in.jy(ito+in*h, j, 0) = rhs_in.jy(ifro+in*h, j, 0);
               lhs_in.jz(ito+in*h, j, 0) = rhs_in.jz(ifro+in*h, j, 0);
@@ -195,13 +195,13 @@ void Tile<2>::update_boundaries(
           // TODO rest of the operations
           if(has_elem(iarr, 1)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(ito+in*h, j, 0) = rhs_in.ex(ifro+in*h, j, 0);
               lhs_in.ey(ito+in*h, j, 0) = rhs_in.ey(ifro+in*h, j, 0);
               lhs_in.ez(ito+in*h, j, 0) = rhs_in.ez(ifro+in*h, j, 0);
             }, Ny, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(ito+in*h, j, 0) = rhs_in.ex(ifro+in*h, j, 0);
               lhs_in.ey(ito+in*h, j, 0) = rhs_in.ey(ifro+in*h, j, 0);
               lhs_in.ez(ito+in*h, j, 0) = rhs_in.ez(ifro+in*h, j, 0);
@@ -211,13 +211,13 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 2)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(ito+in*h, j, 0) = rhs_in.bx(ifro+in*h, j, 0);
               lhs_in.by(ito+in*h, j, 0) = rhs_in.by(ifro+in*h, j, 0);
               lhs_in.bz(ito+in*h, j, 0) = rhs_in.bz(ifro+in*h, j, 0);
             }, Ny, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int j, int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(ito+in*h, j, 0) = rhs_in.bx(ifro+in*h, j, 0);
               lhs_in.by(ito+in*h, j, 0) = rhs_in.by(ifro+in*h, j, 0);
               lhs_in.bz(ito+in*h, j, 0) = rhs_in.bz(ifro+in*h, j, 0);
@@ -228,17 +228,17 @@ void Tile<2>::update_boundaries(
 
 
         } else if (in == 0) { // horizontal
-          //for(int g=0; g<halo; g++) copy_horz_yee(mesh, mpr, iarr, jto+jn*g, jfro+jn*g);   
+          //for(int g=0; g<halo; g++) copy_horz_grids(mesh, mpr, iarr, jto+jn*g, jfro+jn*g);   
 
           if(has_elem(iarr, 0)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(i, jto+jn*g, 0) = rhs_in.jx(i, jfro+jn*g, 0);
               lhs_in.jy(i, jto+jn*g, 0) = rhs_in.jy(i, jfro+jn*g, 0);
               lhs_in.jz(i, jto+jn*g, 0) = rhs_in.jz(i, jfro+jn*g, 0);
             }, Nx, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(i, jto+jn*g, 0) = rhs_in.jx(i, jfro+jn*g, 0);
               lhs_in.jy(i, jto+jn*g, 0) = rhs_in.jy(i, jfro+jn*g, 0);
               lhs_in.jz(i, jto+jn*g, 0) = rhs_in.jz(i, jfro+jn*g, 0);
@@ -249,13 +249,13 @@ void Tile<2>::update_boundaries(
             
           if(has_elem(iarr, 1)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(i, jto+jn*g, 0) = rhs_in.ex(i, jfro+jn*g, 0);
               lhs_in.ey(i, jto+jn*g, 0) = rhs_in.ey(i, jfro+jn*g, 0);
               lhs_in.ez(i, jto+jn*g, 0) = rhs_in.ez(i, jfro+jn*g, 0);
             }, Nx, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(i, jto+jn*g, 0) = rhs_in.ex(i, jfro+jn*g, 0);
               lhs_in.ey(i, jto+jn*g, 0) = rhs_in.ey(i, jfro+jn*g, 0);
               lhs_in.ez(i, jto+jn*g, 0) = rhs_in.ez(i, jfro+jn*g, 0);
@@ -266,13 +266,13 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 2)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(i, jto+jn*g, 0) = rhs_in.bx(i, jfro+jn*g, 0);
               lhs_in.by(i, jto+jn*g, 0) = rhs_in.by(i, jfro+jn*g, 0);
               lhs_in.bz(i, jto+jn*g, 0) = rhs_in.bz(i, jfro+jn*g, 0);
             }, Nx, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(i, jto+jn*g, 0) = rhs_in.bx(i, jfro+jn*g, 0);
               lhs_in.by(i, jto+jn*g, 0) = rhs_in.by(i, jfro+jn*g, 0);
               lhs_in.bz(i, jto+jn*g, 0) = rhs_in.bz(i, jfro+jn*g, 0);
@@ -284,19 +284,19 @@ void Tile<2>::update_boundaries(
         } else { // diagonal
           //for(int h=0; h<halo; h++) {
           //  for(int g=0; g<halo; g++) {
-          //    copy_z_pencil_yee(mesh, mpr,iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+          //    copy_z_pencil_grids(mesh, mpr,iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
           //  }
           //}
 
           if(has_elem(iarr, 0)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(ito+in*h, jto+jn*g, 0) = rhs_in.jx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jy(ito+in*h, jto+jn*g, 0) = rhs_in.jy(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jz(ito+in*h, jto+jn*g, 0) = rhs_in.jz(ifro+in*h, jfro+jn*g, 0);
             }, halo, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(ito+in*h, jto+jn*g, 0) = rhs_in.jx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jy(ito+in*h, jto+jn*g, 0) = rhs_in.jy(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jz(ito+in*h, jto+jn*g, 0) = rhs_in.jz(ifro+in*h, jfro+jn*g, 0);
@@ -307,13 +307,13 @@ void Tile<2>::update_boundaries(
             
           if(has_elem(iarr, 1)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(ito+in*h, jto+jn*g, 0) = rhs_in.ex(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ey(ito+in*h, jto+jn*g, 0) = rhs_in.ey(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ez(ito+in*h, jto+jn*g, 0) = rhs_in.ez(ifro+in*h, jfro+jn*g, 0);
             }, halo, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(ito+in*h, jto+jn*g, 0) = rhs_in.ex(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ey(ito+in*h, jto+jn*g, 0) = rhs_in.ey(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ez(ito+in*h, jto+jn*g, 0) = rhs_in.ez(ifro+in*h, jfro+jn*g, 0);
@@ -324,13 +324,13 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 2)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(ito+in*h, jto+jn*g, 0) = rhs_in.bx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.by(ito+in*h, jto+jn*g, 0) = rhs_in.by(ifro+in*h, jfro+jn*g, 0);
               lhs_in.bz(ito+in*h, jto+jn*g, 0) = rhs_in.bz(ifro+in*h, jfro+jn*g, 0);
             }, halo, halo, lhs, rhs);
             #else
-            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+            UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(ito+in*h, jto+jn*g, 0) = rhs_in.bx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.by(ito+in*h, jto+jn*g, 0) = rhs_in.by(ifro+in*h, jfro+jn*g, 0);
               lhs_in.bz(ito+in*h, jto+jn*g, 0) = rhs_in.bz(ifro+in*h, jfro+jn*g, 0);
@@ -364,7 +364,7 @@ void Tile<3>::update_boundaries(
   int ito=0, jto=0, kto=0, ifro=0, jfro=0, kfro=0;
   Tileptr tpr;
 
-  auto& lhs = get_yee(); // target as a reference to update into
+  auto& lhs = get_grids(); // target as a reference to update into
   const int halo = 3; // halo region size for fields
 
   const int Nx = lhs.Nx;
@@ -380,7 +380,7 @@ void Tile<3>::update_boundaries(
         // continue only if the tile exists (get_tileptr return nullptr otherwise)
         tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
         if (tpr) {
-          auto& rhs = tpr->get_yee();
+          auto& rhs = tpr->get_grids();
 
           /* diagonal rules are:
           if + then to   n
@@ -404,18 +404,18 @@ void Tile<3>::update_boundaries(
 
             // vertical
             if (jn == 0) { 
-              //for(int h=0; h<halo; h++) copy_vert_yee(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
-              //copy_vert_yee_halo(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in, ind);
+              //for(int h=0; h<halo; h++) copy_vert_grids(mesh, mpr, iarr, ito+in*h, ifro+in*h);   
+              //copy_vert_grids_halo(mesh, mpr, mesh.ex.Ny, mesh.ex.Nz, halo, ito, ifro, in, ind);
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, j, k) = rhs_in.jx(ifro+in*h, j, k);
                   lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
                   lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
                 }, Ny, Nz, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, j, k) = rhs_in.jx(ifro+in*h, j, k);
                   lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
                   lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
@@ -426,13 +426,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
                   lhs_in.ey(ito+in*h, j, k) = rhs_in.ey(ifro+in*h, j, k);
                   lhs_in.ez(ito+in*h, j, k) = rhs_in.ez(ifro+in*h, j, k);
                 }, Ny, Nz, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
                   lhs_in.ey(ito+in*h, j, k) = rhs_in.ey(ifro+in*h, j, k);
                   lhs_in.ez(ito+in*h, j, k) = rhs_in.ez(ifro+in*h, j, k);
@@ -443,13 +443,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, j, k) = rhs_in.bx(ifro+in*h, j, k);
                   lhs_in.by(ito+in*h, j, k) = rhs_in.by(ifro+in*h, j, k);
                   lhs_in.bz(ito+in*h, j, k) = rhs_in.bz(ifro+in*h, j, k);
                 }, Ny, Nz, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, j, k) = rhs_in.bx(ifro+in*h, j, k);
                   lhs_in.by(ito+in*h, j, k) = rhs_in.by(ifro+in*h, j, k);
                   lhs_in.bz(ito+in*h, j, k) = rhs_in.bz(ifro+in*h, j, k);
@@ -460,18 +460,18 @@ void Tile<3>::update_boundaries(
 
             // horizontal
             } else if (in == 0) { 
-              //for(int g=0; g<halo; g++) copy_horz_yee(mesh, mpr,iarr, jto+jn*g, jfro+jn*g);   
-              //copy_horz_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn, ind);
+              //for(int g=0; g<halo; g++) copy_horz_grids(mesh, mpr,iarr, jto+jn*g, jfro+jn*g);   
+              //copy_horz_grids_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Nz, halo, jto, jfro, jn, ind);
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, jto+jn*g, k) = rhs_in.jx(i, jfro+jn*g, k);
                   lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
                   lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
                 }, Nx, Nz, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, jto+jn*g, k) = rhs_in.jx(i, jfro+jn*g, k);
                   lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
                   lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
@@ -482,13 +482,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
                   lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
                   lhs_in.ez(i, jto+jn*g, k) = rhs_in.ez(i, jfro+jn*g, k);
                 }, Nx, Nz, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
                   lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
                   lhs_in.ez(i, jto+jn*g, k) = rhs_in.ez(i, jfro+jn*g, k);
@@ -499,13 +499,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, jto+jn*g, k) = rhs_in.bx(i, jfro+jn*g, k);
                   lhs_in.by(i, jto+jn*g, k) = rhs_in.by(i, jfro+jn*g, k);
                   lhs_in.bz(i, jto+jn*g, k) = rhs_in.bz(i, jfro+jn*g, k);
                 }, Nx, Nz, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, jto+jn*g, k) = rhs_in.bx(i, jfro+jn*g, k);
                   lhs_in.by(i, jto+jn*g, k) = rhs_in.by(i, jfro+jn*g, k);
                   lhs_in.bz(i, jto+jn*g, k) = rhs_in.bz(i, jfro+jn*g, k);
@@ -518,19 +518,19 @@ void Tile<3>::update_boundaries(
             } else { 
               //for(int h=0; h<halo; h++) {
               //  for(int g=0; g<halo; g++) {
-              //    copy_z_pencil_yee(mesh, mpr, iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
+              //    copy_z_pencil_grids(mesh, mpr, iarr, ito+in*h, jto+jn*g, ifro+in*h, jfro+jn*g); 
               //} }
-             //copy_z_pencil_yee_halo(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn, ind);
+             //copy_z_pencil_grids_halo(mesh, mpr, mesh.ex.Nz, halo, ito, ifro, jto, jfro, in, jn, ind);
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, jto+jn*g, k) = rhs_in.jx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jy(ito+in*h, jto+jn*g, k) = rhs_in.jy(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
                 }, Nz, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, jto+jn*g, k) = rhs_in.jx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jy(ito+in*h, jto+jn*g, k) = rhs_in.jy(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
@@ -541,13 +541,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ez(ito+in*h, jto+jn*g, k) = rhs_in.ez(ifro+in*h, jfro+jn*g, k);
                 }, Nz, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ez(ito+in*h, jto+jn*g, k) = rhs_in.ez(ifro+in*h, jfro+jn*g, k);
@@ -558,13 +558,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, jto+jn*g, k) = rhs_in.bx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.by(ito+in*h, jto+jn*g, k) = rhs_in.by(ifro+in*h, jfro+jn*g, k);
                   lhs_in.bz(ito+in*h, jto+jn*g, k) = rhs_in.bz(ifro+in*h, jfro+jn*g, k);
                 }, Nz, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, jto+jn*g, k) = rhs_in.bx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.by(ito+in*h, jto+jn*g, k) = rhs_in.by(ifro+in*h, jfro+jn*g, k);
                   lhs_in.bz(ito+in*h, jto+jn*g, k) = rhs_in.bz(ifro+in*h, jfro+jn*g, k);
@@ -580,18 +580,18 @@ void Tile<3>::update_boundaries(
             
             // infront/behind directions
             if (in == 0 && jn == 0 && kn != 0) { 
-              //for(int g=0; g<halo; g++) copy_face_yee(mesh, mpr, iarr, kto+kn*g, kfro+kn*g);   
-              //copy_face_yee_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn, ind);
+              //for(int g=0; g<halo; g++) copy_face_grids(mesh, mpr, iarr, kto+kn*g, kfro+kn*g);   
+              //copy_face_grids_halo(mesh, mpr, mesh.ex.Nx, mesh.ex.Ny, halo, kto, kfro, kn, ind);
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, j, kto +kn*f) =  rhs_in.jx(i, j, kfro+kn*f);
                   lhs_in.jy(i, j, kto +kn*f) =  rhs_in.jy(i, j, kfro+kn*f);
                   lhs_in.jz(i, j, kto +kn*f) =  rhs_in.jz(i, j, kfro+kn*f);
                 }, Nx, Ny, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, j, kto +kn*f) =  rhs_in.jx(i, j, kfro+kn*f);
                   lhs_in.jy(i, j, kto +kn*f) =  rhs_in.jy(i, j, kfro+kn*f);
                   lhs_in.jz(i, j, kto +kn*f) =  rhs_in.jz(i, j, kfro+kn*f);
@@ -602,13 +602,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, j, kto +kn*f) =  rhs_in.ex(i, j, kfro+kn*f);
                   lhs_in.ey(i, j, kto +kn*f) =  rhs_in.ey(i, j, kfro+kn*f);
                   lhs_in.ez(i, j, kto +kn*f) =  rhs_in.ez(i, j, kfro+kn*f);
                 }, Nx, Ny, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, j, kto +kn*f) =  rhs_in.ex(i, j, kfro+kn*f);
                   lhs_in.ey(i, j, kto +kn*f) =  rhs_in.ey(i, j, kfro+kn*f);
                   lhs_in.ez(i, j, kto +kn*f) =  rhs_in.ez(i, j, kfro+kn*f);
@@ -619,13 +619,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, j, kto +kn*f) =  rhs_in.bx(i, j, kfro+kn*f);
                   lhs_in.by(i, j, kto +kn*f) =  rhs_in.by(i, j, kfro+kn*f);
                   lhs_in.bz(i, j, kto +kn*f) =  rhs_in.bz(i, j, kfro+kn*f);
                 }, Nx, Ny, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, j, kto +kn*f) =  rhs_in.bx(i, j, kfro+kn*f);
                   lhs_in.by(i, j, kto +kn*f) =  rhs_in.by(i, j, kfro+kn*f);
                   lhs_in.bz(i, j, kto +kn*f) =  rhs_in.bz(i, j, kfro+kn*f);
@@ -645,19 +645,19 @@ void Tile<3>::update_boundaries(
               // y pencils
               //for(int h=0; h<halo; h++) {
               //for(int g=0; g<halo; g++) {
-              //    copy_y_pencil_yee(mesh, mpr, iarr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
+              //    copy_y_pencil_grids(mesh, mpr, iarr, ito+in*h, kto+kn*g, ifro+in*h, kfro+kn*g); 
               //}}
-              //copy_y_pencil_yee_halo(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
+              //copy_y_pencil_grids_halo(mesh, mpr, mesh.ex.Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, j, kto+kn*g) = rhs_in.jx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
                 }, Ny, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, j, kto+kn*g) = rhs_in.jx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
@@ -668,13 +668,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ey(ito+in*h, j, kto+kn*g) = rhs_in.ey(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ez(ito+in*h, j, kto+kn*g) = rhs_in.ez(ifro+in*h, j, kfro+kn*g);
                 }, Ny, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ey(ito+in*h, j, kto+kn*g) = rhs_in.ey(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ez(ito+in*h, j, kto+kn*g) = rhs_in.ez(ifro+in*h, j, kfro+kn*g);
@@ -685,13 +685,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, j, kto+kn*g) = rhs_in.bx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.by(ito+in*h, j, kto+kn*g) = rhs_in.by(ifro+in*h, j, kfro+kn*g);
                   lhs_in.bz(ito+in*h, j, kto+kn*g) = rhs_in.bz(ifro+in*h, j, kfro+kn*g);
                 }, Ny, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, j, kto+kn*g) = rhs_in.bx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.by(ito+in*h, j, kto+kn*g) = rhs_in.by(ifro+in*h, j, kfro+kn*g);
                   lhs_in.bz(ito+in*h, j, kto+kn*g) = rhs_in.bz(ifro+in*h, j, kfro+kn*g);
@@ -707,19 +707,19 @@ void Tile<3>::update_boundaries(
               // x pencils
               //for(int h=0; h<halo; h++) {
               //for(int g=0; g<halo; g++) {
-              //    copy_x_pencil_yee(mesh, mpr, iarr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
+              //    copy_x_pencil_grids(mesh, mpr, iarr, jto+jn*h, kto+kn*g, jfro+jn*h, kfro+kn*g); 
               //}}
-              //copy_x_pencil_yee_halo(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
+              //copy_x_pencil_grids_halo(mesh, mpr, mesh.ex.Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, jto+jn*h, kto+kn*g) = rhs_in.jx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
                 }, Nx, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, jto+jn*h, kto+kn*g) = rhs_in.jx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
@@ -730,13 +730,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ez(i, jto+jn*h, kto+kn*g) = rhs_in.ez(i, jfro+jn*h, kfro+kn*g);
                 }, Nx, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ez(i, jto+jn*h, kto+kn*g) = rhs_in.ez(i, jfro+jn*h, kfro+kn*g);
@@ -747,13 +747,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, jto+jn*h, kto+kn*g) = rhs_in.bx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.by(i, jto+jn*h, kto+kn*g) = rhs_in.by(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.bz(i, jto+jn*h, kto+kn*g) = rhs_in.bz(i, jfro+jn*h, kfro+kn*g);
                 }, Nx, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, jto+jn*h, kto+kn*g) = rhs_in.bx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.by(i, jto+jn*h, kto+kn*g) = rhs_in.by(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.bz(i, jto+jn*h, kto+kn*g) = rhs_in.bz(i, jfro+jn*h, kfro+kn*g);
@@ -769,21 +769,21 @@ void Tile<3>::update_boundaries(
               //for(int h=0; h<halo; h++) {
               //for(int g=0; g<halo; g++) {
               //for(int f=0; f<halo; f++) {
-              //  copy_point_yee(mesh, mpr, iarr,
+              //  copy_point_grids(mesh, mpr, iarr,
               //          ito +in*h, jto +jn*g, kto +kn*f,
               //          ifro+in*h, jfro+jn*g, kfro+kn*f);
               //}}}
-              //copy_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
+              //copy_point_grids_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
                 }, halo, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -794,13 +794,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
                 }, halo, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -811,13 +811,13 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
                 }, halo, halo, halo, lhs, rhs);
                 #else
-                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+                UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -856,26 +856,26 @@ void Tile<1>::exchange_currents(corgi::Grid<1>& grid)
 
   int halo = 3; // halo region size for currents
 
-  auto& lhs = get_yee(); // target as a reference to update into
+  auto& lhs = get_grids(); // target as a reference to update into
   const int Nx = lhs.Nx;
 
   // add from right side to left
-  //for(int h=1; h<= halo; h++) add_vert_yee(mesh, mleft, -h, mleft.Nx-h); 
+  //for(int h=1; h<= halo; h++) add_vert_grids(mesh, mleft, -h, mleft.Nx-h); 
   // add from left side to right
-  //for(int h=1; h<= halo; h++) add_vert_yee(mesh, mright, mesh.Nx+h-1, h-1); 
+  //for(int h=1; h<= halo; h++) add_vert_grids(mesh, mright, mesh.Nx+h-1, h-1); 
 
   for(int in=-1; in <= 1; in++) {
     if (in == 0) continue;
     tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in) ));
 
     if (tpr) {
-      auto& rhs = tpr->get_yee();
+      auto& rhs = tpr->get_grids();
 
       //shifted neg's from vals with -1
       if (in == +1) { ito = Nx-1; ifro = -1; }
       if (in == -1) { ito = 0;    ifro = Nx; }
 
-        UniIter::iterate([=] DEVCALLABLE (int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){  
           atomic_add( lhs_in.jx(ito-in*h, 0, 0), rhs_in.jx(ifro-in*h, 0, 0) );
           atomic_add( lhs_in.jy(ito-in*h, 0, 0), rhs_in.jy(ifro-in*h, 0, 0) );
           atomic_add( lhs_in.jz(ito-in*h, 0, 0), rhs_in.jz(ifro-in*h, 0, 0) );
@@ -931,7 +931,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 
   const int halo = 3;
 
-  auto& lhs = get_yee(); // target as a reference to update into
+  auto& lhs = get_grids(); // target as a reference to update into
 
   const int Nx = lhs.Nx;
   const int Ny = lhs.Ny;
@@ -943,7 +943,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 
       tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn) ));
       if (tpr) {
-        auto& rhs = tpr->get_yee();
+        auto& rhs = tpr->get_grids();
 
         /* diagonal rules are:
         if + then to   n
@@ -962,16 +962,16 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 
         // add
         if (jn == 0) { // vertical
-          //for(int h=1; h<=halo; h++) add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
+          //for(int h=1; h<=halo; h++) add_vert_grids(mesh, mpr, ito-in*h, ifro-in*h);   
           
           #ifdef VEC_CUR2D
-          UniIter::iterate2D([=] DEVCALLABLE (int j,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+          UniIter::iterate2D([=] DEVCALLABLE (int j,int h, Grids &lhs_in, Grids &rhs_in){  
             atomic_add( lhs_in.jx(ito-in*h, j, 0), rhs_in.jx(ifro-in*h, j, 0) );
             atomic_add( lhs_in.jy(ito-in*h, j, 0), rhs_in.jy(ifro-in*h, j, 0) );
             atomic_add( lhs_in.jz(ito-in*h, j, 0), rhs_in.jz(ifro-in*h, j, 0) );
           }, Ny, halo, lhs, rhs);
           #else
-          UniIter::UniIterHost::iterate2D_nonvec([=] (int j,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+          UniIter::UniIterHost::iterate2D_nonvec([=] (int j,int h, Grids &lhs_in, Grids &rhs_in){  
             lhs_in.jx(ito-in*h, j, 0) += rhs_in.jx(ifro-in*h, j, 0);
             lhs_in.jy(ito-in*h, j, 0) += rhs_in.jy(ifro-in*h, j, 0);
             lhs_in.jz(ito-in*h, j, 0) += rhs_in.jz(ifro-in*h, j, 0);
@@ -979,16 +979,16 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
           #endif
 
         } else if (in == 0) { // horizontal
-          //for(int g=1; g<=halo; g++) add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
+          //for(int g=1; g<=halo; g++) add_horz_grids(mesh, mpr, jto-jn*g, jfro-jn*g);   
 
           #ifdef VEC_CUR2D
-          UniIter::iterate2D([=] DEVCALLABLE (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+          UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
             atomic_add( lhs_in.jx(i, jto-jn*g, 0), rhs_in.jx(i, jfro-jn*g, 0) );
             atomic_add( lhs_in.jy(i, jto-jn*g, 0), rhs_in.jy(i, jfro-jn*g, 0) );
             atomic_add( lhs_in.jz(i, jto-jn*g, 0), rhs_in.jz(i, jfro-jn*g, 0) );
           }, Nx, halo, lhs, rhs);
           #else
-          UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+          UniIter::UniIterHost::iterate2D_nonvec([=] (int i, int g, Grids &lhs_in, Grids &rhs_in){
             lhs_in.jx(i, jto-jn*g, 0) += rhs_in.jx(i, jfro-jn*g, 0);
             lhs_in.jy(i, jto-jn*g, 0) += rhs_in.jy(i, jfro-jn*g, 0);
             lhs_in.jz(i, jto-jn*g, 0) += rhs_in.jz(i, jfro-jn*g, 0);
@@ -997,18 +997,18 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
         } else { // diagonal
           //for(int h=1; h<=halo; h++) {
           //  for(int g=1; g<=halo; g++) {
-          //    add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
+          //    add_z_pencil_grids(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
           //  }
           //}
 
           #ifdef VEC_CUR2D
-          UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+          UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
             atomic_add( lhs_in.jx(ito-in*h, jto-jn*g, 0), rhs_in.jx(ifro-in*h, jfro-jn*g, 0));
             atomic_add( lhs_in.jy(ito-in*h, jto-jn*g, 0), rhs_in.jy(ifro-in*h, jfro-jn*g, 0));
             atomic_add( lhs_in.jz(ito-in*h, jto-jn*g, 0), rhs_in.jz(ifro-in*h, jfro-jn*g, 0));
           }, halo, halo, lhs, rhs);
           #else
-          UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+          UniIter::UniIterHost::iterate2D_nonvec([=] (int g ,int h, Grids &lhs_in, Grids &rhs_in){
             lhs_in.jx(ito-in*h, jto-jn*g, 0) += rhs_in.jx(ifro-in*h, jfro-jn*g, 0);
             lhs_in.jy(ito-in*h, jto-jn*g, 0) += rhs_in.jy(ifro-in*h, jfro-jn*g, 0);
             lhs_in.jz(ito-in*h, jto-jn*g, 0) += rhs_in.jz(ifro-in*h, jfro-jn*g, 0);
@@ -1036,7 +1036,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
   const int halo = 3;
 
-  auto& lhs = get_yee(); // target as a reference to update into
+  auto& lhs = get_grids(); // target as a reference to update into
   const int Nx = lhs.Nx;
   const int Ny = lhs.Ny;
   const int Nz = lhs.Nz;
@@ -1049,7 +1049,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
         tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn, kn) ));
         if (tpr) {
-          auto& rhs = tpr->get_yee();
+          auto& rhs = tpr->get_grids();
 
           /* diagonal rules are:
           if + then to   n
@@ -1075,16 +1075,16 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
             // vertical
             if (jn == 0) { 
-              //for(int h=0; h<halo; h++) add_vert_yee(mesh, mpr, ito-in*h, ifro-in*h);   
+              //for(int h=0; h<halo; h++) add_vert_grids(mesh, mpr, ito-in*h, ifro-in*h);   
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+              UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){  
                 atomic_add( lhs_in.jx(ito-in*h, j, k), rhs_in.jx(ifro-in*h, j, k) );
                 atomic_add( lhs_in.jy(ito-in*h, j, k), rhs_in.jy(ifro-in*h, j, k) );
                 atomic_add( lhs_in.jz(ito-in*h, j, k), rhs_in.jz(ifro-in*h, j, k) );
               }, Ny, Nz, halo, lhs, rhs);
               #else
-              UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){  
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){  
                 lhs_in.jx(ito-in*h, j, k) += rhs_in.jx(ifro-in*h, j, k);
                 lhs_in.jy(ito-in*h, j, k) += rhs_in.jy(ifro-in*h, j, k);
                 lhs_in.jz(ito-in*h, j, k) += rhs_in.jz(ifro-in*h, j, k);
@@ -1093,16 +1093,16 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
 
             // horizontal
             } else if (in == 0) { 
-              //for(int g=0; g<halo; g++) add_horz_yee(mesh, mpr, jto-jn*g, jfro-jn*g);   
+              //for(int g=0; g<halo; g++) add_horz_grids(mesh, mpr, jto-jn*g, jfro-jn*g);   
                 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(i, jto-jn*g, k), rhs_in.jx(i, jfro-jn*g, k) );
                 atomic_add( lhs_in.jy(i, jto-jn*g, k), rhs_in.jy(i, jfro-jn*g, k) );
                 atomic_add( lhs_in.jz(i, jto-jn*g, k), rhs_in.jz(i, jfro-jn*g, k) );
               }, Nx, Nz, halo, lhs, rhs);
               #else
-              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                 lhs_in.jx(i, jto-jn*g, k) += rhs_in.jx(i, jfro-jn*g, k);
                 lhs_in.jy(i, jto-jn*g, k) += rhs_in.jy(i, jfro-jn*g, k);
                 lhs_in.jz(i, jto-jn*g, k) += rhs_in.jz(i, jfro-jn*g, k);
@@ -1113,17 +1113,17 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             } else { 
               //for(int h=0; h<halo; h++) {
               //  for(int g=0; g<halo; g++) {
-              //    add_z_pencil_yee(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
+              //    add_z_pencil_grids(mesh, mpr, ito-in*h, jto-jn*g, ifro-in*h, jfro-jn*g); 
               //} }
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(ito-in*h, jto-jn*g, k), rhs_in.jx(ifro-in*h, jfro-jn*g, k) );
                 atomic_add( lhs_in.jy(ito-in*h, jto-jn*g, k), rhs_in.jy(ifro-in*h, jfro-jn*g, k) );
                 atomic_add( lhs_in.jz(ito-in*h, jto-jn*g, k), rhs_in.jz(ifro-in*h, jfro-jn*g, k) );
               }, Nz, halo, halo, lhs, rhs);
               #else
-              UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 lhs_in.jx(ito-in*h, jto-jn*g, k) += rhs_in.jx(ifro-in*h, jfro-jn*g, k);
                 lhs_in.jy(ito-in*h, jto-jn*g, k) += rhs_in.jy(ifro-in*h, jfro-jn*g, k);
                 lhs_in.jz(ito-in*h, jto-jn*g, k) += rhs_in.jz(ifro-in*h, jfro-jn*g, k);
@@ -1136,17 +1136,17 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
             
             // infront/behind directions
             if (in == 0 && jn == 0 && kn != 0) { 
-              //for(int g=0; g<halo; g++) add_face_yee(mesh, mpr, kto-kn*g, kfro-kn*g);   
-              //add_face_yee_halo(mesh, mpr, Nx, Ny, halo, kto, kfro, kn, ind);
+              //for(int g=0; g<halo; g++) add_face_grids(mesh, mpr, kto-kn*g, kfro-kn*g);   
+              //add_face_grids_halo(mesh, mpr, Nx, Ny, halo, kto, kfro, kn, ind);
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
+              UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, Grids &lhs_in, Grids &rhs_in){ 
                   atomic_add( lhs_in.jx(i, j, kto-kn*g), rhs_in.jx(i, j, kfro-kn*g) );
                   atomic_add( lhs_in.jy(i, j, kto-kn*g), rhs_in.jy(i, j, kfro-kn*g) );
                   atomic_add( lhs_in.jz(i, j, kto-kn*g), rhs_in.jz(i, j, kfro-kn*g) );
               }, Nx, Ny, halo, lhs, rhs);
               #else
-              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int g, YeeLattice &lhs_in, YeeLattice &rhs_in){ 
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int j ,int g, Grids &lhs_in, Grids &rhs_in){ 
                   lhs_in.jx(i, j, kto-kn*g) += rhs_in.jx(i, j, kfro-kn*g);
                   lhs_in.jy(i, j, kto-kn*g) += rhs_in.jy(i, j, kfro-kn*g);
                   lhs_in.jz(i, j, kto-kn*g) += rhs_in.jz(i, j, kfro-kn*g);
@@ -1164,18 +1164,18 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               // y pencils
               //for(int h=0; h<halo; h++) {
               //for(int g=0; g<halo; g++) {
-              //  add_y_pencil_yee(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
+              //  add_y_pencil_grids(mesh, mpr, ito-in*h, kto-kn*g, ifro-in*h, kfro-kn*g); 
               //}}
-              //add_y_pencil_yee_halo(mesh, mpr, Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
+              //add_y_pencil_grids_halo(mesh, mpr, Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(ito-in*h, j, kto-kn*g), rhs_in.jx(ifro-in*h, j, kfro-kn*g) );
                 atomic_add( lhs_in.jy(ito-in*h, j, kto-kn*g), rhs_in.jy(ifro-in*h, j, kfro-kn*g) );
                 atomic_add( lhs_in.jz(ito-in*h, j, kto-kn*g), rhs_in.jz(ifro-in*h, j, kfro-kn*g) );
               }, Ny, halo, halo, lhs, rhs);
               #else
-              UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 lhs_in.jx(ito-in*h, j, kto-kn*g) += rhs_in.jx(ifro-in*h, j, kfro-kn*g);
                 lhs_in.jy(ito-in*h, j, kto-kn*g) += rhs_in.jy(ifro-in*h, j, kfro-kn*g);
                 lhs_in.jz(ito-in*h, j, kto-kn*g) += rhs_in.jz(ifro-in*h, j, kfro-kn*g);
@@ -1186,18 +1186,18 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               // x pencils
               //for(int h=0; h<halo; h++) {
               //for(int g=0; g<halo; g++) {
-              //  add_x_pencil_yee(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
+              //  add_x_pencil_grids(mesh, mpr, jto-jn*h, kto-kn*g, jfro-jn*h, kfro-kn*g); 
               //}}
-              //add_x_pencil_yee_halo(lhs, rhs, Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
+              //add_x_pencil_grids_halo(lhs, rhs, Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(i, jto-jn*h, kto-kn*g), rhs_in.jx(i, jfro-jn*h, kfro-kn*g) );
                 atomic_add( lhs_in.jy(i, jto-jn*h, kto-kn*g), rhs_in.jy(i, jfro-jn*h, kfro-kn*g) );
                 atomic_add( lhs_in.jz(i, jto-jn*h, kto-kn*g), rhs_in.jz(i, jfro-jn*h, kfro-kn*g) );
               }, Nx, halo, halo, lhs, rhs);
               #else
-              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 lhs_in.jx(i, jto-jn*h, kto-kn*g) += rhs_in.jx(i, jfro-jn*h, kfro-kn*g);
                 lhs_in.jy(i, jto-jn*h, kto-kn*g) += rhs_in.jy(i, jfro-jn*h, kfro-kn*g);
                 lhs_in.jz(i, jto-jn*h, kto-kn*g) += rhs_in.jz(i, jfro-jn*h, kfro-kn*g);
@@ -1211,20 +1211,20 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //for(int h=0; h<halo; h++) {
               //for(int g=0; g<halo; g++) {
               //for(int f=0; f<halo; f++) {
-              //  add_point_yee(mesh, mpr, 
+              //  add_point_grids(mesh, mpr, 
               //          ito -in*h, jto -jn*g, kto -kn*f,
               //          ifro-in*h, jfro-jn*g, kfro-kn*f);
               //}}}
-              //add_point_yee_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
+              //add_point_grids_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
                 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f) );
                 atomic_add( lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f) );
                 atomic_add( lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f) );
               }, halo, halo, halo, lhs, rhs);
               #else
-              UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, YeeLattice &lhs_in, YeeLattice &rhs_in){
+              UniIter::UniIterHost::iterate3D_nonvec([=] (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f) += rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f);
                 lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f) += rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f);
                 lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f) += rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f);
@@ -1256,7 +1256,7 @@ void Tile<D>::clear_current()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = this->get_yee();
+  auto& yee = this->get_grids();
   yee.jx.clear();
   yee.jy.clear();
   yee.jz.clear();
@@ -1294,7 +1294,7 @@ std::vector<mpi::request> Tile<D>::send_data(
   nvtxRangePush(__FUNCTION__);
 #endif
 
-  auto& yee = get_yee(); 
+  auto& yee = get_grids(); 
   std::vector<mpi::request> reqs;
 
   UniIter::sync();
@@ -1333,7 +1333,7 @@ std::vector<mpi::request> Tile<D>::recv_data(
   nvtxRangePush(__FUNCTION__);
 #endif
 
-  auto& yee = get_yee(); 
+  auto& yee = get_grids(); 
 
   std::vector<mpi::request> reqs;
 

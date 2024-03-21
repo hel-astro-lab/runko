@@ -38,7 +38,7 @@ void pic::LinearInterpolator<D,V>::solve(
 #endif
 
   // get reference to the Yee grid 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   for(auto&& con : tile.containers) {
 
@@ -56,7 +56,7 @@ void pic::LinearInterpolator<D,V>::solve(
     // loop over particles
     UniIter::iterate([=] DEVCALLABLE( 
                 size_t n, 
-                emf::YeeLattice& yee,
+                emf::Grids& yee,
                 pic::ParticleContainer<D>& con){
 
       int i=0, j=0, k=0;

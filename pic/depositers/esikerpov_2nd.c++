@@ -24,7 +24,7 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
   const auto mins = tile.mins;
 
   //clear arrays before new update
@@ -42,7 +42,7 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
 
     //UniIter::iterate([=] DEVCALLABLE (
     //            size_t n, 
-    //            emf::YeeLattice &yee,
+    //            emf::Grids &yee,
     //            pic::ParticleContainer<D>& con
     //            ){
     for(size_t n=0; n<con.size(); n++) {

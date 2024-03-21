@@ -63,7 +63,7 @@ auto declare_tile(
     .def("update_boundaries",   &emf::Tile<D>::update_boundaries,
             py::arg("grid"),
             py::arg("iarr")=iarr)
-    .def("get_yee",             &emf::Tile<D>::get_yee,
+    .def("get_grids",             &emf::Tile<D>::get_grids,
         py::arg("i")=0,
         py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
@@ -231,20 +231,20 @@ void bind_emf(py::module& m_sub)
 {
     
   py::class_<
-    emf::YeeLattice,
-    std::shared_ptr<emf::YeeLattice>
-            >(m_sub, "YeeLattice")
+    emf::Grids,
+    std::shared_ptr<emf::Grids>
+            >(m_sub, "Grids")
     .def(py::init<int, int, int>())
-    .def_readwrite("ex",   &emf::YeeLattice::ex , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("ey",   &emf::YeeLattice::ey , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("ez",   &emf::YeeLattice::ez , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("bx",   &emf::YeeLattice::bx , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("by",   &emf::YeeLattice::by , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("bz",   &emf::YeeLattice::bz , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("jx",   &emf::YeeLattice::jx , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("jy",   &emf::YeeLattice::jy , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("jz",   &emf::YeeLattice::jz , py::return_value_policy::reference, py::keep_alive<1,0>())
-    .def_readwrite("rho",  &emf::YeeLattice::rho, py::return_value_policy::reference, py::keep_alive<1,0>());
+    .def_readwrite("ex",   &emf::Grids::ex , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("ey",   &emf::Grids::ey , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("ez",   &emf::Grids::ez , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("bx",   &emf::Grids::bx , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("by",   &emf::Grids::by , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("bz",   &emf::Grids::bz , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jx",   &emf::Grids::jx , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jy",   &emf::Grids::jy , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("jz",   &emf::Grids::jz , py::return_value_policy::reference, py::keep_alive<1,0>())
+    .def_readwrite("rho",  &emf::Grids::rho, py::return_value_policy::reference, py::keep_alive<1,0>());
 
 
 
@@ -261,11 +261,11 @@ void bind_emf(py::module& m_sub)
 
   // FIXME extra debug additions/tests
   //t3.def_property("yee", 
-  //  &emf::Tile<3>::get_yee2,
-  //  &emf::Tile<3>::set_yee,
+  //  &emf::Tile<3>::get_grids2,
+  //  &emf::Tile<3>::set_grids,
   //  py::return_value_policy::reference_internal, 
   //  py::keep_alive<0,1>());
-  //t3.def("get_yeeptr", &emf::Tile<3>::get_yeeptr
+  //t3.def("get_grids_ptr", &emf::Tile<3>::get_grids_ptr
   //    );
   //     // py::return_value_policy::reference_internal);
 
@@ -282,18 +282,18 @@ void bind_emf(py::module& m_sub)
   //  //    py::return_value_policy::reference_internal, 
   //  //    py::keep_alive<0,1>())
   //  .def_property("yee", 
-  //      &emf::Tile<3>::get_yee2,
-  //      &emf::Tile<3>::set_yee,
+  //      &emf::Tile<3>::get_grids2,
+  //      &emf::Tile<3>::set_grids,
   //      py::return_value_policy::reference_internal, 
   //      py::keep_alive<0,1>())
-  //  .def("cycle_yee",            &emf::Tile<3>::cycle_yee)
+  //  .def("cycle_grids",            &emf::Tile<3>::cycle_grids)
   //  .def("clear_current",        &emf::Tile<3>::clear_current)
   //  .def("deposit_current",      &emf::Tile<3>::deposit_current)
   //  .def("update_boundaries",    &emf::Tile<3>::update_boundaries)
   //  .def("exchange_currents",    &emf::Tile<3>::exchange_currents)
-  //  .def("get_yeeptr",           &emf::Tile<3>::get_yeeptr,
+  //  .def("get_grids_ptr",           &emf::Tile<3>::get_grids_ptr,
   //      py::return_value_policy::reference_internal)
-  //  .def("get_yee",              &emf::Tile<3>::get_yee, 
+  //  .def("get_grids",              &emf::Tile<3>::get_grids, 
   //      py::arg("i")=0,
   //      py::return_value_policy::reference,
   //      // keep alive for the lifetime of the grid
@@ -629,18 +629,18 @@ void bind_emf(py::module& m_sub)
   // Full IO 
 
   // 1D
-  m_1d.def("read_yee",        &emf::read_yee<1>);
-  m_1d.def("write_yee",       &emf::write_yee<1>);
+  m_1d.def("read_grids",        &emf::read_grids<1>);
+  m_1d.def("write_grids",       &emf::write_grids<1>);
 
 
   // 2D
-  m_2d.def("write_yee",        &emf::write_yee<2>);
-  m_2d.def("read_yee",         &emf::read_yee<2>);
+  m_2d.def("write_grids",        &emf::write_grids<2>);
+  m_2d.def("read_grids",         &emf::read_grids<2>);
 
 
   // 3D
-  m_3d.def("write_yee",        &emf::write_yee<3>);
-  m_3d.def("read_yee",         &emf::read_yee<3>);
+  m_3d.def("write_grids",        &emf::write_grids<3>);
+  m_3d.def("read_grids",         &emf::read_grids<3>);
 
 
 

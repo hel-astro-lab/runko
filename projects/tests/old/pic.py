@@ -31,7 +31,7 @@ np.random.seed(1)
 import matplotlib.pyplot as plt
 from visualize import plotNode
 from visualize import plotJ, plotE, plotDens
-from visualize import get_yee
+from visualize import get_grids
 from visualize import saveVisz
 
 from visualize import getYee2D
@@ -133,7 +133,7 @@ def filler(xloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
     ex = yee['ex']
     exS = smooth(ex, 10)
 
@@ -488,7 +488,7 @@ if __name__ == "__main__":
                 tile = grid.get_tile(cid)
                 analyzer.analyze2d(tile)
 
-            pyvlv.write_yee(grid,      lap, conf.outdir + "/")
+            pyvlv.write_grids(grid,      lap, conf.outdir + "/")
             pyvlv.write_analysis(grid, lap, conf.outdir + "/")
             #pyvlv.write_mesh(grid,     lap, conf.outdir + "/")
 

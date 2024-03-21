@@ -12,7 +12,7 @@ h5io::Writer::write(
   ezh5::File& file
   )
 {
-  const auto& yee = tile.get_const_yee();
+  const auto& yee = tile.get_const_grids();
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );

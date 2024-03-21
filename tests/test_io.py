@@ -9,7 +9,7 @@ import pyrunko
 import pytools
 import h5py
 
-#from visualize import get_yee
+#from visualize import get_grids
 #from visualize import getYee2D
 #from combine_files import combine_tiles
 #import injector
@@ -153,7 +153,7 @@ def fill_ref(grid, conf):
 
 
 # fill Yee mesh with values
-def fill_yee(grid, data, conf):
+def fill_grids(grid, data, conf):
 
     Nx = grid.get_Nx()
     Ny = grid.get_Ny()
@@ -171,7 +171,7 @@ def fill_yee(grid, data, conf):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     c = grid.get_tile(i,j,k)
-                    yee = c.get_yee(0)
+                    yee = c.get_grids(0)
 
                     for q in range(conf.NxMesh):
                         for r in range(conf.NyMesh):
@@ -261,9 +261,9 @@ class IO(unittest.TestCase):
         loadTiles1D(grid, conf)
 
         ref = fill_ref(grid, conf)
-        fill_yee(grid, ref, conf)
+        fill_grids(grid, ref, conf)
 
-        pyrunko.emf.oneD.write_yee(grid, 0, conf.outdir)
+        pyrunko.emf.oneD.write_grids(grid, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -294,10 +294,10 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyrunko.emf.oneD.read_yee(node2, 0, "io_test_1D")
+        pyrunko.emf.oneD.read_grids(node2, 0, "io_test_1D")
 
-        yee1 = pytools.visualize.get_yee(grid,  conf)
-        yee2 = pytools.visualize.get_yee(node2, conf)
+        yee1 = pytools.visualize.get_grids(grid,  conf)
+        yee2 = pytools.visualize.get_grids(node2, conf)
 
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -341,9 +341,9 @@ class IO(unittest.TestCase):
         loadTiles2D(grid, conf)
 
         ref = fill_ref(grid, conf)
-        fill_yee(grid, ref, conf)
+        fill_grids(grid, ref, conf)
 
-        pyrunko.emf.twoD.write_yee(grid, 0, conf.outdir)
+        pyrunko.emf.twoD.write_grids(grid, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
@@ -374,10 +374,10 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyrunko.emf.twoD.read_yee(node2, 0, "io_test_2D")
+        pyrunko.emf.twoD.read_grids(node2, 0, "io_test_2D")
 
-        yee1 = pytools.visualize.get_yee_2D(grid,  conf)
-        yee2 = pytools.visualize.get_yee_2D(node2, conf)
+        yee1 = pytools.visualize.get_grids_2D(grid,  conf)
+        yee2 = pytools.visualize.get_grids_2D(node2, conf)
 
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):

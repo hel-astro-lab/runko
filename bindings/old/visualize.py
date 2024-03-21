@@ -214,7 +214,7 @@ def plotXmesh(ax, n, conf, spcs):
     #       )
 
 
-def get_yee(n, conf):
+def get_grids(n, conf):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
             'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
@@ -235,7 +235,7 @@ def get_yee(n, conf):
         cid = n.id(i)
         c = n.get_tile(cid)
 
-        yee = c.get_yee(0)
+        yee = c.get_grids(0)
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
 
@@ -287,7 +287,7 @@ def getYee2D(n, conf):
         except:
             i,j,k = c.index
 
-        yee = c.get_yee(0)
+        yee = c.get_grids(0)
         for r in range(conf.NyMesh):
             for q in range(conf.NxMesh):
                 indx = i*conf.NxMesh + q
@@ -366,7 +366,7 @@ def get_analysis(n, conf, ispcs):
     return data
 
 def plotJ(ax, n, conf):
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
 
     ax.clear()
     ax.minorticks_on()
@@ -388,7 +388,7 @@ def plotJ(ax, n, conf):
 
 
 def plotE(ax, n, conf):
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
 
     ax.clear()
     ax.minorticks_on()
@@ -404,7 +404,7 @@ def plotE(ax, n, conf):
 
 
 def plotDens(ax, n, conf):
-    yee = get_yee(n, conf)
+    yee = get_grids(n, conf)
 
     ax.clear()
     ax.minorticks_on()

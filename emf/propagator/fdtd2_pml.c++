@@ -68,12 +68,12 @@ void emf::FDTD2_pml<2>::push_e(emf::Tile<2>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = tile.cfl;
   const auto mins = tile.mins;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, Grids &mesh)
   {
     //-----------
     // global grid coordinates
@@ -118,13 +118,13 @@ void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   //const float_m C = 1.0 * tile.cfl * dt * corr;
   const float_m C = tile.cfl;
   const auto mins = tile.mins;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
   {
     //-----------
     // global grid coordinates
@@ -201,12 +201,12 @@ void emf::FDTD2_pml<2>::push_half_b(emf::Tile<2>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C = 0.5*tile.cfl;
   const auto mins = tile.mins;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, Grids &mesh)
   {
 
     // global grid coordinates
@@ -248,7 +248,7 @@ void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   //const float_m C = 0.5 * tile.cfl * dt * corr;
   const float_m C = 0.5*tile.cfl;
   const auto mins = tile.mins;
@@ -258,7 +258,7 @@ void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
   //for(int i=0; i<tile.mesh_lengths[0]; i++) {
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
   {
 
     // global grid coordinates
@@ -328,7 +328,7 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 #endif
 
   // refs to storages
-  emf::YeeLattice&     m = tile.get_yee();
+  emf::Grids&     m = tile.get_grids();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
     
   // Tile limits
@@ -341,7 +341,7 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, 
       ffe::SkinnyYeeLattice& dm,
-      emf::YeeLattice& m
+      emf::Grids& m
       )
   {
     //-----------

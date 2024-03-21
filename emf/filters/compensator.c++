@@ -29,7 +29,7 @@ void emf::Compensator2<2>::solve(
                wtc=-1.0*winv; //corner K
 
 
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
   const int H = 2; 
   const int k = 0;
 

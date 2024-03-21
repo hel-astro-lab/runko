@@ -1,4 +1,4 @@
-#include "skinny_yee.h"
+#include "slim_grids.h"
 #include "../emf/tile.h"
 
 
@@ -56,7 +56,7 @@ ffe::SkinnyYeeLattice&
 
 
 /// copy yee grid to skinny yee
-void ffe::SkinnyYeeLattice::set_yee(const emf::YeeLattice& yee)
+void ffe::SkinnyYeeLattice::set_grids(const emf::Grids& yee)
 {
   ex = yee.ex;
   ey = yee.ey;

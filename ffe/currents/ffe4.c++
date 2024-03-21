@@ -42,7 +42,7 @@ void ffe::FFE4<3>::interpolate(
 }
 
 template<>
-void ffe::FFE4<3>::stagger_x_eb(emf::YeeLattice& m)
+void ffe::FFE4<3>::stagger_x_eb(emf::Grids& m)
 {
   interpolate(m.ex, exf, {{1,1,0}}, {{1,1,0}} ); //x
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,1,0}} );
@@ -68,7 +68,7 @@ void ffe::FFE4<3>::stagger_x_curl()
 
 
 template<>
-void ffe::FFE4<3>::stagger_y_eb(emf::YeeLattice& m)
+void ffe::FFE4<3>::stagger_y_eb(emf::Grids& m)
 {
   interpolate(m.ex, exf, {{1,1,0}}, {{1,0,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,0,1}} ); //y
@@ -93,7 +93,7 @@ void ffe::FFE4<3>::stagger_y_curl()
 }
 
 template<>
-void ffe::FFE4<3>::stagger_z_eb(emf::YeeLattice& m)
+void ffe::FFE4<3>::stagger_z_eb(emf::Grids& m)
 {
   interpolate(m.ex, exf, {{1,1,0}}, {{0,1,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{0,1,1}} );
@@ -122,7 +122,7 @@ void ffe::FFE4<3>::stagger_z_curl()
 template<>
 void ffe::FFE4<3>::comp_rho(ffe::Tile<3>& tile)
 {
-  emf::YeeLattice& mesh = tile.get_yee();
+  emf::Grids& mesh = tile.get_grids();
   auto& rho = mesh.rho;
   auto& ex  = mesh.ex;
   auto& ey  = mesh.ey;
@@ -153,7 +153,7 @@ template<>
 void ffe::FFE4<3>::push_eb(ffe::Tile<3>& tile)
 {
   // refs to storages
-  emf::YeeLattice&     m = tile.get_yee();
+  emf::Grids&     m = tile.get_grids();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   // refs to emf for easier access
@@ -212,7 +212,7 @@ void ffe::FFE4<3>::push_eb(ffe::Tile<3>& tile)
 template<>
 void ffe::FFE4<3>::add_jperp(ffe::Tile<3>& tile)
 {
-  emf::YeeLattice&     m = tile.get_yee();
+  emf::Grids&     m = tile.get_grids();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   auto& jx  = m.jx;
@@ -289,7 +289,7 @@ void ffe::FFE4<3>::add_jperp(ffe::Tile<3>& tile)
 template<>
 void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
 {
-  emf::YeeLattice&     m = tile.get_yee();
+  emf::Grids&     m = tile.get_grids();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   auto& ex  = m.ex;
@@ -427,7 +427,7 @@ void ffe::FFE4<3>::add_jpar(ffe::Tile<3>& tile)
 template<>
 void ffe::FFE4<3>::limit_e(ffe::Tile<3>& tile)
 {
-  emf::YeeLattice&     m = tile.get_yee();
+  emf::Grids&     m = tile.get_grids();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m dt = tile.cfl;
@@ -506,7 +506,7 @@ void ffe::FFE4<3>::limit_e(ffe::Tile<3>& tile)
 template<>
 void ffe::FFE4<3>::add_diffusion(ffe::Tile<3>& tile)
 {
-  emf::YeeLattice&     m = tile.get_yee();
+  emf::Grids&     m = tile.get_grids();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m dt = tile.cfl;
@@ -559,7 +559,7 @@ void ffe::FFE4<3>::add_diffusion(ffe::Tile<3>& tile)
 template<>
 void ffe::FFE4<3>::remove_jpar(ffe::Tile<3>& tile)
 {
-  emf::YeeLattice&     m = tile.get_yee();
+  emf::Grids&     m = tile.get_grids();
   ffe::SkinnyYeeLattice& dm = tile.dF; 
 
   float_m cur, b2;

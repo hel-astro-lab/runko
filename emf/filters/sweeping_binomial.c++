@@ -67,7 +67,7 @@ template<>
 void emf::OptBinomial2<3>::solve(
     emf::Tile<3>& tile)
 {
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
 
   sweep_in_x(mesh.jx, tile.mesh_lengths[0], tile.mesh_lengths[1], tile.mesh_lengths[2], 1);
   sweep_in_x(mesh.jy, tile.mesh_lengths[0], tile.mesh_lengths[1], tile.mesh_lengths[2], 1);

@@ -22,7 +22,7 @@ void emf::General3p<2>::solve(
                wts=winv*2.0*alpha*(1.0-alpha),   //side
                wtc=winv*(1.0-alpha)*(1.0-alpha); //corner
 
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
   const int H = 2; 
   const int k = 0;
 

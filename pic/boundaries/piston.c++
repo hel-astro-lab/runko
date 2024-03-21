@@ -23,7 +23,7 @@ void pic::Piston<D>::zigzag(
     double z2glob, 
     double q)
 {
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
   auto mins = tile.mins;
 
   // normalized location w.r.t. tile
@@ -236,7 +236,7 @@ void pic::Piston<2>::field_bc(
 
   // make left side of piston conductor
   if(walloc < maxs[0]) {
-    auto& yee = tile.get_yee();
+    auto& yee = tile.get_grids();
 
     // wall location 
     auto iw = static_cast<int>(walloc - mins[0]);
@@ -272,7 +272,7 @@ void pic::Piston<3>::field_bc(
 
   // make left side of piston conductor
   if(walloc < maxs[0]) {
-    auto& yee = tile.get_yee();
+    auto& yee = tile.get_grids();
 
     // wall location 
     auto iw = static_cast<int>(walloc - mins[0]);

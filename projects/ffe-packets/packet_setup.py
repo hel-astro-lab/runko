@@ -34,7 +34,7 @@ def insert_em_fields(grid, conf):
 
     for cid in grid.get_tile_ids():
         tile = grid.get_tile(cid)
-        yee = tile.get_yee(0)
+        yee = tile.get_grids(0)
 
         if conf.twoD:
             ii, jj = tile.index

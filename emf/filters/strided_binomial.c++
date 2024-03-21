@@ -21,7 +21,7 @@ void emf::General3pStrided<2>::solve(
                wts=winv * 2.0*alpha*(1.0-alpha),   //side
                wtc=winv * (1.0-alpha)*(1.0-alpha); //corner
     
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
 
   const int H = 0; 
   const int k = 0;
@@ -111,7 +111,7 @@ void emf::Binomial2Strided2<2>::solve(
   // 2D general coefficients
   const double wn=1./16.0/16.0;  //normalization
     
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
   const int H = 0; 
   const int k = 0;
     

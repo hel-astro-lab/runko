@@ -11,7 +11,7 @@ using std::exp;
 //>
 //void emf::damping::Tile<D, S>::deposit_current() {
 //
-//  auto& yee = ::emf::Tile<D>::get_yee();
+//  auto& yee = ::emf::Tile<D>::get_grids();
 //
 //  //std::cout << "Calling DAMPED J update\n";
 //
@@ -45,7 +45,7 @@ template<
 void emf::damping::Tile<D,S>::damp_fields()
 {
 
-  auto& yee = this->get_yee();
+  auto& yee = this->get_grids();
 
   float_m lambda2;
 

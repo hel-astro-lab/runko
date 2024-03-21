@@ -212,7 +212,7 @@ def plot_X_mesh(ax, n, conf, spcs):
     #       )
 
 
-def get_yee(n, conf):
+def get_grids(n, conf):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
             'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
@@ -233,7 +233,7 @@ def get_yee(n, conf):
         cid = n.id(i)
         c = n.get_tile(cid)
 
-        yee = c.get_yee(0)
+        yee = c.get_grids(0)
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
 
@@ -256,7 +256,7 @@ def get_yee(n, conf):
     return data
 
 
-def get_yee_2D(n, conf):
+def get_grids_2D(n, conf):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
             'y' : np.linspace(n.get_ymin(), n.get_ymax(), conf.Ny*conf.NyMesh),
@@ -280,7 +280,7 @@ def get_yee_2D(n, conf):
     for cid in n.get_tile_ids():
         c = n.get_tile(cid)
         i,j = c.index
-        yee = c.get_yee(0)
+        yee = c.get_grids(0)
         for r in range(conf.NyMesh):
             for q in range(conf.NxMesh):
                 indx = i*conf.NxMesh + q

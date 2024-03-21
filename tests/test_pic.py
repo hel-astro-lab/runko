@@ -14,7 +14,7 @@ import pyrunko
 #from visualize_pic import plot2dParticles
 #from visualize import plotNode
 #from visualize import plot2dYee
-#from visualize import pytools.visualize.get_yee_2D
+#from visualize import pytools.visualize.get_grids_2D
 #from visualize import saveVisz
 
 
@@ -170,7 +170,7 @@ def insert_em(grid, conf, ffunc, zero_field=False):
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
                 c = grid.get_tile(i,j,k)
-                yee = c.get_yee()
+                yee = c.get_grids()
 
                 for n in range(conf.NzMesh):
                     for m in range(conf.NyMesh):
@@ -955,7 +955,7 @@ class PIC(unittest.TestCase):
             #except:
             #    pass
 
-            yee_ref = pytools.visualize.get_yee_2D(grid, conf)
+            grids_refs = pytools.visualize.get_grids_2D(grid, conf)
 
             #filter
             for j in range(grid.get_Ny()):
@@ -980,7 +980,7 @@ class PIC(unittest.TestCase):
                     tile = grid.get_tile(i,j)
                     tile.cycle_current()
 
-            yee = pytools.visualize.get_yee_2D(grid, conf)
+            yee = pytools.visualize.get_grids_2D(grid, conf)
 
             #try:
             #    plot2dYee(axs[5], grid, conf, 'jx')
@@ -993,9 +993,9 @@ class PIC(unittest.TestCase):
             for j in range(conf.Ny*conf.NyMesh):
                 for i in range(conf.Nx*conf.NxMesh):
                     #print("({},{})".format(i,j))
-                    self.assertAlmostEqual( yee_ref['jx'][i,j], yee['jx'][i,j], places=5 )
-                    self.assertAlmostEqual( yee_ref['jy'][i,j], yee['jy'][i,j], places=5 )
-                    self.assertAlmostEqual( yee_ref['jz'][i,j], yee['jz'][i,j], places=5 )
+                    self.assertAlmostEqual( grids_refs['jx'][i,j], yee['jx'][i,j], places=5 )
+                    self.assertAlmostEqual( grids_refs['jy'][i,j], yee['jy'][i,j], places=5 )
+                    self.assertAlmostEqual( grids_refs['jz'][i,j], yee['jz'][i,j], places=5 )
 
 
 
@@ -1045,7 +1045,7 @@ class PIC(unittest.TestCase):
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
                 c = grid.get_tile(i,j)
-                yee = c.get_yee(0)
+                yee = c.get_grids(0)
                 for l in range(-3, conf.NxMesh+3):
                     for m in range(-3,conf.NyMesh+3):
                         for n in range(-3,conf.NzMesh+3):
@@ -1092,7 +1092,7 @@ class PIC(unittest.TestCase):
         for j in [1]:
             for i in [1]:
                 c = grid.get_tile(i,j)
-                yee = c.get_yee(0)
+                yee = c.get_grids(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
                         self.assertEqual(ref[l,m], yee.jx[l,m,0] )
@@ -1177,7 +1177,7 @@ class PIC(unittest.TestCase):
             for j in range(grid.get_Ny()):
                 for i in range(grid.get_Nx()):
                     c = grid.get_tile(i,j)
-                    yee = c.get_yee(0)
+                    yee = c.get_grids(0)
                     for l in range(conf.NxMesh):
                         for m in range(conf.NyMesh):
                             self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=5 )
@@ -1244,7 +1244,7 @@ class PIC(unittest.TestCase):
                 for j in range(grid.get_Ny()):
                     for i in range(grid.get_Nx()):
                         c = grid.get_tile(i,j,k)
-                        yee = c.get_yee(0)
+                        yee = c.get_grids(0)
                         for l in range(conf.NxMesh):
                             for m in range(conf.NyMesh):
                                 for n in range(conf.NzMesh):
@@ -1464,7 +1464,7 @@ class PIC(unittest.TestCase):
                     print("container bz:", container.bz(i))
     
             #plot
-            yee = pytools.visualize.get_yee_2D(grid, conf)
+            yee = pytools.visualize.get_grids_2D(grid, conf)
 
 
             if do_plots:

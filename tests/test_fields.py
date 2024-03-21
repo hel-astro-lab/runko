@@ -137,7 +137,7 @@ class Communications(unittest.TestCase):
             #if n.get_mpi_grid(i,j) == n.rank:
             if True:
                 c = grid.get_tile(i)
-                yee = c.get_yee(0)
+                yee = c.get_grids(0)
 
                 for q in range(conf.NxMesh):
                     for r in range(conf.NyMesh):
@@ -162,7 +162,7 @@ class Communications(unittest.TestCase):
             c = grid.get_tile( cid )
             (i,) = c.index
 
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
 
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
@@ -200,7 +200,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i,) = c.index
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
 
             for s in range(-1, conf.NzMesh+1, 1):
                 for r in range(-1, conf.NyMesh+1, 1):
@@ -252,7 +252,7 @@ class Communications(unittest.TestCase):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     c = grid.get_tile(i,j)
-                    yee = c.get_yee(0)
+                    yee = c.get_grids(0)
 
                     for s in range(conf.NzMesh):
                         for r in range(conf.NyMesh):
@@ -276,7 +276,7 @@ class Communications(unittest.TestCase):
             c = grid.get_tile( cid )
             (i, j) = c.index
 
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
                     for s in range(conf.NzMesh):
@@ -315,7 +315,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j) = c.index
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
 
             for s in range(-3, conf.NzMesh+3, 1):
                 for r in range(-3, conf.NyMesh+3, 1):
@@ -354,7 +354,7 @@ class Communications(unittest.TestCase):
         #check halo regions of the middle tile
 
         c = grid.get_tile(1,1)
-        yee = c.get_yee(0)
+        yee = c.get_grids(0)
         arr = np.zeros((conf.NxMesh+6, conf.NyMesh+6))
         for r in range(-3, conf.NyMesh+3, 1):
             for q in range(-3, conf.NxMesh+3, 1):
@@ -394,7 +394,7 @@ class Communications(unittest.TestCase):
 
         #print("getting 000")
         c = grid.get_tile(0,0)
-        yee = c.get_yee()
+        yee = c.get_grids()
 
         #print("mem bug +++++++")
 
@@ -417,7 +417,7 @@ class Communications(unittest.TestCase):
         self.assertEqual(nx, (conf.NxMesh+H*2)*(conf.NyMesh+H*2)*(conf.NzMesh+H*2))
 
 
-    # Captures memory bug with mesh initialization; when internal meshes in YeeLattice
+    # Captures memory bug with mesh initialization; when internal meshes in Grids
     # are too big, compiler tires to over-optimize. Then some stuff never gets allocated.
     # This is fixed now by a copy-and-swap algorithm in toolbox::Mesh.
     def test_3D_tile_memory_bug(self):
@@ -464,16 +464,16 @@ class Communications(unittest.TestCase):
         #tile.add_analysis_species()
 
         #print("creating yee2")
-        #yee2 = pyrunko.emf.YeeLattice(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #yee2 = pyrunko.emf.Grids(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         #print(sys.getrefcount(yee2))
         #print("ending yee2")
 
 
         if True:
             #print("getting yee p0")
-            yee0 = tile.get_yee()
+            yee0 = tile.get_grids()
             #yee0 = tile.yee
-            #yee0 = tile.get_yeeptr()
+            #yee0 = tile.get_grids_ptr()
             #print("ref count yee0:", sys.getrefcount(yee0))
             #print("getting ex")
             ex0 = yee0.ex
@@ -513,10 +513,10 @@ class Communications(unittest.TestCase):
             #print("ref count tile:", sys.getrefcount(c))
 
             #print("getting yee p1")
-            yee = c.get_yee()
+            yee = c.get_grids()
             #print("ref count yee:", sys.getrefcount(yee))
             #yee = c.yee
-            #yee = c.get_yeeptr()
+            #yee = c.get_grids_ptr()
             #print("getting ex")
             ex = yee.ex
             #print("ref count ex:", sys.getrefcount(ex))
@@ -545,15 +545,15 @@ class Communications(unittest.TestCase):
         #now ask even more references
         if False:
             c1= grid.get_tile(0,0,1)
-            yee1 = c1.get_yee()
+            yee1 = c1.get_grids()
             ex1 = c1.ex
 
             c2= grid.get_tile(0,0,1)
-            yee2 = c2.get_yee()
+            yee2 = c2.get_grids()
             ex2 = c2.ex
 
             c3= grid.get_tile(0,0,1)
-            yee3 = c3.get_yee()
+            yee3 = c3.get_grids()
             ex3 = c3.ex
 
         #print("mem bug +++++++")
@@ -671,7 +671,7 @@ class Communications(unittest.TestCase):
         loadTiles3D(grid, conf)
 
         c = grid.get_tile(1,1,1)
-        yee = c.get_yee() #FIXME: yee does not exist here
+        yee = c.get_grids() #FIXME: yee does not exist here
 
         orig = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
@@ -695,7 +695,7 @@ class Communications(unittest.TestCase):
                         self.assertEqual(j, indx[1])
                         self.assertEqual(k, indx[2])
 
-                        yee = c.get_yee()
+                        yee = c.get_grids()
 
                         for s in range(conf.NzMesh):
                             for r in range(conf.NyMesh):
@@ -733,7 +733,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.get_index(grid)
-            yee = c.get_yee()
+            yee = c.get_grids()
 
             for s in range(-3, conf.NzMesh+3, 1):
                 if not(s < 0 or s >= conf.NzMesh):
@@ -769,7 +769,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.index
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
             for s in range(conf.NzMesh):
                 for r in range(conf.NyMesh):
                     for q in range(conf.NxMesh):
@@ -821,7 +821,7 @@ class Communications(unittest.TestCase):
                 for kk in [-1, 0, 1]:
                     if (ii == 0 and jj == 0 and kk == 0): continue
 
-                    yee = tile.get_yee()
+                    yee = tile.get_grids()
                     ind = tile.neighs(ii,jj,kk)
 
 
@@ -852,7 +852,7 @@ class Communications(unittest.TestCase):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         c = grid.get_tile(i,j,k)
-                        yee = c.get_yee()
+                        yee = c.get_grids()
 
                         #loop over only halos
                         for s in range(-3, conf.NzMesh+3, 1):
@@ -913,7 +913,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.get_index(grid)
-            yee = c.get_yee()
+            yee = c.get_grids()
 
             #loop over internals where summation is put
             for s in range(conf.NzMesh):

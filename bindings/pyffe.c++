@@ -10,7 +10,7 @@ namespace py = pybind11;
 #include "../ffe/currents/rffe4.h"
 #include "../ffe/currents/ffe2.h"
 #include "../ffe/currents/ffe4.h"
-#include "../ffe/skinny_yee.h"
+#include "../ffe/slim_grids.h"
 
 
 namespace ffe {
@@ -52,7 +52,7 @@ void bind_ffe(py::module& m_sub)
     .def_readwrite("bx",   &ffe::SkinnyYeeLattice::bx)
     .def_readwrite("by",   &ffe::SkinnyYeeLattice::by)
     .def_readwrite("bz",   &ffe::SkinnyYeeLattice::bz)
-    .def("set_yee",        &ffe::SkinnyYeeLattice::set_yee)
+    .def("set_grids",        &ffe::SkinnyYeeLattice::set_grids)
     .def(py::self += py::self)
     .def(py::self -= py::self)
     .def(py::self *= float())
@@ -63,16 +63,16 @@ void bind_ffe(py::module& m_sub)
     .def(py::self /  float());
 
 
-  m_sub.def("set_step", [](emf::YeeLattice& yee, ffe::SkinnyYeeLattice skyee)
+  m_sub.def("set_step", [](emf::Grids& yee, ffe::SkinnyYeeLattice skgrids)
       -> void 
       {
-        yee.ex = skyee.ex;
-        yee.ey = skyee.ey;
-        yee.ez = skyee.ez;
+        yee.ex = skgrids.ex;
+        yee.ey = skgrids.ey;
+        yee.ez = skgrids.ez;
         
-        yee.bx = skyee.bx;
-        yee.by = skyee.by;
-        yee.bz = skyee.bz;
+        yee.bx = skgrids.bx;
+        yee.by = skgrids.by;
+        yee.bz = skgrids.bz;
      }
   );
 

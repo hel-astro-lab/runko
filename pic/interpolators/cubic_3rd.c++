@@ -74,7 +74,7 @@ void pic::CubicInterpolator<D>::solve(
   //std::array<int, D> dummy; 
 
   // get reference to the Yee grid 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   for(auto&& con : tile.containers) {
 
@@ -92,7 +92,7 @@ void pic::CubicInterpolator<D>::solve(
     // loop over particles
     //UniIter::iterate([=] DEVCALLABLE( 
     //            size_t n, 
-    //            emf::YeeLattice& yee,
+    //            emf::Grids& yee,
     //            pic::ParticleContainer<D>& con){
     for(size_t n=0; n<con.size(); n++) {
       //--------------------------------------------------

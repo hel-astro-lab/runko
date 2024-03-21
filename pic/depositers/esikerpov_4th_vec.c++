@@ -39,7 +39,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
   const auto mins = tile.mins;
 
   //clear arrays before new update

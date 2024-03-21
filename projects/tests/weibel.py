@@ -61,7 +61,7 @@ def insert_em_fields(grid, conf):
     beta = conf.beta
 
     for tile in pytools.tiles_all(grid):
-        yee = tile.get_yee(0)
+        yee = tile.get_grids(0)
 
         ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
 

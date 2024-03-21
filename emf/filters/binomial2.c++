@@ -20,7 +20,7 @@ void emf::Binomial2<1>::solve(
   // 1D 3-point binomial coefficients
   const float_m C1[3] = {1./4., 2./4., 1./4.};
 
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
 
   // halo width
   const int H = 2; 
@@ -92,7 +92,7 @@ void emf::Binomial2<2>::solve(
           {2./16., 4./16., 2./16.},
           {1./16., 2./16., 1./16.} };
 
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
 
   const int H = 2; 
 
@@ -179,7 +179,7 @@ void emf::Binomial2<3>::solve(
           { {2./64., 4./64., 2./64.}, {4./64., 8./64., 4./64.}, {2./64., 4./64., 2./64.} },
           { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
 
-  auto& mesh = tile.get_yee();
+  auto& mesh = tile.get_grids();
   const int H = 2; 
 
 

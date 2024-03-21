@@ -3,7 +3,7 @@
 #include <vector>
 #include <array>
 
-#include "skinny_yee.h"
+#include "slim_grids.h"
 
 #include"../tools/iter/allocator.h"
 

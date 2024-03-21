@@ -30,7 +30,7 @@ def read_tile(tile, conf):
     nx,ny,nz = conf.NxMesh, conf.NyMesh, conf.NzMesh
     arr = np.zeros((nx,ny,nz))
 
-    yee = tile.get_yee(0)
+    yee = tile.get_grids(0)
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
@@ -66,12 +66,12 @@ if __name__ == "__main__":
     tile = pypic.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     if True:
-        yee = tile.get_yee(0)
+        yee = tile.get_grids(0)
         yee.jx[50,50,0] = 1.0
 
     #inject cherenkov like noise by hand
     elif False:
-        yee = tile.get_yee(0)
+        yee = tile.get_grids(0)
         #yee.jx[50,50,0] = 1.0
         
         N = 200

@@ -29,7 +29,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
     )
 {
   auto& tile = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
     
   auto mins = tile.mins;
   auto maxs = tile.maxs;

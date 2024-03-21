@@ -82,7 +82,7 @@ void emf::Conductor<D>::insert_em(
   auto mins = tile.mins;
   //auto maxs = tile.maxs;
 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   //--------------------------------------------------
   // angular velocity
@@ -202,7 +202,7 @@ void emf::Conductor<D>::update_b(
   auto mins = tile.mins;
   auto maxs = tile.maxs;
 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   //-------------------------------------------------- 
   // find if this is a corner tile
@@ -594,7 +594,7 @@ void emf::Conductor<D>::update_e(
   auto mins = tile.mins;
   auto maxs = tile.maxs;
 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   //-------------------------------------------------- 
   // null sides to prevent periodic bc conditions

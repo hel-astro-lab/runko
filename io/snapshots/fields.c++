@@ -33,7 +33,7 @@ inline void h5io::FieldsWriter<1>::read_tiles(
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<emf::Tile<1>&>(grid.get_tile( cid ));
-    auto& yee = tile.get_yee();
+    auto& yee = tile.get_grids();
 
     // get arrays
     auto index = expand_indices( &tile );
@@ -103,7 +103,7 @@ inline void h5io::FieldsWriter<2>::read_tiles(
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<emf::Tile<2>&>(grid.get_tile( cid ));
-    auto& yee = tile.get_yee();
+    auto& yee = tile.get_grids();
 
     // get arrays
     auto index = expand_indices( &tile );
@@ -180,7 +180,7 @@ inline void h5io::FieldsWriter<3>::read_tiles(
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile( cid ));
-    auto& yee = tile.get_yee();
+    auto& yee = tile.get_grids();
 
     // get arrays
     auto index = expand_indices( &tile );

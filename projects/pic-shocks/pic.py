@@ -73,7 +73,7 @@ def insert_em_fields(grid, conf):
     beta = conf.beta
 
     for tile in pytools.tiles_all(grid):
-        yee = tile.get_yee(0)
+        yee = tile.get_grids(0)
 
         ii, jj, kk = tile.index if conf.threeD else (*tile.index, 0)
 
@@ -180,7 +180,7 @@ if __name__ == "__main__":
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
 
         # read restart files
-        pyfld.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyfld.read_grids(grid, io_stat["read_lap"], io_stat["read_dir"])
         pypic.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # step one step ahead
@@ -615,7 +615,7 @@ if __name__ == "__main__":
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
-                pyfld.write_yee(grid, lap, conf.outdir + "/full_output/")
+                pyfld.write_grids(grid, lap, conf.outdir + "/full_output/")
                 pypic.write_particles(grid, lap, conf.outdir + "/full_output/")
                 # pypic.write_analysis(grid, lap, conf.outdir + "/full_output/")
 
@@ -625,7 +625,7 @@ if __name__ == "__main__":
                 # flip between two sets of files
                 io_stat["deep_io_switch"] = 1 if io_stat["deep_io_switch"] == 0 else 0
 
-                pyfld.write_yee(
+                pyfld.write_grids(
                     grid, io_stat["deep_io_switch"], conf.outdir + "/restart/"
                 )
                 pypic.write_particles(

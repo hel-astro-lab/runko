@@ -33,7 +33,7 @@ class Analyzator {
   {
 
     // Yee lattice reference
-    auto& yee = tile.get_yee();
+    auto& yee = tile.get_grids();
     yee.rho.clear();
 
     // tile limits

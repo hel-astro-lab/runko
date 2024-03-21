@@ -41,7 +41,7 @@ def insert_em(grid, conf, ffunc):
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             c = grid.get_tile(i,j)
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -787,7 +787,7 @@ class FilterTests(unittest.TestCase):
             c = grid.get_tile( cid )
             (i, j) = c.index
 
-            yee = c.get_yee(0)
+            yee = c.get_grids(0)
             for k in range(conf.NyMesh):
                 for q in range(conf.NxMesh):
                     for r in range(conf.NzMesh):

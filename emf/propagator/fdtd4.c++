@@ -21,14 +21,14 @@ void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
 
   const float_m C1 = coeff1*corr*tile.cfl;
   const float_m C2 = coeff2*corr*tile.cfl;
   const int k = 0;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, Grids &mesh)
   {
 	mesh.ex(i,j,k) +=   C1*(-mesh.bz(i,  j-1,k) + mesh.bz(i,  j,  k)) 
 		               +C2*(-mesh.bz(i,  j-2,k) + mesh.bz(i,  j+1,k));
@@ -62,12 +62,12 @@ void emf::FDTD4<3>::push_e(emf::Tile<3>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C1 = coeff1*corr*tile.cfl;
   const float_m C2 = coeff2*corr*tile.cfl;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
   {
     mesh.ex(i,j,k)+= C1*(mesh.by(i,  j,  k-1) - mesh.by(i,  j,  k  )  
                        - mesh.bz(i,  j-1,k  ) + mesh.bz(i,  j,  k  ))
@@ -110,13 +110,13 @@ void emf::FDTD4<2>::push_half_b(emf::Tile<2>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C1 = 0.5*coeff1*corr*tile.cfl;
   const float_m C2 = 0.5*coeff2*corr*tile.cfl;
   const int k = 0;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, Grids &mesh)
   {
      mesh.bx(i,j,k) += C1*(-mesh.ez(i,  j+1,k) + mesh.ez(i,  j,  k))
 	                  +C2*(-mesh.ez(i,  j+2,k) + mesh.ez(i,  j-1,k));
@@ -149,12 +149,12 @@ void emf::FDTD4<3>::push_half_b(emf::Tile<3>& tile)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  YeeLattice& mesh = tile.get_yee();
+  Grids& mesh = tile.get_grids();
   const float_m C1 = 0.5*coeff1*corr*tile.cfl;
   const float_m C2 = 0.5*coeff2*corr*tile.cfl;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, YeeLattice &mesh)
+  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
   {
     mesh.bx(i,j,k)+= C1*(mesh.ey(i,  j,  k+1) - mesh.ey(i,  j,  k  )  
                        - mesh.ez(i,  j+1,k  ) + mesh.ez(i,  j,  k  ))

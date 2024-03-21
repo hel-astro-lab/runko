@@ -14,7 +14,7 @@ using iter::zip;
 template< typename T, int D, int V>
 void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cfl)
 {
-  //auto& yee = tile.get_yee();
+  //auto& yee = tile.get_grids();
   tile.jx1.clear();
 
   auto& step0 = tile.steps.get(0);
@@ -69,7 +69,7 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
 
 
   // get reference to the Yee grid 
-  auto& yee = tile.get_yee();
+  auto& yee = tile.get_grids();
 
   // timestep
   //auto dt   = (T) tile.dt;      
