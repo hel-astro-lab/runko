@@ -30,8 +30,8 @@ class Tile :
 
 
   // RK temporary sub-stage storages
-  SkinnyYeeLattice dF;
-  SkinnyYeeLattice Fn;
+  SlimGrids dF;
+  SlimGrids Fn;
 
   /// constructor
   Tile(int nx, int ny, int nz) :

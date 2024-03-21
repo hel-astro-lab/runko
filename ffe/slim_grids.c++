@@ -2,8 +2,8 @@
 #include "../emf/tile.h"
 
 
-ffe::SkinnyYeeLattice& 
-  ffe::SkinnyYeeLattice::operator +=(const ffe::SkinnyYeeLattice& rhs)
+ffe::SlimGrids& 
+  ffe::SlimGrids::operator +=(const ffe::SlimGrids& rhs)
 {
   ex += rhs.ex;
   ey += rhs.ey;
@@ -15,8 +15,8 @@ ffe::SkinnyYeeLattice&
   return *this;
 }
 
-ffe::SkinnyYeeLattice& 
-  ffe::SkinnyYeeLattice::operator -=(const ffe::SkinnyYeeLattice& rhs) 
+ffe::SlimGrids& 
+  ffe::SlimGrids::operator -=(const ffe::SlimGrids& rhs) 
 {
   ex -= rhs.ex;
   ey -= rhs.ey;
@@ -28,8 +28,8 @@ ffe::SkinnyYeeLattice&
   return *this;
 }
 
-ffe::SkinnyYeeLattice& 
-  ffe::SkinnyYeeLattice::operator *=(double rhs) 
+ffe::SlimGrids& 
+  ffe::SlimGrids::operator *=(double rhs) 
 {
   ex *= static_cast<float_m>(rhs);
   ey *= static_cast<float_m>(rhs);
@@ -41,8 +41,8 @@ ffe::SkinnyYeeLattice&
   return *this;
 }
 
-ffe::SkinnyYeeLattice& 
-  ffe::SkinnyYeeLattice::operator /=(double rhs) 
+ffe::SlimGrids& 
+  ffe::SlimGrids::operator /=(double rhs) 
 {
   ex /= static_cast<float_m>(rhs);
   ey /= static_cast<float_m>(rhs);
@@ -56,7 +56,7 @@ ffe::SkinnyYeeLattice&
 
 
 /// copy yee grid to skinny yee
-void ffe::SkinnyYeeLattice::set_grids(const emf::Grids& yee)
+void ffe::SlimGrids::set_grids(const emf::Grids& yee)
 {
   ex = yee.ex;
   ey = yee.ey;
@@ -66,29 +66,29 @@ void ffe::SkinnyYeeLattice::set_grids(const emf::Grids& yee)
   bz = yee.bz;
 }
 
-ffe::SkinnyYeeLattice 
-  ffe::operator +(ffe::SkinnyYeeLattice lhs, const ffe::SkinnyYeeLattice& rhs)
+ffe::SlimGrids 
+  ffe::operator +(ffe::SlimGrids lhs, const ffe::SlimGrids& rhs)
 {
   lhs += rhs;
   return lhs;
 }
 
-ffe::SkinnyYeeLattice 
-  ffe::operator -(ffe::SkinnyYeeLattice lhs, const ffe::SkinnyYeeLattice& rhs)
+ffe::SlimGrids 
+  ffe::operator -(ffe::SlimGrids lhs, const ffe::SlimGrids& rhs)
 {
   lhs -= rhs;
   return lhs;
 }
 
-ffe::SkinnyYeeLattice 
-  ffe::operator *(ffe::SkinnyYeeLattice lhs, double rhs)
+ffe::SlimGrids 
+  ffe::operator *(ffe::SlimGrids lhs, double rhs)
 {
   lhs *= rhs;
   return lhs;
 }
 
-ffe::SkinnyYeeLattice 
-  ffe::operator /(ffe::SkinnyYeeLattice lhs, double rhs)
+ffe::SlimGrids 
+  ffe::operator /(ffe::SlimGrids lhs, double rhs)
 {
   lhs *= rhs;
   return lhs;

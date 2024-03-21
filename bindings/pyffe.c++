@@ -44,15 +44,15 @@ void bind_ffe(py::module& m_sub)
 {
 
   // skinny version of the Yee lattice with only (e and b meshes)
-  py::class_<ffe::SkinnyYeeLattice>(m_sub, "SkinnyYeeLattice")
+  py::class_<ffe::SlimGrids>(m_sub, "SlimGrids")
     .def(py::init<int, int, int>())
-    .def_readwrite("ex",   &ffe::SkinnyYeeLattice::ex)
-    .def_readwrite("ey",   &ffe::SkinnyYeeLattice::ey)
-    .def_readwrite("ez",   &ffe::SkinnyYeeLattice::ez)
-    .def_readwrite("bx",   &ffe::SkinnyYeeLattice::bx)
-    .def_readwrite("by",   &ffe::SkinnyYeeLattice::by)
-    .def_readwrite("bz",   &ffe::SkinnyYeeLattice::bz)
-    .def("set_grids",        &ffe::SkinnyYeeLattice::set_grids)
+    .def_readwrite("ex",   &ffe::SlimGrids::ex)
+    .def_readwrite("ey",   &ffe::SlimGrids::ey)
+    .def_readwrite("ez",   &ffe::SlimGrids::ez)
+    .def_readwrite("bx",   &ffe::SlimGrids::bx)
+    .def_readwrite("by",   &ffe::SlimGrids::by)
+    .def_readwrite("bz",   &ffe::SlimGrids::bz)
+    .def("set_grids",        &ffe::SlimGrids::set_grids)
     .def(py::self += py::self)
     .def(py::self -= py::self)
     .def(py::self *= float())
@@ -63,7 +63,7 @@ void bind_ffe(py::module& m_sub)
     .def(py::self /  float());
 
 
-  m_sub.def("set_step", [](emf::Grids& yee, ffe::SkinnyYeeLattice skgrids)
+  m_sub.def("set_step", [](emf::Grids& yee, ffe::SlimGrids skgrids)
       -> void 
       {
         yee.ex = skgrids.ex;

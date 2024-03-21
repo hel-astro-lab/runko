@@ -16,17 +16,17 @@ void Tile<D>::rk3_update(
     )
 {
   emf::Grids&    m  = this->get_grids();
-  ffe::SkinnyYeeLattice& n  = this->Fn; 
-  ffe::SkinnyYeeLattice& dm = this->dF; 
+  ffe::SlimGrids& n  = this->Fn; 
+  ffe::SlimGrids& dm = this->dF; 
   //float_m dt = tile.cfl;
 
 
   UniIter::iterate3D(
     [=] DEVCALLABLE(
       int i, int j, int k,
-      ffe::SkinnyYeeLattice& dm,
+      ffe::SlimGrids& dm,
       emf::Grids& m,
-      ffe::SkinnyYeeLattice& n)
+      ffe::SlimGrids& n)
       {
         // RK3 E update
         m.ex(i,j,k) = c1*n.ex(i,j,k) + c2*m.ex(i,j,k) + c3*dm.ex(i,j,k);
@@ -62,10 +62,10 @@ template<std::size_t D>
 void Tile<D>::copy_eb()
 {
   emf::Grids&    m = this->get_grids();
-  ffe::SkinnyYeeLattice& n = this->Fn; 
+  ffe::SlimGrids& n = this->Fn; 
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, emf::Grids& m, ffe::SkinnyYeeLattice& n)
+    [=] DEVCALLABLE( int i, int j, int k, emf::Grids& m, ffe::SlimGrids& n)
     {
         n.ex(i,j,k) = m.ex(i,j,k);
         n.ey(i,j,k) = m.ey(i,j,k);

@@ -111,7 +111,7 @@ void ffe::rFFE4<3>::push_eb(ffe::Tile<3>& tile)
 {
   // refs to storages
   emf::Grids&     m = tile.get_grids();
-  ffe::SkinnyYeeLattice& dm = tile.dF; 
+  ffe::SlimGrids& dm = tile.dF; 
 
   // refs to emf for easier access
   auto& ex  = m.ex;
@@ -171,7 +171,7 @@ template<>
 void ffe::rFFE4<3>::add_jperp(ffe::Tile<3>& tile)
 {
   emf::Grids&     m = tile.get_grids();
-  ffe::SkinnyYeeLattice& dm = tile.dF; 
+  ffe::SlimGrids& dm = tile.dF; 
 
   auto& jx  = m.jx;
   auto& jy  = m.jy;
@@ -248,7 +248,7 @@ template<>
 void ffe::rFFE4<3>::remove_jpar(ffe::Tile<3>& tile)
 {
   emf::Grids&     m = tile.get_grids();
-  ffe::SkinnyYeeLattice& dm = tile.dF; 
+  ffe::SlimGrids& dm = tile.dF; 
 
   float_m cur, b2;
   float_m dt = tile.cfl;
@@ -335,7 +335,7 @@ template<>
 void ffe::rFFE4<3>::limit_e(ffe::Tile<3>& tile)
 {
   emf::Grids&     m = tile.get_grids();
-  ffe::SkinnyYeeLattice& dm = tile.dF; 
+  ffe::SlimGrids& dm = tile.dF; 
 
   float_m dt = tile.cfl;
   float_m e2, b2, diss, cur;

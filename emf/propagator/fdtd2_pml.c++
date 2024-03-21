@@ -329,7 +329,7 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 
   // refs to storages
   emf::Grids&     m = tile.get_grids();
-  ffe::SkinnyYeeLattice& dm = tile.dF; 
+  ffe::SlimGrids& dm = tile.dF; 
     
   // Tile limits
   const auto mins = tile.mins;
@@ -340,7 +340,7 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, 
-      ffe::SkinnyYeeLattice& dm,
+      ffe::SlimGrids& dm,
       emf::Grids& m
       )
   {

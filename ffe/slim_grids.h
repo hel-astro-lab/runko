@@ -17,7 +17,7 @@ namespace ffe {
 //
 // Additionally we overload basic arithmetics to the lattice 
 // to ease the implementation of RK substep combinations
-class SkinnyYeeLattice {
+class SlimGrids {
 
   public:
 
@@ -40,7 +40,7 @@ class SkinnyYeeLattice {
 
 
   // real initializer constructor
-  SkinnyYeeLattice(int Nx, int Ny, int Nz) : 
+  SlimGrids(int Nx, int Ny, int Nz) : 
     Nx(Nx), Ny(Ny), Nz(Nz),
 
     ex(Nx, Ny, Nz),
@@ -54,28 +54,28 @@ class SkinnyYeeLattice {
       //DEV_REGISTER
     }
 
-  ~SkinnyYeeLattice() = default;
+  ~SlimGrids() = default;
 
 
   // basic arithmetics 
-  SkinnyYeeLattice& operator +=(const SkinnyYeeLattice& rhs);
-  SkinnyYeeLattice& operator -=(const SkinnyYeeLattice& rhs);
-  SkinnyYeeLattice& operator *=(double rhs);
-  SkinnyYeeLattice& operator /=(double rhs);
+  SlimGrids& operator +=(const SlimGrids& rhs);
+  SlimGrids& operator -=(const SlimGrids& rhs);
+  SlimGrids& operator *=(double rhs);
+  SlimGrids& operator /=(double rhs);
 
 
   void set_grids(const emf::Grids& yee);
 
 };
 
-SkinnyYeeLattice operator +(SkinnyYeeLattice lhs, const SkinnyYeeLattice& rhs);
-SkinnyYeeLattice operator -(SkinnyYeeLattice lhs, const SkinnyYeeLattice& rhs);
-SkinnyYeeLattice operator *(SkinnyYeeLattice lhs, double rhs);
-SkinnyYeeLattice operator /(SkinnyYeeLattice lhs, double rhs);
+SlimGrids operator +(SlimGrids lhs, const SlimGrids& rhs);
+SlimGrids operator -(SlimGrids lhs, const SlimGrids& rhs);
+SlimGrids operator *(SlimGrids lhs, double rhs);
+SlimGrids operator /(SlimGrids lhs, double rhs);
 
 
 
 }
 
-//ffe::SkinnyYeeLattice operator /(ffe::SkinnyYeeLattice lhs, double rhs);
+//ffe::SlimGrids operator /(ffe::SlimGrids lhs, double rhs);
 
