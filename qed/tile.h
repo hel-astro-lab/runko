@@ -22,9 +22,9 @@ namespace qed {
 
 template<std::size_t D>
 class Tile :
-  virtual public    pic::Tile<D>,
+  virtual public pic::Tile<D>,
   virtual public emf::Tile<D>, 
-  virtual public  corgi::Tile<D> 
+  virtual public corgi::Tile<D> 
 {
 
 public:
@@ -33,7 +33,7 @@ public:
   using corgi::Tile<D>::maxs;
   using emf::Tile<D>::mesh_lengths;
 
-  using emf::Tile<D>::yee;
+  using emf::Tile<D>::grids;
   using emf::Tile<D>::cfl;
 
   using pic::Tile<D>::containers;
