@@ -119,6 +119,21 @@ And we are finished! All the quantities are now defined at
 
 and we can move on to the next time step.
 
+Code implementation
+-------------------
+
+The current deposition is implemented as a member function of the ``emf::Tile`` as
+
+.. literalinclude:: ../emf/tile.c++
+   :linenos:
+   :caption:
+   :dedent:
+   :language: c++
+   :start-after: SPHINX emf docs addcur start
+   :end-before: SPHINX emf docs addcur stop
+
+
+
 
 Particle shapes
 ---------------

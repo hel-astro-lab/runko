@@ -44,4 +44,3 @@ using float_p = float; /// particle storage type; NOTE: don't forget MPI type be
 //using indices_t = std::array<size_t, 3>;
 //using vblock_t = std::array<float, BLOCK_WID>;
 
-
