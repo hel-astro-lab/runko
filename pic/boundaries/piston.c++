@@ -23,7 +23,7 @@ void pic::Piston<D>::zigzag(
     double z2glob, 
     double q)
 {
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
   auto mins = tile.mins;
 
   // normalized location w.r.t. tile
@@ -66,37 +66,37 @@ void pic::Piston<D>::zigzag(
   double Fz2 = +q*(z2-zr);
 
   // jx
-  if (D >= 1) yee.jx(i1,  j1,   k1)   += Fx1 * (1.0-Wy1) * (1.0-Wz1);
-  if (D >= 2) yee.jx(i1,  j1+1, k1)   += Fx1 * Wy1       * (1.0-Wz1);
-  if (D >= 3) yee.jx(i1,  j1,   k1+1) += Fx1 * (1.0-Wy1) * Wz1;
-  if (D >= 3) yee.jx(i1,  j1+1, k1+1) += Fx1 * Wy1     * Wz1;
+  if (D >= 1) gs.jx(i1,  j1,   k1)   += Fx1 * (1.0-Wy1) * (1.0-Wz1);
+  if (D >= 2) gs.jx(i1,  j1+1, k1)   += Fx1 * Wy1       * (1.0-Wz1);
+  if (D >= 3) gs.jx(i1,  j1,   k1+1) += Fx1 * (1.0-Wy1) * Wz1;
+  if (D >= 3) gs.jx(i1,  j1+1, k1+1) += Fx1 * Wy1     * Wz1;
 
-  if (D >= 1) yee.jx(i2,  j2,   k2)   += Fx2 * (1.0-Wy2) * (1.0-Wz2);
-  if (D >= 2) yee.jx(i2,  j2+1, k2)   += Fx2 * Wy2       * (1.0-Wz2);
-  if (D >= 3) yee.jx(i2,  j2,   k2+1) += Fx2 * (1.0-Wy2) * Wz2;
-  if (D >= 3) yee.jx(i2,  j2+1, k2+1) += Fx2 * Wy2     * Wz2;
+  if (D >= 1) gs.jx(i2,  j2,   k2)   += Fx2 * (1.0-Wy2) * (1.0-Wz2);
+  if (D >= 2) gs.jx(i2,  j2+1, k2)   += Fx2 * Wy2       * (1.0-Wz2);
+  if (D >= 3) gs.jx(i2,  j2,   k2+1) += Fx2 * (1.0-Wy2) * Wz2;
+  if (D >= 3) gs.jx(i2,  j2+1, k2+1) += Fx2 * Wy2     * Wz2;
 
   // jy
-  if (D >= 1) yee.jy(i1,  j1,   k1)   += Fy1 * (1.0-Wx1) * (1.0-Wz1);
-  if (D >= 2) yee.jy(i1+1,j1,   k1)   += Fy1 * Wx1       * (1.0-Wz1);
-  if (D >= 3) yee.jy(i1  ,j1,   k1+1) += Fy1 * (1.0-Wx1) * Wz1;
-  if (D >= 3) yee.jy(i1+1,j1,   k1+1) += Fy1 * Wx1     * Wz1;
+  if (D >= 1) gs.jy(i1,  j1,   k1)   += Fy1 * (1.0-Wx1) * (1.0-Wz1);
+  if (D >= 2) gs.jy(i1+1,j1,   k1)   += Fy1 * Wx1       * (1.0-Wz1);
+  if (D >= 3) gs.jy(i1  ,j1,   k1+1) += Fy1 * (1.0-Wx1) * Wz1;
+  if (D >= 3) gs.jy(i1+1,j1,   k1+1) += Fy1 * Wx1     * Wz1;
   
-  if (D >= 1) yee.jy(i2,  j2,   k2)   += Fy2 * (1.0-Wx2) * (1.0-Wz2);
-  if (D >= 2) yee.jy(i2+1,j2,   k2)   += Fy2 * Wx2       * (1.0-Wz2);
-  if (D >= 3) yee.jy(i2,  j2,   k2+1) += Fy2 * (1.0-Wx2) * Wz2;
-  if (D >= 3) yee.jy(i2+1,j2,   k2+1) += Fy2 * Wx2     * Wz2;
+  if (D >= 1) gs.jy(i2,  j2,   k2)   += Fy2 * (1.0-Wx2) * (1.0-Wz2);
+  if (D >= 2) gs.jy(i2+1,j2,   k2)   += Fy2 * Wx2       * (1.0-Wz2);
+  if (D >= 3) gs.jy(i2,  j2,   k2+1) += Fy2 * (1.0-Wx2) * Wz2;
+  if (D >= 3) gs.jy(i2+1,j2,   k2+1) += Fy2 * Wx2     * Wz2;
                         
   // jz
-  if (D >= 1) yee.jz(i1,  j1,   k1)   += Fz1 * (1.0-Wx1) * (1.0-Wy1);
-  if (D >= 1) yee.jz(i1+1,j1,   k1)   += Fz1 * Wx1       * (1.0-Wy1);
-  if (D >= 2) yee.jz(i1,  j1+1, k1)   += Fz1 * (1.0-Wx1) * Wy1;
-  if (D >= 2) yee.jz(i1+1,j1+1, k1)   += Fz1 * Wx1       * Wy1;
+  if (D >= 1) gs.jz(i1,  j1,   k1)   += Fz1 * (1.0-Wx1) * (1.0-Wy1);
+  if (D >= 1) gs.jz(i1+1,j1,   k1)   += Fz1 * Wx1       * (1.0-Wy1);
+  if (D >= 2) gs.jz(i1,  j1+1, k1)   += Fz1 * (1.0-Wx1) * Wy1;
+  if (D >= 2) gs.jz(i1+1,j1+1, k1)   += Fz1 * Wx1       * Wy1;
 
-  if (D >= 2) yee.jz(i2,  j2,   k2)   += Fz2 * (1.0-Wx2) * (1.0-Wy2);
-  if (D >= 2) yee.jz(i2+1,j2,   k2)   += Fz2 * Wx2       * (1.0-Wy2);
-  if (D >= 2) yee.jz(i2,  j2+1, k2)   += Fz2 * (1.0-Wx2) * Wy2;
-  if (D >= 2) yee.jz(i2+1,j2+1, k2)   += Fz2 * Wx2       * Wy2;
+  if (D >= 2) gs.jz(i2,  j2,   k2)   += Fz2 * (1.0-Wx2) * (1.0-Wy2);
+  if (D >= 2) gs.jz(i2+1,j2,   k2)   += Fz2 * Wx2       * (1.0-Wy2);
+  if (D >= 2) gs.jz(i2,  j2+1, k2)   += Fz2 * (1.0-Wx2) * Wy2;
+  if (D >= 2) gs.jz(i2+1,j2+1, k2)   += Fz2 * Wx2       * Wy2;
 
 }
 
@@ -236,7 +236,7 @@ void pic::Piston<2>::field_bc(
 
   // make left side of piston conductor
   if(walloc < maxs[0]) {
-    auto& yee = tile.get_grids();
+    auto& gs = tile.get_grids();
 
     // wall location 
     auto iw = static_cast<int>(walloc - mins[0]);
@@ -247,14 +247,14 @@ void pic::Piston<2>::field_bc(
       for(int i=-3; i<=iw; i++) {
 
         // transverse components of electric field to zero (only parallel comp allowed)
-        yee.ey(i,j,k) = 0.0;
-        yee.ez(i,j,k) = 0.0;
+        gs.ey(i,j,k) = 0.0;
+        gs.ez(i,j,k) = 0.0;
 
         // clean all current behind piston head
         // NOTE: not needed since we null the current inside reflection procedure
-        //yee.jx(i,j,k) = 0.0;
-        //yee.jy(i,j,k) = 0.0;
-        //yee.jz(i,j,k) = 0.0;
+        //gs.jx(i,j,k) = 0.0;
+        //gs.jy(i,j,k) = 0.0;
+        //gs.jz(i,j,k) = 0.0;
       }
     }
   }
@@ -272,7 +272,7 @@ void pic::Piston<3>::field_bc(
 
   // make left side of piston conductor
   if(walloc < maxs[0]) {
-    auto& yee = tile.get_grids();
+    auto& gs = tile.get_grids();
 
     // wall location 
     auto iw = static_cast<int>(walloc - mins[0]);
@@ -284,13 +284,13 @@ void pic::Piston<3>::field_bc(
     for(int i=-3; i<=iw; i++) {
 
       // transverse components of electric field to zero (only parallel comp allowed)
-      yee.ey(i,j,k) = 0.0;
-      yee.ez(i,j,k) = 0.0;
+      gs.ey(i,j,k) = 0.0;
+      gs.ez(i,j,k) = 0.0;
 
       // clean all current behind piston head
-      //yee.jx(i,j,k) = 0.0;
-      //yee.jy(i,j,k) = 0.0;
-      //yee.jz(i,j,k) = 0.0;
+      //gs.jx(i,j,k) = 0.0;
+      //gs.jy(i,j,k) = 0.0;
+      //gs.jz(i,j,k) = 0.0;
     }
 
   } // end if inside piston

@@ -24,13 +24,13 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
   const auto mins = tile.mins;
 
   //clear arrays before new update
-  yee.jx.clear();
-  yee.jy.clear();
-  yee.jz.clear();
+  gs.jx.clear();
+  gs.jy.clear();
+  gs.jz.clear();
 
   for(auto&& con : tile.containers) {
 
@@ -42,7 +42,7 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
 
     //UniIter::iterate([=] DEVCALLABLE (
     //            size_t n, 
-    //            emf::Grids &yee,
+    //            emf::Grids &gs,
     //            pic::ParticleContainer<D>& con
     //            ){
     for(size_t n=0; n<con.size(); n++) {
@@ -140,8 +140,8 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
                            + DSy[j]*DSz[k]/3.);
 
             // TODO 1d indexing
-            atomic_add( yee.jx(iloc, jloc, kloc), tmpJx[j][k] );
-            //atomic_add( yee.jx(i2p+i-offset, j2p+j-offset, k2p+k-offset), tmpJx[j][k] );
+            atomic_add( gs.jx(iloc, jloc, kloc), tmpJx[j][k] );
+            //atomic_add( gs.jx(i2p+i-offset, j2p+j-offset, k2p+k-offset), tmpJx[j][k] );
       }}}
 
       //-------------------------------------------------- 
@@ -159,8 +159,8 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
                            + DSz[k]*DSx[i]/3.);
 
 
-            atomic_add( yee.jy(iloc, jloc, kloc), tmpJy[i][k] );
-            //atomic_add( yee.jy(i2p+i-offset, j2p+j-offset, k2p+k-offset), tmpJy[i][k] );
+            atomic_add( gs.jy(iloc, jloc, kloc), tmpJy[i][k] );
+            //atomic_add( gs.jy(i2p+i-offset, j2p+j-offset, k2p+k-offset), tmpJy[i][k] );
       }}}
 
 
@@ -179,8 +179,8 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
                            + DSx[i]*DSy[j]/3.);
 
 
-            atomic_add( yee.jz(iloc, jloc, kloc), tmpJz[i][j] );
-            //atomic_add( yee.jz(i2p+i-offset, j2p+j-offset, k2p+k-offset), tmpJz[i][j] );
+            atomic_add( gs.jz(iloc, jloc, kloc), tmpJz[i][j] );
+            //atomic_add( gs.jz(i2p+i-offset, j2p+j-offset, k2p+k-offset), tmpJz[i][j] );
       }}}
 
 
@@ -219,7 +219,7 @@ void pic::Esikerpov_2nd<D,V>::solve( pic::Tile<D>& tile )
 
 
     }
-    //}, con.size(), yee, con);
+    //}, con.size(), gs, con);
 
   }//end of loop over species
 

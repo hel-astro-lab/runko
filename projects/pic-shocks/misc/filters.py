@@ -30,11 +30,11 @@ def read_tile(tile, conf):
     nx,ny,nz = conf.NxMesh, conf.NyMesh, conf.NzMesh
     arr = np.zeros((nx,ny,nz))
 
-    yee = tile.get_grids(0)
+    gs = tile.get_grids(0)
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
-                arr[i,j,k] = yee.jx[i,j,k]
+                arr[i,j,k] = gs.jx[i,j,k]
 
     return arr
 
@@ -66,13 +66,13 @@ if __name__ == "__main__":
     tile = pypic.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     if True:
-        yee = tile.get_grids(0)
-        yee.jx[50,50,0] = 1.0
+        gs = tile.get_grids(0)
+        gs.jx[50,50,0] = 1.0
 
     #inject cherenkov like noise by hand
     elif False:
-        yee = tile.get_grids(0)
-        #yee.jx[50,50,0] = 1.0
+        gs = tile.get_grids(0)
+        #gs.jx[50,50,0] = 1.0
         
         N = 200
         iss1 = np.random.randint(10, 89, size=N)
@@ -86,20 +86,20 @@ if __name__ == "__main__":
         #insert diagonal noise
         if True:
             for (i,j,r) in zip(iss1,jss1,rss1):
-                yee.jx[i,j,0    ] += 1.0
+                gs.jx[i,j,0    ] += 1.0
                 for ri in range(r):
-                    yee.jx[i+ri,j+ri,0] += 1.0
+                    gs.jx[i+ri,j+ri,0] += 1.0
 
         if False:
             for (i,j) in zip(iss1,jss1):
-                yee.jx[i,j,0    ] = 1.0
-                yee.jx[i+1,j+1,0] = 1.0
+                gs.jx[i,j,0    ] = 1.0
+                gs.jx[i+1,j+1,0] = 1.0
 
         #insert diagonal noise
         if False:
             for (i,j) in zip(iss2,jss2):
-                yee.jx[i,j,0    ] = 1.0
-                yee.jx[i-1,j+1,0] = 1.0
+                gs.jx[i,j,0    ] = 1.0
+                gs.jx[i-1,j+1,0] = 1.0
 
     timer = Timer()
     timer.start("filter")

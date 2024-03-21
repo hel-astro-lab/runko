@@ -181,17 +181,17 @@ class Antenna:
 
 
     def add_driving(self, tile):
-        yee = tile.get_grids(0)
+        gs = tile.get_grids(0)
         #self.get_Brms(tile)
         self.get_Brms2(tile)
 
-        yee.bx += self.Bx_rms
-        yee.by += self.By_rms
+        gs.bx += self.Bx_rms
+        gs.by += self.By_rms
         
 
-        #yee.jz += self.Jext
+        #gs.jz += self.Jext
 
         #for mode in self.modes:
         #    self.get_current(mode, tile)
-        #    yee.jz += self.Jext
+        #    gs.jz += self.Jext
 

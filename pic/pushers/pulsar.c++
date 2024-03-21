@@ -186,22 +186,22 @@ void pic::PulsarPusher<D,V>::push_container(
   const double m  = con.m; //mass
 
   // emf at the grid
-  auto& yee = tile.get_grids(); 
-  auto& exM = yee.ex;
-  auto& eyM = yee.ey;
-  auto& ezM = yee.ez;
+  auto& gs = tile.get_grids(); 
+  auto& exM = gs.ex;
+  auto& eyM = gs.ey;
+  auto& ezM = gs.ez;
 
-  auto& bxM = yee.bx;
-  auto& byM = yee.by;
-  auto& bzM = yee.bz;
+  auto& bxM = gs.bx;
+  auto& byM = gs.by;
+  auto& bzM = gs.bz;
 
   //const int Nx = tile.mesh_lengths[0];
   //const int Ny = tile.mesh_lengths[1];
   //const int Nz = tile.mesh_lengths[2];
 
   // mesh sizes for 1D indexing
-  const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
-  const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
+  const size_t iy = D >= 2 ? gs.ex.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
+  const size_t iz = D >= 3 ? gs.ex.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
 
   auto mins = tile.mins;
   //auto maxs = tile.maxs;
@@ -243,7 +243,7 @@ void pic::PulsarPusher<D,V>::push_container(
     //internal field interpolation 
 
     // 1D reference index
-    const size_t ind0 = yee.ex.indx(ii,jj,kk);
+    const size_t ind0 = gs.ex.indx(ii,jj,kk);
 
     auto [ex0, ey0, ez0, bx0, by0, bz0] = interpolate_fields(
                                       exM, eyM, ezM, bxM, byM, bzM, 
@@ -334,7 +334,7 @@ void pic::PulsarPusher<D,V>::push_container(
       if(D > 1) jj -= mins[1];
       if(D > 2) kk -= mins[2];
       
-      const size_t ind1 = yee.ex.indx(ii,jj,kk); // 1D reference index
+      const size_t ind1 = gs.ex.indx(ii,jj,kk); // 1D reference index
 
       auto [ex1, ey1, ez1, bx1, by1, bz1] = interpolate_fields(
                                       exM, eyM, ezM, bxM, byM, bzM, 

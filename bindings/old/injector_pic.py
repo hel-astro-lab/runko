@@ -95,7 +95,7 @@ def insert_em(grid, conf, ffunc):
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             c = grid.get_tile(i,j)
-            yee = c.get_grids(0)
+            gs = c.get_grids(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -122,18 +122,18 @@ def insert_em(grid, conf, ffunc):
                         #val = ffunc(xmid, ymid, zmid)
 
                         # enforce Yee lattice structure
-                        yee.ex[l,m,n] = ffunc(xmid, ycor, zcor)
-                        yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)+1.0
-                        #yee.ez[l,m,n] = ffunc(xcor, ycor, zmid)+2.0
-                        yee.ez[l,m,n] = ffunc(xcor, ycor, zcor)+2.0  #2D hack
+                        gs.ex[l,m,n] = ffunc(xmid, ycor, zcor)
+                        gs.ey[l,m,n] = ffunc(xcor, ymid, zcor)+1.0
+                        #gs.ez[l,m,n] = ffunc(xcor, ycor, zmid)+2.0
+                        gs.ez[l,m,n] = ffunc(xcor, ycor, zcor)+2.0  #2D hack
 
-                        #yee.bx[l,m,n] = ffunc(xcor, ymid, zmid)+3.0
-                        yee.bx[l,m,n] = ffunc(xcor, ymid, zcor)+3.0  #2D hack
-                        #yee.by[l,m,n] = ffunc(xmid, ycor, zmid)+4.0 #2D hack
-                        yee.by[l,m,n] = ffunc(xmid, ycor, zcor)+4.0
-                        yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)+5.0
+                        #gs.bx[l,m,n] = ffunc(xcor, ymid, zmid)+3.0
+                        gs.bx[l,m,n] = ffunc(xcor, ymid, zcor)+3.0  #2D hack
+                        #gs.by[l,m,n] = ffunc(xmid, ycor, zmid)+4.0 #2D hack
+                        gs.by[l,m,n] = ffunc(xmid, ycor, zcor)+4.0
+                        gs.bz[l,m,n] = ffunc(xmid, ymid, zcor)+5.0
 
-                        yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
-                        yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
-                        yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+                        gs.jx[l,m,n] = ffunc(xmid, ymid, zmid)
+                        gs.jy[l,m,n] = ffunc(xmid, ymid, zmid)
+                        gs.jz[l,m,n] = ffunc(xmid, ymid, zmid)
 

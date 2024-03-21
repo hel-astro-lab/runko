@@ -72,7 +72,7 @@ def insert_em_fields(grid, conf):
 
 
     for tile in pytools.tiles_all(grid):
-        yee = tile.get_grids(0)
+        gs = tile.get_grids(0)
 
         ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
 
@@ -83,14 +83,14 @@ def insert_em_fields(grid, conf):
                     # get global coordinates
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
                     #r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
-                    yee.bx[l, m, n] = 0.0 #conf.binit * np.cos(bphi)
-                    yee.by[l, m, n] = 0.0 #conf.binit * np.sin(bphi) * np.sin(btheta)
-                    yee.bz[l, m, n] = 0.0 #conf.binit * np.sin(bphi) * np.cos(btheta)
-                    yee.ey[l, m, n] = 0.0 #-beta * yee.bz[l, m, n]
-                    yee.ez[l, m, n] = 0.0 #+beta * yee.by[l, m, n]
+                    gs.bx[l, m, n] = 0.0 #conf.binit * np.cos(bphi)
+                    gs.by[l, m, n] = 0.0 #conf.binit * np.sin(bphi) * np.sin(btheta)
+                    gs.bz[l, m, n] = 0.0 #conf.binit * np.sin(bphi) * np.cos(btheta)
+                    gs.ey[l, m, n] = 0.0 #-beta * gs.bz[l, m, n]
+                    gs.ez[l, m, n] = 0.0 #+beta * gs.by[l, m, n]
         
                     # harmonic perturbations
-                    yee.ex[l,m,n] = ampl*np.sum(np.sin( kx*iglob*modes + rnd_phases) )
+                    gs.ex[l,m,n] = ampl*np.sum(np.sin( kx*iglob*modes + rnd_phases) )
 
 
     return

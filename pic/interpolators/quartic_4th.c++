@@ -75,7 +75,7 @@ void pic::QuarticInterpolator<D>::solve(
   //std::array<int, D> dummy; 
 
   // get reference to the Yee grid 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   for(auto&& con : tile.containers) {
 
@@ -86,14 +86,14 @@ void pic::QuarticInterpolator<D>::solve(
     auto mins = tile.mins;
 
     // mesh sizes for 1D indexing
-    const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
-    const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
+    const size_t iy = D >= 2 ? gs.ex.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
+    const size_t iz = D >= 3 ? gs.ex.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
 
 
     // loop over particles
     //UniIter::iterate([=] DEVCALLABLE( 
     //            size_t n, 
-    //            emf::Grids& yee,
+    //            emf::Grids& gs,
     //            pic::ParticleContainer<D>& con){
     for(size_t n=0; n<con.size(); n++) {
       //--------------------------------------------------
@@ -204,22 +204,22 @@ void pic::QuarticInterpolator<D>::solve(
       // 4th order -2,-1,0,1,2 access pattern
         
       // default scheme
-      con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], yee.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
-      con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], yee.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
-      con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], yee.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
-      con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], yee.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
-      con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], yee.by, iy,iz,  id,jp,kd); // By(d,p,d)
-      con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], yee.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
+      con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], gs.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
+      con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], gs.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
+      con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], gs.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
+      con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], gs.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
+      con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], gs.by, iy,iz,  id,jp,kd); // By(d,p,d)
+      con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], gs.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
 
       // Sokolov
-      //con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], yee.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
-      //con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], yee.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
-      //con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], yee.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
-      //con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], yee.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
-      //con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], yee.by, iy,iz,  id,jp,kd); // By(d,p,d)
-      //con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], yee.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
+      //con.ex(n) = compute( &cxd[2], &cyp[2], &czp[2], gs.ex, iy,iz,  id,jp,kp); // Ex(d,p,p)
+      //con.ey(n) = compute( &cxp[2], &cyd[2], &czp[2], gs.ey, iy,iz,  ip,jd,kp); // Ey(p,d,p)
+      //con.ez(n) = compute( &cxp[2], &cyp[2], &czd[2], gs.ez, iy,iz,  ip,jp,kd); // Ez(p,p,d)
+      //con.bx(n) = compute( &cxp[2], &cyd[2], &czd[2], gs.bx, iy,iz,  ip,jd,kd); // Bx(p,d,d)
+      //con.by(n) = compute( &cxd[2], &cyp[2], &czd[2], gs.by, iy,iz,  id,jp,kd); // By(d,p,d)
+      //con.bz(n) = compute( &cxd[2], &cyd[2], &czp[2], gs.bz, iy,iz,  id,jd,kp); // Bz(d,d,p)
 
-    //}, con.size(), yee, con);
+    //}, con.size(), gs, con);
     }
 
     UniIter::sync();

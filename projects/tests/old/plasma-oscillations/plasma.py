@@ -100,11 +100,11 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_grids(n, conf)
+    gs = get_grids(n, conf)
 
-    f5['fields/Ex'  ][:,lap] = yee['ex']
-    f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = yee['ekin']
+    f5['fields/Ex'  ][:,lap] = gs['ex']
+    f5['fields/rho' ][:,lap] = gs['rho']
+    f5['fields/ekin'][:,lap] = gs['ekin']
 
     return
 

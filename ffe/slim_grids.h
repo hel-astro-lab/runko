@@ -64,7 +64,7 @@ class SlimGrids {
   SlimGrids& operator /=(double rhs);
 
 
-  void set_grids(const emf::Grids& yee);
+  void set_grids(const emf::Grids& gs);
 
 };
 

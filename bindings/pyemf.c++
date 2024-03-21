@@ -260,7 +260,7 @@ void bind_emf(py::module& m_sub)
 
 
   // FIXME extra debug additions/tests
-  //t3.def_property("yee", 
+  //t3.def_property("gs", 
   //  &emf::Tile<3>::get_grids2,
   //  &emf::Tile<3>::set_grids,
   //  py::return_value_policy::reference_internal, 
@@ -278,10 +278,10 @@ void bind_emf(py::module& m_sub)
   //  .def(py::init<size_t, size_t, size_t>())
   //  .def_readwrite("dx",         &emf::Tile<3>::dx)
   //  .def_readwrite("cfl",        &emf::Tile<3>::cfl)
-  //  //.def_readwrite("yee",        &emf::Tile<3>::yee,
+  //  //.def_readwrite("gs",        &emf::Tile<3>::gs,
   //  //    py::return_value_policy::reference_internal, 
   //  //    py::keep_alive<0,1>())
-  //  .def_property("yee", 
+  //  .def_property("gs", 
   //      &emf::Tile<3>::get_grids2,
   //      &emf::Tile<3>::set_grids,
   //      py::return_value_policy::reference_internal, 

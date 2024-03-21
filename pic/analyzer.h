@@ -33,8 +33,8 @@ class Analyzator {
   {
 
     // Yee lattice reference
-    auto& yee = tile.get_grids();
-    yee.rho.clear();
+    auto& gs = tile.get_grids();
+    gs.rho.clear();
 
     // tile limits
     auto mins = tile.mins;
@@ -70,7 +70,7 @@ class Analyzator {
       int n1 = 0;
       int n2 = nparts;
 
-      // TODO: think SIMD (not possible atm due to ijk writing to yee
+      // TODO: think SIMD (not possible atm due to ijk writing to gs
       for(int n=n1; n<n2; n++) {
           
         // grid coordinate location; cast to double for the duration of this algorithm
@@ -144,7 +144,7 @@ class Analyzator {
         // --------------------------------------------------
         // general quantities
         double mass = abs(q);
-        yee.rho(i,j,k) += mass; // total number density
+        gs.rho(i,j,k) += mass; // total number density
 
         // --------------------------------------------------
         // particle-species quantities

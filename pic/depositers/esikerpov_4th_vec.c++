@@ -39,17 +39,17 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
   const auto mins = tile.mins;
 
   //clear arrays before new update
-  yee.jx.clear();
-  yee.jy.clear();
-  yee.jz.clear();
+  gs.jx.clear();
+  gs.jy.clear();
+  gs.jz.clear();
 
-  const auto Nx = yee.Nx;
-  const auto Ny = yee.Ny;
-  const auto Nz = yee.Nz;
+  const auto Nx = gs.Nx;
+  const auto Ny = gs.Ny;
+  const auto Nz = gs.Nz;
 
   //--------------------------------------------------
   // vectorized arrays
@@ -89,8 +89,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
     int nparts = iend-istart;
 
     // mesh sizes for 1D indexing
-    const size_t iy = D >= 2 ? yee.jx.indx(0,1,0) - yee.jx.indx(0,0,0) : 0;
-    const size_t iz = D >= 3 ? yee.jx.indx(0,0,1) - yee.jx.indx(0,0,0) : 0;
+    const size_t iy = D >= 2 ? gs.jx.indx(0,1,0) - gs.jx.indx(0,0,0) : 0;
+    const size_t iz = D >= 3 ? gs.jx.indx(0,0,1) - gs.jx.indx(0,0,0) : 0;
 
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
@@ -256,10 +256,10 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
         //  << " x2: " << "(" << x2 << "," << y2 << "," << z2 << ")"
         //  << "\n";
 
-        //size_t ind = yee.jx.indx(i2p,j2p,k2p);  // TODO wrong
+        //size_t ind = gs.jx.indx(i2p,j2p,k2p);  // TODO wrong
         //std::cout << "done" << ind << "\n";
 
-        //size_t ind = yee.jx.indx(i1p,j1p,k1p); 
+        //size_t ind = gs.jx.indx(i1p,j1p,k1p); 
 
 
         //--------------------------------------------------
@@ -273,7 +273,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
         //int linindex0 = iold[ipart+0*nparts]*yz_size0+iold[ipart+1*nparts]*z_size0+iold[ipart+2*nparts];
 
         // one-dimensional index
-        size_t ind0 = yee.jx.indx(i1p,j1p,k1p); 
+        size_t ind0 = gs.jx.indx(i1p,j1p,k1p); 
 
         for(size_t k=0; k<7; k++ ) {
           size_t k0 = cap(k1p, k, Nz);
@@ -294,8 +294,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
 
               //assert(val < 1.0);
 
-              atomic_add( yee.jx(idx), val );
-              //yee.jx(idx) += val;
+              atomic_add( gs.jx(idx), val );
+              //gs.jx(idx) += val;
             }
           }
         }
@@ -310,7 +310,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
         //int yz_size1 = nprimz*( nprimy+1 ); // TODO: has nprimy+1
         //int linindex1 = iold[ipart+0*nparts]*yz_size1+iold[ipart+1*nparts]*z_size1+iold[ipart+2*nparts];
 
-        size_t ind1 = yee.jx.indx(i1p,j1p+1,k1p); 
+        size_t ind1 = gs.jx.indx(i1p,j1p+1,k1p); 
 
         for(size_t k=0; k<7; k++ ) {
           size_t k0 = cap(k1p, k, Nz);
@@ -332,8 +332,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
               size_t idx = ind1 + (i0-3) + (j0-3)*(iy+1) + (k0-3)*iz; // FIXME
 
               //assert(val < 1.0);
-              atomic_add( yee.jy(idx), val ); // NOTE: jumps of j*iy
-              //yee.jy(idx) += val;
+              atomic_add( gs.jy(idx), val ); // NOTE: jumps of j*iy
+              //gs.jy(idx) += val;
             }
           }
         }
@@ -348,7 +348,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
         //int yz_size2 = ( nprimz+1 )*nprimy; // TODO has nprimz+1
         //int linindex2 = iold[ipart+0*nparts]*yz_size2+iold[ipart+1*nparts]*z_size2+iold[ipart+2*nparts];
 
-        size_t ind2 = yee.jx.indx(i1p,j1p,k1p+1); 
+        size_t ind2 = gs.jx.indx(i1p,j1p,k1p+1); 
         for(size_t k=1; k<7; k++ ) {
           size_t k0 = cap(k1p, k, Nz);
 
@@ -371,8 +371,8 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
 
               //std::cout << sum_v[ip + k*vec_size] << " " << tmp;
               //assert(val < 1.0);
-              atomic_add( yee.jz(idx), val ); // NOTE: jumps of k*iz
-              //yee.jz(idx) += val; 
+              atomic_add( gs.jz(idx), val ); // NOTE: jumps of k*iz
+              //gs.jz(idx) += val; 
             }
           }
         }

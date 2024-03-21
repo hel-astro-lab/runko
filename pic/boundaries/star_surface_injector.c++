@@ -90,7 +90,7 @@ void pic::Star<D>::solve(
   //--------------------------------------------------
   StaggeredSphericalCoordinates coord(cenx,ceny,cenz,1.0);
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
   //const auto c = tile.cfl;
 
   //--------------------------------------------------
@@ -103,13 +103,13 @@ void pic::Star<D>::solve(
 
   //UniIter::iterate3D(
   //[=] DEVCALLABLE (int i, int j, int k, 
-  //                Grids &yee)
+  //                Grids &gs)
   //{
 
 
   //}, 
   //  nx_tile, ny_tile, nz_tile,
-  //  yee);
+  //  gs);
 
 
   for(int k=0; k<nz_tile; k++) 
@@ -181,18 +181,18 @@ void pic::Star<D>::solve(
     if( inside_atmos && !inside_star && inside_pcap ) {
 
       // debug to show the injection region
-      //yee.ex(i,j,k) = 10.0;
-      //yee.ey(i,j,k) = 10.0;
-      //yee.ez(i,j,k) = 10.0;
+      //gs.ex(i,j,k) = 10.0;
+      //gs.ey(i,j,k) = 10.0;
+      //gs.ez(i,j,k) = 10.0;
 
       // get epar (TODO not on the right staggering)
-      auto ex = yee.ex(i,j,k);
-      auto ey = yee.ey(i,j,k);
-      auto ez = yee.ez(i,j,k);
+      auto ex = gs.ex(i,j,k);
+      auto ey = gs.ey(i,j,k);
+      auto ez = gs.ez(i,j,k);
 
-      auto bx = yee.bx(i,j,k);
-      auto by = yee.by(i,j,k);
-      auto bz = yee.bz(i,j,k);
+      auto bx = gs.bx(i,j,k);
+      auto by = gs.by(i,j,k);
+      auto bz = gs.bz(i,j,k);
 
       auto b    = sqrt( bx*bx + by*by + bz*bz ) + EPS;
       auto epar = ( ex*bx + ey*by + ez*bz )/b;
@@ -211,9 +211,9 @@ void pic::Star<D>::solve(
 
       //--------------------------------------------------
       // ver2; current dependent inj; NOTE does not work because current arrays are emptied
-      //float_m jx = yee.jx(i,j,k);
-      //float_m jy = yee.jy(i,j,k);
-      //float_m jz = yee.jz(i,j,k);
+      //float_m jx = gs.jx(i,j,k);
+      //float_m jy = gs.jy(i,j,k);
+      //float_m jz = gs.jz(i,j,k);
       //float_m j = sqrt(jx*jx + jy*jy + jz*jz);
       
       // current is given as j = e*n_pcc*c so that n_ppc = j*c/e

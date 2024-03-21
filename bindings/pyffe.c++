@@ -63,16 +63,16 @@ void bind_ffe(py::module& m_sub)
     .def(py::self /  float());
 
 
-  m_sub.def("set_step", [](emf::Grids& yee, ffe::SlimGrids skgrids)
+  m_sub.def("set_step", [](emf::Grids& gs, ffe::SlimGrids sgs)
       -> void 
       {
-        yee.ex = skgrids.ex;
-        yee.ey = skgrids.ey;
-        yee.ez = skgrids.ez;
+        gs.ex = sgs.ex;
+        gs.ey = sgs.ey;
+        gs.ez = sgs.ez;
         
-        yee.bx = skgrids.bx;
-        yee.by = skgrids.by;
-        yee.bz = skgrids.bz;
+        gs.bx = sgs.bx;
+        gs.by = sgs.by;
+        gs.bz = sgs.bz;
      }
   );
 

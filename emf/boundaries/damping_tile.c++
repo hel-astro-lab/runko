@@ -11,7 +11,7 @@ using std::exp;
 //>
 //void emf::damping::Tile<D, S>::deposit_current() {
 //
-//  auto& yee = ::emf::Tile<D>::get_grids();
+//  auto& gs = ::emf::Tile<D>::get_grids();
 //
 //  //std::cout << "Calling DAMPED J update\n";
 //
@@ -19,9 +19,9 @@ using std::exp;
 //  
 //  float_m resistivity = 10.0;
 //
-//  yee.ex -= yee.jx / resistivity;
-//  yee.ey -= yee.jy / resistivity;
-//  yee.ez -= yee.jz / resistivity;
+//  gs.ex -= gs.jx / resistivity;
+//  gs.ey -= gs.jy / resistivity;
+//  gs.ez -= gs.jz / resistivity;
 //
 //}
 
@@ -45,7 +45,7 @@ template<
 void emf::damping::Tile<D,S>::damp_fields()
 {
 
-  auto& yee = this->get_grids();
+  auto& gs = this->get_grids();
 
   float_m lambda2;
 
@@ -126,25 +126,25 @@ void emf::damping::Tile<D,S>::damp_fields()
         }
 
         if(inside_damping_zone){
-            yee.ex(i,j,k) = t1*yee.ex(i,j,k) + t2*ex_ref(i,j,k);
-            yee.ey(i,j,k) = t1*yee.ey(i,j,k) + t2*ey_ref(i,j,k);
-            yee.ez(i,j,k) = t1*yee.ez(i,j,k) + t2*ez_ref(i,j,k);
+            gs.ex(i,j,k) = t1*gs.ex(i,j,k) + t2*ex_ref(i,j,k);
+            gs.ey(i,j,k) = t1*gs.ey(i,j,k) + t2*ey_ref(i,j,k);
+            gs.ez(i,j,k) = t1*gs.ez(i,j,k) + t2*ez_ref(i,j,k);
 
-            yee.bx(i,j,k) = t1*yee.bx(i,j,k) + t2*bx_ref(i,j,k);
-            yee.by(i,j,k) = t1*yee.by(i,j,k) + t2*by_ref(i,j,k);
-            yee.bz(i,j,k) = t1*yee.bz(i,j,k) + t2*bz_ref(i,j,k);
+            gs.bx(i,j,k) = t1*gs.bx(i,j,k) + t2*bx_ref(i,j,k);
+            gs.by(i,j,k) = t1*gs.by(i,j,k) + t2*by_ref(i,j,k);
+            gs.bz(i,j,k) = t1*gs.bz(i,j,k) + t2*bz_ref(i,j,k);
         }
 
         // fully damped to reference; behind the damping zone
         if ( (left &&  (glob_coord <= fld1)) 
           || (right && (glob_coord >  fld1)) ) {
-          yee.ex(i,j,k) = ex_ref(i,j,k);
-          yee.ey(i,j,k) = ey_ref(i,j,k);
-          yee.ez(i,j,k) = ez_ref(i,j,k);
+          gs.ex(i,j,k) = ex_ref(i,j,k);
+          gs.ey(i,j,k) = ey_ref(i,j,k);
+          gs.ez(i,j,k) = ez_ref(i,j,k);
 
-          yee.bx(i,j,k) = bx_ref(i,j,k);
-          yee.by(i,j,k) = by_ref(i,j,k);
-          yee.bz(i,j,k) = bz_ref(i,j,k);
+          gs.bx(i,j,k) = bx_ref(i,j,k);
+          gs.by(i,j,k) = by_ref(i,j,k);
+          gs.bz(i,j,k) = bz_ref(i,j,k);
         }
       }
     }

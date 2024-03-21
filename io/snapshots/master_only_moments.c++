@@ -29,7 +29,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
     )
 {
   auto& tile = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
     
   auto mins = tile.mins;
   auto maxs = tile.maxs;
@@ -37,7 +37,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
 
   // clear buffer before additive variables
   sbuf[0].clear();
-  if(ifea==0) yee.rho.clear();
+  if(ifea==0) gs.rho.clear();
 
 
   // local variables
@@ -130,7 +130,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
         kff = D >= 3 ? limit( floor(z0-mins[2]), -3., maxs[2]-mins[2] +2.) : 0;
 
         // update rho arrays; this is interpreted as mass density
-        yee.rho(iff,jff,kff) += mass*wgt;
+        gs.rho(iff,jff,kff) += mass*wgt;
 
       //--------------------------------------------------
       }

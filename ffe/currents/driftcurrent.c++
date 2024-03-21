@@ -9,34 +9,34 @@
 
 template<>
 void ffe::DriftCurrent<2>::interpolate_b(
-     emf::Grids& yee
+     emf::Grids& gs
     )
 {
   nvtxRangePush(__FUNCTION__);
 
   int k = 0;
-  for(int j=0; j<static_cast<int>(yee.Ny); j++) 
-  for(int i=0; i<static_cast<int>(yee.Nx); i++) {
+  for(int j=0; j<static_cast<int>(gs.Ny); j++) 
+  for(int i=0; i<static_cast<int>(gs.Nx); i++) {
 
     bxf(i,j,k)=0.25*(
-      yee.bx(i,   j,   k) + 
-      yee.bx(i,   j-1, k) +
-      yee.bx(i+1, j,   k) +
-      yee.bx(i+1, j-1, k) 
+      gs.bx(i,   j,   k) + 
+      gs.bx(i,   j-1, k) +
+      gs.bx(i+1, j,   k) +
+      gs.bx(i+1, j-1, k) 
       );
 
     byf(i,j,k) = 0.25*(
-        yee.by(i,   j,   k) + 
-        yee.by(i,   j+1, k) + 
-        yee.by(i-1, j,   k) + 
-        yee.by(i-1, j+1, k)
+        gs.by(i,   j,   k) + 
+        gs.by(i,   j+1, k) + 
+        gs.by(i-1, j,   k) + 
+        gs.by(i-1, j+1, k)
         );
 
     bzf(i,j,k) = 0.25*(
-        yee.bz(i,   j,   k) + 
-        yee.bz(i,   j-1, k) + 
-        yee.bz(i-1, j,   k) + 
-        yee.bz(i-1, j-1, k)
+        gs.bz(i,   j,   k) + 
+        gs.bz(i,   j-1, k) + 
+        gs.bz(i-1, j,   k) + 
+        gs.bz(i-1, j-1, k)
         );
   }
   nvtxRangePop();
@@ -46,46 +46,46 @@ void ffe::DriftCurrent<2>::interpolate_b(
 
 template<>
 void ffe::DriftCurrent<3>::interpolate_b(
-     emf::Grids& yee
+     emf::Grids& gs
     )
 {
   nvtxRangePush(__FUNCTION__);
 
-  for(int k=0; k<static_cast<int>(yee.Nz); k++) 
-  for(int j=0; j<static_cast<int>(yee.Ny); j++) 
-  for(int i=0; i<static_cast<int>(yee.Nx); i++) {
+  for(int k=0; k<static_cast<int>(gs.Nz); k++) 
+  for(int j=0; j<static_cast<int>(gs.Ny); j++) 
+  for(int i=0; i<static_cast<int>(gs.Nx); i++) {
 
   bxf(i,j,k) = 0.125*(
-    yee.bx(i,   j,   k  ) + 
-    yee.bx(i,   j,   k-1) + 
-    yee.bx(i,   j-1, k  ) + 
-    yee.bx(i,   j-1, k-1) + 
-    yee.bx(i+1, j,   k  ) + 
-    yee.bx(i+1, j,   k-1) + 
-    yee.bx(i+1, j-1, k  ) + 
-    yee.bx(i+1, j-1, k-1)
+    gs.bx(i,   j,   k  ) + 
+    gs.bx(i,   j,   k-1) + 
+    gs.bx(i,   j-1, k  ) + 
+    gs.bx(i,   j-1, k-1) + 
+    gs.bx(i+1, j,   k  ) + 
+    gs.bx(i+1, j,   k-1) + 
+    gs.bx(i+1, j-1, k  ) + 
+    gs.bx(i+1, j-1, k-1)
   );
 
   byf(i,j,k) = 0.125*(
-    yee.by(i,   j,   k)   + 
-    yee.by(i,   j,   k-1) + 
-    yee.by(i,   j+1, k)   + 
-    yee.by(i,   j+1, k-1) + 
-    yee.by(i-1, j,   k)   + 
-    yee.by(i-1, j,   k-1) + 
-    yee.by(i-1, j+1, k)   + 
-    yee.by(i-1, j+1, k-1)
+    gs.by(i,   j,   k)   + 
+    gs.by(i,   j,   k-1) + 
+    gs.by(i,   j+1, k)   + 
+    gs.by(i,   j+1, k-1) + 
+    gs.by(i-1, j,   k)   + 
+    gs.by(i-1, j,   k-1) + 
+    gs.by(i-1, j+1, k)   + 
+    gs.by(i-1, j+1, k-1)
   );
 
   bzf(i,j,k) = 0.125*(
-    yee.bz(i,   j,   k)   + 
-    yee.bz(i,   j,   k+1) + 
-    yee.bz(i,   j-1, k)   + 
-    yee.bz(i,   j-1, k+1) + 
-    yee.bz(i-1, j,   k)   + 
-    yee.bz(i-1, j,   k+1) + 
-    yee.bz(i-1, j-1, k)   + 
-    yee.bz(i-1, j-1, k+1)
+    gs.bz(i,   j,   k)   + 
+    gs.bz(i,   j,   k+1) + 
+    gs.bz(i,   j-1, k)   + 
+    gs.bz(i,   j-1, k+1) + 
+    gs.bz(i-1, j,   k)   + 
+    gs.bz(i-1, j,   k+1) + 
+    gs.bz(i-1, j-1, k)   + 
+    gs.bz(i-1, j-1, k+1)
   );
 
   }

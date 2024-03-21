@@ -59,7 +59,7 @@ def density_profile(xloc, ispcs, conf):
 def insert_em_fields(grid, conf):
 
     for tile in pytools.tiles_all(grid):
-        yee = tile.get_grids(0)
+        gs = tile.get_grids(0)
 
         ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
 
@@ -72,13 +72,13 @@ def insert_em_fields(grid, conf):
                     #iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
                     #r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
-                    yee.bx[l, m, n] = 0.0
-                    yee.by[l, m, n] = 0.0
-                    yee.bz[l, m, n] = conf.binit 
+                    gs.bx[l, m, n] = 0.0
+                    gs.by[l, m, n] = 0.0
+                    gs.bz[l, m, n] = conf.binit 
 
-                    yee.ex[l, m, n] = 0.0
-                    yee.ey[l, m, n] = 0.0
-                    yee.ez[l, m, n] = 0.0
+                    gs.ex[l, m, n] = 0.0
+                    gs.ey[l, m, n] = 0.0
+                    gs.ez[l, m, n] = 0.0
     return
 
 

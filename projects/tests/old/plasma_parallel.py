@@ -167,12 +167,12 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_grids(n, conf)
+    gs = get_grids(n, conf)
 
-    f5['fields/Ex'  ][:,lap] = yee['ex']
-    f5['fields/rho' ][:,lap] = yee['rho']
-    #f5['fields/ekin'][:,lap] = yee['ekin']
-    f5['fields/jx'  ][:,lap] = yee['jx']
+    f5['fields/Ex'  ][:,lap] = gs['ex']
+    f5['fields/rho' ][:,lap] = gs['rho']
+    #f5['fields/ekin'][:,lap] = gs['ekin']
+    f5['fields/jx'  ][:,lap] = gs['jx']
 
     return
 
@@ -188,7 +188,7 @@ def insert_em(grid, conf):
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             c = grid.get_tileptr(i,j)
-            yee = c.get_grids(0)
+            gs = c.get_grids(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -203,16 +203,16 @@ def insert_em(grid, conf):
                         #xloc1 = injector.spatialLoc(grid, (i,j), (l-1,m,n), conf)
 
                         xmid = 0.5*(xloc0[0] + xloc1[0])
-                        yee.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
+                        gs.ex[l,m,n] = n0*conf.me*conf.beta*np.sin(2.0*np.pi*k*xmid/Lx)/k
 
-                        #yee.ex[l,m,n] = 1.0e-5
+                        #gs.ex[l,m,n] = 1.0e-5
 
 
 def solvePoisson(ax, grid, conf):
-    yee = get_grids(n, conf)
+    gs = get_grids(n, conf)
 
-    x   = yee['x']
-    rho = yee['rho']
+    x   = gs['x']
+    rho = gs['rho']
 
 
 

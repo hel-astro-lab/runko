@@ -164,29 +164,29 @@ def fill_grids(grid, data, conf):
     NzM = conf.NzMesh
 
     # lets put ref array into Yee lattice
-    #print("filling yee")
+    #print("filling gs")
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             for k in range(grid.get_Nz()):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     c = grid.get_tile(i,j,k)
-                    yee = c.get_grids(0)
+                    gs = c.get_grids(0)
 
                     for q in range(conf.NxMesh):
                         for r in range(conf.NyMesh):
                             for s in range(conf.NzMesh):
-                                yee.ex[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 0] 
-                                yee.ey[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 1]
-                                yee.ez[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 2]
+                                gs.ex[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 0] 
+                                gs.ey[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 1]
+                                gs.ez[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 2]
 
-                                yee.bx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 3]
-                                yee.by[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 4]
-                                yee.bz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 5]
+                                gs.bx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 3]
+                                gs.by[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 4]
+                                gs.bz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 5]
 
-                                yee.jx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 6]
-                                yee.jy[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 7]
-                                yee.jz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 8]
+                                gs.jx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 6]
+                                gs.jy[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 7]
+                                gs.jz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 8]
 
 
 # Generic function to fill the velocity mesh

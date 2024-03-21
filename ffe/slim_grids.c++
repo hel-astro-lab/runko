@@ -55,15 +55,15 @@ ffe::SlimGrids&
 }
 
 
-/// copy yee grid to skinny yee
-void ffe::SlimGrids::set_grids(const emf::Grids& yee)
+/// copy gs grid to skinny gs
+void ffe::SlimGrids::set_grids(const emf::Grids& gs)
 {
-  ex = yee.ex;
-  ey = yee.ey;
-  ez = yee.ez;
-  bx = yee.bx;
-  by = yee.by;
-  bz = yee.bz;
+  ex = gs.ex;
+  ey = gs.ey;
+  ez = gs.ez;
+  bx = gs.bx;
+  by = gs.by;
+  bz = gs.bz;
 }
 
 ffe::SlimGrids 

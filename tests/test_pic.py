@@ -170,7 +170,7 @@ def insert_em(grid, conf, ffunc, zero_field=False):
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
                 c = grid.get_tile(i,j,k)
-                yee = c.get_grids()
+                gs = c.get_grids()
 
                 for n in range(conf.NzMesh):
                     for m in range(conf.NyMesh):
@@ -196,47 +196,47 @@ def insert_em(grid, conf, ffunc, zero_field=False):
                             #val = ffunc(xmid, ymid, zmid)
 
                             # enforce Yee lattice structure
-                            #yee.ex[l,m,n] = ffunc(xmid, ycor, zcor)
-                            #yee.ey[l,m,n] = ffunc(xcor, ymid, zcor)
-                            #yee.ez[l,m,n] = ffunc(xcor, ycor, zmid)
+                            #gs.ex[l,m,n] = ffunc(xmid, ycor, zcor)
+                            #gs.ey[l,m,n] = ffunc(xcor, ymid, zcor)
+                            #gs.ez[l,m,n] = ffunc(xcor, ycor, zmid)
 
-                            #yee.bx[l,m,n] = ffunc(xcor, ymid, zmid)
-                            #yee.by[l,m,n] = ffunc(xmid, ycor, zmid)
-                            #yee.bz[l,m,n] = ffunc(xmid, ymid, zcor)
+                            #gs.bx[l,m,n] = ffunc(xcor, ymid, zmid)
+                            #gs.by[l,m,n] = ffunc(xmid, ycor, zmid)
+                            #gs.bz[l,m,n] = ffunc(xmid, ymid, zcor)
 
-                            #yee.jx[l,m,n] = ffunc(xmid, ymid, zmid)
-                            #yee.jy[l,m,n] = ffunc(xmid, ymid, zmid)
-                            #yee.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+                            #gs.jx[l,m,n] = ffunc(xmid, ymid, zmid)
+                            #gs.jy[l,m,n] = ffunc(xmid, ymid, zmid)
+                            #gs.jz[l,m,n] = ffunc(xmid, ymid, zmid)
 
                             #TODO
                             xc = xloc0[0]
                             yc = xloc0[1]
                             zc = xloc0[2]
-                            #yee.ex[l,m,n] = ffunc(xc,yc-0.5,zc-0.5)
-                            #yee.ey[l,m,n] = ffunc(xc-0.5,yc,zc-0.5)
-                            #yee.ez[l,m,n] = ffunc(xc-0.5,yc-0.5,zc)
-                            #yee.bx[l,m,n] = ffunc(xc-0.5,yc,zc)
-                            #yee.by[l,m,n] = ffunc(xc,yc-0.5,zc)
-                            #yee.bz[l,m,n] = ffunc(xc,yc,zc-0.5)
+                            #gs.ex[l,m,n] = ffunc(xc,yc-0.5,zc-0.5)
+                            #gs.ey[l,m,n] = ffunc(xc-0.5,yc,zc-0.5)
+                            #gs.ez[l,m,n] = ffunc(xc-0.5,yc-0.5,zc)
+                            #gs.bx[l,m,n] = ffunc(xc-0.5,yc,zc)
+                            #gs.by[l,m,n] = ffunc(xc,yc-0.5,zc)
+                            #gs.bz[l,m,n] = ffunc(xc,yc,zc-0.5)
 
-                            yee.ex[l,m,n] = ffunc(xc+0.5,yc,    zc)
-                            yee.ey[l,m,n] = ffunc(xc,    yc+0.5,zc)
-                            yee.ez[l,m,n] = ffunc(xc,    yc,    zc+0.5)
-                            yee.bx[l,m,n] = ffunc(xc,    yc+0.5,zc+0.5)
-                            yee.by[l,m,n] = ffunc(xc+0.5,yc,    zc+0.5)
-                            yee.bz[l,m,n] = ffunc(xc+0.5,yc+0.5,zc)
+                            gs.ex[l,m,n] = ffunc(xc+0.5,yc,    zc)
+                            gs.ey[l,m,n] = ffunc(xc,    yc+0.5,zc)
+                            gs.ez[l,m,n] = ffunc(xc,    yc,    zc+0.5)
+                            gs.bx[l,m,n] = ffunc(xc,    yc+0.5,zc+0.5)
+                            gs.by[l,m,n] = ffunc(xc+0.5,yc,    zc+0.5)
+                            gs.bz[l,m,n] = ffunc(xc+0.5,yc+0.5,zc)
 
-                            yee.jx[l,m,n] = ffunc(xc,yc,zc)
-                            yee.jy[l,m,n] = ffunc(xc,yc,zc)
-                            yee.jz[l,m,n] = ffunc(xc,yc,zc)
+                            gs.jx[l,m,n] = ffunc(xc,yc,zc)
+                            gs.jy[l,m,n] = ffunc(xc,yc,zc)
+                            gs.jz[l,m,n] = ffunc(xc,yc,zc)
 
                             if not(zero_field):
-                                yee.ex[l,m,n] += +0.0
-                                yee.ey[l,m,n] += +1.0
-                                yee.ez[l,m,n] += +2.0 
-                                yee.bx[l,m,n] += +3.0
-                                yee.by[l,m,n] += +4.0
-                                yee.bz[l,m,n] += +5.0
+                                gs.ex[l,m,n] += +0.0
+                                gs.ey[l,m,n] += +1.0
+                                gs.ez[l,m,n] += +2.0 
+                                gs.bx[l,m,n] += +3.0
+                                gs.by[l,m,n] += +4.0
+                                gs.bz[l,m,n] += +5.0
 
 
 
@@ -980,7 +980,7 @@ class PIC(unittest.TestCase):
                     tile = grid.get_tile(i,j)
                     tile.cycle_current()
 
-            yee = pytools.visualize.get_grids_2D(grid, conf)
+            gs = pytools.visualize.get_grids_2D(grid, conf)
 
             #try:
             #    plot2dYee(axs[5], grid, conf, 'jx')
@@ -993,9 +993,9 @@ class PIC(unittest.TestCase):
             for j in range(conf.Ny*conf.NyMesh):
                 for i in range(conf.Nx*conf.NxMesh):
                     #print("({},{})".format(i,j))
-                    self.assertAlmostEqual( grids_refs['jx'][i,j], yee['jx'][i,j], places=5 )
-                    self.assertAlmostEqual( grids_refs['jy'][i,j], yee['jy'][i,j], places=5 )
-                    self.assertAlmostEqual( grids_refs['jz'][i,j], yee['jz'][i,j], places=5 )
+                    self.assertAlmostEqual( grids_refs['jx'][i,j], gs['jx'][i,j], places=5 )
+                    self.assertAlmostEqual( grids_refs['jy'][i,j], gs['jy'][i,j], places=5 )
+                    self.assertAlmostEqual( grids_refs['jz'][i,j], gs['jz'][i,j], places=5 )
 
 
 
@@ -1045,13 +1045,13 @@ class PIC(unittest.TestCase):
         for j in range(grid.get_Ny()):
             for i in range(grid.get_Nx()):
                 c = grid.get_tile(i,j)
-                yee = c.get_grids(0)
+                gs = c.get_grids(0)
                 for l in range(-3, conf.NxMesh+3):
                     for m in range(-3,conf.NyMesh+3):
                         for n in range(-3,conf.NzMesh+3):
-                            yee.jx[l,m,n] = 1.0
-                            yee.jy[l,m,n] = 1.0
-                            yee.jz[l,m,n] = 1.0
+                            gs.jx[l,m,n] = 1.0
+                            gs.jy[l,m,n] = 1.0
+                            gs.jz[l,m,n] = 1.0
 
         #deposit current
         #for j in range(grid.get_Ny()):
@@ -1092,12 +1092,12 @@ class PIC(unittest.TestCase):
         for j in [1]:
             for i in [1]:
                 c = grid.get_tile(i,j)
-                yee = c.get_grids(0)
+                gs = c.get_grids(0)
                 for l in range(conf.NxMesh):
                     for m in range(conf.NyMesh):
-                        self.assertEqual(ref[l,m], yee.jx[l,m,0] )
-                        self.assertEqual(ref[l,m], yee.jy[l,m,0] )
-                        self.assertEqual(ref[l,m], yee.jz[l,m,0] )
+                        self.assertEqual(ref[l,m], gs.jx[l,m,0] )
+                        self.assertEqual(ref[l,m], gs.jy[l,m,0] )
+                        self.assertEqual(ref[l,m], gs.jz[l,m,0] )
 
 
     def test_current_deposit(self):
@@ -1177,15 +1177,15 @@ class PIC(unittest.TestCase):
             for j in range(grid.get_Ny()):
                 for i in range(grid.get_Nx()):
                     c = grid.get_tile(i,j)
-                    yee = c.get_grids(0)
+                    gs = c.get_grids(0)
                     for l in range(conf.NxMesh):
                         for m in range(conf.NyMesh):
-                            self.assertAlmostEqual(yee.jx[l,m,0], 0.0, places=5 )
-                            self.assertAlmostEqual(yee.jy[l,m,0], 0.0, places=5 )
-                            self.assertAlmostEqual(yee.jz[l,m,0], 0.0, places=5 )
-                            #self.assertEqual(yee.jx[l,m,0], 0.0 )
-                            #self.assertEqual(yee.jy[l,m,0], 0.0 )
-                            #self.assertEqual(yee.jz[l,m,0], 0.0 )
+                            self.assertAlmostEqual(gs.jx[l,m,0], 0.0, places=5 )
+                            self.assertAlmostEqual(gs.jy[l,m,0], 0.0, places=5 )
+                            self.assertAlmostEqual(gs.jz[l,m,0], 0.0, places=5 )
+                            #self.assertEqual(gs.jx[l,m,0], 0.0 )
+                            #self.assertEqual(gs.jy[l,m,0], 0.0 )
+                            #self.assertEqual(gs.jz[l,m,0], 0.0 )
 
     def test_current_deposit3D(self):
         #test that current deposit of + and - particles with same x and v
@@ -1244,13 +1244,13 @@ class PIC(unittest.TestCase):
                 for j in range(grid.get_Ny()):
                     for i in range(grid.get_Nx()):
                         c = grid.get_tile(i,j,k)
-                        yee = c.get_grids(0)
+                        gs = c.get_grids(0)
                         for l in range(conf.NxMesh):
                             for m in range(conf.NyMesh):
                                 for n in range(conf.NzMesh):
-                                    self.assertAlmostEqual(yee.jx[l,m,n], 0.0, places=5 )
-                                    self.assertAlmostEqual(yee.jy[l,m,n], 0.0, places=5 )
-                                    self.assertAlmostEqual(yee.jz[l,m,n], 0.0, places=5 )
+                                    self.assertAlmostEqual(gs.jx[l,m,n], 0.0, places=5 )
+                                    self.assertAlmostEqual(gs.jy[l,m,n], 0.0, places=5 )
+                                    self.assertAlmostEqual(gs.jz[l,m,n], 0.0, places=5 )
 
 
     def test_test_particle_initialization(self):
@@ -1464,34 +1464,34 @@ class PIC(unittest.TestCase):
                     print("container bz:", container.bz(i))
     
             #plot
-            yee = pytools.visualize.get_grids_2D(grid, conf)
+            gs = pytools.visualize.get_grids_2D(grid, conf)
 
 
             if do_plots:
-                print("jx:", yee['jx'])
-                print("jy:", yee['jy'])
-                print("jz:", yee['jz'])
-                print("sum of current jx:", np.sum(yee['jx']))
-                print("sum of current jy:", np.sum(yee['jy']))
-                print("sum of current jz:", np.sum(yee['jz']))
+                print("jx:", gs['jx'])
+                print("jy:", gs['jy'])
+                print("jz:", gs['jz'])
+                print("sum of current jx:", np.sum(gs['jx']))
+                print("sum of current jy:", np.sum(gs['jy']))
+                print("sum of current jz:", np.sum(gs['jz']))
                 #plotNode(axs[0], grid, conf)
-                #plot2dYee(axs[1],  yee, grid, conf, 'rho', label_title=True)
+                #plot2dYee(axs[1],  gs, grid, conf, 'rho', label_title=True)
 
-                #plot2dYee(axs[3],  yee, grid, conf, 'jx' , label_title=True)
-                #plot2dYee(axs[4],  yee, grid, conf, 'jy' , label_title=True)
-                #plot2dYee(axs[5],  yee, grid, conf, 'jz' , label_title=True)
-                #plot2dYee(axs[6],  yee, grid, conf, 'ex' , label_title=True)
-                #plot2dYee(axs[7],  yee, grid, conf, 'ey' , label_title=True)
-                #plot2dYee(axs[8],  yee, grid, conf, 'ez' , label_title=True)
-                #plot2dYee(axs[9],  yee, grid, conf, 'bx' , label_title=True)
-                #plot2dYee(axs[10], yee, grid, conf, 'by' , label_title=True)
-                #plot2dYee(axs[11], yee, grid, conf, 'bz' , label_title=True)
+                #plot2dYee(axs[3],  gs, grid, conf, 'jx' , label_title=True)
+                #plot2dYee(axs[4],  gs, grid, conf, 'jy' , label_title=True)
+                #plot2dYee(axs[5],  gs, grid, conf, 'jz' , label_title=True)
+                #plot2dYee(axs[6],  gs, grid, conf, 'ex' , label_title=True)
+                #plot2dYee(axs[7],  gs, grid, conf, 'ey' , label_title=True)
+                #plot2dYee(axs[8],  gs, grid, conf, 'ez' , label_title=True)
+                #plot2dYee(axs[9],  gs, grid, conf, 'bx' , label_title=True)
+                #plot2dYee(axs[10], gs, grid, conf, 'by' , label_title=True)
+                #plot2dYee(axs[11], gs, grid, conf, 'bz' , label_title=True)
                 #saveVisz(lap, grid, conf)
     
             #assert that arrays are zero (i.e., scheme is charge conserving)
-            self.assertTrue( np.abs(np.sum(yee['jx'])) < 1.e7)
-            self.assertTrue( np.abs(np.sum(yee['jy'])) < 1.e7)
-            self.assertTrue( np.abs(np.sum(yee['jz'])) < 1.e7)
+            self.assertTrue( np.abs(np.sum(gs['jx'])) < 1.e7)
+            self.assertTrue( np.abs(np.sum(gs['jy'])) < 1.e7)
+            self.assertTrue( np.abs(np.sum(gs['jz'])) < 1.e7)
 
 
 

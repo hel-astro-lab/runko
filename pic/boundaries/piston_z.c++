@@ -30,7 +30,7 @@ void pic::PistonZdir<D>::zigzag(
     double z2glob, 
     double q)
 {
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   const auto mins = tile.mins;
   //const auto c = tile.cfl;    // speed of light
@@ -80,39 +80,39 @@ void pic::PistonZdir<D>::zigzag(
 
   //--------------------------------------------------
   // jx
-  if(D>=1) atomic_add( yee.jx(i1  , j1  , k1  ), Fx1*(1.0f-Wy1)*(1.0f-Wz1) );
-  if(D>=2) atomic_add( yee.jx(i1  , j1+1, k1  ), Fx1*Wy1       *(1.0f-Wz1) );
-  if(D>=3) atomic_add( yee.jx(i1  , j1  , k1+1), Fx1*(1.0f-Wy1)*Wz1        );
-  if(D>=3) atomic_add( yee.jx(i1  , j1+1, k1+1), Fx1*Wy1       *Wz1        );
+  if(D>=1) atomic_add( gs.jx(i1  , j1  , k1  ), Fx1*(1.0f-Wy1)*(1.0f-Wz1) );
+  if(D>=2) atomic_add( gs.jx(i1  , j1+1, k1  ), Fx1*Wy1       *(1.0f-Wz1) );
+  if(D>=3) atomic_add( gs.jx(i1  , j1  , k1+1), Fx1*(1.0f-Wy1)*Wz1        );
+  if(D>=3) atomic_add( gs.jx(i1  , j1+1, k1+1), Fx1*Wy1       *Wz1        );
 
-  if(D>=1) atomic_add( yee.jx(i2  , j2  , k2  ), Fx2*(1.0f-Wy2)*(1.0f-Wz2) );
-  if(D>=2) atomic_add( yee.jx(i2  , j2+1, k2  ), Fx2*Wy2       *(1.0f-Wz2) );
-  if(D>=3) atomic_add( yee.jx(i2  , j2  , k2+1), Fx2*(1.0f-Wy2)*Wz2        );
-  if(D>=3) atomic_add( yee.jx(i2  , j2+1, k2+1), Fx2*Wy2       *Wz2        );
+  if(D>=1) atomic_add( gs.jx(i2  , j2  , k2  ), Fx2*(1.0f-Wy2)*(1.0f-Wz2) );
+  if(D>=2) atomic_add( gs.jx(i2  , j2+1, k2  ), Fx2*Wy2       *(1.0f-Wz2) );
+  if(D>=3) atomic_add( gs.jx(i2  , j2  , k2+1), Fx2*(1.0f-Wy2)*Wz2        );
+  if(D>=3) atomic_add( gs.jx(i2  , j2+1, k2+1), Fx2*Wy2       *Wz2        );
 
   //--------------------------------------------------
   // jy
-  if(D>=1) atomic_add( yee.jy(i1  , j1  , k1  ), Fy1*(1.0f-Wx1)*(1.0f-Wz1) );
-  if(D>=2) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1       *(1.0f-Wz1) );
-  if(D>=3) atomic_add( yee.jy(i1  , j1  , k1+1), Fy1*(1.0f-Wx1)*Wz1        );
-  if(D>=3) atomic_add( yee.jy(i1+1, j1  , k1+1), Fy1*Wx1       *Wz1        );
+  if(D>=1) atomic_add( gs.jy(i1  , j1  , k1  ), Fy1*(1.0f-Wx1)*(1.0f-Wz1) );
+  if(D>=2) atomic_add( gs.jy(i1+1, j1  , k1  ), Fy1*Wx1       *(1.0f-Wz1) );
+  if(D>=3) atomic_add( gs.jy(i1  , j1  , k1+1), Fy1*(1.0f-Wx1)*Wz1        );
+  if(D>=3) atomic_add( gs.jy(i1+1, j1  , k1+1), Fy1*Wx1       *Wz1        );
 
-  if(D>=1) atomic_add( yee.jy(i2  , j2  , k2  ), Fy2*(1.0f-Wx2)*(1.0f-Wz2) );
-  if(D>=2) atomic_add( yee.jy(i2+1, j2  , k2  ), Fy2*Wx2       *(1.0f-Wz2) );
-  if(D>=3) atomic_add( yee.jy(i2  , j2  , k2+1), Fy2*(1.0f-Wx2)*Wz2        );
-  if(D>=3) atomic_add( yee.jy(i2+1, j2  , k2+1), Fy2*Wx2       *Wz2        );
+  if(D>=1) atomic_add( gs.jy(i2  , j2  , k2  ), Fy2*(1.0f-Wx2)*(1.0f-Wz2) );
+  if(D>=2) atomic_add( gs.jy(i2+1, j2  , k2  ), Fy2*Wx2       *(1.0f-Wz2) );
+  if(D>=3) atomic_add( gs.jy(i2  , j2  , k2+1), Fy2*(1.0f-Wx2)*Wz2        );
+  if(D>=3) atomic_add( gs.jy(i2+1, j2  , k2+1), Fy2*Wx2       *Wz2        );
 
   //--------------------------------------------------
   // jz
-  if(D>=1) atomic_add( yee.jz(i1  , j1  , k1  ), Fz1*(1.0f-Wx1)*(1.0f-Wy1) );
-  if(D>=1) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0f-Wy1) );
-  if(D>=2) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0f-Wx1)*Wy1        );
-  if(D>=2) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1       *Wy1        );
+  if(D>=1) atomic_add( gs.jz(i1  , j1  , k1  ), Fz1*(1.0f-Wx1)*(1.0f-Wy1) );
+  if(D>=1) atomic_add( gs.jz(i1+1, j1  , k1  ), Fz1*Wx1       *(1.0f-Wy1) );
+  if(D>=2) atomic_add( gs.jz(i1  , j1+1, k1  ), Fz1*(1.0f-Wx1)*Wy1        );
+  if(D>=2) atomic_add( gs.jz(i1+1, j1+1, k1  ), Fz1*Wx1       *Wy1        );
 
-  if(D>=1) atomic_add( yee.jz(i2  , j2  , k2  ), Fz2*(1.0f-Wx2)*(1.0f-Wy2) );
-  if(D>=1) atomic_add( yee.jz(i2+1, j2  , k2  ), Fz2*Wx2       *(1.0f-Wy2) );
-  if(D>=2) atomic_add( yee.jz(i2  , j2+1, k2  ), Fz2*(1.0f-Wx2)*Wy2        );
-  if(D>=2) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2       *Wy2        );
+  if(D>=1) atomic_add( gs.jz(i2  , j2  , k2  ), Fz2*(1.0f-Wx2)*(1.0f-Wy2) );
+  if(D>=1) atomic_add( gs.jz(i2+1, j2  , k2  ), Fz2*Wx2       *(1.0f-Wy2) );
+  if(D>=2) atomic_add( gs.jz(i2  , j2+1, k2  ), Fz2*(1.0f-Wx2)*Wy2        );
+  if(D>=2) atomic_add( gs.jz(i2+1, j2+1, k2  ), Fz2*Wx2       *Wy2        );
 
 }
 
@@ -239,7 +239,7 @@ void pic::PistonZdir<3>::field_bc(
   // skip if piston head is not inside tile boundaries
   const auto mins = tile.mins;
   const auto maxs = tile.maxs;
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   // walloc to relative tile units
   int kw = wallocz - mins[2];
@@ -256,17 +256,17 @@ void pic::PistonZdir<3>::field_bc(
     for(int i=-3; i<tile.mesh_lengths[0]+3; i++) {
 
       // transverse components of electric field to zero (only parallel comp allowed)
-      //yee.ex(i,j,k) = 0.0;
-      //yee.ey(i,j,k) = 0.0;
+      //gs.ex(i,j,k) = 0.0;
+      //gs.ey(i,j,k) = 0.0;
 
       // clean all current behind piston head
-      yee.jx(i,j,k) = 0.0;
-      yee.jy(i,j,k) = 0.0;
-      yee.jz(i,j,k) = 0.0;
+      gs.jx(i,j,k) = 0.0;
+      gs.jy(i,j,k) = 0.0;
+      gs.jz(i,j,k) = 0.0;
 
-      //yee.bx(i,j,k) = 0.0;
-      //yee.by(i,j,k) = 0.0;
-      //yee.bz(i,j,k) = 0.0;
+      //gs.bx(i,j,k) = 0.0;
+      //gs.by(i,j,k) = 0.0;
+      //gs.bz(i,j,k) = 0.0;
     }
   } else if(wdir < 0 && wallocz > mins[2]) {
 
@@ -279,17 +279,17 @@ void pic::PistonZdir<3>::field_bc(
     for(int i=-3; i<tile.mesh_lengths[0]+3; i++) {
 
       // transverse components of electric field to zero (only parallel comp allowed)
-      //yee.ex(i,j,k) = 0.0;
-      //yee.ey(i,j,k) = 0.0;
+      //gs.ex(i,j,k) = 0.0;
+      //gs.ey(i,j,k) = 0.0;
 
       // clean all current behind piston head
-      yee.jx(i,j,k) = 0.0;
-      yee.jy(i,j,k) = 0.0;
-      yee.jz(i,j,k) = 0.0;
+      gs.jx(i,j,k) = 0.0;
+      gs.jy(i,j,k) = 0.0;
+      gs.jz(i,j,k) = 0.0;
 
-      //yee.bx(i,j,k) = 0.0;
-      //yee.by(i,j,k) = 0.0;
-      //yee.bz(i,j,k) = 0.0;
+      //gs.bx(i,j,k) = 0.0;
+      //gs.by(i,j,k) = 0.0;
+      //gs.bz(i,j,k) = 0.0;
     }
   }
 }

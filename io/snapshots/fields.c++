@@ -33,19 +33,19 @@ inline void h5io::FieldsWriter<1>::read_tiles(
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<emf::Tile<1>&>(grid.get_tile( cid ));
-    auto& yee = tile.get_grids();
+    auto& gs = tile.get_grids();
 
     // get arrays
     auto index = expand_indices( &tile );
 
     // starting location
-    int i0 = (yee.Nx/stride)*std::get<0>(index);
-    int j0 = 0; // (yee.Ny/stride)*std::get<1>(index);
-    int k0 = 0; // (yee.Nz/stride)*std::get<2>(index);
+    int i0 = (gs.Nx/stride)*std::get<0>(index);
+    int j0 = 0; // (gs.Ny/stride)*std::get<1>(index);
+    int k0 = 0; // (gs.Nz/stride)*std::get<2>(index);
 
     // tile limits taking into account 0 collapsing dimensions
     int nxt;
-    nxt = (int)yee.Nx/stride;
+    nxt = (int)gs.Nx/stride;
 
     nxt = nxt == 0 ? 1 : nxt;
 
@@ -57,22 +57,22 @@ inline void h5io::FieldsWriter<1>::read_tiles(
 
     // field quantities; just downsample by hopping with stride
     for(int is=0; is<nxt; is++) {
-      ex(i0+is, j0+js, k0+ks) = yee.ex( is*stride, js*stride, ks*stride);
-      ey(i0+is, j0+js, k0+ks) = yee.ey( is*stride, js*stride, ks*stride);
-      ez(i0+is, j0+js, k0+ks) = yee.ez( is*stride, js*stride, ks*stride);
+      ex(i0+is, j0+js, k0+ks) = gs.ex( is*stride, js*stride, ks*stride);
+      ey(i0+is, j0+js, k0+ks) = gs.ey( is*stride, js*stride, ks*stride);
+      ez(i0+is, j0+js, k0+ks) = gs.ez( is*stride, js*stride, ks*stride);
 
-      bx(i0+is, j0+js, k0+ks) = yee.bx( is*stride, js*stride, ks*stride);
-      by(i0+is, j0+js, k0+ks) = yee.by( is*stride, js*stride, ks*stride);
-      bz(i0+is, j0+js, k0+ks) = yee.bz( is*stride, js*stride, ks*stride);
+      bx(i0+is, j0+js, k0+ks) = gs.bx( is*stride, js*stride, ks*stride);
+      by(i0+is, j0+js, k0+ks) = gs.by( is*stride, js*stride, ks*stride);
+      bz(i0+is, j0+js, k0+ks) = gs.bz( is*stride, js*stride, ks*stride);
     }
 
     // densities; these quantities we average over the volume
     for(int is=0; is<nxt; is++) 
     for(int istride=0; istride < stride; istride++) {
-      jx(i0+is, j0+js, k0+ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jy(i0+is, j0+js, k0+ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jz(i0+is, j0+js, k0+ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      rh(i0+is, j0+js, k0+ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jx(i0+is, j0+js, k0+ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jy(i0+is, j0+js, k0+ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jz(i0+is, j0+js, k0+ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      rh(i0+is, j0+js, k0+ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
     }
 
   } // tiles
@@ -103,20 +103,20 @@ inline void h5io::FieldsWriter<2>::read_tiles(
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<emf::Tile<2>&>(grid.get_tile( cid ));
-    auto& yee = tile.get_grids();
+    auto& gs = tile.get_grids();
 
     // get arrays
     auto index = expand_indices( &tile );
 
     // starting location
-    int i0 = (yee.Nx/stride)*std::get<0>(index);
-    int j0 = (yee.Ny/stride)*std::get<1>(index);
-    int k0 = 0; //(yee.Nz/stride)*std::get<2>(index);
+    int i0 = (gs.Nx/stride)*std::get<0>(index);
+    int j0 = (gs.Ny/stride)*std::get<1>(index);
+    int k0 = 0; //(gs.Nz/stride)*std::get<2>(index);
 
     // tile limits taking into account 0 collapsing dimensions
     int nxt, nyt;
-    nxt = (int)yee.Nx/stride;
-    nyt = (int)yee.Ny/stride;
+    nxt = (int)gs.Nx/stride;
+    nyt = (int)gs.Ny/stride;
 
     nxt = nxt == 0 ? 1 : nxt;
     nyt = nyt == 0 ? 1 : nyt;
@@ -131,21 +131,21 @@ inline void h5io::FieldsWriter<2>::read_tiles(
 
           // field quantities; no integration
           if (jstride==0) {
-            ex(i0+is, j0+js, k0+ks) += yee.ex( is*stride, js*stride, ks*stride);
-            ey(i0+is, j0+js, k0+ks) += yee.ey( is*stride, js*stride, ks*stride);
-            ez(i0+is, j0+js, k0+ks) += yee.ez( is*stride, js*stride, ks*stride);
+            ex(i0+is, j0+js, k0+ks) += gs.ex( is*stride, js*stride, ks*stride);
+            ey(i0+is, j0+js, k0+ks) += gs.ey( is*stride, js*stride, ks*stride);
+            ez(i0+is, j0+js, k0+ks) += gs.ez( is*stride, js*stride, ks*stride);
 
-            bx(i0+is, j0+js, k0+ks) += yee.bx( is*stride, js*stride, ks*stride);
-            by(i0+is, j0+js, k0+ks) += yee.by( is*stride, js*stride, ks*stride);
-            bz(i0+is, j0+js, k0+ks) += yee.bz( is*stride, js*stride, ks*stride);
+            bx(i0+is, j0+js, k0+ks) += gs.bx( is*stride, js*stride, ks*stride);
+            by(i0+is, j0+js, k0+ks) += gs.by( is*stride, js*stride, ks*stride);
+            bz(i0+is, j0+js, k0+ks) += gs.bz( is*stride, js*stride, ks*stride);
           }
 
           // densities; these quantities we need to integrate over stride
           for(int istride=0; istride < stride; istride++) {
-            jx(i0+is, j0+js, k0+ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-            jy(i0+is, j0+js, k0+ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-            jz(i0+is, j0+js, k0+ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-            rh(i0+is, j0+js, k0+ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+            jx(i0+is, j0+js, k0+ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+            jy(i0+is, j0+js, k0+ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+            jz(i0+is, j0+js, k0+ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+            rh(i0+is, j0+js, k0+ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
           }
 
         }
@@ -180,21 +180,21 @@ inline void h5io::FieldsWriter<3>::read_tiles(
   // read my local tiles
   for(auto cid : grid.get_local_tiles() ){
     auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile( cid ));
-    auto& yee = tile.get_grids();
+    auto& gs = tile.get_grids();
 
     // get arrays
     auto index = expand_indices( &tile );
 
     // starting location
-    int i0 = (yee.Nx/stride)*std::get<0>(index);
-    int j0 = (yee.Ny/stride)*std::get<1>(index);
-    int k0 = (yee.Nz/stride)*std::get<2>(index);
+    int i0 = (gs.Nx/stride)*std::get<0>(index);
+    int j0 = (gs.Ny/stride)*std::get<1>(index);
+    int k0 = (gs.Nz/stride)*std::get<2>(index);
 
     // tile limits taking into account 0 collapsing dimensions
     int nxt, nyt, nzt;
-    nxt = (int)yee.Nx/stride;
-    nyt = (int)yee.Ny/stride;
-    nzt = (int)yee.Nz/stride;
+    nxt = (int)gs.Nx/stride;
+    nyt = (int)gs.Ny/stride;
+    nzt = (int)gs.Nz/stride;
 
     nxt = nxt == 0 ? 1 : nxt;
     nyt = nyt == 0 ? 1 : nyt;
@@ -206,13 +206,13 @@ inline void h5io::FieldsWriter<3>::read_tiles(
     for(int ks=0; ks<nzt; ks++) 
     for(int js=0; js<nyt; js++) 
     for(int is=0; is<nxt; is++) {
-      ex(i0+is, j0+js, k0+ks) = yee.ex( is*stride, js*stride, ks*stride);
-      ey(i0+is, j0+js, k0+ks) = yee.ey( is*stride, js*stride, ks*stride);
-      ez(i0+is, j0+js, k0+ks) = yee.ez( is*stride, js*stride, ks*stride);
+      ex(i0+is, j0+js, k0+ks) = gs.ex( is*stride, js*stride, ks*stride);
+      ey(i0+is, j0+js, k0+ks) = gs.ey( is*stride, js*stride, ks*stride);
+      ez(i0+is, j0+js, k0+ks) = gs.ez( is*stride, js*stride, ks*stride);
 
-      bx(i0+is, j0+js, k0+ks) = yee.bx( is*stride, js*stride, ks*stride);
-      by(i0+is, j0+js, k0+ks) = yee.by( is*stride, js*stride, ks*stride);
-      bz(i0+is, j0+js, k0+ks) = yee.bz( is*stride, js*stride, ks*stride);
+      bx(i0+is, j0+js, k0+ks) = gs.bx( is*stride, js*stride, ks*stride);
+      by(i0+is, j0+js, k0+ks) = gs.by( is*stride, js*stride, ks*stride);
+      bz(i0+is, j0+js, k0+ks) = gs.bz( is*stride, js*stride, ks*stride);
     }
 
     // densities; these quantities we average over the volume
@@ -222,10 +222,10 @@ inline void h5io::FieldsWriter<3>::read_tiles(
     for(int jstride=0; jstride < stride; jstride++) 
     for(int is=0; is<nxt; is++) 
     for(int istride=0; istride < stride; istride++) {
-      jx(i0+is, j0+js, k0+ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jy(i0+is, j0+js, k0+ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jz(i0+is, j0+js, k0+ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      rh(i0+is, j0+js, k0+ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jx(i0+is, j0+js, k0+ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jy(i0+is, j0+js, k0+ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      jz(i0+is, j0+js, k0+ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      rh(i0+is, j0+js, k0+ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
     }
 
   } // tiles

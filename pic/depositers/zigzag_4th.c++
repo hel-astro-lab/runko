@@ -25,13 +25,13 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
   const auto mins = tile.mins;
 
   //clear arrays before new update
-  yee.jx.clear();
-  yee.jy.clear();
-  yee.jz.clear();
+  gs.jx.clear();
+  gs.jy.clear();
+  gs.jz.clear();
 
   for(auto&& con : tile.containers) {
 
@@ -45,7 +45,7 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
       
     UniIter::iterate([=] DEVCALLABLE (
                 size_t n, 
-                emf::Grids &yee,
+                emf::Grids &gs,
                 pic::ParticleContainer<D>& con
                 ){
 
@@ -256,8 +256,8 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
       for(int zi=-zlim; zi <=zlim; ++zi)
       for(int yi=-ylim; yi <=ylim; ++yi){
         for(int is=-1; is<=2; is++) {
-          atomic_add( yee.jx(i1d+is, j1p+yi, k1p+zi), qvx1* Wx1[is+2]* Wyy1[yi+2]*Wzz1[zi+2] );
-          atomic_add( yee.jx(i2d+is, j2p+yi, k2p+zi), qvx2* Wx2[is+2]* Wyy2[yi+2]*Wzz2[zi+2] );
+          atomic_add( gs.jx(i1d+is, j1p+yi, k1p+zi), qvx1* Wx1[is+2]* Wyy1[yi+2]*Wzz1[zi+2] );
+          atomic_add( gs.jx(i2d+is, j2p+yi, k2p+zi), qvx2* Wx2[is+2]* Wyy2[yi+2]*Wzz2[zi+2] );
         }
       }
 
@@ -265,8 +265,8 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
       for(int zi=-zlim; zi <=zlim; ++zi)
       for(int xi=-xlim; xi <=xlim; ++xi){
         for(int is=-1; is<=2; is++) {
-          atomic_add( yee.jy(i1p+xi, j1d+is, k1p+zi), qvy1* Wy1[is+2] *Wxx1[xi+2]*Wzz1[zi+2] );
-          atomic_add( yee.jy(i2p+xi, j2d+is, k2p+zi), qvy2* Wy2[is+2] *Wxx2[xi+2]*Wzz2[zi+2] );
+          atomic_add( gs.jy(i1p+xi, j1d+is, k1p+zi), qvy1* Wy1[is+2] *Wxx1[xi+2]*Wzz1[zi+2] );
+          atomic_add( gs.jy(i2p+xi, j2d+is, k2p+zi), qvy2* Wy2[is+2] *Wxx2[xi+2]*Wzz2[zi+2] );
         }
       }
                                                                                        
@@ -274,12 +274,12 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
       for(int yi=-ylim; yi <=ylim; ++yi)                                                     
       for(int xi=-xlim; xi <=xlim; ++xi){                                                    
         for(int is=-1; is<=2; is++) {
-          atomic_add( yee.jz(i1p+xi, j1p+yi, k1d+is), qvz1* Wz1[is+2] *Wxx1[xi+2]*Wyy1[yi+2] );
-          atomic_add( yee.jz(i2p+xi, j2p+yi, k2d+is), qvz2* Wz2[is+2] *Wxx2[xi+2]*Wyy2[yi+2] );
+          atomic_add( gs.jz(i1p+xi, j1p+yi, k1d+is), qvz1* Wz1[is+2] *Wxx1[xi+2]*Wyy1[yi+2] );
+          atomic_add( gs.jz(i2p+xi, j2p+yi, k2d+is), qvz2* Wz2[is+2] *Wxx2[xi+2]*Wyy2[yi+2] );
         }
       }
 
-    }, con.size(), yee, con);
+    }, con.size(), gs, con);
 
   }//end of loop over species
 

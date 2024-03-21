@@ -317,7 +317,7 @@ class AmrSpatialLagrangianSolver :
         vlv::PlasmaBlock& block0_right,
         T qm,
         T cfl,
-        emf::Grids& yee)
+        emf::Grids& gs)
     {
 
 
@@ -481,11 +481,11 @@ class AmrSpatialLagrangianSolver :
               
 
             // vertex centered
-            if(q >= 0)    yee.jx(q,r,s)   += jx; //U_i+1/2
+            if(q >= 0)    gs.jx(q,r,s)   += jx; //U_i+1/2
             
             // cell centered
-            //if(q >= 0)    yee.jx(q,r,s)   += jx/2.0; //U_i+1/2
-            //if(q <= Nx-2) yee.jx(q+1,r,s) += jx/2.0; //U_i-1/2
+            //if(q >= 0)    gs.jx(q,r,s)   += jx/2.0; //U_i+1/2
+            //if(q <= Nx-2) gs.jx(q+1,r,s) += jx/2.0; //U_i-1/2
             
           }
         }
@@ -499,10 +499,10 @@ class AmrSpatialLagrangianSolver :
     {
 
       // Yee lattice reference
-      auto& yee = tile.get_grids();
-      yee.jx.clear();
-      yee.jy.clear();
-      yee.jz.clear();
+      auto& gs = tile.get_grids();
+      gs.jx.clear();
+      gs.jy.clear();
+      gs.jz.clear();
 
 
       // get reference to the Vlasov fluid that we are solving
@@ -531,7 +531,7 @@ class AmrSpatialLagrangianSolver :
         //auto& block0_top    = get_external_data( 0,+1, ispc, tile, grid);
 
         // sweep in X
-        xsweep(block0, block1, block0_left, block0_right, qm, cfl, yee);
+        xsweep(block0, block1, block0_left, block0_right, qm, cfl, gs);
         // ysweep(block0, block1, block0_bottom, block0_top,   qm, dt, dx);
         // xsweep(block0, block1, block0_left,   block0_right, qm, dt/2, dx);
 

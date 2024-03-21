@@ -133,16 +133,16 @@ def filler(xloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_grids(n, conf)
-    ex = yee['ex']
+    gs = get_grids(n, conf)
+    ex = gs['ex']
     exS = smooth(ex, 10)
 
 
-    #f5['fields/Ex'  ][:,lap] = yee['ex']
+    #f5['fields/Ex'  ][:,lap] = gs['ex']
     f5['fields/Ex'  ][:,lap] = exS
-    f5['fields/rho' ][:,lap] = yee['rho']
-    #f5['fields/ekin'][:,lap] = yee['ekin']
-    f5['fields/jx'  ][:,lap] = yee['jx']
+    f5['fields/rho' ][:,lap] = gs['rho']
+    #f5['fields/ekin'][:,lap] = gs['ekin']
+    f5['fields/jx'  ][:,lap] = gs['jx']
 
     return
 
@@ -507,17 +507,17 @@ if __name__ == "__main__":
             plotNode(axs[0], grid, conf)
             plot2dParticles(axs[1], grid, conf, downsample=0.001)
 
-            yee = getYee2D(grid, conf)
-            plot2dYee(axs[2],  yee, grid, conf, 'rho')
-            plot2dYee(axs[3],  yee, grid, conf, 'jx')
-            plot2dYee(axs[4],  yee, grid, conf, 'jy')
-            plot2dYee(axs[5],  yee, grid, conf, 'jz')
-            plot2dYee(axs[6],  yee, grid, conf, 'ex')
-            plot2dYee(axs[7],  yee, grid, conf, 'ey')
-            plot2dYee(axs[8],  yee, grid, conf, 'ez')
-            plot2dYee(axs[9],  yee, grid, conf, 'bx')
-            plot2dYee(axs[10], yee, grid, conf, 'by')
-            plot2dYee(axs[11], yee, grid, conf, 'bz')
+            gs = getYee2D(grid, conf)
+            plot2dYee(axs[2],  gs, grid, conf, 'rho')
+            plot2dYee(axs[3],  gs, grid, conf, 'jx')
+            plot2dYee(axs[4],  gs, grid, conf, 'jy')
+            plot2dYee(axs[5],  gs, grid, conf, 'jz')
+            plot2dYee(axs[6],  gs, grid, conf, 'ex')
+            plot2dYee(axs[7],  gs, grid, conf, 'ey')
+            plot2dYee(axs[8],  gs, grid, conf, 'ez')
+            plot2dYee(axs[9],  gs, grid, conf, 'bx')
+            plot2dYee(axs[10], gs, grid, conf, 'by')
+            plot2dYee(axs[11], gs, grid, conf, 'bz')
             saveVisz(lap, grid, conf)
             #except:
             #    print()

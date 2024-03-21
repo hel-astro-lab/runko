@@ -60,9 +60,9 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
     auto mins = tile.mins;
     auto maxs = tile.maxs;
 
-    // update also yee
-    auto& yee = tile.get_grids();
-    yee.rho.clear();
+    // update also gs
+    auto& gs = tile.get_grids();
+    gs.rho.clear();
 
     // loop over species
     for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
@@ -140,7 +140,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         kff = D >= 3 ? limit( floor(z0-mins[2]), -3., maxs[2]-mins[2] +2.) : 0;
 
         // update rho arrays; this is interpreted as mass density
-        yee.rho(iff,jff,kff) += mass*wgt;
+        gs.rho(iff,jff,kff) += mass*wgt;
 
         //-------------------------------------------------- 
 

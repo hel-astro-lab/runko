@@ -22,14 +22,14 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
   const auto mins = tile.mins;
   const auto maxs = tile.maxs;
 
   //clear arrays before new update
-  yee.jx.clear();
-  yee.jy.clear();
-  yee.jz.clear();
+  gs.jx.clear();
+  gs.jy.clear();
+  gs.jz.clear();
 
   for(auto&& con: tile.containers) {
 
@@ -39,15 +39,15 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     // skip particle species if zero charge
     if (q == 0.0) continue;
     
-    const size_t iy = D >= 2 ? yee.jx.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
-    const size_t iz = D >= 3 ? yee.jx.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
+    const size_t iy = D >= 2 ? gs.jx.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
+    const size_t iz = D >= 3 ? gs.jx.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
 
     // no vectorization here since we dont use the general iterator
     //for(size_t n=0; n<con.size(); n++) {
 
     UniIter::iterate([=] DEVCALLABLE (
                 size_t n, 
-                emf::Grids &yee,
+                emf::Grids &gs,
                 pic::ParticleContainer<D>& con
                 ){
 
@@ -133,78 +133,78 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       //--------------------------------------------------
       // one-dimensional indices
         
-      const size_t ind1 = yee.jx.indx(i1,j1,k1);
-      const size_t ind2 = yee.jx.indx(i2,j2,k2);
+      const size_t ind1 = gs.jx.indx(i1,j1,k1);
+      const size_t ind2 = gs.jx.indx(i2,j2,k2);
         
-      if(D>=1) atomic_add( yee.jx(ind1            ), Fx1*(1.0-Wy1)*(1.0-Wz1) );
-      if(D>=2) atomic_add( yee.jx(ind1    +iy     ), Fx1*Wy1      *(1.0-Wz1) );
-      if(D>=3) atomic_add( yee.jx(ind1        +iz ), Fx1*(1.0-Wy1)*Wz1       );
-      if(D>=3) atomic_add( yee.jx(ind1    +iy +iz ), Fx1*Wy1      *Wz1       );
+      if(D>=1) atomic_add( gs.jx(ind1            ), Fx1*(1.0-Wy1)*(1.0-Wz1) );
+      if(D>=2) atomic_add( gs.jx(ind1    +iy     ), Fx1*Wy1      *(1.0-Wz1) );
+      if(D>=3) atomic_add( gs.jx(ind1        +iz ), Fx1*(1.0-Wy1)*Wz1       );
+      if(D>=3) atomic_add( gs.jx(ind1    +iy +iz ), Fx1*Wy1      *Wz1       );
 
-      if(D>=1) atomic_add( yee.jx(ind2            ), Fx2*(1.0-Wy2)*(1.0-Wz2) );
-      if(D>=2) atomic_add( yee.jx(ind2    +iy     ), Fx2*Wy2      *(1.0-Wz2) );
-      if(D>=3) atomic_add( yee.jx(ind2        +iz ), Fx2*(1.0-Wy2)*Wz2       );
-      if(D>=3) atomic_add( yee.jx(ind2    +iy +iz ), Fx2*Wy2      *Wz2       );
+      if(D>=1) atomic_add( gs.jx(ind2            ), Fx2*(1.0-Wy2)*(1.0-Wz2) );
+      if(D>=2) atomic_add( gs.jx(ind2    +iy     ), Fx2*Wy2      *(1.0-Wz2) );
+      if(D>=3) atomic_add( gs.jx(ind2        +iz ), Fx2*(1.0-Wy2)*Wz2       );
+      if(D>=3) atomic_add( gs.jx(ind2    +iy +iz ), Fx2*Wy2      *Wz2       );
 
       // jy
-      if(D>=1) atomic_add( yee.jy(ind1            ), Fy1*(1.0-Wx1)*(1.0-Wz1) );
-      if(D>=1) atomic_add( yee.jy(ind1 +1         ), Fy1*Wx1      *(1.0-Wz1) );
-      if(D>=3) atomic_add( yee.jy(ind1        +iz ), Fy1*(1.0-Wx1)*Wz1       );
-      if(D>=3) atomic_add( yee.jy(ind1 +1     +iz ), Fy1*Wx1      *Wz1       );
+      if(D>=1) atomic_add( gs.jy(ind1            ), Fy1*(1.0-Wx1)*(1.0-Wz1) );
+      if(D>=1) atomic_add( gs.jy(ind1 +1         ), Fy1*Wx1      *(1.0-Wz1) );
+      if(D>=3) atomic_add( gs.jy(ind1        +iz ), Fy1*(1.0-Wx1)*Wz1       );
+      if(D>=3) atomic_add( gs.jy(ind1 +1     +iz ), Fy1*Wx1      *Wz1       );
 
-      if(D>=1) atomic_add( yee.jy(ind2            ), Fy2*(1.0-Wx2)*(1.0-Wz2) );
-      if(D>=1) atomic_add( yee.jy(ind2 +1         ), Fy2*Wx2      *(1.0-Wz2) );
-      if(D>=3) atomic_add( yee.jy(ind2        +iz ), Fy2*(1.0-Wx2)*Wz2       );
-      if(D>=3) atomic_add( yee.jy(ind2 +1     +iz ), Fy2*Wx2      *Wz2       );
+      if(D>=1) atomic_add( gs.jy(ind2            ), Fy2*(1.0-Wx2)*(1.0-Wz2) );
+      if(D>=1) atomic_add( gs.jy(ind2 +1         ), Fy2*Wx2      *(1.0-Wz2) );
+      if(D>=3) atomic_add( gs.jy(ind2        +iz ), Fy2*(1.0-Wx2)*Wz2       );
+      if(D>=3) atomic_add( gs.jy(ind2 +1     +iz ), Fy2*Wx2      *Wz2       );
 
       // jz
-      if(D>=1) atomic_add( yee.jz(ind1            ), Fz1*(1.0-Wx1)*(1.0-Wy1) );
-      if(D>=1) atomic_add( yee.jz(ind1 +1         ), Fz1*Wx1      *(1.0-Wy1) );
-      if(D>=2) atomic_add( yee.jz(ind1    +iy     ), Fz1*(1.0-Wx1)*Wy1       );
-      if(D>=2) atomic_add( yee.jz(ind1 +1 +iy     ), Fz1*Wx1      *Wy1       );
+      if(D>=1) atomic_add( gs.jz(ind1            ), Fz1*(1.0-Wx1)*(1.0-Wy1) );
+      if(D>=1) atomic_add( gs.jz(ind1 +1         ), Fz1*Wx1      *(1.0-Wy1) );
+      if(D>=2) atomic_add( gs.jz(ind1    +iy     ), Fz1*(1.0-Wx1)*Wy1       );
+      if(D>=2) atomic_add( gs.jz(ind1 +1 +iy     ), Fz1*Wx1      *Wy1       );
 
-      if(D>=1) atomic_add( yee.jz(ind2            ), Fz2*(1.0-Wx2)*(1.0-Wy2) );
-      if(D>=1) atomic_add( yee.jz(ind2 +1         ), Fz2*Wx2      *(1.0-Wy2) );
-      if(D>=2) atomic_add( yee.jz(ind2    +iy     ), Fz2*(1.0-Wx2)*Wy2       );
-      if(D>=2) atomic_add( yee.jz(ind2 +1 +iy     ), Fz2*Wx2      *Wy2       );
+      if(D>=1) atomic_add( gs.jz(ind2            ), Fz2*(1.0-Wx2)*(1.0-Wy2) );
+      if(D>=1) atomic_add( gs.jz(ind2 +1         ), Fz2*Wx2      *(1.0-Wy2) );
+      if(D>=2) atomic_add( gs.jz(ind2    +iy     ), Fz2*(1.0-Wx2)*Wy2       );
+      if(D>=2) atomic_add( gs.jz(ind2 +1 +iy     ), Fz2*Wx2      *Wy2       );
 
 
       // multid indexing version
       //--------------------------------------------------
       // jx
-      //if(D>=1) atomic_add( yee.jx(i1  , j1  , k1  ), Fx1*(1.0-Wy1)*(1.0-Wz1) );
-      //if(D>=2) atomic_add( yee.jx(i1  , j1+1, k1  ), Fx1*Wy1      *(1.0-Wz1) );
-      //if(D>=3) atomic_add( yee.jx(i1  , j1  , k1+1), Fx1*(1.0-Wy1)*Wz1       );
-      //if(D>=3) atomic_add( yee.jx(i1  , j1+1, k1+1), Fx1*Wy1      *Wz1       );
+      //if(D>=1) atomic_add( gs.jx(i1  , j1  , k1  ), Fx1*(1.0-Wy1)*(1.0-Wz1) );
+      //if(D>=2) atomic_add( gs.jx(i1  , j1+1, k1  ), Fx1*Wy1      *(1.0-Wz1) );
+      //if(D>=3) atomic_add( gs.jx(i1  , j1  , k1+1), Fx1*(1.0-Wy1)*Wz1       );
+      //if(D>=3) atomic_add( gs.jx(i1  , j1+1, k1+1), Fx1*Wy1      *Wz1       );
 
-      //if(D>=1) atomic_add( yee.jx(i2  , j2  , k2  ), Fx2*(1.0-Wy2)*(1.0-Wz2) );
-      //if(D>=2) atomic_add( yee.jx(i2  , j2+1, k2  ), Fx2*Wy2      *(1.0-Wz2) );
-      //if(D>=3) atomic_add( yee.jx(i2  , j2  , k2+1), Fx2*(1.0-Wy2)*Wz2       );
-      //if(D>=3) atomic_add( yee.jx(i2  , j2+1, k2+1), Fx2*Wy2      *Wz2       );
+      //if(D>=1) atomic_add( gs.jx(i2  , j2  , k2  ), Fx2*(1.0-Wy2)*(1.0-Wz2) );
+      //if(D>=2) atomic_add( gs.jx(i2  , j2+1, k2  ), Fx2*Wy2      *(1.0-Wz2) );
+      //if(D>=3) atomic_add( gs.jx(i2  , j2  , k2+1), Fx2*(1.0-Wy2)*Wz2       );
+      //if(D>=3) atomic_add( gs.jx(i2  , j2+1, k2+1), Fx2*Wy2      *Wz2       );
 
       //// jy
-      //if(D>=1) atomic_add( yee.jy(i1  , j1  , k1  ), Fy1*(1.0-Wx1)*(1.0-Wz1) );
-      //if(D>=1) atomic_add( yee.jy(i1+1, j1  , k1  ), Fy1*Wx1      *(1.0-Wz1) );
-      //if(D>=3) atomic_add( yee.jy(i1  , j1  , k1+1), Fy1*(1.0-Wx1)*Wz1       );
-      //if(D>=3) atomic_add( yee.jy(i1+1, j1  , k1+1), Fy1*Wx1      *Wz1       );
+      //if(D>=1) atomic_add( gs.jy(i1  , j1  , k1  ), Fy1*(1.0-Wx1)*(1.0-Wz1) );
+      //if(D>=1) atomic_add( gs.jy(i1+1, j1  , k1  ), Fy1*Wx1      *(1.0-Wz1) );
+      //if(D>=3) atomic_add( gs.jy(i1  , j1  , k1+1), Fy1*(1.0-Wx1)*Wz1       );
+      //if(D>=3) atomic_add( gs.jy(i1+1, j1  , k1+1), Fy1*Wx1      *Wz1       );
 
-      //if(D>=1) atomic_add( yee.jy(i2  , j2  , k2  ), Fy2*(1.0-Wx2)*(1.0-Wz2) );
-      //if(D>=1) atomic_add( yee.jy(i2+1, j2  , k2  ), Fy2*Wx2      *(1.0-Wz2) );
-      //if(D>=3) atomic_add( yee.jy(i2  , j2  , k2+1), Fy2*(1.0-Wx2)*Wz2       );
-      //if(D>=3) atomic_add( yee.jy(i2+1, j2  , k2+1), Fy2*Wx2      *Wz2       );
+      //if(D>=1) atomic_add( gs.jy(i2  , j2  , k2  ), Fy2*(1.0-Wx2)*(1.0-Wz2) );
+      //if(D>=1) atomic_add( gs.jy(i2+1, j2  , k2  ), Fy2*Wx2      *(1.0-Wz2) );
+      //if(D>=3) atomic_add( gs.jy(i2  , j2  , k2+1), Fy2*(1.0-Wx2)*Wz2       );
+      //if(D>=3) atomic_add( gs.jy(i2+1, j2  , k2+1), Fy2*Wx2      *Wz2       );
 
       //// jz
-      //if(D>=1) atomic_add( yee.jz(i1  , j1  , k1  ), Fz1*(1.0-Wx1)*(1.0-Wy1) );
-      //if(D>=1) atomic_add( yee.jz(i1+1, j1  , k1  ), Fz1*Wx1      *(1.0-Wy1) );
-      //if(D>=2) atomic_add( yee.jz(i1  , j1+1, k1  ), Fz1*(1.0-Wx1)*Wy1       );
-      //if(D>=2) atomic_add( yee.jz(i1+1, j1+1, k1  ), Fz1*Wx1      *Wy1       );
+      //if(D>=1) atomic_add( gs.jz(i1  , j1  , k1  ), Fz1*(1.0-Wx1)*(1.0-Wy1) );
+      //if(D>=1) atomic_add( gs.jz(i1+1, j1  , k1  ), Fz1*Wx1      *(1.0-Wy1) );
+      //if(D>=2) atomic_add( gs.jz(i1  , j1+1, k1  ), Fz1*(1.0-Wx1)*Wy1       );
+      //if(D>=2) atomic_add( gs.jz(i1+1, j1+1, k1  ), Fz1*Wx1      *Wy1       );
 
-      //if(D>=1) atomic_add( yee.jz(i2  , j2  , k2  ), Fz2*(1.0-Wx2)*(1.0-Wy2) );
-      //if(D>=1) atomic_add( yee.jz(i2+1, j2  , k2  ), Fz2*Wx2      *(1.0-Wy2) );
-      //if(D>=2) atomic_add( yee.jz(i2  , j2+1, k2  ), Fz2*(1.0-Wx2)*Wy2       );
-      //if(D>=2) atomic_add( yee.jz(i2+1, j2+1, k2  ), Fz2*Wx2      *Wy2       );
+      //if(D>=1) atomic_add( gs.jz(i2  , j2  , k2  ), Fz2*(1.0-Wx2)*(1.0-Wy2) );
+      //if(D>=1) atomic_add( gs.jz(i2+1, j2  , k2  ), Fz2*Wx2      *(1.0-Wy2) );
+      //if(D>=2) atomic_add( gs.jz(i2  , j2+1, k2  ), Fz2*(1.0-Wx2)*Wy2       );
+      //if(D>=2) atomic_add( gs.jz(i2+1, j2+1, k2  ), Fz2*Wx2      *Wy2       );
       
-    }, con.size(), yee, con);
+    }, con.size(), gs, con);
 
 
     UniIter::sync();

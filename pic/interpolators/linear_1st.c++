@@ -38,7 +38,7 @@ void pic::LinearInterpolator<D,V>::solve(
 #endif
 
   // get reference to the Yee grid 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   for(auto&& con : tile.containers) {
 
@@ -49,14 +49,14 @@ void pic::LinearInterpolator<D,V>::solve(
     auto mins = tile.mins;
 
     // mesh sizes for 1D indexing
-    const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
-    const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
+    const size_t iy = D >= 2 ? gs.ex.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
+    const size_t iz = D >= 3 ? gs.ex.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
 
 
     // loop over particles
     UniIter::iterate([=] DEVCALLABLE( 
                 size_t n, 
-                emf::Grids& yee,
+                emf::Grids& gs,
                 pic::ParticleContainer<D>& con){
 
       int i=0, j=0, k=0;
@@ -77,78 +77,78 @@ void pic::LinearInterpolator<D,V>::solve(
       if(D >= 3) dz = loc2n - k;
 
       // one-dimensional index
-      const size_t ind = yee.ex.indx(i,j,k);
+      const size_t ind = gs.ex.indx(i,j,k);
       double c000, c100, c010, c110, c001, c101, c011, c111;
 
       //ex
-      c000 = 0.5*(yee.ex(ind       ) +yee.ex(ind-1      ));
-      c100 = 0.5*(yee.ex(ind       ) +yee.ex(ind+1      ));
-      c010 = 0.5*(yee.ex(ind+iy    ) +yee.ex(ind-1+iy   ));
-      c110 = 0.5*(yee.ex(ind+iy    ) +yee.ex(ind+1+iy   ));
-      c001 = 0.5*(yee.ex(ind+iz    ) +yee.ex(ind-1+iz   ));
-      c101 = 0.5*(yee.ex(ind+iz    ) +yee.ex(ind+1+iz   ));
-      c011 = 0.5*(yee.ex(ind+iy+iz ) +yee.ex(ind-1+iy+iz));
-      c111 = 0.5*(yee.ex(ind+iy+iz ) +yee.ex(ind+1+iy+iz));
+      c000 = 0.5*(gs.ex(ind       ) +gs.ex(ind-1      ));
+      c100 = 0.5*(gs.ex(ind       ) +gs.ex(ind+1      ));
+      c010 = 0.5*(gs.ex(ind+iy    ) +gs.ex(ind-1+iy   ));
+      c110 = 0.5*(gs.ex(ind+iy    ) +gs.ex(ind+1+iy   ));
+      c001 = 0.5*(gs.ex(ind+iz    ) +gs.ex(ind-1+iz   ));
+      c101 = 0.5*(gs.ex(ind+iz    ) +gs.ex(ind+1+iz   ));
+      c011 = 0.5*(gs.ex(ind+iy+iz ) +gs.ex(ind-1+iy+iz));
+      c111 = 0.5*(gs.ex(ind+iy+iz ) +gs.ex(ind+1+iy+iz));
       con.ex(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       //ey
-      c000 = 0.5*(yee.ey(ind       ) +yee.ey(ind-iy     ));
-      c100 = 0.5*(yee.ey(ind+1     ) +yee.ey(ind+1-iy   ));
-      c010 = 0.5*(yee.ey(ind       ) +yee.ey(ind+iy     ));
-      c110 = 0.5*(yee.ey(ind+1     ) +yee.ey(ind+1+iy   ));
-      c001 = 0.5*(yee.ey(ind+iz    ) +yee.ey(ind-iy+iz  ));
-      c101 = 0.5*(yee.ey(ind+1+iz  ) +yee.ey(ind+1-iy+iz));
-      c011 = 0.5*(yee.ey(ind+iz    ) +yee.ey(ind+iy+iz  ));
-      c111 = 0.5*(yee.ey(ind+1+iz  ) +yee.ey(ind+1+iy+iz));
+      c000 = 0.5*(gs.ey(ind       ) +gs.ey(ind-iy     ));
+      c100 = 0.5*(gs.ey(ind+1     ) +gs.ey(ind+1-iy   ));
+      c010 = 0.5*(gs.ey(ind       ) +gs.ey(ind+iy     ));
+      c110 = 0.5*(gs.ey(ind+1     ) +gs.ey(ind+1+iy   ));
+      c001 = 0.5*(gs.ey(ind+iz    ) +gs.ey(ind-iy+iz  ));
+      c101 = 0.5*(gs.ey(ind+1+iz  ) +gs.ey(ind+1-iy+iz));
+      c011 = 0.5*(gs.ey(ind+iz    ) +gs.ey(ind+iy+iz  ));
+      c111 = 0.5*(gs.ey(ind+1+iz  ) +gs.ey(ind+1+iy+iz));
       con.ey(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       //ez
-      c000 = 0.5*(yee.ez(ind       ) + yee.ez(ind-iz     ));
-      c100 = 0.5*(yee.ez(ind+1     ) + yee.ez(ind+1-iz   ));
-      c010 = 0.5*(yee.ez(ind+iy    ) + yee.ez(ind+iy-iz  ));
-      c110 = 0.5*(yee.ez(ind+1+iy  ) + yee.ez(ind+1+iy-iz));
-      c001 = 0.5*(yee.ez(ind       ) + yee.ez(ind+iz     ));
-      c101 = 0.5*(yee.ez(ind+1     ) + yee.ez(ind+1+iz   ));
-      c011 = 0.5*(yee.ez(ind+iy    ) + yee.ez(ind+iy+iz  ));
-      c111 = 0.5*(yee.ez(ind+1+iy  ) + yee.ez(ind+1+iy+iz));
+      c000 = 0.5*(gs.ez(ind       ) + gs.ez(ind-iz     ));
+      c100 = 0.5*(gs.ez(ind+1     ) + gs.ez(ind+1-iz   ));
+      c010 = 0.5*(gs.ez(ind+iy    ) + gs.ez(ind+iy-iz  ));
+      c110 = 0.5*(gs.ez(ind+1+iy  ) + gs.ez(ind+1+iy-iz));
+      c001 = 0.5*(gs.ez(ind       ) + gs.ez(ind+iz     ));
+      c101 = 0.5*(gs.ez(ind+1     ) + gs.ez(ind+1+iz   ));
+      c011 = 0.5*(gs.ez(ind+iy    ) + gs.ez(ind+iy+iz  ));
+      c111 = 0.5*(gs.ez(ind+1+iy  ) + gs.ez(ind+1+iy+iz));
       con.ez(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
 
       //-------------------------------------------------- 
       // bx
-      c000 = 0.25*( yee.bx(ind)+   yee.bx(ind-iy)+   yee.bx(ind-iz)+      yee.bx(ind-iy-iz));
-      c100 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1-iy)+ yee.bx(ind+1-iz)+    yee.bx(ind+1-iy-iz));
-      c001 = 0.25*( yee.bx(ind)+   yee.bx(ind+iz)+   yee.bx(ind-iy)+      yee.bx(ind-iy+iz));
-      c101 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1+iz)+ yee.bx(ind+1-iy)+    yee.bx(ind+1-iy+iz));
-      c010 = 0.25*( yee.bx(ind)+   yee.bx(ind+iy)+   yee.bx(ind-iz)+      yee.bx(ind+iy-iz));
-      c110 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1-iz)+ yee.bx(ind+1+iy-iz)+ yee.bx(ind+1+iy));
-      c011 = 0.25*( yee.bx(ind)+   yee.bx(ind+iy)+   yee.bx(ind+iy+iz)+   yee.bx(ind+iz));
-      c111 = 0.25*( yee.bx(ind+1)+ yee.bx(ind+1+iy)+ yee.bx(ind+1+iy+iz)+ yee.bx(ind+1+iz));
+      c000 = 0.25*( gs.bx(ind)+   gs.bx(ind-iy)+   gs.bx(ind-iz)+      gs.bx(ind-iy-iz));
+      c100 = 0.25*( gs.bx(ind+1)+ gs.bx(ind+1-iy)+ gs.bx(ind+1-iz)+    gs.bx(ind+1-iy-iz));
+      c001 = 0.25*( gs.bx(ind)+   gs.bx(ind+iz)+   gs.bx(ind-iy)+      gs.bx(ind-iy+iz));
+      c101 = 0.25*( gs.bx(ind+1)+ gs.bx(ind+1+iz)+ gs.bx(ind+1-iy)+    gs.bx(ind+1-iy+iz));
+      c010 = 0.25*( gs.bx(ind)+   gs.bx(ind+iy)+   gs.bx(ind-iz)+      gs.bx(ind+iy-iz));
+      c110 = 0.25*( gs.bx(ind+1)+ gs.bx(ind+1-iz)+ gs.bx(ind+1+iy-iz)+ gs.bx(ind+1+iy));
+      c011 = 0.25*( gs.bx(ind)+   gs.bx(ind+iy)+   gs.bx(ind+iy+iz)+   gs.bx(ind+iz));
+      c111 = 0.25*( gs.bx(ind+1)+ gs.bx(ind+1+iy)+ gs.bx(ind+1+iy+iz)+ gs.bx(ind+1+iz));
       con.bx(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       // by
-      c000 = 0.25*( yee.by(ind-1-iz)+    yee.by(ind-1)+       yee.by(ind-iz)+      yee.by(ind));
-      c100 = 0.25*( yee.by(ind-iz)+      yee.by(ind)+         yee.by(ind+1-iz)+    yee.by(ind+1));
-      c001 = 0.25*( yee.by(ind-1)+       yee.by(ind-1+iz)+    yee.by(ind)+         yee.by(ind+iz));
-      c101 = 0.25*( yee.by(ind)+         yee.by(ind+iz)+      yee.by(ind+1)+       yee.by(ind+1+iz));
-      c010 = 0.25*( yee.by(ind-1+iy-iz)+ yee.by(ind-1+iy)+    yee.by(ind+iy-iz)+   yee.by(ind+iy));
-      c110 = 0.25*( yee.by(ind+iy-iz)+   yee.by(ind+iy)+      yee.by(ind+1+iy-iz)+ yee.by(ind+1+iy));
-      c011 = 0.25*( yee.by(ind-1+iy)+    yee.by(ind-1+iy+iz)+ yee.by(ind+iy)+      yee.by(ind+iy+iz));
-      c111 = 0.25*( yee.by(ind+iy)+      yee.by(ind+iy+iz)+   yee.by(ind+1+iy)+    yee.by(ind+1+iy+iz));
+      c000 = 0.25*( gs.by(ind-1-iz)+    gs.by(ind-1)+       gs.by(ind-iz)+      gs.by(ind));
+      c100 = 0.25*( gs.by(ind-iz)+      gs.by(ind)+         gs.by(ind+1-iz)+    gs.by(ind+1));
+      c001 = 0.25*( gs.by(ind-1)+       gs.by(ind-1+iz)+    gs.by(ind)+         gs.by(ind+iz));
+      c101 = 0.25*( gs.by(ind)+         gs.by(ind+iz)+      gs.by(ind+1)+       gs.by(ind+1+iz));
+      c010 = 0.25*( gs.by(ind-1+iy-iz)+ gs.by(ind-1+iy)+    gs.by(ind+iy-iz)+   gs.by(ind+iy));
+      c110 = 0.25*( gs.by(ind+iy-iz)+   gs.by(ind+iy)+      gs.by(ind+1+iy-iz)+ gs.by(ind+1+iy));
+      c011 = 0.25*( gs.by(ind-1+iy)+    gs.by(ind-1+iy+iz)+ gs.by(ind+iy)+      gs.by(ind+iy+iz));
+      c111 = 0.25*( gs.by(ind+iy)+      gs.by(ind+iy+iz)+   gs.by(ind+1+iy)+    gs.by(ind+1+iy+iz));
       con.by(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
       // bz
-      c000 = 0.25*( yee.bz(ind-1-iy)+    yee.bz(ind-1)+       yee.bz(ind-iy)+      yee.bz(ind));
-      c100 = 0.25*( yee.bz(ind-iy)+      yee.bz(ind)+         yee.bz(ind+1-iy)+    yee.bz(ind+1));
-      c001 = 0.25*( yee.bz(ind-1-iy+iz)+ yee.bz(ind-1+iz)+    yee.bz(ind-iy+iz)+   yee.bz(ind+iz));
-      c101 = 0.25*( yee.bz(ind-iy+iz)+   yee.bz(ind+iz)+      yee.bz(ind+1-iy+iz)+ yee.bz(ind+1+iz));
-      c010 = 0.25*( yee.bz(ind-1)+       yee.bz(ind-1+iy)+    yee.bz(ind)+         yee.bz(ind+iy));
-      c110 = 0.25*( yee.bz(ind)+         yee.bz(ind+iy)+      yee.bz(ind+1)+       yee.bz(ind+1+iy));
-      c011 = 0.25*( yee.bz(ind-1+iz)+    yee.bz(ind-1+iy+iz)+ yee.bz(ind+iz)+      yee.bz(ind+iy+iz));
-      c111 = 0.25*( yee.bz(ind+iz)+      yee.bz(ind+iy+iz)+   yee.bz(ind+1+iz)+    yee.bz(ind+1+iy+iz));
+      c000 = 0.25*( gs.bz(ind-1-iy)+    gs.bz(ind-1)+       gs.bz(ind-iy)+      gs.bz(ind));
+      c100 = 0.25*( gs.bz(ind-iy)+      gs.bz(ind)+         gs.bz(ind+1-iy)+    gs.bz(ind+1));
+      c001 = 0.25*( gs.bz(ind-1-iy+iz)+ gs.bz(ind-1+iz)+    gs.bz(ind-iy+iz)+   gs.bz(ind+iz));
+      c101 = 0.25*( gs.bz(ind-iy+iz)+   gs.bz(ind+iz)+      gs.bz(ind+1-iy+iz)+ gs.bz(ind+1+iz));
+      c010 = 0.25*( gs.bz(ind-1)+       gs.bz(ind-1+iy)+    gs.bz(ind)+         gs.bz(ind+iy));
+      c110 = 0.25*( gs.bz(ind)+         gs.bz(ind+iy)+      gs.bz(ind+1)+       gs.bz(ind+1+iy));
+      c011 = 0.25*( gs.bz(ind-1+iz)+    gs.bz(ind-1+iy+iz)+ gs.bz(ind+iz)+      gs.bz(ind+iy+iz));
+      c111 = 0.25*( gs.bz(ind+iz)+      gs.bz(ind+iy+iz)+   gs.bz(ind+1+iz)+    gs.bz(ind+1+iy+iz));
       con.bz(n) = _lerp(c000, c100, c010, c110, c001, c101, c011, c111, dx, dy, dz);
 
-    }, con.size(), yee, con);
+    }, con.size(), gs, con);
 
     UniIter::sync();
   } // end of loop over species

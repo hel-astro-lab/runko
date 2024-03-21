@@ -82,7 +82,7 @@ void emf::Conductor<D>::insert_em(
   auto mins = tile.mins;
   //auto maxs = tile.maxs;
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   //--------------------------------------------------
   // angular velocity
@@ -128,9 +128,9 @@ void emf::Conductor<D>::insert_em(
     auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
     auto bzd = B0*dipole(r3); // diple field
 
-    yee.bx(i,j,k) = bxd(0);
-    yee.by(i,j,k) = byd(1);
-    yee.bz(i,j,k) = bzd(2);
+    gs.bx(i,j,k) = bxd(0);
+    gs.by(i,j,k) = byd(1);
+    gs.bz(i,j,k) = bzd(2);
 
 
     //--------------------------------------------------
@@ -181,9 +181,9 @@ void emf::Conductor<D>::insert_em(
     //auto erot3 = -1.0f*cross(vrot3, Bd);
     //ezd = erot3(2); // z component
 
-    //yee.ex(i,j,k) = exd;
-    //yee.ey(i,j,k) = eyd;
-    //yee.ez(i,j,k) = ezd;
+    //gs.ex(i,j,k) = exd;
+    //gs.ey(i,j,k) = eyd;
+    //gs.ez(i,j,k) = ezd;
 
   }
 }
@@ -202,7 +202,7 @@ void emf::Conductor<D>::update_b(
   auto mins = tile.mins;
   auto maxs = tile.maxs;
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   //-------------------------------------------------- 
   // find if this is a corner tile
@@ -312,9 +312,9 @@ void emf::Conductor<D>::update_b(
 
       //--------------------------------------------------
       // blending of old + new solution
-      yee.bx(i,j,k) = sx*bxd(0) + (1.0f - sx)*yee.bx(i,j,k); 
-      yee.by(i,j,k) = sy*byd(1) + (1.0f - sy)*yee.by(i,j,k); 
-      yee.bz(i,j,k) = sz*bzd(2) + (1.0f - sz)*yee.bz(i,j,k); 
+      gs.bx(i,j,k) = sx*bxd(0) + (1.0f - sx)*gs.bx(i,j,k); 
+      gs.by(i,j,k) = sy*byd(1) + (1.0f - sy)*gs.by(i,j,k); 
+      gs.bz(i,j,k) = sz*bzd(2) + (1.0f - sz)*gs.bz(i,j,k); 
     }
 
   }
@@ -386,9 +386,9 @@ void emf::Conductor<D>::update_b(
 
       //--------------------------------------------------
       // damp to dipole solution
-      yee.bx(i,j,k) = sx*yee.bx(i,j,k) + (1.0f-sx)*bxd(0);
-      yee.by(i,j,k) = sy*yee.by(i,j,k) + (1.0f-sy)*byd(1);
-      yee.bz(i,j,k) = sz*yee.bz(i,j,k) + (1.0f-sz)*bzd(2);
+      gs.bx(i,j,k) = sx*gs.bx(i,j,k) + (1.0f-sx)*bxd(0);
+      gs.by(i,j,k) = sy*gs.by(i,j,k) + (1.0f-sy)*byd(1);
+      gs.bz(i,j,k) = sz*gs.bz(i,j,k) + (1.0f-sz)*bzd(2);
     }
   }
 
@@ -444,9 +444,9 @@ void emf::Conductor<D>::update_b(
 
       //--------------------------------------------------
       // damp to dipole solution
-      yee.bx(i,j,k) = s*yee.bx(i,j,k) + (1.0f-s)*bxd(0);
-      yee.by(i,j,k) = s*yee.by(i,j,k) + (1.0f-s)*byd(1);
-      yee.bz(i,j,k) = s*yee.bz(i,j,k) + (1.0f-s)*bzd(2);
+      gs.bx(i,j,k) = s*gs.bx(i,j,k) + (1.0f-s)*bxd(0);
+      gs.by(i,j,k) = s*gs.by(i,j,k) + (1.0f-s)*byd(1);
+      gs.bz(i,j,k) = s*gs.bz(i,j,k) + (1.0f-s)*bzd(2);
     }
 
   }
@@ -495,9 +495,9 @@ void emf::Conductor<D>::update_b(
                                                 
       //--------------------------------------------------
       // damp to dipole solution
-      yee.bx(i,j,k) = s*yee.bx(i,j,k) + (1.0f-s)*bxd(0);
-      yee.by(i,j,k) = s*yee.by(i,j,k) + (1.0f-s)*byd(1);
-      yee.bz(i,j,k) = s*yee.bz(i,j,k) + (1.0f-s)*bzd(2);
+      gs.bx(i,j,k) = s*gs.bx(i,j,k) + (1.0f-s)*bxd(0);
+      gs.by(i,j,k) = s*gs.by(i,j,k) + (1.0f-s)*byd(1);
+      gs.bz(i,j,k) = s*gs.bz(i,j,k) + (1.0f-s)*bzd(2);
     }
 
   }
@@ -562,9 +562,9 @@ void emf::Conductor<D>::update_b(
       // vector friendly application of boolean boundary
       auto s = static_cast<float_m>(inside_box_bcs);
 
-      yee.bx(i,j,k) = s*bxd(0) + (1.0f-s)*yee.bx(i,j,k);
-      yee.by(i,j,k) = s*byd(1) + (1.0f-s)*yee.by(i,j,k);
-      yee.bz(i,j,k) = s*bzd(2) + (1.0f-s)*yee.bz(i,j,k);
+      gs.bx(i,j,k) = s*bxd(0) + (1.0f-s)*gs.bx(i,j,k);
+      gs.by(i,j,k) = s*byd(1) + (1.0f-s)*gs.by(i,j,k);
+      gs.bz(i,j,k) = s*bzd(2) + (1.0f-s)*gs.bz(i,j,k);
     }
   }
 
@@ -594,7 +594,7 @@ void emf::Conductor<D>::update_e(
   auto mins = tile.mins;
   auto maxs = tile.maxs;
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   //-------------------------------------------------- 
   // null sides to prevent periodic bc conditions
@@ -718,13 +718,13 @@ void emf::Conductor<D>::update_e(
 
     //--------------------------------------------------
     // epar; ver 1
-    auto exi = yee.ex(i,j,k);
-    auto eyi = yee.ey(i,j,k);
-    auto ezi = yee.ez(i,j,k);
+    auto exi = gs.ex(i,j,k);
+    auto eyi = gs.ey(i,j,k);
+    auto ezi = gs.ez(i,j,k);
 
-    auto bxi = yee.bx(i,j,k);
-    auto byi = yee.by(i,j,k);
-    auto bzi = yee.bz(i,j,k);
+    auto bxi = gs.bx(i,j,k);
+    auto byi = gs.by(i,j,k);
+    auto bzi = gs.bz(i,j,k);
     auto bn  = std::sqrt( bxi*bxi + byi*byi + bzi*bzi ) + EPS;
 
     // E_\parallel
@@ -737,65 +737,65 @@ void emf::Conductor<D>::update_e(
     auto eznew = ezi - epar*bzi/bn;
 
     // blend solution in with a smoothing function
-    yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
-    yee.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
-    yee.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
+    gs.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
+    gs.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
+    gs.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
 
     //--------------------------------------------------
     // epar; ver 2 with interpolation
     //float exi, eyi, ezi, bxi, byi, bzi, b2, eparb;
 
-    //const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
-    //const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
-    //const size_t ind = yee.ex.indx(i,j,k);
+    //const size_t iy = D >= 2 ? gs.ex.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
+    //const size_t iz = D >= 3 ? gs.ex.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
+    //const size_t ind = gs.ex.indx(i,j,k);
 
     //// ex
-    //exi = yee.ex(ind);
-    //eyi = 0.25 *(yee.ey(ind)    + yee.ey(ind+1)     + yee.ey(ind-iy)      + yee.ey(ind+1-iy));
-    //ezi = 0.25 *(yee.ez(ind)    + yee.ez(ind+1)     + yee.ez(ind-iz)      + yee.ez(ind+1-iz));
+    //exi = gs.ex(ind);
+    //eyi = 0.25 *(gs.ey(ind)    + gs.ey(ind+1)     + gs.ey(ind-iy)      + gs.ey(ind+1-iy));
+    //ezi = 0.25 *(gs.ez(ind)    + gs.ez(ind+1)     + gs.ez(ind-iz)      + gs.ez(ind+1-iz));
 
-    //bxi = 0.125*(yee.bx(ind)    + yee.bx(ind-iy)    + yee.bx(ind+1-iy)    + yee.bx(ind+1) +
-    //             yee.bx(ind-iz) + yee.bx(ind-iy-iz) + yee.bx(ind+1-iy-iz) + yee.bx(ind+1-iz));
-    //byi = 0.5 * (yee.by(ind)    + yee.by(ind-iz));
-    //bzi = 0.5 * (yee.bz(ind)    + yee.bz(ind-iy));
+    //bxi = 0.125*(gs.bx(ind)    + gs.bx(ind-iy)    + gs.bx(ind+1-iy)    + gs.bx(ind+1) +
+    //             gs.bx(ind-iz) + gs.bx(ind-iy-iz) + gs.bx(ind+1-iy-iz) + gs.bx(ind+1-iz));
+    //byi = 0.5 * (gs.by(ind)    + gs.by(ind-iz));
+    //bzi = 0.5 * (gs.bz(ind)    + gs.bz(ind-iy));
 
     //b2  = bxi*bxi + byi*byi + bzi*bzi + EPS;
     //eparb = exi*bxi + eyi*byi + ezi*bzi;
     //auto exnew = exi-eparb*bxi/b2;
 
-    //yee.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
+    //gs.ex(i,j,k) = s*exnew + (1.0f - s)*exi;
 
     ////--------------------------------------------------
     //// ey
-    //exi = 0.25 * (yee.ex(ind)    + yee.ex(ind-1)    + yee.ex(ind+iy)      + yee.ex(ind-1+iy));
-    //eyi =         yee.ey(ind);
-    //ezi = 0.25 * (yee.ez(ind)    + yee.ez(ind+iy)   + yee.ez(ind-iz)      + yee.ez(ind+iy-iz));
+    //exi = 0.25 * (gs.ex(ind)    + gs.ex(ind-1)    + gs.ex(ind+iy)      + gs.ex(ind-1+iy));
+    //eyi =         gs.ey(ind);
+    //ezi = 0.25 * (gs.ez(ind)    + gs.ez(ind+iy)   + gs.ez(ind-iz)      + gs.ez(ind+iy-iz));
 
-    //bxi = 0.5 * ( yee.bx(ind)    + yee.bx(ind-iz));
-    //byi = 0.125*( yee.by(ind)    + yee.by(ind-1)    + yee.by(ind-1+iy)    + yee.by(ind+iy) +
-    //              yee.by(ind-iz) + yee.by(ind-1-iz) + yee.by(ind-1+iy-iz) + yee.by(ind+iy-iz));
-    //bzi = 0.5 * ( yee.bz(ind)    + yee.bz(ind-1));
+    //bxi = 0.5 * ( gs.bx(ind)    + gs.bx(ind-iz));
+    //byi = 0.125*( gs.by(ind)    + gs.by(ind-1)    + gs.by(ind-1+iy)    + gs.by(ind+iy) +
+    //              gs.by(ind-iz) + gs.by(ind-1-iz) + gs.by(ind-1+iy-iz) + gs.by(ind+iy-iz));
+    //bzi = 0.5 * ( gs.bz(ind)    + gs.bz(ind-1));
 
     //b2  = bxi*bxi + byi*byi + bzi*bzi + EPS;
     //eparb = exi*bxi + eyi*byi + ezi*bzi;
     //auto eynew = eyi-eparb*byi/b2;
-    //yee.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
+    //gs.ey(i,j,k) = s*eynew + (1.0f - s)*eyi;
 
     ////--------------------------------------------------
     ////ez
-    //exi = 0.25 * (yee.ex(ind)    + yee.ex(ind-1)   +  yee.ex(ind+iz)      + yee.ex(ind-1+iz ));
-    //eyi = 0.25 * (yee.ey(ind)    + yee.ey(ind-iy)  +  yee.ey(ind+iz)      + yee.ey(ind-iy+iz));
-    //ezi =         yee.ez(ind);
+    //exi = 0.25 * (gs.ex(ind)    + gs.ex(ind-1)   +  gs.ex(ind+iz)      + gs.ex(ind-1+iz ));
+    //eyi = 0.25 * (gs.ey(ind)    + gs.ey(ind-iy)  +  gs.ey(ind+iz)      + gs.ey(ind-iy+iz));
+    //ezi =         gs.ez(ind);
 
-    //bxi = 0.5 * ( yee.bx(ind)    + yee.bx(ind-iy));
-    //byi = 0.5 * ( yee.by(ind)    + yee.by(ind-1));
-    //bzi = 0.125*( yee.bz(ind)    + yee.bz(ind-1)    + yee.bz(ind-1-iy)    + yee.bz(ind-iy) + 
-    //              yee.bz(ind+iz) + yee.bz(ind-1+iz) + yee.bz(ind-1-iy+iz) + yee.bz(ind-iy+iz));
+    //bxi = 0.5 * ( gs.bx(ind)    + gs.bx(ind-iy));
+    //byi = 0.5 * ( gs.by(ind)    + gs.by(ind-1));
+    //bzi = 0.125*( gs.bz(ind)    + gs.bz(ind-1)    + gs.bz(ind-1-iy)    + gs.bz(ind-iy) + 
+    //              gs.bz(ind+iz) + gs.bz(ind-1+iz) + gs.bz(ind-1-iy+iz) + gs.bz(ind-iy+iz));
 
     //b2  = bxi*bxi + byi*byi + bzi*bzi + EPS;
     //eparb = exi*bxi + eyi*byi + ezi*bzi;
     //auto eznew = ezi - eparb*bzi/b2;
-    //yee.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
+    //gs.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
 
   }
 
@@ -873,9 +873,9 @@ void emf::Conductor<D>::update_e(
 
       //--------------------------------------------------
       // blending of old + new solution
-      yee.ex(i,j,k) = sx*erot1(0) + (1.0f - sx)*yee.ex(i,j,k); 
-      yee.ey(i,j,k) = sy*erot2(1) + (1.0f - sy)*yee.ey(i,j,k); 
-      yee.ez(i,j,k) = sz*erot3(2) + (1.0f - sz)*yee.ez(i,j,k); 
+      gs.ex(i,j,k) = sx*erot1(0) + (1.0f - sx)*gs.ex(i,j,k); 
+      gs.ey(i,j,k) = sy*erot2(1) + (1.0f - sy)*gs.ey(i,j,k); 
+      gs.ez(i,j,k) = sz*erot3(2) + (1.0f - sz)*gs.ez(i,j,k); 
 
     }
   }
@@ -942,9 +942,9 @@ void emf::Conductor<D>::update_e(
 
       //--------------------------------------------------
       // damp to vacuum
-      yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0f;
-      yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0f;
-      yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0f;
+      gs.ex(i,j,k) = s*gs.ex(i,j,k) + (1.0f-s)*0.0f;
+      gs.ey(i,j,k) = s*gs.ey(i,j,k) + (1.0f-s)*0.0f;
+      gs.ez(i,j,k) = s*gs.ez(i,j,k) + (1.0f-s)*0.0f;
     }
   }
 
@@ -986,9 +986,9 @@ void emf::Conductor<D>::update_e(
 
       //--------------------------------------------------
       // damp to vacuum
-      yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0f;
-      yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0f;
-      yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0f;
+      gs.ex(i,j,k) = s*gs.ex(i,j,k) + (1.0f-s)*0.0f;
+      gs.ey(i,j,k) = s*gs.ey(i,j,k) + (1.0f-s)*0.0f;
+      gs.ez(i,j,k) = s*gs.ez(i,j,k) + (1.0f-s)*0.0f;
 
     }
   }
@@ -1021,9 +1021,9 @@ void emf::Conductor<D>::update_e(
 
       //--------------------------------------------------
       // damp to vacuum
-      yee.ex(i,j,k) = s*yee.ex(i,j,k) + (1.0f-s)*0.0f;
-      yee.ey(i,j,k) = s*yee.ey(i,j,k) + (1.0f-s)*0.0f;
-      yee.ez(i,j,k) = s*yee.ez(i,j,k) + (1.0f-s)*0.0f;
+      gs.ex(i,j,k) = s*gs.ex(i,j,k) + (1.0f-s)*0.0f;
+      gs.ey(i,j,k) = s*gs.ey(i,j,k) + (1.0f-s)*0.0f;
+      gs.ez(i,j,k) = s*gs.ez(i,j,k) + (1.0f-s)*0.0f;
 
     }
   }
@@ -1076,9 +1076,9 @@ void emf::Conductor<D>::update_e(
 
       //--------------------------------------------------
       // damp to vacuum
-      yee.ex(i,j,k) = s*0.0f + (1.0f - s)*yee.ex(i,j,k);
-      yee.ey(i,j,k) = s*0.0f + (1.0f - s)*yee.ey(i,j,k);
-      yee.ez(i,j,k) = s*0.0f + (1.0f - s)*yee.ez(i,j,k);
+      gs.ex(i,j,k) = s*0.0f + (1.0f - s)*gs.ex(i,j,k);
+      gs.ey(i,j,k) = s*0.0f + (1.0f - s)*gs.ey(i,j,k);
+      gs.ez(i,j,k) = s*0.0f + (1.0f - s)*gs.ez(i,j,k);
 
     }
   }

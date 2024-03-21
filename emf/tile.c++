@@ -1256,10 +1256,10 @@ void Tile<D>::clear_current()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = this->get_grids();
-  yee.jx.clear();
-  yee.jy.clear();
-  yee.jz.clear();
+  auto& gs = this->get_grids();
+  gs.jx.clear();
+  gs.jy.clear();
+  gs.jz.clear();
 
 
 #ifdef GPU
@@ -1294,23 +1294,23 @@ std::vector<mpi::request> Tile<D>::send_data(
   nvtxRangePush(__FUNCTION__);
 #endif
 
-  auto& yee = get_grids(); 
+  auto& gs = get_grids(); 
   std::vector<mpi::request> reqs;
 
   UniIter::sync();
 
   if (mode == 0) {
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), yee.jy.data(), yee.jy.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 2), yee.jz.data(), yee.jz.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), gs.jx.data(), gs.jx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 1), gs.jy.data(), gs.jy.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 2), gs.jz.data(), gs.jz.size()) );
   } else if (mode == 1) {
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 3), yee.ex.data(), yee.ex.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 4), yee.ey.data(), yee.ey.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 5), yee.ez.data(), yee.ez.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 3), gs.ex.data(), gs.ex.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 4), gs.ey.data(), gs.ey.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 5), gs.ez.data(), gs.ez.size()) );
   } else if (mode == 2) {
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 6), yee.bx.data(), yee.bx.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 7), yee.by.data(), yee.by.size()) );
-    reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 6), gs.bx.data(), gs.bx.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 7), gs.by.data(), gs.by.size()) );
+    reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), gs.bz.data(), gs.bz.size()) );
   }
 
 #ifdef GPU
@@ -1333,24 +1333,24 @@ std::vector<mpi::request> Tile<D>::recv_data(
   nvtxRangePush(__FUNCTION__);
 #endif
 
-  auto& yee = get_grids(); 
+  auto& gs = get_grids(); 
 
   std::vector<mpi::request> reqs;
 
   UniIter::sync();
 
   if (mode == 0) {
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 0), yee.jx.data(), yee.jx.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 1), yee.jy.data(), yee.jy.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 2), yee.jz.data(), yee.jz.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 0), gs.jx.data(), gs.jx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 1), gs.jy.data(), gs.jy.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 2), gs.jz.data(), gs.jz.size()) );
   } else if (mode == 1) {
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 3), yee.ex.data(), yee.ex.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 4), yee.ey.data(), yee.ey.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 5), yee.ez.data(), yee.ez.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 3), gs.ex.data(), gs.ex.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 4), gs.ey.data(), gs.ey.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 5), gs.ez.data(), gs.ez.size()) );
   } else if (mode == 2) {
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 6), yee.bx.data(), yee.bx.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 7), yee.by.data(), yee.by.size()) );
-    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 8), yee.bz.data(), yee.bz.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 6), gs.bx.data(), gs.bx.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 7), gs.by.data(), gs.by.size()) );
+    reqs.emplace_back( comm.irecv(orig, get_tag(tag, 8), gs.bz.data(), gs.bz.size()) );
   }
 
 #ifdef GPU

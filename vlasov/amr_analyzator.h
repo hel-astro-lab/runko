@@ -46,10 +46,10 @@ class Analyzator {
   {
 
     // Yee lattice reference
-    auto& yee = tile.get_grids();
-    yee.rho.clear();
-    //yee.ekin.clear();
-    //yee.jx1.clear();
+    auto& gs = tile.get_grids();
+    gs.rho.clear();
+    //gs.ekin.clear();
+    //gs.jx1.clear();
 
 
     // get reference to the Vlasov fluid that we are solving
@@ -87,7 +87,7 @@ class Analyzator {
             // Global quantities (sum over species)
 
             // number density; chi(u) = 1
-            yee.rho(q,r,s) += 
+            gs.rho(q,r,s) += 
               integrate_moment(
                   M,
                 [](std::array<T,3>& ) -> T { return T(1);}
@@ -95,7 +95,7 @@ class Analyzator {
 
             // Jx current; chi(u) = u/gamma = v
             // NOTE: Current is already computed in the time loop so omit it here
-            //yee.jx1(q,r,s) += sign(qm)*
+            //gs.jx1(q,r,s) += sign(qm)*
             //  integrate_moment(
             //      M,
             //    [](std::array<T,3> uvel) -> T 
@@ -106,7 +106,7 @@ class Analyzator {
             //-------------------------------------------------- 
             // Species-specific quantities
             // NOTE: different insert location (i.e., analysis object 
-            // instead of yee object)
+            // instead of gs object)
 
             // number density; chi(u) = 1
             T rho = 

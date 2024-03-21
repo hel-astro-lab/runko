@@ -14,7 +14,7 @@ using iter::zip;
 template< typename T, int D, int V>
 void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cfl)
 {
-  //auto& yee = tile.get_grids();
+  //auto& gs = tile.get_grids();
   tile.jx1.clear();
 
   auto& step0 = tile.steps.get(0);
@@ -35,7 +35,7 @@ void vlv::MomentumSolver<T,D,V>::update_future_current( vlv::Tile<D>& tile, T cf
           //
           // NOTE: needs to be given in units of grid speed 
           //       so we scale with dt/dx
-          //yee.jx1(q,r,s) += qm*
+          //gs.jx1(q,r,s) += qm*
           tile.jx1(q,r,s) += qm*cfl*
             integrate_moment(
                 M,
@@ -69,7 +69,7 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
 
 
   // get reference to the Yee grid 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
 
   // timestep
   //auto dt   = (T) tile.dt;      
@@ -109,9 +109,9 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
           vec 
             B = 
             {{
-               (T) yee.bx(q,r,s),
-               (T) yee.by(q,r,s),
-               (T) yee.bz(q,r,s)
+               (T) gs.bx(q,r,s),
+               (T) gs.by(q,r,s),
+               (T) gs.bz(q,r,s)
             }},              
 
             // E-field interpolated to the middle of the tile
@@ -119,13 +119,13 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
             // XXX
             E =                
             {{                 
-               (T) (0.5*(yee.ex(q,r,s) + yee.ex(q-1,r,   s  ))),
-               (T) (0.5*(yee.ey(q,r,s) + yee.ey(q,  r-1, s  ))),
-               (T) (0.5*(yee.ez(q,r,s) + yee.ez(q,  r,   s-1)))
+               (T) (0.5*(gs.ex(q,r,s) + gs.ex(q-1,r,   s  ))),
+               (T) (0.5*(gs.ey(q,r,s) + gs.ey(q,  r-1, s  ))),
+               (T) (0.5*(gs.ez(q,r,s) + gs.ez(q,  r,   s-1)))
             }};
 
           // Now push E field to future temporarily
-          //E[0] -= yee.jx1(q,r,s) * 0.5;
+          //E[0] -= gs.jx1(q,r,s) * 0.5;
 
 
           // dig out velomeshes from blocks

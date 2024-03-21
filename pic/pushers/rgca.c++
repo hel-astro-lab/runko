@@ -199,22 +199,22 @@ void pic::rGCAPusher<D,V>::push_container(
   const double m    = con.m; //mass
 
   // emf at the grid
-  auto& yee = tile.get_grids(); 
-  auto& exM = yee.ex;
-  auto& eyM = yee.ey;
-  auto& ezM = yee.ez;
+  auto& gs = tile.get_grids(); 
+  auto& exM = gs.ex;
+  auto& eyM = gs.ey;
+  auto& ezM = gs.ez;
 
-  auto& bxM = yee.bx;
-  auto& byM = yee.by;
-  auto& bzM = yee.bz;
+  auto& bxM = gs.bx;
+  auto& byM = gs.by;
+  auto& bzM = gs.bz;
 
   const int Nx = tile.mesh_lengths[0];
   const int Ny = tile.mesh_lengths[1];
   const int Nz = tile.mesh_lengths[2];
 
   // mesh sizes for 1D indexing
-  const size_t iy = D >= 2 ? yee.ex.indx(0,1,0) - yee.ex.indx(0,0,0) : 0;
-  const size_t iz = D >= 3 ? yee.ex.indx(0,0,1) - yee.ex.indx(0,0,0) : 0;
+  const size_t iy = D >= 2 ? gs.ex.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
+  const size_t iz = D >= 3 ? gs.ex.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
   auto mins = tile.mins;
 
 
@@ -348,7 +348,7 @@ void pic::rGCAPusher<D,V>::push_container(
         if(D >= 2) { if(j >= Ny+1 ) { dy += j-Ny-1; j = Ny+1; } }
         if(D >= 3) { if(k >= Nz+1 ) { dz += k-Nz-1; k = Nz+1; } }
 
-        const size_t ind = yee.ex.indx(i,j,k);
+        const size_t ind = gs.ex.indx(i,j,k);
 
         //ex
         c000 = 0.5*(exM(ind       ) +exM(ind-1      ));

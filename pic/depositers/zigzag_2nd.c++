@@ -25,13 +25,13 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
   const auto mins = tile.mins;
 
   //clear arrays before new update
-  yee.jx.clear();
-  yee.jy.clear();
-  yee.jz.clear();
+  gs.jx.clear();
+  gs.jy.clear();
+  gs.jz.clear();
 
 
   for(auto&& con : tile.containers) {
@@ -44,7 +44,7 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
 
     //UniIter::iterate([=] DEVCALLABLE (
     //            size_t n, 
-    //            emf::Grids &yee,
+    //            emf::Grids &gs,
     //            pic::ParticleContainer<D>& con
     //            ){
     for(size_t n=0; n<con.size(); n++) {
@@ -271,15 +271,15 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //  "(" << i2   <<","<< j2+yi <<","<< k2+zi <<") " << "\n";
         //}
 
-        //if(D >= 1) atomic_add( yee.jx(i1d  , j1p+yi, k1p+zi), qvx1* Wx1[1]* Wyy1[yi+1]*Wzz1[zi+1] );
-        //if(D >= 1) atomic_add( yee.jx(i1d+1, j1p+yi, k1p+zi), qvx1* Wx1[2]* Wyy1[yi+1]*Wzz1[zi+1] );
-        //if(D >= 1) atomic_add( yee.jx(i2d  , j2p+yi, k2p+zi), qvx2* Wx2[1]* Wyy2[yi+1]*Wzz2[zi+1] );
-        //if(D >= 1) atomic_add( yee.jx(i2d+1, j2p+yi, k2p+zi), qvx2* Wx2[2]* Wyy2[yi+1]*Wzz2[zi+1] );
+        //if(D >= 1) atomic_add( gs.jx(i1d  , j1p+yi, k1p+zi), qvx1* Wx1[1]* Wyy1[yi+1]*Wzz1[zi+1] );
+        //if(D >= 1) atomic_add( gs.jx(i1d+1, j1p+yi, k1p+zi), qvx1* Wx1[2]* Wyy1[yi+1]*Wzz1[zi+1] );
+        //if(D >= 1) atomic_add( gs.jx(i2d  , j2p+yi, k2p+zi), qvx2* Wx2[1]* Wyy2[yi+1]*Wzz2[zi+1] );
+        //if(D >= 1) atomic_add( gs.jx(i2d+1, j2p+yi, k2p+zi), qvx2* Wx2[2]* Wyy2[yi+1]*Wzz2[zi+1] );
 
-        if(D >= 1) atomic_add( yee.jx(i1d-1, j1p+yi, k1p+zi), qvx1* Wx1[1]* Wyy1[yi+1]*Wzz1[zi+1] );
-        if(D >= 1) atomic_add( yee.jx(i1d  , j1p+yi, k1p+zi), qvx1* Wx1[2]* Wyy1[yi+1]*Wzz1[zi+1] );
-        if(D >= 1) atomic_add( yee.jx(i2d-1, j2p+yi, k2p+zi), qvx2* Wx2[1]* Wyy2[yi+1]*Wzz2[zi+1] );
-        if(D >= 1) atomic_add( yee.jx(i2d  , j2p+yi, k2p+zi), qvx2* Wx2[2]* Wyy2[yi+1]*Wzz2[zi+1] );
+        if(D >= 1) atomic_add( gs.jx(i1d-1, j1p+yi, k1p+zi), qvx1* Wx1[1]* Wyy1[yi+1]*Wzz1[zi+1] );
+        if(D >= 1) atomic_add( gs.jx(i1d  , j1p+yi, k1p+zi), qvx1* Wx1[2]* Wyy1[yi+1]*Wzz1[zi+1] );
+        if(D >= 1) atomic_add( gs.jx(i2d-1, j2p+yi, k2p+zi), qvx2* Wx2[1]* Wyy2[yi+1]*Wzz2[zi+1] );
+        if(D >= 1) atomic_add( gs.jx(i2d  , j2p+yi, k2p+zi), qvx2* Wx2[2]* Wyy2[yi+1]*Wzz2[zi+1] );
 
       }
 
@@ -292,15 +292,15 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2+xi <<","<< j2-1 <<","<< k2+zi <<") " <<
         //"(" << i2+xi <<","<< j2   <<","<< k2+zi <<") " << "\n";
 
-        //if(D >= 2) atomic_add( yee.jy(i1p+xi, j1d  , k1p+zi), qvy1* Wy1[1] *Wxx1[xi+1]*Wzz1[zi+1] );
-        //if(D >= 1) atomic_add( yee.jy(i1p+xi, j1d+1, k1p+zi), qvy1* Wy1[2] *Wxx1[xi+1]*Wzz1[zi+1] );
-        //if(D >= 2) atomic_add( yee.jy(i2p+xi, j2d  , k2p+zi), qvy2* Wy2[1] *Wxx2[xi+1]*Wzz2[zi+1] );
-        //if(D >= 1) atomic_add( yee.jy(i2p+xi, j2d+1, k2p+zi), qvy2* Wy2[2] *Wxx2[xi+1]*Wzz2[zi+1] );
+        //if(D >= 2) atomic_add( gs.jy(i1p+xi, j1d  , k1p+zi), qvy1* Wy1[1] *Wxx1[xi+1]*Wzz1[zi+1] );
+        //if(D >= 1) atomic_add( gs.jy(i1p+xi, j1d+1, k1p+zi), qvy1* Wy1[2] *Wxx1[xi+1]*Wzz1[zi+1] );
+        //if(D >= 2) atomic_add( gs.jy(i2p+xi, j2d  , k2p+zi), qvy2* Wy2[1] *Wxx2[xi+1]*Wzz2[zi+1] );
+        //if(D >= 1) atomic_add( gs.jy(i2p+xi, j2d+1, k2p+zi), qvy2* Wy2[2] *Wxx2[xi+1]*Wzz2[zi+1] );
 
-        if(D >= 2) atomic_add( yee.jy(i1p+xi, j1d-1, k1p+zi), qvy1* Wy1[1] *Wxx1[xi+1]*Wzz1[zi+1] );
-        if(D >= 1) atomic_add( yee.jy(i1p+xi, j1d  , k1p+zi), qvy1* Wy1[2] *Wxx1[xi+1]*Wzz1[zi+1] );
-        if(D >= 2) atomic_add( yee.jy(i2p+xi, j2d-1, k2p+zi), qvy2* Wy2[1] *Wxx2[xi+1]*Wzz2[zi+1] );
-        if(D >= 1) atomic_add( yee.jy(i2p+xi, j2d  , k2p+zi), qvy2* Wy2[2] *Wxx2[xi+1]*Wzz2[zi+1] );
+        if(D >= 2) atomic_add( gs.jy(i1p+xi, j1d-1, k1p+zi), qvy1* Wy1[1] *Wxx1[xi+1]*Wzz1[zi+1] );
+        if(D >= 1) atomic_add( gs.jy(i1p+xi, j1d  , k1p+zi), qvy1* Wy1[2] *Wxx1[xi+1]*Wzz1[zi+1] );
+        if(D >= 2) atomic_add( gs.jy(i2p+xi, j2d-1, k2p+zi), qvy2* Wy2[1] *Wxx2[xi+1]*Wzz2[zi+1] );
+        if(D >= 1) atomic_add( gs.jy(i2p+xi, j2d  , k2p+zi), qvy2* Wy2[2] *Wxx2[xi+1]*Wzz2[zi+1] );
       }                                                                                
                                                                                        
       //jz                                                                             
@@ -312,19 +312,19 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
         //"(" << i2+xi <<","<< j2+yi <<","<< k2-1 <<") " <<                            
         //"(" << i2+xi <<","<< j2+yi <<","<< k2   <<") " << "\n";                      
                                                                                        
-        //if(D >= 3) atomic_add( yee.jz(i1p+xi, j1p+yi, k1d  ), qvz1* Wz1[1] *Wxx1[xi+1]*Wyy1[yi+1] );
-        //if(D >= 1) atomic_add( yee.jz(i1p+xi, j1p+yi, k1d+1), qvz1* Wz1[2] *Wxx1[xi+1]*Wyy1[yi+1] );
-        //if(D >= 3) atomic_add( yee.jz(i2p+xi, j2p+yi, k2d  ), qvz2* Wz2[1] *Wxx2[xi+1]*Wyy2[yi+1] );
-        //if(D >= 1) atomic_add( yee.jz(i2p+xi, j2p+yi, k2d+1), qvz2* Wz2[2] *Wxx2[xi+1]*Wyy2[yi+1] );
+        //if(D >= 3) atomic_add( gs.jz(i1p+xi, j1p+yi, k1d  ), qvz1* Wz1[1] *Wxx1[xi+1]*Wyy1[yi+1] );
+        //if(D >= 1) atomic_add( gs.jz(i1p+xi, j1p+yi, k1d+1), qvz1* Wz1[2] *Wxx1[xi+1]*Wyy1[yi+1] );
+        //if(D >= 3) atomic_add( gs.jz(i2p+xi, j2p+yi, k2d  ), qvz2* Wz2[1] *Wxx2[xi+1]*Wyy2[yi+1] );
+        //if(D >= 1) atomic_add( gs.jz(i2p+xi, j2p+yi, k2d+1), qvz2* Wz2[2] *Wxx2[xi+1]*Wyy2[yi+1] );
 
-        if(D >= 3) atomic_add( yee.jz(i1p+xi, j1p+yi, k1d-1), qvz1* Wz1[1] *Wxx1[xi+1]*Wyy1[yi+1] );
-        if(D >= 1) atomic_add( yee.jz(i1p+xi, j1p+yi, k1d  ), qvz1* Wz1[2] *Wxx1[xi+1]*Wyy1[yi+1] );
-        if(D >= 3) atomic_add( yee.jz(i2p+xi, j2p+yi, k2d-1), qvz2* Wz2[1] *Wxx2[xi+1]*Wyy2[yi+1] );
-        if(D >= 1) atomic_add( yee.jz(i2p+xi, j2p+yi, k2d  ), qvz2* Wz2[2] *Wxx2[xi+1]*Wyy2[yi+1] );
+        if(D >= 3) atomic_add( gs.jz(i1p+xi, j1p+yi, k1d-1), qvz1* Wz1[1] *Wxx1[xi+1]*Wyy1[yi+1] );
+        if(D >= 1) atomic_add( gs.jz(i1p+xi, j1p+yi, k1d  ), qvz1* Wz1[2] *Wxx1[xi+1]*Wyy1[yi+1] );
+        if(D >= 3) atomic_add( gs.jz(i2p+xi, j2p+yi, k2d-1), qvz2* Wz2[1] *Wxx2[xi+1]*Wyy2[yi+1] );
+        if(D >= 1) atomic_add( gs.jz(i2p+xi, j2p+yi, k2d  ), qvz2* Wz2[2] *Wxx2[xi+1]*Wyy2[yi+1] );
       }
 
     }
-    //}, con.size(), yee, con);
+    //}, con.size(), gs, con);
 
   }//end of loop over species
 

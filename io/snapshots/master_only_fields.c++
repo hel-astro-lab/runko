@@ -26,7 +26,7 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
     )
 {
   auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile( cid ));
-  auto& yee = tile.get_grids();
+  auto& gs = tile.get_grids();
     
   // clear buffer before additive variables
   sbuf[0].clear();
@@ -37,13 +37,13 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
     for(int ks=0; ks<nzM; ks++) 
     for(int js=0; js<nyM; js++) 
     for(int is=0; is<nxM; is++) {
-      if(ifea == 0) sbuf[0](is, js, ks) = yee.ex( is*stride, js*stride, ks*stride);
-      if(ifea == 1) sbuf[0](is, js, ks) = yee.ey( is*stride, js*stride, ks*stride);
-      if(ifea == 2) sbuf[0](is, js, ks) = yee.ez( is*stride, js*stride, ks*stride);
+      if(ifea == 0) sbuf[0](is, js, ks) = gs.ex( is*stride, js*stride, ks*stride);
+      if(ifea == 1) sbuf[0](is, js, ks) = gs.ey( is*stride, js*stride, ks*stride);
+      if(ifea == 2) sbuf[0](is, js, ks) = gs.ez( is*stride, js*stride, ks*stride);
 
-      if(ifea == 3) sbuf[0](is, js, ks) = yee.bx( is*stride, js*stride, ks*stride);
-      if(ifea == 4) sbuf[0](is, js, ks) = yee.by( is*stride, js*stride, ks*stride);
-      if(ifea == 5) sbuf[0](is, js, ks) = yee.bz( is*stride, js*stride, ks*stride);
+      if(ifea == 3) sbuf[0](is, js, ks) = gs.bx( is*stride, js*stride, ks*stride);
+      if(ifea == 4) sbuf[0](is, js, ks) = gs.by( is*stride, js*stride, ks*stride);
+      if(ifea == 5) sbuf[0](is, js, ks) = gs.bz( is*stride, js*stride, ks*stride);
     }
 
   } else {
@@ -55,10 +55,10 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
     for(int jstride=0; jstride < stride; jstride++) 
     for(int is=0; is<nxM; is++) 
     for(int istride=0; istride < stride; istride++) {
-      if(ifea == 6) sbuf[0](is, js, ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      if(ifea == 7) sbuf[0](is, js, ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      if(ifea == 8) sbuf[0](is, js, ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      if(ifea == 9) sbuf[0](is, js, ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 6) sbuf[0](is, js, ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 7) sbuf[0](is, js, ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 8) sbuf[0](is, js, ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 9) sbuf[0](is, js, ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
     }
 
   }

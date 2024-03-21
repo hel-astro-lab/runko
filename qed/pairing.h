@@ -1582,7 +1582,7 @@ public:
         //if(D >= 1) i -= mins[0];
         //if(D >= 2) j -= mins[1];
         //if(D >= 3) k -= mins[2];
-        //const size_t ind = yee.ex.indx(i,j,k);
+        //const size_t ind = gs.ex.indx(i,j,k);
           
         //--------------------------------------------------
         // v2; passive fetching; assumes a call has been made to interp before this function
