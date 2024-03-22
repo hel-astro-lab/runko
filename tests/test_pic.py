@@ -1221,7 +1221,7 @@ class PIC(unittest.TestCase):
 
         # loop over different depositers
         for currint in currints:
-            print(currint)
+            #print(currint)
 
             #deposit current
             #print('deposit')
@@ -1523,7 +1523,7 @@ class PIC(unittest.TestCase):
         pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, zero_field)
 
-        print("============================================================")
+        #print("============================================================")
 
         #--------------------------------------------------
         cid    = grid.id(0,0,0)
