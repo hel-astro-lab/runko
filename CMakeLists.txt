@@ -55,8 +55,14 @@ endif()
 
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Flags (debug): ${CMAKE_CXX_FLAGS_DEBUG}")
-message(STATUS "Flags (release): ${CMAKE_CXX_FLAGS_RELEASE}")
+
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+    message(STATUS "Flags (debug): ${CMAKE_CXX_FLAGS_DEBUG}")
+endif()
+
+if(CMAKE_BUILD_TYPE MATCHES "Release")
+    message(STATUS "Flags (release): ${CMAKE_CXX_FLAGS_RELEASE}")
+endif()
 
 
 
@@ -177,7 +183,7 @@ if(DEFINED Python_EXECUTABLE AND NOT DEFINED PYTHON_EXECUTABLE)
   set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
 endif()
 
-message(STATUS "Tests ran with python: ${PYTHON_EXECUTABLE}")
+message(STATUS "Runko tests ran with python: ${PYTHON_EXECUTABLE}")
 
 add_custom_target(check-runko ALL
                   ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
