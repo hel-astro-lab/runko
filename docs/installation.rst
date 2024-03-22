@@ -238,9 +238,9 @@ Next we can proceed to compiling the standard version of the code with all the d
 
    mkdir build
    cd build
-   cmake -DPYTHON_EXECUTABLE=$(which python3) ..
+   cmake ..
 
-And make sure to check that `CMake` finishes successfully. After that, you are ready to compile the framework with
+And check that `CMake` finishes successfully. After that, you are ready to compile the framework with
 
 .. code-block:: bash
 
@@ -252,6 +252,14 @@ When compiling and linking is finished, CMake runs few automated tests to check 
 .. note::
 
     Since the compiling can take quite a while, you can use the multi-core compilation by ``make -j8`` (or whatever number of tasks you want).
+
+Sometimes the tests can fail because the python version is not detected correctly. In this case, you can feed the correct version to the CMake directly via
+
+.. code-block:: bash
+
+   cmake -DPYTHON_EXECUTABLE=$(which python3) ..
+
+which uses the output of ``which python3`` as your default python executable. 
 
 
 

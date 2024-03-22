@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.5)
 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,9 +19,9 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 #--------------------------------------------------
 # debug mode (default for code development)
 
-#set(CMAKE_CXX_FLAGS "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Werror -Wno-error=unknown-pragmas -Wno-error=unused-parameter")
-set(CMAKE_CXX_FLAGS "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
-#set(CMAKE_CXX_FLAGS "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g3 -O2 -march=native -ftree-vectorize")
+set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Werror -Wno-error=unknown-pragmas -Wno-error=unused-parameter")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -DDEBUG -march=native -ftree-vectorize")
 
 
 #--------------------------------------------------
@@ -37,6 +37,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -mtune=native -ftree-vectorize")
 # other compiliation modes
 
 # AddressSanitizer
+#set(CMAKE_CXX_FLAGS "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g3 -O2 -march=native -ftree-vectorize")
 set(CMAKE_CXX_FLAGS_ASAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer -g3 -O2 -march=native -ftree-vectorize")
 
 # LeakSanitizer
@@ -47,9 +48,15 @@ set(CMAKE_CXX_FLAGS_MSAN "-fsanitize=memory -fno-optimize-sibling-calls -fsaniti
 
 #--------------------------------------------------
 
+# we default to Release build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Flags (debug): ${CMAKE_CXX_FLAGS}")
-message(STATUS "Flags RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "Flags (debug): ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "Flags (release): ${CMAKE_CXX_FLAGS_RELEASE}")
 
 
 
@@ -70,6 +77,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # dependencies
 
 include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
+
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 # fmt preinstallation fails with intel compilers
 #FIND_PACKAGE (FMT REQUIRED)
@@ -162,6 +172,13 @@ add_subdirectory(docs)
 
 #-------------------------------------------------- 
 # unit tests
+
+if(DEFINED Python_EXECUTABLE AND NOT DEFINED PYTHON_EXECUTABLE)
+  set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
+endif()
+
+message(STATUS "Tests ran with python: ${PYTHON_EXECUTABLE}")
+
 add_custom_target(check-runko ALL
                   ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
                   DEPENDS pycorgi pyrunko 
