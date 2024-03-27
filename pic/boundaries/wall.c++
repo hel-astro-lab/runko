@@ -1,4 +1,4 @@
-#include "wall.h"
+#include "pic/boundaries/wall.h"
 
 
 

@@ -1,10 +1,11 @@
 #include <iostream>
 #include <cmath>
 #include <cassert>
-#include "multi_phot_ann.h"
-#include "../../tools/vector.h"
-#include "../../tools/sample_arrays.h"
-#include "../../tools/bkn_plaw.h"
+
+#include "qed/interactions/multi_phot_ann.h"
+#include "tools/vector.h"
+#include "tools/sample_arrays.h"
+#include "tools/bkn_plaw.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wunused-parameter"

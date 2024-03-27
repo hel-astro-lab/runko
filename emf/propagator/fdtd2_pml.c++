@@ -1,7 +1,7 @@
-#include "fdtd2_pml.h"
-
 #include <cmath>
-#include "../../tools/iter/iter.h"
+
+#include "emf/propagator/fdtd2_pml.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

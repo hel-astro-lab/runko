@@ -1,11 +1,11 @@
 #include <iostream>
 #include <cmath>
 
-#include "tile.h"
+#include "emf/tile.h"
 
-#include "../tools/has_element.h"
-#include "../tools/iter/iter.h"
-#include "../tools/iter/allocator.h"
+#include "tools/has_element.h"
+#include "tools/iter/iter.h"
+#include "tools/iter/allocator.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

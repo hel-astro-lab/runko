@@ -4,9 +4,9 @@
 #include <cmath> 
 //#include <Eigen/Dense>
 
-#include "../amr/mesh.h"
-#include "../amr/numerics.h"
-#include "../amr/refiner.h"
+#include "vlv/amr/mesh.h"
+#include "vlv/amr/numerics.h"
+#include "vlv/amr/refiner.h"
 
 
 

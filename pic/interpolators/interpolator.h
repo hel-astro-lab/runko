@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../pic/tile.h"
-#include "../../definitions.h"
-#include "../../tools/iter/allocator.h"
+#include "pic/tile.h"
+#include "definitions.h"
+#include "tools/iter/allocator.h"
 
 namespace pic {
 

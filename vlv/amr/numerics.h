@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "../../definitions.h"
-#include "mesh.h"
+#include "definitions.h"
+#include "vlv/amr/mesh.h"
 
 
 

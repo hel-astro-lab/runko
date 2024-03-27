@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interpolator.h"
+#include "pic/interpolators/interpolator.h"
 
 
 namespace pic {

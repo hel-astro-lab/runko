@@ -8,12 +8,11 @@
 #include <iostream>
 #include <string>
 
-#include "../definitions.h"
-
-#include "../tools/iter/dynArray.h"
-#include "../tools/iter/allocator.h"
-#include "../tools/iter/managed_alloc.h"
-#include "../tools/sort.h"
+#include "definitions.h"
+#include "tools/iter/dynArray.h"
+#include "tools/iter/allocator.h"
+#include "tools/iter/managed_alloc.h"
+#include "tools/sort.h"
 
 
 

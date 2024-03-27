@@ -78,6 +78,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ##################################################
 # dependencies
 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ) # include main repository folder so that header links work
+
+
 include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 

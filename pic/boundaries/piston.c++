@@ -1,9 +1,9 @@
-#include "piston.h"
-#include "../../tools/signum.h"
-
 #include <cmath> 
 #include <cassert>
 #include <algorithm>
+
+#include "pic/boundaries/piston.h"
+#include "tools/signum.h"
 
 using std::min;
 using std::max;

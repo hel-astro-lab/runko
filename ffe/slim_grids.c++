@@ -1,5 +1,5 @@
 #include "slim_grids.h"
-#include "../emf/tile.h"
+#include "emf/tile.h"
 
 
 ffe::SlimGrids& 

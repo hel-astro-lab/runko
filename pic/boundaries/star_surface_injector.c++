@@ -1,13 +1,13 @@
-#include "star_surface_injector.h"
-#include "../../emf/boundaries/conductor.h"
-
-#include "../../tools/vector.h"
-#include "../../tools/signum.h"
-
 #include <cmath> 
 #include <cassert>
 #include <string>
 #include <map>
+
+#include "pic/boundaries/star_surface_injector.h"
+#include "emf/boundaries/conductor.h"
+#include "tools/vector.h"
+#include "tools/signum.h"
+
 
 using std::min;
 using std::max;

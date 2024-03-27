@@ -1,6 +1,7 @@
-#include "tile.h"
-#include "communicate.h"
 #include <cmath>
+
+#include "pic/tile.h"
+#include "pic/communicate.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

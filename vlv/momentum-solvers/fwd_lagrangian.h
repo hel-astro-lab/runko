@@ -1,6 +1,6 @@
 #pragma once
 
-#include "amr_momentum_solver.h"
+#include "vlv/momentum-solvers/amr_momentum_solver.h"
 
 
 namespace vlv {

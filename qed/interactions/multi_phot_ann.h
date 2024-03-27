@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interaction.h"
+#include "qed/interactions/interaction.h"
 
 
 namespace qed {

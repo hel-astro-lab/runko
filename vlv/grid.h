@@ -3,8 +3,8 @@
 #include <string>
 #include <memory>
 
-#include "../corgi/corgi.h"
-#include "../tools/deprecated/rotator.h"
+#include "corgi/corgi.h"
+#include "tools/deprecated/rotator.h"
 
 
 

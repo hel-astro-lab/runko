@@ -1,16 +1,16 @@
 #pragma once
 
-#include "../../corgi/corgi.h"
-#include "../../definitions.h"
-#include "../../tools/fastlog.h"
-#include "../../tools/mesh.h"
-#include "../namer.h"
-
 #include <array>
 #include <mpi4cpp/mpi.h>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "corgi/corgi.h"
+#include "definitions.h"
+#include "tools/fastlog.h"
+#include "tools/mesh.h"
+#include "io/namer.h"
 
 
 namespace h5io { 

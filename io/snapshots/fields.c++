@@ -1,8 +1,8 @@
-#include "fields.h"
 #include <mpi4cpp/mpi.h>
 
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../emf/tile.h"
+#include "io/snapshots/fields.h"
+#include "tools/ezh5/src/ezh5.hpp"
+#include "emf/tile.h"
 
 
 using namespace mpi4cpp;

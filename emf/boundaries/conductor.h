@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../emf/tile.h"
-#include "../../definitions.h"
-#include "../../tools/vector.h"
+#include "emf/tile.h"
+#include "definitions.h"
+#include "tools/vector.h"
 
 
 namespace emf {

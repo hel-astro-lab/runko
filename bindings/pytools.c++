@@ -1,11 +1,11 @@
 #include "py_submodules.h"
 #include <pybind11/operators.h>
 
-#include "../definitions.h"
-#include "../tools/mesh.h"
-#include "../vlv/amr/mesh.h"
+#include "definitions.h"
+#include "tools/mesh.h"
+#include "vlv/amr/mesh.h"
 
-#include "../tools/hilbert.h"
+#include "tools/hilbert.h"
 
 #include <exception>
 

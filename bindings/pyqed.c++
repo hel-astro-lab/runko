@@ -5,13 +5,13 @@
 //#include "../qed/photon.h"
 //#include "../qed/tile.h"
 
-#include "../qed/interactions/interaction.h"
-#include "../qed/interactions/pair_ann.h"
-#include "../qed/interactions/phot_ann.h"
-#include "../qed/interactions/compton.h"
-#include "../qed/interactions/synchrotron.h"
-#include "../qed/interactions/multi_phot_ann.h"
-#include "../qed/pairing.h"
+#include "qed/interactions/interaction.h"
+#include "qed/interactions/pair_ann.h"
+#include "qed/interactions/phot_ann.h"
+#include "qed/interactions/compton.h"
+#include "qed/interactions/synchrotron.h"
+#include "qed/interactions/multi_phot_ann.h"
+#include "qed/pairing.h"
 
 
 

@@ -3,7 +3,8 @@
 #include <string>
 #include <tuple>
 #include <random>
-#include "../../definitions.h"
+
+#include "definitions.h"
 
 // TODO turning compiler warnings off temporarily in this file since 
 //      for symmetry, there are lots of unused variables in the qed API

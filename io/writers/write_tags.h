@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../corgi/tags.h"
+#include "corgi/tags.h"
 
 /// I/O Write modes, 
 //

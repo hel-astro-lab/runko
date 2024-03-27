@@ -5,13 +5,13 @@
 #include <vector>
 
 
-#include "../definitions.h"
-#include "../corgi/tile.h"
-#include "amr/mesh.h"
-#include "amr/integrate.h"
-#include "../tools/mesh.h"
-#include "../tools/deprecated/rotator.h"
-#include "../emf/tile.h"
+#include "definitions.h"
+#include "corgi/tile.h"
+#include "vlv/amr/mesh.h"
+#include "vlv/amr/integrate.h"
+#include "tools/mesh.h"
+#include "tools/deprecated/rotator.h"
+#include "emf/tile.h"
 
 //#include "grid.h"
 

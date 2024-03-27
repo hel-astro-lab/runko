@@ -1,8 +1,9 @@
 #include <iostream>
 #include <cmath>
 #include <cassert>
-#include "compton.h"
-#include "../../tools/vector.h"
+
+#include "qed/interactions/compton.h"
+#include "tools/vector.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wunused-parameter"

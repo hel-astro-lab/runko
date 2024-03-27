@@ -1,6 +1,6 @@
 #pragma once
 
-#include "propagator.h"
+#include "emf/propagator/propagator.h"
 
 namespace emf {
 

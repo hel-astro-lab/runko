@@ -1,4 +1,4 @@
-#include "damping_tile.h"
+#include "emf/boundaries/damping_tile.h"
 
 
 using std::exp;

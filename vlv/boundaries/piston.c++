@@ -1,5 +1,5 @@
-#include "piston.h"
-#include "../../definitions.h"
+#include "vlv/boundaries/piston.h"
+#include "definitions.h"
 
 /// Perform phase-space reflection along x-axis
 template<typename T>

@@ -1,11 +1,10 @@
-#include "piston_z.h"
-
 #include <cmath> 
 #include <cassert>
 #include <algorithm>
 
-#include "../../tools/signum.h"
-#include "../../tools/iter/iter.h"
+#include "pic/boundaries/piston_z.h"
+#include "tools/signum.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

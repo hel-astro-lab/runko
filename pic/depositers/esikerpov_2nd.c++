@@ -1,11 +1,10 @@
-#include "esikerpov_2nd.h"
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 
-#include "../shapes.h"
-#include "../../tools/iter/iter.h"
+#include "pic/depositers/esikerpov_2nd.h"
+#include "pic/shapes.h"
+#include "tools/iter/iter.h"
 
 
 #ifdef GPU

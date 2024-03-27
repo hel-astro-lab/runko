@@ -5,10 +5,10 @@
 #include <tuple>
 #include <cassert>
 
-#include "../tile.h"
+#include "emf/tile.h"
 //#include "communicate.h"
 
-#include "../../units.h"
+#include "units.h"
 #include "fftw3.h"
 
 

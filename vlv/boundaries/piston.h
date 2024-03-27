@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../corgi/corgi.h"
-#include "../../vlv/tile.h"
+#include "corgi/corgi.h"
+#include "vlv/tile.h"
 
 
 namespace vlv {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../tile.h"
-#include "../../tools/mesh.h"
-#include "../../definitions.h"
-#include "../../tools/iter/managed_alloc.h"
+#include "definitions.h"
+#include "emf/tile.h"
+#include "tools/mesh.h"
+#include "tools/iter/managed_alloc.h"
 
 
 namespace emf {

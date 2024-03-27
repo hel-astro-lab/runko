@@ -3,7 +3,7 @@
 #include <cassert>
 #include <array>
 
-#include "mesh.h"
+#include "vlv/amr/mesh.h"
 
 
 /// integrate Adaptive Mesh phase space with function Chi(u)

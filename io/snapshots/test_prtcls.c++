@@ -1,9 +1,9 @@
-#include "test_prtcls.h"
-
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../pic/particle.h"
-#include "../../pic/tile.h"
 #include <mpi4cpp/mpi.h>
+
+#include "io/snapshots/test_prtcls.h"
+#include "tools/ezh5/src/ezh5.hpp"
+#include "pic/particle.h"
+#include "pic/tile.h"
 
 using ezh5::File;
 

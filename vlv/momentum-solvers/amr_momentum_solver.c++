@@ -3,8 +3,8 @@
 #include <cmath> 
 //#include <Eigen/Dense>
 
-#include "../../tools/cppitertools/zip.hpp"
-#include "../../definitions.h"
+#include "tools/cppitertools/zip.hpp"
+#include "definitions.h"
 
 //using namespace Eigen;
 using iter::zip;

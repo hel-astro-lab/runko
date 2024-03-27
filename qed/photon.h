@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../pic/particle.h"
+#include "pic/particle.h"
 
 
 namespace qed {

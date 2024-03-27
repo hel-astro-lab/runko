@@ -1,9 +1,9 @@
-#include "rgca.h"
-
 #include <cmath> 
-#include "../../tools/signum.h"
-#include "../../tools/iter/iter.h"
-#include "../../tools/lerp.h"
+
+#include "pic/pushers/rgca.h"
+#include "tools/signum.h"
+#include "tools/iter/iter.h"
+#include "tools/lerp.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

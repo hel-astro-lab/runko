@@ -1,4 +1,4 @@
-#include "reader.h"
+#include "io/readers/reader.h"
 
 // explicit template member instantiation
 template bool h5io::Reader::read( emf::Tile<1>& , ezh5::File& file);

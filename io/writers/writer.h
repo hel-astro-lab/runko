@@ -3,16 +3,14 @@
 #include <vector>
 #include <string>
 
-#include "../namer.h"
+#include "io/namer.h"
 
-#include "../../tools/mesh.h"
-#include "../../emf/tile.h"
-#include "../../vlv/tile.h"
-#include "../../vlv/amr/mesh.h"
-#include "../../pic/tile.h"
-
-#include "../../tools/ezh5/src/ezh5.hpp"
-
+#include "tools/mesh.h"
+#include "emf/tile.h"
+#include "vlv/tile.h"
+#include "vlv/amr/mesh.h"
+#include "pic/tile.h"
+#include "tools/ezh5/src/ezh5.hpp"
 
 
 namespace h5io {

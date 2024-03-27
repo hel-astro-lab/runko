@@ -5,8 +5,8 @@
 #include <stdexcept>
 #include <unordered_set>
 
-#include "mesh.h"
-#include "numerics.h"
+#include "vlv/amr/mesh.h"
+#include "vlv/amr/numerics.h"
 
 
 using std::max_element;

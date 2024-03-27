@@ -5,7 +5,7 @@
 
 #include "slim_grids.h"
 
-#include"../tools/iter/allocator.h"
+#include"tools/iter/allocator.h"
 
 namespace ffe {
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../tile.h"
-#include "../../definitions.h"
-#include "../../tools/iter/allocator.h"
+#include "ffe/tile.h"
+#include "definitions.h"
+#include "tools/iter/allocator.h"
 
 namespace ffe {
 

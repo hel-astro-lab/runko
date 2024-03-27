@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../namer.h"
-#include "../../emf/tile.h"
+#include "io/namer.h"
+#include "emf/tile.h"
 
 
 /// Write PlasmaTile content into a hdf5 data group

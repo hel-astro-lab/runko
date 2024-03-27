@@ -3,9 +3,9 @@
 #include <string>
 #include <omp.h>
 
-#include "../io/writer.h"
-#include "../io/reader.h"
-#include "../io/write_tags.h"
+#include "io/writer.h"
+#include "io/reader.h"
+#include "io/write_tags.h"
 
 
 

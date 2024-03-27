@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../amr/mesh.h"
-#include "../tile.h"
-#include "../../tools/vector.h"
+#include "vlv/amr/mesh.h"
+#include "vlv/tile.h"
+#include "tools/vector.h"
 
 //#include <Eigen/Dense>
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../tile.h"
-#include "../../definitions.h"
+#include "ffe/tile.h"
+#include "definitions.h"
 
 namespace ffe {
 

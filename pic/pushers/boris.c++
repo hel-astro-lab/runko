@@ -1,8 +1,8 @@
-#include "boris.h"
-
 #include <cmath> 
-#include "../../tools/signum.h"
-#include "../../tools/iter/iter.h"
+
+#include "pic/pushers/boris.h"
+#include "tools/signum.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

@@ -1,8 +1,8 @@
-#include "driftcurrent.h"
-#include "../../emf/tile.h"
-#include "../../tools/signum.h"
-
 #include <cmath>
+
+#include "ffe/currents/driftcurrent.h"
+#include "emf/tile.h"
+#include "tools/signum.h"
 
 #include <nvtx3/nvToolsExt.h> 
 

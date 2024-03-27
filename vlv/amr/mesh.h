@@ -11,7 +11,7 @@
 //#include "../../tools/sparsepp/sparsepp/spp.h"
 
 // #include "reversed_iterator.h"
-#include "../../definitions.h"
+#include "definitions.h"
 
 /// super ugly hack to get optimized 1V / 3V switch
 //#define THREEVHACK

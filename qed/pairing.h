@@ -9,13 +9,13 @@
 #include <functional>
 #include <cmath>
 
-#include "../definitions.h"
-#include "../pic/tile.h"
-#include "../tools/sample_arrays.h"
-#include "../tools/linlogspace.h"
+#include "definitions.h"
+#include "pic/tile.h"
+#include "tools/sample_arrays.h"
+#include "tools/linlogspace.h"
 
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
-#include "../tools/timer/timer.h"
+#include "tools/timer/timer.h"
 
 
 // TODO turning compiler warnings off temporarily in this file since 
@@ -27,7 +27,7 @@
 #pragma GCC diagnostic warning "-Wunused-but-set-variable"
 #pragma GCC diagnostic warning "-Warray-bounds"
 
-#include "interactions/interaction.h"
+#include "qed/interactions/interaction.h"
 
 
 

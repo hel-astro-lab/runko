@@ -4,8 +4,8 @@
 
 #include <omp.h>
 
-#include "momentum-solvers/amr_momentum_solver.h"
-#include "spatial-solvers/amr_spatial_solver.h"
+#include "vlv/momentum-solvers/amr_momentum_solver.h"
+#include "vlv/spatial-solvers/amr_spatial_solver.h"
 
 namespace vlv{
 

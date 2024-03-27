@@ -2,7 +2,7 @@
 #include <tuple>
 #include <string>
 
-#include "../corgi/tile.h"
+#include "corgi/tile.h"
 
 
 namespace h5io {

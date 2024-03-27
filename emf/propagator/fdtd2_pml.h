@@ -1,7 +1,8 @@
 #pragma once
 
-#include "propagator.h"
-#include "../../ffe/tile.h"
+#include "emf/propagator/propagator.h"
+#include "emf/tile.h"
+#include "ffe/tile.h"
 
 namespace emf {
 

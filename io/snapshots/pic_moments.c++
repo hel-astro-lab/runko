@@ -1,11 +1,11 @@
 #include <cmath>
 
-#include "pic_moments.h"
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../pic/particle.h"
-#include "../../pic/tile.h"
-#include "../../tools/signum.h"
-#include "../../tools/limit.h"
+#include "io/snapshots/pic_moments.h"
+#include "tools/ezh5/src/ezh5.hpp"
+#include "pic/particle.h"
+#include "pic/tile.h"
+#include "tools/signum.h"
+#include "tools/limit.h"
 
 // TODO turning compiler warnings off temporarily in this file since 
 //      error printing in debug mode accesses mins/maxs outside boundaries

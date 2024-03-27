@@ -1,18 +1,16 @@
-#include "zigzag.h"
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 
-using std::min;
-using std::max;
-
-#include "../../tools/iter/iter.h"
+#include "pic/depositers/zigzag.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 
 #endif
 
+using std::min;
+using std::max;
 
 template<size_t D, size_t V>
 void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )

@@ -2,13 +2,11 @@
 
 #include <cmath> 
 #include <cassert>
-
-#include "tile.h"
-#include "../emf/tile.h"
-
-#include "../tools/signum.h"
-
 #include <iostream>
+
+#include "pic/tile.h"
+#include "emf/tile.h"
+#include "tools/signum.h"
 
 
 using toolbox::sign;

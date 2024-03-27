@@ -3,36 +3,36 @@
 
 #include "py_submodules.h"
 
-#include "../corgi/internals.h"
+#include "corgi/internals.h"
 
-#include "../definitions.h"
-#include "../tools/mesh.h"
+#include "definitions.h"
+#include "tools/mesh.h"
 
-#include "../emf/tile.h"
+#include "emf/tile.h"
 
-#include "../emf/propagator/propagator.h"
-#include "../emf/propagator/fdtd2.h"
-#include "../emf/propagator/fdtd2_pml.h"
-#include "../emf/propagator/fdtd4.h"
-#include "../emf/propagator/fdtd_general.h"
+#include "emf/propagator/propagator.h"
+#include "emf/propagator/fdtd2.h"
+#include "emf/propagator/fdtd2_pml.h"
+#include "emf/propagator/fdtd4.h"
+#include "emf/propagator/fdtd_general.h"
 
-#include "../emf/filters/filter.h"
-#include "../emf/filters/binomial2.h"
-#include "../emf/filters/compensator.h"
-#include "../emf/filters/strided_binomial.h"
-#include "../emf/filters/general_binomial.h"
-#include "../emf/filters/sweeping_binomial.h"
+#include "emf/filters/filter.h"
+#include "emf/filters/binomial2.h"
+#include "emf/filters/compensator.h"
+#include "emf/filters/strided_binomial.h"
+#include "emf/filters/general_binomial.h"
+#include "emf/filters/sweeping_binomial.h"
 
 
-#include "../emf/boundaries/damping_tile.h"
-#include "../emf/boundaries/conductor.h"
+#include "emf/boundaries/damping_tile.h"
+#include "emf/boundaries/conductor.h"
 
-#include "../io/writers/writer.h"
-#include "../io/writers/fields.h"
-#include "../io/snapshots/fields.h"
-#include "../io/snapshots/master_only_fields.h"
-#include "../io/snapshots/field_slices.h"
-#include "../io/tasker.h"
+#include "io/writers/writer.h"
+#include "io/writers/fields.h"
+#include "io/snapshots/fields.h"
+#include "io/snapshots/master_only_fields.h"
+#include "io/snapshots/field_slices.h"
+#include "io/tasker.h"
 
 
 //--------------------------------------------------

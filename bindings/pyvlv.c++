@@ -1,27 +1,26 @@
 #include "py_submodules.h"
 
 
-#include "../definitions.h"
-//#include "../tools/mesh.h"
+#include "definitions.h"
 
 
 //--------------------------------------------------
 // Vlasov module
   
-#include "../vlv/tile.h"
-#include "../emf/tile.h"
-#include "../emf/boundaries/damping_tile.h"
-#include "../vlv/amr/mesh.h"
-#include "../vlv/amr/refiner.h"
-#include "../vlv/amr/operators.h"
-#include "../vlv/momentum-solvers/amr_momentum_solver.h"
-#include "../vlv/momentum-solvers/bwd_lagrangian.h"
-#include "../vlv/momentum-solvers/bwd_lagrangian_gravity.h"
-#include "../vlv/spatial-solvers/amr_spatial_solver.h"
-#include "../vlv/tasker.h"
-#include "../io/tasker.h"
-#include "../vlv/boundaries/outflow.h"
-#include "../vlv/boundaries/piston.h"
+#include "vlv/tile.h"
+#include "emf/tile.h"
+#include "emf/boundaries/damping_tile.h"
+#include "vlv/amr/mesh.h"
+#include "vlv/amr/refiner.h"
+#include "vlv/amr/operators.h"
+#include "vlv/momentum-solvers/amr_momentum_solver.h"
+#include "vlv/momentum-solvers/bwd_lagrangian.h"
+#include "vlv/momentum-solvers/bwd_lagrangian_gravity.h"
+#include "vlv/spatial-solvers/amr_spatial_solver.h"
+#include "vlv/tasker.h"
+#include "io/tasker.h"
+#include "vlv/boundaries/outflow.h"
+#include "vlv/boundaries/piston.h"
 
 
 namespace vlv {

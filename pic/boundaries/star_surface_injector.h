@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../../emf/boundaries/conductor.h"
-#include "../tile.h"
 #include <random>
 
+#include "emf/boundaries/conductor.h"
+#include "pic/tile.h"
 
 namespace pic {
 

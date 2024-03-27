@@ -1,9 +1,8 @@
-#include "linear_1st.h"
-
 #include <cmath> 
 #include <cassert>
 
-#include "../../tools/iter/iter.h"
+#include "pic/interpolators/linear_1st.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

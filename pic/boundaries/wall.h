@@ -3,8 +3,8 @@
 #include <array>
 #include <vector>
 
-#include "../../pic/tile.h"
-#include "../../emf/boundaries/damping_tile.h"
+#include "pic/tile.h"
+#include "emf/boundaries/damping_tile.h"
 
 
 namespace pic {

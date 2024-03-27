@@ -3,9 +3,9 @@
 #include <array>
 #include <vector>
 
-#include "../tools/mesh.h"
-#include "../definitions.h"
-#include "../emf/tile.h"
+#include "tools/mesh.h"
+#include "definitions.h"
+#include "emf/tile.h"
 
 
 namespace ffe {

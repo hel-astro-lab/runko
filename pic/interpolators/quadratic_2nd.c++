@@ -1,10 +1,9 @@
-#include "quadratic_2nd.h"
-
 #include <cmath> 
 #include <cassert>
 
-#include "../shapes.h"
-#include "../../tools/iter/iter.h"
+#include "pic/interpolators/quadratic_2nd.h"
+#include "pic/shapes.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

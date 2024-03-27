@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../namer.h"
-#include "../../vlv/tile.h"
-#include "../../vlv/amr/mesh.h"
+#include "io/namer.h"
+#include "vlv/tile.h"
+#include "vlv/amr/mesh.h"
 
 /// Write vlv::Tile 
 template<size_t D>

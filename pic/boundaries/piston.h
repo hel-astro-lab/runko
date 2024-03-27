@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../pic/tile.h"
-#include "../../definitions.h"
+#include "pic/tile.h"
+#include "definitions.h"
 
 namespace pic {
 

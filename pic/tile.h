@@ -3,12 +3,12 @@
 #include <array>
 #include <mpi4cpp/mpi.h>
 
-#include "../definitions.h"
-#include "../corgi/tile.h"
-#include "../corgi/corgi.h"
-#include "../emf/tile.h"
-#include "particle.h"
-#include"../tools/iter/allocator.h"
+#include "definitions.h"
+#include "corgi/tile.h"
+#include "corgi/corgi.h"
+#include "emf/tile.h"
+#include "pic/particle.h"
+#include "tools/iter/allocator.h"
 
 
 namespace pic {

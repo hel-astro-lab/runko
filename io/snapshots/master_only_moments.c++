@@ -1,11 +1,11 @@
-#include "master_only_moments.h"
 #include <mpi4cpp/mpi.h>
 
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../pic/particle.h"
-#include "../../pic/tile.h"
-#include "../../tools/signum.h"
-#include "../../tools/limit.h"
+#include "io/snapshots/master_only_moments.h"
+#include "tools/ezh5/src/ezh5.hpp"
+#include "pic/particle.h"
+#include "pic/tile.h"
+#include "tools/signum.h"
+#include "tools/limit.h"
 
 
 using namespace mpi4cpp;

@@ -1,8 +1,8 @@
-#include "photon.h"
-
 #include <cmath> 
-#include "../../tools/signum.h"
-#include "../../tools/iter/iter.h"
+
+#include "pic/pushers/photon.h"
+#include "tools/signum.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

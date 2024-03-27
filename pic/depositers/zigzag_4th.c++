@@ -1,12 +1,10 @@
-#include "zigzag_4th.h"
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 
-#include "../shapes.h"
-#include "../../tools/iter/iter.h"
-
+#include "pic/depositers/zigzag_4th.h"
+#include "pic/shapes.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

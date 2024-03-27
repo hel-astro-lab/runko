@@ -1,10 +1,9 @@
-#include "cubic_3rd.h"
-
 #include <cmath> 
 #include <cassert>
 
-#include "../shapes.h"
-#include "../../tools/iter/iter.h"
+#include "pic/interpolators/cubic_3rd.h"
+#include "pic/shapes.h"
+#include "tools/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

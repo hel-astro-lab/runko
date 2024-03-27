@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "../namer.h"
-#include "../../pic/tile.h"
+#include "io/namer.h"
+#include "pic/tile.h"
 
 
 template<size_t D>

@@ -1,5 +1,5 @@
-#include "conductor.h"
-#include "../../tools/vector.h"
+#include "emf/boundaries/conductor.h"
+#include "tools/vector.h"
 
 #include <cmath> 
 #include <cassert>

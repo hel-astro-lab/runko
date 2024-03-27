@@ -4,13 +4,11 @@
 #include <utility>
 #include <vector>
 
-#include "../../emf/tile.h"
-#include "../../pic/tile.h"
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../vlv/tile.h"
-
-#include "../namer.h"
-
+#include "io/namer.h"
+#include "emf/tile.h"
+#include "pic/tile.h"
+#include "vlv/tile.h"
+#include "tools/ezh5/src/ezh5.hpp"
 
 namespace h5io {
 

@@ -1,8 +1,9 @@
-#include "ffe2.h"
-#include "../../tools/signum.h"
-#include "../../emf/tile.h"
-
 #include <cmath>
+
+#include "ffe/currents/ffe2.h"
+#include "tools/signum.h"
+#include "emf/tile.h"
+
 
 
 // general trilinear interpolation
