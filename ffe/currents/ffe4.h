@@ -15,38 +15,38 @@ class FFE4
   int Ny;
   int Nz;
 
-  float_m eta = 1.0e-3; //resistivity for diffusion
-  float_m reltime = 1.0; // e.b relaxation time (in units of dt)
+  float eta = 1.0e-3; //resistivity for diffusion
+  float reltime = 1.0; // e.b relaxation time (in units of dt)
 
 
   /// interpolated arrays
-  toolbox::Mesh<float_m, 0> bxf;
-  toolbox::Mesh<float_m, 0> byf;
-  toolbox::Mesh<float_m, 0> bzf;
+  toolbox::Mesh<float, 0> bxf;
+  toolbox::Mesh<float, 0> byf;
+  toolbox::Mesh<float, 0> bzf;
 
-  toolbox::Mesh<float_m, 0> exf;
-  toolbox::Mesh<float_m, 0> eyf;
-  toolbox::Mesh<float_m, 0> ezf;
+  toolbox::Mesh<float, 0> exf;
+  toolbox::Mesh<float, 0> eyf;
+  toolbox::Mesh<float, 0> ezf;
 
-  toolbox::Mesh<float_m, 0> rhf;
-
-  // extra arrays for jpar step
-  toolbox::Mesh<float_m, 3> curlex;
-  toolbox::Mesh<float_m, 3> curley;
-  toolbox::Mesh<float_m, 3> curlez;
-
-  toolbox::Mesh<float_m, 3> curlbx;
-  toolbox::Mesh<float_m, 3> curlby;
-  toolbox::Mesh<float_m, 3> curlbz;
+  toolbox::Mesh<float, 0> rhf;
 
   // extra arrays for jpar step
-  toolbox::Mesh<float_m, 0> curlexf;
-  toolbox::Mesh<float_m, 0> curleyf;
-  toolbox::Mesh<float_m, 0> curlezf;
+  toolbox::Mesh<float, 3> curlex;
+  toolbox::Mesh<float, 3> curley;
+  toolbox::Mesh<float, 3> curlez;
+
+  toolbox::Mesh<float, 3> curlbx;
+  toolbox::Mesh<float, 3> curlby;
+  toolbox::Mesh<float, 3> curlbz;
+
+  // extra arrays for jpar step
+  toolbox::Mesh<float, 0> curlexf;
+  toolbox::Mesh<float, 0> curleyf;
+  toolbox::Mesh<float, 0> curlezf;
                              
-  toolbox::Mesh<float_m, 0> curlbxf;
-  toolbox::Mesh<float_m, 0> curlbyf;
-  toolbox::Mesh<float_m, 0> curlbzf;
+  toolbox::Mesh<float, 0> curlbxf;
+  toolbox::Mesh<float, 0> curlbyf;
+  toolbox::Mesh<float, 0> curlbzf;
 
 
   FFE4(int Nx, int Ny, int Nz) :
@@ -76,8 +76,8 @@ class FFE4
 
   // interpolation routine
   void interpolate( 
-        toolbox::Mesh<float_m,3>& f,
-        toolbox::Mesh<float_m,0>& fi,
+        toolbox::Mesh<float,3>& f,
+        toolbox::Mesh<float,0>& fi,
         const std::array<int,D>& in,
         const std::array<int,D>& out
       );

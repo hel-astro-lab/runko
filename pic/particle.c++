@@ -146,9 +146,9 @@ std::pair<int,int> pic::ParticleContainer<D>::keygen()
 
 template<std::size_t D>
 void ParticleContainer<D>::add_particle (
-    std::vector<float_p> prtcl_loc,
-    std::vector<float_p> prtcl_vel,
-    float_p prtcl_wgt)
+    std::vector<float> prtcl_loc,
+    std::vector<float> prtcl_vel,
+    float prtcl_wgt)
 {
 
   assert(prtcl_loc.size() == 3);
@@ -169,9 +169,9 @@ void ParticleContainer<D>::add_particle (
 
 template<std::size_t D>
 void ParticleContainer<D>::add_identified_particle (
-    std::vector<float_p> prtcl_loc,
-    std::vector<float_p> prtcl_vel,
-    float_p prtcl_wgt,
+    std::vector<float> prtcl_loc,
+    std::vector<float> prtcl_vel,
+    float prtcl_wgt,
     int _id, int _proc)
 {
 
@@ -218,8 +218,8 @@ void ParticleContainer<1>::check_outgoing_particles(
   for(size_t n=0; n<size(); n++) {
     int i=0,j=0,k=0; // relative indices
     
-    if( loc(0,n) - float_p( mins[0] ) <  0.0 ) i--; // left wrap
-    if( loc(0,n) - float_p( maxs[0] ) >= 0.0 ) i++; // right wrap
+    if( loc(0,n) - float( mins[0] ) <  0.0 ) i--; // left wrap
+    if( loc(0,n) - float( maxs[0] ) >= 0.0 ) i++; // right wrap
     
     if( i != 0 ) to_other_tiles.push_back( {i,j,k,n} );
   } 
@@ -258,7 +258,7 @@ void ParticleContainer<2>::check_outgoing_particles(
   int i0, j0;
 
   // shortcut for particle locations
-  float_p* locn[3];
+  float* locn[3];
   for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
   int i,j,k; // relative indices
@@ -373,7 +373,7 @@ std::array<double,3>& maxs)
 #ifdef GPU
 
   // shortcut for particle locations
-  float_p* locn[3];
+  float* locn[3];
   for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
 
   particleIndexesA.resize(size());
@@ -432,31 +432,31 @@ std::array<double,3>& maxs)
   for(size_t n=0; n<size(); n++) {
     int i=0,j=0,k=0; // relative indices
     
-    if( loc(0,n) - float_p( mins[0] ) <  0.0 ) i--; // left wrap
-    if( loc(0,n) - float_p( maxs[0] ) >= 0.0 ) i++; // right wrap
-    if( loc(1,n) - float_p( mins[1] ) <  0.0 ) j--; // bottom wrap
-    if( loc(1,n) - float_p( maxs[1] ) >= 0.0 ) j++; // top wrap
-    if( loc(2,n) - float_p( mins[2] ) <  0.0 ) k--; // back wrap
-    if( loc(2,n) - float_p( maxs[2] ) >= 0.0 ) k++; // front wrap
+    if( loc(0,n) - float( mins[0] ) <  0.0 ) i--; // left wrap
+    if( loc(0,n) - float( maxs[0] ) >= 0.0 ) i++; // right wrap
+    if( loc(1,n) - float( mins[1] ) <  0.0 ) j--; // bottom wrap
+    if( loc(1,n) - float( maxs[1] ) >= 0.0 ) j++; // top wrap
+    if( loc(2,n) - float( mins[2] ) <  0.0 ) k--; // back wrap
+    if( loc(2,n) - float( maxs[2] ) >= 0.0 ) k++; // front wrap
     
     // ver2
-    //if( loc(0,n) <  float_p( mins[0] ) ) i--; // left wrap
-    //if( loc(0,n) >= float_p( maxs[0] ) ) i++; // right wrap
-    //if( loc(1,n) <  float_p( mins[1] ) ) j--; // bottom wrap
-    //if( loc(1,n) >= float_p( maxs[1] ) ) j++; // top wrap
-    //if( loc(2,n) <  float_p( mins[2] ) ) k--; // back wrap
-    //if( loc(2,n) >= float_p( maxs[2] ) ) k++; // front wrap
+    //if( loc(0,n) <  float( mins[0] ) ) i--; // left wrap
+    //if( loc(0,n) >= float( maxs[0] ) ) i++; // right wrap
+    //if( loc(1,n) <  float( mins[1] ) ) j--; // bottom wrap
+    //if( loc(1,n) >= float( maxs[1] ) ) j++; // top wrap
+    //if( loc(2,n) <  float( mins[2] ) ) k--; // back wrap
+    //if( loc(2,n) >= float( maxs[2] ) ) k++; // front wrap
     
     // tests for outflowing prtcls. 
     // NOTE fiddling w/ prtcl velocities in pusher might change velocities so
     // that current deposit overflows over tile boundaries.
     //bool outflow = false;
-    //if( loc(0,n) - float_p( mins[0] ) < -2.0 ) outflow = true; // left wrap
-    //if( loc(0,n) - float_p( maxs[0] ) >= 2.0 ) outflow = true; // right wrap
-    //if( loc(1,n) - float_p( mins[1] ) < -2.0 ) outflow = true; // bottom wrap
-    //if( loc(1,n) - float_p( maxs[1] ) >= 2.0 ) outflow = true; // top wrap
-    //if( loc(2,n) - float_p( mins[2] ) < -2.0 ) outflow = true; // back wrap
-    //if( loc(2,n) - float_p( maxs[2] ) >= 2.0 ) outflow = true; // front wrap
+    //if( loc(0,n) - float( mins[0] ) < -2.0 ) outflow = true; // left wrap
+    //if( loc(0,n) - float( maxs[0] ) >= 2.0 ) outflow = true; // right wrap
+    //if( loc(1,n) - float( mins[1] ) < -2.0 ) outflow = true; // bottom wrap
+    //if( loc(1,n) - float( maxs[1] ) >= 2.0 ) outflow = true; // top wrap
+    //if( loc(2,n) - float( mins[2] ) < -2.0 ) outflow = true; // back wrap
+    //if( loc(2,n) - float( maxs[2] ) >= 2.0 ) outflow = true; // front wrap
     
     //if( outflow ){
     //  std::cout << " ERROR outflow " <<  
@@ -464,11 +464,11 @@ std::array<double,3>& maxs)
     //    loc(0,n) << " " << 
     //    loc(1,n) << " " << 
     //    loc(2,n) << " " << 
-    //    loc(0,n) - float_p(mins[0]) << " " << 
-    //    loc(1,n) - float_p(mins[0]) << " " << 
-    //    loc(2,n) - float_p(mins[0]) << " " << 
-    //    " mins:" << float_p(mins[0]) << " " << float_p(mins[1]) << " " << float_p(mins[2]) << 
-    //    " maxs:" << float_p(maxs[0]) << " " << float_p(maxs[1]) << " " << float_p(maxs[2]) << 
+    //    loc(0,n) - float(mins[0]) << " " << 
+    //    loc(1,n) - float(mins[0]) << " " << 
+    //    loc(2,n) - float(mins[0]) << " " << 
+    //    " mins:" << float(mins[0]) << " " << float(mins[1]) << " " << float(mins[2]) << 
+    //    " maxs:" << float(maxs[0]) << " " << float(maxs[1]) << " " << float(maxs[2]) << 
     //    std::endl;
     //    
     //  assert(!outflow);
@@ -493,12 +493,12 @@ std::array<double,3>& maxs)
 //--------------------------------------------------
 
 template<size_t D>
-inline DEVCALLABLE float_p ParticleContainer<D>::get_prtcl_ene(size_t n)
+inline DEVCALLABLE float ParticleContainer<D>::get_prtcl_ene(size_t n)
 {
 
-  //const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+  //const float mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
 
-  const float_p mass = m; // read mass from class
+  const float mass = m; // read mass from class
   return std::sqrt( 
     mass*mass + 
     vel(0,n)*vel(0,n) + 
@@ -517,10 +517,10 @@ void ParticleContainer<D>::sort_in_rev_energy()
 
   //--------------------------------------------------
   // energy array for sorting
-  //const float_p mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+  //const float mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
   
   // construct energy array
-  //std::vector<float_p> eneArr( size() );  
+  //std::vector<float> eneArr( size() );  
   
   eneArr.resize( size() ); // NOTE: do not create here but assume that it is initialized in constructor
                              
@@ -557,10 +557,10 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
 
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
   
-  float_p* locn[3];
+  float* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
   
-  float_p* veln[3];
+  float* veln[3];
   for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
   
   int* idn[2];
@@ -635,10 +635,10 @@ void ParticleContainer<D>::delete_transferred_particles()
   //--------------------------------------------------
   
 
-  float_p* locn[3];
+  float* locn[3];
   for(int i=0; i<3; i++) locn[i] = &( loc(i,0) );
   
-  float_p* veln[3];
+  float* veln[3];
   for(int i=0; i<3; i++) veln[i] = &( vel(i,0) );
   
   int* idn[2];
@@ -705,7 +705,7 @@ void ParticleContainer<1>::transfer_and_wrap_particles(
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
-  float_p locx, locy, locz, velx, vely, velz, wgt;
+  float locx, locy, locz, velx, vely, velz, wgt;
   int id, proc;
 
   int i;
@@ -723,9 +723,9 @@ void ParticleContainer<1>::transfer_and_wrap_particles(
       i = elem.n;
 
       // NOTE: wrap bounds to [min, max)
-      locx = wrap( neigh.loc(0, i), static_cast<float_p>(global_mins[0]), static_cast<float_p>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
+      locx = wrap( neigh.loc(0, i), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
 
       velx = neigh.vel(0, i);
       vely = neigh.vel(1, i);
@@ -763,7 +763,7 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
-  float_p locx, locy, locz, velx, vely, velz, wgt;
+  float locx, locy, locz, velx, vely, velz, wgt;
   int id, proc;
 
   int i;
@@ -783,9 +783,9 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
       i = elem.n;
 
       // NOTE: wrap bounds to [min, max)
-      locx = wrap( neigh.loc(0, i), static_cast<float_p>(global_mins[0]), static_cast<float_p>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
+      locx = wrap( neigh.loc(0, i), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, i), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, i), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
 
       velx = neigh.vel(0, i);
       vely = neigh.vel(1, i);
@@ -822,7 +822,7 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
-  float_p locx, locy, locz;
+  float locx, locy, locz;
 
   int ind;
   //  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
@@ -843,9 +843,9 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
 
       ind = elem.n;
 
-      locx = wrap( neigh.loc(0, ind), static_cast<float_p>(global_mins[0]), static_cast<float_p>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, ind), static_cast<float_p>(global_mins[1]), static_cast<float_p>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, ind), static_cast<float_p>(global_mins[2]), static_cast<float_p>(global_maxs[2]) );
+      locx = wrap( neigh.loc(0, ind), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
+      locy = wrap( neigh.loc(1, ind), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
+      locz = wrap( neigh.loc(2, ind), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
 
       add_identified_particle(
           {locx, locy, locz}, 
@@ -997,7 +997,7 @@ void ParticleContainer<D>::unpack_incoming_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  float_p locx, locy, locz, velx, vely, velz, wgts;
+  float locx, locy, locz, velx, vely, velz, wgts;
   int ids, proc;
 
   // get real number of incoming particles
@@ -1119,7 +1119,7 @@ void ParticleContainer<D>::update_cumulative_arrays()
   wgtCumArr.resize(N); 
 
   // sum over wgt
-  float_p wsum = 0.0;
+  float wsum = 0.0;
 
   #pragma omp simd reduction(+:wsum)
   for(size_t i=0; i<N; i++) {

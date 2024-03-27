@@ -8,28 +8,28 @@
 #endif
 
 
-inline float_m Dm_x( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
+inline float Dm_x( toolbox::Mesh<float, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
     return f(i+ai-1, j+bj, k+bk) -f(i-ai, j+bj, k+bk);
 }
 
-inline float_m Dm_y( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
+inline float Dm_y( toolbox::Mesh<float, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
     return f(i+bi, j+ai-1, k+bk) -f(i+bi, j-ai, k+bk);
 }
 
-inline float_m Dm_z( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
+inline float Dm_z( toolbox::Mesh<float, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
     return f(i+bi, j+bj, k+ai-1) -f(i+bi, j+bj, k-ai);
 }
 
 //-------------------------------------------------- 
-inline float_m Dp_x( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
+inline float Dp_x( toolbox::Mesh<float, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
     return f(i+ai, j+bj, k+bk) - f(i-ai+1, j+bj, k+bk);
 }
 
-inline float_m Dp_y( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
+inline float Dp_y( toolbox::Mesh<float, 3>& f, int i, int j, int k, int ai, int bi, int /*bj*/, int bk) {
     return f(i+bi, j+ai, k+bk) - f(i+bi, j-ai+1, k+bk);
 }
 
-inline float_m Dp_z( toolbox::Mesh<float_m, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
+inline float Dp_z( toolbox::Mesh<float, 3>& f, int i, int j, int k, int ai, int bi, int bj, int /*bk*/) {
     return f(i+bi, j+bj, k+ai) - f(i+bi, j+bj, k-ai+1);
 }
 
@@ -56,9 +56,9 @@ void emf::FDTDGen<3>::push_e(emf::Tile<3>& tile)
 
     // dE/dt = +curlB
     for(int ai=1; ai<=3; ai++) { //alphas
-      const float_m Cx = CXs(ai, 0, 0)*corr*tile.cfl;
-      const float_m Cy = CYs(0, ai, 0)*corr*tile.cfl;
-      const float_m Cz = CZs(0,  0,ai)*corr*tile.cfl;
+      const float Cx = CXs(ai, 0, 0)*corr*tile.cfl;
+      const float Cy = CYs(0, ai, 0)*corr*tile.cfl;
+      const float Cz = CZs(0,  0,ai)*corr*tile.cfl;
 
       //legs with 0-offset
       mesh.ex(i,j,k) += +Cy*Dm_y(mesh.bz,i,j,k, ai, 0,0,0); 
@@ -73,9 +73,9 @@ void emf::FDTDGen<3>::push_e(emf::Tile<3>& tile)
       for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
           // hand-coded beta fetching from array
-          const float_m Cx2 = CXs(ai, 1, 1)*corr*tile.cfl;
-          const float_m Cy2 = CYs(1, ai, 1)*corr*tile.cfl;
-          const float_m Cz2 = CZs(1,  1,ai)*corr*tile.cfl;
+          const float Cx2 = CXs(ai, 1, 1)*corr*tile.cfl;
+          const float Cy2 = CYs(1, ai, 1)*corr*tile.cfl;
+          const float Cz2 = CZs(1,  1,ai)*corr*tile.cfl;
 
           // curl_x
           mesh.ex(i,j,k) += +Cy2*Dm_y(mesh.bz,i,j,k, ai, bi,0,0); //beta_yx
@@ -133,9 +133,9 @@ void emf::FDTDGen<3>::push_half_b(emf::Tile<3>& tile)
   {
     // dB/dt = -curlE
     for(int ai=1; ai<=3; ai++) { //alphas
-      const float_m Cx = 0.5*CXs(ai, 0, 0)*corr*tile.cfl;
-      const float_m Cy = 0.5*CYs(0, ai, 0)*corr*tile.cfl;
-      const float_m Cz = 0.5*CZs(0,  0,ai)*corr*tile.cfl;
+      const float Cx = 0.5*CXs(ai, 0, 0)*corr*tile.cfl;
+      const float Cy = 0.5*CYs(0, ai, 0)*corr*tile.cfl;
+      const float Cz = 0.5*CZs(0,  0,ai)*corr*tile.cfl;
 
       //legs with 0-offset
       mesh.bx(i,j,k) -= +Cy*Dp_y(mesh.ez,i,j,k, ai, 0,0,0); 
@@ -153,9 +153,9 @@ void emf::FDTDGen<3>::push_half_b(emf::Tile<3>& tile)
       for(int bi : {-3,-2,-1,+1,+2,+3}) {
 
         // hand-coded beta fetching from array
-        const float_m Cx2 = 0.5*CXs(ai, 1, 1)*corr*tile.cfl;
-        const float_m Cy2 = 0.5*CYs(1, ai, 1)*corr*tile.cfl;
-        const float_m Cz2 = 0.5*CZs(1,  1,ai)*corr*tile.cfl;
+        const float Cx2 = 0.5*CXs(ai, 1, 1)*corr*tile.cfl;
+        const float Cy2 = 0.5*CYs(1, ai, 1)*corr*tile.cfl;
+        const float Cz2 = 0.5*CZs(1,  1,ai)*corr*tile.cfl;
 
         // curl_x
         mesh.bx(i,j,k) -= +Cy2*Dp_y(mesh.ez,i,j,k, ai, bi,0,0); //beta_yx

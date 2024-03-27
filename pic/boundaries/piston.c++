@@ -206,13 +206,13 @@ void pic::Piston<D>::solve(
             -q);
 
         // lastly; store particle back to the container
-        container.loc(0,n) = static_cast<float_p>( xnew );
-        container.loc(1,n) = static_cast<float_p>( ynew );
-        container.loc(2,n) = static_cast<float_p>( znew );
+        container.loc(0,n) = static_cast<float>( xnew );
+        container.loc(1,n) = static_cast<float>( ynew );
+        container.loc(2,n) = static_cast<float>( znew );
 
-        container.vel(0,n) = static_cast<float_p>( u1 );
-        //container.vel(1,n) = static_cast<float_p>( v1 );
-        //container.vel(2,n) = static_cast<float_p>( w1 );
+        container.vel(0,n) = static_cast<float>( u1 );
+        //container.vel(1,n) = static_cast<float>( v1 );
+        //container.vel(2,n) = static_cast<float>( w1 );
       }
     }
 

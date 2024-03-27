@@ -152,6 +152,6 @@ void vlv::MomentumSolver<T,D,V>::solve( vlv::Tile<D>& tile, T step_size)
 
 //--------------------------------------------------
 // explicit template instantiation
-template class vlv::MomentumSolver<float_m, 1, 1>;
+template class vlv::MomentumSolver<float, 1, 1>;
 
 

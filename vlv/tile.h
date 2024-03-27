@@ -35,7 +35,7 @@ inline T gamma(std::array<T,V>& uvel)
 * Container to hold a plasma species block
 */
 class PlasmaBlock {
-  using T = toolbox::Mesh< toolbox::AdaptiveMesh<float_m,3>, 3>;
+  using T = toolbox::Mesh< toolbox::AdaptiveMesh<float,3>, 3>;
 
   public:
 
@@ -52,7 +52,7 @@ class PlasmaBlock {
 
   //virtual ~PlasmaBlock() = default;
 
-  float_m qm; 
+  float qm; 
 };
 
 
@@ -86,9 +86,9 @@ class Tile :
   toolbox::Rotator< std::vector<PlasmaBlock>, 2 > steps;
 
   /// temporary current
-  toolbox::Mesh<float_m, 3> jx1;
-  toolbox::Mesh<float_m, 3> jy1;
-  toolbox::Mesh<float_m, 3> jz1;
+  toolbox::Mesh<float, 3> jx1;
+  toolbox::Mesh<float, 3> jy1;
+  toolbox::Mesh<float, 3> jz1;
 
 
   /// constructor
@@ -123,13 +123,13 @@ class Tile :
 
 
   /// General clipping threshold
-  float_m threshold = 1.0e-5;
+  float threshold = 1.0e-5;
 
 
   /// Clip all the meshes inside tile
   void clip() {
     auto& species = steps.get();
-    float_m norm0, norm1;
+    float norm0, norm1;
     size_t nclips;
 
     for(auto&& internal_mesh : species) {
@@ -160,7 +160,7 @@ class Tile :
     
   /// Clip all the meshes inside tile with less aggressive clip_neighbors
   void clip_neighbors() {
-    float_m norm0, norm1;
+    float norm0, norm1;
     size_t nclips;
 
     auto& species = steps.get();
@@ -197,7 +197,7 @@ class Tile :
   virtual void step_location(corgi::Grid<D>& grid);
   /*
   {
-    vlv::AmrSpatialLagrangianSolver<float_m> ssol;
+    vlv::AmrSpatialLagrangianSolver<float> ssol;
     ssol.solve(*this, grid);
   }
   */

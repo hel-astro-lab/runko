@@ -10,7 +10,7 @@
 // general bilinear interpolation
 //template<>
 //void ffe::rFFE<2>::interpolate(
-//  toolbox::Mesh<float_m,3>& f,
+//  toolbox::Mesh<float,3>& f,
 //  int i, int j,
 //  std::array<int,2>& in,
 //  std::array<int,2>& out
@@ -21,16 +21,16 @@
 //  int jm = in[1] == out[1] ? 0 :  -out[1];
 //  int jp = in[1] == out[1] ? 0 : 1-out[1];
 //
-//  float_m f1 = f[i+ip, j+jp, k] + f[i+ip, j+jm, k]
-//  float_m f0 = f[i+im, j+jp, k] + f[i+im, j+jm, k] 
+//  float f1 = f[i+ip, j+jp, k] + f[i+ip, j+jm, k]
+//  float f0 = f[i+im, j+jp, k] + f[i+im, j+jm, k] 
 //  return 0.25*(f1 + f0);
 //}
 
 // general trilinear interpolation
 template<>
 void ffe::rFFE2<3>::interpolate( 
-        toolbox::Mesh<float_m,3>& f,
-        toolbox::Mesh<float_m,0>& fi,
+        toolbox::Mesh<float,3>& f,
+        toolbox::Mesh<float,0>& fi,
         const std::array<int,3>& in,
         const std::array<int,3>& out
       )
@@ -47,9 +47,9 @@ void ffe::rFFE2<3>::interpolate(
   int kp = in[0] == out[0] ? 0 : 1-out[0];
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<float_m,3>& f, toolbox::Mesh<float_m,0>& fi)
+    [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<float,3>& f, toolbox::Mesh<float,0>& fi)
     {
-      float_m f11, f10, f01, f00, f1, f0;
+      float f11, f10, f01, f00, f1, f0;
       f11 = f(i+ip, j+jp, k+km) + f(i+ip, j+jp, k+kp);
       f10 = f(i+ip, j+jm, k+km) + f(i+ip, j+jm, k+kp);
       f01 = f(i+im, j+jp, k+km) + f(i+im, j+jp, k+kp);
@@ -119,12 +119,12 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 
   // refs to emf for easier access
 
-  float_m c = tile.cfl;
+  float c = tile.cfl;
 
   // dt / dx
-  float_m cx = c;
-  float_m cy = c;
-  float_m cz = c;
+  float cx = c;
+  float cy = c;
+  float cz = c;
 
   //for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
   //  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
@@ -223,18 +223,18 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   emf::Grids&     m = tile.get_grids();
   ffe::SlimGrids& dm = tile.dF; 
 
-  float_m dt = tile.cfl;
+  float dt = tile.cfl;
 
   interpolate(m.rho, rhf, { { 1, 1, 1 } }, { { 1, 1, 0 } });
   stagger_x_eb(m);
   UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
 
-      float_m b2, cur;
+      float b2, cur;
       b2 =
         (bxf(i, j, k) * bxf(i, j, k) + byf(i, j, k) * byf(i, j, k) +
          bzf(i, j, k) * bzf(i, j, k) + EPS);
@@ -254,11 +254,11 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
   UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
-        float_m b2, cur;
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
+        float b2, cur;
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -280,11 +280,11 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 
     UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
-        float_m b2, cur;
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
+        float b2, cur;
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -316,7 +316,7 @@ UniIter::sync();
   emf::Grids&     m = tile.get_grids();
   ffe::SlimGrids& dm = tile.dF; 
 
-  float_m dt = tile.cfl;
+  float dt = tile.cfl;
 
   // NOTE: updates done via dm array to avoid cross contamination between x/y/z diretions
 
@@ -324,11 +324,11 @@ UniIter::sync();
   
   UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
-        float_m cur, b2;
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
+        float cur, b2;
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -349,11 +349,11 @@ UniIter::sync();
   
   UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
-        float_m cur, b2;
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
+        float cur, b2;
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -374,11 +374,11 @@ UniIter::sync();
   
   UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
-        float_m cur, b2;
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
+        float cur, b2;
         b2 = (
             bxf(i,j,k)*bxf(i,j,k) + 
             byf(i,j,k)*byf(i,j,k) + 
@@ -421,18 +421,18 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   emf::Grids&     m = tile.get_grids();
   ffe::SlimGrids& dm = tile.dF; 
 
-  float_m dt = tile.cfl;
+  float dt = tile.cfl;
 
 
   stagger_x_eb(m);
 
     UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
-        float_m e2, b2, diss, cur;
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
+        float e2, b2, diss, cur;
 
         e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k) + EPS;
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
@@ -453,12 +453,12 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   stagger_y_eb(m);
     UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
       
-        float_m e2, b2, diss, cur;
+        float e2, b2, diss, cur;
 
         e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k) + EPS;
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;
@@ -480,12 +480,12 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   stagger_z_eb(m);
     UniIter::iterate3D(
     [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
-    toolbox::Mesh<float_m, 0>& bxf,
-    toolbox::Mesh<float_m, 0>& byf, toolbox::Mesh<float_m, 0>& bzf,
-    toolbox::Mesh<float_m, 0>& exf, toolbox::Mesh<float_m, 0>& eyf,
-    toolbox::Mesh<float_m, 0>& ezf, toolbox::Mesh<float_m, 0>& rhf) {
+    toolbox::Mesh<float, 0>& bxf,
+    toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
+    toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
+    toolbox::Mesh<float, 0>& ezf, toolbox::Mesh<float, 0>& rhf) {
 
-        float_m e2, b2, diss, cur;
+        float e2, b2, diss, cur;
         
         e2 = exf(i,j,k)*exf(i,j,k) + eyf(i,j,k)*eyf(i,j,k) + ezf(i,j,k)*ezf(i,j,k) + EPS;
         b2 = bxf(i,j,k)*bxf(i,j,k) + byf(i,j,k)*byf(i,j,k) + bzf(i,j,k)*bzf(i,j,k) + EPS;

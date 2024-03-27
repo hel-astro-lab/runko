@@ -18,15 +18,15 @@ class rFFE2 : public ManagedParent
   int Nz;
 
   /// interpolated arrays
-  toolbox::Mesh<float_m, 0> bxf;
-  toolbox::Mesh<float_m, 0> byf;
-  toolbox::Mesh<float_m, 0> bzf;
+  toolbox::Mesh<float, 0> bxf;
+  toolbox::Mesh<float, 0> byf;
+  toolbox::Mesh<float, 0> bzf;
 
-  toolbox::Mesh<float_m, 0> exf;
-  toolbox::Mesh<float_m, 0> eyf;
-  toolbox::Mesh<float_m, 0> ezf;
+  toolbox::Mesh<float, 0> exf;
+  toolbox::Mesh<float, 0> eyf;
+  toolbox::Mesh<float, 0> ezf;
 
-  toolbox::Mesh<float_m, 0> rhf;
+  toolbox::Mesh<float, 0> rhf;
 
 
   rFFE2(int Nx, int Ny, int Nz) :
@@ -47,8 +47,8 @@ class rFFE2 : public ManagedParent
 
   // interpolation routine
   void interpolate( 
-        toolbox::Mesh<float_m,3>& f,
-        toolbox::Mesh<float_m,0>& fi,
+        toolbox::Mesh<float,3>& f,
+        toolbox::Mesh<float,0>& fi,
         const std::array<int,D>& in,
         const std::array<int,D>& out
       );

@@ -23,7 +23,7 @@ void emf::FDTD2<1>::push_e(emf::Tile<1>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C = 1.0 * tile.cfl * dt * corr;
+  const float C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate(
   [=] DEVCALLABLE (int i, Grids &mesh)
@@ -53,7 +53,7 @@ void emf::FDTD2<2>::push_e(emf::Tile<2>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C = 1.0 * tile.cfl * dt * corr;
+  const float C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate2D(
   [=] DEVCALLABLE (int i, int j, Grids &mesh)
@@ -88,7 +88,7 @@ void emf::FDTD2<3>::push_e(emf::Tile<3>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C = 1.0 * tile.cfl * dt * corr;
+  const float C = 1.0 * tile.cfl * dt * corr;
 
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
@@ -127,7 +127,7 @@ void emf::FDTD2<1>::push_half_b(emf::Tile<1>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C = 0.5 * tile.cfl * dt * corr;
+  const float C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate(
   [=] DEVCALLABLE (int i, Grids &mesh)
@@ -156,7 +156,7 @@ void emf::FDTD2<2>::push_half_b(emf::Tile<2>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C = 0.5 * tile.cfl * dt * corr;
+  const float C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate2D(
   [=] DEVCALLABLE (int i, int j, Grids &mesh)
@@ -189,7 +189,7 @@ void emf::FDTD2<3>::push_half_b(emf::Tile<3>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C = 0.5 * tile.cfl * dt * corr;
+  const float C = 0.5 * tile.cfl * dt * corr;
 
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)

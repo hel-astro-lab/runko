@@ -46,7 +46,7 @@ class MasterPicMomentsWriter :
     int stride = 1;
       
     // mpi send buffer
-    std::vector< toolbox::Mesh<float_m,0> > sbuf;
+    std::vector< toolbox::Mesh<float,0> > sbuf;
       
     // status of master rank that is differnet from the rest
     bool master_is_initialized = false;

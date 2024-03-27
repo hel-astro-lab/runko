@@ -19,7 +19,7 @@ void emf::Binomial2<1>::solve(
 {
     
   // 1D 3-point binomial coefficients
-  const float_m C1[3] = {1./4., 2./4., 1./4.};
+  const float C1[3] = {1./4., 2./4., 1./4.};
 
   auto& mesh = tile.get_grids();
 
@@ -33,8 +33,8 @@ void emf::Binomial2<1>::solve(
   // NOTE: similarly, limits are expanded by 2*H
   auto fun = 
   [=] DEVCALLABLE (int i,  
-                   toolbox::Mesh<float_m, 3> &jj, 
-                   toolbox::Mesh<float_m, 3> &tmp)
+                   toolbox::Mesh<float, 3> &jj, 
+                   toolbox::Mesh<float, 3> &tmp)
   {
     for(int is=-1; is<=1; is++) {
       tmp(i-H,0,0) += jj(i+is-H, 0, 0)*C1[is+1];
@@ -88,7 +88,7 @@ void emf::Binomial2<2>::solve(
 {
     
   // 2D 3-point binomial coefficients
-  const float_m C2[3][3] = 
+  const float C2[3][3] = 
         { {1./16., 2./16., 1./16.},
           {2./16., 4./16., 2./16.},
           {1./16., 2./16., 1./16.} };
@@ -115,8 +115,8 @@ void emf::Binomial2<2>::solve(
   // make 2d loop with shared memory 
   auto fun = 
   [=] DEVCALLABLE (int i, int j, 
-                   toolbox::Mesh<float_m, 3> &jj, 
-                   toolbox::Mesh<float_m, 3> &tmp)
+                   toolbox::Mesh<float, 3> &jj, 
+                   toolbox::Mesh<float, 3> &tmp)
   {
     for(int is=-1; is<=1; is++) {
     for(int js=-1; js<=1; js++) {
@@ -175,7 +175,7 @@ void emf::Binomial2<3>::solve(
 
 
   // 3D 3-point binomial coefficients
-  const float_m C3[3][3][3] = 
+  const float C3[3][3][3] = 
         { { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} },
           { {2./64., 4./64., 2./64.}, {4./64., 8./64., 4./64.}, {2./64., 4./64., 2./64.} },
           { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
@@ -186,7 +186,7 @@ void emf::Binomial2<3>::solve(
 
   // make 3d loop with shared memory 
   auto fun = 
-  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<float_m, 3> &jj, toolbox::Mesh<float_m, 3> &tmp)
+  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<float, 3> &jj, toolbox::Mesh<float, 3> &tmp)
   {
     for(int is=-1; is<=1; is++) {
     for(int js=-1; js<=1; js++) {

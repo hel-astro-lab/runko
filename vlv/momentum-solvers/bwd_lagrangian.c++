@@ -243,5 +243,5 @@ vlv::AmrMomentumLagrangianSolver<T,D,V>::other_forces(
 
 //--------------------------------------------------
 // explicit template instantiation
-template class vlv::AmrMomentumLagrangianSolver<float_m, 1, 1>; //1D1V
+template class vlv::AmrMomentumLagrangianSolver<float, 1, 1>; //1D1V
 

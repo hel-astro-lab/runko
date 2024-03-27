@@ -69,29 +69,29 @@ public:
 
   // internal storage for the dimensionless photon quantum parameter
   // updated in comp_chi()
-  float_p chi_x = 0.0; 
+  float chi_x = 0.0; 
 
   // NOTE no override since input arguments are different
   pair_float get_minmax_ene( string t1, string t2, double ene) override final;
 
   // calculate quantum parameter
-  float_p comp_chi( 
-      float_p ux1, float_p uy1, float_p uz1,
-      float_p ex,  float_p ey,  float_p ez,
-      float_p bx,  float_p by,  float_p bz);
+  float comp_chi( 
+      float ux1, float uy1, float uz1,
+      float ex,  float ey,  float ez,
+      float bx,  float by,  float bz);
 
   // calculate optical depth for the process 
-  float_p comp_optical_depth( string t1, 
-      float_p ux1, float_p uy1, float_p uz1,
-      float_p ex,  float_p ey,  float_p ez,
-      float_p bx,  float_p by,  float_p bz
+  float comp_optical_depth( string t1, 
+      float ux1, float uy1, float uz1,
+      float ex,  float ey,  float ez,
+      float bx,  float by,  float bz
       ) override final;
 
   void interact(
-        string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
-        string& t2, float_p& ux2, float_p& uy2, float_p& uz2) override final;
+        string& t1, float& ux1, float& uy1, float& uz1,
+        string& t2, float& ux2, float& uy2, float& uz2) override final;
 
-  //pair_float accumulate(string t1, float_p e1 ) override;
+  //pair_float accumulate(string t1, float e1 ) override;
 
 }; // end of MultiPhotAnn class
 

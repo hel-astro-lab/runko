@@ -86,10 +86,10 @@ void emf::Conductor<D>::insert_em(
 
   //--------------------------------------------------
   // angular velocity
-  float_m Omega = 2.0*PI/period;
+  float Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
                                   
-  Vec3<float_m> Om;
+  Vec3<float> Om;
   if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
   //if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
   if(D == 3) Om.set( sin(chi_om)*cos(phase_om)*Omega, sin(chi_om)*sin(phase_om)*Omega, cos(chi_om)*Omega ); 
@@ -431,12 +431,12 @@ void emf::Conductor<D>::update_b(
       auto s = shape(h, radius_ext, delta_ext); // tanh
 
       // ver2 linear profile
-      //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
-      //float_m delta_ext = 1.0*tile_len; // full tile size
+      //float radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+      //float delta_ext = 1.0*tile_len; // full tile size
       //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
 
       //ver 3; mimic lambda profile from PML
-      //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+      //float lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
       //s = min(1.0f, lam);
 
       //ver 4; exp profile
@@ -560,7 +560,7 @@ void emf::Conductor<D>::update_b(
 
       //--------------------------------------------------
       // vector friendly application of boolean boundary
-      auto s = static_cast<float_m>(inside_box_bcs);
+      auto s = static_cast<float>(inside_box_bcs);
 
       gs.bx(i,j,k) = s*bxd(0) + (1.0f-s)*gs.bx(i,j,k);
       gs.by(i,j,k) = s*byd(1) + (1.0f-s)*gs.by(i,j,k);
@@ -578,8 +578,8 @@ void emf::Conductor<D>::update_e(
 {
 
   // angular velocity
-  Vec3<float_m> Om; 
-  float_m Omega = 2.0*PI/period;
+  Vec3<float> Om; 
+  float Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
 
   if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
@@ -689,7 +689,7 @@ void emf::Conductor<D>::update_e(
 
     //--------------------------------------------------
     // vector friendly application of boolean boundary
-    //auto s = static_cast<float_m>(inside_closed_field_region);
+    //auto s = static_cast<float>(inside_closed_field_region);
 
     //--------------------------------------------------
     // smoothing function
@@ -928,12 +928,12 @@ void emf::Conductor<D>::update_e(
       auto s = shape(rcyl, rbox, delta_ext); 
 
       // ver2 linear profile
-      //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
-      //float_m delta_ext = 1.0*tile_len; // full tile size
+      //float radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+      //float delta_ext = 1.0*tile_len; // full tile size
       //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
 
       //ver 3; mimic lambda profile from PML
-      //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+      //float lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
       //s = min(1.0f, lam);
 
       //ver 4; exp profile
@@ -971,12 +971,12 @@ void emf::Conductor<D>::update_e(
       auto s = shape(h, radius_ext, delta_ext); // tanh
 
       // ver2 linear profile
-      //float_m radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
-      //float_m delta_ext = 1.0*tile_len; // full tile size
+      //float radius_ext = (D == 2) ? Ny - tile_len : Nz - tile_len;
+      //float delta_ext = 1.0*tile_len; // full tile size
       //s = 1.0f - std::max(0.0f, std::min(1.0f, (h-radius_ext)/delta_ext) ); //RELU
 
       //ver 3; mimic lambda profile from PML
-      //float_m lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
+      //float lam = pow( (h - radius_ext)/(1.0 - radius_ext), 3);
       //s = min(1.0f, lam);
 
       //ver 4; exp profile
@@ -1072,7 +1072,7 @@ void emf::Conductor<D>::update_e(
 
       //--------------------------------------------------
       // vector friendly application of boolean boundary
-      auto s = static_cast<float_m>(inside_box_bcs);
+      auto s = static_cast<float>(inside_box_bcs);
 
       //--------------------------------------------------
       // damp to vacuum

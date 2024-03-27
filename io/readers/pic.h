@@ -28,7 +28,7 @@ h5io::Reader::read(
   auto maxs = tile.maxs;
 
   //maximum acceptable prtcl 4-velocity
-  const float_p max_vel = 1.0e8; 
+  const float max_vel = 1.0e8; 
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
@@ -51,7 +51,7 @@ h5io::Reader::read(
 
     // read into explicitly initialized arrays; otherwise, some -OX option
     // tries to optimize these away and we don't read anything.
-    std::vector<float_p> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
+    std::vector<float> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
     arr1  << gr["x"];
     arr2  << gr["y"];
     arr3  << gr["z"];
@@ -79,8 +79,8 @@ h5io::Reader::read(
     assert(iarr1.size() == nparts);
     assert(iarr2.size() == nparts);
 
-    float_p xloc, yloc, zloc;
-    float_p ux, uy, uz, w;
+    float xloc, yloc, zloc;
+    float ux, uy, uz, w;
     for(size_t n=0; n<nparts; n++) {
       // generates key
       //container.add_particle(

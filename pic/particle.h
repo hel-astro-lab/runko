@@ -24,17 +24,17 @@ namespace pic {
 struct Particle {
 
   // location
-  float_p x;
-  float_p y;
-  float_p z;
+  float x;
+  float y;
+  float z;
 
   // four-momentum
-  float_p ux;
-  float_p uy;
-  float_p uz;
+  float ux;
+  float uy;
+  float uz;
 
   // weight
-  float_p w;
+  float w;
 
   /// particle id
   int id;
@@ -73,10 +73,10 @@ class ParticleContainer{
 
   protected:
 
-  std::array<ManVec<float_p>, 3 > locArr; // x y z location
-  std::array<ManVec<float_p>, 3 > velArr; // vx vy vz velocities
+  std::array<ManVec<float>, 3 > locArr; // x y z location
+  std::array<ManVec<float>, 3 > velArr; // vx vy vz velocities
   std::array<ManVec<int>, 2 > indArr;     // cpu,id index
-  ManVec<float_p> wgtArr;                 // weight
+  ManVec<float> wgtArr;                 // weight
 
   public:
 
@@ -84,8 +84,8 @@ class ParticleContainer{
   int cid = 0; // container identification id (minted with tile id)
 
   // these arrays are required for QED interactions
-  ManVec<float_p> wgtCumArr;              // cumulative weights; kept 0 if not needed
-  ManVec<float_p> eneArr;                 // particle energies
+  ManVec<float> wgtCumArr;              // cumulative weights; kept 0 if not needed
+  ManVec<float> eneArr;                 // particle energies
 
     
   /// packed outgoing particles
@@ -128,10 +128,10 @@ class ParticleContainer{
   // NOTE maximum prtcl size during first iteration is 2*first_msg; then resized
 
   //! particle specific electric field components
-  ManVec<float_p> Epart;
+  ManVec<float> Epart;
 
   //! particle specific magnetic field components
-  ManVec<float_p> Bpart;
+  ManVec<float> Bpart;
 
   //! multimap of particles going to other tiles
   using mapType = ManVec<to_other_tiles_struct>;
@@ -216,20 +216,20 @@ class ParticleContainer{
   //--------------------------------------------------
   // locations
   DEVCALLABLE
-  inline float_p loc( size_t idim, size_t iprtcl ) const
+  inline float loc( size_t idim, size_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
   DEVCALLABLE
-  inline float_p& loc( size_t idim, size_t iprtcl )       
+  inline float& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
   }
 
-  inline std::vector<float_p> loc(size_t idim) 
+  inline std::vector<float> loc(size_t idim) 
   {
-    std::vector<float_p> ret;
+    std::vector<float> ret;
     for(const auto& e: locArr[idim])
       ret.push_back(e);
     return ret;//locArr[idim];
@@ -238,27 +238,27 @@ class ParticleContainer{
   //--------------------------------------------------
   // velocities
   DEVCALLABLE
-  inline float_p vel( size_t idim, size_t iprtcl ) const
+  inline float vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
   DEVCALLABLE
-  inline float_p& vel( size_t idim, size_t iprtcl )       
+  inline float& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
   }
 
-  inline std::vector<float_p> vel(size_t idim) 
+  inline std::vector<float> vel(size_t idim) 
   {
     //return velArr[idim];
-    std::vector<float_p> ret;
+    std::vector<float> ret;
     for(const auto& e: velArr[idim])
       ret.push_back(e);
     return ret;
   }
 /*
-  virtual inline std::vector<float_p>& vel(size_t idim)
+  virtual inline std::vector<float>& vel(size_t idim)
   {
     return velArr[idim];
   }
@@ -266,28 +266,28 @@ class ParticleContainer{
   //--------------------------------------------------
   // weights
   DEVCALLABLE
-  inline float_p wgt( size_t iprtcl ) const
+  inline float wgt( size_t iprtcl ) const
   {
     return wgtArr[iprtcl];
   }
 
   DEVCALLABLE
-  inline float_p& wgt( size_t iprtcl )       
+  inline float& wgt( size_t iprtcl )       
   {
     return wgtArr[iprtcl];
   }
 
-  inline std::vector<float_p> wgt()
+  inline std::vector<float> wgt()
   {
     //return wgtArr;
-    std::vector<float_p> ret;
+    std::vector<float> ret;
     for(const auto& e: wgtArr)
       ret.push_back(e);
     return ret;
   }
 
 /*
-  virtual inline std::vector<float_p>& wgt()
+  virtual inline std::vector<float>& wgt()
   {
     return wgtArr;
   }
@@ -324,40 +324,40 @@ class ParticleContainer{
 
   //--------------------------------------------------
   // EM fields
-  DEVCALLABLE inline float_p& ex(size_t iprtcl ) { return Epart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float_p& ey(size_t iprtcl ) { return Epart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float_p& ez(size_t iprtcl ) { return Epart[2*size() + iprtcl]; };
+  DEVCALLABLE inline float& ex(size_t iprtcl ) { return Epart[0*size() + iprtcl]; };
+  DEVCALLABLE inline float& ey(size_t iprtcl ) { return Epart[1*size() + iprtcl]; };
+  DEVCALLABLE inline float& ez(size_t iprtcl ) { return Epart[2*size() + iprtcl]; };
 
-  DEVCALLABLE inline float_p& bx(size_t iprtcl ) { return Bpart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float_p& by(size_t iprtcl ) { return Bpart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float_p& bz(size_t iprtcl ) { return Bpart[2*size() + iprtcl]; };
+  DEVCALLABLE inline float& bx(size_t iprtcl ) { return Bpart[0*size() + iprtcl]; };
+  DEVCALLABLE inline float& by(size_t iprtcl ) { return Bpart[1*size() + iprtcl]; };
+  DEVCALLABLE inline float& bz(size_t iprtcl ) { return Bpart[2*size() + iprtcl]; };
 
-  DEVCALLABLE inline float_p ex(size_t iprtcl ) const {return Epart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float_p ey(size_t iprtcl ) const {return Epart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float_p ez(size_t iprtcl ) const {return Epart[2*size() + iprtcl]; };
+  DEVCALLABLE inline float ex(size_t iprtcl ) const {return Epart[0*size() + iprtcl]; };
+  DEVCALLABLE inline float ey(size_t iprtcl ) const {return Epart[1*size() + iprtcl]; };
+  DEVCALLABLE inline float ez(size_t iprtcl ) const {return Epart[2*size() + iprtcl]; };
 
-  DEVCALLABLE inline float_p bx(size_t iprtcl ) const {return Bpart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float_p by(size_t iprtcl ) const {return Bpart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float_p bz(size_t iprtcl ) const {return Bpart[2*size() + iprtcl]; };
+  DEVCALLABLE inline float bx(size_t iprtcl ) const {return Bpart[0*size() + iprtcl]; };
+  DEVCALLABLE inline float by(size_t iprtcl ) const {return Bpart[1*size() + iprtcl]; };
+  DEVCALLABLE inline float bz(size_t iprtcl ) const {return Bpart[2*size() + iprtcl]; };
 
 
   // particle creation
   virtual void add_particle (
-      std::vector<float_p> prtcl_loc,
-      std::vector<float_p> prtcl_vel,
-      float_p prtcl_wgt);
+      std::vector<float> prtcl_loc,
+      std::vector<float> prtcl_vel,
+      float prtcl_wgt);
 
   // particle creation v2
   //virtual void add_particle2 (
-  //  float_p lx, float_p ly, float_p lz, 
-  //  float_p ux, float_p uy, float_p uz,
-  //  float_p prtcl_wgt);
+  //  float lx, float ly, float lz, 
+  //  float ux, float uy, float uz,
+  //  float prtcl_wgt);
 
   // particle creation
   virtual void add_identified_particle (
-      std::vector<float_p> prtcl_loc,
-      std::vector<float_p> prtcl_vel,
-      float_p prtcl_wgt, 
+      std::vector<float> prtcl_loc,
+      std::vector<float> prtcl_vel,
+      float prtcl_wgt, 
       int _id, int _proc);
 
 
@@ -390,7 +390,7 @@ class ParticleContainer{
   void set_keygen_state(int __key, int __rank);
   
   // return energy of i:th particle 
-  float_p get_prtcl_ene(size_t n);
+  float get_prtcl_ene(size_t n);
   
   // sort particles in reverse (ascending) energy order
   void apply_permutation(ManVec<size_t>& indices);

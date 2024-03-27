@@ -31,12 +31,12 @@ ffe::SlimGrids&
 ffe::SlimGrids& 
   ffe::SlimGrids::operator *=(double rhs) 
 {
-  ex *= static_cast<float_m>(rhs);
-  ey *= static_cast<float_m>(rhs);
-  ez *= static_cast<float_m>(rhs);
-  bx *= static_cast<float_m>(rhs);
-  by *= static_cast<float_m>(rhs);
-  bz *= static_cast<float_m>(rhs);
+  ex *= static_cast<float>(rhs);
+  ey *= static_cast<float>(rhs);
+  ez *= static_cast<float>(rhs);
+  bx *= static_cast<float>(rhs);
+  by *= static_cast<float>(rhs);
+  bz *= static_cast<float>(rhs);
 
   return *this;
 }
@@ -44,12 +44,12 @@ ffe::SlimGrids&
 ffe::SlimGrids& 
   ffe::SlimGrids::operator /=(double rhs) 
 {
-  ex /= static_cast<float_m>(rhs);
-  ey /= static_cast<float_m>(rhs);
-  ez /= static_cast<float_m>(rhs);
-  bx /= static_cast<float_m>(rhs);
-  by /= static_cast<float_m>(rhs);
-  bz /= static_cast<float_m>(rhs);
+  ex /= static_cast<float>(rhs);
+  ey /= static_cast<float>(rhs);
+  ez /= static_cast<float>(rhs);
+  bx /= static_cast<float>(rhs);
+  by /= static_cast<float>(rhs);
+  bz /= static_cast<float>(rhs);
 
   return *this;
 }

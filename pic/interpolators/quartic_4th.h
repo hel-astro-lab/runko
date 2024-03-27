@@ -15,7 +15,7 @@ class QuarticInterpolator :
 
   double compute( 
         double* /*cx*/, double* /*cy*/, double* /*cz*/, 
-        const toolbox::Mesh<float_m, 3>& /*f*/, 
+        const toolbox::Mesh<float, 3>& /*f*/, 
         const size_t /*iy*/, const size_t /*iz*/,
         int /*i*/, int /*j*/, int /*k*/);
   

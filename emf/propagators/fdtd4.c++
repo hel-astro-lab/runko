@@ -23,8 +23,8 @@ void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
 
   Grids& mesh = tile.get_grids();
 
-  const float_m C1 = coeff1*corr*tile.cfl;
-  const float_m C2 = coeff2*corr*tile.cfl;
+  const float C1 = coeff1*corr*tile.cfl;
+  const float C2 = coeff2*corr*tile.cfl;
   const int k = 0;
 
   UniIter::iterate2D(
@@ -63,8 +63,8 @@ void emf::FDTD4<3>::push_e(emf::Tile<3>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C1 = coeff1*corr*tile.cfl;
-  const float_m C2 = coeff2*corr*tile.cfl;
+  const float C1 = coeff1*corr*tile.cfl;
+  const float C2 = coeff2*corr*tile.cfl;
 
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
@@ -111,8 +111,8 @@ void emf::FDTD4<2>::push_half_b(emf::Tile<2>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C1 = 0.5*coeff1*corr*tile.cfl;
-  const float_m C2 = 0.5*coeff2*corr*tile.cfl;
+  const float C1 = 0.5*coeff1*corr*tile.cfl;
+  const float C2 = 0.5*coeff2*corr*tile.cfl;
   const int k = 0;
 
   UniIter::iterate2D(
@@ -150,8 +150,8 @@ void emf::FDTD4<3>::push_half_b(emf::Tile<3>& tile)
 #endif
 
   Grids& mesh = tile.get_grids();
-  const float_m C1 = 0.5*coeff1*corr*tile.cfl;
-  const float_m C2 = 0.5*coeff2*corr*tile.cfl;
+  const float C1 = 0.5*coeff1*corr*tile.cfl;
+  const float C2 = 0.5*coeff2*corr*tile.cfl;
 
   UniIter::iterate3D(
   [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)

@@ -28,11 +28,11 @@ namespace qed {
 //
 //  std::random_device rd;
 //  std::mt19937 gen;
-//  std::uniform_real_distribution<float_p> uni_dis;
+//  std::uniform_real_distribution<float> uni_dis;
 //
 //public:
 //
-//  using pair_float = std::tuple<float_p, float_p>;
+//  using pair_float = std::tuple<float, float>;
 //
 //  string name = "GenSingleInt"; // interaction name
 //
@@ -53,23 +53,23 @@ namespace qed {
 //
 //  // interaction cross section given incident particle's four-velocities
 //  virtual pair_float comp_optical_depth(
-//    string t1, float_p ux1, float_p uy1, float_p uz1)
+//    string t1, float ux1, float uy1, float uz1)
 //    { return {1.0f, 1.0f}; }
 //
 //  // interaction accumulation factor
-//  //virtual pair_float accumulate(string t1, float_p e1) {return {1.0f,1.0f}; };
+//  //virtual pair_float accumulate(string t1, float e1) {return {1.0f,1.0f}; };
 //
 //  virtual void interact(
-//        string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
-//        string& t2, float_p& ux2, float_p& uy2, float_p& uz2)
+//        string& t1, float& ux1, float& uy1, float& uz1,
+//        string& t2, float& ux2, float& uy2, float& uz2)
 //      { return; }
 //
 //  // random numbers between [0, 1[
-//  float_p rand() { return uni_dis(gen); };
+//  float rand() { return uni_dis(gen); };
 //
 //  // random numbers between [a, b[
-//  float_p rand_ab(float_p a, float_p b) { 
-//    float_p r = rand();
+//  float rand_ab(float a, float b) { 
+//    float r = rand();
 //    return a + (b-a)*r;
 //  };
 //
@@ -85,7 +85,7 @@ private:
 
   std::random_device rd;
   std::mt19937 gen;
-  std::uniform_real_distribution<float_p> uni_dis;
+  std::uniform_real_distribution<float> uni_dis;
 
 public:
 
@@ -96,9 +96,9 @@ public:
 
   int interaction_order = 2; // default interaction is 2-body
 
-  using pair_float = std::tuple<float_p, float_p>;
+  using pair_float = std::tuple<float, float>;
     
-  const float_p cross_section = 1.0; // maximum cross section (in units of sigma_T)
+  const float cross_section = 1.0; // maximum cross section (in units of sigma_T)
 
   string name = "GenTwoBodyInt"; // interaction name
              //
@@ -109,7 +109,7 @@ public:
   bool do_accumulate = false;
 
   // enhance energy transfer by this factor 
-  float_p wtar2wini = 1.0f;
+  float wtar2wini = 1.0f;
 
   // error tolerance
   const float tol = 3.0e-4;
@@ -131,19 +131,19 @@ public:
   // interaction cross section given incident/target particle four-velocities
   // NOTE: used in binary interactions
   virtual pair_float comp_cross_section(
-    string t1, float_p ux1, float_p uy1, float_p uz1,
-    string t2, float_p ux2, float_p uy2, float_p uz2)
+    string t1, float ux1, float uy1, float uz1,
+    string t2, float ux2, float uy2, float uz2)
     { return {cross_section, 1.0f}; }
 
   // NOTE: used in single interactions
   virtual float comp_optical_depth( string t1, 
-      float_p ux1, float_p uy1, float_p uz1,
-      float_p ex,  float_p ey,  float_p ez,
-      float_p bx,  float_p by,  float_p bz)
+      float ux1, float uy1, float uz1,
+      float ex,  float ey,  float ez,
+      float bx,  float by,  float bz)
   { return 1.0f; };
 
   // interaction accumulation factor
-  virtual pair_float accumulate(string t1, float_p e1, string t2, float_p e2) {return {1.0f,1.0f}; };
+  virtual pair_float accumulate(string t1, float e1, string t2, float e2) {return {1.0f,1.0f}; };
 
   // main interaction routine; 
   //
@@ -156,16 +156,16 @@ public:
   //  particle4: type, ux, uy, uz
   //
   virtual void interact(
-        string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
-        string& t2, float_p& ux2, float_p& uy2, float_p& uz2)
+        string& t1, float& ux1, float& uy1, float& uz1,
+        string& t2, float& ux2, float& uy2, float& uz2)
       { return; }
 
   // random numbers between [0, 1[
-  float_p rand() { return uni_dis(gen); };
+  float rand() { return uni_dis(gen); };
 
   // random numbers between [a, b[
-  float_p rand_ab(float_p a, float_p b) { 
-    float_p r = rand();
+  float rand_ab(float a, float b) { 
+    float r = rand();
     return a + (b-a)*r;
   };
 

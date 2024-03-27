@@ -71,16 +71,16 @@ void pic::Star<D>::solve(
   for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
   // get charge (assume q_- = q_+)
-  const float_m q = cons["e-"]->q;
-  float_p wep = 1.0f;
-  float_p wph = 1.0f;
+  const float q = cons["e-"]->q;
+  float wep = 1.0f;
+  float wph = 1.0f;
 
   //--------------------------------------------------
   // main rouutine starts here now that we have the right tile
     
-  Vec3<float_m> Om; 
+  Vec3<float> Om; 
 
-  float_m Omega = 2.0*PI/period;
+  float Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
 
   if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
@@ -211,10 +211,10 @@ void pic::Star<D>::solve(
 
       //--------------------------------------------------
       // ver2; current dependent inj; NOTE does not work because current arrays are emptied
-      //float_m jx = gs.jx(i,j,k);
-      //float_m jy = gs.jy(i,j,k);
-      //float_m jz = gs.jz(i,j,k);
-      //float_m j = sqrt(jx*jx + jy*jy + jz*jz);
+      //float jx = gs.jx(i,j,k);
+      //float jy = gs.jy(i,j,k);
+      //float jz = gs.jz(i,j,k);
+      //float j = sqrt(jx*jx + jy*jy + jz*jz);
       
       // current is given as j = e*n_pcc*c so that n_ppc = j*c/e
       // We supply M_atms = 10x atmospheric particles required to screen the local current

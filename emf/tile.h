@@ -23,22 +23,22 @@ class Grids
   int Nz;
 
   /// Electric field 
-  toolbox::Mesh<float_m, 3> ex;
-  toolbox::Mesh<float_m, 3> ey;
-  toolbox::Mesh<float_m, 3> ez;
+  toolbox::Mesh<float, 3> ex;
+  toolbox::Mesh<float, 3> ey;
+  toolbox::Mesh<float, 3> ez;
   
   /// Magnetic field 
-  toolbox::Mesh<float_m, 3> bx;
-  toolbox::Mesh<float_m, 3> by;
-  toolbox::Mesh<float_m, 3> bz;
+  toolbox::Mesh<float, 3> bx;
+  toolbox::Mesh<float, 3> by;
+  toolbox::Mesh<float, 3> bz;
     
   /// Charge density
-  toolbox::Mesh<float_m, 3> rho;
+  toolbox::Mesh<float, 3> rho;
 
   /// Current vector 
-  toolbox::Mesh<float_m, 3> jx;
-  toolbox::Mesh<float_m, 3> jy;
-  toolbox::Mesh<float_m, 3> jz;
+  toolbox::Mesh<float, 3> jx;
+  toolbox::Mesh<float, 3> jy;
+  toolbox::Mesh<float, 3> jz;
 
 
 

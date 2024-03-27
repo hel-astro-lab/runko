@@ -31,7 +31,7 @@ class Tile :
       //std::cout<<"BC spatial step\n";
 
     if(advance) {
-      vlv::AmrSpatialLagrangianSolver<float_m> ssol;
+      vlv::AmrSpatialLagrangianSolver<float> ssol;
       ssol.solve(*this, grid);
     }
   }

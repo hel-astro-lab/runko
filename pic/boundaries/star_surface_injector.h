@@ -17,7 +17,7 @@ private:
 
   std::random_device rd;
   std::mt19937 gen;
-  std::uniform_real_distribution<float_p> uni_dis;
+  std::uniform_real_distribution<float> uni_dis;
 
   // using raw pointer instead of smart ptrs; it does not take ownership of the object
   // so the container is not deleted when the temporary storage goes out of scope.
@@ -65,7 +65,7 @@ public:
   { }
 
   // random numbers between [0, 1[
-  float_p rand() { return uni_dis(gen); };
+  float rand() { return uni_dis(gen); };
 
   void solve(pic::Tile<D>&  tile);
 

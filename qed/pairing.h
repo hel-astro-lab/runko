@@ -41,8 +41,8 @@ namespace qed {
 
 // duplicate particle info into fresh variables
 inline auto duplicate_prtcl(
-    string t1, float_p ux1, float_p uy1, float_p uz1, float_p w1
-    ) -> std::tuple<string, float_p, float_p, float_p, float_p>
+    string t1, float ux1, float uy1, float uz1, float w1
+    ) -> std::tuple<string, float, float, float, float>
 {
   return {t1, ux1, uy1, uz1, w1};
 }
@@ -56,7 +56,7 @@ class Pairing
 private:
   std::random_device rd;
   std::mt19937 gen;
-  std::uniform_real_distribution<float_p> uni_dis;
+  std::uniform_real_distribution<float> uni_dis;
 
   using InteractionPtr = std::shared_ptr<qed::Interaction>;
 
@@ -92,10 +92,10 @@ public:
   std::vector<InteractionPtr> binary_interactions;
 
   // normalization factor for two-body interaction probabilities
-  float_p prob_norm = 1.0f;
+  float prob_norm = 1.0f;
 
   // normalization factor for single-body interaction probabilities
-  float_p prob_norm_onebody = 1.0f;
+  float prob_norm_onebody = 1.0f;
 
   // force e- e+ to have unit weights irrespective of weighting functions
   bool force_ep_uni_w = true; 
@@ -160,7 +160,7 @@ public:
 
   //--------------------------------------------------
   // auxiliary containers for Monte Carlo sampling 
-  std::vector<float_p> 
+  std::vector<float> 
       probs,    // maximum probabillity
       wsums,    // sum over possible target weights
       cmaxs;    // maximum cross section
@@ -182,7 +182,7 @@ public:
   //--------------------------------------------------
     
   // random numbers between [0, 1[
-  float_p rand() { return uni_dis(gen); };
+  float rand() { return uni_dis(gen); };
   
   // add interactions to internal memory of the class; 
   // done via pointers to handle pybind interface w/ python
@@ -241,7 +241,7 @@ public:
 
   // compute maximum partial interaction rates for each process 
   // that LP of type t1 and energy of e1 can experience.
-  void comp_pmax(string t1, float_p e1, 
+  void comp_pmax(string t1, float e1, 
                  std::map<std::string, pic::ParticleContainer<D>*>& cons)
   {
 
@@ -274,7 +274,7 @@ public:
         // skip containers with zero targets
         if(con_tar->eneArr.size() == 0) continue;
 
-        const float_p cross_max = iptr->cross_section; // maximum cross section (including x2 for head-on collisions)
+        const float cross_max = iptr->cross_section; // maximum cross section (including x2 for head-on collisions)
 
         // NOTE: assumes that target distribution remains static for the duration of the time step.
         // In that case, no LP changes energy and the limits finding is ok.
@@ -337,35 +337,35 @@ public:
         // ver1
         // total weight of prtcls between jmin-jmax
         // ver1: calculates total weight for every particle; value evolves dynamically
-        //float_p wsum = 0.0f;
+        //float wsum = 0.0f;
         //for(size_t j=jmin; j<jmax; j++) wsum += con_tar->wgt( j ); // sum( w[jmin:jmax] )
 
         // ver2
         // NOTE switching to this version as it is faster
         // assumes static targets; value calculated in the beginnig of loop
-        float_p wsum2 = 0.0f;
+        float wsum2 = 0.0f;
           
         //--------------------------------------------------
         if(! iptr->do_accumulate ){ // normal mode; no accumulation
 
           if(jmin < jmax) { // in the opposite case arrays dont span a range and so wsum2 = 0
-            float_p wsum_min = jmin == 0 ? 0.0f : con_tar->wgtCumArr[jmin];
+            float wsum_min = jmin == 0 ? 0.0f : con_tar->wgtCumArr[jmin];
             wsum2 = con_tar->wgtCumArr[jmax-1] - wsum_min;
           }
 
         //--------------------------------------------------
         } else { // accumulate interactions; effectively reduces weight
-          float_p wprev = jmin == 0 ? 0.0 : con_tar->wgtCumArr[jmin-1];
+          float wprev = jmin == 0 ? 0.0 : con_tar->wgtCumArr[jmin-1];
           for(size_t j=jmin; j<jmax; j++) {
             
             // weight between [j-1, j]
             //w = con_tar->wgt(j); // real weight
-            float_p w = con_tar->wgtCumArr[j] - wprev; // calc via cum array 
+            float w = con_tar->wgtCumArr[j] - wprev; // calc via cum array 
             wprev = con_tar->wgtCumArr[j];
 
-            float_p e2 = con_tar->eneArr[j];
+            float e2 = con_tar->eneArr[j];
             auto [f1,f2] = iptr->accumulate(t1, e1, t2, e2);
-            float_p f = f1*f2; //std::max(f1,f2);  // TODO is max ok here? or product?
+            float f = f1*f2; //std::max(f1,f2);  // TODO is max ok here? or product?
 
             wsum2 += w/f; 
           }
@@ -416,13 +416,13 @@ public:
            
         //--------------------------------------------------
         //total sum of target weights; TODO can this be removed?
-        //float_p wtot = 0.0f;
+        //float wtot = 0.0f;
         //for(size_t j=0; j<N2; j++) wtot += con_tar->wgt( j ); // sum( w )
         //if(wtot <= 0.0f) wtot = 1.0f; // guard for NaNs
 
         //--------------------------------------------------
         // maximum partial interaction rate
-        float_p par_int_rate = 2.0f*cross_max * wsum2; // factor 2 comes from v_rel = 2c
+        float par_int_rate = 2.0f*cross_max * wsum2; // factor 2 comes from v_rel = 2c
 
         // update/accept interaction only if it has non-zero prob to occur
         if(par_int_rate > 0.0f) {
@@ -468,11 +468,11 @@ public:
   {
     const size_t N = probs.size();
     //double ptot = toolbox::sum(probs); // TODO
-    float_p ptot = 0.0;
+    float ptot = 0.0;
     for(size_t i=0; i<N; i++) ptot += probs[i];
 
     // calculate cumulative sum of all interactions
-    ManVec<float_p> cumsum_int_probs;
+    ManVec<float> cumsum_int_probs;
     cumsum_int_probs.resize(N);
 
     cumsum_int_probs[0] = probs[0];
@@ -493,7 +493,7 @@ public:
   //
   // value corresponds to number of particles (of type t) produced with given energy x
   // e.g., constant value means that every interactions splits the particle into that many pieces
-  float_p ene_weight_funs(std::string t, float_p x) 
+  float ene_weight_funs(std::string t, float x) 
   {
 
     // standard unit weights
@@ -538,13 +538,13 @@ public:
 
     //--------------------------------------------------
     // variables inside loop
-    float_p lx1, ly1, lz1,     lx2, ly2, lz2;
-    float_p lx3, ly3, lz3,     lx4, ly4, lz4;
-    float_p ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
-    float_p ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
-    float_p e1, e2;
-    float_p wmin, wmax, prob;
-    float_p p_ini, p_tar;
+    float lx1, ly1, lz1,     lx2, ly2, lz2;
+    float lx3, ly3, lz3,     lx4, ly4, lz4;
+    float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
+    float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
+    float e1, e2;
+    float wmin, wmax, prob;
+    float p_ini, p_tar;
 
     // loop over interactions
     for(auto iptr : binary_interactions){
@@ -755,15 +755,15 @@ public:
     //--------------------------------------------------
 
     // initialize temp variable storages
-    float_p lx1, ly1, lz1,     lx2, ly2, lz2;
-    float_p lx3, ly3, lz3,     lx4, ly4, lz4;
-    float_p ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
-    float_p ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
-    float_p e1, e2, e3, e4;
-    float_p m3, m4;
+    float lx1, ly1, lz1,     lx2, ly2, lz2;
+    float lx3, ly3, lz3,     lx4, ly4, lz4;
+    float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
+    float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
+    float e1, e2, e3, e4;
+    float m3, m4;
 
-    float_p wmin, wmax, prob;
-    float_p prob_upd3, prob_upd4, prob_kill3, prob_kill4;
+    float wmin, wmax, prob;
+    float prob_upd3, prob_upd4, prob_kill3, prob_kill4;
 
     //--------------------------------------------------
     // loop over incident types
@@ -1034,7 +1034,7 @@ public:
           timer.stop_comp("comp_cs");
 
           // collect max cross section
-          float_p cm_cur = info_max_int_cs[iptr->name];
+          float cm_cur = info_max_int_cs[iptr->name];
           info_max_int_cs[iptr->name] = std::max( cm_cur, cm*vrel/2.0f);
 
           // comparison of interaction to max interaction 
@@ -1084,18 +1084,18 @@ public:
             e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
 
             // weight adaptation; original Stern95 version
-            //float_p fw3 = (e3/e1)*ene_weight_funs(t1, e1)/ene_weight_funs(t3, e3); 
-            //float_p fw4 = (e4/e2)*ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
+            //float fw3 = (e3/e1)*ene_weight_funs(t1, e1)/ene_weight_funs(t3, e3); 
+            //float fw4 = (e4/e2)*ene_weight_funs(t2, e2)/ene_weight_funs(t4, e4); 
 
             // more intuitive version (flipped)
             timer.start_comp("weight_funs");
-            float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1);
-            float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t2, e2);
+            float fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1);
+            float fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t2, e2);
             timer.stop_comp("weight_funs");
 
             // limit explosive particle creation
-            float_p n3 = std::min( fw3, 32.0f );
-            float_p n4 = std::min( fw4, 32.0f );
+            float n3 = std::min( fw3, 32.0f );
+            float n4 = std::min( fw4, 32.0f );
 
             //--------------------------------------------------
             if(t1 == t3 && t2 == t4) { // scattering interactions
@@ -1509,17 +1509,17 @@ public:
 
     //--------------------------------------------------
     // initialize temp variable storages
-    float_p lx1, ly1, lz1, lx2, ly2, lz2;
-    float_p ux1, uy1, uz1, w1=0.0;
-    float_p ux3, uy3, uz3, w3=0.0;
-    float_p ux4, uy4, uz4, w4=0.0;
-    float_p m3, m4;
-    float_p e1, e3, e4;
+    float lx1, ly1, lz1, lx2, ly2, lz2;
+    float ux1, uy1, uz1, w1=0.0;
+    float ux3, uy3, uz3, w3=0.0;
+    float ux4, uy4, uz4, w4=0.0;
+    float m3, m4;
+    float e1, e3, e4;
     std::string t4;  // type variable for secondary prtcl;
 
     // interaction proceeds as t1 -> t3 + t4
 
-    float_m ex,ey,ez,bx,by,bz;
+    float ex,ey,ez,bx,by,bz;
 
 
     // ver1: ordered iteration over prtcls
@@ -1598,7 +1598,7 @@ public:
         // local optical depth; 
         // NOTE: em field is stored during this call and does not need to be called again in interact()
         timer.start_comp("optical_depth");
-        float_p tau_int = iptr->comp_optical_depth(
+        float tau_int = iptr->comp_optical_depth(
                                   t1, 
                                   ux1, uy1, uz1, 
                                   ex, ey, ez, 
@@ -1628,13 +1628,13 @@ public:
 
           timer.start_comp("weight_funs");
           // NOTE both are compared to the same parent t1 
-          float_p fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1); // possible re-weighting of the parent particle 
-          float_p fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t1, e1); // re-weighting of the secondary particle 
+          float fw3 = ene_weight_funs(t3, e3)/ene_weight_funs(t1, e1); // possible re-weighting of the parent particle 
+          float fw4 = ene_weight_funs(t4, e4)/ene_weight_funs(t1, e1); // re-weighting of the secondary particle 
           timer.stop_comp("weight_funs");
 
           // limit explosive particle creation
-          float_p n3 = std::min( fw3, 32.0f );
-          float_p n4 = std::min( fw4, 32.0f );
+          float n3 = std::min( fw3, 32.0f );
+          float n4 = std::min( fw4, 32.0f );
 
           //--------------------------------------------------
           // accumulation
@@ -1685,7 +1685,7 @@ public:
 
               if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){ 
                 w3 = 1.0f;
-                float_p n3 = w1/w3; // remembering to increase prtcl num w/ facc
+                float n3 = w1/w3; // remembering to increase prtcl num w/ facc
               }
 
               if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
@@ -1747,13 +1747,13 @@ public:
     size_t N1 = cons[t1]->size(); // read particle number from here; 
 
     // total weight = sum(ws)
-    float_p wtot = 0.0;
+    float wtot = 0.0;
     for(size_t n1=0; n1<N1; n1++) wtot += cons[t1]->wgt(n1);
 
     // TODO it is not energy conserving to select particles equally w/o w-weighting
 
     // loop over particles
-    float_p w1, zeta, prob_kill;
+    float w1, zeta, prob_kill;
     for(size_t n1=0; n1<N1; n1++) {
       w1  = cons[t1]->wgt(n1);
 
@@ -1776,9 +1776,9 @@ public:
 
   // inject soft photons
   void inject_photons(pic::Tile<D>& tile, 
-      float_p temp_inj, 
-      float_p wph_inj,
-      float_p Nph_inj) 
+      float temp_inj, 
+      float wph_inj,
+      float Nph_inj) 
   {
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
@@ -1786,21 +1786,21 @@ public:
     auto mins = tile.mins;
     auto maxs = tile.maxs;
 
-    float_p x_min = D >= 1 ? mins[0] : 0.0f;
-    float_p y_min = D >= 2 ? mins[1] : 0.0f;
-    float_p z_min = D >= 3 ? mins[2] : 0.0f;
+    float x_min = D >= 1 ? mins[0] : 0.0f;
+    float y_min = D >= 2 ? mins[1] : 0.0f;
+    float z_min = D >= 3 ? mins[2] : 0.0f;
 
-    float_p lenx = D >= 1 ? (maxs[0] - mins[0]) : 0.0f;
-    float_p leny = D >= 2 ? (maxs[1] - mins[1]) : 0.0f;
-    float_p lenz = D >= 3 ? (maxs[2] - mins[2]) : 0.0f;
+    float lenx = D >= 1 ? (maxs[0] - mins[0]) : 0.0f;
+    float leny = D >= 2 ? (maxs[1] - mins[1]) : 0.0f;
+    float lenz = D >= 3 ? (maxs[2] - mins[2]) : 0.0f;
 
     // inject Nph_inj photons
-    float_p vx, vy, vz, xi;
-    float_p ux, uy, uz, xinj;
-    float_p xloc, yloc, zloc;
+    float vx, vy, vz, xi;
+    float ux, uy, uz, xinj;
+    float xloc, yloc, zloc;
 
-    float_p ncop = 0.0f;
-    float_p z1 = rand();
+    float ncop = 0.0f;
+    float z1 = rand();
 
     while(Nph_inj > z1 + ncop)
     {
@@ -1818,12 +1818,12 @@ public:
 
       //--------------------------------------------------
       // draw energy from a black body distribution
-      float_p xi1 = rand();
-      float_p xi2 = rand();
-      float_p xi3 = rand();
-      float_p xi4 = rand();
+      float xi1 = rand();
+      float xi2 = rand();
+      float xi3 = rand();
+      float xi4 = rand();
     
-      float_p xi, jj, fsum;
+      float xi, jj, fsum;
       if( 1.202f*xi1 < 1.0f ){
           xi = 1.0f;
       } else {
@@ -1855,21 +1855,21 @@ public:
 
   // inject soft photons
   void inject_plaw_pairs(pic::Tile<D>& tile, 
-      float_p slope, 
-      float_p pmin,
-      float_p pmax,
-      float_p w_inj,
-      float_p N_inj) 
+      float slope, 
+      float pmin,
+      float pmax,
+      float w_inj,
+      float N_inj) 
   {
 
-    //const float_p pmin = 10.0f;
-    //const float_p pmax = 100.0f;
+    //const float pmin = 10.0f;
+    //const float pmax = 100.0f;
 
     assert(pmin > 1.0f); // pmin interpreted as gamma 
     assert(pmax > 1.0f); // pmax interpreted as gamma 
 
-    float_p pminp = std::pow(pmin, 1.0f+slope);  // pmin^(1-g)
-    float_p pmaxp = std::pow(pmax, 1.0f+slope);  // pmax^(1-g)
+    float pminp = std::pow(pmin, 1.0f+slope);  // pmin^(1-g)
+    float pmaxp = std::pow(pmax, 1.0f+slope);  // pmax^(1-g)
 
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
@@ -1877,21 +1877,21 @@ public:
     auto mins = tile.mins;
     auto maxs = tile.maxs;
 
-    float_p x_min = D >= 1 ? mins[0] : 0.0f;
-    float_p y_min = D >= 2 ? mins[1] : 0.0f;
-    float_p z_min = D >= 3 ? mins[2] : 0.0f;
+    float x_min = D >= 1 ? mins[0] : 0.0f;
+    float y_min = D >= 2 ? mins[1] : 0.0f;
+    float z_min = D >= 3 ? mins[2] : 0.0f;
 
-    float_p lenx = D >= 1 ? (maxs[0] - mins[0]) : 0.0f;
-    float_p leny = D >= 2 ? (maxs[1] - mins[1]) : 0.0f;
-    float_p lenz = D >= 3 ? (maxs[2] - mins[2]) : 0.0f;
+    float lenx = D >= 1 ? (maxs[0] - mins[0]) : 0.0f;
+    float leny = D >= 2 ? (maxs[1] - mins[1]) : 0.0f;
+    float lenz = D >= 3 ? (maxs[2] - mins[2]) : 0.0f;
 
     // inject N_inj pairs
-    float_p vx, vy, vz, xi;
-    float_p ux, uy, uz, ginj, pinj;
-    float_p xloc, yloc, zloc;
+    float vx, vy, vz, xi;
+    float ux, uy, uz, ginj, pinj;
+    float xloc, yloc, zloc;
 
-    float_p ncop = 0.0f;
-    float_p z1 = rand();
+    float ncop = 0.0f;
+    float z1 = rand();
 
     while(N_inj > z1 + ncop)
     {
@@ -1948,9 +1948,9 @@ public:
 
     //--------------------------------------------------
     // pair number density
-    float_p wsum_ep = 0.0f;
-    float_p wvrel   = 0.0f;
-    float_p w1, beta, gam;
+    float wsum_ep = 0.0f;
+    float wvrel   = 0.0f;
+    float w1, beta, gam;
 
     size_t Ne = cons["e-"]->size(); 
     for(size_t n1=0; n1<Ne; n1++) {
@@ -1973,8 +1973,8 @@ public:
     }
     //--------------------------------------------------
     // TODO which one?
-    //float_p tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
-    float_p tauT = wsum_ep*w2tau_units; // \tau_T = \sigma_T wsum
+    //float tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
+    float tauT = wsum_ep*w2tau_units; // \tau_T = \sigma_T wsum
 
     //std::cout << "escape" << std::endl;
     //std::cout << "   tauT: " << tauT << std::endl;
@@ -2006,8 +2006,8 @@ public:
     //--------------------------------------------------
     // NOTE two variants; TODO which one is more correct for escape prob. formalism?
       
-    //float_p tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
-    float_p tauT = tau_global; // global optical depth of whole domain
+    //float tauT  = wvrel*w2tau_units; // \tau_T = \sigma_T <v_rel> wsum
+    float tauT = tau_global; // global optical depth of whole domain
 
     if(tau_ext > 0.0) tauT = tau_ext; // use external tau if given
 
@@ -2017,7 +2017,7 @@ public:
                                   //
     cons[t1]->to_other_tiles.clear(); // clear book keeping array
 
-    float_p w, x, f, sKN, P_esc;
+    float w, x, f, sKN, P_esc;
     for(size_t n1=0; n1<Nx; n1++) {
       w = cons[t1]->wgt(n1);
       x = cons[t1]->get_prtcl_ene(n1);
@@ -2041,8 +2041,8 @@ public:
 
       //(c/R)*dt = dt/t_c
       //P_esc = dt_per_tc/( 0.75f + 0.188f*tauT*f*sKN ); // sphere
-      float_p t_esc = ( 1.0f + tauT*f*sKN ); // slab
-      //float_p t_esc = ( 1.0f + tauT*f*sKN + (1.0f-f)*2.886f ); // slab w/ asymptic scaling to 5/sqrt(3)
+      float t_esc = ( 1.0f + tauT*f*sKN ); // slab
+      //float t_esc = ( 1.0f + tauT*f*sKN + (1.0f-f)*2.886f ); // slab w/ asymptic scaling to 5/sqrt(3)
                                                                // this mimics pair-production opacity
                                                                // asymptotic solution to slab geometry
                                                                // with rad. transf. when tau -> infty

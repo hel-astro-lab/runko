@@ -25,7 +25,7 @@ class Tile :
   void step_location(corgi::Grid<D>& /*grid*/) override {
       //std::cout<<"BC spatial step\n";
 
-      //vlv::AmrSpatialLagrangianSolver<float_m> ssol;
+      //vlv::AmrSpatialLagrangianSolver<float> ssol;
       //ssol.solve(*this, grid);
     }
     

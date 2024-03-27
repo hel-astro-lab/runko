@@ -30,8 +30,8 @@ void emf::General3pStrided<2>::solve(
   // make 2d loop with shared memory 
   auto fun = 
   [=] DEVCALLABLE (int i, int j, 
-                   toolbox::Mesh<float_m, 3> &jj, 
-                   toolbox::Mesh<float_m, 3> &tmp)
+                   toolbox::Mesh<float, 3> &jj, 
+                   toolbox::Mesh<float, 3> &tmp)
   {
     for(int istr = 1; istr < stride; istr++){
       tmp(i-H,j-H,k) = 
@@ -119,8 +119,8 @@ void emf::Binomial2Strided2<2>::solve(
   // make 2d loop with shared memory 
   auto fun = 
   [=] DEVCALLABLE (int i, int j, 
-                   toolbox::Mesh<float_m, 3> &jj, 
-                   toolbox::Mesh<float_m, 3> &tmp)
+                   toolbox::Mesh<float, 3> &jj, 
+                   toolbox::Mesh<float, 3> &tmp)
   {
     tmp(i-H,j-H,k) = 
         jj(i-3-H, j-3-H, 0)*1.0*wn +

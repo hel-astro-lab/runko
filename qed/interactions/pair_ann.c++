@@ -26,39 +26,39 @@ namespace qed {
   using toolbox::inv;
 
 
-tuple<float_p, float_p> PairAnn::get_minmax_ene( string t1, string t2, double ene)
+tuple<float, float> PairAnn::get_minmax_ene( string t1, string t2, double ene)
 {
   return {0.0f, INF}; 
 }
 
 
 PairAnn::pair_float PairAnn::comp_cross_section(
-    string t1, float_p ux1, float_p uy1, float_p uz1,
-    string t2, float_p ux2, float_p uy2, float_p uz2)
+    string t1, float ux1, float uy1, float uz1,
+    string t2, float ux2, float uy2, float uz2)
 {
 
-  float_p zp = norm(ux1, uy1, uz1); // z_+
-  float_p zm = norm(ux2, uy2, uz2); // z_-
-  float_p gamp = sqrt(zp*zp + 1.0f); // \gamma_+
-  float_p gamm = sqrt(zm*zm + 1.0f); // \gamma_-
+  float zp = norm(ux1, uy1, uz1); // z_+
+  float zm = norm(ux2, uy2, uz2); // z_-
+  float gamp = sqrt(zp*zp + 1.0f); // \gamma_+
+  float gamm = sqrt(zm*zm + 1.0f); // \gamma_-
 
-  float_p zeta = ( ux1*ux2 + uy1*uy2 + uz1*uz2 )/( zm*zp ); //#angle between pair's momentum
+  float zeta = ( ux1*ux2 + uy1*uy2 + uz1*uz2 )/( zm*zp ); //#angle between pair's momentum
   
   //qe = max(1+EPS, gamp*gamm - zp*zm*zeta) 
-  float_p qe =  gamp*gamm - zp*zm*zeta; //# product of 4-moms; q_e = z_- . z_+; = 2gamma_cm^2 - 1 = gamma_r
-  float_p q = qe + 1.0f;          //# q_e = q + 1
-  float_p bcm = sqrt( (q - 2.0f)/q ); //# \beta_cm; matches beta' in Coppi & Blandford
-  float_p gcm = 1.0f/sqrt(1.0f - bcm*bcm); //# gamma_cm
+  float qe =  gamp*gamm - zp*zm*zeta; //# product of 4-moms; q_e = z_- . z_+; = 2gamma_cm^2 - 1 = gamma_r
+  float q = qe + 1.0f;          //# q_e = q + 1
+  float bcm = sqrt( (q - 2.0f)/q ); //# \beta_cm; matches beta' in Coppi & Blandford
+  float gcm = 1.0f/sqrt(1.0f - bcm*bcm); //# gamma_cm
 
   //# expression via relativistic invariant x = sqrt( p_- . p_+ )
-  //float_p x = bcm;                  //# free variable
-  //float_p s0 = (0.25f*(1.0f/x/x)*(1.0f-x*x))*( (3.0f-x*x*x*x)*log((1.0f+x)/(1.0f-x)) + 2.0f*x*(x*x - 2.0f)); //# ver2
+  //float x = bcm;                  //# free variable
+  //float s0 = (0.25f*(1.0f/x/x)*(1.0f-x*x))*( (3.0f-x*x*x*x)*log((1.0f+x)/(1.0f-x)) + 2.0f*x*(x*x - 2.0f)); //# ver2
   //s0 *= 3.0f/8.0f; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
 
   //s0 *= 2.0; // FIXME ????
 
   //# ver2; Svensson 1992
-  float_p s0 = (0.25f/(bcm*gcm*gcm))*( (1.0f/bcm)*(2.0f + 2.0f/gcm/gcm - 1.0f/pow(gcm,4))*log( (1.0f+bcm)/(1.0f-bcm) ) - 2.0f - 2.0f/gcm/gcm);
+  float s0 = (0.25f/(bcm*gcm*gcm))*( (1.0f/bcm)*(2.0f + 2.0f/gcm/gcm - 1.0f/pow(gcm,4))*log( (1.0f+bcm)/(1.0f-bcm) ) - 2.0f - 2.0f/gcm/gcm);
   s0 *= 3.0f/8.0f; //# normalization to rates; mathches with Coppi & Blandford eq 3.1
      
   //std::cout << " PAIR-ANN:" << s0 << " " << s1 << std::endl;
@@ -86,8 +86,8 @@ PairAnn::pair_float PairAnn::comp_cross_section(
   //#fkin2 = bcm*q/(gamm*gamp) # equal expression to above
 
   // kinematic factor based on Svensson 82 Eq 8; qe = q_+ . q_-
-  float_p fkin = sqrt( qe*qe - 1.0 )/(gamp*gamm);
-  //float_p fkin = 1.0;
+  float fkin = sqrt( qe*qe - 1.0 )/(gamp*gamm);
+  //float fkin = 1.0;
 
   //if qe**2 -1 < 0: print('pair-ann cs:', s0, fkin, qe, gamp, gamm, zeta, x)
   return {s0, fkin};
@@ -95,11 +95,11 @@ PairAnn::pair_float PairAnn::comp_cross_section(
 
 
 //tuple<
-//    string, float_p, float_p, float_p,
-//    string, float_p, float_p, float_p>
+//    string, float, float, float,
+//    string, float, float, float>
 //PairAnn::interact(
-//  string t1, float_p ux1, float_p uy1, float_p uz1,
-//  string t2, float_p ux2, float_p uy2, float_p uz2) 
+//  string t1, float ux1, float uy1, float uz1,
+//  string t2, float ux2, float uy2, float uz2) 
 //{
 //
 //  //      particle 1          particle 2
@@ -107,60 +107,60 @@ PairAnn::pair_float PairAnn::comp_cross_section(
 //}
   
 void PairAnn::interact(
-  string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
-  string& t2, float_p& ux2, float_p& uy2, float_p& uz2) 
+  string& t1, float& ux1, float& uy1, float& uz1,
+  string& t2, float& ux2, float& uy2, float& uz2) 
 {
-  Vec3<float_p> zmvec(ux1, uy1, uz1);
-  Vec3<float_p> zpvec(ux2, uy2, uz2);
+  Vec3<float> zmvec(ux1, uy1, uz1);
+  Vec3<float> zpvec(ux2, uy2, uz2);
 
-  float_p zm = norm(zmvec); // electron momenta z_-
-  float_p zp = norm(zpvec); // positron momenta z_+
+  float zm = norm(zmvec); // electron momenta z_-
+  float zp = norm(zpvec); // positron momenta z_+
 
-  float_p gamm = sqrt(zm*zm + 1.0); // electron gamma_-
-  float_p gamp = sqrt(zp*zp + 1.0); // positron gamma_+
+  float gamm = sqrt(zm*zm + 1.0); // electron gamma_-
+  float gamp = sqrt(zp*zp + 1.0); // positron gamma_+
 
-  Vec3<float_p> omm = zmvec/zm; // direction of electron momenta Omega_-
-  Vec3<float_p> omp = zpvec/zp; // direction of positron momenta Omega_+
+  Vec3<float> omm = zmvec/zm; // direction of electron momenta Omega_-
+  Vec3<float> omp = zpvec/zp; // direction of positron momenta Omega_+
         
-  float_p zeta = dot(omm, omp); //#angle between electron and positron momenta
+  float zeta = dot(omm, omp); //#angle between electron and positron momenta
 
-  float_p s0 = gamm + gamp;                        // s0 = x + x1 #sqrt(2q) in CoM
-  float_p s  = sqrt(zm*zm + zp*zp + 2*zm*zp*zeta); // s  = sqrt(x**2  + x1**2 + 2*x*x1*mu)
-  float_p q  = gamp*gamm - zp*zm*zeta + 1.0;       // q  = x*x1*(1-mu)
+  float s0 = gamm + gamp;                        // s0 = x + x1 #sqrt(2q) in CoM
+  float s  = sqrt(zm*zm + zp*zp + 2*zm*zp*zeta); // s  = sqrt(x**2  + x1**2 + 2*x*x1*mu)
+  float q  = gamp*gamm - zp*zm*zeta + 1.0;       // q  = x*x1*(1-mu)
   // alternatively:  q = s0**2 - s**2
 
   //Vec3 svec = zp*omp + zm*omm;                 // svec = x*om + x1*om1
-  Vec3<float_p> svec_a = zp*omp;                  // part 1
-  Vec3<float_p> svec_b = zm*omm;                  // part 2
-  Vec3<float_p> svec = svec_a + svec_b;
+  Vec3<float> svec_a = zp*omp;                  // part 1
+  Vec3<float> svec_b = zm*omm;                  // part 2
+  Vec3<float> svec = svec_a + svec_b;
 
   //# CoM frame variables; x_c
-  Vec3<float_p> bc = svec/(-1.0f*s0); //lorentz transform along CoM velocity vector
-  float_p gc = s0/sqrt(2.0*q);       // lorentz factor of the boost; CoM vel
-  Vec3<float_p> uv = gc*bc;          // com four vel
-  float_p v2 = dot(bc,bc);           // v_c^2
-  float_p vc = sqrt(v2);
+  Vec3<float> bc = svec/(-1.0f*s0); //lorentz transform along CoM velocity vector
+  float gc = s0/sqrt(2.0*q);       // lorentz factor of the boost; CoM vel
+  Vec3<float> uv = gc*bc;          // com four vel
+  float v2 = dot(bc,bc);           // v_c^2
+  float vc = sqrt(v2);
 
   //--------------------------------------------------
   // boosted variables in CoM frame; x_cm 
-  float_p gcm = sqrt(q/2.0); // # prtcl energies are equal in this frame; photons also have this energy
-  float_p vcm = sqrt(1.0-1.0/(gcm*gcm)); //# v_cm
+  float gcm = sqrt(q/2.0); // # prtcl energies are equal in this frame; photons also have this energy
+  float vcm = sqrt(1.0-1.0/(gcm*gcm)); //# v_cm
 
   //# angle between b_cm and b_c; electron and CoM 
-  float_p y = (1.0/vc/vcm)*((gamp - gamm)/(gamp + gamm));
+  float y = (1.0/vc/vcm)*((gamp - gamm)/(gamp + gamm));
 
   //# build new coordinate system along svec
-  Vec3<float_p> kvec = bc/norm(bc);            // z axis along b_c vector
-  Vec3<float_p> jvec = unit_cross(kvec, omm);  // y axis to electron direction  
-  Vec3<float_p> ivec = unit_cross(jvec, kvec); // x axis just orthogonal to others 
-  Mat3<float_p> M(ivec, jvec, kvec);           // 3x3 rotation matrix
+  Vec3<float> kvec = bc/norm(bc);            // z axis along b_c vector
+  Vec3<float> jvec = unit_cross(kvec, omm);  // y axis to electron direction  
+  Vec3<float> ivec = unit_cross(jvec, kvec); // x axis just orthogonal to others 
+  Mat3<float> M(ivec, jvec, kvec);           // 3x3 rotation matrix
 
 
   //#--------------------------------------------------
   //# draw angles
   int niter = 0;
 
-  float_p cosz, phi, xang, z1, z2, F; // temp variables
+  float cosz, phi, xang, z1, z2, F; // temp variables
   while(true) {
     phi = 2.0*PI*rand(); // azimuthal symmetry angle
     cosz= -1.0 + 2.0*rand(); //# angle between k_cm and b_c; photon and CoM
@@ -186,49 +186,49 @@ void PairAnn::interact(
 
 
   //# new photon vectors in CoM frame
-  float_p sinz = sqrt(1.0 - cosz*cosz); 
-  Vec3<float_p> omrR( sinz*cos(phi), sinz*sin(phi), cosz );
+  float sinz = sqrt(1.0 - cosz*cosz); 
+  Vec3<float> omrR( sinz*cos(phi), sinz*sin(phi), cosz );
 
   //# rotate back to lab frame angles
-  Mat3<float_p> Minv = inv( M );
-  Vec3<float_p> omr0 = dot( Minv, omrR );
-  Vec3<float_p> omr1 = -1.0f*omr0; // other photon has same but opposite direction 
+  Mat3<float> Minv = inv( M );
+  Vec3<float> omr0 = dot( Minv, omrR );
+  Vec3<float> omr1 = -1.0f*omr0; // other photon has same but opposite direction 
 
 
   //# boost matrix back to lab frame; constructed from b_c vector
-  Vec4<float_p> B1( gc,       -uv(0),                    -uv(1),                    -uv(2)                 );
-  Vec4<float_p> B2(-uv(0), 1.+(gc-1.)*bc(0)*bc(0)/v2,    (gc-1.)*bc(1)*bc(0)/v2,    (gc-1.)*bc(2)*bc(0)/v2 );
-  Vec4<float_p> B3(-uv(1),    (gc-1.)*bc(0)*bc(1)/v2, 1.+(gc-1.)*bc(1)*bc(1)/v2,    (gc-1.)*bc(2)*bc(1)/v2 );
-  Vec4<float_p> B4(-uv(2),    (gc-1.)*bc(0)*bc(2)/v2,    (gc-1.)*bc(1)*bc(2)/v2, 1.+(gc-1.)*bc(2)*bc(2)/v2 );
-  Mat4<float_p> B(B1, B2, B3, B4);
+  Vec4<float> B1( gc,       -uv(0),                    -uv(1),                    -uv(2)                 );
+  Vec4<float> B2(-uv(0), 1.+(gc-1.)*bc(0)*bc(0)/v2,    (gc-1.)*bc(1)*bc(0)/v2,    (gc-1.)*bc(2)*bc(0)/v2 );
+  Vec4<float> B3(-uv(1),    (gc-1.)*bc(0)*bc(1)/v2, 1.+(gc-1.)*bc(1)*bc(1)/v2,    (gc-1.)*bc(2)*bc(1)/v2 );
+  Vec4<float> B4(-uv(2),    (gc-1.)*bc(0)*bc(2)/v2,    (gc-1.)*bc(1)*bc(2)/v2, 1.+(gc-1.)*bc(2)*bc(2)/v2 );
+  Mat4<float> B(B1, B2, B3, B4);
 
   //# four momenta of photons
-  Vec4<float_p> xp0(gcm, gcm*omr0(0), gcm*omr0(1), gcm*omr0(2));
-  Vec4<float_p> xp1(gcm, gcm*omr1(0), gcm*omr1(1), gcm*omr1(2));
+  Vec4<float> xp0(gcm, gcm*omr0(0), gcm*omr0(1), gcm*omr0(2));
+  Vec4<float> xp1(gcm, gcm*omr1(0), gcm*omr1(1), gcm*omr1(2));
 
   //# boost 
-  Vec4<float_p> xpp0 = dot(B, xp0);
-  Vec4<float_p> xpp1 = dot(B, xp1);
+  Vec4<float> xpp0 = dot(B, xp0);
+  Vec4<float> xpp1 = dot(B, xp1);
 
-  float_p x0 = xpp0(0); // energy of primary photon
-  float_p x1 = xpp1(0); // energy of secondary photon
+  float x0 = xpp0(0); // energy of primary photon
+  float x1 = xpp1(0); // energy of secondary photon
 
-  Vec3<float_p> om0( xpp0(1)/x0, xpp0(2)/x0, xpp0(3)/x0 ); 
-  Vec3<float_p> om1( xpp1(1)/x1, xpp1(2)/x1, xpp1(3)/x1 ); 
+  Vec3<float> om0( xpp0(1)/x0, xpp0(2)/x0, xpp0(3)/x0 ); 
+  Vec3<float> om1( xpp1(1)/x1, xpp1(2)/x1, xpp1(3)/x1 ); 
 
 #ifdef DEBUG
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed
   if(true){
-    float_p enec = gamm + gamp - (x0 + x1);
-    Vec3<float_p> momc; // zmvec + zpvec; - (x*om + x1*om1);
+    float enec = gamm + gamp - (x0 + x1);
+    Vec3<float> momc; // zmvec + zpvec; - (x*om + x1*om1);
     for(size_t i=0; i<3; i++) momc(i) = zmvec(i) + zpvec(i) - ( x0*om0(i) + x1*om1(i) );
-    float_p moms = sum(momc);
+    float moms = sum(momc);
 
-    float_p nom1i = norm(omm);
-    float_p nom2i = norm(omp);
-    float_p nom1  = norm(om0);
-    float_p nom2  = norm(om1);
+    float nom1i = norm(omm);
+    float nom2i = norm(omp);
+    float nom1  = norm(om0);
+    float nom2  = norm(om1);
 
     bool ts[8]; // t1,t2,t3,t4,t5,t6,t7,t8 = False,False,False,False,False,False,False,False
     for(size_t i=0; i<8; i++)    ts[i] = false; 

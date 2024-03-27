@@ -16,12 +16,12 @@ using toolbox::lerp;
 // cubic linear interpolation of the staggered emf to the 
 // location of ind+dx+dy+dz
 inline auto interpolate_fields(
-    const toolbox::Mesh<float_m, 3>& exM,
-    const toolbox::Mesh<float_m, 3>& eyM,
-    const toolbox::Mesh<float_m, 3>& ezM,
-    const toolbox::Mesh<float_m, 3>& bxM,
-    const toolbox::Mesh<float_m, 3>& byM,
-    const toolbox::Mesh<float_m, 3>& bzM,
+    const toolbox::Mesh<float, 3>& exM,
+    const toolbox::Mesh<float, 3>& eyM,
+    const toolbox::Mesh<float, 3>& ezM,
+    const toolbox::Mesh<float, 3>& bxM,
+    const toolbox::Mesh<float, 3>& byM,
+    const toolbox::Mesh<float, 3>& bzM,
     size_t ind, double dx, double dy, double dz, // interpolation target location
     size_t iy, size_t iz                         // mesh sizes in y and z dir
     ) -> std::tuple<double, double, double, double, double, double>

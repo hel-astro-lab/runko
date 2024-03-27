@@ -58,13 +58,13 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
 
     if(nparts <= 0) continue; // skip zero containers
 
-    float_p* loc[3];
+    float* loc[3];
     for( i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    float_p* vel[3];
+    float* vel[3];
     for( i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-    float_p* ch;
+    float* ch;
     ch = &( container.wgt(0) );
 
 

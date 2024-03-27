@@ -179,10 +179,10 @@ inline T interp_linear(
 // XXX WARNING: not tested
 //
 template<>
-inline float_m interp_linear<float_m,1>(
-    const AdaptiveMesh<float_m,3>& mesh,
-    typename AdaptiveMesh<float_m,3>::indices_t& indices,
-    typename AdaptiveMesh<float_m,3>::value_array_t coordinates,
+inline float interp_linear<float,1>(
+    const AdaptiveMesh<float,3>& mesh,
+    typename AdaptiveMesh<float,3>::indices_t& indices,
+    typename AdaptiveMesh<float,3>::value_array_t coordinates,
     int rfl)
 {
   uint64_t 
@@ -190,13 +190,13 @@ inline float_m interp_linear<float_m,1>(
     j = indices[1], // + uint64_t(coordinates[1] - 1.5),
     k = indices[2]; // + uint64_t(coordinates[2] - 1.5);
 	
-	float_m dx = coordinates[0]; // - T(0.5); 
+	float dx = coordinates[0]; // - T(0.5); 
 
-  float_m d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+  float d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
 
 
   // Mesh is actually corner-stored so does not work:
-	//float_m d00 = lerp_center(dx, 
+	//float d00 = lerp_center(dx, 
   //    _getv(mesh, {{i-1, j,   k  }}, rfl), 
   //    _getv(mesh, {{i,   j,   k  }}, rfl), 
   //    _getv(mesh, {{i+1, j,   k  }}, rfl) 
@@ -215,10 +215,10 @@ inline float_m interp_linear<float_m,1>(
 // https://svn.blender.org/svnroot/bf-blender/
 // branches/volume25/source/blender/blenlib/intern/voxel.c  
 template<>
-inline float_m interp_linear<float_m,3>(
-    const AdaptiveMesh<float_m,3>& mesh,
-    typename AdaptiveMesh<float_m,3>::indices_t& indices,
-    typename AdaptiveMesh<float_m,3>::value_array_t coordinates,
+inline float interp_linear<float,3>(
+    const AdaptiveMesh<float,3>& mesh,
+    typename AdaptiveMesh<float,3>::indices_t& indices,
+    typename AdaptiveMesh<float,3>::value_array_t coordinates,
     int rfl)
 {
   uint64_t 
@@ -226,17 +226,17 @@ inline float_m interp_linear<float_m,3>(
     j = indices[1], // + uint64_t(coordinates[1] - 1.5),
     k = indices[2]; // + uint64_t(coordinates[2] - 1.5);
 	
-	float_m dx = coordinates[0]; // - T(0.5); 
-  float_m dy = coordinates[1]; // - T(0.5); 
-  float_m dz = coordinates[2]; // - T(0.5);
+	float dx = coordinates[0]; // - T(0.5); 
+  float dy = coordinates[1]; // - T(0.5); 
+  float dz = coordinates[2]; // - T(0.5);
 	
-	float_m d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
-	float_m d10 = lerp_corner(dx, _getv(mesh, {{i, j+1, k  }}, rfl), _getv(mesh, {{i+1, j+1, k  }}, rfl) );
-	float_m d01 = lerp_corner(dx, _getv(mesh, {{i, j,   k+1}}, rfl), _getv(mesh, {{i+1, j,   k+1}}, rfl) );
-	float_m d11 = lerp_corner(dx, _getv(mesh, {{i, j+1, k+1}}, rfl), _getv(mesh, {{i+1, j+1, k+1}}, rfl) );
-	float_m d0  = lerp_corner(dy, d00, d10);
-	float_m d1  = lerp_corner(dy, d01, d11);
-	float_m d   = lerp_corner(dz, d0,  d1);
+	float d00 = lerp_corner(dx, _getv(mesh, {{i, j,   k  }}, rfl), _getv(mesh, {{i+1, j,   k  }}, rfl) );
+	float d10 = lerp_corner(dx, _getv(mesh, {{i, j+1, k  }}, rfl), _getv(mesh, {{i+1, j+1, k  }}, rfl) );
+	float d01 = lerp_corner(dx, _getv(mesh, {{i, j,   k+1}}, rfl), _getv(mesh, {{i+1, j,   k+1}}, rfl) );
+	float d11 = lerp_corner(dx, _getv(mesh, {{i, j+1, k+1}}, rfl), _getv(mesh, {{i+1, j+1, k+1}}, rfl) );
+	float d0  = lerp_corner(dy, d00, d10);
+	float d1  = lerp_corner(dy, d01, d11);
+	float d   = lerp_corner(dz, d0,  d1);
 	
 	return d;
 }
@@ -354,10 +354,10 @@ inline T interp_cubic(
 //   and https://arxiv.org/pdf/0905.3564.pdf
 //
 template<>
-inline float_m interp_cubic<float_m,1>(
-    const AdaptiveMesh<float_m,3>& mesh,
-    typename AdaptiveMesh<float_m,3>::indices_t& indices,
-    typename AdaptiveMesh<float_m,3>::value_array_t& coordinates,
+inline float interp_cubic<float,1>(
+    const AdaptiveMesh<float,3>& mesh,
+    typename AdaptiveMesh<float,3>::indices_t& indices,
+    typename AdaptiveMesh<float,3>::value_array_t& coordinates,
     int rfl)
 {
   uint64_t 
@@ -365,11 +365,11 @@ inline float_m interp_cubic<float_m,1>(
     j = indices[1], 
     k = indices[2]; 
 	
-	float_m dx = coordinates[0]; // - T(0.5); 
-  //float_m dy = coordinates[1]; // - T(0.5); 
-  //float_m dz = coordinates[2]; // - T(0.5);
+	float dx = coordinates[0]; // - T(0.5); 
+  //float dy = coordinates[1]; // - T(0.5); 
+  //float dz = coordinates[2]; // - T(0.5);
 
-	float_m pm1 = _getv(mesh, {{i-1, j  , k}}  , rfl),
+	float pm1 = _getv(mesh, {{i-1, j  , k}}  , rfl),
 	      p0  = _getv(mesh, {{i  , j  , k}}  , rfl),
 	      pp1 = _getv(mesh, {{i+1, j  , k}}  , rfl),
 	      pp2 = _getv(mesh, {{i+2, j  , k}}  , rfl);
@@ -396,10 +396,10 @@ T tricubic_interp(
 
 /// Tricubic interpolator (specialization to D=3)
 template<>
-inline float_m interp_cubic<float_m,3>(
-    const AdaptiveMesh<float_m,3>& mesh,
-    typename AdaptiveMesh<float_m,3>::indices_t& indices,
-    typename AdaptiveMesh<float_m,3>::value_array_t& coordinates,
+inline float interp_cubic<float,3>(
+    const AdaptiveMesh<float,3>& mesh,
+    typename AdaptiveMesh<float,3>::indices_t& indices,
+    typename AdaptiveMesh<float,3>::value_array_t& coordinates,
     int rfl)
 {
   uint64_t 
@@ -407,9 +407,9 @@ inline float_m interp_cubic<float_m,3>(
     j = indices[1], // - uint64_t(coordinates[1] - 1.5),
     k = indices[2]; // - uint64_t(coordinates[2] - 1.5);
 	
-	float_m dx = coordinates[0]; // - T(0.5); 
-  float_m dy = coordinates[1]; // - T(0.5); 
-  float_m dz = coordinates[2]; // - T(0.5);
+	float dx = coordinates[0]; // - T(0.5); 
+  float dy = coordinates[1]; // - T(0.5); 
+  float dz = coordinates[2]; // - T(0.5);
 
   /*
   T x[64];
@@ -417,7 +417,7 @@ inline float_m interp_cubic<float_m,3>(
   */
 
   // Extract the local vocal values and calculate partial derivatives.
-	float_m x[64] = {
+	float x[64] = {
 
 		    // values of f(x,y,z) at each corner.
 		    _getv(mesh, {{i  , j  , k}}  , rfl),
@@ -430,87 +430,87 @@ inline float_m interp_cubic<float_m,3>(
         _getv(mesh, {{i+1, j+1, k+1}}, rfl),
 
         // values of df/dx at each corner.
-		    float_m(0.5)*(_getv(mesh, {{i+1, j  , k   }}, rfl) - _getv(mesh, {{i-1, j  , k   }}, rfl)),
-		    float_m(0.5)*(_getv(mesh, {{i+2, j  , k   }}, rfl) - _getv(mesh, {{i  , j  , k   }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+1, j+1, k   }}, rfl) - _getv(mesh, {{i-1, j+1, k   }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+2, j+1, k   }}, rfl) - _getv(mesh, {{i  , j+1, k   }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+1, j  , k+1 }}, rfl) - _getv(mesh, {{i-1, j  , k+1 }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+2, j  , k+1 }}, rfl) - _getv(mesh, {{i  , j  , k+1 }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+1, j+1, k+1 }}, rfl) - _getv(mesh, {{i-1, j+1, k+1 }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+2, j+1, k+1 }}, rfl) - _getv(mesh, {{i  , j+1, k+1 }}, rfl)),
+		    float(0.5)*(_getv(mesh, {{i+1, j  , k   }}, rfl) - _getv(mesh, {{i-1, j  , k   }}, rfl)),
+		    float(0.5)*(_getv(mesh, {{i+2, j  , k   }}, rfl) - _getv(mesh, {{i  , j  , k   }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+1, j+1, k   }}, rfl) - _getv(mesh, {{i-1, j+1, k   }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+2, j+1, k   }}, rfl) - _getv(mesh, {{i  , j+1, k   }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+1, j  , k+1 }}, rfl) - _getv(mesh, {{i-1, j  , k+1 }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+2, j  , k+1 }}, rfl) - _getv(mesh, {{i  , j  , k+1 }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+1, j+1, k+1 }}, rfl) - _getv(mesh, {{i-1, j+1, k+1 }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+2, j+1, k+1 }}, rfl) - _getv(mesh, {{i  , j+1, k+1 }}, rfl)),
   
         // values of df/dy at each corner.
-		    float_m(0.5)*(_getv(mesh, {{i  , j+1 , k  }}, rfl) - _getv(mesh, {{i  , j-1,  k  }}, rfl)),
-		    float_m(0.5)*(_getv(mesh, {{i+1, j+1 , k  }}, rfl) - _getv(mesh, {{i+1, j-1,  k  }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i  , j+2 , k  }}, rfl) - _getv(mesh, {{i  , j,    k  }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+1, j+2 , k  }}, rfl) - _getv(mesh, {{i+1, j,    k  }}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i  , j+1 , k+1}}, rfl) - _getv(mesh, {{i  , j- 1, k+1}}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+1, j+1 , k+1}}, rfl) - _getv(mesh, {{i+1, j- 1, k+1}}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i  , j+2 , k+1}}, rfl) - _getv(mesh, {{i  , j,    k+1}}, rfl)),
-			  float_m(0.5)*(_getv(mesh, {{i+1, j+2 , k+1}}, rfl) - _getv(mesh, {{i+1, j,    k+1}}, rfl)),
+		    float(0.5)*(_getv(mesh, {{i  , j+1 , k  }}, rfl) - _getv(mesh, {{i  , j-1,  k  }}, rfl)),
+		    float(0.5)*(_getv(mesh, {{i+1, j+1 , k  }}, rfl) - _getv(mesh, {{i+1, j-1,  k  }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i  , j+2 , k  }}, rfl) - _getv(mesh, {{i  , j,    k  }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+1, j+2 , k  }}, rfl) - _getv(mesh, {{i+1, j,    k  }}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i  , j+1 , k+1}}, rfl) - _getv(mesh, {{i  , j- 1, k+1}}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+1, j+1 , k+1}}, rfl) - _getv(mesh, {{i+1, j- 1, k+1}}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i  , j+2 , k+1}}, rfl) - _getv(mesh, {{i  , j,    k+1}}, rfl)),
+			  float(0.5)*(_getv(mesh, {{i+1, j+2 , k+1}}, rfl) - _getv(mesh, {{i+1, j,    k+1}}, rfl)),
 
         // values of df/dz at each corner.
-		    float_m(0.5)*(_getv(mesh , {{i   , j   , k+1}} , rfl) - _getv(mesh , {{i  , j  , k- 1}}, rfl)),
-		    float_m(0.5)*(_getv(mesh , {{i+1 , j   , k+1}} , rfl) - _getv(mesh , {{i+1, j  , k- 1}}, rfl)),
-			  float_m(0.5)*(_getv(mesh , {{i   , j+1 , k+1}} , rfl) - _getv(mesh , {{i  , j+1, k- 1}}, rfl)),
-			  float_m(0.5)*(_getv(mesh , {{i+1 , j+1 , k+1}} , rfl) - _getv(mesh , {{i+1, j+1, k- 1}}, rfl)),
-			  float_m(0.5)*(_getv(mesh , {{i   , j   , k+2}} , rfl) - _getv(mesh , {{i  , j  , k   }}, rfl)),
-			  float_m(0.5)*(_getv(mesh , {{i+1 , j   , k+2}} , rfl) - _getv(mesh , {{i+1, j  , k   }}, rfl)),
-			  float_m(0.5)*(_getv(mesh , {{i   , j+1 , k+2}} , rfl) - _getv(mesh , {{i  , j+1, k   }}, rfl)),
-			  float_m(0.5)*(_getv(mesh , {{i+1 , j+1 , k+2}} , rfl) - _getv(mesh , {{i+1, j+1, k   }}, rfl)),
+		    float(0.5)*(_getv(mesh , {{i   , j   , k+1}} , rfl) - _getv(mesh , {{i  , j  , k- 1}}, rfl)),
+		    float(0.5)*(_getv(mesh , {{i+1 , j   , k+1}} , rfl) - _getv(mesh , {{i+1, j  , k- 1}}, rfl)),
+			  float(0.5)*(_getv(mesh , {{i   , j+1 , k+1}} , rfl) - _getv(mesh , {{i  , j+1, k- 1}}, rfl)),
+			  float(0.5)*(_getv(mesh , {{i+1 , j+1 , k+1}} , rfl) - _getv(mesh , {{i+1, j+1, k- 1}}, rfl)),
+			  float(0.5)*(_getv(mesh , {{i   , j   , k+2}} , rfl) - _getv(mesh , {{i  , j  , k   }}, rfl)),
+			  float(0.5)*(_getv(mesh , {{i+1 , j   , k+2}} , rfl) - _getv(mesh , {{i+1, j  , k   }}, rfl)),
+			  float(0.5)*(_getv(mesh , {{i   , j+1 , k+2}} , rfl) - _getv(mesh , {{i  , j+1, k   }}, rfl)),
+			  float(0.5)*(_getv(mesh , {{i+1 , j+1 , k+2}} , rfl) - _getv(mesh , {{i+1, j+1, k   }}, rfl)),
 
         // values of d2f/dxdy at each corner.
-		    float_m(0.25)*(_getv(mesh, {{i+1,j+1,k}},   rfl) - _getv(mesh, {{i-1,j+1,k}}, rfl)   - _getv(mesh, {{i+1,j-1,k}}, rfl)   + _getv(mesh, {{i-1,j-1,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j+1,k}},   rfl) - _getv(mesh, {{i,j+1,k}}, rfl)     - _getv(mesh, {{i+2,j-1,k}}, rfl)   + _getv(mesh, {{i,j-1,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+2,k}},   rfl) - _getv(mesh, {{i-1,j+2,k}}, rfl)   - _getv(mesh, {{i+1,j,k}}, rfl)     + _getv(mesh, {{i-1,j,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j+2,k}},   rfl) - _getv(mesh, {{i,j+2,k}}, rfl)     - _getv(mesh, {{i+2,j,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl) + _getv(mesh, {{i-1,j-1,k+1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i+2,j-1,k+1}}, rfl) + _getv(mesh, {{i,j-1,k+1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i-1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)   + _getv(mesh, {{i-1,j,k+1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j+2,k+1}}, rfl) - _getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i+2,j,k+1}}, rfl)   + _getv(mesh, {{i,j,k+1}}, rfl)),
+		    float(0.25)*(_getv(mesh, {{i+1,j+1,k}},   rfl) - _getv(mesh, {{i-1,j+1,k}}, rfl)   - _getv(mesh, {{i+1,j-1,k}}, rfl)   + _getv(mesh, {{i-1,j-1,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j+1,k}},   rfl) - _getv(mesh, {{i,j+1,k}}, rfl)     - _getv(mesh, {{i+2,j-1,k}}, rfl)   + _getv(mesh, {{i,j-1,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+2,k}},   rfl) - _getv(mesh, {{i-1,j+2,k}}, rfl)   - _getv(mesh, {{i+1,j,k}}, rfl)     + _getv(mesh, {{i-1,j,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j+2,k}},   rfl) - _getv(mesh, {{i,j+2,k}}, rfl)     - _getv(mesh, {{i+2,j,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl) + _getv(mesh, {{i-1,j-1,k+1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i+2,j-1,k+1}}, rfl) + _getv(mesh, {{i,j-1,k+1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i-1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)   + _getv(mesh, {{i-1,j,k+1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j+2,k+1}}, rfl) - _getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i+2,j,k+1}}, rfl)   + _getv(mesh, {{i,j,k+1}}, rfl)),
 
         // values of d2f/dxdz at each corner.
-		    float_m(0.25)*(_getv(mesh, {{i+1,j,k+1}}, rfl)   - _getv(mesh, {{i-1,j,k+1}}, rfl)  - _getv(mesh, {{i+1,j,k-1}}, rfl)   + _getv(mesh, {{i-1,j,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j,k+1}}, rfl)   - _getv(mesh, {{i,j,k+1}}, rfl)    - _getv(mesh, {{i+2,j,k-1}}, rfl)   + _getv(mesh, {{i,j,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl)- _getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i-1,j+1,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)  - _getv(mesh, {{i+2,j+1,k-1}}, rfl) + _getv(mesh, {{i,j+1,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j,k+2}}, rfl)   - _getv(mesh, {{i-1,j,k+2}}, rfl)  - _getv(mesh, {{i+1,j,k}}, rfl)     + _getv(mesh, {{i-1,j,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j,k+2}}, rfl)   - _getv(mesh, {{i,j,k+2}}, rfl)    - _getv(mesh, {{i+2,j,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i-1,j+1,k+2}}, rfl)- _getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i-1,j+1,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+2,j+1,k+2}}, rfl) - _getv(mesh, {{i,j+1,k+2}}, rfl)  - _getv(mesh, {{i+2,j+1,k}}, rfl)   + _getv(mesh, {{i,j+1,k}}, rfl)),
+		    float(0.25)*(_getv(mesh, {{i+1,j,k+1}}, rfl)   - _getv(mesh, {{i-1,j,k+1}}, rfl)  - _getv(mesh, {{i+1,j,k-1}}, rfl)   + _getv(mesh, {{i-1,j,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j,k+1}}, rfl)   - _getv(mesh, {{i,j,k+1}}, rfl)    - _getv(mesh, {{i+2,j,k-1}}, rfl)   + _getv(mesh, {{i,j,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl)- _getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i-1,j+1,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)  - _getv(mesh, {{i+2,j+1,k-1}}, rfl) + _getv(mesh, {{i,j+1,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j,k+2}}, rfl)   - _getv(mesh, {{i-1,j,k+2}}, rfl)  - _getv(mesh, {{i+1,j,k}}, rfl)     + _getv(mesh, {{i-1,j,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j,k+2}}, rfl)   - _getv(mesh, {{i,j,k+2}}, rfl)    - _getv(mesh, {{i+2,j,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i-1,j+1,k+2}}, rfl)- _getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i-1,j+1,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+2,j+1,k+2}}, rfl) - _getv(mesh, {{i,j+1,k+2}}, rfl)  - _getv(mesh, {{i+2,j+1,k}}, rfl)   + _getv(mesh, {{i,j+1,k}}, rfl)),
 
         // values of d2f/dydz at each corner.
-		    float_m(0.25)*(_getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i,j-1,k+1}}, rfl)  - _getv(mesh, {{i,j+1,k-1}}, rfl)   + _getv(mesh, {{i,j-1,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl)- _getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i+1,j-1,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i,j,k+1}}, rfl)    - _getv(mesh, {{i,j+2,k-1}}, rfl)   + _getv(mesh, {{i,j,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)  - _getv(mesh, {{i+1,j+2,k-1}}, rfl) + _getv(mesh, {{i+1,j,k-1}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i,j+1,k+2}}, rfl)   - _getv(mesh, {{i,j-1,k+2}}, rfl)  - _getv(mesh, {{i,j+1,k}}, rfl)     + _getv(mesh, {{i,j-1,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i+1,j-1,k+2}}, rfl)- _getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i+1,j-1,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i,j+2,k+2}}, rfl)   - _getv(mesh, {{i,j,k+2}}, rfl)    - _getv(mesh, {{i,j+2,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
-			  float_m(0.25)*(_getv(mesh, {{i+1,j+2,k+2}}, rfl) - _getv(mesh, {{i+1,j,k+2}}, rfl)  - _getv(mesh, {{i+1,j+2,k}}, rfl)   + _getv(mesh, {{i+1,j,k}}, rfl)),
+		    float(0.25)*(_getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i,j-1,k+1}}, rfl)  - _getv(mesh, {{i,j+1,k-1}}, rfl)   + _getv(mesh, {{i,j-1,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl)- _getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i+1,j-1,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i,j,k+1}}, rfl)    - _getv(mesh, {{i,j+2,k-1}}, rfl)   + _getv(mesh, {{i,j,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)  - _getv(mesh, {{i+1,j+2,k-1}}, rfl) + _getv(mesh, {{i+1,j,k-1}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i,j+1,k+2}}, rfl)   - _getv(mesh, {{i,j-1,k+2}}, rfl)  - _getv(mesh, {{i,j+1,k}}, rfl)     + _getv(mesh, {{i,j-1,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i+1,j-1,k+2}}, rfl)- _getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i+1,j-1,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i,j+2,k+2}}, rfl)   - _getv(mesh, {{i,j,k+2}}, rfl)    - _getv(mesh, {{i,j+2,k}}, rfl)     + _getv(mesh, {{i,j,k}}, rfl)),
+			  float(0.25)*(_getv(mesh, {{i+1,j+2,k+2}}, rfl) - _getv(mesh, {{i+1,j,k+2}}, rfl)  - _getv(mesh, {{i+1,j+2,k}}, rfl)   + _getv(mesh, {{i+1,j,k}}, rfl)),
 
 			  // values of d3f/dxdydz at each corner.
-		    float_m(0.125)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl) + _getv(mesh, {{i-1,j-1,k+1}}, rfl) 
+		    float(0.125)*(_getv(mesh, {{i+1,j+1,k+1}}, rfl) - _getv(mesh, {{i-1,j+1,k+1}}, rfl) - _getv(mesh, {{i+1,j-1,k+1}}, rfl) + _getv(mesh, {{i-1,j-1,k+1}}, rfl) 
                  -_getv(mesh, {{i+1,j+1,k-1}}, rfl) + _getv(mesh, {{i-1,j+1,k-1}}, rfl) + _getv(mesh, {{i+1,j-1,k-1}}, rfl) - _getv(mesh, {{i-1,j-1,k-1}}, rfl)),
-			  float_m(0.125)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i+2,j-1,k+1}}, rfl) + _getv(mesh, {{i,j-1,k+1}}, rfl)
+			  float(0.125)*(_getv(mesh, {{i+2,j+1,k+1}}, rfl) - _getv(mesh, {{i,j+1,k+1}}, rfl)   - _getv(mesh, {{i+2,j-1,k+1}}, rfl) + _getv(mesh, {{i,j-1,k+1}}, rfl)
                  -_getv(mesh, {{i+2,j+1,k-1}}, rfl) + _getv(mesh, {{i,j+1,k-1}}, rfl)   + _getv(mesh, {{i+2,j-1,k-1}}, rfl) - _getv(mesh, {{i,j-1,k-1}}, rfl)),
-			  float_m(0.125)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i-1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)   + _getv(mesh, {{i-1,j,k+1}}, rfl)
+			  float(0.125)*(_getv(mesh, {{i+1,j+2,k+1}}, rfl) - _getv(mesh, {{i-1,j+2,k+1}}, rfl) - _getv(mesh, {{i+1,j,k+1}}, rfl)   + _getv(mesh, {{i-1,j,k+1}}, rfl)
                  -_getv(mesh, {{i+1,j+2,k-1}}, rfl) + _getv(mesh, {{i-1,j+2,k-1}}, rfl) + _getv(mesh, {{i+1,j,k-1}}, rfl)   - _getv(mesh, {{i-1,j,k-1}}, rfl)),
-			  float_m(0.125)*(_getv(mesh, {{i+2,j+2,k+1}}, rfl) - _getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i+2,j,k+1}}, rfl)   + _getv(mesh, {{i,j,k+1}}, rfl)
+			  float(0.125)*(_getv(mesh, {{i+2,j+2,k+1}}, rfl) - _getv(mesh, {{i,j+2,k+1}}, rfl)   - _getv(mesh, {{i+2,j,k+1}}, rfl)   + _getv(mesh, {{i,j,k+1}}, rfl)
                  -_getv(mesh, {{i+2,j+2,k-1}}, rfl) + _getv(mesh, {{i,j+2,k-1}}, rfl)   + _getv(mesh, {{i+2,j,k-1}}, rfl)   - _getv(mesh, {{i,j,k-1}}, rfl)),
-			  float_m(0.125)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i-1,j+1,k+2}}, rfl) - _getv(mesh, {{i+1,j-1,k+2}}, rfl) + _getv(mesh, {{i-1,j-1,k+2}}, rfl)
+			  float(0.125)*(_getv(mesh, {{i+1,j+1,k+2}}, rfl) - _getv(mesh, {{i-1,j+1,k+2}}, rfl) - _getv(mesh, {{i+1,j-1,k+2}}, rfl) + _getv(mesh, {{i-1,j-1,k+2}}, rfl)
                  -_getv(mesh, {{i+1,j+1,k}}, rfl)   + _getv(mesh, {{i-1,j+1,k}}, rfl)   + _getv(mesh, {{i+1,j-1,k}}, rfl)   - _getv(mesh, {{i-1,j-1,k}}, rfl)),
-			  float_m(0.125)*(_getv(mesh, {{i+2,j+1,k+2}}, rfl) - _getv(mesh, {{i,j+1,k+2}}, rfl)   - _getv(mesh, {{i+2,j-1,k+2}}, rfl) + _getv(mesh, {{i,j-1,k+2}}, rfl)
+			  float(0.125)*(_getv(mesh, {{i+2,j+1,k+2}}, rfl) - _getv(mesh, {{i,j+1,k+2}}, rfl)   - _getv(mesh, {{i+2,j-1,k+2}}, rfl) + _getv(mesh, {{i,j-1,k+2}}, rfl)
                  -_getv(mesh, {{i+2,j+1,k}}, rfl)   + _getv(mesh, {{i,j+1,k}}, rfl)     + _getv(mesh, {{i+2,j-1,k}}, rfl)   - _getv(mesh, {{i,j-1,k}}, rfl)),
-			  float_m(0.125)*(_getv(mesh, {{i+1,j+2,k+2}}, rfl) - _getv(mesh, {{i-1,j+2,k+2}}, rfl) - _getv(mesh, {{i+1,j,k+2}}, rfl)   + _getv(mesh, {{i-1,j,k+2}}, rfl)
+			  float(0.125)*(_getv(mesh, {{i+1,j+2,k+2}}, rfl) - _getv(mesh, {{i-1,j+2,k+2}}, rfl) - _getv(mesh, {{i+1,j,k+2}}, rfl)   + _getv(mesh, {{i-1,j,k+2}}, rfl)
                  -_getv(mesh, {{i+1,j+2,k}}, rfl)   + _getv(mesh, {{i-1,j+2,k}}, rfl)   + _getv(mesh, {{i+1,j,k}}, rfl)     - _getv(mesh, {{i-1,j,k}}, rfl)),
-			  float_m(0.125)*(_getv(mesh, {{i+2,j+2,k+2}}, rfl) - _getv(mesh, {{i,j+2,k+2}}, rfl)   - _getv(mesh, {{i+2,j,k+2}}, rfl)   + _getv(mesh, {{i,j,k+2}}, rfl)
+			  float(0.125)*(_getv(mesh, {{i+2,j+2,k+2}}, rfl) - _getv(mesh, {{i,j+2,k+2}}, rfl)   - _getv(mesh, {{i+2,j,k+2}}, rfl)   + _getv(mesh, {{i,j,k+2}}, rfl)
               -_getv(mesh, {{i+2,j+2,k}}, rfl)   + _getv(mesh, {{i,j+2,k}}, rfl)     + _getv(mesh, {{i+2,j,k}}, rfl)     - _getv(mesh, {{i,j,k}}, rfl))
 		};
 
 
   // Convert voxel values and partial derivatives to interpolation coefficients.
-  float_m _coefs[64];
+  float _coefs[64];
   for (int i=0;i<64;++i) {
     _coefs[i] = 0.0;
     for (int j=0;j<64;++j) {
@@ -519,9 +519,9 @@ inline float_m interp_cubic<float_m,3>(
   }
 
   int ijkn(0);
-  float_m dzpow(1);
-  float_m f0(0);
-  float_m alpha;
+  float dzpow(1);
+  float f0(0);
+  float alpha;
 
   /*
   grad[0] = T(0);
@@ -530,7 +530,7 @@ inline float_m interp_cubic<float_m,3>(
   */
 
   for(int k = 0; k < 4; ++k) {
-    float_m dypow(1);
+    float dypow(1);
     for(int j = 0; j < 4; ++j) {
       alpha = dypow*dzpow*
         (_coefs[ijkn] + dx*(_coefs[ijkn+1] + dx*(_coefs[ijkn+2] + dx*_coefs[ijkn+3])));

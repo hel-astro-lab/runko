@@ -177,7 +177,7 @@ class Filter {
   // but we do it like this for clarity as the syntax is used later on.
   virtual void init_kernel() 
   {
-    float_m val;
+    float val;
 
     // kernel size (even number because of initialization)
     //int knx = height/3;
@@ -221,15 +221,15 @@ class Filter {
   {
 
     // 3-point digital filter
-    std::vector<float_m> coeffs = {{ 1., 2., 1.,
+    std::vector<float> coeffs = {{ 1., 2., 1.,
                                     2., 4., 2.,
                                     1., 2., 1. }};
     // normalize
-    float_m norm = 0.0;
+    float norm = 0.0;
     for(auto& coeff : coeffs) norm += coeff;
     for(auto& coeff : coeffs) coeff /= norm;
 
-    std::vector<float_m> image1, image2, image3;
+    std::vector<float> image1, image2, image3;
     image1.resize(Nx*Ny*Nz); 
     image2.resize(Nx*Ny*Nz); 
     image3.resize(Nx*Ny*Nz); 
@@ -268,18 +268,18 @@ class Filter {
     //int K = 3; // three point kernel
 
     // 3-point digital filter
-    std::vector<float_m> coeffs = {{ 1., 2., 1.,
+    std::vector<float> coeffs = {{ 1., 2., 1.,
                                     2., 4., 2.,
                                     1., 2., 1. }};
 
-    float_m norm = 0.0;
+    float norm = 0.0;
     for(auto& coeff : coeffs) norm += coeff;
     for(auto& coeff : coeffs) coeff /= norm;
 
 
     // create temporary Real number image array
     // NOTE: can not easily copy kernel into pure real part due to interleaved nature
-    std::vector<float_m> image;
+    std::vector<float> image;
     image.resize(Nx*Ny*Nz); 
 
     for (int j=0; j < Ny;  ++j) 
@@ -313,14 +313,14 @@ class Filter {
   // scale is a scaling factor to normalise the filter gain
   //
   void direct_convolve(
-      float_m* image,
-      float_m* kernel,
+      float* image,
+      float* kernel,
       int K)
   {
 
     // out array
-    float_m data;
-    std::vector<float_m> out;
+    float data;
+    std::vector<float> out;
     out.resize(Nx*Ny*Nz);
 
     //for (int j = K/2; j < width -K/2; ++j) // iterate through image
@@ -329,7 +329,7 @@ class Filter {
       //for (int i = K/2; i < height - K/2; ++i) // iterate through image
       for (int i=0; i < Nx; ++i) // iterate through circular image
       {
-        float_m sum = 0.0; // sum will be the sum of input data * coeff terms
+        float sum = 0.0; // sum will be the sum of input data * coeff terms
 
         // convolution of single point
         for (int jj = -K/2; jj <= K/2; ++jj)
@@ -337,7 +337,7 @@ class Filter {
           for (int ii = -K/2; ii <= K/2; ++ii) // iterate over kernel
           {
             data = image[ index(i+ii, j+jj) ]; 
-            float_m coeff = kernel[ (ii + K/2)*K + (jj + K/2) ];
+            float coeff = kernel[ (ii + K/2)*K + (jj + K/2) ];
 
             sum += data * coeff;
           }
@@ -357,7 +357,7 @@ class Filter {
 
 
   /// initialize Gaussian kernel given the sigma
-  virtual void init_gaussian_kernel(float_m sigx, float_m sigy) 
+  virtual void init_gaussian_kernel(float sigx, float sigy) 
   {
     // kernel size (even number because of initialization)
     //int knx = height/3;
@@ -370,9 +370,9 @@ class Filter {
     int w2 = (Ny + 2 - 1)/2;
 
     int wi,wj;
-    float_m val;
+    float val;
 
-    float_m sum = 0.0;
+    float sum = 0.0;
     for(int j=-w1; j<w2; ++j) {
       for(int i =-h1; i<h2; ++i) {
         auto zindx = zero_wrapped_index(i,j);
@@ -383,8 +383,8 @@ class Filter {
         assert(wj >= 0 && wj < Ny);
 
         val = 1.0;
-        val *= exp( -0.5*((float_m)(i*i))/sigx/sigx);
-        val *= exp( -0.5*((float_m)(j*j))/sigy/sigy);
+        val *= exp( -0.5*((float)(i*i))/sigx/sigx);
+        val *= exp( -0.5*((float)(j*j))/sigy/sigy);
 
         kernel[ index(wi,wj) ][0] = val; // real part
         kernel[ index(wi,wj) ][1] = 0.0; // complex part
@@ -464,9 +464,9 @@ class Filter {
     int w2 = (Ny + 2 - 1)/2;
 
     int wi,wj;
-    float_m val;
+    float val;
 
-    float_m sum = 0.0;
+    float sum = 0.0;
     for(int i =-h1; i<h2; ++i) {
       for(int j=-w1; j<w2; ++j) {
         auto zindx = zero_wrapped_index(i,j);
@@ -528,8 +528,8 @@ class Filter {
   /// Multiply kernel and image
   void apply_kernel()
   {
-    float_m x1, y1, x2, y2, x3, y3;
-    float_m u, v;
+    float x1, y1, x2, y2, x3, y3;
+    float u, v;
     for(int j = 0 ; j < Ny ; ++j) {
       for(int i  = 0 ; i < Nx ; ++i) {
 
@@ -667,7 +667,7 @@ class Filter {
   // --------------------------------------------------
   // auxiliary/utility functions for debugging
 
-  void set_kernel(std::vector<float_m>& in)
+  void set_kernel(std::vector<float>& in)
   {
     if(in.size() != (size_t)Nx*Ny*Nz) std::cout << "error in size!\n";
 
@@ -678,7 +678,7 @@ class Filter {
   }
 
 
-  void set_image(std::vector<float_m>& in)
+  void set_image(std::vector<float>& in)
   {
     if(in.size() != (size_t)Nx*Ny*Nz) std::cout << "error in size!\n";
 
@@ -689,9 +689,9 @@ class Filter {
   }
 
 
-  std::vector<float_m> get_kernel()
+  std::vector<float> get_kernel()
   {
-    std::vector<float_m> ret;
+    std::vector<float> ret;
 
     for(int j = 0 ; j < Ny ; ++j)  
     for(int i = 0 ; i < Nx ; ++i)  
@@ -701,9 +701,9 @@ class Filter {
   }
 
 
-  std::vector<float_m> get_image()
+  std::vector<float> get_image()
   {
-    std::vector<float_m> ret;
+    std::vector<float> ret;
 
     for(int j = 0 ; j < Ny ; ++j)  
     for(int i = 0 ; i < Nx ; ++i)  

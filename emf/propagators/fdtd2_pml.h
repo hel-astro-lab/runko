@@ -34,7 +34,7 @@ class FDTD2_pml :
   int mode = 2; 
 
   /// damping function
-  virtual float_m lambda(float_m sx, float_m sy, float_m sz);
+  virtual float lambda(float sx, float sy, float sz);
 
   void push_e(Tile<D>& tile) override;
 

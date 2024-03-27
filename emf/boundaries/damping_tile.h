@@ -27,14 +27,14 @@ class Tile :
   // reference field to relax tile into
 
   /// Electric field 
-  toolbox::Mesh<float_m, 1> ex_ref;
-  toolbox::Mesh<float_m, 1> ey_ref;
-  toolbox::Mesh<float_m, 1> ez_ref;
+  toolbox::Mesh<float, 1> ex_ref;
+  toolbox::Mesh<float, 1> ey_ref;
+  toolbox::Mesh<float, 1> ez_ref;
   
   /// Magnetic field 
-  toolbox::Mesh<float_m, 1> bx_ref;
-  toolbox::Mesh<float_m, 1> by_ref;
-  toolbox::Mesh<float_m, 1> bz_ref;
+  toolbox::Mesh<float, 1> bx_ref;
+  toolbox::Mesh<float, 1> by_ref;
+  toolbox::Mesh<float, 1> bz_ref;
 
 
   /// constructor
@@ -64,13 +64,13 @@ class Tile :
   void damp_fields();
 
   /// start index of the slope
-  float_m fld1;
+  float fld1;
     
   /// end index of the slope
-  float_m fld2;
+  float fld2;
 
   // damping parameter
-  float_m ksupp = 10; 
+  float ksupp = 10; 
 
 
 };

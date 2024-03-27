@@ -65,11 +65,12 @@ inline MPI_Datatype get_mpi_datatype<::pic::Particle>(
 
 
   // introduce datatypes; 
+  // NOTE this must match  the datatype defined in pic/particle.c++
   std::array<MPI_Datatype, 9> datatypes{
     {
-      MPI_FLOAT_TP, MPI_FLOAT_TP, MPI_FLOAT_TP, 
-      MPI_FLOAT_TP, MPI_FLOAT_TP, MPI_FLOAT_TP, 
-      MPI_FLOAT_TP, 
+      MPI_FLOAT, MPI_FLOAT, MPI_FLOAT, 
+      MPI_FLOAT, MPI_FLOAT, MPI_FLOAT, 
+      MPI_FLOAT, 
       MPI_INT, MPI_INT}
   };
 

@@ -17,7 +17,7 @@ using std::exp;
 //
 //  //std::cout<<"dt:"<<yeeDt<<"  and vol:"<<yeeDx<<" .. " <<(yeeDx*yeeDy*yeeDz) <<"\n";
 //  
-//  float_m resistivity = 10.0;
+//  float resistivity = 10.0;
 //
 //  gs.ex -= gs.jx / resistivity;
 //  gs.ey -= gs.jy / resistivity;
@@ -47,7 +47,7 @@ void emf::damping::Tile<D,S>::damp_fields()
 
   auto& gs = this->get_grids();
 
-  float_m lambda2;
+  float lambda2;
 
   bool left  = S < 0;
   bool right = S > 0;
@@ -79,20 +79,20 @@ void emf::damping::Tile<D,S>::damp_fields()
   if(D >= 3) kfin += halo;
 
 
-  float_m iglob, jglob, kglob, glob_coord;
-  float_m t1, t2;
+  float iglob, jglob, kglob, glob_coord;
+  float t1, t2;
 
   bool inside_damping_zone = false;
 
   // loop over all values in mesh
   for(int k = kstr; k<kfin; k++) {
-    kglob = (float_m)k + emf::Tile<D>::mins[2];
+    kglob = (float)k + emf::Tile<D>::mins[2];
 
     for(int j = jstr; j<jfin; j++) {
-      jglob = (float_m)j + emf::Tile<D>::mins[1];
+      jglob = (float)j + emf::Tile<D>::mins[1];
 
       for(int i=istr; i<ifin; i++) {
-        iglob = (float_m)i + emf::Tile<D>::mins[0];
+        iglob = (float)i + emf::Tile<D>::mins[0];
 
         inside_damping_zone = false;
 

@@ -94,7 +94,7 @@ class StaggeredSphericalCoordinates
      -------|----------->
             r0
 */
-inline float_m shape(float_m r, float_m r0, float_m delta) 
+inline float shape(float r, float r0, float delta) 
 { 
   return 0.5 * (1.0 - tanh( (r - r0) / delta )); 
 }

@@ -103,8 +103,8 @@ auto declare_prtcl_container(
     .def("size",          &pic::ParticleContainer<D>::size)
     .def("add_particle",  &pic::ParticleContainer<D>::add_particle)
     .def("add_particle2", [](pic::ParticleContainer<D>& s, 
-                            float_p xx, float_p yy, float_p zz,
-                            float_p vx, float_p vy, float_p vz, float_p wgt)
+                            float xx, float yy, float zz,
+                            float vx, float vy, float vz, float wgt)
         {
           s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
         })
@@ -190,9 +190,9 @@ auto declare_prtcl_container(
 
         // we should not end up here;
         throw py::index_error();
-        return float_p(0.0);
+        return float(0.0);
       })
-    .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, float_p val)
+    .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, float val)
       {
         auto ip = indx[0].cast<int>();
         auto v = indx[1].cast<int>();
@@ -707,7 +707,7 @@ void bind_pic(py::module& m_sub)
             {
                 const auto nx = static_cast<pybind11::ssize_t>( s.nx );
                 const auto ny = static_cast<pybind11::ssize_t>( s.ny );
-                auto v = pybind11::array_t<float_m>( {nx, ny}, s.arrs[k].data() );
+                auto v = pybind11::array_t<float>( {nx, ny}, s.arrs[k].data() );
                 return v;
             });
 

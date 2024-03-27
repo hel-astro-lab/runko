@@ -32,8 +32,8 @@ void emf::General3p<2>::solve(
   // make 2d loop with shared memory 
   auto fun = 
   [=] DEVCALLABLE (int i, int j, 
-                   toolbox::Mesh<float_m, 3> &jj, 
-                   toolbox::Mesh<float_m, 3> &tmp)
+                   toolbox::Mesh<float, 3> &jj, 
+                   toolbox::Mesh<float, 3> &tmp)
   {
     tmp(i-H,j-H,k) = 
         jj(i-1-H, j-1-H, k)*wtc + 

@@ -9,15 +9,15 @@ namespace ffe {
 
 template<std::size_t D>
 void Tile<D>::rk3_update(
-    float_m c1, 
-    float_m c2, 
-    float_m c3
+    float c1, 
+    float c2, 
+    float c3
     )
 {
   emf::Grids&    m  = this->get_grids();
   ffe::SlimGrids& n  = this->Fn; 
   ffe::SlimGrids& dm = this->dF; 
-  //float_m dt = tile.cfl;
+  //float dt = tile.cfl;
 
 
   UniIter::iterate3D(

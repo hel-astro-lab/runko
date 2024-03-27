@@ -49,10 +49,10 @@ class Analyzator {
       // initialize pointers to particle arrays
       int nparts = container.size();
         
-      float_p* loc[3];
+      float* loc[3];
       for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-      float_p* vel[3];
+      float* vel[3];
       for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
 

@@ -53,7 +53,7 @@ public:
 
   // trampoline for each  virtual function
  
-  using tuple_pair = std::tuple<float_p, float_p>; // following macro does not accept commas so we define this
+  using tuple_pair = std::tuple<float, float>; // following macro does not accept commas so we define this
 
   tuple_pair get_minmax_ene( string t1, string t2, double ene) override { 
     PYBIND11_OVERLOAD_PURE(
@@ -66,14 +66,14 @@ public:
         );
   }
 
-  float_p comp_optical_depth( 
+  float comp_optical_depth( 
     string t1, 
-    float_p ux1, float_p uy1, float_p uz1,
-    float_p ex,  float_p ey,  float_p ez,
-    float_p bx,  float_p by,  float_p bz
+    float ux1, float uy1, float uz1,
+    float ex,  float ey,  float ez,
+    float bx,  float by,  float bz
     ) override {
     PYBIND11_OVERLOAD_PURE(
-        float_p, // return type
+        float, // return type
         Interaction,                  // parent class
         comp_optical_depth,           // name of function in C++
         t1, ux1, uy1, uz1, ex,ey,ez,bx,by,bz
@@ -81,8 +81,8 @@ public:
   }
 
   tuple_pair comp_cross_section( 
-    string t1, float_p ux1, float_p uy1, float_p uz1,
-    string t2, float_p ux2, float_p uy2, float_p uz2) override {
+    string t1, float ux1, float uy1, float uz1,
+    string t2, float ux2, float uy2, float uz2) override {
     PYBIND11_OVERLOAD_PURE(
         tuple_pair, // return type
         Interaction,                  // parent class
@@ -92,23 +92,23 @@ public:
   }
 
   //std::tuple<
-  //  string, float_p, float_p, float_p,
-  //  string, float_p, float_p, float_p>
+  //  string, float, float, float,
+  //  string, float, float, float>
   //    interact(
-  //      string t1, float_p ux1, float_p uy1, float_p uz1,
-  //      string t2, float_p ux2, float_p uy2, float_p uz2) override {
+  //      string t1, float ux1, float uy1, float uz1,
+  //      string t2, float ux2, float uy2, float uz2) override {
   //  PYBIND11_OVERLOAD_PURE(
-  //      std::tuple<string, float_p, float_p, float_p, string, float_p, float_p, float_p>, // return type
+  //      std::tuple<string, float, float, float, string, float, float, float>, // return type
   //      Interaction,                // parent class
   //      interact,                   // name of function in C++
   //      string, // arguments
-  //      float_p, float_p, float_p,
+  //      float, float, float,
   //      string,
-  //      float_p, float_p, float_p
+  //      float, float, float
   //      );
   //  }
 
-  tuple_pair accumulate( string t1, float_p e1, string t2, float_p e2) override { 
+  tuple_pair accumulate( string t1, float e1, string t2, float e2) override { 
     PYBIND11_OVERLOAD_PURE(
         tuple_pair, // return type
         Interaction,               // parent class
@@ -121,8 +121,8 @@ public:
   }
 
   void interact(
-        string& t1, float_p& ux1, float_p& uy1, float_p& uz1,
-        string& t2, float_p& ux2, float_p& uy2, float_p& uz2) override {
+        string& t1, float& ux1, float& uy1, float& uz1,
+        string& t2, float& ux2, float& uy2, float& uz2) override {
     PYBIND11_OVERLOAD_PURE(
         void,                       // return type
         Interaction,                // parent class
@@ -143,7 +143,7 @@ void bind_qed(py::module& m_sub)
   //py::class_<qed::PhotonContainer, pic::ParticleContainer<3>>(m_sub, "PhotonContainer")
   //  .def(py::init<>())
   //  .def("add_particle",  (void (qed::PhotonContainer::*)
-  //        ( std::vector<float_p>, std::vector<float_p>, float_p, float_p ) ) 
+  //        ( std::vector<float>, std::vector<float>, float, float ) ) 
   //          &qed::PhotonContainer::add_particle)
   //  .def("ene", [](qed::PhotonContainer& s) {return s.eneArr;}, py::return_value_policy::reference)
   //  // FIXME: use base class definition via getter/setter members to avoid this redefinition
@@ -173,8 +173,8 @@ void bind_qed(py::module& m_sub)
     .def("comp_optical_depth",  &qed::Interaction::comp_optical_depth)
     .def("accumulate",          &qed::Interaction::accumulate)
     .def("interact", [](qed::Interaction &self, 
-          std::string t1, float_p ux1, float_p uy1, float_p uz1,
-          std::string t2, float_p ux2, float_p uy2, float_p uz2) 
+          std::string t1, float ux1, float uy1, float uz1,
+          std::string t2, float ux2, float uy2, float uz2) 
         {
           self.interact(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2); 
           return std::make_tuple(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2);

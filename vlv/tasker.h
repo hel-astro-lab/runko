@@ -25,7 +25,7 @@ inline void step_location( corgi::Grid<1>& grid )
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
 
-          //vlv::AmrSpatialLagrangianSolver<float_m> ssol;
+          //vlv::AmrSpatialLagrangianSolver<float> ssol;
           //ssol.solve(tile, grid);
             
           tile.step_location(grid);
@@ -42,7 +42,7 @@ template<int V>
 void initial_step( corgi::Grid<1>& grid )
 {
 
-  vlv::AmrMomentumLagrangianSolver<float_m,1,V> vsol;
+  vlv::AmrMomentumLagrangianSolver<float,1,V> vsol;
 
   #pragma omp parallel 
   {
@@ -70,7 +70,7 @@ void initial_step( corgi::Grid<1>& grid )
 template<int V>
 void step_velocity( corgi::Grid<1>& grid )
 {
-  vlv::AmrMomentumLagrangianSolver<float_m,1,V> vsol;
+  vlv::AmrMomentumLagrangianSolver<float,1,V> vsol;
 
   #pragma omp parallel
   {
@@ -95,12 +95,12 @@ void step_velocity( corgi::Grid<1>& grid )
 template<int V>
 void step_velocity_with_gravity( 
     corgi::Grid<1>& grid,
-    float_m g0,
-    float_m Lx
+    float g0,
+    float Lx
     )
 {
 
-  vlv::GravityAmrMomentumLagrangianSolver<float_m,1,V> vsol(g0, Lx);
+  vlv::GravityAmrMomentumLagrangianSolver<float,1,V> vsol(g0, Lx);
 
   #pragma omp parallel
   {
@@ -125,7 +125,7 @@ void step_velocity_with_gravity(
 
 //inline void analyze( corgi::Grid<1>& grid )
 //{
-//  vlv::Analyzator<float_m> analyzator;
+//  vlv::Analyzator<float> analyzator;
 //
 //  #pragma omp parallel
 //  {
