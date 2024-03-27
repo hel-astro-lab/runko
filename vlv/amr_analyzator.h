@@ -32,7 +32,7 @@ inline T gamma(std::array<T,V>& uvel)
 
 
 
-/// General analyzator that computes moments for the vlasov meshes inside the tiles
+/// General analyzator that computes moments for the vlv meshes inside the tiles
 template<typename T>
 class Analyzator {
 

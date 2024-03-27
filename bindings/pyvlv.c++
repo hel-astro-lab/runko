@@ -8,20 +8,20 @@
 //--------------------------------------------------
 // Vlasov module
   
-#include "../vlasov/tile.h"
+#include "../vlv/tile.h"
 #include "../emf/tile.h"
 #include "../emf/boundaries/damping_tile.h"
-#include "../vlasov/amr/mesh.h"
-#include "../vlasov/amr/refiner.h"
-#include "../vlasov/amr/operators.h"
-#include "../vlasov/momentum-solvers/amr_momentum_solver.h"
-#include "../vlasov/momentum-solvers/bwd_lagrangian.h"
-#include "../vlasov/momentum-solvers/bwd_lagrangian_gravity.h"
-#include "../vlasov/spatial-solvers/amr_spatial_solver.h"
-#include "../vlasov/tasker.h"
+#include "../vlv/amr/mesh.h"
+#include "../vlv/amr/refiner.h"
+#include "../vlv/amr/operators.h"
+#include "../vlv/momentum-solvers/amr_momentum_solver.h"
+#include "../vlv/momentum-solvers/bwd_lagrangian.h"
+#include "../vlv/momentum-solvers/bwd_lagrangian_gravity.h"
+#include "../vlv/spatial-solvers/amr_spatial_solver.h"
+#include "../vlv/tasker.h"
 #include "../io/tasker.h"
-#include "../vlasov/boundaries/outflow.h"
-#include "../vlasov/boundaries/piston.h"
+#include "../vlv/boundaries/outflow.h"
+#include "../vlv/boundaries/piston.h"
 
 
 namespace vlv {

@@ -35,14 +35,14 @@ class SpatialSolver {
   /// get neighboring tile from grid
   // TODO: think about dynamic casting; something might be wrong in the design
   // TODO: separate into own communication module/header
-  //vlasov::PlasmaBlock& get_external_data(
+  //vlv::PlasmaBlock& get_external_data(
   //    int i, int j, int ispc,
-  //    vlasov::VlasovTile& tile, 
-  //    vlasov::Grid& grid)
+  //    vlv::VlasovTile& tile, 
+  //    vlv::Grid& grid)
   //{
   //  auto neigh_index   = tile.neighs(i, j); 
   //  uint64_t neigh_cid = grid.tile_id( std::get<0>(neigh_index), std::get<1>(neigh_index) );
-  //  vlasov::VlasovTile& tile_neigh = dynamic_cast<vlasov::VlasovTile&>( grid.get_tile(neigh_cid) );
+  //  vlv::VlasovTile& tile_neigh = dynamic_cast<vlv::VlasovTile&>( grid.get_tile(neigh_cid) );
 
   //  auto& species = tile_neigh.steps.get();
 
@@ -518,7 +518,7 @@ class AmrSpatialLagrangianSolver :
       int ispc = 0; // ith particle species
       for(auto&& blocks : zip(step0, step1) ) {
 
-        // internal blocks of vlasov meshes for current and future timestep
+        // internal blocks of vlv meshes for current and future timestep
         auto& block0 = std::get<0>(blocks); // Solution^t
         auto& block1 = std::get<1>(blocks); // Solution^t+dt
         T qm = 1.0 / block0.qm;  // charge to mass ratio

@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
         #B field half update
 
-        ##move vlasov fluid
+        ##move vlv fluid
 
         #update boundaries
         for j in range(grid.get_Ny()):

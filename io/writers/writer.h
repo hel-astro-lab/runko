@@ -7,8 +7,8 @@
 
 #include "../../tools/mesh.h"
 #include "../../emf/tile.h"
-#include "../../vlasov/tile.h"
-#include "../../vlasov/amr/mesh.h"
+#include "../../vlv/tile.h"
+#include "../../vlv/amr/mesh.h"
 #include "../../pic/tile.h"
 
 #include "../../tools/ezh5/src/ezh5.hpp"
@@ -105,6 +105,6 @@ class Writer {
 // template implementations
 
 #include "fields.h"
-#include "vlasov.h"
+#include "vlv.h"
 #include "pic.h"
 

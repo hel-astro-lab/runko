@@ -25,7 +25,7 @@ inline void step_location( corgi::Grid<1>& grid )
           auto& tile 
             = dynamic_cast<vlv::Tile<1>&>(grid.get_tile( cid ));
 
-          //vlasov::AmrSpatialLagrangianSolver<float_m> ssol;
+          //vlv::AmrSpatialLagrangianSolver<float_m> ssol;
           //ssol.solve(tile, grid);
             
           tile.step_location(grid);

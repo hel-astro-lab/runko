@@ -4,9 +4,9 @@ set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
-# https://cliutils.gitlab.io/modern-cmake/chapters/packages/CUDA.html
 project (runko LANGUAGES CXX C)
 
+# https://cliutils.gitlab.io/modern-cmake/chapters/packages/CUDA.html
 include(CheckLanguage)
 check_language(CUDA)
 
@@ -16,13 +16,11 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 ##################################################
 # optimization flags
 
-#--------------------------------------------------
 # debug mode (default for code development)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Werror -Wno-error=unknown-pragmas -Wno-error=unused-parameter -save-temps=obj")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -DDEBUG -march=native -ftree-vectorize")
-
 
 #--------------------------------------------------
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -fopt-info-all-all=all.all") general
@@ -53,7 +51,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
@@ -63,7 +60,6 @@ endif()
 if(CMAKE_BUILD_TYPE MATCHES "Release")
     message(STATUS "Flags (release): ${CMAKE_CXX_FLAGS_RELEASE}")
 endif()
-
 
 
 #--------------------------------------------------
@@ -96,10 +92,9 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 #FIND_PACKAGE (HDF5 COMPONENTS CXX)
 FIND_PACKAGE (HDF5)
 
-#FIND_PACKAGE( FFTW3 ) # this does not exists
-
 # hpc stuff 
-#find_package (MPI)
+#FIND_PACKAGE( FFTW3 ) # this is not needed
+#find_package (MPI) # assumed to be provided by the compiler
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/corgi/mpi4cpp/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/corgi/mpi4cpp/tools/optional-lite/include )
 

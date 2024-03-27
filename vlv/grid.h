@@ -40,7 +40,7 @@ class Grid :
   /*
      void cycle() {
      for (auto& it: tiles) {
-     Tileptr tileptr = std::dynamic_pointer_cast<vlasov::VlasovTile>( it.second );
+     Tileptr tileptr = std::dynamic_pointer_cast<vlv::VlasovTile>( it.second );
      tileptr->vmeshes.cycle();
      tileptr->yee.cycle();
      }

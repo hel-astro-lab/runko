@@ -2,7 +2,7 @@
 
 #include "../../corgi/corgi.h"
 #include "../../emf/boundaries/damping_tile.h"
-#include "../../vlasov/tile.h"
+#include "../../vlv/tile.h"
 
 #include "../spatial-solvers/amr_spatial_solver.h"
 
@@ -44,4 +44,4 @@ class Tile :
 };
 
 } // end of namespace outflow
-} // end of namespace vlasov
+} // end of namespace vlv

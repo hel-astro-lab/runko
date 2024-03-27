@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../corgi/corgi.h"
-#include "../../vlasov/tile.h"
+#include "../../vlv/tile.h"
 
 
 namespace vlv {
@@ -25,7 +25,7 @@ class Tile :
   void step_location(corgi::Grid<D>& /*grid*/) override {
       //std::cout<<"BC spatial step\n";
 
-      //vlasov::AmrSpatialLagrangianSolver<float_m> ssol;
+      //vlv::AmrSpatialLagrangianSolver<float_m> ssol;
       //ssol.solve(*this, grid);
     }
     
