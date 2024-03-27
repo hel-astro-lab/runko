@@ -1,6 +1,6 @@
 #pragma once
 
-#include "emf/propagator/propagator.h"
+#include "emf/propagators/propagator.h"
 #include "emf/tile.h"
 #include "ffe/tile.h"
 

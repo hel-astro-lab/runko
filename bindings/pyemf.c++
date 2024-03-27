@@ -10,11 +10,11 @@
 
 #include "emf/tile.h"
 
-#include "emf/propagator/propagator.h"
-#include "emf/propagator/fdtd2.h"
-#include "emf/propagator/fdtd2_pml.h"
-#include "emf/propagator/fdtd4.h"
-#include "emf/propagator/fdtd_general.h"
+#include "emf/propagators/propagator.h"
+#include "emf/propagators/fdtd2.h"
+#include "emf/propagators/fdtd2_pml.h"
+#include "emf/propagators/fdtd4.h"
+#include "emf/propagators/fdtd_general.h"
 
 #include "emf/filters/filter.h"
 #include "emf/filters/binomial2.h"

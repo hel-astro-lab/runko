@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "emf/propagator/fdtd2_pml.h"
+#include "emf/propagators/fdtd2_pml.h"
 #include "tools/iter/iter.h"
 
 #ifdef GPU

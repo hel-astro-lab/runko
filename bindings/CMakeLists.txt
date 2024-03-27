@@ -12,10 +12,10 @@ set (TOOLS_FILES
 set (FIELDS_FILES 
      pyemf.c++
      ../emf/tile.c++ 
-     ../emf/propagator/fdtd2.c++ 
-     ../emf/propagator/fdtd2_pml.c++ 
-     ../emf/propagator/fdtd4.c++ 
-     ../emf/propagator/fdtd_general.c++ 
+     ../emf/propagators/fdtd2.c++ 
+     ../emf/propagators/fdtd2_pml.c++ 
+     ../emf/propagators/fdtd4.c++ 
+     ../emf/propagators/fdtd_general.c++ 
      ../emf/filters/binomial2.c++
      ../emf/filters/compensator.c++
      ../emf/filters/general_binomial.c++
@@ -151,7 +151,7 @@ if(ENABLE_CUDA)
      set_source_files_properties(../ffe/currents/rffe.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../emf/tile.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../emf/filters/binomial2.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../emf/propagator/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../emf/propagators/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)
