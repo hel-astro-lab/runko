@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "ffe/tile.h"
-#include "tools/iter/iter.h"
+#include "external/iter/iter.h"
 
 namespace ffe {
   using namespace mpi4cpp;

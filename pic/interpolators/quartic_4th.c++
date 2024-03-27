@@ -3,7 +3,7 @@
 
 #include "pic/interpolators/quartic_4th.h"
 #include "pic/shapes.h"
-#include "tools/iter/iter.h"
+#include "external/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

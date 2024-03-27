@@ -8,7 +8,7 @@
 #include "emf/tile.h"
 #include "pic/tile.h"
 #include "vlv/tile.h"
-#include "tools/ezh5/src/ezh5.hpp"
+#include "external/ezh5/src/ezh5.hpp"
 
 namespace h5io {
 

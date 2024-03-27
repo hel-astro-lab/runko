@@ -9,9 +9,9 @@
 #include <string>
 
 #include "definitions.h"
-#include "tools/iter/dynArray.h"
-#include "tools/iter/allocator.h"
-#include "tools/iter/managed_alloc.h"
+#include "external/iter/dynArray.h"
+#include "external/iter/allocator.h"
+#include "external/iter/managed_alloc.h"
 #include "tools/sort.h"
 
 

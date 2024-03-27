@@ -3,7 +3,7 @@
 #include <cmath> 
 //#include <Eigen/Dense>
 
-#include "tools/cppitertools/zip.hpp"
+#include "external/cppitertools/zip.hpp"
 #include "definitions.h"
 
 //using namespace Eigen;

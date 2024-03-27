@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 
-#include "corgi/corgi.h"
+#include "external/corgi/corgi.h"
 #include "tools/deprecated/rotator.h"
 
 

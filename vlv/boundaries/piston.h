@@ -1,6 +1,6 @@
 #pragma once
 
-#include "corgi/corgi.h"
+#include "external/corgi/corgi.h"
 #include "vlv/tile.h"
 
 

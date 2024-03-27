@@ -1,7 +1,7 @@
 #include <mpi4cpp/mpi.h>
 
 #include "io/snapshots/master_only_fields.h"
-#include "tools/ezh5/src/ezh5.hpp"
+#include "external/ezh5/src/ezh5.hpp"
 #include "emf/tile.h"
 
 

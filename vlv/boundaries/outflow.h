@@ -1,6 +1,6 @@
 #pragma once
 
-#include "corgi/corgi.h"
+#include "external/corgi/corgi.h"
 #include "emf/boundaries/damping_tile.h"
 #include "vlv/tile.h"
 #include "vlv/spatial-solvers/amr_spatial_solver.h"

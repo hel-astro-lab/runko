@@ -4,8 +4,8 @@
 #include "emf/tile.h"
 
 #include "tools/has_element.h"
-#include "tools/iter/iter.h"
-#include "tools/iter/allocator.h"
+#include "external/iter/iter.h"
+#include "external/iter/allocator.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

@@ -5,8 +5,8 @@
 #include <cmath>
 
 // for GPU supported sorting
-#include "iter/dynArray.h"
-#include "iter/devcall.h"
+#include "external/iter/dynArray.h"
+#include "external/iter/devcall.h"
 
 
 namespace toolbox {

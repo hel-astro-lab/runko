@@ -1,16 +1,16 @@
-[submodule "corgi"]
-	path = corgi
+[submodule "external/corgi"]
+	path = external/corgi
 	url = https://github.com/natj/corgi.git
 	branch = master
-[submodule "tools/ezh5"]
-	path = tools/ezh5
+[submodule "external/ezh5"]
+	path = external/ezh5
 	url = https://github.com/natj/ezh5.git
 	branch = master
-[submodule "tools/fmt"]
-	path = tools/fmt
+[submodule "external/fmt"]
+	path = external/fmt
 	url = https://github.com/fmtlib/fmt.git
-[submodule "tools/cppitertools"]
-	path = tools/cppitertools
+[submodule "external/cppitertools"]
+	path = external/cppitertools
 	url = https://github.com/ryanhaining/cppitertools.git
 [submodule "pytools/pybox"]
 	path = pytools/pybox

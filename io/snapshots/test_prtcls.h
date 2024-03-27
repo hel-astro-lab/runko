@@ -4,7 +4,7 @@
 #include <string>
 
 #include "io/snapshots/snapshot.h"
-#include "corgi/corgi.h"
+#include "external/corgi/corgi.h"
 #include "tools/mesh.h"
 
 

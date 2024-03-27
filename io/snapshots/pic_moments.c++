@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include "io/snapshots/pic_moments.h"
-#include "tools/ezh5/src/ezh5.hpp"
+#include "external/ezh5/src/ezh5.hpp"
 #include "pic/particle.h"
 #include "pic/tile.h"
 #include "tools/signum.h"

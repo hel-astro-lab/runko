@@ -15,7 +15,7 @@
 #include "tools/linlogspace.h"
 
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
-#include "tools/timer/timer.h"
+#include "external/timer/timer.h"
 
 
 // TODO turning compiler warnings off temporarily in this file since 

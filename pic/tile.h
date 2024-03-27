@@ -4,11 +4,11 @@
 #include <mpi4cpp/mpi.h>
 
 #include "definitions.h"
-#include "corgi/tile.h"
-#include "corgi/corgi.h"
+#include "external/corgi/tile.h"
+#include "external/corgi/corgi.h"
 #include "emf/tile.h"
 #include "pic/particle.h"
-#include "tools/iter/allocator.h"
+#include "external/iter/allocator.h"
 
 
 namespace pic {

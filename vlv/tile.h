@@ -6,7 +6,7 @@
 
 
 #include "definitions.h"
-#include "corgi/tile.h"
+#include "external/corgi/tile.h"
 #include "vlv/amr/mesh.h"
 #include "vlv/amr/integrate.h"
 #include "tools/mesh.h"

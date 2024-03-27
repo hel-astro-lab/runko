@@ -10,7 +10,7 @@
 #include "vlv/tile.h"
 #include "vlv/amr/mesh.h"
 #include "pic/tile.h"
-#include "tools/ezh5/src/ezh5.hpp"
+#include "external/ezh5/src/ezh5.hpp"
 
 
 namespace h5io {

@@ -1,9 +1,9 @@
 #include <cmath>
 
 #include "emf/filters/general_binomial.h"
-#include "tools/iter/devcall.h"
-#include "tools/iter/iter.h"
-#include "tools/iter/allocator.h"
+#include "external/iter/devcall.h"
+#include "external/iter/iter.h"
+#include "external/iter/allocator.h"
 
 
 #ifdef GPU

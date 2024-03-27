@@ -12,7 +12,7 @@
 #include "vlv/amr/operators.h"
 
 #include "tools/signum.h"
-#include "tools/cppitertools/zip.hpp"
+#include "external/cppitertools/zip.hpp"
 
 using iter::zip;
 using toolbox::sign;

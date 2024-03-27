@@ -3,7 +3,7 @@
 
 #include "py_submodules.h"
 
-#include "corgi/internals.h"
+#include "external/corgi/internals.h"
 
 #include "definitions.h"
 #include "tools/mesh.h"

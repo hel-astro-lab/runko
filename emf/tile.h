@@ -3,11 +3,11 @@
 #include <vector>
 #include <mpi4cpp/mpi.h>
 
-#include "corgi/tile.h"
-#include "corgi/corgi.h"
+#include "external/corgi/tile.h"
+#include "external/corgi/corgi.h"
 #include "tools/mesh.h"
 #include "definitions.h"
-#include "tools/iter/allocator.h"
+#include "external/iter/allocator.h"
 
 namespace emf {
   namespace mpi = mpi4cpp::mpi;

@@ -7,8 +7,8 @@
 
 #include "pic/particle.h"
 #include "tools/wrap.h"
-#include "tools/iter/devcall.h"
-#include "tools/iter/iter.h"
+#include "external/iter/devcall.h"
+#include "external/iter/iter.h"
 
 
 #ifdef GPU

@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include "emf/propagators/fdtd_general.h"
-#include "tools/iter/iter.h"
+#include "external/iter/iter.h"
 
 #ifdef GPU
 #include <nvtx3/nvToolsExt.h> 

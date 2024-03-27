@@ -2,7 +2,7 @@
 
 #include "ffe/currents/rffe2.h"
 #include "tools/signum.h"
-#include "tools/iter/iter.h"
+#include "external/iter/iter.h"
 #include "emf/tile.h"
 
 //#include <nvtx3/nvToolsExt.h> 

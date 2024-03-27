@@ -8,8 +8,8 @@
 #include <cassert>
 #include <exception>
 
-#include "iter/allocator.h"
-#include "iter/devcall.h"
+#include "external/iter/allocator.h"
+#include "external/iter/devcall.h"
 
 #ifdef GPU
 #include <cuda_runtime_api.h>
