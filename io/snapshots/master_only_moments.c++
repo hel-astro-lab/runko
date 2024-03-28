@@ -2,8 +2,8 @@
 
 #include "io/snapshots/master_only_moments.h"
 #include "external/ezh5/src/ezh5.hpp"
-#include "pic/particle.h"
-#include "pic/tile.h"
+#include "core/pic/particle.h"
+#include "core/pic/tile.h"
 #include "tools/signum.h"
 #include "tools/limit.h"
 

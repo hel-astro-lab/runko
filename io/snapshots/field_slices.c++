@@ -2,7 +2,7 @@
 
 #include "io/snapshots/field_slices.h"
 #include "external/ezh5/src/ezh5.hpp"
-#include "emf/tile.h"
+#include "core/emf/tile.h"
 
 
 using namespace mpi4cpp;

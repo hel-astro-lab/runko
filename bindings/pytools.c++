@@ -3,7 +3,7 @@
 #include "external/corgi/pybind11/include/pybind11/operators.h"
 #include "definitions.h"
 #include "tools/mesh.h"
-#include "vlv/amr/mesh.h"
+#include "core/vlv/amr/mesh.h"
 #include "tools/hilbert.h"
 
 #include <exception>

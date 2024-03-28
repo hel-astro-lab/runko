@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "io/namer.h"
-#include "pic/tile.h"
+#include "core/pic/tile.h"
 
 
 template<size_t D>

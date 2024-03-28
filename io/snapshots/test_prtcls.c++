@@ -2,8 +2,8 @@
 
 #include "io/snapshots/test_prtcls.h"
 #include "external/ezh5/src/ezh5.hpp"
-#include "pic/particle.h"
-#include "pic/tile.h"
+#include "core/pic/particle.h"
+#include "core/pic/tile.h"
 
 using ezh5::File;
 

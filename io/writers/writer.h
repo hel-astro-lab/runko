@@ -6,10 +6,10 @@
 #include "io/namer.h"
 
 #include "tools/mesh.h"
-#include "emf/tile.h"
-#include "vlv/tile.h"
-#include "vlv/amr/mesh.h"
-#include "pic/tile.h"
+#include "core/emf/tile.h"
+#include "core/vlv/tile.h"
+#include "core/vlv/amr/mesh.h"
+#include "core/pic/tile.h"
 #include "external/ezh5/src/ezh5.hpp"
 
 

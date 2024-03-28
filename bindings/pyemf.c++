@@ -8,24 +8,24 @@
 #include "definitions.h"
 #include "tools/mesh.h"
 
-#include "emf/tile.h"
+#include "core/emf/tile.h"
 
-#include "emf/propagators/propagator.h"
-#include "emf/propagators/fdtd2.h"
-#include "emf/propagators/fdtd2_pml.h"
-#include "emf/propagators/fdtd4.h"
-#include "emf/propagators/fdtd_general.h"
+#include "core/emf/propagators/propagator.h"
+#include "core/emf/propagators/fdtd2.h"
+#include "core/emf/propagators/fdtd2_pml.h"
+#include "core/emf/propagators/fdtd4.h"
+#include "core/emf/propagators/fdtd_general.h"
 
-#include "emf/filters/filter.h"
-#include "emf/filters/binomial2.h"
-#include "emf/filters/compensator.h"
-#include "emf/filters/strided_binomial.h"
-#include "emf/filters/general_binomial.h"
-#include "emf/filters/sweeping_binomial.h"
+#include "core/emf/filters/filter.h"
+#include "core/emf/filters/binomial2.h"
+#include "core/emf/filters/compensator.h"
+#include "core/emf/filters/strided_binomial.h"
+#include "core/emf/filters/general_binomial.h"
+#include "core/emf/filters/sweeping_binomial.h"
 
 
-#include "emf/boundaries/damping_tile.h"
-#include "emf/boundaries/conductor.h"
+#include "core/emf/boundaries/damping_tile.h"
+#include "core/emf/boundaries/conductor.h"
 
 #include "io/writers/writer.h"
 #include "io/writers/fields.h"

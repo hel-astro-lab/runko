@@ -2,16 +2,16 @@
 
 #include <pybind11/numpy.h>
 
-//#include "../qed/photon.h"
-//#include "../qed/tile.h"
+//#include "../core/qed/photon.h"
+//#include "../core/qed/tile.h"
 
-#include "qed/interactions/interaction.h"
-#include "qed/interactions/pair_ann.h"
-#include "qed/interactions/phot_ann.h"
-#include "qed/interactions/compton.h"
-#include "qed/interactions/synchrotron.h"
-#include "qed/interactions/multi_phot_ann.h"
-#include "qed/pairing.h"
+#include "core/qed/interactions/interaction.h"
+#include "core/qed/interactions/pair_ann.h"
+#include "core/qed/interactions/phot_ann.h"
+#include "core/qed/interactions/compton.h"
+#include "core/qed/interactions/synchrotron.h"
+#include "core/qed/interactions/multi_phot_ann.h"
+#include "core/qed/pairing.h"
 
 
 

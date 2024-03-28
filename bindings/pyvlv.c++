@@ -7,20 +7,20 @@
 //--------------------------------------------------
 // Vlasov module
   
-#include "vlv/tile.h"
-#include "emf/tile.h"
-#include "emf/boundaries/damping_tile.h"
-#include "vlv/amr/mesh.h"
-#include "vlv/amr/refiner.h"
-#include "vlv/amr/operators.h"
-#include "vlv/momentum-solvers/amr_momentum_solver.h"
-#include "vlv/momentum-solvers/bwd_lagrangian.h"
-#include "vlv/momentum-solvers/bwd_lagrangian_gravity.h"
-#include "vlv/spatial-solvers/amr_spatial_solver.h"
-#include "vlv/tasker.h"
+#include "core/vlv/tile.h"
+#include "core/emf/tile.h"
+#include "core/emf/boundaries/damping_tile.h"
+#include "core/vlv/amr/mesh.h"
+#include "core/vlv/amr/refiner.h"
+#include "core/vlv/amr/operators.h"
+#include "core/vlv/momentum-solvers/amr_momentum_solver.h"
+#include "core/vlv/momentum-solvers/bwd_lagrangian.h"
+#include "core/vlv/momentum-solvers/bwd_lagrangian_gravity.h"
+#include "core/vlv/spatial-solvers/amr_spatial_solver.h"
+#include "core/vlv/tasker.h"
 #include "io/tasker.h"
-#include "vlv/boundaries/outflow.h"
-#include "vlv/boundaries/piston.h"
+#include "core/vlv/boundaries/outflow.h"
+#include "core/vlv/boundaries/piston.h"
 
 
 namespace vlv {

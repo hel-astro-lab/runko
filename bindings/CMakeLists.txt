@@ -11,78 +11,78 @@ set (TOOLS_FILES
 
 set (FIELDS_FILES 
      pyemf.c++
-     ../emf/tile.c++ 
-     ../emf/propagators/fdtd2.c++ 
-     ../emf/propagators/fdtd2_pml.c++ 
-     ../emf/propagators/fdtd4.c++ 
-     ../emf/propagators/fdtd_general.c++ 
-     ../emf/filters/binomial2.c++
-     ../emf/filters/compensator.c++
-     ../emf/filters/general_binomial.c++
-     ../emf/filters/strided_binomial.c++
-     #../emf/filters/sweeping_binomial.c++
-     ../emf/boundaries/damping_tile.c++
-     ../emf/boundaries/conductor.c++
+     ../core/emf/tile.c++ 
+     ../core/emf/propagators/fdtd2.c++ 
+     ../core/emf/propagators/fdtd2_pml.c++ 
+     ../core/emf/propagators/fdtd4.c++ 
+     ../core/emf/propagators/fdtd_general.c++ 
+     ../core/emf/filters/binomial2.c++
+     ../core/emf/filters/compensator.c++
+     ../core/emf/filters/general_binomial.c++
+     ../core/emf/filters/strided_binomial.c++
+    #../core/emf/filters/sweeping_binomial.c++
+     ../core/emf/boundaries/damping_tile.c++
+     ../core/emf/boundaries/conductor.c++
      )
 
 set (VLV_FILES 
       pyvlv.c++
-      ../vlv/tile.c++
-      ../vlv/boundaries/piston.c++
-      ../vlv/boundaries/outflow.c++
-      ../vlv/momentum-solvers/amr_momentum_solver.c++
-      ../vlv/momentum-solvers/bwd_lagrangian.c++
+      ../core/vlv/tile.c++
+      ../core/vlv/boundaries/piston.c++
+      ../core/vlv/boundaries/outflow.c++
+      ../core/vlv/momentum-solvers/amr_momentum_solver.c++
+      ../core/vlv/momentum-solvers/bwd_lagrangian.c++
      )
 
 
 set (PIC_FILES 
      pypic.c++
-     ../pic/tile.c++
-     ../pic/particle.c++
-     ../pic/boundaries/wall.c++
-     ../pic/boundaries/piston.c++
-     ../pic/boundaries/piston_z.c++
-     ../pic/boundaries/star_surface_injector.c++
-     ../pic/pushers/boris.c++
-     ../pic/pushers/boris_drag.c++
-     ../pic/pushers/boris_rad.c++
-     ../pic/pushers/boris_grav.c++
-     ../pic/pushers/vay.c++
-     ../pic/pushers/higuera_cary.c++
-     ../pic/pushers/rgca.c++
-     ../pic/pushers/photon.c++
-     ../pic/pushers/pulsar.c++
-     ../pic/interpolators/linear_1st.c++
-     ../pic/interpolators/quadratic_2nd.c++
-     ../pic/interpolators/cubic_3rd.c++
-     ../pic/interpolators/quartic_4th.c++
-     ../pic/depositers/zigzag.c++
-     ../pic/depositers/zigzag_2nd.c++
-     ../pic/depositers/zigzag_3rd.c++
-     ../pic/depositers/zigzag_4th.c++
-     ../pic/depositers/esikerpov_2nd.c++
-     ../pic/depositers/esikerpov_4th.c++
-     #../pic/depositers/esikerpov_4th_vec.c++
+     ../core/pic/tile.c++
+     ../core/pic/particle.c++
+     ../core/pic/boundaries/wall.c++
+     ../core/pic/boundaries/piston.c++
+     ../core/pic/boundaries/piston_z.c++
+     ../core/pic/boundaries/star_surface_injector.c++
+     ../core/pic/pushers/boris.c++
+     ../core/pic/pushers/boris_drag.c++
+     ../core/pic/pushers/boris_rad.c++
+     ../core/pic/pushers/boris_grav.c++
+     ../core/pic/pushers/vay.c++
+     ../core/pic/pushers/higuera_cary.c++
+     ../core/pic/pushers/rgca.c++
+     ../core/pic/pushers/photon.c++
+     ../core/pic/pushers/pulsar.c++
+     ../core/pic/interpolators/linear_1st.c++
+     ../core/pic/interpolators/quadratic_2nd.c++
+     ../core/pic/interpolators/cubic_3rd.c++
+     ../core/pic/interpolators/quartic_4th.c++
+     ../core/pic/depositers/zigzag.c++
+     ../core/pic/depositers/zigzag_2nd.c++
+     ../core/pic/depositers/zigzag_3rd.c++
+     ../core/pic/depositers/zigzag_4th.c++
+     ../core/pic/depositers/esikerpov_2nd.c++
+     ../core/pic/depositers/esikerpov_4th.c++
+    #../core/pic/depositers/esikerpov_4th_vec.c++
      )
 
 set (QED_FILES 
      pyqed.c++
-     ../qed/interactions/pair_ann.c++
-     ../qed/interactions/phot_ann.c++
-     ../qed/interactions/compton.c++
-     ../qed/interactions/synchrotron.c++
-     ../qed/interactions/multi_phot_ann.c++
-     ../qed/pairing.c++
+     ../core/qed/interactions/pair_ann.c++
+     ../core/qed/interactions/phot_ann.c++
+     ../core/qed/interactions/compton.c++
+     ../core/qed/interactions/synchrotron.c++
+     ../core/qed/interactions/multi_phot_ann.c++
+     ../core/qed/pairing.c++
      )
 
 set (FFE_FILES 
      pyffe.c++
-     ../ffe/tile.c++
-     ../ffe/slim_grids.c++
-     ../ffe/currents/rffe2.c++
-     ../ffe/currents/rffe4.c++
-     ../ffe/currents/ffe2.c++
-     ../ffe/currents/ffe4.c++
+     ../core/ffe/tile.c++
+     ../core/ffe/slim_grids.c++
+     ../core/ffe/currents/rffe2.c++
+     ../core/ffe/currents/rffe4.c++
+     ../core/ffe/currents/ffe2.c++
+     ../core/ffe/currents/ffe4.c++
      )
 
 

@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "io/namer.h"
-#include "emf/tile.h"
-#include "pic/tile.h"
-#include "vlv/tile.h"
+#include "core/emf/tile.h"
+#include "core/pic/tile.h"
+#include "core/vlv/tile.h"
 #include "external/ezh5/src/ezh5.hpp"
 
 namespace h5io {
