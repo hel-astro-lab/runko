@@ -430,10 +430,10 @@ class radiation(unittest.TestCase):
                 pass
 
         prtcl_sum=np.sum(phhist*edges[:-1])/Nph
-        print("Energy of photons: {}".format(prtcl_sum))
+        #print("Energy of photons: {}".format(prtcl_sum))
 
         bbrad_sum = np.sum(3.0e12*2.*edges**3/(np.exp(edges/kTbb)-1.0))
-        print("Blackbody energy: {}".format(bbrad_sum))
+        #print("Blackbody energy: {}".format(bbrad_sum))
 
 
         try:
@@ -505,10 +505,10 @@ class radiation(unittest.TestCase):
         #intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
         t3, ux3, uy3, uz3, t4, ux4, uy4, uz4 = intr.interact(t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
 
-        print('after')
-        print('cs', cs)
-        print(t3, ux3, uy3, uz3)
-        print(t4, ux4, uy4, uz4)
+        #print('after')
+        #print('cs', cs)
+        #print(t3, ux3, uy3, uz3)
+        #print(t4, ux4, uy4, uz4)
 
         # python version
         #a0, avec, b0, bvec = _interact_photann( np.array([ux1, uy1, uz1]), np.array([ux2, uy2, uz2]) )

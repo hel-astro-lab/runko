@@ -1,12 +1,17 @@
 #include <cmath>
 
-#include "pic_moments.h"
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../pic/particle.h"
-#include "../../pic/tile.h"
-#include "../../tools/signum.h"
-#include "../../tools/limit.h"
+#include "io/snapshots/pic_moments.h"
+#include "external/ezh5/src/ezh5.hpp"
+#include "core/pic/particle.h"
+#include "core/pic/tile.h"
+#include "tools/signum.h"
+#include "tools/limit.h"
 
+// TODO turning compiler warnings off temporarily in this file since 
+//      error printing in debug mode accesses mins/maxs outside boundaries
+// NOTE remember to remove pragma pop at the end of the file when done with these.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Warray-bounds"
 
 using ezh5::File;
 
@@ -55,9 +60,9 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
     auto mins = tile.mins;
     auto maxs = tile.maxs;
 
-    // update also yee
-    auto& yee = tile.get_yee();
-    yee.rho.clear();
+    // update also gs
+    auto& gs = tile.get_grids();
+    gs.rho.clear();
 
     // loop over species
     for (int ispc=0; ispc<tile.Nspecies(); ispc++) {
@@ -67,13 +72,13 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
 
       if(nparts <= 0) continue; // skip zero containers
 
-      float_p* loc[3];
+      float* loc[3];
       for( i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-      float_p* vel[3];
+      float* vel[3];
       for( i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-      float_p* ch;
+      float* ch;
       ch = &( container.wgt(0) );
 
 
@@ -95,6 +100,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         gam = sqrt(1.0 + u0*u0 + v0*v0 + w0*w0);
         xene = sqrt(      u0*u0 + v0*v0 + w0*w0);
 
+#ifdef DEBUG
         // capture NaNs
         assert(!std::isnan(x0));
         assert(!std::isnan(y0));
@@ -125,7 +131,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
           std::cerr << " fz: " << flagz;
           assert(false);
         }
-
+#endif
 
         // rel prtcl index; assuming dx = 1; tile coordinates
         // limit to 0 Nx-1 just in case to avoid crashes
@@ -134,7 +140,7 @@ inline void h5io::PicMomentsWriter<D>::read_tiles(
         kff = D >= 3 ? limit( floor(z0-mins[2]), -3., maxs[2]-mins[2] +2.) : 0;
 
         // update rho arrays; this is interpreted as mass density
-        yee.rho(iff,jff,kff) += mass*wgt;
+        gs.rho(iff,jff,kff) += mass*wgt;
 
         //-------------------------------------------------- 
 
@@ -263,3 +269,5 @@ inline bool h5io::PicMomentsWriter<D>::write(
 template class h5io::PicMomentsWriter<1>;
 template class h5io::PicMomentsWriter<2>;
 template class h5io::PicMomentsWriter<3>;
+
+#pragma GCC diagnostic pop

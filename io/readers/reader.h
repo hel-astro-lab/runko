@@ -4,13 +4,11 @@
 #include <utility>
 #include <vector>
 
-#include "../../em-fields/tile.h"
-#include "../../pic/tile.h"
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../vlasov/tile.h"
-
-#include "../namer.h"
-
+#include "io/namer.h"
+#include "core/emf/tile.h"
+#include "core/pic/tile.h"
+#include "core/vlv/tile.h"
+#include "external/ezh5/src/ezh5.hpp"
 
 namespace h5io {
 
@@ -76,7 +74,7 @@ class Reader
 
 
   template<size_t D>
-  bool read(fields::Tile<D>& tile, ezh5::File& file);
+  bool read(emf::Tile<D>& tile, ezh5::File& file);
 
   template<size_t D>
   bool read(   vlv::Tile<D>& tile, ezh5::File& file);
@@ -94,7 +92,7 @@ class Reader
 // template implementations
 
 #include "fields.h"
-#include "vlasov.h"
+#include "vlv.h"
 #include "pic.h"
 
 

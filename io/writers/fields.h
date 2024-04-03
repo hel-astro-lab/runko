@@ -1,18 +1,18 @@
 #pragma once
 
-#include "../namer.h"
-#include "../../em-fields/tile.h"
+#include "io/namer.h"
+#include "core/emf/tile.h"
 
 
 /// Write PlasmaTile content into a hdf5 data group
 template<size_t D>
 bool 
 h5io::Writer::write( 
-  const fields::Tile<D>& tile,
+  const emf::Tile<D>& tile,
   ezh5::File& file
   )
 {
-  const auto& yee = tile.get_const_yee();
+  const auto& gs = tile.get_const_grids();
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
@@ -27,26 +27,26 @@ h5io::Writer::write(
   gr["k"] = static_cast<int>( std::get<2>(my_ind) );
 
   // size
-  gr["Nx"] = static_cast<int>( yee.Nx );
-  gr["Ny"] = static_cast<int>( yee.Ny );
-  gr["Nz"] = static_cast<int>( yee.Nz );
+  gr["Nx"] = static_cast<int>( gs.Nx );
+  gr["Ny"] = static_cast<int>( gs.Ny );
+  gr["Nz"] = static_cast<int>( gs.Nz );
 
   //--------------------------------------------------
   // Yee lattice quantities
 
-  gr["jx"] = yee.jx.serialize();
-  gr["jy"] = yee.jy.serialize();
-  gr["jz"] = yee.jz.serialize();
+  gr["jx"] = gs.jx.serialize();
+  gr["jy"] = gs.jy.serialize();
+  gr["jz"] = gs.jz.serialize();
 
-  gr["ex"] = yee.ex.serialize();
-  gr["ey"] = yee.ey.serialize();
-  gr["ez"] = yee.ez.serialize();
+  gr["ex"] = gs.ex.serialize();
+  gr["ey"] = gs.ey.serialize();
+  gr["ez"] = gs.ez.serialize();
 
-  gr["bx"] = yee.bx.serialize();
-  gr["by"] = yee.by.serialize();
-  gr["bz"] = yee.bz.serialize();
+  gr["bx"] = gs.bx.serialize();
+  gr["by"] = gs.by.serialize();
+  gr["bz"] = gs.bz.serialize();
 
-  gr["rho"] = yee.rho.serialize();
+  gr["rho"] = gs.rho.serialize();
 
 
   return true;

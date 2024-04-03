@@ -1,8 +1,8 @@
-#include "master_only_fields.h"
 #include <mpi4cpp/mpi.h>
 
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../em-fields/tile.h"
+#include "io/snapshots/master_only_fields.h"
+#include "external/ezh5/src/ezh5.hpp"
+#include "core/emf/tile.h"
 
 
 using namespace mpi4cpp;
@@ -25,8 +25,8 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
     int ifea
     )
 {
-  auto& tile = dynamic_cast<fields::Tile<3>&>(grid.get_tile( cid ));
-  auto& yee = tile.get_yee();
+  auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile( cid ));
+  auto& gs = tile.get_grids();
     
   // clear buffer before additive variables
   sbuf[0].clear();
@@ -37,13 +37,13 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
     for(int ks=0; ks<nzM; ks++) 
     for(int js=0; js<nyM; js++) 
     for(int is=0; is<nxM; is++) {
-      if(ifea == 0) sbuf[0](is, js, ks) = yee.ex( is*stride, js*stride, ks*stride);
-      if(ifea == 1) sbuf[0](is, js, ks) = yee.ey( is*stride, js*stride, ks*stride);
-      if(ifea == 2) sbuf[0](is, js, ks) = yee.ez( is*stride, js*stride, ks*stride);
+      if(ifea == 0) sbuf[0](is, js, ks) = gs.ex( is*stride, js*stride, ks*stride);
+      if(ifea == 1) sbuf[0](is, js, ks) = gs.ey( is*stride, js*stride, ks*stride);
+      if(ifea == 2) sbuf[0](is, js, ks) = gs.ez( is*stride, js*stride, ks*stride);
 
-      if(ifea == 3) sbuf[0](is, js, ks) = yee.bx( is*stride, js*stride, ks*stride);
-      if(ifea == 4) sbuf[0](is, js, ks) = yee.by( is*stride, js*stride, ks*stride);
-      if(ifea == 5) sbuf[0](is, js, ks) = yee.bz( is*stride, js*stride, ks*stride);
+      if(ifea == 3) sbuf[0](is, js, ks) = gs.bx( is*stride, js*stride, ks*stride);
+      if(ifea == 4) sbuf[0](is, js, ks) = gs.by( is*stride, js*stride, ks*stride);
+      if(ifea == 5) sbuf[0](is, js, ks) = gs.bz( is*stride, js*stride, ks*stride);
     }
 
   } else {
@@ -55,10 +55,10 @@ inline void h5io::MasterFieldsWriter<3>::read_tile_feature(
     for(int jstride=0; jstride < stride; jstride++) 
     for(int is=0; is<nxM; is++) 
     for(int istride=0; istride < stride; istride++) {
-      if(ifea == 6) sbuf[0](is, js, ks) += yee.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      if(ifea == 7) sbuf[0](is, js, ks) += yee.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      if(ifea == 8) sbuf[0](is, js, ks) += yee.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      if(ifea == 9) sbuf[0](is, js, ks) += yee.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 6) sbuf[0](is, js, ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 7) sbuf[0](is, js, ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 8) sbuf[0](is, js, ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
+      if(ifea == 9) sbuf[0](is, js, ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
     }
 
   }
@@ -83,12 +83,12 @@ inline void h5io::MasterFieldsWriter<3>::mpi_reduce_snapshots(
   int nx_tile = lens[0];
   int ny_tile = lens[1];
   int nz_tile = lens[2];
-  int n_tiles = nx_tile*ny_tile*nz_tile;
+  size_t n_tiles = nx_tile*ny_tile*nz_tile;
 
   // sync everyone before going into the loop
   comm.barrier();
 
-  for(uint64_t cid=0; cid<n_tiles; cid++) {
+  for(size_t cid=0; cid<n_tiles; cid++) {
 
     int msg_rank = -1;
     if( grid.is_local(cid) ) msg_rank = rank;

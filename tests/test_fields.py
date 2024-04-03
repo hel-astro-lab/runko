@@ -45,7 +45,7 @@ def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
@@ -54,7 +54,7 @@ def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
@@ -65,12 +65,12 @@ def loadTiles3D(n, conf):
             for k in range(n.get_Nz()):
                 #print("putting", i,j,k)
                 #if n.get_mpi_grid(i,j) == n.rank:
-                c = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+                c = pyrunko.emf.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
                 c.lengths = [conf.Nx, conf.Ny, conf.Nz]
 
                 n.add_tile(c, (i,j,k) ) 
         
-                #c = pyrunko.fields.threeD.make_and_add_tile( n, 
+                #c = pyrunko.emf.threeD.make_and_add_tile( n, 
                 #        conf.NxMesh, conf.NyMesh, conf.NzMesh, (i,j,k))
 
 
@@ -92,8 +92,8 @@ class FLD_inits(unittest.TestCase):
         conf.NyMesh = 1 #force 1D
         conf.NzMesh = 1 #
 
-        fdtd2 = pyrunko.fields.oneD.FDTD2()
-        tile = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fdtd2 = pyrunko.emf.oneD.FDTD2()
+        tile = pyrunko.emf.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
@@ -103,8 +103,8 @@ class FLD_inits(unittest.TestCase):
         conf.twoD = True
         conf.NzMesh = 1 #force 2D
 
-        fdtd2 = pyrunko.fields.twoD.FDTD2()
-        tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        fdtd2 = pyrunko.emf.twoD.FDTD2()
+        tile = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
         fdtd2.push_e(tile)
         fdtd2.push_half_b(tile)
@@ -137,22 +137,22 @@ class Communications(unittest.TestCase):
             #if n.get_mpi_grid(i,j) == n.rank:
             if True:
                 c = grid.get_tile(i)
-                yee = c.get_yee(0)
+                gs = c.get_grids(0)
 
                 for q in range(conf.NxMesh):
                     for r in range(conf.NyMesh):
                         for s in range(conf.NzMesh):
-                            yee.ex[q,r,s] = val
-                            yee.ey[q,r,s] = val
-                            yee.ez[q,r,s] = val
+                            gs.ex[q,r,s] = val
+                            gs.ey[q,r,s] = val
+                            gs.ez[q,r,s] = val
                                         
-                            yee.bx[q,r,s] = val
-                            yee.by[q,r,s] = val
-                            yee.bz[q,r,s] = val
+                            gs.bx[q,r,s] = val
+                            gs.by[q,r,s] = val
+                            gs.bz[q,r,s] = val
                                         
-                            yee.jx[q,r,s] = val
-                            yee.jy[q,r,s] = val
-                            yee.jz[q,r,s] = val
+                            gs.jx[q,r,s] = val
+                            gs.jy[q,r,s] = val
+                            gs.jz[q,r,s] = val
                             val += 1
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
@@ -162,22 +162,22 @@ class Communications(unittest.TestCase):
             c = grid.get_tile( cid )
             (i,) = c.index
 
-            yee = c.get_yee(0)
+            gs = c.get_grids(0)
 
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
                     for s in range(conf.NzMesh):
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 0] = yee.ex[q,r,s]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 1] = yee.ey[q,r,s]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 2] = yee.ez[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 0] = gs.ex[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 1] = gs.ey[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 2] = gs.ez[q,r,s]
                                                                                      
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 3] = yee.bx[q,r,s]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 4] = yee.by[q,r,s]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 5] = yee.bz[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 3] = gs.bx[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 4] = gs.by[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 5] = gs.bz[q,r,s]
                                                                                      
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 6] = yee.jx[q,r,s]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 7] = yee.jy[q,r,s]
-                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 8] = yee.jz[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 6] = gs.jx[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 7] = gs.jy[q,r,s]
+                        data[ i*conf.NxMesh + q, 0*conf.NyMesh + r, 0*conf.NzMesh + s, 8] = gs.jz[q,r,s]
 
         #print("r=0-------")
         #print(data[:,:,0,0])
@@ -200,7 +200,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i,) = c.index
-            yee = c.get_yee(0)
+            gs = c.get_grids(0)
 
             for s in range(-1, conf.NzMesh+1, 1):
                 for r in range(-1, conf.NyMesh+1, 1):
@@ -209,7 +209,7 @@ class Communications(unittest.TestCase):
                         qq = wrap( i*conf.NxMesh + q, conf.Nx*conf.NxMesh )
                         rr = wrap( 0*conf.NyMesh + r, conf.Ny*conf.NyMesh )
                         ss = wrap( 0*conf.NzMesh + s, conf.Nz*conf.NzMesh )
-                        ref[m, qq, rr, ss] = yee.ex[q,r,s]
+                        ref[m, qq, rr, ss] = gs.ex[q,r,s]
             m += 1
 
         #print("cid = 0")
@@ -252,22 +252,22 @@ class Communications(unittest.TestCase):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     c = grid.get_tile(i,j)
-                    yee = c.get_yee(0)
+                    gs = c.get_grids(0)
 
                     for s in range(conf.NzMesh):
                         for r in range(conf.NyMesh):
                             for q in range(conf.NxMesh):
-                                yee.ex[q,r,s] = val
-                                yee.ey[q,r,s] = val
-                                yee.ez[q,r,s] = val
+                                gs.ex[q,r,s] = val
+                                gs.ey[q,r,s] = val
+                                gs.ez[q,r,s] = val
 
-                                yee.bx[q,r,s] = val
-                                yee.by[q,r,s] = val
-                                yee.bz[q,r,s] = val
+                                gs.bx[q,r,s] = val
+                                gs.by[q,r,s] = val
+                                gs.bz[q,r,s] = val
 
-                                yee.jx[q,r,s] = val
-                                yee.jy[q,r,s] = val
-                                yee.jz[q,r,s] = val
+                                gs.jx[q,r,s] = val
+                                gs.jy[q,r,s] = val
+                                gs.jz[q,r,s] = val
                                 val += 1
 
         data = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh, 9))
@@ -276,21 +276,21 @@ class Communications(unittest.TestCase):
             c = grid.get_tile( cid )
             (i, j) = c.index
 
-            yee = c.get_yee(0)
+            gs = c.get_grids(0)
             for q in range(conf.NxMesh):
                 for r in range(conf.NyMesh):
                     for s in range(conf.NzMesh):
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 0] = yee.ex[q,r,s]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 1] = yee.ey[q,r,s]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 2] = yee.ez[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 0] = gs.ex[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 1] = gs.ey[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 2] = gs.ez[q,r,s]
                                                                                                         
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 3] = yee.bx[q,r,s]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 4] = yee.by[q,r,s]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 5] = yee.bz[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 3] = gs.bx[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 4] = gs.by[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 5] = gs.bz[q,r,s]
                                                                                                         
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 6] = yee.jx[q,r,s]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 7] = yee.jy[q,r,s]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 8] = yee.jz[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 6] = gs.jx[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 7] = gs.jy[q,r,s]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + r, 0*conf.NzMesh + s, 8] = gs.jz[q,r,s]
 
         #print("r=0-------")
         #print(data[:,:,0,0])
@@ -315,7 +315,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j) = c.index
-            yee = c.get_yee(0)
+            gs = c.get_grids(0)
 
             for s in range(-3, conf.NzMesh+3, 1):
                 for r in range(-3, conf.NyMesh+3, 1):
@@ -326,8 +326,8 @@ class Communications(unittest.TestCase):
                         rr = wrap( j*conf.NyMesh + r, conf.Ny*conf.NyMesh )
                         ss = wrap( 0*conf.NzMesh + s, conf.Nz*conf.NzMesh )
                         #print( ref[m, qq, kk, rr]  )
-                        #print(  yee.ex[q,k,r] )
-                        ref[m, qq, rr, ss] = yee.ex[q,r,s]
+                        #print(  gs.ex[q,k,r] )
+                        ref[m, qq, rr, ss] = gs.ex[q,r,s]
             m += 1
 
     
@@ -354,11 +354,11 @@ class Communications(unittest.TestCase):
         #check halo regions of the middle tile
 
         c = grid.get_tile(1,1)
-        yee = c.get_yee(0)
+        gs = c.get_grids(0)
         arr = np.zeros((conf.NxMesh+6, conf.NyMesh+6))
         for r in range(-3, conf.NyMesh+3, 1):
             for q in range(-3, conf.NxMesh+3, 1):
-                arr[q+3, r+3] = yee.ex[q,r,0]
+                arr[q+3, r+3] = gs.ex[q,r,0]
 
         ref2 = data[1:-1, 1:-1, 0,0] #strip outer boundaries away
         nx,ny=np.shape(ref2)
@@ -366,7 +366,11 @@ class Communications(unittest.TestCase):
             for j in range(ny):
                 self.assertEqual(ref2[i,j], arr[i,j])
 
-    # testing a spesific seg fault with loading of yee lattices. This same test fails with 3D
+    # testing a spesific seg fault with loading of gs lattices. This same test fails with 3D
+    #
+    # NOTE to future generations: this bug is typically triggered when corgi lib is not compiled with 
+    #      with the same compiler version as runko. You can fix this by going to corgi/build and rebuilding.
+    #
     def test_2D_tile_memory_bug(self):
         conf = Conf()
         conf.twoD = True
@@ -383,14 +387,14 @@ class Communications(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         #print("load")
-        tile = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, 1)
+        tile = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, 1)
         #print("ref count tile 2d:", sys.getrefcount(tile))
         grid.add_tile(tile, (0,0) ) 
         #print("ref count tile 2d:", sys.getrefcount(tile))
 
         #print("getting 000")
         c = grid.get_tile(0,0)
-        yee = c.get_yee()
+        gs = c.get_grids()
 
         #print("mem bug +++++++")
 
@@ -413,7 +417,7 @@ class Communications(unittest.TestCase):
         self.assertEqual(nx, (conf.NxMesh+H*2)*(conf.NyMesh+H*2)*(conf.NzMesh+H*2))
 
 
-    # Captures memory bug with mesh initialization; when internal meshes in YeeLattice
+    # Captures memory bug with mesh initialization; when internal meshes in Grids
     # are too big, compiler tires to over-optimize. Then some stuff never gets allocated.
     # This is fixed now by a copy-and-swap algorithm in toolbox::Mesh.
     def test_3D_tile_memory_bug(self):
@@ -437,7 +441,7 @@ class Communications(unittest.TestCase):
         #Second create mechanism with automatic tying of pointer to grid lifetime
         if False:
             #print("create2")
-            tile = pyrunko.fields.threeD.make_and_add_tile(
+            tile = pyrunko.emf.threeD.make_and_add_tile(
                     grid, 
                     conf.NxMesh, conf.NyMesh, conf.NzMesh,
                     (1,0,0)
@@ -448,7 +452,7 @@ class Communications(unittest.TestCase):
             # NOTE: leads to segfaulting with 3D tiles. Most likely py GC cleans tiles
             # aggressively. FIXED.
             #print("create")
-            tile = pyrunko.fields.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            tile = pyrunko.emf.threeD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             #print("ref count tile:", sys.getrefcount(tile))
             grid.add_tile(tile, (1,0,0) ) 
             #print("ref count tile:", sys.getrefcount(tile))
@@ -460,16 +464,16 @@ class Communications(unittest.TestCase):
         #tile.add_analysis_species()
 
         #print("creating yee2")
-        #yee2 = pyrunko.fields.YeeLattice(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+        #yee2 = pyrunko.emf.Grids(conf.NxMesh, conf.NyMesh, conf.NzMesh)
         #print(sys.getrefcount(yee2))
         #print("ending yee2")
 
 
         if True:
-            #print("getting yee p0")
-            yee0 = tile.get_yee()
-            #yee0 = tile.yee
-            #yee0 = tile.get_yeeptr()
+            #print("getting gs p0")
+            yee0 = tile.get_grids()
+            #yee0 = tile.gs
+            #yee0 = tile.get_grids_ptr()
             #print("ref count yee0:", sys.getrefcount(yee0))
             #print("getting ex")
             ex0 = yee0.ex
@@ -492,7 +496,7 @@ class Communications(unittest.TestCase):
 
             #print("setting same corner")
             ex0[1,1,1] = 2.0
-            #print("end of getting yee p0")
+            #print("end of getting gs p0")
 
         # now re-ask for the tile to test handling of multiple copies of same object
         if True:
@@ -508,15 +512,15 @@ class Communications(unittest.TestCase):
 
             #print("ref count tile:", sys.getrefcount(c))
 
-            #print("getting yee p1")
-            yee = c.get_yee()
-            #print("ref count yee:", sys.getrefcount(yee))
-            #yee = c.yee
-            #yee = c.get_yeeptr()
+            #print("getting gs p1")
+            gs = c.get_grids()
+            #print("ref count gs:", sys.getrefcount(gs))
+            #gs = c.gs
+            #gs = c.get_grids_ptr()
             #print("getting ex")
-            ex = yee.ex
+            ex = gs.ex
             #print("ref count ex:", sys.getrefcount(ex))
-            #ex = yee.get_ex()
+            #ex = gs.get_ex()
 
             nt = ex.size()
             #print("size was", nt)
@@ -531,9 +535,9 @@ class Communications(unittest.TestCase):
             #print("val = ", val)
             #print("getting size")
             nt = ex.size()
-            #print("size from yee", nt)
+            #print("size from gs", nt)
 
-            #print("size from tile directly", c.yee.ex.nx)
+            #print("size from tile directly", c.gs.ex.nx)
             #self.assertEqual(nx, conf.NxMesh)
 
         #analysis = c.get_analysis()
@@ -541,15 +545,15 @@ class Communications(unittest.TestCase):
         #now ask even more references
         if False:
             c1= grid.get_tile(0,0,1)
-            yee1 = c1.get_yee()
+            yee1 = c1.get_grids()
             ex1 = c1.ex
 
             c2= grid.get_tile(0,0,1)
-            yee2 = c2.get_yee()
+            yee2 = c2.get_grids()
             ex2 = c2.ex
 
             c3= grid.get_tile(0,0,1)
-            yee3 = c3.get_yee()
+            yee3 = c3.get_grids()
             ex3 = c3.ex
 
         #print("mem bug +++++++")
@@ -667,7 +671,7 @@ class Communications(unittest.TestCase):
         loadTiles3D(grid, conf)
 
         c = grid.get_tile(1,1,1)
-        yee = c.get_yee() #FIXME: yee does not exist here
+        gs = c.get_grids() #FIXME: gs does not exist here
 
         orig = np.zeros((conf.Nx*conf.NxMesh, conf.Ny*conf.NyMesh, conf.Nz*conf.NzMesh))
 
@@ -691,7 +695,7 @@ class Communications(unittest.TestCase):
                         self.assertEqual(j, indx[1])
                         self.assertEqual(k, indx[2])
 
-                        yee = c.get_yee()
+                        gs = c.get_grids()
 
                         for s in range(conf.NzMesh):
                             for r in range(conf.NyMesh):
@@ -701,18 +705,18 @@ class Communications(unittest.TestCase):
                                     kz = k*conf.NzMesh + s
                                     orig[ix,jy,kz] = val #save original value for comparison
 
-                                    #put same value to yee
-                                    yee.ex[q,r,s] = val
-                                    yee.ey[q,r,s] = val
-                                    yee.ez[q,r,s] = val
+                                    #put same value to gs
+                                    gs.ex[q,r,s] = val
+                                    gs.ey[q,r,s] = val
+                                    gs.ez[q,r,s] = val
 
-                                    yee.bx[q,r,s] = val
-                                    yee.by[q,r,s] = val
-                                    yee.bz[q,r,s] = val
+                                    gs.bx[q,r,s] = val
+                                    gs.by[q,r,s] = val
+                                    gs.bz[q,r,s] = val
 
-                                    yee.jx[q,r,s] = val
-                                    yee.jy[q,r,s] = val
-                                    yee.jz[q,r,s] = val
+                                    gs.jx[q,r,s] = val
+                                    gs.jy[q,r,s] = val
+                                    gs.jz[q,r,s] = val
                                     val += 1
 
 
@@ -729,7 +733,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.get_index(grid)
-            yee = c.get_yee()
+            gs = c.get_grids()
 
             for s in range(-3, conf.NzMesh+3, 1):
                 if not(s < 0 or s >= conf.NzMesh):
@@ -749,23 +753,23 @@ class Communications(unittest.TestCase):
                         rr = wrap( jy, conf.Ny*conf.NyMesh )
                         ss = wrap( kz, conf.Nz*conf.NzMesh )
 
-                        ref[qq, rr, ss, 0] = yee.ex[q,r,s]
-                        ref[qq, rr, ss, 1] = yee.ey[q,r,s]
-                        ref[qq, rr, ss, 2] = yee.ez[q,r,s]
+                        ref[qq, rr, ss, 0] = gs.ex[q,r,s]
+                        ref[qq, rr, ss, 1] = gs.ey[q,r,s]
+                        ref[qq, rr, ss, 2] = gs.ez[q,r,s]
 
-                        ref[qq, rr, ss, 3] = yee.bx[q,r,s]
-                        ref[qq, rr, ss, 4] = yee.by[q,r,s]
-                        ref[qq, rr, ss, 5] = yee.bz[q,r,s]
+                        ref[qq, rr, ss, 3] = gs.bx[q,r,s]
+                        ref[qq, rr, ss, 4] = gs.by[q,r,s]
+                        ref[qq, rr, ss, 5] = gs.bz[q,r,s]
 
-                        ref[qq, rr, ss, 6] = yee.jx[q,r,s]
-                        ref[qq, rr, ss, 7] = yee.jy[q,r,s]
-                        ref[qq, rr, ss, 8] = yee.jz[q,r,s]
+                        ref[qq, rr, ss, 6] = gs.jx[q,r,s]
+                        ref[qq, rr, ss, 7] = gs.jy[q,r,s]
+                        ref[qq, rr, ss, 8] = gs.jz[q,r,s]
 
 
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.index
-            yee = c.get_yee(0)
+            gs = c.get_grids(0)
             for s in range(conf.NzMesh):
                 for r in range(conf.NyMesh):
                     for q in range(conf.NxMesh):
@@ -787,7 +791,7 @@ class Communications(unittest.TestCase):
         if False:
             large_width = 400
             with np.printoptions(linewidth=large_width):
-                print("yee")
+                print("gs")
                 print(ref[:,:,2,0].astype(int))
                 print("orig")
                 print(orig[:,:,2].astype(int))
@@ -817,7 +821,7 @@ class Communications(unittest.TestCase):
                 for kk in [-1, 0, 1]:
                     if (ii == 0 and jj == 0 and kk == 0): continue
 
-                    yee = tile.get_yee()
+                    gs = tile.get_grids()
                     ind = tile.neighs(ii,jj,kk)
 
 
@@ -848,7 +852,7 @@ class Communications(unittest.TestCase):
                     #if n.get_mpi_grid(i,j) == n.rank:
                     if True:
                         c = grid.get_tile(i,j,k)
-                        yee = c.get_yee()
+                        gs = c.get_grids()
 
                         #loop over only halos
                         for s in range(-3, conf.NzMesh+3, 1):
@@ -884,9 +888,9 @@ class Communications(unittest.TestCase):
                                     #print("ijk {},{},{} | qrs {},{},{} | ii,jj,kk {},{},{} | qq rr ss {},{},{} | multxyz {},{},{}".format(i,j,k, q,r,s, ix,jy,kz, qq,rr,ss, i*conf.NxMesh, j*conf.NyMesh, k*conf.NzMesh))
 
                                     #add to halos
-                                    yee.jx[q,r,s] = 1.0
-                                    yee.jy[q,r,s] = 1.0
-                                    yee.jz[q,r,s] = 1.0
+                                    gs.jx[q,r,s] = 1.0
+                                    gs.jy[q,r,s] = 1.0
+                                    gs.jz[q,r,s] = 1.0
 
                                     orig[qq,rr,ss] += 1.0
 
@@ -909,7 +913,7 @@ class Communications(unittest.TestCase):
         for cid in grid.get_tile_ids():
             c = grid.get_tile( cid )
             (i, j, k) = c.get_index(grid)
-            yee = c.get_yee()
+            gs = c.get_grids()
 
             #loop over internals where summation is put
             for s in range(conf.NzMesh):
@@ -919,16 +923,16 @@ class Communications(unittest.TestCase):
                         jy = j*conf.NyMesh + r 
                         kz = k*conf.NzMesh + s
 
-                        ref[ix,jy,kz, 0] = yee.jx[q,r,s]
-                        ref[ix,jy,kz, 1] = yee.jy[q,r,s]
-                        ref[ix,jy,kz, 2] = yee.jz[q,r,s]
+                        ref[ix,jy,kz, 0] = gs.jx[q,r,s]
+                        ref[ix,jy,kz, 1] = gs.jy[q,r,s]
+                        ref[ix,jy,kz, 2] = gs.jz[q,r,s]
 
 
         #print for debug
         if False:
             large_width = 400
             with np.printoptions(linewidth=large_width):
-                print("yee")
+                print("gs")
                 print(ref[:,:,0,0].astype(int))
 
                 print("orig")

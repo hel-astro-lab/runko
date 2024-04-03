@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "../namer.h"
-#include "../../pic/tile.h"
+#include "io/namer.h"
+#include "core/pic/tile.h"
 
 
 template<size_t D>
@@ -28,7 +28,7 @@ h5io::Reader::read(
   auto maxs = tile.maxs;
 
   //maximum acceptable prtcl 4-velocity
-  const float_p max_vel = 1.0e8; 
+  const float max_vel = 1.0e8; 
 
   // internal tile numbering 
   auto my_ind = expand_indices( &tile );
@@ -51,7 +51,7 @@ h5io::Reader::read(
 
     // read into explicitly initialized arrays; otherwise, some -OX option
     // tries to optimize these away and we don't read anything.
-    std::vector<float_p> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
+    std::vector<float> arr1, arr2, arr3, arr4, arr5, arr6, arr7;
     arr1  << gr["x"];
     arr2  << gr["y"];
     arr3  << gr["z"];
@@ -79,8 +79,8 @@ h5io::Reader::read(
     assert(iarr1.size() == nparts);
     assert(iarr2.size() == nparts);
 
-    float_p xloc, yloc, zloc;
-    float_p ux, uy, uz, w;
+    float xloc, yloc, zloc;
+    float ux, uy, uz, w;
     for(size_t n=0; n<nparts; n++) {
       // generates key
       //container.add_particle(
@@ -139,6 +139,7 @@ h5io::Reader::read(
           );
 
       } else {
+
         std::cerr << "skipping prtcl"
                   << " n=" << n
                   << " x=" << xloc
@@ -153,12 +154,36 @@ h5io::Reader::read(
                   << " vel_flag=" << vel_flag
                   << std::endl;
 
-        if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
-        if( !(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) ) std::cerr << "  yloc err: min:" << mins[1] << " p:" << yloc << " max:" << maxs[1] << std::endl;
-        if( !(D>= 3 && mins[2]-2 <= zloc && zloc <= maxs[2]+2) ) std::cerr << "  zloc err: min:" << mins[2] << " p:" << zloc << " max:" << maxs[2] << std::endl;
+        if(D == 1) {
+          if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) {
+            std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
+          }
+        }
 
-        //assert(false);
+        if(D == 2) {
+          if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) {
+            std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
+          }
+          if( !(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) ) { 
+            std::cerr << "  yloc err: min:" << mins[1] << " p:" << yloc << " max:" << maxs[1] << std::endl;
+          }
+        }
+
+        if(D == 3) {
+          if( !(D>= 1 && mins[0]-2 <= xloc && xloc <= maxs[0]+2) ) {
+            std::cerr << "  xloc err: min:" << mins[0] << " p:" << xloc << " max:" << maxs[0] << std::endl;
+          }
+          if( !(D>= 2 && mins[1]-2 <= yloc && yloc <= maxs[1]+2) ) {
+            std::cerr << "  yloc err: min:" << mins[1] << " p:" << yloc << " max:" << maxs[1] << std::endl;
+          }
+          if( !(D>= 3 && mins[2]-2 <= zloc && zloc <= maxs[2]+2) ) {
+            std::cerr << "  zloc err: min:" << mins[2] << " p:" << zloc << " max:" << maxs[2] << std::endl;
+          }
+        }
+
+        assert(false);
       }
+
     }
   }
 

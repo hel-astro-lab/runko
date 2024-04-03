@@ -107,7 +107,7 @@ if __name__ == "__main__":
         if Lz > 1:
             norm_flds /= (1.0/conf.stride)
 
-        # fields into units of particle enthalphy density
+        # emf into units of particle enthalphy density
         norm_flds /= norm_prtcl
 
 

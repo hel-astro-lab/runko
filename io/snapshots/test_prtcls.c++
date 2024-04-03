@@ -1,9 +1,9 @@
-#include "test_prtcls.h"
-
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../pic/particle.h"
-#include "../../pic/tile.h"
 #include <mpi4cpp/mpi.h>
+
+#include "io/snapshots/test_prtcls.h"
+#include "external/ezh5/src/ezh5.hpp"
+#include "core/pic/particle.h"
+#include "core/pic/tile.h"
 
 using ezh5::File;
 
@@ -143,16 +143,16 @@ inline void h5io::TestPrtclWriter<D>::read_tiles(
     auto& container = tile.get_container( ispc );
     int nparts = container.size();
 
-    float_p* loc[3];
+    float* loc[3];
     for( int i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    float_p* vel[3];
+    float* vel[3];
     for( int i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-    float_p* ch;
+    float* ch;
     ch = &( container.wgt(0) );
 
-    float_p *ex, *ey, *ez, *bx, *by, *bz;
+    float *ex, *ey, *ez, *bx, *by, *bz;
     ex = &( container.Epart[0*nparts] );
     ey = &( container.Epart[1*nparts] );
     ez = &( container.Epart[2*nparts] );

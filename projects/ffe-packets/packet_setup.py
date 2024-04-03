@@ -34,7 +34,7 @@ def insert_em_fields(grid, conf):
 
     for cid in grid.get_tile_ids():
         tile = grid.get_tile(cid)
-        yee = tile.get_yee(0)
+        gs = tile.get_grids(0)
 
         if conf.twoD:
             ii, jj = tile.index
@@ -60,7 +60,7 @@ def insert_em_fields(grid, conf):
                     z = kglob 
 
                     # add stationary guide field
-                    yee.bz[l, m, n] = b0
+                    gs.bz[l, m, n] = b0
 
                     bpkg1 = {}
                     bpkg2 = {}
@@ -91,12 +91,12 @@ def insert_em_fields(grid, conf):
 
 
                     #first pkg
-                    yee.bx[l, m, n] += -bpkg1["bx"] * d1.at("bx").y
-                    yee.by[l, m, n] += +bpkg1["by"] * d1.at("by").x
+                    gs.bx[l, m, n] += -bpkg1["bx"] * d1.at("bx").y
+                    gs.by[l, m, n] += +bpkg1["by"] * d1.at("by").x
 
                     wdir = +1.0*conf.beta #direction of wave
-                    yee.ex[l, m, n] += wdir*bpkg1["ex"] * d1.at("ex").x
-                    yee.ey[l, m, n] += wdir*bpkg1["ey"] * d1.at("ey").y
+                    gs.ex[l, m, n] += wdir*bpkg1["ex"] * d1.at("ex").x
+                    gs.ey[l, m, n] += wdir*bpkg1["ey"] * d1.at("ey").y
 
                     #second pkg
                     if conf.two_wave:
@@ -105,12 +105,12 @@ def insert_em_fields(grid, conf):
                         else:
                             rdir = +1.0 #direction of twist; aligned
 
-                        yee.bx[l, m, n] += -rdir*bpkg2["bx"] * d2.at("bx").y
-                        yee.by[l, m, n] += +rdir*bpkg2["by"] * d2.at("by").x
+                        gs.bx[l, m, n] += -rdir*bpkg2["bx"] * d2.at("bx").y
+                        gs.by[l, m, n] += +rdir*bpkg2["by"] * d2.at("by").x
 
                         wdir = -1.0*conf.beta #direction of wave
-                        yee.ex[l, m, n] += wdir*rdir*bpkg2["ex"] * d2.at("ex").x
-                        yee.ey[l, m, n] += wdir*rdir*bpkg2["ey"] * d2.at("ey").y
+                        gs.ex[l, m, n] += wdir*rdir*bpkg2["ex"] * d2.at("ex").x
+                        gs.ey[l, m, n] += wdir*rdir*bpkg2["ey"] * d2.at("ey").y
 
     return
 

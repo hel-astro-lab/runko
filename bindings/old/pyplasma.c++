@@ -9,21 +9,21 @@ namespace py = pybind11;
 //--------------------------------------------------
 // Vlasov module
   
-//#include "../vlasov/tile.h"
-#include "../vlasov/grid.h"
+//#include "../vlv/tile.h"
+#include "../vlv/grid.h"
 
 #include "../em-fields/tile.h"
 #include "../em-fields/damping_tile.h"
 
-#include "../vlasov/amr/mesh.h"
-//#include "../vlasov/amr/numerics.h"
-#include "../vlasov/amr/refiner.h"
-#include "../vlasov/amr/operators.h"
-#include "../vlasov/amr_momentum_solver.h"
-#include "../vlasov/amr_spatial_solver.h"
-#include "../vlasov/amr_analyzator.h"
+#include "../vlv/amr/mesh.h"
+//#include "../vlv/amr/numerics.h"
+#include "../vlv/amr/refiner.h"
+#include "../vlv/amr/operators.h"
+#include "../vlv/amr_momentum_solver.h"
+#include "../vlv/amr_spatial_solver.h"
+#include "../vlv/amr_analyzator.h"
 
-#include "../vlasov/tasker.h"
+#include "../vlv/tasker.h"
 
 
 using float_m = float;
@@ -33,7 +33,7 @@ typedef toolbox::Adapter<float_m, 3> Adapter3d;
 
 
 /// trampoline class for VlasovVelocitySolver
-typedef vlasov::MomentumSolver<float_m,3> momsol; // PYBIND preprocessor macro freaks out 
+typedef vlv::MomentumSolver<float_m,3> momsol; // PYBIND preprocessor macro freaks out 
                                                 // of commas so we hide them with typedef
                                                   
 class PyMomentumSolver : public momsol {
@@ -62,16 +62,16 @@ class PyMomentumSolver : public momsol {
 
 
 /// trampoline class for VlasovSpatialSolver
-class PySpatialSolver : public vlasov::SpatialSolver<float_m> {
+class PySpatialSolver : public vlv::SpatialSolver<float_m> {
   public:
 
     void solve(
-      vlasov::VlasovTile& tile,
-      vlasov::Grid& grid
+      vlv::VlasovTile& tile,
+      vlv::Grid& grid
       ) override {
       PYBIND11_OVERLOAD_PURE(
           void,
-          vlasov::SpatialSolver<float_m>,
+          vlv::SpatialSolver<float_m>,
           solve,
           tile, grid
           );
@@ -180,13 +180,13 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("dt",   &fields::PlasmaTile::dt)
     .def_readwrite("dx",   &fields::PlasmaTile::dx)
     .def_readwrite("cfl",  &fields::PlasmaTile::cfl)
-    .def("cycle_yee",         &fields::PlasmaTile::cycle_yee)
+    .def("cycle_grids",         &fields::PlasmaTile::cycle_grids)
     .def("cycle_current",     &fields::PlasmaTile::cycle_current)
     .def("cycle_current_2d",   &fields::PlasmaTile::cycle_current_2d)
     .def("push_e",            &fields::PlasmaTile::push_e)
     .def("push_half_b",        &fields::PlasmaTile::push_half_b)
     .def("deposit_current",   &fields::PlasmaTile::deposit_current)
-    .def("get_yee",           &fields::PlasmaTile::get_yee, py::return_value_policy::reference)
+    .def("get_grids",           &fields::PlasmaTile::get_grids, py::return_value_policy::reference)
     .def("get_analysis",      &fields::PlasmaTile::get_analysis, py::return_value_policy::reference)
     .def("add_analysis_species", &fields::PlasmaTile::add_analysis_species)
     .def("update_boundaries",  &fields::PlasmaTile::update_boundaries)
@@ -204,22 +204,22 @@ PYBIND11_MODULE(pyplasma, m) {
 
   // Loading grid bindings from corgi library
   py::object corgi_node = (py::object) py::module::import("pycorgi").attr("Grid");
-  py::class_<vlasov::Grid>(m, "Grid", corgi_node)
+  py::class_<vlv::Grid>(m, "Grid", corgi_node)
     .def(py::init<size_t, size_t>());
 
-  py::class_<fields::YeeLattice>(m, "YeeLattice")
+  py::class_<fields::Grids>(m, "Grids")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("ex",   &fields::YeeLattice::ex)
-    .def_readwrite("ey",   &fields::YeeLattice::ey)
-    .def_readwrite("ez",   &fields::YeeLattice::ez)
-    .def_readwrite("bx",   &fields::YeeLattice::bx)
-    .def_readwrite("by",   &fields::YeeLattice::by)
-    .def_readwrite("bz",   &fields::YeeLattice::bz)
-    .def_readwrite("jx",   &fields::YeeLattice::jx)
-    .def_readwrite("jy",   &fields::YeeLattice::jy)
-    .def_readwrite("jz",   &fields::YeeLattice::jz)
-    .def_readwrite("jx1",  &fields::YeeLattice::jx1)
-    .def_readwrite("rho",  &fields::YeeLattice::rho);
+    .def_readwrite("ex",   &fields::Grids::ex)
+    .def_readwrite("ey",   &fields::Grids::ey)
+    .def_readwrite("ez",   &fields::Grids::ez)
+    .def_readwrite("bx",   &fields::Grids::bx)
+    .def_readwrite("by",   &fields::Grids::by)
+    .def_readwrite("bz",   &fields::Grids::bz)
+    .def_readwrite("jx",   &fields::Grids::jx)
+    .def_readwrite("jy",   &fields::Grids::jy)
+    .def_readwrite("jz",   &fields::Grids::jz)
+    .def_readwrite("jx1",  &fields::Grids::jx1)
+    .def_readwrite("rho",  &fields::Grids::rho);
 
 
   py::class_<fields::PlasmaMomentLattice>(m, "PlasmaMomentLattice")
@@ -235,18 +235,18 @@ PYBIND11_MODULE(pyplasma, m) {
     .def_readwrite("ekin",     &fields::PlasmaMomentLattice::ekin);
 
 
-  py::class_<vlasov::VlasovTile, 
+  py::class_<vlv::VlasovTile, 
              fields::PlasmaTile,
              corgi::Tile, 
-             std::shared_ptr<vlasov::VlasovTile>
+             std::shared_ptr<vlv::VlasovTile>
              >(m, "VlasovTile")
     .def(py::init<size_t, size_t, int, size_t, size_t, size_t, size_t>())
-    .def_readwrite("dt",     &vlasov::VlasovTile::dt)
-    .def_readwrite("dx",     &vlasov::VlasovTile::dx)
-    .def("get_plasma_species", [](vlasov::VlasovTile& tile, size_t i, size_t s) 
+    .def_readwrite("dt",     &vlv::VlasovTile::dt)
+    .def_readwrite("dx",     &vlv::VlasovTile::dx)
+    .def("get_plasma_species", [](vlv::VlasovTile& tile, size_t i, size_t s) 
         { return tile.steps.get(i).at(s); }, py::return_value_policy::reference)
-    .def("insert_initial_species", [](vlasov::VlasovTile& c, 
-                                  std::vector<vlasov::PlasmaBlock> species){
+    .def("insert_initial_species", [](vlv::VlasovTile& c, 
+                                  std::vector<vlv::PlasmaBlock> species){
         // push twice to initialize both time steps (current and future)
         c.steps.push_back(species);
         c.steps.push_back(species);
@@ -255,8 +255,8 @@ PYBIND11_MODULE(pyplasma, m) {
 
         })
 
-    .def("clip",         &vlasov::VlasovTile::clip)
-    .def("cycle",        &vlasov::VlasovTile::cycle);
+    .def("clip",         &vlv::VlasovTile::clip)
+    .def("cycle",        &vlv::VlasovTile::cycle);
 
 
 
@@ -338,35 +338,35 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
   // general interface for momentum solvers
-  py::class_<vlasov::MomentumSolver<float_m,3>, PyMomentumSolver > vvsol(m, "MomentumSolver");
+  py::class_<vlv::MomentumSolver<float_m,3>, PyMomentumSolver > vvsol(m, "MomentumSolver");
   vvsol
     .def(py::init<>())
-    .def("solve",     &vlasov::MomentumSolver<float_m,3>::solve)
-    .def("solve_mesh", &vlasov::MomentumSolver<float_m,3>::solve_mesh);
+    .def("solve",     &vlv::MomentumSolver<float_m,3>::solve)
+    .def("solve_mesh", &vlv::MomentumSolver<float_m,3>::solve_mesh);
 
   // AMR Lagrangian solver
-  py::class_<vlasov::AmrMomentumLagrangianSolver<float_m,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlv::AmrMomentumLagrangianSolver<float_m,3>>(m, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
-  py::class_<vlasov::GravityAmrMomentumLagrangianSolver<float_m,3>>(m, "GravityAmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlv::GravityAmrMomentumLagrangianSolver<float_m,3>>(m, "GravityAmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
 
 
   // general interface for spatial solvers
-  py::class_<vlasov::SpatialSolver<float_m>, PySpatialSolver> vssol(m, "SpatialSolver");
+  py::class_<vlv::SpatialSolver<float_m>, PySpatialSolver> vssol(m, "SpatialSolver");
   vssol
     .def(py::init<>())
-    .def("solve", &vlasov::SpatialSolver<float_m>::solve);
+    .def("solve", &vlv::SpatialSolver<float_m>::solve);
 
 
   // AMR Lagrangian solver
-  py::class_<vlasov::AmrSpatialLagrangianSolver<float_m>>(m, "AmrSpatialLagrangianSolver", vssol)
+  py::class_<vlv::AmrSpatialLagrangianSolver<float_m>>(m, "AmrSpatialLagrangianSolver", vssol)
     .def(py::init<>());
 
 
   /// Vlasov tile analyzator
-  py::class_<vlasov::Analyzator<float_m> >(m, "Analyzator")
+  py::class_<vlv::Analyzator<float_m> >(m, "Analyzator")
     .def(py::init<>());
 
 
@@ -376,13 +376,13 @@ PYBIND11_MODULE(pyplasma, m) {
 
 
 
-  py::class_<vlasov::PlasmaBlock>(m, "PlasmaBlock")
+  py::class_<vlv::PlasmaBlock>(m, "PlasmaBlock")
     .def(py::init<size_t, size_t, size_t>())
-    .def_readwrite("Nx", &vlasov::PlasmaBlock::Nx)
-    .def_readwrite("Ny", &vlasov::PlasmaBlock::Ny)
-    .def_readwrite("Nz", &vlasov::PlasmaBlock::Nz)
-    .def_readwrite("qm", &vlasov::PlasmaBlock::qm)
-    .def("__getitem__", [](const vlasov::PlasmaBlock &s, py::tuple indx) 
+    .def_readwrite("Nx", &vlv::PlasmaBlock::Nx)
+    .def_readwrite("Ny", &vlv::PlasmaBlock::Ny)
+    .def_readwrite("Nz", &vlv::PlasmaBlock::Nz)
+    .def_readwrite("qm", &vlv::PlasmaBlock::qm)
+    .def("__getitem__", [](const vlv::PlasmaBlock &s, py::tuple indx) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
@@ -398,7 +398,7 @@ PYBIND11_MODULE(pyplasma, m) {
 
         return s.block(i,j,k);
       }, py::return_value_policy::reference)
-    .def("__setitem__", [](vlasov::PlasmaBlock &s, py::tuple indx, AM3d val) 
+    .def("__setitem__", [](vlv::PlasmaBlock &s, py::tuple indx, AM3d val) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
@@ -414,26 +414,26 @@ PYBIND11_MODULE(pyplasma, m) {
 
         s.block(i,j,k) = val;
         })
-    .def("clear",       [](vlasov::PlasmaBlock &s){s.block.clear();});
+    .def("clear",       [](vlv::PlasmaBlock &s){s.block.clear();});
 
 
-    m.def("initial_step_1d", &vlasov::initial_step<1>);
-    m.def("initial_step", &vlasov::initial_step<3>);
+    m.def("initial_step_1d", &vlv::initial_step<1>);
+    m.def("initial_step", &vlv::initial_step<3>);
 
-    m.def("step_location", &vlasov::step_location);
+    m.def("step_location", &vlv::step_location);
 
 
-    m.def("step_velocity_1d", &vlasov::step_velocity<1>);
-    m.def("step_velocity",   &vlasov::step_velocity<3>);
-    m.def("step_velocity_with_gravity_1d",   &vlasov::step_velocity_with_gravity<1>);
+    m.def("step_velocity_1d", &vlv::step_velocity<1>);
+    m.def("step_velocity",   &vlv::step_velocity<3>);
+    m.def("step_velocity_with_gravity_1d",   &vlv::step_velocity_with_gravity<1>);
 
-    m.def("analyze",      &vlasov::analyze);
+    m.def("analyze",      &vlv::analyze);
 
-    m.def("write_yee", &vlasov::write_yee);
+    m.def("write_grids", &vlv::write_grids);
 
-    m.def("write_analysis", &vlasov::write_analysis);
+    m.def("write_analysis", &vlv::write_analysis);
 
-    m.def("write_mesh", &vlasov::write_mesh);
+    m.def("write_mesh", &vlv::write_mesh);
 
 }
 

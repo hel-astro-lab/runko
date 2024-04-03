@@ -214,7 +214,7 @@ def plotXmesh(ax, n, conf, spcs):
     #       )
 
 
-def get_yee(n, conf):
+def get_grids(n, conf):
 
     data = {'x' : np.linspace(n.get_xmin(), n.get_xmax(), conf.Nx*conf.NxMesh),
             'ex':   -1.0 * np.ones( (conf.Nx*conf.NxMesh) ),
@@ -235,25 +235,25 @@ def get_yee(n, conf):
         cid = n.id(i)
         c = n.get_tile(cid)
 
-        yee = c.get_yee(0)
+        gs = c.get_grids(0)
         for s in range(conf.NxMesh):
             indx = i*conf.NxMesh + s
 
-            data['ex'][indx] = yee.ex[s, 0, 0]
-            data['ey'][indx] = yee.ey[s, 0, 0]
-            data['ez'][indx] = yee.ez[s, 0, 0]
+            data['ex'][indx] = gs.ex[s, 0, 0]
+            data['ey'][indx] = gs.ey[s, 0, 0]
+            data['ez'][indx] = gs.ez[s, 0, 0]
 
-            data['bx'][indx] = yee.bx[s, 0, 0]
-            data['by'][indx] = yee.by[s, 0, 0]
-            data['bz'][indx] = yee.bz[s, 0, 0]
+            data['bx'][indx] = gs.bx[s, 0, 0]
+            data['by'][indx] = gs.by[s, 0, 0]
+            data['bz'][indx] = gs.bz[s, 0, 0]
 
-            data['jx'][indx] = yee.jx[s, 0, 0]
-            data['jy'][indx] = yee.jy[s, 0, 0]
-            data['jz'][indx] = yee.jz[s, 0, 0]
+            data['jx'][indx] = gs.jx[s, 0, 0]
+            data['jy'][indx] = gs.jy[s, 0, 0]
+            data['jz'][indx] = gs.jz[s, 0, 0]
 
-            #data['jx1'][indx] = yee.jx1[s, 0, 0]
+            #data['jx1'][indx] = gs.jx1[s, 0, 0]
 
-            data['rho'][indx] = yee.rho[s, 0, 0]
+            data['rho'][indx] = gs.rho[s, 0, 0]
 
     return data
 
@@ -287,29 +287,29 @@ def getYee2D(n, conf):
         except:
             i,j,k = c.index
 
-        yee = c.get_yee(0)
+        gs = c.get_grids(0)
         for r in range(conf.NyMesh):
             for q in range(conf.NxMesh):
                 indx = i*conf.NxMesh + q
                 jndx = j*conf.NyMesh + r
 
-                data['ex'][indx, jndx] = yee.ex[q, r, 0]
-                data['ey'][indx, jndx] = yee.ey[q, r, 0]
-                data['ez'][indx, jndx] = yee.ez[q, r, 0]
+                data['ex'][indx, jndx] = gs.ex[q, r, 0]
+                data['ey'][indx, jndx] = gs.ey[q, r, 0]
+                data['ez'][indx, jndx] = gs.ez[q, r, 0]
 
-                data['bx'][indx, jndx] = yee.bx[q, r, 0]
-                data['by'][indx, jndx] = yee.by[q, r, 0]
-                data['bz'][indx, jndx] = yee.bz[q, r, 0]
+                data['bx'][indx, jndx] = gs.bx[q, r, 0]
+                data['by'][indx, jndx] = gs.by[q, r, 0]
+                data['bz'][indx, jndx] = gs.bz[q, r, 0]
                                                     
-                data['jx'][indx, jndx] = yee.jx[q, r, 0]
-                data['jy'][indx, jndx] = yee.jy[q, r, 0]
-                data['jz'][indx, jndx] = yee.jz[q, r, 0]
+                data['jx'][indx, jndx] = gs.jx[q, r, 0]
+                data['jy'][indx, jndx] = gs.jy[q, r, 0]
+                data['jz'][indx, jndx] = gs.jz[q, r, 0]
 
-                #data['jx1'][indx, jndx] = yee.jx1[q, r, 0]
-                #data['jy1'][indx, jndx] = yee.jy1[q, r, 0]
-                #data['jz1'][indx, jndx] = yee.jz1[q, r, 0]
+                #data['jx1'][indx, jndx] = gs.jx1[q, r, 0]
+                #data['jy1'][indx, jndx] = gs.jy1[q, r, 0]
+                #data['jz1'][indx, jndx] = gs.jz1[q, r, 0]
 
-                data['rho'][indx, jndx] = yee.rho[q, r, 0]
+                data['rho'][indx, jndx] = gs.rho[q, r, 0]
 
     return data
 
@@ -366,7 +366,7 @@ def get_analysis(n, conf, ispcs):
     return data
 
 def plotJ(ax, n, conf):
-    yee = get_yee(n, conf)
+    gs = get_grids(n, conf)
 
     ax.clear()
     ax.minorticks_on()
@@ -374,21 +374,21 @@ def plotJ(ax, n, conf):
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
 
-    ax.plot(yee['x'], yee['jx'], "b-")
-    #ax.plot(yee['x'], yee['jy'], "r--")
-    #ax.plot(yee['x'], yee['jz'], "g--")
+    ax.plot(gs['x'], gs['jx'], "b-")
+    #ax.plot(gs['x'], gs['jy'], "r--")
+    #ax.plot(gs['x'], gs['jz'], "g--")
 
-    ax.plot(yee['x'], yee['jx1'], "r--")
+    ax.plot(gs['x'], gs['jx1'], "r--")
 
     #ratio
-    #ax.plot(yee['x'], yee['jx1']/yee['jx'], "k-")
+    #ax.plot(gs['x'], gs['jx1']/gs['jx'], "k-")
 
     
     ax.set_ylabel(r'$J_x$')
 
 
 def plotE(ax, n, conf):
-    yee = get_yee(n, conf)
+    gs = get_grids(n, conf)
 
     ax.clear()
     ax.minorticks_on()
@@ -396,15 +396,15 @@ def plotE(ax, n, conf):
     #ax.set_xlim(-3.0, 3.0)
     #ax.set_ylim(-20.0, 20.0)
 
-    ax.plot(yee['x'], yee['ex'], "b-")
-    ax.plot(yee['x'], yee['ey'], "r--")
-    ax.plot(yee['x'], yee['ez'], "g--")
+    ax.plot(gs['x'], gs['ex'], "b-")
+    ax.plot(gs['x'], gs['ey'], "r--")
+    ax.plot(gs['x'], gs['ez'], "g--")
     
     ax.set_ylabel(r'$E_x$')
 
 
 def plotDens(ax, n, conf):
-    yee = get_yee(n, conf)
+    gs = get_grids(n, conf)
 
     ax.clear()
     ax.minorticks_on()
@@ -413,7 +413,7 @@ def plotDens(ax, n, conf):
     #ax.set_ylim(-20.0, 20.0)
     #ax.set_yscale('log')
 
-    ax.plot(yee['x'], yee['rho'], "b-")
+    ax.plot(gs['x'], gs['rho'], "b-")
     
     ax.set_ylabel(r'$n$')
 
@@ -421,7 +421,7 @@ def plotDens(ax, n, conf):
 
 def plot2dYee(
         ax, 
-        yee, 
+        gs, 
         n, 
         conf, 
         val = 'jx', 
@@ -432,10 +432,10 @@ def plot2dYee(
 
     #ax.clear()
     ax.cla()
-    #yee = getYee2D(n, conf)
+    #gs = getYee2D(n, conf)
 
     #filter non-existent values away
-    arr = yee[val]
+    arr = gs[val]
     arr = np.ma.masked_where(arr == -np.inf, arr)
 
     if vmin == None:

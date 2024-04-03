@@ -49,13 +49,13 @@ if __name__ == "__main__":
         # 3D modules
         import pycorgi.threeD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.threeD as pypic  # runko pic c++ bindings
-        import pyrunko.fields.threeD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.threeD as pyfld  # runko fld c++ bindings
 
     elif conf.twoD:
         # 2D modules
         import pycorgi.twoD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.twoD as pypic  # runko pic c++ bindings
-        import pyrunko.fields.twoD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.twoD as pyfld  # runko fld c++ bindings
 
 
     # --------------------------------------------------
@@ -110,7 +110,7 @@ if __name__ == "__main__":
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
 
         # read restart files
-        pyfld.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyfld.read_grids(grid, io_stat["read_lap"], io_stat["read_dir"])
         pypic.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # step one step ahead
@@ -210,7 +210,7 @@ if __name__ == "__main__":
                 antenna.add_driving(tile)
 
     # --------------------------------------------------
-    # sync e and b fields 
+    # sync e and b emf 
 
     # mpi e
     grid.send_data(1)
@@ -270,7 +270,7 @@ if __name__ == "__main__":
         # move particles (only locals tiles)
 
         # --------------------------------------------------
-        # interpolate fields
+        # interpolate emf
         t1 = timer.start_comp("interp_em")
         for tile in pytools.tiles_local(grid):
             fintp.solve(tile)
@@ -498,7 +498,7 @@ if __name__ == "__main__":
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
-                pyfld.write_yee(grid, lap, conf.outdir + "/full_output/")
+                pyfld.write_grids(grid, lap, conf.outdir + "/full_output/")
                 pypic.write_particles(grid, lap, conf.outdir + "/full_output/")
 
             # restart IO (overwrites)
@@ -507,7 +507,7 @@ if __name__ == "__main__":
                 # flip between two sets of files
                 io_stat["deep_io_switch"] = 1 if io_stat["deep_io_switch"] == 0 else 0
 
-                pyfld.write_yee(
+                pyfld.write_grids(
                     grid, io_stat["deep_io_switch"], conf.outdir + "/restart/"
                 )
                 pypic.write_particles(

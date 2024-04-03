@@ -1,11 +1,11 @@
-#include "master_only_moments.h"
 #include <mpi4cpp/mpi.h>
 
-#include "../../tools/ezh5/src/ezh5.hpp"
-#include "../../pic/particle.h"
-#include "../../pic/tile.h"
-#include "../../tools/signum.h"
-#include "../../tools/limit.h"
+#include "io/snapshots/master_only_moments.h"
+#include "external/ezh5/src/ezh5.hpp"
+#include "core/pic/particle.h"
+#include "core/pic/tile.h"
+#include "tools/signum.h"
+#include "tools/limit.h"
 
 
 using namespace mpi4cpp;
@@ -29,7 +29,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
     )
 {
   auto& tile = dynamic_cast<pic::Tile<D>&>(grid.get_tile( cid ));
-  auto& yee = tile.get_yee();
+  auto& gs = tile.get_grids();
     
   auto mins = tile.mins;
   auto maxs = tile.maxs;
@@ -37,7 +37,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
 
   // clear buffer before additive variables
   sbuf[0].clear();
-  if(ifea==0) yee.rho.clear();
+  if(ifea==0) gs.rho.clear();
 
 
   // local variables
@@ -58,13 +58,13 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
 
     if(nparts <= 0) continue; // skip zero containers
 
-    float_p* loc[3];
+    float* loc[3];
     for( i=0; i<3; i++) loc[i] = &( container.loc(i,0) );
 
-    float_p* vel[3];
+    float* vel[3];
     for( i=0; i<3; i++) vel[i] = &( container.vel(i,0) );
 
-    float_p* ch;
+    float* ch;
     ch = &( container.wgt(0) );
 
 
@@ -130,7 +130,7 @@ inline void h5io::MasterPicMomentsWriter<D>::read_tile_feature(
         kff = D >= 3 ? limit( floor(z0-mins[2]), -3., maxs[2]-mins[2] +2.) : 0;
 
         // update rho arrays; this is interpreted as mass density
-        yee.rho(iff,jff,kff) += mass*wgt;
+        gs.rho(iff,jff,kff) += mass*wgt;
 
       //--------------------------------------------------
       }
@@ -208,12 +208,12 @@ inline void h5io::MasterPicMomentsWriter<3>::mpi_reduce_snapshots(
   int nx_tile = lens[0];
   int ny_tile = lens[1];
   int nz_tile = lens[2];
-  int n_tiles = nx_tile*ny_tile*nz_tile;
+  size_t n_tiles = nx_tile*ny_tile*nz_tile;
 
   // sync everyone before going into the loop
   comm.barrier();
 
-  for(uint64_t cid=0; cid<n_tiles; cid++) {
+  for(size_t cid=0; cid<n_tiles; cid++) {
 
     int msg_rank = -1;
     if( grid.is_local(cid) ) msg_rank = rank;

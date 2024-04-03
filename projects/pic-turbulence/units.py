@@ -42,7 +42,7 @@ class Units:
 
 
         #--------------------------------------------------
-        #fields normalization; OLD; 
+        #emf normalization; OLD; 
 
         #conf.binit = 1.0
         self.norm_flds = 2.0/conf.binit**2 #mean initial energy density

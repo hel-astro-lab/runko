@@ -61,7 +61,7 @@ def insert_em_fields(grid, conf):
     beta = conf.beta
 
     for tile in pytools.tiles_all(grid):
-        yee = tile.get_yee(0)
+        gs = tile.get_grids(0)
 
         ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
 
@@ -73,12 +73,12 @@ def insert_em_fields(grid, conf):
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
                     r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
-                    yee.bx[l, m, n] = conf.binit * np.cos(bphi)
-                    yee.by[l, m, n] = conf.binit * np.sin(bphi) * np.sin(btheta)
-                    yee.bz[l, m, n] = conf.binit * np.sin(bphi) * np.cos(btheta)
+                    gs.bx[l, m, n] = conf.binit * np.cos(bphi)
+                    gs.by[l, m, n] = conf.binit * np.sin(bphi) * np.sin(btheta)
+                    gs.bz[l, m, n] = conf.binit * np.sin(bphi) * np.cos(btheta)
 
-                    yee.ex[l, m, n] = 0.0
-                    yee.ey[l, m, n] = -beta * yee.bz[l, m, n]
-                    yee.ez[l, m, n] = beta * yee.by[l, m, n]
+                    gs.ex[l, m, n] = 0.0
+                    gs.ey[l, m, n] = -beta * gs.bz[l, m, n]
+                    gs.ez[l, m, n] = beta * gs.by[l, m, n]
     return
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../namer.h"
-#include "../../pic/tile.h"
+#include "io/namer.h"
+#include "core/pic/tile.h"
 
 template<size_t D>
 bool

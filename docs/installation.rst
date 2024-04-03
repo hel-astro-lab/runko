@@ -225,22 +225,21 @@ You should also add the python script directories into ``PYTHONPATH`` environmen
     export RUNKO=/path2repo
     PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/"
     PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/lib"
-    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/corgi/lib"
-    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/bindings/old"
+    PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$RUNKO/external/corgi/lib"
     export PYTHONPATH
 
 where ``path2repo`` points to the location where you cloned the repository (i.e. path to ``runko`` directory). Note that there is no trailing slash ``/`` symbol in the commands. As an example, the path can be e.g., ``/Users/natj/runko``.
 
 
-Next we can proceed to compiling. Out-of-source builds are recommended: inside the repository directory, make a new ``build`` directory, go into that, and only then run the CMake configuration commands. This can be done by running (inside ``runko`` directory):
+Next we can proceed to compiling the standard version of the code with all the debugging information included. Out-of-source builds are recommended: inside the repository directory, make a new ``build`` directory, go into that, and only then run the CMake configuration commands. This can be done by running (inside ``runko`` directory):
 
 .. code-block:: bash
 
    mkdir build
    cd build
-   cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python3) ..
+   cmake ..
 
-And make sure to check that `CMake` finishes successfully. After that, you are ready to compile the framework with
+And check that `CMake` finishes successfully. After that, you are ready to compile the framework with
 
 .. code-block:: bash
 
@@ -253,6 +252,14 @@ When compiling and linking is finished, CMake runs few automated tests to check 
 
     Since the compiling can take quite a while, you can use the multi-core compilation by ``make -j8`` (or whatever number of tasks you want).
 
+Sometimes the tests can fail because the python version is not detected correctly. In this case, you can feed the correct version to the CMake directly via
+
+.. code-block:: bash
+
+   cmake -DPYTHON_EXECUTABLE=$(which python3) ..
+
+which uses the output of ``which python3`` as your default python executable. 
+
 
 
 Testing of the new installation
@@ -261,3 +268,17 @@ Testing of the new installation
 Runko comes with multiple tests (found in ``runko/tests/``) that are ran after every compilation. In general, if you see "All tests passed.", after the compilation, your installation should be succesfull.
 
 The next step is to run an actual simulation with the code. For that, see the premade projects setups in ``runko/projects/``.
+
+
+
+Compiling the faster Release version
+===============================
+
+By default, the CMAKE will compile the code in a safe debug mode. This mode includes additional sanity tests during the simulation runtime to ensure proper code behavior. When you are sure that the code works as intended, you can compile the faster release version (with all the tests turned off) with
+
+.. code-block:: bash
+
+   cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python3) ..
+
+Note that debugging an undefined code behavior in this mode can be much harder so it is not given as the default option.
+

@@ -4,13 +4,13 @@
 
 namespace py = pybind11;
 
-#include "../ffe/tile.h"
+#include "core/ffe/tile.h"
 
-#include "../ffe/currents/rffe2.h"
-#include "../ffe/currents/rffe4.h"
-#include "../ffe/currents/ffe2.h"
-#include "../ffe/currents/ffe4.h"
-#include "../ffe/skinny_yee.h"
+#include "core/ffe/currents/rffe2.h"
+#include "core/ffe/currents/rffe4.h"
+#include "core/ffe/currents/ffe2.h"
+#include "core/ffe/currents/ffe4.h"
+#include "core/ffe/slim_grids.h"
 
 
 namespace ffe {
@@ -24,7 +24,7 @@ auto declare_tile(
 
   return 
   py::class_<ffe::Tile<D>, 
-             fields::Tile<D>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
              std::shared_ptr<ffe::Tile<D>>
              >(m, 
@@ -44,15 +44,15 @@ void bind_ffe(py::module& m_sub)
 {
 
   // skinny version of the Yee lattice with only (e and b meshes)
-  py::class_<ffe::SkinnyYeeLattice>(m_sub, "SkinnyYeeLattice")
+  py::class_<ffe::SlimGrids>(m_sub, "SlimGrids")
     .def(py::init<int, int, int>())
-    .def_readwrite("ex",   &ffe::SkinnyYeeLattice::ex)
-    .def_readwrite("ey",   &ffe::SkinnyYeeLattice::ey)
-    .def_readwrite("ez",   &ffe::SkinnyYeeLattice::ez)
-    .def_readwrite("bx",   &ffe::SkinnyYeeLattice::bx)
-    .def_readwrite("by",   &ffe::SkinnyYeeLattice::by)
-    .def_readwrite("bz",   &ffe::SkinnyYeeLattice::bz)
-    .def("set_yee",        &ffe::SkinnyYeeLattice::set_yee)
+    .def_readwrite("ex",   &ffe::SlimGrids::ex)
+    .def_readwrite("ey",   &ffe::SlimGrids::ey)
+    .def_readwrite("ez",   &ffe::SlimGrids::ez)
+    .def_readwrite("bx",   &ffe::SlimGrids::bx)
+    .def_readwrite("by",   &ffe::SlimGrids::by)
+    .def_readwrite("bz",   &ffe::SlimGrids::bz)
+    .def("set_grids",        &ffe::SlimGrids::set_grids)
     .def(py::self += py::self)
     .def(py::self -= py::self)
     .def(py::self *= float())
@@ -63,16 +63,16 @@ void bind_ffe(py::module& m_sub)
     .def(py::self /  float());
 
 
-  m_sub.def("set_step", [](fields::YeeLattice& yee, ffe::SkinnyYeeLattice skyee)
+  m_sub.def("set_step", [](emf::Grids& gs, ffe::SlimGrids sgs)
       -> void 
       {
-        yee.ex = skyee.ex;
-        yee.ey = skyee.ey;
-        yee.ez = skyee.ez;
+        gs.ex = sgs.ex;
+        gs.ey = sgs.ey;
+        gs.ez = sgs.ez;
         
-        yee.bx = skyee.bx;
-        yee.by = skyee.by;
-        yee.bz = skyee.bz;
+        gs.bx = sgs.bx;
+        gs.by = sgs.by;
+        gs.bz = sgs.bz;
      }
   );
 

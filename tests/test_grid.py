@@ -15,7 +15,7 @@ class Initialization(unittest.TestCase):
     #    grid = pycorgi.oneD.Grid(3,1,1)
     #    grid.set_grid_lims(0.0, 1.0)
 
-    #    #c = pyrunko.fields.Tile1D(10)
+    #    #c = pyrunko.emf.Tile1D(10)
     #    c = pyrunko.pic.oneD.Tile(10,1,1)
     #    grid.add_tile(c, (1,) ) 
 
@@ -31,7 +31,7 @@ class Initialization(unittest.TestCase):
         grid.set_grid_lims(0.0, 1.0, 10.0, 20.0)
 
         # note: we also try different tile family here
-        c = pyrunko.fields.twoD.Tile(10, 10, 1)
+        c = pyrunko.emf.twoD.Tile(10, 10, 1)
         grid.add_tile(c, (1,2) ) 
 
         c2 = grid.get_tile(1,2)

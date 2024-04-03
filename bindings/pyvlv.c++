@@ -1,38 +1,37 @@
 #include "py_submodules.h"
 
 
-#include "../definitions.h"
-//#include "../tools/mesh.h"
+#include "definitions.h"
 
 
 //--------------------------------------------------
 // Vlasov module
   
-#include "../vlasov/tile.h"
-#include "../em-fields/tile.h"
-#include "../em-fields/boundaries/damping_tile.h"
-#include "../vlasov/amr/mesh.h"
-#include "../vlasov/amr/refiner.h"
-#include "../vlasov/amr/operators.h"
-#include "../vlasov/momentum-solvers/amr_momentum_solver.h"
-#include "../vlasov/momentum-solvers/bwd_lagrangian.h"
-#include "../vlasov/momentum-solvers/bwd_lagrangian_gravity.h"
-#include "../vlasov/spatial-solvers/amr_spatial_solver.h"
-#include "../vlasov/tasker.h"
-#include "../io/tasker.h"
-#include "../vlasov/boundaries/outflow.h"
-#include "../vlasov/boundaries/piston.h"
+#include "core/vlv/tile.h"
+#include "core/emf/tile.h"
+#include "core/emf/boundaries/damping_tile.h"
+#include "core/vlv/amr/mesh.h"
+#include "core/vlv/amr/refiner.h"
+#include "core/vlv/amr/operators.h"
+#include "core/vlv/momentum-solvers/amr_momentum_solver.h"
+#include "core/vlv/momentum-solvers/bwd_lagrangian.h"
+#include "core/vlv/momentum-solvers/bwd_lagrangian_gravity.h"
+#include "core/vlv/spatial-solvers/amr_spatial_solver.h"
+#include "core/vlv/tasker.h"
+#include "io/tasker.h"
+#include "core/vlv/boundaries/outflow.h"
+#include "core/vlv/boundaries/piston.h"
 
 
 namespace vlv {
 
-using Adapter3d = toolbox::Adapter<float_m, 3>;
-using AM1d = toolbox::AdaptiveMesh<float_m, 1>;
-using AM3d = toolbox::AdaptiveMesh<float_m, 3>;
+using Adapter3d = toolbox::Adapter<float, 3>;
+using AM1d = toolbox::AdaptiveMesh<float, 1>;
+using AM3d = toolbox::AdaptiveMesh<float, 3>;
 
 //--------------------------------------------------
 /// trampoline class for VlasovVelocitySolver
-using momsol = vlv::MomentumSolver<float_m,1,1>; // PYBIND preprocessor macro freaks out 
+using momsol = vlv::MomentumSolver<float,1,1>; // PYBIND preprocessor macro freaks out 
                                              // of commas so we hide them with typedef
 
                                                   
@@ -45,9 +44,9 @@ class PyMomentumSolver : public momsol {
     void solve_mesh( 
         AM3d& mesh0, 
         AM3d& mesh1, 
-        std::array<float_m, 3>& E,
-        std::array<float_m, 3>& B,
-        vlv::tools::Params<float_m>& params
+        std::array<float, 3>& E,
+        std::array<float, 3>& B,
+        vlv::tools::Params<float>& params
         ) override {
       PYBIND11_OVERLOAD_PURE(
           void, 
@@ -60,7 +59,7 @@ class PyMomentumSolver : public momsol {
 
 
 /// trampoline class for VlasovSpatialSolver
-class PySpatialSolver : public vlv::SpatialSolver<float_m> {
+class PySpatialSolver : public vlv::SpatialSolver<float> {
   public:
 
     void solve(
@@ -69,7 +68,7 @@ class PySpatialSolver : public vlv::SpatialSolver<float_m> {
       ) override {
       PYBIND11_OVERLOAD_PURE(
           void,
-          vlv::SpatialSolver<float_m>,
+          vlv::SpatialSolver<float>,
           solve,
           tile, grid
           );
@@ -90,7 +89,7 @@ auto declare_tile(
 
   return
     py::class_<vlv::Tile<D>, 
-             fields::Tile<D>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
              std::shared_ptr<vlv::Tile<D> >
              >(m, 
@@ -132,8 +131,8 @@ namespace outflow {
         py::class_<
           vlv::outflow::Tile<D, S>,
           vlv::Tile<D>,
-          fields::damping::Tile<D, S>,
-          fields::Tile<D>,
+          emf::damping::Tile<D, S>,
+          emf::Tile<D>,
           corgi::Tile<D>, 
           std::shared_ptr<vlv::outflow::Tile<D,S>>
         >(m, 
@@ -157,7 +156,7 @@ namespace piston {
         py::class_<
           vlv::piston::Tile<D>,
           vlv::Tile<D>,
-          fields::Tile<D>,
+          emf::Tile<D>,
           corgi::Tile<D>, 
           std::shared_ptr<vlv::piston::Tile<D>>
         >(m, 
@@ -250,31 +249,31 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
   // general interface for momentum solvers
-  py::class_<vlv::MomentumSolver<float_m,1,1>, PyMomentumSolver > vvsol(m_1d, "MomentumSolver");
+  py::class_<vlv::MomentumSolver<float,1,1>, PyMomentumSolver > vvsol(m_1d, "MomentumSolver");
   vvsol
     .def(py::init<>())
-    .def("solve",     &vlv::MomentumSolver<float_m,1,1>::solve)
-    .def("solve_mesh", &vlv::MomentumSolver<float_m,1,1>::solve_mesh);
+    .def("solve",     &vlv::MomentumSolver<float,1,1>::solve)
+    .def("solve_mesh", &vlv::MomentumSolver<float,1,1>::solve_mesh);
 
   // AMR Lagrangian solver
-  py::class_<vlv::AmrMomentumLagrangianSolver<float_m,1,1>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
+  py::class_<vlv::AmrMomentumLagrangianSolver<float,1,1>>(m_1d, "AmrMomentumLagrangianSolver", vvsol)
      .def(py::init<>());
 
-  py::class_<vlv::GravityAmrMomentumLagrangianSolver<float_m,1,1>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
-     .def(py::init<float_m,float_m>());
+  py::class_<vlv::GravityAmrMomentumLagrangianSolver<float,1,1>>(m_1d, "GravityAmrMomentumLagrangianSolver", vvsol)
+     .def(py::init<float,float>());
 
 
   //--------------------------------------------------
 
   // general interface for spatial solvers
-  py::class_<vlv::SpatialSolver<float_m>, PySpatialSolver> vssol(m_1d, "SpatialSolver");
+  py::class_<vlv::SpatialSolver<float>, PySpatialSolver> vssol(m_1d, "SpatialSolver");
   vssol
     .def(py::init<>())
-    .def("solve", &vlv::SpatialSolver<float_m>::solve);
+    .def("solve", &vlv::SpatialSolver<float>::solve);
 
 
   // AMR Lagrangian solver
-  py::class_<vlv::AmrSpatialLagrangianSolver<float_m>>(m_1d, "AmrSpatialLagrangianSolver", vssol)
+  py::class_<vlv::AmrSpatialLagrangianSolver<float>>(m_1d, "AmrSpatialLagrangianSolver", vssol)
     .def(py::init<>());
 
 
@@ -289,7 +288,7 @@ void bind_vlv(py::module& m_sub)
   //--------------------------------------------------
 
   /// Vlasov tile analyzator
-  //py::class_<vlv::Analyzator<float_m> >(m_1d, "Analyzator")
+  //py::class_<vlv::Analyzator<float> >(m_1d, "Analyzator")
   //  .def(py::init<>());
 
 

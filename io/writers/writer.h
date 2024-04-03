@@ -3,16 +3,14 @@
 #include <vector>
 #include <string>
 
-#include "../namer.h"
+#include "io/namer.h"
 
-#include "../../tools/mesh.h"
-#include "../../em-fields/tile.h"
-#include "../../vlasov/tile.h"
-#include "../../vlasov/amr/mesh.h"
-#include "../../pic/tile.h"
-
-#include "../../tools/ezh5/src/ezh5.hpp"
-
+#include "tools/mesh.h"
+#include "core/emf/tile.h"
+#include "core/vlv/tile.h"
+#include "core/vlv/amr/mesh.h"
+#include "core/pic/tile.h"
+#include "external/ezh5/src/ezh5.hpp"
 
 
 namespace h5io {
@@ -85,10 +83,10 @@ class Writer {
     // }
 
     template<size_t D>
-    bool write(const fields::Tile<D>& tile, ezh5::File& file);
+    bool write(const emf::Tile<D>& tile, ezh5::File& file);
 
     //template<size_t D>
-    //bool write2(const fields::Tile<D>& tile);
+    //bool write2(const emf::Tile<D>& tile);
 
     template<size_t D>
     bool write(const vlv::Tile<D>& tile, ezh5::File& file);
@@ -105,6 +103,6 @@ class Writer {
 // template implementations
 
 #include "fields.h"
-#include "vlasov.h"
+#include "vlv.h"
 #include "pic.h"
 

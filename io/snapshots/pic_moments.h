@@ -3,8 +3,8 @@
 #include <vector>
 #include <string>
 
-#include "snapshot.h"
-#include "../../corgi/corgi.h"
+#include "io/snapshots/snapshot.h"
+#include "external/corgi/corgi.h"
 
 
 namespace h5io { 

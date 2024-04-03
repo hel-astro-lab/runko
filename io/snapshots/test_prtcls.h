@@ -3,9 +3,9 @@
 #include <vector>
 #include <string>
 
-#include "snapshot.h"
-#include "../../corgi/corgi.h"
-#include "../../tools/mesh.h"
+#include "io/snapshots/snapshot.h"
+#include "external/corgi/corgi.h"
+#include "tools/mesh.h"
 
 
 namespace h5io { 

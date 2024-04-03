@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "writers/writer.h"
-#include "readers/reader.h"
+#include "io/writers/writer.h"
+#include "io/readers/reader.h"
 
 
 namespace vlv{
@@ -59,10 +59,10 @@ inline void read_mesh(
 
 //--------------------------------------------------
 
-namespace fields {
+namespace emf {
 
 template<size_t D>
-inline void write_yee( 
+inline void write_grids( 
     corgi::Grid<D>& grid, 
     int lap,
     std::string dir
@@ -78,7 +78,7 @@ inline void write_yee(
 
   for(auto cid : grid.get_local_tiles() ){
     const auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+      = dynamic_cast<emf::Tile<D>&>(grid.get_tile( cid ));
     writer.write(tile, file);
   }
 }
@@ -98,13 +98,13 @@ inline void write_yee(
 //
 //  for(auto cid : grid.get_local_tiles() ){
 //    const auto& tile 
-//      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+//      = dynamic_cast<emf::Tile<D>&>(grid.get_tile( cid ));
 //    writer.write2(tile);
 //  }
 //}
 
 template<size_t D>
-inline void read_yee( 
+inline void read_grids( 
     corgi::Grid<D>& grid, 
     int lap,
     std::string dir 
@@ -120,13 +120,13 @@ inline void read_yee(
 
   for(auto cid : grid.get_tile_ids() ){
     auto& tile 
-      = dynamic_cast<fields::Tile<D>&>(grid.get_tile( cid ));
+      = dynamic_cast<emf::Tile<D>&>(grid.get_tile( cid ));
     reader.read(tile, file);
   }
 
 }
 
-} // end of ns fields
+} // end of ns emf
 
 
 //--------------------------------------------------

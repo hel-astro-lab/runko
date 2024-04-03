@@ -17,11 +17,11 @@ maxi = 100
 maxi = -1
 
 #Read field
-ex   = f['fields/Ex'][()]
-rho  = f['fields/rho'][()]
-ekin = f['fields/ekin'][()]
-#ex  = f['fields/Ex' ][:,:maxi]
-#rho = f['fields/rho'][:,:maxi]
+ex   = f['emf/Ex'][()]
+rho  = f['emf/rho'][()]
+ekin = f['emf/ekin'][()]
+#ex  = f['emf/Ex' ][:,:maxi]
+#rho = f['emf/rho'][:,:maxi]
 
 print "Ex shape:", np.shape(ex)
 

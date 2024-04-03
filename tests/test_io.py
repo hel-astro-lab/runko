@@ -9,7 +9,7 @@ import pyrunko
 import pytools
 import h5py
 
-#from visualize import get_yee
+#from visualize import get_grids
 #from visualize import getYee2D
 #from combine_files import combine_tiles
 #import injector
@@ -99,7 +99,7 @@ def loadTiles1D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i) == n.rank:
-            c = pyrunko.fields.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.oneD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,) ) 
 
 
@@ -108,7 +108,7 @@ def loadTiles2D(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
-            c = pyrunko.fields.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
+            c = pyrunko.emf.twoD.Tile(conf.NxMesh, conf.NyMesh, conf.NzMesh)
             n.add_tile(c, (i,j) ) 
 
 
@@ -153,7 +153,7 @@ def fill_ref(grid, conf):
 
 
 # fill Yee mesh with values
-def fill_yee(grid, data, conf):
+def fill_grids(grid, data, conf):
 
     Nx = grid.get_Nx()
     Ny = grid.get_Ny()
@@ -164,29 +164,29 @@ def fill_yee(grid, data, conf):
     NzM = conf.NzMesh
 
     # lets put ref array into Yee lattice
-    #print("filling yee")
+    #print("filling gs")
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             for k in range(grid.get_Nz()):
                 #if n.get_mpi_grid(i,j) == n.rank:
                 if True:
                     c = grid.get_tile(i,j,k)
-                    yee = c.get_yee(0)
+                    gs = c.get_grids(0)
 
                     for q in range(conf.NxMesh):
                         for r in range(conf.NyMesh):
                             for s in range(conf.NzMesh):
-                                yee.ex[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 0] 
-                                yee.ey[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 1]
-                                yee.ez[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 2]
+                                gs.ex[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 0] 
+                                gs.ey[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 1]
+                                gs.ez[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 2]
 
-                                yee.bx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 3]
-                                yee.by[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 4]
-                                yee.bz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 5]
+                                gs.bx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 3]
+                                gs.by[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 4]
+                                gs.bz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 5]
 
-                                yee.jx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 6]
-                                yee.jy[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 7]
-                                yee.jz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 8]
+                                gs.jx[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 6]
+                                gs.jy[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 7]
+                                gs.jz[q,r,s] = data[i*NxM + q, j*NyM + r, k*NzM + s, 8]
 
 
 # Generic function to fill the velocity mesh
@@ -261,9 +261,9 @@ class IO(unittest.TestCase):
         loadTiles1D(grid, conf)
 
         ref = fill_ref(grid, conf)
-        fill_yee(grid, ref, conf)
+        fill_grids(grid, ref, conf)
 
-        pyrunko.fields.oneD.write_yee(grid, 0, conf.outdir)
+        pyrunko.emf.oneD.write_grids(grid, 0, conf.outdir)
 
         ##################################################
         # read using analysis tools
@@ -294,10 +294,10 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles1D(node2, conf)
 
-        pyrunko.fields.oneD.read_yee(node2, 0, "io_test_1D")
+        pyrunko.emf.oneD.read_grids(node2, 0, "io_test_1D")
 
-        yee1 = pytools.visualize.get_yee(grid,  conf)
-        yee2 = pytools.visualize.get_yee(node2, conf)
+        yee1 = pytools.visualize.get_grids(grid,  conf)
+        yee2 = pytools.visualize.get_grids(node2, conf)
 
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -341,9 +341,9 @@ class IO(unittest.TestCase):
         loadTiles2D(grid, conf)
 
         ref = fill_ref(grid, conf)
-        fill_yee(grid, ref, conf)
+        fill_grids(grid, ref, conf)
 
-        pyrunko.fields.twoD.write_yee(grid, 0, conf.outdir)
+        pyrunko.emf.twoD.write_grids(grid, 0, conf.outdir)
         
         ##################################################
         # read using analysis tools
@@ -374,10 +374,10 @@ class IO(unittest.TestCase):
         node2.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
         loadTiles2D(node2, conf)
 
-        pyrunko.fields.twoD.read_yee(node2, 0, "io_test_2D")
+        pyrunko.emf.twoD.read_grids(node2, 0, "io_test_2D")
 
-        yee1 = pytools.visualize.get_yee_2D(grid,  conf)
-        yee2 = pytools.visualize.get_yee_2D(node2, conf)
+        yee1 = pytools.visualize.get_grids_2D(grid,  conf)
+        yee2 = pytools.visualize.get_grids_2D(node2, conf)
 
         for i in range(grid.get_Nx()):
             for j in range(grid.get_Ny()):
@@ -547,7 +547,7 @@ class IO(unittest.TestCase):
 
         pytools.pic.inject(grid, test_filler, density_profile, conf)
 
-        print("write prtcls")
+        #print("write prtcls")
         pyrunko.pic.twoD.write_particles(grid, 0, conf.outdir)
 
         # TODO: read with h5py
@@ -565,7 +565,7 @@ class IO(unittest.TestCase):
                     pytools.pic.initialize_tile(c, (i, j,k), node2, conf)
                     node2.add_tile(c, (i,j)) 
 
-        print("read prtcls")
+        #print("read prtcls")
         pyrunko.pic.twoD.read_particles(node2, 0, conf.outdir)
 
         #assert

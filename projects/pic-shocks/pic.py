@@ -73,7 +73,7 @@ def insert_em_fields(grid, conf):
     beta = conf.beta
 
     for tile in pytools.tiles_all(grid):
-        yee = tile.get_yee(0)
+        gs = tile.get_grids(0)
 
         ii, jj, kk = tile.index if conf.threeD else (*tile.index, 0)
 
@@ -85,13 +85,13 @@ def insert_em_fields(grid, conf):
                     iglob, jglob, kglob = pytools.ind2loc((ii, jj, kk), (l, m, n), conf)
                     r = np.sqrt(iglob ** 2 + jglob ** 2 + kglob ** 2)
 
-                    yee.bx[l, m, n] = conf.binit * np.cos(bphi)
-                    yee.by[l, m, n] = conf.binit * np.sin(bphi) * np.sin(btheta)
-                    yee.bz[l, m, n] = conf.binit * np.sin(bphi) * np.cos(btheta)
+                    gs.bx[l, m, n] = conf.binit * np.cos(bphi)
+                    gs.by[l, m, n] = conf.binit * np.sin(bphi) * np.sin(btheta)
+                    gs.bz[l, m, n] = conf.binit * np.sin(bphi) * np.cos(btheta)
 
-                    yee.ex[l, m, n] = 0.0
-                    yee.ey[l, m, n] = -beta * yee.bz[l, m, n]
-                    yee.ez[l, m, n] = beta * yee.by[l, m, n]
+                    gs.ex[l, m, n] = 0.0
+                    gs.ey[l, m, n] = -beta * gs.bz[l, m, n]
+                    gs.ez[l, m, n] = beta * gs.by[l, m, n]
     return
 
 
@@ -128,13 +128,13 @@ if __name__ == "__main__":
         # 3D modules
         import pycorgi.threeD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.threeD as pypic  # runko pic c++ bindings
-        import pyrunko.fields.threeD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.threeD as pyfld  # runko fld c++ bindings
 
     elif conf.twoD:
         # 2D modules
         import pycorgi.twoD as pycorgi  # corgi ++ bindings
         import pyrunko.pic.twoD as pypic  # runko pic c++ bindings
-        import pyrunko.fields.twoD as pyfld  # runko fld c++ bindings
+        import pyrunko.emf.twoD as pyfld  # runko fld c++ bindings
 
     # --------------------------------------------------
     # setup grid
@@ -180,7 +180,7 @@ if __name__ == "__main__":
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
 
         # read restart files
-        pyfld.read_yee(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyfld.read_grids(grid, io_stat["read_lap"], io_stat["read_dir"])
         pypic.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # step one step ahead
@@ -318,7 +318,7 @@ if __name__ == "__main__":
     # timer.verbose = 1  # 0 normal; 1 - debug mode
 
     # --------------------------------------------------
-    # sync e and b fields
+    # sync e and b emf
 
     # mpi e
     grid.send_data(1)
@@ -369,7 +369,7 @@ if __name__ == "__main__":
         # move particles (only locals tiles)
 
         # --------------------------------------------------
-        # interpolate fields
+        # interpolate emf
         t1 = timer.start_comp("interp_em")
         for tile in pytools.tiles_local(grid):
             fintp.solve(tile)
@@ -615,7 +615,7 @@ if __name__ == "__main__":
 
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
-                pyfld.write_yee(grid, lap, conf.outdir + "/full_output/")
+                pyfld.write_grids(grid, lap, conf.outdir + "/full_output/")
                 pypic.write_particles(grid, lap, conf.outdir + "/full_output/")
                 # pypic.write_analysis(grid, lap, conf.outdir + "/full_output/")
 
@@ -625,7 +625,7 @@ if __name__ == "__main__":
                 # flip between two sets of files
                 io_stat["deep_io_switch"] = 1 if io_stat["deep_io_switch"] == 0 else 0
 
-                pyfld.write_yee(
+                pyfld.write_grids(
                     grid, io_stat["deep_io_switch"], conf.outdir + "/restart/"
                 )
                 pypic.write_particles(

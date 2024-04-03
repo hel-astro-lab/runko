@@ -16,7 +16,7 @@ from visualize import plotNode
 from visualize_amr import plotXmesh
 from visualize import plotJ, plotE, plotDens
 from visualize import saveVisz
-from visualize import get_yee
+from visualize import get_grids
 
 import injector
 
@@ -100,11 +100,11 @@ def filler(xloc, uloc, ispcs, conf):
 def save(n, conf, lap, f5):
 
     #get E field
-    yee = get_yee(n, conf)
+    gs = get_grids(n, conf)
 
-    f5['fields/Ex'  ][:,lap] = yee['ex']
-    f5['fields/rho' ][:,lap] = yee['rho']
-    f5['fields/ekin'][:,lap] = yee['ekin']
+    f5['fields/Ex'  ][:,lap] = gs['ex']
+    f5['fields/rho' ][:,lap] = gs['rho']
+    f5['fields/ekin'][:,lap] = gs['ekin']
 
     return
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
         #B field half update
 
-        ##move vlasov fluid
+        ##move vlv fluid
 
         #update boundaries
         for j in range(grid.get_Ny()):

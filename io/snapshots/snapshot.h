@@ -1,16 +1,16 @@
 #pragma once
 
-#include "../../corgi/corgi.h"
-#include "../../definitions.h"
-#include "../../tools/fastlog.h"
-#include "../../tools/mesh.h"
-#include "../namer.h"
-
 #include <array>
 #include <mpi4cpp/mpi.h>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "external/corgi/corgi.h"
+#include "definitions.h"
+#include "tools/fastlog.h"
+#include "tools/mesh.h"
+#include "io/namer.h"
 
 
 namespace h5io { 
@@ -32,10 +32,10 @@ class SnapshotWriter {
     std::string fname;
 
     /// meshes
-    std::vector< toolbox::Mesh<float_m,0> > arrs;
+    std::vector< toolbox::Mesh<float,0> > arrs;
 
     /// mpi receive buffer
-    std::vector< toolbox::Mesh<float_m,0> > rbuf;
+    std::vector< toolbox::Mesh<float,0> > rbuf;
 
 
     /// data stride length

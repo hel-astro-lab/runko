@@ -10,79 +10,79 @@ set (TOOLS_FILES
      )
 
 set (FIELDS_FILES 
-     pyfields.c++
-     ../em-fields/tile.c++ 
-     ../em-fields/propagator/fdtd2.c++ 
-     ../em-fields/propagator/fdtd2_pml.c++ 
-     ../em-fields/propagator/fdtd4.c++ 
-     ../em-fields/propagator/fdtd_general.c++ 
-     ../em-fields/filters/binomial2.c++
-     ../em-fields/filters/compensator.c++
-     ../em-fields/filters/general_binomial.c++
-     ../em-fields/filters/strided_binomial.c++
-     #../em-fields/filters/sweeping_binomial.c++
-     ../em-fields/boundaries/damping_tile.c++
-     ../em-fields/boundaries/conductor.c++
+     pyemf.c++
+     ../core/emf/tile.c++ 
+     ../core/emf/propagators/fdtd2.c++ 
+     ../core/emf/propagators/fdtd2_pml.c++ 
+     ../core/emf/propagators/fdtd4.c++ 
+     ../core/emf/propagators/fdtd_general.c++ 
+     ../core/emf/filters/binomial2.c++
+     ../core/emf/filters/compensator.c++
+     ../core/emf/filters/general_binomial.c++
+     ../core/emf/filters/strided_binomial.c++
+    #../core/emf/filters/sweeping_binomial.c++
+     ../core/emf/boundaries/damping_tile.c++
+     ../core/emf/boundaries/conductor.c++
      )
 
 set (VLV_FILES 
-     # pyvlv.c++
-     # ../vlasov/tile.c++
-     # ../vlasov/boundaries/piston.c++
-     # ../vlasov/boundaries/outflow.c++
-     # ../vlasov/momentum-solvers/amr_momentum_solver.c++
-     # ../vlasov/momentum-solvers/bwd_lagrangian.c++
+      pyvlv.c++
+      ../core/vlv/tile.c++
+      ../core/vlv/boundaries/piston.c++
+      ../core/vlv/boundaries/outflow.c++
+      ../core/vlv/momentum-solvers/amr_momentum_solver.c++
+      ../core/vlv/momentum-solvers/bwd_lagrangian.c++
      )
 
 
 set (PIC_FILES 
      pypic.c++
-     ../pic/tile.c++
-     ../pic/particle.c++
-     ../pic/boundaries/wall.c++
-     ../pic/boundaries/piston.c++
-     ../pic/boundaries/piston_z.c++
-     ../pic/boundaries/star_surface_injector.c++
-     ../pic/pushers/boris.c++
-     ../pic/pushers/boris_drag.c++
-     ../pic/pushers/boris_rad.c++
-     ../pic/pushers/boris_grav.c++
-     ../pic/pushers/vay.c++
-     ../pic/pushers/higuera_cary.c++
-     ../pic/pushers/rgca.c++
-     ../pic/pushers/photon.c++
-     ../pic/pushers/pulsar.c++
-     ../pic/interpolators/linear_1st.c++
-     ../pic/interpolators/quadratic_2nd.c++
-     ../pic/interpolators/cubic_3rd.c++
-     ../pic/interpolators/quartic_4th.c++
-     ../pic/depositers/zigzag.c++
-     ../pic/depositers/zigzag_2nd.c++
-     ../pic/depositers/zigzag_3rd.c++
-     ../pic/depositers/zigzag_4th.c++
-     ../pic/depositers/esikerpov_2nd.c++
-     ../pic/depositers/esikerpov_4th.c++
-     #../pic/depositers/esikerpov_4th_vec.c++
+     ../core/pic/tile.c++
+     ../core/pic/particle.c++
+     ../core/pic/boundaries/wall.c++
+     ../core/pic/boundaries/piston.c++
+     ../core/pic/boundaries/piston_z.c++
+     ../core/pic/boundaries/star_surface_injector.c++
+     ../core/pic/pushers/boris.c++
+     ../core/pic/pushers/boris_drag.c++
+     ../core/pic/pushers/boris_rad.c++
+     ../core/pic/pushers/boris_grav.c++
+     ../core/pic/pushers/vay.c++
+     ../core/pic/pushers/higuera_cary.c++
+     ../core/pic/pushers/rgca.c++
+     ../core/pic/pushers/photon.c++
+     ../core/pic/pushers/pulsar.c++
+     ../core/pic/interpolators/linear_1st.c++
+     ../core/pic/interpolators/quadratic_2nd.c++
+     ../core/pic/interpolators/cubic_3rd.c++
+     ../core/pic/interpolators/quartic_4th.c++
+     ../core/pic/depositers/zigzag.c++
+     ../core/pic/depositers/zigzag_2nd.c++
+     ../core/pic/depositers/zigzag_3rd.c++
+     ../core/pic/depositers/zigzag_4th.c++
+     ../core/pic/depositers/esikerpov_2nd.c++
+     ../core/pic/depositers/esikerpov_4th.c++
+    #../core/pic/depositers/esikerpov_4th_vec.c++
      )
 
 set (QED_FILES 
      pyqed.c++
-     ../qed/interactions/pair_ann.c++
-     ../qed/interactions/phot_ann.c++
-     ../qed/interactions/compton.c++
-     ../qed/interactions/synchrotron.c++
-     ../qed/interactions/multi_phot_ann.c++
-     ../qed/pairing.c++
+     ../core/qed/interactions/pair_ann.c++
+     ../core/qed/interactions/phot_ann.c++
+     ../core/qed/interactions/compton.c++
+     ../core/qed/interactions/synchrotron.c++
+     ../core/qed/interactions/multi_phot_ann.c++
+     ../core/qed/pairing.c++
      )
 
 set (FFE_FILES 
      pyffe.c++
-     ../ffe/tile.c++
-     ../ffe/skinny_yee.c++
-     ../ffe/currents/rffe2.c++
-     ../ffe/currents/rffe4.c++
-     ../ffe/currents/ffe2.c++
-     ../ffe/currents/ffe4.c++
+     ../core/ffe/tile.c++
+     ../core/ffe/slim_grids.c++
+     ../core/ffe/currents/rffe2.c++
+     ../core/ffe/currents/rffe4.c++
+     ../core/ffe/currents/ffe2.c++
+     ../core/ffe/currents/ffe4.c++
      )
 
 
@@ -103,8 +103,6 @@ set (ACC_FILES
 
 
 set (MISC_FILES 
-     pycpl.c++
-     ../coupling/tile.c++
     )
 
 
@@ -151,9 +149,9 @@ if(ENABLE_CUDA)
      
      set_target_properties(pyrunko PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
      set_source_files_properties(../ffe/currents/rffe.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../em-fields/tile.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../em-fields/filters/binomial2.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../em-fields/propagator/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../emf/tile.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../emf/filters/binomial2.c++ PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(../emf/propagators/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
      set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)

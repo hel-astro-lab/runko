@@ -21,13 +21,10 @@ The design and usage of the code are described in detail in the accompanying [pa
 ## Available modules
 Current main physics simulation modules include:
 - **3D3V Particle-In-Cell module** (`pic/`)
-- **3D FDTD electromagnetics module** based on staggered Yee lattice (`em-fields/`)
+- **3D FDTD electromagnetics module** based on staggered Yee lattice (`emf/`)
 - **3D Force-free electrodynamics** module (`ffe/`)
-- **1D3V Relativistic Vlasov module** (`vlasov/`)
-
-Additionally, modules under construction include:
+- **1D3V Relativistic Vlasov module** (`vlv/`)
 - Non-linear Monte Carlo **radiation module** (`qed/`)
-- Full **3D3V Vlasov module**
 
 
 ## Quick getting started guide

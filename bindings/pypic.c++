@@ -8,45 +8,45 @@ namespace py = pybind11;
 //--------------------------------------------------
 // experimental PIC module
   
-#include "../pic/tile.h"
-#include "../pic/pushers/pusher.h"
-#include "../pic/pushers/boris.h"
-#include "../pic/pushers/boris_drag.h"
-#include "../pic/pushers/boris_rad.h"
-#include "../pic/pushers/boris_grav.h"
-#include "../pic/pushers/vay.h"
-#include "../pic/pushers/higuera_cary.h"
-#include "../pic/pushers/rgca.h"
-#include "../pic/pushers/pulsar.h"
-#include "../pic/pushers/photon.h"
+#include "core/pic/tile.h"
+#include "core/pic/pushers/pusher.h"
+#include "core/pic/pushers/boris.h"
+#include "core/pic/pushers/boris_drag.h"
+#include "core/pic/pushers/boris_rad.h"
+#include "core/pic/pushers/boris_grav.h"
+#include "core/pic/pushers/vay.h"
+#include "core/pic/pushers/higuera_cary.h"
+#include "core/pic/pushers/rgca.h"
+#include "core/pic/pushers/pulsar.h"
+#include "core/pic/pushers/photon.h"
 
-#include "../pic/interpolators/interpolator.h"
-#include "../pic/interpolators/linear_1st.h"
-#include "../pic/interpolators/quadratic_2nd.h"
-#include "../pic/interpolators/cubic_3rd.h"
-#include "../pic/interpolators/quartic_4th.h"
+#include "core/pic/interpolators/interpolator.h"
+#include "core/pic/interpolators/linear_1st.h"
+#include "core/pic/interpolators/quadratic_2nd.h"
+#include "core/pic/interpolators/cubic_3rd.h"
+#include "core/pic/interpolators/quartic_4th.h"
 
-#include "../pic/depositers/depositer.h"
-#include "../pic/depositers/zigzag.h"
-#include "../pic/depositers/zigzag_2nd.h"
-#include "../pic/depositers/zigzag_3rd.h"
-#include "../pic/depositers/zigzag_4th.h"
-#include "../pic/depositers/esikerpov_2nd.h"
-#include "../pic/depositers/esikerpov_4th.h"
+#include "core/pic/depositers/depositer.h"
+#include "core/pic/depositers/zigzag.h"
+#include "core/pic/depositers/zigzag_2nd.h"
+#include "core/pic/depositers/zigzag_3rd.h"
+#include "core/pic/depositers/zigzag_4th.h"
+#include "core/pic/depositers/esikerpov_2nd.h"
+#include "core/pic/depositers/esikerpov_4th.h"
 
-#include "../pic/communicate.h"
+#include "core/pic/communicate.h"
 
-#include "../pic/boundaries/wall.h"
-#include "../pic/boundaries/piston.h"
-#include "../pic/boundaries/piston_z.h"
-#include "../pic/boundaries/star_surface_injector.h"
+#include "core/pic/boundaries/wall.h"
+#include "core/pic/boundaries/piston.h"
+#include "core/pic/boundaries/piston_z.h"
+#include "core/pic/boundaries/star_surface_injector.h"
 
-#include "../io/writers/writer.h"
-#include "../io/writers/pic.h"
-#include "../io/snapshots/test_prtcls.h"
-#include "../io/snapshots/pic_moments.h"
-#include "../io/snapshots/master_only_moments.h"
-#include "../io/tasker.h"
+#include "io/writers/writer.h"
+#include "io/writers/pic.h"
+#include "io/snapshots/test_prtcls.h"
+#include "io/snapshots/pic_moments.h"
+#include "io/snapshots/master_only_moments.h"
+#include "io/tasker.h"
 
 
 
@@ -64,7 +64,7 @@ auto declare_tile(
 
   return 
   py::class_<pic::Tile<D>, 
-             fields::Tile<D>,
+             emf::Tile<D>,
              corgi::Tile<D>, 
              std::shared_ptr<pic::Tile<D>>
              >(m, 
@@ -103,8 +103,8 @@ auto declare_prtcl_container(
     .def("size",          &pic::ParticleContainer<D>::size)
     .def("add_particle",  &pic::ParticleContainer<D>::add_particle)
     .def("add_particle2", [](pic::ParticleContainer<D>& s, 
-                            float_p xx, float_p yy, float_p zz,
-                            float_p vx, float_p vy, float_p vz, float_p wgt)
+                            float xx, float yy, float zz,
+                            float vx, float vy, float vz, float wgt)
         {
           s.add_particle({xx,yy,zz}, {vx,vy,vz}, wgt);
         })
@@ -190,9 +190,9 @@ auto declare_prtcl_container(
 
         // we should not end up here;
         throw py::index_error();
-        return float_p(0.0);
+        return float(0.0);
       })
-    .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, float_p val)
+    .def("__setitem__", [](pic::ParticleContainer<D>& s, const py::tuple& indx, float val)
       {
         auto ip = indx[0].cast<int>();
         auto v = indx[1].cast<int>();
@@ -233,8 +233,8 @@ namespace wall {
       return
         py::class_<pic::wall::Tile<D, S>,
                    pic::Tile<D>,
-                   fields::damping::Tile<D, S>,
-                   fields::Tile<D>,
+                   emf::damping::Tile<D, S>,
+                   emf::Tile<D>,
                    corgi::Tile<D>, 
                    std::shared_ptr<pic::wall::Tile<D,S>>
         >(m, 
@@ -707,7 +707,7 @@ void bind_pic(py::module& m_sub)
             {
                 const auto nx = static_cast<pybind11::ssize_t>( s.nx );
                 const auto ny = static_cast<pybind11::ssize_t>( s.ny );
-                auto v = pybind11::array_t<float_m>( {nx, ny}, s.arrs[k].data() );
+                auto v = pybind11::array_t<float>( {nx, ny}, s.arrs[k].data() );
                 return v;
             });
 

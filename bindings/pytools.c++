@@ -1,13 +1,10 @@
 #include "py_submodules.h"
-#include <pybind11/operators.h>
 
-#include "../definitions.h"
-#include "../tools/mesh.h"
-#include "../vlasov/amr/mesh.h"
-
-//#include "../em-fields/filters/filters.h"
-
-#include "../tools/hilbert.h"
+#include "external/corgi/pybind11/include/pybind11/operators.h"
+#include "definitions.h"
+#include "tools/mesh.h"
+#include "core/vlv/amr/mesh.h"
+#include "tools/hilbert.h"
 
 #include <exception>
 
@@ -71,7 +68,7 @@ void declare_mesh(
 
         return s(i,j,k);
       }) //, py::return_value_policy::reference)
-    .def("__setitem__", [](Class &s, const py::tuple& indx, float_m val) 
+    .def("__setitem__", [](Class &s, const py::tuple& indx, float val) 
       {
         auto i = indx[0].cast<int>();
         auto j = indx[1].cast<int>();
@@ -105,9 +102,9 @@ void bind_tools(pybind11::module& m)
 {
 
   // declare Mesh with various halo sizes
-  declare_mesh<float_m, 0>(m, "Mesh_H0" );
-  declare_mesh<float_m, 1>(m, "Mesh_H1" );
-  declare_mesh<float_m, 3>(m, "Mesh_H3" );
+  declare_mesh<float, 0>(m, "Mesh_H0" );
+  declare_mesh<float, 1>(m, "Mesh_H1" );
+  declare_mesh<float, 3>(m, "Mesh_H3" );
 
 
   //--------------------------------------------------
@@ -144,7 +141,7 @@ void bind_tools(pybind11::module& m)
 
         return s.get_from_roots(cid);
         })
-    .def("__setitem__", [](AM3d &s, py::tuple indx, float_m v) 
+    .def("__setitem__", [](AM3d &s, py::tuple indx, float v) 
         { 
         auto i = indx[0].cast<uint64_t>();
         auto j = indx[1].cast<uint64_t>();
@@ -176,24 +173,24 @@ void bind_tools(pybind11::module& m)
 
   py::module m_2d = m.def_submodule("twoD", "2D specializations");
 
-  //py::class_<fields::Filter>(m_2d, "Filter")
+  //py::class_<emf::Filter>(m_2d, "Filter")
   //  .def(py::init<int, int>())
-  //  .def("init_kernel",             &fields::Filter::init_kernel)
-  //  .def("init_gaussian_kernel",    &fields::Filter::init_gaussian_kernel)
-  //  //.def("init_sinc_kernel",      &fields::Filter::init_sinc_kernel)
-  //  .def("init_lowpass_fft_kernel", &fields::Filter::init_lowpass_fft_kernel)
-  //  .def("init_3point",             &fields::Filter::init_3point_kernel)
-  //  .def("fft_kernel",              &fields::Filter::fft_kernel)
-  //  .def("fft_image_forward",       &fields::Filter::fft_image_forward)
-  //  .def("fft_image_backward",      &fields::Filter::fft_image_backward)
-  //  .def("apply_kernel",            &fields::Filter::apply_kernel)
-  //  .def("get_padded_current",      &fields::Filter::get_padded_current)
-  //  .def("set_current",             &fields::Filter::set_current)
-  //  .def("direct_convolve_3point",  &fields::Filter::direct_convolve_3point)
-  //  .def("set_image",               &fields::Filter::set_image)
-  //  .def("set_kernel",              &fields::Filter::set_kernel)
-  //  .def("get_kernel",              &fields::Filter::get_kernel, py::return_value_policy::reference)
-  //  .def("get_image",               &fields::Filter::get_image,  py::return_value_policy::reference);
+  //  .def("init_kernel",             &emf::Filter::init_kernel)
+  //  .def("init_gaussian_kernel",    &emf::Filter::init_gaussian_kernel)
+  //  //.def("init_sinc_kernel",      &emf::Filter::init_sinc_kernel)
+  //  .def("init_lowpass_fft_kernel", &emf::Filter::init_lowpass_fft_kernel)
+  //  .def("init_3point",             &emf::Filter::init_3point_kernel)
+  //  .def("fft_kernel",              &emf::Filter::fft_kernel)
+  //  .def("fft_image_forward",       &emf::Filter::fft_image_forward)
+  //  .def("fft_image_backward",      &emf::Filter::fft_image_backward)
+  //  .def("apply_kernel",            &emf::Filter::apply_kernel)
+  //  .def("get_padded_current",      &emf::Filter::get_padded_current)
+  //  .def("set_current",             &emf::Filter::set_current)
+  //  .def("direct_convolve_3point",  &emf::Filter::direct_convolve_3point)
+  //  .def("set_image",               &emf::Filter::set_image)
+  //  .def("set_kernel",              &emf::Filter::set_kernel)
+  //  .def("get_kernel",              &emf::Filter::get_kernel, py::return_value_policy::reference)
+  //  .def("get_image",               &emf::Filter::get_image,  py::return_value_policy::reference);
 
 
 

@@ -4,8 +4,8 @@
 #include <algorithm>
   
 // for GPU supported sorting
-#include "iter/dynArray.h"
-#include "iter/devcall.h"
+#include "external/iter/dynArray.h"
+#include "external/iter/devcall.h"
 
 namespace toolbox {
 
@@ -19,7 +19,7 @@ DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
     if(val < arr[0]) return 0;
 
     // value is between array elements
-    for(int i=1; i<arr.size(); i++){
+    for(size_t i=1; i<arr.size(); i++){
       if( ( arr[i-1] <= val ) && ( val < arr[i] ) ) {
         return i;
       }

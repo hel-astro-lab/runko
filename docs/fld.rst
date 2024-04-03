@@ -65,6 +65,17 @@ Different FDTD solvers can be obtained by defining different discrete curl-opera
 
     TODO
 
+One of the simplest FDTD operators is the second-order ``FDTD2`` solver, implemented as
+
+.. literalinclude:: ../emf/propagator/fdtd2.c++
+   :linenos:
+   :caption:
+   :dedent:
+   :language: c++
+   :start-after: SPHINX emf docs pusher example start
+   :end-before: SPHINX emf docs pusher example stop
+
+
 
 Filtering
 ---------

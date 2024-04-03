@@ -12,7 +12,7 @@ from scipy.signal import convolve
 import pycorgi
 import pyrunko.pic.twoD as pypic
 import pyrunko.tools.twoD as pytools
-import pyrunko.fields.twoD as pyfields
+import pyrunko.emf.twoD as pyfields
 
 from initialize_pic import loadTiles
 from initialize_pic import spatialLoc
@@ -41,7 +41,7 @@ def insert_em(grid, conf, ffunc):
     for i in range(grid.get_Nx()):
         for j in range(grid.get_Ny()):
             c = grid.get_tile(i,j)
-            yee = c.get_yee(0)
+            gs = c.get_grids(0)
 
             for l in range(conf.NxMesh):
                 for m in range(conf.NyMesh):
@@ -57,9 +57,9 @@ def insert_em(grid, conf, ffunc):
 
                         val = ffunc(xmid, ymid, zmid)
 
-                        yee.jx[l,m,n] = val
-                        yee.jy[l,m,n] = val+1.0
-                        yee.jz[l,m,n] = val+2.0
+                        gs.jx[l,m,n] = val
+                        gs.jy[l,m,n] = val+1.0
+                        gs.jz[l,m,n] = val+2.0
 
 
 # basic Conf file/class for PiC simulation testing
@@ -787,13 +787,13 @@ class FilterTests(unittest.TestCase):
             c = grid.get_tile( cid )
             (i, j) = c.index
 
-            yee = c.get_yee(0)
+            gs = c.get_grids(0)
             for k in range(conf.NyMesh):
                 for q in range(conf.NxMesh):
                     for r in range(conf.NzMesh):
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 0] = yee.jx[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 1] = yee.jy[q,k,r]
-                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 2] = yee.jz[q,k,r]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 0] = gs.jx[q,k,r]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 1] = gs.jy[q,k,r]
+                        data[ i*conf.NxMesh + q, j*conf.NyMesh + k, 0*conf.NzMesh + r, 2] = gs.jz[q,k,r]
 
         #img2 = data[:,:,0,0]
         #axs[1].imshow(img2, vmin=0.0, vmax=100.0) #, vmin=vmin, vmax=vmax)

@@ -104,7 +104,7 @@ class Antenna:
 
 
     def add_driving(self, tile):
-        yee = tile.get_yee(0)
+        gs = tile.get_grids(0)
 
         self.get_dB(tile)
 
@@ -112,7 +112,7 @@ class Antenna:
         for r in range(self.NzMesh):
             for s in range(self.NyMesh):
                 for q in range(self.NxMesh):
-                    yee.bx[q,s,r] = self.bxm[q,s,r]
-                    yee.by[q,s,r] = self.bym[q,s,r]
+                    gs.bx[q,s,r] = self.bxm[q,s,r]
+                    gs.by[q,s,r] = self.bym[q,s,r]
 
 
