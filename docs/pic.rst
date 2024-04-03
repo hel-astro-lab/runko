@@ -124,7 +124,7 @@ Code implementation
 
 The current deposition is implemented as a member function of the ``emf::Tile`` as
 
-.. literalinclude:: ../emf/tile.c++
+.. literalinclude:: ../core/emf/tile.c++
    :linenos:
    :caption:
    :dedent:
