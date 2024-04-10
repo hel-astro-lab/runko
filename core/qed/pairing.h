@@ -538,13 +538,13 @@ public:
 
     //--------------------------------------------------
     // variables inside loop
-    float lx1, ly1, lz1,     lx2, ly2, lz2;
-    float lx3, ly3, lz3,     lx4, ly4, lz4;
-    float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
-    float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
-    float e1, e2;
-    float wmin, wmax, prob;
-    float p_ini, p_tar;
+    //float lx1, ly1, lz1,     lx2, ly2, lz2;
+    //float lx3, ly3, lz3,     lx4, ly4, lz4;
+    //float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
+    //float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
+    //float e1, e2;
+    //float wmin, wmax, prob;
+    //float p_ini, p_tar;
 
     // loop over interactions
     for(auto iptr : binary_interactions){
@@ -582,32 +582,31 @@ public:
                 // some interactions modify its value during the iteration
                   
                 //unpack incident 
-                lx1 = con1.loc(0,n1);
-                ly1 = con1.loc(1,n1);
-                lz1 = con1.loc(2,n1);
-                  
-                ux1 = con1.vel(0,n1);
-                uy1 = con1.vel(1,n1);
-                uz1 = con1.vel(2,n1);
-                w1  = con1.wgt(n1);
+                auto lx1 = con1.loc(0,n1);
+                auto ly1 = con1.loc(1,n1);
+                auto lz1 = con1.loc(2,n1);
+
+                auto ux1 = con1.vel(0,n1);
+                auto uy1 = con1.vel(1,n1);
+                auto uz1 = con1.vel(2,n1);
+                auto w1  = con1.wgt(n1);
 
                 //e1  = con1.eneArr[n1]; 
-                e1  = con1.get_prtcl_ene(n1);
+                //auto e1  = con1.get_prtcl_ene(n1);
 
                 if(w1 < EPS) continue; // omit zero-w incidents
 
                 // unpack target
-                lx2 = con2.loc(0,n2);
-                ly2 = con2.loc(1,n2);
-                lz2 = con2.loc(2,n2);
+                auto lx2 = con2.loc(0,n2);
+                auto ly2 = con2.loc(1,n2);
+                auto lz2 = con2.loc(2,n2);
 
-                ux2 = con2.vel(0,n2);
-                uy2 = con2.vel(1,n2);
-                uz2 = con2.vel(2,n2);
-                w2  = con2.wgt(  n2);
+                auto ux2 = con2.vel(0,n2);
+                auto uy2 = con2.vel(1,n2);
+                auto uz2 = con2.vel(2,n2);
+                auto w2  = con2.wgt(  n2);
 
-                //e2  = con2.eneArr[n2]; 
-                e1 = con2.get_prtcl_ene(n2);
+                //auto e2 = con2.get_prtcl_ene(n2);
 
                 if(w2 < EPS) continue; // omit zero-w targets
                                          
@@ -620,13 +619,13 @@ public:
                 auto [cm, vrel] = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
                 
                 // interaction probability
-                wmin = min(w1, w2);
-                wmax = max(w1, w2);
-                prob = cm*vrel*w1*w2;
+                //auto wmin = min(w1, w2);
+                auto wmax = max(w1, w2);
+                auto prob = cm*vrel*w1*w2;
                 // NOTE: difference of all2all scheme is here where prob depends on w1*w2
 
                 // exponential waiting time between interactions
-                double t_free = -log( rand() )*prob_norm/prob;
+                float t_free = -log( rand() )*prob_norm/prob;
 
                 //-------------------------------------------------- 
                 if(t_free < 1.0){
@@ -638,8 +637,8 @@ public:
                   // interact and udpate variables in-place
                   iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
 
-                  p_ini = w2/wmax;
-                  p_tar = w1/wmax;
+                  auto p_ini = w2/wmax;
+                  auto p_tar = w1/wmax;
 
                   //std::cout << " interacting:" << prob << " pini/tar" << p_ini << " " << p_tar << std::endl;
 
@@ -749,20 +748,19 @@ public:
       info_prtcl_num[t1] = con.size();
     }
 
-    auto mins = tile.mins;
-    auto maxs = tile.maxs;
+    const auto mins = tile.mins;
+    const auto maxs = tile.maxs;
 
     //--------------------------------------------------
 
     // initialize temp variable storages
-    float lx1, ly1, lz1,     lx2, ly2, lz2;
-    float lx3, ly3, lz3,     lx4, ly4, lz4;
-    float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
-    float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
-    float e1, e2, e3, e4;
-    float m3, m4;
-
-    float wmin, wmax, prob;
+    //float lx1, ly1, lz1,     lx2, ly2, lz2;
+    //float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
+    //float lx3, ly3, lz3,     lx4, ly4, lz4;
+    //float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
+    //float e1, e2, e3, e4;
+    //float m3, m4;
+    float wmin; //, wmax, prob;
     float prob_upd3, prob_upd4, prob_kill3, prob_kill4;
 
     //--------------------------------------------------
@@ -802,16 +800,16 @@ public:
       //for(int n1=con1.size()-1; n1>=0; n1--) { // reverse iteration
 
         //unpack incident 
-        lx1 = con1.loc(0,n1);
-        ly1 = con1.loc(1,n1);
-        lz1 = con1.loc(2,n1);
-          
-        ux1 = con1.vel(0,n1);
-        uy1 = con1.vel(1,n1);
-        uz1 = con1.vel(2,n1);
-        w1  = con1.wgt(n1);
+        auto lx1 = con1.loc(0,n1);
+        auto ly1 = con1.loc(1,n1);
+        auto lz1 = con1.loc(2,n1);
 
-        e1 = con1.get_prtcl_ene(n1);
+        auto ux1 = con1.vel(0,n1);
+        auto uy1 = con1.vel(1,n1);
+        auto uz1 = con1.vel(2,n1);
+        auto w1  = con1.wgt(n1);
+
+        auto e1 = con1.get_prtcl_ene(n1);
 
         if(w1 < EPS) continue; // omit zero-w incidents
 
@@ -824,7 +822,7 @@ public:
 
         // total probability
         // NOTE: maximum interaction rate = sigma_max * w2_sum * w1/prob_norm
-        double prob_vir_max = 0.0;
+        float prob_vir_max = 0.0;
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]; 
                                                                                              
         // no targets to interact with
@@ -838,7 +836,7 @@ public:
         //}
 
         // exponential waiting time between interactions
-        double t_free = -log( rand() )*prob_norm/(prob_vir_max*w1); //NOTE w1 here
+        float t_free = -log( rand() )*prob_norm/(prob_vir_max*w1); //NOTE w1 here
                                                                     //
         //if( t_free > 1.0) {
         //if( true ) {
@@ -891,15 +889,15 @@ public:
           if( (t1 == t2) && (n1 == n2) ) continue; // do not interact with self
 
           // unpack target
-          lx2 = con2->loc(0,n2);
-          ly2 = con2->loc(1,n2);
-          lz2 = con2->loc(2,n2);
+          auto lx2 = con2->loc(0,n2);
+          auto ly2 = con2->loc(1,n2);
+          auto lz2 = con2->loc(2,n2);
 
-          ux2 = con2->vel(0,n2);
-          uy2 = con2->vel(1,n2);
-          uz2 = con2->vel(2,n2);
-          w2  = con2->wgt(  n2);
-          e2  = con2->get_prtcl_ene(n2);
+          auto ux2 = con2->vel(0,n2);
+          auto uy2 = con2->vel(1,n2);
+          auto uz2 = con2->vel(2,n2);
+          auto w2  = con2->wgt(  n2);
+          auto e2  = con2->get_prtcl_ene(n2);
 
           if(w2 < EPS) continue; // omit zero-w targets
                                    
@@ -927,18 +925,18 @@ public:
           //if(D>= 2 && mins[1]-2 <= ly2 && ly2 <= maxs[1]+2) loc_flag2++;
           //if(D>= 3 && mins[2]-2 <= lz2 && lz2 <= maxs[2]+2) loc_flag2++;
 
-          lx3 = lx1; //(lx1 + lx2)*0.5; 
-          ly3 = ly1; //(ly1 + ly2)*0.5; 
-          lz3 = lz1; //(lz1 + lz2)*0.5; 
+          auto lx3 = lx1; //(lx1 + lx2)*0.5; 
+          auto ly3 = ly1; //(ly1 + ly2)*0.5; 
+          auto lz3 = lz1; //(lz1 + lz2)*0.5; 
 
           size_t loc_flag3 = 0;
           if(D>= 1 && mins[0]-3 <= lx3 && lx3 <= maxs[0]+2) loc_flag3++;
           if(D>= 2 && mins[1]-3 <= ly3 && ly3 <= maxs[1]+2) loc_flag3++;
           if(D>= 3 && mins[2]-3 <= lz3 && lz3 <= maxs[2]+2) loc_flag3++;
 
-          lx4 = lx2; //(lx1 + lx2)*0.5; 
-          ly4 = ly2; //(ly1 + ly2)*0.5; 
-          lz4 = lz2; //(lz1 + lz2)*0.5; 
+          auto lx4 = lx2; //(lx1 + lx2)*0.5; 
+          auto ly4 = ly2; //(ly1 + ly2)*0.5; 
+          auto lz4 = lz2; //(lz1 + lz2)*0.5; 
 
           size_t loc_flag4 = 0;
           if(D>= 1 && mins[0]-3 <= lx4 && lx4 <= maxs[0]+2) loc_flag4++;
@@ -996,10 +994,10 @@ public:
                 << " w="  << w1
                 << " minsx:" << mins[0] 
                 << " minsy:" << mins[1] 
-                << " minsz:" << mins[2] 
+                //<< " minsz:" << mins[2] 
                 << " maxsx:" << maxs[0] 
                 << " maxsy:" << maxs[1] 
-                << " maxsz:" << maxs[2] 
+                //<< " maxsz:" << maxs[2] 
                 << std::endl;
                 assert(false);
           }
@@ -1017,10 +1015,10 @@ public:
                 << " w="  << w2
                 << " minsx:" << mins[0] 
                 << " minsy:" << mins[1] 
-                << " minsz:" << mins[2] 
+                //<< " minsz:" << mins[2] 
                 << " maxsx:" << maxs[0] 
                 << " maxsy:" << maxs[1] 
-                << " maxsz:" << maxs[2] 
+                //<< " maxsz:" << maxs[2] 
                 << std::endl;
                 assert(false);
           }
@@ -1038,7 +1036,7 @@ public:
           info_max_int_cs[iptr->name] = std::max( cm_cur, cm*vrel/2.0f);
 
           // comparison of interaction to max interaction 
-          double prob_vir = cm*vrel/(2.0*cmax);
+          float prob_vir = cm*vrel/(2.0*cmax);
 
           // correct average accumulation factor with the real value
           timer.start_comp("acc");
@@ -1078,10 +1076,10 @@ public:
             timer.stop_comp("interact");
 
             // new energies; NOTE: could use container.m to get the mass
-            m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
-            m4 = (t4 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
-            e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
-            e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
+            float m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+            float m4 = (t4 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+            float e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
+            float e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
 
             // weight adaptation; original Stern95 version
             //float fw3 = (e3/e1)*ene_weight_funs(t1, e1)/ene_weight_funs(t3, e3); 
@@ -1247,7 +1245,6 @@ public:
 
 
             //-------------------------------------------------- 
-            int n_added = 0; //ncop = 0;
             double ncop = 0.0;
 
             //if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
@@ -1350,7 +1347,6 @@ public:
 
             //-------------------------------------------------- 
             // add prtcl t2/t4
-            n_added = 0; 
             ncop = 0.0;
 
             //if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
@@ -1503,25 +1499,16 @@ public:
       info_prtcl_num[t1] = con.size();
     }
 
-    auto mins = tile.mins;
-    auto maxs = tile.maxs;
+    const auto mins = tile.mins;
+    //const auto maxs = tile.maxs;
 
+    const auto& gs = tile.get_grids(); 
 
     //--------------------------------------------------
     // initialize temp variable storages
-    float lx1, ly1, lz1, lx2, ly2, lz2;
-    float ux1, uy1, uz1, w1=0.0;
-    float ux3, uy3, uz3, w3=0.0;
-    float ux4, uy4, uz4, w4=0.0;
-    float m3, m4;
-    float e1, e3, e4;
+    float ux4, uy4, uz4, w4=0.0; // empty particle created in p1 -> p3 + p4 splitting
     std::string t4;  // type variable for secondary prtcl;
 
-    // interaction proceeds as t1 -> t3 + t4
-
-    float ex,ey,ez,bx,by,bz;
-
-    auto& gs = tile.get_grids(); 
 
     // ver1: ordered iteration over prtcls
     for(auto&& con1 : tile.containers) 
@@ -1551,20 +1538,20 @@ public:
       for(size_t n1=0; n1<Ntot1; n1++) {
 
         //unpack incident 
-        lx1 = con1.loc(0,n1);
-        ly1 = con1.loc(1,n1);
-        lz1 = con1.loc(2,n1);
+        const auto lx1 = con1.loc(0,n1);
+        const auto ly1 = con1.loc(1,n1);
+        const auto lz1 = con1.loc(2,n1);
 
-        ux1 = con1.vel(0,n1);
-        uy1 = con1.vel(1,n1);
-        uz1 = con1.vel(2,n1);
+        const auto ux1 = con1.vel(0,n1);
+        const auto uy1 = con1.vel(1,n1);
+        const auto uz1 = con1.vel(2,n1);
 
-        w1  = con1.wgt(n1);
-        e1  = con1.get_prtcl_ene(n1);
+        const auto w1  = con1.wgt(n1);
+        const auto e1  = con1.get_prtcl_ene(n1);
 
         if(w1 < EPS) continue; // omit zero-w incidents
 
-        auto [emin, emax] = iptr->get_minmax_ene(t1, "", e1);
+        const auto [emin, emax] = iptr->get_minmax_ene(t1, "", e1);
 
         //std::cout << "emin/emax " << e1 << " " << emin << " " << emax << "\n";
 
@@ -1575,24 +1562,20 @@ public:
         // v1; active interpolation (via nearest neighbor)
           
         // get E and B field values
-        int i=0,j=0,k=0;
-        if(D >= 1) i  = static_cast<int>(floor(lx1));
-        if(D >= 2) j  = static_cast<int>(floor(ly1));
-        if(D >= 3) k  = static_cast<int>(floor(lz1));
+        int i=0, j=0, k=0;
+        if(D >= 1) i = static_cast<int>(floor(lx1) - mins[0]);
+        if(D >= 2) j = static_cast<int>(floor(ly1) - mins[1]);
+        if(D >= 3) k = static_cast<int>(floor(lz1) - mins[2]);
 
-        // normalize to tile units
-        if(D >= 1) i -= mins[0];
-        if(D >= 2) j -= mins[1];
-        if(D >= 3) k -= mins[2];
         const size_t ind = gs.ex.indx(i,j,k);
           
-        ex = gs.ex(ind); 
-        ey = gs.ey(ind); 
-        ez = gs.ez(ind); 
+        const float ex = gs.ex(ind); 
+        const float ey = gs.ey(ind); 
+        const float ez = gs.ez(ind); 
 
-        bx = gs.bx(ind); 
-        by = gs.by(ind); 
-        bz = gs.bz(ind); 
+        const float bx = gs.bx(ind); 
+        const float by = gs.by(ind); 
+        const float bz = gs.bz(ind); 
 
         //--------------------------------------------------
         // v2; passive fetching; assumes a call has been made to interp before this function
@@ -1614,7 +1597,7 @@ public:
         // local optical depth; 
         // NOTE: em field is stored during this call and does not need to be called again in interact()
         timer.start_comp("optical_depth");
-        float tau_int = iptr->comp_optical_depth(
+        const float tau_int = iptr->comp_optical_depth(
                                   t1, 
                                   ux1, uy1, uz1, 
                                   ex, ey, ez, 
@@ -1622,7 +1605,7 @@ public:
         timer.stop_comp("optical_depth");
 
         // exponential waiting time between interactions
-        double t_free = -log( rand() )*prob_norm_onebody/tau_int; //NOTE w1 here
+        const float t_free = -log( rand() )*prob_norm_onebody/tau_int; //NOTE w1 here
 
         //std::cout << "oneb: t_free:" << t_free << " tau: " << tau_int << "\n";
 
@@ -1637,10 +1620,10 @@ public:
           timer.stop_comp("interact");
 
           // new energies; NOTE: could use container.m to get the mass
-          m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
-          m4 = (t4 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
-          e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
-          e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
+          const float m3 = (t3 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+          const float m4 = (t4 == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
+          const float e3 = std::sqrt( m3*m3 + ux3*ux3 + uy3*uy3 + uz3*uz3 );
+          const float e4 = std::sqrt( m4*m4 + ux4*ux4 + uy4*uy4 + uz4*uz4 );
 
           timer.start_comp("weight_funs");
           // NOTE both are compared to the same parent t1 
@@ -1688,8 +1671,8 @@ public:
 
             // add prtcl 4
             timer.start_comp("add_ems_prtcls");
-            double ncop = 0.0;
-            double z1 = rand();
+            float ncop = 0.0;
+            float z1 = rand();
             while(n4 > z1 + ncop) {
               cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
               ncop += 1.0;
@@ -1701,7 +1684,7 @@ public:
 
               if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){ 
                 w3 = 1.0f;
-                float n3 = w1/w3; // remembering to increase prtcl num w/ facc
+                n3 = w1/w3; // remembering to increase prtcl num w/ facc
               }
 
               if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
@@ -1711,8 +1694,8 @@ public:
 
               // add new particle t3 and t4; particles are assumed to be identical
               timer.start_comp("add_ann_prtcls");
-              double ncop = 0.0;
-              double z1 = rand();
+              float ncop = 0.0;
+              float z1 = rand();
               while(n4 > z1 + ncop) {
                 cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); 
                 cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
@@ -2033,7 +2016,7 @@ public:
                                   //
     cons[t1]->to_other_tiles.clear(); // clear book keeping array
 
-    float w, x, f, sKN, P_esc;
+    float w, x, f, sKN; //, P_esc;
     for(size_t n1=0; n1<Nx; n1++) {
       w = cons[t1]->wgt(n1);
       x = cons[t1]->get_prtcl_ene(n1);
