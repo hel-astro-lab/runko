@@ -26,15 +26,15 @@ namespace qed {
   using toolbox::inv;
 
 
-tuple<float, float> PairAnn::get_minmax_ene( string t1, string t2, double ene)
+tuple<float, float> PairAnn::get_minmax_ene( string /*t1*/, string /*t2*/, double /*ene*/)
 {
   return {0.0f, INF}; 
 }
 
 
 PairAnn::pair_float PairAnn::comp_cross_section(
-    string t1, float ux1, float uy1, float uz1,
-    string t2, float ux2, float uy2, float uz2)
+    string /*t1*/, float ux1, float uy1, float uz1,
+    string /*t2*/, float ux2, float uy2, float uz2)
 {
 
   float zp = norm(ux1, uy1, uz1); // z_+

@@ -25,7 +25,7 @@ namespace qed {
   using toolbox::inv;
 
 
-tuple<float, float> Compton::get_minmax_ene( string t1, string t2, double ene)
+tuple<float, float> Compton::get_minmax_ene( string /*t1*/, string /*t2*/, double /*ene*/)
 {
   return {0.0f, INF};
 

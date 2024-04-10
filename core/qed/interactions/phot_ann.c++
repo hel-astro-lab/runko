@@ -25,7 +25,7 @@ namespace qed {
   using toolbox::inv;
 
 
-tuple<float, float> PhotAnn::get_minmax_ene( string t1, string t2, double ene)
+tuple<float, float> PhotAnn::get_minmax_ene( string /*t1*/, string /*t2*/, double ene)
 {
   if(ene > 0.0){
 
@@ -51,8 +51,8 @@ tuple<float, float> PhotAnn::get_minmax_ene( string t1, string t2, double ene)
 // Exact formula for Breit-Wheeler cross section in units of sigma_T
 // NOTE: sigma_T = 8 pi r2/3; this is in units of \pi r_e^2
 PhotAnn::pair_float PhotAnn::comp_cross_section(
-    string t1, float ux1, float uy1, float uz1,
-    string t2, float ux2, float uy2, float uz2)
+    string /*t1*/, float ux1, float uy1, float uz1,
+    string /*t2*/, float ux2, float uy2, float uz2)
 {
 
   Vec3 x1v(ux1, uy1, uz1);

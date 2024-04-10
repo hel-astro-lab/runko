@@ -126,24 +126,25 @@ public:
   { }
 
   // minimum and maximum particle energies required to participate in the interaction
-  virtual pair_float get_minmax_ene( string t1, string t2, double ene) { return {0.0f, 1.0f}; };
+  virtual pair_float get_minmax_ene( string /*t1*/, string /*t2*/, double /*ene*/) { return {0.0f, 1.0f}; };
 
   // interaction cross section given incident/target particle four-velocities
   // NOTE: used in binary interactions
   virtual pair_float comp_cross_section(
-    string t1, float ux1, float uy1, float uz1,
-    string t2, float ux2, float uy2, float uz2)
+    string /*t1*/, float /*ux1*/, float /*uy1*/, float /*uz1*/,
+    string /*t2*/, float /*ux2*/, float /*uy2*/, float /*uz2*/)
     { return {cross_section, 1.0f}; }
 
   // NOTE: used in single interactions
-  virtual float comp_optical_depth( string t1, 
-      float ux1, float uy1, float uz1,
-      float ex,  float ey,  float ez,
-      float bx,  float by,  float bz)
+  virtual float comp_optical_depth( 
+      string /*t1*/, 
+      float /*ux1*/, float /*uy1*/, float /*uz1*/,
+      float /*ex*/,  float /*ey*/,  float /*ez*/,
+      float /*bx*/,  float /*by*/,  float /*bz*/)
   { return 1.0f; };
 
   // interaction accumulation factor
-  virtual pair_float accumulate(string t1, float e1, string t2, float e2) {return {1.0f,1.0f}; };
+  virtual pair_float accumulate(string /*t1*/, float /*e1*/, string /*t2*/, float /*e2*/) {return {1.0f,1.0f}; };
 
   // main interaction routine; 
   //
@@ -156,8 +157,8 @@ public:
   //  particle4: type, ux, uy, uz
   //
   virtual void interact(
-        string& t1, float& ux1, float& uy1, float& uz1,
-        string& t2, float& ux2, float& uy2, float& uz2)
+        string& /*t1*/, float& /*ux1*/, float& /*uy1*/, float& /*uz1*/,
+        string& /*t2*/, float& /*ux2*/, float& /*uy2*/, float& /*uz2*/)
       { return; }
 
   // random numbers between [0, 1[

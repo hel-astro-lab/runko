@@ -31,7 +31,7 @@ namespace qed {
 
 
 
-tuple<float, float> MultiPhotAnn::get_minmax_ene( string t1, string t2, double ene)
+tuple<float, float> MultiPhotAnn::get_minmax_ene( string /*t1*/, string /*t2*/, double /*ene*/)
 {
   // only x>2 can participate
   return {2.0f, INF};
@@ -73,7 +73,7 @@ float MultiPhotAnn::comp_chi(
 
 
 float MultiPhotAnn::comp_optical_depth(
-    string t1, 
+    string /*t1*/, 
     float ux1, float uy1, float uz1,
     float ex,  float ey,  float ez,
     float bx,  float by,  float bz)

@@ -30,7 +30,7 @@ namespace qed {
   using toolbox::find_sorted_nearest_algo2; // binary search for sorted arrays
 
 
-tuple<float, float> Synchrotron::get_minmax_ene( string t1, string t2, double ene)
+tuple<float, float> Synchrotron::get_minmax_ene( string /*t1*/, string /*t2*/, double /*ene*/)
 {
   // only gam >1.5 emits
   return {3.0f, INF};
@@ -91,7 +91,7 @@ float Synchrotron::comp_chi(
 
 
 float Synchrotron::comp_optical_depth(
-    string t1, 
+    string /*t1*/, 
     float ux1, float uy1, float uz1,
     float ex,  float ey,  float ez,
     float bx,  float by,  float bz)
@@ -125,8 +125,8 @@ float Synchrotron::comp_optical_depth(
 
 
 tuple<float, float> Synchrotron::accumulate(
-    string t3, float e3, 
-    string t4, float e4)
+    string /*t3*/, float /*e3*/, 
+    string /*t4*/, float e4)
 {
 
   //if( (t1 == "e-" || t1 == "e+") && e1 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
@@ -145,8 +145,8 @@ tuple<float, float> Synchrotron::accumulate(
 
 
 void Synchrotron::interact(
-  string& t1, float& ux1, float& uy1, float& uz1,
-  string& t2, float& ux2, float& uy2, float& uz2) 
+  string& /*t1*/, float& ux1, float& uy1, float& uz1,
+  string& t2,     float& ux2, float& uy2, float& uz2) 
 {
 
   //--------------------------------------------------
