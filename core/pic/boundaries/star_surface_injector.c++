@@ -105,12 +105,9 @@ void pic::Star<D>::solve(
   //[=] DEVCALLABLE (int i, int j, int k, 
   //                Grids &gs)
   //{
-
-
   //}, 
   //  nx_tile, ny_tile, nz_tile,
   //  gs);
-
 
   for(int k=0; k<nz_tile; k++) 
   for(int j=0; j<ny_tile; j++) 
@@ -128,7 +125,7 @@ void pic::Star<D>::solve(
     // check if we are inside star
 
     // inject top of star
-    const int height_atms = 2; // height of the atmosphere in cells
+    const int height_atms = 1; // height of the atmosphere in cells
     //bool inside_star  = norm(rvec) < 1.0*radius;
     //bool inside_atmos = norm(rvec) < 1.0*radius + height_atms;
 
@@ -448,7 +445,7 @@ void pic::Star<D>::solve(
 
       // flat surface
       //bool inside_star    = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius; 
-      bool below_star     = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius - 2; 
+      bool below_star     = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius - 1; 
                                                                                       
       bool inside_bot     = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
       bool inside_top     = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
