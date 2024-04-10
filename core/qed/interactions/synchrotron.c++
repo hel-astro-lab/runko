@@ -53,25 +53,64 @@ float Synchrotron::comp_chi(
 
   Vec4<float> z(gam, ux1, uy1, uz1);  // particle four momentum
 
-  // electromagnetic Maxwell tensor
+  // covariant electromagnetic Maxwell tensor F_\mu\nu
   Vec4<float> F1( 0,  ex, ey, ez );
   Vec4<float> F2(-ex,  0,-bz, by );
-  Vec4<float> F3(-ey, bz,  0, bx );
+  Vec4<float> F3(-ey, bz,  0,-bx );
   Vec4<float> F4(-ez,-by, bx, 0  );
   Mat4<float> F(  F1, F2, F3, F4 );
+
+  // contravariant electromagnetic Maxwell tensor F^\mu\nu
+  //Vec4<float> F1( 0, -ex,-ey,-ez );
+  //Vec4<float> F2( ex,  0,-bz, by );
+  //Vec4<float> F3( ey, bz,  0,-bx );
+  //Vec4<float> F4( ez,-by, bx, 0  );
+  //Mat4<float> F(  F1, F2, F3, F4 );
 
   auto Fdotz = dot(F, z); // p_mu F^\mu\nu
   float chi_fpart = norm(Fdotz); //|p F| 
 
   //--------------------------------------------------
-  // ver2
+  //std::cout << " chi sy v1: " << chi_fpart << "\n";
+
+  // DONE manual calc (v4) agrees with v2
+  // covariant electromagnetic Maxwell tensor F_\mu\nu
+  //Vec4<float> W1( 0,  ex, ey, ez );
+  //Vec4<float> W2(-ex,  0,-bz, by );
+  //Vec4<float> W3(-ey, bz,  0,-bx );
+  //Vec4<float> W4(-ez,-by, bx, 0  );
+  //Mat4<float> W(  W1, W2, W3, W4 );
+
+  //auto Wdotz = dot(W, z); // p_mu F^\mu\nu
+  //float chi_fpart2 = norm(Wdotz); //|p F| 
+
+  //std::cout << " chi sy v2: " << chi_fpart2 << "\n";
+
+  //// v3 wrong
+  //// covariant electromagnetic Maxwell tensor F_\mu\nu
+  //Vec4<float> R1( 0,  ex, ey, ez );
+  //Vec4<float> R2(-ex,  0,-bz, by );
+  //Vec4<float> R3(-ey, bz,  0, bx );
+  //Vec4<float> R4(-ez,-by, bx, 0  );
+  //Mat4<float> R(  R1, R2, R3, R4 );
+
+  //auto Rdotz = dot(R, z); // p_mu F^\mu\nu
+  //float chi_fpart3 = norm(Rdotz); //|p F| 
+
+  //std::cout << " chi sy v3: " << chi_fpart3 << "\n";
+
+
+  ////--------------------------------------------------
+  //// ver2
   //Vec3<float> B(bx,by,bz); // magnetic field
   //Vec3<float> E(ex,ey,ez); // electric field
   //auto beta = zv/gam; 
 
   //auto VxB = cross(beta, B);
   //auto E_VxB = E + VxB;
-  //float chi_fpart2 = gam*sqrt( abs( pow(dot(beta, E), 2) - dot(E_VxB, E_VxB) ) );
+  //float chi_fpart4 = gam*sqrt( abs( pow(dot(beta, E), 2) - dot(E_VxB, E_VxB) ) );
+
+  //std::cout << " chi sy v4: " << chi_fpart4 << "\n";
 
   //std::cout << "Chi_fpart: v1:" << chi_fpart << " v2:" << chi_fpart2 << "\n";
   //std::cout << "z " << zv << "\n";
