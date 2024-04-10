@@ -223,6 +223,10 @@ void pic::PulsarPusher<D,V>::push_container(
     const auto vel1n = con.vel(1,n);
     const auto vel2n = con.vel(2,n);
 
+    const auto w = con.wgt(n);
+
+    if( w < EPS) continue;
+
     //--------------------------------------------------
     // cell integer locations
     if(D > 0) ii = floor(R0x);
