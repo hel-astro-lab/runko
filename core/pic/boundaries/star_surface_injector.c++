@@ -316,14 +316,12 @@ void pic::Star<D>::solve(
         //  uy_to_be_inj[n] << " " <<
         //  uz_to_be_inj[n] << "\n";
         cons["e-"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
-                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
-                                wep); 
+                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, wep); 
       }
 
       for(int n=0; n<ncop; n++){
         cons["e+"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
-                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
-                                wep); 
+                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, wep); 
       }
 
 
@@ -411,8 +409,7 @@ void pic::Star<D>::solve(
       // add the pre-created particles
       for(int n=0; n<ncop; n++){
         cons["ph"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
-                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, 
-                                wph); 
+                                  {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, wph); 
       }
 
 

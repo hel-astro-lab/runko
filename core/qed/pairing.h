@@ -1521,6 +1521,7 @@ public:
 
     float ex,ey,ez,bx,by,bz;
 
+    auto& gs = tile.get_grids(); 
 
     // ver1: ordered iteration over prtcls
     for(auto&& con1 : tile.containers) 
@@ -1571,29 +1572,44 @@ public:
         if( e1 > emax ) continue; // high-energy cutoff
 
         //--------------------------------------------------
-        // v1; active interpolation
+        // v1; active interpolation (via nearest neighbor)
           
         // get E and B field values
-        //if(D >= 1) i  = static_cast<int>(floor(lx1));
-        //if(D >= 2) j  = static_cast<int>(floor(ly1));
-        //if(D >= 3) k  = static_cast<int>(floor(lz1));
+        int i=0,j=0,k=0;
+        if(D >= 1) i  = static_cast<int>(floor(lx1));
+        if(D >= 2) j  = static_cast<int>(floor(ly1));
+        if(D >= 3) k  = static_cast<int>(floor(lz1));
 
         // normalize to tile units
-        //if(D >= 1) i -= mins[0];
-        //if(D >= 2) j -= mins[1];
-        //if(D >= 3) k -= mins[2];
-        //const size_t ind = gs.ex.indx(i,j,k);
+        if(D >= 1) i -= mins[0];
+        if(D >= 2) j -= mins[1];
+        if(D >= 3) k -= mins[2];
+        const size_t ind = gs.ex.indx(i,j,k);
           
+        ex = gs.ex(ind); 
+        ey = gs.ey(ind); 
+        ez = gs.ez(ind); 
+
+        bx = gs.bx(ind); 
+        by = gs.by(ind); 
+        bz = gs.bz(ind); 
+
         //--------------------------------------------------
         // v2; passive fetching; assumes a call has been made to interp before this function
+        // NOTE does not work because this solve_onebody method modifies the arrays with add_prtcl1; 
+        //      this causes epart and bpart arrays to not be in sync 
 
-        ex = con1.ex(n1); 
-        ey = con1.ey(n1); 
-        ez = con1.ez(n1); 
+        //auto ex2 = con1.ex(n1); 
+        //auto ey2 = con1.ey(n1); 
+        //auto ez2 = con1.ez(n1); 
 
-        bx = con1.bx(n1); 
-        by = con1.by(n1); 
-        bz = con1.bz(n1); 
+        //auto bx2 = con1.bx(n1); 
+        //auto by2 = con1.by(n1); 
+        //auto bz2 = con1.bz(n1); 
+
+        //std::cout << " nnbor: " << ex << " " << ey << " " << ez << " " << bx << " " << by << " " << bz << "\n"; 
+        //std::cout << " inter: " << ex2 << " " << ey2 << " " << ez2 << " " << bx2 << " " << by2 << " " << bz2 << "\n"; 
+
 
         // local optical depth; 
         // NOTE: em field is stored during this call and does not need to be called again in interact()
