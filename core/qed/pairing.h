@@ -17,18 +17,7 @@
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
 #include "external/timer/timer.h"
 
-
-// TODO turning compiler warnings off temporarily in this file since 
-//      for symmetry, there are lots of unused variables in the qed API
-// NOTE remember to remove pragma pop at the end of the file when done with these.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wunused-variable"
-#pragma GCC diagnostic warning "-Wunused-parameter"
-#pragma GCC diagnostic warning "-Wunused-but-set-variable"
-#pragma GCC diagnostic warning "-Warray-bounds"
-
 #include "core/qed/interactions/interaction.h"
-
 
 
 namespace qed {
@@ -47,9 +36,30 @@ inline auto duplicate_prtcl(
   return {t1, ux1, uy1, uz1, w1};
 }
 
-
-
-// Binary all2all pairing of particles
+//--------------------------------------------------
+// Monte Carlo pairing of particles
+//
+// This monolithic object implements an advanced Monte Carlo pairing of:
+//
+// 1) Single body interactions; here processes proceed as
+//      p1 -> p3 + (p4) 
+//    where p4 is optional 
+//
+// 2) Two-body binary interactions; here processes proceed as
+//    p1 + p2 -> p3 + p4
+//
+// The binary pairing proceeds in steps, as outlined in Stern et al. 1995. Most importantly,
+// we rely on:
+//
+// 1) sampling the processes via a virtual interaction channel (sum of all interactions)
+//    and then, if the virtual channel is selected, we sample which real process is performed.
+//    This avoids calculating the cross sections for each real physical process and instead requires 
+//    only the maximum cross section to be calculated once for each particle. Implementation is in
+//    comp_pmax()
+//
+// 2) Automated re-weighting of particles during the interaction. The weights can be fine-tuned via
+//    the functions given in ene_weight_funs() (NOTE: these are inverse of values described in Stern95).
+//    
 template<size_t D>
 class Pairing
 {
@@ -519,202 +529,7 @@ public:
 
 
   //--------------------------------------------------
-  void solve(pic::Tile<D>& tile)
-  {
-      
-    // build pointer map of types to containers; used as a helper to access particle tyeps
-    std::map<std::string, ConPtr> cons;
-    for(auto&& con : tile.containers) cons.emplace(con.type, &con );
-
-    //--------------------------------------------------
-    // call pre-iteration functions to update internal arrays 
-    for(auto&& con : tile.containers)
-    {
-      con.sort_in_rev_energy();
-      //con.update_cumulative_arrays();
-      con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
-    }
-
-
-    //--------------------------------------------------
-    // variables inside loop
-    //float lx1, ly1, lz1,     lx2, ly2, lz2;
-    //float lx3, ly3, lz3,     lx4, ly4, lz4;
-    //float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
-    //float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
-    //float e1, e2;
-    //float wmin, wmax, prob;
-    //float p_ini, p_tar;
-
-    // loop over interactions
-    for(auto iptr : binary_interactions){
-
-      //--------------------------------------------------
-      // loop over incident types
-      for(auto&& con1 : tile.containers)
-      {
-        auto t1 = con1.type;
-        if(is_empty_binary_int(t1)) continue; // no interactions with incident type t1
-
-        //std::cout << "container type:" << t1 << std::endl;
-
-        // loop over target types
-        for(auto&& con2 : tile.containers)
-        {
-          auto t2 = con2.type;
-
-          // do type matching of containers and interactions
-          if( (t1 == iptr->t1) && (t2 == iptr->t2) ){
-
-            // loop over incident particles
-            //UniIter::iterate([=] DEVCALLABLE (
-            //          size_t n, 
-            //          pic::ParticleContainer<D>& con
-            //          ){
-            //for(int n1=con1.size()-1; n1>=0; n1--) {
-            for(size_t n1=0; n1<con1.size(); n1++) { 
-
-              // loop over targets
-              //for(int n2=con2.size()-1; n2>=0; n2--) {
-              for(size_t n2=0; n2<con2.size(); n2++) { 
-
-                // NOTE: incident needs to be unpacked in the innermost loop, since 
-                // some interactions modify its value during the iteration
-                  
-                //unpack incident 
-                auto lx1 = con1.loc(0,n1);
-                auto ly1 = con1.loc(1,n1);
-                auto lz1 = con1.loc(2,n1);
-
-                auto ux1 = con1.vel(0,n1);
-                auto uy1 = con1.vel(1,n1);
-                auto uz1 = con1.vel(2,n1);
-                auto w1  = con1.wgt(n1);
-
-                //e1  = con1.eneArr[n1]; 
-                //auto e1  = con1.get_prtcl_ene(n1);
-
-                if(w1 < EPS) continue; // omit zero-w incidents
-
-                // unpack target
-                auto lx2 = con2.loc(0,n2);
-                auto ly2 = con2.loc(1,n2);
-                auto lz2 = con2.loc(2,n2);
-
-                auto ux2 = con2.vel(0,n2);
-                auto uy2 = con2.vel(1,n2);
-                auto uz2 = con2.vel(2,n2);
-                auto w2  = con2.wgt(  n2);
-
-                //auto e2 = con2.get_prtcl_ene(n2);
-
-                if(w2 < EPS) continue; // omit zero-w targets
-                                         
-
-                //--------------------------------------------------
-                //avoid double counting by considering only e1 < e2 cases
-                //if(e1 > e2) continue;
-
-                // interaction cross section
-                auto [cm, vrel] = iptr->comp_cross_section(t1, ux1, uy1, uz1,  t2, ux2, uy2, uz2 );
-                
-                // interaction probability
-                //auto wmin = min(w1, w2);
-                auto wmax = max(w1, w2);
-                auto prob = cm*vrel*w1*w2;
-                // NOTE: difference of all2all scheme is here where prob depends on w1*w2
-
-                // exponential waiting time between interactions
-                float t_free = -log( rand() )*prob_norm/prob;
-
-                //-------------------------------------------------- 
-                if(t_free < 1.0){
-
-                  // particle values after interaction
-                  auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
-                  auto [t4, ux4, uy4, uz4, w4] = duplicate_prtcl(t2, ux2, uy2, uz2, w2);
-
-                  // interact and udpate variables in-place
-                  iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
-
-                  auto p_ini = w2/wmax;
-                  auto p_tar = w1/wmax;
-
-                  //std::cout << " interacting:" << prob << " pini/tar" << p_ini << " " << p_tar << std::endl;
-
-                  //-------------------------------------------------- 
-                  if(rand() < p_ini){
-                    if(t1 == t3){ // if type is conserved only update the prtcl info
-                                    
-                      // NOTE: we keep location the same
-                      con1.vel(0,n1) = ux3;
-                      con1.vel(1,n1) = uy3;
-                      con1.vel(2,n1) = uz3;
-                    } else { // else destroy previous and add new 
-
-                      // destroy current
-                      con1.to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
-                      con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
-
-                      // add new
-                      cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w1);
-
-                      //std::cout << "killing t1" << t1 << std::endl;
-                      //std::cout << "adding t3" << t3 << std::endl;
-                    }
-                  }
-                  //-------------------------------------------------- 
-
-                  //-------------------------------------------------- 
-                  if(rand() < p_tar){
-                    if(t2 == t4){ // if type is conserved only update the prtcl info
-
-                      // NOTE: we keep location the same
-                      con2.vel(0,n2) = ux4;
-                      con2.vel(1,n2) = uy4;
-                      con2.vel(2,n2) = uz4;
-                    } else { // else destroy previous and add new 
-
-                      // destroy current
-                      con2.to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
-                      con2.wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
-
-                      // add_particle
-                      cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w2);
-
-                      //std::cout << "killing t2" << t2 << std::endl;
-                      //std::cout << "adding t4" << t4 << std::endl;
-                    }
-                  }
-                  //-------------------------------------------------- 
-
-                } // end of if prob
-                //-------------------------------------------------- 
-              } // end of loop over con2 particles
-            } // end of loop over con1 particles
-            //}, con.size(), con);
-            //UniIter::sync();
-          } // con types match interaction
-        }//con2
-      } // con1
-    }//end of loop over types
-
-
-    //--------------------------------------------------
-    // final book keeping routines
-
-    for(auto&& con : tile.containers)
-    {
-      con.delete_transferred_particles(); // remove annihilated prtcls; this transfer storage 
-                                          // is used as a tmp container for storing the indices
-    }
-
-    return;
-  }
-
-
-  //--------------------------------------------------
-  void solve_mc(pic::Tile<D>& tile)
+  void solve_twobody(pic::Tile<D>& tile)
   {
 
     timer.start(); // start profiling block
@@ -754,12 +569,6 @@ public:
     //--------------------------------------------------
 
     // initialize temp variable storages
-    //float lx1, ly1, lz1,     lx2, ly2, lz2;
-    //float ux1, uy1, uz1, w1, ux2, uy2, uz2, w2;
-    //float lx3, ly3, lz3,     lx4, ly4, lz4;
-    //float ux3, uy3, uz3, w3, ux4, uy4, uz4, w4;
-    //float e1, e2, e3, e4;
-    //float m3, m4;
     float wmin; //, wmax, prob;
     float prob_upd3, prob_upd4, prob_kill3, prob_kill4;
 
@@ -2091,5 +1900,3 @@ public:
 
 
 } // end of namespace qed
-    
-#pragma GCC diagnostic pop

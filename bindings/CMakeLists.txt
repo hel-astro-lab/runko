@@ -73,6 +73,7 @@ set (QED_FILES
      ../core/qed/interactions/synchrotron.c++
      ../core/qed/interactions/multi_phot_ann.c++
      ../core/qed/pairing.c++
+     ../core/qed/pairing_all2all.c++
      )
 
 set (FFE_FILES 
