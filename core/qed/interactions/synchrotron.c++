@@ -53,13 +53,6 @@ float Synchrotron::comp_chi(
 
   Vec4<float> z(gam, ux1, uy1, uz1);  // particle four momentum
 
-  // covariant electromagnetic Maxwell tensor F_\mu\nu
-  Vec4<float> F1( 0,  ex, ey, ez );
-  Vec4<float> F2(-ex,  0,-bz, by );
-  Vec4<float> F3(-ey, bz,  0,-bx );
-  Vec4<float> F4(-ez,-by, bx, 0  );
-  Mat4<float> F(  F1, F2, F3, F4 );
-
   // contravariant electromagnetic Maxwell tensor F^\mu\nu
   //Vec4<float> F1( 0, -ex,-ey,-ez );
   //Vec4<float> F2( ex,  0,-bz, by );
@@ -67,37 +60,23 @@ float Synchrotron::comp_chi(
   //Vec4<float> F4( ez,-by, bx, 0  );
   //Mat4<float> F(  F1, F2, F3, F4 );
 
+  // covariant electromagnetic Maxwell tensor F_\mu\nu
+  // metric signature of +---
+  Vec4<float> F1( 0,  ex, ey, ez );
+  Vec4<float> F2(-ex,  0,-bz, by );
+  Vec4<float> F3(-ey, bz,  0,-bx );
+  Vec4<float> F4(-ez,-by, bx, 0  );
+  Mat4<float> F(  F1, F2, F3, F4 );
+
+
   auto Fdotz = dot(F, z); // p_mu F^\mu\nu
   float chi_fpart = norm(Fdotz); //|p F| 
 
   //--------------------------------------------------
   //std::cout << " chi sy v1: " << chi_fpart << "\n";
 
-  // DONE manual calc (v4) agrees with v2
-  // covariant electromagnetic Maxwell tensor F_\mu\nu
-  //Vec4<float> W1( 0,  ex, ey, ez );
-  //Vec4<float> W2(-ex,  0,-bz, by );
-  //Vec4<float> W3(-ey, bz,  0,-bx );
-  //Vec4<float> W4(-ez,-by, bx, 0  );
-  //Mat4<float> W(  W1, W2, W3, W4 );
-
-  //auto Wdotz = dot(W, z); // p_mu F^\mu\nu
-  //float chi_fpart2 = norm(Wdotz); //|p F| 
-
-  //std::cout << " chi sy v2: " << chi_fpart2 << "\n";
-
-  //// v3 wrong
-  //// covariant electromagnetic Maxwell tensor F_\mu\nu
-  //Vec4<float> R1( 0,  ex, ey, ez );
-  //Vec4<float> R2(-ex,  0,-bz, by );
-  //Vec4<float> R3(-ey, bz,  0, bx );
-  //Vec4<float> R4(-ez,-by, bx, 0  );
-  //Mat4<float> R(  R1, R2, R3, R4 );
-
-  //auto Rdotz = dot(R, z); // p_mu F^\mu\nu
-  //float chi_fpart3 = norm(Rdotz); //|p F| 
-
-  //std::cout << " chi sy v3: " << chi_fpart3 << "\n";
+  // DONE manual calc (v4 with covariant F) agrees with manual version (v2)
+  //      note the transpose when compiling F, hence the co <-> contra flip
 
 
   ////--------------------------------------------------
