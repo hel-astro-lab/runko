@@ -517,5 +517,34 @@ class radiation(unittest.TestCase):
         #print('b', b0, bvec)
 
 
+    def test_photann(self):
+
+        t1 = 'ph'
+        t2 = 'ph'
+        ux1, uy1, uz1 = 10.0, 1.1, 1.2
+        ux2, uy2, uz2 = 0.01, 0.26, 0.17
+
+        intr = pyqed.PhotAnn('ph', 'ph')
+        intr.get_minmax_ene('ph', 'ph', 2.0)
+
+        #print('before')
+        #print(t1, ux1, uy1, uz1)
+        #print(t2, ux2, uy2, uz2)
+
+        cs = intr.comp_cross_section( t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        #intr.interact(           t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+        t3, ux3, uy3, uz3, t4, ux4, uy4, uz4 = intr.interact(t1, ux1, uy1, uz1, t2, ux2, uy2, uz2 )
+
+        #print('after')
+        #print('cs', cs)
+        #print(t3, ux3, uy3, uz3)
+        #print(t4, ux4, uy4, uz4)
+
+        # python version
+        #a0, avec, b0, bvec = _interact_photann( np.array([ux1, uy1, uz1]), np.array([ux2, uy2, uz2]) )
+        #print('py ver')
+        #print('a', a0, avec)
+        #print('b', b0, bvec)
+
 
 
