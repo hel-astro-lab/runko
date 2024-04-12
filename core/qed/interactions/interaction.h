@@ -90,7 +90,10 @@ private:
 public:
 
   // constants used in calculations
-  const float alphaf = 1.0/137.0; // fine structure constant
+  // NOTE: both constants are normalized to zero because of how the external (python-defined)
+  //       normalization of QED reactions is done. It assumes that the numerical reaction rates 
+  //       are of form alpha/lamC d\tau/dt (and so the alpha/lamC is dealt there).
+  const float alphaf = 1.0; //1.0/137.0; // fine structure constant
   const float lamC = 1.0f; // normalized reduced Compton wavelength (real value is considered in pic.py)
 
 
