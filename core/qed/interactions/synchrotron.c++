@@ -185,7 +185,7 @@ void Synchrotron::interact(
   const int dim1 = 33;
 
   int i,j; 
-  float dx, dy, logchix, chi_x;
+  float dx=0, dy, logchix, chi_x;
   float XI_int[dim1]; // +1 element to ensure that the last value is always 1.0
 
   // closest index on the CHIE grid (x-axis of XI table)
@@ -288,6 +288,42 @@ void Synchrotron::interact(
   ux1 -= ux2;
   uy1 -= uy2;
   uz1 -= uz2;
+
+
+#ifdef DEBUG 
+
+  // check for NaNs
+  bool ts[6];
+  ts[0] = std::isnan(ux1);
+  ts[1] = std::isnan(uy1);
+  ts[2] = std::isnan(uz1);
+  ts[3] = std::isnan(ux2);
+  ts[4] = std::isnan(uy2);
+  ts[5] = std::isnan(uz2);
+
+  if(ts[0] ||
+     ts[1] ||
+     ts[2] ||
+     ts[3] ||
+     ts[4] ||
+     ts[5] ) { 
+
+    std::cerr << "ERROR QNTM-SYNCH:" << std::endl;
+    for(size_t i = 0; i < 5; i++) { std::cerr << i << " " << ts[i] << std::endl; }
+
+    std::cerr << "logchix:" << logchix << " chi_x:" << chi_x <<  " chi_e:" <<  chi_e << std::endl;
+    std::cerr << "zv" <<  zv << std::endl;
+    std::cerr << "x" <<  x << " z0:" << z0 << std::endl;
+
+    std::cerr << "ux1" <<  ux1 << " uy1:" << uy1 << " uz1:" << uz1 << std::endl;
+    std::cerr << "ux2" <<  ux2 << " uy2:" << uy2 << " uz2:" << uz2 << std::endl;
+
+    std::cerr << "i:" <<  i << " dx:" << dx << std::endl;
+    std::cerr << "j:" <<  j << " dy:" << dy << std::endl;
+  }
+
+
+#endif
 
   return;
 }

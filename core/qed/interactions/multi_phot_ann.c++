@@ -147,7 +147,7 @@ void MultiPhotAnn::interact(
   const int dim1 = 33;
 
   int i,j; 
-  float dx, dy, logchie, chi_ep;
+  float dx=0, dy, logchie, chi_ep;
   float XI_int[dim1]; // +1 element to ensure that the last value is always 1.0
 
   // closest index on the CHIE grid (x-axis of XI table)
@@ -228,12 +228,9 @@ void MultiPhotAnn::interact(
     chi_e = chi_x - chi_p;
   }
 
+
   //--------------------------------------------------
-
-
-
   // particles are emtited to the direction of the photon
-    
   // TODO: better way would be to go into the photons frame, draw the angles, create leptons, and de-boost back
 
   float inv_cx = ( x0 - 2.0 )/chi_x; // available energy / chi_x
@@ -250,16 +247,43 @@ void MultiPhotAnn::interact(
   uy2 = pp*xv(1)/x0; 
   uz2 = pp*xv(2)/x0; 
                                                                                 
+
+  //--------------------------------------------------
 #ifdef DEBUG 
-  //float err_ene = x0 - (sqrt(1.0 + pe*pe) + sqrt(1.0 + pp*pp));
-
-  //std::cout << " multiphoton breit-wheeler: chi x e p" << chi_x << " " << chi_e << " " << chi_p << "\n";
-  //std::cout << "                            u1:" << ux1 << " " << uy1 << " " << uz1 << "\n";
-  //std::cout << "                            u2:" << ux2 << " " << uy2 << " " << uz2 << "\n";
-
-  ///std::cout << " enes x/e/p" << x0 << " " << pe << " " << pp << " err:" << err_ene << "\n";
   
   // TODO check momentum conservation
+
+  // check for NaNs
+  bool ts[6];
+  ts[0] = std::isnan(ux1);
+  ts[1] = std::isnan(uy1);
+  ts[2] = std::isnan(uz1);
+  ts[3] = std::isnan(ux2);
+  ts[4] = std::isnan(uy2);
+  ts[5] = std::isnan(uz2);
+
+  if(ts[0] ||
+     ts[1] ||
+     ts[2] ||
+     ts[3] ||
+     ts[4] ||
+     ts[5] ) { 
+
+    std::cerr << "ERROR MULTI-PHOT-ANN:" << std::endl;
+    for(size_t i = 0; i < 5; i++) { std::cerr << i << " " << ts[i] << std::endl; }
+
+    std::cerr << "logchie:" << logchie << " chi_ep:" << chi_ep <<  " chi_e:" <<  chi_e << " chi_p:" << chi_p << std::endl;
+    std::cerr << "xv: " <<  xv << std::endl;
+    std::cerr << "x0: " <<  x0 << " inv_cx:" << inv_cx << std::endl;
+    std::cerr << "pp: " <<  pp << " pe:" << pe << std::endl;
+
+    std::cerr << "ux1: " <<  ux1 << " uy1:" << uy1 << " uz1:" << uz1 << std::endl;
+    std::cerr << "ux2: " <<  ux2 << " uy2:" << uy2 << " uz2:" << uz2 << std::endl;
+
+    std::cerr << "i: " <<  i << " dx:" << dx << std::endl;
+    std::cerr << "j: " <<  j << " dy:" << dy << std::endl;
+  }
+
 #endif
 
   return;
