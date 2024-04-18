@@ -151,8 +151,21 @@ void ParticleContainer<D>::add_particle (
     float prtcl_wgt)
 {
 
+#ifdef DEBUG
   assert(prtcl_loc.size() == 3);
   assert(prtcl_vel.size() == 3);
+
+  assert(!std::isnan(prtcl_loc[0]));
+  assert(!std::isnan(prtcl_loc[1]));
+  assert(!std::isnan(prtcl_loc[2]));
+
+  assert(!std::isnan(prtcl_vel[0]));
+  assert(!std::isnan(prtcl_vel[1]));
+  assert(!std::isnan(prtcl_vel[2]));
+
+  assert(!std::isnan(prtcl_wgt));
+#endif
+
 
   for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
   for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_vel[i]);
@@ -179,8 +192,24 @@ void ParticleContainer<D>::add_identified_particle (
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
+#ifdef DEBUG
   assert(prtcl_loc.size() == 3);
   assert(prtcl_vel.size() == 3);
+
+  assert(!std::isnan(prtcl_loc[0]));
+  assert(!std::isnan(prtcl_loc[1]));
+  assert(!std::isnan(prtcl_loc[2]));
+
+  assert(!std::isnan(prtcl_vel[0]));
+  assert(!std::isnan(prtcl_vel[1]));
+  assert(!std::isnan(prtcl_vel[2]));
+
+  assert(!std::isnan(prtcl_wgt));
+
+  assert(!std::isnan(_id));
+  assert(!std::isnan(_proc));
+#endif
+
 
   for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
   for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_vel[i]);
