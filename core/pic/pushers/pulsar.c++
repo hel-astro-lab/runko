@@ -470,6 +470,8 @@ void pic::PulsarPusher<D,V>::push_container(
         << " mu:" << mu 
         << " ug:" << sqrt(ug2) << " ugn:" << sqrt(ug2n)
         << "\n"
+        << " vel0:" << vel0n << " vely:" << vel1n << " velz:" << vel2n 
+        << "\n"
         << " vex0:" << vex0 << " vey:" << vey0 << " vez:" << vez0 << " kappa0:" << kappa0
         << "\n"
         << " vex1:" << vex1 << " vey:" << vey1 << " vez:" << vez1 << " kappa1:" << kappa1
