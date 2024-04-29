@@ -4,7 +4,7 @@ import sys, os
 
 import matplotlib.pyplot as plt
  
-from problem import Configuration_Turbulence as Configuration
+from init_problem import Configuration_Turbulence as Configuration
 from units import Units
 
 import pytools

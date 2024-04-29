@@ -1,5 +1,5 @@
 from __future__ import print_function
-from problem import Configuration_Turbulence as Configuration
+from init_problem import Configuration_Turbulence as Configuration
 
 
 from numpy import sqrt, pi
