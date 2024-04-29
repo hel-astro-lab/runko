@@ -228,6 +228,9 @@ void MultiPhotAnn::interact(
     chi_e = chi_x - chi_p;
   }
 
+  // cap small values; the substraction can sometimes result in negative values when chi_e ~ chi_x
+  chi_e = chi_e < 0.0 ? 1.0e-4 : chi_e;
+  chi_p = chi_p < 0.0 ? 1.0e-4 : chi_p;
 
   //--------------------------------------------------
   // particles are emtited to the direction of the photon
