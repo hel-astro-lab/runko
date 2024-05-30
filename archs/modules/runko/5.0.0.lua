@@ -33,21 +33,22 @@ load("virtualenv/20.23.1-GCCcore-12.3.0")
 -- load("sympy/1.12-gfbf-2023a")
 -- load("scikit-build/0.17.6-GCCcore-12.3.0")
 
+local user = os.getenv("USER")
+
 -- activate python virtualenv
-execute {cmd="source /home/jnattila/venvs/runko/bin/activate", modeA={"load"}}
+execute {cmd="source /home/" .. user .. "/venvs/runko/bin/activate", modeA={"load"}}
 
 -- smarter version
 -- if { [module-info mode load] || [module-info mode switch2] } {
---     puts stdout "source /home/jnattila/venvs/runko/bin/activate;"
+--     puts stdout "source /home/$USER/venvs/runko/bin/activate;"
 -- } elseif { [module-info mode remove] && ![module-info mode switch3] } {
 --     puts stdout "deactivate;"
 -- }
 
--- setenv("RUNKODIR", "/home/jnattila/modules/runko/latest/runko")
-setenv("RUNKODIR", "/wrk-vakka/users/jnattila/runko")
-prepend_path("PYTHONPATH","/wrk-vakka/users/jnattila/runko")
-prepend_path("PYTHONPATH","/wrk-vakka/users/jnattila/runko/lib")
-prepend_path("PYTHONPATH","/wrk-vakka/users/jnattila/runko/external/corgi/lib")
+setenv("RUNKODIR",        "/wrk-vakka/users/" .. user .. "/runko")
+prepend_path("PYTHONPATH","/wrk-vakka/users/" .. user .. "/runko")
+prepend_path("PYTHONPATH","/wrk-vakka/users/" .. user .. "/runko/lib")
+prepend_path("PYTHONPATH","/wrk-vakka/users/" .. user .. "/runko/external/corgi/lib")
 
 setenv("CC",  "mpicc")
 setenv("CXX", "mpic++")
