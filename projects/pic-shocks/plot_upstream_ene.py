@@ -10,7 +10,7 @@ from pytools import read_h5_array
 from pytools.cli import parse_args
 
 from matplotlib.colors import Normalize
-from matplotlib.cm import get_cmap
+#from matplotlib.cm import get_cmap
 from matplotlib import colorbar
 
 from labellines import labelLine, labelLines
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     #--------------------------------------------------
     # visualization 
     norm = Normalize(vmin=0.0, vmax=tmax)
-    cmap = get_cmap('Spectral')
+    #cmap = get_cmap('Spectral')
 
     
     tt  = []
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     prev_Sx = 1.0e-2
     for lap in range(0, conf.Nt+1, conf.interval):
         time = lap2time(lap,conf)
-        col = cmap(norm( time ))
+        #col = cmap(norm( time ))
 
         fname = fdir + "shock_" + str(lap) + ".h5"
         if not(os.path.isfile(fname)):
