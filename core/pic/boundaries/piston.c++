@@ -223,6 +223,42 @@ void pic::Piston<D>::solve(
 }
 
 
+template<>
+void pic::Piston<1>::field_bc(
+    pic::Tile<1>& tile)
+{
+  int k = 0; // collapse third D
+  int j = 0; // collapse second D
+
+  // skip if piston head is not inside tile boundaries
+  auto mins = tile.mins;
+  auto maxs = tile.maxs;
+
+  // make left side of piston conductor
+  if(walloc < maxs[0]) {
+    auto& gs = tile.get_grids();
+
+    // wall location 
+    auto iw = static_cast<int>(walloc - mins[0]);
+    if(iw > static_cast<int>(tile.mesh_lengths[0])) iw = tile.mesh_lengths[0];
+
+    // set transverse directions to zero
+    for(int i=-3; i<=iw; i++) {
+
+        // transverse components of electric field to zero (only parallel comp allowed)
+        gs.ey(i,j,k) = 0.0;
+        gs.ez(i,j,k) = 0.0;
+
+        // clean all current behind piston head
+        // NOTE: not needed since we null the current inside reflection procedure
+        //gs.jx(i,j,k) = 0.0;
+        //gs.jy(i,j,k) = 0.0;
+        //gs.jz(i,j,k) = 0.0;
+    }
+  }
+
+}
+
 
 template<>
 void pic::Piston<2>::field_bc(
@@ -301,7 +337,7 @@ void pic::Piston<3>::field_bc(
 //--------------------------------------------------
 // explicit template instantiation
 
-//template class pic::Piston<1>; // 1D3V
+template class pic::Piston<1>; // 1D3V
 template class pic::Piston<2>; // 2D3V
 template class pic::Piston<3>; // 3D3V
 

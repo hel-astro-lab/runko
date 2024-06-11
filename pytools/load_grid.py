@@ -446,14 +446,16 @@ def get_mpi_grid(grid, conf):
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
-                if conf.twoD:
+                if conf.oneD:
+                    val = grid.get_mpi_grid(i,)
+                elif conf.twoD:
                     val = grid.get_mpi_grid(i, j)
                 elif conf.threeD:
                     val = grid.get_mpi_grid(i, j, k)
-
+                
                 mpi_grid[i,j,k] = val 
 
-    #print('slice in get mpi:', mpi_grid[:,0,0])
+    # print('slice in get mpi:', mpi_grid[:,0,0])
     return mpi_grid
 
 

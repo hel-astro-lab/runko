@@ -10,7 +10,7 @@ def get_index(tile, conf):
         i,j = ind
         k = 0
     elif conf.oneD:
-        i = ind
+        i = ind[0]
         j = 0
         k = 0
 

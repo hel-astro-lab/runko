@@ -35,8 +35,13 @@ def insert_em_fields(grid, conf, do_initialization=True):
     for tile in pytools.tiles_all(grid):
         g = tile.get_grids(0)
 
-        ii,jj,kk = tile.index if conf.threeD else (*tile.index, 0)
-
+        if conf.oneD:
+            ii,jj,kk = (tile.index, 0, 0)
+        elif conf.twoD:
+            ii,jj,kk = (*tile.index, 0)
+        else:
+            ii,jj,kk = tile.index
+        
         # insert values into Yee lattices; includes halos from -3 to n+3
         if do_initialization:
             for n in range(-3, conf.NzMesh + 3):
@@ -90,19 +95,22 @@ def load_damping_tiles(n, conf):
         for j in range(n.get_Ny()):
             for i in range(n.get_Nx()):
                 # print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
-
+		
+		
                 is_owned = False
-                if conf.twoD and n.get_mpi_grid(i,j) == n.rank():
+                if conf.oneD and n.get_mpi_grid(i) == n.rank():
                     is_owned = True
-                if conf.threeD and n.get_mpi_grid(i,j,k) == n.rank():
+                    ind = (i,)
+                elif conf.twoD and n.get_mpi_grid(i,j) == n.rank():
                     is_owned = True
-
+                    ind = (i,j)
+                elif conf.threeD and n.get_mpi_grid(i,j,k) == n.rank():
+                    is_owned = True
+                    ind = (i,j,k)
                 if is_owned:
                     tile = pypic.Tile_wall_RX(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
-                    # create tile index depending on the dimensionality
-                    ind = (i,j,k) if conf.threeD else (i,j)
-
+         
                     # add tile
                     pytools.pic.initialize_tile(tile, (i,j,k), n, conf)
 
@@ -187,7 +195,11 @@ if __name__ == "__main__":
         import pycorgi.twoD as pycorgi     # corgi ++ bindings
         import pyrunko.pic.twoD as pypic   # runko pic c++ bindings
         import pyrunko.emf.twoD as pyfld   # runko fld c++ bindings
-
+    elif conf.oneD:
+        # 2D modules
+        import pycorgi.oneD as pycorgi     # corgi ++ bindings
+        import pyrunko.pic.oneD as pypic   # runko pic c++ bindings
+        import pyrunko.emf.oneD as pyfld   # runko fld c++ bindings
     # --------------------------------------------------
     # setup grid
     grid = pycorgi.Grid(conf.Nx, conf.Ny, conf.Nz)
