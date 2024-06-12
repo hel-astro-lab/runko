@@ -18,7 +18,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # debug mode (default for code development)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Werror -Wno-error=unknown-pragmas -Wno-error=unused-parameter -save-temps=obj")
+set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Wno-error=unknown-pragmas -Wno-error=unused-parameter -save-temps=obj")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -DDEBUG -march=native -ftree-vectorize")
 
