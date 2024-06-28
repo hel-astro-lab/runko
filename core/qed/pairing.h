@@ -800,15 +800,17 @@ public:
                 << " ux=" << ux1
                 << " uy=" << uy1
                 << " uz=" << uz1
-                << " w="  << w1
-                << " minsx:" << mins[0] 
-                << " minsy:" << mins[1] 
-                //<< " minsz:" << mins[2] 
-                << " maxsx:" << maxs[0] 
-                << " maxsy:" << maxs[1] 
-                //<< " maxsz:" << maxs[2] 
-                << std::endl;
-                assert(false);
+                << " w="  << w1;
+
+              if(D >= 1) std::cerr << " minsx:" << mins[0];
+              if(D >= 2) std::cerr << " minsy:" << mins[1];
+              if(D >= 3) std::cerr << " minsz:" << mins[2];
+              if(D >= 1) std::cerr << " maxsx:" << maxs[0];
+              if(D >= 2) std::cerr << " maxsy:" << maxs[1];
+              if(D >= 3) std::cerr << " maxsz:" << maxs[2];
+              std::cerr << std::endl;
+
+              assert(false);
           }
 
           if(loc_flag4 < D ) {
@@ -821,15 +823,17 @@ public:
                 << " ux=" << ux2
                 << " uy=" << uy2
                 << " uz=" << uz2
-                << " w="  << w2
-                << " minsx:" << mins[0] 
-                << " minsy:" << mins[1] 
-                //<< " minsz:" << mins[2] 
-                << " maxsx:" << maxs[0] 
-                << " maxsy:" << maxs[1] 
-                //<< " maxsz:" << maxs[2] 
-                << std::endl;
-                assert(false);
+                << " w="  << w2;
+
+              if(D >= 1) std::cerr << " minsx:" << mins[0];
+              if(D >= 2) std::cerr << " minsy:" << mins[1];
+              if(D >= 3) std::cerr << " minsz:" << mins[2];
+              if(D >= 1) std::cerr << " maxsx:" << maxs[0];
+              if(D >= 2) std::cerr << " maxsy:" << maxs[1];
+              if(D >= 3) std::cerr << " maxsz:" << maxs[2];
+              std::cerr << std::endl;
+
+              assert(false);
           }
 #endif
           
