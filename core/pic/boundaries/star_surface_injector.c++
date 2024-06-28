@@ -54,25 +54,26 @@ void pic::Star<D>::solve(
   const int H = 2; // halo size
 
   if( D == 1 ) { // 1D boudaries
-    if( mins[0] < 1.1*radius - cenx ) bot   = true; 
+    if( mins[0] < 1.1*radius + cenx ) bot   = true; 
     if( maxs[0] > Nx-1 )              top   = true; 
   } else if( D == 2 ) { // 2D BCs
-    if( mins[1] < 1.1*radius - ceny ) bot   = true; 
+    if( mins[1] < 1.1*radius + ceny ) bot   = true; 
     if( maxs[1] > Ny-1 )              top   = true; 
   } else if( D == 3 ){ // 3D BCs
-    if( mins[2] < 1.1*radius - cenz ) bot   = true; 
+    if( mins[2] < 1.1*radius + cenz ) bot   = true; 
     if( maxs[2] > Nz-1 )              top   = true; 
   }
 
-  std::cout << " insider check: " 
-            << " mins:" << mins[0] 
-            << " maxs:" << maxs[0] 
-            << " r1.1:" << 1.1*radius 
-            << " cenx:" << cenx 
-            << " val:" << 1.1*radius - cenx 
-            << " bot " << bot 
-            << " top " << top 
-            << "\n";
+
+  //std::cout << " insider check: " 
+  //          << " mins:" << mins[0] 
+  //          << " maxs:" << maxs[0] 
+  //          << " r1.1:" << 1.1*radius 
+  //          << " cenx:" << cenx 
+  //          << " val:" << 1.1*radius + cenx 
+  //          << " bot " << bot 
+  //          << " top " << top 
+  //          << "\n";
 
   //--------------------------------------------------
   // operate only on roughly correct tiles 
