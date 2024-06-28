@@ -151,11 +151,11 @@ tuple<float, float> Synchrotron::accumulate(
   //if( (t2 == "e-" || t2 == "e+") && e2 > ming) return {1.0f, 1.0f}; // do not accumulate rel prtcl
 
   float f1 = 1.0f;
-  float f2 = 1.0f;
+  float f2 = 3.0f;
 
   // 1/x^a suppression below threshold
   float thr = 1.0f;
-  if( e4 < thr ) f2 = pow(e4/thr, -2.0);
+  if( e4 < thr ) f2 *= pow(e4/thr, -2.0);
 
   return {f1,f2};
 }
