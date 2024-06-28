@@ -53,14 +53,26 @@ void pic::Star<D>::solve(
 
   const int H = 2; // halo size
 
-  if( D == 2 ) { // 2D boudaries
-    if( mins[1] < 1.1*radius - ceny )    bot   = true; 
-    if( maxs[1] > Ny-1 ) top   = true; 
-  } else if( D == 3 ){
-    //if( mins[2] < 1 )    bot   = true; 
+  if( D == 1 ) { // 1D boudaries
+    if( mins[0] < 1.1*radius - cenx ) bot   = true; 
+    if( maxs[0] > Nx-1 )              top   = true; 
+  } else if( D == 2 ) { // 2D BCs
+    if( mins[1] < 1.1*radius - ceny ) bot   = true; 
+    if( maxs[1] > Ny-1 )              top   = true; 
+  } else if( D == 3 ){ // 3D BCs
     if( mins[2] < 1.1*radius - cenz ) bot   = true; 
-    if( maxs[2] > Nz-1 ) top   = true; 
+    if( maxs[2] > Nz-1 )              top   = true; 
   }
+
+  std::cout << " insider check: " 
+            << " mins:" << mins[0] 
+            << " maxs:" << maxs[0] 
+            << " r1.1:" << 1.1*radius 
+            << " cenx:" << cenx 
+            << " val:" << 1.1*radius - cenx 
+            << " bot " << bot 
+            << " top " << top 
+            << "\n";
 
   //--------------------------------------------------
   // operate only on roughly correct tiles 
@@ -83,6 +95,7 @@ void pic::Star<D>::solve(
   float Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
 
+  if(D == 1) Om.set(Omega,              0.0,   0.0); // Omega unit vector along x-axis
   if(D == 2) Om.set(0.0,                Omega, 0.0); // Omega unit vector along y-axis
   //if(D == 3) Om.set( sin(chi_om)*Omega, 0.0,   cos(chi_om)*Omega ); // general Omega unit vector 
   if(D == 3) Om.set( sin(chi_om)*cos(phase_om)*Omega, sin(chi_om)*sin(phase_om)*Omega, cos(chi_om)*Omega ); 
@@ -135,8 +148,24 @@ void pic::Star<D>::solve(
     //bool inside_atmos = (D==2) ? abs(rvec(1)) <= 1.0*radius + height_atms : abs(rvec(2)) <= 1.0*radius + height_atms;
 
     // flat surface; slab higher up
-    bool inside_star  = (D==2) ? abs(rvec(1)) <= 1.0*radius + 1.0*height_atms : abs(rvec(2)) <= 1.0*radius + 1.0*height_atms;
-    bool inside_atmos = (D==2) ? abs(rvec(1)) <= 1.0*radius + 2.0*height_atms : abs(rvec(2)) <= 1.0*radius + 2.0*height_atms;
+    //bool inside_star  = (D==2) ? abs(rvec(1)) <= 1.0*radius + 1.0*height_atms : abs(rvec(2)) <= 1.0*radius + 1.0*height_atms;
+    //bool inside_atmos = (D==2) ? abs(rvec(1)) <= 1.0*radius + 2.0*height_atms : abs(rvec(2)) <= 1.0*radius + 2.0*height_atms;
+
+    bool inside_star  = false;
+    bool inside_atmos = false;
+
+    // flat surface; slab higher up
+    if(D == 1){
+      inside_star  = abs(rvec(0)) <= 1.0*radius + 1.0*height_atms;
+      inside_atmos = abs(rvec(0)) <= 1.0*radius + 2.0*height_atms;
+    } else if (D == 2){
+      inside_star  = abs(rvec(1)) <= 1.0*radius + 1.0*height_atms;
+      inside_atmos = abs(rvec(1)) <= 1.0*radius + 2.0*height_atms;
+    } else if (D == 3){
+      inside_star  = abs(rvec(2)) <= 1.0*radius + 1.0*height_atms;
+      inside_atmos = abs(rvec(2)) <= 1.0*radius + 2.0*height_atms;
+    }
+
 
     //--------------------------------------------------
     // inject below surface
@@ -171,7 +200,19 @@ void pic::Star<D>::solve(
 
     //--------------------------------------------------
     const float offs = 2.0f*delta_pc; // expand polar cap a bit
-    bool inside_pcap = (D==2) ? norm1d(rvec) < radius_pc + offs : norm2d(rvec) < radius_pc + offs;
+    //bool inside_pcap = (D==2) ? norm1d(rvec) < radius_pc + offs : norm2d(rvec) < radius_pc + offs;
+
+    bool inside_pcap = false;
+    if(D == 1){
+      inside_pcap = true; // always inside pcap in 1D
+    } else if (D == 2){
+      inside_pcap = norm1d(rvec) < radius_pc + offs;
+    } else if (D == 3){
+      inside_pcap = norm2d(rvec) < radius_pc + offs;
+    }
+  
+
+    std::cout << "ijk " << i << " " << j << " " << k << " conds:" << inside_atmos << " " << inside_star << " " << inside_pcap << "\n";
 
     //--------------------------------------------------
     // we are inside a thin layer above the star
@@ -304,14 +345,14 @@ void pic::Star<D>::solve(
       //--------------------------------------------------
       // add the pre-created particles
       for(int n=0; n<ncop; n++){
-        //std::cout <<" x y z " << 
-        //  x_to_be_inj[n] << " " <<
-        //  y_to_be_inj[n] << " " <<
-        //  z_to_be_inj[n] << " " 
-        //  << " ux uy uz " <<
-        //  ux_to_be_inj[n] << " " <<
-        //  uy_to_be_inj[n] << " " <<
-        //  uz_to_be_inj[n] << "\n";
+        std::cout <<" x y z " << 
+          x_to_be_inj[n] << " " <<
+          y_to_be_inj[n] << " " <<
+          z_to_be_inj[n] << " " 
+          << " ux uy uz " <<
+          ux_to_be_inj[n] << " " <<
+          uy_to_be_inj[n] << " " <<
+          uz_to_be_inj[n] << "\n";
         cons["e-"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
                                   {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, wep); 
       }
@@ -417,8 +458,14 @@ void pic::Star<D>::solve(
   //--------------------------------------------------
   // remove outflowing particles
 
-  float tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
-  float rbox = (D == 2) ? 0.5*Nx - 0.5*tile_len : 0.5*Nx - H - 1; // maximum cylindrical radius
+  //float tile_len = (D == 2 ) ? tile.mesh_lengths[1] : tile.mesh_lengths[2];
+  //float rbox = (D == 2) ? 0.5*Nx - 0.5*tile_len : 0.5*Nx - H - 1; // maximum cylindrical radius
+  //float tile_height = (D==2) ? tile.mesh_lengths[1] : tile.mesh_lengths[2]; // height of the tile
+
+  float rbox      = 0.0;
+  if(D == 1) rbox = 0.0; // N/A
+  if(D == 2) rbox = 0.5*Nx - 0.5*tile.mesh_lengths[1]; // maximum cylindrical radius
+  if(D == 3) rbox = 0.5*Nx - H - 1;                    // maximum cylindrical radius
 
 
   // call pre-iteration functions to update internal arrays 
@@ -426,7 +473,6 @@ void pic::Star<D>::solve(
       con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
   }
 
-  float tile_height = (D==2) ? tile.mesh_lengths[1] : tile.mesh_lengths[2]; // height of the tile
 
   for(auto&& con : tile.containers) {
     for(size_t n=0; n<con.size(); n++) {
@@ -445,12 +491,33 @@ void pic::Star<D>::solve(
 
       // flat surface
       //bool inside_star    = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius; 
-      bool below_star     = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius - 1; 
-                                                                                      
-      bool inside_bot     = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
-      bool inside_top     = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
+
+      //bool below_star     = (D == 2) ? abs(yr0) < 1.0*radius : abs(zr0) < 1.0*radius - 1; 
+      //bool inside_bot     = (D == 2) ? jglob < H    : kglob < H; // y or z direction flip 
+      //bool inside_top     = (D == 2) ? jglob > Ny - 0.75*tile_height : kglob > Nz - 0.75*tile_height; // y or z direction flip 
       //bool outside_pcap   = (D == 2) ? abs(xr0) > radius_pc : sqrt( xr0*xr0 + yr0*yr0 ) > radius_pc; // same here
-      bool inside_cyl_bcs = (D == 2) ? abs(xr0) > rbox : sqrt(xr0*xr0 + yr0*yr0) > rbox; // box sides covering a cylindrical region
+      //bool inside_cyl_bcs = (D == 2) ? abs(xr0) > rbox : sqrt(xr0*xr0 + yr0*yr0) > rbox; // box sides covering a cylindrical region
+
+
+      bool below_star = false;
+      if(D == 1) below_star = abs(xr0) < 1.0*radius;
+      if(D == 2) below_star = abs(yr0) < 1.0*radius;
+      if(D == 3) below_star = abs(zr0) < 1.0*radius;
+
+      bool inside_bot = false;
+      if(D == 1) inside_bot = iglob < H; // x direction 
+      if(D == 2) inside_bot = jglob < H; // y direction 
+      if(D == 3) inside_bot = kglob < H; // z direction 
+
+      bool inside_top = false;
+      if(D == 1) inside_top = iglob > Nx - 0.75*tile.mesh_lengths[0];
+      if(D == 2) inside_top = jglob > Ny - 0.75*tile.mesh_lengths[1];
+      if(D == 3) inside_top = kglob > Nz - 0.75*tile.mesh_lengths[2]; 
+
+      bool inside_cyl_bcs = false;
+      if(D == 1) inside_cyl_bcs = false; // no boundaries in 1D
+      if(D == 2) inside_cyl_bcs = abs(xr0) > rbox; // box sides covering a cylindrical region
+      if(D == 3) inside_cyl_bcs = sqrt(xr0*xr0 + yr0*yr0) > rbox; // box sides covering a cylindrical region
 
       if( inside_bot                  ||
           //inside_star && outside_pcap ||
@@ -474,5 +541,6 @@ void pic::Star<D>::solve(
 }
 
 
+template class pic::Star<1>; // 1D
 template class pic::Star<2>; // 2D
 template class pic::Star<3>; // 3D
