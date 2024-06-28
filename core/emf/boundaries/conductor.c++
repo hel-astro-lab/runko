@@ -279,9 +279,12 @@ void emf::Conductor<D>::update_b(
 
   if( inside_star) {
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -315,8 +318,7 @@ void emf::Conductor<D>::update_b(
       gs.bx(i,j,k) = sx*bxd(0) + (1.0f - sx)*gs.bx(i,j,k); 
       gs.by(i,j,k) = sy*byd(1) + (1.0f - sy)*gs.by(i,j,k); 
       gs.bz(i,j,k) = sz*bzd(2) + (1.0f - sz)*gs.bz(i,j,k); 
-    }
-
+    }}}
   }
 
 
@@ -346,9 +348,11 @@ void emf::Conductor<D>::update_b(
 
   if( inside_cyl_bcs ) {
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -389,7 +393,7 @@ void emf::Conductor<D>::update_b(
       gs.bx(i,j,k) = sx*gs.bx(i,j,k) + (1.0f-sx)*bxd(0);
       gs.by(i,j,k) = sy*gs.by(i,j,k) + (1.0f-sy)*byd(1);
       gs.bz(i,j,k) = sz*gs.bz(i,j,k) + (1.0f-sz)*bzd(2);
-    }
+    }}}
   }
 
 
@@ -402,9 +406,11 @@ void emf::Conductor<D>::update_b(
     //float radius_ext = (D == 2) ? Ny - H : Nz - H; // exp profile
     float delta_ext  = 0.25f*tile_len; // 1/4 of tile size
                                            
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -447,8 +453,7 @@ void emf::Conductor<D>::update_b(
       gs.bx(i,j,k) = s*gs.bx(i,j,k) + (1.0f-s)*bxd(0);
       gs.by(i,j,k) = s*gs.by(i,j,k) + (1.0f-s)*byd(1);
       gs.bz(i,j,k) = s*gs.bz(i,j,k) + (1.0f-s)*bzd(2);
-    }
-
+    }}}
   }
 
 
@@ -461,9 +466,11 @@ void emf::Conductor<D>::update_b(
     //float radius_ext = (D == 2) ? Ny - H : Nz - H; // exp profile
     float delta_ext  = 0.25f*tile_len; // 1/4 of tile size
                                            
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -489,16 +496,18 @@ void emf::Conductor<D>::update_b(
 
       //--------------------------------------------------
       // ver 1; tanh profile
-      auto s = 1.0f - shape(h, radius_ext, delta_ext); // tanh
+      //auto s = 1.0f - shape(h, radius_ext, delta_ext); // tanh
+      //if( rcyl < 1.5*radius_pc ) s = 1.0f; // act normal inside star
 
-      if( rcyl < 1.5*radius_pc ) s = 1.0f; // act normal inside star
+      // tanh profile outside the cylindrical region
+      auto s = 1.0f ? rcyl < 1.5*radius_pc : 1.0f - shape(h, radius_ext, delta_ext);
                                                 
       //--------------------------------------------------
       // damp to dipole solution
       gs.bx(i,j,k) = s*gs.bx(i,j,k) + (1.0f-s)*bxd(0);
       gs.by(i,j,k) = s*gs.by(i,j,k) + (1.0f-s)*byd(1);
       gs.bz(i,j,k) = s*gs.bz(i,j,k) + (1.0f-s)*bzd(2);
-    }
+    }}}
 
   }
 
@@ -517,9 +526,11 @@ void emf::Conductor<D>::update_b(
       top
     ){
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -565,7 +576,7 @@ void emf::Conductor<D>::update_b(
       gs.bx(i,j,k) = s*bxd(0) + (1.0f-s)*gs.bx(i,j,k);
       gs.by(i,j,k) = s*byd(1) + (1.0f-s)*gs.by(i,j,k);
       gs.bz(i,j,k) = s*bzd(2) + (1.0f-s)*gs.bz(i,j,k);
-    }
+    }}}
   }
 
 }
@@ -667,9 +678,11 @@ void emf::Conductor<D>::update_e(
   //for(int j=-3; j<ny_tile+3; j++) 
   //for(int i=-3; i<nx_tile+3; i++) {
 
-  for(int k=0; k<nz_tile; k++) 
-  for(int j=0; j<ny_tile; j++) 
-  for(int i=0; i<nx_tile; i++) {
+  #pragma omp parallel for
+  for(int k=0; k<nz_tile; k++) {
+    for(int j=0; j<ny_tile; j++) {
+      #pragma omp simd
+      for(int i=0; i<nx_tile; i++) {
       
     // global grid coordinates
     float iglob = (D>=1) ? i + mins[0] : 0;
@@ -797,7 +810,7 @@ void emf::Conductor<D>::update_e(
     //auto eznew = ezi - eparb*bzi/b2;
     //gs.ez(i,j,k) = s*eznew + (1.0f - s)*ezi;
 
-  }
+  }}}
 
 
   //--------------------------------------------------
@@ -815,9 +828,11 @@ void emf::Conductor<D>::update_e(
 
   if( inside_star ) {
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -877,7 +892,7 @@ void emf::Conductor<D>::update_e(
       gs.ey(i,j,k) = sy*erot2(1) + (1.0f - sy)*gs.ey(i,j,k); 
       gs.ez(i,j,k) = sz*erot3(2) + (1.0f - sz)*gs.ez(i,j,k); 
 
-    }
+    }}}
   }
 
 
@@ -909,9 +924,11 @@ void emf::Conductor<D>::update_e(
 
   if( inside_cyl_bcs ) {
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -945,7 +962,7 @@ void emf::Conductor<D>::update_e(
       gs.ex(i,j,k) = s*gs.ex(i,j,k) + (1.0f-s)*0.0f;
       gs.ey(i,j,k) = s*gs.ey(i,j,k) + (1.0f-s)*0.0f;
       gs.ez(i,j,k) = s*gs.ez(i,j,k) + (1.0f-s)*0.0f;
-    }
+    }}}
   }
 
   //--------------------------------------------------
@@ -953,9 +970,11 @@ void emf::Conductor<D>::update_e(
 
   if(top) {
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       //float iglob = (D>=1) ? i + mins[0] : 0;
@@ -990,7 +1009,7 @@ void emf::Conductor<D>::update_e(
       gs.ey(i,j,k) = s*gs.ey(i,j,k) + (1.0f-s)*0.0f;
       gs.ez(i,j,k) = s*gs.ez(i,j,k) + (1.0f-s)*0.0f;
 
-    }
+    }}}
   }
 
 
@@ -998,9 +1017,11 @@ void emf::Conductor<D>::update_e(
   // inside bottom / outside star
   if(bot) {
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -1024,8 +1045,8 @@ void emf::Conductor<D>::update_e(
       gs.ex(i,j,k) = s*gs.ex(i,j,k) + (1.0f-s)*0.0f;
       gs.ey(i,j,k) = s*gs.ey(i,j,k) + (1.0f-s)*0.0f;
       gs.ez(i,j,k) = s*gs.ez(i,j,k) + (1.0f-s)*0.0f;
+    }}}
 
-    }
   }
 
 
@@ -1041,9 +1062,11 @@ void emf::Conductor<D>::update_e(
       top
     ){
 
-    for(int k=-3; k<nz_tile+3; k++) 
-    for(int j=-3; j<ny_tile+3; j++) 
-    for(int i=-3; i<nx_tile+3; i++) {
+    #pragma omp parallel for
+    for(int k=-3; k<nz_tile+3; k++) {
+      for(int j=-3; j<ny_tile+3; j++) {
+        #pragma omp simd
+        for(int i=-3; i<nx_tile+3; i++) {
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
@@ -1080,7 +1103,7 @@ void emf::Conductor<D>::update_e(
       gs.ey(i,j,k) = s*0.0f + (1.0f - s)*gs.ey(i,j,k);
       gs.ez(i,j,k) = s*0.0f + (1.0f - s)*gs.ez(i,j,k);
 
-    }
+    }}}
   }
 
 }
