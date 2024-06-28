@@ -213,7 +213,12 @@ void pic::Star<D>::solve(
     }
   
 
-    std::cout << "ijk " << i << " " << j << " " << k << " conds:" << inside_atmos << " " << inside_star << " " << inside_pcap << "\n";
+    //std::cout << "ijk " << i << " " << j << " " << k 
+    //          << " conds:" << inside_atmos 
+    //          << " " << inside_star 
+    //          << " " << inside_pcap 
+    //          << " full:" << (inside_atmos && !inside_star && inside_pcap)
+    //          << "\n";
 
     //--------------------------------------------------
     // we are inside a thin layer above the star
@@ -278,6 +283,7 @@ void pic::Star<D>::solve(
       auto uy_to_be_inj = std::vector<float>(n_to_be_inj);
       auto uz_to_be_inj = std::vector<float>(n_to_be_inj);
 
+      //std::cout << " inj ncop:" << ninj << "\n";
 
       //--------------------------------------------------
       //add particles
@@ -346,14 +352,14 @@ void pic::Star<D>::solve(
       //--------------------------------------------------
       // add the pre-created particles
       for(int n=0; n<ncop; n++){
-        std::cout <<" x y z " << 
-          x_to_be_inj[n] << " " <<
-          y_to_be_inj[n] << " " <<
-          z_to_be_inj[n] << " " 
-          << " ux uy uz " <<
-          ux_to_be_inj[n] << " " <<
-          uy_to_be_inj[n] << " " <<
-          uz_to_be_inj[n] << "\n";
+        //std::cout <<" x y z " << 
+        //  x_to_be_inj[n] << " " <<
+        //  y_to_be_inj[n] << " " <<
+        //  z_to_be_inj[n] << " " 
+        //  << " ux uy uz " <<
+        //  ux_to_be_inj[n] << " " <<
+        //  uy_to_be_inj[n] << " " <<
+        //  uz_to_be_inj[n] << "\n";
         cons["e-"]->add_particle( {{  x_to_be_inj[n],  y_to_be_inj[n],  z_to_be_inj[n] }}, 
                                   {{ ux_to_be_inj[n], uy_to_be_inj[n], uz_to_be_inj[n] }}, wep); 
       }
