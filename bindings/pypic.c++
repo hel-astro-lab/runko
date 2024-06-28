@@ -749,6 +749,36 @@ void bind_pic(py::module& m_sub)
   //--------------------------------------------------
   // star
 
+  // 1D rotating conductor
+  py::class_<pic::Star<1>>(m_1d, "Star")
+    .def(py::init<>())
+    .def_readwrite("B0",             &pic::Star<1>::B0)
+    .def_readwrite("radius",         &pic::Star<1>::radius)
+    .def_readwrite("period",         &pic::Star<1>::period)
+    .def_readwrite("chi_mu",         &pic::Star<1>::chi_mu)
+    .def_readwrite("chi_om",         &pic::Star<1>::chi_om)
+    .def_readwrite("phase_mu",       &pic::Star<1>::phase_mu)
+    .def_readwrite("phase_om",       &pic::Star<1>::phase_om)
+    .def_readwrite("cenx",           &pic::Star<1>::cenx)
+    .def_readwrite("ceny",           &pic::Star<1>::ceny)
+    .def_readwrite("cenz",           &pic::Star<1>::cenz)
+    .def_readwrite("delta",          &pic::Star<1>::delta)
+    .def_readwrite("radius_pc",      &pic::Star<1>::radius_pc)
+    .def_readwrite("delta_pc",       &pic::Star<1>::delta_pc)
+    .def_readwrite("Nx",             &pic::Star<1>::Nx)
+    .def_readwrite("Ny",             &pic::Star<1>::Ny)
+    .def_readwrite("Nz",             &pic::Star<1>::Nz)
+    .def_readwrite("temp_pairs",     &pic::Star<1>::temp_pairs)
+    .def_readwrite("temp_phots",     &pic::Star<1>::temp_phots)
+    .def_readwrite("ninj_pairs",     &pic::Star<1>::ninj_pairs)
+    .def_readwrite("ninj_phots",     &pic::Star<1>::ninj_phots)
+    .def_readwrite("ninj_min_pairs", &pic::Star<1>::ninj_min_pairs)
+    .def_readwrite("ninj_min_phots", &pic::Star<1>::ninj_min_phots)
+    .def("insert_em",                &pic::Star<1>::insert_em)
+    .def("update_b",                 &pic::Star<1>::update_b)
+    .def("update_e",                 &pic::Star<1>::update_e)
+    .def("solve",                    &pic::Star<1>::solve);
+
 
   // 2D rotating conductor
   py::class_<pic::Star<2>>(m_2d, "Star")

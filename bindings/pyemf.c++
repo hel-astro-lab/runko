@@ -532,6 +532,30 @@ void bind_emf(py::module& m_sub)
   //--------------------------------------------------
   // EM boundary conditions
     
+  // 1D rotating conductor
+  py::class_<emf::Conductor<1>>(m_1d, "Conductor")
+    .def(py::init<>())
+    .def_readwrite("B0",       &emf::Conductor<1>::B0)
+    .def_readwrite("radius",   &emf::Conductor<1>::radius)
+    .def_readwrite("period",   &emf::Conductor<1>::period)
+    .def_readwrite("chi_om",   &emf::Conductor<1>::chi_om)
+    .def_readwrite("chi_mu",   &emf::Conductor<1>::chi_mu)
+    .def_readwrite("phase_mu", &emf::Conductor<1>::phase_mu)
+    .def_readwrite("phase_om", &emf::Conductor<1>::phase_om)
+    .def_readwrite("cenx",     &emf::Conductor<1>::cenx)
+    .def_readwrite("ceny",     &emf::Conductor<1>::ceny)
+    .def_readwrite("cenz",     &emf::Conductor<1>::cenz)
+    .def_readwrite("delta",    &emf::Conductor<1>::delta)
+    .def_readwrite("radius_pc",&emf::Conductor<1>::radius_pc)
+    .def_readwrite("delta_pc", &emf::Conductor<1>::delta_pc)
+    .def_readwrite("Nx",       &emf::Conductor<1>::Nx)
+    .def_readwrite("Ny",       &emf::Conductor<1>::Ny)
+    .def_readwrite("Nz",       &emf::Conductor<1>::Nz)
+    .def("insert_em",          &emf::Conductor<1>::insert_em)
+    .def("update_b",           &emf::Conductor<1>::update_b)
+    .def("update_e",           &emf::Conductor<1>::update_e);
+
+    
   // 2D rotating conductor
   py::class_<emf::Conductor<2>>(m_2d, "Conductor")
     .def(py::init<>())
