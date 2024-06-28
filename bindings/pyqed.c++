@@ -137,6 +137,46 @@ public:
 
 //--------------------------------------------------
 
+
+// generator for D-dimensional MC pairing algorithm
+template<int D>
+auto declare_pairing(py::module& m)
+{
+  return py::class_<qed::Pairing<D> >(m, "Pairing")
+    .def(py::init<>())
+    .def_readwrite("prob_norm",           &qed::Pairing<D>::prob_norm)
+    .def_readwrite("prob_norm_onebody",   &qed::Pairing<D>::prob_norm_onebody)
+    .def_readwrite("leaked_ene",          &qed::Pairing<D>::leaked_ene)
+    .def_readwrite("leaked_wsum",         &qed::Pairing<D>::leaked_wsum)
+    .def_readwrite("leaked_pnum",         &qed::Pairing<D>::leaked_pnum)
+    .def_readwrite("inj_ene_ph",          &qed::Pairing<D>::inj_ene_ph)
+    .def_readwrite("inj_ene_ep",          &qed::Pairing<D>::inj_ene_ep)
+    .def_readwrite("tau_global",          &qed::Pairing<D>::tau_global)
+    .def("comp_tau",                      &qed::Pairing<D>::comp_tau)
+    .def("leak_photons",                  &qed::Pairing<D>::leak_photons)
+    .def("update_hist_lims",              &qed::Pairing<D>::update_hist_lims)
+    .def("clear_hist",                    &qed::Pairing<D>::clear_hist)
+    .def("solve_onebody",                 &qed::Pairing<D>::solve_onebody)
+    .def("solve_twobody",                 &qed::Pairing<D>::solve_twobody)
+    .def("add_interaction",               &qed::Pairing<D>::add_interaction, py::keep_alive<1,2>() )
+    .def("rescale",                       &qed::Pairing<D>::rescale)
+    .def("get_hist_edges",   [](           qed::Pairing<D>& s)
+        {
+          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
+          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
+          return v;
+        })
+    .def("get_hist_cnts",    [](qed::Pairing<D>& s)
+        {
+          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
+          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
+          return v;
+        })
+    .def("timer_stats",    [](qed::Pairing<D>& s) { s.timer.comp_stats(); })
+    .def("timer_clear",    [](qed::Pairing<D>& s) { s.timer.clear(); });
+}
+
+
 // python bindings for radiation classes & functions
 void bind_qed(py::module& m_sub)
 {
@@ -214,83 +254,16 @@ void bind_qed(py::module& m_sub)
 
 
   //--------------------------------------------------
+  py::module m_1d = m_sub.def_submodule("oneD",   "1D specializations");
   py::module m_2d = m_sub.def_submodule("twoD",   "2D specializations");
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 
 
   //--------------------------------------------------
-  // Particle pairing routines
-  py::class_<qed::Pairing<2> >(m_2d, "Pairing")
-    .def(py::init<>())
-    .def_readwrite("prob_norm",           &qed::Pairing<2>::prob_norm)
-    .def_readwrite("prob_norm_onebody",   &qed::Pairing<2>::prob_norm_onebody)
-    .def_readwrite("leaked_ene",  &qed::Pairing<2>::leaked_ene)
-    .def_readwrite("leaked_wsum", &qed::Pairing<2>::leaked_wsum)
-    .def_readwrite("leaked_pnum", &qed::Pairing<2>::leaked_pnum)
-    .def_readwrite("inj_ene_ph",  &qed::Pairing<2>::inj_ene_ph)
-    .def_readwrite("inj_ene_ep",  &qed::Pairing<2>::inj_ene_ep)
-    .def_readwrite("tau_global",  &qed::Pairing<2>::tau_global)
-    .def("comp_tau",           &qed::Pairing<2>::comp_tau)
-    .def("leak_photons",       &qed::Pairing<2>::leak_photons)
-    .def("update_hist_lims",   &qed::Pairing<2>::update_hist_lims)
-    .def("clear_hist",         &qed::Pairing<2>::clear_hist)
-    .def("solve_onebody",      &qed::Pairing<2>::solve_onebody)
-    .def("solve_twobody",      &qed::Pairing<2>::solve_twobody)
-    .def("add_interaction",    &qed::Pairing<2>::add_interaction, py::keep_alive<1,2>() )
-    .def("rescale",            &qed::Pairing<2>::rescale)
-    .def("get_hist_edges",   [](qed::Pairing<2>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
-          return v;
-        })
-    .def("get_hist_cnts",    [](qed::Pairing<2>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
-          return v;
-        })
-    .def("timer_stats",    [](qed::Pairing<2>& s) { s.timer.comp_stats(); })
-    .def("timer_clear",    [](qed::Pairing<2>& s) { s.timer.clear(); });
-
-
-    //-------------------------------------------------- 
-    // 3D pairings
-  py::class_<qed::Pairing<3> >(m_3d, "Pairing")
-    .def(py::init<>())
-    .def_readwrite("prob_norm",           &qed::Pairing<3>::prob_norm)
-    .def_readwrite("prob_norm_onebody",   &qed::Pairing<3>::prob_norm_onebody)
-    .def_readwrite("leaked_ene",  &qed::Pairing<3>::leaked_ene)
-    .def_readwrite("leaked_wsum", &qed::Pairing<3>::leaked_wsum)
-    .def_readwrite("leaked_pnum", &qed::Pairing<3>::leaked_pnum)
-    .def_readwrite("inj_ene_ph",  &qed::Pairing<3>::inj_ene_ph)
-    .def_readwrite("inj_ene_ep",  &qed::Pairing<3>::inj_ene_ep)
-    .def_readwrite("tau_global",  &qed::Pairing<3>::tau_global)
-    .def("add_interaction",    &qed::Pairing<3>::add_interaction, py::keep_alive<1,2>() )
-    .def("rescale",            &qed::Pairing<3>::rescale)
-    .def("inject_photons",     &qed::Pairing<3>::inject_photons)
-    .def("inject_plaw_pairs",  &qed::Pairing<3>::inject_plaw_pairs)
-    .def("comp_tau",           &qed::Pairing<3>::comp_tau)
-    .def("leak_photons",       &qed::Pairing<3>::leak_photons)
-    .def("update_hist_lims",   &qed::Pairing<3>::update_hist_lims)
-    .def("clear_hist",         &qed::Pairing<3>::clear_hist)
-    .def("solve_onebody",      &qed::Pairing<3>::solve_onebody)
-    .def("solve_twobody",      &qed::Pairing<3>::solve_twobody)
-    .def("get_hist_edges",   [](qed::Pairing<3>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
-          return v;
-        })
-    .def("get_hist_cnts",    [](qed::Pairing<3>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
-          return v;
-        })
-    .def("timer_stats",    [](qed::Pairing<3>& s) { s.timer.comp_stats(); })
-    .def("timer_clear",    [](qed::Pairing<3>& s) { s.timer.clear(); });
-
+  // Monte Carlo particle pairing routines
+  auto t1 = declare_pairing<1>(m_1d);
+  auto t2 = declare_pairing<2>(m_2d);
+  auto t3 = declare_pairing<3>(m_3d);
 
   //--------------------------------------------------
   // Debug class with simplified all-to-all binary pairing
