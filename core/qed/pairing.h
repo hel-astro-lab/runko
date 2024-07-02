@@ -719,7 +719,14 @@ public:
           //could also put double counting check to comp_pmax
           //--------------------------------------------------
             
+          auto lx3 = lx1; //(lx1 + lx2)*0.5; 
+          auto ly3 = ly1; //(ly1 + ly2)*0.5; 
+          auto lz3 = lz1; //(lz1 + lz2)*0.5; 
 
+          auto lx4 = lx2; //(lx1 + lx2)*0.5; 
+          auto ly4 = ly2; //(ly1 + ly2)*0.5; 
+          auto lz4 = lz2; //(lz1 + lz2)*0.5; 
+                            
 #ifdef DEBUG
           //--------------------------------------------------
           // confirm that locations are inside tile
@@ -734,18 +741,11 @@ public:
           //if(D>= 2 && mins[1]-2 <= ly2 && ly2 <= maxs[1]+2) loc_flag2++;
           //if(D>= 3 && mins[2]-2 <= lz2 && lz2 <= maxs[2]+2) loc_flag2++;
 
-          auto lx3 = lx1; //(lx1 + lx2)*0.5; 
-          auto ly3 = ly1; //(ly1 + ly2)*0.5; 
-          auto lz3 = lz1; //(lz1 + lz2)*0.5; 
-
           size_t loc_flag3 = 0;
           if(D>= 1 && mins[0]-3 <= lx3 && lx3 <= maxs[0]+2) loc_flag3++;
           if(D>= 2 && mins[1]-3 <= ly3 && ly3 <= maxs[1]+2) loc_flag3++;
           if(D>= 3 && mins[2]-3 <= lz3 && lz3 <= maxs[2]+2) loc_flag3++;
 
-          auto lx4 = lx2; //(lx1 + lx2)*0.5; 
-          auto ly4 = ly2; //(ly1 + ly2)*0.5; 
-          auto lz4 = lz2; //(lz1 + lz2)*0.5; 
 
           size_t loc_flag4 = 0;
           if(D>= 1 && mins[0]-3 <= lx4 && lx4 <= maxs[0]+2) loc_flag4++;
