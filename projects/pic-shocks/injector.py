@@ -179,6 +179,9 @@ class MovingInjector:
             elif conf.twoD:
                 i,j = ind
                 k = 0
+            elif conf.oneD:
+                i = ind[0]
+                j, k = 0
 
             tile_xmin = tile.mins[0]
             tile_xmax = tile.maxs[0]
