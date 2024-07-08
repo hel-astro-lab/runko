@@ -185,21 +185,21 @@ if __name__ == "__main__":
 
     # --------------------------------------------------
     # load runko
-    if conf.threeD:
-        # 3D modules
-        import pycorgi.threeD as pycorgi   # corgi ++ bindings
-        import pyrunko.pic.threeD as pypic # pic c++ bindings
-        import pyrunko.emf.threeD as pyfld # fld c++ bindings
+    if conf.oneD:
+        # 1D modules
+        import pycorgi.oneD as pycorgi     # corgi ++ bindings
+        import pyrunko.pic.oneD as pypic   # runko pic c++ bindings
+        import pyrunko.emf.oneD as pyfld   # runko fld c++ bindings
     elif conf.twoD:
         # 2D modules
         import pycorgi.twoD as pycorgi     # corgi ++ bindings
         import pyrunko.pic.twoD as pypic   # runko pic c++ bindings
         import pyrunko.emf.twoD as pyfld   # runko fld c++ bindings
-    elif conf.oneD:
-        # 2D modules
-        import pycorgi.oneD as pycorgi     # corgi ++ bindings
-        import pyrunko.pic.oneD as pypic   # runko pic c++ bindings
-        import pyrunko.emf.oneD as pyfld   # runko fld c++ bindings
+    else:
+        # 3D modules
+        import pycorgi.threeD as pycorgi   # corgi ++ bindings
+        import pyrunko.pic.threeD as pypic # pic c++ bindings
+        import pyrunko.emf.threeD as pyfld # fld c++ bindings
     # --------------------------------------------------
     # setup grid
     grid = pycorgi.Grid(conf.Nx, conf.Ny, conf.Nz)

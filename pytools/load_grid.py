@@ -333,16 +333,17 @@ def load_catepillar_track_mpi(
             raise ValueError("Nz is not power of 2 (i.e. 2^m)")
 
         # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        if conf.twoD or conf.oneD:
+        if conf.oneD or conf.twoD:
             hgen = pyrunko.tools.twoD.HilbertGen(int(m0), int(m1))
         elif conf.threeD:
             hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2) )
+
         grid = np.zeros((nx, ny, nz))  # , int)
 
         for i in range(nx):
             for j in range(ny):
                 for k in range(nz):
-                    if conf.twoD or conf.oneD:
+                    if conf.oneD or conf.twoD:
                         grid[i, j, k] = hgen.hindex(i, j)
                     elif conf.threeD:
                         grid[i, j, k] = hgen.hindex(i, j, k)
@@ -375,7 +376,7 @@ def load_catepillar_track_mpi(
                         n.set_mpi_grid(i, val)
                     elif conf.twoD:
                         n.set_mpi_grid(i, j, val)
-                    elif conf.threeD:
+                    else: 
                         n.set_mpi_grid(i, j, k, val)
 
     # broadcast calculation to everybody
@@ -451,7 +452,7 @@ def get_mpi_grid(grid, conf):
                     val = grid.get_mpi_grid(i,)
                 elif conf.twoD:
                     val = grid.get_mpi_grid(i, j)
-                elif conf.threeD:
+                else:
                     val = grid.get_mpi_grid(i, j, k)
                 
                 mpi_grid[i,j,k] = val 

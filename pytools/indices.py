@@ -4,16 +4,13 @@
 # dig out indices from inside the tile
 def get_index(tile, conf):
     ind = tile.index
-    if conf.threeD:
-        i,j,k = ind
+    if conf.oneD:
+        i, j ,k = ind[0], 0, 0
     elif conf.twoD:
         i,j = ind
         k = 0
-    elif conf.oneD:
-        i = ind[0]
-        j = 0
-        k = 0
-
+    else:
+        i,j,k = ind
     return i,j,k
 
 
