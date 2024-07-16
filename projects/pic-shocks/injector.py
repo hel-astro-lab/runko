@@ -174,11 +174,13 @@ class MovingInjector:
 
             # get index
             ind = tile.index
-            if conf.threeD:
-                i,j,k = ind
+            if conf.oneD:
+                i, j, k  = ind[0], 0, 0
             elif conf.twoD:
                 i,j = ind
                 k = 0
+            else:
+                i,j,k = ind
 
             tile_xmin = tile.mins[0]
             tile_xmax = tile.maxs[0]

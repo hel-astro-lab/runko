@@ -367,6 +367,10 @@ void bind_pic(py::module& m_sub)
   // Boris pusher
   py::class_<pic::BorisPusher<1,3>>(m_1d, "BorisPusher", picpusher1d)
     .def(py::init<>());
+
+  // 1D Higuera-Cary pusher
+  py::class_<pic::HigueraCaryPusher<1,3>>(m_1d, "HigueraCaryPusher", picpusher1d)
+    .def(py::init<>());
     
   // Photon pusher
   py::class_<pic::PhotonPusher<1,3>>(m_1d, "PhotonPusher", picpusher1d)
@@ -634,6 +638,16 @@ void bind_pic(py::module& m_sub)
     .def(py::init<>());
 
   //--------------------------------------------------
+
+  //1 D piston
+  py::class_<pic::Piston<1>>(m_1d, "Piston")
+    .def(py::init<>())
+    .def_readwrite("walloc",   &pic::Piston<1>::walloc)
+    .def_readwrite("gammawall",&pic::Piston<1>::gammawall)
+    .def_readwrite("betawall", &pic::Piston<1>::betawall)
+    .def("solve",              &pic::Piston<1>::solve)
+    .def("field_bc",           &pic::Piston<1>::field_bc);
+
   //2 D piston
   py::class_<pic::Piston<2>>(m_2d, "Piston")
     .def(py::init<>())
@@ -663,12 +677,18 @@ void bind_pic(py::module& m_sub)
 
 
   //--------------------------------------------------
-  // wall
+  // 1D wall
 
-  auto tw1 = pic::wall::declare_tile<2, -1>(m_2d, "Tile_wall_LX");
-  auto tw2 = pic::wall::declare_tile<2, +1>(m_2d, "Tile_wall_RX");
-  auto tw3 = pic::wall::declare_tile<2, -2>(m_2d, "Tile_wall_LY");
-  auto tw4 = pic::wall::declare_tile<2, +2>(m_2d, "Tile_wall_RY");
+  auto tw11d = pic::wall::declare_tile<1, -1>(m_1d, "Tile_wall_LX");
+  auto tw21d = pic::wall::declare_tile<1, +1>(m_1d, "Tile_wall_RX");
+
+  //--------------------------------------------------
+  // 2D wall
+
+  auto tw12d = pic::wall::declare_tile<2, -1>(m_2d, "Tile_wall_LX");
+  auto tw22d = pic::wall::declare_tile<2, +1>(m_2d, "Tile_wall_RX");
+  auto tw32d = pic::wall::declare_tile<2, -2>(m_2d, "Tile_wall_LY");
+  auto tw42d = pic::wall::declare_tile<2, +2>(m_2d, "Tile_wall_RY");
 
   //--------------------------------------------------
   // Quick IO 
