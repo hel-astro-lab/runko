@@ -20,7 +20,7 @@ The framework relies on various small (template) libraries that are automaticall
 
 .. code-block:: bash
 
-   git clone --recursive git@github.com:natj/runko.git
+   git clone --recursive git@github.com:hel-astro-lab/runko.git
 
 You also need to update all the submodules (so that various branches are in sync) with
 
@@ -61,7 +61,7 @@ Before proceeding with the code compilation, your system needs to fulfill these 
 
 .. note::
 
-    Note that g++-8 does not work because of a (known) compiler bug. Therefore, g++-9 or newer is the current recommended choice.
+    Note that g++-8 does not work because of a (known) compiler bug. 
 
 
 
@@ -84,26 +84,30 @@ Make also sure that Xcode developer tools are installed by running
 
 MPI needs to be compiled separately because, by default, it uses the `AppleClang` compiler (instead of the `g++` that you just installed).
 
-You can compile OpenMPI via homebrew by first modifying your ``~/.bash_profile`` to link the new compilers:
+You can compile OpenMPI via homebrew by first modifying your ``~/.zshrc`` to link the new compilers:
 
 .. code-block:: bash
 
-   export HOMEBREW_CC=gcc-13
-   export HOMEBREW_CXX=g++-13
-   export OMPI_CC=gcc-13
-   export OMPI_CXX=g++-13
+   export HOMEBREW_CC=gcc-14
+   export HOMEBREW_CXX=g++-14
+   export OMPI_CC=gcc-14
+   export OMPI_CXX=g++-14
+   export CC=gcc-14  # NOTE: you need to change these after the installation
+   export CXX=g++-14 # NOTE: you need to change these after the installation
 
 Then restart the terminal to reload the newly added environment variables. After restarting, install `OpenMPI` from source with
 
 .. code-block:: bash
 
-    brew reinstall openmpi -cc=gcc-13 --build-from-source
+    brew reinstall openmpi --build-from-source
 
-and 
+and then remove all the (possible) previous installations of mpi4py and re-install it using pip3
 
 .. code-block:: bash
 
-    brew reinstall mpi4py
+    brew uninstall mpi4py
+    pip3 uninstall mpi4py --break-system-packages
+    pip3 install mpi4py --break-system-packages
 
 
 
@@ -153,12 +157,12 @@ Alternatively, if you want even more control of the operation, you can compile i
    export MPI_IMPL=openmpi41
    mkdir -p $HOME/local/$MPI_IMPL/bin/openmpi
    cd $HOME/local/$MPI_IMPL/bin/openmpi
-   wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.1/downloads/openmpi-4.1.5.tar.bz2
-   tar -xjf openmpi-4.1.5.tar.bz2
-   cd openmpi-4.1.5
-   export OMPI_CC=gcc-13
-   export OMPI_CXX=g++-13
-   ./configure CC=gcc-13 CXX=g++-13 --prefix=$HOME/bin/$MPI_IMPL 
+   wget --no-check-certificate http://www.open-mpi.org/software/ompi/v4.1/downloads/openmpi-4.1.6.tar.bz2
+   tar -xjf openmpi-4.1.6.tar.bz2
+   cd openmpi-4.1.6
+   export OMPI_CC=gcc-14
+   export OMPI_CXX=g++-14
+   ./configure CC=gcc-14 CXX=g++-14 --prefix=$HOME/bin/$MPI_IMPL 
    make -j 4
    make install
    make clean
@@ -168,8 +172,8 @@ This installs OpenMPI to ``~/bin/`` and exports the correct directories so that 
 
 .. code-block:: bash
 
-   export OMPI_CC=gcc-13
-   export OMPI_CXX=g++-13
+   export OMPI_CC=gcc-14
+   export OMPI_CXX=g++-14
    export MPI_IMPL=openmpi41
    export PATH=$PATH:$HOME/bin/$MPI_IMPL/bin
    export PATH=$PATH:$HOME/bin/$MPI_IMPL/include
