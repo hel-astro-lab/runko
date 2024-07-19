@@ -1,140 +1,138 @@
-Tutorial: Collisionless shocks
+.. default-role:: math
+
+
+Tutorial: Collisionless Shocks
 ##############################
 
-In this tutorial we use Runko to run a small non-magnetized collisionless shock simulation.
+This tutorial provides some tips for getting started with collisionless shock simulations using Runko.  
 
-.. image:: https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/movies/shock.gif
-
-
-Running a collisionless shock simulation
-========================================
-You will find the related scripts to run the simulation and the analytical tools in
+Simulation scripts and analysis files for shock simulations are found in    
 
 .. code-block:: bash
 
-   /runko/projects/pic-shocks
+    /runko/projects/pic-shocks
+
+The *pic-shocks* project simulates a scenario where plasma travels in a tube-like structure in the `-x` direction, meets the end of the tube and reflects back towards the `+x` direction. As a result, there are two populations of plasma passing through each other. The populations interact with each other via the electromagnetic fields and form a collisionless shock.
+
+The example setup simulates a relativistic, magnetized, perpendicular shock in an electron-positron pair plasma. Such shocks are prone to the synchrotron maser instability. More details are available, e.g., in `Plotnikov & Sironi 2019 <https://academic.oup.com/mnras/article/485/3/3816/5370092?login=true>`_.
+
+Running the Simulation
+++++++++++++++++++++++
+
+Simulations as well as analytical procedures are run via command line. The syntax for running the simulation is
+
+.. code-block:: bash
+
+    mpirun -n [number of cores] python3 pic.py --conf file.ini
+
+The above command executes file ``pic.py`` using *[number of cores]* MPI ranks and configuration parameters set in ``file.ini``. The amount of MPI ranks depends on your machine.
+
+**Example:** Running a simulation with 4 cores using the configuration file ``2dsig3.ini``: 
+
+.. code-block:: bash
+
+    mpirun -n 4 python3 pic.py --conf 2dsig3.ini
+    
+
+Configuration Parameters
+++++++++++++++++++++++++
 
 
-Configuring the simulation
-==========================
-To configure the simulation, you can edit the `shock_mini.ini` or `shock_small.ini` files given. The smaller of those (mini) should finish in less than a minute whereas the small takes ~20mins to finish.
+Grid and Dimensions
+------------------------
 
-The following settings are given:
+Simulations are available in all three dimensions and you can set the size of the grid based on your needs. The following configuration parameters are found and can be edited in the ``.ini`` files.
 
-- [io]
-   - `outdir`: Defines the output directory name
-   - `interval`: No. of steps between output files written
-   - `restart`: No. of steps between restart files written
-   - `laprestart`: Simulation lap to restart from (-1 = no restart, 0 = automatic, X lap to restart)
+Simulation framework:
 
-Additionally, more advanced options include
+- ``[grid]``
+   - ``Nx``, ``Ny``, ``Nx`` : Number of tiles in corresponding directions
+   - ``NxMesh``, ``NyMesh``, ``NzMesh`` : Number of partitions each tile is divided into in each corresponding direction; internal grid.
+   - ``c_omp`` : Simulation skin depth resolution
 
-   - `stride`: Output image reduce factor
-   - `full_interval`: No. of steps between full restart snapshot written to file (-1 = disabled)
+Complete grid size in each dimension is determined as ``Ni*NiMesh``. One plasma skin depth (in the upstream) equals `\texttt{c_omp} \times \texttt{cells}`.
 
-- [simulation]
-   - `cfl`: The simulation time step in units of grid space
-   - `Nt`: The total number of laps in the simulation
+
+Relevant parameters to get the simulation running:
+--------------------------------------------------
+
+- ``[io]``
+   - ``outdir``, ``prefix``, ``postfix`` : Output directory name
+   - ``interval`` : Simulation output frequency for analysis in units of laps
+
+The output directory can be easily named by defining ``outdir: "auto"`` and setting, e.g., ``prefix: "shock_"`` and ``postfix: "_try1"``; this will automatically create a folder ``shock_XXX_try1``, where ``XXX`` is replaced with the simulation parameters.
+
+
+- ``[simulation]``
+   - ``Nt`` : Maximum simulation time in units of laps
+   - ``npasses`` : Number of current filters
+   - ``mpi_track`` : Caterpillar cycle length
+
+- ``[problem]``
+   - ``delgam`` : Upstream plasma temperature in units of `\frac{kT}{m_e c^2}`
+   - ``bpar``, ``bplan``, ``bperp`` : Magnetic fields in `x`, `y` and `z` directions accordingly. 
+   - ``sigma`` : Plasma magnetization parameter, `\; \sigma = \frac{B^2}{4\pi n_e \gamma m_e c^2}`
+   - ``gamma`` : Upstream bulk flow speed in units of
+
+      - Lorentz factor `\quad \Gamma = \left(1 - \frac{v^2}{c^2} \right)^{-\frac{1}{2}}, \quad`  for `\gamma > 1`
+      - 3-velocity `\quad \beta = \frac{v}{c}, \quad` for `\gamma < 1`
+
+- ``[particles]``
+   - ``Npecies`` : Number of particle species
+   - ``ppc`` : Particles per cell per species
+   - ``n_test_prtcls`` : Number of test particles
+
+
+Analysis Tools
+++++++++++++++
+
+Scripts
+-------
+
+The *pic-shocks* folder includes some ``python`` scripts for plotting the simulation data.
+
+- ``plot_upstream_ene.py`` plots the Poynting flux of the synchrotron maser as well as the components of electromagnetic fields in a region of upstream plasma ahead of the shock.
+- ``plot_jump_conds.py`` calculates the shock jump conditions and plots them; plots the `x` location and velocity of the shock as well as the downstream to upstream plasma density ratio as functions of simulation time steps.
+- ``plot_dens.py`` plots the plasma density as a mountain plot.
+- ``plot_win_2d_shock.py`` visualizes the shock; plots plasma densities, velocities and components of electric and magnetic fields and electric currents into individual panels.
+
+
+Usage
+-----
+
+All of the scripts above use syntax 
+
+.. code-block:: bash
+
+    python3 script.py --conf file.ini
+
+Except in case of ``plot_win_2d_shock.py``:
+
+.. code-block:: bash
+
+    python3 plot_win_2d_shock.py --conf file.ini --lap [lap number]
+
+The number after ``--lap`` specifies the simulation lap you want to view. If you want to plot *all* of the laps of a complete run, you can run
+ 
+.. code-block:: bash
+
+    ./scripts.sh
+
+in the *pic-shocks* folder.
+
+
+**Example:** The output of ``plot_win_2d_shock`` should look something like this:
+
+.. image:: https://raw.githubusercontent.com/natj/pb-utilities/60bb931396941562251ab2329fd4c07f8890e906/imgs/pic-shock1d.png 
+   :width: 800px 
+
+
+.. note::
    
-- [problem]
-   - `Nspecies`: Number of species
-   - `delgam`: Temperature of plasma in units of mc^2 in bulk flow frame
-   - `gamma`: Lorentz factor of bulk flow
-   - `me`: electron mass-to-charge
-   - `mi`: positron/ion mass-to-charge
-   - `sigma`: Plasma magnetization parameter
-   - `npasses`: Number of current filter passes
+   The above plot is from a short 1D shock simulation (with `\gamma = 10` and `\sigma = 3`) using 2 cores. Depending on the dimensions and other parameters of your simulation the output might look slightly different.
    
-Additionally, more advanced options include
+The script plots the values in panels as functions of skin depth, `\frac{c}{\omega_p}` (scale at the bottom of the figure). Point `x = 0`, which follows the shock front, divides the plasma into *downstream* (negative `x`) and *upstream* (positive `x`) sections.
 
-   - `temp_ratio`: Ratio of ion temperature to electron temperature
-   - `bphi`: external B-field z angle
-   - `btheta`: external B-field x-y angle
-   - `wallgamma`: X velocity of the left piston wall (this makes the left wall ram into the plasma)
+The top two panels show plasma density. If a shock has succesfully formed, you should be able to see a jump in the downstream to upstream density affected by the shock: `\frac{n_d}{n_u} \approx 1 \rightarrow 2` 
 
-- [grid]
-   - `Nx`, `Ny`, `Nz`: No. of mesh tiles in x,y,z direction
-   - `NxMesh`/`NyMesh`/`NzMesh`: Size of tiles in x,y,z direction
-   
-Complete grid size is then `Ni*NiMesh`.
-
-- [particles]
-   - `ppc`: Particles per cell per species
-   - `c_omp`: Skindepth resolution
-
-Additionally, more advanced options include
-
-   - `n_test_prtcls`: Number of test particles tracked in simulation
-   
-
-
-Running the simulation
-======================
-To run a shock simulation on Runko, use the following command:
-
-.. code-block:: bash
-
-   mpirun [-n no_of_cores] python3 pic.py --conf shock_mini.ini
-
-
-Using the analysis tools
-========================
-There are four tools provided for use in studying the results:
-
-1. Particle spectra
--------------------
-
-This script will output a spectra of the particles Lorentz factor (gamma, :math:`\gamma = (1-\beta^2)^{-1/2}`) over the time period of the simulation. It will plot all simulation laps by default, however, a lap can also be designated. If all laps are plotted, it will also find the 10 most energetic particles at the end of the simulation and write their details to file in `10_prtcls.txt`.
-
-To run, use the command:
-
-.. code-block:: bash
-
-   python3 prtcl_spec.py --conf shock_mini.ini [--lap lap_no]
-   
-Note that the particle spectra is typically computed with a logarithmic binning so that
-
-.. math::
-
-   \frac{dN}{d\log \gamma} = \gamma \frac{dN}{d\gamma}
-
-2. Particle paths
------------------
-
-This script will generate a file which shows the 10 most energetic particles' position and their Lorentz factor against time.
-
-To run, use the command:
-
-.. code-block:: bash
-
-   python3 prtcl_path.py --conf shock_mini.ini
-  
-3. Plot shock
--------------
-
-This script generates a four-part plot showing:
-
-- A plasma density map
-- An out-of-the-plane magnetic field map (Z-direction)
-- An out-of-the-plane current density map (Z-direction)
-- Plot of 1D density and magnetic energy density
-
-This produces graphs for all laps generated, unless a simulation lap is specified. Additionally, the paths of the 10 most energetic particles are shown and, if all laps are generated, the 1D density data is output for the shock velocity script.
-
-To run, use the command:
-
-.. code-block:: bash
-
-   python3 plot_shock.py --conf shock_mini.ini [--lap lap_no]
-
-4. Shock Rankine-Hugoniot jump conditions
------------------------------------------
-
-This script will load in the 1D density data, and use it to find the compression ratio of the shock and subsequently the shock velocity based on the midpoint of the shock.
-A plot of position against time will be shown, and the coordinate-velocity value determined in the frame of the **downstream plasma**.
-
-To run, use the command:
-
-.. code-block:: bash
-
-   python3 shock_RH.py --conf shock_mini.ini
+Other panels include (top to bottom) `x`, `y` and `z` components of the electric field, magnetic field and electric currents. Panel just beneath `J_z` marks the MPI rank division. The bottom four panels visualize the total velocity `\log_{10}(\gamma)` and the individual four-velocity components `\beta_x \gamma`, `\; \beta_y \gamma`, and `\; \beta_z \gamma`.
