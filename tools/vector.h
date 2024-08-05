@@ -352,9 +352,11 @@ inline T norm1d(Vec3<T>& v) // contracted norm in x direction
 }
 
 template <typename T> 
-inline T norm(Vec4<T>& v)
+inline T norm_minkowski(Vec4<T>& v)
 {
-  return std::sqrt( v(0)*v(0) + v(1)*v(1) + v(2)*v(2) + v(3)*v(3) );
+  // NOTE: minkowski norm with -0 + 1 + 2 + 3 signature. However, we take absolute value
+  //       of the output to be agnostic about the metric signature.
+  return std::sqrt(std::abs( -v(0)*v(0) + v(1)*v(1) + v(2)*v(2) + v(3)*v(3) ) );
 }
 
 

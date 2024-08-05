@@ -21,6 +21,7 @@ namespace qed {
   using toolbox::Vec4;
   using toolbox::Mat4;
   using toolbox::norm;
+  using toolbox::norm_minkowski;
   using toolbox::dot;
   using toolbox::cross;
   using toolbox::unit_cross;
@@ -54,22 +55,22 @@ float MultiPhotAnn::comp_chi(
   Vec4<float> z(x0, ux1, uy1, uz1);  // particle four momentum
 
   // contravariant electromagnetic Maxwell tensor F^\mu\nu
-  //Vec4<float> F1( 0, -ex,-ey,-ez );
-  //Vec4<float> F2( ex,  0,-bz, by );
-  //Vec4<float> F3( ey, bz,  0,-bx );
-  //Vec4<float> F4( ez,-by, bx, 0  );
-  //Mat4<float> F(  F1, F2, F3, F4 );
+  Vec4<float> F1( 0, -ex,-ey,-ez );
+  Vec4<float> F2( ex,  0,-bz, by );
+  Vec4<float> F3( ey, bz,  0,-bx );
+  Vec4<float> F4( ez,-by, bx, 0  );
+  Mat4<float> F(  F1, F2, F3, F4 );
 
   // covariant electromagnetic Maxwell tensor F_\mu\nu
   // metric signature of +---
-  Vec4<float> F1( 0,  ex, ey, ez );
-  Vec4<float> F2(-ex,  0,-bz, by );
-  Vec4<float> F3(-ey, bz,  0,-bx );
-  Vec4<float> F4(-ez,-by, bx, 0  );
-  Mat4<float> F(  F1, F2, F3, F4 );
+  //Vec4<float> F1( 0,  ex, ey, ez );
+  //Vec4<float> F2(-ex,  0,-bz, by );
+  //Vec4<float> F3(-ey, bz,  0,-bx );
+  //Vec4<float> F4(-ez,-by, bx, 0  );
+  //Mat4<float> F(  F1, F2, F3, F4 );
 
   auto Fdotz = dot(F, z); // p_mu F^\mu\nu
-  float chi_fpart = norm(Fdotz); //|p F| 
+  float chi_fpart = norm_minkowski(Fdotz); //|p F| 
 
 
   ////--------------------------------------------------

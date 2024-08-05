@@ -21,6 +21,7 @@ namespace qed {
   using toolbox::Vec4;
   using toolbox::Mat4;
   using toolbox::norm;
+  using toolbox::norm_minkowski;
   using toolbox::dot;
   using toolbox::cross;
   using toolbox::unit_cross;
@@ -51,33 +52,34 @@ float Synchrotron::comp_chi(
   // --------------------------------------------------
   // calculate the electron quantum parameter
 
-  Vec4<float> z(gam, ux1, uy1, uz1);  // particle four momentum
+  Vec4<float> z(gam, ux1, uy1, uz1);  // particle four momentum z^mu
+
 
   // contravariant electromagnetic Maxwell tensor F^\mu\nu
-  //Vec4<float> F1( 0, -ex,-ey,-ez );
-  //Vec4<float> F2( ex,  0,-bz, by );
-  //Vec4<float> F3( ey, bz,  0,-bx );
-  //Vec4<float> F4( ez,-by, bx, 0  );
-  //Mat4<float> F(  F1, F2, F3, F4 );
+  Vec4<float> F1( 0, -ex,-ey,-ez );
+  Vec4<float> F2( ex,  0,-bz, by );
+  Vec4<float> F3( ey, bz,  0,-bx );
+  Vec4<float> F4( ez,-by, bx, 0  );
+  Mat4<float> F(  F1, F2, F3, F4 );
 
   // covariant electromagnetic Maxwell tensor F_\mu\nu
   // metric signature of +---
-  Vec4<float> F1( 0,  ex, ey, ez );
-  Vec4<float> F2(-ex,  0,-bz, by );
-  Vec4<float> F3(-ey, bz,  0,-bx );
-  Vec4<float> F4(-ez,-by, bx, 0  );
-  Mat4<float> F(  F1, F2, F3, F4 );
+  //Vec4<float> F1( 0,  ex, ey, ez );
+  //Vec4<float> F2(-ex,  0,-bz, by );
+  //Vec4<float> F3(-ey, bz,  0,-bx );
+  //Vec4<float> F4(-ez,-by, bx, 0  );
+  //Mat4<float> F(  F1, F2, F3, F4 );
 
+  // TODO why does this not match 
 
   auto Fdotz = dot(F, z); // p_mu F^\mu\nu
-  float chi_fpart = norm(Fdotz); //|p F| 
+  float chi_fpart = norm_minkowski(Fdotz); //|p F| 
 
   //--------------------------------------------------
-  //std::cout << " chi sy v1: " << chi_fpart << "\n";
+  //std::cout << " chi sy v1: " << chi_fpart << " chie:" << chi_fpart/B_QED << " Bq:" << B_QED << "\n";
 
   // DONE manual calc (v4 with covariant F) agrees with manual version (v2)
   //      note the transpose when compiling F, hence the co <-> contra flip
-
 
   ////--------------------------------------------------
   //// ver2
@@ -85,19 +87,26 @@ float Synchrotron::comp_chi(
   //Vec3<float> E(ex,ey,ez); // electric field
   //auto beta = zv/gam; 
 
+  //auto ExB = cross(E, B);
   //auto VxB = cross(beta, B);
   //auto E_VxB = E + VxB;
-  //float chi_fpart4 = gam*sqrt( abs( pow(dot(beta, E), 2) - dot(E_VxB, E_VxB) ) );
+  //auto v_E = dot(beta, E);
+  //float chi_fpart4 = gam*sqrt( abs( v_E*v_E - dot(E_VxB, E_VxB) ) );
 
-  //std::cout << " chi sy v4: " << chi_fpart4 << "\n";
+  //std::cout << " chi sy v4: " << chi_fpart4/B_QED << "\n";
 
-  //std::cout << "Chi_fpart: v1:" << chi_fpart << " v2:" << chi_fpart2 << "\n";
+  ////std::cout << "Chi_fpart: v1:" << chi_fpart << " v2:" << chi_fpart4 << "\n";
+  //std::cout << "gam " << gam << "\n";
+  //std::cout << "p_mu F^mu nu " << Fdotz << "\n";
   //std::cout << "z " << zv << "\n";
-  //std::cout << "be " << beta << "\n";
+  //std::cout << "beta " << beta << "\n";
   //std::cout << "B " << B << "\n";
   //std::cout << "E " << E << "\n";
-  //std::cout << "vxb " << VxB << "\n";
+  //std::cout << "VxB " << VxB << "\n";
   //std::cout << "e_vxb " << E_VxB << "\n";
+  //std::cout << "exb " << ExB << "\n";
+
+  // TODO calculate pitch angle next
 
   //--------------------------------------------------
   
