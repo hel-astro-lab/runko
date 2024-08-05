@@ -2,6 +2,10 @@
 	path = pytools/pybox
 	url = https://github.com/natj/pyBox.git
 	branch = master
+[submodule "external/corgi"]
+	path = external/corgi
+	url = https://github.com/hel-astro-lab/corgi.git
+	branch = master
 [submodule "external/cppitertools"]
 	path = external/cppitertools
 	url = https://github.com/ryanhaining/cppitertools.git
@@ -14,6 +18,3 @@
 	path = external/fmt
 	url = https://github.com/fmtlib/fmt.git
 	branch = master
-[submodule "external/corgi"]
-	path = external/corgi
-	url = https://github.com/natj/corgi.git
