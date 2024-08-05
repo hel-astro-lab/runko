@@ -19,7 +19,8 @@ using emf::StaggeredSphericalCoordinates;
 template<>
 Vec3<float> emf::Conductor<1>::dipole(Vec3<float>& xvec)
 {
-  Vec3<float> ret( 2.0/(pow(xvec(0), 3) + EPS), 0.0, 0.0);
+  Vec3<float> ret( 2.0/(pow(xvec(0), 3) + EPS), 0.0, 0.0); // real dipole
+  //Vec3<float> ret( 2.0, 0.0, 0.0); // const
   return ret;
 }
 
@@ -91,6 +92,8 @@ void emf::Conductor<D>::insert_em(
 
   auto& gs = tile.get_grids();
 
+  const float c = tile.cfl; // (numerical) speed of light
+                              
   //--------------------------------------------------
   // angular velocity
   float Omega = 2.0*PI/period;
@@ -206,6 +209,48 @@ void emf::Conductor<D>::insert_em(
     //gs.ez(i,j,k) = ezd;
 
   }
+
+  //--------------------------------------------------
+  // start magnetosphere from non-rotating configuration, i.e., set E_rot 
+  if( (D == 1) ) {
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) {
+
+      // global grid coordinates
+      const float iglob = (D>=1) ? i + mins[0] : 0;
+                                   
+      // TODO define rotating electric field inside star
+      auto r  = coord.ex().vec(iglob, 0.0f, 0.0f, D); // cartesian position vector in "star's coordinates"
+      auto bd = B0*dipole(r); // diple field
+      auto h  = abs(r(0)); // cylindrical coordinate system height
+                             
+      auto s  = 1.0f - shape( h, radius, delta); // height smoothing parameter
+      //auto s  = h < radius + 4 ? 1.0f : 0.0f; // step function; field inside star h < r_*
+      //auto s  = h > radius + 4 ? 1.0f : 0.0f; // step function; field outside star h > r_*
+
+      //const auto rcyl1 = radius_pc;
+      //const float offs = delta_pc; // expanded polar cap
+      //sx      *= shape(rcyl1, radius_pc + offs, delta_pc); // no damping from polar cap edges in 1D
+                                   
+      float vrot = Om(0)*radius_pc/c; //r1(0); // Omega x r_pc
+      float erot = 1.0f*vrot*bd(0); //-v x B
+
+      // linear voltage
+      erot = iglob < radius_pc ? erot*( 1.0 - iglob/radius_pc ) : 0.0;
+
+      const float erot1 = erot;
+      const float erot2 = 0.0f;
+      const float erot3 = 0.0f;
+
+      //--------------------------------------------------
+      // blending of old + new solution
+      gs.ex(i,0,0) = s*erot1 + (1.0f - s)*gs.ex(i,0,0); 
+      gs.ey(i,0,0) = s*erot2 + (1.0f - s)*gs.ey(i,0,0); 
+      gs.ez(i,0,0) = s*erot3 + (1.0f - s)*gs.ez(i,0,0); 
+    }
+  }
+
 }
 
 
@@ -643,6 +688,9 @@ void emf::Conductor<D>::update_e(
   float Omega = 2.0*PI/period;
   if(period < EPS) Omega = 0.0; // reality check
 
+  const float c = tile.cfl; // (numerical) speed of light
+
+
   if(D == 1) Om.set(Omega, 0.0, 0.0); // Omega unit vector along y-axis
   if(D == 2) Om.set(0.0, Omega, 0.0); // Omega unit vector along y-axis
   if(D == 3) Om.set( sin(chi_om)*cos(phase_om)*Omega, sin(chi_om)*sin(phase_om)*Omega, cos(chi_om)*Omega ); 
@@ -737,6 +785,10 @@ void emf::Conductor<D>::update_e(
   if( D == 2 ) tile_len = tile.mesh_lengths[1];
   if( D == 3 ) tile_len = tile.mesh_lengths[2];
 
+  // tile lengths
+  const int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
+  const int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
+  const int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
 
   //--------------------------------------------------
   // inside star
@@ -749,16 +801,17 @@ void emf::Conductor<D>::update_e(
   auto sint = radius_pc/radius; // sin\theta = R_pc/R_star
   auto Rbc  = radius/sint/sint;  
 
-  // TOOD no full tile boundaries w/ halos for epar removal
-  //for(int k=-3; k<nz_tile+3; k++) 
-  //for(int j=-3; j<ny_tile+3; j++) 
-  //for(int i=-3; i<nx_tile+3; i++) {
+
+    
+
+  // NOTE: do not use full tile boundaries w/ halos for epar removal
+  if( D >= 2 ) { // epar removal only for D=2 and 3
 
   #pragma omp parallel for
-  for(int k=0; k<tile.mesh_lengths[2]; k++) {
-    for(int j=0; j<tile.mesh_lengths[1]; j++) {
+  for(int k=0; k<nz_tile; k++) {
+    for(int j=0; j<ny_tile; j++) {
       #pragma omp simd
-      for(int i=0; i<tile.mesh_lengths[0]; i++) {
+      for(int i=0; i<nx_tile; i++) {
       
         // global grid coordinates
         const float iglob = (D>=1) ? i + mins[0] : 0;
@@ -889,6 +942,9 @@ void emf::Conductor<D>::update_e(
 
   }}}
 
+  } // end of D>=2
+
+
 
   //--------------------------------------------------
   // TODO this is not a bulletproof method to find if the star is inside tile;
@@ -903,7 +959,39 @@ void emf::Conductor<D>::update_e(
     norm(x7) < 1.1*radius ||
     norm(x8) < 1.1*radius;
 
-  if( inside_star ) {
+  if( inside_star && (D == 1) ) {
+
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) {
+
+      // global grid coordinates
+      const float iglob = (D>=1) ? i + mins[0] : 0;
+                                   
+      // rotating electric field inside star
+      auto r  = coord.ex().vec(iglob, 0.0f, 0.0f, D); // cartesian position vector in "star's coordinates"
+      auto bd = B0*dipole(r); // diple field
+      auto h  = abs(r(0)); // cylindrical coordinate system height
+                             
+      auto s  = shape( h, radius, delta); // height smoothing parameter
+      //auto s  = h < radius + 4 ? 1.0f : 0.0f; // step function; field inside star h < r_*
+      //auto s  = h > radius + 4 ? 1.0f : 0.0f; // step function; field outside star h > r_*
+                                   
+      float vrot = Om(0)*radius_pc/c; //r1(0); // Omega x r_pc
+      float erot = 1.0f*vrot*bd(0); //-v x B
+
+      const float erot1 = erot; // B_\parallel direction 
+      const float erot2 = 0.0f; 
+      const float erot3 = 0.0f;
+
+      //--------------------------------------------------
+      // blending of old + new solution
+      gs.ex(i,0,0) = s*erot1 + (1.0f - s)*gs.ex(i,0,0); 
+      gs.ey(i,0,0) = s*erot2 + (1.0f - s)*gs.ey(i,0,0); 
+      gs.ez(i,0,0) = s*erot3 + (1.0f - s)*gs.ez(i,0,0); 
+    }
+
+
+  } else if( inside_star && (D>=2) ) {
 
     #pragma omp parallel for
     for(int k=kmin; k<kmax; k++) {
@@ -1090,7 +1178,7 @@ void emf::Conductor<D>::update_e(
 
   //--------------------------------------------------
   // inside bottom / outside star
-  if(bot) {
+  if( bot && (D>=2) ) { // only for D=2,3
 
     #pragma omp parallel for
     for(int k=kmin; k<kmax; k++) {
@@ -1128,6 +1216,8 @@ void emf::Conductor<D>::update_e(
 
   //--------------------------------------------------
   // box boundaries
+
+  // TODO optimize for 1D where -3,-2,-1 and nx-3,-2,-1 values can be set manually much faster
 
   if( left  ||
       right || 
@@ -1183,10 +1273,99 @@ void emf::Conductor<D>::update_e(
 }
 
 
+
+// current from moving frame
+template<size_t D>
+void emf::Conductor<D>::update_j(
+  emf::Tile<D>& tile)
+{
+
+  // Tile limits
+  auto mins = tile.mins;
+  //auto maxs = tile.maxs;
+  auto& gs = tile.get_grids();
+
+
+  // tile lengths
+  const int nx_tile = (D>=1) ? tile.mesh_lengths[0] : 1;
+  const int ny_tile = (D>=2) ? tile.mesh_lengths[1] : 1;
+  const int nz_tile = (D>=3) ? tile.mesh_lengths[2] : 1;
+  //const int H = 2;
+
+  // cutoff radius after which jm is not applied. 
+  // NOTE: this needs to be less than update_e top cutoff; hence we set it to 0.25*tile (and E cutoff is 0.5*tile)
+  float radius_ext = 0.0;
+  if(D == 1) radius_ext = Nx - 0.25*nx_tile;
+  if(D == 2) radius_ext = Ny - 0.25*ny_tile;
+  if(D == 3) radius_ext = Nz - 0.25*nz_tile;
+
+  float delta_ext  = 0.10f*nx_tile; // sharp enough profile so that at radius_ext + 2*delta_ext = 0
+
+  //--------------------------------------------------
+  const float Omega = 2.0*PI/period;
+  const float v = Omega*radius_pc; // v_rot = Omega \times r_pc
+
+  const float c = tile.cfl; // \Delta t
+
+  // set current
+  #pragma omp parallel for
+  for(int k=0; k<nz_tile; k++) {
+    for(int j=0; j<ny_tile; j++) {
+      #pragma omp simd
+      for(int i=0; i<nx_tile; i++) {
+
+        // global grid coordinates
+        float ig = (D>=1) ? i + mins[0] : 0;
+        float jg = (D>=2) ? j + mins[1] : 0;
+        float kg = (D>=3) ? k + mins[2] : 0;
+
+        float jx=0.0f, jy=0.0f, jz=0.0f;
+
+        //--------------------------------------------------
+        // current in 1D moving frame v = v \hat{y}
+        if( D == 1 ) {
+          // j_m = 
+          //x:  - v d( E_y)
+          //y:  -d( v E_x) + d( v^2 B_z)
+          //z:  0
+
+          //curl( gs.ex, gs.ey, gs.ez, i,j,k );
+
+          // jx
+          float dx_ey_at_x = gs.ey(i,j,k) - gs.ey(i-1,j,k); // partial_x(E_y) at i,j,k
+          //float dx_ey_at_x = gs.ey(i+1,j,k) - gs.ey(i,j,k); // partial_x(E_y) at i,j,k // BAD: oscillates
+          jx = -v*dx_ey_at_x;
+
+          // jy
+          float dx_v_ex_at_y  = v*gs.ex(i,j,k) - v*gs.ex(i-1,j,k); // partial_y(v E_x) at i,j,k
+          //float dx_v_ex_at_y  = v*gs.ex(i+1,j,k) - v*gs.ex(i,j,k); // partial_y(v E_x) at i,j,k // BAD: oscillates
+          float dx_v2_bz_at_y = v*v*gs.bz(i,j,k) - v*v*gs.bz(i-1,j,k);
+          //float dx_v2_bz_at_y = v*v*gs.bz(i+1,j,k) - v*v*gs.bz(i,j,k);
+          jy = -dx_v_ex_at_y + dx_v2_bz_at_y;
+
+          //jz
+          jz = 0.0f;
+        }
+          
+        // ver 1; tanh profile
+        const auto h = (D==1) ? ig : (D==2) ? jg : kg; // height
+        auto s = shape(h, radius_ext, delta_ext); // tanh
+
+        //--------------------------------------------------
+        // add to the current
+        gs.jx(i,j,k) += s*jx*c;
+        gs.jy(i,j,k) += s*jy*c;
+        gs.jz(i,j,k) += s*jz*c;
+      }
+    }
+  }
+
+
+
+}
+
 //--------------------------------------------------
 // explicit template instantiation
-
 template class emf::Conductor<1>; // 1D
 template class emf::Conductor<2>; // 2D
 template class emf::Conductor<3>; // 3D
-

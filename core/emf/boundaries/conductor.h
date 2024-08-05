@@ -146,6 +146,7 @@ class Conductor
 
   void update_e(emf::Tile<D>&  tile);
 
+  void update_j(emf::Tile<D>&  tile);
 };
 
 
