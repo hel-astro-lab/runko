@@ -553,6 +553,7 @@ void bind_emf(py::module& m_sub)
     .def_readwrite("Nz",       &emf::Conductor<1>::Nz)
     .def("insert_em",          &emf::Conductor<1>::insert_em)
     .def("update_b",           &emf::Conductor<1>::update_b)
+    .def("update_j",           &emf::Conductor<1>::update_j)
     .def("update_e",           &emf::Conductor<1>::update_e);
 
     
@@ -577,6 +578,7 @@ void bind_emf(py::module& m_sub)
     .def_readwrite("Nz",       &emf::Conductor<2>::Nz)
     .def("insert_em",          &emf::Conductor<2>::insert_em)
     .def("update_b",           &emf::Conductor<2>::update_b)
+    .def("update_j",           &emf::Conductor<2>::update_j)
     .def("update_e",           &emf::Conductor<2>::update_e);
 
 
@@ -601,6 +603,7 @@ void bind_emf(py::module& m_sub)
     .def_readwrite("Nz",       &emf::Conductor<3>::Nz)
     .def("insert_em",          &emf::Conductor<3>::insert_em)
     .def("update_e",           &emf::Conductor<3>::update_e)
+    .def("update_j",           &emf::Conductor<3>::update_j)
     .def("update_b",           &emf::Conductor<3>::update_b);
 
 

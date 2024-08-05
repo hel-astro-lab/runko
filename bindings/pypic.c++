@@ -797,6 +797,7 @@ void bind_pic(py::module& m_sub)
     .def("insert_em",                &pic::Star<1>::insert_em)
     .def("update_b",                 &pic::Star<1>::update_b)
     .def("update_e",                 &pic::Star<1>::update_e)
+    .def("update_j",                 &pic::Star<1>::update_j)
     .def("solve",                    &pic::Star<1>::solve);
 
 
