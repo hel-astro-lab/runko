@@ -57,7 +57,7 @@ void emf::damping::Tile<D,S>::damp_fields()
   bool zdir  = abs(S) == 3;
 
   // fixed position
-  const int halo = 1;
+  const int halo = 3; 
 
   int istr = 0;
   int ifin = emf::Tile<D>::mesh_lengths[0];
@@ -85,10 +85,10 @@ void emf::damping::Tile<D,S>::damp_fields()
   bool inside_damping_zone = false;
 
   // loop over all values in mesh
-  for(int k = kstr; k<kfin; k++) {
+  for(int k=kstr; k<kfin; k++) {
     kglob = (float)k + emf::Tile<D>::mins[2];
 
-    for(int j = jstr; j<jfin; j++) {
+    for(int j=jstr; j<jfin; j++) {
       jglob = (float)j + emf::Tile<D>::mins[1];
 
       for(int i=istr; i<ifin; i++) {

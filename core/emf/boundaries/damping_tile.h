@@ -27,14 +27,14 @@ class Tile :
   // reference field to relax tile into
 
   /// Electric field 
-  toolbox::Mesh<float, 1> ex_ref;
-  toolbox::Mesh<float, 1> ey_ref;
-  toolbox::Mesh<float, 1> ez_ref;
+  toolbox::Mesh<float, 3> ex_ref;
+  toolbox::Mesh<float, 3> ey_ref;
+  toolbox::Mesh<float, 3> ez_ref;
   
   /// Magnetic field 
-  toolbox::Mesh<float, 1> bx_ref;
-  toolbox::Mesh<float, 1> by_ref;
-  toolbox::Mesh<float, 1> bz_ref;
+  toolbox::Mesh<float, 3> bx_ref;
+  toolbox::Mesh<float, 3> by_ref;
+  toolbox::Mesh<float, 3> bz_ref;
 
 
   /// constructor
