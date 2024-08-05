@@ -55,7 +55,11 @@ class Mesh
       bool iny = (j >= -H) && (j < (int)Ny + H);
       bool inz = (k >= -H) && (k < (int)Nz + H);
 
-      if( !inx || !iny || !inz) {
+      // NOT CHECKED ATM
+      bool j_halo_outflow = false; //j != 0 && Ny==1;
+      bool k_halo_outflow = false; //k != 0 && Nz==1;
+
+      if( !inx || !iny || !inz || j_halo_outflow || k_halo_outflow ) {
           std::cerr << "MESH OUTSIDE TILE " << std::endl;
           std::cerr << i << " /" << Nx << " +H " << H << std::endl;
           std::cerr << j << " /" << Ny << " +H " << H << std::endl;
