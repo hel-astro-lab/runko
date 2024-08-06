@@ -4,3 +4,4 @@ scipy
 palettable
 mpi4py
 matplotlib
+sphinx
