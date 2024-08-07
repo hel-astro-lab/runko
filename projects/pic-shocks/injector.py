@@ -162,12 +162,21 @@ class MovingInjector:
 
         #correct for plasma bulk motion; 
         # start damping earlier to close the gap between escaping plasma and injector
-        d0 = int(self.wloc0 - self.betaplasma*dt - self.damping_region_width - 5.0)
-        d1 = int(self.wloc0 - self.betaplasma*dt - 5.0 )
+        d0 = int(self.wloc0 - self.betaplasma*dt - self.damping_region_width )
+        d1 = int(self.wloc0 - self.betaplasma*dt )
+
+        # offset by -5 cells to the left from the right edge of the plasma
+        d0 -= 5
+        d1 -= 5
+
+        #print(d0, conf.inj_startx*conf.c_omp)
 
         # do not damp the early region when shock is still forming
-        if d0 < self.wloc0:
-            return
+        if d0 < conf.inj_startx*conf.c_omp: return
+
+
+        #if d1 > self.wloc0: return
+        #print('pre damp', d0, d1, self.wloc0)
 
         # loop over local tiles and apply damping if tile crosses damping zone
         for tile in pytools.tiles_local(grid):
@@ -177,8 +186,7 @@ class MovingInjector:
             if conf.oneD:
                 i, j, k  = ind[0], 0, 0
             elif conf.twoD:
-                i,j = ind
-                k = 0
+                i,j,k = ind,0
             else:
                 i,j,k = ind
 
@@ -199,6 +207,8 @@ class MovingInjector:
             xg0 = d0 - 2*conf.NxMesh - 5.0
             xg1 = d1 + 3*conf.NxMesh + 5.0
 
+            #print('testing for damp:', tile_xmax, xg0, ' and ', tile_xmin, xg1, 'd1 0:', d1, d0)
+
             #   xg0      xg1
             #    |        |  
             #   
@@ -210,6 +220,7 @@ class MovingInjector:
             #          xmin  xmax
             #if tile_xmin > xg0 and tile_xmax < xg1:
             if tile_xmax > xg0 and tile_xmin < xg1:
+                #print('between; damping', d1, d0)
                 tile.fld1 = d1
                 tile.fld2 = d0
                 tile.damp_fields()
