@@ -1418,7 +1418,7 @@ public:
         timer.stop_comp("optical_depth");
 
         // exponential waiting time between interactions
-        const float t_free = -log( rand() )*prob_norm_onebody/tau_int; //NOTE w1 here
+        const float t_free = -log( rand() )*prob_norm_onebody/tau_int; 
 
         //std::cout << "oneb: t_free:" << t_free << " tau: " << tau_int << "\n";
 
