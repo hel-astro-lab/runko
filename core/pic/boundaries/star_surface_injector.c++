@@ -156,15 +156,16 @@ void pic::Star<D>::solve(
     bool inside_atmos = false;
 
     // flat surface; slab higher up
+    // NOTE: we have +1 height so that the update_e does not operate in the region we inject particles into
     if(D == 1){
-      inside_star  = abs(rvec(0)) <= 1.0*radius + 1.0*height_atms;
-      inside_atmos = abs(rvec(0)) <= 1.0*radius + 2.0*height_atms;
+      inside_star  = abs(rvec(0)) <= 1.0*radius + 1.0 + 1.0*height_atms;
+      inside_atmos = abs(rvec(0)) <= 1.0*radius + 1.0 + 2.0*height_atms;
     } else if (D == 2){
-      inside_star  = abs(rvec(1)) <= 1.0*radius + 1.0*height_atms;
-      inside_atmos = abs(rvec(1)) <= 1.0*radius + 2.0*height_atms;
+      inside_star  = abs(rvec(1)) <= 1.0*radius + 1.0 + 1.0*height_atms;
+      inside_atmos = abs(rvec(1)) <= 1.0*radius + 1.0 + 2.0*height_atms;
     } else if (D == 3){
-      inside_star  = abs(rvec(2)) <= 1.0*radius + 1.0*height_atms;
-      inside_atmos = abs(rvec(2)) <= 1.0*radius + 2.0*height_atms;
+      inside_star  = abs(rvec(2)) <= 1.0*radius + 1.0 + 1.0*height_atms;
+      inside_atmos = abs(rvec(2)) <= 1.0*radius + 1.0 + 2.0*height_atms;
     }
 
 
@@ -229,14 +230,23 @@ void pic::Star<D>::solve(
       //gs.ey(i,j,k) = 10.0;
       //gs.ez(i,j,k) = 10.0;
 
-      // get epar (TODO not on the right staggering)
-      auto ex = gs.ex(i,j,k);
-      auto ey = gs.ey(i,j,k);
-      auto ez = gs.ez(i,j,k);
+      // read current from this many cells ahead of the atmopshere
+      // this leap is needed so that electric currents have effect on the E field and we measure the right
+      // electric field. 
+      // NOTE: the value here should be about 2x delta ~ 2 cells
+      int isk = D==1 ? 3 : 0;
+      int jsk = D==2 ? 3 : 0;
+      int ksk = D==3 ? 3 : 0;
 
-      auto bx = gs.bx(i,j,k);
-      auto by = gs.by(i,j,k);
-      auto bz = gs.bz(i,j,k);
+
+      // get epar (TODO not on the right staggering)
+      auto ex = gs.ex(i+isk,j+jsk,k+ksk);
+      auto ey = gs.ey(i+isk,j+jsk,k+ksk);
+      auto ez = gs.ez(i+isk,j+jsk,k+ksk);
+
+      auto bx = gs.bx(i+isk,j+jsk,k+ksk);
+      auto by = gs.by(i+isk,j+jsk,k+ksk);
+      auto bz = gs.bz(i+isk,j+jsk,k+ksk);
 
       auto b    = sqrt( bx*bx + by*by + bz*bz ) + EPS;
       auto epar = ( ex*bx + ey*by + ez*bz )/b;
