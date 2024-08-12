@@ -287,8 +287,29 @@ def plot1d_panel(
         a = np.argwhere(vec)
         return a[-1][0] if len(a) else 0
 
-    sloc4 = where_last( dens > 1.5)
+    # v1
+    #sloc4 = where_last( dens > conf.shock_density_jump_thr)
+    #x_shock_loc = xloc[sloc4]
+
+
+    # v2
+    nu_nd = dens 
+    while True:
+        sloc4 = where_last( nu_nd > conf.shock_density_jump_thr )
+        mean_dens_behind = np.mean(nu_nd[sloc4-3*conf.c_omp:sloc4]) # mean density value behind found location
+
+        #print( 'ind at', ind, 'nu/nd:', nu_nd[ind], 'mean val behind:', mean_dens_behind)
+
+        if mean_dens_behind > conf.shock_density_jump_thr:
+            break
+        elif sloc4 == 0:
+            break # unphysical situation
+        else:
+            nu_nd = nu_nd[:sloc4] # cut point out and analyze the next
+
     x_shock_loc = xloc[sloc4]
+
+
 
     #beta_shock
     betash =  x_shock_loc/time # beta_sh

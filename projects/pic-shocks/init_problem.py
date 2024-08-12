@@ -191,9 +191,9 @@ def velocity_profile(xloc, ispcs, conf):
         delgam = conf.delgam_x
 
     # perturb position between x0 + RUnif[0,1)
-    xx = xloc[0] + np.random.rand()
-    yy = xloc[1] + np.random.rand()
-    zz = xloc[2] + np.random.rand()
+    xx = xloc[0] + 0.0 #+ np.random.rand()
+    yy = xloc[1] + 0.0 #+ np.random.rand()
+    zz = xloc[2] + 0.0 #+ np.random.rand()
 
     # velocity sampling from Maxwell-Juttner
     if ispcs in [0,1]:

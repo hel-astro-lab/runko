@@ -295,7 +295,7 @@ def plot1d_panel(
     # plot
 
     dens[:] += offs
-    ax.plot(xloc, dens, 'b-')
+    ax.plot(xloc, dens, 'b-', lw=0.1)
 
     #ax.axvline(x=x_shock_loc)
     print('sloc', sloc)

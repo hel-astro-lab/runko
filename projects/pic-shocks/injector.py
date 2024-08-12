@@ -79,7 +79,8 @@ class MovingInjector:
 
 
     # TODO: split this into tile-based operations to better reflect standard API
-    def inject(self, grid, lap, vel_func, den_func, conf):
+    # v1: inject a one-cell wide slice for every x
+    def inject_v1(self, grid, lap, vel_func, den_func, conf):
 
         # do not inject if we are no longer moving
         if not(self.moving):
@@ -89,7 +90,7 @@ class MovingInjector:
         if not(lap % self.interval == 0):
             return 0
 
-        #print('injecting stripe between', self.wloc0, self.wloc1)
+        print('injecting stripe between', self.wloc0, self.wloc1)
 
         for tile in pytools.tiles_local(grid):
             i,j,k = pytools.get_index(tile, conf)
@@ -113,7 +114,7 @@ class MovingInjector:
 
                 # injection stripe
                 x0 = np.floor(self.wloc0) 
-                x1 = np.ceil(self.wloc1)
+                x1 = np.ceil( self.wloc1)
 
                 if x0 <= xloc0[0] <= x1:
                     for n in range(conf.NzMesh):
@@ -127,11 +128,14 @@ class MovingInjector:
                             for ip in range(ppc):
                                 xl0, u0 = vel_func(xloc, 0, conf) #sample electron loc and vel
 
+                                dx = self.wloc0 - x0
                                 if self.wloc0 <= xl0[0] <= self.wloc1:
 
                                     #check that we are still inside tile limits
                                     # TODO; is this needed?
                                     if tile_xmin <= xl0[0] <= tile_xmax:
+
+                                        xl0[0] += dx
 
                                         #inject electrons
                                         container1.add_particle(xl0, u0, 1.0)
@@ -148,6 +152,88 @@ class MovingInjector:
         #print("Injected total of:", prtcl_tot)
         return self.prtcl_tot
 
+
+    # TODO: split this into tile-based operations to better reflect standard API
+    # v2: inject a stripe 
+    def inject(self, grid, lap, vel_func, den_func, conf):
+
+        # do not inject if we are no longer moving
+        if not(self.moving):
+            return 0
+
+        # only inject with modulo interval
+        if not(lap % self.interval == 0):
+            return 0
+
+        #print('injecting stripe between', self.wloc0, self.wloc1)
+
+        for tile in pytools.tiles_local(grid):
+            i,j,k = pytools.get_index(tile, conf)
+
+            # inject particles
+            # even species are on their own; odd species are located on
+            # top of previous even ones
+
+            tile_xmin = tile.mins[0]
+            tile_xmax = tile.maxs[0]
+
+            if self.wloc1 > tile_xmin and self.wloc0 < tile_xmax: 
+
+                # stripe limits
+                x0 = np.floor(self.wloc0) 
+                x1 = np.ceil( self.wloc1)
+                dxx = self.wloc0 - x0 # remaining space between cell's left edge and injector's lagging edge
+
+                x0 = max(x0, tile_xmin)
+                x1 = min(x1, tile_xmax)
+
+                #dx = self.wloc1 - self.wloc0 #x1 - x0
+                dx = min(self.wloc1, tile_xmax) - max(self.wloc0, tile_xmin)
+                dy = conf.NyMesh
+                dz = conf.NzMesh
+
+                #--------------------------------------------------
+                # load containers
+                container1 = tile.get_container(0)
+                container2 = tile.get_container(1)
+
+                container1.set_keygen_state(self.prtcl_tot[0], self.rank)
+                container2.set_keygen_state(self.prtcl_tot[1], self.rank)
+
+                # first valid cell point inside the mesh where we to inject
+                l = int( np.floor(x0) - i*conf.NxMesh )
+                xloc = ind2loc((i, j, k), (l, 0, 0), conf)
+
+                # calculate how many electron prtcls to inject in this loc
+                #ppc = int(conf.ppc*dx*dy*dz)
+                ppc = int( den_func(xloc, 0, conf)*dx*dy*dz )
+
+                #print('injecting between ', x0, x1, ' ppc', ppc, ' tile lims:', tile_xmin, tile_xmax, 'wloc', np.floor(self.wloc0), np.ceil(self.wloc1), 'dx', dx, dxx)
+
+                for ip in range(ppc):
+                    xl0, u0 = vel_func(xloc, 0, conf) #sample electron loc and vel
+
+                    xl0[0] += np.random.rand()*dx + dxx
+                    xl0[1] += np.random.rand()*dy
+                    xl0[2] += np.random.rand()*dz
+
+                    #print('inj:', xl0, 'dx/y/z', dx, dy, dz)
+
+                    #inject electrons
+                    container1.add_particle(xl0, u0, 1.0)
+
+                    # inject positrons with new velocity but same position
+                    xl1, u1 = vel_func(xloc, 1, conf)
+                    container2.add_particle(xl0, u1, 1.0)
+
+                    # increase local counter for book keeping
+                    self.prtcl_tot[0] += 1
+                    self.prtcl_tot[1] += 1
+
+
+
+        #print("Injected total of:", prtcl_tot)
+        return self.prtcl_tot
 
     # reset EM fields ahead of the piston
     # TODO: split this into tile-based operations to better reflect standard API
