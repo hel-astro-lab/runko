@@ -54,7 +54,6 @@ float Synchrotron::comp_chi(
 
   Vec4<float> z(gam, ux1, uy1, uz1);  // particle four momentum z^mu
 
-
   // contravariant electromagnetic Maxwell tensor F^\mu\nu
   Vec4<float> F1( 0, -ex,-ey,-ez );
   Vec4<float> F2( ex,  0,-bz, by );
@@ -76,7 +75,17 @@ float Synchrotron::comp_chi(
   float chi_fpart = norm_minkowski(Fdotz); //|p F| 
 
   //--------------------------------------------------
-  //std::cout << " chi sy v1: " << chi_fpart << " chie:" << chi_fpart/B_QED << " Bq:" << B_QED << "\n";
+  //if(chi_fpart/B_QED > 0.04) {
+  //  std::cout << " chi sy v1: " << chi_fpart 
+  //            << " chie:" << chi_fpart/B_QED 
+  //            << " Bq:" << B_QED 
+  //            << " u:" << z 
+  //            << " F.u:" << Fdotz 
+  //            << " Ex/Bq" << ex/B_QED 
+  //            << " By/Bq" << gam*by/B_QED 
+  //            << "\n";
+  //}
+
 
   // DONE manual calc (v4 with covariant F) agrees with manual version (v2)
   //      note the transpose when compiling F, hence the co <-> contra flip
@@ -298,6 +307,7 @@ void Synchrotron::interact(
   uy1 -= uy2;
   uz1 -= uz2;
 
+  //std::cout << " syn emit energy:" << x << " pair gamma: " << z0 << "\n";
 
 #ifdef DEBUG 
 

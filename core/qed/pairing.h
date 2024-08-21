@@ -111,6 +111,12 @@ public:
   bool force_ep_uni_w = true; 
 
   //--------------------------------------------------
+  // optional virtual field component (esp. for 1D sims to mimic varying backgrounds)
+
+  bool use_vir_curvature = false;
+  float vir_pitch_ang = 0.0; // sin\alpha/\gamma of the (virtual) curvature pitch angle
+
+  //--------------------------------------------------
   //histogram for the leaking/escaping photons
   double hist_emin = -4.0; // log10(emin)
   double hist_emax =  2.0; // log10(emax)
@@ -1380,16 +1386,29 @@ public:
         if(D >= 2) j = static_cast<int>(floor(ly1) - mins[1]);
         if(D >= 3) k = static_cast<int>(floor(lz1) - mins[2]);
 
+        //--------------------------------------------------
         const size_t ind = gs.ex.indx(i,j,k);
+
+        //--------------------------------------------------
+        // construct (optional) virtual curvature into the EM fields (for 1D cases)
+        float by_vir = 0.0f;
+        if (use_vir_curvature) {
+          //float r_curv = std::max(lx1 - rad_offs_vir, 0.0f)/rad_curv_vir;
+          //by_vir = b0_curv_vir*pow(r_curv, 2);
+
+          float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
+          by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
+        }
           
         const float ex = gs.ex(ind); 
         const float ey = gs.ey(ind); 
         const float ez = gs.ez(ind); 
 
         const float bx = gs.bx(ind); 
-        const float by = gs.by(ind); 
+        const float by = gs.by(ind) + by_vir; 
         const float bz = gs.bz(ind); 
 
+        
         //--------------------------------------------------
         // v2; passive fetching; assumes a call has been made to interp before this function
         // NOTE does not work because this solve_onebody method modifies the arrays with add_prtcl1; 
