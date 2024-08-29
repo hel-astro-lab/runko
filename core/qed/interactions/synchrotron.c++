@@ -137,6 +137,8 @@ float Synchrotron::comp_optical_depth(
 
   float gam = sqrt( 1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
 
+  //std::cout << "  gam:" << gam << " chi:" << x << std::endl;
+
   // calculate
   // K(\chi_\pm) = \int_0^\chi_\pm d^2 N_phot / dt d\chi d\chi = \int_0^\chi_pm  S(\chi_\pm, \chi_x)/\chi d\chi
   // where S is known as the Ritus synchrotron emissivity function
@@ -153,10 +155,22 @@ float Synchrotron::comp_optical_depth(
   float prefac_int = 3.0*sqrt(3.0)*x/(4.0*PI*gam);
 
   // classical radiated power
-  float prefac_syn = 2.0*alphaf/(3.0*lamC); 
+  float prefac_syn = 2.0*alphaf*cvel/(3.0*lamC); 
 
   // total time change in the synchrotron optical depth is 
-  return prefac_syn*prefac_int*(K_asy + K_app);
+  //return prefac_syn*prefac_int*(K_asy + K_app);
+  float dtau_dt = prefac_syn*prefac_int*(K_asy + K_app);
+
+
+  //--------------------------------------------------
+  // v2 with cleaner syntax
+  //float prefac = alphaf/lamC;
+  //float T = 1.442;
+  //float dtau_dt2 = prefac*x*T/gam;
+    
+  //std::cout << "dtau_dt" << dtau_dt << " " << dtau_dt2 << std::endl;
+
+  return dtau_dt;
 }
 
 
@@ -279,6 +293,23 @@ void Synchrotron::interact(
 
   //std::cout << " CHIX:" << chi_x << " CHIE: " << chi_e << "\n";
 
+
+  //--------------------------------------------------
+  // v2 with direct fitting formulas
+  // not tested 
+
+  //float a, n;
+  //a  = 7.635/pow(chi_e, 0.996);
+  //a *= 0.5 - 0.4995*tanh(0.1271*(chi_e - 21.93)); // a coeff
+  //                                                  
+  //n = 0.313*(1.0 + 3.2*exp(-pow(chi_e,0.4332))); // n coeff
+
+  //float z = rand();
+  //float chi_x2 = chi_e*pow(z/(1.0 + a*(1.0-z)), 1.0/n);
+
+  ////std::cout << "chie:" << chi_e << " chi_x:" << chi_x << " chi_x2:" << chi_x2 << std::endl;
+  //chi_x = chi_x2;
+
   //--------------------------------------------------
   // construct photon properties 
     
@@ -303,11 +334,21 @@ void Synchrotron::interact(
   // udpate electron properties
 
   // remove photon momentum from electron
-  ux1 -= ux2;
-  uy1 -= uy2;
-  uz1 -= uz2;
+  // we assume that cooling follows du/dt = -P_0 u^2, then the solution is
+  // u(t) = u_0/(1 - u_0*t/t_rad)
+  // Here, t/t_rad = \Delta t/t_rad is suppliad via the wtar2wini parameter.
 
-  //std::cout << " syn emit energy:" << x << " pair gamma: " << z0 << "\n";
+  float A = 1.0f/(1.0f + z0*wtar2wini); // A = 1/(1 + u_0*(\Delta t/t_rad))
+  float facc = z0*(1.0f - A)/x; // f_acc = u_0*(1-A)/x_syn
+  facc = std::max(facc, 1.0f); // cap at 1
+
+  // accumulated losses with a cap at 1e-3 change of an individual mom. component
+  ux1 -= std::min(facc*ux2, 0.999f*ux1);
+  uy1 -= std::min(facc*uy2, 0.999f*uy1);
+  uz1 -= std::min(facc*uz2, 0.999f*uz1);
+
+  wtar2wini = facc; // insert accumulation factor back to feed it into photon weight adjustment in pairing routines
+  //std::cout << " syn emit energy:" << x << " pair gamma: " << z0 << " f_acc:" << wtar2wini << "\n";
 
 #ifdef DEBUG 
 

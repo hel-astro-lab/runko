@@ -1439,13 +1439,16 @@ public:
         // exponential waiting time between interactions
         const float t_free = -log( rand() )*prob_norm_onebody/tau_int; 
 
-        //std::cout << "oneb: t_free:" << t_free << " tau: " << tau_int << "\n";
+        //std::cout << "oneb: t_free:" << t_free << " tau: " << tau_int << " N:" << prob_norm_onebody << "\n";
 
         if(t_free < 1.0) // interact
         { 
 
           // particle values after interaction
           auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
+
+          //iptr->wtar2wini = 1.0f/t_free;
+          iptr->wtar2wini = prob_norm_onebody/tau_int; // feed t_rad/\Delta t into the process
 
           timer.start_comp("interact");
           iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
@@ -1480,8 +1483,11 @@ public:
           facc4 = iptr->do_accumulate ? facc4 : 1.0f;
           timer.stop_comp("acc");
 
+          facc4 /= iptr->wtar2wini; // add accumulation factor calculated inside the processes' interact routine
+
           //n3 = n4/facc3; // NOTE never modify the parent; could be implemented but then need to change also the 
                            //      parent update below.
+
           n4 = n4/facc4; 
 
           // NOTE: weight is automatically modified correctly since it is updated based on number of copies
