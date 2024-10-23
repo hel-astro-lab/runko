@@ -348,6 +348,9 @@ def load_catepillar_track_mpi(
                     elif conf.threeD:
                         grid[i, j, k] = hgen.hindex(i, j, k)
 
+        print('lba: grid')
+        print(grid[:,:,0])
+
         # print(grid)
         hmin, hmax = np.min(grid), np.max(grid)
 
@@ -360,6 +363,9 @@ def load_catepillar_track_mpi(
                 for k in range(nz):
                     ic = i % nx
                     igrid[i, j, k] = np.floor(comm_size * grid[ic, j, k] / (hmax + 1))
+
+        print('lba: full grid')
+        print(igrid[:,:,0])
 
         # check that nodes get about same work load
         y = np.bincount(igrid.flatten())
