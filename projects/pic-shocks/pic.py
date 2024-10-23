@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from mpi4py import MPI
+#print("MPI Version:", MPI.Get_version())
+
 import numpy as np
 import sys, os
 
@@ -166,6 +168,7 @@ if __name__ == "__main__":
     # create conf object with simulation parameters based on them
     conf = Configuration(args.conf_filename, do_print=sch.is_master)
     sch.conf = conf # remember to update conf to scheduler
+    sch.debug = False # code debug mode; prints after every task
 
     if conf.mpi_task_mode: sch.switch_to_task_mode() # switch scheduler to task mode
 
@@ -208,7 +211,7 @@ if __name__ == "__main__":
 
 
     # compute initial mpi ranks using Hilbert's curve partitioning
-    if conf.use_injector:
+    if conf.use_injector and conf.mpi_track > 1:
         pytools.load_catepillar_track_mpi(grid, conf.mpi_track, conf) 
     else:
         #pytools.load_mpi_y_strides(grid, conf) #equal x stripes
@@ -296,8 +299,12 @@ if __name__ == "__main__":
 
     if sch.is_master: print("loading solvers..."); sys.stdout.flush()
 
-    sch.fldpropE = pyfld.FDTD2()
-    sch.fldpropB = pyfld.FDTD2()
+    if conf.twoD or conf.threeD:
+        sch.fldpropE = pyfld.FDTD4()
+        sch.fldpropB = pyfld.FDTD4()
+    else:
+        sch.fldpropE = pyfld.FDTD2()
+        sch.fldpropB = pyfld.FDTD2()
 
     # enhance numerical speed of light slightly to suppress numerical Cherenkov instability
     sch.fldpropE.corr = conf.c_corr
@@ -354,23 +361,24 @@ if __name__ == "__main__":
 
     # quick field snapshots
     #fld_writer = pyfld.MasterFieldsWriter(
-    fld_writer = pyfld.FieldsWriter(
-        conf.outdir,
-        conf.Nx,
-        conf.NxMesh,
-        conf.Ny,
-        conf.NyMesh,
-        conf.Nz,
-        conf.NzMesh,
-        conf.stride,
-    )
+    #fld_writer = pyfld.FieldsWriter(
+    #    conf.outdir,
+    #    conf.Nx,
+    #    conf.NxMesh,
+    #    conf.Ny,
+    #    conf.NyMesh,
+    #    conf.Nz,
+    #    conf.NzMesh,
+    #    conf.stride,
+    #)
 
 
     # tracked particles; only works with no injector (id's are messed up when coming out from injector)
     prtcl_writers = []
 
     #for ispc in [0, 1, 2]: #electrons & positrons
-    for ispc in [0]: #electrons
+    #for ispc in [0]: #electrons
+    if False:
         mpi_comm_size = grid.size() if not(conf.mpi_task_mode) else grid.size() - 1
         n_local_tiles = int(conf.Nx*conf.Ny*conf.Nz/mpi_comm_size)
         #print("average n_local_tiles:", n_local_tiles, " / ", mpi_comm_size)
@@ -387,16 +395,16 @@ if __name__ == "__main__":
 
     # momens of particle distribution
     #mom_writer = pypic.MasterPicMomentsWriter(
-    mom_writer = pypic.PicMomentsWriter(
-        conf.outdir,
-        conf.Nx,
-        conf.NxMesh,
-        conf.Ny,
-        conf.NyMesh,
-        conf.Nz,
-        conf.NzMesh,
-        conf.stride_mom,
-    )
+    #mom_writer = pypic.PicMomentsWriter(
+    #    conf.outdir,
+    #    conf.Nx,
+    #    conf.NxMesh,
+    #    conf.Ny,
+    #    conf.NyMesh,
+    #    conf.Nz,
+    #    conf.NzMesh,
+    #    conf.stride_mom,
+    #)
 
     # 3D box peripherals
     if conf.threeD:
@@ -651,8 +659,8 @@ if __name__ == "__main__":
 
             # shallow IO
             # NOTE: do moms before other IOs to keep rho field up-to-date
-            mom_writer.write(grid, lap)  # pic distribution moments; 
-            fld_writer.write(grid, lap)  # quick field snapshots
+            #mom_writer.write(grid, lap)  # pic distribution moments; 
+            #fld_writer.write(grid, lap)  # quick field snapshots
 
             for pw in prtcl_writers:
                 pw.write(grid, lap)  # particle tracking
@@ -688,19 +696,16 @@ if __name__ == "__main__":
             if sch.is_master:
                 tplt.col_mode = False # use terminal color / use ASCII art
 
-                if conf.twoD:
-                    tplt.plot_panels( (2,1),
-                    dict(axs=(0,0), data=fld_writer.get_slice(0)/conf.p_norm, name='ne', cmap='viridis', vmin=0,  vmax=2),
-                    dict(axs=(1,0), data=fld_writer.get_slice(6)/conf.j_norm, name='jx', cmap='RdBu',    vmin=-1, vmax=1),
-                                     )
-
-                elif conf.threeD:
-                    tplt.plot_panels( (1,1),
-                    dict(axs=(0,0), data=slice_xy_writer.get_slice(8)/conf.j_norm ,   name='jx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
-                    #dict(axs=(0,0), data=slice_xy_writer.get_slice(9)/conf.p_norm   , name='ne (xy)', cmap='viridis',vmin= 0, vmax=4),
-                    #dict(axs=(1,0), data=slice_xy_writer.get_slice(3)/conf.b_norm ,   name='bx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
-                    #dict(axs=(1,1), data=slice_xy_writer.get_slice(5)/conf.b_norm ,   name='bz (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
-                    )
+                #if conf.twoD:
+                #    #tplt.plot_panels( (2,1),
+                #    #dict(axs=(0,0), data=fld_writer.get_slice(0)/conf.p_norm, name='ne', cmap='viridis', vmin=0,  vmax=2),
+                #    #dict(axs=(1,0), data=fld_writer.get_slice(6)/conf.j_norm, name='jx', cmap='RdBu',    vmin=-1, vmax=1),)
+                #elif conf.threeD:
+                #    #tplt.plot_panels( (1,1),
+                #    #dict(axs=(0,0), data=slice_xy_writer.get_slice(8)/conf.j_norm ,   name='jx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
+                #    #dict(axs=(0,0), data=slice_xy_writer.get_slice(9)/conf.p_norm   , name='ne (xy)', cmap='viridis',vmin= 0, vmax=4),
+                #    #dict(axs=(1,0), data=slice_xy_writer.get_slice(3)/conf.b_norm ,   name='bx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
+                #    #dict(axs=(1,1), data=slice_xy_writer.get_slice(5)/conf.b_norm ,   name='bz (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),)
 
             #--------------------------------------------------
             #print statistics
