@@ -146,9 +146,9 @@ def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False):
         tiles_owned = {}
         for (rank, nt) in zip(ii, y[ii]):
             try:
-                tiles_owned[nt] += 1
+                tiles_owned[int(nt)] += 1
             except:
-                tiles_owned[nt] = 1
+                tiles_owned[int(nt)] = 1
 
         print('lba : tiles owned per rank', tiles_owned, " (#tiles, #ranks)")
         
@@ -229,9 +229,9 @@ def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None):
             tiles_owned = {}
             for (rank, nt) in zip(ii, y[ii]):
                 try:
-                    tiles_owned[nt] += 1
+                    tiles_owned[int(nt)] += 1
                 except:
-                    tiles_owned[nt] = 1
+                    tiles_owned[int(nt)] = 1
 
             tile_nbors = {}
 
@@ -364,9 +364,15 @@ def load_catepillar_track_mpi(
         # check that nodes get about same work load
         y = np.bincount(igrid.flatten())
         ii = np.nonzero(y)[0]
+        grid_tile_list = list(zip(ii,y[ii]))
 
-        #print('rank load statistics')
-        #print(list(zip(ii,y[ii])))
+        tiles_owned = {}
+        for (rank, nt) in zip(ii, y[ii]):
+            try:
+                tiles_owned[nt] += 1
+            except:
+                tiles_owned[nt] = 1
+        print('lba : tiles owned per rank', tiles_owned, " (#tiles, #ranks)")
 
         for i in range(nxt):
             for j in range(ny):
