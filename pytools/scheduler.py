@@ -62,6 +62,8 @@ class Scheduler:
         if self.debug: # additional debug printing
             print('R:', self.rank, op) # debug print
             MPI.COMM_WORLD.Barrier() 
+            if self.is_master:
+                print('',sys.stdout.flush())
     
         #--------------------------------------------------
         # default values
@@ -119,8 +121,8 @@ class Scheduler:
     
             t1 = self.timer.start_comp(op['name'])
     
-            self.grid.send_data(mpid)
             self.grid.recv_data(mpid)
+            self.grid.send_data(mpid)
             self.grid.wait_data(mpid)
     
             self.timer.stop_comp(t1)
