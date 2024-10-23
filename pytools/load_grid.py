@@ -319,35 +319,48 @@ def load_catepillar_track_mpi(
         ny = n.get_Ny()
         nz = n.get_Nz()
 
-        m0 = np.log2(nx)
-        m1 = np.log2(ny)
-        m2 = np.log2(nz)
-
-        if not (m0.is_integer()):
-            raise ValueError("Nx is not power of 2 (i.e. 2^m)")
-
-        if not (m1.is_integer()):
-            raise ValueError("Ny is not power of 2 (i.e. 2^m)")
-        
-        if conf.threeD and not( m2.is_integer() ):
-            raise ValueError("Nz is not power of 2 (i.e. 2^m)")
-
-        # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        if conf.oneD or conf.twoD:
-            hgen = pyrunko.tools.twoD.HilbertGen(int(m0), int(m1))
-        elif conf.threeD:
-            hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2) )
-
         grid = np.zeros((nx, ny, nz))  # , int)
 
+        #-------------------------------------------------- 
+        # Hilbert curve
+
+        #m0 = np.log2(nx)
+        #m1 = np.log2(ny)
+        #m2 = np.log2(nz)
+
+        #if not (m0.is_integer()):
+        #    raise ValueError("Nx is not power of 2 (i.e. 2^m)")
+
+        #if not (m1.is_integer()):
+        #    raise ValueError("Ny is not power of 2 (i.e. 2^m)")
+        #
+        #if conf.threeD and not( m2.is_integer() ):
+        #    raise ValueError("Nz is not power of 2 (i.e. 2^m)")
+
+        ## print('Generating hilbert with 2^{} {}'.format(m0,m1))
+        #if conf.oneD or conf.twoD:
+        #    hgen = pyrunko.tools.twoD.HilbertGen(int(m0), int(m1))
+        #elif conf.threeD:
+        #    hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2) )
+
+        #for i in range(nx):
+        #    for j in range(ny):
+        #        for k in range(nz):
+        #            if conf.oneD or conf.twoD:
+        #                grid[i, j, k] = hgen.hindex(i, j)
+        #            elif conf.threeD:
+        #                grid[i, j, k] = hgen.hindex(i, j, k)
+    
+        #--------------------------------------------------
+        # regular ordering
+        val = 0.0
         for i in range(nx):
             for j in range(ny):
                 for k in range(nz):
-                    if conf.oneD or conf.twoD:
-                        grid[i, j, k] = hgen.hindex(i, j)
-                    elif conf.threeD:
-                        grid[i, j, k] = hgen.hindex(i, j, k)
+                    grid[i, j, k] = val
+                    val += 1.0
 
+        #--------------------------------------------------
         # print(grid)
         hmin, hmax = np.min(grid), np.max(grid)
 
