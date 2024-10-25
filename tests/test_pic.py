@@ -533,11 +533,11 @@ class PIC(unittest.TestCase):
 
             # MPI global exchange
             # transfer primary and extra data
-            grid.send_data(0) #(indepdendent)
-            grid.send_data(1) #(indepdendent)
-
             grid.recv_data(0) #(indepdendent)
             grid.recv_data(1) #(indepdendent)
+
+            grid.send_data(0) #(indepdendent)
+            grid.send_data(1) #(indepdendent)
 
             grid.wait_data(0) #(indepdendent)
             grid.wait_data(1) #(indepdendent)
