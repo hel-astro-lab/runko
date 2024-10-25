@@ -242,6 +242,7 @@ void bind_qed(py::module& m_sub)
   // quantum-suppressed synchrotron
   py::class_<qed::Synchrotron>(m_sub, "Synchrotron", qedinter)
     .def_readwrite("B_QED",    &qed::Synchrotron::B_QED)
+    .def_readwrite("C_SYNC",    &qed::Synchrotron::C_SYNC)
     .def("comp_chi",           &qed::Synchrotron::comp_chi)
     .def(py::init<string>());
 
