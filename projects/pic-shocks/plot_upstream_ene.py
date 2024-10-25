@@ -79,7 +79,7 @@ if __name__ == "__main__":
     #--------------------------------------------------
     # set up plot
     tmin = 0.0
-    tmax = 1.5e4
+    tmax = 1.5e3
 
     ax.set_yscale('log')
     #ax.set_xscale('log')

@@ -381,7 +381,7 @@ if __name__ == "__main__":
     # if lap is defined, only plot that one individual round
     
     offs = 0
-    for lap in range(0, conf.Nt, 5*conf.interval):
+    for lap in range(0, conf.Nt, conf.interval):
         info = quick_build_info(fdir, lap)
         info['skindepth'] = conf.c_omp #/conf.stride
         print(info['shock_file'])
