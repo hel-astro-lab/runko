@@ -210,7 +210,6 @@ void ParticleContainer<D>::add_identified_particle (
   assert(!std::isnan(_proc));
 #endif
 
-
   for (size_t i=0; i<3; i++) locArr[i].push_back(prtcl_loc[i]);
   for (size_t i=0; i<3; i++) velArr[i].push_back(prtcl_vel[i]);
   wgtArr.push_back(prtcl_wgt);
@@ -488,7 +487,9 @@ std::array<double,3>& maxs)
     //if( loc(2,n) - float( maxs[2] ) >= 2.0 ) outflow = true; // front wrap
     
     //if( outflow ){
-    //  std::cout << " ERROR outflow " <<  
+    
+    //if ( (i != 0) || (j != 0) || (k != 0) ) {
+    //  std::cout << " outflow " <<  
     //    n << " " << 
     //    loc(0,n) << " " << 
     //    loc(1,n) << " " << 
@@ -499,6 +500,7 @@ std::array<double,3>& maxs)
     //    " mins:" << float(mins[0]) << " " << float(mins[1]) << " " << float(mins[2]) << 
     //    " maxs:" << float(maxs[0]) << " " << float(maxs[1]) << " " << float(maxs[2]) << 
     //    std::endl;
+    //}
     //    
     //  assert(!outflow);
     //}
@@ -679,7 +681,11 @@ void ParticleContainer<D>::delete_transferred_particles()
   int last = size()-to_other_tiles.size();
   //std::cout << "del: " << size() << " to be deleted: " << to_other_tiles.size() << std::endl;
   
-  UniIter::iterate([=] DEVCALLABLE (int ii, ManVec<to_other_tiles_struct> &to_other_tiles){
+
+  // NOTE vectorizing the below loop leads to race conditions; hence it is turned off for now
+    
+  //UniIter::iterate([=] DEVCALLABLE (int ii, ManVec<to_other_tiles_struct> &to_other_tiles){
+  for(int ii=0; ii<to_other_tiles.size(); ii++){
     int other = last+ii; //size() - 1 - i;
     int indx = to_other_tiles[ii].n;
 
@@ -687,12 +693,14 @@ void ParticleContainer<D>::delete_transferred_particles()
     //std::cout << " sw " << indx << " to " << other << " while last " << last << std::endl;
       
     //std::cout << "deleting " << indx << " by putting it to " << last << '\n';
+
     for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
     for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
     for(int i=0; i<2; i++) idn[ i][indx] = idn[ i][other];
-    wgtArr[indx] = wgtArr[other];
+    wgtArr[indx] = wgtArr[other]; 
 
-  }, to_other_tiles.size(), to_other_tiles);
+  }
+  //, to_other_tiles.size(), to_other_tiles);
   
   UniIter::sync();
   

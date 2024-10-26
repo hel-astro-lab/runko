@@ -18,7 +18,7 @@
 
 namespace pic {
 
-/// Particle data struct for communication; designe to be POD
+/// Particle data struct for communication; desiged to be POD
 // NOTE: ParticleContainer checks the validity of this struct in its
 //       own constructor.
 struct Particle {
