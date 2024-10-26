@@ -137,6 +137,7 @@
         }
 
 
+        // v0
         inline void push_back(T val)
         {
             //
@@ -151,6 +152,44 @@
                 push_back(val);
             }
         }
+
+        //v1 and v2 with emplace_back as the lowest operation
+
+        //v1
+        //template <typename... Args>
+        //inline void emplace_back(Args&&... args) {
+        //  //if (size == capacity) grow();
+        //  if(count+1 > cap) {
+        //    realloc((cap+1)*overAllocFactor);
+        //  }
+        //  
+        //  return *new (start + size++) T(std::forward<Args>(args)...);
+        //}
+        //inline void push_back(const T & t) { return emplace_back(t); }
+        //inline void push_back(T && t) { return emplace_back(std::move(t)); }
+
+        //v2
+        //template<class... Args>
+        //inline void emplace_back(Args&&... args) {
+
+        //  if(count+1 > cap){
+        //    realloc((cap+1)*overAllocFactor);
+        //  }
+
+        //  ptr[count] = T(std::forward<Args>(args)...);
+        //  count++;
+        //  return;
+        //}
+
+        //inline void push_back(T&& val) {
+        //  emplace_back(std::move(val));
+        //}
+
+        //inline void push_back(const T& val) {
+        //  emplace_back(val);
+        //}
+
+
 
         inline void reserve(size_t newCap)
         {
