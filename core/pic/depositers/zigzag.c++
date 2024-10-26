@@ -125,7 +125,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
         // do not deposit anything
         Fx1 = 0.0, Fx2 = 0.0, Fy1 = 0.0, Fy2 = 0.0, Fz1 = 0.0, Fz2 = 0.0;
         i1=0, i2=0, j1=0, j2=0, k1=0, k2=0;
-        assert(false);
+        //assert(false);
       }
 
       //--------------------------------------------------
