@@ -83,6 +83,8 @@ class ParticleContainer{
   int Nprtcls = 0;
   int cid = 0; // container identification id (minted with tile id)
 
+  int Nprtcls_cap = 0; //current capacity of the arrays
+
   // these arrays are required for QED interactions
   ManVec<float> wgtCumArr;              // cumulative weights; kept 0 if not needed
   ManVec<float> eneArr;                 // particle energies
@@ -360,6 +362,12 @@ class ParticleContainer{
       float prtcl_wgt, 
       int _id, int _proc);
 
+  // insert a particle to pre-reserved array; dangerous! 
+  virtual void insert_identified_particle (
+      std::vector<float> prtcl_loc,
+      std::vector<float> prtcl_vel,
+      float prtcl_wgt, 
+      int _id, int _proc, int ind);
 
   // --------------------------------------------------
   // particle boundary checks

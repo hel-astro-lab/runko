@@ -86,6 +86,8 @@ void ParticleContainer<D>::reserve(size_t N) {
   Epart.reserve(N*3);
   Bpart.reserve(N*3);
 
+  Nprtcls_cap = N; // mark the capacity of the array
+
 #ifdef GPU
   nvtxRangePop();
 #endif
@@ -223,6 +225,65 @@ void ParticleContainer<D>::add_identified_particle (
   nvtxRangePop();
 #endif
 }
+
+
+template<std::size_t D>
+void ParticleContainer<D>::insert_identified_particle (
+    std::vector<float> prtcl_loc,
+    std::vector<float> prtcl_vel,
+    float prtcl_wgt,
+    int _id, int _proc, int ind)
+{
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+#ifdef DEBUG
+  assert(prtcl_loc.size() == 3);
+  assert(prtcl_vel.size() == 3);
+
+  assert(!std::isnan(prtcl_loc[0]));
+  assert(!std::isnan(prtcl_loc[1]));
+  assert(!std::isnan(prtcl_loc[2]));
+
+  assert(!std::isnan(prtcl_vel[0]));
+  assert(!std::isnan(prtcl_vel[1]));
+  assert(!std::isnan(prtcl_vel[2]));
+
+  assert(!std::isnan(prtcl_wgt));
+
+  assert(!std::isnan(_id));
+  assert(!std::isnan(_proc));
+
+  assert(Nprtcls_cap > ind); // require that there are free slots for 
+#endif
+
+  locArr[0][ind] = prtcl_loc[0];
+  locArr[1][ind] = prtcl_loc[1];
+  locArr[2][ind] = prtcl_loc[2];
+
+  velArr[0][ind] = prtcl_vel[0];
+  velArr[1][ind] = prtcl_vel[1];
+  velArr[2][ind] = prtcl_vel[2];
+
+  wgtArr[ind] = prtcl_wgt;
+
+  indArr[0][ind] = _id;
+  indArr[1][ind] = _proc;
+
+  //Nprtcls++; // NOTE: insertion needs to be added manually 
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
+
+
+
+
+
+
 
 //--------------------------------------------------
 // check_outgoing_particles; 1D case 
@@ -457,6 +518,9 @@ std::array<double,3>& maxs)
 
 
 #else
+
+  to_other_tiles.reserve(0.3*size()); // estimate for the num of outflowing prtcls
+
   for(size_t n=0; n<size(); n++) {
     int i=0,j=0,k=0; // relative indices
     
@@ -466,45 +530,6 @@ std::array<double,3>& maxs)
     if( loc(1,n) - float( maxs[1] ) >= 0.0 ) j++; // top wrap
     if( loc(2,n) - float( mins[2] ) <  0.0 ) k--; // back wrap
     if( loc(2,n) - float( maxs[2] ) >= 0.0 ) k++; // front wrap
-    
-    // ver2
-    //if( loc(0,n) <  float( mins[0] ) ) i--; // left wrap
-    //if( loc(0,n) >= float( maxs[0] ) ) i++; // right wrap
-    //if( loc(1,n) <  float( mins[1] ) ) j--; // bottom wrap
-    //if( loc(1,n) >= float( maxs[1] ) ) j++; // top wrap
-    //if( loc(2,n) <  float( mins[2] ) ) k--; // back wrap
-    //if( loc(2,n) >= float( maxs[2] ) ) k++; // front wrap
-    
-    // tests for outflowing prtcls. 
-    // NOTE fiddling w/ prtcl velocities in pusher might change velocities so
-    // that current deposit overflows over tile boundaries.
-    //bool outflow = false;
-    //if( loc(0,n) - float( mins[0] ) < -2.0 ) outflow = true; // left wrap
-    //if( loc(0,n) - float( maxs[0] ) >= 2.0 ) outflow = true; // right wrap
-    //if( loc(1,n) - float( mins[1] ) < -2.0 ) outflow = true; // bottom wrap
-    //if( loc(1,n) - float( maxs[1] ) >= 2.0 ) outflow = true; // top wrap
-    //if( loc(2,n) - float( mins[2] ) < -2.0 ) outflow = true; // back wrap
-    //if( loc(2,n) - float( maxs[2] ) >= 2.0 ) outflow = true; // front wrap
-    
-    //if( outflow ){
-    
-    //if ( (i != 0) || (j != 0) || (k != 0) ) {
-    //  std::cout << " outflow " <<  
-    //    n << " " << 
-    //    loc(0,n) << " " << 
-    //    loc(1,n) << " " << 
-    //    loc(2,n) << " " << 
-    //    loc(0,n) - float(mins[0]) << " " << 
-    //    loc(1,n) - float(mins[0]) << " " << 
-    //    loc(2,n) - float(mins[0]) << " " << 
-    //    " mins:" << float(mins[0]) << " " << float(mins[1]) << " " << float(mins[2]) << 
-    //    " maxs:" << float(maxs[0]) << " " << float(maxs[1]) << " " << float(maxs[2]) << 
-    //    std::endl;
-    //}
-    //    
-    //  assert(!outflow);
-    //}
-
 
     if ( (i != 0) || (j != 0) || (k != 0) ) {
 	    to_other_tiles.push_back( {i,j,k,n} );
@@ -602,10 +627,12 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
   // then resize the array
   int last = size()-to_be_deleted.size();
 
+  // NOTE vectorizing the below loop leads to race conditions; hence it is turned off for now
 
-  UniIter::iterate([=] DEVCALLABLE (
-        int ii, 
-        std::vector<int>& to_be_deleted){
+  //UniIter::iterate([=] DEVCALLABLE (
+  //      int ii, 
+  //      std::vector<int>& to_be_deleted){
+  for(int ii=0; ii<to_be_deleted.size(); ii++){
 
     int other = last+ii; //size() - 1 - i;
     int indx = to_be_deleted[ii];
@@ -619,8 +646,9 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
     for(int i=0; i<2; i++) idn[ i][indx] = idn[ i][other];
     wgtArr[indx] = wgtArr[other];
 
-  }, to_be_deleted.size(), to_be_deleted);
-  
+  //}, to_be_deleted.size(), to_be_deleted);
+  }
+
   UniIter::sync();
   
   // resize if needed and take care of the size
@@ -651,7 +679,7 @@ void ParticleContainer<D>::delete_transferred_particles()
   std::sort(to_other_tiles.begin(), to_other_tiles.end(), [](const auto& a, const auto& b){return a.n > b.n;} );
 
   //--------------------------------------------------
-#ifdef DEBUG
+//#ifdef DEBUG
   // ensure that the array to be removed is unique
 
   auto uniq = std::unique( to_other_tiles.begin(), to_other_tiles.end(), [](const auto& a, const auto& b){return a.n == b.n;} );
@@ -662,7 +690,7 @@ void ParticleContainer<D>::delete_transferred_particles()
     for(auto& i : to_other_tiles) std::cerr << "," << i.n;
     assert(false);
   }
-#endif
+//#endif
   //--------------------------------------------------
   
 
@@ -694,10 +722,25 @@ void ParticleContainer<D>::delete_transferred_particles()
       
     //std::cout << "deleting " << indx << " by putting it to " << last << '\n';
 
-    for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
-    for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
-    for(int i=0; i<2; i++) idn[ i][indx] = idn[ i][other];
-    wgtArr[indx] = wgtArr[other]; 
+    // v1 swap routine; more safe
+    std::swap( locn[0][indx], locn[0][other] );
+    std::swap( locn[1][indx], locn[1][other] );
+    std::swap( locn[2][indx], locn[2][other] );
+
+    std::swap( veln[0][indx], veln[0][other] );
+    std::swap( veln[1][indx], veln[1][other] );
+    std::swap( veln[2][indx], veln[2][other] );
+
+    std::swap(  idn[0][indx],  idn[0][other] );
+    std::swap(  idn[1][indx],  idn[1][other] );
+
+    std::swap(  wgtArr[indx],  wgtArr[other] );
+
+    // v0: replacement routine
+    //for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
+    //for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
+    //for(int i=0; i<2; i++) idn[ i][indx] = idn[ i][other];
+    //wgtArr[indx] = wgtArr[other]; 
 
   }
   //, to_other_tiles.size(), to_other_tiles);
@@ -707,15 +750,6 @@ void ParticleContainer<D>::delete_transferred_particles()
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
-  
-    /*
-    for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
-    {
-      const auto &elem = to_other_tiles[ii];
-      to_be_deleted.push_back( elem.n );
-    }
-    delete_particles(to_be_deleted);
-    */
 
   //std::cout << " INFO: " << cid << " v2: removing prtcls :" << Nprtcls << " - " << to_other_tiles.size() << std::endl;
   Nprtcls -= to_other_tiles.size();
@@ -845,7 +879,7 @@ void ParticleContainer<2>::transfer_and_wrap_particles(
 // --- 3D case ---
 template<>
 void ParticleContainer<3>::transfer_and_wrap_particles( 
-    ParticleContainer& neigh,
+    ParticleContainer&   neigh,
     std::array<int,3>    dirs, 
     std::array<double,3>& global_mins, 
     std::array<double,3>& global_maxs
@@ -859,40 +893,88 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
   // particle overflow from tiles is done in shortest precision
   // to avoid rounding off errors and particles left in a limbo
   // between tiles.
-  float locx, locy, locz;
 
-  int ind;
-  //  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
-  //  {
-  //    const auto &elem = neigh.to_other_tiles[ii];
-  for (auto&& elem : neigh.to_other_tiles) {
-      
-    if(elem.i == 0 && 
-       elem.j == 0 &&
-       elem.k == 0) continue; 
+  //--------------------------------------------------
+  // v1
 
-    // NOTE: directions are flipped (- sign) so that they are
-    // in directions in respect to the current tile
+  // TODO test speed of v1 and v0 below; why v1 is so slow?
 
-    if (elem.i == -dirs[0] &&
-        elem.j == -dirs[1] &&
-        elem.k == -dirs[2] ) {
+  // count how many prtcls are coming
+  std::vector<int> ind_incoming;  // array for incoming indices
+  ind_incoming.reserve(neigh.to_other_tiles.size() ); //reserve up to max size
 
-      ind = elem.n;
 
-      locx = wrap( neigh.loc(0, ind), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, ind), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, ind), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
+  // pre-loop to collect incoming particles from right directions
+  for(auto&& elem : neigh.to_other_tiles) {
 
-      add_identified_particle(
-          {locx, locy, locz}, 
-          {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
-          neigh.wgt(ind),
-          neigh.id(0,ind), neigh.id(1,ind)
-          );
-
+    //if(elem.i == 0 && elem.j == 0 && elem.k == 0) continue; 
+    if (elem.i == -dirs[0] && elem.j == -dirs[1] && elem.k == -dirs[2] ) {
+      ind_incoming.push_back(elem.n); // add to list
     }
   }
+
+  int N = this->size(); // current number of prtcls and tip of the storage arrays
+  this->resize( this->size() + ind_incoming.size() ); // pre-reserve the expected num of prtcls; 
+                                                      // resize of ManVec changes capacity only upwards
+                                                      // so this is safe to issue here
+
+  //std::cout << "trnsf_wrap N:" << N << " ind_incoming: " << ind_incoming.size() << "\n";
+
+  // second loop to add the particles
+  UniIter::iterate([=] DEVCALLABLE (int i, std::vector<int>& ind_incoming){
+    int ind = ind_incoming[i];
+   
+    float locx = wrap( neigh.loc(0, ind), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
+    float locy = wrap( neigh.loc(1, ind), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
+    float locz = wrap( neigh.loc(2, ind), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
+   
+    // manual insert routine (SIMD friendly)
+    insert_identified_particle(
+        {locx, locy, locz}, 
+        {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
+        neigh.wgt(ind),
+        neigh.id(0,ind), neigh.id(1,ind),
+        N + i );
+   
+  }, ind_incoming.size(), ind_incoming);
+
+  Nprtcls = N + ind_incoming.size(); // NOTE: we need to manually remember to expand the array
+
+
+
+  //--------------------------------------------------
+  // old single-loop pass; faster but not SIMD-safe
+
+  //int ind;
+  //for (auto&& elem : neigh.to_other_tiles) {
+  //    
+  //  if(elem.i == 0 && 
+  //     elem.j == 0 &&
+  //     elem.k == 0) continue; 
+
+  //  // NOTE: directions are flipped (- sign) so that they are
+  //  // in directions in respect to the current tile
+
+  //  if (elem.i == -dirs[0] &&
+  //      elem.j == -dirs[1] &&
+  //      elem.k == -dirs[2] ) {
+
+  //    ind = elem.n;
+
+  //    float locx = wrap( neigh.loc(0, ind), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
+  //    float locy = wrap( neigh.loc(1, ind), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
+  //    float locz = wrap( neigh.loc(2, ind), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
+
+  //    // TODO XXX here
+  //    add_identified_particle(
+  //        {locx, locy, locz}, 
+  //        {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
+  //        neigh.wgt(ind),
+  //        neigh.id(0,ind), neigh.id(1,ind)
+  //        );
+
+  //  }
+  //}
 
 
 #ifdef GPU
@@ -1046,6 +1128,9 @@ void ParticleContainer<D>::unpack_incoming_particles()
 
   int number_of_secondary_particles = incoming_extra_particles.size();
 
+  // reserve arrays
+  reserve( size() + number_of_incoming_particles + number_of_secondary_particles ); 
+
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
     locx = incoming_particles[i].x;
@@ -1059,6 +1144,8 @@ void ParticleContainer<D>::unpack_incoming_particles()
 
     ids  = incoming_particles[i].id;
     proc = incoming_particles[i].proc;
+
+    // TODO XX here
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
@@ -1075,6 +1162,8 @@ void ParticleContainer<D>::unpack_incoming_particles()
 
     ids  = incoming_extra_particles[i].id;
     proc = incoming_extra_particles[i].proc;
+      
+    // TODO XX here
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
