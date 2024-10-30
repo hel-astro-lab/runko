@@ -127,7 +127,7 @@ class ParticleContainer{
   void unpack_incoming_particles();
 
   // size of MPI particle buffers
-  const int first_message_size = 4096; 
+  const int first_message_size = 16384; //4096; 
   // NOTE maximum prtcl size during first iteration is 2*first_msg; then resized
 
   //! particle specific electric field components
