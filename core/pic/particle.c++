@@ -289,11 +289,12 @@ void ParticleContainer<D>::insert_identified_particle (
 }
 
 
-
+#pragma omp declare simd
 inline int dir2info(int i, int j, int k){
   return 1 + (i+1) + 3*( (j+1) + 3*(k+1) );
 }
 
+#pragma omp declare simd
 inline auto info2dir(int n){
   if(n==0) return std::make_tuple(0,0,0);
 
@@ -449,6 +450,9 @@ std::array<double,3>& maxs)
 
 #else
 
+  //--------------------------------------------------
+  //v0 with to_other_tiles as a storage
+
   //to_other_tiles.reserve(0.3*size()); // estimate for the num of outflowing prtcls
   //for(size_t n=0; n<size(); n++) {
   //  int i=0,j=0,k=0; // relative indices
@@ -465,8 +469,14 @@ std::array<double,3>& maxs)
 	//    outgoing_count++;
   //  }
   //}
+    
+  //--------------------------------------------------
+  //v1 with no storage
 
-  UniIter::iterate([=] DEVCALLABLE (int n, ParticleContainer<D> &self){
+  //UniIter::iterate([=] DEVCALLABLE (int n, ParticleContainer<D> &self){
+
+#pragma omp simd reduction(+:outgoing_count)
+  for(int n=0; n<size(); n++){
     int i=0,j=0,k=0; // relative indices
 
     if( (D>=1) &&  ( loc(0,n) - float( mins[0] ) <  0.0 )) i--; // left wrap
@@ -476,14 +486,16 @@ std::array<double,3>& maxs)
     if( (D>=3) &&  ( loc(2,n) - float( mins[2] ) <  0.0 )) k--; // back wrap
     if( (D>=3) &&  ( loc(2,n) - float( maxs[2] ) >= 0.0 )) k++; // front wrap
                                                     
-    infoArr[n] = dir2info(i,j,k);
-  }, size(), *this);
+    int info = dir2info(i,j,k);
+    infoArr[n] = info;
+    outgoing_count += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
+  } //, size(), *this);
 
-  // TODO outgoing_count
 
   // second pass to reconstruct to_other_tiles
   // TODO remove
   to_other_tiles.clear();
+  to_other_tiles.reserve(outgoing_count);
   for(size_t n=0; n<size(); n++) {
 
     //int ii=0,jj=0,kk=0; // relative indices
@@ -503,7 +515,6 @@ std::array<double,3>& maxs)
     
     if ( (i != 0) || (j != 0) || (k != 0) ) {
 	    to_other_tiles.push_back( {i,j,k,n} );
-	    outgoing_count++;
     }
   }
 
