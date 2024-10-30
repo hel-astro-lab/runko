@@ -813,150 +813,58 @@ void ParticleContainer<D>::delete_transferred_particles()
 #endif
 }
 
-//--------------------------------------------------
-// transfer_and_wrap_particles; 1D case
-template<>
-void ParticleContainer<1>::transfer_and_wrap_particles( 
+
+template<std::size_t D>
+void ParticleContainer<D>::transfer_and_wrap_particles( 
     ParticleContainer&    neigh,
     std::array<int,3>     dirs, 
     std::array<double,3>& global_mins, 
     std::array<double,3>& global_maxs
     )
 {
+
 #ifdef GPU
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  // particle overflow from tiles is done in shortest precision
-  // to avoid rounding off errors and particles left in a limbo
-  // between tiles.
-  float locx, locy, locz, velx, vely, velz, wgt;
-  int id, proc;
+  //--------------------------------------------------
+  // v2: loop w/o external to_other_tiles storage
 
-  int i;
-  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
-  {
-    const auto &elem = neigh.to_other_tiles[ii];
+  for(int n=0; n<neigh.size(); n++){
+    auto [i,j,k] = info2dir( neigh.infoArr[n] );
 
-    if(elem.i == 0) continue; 
+    // these need to be skipped 
+    if( (D==1) && (i== 0) )                     continue;
+    if( (D==2) && (i== 0) && (j==0) )           continue;
+    if( (D==3) && (i== 0) && (j==0) && (k==0) ) continue;
 
     // NOTE: directions are flipped (- sign) so that they are
     // in directions in respect to the current tile
+    bool add=false;
+    if( (D==1) && (i== -dirs[0]) )                                   add = true;
+    if( (D==2) && (i== -dirs[0]) && (j==-dirs[1]) )                  add = true;
+    if( (D==3) && (i== -dirs[0]) && (j==-dirs[1]) && (k==-dirs[2]) ) add = true;
+    
+    if(add) {
+      float locx = wrap( neigh.loc(0, n), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
+      float locy = wrap( neigh.loc(1, n), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
+      float locz = wrap( neigh.loc(2, n), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
 
-    if (elem.i == -dirs[0]) {
-
-      i = elem.n;
-
-      // NOTE: wrap bounds to [min, max)
-      locx = wrap( neigh.loc(0, i), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
-
-      velx = neigh.vel(0, i);
-      vely = neigh.vel(1, i);
-      velz = neigh.vel(2, i);
-
-      wgt  = neigh.wgt(i);
-
-      id   = neigh.id(0,i);
-      proc = neigh.id(1,i);
-
-      add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
+      add_identified_particle(
+          {locx, locy, locz}, 
+          {neigh.vel(0, n), neigh.vel(1, n), neigh.vel(2, n)},
+          neigh.wgt(n),
+          neigh.id(0,n), neigh.id(1,n));
     }
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
-}
-
-
-// --- 2D case ---
-template<>
-void ParticleContainer<2>::transfer_and_wrap_particles( 
-    ParticleContainer& neigh,
-    std::array<int,3>    dirs, 
-    std::array<double,3>& global_mins, 
-    std::array<double,3>& global_maxs
-    )
-{
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
-  // particle overflow from tiles is done in shortest precision
-  // to avoid rounding off errors and particles left in a limbo
-  // between tiles.
-  float locx, locy, locz, velx, vely, velz, wgt;
-  int id, proc;
-
-  int i;
-  //for (auto&& elem : neigh.to_other_tiles) {
-  for (size_t ii = 0; ii < neigh.to_other_tiles.size(); ii++)
-  {
-    const auto &elem = neigh.to_other_tiles[ii];
-
-    if(elem.i == 0 && elem.j == 0) continue; 
-
-    // NOTE: directions are flipped (- sign) so that they are
-    // in directions in respect to the current tile
-
-    if (elem.i == -dirs[0] &&
-        elem.j == -dirs[1] ) {
-
-      i = elem.n;
-
-      // NOTE: wrap bounds to [min, max)
-      locx = wrap( neigh.loc(0, i), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
-      locy = wrap( neigh.loc(1, i), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
-      locz = wrap( neigh.loc(2, i), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
-
-      velx = neigh.vel(0, i);
-      vely = neigh.vel(1, i);
-      velz = neigh.vel(2, i);
-
-      wgt  = neigh.wgt(i);
-
-      id   = neigh.id(0,i);
-      proc = neigh.id(1,i);
-
-      add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgt, id, proc);
-    }
-  }
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
-}
-
-// --- 3D case ---
-template<>
-void ParticleContainer<3>::transfer_and_wrap_particles( 
-    ParticleContainer&   neigh,
-    std::array<int,3>    dirs, 
-    std::array<double,3>& global_mins, 
-    std::array<double,3>& global_maxs
-    )
-{
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
-  // particle overflow from tiles is done in shortest precision
-  // to avoid rounding off errors and particles left in a limbo
-  // between tiles.
 
   //--------------------------------------------------
   // v1
 
-  // TODO test speed of v1 and v0 below; why v1 is so slow?
-
   // count how many prtcls are coming
   //std::vector<int> ind_incoming;  // array for incoming indices
   //ind_incoming.reserve(neigh.to_other_tiles.size() ); //reserve up to max size
-
 
   //// pre-loop to collect incoming particles from right directions
   //for(auto&& elem : neigh.to_other_tiles) {
@@ -994,68 +902,42 @@ void ParticleContainer<3>::transfer_and_wrap_particles(
 
   //Nprtcls = N + ind_incoming.size(); // NOTE: we need to manually remember to expand the array
 
-
   //--------------------------------------------------
-  // v2: loop w/o external to_other_tiles storage
+  // v3: SIMD loops w/o external to_other_tiles storage
 
-  // TODO needs to be re-written using a mask over neigh.infoArr and proper directionality
-  //      then we can use SIMD arrays
-
-  //UniIter::iterate([=] DEVCALLABLE (int n, ParticleContainer<3>& neigh){
-  for(int ind=0; ind<neigh.size(); ind++){
-    auto [i,j,k] = info2dir( neigh.infoArr[ind] );
-    
-    if (i == -dirs[0] && j == -dirs[1] && k == -dirs[2] ) {
-      float locx = wrap( neigh.loc(0, ind), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
-      float locy = wrap( neigh.loc(1, ind), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
-      float locz = wrap( neigh.loc(2, ind), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
-
-      add_identified_particle(
-          {locx, locy, locz}, 
-          {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
-          neigh.wgt(ind),
-          neigh.id(0,ind), neigh.id(1,ind));
-    }
-
-    // TODO XXX not safe; pack outgoing particles will also need to read the prtcl data for generating the MPI load
-    //neigh.wgt(ind) += 1; // re-set moved prtcl weight
-  }
-
-  //}, neigh.size(), neigh);
-
-  //--------------------------------------------------
-  // v0: old single-loop pass; faster but not SIMD-safe
-
-  //int ind;
-  //for (auto&& elem : neigh.to_other_tiles) {
-  //    
-  //  if(elem.i == 0 && 
-  //     elem.j == 0 &&
-  //     elem.k == 0) continue; 
-
-  //  // NOTE: directions are flipped (- sign) so that they are
-  //  // in directions in respect to the current tile
-
-  //  if (elem.i == -dirs[0] &&
-  //      elem.j == -dirs[1] &&
-  //      elem.k == -dirs[2] ) {
-
-  //    ind = elem.n;
-
-  //    float locx = wrap( neigh.loc(0, ind), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
-  //    float locy = wrap( neigh.loc(1, ind), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
-  //    float locz = wrap( neigh.loc(2, ind), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
-
-  //    // TODO XXX here
-  //    add_identified_particle(
-  //        {locx, locy, locz}, 
-  //        {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
-  //        neigh.wgt(ind),
-  //        neigh.id(0,ind), neigh.id(1,ind)
-  //        );
-
+  // collect outgoing prtcls
+  //ManVec<int> ind_incoming;
+  //ind_incoming.reserve(neigh.outgoing_count);
+  //for(int ind=0; ind<neigh.size(); ind++){
+  //  auto [i,j,k] = info2dir( neigh.infoArr[ind] );
+  //  if (i == -dirs[0] && j == -dirs[1] && k == -dirs[2] ) {
+  //    ind_incoming.push_back( ind );
   //  }
-  //}
+  //};
+
+  //// insert them to current container
+  //int N = this->size(); // current number of prtcls and tip of the storage arrays
+  //this->resize( this->size() + ind_incoming.size() ); // pre-reserve the expected num of prtcls; 
+  //                                                    // resize of ManVec changes capacity only upwards
+  //                                                    // so this is safe to issue here
+  //
+  //UniIter::iterate([=] DEVCALLABLE (int i, ManVec<int>& ind_incoming){
+  //  int ind = ind_incoming[i];
+  // 
+  //  float locx = (D >= 1) ? wrap( neigh.loc(0, ind), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) ) : 0.0f;
+  //  float locy = (D >= 2) ? wrap( neigh.loc(1, ind), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) ) : 0.0f;
+  //  float locz = (D >= 3) ? wrap( neigh.loc(2, ind), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) ) : 0.0f;
+  // 
+  //  // manual insert routine (SIMD friendly)
+  //  insert_identified_particle(
+  //      {locx, locy, locz}, 
+  //      {neigh.vel(0, ind), neigh.vel(1, ind), neigh.vel(2, ind)},
+  //      neigh.wgt(ind),
+  //      neigh.id(0,ind), neigh.id(1,ind),
+  //      N + i );
+  // 
+  //}, ind_incoming.size(), ind_incoming);
+  //Nprtcls = N + ind_incoming.size(); // NOTE: we need to manually remember to expand the array
 
 
 #ifdef GPU

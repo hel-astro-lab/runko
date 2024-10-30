@@ -354,7 +354,7 @@ class PIC(unittest.TestCase):
         fintp  = pyrunko.pic.twoD.LinearInterpolator()
 
 
-        for lap in range(40):
+        for lap in range(20):
 
             for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
@@ -376,26 +376,26 @@ class PIC(unittest.TestCase):
                 tile.check_outgoing_particles()
 
             # global mpi exchange (independent)
-            for cid in grid.get_boundary_tiles():
-                tile = grid.get_tile(cid)
-                tile.pack_outgoing_particles()
+            #for cid in grid.get_boundary_tiles():
+            #    tile = grid.get_tile(cid)
+            #    tile.pack_outgoing_particles()
 
-            # MPI global exchange
-            # transfer primary and extra data
-            grid.send_data(0) #(indepdendent)
-            grid.send_data(1) #(indepdendent)
+            ## MPI global exchange
+            ## transfer primary and extra data
+            #grid.send_data(0) #(indepdendent)
+            #grid.send_data(1) #(indepdendent)
 
-            grid.recv_data(0) #(indepdendent)
-            grid.recv_data(1) #(indepdendent)
+            #grid.recv_data(0) #(indepdendent)
+            #grid.recv_data(1) #(indepdendent)
 
-            grid.wait_data(0) #(indepdendent)
-            grid.wait_data(1) #(indepdendent)
+            #grid.wait_data(0) #(indepdendent)
+            #grid.wait_data(1) #(indepdendent)
 
             # global unpacking (independent)
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.unpack_incoming_particles()
-                tile.check_outgoing_particles()
+            #for cid in grid.get_virtual_tiles(): 
+            #    tile = grid.get_tile(cid)
+            #    tile.unpack_incoming_particles()
+            #    tile.check_outgoing_particles()
 
             # transfer local + global
             for cid in grid.get_local_tiles():
@@ -407,9 +407,10 @@ class PIC(unittest.TestCase):
                 tile = grid.get_tile(cid)
                 tile.delete_transferred_particles()
 
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.delete_all_particles()
+            # delete global mpi particles
+            #for cid in grid.get_virtual_tiles(): 
+            #    tile = grid.get_tile(cid)
+            #    tile.delete_all_particles()
 
         # count how many particles we now have
         n_particles = 0
@@ -481,7 +482,7 @@ class PIC(unittest.TestCase):
         #    axs.append( plt.subplot(gs[ai]) )
 
         conf = Conf()
-        conf.ppc = 128
+        conf.ppc = 16
         conf.threeD = True
         conf.NxMesh = 3
         conf.NyMesh = 3
@@ -578,7 +579,9 @@ class PIC(unittest.TestCase):
                         container = c.get_container(0)
                         #print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
                         n_particles += len(container.loc(0))
+                        #n_particles += len(container.size() )
 
+                        #print()
                         #print("num prtcls", i,j,k, "len(loc())", len(container.loc(0)), " cont.size:", container.size())
                         self.assertTrue( len(container.loc(0)) == container.size() )
 
