@@ -8,7 +8,7 @@ import pyrunko
 import scipy
 
 
-def balance_mpi(n, conf, comm_size=None):
+def balance_mpi(n, conf, comm_size=None, do_print=True):
 
     # test if conf has task mode defined; do not crash if it doesnt
     try: 
@@ -17,11 +17,11 @@ def balance_mpi(n, conf, comm_size=None):
         mpi_task_mode = False
 
     if conf.oneD:
-        return balance_mpi_1D(n, comm_size=comm_size)
+        return balance_mpi_1D(n, comm_size=comm_size, do_print=do_print)
     if conf.twoD:
-        return balance_mpi_2D(n, comm_size=comm_size)
+        return balance_mpi_2D(n, comm_size=comm_size, do_print=do_print)
     elif conf.threeD:
-        return balance_mpi_3D(n, comm_size=comm_size, mpi_task_mode=conf.mpi_task_mode)
+        return balance_mpi_3D(n, comm_size=comm_size, do_print=do_print, mpi_task_mode=conf.mpi_task_mode)
 
 
 
@@ -90,7 +90,7 @@ def balance_mpi_2D(n, comm_size=None):
 
 
 # load nodes using 3D Hilbert curve
-def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False):
+def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False, do_print=True):
 
     if n.rank() == 0:  # only master initializes; then sends
         if comm_size == None:
@@ -150,7 +150,8 @@ def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False):
             except:
                 tiles_owned[int(nt)] = 1
 
-        print('lba : tiles owned per rank', tiles_owned, " (#tiles, #ranks)")
+        if do_print:
+            print('lba : tiles owned per rank', tiles_owned, " (#tiles, #ranks)")
         
 
         # print("grid:")
@@ -170,13 +171,14 @@ def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False):
 # load nodes using 3D Hilbert curve
 # Leaves i_drop_rank first ranks to be empty. In addition, prints analysis of the grid state.
 # Can be used to balance the memory impact of the first node that has rank0 (which can have large arrays due to IO).
-def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None):
+def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None, do_print=True):
 
     if n.rank() == 0:  # only master initializes; then sends
         if comm_size == None:
             comm_size = n.size()
 
-        print("lba: loadbalancing grid with ", i_drop_rank, " empty ranks...")
+        if do_print:
+            print("lba: loadbalancing grid with ", i_drop_rank, " empty ranks...")
 
         #for i_drop_rank in range(1, mpi_task_mode+1):
         if True:
@@ -276,13 +278,14 @@ def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None):
             #print('tiles_owned', i_drop_rank, tiles_owned, tot_nbors/(nx*ny*nz))
 
             #print('analysis: {:3d} mean(nbors): {:5.3f} mean(nbor/tiles): {5.3f}'.format(
-            print('lba: analysis: {:3d} mean(nbors): {:6.3f} min(nbors) {:6.3f} max(nbors) {:6.3f} mode(nbors) {:6.3f} mean(nbor/tile) {:6.3f}'.format(
-                i_drop_rank,
-                np.mean(nbors_per_rank),
-                np.min(nbors_per_rank),
-                np.max(nbors_per_rank),
-                np.median(nbors_per_rank),
-                np.mean(nbors_per_rank[1:]/tiles_per_rank[1:]),
+            if do_print:
+                print('lba: analysis: {:3d} mean(nbors): {:6.3f} min(nbors) {:6.3f} max(nbors) {:6.3f} mode(nbors) {:6.3f} mean(nbor/tile) {:6.3f}'.format(
+                    i_drop_rank,
+                    np.mean(nbors_per_rank),
+                    np.min(nbors_per_rank),
+                    np.max(nbors_per_rank),
+                    np.median(nbors_per_rank),
+                    np.mean(nbors_per_rank[1:]/tiles_per_rank[1:]),
                                            ))
 
         # print("grid:")
@@ -306,7 +309,9 @@ def load_catepillar_track_mpi(
         n, 
         nx_track_len,
         conf,
-        comm_size=None):
+        comm_size=None,
+        do_print=True
+        ):
 
 
     #if True:  # only master initializes; then sends
@@ -360,8 +365,9 @@ def load_catepillar_track_mpi(
                     grid[i, j, k] = val
                     val += 1.0
 
-        print('lba: grid')
-        print(grid[:,:,0])
+        if do_print:
+            print('lba: grid')
+            print(grid[:,:,0])
 
         hmin, hmax = np.min(grid), np.max(grid)
 
@@ -389,7 +395,9 @@ def load_catepillar_track_mpi(
                 tiles_owned[int(nt)] += 1
             except:
                 tiles_owned[int(nt)] = 1
-        print('lba : tiles owned per rank', tiles_owned, " (#tiles, #ranks)")
+
+        if do_print:
+            print('lba : tiles owned per rank', tiles_owned, " (#tiles, #ranks)")
 
         for i in range(nxt):
             for j in range(ny):
