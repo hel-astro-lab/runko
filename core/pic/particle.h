@@ -75,8 +75,9 @@ class ParticleContainer{
 
   std::array<ManVec<float>, 3 > locArr; // x y z location
   std::array<ManVec<float>, 3 > velArr; // vx vy vz velocities
-  std::array<ManVec<int>, 2 > indArr;     // cpu,id index
+  std::array<ManVec<int>, 2 >   indArr; // cpu,id index
   ManVec<float> wgtArr;                 // weight
+  ManVec<int>   infoArr;                // prtcl info (stores outflow information)
 
   public:
 
@@ -173,7 +174,7 @@ class ParticleContainer{
   DEVCALLABLE size_t size() const { 
 
 #ifdef DEBUG
-    bool ts[9] = {0,0,0,0,0,0,0,0,0};
+    bool ts[10] = {0,0,0,0,0,0,0,0,0,0};
 
     ts[0] = locArr[0].size() == locArr[1].size();
     ts[1] = locArr[0].size() == locArr[2].size();
@@ -183,7 +184,8 @@ class ParticleContainer{
     ts[5] = locArr[0].size() == indArr[0].size();
     ts[6] = locArr[0].size() == indArr[1].size();
     ts[7] = locArr[0].size() == wgtArr.size();
-    ts[8] = locArr[0].size() == static_cast<size_t>(Nprtcls);
+    ts[8] = locArr[0].size() == infoArr.size();
+    ts[9] = locArr[0].size() == static_cast<size_t>(Nprtcls);
 
     //bool ts2 = 0;
     //for(size_t i = 0; i<9; i++) ts2 += !ts[i];
@@ -196,7 +198,8 @@ class ParticleContainer{
         !ts[5] ||
         !ts[6] ||
         !ts[7] ||
-        !ts[8] ){
+        !ts[8] ||
+        !ts[9] ){
       std::cerr << "ERROR: particle number mismatch\n";
       std::cerr << locArr[0].size() << std::endl;
       std::cerr << locArr[1].size() << std::endl;
@@ -207,6 +210,7 @@ class ParticleContainer{
       std::cerr << indArr[0].size() << std::endl;
       std::cerr << indArr[1].size() << std::endl;
       std::cerr << wgtArr.size()    << std::endl;
+      std::cerr << infoArr.size()   << std::endl;
       std::cerr << Nprtcls          << std::endl;
       assert(false);
     }
