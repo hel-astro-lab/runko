@@ -474,7 +474,6 @@ std::array<double,3>& maxs)
   //v1 with no storage
 
   //UniIter::iterate([=] DEVCALLABLE (int n, ParticleContainer<D> &self){
-
 #pragma omp simd reduction(+:outgoing_count)
   for(int n=0; n<size(); n++){
     int i=0,j=0,k=0; // relative indices
@@ -1018,12 +1017,6 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
   //std::cout << "reserving1: " << first_message_size << "\n";
   //std::cout << "reserving2: " << np <<" minus " << np-first_message_size << "\n";
-
-  //outgoing_particles.reserve(first_message_size);
-  //if(np > first_message_size + extra_message_size) {
-  //  std::cerr << "Number of particles in MPI message exceeds maximum message size. See documentation." << std::endl;
-  //  exit(1);
-  //} else 
     
   if (np > first_message_size) {
     // reserve is needed here; if size is less than capacity, we do nothing
@@ -1031,7 +1024,6 @@ void ParticleContainer<D>::pack_outgoing_particles()
   }
 
   // first particle is always the message info
-  //outgoing_particles.push_back({np});
   outgoing_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}); // store prtcl number in id slot
 
   // next, pack all other particles
@@ -1092,7 +1084,15 @@ void ParticleContainer<D>::unpack_incoming_particles()
   int number_of_secondary_particles = incoming_extra_particles.size();
 
   // reserve arrays
-  reserve( size() + number_of_incoming_particles + number_of_secondary_particles ); 
+  int N = size();
+
+  //std::cout << "mpi inc: " << number_of_incoming_particles 
+  //          << " prim:" << number_of_primary_particles 
+  //          << " seco:" << number_of_secondary_particles 
+  //          << " N:"    << N << "\n"; 
+
+  //reserve( N + number_of_incoming_particles + number_of_secondary_particles );  //reserve for addition
+  resize( N + number_of_incoming_particles );  // resize for insertion
 
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
@@ -1108,11 +1108,11 @@ void ParticleContainer<D>::unpack_incoming_particles()
     ids  = incoming_particles[i].id;
     proc = incoming_particles[i].proc;
 
-    // TODO XX here
-
-    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1 );
   }
 
+  N += number_of_primary_particles-1;
   for(int i=0; i<number_of_secondary_particles; i++){
     locx = incoming_extra_particles[i].x;
     locy = incoming_extra_particles[i].y;
@@ -1126,10 +1126,13 @@ void ParticleContainer<D>::unpack_incoming_particles()
     ids  = incoming_extra_particles[i].id;
     proc = incoming_extra_particles[i].proc;
       
-    // TODO XX here
-
-    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i);
   }
+
+  // update internal counter after insertion
+  Nprtcls += number_of_incoming_particles-1;
+
 
 #ifdef GPU
   nvtxRangePop();
