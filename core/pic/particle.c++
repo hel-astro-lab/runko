@@ -680,17 +680,11 @@ void ParticleContainer<D>::delete_transferred_particles()
     auto [i,j,k] = info2dir(n);
 
     bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-    //if(n == 0) inside_tile = true; // special case of new/transferred particle
-
     bool to_be_removed = !inside_tile;
 
-    //std::cout << "  in del: n: " << n << " ijk " << i << "," << j << "," << k << " wgt: " << wgtArr[n] << " in " << inside_tile <<  "\n";
-
+    // replace good value with a bad value
     if( !to_be_removed ) {
       if( iter != first ){
-
-        //std::cout << "remove_if: first:" << first << " res " << iter << " last " << last << " n: " << n << "\n";
-        //std::cout << "            locs:" << locn[0][iter] << "swamp <= " << locn[0][first] << "\n";
 
         // should be move operation; same?
         locn[0][iter] = locn[0][first];
@@ -713,88 +707,12 @@ void ParticleContainer<D>::delete_transferred_particles()
   }
   int new_last = iter;
 
-
-
-  // libc implementation
-  // __first = std::find_if<_ForwardIterator, _Predicate&>(__first, __last, __pred);
-  //  if (__first != __last) {
-  //    _ForwardIterator __i = __first;
-  //    while (++__i != __last) {
-  //      if (!__pred(*__i)) {
-  //        *__first = std::move(*__i);
-  //        ++__first;
-  //      }
-  //    }
-  //  }
-  //  return __first;
-  //}
-
-
-  //--------------------------------------------------
-  // remove_if idiom
-  //int first = 0;
-  //int last = size();
-
-  //for(;first<last;first++){
-  //  
-  //  // check if outside tile 
-  //  int n = infoArr[first];
-  //  auto [i,j,k] = info2dir(n);
-
-  //  bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-  //  bool to_be_removed = !inside_tile;
-  //  if(to_be_removed) break;
-  //}
-
-  //int iter = first;
-  //while(++iter != last){
-
-  //  // check if outside tile 
-  //  int n = infoArr[iter];
-  //  auto [i,j,k] = info2dir(n);
-
-  //  bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-  //  bool to_be_removed = !inside_tile;
-
-  //  std::cout << "  test:" 
-  //    << " first:" << first
-  //    << " iter:"  << iter
-  //    << " del:"  << to_be_removed
-  //    << " \n";
-
-  //  if(!to_be_removed){
-  //      locn[0][first] = locn[0][iter];
-  //      locn[1][first] = locn[1][iter];
-  //      locn[2][first] = locn[2][iter];
-
-  //      veln[0][first] = veln[0][iter];
-  //      veln[1][first] = veln[1][iter];
-  //      veln[2][first] = veln[2][iter];
-
-  //      idn[0][ first] =  idn[0][iter];
-  //      idn[1][ first] =  idn[1][iter];
-
-  //      wgtArr[ first] =  wgtArr[iter];
-  //      infoArr[first] = infoArr[iter];
-  //      
-  //      std::cout << "     del:" 
-  //        << " first:" << first
-  //        << " to iter:" << iter
-  //        << "\n";
-
-  //      ++first;
-  //  }
-  //}
-  //int new_last = first;
-
   //--------------------------------------------------
   //for(int n=0; n<size(); n++){
   //  int nn = infoArr[n];
   //  auto [i,j,k] = info2dir(nn);
-
   //  std::cout << "list after del: n: " << n << " ind: " << nn << " ijk " << i << "," << j << "," << k << " wgt: " << wgtArr[n] << "\n";
   //}
-
 
   // now remove anything between result and last
   resize(new_last);
