@@ -488,92 +488,78 @@ class PIC(unittest.TestCase):
         #for ai in range(1):
         #    axs.append( plt.subplot(gs[ai]) )
 
+        sch  = pytools.Scheduler(print_banner=False) # Set MPI aware task scheduler
+        sch.verbose=0
+
+        timer = pytools.Timer()
+        timer.verbose = 0  # 0 normal; 1 - debug mode
+        sch.timer = timer # remember to update scheduler
+
         conf = Conf()
-        conf.ppc = 16
+        conf.ppc = 2
         conf.threeD = True
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.NzMesh = 3
-
-        conf.Nx = 3
-        conf.Ny = 3
-        conf.Nz = 3
+        conf.Nx = 4
+        conf.Ny = 4
+        conf.Nz = 4
         conf.update_bbox()
-
+        conf.mpi_task_mode = False
         conf.vel = 0.3
+
+        sch.conf = conf # remember to update conf to scheduler
+
 
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+        sch.grid = grid # remember to update scheduler
+
+        pytools.balance_mpi(grid, conf, do_print=False) #balance MPI ranks; Hilbert curve optimization 
 
         pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, zero_field, zero_field=True)
         pytools.pic.inject(grid, filler3D, density_profile, conf) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
-        pusher = pyrunko.pic.threeD.BorisPusher()
+        sch.pusher  = pyrunko.pic.threeD.BorisPusher()
+        sch.fintp   = pyrunko.pic.threeD.LinearInterpolator()
+        sch.currint = pyrunko.pic.threeD.ZigZag()
 
-        fintp  = pyrunko.pic.threeD.LinearInterpolator()
+        # start MPI
+        # update boundaries
+        grid.analyze_boundaries()
+        grid.send_tiles()
+        grid.recv_tiles()
+        MPI.COMM_WORLD.barrier()
+        rank = MPI.COMM_WORLD.Get_rank()
 
-        for lap in range(2):
+        # load virtual mpi halo tiles
+        pytools.pic.load_virtual_tiles(grid, conf)
 
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                fintp.solve(tile)
+        for lap in range(10):
 
-            #plot2dParticles(axs[0], grid, conf)
-            #saveVisz(lap, grid, conf)
+            # interpolate fields and push particles in x and u
+            sch.operate( dict(name='interp_em', solver='fintp',  method='solve', nhood='local', ) )
+            sch.operate( dict(name='push',      solver='pusher', method='solve', nhood='local', ) )
 
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                pusher.solve(tile)
+            # --------------------------------------------------
+            # particle communication (only local/boundary tiles)
 
-            ##################################################
-            # communication
+            # local and global particle exchange 
+            sch.operate( dict(name='check_outg_prtcls',     solver='tile',  method='check_outgoing_particles',     nhood='local', ) )
+            sch.operate( dict(name='pack_outg_prtcls',      solver='tile',  method='pack_outgoing_particles',      nhood='boundary', ) )
 
-            #update particle boundaries
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                tile.check_outgoing_particles()
+            sch.operate( dict(name='mpi_prtcls',            solver='mpi',   method='p1',                           nhood='all', ) )
+            sch.operate( dict(name='mpi_prtcls',            solver='mpi',   method='p2',                           nhood='all', ) )
 
-            # global mpi exchange (independent)
-            for cid in grid.get_boundary_tiles():
-                tile = grid.get_tile(cid)
-                tile.pack_outgoing_particles()
+            sch.operate( dict(name='unpack_vir_prtcls',     solver='tile',  method='unpack_incoming_particles',    nhood='virtual', ) )
+            sch.operate( dict(name='check_outg_vir_prtcls', solver='tile',  method='check_outgoing_particles',     nhood='virtual', ) )
+            sch.operate( dict(name='get_inc_prtcls',        solver='tile',  method='get_incoming_particles',       nhood='local', args=[grid,]) )
 
-            # MPI global exchange
-            # transfer primary and extra data
-            grid.recv_data(0) #(indepdendent)
-            grid.recv_data(1) #(indepdendent)
+            sch.operate( dict(name='del_trnsfrd_prtcls',    solver='tile',  method='delete_transferred_particles', nhood='local', ) )
+            sch.operate( dict(name='del_vir_prtcls',        solver='tile',  method='delete_all_particles',         nhood='virtual', ) )
 
-            grid.send_data(0) #(indepdendent)
-            grid.send_data(1) #(indepdendent)
-
-            grid.wait_data(0) #(indepdendent)
-            grid.wait_data(1) #(indepdendent)
-
-            # global unpacking (independent)
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.unpack_incoming_particles()
-                tile.check_outgoing_particles()
-
-            # transfer local + global
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                tile.get_incoming_particles(grid)
-
-            # delete local transferred particles
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                tile.delete_transferred_particles()
-
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.delete_all_particles()
-
-
-            # outflow 26   8.30763             5.59324             9.03402              2.30763                -0.406764               3.03402   mins:6 3 6 maxs:9 6 9
-            #prtcl    22 x=8.307631492614746 y=5.593235969543457 z=9.03402328491211 vx=-0.020194780081510544 vy=0.23969225585460663 vz=0.1792757362127304 | tile lims 9 9 9
 
             # count how many particles we now have
             n_particles = 0
@@ -599,27 +585,21 @@ class PIC(unittest.TestCase):
                 #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
 
                 for prtcl in range(len(container.loc(0))):
-                    #print("{} {} {} maxs {} {} {} id {}/{}".format( 
-                    #container.loc(0)[prtcl], 
-                    #container.loc(1)[prtcl], 
-                    #container.loc(2)[prtcl], 
-                    #conf.xmax, conf.ymax, conf.zmax, 
-                    #container.id(0)[prtcl], 
-                    #container.id(1)[prtcl], 
-                    #))
 
-                    #print("prtcl {} x={} y={} z={} vx={} vy={} vz={} w={} | tile lims {} {} {}".format(
-                    #    prtcl, 
-                    #    container.loc(0)[prtcl],
-                    #    container.loc(1)[prtcl],
-                    #    container.loc(2)[prtcl],
-                    #    container.vel(0)[prtcl],
-                    #    container.vel(1)[prtcl],
-                    #    container.vel(2)[prtcl],
-                    #    container.wgt()[ prtcl],
-                    #    conf.xmax,
-                    #    conf.ymax,
-                    #    conf.zmax),)
+                    if False: #rank == 0:
+                        print("r: {} ----prtcl {} x={} y={} z={} vx={} vy={} vz={} w={} | tile lims {} {} {}".format(
+                        rank,
+                        prtcl, 
+                        container.loc(0)[prtcl],
+                        container.loc(1)[prtcl],
+                        container.loc(2)[prtcl],
+                        container.vel(0)[prtcl],
+                        container.vel(1)[prtcl],
+                        container.vel(2)[prtcl],
+                        container.wgt()[ prtcl],
+                        conf.xmax,
+                        conf.ymax,
+                        conf.zmax),)
 
                     # check location
                     self.assertTrue( 0.0 <= container.loc(0)[prtcl] <= conf.xmax )
@@ -638,13 +618,12 @@ class PIC(unittest.TestCase):
                              conf.Nz*conf.NzMesh *
                             conf.ppc)
 
-            #tot_particles =(conf.NxMesh *
-            #                conf.NyMesh *
-            #                conf.NzMesh *
-            #                conf.ppc)
+            #print('r: {} np: {}'.format(rank, n_particles))
+            n_particles = MPI.COMM_WORLD.reduce( n_particles, op=MPI.SUM, root=0)
 
             # assert that there is equal number of particles as we began with
-            self.assertEqual( tot_particles, n_particles )
+            if rank == 0:
+                self.assertEqual( tot_particles, n_particles)
 
 
 
