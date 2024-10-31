@@ -318,7 +318,6 @@ std::array<double,3>& maxs)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  //to_other_tiles.clear();
   outgoing_count = 0;
 
   /*
@@ -493,29 +492,29 @@ std::array<double,3>& maxs)
 
   // second pass to reconstruct to_other_tiles
   // TODO remove
-  to_other_tiles.clear();
-  to_other_tiles.reserve(outgoing_count);
-  for(size_t n=0; n<size(); n++) {
+  //to_other_tiles.clear();
+  //to_other_tiles.reserve(outgoing_count);
+  //for(size_t n=0; n<size(); n++) {
 
-    //int ii=0,jj=0,kk=0; // relative indices
-    //if( loc(0,n) - float( mins[0] ) <  0.0 ) ii--; // left wrap
-    //if( loc(0,n) - float( maxs[0] ) >= 0.0 ) ii++; // right wrap
-    //if( loc(1,n) - float( mins[1] ) <  0.0 ) jj--; // bottom wrap
-    //if( loc(1,n) - float( maxs[1] ) >= 0.0 ) jj++; // top wrap
-    //if( loc(2,n) - float( mins[2] ) <  0.0 ) kk--; // back wrap
-    //if( loc(2,n) - float( maxs[2] ) >= 0.0 ) kk++; // front wrap
+  //  //int ii=0,jj=0,kk=0; // relative indices
+  //  //if( loc(0,n) - float( mins[0] ) <  0.0 ) ii--; // left wrap
+  //  //if( loc(0,n) - float( maxs[0] ) >= 0.0 ) ii++; // right wrap
+  //  //if( loc(1,n) - float( mins[1] ) <  0.0 ) jj--; // bottom wrap
+  //  //if( loc(1,n) - float( maxs[1] ) >= 0.0 ) jj++; // top wrap
+  //  //if( loc(2,n) - float( mins[2] ) <  0.0 ) kk--; // back wrap
+  //  //if( loc(2,n) - float( maxs[2] ) >= 0.0 ) kk++; // front wrap
 
-    auto [i,j,k] = info2dir( infoArr[n] );
+  //  auto [i,j,k] = info2dir( infoArr[n] );
 
-    //std::cout << "comp " << 
-    //  " ijk v1: " <<i<<","<<j<<","<<k << " n:"<<n<<
-    //  " ijk v0: " <<ii<<","<<jj<<","<<kk
-    //  <<"\n";
-    
-    if ( (i != 0) || (j != 0) || (k != 0) ) {
-	    to_other_tiles.push_back( {i,j,k,n} );
-    }
-  }
+  //  //std::cout << "comp " << 
+  //  //  " ijk v1: " <<i<<","<<j<<","<<k << " n:"<<n<<
+  //  //  " ijk v0: " <<ii<<","<<jj<<","<<kk
+  //  //  <<"\n";
+  //  
+  //  if ( (i != 0) || (j != 0) || (k != 0) ) {
+	//    to_other_tiles.push_back( {i,j,k,n} );
+  //  }
+  //}
 
   //std::cout << "INFO " << cid << " outgoing count:" << outgoing_count << "\n";
 #endif
@@ -624,8 +623,8 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
     for(int i=0; i<3; i++) locn[i][indx] = locn[i][other];
     for(int i=0; i<3; i++) veln[i][indx] = veln[i][other];
     for(int i=0; i<2; i++) idn[ i][indx] = idn[ i][other];
-    wgtArr[indx] = wgtArr[other];
-    //TODO infoArr
+    wgtArr[ indx] = wgtArr[ other];
+    infoArr[indx] = infoArr[other];
 
   //}, to_be_deleted.size(), to_be_deleted);
   }
@@ -1012,16 +1011,29 @@ void ParticleContainer<D>::pack_outgoing_particles()
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
+
+  int num_of_outgoing = 0;
+  #pragma omp simd reduction(+:num_of_outgoing)
+  for(int n=0; n<size(); n++){
+    int info = infoArr[n];
+    auto [i,j,k] = info2dir(info);
+
+    num_of_outgoing += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
+  } 
+
   // +1 for info particle
-  int np = outgoing_count + 1; // value calculated in transfer_and_wrap_particles
+  int np = num_of_outgoing + 1; // value calculated in transfer_and_wrap_particles
+  //int np = outgoing_count + 1; // value calculated in transfer_and_wrap_particles
   //int np = to_other_tiles.size() + 1;
+
 
   // DEBUG
   //assert(to_other_tiles.size() == outgoing_count );
 
-  //std::cout << "outgoing prtcls: " << outgoing_count << " vs " << to_other_tiles.size() << "\n";
-  //std::cout << "reserving1: " << first_message_size << "\n";
-  //std::cout << "reserving2: " << np <<" minus " << np-first_message_size << "\n";
+  std::cout << "outgoing prtcls: " << outgoing_count << " vs num_of_outgoing: " << num_of_outgoing << " vs to_other_tiles: " << to_other_tiles.size()
+            << " np: " << np
+            << " reserving1: " << first_message_size
+            << " reserving2: " << np-first_message_size << "\n";
     
   if (np > first_message_size) {
     // reserve is needed here; if size is less than capacity, we do nothing
@@ -1035,59 +1047,59 @@ void ParticleContainer<D>::pack_outgoing_particles()
   // v1 with on-the-fly calculation of escape condition
 
   // next, pack all other particles
-  //int ind=1;
-  //for(int n=0; n<size(); n++){
+  int ind=1;
+  for(int n=0; n<size(); n++){
 
-  //  // check if moving out
-  //  auto [i,j,k] = info2dir( infoArr[n] );
-  //  bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-  //  bool to_be_packed = !inside_tile;
+    // check if moving out
+    auto [i,j,k] = info2dir( infoArr[n] );
+    bool inside_tile = (i == 0) && (j == 0) && (k == 0);
+    bool to_be_packed = !inside_tile;
 
-  //  // pack if true; split between fixed primary and adaptive extra message containers
-  //  if(to_be_packed) {
-  //    if(ind < first_message_size) {
-  //      outgoing_particles.push_back({ 
-  //        loc(0, n), loc(1, n), loc(2, n), 
-  //        vel(0, n), vel(1, n), vel(2, n), 
-  //        wgt(n), 
-  //        id(0, n), id(1, n) });
-  //    } else {
-  //      outgoing_extra_particles.push_back({ 
-  //        loc(0, n), loc(1, n), loc(2, n), 
-  //        vel(0, n), vel(1, n), vel(2, n), 
-  //        wgt(n), 
-  //        id(0, n), id(1, n) });
-  //    }
-  //    ind++;
-  //  }
-  //}
+    // pack if true; split between fixed primary and adaptive extra message containers
+    if(to_be_packed) {
+      if(ind < first_message_size) {
+        outgoing_particles.push_back({ 
+          loc(0, n), loc(1, n), loc(2, n), 
+          vel(0, n), vel(1, n), vel(2, n), 
+          wgt(n), 
+          id(0, n), id(1, n) });
+      } else {
+        outgoing_extra_particles.push_back({ 
+          loc(0, n), loc(1, n), loc(2, n), 
+          vel(0, n), vel(1, n), vel(2, n), 
+          wgt(n), 
+          id(0, n), id(1, n) });
+      }
+      ind++;
+    }
+  }
 
   //std::cout << " inserted " << ind << "\n";
 
   // -------------------------------------------------- 
   // v0 with to_other_tiles 
-  int i = 1;
-  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
-  {
-    const auto &elem = to_other_tiles[ii];
-    int ind = elem.n;
+  //int i = 1;
+  //for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  //{
+  //  const auto &elem = to_other_tiles[ii];
+  //  int ind = elem.n;
 
-    if(i < first_message_size) {
-      outgoing_particles.push_back({ 
-        loc(0, ind), loc(1, ind), loc(2, ind), 
-        vel(0, ind), vel(1, ind), vel(2, ind), 
-        wgt(ind), 
-        id(0, ind), id(1, ind) });
-    } else {
-      outgoing_extra_particles.push_back({ 
-        loc(0, ind), loc(1, ind), loc(2, ind), 
-        vel(0, ind), vel(1, ind), vel(2, ind), 
-        wgt(ind), 
-        id(0, ind), id(1, ind) });
-    }
+  //  if(i < first_message_size) {
+  //    outgoing_particles.push_back({ 
+  //      loc(0, ind), loc(1, ind), loc(2, ind), 
+  //      vel(0, ind), vel(1, ind), vel(2, ind), 
+  //      wgt(ind), 
+  //      id(0, ind), id(1, ind) });
+  //  } else {
+  //    outgoing_extra_particles.push_back({ 
+  //      loc(0, ind), loc(1, ind), loc(2, ind), 
+  //      vel(0, ind), vel(1, ind), vel(2, ind), 
+  //      wgt(ind), 
+  //      id(0, ind), id(1, ind) });
+  //  }
 
-    i++;
-  }
+  //  i++;
+  //}
 
 
   // -------------------------------------------------- 
@@ -1125,13 +1137,13 @@ void ParticleContainer<D>::unpack_incoming_particles()
   // reserve arrays
   int N = size();
 
-  //std::cout << "mpi inc: " << number_of_incoming_particles 
-  //          << " prim:" << number_of_primary_particles 
-  //          << " seco:" << number_of_secondary_particles 
-  //          << " N:"    << N << "\n"; 
+  std::cout << "mpi inc: " << number_of_incoming_particles 
+            << " prim:" << number_of_primary_particles 
+            << " seco:" << number_of_secondary_particles 
+            << " N:"    << N << "\n"; 
 
-  reserve( N + number_of_incoming_particles + number_of_secondary_particles );  //reserve for addition
-  //resize( N + number_of_incoming_particles );  // resize for insertion
+  //reserve( N + number_of_incoming_particles + number_of_secondary_particles );  //reserve for addition
+  resize( N + number_of_incoming_particles );  // resize for insertion
 
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
@@ -1147,8 +1159,8 @@ void ParticleContainer<D>::unpack_incoming_particles()
     ids  = incoming_particles[i].id;
     proc = incoming_particles[i].proc;
 
-    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
-    //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1 );
+    //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1 );
   }
 
   N += number_of_primary_particles-1;
@@ -1165,12 +1177,12 @@ void ParticleContainer<D>::unpack_incoming_particles()
     ids  = incoming_extra_particles[i].id;
     proc = incoming_extra_particles[i].proc;
       
-    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
-    //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i);
+    //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i);
   }
 
   // update internal counter after insertion
-  //Nprtcls += number_of_incoming_particles-1;
+  Nprtcls += number_of_incoming_particles-1;
 
 
 #ifdef GPU
