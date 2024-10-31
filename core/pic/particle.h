@@ -45,12 +45,12 @@ struct Particle {
 
 
 // data struct for coupling tile send/recv directions together 
-//struct to_other_tiles_struct{
-//  int i;
-//  int j;
-//  int k;
-//  size_t n;
-//};
+struct to_other_tiles_struct{
+  int i;
+  int j;
+  int k;
+  size_t n;
+};
 
 /*! \brief Container of particles inside the tile
 *
@@ -137,8 +137,8 @@ class ParticleContainer{
   ManVec<float> Bpart;
 
   //! multimap of particles going to other tiles
-  //using mapType = ManVec<to_other_tiles_struct>;
-  //mapType to_other_tiles;
+  using mapType = ManVec<to_other_tiles_struct>;
+  mapType to_other_tiles;
 
   // particle charge 
   double q = 1.0; 

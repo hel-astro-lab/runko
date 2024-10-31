@@ -493,29 +493,29 @@ std::array<double,3>& maxs)
 
   // second pass to reconstruct to_other_tiles
   // TODO remove
-  //to_other_tiles.clear();
-  //to_other_tiles.reserve(outgoing_count);
-  //for(size_t n=0; n<size(); n++) {
+  to_other_tiles.clear();
+  to_other_tiles.reserve(outgoing_count);
+  for(size_t n=0; n<size(); n++) {
 
-  //  //int ii=0,jj=0,kk=0; // relative indices
-  //  //if( loc(0,n) - float( mins[0] ) <  0.0 ) ii--; // left wrap
-  //  //if( loc(0,n) - float( maxs[0] ) >= 0.0 ) ii++; // right wrap
-  //  //if( loc(1,n) - float( mins[1] ) <  0.0 ) jj--; // bottom wrap
-  //  //if( loc(1,n) - float( maxs[1] ) >= 0.0 ) jj++; // top wrap
-  //  //if( loc(2,n) - float( mins[2] ) <  0.0 ) kk--; // back wrap
-  //  //if( loc(2,n) - float( maxs[2] ) >= 0.0 ) kk++; // front wrap
+    //int ii=0,jj=0,kk=0; // relative indices
+    //if( loc(0,n) - float( mins[0] ) <  0.0 ) ii--; // left wrap
+    //if( loc(0,n) - float( maxs[0] ) >= 0.0 ) ii++; // right wrap
+    //if( loc(1,n) - float( mins[1] ) <  0.0 ) jj--; // bottom wrap
+    //if( loc(1,n) - float( maxs[1] ) >= 0.0 ) jj++; // top wrap
+    //if( loc(2,n) - float( mins[2] ) <  0.0 ) kk--; // back wrap
+    //if( loc(2,n) - float( maxs[2] ) >= 0.0 ) kk++; // front wrap
 
-  //  auto [i,j,k] = info2dir( infoArr[n] );
+    auto [i,j,k] = info2dir( infoArr[n] );
 
-  //  //std::cout << "comp " << 
-  //  //  " ijk v1: " <<i<<","<<j<<","<<k << " n:"<<n<<
-  //  //  " ijk v0: " <<ii<<","<<jj<<","<<kk
-  //  //  <<"\n";
-  //  
-  //  if ( (i != 0) || (j != 0) || (k != 0) ) {
-	//    to_other_tiles.push_back( {i,j,k,n} );
-  //  }
-  //}
+    //std::cout << "comp " << 
+    //  " ijk v1: " <<i<<","<<j<<","<<k << " n:"<<n<<
+    //  " ijk v0: " <<ii<<","<<jj<<","<<kk
+    //  <<"\n";
+    
+    if ( (i != 0) || (j != 0) || (k != 0) ) {
+	    to_other_tiles.push_back( {i,j,k,n} );
+    }
+  }
 
   //std::cout << "INFO " << cid << " outgoing count:" << outgoing_count << "\n";
 #endif
@@ -1035,58 +1035,59 @@ void ParticleContainer<D>::pack_outgoing_particles()
   // v1 with on-the-fly calculation of escape condition
 
   // next, pack all other particles
-  int ind=1;
-  for(int n=0; n<size(); n++){
+  //int ind=1;
+  //for(int n=0; n<size(); n++){
 
-    // check if moving out
-    auto [i,j,k] = info2dir( infoArr[n] );
-    bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-    bool to_be_packed = !inside_tile;
+  //  // check if moving out
+  //  auto [i,j,k] = info2dir( infoArr[n] );
+  //  bool inside_tile = (i == 0) && (j == 0) && (k == 0);
+  //  bool to_be_packed = !inside_tile;
 
-    // pack if true; split between fixed primary and adaptive extra message containers
-    if(to_be_packed) {
-      if(ind < first_message_size) {
-        outgoing_particles.push_back({ 
-          loc(0, n), loc(1, n), loc(2, n), 
-          vel(0, n), vel(1, n), vel(2, n), 
-          wgt(n), 
-          id(0, n), id(1, n) });
-      } else {
-        outgoing_extra_particles.push_back({ 
-          loc(0, n), loc(1, n), loc(2, n), 
-          vel(0, n), vel(1, n), vel(2, n), 
-          wgt(n), 
-          id(0, n), id(1, n) });
-      }
-      ind++;
-    }
-  }
+  //  // pack if true; split between fixed primary and adaptive extra message containers
+  //  if(to_be_packed) {
+  //    if(ind < first_message_size) {
+  //      outgoing_particles.push_back({ 
+  //        loc(0, n), loc(1, n), loc(2, n), 
+  //        vel(0, n), vel(1, n), vel(2, n), 
+  //        wgt(n), 
+  //        id(0, n), id(1, n) });
+  //    } else {
+  //      outgoing_extra_particles.push_back({ 
+  //        loc(0, n), loc(1, n), loc(2, n), 
+  //        vel(0, n), vel(1, n), vel(2, n), 
+  //        wgt(n), 
+  //        id(0, n), id(1, n) });
+  //    }
+  //    ind++;
+  //  }
+  //}
 
   //std::cout << " inserted " << ind << "\n";
 
   // -------------------------------------------------- 
   // v0 with to_other_tiles 
-  //for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
-  //{
-  //  const auto &elem = to_other_tiles[ii];
-  //  ind = elem.n;
+  int i = 1;
+  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  {
+    const auto &elem = to_other_tiles[ii];
+    int ind = elem.n;
 
-  //  if(i < first_message_size) {
-  //    outgoing_particles.push_back({ 
-  //      loc(0, ind), loc(1, ind), loc(2, ind), 
-  //      vel(0, ind), vel(1, ind), vel(2, ind), 
-  //      wgt(ind), 
-  //      id(0, ind), id(1, ind) });
-  //  } else {
-  //    outgoing_extra_particles.push_back({ 
-  //      loc(0, ind), loc(1, ind), loc(2, ind), 
-  //      vel(0, ind), vel(1, ind), vel(2, ind), 
-  //      wgt(ind), 
-  //      id(0, ind), id(1, ind) });
-  //  }
+    if(i < first_message_size) {
+      outgoing_particles.push_back({ 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind), 
+        id(0, ind), id(1, ind) });
+    } else {
+      outgoing_extra_particles.push_back({ 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind), 
+        id(0, ind), id(1, ind) });
+    }
 
-  //  i++;
-  //}
+    i++;
+  }
 
 
   // -------------------------------------------------- 
