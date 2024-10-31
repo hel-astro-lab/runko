@@ -953,6 +953,8 @@ void ParticleContainer<D>::pack_all_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
+  assert(false); // not workign anymore since new extra_message_size needs info prtcl
+
   outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
@@ -1021,27 +1023,38 @@ void ParticleContainer<D>::pack_outgoing_particles()
     num_of_outgoing += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
   } 
 
-  // +1 for info particle
-  int np = num_of_outgoing + 1; // value calculated in transfer_and_wrap_particles
+  // numbers of particles in MPI payloads
+  // primary msg is fixed/static and its size is always first_message_size
+  //    it carries an info particle (as a first element) that announces total number of prtcls coming
+  // secondary (extra) message carries the rest if they do not fit in primary message
+  //    it carries an info particle (as a first element) that announces its own length. 
+  //    This gives us 2 ways to calculate extra container length: 1) via primary msg info and 2) via secondary info prtcl
+    
+  int np_tot = num_of_outgoing + 2;  // 2 info particles; one with total num of prtcls, and second with num of extra particles
+  int np_extra = np_tot-1 > first_message_size ? np_tot - first_message_size : 1;  // always 1 extra particle slow
+
+                                  
+  // v0 versions
   //int np = outgoing_count + 1; // value calculated in transfer_and_wrap_particles
   //int np = to_other_tiles.size() + 1;
+  //assert(to_other_tiles.size() == outgoing_count ); DEBUG
 
-
-  // DEBUG
-  //assert(to_other_tiles.size() == outgoing_count );
-
-  std::cout << "outgoing prtcls: " << outgoing_count << " vs num_of_outgoing: " << num_of_outgoing << " vs to_other_tiles: " << to_other_tiles.size()
-            << " np: " << np
-            << " reserving1: " << first_message_size
-            << " reserving2: " << np-first_message_size << "\n";
+  //std::cout << "outgoing prtcls: " << outgoing_count << " vs num_of_outgoing: " << num_of_outgoing << " vs to_other_tiles: " << to_other_tiles.size()
+  //          << " np_tot: " << np_tot
+  //          << " np_extra: " << np_extra
+  //          << " reserving1: " << first_message_size
+  //          << " reserving2: " << np_extra << "\n";
     
-  if (np > first_message_size) {
-    // reserve is needed here; if size is less than capacity, we do nothing
-    outgoing_extra_particles.reserve( np-first_message_size );
-  }
+  //if (np_tot - 1 > first_message_size) { // +1 for info particle in primary static msg; -1 for info prtcl in extra payload
+  //  // reserve is needed here; if size is less than capacity, we do nothing
+  //  outgoing_extra_particles.reserve( np_tot - first_message_size ); 
+  //}
+  outgoing_extra_particles.reserve( np_extra );
+
 
   // first particle is always the message info
-  outgoing_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}); // store prtcl number in id slot
+  outgoing_particles.push_back(      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot, 0}); // store prtcl number in id slot
+  outgoing_extra_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_extra, 0}); // store prtcl number in id slot
                                                                               
   // -------------------------------------------------- 
   // v1 with on-the-fly calculation of escape condition
@@ -1073,6 +1086,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
       ind++;
     }
   }
+  ind++; // for extra prtcl payload
 
   //std::cout << " inserted " << ind << "\n";
 
@@ -1127,26 +1141,35 @@ void ParticleContainer<D>::unpack_incoming_particles()
 
   // get real number of incoming particles
   int number_of_incoming_particles = incoming_particles[0].id; // number stored in id slot
+  int number_of_incoming_extra_particles = incoming_extra_particles[0].id;
 
   int number_of_primary_particles = 
     number_of_incoming_particles > first_message_size 
     ? first_message_size : number_of_incoming_particles;
 
-  int number_of_secondary_particles = incoming_extra_particles.size();
+  int number_of_secondary_particles = number_of_incoming_extra_particles;
+
+#ifdef DEBUG
+  assert(number_of_secondary_particles == incoming_extra_particles.size() );
+#endif
 
   // reserve arrays
   int N = size();
 
-  std::cout << "mpi inc: " << number_of_incoming_particles 
-            << " prim:" << number_of_primary_particles 
-            << " seco:" << number_of_secondary_particles 
-            << " N:"    << N << "\n"; 
+  //std::cout 
+  //  << " mpi inc1: " << number_of_incoming_particles 
+  //  << " mpi inc2: " << number_of_incoming_extra_particles 
+  //  << " mpi msg2 size " << incoming_extra_particles.size()
+  //  << " prim:" << number_of_primary_particles 
+  //  << " seco:" << number_of_secondary_particles 
+  //  << " N:"    << N << "\n"; 
 
   //reserve( N + number_of_incoming_particles + number_of_secondary_particles );  //reserve for addition
-  resize( N + number_of_incoming_particles );  // resize for insertion
+  resize( N + number_of_incoming_particles - 2 );  // resize for insertion
 
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
+    //std::cout << "inserting1 to slot" << N+i-1 << " out of " << N << "\n";
     locx = incoming_particles[i].x;
     locy = incoming_particles[i].y;
     locz = incoming_particles[i].z;
@@ -1164,7 +1187,9 @@ void ParticleContainer<D>::unpack_incoming_particles()
   }
 
   N += number_of_primary_particles-1;
-  for(int i=0; i<number_of_secondary_particles; i++){
+  for(int i=1; i<number_of_secondary_particles; i++){
+    //std::cout << "inserting2 to slot" << N+i-1 << " out of " << N << "\n";
+
     locx = incoming_extra_particles[i].x;
     locy = incoming_extra_particles[i].y;
     locz = incoming_extra_particles[i].z;
@@ -1178,11 +1203,11 @@ void ParticleContainer<D>::unpack_incoming_particles()
     proc = incoming_extra_particles[i].proc;
       
     //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
-    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i);
+    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1);
   }
 
   // update internal counter after insertion
-  Nprtcls += number_of_incoming_particles-1;
+  Nprtcls += number_of_incoming_particles-2;
 
 
 #ifdef GPU
