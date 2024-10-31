@@ -493,29 +493,29 @@ std::array<double,3>& maxs)
 
   // second pass to reconstruct to_other_tiles
   // TODO remove
-  to_other_tiles.clear();
-  to_other_tiles.reserve(outgoing_count);
-  for(size_t n=0; n<size(); n++) {
+  //to_other_tiles.clear();
+  //to_other_tiles.reserve(outgoing_count);
+  //for(size_t n=0; n<size(); n++) {
 
-    //int ii=0,jj=0,kk=0; // relative indices
-    //if( loc(0,n) - float( mins[0] ) <  0.0 ) ii--; // left wrap
-    //if( loc(0,n) - float( maxs[0] ) >= 0.0 ) ii++; // right wrap
-    //if( loc(1,n) - float( mins[1] ) <  0.0 ) jj--; // bottom wrap
-    //if( loc(1,n) - float( maxs[1] ) >= 0.0 ) jj++; // top wrap
-    //if( loc(2,n) - float( mins[2] ) <  0.0 ) kk--; // back wrap
-    //if( loc(2,n) - float( maxs[2] ) >= 0.0 ) kk++; // front wrap
+  //  //int ii=0,jj=0,kk=0; // relative indices
+  //  //if( loc(0,n) - float( mins[0] ) <  0.0 ) ii--; // left wrap
+  //  //if( loc(0,n) - float( maxs[0] ) >= 0.0 ) ii++; // right wrap
+  //  //if( loc(1,n) - float( mins[1] ) <  0.0 ) jj--; // bottom wrap
+  //  //if( loc(1,n) - float( maxs[1] ) >= 0.0 ) jj++; // top wrap
+  //  //if( loc(2,n) - float( mins[2] ) <  0.0 ) kk--; // back wrap
+  //  //if( loc(2,n) - float( maxs[2] ) >= 0.0 ) kk++; // front wrap
 
-    auto [i,j,k] = info2dir( infoArr[n] );
+  //  auto [i,j,k] = info2dir( infoArr[n] );
 
-    //std::cout << "comp " << 
-    //  " ijk v1: " <<i<<","<<j<<","<<k << " n:"<<n<<
-    //  " ijk v0: " <<ii<<","<<jj<<","<<kk
-    //  <<"\n";
-    
-    if ( (i != 0) || (j != 0) || (k != 0) ) {
-	    to_other_tiles.push_back( {i,j,k,n} );
-    }
-  }
+  //  //std::cout << "comp " << 
+  //  //  " ijk v1: " <<i<<","<<j<<","<<k << " n:"<<n<<
+  //  //  " ijk v0: " <<ii<<","<<jj<<","<<kk
+  //  //  <<"\n";
+  //  
+  //  if ( (i != 0) || (j != 0) || (k != 0) ) {
+	//    to_other_tiles.push_back( {i,j,k,n} );
+  //  }
+  //}
 
   //std::cout << "INFO " << cid << " outgoing count:" << outgoing_count << "\n";
 #endif
@@ -1017,7 +1017,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //int np = to_other_tiles.size() + 1;
 
   // DEBUG
-  assert(to_other_tiles.size() == outgoing_count );
+  //assert(to_other_tiles.size() == outgoing_count );
 
   //std::cout << "outgoing prtcls: " << outgoing_count << " vs " << to_other_tiles.size() << "\n";
   //std::cout << "reserving1: " << first_message_size << "\n";
