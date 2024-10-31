@@ -1013,8 +1013,13 @@ void ParticleContainer<D>::pack_outgoing_particles()
   outgoing_extra_particles.clear();
     
   // +1 for info particle
-  int np = to_other_tiles.size() + 1;
+  int np = outgoing_count + 1; // value calculated in transfer_and_wrap_particles
+  //int np = to_other_tiles.size() + 1;
 
+  // DEBUG
+  assert(to_other_tiles.size() == outgoing_count );
+
+  //std::cout << "outgoing prtcls: " << outgoing_count << " vs " << to_other_tiles.size() << "\n";
   //std::cout << "reserving1: " << first_message_size << "\n";
   //std::cout << "reserving2: " << np <<" minus " << np-first_message_size << "\n";
     
@@ -1025,33 +1030,66 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
   // first particle is always the message info
   outgoing_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}); // store prtcl number in id slot
+                                                                              
+  // -------------------------------------------------- 
+  // v1 with on-the-fly calculation of escape condition
 
   // next, pack all other particles
-  int i=1, ind;
-  
-//  for (auto&& elem : to_other_tiles) {
-  for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
-  {
-    const auto &elem = to_other_tiles[ii];
-    ind = elem.n;
+  int ind=1;
+  for(int n=0; n<size(); n++){
 
-    if(i < first_message_size) {
-      outgoing_particles.push_back({ 
-        loc(0, ind), loc(1, ind), loc(2, ind), 
-        vel(0, ind), vel(1, ind), vel(2, ind), 
-        wgt(ind), 
-        id(0, ind), id(1, ind) });
-    } else {
-      outgoing_extra_particles.push_back({ 
-        loc(0, ind), loc(1, ind), loc(2, ind), 
-        vel(0, ind), vel(1, ind), vel(2, ind), 
-        wgt(ind), 
-        id(0, ind), id(1, ind) });
+    // check if moving out
+    auto [i,j,k] = info2dir( infoArr[n] );
+    bool inside_tile = (i == 0) && (j == 0) && (k == 0);
+    bool to_be_packed = !inside_tile;
+
+    // pack if true; split between fixed primary and adaptive extra message containers
+    if(to_be_packed) {
+      if(ind < first_message_size) {
+        outgoing_particles.push_back({ 
+          loc(0, n), loc(1, n), loc(2, n), 
+          vel(0, n), vel(1, n), vel(2, n), 
+          wgt(n), 
+          id(0, n), id(1, n) });
+      } else {
+        outgoing_extra_particles.push_back({ 
+          loc(0, n), loc(1, n), loc(2, n), 
+          vel(0, n), vel(1, n), vel(2, n), 
+          wgt(n), 
+          id(0, n), id(1, n) });
+      }
+      ind++;
     }
-
-    i++;
   }
 
+  //std::cout << " inserted " << ind << "\n";
+
+  // -------------------------------------------------- 
+  // v0 with to_other_tiles 
+  //for (size_t ii = 0; ii < to_other_tiles.size(); ii++)
+  //{
+  //  const auto &elem = to_other_tiles[ii];
+  //  ind = elem.n;
+
+  //  if(i < first_message_size) {
+  //    outgoing_particles.push_back({ 
+  //      loc(0, ind), loc(1, ind), loc(2, ind), 
+  //      vel(0, ind), vel(1, ind), vel(2, ind), 
+  //      wgt(ind), 
+  //      id(0, ind), id(1, ind) });
+  //  } else {
+  //    outgoing_extra_particles.push_back({ 
+  //      loc(0, ind), loc(1, ind), loc(2, ind), 
+  //      vel(0, ind), vel(1, ind), vel(2, ind), 
+  //      wgt(ind), 
+  //      id(0, ind), id(1, ind) });
+  //  }
+
+  //  i++;
+  //}
+
+
+  // -------------------------------------------------- 
   //outgoing_extra_particles.shrink_to_fit();
 
   // TODO: set next message size dynamically according to history
