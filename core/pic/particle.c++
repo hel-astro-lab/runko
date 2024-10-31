@@ -1130,8 +1130,8 @@ void ParticleContainer<D>::unpack_incoming_particles()
   //          << " seco:" << number_of_secondary_particles 
   //          << " N:"    << N << "\n"; 
 
-  //reserve( N + number_of_incoming_particles + number_of_secondary_particles );  //reserve for addition
-  resize( N + number_of_incoming_particles );  // resize for insertion
+  reserve( N + number_of_incoming_particles + number_of_secondary_particles );  //reserve for addition
+  //resize( N + number_of_incoming_particles );  // resize for insertion
 
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
@@ -1147,8 +1147,8 @@ void ParticleContainer<D>::unpack_incoming_particles()
     ids  = incoming_particles[i].id;
     proc = incoming_particles[i].proc;
 
-    //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
-    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1 );
+    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1 );
   }
 
   N += number_of_primary_particles-1;
@@ -1165,12 +1165,12 @@ void ParticleContainer<D>::unpack_incoming_particles()
     ids  = incoming_extra_particles[i].id;
     proc = incoming_extra_particles[i].proc;
       
-    //add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
-    insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i);
+    add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
+    //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i);
   }
 
   // update internal counter after insertion
-  Nprtcls += number_of_incoming_particles-1;
+  //Nprtcls += number_of_incoming_particles-1;
 
 
 #ifdef GPU
