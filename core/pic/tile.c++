@@ -272,7 +272,12 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
           );
     }
 
-    //std::cout << this->communication.cid << " send " << container.outgoing_particles.size() << " + " << container.outgoing_extra_particles.size() << " particles\n";
+    std::cout << this->communication.cid 
+      << " send " << container.outgoing_particles.size() 
+      << " / " << container.outgoing_particles[0].id
+      << " + " << container.outgoing_extra_particles.size() 
+      << " / " << container.outgoing_extra_particles[0].id
+      << " particles\n";
   }
 
 #ifdef GPU
@@ -354,7 +359,8 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     auto& container = get_container(ispc);
     //container.incoming_extra_particles.clear();
       
-    //std::cout << "recv_prtcl: got " << container.incoming_particles[0].id << " by mpi\n";
+    std::cout << "recv_prtcl1: got " << container.incoming_particles[0].id << " by mpi\n";
+    std::cout << "recv_prtcl2: got " << container.incoming_extra_particles[0].id << " by mpi\n";
 
     // check if we need to expect extra message
     //extra_size = msginfo.size() - container.first_message_size;
