@@ -547,9 +547,9 @@ public:
 
     //--------------------------------------------------
     // call pre-iteration functions to update internal arrays 
-    for(auto&& con : tile.containers) {
-      con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
-    }
+    //for(auto&& con : tile.containers) {
+    //  con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
+    //}
 
     // keep this ordering; initialization of arrays assumes this way of calling the functions
     // NOTE: cannot move this inside the loop because particle removal assumes that indices remain static
@@ -1127,7 +1127,8 @@ public:
               timer.start_comp("del_parent1");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
-                cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
+                //cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
+                cons[t1]->info(n1) = -1; // mark for deletion via outflow routines
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent1");
@@ -1156,7 +1157,8 @@ public:
               timer.start_comp("del_parent1");
               // kill parent
               if( prob_kill3 > rand() ) {
-                cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
+                //cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
+                cons[t1]->info(n1) = -1; // mark for deletion via outflow routines
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent1");
@@ -1204,7 +1206,8 @@ public:
               timer.start_comp("del_parent2");
               // remove parent prtcl if nothing was added
               if( ncop < EPS ) {
-                cons[t2]->to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
+                //cons[t2]->to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
+                cons[t2]->info(n2) = -1; // mark for deletion via outflow routines
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent2");
@@ -1227,7 +1230,8 @@ public:
               timer.start_comp("del_parent2");
               // kill parent
               if( prob_kill4 > rand() ) {
-                cons[t2]->to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
+                //cons[t2]->to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
+                cons[t2]->info(n2) = -1; // mark for deletion
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
               }
               timer.stop_comp("del_parent2");
@@ -1255,7 +1259,13 @@ public:
     std::map<std::string, int> info_prtcl_kill;
     for(auto&& con : tile.containers) {
       auto t1 = con.type;
-      info_prtcl_kill[t1] = cons[t1]->to_other_tiles.size();
+
+      int num_of_dels = 0;
+      #pragma omp simd reduction(+:num_of_dels)
+      for(int n=0; n<cons[t1]->size(); n++){
+        num_of_dels += cons[t1]->info(n) == -1 ? 1 : 0; // if -1 add one
+      }
+      info_prtcl_kill[t1] = num_of_dels;
     }
 
 
@@ -1305,9 +1315,9 @@ public:
 
     //--------------------------------------------------
     // call pre-iteration functions to update internal arrays 
-    for(auto&& con : tile.containers) {
-      con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
-    }
+    //for(auto&& con : tile.containers) {
+    //  con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
+    //}
 
 
     //--------------------------------------------------
@@ -1543,7 +1553,7 @@ public:
 
               // remove old parent particle t1
               timer.start_comp("del_parent");
-              cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
+              cons[t1]->info(n1) = -1; //to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
               cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
               timer.stop_comp("del_parent");
           }
@@ -1579,7 +1589,7 @@ public:
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
-    cons[t1]->to_other_tiles.clear(); // clear book keeping array
+    //cons[t1]->to_other_tiles.clear(); // clear book keeping array
 
     size_t N1 = cons[t1]->size(); // read particle number from here; 
 
@@ -1598,7 +1608,7 @@ public:
 
       zeta = rand();
       if( zeta < prob_kill) {
-        cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
+        cons[t1]->info(n1) = -1; //to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
       } else {
         cons[t1]->wgt(n1) = w1*f_kill; // compensate lost particles by increasing w
@@ -1852,7 +1862,7 @@ public:
     std::string t1 = "ph";
     size_t Nx = cons[t1]->size(); // read particle number from here; 
                                   //
-    cons[t1]->to_other_tiles.clear(); // clear book keeping array
+    //cons[t1]->to_other_tiles.clear(); // clear book keeping array
 
     float w, x, f, sKN; //, P_esc;
     for(size_t n1=0; n1<Nx; n1++) {
@@ -1911,7 +1921,7 @@ public:
         // book keeping of escaped flux
         add_to_histogram(x, w);
 
-        cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
+        cons[t1]->info(n1) = -1; //to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
       }
 
