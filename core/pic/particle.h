@@ -45,12 +45,12 @@ struct Particle {
 
 
 // data struct for coupling tile send/recv directions together 
-struct to_other_tiles_struct{
-  int i;
-  int j;
-  int k;
-  size_t n;
-};
+//struct to_other_tiles_struct{
+//  int i;
+//  int j;
+//  int k;
+//  size_t n;
+//};
 
 /*! \brief Container of particles inside the tile
 *
@@ -137,8 +137,8 @@ class ParticleContainer{
   ManVec<float> Bpart;
 
   //! multimap of particles going to other tiles
-  using mapType = ManVec<to_other_tiles_struct>;
-  mapType to_other_tiles;
+  //using mapType = ManVec<to_other_tiles_struct>;
+  //mapType to_other_tiles;
 
   // particle charge 
   double q = 1.0; 
@@ -317,6 +317,29 @@ class ParticleContainer{
     //return indArr[idim];
     std::vector<int> ret;
     for(const auto& e: indArr[idim])
+      ret.push_back(e);
+    return ret;
+  }
+
+  //--------------------------------------------------
+  // info
+  DEVCALLABLE
+  inline int info( size_t iprtcl ) const
+  {
+    return infoArr[iprtcl];
+  }
+
+  DEVCALLABLE
+  inline int& info( size_t iprtcl )       
+  {
+    return infoArr[iprtcl];
+  }
+
+  inline std::vector<int> infos()
+  {
+    //return wgtArr;
+    std::vector<int> ret;
+    for(const auto& e: infoArr)
       ret.push_back(e);
     return ret;
   }
