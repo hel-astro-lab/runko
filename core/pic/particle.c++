@@ -47,11 +47,11 @@ ParticleContainer<D>::ParticleContainer()
   static_assert( std::is_standard_layout_v<Particle>    == true );
 #endif
 
-  incoming_particles.resize(first_message_size);
-  incoming_extra_particles.resize(first_message_size); // pre-allocating 
+  //incoming_particles.resize(first_message_size);
+  incoming_extra_particles.reserve(first_message_size); // pre-allocating 
 
-  outgoing_particles.resize(first_message_size);
-  outgoing_extra_particles.resize(first_message_size); // pre-allocating
+  //outgoing_particles.resize(first_message_size);
+  outgoing_extra_particles.reserve(first_message_size); // pre-allocating
 
 #ifdef GPU
   //DEV_REGISTER
@@ -307,6 +307,12 @@ inline auto info2dir(int n){
   return std::make_tuple(i-1,j-1,k-1);
 }
 
+#pragma omp declare simd
+inline bool is_prtcl_inside(int n){
+  return (n == 0) || (n==14); // default val or ijk=0
+}
+
+
 
 // check outgoing particles and update internal markers if particles are overflowing
 template<size_t D>
@@ -486,7 +492,8 @@ std::array<double,3>& maxs)
                                                     
     int info = dir2info(i,j,k);
     infoArr[n] = info;
-    outgoing_count += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
+    //outgoing_count += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
+    outgoing_count += !is_prtcl_inside(info);
   } //, size(), *this);
 
 
@@ -675,13 +682,14 @@ void ParticleContainer<D>::delete_transferred_particles()
     
     // check if outside tile 
     int n = infoArr[first];
-    auto [i,j,k] = info2dir(n);
 
-    bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-    bool to_be_removed = !inside_tile;
+    //auto [i,j,k] = info2dir(n);
+    //bool inside_tile = (i == 0) && (j == 0) && (k == 0);
+    //bool to_be_removed = !inside_tile;
 
     // replace good value with a bad value
-    if( !to_be_removed ) {
+    //if( !to_be_removed ) {
+    if( is_prtcl_inside(n) ) {
       if( iter != first ){
 
         // should be move operation; same?
@@ -955,7 +963,7 @@ void ParticleContainer<D>::pack_all_particles()
 
   assert(false); // not workign anymore since new extra_message_size needs info prtcl
 
-  outgoing_particles.clear();
+  //outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
   // +1 for info particle
@@ -974,17 +982,18 @@ void ParticleContainer<D>::pack_all_particles()
   }
 
   // first particle is always the message info
-  outgoing_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}); // store prtcl number in id slot
+  outgoing_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}; // store prtcl number in id slot
 
   // next, pack all other particles
   int i=1;
   for(size_t ind=0; ind < size(); ind++) {
     if(i < first_message_size) {
-      outgoing_particles.push_back({ 
+      //outgoing_particles.push_back({ 
+      outgoing_particles[i] = {
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
         wgt(ind), 
-        id(0, ind), id(1, ind) });
+        id(0, ind), id(1, ind) };
     } else {
       outgoing_extra_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
@@ -1010,7 +1019,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  outgoing_particles.clear();
+  //outgoing_particles.clear();
   outgoing_extra_particles.clear();
     
 
@@ -1018,9 +1027,10 @@ void ParticleContainer<D>::pack_outgoing_particles()
   #pragma omp simd reduction(+:num_of_outgoing)
   for(int n=0; n<size(); n++){
     int info = infoArr[n];
-    auto [i,j,k] = info2dir(info);
 
-    num_of_outgoing += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
+    //auto [i,j,k] = info2dir(info);
+    //num_of_outgoing += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
+    num_of_outgoing += !is_prtcl_inside(info);
   } 
 
   // numbers of particles in MPI payloads
@@ -1031,7 +1041,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //    This gives us 2 ways to calculate extra container length: 1) via primary msg info and 2) via secondary info prtcl
     
   int np_tot = num_of_outgoing + 2;  // 2 info particles; one with total num of prtcls, and second with num of extra particles
-  int np_extra = np_tot-1 > first_message_size ? np_tot - first_message_size : 1;  // always 1 extra particle slow
+  int np_extra = np_tot-1 > first_message_size ? np_tot - first_message_size : 1;  // always 1 extra particle 
 
                                   
   // v0 versions
@@ -1053,7 +1063,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
 
   // first particle is always the message info
-  outgoing_particles.push_back(      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot, 0}); // store prtcl number in id slot
+  outgoing_particles[0] =            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot, 0}; // store prtcl number in id slot
   outgoing_extra_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_extra, 0}); // store prtcl number in id slot
                                                                               
   // -------------------------------------------------- 
@@ -1064,18 +1074,20 @@ void ParticleContainer<D>::pack_outgoing_particles()
   for(int n=0; n<size(); n++){
 
     // check if moving out
-    auto [i,j,k] = info2dir( infoArr[n] );
-    bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-    bool to_be_packed = !inside_tile;
+    //auto [i,j,k] = info2dir( infoArr[n] );
+    //bool inside_tile = (i == 0) && (j == 0) && (k == 0);
+    //bool to_be_packed = !inside_tile;
+    bool to_be_packed = !is_prtcl_inside(infoArr[n]);
 
     // pack if true; split between fixed primary and adaptive extra message containers
     if(to_be_packed) {
       if(ind < first_message_size) {
-        outgoing_particles.push_back({ 
+        //outgoing_particles.push_back({ 
+        outgoing_particles[ind] = {
           loc(0, n), loc(1, n), loc(2, n), 
           vel(0, n), vel(1, n), vel(2, n), 
           wgt(n), 
-          id(0, n), id(1, n) });
+          id(0, n), id(1, n) };
       } else {
         outgoing_extra_particles.push_back({ 
           loc(0, n), loc(1, n), loc(2, n), 

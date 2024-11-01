@@ -71,6 +71,7 @@ class ParticleContainer{
   /// unique key generator
   std::pair<int,int> keygen();
 
+
   protected:
 
   std::array<ManVec<float>, 3 > locArr; // x y z location
@@ -78,6 +79,7 @@ class ParticleContainer{
   std::array<ManVec<int>, 2 >   indArr; // cpu,id index
   ManVec<float> wgtArr;                 // weight
   ManVec<int>   infoArr;                // prtcl info (stores outflow information)
+
 
   public:
 
@@ -90,9 +92,13 @@ class ParticleContainer{
   ManVec<float> wgtCumArr;              // cumulative weights; kept 0 if not needed
   ManVec<float> eneArr;                 // particle energies
 
+  // size of MPI particle buffers
+  static const int first_message_size = 16384; //4096; 
+  // NOTE maximum prtcl size during first iteration is 2*first_msg; then resized
     
   /// packed outgoing particles
-  ManVec<Particle> outgoing_particles;
+  //ManVec<Particle> outgoing_particles;
+  std::array<Particle, first_message_size> outgoing_particles;
   ManVec<Particle> outgoing_extra_particles;
 
   /// pack all particles in the container
@@ -102,7 +108,8 @@ class ParticleContainer{
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  ManVec<Particle> incoming_particles;
+  //ManVec<Particle> incoming_particles;
+  std::array<Particle, first_message_size> incoming_particles;
   ManVec<Particle> incoming_extra_particles;
 
 #ifdef GPU
@@ -126,9 +133,6 @@ class ParticleContainer{
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();
 
-  // size of MPI particle buffers
-  const int first_message_size = 16384; //4096; 
-  // NOTE maximum prtcl size during first iteration is 2*first_msg; then resized
 
   //! particle specific electric field components
   ManVec<float> Epart;

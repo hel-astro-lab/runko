@@ -272,12 +272,12 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
           );
     }
 
-    std::cout << this->communication.cid 
-      << " send " << container.outgoing_particles.size() 
-      << " / " << container.outgoing_particles[0].id
-      << " + " << container.outgoing_extra_particles.size() 
-      << " / " << container.outgoing_extra_particles[0].id
-      << " particles\n";
+    //std::cout << this->communication.cid 
+    //  << " send " << container.outgoing_particles.size() 
+    //  << " / " << container.outgoing_particles[0].id
+    //  << " + " << container.outgoing_extra_particles.size() 
+    //  << " / " << container.outgoing_extra_particles[0].id
+    //  << " particles\n";
   }
 
 #ifdef GPU
@@ -320,7 +320,9 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
   std::vector<mpi::request> reqs;
   for (int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
-    container.incoming_particles.resize( container.first_message_size );
+
+    // static array
+    //container.incoming_particles.resize( container.first_message_size );
 
     reqs.emplace_back(
         comm.irecv(orig, get_tag(tag, ispc),
@@ -354,28 +356,33 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
   // and passed.
 
   // normal particles
-  int extra_size=0;
   for (int ispc=0; ispc<Nspecies(); ispc++) {
     auto& container = get_container(ispc);
     //container.incoming_extra_particles.clear();
       
-    std::cout << "recv_prtcl1: got " << container.incoming_particles[0].id << " by mpi\n";
-    std::cout << "recv_prtcl2: got " << container.incoming_extra_particles[0].id << " by mpi\n";
+    //std::cout << "recv_prtcl1: got " << container.incoming_particles[0].id << " by mpi\n";
 
     // check if we need to expect extra message
     //extra_size = msginfo.size() - container.first_message_size;
 
     // NOTE number of particles stored in id slot
-    extra_size = container.incoming_particles[0].id - container.first_message_size;
-    extra_size = extra_size <= 0 ? 1 : extra_size; // minimum of 1 info prtcl
+    //int extra_size = container.incoming_particles[0].id - container.first_message_size;
+    //extra_size = extra_size <= 0 ? 1 : extra_size; // minimum of 1 info prtcl
 
-    if(extra_size > 0) {
-      container.incoming_extra_particles.resize(extra_size);
+    int first_message_size = container.first_message_size;
+    int np_tot = container.incoming_particles[0].id;
+    int np_extra = np_tot-1 > first_message_size ? np_tot - first_message_size : 1;
+
+    //std::cout << "recv_prtcl2: got " << container.incoming_extra_particles[0].id <<  " / " << np_extra << " by mpi\n";
+    //assert(np_extra == container.incoming_extra_particles[0].id );
+
+    if(np_extra > 0) {
+      container.incoming_extra_particles.resize(np_extra);
 
       reqs.emplace_back(
           comm.irecv(orig, get_extra_tag(tag, ispc),
             container.incoming_extra_particles.data(),
-            extra_size)
+            np_extra)
           );
     } else {
       container.incoming_extra_particles.clear();
@@ -440,8 +447,8 @@ void Tile<D>::shrink_to_fit_all_particles()
   for(auto&& container : containers) {
 
     // mpi main containers (should remain the same if not dynamical sizing)
-    container.incoming_particles.resize(container.first_message_size);
-    container.outgoing_particles.resize(container.first_message_size);
+    //container.incoming_particles.resize(container.first_message_size);
+    //container.outgoing_particles.resize(container.first_message_size);
 
     // mpi extra message containers
     container.incoming_extra_particles.shrink_to_fit();
