@@ -237,7 +237,7 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
     reqs.emplace_back(
         comm.isend(dest, get_tag(tag, ispc), 
           container.outgoing_particles.data(), 
-          container.outgoing_particles.size())
+          container.first_message_size)
         );
   }
 

@@ -982,7 +982,8 @@ void ParticleContainer<D>::pack_all_particles()
   }
 
   // first particle is always the message info
-  outgoing_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}; // store prtcl number in id slot
+  outgoing_particles[0]       = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}; // store prtcl number in id slot
+  outgoing_extra_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np, 0}; // store prtcl number in id slot
 
   // next, pack all other particles
   int i=1;
@@ -995,6 +996,7 @@ void ParticleContainer<D>::pack_all_particles()
         wgt(ind), 
         id(0, ind), id(1, ind) };
     } else {
+      //outgoing_extra_particles.push_back({ 
       outgoing_extra_particles.push_back({ 
         loc(0, ind), loc(1, ind), loc(2, ind), 
         vel(0, ind), vel(1, ind), vel(2, ind), 
@@ -1020,7 +1022,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
 #endif
 
   //outgoing_particles.clear();
-  outgoing_extra_particles.clear();
+  //outgoing_extra_particles.clear();
     
 
   int num_of_outgoing = 0;
@@ -1059,12 +1061,12 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //  // reserve is needed here; if size is less than capacity, we do nothing
   //  outgoing_extra_particles.reserve( np_tot - first_message_size ); 
   //}
-  outgoing_extra_particles.reserve( np_extra );
+  outgoing_extra_particles.resize( np_extra );
 
 
   // first particle is always the message info
-  outgoing_particles[0] =            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot, 0}; // store prtcl number in id slot
-  outgoing_extra_particles.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_extra, 0}); // store prtcl number in id slot
+  outgoing_particles[0] =       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot, 0}; // store prtcl number in id slot
+  outgoing_extra_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_extra, 0}; // store prtcl number in id slot
                                                                               
   // -------------------------------------------------- 
   // v1 with on-the-fly calculation of escape condition
@@ -1089,11 +1091,13 @@ void ParticleContainer<D>::pack_outgoing_particles()
           wgt(n), 
           id(0, n), id(1, n) };
       } else {
-        outgoing_extra_particles.push_back({ 
+        int ind2 = ind - first_message_size + 1;
+        //outgoing_extra_particles.push_back({ 
+        outgoing_extra_particles[ind2] = {
           loc(0, n), loc(1, n), loc(2, n), 
           vel(0, n), vel(1, n), vel(2, n), 
           wgt(n), 
-          id(0, n), id(1, n) });
+          id(0, n), id(1, n) };
       }
       ind++;
     }
