@@ -106,7 +106,7 @@ void pic::Piston<D>::solve(
 {
 
   // outflowing particles
-  std::vector<int> to_be_deleted;
+  //std::vector<int> to_be_deleted;
 
   // skip if piston head is not inside tile boundaries
   auto mins = tile.mins;
@@ -116,7 +116,7 @@ void pic::Piston<D>::solve(
 
 
   for(auto&& container : tile.containers) {
-    to_be_deleted.clear();
+    //to_be_deleted.clear();
 
     const double c = tile.cfl;
     const double q = container.q;
@@ -148,7 +148,9 @@ void pic::Piston<D>::solve(
         // check if this is reflected particle; else remove 
         // equals to right boundary outflow as they wrap particles to here
         if(walloc0 - x0 > c) {
-          to_be_deleted.push_back(n);
+          //to_be_deleted.push_back(n);
+          container.loc(0,n) =  1; // insert prtcl behind wall
+          container.info(n)  = -1; // insert prtcl behind wall
           continue;
         }
 
@@ -160,7 +162,10 @@ void pic::Piston<D>::solve(
 
         // skip this particle since it is further away from the wall than one time step
         if(dt > 1.0) {
-          to_be_deleted.push_back(n);
+          //to_be_deleted.push_back(n);
+
+          container.loc(0,n) =  1; // insert prtcl behind wall
+          container.info(n)  = -2; // insert prtcl behind wall
           continue; 
         }
 
@@ -217,7 +222,8 @@ void pic::Piston<D>::solve(
     }
 
     // process outflown particles
-    container.delete_particles(to_be_deleted);
+    //container.delete_particles(to_be_deleted);
+    container.delete_transferred_particles(); // delete via infoArr status (-1 or -2)
 
   } // end of loop over species
 }
