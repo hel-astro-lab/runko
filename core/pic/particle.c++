@@ -597,6 +597,9 @@ void ParticleContainer<D>::delete_particles(std::vector<int> to_be_deleted)
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
+  assert(false);
+
+
   std::sort(to_be_deleted.begin(), to_be_deleted.end(), std::greater<int>() );
   
   float* locn[3];
@@ -1161,9 +1164,6 @@ void ParticleContainer<D>::unpack_incoming_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  float locx, locy, locz, velx, vely, velz, wgts;
-  int ids, proc;
-
   // get real number of incoming particles
   int number_of_incoming_particles = incoming_particles[0].id; // number stored in id slot
   int number_of_incoming_extra_particles = incoming_extra_particles[0].id;
@@ -1189,24 +1189,24 @@ void ParticleContainer<D>::unpack_incoming_particles()
   //  << " seco:" << number_of_secondary_particles 
   //  << " N:"    << N << "\n"; 
 
-  reserve( N + number_of_incoming_particles - 2 );  //reserve for addition
+  reserve( N + number_of_incoming_particles - 2);  //reserve for addition
   //resize( N + number_of_incoming_particles - 2 );  // resize for insertion
 
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
     //std::cout << "inserting1 to slot" << N+i-1 << " out of " << N << "\n";
 
-    locx = incoming_particles[i].x;
-    locy = incoming_particles[i].y;
-    locz = incoming_particles[i].z;
+    float locx = incoming_particles[i].x;
+    float locy = incoming_particles[i].y;
+    float locz = incoming_particles[i].z;
 
-    velx = incoming_particles[i].ux;
-    vely = incoming_particles[i].uy;
-    velz = incoming_particles[i].uz;
-    wgts = incoming_particles[i].w;
+    float velx = incoming_particles[i].ux;
+    float vely = incoming_particles[i].uy;
+    float velz = incoming_particles[i].uz;
+    float wgts = incoming_particles[i].w;
 
-    ids  = incoming_particles[i].id;
-    proc = incoming_particles[i].proc;
+    int ids  = incoming_particles[i].id;
+    int proc = incoming_particles[i].proc;
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
     //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1 );
@@ -1216,17 +1216,17 @@ void ParticleContainer<D>::unpack_incoming_particles()
   for(int i=1; i<number_of_secondary_particles; i++){
     //std::cout << "inserting2 to slot" << N+i-1 << " out of " << N << "\n";
 
-    locx = incoming_extra_particles[i].x;
-    locy = incoming_extra_particles[i].y;
-    locz = incoming_extra_particles[i].z;
+    float locx = incoming_extra_particles[i].x;
+    float locy = incoming_extra_particles[i].y;
+    float locz = incoming_extra_particles[i].z;
 
-    velx = incoming_extra_particles[i].ux;
-    vely = incoming_extra_particles[i].uy;
-    velz = incoming_extra_particles[i].uz;
-    wgts = incoming_extra_particles[i].w;
+    float velx = incoming_extra_particles[i].ux;
+    float vely = incoming_extra_particles[i].uy;
+    float velz = incoming_extra_particles[i].uz;
+    float wgts = incoming_extra_particles[i].w;
 
-    ids  = incoming_extra_particles[i].id;
-    proc = incoming_extra_particles[i].proc;
+    int ids  = incoming_extra_particles[i].id;
+    int proc = incoming_extra_particles[i].proc;
       
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
     //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1);
