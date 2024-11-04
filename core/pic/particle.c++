@@ -1033,19 +1033,17 @@ void ParticleContainer<D>::pack_outgoing_particles()
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  //outgoing_particles.clear();
-  //outgoing_extra_particles.clear();
-    
 
-  int num_of_outgoing = 0;
-  #pragma omp simd reduction(+:num_of_outgoing)
-  for(int n=0; n<size(); n++){
-    int info = infoArr[n];
+  //int num_of_outgoing = 0;
+  //#pragma omp simd reduction(+:num_of_outgoing)
+  //for(int n=0; n<size(); n++){
+  //  int info = infoArr[n];
 
-    //auto [i,j,k] = info2dir(info);
-    //num_of_outgoing += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
-    num_of_outgoing += !is_prtcl_inside(info);
-  } 
+  //  //auto [i,j,k] = info2dir(info);
+  //  //num_of_outgoing += (i!=0) || (j!=0) || (k!=0 ) ? 1 : 0;
+  //  num_of_outgoing += !is_prtcl_inside(info);
+  //} 
+
 
   // numbers of particles in MPI payloads
   // primary msg is fixed/static and its size is always first_message_size
@@ -1054,8 +1052,8 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //    it carries an info particle (as a first element) that announces its own length. 
   //    This gives us 2 ways to calculate extra container length: 1) via primary msg info and 2) via secondary info prtcl
     
-  int np_tot = num_of_outgoing + 2;  // 2 info particles; one with total num of prtcls, and second with num of extra particles
-  int np_extra = np_tot-1 > first_message_size ? np_tot - first_message_size : 1;  // always 1 extra particle 
+  //int np_tot = num_of_outgoing + 2;  // 2 info particles; one with total num of prtcls, and second with num of extra particles
+  //int np_extra = np_tot-1 > first_message_size ? np_tot - first_message_size : 1;  // always 1 extra particle 
 
                                   
   // v0 versions
@@ -1073,48 +1071,49 @@ void ParticleContainer<D>::pack_outgoing_particles()
   //  // reserve is needed here; if size is less than capacity, we do nothing
   //  outgoing_extra_particles.reserve( np_tot - first_message_size ); 
   //}
-  outgoing_extra_particles.resize( np_extra );
-
+  //outgoing_extra_particles.resize( np_extra );
 
   // first particle is always the message info
-  outgoing_particles[0] =       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot,   0}; // store prtcl number in id slot
-  outgoing_extra_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_extra, 0}; // store prtcl number in id slot
+  //outgoing_particles[0] =       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot,   0}; // store prtcl number in id slot
+  //outgoing_extra_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_extra, 0}; // store prtcl number in id slot
+
+
+  // initialize msg arrays 
+  outgoing_extra_particles.clear();
+  outgoing_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0}; // store prtcl number in id slot
+
                                                                               
   // -------------------------------------------------- 
   // v1 with on-the-fly calculation of escape condition
 
   // next, pack all other particles
-  int ind=1;
+  int count=1;
   for(int n=0; n<size(); n++){
 
     // check if moving out
-    //auto [i,j,k] = info2dir( infoArr[n] );
-    //bool inside_tile = (i == 0) && (j == 0) && (k == 0);
-    //bool to_be_packed = !inside_tile;
     bool to_be_packed = !is_prtcl_inside(infoArr[n]);
 
     // pack if true; split between fixed primary and adaptive extra message containers
     if(to_be_packed) {
-      if(ind < first_message_size) {
-        //outgoing_particles.push_back({ 
-        outgoing_particles[ind] = {
+      if(count < first_message_size) {
+        outgoing_particles[count] = {
           loc(0, n), loc(1, n), loc(2, n), 
           vel(0, n), vel(1, n), vel(2, n), 
           wgt(n), 
           id(0, n), id(1, n) };
       } else {
-        int ind2 = ind - first_message_size + 1;
-        //outgoing_extra_particles.push_back({ 
-        outgoing_extra_particles[ind2] = {
+        outgoing_extra_particles.push_back({ 
           loc(0, n), loc(1, n), loc(2, n), 
           vel(0, n), vel(1, n), vel(2, n), 
           wgt(n), 
-          id(0, n), id(1, n) };
+          id(0, n), id(1, n) });
       }
-      ind++;
+      count++;
     }
   }
-  ind++; // for extra prtcl payload
+
+  outgoing_particles[0].id = count; // update info
+
 
   //std::cout << " inserted " << ind << "\n";
 
@@ -1165,18 +1164,12 @@ void ParticleContainer<D>::unpack_incoming_particles()
 #endif
 
   // get real number of incoming particles
-  int number_of_incoming_particles = incoming_particles[0].id; // number stored in id slot
-  int number_of_incoming_extra_particles = incoming_extra_particles[0].id;
+  int np_tot = incoming_particles[0].id; // number stored in id slot
 
-  int number_of_primary_particles = 
-    number_of_incoming_particles > first_message_size 
-    ? first_message_size : number_of_incoming_particles;
+  // first and extra msg sizes
+  int np_first  = np_tot > first_message_size ? first_message_size : np_tot;
+  int np_extra = np_tot > first_message_size ? np_tot - first_message_size : 0;
 
-  int number_of_secondary_particles = number_of_incoming_extra_particles;
-
-#ifdef DEBUG
-  assert(number_of_secondary_particles == incoming_extra_particles.size() );
-#endif
 
   // reserve arrays
   int N = size();
@@ -1189,13 +1182,10 @@ void ParticleContainer<D>::unpack_incoming_particles()
   //  << " seco:" << number_of_secondary_particles 
   //  << " N:"    << N << "\n"; 
 
-  reserve( N + number_of_incoming_particles - 2);  //reserve for addition
-  //resize( N + number_of_incoming_particles - 2 );  // resize for insertion
+  reserve( N + np_tot - 1);  //reserve for addition
 
   // skipping 1st info particle
-  for(int i=1; i<number_of_primary_particles; i++){
-    //std::cout << "inserting1 to slot" << N+i-1 << " out of " << N << "\n";
-
+  for(int i=1; i<np_first; i++){
     float locx = incoming_particles[i].x;
     float locy = incoming_particles[i].y;
     float locz = incoming_particles[i].z;
@@ -1209,13 +1199,9 @@ void ParticleContainer<D>::unpack_incoming_particles()
     int proc = incoming_particles[i].proc;
 
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
-    //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1 );
   }
 
-  //N += number_of_primary_particles-1;
-  for(int i=1; i<number_of_secondary_particles; i++){
-    //std::cout << "inserting2 to slot" << N+i-1 << " out of " << N << "\n";
-
+  for(int i=0; i<np_extra; i++){
     float locx = incoming_extra_particles[i].x;
     float locy = incoming_extra_particles[i].y;
     float locz = incoming_extra_particles[i].z;
@@ -1229,12 +1215,7 @@ void ParticleContainer<D>::unpack_incoming_particles()
     int proc = incoming_extra_particles[i].proc;
       
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
-    //insert_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc, N+i-1);
   }
-
-  // update internal counter after insertion
-  //Nprtcls += number_of_incoming_particles-2;
-
 
 #ifdef GPU
   nvtxRangePop();

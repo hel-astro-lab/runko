@@ -368,13 +368,14 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     // NOTE number of particles stored in id slot
     //int extra_size = container.incoming_particles[0].id - container.first_message_size;
     //extra_size = extra_size <= 0 ? 1 : extra_size; // minimum of 1 info prtcl
+      
+    //std::cout << "recv_prtcl2: got " << container.incoming_extra_particles[0].id <<  " / " << np_extra << " by mpi\n";
+    //assert(np_extra == container.incoming_extra_particles[0].id );
 
     int first_message_size = container.first_message_size;
     int np_tot = container.incoming_particles[0].id;
-    int np_extra = np_tot-1 > first_message_size ? np_tot - first_message_size : 1;
+    int np_extra = np_tot > first_message_size ? np_tot - first_message_size : 0;
 
-    //std::cout << "recv_prtcl2: got " << container.incoming_extra_particles[0].id <<  " / " << np_extra << " by mpi\n";
-    //assert(np_extra == container.incoming_extra_particles[0].id );
 
     if(np_extra > 0) {
       container.incoming_extra_particles.resize(np_extra);
