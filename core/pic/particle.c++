@@ -833,6 +833,15 @@ void ParticleContainer<D>::transfer_and_wrap_particles(
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
+  // global grid limits
+  const float minx = global_mins[0];
+  const float miny = global_mins[1];
+  const float minz = global_mins[2];
+
+  const float maxx = global_maxs[0];
+  const float maxy = global_maxs[1];
+  const float maxz = global_maxs[2];
+
   //--------------------------------------------------
   // v2: loop w/o external to_other_tiles storage
 
@@ -852,9 +861,9 @@ void ParticleContainer<D>::transfer_and_wrap_particles(
     if( (D==3) && (i== -dirs[0]) && (j==-dirs[1]) && (k==-dirs[2]) ) add = true;
     
     if(add) {
-      float locx = wrap( neigh.loc(0, n), static_cast<float>(global_mins[0]), static_cast<float>(global_maxs[0]) );
-      float locy = wrap( neigh.loc(1, n), static_cast<float>(global_mins[1]), static_cast<float>(global_maxs[1]) );
-      float locz = wrap( neigh.loc(2, n), static_cast<float>(global_mins[2]), static_cast<float>(global_maxs[2]) );
+      float locx = wrap( neigh.loc(0, n), minx, maxx );
+      float locy = wrap( neigh.loc(1, n), miny, maxy );
+      float locz = wrap( neigh.loc(2, n), minz, maxz );
 
       add_identified_particle(
           {locx, locy, locz}, 
@@ -1065,7 +1074,7 @@ void ParticleContainer<D>::pack_outgoing_particles()
 
 
   // first particle is always the message info
-  outgoing_particles[0] =       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot, 0}; // store prtcl number in id slot
+  outgoing_particles[0] =       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_tot,   0}; // store prtcl number in id slot
   outgoing_extra_particles[0] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, np_extra, 0}; // store prtcl number in id slot
                                                                               
   // -------------------------------------------------- 
@@ -1186,6 +1195,7 @@ void ParticleContainer<D>::unpack_incoming_particles()
   // skipping 1st info particle
   for(int i=1; i<number_of_primary_particles; i++){
     //std::cout << "inserting1 to slot" << N+i-1 << " out of " << N << "\n";
+
     locx = incoming_particles[i].x;
     locy = incoming_particles[i].y;
     locz = incoming_particles[i].z;

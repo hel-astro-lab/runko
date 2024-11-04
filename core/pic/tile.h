@@ -57,6 +57,10 @@ public:
     // label container with tile cid; used for identifying containers when debugging
     block.cid = cid;
 
+    // label container with exterior tile limits
+    block.mins = mins;
+    block.maxs = maxs;
+
     // add 
     containers.push_back(block); 
   };

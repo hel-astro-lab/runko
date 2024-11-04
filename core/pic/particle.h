@@ -88,6 +88,10 @@ class ParticleContainer{
 
   int Nprtcls_cap = 0; //current capacity of the arrays
 
+  // mins and max limits for the exterior tile
+  std::array<double,D> mins; 
+  std::array<double,D> maxs;
+
   // these arrays are required for QED interactions
   ManVec<float> wgtCumArr;              // cumulative weights; kept 0 if not needed
   ManVec<float> eneArr;                 // particle energies
