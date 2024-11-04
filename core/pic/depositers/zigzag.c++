@@ -112,8 +112,8 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
           j1 < -H || j1 >= maxs[1] + H-1 ||
           j2 < -H || j2 >= maxs[1] + H-1 ||
           k1 < -H || k1 >= maxs[2] + H-1 ||
-          k2 < -H || k2 >= maxs[2] + H-1 ) && 
-          con.wgt(n) > 0.0) {
+          k2 < -H || k2 >= maxs[2] + H-1 ) ){
+          //&& con.wgt(n) > 0.0) {
 
         std::cerr << "ERROR ZIGZAG:" 
                   << " i1 " << i1 << " i2 " << i2
