@@ -419,7 +419,7 @@ class ParticleContainer{
   void delete_transferred_particles();
 
   /// process through an index list and delete particles in it
-  void delete_particles(std::vector<int> to_be_deleted);
+  //void delete_particles(std::vector<int> to_be_deleted);
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(
