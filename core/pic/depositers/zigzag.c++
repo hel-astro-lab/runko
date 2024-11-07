@@ -102,10 +102,11 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
 
+
      //-------------------------------------------------- 
      // check outflow
-
-      // debug guard
+#if DEBUG
+       
       const int H = 3;
       if((i1 < -H || i1 >= maxs[0] + H-1 ||
           i2 < -H || i2 >= maxs[0] + H-1 ||
@@ -131,6 +132,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
         i1=0, i2=0, j1=0, j2=0, k1=0, k2=0;
         //assert(false);
       }
+#endif
 
       //--------------------------------------------------
       // one-dimensional indices
