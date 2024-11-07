@@ -1,0 +1,39 @@
+#!/bin/bash
+#SBATCH -J 3ds3-x2048
+#SBATCH -p cpu
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -c 1                   # cores per task
+#SBATCH --ntasks-per-node=128  # 128 for amd epyc romes
+#SBATCH -t 20-00:00:00         # max run time
+#SBATCH --nodes=8              # nodes reserved
+#SBATCH --mem-per-cpu=7G       # max 7G/128 cores
+#SBATCH --distribution=block:block
+
+# SBATCH --exclude=x3000c0s14b3n0,x3000c0s14b4n0,x3000c0s16b1n0
+# SBATCH --nodelist=
+
+# HILE-C node list
+# x3000c0s14b1n0,x3000c0s14b2n0,x3000c0s14b3n0,x3000c0s14b4n0,x3000c0s16b1n0,x3000c0s16b2n0,x3000c0s16b3n0,x3000c0s16b4n0,x3000c0s18b1n0,x3000c0s18b2n0,x3000c0s18b3n0,x3000c0s18b4n0
+
+# specific environment variable settings
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+
+# Cray optimizations
+export MPICH_OFI_STARTUP_CONNECT=1  # create mpi rank connections in the beginning, not on the fly
+export FI_CXI_DEFAULT_TX_SIZE=16384 # 4096 # increase max MPI msgs per rank
+# export FI_CXI_RDZV_THRESHOLD=16384 # same but for slingshot <2.1
+export FI_CXI_RX_MATCH_MODE=hybrid # in case hardware storate overflows, we use software mem
+
+
+# export FI_OFI_RXM_SAR_LIMIT=524288 # mpi small/eager msg limit in bytes
+# export FI_OFI_RXM_BUFFER_SIZE=131072 # mpi msg buffer of 128KiB
+
+# go to working directory
+cd $RUNKODIR/projects/pic-shocks/
+ 
+srun --mpi=cray_shasta python3 pic.py --conf 3dsig3.ini   # Cray
+#srun --mpi=pmix python3 pic.py --conf 3dsig3.ini  # GCC + OpenMPI

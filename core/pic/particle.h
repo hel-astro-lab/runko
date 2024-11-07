@@ -18,7 +18,7 @@
 
 namespace pic {
 
-/// Particle data struct for communication; designe to be POD
+/// Particle data struct for communication; desiged to be POD
 // NOTE: ParticleContainer checks the validity of this struct in its
 //       own constructor.
 struct Particle {
@@ -71,25 +71,38 @@ class ParticleContainer{
   /// unique key generator
   std::pair<int,int> keygen();
 
+
   protected:
 
   std::array<ManVec<float>, 3 > locArr; // x y z location
   std::array<ManVec<float>, 3 > velArr; // vx vy vz velocities
-  std::array<ManVec<int>, 2 > indArr;     // cpu,id index
+  std::array<ManVec<int>, 2 >   indArr; // cpu,id index
   ManVec<float> wgtArr;                 // weight
+  ManVec<int>   infoArr;                // prtcl info (stores outflow information)
+
 
   public:
 
   int Nprtcls = 0;
   int cid = 0; // container identification id (minted with tile id)
 
+  int Nprtcls_cap = 0; //current capacity of the arrays
+
+  // mins and max limits for the exterior tile
+  std::array<double,D> mins; 
+  std::array<double,D> maxs;
+
   // these arrays are required for QED interactions
   ManVec<float> wgtCumArr;              // cumulative weights; kept 0 if not needed
   ManVec<float> eneArr;                 // particle energies
 
+  // size of MPI particle buffers
+  static const int first_message_size = 16384; //4096; 
+  // NOTE maximum prtcl size during first iteration is 2*first_msg; then resized
     
   /// packed outgoing particles
-  ManVec<Particle> outgoing_particles;
+  //ManVec<Particle> outgoing_particles;
+  std::array<Particle, first_message_size> outgoing_particles;
   ManVec<Particle> outgoing_extra_particles;
 
   /// pack all particles in the container
@@ -99,7 +112,8 @@ class ParticleContainer{
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  ManVec<Particle> incoming_particles;
+  //ManVec<Particle> incoming_particles;
+  std::array<Particle, first_message_size> incoming_particles;
   ManVec<Particle> incoming_extra_particles;
 
 #ifdef GPU
@@ -123,9 +137,6 @@ class ParticleContainer{
   /// unpack incoming particles into internal vectors
   void unpack_incoming_particles();
 
-  // size of MPI particle buffers
-  const int first_message_size = 4096; 
-  // NOTE maximum prtcl size during first iteration is 2*first_msg; then resized
 
   //! particle specific electric field components
   ManVec<float> Epart;
@@ -171,7 +182,7 @@ class ParticleContainer{
   DEVCALLABLE size_t size() const { 
 
 #ifdef DEBUG
-    bool ts[9] = {0,0,0,0,0,0,0,0,0};
+    bool ts[10] = {0,0,0,0,0,0,0,0,0,0};
 
     ts[0] = locArr[0].size() == locArr[1].size();
     ts[1] = locArr[0].size() == locArr[2].size();
@@ -181,7 +192,8 @@ class ParticleContainer{
     ts[5] = locArr[0].size() == indArr[0].size();
     ts[6] = locArr[0].size() == indArr[1].size();
     ts[7] = locArr[0].size() == wgtArr.size();
-    ts[8] = locArr[0].size() == static_cast<size_t>(Nprtcls);
+    ts[8] = locArr[0].size() == infoArr.size();
+    ts[9] = locArr[0].size() == static_cast<size_t>(Nprtcls);
 
     //bool ts2 = 0;
     //for(size_t i = 0; i<9; i++) ts2 += !ts[i];
@@ -194,7 +206,8 @@ class ParticleContainer{
         !ts[5] ||
         !ts[6] ||
         !ts[7] ||
-        !ts[8] ){
+        !ts[8] ||
+        !ts[9] ){
       std::cerr << "ERROR: particle number mismatch\n";
       std::cerr << locArr[0].size() << std::endl;
       std::cerr << locArr[1].size() << std::endl;
@@ -205,6 +218,7 @@ class ParticleContainer{
       std::cerr << indArr[0].size() << std::endl;
       std::cerr << indArr[1].size() << std::endl;
       std::cerr << wgtArr.size()    << std::endl;
+      std::cerr << infoArr.size()   << std::endl;
       std::cerr << Nprtcls          << std::endl;
       assert(false);
     }
@@ -315,6 +329,29 @@ class ParticleContainer{
     return ret;
   }
 
+  //--------------------------------------------------
+  // info
+  DEVCALLABLE
+  inline int info( size_t iprtcl ) const
+  {
+    return infoArr[iprtcl];
+  }
+
+  DEVCALLABLE
+  inline int& info( size_t iprtcl )       
+  {
+    return infoArr[iprtcl];
+  }
+
+  inline std::vector<int> infos()
+  {
+    //return wgtArr;
+    std::vector<int> ret;
+    for(const auto& e: infoArr)
+      ret.push_back(e);
+    return ret;
+  }
+
 /*
   virtual inline std::vector<int>& id(size_t idim)
   {
@@ -360,6 +397,12 @@ class ParticleContainer{
       float prtcl_wgt, 
       int _id, int _proc);
 
+  // insert a particle to pre-reserved array; dangerous! 
+  virtual void insert_identified_particle (
+      std::vector<float> prtcl_loc,
+      std::vector<float> prtcl_vel,
+      float prtcl_wgt, 
+      int _id, int _proc, int ind);
 
   // --------------------------------------------------
   // particle boundary checks
@@ -376,7 +419,7 @@ class ParticleContainer{
   void delete_transferred_particles();
 
   /// process through an index list and delete particles in it
-  void delete_particles(std::vector<int> to_be_deleted);
+  //void delete_particles(std::vector<int> to_be_deleted);
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(

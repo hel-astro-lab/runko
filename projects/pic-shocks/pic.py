@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from mpi4py import MPI
+#print("MPI Version:", MPI.Get_version())
+
 import numpy as np
 import sys, os
 
@@ -166,6 +168,7 @@ if __name__ == "__main__":
     # create conf object with simulation parameters based on them
     conf = Configuration(args.conf_filename, do_print=sch.is_master)
     sch.conf = conf # remember to update conf to scheduler
+    sch.debug = False # code debug mode; prints after every task
 
     if conf.mpi_task_mode: sch.switch_to_task_mode() # switch scheduler to task mode
 
@@ -202,28 +205,26 @@ if __name__ == "__main__":
         import pyrunko.emf.threeD as pyfld # fld c++ bindings
     # --------------------------------------------------
     # setup grid
-    grid = pycorgi.Grid(conf.Nx, conf.Ny, conf.Nz)
-    grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
-    sch.grid = grid # remember to update scheduler
-
+    sch.grid = pycorgi.Grid(conf.Nx, conf.Ny, conf.Nz)
+    sch.grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
 
     # compute initial mpi ranks using Hilbert's curve partitioning
-    if conf.use_injector:
-        pytools.load_catepillar_track_mpi(grid, conf.mpi_track, conf) 
+    if conf.use_injector and conf.mpi_track > 1:
+        pytools.load_catepillar_track_mpi(sch.grid, conf.mpi_track, conf) 
     else:
-        #pytools.load_mpi_y_strides(grid, conf) #equal x stripes
+        #pytools.load_mpi_y_strides(sch.grid, conf) #equal x stripes
 
         # advanced Hilbert curve optimization (leave 4 first ranks empty)
-        #if grid.size() > 24: # big run
-        #    pytools.balance_mpi_3D_rootmem(grid, 4) 
+        #if sch.grid.size() > 24: # big run
+        #    pytools.balance_mpi_3D_rootmem(sch.grid, 4) 
         #else:
 
-        pytools.balance_mpi(grid, conf) #Hilbert curve optimization 
+        pytools.balance_mpi(sch.grid, conf) #Hilbert curve optimization 
 
 
     # load pic tiles into grid
-    #pytools.pic.load_tiles(grid, conf)
-    load_damping_tiles(grid, conf) # NOTE different from regular intialization
+    #pytools.pic.load_tiles(sch.grid, conf)
+    load_damping_tiles(sch.grid, conf) # NOTE different from regular intialization
 
     # --------------------------------------------------
     # simulation restart
@@ -242,31 +243,31 @@ if __name__ == "__main__":
 
         # injecting plasma particles
         if not(conf.use_injector):
-            prtcl_stat = pytools.pic.inject(grid, velocity_profile, density_profile, conf)
+            prtcl_stat = pytools.pic.inject(sch.grid, velocity_profile, density_profile, conf)
             if sch.is_example_worker: 
                 print("injected:")
                 print("     e- prtcls: {}".format(prtcl_stat[0]))
                 print("     e+ prtcls: {}".format(prtcl_stat[1]))
 
         # inserting em grid
-        insert_em_fields(grid, conf, do_initialization=True)
+        insert_em_fields(sch.grid, conf, do_initialization=True)
 
         # save a snapshot of the state to disk
-        pytools.save_mpi_grid_to_disk(conf.outdir, 0, grid, conf)
+        pytools.save_mpi_grid_to_disk(conf.outdir, 0, sch.grid, conf)
 
     else:
         if sch.is_master:
             print("restarting simulation from lap {}...".format(io_stat["lap"]))
 
         # insert damping reference values
-        insert_em_fields(grid, conf, do_initialization=False)
+        insert_em_fields(sch.grid, conf, do_initialization=False)
 
         # read restart files
-        pyfld.read_grids(grid, io_stat["read_lap"], io_stat["read_dir"])
-        pypic.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyfld.read_grids(sch.grid, io_stat["read_lap"], io_stat["read_dir"])
+        pypic.read_particles(sch.grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # set particle types
-        for tile in pytools.tiles_all(grid):
+        for tile in pytools.tiles_all(sch.grid):
             for ispcs in range(conf.Nspecies):
                 container = tile.get_container(ispcs)
                 container.type = conf.prtcl_types[ispcs] # name container
@@ -280,15 +281,15 @@ if __name__ == "__main__":
     if sch.is_master: print("load balancing grid..."); sys.stdout.flush()
 
     # update boundaries
-    grid.analyze_boundaries()
-    grid.send_tiles()
-    grid.recv_tiles()
+    sch.grid.analyze_boundaries()
+    sch.grid.send_tiles()
+    sch.grid.recv_tiles()
     MPI.COMM_WORLD.barrier()
 
     if sch.is_master: print("loading virtual tiles..."); sys.stdout.flush()
 
     # load virtual mpi halo tiles
-    pytools.pic.load_virtual_tiles(grid, conf)
+    pytools.pic.load_virtual_tiles(sch.grid, conf)
 
 
     # --------------------------------------------------
@@ -296,8 +297,12 @@ if __name__ == "__main__":
 
     if sch.is_master: print("loading solvers..."); sys.stdout.flush()
 
-    sch.fldpropE = pyfld.FDTD2()
-    sch.fldpropB = pyfld.FDTD2()
+    if conf.twoD or conf.threeD:
+        sch.fldpropE = pyfld.FDTD4()
+        sch.fldpropB = pyfld.FDTD4()
+    else:
+        sch.fldpropE = pyfld.FDTD2()
+        sch.fldpropB = pyfld.FDTD2()
 
     # enhance numerical speed of light slightly to suppress numerical Cherenkov instability
     sch.fldpropE.corr = conf.c_corr
@@ -370,8 +375,9 @@ if __name__ == "__main__":
     prtcl_writers = []
 
     #for ispc in [0, 1, 2]: #electrons & positrons
-    for ispc in [0]: #electrons
-        mpi_comm_size = grid.size() if not(conf.mpi_task_mode) else grid.size() - 1
+    #for ispc in [0]: #electrons
+    if False:
+        mpi_comm_size = sch.grid.size() if not(conf.mpi_task_mode) else sch.grid.size() - 1
         n_local_tiles = int(conf.Nx*conf.Ny*conf.Nz/mpi_comm_size)
         #print("average n_local_tiles:", n_local_tiles, " / ", mpi_comm_size)
 
@@ -379,7 +385,7 @@ if __name__ == "__main__":
                 conf.outdir,
                 conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh,
                 conf.ppc,
-                n_local_tiles, #len(grid.get_local_tiles()),
+                n_local_tiles, #len(sch.grid.get_local_tiles()),
                 conf.n_test_prtcls,)
         prtcl_writer.ispc = ispc
         prtcl_writers.append(prtcl_writer)
@@ -395,8 +401,7 @@ if __name__ == "__main__":
         conf.NyMesh,
         conf.Nz,
         conf.NzMesh,
-        conf.stride_mom,
-    )
+        conf.stride_mom,)
 
     # 3D box peripherals
     if conf.threeD:
@@ -457,7 +462,7 @@ if __name__ == "__main__":
                 print("injecting prtcls with moving injector")
                 sys.stdout.flush()
 
-            prtcl_stat = sch.rwall.inject(grid, lap, velocity_profile, density_profile, conf)
+            prtcl_stat = sch.rwall.inject(sch.grid, lap, velocity_profile, density_profile, conf)
             if sch.is_master:
                 print('injected e^-:', prtcl_stat[0])
                 print('injected e^+:', prtcl_stat[1])
@@ -476,7 +481,7 @@ if __name__ == "__main__":
         sch.rwall.step(0)
 
         for plap in range(0, lap):
-            do_slide = slider.slide(plap, grid, conf)
+            do_slide = slider.slide(plap, sch.grid, conf)
 
             if do_slide: sch.lwall.walloc = slider.xmin  # set reflecting box to end of the box
 
@@ -512,7 +517,7 @@ if __name__ == "__main__":
         # --------------------------------------------------
         # sliding box 
         t1 = sch.timer.start_comp("sliding_box")
-        do_slide = slider.slide(lap, grid, conf)
+        do_slide = slider.slide(lap, sch.grid, conf)
         if do_slide:
             sch.lwall.walloc = slider.xmin  # set reflecting box to the end of the box
         sch.timer.stop_comp(t1)
@@ -521,19 +526,19 @@ if __name__ == "__main__":
 
         # moving right injector
         t1 = sch.timer.start_comp("rwall_bc")
-        sch.rwall.damp_em_fields(grid, lap, conf)
+        sch.rwall.damp_em_fields(sch.grid, lap, conf)
         sch.timer.stop_comp(t1)
 
         if conf.use_injector:
             t1 = sch.timer.start_comp("rwall")
-            prtcl_stat = sch.rwall.inject(grid, lap, velocity_profile, density_profile, conf)
+            prtcl_stat = sch.rwall.inject(sch.grid, lap, velocity_profile, density_profile, conf)
             sch.timer.stop_comp(t1)
 
         # --------------------------------------------------
         # comm E and B
         sch.operate( dict(name='mpi_b0', solver='mpi', method='b', ) )
         sch.operate( dict(name='mpi_e0', solver='mpi', method='e', ) )
-        sch.operate( dict(name='upd_bc', solver='tile',method='update_boundaries', args=[grid,[1,2] ], nhood='local', ) )
+        sch.operate( dict(name='upd_bc', solver='tile',method='update_boundaries', args=[sch.grid,[1,2] ], nhood='local', ) )
 
         # --------------------------------------------------
         # push B half
@@ -542,7 +547,7 @@ if __name__ == "__main__":
 
         # comm B
         sch.operate( dict(name='mpi_b1',  solver='mpi', method='b',                 ) )
-        sch.operate( dict(name='upd_bc ', solver='tile',method='update_boundaries',args=[grid, [2,] ], nhood='local',) )
+        sch.operate( dict(name='upd_bc ', solver='tile',method='update_boundaries',args=[sch.grid, [2,] ], nhood='local',) )
 
         # --------------------------------------------------
         # move particles (only locals tiles)
@@ -567,7 +572,7 @@ if __name__ == "__main__":
 
         # comm B
         sch.operate( dict(name='mpi_b2', solver='mpi', method='b',                 ) )
-        sch.operate( dict(name='upd_bc', solver='tile',method='update_boundaries', args=[grid, [2,] ], nhood='local',) )
+        sch.operate( dict(name='upd_bc', solver='tile',method='update_boundaries', args=[sch.grid, [2,] ], nhood='local',) )
 
 
         # --------------------------------------------------
@@ -587,7 +592,7 @@ if __name__ == "__main__":
 
         sch.operate( dict(name='unpack_vir_prtcls',     solver='tile',  method='unpack_incoming_particles',    nhood='virtual', ) )
         sch.operate( dict(name='check_outg_vir_prtcls', solver='tile',  method='check_outgoing_particles',     nhood='virtual', ) )
-        sch.operate( dict(name='get_inc_prtcls',        solver='tile',  method='get_incoming_particles',       nhood='local', args=[grid,]) )
+        sch.operate( dict(name='get_inc_prtcls',        solver='tile',  method='get_incoming_particles',       nhood='local', args=[sch.grid,]) )
 
         sch.operate( dict(name='del_trnsfrd_prtcls',    solver='tile',  method='delete_transferred_particles', nhood='local', ) )
         sch.operate( dict(name='del_vir_prtcls',        solver='tile',  method='delete_all_particles',         nhood='virtual', ) )
@@ -598,7 +603,7 @@ if __name__ == "__main__":
         sch.operate( dict(name='comp_curr',     solver='currint', method='solve',             nhood='local', ) )
         sch.operate( dict(name='clear_vir_cur', solver='tile',    method='clear_current',     nhood='virtual', ) )
         sch.operate( dict(name='mpi_cur',       solver='mpi',     method='j',                 nhood='all', ) )
-        sch.operate( dict(name='cur_exchange',  solver='tile',    method='exchange_currents', nhood='local', args=[grid,], ) )
+        sch.operate( dict(name='cur_exchange',  solver='tile',    method='exchange_currents', nhood='local', args=[sch.grid,], ) )
 
         # --------------------------------------------------
         # filter
@@ -607,7 +612,7 @@ if __name__ == "__main__":
             # flt uses halo=2 padding so only every 3rd (0,1,2) pass needs update
             if fj % 2 == 0:
                 sch.operate( dict(name='mpi_cur_flt', solver='mpi', method='j', ) )
-                sch.operate( dict(name='upd_bc',      solver='tile',method='update_boundaries',args=[grid, [0,] ], nhood='local', ) )
+                sch.operate( dict(name='upd_bc',      solver='tile',method='update_boundaries',args=[sch.grid, [0,] ], nhood='local', ) )
 
                 #TODO is wall_bc needed here?
 
@@ -618,7 +623,7 @@ if __name__ == "__main__":
         # --------------------------------------------------
         # add antenna contribution for exciting waves
         #sch.antenna.update_rnd_phases()
-        #antenna.get_brms(grid) # debug tracking
+        #antenna.get_brms(sch.grid) # debug tracking
         #sch.operate( dict(name='add_antenna', solver='antenna', method='add_ext_cur', nhood='local', ) )
 
         # --------------------------------------------------
@@ -643,7 +648,7 @@ if __name__ == "__main__":
             # io/analyze (independent)
             sch.timer.start("io")
             # shrink particle arrays
-            for tile in pytools.tiles_all(grid):
+            for tile in pytools.tiles_all(sch.grid):
                 tile.shrink_to_fit_all_particles()
 
             # barrier for quick writers
@@ -651,19 +656,19 @@ if __name__ == "__main__":
 
             # shallow IO
             # NOTE: do moms before other IOs to keep rho field up-to-date
-            mom_writer.write(grid, lap)  # pic distribution moments; 
-            fld_writer.write(grid, lap)  # quick field snapshots
+            mom_writer.write(sch.grid, lap)  # pic distribution moments; 
+            fld_writer.write(sch.grid, lap)  # quick field snapshots
 
             for pw in prtcl_writers:
-                pw.write(grid, lap)  # particle tracking
+                pw.write(sch.grid, lap)  # particle tracking
             
-            #pytools.save_mpi_grid_to_disk(conf.outdir, lap, grid, conf) # MPI grid
+            #pytools.save_mpi_grid_to_disk(conf.outdir, lap, sch.grid, conf) # MPI grid
 
             #box peripheries 
             if conf.threeD:
-                slice_xy_writer.write(grid, lap)
-                slice_xz_writer.write(grid, lap)
-                slice_yz_writer.write(grid, lap)
+                slice_xy_writer.write(sch.grid, lap)
+                slice_xz_writer.write(sch.grid, lap)
+                slice_yz_writer.write(sch.grid, lap)
 
 
             #--------------------------------------------------
@@ -674,13 +679,13 @@ if __name__ == "__main__":
             shock_toolset.wloc0 = slider.xmin #downstream chunking sets left box limit
             shock_toolset.wloc1 = sch.rwall.wloc1 #upstream injector sets right box limit
 
-            shock_toolset.get_density_profile(grid, lap, conf)
-            shock_toolset.find_shock_front(grid, lap, conf, xmin=slider.xmin)
+            shock_toolset.get_density_profile(sch.grid, lap, conf)
+            shock_toolset.find_shock_front(sch.grid, lap, conf, xmin=slider.xmin)
 
-            shock_toolset.read_fields(grid, lap, conf)
-            shock_toolset.read_prtcls(grid, lap, conf)
+            shock_toolset.read_fields(sch.grid, lap, conf)
+            shock_toolset.read_prtcls(sch.grid, lap, conf)
 
-            shock_toolset.save(grid, lap, conf)
+            shock_toolset.save(sch.grid, lap, conf)
 
 
             #--------------------------------------------------
@@ -688,19 +693,16 @@ if __name__ == "__main__":
             if sch.is_master:
                 tplt.col_mode = False # use terminal color / use ASCII art
 
-                if conf.twoD:
-                    tplt.plot_panels( (2,1),
-                    dict(axs=(0,0), data=fld_writer.get_slice(0)/conf.p_norm, name='ne', cmap='viridis', vmin=0,  vmax=2),
-                    dict(axs=(1,0), data=fld_writer.get_slice(6)/conf.j_norm, name='jx', cmap='RdBu',    vmin=-1, vmax=1),
-                                     )
-
-                elif conf.threeD:
-                    tplt.plot_panels( (1,1),
-                    dict(axs=(0,0), data=slice_xy_writer.get_slice(8)/conf.j_norm ,   name='jx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
-                    #dict(axs=(0,0), data=slice_xy_writer.get_slice(9)/conf.p_norm   , name='ne (xy)', cmap='viridis',vmin= 0, vmax=4),
-                    #dict(axs=(1,0), data=slice_xy_writer.get_slice(3)/conf.b_norm ,   name='bx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
-                    #dict(axs=(1,1), data=slice_xy_writer.get_slice(5)/conf.b_norm ,   name='bz (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
-                    )
+                #if conf.twoD:
+                #    #tplt.plot_panels( (2,1),
+                #    #dict(axs=(0,0), data=fld_writer.get_slice(0)/conf.p_norm, name='ne', cmap='viridis', vmin=0,  vmax=2),
+                #    #dict(axs=(1,0), data=fld_writer.get_slice(6)/conf.j_norm, name='jx', cmap='RdBu',    vmin=-1, vmax=1),)
+                #elif conf.threeD:
+                #    #tplt.plot_panels( (1,1),
+                #    #dict(axs=(0,0), data=slice_xy_writer.get_slice(8)/conf.j_norm ,   name='jx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
+                #    #dict(axs=(0,0), data=slice_xy_writer.get_slice(9)/conf.p_norm   , name='ne (xy)', cmap='viridis',vmin= 0, vmax=4),
+                #    #dict(axs=(1,0), data=slice_xy_writer.get_slice(3)/conf.b_norm ,   name='bx (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),
+                #    #dict(axs=(1,1), data=slice_xy_writer.get_slice(5)/conf.b_norm ,   name='bz (xy)', cmap='RdBu'   ,vmin=-2, vmax=2),)
 
             #--------------------------------------------------
             #print statistics
@@ -713,8 +715,8 @@ if __name__ == "__main__":
             #--------------------------------------------------
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
-                pyfld.write_grids(grid, lap, conf.outdir + "/full_output/")
-                pypic.write_particles(grid, lap, conf.outdir + "/full_output/")
+                pyfld.write_grids(sch.grid, lap, conf.outdir + "/full_output/")
+                pypic.write_particles(sch.grid, lap, conf.outdir + "/full_output/")
 
 
             # restart IO (overwrites)
@@ -724,18 +726,18 @@ if __name__ == "__main__":
                 io_stat["deep_io_switch"] = 1 if io_stat["deep_io_switch"] == 0 else 0
 
                 pyfld.write_grids(
-                    grid, io_stat["deep_io_switch"] + io_stat['restart_num'],
+                    sch.grid, io_stat["deep_io_switch"] + io_stat['restart_num'],
                     conf.outdir + "/restart/"
                 )
 
                 pypic.write_particles(
-                    grid, io_stat["deep_io_switch"] + io_stat['restart_num'],
+                    sch.grid, io_stat["deep_io_switch"] + io_stat['restart_num'],
                     conf.outdir + "/restart/"
                 )
 
                 # if successful adjust info file
                 MPI.COMM_WORLD.barrier()  # sync everybody in case of failure before write
-                if grid.rank() == 0:
+                if sch.grid.rank() == 0:
                     with open(conf.outdir + "/restart/laps.txt", "a") as lapfile:
                         lapfile.write("{},{}\n".format(
                             lap, 

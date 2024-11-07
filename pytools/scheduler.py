@@ -9,7 +9,7 @@ def str_to_class(classname):
 
 class Scheduler:
 
-    def __init__(self):
+    def __init__(self, print_banner=True):
         self.timer = None
         self.grid  = None
 
@@ -20,7 +20,7 @@ class Scheduler:
         self.is_master         = True if self.rank == 0 else False # root rank
         self.is_example_worker = True if self.rank == 0 else False # example work rank
 
-        if self.is_master:
+        if self.is_master and print_banner:
             pytools.print_banner()
             print("sch : running runko with {} MPI rank(s)".format(self.mpi_comm_size))
 
@@ -62,6 +62,8 @@ class Scheduler:
         if self.debug: # additional debug printing
             print('R:', self.rank, op) # debug print
             MPI.COMM_WORLD.Barrier() 
+            if self.is_master:
+                print('',sys.stdout.flush())
     
         #--------------------------------------------------
         # default values
@@ -119,8 +121,8 @@ class Scheduler:
     
             t1 = self.timer.start_comp(op['name'])
     
-            self.grid.send_data(mpid)
             self.grid.recv_data(mpid)
+            self.grid.send_data(mpid)
             self.grid.wait_data(mpid)
     
             self.timer.stop_comp(t1)

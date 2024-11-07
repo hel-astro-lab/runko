@@ -166,77 +166,81 @@ def qudratic_field_3d(x, y, z):
 def insert_em(grid, conf, ffunc, zero_field=False):
 
     Lx  = conf.Nx*conf.NxMesh #XXX scaled length
-    for k in range(grid.get_Nz()):
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                c = grid.get_tile(i,j,k)
-                gs = c.get_grids()
+    #for k in range(grid.get_Nz()):
+    #    for j in range(grid.get_Ny()):
+    #        for i in range(grid.get_Nx()):
 
-                for n in range(conf.NzMesh):
-                    for m in range(conf.NyMesh):
-                        for l in range(conf.NxMesh):
-                            # get x_i,j,k
-                            xloc0 = pytools.ind2loc((i,j,k), (l,m,n), conf)
+    for cid in grid.get_local_tiles():
+        #c = grid.get_tile(i,j,k)
+        c = grid.get_tile(cid)
+        gs = c.get_grids()
+        i,j,k = pytools.get_index(c, conf)
 
-                            #get x_i+1/2, x_j+1/2, x_k+1/2
-                            #xloc1 = pytools.ind2loc((i,j,k), (l+1,m,  n),   conf)
-                            #yloc1 = pytools.ind2loc((i,j,k), (l,  m+1,n),   conf)
-                            #zloc1 = pytools.ind2loc((i,j,k), (l,  m,  n+1), conf)
+        for n in range(conf.NzMesh):
+            for m in range(conf.NyMesh):
+                for l in range(conf.NxMesh):
+                    # get x_i,j,k
+                    xloc0 = pytools.ind2loc((i,j,k), (l,m,n), conf)
 
-                            # values in Yee lattice corners
-                            #xcor = xloc0[0]
-                            #ycor = xloc0[1]
-                            #zcor = xloc0[2]
+                    #get x_i+1/2, x_j+1/2, x_k+1/2
+                    #xloc1 = pytools.ind2loc((i,j,k), (l+1,m,  n),   conf)
+                    #yloc1 = pytools.ind2loc((i,j,k), (l,  m+1,n),   conf)
+                    #zloc1 = pytools.ind2loc((i,j,k), (l,  m,  n+1), conf)
 
-                            # values in Yee lattice mids
-                            #xmid = 0.5*(xloc0[0] + xloc1[0])
-                            #ymid = 0.5*(xloc0[1] + yloc1[1])
-                            #zmid = 0.5*(xloc0[2] + zloc1[2])
+                    # values in Yee lattice corners
+                    #xcor = xloc0[0]
+                    #ycor = xloc0[1]
+                    #zcor = xloc0[2]
 
-                            #val = ffunc(xmid, ymid, zmid)
+                    # values in Yee lattice mids
+                    #xmid = 0.5*(xloc0[0] + xloc1[0])
+                    #ymid = 0.5*(xloc0[1] + yloc1[1])
+                    #zmid = 0.5*(xloc0[2] + zloc1[2])
 
-                            # enforce Yee lattice structure
-                            #gs.ex[l,m,n] = ffunc(xmid, ycor, zcor)
-                            #gs.ey[l,m,n] = ffunc(xcor, ymid, zcor)
-                            #gs.ez[l,m,n] = ffunc(xcor, ycor, zmid)
+                    #val = ffunc(xmid, ymid, zmid)
 
-                            #gs.bx[l,m,n] = ffunc(xcor, ymid, zmid)
-                            #gs.by[l,m,n] = ffunc(xmid, ycor, zmid)
-                            #gs.bz[l,m,n] = ffunc(xmid, ymid, zcor)
+                    # enforce Yee lattice structure
+                    #gs.ex[l,m,n] = ffunc(xmid, ycor, zcor)
+                    #gs.ey[l,m,n] = ffunc(xcor, ymid, zcor)
+                    #gs.ez[l,m,n] = ffunc(xcor, ycor, zmid)
 
-                            #gs.jx[l,m,n] = ffunc(xmid, ymid, zmid)
-                            #gs.jy[l,m,n] = ffunc(xmid, ymid, zmid)
-                            #gs.jz[l,m,n] = ffunc(xmid, ymid, zmid)
+                    #gs.bx[l,m,n] = ffunc(xcor, ymid, zmid)
+                    #gs.by[l,m,n] = ffunc(xmid, ycor, zmid)
+                    #gs.bz[l,m,n] = ffunc(xmid, ymid, zcor)
 
-                            #TODO
-                            xc = xloc0[0]
-                            yc = xloc0[1]
-                            zc = xloc0[2]
-                            #gs.ex[l,m,n] = ffunc(xc,yc-0.5,zc-0.5)
-                            #gs.ey[l,m,n] = ffunc(xc-0.5,yc,zc-0.5)
-                            #gs.ez[l,m,n] = ffunc(xc-0.5,yc-0.5,zc)
-                            #gs.bx[l,m,n] = ffunc(xc-0.5,yc,zc)
-                            #gs.by[l,m,n] = ffunc(xc,yc-0.5,zc)
-                            #gs.bz[l,m,n] = ffunc(xc,yc,zc-0.5)
+                    #gs.jx[l,m,n] = ffunc(xmid, ymid, zmid)
+                    #gs.jy[l,m,n] = ffunc(xmid, ymid, zmid)
+                    #gs.jz[l,m,n] = ffunc(xmid, ymid, zmid)
 
-                            gs.ex[l,m,n] = ffunc(xc+0.5,yc,    zc)
-                            gs.ey[l,m,n] = ffunc(xc,    yc+0.5,zc)
-                            gs.ez[l,m,n] = ffunc(xc,    yc,    zc+0.5)
-                            gs.bx[l,m,n] = ffunc(xc,    yc+0.5,zc+0.5)
-                            gs.by[l,m,n] = ffunc(xc+0.5,yc,    zc+0.5)
-                            gs.bz[l,m,n] = ffunc(xc+0.5,yc+0.5,zc)
+                    #TODO
+                    xc = xloc0[0]
+                    yc = xloc0[1]
+                    zc = xloc0[2]
+                    #gs.ex[l,m,n] = ffunc(xc,yc-0.5,zc-0.5)
+                    #gs.ey[l,m,n] = ffunc(xc-0.5,yc,zc-0.5)
+                    #gs.ez[l,m,n] = ffunc(xc-0.5,yc-0.5,zc)
+                    #gs.bx[l,m,n] = ffunc(xc-0.5,yc,zc)
+                    #gs.by[l,m,n] = ffunc(xc,yc-0.5,zc)
+                    #gs.bz[l,m,n] = ffunc(xc,yc,zc-0.5)
 
-                            gs.jx[l,m,n] = ffunc(xc,yc,zc)
-                            gs.jy[l,m,n] = ffunc(xc,yc,zc)
-                            gs.jz[l,m,n] = ffunc(xc,yc,zc)
+                    gs.ex[l,m,n] = ffunc(xc+0.5,yc,    zc)
+                    gs.ey[l,m,n] = ffunc(xc,    yc+0.5,zc)
+                    gs.ez[l,m,n] = ffunc(xc,    yc,    zc+0.5)
+                    gs.bx[l,m,n] = ffunc(xc,    yc+0.5,zc+0.5)
+                    gs.by[l,m,n] = ffunc(xc+0.5,yc,    zc+0.5)
+                    gs.bz[l,m,n] = ffunc(xc+0.5,yc+0.5,zc)
 
-                            if not(zero_field):
-                                gs.ex[l,m,n] += +0.0
-                                gs.ey[l,m,n] += +1.0
-                                gs.ez[l,m,n] += +2.0 
-                                gs.bx[l,m,n] += +3.0
-                                gs.by[l,m,n] += +4.0
-                                gs.bz[l,m,n] += +5.0
+                    gs.jx[l,m,n] = ffunc(xc,yc,zc)
+                    gs.jy[l,m,n] = ffunc(xc,yc,zc)
+                    gs.jz[l,m,n] = ffunc(xc,yc,zc)
+
+                    if not(zero_field):
+                        gs.ex[l,m,n] += +0.0
+                        gs.ey[l,m,n] += +1.0
+                        gs.ez[l,m,n] += +2.0 
+                        gs.bx[l,m,n] += +3.0
+                        gs.by[l,m,n] += +4.0
+                        gs.bz[l,m,n] += +5.0
 
 
 
@@ -285,6 +289,7 @@ class Conf:
     qe = 1.0
     qi =-1.0
 
+    oneD   = False
     twoD   = False
     threeD = False
 
@@ -354,7 +359,7 @@ class PIC(unittest.TestCase):
         fintp  = pyrunko.pic.twoD.LinearInterpolator()
 
 
-        for lap in range(40):
+        for lap in range(20):
 
             for cid in grid.get_local_tiles():
                 tile = grid.get_tile(cid)
@@ -376,26 +381,26 @@ class PIC(unittest.TestCase):
                 tile.check_outgoing_particles()
 
             # global mpi exchange (independent)
-            for cid in grid.get_boundary_tiles():
-                tile = grid.get_tile(cid)
-                tile.pack_outgoing_particles()
+            #for cid in grid.get_boundary_tiles():
+            #    tile = grid.get_tile(cid)
+            #    tile.pack_outgoing_particles()
 
-            # MPI global exchange
-            # transfer primary and extra data
-            grid.send_data(0) #(indepdendent)
-            grid.send_data(1) #(indepdendent)
+            ## MPI global exchange
+            ## transfer primary and extra data
+            #grid.send_data(0) #(indepdendent)
+            #grid.send_data(1) #(indepdendent)
 
-            grid.recv_data(0) #(indepdendent)
-            grid.recv_data(1) #(indepdendent)
+            #grid.recv_data(0) #(indepdendent)
+            #grid.recv_data(1) #(indepdendent)
 
-            grid.wait_data(0) #(indepdendent)
-            grid.wait_data(1) #(indepdendent)
+            #grid.wait_data(0) #(indepdendent)
+            #grid.wait_data(1) #(indepdendent)
 
             # global unpacking (independent)
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.unpack_incoming_particles()
-                tile.check_outgoing_particles()
+            #for cid in grid.get_virtual_tiles(): 
+            #    tile = grid.get_tile(cid)
+            #    tile.unpack_incoming_particles()
+            #    tile.check_outgoing_particles()
 
             # transfer local + global
             for cid in grid.get_local_tiles():
@@ -407,56 +412,59 @@ class PIC(unittest.TestCase):
                 tile = grid.get_tile(cid)
                 tile.delete_transferred_particles()
 
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.delete_all_particles()
+            # delete global mpi particles
+            #for cid in grid.get_virtual_tiles(): 
+            #    tile = grid.get_tile(cid)
+            #    tile.delete_all_particles()
 
         # count how many particles we now have
         n_particles = 0
-        for i in range(conf.Nx):
-            for j in range(conf.Ny):
-                for k in range(conf.Nz):
-                    cid = grid.id(i,j)
-                    c = grid.get_tile(cid)
+        #for i in range(conf.Nx):
+        #    for j in range(conf.Ny):
+        #        for k in range(conf.Nz):
+        #    cid = grid.id(i,j)
+        for cid in grid.get_local_tiles():
+            c = grid.get_tile(cid)
+            i,j,k = pytools.get_index(c, conf)
 
-                    container = c.get_container(0)
-                    #print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
-                    n_particles += len(container.loc(0))
+            container = c.get_container(0)
+            #print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
+            n_particles += len(container.loc(0))
 
-                    #self.assertTrue( 0.0 <= container.loc(0) <= conf.xmax )
-                    #self.assertTrue( 0.0 <= container.loc(1) <= conf.ymax )
-                    #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
+            #self.assertTrue( 0.0 <= container.loc(0) <= conf.xmax )
+            #self.assertTrue( 0.0 <= container.loc(1) <= conf.ymax )
+            #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
 
-                    for prtcl in range(len(container.loc(0))):
-                        #print("{} {} {} maxs {} {} {} id {}/{}".format( 
-                        #container.loc(0)[prtcl], 
-                        #container.loc(1)[prtcl], 
-                        #container.loc(2)[prtcl], 
-                        #conf.xmax, conf.ymax, conf.zmax, 
-                        #container.id(0)[prtcl], 
-                        #container.id(1)[prtcl], 
-                        #))
+            for prtcl in range(len(container.loc(0))):
+                #print("{} {} {} maxs {} {} {} id {}/{}".format( 
+                #container.loc(0)[prtcl], 
+                #container.loc(1)[prtcl], 
+                #container.loc(2)[prtcl], 
+                #conf.xmax, conf.ymax, conf.zmax, 
+                #container.id(0)[prtcl], 
+                #container.id(1)[prtcl], 
+                #))
 
-                        #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
-                        #    prtcl, 
-                        #    container.loc(0)[prtcl],
-                        #    container.loc(1)[prtcl],
-                        #    container.loc(2)[prtcl],
-                        #    container.vel(0)[prtcl],
-                        #    container.vel(1)[prtcl],
-                        #    container.vel(2)[prtcl]))
+                #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
+                #    prtcl, 
+                #    container.loc(0)[prtcl],
+                #    container.loc(1)[prtcl],
+                #    container.loc(2)[prtcl],
+                #    container.vel(0)[prtcl],
+                #    container.vel(1)[prtcl],
+                #    container.vel(2)[prtcl]))
 
-                        # check location
-                        self.assertTrue( 0.0 <= container.loc(0)[prtcl] <= conf.xmax )
-                        self.assertTrue( 0.0 <= container.loc(1)[prtcl] <= conf.ymax )
-                        self.assertTrue( 0.0 <= container.loc(2)[prtcl] <= conf.zmax )
+                # check location
+                self.assertTrue( 0.0 <= container.loc(0)[prtcl] <= conf.xmax )
+                self.assertTrue( 0.0 <= container.loc(1)[prtcl] <= conf.ymax )
+                self.assertTrue( 0.0 <= container.loc(2)[prtcl] <= conf.zmax )
 
-                        # check velocity 
-                        velx = container.vel(0)[prtcl]
-                        vely = container.vel(1)[prtcl]
-                        velz = container.vel(2)[prtcl]
-                        vel = np.sqrt( velx*velx + vely*vely + velz*velz )
-                        self.assertAlmostEqual( vel, conf.vel, places=5 )
+                # check velocity 
+                velx = container.vel(0)[prtcl]
+                vely = container.vel(1)[prtcl]
+                velz = container.vel(2)[prtcl]
+                vel = np.sqrt( velx*velx + vely*vely + velz*velz )
+                self.assertAlmostEqual( vel, conf.vel, places=5 )
 
         tot_particles = (conf.Nx*conf.NxMesh *
                         conf.Ny*conf.NyMesh *
@@ -480,147 +488,142 @@ class PIC(unittest.TestCase):
         #for ai in range(1):
         #    axs.append( plt.subplot(gs[ai]) )
 
+        sch  = pytools.Scheduler(print_banner=False) # Set MPI aware task scheduler
+        sch.verbose=0
+
+        timer = pytools.Timer()
+        timer.verbose = 0  # 0 normal; 1 - debug mode
+        sch.timer = timer # remember to update scheduler
+
         conf = Conf()
+        conf.ppc = 2
         conf.threeD = True
         conf.NxMesh = 3
         conf.NyMesh = 3
         conf.NzMesh = 3
-
-        conf.Nx = 3
-        conf.Ny = 3
-        conf.Nz = 3
+        conf.Nx = 4
+        conf.Ny = 4
+        conf.Nz = 4
         conf.update_bbox()
-
+        conf.mpi_task_mode = False
         conf.vel = 0.3
+
+        sch.conf = conf # remember to update conf to scheduler
+
 
         grid = pycorgi.threeD.Grid(conf.Nx, conf.Ny, conf.Nz)
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax, conf.zmin, conf.zmax)
+        sch.grid = grid # remember to update scheduler
+
+        pytools.balance_mpi(grid, conf, do_print=False) #balance MPI ranks; Hilbert curve optimization 
 
         pytools.pic.load_tiles(grid, conf)
         insert_em(grid, conf, zero_field, zero_field=True)
         pytools.pic.inject(grid, filler3D, density_profile, conf) #pytools.pic.injecting plasma particles
 
         # push particles couple of times to make them leak into neighboring tiles
-        pusher = pyrunko.pic.threeD.BorisPusher()
+        sch.pusher  = pyrunko.pic.threeD.BorisPusher()
+        sch.fintp   = pyrunko.pic.threeD.LinearInterpolator()
+        sch.currint = pyrunko.pic.threeD.ZigZag()
 
-        fintp  = pyrunko.pic.threeD.LinearInterpolator()
+        # start MPI
+        # update boundaries
+        grid.analyze_boundaries()
+        grid.send_tiles()
+        grid.recv_tiles()
+        MPI.COMM_WORLD.barrier()
+        rank = MPI.COMM_WORLD.Get_rank()
 
-        for lap in range(40):
+        # load virtual mpi halo tiles
+        pytools.pic.load_virtual_tiles(grid, conf)
 
+        for lap in range(10):
+
+            # interpolate fields and push particles in x and u
+            sch.operate( dict(name='interp_em', solver='fintp',  method='solve', nhood='local', ) )
+            sch.operate( dict(name='push',      solver='pusher', method='solve', nhood='local', ) )
+
+            # --------------------------------------------------
+            # particle communication (only local/boundary tiles)
+
+            # local and global particle exchange 
+            sch.operate( dict(name='check_outg_prtcls',     solver='tile',  method='check_outgoing_particles',     nhood='local', ) )
+            sch.operate( dict(name='pack_outg_prtcls',      solver='tile',  method='pack_outgoing_particles',      nhood='boundary', ) )
+
+            sch.operate( dict(name='mpi_prtcls',            solver='mpi',   method='p1',                           nhood='all', ) )
+            sch.operate( dict(name='mpi_prtcls',            solver='mpi',   method='p2',                           nhood='all', ) )
+
+            sch.operate( dict(name='unpack_vir_prtcls',     solver='tile',  method='unpack_incoming_particles',    nhood='virtual', ) )
+            sch.operate( dict(name='check_outg_vir_prtcls', solver='tile',  method='check_outgoing_particles',     nhood='virtual', ) )
+            sch.operate( dict(name='get_inc_prtcls',        solver='tile',  method='get_incoming_particles',       nhood='local', args=[grid,]) )
+
+            sch.operate( dict(name='del_trnsfrd_prtcls',    solver='tile',  method='delete_transferred_particles', nhood='local', ) )
+            sch.operate( dict(name='del_vir_prtcls',        solver='tile',  method='delete_all_particles',         nhood='virtual', ) )
+
+
+            # count how many particles we now have
+            n_particles = 0
+            #for cid in grid.get_local_tiles():
+            #for i in range(conf.Nx):
+            #    for j in range(conf.Ny):
+            #        for k in range(conf.Nz):
             for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                fintp.solve(tile)
+                c = grid.get_tile(cid)
+                i,j,k = pytools.get_index(c, conf)
 
-            #plot2dParticles(axs[0], grid, conf)
-            #saveVisz(lap, grid, conf)
+                container = c.get_container(0)
+                #print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
+                n_particles += len(container.loc(0))
+                #n_particles += len(container.size() )
 
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                pusher.solve(tile)
+                #print()
+                #print("num prtcls", i,j,k, "len(loc())", len(container.loc(0)), " cont.size:", container.size())
+                self.assertTrue( len(container.loc(0)) == container.size() )
 
-            ##################################################
-            # communication
+                #self.assertTrue( 0.0 <= container.loc(0) <= conf.xmax )
+                #self.assertTrue( 0.0 <= container.loc(1) <= conf.ymax )
+                #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
 
-            #update particle boundaries
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                tile.check_outgoing_particles()
+                for prtcl in range(len(container.loc(0))):
 
-            # global mpi exchange (independent)
-            for cid in grid.get_boundary_tiles():
-                tile = grid.get_tile(cid)
-                tile.pack_outgoing_particles()
+                    if False: #rank == 0:
+                        print("r: {} ----prtcl {} x={} y={} z={} vx={} vy={} vz={} w={} | tile lims {} {} {}".format(
+                        rank,
+                        prtcl, 
+                        container.loc(0)[prtcl],
+                        container.loc(1)[prtcl],
+                        container.loc(2)[prtcl],
+                        container.vel(0)[prtcl],
+                        container.vel(1)[prtcl],
+                        container.vel(2)[prtcl],
+                        container.wgt()[ prtcl],
+                        conf.xmax,
+                        conf.ymax,
+                        conf.zmax),)
 
-            # MPI global exchange
-            # transfer primary and extra data
-            grid.send_data(0) #(indepdendent)
-            grid.send_data(1) #(indepdendent)
+                    # check location
+                    self.assertTrue( 0.0 <= container.loc(0)[prtcl] <= conf.xmax )
+                    self.assertTrue( 0.0 <= container.loc(1)[prtcl] <= conf.ymax )
+                    self.assertTrue( 0.0 <= container.loc(2)[prtcl] <= conf.zmax )
 
-            grid.recv_data(0) #(indepdendent)
-            grid.recv_data(1) #(indepdendent)
+                    # check velocity 
+                    velx = container.vel(0)[prtcl]
+                    vely = container.vel(1)[prtcl]
+                    velz = container.vel(2)[prtcl]
+                    vel = np.sqrt( velx*velx + vely*vely + velz*velz )
+                    self.assertAlmostEqual( vel, conf.vel, places=5 )
 
-            grid.wait_data(0) #(indepdendent)
-            grid.wait_data(1) #(indepdendent)
+            tot_particles = (conf.Nx*conf.NxMesh *
+                             conf.Ny*conf.NyMesh *
+                             conf.Nz*conf.NzMesh *
+                            conf.ppc)
 
-            # global unpacking (independent)
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.unpack_incoming_particles()
-                tile.check_outgoing_particles()
+            #print('r: {} np: {}'.format(rank, n_particles))
+            n_particles = MPI.COMM_WORLD.reduce( n_particles, op=MPI.SUM, root=0)
 
-            # transfer local + global
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                tile.get_incoming_particles(grid)
-
-            # delete local transferred particles
-            for cid in grid.get_local_tiles():
-                tile = grid.get_tile(cid)
-                tile.delete_transferred_particles()
-
-            for cid in grid.get_virtual_tiles(): 
-                tile = grid.get_tile(cid)
-                tile.delete_all_particles()
-
-        # count how many particles we now have
-        n_particles = 0
-        for i in range(conf.Nx):
-            for j in range(conf.Ny):
-                for k in range(conf.Nz):
-                    cid = grid.id(i,j,k)
-                    c = grid.get_tile(cid)
-
-                    container = c.get_container(0)
-                    #print("({},{},{}) has {}".format(i,j,k,len(container.loc(0))))
-                    n_particles += len(container.loc(0))
-
-                    #self.assertTrue( 0.0 <= container.loc(0) <= conf.xmax )
-                    #self.assertTrue( 0.0 <= container.loc(1) <= conf.ymax )
-                    #self.assertTrue( 0.0 <= container.loc(2) <= conf.zmax )
-
-                    for prtcl in range(len(container.loc(0))):
-                        #print("{} {} {} maxs {} {} {} id {}/{}".format( 
-                        #container.loc(0)[prtcl], 
-                        #container.loc(1)[prtcl], 
-                        #container.loc(2)[prtcl], 
-                        #conf.xmax, conf.ymax, conf.zmax, 
-                        #container.id(0)[prtcl], 
-                        #container.id(1)[prtcl], 
-                        #))
-
-                        #print("prtcl {} x={} y={} z={} vx={} vy={} vz={}".format(
-                        #    prtcl, 
-                        #    container.loc(0)[prtcl],
-                        #    container.loc(1)[prtcl],
-                        #    container.loc(2)[prtcl],
-                        #    container.vel(0)[prtcl],
-                        #    container.vel(1)[prtcl],
-                        #    container.vel(2)[prtcl]))
-
-                        # check location
-                        self.assertTrue( 0.0 <= container.loc(0)[prtcl] <= conf.xmax )
-                        self.assertTrue( 0.0 <= container.loc(1)[prtcl] <= conf.ymax )
-                        self.assertTrue( 0.0 <= container.loc(2)[prtcl] <= conf.zmax )
-
-                        # check velocity 
-                        velx = container.vel(0)[prtcl]
-                        vely = container.vel(1)[prtcl]
-                        velz = container.vel(2)[prtcl]
-                        vel = np.sqrt( velx*velx + vely*vely + velz*velz )
-                        self.assertAlmostEqual( vel, conf.vel, places=5 )
-
-        tot_particles = (conf.Nx*conf.NxMesh *
-                         conf.Ny*conf.NyMesh *
-                         conf.Nz*conf.NzMesh *
-                        conf.ppc)
-
-        #tot_particles =(conf.NxMesh *
-        #                conf.NyMesh *
-        #                conf.NzMesh *
-        #                conf.ppc)
-
-        # assert that there is equal number of particles as we began with
-        self.assertEqual( tot_particles, n_particles )
+            # assert that there is equal number of particles as we began with
+            if rank == 0:
+                self.assertEqual( tot_particles, n_particles)
 
 
 
@@ -635,10 +638,9 @@ class PIC(unittest.TestCase):
         pytools.pic.inject(grid, filler_no_velocity, density_profile, conf) #pytools.pic.injecting plasma particles
 
         ##update boundaries
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                tile = grid.get_tile(i,j)
-                tile.update_boundaries(grid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
+            tile.update_boundaries(grid)
 
         #interpolate emf
         fintps = []
@@ -647,42 +649,38 @@ class PIC(unittest.TestCase):
         fintps.append( pyrunko.pic.twoD.QuadraticInterpolator() )
 
         for fintp in fintps:
-            for j in range(grid.get_Ny()):
-                for i in range(grid.get_Nx()):
-                    tile = grid.get_tile(i,j)
-                    fintp.solve(tile)
+            for cid in grid.get_local_tiles():
+                tile = grid.get_tile(cid)
+                fintp.solve(tile)
 
             #test results
-            for i in range(conf.Nx):
-                for j in range(conf.Ny):
+            for cid in grid.get_local_tiles():
+                c = grid.get_tile(cid)
+                container = c.get_container(0)
 
-                    cid = grid.id(i,j)
-                    c = grid.get_tile(cid)
-                    container = c.get_container(0)
+                xx = container.loc(0)
+                yy = container.loc(1)
+                zz = container.loc(2)
 
-                    xx = container.loc(0)
-                    yy = container.loc(1)
-                    zz = container.loc(2)
+                ux = container.vel(0)
+                uy = container.vel(1)
+                uz = container.vel(2)
 
-                    ux = container.vel(0)
-                    uy = container.vel(1)
-                    uz = container.vel(2)
+                for i, x in enumerate(xx):
+                    #print(i)
+                    ex_ref = 1.0
+                    ey_ref = 2.0
+                    ez_ref = 3.0
+                    self.assertAlmostEqual(container.ex(i), ex_ref, places=5)
+                    self.assertAlmostEqual(container.ey(i), ey_ref, places=5)
+                    self.assertAlmostEqual(container.ez(i), ez_ref, places=5)
 
-                    for i, x in enumerate(xx):
-                        #print(i)
-                        ex_ref = 1.0
-                        ey_ref = 2.0
-                        ez_ref = 3.0
-                        self.assertAlmostEqual(container.ex(i), ex_ref, places=5)
-                        self.assertAlmostEqual(container.ey(i), ey_ref, places=5)
-                        self.assertAlmostEqual(container.ez(i), ez_ref, places=5)
-
-                        bx_ref = 4.0
-                        by_ref = 5.0
-                        bz_ref = 6.0
-                        self.assertAlmostEqual(container.bx(i), bx_ref, places=5)
-                        self.assertAlmostEqual(container.by(i), by_ref, places=5)
-                        self.assertAlmostEqual(container.bz(i), bz_ref, places=5)
+                    bx_ref = 4.0
+                    by_ref = 5.0
+                    bz_ref = 6.0
+                    self.assertAlmostEqual(container.bx(i), bx_ref, places=5)
+                    self.assertAlmostEqual(container.by(i), by_ref, places=5)
+                    self.assertAlmostEqual(container.bz(i), bz_ref, places=5)
 
 
     def test_const_field_interpolation_3d(self):

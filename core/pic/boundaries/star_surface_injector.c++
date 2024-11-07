@@ -486,9 +486,9 @@ void pic::Star<D>::solve(
 
 
   // call pre-iteration functions to update internal arrays 
-  for(auto&& con : tile.containers) {
-      con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
-  }
+  //for(auto&& con : tile.containers) {
+  //    con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
+  //}
 
 
   for(auto&& con : tile.containers) {
@@ -542,7 +542,8 @@ void pic::Star<D>::solve(
           inside_cyl_bcs              || 
           (top && inside_top)              // particles at the very top
           ) {
-        con.to_other_tiles.push_back( {1,1,1,n} );
+        //con.to_other_tiles.push_back( {1,1,1,n} );
+        con.info(n) = -1;
       }
     }
   }

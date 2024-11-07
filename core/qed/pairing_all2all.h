@@ -221,7 +221,7 @@ public:
     {
       con.sort_in_rev_energy();
       //con.update_cumulative_arrays();
-      con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
+      //con.to_other_tiles.clear(); // empty tmp container; we store killed particles here
     }
 
     //--------------------------------------------------
@@ -332,7 +332,7 @@ public:
                     } else { // else destroy previous and add new 
 
                       // destroy current
-                      con1.to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
+                      con1.info(n1) = -1; //to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
                       con1.wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
 
                       // add new
@@ -355,7 +355,7 @@ public:
                     } else { // else destroy previous and add new 
 
                       // destroy current
-                      con2.to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
+                      con2.info(n2) = -1; //to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
                       con2.wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
 
                       // add_particle
@@ -400,7 +400,7 @@ public:
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
-    cons[t1]->to_other_tiles.clear(); // clear book keeping array
+    //cons[t1]->to_other_tiles.clear(); // clear book keeping array
 
     size_t N1 = cons[t1]->size(); // read particle number from here; 
 
@@ -419,7 +419,7 @@ public:
 
       zeta = rand();
       if( zeta < prob_kill) {
-        cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
+        cons[t1]->info(n1) = -1; //to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
       } else {
         cons[t1]->wgt(n1) = w1*f_kill; // compensate lost particles by increasing w
@@ -673,7 +673,7 @@ public:
     std::string t1 = "ph";
     size_t Nx = cons[t1]->size(); // read particle number from here; 
                                   //
-    cons[t1]->to_other_tiles.clear(); // clear book keeping array
+    //cons[t1]->to_other_tiles.clear(); // clear book keeping array
 
     float w, x, f, sKN; //, P_esc;
     for(size_t n1=0; n1<Nx; n1++) {
@@ -732,7 +732,7 @@ public:
         // book keeping of escaped flux
         add_to_histogram(x, w);
 
-        cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
+        cons[t1]->info(n1) = -1; //to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
       }
 

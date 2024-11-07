@@ -312,13 +312,7 @@ void pic::PistonZdir<D>::clean_prtcls( pic::Tile<D>& tile)
   // if wall crossing is not inside tile, skip further analysis
   if( !tile_between_z ) return;
 
-  // outflowing particles
-  std::vector<int> to_be_deleted;
-
-
   for(auto&& con : tile.containers) {
-    //const auto c = tile.cfl;    // speed of light
-    to_be_deleted.clear();
 
     for(size_t n=0; n<con.size(); n++) {
 
@@ -330,10 +324,12 @@ void pic::PistonZdir<D>::clean_prtcls( pic::Tile<D>& tile)
       if( wdir < 0.0 && z1 > wallocz ) behind_wall = true;
 
       // skip if we dont reflect
-      if(behind_wall) to_be_deleted.push_back(n);
+      if(behind_wall) {
+        con.info(n) = -1; // mark for deletion
+      }
     }
 
-    con.delete_particles(to_be_deleted);
+    con.delete_transferred_particles();
   }
 
 }

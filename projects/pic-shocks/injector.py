@@ -272,7 +272,7 @@ class MovingInjector:
             if conf.oneD:
                 i, j, k  = ind[0], 0, 0
             elif conf.twoD:
-                i,j,k = ind,0
+                i,j,k = ind[0],ind[1],0
             else:
                 i,j,k = ind
 

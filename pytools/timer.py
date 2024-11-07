@@ -85,11 +85,17 @@ class Timer:
     def stats(self, name):
 
         ts = np.array(self.names[name])
-        cnts = len(ts) - 1
-        if cnts < 1:
-            return
 
-        t0 = ts[-1] - ts[0]
+        if len(ts) == 1: # first time step
+            # obtain duration from summing components instead
+            cnts = 1
+            t0 = 0.0
+            for n in self.components:
+                t0 += np.sum( np.array(self.components[n]) )
+
+        else:
+            t0 = ts[-1] - ts[0]
+            cnts = len(ts) - 1
 
         if self.do_print:
             if t0 < 1.0e-6:
@@ -112,10 +118,15 @@ class Timer:
                 )
 
             # print additional statistics
-            if cnts > 1:
+            if len(ts) == 1: # first time step
+                tavg = t0
+                tstd = 0.0
+            else:
                 tss = self._calc_mean(ts)
                 tavg = np.mean(tss)
                 tstd = np.std(tss)
+
+            if len(ts) > 2:
                 print(
                     "---            avg: {:8.5f} s   /  {:3d}  ({})".format(
                         tavg, cnts, tavg
