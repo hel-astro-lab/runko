@@ -17,9 +17,9 @@ def balance_mpi(n, conf, comm_size=None, do_print=True):
         mpi_task_mode = False
 
     if conf.oneD:
-        return balance_mpi_1D(n, comm_size=comm_size, do_print=do_print)
+        return balance_mpi_1D(n, comm_size=comm_size)
     if conf.twoD:
-        return balance_mpi_2D(n, comm_size=comm_size, do_print=do_print)
+        return balance_mpi_2D(n, comm_size=comm_size)
     elif conf.threeD:
         return balance_mpi_3D(n, comm_size=comm_size, do_print=do_print, mpi_task_mode=conf.mpi_task_mode)
 
