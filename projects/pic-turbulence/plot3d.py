@@ -260,7 +260,7 @@ if __name__ == "__main__":
         
 
     # read just periphery or full box
-    do_periphery = False
+    do_periphery = True
     if not(do_periphery):
         def read_h5(outdir, fname, var, lap):
             return read_full_box(outdir, fname, var, lap)

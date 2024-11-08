@@ -84,13 +84,13 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       //--------------------------------------------------
       // +q since - sign is already included in the Ampere's equation
       //q = weight*qe;
-      double Fx1 = +q*(xr - x1);
-      double Fy1 = +q*(yr - y1);
-      double Fz1 = +q*(zr - z1);
+      double Fx1 = +q*con.wgt(n)*(xr - x1);
+      double Fy1 = +q*con.wgt(n)*(yr - y1);
+      double Fz1 = +q*con.wgt(n)*(zr - z1);
       
-      double Fx2 = +q*(x2 - xr);
-      double Fy2 = +q*(y2 - yr);
-      double Fz2 = +q*(z2 - zr);
+      double Fx2 = +q*con.wgt(n)*(x2 - xr);
+      double Fy2 = +q*con.wgt(n)*(y2 - yr);
+      double Fz2 = +q*con.wgt(n)*(z2 - zr);
 
 
       double Wx1 = D >= 1 ? 0.5*(x1 + xr) - i1 : 0.0;
@@ -102,31 +102,37 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       double Wz2 = D >= 3 ? 0.5*(z2 + zr) - k2 : 0.0;
 
 
+
      //-------------------------------------------------- 
      // check outflow
+#if DEBUG
+       
+      const int H = 3;
+      if((i1 < -H || i1 >= maxs[0] + H-1 ||
+          i2 < -H || i2 >= maxs[0] + H-1 ||
+          j1 < -H || j1 >= maxs[1] + H-1 ||
+          j2 < -H || j2 >= maxs[1] + H-1 ||
+          k1 < -H || k1 >= maxs[2] + H-1 ||
+          k2 < -H || k2 >= maxs[2] + H-1 ) ){
+          //&& con.wgt(n) > 0.0) {
 
-      // debug guard
-      if( i1 < -3 || i1 + 1 > maxs[0] + 2 ||
-          i2 < -3 || i2 + 1 > maxs[0] + 2 ||
-          j1 < -3 || j1 + 1 > maxs[1] + 2 ||
-          j2 < -3 || j2 + 1 > maxs[1] + 2 ||
-          k1 < -3 || k1 + 1 > maxs[2] + 2 ||
-          k2 < -3 || k2 + 1 > maxs[2] + 2) {
-
-        std::cerr << "ERROR ZIGZAG:" << std::endl;
-        std::cerr << " i1 " << i1 << " i2 " << i2;
-        std::cerr << " j1 " << j1 << " j2 " << j2;
-        std::cerr << " k1 " << k1 << " k2 " << k2;
-        std::cerr << " x1 " << x1 << " x2 " << x2;
-        std::cerr << " y1 " << y1 << " y2 " << y2;
-        std::cerr << " z1 " << z1 << " z2 " << z2;
-        std::cerr << " v " << u << " " << v << " " << w << std::endl;
+        std::cerr << "ERROR ZIGZAG:" 
+                  << " i1 " << i1 << " i2 " << i2
+                  << " j1 " << j1 << " j2 " << j2
+                  << " k1 " << k1 << " k2 " << k2
+                  << " x1 " << x1 << " x2 " << x2
+                  << " y1 " << y1 << " y2 " << y2
+                  << " z1 " << z1 << " z2 " << z2
+                  << " v " << u << " " << v << " " << w 
+                  << " wgt " << con.wgt(n) << " info " << con.info(n) 
+                  << std::endl;
 
         // do not deposit anything
         Fx1 = 0.0, Fx2 = 0.0, Fy1 = 0.0, Fy2 = 0.0, Fz1 = 0.0, Fz2 = 0.0;
         i1=0, i2=0, j1=0, j2=0, k1=0, k2=0;
-        assert(false);
+        //assert(false);
       }
+#endif
 
       //--------------------------------------------------
       // one-dimensional indices

@@ -888,9 +888,9 @@ if __name__ == "__main__":
     axs[1].minorticks_on()
     axs[2].minorticks_on()
 
-    axs[0].set_xlim((0,2000))
-    axs[1].set_xlim((0,2000))
-    axs[2].set_xlim((0,2000))
+    axs[0].set_xlim((0,1500))
+    axs[1].set_xlim((0,1500))
+    axs[2].set_xlim((0,1500))
 
     if True:
         #axs[1].set_ylim((0.2,1.0))

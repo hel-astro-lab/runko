@@ -1,0 +1,24 @@
+#!/bin/bash
+#SBATCH -J 1ds3-x512
+#SBATCH -p cpu
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -t 10-00:00:00
+#SBATCH --nodes=1
+#SBATCH -n 32                 # total num of cores
+#SBATCH --ntasks-per-node=32  # 128 for amd epyc romes
+#SBATCH -c 1                  # cores per task
+#SBATCH --mem-per-cpu=30G     # max 8G
+ 
+#SBATCH --exclude=x3000c0s14b1n0,x3000c0s14b2n0,x3000c0s14b3n0,x3000c0s14b4n0,x3000c0s16b1n0,x3000c0s16b2n0,x3000c0s16b3n0
+
+# activate threading
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+# go to working directory
+cd $RUNKODIR/projects/pic-shocks/
+ 
+srun --mpi=cray_shasta python3 pic.py --conf 1dsig3.ini   # Cray
+#srun --mpi=pmix python3 pic.py --conf 1dsig3.ini   # gcc

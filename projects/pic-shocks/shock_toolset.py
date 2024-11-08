@@ -159,22 +159,22 @@ class ShockToolset:
             norm = n0 #*qe
 
             #v1: shock front tracking
-            #ind = where_last( self.density/norm > conf.shock_density_jump_thr)
+            ind = where_last( self.density/norm > conf.shock_density_jump_thr)
 
             #v2 shock front tracking where we test also that values left of the index have n_d/n_u > thr
-            nu_nd = self.density/norm 
-            while True:
-                ind = where_last( nu_nd > conf.shock_density_jump_thr )
-                mean_dens_behind = np.mean(nu_nd[ind-3*conf.c_omp:ind]) # mean density value behind found location
+            #nu_nd = self.density/norm 
+            #while True:
+            #    ind = where_last( nu_nd > conf.shock_density_jump_thr )
+            #    mean_dens_behind = np.mean(nu_nd[ind-3*conf.c_omp:ind]) # mean density value behind found location
 
-                #print( 'ind at', ind, 'nu/nd:', nu_nd[ind], 'mean val behind:', mean_dens_behind)
+            #    #print( 'ind at', ind, 'nu/nd:', nu_nd[ind], 'mean val behind:', mean_dens_behind)
 
-                if mean_dens_behind > conf.shock_density_jump_thr:
-                    break
-                elif ind == 0:
-                    break # unphysical situation
-                else:
-                    nu_nd = nu_nd[:ind] # cut point out and analyze the next
+            #    if mean_dens_behind > conf.shock_density_jump_thr:
+            #        break
+            #    elif ind == 0:
+            #        break # unphysical situation
+            #    else:
+            #        nu_nd = nu_nd[:ind] # cut point out and analyze the next
 
             # try to predic location roughly if the above test does not work
             if ind == 0:

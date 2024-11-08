@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH -J 1ds3
+#SBATCH -M ukko
+#SBATCH -p short
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -t 0-05:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=16
+#SBATCH --constraint=amd
+#SBATCH --exclusive
+
+# INFO: ukko AMD nodes have 128 EPYC Rome cores
+
+# modules
+module use /home/jnattila/modules
+module load runko
+
+# activate threading
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+# go to working directory
+cd $RUNKODIR/projects/pic-shocks/
+
+mpirun -n 16 python pic.py --conf 2dsig3.ini

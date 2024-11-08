@@ -1,18 +1,25 @@
-#!/bin/zsh
+#!/usr/bin/env bash
  
-# ! /usr/bin/env bash
+##!/bin/zsh
+ 
 
 declare -a conf_arr=(
-"2dsig3.ini"
+#"1dsig3.ini"
+#"shock_x256m128_p32np4c10_s3d1e-4_v5/1dsig3.ini"
+#"shock_x512m1024_p32np4c25_s3d1e-4_v6/1dsig3.ini"
+#"shock_x512m1024_p32np4c25_s3d1e-4_v7/1dsig3.ini"
+#"shock_x1024m60_p2np8c25_s3d1e-4_v6/2dsig3.ini"
+"shock_x1024m60_p2np8c25_s3d1e-4_v8/2dsig3.ini"
 )
 
 
 # one-time scripts that read all the time slices in one go
 declare -a single_scripts_arr=(
-#"plot_dens.py"
+"plot_dens.py"
+"plot_upstream_ene.py"    
+"plot_jump_conds.py"    
 #"plot_pspec.py"
 ##"plot_ene.py"    
-##"plot_upstream_ene.py"    
 )
 
 
@@ -44,7 +51,7 @@ done
 #-------------------------------------------------- 
 # multilap scripts
 
-for lap in {0..10000..100}
+for lap in {0..200000..1000}
 do
     echo "lap is $lap"
     for c in "${conf_arr[@]}"

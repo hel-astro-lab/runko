@@ -1,0 +1,32 @@
+#!/bin/bash
+#SBATCH -J 2ds3-x1024
+#SBATCH -p cpu
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -c 1                   # cores per task
+#SBATCH --ntasks-per-node=128  # 128 for amd epyc romes
+#SBATCH -t 20-00:00:00         # max run time
+#SBATCH --nodes=1              # nodes reserved
+#SBATCH --mem-per-cpu=7G       # max 7G
+#SBATCH --distribution=block:block
+#
+# SBATCH --exclude=x3000c0s14b3n0,x3000c0s14b4n0,x3000c0s16b1n0
+# SBATCH --nodelist=x3000c0s16b3n0,x3000c0s18b2n0,x3000c0s18b3n0,x3000c0s18b4n0,x3000c0s16b4n0,x3000c0s18b1n0
+
+# HILE-C node list
+# x3000c0s14b1n0,x3000c0s14b2n0,x3000c0s14b3n0,x3000c0s14b4n0,x3000c0s16b1n0,x3000c0s16b2n0,x3000c0s16b3n0,x3000c0s16b4n0,x3000c0s18b1n0,x3000c0s18b2n0,x3000c0s18b3n0,x3000c0s18b4n0
+
+# activate threading
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+export FI_CXI_DEFAULT_TX_SIZE=16384 # 4096 # increase max MPI msgs per rank
+# export FI_CXI_RDZV_THRESHOLD=16384 # same but for slingshot <2.1
+export FI_CXI_RX_MATCH_MODE=hybrid # in case hardware storate overflows, we use software mem
+
+# go to working directory
+cd $RUNKODIR/projects/pic-shocks/
+ 
+srun --mpi=cray_shasta --pmi=cray python3 pic.py --conf 2dsig3-slab.ini   # Cray
+#srun --mpi=pmix python3 pic.py --conf 3dsig3.ini  # GCC + OpenMPI
