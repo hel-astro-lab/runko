@@ -352,16 +352,23 @@ void Synchrotron::interact(
   //std::cout << " syn emit energy:" << x << " pair gamma: " << z0 << " f_acc:" << wtar2wini << "\n";
 
   //TS: A new version that should still be checked:
-  //std::cout << " old vel:" << ux1 << "\n";
-  float Ax = 1/cbrt(1.0-3.0*C_SYNC*ux1*ux1*ux1);
-  float Ay = 1/cbrt(1.0-3.0*C_SYNC*uy1*uy1*uy1);
-  float Az = 1/cbrt(1.0-3.0*C_SYNC*uz1*uz1*uz1);
+  //if (ux1>0){
+  //std::cout << " old vel:" << ux1 << "\n";}
+  float sign_fac = 3.0;
+  if (ux1>0){
+      sign_fac = 3.0;}
+  else{
+      sign_fac = -3.0;}
+  float Ax = 1/cbrt(1.0+sign_fac*C_SYNC*ux1*ux1*ux1);
+  float Ay = 1/cbrt(1.0+sign_fac*C_SYNC*uy1*uy1*uy1);
+  float Az = 1/cbrt(1.0+sign_fac*C_SYNC*uz1*uz1*uz1);
   float ene_old = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
   ux1 = std::max(Ax,0.001f)*ux1;
   uy1 = std::max(Ay,0.001f)*uy1;
   uz1 = std::max(Az,0.001f)*uz1;
   float ene_new = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
-  //std::cout << " new vel:" << ux1 << "\n";
+  //if (ux1>0){
+  //std::cout << " new vel:" << ux1 << "\n";}
   float facc = (ene_old-ene_new)/x;
   wtar2wini = facc;
 
