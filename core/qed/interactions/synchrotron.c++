@@ -138,7 +138,7 @@ float Synchrotron::comp_optical_depth(
 
   float gam = sqrt( 1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
 
-  //std::cout << "  gam:" << gam << " chi:" << x << std::endl;
+  //std::cout << "  gam:" << gam << " chi:" << x << " chi/gam:" << x/gam << std::endl;
 
   // calculate
   // K(\chi_\pm) = \int_0^\chi_\pm d^2 N_phot / dt d\chi d\chi = \int_0^\chi_pm  S(\chi_\pm, \chi_x)/\chi d\chi
@@ -168,10 +168,12 @@ float Synchrotron::comp_optical_depth(
   //float prefac = alphaf/lamC;
   //float T = 1.442;
   //float dtau_dt2 = prefac*x*T/gam;
-    
-  //std::cout << "dtau_dt" << dtau_dt << " " << dtau_dt2 << std::endl;
 
-  return dtau_dt;
+  float dtau_dt2 = (cvel/lamC)*1.442*x/gam/alphaf;
+
+  //std::cout << "dtau_dt: " << dtau_dt << " " << dtau_dt2 << std::endl;
+
+  return dtau_dt2;
 }
 
 
@@ -363,9 +365,18 @@ void Synchrotron::interact(
   float Ay = 1/cbrt(1.0+sign_fac*C_SYNC*uy1*uy1*uy1);
   float Az = 1/cbrt(1.0+sign_fac*C_SYNC*uz1*uz1*uz1);
   float ene_old = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
-  ux1 = std::max(Ax,0.001f)*ux1;
-  uy1 = std::max(Ay,0.001f)*uy1;
-  uz1 = std::max(Az,0.001f)*uz1;
+
+  //New u assuming only 1 photon emission:
+  float ux1b = ux1 - std::min(ux2, 0.999f*ux1);
+  float uy1b = uy1 - std::min(uy2, 0.999f*uy1);
+  float uz1b = uz1 - std::min(uz2, 0.999f*uz1);
+
+  //Making sure the particle becomes at least as slow as it would be after emitting 1 photon
+  //But not slower than 0.001 of the original velocity.
+  ux1 = std::min(std::max(Ax,0.001f)*ux1,ux1b);
+  uy1 = std::min(std::max(Ay,0.001f)*uy1,uy1b);
+  uz1 = std::min(std::max(Az,0.001f)*uz1,uz1b);
+
   float ene_new = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
   //if (ux1>0){
   //std::cout << " new vel:" << ux1 << "\n";}
