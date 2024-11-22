@@ -6,6 +6,7 @@
 #include "tools/vector.h"
 #include "tools/sample_arrays.h"
 #include "tools/bkn_plaw.h"
+#include "tools/signum.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wunused-parameter"
@@ -30,6 +31,7 @@ namespace qed {
   using toolbox::inv;
   using toolbox::bkn_plaw;
   using toolbox::find_sorted_nearest_algo2; // binary search for sorted arrays
+  using toolbox::sign;
 
 
 tuple<float, float> Synchrotron::get_minmax_ene( string /*t1*/, string /*t2*/, double /*ene*/)
@@ -169,7 +171,7 @@ float Synchrotron::comp_optical_depth(
   //float T = 1.442;
   //float dtau_dt2 = prefac*x*T/gam;
 
-  float dtau_dt2 = (cvel/lamC)*1.442*x/gam/alphaf;
+  float dtau_dt2 = (alphaf*cvel/lamC)*1.442*x/gam;
 
   //std::cout << "dtau_dt: " << dtau_dt << " " << dtau_dt2 << std::endl;
 
@@ -353,29 +355,27 @@ void Synchrotron::interact(
   //wtar2wini = facc; // insert accumulation factor back to feed it into photon weight adjustment in pairing routines
   //std::cout << " syn emit energy:" << x << " pair gamma: " << z0 << " f_acc:" << wtar2wini << "\n";
 
-  //TS: A new version that should still be checked:
   //if (ux1>0){
   //std::cout << " old vel:" << ux1 << "\n";}
-  float sign_fac = 3.0;
-  if (ux1>0){
-      sign_fac = 3.0;}
-  else{
-      sign_fac = -3.0;}
-  float Ax = 1/cbrt(1.0+sign_fac*C_SYNC*ux1*ux1*ux1);
-  float Ay = 1/cbrt(1.0+sign_fac*C_SYNC*uy1*uy1*uy1);
-  float Az = 1/cbrt(1.0+sign_fac*C_SYNC*uz1*uz1*uz1);
+  float Ax = 1.0/cbrt(1.0+sign(ux1)*3.0*C_SYNC*ux1*ux1*ux1);
+  float Ay = 1.0/cbrt(1.0+sign(uy1)*3.0*C_SYNC*uy1*uy1*uy1);
+  float Az = 1.0/cbrt(1.0+sign(uz1)*3.0*C_SYNC*uz1*uz1*uz1);
   float ene_old = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
 
-  //New u assuming only 1 photon emission:
-  float ux1b = ux1 - std::min(ux2, 0.999f*ux1);
-  float uy1b = uy1 - std::min(uy2, 0.999f*uy1);
-  float uz1b = uz1 - std::min(uz2, 0.999f*uz1);
+  ////New u assuming only 1 photon emission:
+  float ux1b = ux1 - sign(ux1)*std::min(abs(ux2), abs(0.999f*ux1));
+  float uy1b = uy1 - sign(uy1)*std::min(abs(uy2), abs(0.999f*uy1));
+  float uz1b = uz1 - sign(uz1)*std::min(abs(uz2), abs(0.999f*uz1));
 
-  //Making sure the particle becomes at least as slow as it would be after emitting 1 photon
-  //But not slower than 0.001 of the original velocity.
-  ux1 = std::min(std::max(Ax,0.001f)*ux1,ux1b);
-  uy1 = std::min(std::max(Ay,0.001f)*uy1,uy1b);
-  uz1 = std::min(std::max(Az,0.001f)*uz1,uz1b);
+  ////Momentum reduction based on the cooling in one dt (but at least 0.001 of the original)
+  float ux1c = std::max(Ax,0.001f)*ux1;
+  float uy1c = std::max(Ay,0.001f)*uy1;
+  float uz1c = std::max(Az,0.001f)*uz1;
+
+  //Making sure the new particle momentum is at least as small as based on 1 photon emission.
+  ux1 = sign(ux1)*std::min(abs(ux1b),abs(ux1c));
+  uy1 = sign(uy1)*std::min(abs(uy1b),abs(uy1c));
+  uz1 = sign(uz1)*std::min(abs(uz1b),abs(uz1c));
 
   float ene_new = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
   //if (ux1>0){
