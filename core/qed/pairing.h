@@ -1406,6 +1406,7 @@ public:
           //float r_curv = std::max(lx1 - rad_offs_vir, 0.0f)/rad_curv_vir;
           //by_vir = b0_curv_vir*pow(r_curv, 2);
 
+          // Lorentz boosted virtual B_y
           float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
           by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
         }
@@ -1457,8 +1458,7 @@ public:
           // particle values after interaction
           auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
 
-          //iptr->wtar2wini = 1.0f/t_free;
-          iptr->wtar2wini = prob_norm_onebody/tau_int; // feed t_rad/\Delta t into the process
+          iptr->wtar2wini = prob_norm_onebody; // inject N1Q normalization into the interaction for possible extra calculations
 
           timer.start_comp("interact");
           iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);

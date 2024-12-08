@@ -355,33 +355,100 @@ void Synchrotron::interact(
   //wtar2wini = facc; // insert accumulation factor back to feed it into photon weight adjustment in pairing routines
   //std::cout << " syn emit energy:" << x << " pair gamma: " << z0 << " f_acc:" << wtar2wini << "\n";
 
-  //if (ux1>0){
-  //std::cout << " old vel:" << ux1 << "\n";}
-  float Ax = 1.0/cbrt(1.0+sign(ux1)*3.0*C_SYNC*ux1*ux1*ux1);
-  float Ay = 1.0/cbrt(1.0+sign(uy1)*3.0*C_SYNC*uy1*uy1*uy1);
-  float Az = 1.0/cbrt(1.0+sign(uz1)*3.0*C_SYNC*uz1*uz1*uz1);
-  float ene_old = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
 
-  ////New u assuming only 1 photon emission:
-  float ux1b = ux1 - sign(ux1)*std::min(abs(ux2), abs(0.999f*ux1));
-  float uy1b = uy1 - sign(uy1)*std::min(abs(uy2), abs(0.999f*uy1));
-  float uz1b = uz1 - sign(uz1)*std::min(abs(uz2), abs(0.999f*uz1));
+
+  //--------------------------------------------------
+  // v2 sub-step cooling via the energy evolution equation
+    
+  float N1Q = wtar2wini; // pairing routine gives us the onebody normalization coefficient via this parameter
+
+  // radiative cooling time for the process per Delta t
+  // t_rad/Delta t = 3/2 N gam^2/chi^2 \approx 3/2 N b^-2  for synchrotron
+  // t_rad/Delta t = 3/2 N gam^2/chi^2 \approx 3/2 N b^-2 (rg/Rcurv)^-2 \gamma^-2 for virtual curvature
+  //
+  // NOTE: For virtual curvature radiation (in 1D) we feed the virtual pitch angle \sin\theta = gamma (rg/Rcurv) 
+  //       into the mechanism via the B_y component that then gets included in the value of \chi_e. 
+  // NOTE2: This expression ignores the quantum Gaunt factor and assumes b << 1
+  float t_rad = 1.5*N1Q*(gam*gam/chi_e/chi_e);   // TODO
+
+  // Solution of the curvature cooling energy equation is
+  // A = g(Delta t)/g_0 = ( 1 + 3 * g^3 (Delta t/t_curv) )^-1/3
+  //                    = ( 1 + 3 * g (Delta t/t_rad) )^-1/3 
+  // since our definition of t_rad includes g^-2 factor already for virtual curvature process
+  float A = 1.0f/cbrt(1.0f + 3.0f*gam/t_rad);
+
+  // Solution of the synchrotron cooling energy equation is
+  // A = g(Delta t)/g_0 = ( 1 + g (Delta t/t_rad) )^-1
+  //float A = 1.0/(1.0 + gam/t_rad);
+
+  // cap at a min of 1 and max of 10^-4 change
+  A = std::max(1.0e-4f, std::min(1.0f, A)); 
+
+  ////New electron u assuming only 1 photon emission from the regular MC process:
+  float ux1b = ux1 - sign(ux1)*abs(ux2);
+  float uy1b = uy1 - sign(uy1)*abs(uy2);
+  float uz1b = uz1 - sign(uz1)*abs(uz2);
 
   ////Momentum reduction based on the cooling in one dt (but at least 0.001 of the original)
-  float ux1c = std::max(Ax,0.001f)*ux1;
-  float uy1c = std::max(Ay,0.001f)*uy1;
-  float uz1c = std::max(Az,0.001f)*uz1;
+  //NOTE: we treat momentum as energy here assuming g >> 1
+  float ux1c = A*ux1;
+  float uy1c = A*uy1;
+  float uz1c = A*uz1;
 
   //Making sure the new particle momentum is at least as small as based on 1 photon emission.
-  ux1 = sign(ux1)*std::min(abs(ux1b),abs(ux1c));
-  uy1 = sign(uy1)*std::min(abs(uy1b),abs(uy1c));
-  uz1 = sign(uz1)*std::min(abs(uz1b),abs(uz1c));
+  ux1 = sign(ux1)*std::min(abs(ux1b), abs(ux1c));
+  uy1 = sign(uy1)*std::min(abs(uy1b), abs(uy1c));
+  uz1 = sign(uz1)*std::min(abs(uz1b), abs(uz1c));
 
-  float ene_new = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
-  //if (ux1>0){
-  //std::cout << " new vel:" << ux1 << "\n";}
-  float facc = (ene_old-ene_new)/x;
+  float gam_new = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1);
+
+  // accumulation factor; the this is how many reactions we did in reality during the unresolved dt
+  float facc = (gam - gam_new)/x;
   wtar2wini = facc;
+
+
+  //--------------------------------------------------
+  // v1 with four momenta and curvature radiation 
+
+  //--------------------------------------------------
+  //if (ux1>0){
+  //std::cout << " old vel:" << ux1 << "\n";}
+  //double Ax = 1.0/cbrt(1.0 + sign(ux1)*3.0*C_SYNC*ux1*ux1*ux1);
+  //double Ay = 1.0/cbrt(1.0 + sign(uy1)*3.0*C_SYNC*uy1*uy1*uy1);
+  //double Az = 1.0/cbrt(1.0 + sign(uz1)*3.0*C_SYNC*uz1*uz1*uz1);
+
+  //std::cout << "A:"   << Ax 
+  //          << " vs.:" << A 
+  //          << " rat:" << Ax/A 
+  //          << " gam:" << gam
+  //          << " 1/trad:" << 1.0/t_rad
+  //          << " CSYN:" << C_SYNC*ux1*ux1
+  //          << " 1+gam/trad:" << 1.0 + 3.0*gam/t_rad
+  //          << "\n";
+
+
+  //double ene_old = sqrt(ux1*ux1+uy1*uy1+uz1*uz1);
+
+  ////New u assuming only 1 photon emission:
+  //double ux1b = ux1 - sign(ux1)*std::min(double(abs(ux2)), abs(0.999*ux1));
+  //double uy1b = uy1 - sign(uy1)*std::min(double(abs(uy2)), abs(0.999*uy1));
+  //double uz1b = uz1 - sign(uz1)*std::min(double(abs(uz2)), abs(0.999*uz1));
+
+  //////Momentum reduction based on the cooling in one dt (but at least 0.001 of the original)
+  //double ux1c = std::max(Ax,0.001)*ux1;
+  //double uy1c = std::max(Ay,0.001)*uy1;
+  //double uz1c = std::max(Az,0.001)*uz1;
+
+  ////Making sure the new particle momentum is at least as small as based on 1 photon emission.
+  //ux1 = sign(ux1)*std::min(abs(ux1b),abs(ux1c));
+  //uy1 = sign(uy1)*std::min(abs(uy1b),abs(uy1c));
+  //uz1 = sign(uz1)*std::min(abs(uz1b),abs(uz1c));
+
+  //double ene_new = sqrt(ux1*ux1 + uy1*uy1 + uz1*uz1);
+  // //if (ux1>0){
+  // //std::cout << " new vel:" << ux1 << "\n";}
+  // float facc = (ene_old-ene_new)/x;
+  // wtar2wini = facc;
 
   //wtar2wini = 1.0;
 
