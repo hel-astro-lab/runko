@@ -402,9 +402,9 @@ void Synchrotron::interact(
 
   float gam_new = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1);
 
-  // accumulation factor; the this is how many reactions we did in reality during the unresolved dt
-  float facc = (gam - gam_new)/x;
-  wtar2wini = facc;
+  // growth factor; the this is how many reactions we did in reality during the unresolved dt
+  float fgrowth = (gam - gam_new)/x;
+  wtar2wini = fgrowth;
 
 
   //--------------------------------------------------

@@ -1309,7 +1309,7 @@ public:
   {
     timer.start(); // start profiling block
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -1493,8 +1493,6 @@ public:
           facc4 = iptr->do_accumulate ? facc4 : 1.0f;
           timer.stop_comp("acc");
 
-          facc4 /= iptr->wtar2wini; // add accumulation factor calculated inside the processes' interact routine
-
           //n3 = n4/facc3; // NOTE never modify the parent; could be implemented but then need to change also the 
                            //      parent update below.
 
@@ -1507,6 +1505,8 @@ public:
 
             w3 = w1/n3; // new parent particle weight
             w4 = w1/n4; // emitted prtcl inherits weight from parent
+
+            w4 = w4*iptr->wtar2wini; //add a growth factor calculated inside the processes' interact routine
                           
             // NOTE: we keep location the same
             con1.vel(0,n1) = ux3;
