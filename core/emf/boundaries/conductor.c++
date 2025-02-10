@@ -979,7 +979,7 @@ void emf::Conductor<D>::update_e(
       float vrot = Om(0)*radius_pc/c; //r1(0); // Omega x r_pc
       float erot = 1.0f*vrot*bd(0); //-v x B
 
-      const float erot1 = erot; // B_\parallel direction 
+      const float erot1 = 0.0f; // erot; // B_\parallel direction
       const float erot2 = 0.0f; 
       const float erot3 = 0.0f;
 
