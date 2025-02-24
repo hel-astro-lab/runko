@@ -312,9 +312,18 @@ void pic::Star<D>::solve(
         
         // 1D distribution along B-field
         // NOTE: same "random" velocity taken for both particles as an approx
-        auto ux1 = vr*bx/b;
-        auto uy1 = vr*by/b;
-        auto uz1 = vr*bz/b;
+        //auto ux1 = vr*bx/b;
+        //auto uy1 = vr*by/b;
+        //auto uz1 = vr*bz/b;
+
+        // Using now a random 3D distribution instead:
+        float zeta = 2.0f*PI*rand();
+        float mu = -1.0f + 2.0f*rand();
+        float sin_theta = sqrt(1.0f-pow(mu,2));
+
+        auto ux1 = vr*sin_theta*cos(zeta);
+        auto uy1 = vr*sin_theta*sin(zeta);
+        auto uz1 = vr*mu;
 
         //--------------------------------------------------
         // pcap rotation vector
