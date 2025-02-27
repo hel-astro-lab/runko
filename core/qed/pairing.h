@@ -1371,6 +1371,8 @@ public:
         const auto ly1 = con1.loc(1,n1);
         const auto lz1 = con1.loc(2,n1);
 
+        const auto xborn = ly1; //Used only in 1D
+
         const auto ux1 = con1.vel(0,n1);
         const auto uy1 = con1.vel(1,n1);
         const auto uz1 = con1.vel(2,n1);
@@ -1406,9 +1408,14 @@ public:
           //float r_curv = std::max(lx1 - rad_offs_vir, 0.0f)/rad_curv_vir;
           //by_vir = b0_curv_vir*pow(r_curv, 2);
 
-          // Lorentz boosted virtual B_y
-          float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
-          by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
+          if (t1 == "ph"){
+            float R_curv = 17280.0f; //TBD: Get this directly from the user.
+            by_vir = gs.bx(ind)*std::sin((lx1-xborn)/R_curv);
+          } else {
+            // Lorentz boosted virtual B_y
+            float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
+            by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
+          }
         }
           
         const float ex = gs.ex(ind); 
@@ -1521,8 +1528,14 @@ public:
             timer.start_comp("add_ems_prtcls");
             float ncop = 0.0;
             float z1 = rand();
+
+            float ly1vir = ly1;
+            if (use_vir_curvature){
+                ly1vir = lx1; //Saving the x-value of the created photon for 1D calculation
+            }
+
             while(n4 > z1 + ncop) {
-              cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
+              cons[t4]->add_particle( {{lx1, ly1vir, lz1}}, {{ux4, uy4, uz4}}, w4);
               ncop += 1.0;
             }
             timer.stop_comp("add_ems_prtcls");
