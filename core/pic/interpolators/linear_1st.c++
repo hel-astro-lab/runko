@@ -62,9 +62,9 @@ void pic::LinearInterpolator<D,V>::solve(
       double dx=0.0, dy=0.0, dz=0.0;
     
       // normalize to tile units
-      double loc0n = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
-      double loc1n = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
-      double loc2n = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
+      double loc0n = D >= 1 ? con.loc(0,n) - mins[0] : 0.0;
+      double loc1n = D >= 2 ? con.loc(1,n) - mins[1] : 0.0;
+      double loc2n = D >= 3 ? con.loc(2,n) - mins[2] : 0.0;
 
       // particle location in the grid
       if(D >= 1) i = floor(loc0n);

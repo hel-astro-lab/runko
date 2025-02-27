@@ -59,9 +59,9 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
       //--------------------------------------------------
       // new (normalized) location, x_{n+1}
-      double x2 = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
-      double y2 = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
-      double z2 = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
+      double x2 = D >= 1 ? con.loc(0,n) - mins[0] : 0.0;
+      double y2 = D >= 2 ? con.loc(1,n) - mins[1] : 0.0;
+      double z2 = D >= 3 ? con.loc(2,n) - mins[2] : 0.0;
 
       // previos location, x_n
       double x1 = x2 - u*invgam*c;
