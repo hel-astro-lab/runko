@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH -J 3ds3-x2048
-#SBATCH -p cpu
+#SBATCH -J 3ds3-x4096
+#SBATCH -C c
 #SBATCH --output=%J.out
 #SBATCH --error=%J.err
 #SBATCH -c 1                   # cores per task
 #SBATCH --ntasks-per-node=128  # 128 for amd epyc romes
-#SBATCH -t 20-00:00:00         # max run time
-#SBATCH --nodes=8              # nodes reserved
+#SBATCH -t 0-10:00:00          # max run time
+#SBATCH --nodes=10             # nodes reserved
 #SBATCH --mem-per-cpu=7G       # max 7G/128 cores
 #SBATCH --distribution=block:block
 
@@ -15,6 +15,8 @@
 
 # HILE-C node list
 # x3000c0s14b1n0,x3000c0s14b2n0,x3000c0s14b3n0,x3000c0s14b4n0,x3000c0s16b1n0,x3000c0s16b2n0,x3000c0s16b3n0,x3000c0s16b4n0,x3000c0s18b1n0,x3000c0s18b2n0,x3000c0s18b3n0,x3000c0s18b4n0
+
+module load libfabric
 
 # specific environment variable settings
 export OMP_NUM_THREADS=1
@@ -36,4 +38,3 @@ export FI_CXI_RX_MATCH_MODE=hybrid # in case hardware storate overflows, we use 
 cd $RUNKODIR/projects/pic-shocks/
  
 srun --mpi=cray_shasta python3 pic.py --conf 3dsig3.ini   # Cray
-#srun --mpi=pmix python3 pic.py --conf 3dsig3.ini  # GCC + OpenMPI
