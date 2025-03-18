@@ -541,7 +541,7 @@ public:
     timer.start(); // start profiling block
 
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -689,9 +689,11 @@ public:
           auto t2   = iptr->t2;                    // target type
           auto con2 = cons[t2];                    // target container
 
+          if(con2->size()==0) continue;
+
           //--------------------------------------------------
           // get random target with energy between jmin/jmax
-          // propability is proptional to weight of LPs
+          // propability is proportional to weight of LPs
 
           timer.start_comp("sample_prob");
           //size_t n2 = toolbox::sample_prob_between(     con2->wgtCumArr, rand(), jmin, jmax);
@@ -1598,7 +1600,7 @@ public:
   void rescale(pic::Tile<D>& tile, string& t1, double f_kill)
   {
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -1802,7 +1804,7 @@ public:
       )
   {
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -1859,7 +1861,7 @@ public:
       )
   {
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
