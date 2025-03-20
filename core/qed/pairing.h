@@ -107,6 +107,9 @@ public:
   // normalization factor for single-body interaction probabilities
   float prob_norm_onebody = 1.0f;
 
+  // curvature radius
+  float r_curv = 1.0f;
+
   // force e- e+ to have unit weights irrespective of weighting functions
   bool force_ep_uni_w = true; 
 
@@ -1407,12 +1410,8 @@ public:
         // construct (optional) virtual curvature into the EM fields (for 1D cases)
         float by_vir = 0.0f;
         if (use_vir_curvature) {
-          //float r_curv = std::max(lx1 - rad_offs_vir, 0.0f)/rad_curv_vir;
-          //by_vir = b0_curv_vir*pow(r_curv, 2);
-
           if (t1 == "ph"){
-            float R_curv = 17280.0f; //TBD: Get this directly from the user.
-            by_vir = gs.bx(ind)*std::sin((lx1-xborn)/R_curv);
+            by_vir = gs.bx(ind)*std::sin((lx1-xborn)/r_curv);
           } else {
             // Lorentz boosted virtual B_y
             float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
