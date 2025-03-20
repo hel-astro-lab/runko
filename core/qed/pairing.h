@@ -1408,17 +1408,25 @@ public:
 
         //--------------------------------------------------
         // construct (optional) virtual curvature into the EM fields (for 1D cases)
+        // We mimic a real B-field line curvature by inserting the equivalent field perpendicular component to B_y via by_vir parameter.
+
+        // Synchrotron: particle experiences an angle sin\theta = \gamma r_g/R_curv where r_g is the gyroradius and R_curv the field line curvature
+        // in its rest frame (hence an additional \gamma factor).
+
+        // Multi-photon annihilation: Photons are emitted mostly to the direction of the electron and as they propagate, have an increasing angle against the curving field line.
+        // To mimic  this, we calculate the angle via \sin\theta = sin((x-x_born)/R_curv).
+        // The height where the photon is born (x_born) is stored in 1D simulations within the y-location of the particle.
+
         float by_vir = 0.0f;
         if (use_vir_curvature) {
-          if (t1 == "ph"){
+          if(iptr->name == "multi-phot-ann"){
             by_vir = gs.bx(ind)*std::sin((lx1-xborn)/r_curv);
-          } else {
-            // Lorentz boosted virtual B_y
+          } else if(iptr->name == "synchrotron") {
             float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
             by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
           }
         }
-          
+
         const float ex = gs.ex(ind); 
         const float ey = gs.ey(ind); 
         const float ez = gs.ez(ind); 
