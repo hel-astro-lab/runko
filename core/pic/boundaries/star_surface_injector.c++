@@ -85,8 +85,8 @@ void pic::Star<D>::solve(
 
   // get charge (assume q_- = q_+)
   const float q = cons["e-"]->q;
-  float wep = 1.0f;
-  float wph = 1.0f;
+  //float wep = 1.0f;
+  //float wph = 1.0f;
 
   //--------------------------------------------------
   // main rouutine starts here now that we have the right tile
@@ -139,7 +139,7 @@ void pic::Star<D>::solve(
     // check if we are inside star
 
     // inject top of star
-    const int height_atms = 1; // height of the atmosphere in cells
+    //const int height_atms = 1; // height of the atmosphere in cells
     //bool inside_star  = norm(rvec) < 1.0*radius;
     //bool inside_atmos = norm(rvec) < 1.0*radius + height_atms;
 
