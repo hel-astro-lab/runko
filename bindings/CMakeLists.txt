@@ -123,6 +123,8 @@ pybind11_add_module(pyrunko
                     ${MISC_FILES}
                     )
 
+target_link_libraries(pyrunko PRIVATE MPI::MPI_CXX)
+
 #target_link_libraries(pyrunko PRIVATE -lhdf5)
 target_link_libraries(pyrunko PRIVATE ${HDF5_C_LIBRARIES})
 target_include_directories(pyrunko PRIVATE ${HDF5_INCLUDE_DIRS})

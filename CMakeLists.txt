@@ -98,7 +98,7 @@ FIND_PACKAGE (HDF5)
 
 # hpc stuff 
 #FIND_PACKAGE( FFTW3 ) # this is not needed
-#find_package (MPI) # assumed to be provided by the compiler
+find_package (MPI)
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/external/corgi/mpi4cpp/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/external/corgi/mpi4cpp/tools/optional-lite/include )
 
