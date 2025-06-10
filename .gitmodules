@@ -18,3 +18,7 @@
 	path = external/fmt
 	url = https://github.com/fmtlib/fmt.git
 	branch = master
+[submodule "external/tyvi"]
+	path = external/tyvi
+	url = git@github.com:hel-astro-lab/tyvi.git
+	branch = main
