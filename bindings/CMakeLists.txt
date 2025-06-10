@@ -123,6 +123,7 @@ pybind11_add_module(pyrunko
                     ${MISC_FILES}
                     )
 
+target_link_libraries(pyrunko PRIVATE tyvi::tyvi)
 target_link_libraries(pyrunko PRIVATE MPI::MPI_CXX)
 
 #target_link_libraries(pyrunko PRIVATE -lhdf5)

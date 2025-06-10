@@ -171,6 +171,7 @@ endif(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 
 
 #-------------------------------------------------- 
+add_subdirectory(external/tyvi)
 add_subdirectory(external/corgi)
 add_subdirectory(bindings)
 add_subdirectory(docs)
