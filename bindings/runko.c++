@@ -19,6 +19,10 @@ PYBIND11_MODULE(pyrunko, m_base) {
   py::module m_emf = m_base.def_submodule("emf", "Runko emf module");
   emf::bind_emf(m_emf);
 
+  /// emf2
+  py::module m_emf2 = m_base.def_submodule("emf2", "Runko emf v2 module");
+  emf2::bind_emf2(m_emf2);
+
   /// vlv
   //py::module m_vlv = m_base.def_submodule("vlv", "Runko Vlasov module");
   //vlv::bind_vlv(m_vlv);
@@ -27,10 +31,14 @@ PYBIND11_MODULE(pyrunko, m_base) {
   py::module m_pic = m_base.def_submodule("pic", "Runko PIC module");
   pic::bind_pic(m_pic);
 
+  /// pic2
+  py::module m_pic2 = m_base.def_submodule("pic2", "Runko PIC v2 module");
+  pic2::bind_pic2(m_pic2);
+
   /// qed
   py::module m_qed = m_base.def_submodule("qed", "Runko QED module");
   qed::bind_qed(m_qed);
-    
+
   /// ffe
   py::module m_ffe = m_base.def_submodule("ffe", "Runko force-free MHD module");
   ffe::bind_ffe(m_ffe);

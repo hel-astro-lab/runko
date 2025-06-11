@@ -14,12 +14,20 @@ namespace emf {
   void bind_emf(py::module& m);
 }
 
+namespace emf2 {
+  void bind_emf2(py::module& m);
+}
+
 namespace vlv {
   void bind_vlv(py::module& m);
 }
 
 namespace pic {
   void bind_pic(py::module& m);
+}
+
+namespace pic2 {
+  void bind_pic2(py::module& m);
 }
 
 namespace qed {

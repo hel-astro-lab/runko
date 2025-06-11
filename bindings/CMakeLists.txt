@@ -25,7 +25,11 @@ set (FIELDS_FILES
      ../core/emf/boundaries/conductor.c++
      )
 
-set (VLV_FILES 
+set (FIELDS2_FILES
+     pyemf2.c++
+     )
+
+set (VLV_FILES
       pyvlv.c++
       ../core/vlv/tile.c++
       ../core/vlv/boundaries/piston.c++
@@ -63,6 +67,10 @@ set (PIC_FILES
      ../core/pic/depositers/esikerpov_2nd.c++
      ../core/pic/depositers/esikerpov_4th.c++
     #../core/pic/depositers/esikerpov_4th_vec.c++
+     )
+
+set (PIC2_FILES
+     pypic2.c++
      )
 
 set (QED_FILES 
@@ -114,8 +122,10 @@ pybind11_add_module(pyrunko
                     runko.c++ 
                     ${TOOLS_FILES}
                     ${FIELDS_FILES}
+                    ${FIELDS2_FILES}
                     ${VLV_FILES}
                     ${PIC_FILES}
+                    ${PIC2_FILES}
                     ${QED_FILES}
                     ${FFE_FILES}
                     ${IO_FILES}
