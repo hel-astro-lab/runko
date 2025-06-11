@@ -27,8 +27,8 @@ def insert_em_fields(grid, conf):
 
         if not(conf.use_maxwell_split): # if no static component
 
-            g.set_E(lambda _, _, _: (0, 0, 0))
-            g.set_B(lambda _, _, _: (0, 0, conf.binit))
+            g.set_E(lambda i, j, k: (0, 0, 0))
+            g.set_B(lambda i, j, k: (0, 0, conf.binit))
 
         elif conf.use_maxwell_split:
             raise NotImplementedError()
@@ -71,9 +71,9 @@ if __name__ == "__main__":
     if conf.threeD:
         # 3D modules
         import pycorgi.threeD as pycorgi   # corgi ++ bindings
-        import pyrunko.pic2.threeD as pypic # pic2 c++ bindings
-        import pyrunko.emf2.threeD as pyfld # fld2 c++ bindings
-    elif conf.twoD:
+        import pyrunko.pic2.threeD as pypic2 # pic2 c++ bindings
+        import pyrunko.emf2.threeD as pyfld2 # fld2 c++ bindings
+    else:
         raise NotImplementedError()
 
 
@@ -89,11 +89,13 @@ if __name__ == "__main__":
     else:
         pytools.balance_mpi(grid, conf) #Hilbert curve optimization
 
+    # load pic tiles into grid (functionally same as pytools.pic.load_tiles(grid, conf)
+    for k in range(grid.get_Nz()):
+        for j in range(grid.get_Ny()):
+            for i in range(grid.get_Nx()):
+                grid.add_tile(pypic2.Tile(conf), (i, j, k))
 
     raise NotImplementedError("Rest is not changed from original pic.py")
-
-    # load pic tiles into grid
-    pytools.pic.load_tiles(grid, conf)
 
     # --------------------------------------------------
     # simulation restart

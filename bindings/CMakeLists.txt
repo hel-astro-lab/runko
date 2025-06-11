@@ -7,6 +7,7 @@ project (pyrunko LANGUAGES CXX C)
 set (TOOLS_FILES 
      pytools.c++
      ../tools/hilbert.c++
+     ../tools/config_parser.c++
      )
 
 set (FIELDS_FILES 
@@ -27,6 +28,7 @@ set (FIELDS_FILES
 
 set (FIELDS2_FILES
      pyemf2.c++
+     ../core/emf2/tile.c++
      )
 
 set (VLV_FILES
@@ -71,6 +73,7 @@ set (PIC_FILES
 
 set (PIC2_FILES
      pypic2.c++
+     ../core/pic2/tile.c++
      )
 
 set (QED_FILES 

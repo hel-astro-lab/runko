@@ -1,8 +1,11 @@
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include "core/pic2/tile.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/stl.h"
+#include "tools/config_parser.h"
 
-namespace py = pybind11;
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 
 //--------------------------------------------------
@@ -10,6 +13,7 @@ namespace py = pybind11;
 
 
 namespace pic2 {
+namespace py = pybind11;
 
 // python bindings for plasma classes & functions
 void
@@ -28,6 +32,15 @@ void
   // 3D bindings
   [[maybe_unused]] py::module m_3d =
     m_sub.def_submodule("threeD", "3D specializations");
+
+  py::class_<
+    pic2::Tile<3>,
+    emf2::Tile<3>,
+    corgi::Tile<3>,
+    std::shared_ptr<pic2::Tile<3>>>(m_3d, "Tile", py::multiple_inheritance())
+    .def(py::init([](const py::handle& h) {
+      return pic2::Tile<3>(toolbox::ConfigParser(h));
+    }));
 }
 
 }  // namespace pic2
