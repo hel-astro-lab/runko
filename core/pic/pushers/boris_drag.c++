@@ -4,10 +4,6 @@
 #include "tools/signum.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 using toolbox::sign;
 
 
@@ -37,7 +33,7 @@ void pic::BorisPusherDrag<D,V>::push_container(
 
 
   // loop over particles
-  UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+  UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
     double vel0n = con.vel(0,n);
     double vel1n = con.vel(1,n);
     double vel2n = con.vel(2,n);
@@ -159,12 +155,6 @@ void pic::BorisPusherDrag<D,V>::push_container(
 
   }, con.size(), con);
 
-  UniIter::sync();
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

@@ -10,8 +10,6 @@
 
 #include "definitions.h"
 #include "external/iter/dynArray.h"
-#include "external/iter/allocator.h"
-#include "external/iter/managed_alloc.h"
 #include "tools/sort.h"
 
 
@@ -116,21 +114,6 @@ class ParticleContainer{
   std::array<Particle, first_message_size> incoming_particles;
   ManVec<Particle> incoming_extra_particles;
 
-#ifdef GPU
-  // incoming indexes, to optimize transfer_and_wrap_particles for GPUs
-  //int incoming_count;
-  ManVec<int> incoming_particleIndexes;
-  ManVec<int> particleIndexesA;
-  ManVec<int> particleIndexesB;
-  int pCount;
-
-  void     *d_temp_storage = NULL;
-  size_t   temp_storage_bytes = 0;
-
-  // incoming indexes, to optimize transfer_and_wrap_particles for GPUs
-  ManVec<int> outgoing_particleIndexes;
-#endif
-
   /// number of particles flowing out from the tile
   int outgoing_count;
 
@@ -176,10 +159,10 @@ class ParticleContainer{
   virtual void shrink_to_fit();
 
   /// size of the container (in terms of particles)
-  //DEVCALLABLE size_t size() const { return Nprtcls; }
-  //DEVCALLABLE size_t size() const { return locArr[0].size(); } // FIXME defaul
+  // size_t size() const { return Nprtcls; }
+  // size_t size() const { return locArr[0].size(); } // FIXME defaul
 
-  DEVCALLABLE size_t size() const { 
+   size_t size() const { 
 
 #ifdef DEBUG
     bool ts[10] = {0,0,0,0,0,0,0,0,0,0};
@@ -229,13 +212,13 @@ class ParticleContainer{
 
   //--------------------------------------------------
   // locations
-  DEVCALLABLE
+  
   inline float loc( size_t idim, size_t iprtcl ) const
   {
     return locArr[idim][iprtcl];
   }
 
-  DEVCALLABLE
+  
   inline float& loc( size_t idim, size_t iprtcl )       
   {
     return locArr[idim][iprtcl];
@@ -251,13 +234,13 @@ class ParticleContainer{
 
   //--------------------------------------------------
   // velocities
-  DEVCALLABLE
+  
   inline float vel( size_t idim, size_t iprtcl ) const
   {
     return velArr[idim][iprtcl];
   }
 
-  DEVCALLABLE
+  
   inline float& vel( size_t idim, size_t iprtcl )       
   {
     return velArr[idim][iprtcl];
@@ -279,13 +262,13 @@ class ParticleContainer{
 */
   //--------------------------------------------------
   // weights
-  DEVCALLABLE
+  
   inline float wgt( size_t iprtcl ) const
   {
     return wgtArr[iprtcl];
   }
 
-  DEVCALLABLE
+  
   inline float& wgt( size_t iprtcl )       
   {
     return wgtArr[iprtcl];
@@ -308,13 +291,13 @@ class ParticleContainer{
 */
   //--------------------------------------------------
   // id
-  DEVCALLABLE
+  
   inline int id( size_t idim, size_t iprtcl ) const
   {
     return indArr[idim][iprtcl];
   }
 
-  DEVCALLABLE
+  
   inline int& id( size_t idim, size_t iprtcl )       
   {
     return indArr[idim][iprtcl];
@@ -331,13 +314,13 @@ class ParticleContainer{
 
   //--------------------------------------------------
   // info
-  DEVCALLABLE
+  
   inline int info( size_t iprtcl ) const
   {
     return infoArr[iprtcl];
   }
 
-  DEVCALLABLE
+  
   inline int& info( size_t iprtcl )       
   {
     return infoArr[iprtcl];
@@ -361,21 +344,21 @@ class ParticleContainer{
 
   //--------------------------------------------------
   // EM fields
-  DEVCALLABLE inline float& ex(size_t iprtcl ) { return Epart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float& ey(size_t iprtcl ) { return Epart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float& ez(size_t iprtcl ) { return Epart[2*size() + iprtcl]; };
+   inline float& ex(size_t iprtcl ) { return Epart[0*size() + iprtcl]; };
+   inline float& ey(size_t iprtcl ) { return Epart[1*size() + iprtcl]; };
+   inline float& ez(size_t iprtcl ) { return Epart[2*size() + iprtcl]; };
 
-  DEVCALLABLE inline float& bx(size_t iprtcl ) { return Bpart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float& by(size_t iprtcl ) { return Bpart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float& bz(size_t iprtcl ) { return Bpart[2*size() + iprtcl]; };
+   inline float& bx(size_t iprtcl ) { return Bpart[0*size() + iprtcl]; };
+   inline float& by(size_t iprtcl ) { return Bpart[1*size() + iprtcl]; };
+   inline float& bz(size_t iprtcl ) { return Bpart[2*size() + iprtcl]; };
 
-  DEVCALLABLE inline float ex(size_t iprtcl ) const {return Epart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float ey(size_t iprtcl ) const {return Epart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float ez(size_t iprtcl ) const {return Epart[2*size() + iprtcl]; };
+   inline float ex(size_t iprtcl ) const {return Epart[0*size() + iprtcl]; };
+   inline float ey(size_t iprtcl ) const {return Epart[1*size() + iprtcl]; };
+   inline float ez(size_t iprtcl ) const {return Epart[2*size() + iprtcl]; };
 
-  DEVCALLABLE inline float bx(size_t iprtcl ) const {return Bpart[0*size() + iprtcl]; };
-  DEVCALLABLE inline float by(size_t iprtcl ) const {return Bpart[1*size() + iprtcl]; };
-  DEVCALLABLE inline float bz(size_t iprtcl ) const {return Bpart[2*size() + iprtcl]; };
+   inline float bx(size_t iprtcl ) const {return Bpart[0*size() + iprtcl]; };
+   inline float by(size_t iprtcl ) const {return Bpart[1*size() + iprtcl]; };
+   inline float bz(size_t iprtcl ) const {return Bpart[2*size() + iprtcl]; };
 
 
   // particle creation

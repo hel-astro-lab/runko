@@ -3,15 +3,13 @@
 #include <vector>
 #include <algorithm>
   
-// for GPU supported sorting
 #include "external/iter/dynArray.h"
-#include "external/iter/devcall.h"
 
 namespace toolbox {
 
 
 template <typename T>
-DEVCALLABLE int find_sorted_nearest( ManVec<T> const& arr, T val) {
+ int find_sorted_nearest( ManVec<T> const& arr, T val) {
 
     if(arr.size() == 0) return 0;
 

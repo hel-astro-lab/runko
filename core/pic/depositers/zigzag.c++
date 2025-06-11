@@ -5,20 +5,12 @@
 #include "core/pic/depositers/zigzag.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 using std::min;
 using std::max;
 
 template<size_t D, size_t V>
 void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   auto& gs = tile.get_grids();
   const auto mins = tile.mins;
@@ -43,7 +35,7 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     // no vectorization here since we dont use the general iterator
     //for(size_t n=0; n<con.size(); n++) {
 
-    UniIter::iterate([=] DEVCALLABLE (
+    UniIter::iterate([=]  (
                 size_t n, 
                 emf::Grids &gs,
                 pic::ParticleContainer<D>& con
@@ -211,13 +203,8 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
     }, con.size(), gs, con);
 
 
-    UniIter::sync();
   }//end of loop over species
 
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 

@@ -4,15 +4,12 @@
 #include <array>
 #include <cmath>
 
-// for GPU supported sorting
 #include "external/iter/dynArray.h"
-#include "external/iter/devcall.h"
-
 
 namespace toolbox {
 
 template <typename T>
-DEVCALLABLE void arange(T start, T stop, ManVec<T>& ret)
+ void arange(T start, T stop, ManVec<T>& ret)
 {
   //ManVec<T> ret;
 
@@ -29,7 +26,7 @@ DEVCALLABLE void arange(T start, T stop, ManVec<T>& ret)
 // Returns num evenly spaced samples, calculated over the interval [`start`, `stop`].
 // based on numpy linspace https://github.com/numpy/numpy/blob/v1.25.0/numpy/core/function_base.py
 template <typename T>
-DEVCALLABLE void linspace(T start, T stop, int num, ManVec<T>& ret)
+ void linspace(T start, T stop, int num, ManVec<T>& ret)
 {
   //ManVec<T> ret;
 
@@ -55,7 +52,7 @@ DEVCALLABLE void linspace(T start, T stop, int num, ManVec<T>& ret)
 
 
 template <typename T>
-DEVCALLABLE void logspace(T start, T stop, int num, ManVec<T>& ret)
+ void logspace(T start, T stop, int num, ManVec<T>& ret)
 {
   linspace(start, stop, num, ret);
   T base = static_cast<T>(10.0);

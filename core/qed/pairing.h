@@ -607,7 +607,7 @@ public:
       //std::shuffle(std::begin(inds), std::end(inds), gen);
 
       // loop over incident particles
-      //UniIter::iterate([=] DEVCALLABLE (
+      //UniIter::iterate([=]  (
       //          size_t n, 
       //          pic::ParticleContainer<D>& con
       //          ){
@@ -1243,7 +1243,6 @@ public:
         }
       } // end of loop over con1 particles
       //}, con.size(), con);
-      //UniIter::sync();
     }// end con1
 
 

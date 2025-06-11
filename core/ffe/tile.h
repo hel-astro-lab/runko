@@ -5,18 +5,15 @@
 
 #include "slim_grids.h"
 
-#include"external/iter/allocator.h"
-
 namespace ffe {
 
 /*! \brief Force-Free electrodynamics methods
  *
  */
 template<std::size_t D>
-class Tile : 
-  virtual public emf::Tile<D>, 
-  virtual public corgi::Tile<D>, 
-  virtual public ManagedParent
+class Tile :
+  virtual public emf::Tile<D>,
+  virtual public corgi::Tile<D>
 {
 
   public:

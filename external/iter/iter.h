@@ -2,19 +2,10 @@
 #define ITER_H
 #pragma once
 
-#ifdef GPU 
-#include <cuda_runtime_api.h>
-#else
-#endif
-
 #include <tuple>
 #include <unordered_map>
 #include <map>
 #include <optional>
-//#define DEBUG_DEV
-//#define GPU
-
-#include "devcall.h"
 
 #include <execinfo.h>
 #include <stdio.h>
@@ -24,84 +15,16 @@
 // vectorization is broken at the point where we add values back to the grid.
 // This auxiliary function tries to hide that complexity.
 template<typename T, typename S>
-DEVCALLABLE inline void atomic_add(T& lhs, S rhs) 
+ inline void atomic_add(T& lhs, S rhs) 
 {
-#ifdef GPU
-    atomicAdd(&lhs, static_cast<T>(rhs));
-#else
     //NOTE: need to use #pragma omp atomic if vectorizing these
     #pragma omp atomic update
     lhs += static_cast<S>(rhs);
-#endif
 }
 
 
 
 namespace {
-
-#ifdef GPU
-namespace DevKernels
-{
-    template<class F, class... Args>
-    __global__ void iterateKern(F fun, int max, Args& ... args)
-    {
-        //
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-        if(idx >= max) return;
-
-        fun(idx, args...);
-    }
-
-    template<class F, class... Args>
-    __global__ void iterate2dKern(F fun, int xMax, int yMax, Args& ... args)
-    {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        int idy = blockIdx.y * blockDim.y + threadIdx.y;
-        if(idx >= xMax) return;
-        if(idy >= yMax) return;
-
-        fun(idx, idy, args...);
-    }
-
-    template<class F, class... Args>
-    __global__ void iterate3dKern(F fun, int xMax, int yMax, int zMax, Args& ... args)
-    {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        int idy = blockIdx.y * blockDim.y + threadIdx.y;
-        int idz = blockIdx.z * blockDim.z + threadIdx.z;
-        if(idx >= xMax) return;
-        if(idy >= yMax) return;
-        if(idz >= zMax) return;
-
-        fun(idx, idy, idz, args...);
-    }
-
-    template<class T>
-    __global__ void copyItoDMulti(int max, int **indexes, T **from, T **to)
-    {
-        int i = blockIdx.x * blockDim.x + threadIdx.x;
-        int ptrInd = threadIdx.y;
-        if(i >= max) return;
-        
-        int indirectInd = indexes[ptrInd][i];
-
-        to[ptrInd][i] = from[ptrInd][indirectInd];
-    }
-
-    template<class T>
-    __global__ void copyDtoIMulti(int max, int **indexes, T **from, T **to)
-    {
-        int i = blockIdx.x * blockDim.x + threadIdx.x;
-        int ptrInd = threadIdx.y;
-        if(i >= max) return;
-        
-        int indirectInd = indexes[ptrInd][i];
-
-        from[ptrInd][indirectInd] = to[ptrInd][i];
-    }
-}
-#endif
 
 class ExecPlan{
 public:
@@ -130,161 +53,6 @@ public:
 
 class UniIter{
     public:
-
-    #ifdef GPU
-    class UniIterCU{
-    public:
-
-        static std::unordered_map<std::string, cudaStream_t> streams;
-        static std::map<void*, void*> registeredAddesses;
-
-
-        static auto getGrid2(std::tuple<int, int> max)
-        {
-            dim3 block = { 8, 8 }; // TODO: 8x8 for 2D?
-            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 
-                           1 + (std::get<1>(max) / block.y) };
-
-            return std::make_tuple(block, grid);
-        }
-
-        static auto getGrid3(std::tuple<int, int, int> max)
-        {
-            dim3 block = { 8, 8, 1 };
-            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 
-                           1 + (std::get<1>(max) / block.y), 
-                           1 + (std::get<2>(max) / block.z) };
-
-            return std::make_tuple(block, grid);
-        }
-
-        static auto getGrid2(std::tuple<int, int> max, std::tuple<int, int> block_)
-        {
-            dim3 block = { std::get<0>(block_), std::get<1>(block_) };
-            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 
-                           1 + (std::get<1>(max) / block.y) };
-            return std::make_tuple(block, grid);
-        }
-
-        static auto getGrid3(std::tuple<int, int, int> max, std::tuple<int, int, int> block_)
-        {
-            dim3 block = { std::get<0>(block_), std::get<1>(block_), std::get<2>(block_) };
-            dim3 grid  = { 1 + (std::get<0>(max) / block.x), 1 + (std::get<1>(max) / block.y), 1 + (std::get<2>(max) / block.z) };
-
-            return std::make_tuple(block, grid);
-        }
-
-        static auto getGrid(std::tuple<int> max)
-        {
-            dim3 block = { 128 };
-            dim3 grid  = { 1 + (std::get<0>(max) / block.x)};
-
-            return std::make_tuple(block, grid);
-        }
-
-        template<class F, class... Args>
-        static void iterate(F fun, int max, Args& ... args)
-        {
-            auto [block, grid] = getGrid({max});
-
-            getErrorCuda(((DevKernels::iterateKern<<<grid, block>>>(fun, max, args...))));
-
-         }
-
-        template<class F, class... Args>
-        static void iterate2D(F fun, int xMax, int yMax, Args& ... args)
-        {
-            auto [block, grid] = getGrid2({xMax, yMax});
-
-            getErrorCuda(((DevKernels::iterate2dKern<<<grid, block>>>(fun, xMax, yMax, args...))));
-
-        }
-
-        template<class F, class... Args>
-        static void iterate3D(F fun, int xMax, int yMax, int zMax, Args& ... args)
-        {
-            auto [block, grid] = getGrid3({xMax, yMax, zMax});
-
-            getErrorCuda(((DevKernels::iterate3dKern<<<grid, block>>>(fun, xMax, yMax, zMax, args...))));
-
-        }
-
-
-        template<class F, class... Args>
-        static void iterate2D(F fun, ExecPlan plan, int xMax, int yMax, Args& ... args)
-        {
-            std::tuple<dim3, dim3> gridArgs;
-
-            if(plan.block) { gridArgs = getGrid2({xMax, yMax, zMax}, plan.block.value()); }
-            else { gridArgs = getGrid2({xMax, yMax}); }
-
-            // unpack and handle exec plan here
-            if (plan.stream == "default")
-            {
-                // default stream
-                //std::cout << "Using default stream using it" << std::endl;
-                getErrorCuda(((DevKernels::iterate2dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, xMax, yMax, args...))));
-            }
-            else {
-                // non default stream
-                // check if it exsists
-                // if not create it
-                auto search = streams.find(plan.stream);
-                if (search != streams.end()) {
-                    //
-                    std::cout << "stream found using it" << std::endl;
-                } else {
-                    streams[plan.stream] = cudaStream_t();
-                    cudaStreamCreate(&streams[plan.stream]);
-                    std::cout << "Not found stream crated" << std::endl;
-                }
-                getErrorCuda(((DevKernels::iterate2dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs), 0, streams[plan.stream]>>>(fun, xMax, yMax, args...))));
-    
-            }
-        }
-
-        template<class F, class... Args>
-        static void iterate3D(F fun, ExecPlan plan, int xMax, int yMax, int zMax, Args& ... args)
-        {
-            std::tuple<dim3, dim3> gridArgs;
-
-            if(plan.block)
-            {
-                gridArgs = getGrid3({xMax, yMax, zMax}, plan.block.value());
-            }
-            else
-            {
-                gridArgs = getGrid3({xMax, yMax, zMax});
-            }
-
-            // unpack and handle exec plan here
-            if (plan.stream == "default")
-            {
-                // default stream
-                //std::cout << "Using default stream using it" << std::endl;
-                getErrorCuda(((DevKernels::iterate3dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs)>>>(fun, xMax, yMax, zMax, args...))));
-            }
-            else
-            {
-                // non default stream
-                // check if it exsists
-                // if not create it
-                auto search = streams.find(plan.stream);
-                if (search != streams.end()) {
-                    //
-                    std::cout << "stream found using it" << std::endl;
-                } else {
-                    streams[plan.stream] = cudaStream_t();
-                    cudaStreamCreate(&streams[plan.stream]);
-                    std::cout << "Not found stream crated" << std::endl;
-                }
-                getErrorCuda(((DevKernels::iterate3dKern<<<std::get<1>(gridArgs), std::get<0>(gridArgs), 0, streams[plan.stream]>>>(fun, xMax, yMax, zMax, args...))));
-    
-            }
-        }
-    };
-    #endif
-
 
     class UniIterHost{
         template<int Dims, class F, class... Args>
@@ -362,22 +130,14 @@ public:
     {
         //
         //std::cout << "3d iterate" << std::endl;
-    #ifdef GPU
-        UniIterCU::iterate2D(fun, xMax, yMax, args...);
-    #else
         UniIterHost::iterate2D(fun, xMax, yMax, args...);
-    #endif
     }
 
     template<class F, class... Args>
     static void iterate2D(F fun, ExecPlan plan, int xMax, int yMax, Args& ... args)
     {
         //std::cout << "2d iterate w plan" << std::endl;
-    #ifdef GPU
-        UniIterCU::iterate2D(fun, plan, xMax, yMax, args...);
-    #else
         UniIterHost::iterate2D(fun, xMax, yMax, args...);
-    #endif
     }
 
 
@@ -386,11 +146,7 @@ public:
     {
         //
         //std::cout << "3d iterate" << std::endl;
-    #ifdef GPU
-        UniIterCU::iterate3D(fun, xMax, yMax, zMax, args...);
-    #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
-    #endif
     }
 
     template<class F, class... Args>
@@ -398,11 +154,7 @@ public:
     {
         //
         //std::cout << "3d iterate w plan" << std::endl;
-    #ifdef GPU
-        UniIterCU::iterate3D(fun, plan, xMax, yMax, zMax, args...);
-    #else
         UniIterHost::iterate3D(fun, xMax, yMax, zMax, args...);
-    #endif
     }
     
     template<class F, class... Args>
@@ -410,27 +162,9 @@ public:
     {
         //
         //std::cout << "1d iterate" << std::endl;
-    #ifdef GPU
-        UniIterCU::iterate(fun, max, args...);
-    #else
         UniIterHost::iterate(fun, max, args...);
-    #endif
-    }
-
-    static void sync(){
-        #ifdef GPU
-        auto err = cudaDeviceSynchronize();
-        // todo: check the error code
-        //std::cout << err << std::endl;
-        #else
-        #endif
-        //
     }
 };
-
-#ifdef GPU
-std::unordered_map<std::string, cudaStream_t> UniIter::UniIterCU::streams = std::unordered_map<std::string, cudaStream_t>();
-#endif
 }
 
 #endif

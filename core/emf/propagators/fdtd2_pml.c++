@@ -3,14 +3,10 @@
 #include "core/emf/propagators/fdtd2_pml.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 
 /// Radial PML damping coefficient profile
 template<size_t D>
-DEVCALLABLE float emf::FDTD2_pml<D>::lambda( 
+ float emf::FDTD2_pml<D>::lambda( 
     float sx, 
     float sy, 
     float sz )
@@ -64,16 +60,12 @@ DEVCALLABLE float emf::FDTD2_pml<D>::lambda(
 template<>
 void emf::FDTD2_pml<2>::push_e(emf::Tile<2>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   Grids& mesh = tile.get_grids();
   const float C = tile.cfl;
   const auto mins = tile.mins;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, Grids &mesh)
+  [=]  (int i, int j, Grids &mesh)
   {
     //-----------
     // global grid coordinates
@@ -101,11 +93,6 @@ void emf::FDTD2_pml<2>::push_e(emf::Tile<2>& tile)
     mesh);
 
 
-  UniIter::sync();
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 
@@ -114,9 +101,6 @@ void emf::FDTD2_pml<2>::push_e(emf::Tile<2>& tile)
 template<>
 void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
   //const float C = 1.0 * tile.cfl * dt * corr;
@@ -124,7 +108,7 @@ void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
   const auto mins = tile.mins;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
+  [=]  (int i, int j, int k, Grids &mesh)
   {
     //-----------
     // global grid coordinates
@@ -181,11 +165,6 @@ void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
     mesh);
 
 
-  UniIter::sync();
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 
@@ -197,16 +176,13 @@ void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
 template<>
 void emf::FDTD2_pml<2>::push_half_b(emf::Tile<2>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
   const float C = 0.5*tile.cfl;
   const auto mins = tile.mins;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, Grids &mesh)
+  [=]  (int i, int j, Grids &mesh)
   {
 
     // global grid coordinates
@@ -232,11 +208,7 @@ void emf::FDTD2_pml<2>::push_half_b(emf::Tile<2>& tile)
     mesh);
 
 
-  UniIter::sync();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -244,9 +216,6 @@ void emf::FDTD2_pml<2>::push_half_b(emf::Tile<2>& tile)
 template<>
 void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
   //const float C = 0.5 * tile.cfl * dt * corr;
@@ -258,7 +227,7 @@ void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
   //for(int i=0; i<tile.mesh_lengths[0]; i++) {
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
+  [=]  (int i, int j, int k, Grids &mesh)
   {
 
     // global grid coordinates
@@ -311,11 +280,7 @@ void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
     mesh);
 
 
-  UniIter::sync();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -323,9 +288,6 @@ void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
 template<>
 void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // refs to storages
   emf::Grids&     m = tile.get_grids();
@@ -339,7 +301,7 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
   const float C1 =  c; // high-order curl operator coefficients
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, 
+  [=]  (int i, int j, int k, 
       ffe::SlimGrids& dm,
       emf::Grids& m
       )
@@ -382,11 +344,7 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
     dm, m
     );
 
-  UniIter::sync();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

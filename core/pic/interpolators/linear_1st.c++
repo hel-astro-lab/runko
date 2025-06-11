@@ -4,13 +4,8 @@
 #include "core/pic/interpolators/linear_1st.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
 
-
-
-DEVCALLABLE inline double _lerp(
+ inline double _lerp(
       double c000, double c100, double c010, double c110,
       double c001, double c101, double c011, double c111,
       double dx, double dy, double dz) 
@@ -32,9 +27,6 @@ void pic::LinearInterpolator<D,V>::solve(
     pic::Tile<D>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // get reference to the Yee grid 
   auto& gs = tile.get_grids();
@@ -53,7 +45,7 @@ void pic::LinearInterpolator<D,V>::solve(
 
 
     // loop over particles
-    UniIter::iterate([=] DEVCALLABLE( 
+    UniIter::iterate([=] ( 
                 size_t n, 
                 emf::Grids& gs,
                 pic::ParticleContainer<D>& con){
@@ -149,13 +141,7 @@ void pic::LinearInterpolator<D,V>::solve(
 
     }, con.size(), gs, con);
 
-    UniIter::sync();
   } // end of loop over species
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 

@@ -5,12 +5,6 @@
 
 #include "tools/has_element.h"
 #include "external/iter/iter.h"
-#include "external/iter/allocator.h"
-
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 
 // Optional vectorization of tile boundary updates;
 // VEC_FLD controls exchange_boundary routines 
@@ -31,27 +25,16 @@ namespace emf {
 template<std::size_t D>
 void Tile<D>::deposit_current() 
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   auto& mesh = get_grids();
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, Grids& mesh)
+    [=]  (int i, int j, int k, Grids& mesh)
     {
       mesh.ex(i,j,k) -= mesh.jx(i,j,k);
       mesh.ey(i,j,k) -= mesh.jy(i,j,k);
       mesh.ez(i,j,k) -= mesh.jz(i,j,k);
     },mesh.ex.Nx, mesh.ex.Ny, mesh.ex.Nz, mesh);
 
-  UniIter::sync();
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif 
 }
 // SPHINX emf docs addcur stop
 
@@ -95,7 +78,7 @@ void Tile<1>::update_boundaries(
       if (in == -1) { ito = -1; ifro = Nx-1; }
 
       if(has_elem(iarr, 0)) {
-        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){
+        UniIter::iterate([=]  (int h, Grids &lhs_in, Grids &rhs_in){
           lhs_in.jx(ito+in*h, 0, 0) = rhs_in.jx(ifro+in*h, 0, 0);
           lhs_in.jy(ito+in*h, 0, 0) = rhs_in.jy(ifro+in*h, 0, 0);
           lhs_in.jz(ito+in*h, 0, 0) = rhs_in.jz(ifro+in*h, 0, 0);
@@ -103,7 +86,7 @@ void Tile<1>::update_boundaries(
       }
 
       if(has_elem(iarr, 1)) {
-        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){
+        UniIter::iterate([=]  (int h, Grids &lhs_in, Grids &rhs_in){
           lhs_in.ex(ito+in*h, 0, 0) = rhs_in.ex(ifro+in*h, 0, 0);
           lhs_in.ey(ito+in*h, 0, 0) = rhs_in.ey(ifro+in*h, 0, 0);
           lhs_in.ez(ito+in*h, 0, 0) = rhs_in.ez(ifro+in*h, 0, 0);
@@ -111,7 +94,7 @@ void Tile<1>::update_boundaries(
       }
 
       if(has_elem(iarr, 2)) {
-        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){
+        UniIter::iterate([=]  (int h, Grids &lhs_in, Grids &rhs_in){
           lhs_in.bx(ito+in*h, 0, 0) = rhs_in.bx(ifro+in*h, 0, 0);
           lhs_in.by(ito+in*h, 0, 0) = rhs_in.by(ifro+in*h, 0, 0);
           lhs_in.bz(ito+in*h, 0, 0) = rhs_in.bz(ifro+in*h, 0, 0);
@@ -178,7 +161,7 @@ void Tile<2>::update_boundaries(
           if(has_elem(iarr, 0)) {
 
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(ito+in*h, j, 0) = rhs_in.jx(ifro+in*h, j, 0);
               lhs_in.jy(ito+in*h, j, 0) = rhs_in.jy(ifro+in*h, j, 0);
               lhs_in.jz(ito+in*h, j, 0) = rhs_in.jz(ifro+in*h, j, 0);
@@ -195,7 +178,7 @@ void Tile<2>::update_boundaries(
           // TODO rest of the operations
           if(has_elem(iarr, 1)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(ito+in*h, j, 0) = rhs_in.ex(ifro+in*h, j, 0);
               lhs_in.ey(ito+in*h, j, 0) = rhs_in.ey(ifro+in*h, j, 0);
               lhs_in.ez(ito+in*h, j, 0) = rhs_in.ez(ifro+in*h, j, 0);
@@ -211,7 +194,7 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 2)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int j, int h, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int j, int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(ito+in*h, j, 0) = rhs_in.bx(ifro+in*h, j, 0);
               lhs_in.by(ito+in*h, j, 0) = rhs_in.by(ifro+in*h, j, 0);
               lhs_in.bz(ito+in*h, j, 0) = rhs_in.bz(ifro+in*h, j, 0);
@@ -232,7 +215,7 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 0)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(i, jto+jn*g, 0) = rhs_in.jx(i, jfro+jn*g, 0);
               lhs_in.jy(i, jto+jn*g, 0) = rhs_in.jy(i, jfro+jn*g, 0);
               lhs_in.jz(i, jto+jn*g, 0) = rhs_in.jz(i, jfro+jn*g, 0);
@@ -249,7 +232,7 @@ void Tile<2>::update_boundaries(
             
           if(has_elem(iarr, 1)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(i, jto+jn*g, 0) = rhs_in.ex(i, jfro+jn*g, 0);
               lhs_in.ey(i, jto+jn*g, 0) = rhs_in.ey(i, jfro+jn*g, 0);
               lhs_in.ez(i, jto+jn*g, 0) = rhs_in.ez(i, jfro+jn*g, 0);
@@ -266,7 +249,7 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 2)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int i, int g, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(i, jto+jn*g, 0) = rhs_in.bx(i, jfro+jn*g, 0);
               lhs_in.by(i, jto+jn*g, 0) = rhs_in.by(i, jfro+jn*g, 0);
               lhs_in.bz(i, jto+jn*g, 0) = rhs_in.bz(i, jfro+jn*g, 0);
@@ -290,7 +273,7 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 0)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.jx(ito+in*h, jto+jn*g, 0) = rhs_in.jx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jy(ito+in*h, jto+jn*g, 0) = rhs_in.jy(ifro+in*h, jfro+jn*g, 0);
               lhs_in.jz(ito+in*h, jto+jn*g, 0) = rhs_in.jz(ifro+in*h, jfro+jn*g, 0);
@@ -307,7 +290,7 @@ void Tile<2>::update_boundaries(
             
           if(has_elem(iarr, 1)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.ex(ito+in*h, jto+jn*g, 0) = rhs_in.ex(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ey(ito+in*h, jto+jn*g, 0) = rhs_in.ey(ifro+in*h, jfro+jn*g, 0);
               lhs_in.ez(ito+in*h, jto+jn*g, 0) = rhs_in.ez(ifro+in*h, jfro+jn*g, 0);
@@ -324,7 +307,7 @@ void Tile<2>::update_boundaries(
 
           if(has_elem(iarr, 2)) {
             #ifdef VEC_FLD2D
-            UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
+            UniIter::iterate2D([=]  (int g ,int h, Grids &lhs_in, Grids &rhs_in){
               lhs_in.bx(ito+in*h, jto+jn*g, 0) = rhs_in.bx(ifro+in*h, jfro+jn*g, 0);
               lhs_in.by(ito+in*h, jto+jn*g, 0) = rhs_in.by(ifro+in*h, jfro+jn*g, 0);
               lhs_in.bz(ito+in*h, jto+jn*g, 0) = rhs_in.bz(ifro+in*h, jfro+jn*g, 0);
@@ -354,9 +337,6 @@ void Tile<3>::update_boundaries(
         )
 {
   //std::cout << "upB: updating boundaries\n";
-#ifdef GPU
-  nvtxRangePush(__FUNCTION__);
-#endif
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -409,7 +389,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, j, k) = rhs_in.jx(ifro+in*h, j, k);
                   lhs_in.jy(ito+in*h, j, k) = rhs_in.jy(ifro+in*h, j, k);
                   lhs_in.jz(ito+in*h, j, k) = rhs_in.jz(ifro+in*h, j, k);
@@ -426,7 +406,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, j, k) = rhs_in.ex(ifro+in*h, j, k);
                   lhs_in.ey(ito+in*h, j, k) = rhs_in.ey(ifro+in*h, j, k);
                   lhs_in.ez(ito+in*h, j, k) = rhs_in.ez(ifro+in*h, j, k);
@@ -443,7 +423,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, j, k) = rhs_in.bx(ifro+in*h, j, k);
                   lhs_in.by(ito+in*h, j, k) = rhs_in.by(ifro+in*h, j, k);
                   lhs_in.bz(ito+in*h, j, k) = rhs_in.bz(ifro+in*h, j, k);
@@ -465,7 +445,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, jto+jn*g, k) = rhs_in.jx(i, jfro+jn*g, k);
                   lhs_in.jy(i, jto+jn*g, k) = rhs_in.jy(i, jfro+jn*g, k);
                   lhs_in.jz(i, jto+jn*g, k) = rhs_in.jz(i, jfro+jn*g, k);
@@ -482,7 +462,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, jto+jn*g, k) = rhs_in.ex(i, jfro+jn*g, k);
                   lhs_in.ey(i, jto+jn*g, k) = rhs_in.ey(i, jfro+jn*g, k);
                   lhs_in.ez(i, jto+jn*g, k) = rhs_in.ez(i, jfro+jn*g, k);
@@ -499,7 +479,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, jto+jn*g, k) = rhs_in.bx(i, jfro+jn*g, k);
                   lhs_in.by(i, jto+jn*g, k) = rhs_in.by(i, jfro+jn*g, k);
                   lhs_in.bz(i, jto+jn*g, k) = rhs_in.bz(i, jfro+jn*g, k);
@@ -524,7 +504,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, jto+jn*g, k) = rhs_in.jx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jy(ito+in*h, jto+jn*g, k) = rhs_in.jy(ifro+in*h, jfro+jn*g, k);
                   lhs_in.jz(ito+in*h, jto+jn*g, k) = rhs_in.jz(ifro+in*h, jfro+jn*g, k);
@@ -541,7 +521,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, jto+jn*g, k) = rhs_in.ex(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ey(ito+in*h, jto+jn*g, k) = rhs_in.ey(ifro+in*h, jfro+jn*g, k);
                   lhs_in.ez(ito+in*h, jto+jn*g, k) = rhs_in.ez(ifro+in*h, jfro+jn*g, k);
@@ -558,7 +538,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, jto+jn*g, k) = rhs_in.bx(ifro+in*h, jfro+jn*g, k);
                   lhs_in.by(ito+in*h, jto+jn*g, k) = rhs_in.by(ifro+in*h, jfro+jn*g, k);
                   lhs_in.bz(ito+in*h, jto+jn*g, k) = rhs_in.bz(ifro+in*h, jfro+jn*g, k);
@@ -585,7 +565,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, j, kto +kn*f) =  rhs_in.jx(i, j, kfro+kn*f);
                   lhs_in.jy(i, j, kto +kn*f) =  rhs_in.jy(i, j, kfro+kn*f);
                   lhs_in.jz(i, j, kto +kn*f) =  rhs_in.jz(i, j, kfro+kn*f);
@@ -602,7 +582,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, j, kto +kn*f) =  rhs_in.ex(i, j, kfro+kn*f);
                   lhs_in.ey(i, j, kto +kn*f) =  rhs_in.ey(i, j, kfro+kn*f);
                   lhs_in.ez(i, j, kto +kn*f) =  rhs_in.ez(i, j, kfro+kn*f);
@@ -619,7 +599,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int j ,int f, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, j, kto +kn*f) =  rhs_in.bx(i, j, kfro+kn*f);
                   lhs_in.by(i, j, kto +kn*f) =  rhs_in.by(i, j, kfro+kn*f);
                   lhs_in.bz(i, j, kto +kn*f) =  rhs_in.bz(i, j, kfro+kn*f);
@@ -651,7 +631,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito+in*h, j, kto+kn*g) = rhs_in.jx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jy(ito+in*h, j, kto+kn*g) = rhs_in.jy(ifro+in*h, j, kfro+kn*g);
                   lhs_in.jz(ito+in*h, j, kto+kn*g) = rhs_in.jz(ifro+in*h, j, kfro+kn*g);
@@ -668,7 +648,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito+in*h, j, kto+kn*g) = rhs_in.ex(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ey(ito+in*h, j, kto+kn*g) = rhs_in.ey(ifro+in*h, j, kfro+kn*g);
                   lhs_in.ez(ito+in*h, j, kto+kn*g) = rhs_in.ez(ifro+in*h, j, kfro+kn*g);
@@ -685,7 +665,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito+in*h, j, kto+kn*g) = rhs_in.bx(ifro+in*h, j, kfro+kn*g);
                   lhs_in.by(ito+in*h, j, kto+kn*g) = rhs_in.by(ifro+in*h, j, kfro+kn*g);
                   lhs_in.bz(ito+in*h, j, kto+kn*g) = rhs_in.bz(ifro+in*h, j, kfro+kn*g);
@@ -713,7 +693,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(i, jto+jn*h, kto+kn*g) = rhs_in.jx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jy(i, jto+jn*h, kto+kn*g) = rhs_in.jy(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.jz(i, jto+jn*h, kto+kn*g) = rhs_in.jz(i, jfro+jn*h, kfro+kn*g);
@@ -730,7 +710,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(i, jto+jn*h, kto+kn*g) = rhs_in.ex(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ey(i, jto+jn*h, kto+kn*g) = rhs_in.ey(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.ez(i, jto+jn*h, kto+kn*g) = rhs_in.ez(i, jfro+jn*h, kfro+kn*g);
@@ -747,7 +727,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(i, jto+jn*h, kto+kn*g) = rhs_in.bx(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.by(i, jto+jn*h, kto+kn*g) = rhs_in.by(i, jfro+jn*h, kfro+kn*g);
                   lhs_in.bz(i, jto+jn*h, kto+kn*g) = rhs_in.bz(i, jfro+jn*h, kfro+kn*g);
@@ -777,7 +757,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 0)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.jx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jy(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jy(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.jz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.jz(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -794,7 +774,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 1)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.ex(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ex(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ey(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ey(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.ez(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.ez(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -811,7 +791,7 @@ void Tile<3>::update_boundaries(
 
               if(has_elem(iarr, 2)) {
                 #ifdef VEC_FLD3D
-                UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+                UniIter::iterate3D([=]  (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                   lhs_in.bx(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bx(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.by(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.by(ifro+in*h, jfro+jn*g, kfro+kn*f);
                   lhs_in.bz(ito +in*h, jto +jn*g, kto +kn*f) =  rhs_in.bz(ifro+in*h, jfro+jn*g, kfro+kn*f);
@@ -835,12 +815,7 @@ void Tile<3>::update_boundaries(
     } // jn
   } // in
 
-  UniIter::sync();
   
-#ifdef GPU
-  nvtxRangePop();
-#endif
-
 }
 
 
@@ -875,7 +850,7 @@ void Tile<1>::exchange_currents(corgi::Grid<1>& grid)
       if (in == +1) { ito = Nx-1; ifro = -1; }
       if (in == -1) { ito = 0;    ifro = Nx; }
 
-        UniIter::iterate([=] DEVCALLABLE (int h, Grids &lhs_in, Grids &rhs_in){  
+        UniIter::iterate([=]  (int h, Grids &lhs_in, Grids &rhs_in){  
           atomic_add( lhs_in.jx(ito-in*h, 0, 0), rhs_in.jx(ifro-in*h, 0, 0) );
           atomic_add( lhs_in.jy(ito-in*h, 0, 0), rhs_in.jy(ifro-in*h, 0, 0) );
           atomic_add( lhs_in.jz(ito-in*h, 0, 0), rhs_in.jz(ifro-in*h, 0, 0) );
@@ -965,7 +940,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
           //for(int h=1; h<=halo; h++) add_vert_grids(mesh, mpr, ito-in*h, ifro-in*h);   
           
           #ifdef VEC_CUR2D
-          UniIter::iterate2D([=] DEVCALLABLE (int j,int h, Grids &lhs_in, Grids &rhs_in){  
+          UniIter::iterate2D([=]  (int j,int h, Grids &lhs_in, Grids &rhs_in){  
             atomic_add( lhs_in.jx(ito-in*h, j, 0), rhs_in.jx(ifro-in*h, j, 0) );
             atomic_add( lhs_in.jy(ito-in*h, j, 0), rhs_in.jy(ifro-in*h, j, 0) );
             atomic_add( lhs_in.jz(ito-in*h, j, 0), rhs_in.jz(ifro-in*h, j, 0) );
@@ -982,7 +957,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
           //for(int g=1; g<=halo; g++) add_horz_grids(mesh, mpr, jto-jn*g, jfro-jn*g);   
 
           #ifdef VEC_CUR2D
-          UniIter::iterate2D([=] DEVCALLABLE (int i, int g, Grids &lhs_in, Grids &rhs_in){
+          UniIter::iterate2D([=]  (int i, int g, Grids &lhs_in, Grids &rhs_in){
             atomic_add( lhs_in.jx(i, jto-jn*g, 0), rhs_in.jx(i, jfro-jn*g, 0) );
             atomic_add( lhs_in.jy(i, jto-jn*g, 0), rhs_in.jy(i, jfro-jn*g, 0) );
             atomic_add( lhs_in.jz(i, jto-jn*g, 0), rhs_in.jz(i, jfro-jn*g, 0) );
@@ -1002,7 +977,7 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
           //}
 
           #ifdef VEC_CUR2D
-          UniIter::iterate2D([=] DEVCALLABLE (int g ,int h, Grids &lhs_in, Grids &rhs_in){
+          UniIter::iterate2D([=]  (int g ,int h, Grids &lhs_in, Grids &rhs_in){
             atomic_add( lhs_in.jx(ito-in*h, jto-jn*g, 0), rhs_in.jx(ifro-in*h, jfro-jn*g, 0));
             atomic_add( lhs_in.jy(ito-in*h, jto-jn*g, 0), rhs_in.jy(ifro-in*h, jfro-jn*g, 0));
             atomic_add( lhs_in.jz(ito-in*h, jto-jn*g, 0), rhs_in.jz(ifro-in*h, jfro-jn*g, 0));
@@ -1023,10 +998,6 @@ void Tile<2>::exchange_currents(corgi::Grid<2>& grid)
 template<>
 void Tile<3>::exchange_currents(corgi::Grid<3>& grid) 
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   using Tile_t  = Tile<3>;
   using Tileptr = std::shared_ptr<Tile_t>;
@@ -1078,7 +1049,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //for(int h=0; h<halo; h++) add_vert_grids(mesh, mpr, ito-in*h, ifro-in*h);   
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){  
+              UniIter::iterate3D([=]  (int j, int k ,int h, Grids &lhs_in, Grids &rhs_in){  
                 atomic_add( lhs_in.jx(ito-in*h, j, k), rhs_in.jx(ifro-in*h, j, k) );
                 atomic_add( lhs_in.jy(ito-in*h, j, k), rhs_in.jy(ifro-in*h, j, k) );
                 atomic_add( lhs_in.jz(ito-in*h, j, k), rhs_in.jz(ifro-in*h, j, k) );
@@ -1096,7 +1067,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //for(int g=0; g<halo; g++) add_horz_grids(mesh, mpr, jto-jn*g, jfro-jn*g);   
                 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
+              UniIter::iterate3D([=]  (int i, int k ,int g, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(i, jto-jn*g, k), rhs_in.jx(i, jfro-jn*g, k) );
                 atomic_add( lhs_in.jy(i, jto-jn*g, k), rhs_in.jy(i, jfro-jn*g, k) );
                 atomic_add( lhs_in.jz(i, jto-jn*g, k), rhs_in.jz(i, jfro-jn*g, k) );
@@ -1117,7 +1088,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //} }
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+              UniIter::iterate3D([=]  (int k, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(ito-in*h, jto-jn*g, k), rhs_in.jx(ifro-in*h, jfro-jn*g, k) );
                 atomic_add( lhs_in.jy(ito-in*h, jto-jn*g, k), rhs_in.jy(ifro-in*h, jfro-jn*g, k) );
                 atomic_add( lhs_in.jz(ito-in*h, jto-jn*g, k), rhs_in.jz(ifro-in*h, jfro-jn*g, k) );
@@ -1140,7 +1111,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //add_face_grids_halo(mesh, mpr, Nx, Ny, halo, kto, kfro, kn, ind);
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int i, int j ,int g, Grids &lhs_in, Grids &rhs_in){ 
+              UniIter::iterate3D([=]  (int i, int j ,int g, Grids &lhs_in, Grids &rhs_in){ 
                   atomic_add( lhs_in.jx(i, j, kto-kn*g), rhs_in.jx(i, j, kfro-kn*g) );
                   atomic_add( lhs_in.jy(i, j, kto-kn*g), rhs_in.jy(i, j, kfro-kn*g) );
                   atomic_add( lhs_in.jz(i, j, kto-kn*g), rhs_in.jz(i, j, kfro-kn*g) );
@@ -1169,7 +1140,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //add_y_pencil_grids_halo(mesh, mpr, Ny, halo, ito, ifro, kto, kfro, in, kn, ind);
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+              UniIter::iterate3D([=]  (int j, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(ito-in*h, j, kto-kn*g), rhs_in.jx(ifro-in*h, j, kfro-kn*g) );
                 atomic_add( lhs_in.jy(ito-in*h, j, kto-kn*g), rhs_in.jy(ifro-in*h, j, kfro-kn*g) );
                 atomic_add( lhs_in.jz(ito-in*h, j, kto-kn*g), rhs_in.jz(ifro-in*h, j, kfro-kn*g) );
@@ -1191,7 +1162,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //add_x_pencil_grids_halo(lhs, rhs, Nx, halo, jto, jfro, kto, kfro, jn, kn, ind);
 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+              UniIter::iterate3D([=]  (int i, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(i, jto-jn*h, kto-kn*g), rhs_in.jx(i, jfro-jn*h, kfro-kn*g) );
                 atomic_add( lhs_in.jy(i, jto-jn*h, kto-kn*g), rhs_in.jy(i, jfro-jn*h, kfro-kn*g) );
                 atomic_add( lhs_in.jz(i, jto-jn*h, kto-kn*g), rhs_in.jz(i, jfro-jn*h, kfro-kn*g) );
@@ -1218,7 +1189,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
               //add_point_grids_halo(mesh, mpr, halo, ito, ifro, jto, jfro, kto, kfro, in, jn, kn, ind);
                 
               #ifdef VEC_CUR3D
-              UniIter::iterate3D([=] DEVCALLABLE (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
+              UniIter::iterate3D([=]  (int f, int g ,int h, Grids &lhs_in, Grids &rhs_in){
                 atomic_add( lhs_in.jx(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jx(ifro-in*h, jfro-jn*g, kfro-kn*f) );
                 atomic_add( lhs_in.jy(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jy(ifro-in*h, jfro-jn*g, kfro-kn*f) );
                 atomic_add( lhs_in.jz(ito -in*h, jto -jn*g, kto -kn*f), rhs_in.jz(ifro-in*h, jfro-jn*g, kfro-kn*f) );
@@ -1240,11 +1211,7 @@ void Tile<3>::exchange_currents(corgi::Grid<3>& grid)
       }
     }
   }
-  UniIter::sync();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -1252,19 +1219,11 @@ template<std::size_t D>
 void Tile<D>::clear_current() 
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   auto& gs = this->get_grids();
   gs.jx.clear();
   gs.jy.clear();
   gs.jz.clear();
 
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 
@@ -1290,14 +1249,9 @@ std::vector<mpi::request> Tile<D>::send_data(
     int tag)
 {
 
-#ifdef GPU
-  nvtxRangePush(__FUNCTION__);
-#endif
-
   auto& gs = get_grids(); 
   std::vector<mpi::request> reqs;
 
-  UniIter::sync();
 
   if (mode == 0) {
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 0), gs.jx.data(), gs.jx.size()) );
@@ -1313,10 +1267,6 @@ std::vector<mpi::request> Tile<D>::send_data(
     reqs.emplace_back( comm.isend(dest, get_tag(tag, 8), gs.bz.data(), gs.bz.size()) );
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
-
   return reqs;
 }
 
@@ -1329,15 +1279,10 @@ std::vector<mpi::request> Tile<D>::recv_data(
     int tag)
 {
 
-#ifdef GPU
-  nvtxRangePush(__FUNCTION__);
-#endif
-
   auto& gs = get_grids(); 
 
   std::vector<mpi::request> reqs;
 
-  UniIter::sync();
 
   if (mode == 0) {
     reqs.emplace_back( comm.irecv(orig, get_tag(tag, 0), gs.jx.data(), gs.jx.size()) );
@@ -1352,10 +1297,6 @@ std::vector<mpi::request> Tile<D>::recv_data(
     reqs.emplace_back( comm.irecv(orig, get_tag(tag, 7), gs.by.data(), gs.by.size()) );
     reqs.emplace_back( comm.irecv(orig, get_tag(tag, 8), gs.bz.data(), gs.bz.size()) );
   }
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
   return reqs;
 }

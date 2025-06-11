@@ -7,15 +7,7 @@
 
 #include "core/pic/particle.h"
 #include "tools/wrap.h"
-#include "external/iter/devcall.h"
 #include "external/iter/iter.h"
-
-
-#ifdef GPU
-#include <cuda_runtime_api.h>
-#include <nvtx3/nvToolsExt.h> 
-#include "../tools/cub/cub.cuh"
-#endif
 
 
 namespace pic {
@@ -27,10 +19,6 @@ namespace pic {
 template<std::size_t D>
 ParticleContainer<D>::ParticleContainer()
 { 
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // Get the number of processes
   //MPI_Comm_size(MPI_COMM_WORLD, &mpi_world_size);
@@ -52,27 +40,11 @@ ParticleContainer<D>::ParticleContainer()
 
   //outgoing_particles.resize(first_message_size);
   outgoing_extra_particles.reserve(first_message_size); // pre-allocating
-
-#ifdef GPU
-  //DEV_REGISTER
-  temp_storage_bytes = 10000;
-  //std::cout << temp_storage_bytes << std::endl;
-  cudaMalloc(&d_temp_storage, temp_storage_bytes);
-#endif
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
 template<std::size_t D>
 void ParticleContainer<D>::reserve(size_t N) {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // always reserve at least 1 element to ensure proper array initialization
   if (N <= 0) N = 1;
@@ -89,18 +61,11 @@ void ParticleContainer<D>::reserve(size_t N) {
 
   Nprtcls_cap = N; // mark the capacity of the array
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 template<std::size_t D>
 void ParticleContainer<D>::resize(size_t N)
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   for(size_t i=0; i<3; i++) locArr[i].resize(N);
   for(size_t i=0; i<3; i++) velArr[i].resize(N);
@@ -112,19 +77,11 @@ void ParticleContainer<D>::resize(size_t N)
   Bpart.resize(N*3);
 
   //std::cout << " INFO: " << cid << " resizing container from " << Nprtcls << " to  " << N << std::endl;
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 template<std::size_t D>
 void ParticleContainer<D>::shrink_to_fit()
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   for(size_t i=0; i<3; i++) locArr[i].shrink_to_fit();
   for(size_t i=0; i<3; i++) velArr[i].shrink_to_fit();
@@ -132,9 +89,6 @@ void ParticleContainer<D>::shrink_to_fit()
   wgtArr.shrink_to_fit();
   infoArr.shrink_to_fit();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -195,10 +149,6 @@ void ParticleContainer<D>::add_identified_particle (
     int _id, int _proc)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
 #ifdef DEBUG
   assert(prtcl_loc.size() == 3);
   assert(prtcl_vel.size() == 3);
@@ -228,9 +178,6 @@ void ParticleContainer<D>::add_identified_particle (
 
   Nprtcls++;
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -241,10 +188,6 @@ void ParticleContainer<D>::insert_identified_particle (
     float prtcl_wgt,
     int _id, int _proc, int ind)
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
 #ifdef DEBUG
   assert(prtcl_loc.size() == 3);
@@ -283,9 +226,6 @@ void ParticleContainer<D>::insert_identified_particle (
                           
   //Nprtcls++; // NOTE: insertion needs to be added manually 
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -320,10 +260,6 @@ void ParticleContainer<D>::check_outgoing_particles(
 std::array<double,3>& mins,
 std::array<double,3>& maxs)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   /*
   int maxCap = to_other_tiles.capacity();
   to_other_tiles.resize(to_other_tiles.capacity());
@@ -358,22 +294,17 @@ std::array<double,3>& maxs)
     if ( (i != 0) || (j != 0) || (k != 0) ) 
     {
   	//to_other_tiles.push_back( {i,j,k,n} );
-  	#ifdef GPU
-  	  int pos = atomicAdd(&count, 1);
-  	#else
   	int pos;
   	  #pragma omp atomic capture 
   	  {
   		pos = count;
   		count++;
   	  }
-  	#endif
   	
   	if(pos < maxCap)
   	  listPtr[pos] = {i,j,k,n};
     }
   },size(), outgoing_count);
-  UniIter::sync();
   // check outgoing_count and react to it...
   if(outgoing_count > maxCap)
   {
@@ -391,75 +322,12 @@ std::array<double,3>& maxs)
   */
 
 
-#ifdef GPU
-
-  assert(false); // not implemented with template parameter D
-
-  // shortcut for particle locations
-  float* locn[3];
-  for( int i=0; i<3; i++) locn[i] = &( loc(i,0) );
-
-  particleIndexesA.resize(size());
-  particleIndexesB.resize(size());
-
-  UniIter::iterate([=] DEVCALLABLE (int ii, ParticleContainer<D> &self){
-    self.particleIndexesA[ii] = ii;
-  }, size(), *this);
-  
-  cub::DeviceSelect::If(
-  	  d_temp_storage, temp_storage_bytes, 
-  	  particleIndexesA.data(), 
-  	  particleIndexesB.data(), 
-  &pCount, size(), 
-  [=]__device__ (int n){
-    int i,j,k; // relative indices
-    i = 0;
-    j = 0;
-    k = 0;
-    
-    if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
-    if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
-    
-    if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
-    if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
-    
-    if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
-    if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
-    
-    return ( (i != 0) || (j != 0) || (k != 0) ) ;
-  });
-  
-  cudaDeviceSynchronize();
-  
-  to_other_tiles.resize(pCount);
-
-
-  UniIter::iterate([=] DEVCALLABLE (int ii, ParticleContainer<D> &self){
-    int n = self.particleIndexesB[ii];
-    int i=0,j=0,k=0; // relative indices
-    
-    if( locn[0][n]-mins[0] <  0.0 ) i--; // left wrap
-    if( locn[0][n]-maxs[0] >= 0.0 ) i++; // right wrap
-    
-    if( locn[1][n]-mins[1] <  0.0 ) j--; // bottom wrap
-    if( locn[1][n]-maxs[1] >= 0.0 ) j++; // top wrap
-    
-    if( locn[2][n]-mins[2] <  0.0 ) k--; // back wrap
-    if( locn[2][n]-maxs[2] >= 0.0 ) k++; // front wrap
-    
-    self.to_other_tiles[ii] =  {i,j,k,n};
-  }, pCount, *this);
-
-
-#else
-
-    
   //--------------------------------------------------
   //cpu version with no usage of external storage
 
   outgoing_count = 0;
 
-  //UniIter::iterate([=] DEVCALLABLE (int n, ParticleContainer<D> &self){
+  //UniIter::iterate([=]  (int n, ParticleContainer<D> &self){
 #pragma omp simd reduction(+:outgoing_count)
   for(int n=0; n<size(); n++){
     int i=0,j=0,k=0; // relative indices
@@ -477,18 +345,12 @@ std::array<double,3>& maxs)
   } //, size(), *this);
 
   //std::cout << "INFO " << cid << " outgoing count:" << outgoing_count << "\n";
-#endif
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 //--------------------------------------------------
 
 template<size_t D>
-inline DEVCALLABLE float ParticleContainer<D>::get_prtcl_ene(size_t n)
+inline  float ParticleContainer<D>::get_prtcl_ene(size_t n)
 {
 
   //const float mass = (type == "ph") ? 0.0f : 1.0f; // particle mass; zero if photon
@@ -506,25 +368,18 @@ template<size_t D>
 void ParticleContainer<D>::sort_in_rev_energy()
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
   
   eneArr.resize( size() ); // NOTE: do not create here but assume that it is initialized in constructor
 
-  UniIter::iterate([=] DEVCALLABLE (size_t n, ParticleContainer<D>& self){
+  UniIter::iterate([=]  (size_t n, ParticleContainer<D>& self){
       self.eneArr[n] = get_prtcl_ene( n );
   }, size(), *this);
-  UniIter::sync();
 
   //--------------------------------------------------
   //sort and apply
   auto indices = argsort_rev(eneArr);
   apply_permutation(indices);
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -533,9 +388,6 @@ void ParticleContainer<D>::delete_transferred_particles()
 {
   if(size() == 0) return; // nothing to do; early return
                             
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   //--------------------------------------------------
   float* locn[3];
@@ -587,9 +439,6 @@ void ParticleContainer<D>::delete_transferred_particles()
   resize(new_last);
   Nprtcls -= (last - new_last); // substract number of particles removed
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -602,9 +451,6 @@ void ParticleContainer<D>::transfer_and_wrap_particles(
     )
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // global grid limits
   const float minx = global_mins[0];
@@ -646,9 +492,6 @@ void ParticleContainer<D>::transfer_and_wrap_particles(
     }
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 //--------------------------------------------------
@@ -657,9 +500,6 @@ template<std::size_t D>
 void ParticleContainer<D>::pack_all_particles()
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // clear extra array (for appending)
   outgoing_extra_particles.clear();
@@ -696,9 +536,6 @@ void ParticleContainer<D>::pack_all_particles()
     i++;
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -706,9 +543,6 @@ template<std::size_t D>
 void ParticleContainer<D>::pack_outgoing_particles()
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // initialize msg arrays 
   outgoing_extra_particles.clear(); 
@@ -747,9 +581,6 @@ void ParticleContainer<D>::pack_outgoing_particles()
   }
   outgoing_particles[0].id = count; // update info
     
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -757,9 +588,6 @@ template<std::size_t D>
 void ParticleContainer<D>::unpack_incoming_particles()
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   // get real number of incoming particles
   int np_tot = incoming_particles[0].id; // number stored in id slot
@@ -804,9 +632,6 @@ void ParticleContainer<D>::unpack_incoming_particles()
     add_identified_particle({locx,locy,locz}, {velx,vely,velz}, wgts, ids, proc);
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

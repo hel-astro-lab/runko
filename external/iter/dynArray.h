@@ -12,11 +12,6 @@
 #include <cstring>
 #include <iostream>
 
-#ifdef GPU
-#include <cuda_runtime_api.h>
-#endif
-#include "devcall.h"
-
     template <class T>
     class ManVec{
 
@@ -31,22 +26,14 @@
             //
             //std::cout << "reallocing to " << newCap << std::endl;
             T *ptrTemp;// = new T[newCap];
-            #ifdef GPU
-            getErrorCuda((cudaMallocManaged((void**)&ptrTemp, newCap * sizeof(T))));
-            #else
             ptrTemp = new T[newCap];
-            #endif
 
             size_t toCopyCount = count;
 
             if(newCap < cap)
                 toCopyCount = newCap;
 
-            #ifdef GPU
-            cudaMemcpy(ptrTemp, ptr, sizeof(T)*toCopyCount, cudaMemcpyDefault);
-            #else
             std::memcpy(ptrTemp, ptr, sizeof(T)*toCopyCount);
-            #endif
 
             cap = newCap;
 
@@ -57,11 +44,7 @@
             }
             
 */
-            #ifdef GPU
-            cudaFree(ptr);
-            #else
             delete[] ptr;
-            #endif
 
             ptr = ptrTemp;
             //std::cout << "reallocing out " << std::endl;
@@ -74,11 +57,7 @@
             //std::cout << "ManVec create " << std::endl;
 
             cap = DEFAULTSIZE / sizeof(T);
-            #ifdef GPU
-            getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
-            #else
             ptr = new T[cap];
-            #endif
 
             count = 0;
             //std::cout << "ManVec create out" << std::endl;
@@ -88,11 +67,7 @@
 
             if(allocated)
             {
-                #ifdef GPU
-                cudaFree(ptr);
-                #else
                 delete[] ptr;
-                #endif
             }
             //std::cout << "ManVec deconstruct out" << std::endl;
         }
@@ -107,21 +82,14 @@
             count = old_obj.count;
             allocated = old_obj.allocated;
 
-            #ifdef GPU
-            getErrorCuda((cudaMallocManaged((void**)&ptr, cap * sizeof(T))));
-            cudaMemcpy(ptr, old_obj.ptr, sizeof(T)*count, cudaMemcpyDefault);
-            #else
             ptr = new T[cap];
             std::memcpy(ptr, old_obj.ptr, sizeof(T)*count);
-            #endif
-            
             /*
             for (size_t i = count; i < cap; i++)
             {
                 ptr[i] = T{};
             }
             */
-            
         }
 
         // move constructor
@@ -221,7 +189,7 @@
             realloc(count);
         }
 
-        DEVCALLABLE
+        
         inline T & operator[](const size_t &ind)
         {
             //
@@ -231,7 +199,7 @@
             return ptr[ind];
         }
 
-        DEVCALLABLE
+        
         inline const T &operator[](const size_t &ind) const
         {
             //
@@ -242,13 +210,13 @@
             return ptr[ind];
         }
 
-        DEVCALLABLE
+        
         inline size_t size() const
         {
             return count;
         }
 
-        DEVCALLABLE
+        
         inline size_t capacity() const
         {
             return cap;
@@ -259,7 +227,7 @@
             count = 0;
         }
 
-        DEVCALLABLE
+        
         inline T*& data()
         {
             return ptr;
@@ -271,31 +239,31 @@
             count = newSize;
         }
 
-        DEVCALLABLE
+        
         inline bool empty()
         {
             return count == 0;
         }
 
-        DEVCALLABLE
+        
         inline T* begin()
         {
             return ptr;
         }
 
-        DEVCALLABLE
+        
         inline T* end()
         {
             return ptr+count;
         }
 
-        DEVCALLABLE
+        
         inline T const* cbegin() const
         {
             return ptr;
         }
 
-        DEVCALLABLE
+        
         inline T const* cend() const
         {
             return ptr+count;

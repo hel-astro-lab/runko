@@ -5,8 +5,6 @@
 #include "external/iter/iter.h"
 #include "core/emf/tile.h"
 
-//#include <nvtx3/nvToolsExt.h> 
-
 // general bilinear interpolation
 //template<>
 //void ffe::rFFE<2>::interpolate(
@@ -35,8 +33,6 @@ void ffe::rFFE2<3>::interpolate(
         const std::array<int,3>& out
       )
 {
-  //nvtxRangePush(__FUNCTION__);
-
   int im = in[2] == out[2] ? 0 :  -out[2];
   int ip = in[2] == out[2] ? 0 : 1-out[2];
 
@@ -47,7 +43,7 @@ void ffe::rFFE2<3>::interpolate(
   int kp = in[0] == out[0] ? 0 : 1-out[0];
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<float,3>& f, toolbox::Mesh<float,0>& fi)
+    [=]  (int i, int j, int k, toolbox::Mesh<float,3>& f, toolbox::Mesh<float,0>& fi)
     {
       float f11, f10, f01, f00, f1, f0;
       f11 = f(i+ip, j+jp, k+km) + f(i+ip, j+jp, k+kp);
@@ -60,8 +56,6 @@ void ffe::rFFE2<3>::interpolate(
       fi(i,j,k) = 0.125*(f1 + f0);
     }, {std::tuple{8,8,4}},
     f.Nx, f.Ny, f.Nz, f, fi);
-    
-  //nvtxRangePop();
 }
 
 
@@ -70,8 +64,6 @@ void ffe::rFFE2<3>::interpolate(
 template<>
 void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
 {
-  //nvtxRangePush(__FUNCTION__);
-  
   emf::Grids& mesh = tile.get_grids();
 
   // NOTE: compute rho from -1 to +1 because later on we re-stagger it 
@@ -89,7 +81,7 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
     
   // TODO check vs above
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, emf::Grids& m)
+    [=]  (int i, int j, int k, emf::Grids& m)
     {
         m.rho(i-1,j-1,k-1) = 
           (m.ex(i-1,j-1,k-1) - m.ex(i-1-1,j-1,  k-1  )) +
@@ -101,9 +93,6 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0])+2,
     mesh);
 
-  //nvtxRangePop();
-  UniIter::sync();
-
 }
 
 
@@ -111,8 +100,6 @@ void ffe::rFFE2<3>::comp_rho(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 {
-  //nvtxRangePush(__FUNCTION__);
-
   // refs to storages
   emf::Grids&     m = tile.get_grids();
   ffe::SlimGrids& dm = tile.dF; 
@@ -145,7 +132,7 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 
   // TODO check vs above
   UniIter::iterate3D(
-    [=] DEVCALLABLE (int i, int j, int k, ffe::SlimGrids& dm, emf::Grids &m)
+    [=]  (int i, int j, int k, ffe::SlimGrids& dm, emf::Grids &m)
     {
       // dB = dt*curl E
       dm.bx(i,j,k) = cz*( m.ey(i,  j,  k+1) - m.ey(i,j,k) ) - cy*( m.ez(i,  j+1,k) - m.ez(i,j,k) );
@@ -162,8 +149,6 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0]),
     dm, m);
 
-    //nvtxRangePop();
-    UniIter::sync();
 }
 
 
@@ -171,46 +156,34 @@ void ffe::rFFE2<3>::push_eb(ffe::Tile<3>& tile)
 template<>
 void ffe::rFFE2<3>::stagger_x_eb(emf::Grids& m)
 {
-  //nvtxRangePush(__FUNCTION__);
-
   interpolate(m.ex, exf, {{1,1,0}}, {{1,1,0}} ); //x
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,1,0}} );
   interpolate(m.ez, ezf, {{0,1,1}}, {{1,1,0}} );
   interpolate(m.bx, bxf, {{0,0,1}}, {{1,1,0}} );
   interpolate(m.by, byf, {{0,1,0}}, {{1,1,0}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,1,0}} );
-  //nvtxRangePop();
-
 }
 
 template<>
 void ffe::rFFE2<3>::stagger_y_eb(emf::Grids& m)
 {
-  //nvtxRangePush(__FUNCTION__);
-
   interpolate(m.ex, exf, {{1,1,0}}, {{1,0,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{1,0,1}} ); //y
   interpolate(m.ez, ezf, {{0,1,1}}, {{1,0,1}} );
   interpolate(m.bx, bxf, {{0,0,1}}, {{1,0,1}} );
   interpolate(m.by, byf, {{0,1,0}}, {{1,0,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{1,0,1}} );
-  //nvtxRangePop();
-
 }
 
 template<>
 void ffe::rFFE2<3>::stagger_z_eb(emf::Grids& m)
 {
-  //nvtxRangePush(__FUNCTION__);
-
   interpolate(m.ex, exf, {{1,1,0}}, {{0,1,1}} );
   interpolate(m.ey, eyf, {{1,0,1}}, {{0,1,1}} );
   interpolate(m.ez, ezf, {{0,1,1}}, {{0,1,1}} ); //z
   interpolate(m.bx, bxf, {{0,0,1}}, {{0,1,1}} );
   interpolate(m.by, byf, {{0,1,0}}, {{0,1,1}} );
   interpolate(m.bz, bzf, {{1,0,0}}, {{0,1,1}} );
-  //nvtxRangePop();
-
 }
 
 
@@ -218,8 +191,6 @@ void ffe::rFFE2<3>::stagger_z_eb(emf::Grids& m)
 template<>
 void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
 {
-  //nvtxRangePush(__FUNCTION__);
-
   emf::Grids&     m = tile.get_grids();
   ffe::SlimGrids& dm = tile.dF; 
 
@@ -228,7 +199,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   interpolate(m.rho, rhf, { { 1, 1, 1 } }, { { 1, 1, 0 } });
   stagger_x_eb(m);
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -253,7 +224,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   stagger_y_eb(m);
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -279,7 +250,7 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
   stagger_z_eb(m);
 
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -300,19 +271,12 @@ void ffe::rFFE2<3>::add_jperp(ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0]),
     dm, m, bxf, byf, bzf, exf, eyf, ezf, rhf);
 
-
-//nvtxRangePop();
-  UniIter::sync();
-
  }
 
 
 template<>
 void ffe::rFFE2<3>::remove_jpar(ffe::Tile<3>& tile)
 {
-UniIter::sync();
-  //nvtxRangePush(__FUNCTION__);
-
   emf::Grids&     m = tile.get_grids();
   ffe::SlimGrids& dm = tile.dF; 
 
@@ -323,7 +287,7 @@ UniIter::sync();
   stagger_x_eb(m);
   
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -348,7 +312,7 @@ UniIter::sync();
   stagger_y_eb(m);
   
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -373,7 +337,7 @@ UniIter::sync();
   stagger_z_eb(m);
   
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -395,9 +359,6 @@ UniIter::sync();
     static_cast<int>(tile.mesh_lengths[0]),
     dm, m, bxf, byf, bzf, exf, eyf, ezf, rhf);
 
-//nvtxRangePop();
-    UniIter::sync();
-
   //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
   //for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {
   //  for(int j=0; j<static_cast<int>(tile.mesh_lengths[1]); j++) {
@@ -416,8 +377,6 @@ UniIter::sync();
 template<>
 void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 {
-  //nvtxRangePush(__FUNCTION__);
-
   emf::Grids&     m = tile.get_grids();
   ffe::SlimGrids& dm = tile.dF; 
 
@@ -427,7 +386,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
   stagger_x_eb(m);
 
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -452,7 +411,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
   stagger_y_eb(m);
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -479,7 +438,7 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
 
   stagger_z_eb(m);
     UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
+    [=] ( int i, int j, int k, ffe::SlimGrids& dm, emf::Grids& m, 
     toolbox::Mesh<float, 0>& bxf,
     toolbox::Mesh<float, 0>& byf, toolbox::Mesh<float, 0>& bzf,
     toolbox::Mesh<float, 0>& exf, toolbox::Mesh<float, 0>& eyf,
@@ -504,9 +463,6 @@ void ffe::rFFE2<3>::limit_e(ffe::Tile<3>& tile)
     static_cast<int>(tile.mesh_lengths[0]),
     dm, m, bxf, byf, bzf, exf, eyf, ezf, rhf);
 
-
-//nvtxRangePop();
-  UniIter::sync();
 
   //NOTE: only done at the end of the loop so it does not affect previous calculations: dm used as temporary array
   //for(int k=0; k<static_cast<int>(tile.mesh_lengths[2]); k++) {

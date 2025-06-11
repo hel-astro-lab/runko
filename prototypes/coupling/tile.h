@@ -14,9 +14,6 @@
 #include "../ffe/tile.h"
 #include "../pic/tile.h"
 
-#include"../tools/iter/allocator.h"
-
-
 namespace cpl {
 
 /*! \brief Force-Free electrodynamics methods
@@ -27,8 +24,7 @@ class Tile :
   virtual public pic::Tile<D>,
   virtual public ffe::Tile<D>,
   virtual public emf::Tile<D>, 
-  virtual public corgi::Tile<D>, 
-  virtual public ManagedParent
+  virtual public corgi::Tile<D>
 {
 
   public:

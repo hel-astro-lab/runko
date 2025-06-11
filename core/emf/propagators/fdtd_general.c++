@@ -3,9 +3,6 @@
 #include "core/emf/propagators/fdtd_general.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
 
 
 inline float Dm_x( toolbox::Mesh<float, 3>& f, int i, int j, int k, int ai, int /*bi*/, int bj, int bk) {
@@ -44,14 +41,11 @@ template<>
 void emf::FDTDGen<3>::push_e(emf::Tile<3>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
+  [=]  (int i, int j, int k, Grids &mesh)
   {
 
     // dE/dt = +curlB
@@ -107,11 +101,6 @@ void emf::FDTDGen<3>::push_e(emf::Tile<3>& tile)
     tile.mesh_lengths[2], 
     mesh);
 
-  UniIter::sync();
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -122,14 +111,11 @@ void emf::FDTDGen<3>::push_e(emf::Tile<3>& tile)
 template<>
 void emf::FDTDGen<3>::push_half_b(emf::Tile<3>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
+  [=]  (int i, int j, int k, Grids &mesh)
   {
     // dB/dt = -curlE
     for(int ai=1; ai<=3; ai++) { //alphas
@@ -184,12 +170,6 @@ void emf::FDTDGen<3>::push_half_b(emf::Tile<3>& tile)
     tile.mesh_lengths[1], 
     tile.mesh_lengths[2], 
     mesh);
-
-  UniIter::sync();
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 

@@ -2,15 +2,7 @@
 #include <cmath>
 
 #include "core/emf/filters/binomial2.h"
-#include "external/iter/devcall.h"
 #include "external/iter/iter.h"
-#include "external/iter/allocator.h"
-
-
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 
 /// single 2D 2nd order 3-point binomial filter 
 template<>
@@ -32,7 +24,7 @@ void emf::Binomial2<1>::solve(
   // NOTE: shifted with -H to iterate over halos
   // NOTE: similarly, limits are expanded by 2*H
   auto fun = 
-  [=] DEVCALLABLE (int i,  
+  [=]  (int i,  
                    toolbox::Mesh<float, 3> &jj, 
                    toolbox::Mesh<float, 3> &tmp)
   {
@@ -49,7 +41,6 @@ void emf::Binomial2<1>::solve(
         mesh.jx, 
         tmp);
  
-  UniIter::sync();
   std::swap(mesh.jx, tmp);
 
   //--------------------------------------------------
@@ -60,7 +51,6 @@ void emf::Binomial2<1>::solve(
         mesh.jy, 
         tmp);
  
-  UniIter::sync();
   std::swap(mesh.jy, tmp);
 
   //--------------------------------------------------
@@ -71,13 +61,9 @@ void emf::Binomial2<1>::solve(
         mesh.jz, 
         tmp);
  
-  UniIter::sync();
   std::swap(mesh.jz, tmp);
 
   //--------------------------------------------------
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -114,7 +100,7 @@ void emf::Binomial2<2>::solve(
     
   // make 2d loop with shared memory 
   auto fun = 
-  [=] DEVCALLABLE (int i, int j, 
+  [=]  (int i, int j, 
                    toolbox::Mesh<float, 3> &jj, 
                    toolbox::Mesh<float, 3> &tmp)
   {
@@ -132,7 +118,6 @@ void emf::Binomial2<2>::solve(
         tile.mesh_lengths[1] + 2*H,
         mesh.jx, tmp);
  
-  UniIter::sync();
   std::swap(mesh.jx, tmp);
 
   //--------------------------------------------------
@@ -143,7 +128,6 @@ void emf::Binomial2<2>::solve(
         tile.mesh_lengths[1] + 2*H,
         mesh.jy, tmp);
  
-  UniIter::sync();
   std::swap(mesh.jy, tmp);
 
   //--------------------------------------------------
@@ -154,13 +138,9 @@ void emf::Binomial2<2>::solve(
         tile.mesh_lengths[1] + 2*H,
         mesh.jz, tmp);
  
-  UniIter::sync();
   std::swap(mesh.jz, tmp);
 
   //--------------------------------------------------
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -169,10 +149,6 @@ template<>
 void emf::Binomial2<3>::solve(
     emf::Tile<3>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
 
   // 3D 3-point binomial coefficients
   const float C3[3][3][3] = 
@@ -186,7 +162,7 @@ void emf::Binomial2<3>::solve(
 
   // make 3d loop with shared memory 
   auto fun = 
-  [=] DEVCALLABLE (int i, int j, int k, toolbox::Mesh<float, 3> &jj, toolbox::Mesh<float, 3> &tmp)
+  [=]  (int i, int j, int k, toolbox::Mesh<float, 3> &jj, toolbox::Mesh<float, 3> &tmp)
   {
     for(int is=-1; is<=1; is++) {
     for(int js=-1; js<=1; js++) {
@@ -203,7 +179,6 @@ void emf::Binomial2<3>::solve(
         tile.mesh_lengths[2] + 2*H,
         mesh.jx, tmp);
  
-  UniIter::sync();
   std::swap(mesh.jx, tmp);
 
   //--------------------------------------------------
@@ -214,7 +189,6 @@ void emf::Binomial2<3>::solve(
         tile.mesh_lengths[2] + 2*H,
         mesh.jy, tmp);
 
-  UniIter::sync();
   std::swap(mesh.jy, tmp);
 
   //--------------------------------------------------
@@ -225,14 +199,9 @@ void emf::Binomial2<3>::solve(
         tile.mesh_lengths[2] + 2*H,
         mesh.jz, tmp);
 
-  UniIter::sync();
   std::swap(mesh.jz, tmp);
-  
 
   //--------------------------------------------------
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

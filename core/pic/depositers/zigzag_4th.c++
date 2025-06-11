@@ -6,9 +6,6 @@
 #include "core/pic/shapes.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
 
 using std::min;
 using std::max;
@@ -18,10 +15,6 @@ using std::max;
 template<size_t D, size_t V>
 void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   auto& gs = tile.get_grids();
   const auto mins = tile.mins;
@@ -41,7 +34,7 @@ void pic::ZigZag_4th<D,V>::solve( pic::Tile<D>& tile )
 
     //for(size_t n=0; n<con.size(); n++) {
       
-    UniIter::iterate([=] DEVCALLABLE (
+    UniIter::iterate([=]  (
                 size_t n, 
                 emf::Grids &gs,
                 pic::ParticleContainer<D>& con

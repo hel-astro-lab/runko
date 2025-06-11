@@ -7,15 +7,7 @@
 #include <stdexcept>
 #include <cassert>
 #include <exception>
-
-#include "external/iter/allocator.h"
-#include "external/iter/devcall.h"
-
-#ifdef GPU
-#include <cuda_runtime_api.h>
-#else
-#endif
-
+#include <memory>
 
 namespace toolbox {
 
@@ -47,7 +39,7 @@ class Mesh
     int Nz{0};
 
     /// Internal indexing with halo region padding of width H
-    DEVCALLABLE
+    
     inline size_t indx(int i, int j, int k) const {
 
 #ifdef DEBUG
@@ -88,18 +80,18 @@ class Mesh
     }
 
     /// 1D index 
-    DEVCALLABLE
+    
     inline T& operator()(size_t ind) { 
       return ptr[ ind ];
     }
 
-    DEVCALLABLE
+    
     inline const T& operator()(size_t ind) const { 
       return ptr[ ind ];
     }
 
     /// standard (i,j,k) syntax
-    DEVCALLABLE
+    
     inline T& operator()(int i, int j, int k) { 
       auto ind = indx(i,j,k);
 
@@ -109,7 +101,7 @@ class Mesh
       return ptr[ind];
     }
 
-    DEVCALLABLE
+    
     inline const T& operator()(int i, int j, int k) const { 
       auto ind = indx(i,j,k);
 #ifdef DEBUG
@@ -219,7 +211,7 @@ class Mesh
     ~Mesh()
     {
       // todo fix this 
-      if(allocated) UniAllocator::deallocate(ptr);
+      if(allocated) std::allocator<T>{}.deallocate(ptr, count);
 
       allocated = false;
       count = 0;
@@ -227,10 +219,10 @@ class Mesh
     }
 
     /// address to data
-    DEVCALLABLE
+    
     T* data() { return ptr; }
     
-    DEVCALLABLE
+    
     const T* data() const {return ptr; }
 
     /// internal storage size
@@ -238,12 +230,7 @@ class Mesh
 
     /// clear internal storage (overriding with zeros to avoid garbage)
     void clear() {
-      #ifdef GPU
-        cudaMemset ( ptr, 0, count*sizeof(T) );
-      #else
         std::fill(ptr, ptr+count, T() ); // fill with zeros
-      #endif
-      
     }
 
     /// fill halos with zeros
@@ -299,9 +286,9 @@ class Mesh
     }
 
     void alloc(int count_){
-        if(allocated) UniAllocator::deallocate(ptr);
+        if(allocated) std::allocator<T>{}.deallocate(ptr, count);
 
-        ptr = UniAllocator::allocate<T>(count_);
+        ptr = std::allocator<T>{}.allocate(count_);
         allocated = true;
         count = count_;
 

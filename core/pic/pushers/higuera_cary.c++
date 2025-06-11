@@ -4,10 +4,6 @@
 #include "tools/signum.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 using toolbox::sign;
 
 template<size_t D, size_t V>
@@ -16,16 +12,12 @@ void pic::HigueraCaryPusher<D,V>::push_container(
     pic::Tile<D>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   const double c  = tile.cfl;
   const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because emf are in units of q)
 
 
   // loop over particles
-  UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+  UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
     double vel0n = con.vel(0,n);
     double vel1n = con.vel(1,n);
     double vel2n = con.vel(2,n);
@@ -80,12 +72,6 @@ void pic::HigueraCaryPusher<D,V>::push_container(
     for(size_t i=0; i<D; i++) con.loc(i,n) += con.vel(i,n)*ginv*c;
   }, con.size(), con);
 
-  UniIter::sync();
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

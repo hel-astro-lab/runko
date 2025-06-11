@@ -21,7 +21,7 @@ void Tile<D>::rk3_update(
 
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE(
+    [=] (
       int i, int j, int k,
       ffe::SlimGrids& dm,
       emf::Grids& m,
@@ -50,10 +50,6 @@ void Tile<D>::rk3_update(
     static_cast<int>(mesh_lengths[0]),
     dm, m, n);
 
-#ifdef GPU
-    UniIter::sync();
-#endif
-
 }
 
 
@@ -64,7 +60,7 @@ void Tile<D>::copy_eb()
   ffe::SlimGrids& n = this->Fn; 
 
   UniIter::iterate3D(
-    [=] DEVCALLABLE( int i, int j, int k, emf::Grids& m, ffe::SlimGrids& n)
+    [=] ( int i, int j, int k, emf::Grids& m, ffe::SlimGrids& n)
     {
         n.ex(i,j,k) = m.ex(i,j,k);
         n.ey(i,j,k) = m.ey(i,j,k);
@@ -78,11 +74,6 @@ void Tile<D>::copy_eb()
     static_cast<int>(mesh_lengths[1]),
     static_cast<int>(mesh_lengths[0]),
     m, n);
-
-#ifdef GPU
-//nvtxRangePop();
-  UniIter::sync();
-#endif
 
 }
 

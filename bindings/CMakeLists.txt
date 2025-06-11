@@ -134,43 +134,7 @@ target_include_directories(pyrunko PRIVATE ${HDF5_INCLUDE_DIRS})
 #target_link_libraries(pyrunko PRIVATE -lfftw3f)
 target_link_libraries(pyrunko PUBLIC coverage_config)
 
-include(CheckLanguage)
-
-option(ENABLE_CUDA "Enable CUDA" OFF)
-if(ENABLE_CUDA)
-     check_language(CUDA REQUIRED)
-     enable_language(CUDA)
-
-     find_package(CUDA 11.0 REQUIRED)
-     target_link_libraries(pyrunko PRIVATE ${CUDA_LIBRARIES})
-endif()
-
-
-
 target_compile_options(pyrunko PRIVATE ${WARNING_FLAGS})
-
-if(ENABLE_CUDA)
-     
-     set_target_properties(pyrunko PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
-     set_source_files_properties(../ffe/currents/rffe.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../emf/tile.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../emf/filters/binomial2.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../emf/propagators/fdtd2.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../pic/interpolators/linear.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../pic/pushers/boris.c++ PROPERTIES LANGUAGE CUDA)
-     set_source_files_properties(../pic/depositers/zigzag.c++ PROPERTIES LANGUAGE CUDA)
-
-     #TODO this will give wrong results if the file passed to nvcc 
-      set_source_files_properties(../pic/particle.c++ PROPERTIES LANGUAGE CUDA)
-     target_compile_definitions(pyrunko PUBLIC GPU)
-
-     set_property(TARGET pyrunko PROPERTY CUDA_STANDARD 17)
-
-     # need extended lambda support to be able to pass lambdas to interation functions
-     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr -std=c++17")
-     message( ${CMAKE_CUDA_FLAGS} )
-endif()
-
 
 # installation
 install (TARGETS pyrunko DESTINATION lib)

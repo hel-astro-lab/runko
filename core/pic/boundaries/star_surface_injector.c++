@@ -116,7 +116,7 @@ void pic::Star<D>::solve(
 
 
   //UniIter::iterate3D(
-  //[=] DEVCALLABLE (int i, int j, int k, 
+  //[=]  (int i, int j, int k, 
   //                Grids &gs)
   //{
   //}, 

@@ -4,10 +4,6 @@
 #include "tools/signum.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 using toolbox::sign;
 
 template<size_t D, size_t V>
@@ -16,17 +12,13 @@ void pic::BorisPusherGrav<D,V>::push_container(
     pic::Tile<D>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   const double c  = tile.cfl;
   const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because emf are in units of q)
   const double m  = con.m; // mass
   
 
   // loop over particles
-  UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+  UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
 
     double loc0n = con.loc(0,n);
     //double loc1n = con.loc(1,n);
@@ -98,12 +90,6 @@ void pic::BorisPusherGrav<D,V>::push_container(
 
   }, con.size(), con);
 
-  UniIter::sync();
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

@@ -1,15 +1,7 @@
 #include <cmath>
 
 #include "core/emf/filters/general_binomial.h"
-#include "external/iter/devcall.h"
 #include "external/iter/iter.h"
-#include "external/iter/allocator.h"
-
-
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 
 void sweep_in_x(
         toolbox::Mesh<float,3>& arr,

@@ -246,7 +246,7 @@ public:
           if( (t1 == iptr->t1) && (t2 == iptr->t2) ){
 
             // loop over incident particles
-            //UniIter::iterate([=] DEVCALLABLE (
+            //UniIter::iterate([=]  (
             //          size_t n, 
             //          pic::ParticleContainer<D>& con
             //          ){
@@ -372,7 +372,6 @@ public:
               } // end of loop over con2 particles
             } // end of loop over con1 particles
             //}, con.size(), con);
-            //UniIter::sync();
           } // con types match interaction
         }//con2
       } // con1

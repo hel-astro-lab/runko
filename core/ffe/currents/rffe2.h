@@ -2,14 +2,12 @@
 
 #include "core/ffe/tile.h"
 #include "definitions.h"
-#include "external/iter/allocator.h"
 
 namespace ffe {
 
 /// Combined RK3 reduced FFE 2nd order solver 
 template<size_t D>
-class rFFE2 : public ManagedParent
-
+class rFFE2
 {
   public:
 

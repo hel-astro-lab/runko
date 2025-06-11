@@ -3,9 +3,6 @@
 #include "core/emf/propagators/fdtd4.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
 
 /*! \brief Update E field with full step
  *
@@ -17,9 +14,6 @@
 template<>
 void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
 
@@ -28,7 +22,7 @@ void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
   const int k = 0;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, Grids &mesh)
+  [=]  (int i, int j, Grids &mesh)
   {
 	mesh.ex(i,j,k) +=   C1*(-mesh.bz(i,  j-1,k) + mesh.bz(i,  j,  k)) 
 		               +C2*(-mesh.bz(i,  j-2,k) + mesh.bz(i,  j+1,k));
@@ -45,11 +39,7 @@ void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
     tile.mesh_lengths[1], 
     mesh);
 
-  UniIter::sync();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -58,16 +48,13 @@ template<>
 void emf::FDTD4<3>::push_e(emf::Tile<3>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
   const float C1 = coeff1*corr*tile.cfl;
   const float C2 = coeff2*corr*tile.cfl;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
+  [=]  (int i, int j, int k, Grids &mesh)
   {
     mesh.ex(i,j,k)+= C1*(mesh.by(i,  j,  k-1) - mesh.by(i,  j,  k  )  
                        - mesh.bz(i,  j-1,k  ) + mesh.bz(i,  j,  k  ))
@@ -89,11 +76,7 @@ void emf::FDTD4<3>::push_e(emf::Tile<3>& tile)
     tile.mesh_lengths[2], 
     mesh);
 
-  UniIter::sync();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 
@@ -106,9 +89,6 @@ void emf::FDTD4<3>::push_e(emf::Tile<3>& tile)
 template<>
 void emf::FDTD4<2>::push_half_b(emf::Tile<2>& tile)
 {
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
   const float C1 = 0.5*coeff1*corr*tile.cfl;
@@ -116,7 +96,7 @@ void emf::FDTD4<2>::push_half_b(emf::Tile<2>& tile)
   const int k = 0;
 
   UniIter::iterate2D(
-  [=] DEVCALLABLE (int i, int j, Grids &mesh)
+  [=]  (int i, int j, Grids &mesh)
   {
      mesh.bx(i,j,k) += C1*(-mesh.ez(i,  j+1,k) + mesh.ez(i,  j,  k))
 	                  +C2*(-mesh.ez(i,  j+2,k) + mesh.ez(i,  j-1,k));
@@ -132,11 +112,7 @@ void emf::FDTD4<2>::push_half_b(emf::Tile<2>& tile)
     tile.mesh_lengths[1], 
     mesh);
 
-  UniIter::sync();
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -145,16 +121,13 @@ template<>
 void emf::FDTD4<3>::push_half_b(emf::Tile<3>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   Grids& mesh = tile.get_grids();
   const float C1 = 0.5*coeff1*corr*tile.cfl;
   const float C2 = 0.5*coeff2*corr*tile.cfl;
 
   UniIter::iterate3D(
-  [=] DEVCALLABLE (int i, int j, int k, Grids &mesh)
+  [=]  (int i, int j, int k, Grids &mesh)
   {
     mesh.bx(i,j,k)+= C1*(mesh.ey(i,  j,  k+1) - mesh.ey(i,  j,  k  )  
                        - mesh.ez(i,  j+1,k  ) + mesh.ez(i,  j,  k  ))
@@ -177,11 +150,6 @@ void emf::FDTD4<3>::push_half_b(emf::Tile<3>& tile)
     tile.mesh_lengths[2], 
     mesh);
 
-  UniIter::sync();
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 

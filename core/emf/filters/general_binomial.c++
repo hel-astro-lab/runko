@@ -2,15 +2,7 @@
 #include <cmath>
 
 #include "core/emf/filters/general_binomial.h"
-#include "external/iter/devcall.h"
 #include "external/iter/iter.h"
-#include "external/iter/allocator.h"
-
-
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 
 template<>
 void emf::General3p<2>::solve(
@@ -31,7 +23,7 @@ void emf::General3p<2>::solve(
 
   // make 2d loop with shared memory 
   auto fun = 
-  [=] DEVCALLABLE (int i, int j, 
+  [=]  (int i, int j, 
                    toolbox::Mesh<float, 3> &jj, 
                    toolbox::Mesh<float, 3> &tmp)
   {
@@ -55,7 +47,6 @@ void emf::General3p<2>::solve(
         tile.mesh_lengths[1] + 2*H,
         mesh.jx, tmp);
  
-  UniIter::sync();
   std::swap(mesh.jx, tmp);
 
   //--------------------------------------------------
@@ -66,7 +57,6 @@ void emf::General3p<2>::solve(
         tile.mesh_lengths[1] + 2*H,
         mesh.jy, tmp);
  
-  UniIter::sync();
   std::swap(mesh.jy, tmp);
 
   //--------------------------------------------------
@@ -77,13 +67,9 @@ void emf::General3p<2>::solve(
         tile.mesh_lengths[1] + 2*H,
         mesh.jz, tmp);
  
-  UniIter::sync();
   std::swap(mesh.jz, tmp);
 
   //--------------------------------------------------
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

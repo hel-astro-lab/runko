@@ -5,11 +5,6 @@
 #include "core/pic/shapes.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
-
 // 2D specialization
 template<>
 double pic::CubicInterpolator<2>::compute( 
@@ -65,10 +60,6 @@ void pic::CubicInterpolator<D>::solve(
     pic::Tile<D>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   //NOTE: we need this dummy to enforce template D specialization later on
   //std::array<int, D> dummy; 
 
@@ -89,7 +80,7 @@ void pic::CubicInterpolator<D>::solve(
 
 
     // loop over particles
-    //UniIter::iterate([=] DEVCALLABLE( 
+    //UniIter::iterate([=] ( 
     //            size_t n, 
     //            emf::Grids& gs,
     //            pic::ParticleContainer<D>& con){
@@ -164,13 +155,7 @@ void pic::CubicInterpolator<D>::solve(
     //}, con.size(), gs, con);
     }
 
-    UniIter::sync();
   } // end of loop over species
-
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 

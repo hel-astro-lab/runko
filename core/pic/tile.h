@@ -8,8 +8,6 @@
 #include "external/corgi/corgi.h"
 #include "core/emf/tile.h"
 #include "core/pic/particle.h"
-#include "external/iter/allocator.h"
-
 
 namespace pic {
 
@@ -23,9 +21,8 @@ using namespace mpi4cpp;
 
 template<std::size_t D>
 class Tile :
-  virtual public emf::Tile<D>, 
-  virtual public  corgi::Tile<D>,
-  virtual public ManagedParent
+  virtual public emf::Tile<D>,
+  virtual public  corgi::Tile<D>
 {
 
 
@@ -41,7 +38,7 @@ public:
 
   using emf::Tile<D>::cfl;
 
-  std::vector<ParticleContainer<D> , ManagedAlloc<ParticleContainer<D> >> containers;
+  std::vector<ParticleContainer<D>> containers;
 
   //--------------------------------------------------
   // normal container methods

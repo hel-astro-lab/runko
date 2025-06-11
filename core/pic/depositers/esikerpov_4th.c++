@@ -6,10 +6,6 @@
 #include "core/pic/shapes.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 using std::min;
 using std::max;
 
@@ -25,10 +21,6 @@ inline T clamp(T x, T xmin, T xmax) {
 template<size_t D, size_t V>
 void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   auto& gs = tile.get_grids();
   const auto mins = tile.mins;
@@ -51,7 +43,7 @@ void pic::Esikerpov_4th<D,V>::solve( pic::Tile<D>& tile )
     // skip particle species if zero charge
     if (q == 0.0) continue;
 
-    //UniIter::iterate([=] DEVCALLABLE (
+    //UniIter::iterate([=]  (
     //            size_t n, 
     //            emf::Grids &gs,
     //            pic::ParticleContainer<D>& con

@@ -2,14 +2,13 @@
 
 #include "core/pic/tile.h"
 #include "definitions.h"
-#include "external/iter/allocator.h"
 
 namespace pic {
 
 /// General interface for particle interpolators
 /// Interpolates electromagnetic fields to particle locations
 template<size_t D, size_t V>
-class Interpolator: public ManagedParent
+class Interpolator
 {
 
   public:

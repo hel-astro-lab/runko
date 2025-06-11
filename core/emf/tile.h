@@ -7,7 +7,6 @@
 #include "external/corgi/corgi.h"
 #include "tools/mesh.h"
 #include "definitions.h"
-#include "external/iter/allocator.h"
 
 namespace emf {
   namespace mpi = mpi4cpp::mpi;
@@ -119,9 +118,7 @@ class Grids
  * staggered Yee lattice.
  */
 template<std::size_t D>
-class Tile : 
-  virtual public corgi::Tile<D>,
-  virtual public ManagedParent
+class Tile : virtual public corgi::Tile<D>
 {
 
   public:

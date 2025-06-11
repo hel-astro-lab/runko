@@ -4,9 +4,7 @@
 #include <algorithm>
 #include <numeric>
 
-// for GPU supported sorting
 #include "external/iter/dynArray.h"
-#include "external/iter/devcall.h"
 
 // sort vector but return sorted indices 
 //
@@ -41,10 +39,9 @@ std::vector<size_t> argsort_rev(std::vector<T> const& values) {
 }
 
 
-// GPU version of reverse argsort
 // FIXME: should indices vector std::vector<size_t> be ManVec as well?
 template <typename T>
-DEVCALLABLE ManVec<size_t> argsort_rev(ManVec<T> const& values) {
+ ManVec<size_t> argsort_rev(ManVec<T> const& values) {
 
   size_t N = values.size();
 

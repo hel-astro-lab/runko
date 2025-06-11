@@ -5,10 +5,6 @@
 #include "external/iter/iter.h"
 #include "tools/lerp.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 using toolbox::sign;
 using toolbox::lerp;
 
@@ -177,9 +173,6 @@ void pic::PulsarPusher<D,V>::push_container(
     )
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   const double c  = tile.cfl;
   const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because emf are in units of q)
@@ -210,7 +203,7 @@ void pic::PulsarPusher<D,V>::push_container(
   double dx=0.0, dy=0.0, dz=0.0;
 
   // loop over particles
-  //UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+  //UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
   for(size_t n=0; n<con.size(); n++){
 
     // particle location (assuming location coincides with gyro-center location)
@@ -581,12 +574,6 @@ void pic::PulsarPusher<D,V>::push_container(
 
   } // end of loop over containers
 
-
-  UniIter::sync();
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

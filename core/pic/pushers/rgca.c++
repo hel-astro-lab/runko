@@ -5,9 +5,6 @@
 #include "external/iter/iter.h"
 #include "tools/lerp.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
 
 using toolbox::sign;
 using toolbox::lerp;
@@ -190,10 +187,6 @@ void pic::rGCAPusher<D,V>::push_container(
     )
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   const double c    = tile.cfl;
   const double qm   = sign(con.q)/con.m; // q_s/m_s (sign only because emf are in units of q)
   const double m    = con.m; //mass
@@ -219,7 +212,7 @@ void pic::rGCAPusher<D,V>::push_container(
 
 
   // loop over particles
-  //UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
+  //UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
   for(size_t n=0; n<con.size(); n++){
 
     // local tmp variables that carry over post iteration
@@ -624,12 +617,6 @@ void pic::rGCAPusher<D,V>::push_container(
   //}, con.size(), con);
   }
 
-
-  UniIter::sync();
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 

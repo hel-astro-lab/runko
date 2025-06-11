@@ -27,13 +27,13 @@ class Pusher
   double ez_ext = 0.0;
 
   // external field getter functions; can be overridden in derived pusher classes to depend on position
-  DEVCALLABLE virtual double get_bx_ext(double /*x*/, double /*y*/, double /*z*/) { return bx_ext; };
-  DEVCALLABLE virtual double get_by_ext(double /*x*/, double /*y*/, double /*z*/) { return by_ext; };
-  DEVCALLABLE virtual double get_bz_ext(double /*x*/, double /*y*/, double /*z*/) { return bz_ext; };
+   virtual double get_bx_ext(double /*x*/, double /*y*/, double /*z*/) { return bx_ext; };
+   virtual double get_by_ext(double /*x*/, double /*y*/, double /*z*/) { return by_ext; };
+   virtual double get_bz_ext(double /*x*/, double /*y*/, double /*z*/) { return bz_ext; };
 
-  DEVCALLABLE virtual double get_ex_ext(double /*x*/, double /*y*/, double /*z*/) { return ex_ext; };
-  DEVCALLABLE virtual double get_ey_ext(double /*x*/, double /*y*/, double /*z*/) { return ey_ext; };
-  DEVCALLABLE virtual double get_ez_ext(double /*x*/, double /*y*/, double /*z*/) { return ez_ext; };
+   virtual double get_ex_ext(double /*x*/, double /*y*/, double /*z*/) { return ex_ext; };
+   virtual double get_ey_ext(double /*x*/, double /*y*/, double /*z*/) { return ey_ext; };
+   virtual double get_ez_ext(double /*x*/, double /*y*/, double /*z*/) { return ez_ext; };
 
 
   virtual void push_container(

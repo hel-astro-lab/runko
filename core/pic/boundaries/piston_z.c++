@@ -6,11 +6,6 @@
 #include "tools/signum.h"
 #include "external/iter/iter.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
-
 using std::min;
 using std::max;
 
@@ -120,10 +115,6 @@ template<size_t D>
 void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   const auto mins = tile.mins;
   const auto maxs = tile.maxs;
 
@@ -139,7 +130,7 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
-    UniIter::iterate([=] DEVCALLABLE (
+    UniIter::iterate([=]  (
                 size_t n, 
                 pic::Tile<D>& tile,
                 pic::ParticleContainer<D>& con
@@ -220,13 +211,8 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
         tile,
         con);
 
-    UniIter::sync();
   }
 
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 }
 
 
@@ -297,10 +283,6 @@ void pic::PistonZdir<3>::field_bc(
 template<size_t D>
 void pic::PistonZdir<D>::clean_prtcls( pic::Tile<D>& tile)
 {
-
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   const auto mins = tile.mins;
   const auto maxs = tile.maxs;

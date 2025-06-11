@@ -2,10 +2,6 @@
 
 #include <cmath>
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 namespace cpl { 
 
 

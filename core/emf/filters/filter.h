@@ -3,14 +3,13 @@
 #include "definitions.h"
 #include "core/emf/tile.h"
 #include "tools/mesh.h"
-#include "external/iter/managed_alloc.h"
 
 
 namespace emf {
 
 /// General interface for filters
 template<size_t D>
-class Filter: public ManagedParent
+class Filter
 {
   public:
 

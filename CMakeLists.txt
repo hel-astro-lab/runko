@@ -6,10 +6,6 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 
 project (runko LANGUAGES CXX C)
 
-# https://cliutils.gitlab.io/modern-cmake/chapters/packages/CUDA.html
-include(CheckLanguage)
-check_language(CUDA)
-
 # Add the cmake folder to get FindPkg files
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
  

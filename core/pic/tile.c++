@@ -3,10 +3,6 @@
 #include "core/pic/tile.h"
 #include "core/pic/communicate.h"
 
-#ifdef GPU
-#include <nvtx3/nvToolsExt.h> 
-#endif
-
 
 namespace pic {
 
@@ -65,9 +61,6 @@ void Tile<1>::get_incoming_particles(
     corgi::Grid<1>& grid)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   std::array<double,3> global_mins = {
     static_cast<double>( grid.get_xmin() ),
@@ -100,10 +93,6 @@ void Tile<1>::get_incoming_particles(
         }
 
   }
-
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 
@@ -154,10 +143,6 @@ void Tile<3>::get_incoming_particles(
     corgi::Grid<3>& grid)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
-
   std::array<double,3> global_mins = {
     static_cast<double>( grid.get_xmin() ),
     static_cast<double>( grid.get_ymin() ),
@@ -195,9 +180,6 @@ void Tile<3>::get_incoming_particles(
     }
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
 }
 
@@ -226,9 +208,6 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
     int tag)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   std::vector<mpi::request> reqs;
   for(int ispc=0; ispc<Nspecies(); ispc++) {
@@ -241,9 +220,6 @@ std::vector<mpi::request> Tile<D>::send_particle_data(
         );
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
   return reqs;
 }
@@ -256,9 +232,6 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
     int tag)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   std::vector<mpi::request> reqs;
   for(int ispc=0; ispc<Nspecies(); ispc++) {
@@ -280,9 +253,6 @@ std::vector<mpi::request> Tile<D>::send_particle_extra_data(
     //  << " particles\n";
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
   return reqs;
 }
@@ -313,9 +283,6 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
     int tag)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   std::vector<mpi::request> reqs;
   for (int ispc=0; ispc<Nspecies(); ispc++) {
@@ -331,9 +298,6 @@ std::vector<mpi::request> Tile<D>::recv_particle_data(
         );
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
   return reqs;
 }
@@ -346,9 +310,6 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     int tag)
 {
 
-#ifdef GPU
-  nvtxRangePush(__PRETTY_FUNCTION__);
-#endif
 
   std::vector<mpi::request> reqs;
 
@@ -379,9 +340,6 @@ std::vector<mpi::request> Tile<D>::recv_particle_extra_data(
     //std::cout << this->communication.cid << " recv " << container.incoming_particles.size() << " + " << container.incoming_extra_particles.size() << " particles\n";
   }
 
-#ifdef GPU
-  nvtxRangePop();
-#endif
 
   return reqs;
 }
