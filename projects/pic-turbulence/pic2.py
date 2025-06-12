@@ -114,9 +114,9 @@ if __name__ == "__main__":
 
         # injecting plasma particles
         if not(conf.use_injector):
-            prtcl_stat = pytools.pic.inject(grid, velocity_profile, density_profile, conf)
-            if sch.is_example_worker: 
-                print("injected:")
+            prtcl_stat = pytools.pic2.inject(grid, velocity_profile, density_profile, conf)
+            if sch.is_example_worker:
+                print
                 print("     e- prtcls: {}".format(prtcl_stat[0]))
                 print("     e+ prtcls: {}".format(prtcl_stat[1]))
 

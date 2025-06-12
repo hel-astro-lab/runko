@@ -21,6 +21,7 @@ from .banner import print_banner
 
 # physics modules
 from . import pic 
+from . import pic2
 from . import qed
 from . import vlv
 from . import ffe 
