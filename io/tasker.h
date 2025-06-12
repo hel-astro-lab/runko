@@ -1,8 +1,4 @@
 #pragma once
-        for tile in pytools.tiles_all(grid):
-            for ispcs in range(conf.Nspecies):
-                container = tile.get_container(ispcs)
-                container.type = conf.prtcl_types[ispcs] # name container
 
 #include <string>
 #include <iostream>
