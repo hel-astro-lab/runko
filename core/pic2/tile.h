@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/emf2/tile.h"
+#include "core/pic2/particle.h"
 #include "external/corgi/corgi.h"
 #include "external/corgi/tile.h"
 #include "tools/config_parser.h"
 
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 
@@ -20,6 +22,12 @@ namespace mpi = mpi4cpp::mpi;
 
 template<std::size_t D>
 class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
+
+  static_assert(D <= 3);
+
+  std::vector<ParticleContainer<D>> particle_buffs_;
+
+  std::size_t particles_per_cell_;
 
 public:
   Tile(const toolbox::ConfigParser& config);

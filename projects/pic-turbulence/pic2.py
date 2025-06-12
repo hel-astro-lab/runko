@@ -89,13 +89,32 @@ if __name__ == "__main__":
     if conf.use_injector:
         pytools.load_catepillar_track_mpi(grid, conf.mpi_track, conf)
     else:
-        pytools.balance_mpi(grid, conf) #Hilbert curve optimization
+        pytools.balance_mpi(grid, conf) # Hilbert curve optimization
+
+    # helper to loop over all grid inidices
+    def index_space(g):
+        for k in range(g.get_Nz()):
+            for j in range(g.get_Ny()):
+                for i in range(g.get_Nx()):
+                    yield (i, j, k)
 
     # load pic tiles into grid (functionally same as pytools.pic.load_tiles(grid, conf)
-    for k in range(grid.get_Nz()):
-        for j in range(grid.get_Ny()):
-            for i in range(grid.get_Nx()):
-                grid.add_tile(pypic2.Tile(conf), (i, j, k))
+    for idx in index_space(grid):
+        if conf.threeD:
+            i, j, k = idx
+            if n.get_mpi_grid(i, j, k) == n.rank():
+                tile = pypic2.Tile(conf)
+
+                G0 = (0, 0, 0)
+                GN = (conf.NxMesh, conf.NyMesh, conf.NzMesh)
+
+                tile.set_tile_mins(pytools.pic.ind2loc(idx, G0, conf))
+                tile.set_tile_maxs(pytools.pic.ind2loc(idx, GN, conf))
+
+                grid.add_tile(tile, idx)
+
+        else:
+            raise NotImplementedError()
 
     raise NotImplementedError("Rest is not changed from original pic.py")
 
