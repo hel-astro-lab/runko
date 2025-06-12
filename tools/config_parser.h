@@ -29,7 +29,7 @@ public:
       if constexpr(std::convertible_to<U, T>) {
         return static_cast<T>(value);
       } else {
-        throw std::runtime_erro {
+        throw std::runtime_error {
           "Accessed value is not convertible to requested type."
         };
       }
