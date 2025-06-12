@@ -2,6 +2,8 @@
 
 #include "pybind11/pybind11.h"
 
+#include <concepts>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -19,14 +21,21 @@ public:
   ConfigParser(const pybind11::handle&);
 
   template<typename T>
-  [[nodiscard]] T get(const std::string& key) const
+  [[nodiscard]] std::optional<T> get(const std::string& key) const
   {
-    try {
-      return std::get<T>(config_.at(key));
-    } catch(std::out_of_range) {
-      throw std::runtime_error { std::string { "Trying to access missing key: " } +
-                                 key };
-    }
+    if(not config_.contains(key)) { return {}; }
+
+    auto convert_to_requested = []<typename U>(const U& value) -> T {
+      if constexpr(std::convertible_to<U, T>) {
+        return static_cast<T>(value);
+      } else {
+        throw std::runtime_erro {
+          "Accessed value is not convertible to requested type."
+        };
+      }
+    };
+
+    return std::visit(convert_to_requested, config_.at(key));
   }
 };
 
