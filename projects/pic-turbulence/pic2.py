@@ -19,25 +19,6 @@ rnd_seed_default = 1
 np.random.seed(rnd_seed_default)  # global simulation seed
 
 #--------------------------------------------------
-# Field initialization (guide field)
-def insert_em_fields(grid, conf, do_initialization):
-    if not do_initialization:
-        return
-
-    for tile in pytools.tiles_all(grid):
-        g = tile.yee_lattice()
-
-        if not conf.use_maxwell_split: # if no static component
-
-            g.set_E(lambda i, j, k: (0, 0, 0))
-            g.set_B(lambda i, j, k: (0, 0, conf.binit))
-
-        elif conf.use_maxwell_split:
-            raise NotImplementedError()
-
-    return
-
-#--------------------------------------------------
 #--------------------------------------------------
 #--------------------------------------------------
 if __name__ == "__main__":
@@ -141,8 +122,12 @@ if __name__ == "__main__":
                 print("     e- prtcls: {}".format(prtcl_stat[0]))
                 print("     e+ prtcls: {}".format(prtcl_stat[1]))
 
-        # inserting em grid
-        insert_em_fields(grid, conf, do_initialization=True)
+        for tile in pytools.tiles_all(grid):
+            E = lambda x, y, z: (0, 0, 0)
+            B = lambda x, y, z: (0, 0, conf.binit)
+            rho = lambda x, y, z: (0, 0, 0)
+            J = lambda x, y, z: (0, 0, 0)
+            tile.set_fields(E, B, rho, J)
 
         # save a snapshot of the state to disk
         pytools.save_mpi_grid_to_disk(conf.outdir, 0, grid, conf)

@@ -36,7 +36,8 @@ void
     "Tile")
     .def(py::init([](const py::handle& h) {
       return emf2::Tile<3>(toolbox::ConfigParser(h));
-    }));
+    }))
+    .def("set_fields", &emf2::Tile<3>::set_fields);
 
   //--------------------------------------------------
   // Full IO

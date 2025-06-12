@@ -8,7 +8,9 @@
 #include <array>
 #include <cstddef>
 #include <experimental/mdspan>
+#include <functional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 
 namespace emf2 {
@@ -22,7 +24,7 @@ struct [[nodiscard]] YeeLattice {
     tyvi::mdgrid_element_descriptor<float> { .rank = 0, .dim = 3 };
 
   using VecGrid    = tyvi::mdgrid<VecElement, GridExtents>;
-  using ScalarGrid = tyvi::mdgrid<VecElement, GridExtents>;
+  using ScalarGrid = tyvi::mdgrid<ScalarElement, GridExtents>;
 
   /// Electric fiel
   VecGrid E;
@@ -55,14 +57,38 @@ protected:
 private:
   YeeLattice yee_lattice_;
 
+  [[nodiscard]] auto yee_lattice_staging_mds_no_halo()
+  {
+    const auto Emds   = yee_lattice_.E.staging_mds();
+    const auto Bmds   = yee_lattice_.B.staging_mds();
+    const auto rhomds = yee_lattice_.rho.staging_mds();
+    const auto Jmds   = yee_lattice_.J.staging_mds();
+
+    const auto x = std::tuple { halo_length, halo_length + yee_lattice_extents_[0] };
+    const auto y = std::tuple { halo_length, halo_length + yee_lattice_extents_[1] };
+    const auto z = std::tuple { halo_length, halo_length + yee_lattice_extents_[2] };
+    return std::tuple { std::submdspan(Emds, x, y, z),
+                        std::submdspan(Bmds, x, y, z),
+                        std::submdspan(rhomds, x, y, z),
+                        std::submdspan(Jmds, x, y, z) };
+  }
+
   double cfl_;
 
 public:
+  static constexpr auto halo_length = 3;
+
   Tile(const toolbox::ConfigParser& config);
 
   // Has to be explicitly declared as a work around for hipcc bug.
   // see: https://github.com/llvm/llvm-project/issues/141592
   ~Tile() = default;
+
+  using scalar_field = std::function<double(double, double, double)>;
+  using vector_field = std::function<std::array<double, 3>(double, double, double)>;
+
+  /// Precondition: corgi::Tile<D>::{mins,maxs} are set.
+  void set_fields(vector_field E, vector_field B, scalar_field rho, vector_field J);
 };
 
 }  // namespace emf2
