@@ -1,4 +1,5 @@
 #include "core/emf2/tile.h"
+#include "io/tasker.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "tools/config_parser.h"
@@ -36,5 +37,18 @@ void
     .def(py::init([](const py::handle& h) {
       return emf2::Tile<3>(toolbox::ConfigParser(h));
     }));
+
+  //--------------------------------------------------
+  // Full IO
+
+  // 1D
+  // TODO
+
+  // 2D
+  // TODO
+
+  // 3D
+  m_3d.def("write_grids", &emf2::write_grids<3>);
+  m_3d.def("read_grids", &emf2::read_grids<3>);
 }
 }  // namespace emf2

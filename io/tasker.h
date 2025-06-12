@@ -1,6 +1,12 @@
 #pragma once
+        for tile in pytools.tiles_all(grid):
+            for ispcs in range(conf.Nspecies):
+                container = tile.get_container(ispcs)
+                container.type = conf.prtcl_types[ispcs] # name container
 
 #include <string>
+#include <iostream>
+#include <source_location>
 
 #include "io/writers/writer.h"
 #include "io/readers/reader.h"
@@ -131,6 +137,33 @@ inline void read_grids(
 
 //--------------------------------------------------
 
+namespace emf2 {
+
+template<size_t D>
+inline void write_grids(corgi::Grid<D>&, int lap, std::string dir)
+{
+  const auto location = std::source_location::current();
+  std::cout << "NOT IMPLEMENTED: file: " << location.file_name() << '('
+            << location.line() << ':' << location.column() << ") `"
+            << location.function_name() << "`: " << "(lap, dir) = (" << lap << ", "
+            << dir << ")\n";
+}
+
+template<size_t D>
+inline void read_grids(corgi::Grid<D>&, int lap, std::string dir)
+{
+  const auto location = std::source_location::current();
+  std::cout << "NOT IMPLEMENTED: file: " << location.file_name() << '('
+            << location.line() << ':' << location.column() << ") `"
+            << location.function_name() << "`: " << "(lap, dir) = (" << lap << ", "
+            << dir << ")\n";
+}
+
+} // end of ns emf2
+
+
+//--------------------------------------------------
+
 namespace pic {
 
 
@@ -180,4 +213,28 @@ inline void read_particles(
 }
 
 
+}
+
+//--------------------------------------------------
+
+namespace pic2 {
+template<size_t D>
+inline void write_particles(corgi::Grid<D>&, int lap, std::string dir)
+{
+  const auto location = std::source_location::current();
+  std::cout << "NOT IMPLEMENTED: file: " << location.file_name() << '('
+            << location.line() << ':' << location.column() << ") `"
+            << location.function_name() << "`: " << "(lap, dir) = (" << lap << ", "
+            << dir << ")\n";
+}
+
+template<size_t D>
+inline void read_particles(corgi::Grid<D>&, int lap, std::string dir)
+{
+  const auto location = std::source_location::current();
+  std::cout << "NOT IMPLEMENTED: file: " << location.file_name() << '('
+            << location.line() << ':' << location.column() << ") `"
+            << location.function_name() << "`: " << "(lap, dir) = (" << lap << ", "
+            << dir << ")\n";
+}
 }

@@ -20,12 +20,14 @@ np.random.seed(rnd_seed_default)  # global simulation seed
 
 #--------------------------------------------------
 # Field initialization (guide field)
-def insert_em_fields(grid, conf):
+def insert_em_fields(grid, conf, do_initialization):
+    if not do_initialization:
+        return
 
     for tile in pytools.tiles_all(grid):
-        g = tile.get_grids(0)
+        g = tile.yee_lattice()
 
-        if not(conf.use_maxwell_split): # if no static component
+        if not conf.use_maxwell_split: # if no static component
 
             g.set_E(lambda i, j, k: (0, 0, 0))
             g.set_B(lambda i, j, k: (0, 0, conf.binit))
@@ -134,14 +136,11 @@ if __name__ == "__main__":
         insert_em_fields(grid, conf, do_initialization=False)
 
         # read restart files
-        pyfld.read_grids(grid, io_stat["read_lap"], io_stat["read_dir"])
-        pypic.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pyfld2.read_grids(grid, io_stat["read_lap"], io_stat["read_dir"])
+        pypic2.read_particles(grid, io_stat["read_lap"], io_stat["read_dir"])
 
         # set particle types
-        for tile in pytools.tiles_all(grid):
-            for ispcs in range(conf.Nspecies):
-                container = tile.get_container(ispcs)
-                container.type = conf.prtcl_types[ispcs] # name container
+        print("NOT IMPLEMENTED: set particle types (should be done in ctor of pic2 tile)")
 
         # step one step ahead
         lap = io_stat["lap"] + 1
@@ -154,30 +153,10 @@ if __name__ == "__main__":
     # --------------------------------------------------
     # initial driving; NOTE: turbulence specific/ needs to be here BEFORE update_boundaries call
 
-    if True: #driven setup
-        from antenna3d_langevin import Antenna  # 3D forced Langevin antenna setup
-
-        sch.antenna = Antenna(conf.min_mode, conf.max_mode, conf)
-        if io_stat["do_initialization"]:
-            for tile in pytools.tiles_local(grid):
-                sch.antenna.add_driving(tile)
-        else:
-            # advance antenna
-            for lap_tmp in range(0, lap):
-                sch.antenna.update_rnd_phases()
-
+    if False: # driven setup
+        raise NotImplementedError("Driver setup not implemented for pic2.")
     else: # decaying setup
-
-        if conf.twoD:
-            from antenna2d import Antenna
-            antenna = Antenna(conf.min_mode, conf.max_mode, conf)
-        elif conf.threeD:
-            from antenna3d import Antenna
-            antenna = Antenna(conf.max_mode, 2, conf)
-
-        # add \delta B perturbations
-        for tile in pytools.tiles_local(grid):
-            antenna.add_driving(tile)
+        print("NOT IMPLEMENTED: decay setup for pic2.")
 
     # update boundaries
     grid.analyze_boundaries()
@@ -188,32 +167,29 @@ if __name__ == "__main__":
     if sch.is_master: print("loading virtual tiles..."); sys.stdout.flush()
 
     # load virtual mpi halo tiles
-    pytools.pic.load_virtual_tiles(grid, conf)
-
+    print("NOT IMPLEMENTED: loading virtual tiles for pic2.")
 
     # --------------------------------------------------
     # load physics solvers
 
     if sch.is_master: print("loading solvers..."); sys.stdout.flush()
 
-
-    sch.fldpropE = pyfld.FDTD2()
-    sch.fldpropB = pyfld.FDTD2()
-    #sch.fldpropE = pyfld.FDTD4()
-    #sch.fldpropB = pyfld.FDTD4()
+    print("NOT IMPLEMENTED: emf2 field propagator.")
+    # sch.fldpropE = pyfld.FDTD2()
+    # sch.fldpropB = pyfld.FDTD2()
 
     # enhance numerical speed of light slightly to suppress numerical Cherenkov instability
-    sch.fldpropE.corr = conf.c_corr
-    sch.fldpropB.corr = conf.c_corr
+    # sch.fldpropE.corr = conf.c_corr
+    # sch.fldpropB.corr = conf.c_corr
 
 
     # --------------------------------------------------
     # particle puhser
 
-    #sch.pusher = pypic.BorisPusher()
-    #sch.pusher = pypic.VayPusher()
-    sch.pusher = pypic.HigueraCaryPusher()
-    #sch.pusher  = pypic.rGCAPusher()
+    print("NOT IMPLEMENTED: pic2 particle pusher.")
+    # sch.pusher = pypic2.BorisPusher()
+
+    # Do pusher configuration in pusher ctor.
 
     #if conf.gammarad > 0:
     #    sch.pusher   = pypic.BorisDragPusher()
@@ -221,101 +197,40 @@ if __name__ == "__main__":
     #    sch.pusher.temp = 0.0
 
     # background field from external pusher components
-    if conf.use_maxwell_split:
-        sch.pusher.bx_ext = conf.bx_ext 
-        sch.pusher.by_ext = conf.by_ext
-        sch.pusher.bz_ext = conf.bz_ext
+    # if conf.use_maxwell_split:
+    #     sch.pusher.bx_ext = conf.bx_ext
+    #     sch.pusher.by_ext = conf.by_ext
+    #     sch.pusher.bz_ext = conf.bz_ext
 
-        sch.pusher.ex_ext = conf.ex_ext 
-        sch.pusher.ey_ext = conf.ey_ext
-        sch.pusher.ez_ext = conf.ez_ext
+    #     sch.pusher.ex_ext = conf.ex_ext
+    #     sch.pusher.ey_ext = conf.ey_ext
+    #     sch.pusher.ez_ext = conf.ez_ext
 
 
     # --------------------------------------------------
     # particle interpolator
-    sch.fintp = pypic.LinearInterpolator()
-    #sch.fintp = pypic.QuadraticInterpolator() #2nd order quadratic
-    #sch.fintp = pypic.CubicInterpolator()     #3rd order cubic 3d
-    #sch.fintp = pypic.QuarticInterpolator()   #4th order quartic; 3d
+    print("NOT IMPLEMENTED: pic2 field interpolator.")
+    # sch.fintp = pypic2.LinearInterpolator()
 
     # --------------------------------------------------
     # current deposit
-    sch.currint = pypic.ZigZag()
-    #sch.currint = pypic.ZigZag_2nd()
-    #sch.currint = pypic.ZigZag_3rd()
-    #sch.currint = pypic.ZigZag_4th()
-    #sch.currint = pypic.Esikerpov_2nd() # 3d only
-    #sch.currint = pypic.Esikerpov_4th() # 3d only
+    print("NOT IMPLEMENTED: pic2 current deposit.")
+    # sch.currint = pypic2.ZigZag()
 
     # --------------------------------------------------
-    #filter
-    sch.flt = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
-
+    # filter
+    print("NOT IMPLEMENTED: emf2 filter.")
+    # sch.flt = pyfld.Binomial2(conf.NxMesh, conf.NyMesh, conf.NzMesh)
 
     # --------------------------------------------------
     # I/O objects
     if sch.is_master: print("loading IO objects..."); sys.stdout.flush()
 
     # quick field snapshots
-    #fld_writer = pyfld.MasterFieldsWriter(
-    fld_writer = pyfld.FieldsWriter(
-        conf.outdir,
-        conf.Nx,
-        conf.NxMesh,
-        conf.Ny,
-        conf.NyMesh,
-        conf.Nz,
-        conf.NzMesh,
-        conf.stride,
-    )
-
-
-    # tracked particles; only works with no injector (id's are messed up when coming out from injector)
-    prtcl_writers = []
-
-    #for ispc in [0, 1, 2]: #electrons & positrons
-    for ispc in [0]: #electrons
-        mpi_comm_size = grid.size() if not(conf.mpi_task_mode) else grid.size() - 1
-        n_local_tiles = int(conf.Nx*conf.Ny*conf.Nz/mpi_comm_size)
-        #print("average n_local_tiles:", n_local_tiles, " / ", mpi_comm_size)
-
-        prtcl_writer = pypic.TestPrtclWriter(
-                conf.outdir,
-                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh,
-                conf.ppc,
-                n_local_tiles, #len(grid.get_local_tiles()),
-                conf.n_test_prtcls,)
-        prtcl_writer.ispc = ispc
-        prtcl_writers.append(prtcl_writer)
-
-
-    # momens of particle distribution
-    #mom_writer = pypic.MasterPicMomentsWriter(
-    mom_writer = pypic.PicMomentsWriter(
-        conf.outdir,
-        conf.Nx,
-        conf.NxMesh,
-        conf.Ny,
-        conf.NyMesh,
-        conf.Nz,
-        conf.NzMesh,
-        conf.stride_mom,
-    )
-
-    # 3D box peripherals
-    if conf.threeD:
-        st = 1 # stride
-        slice_xy_writer = pyfld.FieldSliceWriter( conf.outdir, 
-                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, st, 0, 1)
-        slice_xz_writer = pyfld.FieldSliceWriter( conf.outdir, 
-                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, st, 1, 1)
-        slice_yz_writer = pyfld.FieldSliceWriter( conf.outdir, 
-                conf.Nx, conf.NxMesh, conf.Ny, conf.NyMesh, conf.Nz, conf.NzMesh, st, 2, 1)
-
-        # location of the slice (grid index)
-        slice_xy_writer.ind = int(0.0*conf.Lz) # bottom slice
-        slice_xz_writer.ind = int(0.0*conf.Ly) # side wall 1
-        slice_yz_writer.ind = int(0.0*conf.Lx) # side wall 2
+    print("NOT IMPLEMENTED: emf2 field writer.")
+    print("NOT IMPLEMENTED: pic2 particle writers.")
+    print("NOT IMPLEMENTED: pic2 momentum writer.")
+    print("NOT IMPLEMENTED: emf2 field slice writer.")
 
     # --------------------------------------------------
     # --------------------------------------------------
@@ -334,6 +249,8 @@ if __name__ == "__main__":
     time = lap * (conf.cfl / conf.c_omp)
     for lap in range(lap, conf.Nt + 1):
 
+        # Commented out wall operations present in orginal pic.py are removed.
+
         # --------------------------------------------------
         # comm E and B
         sch.operate( dict(name='mpi_b0', solver='mpi', method='b', ) )
@@ -343,7 +260,6 @@ if __name__ == "__main__":
         # --------------------------------------------------
         # push B half
         sch.operate( dict(name='push_half_b1', solver='fldpropB', method='push_half_b', nhood='local',) )
-        #sch.operate( dict(name='wall_bc',      solver='lwall',    method='field_bc',    nhood='local',) )
 
         # comm B
         sch.operate( dict(name='mpi_b1',  solver='mpi', method='b',                 ) )
@@ -354,22 +270,15 @@ if __name__ == "__main__":
 
         # interpolate fields and push particles in x and u
         sch.operate( dict(name='interp_em', solver='fintp',  method='solve', nhood='local', ) )
-        #sch.operate( dict(name='push',      solver='pusher', method='solve', nhood='local', ) )
+        #sch.operate( dict(name='push',      solver='pusher', method='solve', nhood='local', ) ) # all particle continers
         sch.operate( dict(name='push',      solver='pusher', method='solve', nhood='local', args=[0]) ) # e^-
         sch.operate( dict(name='push',      solver='pusher', method='solve', nhood='local', args=[1]) ) # e^+
 
-
-        # clear currents; need to call this before wall operations since they can deposit currents too 
         sch.operate( dict(name='clear_cur', solver='tile',   method='clear_current', nhood='all', ) )
 
-        # apply moving/reflecting walls
-        #sch.operate( dict(name='walls',     solver='lwall', method='solve', nhood='local', ) )
-
-
         # --------------------------------------------------
-        # advance half B 
+        # advance half B
         sch.operate( dict(name='push_half_b2', solver='fldpropB', method='push_half_b', nhood='local', ) )
-        #sch.operate( dict(name='wall_bc',      solver='lwall',    method='field_bc',    nhood='local', ) )
 
         # comm B
         sch.operate( dict(name='mpi_b2', solver='mpi', method='b',                 ) )
@@ -379,14 +288,15 @@ if __name__ == "__main__":
         # --------------------------------------------------
         # push E
         sch.operate( dict(name='push_e',   solver='fldpropE', method='push_e',  nhood='local', ) )
-        #sch.operate( dict(name='wall_bc',  solver='lwall',    method='field_bc',nhood='local', ) )
 
-        # TODO current deposit + MPI was here
+        # TODO current deposit + MPI was here (never in pic2.py)
 
         # --------------------------------------------------
         # particle communication (only local/boundary tiles)
 
-        # local and global particle exchange 
+        # This should be refactored into a one C++ method.
+
+        # local and global particle exchange
         sch.operate( dict(name='check_outg_prtcls',     solver='tile',  method='check_outgoing_particles',     nhood='local', ) )
         sch.operate( dict(name='pack_outg_prtcls',      solver='tile',  method='pack_outgoing_particles',      nhood='boundary', ) )
 
@@ -402,6 +312,9 @@ if __name__ == "__main__":
 
         # --------------------------------------------------
         # current calculation; charge conserving current deposition
+
+        # These should be refactored into a one C++ method(?).
+
         # clear virtual current arrays for boundary addition after mpi, send currents, and exchange between tiles
         sch.operate( dict(name='comp_curr', solver='currint', method='solve', nhood='local', ) )
         sch.operate( dict(name='clear_vir_cur', solver='tile',method='clear_current',     nhood='virtual', ) )
@@ -422,14 +335,15 @@ if __name__ == "__main__":
 
         # --------------------------------------------------
         # add antenna contribution
-        sch.antenna.update_rnd_phases()
-        #antenna.get_brms(grid) # debug tracking
-        sch.operate( dict(name='add_antenna', solver='antenna', method='add_ext_cur', nhood='local', ) )
+
+        # For Langevin antenna only.
+        # sch.antenna.update_rnd_phases()
+        # antenna.get_brms(grid) # debug tracking
+        # sch.operate( dict(name='add_antenna', solver='antenna', method='add_ext_cur', nhood='local', ) )
 
         # --------------------------------------------------
         # add current to E
         sch.operate( dict(name='add_cur', solver='tile', method='deposit_current', nhood='local', ) )
-        #operate( dict(name='wall_bc', solver='lwall', method='field_bc', nhood='local', ) )
 
 
         ##################################################
@@ -456,22 +370,22 @@ if __name__ == "__main__":
 
             # shallow IO
             # NOTE: do moms before other IOs to keep rho field up-to-date
-            mom_writer.write(grid, lap)  # pic distribution moments; 
+            mom_writer.write(grid, lap)  # pic distribution moments;
             fld_writer.write(grid, lap)  # quick field snapshots
 
             for pw in prtcl_writers:
                 pw.write(grid, lap)  # particle tracking
-            
-            #pytools.save_mpi_grid_to_disk(conf.outdir, lap, grid, conf) # MPI grid
 
-            #box peripheries 
+            # pytools.save_mpi_grid_to_disk(conf.outdir, lap, grid, conf) # MPI grid
+
+            #box peripheries
             if conf.threeD:
                 slice_xy_writer.write(grid, lap)
                 slice_xz_writer.write(grid, lap)
                 slice_yz_writer.write(grid, lap)
 
             #--------------------------------------------------
-            # terminal plot 
+            # terminal plot
             if sch.is_master:
                 tplt.col_mode = False # use terminal color / use ASCII art
                 if conf.threeD:
@@ -485,17 +399,18 @@ if __name__ == "__main__":
             #--------------------------------------------------
             #print statistics
             if sch.is_master:
-                #print('simulation time    {:7d} ({:7.1f} omp)   {:5.1f}%'.format( int(lap), time, 100.0*lap/conf.Nt))
-                print('sim time {:7d} ({:7.1f} omp) ({:7.2f} l0/c) {:5.2f}%'.format(int(lap), 
-                                                                                        time, 
+                print('simulation time    {:7d} ({:7.1f} omp)   {:5.1f}%'.format( int(lap), time, 100.0*lap/conf.Nt))
+                # For Langevin antenna only.
+                # print('sim time {:7d} ({:7.1f} omp) ({:7.2f} l0/c) {:5.2f}%'.format(int(lap),
+                                                                                        time,
                                                                                         sch.antenna.tcur,
                                                                                         100.0*lap/conf.Nt))
 
             #--------------------------------------------------
             # deep IO
             if conf.full_interval > 0 and (lap % conf.full_interval == 0) and (lap > 0):
-                pyfld.write_grids(grid, lap, conf.outdir + "/full_output/")
-                pypic.write_particles(grid, lap, conf.outdir + "/full_output/")
+                pyfld2.write_grids(grid, lap, conf.outdir + "/full_output/")
+                pypic2.write_particles(grid, lap, conf.outdir + "/full_output/")
 
 
             # restart IO (overwrites)
@@ -504,12 +419,12 @@ if __name__ == "__main__":
                 # flip between two sets of files
                 io_stat["deep_io_switch"] = 1 if io_stat["deep_io_switch"] == 0 else 0
 
-                pyfld.write_grids(
+                pyfld2.write_grids(
                     grid, io_stat["deep_io_switch"] + io_stat['restart_num'],
                     conf.outdir + "/restart/"
                 )
 
-                pypic.write_particles(
+                pypic2.write_particles(
                     grid, io_stat["deep_io_switch"] + io_stat['restart_num'],
                     conf.outdir + "/restart/"
                 )
@@ -519,7 +434,7 @@ if __name__ == "__main__":
                 if grid.rank() == 0:
                     with open(conf.outdir + "/restart/laps.txt", "a") as lapfile:
                         lapfile.write("{},{}\n".format(
-                            lap, 
+                            lap,
                             io_stat["deep_io_switch"]+io_stat['restart_num']))
 
             MPI.COMM_WORLD.barrier() # extra barrier to synch everybody after IOs
@@ -543,4 +458,3 @@ if __name__ == "__main__":
 
     timer.stop("total")
     timer.stats("total")
-

@@ -1,4 +1,5 @@
 #include "core/pic2/tile.h"
+#include "io/tasker.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "tools/config_parser.h"
@@ -30,8 +31,7 @@ void
 
   //--------------------------------------------------
   // 3D bindings
-  [[maybe_unused]] py::module m_3d =
-    m_sub.def_submodule("threeD", "3D specializations");
+  py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 
   py::class_<
     pic2::Tile<3>,
@@ -41,6 +41,19 @@ void
     .def(py::init([](const py::handle& h) {
       return pic2::Tile<3>(toolbox::ConfigParser(h));
     }));
+
+  //--------------------------------------------------
+  // Full IO
+
+  // 1D
+  // TODO
+
+  // 2D
+  // TODO
+
+  // 3D
+  m_3d.def("write_particles", &pic2::write_particles<3>);
+  m_3d.def("read_particles", &pic2::read_particles<3>);
 }
 
 }  // namespace pic2
