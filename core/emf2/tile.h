@@ -57,20 +57,32 @@ protected:
 private:
   YeeLattice yee_lattice_;
 
-  [[nodiscard]] auto yee_lattice_staging_mds_no_halo()
+  struct with_halo_tag {};
+  struct wout_halo_tag {};
+  static constexpr with_halo_tag with_halo {};
+  static constexpr wout_halo_tag wout_halo {};
+
+  /// Returns tuple of mdspans to yee_lattice_ staging buffer {E, B, rho, J}.
+  [[nodiscard]] auto yee_lattice_staging_mds(with_halo_tag)
   {
-    const auto Emds   = yee_lattice_.E.staging_mds();
-    const auto Bmds   = yee_lattice_.B.staging_mds();
-    const auto rhomds = yee_lattice_.rho.staging_mds();
-    const auto Jmds   = yee_lattice_.J.staging_mds();
+    return std::tuple { yee_lattice_.E.staging_mds(),
+                        yee_lattice_.B.staging_mds(),
+                        yee_lattice_.rho.staging_mds(),
+                        yee_lattice_.J.staging_mds() };
+  }
+
+  [[nodiscard]] auto yee_lattice_staging_mds(wout_halo_tag)
+  {
+    auto [Emds, Bmds, rhomds, Jmds] = yee_lattice_staging_mds(with_halo);
 
     const auto x = std::tuple { halo_length, halo_length + yee_lattice_extents_[0] };
     const auto y = std::tuple { halo_length, halo_length + yee_lattice_extents_[1] };
     const auto z = std::tuple { halo_length, halo_length + yee_lattice_extents_[2] };
-    return std::tuple { std::submdspan(Emds, x, y, z),
-                        std::submdspan(Bmds, x, y, z),
-                        std::submdspan(rhomds, x, y, z),
-                        std::submdspan(Jmds, x, y, z) };
+
+    return std::tuple { std::submdspan(std::move(Emds), x, y, z),
+                        std::submdspan(std::move(Bmds), x, y, z),
+                        std::submdspan(std::move(rhomds), x, y, z),
+                        std::submdspan(std::move(Jmds), x, y, z) };
   }
 
   double cfl_;

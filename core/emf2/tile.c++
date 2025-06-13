@@ -60,7 +60,7 @@ void
     };
   };
 
-  const auto [Emds, Bmds, rhomds, Jmds] = yee_lattice_staging_mds_no_halo();
+  const auto [Emds, Bmds, rhomds, Jmds] = yee_lattice_staging_mds(wout_halo);
 
   for(const auto idx: tyvi::sstd::index_space(Emds)) {
     const auto [x, y, z] = global_coordinates(idx[0], idx[1], idx[2]);
