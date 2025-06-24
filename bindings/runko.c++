@@ -42,5 +42,10 @@ PYBIND11_MODULE(pyrunko, m_base) {
   /// ffe
   py::module m_ffe = m_base.def_submodule("ffe", "Runko force-free MHD module");
   ffe::bind_ffe(m_ffe);
+
+  /// runko_next
+  py::module m_runko_next = m_base.def_submodule("_runko_next",
+                                                 "Implementation detail for runko module.");
+  runko_next::bind_runko_next(m_runko_next);
 }
 

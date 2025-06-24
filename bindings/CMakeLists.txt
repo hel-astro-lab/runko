@@ -117,6 +117,9 @@ set (ACC_FILES
 set (MISC_FILES 
     )
 
+set (RUNKO_NEXT_FILES
+     runko_next.c++
+    )
 
 # python module creation
 #--------------------------------------------------
@@ -134,6 +137,7 @@ pybind11_add_module(pyrunko
                     ${IO_FILES}
                     ${ACC_FILES}
                     ${MISC_FILES}
+                    ${RUNKO_NEXT_FILES}
                     )
 
 target_link_libraries(pyrunko PRIVATE tyvi::tyvi)

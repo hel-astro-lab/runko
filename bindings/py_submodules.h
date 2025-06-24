@@ -38,3 +38,7 @@ namespace ffe {
   void bind_ffe(py::module& m);
 }
 
+namespace runko_next {
+  void bind_runko_next(py::module& m);
+}
+
