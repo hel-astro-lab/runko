@@ -31,5 +31,15 @@ class configuration(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.conf_A.__foobar__
 
+    def test_empty_conf(self):
+        conf = runko.Configuration(None)
+
+        with self.assertRaises(KeyError):
+            conf.foo
+
+        conf.foo = "bar"
+
+        self.assertEqual(conf.foo, "bar")
+
 if __name__ == "__main__":
     unittest.main()

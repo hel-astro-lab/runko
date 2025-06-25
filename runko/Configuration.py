@@ -10,9 +10,15 @@ class Configuration:
 
     _section_names = "io", "simulation", "grid", "problem", "particles"
 
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str | None):
+        """
+        If config_path is None, creates Configuration instance without any values.
+        """
 
         self._config_path = config_path
+
+        if config_path == None:
+            return
 
         from configparser import ConfigParser
         import ast
@@ -39,4 +45,4 @@ class Configuration:
 
         if name.startswith("__"):
             raise AttributeError(f"Configuration does not define: {name}")
-        raise KeyError(f"Key '{name}' not found in config: {self._config_path}")
+        raise KeyError(f"Key '{name}' not found. Original config: {self._config_path}")
