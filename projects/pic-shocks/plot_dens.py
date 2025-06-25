@@ -267,6 +267,9 @@ def plot1d_panel(
     xloc = np.arange(len(dens)).astype(float)
     xloc[:] /= info['skindepth']
 
+    if sloc >= len(xloc):
+        sloc = -1
+
     x_shock_loc = xloc[sloc]
     xloc[:] -= x_shock_loc
 
@@ -334,16 +337,16 @@ def quick_build_info(fdir, lap):
 
 
 
-do_dark = True
+do_dark = False
 
 if __name__ == "__main__":
 
-    if do_dark:
-        plt.fig = plt.figure(1, figsize=(8,8), dpi=300)
+    #if do_dark:
+    plt.fig = plt.figure(1, figsize=(8,8), dpi=300)
         
-        plt.rc('font', family='serif', size=7)
-        plt.rc('xtick')
-        plt.rc('ytick')
+    plt.rc('font', family='serif', size=7)
+    plt.rc('xtick')
+    plt.rc('ytick')
 
     #else:
     #    plt.fig = plt.figure(1, figsize=(4,3.5), dpi=200)
@@ -401,17 +404,11 @@ if __name__ == "__main__":
     axs[0].minorticks_on()
 
     slap = str(args.lap).rjust(7, '0')
-    if do_dark:
-        fname = fdir +'dens_mnt.pdf'
-    else:
-        fname = fdir +'dens_mnt.pdf'
+    fname = fdir +'dens_mnt.pdf'
     plt.savefig(fname)
 
     #wide
     axs[0].set_xlim((-500.0, 500.0))
-    if do_dark:
-        fname = fdir +'dens_mnt_wide.pdf'
-    else:
-        fname = fdir +'dens_mnt.pdf'
+    fname = fdir +'dens_mnt_wide.pdf'
     plt.savefig(fname)
 
