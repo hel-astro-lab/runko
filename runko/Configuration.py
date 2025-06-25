@@ -17,7 +17,7 @@ class Configuration:
 
         self._config_path = config_path
 
-        if config_path == None:
+        if not config_path:
             return
 
         from configparser import ConfigParser
@@ -36,8 +36,7 @@ class Configuration:
     def __getattr__(self, name):
         """
         This is called when accessed attribute is missing.
-        Instead of raising AttributeError this method raises KeyError,
-        because it is more descriptive what actually went wrong.
+        Instead of raising AttributeError we return None.
 
         Attributes starting with __ are treated as proper attributes
         for which AttributeError is raised instead.
@@ -45,4 +44,5 @@ class Configuration:
 
         if name.startswith("__"):
             raise AttributeError(f"Configuration does not define: {name}")
-        raise KeyError(f"Key '{name}' not found. Original config: {self._config_path}")
+
+        return None

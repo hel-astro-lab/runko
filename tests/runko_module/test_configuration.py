@@ -20,11 +20,8 @@ class configuration(unittest.TestCase):
 
         conf = copy.deepcopy(self.conf_A)
 
-        with self.assertRaises(KeyError):
-            conf.foo
-
+        self.assertIsNone(conf.foo)
         conf.foo = "bar"
-
         self.assertEqual(conf.foo, "bar")
 
     def test_special_attributes_raise_attribute_error(self):
@@ -34,11 +31,8 @@ class configuration(unittest.TestCase):
     def test_empty_conf(self):
         conf = runko.Configuration(None)
 
-        with self.assertRaises(KeyError):
-            conf.foo
-
+        self.assertIsNone(conf.foo)
         conf.foo = "bar"
-
         self.assertEqual(conf.foo, "bar")
 
 if __name__ == "__main__":
