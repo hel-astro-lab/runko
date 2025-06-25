@@ -1329,19 +1329,19 @@ void emf::Conductor<D>::update_j(
           //y:  -d( v E_x) + d( v^2 B_z)
           //z:  0
 
-          //curl( gs.ex, gs.ey, gs.ez, i,j,k );
-
           // jx
-          float dx_ey_at_x = gs.ey(i,j,k) - gs.ey(i-1,j,k); // partial_x(E_y) at i,j,k
-          //float dx_ey_at_x = gs.ey(i+1,j,k) - gs.ey(i,j,k); // partial_x(E_y) at i,j,k // BAD: oscillates
-          jx = -v*dx_ey_at_x;
+          float dx_ey_at_x = gs.ey(i,j,k) - gs.ey(i-1,j,k); // term2: partial_x(E_y) at i,j,k
+          //float dx_ey_at_x = gs.ey(i+1,j,k) - gs.ey(i,j,k); // term2: partial_x(E_y) at i,j,k // BAD: oscillates
+          //jx = -v*dx_ey_at_x; // IGNORED term2
 
           // jy
-          float dx_v_ex_at_y  = v*gs.ex(i,j,k) - v*gs.ex(i-1,j,k); // partial_y(v E_x) at i,j,k
-          //float dx_v_ex_at_y  = v*gs.ex(i+1,j,k) - v*gs.ex(i,j,k); // partial_y(v E_x) at i,j,k // BAD: oscillates
-          float dx_v2_bz_at_y = v*v*gs.bz(i,j,k) - v*v*gs.bz(i-1,j,k);
-          //float dx_v2_bz_at_y = v*v*gs.bz(i+1,j,k) - v*v*gs.bz(i,j,k);
-          jy = -dx_v_ex_at_y + dx_v2_bz_at_y;
+          float dx_v_ex_at_y  = v*gs.ex(i,j,k) - v*gs.ex(i-1,j,k); // term1: partial_y(v E_x) at i,j,k
+          //float dx_v_ex_at_y  = v*gs.ex(i+1,j,k) - v*gs.ex(i,j,k); // term1: partial_y(v E_x) at i,j,k // BAD: oscillates
+	    
+          float dx_v2_bz_at_y = v*v*gs.bz(i,j,k) - v*v*gs.bz(i-1,j,k);   // term3: partial_x( v^2 B_z )
+          //float dx_v2_bz_at_y = v*v*gs.bz(i+1,j,k) - v*v*gs.bz(i,j,k); // term3: partial_x (v^2 B_z) // UNTESTED
+          //jy = -dx_v_ex_at_y + dx_v2_bz_at_y; // IGNORED term3
+          jy = -dx_v_ex_at_y; // ONLY term1 active
 
           //jz
           jz = 0.0f;
@@ -1349,7 +1349,7 @@ void emf::Conductor<D>::update_j(
           
         // ver 1; tanh profile
         const auto h = (D==1) ? ig : (D==2) ? jg : kg; // height
-        auto s = shape(h, radius_ext, delta_ext); // tanh
+        auto s = 1.0f; //shape(h, radius_ext, delta_ext); // tanh
 
         //--------------------------------------------------
         // add to the current
