@@ -38,9 +38,10 @@ void
     emf2::Tile<3>,
     corgi::Tile<3>,
     std::shared_ptr<pic2::Tile<3>>>(m_3d, "Tile", py::multiple_inheritance())
-    .def(py::init([](const py::handle& h) {
-      return pic2::Tile<3>(toolbox::ConfigParser(h));
-    }));
+    .def(
+      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
+        return pic2::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
+      }));
 
   //--------------------------------------------------
   // Full IO

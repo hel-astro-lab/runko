@@ -27,7 +27,7 @@ if __name__ == "__main__":
         J = lambda x, y, z: (0, 0, 0)
 
         for idx in tile_grid.local_tile_indices():
-            tile = runko.pypic.Tile(conf) # Tile can deduce its coordinate extents from conf.
+            tile = runko.pypic.Tile(idx, conf) # Tile can deduce its coordinate extents from conf.
             tile.set_fields(E, B, J)
             tile_grid.add_tile(idx, tile)
 

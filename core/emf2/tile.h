@@ -4,42 +4,44 @@
 #include "external/corgi/tile.h"
 #include "tools/config_parser.h"
 #include "tyvi/mdgrid.h"
+#include "tyvi/mdgrid_buffer.h"
 
 #include <array>
 #include <cstddef>
 #include <experimental/mdspan>
 #include <functional>
-#include <string>
 #include <tuple>
-#include <unordered_map>
+#include <vector>
 
 namespace emf2 {
 
-/// Yee lattice of plasma quantities
+/// Yee lattice of plasma quantities in tyvi::mdgrid continers.
 struct [[nodiscard]] YeeLattice {
-  using GridExtents = std::dextents<std::size_t, 3>;
-  static constexpr auto VecElement =
+  using grid_extents_type = std::dextents<std::size_t, 3>;
+  static constexpr auto vec_element =
     tyvi::mdgrid_element_descriptor<float> { .rank = 1, .dim = 3 };
-  static constexpr auto ScalarElement =
-    tyvi::mdgrid_element_descriptor<float> { .rank = 0, .dim = 3 };
 
-  using VecGrid    = tyvi::mdgrid<VecElement, GridExtents>;
-  using ScalarGrid = tyvi::mdgrid<ScalarElement, GridExtents>;
+  using vec_grid = tyvi::mdgrid<vec_element, grid_extents_type>;
 
-  /// Electric fiel
-  VecGrid E;
+  using host_vec_grid = tyvi::mdgrid_buffer<
+    std::vector<vec_grid::value_type>,
+    vec_grid::element_extents_type,
+    vec_grid::element_layout_type,
+    vec_grid::grid_extents_type,
+    vec_grid::grid_layout_type>;
+
+  /// Electric field
+  vec_grid E;
 
   /// Magnetic field
-  VecGrid B;
+  vec_grid B;
 
-  /// Charge density
-  ScalarGrid rho;
-
-  /// Current vector
-  VecGrid J;
+  /// Current
+  vec_grid J;
 
   YeeLattice(std::size_t Nx, std::size_t Ny, std::size_t Nz);
 };
+
 
 /*! \brief General Plasma tile for solving Maxwell's equations
  *
@@ -52,36 +54,32 @@ class Tile : virtual public corgi::Tile<D> {
   static_assert(D <= 3);
 
 protected:
-  std::array<std::size_t, 3> yee_lattice_extents_;
+  std::array<std::size_t, 3> yee_lattice_extents_wout_halo_;
 
 private:
   YeeLattice yee_lattice_;
 
-  struct with_halo_tag {};
-  struct wout_halo_tag {};
-  static constexpr with_halo_tag with_halo {};
-  static constexpr wout_halo_tag wout_halo {};
-
-  /// Returns tuple of mdspans to yee_lattice_ staging buffer {E, B, rho, J}.
-  [[nodiscard]] auto yee_lattice_staging_mds(with_halo_tag)
+  /// Returns tuple of mdspans to yee_lattice_ staging buffer {E, B, J}.
+  [[nodiscard]] auto yee_lattice_staging_mds_with_halo()
   {
     return std::tuple { yee_lattice_.E.staging_mds(),
                         yee_lattice_.B.staging_mds(),
-                        yee_lattice_.rho.staging_mds(),
                         yee_lattice_.J.staging_mds() };
   }
 
-  [[nodiscard]] auto yee_lattice_staging_mds(wout_halo_tag)
+  [[nodiscard]] auto yee_lattice_staging_mds_wout_halo()
   {
-    auto [Emds, Bmds, rhomds, Jmds] = yee_lattice_staging_mds(with_halo);
+    auto [Emds, Bmds, Jmds] = yee_lattice_staging_mds_with_halo();
 
-    const auto x = std::tuple { halo_length, halo_length + yee_lattice_extents_[0] };
-    const auto y = std::tuple { halo_length, halo_length + yee_lattice_extents_[1] };
-    const auto z = std::tuple { halo_length, halo_length + yee_lattice_extents_[2] };
+    const auto x =
+      std::tuple { halo_length, halo_length + yee_lattice_extents_wout_halo_[0] };
+    const auto y =
+      std::tuple { halo_length, halo_length + yee_lattice_extents_wout_halo_[1] };
+    const auto z =
+      std::tuple { halo_length, halo_length + yee_lattice_extents_wout_halo_[2] };
 
     return std::tuple { std::submdspan(std::move(Emds), x, y, z),
                         std::submdspan(std::move(Bmds), x, y, z),
-                        std::submdspan(std::move(rhomds), x, y, z),
                         std::submdspan(std::move(Jmds), x, y, z) };
   }
 
@@ -90,17 +88,41 @@ private:
 public:
   static constexpr auto halo_length = 3;
 
-  Tile(const toolbox::ConfigParser& config);
+  /// Construct Tile by deducing extents from given tile grid index and config.
+  ///
+  /// Config has to contain values for:
+  ///
+  /// `cfl`: (FIXME: add description)
+  /// `N{x,y,z}`: tile grid extents
+  /// `N{x,y,z}Mesh`: extents of mesh/grid in each tile
+  /// `{x,y,z}min: minimum coordinate values
+  /// `d{x,y,z}`: coordinate distance between mesh/grid points
+  explicit Tile(
+    std::array<std::size_t, 3> tile_grid_indices,
+    const toolbox::ConfigParser& config);
 
   // Has to be explicitly declared as a work around for hipcc bug.
   // see: https://github.com/llvm/llvm-project/issues/141592
   ~Tile() = default;
 
-  using scalar_field = std::function<double(double, double, double)>;
-  using vector_field = std::function<std::array<double, 3>(double, double, double)>;
+  using vector_field_function =
+    std::function<std::tuple<double, double, double>(double, double, double)>;
 
-  /// Precondition: corgi::Tile<D>::{mins,maxs} are set.
-  void set_fields(vector_field E, vector_field B, scalar_field rho, vector_field J);
+  /// Set E, B and J fields in non-halo regions.
+  void
+    set_EBJ(vector_field_function E, vector_field_function B, vector_field_function J);
+
+  struct host_EBJ_grids {
+    YeeLattice::host_vec_grid E;
+    YeeLattice::host_vec_grid B;
+    YeeLattice::host_vec_grid J;
+  };
+
+  /// Get E, B and J fields in non-halo regions.
+  host_EBJ_grids get_EBJ();
+
+  /// Size of the non-halo yee lattice.
+  std::array<std::size_t, 3> extents_wout_halo() const;
 };
 
 }  // namespace emf2

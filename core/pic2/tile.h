@@ -6,9 +6,9 @@
 #include "external/corgi/tile.h"
 #include "tools/config_parser.h"
 
+#include <array>
 #include <cstddef>
 #include <string>
-#include <unordered_map>
 
 namespace pic2 {
 
@@ -30,7 +30,9 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   std::size_t particles_per_cell_;
 
 public:
-  Tile(const toolbox::ConfigParser& config);
+  explicit Tile(
+    std::array<std::size_t, 3> tile_grid_idx,
+    const toolbox::ConfigParser& config);
 
   // Has to be explicitly declared as a work around for hipcc bug.
   // see: https://github.com/llvm/llvm-project/issues/141592

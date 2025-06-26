@@ -10,15 +10,17 @@
 namespace pic2 {
 
 template<std::size_t D>
-Tile<D>::Tile(const toolbox::ConfigParser& conf) :
+Tile<D>::Tile(
+  const std::array<std::size_t, 3> tile_grid_idx,
+  const toolbox::ConfigParser& conf) :
   corgi::Tile<D>(),
-  emf2::Tile<D>(conf),
+  emf2::Tile<D>(tile_grid_idx, conf),
   particles_per_cell_ { conf.get<std::size_t>("ppc").value() }
 {
 
   const auto number_of_cells = std::reduce(
-    this->yee_lattice_extents_.begin(),
-    this->yee_lattice_extents_.end(),
+    this->yee_lattice_extents_wout_halo_.begin(),
+    this->yee_lattice_extents_wout_halo_.end(),
     1uz,
     std::multiplies<std::size_t> {});
 
