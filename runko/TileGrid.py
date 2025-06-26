@@ -60,3 +60,16 @@ class TileGrid:
                                               do_print=False)
         else:
             raise RuntimeError("Due to previous checking this should not happend.")
+
+    def add_tile(self, tile, tile_grid_idx: (int, int, int)):
+        """
+        Adds tile to given tile grid index.
+        """
+
+        i, j, k = tile_grid_idx
+        my_rank, ijk_rank = self._corgi_grid.rank(), self._corgi_grid.get_mpi_grid(i, j, k)
+        if my_rank != ijk_rank:
+            msg = f"rank {my_rank}: Trying to add tile to {idx} which belongs to different MPI rank."
+            raise RuntimeError(msg)
+
+        self._corgi_grid.add_tile(tile, tile_grid_idx)
