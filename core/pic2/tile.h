@@ -23,7 +23,7 @@ namespace mpi = mpi4cpp::mpi;
 template<std::size_t D>
 class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
 
-  static_assert(D <= 3);
+  static_assert(D == 3);
 
   std::vector<ParticleContainer<D>> particle_buffs_;
 

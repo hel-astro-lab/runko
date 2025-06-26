@@ -51,7 +51,7 @@ struct [[nodiscard]] YeeLattice {
 template<std::size_t D>
 class Tile : virtual public corgi::Tile<D> {
 
-  static_assert(D <= 3);
+  static_assert(D == 3);
 
 protected:
   std::array<std::size_t, 3> yee_lattice_extents_wout_halo_;
