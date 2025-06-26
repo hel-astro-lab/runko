@@ -2,6 +2,7 @@
 
 #include "pybind11/stl.h"
 
+#include <format>
 #include <utility>
 
 namespace toolbox {
@@ -21,7 +22,9 @@ ConfigParser::ConfigParser(const pybind11::handle& conf_obj)
   const pybind11::dict d = conf_obj.attr("__dict__");
   for(const auto& [key, value]: d) {
     auto skey = key.cast<std::string>();
-    if(pybind11::isinstance<pybind11::bool_>(value)) {
+    if(pybind11::isinstance<pybind11::none>(value)) {
+      config_.emplace(std::make_pair(std::move(skey), none_tag_type {}));
+    } else if(pybind11::isinstance<pybind11::bool_>(value)) {
       config_.emplace(std::make_pair(std::move(skey), value.cast<bool>()));
     } else if(pybind11::isinstance<pybind11::str>(value)) {
       config_.emplace(std::make_pair(std::move(skey), value.cast<std::string>()));
@@ -35,8 +38,13 @@ ConfigParser::ConfigParser(const pybind11::handle& conf_obj)
       config_.emplace(
         std::make_pair(std::move(skey), value.cast<std::vector<std::string>>()));
     } else {
-      throw std::runtime_error { std::string { "Unsupported type: " } +
-                                 value.get_type().cast<std::string>() };
+      const auto cls      = value.attr("__class__");
+      const auto cls_name = cls.attr("__name__").cast<std::string>();
+      const auto msg      = std::format(
+        "configuration variable `{}` has unsupported type: {}",
+        skey,
+        cls_name);
+      throw std::runtime_error { msg };
     }
   }
 }
