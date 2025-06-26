@@ -6,16 +6,6 @@
 
 namespace emf2 {
 
-YeeLattice::YeeLattice(
-  const std::size_t Nx,
-  const std::size_t Ny,
-  const std::size_t Nz) :
-  E(Nx, Ny, Nz),
-  B(Nx, Ny, Nz),
-  J(Nx, Ny, Nz)
-{
-}
-
 template<std::size_t D>
 Tile<D>::Tile(
   const std::array<std::size_t, 3> tile_indices,
