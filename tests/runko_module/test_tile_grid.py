@@ -9,11 +9,8 @@ class tile_grid(unittest.TestCase):
         conf.Ny = 2
         conf.Nz = 2
         conf.xmin = 0
-        conf.xmax = 1
         conf.ymin = 0
-        conf.ymax = 2
         conf.zmin = 0
-        conf.zmax = 3
 
         self.test_grid = runko.TileGrid(conf)
 
@@ -23,28 +20,6 @@ class tile_grid(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             runko.TileGrid(empty_conf)
 
-    def test_mins_cant_be_larger_than_maxs(self):
-        conf = runko.Configuration(None)
-        conf.tile_partitioning = "hilbert_curve"
-        conf.Nx = 2
-        conf.Ny = 2
-        conf.Nz = 2
-        conf.xmin = 0
-        conf.xmax = 1
-        conf.ymin = 0
-        conf.ymax = 0
-        conf.zmin = 0
-        conf.zmax = 3
-
-        with self.assertRaisesRegex(RuntimeError, r"ymin >= ymax"):
-            runko.TileGrid(conf)
-
-        conf.ymax = 2
-        conf.zmax = -1
-
-        with self.assertRaisesRegex(RuntimeError, r"zmin >= zmax"):
-            runko.TileGrid(conf)
-
     def test_nonsense_tile_partitioning(self):
         conf = runko.Configuration(None)
         conf.tile_partitioning = "nonsense"
@@ -52,11 +27,8 @@ class tile_grid(unittest.TestCase):
         conf.Ny = 2
         conf.Nz = 2
         conf.xmin = 0
-        conf.xmax = 1
         conf.ymin = 0
-        conf.ymax = 1
         conf.zmin = 0
-        conf.zmax = 1
 
         with self.assertRaisesRegex(RuntimeError, r"tile_partitioning"):
             runko.TileGrid(conf)
@@ -68,14 +40,12 @@ class tile_grid(unittest.TestCase):
         conf.Ny = 2
         conf.Nz = 2
         conf.xmin = 0
-        conf.xmax = 1
         conf.ymin = 0
-        conf.ymax = 1
         conf.zmin = 0
-        conf.zmax = 1
 
         with self.assertRaisesRegex(RuntimeError, r"catepillar_track_length"):
             runko.TileGrid(conf)
 
+    def test_
 if __name__ == "__main__":
     unittest.main()

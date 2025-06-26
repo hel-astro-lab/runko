@@ -18,23 +18,13 @@ class TileGrid:
                          "Ny",
                          "Nz",
                          "xmin",
-                         "xmax",
                          "ymin",
-                         "ymax",
                          "zmin",
-                         "zmax",
                          "tile_partitioning"]
 
         for var in required_vars:
             if getattr(conf, var) is None:
                 raise RuntimeError(f"Can not construct TileGrid without: {var}")
-
-        if conf.xmin >= conf.xmax:
-            raise RuntimeError(f"xmin >= xmax ({conf.xmin} >= {conf.xmax})")
-        if conf.ymin >= conf.ymax:
-            raise RuntimeError(f"ymin >= ymax ({conf.ymin} >= {conf.ymax})")
-        if conf.zmin >= conf.zmax:
-            raise RuntimeError(f"zmin >= zmax ({conf.zmin} >= {conf.zmax})")
 
         valid_tile_partitions = ["hilbert_curve", "catepillar_track"]
 
