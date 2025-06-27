@@ -52,4 +52,38 @@ std::size_t
   return halo_size_;
 }
 
+YeeLattice::YeeLatticeHostCopy
+  YeeLattice::get_EBJ()
+{
+  auto wE = tyvi::mdgrid_work {};
+  auto wB = tyvi::mdgrid_work {};
+  auto wJ = tyvi::mdgrid_work {};
+
+  auto wE1 = wE.sync_to_staging(E_);
+  auto wB1 = wB.sync_to_staging(B_);
+  auto wJ1 = wJ.sync_to_staging(J_);
+
+  const auto [Emds, Bmds, Jmds] = staging_mds_wout_halo();
+
+  const auto [a, b, c] = extents_wout_halo();
+  auto host_buffer     = YeeLatticeHostCopy(a, b, c);
+  const auto mds       = host_buffer.mds();
+
+  tyvi::when_all(wE1, wB1, wJ1).wait();
+
+  for(const auto idx: tyvi::sstd::index_space(mds)) {
+    mds[idx][] = YeeLatticeFieldsAtPoint { .Ex = Emds[idx][0],
+                                           .Ey = Emds[idx][1],
+                                           .Ez = Emds[idx][2],
+                                           .Bx = Bmds[idx][0],
+                                           .By = Bmds[idx][1],
+                                           .Bz = Bmds[idx][2],
+                                           .Jx = Jmds[idx][0],
+                                           .Jy = Jmds[idx][1],
+                                           .Jz = Jmds[idx][2] };
+  }
+
+  return host_buffer;
+}
+
 }  // namespace emf2
