@@ -5,7 +5,7 @@ import numpy as np
 
 import runko
 
-class PIC2(unittest.TestCase):
+class emf2(unittest.TestCase):
 
     def test_unregonized_config_value_type_fails_gracefully(self):
 

@@ -8,6 +8,9 @@ class tile_grid(unittest.TestCase):
         conf.Nx = 2
         conf.Ny = 2
         conf.Nz = 2
+        conf.NxMesh = 10
+        conf.NyMesh = 11
+        conf.NzMesh = 13
         conf.xmin = 0
         conf.ymin = 0
         conf.zmin = 0
@@ -26,6 +29,9 @@ class tile_grid(unittest.TestCase):
         conf.Nx = 2
         conf.Ny = 2
         conf.Nz = 2
+        conf.NxMesh = 10
+        conf.NyMesh = 11
+        conf.NzMesh = 13
         conf.xmin = 0
         conf.ymin = 0
         conf.zmin = 0
@@ -39,6 +45,9 @@ class tile_grid(unittest.TestCase):
         conf.Nx = 2
         conf.Ny = 2
         conf.Nz = 2
+        conf.NxMesh = 10
+        conf.NyMesh = 11
+        conf.NzMesh = 13
         conf.xmin = 0
         conf.ymin = 0
         conf.zmin = 0
@@ -46,6 +55,5 @@ class tile_grid(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"catepillar_track_length"):
             runko.TileGrid(conf)
 
-    def test_
 if __name__ == "__main__":
     unittest.main()

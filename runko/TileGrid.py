@@ -17,6 +17,9 @@ class TileGrid:
         required_vars = ["Nx",
                          "Ny",
                          "Nz",
+                         "NxMesh",
+                         "NyMesh",
+                         "NzMesh",
                          "xmin",
                          "ymin",
                          "zmin",
@@ -37,14 +40,18 @@ class TileGrid:
                 raise RuntimeError(msg)
 
 
-
         self._corgi_grid = pycorgi.Grid(conf.Nx, conf.Ny, conf.Nz)
+
+        xmax = conf.xmin + conf.Nx * conf.NxMesh
+        ymax = conf.ymin + conf.Ny * conf.NyMesh
+        zmax = conf.zmin + conf.Nz * conf.NzMesh
+
         self._corgi_grid.set_grid_lims(conf.xmin,
-                                       conf.xmax,
+                                       xmax,
                                        conf.ymin,
-                                       conf.ymax,
+                                       ymax,
                                        conf.zmin,
-                                       conf.zmax)
+                                       zmax)
 
         legacy_conf = type("", (), dict(oneD=False,
                                         twoD=False,
