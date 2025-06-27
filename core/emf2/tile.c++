@@ -81,8 +81,6 @@ void
     };
   };
 
-  const auto [Emds, Bmds, Jmds] = yee_lattice_.staging_mds_wout_halo();
-
   auto f = [&](const std::size_t i, const std::size_t j, const std::size_t k) {
     const auto [x, y, z] = global_coordinates(i, j, k);
     const auto ex        = E(x + 0.5, y, z);
