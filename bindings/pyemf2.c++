@@ -9,50 +9,62 @@
 #include "tyvi/mdspan.h"
 
 #include <memory>
+#include <tuple>
 
 namespace {
 
 namespace py = pybind11;
 
-/// MVP implementation. Only supports 3D vector grids.
-template<
-  typename V,
-  typename ElemExtents,
-  typename ElemLP,
-  typename GridExtents,
-  typename GridLP>
-  requires(
-    ElemExtents::rank() == 1uz and ElemExtents::static_extent(0) == 3uz and
-    GridExtents::rank() == 3uz)
+/// MVP implementation.
 auto
-  tyvi_mdgrid_buffer_to_ndarray(
-    const tyvi::mdgrid_buffer<V, ElemExtents, ElemLP, GridExtents, GridLP>& mdgbuff)
+  to_ndarrays(emf2::YeeLattice::YeeLatticeHostCopy& lattice)
 {
 
-  const auto grid_shape = std::array { mdgbuff.grid_extents().extent(0),
-                                       mdgbuff.grid_extents().extent(1),
-                                       mdgbuff.grid_extents().extent(2) };
-  constexpr auto b      = sizeof(typename V::value_type);
+  const auto grid_shape = std::array { lattice.grid_extents().extent(0),
+                                       lattice.grid_extents().extent(1),
+                                       lattice.grid_extents().extent(2) };
+  constexpr auto b      = sizeof(double);
   const auto grid_strides =
     std::array { b * grid_shape[1] * grid_shape[2], b * grid_shape[2], b };
 
-  auto x = py::array_t<typename V::value_type>(grid_shape, grid_strides);
-  auto y = py::array_t<typename V::value_type>(grid_shape, grid_strides);
-  auto z = py::array_t<typename V::value_type>(grid_shape, grid_strides);
+  auto Ex = py::array_t<double>(grid_shape, grid_strides);
+  auto Ey = py::array_t<double>(grid_shape, grid_strides);
+  auto Ez = py::array_t<double>(grid_shape, grid_strides);
+  auto Bx = py::array_t<double>(grid_shape, grid_strides);
+  auto By = py::array_t<double>(grid_shape, grid_strides);
+  auto Bz = py::array_t<double>(grid_shape, grid_strides);
+  auto Jx = py::array_t<double>(grid_shape, grid_strides);
+  auto Jy = py::array_t<double>(grid_shape, grid_strides);
+  auto Jz = py::array_t<double>(grid_shape, grid_strides);
 
-  auto [xv, yv, zv] = std::tuple { x.template mutable_unchecked<3>(),
-                                   y.template mutable_unchecked<3>(),
-                                   z.template mutable_unchecked<3>() };
+  auto Exv = Ex.template mutable_unchecked<3>();
+  auto Eyv = Ey.template mutable_unchecked<3>();
+  auto Ezv = Ez.template mutable_unchecked<3>();
+  auto Bxv = Bx.template mutable_unchecked<3>();
+  auto Byv = By.template mutable_unchecked<3>();
+  auto Bzv = Bz.template mutable_unchecked<3>();
+  auto Jxv = Jx.template mutable_unchecked<3>();
+  auto Jyv = Jy.template mutable_unchecked<3>();
+  auto Jzv = Jz.template mutable_unchecked<3>();
 
-  for(const auto mds = mdgbuff.mds(); const auto idx: tyvi::sstd::index_space(mds)) {
+  for(const auto mds = lattice.mds(); const auto idx: tyvi::sstd::index_space(mds)) {
     const auto [i, j, k] = idx;
+    const auto F         = mds[idx][];
 
-    xv(i, j, k) = mds[idx][0];
-    yv(i, j, k) = mds[idx][1];
-    zv(i, j, k) = mds[idx][2];
+    Exv(i, j, k) = F.Ex;
+    Eyv(i, j, k) = F.Ey;
+    Ezv(i, j, k) = F.Ez;
+    Bxv(i, j, k) = F.Bx;
+    Byv(i, j, k) = F.By;
+    Bzv(i, j, k) = F.Bz;
+    Jxv(i, j, k) = F.Jx;
+    Jyv(i, j, k) = F.Jy;
+    Jzv(i, j, k) = F.Jz;
   }
 
-  return std::tuple { std::move(x), std::move(y), std::move(z) };
+  return std::tuple { std::tuple { std::move(Ex), std::move(Ey), std::move(Ez) },
+                      std::tuple { std::move(Bx), std::move(By), std::move(Bz) },
+                      std::tuple { std::move(Jx), std::move(Jy), std::move(Jz) } };
 }
 }  // namespace
 
@@ -86,11 +98,8 @@ void
       }))
     .def("set_EBJ", &emf2::Tile<3>::set_EBJ)
     .def("get_EBJ", [](emf2::Tile<3>& tile) {
-      const auto [E, B, J] = tile.get_EBJ();
-
-      return std::tuple { tyvi_mdgrid_buffer_to_ndarray(E),
-                          tyvi_mdgrid_buffer_to_ndarray(B),
-                          tyvi_mdgrid_buffer_to_ndarray(J) };
+      auto EBJ = tile.get_EBJ();
+      return to_ndarrays(EBJ);
     });
 
   //--------------------------------------------------

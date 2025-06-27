@@ -11,13 +11,13 @@ Tile<D>::Tile(
   const std::array<std::size_t, 3> tile_indices,
   const toolbox::ConfigParser& p) :
   corgi::Tile<D>(),
-  yee_lattice_extents_wout_halo_ { p.get_or_throw<std::size_t>("NxMesh"),
-                                   p.get_or_throw<std::size_t>("NyMesh"),
-                                   p.get_or_throw<std::size_t>("NzMesh") },
   yee_lattice_(
-    yee_lattice_extents_wout_halo_[0] + 2 * halo_length,
-    yee_lattice_extents_wout_halo_[1] + 2 * halo_length,
-    yee_lattice_extents_wout_halo_[2] + 2 * halo_length),
+    YeeLatticeCtorArgs { .halo_size = halo_size,
+                         .Nx        = p.get_or_throw<std::size_t>("NxMesh"),
+                         .Ny        = p.get_or_throw<std::size_t>("NyMesh"),
+                         .Nz        = p.get_or_throw<std::size_t>("NzMesh")
+
+    }),
   cfl_ { p.get_or_throw<double>("cfl") }
 {
   const auto Nx = p.get_or_throw<std::size_t>("Nx");
@@ -44,9 +44,7 @@ Tile<D>::Tile(
   const auto [i, j, k] = tile_indices;
 
   // Tile size.
-  const auto Lx = yee_lattice_extents_wout_halo_[0];
-  const auto Ly = yee_lattice_extents_wout_halo_[1];
-  const auto Lz = yee_lattice_extents_wout_halo_[2];
+  const auto [Lx, Ly, Lz] = yee_lattice_.extents_wout_halo();
 
   this->set_tile_mins({ xmin + i * Lx, ymin + j * Ly, zmin + k * Lz });
   this->set_tile_maxs(
@@ -71,12 +69,10 @@ void
   const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
 
   auto global_coordinates = [&](const auto i, const auto j, const auto k) {
-    const auto x_coeff =
-      static_cast<double>(i) / static_cast<double>(yee_lattice_extents_wout_halo_[0]);
-    const auto y_coeff =
-      static_cast<double>(j) / static_cast<double>(yee_lattice_extents_wout_halo_[1]);
-    const auto z_coeff =
-      static_cast<double>(k) / static_cast<double>(yee_lattice_extents_wout_halo_[2]);
+    const auto e       = yee_lattice_.extents_wout_halo();
+    const auto x_coeff = static_cast<double>(i) / static_cast<double>(e[0]);
+    const auto y_coeff = static_cast<double>(j) / static_cast<double>(e[1]);
+    const auto z_coeff = static_cast<double>(k) / static_cast<double>(e[2]);
 
     return std::tuple<double, double, double> {
       static_cast<double>(this->mins[0]) + x_coeff * Lx,
@@ -85,10 +81,10 @@ void
     };
   };
 
-  const auto [Emds, Bmds, Jmds] = yee_lattice_staging_mds_wout_halo();
+  const auto [Emds, Bmds, Jmds] = yee_lattice_.staging_mds_wout_halo();
 
-  for(const auto idx: tyvi::sstd::index_space(Emds)) {
-    const auto [x, y, z] = global_coordinates(idx[0], idx[1], idx[2]);
+  auto f = [&](const std::size_t i, const std::size_t j, const std::size_t k) {
+    const auto [x, y, z] = global_coordinates(i, j, k);
     const auto ex        = E(x + 0.5, y, z);
     const auto ey        = E(x, y + 0.5, z);
     const auto ez        = E(x, y, z + 0.5);
@@ -99,72 +95,32 @@ void
     const auto jy        = J(x, y + 0.5, z);
     const auto jz        = J(x, y, z + 0.5);
 
-    Emds[idx][0] = std::get<0>(ex);
-    Emds[idx][1] = std::get<1>(ey);
-    Emds[idx][2] = std::get<2>(ez);
+    return YeeLatticeFieldsAtPoint { .Ex = std::get<0>(ex),
+                                     .Ey = std::get<1>(ey),
+                                     .Ez = std::get<2>(ez),
+                                     .Bx = std::get<0>(bx),
+                                     .By = std::get<1>(by),
+                                     .Bz = std::get<2>(bz),
+                                     .Jx = std::get<0>(jx),
+                                     .Jy = std::get<1>(jy),
+                                     .Jz = std::get<2>(jz) };
+  };
 
-    Bmds[idx][0] = std::get<0>(bx);
-    Bmds[idx][1] = std::get<1>(by);
-    Bmds[idx][2] = std::get<2>(bz);
-
-    Jmds[idx][0] = std::get<0>(jx);
-    Jmds[idx][1] = std::get<1>(jy);
-    Jmds[idx][2] = std::get<2>(jz);
-  }
-
-  auto wE = tyvi::mdgrid_work {};
-  auto wB = tyvi::mdgrid_work {};
-  auto wJ = tyvi::mdgrid_work {};
-
-  auto wE1 = wE.sync_from_staging(yee_lattice_.E);
-  auto wB1 = wB.sync_from_staging(yee_lattice_.B);
-  auto wJ1 = wJ.sync_from_staging(yee_lattice_.J);
-
-  tyvi::when_all(wE1, wB1, wJ1).wait();
+  yee_lattice_.set_EBJ(f);
 }
 
 template<std::size_t D>
-Tile<D>::host_EBJ_grids
+YeeLattice::YeeLatticeHostCopy
   Tile<D>::get_EBJ()
 {
-
-  auto wE = tyvi::mdgrid_work {};
-  auto wB = tyvi::mdgrid_work {};
-  auto wJ = tyvi::mdgrid_work {};
-
-  auto wE1 = wE.sync_to_staging(yee_lattice_.E);
-  auto wB1 = wB.sync_to_staging(yee_lattice_.B);
-  auto wJ1 = wJ.sync_to_staging(yee_lattice_.J);
-
-  const auto [Emds, Bmds, Jmds] = yee_lattice_staging_mds_wout_halo();
-
-  auto host_buffer =
-    host_EBJ_grids { .E = YeeLattice::host_vec_grid(yee_lattice_extents_wout_halo_),
-                     .B = YeeLattice::host_vec_grid(yee_lattice_extents_wout_halo_),
-                     .J = YeeLattice::host_vec_grid(yee_lattice_extents_wout_halo_) };
-
-  const auto hostEmds = host_buffer.E.mds();
-  const auto hostBmds = host_buffer.B.mds();
-  const auto hostJmds = host_buffer.J.mds();
-
-  tyvi::when_all(wE1, wB1, wJ1).wait();
-
-  for(const auto idx: tyvi::sstd::index_space(hostEmds)) {
-    for(const auto tidx: tyvi::sstd::index_space(hostEmds[idx])) {
-      hostEmds[idx][tidx] = Emds[idx][tidx];
-      hostBmds[idx][tidx] = Bmds[idx][tidx];
-      hostJmds[idx][tidx] = Jmds[idx][tidx];
-    }
-  }
-
-  return host_buffer;
+  return yee_lattice_.get_EBJ();
 }
 
 template<std::size_t D>
 std::array<std::size_t, 3>
   Tile<D>::extents_wout_halo() const
 {
-  return yee_lattice_extents_wout_halo_;
+  return yee_lattice_.extents_wout_halo();
 }
 
 }  // namespace emf2

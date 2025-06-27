@@ -18,11 +18,9 @@ Tile<D>::Tile(
   particles_per_cell_ { conf.get<std::size_t>("ppc").value() }
 {
 
-  const auto number_of_cells = std::reduce(
-    this->yee_lattice_extents_wout_halo_.begin(),
-    this->yee_lattice_extents_wout_halo_.end(),
-    1uz,
-    std::multiplies<std::size_t> {});
+  const auto e = this->extents_wout_halo();
+  const auto number_of_cells =
+    std::reduce(e.begin(), e.end(), 1uz, std::multiplies<std::size_t> {});
 
   const auto number_of_particles = number_of_cells * particles_per_cell_;
 
