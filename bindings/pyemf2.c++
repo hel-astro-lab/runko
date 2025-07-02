@@ -23,19 +23,16 @@ auto
   const auto grid_shape = std::array { lattice.grid_extents().extent(0),
                                        lattice.grid_extents().extent(1),
                                        lattice.grid_extents().extent(2) };
-  constexpr auto b      = sizeof(double);
-  const auto grid_strides =
-    std::array { b * grid_shape[1] * grid_shape[2], b * grid_shape[2], b };
 
-  auto Ex = py::array_t<double>(grid_shape, grid_strides);
-  auto Ey = py::array_t<double>(grid_shape, grid_strides);
-  auto Ez = py::array_t<double>(grid_shape, grid_strides);
-  auto Bx = py::array_t<double>(grid_shape, grid_strides);
-  auto By = py::array_t<double>(grid_shape, grid_strides);
-  auto Bz = py::array_t<double>(grid_shape, grid_strides);
-  auto Jx = py::array_t<double>(grid_shape, grid_strides);
-  auto Jy = py::array_t<double>(grid_shape, grid_strides);
-  auto Jz = py::array_t<double>(grid_shape, grid_strides);
+  auto Ex = py::array_t<double, py::array::c_style>(grid_shape);
+  auto Ey = py::array_t<double, py::array::c_style>(grid_shape);
+  auto Ez = py::array_t<double, py::array::c_style>(grid_shape);
+  auto Bx = py::array_t<double, py::array::c_style>(grid_shape);
+  auto By = py::array_t<double, py::array::c_style>(grid_shape);
+  auto Bz = py::array_t<double, py::array::c_style>(grid_shape);
+  auto Jx = py::array_t<double, py::array::c_style>(grid_shape);
+  auto Jy = py::array_t<double, py::array::c_style>(grid_shape);
+  auto Jz = py::array_t<double, py::array::c_style>(grid_shape);
 
   auto Exv = Ex.template mutable_unchecked<3>();
   auto Eyv = Ey.template mutable_unchecked<3>();
