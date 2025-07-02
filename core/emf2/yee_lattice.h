@@ -79,58 +79,15 @@ private:
 public:
   explicit YeeLattice(YeeLatticeCtorArgs);
 
-  /* mds getters are implemented in header, due to not wanting to write return type. */
-
-  /// Returns tuple of mdspans to yee_lattice_ staging buffer {E, B, J} with halo.
-  [[nodiscard]] auto staging_mds_with_halo()
-  {
-    return std::tuple { E_.staging_mds(), B_.staging_mds(), J_.staging_mds() };
-  }
-
-  /// Returns tuple of mdspans to yee_lattice_ staging buffer {E, B, J} without halo.
-  [[nodiscard]] auto staging_mds_wout_halo()
-  {
-    auto [Emds, Bmds, Jmds] = staging_mds_with_halo();
-
-    const auto x = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
-    const auto y = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };
-    const auto z = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[2] };
-
-    return std::tuple { std::submdspan(std::move(Emds), x, y, z),
-                        std::submdspan(std::move(Bmds), x, y, z),
-                        std::submdspan(std::move(Jmds), x, y, z) };
-  }
-
-  /// Returns tuple of mdspans to yee_lattice_ device buffer {E, B, J} with halo.
-  [[nodiscard]] auto mds_with_halo()
-  {
-    return std::tuple { E_.mds(), B_.mds(), J_.mds() };
-  }
-
-  /// Returns tuple of mdspans to yee_lattice_ device buffer {E, B, J} without halo.
-  [[nodiscard]] auto mds_wout_halo()
-  {
-    auto [Emds, Bmds, Jmds] = mds_with_halo();
-
-    const auto x = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
-    const auto y = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };
-    const auto z = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[2] };
-
-    return std::tuple { std::submdspan(std::move(Emds), x, y, z),
-                        std::submdspan(std::move(Bmds), x, y, z),
-                        std::submdspan(std::move(Jmds), x, y, z) };
-  }
-
-
   [[nodiscard]] std::array<std::size_t, 3> extents_wout_halo() const;
   [[nodiscard]] std::array<std::size_t, 3> extents_with_halo() const;
   [[nodiscard]] std::size_t halo_size() const;
 
-
   /// Initializes E, B and J in non-halo region.
   void set_EBJ(yee_lattice_fields_function auto&& f)
   {
-    const auto [Emds, Bmds, Jmds] = staging_mds_wout_halo();
+    const auto [Emds, Bmds, Jmds] =
+      nonhalo_submds(E_.staging_mds(), B_.staging_mds(), J_.staging_mds());
 
     for(const auto idx: tyvi::sstd::index_space(Emds)) {
       const auto F = f(idx[0], idx[1], idx[2]);
