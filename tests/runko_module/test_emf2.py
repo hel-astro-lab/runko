@@ -19,6 +19,7 @@ class emf2(unittest.TestCase):
         config.xmin = -3.2
         config.ymin = -2.3
         config.zmin = 1
+        config.field_propagator = "FDTD2"
 
         class foo:
             def __inti__(self):
@@ -45,6 +46,7 @@ class emf2(unittest.TestCase):
         config.ymin = -2.3
         config.zmin = 1
         config.cfl = 1
+        config.field_propagator = "FDTD2"
 
         tile_grid_idx = (0, 1, 2)
         tile = runko.emf.Tile(tile_grid_idx, config)
@@ -82,6 +84,28 @@ class emf2(unittest.TestCase):
         tile.set_EBJ(Einit, Binit, Jinit)
 
         (Ex, Ey, Ez), (Bx, By, Bz), (Jx, Jy, Jz) = tile.get_EBJ()
+
+        # Make sure numpy mdarrays own the data.
+        self.assertIsNone(Ex.base)
+        self.assertIsNone(Ey.base)
+        self.assertIsNone(Ez.base)
+        self.assertIsNone(Bx.base)
+        self.assertIsNone(By.base)
+        self.assertIsNone(Bz.base)
+        self.assertIsNone(Jx.base)
+        self.assertIsNone(Jy.base)
+        self.assertIsNone(Jz.base)
+
+        s = (config.NxMesh, config.NyMesh, config.NzMesh)
+        self.assertEqual(Ex.shape, s)
+        self.assertEqual(Ey.shape, s)
+        self.assertEqual(Ez.shape, s)
+        self.assertEqual(Bx.shape, s)
+        self.assertEqual(By.shape, s)
+        self.assertEqual(Bz.shape, s)
+        self.assertEqual(Jx.shape, s)
+        self.assertEqual(Jy.shape, s)
+        self.assertEqual(Jz.shape, s)
 
         index_space = itertools.product(range(config.NxMesh),
                                         range(config.NyMesh),

@@ -30,6 +30,7 @@ set (FIELDS2_FILES
      pyemf2.c++
      ../core/emf2/tile.c++
      ../core/emf2/yee_lattice.c++
+     ../core/emf2/yee_lattice_FDTD2.c++
      )
 
 set (VLV_FILES

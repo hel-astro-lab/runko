@@ -13,6 +13,8 @@
 
 namespace emf2 {
 
+enum class FieldPropagator { FDTD2 };
+
 /*! \brief General Plasma tile for solving Maxwell's equations
  *
  * Internally everything for computations are stored in
@@ -26,6 +28,7 @@ class Tile : virtual public corgi::Tile<D> {
 protected:
   YeeLattice yee_lattice_;
   double cfl_;
+  FieldPropagator field_propagator_;
 
 public:
   static constexpr auto halo_size = 3;
@@ -39,6 +42,7 @@ public:
   /// `N{x,y,z}Mesh`: extents of mesh/grid in each tile
   /// `{x,y,z}min: minimum coordinate values
   /// `d{x,y,z}`: coordinate distance between mesh/grid points
+  /// `field_propagator`: scheme to propagate E and B fields.
   explicit Tile(
     std::array<std::size_t, 3> tile_grid_indices,
     const toolbox::ConfigParser& config);
@@ -59,6 +63,14 @@ public:
 
   /// Size of the non-halo yee lattice.
   std::array<std::size_t, 3> extents_wout_halo() const;
+
+  /// Advance B by half time step using scheme from configuration in non-halo region.
+  void push_half_b();
+
+  /// Advance E by full time step using scheme from configuration in non-halo region.
+  ///
+  /// Does not add contributions from the current.
+  void push_e();
 };
 
 }  // namespace emf2

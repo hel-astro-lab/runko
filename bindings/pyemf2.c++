@@ -94,10 +94,14 @@ void
         return emf2::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
       }))
     .def("set_EBJ", &emf2::Tile<3>::set_EBJ)
-    .def("get_EBJ", [](emf2::Tile<3>& tile) {
-      auto EBJ = tile.get_EBJ();
-      return to_ndarrays(EBJ);
-    });
+    .def(
+      "get_EBJ",
+      [](emf2::Tile<3>& tile) {
+        auto EBJ = tile.get_EBJ();
+        return to_ndarrays(EBJ);
+      })
+    .def("push_half_b", &emf2::Tile<3>::push_half_b)
+    .def("push_e", &emf2::Tile<3>::push_e);
 
   //--------------------------------------------------
   // Full IO

@@ -2,7 +2,22 @@
 
 #include "tyvi/mdspan.h"
 
+#include <format>
 #include <iostream>
+#include <string_view>
+
+namespace {
+emf2::FieldPropagator
+  parse_field_propagator(const std::string_view p)
+{
+  if(p == "FDTD2") {
+    return emf2::FieldPropagator::FDTD2;
+  } else {
+    const auto msg = std::format("{} is not supported field propagator.", p);
+    throw std::runtime_error { msg };
+  }
+}
+}  // namespace
 
 namespace emf2 {
 
@@ -18,7 +33,9 @@ Tile<D>::Tile(
                          .Nz        = p.get_or_throw<std::size_t>("NzMesh")
 
     }),
-  cfl_ { p.get_or_throw<double>("cfl") }
+  cfl_ { p.get_or_throw<double>("cfl") },
+  field_propagator_ { parse_field_propagator(
+    p.get_or_throw<std::string>("field_propagator")) }
 {
   const auto Nx = p.get_or_throw<std::size_t>("Nx");
   const auto Ny = p.get_or_throw<std::size_t>("Ny");
@@ -120,6 +137,33 @@ std::array<std::size_t, 3>
 {
   return yee_lattice_.extents_wout_halo();
 }
+
+template<std::size_t D>
+void
+  Tile<D>::push_half_b()
+{
+  switch(field_propagator_) {
+    case FieldPropagator::FDTD2: yee_lattice_.push_b_FDTD2(cfl_ / 2); break;
+    default:
+      throw std::logic_error {
+        "emf2::Tile::push_half_b internal error: field_propagator_ not set."
+      };
+  }
+}
+
+template<std::size_t D>
+void
+  Tile<D>::push_e()
+{
+  switch(field_propagator_) {
+    case FieldPropagator::FDTD2: yee_lattice_.push_e_FDTD2(cfl_); break;
+    default:
+      throw std::logic_error {
+        "emf2::Tile::push_e internal error: field_propagator_ not set."
+      };
+  }
+}
+
 
 }  // namespace emf2
 

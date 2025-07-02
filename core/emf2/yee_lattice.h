@@ -65,6 +65,17 @@ private:
   /// Current
   vec_grid J_;
 
+  template<typename... MDS>
+  [[nodiscard]]
+  auto nonhalo_submds(MDS&&... mds)
+  {
+    const auto x = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
+    const auto y = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };
+    const auto z = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[2] };
+
+    return std::tuple { std::submdspan(std::forward<MDS>(mds), x, y, z)... };
+  }
+
 public:
   explicit YeeLattice(YeeLatticeCtorArgs);
 
@@ -147,6 +158,12 @@ public:
 
   /// Get copy of E, B and J in non-halo region.
   YeeLatticeHostCopy get_EBJ();
+
+  /// Advance B by half time step using FDTD2 scheme in non-halo region.
+  void push_b_FDTD2(float dt);
+
+  /// Advance E by full time step using FDTD2 scheme in non-halo region.
+  void push_e_FDTD2(float dt);
 };
 
 }  // namespace emf2
