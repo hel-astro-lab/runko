@@ -26,14 +26,21 @@ ParticleContainer<D>::ParticleContainer()
   // Get the rank of the process
   //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-#ifdef DEBUG
   // NOTE: MPI messaging and storing of particles to our own manual vector 
   // requires that Particle is a POD and trivially copyable
-  static_assert( std::is_pod_v<Particle>                == true );
-  static_assert( std::is_trivially_copyable_v<Particle> == true );
-  static_assert( std::is_trivial_v<Particle>            == true );
-  static_assert( std::is_standard_layout_v<Particle>    == true );
-#endif
+
+  // NOTE2: Notion of POD classes is depricated in C++20.
+  // Requirements for POD class: trivial, standard-layout and no non-POD data members.
+  // However, notion of trivial types is depricated in C++26.
+  // Trivial types are: scalars and trivial class types (modulo arrays and cv-qualification).
+  // Trivial class type are trivially copyable and have trivial default constructor.
+  //
+  // see: https://stackoverflow.com/a/48225882, https://stackoverflow.com/a/79286796
+  //
+  // Overall this means that POD here can be replaced with:
+  static_assert(std::is_trivially_copyable_v<Particle>);
+  static_assert(std::is_trivially_default_constructible_v<Particle>);
+  static_assert(std::is_standard_layout_v<Particle>);
 
   //incoming_particles.resize(first_message_size);
   incoming_extra_particles.reserve(first_message_size); // pre-allocating 
