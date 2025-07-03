@@ -290,13 +290,13 @@ void bind_qed(py::module& m_sub)
     .def("get_hist_edges",   [](   qed::PairingAll2All<3>& s)
         {
           const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
+          auto v = pybind11::array_t<double>(N, s.hist_ene_edges.data() );
           return v;
         })
     .def("get_hist_cnts",    [](   qed::PairingAll2All<3>& s)
         {
           const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
+          auto v = pybind11::array_t<double>(N, s.hist.data() );
           return v;
         });
 
