@@ -17,7 +17,7 @@ void pic::BorisPusherRad<D,V>::push_container(
 
 
   // loop over particles
-  UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
+  UniIter::iterate([=, this]  (size_t n, pic::ParticleContainer<D>& con){
     
     // tmp variables
     double uxt, gamx, pressx, pressy, pressz;

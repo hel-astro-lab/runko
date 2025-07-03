@@ -378,7 +378,7 @@ void ParticleContainer<D>::sort_in_rev_energy()
   
   eneArr.resize( size() ); // NOTE: do not create here but assume that it is initialized in constructor
 
-  UniIter::iterate([=]  (size_t n, ParticleContainer<D>& self){
+  UniIter::iterate([=, this]  (size_t n, ParticleContainer<D>& self){
       self.eneArr[n] = get_prtcl_ene( n );
   }, size(), *this);
 

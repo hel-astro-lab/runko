@@ -45,7 +45,7 @@ void emf::FDTDGen<3>::push_e(emf::Tile<3>& tile)
   Grids& mesh = tile.get_grids();
 
   UniIter::iterate3D(
-  [=]  (int i, int j, int k, Grids &mesh)
+  [=, this]  (int i, int j, int k, Grids &mesh)
   {
 
     // dE/dt = +curlB
@@ -115,7 +115,7 @@ void emf::FDTDGen<3>::push_half_b(emf::Tile<3>& tile)
   Grids& mesh = tile.get_grids();
 
   UniIter::iterate3D(
-  [=]  (int i, int j, int k, Grids &mesh)
+  [=, this]  (int i, int j, int k, Grids &mesh)
   {
     // dB/dt = -curlE
     for(int ai=1; ai<=3; ai++) { //alphas

@@ -16,7 +16,7 @@ void pic::BorisPusher<D,V>::push_container(
   const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
 
   // loop over particles
-  UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
+  UniIter::iterate([=, this]  (size_t n, pic::ParticleContainer<D>& con){
     double vel0n = con.vel(0,n)*c;
     double vel1n = con.vel(1,n)*c;
     double vel2n = con.vel(2,n)*c;

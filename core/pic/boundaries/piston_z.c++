@@ -130,7 +130,7 @@ void pic::PistonZdir<D>::solve( pic::Tile<D>& tile)
     const double c = tile.cfl;    // speed of light
     const double q = con.q; // charge
 
-    UniIter::iterate([=]  (
+    UniIter::iterate([=, this]  (
                 size_t n, 
                 pic::Tile<D>& tile,
                 pic::ParticleContainer<D>& con

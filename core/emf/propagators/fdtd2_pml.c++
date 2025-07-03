@@ -65,7 +65,7 @@ void emf::FDTD2_pml<2>::push_e(emf::Tile<2>& tile)
   const auto mins = tile.mins;
 
   UniIter::iterate2D(
-  [=]  (int i, int j, Grids &mesh)
+  [=, this]  (int i, int j, Grids &mesh)
   {
     //-----------
     // global grid coordinates
@@ -108,7 +108,7 @@ void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
   const auto mins = tile.mins;
 
   UniIter::iterate3D(
-  [=]  (int i, int j, int k, Grids &mesh)
+  [=, this]  (int i, int j, int k, Grids &mesh)
   {
     //-----------
     // global grid coordinates
@@ -182,7 +182,7 @@ void emf::FDTD2_pml<2>::push_half_b(emf::Tile<2>& tile)
   const auto mins = tile.mins;
 
   UniIter::iterate2D(
-  [=]  (int i, int j, Grids &mesh)
+  [=, this]  (int i, int j, Grids &mesh)
   {
 
     // global grid coordinates
@@ -227,7 +227,7 @@ void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
   //for(int i=0; i<tile.mesh_lengths[0]; i++) {
 
   UniIter::iterate3D(
-  [=]  (int i, int j, int k, Grids &mesh)
+  [=, this]  (int i, int j, int k, Grids &mesh)
   {
 
     // global grid coordinates
@@ -301,7 +301,7 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
   const float C1 =  c; // high-order curl operator coefficients
 
   UniIter::iterate3D(
-  [=]  (int i, int j, int k, 
+  [=, this]  (int i, int j, int k, 
       ffe::SlimGrids& dm,
       emf::Grids& m
       )

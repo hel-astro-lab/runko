@@ -17,7 +17,7 @@ void pic::HigueraCaryPusher<D,V>::push_container(
 
 
   // loop over particles
-  UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
+  UniIter::iterate([=, this]  (size_t n, pic::ParticleContainer<D>& con){
     double vel0n = con.vel(0,n);
     double vel1n = con.vel(1,n);
     double vel2n = con.vel(2,n);

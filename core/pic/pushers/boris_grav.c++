@@ -18,7 +18,7 @@ void pic::BorisPusherGrav<D,V>::push_container(
   
 
   // loop over particles
-  UniIter::iterate([=]  (size_t n, pic::ParticleContainer<D>& con){
+  UniIter::iterate([=, this]  (size_t n, pic::ParticleContainer<D>& con){
 
     double loc0n = con.loc(0,n);
     //double loc1n = con.loc(1,n);

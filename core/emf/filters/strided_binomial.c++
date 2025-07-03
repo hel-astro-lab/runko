@@ -21,7 +21,7 @@ void emf::General3pStrided<2>::solve(
     
   // make 2d loop with shared memory 
   auto fun = 
-  [=]  (int i, int j, 
+  [=, this]  (int i, int j, 
                    toolbox::Mesh<float, 3> &jj, 
                    toolbox::Mesh<float, 3> &tmp)
   {
