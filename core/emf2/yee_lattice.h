@@ -65,15 +65,27 @@ private:
   /// Current
   vec_grid J_;
 
-  template<typename... MDS>
+  /// Convinience function to get non-halo region of some field.
+  ///
+  /// This could have variadic number of arguments and be used as:
+  ///
+  /// const auto [Emds, Bmds, Jmds] = nonhalo_submds(E_.mds(), B_.mds(), J_.mds());
+  ///
+  /// But Cray Clang on Hile (CC) with OpenMP does not support capturing
+  /// structured bindings to lambdas, so above has to be written as:
+  ///
+  /// const auto Emds = nonhalo_submds(E_.mds());
+  /// const auto Bmds = nonhalo_submds(B_.mds());
+  /// const auto Jmds = nonhalo_submds(J_.mds());
+  template<typename MDS>
   [[nodiscard]]
-  auto nonhalo_submds(MDS&&... mds)
+  auto nonhalo_submds(MDS&& mds)
   {
     const auto x = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
     const auto y = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };
     const auto z = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[2] };
 
-    return std::tuple { std::submdspan(std::forward<MDS>(mds), x, y, z)... };
+    return std::submdspan(std::forward<MDS>(mds), x, y, z);
   }
 
 public:

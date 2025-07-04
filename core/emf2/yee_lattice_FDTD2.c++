@@ -20,8 +20,9 @@ void
   const auto j_nonhalo_p1 = std::tuple { hp1, hp1 + extents_wout_halo_[1] };
   const auto k_nonhalo_p1 = std::tuple { hp1, hp1 + extents_wout_halo_[2] };
 
-  const auto [Emds, Bmds] = nonhalo_submds(E_.mds(), B_.mds());
-  const auto Emds_halo    = E_.mds();
+  const auto Emds      = nonhalo_submds(E_.mds());
+  const auto Bmds      = nonhalo_submds(B_.mds());
+  const auto Emds_halo = E_.mds();
 
   const auto Emds_ip1 = std::submdspan(Emds_halo, i_nonhalo_p1, j_nonhalo, k_nonhalo);
   const auto Emds_jp1 = std::submdspan(Emds_halo, i_nonhalo, j_nonhalo_p1, k_nonhalo);
@@ -68,8 +69,9 @@ void
   const auto j_nonhalo_m1 = std::tuple { hm1, hm1 + extents_wout_halo_[1] };
   const auto k_nonhalo_m1 = std::tuple { hm1, hm1 + extents_wout_halo_[2] };
 
-  const auto [Emds, Bmds] = nonhalo_submds(E_.mds(), B_.mds());
-  const auto Bmds_halo    = B_.mds();
+  const auto Emds      = nonhalo_submds(E_.mds());
+  const auto Bmds      = nonhalo_submds(B_.mds());
+  const auto Bmds_halo = B_.mds();
 
   const auto Bmds_im1 = std::submdspan(Bmds_halo, i_nonhalo_m1, j_nonhalo, k_nonhalo);
   const auto Bmds_jm1 = std::submdspan(Bmds_halo, i_nonhalo, j_nonhalo_m1, k_nonhalo);
