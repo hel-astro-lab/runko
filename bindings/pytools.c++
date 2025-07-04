@@ -1,6 +1,6 @@
 #include "py_submodules.h"
 
-#include "external/corgi/pybind11/include/pybind11/operators.h"
+#include "pybind11/operators.h"
 #include "definitions.h"
 #include "tools/mesh.h"
 #include "core/vlv/amr/mesh.h"

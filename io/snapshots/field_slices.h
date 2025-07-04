@@ -4,7 +4,7 @@
 #include <string>
 
 #include "io/snapshots/snapshot.h"
-#include "external/corgi/corgi.h"
+#include "corgi/corgi.h"
 
 namespace h5io { 
 

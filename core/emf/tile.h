@@ -3,8 +3,8 @@
 #include <vector>
 #include <mpi4cpp/mpi.h>
 
-#include "external/corgi/tile.h"
-#include "external/corgi/corgi.h"
+#include "corgi/tile.h"
+#include "corgi/corgi.h"
 #include "tools/mesh.h"
 #include "definitions.h"
 

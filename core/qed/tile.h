@@ -1,7 +1,7 @@
 #pragma once
 
 #include "definitions.h"
-#include "external/corgi/tile.h"
+#include "corgi/tile.h"
 #include "core/emf/tile.h"
 #include "core/pic/tile.h"
 #include "core/qed/photon.h"

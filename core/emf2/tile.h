@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/emf2/yee_lattice.h"
-#include "external/corgi/corgi.h"
-#include "external/corgi/tile.h"
+#include "corgi/corgi.h"
+#include "corgi/tile.h"
 #include "tools/config_parser.h"
 
 #include <array>

@@ -4,8 +4,8 @@
 #include <mpi4cpp/mpi.h>
 
 #include "definitions.h"
-#include "external/corgi/tile.h"
-#include "external/corgi/corgi.h"
+#include "corgi/tile.h"
+#include "corgi/corgi.h"
 #include "core/emf/tile.h"
 #include "core/pic/particle.h"
 

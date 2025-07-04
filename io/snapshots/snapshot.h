@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "external/corgi/corgi.h"
+#include "corgi/corgi.h"
 #include "definitions.h"
 #include "tools/fastlog.h"
 #include "tools/mesh.h"

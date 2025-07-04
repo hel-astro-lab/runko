@@ -1,9 +1,3 @@
-project (pyrunko LANGUAGES CXX C)
-
-
-#find_package(PYBIND11 REQUIRED) #loaded externally from corgi
-#INCLUDE_DIRECTORIES ( "$ENV{pybind11_INCLUDE_DIR}" )
-
 set (TOOLS_FILES 
      pytools.c++
      ../tools/hilbert.c++
@@ -123,37 +117,34 @@ set (RUNKO_NEXT_FILES
      runko_next.c++
     )
 
-# python module creation
-#--------------------------------------------------
-# https://stackoverflow.com/questions/51907755/building-a-pybind11-module-with-cpp-and-cuda-sources-using-cmake
-pybind11_add_module(pyrunko 
-                    runko.c++ 
-                    ${TOOLS_FILES}
-                    ${FIELDS_FILES}
-                    ${FIELDS2_FILES}
-                    ${VLV_FILES}
-                    ${PIC_FILES}
-                    ${PIC2_FILES}
-                    ${QED_FILES}
-                    ${FFE_FILES}
-                    ${IO_FILES}
-                    ${ACC_FILES}
-                    ${MISC_FILES}
-                    ${RUNKO_NEXT_FILES}
-                    )
+pybind11_add_module(pyrunko
+    runko.c++
+    ${TOOLS_FILES}
+    ${FIELDS_FILES}
+    ${FIELDS2_FILES}
+    ${VLV_FILES}
+    ${PIC_FILES}
+    ${PIC2_FILES}
+    ${QED_FILES}
+    ${FFE_FILES}
+    ${IO_FILES}
+    ${ACC_FILES}
+    ${MISC_FILES}
+    ${RUNKO_NEXT_FILES}
+)
 
-target_link_libraries(pyrunko PRIVATE tyvi::tyvi)
-target_link_libraries(pyrunko PRIVATE MPI::MPI_CXX)
+target_link_libraries(pyrunko
+    PRIVATE
+    runko_includes
+    runko_warnings
+    corgi
+    tyvi::tyvi
+    hdf5::hdf5
+    OpenMP::OpenMP_CXX
+)
 
-#target_link_libraries(pyrunko PRIVATE -lhdf5)
-target_link_libraries(pyrunko PRIVATE ${HDF5_C_LIBRARIES})
-target_include_directories(pyrunko PRIVATE ${HDF5_INCLUDE_DIRS})
+if(RUNKO_CODE_COVERAGE)
+    target_link_libraries(pyrunko PUBLIC runko_coverage_config)
+endif()
 
-#target_link_libraries(pyrunko PRIVATE -lfftw3)
-#target_link_libraries(pyrunko PRIVATE -lfftw3f)
-target_link_libraries(pyrunko PUBLIC coverage_config)
-
-target_compile_options(pyrunko PRIVATE ${WARNING_FLAGS})
-
-# installation
 install (TARGETS pyrunko DESTINATION lib)
