@@ -64,3 +64,5 @@ build/*
 projects/ffe/*ini
 projects/ffe/*.txt
 projects/ffe/test-*
+
+.cache/
