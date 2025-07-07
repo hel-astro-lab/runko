@@ -63,8 +63,9 @@ YeeLattice::YeeLatticeHostCopy
   auto wB1 = wB.sync_to_staging(B_);
   auto wJ1 = wJ.sync_to_staging(J_);
 
-  const auto [Emds, Bmds, Jmds] =
-    nonhalo_submds(E_.staging_mds(), B_.staging_mds(), J_.staging_mds());
+  const auto [Emds, Bmds, Jmds] = std::tuple { nonhalo_submds(E_.staging_mds()),
+                                               nonhalo_submds(B_.staging_mds()),
+                                               nonhalo_submds(J_.staging_mds()) };
 
   const auto [a, b, c] = extents_wout_halo();
   auto host_buffer     = YeeLatticeHostCopy(a, b, c);

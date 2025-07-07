@@ -98,8 +98,9 @@ public:
   /// Initializes E, B and J in non-halo region.
   void set_EBJ(yee_lattice_fields_function auto&& f)
   {
-    const auto [Emds, Bmds, Jmds] =
-      nonhalo_submds(E_.staging_mds(), B_.staging_mds(), J_.staging_mds());
+    const auto [Emds, Bmds, Jmds] = std::tuple { nonhalo_submds(E_.staging_mds()),
+                                                 nonhalo_submds(B_.staging_mds()),
+                                                 nonhalo_submds(J_.staging_mds()) };
 
     for(const auto idx: tyvi::sstd::index_space(Emds)) {
       const auto F = f(idx[0], idx[1], idx[2]);
