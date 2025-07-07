@@ -78,6 +78,9 @@ endif()
 find_package (Python COMPONENTS Interpreter Development REQUIRED)
 find_package (OpenMP REQUIRED)
 find_package (HDF5 REQUIRED)
+# This is not directly needed in runko as we need it only for tests,
+# but mpi4cpp will anyways need this, so we require it here.
+find_package (MPI REQUIRED)
 
 # Corgi has git submodules pybind11 and MPI/mpi4cpp.
 # Mpi4cpp should find MPI, which added to targets that link with corgi target.
@@ -125,6 +128,9 @@ add_subdirectory(docs)
 # unit tests
 
 message(STATUS "Runko tests ran with python: ${Python_EXECUTABLE}")
+
+include(CTest)
+add_subdirectory(multirank_tests)
 
 add_custom_target(check-runko ALL
                   ${Python_EXECUTABLE} -m unittest discover -s ../tests/ -v
