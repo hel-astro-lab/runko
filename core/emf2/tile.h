@@ -71,6 +71,9 @@ public:
   ///
   /// Does not add contributions from the current.
   void push_e();
+
+  /// E += J
+  void deposit_current();
 };
 
 }  // namespace emf2

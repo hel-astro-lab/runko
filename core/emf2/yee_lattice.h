@@ -134,6 +134,9 @@ public:
 
   /// Advance E by full time step using FDTD2 scheme in non-halo region.
   void push_e_FDTD2(float dt);
+
+  /// E += J in non-halo region.
+  void add_J_to_E();
 };
 
 }  // namespace emf2

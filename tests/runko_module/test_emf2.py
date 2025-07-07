@@ -128,5 +128,56 @@ class emf2(unittest.TestCase):
             self.assertAlmostEqual(Jy[i, j, k], Jinit(ii, jj + 0.5, kk)[1], places=5)
             self.assertAlmostEqual(Jz[i, j, k], Jinit(ii, jj, kk + 0.5)[2], places=5)
 
+    def test_deposit_current(self):
+
+        config = runko.Configuration(None)
+        config.Nx = 2
+        config.Ny = 3
+        config.Nz = 4
+        config.NxMesh = 10
+        config.NyMesh = 12
+        config.NzMesh = 14
+        config.xmin = 0
+        config.ymin = 0
+        config.zmin = 0
+        config.cfl = 1
+        config.field_propagator = "FDTD2"
+
+        tile_grid_idx = (0, 0, 0)
+        tile = runko.emf.Tile(tile_grid_idx, config)
+
+        Einit = lambda x, y, z: (0, 0, 0)
+        Binit = lambda x, y, z: (0, 0, 0)
+        Jinit = lambda x, y, z: (1 + y, 2 + z, 3 + x)
+
+        tile.set_EBJ(Einit, Binit, Jinit)
+
+        (E0x, E0y, E0z), _, _ = tile.get_EBJ()
+
+        self.assertTrue(np.all(E0x == 0))
+        self.assertTrue(np.all(E0y == 0))
+        self.assertTrue(np.all(E0z == 0))
+
+        tile.deposit_current()
+
+        # Now E = A * J, for some scalar A.
+        # We can calculate A from each component and test that they are eqal.
+        # Technically due to the units used in runko A should be 1.
+        # However, I don't want to assume that in this test.
+
+        (Ex, Ey, Ez), _, (Jx, Jy, Jz) = tile.get_EBJ()
+
+        Ax_arr, Ay_arr, Az_arr = Ex / Jx, Ey / Jy, Ez / Jz
+        Ax, Ay, Az = Ax_arr.flat[0], Ay_arr.flat[0], Az_arr.flat[0]
+
+        index_space = itertools.product(range(config.NxMesh),
+                                        range(config.NyMesh),
+                                        range(config.NzMesh))
+
+        for i, j, k in index_space:
+            self.assertAlmostEqual(Ax, Ax_arr[i, j, k], places=5)
+            self.assertAlmostEqual(Ay, Ay_arr[i, j, k], places=5)
+            self.assertAlmostEqual(Az, Az_arr[i, j, k], places=5)
+
 if __name__ == "__main__":
     unittest.main()

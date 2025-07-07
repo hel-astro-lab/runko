@@ -164,6 +164,13 @@ void
   }
 }
 
+template<std::size_t D>
+void
+  Tile<D>::deposit_current()
+{
+  yee_lattice_.add_J_to_E();
+}
+
 
 }  // namespace emf2
 

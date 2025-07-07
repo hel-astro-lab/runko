@@ -88,4 +88,19 @@ YeeLattice::YeeLatticeHostCopy
   return host_buffer;
 }
 
+void
+  YeeLattice::add_J_to_E()
+{
+  auto w0 = tyvi::mdgrid_work {};
+
+  const auto Emds = nonhalo_submds(E_.mds());
+  const auto Jmds = nonhalo_submds(J_.mds());
+
+  auto w1 = w0.for_each_index(Emds, [=](const auto idx, const auto tidx) {
+    Emds[idx][tidx] = Emds[idx][tidx] + Jmds[idx][tidx];
+  });
+
+  w1.wait();
+}
+
 }  // namespace emf2
