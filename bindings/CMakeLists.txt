@@ -147,4 +147,6 @@ if(RUNKO_CODE_COVERAGE)
     target_link_libraries(pyrunko PUBLIC runko_coverage_config)
 endif()
 
-install (TARGETS pyrunko DESTINATION lib)
+set_target_properties(pyrunko PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
+)
