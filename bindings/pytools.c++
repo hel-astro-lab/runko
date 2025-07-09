@@ -3,6 +3,7 @@
 #include "pybind11/operators.h"
 #include "definitions.h"
 #include "tools/mesh.h"
+#include "core/communication_common.h"
 #include "core/vlv/amr/mesh.h"
 #include "tools/hilbert.h"
 
@@ -209,7 +210,13 @@ void bind_tools(pybind11::module& m)
     .def("hindex", &hilbert::Hilbert3D::hindex)
     .def("inv",    &hilbert::Hilbert3D::inv);
 
-
+  // Common communication enums.
+  py::enum_<runko::comm_mode>(m, "comm_mode")
+     .value("emf_E", runko::comm_mode::emf_E)
+     .value("emf_B", runko::comm_mode::emf_B)
+     .value("emf_J", runko::comm_mode::emf_J)
+     .value("pic_particle", runko::comm_mode::pic_particle)
+     .value("pic_particle_extra", runko::comm_mode::pic_particle_extra);
 
 }
 
