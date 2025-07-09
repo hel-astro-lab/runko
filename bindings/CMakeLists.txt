@@ -2,6 +2,7 @@ set (TOOLS_FILES
      pytools.c++
      ../tools/hilbert.c++
      ../tools/config_parser.c++
+     ../tools/system.c++
      )
 
 set (FIELDS_FILES 
