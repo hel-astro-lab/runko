@@ -117,6 +117,12 @@ class TileGrid:
         Configures execution ready runko simulation based on the tile grid.
         """
 
+        required_vars = ["Nt"]
+
+        for var in required_vars:
+            if getattr(config, var) is None:
+                raise RuntimeError(f"Can not configure simulation without: {var}")
+
         self._corgi_grid.analyze_boundaries()
         self._corgi_grid.send_tiles()
         self._corgi_grid.recv_tiles()
@@ -151,4 +157,6 @@ class TileGrid:
             self._corgi_grid.add_tile(new_tile, indices) 
             new_tile.load_metainfo(vtile.communication)
 
-        return Simulation(self, Simulation._im_not_user)
+        return Simulation(self,
+                          Simulation._im_not_user,
+                          Nt=config.Nt)
