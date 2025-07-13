@@ -1420,7 +1420,14 @@ public:
         float by_vir = 0.0f;
         if (use_vir_curvature) {
           if(iptr->name == "multi-phot-ann"){
-            by_vir = gs.bx(ind)*std::sin((lx1-xborn)/r_curv);
+            //by_vir = gs.bx(ind)*std::sin((lx1-xborn)/r_curv); // v0 
+
+            // more complicated v1 that should be numerically more stable and has radius dependency
+            by_vir = gs.bx(ind)*std::abs(lx1-xborn)/r_curv; // approximate sin\theta \approx \theta
+            by_vir = by_vir*std::abs(r_curv - lx1)/r_curv;  // decrease field strength linearly with height
+                                                            // assumes that r_curv > Nx
+              
+
           } else if(iptr->name == "synchrotron") {
             float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
             by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
