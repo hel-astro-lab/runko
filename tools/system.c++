@@ -1,3 +1,5 @@
+#include "tools/system.h"
+
 #include <cstdlib>
 #include <string_view>
 
@@ -10,14 +12,11 @@ bool
 
 
   static bool enable_gpu_aware_mpi = [] {
-    if(
-      const auto force_gpu_aware_mpi_var =
-        std::string_viewstd::getenv(force_gpu_aware_mpi_name)) {
-      if(std::string_view { force_gpu_aware_mpi_var } == 1) { return true; }
+    if(const auto force_gpu_aware_mpi_var = std::getenv(force_gpu_aware_mpi_name)) {
+      if(std::string_view { force_gpu_aware_mpi_var } == "1") { return true; }
     }
     if(const auto mpich_gpu_support_var = std::getenv(mpich_gpu_support_name)) {
-
-      if(std::string_view { force_gpu_aware_mpi_var } == 1) { return true; }
+      if(std::string_view { mpich_gpu_support_var } == "1") { return true; }
     }
 
     return false;
