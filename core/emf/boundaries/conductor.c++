@@ -157,6 +157,20 @@ void emf::Conductor<D>::insert_em(
 
 
     //--------------------------------------------------
+    // special mode to set constant background field in 1D
+    if( (D == 1) && set_const_b ) {
+
+      // get value of the dipole at r=R
+      auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+      bxd = B0*dipole(r1_left); // dipole field at r=R
+
+      gs.bx(i,j,k) = bxd(0);
+      gs.by(i,j,k) = 0.0;
+      gs.bz(i,j,k) = 0.0;
+    }
+
+
+    //--------------------------------------------------
     // electric field
 
     //--------------------------------------------------
@@ -224,6 +238,14 @@ void emf::Conductor<D>::insert_em(
       auto r  = coord.ex().vec(iglob, 0.0f, 0.0f, D); // cartesian position vector in "star's coordinates"
       auto bd = B0*dipole(r); // diple field
       auto h  = abs(r(0)); // cylindrical coordinate system height
+
+      //--------------------------------------------------
+      // special mode to set constant background field in 1D
+      if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+        auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+        bd = B0*dipole(r1_left); // dipole field at r=R
+      }
+
                              
       auto s  = 1.0f - shape( h, radius, delta); // height smoothing parameter
       //auto s  = h < radius + 4 ? 1.0f : 0.0f; // step function; field inside star h < r_*

@@ -128,7 +128,9 @@ class Conductor
   float radius_pc = 1.0; // polar cap radius
   float delta_pc  = 1.0; // polar smoothing
 
-  bool flat_surface = true;
+  bool flat_surface = true; // use a flat (non-spherical/curved) surface for the star; makes BCs easier
+
+  bool set_const_b = false; // oneD option to set background Bx to be constant (not a dipole)
 
   // grid size (for nulling the sides to prevent periodic bc's)
   int Nx = 1;
