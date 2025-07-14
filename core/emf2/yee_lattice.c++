@@ -5,6 +5,25 @@
 #include <sstream>
 #include <string>
 
+namespace {
+
+/// Returns mdgrid_work representing the copy operation.
+template<typename MDSfrom, typename MDSto>
+auto
+  mds_copy(MDSfrom&& from, MDSto&& to)
+{
+
+  if(from.extents() != to.extents()) {
+    throw std::runtime_error { "Can not copy from/to different sized mdspan." };
+  }
+
+  return tyvi::mdgrid_work {}.for_each_index(
+    from,
+    [=](const auto idx, const auto tidx) { to[idx][tidx] = from[idx][tidx]; });
+}
+
+}  // namespace
+
 namespace emf2 {
 
 YeeLattice::YeeLattice(const YeeLatticeCtorArgs args) :
@@ -136,6 +155,33 @@ void
   });
 
   w1.wait();
+}
+
+void
+  YeeLattice::set_E_in_subregion(const dir_type dir, const YeeLattice& other)
+{
+  const auto my_Emds_region    = this->subregion(dir, this->E_.mds());
+  const auto other_Emds_region = other.corresponding_subregion(dir, other.E_.mds());
+
+  return mds_copy(other_Emds_region, my_Emds_region).wait();
+}
+
+void
+  YeeLattice::set_B_in_subregion(const dir_type dir, const YeeLattice& other)
+{
+  const auto my_Bmds_region    = this->subregion(dir, this->B_.mds());
+  const auto other_Bmds_region = other.corresponding_subregion(dir, other.B_.mds());
+
+  return mds_copy(other_Bmds_region, my_Bmds_region).wait();
+}
+
+void
+  YeeLattice::set_J_in_subregion(const dir_type dir, const YeeLattice& other)
+{
+  const auto my_Jmds_region    = this->subregion(dir, this->J_.mds());
+  const auto other_Jmds_region = other.corresponding_subregion(dir, other.J_.mds());
+
+  return mds_copy(other_Jmds_region, my_Jmds_region).wait();
 }
 
 }  // namespace emf2

@@ -7,6 +7,7 @@
 #include <concepts>
 #include <cstddef>
 #include <experimental/mdspan>
+#include <ranges>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -51,6 +52,19 @@ public:
     vec_grid::grid_extents_type,
     vec_grid::grid_layout_type>;
 
+
+  /// Lattice consists of  27 different regions which are labeled with {i, j, k}.
+  ///
+  /// Valid dir labels are -1, 0 and 1 and specify coordinate extents for one dimension.
+  /// These correspond to regions [0, halo_size_), [halo_size_, halo_size + extent)
+  /// and [halo_size + extent, 2 * halo_size + extent) respectively.
+  using dir_type = std::array<int, 3>;
+
+  [[nodiscard]] static constexpr dir_type invert_dir(const dir_type& dir)
+  {
+    return dir_type { -dir[0], -dir[1], -dir[2] };
+  }
+
 private:
   std::size_t halo_size_;
   std::array<std::size_t, 3> extents_wout_halo_;
@@ -64,6 +78,8 @@ private:
 
   /// Current
   vec_grid J_;
+
+  /* FIXME: Use std::integral_constant when possible in mds helpers below. */
 
   /// Convinience function to get non-halo region of some field.
   ///
@@ -84,6 +100,79 @@ private:
     const auto x = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
     const auto y = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };
     const auto z = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[2] };
+
+    return std::submdspan(std::forward<MDS>(mds), x, y, z);
+  }
+
+  /// Throws if given mdspan's extents differ from extents_with_halo.
+  void assert_mds_spans_whole_lattice(const auto& mds) const
+  {
+    const auto mds_extents =
+      std::views::iota(0uz, mds.rank()) |
+      std::views::transform([&](const std::size_t i) { return mds.extent(i); });
+
+
+    if(not std::ranges::equal(mds_extents, extents_with_halo())) {
+      throw std::runtime_error { "Given mdspan's extents != extents_with_halo." };
+    }
+  }
+
+  /// Get subregion from whole field mds specified by dir.
+  ///
+  /// mds is assumed to span the whole lattice including non-halo regions.
+  template<typename MDS>
+  [[nodiscard]]
+  auto subregion(dir_type dir, MDS&& mds) const
+  {
+    assert_mds_spans_whole_lattice(mds);
+
+    auto oneD_dir_to_index_extent =
+      [&, this](const std::size_t i) -> std::tuple<std::size_t, std::size_t> {
+      switch(dir[i]) {
+        case -1: return { 0uz, halo_size_ };
+        case 0: return { halo_size_, halo_size_ + extents_wout_halo_[i] };
+        case 1:
+          return { halo_size_ + extents_wout_halo_[i],
+                   2uz * halo_size_ + extents_wout_halo_[i] };
+        default:
+          throw std::logic_error {
+            std::format("dir[{}] = {} != -1, 0 or 1", i, dir[i])
+          };
+      }
+    };
+
+    const auto x = oneD_dir_to_index_extent(0);
+    const auto y = oneD_dir_to_index_extent(1);
+    const auto z = oneD_dir_to_index_extent(2);
+
+    return std::submdspan(std::forward<MDS>(mds), x, y, z);
+  }
+
+  /// Get region in non-halo region corresponding to halo region from `subregion`.
+  ///
+  /// mds is assumed to span the whole lattice including non-halo regions.
+  template<typename MDS>
+  [[nodiscard]]
+  auto corresponding_subregion(dir_type dir, MDS&& mds) const
+  {
+    assert_mds_spans_whole_lattice(mds);
+
+    auto oneD_dir_to_index_extent =
+      [&, this](const std::size_t i) -> std::tuple<std::size_t, std::size_t> {
+      switch(invert_dir(dir)[i]) {
+        case -1: return { halo_size_, 2u * halo_size_ };
+        case 0: return { halo_size_, halo_size_ + extents_wout_halo_[i] };
+        case 1: return { extents_wout_halo_[i], halo_size_ + extents_wout_halo_[i] };
+        default:
+          throw std::logic_error {
+            std::format("dir[{}] = {} != -1, 0 or 1", i, dir[i])
+          };
+      }
+    };
+
+    const auto x = oneD_dir_to_index_extent(0);
+    const auto y = oneD_dir_to_index_extent(1);
+    const auto z = oneD_dir_to_index_extent(2);
 
     return std::submdspan(std::forward<MDS>(mds), x, y, z);
   }
@@ -140,6 +229,31 @@ public:
 
   /// E += J in non-halo region.
   void add_J_to_E();
+
+  [[nodiscard]]
+  auto span_E(this auto& self)
+  {
+    return self.E_.span();
+  }
+  [[nodiscard]]
+  auto span_B(this auto& self)
+  {
+    return self.B_.span();
+  }
+  [[nodiscard]]
+  auto span_J(this auto& self)
+  {
+    return self.J_.span();
+  }
+
+  /// Set E subregion specified by dir from other tile.
+  void set_E_in_subregion(dir_type dir, const YeeLattice& other);
+
+  /// Set B subregion specified by dir from other tile.
+  void set_B_in_subregion(dir_type dir, const YeeLattice& other);
+
+  /// Set J subregion specified by dir from other tile.
+  void set_J_in_subregion(dir_type dir, const YeeLattice& other);
 };
 
 }  // namespace emf2

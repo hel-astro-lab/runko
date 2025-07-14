@@ -3,6 +3,7 @@
 #include "core/emf2/yee_lattice.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
+#include "mpi4cpp/mpi.h"
 #include "tools/config_parser.h"
 
 #include <array>
@@ -77,6 +78,25 @@ public:
 
   /// E += J
   void deposit_current();
+
+  /// Send field specified with mode (see comm_mode).
+  std::vector<mpi4cpp::mpi::request>
+    send_data(mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag)
+      override;
+
+  /// Receive field specified with mode (see comm_mode).
+  std::vector<mpi4cpp::mpi::request>
+    recv_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int mode, int tag)
+      override;
+
+  /// Get halo region of field specified with mode (see comm_mode) from other.
+  ///
+  /// Assumes that the other tile is emf2::Tile or its descendant.
+  void pairwise_moore_communication(
+    const corgi::Tile<D>& /* other */,
+    const std::array<int, D> dir_to_other,
+    const int /* mode */
+    ) override;
 };
 
 }  // namespace emf2

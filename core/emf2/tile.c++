@@ -1,10 +1,15 @@
 #include "core/emf2/tile.h"
 
+#include "core/communication_common.h"
+#include "tools/system.h"
 #include "tyvi/mdspan.h"
 
+#include <cmath>
 #include <format>
 #include <iostream>
+#include <stdexcept>
 #include <string_view>
+#include <type_traits>
 
 namespace {
 emf2::FieldPropagator
@@ -178,6 +183,148 @@ void
   yee_lattice_.add_J_to_E();
 }
 
+namespace {
+template<runko::comm_mode m>
+constexpr int
+  specialized_tag(const int tag)
+{
+
+  // cray-mpich supports maximum of 2^22-1 tag value.
+  if(tag / 3 + 1 >= std::pow(2, 22)) {
+    throw std::runtime_error { "emf2::Tile does not support tags >= 2^22 / 3." };
+  }
+
+  static constexpr auto comm_ordinal = [] {
+    using runko::comm_mode;
+    static_assert(
+      m == comm_mode::emf_E or m == comm_mode::emf_B or m == comm_mode::emf_J);
+
+    switch(m) {
+      case comm_mode::emf_E: return 0;
+      case comm_mode::emf_B: return 1;
+      case comm_mode::emf_J: return 2;
+    }
+  }();
+
+  return 3 * tag + comm_ordinal;
+}
+}  // namespace
+
+template<std::size_t D>
+std::vector<mpi4cpp::mpi::request>
+  Tile<D>::send_data(
+    mpi4cpp::mpi::communicator& comm,
+    const int dest,
+    const int mode,
+    const int tag)
+{
+
+  if(not toolbox::system_supports_gpu_aware_mpi()) {
+    throw std::runtime_error {
+      "Non gpu aware MPI communication is not yet implemented."
+    };
+  }
+
+  using runko::comm_mode;
+
+  auto make_isend = [&](const auto s, const int t) {
+    return comm.isend(dest, t, s.data(), s.size());
+  };
+
+  switch(static_cast<comm_mode>(mode)) {
+    case comm_mode::emf_E:
+      return {
+        make_isend(yee_lattice_.span_E(), specialized_tag<comm_mode::emf_E>(tag))
+      };
+    case comm_mode::emf_B:
+      return {
+        make_isend(yee_lattice_.span_B(), specialized_tag<comm_mode::emf_B>(tag))
+      };
+    case comm_mode::emf_J:
+      return {
+        make_isend(yee_lattice_.span_J(), specialized_tag<comm_mode::emf_J>(tag))
+      };
+    default:
+      throw std::logic_error { std::format(
+        "emf2::Tile::send_data does not support given communication mode: {}",
+        mode) };
+  }
+}
+
+template<std::size_t D>
+std::vector<mpi4cpp::mpi::request>
+  Tile<D>::recv_data(
+    mpi4cpp::mpi::communicator& comm,
+    const int orig,
+    const int mode,
+    const int tag)
+{
+  if(not toolbox::system_supports_gpu_aware_mpi()) {
+    throw std::runtime_error {
+      "Non gpu aware MPI communication is not yet implemented."
+    };
+  }
+
+  using runko::comm_mode;
+
+  auto make_irecv = [&](const auto s, const int t) {
+    return comm.irecv(orig, t, s.data(), s.size());
+  };
+
+  switch(static_cast<comm_mode>(mode)) {
+    case comm_mode::emf_E:
+      return {
+        make_irecv(yee_lattice_.span_E(), specialized_tag<comm_mode::emf_E>(tag))
+      };
+    case comm_mode::emf_B:
+      return {
+        make_irecv(yee_lattice_.span_B(), specialized_tag<comm_mode::emf_B>(tag))
+      };
+    case comm_mode::emf_J:
+      return {
+        make_irecv(yee_lattice_.span_J(), specialized_tag<comm_mode::emf_J>(tag))
+      };
+    default:
+      throw std::logic_error { std::format(
+        "emf2::Tile::recv_data does not support given communication mode: {}",
+        mode) };
+  }
+}
+
+template<std::size_t D>
+void
+  Tile<D>::pairwise_moore_communication(
+    const corgi::Tile<D>& other_base,
+    const std::array<int, D> dir_to_other,
+    const int mode)
+{
+  const Tile<D>& other = [&]() -> const Tile<D>& {
+    try {
+      return dynamic_cast<const Tile<D>&>(other_base);
+    } catch(const std::bad_cast& ex) {
+      throw std::runtime_error { std::format(
+        "emf2::Tile::pairwise_moore_communication assumes that the other tile is "
+        "emf2::Tile or its descendant. Orginal exception: {}",
+        ex.what()) };
+    }
+  }();
+
+  using runko::comm_mode;
+
+  switch(static_cast<comm_mode>(mode)) {
+    case comm_mode::emf_E:
+      yee_lattice_.set_E_in_subregion(dir_to_other, other.yee_lattice_);
+      break;
+    case comm_mode::emf_B:
+      yee_lattice_.set_B_in_subregion(dir_to_other, other.yee_lattice_);
+      break;
+    default:
+      throw std::logic_error { std::format(
+        "emf2::Tile::pairwise_moore_communication does not support given communication "
+        "mode: {}",
+        mode) };
+  }
+};
 
 }  // namespace emf2
 
