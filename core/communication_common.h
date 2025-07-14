@@ -14,10 +14,10 @@
 
 namespace runko {
 enum class comm_mode : int {
-  emf_E = 1,
-  emf_B = 2,
-  emf_J = 0,
-  pic_particle = 3,
+  emf_E              = 1,
+  emf_B              = 2,
+  emf_J              = 0,
+  pic_particle       = 3,
   pic_particle_extra = 4,
 };
 
@@ -25,20 +25,22 @@ template<typename T, typename E>
 concept equality_comparable_with_enum =
   (std::is_enum_v<E>) and std::equality_comparable_with<T, std::underlying_type_t<E>>;
 
+template<typename Rhs>
+  requires(not std::same_as<Rhs, comm_mode>) and
+          equality_comparable_with_enum<Rhs, comm_mode>
 [[nodiscard]]
 constexpr bool
-  operator==(
-    const comm_mode lhs,
-    const equality_comparable_with_enum<comm_mode> auto rhs)
+  operator==(const comm_mode lhs, const Rhs rhs)
 {
   return std::to_underlying(lhs) == rhs;
 }
 
+template<typename Lhs>
+  requires(not std::same_as<Lhs, comm_mode>) and
+          equality_comparable_with_enum<Lhs, comm_mode>
 [[nodiscard]]
 constexpr bool
-  operator==(
-    const equality_comparable_with_enum<comm_mode> auto lhs,
-    const comm_mode rhs)
+  operator==(const Lhs lhs, const comm_mode rhs)
 {
   return lhs == std::to_underlying(rhs);
 }
