@@ -227,23 +227,21 @@ class TerminalPlot:
         #--------------------------------------------------
         # transpose and flip to orient the img properly
         try:
-            nx, ny = np.shape(data)
-            nz = 1
+            nx, = np.shape(data) # assume 1D
+            ny,nz = 1,1
         except:
-            nx, ny, nz = np.shape(data)
+            try:
+                nx, ny = np.shape(data) # assume 2D
+                nz = 1
+            except:
+                nx, ny, nz = np.shape(data) # assume 3D
 
         # NOTE theese manipulations are black magic but they work
         data = np.reshape(data, (nz, ny, nx))
         data = data.ravel(order='F').reshape((nx,ny,nz))
         data = np.fliplr(data)
 
-        #data = np.fliplr(data.T) 
-
         #--------------------------------------------------
-
-        #for i in range(self.ny):
-        #    self.screen[i,i] = 1
-
         self.screen = self.rescale(data)
 
         lines = [] # screen is collected here
