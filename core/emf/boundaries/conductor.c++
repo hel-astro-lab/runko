@@ -1148,7 +1148,7 @@ void emf::Conductor<D>::update_e(
 
           //--------------------------------------------------
           // ver 1; tanh profile
-          const float radius_ext = (D==1) ? Nx - 0.5*tile_len : (D==2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+          const float radius_ext = (D==1) ? Nx - 2.5*tile_len : (D==2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
           const float delta_ext = 0.25*tile_len; // 1/4 of tile size
           const auto s = shape(h, radius_ext, delta_ext); // tanh
 
@@ -1349,7 +1349,7 @@ void emf::Conductor<D>::update_j(
           
         // ver 1; tanh profile
         const auto h = (D==1) ? ig : (D==2) ? jg : kg; // height
-        auto s = 1.0f; //shape(h, radius_ext, delta_ext); // tanh
+        auto s = shape(h, radius_ext, delta_ext); // tanh: suppress rotational currents at the right edge of the box
 
         //--------------------------------------------------
         // add to the current
