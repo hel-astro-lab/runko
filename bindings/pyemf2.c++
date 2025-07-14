@@ -100,6 +100,12 @@ void
         auto EBJ = tile.get_EBJ();
         return to_ndarrays(EBJ);
       })
+    .def(
+      "get_EBJ_with_halo",
+      [](emf2::Tile<3>& tile) {
+        auto EBJ = tile.get_EBJ_with_halo();
+        return to_ndarrays(EBJ);
+      })
     .def("push_half_b", &emf2::Tile<3>::push_half_b)
     .def("push_e", &emf2::Tile<3>::push_e)
     .def("deposit_current", &emf2::Tile<3>::deposit_current);

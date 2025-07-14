@@ -132,6 +132,13 @@ YeeLattice::YeeLatticeHostCopy
 }
 
 template<std::size_t D>
+YeeLattice::YeeLatticeHostCopy
+  Tile<D>::get_EBJ_with_halo()
+{
+  return yee_lattice_.get_EBJ_with_halo();
+}
+
+template<std::size_t D>
 std::array<std::size_t, 3>
   Tile<D>::extents_wout_halo() const
 {

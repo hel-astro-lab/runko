@@ -129,6 +129,9 @@ public:
   /// Get copy of E, B and J in non-halo region.
   YeeLatticeHostCopy get_EBJ();
 
+  /// Get copy of E, B and J including halo regions.
+  YeeLatticeHostCopy get_EBJ_with_halo();
+
   /// Advance B by half time step using FDTD2 scheme in non-halo region.
   void push_b_FDTD2(float dt);
 

@@ -61,6 +61,9 @@ public:
   /// Get E, B and J fields in non-halo regions.
   YeeLattice::YeeLatticeHostCopy get_EBJ();
 
+  /// Get E, B and J fields including halo regions.
+  YeeLattice::YeeLatticeHostCopy get_EBJ_with_halo();
+
   /// Size of the non-halo yee lattice.
   std::array<std::size_t, 3> extents_wout_halo() const;
 

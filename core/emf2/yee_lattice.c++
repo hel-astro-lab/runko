@@ -88,6 +88,41 @@ YeeLattice::YeeLatticeHostCopy
   return host_buffer;
 }
 
+YeeLattice::YeeLatticeHostCopy
+  YeeLattice::get_EBJ_with_halo()
+{
+  auto wE = tyvi::mdgrid_work {};
+  auto wB = tyvi::mdgrid_work {};
+  auto wJ = tyvi::mdgrid_work {};
+
+  auto wE1 = wE.sync_to_staging(E_);
+  auto wB1 = wB.sync_to_staging(B_);
+  auto wJ1 = wJ.sync_to_staging(J_);
+
+  const auto [Emds, Bmds, Jmds] =
+    std::tuple { E_.staging_mds(), B_.staging_mds(), J_.staging_mds() };
+
+  const auto [a, b, c] = extents_with_halo();
+  auto host_buffer     = YeeLatticeHostCopy(a, b, c);
+  const auto mds       = host_buffer.mds();
+
+  tyvi::when_all(wE1, wB1, wJ1).wait();
+
+  for(const auto idx: tyvi::sstd::index_space(mds)) {
+    mds[idx][] = YeeLatticeFieldsAtPoint { .Ex = Emds[idx][0],
+                                           .Ey = Emds[idx][1],
+                                           .Ez = Emds[idx][2],
+                                           .Bx = Bmds[idx][0],
+                                           .By = Bmds[idx][1],
+                                           .Bz = Bmds[idx][2],
+                                           .Jx = Jmds[idx][0],
+                                           .Jy = Jmds[idx][1],
+                                           .Jz = Jmds[idx][2] };
+  }
+
+  return host_buffer;
+}
+
 void
   YeeLattice::add_J_to_E()
 {
