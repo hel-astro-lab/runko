@@ -49,9 +49,10 @@ class Simulation:
         return self._lap
 
 
-    def for_one_lap(self, lap_function):
+
+    def _execute_lap_function(self, lap_function):
         """
-        Advance simulation by one lap using given lap functions.
+        Execute a given lap function.
 
         FIXME: Define lap function.
         FIXME: Parallelize the loop.
@@ -85,6 +86,21 @@ class Simulation:
 
         lap_function(for_each_local_tile, communications)
 
+
+    def prelude(self, lap_function):
+        """
+        Execute a given lap function without increasing the lap.
+        """
+
+        self._execute_lap_function(lap_function)
+
+
+    def for_one_lap(self, lap_function):
+        """
+        Advance simulation by one lap using given lap functions.
+        """
+
+        self._execute_lap_function(lap_function)
         self._lap += 1
 
 
