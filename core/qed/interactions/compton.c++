@@ -204,9 +204,11 @@ void Compton::interact(
     if( niter > n_max ) break; // too many iterations
     niter += 1;
   }
-        
-  if(niter > n_max) std::cerr << "COMPTON WARNING: too many iterations" << std::endl;
 
+
+  #ifdef DEBUG  
+     if(niter > n_max) std::cerr << "COMPTON WARNING: too many iterations" << std::endl;
+  #endif
 
   //# construct new photon vector based on the angles
   //      #om1_Rijk  = np.array([mu, sinth*np.cos(phi), sinth*np.sin(phi)])
@@ -326,6 +328,8 @@ void Compton::interact(
   // # test energy conservation # NOTE: we can remove these debug tests if needed
   //if(true && !(do_accumulate) ){
   //if(false){
+  #ifdef DEBUG
+
   if(true){
 
     float enec = gam1 + x1 - (x0 + gam0);
@@ -368,6 +372,7 @@ void Compton::interact(
       std::cerr << "facc in  "  <<  facc_in  << std::endl;
     }
   }
+  #endif
 
 
   return;

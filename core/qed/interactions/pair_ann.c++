@@ -182,8 +182,9 @@ void PairAnn::interact(
 
   }
 
-  if(niter > n_max) std::cerr << "PAIR-ANN WARNING: too many iterations" << std::endl;
-
+  #ifdef DEBUG  
+   if(niter > n_max) std::cerr << "PAIR-ANN WARNING: too many iterations" << std::endl;
+  #endif
 
   //# new photon vectors in CoM frame
   float sinz = sqrt(1.0 - cosz*cosz); 
@@ -216,7 +217,7 @@ void PairAnn::interact(
   Vec3<float> om0( xpp0(1)/x0, xpp0(2)/x0, xpp0(3)/x0 ); 
   Vec3<float> om1( xpp1(1)/x1, xpp1(2)/x1, xpp1(3)/x1 ); 
 
-#ifdef DEBUG
+  #ifdef DEBUG
   //--------------------------------------------------
   // # test energy conservation # NOTE: we can remove these debug tests if needed
   if(true){
@@ -270,7 +271,7 @@ void PairAnn::interact(
       //assert(false);
     }
   }
-#endif
+  #endif
 
   //# NOTE flip randomly; does not have an effect because photons are identical
   //# alternate the role of primary/secondary; otherwise algorithm is deterministic
