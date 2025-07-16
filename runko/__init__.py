@@ -2,8 +2,9 @@ from pyrunko._runko_next import *
 from .Configuration import Configuration
 from .TileGrid import TileGrid
 import pyrunko.emf2.threeD as emf
+import pyrunko.pic2.threeD as pic
 from .Simulation import Simulation
-from pyrunko.tools import comm_mode
+from pyrunko.tools import comm_mode, particle
 
 
 def on_main_rank() -> bool:

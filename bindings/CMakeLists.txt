@@ -71,6 +71,7 @@ set (PIC_FILES
 set (PIC2_FILES
      pypic2.c++
      ../core/pic2/tile.c++
+     ../core/pic2/particle.c++
      )
 
 set (QED_FILES 

@@ -1,13 +1,33 @@
+#include "core/particles_common.h"
 #include "core/pic2/tile.h"
 #include "io/tasker.h"
+#include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "tools/config_parser.h"
 
 #include <memory>
+#include <ranges>
 #include <string>
+#include <tuple>
 #include <unordered_map>
+#include <utility>
 
+namespace {
+namespace py = pybind11;
+template<typename T>
+auto
+  to_ndarray(const std::vector<T>& vec)
+{
+  const auto grid_shape = std::array { vec.size() };
+  auto mda              = py::array_t<T, py::array::c_style>(grid_shape);
+  auto mda_mut          = mda.template mutable_unchecked<1>();
+
+  for(const auto i: std::views::iota(0uz, vec.size())) { mda_mut(i) = vec[i]; }
+
+  return std::move(mda);
+}
+}  // namespace
 
 //--------------------------------------------------
 // experimental PIC v2 module
@@ -37,11 +57,26 @@ void
     pic2::Tile<3>,
     emf2::Tile<3>,
     corgi::Tile<3>,
-    std::shared_ptr<pic2::Tile<3>>>(m_3d, "Tile", py::multiple_inheritance())
+    std::shared_ptr<pic2::Tile<3>>>(m_3d, "Tile")
     .def(
       py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
         return pic2::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
-      }));
+      }))
+    .def(
+      "get_positions",
+      [](pic2::Tile<3>& tile, const runko::particle p) {
+        const auto [x, y, z] = tile.get_positions(p);
+        return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
+      })
+    .def(
+      "get_velocities",
+      [](pic2::Tile<3>& tile, const runko::particle p) {
+        const auto [x, y, z] = tile.get_velocities(p);
+        return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
+      })
+    .def("get_weights", [](pic2::Tile<3>& tile, const runko::particle p) {
+      return to_ndarray(tile.get_weights(p));
+    });
 
   //--------------------------------------------------
   // Full IO

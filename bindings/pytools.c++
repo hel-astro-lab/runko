@@ -4,6 +4,7 @@
 #include "definitions.h"
 #include "tools/mesh.h"
 #include "core/communication_common.h"
+#include "core/particles_common.h"
 #include "core/vlv/amr/mesh.h"
 #include "tools/hilbert.h"
 
@@ -217,6 +218,12 @@ void bind_tools(pybind11::module& m)
      .value("emf_J", runko::comm_mode::emf_J)
      .value("pic_particle", runko::comm_mode::pic_particle)
      .value("pic_particle_extra", runko::comm_mode::pic_particle_extra);
+
+  // Common particle enums.
+  py::enum_<runko::particle>(m, "particle")
+     .value("electron", runko::particle::electron)
+     .value("ion", runko::particle::ion)
+     .value("photon", runko::particle::photon);
 
 }
 

@@ -11,17 +11,20 @@ struct ParticleContainerArgs {
   double charge, mass;
 };
 
-template<std::size_t D>
 class [[nodiscard]] ParticleContainer {
+public:
+  /// The type in which pos, vel and weights are stored in.
+  using value_type = float;
 
+private:
   using E = std::dextents<std::size_t, 1>;
-  static constexpr auto ScalarElement =
-    tyvi::mdgrid_element_descriptor<float> { .rank = 0, .dim = 3 };
-  static constexpr auto VecElement =
-    tyvi::mdgrid_element_descriptor<float> { .rank = 1, .dim = 3 };
+  static constexpr auto scalar_element =
+    tyvi::mdgrid_element_descriptor<value_type> { .rank = 0, .dim = 3 };
+  static constexpr auto vec_element =
+    tyvi::mdgrid_element_descriptor<value_type> { .rank = 1, .dim = 3 };
 
-  using VecGrid    = tyvi::mdgrid<VecElement, E>;
-  using ScalarGrid = tyvi::mdgrid<VecElement, E>;
+  using ScalarGrid = tyvi::mdgrid<scalar_element, E>;
+  using VecGrid    = tyvi::mdgrid<vec_element, E>;
 
   VecGrid pos_;
   VecGrid vel_;
@@ -31,14 +34,15 @@ class [[nodiscard]] ParticleContainer {
   double mass_;
 
 public:
-  explicit ParticleContainer(const ParticleContainerArgs args) :
-    pos_(args.N),
-    vel_(args.N),
-    weights_(args.N),
-    charge_ { args.charge },
-    mass_ { args.mass }
-  {
-  }
+  ParticleContainer 
+  explicit ParticleContainer(ParticleContainerArgs);
+
+  /// Returns the number of particles.
+  std::size_t size() const;
+
+  std::array<std::vector<value_type>, 3> get_positions();
+  std::array<std::vector<value_type>, 3> get_velocities();
+  std::vector<value_type> get_weights();
 };
 
 
