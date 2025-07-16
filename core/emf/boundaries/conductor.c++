@@ -157,6 +157,20 @@ void emf::Conductor<D>::insert_em(
 
 
     //--------------------------------------------------
+    // special mode to set constant background field in 1D
+    if( (D == 1) && set_const_b ) {
+
+      // get value of the dipole at r=R
+      auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+      bxd = B0*dipole(r1_left); // dipole field at r=R
+
+      gs.bx(i,j,k) = bxd(0);
+      gs.by(i,j,k) = 0.0;
+      gs.bz(i,j,k) = 0.0;
+    }
+
+
+    //--------------------------------------------------
     // electric field
 
     //--------------------------------------------------
@@ -224,6 +238,14 @@ void emf::Conductor<D>::insert_em(
       auto r  = coord.ex().vec(iglob, 0.0f, 0.0f, D); // cartesian position vector in "star's coordinates"
       auto bd = B0*dipole(r); // diple field
       auto h  = abs(r(0)); // cylindrical coordinate system height
+
+      //--------------------------------------------------
+      // special mode to set constant background field in 1D
+      if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+        auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+        bd = B0*dipole(r1_left); // dipole field at r=R
+      }
+
                              
       auto s  = 1.0f - shape( h, radius, delta); // height smoothing parameter
       //auto s  = h < radius + 4 ? 1.0f : 0.0f; // step function; field inside star h < r_*
@@ -386,21 +408,31 @@ void emf::Conductor<D>::update_b(
       auto bxd = B0*dipole(r1); // diple field
       auto h1  = abs(r1(D-1)); // cylindrical coordinate system height
       //auto sx  = shape( norm(r1), radius + b_offset, delta); // radial smoothing parameter
-      auto sx  = shape( h1, radius + b_offset, delta); // radial smoothing parameter
+      auto sx  = shape( h1, radius + b_offset, delta); // cylindrical smoothing parameter
 
       // by
       auto r2  = coord.by().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
       auto byd = B0*dipole(r2); // diple field
       auto h2  = abs(r2(D-1)); // cylindrical coordinate system height
       //auto sy  = shape( norm(r2), radius + b_offset, delta); // radial smoothing parameter
-      auto sy  = shape( h2, radius + b_offset, delta); // radial smoothing parameter
+      auto sy  = shape( h2, radius + b_offset, delta); // cylindrical smoothing parameter
 
       // bz
       auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
       auto bzd = B0*dipole(r3); // diple field
       auto h3  = abs(r3(D-1)); // cylindrical coordinate system height
       //auto sz  = shape( norm(r3), radius + b_offset, delta); // radial smoothing parameter
-      auto sz  = shape( h3, radius + b_offset, delta); // radial smoothing parameter
+      auto sz  = shape( h3, radius + b_offset, delta); // cylindrical smoothing parameter
+
+
+      //--------------------------------------------------
+      // special mode to set constant background field in 1D
+      if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+        auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+        bxd = B0*dipole(r1_left); // dipole field at r=R
+        byd = bxd;
+        bzd = bxd;
+      }
 
       //--------------------------------------------------
       // blending of old + new solution
@@ -528,6 +560,16 @@ void emf::Conductor<D>::update_b(
           auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
           auto bzd = B0*dipole(r3); // diple field
 
+
+          //--------------------------------------------------
+          // special mode to set constant background field in 1D
+          if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+            auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+            bxd = B0*dipole(r1_left); // dipole field at r=R
+            byd = bxd;
+            bzd = bxd;
+          }
+
           //--------------------------------------------------
           // ver 1; tanh profile
           auto s = shape(h, radius_ext, delta_ext); // tanh
@@ -589,6 +631,16 @@ void emf::Conductor<D>::update_b(
           auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
           auto bzd = B0*dipole(r3); // diple field
 
+
+          //--------------------------------------------------
+          // special mode to set constant background field in 1D
+          if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+            auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+            bxd = B0*dipole(r1_left); // dipole field at r=R
+            byd = bxd;
+            bzd = bxd;
+          }
+
           //--------------------------------------------------
           // ver 1; tanh profile
           //auto s = 1.0f - shape(h, radius_ext, delta_ext); // tanh
@@ -644,6 +696,15 @@ void emf::Conductor<D>::update_b(
           // bz
           auto r3  = coord.bz().vec(iglob, jglob, kglob, D); // cartesian position vector in "star's coordinates"
           auto bzd = B0*dipole(r3); // diple field
+
+          //--------------------------------------------------
+          // special mode to set constant background field in 1D
+          if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+            auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+            bxd = B0*dipole(r1_left); // dipole field at r=R
+            byd = bxd;
+            bzd = bxd;
+          }
 
           //--------------------------------------------------
           // sides
@@ -976,6 +1037,14 @@ void emf::Conductor<D>::update_e(
       //auto s  = h < radius + 4 ? 1.0f : 0.0f; // step function; field inside star h < r_*
       //auto s  = h > radius + 4 ? 1.0f : 0.0f; // step function; field outside star h > r_*
                                    
+
+      //--------------------------------------------------
+      // special mode to set constant background field in 1D
+      if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+        auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+        bd = B0*dipole(r1_left); // dipole field at r=R
+      }
+
       float vrot = Om(0)*radius_pc/c; //r1(0); // Omega x r_pc
       float erot = 1.0f*vrot*bd(0); //-v x B
 
@@ -1148,7 +1217,7 @@ void emf::Conductor<D>::update_e(
 
           //--------------------------------------------------
           // ver 1; tanh profile
-          const float radius_ext = (D==1) ? Nx - 0.5*tile_len : (D==2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+          const float radius_ext = (D==1) ? Nx - 2.5*tile_len : (D==2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
           const float delta_ext = 0.25*tile_len; // 1/4 of tile size
           const auto s = shape(h, radius_ext, delta_ext); // tanh
 
@@ -1329,19 +1398,19 @@ void emf::Conductor<D>::update_j(
           //y:  -d( v E_x) + d( v^2 B_z)
           //z:  0
 
-          //curl( gs.ex, gs.ey, gs.ez, i,j,k );
-
           // jx
-          float dx_ey_at_x = gs.ey(i,j,k) - gs.ey(i-1,j,k); // partial_x(E_y) at i,j,k
-          //float dx_ey_at_x = gs.ey(i+1,j,k) - gs.ey(i,j,k); // partial_x(E_y) at i,j,k // BAD: oscillates
-          jx = -v*dx_ey_at_x;
+          float dx_ey_at_x = gs.ey(i,j,k) - gs.ey(i-1,j,k); // term2: partial_x(E_y) at i,j,k
+          //float dx_ey_at_x = gs.ey(i+1,j,k) - gs.ey(i,j,k); // term2: partial_x(E_y) at i,j,k // BAD: oscillates
+          //jx = -v*dx_ey_at_x; // IGNORED term2
 
           // jy
-          float dx_v_ex_at_y  = v*gs.ex(i,j,k) - v*gs.ex(i-1,j,k); // partial_y(v E_x) at i,j,k
-          //float dx_v_ex_at_y  = v*gs.ex(i+1,j,k) - v*gs.ex(i,j,k); // partial_y(v E_x) at i,j,k // BAD: oscillates
-          float dx_v2_bz_at_y = v*v*gs.bz(i,j,k) - v*v*gs.bz(i-1,j,k);
-          //float dx_v2_bz_at_y = v*v*gs.bz(i+1,j,k) - v*v*gs.bz(i,j,k);
-          jy = -dx_v_ex_at_y + dx_v2_bz_at_y;
+          float dx_v_ex_at_y  = v*gs.ex(i,j,k) - v*gs.ex(i-1,j,k); // term1: partial_y(v E_x) at i,j,k
+          //float dx_v_ex_at_y  = v*gs.ex(i+1,j,k) - v*gs.ex(i,j,k); // term1: partial_y(v E_x) at i,j,k // BAD: oscillates
+	    
+          float dx_v2_bz_at_y = v*v*gs.bz(i,j,k) - v*v*gs.bz(i-1,j,k);   // term3: partial_x( v^2 B_z )
+          //float dx_v2_bz_at_y = v*v*gs.bz(i+1,j,k) - v*v*gs.bz(i,j,k); // term3: partial_x (v^2 B_z) // UNTESTED
+          //jy = -dx_v_ex_at_y + dx_v2_bz_at_y; // IGNORED term3
+          jy = -dx_v_ex_at_y; // ONLY term1 active
 
           //jz
           jz = 0.0f;
@@ -1349,7 +1418,7 @@ void emf::Conductor<D>::update_j(
           
         // ver 1; tanh profile
         const auto h = (D==1) ? ig : (D==2) ? jg : kg; // height
-        auto s = shape(h, radius_ext, delta_ext); // tanh
+        auto s = shape(h, radius_ext, delta_ext); // tanh: suppress rotational currents at the right edge of the box
 
         //--------------------------------------------------
         // add to the current

@@ -116,6 +116,10 @@ public:
   // force e- e+ to have unit weights irrespective of weighting functions
   bool force_ep_uni_w = true; 
 
+  // maximum number of particles allowed in a tile; no addition above this
+  // NOTE: this means energy is not conserved if we skip prtcl addition
+  int max_tile_prtcl_num = 1000000; 
+
   //--------------------------------------------------
   // optional virtual field component (esp. for 1D sims to mimic varying backgrounds)
 
@@ -1153,14 +1157,17 @@ public:
               // TODO are these independent or same draw for prob_kill3
               // i.e., kill parent and create copies or let parent live and no copies?
 
-              timer.start_comp("add_prtcl1");
-              double z1 = rand();
-              while( n3 > z1 + ncop ){
-                // TODO NOTE lx3 here not lx1
-                cons[t3]->add_particle( {{lx3, ly3, lz3}}, {{ux3, uy3, uz3}}, w3); // new ene & w
-                ncop += 1.0;
+              if( Ntot1 < max_tile_prtcl_num ) { // add if we are below tile limit
+                                                   
+                timer.start_comp("add_prtcl1");
+                double z1 = rand();
+                while( n3 > z1 + ncop ){
+                  // TODO NOTE lx3 here not lx1
+                  cons[t3]->add_particle( {{lx3, ly3, lz3}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+                  ncop += 1.0;
+                }
+                timer.stop_comp("add_prtcl1");
               }
-              timer.stop_comp("add_prtcl1");
 
               timer.start_comp("del_parent1");
               // kill parent
@@ -1225,15 +1232,18 @@ public:
                        
               // annihilation interactions go her
                 
-              timer.start_comp("add_prtcl2");
-              double z1 = rand();
-              while( n4 > z1 + ncop ){
-                //cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
-                // TODO note lx4 here
-                cons[t4]->add_particle( {{lx4, ly4, lz4}}, {{ux4, uy4, uz4}}, w4); // new ene & w
-                ncop += 1.0;
+              if( Ntot1 < max_tile_prtcl_num ) { // add if we are below tile limit
+                                                 //
+                timer.start_comp("add_prtcl2");
+                double z1 = rand();
+                while( n4 > z1 + ncop ){
+                  //cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                  // TODO note lx4 here
+                  cons[t4]->add_particle( {{lx4, ly4, lz4}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                  ncop += 1.0;
+                }
+                timer.stop_comp("add_prtcl2");
               }
-              timer.stop_comp("add_prtcl2");
 
               timer.start_comp("del_parent2");
               // kill parent
@@ -1423,7 +1433,14 @@ public:
         float by_vir = 0.0f;
         if (use_vir_curvature) {
           if(iptr->name == "multi-phot-ann"){
-            by_vir = gs.bx(ind)*std::sin((lx1-xborn)/r_curv);
+            //by_vir = gs.bx(ind)*std::sin((lx1-xborn)/r_curv); // v0 
+
+            // more complicated v1 that should be numerically more stable and has radius dependency
+            by_vir = gs.bx(ind)*std::abs(lx1-xborn)/r_curv; // approximate sin\theta \approx \theta
+            by_vir = by_vir*std::abs(r_curv - lx1)/r_curv;  // decrease field strength linearly with height
+                                                            // assumes that r_curv > Nx
+              
+
           } else if(iptr->name == "synchrotron") {
             float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
             by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
@@ -1565,16 +1582,20 @@ public:
                 n4 = w1/w4; // NOTE w1 here since parent is same for both t3 and t4
               }
 
-              // add new particle t3 and t4; particles are assumed to be identical
-              timer.start_comp("add_ann_prtcls");
-              float ncop = 0.0;
-              float z1 = rand();
-              while(n4 > z1 + ncop) {
-                cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); 
-                cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
-                ncop += 1.0;
+
+              if( Ntot1 < max_tile_prtcl_num ) { // add if we are below tile limit
+                
+                // add new particle t3 and t4; particles are assumed to be identical
+                timer.start_comp("add_ann_prtcls");
+                float ncop = 0.0;
+                float z1 = rand();
+                while(n4 > z1 + ncop) {
+                  cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); 
+                  cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
+                  ncop += 1.0;
+                }
+                timer.stop_comp("add_ann_prtcls");
               }
-              timer.stop_comp("add_ann_prtcls");
 
               // remove old parent particle t1
               timer.start_comp("del_parent");

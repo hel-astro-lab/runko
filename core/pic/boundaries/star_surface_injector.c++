@@ -536,7 +536,7 @@ void pic::Star<D>::solve(
       if(D == 3) inside_bot = kglob < H; // z direction 
 
       bool inside_top = false;
-      if(D == 1) inside_top = iglob > Nx - 0.75*tile.mesh_lengths[0];
+      if(D == 1) inside_top = iglob > Nx - 2.75*tile.mesh_lengths[0];
       if(D == 2) inside_top = jglob > Ny - 0.75*tile.mesh_lengths[1];
       if(D == 3) inside_top = kglob > Nz - 0.75*tile.mesh_lengths[2]; 
 
