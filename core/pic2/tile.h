@@ -8,7 +8,11 @@
 #include "tools/config_parser.h"
 
 #include <array>
+#include <concepts>
 #include <cstddef>
+#include <functional>
+#include <iterator>
+#include <ranges>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -76,6 +80,17 @@ public:
   std::array<std::vector<value_type>, 3> get_positions(runko::particle);
   std::array<std::vector<value_type>, 3> get_velocities(runko::particle);
   std::vector<value_type> get_weights(runko::particle);
+
+
+  using particle_generator =
+    std::function<std::vector<runko::ParticleState>(double, double, double)>;
+
+  /// Inject particles based on given generator.
+  ///
+  /// Generator is called for each cell coordinates.
+  ///
+  /// Particle type is assumed to be configured.
+  void inject_to_each_cell(runko::particle, particle_generator);
 };
 
 

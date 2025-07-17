@@ -86,6 +86,7 @@ void
     };
   }
 
+  /// FIXME: unify global coordinates from here and pic2::Tile.
   const auto Lx = static_cast<double>(this->maxs[0] - this->mins[0]);
   const auto Ly = static_cast<double>(this->maxs[1] - this->mins[1]);
   const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
