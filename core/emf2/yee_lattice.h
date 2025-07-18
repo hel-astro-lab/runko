@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/mdgrid_common.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
@@ -39,18 +40,15 @@ concept yee_lattice_fields_function =
 /// Yee lattice of plasma quantities in tyvi::mdgrid continers.
 class [[nodiscard]] YeeLattice {
 public:
-  using grid_extents_type = std::dextents<std::size_t, 3>;
-  static constexpr auto vec_element =
-    tyvi::mdgrid_element_descriptor<float> { .rank = 1, .dim = 3 };
-
-  using vec_grid = tyvi::mdgrid<vec_element, grid_extents_type>;
+  using value_type = float;
+  using VecGrid      = runko::VecGrid<value_type>;
 
   using YeeLatticeHostCopy = tyvi::mdgrid_buffer<
     std::vector<YeeLatticeFieldsAtPoint>,
     std::extents<std::size_t>,
     std::layout_right,
-    vec_grid::grid_extents_type,
-    vec_grid::grid_layout_type>;
+    VecGrid::grid_extents_type,
+    VecGrid::grid_layout_type>;
 
 
   /// Lattice consists of  27 different regions which are labeled with {i, j, k}.
@@ -71,13 +69,13 @@ private:
 
 
   /// Electric field
-  vec_grid E_;
+  VecGrid E_;
 
   /// Magnetic field
-  vec_grid B_;
+  VecGrid B_;
 
   /// Current
-  vec_grid J_;
+  VecGrid J_;
 
   /* FIXME: Use std::integral_constant when possible in mds helpers below. */
 
@@ -222,10 +220,10 @@ public:
   YeeLatticeHostCopy get_EBJ_with_halo();
 
   /// Advance B by half time step using FDTD2 scheme in non-halo region.
-  void push_b_FDTD2(float dt);
+  void push_b_FDTD2(value_type dt);
 
   /// Advance E by full time step using FDTD2 scheme in non-halo region.
-  void push_e_FDTD2(float dt);
+  void push_e_FDTD2(value_type dt);
 
   /// E += J in non-halo region.
   void add_J_to_E();

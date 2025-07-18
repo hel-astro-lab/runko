@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/mdgrid_common.h"
 #include "core/particles_common.h"
-#include "tyvi/mdgrid.h"
 
 #include <concepts>
 #include <cstddef>
@@ -21,17 +21,10 @@ public:
 
 private:
   using E = std::dextents<std::size_t, 1>;
-  static constexpr auto scalar_element =
-    tyvi::mdgrid_element_descriptor<value_type> { .rank = 0, .dim = 3 };
-  static constexpr auto vec_element =
-    tyvi::mdgrid_element_descriptor<value_type> { .rank = 1, .dim = 3 };
 
-  using ScalarGrid = tyvi::mdgrid<scalar_element, E>;
-  using VecGrid    = tyvi::mdgrid<vec_element, E>;
-
-  VecGrid pos_;
-  VecGrid vel_;
-  ScalarGrid weights_;
+  runko::VecList<float> pos_;
+  runko::VecList<float> vel_;
+  runko::ScalarList<float> weights_;
 
   double charge_;
   double mass_;

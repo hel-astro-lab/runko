@@ -1,6 +1,6 @@
-
 #include "core/pic2/particle.h"
 
+#include "core/mdgrid_common.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
@@ -101,9 +101,9 @@ void
   const auto Nother = other.size();
   const auto Ntotal = Nprev + Nother;
 
-  auto new_pos     = VecGrid(Ntotal);
-  auto new_vel     = VecGrid(Ntotal);
-  auto new_weights = ScalarGrid(Ntotal);
+  auto new_pos     = runko::VecList<value_type>(Ntotal);
+  auto new_vel     = runko::VecList<value_type>(Ntotal);
+  auto new_weights = runko::ScalarList<value_type>(Ntotal);
 
   const auto new_pos_mds     = new_pos.mds();
   const auto new_vel_mds     = new_vel.mds();
