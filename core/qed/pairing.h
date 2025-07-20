@@ -115,7 +115,7 @@ public:
 
   // maximum number of particles allowed in a tile; no addition above this
   // NOTE: this means energy is not conserved if we skip prtcl addition
-  int max_tile_prtcl_num = 1000000; 
+  int max_tile_prtcl_num = 1000000000; 
 
   //--------------------------------------------------
   // optional virtual field component (esp. for 1D sims to mimic varying backgrounds)
@@ -1154,7 +1154,7 @@ public:
               // TODO are these independent or same draw for prob_kill3
               // i.e., kill parent and create copies or let parent live and no copies?
 
-              if( Ntot1 < max_tile_prtcl_num ) { // add if we are below tile limit
+              if( info_prtcl_num[t3] < max_tile_prtcl_num ) { // add if we are below tile limit
                                                    
                 timer.start_comp("add_prtcl1");
                 double z1 = rand();
@@ -1229,7 +1229,7 @@ public:
                        
               // annihilation interactions go her
                 
-              if( Ntot1 < max_tile_prtcl_num ) { // add if we are below tile limit
+              if( info_prtcl_num[t4] < max_tile_prtcl_num ) { // add if we are below tile limit
                                                  //
                 timer.start_comp("add_prtcl2");
                 double z1 = rand();
@@ -1580,7 +1580,8 @@ public:
               }
 
 
-              if( Ntot1 < max_tile_prtcl_num ) { // add if we are below tile limit
+              if( info_prtcl_num[t3] < max_tile_prtcl_num &&
+                  info_prtcl_num[t4] < max_tile_prtcl_num ) { // add if we are below tile limit
                 
                 // add new particle t3 and t4; particles are assumed to be identical
                 timer.start_comp("add_ann_prtcls");
