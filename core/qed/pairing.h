@@ -14,7 +14,10 @@
 #include "tools/sample_arrays.h"
 #include "tools/linlogspace.h"
 
+#ifdef DEBUG
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
+#endif
+
 #include "external/timer/timer.h"
 
 #include "core/qed/interactions/interaction.h"
