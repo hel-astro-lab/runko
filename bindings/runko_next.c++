@@ -14,13 +14,8 @@ void
 {
   using PS = runko::ParticleState;
   py::class_<PS>(m_sub, "ParticleState")
-    .def(
-      py::init<PS::vec3, PS::vec3, double>(),
-      py::arg("pos"),
-      py::arg("vel"),
-      py::arg("weight"))
+    .def(py::init<PS::vec3, PS::vec3>(), py::arg("pos"), py::arg("vel"))
     .def_readwrite("pos", &PS::pos)
-    .def_readwrite("vel", &PS::vel)
-    .def_readwrite("weight", &PS::weight);
+    .def_readwrite("vel", &PS::vel);
 }
 }  // namespace runko_next

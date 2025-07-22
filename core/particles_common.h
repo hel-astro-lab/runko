@@ -16,7 +16,6 @@ struct ParticleState {
 
   vec3 pos;
   vec3 vel;
-  double weight;
 };
 
 }  // namespace runko

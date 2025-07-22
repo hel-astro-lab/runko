@@ -18,7 +18,7 @@ struct ParticleContainerArgs {
 
 class [[nodiscard]] ParticleContainer {
 public:
-  /// The type in which pos, vel and weights are stored in.
+  /// The type in which pos and vel are stored in.
   using value_type = float;
 
 private:
@@ -26,7 +26,6 @@ private:
 
   runko::VecList<value_type> pos_;
   runko::VecList<value_type> vel_;
-  runko::ScalarList<value_type> weights_;
 
   double charge_;
   double mass_;
@@ -40,7 +39,6 @@ public:
 
   std::array<std::vector<value_type>, 3> get_positions();
   std::array<std::vector<value_type>, 3> get_velocities();
-  std::vector<value_type> get_weights();
 
   /// Add particles from other container.
   ///
@@ -62,20 +60,17 @@ public:
 
     const auto added_pos_smds     = added.pos_.staging_mds();
     const auto added_vel_smds     = added.vel_.staging_mds();
-    const auto added_weights_smds = added.weights_.staging_mds();
 
     for(const auto [i, p]: std::views::enumerate(new_particles)) {
       for(const auto j: std::views::iota(0uz, 3uz)) {
         added_pos_smds[i][j] = p.pos[j];
         added_vel_smds[i][j] = p.vel[j];
       }
-      added_weights_smds[i][] = p.weight;
     }
 
     auto w1 = tyvi::mdgrid_work {}.sync_from_staging(added.pos_);
     auto w2 = tyvi::mdgrid_work {}.sync_from_staging(added.vel_);
-    auto w3 = tyvi::mdgrid_work {}.sync_from_staging(added.weights_);
-    tyvi::when_all(w1, w2, w3).wait();
+    tyvi::when_all(w1, w2).wait();
 
     this->add_particles(added);
   }

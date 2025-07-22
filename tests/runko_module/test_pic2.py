@@ -45,9 +45,6 @@ class pic2_tile(unittest.TestCase):
         self.assertEqual(0, len(vel0_y))
         self.assertEqual(0, len(vel0_z))
 
-        weights0 = tile.get_weights(runko.particle.electron)
-        self.assertEqual(0, len(weights0))
-
 
     def test_inject_to_each_cell_roundtrip(self):
 
@@ -71,14 +68,13 @@ class pic2_tile(unittest.TestCase):
             P = runko.ParticleState
             new_p = []
             for i in range(ppc):
-                new_p.append( P(pos=(x, y, z), vel=(0, 0, i), weight=42))
+                new_p.append( P(pos=(x, y, z), vel=(0, 0, i)))
             return new_p
 
         tile.inject_to_each_cell(runko.particle.electron, particle_generator)
 
         pos_x, pos_y, pos_z = tile.get_positions(runko.particle.electron)
         vel_x, vel_y, vel_z = tile.get_velocities(runko.particle.electron)
-        weights = tile.get_weights(runko.particle.electron)
 
         expected_num_of_particles = ppc * config.NxMesh * config.NyMesh * config.NzMesh
 
@@ -88,7 +84,6 @@ class pic2_tile(unittest.TestCase):
         self.assertEqual(expected_num_of_particles, len(vel_x))
         self.assertEqual(expected_num_of_particles, len(vel_y))
         self.assertEqual(expected_num_of_particles, len(vel_z))
-        self.assertEqual(expected_num_of_particles, len(weights))
 
         # Go through all particles, check their velocities
         # and store their positions if vz == 0.
@@ -108,8 +103,6 @@ class pic2_tile(unittest.TestCase):
 
             self.assertEqual(vx, 0)
             self.assertEqual(vy, 0)
-
-            self.assertEqual(weights[i], 42)
 
         self.assertEqual(config.NxMesh * config.NyMesh * config.NzMesh, len(seen_pos))
 
@@ -139,13 +132,12 @@ class pic2_tile(unittest.TestCase):
         # This should be called for each (non-halo) cell in the tile.
         def make_gen(w):
             def particle_generator(x, y, z):
-                return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0), weight=w)]
+                return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
             return particle_generator
 
         def assertLengths(expected_num_of_particles):
             pos_x, pos_y, pos_z = tile.get_positions(runko.particle.electron)
             vel_x, vel_y, vel_z = tile.get_velocities(runko.particle.electron)
-            weights = tile.get_weights(runko.particle.electron)
 
             self.assertEqual(expected_num_of_particles, len(pos_x))
             self.assertEqual(expected_num_of_particles, len(pos_y))
@@ -153,7 +145,6 @@ class pic2_tile(unittest.TestCase):
             self.assertEqual(expected_num_of_particles, len(vel_x))
             self.assertEqual(expected_num_of_particles, len(vel_y))
             self.assertEqual(expected_num_of_particles, len(vel_z))
-            self.assertEqual(expected_num_of_particles, len(weights))
 
 
         assertLengths(0)
@@ -164,23 +155,6 @@ class pic2_tile(unittest.TestCase):
 
         N = config.NxMesh * config.NyMesh * config.NzMesh
         assertLengths(3 * N)
-
-        # Make sure each weight appears correct amount of times.
-
-        ones, twos, threes = 0, 0, 0
-        for w in tile.get_weights(runko.particle.electron):
-            if w == 1:
-                ones += 1
-            elif w == 2:
-                twos += 1
-            elif w == 3:
-                threes += 1
-            else:
-                raise RuntimeError(f"Unexpected weight: {w}")
-
-        self.assertEqual(ones, N)
-        self.assertEqual(twos, N)
-        self.assertEqual(threes, N)
 
 
     def test_inject_to_each_cell_multiple_particle_types(self):
@@ -203,7 +177,6 @@ class pic2_tile(unittest.TestCase):
         def assertLengths(type, expected_num_of_particles):
             pos_x, pos_y, pos_z = tile.get_positions(type)
             vel_x, vel_y, vel_z = tile.get_velocities(type)
-            weights = tile.get_weights(type)
 
             self.assertEqual(expected_num_of_particles, len(pos_x))
             self.assertEqual(expected_num_of_particles, len(pos_y))
@@ -211,17 +184,16 @@ class pic2_tile(unittest.TestCase):
             self.assertEqual(expected_num_of_particles, len(vel_x))
             self.assertEqual(expected_num_of_particles, len(vel_y))
             self.assertEqual(expected_num_of_particles, len(vel_z))
-            self.assertEqual(expected_num_of_particles, len(weights))
 
 
         assertLengths(runko.particle.electron, 0)
         assertLengths(runko.particle.ion, 0)
 
         def particle_generator_electron(x, y, z):
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0), weight=1)]
+            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         def particle_generator_ion(x, y, z):
-            return 2 * [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0), weight=1)]
+            return 2 * [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(runko.particle.electron, particle_generator_electron)
         tile.inject_to_each_cell(runko.particle.ion, particle_generator_ion)

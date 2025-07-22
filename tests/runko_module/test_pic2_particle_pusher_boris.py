@@ -56,7 +56,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0), weight=1)]
+            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(runko.particle.electron, still_particle)
 
@@ -100,7 +100,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0), weight=1)]
+            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(runko.particle.electron, still_particle)
 
@@ -144,7 +144,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0), weight=1)]
+            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(runko.particle.electron, still_particle)
 
@@ -188,7 +188,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0), weight=1)]
+            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
 
         tile.inject_to_each_cell(runko.particle.electron, moving_particle)
 
@@ -232,7 +232,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0.1, 0, 0), weight=1)]
+            return [runko.ParticleState(pos=(x, y, z), vel=(0.1, 0, 0))]
 
         tile.inject_to_each_cell(runko.particle.electron, moving_particle)
 
@@ -276,7 +276,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0), weight=1)]
+            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
 
         tile.inject_to_each_cell(runko.particle.electron, moving_particle)
 

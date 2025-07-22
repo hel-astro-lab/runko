@@ -75,11 +75,6 @@ void
         const auto [x, y, z] = tile.get_velocities(p);
         return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
       })
-    .def(
-      "get_weights",
-      [](pic2::Tile<3>& tile, const runko::particle p) {
-        return to_ndarray(tile.get_weights(p));
-      })
     .def("inject_to_each_cell", &pic2::Tile<3>::inject_to_each_cell)
     .def("push_particles", &pic2::Tile<3>::push_particles);
 

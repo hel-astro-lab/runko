@@ -114,13 +114,6 @@ std::array<std::vector<typename Tile<D>::value_type>, 3>
 }
 
 template<std::size_t D>
-std::vector<typename Tile<D>::value_type>
-  Tile<D>::get_weights(const runko::particle p)
-{
-  return particle_buffs_.at(p).get_weights();
-}
-
-template<std::size_t D>
 void
   Tile<D>::inject_to_each_cell(
     const runko::particle particle_type,

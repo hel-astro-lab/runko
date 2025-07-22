@@ -40,7 +40,7 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   FieldInterpolator field_interpolator_;
 
 public:
-  /// The type in which pos, vel and weights are stored in.
+  /// The type in which pos and vel are stored in.
   using value_type = ParticleContainer::value_type;
 
   /// Construct Tile based on the given config.
@@ -85,7 +85,6 @@ public:
 
   std::array<std::vector<value_type>, 3> get_positions(runko::particle);
   std::array<std::vector<value_type>, 3> get_velocities(runko::particle);
-  std::vector<value_type> get_weights(runko::particle);
 
 
   using particle_generator =
