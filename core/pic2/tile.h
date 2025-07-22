@@ -21,6 +21,9 @@ namespace pic2 {
 
 namespace mpi = mpi4cpp::mpi;
 
+enum class ParticlePusher { boris };
+enum class FieldInterpolator { linear_1st };
+
 /*! \brief PiC v2 tile
  *
  * Tile infrastructures are inherited from corgi::Tile
@@ -33,7 +36,8 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   static_assert(D == 3);
 
   std::map<runko::particle, ParticleContainer> particle_buffs_;
-
+  ParticlePusher particle_pusher_;
+  FieldInterpolator field_interpolator_;
 
 public:
   /// The type in which pos, vel and weights are stored in.
@@ -41,7 +45,7 @@ public:
 
   /// Construct Tile based on the given config.
   ///
-  /// FIXME: document how the initializeion is done?
+  /// FIXME: document how the initialization is done?
   ///
   /// In addition to emf2::Tile ctor requirements,
   /// the given config has to contain values for:
@@ -53,8 +57,10 @@ public:
   /// `delgam`: temperature(?)
   /// `temperature_ratio`: T_i / T_e
   /// `sigma`: magnetization number (omega_ce/omega_pe)^2, including gamma for inertia
-  /// `c_omp`: simulation skin depth simulation
+  /// `c_omp`: simulation skin depth resolution
   /// `ppc`: particles per cell per species
+  /// `particle_pusher`: scheme to update particles velocities and positions
+  /// `fields_interpolator`: scheme to interpolate E and B fields to particles
   ///
   /// FIXME: figure out meaning, implement and document all options below:
   /// `npasses`: number of current filter passes
@@ -91,6 +97,10 @@ public:
   ///
   /// Particle type is assumed to be configured.
   void inject_to_each_cell(runko::particle, particle_generator);
+
+
+  /// Push particles updating their velocities and positions.
+  void push_particles(runko::particle);
 };
 
 

@@ -29,6 +29,8 @@ class pic2_tile(unittest.TestCase):
         config.temperature_ratio = 1.0
         config.sigma = 40
         config.c_omp = 1
+        config.particle_pusher = "boris"
+        config.field_interpolator = "linear_1st"
 
         tile_grid_idx = (0, 1, 2)
         tile = runko.pic.Tile(tile_grid_idx, config)
@@ -56,6 +58,8 @@ class pic2_tile(unittest.TestCase):
         config.temperature_ratio = 1.0
         config.sigma = 40
         config.c_omp = 1
+        config.particle_pusher = "boris"
+        config.field_interpolator = "linear_1st"
 
         tile_grid_idx = (0, 0, 0)
         tile = runko.pic.Tile(tile_grid_idx, config)
@@ -126,6 +130,8 @@ class pic2_tile(unittest.TestCase):
         config.temperature_ratio = 1.0
         config.sigma = 40
         config.c_omp = 1
+        config.particle_pusher = "boris"
+        config.field_interpolator = "linear_1st"
 
         tile_grid_idx = (0, 0, 0)
         tile = runko.pic.Tile(tile_grid_idx, config)
@@ -188,6 +194,8 @@ class pic2_tile(unittest.TestCase):
         config.temperature_ratio = 1.0
         config.sigma = 40
         config.c_omp = 1
+        config.particle_pusher = "boris"
+        config.field_interpolator = "linear_1st"
 
         tile_grid_idx = (0, 0, 0)
         tile = runko.pic.Tile(tile_grid_idx, config)

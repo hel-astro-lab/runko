@@ -1,10 +1,12 @@
 #pragma once
 
+#include "core/emf2/yee_lattice.h"
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
 
 #include <concepts>
 #include <cstddef>
+#include <functional>
 #include <ranges>
 
 namespace pic2 {
@@ -22,9 +24,9 @@ public:
 private:
   using E = std::dextents<std::size_t, 1>;
 
-  runko::VecList<float> pos_;
-  runko::VecList<float> vel_;
-  runko::ScalarList<float> weights_;
+  runko::VecList<value_type> pos_;
+  runko::VecList<value_type> vel_;
+  runko::ScalarList<value_type> weights_;
 
   double charge_;
   double mass_;
@@ -77,6 +79,12 @@ public:
 
     this->add_particles(added);
   }
+
+  using InterpolatedEB_function =
+    std::function<emf2::YeeLattice::InterpolatedEB(const runko::VecList<value_type>&)>;
+
+  /// Push particles velocities and positions using boris scheme.
+  void push_particles_boris(double cfl, InterpolatedEB_function);
 };
 
 

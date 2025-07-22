@@ -26,6 +26,7 @@ set (FIELDS2_FILES
      ../core/emf2/tile.c++
      ../core/emf2/yee_lattice.c++
      ../core/emf2/yee_lattice_FDTD2.c++
+     ../core/emf2/yee_lattice_interpolate_linear_1st.c++
      )
 
 set (VLV_FILES
@@ -72,6 +73,7 @@ set (PIC2_FILES
      pypic2.c++
      ../core/pic2/tile.c++
      ../core/pic2/particle.c++
+     ../core/pic2/particle_boris.c++
      )
 
 set (QED_FILES 

@@ -41,7 +41,7 @@ concept yee_lattice_fields_function =
 class [[nodiscard]] YeeLattice {
 public:
   using value_type = float;
-  using VecGrid      = runko::VecGrid<value_type>;
+  using VecGrid    = runko::VecGrid<value_type>;
 
   using YeeLatticeHostCopy = tyvi::mdgrid_buffer<
     std::vector<YeeLatticeFieldsAtPoint>,
@@ -252,6 +252,19 @@ public:
 
   /// Set J subregion specified by dir from other tile.
   void set_J_in_subregion(dir_type dir, const YeeLattice& other);
+
+
+  struct [[nodiscard]] InterpolatedEB {
+    runko::VecList<value_type> E, B;
+  };
+
+  /// Interpolate E and B to given coordinates using linear_1st interpolation.
+  ///
+  /// Lattice index (0, 0, 0) is interperted to be at lattice_origo_coordinates.
+  /// Note that (0, 0, 0) is in the halo region.
+  InterpolatedEB interpolate_EB_linear_1st(
+    std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::VecList<value_type>& coordinates) const;
 };
 
 }  // namespace emf2

@@ -4,10 +4,12 @@
 #include "core/pic2/particle.h"
 
 #include <cmath>
+#include <format>
 #include <functional>
 #include <numeric>
 #include <ranges>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -57,6 +59,28 @@ void
   }
 }
 
+pic2::ParticlePusher
+  parse_particle_pusher(const std::string_view p)
+{
+  if(p == "boris") {
+    return pic2::ParticlePusher::boris;
+  } else {
+    const auto msg = std::format("{} is not supported particle pusher.", p);
+    throw std::runtime_error { msg };
+  }
+}
+
+pic2::FieldInterpolator
+  parse_field_interpolator(const std::string_view p)
+{
+  if(p == "linear_1st") {
+    return pic2::FieldInterpolator::linear_1st;
+  } else {
+    const auto msg = std::format("{} is not supported field_interpolator.", p);
+    throw std::runtime_error { msg };
+  }
+}
+
 }  // namespace
 
 namespace pic2 {
@@ -66,7 +90,11 @@ Tile<D>::Tile(
   const std::array<std::size_t, 3> tile_grid_idx,
   const toolbox::ConfigParser& conf) :
   corgi::Tile<D>(),
-  emf2::Tile<D>(tile_grid_idx, conf)
+  emf2::Tile<D>(tile_grid_idx, conf),
+  particle_pusher_ { parse_particle_pusher(
+    conf.get_or_throw<std::string>("particle_pusher")) },
+  field_interpolator_ { parse_field_interpolator(
+    conf.get_or_throw<std::string>("field_interpolator")) }
 {
   construct_particle_buffs(particle_buffs_, conf);
 }
@@ -133,12 +161,44 @@ void
     rv::iota(0uz, e[2]));
   for(const auto [i, j, k]: index_space) {
     const auto [x, y, z] = global_coordinates(i, j, k);
-    for(const auto p: pgen(x, y, z)) {
-        new_particles.push_back(p);
-    }
+    for(const auto p: pgen(x, y, z)) { new_particles.push_back(p); }
   }
 
   particle_buffs_.at(particle_type).add_particles(new_particles);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::push_particles(const runko::particle p)
+{
+  using yee_value_type = emf2::YeeLattice::value_type;
+  const auto origo_pos =
+    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+
+  pic2::ParticleContainer::InterpolatedEB_function ipol_func {};
+
+  switch(field_interpolator_) {
+    case FieldInterpolator::linear_1st: {
+      ipol_func = std::bind_front(
+        &emf2::YeeLattice::interpolate_EB_linear_1st,
+        std::cref(this->yee_lattice_),
+        origo_pos);
+      break;
+    }
+    default:
+      throw std::logic_error { "pic2::Tile::push_particles: unkown interpolator" };
+  }
+
+
+  switch(particle_pusher_) {
+    case ParticlePusher::boris:
+      particle_buffs_.at(p).push_particles_boris(this->cfl_, std::move(ipol_func));
+      break;
+    default:
+      throw std::logic_error { "pic2::Tile::push_particles: unkown particle pusher" };
+  }
 }
 
 }  // namespace pic2

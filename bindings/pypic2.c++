@@ -80,7 +80,8 @@ void
       [](pic2::Tile<3>& tile, const runko::particle p) {
         return to_ndarray(tile.get_weights(p));
       })
-    .def("inject_to_each_cell", &pic2::Tile<3>::inject_to_each_cell);
+    .def("inject_to_each_cell", &pic2::Tile<3>::inject_to_each_cell)
+    .def("push_particles", &pic2::Tile<3>::push_particles);
 
   //--------------------------------------------------
   // Full IO
