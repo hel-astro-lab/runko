@@ -41,6 +41,14 @@ struct VecD {
 
   constexpr VecD(const std::array<T, D>& arr) { data = arr; }
 
+  template<typename MDS>
+    requires std::convertible_to<T, typename MDS::element_type> and
+             (MDS::rank() == 1) and (MDS::static_extent(0) == D)
+  constexpr VecD(const MDS& mds)
+  {
+    for(auto i = 0uz; i < D; ++i) { data[i] = mds[i]; }
+  }
+
   template<std::convertible_to<T>... U>
     requires(sizeof...(U) == D)
   constexpr void set(U&&... args)
