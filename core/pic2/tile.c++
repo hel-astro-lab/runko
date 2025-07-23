@@ -31,8 +31,7 @@ void
 
       // Due to effects of density function to particle number,
       // we do not yet know how many particles there are going to be.
-      // Negation charges and abs(m) are as they are in pytools/pic/*
-      return pic2::ParticleContainerArgs { .N = 0, .charge = -q, .mass = std::fabs(m) };
+      return pic2::ParticleContainerArgs { .N = 0, .charge = q, .mass = m };
     };
 
     return conf.get<double>(q_label)
@@ -40,22 +39,21 @@ void
       .transform(qm_tuple_to_args);
   };
 
-  if(const auto args = make_opt_args("qe", "me")) {
-    where_to.insert_or_assign(
-      runko::particle::electron,
-      pic2::ParticleContainer { args.value() });
-  }
+  for(auto i = 0uz; true; ++i) {
+    const auto q_label = std::format("q{}", i);
+    const auto m_label = std::format("m{}", i);
 
-  if(const auto args = make_opt_args("qi", "mi")) {
-    where_to.insert_or_assign(
-      runko::particle::ion,
-      pic2::ParticleContainer { args.value() });
-  }
+    if(const auto pcontainer_args = make_opt_args(q_label, m_label)) {
+      // insert_or_assign and not operator[], because if element is missing,
+      // then operator[] will default construct it.
+      // pic2::ParticleContainer is not default constructible.
+      std::ignore = where_to.insert_or_assign(
+        i,
+        pic2::ParticleContainer { pcontainer_args.value() });
 
-  if(const auto args = make_opt_args("qp", "mp")) {
-    where_to.insert_or_assign(
-      runko::particle::photon,
-      pic2::ParticleContainer { args.value() });
+    } else {
+      break;
+    }
   }
 }
 
@@ -101,23 +99,21 @@ Tile<D>::Tile(
 
 template<std::size_t D>
 std::array<std::vector<typename Tile<D>::value_type>, 3>
-  Tile<D>::get_positions(const runko::particle p)
+  Tile<D>::get_positions(const std::size_t p)
 {
   return particle_buffs_.at(p).get_positions();
 }
 
 template<std::size_t D>
 std::array<std::vector<typename Tile<D>::value_type>, 3>
-  Tile<D>::get_velocities(const runko::particle p)
+  Tile<D>::get_velocities(const std::size_t p)
 {
   return particle_buffs_.at(p).get_velocities();
 }
 
 template<std::size_t D>
 void
-  Tile<D>::inject_to_each_cell(
-    const runko::particle particle_type,
-    particle_generator pgen)
+  Tile<D>::inject_to_each_cell(const std::size_t particle_type, particle_generator pgen)
 {
   if(this->mins == this->maxs) {
     throw std::logic_error {
@@ -162,7 +158,7 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::push_particles(const runko::particle p)
+  Tile<D>::push_particles(const std::size_t p)
 {
   using yee_value_type = emf2::YeeLattice::value_type;
   const auto origo_pos =

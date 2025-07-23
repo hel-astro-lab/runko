@@ -23,8 +23,8 @@ class pic2_tile(unittest.TestCase):
     def test_pic_tiles_are_initially_empty(self):
 
         config = make_valid_emf2_config()
-        config.qe = 1
-        config.me = 1
+        config.q0 = 1
+        config.m0 = 1
         config.delgam = 1.0e-5
         config.temperature_ratio = 1.0
         config.sigma = 40
@@ -35,8 +35,8 @@ class pic2_tile(unittest.TestCase):
         tile_grid_idx = (0, 1, 2)
         tile = runko.pic.Tile(tile_grid_idx, config)
 
-        (pos0_x, pos0_y, pos0_z) = tile.get_positions(runko.particle.electron)
-        (vel0_x, vel0_y, vel0_z) = tile.get_velocities(runko.particle.electron)
+        (pos0_x, pos0_y, pos0_z) = tile.get_positions(0)
+        (vel0_x, vel0_y, vel0_z) = tile.get_velocities(0)
 
         self.assertEqual(0, len(pos0_x))
         self.assertEqual(0, len(pos0_y))
@@ -49,8 +49,8 @@ class pic2_tile(unittest.TestCase):
     def test_inject_to_each_cell_roundtrip(self):
 
         config = make_valid_emf2_config()
-        config.qe = 1
-        config.me = 1
+        config.q0 = 1
+        config.m0 = 1
         config.delgam = 1.0e-5
         config.temperature_ratio = 1.0
         config.sigma = 40
@@ -71,10 +71,10 @@ class pic2_tile(unittest.TestCase):
                 new_p.append( P(pos=(x, y, z), vel=(0, 0, i)))
             return new_p
 
-        tile.inject_to_each_cell(runko.particle.electron, particle_generator)
+        tile.inject_to_each_cell(0, particle_generator)
 
-        pos_x, pos_y, pos_z = tile.get_positions(runko.particle.electron)
-        vel_x, vel_y, vel_z = tile.get_velocities(runko.particle.electron)
+        pos_x, pos_y, pos_z = tile.get_positions(0)
+        vel_x, vel_y, vel_z = tile.get_velocities(0)
 
         expected_num_of_particles = ppc * config.NxMesh * config.NyMesh * config.NzMesh
 
@@ -117,8 +117,8 @@ class pic2_tile(unittest.TestCase):
     def test_inject_to_each_cell_multiple_times(self):
 
         config = make_valid_emf2_config()
-        config.qe = 1
-        config.me = 1
+        config.q0 = 1
+        config.m0 = 1
         config.delgam = 1.0e-5
         config.temperature_ratio = 1.0
         config.sigma = 40
@@ -136,8 +136,8 @@ class pic2_tile(unittest.TestCase):
             return particle_generator
 
         def assertLengths(expected_num_of_particles):
-            pos_x, pos_y, pos_z = tile.get_positions(runko.particle.electron)
-            vel_x, vel_y, vel_z = tile.get_velocities(runko.particle.electron)
+            pos_x, pos_y, pos_z = tile.get_positions(0)
+            vel_x, vel_y, vel_z = tile.get_velocities(0)
 
             self.assertEqual(expected_num_of_particles, len(pos_x))
             self.assertEqual(expected_num_of_particles, len(pos_y))
@@ -149,9 +149,9 @@ class pic2_tile(unittest.TestCase):
 
         assertLengths(0)
 
-        tile.inject_to_each_cell(runko.particle.electron, make_gen(1))
-        tile.inject_to_each_cell(runko.particle.electron, make_gen(2))
-        tile.inject_to_each_cell(runko.particle.electron, make_gen(3))
+        tile.inject_to_each_cell(0, make_gen(1))
+        tile.inject_to_each_cell(0, make_gen(2))
+        tile.inject_to_each_cell(0, make_gen(3))
 
         N = config.NxMesh * config.NyMesh * config.NzMesh
         assertLengths(3 * N)
@@ -160,10 +160,10 @@ class pic2_tile(unittest.TestCase):
     def test_inject_to_each_cell_multiple_particle_types(self):
 
         config = make_valid_emf2_config()
-        config.qe = 1
-        config.me = 1
-        config.qi = 1
-        config.mi = 1
+        config.q0 = -1
+        config.m0 = 1
+        config.q1 = 2
+        config.m1 = 2
         config.delgam = 1.0e-5
         config.temperature_ratio = 1.0
         config.sigma = 40
@@ -186,8 +186,8 @@ class pic2_tile(unittest.TestCase):
             self.assertEqual(expected_num_of_particles, len(vel_z))
 
 
-        assertLengths(runko.particle.electron, 0)
-        assertLengths(runko.particle.ion, 0)
+        assertLengths(0, 0)
+        assertLengths(1, 0)
 
         def particle_generator_electron(x, y, z):
             return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
@@ -195,12 +195,12 @@ class pic2_tile(unittest.TestCase):
         def particle_generator_ion(x, y, z):
             return 2 * [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
-        tile.inject_to_each_cell(runko.particle.electron, particle_generator_electron)
-        tile.inject_to_each_cell(runko.particle.ion, particle_generator_ion)
+        tile.inject_to_each_cell(0, particle_generator_electron)
+        tile.inject_to_each_cell(1, particle_generator_ion)
 
         N = config.NxMesh * config.NyMesh * config.NzMesh
-        assertLengths(runko.particle.electron, N)
-        assertLengths(runko.particle.ion, 2 * N)
+        assertLengths(0, N)
+        assertLengths(1, 2 * N)
 
 
 if __name__ == "__main__":

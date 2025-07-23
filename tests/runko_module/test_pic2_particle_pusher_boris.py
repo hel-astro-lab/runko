@@ -19,8 +19,8 @@ def make_test_tile():
     config.zmin = 0
     config.cfl = 1
     config.field_propagator = "FDTD2"
-    config.qe = 1
-    config.me = 1
+    config.q0 = -1
+    config.m0 = 1
     config.delgam = 1.0e-5
     config.temperature_ratio = 1.0
     config.sigma = 40
@@ -58,10 +58,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
                 return []
             return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
-        tile.inject_to_each_cell(runko.particle.electron, still_particle)
+        tile.inject_to_each_cell(0, still_particle)
 
-        pos0 = tile.get_positions(runko.particle.electron)
-        vel0 = tile.get_velocities(runko.particle.electron)
+        pos0 = tile.get_positions(0)
+        vel0 = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos0, *vel0):
             self.assertEqual(decimal_part(x), 0)
@@ -72,10 +72,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(runko.particle.electron)
+        tile.push_particles(0)
 
-        pos = tile.get_positions(runko.particle.electron)
-        vel = tile.get_velocities(runko.particle.electron)
+        pos = tile.get_positions(0)
+        vel = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos, *vel):
             self.assertNotEqual(decimal_part(x), 0)
@@ -102,10 +102,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
                 return []
             return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
-        tile.inject_to_each_cell(runko.particle.electron, still_particle)
+        tile.inject_to_each_cell(0, still_particle)
 
-        pos0 = tile.get_positions(runko.particle.electron)
-        vel0 = tile.get_velocities(runko.particle.electron)
+        pos0 = tile.get_positions(0)
+        vel0 = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos0, *vel0):
             self.assertEqual(decimal_part(x), 0)
@@ -116,10 +116,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(runko.particle.electron)
+        tile.push_particles(0)
 
-        pos = tile.get_positions(runko.particle.electron)
-        vel = tile.get_velocities(runko.particle.electron)
+        pos = tile.get_positions(0)
+        vel = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos, *vel):
             self.assertEqual(decimal_part(x), 0)
@@ -146,10 +146,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
                 return []
             return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
-        tile.inject_to_each_cell(runko.particle.electron, still_particle)
+        tile.inject_to_each_cell(0, still_particle)
 
-        pos0 = tile.get_positions(runko.particle.electron)
-        vel0 = tile.get_velocities(runko.particle.electron)
+        pos0 = tile.get_positions(0)
+        vel0 = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos0, *vel0):
             self.assertEqual(decimal_part(x), 0)
@@ -160,10 +160,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(runko.particle.electron)
+        tile.push_particles(0)
 
-        pos = tile.get_positions(runko.particle.electron)
-        vel = tile.get_velocities(runko.particle.electron)
+        pos = tile.get_positions(0)
+        vel = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos, *vel):
             self.assertEqual(decimal_part(x), 0)
@@ -190,10 +190,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
                 return []
             return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
 
-        tile.inject_to_each_cell(runko.particle.electron, moving_particle)
+        tile.inject_to_each_cell(0, moving_particle)
 
-        pos0 = tile.get_positions(runko.particle.electron)
-        vel0 = tile.get_velocities(runko.particle.electron)
+        pos0 = tile.get_positions(0)
+        vel0 = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos0, *vel0):
             self.assertEqual(decimal_part(x), 0)
@@ -204,10 +204,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0.1)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(runko.particle.electron)
+        tile.push_particles(0)
 
-        pos = tile.get_positions(runko.particle.electron)
-        vel = tile.get_velocities(runko.particle.electron)
+        pos = tile.get_positions(0)
+        vel = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos, *vel):
             self.assertEqual(decimal_part(x), 0)
@@ -234,10 +234,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
                 return []
             return [runko.ParticleState(pos=(x, y, z), vel=(0.1, 0, 0))]
 
-        tile.inject_to_each_cell(runko.particle.electron, moving_particle)
+        tile.inject_to_each_cell(0, moving_particle)
 
-        pos0 = tile.get_positions(runko.particle.electron)
-        vel0 = tile.get_velocities(runko.particle.electron)
+        pos0 = tile.get_positions(0)
+        vel0 = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos0, *vel0):
             self.assertEqual(decimal_part(x), 0)
@@ -248,10 +248,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(runko.particle.electron)
+        tile.push_particles(0)
 
-        pos = tile.get_positions(runko.particle.electron)
-        vel = tile.get_velocities(runko.particle.electron)
+        pos = tile.get_positions(0)
+        vel = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos, *vel):
             self.assertNotEqual(decimal_part(x), 0)
@@ -278,10 +278,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
                 return []
             return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
 
-        tile.inject_to_each_cell(runko.particle.electron, moving_particle)
+        tile.inject_to_each_cell(0, moving_particle)
 
-        pos0 = tile.get_positions(runko.particle.electron)
-        vel0 = tile.get_velocities(runko.particle.electron)
+        pos0 = tile.get_positions(0)
+        vel0 = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos0, *vel0):
             self.assertEqual(decimal_part(x), 0)
@@ -292,10 +292,10 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0.1)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(runko.particle.electron)
+        tile.push_particles(0)
 
-        pos = tile.get_positions(runko.particle.electron)
-        vel = tile.get_velocities(runko.particle.electron)
+        pos = tile.get_positions(0)
+        vel = tile.get_velocities(0)
 
         for x, y, z, vx, vy, vz in zip(*pos, *vel):
             self.assertNotEqual(decimal_part(x), 0)

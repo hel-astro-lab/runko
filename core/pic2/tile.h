@@ -35,7 +35,7 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
 
   static_assert(D == 3);
 
-  std::map<runko::particle, ParticleContainer> particle_buffs_;
+  std::map<std::size_t, ParticleContainer> particle_buffs_;
   ParticlePusher particle_pusher_;
   FieldInterpolator field_interpolator_;
 
@@ -50,10 +50,8 @@ public:
   /// In addition to emf2::Tile ctor requirements,
   /// the given config has to contain values for:
   ///
-  /// FIXME: what about photons (qp, mp)?
-  ///
-  /// `qx`: charge of x particle species (x in {e, i, p})
-  /// `mx`: mass-to-charge of x particle species (x in {e, i, p})
+  /// `qx`: charge of x:th particle species (x is natural number)
+  /// `mx`: mass-to-charge of x:th particle species (x is natural number)
   /// `delgam`: temperature(?)
   /// `temperature_ratio`: T_i / T_e
   /// `sigma`: magnetization number (omega_ce/omega_pe)^2, including gamma for inertia
@@ -61,6 +59,9 @@ public:
   /// `ppc`: particles per cell per species
   /// `particle_pusher`: scheme to update particles velocities and positions
   /// `fields_interpolator`: scheme to interpolate E and B fields to particles
+  ///
+  /// Note that particle charges and masses qx and mx are read in order: 0, 1, ...
+  /// If a i:th mass and charge are missing, the search is stopped.
   ///
   /// FIXME: figure out meaning, implement and document all options below:
   /// `npasses`: number of current filter passes
@@ -83,8 +84,8 @@ public:
   // see: https://github.com/llvm/llvm-project/issues/141592
   ~Tile() = default;
 
-  std::array<std::vector<value_type>, 3> get_positions(runko::particle);
-  std::array<std::vector<value_type>, 3> get_velocities(runko::particle);
+  std::array<std::vector<value_type>, 3> get_positions(std::size_t);
+  std::array<std::vector<value_type>, 3> get_velocities(std::size_t);
 
 
   using particle_generator =
@@ -95,11 +96,11 @@ public:
   /// Generator is called for each cell coordinates.
   ///
   /// Particle type is assumed to be configured.
-  void inject_to_each_cell(runko::particle, particle_generator);
+  void inject_to_each_cell(std::size_t, particle_generator);
 
 
   /// Push particles updating their velocities and positions.
-  void push_particles(runko::particle);
+  void push_particles(std::size_t);
 };
 
 

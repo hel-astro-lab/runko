@@ -65,13 +65,13 @@ void
       }))
     .def(
       "get_positions",
-      [](pic2::Tile<3>& tile, const runko::particle p) {
+      [](pic2::Tile<3>& tile, const std::size_t p) {
         const auto [x, y, z] = tile.get_positions(p);
         return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
       })
     .def(
       "get_velocities",
-      [](pic2::Tile<3>& tile, const runko::particle p) {
+      [](pic2::Tile<3>& tile, const std::size_t p) {
         const auto [x, y, z] = tile.get_velocities(p);
         return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
       })
