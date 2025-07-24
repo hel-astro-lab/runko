@@ -58,8 +58,8 @@ public:
     args.N     = N;
     auto added = ParticleContainer(args);
 
-    const auto added_pos_smds     = added.pos_.staging_mds();
-    const auto added_vel_smds     = added.vel_.staging_mds();
+    const auto added_pos_smds = added.pos_.staging_mds();
+    const auto added_vel_smds = added.vel_.staging_mds();
 
     for(const auto [i, p]: std::views::enumerate(new_particles)) {
       for(const auto j: std::views::iota(0uz, 3uz)) {
