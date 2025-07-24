@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-// tyvi has missing include of <functional> :(
+// Bandage for tyvi using but not including <functional> :(
 
 #include "tyvi/mdspan.h"
 
@@ -14,9 +14,28 @@
 
 namespace toolbox {
 
-template<std::floating_point T, std::size_t D>
+template<typename T>
+concept arithmetic = std::default_initializable<T> and requires(T t) {
+  { t + t } -> std::convertible_to<T>;
+  { t - t } -> std::convertible_to<T>;
+  { t * t } -> std::convertible_to<T>;
+  { t / t } -> std::convertible_to<T>;
+};
+
+template<arithmetic T, std::size_t D>
 struct VecD {
   std::array<T, D> data {};
+
+  constexpr bool operator==(const VecD& rhs) const
+  {
+    /* This operator can not be defaulted nor implemented with
+       std::array<T, N>::operator== due to amdgcn linker error for missing memcmp. */
+
+    // Ugly syntax until C++26 :(
+    return [&, this]<std::size_t... I>(std::index_sequence<I...>) {
+      return ((this->data[I] == rhs.data[I]) and ...);
+    }(std::make_index_sequence<D>());
+  };
 
   template<typename Self>
   constexpr auto& operator()(this Self& self, const std::size_t ind)
@@ -56,6 +75,15 @@ struct VecD {
     *this = VecD(std::forward<U>(args)...);
   }
 
+  template<arithmetic U>
+  constexpr VecD<U, D> as() const
+  {
+    // Ugly syntax until C++26 :(
+    return [this]<std::size_t... I>(std::index_sequence<I...>) {
+      return VecD<U, D>(static_cast<U>(this->data[I])...);
+    }(std::make_index_sequence<D>());
+  }
+
   friend std::ostream& operator<<(std::ostream& os, const VecD<T, D>& v)
   {
     os << "[";
@@ -66,20 +94,31 @@ struct VecD {
 };
 
 
-template<std::floating_point T>
+template<arithmetic T>
 using Vec3 = VecD<T, 3>;
 
-template<std::floating_point T>
+template<arithmetic T>
 using Vec4 = VecD<T, 4>;
 
 /// Deduction guide to make `Vec3 v(1, 2, 3);` work.
 template<typename... U>
 VecD(U&&...) -> VecD<std::common_type_t<U...>, sizeof...(U)>;
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
   requires(D >= 2)
 struct MatD {
   std::array<T, D * D> data {};
+
+  constexpr bool operator==(const MatD& rhs) const
+  {
+    /* This operator can not be defaulted nor implemented with
+       std::array<T, N>::operator== due to amdgcn linker error for missing memcmp. */
+
+    // Ugly syntax until C++26 :(
+    return [&, this]<std::size_t... I>(std::index_sequence<I...>) {
+      return ((this->data[I] == rhs.data[I]) and ...);
+    }(std::make_index_sequence<D * D>());
+  };
 
   /// Column major order.
   constexpr auto mds(this auto& self)
@@ -130,17 +169,17 @@ struct MatD {
   }
 };
 
-template<std::floating_point T>
+template<arithmetic T>
 using Mat3 = MatD<T, 3>;
 
-template<std::floating_point T>
+template<arithmetic T>
 using Mat4 = MatD<T, 4>;
 
 //--------------------------------------------------
 // arithmetics
 // elementwise arithmetics
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr VecD<T, D>
   operator/(const VecD<T, D>& v, const T s)
 {
@@ -149,7 +188,7 @@ constexpr VecD<T, D>
   return ret;
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr VecD<T, D>
   operator*(const VecD<T, D>& v, const T s)
 {
@@ -158,7 +197,7 @@ constexpr VecD<T, D>
   return ret;
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr VecD<T, D>
   operator*(const T s, const VecD<T, D>& v)
 {
@@ -166,7 +205,7 @@ constexpr VecD<T, D>
 }
 
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr VecD<T, D>
   operator+(const VecD<T, D>& v1, const VecD<T, D>& v2)
 {
@@ -176,7 +215,7 @@ constexpr VecD<T, D>
 }
 
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr VecD<T, D>
   operator-(const VecD<T, D>& v1, const VecD<T, D>& v2)
 {
@@ -185,7 +224,7 @@ constexpr VecD<T, D>
   return ret;
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr T
   dot(const VecD<T, D>& v1, const VecD<T, D>& v2)
 {
@@ -194,7 +233,7 @@ constexpr T
   return ret;
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr T
   sum(const VecD<T, D>& v)
 {
@@ -205,7 +244,7 @@ constexpr T
 }
 
 // matrix-vector product
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr VecD<T, D>
   dot(const MatD<T, D>& M, const VecD<T, D>& v)
 {
@@ -218,7 +257,7 @@ constexpr VecD<T, D>
 }
 
 
-template<std::floating_point T>
+template<arithmetic T>
 constexpr Vec3<T>
   cross(const Vec3<T>& v1, const Vec3<T>& v2)
 {
@@ -241,7 +280,7 @@ inline Vec3<T>
 
 
 // matrix inversion
-template<std::floating_point T>
+template<arithmetic T>
 constexpr Mat3<T>
   inv(const Mat3<T>& M)
 {
