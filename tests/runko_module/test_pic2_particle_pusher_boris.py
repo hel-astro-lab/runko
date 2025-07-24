@@ -27,6 +27,7 @@ def make_test_tile():
     config.c_omp = 1
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
+    config.current_depositer = "zigzag_1st"
 
     return config, runko.pic.Tile((0, 0, 0), config)
 

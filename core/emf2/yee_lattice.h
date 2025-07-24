@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/mdgrid_common.h"
+#include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
 
+#include <array>
 #include <concepts>
 #include <cstddef>
 #include <experimental/mdspan>
@@ -265,6 +267,21 @@ public:
   InterpolatedEB interpolate_EB_linear_1st(
     std::array<value_type, 3> lattice_origo_coordinates,
     const runko::VecList<value_type>& coordinates) const;
+
+  /// Set J = 0 everywhere including in halo.
+  void clear_current();
+
+  /// Represents a set of locations and corresponding currents.
+  struct [[nodiscard]] CurrentContributions {
+    thrust::device_vector<std::array<std::size_t, 3>> locations;
+    thrust::device_vector<std::array<value_type, 3>> currents;
+  };
+
+  /// Add given currents to J.
+  ///
+  /// It is assumed that every location appears at most once and
+  /// that the location indices include the halo regions.
+  void deposit_current(const CurrentContributions&);
 };
 
 }  // namespace emf2

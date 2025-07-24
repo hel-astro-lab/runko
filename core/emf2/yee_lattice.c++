@@ -1,5 +1,10 @@
 #include "core/emf2/yee_lattice.h"
 
+#include "thrust/execution_policy.h"
+#include "thrust/for_each.h"
+#include "thrust/iterator/zip_iterator.h"
+#include "thrust/tuple.h"
+
 #include <algorithm>
 #include <ranges>
 #include <sstream>
@@ -182,6 +187,35 @@ void
   const auto other_Jmds_region = other.corresponding_subregion(dir, other.J_.mds());
 
   return mds_copy(other_Jmds_region, my_Jmds_region).wait();
+}
+
+void
+  YeeLattice::clear_current()
+{
+  const auto Jmds = J_.mds();
+  tyvi::mdgrid_work {}
+    .for_each_index(Jmds, [=](const auto idx, const auto tidx) { Jmds[idx][tidx] = 0; })
+    .wait();
+}
+
+void
+  YeeLattice::deposit_current(const CurrentContributions& contributions)
+{
+  const auto b = thrust::make_zip_iterator(
+    contributions.locations.begin(),
+    contributions.currents.begin());
+  const auto e = thrust::make_zip_iterator(
+    contributions.locations.end(),
+    contributions.currents.end());
+
+  const auto Jmds = J_.mds();
+  thrust::for_each(thrust::device, b, e, [=](const auto& i) {
+    const auto idx = thrust::get<0>(i);
+    const auto J   = thrust::get<1>(i);
+    Jmds[idx][0]   = Jmds[idx][0] + J[0];
+    Jmds[idx][1]   = Jmds[idx][1] + J[1];
+    Jmds[idx][2]   = Jmds[idx][2] + J[2];
+  });
 }
 
 }  // namespace emf2

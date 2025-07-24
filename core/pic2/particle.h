@@ -3,6 +3,7 @@
 #include "core/emf2/yee_lattice.h"
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
+#include "thrust/device_vector.h"
 
 #include <concepts>
 #include <cstddef>
@@ -80,6 +81,10 @@ public:
 
   /// Push particles velocities and positions using boris scheme.
   void push_particles_boris(double cfl, InterpolatedEB_function);
+
+  emf2::YeeLattice::CurrentContributions current_zigzag_1st(
+    const std::array<value_type, 3> lattice_origo_coordinates,
+    const value_type cfl) const;
 };
 
 

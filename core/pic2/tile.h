@@ -23,6 +23,7 @@ namespace mpi = mpi4cpp::mpi;
 
 enum class ParticlePusher { boris };
 enum class FieldInterpolator { linear_1st };
+enum class CurrentDepositer { zigzag_1st };
 
 /*! \brief PiC v2 tile
  *
@@ -38,6 +39,7 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   std::map<std::size_t, ParticleContainer> particle_buffs_;
   ParticlePusher particle_pusher_;
   FieldInterpolator field_interpolator_;
+  CurrentDepositer current_depositer_;
 
 public:
   /// The type in which pos and vel are stored in.
@@ -101,6 +103,9 @@ public:
 
   /// Push particles updating their velocities and positions.
   void push_particles(std::size_t);
+
+  /// Deposit current from all particls.
+  void deposit_current();
 };
 
 

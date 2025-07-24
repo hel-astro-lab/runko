@@ -74,6 +74,7 @@ set (PIC2_FILES
      ../core/pic2/tile.c++
      ../core/pic2/particle.c++
      ../core/pic2/particle_boris.c++
+     ../core/pic2/particle_current_zigzag_1st.c++
      )
 
 set (QED_FILES 

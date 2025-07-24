@@ -1,5 +1,6 @@
 #include "core/pic2/tile.h"
 
+#include "core/emf2/yee_lattice.h"
 #include "core/particles_common.h"
 #include "core/pic2/particle.h"
 
@@ -79,6 +80,17 @@ pic2::FieldInterpolator
   }
 }
 
+pic2::CurrentDepositer
+  parse_current_depositer(const std::string_view p)
+{
+  if(p == "zigzag" or p == "zigzag_1st") {
+    return pic2::CurrentDepositer::zigzag_1st;
+  } else {
+    const auto msg = std::format("{} is not supported current depositer.", p);
+    throw std::runtime_error { msg };
+  }
+}
+
 }  // namespace
 
 namespace pic2 {
@@ -92,7 +104,9 @@ Tile<D>::Tile(
   particle_pusher_ { parse_particle_pusher(
     conf.get_or_throw<std::string>("particle_pusher")) },
   field_interpolator_ { parse_field_interpolator(
-    conf.get_or_throw<std::string>("field_interpolator")) }
+    conf.get_or_throw<std::string>("field_interpolator")) },
+  current_depositer_ { parse_current_depositer(
+    conf.get_or_throw<std::string>("current_depositer")) }
 {
   construct_particle_buffs(particle_buffs_, conf);
 }
@@ -187,6 +201,30 @@ void
       break;
     default:
       throw std::logic_error { "pic2::Tile::push_particles: unkown particle pusher" };
+  }
+}
+
+template<std::size_t D>
+void
+  Tile<D>::deposit_current()
+{
+  this->yee_lattice_.clear_current();
+
+  using yee_value_type = emf2::YeeLattice::value_type;
+  const auto origo_pos =
+    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+
+  switch(current_depositer_) {
+    case CurrentDepositer::zigzag_1st:
+      for(const auto& [_, pcontainer]: this->particle_buffs_) {
+        this->yee_lattice_.deposit_current(
+          pcontainer.current_zigzag_1st(origo_pos, this->cfl_));
+      }
+      break;
+    default:
+      throw std::logic_error { "pic2::Tile::push_particles: unkown current depositer" };
   }
 }
 

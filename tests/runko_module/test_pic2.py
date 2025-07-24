@@ -31,6 +31,7 @@ class pic2_tile(unittest.TestCase):
         config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
+        config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 1, 2)
         tile = runko.pic.Tile(tile_grid_idx, config)
@@ -57,6 +58,7 @@ class pic2_tile(unittest.TestCase):
         config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
+        config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
         tile = runko.pic.Tile(tile_grid_idx, config)
@@ -125,6 +127,7 @@ class pic2_tile(unittest.TestCase):
         config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
+        config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
         tile = runko.pic.Tile(tile_grid_idx, config)
@@ -170,6 +173,7 @@ class pic2_tile(unittest.TestCase):
         config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
+        config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
         tile = runko.pic.Tile(tile_grid_idx, config)
