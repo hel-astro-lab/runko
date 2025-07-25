@@ -7,6 +7,7 @@
 #include "core/emf/boundaries/conductor.h"
 #include "tools/vector.h"
 #include "tools/signum.h"
+#include "tools/staggered_grid.h"
 
 
 using std::min;
@@ -24,7 +25,7 @@ using toolbox::cross;
 using toolbox::dot;
 using toolbox::Vec3;
 
-using emf::StaggeredSphericalCoordinates;
+using toolbox::StaggeredSphericalCoordinates;
 
 
 // simple pseudo-random floats with C library rand() (outputting int's).

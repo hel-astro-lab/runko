@@ -1,4 +1,5 @@
 #include "core/emf/boundaries/conductor.h"
+#include "tools/staggered_grid.h"
 #include "tools/vector.h"
 
 #include <cmath> 
@@ -12,7 +13,9 @@ using toolbox::Vec3;
 using toolbox::norm;
 using toolbox::norm1d;
 using toolbox::norm2d;
-using emf::StaggeredSphericalCoordinates;
+using toolbox::StaggeredSphericalCoordinates;
+using toolbox::shape;
+
 
 
 // Decaying dipole-like field in 1D
