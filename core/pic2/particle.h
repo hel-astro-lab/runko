@@ -42,8 +42,6 @@ public:
   std::array<std::vector<value_type>, 3> get_velocities();
 
   /// Add particles from other container.
-  ///
-  /// Returns tyvi:::mdgrid_work representing the ongoing work.
   void add_particles(ParticleContainer& other);
 
 
