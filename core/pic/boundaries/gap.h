@@ -35,10 +35,11 @@ public:
   double radius;    // R = 0, location of the star's surface in x coordinate
   double radius_pc; // length of the gap in dx
                    
-  double delta = 2;  // smoothing parameter in units of dx
+  double delta_left  = 2;  // smoothing parameter for left BC in units of dx
+  double delta_right = 4;  // smoothing parameter for right BC in units of dx
   double Nx;     // total grid length
 
-
+  int halo = 3; // extent of the halo regions not updated in left/right edges of the domain
 
 
 
