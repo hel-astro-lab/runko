@@ -44,7 +44,7 @@ def virtual_emf_tiles():
     simulation = tile_grid.configure_simulation(conf)
 
     vtiles = list(simulation.virtual_tiles())
-    # mpi_unittest.assertNotEqual(len(vtiles), 0)
+    mpi_unittest.assertNotEqual(len(vtiles), 0)
 
     asserts = []
     for vtile in vtiles:
