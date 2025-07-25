@@ -53,12 +53,16 @@ def virtual_emf_tiles():
     mpi_unittest.assertDeferredResults(asserts)
 
 
-def emf_halos_are_initialized():
+def emf_communication():
     """
     TileGrid with only emf tiles, which have been initialized
     to have some constant E and B vector fields (curl(E or B) = 0).
-    If halos have not ben initialized, then curl(E or B) != 0
+    Initially the halo regions of each tile have not been initialized,
+    which means that curl(E or B) != 0 next to halo
     and pushing fields will not keep them constant.
+
+    In order to initialize the halos one has to do virtual tile sync
+    for each tile and then pariwise moore communication.
     """
 
     conf, tile_grid = create_test_grid()
@@ -113,4 +117,4 @@ def emf_halos_are_initialized():
 
 if __name__ == "__main__":
     virtual_emf_tiles()
-    emf_halos_are_initialized()
+    emf_communication()
