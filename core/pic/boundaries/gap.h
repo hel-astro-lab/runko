@@ -28,6 +28,20 @@ private:
 
 public:
 
+  // members
+  double B0;     // B_bg
+  double E0;     // E_rot
+
+  double radius;    // R = 0, location of the star's surface in x coordinate
+  double radius_pc; // length of the gap in dx
+                   
+  double delta = 2;  // smoothing parameter in units of dx
+  double Nx;     // total grid length
+
+
+
+
+
   // constructor
   Gap() :
     gen(42), // gen(rd() ) 
