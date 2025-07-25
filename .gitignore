@@ -58,7 +58,6 @@ out/
 
 *.err
 *.out
-CMakeLists.txt
 
 build/*
 projects/ffe/*ini
