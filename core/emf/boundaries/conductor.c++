@@ -1099,7 +1099,7 @@ void emf::Conductor<D>::update_e(
           auto sy  = shape( h2, radius, delta); // height smoothing parameter
 
           auto rcyl2 = (D==1) ? 0.0f : (D==2) ? norm1d(r2) : norm2d(r2); // cylindrical radius
-          sy      *= shape(rcyl2, radius_pc + offs, delta_pc); // damp off edges of polar cap
+          sy        *= shape(rcyl2, radius_pc + offs, delta_pc); // damp off edges of polar cap
 
           auto vrot2 = cross(Om, r2); // Omega x r
           auto erot2 = -1.0f*cross(vrot2, byd); //-v x B
@@ -1217,7 +1217,7 @@ void emf::Conductor<D>::update_e(
 
           //--------------------------------------------------
           // ver 1; tanh profile
-          const float radius_ext = (D==1) ? Nx - 2.5*tile_len : (D==2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
+          const float radius_ext = (D==1) ? Nx - 0.5*tile_len : (D==2) ? Ny - 0.5*tile_len : Nz - 0.5*tile_len;
           const float delta_ext = 0.25*tile_len; // 1/4 of tile size
           const auto s = shape(h, radius_ext, delta_ext); // tanh
 

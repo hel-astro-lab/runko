@@ -536,9 +536,18 @@ void pic::Star<D>::solve(
       if(D == 3) inside_bot = kglob < H; // z direction 
 
       bool inside_top = false;
-      if(D == 1) inside_top = iglob > Nx - 2.75*tile.mesh_lengths[0];
+      if(D == 1) inside_top = iglob > Nx - 0.75*tile.mesh_lengths[0];
       if(D == 2) inside_top = jglob > Ny - 0.75*tile.mesh_lengths[1];
       if(D == 3) inside_top = kglob > Nz - 0.75*tile.mesh_lengths[2]; 
+
+
+      // additional, more aggressive removal of outflowing particles in 1D
+      if(D == 1) {
+	if( iglob > Nx - 20.0*tile.mesh_lengths[0] ) { 
+	  // negative (inwards-going) particle
+	  if( con.vel(0, n) < 0.0f ) con.info(n) = -1;
+	}
+      }
 
       bool inside_cyl_bcs = false;
       if(D == 1) inside_cyl_bcs = false; // no boundaries in 1D
