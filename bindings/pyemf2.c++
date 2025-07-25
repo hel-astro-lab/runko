@@ -108,7 +108,7 @@ void
       })
     .def("push_half_b", &emf2::Tile<3>::push_half_b)
     .def("push_e", &emf2::Tile<3>::push_e)
-    .def("deposit_current", &emf2::Tile<3>::deposit_current);
+    .def("add_J_to_E", &emf2::Tile<3>::add_J_to_E);
 
   //--------------------------------------------------
   // Full IO

@@ -128,7 +128,7 @@ class emf2(unittest.TestCase):
             self.assertAlmostEqual(Jy[i, j, k], Jinit(ii, jj + 0.5, kk)[1], places=5)
             self.assertAlmostEqual(Jz[i, j, k], Jinit(ii, jj, kk + 0.5)[2], places=5)
 
-    def test_deposit_current(self):
+    def test_add_J_to_E(self):
 
         config = runko.Configuration(None)
         config.Nx = 2
@@ -158,7 +158,7 @@ class emf2(unittest.TestCase):
         self.assertTrue(np.all(E0y == 0))
         self.assertTrue(np.all(E0z == 0))
 
-        tile.deposit_current()
+        tile.add_J_to_E()
 
         # Now E = A * J, for some scalar A.
         # We can calculate A from each component and test that they are eqal.

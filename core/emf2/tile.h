@@ -77,7 +77,7 @@ public:
   void push_e();
 
   /// E += J
-  void deposit_current();
+  void add_J_to_E();
 
   /// Send field specified with mode (see comm_mode).
   std::vector<mpi4cpp::mpi::request>
