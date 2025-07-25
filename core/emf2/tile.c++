@@ -184,33 +184,6 @@ void
   yee_lattice_.add_J_to_E();
 }
 
-namespace {
-template<runko::comm_mode m>
-constexpr int
-  specialized_tag(const int tag)
-{
-
-  // cray-mpich supports maximum of 2^22-1 tag value.
-  if(tag / 3 + 1 >= std::pow(2, 22)) {
-    throw std::runtime_error { "emf2::Tile does not support tags >= 2^22 / 3." };
-  }
-
-  static constexpr auto comm_ordinal = [] {
-    using runko::comm_mode;
-    static_assert(
-      m == comm_mode::emf_E or m == comm_mode::emf_B or m == comm_mode::emf_J);
-
-    switch(m) {
-      case comm_mode::emf_E: return 0;
-      case comm_mode::emf_B: return 1;
-      case comm_mode::emf_J: return 2;
-    }
-  }();
-
-  return 3 * tag + comm_ordinal;
-}
-}  // namespace
-
 template<std::size_t D>
 std::vector<mpi4cpp::mpi::request>
   Tile<D>::send_data(
@@ -228,23 +201,14 @@ std::vector<mpi4cpp::mpi::request>
 
   using runko::comm_mode;
 
-  auto make_isend = [&](const auto s, const int t) {
-    return comm.isend(dest, t, s.data(), s.size());
+  auto make_isend = [&](const auto s) {
+    return comm.isend(dest, tag, s.data(), s.size());
   };
 
   switch(static_cast<comm_mode>(mode)) {
-    case comm_mode::emf_E:
-      return {
-        make_isend(yee_lattice_.span_E(), specialized_tag<comm_mode::emf_E>(tag))
-      };
-    case comm_mode::emf_B:
-      return {
-        make_isend(yee_lattice_.span_B(), specialized_tag<comm_mode::emf_B>(tag))
-      };
-    case comm_mode::emf_J:
-      return {
-        make_isend(yee_lattice_.span_J(), specialized_tag<comm_mode::emf_J>(tag))
-      };
+    case comm_mode::emf_E: return { make_isend(yee_lattice_.span_E()) };
+    case comm_mode::emf_B: return { make_isend(yee_lattice_.span_B()) };
+    case comm_mode::emf_J: return { make_isend(yee_lattice_.span_J()) };
     default:
       throw std::logic_error { std::format(
         "emf2::Tile::send_data does not support given communication mode: {}",
@@ -268,23 +232,14 @@ std::vector<mpi4cpp::mpi::request>
 
   using runko::comm_mode;
 
-  auto make_irecv = [&](const auto s, const int t) {
-    return comm.irecv(orig, t, s.data(), s.size());
+  auto make_irecv = [&](const auto s) {
+    return comm.irecv(orig, tag, s.data(), s.size());
   };
 
   switch(static_cast<comm_mode>(mode)) {
-    case comm_mode::emf_E:
-      return {
-        make_irecv(yee_lattice_.span_E(), specialized_tag<comm_mode::emf_E>(tag))
-      };
-    case comm_mode::emf_B:
-      return {
-        make_irecv(yee_lattice_.span_B(), specialized_tag<comm_mode::emf_B>(tag))
-      };
-    case comm_mode::emf_J:
-      return {
-        make_irecv(yee_lattice_.span_J(), specialized_tag<comm_mode::emf_J>(tag))
-      };
+    case comm_mode::emf_E: return { make_irecv(yee_lattice_.span_E()) };
+    case comm_mode::emf_B: return { make_irecv(yee_lattice_.span_B()) };
+    case comm_mode::emf_J: return { make_irecv(yee_lattice_.span_J()) };
     default:
       throw std::logic_error { std::format(
         "emf2::Tile::recv_data does not support given communication mode: {}",
