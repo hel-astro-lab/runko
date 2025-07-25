@@ -1036,20 +1036,19 @@ void emf::Conductor<D>::update_e(
       auto bd = B0*dipole(r); // diple field
       auto h  = abs(r(0)); // cylindrical coordinate system height
                              
-      auto s  = shape( h, radius, delta); // height smoothing parameter
+      auto s  = shape( h, radius + 1.0f, delta); // height smoothing parameter
       //auto s  = h < radius + 4 ? 1.0f : 0.0f; // step function; field inside star h < r_*
       //auto s  = h > radius + 4 ? 1.0f : 0.0f; // step function; field outside star h > r_*
                                    
 
       //--------------------------------------------------
       // special mode to set constant background field in 1D
-      if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
-        auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
-        bd = B0*dipole(r1_left); // dipole field at r=R
-      }
-
-      float vrot = Om(0)*radius_pc/c; //r1(0); // Omega x r_pc
-      float erot = 1.0f*vrot*bd(0); //-v x B
+      //if( (D == 1) && set_const_b ) { // get value of the dipole at r=R
+      //  auto r1_left = coord.bx().vec(0, 0, 0, D); // cartesian position vector in "star's coordinates"
+      //  bd = B0*dipole(r1_left); // dipole field at r=R
+      //}
+      //float vrot = Om(0)*radius_pc/c; //r1(0); // Omega x r_pc
+      //float erot = 1.0f*vrot*bd(0); //-v x B
 
       const float erot1 = 0.0f; // erot; // B_\parallel direction
       const float erot2 = 0.0f; 

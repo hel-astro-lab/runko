@@ -40,6 +40,7 @@ namespace py = pybind11;
 #include "core/pic/boundaries/piston.h"
 #include "core/pic/boundaries/piston_z.h"
 #include "core/pic/boundaries/star_surface_injector.h"
+#include "core/pic/boundaries/gap.h"
 
 #include "io/writers/writer.h"
 #include "io/writers/pic.h"
@@ -765,6 +766,19 @@ void bind_pic(py::module& m_sub)
   auto tw43d = pic::wall::declare_tile<3, +2>(m_3d, "Tile_wall_RY");
   auto tw53d = pic::wall::declare_tile<3, -3>(m_3d, "Tile_wall_LZ");
   auto tw63d = pic::wall::declare_tile<3, +3>(m_3d, "Tile_wall_RZ");
+
+
+  //--------------------------------------------------
+  // Magnetospheric Gap 
+
+  py::class_<pic::Gap<1>>(m_1d, "Gap")
+    .def(py::init<>())
+    .def("insert_em",                &pic::Gap<1>::insert_em)
+    .def("update_b",                 &pic::Gap<1>::update_b)
+    .def("update_e",                 &pic::Gap<1>::update_e)
+    .def("update_j",                 &pic::Gap<1>::update_j)
+    .def("solve",                    &pic::Gap<1>::solve);
+
 
   //--------------------------------------------------
   // star
