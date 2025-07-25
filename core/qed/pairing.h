@@ -1436,9 +1436,9 @@ public:
             //by_vir = gs.bx(ind)*std::sin((lx1-xborn)/r_curv); // v0 
 
             // more complicated v1 that should be numerically more stable and has radius dependency
-            by_vir = gs.bx(ind)*std::abs(lx1-xborn)/r_curv; // approximate sin\theta \approx \theta
-            by_vir = by_vir*std::abs(r_curv - lx1)/r_curv;  // decrease field strength linearly with height
-                                                            // assumes that r_curv > Nx
+            by_vir = gs.bx(ind)*std::abs(lx1 - xborn)/r_curv;        // approximate sin\theta \approx \theta
+            //by_vir = by_vir*(1.0f - std::abs(10.0f*lx1/r_curv) );  // decrease field strength linearly with height
+                                                                     // assumes that r_curv > Nx
               
 
           } else if(iptr->name == "synchrotron") {
