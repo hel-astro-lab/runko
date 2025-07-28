@@ -45,7 +45,7 @@ void pic::Gap<D>::insert_em(
 
     // global grid coordinates
     float iglob = (D>=1) ? i + mins[0] : 0;
-    float h = iglob - radius; // height in units of cells, h=0 is the surface
+    float h = iglob - x_left; // height in units of cells, h=0 is the surface
       
     //--------------------------------------------------
     // magnetic field
@@ -59,7 +59,7 @@ void pic::Gap<D>::insert_em(
     // electric field
 
     // linear profile 
-    float erot = h < radius_pc ? E0*( 1.0 - h/radius_pc ) : 0.0;
+    float erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
 
     const float erot1 = erot;
     const float erot2 = 0.0f;
@@ -92,13 +92,17 @@ void pic::Gap<D>::update_b(
   const float c = tile.cfl; // (numerical) speed of light
 
   // loop indices
-  const int imin = -3, imax = tile.mesh_lengths[0]+3;
+  const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
 
   // find top and bottom tiles and only operate on them
   bool top   = false;
   bool bot   = false;
   if( mins[0] < 1 )    bot   = true; 
   if( maxs[0] > Nx-1 ) top   = true; 
+
+  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot   = true; 
+  if( maxs[0] > x_right -3*delta_right - tile.mesh_lengths[0]) top   = true; 
+
 
   // return and do nothing if not left/rightmost tile
   //if(!(bot || top)) return;
@@ -110,7 +114,7 @@ void pic::Gap<D>::update_b(
 
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
-      float h = iglob - radius; // height in units of cells, h=0 is the surface
+      float h = iglob - x_left; // height in units of cells, h=0 is the surface
         
       //--------------------------------------------------
       // magnetic field
@@ -127,22 +131,12 @@ void pic::Gap<D>::update_b(
       gs.by(i,0,0) = s*by + (1.0f - s)*gs.by(i,0,0); 
       gs.bz(i,0,0) = s*bz + (1.0f - s)*gs.bz(i,0,0); 
     }
-
-    //--------------------------------------------------
-    // hard coded left BC
-    for(int i=imin; i<=halo; i++) {
-      gs.bx(i,0,0) = B0; 
-      gs.by(i,0,0) = 0.0; 
-      gs.bz(i,0,0) = 0.0; 
-    }
-
   }
+
 
   //-------------------------------------------------- 
   // top boundary
   if( top ) {
-
-    float x_right_bc = Nx - 0.5*maxs[0]; // left BC is at -0.5*tile_len from the end
 
     #pragma omp simd
     for(int i=imin; i<imax; i++) {
@@ -159,22 +153,33 @@ void pic::Gap<D>::update_b(
 
       //--------------------------------------------------
       // blending of old + new solution
-      auto s  = 1.0f - shape( iglob, x_right_bc, delta_right); // height smoothing parameter
+      auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
 
       gs.bx(i,0,0) = s*bx + (1.0f - s)*gs.bx(i,0,0); 
       gs.by(i,0,0) = s*by + (1.0f - s)*gs.by(i,0,0); 
       gs.bz(i,0,0) = s*bz + (1.0f - s)*gs.bz(i,0,0); 
     }
+  }
 
 
-    //--------------------------------------------------
-    // hard coded right BC
-    for(int i=imax-halo; i<=imax; i++) {
+  //--------------------------------------------------
+  // hard coded left BC
+  if( mins[0] < 1 ) {
+    for(int i=imin; i<=halo; i++) {
       gs.bx(i,0,0) = B0; 
       gs.by(i,0,0) = 0.0; 
       gs.bz(i,0,0) = 0.0; 
     }
+  }
 
+  //--------------------------------------------------
+  // hard coded right BC
+  if( maxs[0] > Nx-1 ) {
+    for(int i=imax-2*halo; i<=imax; i++) {
+      gs.bx(i,0,0) = B0; 
+      gs.by(i,0,0) = 0.0; 
+      gs.bz(i,0,0) = 0.0; 
+    }
   }
 
 }

@@ -31,10 +31,11 @@ public:
   // members
   double B0;     // B_bg
   double E0;     // E_rot
-
-  double radius;    // R = 0, location of the star's surface in x coordinate
-  double radius_pc; // length of the gap in dx
-                   
+                      
+  double gap_length; // length of the gap in dx
+                       
+  double x_left = 5;     // start of the box
+  double x_right;        // end of the box
   double delta_left  = 2;  // smoothing parameter for left BC in units of dx
   double delta_right = 4;  // smoothing parameter for right BC in units of dx
   double Nx;     // total grid length
