@@ -110,8 +110,6 @@ public:
   // normalization factor for single-body interaction probabilities
   float prob_norm_onebody = 1.0f;
 
-  // curvature radius
-  float r_curv = 1.0f;
 
   // force e- e+ to have unit weights irrespective of weighting functions
   bool force_ep_uni_w = true; 
@@ -125,6 +123,9 @@ public:
 
   bool use_vir_curvature = false;
   float vir_pitch_ang = 0.0; // sin\alpha/\gamma of the (virtual) curvature pitch angle
+                               
+  float r_curv = 1.0f; // curvature radius
+  float r_gap = 100.0f; // gap length 
 
   //--------------------------------------------------
   //histogram for the leaking/escaping photons
@@ -1437,8 +1438,7 @@ public:
 
             // more complicated v1 that should be numerically more stable and has radius dependency
             by_vir = gs.bx(ind)*std::abs(lx1 - xborn)/r_curv;        // approximate sin\theta \approx \theta
-            //by_vir = by_vir*(1.0f - std::abs(10.0f*lx1/r_curv) );  // decrease field strength linearly with height
-                                                                     // assumes that r_curv > Nx
+            by_vir = by_vir*std::pow(1.0f - std::abs(lx1/r_gap), 2);  // decrease field strength linearly with height
               
 
           } else if(iptr->name == "synchrotron") {
