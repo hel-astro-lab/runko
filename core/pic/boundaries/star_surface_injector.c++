@@ -544,10 +544,10 @@ void pic::Star<D>::solve(
 
       // additional, more aggressive removal of outflowing particles in 1D
       if(D == 1) {
-	if( iglob > Nx - 20.0*tile.mesh_lengths[0] ) { 
-	  // negative (inwards-going) particle
-	  if( con.vel(0, n) < 0.0f ) con.info(n) = -1;
-	}
+	      if( iglob > Nx - 20.0*tile.mesh_lengths[0] ) { 
+	        // negative (inwards-going) particle
+	        if( con.vel(0, n) < 0.0f ) con.info(n) = -1;
+	      }
       }
 
       bool inside_cyl_bcs = false;

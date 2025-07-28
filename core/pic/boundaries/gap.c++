@@ -328,7 +328,7 @@ void pic::Gap<D>::update_j(
     gs.jz(i,0,0) += s*jz*c;
   }
 
-
+  return;
 }
 
 
@@ -337,7 +337,157 @@ void pic::Gap<D>::solve(
     pic::Tile<D>& tile)
 {
 
+  // Tile limits
+  auto mins = tile.mins;
+  auto maxs = tile.maxs;
 
+                                                     
+  // find top and bottom tiles and only operate on them
+  bool top   = false;
+  bool bot   = false;
+  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot = true; 
+  if( maxs[0] > x_right -3*delta_right - tile.mesh_lengths[0]) top = true; 
+
+  // operate only on roughly correct tiles 
+  if(!(top || bot)) return;
+
+
+
+  //--------------------------------------------------
+  // shortcut for containers 
+  std::map<std::string, ConPtr> cons;
+  for(auto&& con : tile.containers) cons.emplace(con.type, &con );
+
+  // get charge (assume q_- = q_+)
+  //const float q = cons["e-"]->q;
+  //const float n_co = abs(E0/q)/gap_length; // co-rotation (Goldreich-Julian) density
+
+
+  //--------------------------------------------------
+  // loop over grid points
+  const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
+                                                     
+  for(int i=imin; i<imax; i++) {
+    float iglob = (D>=1) ? i + mins[0] : 0;
+
+    // detect cells that need particle injection
+    bool inside_injection_layer = false;
+    if( iglob == x_left ) inside_injection_layer = true;
+
+    if( inside_injection_layer ) {
+      float ninj = inj_rate_pairs; // number of injections
+
+      // add ninj pairs with MC injection; results on average in ninj injections
+      float ncop = 0.0f; // number of pairs added
+      float z1 = rand();
+
+      //--------------------------------------------------
+      //add particles
+      while( ninj > z1 + ncop ) {
+
+        // sample velocity from thermal distribution
+        // using Box-Muller method to draw thermal velocities; valid for v <~ 0.2c
+        float rr1 = rand(); //zeta4[ncop];
+        float vr = sqrt( -2.0f*log(rr1))*temp_pairs;
+
+        // Using now a random 3D distribution instead:
+        float zeta      = 2.0f*PI*rand();
+        float mu        = -1.0f + 2.0f*rand();
+        float sin_theta = sqrt(1.0f-pow(mu,2));
+
+        // construct velocities
+        auto ux1 = vr*sin_theta*cos(zeta);
+        auto uy1 = vr*sin_theta*sin(zeta);
+        auto uz1 = vr*mu;
+
+        float dx = rand(); // inject location is set randomly inside the cell
+                             
+        cons["e-"]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux1, uy1, uz1 }}, wep);
+        cons["e+"]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux1, uy1, uz1 }}, wep);
+
+        ncop += 1;
+      }
+    } // end of inside_injection_layer
+
+     
+
+
+    //-------------------------------------------------- 
+    // atmospheric photons
+    
+    if( inside_injection_layer ) {
+      float ninj = inj_rate_phots; 
+
+      float ncop = 0.0f; // number of phots added
+      float z1 = rand();
+
+      //--------------------------------------------------
+      // add photons
+      while( ninj > z1 + ncop ) {
+
+        // draw random isotropic 3d vector
+        float xia = rand();
+        float xib = rand();
+        float vx = 2.0f*xia -1.0f;
+        float vy = 2.0f*sqrt(xia*(1.0f-xia))*cos(2.0f*PI*xib);
+        float vz = 2.0f*sqrt(xia*(1.0f-xia))*sin(2.0f*PI*xib);
+
+        //--------------------------------------------------
+        // draw energy sample from a black body distribution
+        float xi1 = rand();
+        float xi2 = rand();
+        float xi3 = rand();
+        float xi4 = rand();
+    
+        float xi, jj, fsum;
+        if( 1.202f*xi1 < 1.0f ){
+            xi = 1.0f;
+        } else {
+            jj = 1.0f;
+            fsum = std::pow(jj, -3);
+            while( 1.202f*xi1 > fsum + std::pow(jj + 1.0f, -3) )
+            {
+                jj   += 1.0f;
+                fsum += std::pow(jj, -3);
+            }
+            xi = jj + 1.0f;
+        }
+        float xinj = -temp_phots*std::log( xi2*xi3*xi4 )/xi;
+
+        //--------------------------------------------------
+        auto ux = xinj*vx;
+        auto uy = xinj*vy;
+        auto uz = xinj*vz;
+
+        float dx = rand(); // inject location is set randomly inside the cell
+                             
+        cons["ph"]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux, uy, uz }}, wph);
+
+        ncop += 1;
+      }
+
+    
+    } // end of inside_injection_layer
+  } // end of for loop over grid points
+
+
+  //-------------------------------------------------- 
+  // remove outflowing particles
+  for(auto&& con : tile.containers) {
+    for(size_t n=0; n<con.size(); n++) {
+      if( con.loc(0,n) < halo )    con.info(n) = -1; // inside star; 
+                                                    
+      if( con.loc(0,n) > x_right ) con.info(n) = -1; // outflowing; 
+    }
+  }
+
+  // remove outflowing prtcls; 
+  // here the transfer storage is used as a tmp container for storing the indices
+  for(auto&& con : tile.containers) {
+    con.delete_transferred_particles(); 
+  }
+
+  return;
 }
 
 
