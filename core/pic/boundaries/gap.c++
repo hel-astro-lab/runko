@@ -176,8 +176,6 @@ void pic::Gap<D>::update_b(
 }
 
 
-
-
 //--------------------------------------------------
 //--------------------------------------------------
 //--------------------------------------------------
@@ -201,30 +199,30 @@ void pic::Gap<D>::update_e(
 
 
   // bottom boundary
-  //if( bot ) {
-  //  #pragma omp simd
-  //  for(int i=imin; i<imax; i++) {
+  if( bot ) {
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) {
 
-  //    // global grid coordinates
-  //    float iglob = (D>=1) ? i + mins[0] : 0;
-  //    float h = iglob - x_left; // height in units of cells, h=0 is the surface
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      float h = iglob - x_left; // height in units of cells, h=0 is the surface
 
-  //    // linear profile 
-  //    float erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
+      // linear profile 
+      float erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
 
-  //    const float erot1 = erot;
-  //    const float erot2 = 0.0f;
-  //    const float erot3 = 0.0f;
+      const float ex = 0.0f; //erot;
+      const float ey = 0.0f;
+      const float ez = 0.0f;
 
-  //    //--------------------------------------------------
-  //    // blending of old + new solution
-  //    auto s = 1.0f - shape( h, 0.0, delta_left); // height smoothing parameter
+      //--------------------------------------------------
+      // blending of old + new solution
+      auto s = shape( h, 0.0, delta_left); // height smoothing parameter
 
-  //    gs.ex(i,0,0) = s*erot1 + (1.0f - s)*gs.ex(i,0,0); 
-  //    gs.ey(i,0,0) = s*erot2 + (1.0f - s)*gs.ey(i,0,0); 
-  //    gs.ez(i,0,0) = s*erot3 + (1.0f - s)*gs.ez(i,0,0); 
-  //  }
-  //}
+      gs.ex(i,0,0) = s*ex + (1.0f - s)*gs.ex(i,0,0); 
+      gs.ey(i,0,0) = s*ey + (1.0f - s)*gs.ey(i,0,0); 
+      gs.ez(i,0,0) = s*ez + (1.0f - s)*gs.ez(i,0,0); 
+    }
+  }
 
   //-------------------------------------------------- 
   // top boundary
@@ -357,10 +355,15 @@ void pic::Gap<D>::add_jext(
     //float jy = 0.0f;
     //float jz = 0.0f;
 
+
+    // suppress current at boundaries; double tanh profile
+    //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
+    //auto s_r =        shape( ig, x_right, delta_right); 
+    //auto s = s_l*s_r;
+
     // add 
-    gs.jx(i,0,0) += jx*c; // external current * dt (since E = -j*dt we add dt already here)
-    //gs.jy(i,0,0) += jy*c;
-    //gs.jz(i,0,0) += jz*c;
+    gs.jx(i,0,0) += jx;     // external current 
+    //gs.jx(i,0,0) += jx*c*s; // external current * dt (since E = -j*dt we add dt already here)
   }
 
   return;
@@ -402,9 +405,17 @@ void pic::Gap<D>::update_j(
     auto s_r =        shape( ig, x_right, delta_right); 
     auto s = s_l*s_r;
 
-    gs.jx(i,0,0) = (1.0 - s)*0.0f + s*gs.jx(i,0,0);
-    gs.jy(i,0,0) = (1.0 - s)*0.0f + s*gs.jy(i,0,0);
-    gs.jz(i,0,0) = (1.0 - s)*0.0f + s*gs.jz(i,0,0);
+    // s looks like 0 -> 1 -> 0
+
+    // suppression of current at the boundaries
+    gs.jx(i,0,0) *= s;
+    gs.jy(i,0,0) *= s;
+    gs.jz(i,0,0) *= s;
+
+    // blending of vacuum + old solutions
+    //gs.jx(i,0,0) = (1.0 - s)*0.0f + s*gs.jx(i,0,0);
+    //gs.jy(i,0,0) = (1.0 - s)*0.0f + s*gs.jy(i,0,0);
+    //gs.jz(i,0,0) = (1.0 - s)*0.0f + s*gs.jz(i,0,0);
   }
 
   return;
@@ -452,7 +463,7 @@ void pic::Gap<D>::solve(
 
     // detect cells that need particle injection
     bool inside_injection_layer = false;
-    if( iglob == x_left ) inside_injection_layer = true;
+    if( iglob == halo + 1 ) inside_injection_layer = true;
 
     if( inside_injection_layer ) {
       float ninj = inj_rate_pairs; // number of injections
@@ -555,9 +566,9 @@ void pic::Gap<D>::solve(
   // remove outflowing particles
   for(auto&& con : tile.containers) {
     for(size_t n=0; n<con.size(); n++) {
-      if( con.loc(0,n) < halo )    con.info(n) = -1; // inside star; 
+      if( con.loc(0,n) <= halo )    con.info(n) = -1; // inside star; 
                                                     
-      if( con.loc(0,n) > x_right ) con.info(n) = -1; // outflowing; 
+      if( con.loc(0,n) >= x_right ) con.info(n) = -1; // outflowing; 
     }
   }
 
