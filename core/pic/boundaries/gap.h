@@ -51,6 +51,7 @@ public:
 
   int halo = 3; // extent of the halo regions not updated in left/right edges of the domain
 
+  float j_ext = 0.0f; // strenght of the external current (add_jext)
 
   float inj_rate_pairs = 1;  // number of particles injected per dt
   float inj_rate_phots = 0;  // number of photons injected per dt
@@ -80,6 +81,10 @@ public:
   void update_e(pic::Tile<D>&  tile);
 
   void update_j(pic::Tile<D>&  tile);
+
+  void add_jext(pic::Tile<D>&  tile);
+
+  void add_jrot(pic::Tile<D>&  tile);
 
   void solve(pic::Tile<D>&  tile);
   

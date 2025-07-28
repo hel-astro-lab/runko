@@ -269,7 +269,7 @@ void pic::Gap<D>::update_e(
 
 // current from moving frame
 template<size_t D>
-void pic::Gap<D>::update_j(
+void pic::Gap<D>::add_jrot(
   pic::Tile<D>& tile)
 {
 
@@ -330,6 +330,86 @@ void pic::Gap<D>::update_j(
 
   return;
 }
+
+
+template<size_t D>
+void pic::Gap<D>::add_jext(
+  pic::Tile<D>& tile)
+{
+
+  // Tile limits
+  auto mins = tile.mins;
+  auto& gs  = tile.get_grids();
+  const float c = tile.cfl; // Delta t
+ 
+  // loop indices
+  const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
+
+  // set current
+  #pragma omp simd
+  for(int i=imin; i<imax; i++) {
+
+    // global grid coordinates
+    float ig = (D>=1) ? i + mins[0] : 0;
+
+    // external current
+    float jx = j_ext; 
+    //float jy = 0.0f;
+    //float jz = 0.0f;
+
+    // add 
+    gs.jx(i,0,0) += jx*c; // external current * dt (since E = -j*dt we add dt already here)
+    //gs.jy(i,0,0) += jy*c;
+    //gs.jz(i,0,0) += jz*c;
+  }
+
+  return;
+}
+
+
+
+template<size_t D>
+void pic::Gap<D>::update_j(
+  pic::Tile<D>& tile)
+{
+
+  // tile limits
+  auto mins = tile.mins;
+  auto maxs = tile.maxs;
+  auto& gs  = tile.get_grids();
+ 
+  // loop indices
+  const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
+
+  // find top and bottom tiles and only operate on them
+  bool top   = false;
+  bool bot   = false;
+  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot = true; 
+  if( maxs[0] > x_right -3*delta_right - tile.mesh_lengths[0]) top = true; 
+
+  // operate only on roughly correct tiles 
+  if(!(top || bot)) return;
+
+  // set current
+  #pragma omp simd
+  for(int i=imin; i<imax; i++) {
+
+    // global grid coordinates
+    float ig = (D>=1) ? i + mins[0] : 0;
+
+    // suppress current at boundaries; double tanh profile
+    auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
+    auto s_r =        shape( ig, x_right, delta_right); 
+    auto s = s_l*s_r;
+
+    gs.jx(i,0,0) = (1.0 - s)*0.0f + s*gs.jx(i,0,0);
+    gs.jy(i,0,0) = (1.0 - s)*0.0f + s*gs.jy(i,0,0);
+    gs.jz(i,0,0) = (1.0 - s)*0.0f + s*gs.jz(i,0,0);
+  }
+
+  return;
+}
+
 
 
 template<size_t D>

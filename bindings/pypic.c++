@@ -786,9 +786,12 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("temp_pairs",     &pic::Gap<1>::temp_pairs)
     .def_readwrite("temp_phots",     &pic::Gap<1>::temp_phots)
     .def_readwrite("wph",            &pic::Gap<1>::wph)
+    .def_readwrite("j_ext",          &pic::Gap<1>::j_ext)
     .def("insert_em",                &pic::Gap<1>::insert_em)
     .def("update_b",                 &pic::Gap<1>::update_b)
     .def("update_e",                 &pic::Gap<1>::update_e)
+    .def("add_jext",                 &pic::Gap<1>::add_jext)
+    .def("add_jrot",                 &pic::Gap<1>::add_jrot)
     .def("update_j",                 &pic::Gap<1>::update_j)
     .def("solve",                    &pic::Gap<1>::solve);
 
