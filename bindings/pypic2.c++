@@ -76,6 +76,7 @@ void
         return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
       })
     .def("inject_to_each_cell", &pic2::Tile<3>::inject_to_each_cell)
+    .def("inject", &pic2::Tile<3>::inject)
     .def("push_particles", &pic2::Tile<3>::push_particles)
     .def("deposit_current", &pic2::Tile<3>::deposit_current);
 

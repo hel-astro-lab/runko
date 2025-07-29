@@ -5,6 +5,7 @@
 #include "core/particles_common.h"
 #include "thrust/device_vector.h"
 
+#include <array>
 #include <concepts>
 #include <cstddef>
 #include <functional>
@@ -41,9 +42,33 @@ public:
   std::array<std::vector<value_type>, 3> get_positions();
   std::array<std::vector<value_type>, 3> get_velocities();
 
-  /// Add particles from other container.
-  void add_particles(ParticleContainer& other);
+  [[nodiscard]]
+  auto span_pos(this auto& self)
+  {
+    return self.pos_.span();
+  }
 
+  [[nodiscard]]
+  auto span_vel(this auto& self)
+  {
+    return self.vel_.span();
+  }
+
+  /// Splits container to 27 subcontainers along given divider lines.
+  ///
+  /// Container pointed by this is replaced by the middle container
+  /// and the rest are returned with corresponding direction.
+  ///
+  /// global_{mins,maxs} are required for global periodic boundary condition.
+  std::vector<std::pair<std::array<int, 3>, ParticleContainer>> split_to_subregions(
+    std::array<value_type, 2> x_dividers,
+    std::array<value_type, 2> y_dividers,
+    std::array<value_type, 2> z_dividers,
+    std::array<value_type, 3> global_mins,
+    std::array<value_type, 3> global_maxs);
+
+  /// Add particles from other container.
+  void add_particles(const ParticleContainer& other);
 
   /// Way to initialize particles. Known to be slow.
   template<std::ranges::forward_range R>

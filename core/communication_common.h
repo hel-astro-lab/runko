@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -19,7 +20,20 @@ enum class comm_mode : int {
   emf_J              = 0,
   pic_particle       = 3,
   pic_particle_extra = 4,
+  number_of_particles,
 };
+
+
+/// Returns a communication which has to be done before given communication.
+[[nodiscard]] constexpr std::optional<comm_mode>
+  virtual_tile_sync_handshake_mode(const comm_mode mode)
+{
+  switch(mode) {
+    case comm_mode::pic_particle: return comm_mode::number_of_particles;
+    default: return {};
+  }
+}
+
 
 template<typename T, typename E>
 concept equality_comparable_with_enum =

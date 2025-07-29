@@ -109,6 +109,27 @@ Tile<D>::Tile(
     conf.get_or_throw<std::string>("current_depositer")) }
 {
   construct_particle_buffs(particle_buffs_, conf);
+
+  const auto xmin   = conf.get_or_throw<double>("xmin");
+  const auto ymin   = conf.get_or_throw<double>("ymin");
+  const auto zmin   = conf.get_or_throw<double>("zmin");
+  const auto Nx     = conf.get_or_throw<double>("Nx");
+  const auto Ny     = conf.get_or_throw<double>("Ny");
+  const auto Nz     = conf.get_or_throw<double>("Nz");
+  const auto NxMesh = conf.get_or_throw<double>("NxMesh");
+  const auto NyMesh = conf.get_or_throw<double>("NyMesh");
+  const auto NzMesh = conf.get_or_throw<double>("NzMesh");
+
+  using PVT                     = ParticleContainer::value_type;
+  this->global_coordinate_mins_ = { static_cast<PVT>(xmin),
+                                    static_cast<PVT>(ymin),
+                                    static_cast<PVT>(zmin) };
+
+  this->global_coordinate_maxs_ = {
+    global_coordinate_mins_[0] + static_cast<PVT>(Nx * NxMesh),
+    global_coordinate_mins_[1] + static_cast<PVT>(Ny * NyMesh),
+    global_coordinate_mins_[2] + static_cast<PVT>(Nz * NzMesh)
+  };
 }
 
 template<std::size_t D>
@@ -167,6 +188,15 @@ void
     for(const auto p: pgen(x, y, z)) { new_particles.push_back(p); }
   }
 
+  particle_buffs_.at(particle_type).add_particles(new_particles);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::inject(
+    const std::size_t particle_type,
+    const std::vector<runko::ParticleState>& new_particles)
+{
   particle_buffs_.at(particle_type).add_particles(new_particles);
 }
 

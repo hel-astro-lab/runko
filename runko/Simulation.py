@@ -1,5 +1,6 @@
 from pytools import MethodWrapper
 from pyrunko.tools import comm_mode
+from pyrunko._runko_next import _virtual_tile_sync_handshake_mode
 
 class Simulation:
     """
@@ -43,6 +44,15 @@ class Simulation:
             yield self._tile_grid._corgi_grid.get_tile(tile_id)
 
 
+    def _boundary_tiles(self):
+        """
+        Return iterable which goes through all boundary tiles in current rank.
+        """
+
+        for tile_id in self._tile_grid._corgi_grid.get_boundary_tiles():
+            yield self._tile_grid._corgi_grid.get_tile(tile_id)
+
+
     @property
     def lap(self):
         """Current simulation lap."""
@@ -73,8 +83,16 @@ class Simulation:
                 case "pairwise_moore":
                     for mode in comm_modes:
                         self._tile_grid._corgi_grid.pairwise_moore_communication(mode.value)
+
                 case "virtual_tile_sync":
                     for mode in comm_modes:
+                        handshake_mode = _virtual_tile_sync_handshake_mode(mode)
+
+                        if handshake_mode:
+                            self._tile_grid._corgi_grid.recv_data(handshake_mode)
+                            self._tile_grid._corgi_grid.send_data(handshake_mode)
+                            self._tile_grid._corgi_grid.wait_data(handshake_mode)
+
                         self._tile_grid._corgi_grid.recv_data(mode.value)
                         self._tile_grid._corgi_grid.send_data(mode.value)
                         self._tile_grid._corgi_grid.wait_data(mode.value)

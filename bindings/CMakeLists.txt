@@ -72,6 +72,7 @@ set (PIC_FILES
 set (PIC2_FILES
      pypic2.c++
      ../core/pic2/tile.c++
+     ../core/pic2/tile_communication.c++
      ../core/pic2/particle.c++
      ../core/pic2/particle_boris.c++
      ../core/pic2/particle_current_zigzag_1st.c++

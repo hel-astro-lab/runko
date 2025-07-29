@@ -1,17 +1,20 @@
 #pragma once
 
+#include "core/communication_common.h"
 #include "core/emf2/tile.h"
 #include "core/particles_common.h"
 #include "core/pic2/particle.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
 #include "tools/config_parser.h"
+#include "tyvi/mdgrid_buffer.h"
 
 #include <array>
 #include <concepts>
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <type_traits>
@@ -40,6 +43,17 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   ParticlePusher particle_pusher_;
   FieldInterpolator field_interpolator_;
   CurrentDepositer current_depositer_;
+  std::map<std::size_t, std::size_t> amount_of_particles_to_be_received_;
+
+  using subregion_particle_buff =
+    std::map<std::array<int, 3>, std::map<std::size_t, ParticleContainer>>;
+
+  std::optional<subregion_particle_buff> particles_in_subregion_ {};
+  void split_particles_to_subregions();
+
+  // Required for global periodic boundary for tiles.
+  std::array<ParticleContainer::value_type, 3> global_coordinate_mins_;
+  std::array<ParticleContainer::value_type, 3> global_coordinate_maxs_;
 
 public:
   /// The type in which pos and vel are stored in.
@@ -98,14 +112,39 @@ public:
   /// Generator is called for each cell coordinates.
   ///
   /// Particle type is assumed to be configured.
-  void inject_to_each_cell(std::size_t, particle_generator);
+  void inject_to_each_cell(std::size_t particle_type, particle_generator);
 
+  /// Inject given particles.
+  ///
+  /// Particle type is assumed to be configured.
+  void inject(std::size_t particle_type, const std::vector<runko::ParticleState>&);
 
   /// Push particles updating their velocities and positions.
   void push_particles(std::size_t);
 
   /// Deposit current from all particls.
   void deposit_current();
+
+  std::vector<mpi4cpp::mpi::request>
+    send_data(mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag)
+      override;
+
+  std::vector<mpi4cpp::mpi::request>
+    recv_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int mode, int tag)
+      override;
+
+  void pairwise_moore_communication_prelude(const int) override;
+  void pairwise_moore_communication_postlude(const int) override;
+
+  /// Get particles from haloregion of the other with comm_mode::pic_particle.
+  ///
+  /// Forward other communication modes to emf2::Tile.
+  /// Assumes that the other tile is pic2::Tile or its descendant.
+  void pairwise_moore_communication(
+    const corgi::Tile<D>& /* other */,
+    const std::array<int, D> dir_to_other,
+    const int /* mode */
+    ) override;
 };
 
 
