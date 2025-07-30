@@ -1,4 +1,5 @@
 #include "core/emf2/tile.h"
+#include "io/snapshots/fields2.h"
 #include "io/tasker.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
@@ -109,6 +110,10 @@ void
     .def("push_half_b", &emf2::Tile<3>::push_half_b)
     .def("push_e", &emf2::Tile<3>::push_e)
     .def("add_J_to_E", &emf2::Tile<3>::add_J_to_E);
+
+  py::class_<h5io::FieldsWriter2<3>>(m_3d, "FieldsWriter2")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write", &h5io::FieldsWriter2<3>::write);
 
   //--------------------------------------------------
   // Full IO

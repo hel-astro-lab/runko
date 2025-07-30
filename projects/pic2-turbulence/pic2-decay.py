@@ -3,6 +3,7 @@ Canonical pic simulation using runko with decaying fields.
 """
 
 
+import matplotlib.pyplot as plt
 import pytools
 import runko
 import numpy as np
@@ -13,14 +14,15 @@ if __name__ == "__main__":
     seed = 42
     np.random.seed(seed)
 
-    conf = runko.Configuration(None)
+    config = runko.Configuration(None)
 
-    config.Nx = 4
-    config.Ny = 4
-    config.Nz = 4
-    config.NxMesh = 20
-    config.NyMesh = 20
-    config.NzMesh = 20
+    config.Nt = 200
+    config.Nx = 2
+    config.Ny = 2
+    config.Nz = 2
+    config.NxMesh = 10
+    config.NyMesh = 10
+    config.NzMesh = 10
     config.xmin = 0
     config.ymin = 0
     config.zmin = 0
@@ -33,6 +35,8 @@ if __name__ == "__main__":
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
+    config.tile_partitioning = "catepillar_track"
+    config.catepillar_track_length = 1
 
 
     # Problem specific configuration
@@ -40,10 +44,10 @@ if __name__ == "__main__":
     oppc = 2 * ppc # overall particles per cell (all particle types)
     gamma = 1
     c_omp = 1
-    omp = config.cfl / c
+    omp = config.cfl / c_omp
 
     config.q0 = -gamma * (omp**2.0) / (0.5 * oppc * (1.0 + config.m0 / config.m1))
-    config.q1 *= self.q0
+    config.q1 *= config.q0
 
     config.m0 *= abs(config.q0)
     config.m1 *= abs(config.q1)
@@ -57,11 +61,11 @@ if __name__ == "__main__":
     delgam1 = temp_ration * delgam0
 
     # No corrections; cold sigma
-    binit_nc = sqrt(oppc * (config.cfl**2.0) * sigma * config.m0)
+    binit_nc = np.sqrt(oppc * (config.cfl**2.0) * sigma * config.m0)
     # another approximation which is more accurate at \delta ~ 1
     gammath = 1.0 + (3.0/2.0) * delgam1
 
-    binit_approx = sqrt(gammath * oppc * config.m0 * (config.cfl**2.0) * sigma)
+    binit_approx = np.sqrt(gammath * oppc * config.m0 * (config.cfl**2.0) * sigma)
     binit = binit_approx # NOTE: selecting this as our sigma definitions
 
     # Decaying setup:
@@ -127,40 +131,70 @@ if __name__ == "__main__":
             return particles
         return f
 
+    if runko.on_main_rank():
+        print(f"Constructing tile grid.")
 
     # TileGrid ctor:
     # - balances tiles based on conf (catepillar, hilbert)
     # - checks if restarts files are present for current config
     #   - if found initializes the tiles based on the restart files
-    tile_grid = runko.TileGrid(conf)
+    tile_grid = runko.TileGrid(config)
 
-    if not grid.initialized_from_restart_file():
+    if not tile_grid.initialized_from_restart_file():
         for idx in tile_grid.local_tile_indices():
-            tile = runko.pypic.Tile(idx, conf) # Tile can deduce its coordinate extents from conf.
-            tile.set_fields(zero_field, B, zero_field)
+            if runko.on_main_rank():
+                print(f"Constructing tile at {idx}:")
+            tile = runko.pic.Tile(idx, config)
+            if runko.on_main_rank():
+                print("Setting fields...")
+            tile.set_EBJ(zero_field, B, zero_field)
+            if runko.on_main_rank():
+                print("Injecting particles...")
             tile.inject_to_each_cell(0, make_pgen(delgam0))
             tile.inject_to_each_cell(1, make_pgen(delgam1))
-            tile_grid.add_tile(idx, tile)
+            tile_grid.add_tile(tile, idx)
+
+    if runko.on_main_rank():
+        print(f"Configuring simulation.")
 
     # Initializes the simulation and returns a handle to it:
     # - analyze and sync boundaries between mpi tasks/ranks/localities
     # - loads virtual tiles (is there benefit of doing this explicitly?)
-    simulation = tile_grid.configure_simulation(conf)
+    simulation = tile_grid.configure_simulation(config)
 
-    def sync_EB(_, comm, *_):
+    def plot():
+        fig, (axEx, axBx) = plt.subplots(2, 1)
+
+        for tile in simulation.local_tiles():
+            (Ex, _, _), (Bx, _, _), _ = tile.get_EBJ()
+
+            minx, miny, minz = tile.mins
+            maxx, maxy, maxz = tile.maxs
+
+            axEx.imshow(Ex[5, :, :], extent=(miny, maxy, minz, maxz))
+            axBx.imshow(Bx[5, :, :], extent=(miny, maxy, minz, maxz))
+
+        fig.suptitle(f"lap {simulation.lap}")
+        fig.savefig(f"{simulation.lap:05}.png")
+
+
+    def sync_EB(tile, comm, io):
         EB = (runko.comm_mode.emf_E, runko.comm_mode.emf_B)
         comm.virtual_tile_sync(*EB)
         comm.pairwise_moore(*EB)
 
     simulation.prelude(sync_EB)
 
-    def pic_simulation_step(tile, comm, *_):
+    def pic_simulation_step(tile, comm, io):
+        if runko.on_main_rank():
+            print(f"Starting lap {simulation.lap}...")
+            # plot()
+
         tile.push_half_b()
         comm.virtual_tile_sync(runko.comm_mode.emf_B)
         comm.pairwise_moore(runko.comm_mode.emf_B)
 
-        tile.push_particles(0)
-        tile.push_particles(1)
+        tile.push_particles()
         comm.virtual_tile_sync(runko.comm_mode.pic_particle)
         comm.pairwise_moore(runko.comm_mode.pic_particle)
 
@@ -176,5 +210,10 @@ if __name__ == "__main__":
         tile.add_J_to_E()
         comm.virtual_tile_sync(runko.comm_mode.emf_E)
         comm.pairwise_moore(runko.comm_mode.emf_E)
+
+        if simulation.lap % 20 == 0:
+            if runko.on_main_rank():
+                print("Starting io...")
+            io.emf_snapshot()
 
     simulation.for_each_lap(pic_simulation_step)

@@ -288,6 +288,26 @@ public:
   /// It is assumed that every location appears at most once and
   /// that the location indices include the halo regions.
   void deposit_current(const CurrentContributions&);
+
+  /// Returns mdspans to host accessible E, B and J in non-halo region.
+  auto view_EBJ_on_host()
+  {
+    auto wE = tyvi::mdgrid_work {};
+    auto wB = tyvi::mdgrid_work {};
+    auto wJ = tyvi::mdgrid_work {};
+
+    auto wE1 = wE.sync_to_staging(E_);
+    auto wB1 = wB.sync_to_staging(B_);
+    auto wJ1 = wJ.sync_to_staging(J_);
+
+    tyvi::when_all(wE1, wB1, wJ1).wait();
+
+    const auto Emds = nonhalo_submds(E_.staging_mds());
+    const auto Bmds = nonhalo_submds(B_.staging_mds());
+    const auto Jmds = nonhalo_submds(J_.staging_mds());
+
+    return std::tuple { Emds, Bmds, Jmds };
+  }
 };
 
 }  // namespace emf2

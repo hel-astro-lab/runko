@@ -1,6 +1,7 @@
 from pytools import MethodWrapper
 from pyrunko.tools import comm_mode
 from pyrunko._runko_next import _virtual_tile_sync_handshake_mode
+import pyrunko.emf2.threeD as emf
 
 class Simulation:
     """
@@ -25,6 +26,21 @@ class Simulation:
 
         self._last_lap = kwargs['Nt']
 
+        self._io_config = kwargs['io_config']
+        self._emf_writer = None
+
+    def _ensure_constructed_emf_writer(self):
+        if self._emf_writer:
+            return
+
+        self._emf_writer = emf.FieldsWriter2(self._io_config["outdir"],
+                                             self._tile_grid._Nx,
+                                             self._tile_grid._NxMesh,
+                                             self._tile_grid._Ny,
+                                             self._tile_grid._NyMesh,
+                                             self._tile_grid._Nz,
+                                             self._tile_grid._NzMesh,
+                                             self._io_config["stride"])
 
     def virtual_tiles(self):
         """
@@ -99,10 +115,19 @@ class Simulation:
                 case _:
                     raise AttributeError(f"{name} is not supported communication type.")
 
+        def io_action(name: str):
+            match name:
+                case "emf_snapshot":
+                    self._ensure_constructed_emf_writer()
+                    self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
+                case _:
+                    raise AttributeError(f"{name} is not supported IO type.")
+
         for_each_local_tile = MethodWrapper(for_each_local_tile_action)
         communications = MethodWrapper(communication_action)
+        io = MethodWrapper(io_action)
 
-        lap_function(for_each_local_tile, communications)
+        lap_function(for_each_local_tile, communications, io)
 
 
     def prelude(self, lap_function):

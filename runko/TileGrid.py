@@ -35,6 +35,9 @@ class TileGrid:
             if getattr(conf, var) is None:
                 raise RuntimeError(f"Can not construct TileGrid without: {var}")
 
+        self._Nx, self._Ny, self._Nz = conf.Nx, conf.Ny, conf.Nz
+        self._NxMesh, self._NyMesh, self._NzMesh = conf.NxMesh, conf.NyMesh, conf.NzMesh
+
         valid_tile_partitions = ["hilbert_curve", "catepillar_track"]
 
         if conf.tile_partitioning not in valid_tile_partitions:
@@ -157,6 +160,10 @@ class TileGrid:
             self._corgi_grid.add_tile(new_tile, indices) 
             new_tile.load_metainfo(vtile.communication)
 
+        io_config = dict(stride=1 if not config.stride else config.stride,
+                         outdir="runko_output" if not config.outdir else config.outdir)
+
         return Simulation(self,
                           Simulation._im_not_user,
-                          Nt=config.Nt)
+                          Nt=config.Nt,
+                          io_config=io_config)
