@@ -27,6 +27,23 @@ auto
     [=](const auto idx, const auto tidx) { to[idx][tidx] = from[idx][tidx]; });
 }
 
+/// Returns mdgrid_work representing the copy operation.
+template<typename MDSfrom, typename MDSto>
+auto
+  mds_add(MDSfrom&& from, MDSto&& to)
+{
+
+  if(from.extents() != to.extents()) {
+    throw std::runtime_error { "Can not copy from/to different sized mdspan." };
+  }
+
+  return tyvi::mdgrid_work {}.for_each_index(
+    from,
+    [=](const auto idx, const auto tidx) {
+      to[idx][tidx] = to[idx][tidx] + from[idx][tidx];
+    });
+}
+
 }  // namespace
 
 namespace emf2 {
@@ -187,6 +204,16 @@ void
   const auto other_Jmds_region = other.corresponding_subregion(dir, other.J_.mds());
 
   return mds_copy(other_Jmds_region, my_Jmds_region).wait();
+}
+
+void
+  YeeLattice::add_to_J_from_subregion(const dir_type dir, const YeeLattice& other)
+{
+  const auto idir = invert_dir(dir);
+  const auto my_Jmds_region    = this->corresponding_subregion(idir, this->J_.mds());
+  const auto other_Jmds_region = other.subregion(idir, other.J_.mds());
+
+  return mds_add(other_Jmds_region, my_Jmds_region).wait();
 }
 
 void

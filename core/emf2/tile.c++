@@ -274,6 +274,12 @@ void
     case comm_mode::emf_B:
       yee_lattice_.set_B_in_subregion(dir_to_other, other.yee_lattice_);
       break;
+    case comm_mode::emf_J:
+      yee_lattice_.set_J_in_subregion(dir_to_other, other.yee_lattice_);
+      break;
+    case comm_mode::emf_J_exchange:
+      yee_lattice_.add_to_J_from_subregion(dir_to_other, other.yee_lattice_);
+      break;
     default:
       throw std::logic_error { std::format(
         "emf2::Tile::pairwise_moore_communication does not support given communication "

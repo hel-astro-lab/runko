@@ -217,7 +217,8 @@ void bind_tools(pybind11::module& m)
      .value("emf_B", runko::comm_mode::emf_B)
      .value("emf_J", runko::comm_mode::emf_J)
      .value("pic_particle", runko::comm_mode::pic_particle)
-     .value("pic_particle_extra", runko::comm_mode::pic_particle_extra);
+     .value("pic_particle_extra", runko::comm_mode::pic_particle_extra)
+     .value("emf_J_exchange", runko::comm_mode::emf_J_exchange);
 
   // Common particle enums.
   py::enum_<runko::particle>(m, "particle")

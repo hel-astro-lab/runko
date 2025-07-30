@@ -255,6 +255,12 @@ public:
   /// Set J subregion specified by dir from other tile.
   void set_J_in_subregion(dir_type dir, const YeeLattice& other);
 
+  /// Add J from other's subregion to corresponding region in this.
+  ///
+  /// Note that compared to set_{E,B,J}_in_subregion,
+  /// this reads other's halo and adds it to non-halo of this,
+  /// while the other's read non-halo and add it to halo of this.
+  void add_to_J_from_subregion(dir_type dir, const YeeLattice& other);
 
   struct [[nodiscard]] InterpolatedEB {
     runko::VecList<value_type> E, B;

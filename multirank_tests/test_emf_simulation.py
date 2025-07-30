@@ -115,6 +115,116 @@ def emf_communication():
     assertConstantFields()
 
 
+def emf_J_exchange():
+    """
+    TileGrid with only emf tiles, which have been initialized
+    to have some constant J0. Then after virtual tile sync
+    normal J pairwaise moore communication and another virtual tile sync,
+    the halo regions also have the current J0 (*).
+
+    Now when pairwise moore J exchange is executed,
+    all non-halo J should be either J0, 2 * J0, 4 * J0 or 8 * J0.
+    It is fiddly to check exactly that right cells have correct amounts,
+    se we only check that there are correct amount of each.
+
+    (*) The first virtual tile sync sets J0 to non-halo regions of virtual tiles.
+    Pairwise moore sets J0 to halo regions of local tiles.
+    The second virtual tile sync sets J0 to non-halo regions of virtual tiles.
+    """
+
+    conf, tile_grid = create_test_grid()
+
+    E = lambda x, y, z: (0, 0, 0)
+    B = lambda x, y, z: (0, 0, 0)
+
+    J0 = np.array((1, 2, 3))
+
+    def J(x, y, z):
+        return J0
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.emf.Tile(idx, conf)
+        tile.set_EBJ(E, B, J)
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    def f(tile, communicate, *_):
+        communicate.virtual_tile_sync(runko.comm_mode.emf_J)
+        communicate.pairwise_moore(runko.comm_mode.emf_J)
+        communicate.virtual_tile_sync(runko.comm_mode.emf_J)
+        communicate.pairwise_moore(runko.comm_mode.emf_J_exchange)
+
+    simulation.for_one_lap(f)
+
+
+    nx, ny, nz = conf.NxMesh, conf.NyMesh, conf.NzMesh
+    halo_width = 3
+    twohalo = 2 * halo_width
+
+    expected_num_of_J0 = (nx - twohalo) * (ny - twohalo) * (nz - twohalo)
+
+    exp_num_of_2J0_a = 2 * (nx - twohalo) * (ny - twohalo)
+    exp_num_of_2J0_b = 2 * (ny - twohalo) * (nz - twohalo)
+    exp_num_of_2J0_c = 2 * (nx - twohalo) * (nz - twohalo)
+    expected_num_of_2J0 = exp_num_of_2J0_a + exp_num_of_2J0_b + exp_num_of_2J0_c
+
+    exp_num_of_4J0_a = 4 * (nx - twohalo) * halo_width
+    exp_num_of_4J0_b = 4 * (ny - twohalo) * halo_width
+    exp_num_of_4J0_c = 4 * (nz - twohalo) * halo_width
+    expected_num_of_4J0 = exp_num_of_4J0_a + exp_num_of_4J0_b + exp_num_of_4J0_c
+
+    expected_num_of_8J0 = 8 * halo_width * halo_width
+
+    asserts = []
+
+    for tile in simulation.local_tiles():
+        _, _, (Jx, Jy, Jz) = tile.get_EBJ()
+
+        # Assume that np.unique returns sorted unique values.
+        unique_Jx, counts_Jx = np.unique(Jx, return_counts=True)
+        unique_Jy, counts_Jy = np.unique(Jy, return_counts=True)
+        unique_Jz, counts_Jz = np.unique(Jz, return_counts=True)
+
+        mpi_unittest.assertEqualDeferred(len(unique_Jx), 4)
+        mpi_unittest.assertEqualDeferred(len(unique_Jy), 4)
+        mpi_unittest.assertEqualDeferred(len(unique_Jz), 4)
+
+        mpi_unittest.assertEqualDeferred(unique_Jx[0], J0[0])
+        mpi_unittest.assertEqualDeferred(unique_Jx[1], 2 * J0[0])
+        mpi_unittest.assertEqualDeferred(unique_Jx[2], 4 * J0[0])
+        mpi_unittest.assertEqualDeferred(unique_Jx[3], 8 * J0[0])
+
+        mpi_unittest.assertEqualDeferred(unique_Jy[0], J0[1])
+        mpi_unittest.assertEqualDeferred(unique_Jy[1], 2 * J0[1])
+        mpi_unittest.assertEqualDeferred(unique_Jy[2], 4 * J0[1])
+        mpi_unittest.assertEqualDeferred(unique_Jy[3], 8 * J0[1])
+
+        mpi_unittest.assertEqualDeferred(unique_Jz[0], J0[2])
+        mpi_unittest.assertEqualDeferred(unique_Jz[1], 2 * J0[2])
+        mpi_unittest.assertEqualDeferred(unique_Jz[2], 4 * J0[2])
+        mpi_unittest.assertEqualDeferred(unique_Jz[3], 8 * J0[2])
+
+        mpi_unittest.assertEqualDeferred(counts_Jx[0], expected_num_of_J0)
+        mpi_unittest.assertEqualDeferred(counts_Jx[1], expected_num_of_2J0)
+        mpi_unittest.assertEqualDeferred(counts_Jx[2], expected_num_of_4J0)
+        mpi_unittest.assertEqualDeferred(counts_Jx[3], expected_num_of_8J0)
+
+        mpi_unittest.assertEqualDeferred(counts_Jy[0], expected_num_of_J0)
+        mpi_unittest.assertEqualDeferred(counts_Jy[1], expected_num_of_2J0)
+        mpi_unittest.assertEqualDeferred(counts_Jy[2], expected_num_of_4J0)
+        mpi_unittest.assertEqualDeferred(counts_Jy[3], expected_num_of_8J0)
+
+        mpi_unittest.assertEqualDeferred(counts_Jz[0], expected_num_of_J0)
+        mpi_unittest.assertEqualDeferred(counts_Jz[1], expected_num_of_2J0)
+        mpi_unittest.assertEqualDeferred(counts_Jz[2], expected_num_of_4J0)
+        mpi_unittest.assertEqualDeferred(counts_Jz[3], expected_num_of_8J0)
+
+
+    mpi_unittest.assertDeferredResults(asserts)
+
+
 if __name__ == "__main__":
     virtual_emf_tiles()
     emf_communication()
+    emf_J_exchange()
