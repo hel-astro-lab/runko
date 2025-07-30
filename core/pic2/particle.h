@@ -103,7 +103,7 @@ public:
     std::function<emf2::YeeLattice::InterpolatedEB(const runko::VecList<value_type>&)>;
 
   /// Push particles velocities and positions using boris scheme.
-  void push_particles_boris(double cfl, InterpolatedEB_function);
+  void push_particles_boris(double cfl, const InterpolatedEB_function&);
 
   emf2::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,

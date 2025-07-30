@@ -8,7 +8,7 @@
 void
   pic2::ParticleContainer::push_particles_boris(
     const double cfl,
-    const InterpolatedEB_function EBfunc)
+    const InterpolatedEB_function& EBfunc)
 {
   const auto EB = EBfunc(pos_);
 

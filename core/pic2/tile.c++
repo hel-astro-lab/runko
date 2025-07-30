@@ -202,7 +202,7 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::push_particles(const std::size_t p)
+  Tile<D>::push_particles()
 {
   using yee_value_type = emf2::YeeLattice::value_type;
   const auto origo_pos =
@@ -227,7 +227,9 @@ void
 
   switch(particle_pusher_) {
     case ParticlePusher::boris:
-      particle_buffs_.at(p).push_particles_boris(this->cfl_, std::move(ipol_func));
+      for(auto& [_, pbuff]: particle_buffs_) {
+        pbuff.push_particles_boris(this->cfl_, ipol_func);
+      }
       break;
     default:
       throw std::logic_error { "pic2::Tile::push_particles: unkown particle pusher" };

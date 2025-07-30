@@ -120,7 +120,7 @@ public:
   void inject(std::size_t particle_type, const std::vector<runko::ParticleState>&);
 
   /// Push particles updating their velocities and positions.
-  void push_particles(std::size_t);
+  void push_particles();
 
   /// Deposit current from all particls.
   void deposit_current();

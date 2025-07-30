@@ -73,7 +73,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(0)
+        tile.push_particles()
 
         pos = tile.get_positions(0)
         vel = tile.get_velocities(0)
@@ -117,7 +117,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(0)
+        tile.push_particles()
 
         pos = tile.get_positions(0)
         vel = tile.get_velocities(0)
@@ -161,7 +161,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(0)
+        tile.push_particles()
 
         pos = tile.get_positions(0)
         vel = tile.get_velocities(0)
@@ -205,7 +205,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0.1)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(0)
+        tile.push_particles()
 
         pos = tile.get_positions(0)
         vel = tile.get_velocities(0)
@@ -249,7 +249,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(0)
+        tile.push_particles()
 
         pos = tile.get_positions(0)
         vel = tile.get_velocities(0)
@@ -293,7 +293,7 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertEqual(vy, 0.1)
             self.assertEqual(vz, 0)
 
-        tile.push_particles(0)
+        tile.push_particles()
 
         pos = tile.get_positions(0)
         vel = tile.get_velocities(0)
