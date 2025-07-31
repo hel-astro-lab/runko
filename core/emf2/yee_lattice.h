@@ -289,6 +289,9 @@ public:
   /// that the location indices include the halo regions.
   void deposit_current(const CurrentContributions&);
 
+  /// Apply digital 2nd order one-pass binomial filter for J.
+  void filter_current_binomial2();
+
   /// Returns mdspans to host accessible E, B and J in non-halo region.
   auto view_EBJ_on_host()
   {

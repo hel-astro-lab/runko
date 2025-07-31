@@ -109,6 +109,7 @@ void
       })
     .def("push_half_b", &emf2::Tile<3>::push_half_b)
     .def("push_e", &emf2::Tile<3>::push_e)
+    .def("filter_current", &emf2::Tile<3>::filter_current)
     .def("add_J_to_E", &emf2::Tile<3>::add_J_to_E);
 
   py::class_<h5io::FieldsWriter2<3>>(m_3d, "FieldsWriter2")

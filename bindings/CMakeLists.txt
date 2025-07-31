@@ -27,6 +27,7 @@ set (FIELDS2_FILES
      ../core/emf2/yee_lattice.c++
      ../core/emf2/yee_lattice_FDTD2.c++
      ../core/emf2/yee_lattice_interpolate_linear_1st.c++
+     ../core/emf2/yee_lattice_current_filter_binomial2.c++
      )
 
 set (VLV_FILES

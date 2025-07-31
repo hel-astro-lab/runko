@@ -22,6 +22,17 @@ emf2::FieldPropagator
     throw std::runtime_error { msg };
   }
 }
+
+emf2::CurrentFilter
+  parse_current_filter(const std::string_view p)
+{
+  if(p == "binomial2") {
+    return emf2::CurrentFilter::binomial2;
+  } else {
+    const auto msg = std::format("{} is not supported current filter.", p);
+    throw std::runtime_error { msg };
+  }
+}
 }  // namespace
 
 namespace emf2 {
@@ -42,6 +53,11 @@ Tile<D>::Tile(
   field_propagator_ { parse_field_propagator(
     p.get_or_throw<std::string>("field_propagator")) }
 {
+  if(const auto cfilter = p.get<std::string>("current_filter")) {
+    current_filter_ = parse_current_filter(cfilter.value());
+  }
+
+
   const auto Nx = p.get_or_throw<std::size_t>("Nx");
   const auto Ny = p.get_or_throw<std::size_t>("Ny");
   const auto Nz = p.get_or_throw<std::size_t>("Nz");
@@ -182,6 +198,28 @@ void
   Tile<D>::add_J_to_E()
 {
   yee_lattice_.add_J_to_E();
+}
+
+template<std::size_t D>
+void
+  Tile<D>::filter_current()
+{
+  if(not current_filter_) {
+    throw std::logic_error {
+      "Trying to filter current without specifying `current_filter`!"
+    };
+  }
+
+  const auto cf = current_filter_.value();
+  switch(cf) {
+    case emf2::CurrentFilter::binomial2:
+      this->yee_lattice_.filter_current_binomial2();
+      return;
+    default:
+      throw std::logic_error {
+        "emf2::Tile::filter_current internal error: unregonized current filter."
+      };
+  }
 }
 
 template<std::size_t D>

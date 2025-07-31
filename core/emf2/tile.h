@@ -10,11 +10,13 @@
 #include <cstddef>
 #include <experimental/mdspan>
 #include <functional>
+#include <optional>
 #include <tuple>
 
 namespace emf2 {
 
 enum class FieldPropagator { FDTD2 };
+enum class CurrentFilter { binomial2 };
 
 /*! \brief General Plasma tile for solving Maxwell's equations
  *
@@ -30,6 +32,7 @@ protected:
   YeeLattice yee_lattice_;
   double cfl_;
   FieldPropagator field_propagator_;
+  std::optional<CurrentFilter> current_filter_ {};
 
 public:
   static constexpr auto halo_size = 3;
@@ -81,6 +84,11 @@ public:
 
   /// E += J
   void add_J_to_E();
+
+  /// Applies potentially configured filter to J.
+  ///
+  /// Throws if filter is not configured.
+  void filter_current();
 
   /// Send field specified with mode (see comm_mode).
   std::vector<mpi4cpp::mpi::request>
