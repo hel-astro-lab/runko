@@ -1438,8 +1438,8 @@ public:
 
             // more complicated v1 that should be numerically more stable and has radius dependency
             by_vir = gs.bx(ind)*std::abs(lx1 - xborn)/r_curv;        // approximate sin\theta \approx \theta
-            by_vir = by_vir*std::pow(1.0f - std::abs(lx1/r_gap), 2);  // decrease field strength linearly with height
-              
+            //by_vir = by_vir*std::pow(1.0f - std::abs(lx1/r_gap), 2);  // decrease field strength linearly with height
+            if(std::abs(lx1/r_gap) > 0.9) by_vir = 0.0f;             // turn off pair production for h/L > 0.9
 
           } else if(iptr->name == "synchrotron") {
             float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
