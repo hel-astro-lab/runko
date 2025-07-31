@@ -106,15 +106,12 @@ emf2::YeeLattice::CurrentContributions
       current_ptr[offset++]   = current;
     };
 
-    // Use the above thing and think about struct of arrays for the contributions.
-
     store_current(
       i1,
       Vec3yee(
         Fx1 * (1.0 - Wy1) * (1.0 - Wz1),
         Fy1 * (1.0 - Wx1) * (1.0 - Wz1),
         Fz1 * (1.0 - Wx1) * (1.0 - Wy1)));
-
 
     store_current(
       i2,
