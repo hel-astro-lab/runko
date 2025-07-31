@@ -131,7 +131,7 @@ std::vector<mpi4cpp::mpi::request>
   switch(static_cast<comm_mode>(mode)) {
     case comm_mode::number_of_particles: return recv_particle_sizes();
     case comm_mode::pic_particle: return recv_particles();
-    default: return emf2::Tile<D>::send_data(comm, orig, mode, tag);
+    default: return emf2::Tile<D>::recv_data(comm, orig, mode, tag);
   }
 }
 
