@@ -64,7 +64,7 @@ class TileGrid:
 
         legacy_conf = type("", (), dict(oneD=False,
                                         twoD=False,
-                                        threeD=False,
+                                        threeD=True,
                                         mpi_task_mode=False))
 
         if conf.tile_partitioning == "hilbert_curve":
@@ -143,6 +143,10 @@ class TileGrid:
 
             for i, j, k in vtile.nhood():
                 nhood_tile = self._corgi_grid.get_tile(i, j, k)
+
+                if not nhood_tile:
+                    continue
+
                 nhood_tile_type = type(nhood_tile)
 
                 # Treat tiles from pycorgi as non-initialized.
@@ -154,6 +158,9 @@ class TileGrid:
                         raise RuntimeError(msg)
 
                     tile_type_candidate = nhood_tile_type
+
+            if not tile_type_candidate:
+                raise RuntimeError("Could not deduce virtual tily type!")
 
             indices = vtile.index
             new_tile = tile_type_candidate(indices, config)
