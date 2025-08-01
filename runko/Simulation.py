@@ -2,6 +2,8 @@ from pytools import MethodWrapper
 from pyrunko.tools import comm_mode
 from pyrunko._runko_next import _virtual_tile_sync_handshake_mode
 import pyrunko.emf2.threeD as emf
+from .runko_logging import runko_logger
+
 
 class Simulation:
     """
@@ -29,6 +31,14 @@ class Simulation:
         self._io_config = kwargs['io_config']
         self._emf_writer = None
 
+        self._logger = runko_logger("Simulation")
+
+        ctor_msg = "Simulation constructed with:\n"
+        ctor_msg += f"\tNt = {kwargs['Nt']}\n"
+        ctor_msg += f"\tio config: {self._io_config}"
+        self._logger.debug(ctor_msg)
+
+
     def _ensure_constructed_emf_writer(self):
         if self._emf_writer:
             return
@@ -41,6 +51,9 @@ class Simulation:
                                              self._tile_grid._Nz,
                                              self._tile_grid._NzMesh,
                                              self._io_config["stride"])
+
+        self._logger.debug("FieldsWriter2 constructed.")
+
 
     def virtual_tiles(self):
         """
@@ -129,12 +142,15 @@ class Simulation:
 
         lap_function(for_each_local_tile, communications, io)
 
+        self._logger.debug(f"Executed lap function at lap: {self.lap}")
+
 
     def prelude(self, lap_function):
         """
         Execute a given lap function without increasing the lap.
         """
 
+        self._logger.info("Executing prelude lap function...")
         self._execute_lap_function(lap_function)
 
 
@@ -142,6 +158,8 @@ class Simulation:
         """
         Advance simulation by one lap using given lap functions.
         """
+
+        self._logger.info(f"Executing lap: {self.lap}")
 
         self._execute_lap_function(lap_function)
         self._lap += 1

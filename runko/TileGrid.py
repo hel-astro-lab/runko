@@ -1,4 +1,5 @@
 import itertools
+import logging
 
 from mpi4py import MPI
 
@@ -6,6 +7,8 @@ import pytools
 import pycorgi.threeD as pycorgi
 
 from .Simulation import Simulation
+from .runko_logging import runko_logger
+
 
 class TileGrid:
     """
@@ -77,6 +80,10 @@ class TileGrid:
         else:
             raise RuntimeError("Due to previous checking this should not happend.")
 
+        self._logger = runko_logger("TileGrid")
+        self._logger.debug(f"TileGrid constructed with configuration: {conf}")
+
+
     def add_tile(self, tile, tile_grid_idx: (int, int, int)):
         """
         Adds tile to given tile grid index.
@@ -89,6 +96,8 @@ class TileGrid:
             raise RuntimeError(msg)
 
         self._corgi_grid.add_tile(tile, tile_grid_idx)
+
+        self._logger.debug(f"Added tile {tile} at {tile_grid_idx}.")
 
 
     def initialized_from_restart_file(self) -> bool:
@@ -164,8 +173,12 @@ class TileGrid:
 
             indices = vtile.index
             new_tile = tile_type_candidate(indices, config)
-            self._corgi_grid.add_tile(new_tile, indices) 
+            self._corgi_grid.add_tile(new_tile, indices)
             new_tile.load_metainfo(vtile.communication)
+
+            vtile_msg = f"Constructed virtual tile at {vtile.index} "
+            vtile_msg += f"with deduced type {tile_type_candidate}."
+            self._logger.debug(vtile_msg)
 
         io_config = dict(stride=1 if not config.stride else config.stride,
                          outdir="runko_output" if not config.outdir else config.outdir)

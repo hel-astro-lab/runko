@@ -5,20 +5,4 @@ import pyrunko.emf2.threeD as emf
 import pyrunko.pic2.threeD as pic
 from .Simulation import Simulation
 from pyrunko.tools import comm_mode, particle
-
-
-def on_main_rank() -> bool:
-    """
-    Checks if the caller is "main" rank.
-
-    There is no other guarantees other that there is only one main rank.
-    """
-
-    try:
-        from mpi4py import MPI
-        return MPI.COMM_WORLD.Get_rank() == 0
-    except:
-        # If importing mpi4py fails, assume that there is no MPI
-        # which means that there has to be only one rank.
-        return True
-
+from .runko_logging import on_main_rank, runko_logger, runko_default_handler
