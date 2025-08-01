@@ -8,6 +8,8 @@ import pytools
 import runko
 import numpy as np
 import itertools
+import logging
+
 
 if __name__ == "__main__":
 
@@ -17,12 +19,12 @@ if __name__ == "__main__":
     config = runko.Configuration(None)
 
     config.Nt = 200
-    config.Nx = 2
-    config.Ny = 2
-    config.Nz = 2
-    config.NxMesh = 10
-    config.NyMesh = 10
-    config.NzMesh = 10
+    config.Nx = 4
+    config.Ny = 4
+    config.Nz = 4
+    config.NxMesh = 20
+    config.NyMesh = 20
+    config.NzMesh = 20
     config.xmin = 0
     config.ymin = 0
     config.zmin = 0
@@ -35,8 +37,8 @@ if __name__ == "__main__":
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
-    config.tile_partitioning = "catepillar_track"
-    config.catepillar_track_length = 1
+    config.current_filter = "binomial2"
+    config.tile_partitioning = "hilbert_curve"
 
 
     # Problem specific configuration
@@ -131,9 +133,6 @@ if __name__ == "__main__":
             return particles
         return f
 
-    if runko.on_main_rank():
-        print(f"Constructing tile grid.")
-
     # TileGrid ctor:
     # - balances tiles based on conf (catepillar, hilbert)
     # - checks if restarts files are present for current config
@@ -142,41 +141,16 @@ if __name__ == "__main__":
 
     if not tile_grid.initialized_from_restart_file():
         for idx in tile_grid.local_tile_indices():
-            if runko.on_main_rank():
-                print(f"Constructing tile at {idx}:")
             tile = runko.pic.Tile(idx, config)
-            if runko.on_main_rank():
-                print("Setting fields...")
             tile.set_EBJ(zero_field, B, zero_field)
-            if runko.on_main_rank():
-                print("Injecting particles...")
             tile.inject_to_each_cell(0, make_pgen(delgam0))
             tile.inject_to_each_cell(1, make_pgen(delgam1))
             tile_grid.add_tile(tile, idx)
-
-    if runko.on_main_rank():
-        print(f"Configuring simulation.")
 
     # Initializes the simulation and returns a handle to it:
     # - analyze and sync boundaries between mpi tasks/ranks/localities
     # - loads virtual tiles (is there benefit of doing this explicitly?)
     simulation = tile_grid.configure_simulation(config)
-
-    def plot():
-        fig, (axEx, axBx) = plt.subplots(2, 1)
-
-        for tile in simulation.local_tiles():
-            (Ex, _, _), (Bx, _, _), _ = tile.get_EBJ()
-
-            minx, miny, minz = tile.mins
-            maxx, maxy, maxz = tile.maxs
-
-            axEx.imshow(Ex[5, :, :], extent=(miny, maxy, minz, maxz))
-            axBx.imshow(Bx[5, :, :], extent=(miny, maxy, minz, maxz))
-
-        fig.suptitle(f"lap {simulation.lap}")
-        fig.savefig(f"{simulation.lap:05}.png")
-
 
     def sync_EB(tile, comm, io):
         EB = (runko.comm_mode.emf_E, runko.comm_mode.emf_B)
@@ -186,9 +160,9 @@ if __name__ == "__main__":
     simulation.prelude(sync_EB)
 
     def pic_simulation_step(tile, comm, io):
-        if runko.on_main_rank():
-            print(f"Starting lap {simulation.lap}...")
-            # plot()
+
+        if simulation.lap % 20 == 0:
+            io.emf_snapshot()
 
         tile.push_half_b()
         comm.virtual_tile_sync(runko.comm_mode.emf_B)
@@ -202,6 +176,15 @@ if __name__ == "__main__":
         comm.virtual_tile_sync(runko.comm_mode.emf_J)
         comm.pairwise_moore(runko.comm_mode.emf_J_exchange)
 
+        comm.virtual_tile_sync(runko.comm_mode.emf_J)
+        comm.pairwise_moore(runko.comm_mode.emf_J)
+        tile.filter_current()
+        tile.filter_current()
+        comm.virtual_tile_sync(runko.comm_mode.emf_J)
+        comm.pairwise_moore(runko.comm_mode.emf_J)
+        tile.filter_current()
+        tile.filter_current()
+
         tile.push_half_b()
         comm.virtual_tile_sync(runko.comm_mode.emf_B)
         comm.pairwise_moore(runko.comm_mode.emf_B)
@@ -211,9 +194,5 @@ if __name__ == "__main__":
         comm.virtual_tile_sync(runko.comm_mode.emf_E)
         comm.pairwise_moore(runko.comm_mode.emf_E)
 
-        if simulation.lap % 20 == 0:
-            if runko.on_main_rank():
-                print("Starting io...")
-            io.emf_snapshot()
-
     simulation.for_each_lap(pic_simulation_step)
+    simulation.log_timer_statistics()
