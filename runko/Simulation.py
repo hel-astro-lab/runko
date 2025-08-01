@@ -3,6 +3,8 @@ from pyrunko.tools import comm_mode
 from pyrunko._runko_next import _virtual_tile_sync_handshake_mode
 import pyrunko.emf2.threeD as emf
 from .runko_logging import runko_logger
+from .runko_timer import Timer, timer_statistics
+import logging
 
 
 class Simulation:
@@ -30,6 +32,8 @@ class Simulation:
 
         self._io_config = kwargs['io_config']
         self._emf_writer = None
+
+        self._lap_timers = []
 
         self._logger = runko_logger("Simulation")
 
@@ -89,7 +93,7 @@ class Simulation:
 
 
 
-    def _execute_lap_function(self, lap_function):
+    def _execute_lap_function(self, lap_function, disable_timing=False):
         """
         Execute a given lap function.
 
@@ -97,18 +101,32 @@ class Simulation:
         FIXME: Parallelize the loop.
         """
 
-        def for_each_local_tile_action(name: str):
-            for tile in self.local_tiles():
-                getattr(tile, name)()
+        lap_timer = Timer() if not disable_timing else None
 
-        def communication_action(name: str, *comm_modes: comm_mode):
+        def pre(method, *vargs, **kwargs):
+            if 'name' in kwargs:
+                lap_timer.start(kwargs['name'])
+            else:
+                lap_timer.start(method)
+
+        def post(method, *vargs, **kwargs):
+            if 'name' in kwargs:
+                lap_timer.stop(kwargs['name'])
+            else:
+                lap_timer.stop(method)
+
+        def for_each_local_tile_action(method: str, **kwargs):
+            for tile in self.local_tiles():
+                getattr(tile, method)()
+
+        def communication_action(method: str, *comm_modes: comm_mode, **kwargs):
             for mode in comm_modes:
                 if type(mode) != comm_mode:
                     msg = "Communications only accept runko.comm_mode arguments.\n"
                     msg += f"Received {mode} of type {type(mode)}."
                     raise TypeError(msg)
 
-            match name:
+            match method:
                 case "pairwise_moore":
                     for mode in comm_modes:
                         self._tile_grid._corgi_grid.pairwise_moore_communication(mode.value)
@@ -126,21 +144,25 @@ class Simulation:
                         self._tile_grid._corgi_grid.send_data(mode.value)
                         self._tile_grid._corgi_grid.wait_data(mode.value)
                 case _:
-                    raise AttributeError(f"{name} is not supported communication type.")
+                    raise AttributeError(f"{method} is not supported communication type.")
 
-        def io_action(name: str):
-            match name:
+        def io_action(method: str, **kwargs):
+            match method:
                 case "emf_snapshot":
                     self._ensure_constructed_emf_writer()
                     self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
                 case _:
-                    raise AttributeError(f"{name} is not supported IO type.")
+                    raise AttributeError(f"{method} is not supported IO type.")
 
-        for_each_local_tile = MethodWrapper(for_each_local_tile_action)
-        communications = MethodWrapper(communication_action)
-        io = MethodWrapper(io_action)
+        pre_post = dict(pre=pre, post=post) if not disable_timing else dict()
+        for_each_local_tile = MethodWrapper(for_each_local_tile_action, **pre_post)
+        communications = MethodWrapper(communication_action, **pre_post)
+        io = MethodWrapper(io_action, **pre_post)
 
         lap_function(for_each_local_tile, communications, io)
+
+        if not disable_timing:
+            self._lap_timers.append(lap_timer)
 
         self._logger.debug(f"Executed lap function at lap: {self.lap}")
 
@@ -151,7 +173,7 @@ class Simulation:
         """
 
         self._logger.info("Executing prelude lap function...")
-        self._execute_lap_function(lap_function)
+        self._execute_lap_function(lap_function, disable_timing=True)
 
 
     def for_one_lap(self, lap_function):
@@ -172,3 +194,26 @@ class Simulation:
 
         while self._lap < self._last_lap:
             self.for_one_lap(lap_function)
+
+
+    def get_time_statistics(self):
+        return timer_statistics(self._lap_timers)
+
+
+    def log_timer_statistics(self, level=logging.INFO):
+        stats = list(self.get_time_statistics().items())
+        stats.sort(key=lambda x: -x[1].total)
+
+        total_elapsed_time = 0
+        for _, s in stats:
+            total_elapsed_time += s.total
+
+        nlen = len(max(stats, key=lambda x: len(x[0]))[0])
+
+        msg = "Simulation execution time statistics:\n"
+        msg += f"{'name':<{nlen}} | total [s] | % of total | average [s] | std [s] | count\n"
+        for name, s in stats:
+            p = 100 * s.total / total_elapsed_time
+            msg += f"{name:<{nlen}} | {s.total:>9.1e} | {p:>10.4} | {s.average:>11.3e} | {s.std_dev:>7.1e} | {s.count:>5}\n"
+        msg += f"Total elapsed time [s]: {total_elapsed_time}"
+        self._logger.log(level, msg)
