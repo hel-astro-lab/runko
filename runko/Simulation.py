@@ -103,17 +103,19 @@ class Simulation:
 
         lap_timer = Timer() if not disable_timing else None
 
-        def pre(method, *vargs, **kwargs):
+        def get_name(method, kwargs):
             if 'name' in kwargs:
-                lap_timer.start(kwargs['name'])
+                return kwargs['name']
             else:
-                lap_timer.start(method)
+                return method
+
+        def pre(method, *vargs, **kwargs):
+            name = get_name(method, kwargs)
+            lap_timer.start(name)
 
         def post(method, *vargs, **kwargs):
-            if 'name' in kwargs:
-                lap_timer.stop(kwargs['name'])
-            else:
-                lap_timer.stop(method)
+            name = get_name(method, kwargs)
+            lap_timer.stop(name)
 
         def for_each_local_tile_action(method: str, **kwargs):
             for tile in self.local_tiles():
@@ -163,8 +165,6 @@ class Simulation:
 
         if not disable_timing:
             self._lap_timers.append(lap_timer)
-
-        self._logger.debug(f"Executed lap function at lap: {self.lap}")
 
 
     def prelude(self, lap_function):

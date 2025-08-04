@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from dataclasses import dataclass
+from .runko_logging import runko_logger
 
 
 @dataclass
@@ -12,6 +13,7 @@ class TimeMeasurement:
 class Timer:
     def __init__(self):
         self.__times = dict()
+        self.__logger = runko_logger("Timer")
 
 
     def __uniq_name(self, name: str):
@@ -34,7 +36,7 @@ class Timer:
         """
 
         uniq_name = self.__uniq_name(name)
-
+        self.__logger.debug(uniq_name)
         self.__times[uniq_name] = TimeMeasurement(begin=time.time())
 
 
