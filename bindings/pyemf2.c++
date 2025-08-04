@@ -95,6 +95,7 @@ void
         return emf2::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
       }))
     .def("set_EBJ", &emf2::Tile<3>::set_EBJ)
+    .def("batch_set_EBJ", &emf2::Tile<3>::batch_set_EBJ)
     .def(
       "get_EBJ",
       [](emf2::Tile<3>& tile) {

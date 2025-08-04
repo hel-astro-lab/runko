@@ -4,6 +4,7 @@
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
 #include "mpi4cpp/mpi.h"
+#include "pybind11/numpy.h"
 #include "tools/config_parser.h"
 
 #include <array>
@@ -61,6 +62,22 @@ public:
   /// Set E, B and J fields in non-halo regions.
   void
     set_EBJ(vector_field_function E, vector_field_function B, vector_field_function J);
+
+  using batch_array = pybind11::array_t<double>;
+  using batch_vector_field_function =
+    std::function<batch_array(batch_array, batch_array, batch_array)>;
+
+  /// Set E, B and J fields in non-halo regions.
+  void batch_set_EBJ(
+    batch_vector_field_function Ex,
+    batch_vector_field_function Ey,
+    batch_vector_field_function Ez,
+    batch_vector_field_function Bx,
+    batch_vector_field_function By,
+    batch_vector_field_function Bz,
+    batch_vector_field_function Jx,
+    batch_vector_field_function Jy,
+    batch_vector_field_function Jz);
 
   /// Get E, B and J fields in non-halo regions.
   YeeLattice::YeeLatticeHostCopy get_EBJ();

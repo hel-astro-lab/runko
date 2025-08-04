@@ -128,6 +128,180 @@ class emf2(unittest.TestCase):
             self.assertAlmostEqual(Jy[i, j, k], Jinit(ii, jj + 0.5, kk)[1], places=5)
             self.assertAlmostEqual(Jz[i, j, k], Jinit(ii, jj, kk + 0.5)[2], places=5)
 
+
+    def test_field_batch_set(self):
+
+        config = runko.Configuration(None)
+        config.Nx = 2
+        config.Ny = 3
+        config.Nz = 4
+        config.NxMesh = 10
+        config.NyMesh = 12
+        config.NzMesh = 14
+        config.xmin = -3.2
+        config.ymin = -2.3
+        config.zmin = 1
+        config.cfl = 1
+        config.field_propagator = "FDTD2"
+
+        tile_grid_idx = (0, 1, 2)
+        tile = runko.emf.Tile(tile_grid_idx, config)
+
+        (E0x, E0y, E0z), (B0x, B0y, B0z), (J0x, J0y, J0z) = tile.get_EBJ()
+
+        self.assertTrue(np.all(E0x == 0))
+        self.assertTrue(np.all(E0y == 0))
+        self.assertTrue(np.all(E0z == 0))
+        self.assertTrue(np.all(B0x == 0))
+        self.assertTrue(np.all(B0y == 0))
+        self.assertTrue(np.all(B0z == 0))
+        self.assertTrue(np.all(J0x == 0))
+        self.assertTrue(np.all(J0y == 0))
+        self.assertTrue(np.all(J0z == 0))
+
+        # Remember that E and B are stored in a Yee Lattice.
+        # Grid indices (i, j, k) corresponds to location:
+        #
+        #     X(i, j, k) = i * dx * e_x + j * dy * e_y + k * dz * e_z
+        #
+        # where e_x, e_y and e_z are unit vectors.
+        #
+        # E and B components corrseponding to grid indices (i, j, k)
+        # are located at different positions:
+        #
+        # Component E_l is located at: X(i, j, k) + 0.5 * dl * e_l
+        # Component B_l is located at: X(i + 0.5, j + 0.5, k + 0.5) - 0.5 * dl * e_l
+        # Components of current J are located at same places as E.
+
+
+        Exinit = lambda x, y, z: x
+        Eyinit = lambda x, y, z: y
+        Ezinit = lambda x, y, z: z
+        Bxinit = lambda x, y, z: 2 * x
+        Byinit = lambda x, y, z: 2 * y
+        Bzinit = lambda x, y, z: 2 * z
+        Jxinit = lambda x, y, z: 3 * x
+        Jyinit = lambda x, y, z: 3 * y
+        Jzinit = lambda x, y, z: 3 * z
+
+        tile.batch_set_EBJ(Exinit, Eyinit, Ezinit,
+                           Bxinit, Byinit, Bzinit,
+                           Jxinit, Jyinit, Jzinit)
+
+        (Ex, Ey, Ez), (Bx, By, Bz), (Jx, Jy, Jz) = tile.get_EBJ()
+
+        index_space = itertools.product(range(config.NxMesh),
+                                        range(config.NyMesh),
+                                        range(config.NzMesh))
+        for i, j, k in index_space:
+
+            ii = config.xmin + tile_grid_idx[0] * config.NxMesh + i
+            jj = config.ymin + tile_grid_idx[1] * config.NyMesh + j
+            kk = config.zmin + tile_grid_idx[2] * config.NzMesh + k
+
+            self.assertAlmostEqual(Ex[i, j, k], Exinit(ii + 0.5, jj, kk), places=5)
+            self.assertAlmostEqual(Ey[i, j, k], Eyinit(ii, jj + 0.5, kk), places=5)
+            self.assertAlmostEqual(Ez[i, j, k], Ezinit(ii, jj, kk + 0.5), places=5)
+
+            self.assertAlmostEqual(Bx[i, j, k], Bxinit(ii, jj + 0.5, kk + 0.5), places=5)
+            self.assertAlmostEqual(By[i, j, k], Byinit(ii + 0.5, jj, kk + 0.5), places=5)
+            self.assertAlmostEqual(Bz[i, j, k], Bzinit(ii + 0.5, jj + 0.5, kk), places=5)
+
+            self.assertAlmostEqual(Jx[i, j, k], Jxinit(ii + 0.5, jj, kk), places=5)
+            self.assertAlmostEqual(Jy[i, j, k], Jyinit(ii, jj + 0.5, kk), places=5)
+            self.assertAlmostEqual(Jz[i, j, k], Jzinit(ii, jj, kk + 0.5), places=5)
+
+
+    def test_batch_setting_fields_with_incorrect_shape_throws(self):
+
+        config = runko.Configuration(None)
+        config.Nx = 2
+        config.Ny = 3
+        config.Nz = 4
+        config.NxMesh = 10
+        config.NyMesh = 12
+        config.NzMesh = 14
+        config.xmin = -3.2
+        config.ymin = -2.3
+        config.zmin = 1
+        config.cfl = 1
+        config.field_propagator = "FDTD2"
+
+        tile_grid_idx = (0, 1, 2)
+        tile = runko.emf.Tile(tile_grid_idx, config)
+
+        f0 = lambda x, y, z: np.ones((1))
+        f1 = lambda x, y, z: np.ones((1, 1))
+        f2 = lambda x, y, z: np.ones((1, 1, 1))
+        f3 = lambda x, y, z: np.ones((10, 12, 15))
+        f4 = lambda x, y, z: np.ones((10, 11, 14))
+        f5 = lambda x, y, z: np.ones((11, 12, 14))
+        f6 = lambda x, y, z: np.ones((1, 1, 1, 1))
+        f7 = lambda x, y, z: np.ones((1, 1, 1, 1, 1))
+        f7 = lambda x, y, z: np.ones(())
+        fc = lambda x, y, z: np.ones((10, 12, 14))
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(f0, fc, fc,
+                               fc, fc, fc,
+                               fc, fc, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, f1, fc,
+                               fc, fc, fc,
+                               fc, fc, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, fc, f2,
+                               fc, fc, fc,
+                               fc, fc, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, fc, fc,
+                               f3, fc, fc,
+                               fc, fc, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, fc, fc,
+                               fc, f4, fc,
+                               fc, fc, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, fc, fc,
+                               fc, fc, f5,
+                               fc, fc, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, fc, fc,
+                               fc, fc, fc,
+                               f6, fc, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, fc, fc,
+                               fc, fc, fc,
+                               fc, f7, fc)
+
+        with self.assertRaises(Exception):
+            tile.batch_set_EBJ(fc, fc, fc,
+                               fc, fc, fc,
+                               fc, fc, f8)
+
+        tile.batch_set_EBJ(fc, fc, fc,
+                           fc, fc, fc,
+                           fc, fc, fc)
+
+        (Ex, Ey, Ez), (Bx, By, Bz), (Jx, Jy, Jz) = tile.get_EBJ()
+        self.assertTrue(np.all(Ex == 1))
+        self.assertTrue(np.all(Ey == 1))
+        self.assertTrue(np.all(Ez == 1))
+        self.assertTrue(np.all(Bx == 1))
+        self.assertTrue(np.all(By == 1))
+        self.assertTrue(np.all(Bz == 1))
+        self.assertTrue(np.all(Jx == 1))
+        self.assertTrue(np.all(Jy == 1))
+        self.assertTrue(np.all(Jz == 1))
+
+
     def test_add_J_to_E(self):
 
         config = runko.Configuration(None)
