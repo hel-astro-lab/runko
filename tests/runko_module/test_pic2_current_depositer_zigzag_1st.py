@@ -51,7 +51,7 @@ def interior_index_space(config):
     return itertools.product(I, J, K)
 
 
-class pic2_particle_pusher_boris(unittest.TestCase):
+class pic2_currend_depositer_zigzag_1st(unittest.TestCase):
 
     def test_nonexisting_particles_do_not_create_current(self):
         config, tile = make_test_tile()
