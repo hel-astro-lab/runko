@@ -47,7 +47,6 @@ void pic::Gap<D>::insert_em(
       
     //--------------------------------------------------
     // magnetic field
-
     gs.bx(i,0,0) = B0; // constant background field
     gs.by(i,0,0) = 0.0;
     gs.bz(i,0,0) = 0.0;
@@ -55,20 +54,22 @@ void pic::Gap<D>::insert_em(
     //--------------------------------------------------
     // electric field
 
-    // linear profile 
-    float erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
-
-    const float erot1 = erot;
-    const float erot2 = 0.0f;
-    const float erot3 = 0.0f;
+    float erot, erot_inside; 
+    if( enable_surface_inj ) {  // ample injection
+      erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
+      erot_inside = 0.0f; // value inside star 
+    } else { // no injection
+      erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
+      erot_inside = E0;
+    }
 
     //--------------------------------------------------
-    // blending of old + new solution
-    auto s  = 1.0f - shape( h, 0.0, delta_left); // height smoothing parameter
+    // blending of inside/outside solutions
+    auto s  = shape( h, 0.0, delta_left); // height smoothing parameter
 
-    gs.ex(i,0,0) = s*erot1 + (1.0f - s)*gs.ex(i,0,0); 
-    gs.ey(i,0,0) = s*erot2 + (1.0f - s)*gs.ey(i,0,0); 
-    gs.ez(i,0,0) = s*erot3 + (1.0f - s)*gs.ez(i,0,0); 
+    gs.ex(i,0,0) = s*erot_inside + (1.0f-s)*erot; 
+    gs.ey(i,0,0) = 0.0f; 
+    gs.ez(i,0,0) = 0.0f; 
   }
 
   return;
@@ -207,20 +208,14 @@ void pic::Gap<D>::update_e(
       float iglob = (D>=1) ? i + mins[0] : 0;
       float h = iglob - x_left; // height in units of cells, h=0 is the surface
 
-      // linear profile 
-      float erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
-
-      const float ex = 0.0f; //erot;
-      const float ey = 0.0f;
-      const float ez = 0.0f;
-
       //--------------------------------------------------
-      // blending of old + new solution
+      // blending of boundary condition + active solution
       auto s = shape( h, 0.0, delta_left); // height smoothing parameter
+      float erot_inside = enable_surface_inj ? 0.0f : E0;
 
-      gs.ex(i,0,0) = s*ex + (1.0f - s)*gs.ex(i,0,0); 
-      gs.ey(i,0,0) = s*ey + (1.0f - s)*gs.ey(i,0,0); 
-      gs.ez(i,0,0) = s*ez + (1.0f - s)*gs.ez(i,0,0); 
+      gs.ex(i,0,0) = s*erot_inside + (1.0f - s)*gs.ex(i,0,0); 
+      gs.ey(i,0,0) = s*0.0f        + (1.0f - s)*gs.ey(i,0,0); 
+      gs.ez(i,0,0) = s*0.0f        + (1.0f - s)*gs.ez(i,0,0); 
     }
   }
 
@@ -355,14 +350,15 @@ void pic::Gap<D>::add_jext(
     //float jy = 0.0f;
     //float jz = 0.0f;
 
-
     // suppress current at boundaries; double tanh profile
-    //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
-    //auto s_r =        shape( ig, x_right, delta_right); 
-    //auto s = s_l*s_r;
+    auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
+    auto s_r =        shape( ig, x_right, delta_right); 
+    //auto s_l = 1.0f - shape( ig, halo,    2); 
+    //auto s_r =        shape( ig, Nx-halo, 2); 
+    auto s = s_l*s_r;
 
     // add 
-    gs.jx(i,0,0) += jx;     // external current 
+    gs.jx(i,0,0) += jx*s;     // external current 
     //gs.jx(i,0,0) += jx*c*s; // external current * dt (since E = -j*dt we add dt already here)
   }
 
@@ -401,21 +397,20 @@ void pic::Gap<D>::update_j(
     float ig = (D>=1) ? i + mins[0] : 0;
 
     // suppress current at boundaries; double tanh profile
-    auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
-    auto s_r =        shape( ig, x_right, delta_right); 
-    auto s = s_l*s_r;
+    //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
+    auto s_r =        shape( ig, x_right, delta_right);  // tanh profile
+      
+    // sharp cutoff at halos
+    float s_l = 0.0f ? ig < halo : 1.0f; // sharp cutoff
+    //float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
 
-    // s looks like 0 -> 1 -> 0
+    // combine
+    auto s    = s_l*s_r; // s now looks like 0 -> 1 -> 0
 
     // suppression of current at the boundaries
     gs.jx(i,0,0) *= s;
     gs.jy(i,0,0) *= s;
     gs.jz(i,0,0) *= s;
-
-    // blending of vacuum + old solutions
-    //gs.jx(i,0,0) = (1.0 - s)*0.0f + s*gs.jx(i,0,0);
-    //gs.jy(i,0,0) = (1.0 - s)*0.0f + s*gs.jy(i,0,0);
-    //gs.jz(i,0,0) = (1.0 - s)*0.0f + s*gs.jz(i,0,0);
   }
 
   return;
@@ -442,7 +437,7 @@ void pic::Gap<D>::solve(
   // operate only on roughly correct tiles 
   if(!(top || bot)) return;
 
-
+  auto& gs = tile.get_grids(); // get fields grid
 
   //--------------------------------------------------
   // shortcut for containers 
@@ -450,8 +445,8 @@ void pic::Gap<D>::solve(
   for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
   // get charge (assume q_- = q_+)
-  //const float q = cons["e-"]->q;
-  //const float n_co = abs(E0/q)/gap_length; // co-rotation (Goldreich-Julian) density
+  const float q = cons["e-"]->q;
+  const float n_co = abs(E0/q)/gap_length; // co-rotation (Goldreich-Julian) density
 
 
   //--------------------------------------------------
@@ -465,8 +460,14 @@ void pic::Gap<D>::solve(
     bool inside_injection_layer = false;
     if( iglob == halo + 1 ) inside_injection_layer = true;
 
-    if( inside_injection_layer ) {
-      float ninj = inj_rate_pairs; // number of injections
+    if( inside_injection_layer && enable_surface_inj ) {
+
+      // v1 (constant rate)
+      //float ninj = inj_rate_pairs; // constant number of injections
+
+      // v2 (screening of E_x)
+      auto epar = gs.ex(i,0,0); // E_par
+      float ninj = inj_rate_pairs*abs(epar/E0)*n_co;
 
       // add ninj pairs with MC injection; results on average in ninj injections
       float ncop = 0.0f; // number of pairs added
@@ -494,13 +495,12 @@ void pic::Gap<D>::solve(
         float dx = rand(); // inject location is set randomly inside the cell
                              
         cons["e-"]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux1, uy1, uz1 }}, wep);
-        cons["e+"]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux1, uy1, uz1 }}, wep);
+        cons["p" ]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux1, uy1, uz1 }}, wep);
 
         ncop += 1;
       }
     } // end of inside_injection_layer
 
-     
 
 
     //-------------------------------------------------- 
@@ -569,6 +569,8 @@ void pic::Gap<D>::solve(
       if( con.loc(0,n) <= halo )    con.info(n) = -1; // inside star; 
                                                     
       if( con.loc(0,n) >= x_right ) con.info(n) = -1; // outflowing; 
+                                                        
+      //if( (con.loc(0,n) >= x_right -10.0f) && (con.vel(0,n) < 0.0f) ) con.info(n) = -1; // backflowing; 
     }
   }
 

@@ -25,7 +25,6 @@ private:
   // so the container is not deleted when the temporary storage goes out of scope.
   using ConPtr = pic::ParticleContainer<D>* ;
 
-
   // temp arrays for particle injection
   //std::vector<float> x_to_be_inj;
   //std::vector<float> y_to_be_inj;
@@ -51,7 +50,9 @@ public:
 
   int halo = 3; // extent of the halo regions not updated in left/right edges of the domain
 
-  float j_ext = 0.0f; // strenght of the external current (add_jext)
+  float j_ext = 0.0f; // strength of the external current (add_jext)
+
+  bool enable_surface_inj = true; // on/off switch for charge injection from atmosphere
 
   float inj_rate_pairs = 1;  // number of particles injected per dt
   float inj_rate_phots = 0;  // number of photons injected per dt
@@ -61,6 +62,7 @@ public:
 
   const float wep = 1.0f; // electron/positron particle weght for injection (constant)
         float wph = 1.0f; // photon particle weght for injection (constant)
+
 
   // constructor
   Gap() :
