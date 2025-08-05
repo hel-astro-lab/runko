@@ -357,7 +357,7 @@ void
       break;
     }
     default:
-      throw std::logic_error { "pic2::Tile::push_particles: unkown current depositer" };
+      throw std::logic_error { "pic2::Tile::deposit_current: unkown current depositer" };
   }
 }
 
