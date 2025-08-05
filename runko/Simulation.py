@@ -201,7 +201,11 @@ class Simulation:
 
 
     def log_timer_statistics(self, level=logging.INFO):
-        stats = list(self.get_time_statistics().items())
+        stats_dict = self.get_time_statistics()
+        if len(stats_dict) == 0:
+            self._logger.warning("Trying to log timer non-existing statistic.")
+            return
+        stats = list(stats_dict.items())
         stats.sort(key=lambda x: -x[1].total)
 
         total_elapsed_time = 0
@@ -215,5 +219,5 @@ class Simulation:
         for name, s in stats:
             p = 100 * s.total / total_elapsed_time
             msg += f"{name:<{nlen}} | {s.total:>9.1e} | {p:>10.4} | {s.average:>11.3e} | {s.std_dev:>7.1e} | {s.count:>5}\n"
-        msg += f"Total elapsed time [s]: {total_elapsed_time}"
+        msg += f"Total elapsed time [s]: {total_elapsed_time:10.4}"
         self._logger.log(level, msg)

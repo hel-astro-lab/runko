@@ -180,6 +180,7 @@ class TileGrid:
             vtile_msg += f"with deduced type {tile_type_candidate}."
             self._logger.debug(vtile_msg)
 
+        self._logger.info(f"simulation configured with: {config.__dict__}")
         io_config = dict(stride=1 if not config.stride else config.stride,
                          outdir="runko_output" if not config.outdir else config.outdir)
 
