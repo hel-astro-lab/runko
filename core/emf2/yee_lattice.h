@@ -289,6 +289,11 @@ public:
   /// that the location indices include the halo regions.
   void deposit_current(const CurrentContributions&);
 
+  /// Add given currents to J.
+  ///
+  /// Throws if given grid is not same size as the lattice with halo.
+  void deposit_current(const runko::VecGrid<value_type>&);
+
   /// Apply digital 2nd order one-pass binomial filter for J.
   void filter_current_binomial2();
 

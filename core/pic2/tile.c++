@@ -85,6 +85,8 @@ pic2::CurrentDepositer
 {
   if(p == "zigzag" or p == "zigzag_1st") {
     return pic2::CurrentDepositer::zigzag_1st;
+  } else if(p == "zigzag_1st_atomic") {
+    return pic2::CurrentDepositer::zigzag_1st_atomic;
   } else {
     const auto msg = std::format("{} is not supported current depositer.", p);
     throw std::runtime_error { msg };
@@ -255,6 +257,17 @@ void
           pcontainer.current_zigzag_1st(origo_pos, this->cfl_));
       }
       break;
+    case CurrentDepositer::zigzag_1st_atomic: {
+      auto generated_J = runko::VecGrid<emf2::YeeLattice::value_type>(
+        this->yee_lattice_.extents_with_halo());
+
+      for(const auto& [_, pcontainer]: this->particle_buffs_) {
+        pcontainer.current_zigzag_1st(generated_J, origo_pos, this->cfl_);
+      }
+
+      this->yee_lattice_.deposit_current(generated_J);
+      break;
+    }
     default:
       throw std::logic_error { "pic2::Tile::push_particles: unkown current depositer" };
   }

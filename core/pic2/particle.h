@@ -108,6 +108,16 @@ public:
   emf2::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
     const value_type cfl) const;
+
+  /// Adds generated current to given grid.
+  ///
+  /// `lattice_orgio_coordinates` is in coordinates of the particles,
+  /// and the spacing between cells in `Jout` is 1.
+  /// Assumes that all particle contributions are inside the lattice.
+  void current_zigzag_1st(
+    runko::VecGrid<emf2::YeeLattice::value_type>& Jout,
+    const std::array<value_type, 3> lattice_origo_coordinates,
+    const value_type cfl) const;
 };
 
 

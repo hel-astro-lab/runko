@@ -210,6 +210,7 @@ void
   YeeLattice::add_to_J_from_subregion(const dir_type dir, const YeeLattice& other)
 {
   const auto idir = invert_dir(dir);
+
   const auto my_Jmds_region    = this->corresponding_subregion(idir, this->J_.mds());
   const auto other_Jmds_region = other.subregion(idir, other.J_.mds());
 
@@ -243,6 +244,28 @@ void
     Jmds[idx][1]   = Jmds[idx][1] + J[1];
     Jmds[idx][2]   = Jmds[idx][2] + J[2];
   });
+}
+
+void
+  YeeLattice::deposit_current(const runko::VecGrid<value_type>& depJ)
+{
+
+  if(depJ.extents() != this->extents_with_halo()) {
+    throw std::runtime_error {
+      "emf2::Tile::deposit_current: given current grid has incorrect extents!"
+    };
+  }
+
+  const auto depJmds = depJ.mds();
+  const auto Jmds    = this->J_.mds();
+
+  tyvi::mdgrid_work {}
+    .for_each_index(
+      Jmds,
+      [=](const auto idx, const auto tidx) {
+        Jmds[idx][tidx] = Jmds[idx][tidx] + depJmds[idx][tidx];
+      })
+    .wait();
 }
 
 }  // namespace emf2
