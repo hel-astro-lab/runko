@@ -207,5 +207,125 @@ class pic2_tile(unittest.TestCase):
         assertLengths(1, 2 * N)
 
 
+    def test_batch_inject_to_cells_roundtrip(self):
+
+        config = make_valid_emf2_config()
+        config.q0 = 1
+        config.m0 = 1
+        config.q1 = 1
+        config.m1 = 1
+        config.delgam = 1.0e-5
+        config.temperature_ratio = 1.0
+        config.sigma = 40
+        config.c_omp = 1
+        config.particle_pusher = "boris"
+        config.field_interpolator = "linear_1st"
+        config.current_depositer = "zigzag_1st"
+
+        tile_grid_idx = (0, 0, 0)
+        tile = runko.pic.Tile(tile_grid_idx, config)
+
+        ptype = 1
+
+        def assertLengths(expected_num_of_particles):
+            pos_x, pos_y, pos_z = tile.get_positions(ptype)
+            vel_x, vel_y, vel_z = tile.get_velocities(ptype)
+
+            self.assertEqual(expected_num_of_particles, len(pos_x))
+            self.assertEqual(expected_num_of_particles, len(pos_y))
+            self.assertEqual(expected_num_of_particles, len(pos_z))
+            self.assertEqual(expected_num_of_particles, len(vel_x))
+            self.assertEqual(expected_num_of_particles, len(vel_y))
+            self.assertEqual(expected_num_of_particles, len(vel_z))
+
+
+        assertLengths(0)
+
+        def pgen(x, y, z):
+            return runko.ParticleStateBatch(pos=(x, y, z), vel=(x, y, z))
+
+        tile.batch_inject_to_cells(ptype, pgen)
+
+        N = config.NxMesh * config.NyMesh * config.NzMesh
+        assertLengths(N)
+
+        def r(h):
+            dh = abs(h) % 1
+            self.assertTrue(dh < 0.00001)
+            return round(h)
+
+        posx, posy, posz = tile.get_positions(ptype)
+        velx, vely, velz = tile.get_velocities(ptype)
+
+        pos = set((r(x), r(y), r(z)) for x, y, z in zip(posx, posy, posz))
+        vel = set((r(vx), r(vy), r(vz)) for vx, vy, vz in zip(velx, vely, velz))
+
+        import itertools
+        cell_index_space = itertools.product(range(config.NxMesh),
+                                             range(config.NyMesh),
+                                             range(config.NzMesh))
+
+        correct = set((i, j, k) for i, j, k in cell_index_space)
+
+        self.assertEqual(pos, correct)
+        self.assertEqual(vel, correct)
+
+        tile.batch_inject_to_cells(ptype, pgen)
+        assertLengths(2 * N)
+
+    def test_batch_inject_to_cells_differing_amount_of_pos_and_vel(self):
+
+        config = make_valid_emf2_config()
+        config.q0 = 1
+        config.m0 = 1
+        config.q1 = 1
+        config.m1 = 1
+        config.delgam = 1.0e-5
+        config.temperature_ratio = 1.0
+        config.sigma = 40
+        config.c_omp = 1
+        config.particle_pusher = "boris"
+        config.field_interpolator = "linear_1st"
+        config.current_depositer = "zigzag_1st"
+
+        tile_grid_idx = (0, 0, 0)
+        tile = runko.pic.Tile(tile_grid_idx, config)
+
+        ptype = 1
+
+        PSB = runko.ParticleStateBatch
+        pgen0 = lambda x, y, z: PSB(pos=(x[:-1, :, :], y, z), vel=(x, y, z))
+        pgen1 = lambda x, y, z: PSB(pos=(x, y[:, 4:, :], z), vel=(x, y, z))
+        pgen2 = lambda x, y, z: PSB(pos=(x, y, z[:, :, -1:]), vel=(x, y, z))
+        pgen3 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x.flatten(), y, z))
+        pgen4 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x, y[:, 4:, :], z))
+        pgen5 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x, y, z[:, :, -1:]))
+
+        with self.assertRaises(Exception):
+            tile.batch_inject_to_cells(ptype, pgen0)
+
+        with self.assertRaises(Exception):
+            tile.batch_inject_to_cells(ptype, pgen1)
+
+        with self.assertRaises(Exception):
+            tile.batch_inject_to_cells(ptype, pgen2)
+
+        with self.assertRaises(Exception):
+            tile.batch_inject_to_cells(ptype, pgen3)
+
+        with self.assertRaises(Exception):
+            tile.batch_inject_to_cells(ptype, pgen4)
+
+        with self.assertRaises(Exception):
+            tile.batch_inject_to_cells(ptype, pgen5)
+
+        def pgen(xx, yy, zz):
+            x = xx[2:-2, :, 3:5]
+            y = yy[2:-2, :, 3:5]
+            z = zz[2:-2, :, 3:5]
+            return PSB(pos=(x, y, z), vel=(x, y, z))
+
+        tile.batch_inject_to_cells(ptype, pgen)
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,7 @@
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace {
 
@@ -200,6 +201,93 @@ void
     const std::vector<runko::ParticleState>& new_particles)
 {
   particle_buffs_.at(particle_type).add_particles(new_particles);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::batch_inject_to_cells(
+    const std::size_t particle_type,
+    batch_particle_generator pgen)
+{
+
+  /// FIXME: unify global coordinates
+  const auto Lx = static_cast<double>(this->maxs[0] - this->mins[0]);
+  const auto Ly = static_cast<double>(this->maxs[1] - this->mins[1]);
+  const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
+
+  const auto e = this->yee_lattice_.extents_wout_halo();
+
+  auto global_coordinates = [&](const auto i, const auto j, const auto k) {
+    const auto x_coeff = static_cast<double>(i) / static_cast<double>(e[0]);
+    const auto y_coeff = static_cast<double>(j) / static_cast<double>(e[1]);
+    const auto z_coeff = static_cast<double>(k) / static_cast<double>(e[2]);
+
+    return std::array { static_cast<double>(this->mins[0]) + x_coeff * Lx,
+                        static_cast<double>(this->mins[1]) + y_coeff * Ly,
+                        static_cast<double>(this->mins[2]) + z_coeff * Lz };
+  };
+
+  auto x = pybind11::array_t<double>(e);
+  auto y = pybind11::array_t<double>(e);
+  auto z = pybind11::array_t<double>(e);
+
+  auto xv = x.template mutable_unchecked<3>();
+  auto yv = y.template mutable_unchecked<3>();
+  auto zv = z.template mutable_unchecked<3>();
+
+  const auto cell_indices =
+    tyvi::sstd::index_space(std::mdspan((int*)nullptr, e[0], e[1], e[2]));
+
+  for(const auto [i, j, k]: cell_indices) {
+    const auto [gx, gy, gz] = global_coordinates(i, j, k);
+    xv(i, j, k)             = gx;
+    yv(i, j, k)             = gy;
+    zv(i, j, k)             = gz;
+  }
+
+  const auto state_batch = pgen(x, y, z);
+
+  const auto assert_shapes = [&](const auto& lhs, const auto& rhs) {
+    if(
+      lhs.shape(0) != rhs.shape(0) or lhs.shape(1) != rhs.shape(1) or
+      lhs.shape(2) != rhs.shape(2)) {
+      throw std::runtime_error {
+        "Batch field setter returned arrays of differing sizes!"
+      };
+    }
+  };
+
+  assert_shapes(state_batch.pos[0], state_batch.pos[1]);
+  assert_shapes(state_batch.pos[0], state_batch.pos[2]);
+  assert_shapes(state_batch.pos[0], state_batch.vel[0]);
+  assert_shapes(state_batch.pos[0], state_batch.vel[1]);
+  assert_shapes(state_batch.pos[0], state_batch.vel[2]);
+
+  const auto posx_view = state_batch.pos[0].template unchecked<3>();
+  const auto posy_view = state_batch.pos[1].template unchecked<3>();
+  const auto posz_view = state_batch.pos[2].template unchecked<3>();
+
+  const auto velx_view = state_batch.vel[0].template unchecked<3>();
+  const auto vely_view = state_batch.vel[1].template unchecked<3>();
+  const auto velz_view = state_batch.vel[2].template unchecked<3>();
+
+  // This is bit of a waste to go for SOA to AOS and then in inject back to SOA.
+  // However, I don't think this matters.
+  auto states = std::vector<runko::ParticleState>(e[0] * e[1] * e[2]);
+  for(auto n = 0uz; const auto [i, j, k]: cell_indices) {
+    const auto posx = posx_view(i, j, k);
+    const auto posy = posy_view(i, j, k);
+    const auto posz = posz_view(i, j, k);
+
+    const auto velx = velx_view(i, j, k);
+    const auto vely = vely_view(i, j, k);
+    const auto velz = velz_view(i, j, k);
+
+    states[n++] =
+      runko::ParticleState { .pos = { posx, posy, posz }, .vel = { velx, vely, velz } };
+  }
+
+  this->inject(particle_type, states);
 }
 
 template<std::size_t D>

@@ -54,6 +54,15 @@ void
   // 3D bindings
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 
+  using PSB = pic2::ParticleStateBatch;
+  py::class_<PSB>(m_3d, "ParticleStateBatch")
+    .def(
+      py::init<PSB::container_type, PSB::container_type>(),
+      py::arg("pos"),
+      py::arg("vel"))
+    .def_readwrite("pos", &PSB::pos)
+    .def_readwrite("vel", &PSB::vel);
+
   py::class_<
     pic2::Tile<3>,
     emf2::Tile<3>,
@@ -77,8 +86,10 @@ void
       })
     .def("inject_to_each_cell", &pic2::Tile<3>::inject_to_each_cell)
     .def("inject", &pic2::Tile<3>::inject)
+    .def("batch_inject_to_cells", &pic2::Tile<3>::batch_inject_to_cells)
     .def("push_particles", &pic2::Tile<3>::push_particles)
     .def("deposit_current", &pic2::Tile<3>::deposit_current);
+
 
   //--------------------------------------------------
   // Full IO

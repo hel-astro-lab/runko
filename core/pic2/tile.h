@@ -6,6 +6,7 @@
 #include "core/pic2/particle.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
+#include "pybind11/numpy.h"
 #include "tools/config_parser.h"
 #include "tyvi/mdgrid_buffer.h"
 
@@ -26,7 +27,14 @@ namespace mpi = mpi4cpp::mpi;
 
 enum class ParticlePusher { boris };
 enum class FieldInterpolator { linear_1st };
-enum class CurrentDepositer { zigzag_1st };
+enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
+
+struct ParticleStateBatch {
+  using container_type = std::array<pybind11::array_t<double>, 3>;
+
+  container_type pos;
+  container_type vel;
+};
 
 /*! \brief PiC v2 tile
  *
@@ -118,6 +126,17 @@ public:
   ///
   /// Particle type is assumed to be configured.
   void inject(std::size_t particle_type, const std::vector<runko::ParticleState>&);
+
+  using batch_array = pybind11::array_t<double>;
+  using batch_particle_generator =
+    std::function<ParticleStateBatch(batch_array, batch_array, batch_array)>;
+
+  /// Inject particles based on given generator.
+  ///
+  /// Generator is called once with all cell coordinates.
+  ///
+  /// Particle type is assumed to be configured.
+  void batch_inject_to_cells(std::size_t particle_type, batch_particle_generator);
 
   /// Push particles updating their velocities and positions.
   void push_particles();
