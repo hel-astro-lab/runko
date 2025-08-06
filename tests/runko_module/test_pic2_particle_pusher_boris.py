@@ -29,7 +29,7 @@ def make_test_tile():
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
 
-    return config, runko.pic.Tile((0, 0, 0), config)
+    return config, runko.pic.Tile((3, 3, 3), config)
 
 
 def in_middle_part(x, y, z, config):
@@ -306,6 +306,99 @@ class pic2_particle_pusher_boris(unittest.TestCase):
             self.assertTrue(vx < 0)
             self.assertAlmostEqual(vy, 0.1, places=3)
             self.assertEqual(vz, 0)
+
+
+    def test_same_E_at_different_x_has_the_same_effect(self):
+        config, tile = make_test_tile()
+
+        E = lambda x, y, z: (0, 0.1, 0.1)
+        zero = lambda x, y, z: (0, 0, 0)
+
+        tile.set_EBJ(E, zero, zero)
+
+        i, j, k = tile.index
+        xA = (i + 0.1) * config.NxMesh
+        xB = (i + 0.9) * config.NxMesh
+        y = (j + 0.5) * config.NyMesh
+        z = (k + 0.5) * config.NzMesh
+
+        particles = [runko.ParticleState(pos=(xA, y, z), vel=(0, 0, 0)),
+                     runko.ParticleState(pos=(xB, y, z), vel=(0, 0, 0))]
+
+        tile.inject(0, particles)
+
+        def assertSameYZ():
+            _, (yA, yB), (zA, zB) = tile.get_positions(0)
+            self.assertAlmostEqual(yA, yB, places=5)
+            self.assertAlmostEqual(zA, zB, places=5)
+
+        assertSameYZ()
+        tile.push_particles()
+        assertSameYZ()
+        tile.push_particles()
+        assertSameYZ()
+
+
+    def test_same_E_at_different_y_has_the_same_effect(self):
+        config, tile = make_test_tile()
+
+        E = lambda x, y, z: (0.1, 0, 0.1)
+        zero = lambda x, y, z: (0, 0, 0)
+
+        tile.set_EBJ(E, zero, zero)
+
+        i, j, k = tile.index
+        x = (i + 0.5) * config.NxMesh
+        yA = (j + 0.1) * config.NyMesh
+        yB = (j + 0.9) * config.NyMesh
+        z = (k + 0.5) * config.NzMesh
+
+        particles = [runko.ParticleState(pos=(x, yA, z), vel=(0, 0, 0)),
+                     runko.ParticleState(pos=(x, yB, z), vel=(0, 0, 0))]
+
+        tile.inject(0, particles)
+
+        def assertSameXZ():
+            (xA, xB), _, (zA, zB) = tile.get_positions(0)
+            self.assertAlmostEqual(xA, xB, places=5)
+            self.assertAlmostEqual(zA, zB, places=5)
+
+        assertSameXZ()
+        tile.push_particles()
+        assertSameXZ()
+        tile.push_particles()
+        assertSameXZ()
+
+
+    def test_same_E_at_different_z_has_the_same_effect(self):
+        config, tile = make_test_tile()
+
+        E = lambda x, y, z: (0.1, 0.1, 0)
+        zero = lambda x, y, z: (0, 0, 0)
+
+        tile.set_EBJ(E, zero, zero)
+
+        i, j, k = tile.index
+        x = (i + 0.5) * config.NxMesh
+        y = (j + 0.5) * config.NyMesh
+        zA = (k + 0.1) * config.NzMesh
+        zB = (k + 0.9) * config.NzMesh
+
+        particles = [runko.ParticleState(pos=(x, y, zA), vel=(0, 0, 0)),
+                     runko.ParticleState(pos=(x, y, zB), vel=(0, 0, 0))]
+
+        tile.inject(0, particles)
+
+        def assertSameXY():
+            (xA, xB), (yA, yB), _ = tile.get_positions(0)
+            self.assertAlmostEqual(xA, xB, places=5)
+            self.assertAlmostEqual(yA, yB, places=5)
+
+        assertSameXY()
+        tile.push_particles()
+        assertSameXY()
+        tile.push_particles()
+        assertSameXY()
 
 
 if __name__ == "__main__":

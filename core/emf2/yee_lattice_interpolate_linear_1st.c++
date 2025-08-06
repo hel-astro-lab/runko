@@ -1,5 +1,6 @@
 #include "core/emf2/yee_lattice.h"
 #include "core/mdgrid_common.h"
+#include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
@@ -9,8 +10,6 @@
 #include <type_traits>
 
 namespace {
-
-using lerp3D_extents = std::extents<std::size_t, 2, 2, 2>;
 
 /// Linear interpolation of mds values to pos.
 ///
@@ -41,15 +40,6 @@ constexpr auto
   return lerp(pos[2], c0, c1);
 }
 
-
-template<std::signed_integral To>
-constexpr To
-  floor(const std::floating_point auto x)
-{
-  const auto y      = static_cast<To>(x);
-  const auto is_neg = static_cast<To>(x < 0);
-  return y - is_neg;
-};
 }  // namespace
 
 namespace emf2 {
@@ -75,20 +65,23 @@ YeeLattice::InterpolatedEB
     .for_each_index(
       posmds,
       [=](const auto idx) {
-        const auto i =
-          floor<std::size_t>(posmds[idx][0] - lattice_origo_coordinates[0]);
-        const auto j =
-          floor<std::size_t>(posmds[idx][1] - lattice_origo_coordinates[1]);
-        const auto k =
-          floor<std::size_t>(posmds[idx][2] - lattice_origo_coordinates[2]);
+        const auto pos   = toolbox::Vec3<value_type>(posmds[idx]);
+        const auto origo = toolbox::Vec3<value_type>(lattice_origo_coordinates);
+        const auto pos_in_lattice = pos - origo;
+
+        // This should be equivelant to floor, as we assume that the particles
+        // are inside the lattice, such that the subtractions are always positive.
+        const auto index_in_lattice = pos_in_lattice.template as<std::size_t>();
+        const auto [i, j, k]        = index_in_lattice.data;
 
         auto Ex_means = std::array<value_type, 8> {};
         auto Ey_means = std::array<value_type, 8> {};
         auto Ez_means = std::array<value_type, 8> {};
 
-        auto Ex_means_mds = std::mdspan<value_type, lerp3D_extents>(Ex_means.data());
-        auto Ey_means_mds = std::mdspan<value_type, lerp3D_extents>(Ey_means.data());
-        auto Ez_means_mds = std::mdspan<value_type, lerp3D_extents>(Ez_means.data());
+        using lerp3D_extents = std::extents<std::size_t, 2, 2, 2>;
+        auto Ex_means_mds    = std::mdspan<value_type, lerp3D_extents>(Ex_means.data());
+        auto Ey_means_mds    = std::mdspan<value_type, lerp3D_extents>(Ey_means.data());
+        auto Ez_means_mds    = std::mdspan<value_type, lerp3D_extents>(Ez_means.data());
 
         auto Bx_means = std::array<value_type, 8> {};
         auto By_means = std::array<value_type, 8> {};
@@ -132,18 +125,15 @@ YeeLattice::InterpolatedEB
             Bmds[ii - 1, jj - 1, kk][2]);
         }
 
-        const auto delta_pos =
-          std::array<value_type, 3> { static_cast<value_type>(posmds[idx][0] - i),
-                                      static_cast<value_type>(posmds[idx][1] - j),
-                                      static_cast<value_type>(posmds[idx][2] - k) };
+        const auto delta_pos = pos_in_lattice - index_in_lattice.template as<value_type>();
 
-        Eipo_mds[idx][0] = lerp3D(delta_pos, Ex_means_mds);
-        Eipo_mds[idx][1] = lerp3D(delta_pos, Ey_means_mds);
-        Eipo_mds[idx][2] = lerp3D(delta_pos, Ez_means_mds);
+        Eipo_mds[idx][0] = lerp3D(delta_pos.data, Ex_means_mds);
+        Eipo_mds[idx][1] = lerp3D(delta_pos.data, Ey_means_mds);
+        Eipo_mds[idx][2] = lerp3D(delta_pos.data, Ez_means_mds);
 
-        Bipo_mds[idx][0] = lerp3D(delta_pos, Bx_means_mds);
-        Bipo_mds[idx][1] = lerp3D(delta_pos, By_means_mds);
-        Bipo_mds[idx][2] = lerp3D(delta_pos, Bz_means_mds);
+        Bipo_mds[idx][0] = lerp3D(delta_pos.data, Bx_means_mds);
+        Bipo_mds[idx][1] = lerp3D(delta_pos.data, By_means_mds);
+        Bipo_mds[idx][2] = lerp3D(delta_pos.data, Bz_means_mds);
       })
     .wait();
   return { std::move(Eipo), std::move(Bipo) };
