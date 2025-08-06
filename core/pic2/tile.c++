@@ -349,6 +349,13 @@ void
       auto generated_J = runko::VecGrid<emf2::YeeLattice::value_type>(
         this->yee_lattice_.extents_with_halo());
 
+      // This might be unneccesseary but I don't trust
+      // underlying thrust::device vector to zero initialize the data.
+      const auto genJmds = generated_J.mds();
+      tyvi::mdgrid_work {}.for_each_index(
+        genJmds,
+        [=](const auto idx, const auto tidx) { genJmds[idx][tidx] = 0; }).wait();
+
       for(const auto& [_, pcontainer]: this->particle_buffs_) {
         pcontainer.current_zigzag_1st(generated_J, origo_pos, this->cfl_);
       }
