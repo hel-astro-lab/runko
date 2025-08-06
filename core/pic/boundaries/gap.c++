@@ -56,8 +56,21 @@ void pic::Gap<D>::insert_em(
 
     float erot, erot_inside; 
     if( enable_surface_inj ) {  // ample injection
-      erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
+      //erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
+
+      // co-rotation charge density is taken to depend on dimensionless height h = (x/H) as:
+      //   eta_co/eta_co0 = 1 + A*h
+      //
+      // then, the electric field is 
+      //    E(x) = 4\pi \int (eta_co0 - eta_co) dx
+      //    E(x) = -E_rot * 0.5*A*h^2
+      //const float eta_co_A = 0.07f; //  realistic value
+      const float eta_co_A = 0.8f; // numerical value
+      const float e_max = 0.5*E0*eta_co_A;
+      erot = h < gap_length ? e_max*std::pow( h/gap_length, 2 ) : 0.0f;
+
       erot_inside = 0.0f; // value inside star 
+                            
     } else { // no injection
       erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
       erot_inside = E0;
@@ -351,11 +364,17 @@ void pic::Gap<D>::add_jext(
     //float jz = 0.0f;
 
     // suppress current at boundaries; double tanh profile
-    auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
-    auto s_r =        shape( ig, x_right, delta_right); 
+    //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
+    //auto s_r =        shape( ig, x_right, delta_right); 
+
+    // sharp cutoff at halos
+    float s_l = 0.0f ? ig < halo : 1.0f; // sharp cutoff
+    float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
+
     //auto s_l = 1.0f - shape( ig, halo,    2); 
     //auto s_r =        shape( ig, Nx-halo, 2); 
     auto s = s_l*s_r;
+    //auto s = 1.0f; // NOTE: no smoothing
 
     // add 
     gs.jx(i,0,0) += jx*s;     // external current 
@@ -398,11 +417,11 @@ void pic::Gap<D>::update_j(
 
     // suppress current at boundaries; double tanh profile
     //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
-    auto s_r =        shape( ig, x_right, delta_right);  // tanh profile
+    //auto s_r =        shape( ig, x_right, delta_right);  // tanh profile
       
     // sharp cutoff at halos
     float s_l = 0.0f ? ig < halo : 1.0f; // sharp cutoff
-    //float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
+    float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
 
     // combine
     auto s    = s_l*s_r; // s now looks like 0 -> 1 -> 0
@@ -446,7 +465,9 @@ void pic::Gap<D>::solve(
 
   // get charge (assume q_- = q_+)
   const float q = cons["e-"]->q;
-  const float n_co = abs(E0/q)/gap_length; // co-rotation (Goldreich-Julian) density
+  const float c = tile.cfl;
+  const float n_co  = abs(E0/q)/gap_length; // co-rotation (Goldreich-Julian) density
+  const float n_ext = abs(j_ext/q/c); // maximum density to screen j_ext
 
 
   //--------------------------------------------------
@@ -458,7 +479,7 @@ void pic::Gap<D>::solve(
 
     // detect cells that need particle injection
     bool inside_injection_layer = false;
-    if( iglob == halo + 1 ) inside_injection_layer = true;
+    if( iglob == x_left + std::max(1.0, 2.0*delta_left) ) inside_injection_layer = true;
 
     if( inside_injection_layer && enable_surface_inj ) {
 
@@ -467,7 +488,11 @@ void pic::Gap<D>::solve(
 
       // v2 (screening of E_x)
       auto epar = gs.ex(i,0,0); // E_par
-      float ninj = inj_rate_pairs*abs(epar/E0)*n_co;
+      //float ninj = inj_rate_pairs*abs(epar/E0)*n_co;
+
+      // v3 (screening of j_ext)
+      //float ninj = inj_rate_pairs*n_ext*abs(30.0f*epar/E0);
+      float ninj = inj_rate_pairs*n_ext;
 
       // add ninj pairs with MC injection; results on average in ninj injections
       float ncop = 0.0f; // number of pairs added
@@ -491,6 +516,8 @@ void pic::Gap<D>::solve(
         auto ux1 = vr*sin_theta*cos(zeta);
         auto uy1 = vr*sin_theta*sin(zeta);
         auto uz1 = vr*mu;
+
+        //ux1 += 0.1f; // add upwards motion to help atmospheric current form
 
         float dx = rand(); // inject location is set randomly inside the cell
                              
