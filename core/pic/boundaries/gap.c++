@@ -55,8 +55,11 @@ void pic::Gap<D>::insert_em(
     // electric field
 
     float erot, erot_inside; 
-    if( enable_surface_inj ) {  // ample injection
+    if( set_e_zero_inside ) {  // ample injection
+                                 
+      // linear gap
       //erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
+      //erot = h > gap_length ? -E0 : erot; // const value higher up
 
       // co-rotation charge density is taken to depend on dimensionless height h = (x/H) as:
       //   eta_co/eta_co0 = 1 + A*h
@@ -224,7 +227,7 @@ void pic::Gap<D>::update_e(
       //--------------------------------------------------
       // blending of boundary condition + active solution
       auto s = shape( h, 0.0, delta_left); // height smoothing parameter
-      float erot_inside = enable_surface_inj ? 0.0f : E0;
+      float erot_inside = set_e_zero_inside ? 0.0f : E0;
 
       gs.ex(i,0,0) = s*erot_inside + (1.0f - s)*gs.ex(i,0,0); 
       gs.ey(i,0,0) = s*0.0f        + (1.0f - s)*gs.ey(i,0,0); 
@@ -322,9 +325,12 @@ void pic::Gap<D>::add_jrot(
     jz = 0.0f;
 
     //--------------------------------------------------
-    // ver 1; smooth tanh profile
-    auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
-    auto s_r =        shape( ig, x_right, delta_right); 
+    // ver 1; smooth tanh profile inside the magnetosphere
+    const auto h_l = ig + std::max(1.0, 2.0*delta_left); // shift by +2 delta
+    const auto h_r = ig - std::max(1.0, 2.0*delta_left); // shift by -2 delta
+
+    auto s_l = 1.0f - shape( h_l, x_left,  delta_left); 
+    auto s_r =        shape( h_r, x_right, delta_right); 
     auto s = s_l*s_r;
 
     //--------------------------------------------------
@@ -479,9 +485,16 @@ void pic::Gap<D>::solve(
 
     // detect cells that need particle injection
     bool inside_injection_layer = false;
-    if( iglob == x_left + std::max(1.0, 2.0*delta_left) ) inside_injection_layer = true;
+    const float x_min_inj = x_left - std::max(1.0, 1.0*delta_left); // left boundary of atmosphere
+    const float x_max_inj = x_left + std::max(1.0, 1.0*delta_left); // right boundary of atmosphere
+    const float inj_width = x_max_inj - x_min_inj;  // width of the region in cells
 
-    if( inside_injection_layer && enable_surface_inj ) {
+    //if( iglob == x_left + std::max(1.0, 2.0*delta_left) ) inside_injection_layer = true;
+    if( (x_min_inj <= iglob) && (iglob <= x_max_inj) ) inside_injection_layer = true;
+
+    //std::cout << "inj: i" << iglob << " min:" << x_min_inj << " max:" << x_max_inj << " w:" << inj_width << " ins:" << inside_injection_layer << "\n";
+
+    if( inside_injection_layer ) {
 
       // v1 (constant rate)
       //float ninj = inj_rate_pairs; // constant number of injections
@@ -492,7 +505,7 @@ void pic::Gap<D>::solve(
 
       // v3 (screening of j_ext)
       //float ninj = inj_rate_pairs*n_ext*abs(30.0f*epar/E0);
-      float ninj = inj_rate_pairs*n_ext;
+      float ninj = inj_rate_pairs*n_ext/inj_width;
 
       // add ninj pairs with MC injection; results on average in ninj injections
       float ncop = 0.0f; // number of pairs added
