@@ -352,6 +352,69 @@ class emf2(unittest.TestCase):
             self.assertAlmostEqual(Ax, Ax_arr[i, j, k], places=5)
             self.assertAlmostEqual(Ay, Ay_arr[i, j, k], places=5)
             self.assertAlmostEqual(Az, Az_arr[i, j, k], places=5)
+            self.assertTrue(Ax_arr[i, j, k] < 0)
+            self.assertTrue(Ay_arr[i, j, k] < 0)
+            self.assertTrue(Az_arr[i, j, k] < 0)
+
+
+    def test_tile_index_is_set(self):
+        config = runko.Configuration(None)
+        config.Nx = 2
+        config.Ny = 3
+        config.Nz = 4
+        config.NxMesh = 10
+        config.NyMesh = 12
+        config.NzMesh = 14
+        config.xmin = 0
+        config.ymin = 0
+        config.zmin = 0
+        config.cfl = 1
+        config.field_propagator = "FDTD2"
+
+        tile_grid_idx = (1, 2, 3)
+        tile = runko.emf.Tile(tile_grid_idx, config)
+
+        """
+        This is not 100% neccesseary, as corgi grids add_tile method
+        will set the index too. However, many tile methods assume that
+        it is set, so this prevents bugs when tiles are used outside
+        of corgi grid.
+        """
+
+        self.assertEqual(tile.index, tile_grid_idx)
+
+
+    def test_bogus_tile_index_raises_exception(self):
+        config = runko.Configuration(None)
+        config.Nx = 2
+        config.Ny = 3
+        config.Nz = 4
+        config.NxMesh = 10
+        config.NyMesh = 12
+        config.NzMesh = 14
+        config.xmin = 0
+        config.ymin = 0
+        config.zmin = 0
+        config.cfl = 1
+        config.field_propagator = "FDTD2"
+
+        with self.assertRaises(Exception):
+            runko.emf.Tile((2, 2, 3), config)
+
+        with self.assertRaises(Exception):
+            runko.emf.Tile((1, 3, 3), config)
+
+        with self.assertRaises(Exception):
+            runko.emf.Tile((1, 2, 4), config)
+
+        with self.assertRaises(Exception):
+            runko.emf.Tile((-1, 0, 0), config)
+
+        with self.assertRaises(Exception):
+            runko.emf.Tile((0, -1, 0), config)
+
+        with self.assertRaises(Exception):
+            runko.emf.Tile((0, 0, -1), config)
 
 if __name__ == "__main__":
     unittest.main()

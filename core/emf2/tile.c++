@@ -10,7 +10,6 @@
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
-#include <print>
 
 namespace {
 emf2::FieldPropagator
@@ -59,10 +58,6 @@ Tile<D>::Tile(
   }
 
 
-  const auto Nx = p.get_or_throw<std::size_t>("Nx");
-  const auto Ny = p.get_or_throw<std::size_t>("Ny");
-  const auto Nz = p.get_or_throw<std::size_t>("Nz");
-
   auto one_or_throw = [](const double d) {
     if(d != 1.0) {
       throw std::logic_error {
@@ -81,6 +76,16 @@ Tile<D>::Tile(
   const auto zmin = p.get_or_throw<double>("zmin");
 
   const auto [i, j, k] = tile_indices;
+
+  const auto Nx = p.get_or_throw<std::size_t>("Nx");
+  const auto Ny = p.get_or_throw<std::size_t>("Ny");
+  const auto Nz = p.get_or_throw<std::size_t>("Nz");
+
+  if(Nx <= i or Ny <= j or Nz <= k) {
+    throw std::runtime_error { "Trying to create tile outside of configured grid." };
+  }
+
+  this->index = tile_indices;
 
   // Tile size.
   const auto [Lx, Ly, Lz] = yee_lattice_.extents_wout_halo();
