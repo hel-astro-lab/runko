@@ -316,9 +316,9 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::add_J_to_E()
+  Tile<D>::subtract_J_from_E()
 {
-  yee_lattice_.add_J_to_E();
+  yee_lattice_.subtract_J_from_E();
 }
 
 template<std::size_t D>

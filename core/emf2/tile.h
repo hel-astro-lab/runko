@@ -99,8 +99,8 @@ public:
   /// Does not add contributions from the current.
   void push_e();
 
-  /// E += J
-  void add_J_to_E();
+  /// E -= J
+  void subtract_J_from_E();
 
   /// Applies potentially configured filter to J.
   ///

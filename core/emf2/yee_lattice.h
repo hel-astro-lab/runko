@@ -227,8 +227,8 @@ public:
   /// Advance E by full time step using FDTD2 scheme in non-halo region.
   void push_e_FDTD2(value_type dt);
 
-  /// E += J in non-halo region.
-  void add_J_to_E();
+  /// E -= J in non-halo region.
+  void subtract_J_from_E();
 
   [[nodiscard]]
   auto span_E(this auto& self)
