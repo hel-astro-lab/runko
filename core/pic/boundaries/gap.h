@@ -88,7 +88,9 @@ public:
 
   void add_jrot(pic::Tile<D>&  tile);
 
-  void solve(pic::Tile<D>&  tile);
+  void inject_prtcls(pic::Tile<D>&  tile);
+
+  void delete_prtcls(pic::Tile<D>&  tile);
   
 }; // end of class
 

@@ -224,9 +224,12 @@ void pic::Gap<D>::update_e(
       float iglob = (D>=1) ? i + mins[0] : 0;
       float h = iglob - x_left; // height in units of cells, h=0 is the surface
 
+      // sharp cutoff
+      auto s = h < 0 ? 1.0f : 0.0f; // here h=0 is the first "real" cell with dynamic E field
+
       //--------------------------------------------------
       // blending of boundary condition + active solution
-      auto s = shape( h, 0.0, delta_left); // height smoothing parameter
+      //auto s = shape( h, 0.0, delta_left); // height smoothing parameter
       float erot_inside = set_e_zero_inside ? 0.0f : E0;
 
       gs.ex(i,0,0) = s*erot_inside + (1.0f - s)*gs.ex(i,0,0); 
@@ -255,20 +258,22 @@ void pic::Gap<D>::update_e(
   //--------------------------------------------------
   // hard-coded left (star) BC
   if( mins[0] < 1 ) {
+    #pragma omp simd
     for(int i=imin; i<=halo; i++) {
-      gs.ex(i,0,0) = 0.0;
-      gs.ey(i,0,0) = 0.0; 
-      gs.ez(i,0,0) = 0.0; 
+      gs.ex(i,0,0) = 0.0f;
+      gs.ey(i,0,0) = 0.0f; 
+      gs.ez(i,0,0) = 0.0f; 
     }
   }
 
   //--------------------------------------------------
   // hard-coded right/vacuum BC
   if( maxs[0] > Nx-1 ) {
+    #pragma omp simd
     for(int i=imax-2*halo; i<=imax; i++) {
-      gs.ex(i,0,0) = 0.0; 
-      gs.ey(i,0,0) = 0.0; 
-      gs.ez(i,0,0) = 0.0; 
+      gs.ex(i,0,0) = 0.0f; 
+      gs.ey(i,0,0) = 0.0f; 
+      gs.ez(i,0,0) = 0.0f; 
     }
   }
 
@@ -426,7 +431,7 @@ void pic::Gap<D>::update_j(
     //auto s_r =        shape( ig, x_right, delta_right);  // tanh profile
       
     // sharp cutoff at halos
-    float s_l = 0.0f ? ig < halo : 1.0f; // sharp cutoff
+    float s_l = 0.0f ? ig <       halo : 1.0f; // sharp cutoff
     float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
 
     // combine
@@ -444,7 +449,7 @@ void pic::Gap<D>::update_j(
 
 
 template<size_t D>
-void pic::Gap<D>::solve(
+void pic::Gap<D>::inject_prtcls(
     pic::Tile<D>& tile)
 {
 
@@ -473,7 +478,7 @@ void pic::Gap<D>::solve(
   const float q = cons["e-"]->q;
   const float c = tile.cfl;
   const float n_co  = abs(E0/q)/gap_length; // co-rotation (Goldreich-Julian) density
-  const float n_ext = abs(j_ext/q/c); // maximum density to screen j_ext
+  const float n_ext = abs(j_ext/q)/c/c; // maximum density to screen j_ext*dt
 
 
   //--------------------------------------------------
@@ -482,15 +487,20 @@ void pic::Gap<D>::solve(
                                                      
   for(int i=imin; i<imax; i++) {
     float iglob = (D>=1) ? i + mins[0] : 0;
+    float h = iglob - x_left; // height in units of cells, h=0 is the surface
 
-    // detect cells that need particle injection
     bool inside_injection_layer = false;
-    const float x_min_inj = x_left - std::max(1.0, 1.0*delta_left); // left boundary of atmosphere
-    const float x_max_inj = x_left + std::max(1.0, 1.0*delta_left); // right boundary of atmosphere
-    const float inj_width = x_max_inj - x_min_inj;  // width of the region in cells
+      
+    // v0: wide injection region
+    //const float x_min_inj = x_left - std::max(1.0, 1.0*delta_left); // left boundary of atmosphere
+    //const float x_max_inj = x_left + std::max(1.0, 1.0*delta_left); // right boundary of atmosphere
+    //const float inj_width = x_max_inj - x_min_inj;  // width of the region in cells
+    //if( (x_min_inj <= iglob) && (iglob <= x_max_inj) ) inside_injection_layer = true;
 
-    //if( iglob == x_left + std::max(1.0, 2.0*delta_left) ) inside_injection_layer = true;
-    if( (x_min_inj <= iglob) && (iglob <= x_max_inj) ) inside_injection_layer = true;
+    // v1: narrow injection region, just behind the surface 
+    if( h == -3.0f ) inside_injection_layer = true;
+    const float inj_width = 1.0f;
+      
 
     //std::cout << "inj: i" << iglob << " min:" << x_min_inj << " max:" << x_max_inj << " w:" << inj_width << " ins:" << inside_injection_layer << "\n";
 
@@ -532,7 +542,11 @@ void pic::Gap<D>::solve(
 
         //ux1 += 0.1f; // add upwards motion to help atmospheric current form
 
-        float dx = rand(); // inject location is set randomly inside the cell
+        // inject location is set randomly inside the cell
+        // added to the first half of the domain between x_p \in [0, -0.5] 
+        float dx = 0.5*rand();  
+        //float dx = rand(); 
+        //float dx = 0.0f;
                              
         cons["e-"]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux1, uy1, uz1 }}, wep);
         cons["p" ]->add_particle( {{iglob + dx, 0.0f, 0.0f }}, {{ ux1, uy1, uz1 }}, wep);
@@ -602,15 +616,49 @@ void pic::Gap<D>::solve(
   } // end of for loop over grid points
 
 
+  return;
+}
+
+
+template<size_t D>
+void pic::Gap<D>::delete_prtcls(
+    pic::Tile<D>& tile)
+{
+
+  // Tile limits
+  auto mins     = tile.mins;
+  auto maxs     = tile.maxs;
+
+  // loop indices
+  const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
+
+  // find top and bottom tiles and only operate on them
+  bool top   = false;
+  bool bot   = false;
+  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot = true; 
+  if( maxs[0] > x_right -5*delta_right - tile.mesh_lengths[0]) top = true; 
+
+  if(!(top || bot)) return;
+
+  //-------------------------------------------------- 
+  // NOTE: we only enter here if boundary tile
+
+  std::map<std::string, ConPtr> cons; // shortcut for containers 
+  for(auto&& con : tile.containers) cons.emplace(con.type, &con );
+
   //-------------------------------------------------- 
   // remove outflowing particles
   for(auto&& con : tile.containers) {
     for(size_t n=0; n<con.size(); n++) {
-      if( con.loc(0,n) <= halo )    con.info(n) = -1; // inside star; 
-                                                    
-      if( con.loc(0,n) >= x_right ) con.info(n) = -1; // outflowing; 
-                                                        
-      //if( (con.loc(0,n) >= x_right -10.0f) && (con.vel(0,n) < 0.0f) ) con.info(n) = -1; // backflowing; 
+                                                                                      
+      // left BC
+      if(  con.loc(0,n) < x_left - 3.0f )                          con.info(n) = -1; // inside
+      if( (con.loc(0,n) < x_left - 2.5f ) && con.vel(0,n) < 0.0f ) con.info(n) = -1; // in-flowing
+                                                                                    
+      // right BC
+      if(  con.loc(0,n) > x_right ) con.info(n) = -1; // outside
+      if( (con.loc(0,n) > x_right- 4*delta_right ) && con.vel(0,n) < 0.0f ) con.info(n) = -1; // outflowing; 
+                                                                                       
     }
   }
 
