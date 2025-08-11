@@ -6,7 +6,7 @@ from mpi4py import MPI
 import pytools
 import pycorgi.threeD as pycorgi
 
-from .Simulation import Simulation
+from .simulation import Simulation
 from .runko_logging import runko_logger
 
 
