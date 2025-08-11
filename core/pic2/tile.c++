@@ -11,6 +11,8 @@
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -227,63 +229,75 @@ void
                         static_cast<double>(this->mins[2]) + z_coeff * Lz };
   };
 
-  auto x = pybind11::array_t<double>(e);
-  auto y = pybind11::array_t<double>(e);
-  auto z = pybind11::array_t<double>(e);
+  const auto cells_in_total = std::array { e[0] * e[1] * e[2] };
+  auto x                    = pybind11::array_t<double>(cells_in_total);
+  auto y                    = pybind11::array_t<double>(cells_in_total);
+  auto z                    = pybind11::array_t<double>(cells_in_total);
 
-  auto xv = x.template mutable_unchecked<3>();
-  auto yv = y.template mutable_unchecked<3>();
-  auto zv = z.template mutable_unchecked<3>();
+  {
+    auto xv = x.template mutable_unchecked<1>();
+    auto yv = y.template mutable_unchecked<1>();
+    auto zv = z.template mutable_unchecked<1>();
 
-  const auto cell_indices =
-    tyvi::sstd::index_space(std::mdspan((int*)nullptr, e[0], e[1], e[2]));
+    // Use this and tyvi index_space to easily iterate over 3D indices.
+    const auto helper_mds = std::mdspan((int*)nullptr, e[0], e[1], e[2]);
+    // Use the mapping directly to get 1D offset from the 3D indices.
+    const auto m = helper_mds.mapping();
 
-  for(const auto [i, j, k]: cell_indices) {
-    const auto [gx, gy, gz] = global_coordinates(i, j, k);
-    xv(i, j, k)             = gx;
-    yv(i, j, k)             = gy;
-    zv(i, j, k)             = gz;
+    for(const auto [i, j, k]: tyvi::sstd::index_space(helper_mds)) {
+      const auto n                  = m(i, j, k);
+      std::tie(xv(n), yv(n), zv(n)) = global_coordinates(i, j, k);
+    }
   }
 
   const auto state_batch = pgen(x, y, z);
+  const auto batch_size  = state_batch.pos[0].shape(0);
 
-  const auto assert_shapes = [&](const auto& lhs, const auto& rhs) {
-    if(
-      lhs.shape(0) != rhs.shape(0) or lhs.shape(1) != rhs.shape(1) or
-      lhs.shape(2) != rhs.shape(2)) {
-      throw std::runtime_error {
-        "Batch field setter returned arrays of differing sizes!"
-      };
-    }
-  };
+  {
+    const auto assert_shapes = [&](const auto& a) {
+      if(a.ndim() != 1) {
+        throw std::runtime_error {
+          "pic2::Tile::batch_inject_to_cells: given batch must be one dimensional."
+        };
+      }
 
-  assert_shapes(state_batch.pos[0], state_batch.pos[1]);
-  assert_shapes(state_batch.pos[0], state_batch.pos[2]);
-  assert_shapes(state_batch.pos[0], state_batch.vel[0]);
-  assert_shapes(state_batch.pos[0], state_batch.vel[1]);
-  assert_shapes(state_batch.pos[0], state_batch.vel[2]);
+      if(a.shape(0) != batch_size) {
+        throw std::runtime_error {
+          "pic2::Tile::batch_inject_to_cells: batches must have same length."
+        };
+      }
+    };
 
-  const auto posx_view = state_batch.pos[0].template unchecked<3>();
-  const auto posy_view = state_batch.pos[1].template unchecked<3>();
-  const auto posz_view = state_batch.pos[2].template unchecked<3>();
+    assert_shapes(state_batch.pos[0]);
+    assert_shapes(state_batch.pos[1]);
+    assert_shapes(state_batch.pos[2]);
+    assert_shapes(state_batch.vel[0]);
+    assert_shapes(state_batch.vel[1]);
+    assert_shapes(state_batch.vel[2]);
+  }
 
-  const auto velx_view = state_batch.vel[0].template unchecked<3>();
-  const auto vely_view = state_batch.vel[1].template unchecked<3>();
-  const auto velz_view = state_batch.vel[2].template unchecked<3>();
+  const auto posx_view = state_batch.pos[0].template unchecked<1>();
+  const auto posy_view = state_batch.pos[1].template unchecked<1>();
+  const auto posz_view = state_batch.pos[2].template unchecked<1>();
+
+  const auto velx_view = state_batch.vel[0].template unchecked<1>();
+  const auto vely_view = state_batch.vel[1].template unchecked<1>();
+  const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
   // This is bit of a waste to go for SOA to AOS and then in inject back to SOA.
   // However, I don't think this matters.
-  auto states = std::vector<runko::ParticleState>(e[0] * e[1] * e[2]);
-  for(auto n = 0uz; const auto [i, j, k]: cell_indices) {
-    const auto posx = posx_view(i, j, k);
-    const auto posy = posy_view(i, j, k);
-    const auto posz = posz_view(i, j, k);
+  auto states   = std::vector<runko::ParticleState>(batch_size);
+  using index_t = std::remove_cvref_t<decltype(batch_size)>;
+  for(const auto n: std::views::iota(index_t { 0 }, batch_size)) {
+    const auto posx = posx_view(n);
+    const auto posy = posy_view(n);
+    const auto posz = posz_view(n);
 
-    const auto velx = velx_view(i, j, k);
-    const auto vely = vely_view(i, j, k);
-    const auto velz = velz_view(i, j, k);
+    const auto velx = velx_view(n);
+    const auto vely = vely_view(n);
+    const auto velz = velz_view(n);
 
-    states[n++] =
+    states[n] =
       runko::ParticleState { .pos = { posx, posy, posz }, .vel = { velx, vely, velz } };
   }
 
@@ -352,9 +366,11 @@ void
       // This might be unneccesseary but I don't trust
       // underlying thrust::device vector to zero initialize the data.
       const auto genJmds = generated_J.mds();
-      tyvi::mdgrid_work {}.for_each_index(
-        genJmds,
-        [=](const auto idx, const auto tidx) { genJmds[idx][tidx] = 0; }).wait();
+      tyvi::mdgrid_work {}
+        .for_each_index(
+          genJmds,
+          [=](const auto idx, const auto tidx) { genJmds[idx][tidx] = 0; })
+        .wait();
 
       for(const auto& [_, pcontainer]: this->particle_buffs_) {
         pcontainer.current_zigzag_1st(generated_J, origo_pos, this->cfl_);

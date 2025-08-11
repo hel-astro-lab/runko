@@ -294,12 +294,12 @@ class pic2_tile(unittest.TestCase):
         ptype = 1
 
         PSB = runko.ParticleStateBatch
-        pgen0 = lambda x, y, z: PSB(pos=(x[:-1, :, :], y, z), vel=(x, y, z))
-        pgen1 = lambda x, y, z: PSB(pos=(x, y[:, 4:, :], z), vel=(x, y, z))
-        pgen2 = lambda x, y, z: PSB(pos=(x, y, z[:, :, -1:]), vel=(x, y, z))
-        pgen3 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x.flatten(), y, z))
-        pgen4 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x, y[:, 4:, :], z))
-        pgen5 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x, y, z[:, :, -1:]))
+        pgen0 = lambda x, y, z: PSB(pos=(x[:-1], y, z), vel=(x, y, z))
+        pgen1 = lambda x, y, z: PSB(pos=(x, y[4:], z), vel=(x, y, z))
+        pgen2 = lambda x, y, z: PSB(pos=(x, y, z[1:]), vel=(x, y, z))
+        pgen3 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x[4], y, z))
+        pgen4 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x, y[4:], z))
+        pgen5 = lambda x, y, z: PSB(pos=(x, y, z), vel=(x, y, z[-1:]))
 
         with self.assertRaises(Exception):
             tile.batch_inject_to_cells(ptype, pgen0)
@@ -320,9 +320,9 @@ class pic2_tile(unittest.TestCase):
             tile.batch_inject_to_cells(ptype, pgen5)
 
         def pgen(xx, yy, zz):
-            x = xx[2:-2, :, 3:5]
-            y = yy[2:-2, :, 3:5]
-            z = zz[2:-2, :, 3:5]
+            x = xx[2:-5]
+            y = yy[0:-7]
+            z = zz[4:-3]
             return PSB(pos=(x, y, z), vel=(x, y, z))
 
         tile.batch_inject_to_cells(ptype, pgen)
