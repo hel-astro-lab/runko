@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
-#include <optional>
 #include <ranges>
 #include <string>
 #include <type_traits>
@@ -56,8 +55,11 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   using subregion_particle_buff =
     std::map<std::array<int, 3>, std::map<std::size_t, ParticleContainer>>;
 
-  std::optional<subregion_particle_buff> particles_in_subregion_ {};
+  subregion_particle_buff subregion_particles_ {};
   void split_particles_to_subregions();
+
+  std::map<std::size_t, std::vector<std::reference_wrapper<const ParticleContainer>>>
+    incoming_subregion_particles_ {};
 
   // Required for global periodic boundary for tiles.
   std::array<ParticleContainer::value_type, 3> global_coordinate_mins_;

@@ -2,7 +2,10 @@
 #include "core/pic2/tile.h"
 #include "tools/system.h"
 
+#include <cstddef>
+#include <stdexcept>
 #include <tuple>
+#include <utility>
 
 namespace {
 
@@ -162,7 +165,7 @@ void
     }
   }
 
-  this->particles_in_subregion_ = std::move(buffs);
+  this->subregion_particles_ = std::move(buffs);
 }
 
 template<std::size_t D>
@@ -179,11 +182,28 @@ template<std::size_t D>
 void
   Tile<D>::pairwise_moore_communication_postlude(const int mode)
 {
-  // std::println("postlude");
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
 
-  this->particles_in_subregion_ = std::nullopt;
+  for(auto& [ptype, incoming_buffs]: this->incoming_subregion_particles_) {
+
+    // Due to definition of pairwise moore we know that there is
+    // going to be 26 incoming buffs (in case of D == 3 which is assumed).
+    static constexpr auto Nincoming = 26uz;
+    if(Nincoming != incoming_buffs.size()) {
+      throw std::logic_error {
+        "pic2::Tile::pairwise_moore_communicaion_postlude: unexpect amount of incoming "
+        "particle buffs."
+      };
+    }
+
+    // Ugly syntax until C++26 :/
+    [&]<std::size_t... I>(std::index_sequence<I...>) {
+      this->particle_buffs_.at(ptype).add_particles(incoming_buffs[I]...);
+    }(std::make_index_sequence<Nincoming>());
+
+    incoming_buffs.clear();
+  }
 }
 
 template<std::size_t D>
@@ -210,24 +230,10 @@ void
     }
   }();
 
-  const auto inverted_dir     = this->yee_lattice_.invert_dir(dir_to_other);
-  const auto& other_particles = other.particles_in_subregion_.value();
+  const auto inverted_dir = this->yee_lattice_.invert_dir(dir_to_other);
 
-  // If particles wrap across periodic boundary, their position has to be fixed.
-  const auto my_idx    = this->index;
-  const auto other_idx = other.index;
-
-  static constexpr auto diff = [](const auto lhs, const auto rhs) {
-    return static_cast<std::ptrdiff_t>(lhs) - static_cast<std::ptrdiff_t>(rhs);
-  };
-
-  const auto xdiff = diff(std::get<0>(other_idx), std::get<0>(my_idx));
-  const auto ydiff = diff(std::get<1>(other_idx), std::get<1>(my_idx));
-  const auto zdiff = diff(std::get<2>(other_idx), std::get<2>(my_idx));
-
-  for(const auto& [ptype, _]: other.particle_buffs_) {
-    this->particle_buffs_.at(ptype).add_particles(
-      other_particles.at(inverted_dir).at(ptype));
+  for(const auto& [ptype, pbuff]: other.subregion_particles_.at(inverted_dir)) {
+    this->incoming_subregion_particles_[ptype].push_back(std::cref(pbuff));
   }
 };
 
