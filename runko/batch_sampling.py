@@ -143,7 +143,7 @@ if __name__ == "__main__":
         import time
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
-        from sampling import sample_boosted_maxwellian
+        from pytools import sample_boosted_maxwellian
 
 
         def expected_distribution(u, T: float, Gamma: float):
