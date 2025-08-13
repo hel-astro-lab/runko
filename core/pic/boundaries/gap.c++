@@ -30,8 +30,10 @@ using toolbox::shape; // tanh function
 template<size_t D>
 float pic::Gap<D>::B(float h) 
 {
-  return B0;                                   // const
+  //return B0;                                   // const
   //return B0*std::max(0.0f, 1.0f - h/gap_length); // linear slope
+  //return B0*std::max(0.0f, std::min(1.0f, 1.0f - (h - gap_length)/gap_length)); // const + linear 
+  return B0*std::max(0.0f, std::min(1.0f, 1.0f - h/Nx)); // long linear (full box)
   //return B0*shape(h + x_left, x_right, delta_right); // const + smooth damping
 }
 
@@ -201,29 +203,29 @@ void pic::Gap<D>::update_b(
   //-------------------------------------------------- 
   // top boundary
   //if( true ) { // NOTE: some profiles need to be always on since they bleeds to left on every step
-  if( top ) {
+  //if( top ) {
 
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) {
+  //  #pragma omp simd
+  //  for(int i=imin; i<imax; i++) {
 
-      // global grid coordinates
-      float iglob = (D>=1) ? i + mins[0] : 0;
-        
-      //--------------------------------------------------
-      // magnetic field
-      float bx = B(Nx); 
-      float by = 0.0;
-      float bz = 0.0;
+  //    // global grid coordinates
+  //    float iglob = (D>=1) ? i + mins[0] : 0;
+  //      
+  //    //--------------------------------------------------
+  //    // magnetic field
+  //    float bx = B(Nx); 
+  //    float by = 0.0;
+  //    float bz = 0.0;
 
-      //--------------------------------------------------
-      // blending of old + new solution
-      auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
+  //    //--------------------------------------------------
+  //    // blending of old + new solution
+  //    auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
 
-      gs.bx(i,0,0) = s*bx + (1.0f - s)*gs.bx(i,0,0); 
-      gs.by(i,0,0) = s*by + (1.0f - s)*gs.by(i,0,0); 
-      gs.bz(i,0,0) = s*bz + (1.0f - s)*gs.bz(i,0,0); 
-    }
-  }
+  //    gs.bx(i,0,0) = s*bx + (1.0f - s)*gs.bx(i,0,0); 
+  //    gs.by(i,0,0) = s*by + (1.0f - s)*gs.by(i,0,0); 
+  //    gs.bz(i,0,0) = s*bz + (1.0f - s)*gs.bz(i,0,0); 
+  //  }
+  //}
 
 
   //--------------------------------------------------
@@ -417,9 +419,10 @@ void pic::Gap<D>::add_jext(
  
   // loop indices
   const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
+  //const int imin = -3, imax = tile.mesh_lengths[0]+3;
 
   // set current
-  #pragma omp simd
+  //#pragma omp simd
   for(int i=imin; i<imax; i++) {
 
     // global grid coordinates
@@ -465,6 +468,7 @@ void pic::Gap<D>::update_j(
  
   // loop indices
   const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
+  //const int imin = -3, imax = tile.mesh_lengths[0]+3;
 
   // find top and bottom tiles and only operate on them
   bool bot = is_bot(tile);
