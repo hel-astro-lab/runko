@@ -33,20 +33,25 @@ private:
   //std::vector<float> uy_to_be_inj;
   //std::vector<float> uz_to_be_inj;
 
+  float B(float);
+  float E(float);
+
+  bool is_bot(pic::Tile<D>&);
+  bool is_top(pic::Tile<D>&);
 
 public:
 
   // members
-  double B0;     // B_bg
-  double E0;     // E_rot
-                      
-  double gap_length; // length of the gap in dx
-                       
-  double x_left = 5;     // start of the box
-  double x_right;        // end of the box
-  double delta_left  = 2;  // smoothing parameter for left BC in units of dx
-  double delta_right = 4;  // smoothing parameter for right BC in units of dx
-  double Nx;     // total grid length
+  float B0;     // B_bg
+  float E0;     // E_rot
+
+  float gap_length; // length of the gap in dx
+
+  float x_left = 5;     // start of the box
+  float x_right;        // end of the box
+  float delta_left  = 2;  // smoothing parameter for left BC in units of dx
+  float delta_right = 4;  // smoothing parameter for right BC in units of dx
+  float Nx;     // total grid length
 
   int halo = 3; // extent of the halo regions not updated in left/right edges of the domain
 

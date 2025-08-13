@@ -25,6 +25,88 @@ using toolbox::StaggeredSphericalCoordinates;
 using toolbox::shape; // tanh function
 
 
+//-------------------------------------------------- 
+//  magnetic  field
+template<size_t D>
+float pic::Gap<D>::B(float h) 
+{
+  return B0;                                   // const
+  //return B0*std::max(0.0f, 1.0f - h/gap_length); // linear slope
+  //return B0*shape(h + x_left, x_right, delta_right); // const + smooth damping
+}
+
+
+//-------------------------------------------------- 
+//  electric field
+template<size_t D>
+float pic::Gap<D>::E(float h) 
+{
+
+  //--------------------------------------------------
+  // Ruderman-style setups
+  if( !set_e_zero_inside ) {
+
+    return std::max(0.0f, E0*std::min(1.0f, (1.0f - h/gap_length) ) );
+
+  //--------------------------------------------------
+  // SCLF style setups
+  } else if( set_e_zero_inside ) {
+
+    // v0
+    return 0.0f; // zero everywhere
+
+    // v1: linear gap
+    //erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
+    //erot = h > gap_length ? -E0 : erot; // const value higher up
+
+    // v2: co-rotation charge density is taken to depend on dimensionless height h = (x/H) as:
+    //   eta_co/eta_co0 = 1 + A*h
+    //
+    // then, the electric field is 
+    //    E(x) = 4\pi \int (eta_co0 - eta_co) dx
+    //    E(x) = -E_rot * 0.5*A*h^2
+    //const float eta_co_A = 0.07f; //  realistic value
+    //const float eta_co_A = 0.8f; // numerical value
+    //const float e_max = 0.5*E0*eta_co_A;
+    //erot = h < gap_length ? e_max*std::pow( h/gap_length, 2 ) : 0.0f;
+  }
+
+  assert(false);
+}
+
+
+// is bottom (left) tile?
+template<size_t D>
+bool pic::Gap<D>::is_bot(pic::Tile<D>& tile) 
+{
+  return tile.mins[0] < x_left + (3*delta_left + tile.mesh_lengths[0]);
+}
+
+// is top (right) tile?
+template<size_t D>
+bool pic::Gap<D>::is_top(pic::Tile<D>& tile) 
+{
+  return tile.maxs[0] > x_right - (3*delta_right + tile.mesh_lengths[0]);
+}
+
+
+//template<size_t D>
+//float pic::Gap<D>::blend_right(float ig, float val, float tar) 
+//{
+//  // height smoothing parameter
+//  auto s  = shape( ig, x_right, delta_right); 
+//  // shape of s(x): ----\____ rightmost BC
+//
+//
+//  auto dv = tar - val; // \delta F; how much value deviates from target
+//  return tar - s*dv;
+//  return tar - s*tar + s*val = tar*(1-s) + s*val
+//
+//  auto s  = 1.0f - shape( ig, x_right, delta_right); 
+//  // shape of s(x): ___ / ---- rightmost BC
+//  return s*tar + (1.0f - s)*val;
+//}
+
 
 template<size_t D>
 void pic::Gap<D>::insert_em(
@@ -47,40 +129,18 @@ void pic::Gap<D>::insert_em(
       
     //--------------------------------------------------
     // magnetic field
-    gs.bx(i,0,0) = B0; // constant background field
+    gs.bx(i,0,0) = B(h);
     gs.by(i,0,0) = 0.0;
     gs.bz(i,0,0) = 0.0;
 
+
     //--------------------------------------------------
     // electric field
-
-    float erot, erot_inside; 
-    if( set_e_zero_inside ) {  // ample injection
-                                 
-      // linear gap
-      //erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
-      //erot = h > gap_length ? -E0 : erot; // const value higher up
-
-      // co-rotation charge density is taken to depend on dimensionless height h = (x/H) as:
-      //   eta_co/eta_co0 = 1 + A*h
-      //
-      // then, the electric field is 
-      //    E(x) = 4\pi \int (eta_co0 - eta_co) dx
-      //    E(x) = -E_rot * 0.5*A*h^2
-      //const float eta_co_A = 0.07f; //  realistic value
-      const float eta_co_A = 0.8f; // numerical value
-      const float e_max = 0.5*E0*eta_co_A;
-      erot = h < gap_length ? e_max*std::pow( h/gap_length, 2 ) : 0.0f;
-
-      erot_inside = 0.0f; // value inside star 
-                            
-    } else { // no injection
-      erot = h < gap_length ? E0*( 1.0 - h/gap_length ) : 0.0;
-      erot_inside = E0;
-    }
+    float erot = E(h); // E(x)
+    float erot_inside = E(0.0f); // field inside star
 
     //--------------------------------------------------
-    // blending of inside/outside solutions
+    // blending of inside/outside solutions; removes sharp jumps between interior and exterior
     auto s  = shape( h, 0.0, delta_left); // height smoothing parameter
 
     gs.ex(i,0,0) = s*erot_inside + (1.0f-s)*erot; 
@@ -90,6 +150,7 @@ void pic::Gap<D>::insert_em(
 
   return;
 }
+
 
 
 //--------------------------------------------------
@@ -109,11 +170,8 @@ void pic::Gap<D>::update_b(
   const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
 
   // find top and bottom tiles and only operate on them
-  bool top   = false;
-  bool bot   = false;
-  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot   = true; 
-  if( maxs[0] > x_right -3*delta_right - tile.mesh_lengths[0]) top   = true; 
-
+  bool bot = is_bot(tile);
+  bool top = is_top(tile);
 
   // bottom boundary
   if( bot ) {
@@ -126,8 +184,7 @@ void pic::Gap<D>::update_b(
         
       //--------------------------------------------------
       // magnetic field
-
-      float bx = B0; // constant background field
+      float bx = B(0.0f); // constant background field
       float by = 0.0;
       float bz = 0.0;
 
@@ -143,6 +200,7 @@ void pic::Gap<D>::update_b(
 
   //-------------------------------------------------- 
   // top boundary
+  //if( true ) { // NOTE: some profiles need to be always on since they bleeds to left on every step
   if( top ) {
 
     #pragma omp simd
@@ -153,8 +211,7 @@ void pic::Gap<D>::update_b(
         
       //--------------------------------------------------
       // magnetic field
-
-      float bx = B0; // constant background field
+      float bx = B(Nx); 
       float by = 0.0;
       float bz = 0.0;
 
@@ -173,7 +230,7 @@ void pic::Gap<D>::update_b(
   // hard-coded left/star BC
   if( mins[0] < 1 ) {
     for(int i=imin; i<=halo; i++) {
-      gs.bx(i,0,0) = B0; 
+      gs.bx(i,0,0) = B(0.0f); 
       gs.by(i,0,0) = 0.0; 
       gs.bz(i,0,0) = 0.0; 
     }
@@ -183,7 +240,7 @@ void pic::Gap<D>::update_b(
   // hard-coded right/const BC
   if( maxs[0] > Nx-1 ) {
     for(int i=imax-2*halo; i<=imax; i++) {
-      gs.bx(i,0,0) = B0; 
+      gs.bx(i,0,0) = B(Nx); 
       gs.by(i,0,0) = 0.0; 
       gs.bz(i,0,0) = 0.0; 
     }
@@ -209,10 +266,8 @@ void pic::Gap<D>::update_e(
   const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
 
   // find top and bottom tiles and only operate on them
-  bool top   = false;
-  bool bot   = false;
-  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot = true; 
-  if( maxs[0] > x_right -3*delta_right - tile.mesh_lengths[0]) top = true; 
+  bool bot = is_bot(tile);
+  bool top = is_top(tile);
 
 
   // bottom boundary
@@ -223,24 +278,25 @@ void pic::Gap<D>::update_e(
       // global grid coordinates
       float iglob = (D>=1) ? i + mins[0] : 0;
       float h = iglob - x_left; // height in units of cells, h=0 is the surface
+                                  
+      // blending of boundary condition + active solution
 
       // sharp cutoff
       auto s = h < 0 ? 1.0f : 0.0f; // here h=0 is the first "real" cell with dynamic E field
 
-      //--------------------------------------------------
-      // blending of boundary condition + active solution
-      //auto s = shape( h, 0.0, delta_left); // height smoothing parameter
-      float erot_inside = set_e_zero_inside ? 0.0f : E0;
+      //// height smoothing parameter
+      //auto s = shape( h, 0.0, delta_left); 
 
-      gs.ex(i,0,0) = s*erot_inside + (1.0f - s)*gs.ex(i,0,0); 
-      gs.ey(i,0,0) = s*0.0f        + (1.0f - s)*gs.ey(i,0,0); 
-      gs.ez(i,0,0) = s*0.0f        + (1.0f - s)*gs.ez(i,0,0); 
+      gs.ex(i,0,0) = s*E(0.0f) + (1.0f - s)*gs.ex(i,0,0); 
+      gs.ey(i,0,0) = s*0.0f    + (1.0f - s)*gs.ey(i,0,0); 
+      gs.ez(i,0,0) = s*0.0f    + (1.0f - s)*gs.ez(i,0,0); 
     }
   }
 
   //-------------------------------------------------- 
   // top boundary
-  if( top ) {
+  //if( top ) {
+  if( true ) { // NOTE: always on since this ends up damping j_ext deposit and needs to smoothly join continuum everywhere
     #pragma omp simd
     for(int i=imin; i<imax; i++) {
 
@@ -248,7 +304,7 @@ void pic::Gap<D>::update_e(
       float iglob = (D>=1) ? i + mins[0] : 0;
       auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
                                                               
-      gs.ex(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ex(i,0,0); 
+      gs.ex(i,0,0) = s*E(Nx)  + (1.0f - s)*gs.ex(i,0,0); 
       gs.ey(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ey(i,0,0); 
       gs.ez(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ez(i,0,0); 
     }
@@ -260,7 +316,7 @@ void pic::Gap<D>::update_e(
   if( mins[0] < 1 ) {
     #pragma omp simd
     for(int i=imin; i<=halo; i++) {
-      gs.ex(i,0,0) = 0.0f;
+      gs.ex(i,0,0) = E(0.0f);
       gs.ey(i,0,0) = 0.0f; 
       gs.ez(i,0,0) = 0.0f; 
     }
@@ -271,7 +327,7 @@ void pic::Gap<D>::update_e(
   if( maxs[0] > Nx-1 ) {
     #pragma omp simd
     for(int i=imax-2*halo; i<=imax; i++) {
-      gs.ex(i,0,0) = 0.0f; 
+      gs.ex(i,0,0) = E(Nx); 
       gs.ey(i,0,0) = 0.0f; 
       gs.ez(i,0,0) = 0.0f; 
     }
@@ -370,7 +426,7 @@ void pic::Gap<D>::add_jext(
     float ig = (D>=1) ? i + mins[0] : 0;
 
     // external current
-    float jx = j_ext; 
+    float jx = j_ext*( B(ig - x_left)/B0 ); 
     //float jy = 0.0f;
     //float jz = 0.0f;
 
@@ -411,10 +467,8 @@ void pic::Gap<D>::update_j(
   const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
 
   // find top and bottom tiles and only operate on them
-  bool top   = false;
-  bool bot   = false;
-  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot = true; 
-  if( maxs[0] > x_right -3*delta_right - tile.mesh_lengths[0]) top = true; 
+  bool bot = is_bot(tile);
+  bool top = is_top(tile);
 
   // operate only on roughly correct tiles 
   if(!(top || bot)) return;
@@ -459,13 +513,11 @@ void pic::Gap<D>::inject_prtcls(
 
                                                      
   // find top and bottom tiles and only operate on them
-  bool top   = false;
-  bool bot   = false;
-  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot = true; 
-  if( maxs[0] > x_right -3*delta_right - tile.mesh_lengths[0]) top = true; 
+  bool bot = is_bot(tile);
+  bool top = is_top(tile);
 
-  // operate only on roughly correct tiles 
-  if(!(top || bot)) return;
+  // operate only on bottom tiles
+  if(!bot) return;
 
   auto& gs = tile.get_grids(); // get fields grid
 
@@ -633,10 +685,12 @@ void pic::Gap<D>::delete_prtcls(
   const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
 
   // find top and bottom tiles and only operate on them
-  bool top   = false;
-  bool bot   = false;
-  if( mins[0] < x_left  +3*delta_left  + tile.mesh_lengths[0]) bot = true; 
-  if( maxs[0] > x_right -5*delta_right - tile.mesh_lengths[0]) top = true; 
+  //bool bot = is_bot(tile);
+  //bool top = is_top(tile);
+
+  // more aggressive boundaries for particle removal
+  bool bot = mins[0] < x_left;
+  bool top = maxs[0] > Nx-1.0f; // rightmost tile
 
   if(!(top || bot)) return;
 
@@ -656,8 +710,8 @@ void pic::Gap<D>::delete_prtcls(
       if( (con.loc(0,n) < x_left - 2.5f ) && con.vel(0,n) < 0.0f ) con.info(n) = -1; // in-flowing
                                                                                     
       // right BC
-      if(  con.loc(0,n) > x_right ) con.info(n) = -1; // outside
-      if( (con.loc(0,n) > x_right- 4*delta_right ) && con.vel(0,n) < 0.0f ) con.info(n) = -1; // outflowing; 
+      if(  con.loc(0,n) > Nx - 1.0f )                              con.info(n) = -1; // outside
+      if( (con.loc(0,n) > Nx - 2.0f) && (con.vel(0,n) < 0.0f) )    con.info(n) = -1; // reflected
                                                                                        
     }
   }
