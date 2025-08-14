@@ -41,22 +41,15 @@ def sample_maxwellian_box_muller_method(size: int,
     """
     Generates `size` amount of floats distributed
     according to Maxwell-Boltzmann distribution,
-    with `theta = kT / m` using Box-Muller method.
+    with `theta = kT / m` using Box-Muller method (*).
 
     Random numbers are generated with the given generator.
+
+    (*) Technically this is inverse transfrom sampling-method for Rayleigh distribution.
     """
 
-
-    N = int(size / 2) + (size % 2)
-
-    X1 = gen.random(size=N)
-    X2 = gen.random(size=N)
-
-    vth = np.sqrt(2.0 * theta)
-    mag = vth * np.sqrt(-2 * np.log(X1))
-
-    return np.concatenate(mag * np.cos(2 * np.pi * X2),
-                          mag * np.sin(2 * np.pi * X2))[:size]
+    vth = np.sqrt(2 * theta)
+    return vth * np.sqrt(-2.0 * np.log(gen.random(size=size)))
 
 
 def sample_boosted_juttner_synge(size: int,
