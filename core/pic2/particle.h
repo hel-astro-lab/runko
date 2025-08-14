@@ -4,6 +4,9 @@
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
 #include "thrust/device_vector.h"
+#include "thrust/iterator/counting_iterator.h"
+#include "thrust/iterator/transform_iterator.h"
+#include "thrust/sort.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
@@ -12,6 +15,7 @@
 #include <cstddef>
 #include <execution>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <numeric>
 #include <ranges>
@@ -26,6 +30,10 @@ struct ParticleContainerArgs {
   std::size_t N;
   double charge, mass;
 };
+
+template<typename F, typename T>
+concept score_function = std::regular_invocable<F, T, T, T> and
+                         std::sortable<std::invoke_result_t<F, T, T, T>*>;
 
 class [[nodiscard]] ParticleContainer {
 public:
@@ -104,6 +112,11 @@ public:
     requires std::
       convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState>
     void add_particles(const R& new_particles);
+
+  /// Sorts particles based on a function of particle position.
+  ///
+  /// Given function has to be device callable.
+  void sort(pic2::score_function<value_type> auto&& f);
 
   using InterpolatedEB_function =
     std::function<emf2::YeeLattice::InterpolatedEB(const runko::VecList<value_type>&)>;
@@ -386,5 +399,49 @@ template<std::ranges::forward_range R>
     }
   }(std::integral_constant<std::size_t, 1uz> {});
 }
+
+
+void
+  ParticleContainer::sort(pic2::score_function<value_type> auto&& f)
+{
+  namespace rn                       = std::ranges;
+  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
+
+  const auto pos_mds = this->pos_.mds();
+
+  const auto scores_begin = thrust::make_transform_iterator(
+    particle_ordinals_begin,
+    [=, f = std::forward<decltype(f)>(f)](const std::size_t i) {
+      return f(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
+    });
+  const auto scores_end = rn::next(scores_begin, this->size());
+
+  auto trackers =
+    thrust::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
+
+  using score_t = std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
+  auto scores   = thrust::device_vector<score_t>(scores_begin, scores_end);
+
+  thrust::sort_by_key(scores.begin(), scores.end(), trackers.begin());
+
+  auto tmp_pos           = this->pos_;
+  auto tmp_vel           = this->vel_;
+  const auto tmp_pos_mds = tmp_pos.mds();
+  const auto tmp_vel_mds = tmp_vel.mds();
+
+  const auto vel_mds = this->vel_.mds();
+
+  tyvi::mdgrid_work {}
+    .for_each_index(
+      tmp_pos,
+      [=, p = trackers.begin()](const auto idx, const auto tidx) {
+        const std::size_t i = p[idx[0]];
+        pos_mds[idx][tidx]  = tmp_pos_mds[i][tidx];
+        vel_mds[idx][tidx]  = tmp_vel_mds[i][tidx];
+      })
+    .wait();
+}
+
 
 }  // namespace pic2

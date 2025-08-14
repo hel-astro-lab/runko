@@ -386,6 +386,29 @@ void
   }
 }
 
+template<std::size_t D>
+void
+  Tile<D>::sort_particles()
+{
+  const auto m = this->yee_lattice_.grid_mapping_with_halo();
+  using M      = decltype(m);
+
+  using F              = pic2::ParticleContainer::value_type;
+  const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - this->halo_size,
+                                      static_cast<F>(this->mins[1]) - this->halo_size,
+                                      static_cast<F>(this->mins[2]) - this->halo_size };
+  using Vec3F          = toolbox::Vec3<F>;
+
+  auto score = [=](const F x, const F y, const F z) {
+    const auto dx  = Vec3F(x, y, z) - Vec3F(origo_pos);
+    const auto idx = dx.template as<typename M::index_type>();
+
+    return m(idx[0], idx[1], idx[2]);
+  };
+
+  for(auto& [_, pbuff]: this->particle_buffs_) { pbuff.sort(std::move(score)); }
+}
+
 }  // namespace pic2
 
 template class pic2::Tile<3>;

@@ -13,6 +13,7 @@
 #include <ranges>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace emf2 {
@@ -44,6 +45,7 @@ class [[nodiscard]] YeeLattice {
 public:
   using value_type = float;
   using VecGrid    = runko::VecGrid<value_type>;
+  using VecGridMDS = std::remove_cvref_t<decltype(std::declval<VecGrid&>().mds())>;
 
   using YeeLatticeHostCopy = tyvi::mdgrid_buffer<
     std::vector<YeeLatticeFieldsAtPoint>,
@@ -316,6 +318,9 @@ public:
 
     return std::tuple { Emds, Bmds, Jmds };
   }
+
+  [[nodiscard]] YeeLattice::VecGridMDS::mapping_type
+    grid_mapping_with_halo() const noexcept;
 };
 
 }  // namespace emf2

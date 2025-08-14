@@ -268,4 +268,10 @@ void
     .wait();
 }
 
+YeeLattice::VecGridMDS::mapping_type
+  YeeLattice::grid_mapping_with_halo() const noexcept
+{
+  return this->E_.mds().mapping();
+}
+
 }  // namespace emf2

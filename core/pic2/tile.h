@@ -148,6 +148,9 @@ public:
   /// Deposit current from all particls.
   void deposit_current();
 
+  /// Sorts the particles in order to reduce cache misses.
+  void sort_particles();
+
   std::vector<mpi4cpp::mpi::request>
     send_data(mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag)
       override;

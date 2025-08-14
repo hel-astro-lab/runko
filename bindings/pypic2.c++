@@ -88,7 +88,8 @@ void
     .def("inject", &pic2::Tile<3>::inject)
     .def("batch_inject_to_cells", &pic2::Tile<3>::batch_inject_to_cells)
     .def("push_particles", &pic2::Tile<3>::push_particles)
-    .def("deposit_current", &pic2::Tile<3>::deposit_current);
+    .def("deposit_current", &pic2::Tile<3>::deposit_current)
+    .def("sort_particles", &pic2::Tile<3>::sort_particles);
 
 
   //--------------------------------------------------
