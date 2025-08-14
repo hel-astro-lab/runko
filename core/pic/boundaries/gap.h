@@ -57,7 +57,8 @@ public:
 
   float j_ext = 0.0f; // strength of the external current (add_jext)
 
-  bool set_e_zero_inside = true; // on/off switch for enforcing E(x < 0) = 0
+  int e_profile_mode = 0; // different Ex profiles
+  int b_profile_mode = 0; // different Bx profiles
 
   float inj_rate_pairs = 1;  // number of particles injected per dt
   float inj_rate_phots = 0;  // number of photons injected per dt

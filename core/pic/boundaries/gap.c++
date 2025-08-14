@@ -30,11 +30,13 @@ using toolbox::shape; // tanh function
 template<size_t D>
 float pic::Gap<D>::B(float h) 
 {
-  //return B0;                                   // const
-  //return B0*std::max(0.0f, 1.0f - h/gap_length); // linear slope
-  //return B0*std::max(0.0f, std::min(1.0f, 1.0f - (h - gap_length)/gap_length)); // const + linear 
-  return B0*std::max(0.0f, std::min(1.0f, 1.0f - h/Nx)); // long linear (full box)
-  //return B0*shape(h + x_left, x_right, delta_right); // const + smooth damping
+  if(      b_profile_mode == 0 ) { return B0; }
+  else if( b_profile_mode == 1 ) { return B0*std::max(0.0f, 1.0f - h/gap_length); } // linear slope
+  else if( b_profile_mode == 2 ) { return B0*std::max(0.0f, std::min(1.0f, 1.0f - h/Nx)); } // long linear (full box)
+  else if( b_profile_mode == 3 ) { return B0*shape(h + x_left, x_right, delta_right); } // const + smooth damping
+  else if( b_profile_mode == 4 ) { return B0*std::max(0.0f, std::min(1.0f, 1.0f - (h - gap_length)/gap_length)); } // const + linear 
+
+  assert(false);
 }
 
 
@@ -43,24 +45,18 @@ float pic::Gap<D>::B(float h)
 template<size_t D>
 float pic::Gap<D>::E(float h) 
 {
+  if(h <= 0) return 0.0f; // set always to zero inside star to ensure proper interior boundaries
 
   //--------------------------------------------------
-  // Ruderman-style setups
-  if( !set_e_zero_inside ) {
-
-    return std::max(0.0f, E0*std::min(1.0f, (1.0f - h/gap_length) ) );
-
-  //--------------------------------------------------
-  // SCLF style setups
-  } else if( set_e_zero_inside ) {
-
-    // v0
-    return 0.0f; // zero everywhere
-
+  if(      e_profile_mode == 0 ) { return std::max(0.0f, E0*std::min(1.0f, (1.0f - h/gap_length) ) ); } // Ruderman-style setups
+  else if( e_profile_mode == 1 ) { return 0.0f; } // zero everywhere
+  else if( e_profile_mode == 2 ) { 
     // v1: linear gap
-    //erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
-    //erot = h > gap_length ? -E0 : erot; // const value higher up
-
+    float erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
+    erot = h > gap_length ? -E0 : erot; // const value higher up
+    return erot;
+  }
+  else if( e_profile_mode == 3 ) { 
     // v2: co-rotation charge density is taken to depend on dimensionless height h = (x/H) as:
     //   eta_co/eta_co0 = 1 + A*h
     //
@@ -68,9 +64,10 @@ float pic::Gap<D>::E(float h)
     //    E(x) = 4\pi \int (eta_co0 - eta_co) dx
     //    E(x) = -E_rot * 0.5*A*h^2
     //const float eta_co_A = 0.07f; //  realistic value
-    //const float eta_co_A = 0.8f; // numerical value
-    //const float e_max = 0.5*E0*eta_co_A;
-    //erot = h < gap_length ? e_max*std::pow( h/gap_length, 2 ) : 0.0f;
+    const float eta_co_A = 0.8f; // numerical value
+    const float e_max = 0.5*E0*eta_co_A;
+    float erot = h < gap_length ? e_max*std::pow( h/gap_length, 2 ) : 0.0f;
+    return erot;
   }
 
   assert(false);
@@ -134,7 +131,6 @@ void pic::Gap<D>::insert_em(
     gs.bx(i,0,0) = B(h);
     gs.by(i,0,0) = 0.0;
     gs.bz(i,0,0) = 0.0;
-
 
     //--------------------------------------------------
     // electric field
@@ -270,6 +266,7 @@ void pic::Gap<D>::update_e(
   // find top and bottom tiles and only operate on them
   bool bot = is_bot(tile);
   bool top = is_top(tile);
+
 
 
   // bottom boundary
@@ -418,11 +415,11 @@ void pic::Gap<D>::add_jext(
   const float c = tile.cfl; // Delta t
  
   // loop indices
-  const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
   //const int imin = -3, imax = tile.mesh_lengths[0]+3;
+  const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
 
   // set current
-  //#pragma omp simd
+  #pragma omp simd
   for(int i=imin; i<imax; i++) {
 
     // global grid coordinates
@@ -446,8 +443,9 @@ void pic::Gap<D>::add_jext(
     auto s = s_l*s_r;
     //auto s = 1.0f; // NOTE: no smoothing
 
+
     // add 
-    gs.jx(i,0,0) += jx*s;     // external current 
+    gs.jx(i,0,0) += jx;     // external current 
     //gs.jx(i,0,0) += jx*c*s; // external current * dt (since E = -j*dt we add dt already here)
   }
 
@@ -467,8 +465,7 @@ void pic::Gap<D>::update_j(
   auto& gs  = tile.get_grids();
  
   // loop indices
-  const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
-  //const int imin = -3, imax = tile.mesh_lengths[0]+3;
+  const int imin = -3, imax = tile.mesh_lengths[0]+3;
 
   // find top and bottom tiles and only operate on them
   bool bot = is_bot(tile);
@@ -681,20 +678,9 @@ void pic::Gap<D>::delete_prtcls(
     pic::Tile<D>& tile)
 {
 
-  // Tile limits
-  auto mins     = tile.mins;
-  auto maxs     = tile.maxs;
-
-  // loop indices
-  const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
-
-  // find top and bottom tiles and only operate on them
-  //bool bot = is_bot(tile);
-  //bool top = is_top(tile);
-
   // more aggressive boundaries for particle removal
-  bool bot = mins[0] < x_left;
-  bool top = maxs[0] > Nx-1.0f; // rightmost tile
+  bool bot = tile.mins[0] < x_left;
+  bool top = tile.maxs[0] > Nx-1.0f; // rightmost tile
 
   if(!(top || bot)) return;
 
