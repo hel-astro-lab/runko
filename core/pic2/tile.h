@@ -52,13 +52,15 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   CurrentDepositer current_depositer_;
   std::map<std::size_t, std::size_t> amount_of_particles_to_be_received_;
 
-  using subregion_particle_buff =
-    std::map<std::array<int, 3>, std::map<std::size_t, ParticleContainer>>;
+  /// particle type -> (direction -> span to subregion_particle_buffs_)
+  std::map<std::size_t, std::map<std::array<int, 3>, ParticleContainer::span>>
+    subregion_particle_spans_;
+  std::map<std::size_t, ParticleContainer> subregion_particle_buffs_;
 
-  subregion_particle_buff subregion_particles_ {};
-  void split_particles_to_subregions();
+  void divide_particles_to_subregions();
 
-  std::map<std::size_t, std::vector<std::reference_wrapper<const ParticleContainer>>>
+  /// particle type -> {0th particles, 1st particles, ...}
+  std::map<std::size_t, std::vector<ParticleContainer::specific_span>>
     incoming_subregion_particles_ {};
 
   // Required for global periodic boundary for tiles.

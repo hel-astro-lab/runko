@@ -140,10 +140,8 @@ std::vector<mpi4cpp::mpi::request>
 
 template<std::size_t D>
 void
-  Tile<D>::split_particles_to_subregions()
+  Tile<D>::divide_particles_to_subregions()
 {
-  auto buffs = subregion_particle_buff {};
-
   const auto x_div =
     std::array { static_cast<ParticleContainer::value_type>(this->mins[0]),
                  static_cast<ParticleContainer::value_type>(this->maxs[0]) };
@@ -154,18 +152,11 @@ void
     std::array { static_cast<ParticleContainer::value_type>(this->mins[2]),
                  static_cast<ParticleContainer::value_type>(this->maxs[2]) };
 
-  for(auto& [key, value]: this->particle_buffs_) {
-    for(auto& [dir, pbuff]: value.split_to_subregions(
-          x_div,
-          y_div,
-          z_div,
-          global_coordinate_mins_,
-          global_coordinate_maxs_)) {
-      buffs[dir].insert_or_assign(key, std::move(pbuff));
-    }
+  for(auto& [ptype, pcontainer]: this->particle_buffs_) {
+    auto [s, c] = pcontainer.divide_to_subregions(x_div, y_div, z_div);
+    std::ignore = this->subregion_particle_spans_.insert_or_assign(ptype, std::move(s));
+    std::ignore = this->subregion_particle_buffs_.insert_or_assign(ptype, std::move(c));
   }
-
-  this->subregion_particles_ = std::move(buffs);
 }
 
 template<std::size_t D>
@@ -175,7 +166,15 @@ void
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
 
-  this->split_particles_to_subregions();
+  this->divide_particles_to_subregions();
+
+  // Make particles staying in this tile "incoming" particles.
+  for(const auto& [ptype, spans]: this->subregion_particle_spans_) {
+    incoming_subregion_particles_[ptype] =
+      std::vector { ParticleContainer::specific_span {
+        .span      = spans.at({ 0, 0, 0 }),
+        .container = &this->subregion_particle_buffs_.at(ptype) } };
+  }
 }
 
 template<std::size_t D>
@@ -185,25 +184,18 @@ void
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
 
-  for(auto& [ptype, incoming_buffs]: this->incoming_subregion_particles_) {
-
-    // Due to definition of pairwise moore we know that there is
-    // going to be 26 incoming buffs (in case of D == 3 which is assumed).
-    static constexpr auto Nincoming = 26uz;
-    if(Nincoming != incoming_buffs.size()) {
-      throw std::logic_error {
-        "pic2::Tile::pairwise_moore_communicaion_postlude: unexpect amount of incoming "
-        "particle buffs."
-      };
-    }
-
-    // Ugly syntax until C++26 :/
-    [&]<std::size_t... I>(std::index_sequence<I...>) {
-      this->particle_buffs_.at(ptype).add_particles(incoming_buffs[I]...);
-    }(std::make_index_sequence<Nincoming>());
-
-    incoming_buffs.clear();
+  for(const auto& [ptype, specific_spans]: this->incoming_subregion_particles_) {
+    particle_buffs_.at(ptype) = ParticleContainer(specific_spans);
   }
+
+  for(auto& [_, pbuff]: this->particle_buffs_) {
+    pbuff.wrap_positions(this->global_coordinate_mins_, this->global_coordinate_maxs_);
+  }
+
+  this->incoming_subregion_particles_.clear();
+  this->subregion_particle_spans_.clear();
+  // Note that this->subregion_particle_buffs_ can not be cleared here.
+  // Other tiles might be using it.
 }
 
 template<std::size_t D>
@@ -232,8 +224,13 @@ void
 
   const auto inverted_dir = this->yee_lattice_.invert_dir(dir_to_other);
 
-  for(const auto& [ptype, pbuff]: other.subregion_particles_.at(inverted_dir)) {
-    this->incoming_subregion_particles_[ptype].push_back(std::cref(pbuff));
+  for(const auto& [ptype, spans]: other.subregion_particle_spans_) {
+    if(spans.contains(inverted_dir)) {
+      this->incoming_subregion_particles_.at(ptype).push_back(
+        ParticleContainer::specific_span {
+          .span      = spans.at(inverted_dir),
+          .container = &other.subregion_particle_buffs_.at(ptype) });
+    }
   }
 };
 

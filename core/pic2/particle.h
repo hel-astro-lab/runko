@@ -6,14 +6,19 @@
 #include "thrust/device_vector.h"
 #include "tyvi/mdgrid.h"
 
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
 #include <execution>
 #include <functional>
+#include <map>
 #include <numeric>
 #include <ranges>
+#include <stdexcept>
+#include <tuple>
 #include <type_traits>
+#include <utility>
 
 namespace pic2 {
 
@@ -27,6 +32,18 @@ public:
   /// The type in which pos and vel are stored in.
   using value_type = float;
 
+  /// Specifies some span of particles in ParticleContainer.
+  struct span {
+    std::size_t begin { 0 }, end { 0 };
+    [[nodiscard]] constexpr std::size_t size() const { return end - begin; }
+  };
+
+  /// Specifies a specifc span of particles in some ParticleContainer.
+  ///
+  /// Has to forward declared, because ParticleContainer
+  /// is incomplete type at this point.
+  struct specific_span;
+
 private:
   using E = std::dextents<std::size_t, 1>;
 
@@ -38,6 +55,13 @@ private:
 
 public:
   explicit ParticleContainer(ParticleContainerArgs);
+
+  /// Construct the container by aggregating the given spans.
+  template<std::ranges::forward_range R>
+    requires std::convertible_to<
+      std::ranges::range_reference_t<R>,
+      ParticleContainer::specific_span>
+  explicit ParticleContainer(const R&);
 
   /// Returns the number of particles.
   std::size_t size() const;
@@ -58,18 +82,18 @@ public:
     return self.vel_.span();
   }
 
+  /// Wraps coordinates outside of given extents.
+  void wrap_positions(std::array<value_type, 3> mins, std::array<value_type, 3> maxs);
+
   /// Splits container to 27 subcontainers along given divider lines.
   ///
-  /// Container pointed by this is replaced by the middle container
-  /// and the rest are returned with corresponding direction.
-  ///
-  /// Applies periodic boundary condition based on global_{mins,maxs}.
-  std::vector<std::pair<std::array<int, 3>, ParticleContainer>> split_to_subregions(
-    std::array<value_type, 2> x_dividers,
-    std::array<value_type, 2> y_dividers,
-    std::array<value_type, 2> z_dividers,
-    std::array<value_type, 3> global_mins,
-    std::array<value_type, 3> global_maxs);
+  /// Returns: [TODO | write this]
+  [[nodiscard]]
+  std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContainer>
+    divide_to_subregions(
+      std::array<value_type, 2> x_dividers,
+      std::array<value_type, 2> y_dividers,
+      std::array<value_type, 2> z_dividers);
 
   /// Add particles from other containers.
   template<std::convertible_to<const ParticleContainer&>... T>
@@ -102,39 +126,13 @@ public:
     const value_type cfl) const;
 };
 
-/// Way to initialize particles. Known to be slow.
-template<std::ranges::forward_range R>
-  requires std::convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState>
-void
-  ParticleContainer::add_particles(const R& new_particles)
-{
-  const auto N = static_cast<std::size_t>(std::ranges::distance(new_particles));
+struct ParticleContainer::specific_span {
+  ParticleContainer::span span {};
+  ParticleContainer const* container { nullptr };
 
-  auto args  = this->args();
-  args.N     = N;
-  auto added = ParticleContainer(args);
+  [[nodiscard]] constexpr std::size_t size() const { return span.size(); }
+};
 
-  const auto added_pos_smds = added.pos_.staging_mds();
-  const auto added_vel_smds = added.vel_.staging_mds();
-
-  for(const auto [i, p]: std::views::enumerate(new_particles)) {
-    for(const auto j: std::views::iota(0uz, 3uz)) {
-      added_pos_smds[i][j] = p.pos[j];
-      added_vel_smds[i][j] = p.vel[j];
-    }
-  }
-
-  auto w1 = tyvi::mdgrid_work {}.sync_from_staging(added.pos_);
-  auto w2 = tyvi::mdgrid_work {}.sync_from_staging(added.vel_);
-  tyvi::when_all(w1, w2).wait();
-
-  this->add_particles(added);
-}
-
-/* It would potentially be convinient for this to take
-   a range of ParticleContainers but due to limitation
-   of tyvi::when_all not handling dynamic number of work items,
-   the number of ParticleContainers has to be known statically. */
 template<std::convertible_to<const ParticleContainer&>... T>
 void
   ParticleContainer::add_particles(const T&... others)
@@ -222,5 +220,171 @@ void
   vel_ = std::move(new_vel);
 }
 
+
+template<std::ranges::forward_range R>
+  requires std::convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState>
+void
+  ParticleContainer::add_particles(const R& new_particles)
+{
+  const auto N = static_cast<std::size_t>(std::ranges::distance(new_particles));
+
+  auto args  = this->args();
+  args.N     = N;
+  auto added = ParticleContainer(args);
+
+  const auto added_pos_smds = added.pos_.staging_mds();
+  const auto added_vel_smds = added.vel_.staging_mds();
+
+  for(const auto [i, p]: std::views::enumerate(new_particles)) {
+    for(const auto j: std::views::iota(0uz, 3uz)) {
+      added_pos_smds[i][j] = p.pos[j];
+      added_vel_smds[i][j] = p.vel[j];
+    }
+  }
+
+  auto w1 = tyvi::mdgrid_work {}.sync_from_staging(added.pos_);
+  auto w2 = tyvi::mdgrid_work {}.sync_from_staging(added.vel_);
+  tyvi::when_all(w1, w2).wait();
+
+  this->add_particles(added);
+}
+
+template<std::ranges::forward_range R>
+  requires std::
+    convertible_to<std::ranges::range_reference_t<R>, ParticleContainer::specific_span>
+  ParticleContainer::ParticleContainer(const R& spans)
+{
+  namespace rn = std::ranges;
+  namespace rv = std::views;
+
+  if(rn::empty(spans)) {
+    // Can not construct the container fron zero spans,
+    // because there is no charge and mass specified.
+    throw std::runtime_error {
+      "Trying to construct ParticleContainer from zero spans."
+    };
+  }
+
+  /* Due to limitation of tyvi::when_all taking only statically known
+     amount of tyvi::mdgrid_work, we have to wait for the copies in batches.
+     (On a deeper level this is limitation of thrust.)
+
+     However, this ctor takes dynamic amount of spans.
+     To call tyvi::when_all on all of them, we have to do a ugly hack.
+     Inorder to do so we can only support up to Nmax spans. */
+
+  static constexpr auto Nmax = 27uz;  // atm nothing should call this with more.
+  const auto Nspans          = rn::distance(spans);
+
+  if(Nspans > Nmax) {
+    throw std::runtime_error {
+      "ParticleContainer: trying to ctor from too many spans."
+    };
+  }
+
+  {
+    const auto args = rn::begin(spans)->container->args();
+    this->charge_   = args.charge;
+    this->mass_     = args.mass;
+
+    const auto consistent_given_charge_n_mass =
+      rn::all_of(spans, [this](const auto& span) {
+        const auto args = span.container->args();
+        return this->charge_ == args.charge and this->mass_ == args.mass;
+      });
+    if(not consistent_given_charge_n_mass) {
+      throw std::runtime_error {
+        "Trying to construct ParticleContainer from spans to containers with "
+        "inconsistent charges/masses."
+      };
+    }
+  }
+
+  const auto span_sizes =
+    spans | rv::transform(&ParticleContainer::specific_span::size);
+
+  // Where spans of particles begin and end in the resulting container:
+
+  // { 0, span_sizes[0], ..., span_sizes[0] + ... + span_sizes[-2] }
+  // Note that the last sum does not include span_sizes[-1].
+  const auto begins = [&] {
+    auto temp = std::vector<std::size_t>(Nspans);
+    std::exclusive_scan(
+      std::execution::unseq,
+      span_sizes.begin(),
+      span_sizes.end(),
+      temp.begin(),
+      0uz);
+    return temp;
+  }();
+
+  // { span_sizes[0], ..., span_sizes[0] + ... + span_sizes[-1] }
+  // Note that the last sum includes span_sizes[-1].
+  const auto ends = [&] {
+    auto temp = std::vector<std::size_t>(Nspans);
+    std::inclusive_scan(
+      std::execution::unseq,
+      span_sizes.begin(),
+      span_sizes.end(),
+      temp.begin());
+    return temp;
+  }();
+
+  const auto Ntotal = ends.back();
+
+  this->pos_ = runko::VecList<value_type>(Ntotal);
+  this->vel_ = runko::VecList<value_type>(Ntotal);
+
+  const auto pos_mds = this->pos_.mds();
+  const auto vel_mds = this->vel_.mds();
+
+  const auto handle_span = [&](
+                             const ParticleContainer::specific_span& span,
+                             const std::array<std::size_t, 2> location_in_this) {
+    const auto other_pos_mds = span.container->pos_.mds();
+    const auto other_vel_mds = span.container->vel_.mds();
+
+    const auto s                = std::array { span.span.begin, span.span.end };
+    const auto other_pos_submds = std::submdspan(other_pos_mds, s);
+    const auto other_vel_submds = std::submdspan(other_vel_mds, s);
+
+    const auto pos_submds = std::submdspan(pos_mds, location_in_this);
+    const auto vel_submds = std::submdspan(vel_mds, location_in_this);
+
+    return tyvi::mdgrid_work {}.for_each_index(
+      pos_submds,
+      [=](const auto idx, const auto tidx) {
+        pos_submds[idx][tidx] = other_pos_submds[idx][tidx];
+        vel_submds[idx][tidx] = other_vel_submds[idx][tidx];
+      });
+  };
+
+
+  // views are lazy ==> work is not started
+  const auto not_started_works =
+    rv::zip(spans, begins, ends) | rv::transform([&](const auto& t) {
+      return handle_span(std::get<0>(t), { std::get<1>(t), std::get<2>(t) });
+    });
+
+  auto works = std::vector(not_started_works.begin(), not_started_works.end());
+
+  // Below is the ugly hack.
+  // See beginning of the function for explanation why it is needed.
+
+  [&]<std::size_t I>(
+    this const auto& self,
+    std::integral_constant<std::size_t, I>) -> void {
+    if constexpr(I <= Nmax) {
+      if(Nspans == I) {
+        // Ugly syntax until C++26.
+        [&]<std::size_t... J>(std::index_sequence<J...>) {
+          tyvi::when_all(works[J]...).wait();
+        }(std::make_index_sequence<I>());
+      } else {
+        self(std::integral_constant<std::size_t, I + 1> {});
+      }
+    }
+  }(std::integral_constant<std::size_t, 1uz> {});
+}
 
 }  // namespace pic2

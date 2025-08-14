@@ -3,16 +3,18 @@
 #include "core/mdgrid_common.h"
 #include "thrust/device_vector.h"
 #include "thrust/execution_policy.h"
+#include "thrust/host_vector.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
-#include "thrust/transform.h"
-#include "thrust/transform_scan.h"
+#include "thrust/sort.h"
+#include "thrust/unique.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
+#include <algorithm>
 #include <cmath>
-#include <ranges>
+#include <iterator>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -84,13 +86,38 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
   return { std::move(vx), std::move(vy), std::move(vz) };
 }
 
-std::vector<std::pair<std::array<int, 3>, ParticleContainer>>
-  ParticleContainer::split_to_subregions(
+void
+  ParticleContainer::wrap_positions(
+    const std::array<value_type, 3> mins,
+    const std::array<value_type, 3> maxs)
+{
+  if(mins[0] >= maxs[0] or mins[1] >= maxs[1] or mins[0] >= maxs[2]) {
+    throw std::runtime_error {
+      "ParticleContainer::wrap_coordinates: given limits do not make sense."
+    };
+  }
+  const auto L = std::array { maxs[0] - mins[0], maxs[1] - mins[1], maxs[2] - mins[2] };
+
+  const auto pos_mds = this->pos_.mds();
+  tyvi::mdgrid_work {}
+    .for_each_index(
+      pos_mds,
+      [=](const auto idx, const auto tidx) {
+        const auto a = mins[tidx[0]];
+        const auto b = maxs[tidx[0]];
+        const auto x = pos_mds[idx][tidx];
+
+        const auto wrapped_pos = (x < 0 ? b : a) + std::fmod(x, L[tidx[0]]);
+        pos_mds[idx][tidx]     = wrapped_pos;
+      })
+    .wait();
+}
+
+std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContainer>
+  ParticleContainer::divide_to_subregions(
     const std::array<value_type, 2> x_dividers,
     const std::array<value_type, 2> y_dividers,
-    const std::array<value_type, 2> z_dividers,
-    const std::array<value_type, 3> global_mins,
-    const std::array<value_type, 3> global_maxs)
+    const std::array<value_type, 2> z_dividers)
 {
   if(
     x_dividers[0] >= x_dividers[1] or y_dividers[0] >= y_dividers[1] or
@@ -99,6 +126,10 @@ std::vector<std::pair<std::array<int, 3>, ParticleContainer>>
       "ParticleContainer::split_to_subregions: given dividers do not make sense."
     };
   }
+
+  // Handle empty container as special case, so that we can later assume
+  // that there is at least one particle.
+  if(this->size() == 0) { return { {}, *this }; }
 
   // subregion_index: {-1, 0, 1} x {-1, 0, 1} x {-1, 0, 1} -> {0, 1, ..., 26}
   constexpr auto subregion_index =
@@ -114,28 +145,9 @@ std::vector<std::pair<std::array<int, 3>, ParticleContainer>>
     return std::array<int, 3> { (n / 9) - 1, ((n / 3) % 3) - 1, (n % 3) - 1 };
   };
 
-  // Special case of zero particles.
-  if(this->size() == 0) {
-    auto empty_subregion_pcontainers =
-      std::vector<std::pair<std::array<int, 3>, ParticleContainer>> {};
-    empty_subregion_pcontainers.reserve(27uz);
-
-    const auto args             = this->args();
-    const auto empty_pcontainer = ParticleContainer(args);
-
-
-    for(const auto i: std::views::iota(0uz, 27uz)) {
-      const auto dir = subregion_index_to_dir(i);
-      empty_subregion_pcontainers.push_back({ dir, empty_pcontainer });
-    }
-
-    static constexpr auto my_idx = subregion_index(0, 0, 0);
-    empty_subregion_pcontainers.erase(empty_subregion_pcontainers.begin() + my_idx);
-
-    return empty_subregion_pcontainers;
-  }
-
   const auto pos_mds = this->pos_.mds();
+  const auto vel_mds = this->vel_.mds();
+
   const auto particle_ordinal_to_subregion_index =
     [=](const std::size_t n) -> std::size_t {
     const auto x = pos_mds[n][0];
@@ -152,96 +164,85 @@ std::vector<std::pair<std::array<int, 3>, ParticleContainer>>
     return subregion_index(i, j, k);
   };
 
+  namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
-  const auto particle_ordinals_end   = particle_ordinals_begin + this->size();
-  auto subregion_indices             = thrust::device_vector<std::size_t>(this->size());
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
-  thrust::transform(
-    thrust::device,
+  const auto particle_subregion_indices_begin = thrust::make_transform_iterator(
     particle_ordinals_begin,
-    particle_ordinals_end,
-    subregion_indices.begin(),
     particle_ordinal_to_subregion_index);
+  const auto particle_subregion_indices_end =
+    rn::next(particle_subregion_indices_begin, this->size());
 
-  using SubRegionSizes = toolbox::VecD<std::size_t, 27>;
+  auto particle_subregion_indices = thrust::device_vector<std::size_t>(
+    particle_subregion_indices_begin,
+    particle_subregion_indices_end);
 
-  const auto subregion_index_to_size_contribution =
-    [=](const std::size_t i) -> SubRegionSizes {
-    auto c = SubRegionSizes {};
-    c(i)   = 1uz;
-    return c;
-  };
+  auto particle_trackers =
+    thrust::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
 
-  auto subregion_sizes = thrust::device_vector<SubRegionSizes>(this->size());
+  thrust::sort_by_key(
+    particle_subregion_indices.begin(),
+    particle_subregion_indices.end(),
+    particle_trackers.begin());
 
-  thrust::transform_inclusive_scan(
-    thrust::device,
-    subregion_indices.begin(),
-    subregion_indices.end(),
-    subregion_sizes.begin(),
-    subregion_index_to_size_contribution,
-    thrust::plus<SubRegionSizes> {});
-
-  // Special case of zero particles is handled in the beginning.
-  const SubRegionSizes final_sizes = subregion_sizes.back();
-
-  auto subregion_pcontainers =
-    std::vector<std::pair<std::array<int, 3>, ParticleContainer>> {};
-  subregion_pcontainers.reserve(27uz);
-
-  for(const auto i: std::views::iota(0uz, 27uz)) {
-    auto a = this->args();
-    a.N    = final_sizes(i);
-
-    const auto dir = subregion_index_to_dir(i);
-    subregion_pcontainers.push_back({ dir, ParticleContainer(a) });
-  }
-
-  using VecMDS =
-    std::remove_cvref_t<decltype(std::declval<decltype(this->pos_)&>().mds())>;
-
-  auto subregion_pos_mds = std::array<VecMDS, 27> {};
-  auto subregion_vel_mds = std::array<VecMDS, 27> {};
-
-  for(const auto i: std::views::iota(0uz, 27uz)) {
-    subregion_pos_mds[i] = subregion_pcontainers[i].second.pos_.mds();
-    subregion_vel_mds[i] = subregion_pcontainers[i].second.vel_.mds();
-  }
-
-  const auto vel_mds               = this->vel_.mds();
-  const auto subregion_indices_ptr = subregion_indices.begin();
-  const auto subregion_sizes_ptr   = subregion_sizes.begin();
-
-  const auto global_L = std::array { global_maxs[0] - global_mins[0],
-                                     global_maxs[1] - global_mins[1],
-                                     global_maxs[2] - global_mins[2] };
+  auto permuted_pcontainer    = *this;
+  const auto permuted_pos_mds = permuted_pcontainer.pos_.mds();
+  const auto permuted_vel_mds = permuted_pcontainer.vel_.mds();
 
   tyvi::mdgrid_work {}
     .for_each_index(
-      vel_mds,
-      [=](const auto idx, const auto tidx) {
-        const auto subregion_index            = subregion_indices_ptr[idx[0]];
-        const SubRegionSizes& subregion_sizes = subregion_sizes_ptr[idx[0]];
-        const auto offset_in_subregion        = subregion_sizes(subregion_index) - 1uz;
-
-        const auto a = global_mins[tidx[0]];
-        const auto b = global_maxs[tidx[0]];
-        const auto x = pos_mds[idx][tidx];
-
-        const auto wrapped_pos = (x < 0 ? b : a) + std::fmod(x, global_L[tidx[0]]);
-
-        subregion_pos_mds[subregion_index][offset_in_subregion][tidx] = wrapped_pos;
-        subregion_vel_mds[subregion_index][offset_in_subregion][tidx] =
-          vel_mds[idx][tidx];
+      permuted_pos_mds,
+      [=, p = particle_trackers.begin()](const auto idx, const auto tidx) {
+        const std::size_t i         = p[idx[0]];
+        permuted_pos_mds[idx][tidx] = pos_mds[i][tidx];
+        permuted_vel_mds[idx][tidx] = vel_mds[i][tidx];
       })
     .wait();
 
-  static constexpr auto my_idx = subregion_index(0, 0, 0);
-  *this                        = std::move(subregion_pcontainers[my_idx].second);
+  // Reset these back to 0, 1, ... inorder to use them in unique
+  // to measure the begins of the subregions.
+  particle_trackers.assign(particle_ordinals_begin, particle_ordinals_end);
 
-  subregion_pcontainers.erase(subregion_pcontainers.begin() + my_idx);
+  const auto new_end = thrust::unique_by_key(
+    thrust::device,
+    particle_subregion_indices.begin(),
+    particle_subregion_indices.end(),
+    particle_trackers.begin());
 
-  return subregion_pcontainers;
+  // Note that this ParticleContainer might not contain
+  // particles in all of the 27 subregions.
+
+  const auto present_subregion_indices =
+    thrust::host_vector<std::size_t>(particle_subregion_indices.begin(), new_end.first);
+  const auto present_subregion_begins =
+    thrust::host_vector<std::size_t>(particle_trackers.begin(), new_end.second);
+
+  const auto present_subregion_ends = [&] {
+    // We assumed at beginning of the function that there is at least one particle.
+    auto temp =
+      std::vector(++present_subregion_begins.begin(), present_subregion_begins.end());
+    temp.push_back(this->size());
+    return temp;
+  }();
+
+  namespace rv = std::views;
+  const auto output_view =
+    rv::zip(
+      present_subregion_indices,
+      present_subregion_begins,
+      present_subregion_ends) |
+    rv::transform([&, this](const auto& x) {
+      return std::pair { subregion_index_to_dir(std::get<0>(x)),
+                         ParticleContainer::span { .begin = std::get<1>(x),
+                                                   .end   = std::get<2>(x) } };
+    });
+
+
+  return { std::map<std::array<int, 3>, ParticleContainer::span>(
+             output_view.begin(),
+             output_view.end()),
+           std::move(permuted_pcontainer) };
 }
 
 }  // namespace pic2
