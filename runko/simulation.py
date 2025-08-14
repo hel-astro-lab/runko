@@ -206,6 +206,11 @@ class Simulation:
         return timer_statistics(self._lap_timers)
 
 
+    def reset_timers(self):
+        self._lap_timers = []
+        self._lap_wall_times = []
+
+
     def log_timer_statistics(self, level=logging.INFO):
         stats_dict = self.get_time_statistics()
         if len(stats_dict) == 0:
