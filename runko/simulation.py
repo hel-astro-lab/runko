@@ -5,6 +5,8 @@ import pyrunko.emf2.threeD as emf
 from .runko_logging import runko_logger
 from .runko_timer import Timer, timer_statistics
 import logging
+import time
+import numpy as np
 
 
 class Simulation:
@@ -34,6 +36,7 @@ class Simulation:
         self._emf_writer = None
 
         self._lap_timers = []
+        self._lap_wall_times = []
 
         self._logger = runko_logger("Simulation")
 
@@ -101,6 +104,7 @@ class Simulation:
         FIXME: Parallelize the loop.
         """
 
+        lap_wall_time_begin = time.time()
         lap_timer = Timer() if not disable_timing else None
 
         def get_name(method, kwargs):
@@ -163,8 +167,10 @@ class Simulation:
 
         lap_function(for_each_local_tile, communications, io)
 
+        lap_wall_time_end = time.time()
         if not disable_timing:
             self._lap_timers.append(lap_timer)
+            self._lap_wall_times.append(lap_wall_time_end - lap_wall_time_begin)
 
 
     def prelude(self, lap_function):
@@ -219,5 +225,12 @@ class Simulation:
         for name, s in stats:
             p = 100 * s.total / total_elapsed_time
             msg += f"{name:<{nlen}} | {s.total:>9.1e} | {p:>10.4} | {s.average:>11.3e} | {s.std_dev:>7.1e} | {s.count:>5}\n"
-        msg += f"Total elapsed time [s]: {total_elapsed_time:10.4}"
+        msg += f"Total elapsed time: {total_elapsed_time:.4}s\n"
+
+
+        total_wall_time = np.sum(self._lap_wall_times)
+        avg_lap_wall_time = np.mean(self._lap_wall_times)
+        laps = len(self._lap_wall_times)
+
+        msg += f"Lap wall times: {total_wall_time:.4} s / {laps} laps = {avg_lap_wall_time:.4} s / lap"
         self._logger.log(level, msg)
