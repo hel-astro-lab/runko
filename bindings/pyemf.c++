@@ -377,6 +377,11 @@ void bind_emf(py::module& m_sub)
     .def(py::init<>())
     .def_readwrite("corr",     &emf::FDTD2<1>::corr);
 
+  // fdtd4 propagator
+  py::class_<emf::FDTD4<1>, Propagator<1>, PyFDTD4<1> >(m_1d, "FDTD4")
+    .def_readwrite("corr",     &emf::FDTD4<1>::corr)
+    .def(py::init<>());
+
 
   //--------------------------------------------------
   // 2D Propagator bindings

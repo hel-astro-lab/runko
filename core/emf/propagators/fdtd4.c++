@@ -13,6 +13,41 @@
  */
 
 
+
+/// 1D E pusher
+template<>
+void emf::FDTD4<1>::push_e(emf::Tile<1>& tile)
+{
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+  Grids& mesh = tile.get_grids();
+
+  const float C1 = coeff1*corr*tile.cfl;
+  const float C2 = coeff2*corr*tile.cfl;
+
+  UniIter::iterate(
+  [=] DEVCALLABLE (int i, Grids &mesh)
+  {
+  // Ex NONE
+	mesh.ey(i,0,0) +=   C1*( mesh.bz(i-1, 0, 0) - mesh.bz(i,   0, 0)) 
+		                 +C2*( mesh.bz(i-2, 0, 0) - mesh.bz(i+1, 0, 0));
+
+	mesh.ez(i,0,0) +=   C1*(-mesh.by(i-1, 0, 0) + mesh.by(i,   0, 0))
+                     +C2*(-mesh.by(i-2, 0, 0) + mesh.by(i+1, 0, 0));
+  }, 
+    tile.mesh_lengths[0], 
+    mesh);
+
+  UniIter::sync();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
+
+
 /// 2D E pusher
 template<>
 void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
@@ -30,16 +65,16 @@ void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
   UniIter::iterate2D(
   [=] DEVCALLABLE (int i, int j, Grids &mesh)
   {
-	mesh.ex(i,j,k) +=   C1*(-mesh.bz(i,  j-1,k) + mesh.bz(i,  j,  k)) 
+	mesh.ex(i,j,k) += C1*(-mesh.bz(i,  j-1,k) + mesh.bz(i,  j,  k)) 
 		               +C2*(-mesh.bz(i,  j-2,k) + mesh.bz(i,  j+1,k));
 
-	mesh.ey(i,j,k) +=   C1*( mesh.bz(i-1,j,  k) - mesh.bz(i,  j,  k)) 
+	mesh.ey(i,j,k) += C1*( mesh.bz(i-1,j,  k) - mesh.bz(i,  j,  k)) 
 		               +C2*( mesh.bz(i-2,j,  k) - mesh.bz(i+1,j,  k));
 
-	mesh.ez(i,j,k) +=   C1*( mesh.bx(i,  j-1,k) - mesh.bx(i,  j,  k) 
-                           - mesh.by(i-1,j,  k) + mesh.by(i,  j,  k))
-                       +C2*( mesh.bx(i,  j-2,k) - mesh.bx(i,  j+1,k)
-                            -mesh.by(i-2,j,  k) + mesh.by(i+1,j,  k));
+	mesh.ez(i,j,k) += C1*( mesh.bx(i,  j-1,k) - mesh.bx(i,  j,  k) 
+                       - mesh.by(i-1,j,  k) + mesh.by(i,  j,  k))
+                   +C2*( mesh.bx(i,  j-2,k) - mesh.bx(i,  j+1,k)
+                        -mesh.by(i-2,j,  k) + mesh.by(i+1,j,  k));
   }, 
     tile.mesh_lengths[0], 
     tile.mesh_lengths[1], 
@@ -51,7 +86,6 @@ void emf::FDTD4<2>::push_e(emf::Tile<2>& tile)
   nvtxRangePop();
 #endif
 }
-
 
 /// 3D E pusher
 template<>
@@ -101,6 +135,41 @@ void emf::FDTD4<3>::push_e(emf::Tile<3>& tile)
 //--------------------------------------------------
 
 /// Update B field with a half step
+
+
+/// 1D B pusher
+template<>
+void emf::FDTD4<1>::push_half_b(emf::Tile<1>& tile)
+{
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+  Grids& mesh = tile.get_grids();
+  const float C1 = 0.5*coeff1*corr*tile.cfl;
+  const float C2 = 0.5*coeff2*corr*tile.cfl;
+
+  UniIter::iterate(
+  [=] DEVCALLABLE (int i, Grids &mesh)
+  {
+    // Bx NONE
+	   mesh.by(i,0,0) += C1*( mesh.ez(i+1, 0, 0) - mesh.ez(i,   0, 0))
+	                    +C2*( mesh.ez(i+2, 0, 0) - mesh.ez(i-1, 0, 0));
+	   mesh.bz(i,0,0) += C1*(-mesh.ey(i+1, 0, 0) + mesh.ey(i,   0, 0))
+                      +C2*(-mesh.ey(i+2, 0, 0) + mesh.ey(i-1, 0, 0));
+
+  }, 
+    tile.mesh_lengths[0], 
+    mesh);
+
+  UniIter::sync();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
+
+
 
 /// 2D B pusher
 template<>
@@ -187,7 +256,7 @@ void emf::FDTD4<3>::push_half_b(emf::Tile<3>& tile)
 
 
 
-//template class emf::FDTD4<1>;
+template class emf::FDTD4<1>;
 template class emf::FDTD4<2>;
 template class emf::FDTD4<3>;
   
