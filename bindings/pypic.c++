@@ -538,6 +538,10 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::LinearInterpolator<1,3>>(m_1d, "LinearInterpolator", picinterp1d)
     .def(py::init<>());
 
+  // 2nd order quadratic
+  py::class_<pic::QuadraticInterpolator<1>>(m_1d, "QuadraticInterpolator", picinterp1d)
+    .def(py::init<>());
+
   //--------------------------------------------------
   // 2D version
   py::class_< pic::Interpolator<2,3>, PyInterpolator<2> > picinterp2d(m_2d, "Interpolator");
@@ -590,6 +594,10 @@ void bind_pic(py::module& m_sub)
   // zigzag depositer
   py::class_<pic::ZigZag<1,3>>(m_1d, "ZigZag", picdeposit1d)
     .def(py::init<>());
+
+  py::class_<pic::ZigZag_2nd<1,3>>(m_1d, "ZigZag_2nd", picdeposit1d)
+    .def(py::init<>());
+
 
   //--------------------------------------------------
   // 2D version

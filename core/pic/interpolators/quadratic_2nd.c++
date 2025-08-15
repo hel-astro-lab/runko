@@ -10,6 +10,25 @@
 #endif
 
 
+// 1D specialization
+template<>
+double pic::QuadraticInterpolator<1>::compute( 
+        double* cx, 
+        double* /*cy*/, 
+        double* /*cz*/, 
+        const toolbox::Mesh<float, 3>& f, 
+        //const size_t ind,
+        const size_t /*iy*/, 
+        const size_t /*iz*/,
+        int i, int /*j*/, int /*k*/)
+{
+  double res = 0.0;
+  for( int il=-1 ; il<=1 ; il++ ) {
+    res += cx[il] * f(i+il, 0, 0);
+  }
+  return res;
+};
+
 
 // 2D specialization
 template<>
@@ -232,6 +251,6 @@ void pic::QuadraticInterpolator<D>::solve(
 
 //--------------------------------------------------
 // explicit template instantiation
-
+template class pic::QuadraticInterpolator<1>; // 1D3V
 template class pic::QuadraticInterpolator<2>; // 2D3V
 template class pic::QuadraticInterpolator<3>; // 3D3V
