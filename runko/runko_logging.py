@@ -12,6 +12,7 @@ which logging level is set to `logging.NOTSET`.
 
 
 import logging
+import sys
 from mpi4py import MPI
 
 
@@ -37,7 +38,7 @@ def runko_logger(sublogger=None):
 
 
 def runko_default_handler():
-    h = logging.StreamHandler()
+    h = logging.StreamHandler(stream=sys.stdout)
     h.setLevel(logging.NOTSET)
 
     f = logging.Formatter('%(levelname)s(%(name)s): %(message)s')
