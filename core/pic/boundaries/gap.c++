@@ -119,7 +119,7 @@ void pic::Gap<D>::insert_em(
   // loop indices
   const int imin = -3, imax = tile.mesh_lengths[0]+3;
 
-  #pragma omp simd
+  //#pragma omp simd
   for(int i=imin; i<imax; i++) {
 
     // global grid coordinates
@@ -165,7 +165,8 @@ void pic::Gap<D>::update_b(
   auto& gs      = tile.get_grids();
 
   // loop indices
-  const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
+  const int imin = 0, imax = tile.mesh_lengths[0];
+  //const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
 
   // find top and bottom tiles and only operate on them
   bool bot = is_bot(tile);
@@ -173,7 +174,7 @@ void pic::Gap<D>::update_b(
 
   // bottom boundary
   if( bot ) {
-    #pragma omp simd
+    //#pragma omp simd
     for(int i=imin; i<imax; i++) {
 
       // global grid coordinates
@@ -227,7 +228,7 @@ void pic::Gap<D>::update_b(
   //--------------------------------------------------
   // hard-coded left/star BC
   if( mins[0] < 1 ) {
-    for(int i=imin; i<=halo; i++) {
+    for(int i=-halo; i<=halo; i++) {
       gs.bx(i,0,0) = B(0.0f); 
       gs.by(i,0,0) = 0.0; 
       gs.bz(i,0,0) = 0.0; 
@@ -237,7 +238,7 @@ void pic::Gap<D>::update_b(
   //--------------------------------------------------
   // hard-coded right/const BC
   if( maxs[0] > Nx-1 ) {
-    for(int i=imax-2*halo; i<=imax; i++) {
+    for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
       gs.bx(i,0,0) = B(Nx); 
       gs.by(i,0,0) = 0.0; 
       gs.bz(i,0,0) = 0.0; 
@@ -261,17 +262,17 @@ void pic::Gap<D>::update_e(
   auto& gs      = tile.get_grids();
 
   // loop indices
-  const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
+  const int imin = 0, imax = tile.mesh_lengths[0];
+  //const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
 
   // find top and bottom tiles and only operate on them
   bool bot = is_bot(tile);
   bool top = is_top(tile);
 
 
-
   // bottom boundary
   if( bot ) {
-    #pragma omp simd
+    //#pragma omp simd
     for(int i=imin; i<imax; i++) {
 
       // global grid coordinates
@@ -294,9 +295,9 @@ void pic::Gap<D>::update_e(
 
   //-------------------------------------------------- 
   // top boundary
-  //if( top ) {
-  if( true ) { // NOTE: always on since this ends up damping j_ext deposit and needs to smoothly join continuum everywhere
-    #pragma omp simd
+  //if( true ) { // NOTE: always on since this ends up damping j_ext deposit and needs to smoothly join continuum everywhere
+  if( top ) {
+    //#pragma omp simd
     for(int i=imin; i<imax; i++) {
 
       // global grid coordinates
@@ -313,8 +314,8 @@ void pic::Gap<D>::update_e(
   //--------------------------------------------------
   // hard-coded left (star) BC
   if( mins[0] < 1 ) {
-    #pragma omp simd
-    for(int i=imin; i<=halo; i++) {
+    //#pragma omp simd
+    for(int i=-halo; i<=halo; i++) {
       gs.ex(i,0,0) = E(0.0f);
       gs.ey(i,0,0) = 0.0f; 
       gs.ez(i,0,0) = 0.0f; 
@@ -324,8 +325,8 @@ void pic::Gap<D>::update_e(
   //--------------------------------------------------
   // hard-coded right/vacuum BC
   if( maxs[0] > Nx-1 ) {
-    #pragma omp simd
-    for(int i=imax-2*halo; i<=imax; i++) {
+    //#pragma omp simd
+    for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
       gs.ex(i,0,0) = E(Nx); 
       gs.ey(i,0,0) = 0.0f; 
       gs.ez(i,0,0) = 0.0f; 
@@ -352,7 +353,7 @@ void pic::Gap<D>::add_jrot(
   const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
 
   // set current
-  #pragma omp simd
+  //#pragma omp simd
   for(int i=imin; i<imax; i++) {
 
     // global grid coordinates
@@ -415,11 +416,11 @@ void pic::Gap<D>::add_jext(
   const float c = tile.cfl; // Delta t
  
   // loop indices
-  //const int imin = -3, imax = tile.mesh_lengths[0]+3;
   const int imin = 0, imax = tile.mesh_lengths[0]; // NOTE: no halos
+  //const int imin = -3, imax = tile.mesh_lengths[0]+3;
 
   // set current
-  #pragma omp simd
+  //#pragma omp simd
   for(int i=imin; i<imax; i++) {
 
     // global grid coordinates
@@ -435,18 +436,17 @@ void pic::Gap<D>::add_jext(
     //auto s_r =        shape( ig, x_right, delta_right); 
 
     // sharp cutoff at halos
-    float s_l = 0.0f ? ig < halo : 1.0f; // sharp cutoff
-    float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
+    //float s_l = 0.0f ? ig < halo : 1.0f; // sharp cutoff
+    //float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
 
     //auto s_l = 1.0f - shape( ig, halo,    2); 
     //auto s_r =        shape( ig, Nx-halo, 2); 
-    auto s = s_l*s_r;
-    //auto s = 1.0f; // NOTE: no smoothing
+    //auto s = s_l*s_r;
+      
+    //-------------------------------------------------- 
+    auto s = 1.0f; // NOTE: no smoothing
 
-
-    // add 
-    gs.jx(i,0,0) += jx;     // external current 
-    //gs.jx(i,0,0) += jx*c*s; // external current * dt (since E = -j*dt we add dt already here)
+    gs.jx(i,0,0) += jx*s; // external current 
   }
 
   return;
@@ -465,7 +465,8 @@ void pic::Gap<D>::update_j(
   auto& gs  = tile.get_grids();
  
   // loop indices
-  const int imin = -3, imax = tile.mesh_lengths[0]+3;
+  //const int imin = -3, imax = tile.mesh_lengths[0]+3;
+  const int imin = 0, imax = tile.mesh_lengths[0];
 
   // find top and bottom tiles and only operate on them
   bool bot = is_bot(tile);
@@ -475,7 +476,7 @@ void pic::Gap<D>::update_j(
   if(!(top || bot)) return;
 
   // set current
-  #pragma omp simd
+  //#pragma omp simd
   for(int i=imin; i<imax; i++) {
 
     // global grid coordinates
@@ -489,8 +490,13 @@ void pic::Gap<D>::update_j(
     float s_l = 0.0f ? ig <       halo : 1.0f; // sharp cutoff
     float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
 
+    // cutoff outside internal tile boundaries
+    //float s_l2 = 0.0f ? i < 0   : 1.0f; // sharp cutoff
+    //float s_r2 = 0.0f ? i >= Nx : 1.0f; // sharp cutoff
+                                                 
     // combine
-    auto s    = s_l*s_r; // s now looks like 0 -> 1 -> 0
+    auto s  = s_l*s_r; // s now looks like 0 -> 1 -> 0
+    //     s *= s_l2*s_r2; // s now looks like 0 -> 1 -> 0
 
     // suppression of current at the boundaries
     gs.jx(i,0,0) *= s;
@@ -697,7 +703,7 @@ void pic::Gap<D>::delete_prtcls(
                                                                                       
       // left BC
       if(  con.loc(0,n) < x_left - 3.0f )                          con.info(n) = -1; // inside
-      if( (con.loc(0,n) < x_left - 2.5f ) && con.vel(0,n) < 0.0f ) con.info(n) = -1; // in-flowing
+      //if( (con.loc(0,n) < x_left - 2.5f ) && con.vel(0,n) < 0.0f ) con.info(n) = -1; // in-flowing
                                                                                     
       // right BC
       if(  con.loc(0,n) > Nx - 1.0f )                              con.info(n) = -1; // outside
