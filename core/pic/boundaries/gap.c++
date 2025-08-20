@@ -49,14 +49,15 @@ float pic::Gap<D>::E(float h)
 
   //--------------------------------------------------
   if(      e_profile_mode == 0 ) { return std::max(0.0f, E0*std::min(1.0f, (1.0f - h/gap_length) ) ); } // Ruderman-style setups
-  else if( e_profile_mode == 1 ) { return 0.0f; } // zero everywhere
-  else if( e_profile_mode == 2 ) { 
+  else if( e_profile_mode == 1 ) { return std::max(0.0f, E0*std::min(1.0f, (1.0f - h/gap_length) ) ) -E0; } // SCLF 
+  else if( e_profile_mode == 2 ) { return 0.0f; } // zero everywhere
+  else if( e_profile_mode == 3 ) { 
     // v1: linear gap
     float erot = h < gap_length ? -E0*( h/gap_length ) : 0.0; // value outside
     erot = h > gap_length ? -E0 : erot; // const value higher up
     return erot;
   }
-  else if( e_profile_mode == 3 ) { 
+  else if( e_profile_mode == 4 ) { 
     // v2: co-rotation charge density is taken to depend on dimensionless height h = (x/H) as:
     //   eta_co/eta_co0 = 1 + A*h
     //
