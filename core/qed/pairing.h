@@ -650,7 +650,10 @@ public:
         // NOTE: maximum interaction rate = sigma_max * w2_sum * w1/prob_norm
         float prob_vir_max = 0.0;
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]; 
-                                                                                             
+
+        // no interactions allowed outside the gap
+        if((std::abs(lx1/r_gap) > 1.0)) continue;
+
         // no targets to interact with
         if(prob_vir_max < EPS) continue;
 
