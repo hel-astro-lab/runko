@@ -117,6 +117,7 @@ public:
   // maximum number of particles allowed in a tile; no addition above this
   // NOTE: this means energy is not conserved if we skip prtcl addition
   int max_tile_prtcl_num = 1000000000; 
+  int max_tile_phot_num = 1000000000; 
 
   //--------------------------------------------------
   // optional virtual field component (esp. for 1D sims to mimic varying backgrounds)
@@ -1161,7 +1162,11 @@ public:
               // TODO are these independent or same draw for prob_kill3
               // i.e., kill parent and create copies or let parent live and no copies?
 
-              if( info_prtcl_num[t3] < max_tile_prtcl_num ) { // add if we are below tile limit
+              bool do_addition = true;
+              if(  (t3 == "ph")                  && (info_prtcl_num[t3] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+              if( ((t3 == "e-") || (t3 == "e+")) && (info_prtcl_num[t3] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+
+              if( do_addition ) { // add if we are below tile limit
                                                    
                 timer.start_comp("add_prtcl1");
                 double z1 = rand();
@@ -1236,7 +1241,11 @@ public:
                        
               // annihilation interactions go her
                 
-              if( info_prtcl_num[t4] < max_tile_prtcl_num ) { // add if we are below tile limit
+              bool do_addition = true;
+              if(  (t4 == "ph")                  && (info_prtcl_num[t4] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+              if( ((t4 == "e-") || (t4 == "e+")) && (info_prtcl_num[t4] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+
+              if( do_addition ) { // add if we are below tile limit
                                                  //
                 timer.start_comp("add_prtcl2");
                 double z1 = rand();
@@ -1556,23 +1565,31 @@ public:
             //      if new processes are added (that can have a parent particle that is not electron/positron) then this 
             //      needs re-updating.
 
-            // add prtcl 4
-            timer.start_comp("add_ems_prtcls");
-            float ncop = 0.0;
-            float z1 = rand();
 
-            float ly1vir = ly1;
-            if (use_vir_curvature){
-                ly1vir = lx1; //Saving the x-value of the created photon for 1D calculation
+            bool do_addition = true;
+            if(  (t4 == "ph")                  && (info_prtcl_num[t4] > max_tile_phot_num)  ) do_addition = false; // switch off for photons
+            if( ((t4 == "e-") || (t4 == "e+")) && (info_prtcl_num[t4] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+
+            if( do_addition ) { // add if we are below tile limit
+                                                                
+              // add prtcl 4
+              timer.start_comp("add_ems_prtcls");
+              float ncop = 0.0;
+              float z1 = rand();
+
+              float ly1vir = ly1;
+              if (use_vir_curvature){
+                  ly1vir = lx1; //Saving the x-value of the created photon for 1D calculation
+              }
+
+              if(use_vir_curvature && lx1 > r_gap) z1 = n4 + 0.5; // prevent emission beyond gap size
+
+              while(n4 > z1 + ncop) {
+                cons[t4]->add_particle( {{lx1, ly1vir, lz1}}, {{ux4, uy4, uz4}}, w4);
+                ncop += 1.0;
+              }
+              timer.stop_comp("add_ems_prtcls");
             }
-
-            if(use_vir_curvature && lx1 > r_gap) z1 = n4 + 0.5; // prevent emission beyond gap size
-
-            while(n4 > z1 + ncop) {
-              cons[t4]->add_particle( {{lx1, ly1vir, lz1}}, {{ux4, uy4, uz4}}, w4);
-              ncop += 1.0;
-            }
-            timer.stop_comp("add_ems_prtcls");
 
           //--------------------------------------------------
           } else { // single-body annihilation into t3 and t4 pair
@@ -1587,9 +1604,14 @@ public:
                 n4 = w1/w4; // NOTE w1 here since parent is same for both t3 and t4
               }
 
-
-              if( info_prtcl_num[t3] < max_tile_prtcl_num &&
-                  info_prtcl_num[t4] < max_tile_prtcl_num ) { // add if we are below tile limit
+              bool do_addition = true;
+              if( ((t3 == "e-") || (t3 == "e+")) && (info_prtcl_num[t3] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+              if( ((t4 == "e-") || (t4 == "e+")) && (info_prtcl_num[t4] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+              if(  (t3 == "ph")                  && (info_prtcl_num[t3] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+              if(  (t4 == "ph")                  && (info_prtcl_num[t4] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+                                                                                                                       
+                                                                                                                       
+              if( do_addition ) { // add if we are below tile limit
                 
                 // add new particle t3 and t4; particles are assumed to be identical
                 timer.start_comp("add_ann_prtcls");
