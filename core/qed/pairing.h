@@ -1563,6 +1563,8 @@ public:
                 ly1vir = lx1; //Saving the x-value of the created photon for 1D calculation
             }
 
+            if(use_vir_curvature && lx1 > r_gap) z1 = n4 + 0.5; // prevent emission beyond gap size
+
             while(n4 > z1 + ncop) {
               cons[t4]->add_particle( {{lx1, ly1vir, lz1}}, {{ux4, uy4, uz4}}, w4);
               ncop += 1.0;
