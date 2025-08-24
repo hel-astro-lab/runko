@@ -367,7 +367,8 @@ void bind_emf(py::module& m_sub)
 
   //--------------------------------------------------
   // 1D Propagator bindings
-  py::class_< emf::Propagator<1>, PyPropagator<1> >(m_1d, "Propagator")
+  py::class_< emf::Propagator<1>, PyPropagator<1> > emfpropag1d(m_1d, "Propagator");
+  emfpropag1d
     .def(py::init<>())
     .def("push_e",      &emf::Propagator<1>::push_e)
     .def("push_half_b", &emf::Propagator<1>::push_half_b);
@@ -381,6 +382,23 @@ void bind_emf(py::module& m_sub)
   py::class_<emf::FDTD4<1>, Propagator<1>, PyFDTD4<1> >(m_1d, "FDTD4")
     .def_readwrite("corr",     &emf::FDTD4<1>::corr)
     .def(py::init<>());
+
+  // fdtd2 propagator with perfectly matched ouer layer
+  py::class_<emf::FDTD2_pml<1>> pml1d(m_1d, "FDTD2_pml", emfpropag1d);
+  pml1d
+    .def(py::init<>())
+    .def_readwrite("cenx",     &emf::FDTD2_pml<1>::cenx)
+    .def_readwrite("ceny",     &emf::FDTD2_pml<1>::ceny)
+    .def_readwrite("cenz",     &emf::FDTD2_pml<1>::cenz)
+    .def_readwrite("radx",     &emf::FDTD2_pml<1>::radx)
+    .def_readwrite("rady",     &emf::FDTD2_pml<1>::rady)
+    .def_readwrite("radz",     &emf::FDTD2_pml<1>::radz)
+    .def_readwrite("rad_lim",  &emf::FDTD2_pml<1>::rad_lim)
+    .def_readwrite("norm_abs", &emf::FDTD2_pml<1>::norm_abs)
+    .def_readwrite("corr",     &emf::FDTD2_pml<1>::corr)
+    .def_readwrite("mode",     &emf::FDTD2_pml<1>::mode)
+    .def("push_e",             &emf::FDTD2_pml<1>::push_e)
+    .def("push_half_b",        &emf::FDTD2_pml<1>::push_half_b);
 
 
   //--------------------------------------------------

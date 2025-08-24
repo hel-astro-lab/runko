@@ -60,6 +60,54 @@ DEVCALLABLE float emf::FDTD2_pml<D>::lambda(
 }
 
 
+/// 1D E pusher
+template<>
+void emf::FDTD2_pml<1>::push_e(emf::Tile<1>& tile)
+{
+
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+  Grids& mesh = tile.get_grids();
+  const float C = tile.cfl;
+  const auto mins = tile.mins;
+
+  UniIter::iterate(
+  [=] DEVCALLABLE (int i, Grids &mesh)
+  {
+    //-----------
+    // global grid coordinates
+    float iglob = i + float( mins[0] );
+
+    // dE = dt*curl B  (1/2)
+    float dex =  0.0f; // Ex NONE
+    float dey =  C*( mesh.bz(i-1,0,0) - mesh.bz(i,0,0));
+    float dez =  C*(-mesh.by(i-1,0,0) + mesh.by(i,0,0));
+
+    float lamx = 0.5f*lambda(iglob+0.5f, 0, 0);
+    float lamy = 0.5f*lambda(iglob,      0, 0);
+    float lamz = 0.5f*lambda(iglob,      0, 0);
+
+    //mesh.ex(i,0,0) = ( mesh.ex(i,0,0)*(1.0f+lamx) + dex )/(1.0f-lamx);
+    mesh.ey(i,0,0) = ( mesh.ey(i,0,0)*(1.0f+lamy) + dey )/(1.0f-lamy);
+    mesh.ez(i,0,0) = ( mesh.ez(i,0,0)*(1.0f+lamz) + dez )/(1.0f-lamz);
+
+  }, 
+    tile.mesh_lengths[0], 
+    mesh);
+
+  UniIter::sync();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
+
+}
+
+
+
+
 /// 2D E pusher
 template<>
 void emf::FDTD2_pml<2>::push_e(emf::Tile<2>& tile)
@@ -193,6 +241,51 @@ void emf::FDTD2_pml<3>::push_e(emf::Tile<3>& tile)
 
 //--------------------------------------------------
    
+
+/// 1D B pusher
+template<>
+void emf::FDTD2_pml<1>::push_half_b(emf::Tile<1>& tile)
+{
+#ifdef GPU
+  nvtxRangePush(__PRETTY_FUNCTION__);
+#endif
+
+  Grids& mesh = tile.get_grids();
+  const float C = 0.5*tile.cfl;
+  const auto mins = tile.mins;
+
+  UniIter::iterate(
+  [=] DEVCALLABLE (int i, Grids &mesh)
+  {
+
+    // global grid coordinates
+    float iglob = i + mins[0];
+
+	  float lamx = 0.25f*lambda(iglob,      0, 0);
+	  float lamy = 0.25f*lambda(iglob+0.5f, 0, 0);
+	  float lamz = 0.25f*lambda(iglob+0.5f, 0, 0);
+      
+    float dbx = 0.0f; // Bx NONE
+    float dby = C*( mesh.ez(i+1,0,0) - mesh.ez(i,0,0));
+    float dbz = C*(-mesh.ey(i+1,0,0) + mesh.ey(i,0,0));
+
+	  //mesh.bx(i,0,0) = ( mesh.bx(i,0,0)*(1.0f+lamx) + dbx )/(1.0f-lamx); // no bx update
+	  mesh.by(i,0,0) = ( mesh.by(i,0,0)*(1.0f+lamy) + dby )/(1.0f-lamy);
+	  mesh.bz(i,0,0) = ( mesh.bz(i,0,0)*(1.0f+lamz) + dbz )/(1.0f-lamz);
+
+  }, 
+    tile.mesh_lengths[0], 
+    mesh);
+
+  UniIter::sync();
+
+#ifdef GPU
+  nvtxRangePop();
+#endif
+}
+
+
+
 /// 2D B pusher
 template<>
 void emf::FDTD2_pml<2>::push_half_b(emf::Tile<2>& tile)
@@ -321,6 +414,20 @@ void emf::FDTD2_pml<3>::push_half_b(emf::Tile<3>& tile)
 
 /// 3D E & B coupled pusher (for FFE)
 template<>
+void emf::FDTD2_pml<1>::push_eb(::ffe::Tile<1>& tile)
+{
+  assert(false);
+}
+
+template<>
+void emf::FDTD2_pml<2>::push_eb(::ffe::Tile<2>& tile)
+{
+  assert(false);
+}
+
+
+/// 3D E & B coupled pusher (for FFE)
+template<>
 void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 {
 #ifdef GPU
@@ -390,6 +497,6 @@ void emf::FDTD2_pml<3>::push_eb(::ffe::Tile<3>& tile)
 }
 
 
-//template class emf::FDTD2_pml<1>;
+template class emf::FDTD2_pml<1>;
 template class emf::FDTD2_pml<2>;
 template class emf::FDTD2_pml<3>; 
