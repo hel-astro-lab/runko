@@ -201,29 +201,28 @@ void pic::Gap<D>::update_b(
   //-------------------------------------------------- 
   // top boundary
   //if( true ) { // NOTE: some profiles need to be always on since they bleeds to left on every step
-  if( top ) {
+  //if( top ) {
+  //  #pragma omp simd
+  //  for(int i=imin; i<imax; i++) {
 
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) {
+  //    // global grid coordinates
+  //    float iglob = (D>=1) ? i + mins[0] : 0;
+  //      
+  //    //--------------------------------------------------
+  //    // magnetic field
+  //    float bx = B(Nx); 
+  //    float by = 0.0;
+  //    float bz = 0.0;
 
-      // global grid coordinates
-      float iglob = (D>=1) ? i + mins[0] : 0;
-        
-      //--------------------------------------------------
-      // magnetic field
-      float bx = B(Nx); 
-      float by = 0.0;
-      float bz = 0.0;
+  //    //--------------------------------------------------
+  //    // blending of old + new solution
+  //    auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
 
-      //--------------------------------------------------
-      // blending of old + new solution
-      auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
-
-      gs.bx(i,0,0) = s*bx + (1.0f - s)*gs.bx(i,0,0); 
-      gs.by(i,0,0) = s*by + (1.0f - s)*gs.by(i,0,0); 
-      gs.bz(i,0,0) = s*bz + (1.0f - s)*gs.bz(i,0,0); 
-    }
-  }
+  //    gs.bx(i,0,0) = s*bx + (1.0f - s)*gs.bx(i,0,0); 
+  //    gs.by(i,0,0) = s*by + (1.0f - s)*gs.by(i,0,0); 
+  //    gs.bz(i,0,0) = s*bz + (1.0f - s)*gs.bz(i,0,0); 
+  //  }
+  //}
 
 
   //--------------------------------------------------
@@ -239,14 +238,14 @@ void pic::Gap<D>::update_b(
 
   //--------------------------------------------------
   // hard-coded right/const BC
-  if( maxs[0] > Nx-1 ) {
-    #pragma omp simd
-    for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
-      gs.bx(i,0,0) = B(0.0f); 
-      gs.by(i,0,0) = 0.0; 
-      gs.bz(i,0,0) = 0.0; 
-    }
-  }
+  //if( maxs[0] > Nx-1 ) {
+  //  #pragma omp simd
+  //  for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
+  //    gs.bx(i,0,0) = B(0.0f); 
+  //    gs.by(i,0,0) = 0.0; 
+  //    gs.bz(i,0,0) = 0.0; 
+  //  }
+  //}
 
   return;
 }
@@ -299,19 +298,19 @@ void pic::Gap<D>::update_e(
   //-------------------------------------------------- 
   // top boundary
   //if( true ) { // NOTE: always on since this ends up damping j_ext deposit and needs to smoothly join continuum everywhere
-  if( top ) {
-    #pragma omp simd
-    for(int i=imin; i<imax; i++) {
+  //if( top ) {
+  //  #pragma omp simd
+  //  for(int i=imin; i<imax; i++) {
 
-      // global grid coordinates
-      float iglob = (D>=1) ? i + mins[0] : 0;
-      auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
-                                                              
-      gs.ex(i,0,0) = s*E(0.0f)+ (1.0f - s)*gs.ex(i,0,0); 
-      gs.ey(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ey(i,0,0); 
-      gs.ez(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ez(i,0,0); 
-    }
-  }
+  //    // global grid coordinates
+  //    float iglob = (D>=1) ? i + mins[0] : 0;
+  //    auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
+  //                                                            
+  //    gs.ex(i,0,0) = s*E(0.0f)+ (1.0f - s)*gs.ex(i,0,0); 
+  //    gs.ey(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ey(i,0,0); 
+  //    gs.ez(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ez(i,0,0); 
+  //  }
+  //}
 
 
   //--------------------------------------------------
@@ -327,14 +326,14 @@ void pic::Gap<D>::update_e(
 
   //--------------------------------------------------
   // hard-coded right/vacuum BC
-  if( maxs[0] > Nx-1 ) {
-    #pragma omp simd
-    for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
-      gs.ex(i,0,0) = E(0.0f); 
-      gs.ey(i,0,0) = 0.0f; 
-      gs.ez(i,0,0) = 0.0f; 
-    }
-  }
+  //if( maxs[0] > Nx-1 ) {
+  //  #pragma omp simd
+  //  for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
+  //    gs.ex(i,0,0) = E(0.0f); 
+  //    gs.ey(i,0,0) = 0.0f; 
+  //    gs.ez(i,0,0) = 0.0f; 
+  //  }
+  //}
 
   return;
 }
@@ -394,7 +393,7 @@ void pic::Gap<D>::add_jrot(
     const auto h_r = ig - std::max(1.0, 2.0*delta_left); // shift by -2 delta
 
     auto s_l = 1.0f - shape( h_l, x_left,  delta_left); 
-    auto s_r =        shape( h_r, x_right, delta_right); 
+    auto s_r = 1.0f; //shape( h_r, x_right, delta_right); 
     auto s = s_l*s_r;
 
     //--------------------------------------------------
