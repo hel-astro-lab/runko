@@ -79,31 +79,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       float yr = min( float(min(j1,j2)+1), max( float(max(j1,j2)), float(0.5f*(y1+y2)) ) );
       float zr = min( float(min(k1,k2)+1), max( float(max(k1,k2)), float(0.5f*(z1+z2)) ) );
 
-      // v2
-
-      //double x2 = con.loc(0,n);
-      //double y2 = con.loc(1,n);
-      //double z2 = con.loc(2,n);
-
-      //// previos location, x_n
-      //double x1 = x2 - u*invgam*c;
-      //double y1 = y2 - v*invgam*c;
-      //double z1 = z2 - w*invgam*c; 
-
-      ////--------------------------------------------------
-      //int i1  = D >= 1 ? floor(x1) : 0;
-      //int i2  = D >= 1 ? floor(x2) : 0;
-      //int j1  = D >= 2 ? floor(y1) : 0;
-      //int j2  = D >= 2 ? floor(y2) : 0;
-      //int k1  = D >= 3 ? floor(z1) : 0;
-      //int k2  = D >= 3 ? floor(z2) : 0;
-
-      //// relay point; +1 is equal to +\Delta x
-      //double xr = min( double(min(i1,i2)+1), max( double(max(i1,i2)), double(0.5*(x1+x2)) ) );
-      //double yr = min( double(min(j1,j2)+1), max( double(max(j1,j2)), double(0.5*(y1+y2)) ) );
-      //double zr = min( double(min(k1,k2)+1), max( double(max(k1,k2)), double(0.5*(z1+z2)) ) );
-
-
       ////--------------------------------------------------
       //// +q since - sign is already included in the Ampere's equation
       ////q = weight*qe;
@@ -122,17 +97,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
       float Wx2 = D >= 1 ? 0.5f*(x2 + xr) - i2 : 0.0f;
       float Wy2 = D >= 2 ? 0.5f*(y2 + yr) - j2 : 0.0f;
       float Wz2 = D >= 3 ? 0.5f*(z2 + zr) - k2 : 0.0f;
-
-      //// normalize locations
-      //// NOTE: done here because i/j/k needed only in the indexing after this step
-      //i1 = D >= 1 ? i1 - mins[0] : 0.0;
-      //i2 = D >= 1 ? i2 - mins[0] : 0.0;
-
-      //j1 = D >= 2 ? j1 - mins[1] : 0.0;
-      //j2 = D >= 2 ? j2 - mins[1] : 0.0;
-
-      //k1 = D >= 3 ? k1 - mins[2] : 0.0;
-      //k2 = D >= 3 ? k2 - mins[2] : 0.0;
 
      //-------------------------------------------------- 
      // check outflow
@@ -244,23 +208,6 @@ void pic::ZigZag<D,V>::solve( pic::Tile<D>& tile )
 
     UniIter::sync();
   }//end of loop over species
-
-
-  ////if( std::get<0>( tile.index ) == 20 ) {
-  //bool do_print = (679 < tile.mins[0] ) && (tile.mins[0] < 681 );
-  ////std::cout << " ---  jcur: tile: " << tile.mins[0] << " " << do_print << "\n";
-
-  ////gs.jx(-1,0,0) = 0.0f;
-  ////gs.jx(40,0,0) = 0.0f;
-
-  //if( do_print ) {
-  //    for(int i=-3; i<tile.mesh_lengths[0]+3; i++) {
-  //      std::cout << "   jcur: i: " << i << " " << gs.jx(i,0,0) << "\n";
-  //      //gs.jx(i,0,0) = -1.0f;
-  //    }
-  //}
-  //// TODO test this change, compile and run 
-
 
 
 #ifdef GPU
