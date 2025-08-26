@@ -854,7 +854,7 @@ void Tile<1>::exchange_currents(corgi::Grid<1>& grid)
   int ito=0, ifro=0;
   Tileptr tpr; 
 
-  int halo = 3; // halo region size for currents
+  const int halo = 3; // halo region size for currents
 
   auto& lhs = get_grids(); // target as a reference to update into
   const int Nx = lhs.Nx;
