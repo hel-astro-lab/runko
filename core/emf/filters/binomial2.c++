@@ -12,7 +12,7 @@
 #endif
 
 
-/// single 2D 2nd order 3-point binomial filter 
+/// single 1D 2nd order 3-point binomial filter 
 template<>
 void emf::Binomial2<1>::solve(
     emf::Tile<1>& tile)
@@ -24,7 +24,7 @@ void emf::Binomial2<1>::solve(
   auto& mesh = tile.get_grids();
 
   // halo width
-  const int H = 2; 
+  const int H = 3; 
 
   // NOTE: using tmp as scratch arrays
 
@@ -38,6 +38,7 @@ void emf::Binomial2<1>::solve(
   {
     for(int is=-1; is<=1; is++) {
       tmp(i-H,0,0) += jj(i+is-H, 0, 0)*C1[is+1];
+      //tmp(i) += jj(i+is)*C1[is+1]; // NOTE: raw 1d indexing does not work
     }
   };
     
@@ -95,7 +96,7 @@ void emf::Binomial2<2>::solve(
 
   auto& mesh = tile.get_grids();
 
-  const int H = 2; 
+  const int H = 3; 
 
   // using tmp as scratch arrays
   //
@@ -181,7 +182,7 @@ void emf::Binomial2<3>::solve(
           { {1./64., 2./64., 1./64.}, {2./64., 4./64., 2./64.}, {1./64., 2./64., 1./64.} } };
 
   auto& mesh = tile.get_grids();
-  const int H = 2; 
+  const int H = 3; 
 
 
   // make 3d loop with shared memory 
