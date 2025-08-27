@@ -264,8 +264,8 @@ void pic::Gap<D>::update_e(
   auto& gs      = tile.get_grids();
 
   // loop indices
-  const int imin = 0, imax = tile.mesh_lengths[0];
-  //const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
+  //const int imin = 0, imax = tile.mesh_lengths[0];
+  const int imin = -halo, imax = tile.mesh_lengths[0]+halo;
 
   // find top and bottom tiles and only operate on them
   bool bot = is_bot(tile);
@@ -326,14 +326,14 @@ void pic::Gap<D>::update_e(
 
   //--------------------------------------------------
   // hard-coded right/vacuum BC
-  //if( maxs[0] > Nx-1 ) {
-  //  #pragma omp simd
-  //  for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
-  //    gs.ex(i,0,0) = E(0.0f); 
-  //    gs.ey(i,0,0) = 0.0f; 
-  //    gs.ez(i,0,0) = 0.0f; 
-  //  }
-  //}
+  if( maxs[0] >= Nx ) {
+    #pragma omp simd
+    for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
+      gs.ex(i,0,0) = E(0.0f); 
+      gs.ey(i,0,0) = 0.0f; 
+      gs.ez(i,0,0) = 0.0f; 
+    }
+  }
 
   return;
 }
@@ -489,8 +489,8 @@ void pic::Gap<D>::update_j(
     //auto s_r =        shape( ig, x_right, delta_right);  // tanh profile
       
     // sharp cutoff at halos
-    float s_l = 0.0f ? ig <       halo : 1.0f; // sharp cutoff
-    float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
+    float s_l = 0.0f ? ig <  halo : 1.0f; // sharp cutoff
+    float s_r = 0.0f ? ig >= Nx   : 1.0f; // sharp cutoff
 
     // cutoff outside internal tile boundaries
     //float s_l2 = 0.0f ? i < 0   : 1.0f; // sharp cutoff
@@ -695,9 +695,6 @@ void pic::Gap<D>::delete_prtcls(
   //-------------------------------------------------- 
   // NOTE: we only enter here if boundary tile
 
-  std::map<std::string, ConPtr> cons; // shortcut for containers 
-  for(auto&& con : tile.containers) cons.emplace(con.type, &con );
-
   //-------------------------------------------------- 
   // remove outflowing particles
   for(auto&& con : tile.containers) {
@@ -708,8 +705,8 @@ void pic::Gap<D>::delete_prtcls(
       //if( (con.loc(0,n) < x_left - 2.5f ) && con.vel(0,n) < 0.0f ) con.info(n) = -1; // in-flowing
                                                                                     
       // right BC
-      if(  con.loc(0,n) > Nx - 1.0f )                              con.info(n) = -1; // outside
-      if( (con.loc(0,n) > Nx - 2.0f) && (con.vel(0,n) < 0.0f) )    con.info(n) = -1; // reflected
+      //if(  con.loc(0,n) > Nx -  1.0f ) con.info(n) = -1; // outside
+      //if( (con.loc(0,n) > Nx - 10.0f ) && (con.vel(0,n) < 0.0f) )    con.info(n) = -1; // reflected
                                                                                        
     }
   }
@@ -723,6 +720,35 @@ void pic::Gap<D>::delete_prtcls(
   return;
 }
 
+
+template<size_t D>
+void pic::Gap<D>::drive_prtcls(
+    pic::Tile<D>& tile)
+{
+
+  const float c = tile.cfl; // c = dt
+
+  //-------------------------------------------------- 
+  // add (negative) acceleration from star's gravity
+  for(auto&& con : tile.containers) {
+
+     // gravitational force is F_g = G M m/r^2 = g m
+     // surface gravity is given as g = G M /r^2 
+     // hence gravitational acceleration is a_grav = F_grav/m = G M/r^2 = g_0 (R/r)^2
+    const float& m = con.m; // prtcl mass in units of m_e
+    const float  g_m = grav_const*m;
+
+    for(size_t n=0; n<con.size(); n++) {
+                                                                                      
+      auto& x = con.loc(0,n); // x location
+      const float r = std::max(1.0f, 1.0f + (x - x_left)/gap_length); // r = R_star + height
+
+      con.vel(0,n) -= c*g_m/r/r;
+    }
+  }
+
+  return;
+}
 
 
 

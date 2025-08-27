@@ -69,6 +69,7 @@ public:
   const float wep = 1.0f; // electron/positron particle weght for injection (constant)
         float wph = 1.0f; // photon particle weght for injection (constant)
 
+  float grav_const = 0.0f;  // surface gravity acc (used in drive_prtcls)
 
   // constructor
   Gap() :
@@ -97,6 +98,8 @@ public:
   void inject_prtcls(pic::Tile<D>&  tile);
 
   void delete_prtcls(pic::Tile<D>&  tile);
+
+  void drive_prtcls(pic::Tile<D>&  tile);
   
 }; // end of class
 
