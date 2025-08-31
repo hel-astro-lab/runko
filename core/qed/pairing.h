@@ -668,7 +668,7 @@ public:
         //       are suppressed so fast beyond x > H_gap that shouldn't matter. 
         // CAVEAT: This would matter, however, for pair annihilation that should always be
         //       possible. It's rate is however tiny (we hope).
-        prob_vir_max *= shape(lx1, r_gap, 5.0f); // tanh profile with delta = 5 cells
+        prob_vir_max *= shape(lx1, r_gap, 20.0f); // tanh profile with delta = 5 cells
         //--------------------------------------------------
 
         // no targets to interact with
@@ -1468,17 +1468,17 @@ public:
             //by_vir = gs.bx(ind)*std::abs(lx1 - xborn)/r_curv;        // approximate sin\theta \approx \theta
             //by_vir = by_vir*std::pow(1.0f - std::abs(lx1/r_gap), 2);  // decrease field strength linearly with height
 
-            // turn off pair production for h/L > 1
-            // v0: sharp drop
-            //if(std::abs(lx1/r_gap) > 1.0) by_vir = 0.0f;
-
-            // v1: smoothed drop
-            by_vir *= shape(lx1, r_gap, 5.0f); // tanh profile with delta = 5 cells
-
           } else if(iptr->name == "synchrotron") {
             float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
             by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
           }
+
+          // turn off pair production for h/L > 1
+          // v0: sharp drop
+          //if(std::abs(lx1/r_gap) > 1.0) by_vir = 0.0f;
+
+          // v1: smoothed drop
+          by_vir *= shape(lx1, r_gap, 20.0f); // tanh profile with delta = 5 cells
         }
 
         const float ex = gs.ex(ind); 
