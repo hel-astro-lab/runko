@@ -654,8 +654,22 @@ public:
         float prob_vir_max = 0.0;
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]; 
 
+
+        //--------------------------------------------------
         // no interactions allowed outside the gap
-        if((std::abs(lx1/r_gap) > 1.0)) continue;
+        // v0; sharp cutoff
+        //if((std::abs(lx1/r_gap) > 1.0)) continue;
+
+        // v1: smoothed drop
+        // NOTE: currently this suppresses all interactions. 
+        //       Should it only suppress 1) two-photon pair creation or 2) Compton?
+        //       Or 3) reduce photon target densities for whatever reaction?
+        // REASONING: In theory, yes but, in practice, both Compton and pair-creation 
+        //       are suppressed so fast beyond x > H_gap that shouldn't matter. 
+        // CAVEAT: This would matter, however, for pair annihilation that should always be
+        //       possible. It's rate is however tiny (we hope).
+        prob_vir_max *= shape(lx1, r_gap, 5.0f); // tanh profile with delta = 5 cells
+        //--------------------------------------------------
 
         // no targets to interact with
         if(prob_vir_max < EPS) continue;
@@ -669,7 +683,7 @@ public:
 
         // exponential waiting time between interactions
         float t_free = -log( rand() )*prob_norm/(prob_vir_max*w1); //NOTE w1 here
-                                                                    //
+                                                                      
         //if( t_free > 1.0) {
         //if( true ) {
         //  std::cout<< "t_free: " << t_free << " N_Q/p_int: " << prob_norm/prob_vir_max << std::endl;
