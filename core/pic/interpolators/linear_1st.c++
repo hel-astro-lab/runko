@@ -10,7 +10,7 @@
 
 
 
-DEVCALLABLE inline double _lerp(
+DEVCALLABLE inline float _lerp(
       float c000, float c100, float c010, float c110,
       float c001, float c101, float c011, float c111,
       float dx, float dy, float dz) 
