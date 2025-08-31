@@ -21,42 +21,42 @@ void pic::BorisPusher<D,V>::push_container(
   nvtxRangePush(__PRETTY_FUNCTION__);
 #endif
 
-  const double c  = tile.cfl;
-  const double qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
+  const float c  = tile.cfl;
+  const float qm = sign(con.q)/con.m; // q_s/m_s (sign only because fields are in units of q)
 
   // loop over particles
   UniIter::iterate([=] DEVCALLABLE (size_t n, pic::ParticleContainer<D>& con){
-    double vel0n = con.vel(0,n)*c;
-    double vel1n = con.vel(1,n)*c;
-    double vel2n = con.vel(2,n)*c;
+    float vel0n = con.vel(0,n)*c;
+    float vel1n = con.vel(1,n)*c;
+    float vel2n = con.vel(2,n)*c;
 
     // read particle-specific fields
-    double ex0 = ( con.ex(n) + this->get_ex_ext(0,0,0) )*0.5*qm;
-    double ey0 = ( con.ey(n) + this->get_ey_ext(0,0,0) )*0.5*qm;
-    double ez0 = ( con.ez(n) + this->get_ez_ext(0,0,0) )*0.5*qm;
+    float ex0 = ( con.ex(n) + this->get_ex_ext(0,0,0) )*0.5*qm;
+    float ey0 = ( con.ey(n) + this->get_ey_ext(0,0,0) )*0.5*qm;
+    float ez0 = ( con.ez(n) + this->get_ez_ext(0,0,0) )*0.5*qm;
 
-    double bx0 = ( con.bx(n) + this->get_bx_ext(0,0,0) )*0.5*qm/c;
-    double by0 = ( con.by(n) + this->get_by_ext(0,0,0) )*0.5*qm/c;
-    double bz0 = ( con.bz(n) + this->get_bz_ext(0,0,0) )*0.5*qm/c;
+    float bx0 = ( con.bx(n) + this->get_bx_ext(0,0,0) )*0.5*qm/c;
+    float by0 = ( con.by(n) + this->get_by_ext(0,0,0) )*0.5*qm/c;
+    float bz0 = ( con.bz(n) + this->get_bz_ext(0,0,0) )*0.5*qm/c;
 
     //--------------------------------------------------
     // Boris algorithm
 
     // first half electric acceleration
-    double u0 = vel0n + ex0;
-    double v0 = vel1n + ey0;
-    double w0 = vel2n + ez0;
+    float u0 = vel0n + ex0;
+    float v0 = vel1n + ey0;
+    float w0 = vel2n + ez0;
 
     // first half magnetic rotation
-    double ginv = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
+    float ginv = c/sqrt(c*c + u0*u0 + v0*v0 + w0*w0);
     bx0 *= ginv;
     by0 *= ginv;
     bz0 *= ginv;
 
-    double f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
-    double u1 = (u0 + v0*bz0 - w0*by0)*f;
-    double v1 = (v0 + w0*bx0 - u0*bz0)*f;
-    double w1 = (w0 + u0*by0 - v0*bx0)*f;
+    float f = 2.0/(1.0 + bx0*bx0 + by0*by0 + bz0*bz0);
+    float u1 = (u0 + v0*bz0 - w0*by0)*f;
+    float v1 = (v0 + w0*bx0 - u0*bz0)*f;
+    float w1 = (w0 + u0*by0 - v0*bx0)*f;
 
     // second half of magnetic rotation & electric acceleration
     u0 = u0 + v1*bz0 - w1*by0 + ex0;
