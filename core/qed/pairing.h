@@ -13,6 +13,7 @@
 #include "core/pic/tile.h"
 #include "tools/sample_arrays.h"
 #include "tools/linlogspace.h"
+#include "tools/staggered_grid.h"
 
 #ifdef DEBUG
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
@@ -29,6 +30,7 @@ namespace qed {
   using std::min;
   using std::max;
 
+  using toolbox::shape; // tanh function
 
 
 // duplicate particle info into fresh variables
@@ -1451,7 +1453,13 @@ public:
             // more complicated v1 that should be numerically more stable and has radius dependency
             //by_vir = gs.bx(ind)*std::abs(lx1 - xborn)/r_curv;        // approximate sin\theta \approx \theta
             //by_vir = by_vir*std::pow(1.0f - std::abs(lx1/r_gap), 2);  // decrease field strength linearly with height
-            if(std::abs(lx1/r_gap) > 1.0) by_vir = 0.0f;             // turn off pair production for h/L > 0.9
+
+            // turn off pair production for h/L > 1
+            // v0: sharp drop
+            //if(std::abs(lx1/r_gap) > 1.0) by_vir = 0.0f;
+
+            // v1: smoothed drop
+            by_vir *= shape(lx1, r_gap, 5.0f); // tanh profile with delta = 5 cells
 
           } else if(iptr->name == "synchrotron") {
             float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
@@ -1577,12 +1585,10 @@ public:
               float ncop = 0.0;
               float z1 = rand();
 
-              float ly1vir = ly1;
-              if (use_vir_curvature){
-                  ly1vir = lx1; //Saving the x-value of the created photon for 1D calculation
-              }
+              //saving the x-value of the created photon for 1D calculation if virtual curv used
+              float ly1vir = use_vir_curvature ? lx1 : ly1;
 
-              if(use_vir_curvature && lx1 > r_gap) z1 = n4 + 0.5; // prevent emission beyond gap size
+              //if(use_vir_curvature && lx1 > r_gap) z1 = n4 + 0.5; // prevent emission beyond gap size
 
               while(n4 > z1 + ncop) {
                 cons[t4]->add_particle( {{lx1, ly1vir, lz1}}, {{ux4, uy4, uz4}}, w4);
