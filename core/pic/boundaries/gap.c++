@@ -284,10 +284,10 @@ void pic::Gap<D>::update_e(
       // blending of boundary condition + active solution
 
       // sharp cutoff
-      auto s = h < 0 ? 1.0f : 0.0f; // here h=0 is the first "real" cell with dynamic E field
+      //auto s = h < 0 ? 1.0f : 0.0f; // here h=0 is the first "real" cell with dynamic E field
 
       //// height smoothing parameter
-      //auto s = shape( h, 0.0, delta_left); 
+      auto s = shape( h, 0.0, delta_left); 
 
       gs.ex(i,0,0) = s*E(0.0f) + (1.0f - s)*gs.ex(i,0,0); 
       gs.ey(i,0,0) = s*0.0f    + (1.0f - s)*gs.ey(i,0,0); 
@@ -323,6 +323,7 @@ void pic::Gap<D>::update_e(
       gs.ez(i,0,0) = 0.0f; 
     }
   }
+
 
   //--------------------------------------------------
   // hard-coded right/vacuum BC
@@ -433,6 +434,9 @@ void pic::Gap<D>::add_jext(
     //float jy = 0.0f;
     //float jz = 0.0f;
 
+    //--------------------------------------------------
+    // various kinds of suppressions at the grid edges
+    //
     // suppress current at boundaries; double tanh profile
     //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
     //auto s_r =        shape( ig, x_right, delta_right); 
@@ -440,13 +444,18 @@ void pic::Gap<D>::add_jext(
     // sharp cutoff at halos
     //float s_l = 0.0f ? ig < halo : 1.0f; // sharp cutoff
     //float s_r = 0.0f ? ig >= Nx - halo : 1.0f; // sharp cutoff
-
+      
     //auto s_l = 1.0f - shape( ig, halo,    2); 
     //auto s_r =        shape( ig, Nx-halo, 2); 
-    //auto s = s_l*s_r;
+
+    //--------------------------------------------------
+    float s_l = 0.0f ? ig < x_left : 1.0f; // sharp cutoff
+    float s_r = 1.0f; // NOTE: do nothing on the right edge
+
+    auto s = s_l*s_r;
       
     //-------------------------------------------------- 
-    auto s = 1.0f; // NOTE: no smoothing
+    //auto s = 1.0f; // NOTE: no smoothing
 
     gs.jx(i,0,0) += jx*s; // external current 
   }
@@ -460,6 +469,7 @@ template<size_t D>
 void pic::Gap<D>::update_j(
   pic::Tile<D>& tile)
 {
+  // NOTE: this function is only called when filtering to set grid edge boundaries
 
   // tile limits
   auto mins = tile.mins;
@@ -478,33 +488,73 @@ void pic::Gap<D>::update_j(
   if(!(top || bot)) return;
 
   // set current
-  #pragma omp simd
-  for(int i=imin; i<imax; i++) {
+  //#pragma omp simd
+  //for(int i=imin; i<imax; i++) {
 
-    // global grid coordinates
-    float ig = (D>=1) ? i + mins[0] : 0;
+  //  // global grid coordinates
+  //  float ig = (D>=1) ? i + mins[0] : 0;
 
-    // suppress current at boundaries; double tanh profile
-    //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
-    //auto s_r =        shape( ig, x_right, delta_right);  // tanh profile
-      
-    // sharp cutoff at halos
-    float s_l = 0.0f ? ig <  halo : 1.0f; // sharp cutoff
-    float s_r = 0.0f ? ig >= Nx   : 1.0f; // sharp cutoff
+  //  // suppress current at boundaries; double tanh profile
+  //  //auto s_l = 1.0f - shape( ig, x_left,  delta_left); 
+  //  //auto s_r =        shape( ig, x_right, delta_right);  // tanh profile
+  //    
+  //  // sharp cutoff at halos
+  //  float s_l = 0.0f ? ig <  halo : 1.0f; // sharp cutoff
+  //  float s_r = 0.0f ? ig >= Nx   : 1.0f; // sharp cutoff
 
-    // cutoff outside internal tile boundaries
-    //float s_l2 = 0.0f ? i < 0   : 1.0f; // sharp cutoff
-    //float s_r2 = 0.0f ? i >= Nx : 1.0f; // sharp cutoff
-                                                 
-    // combine
-    auto s  = s_l*s_r; // s now looks like 0 -> 1 -> 0
-    //     s *= s_l2*s_r2; // s now looks like 0 -> 1 -> 0
+  //  // cutoff outside internal tile boundaries
+  //  //float s_l2 = 0.0f ? i < 0   : 1.0f; // sharp cutoff
+  //  //float s_r2 = 0.0f ? i >= Nx : 1.0f; // sharp cutoff
+  //                                               
+  //  // combine
+  //  auto s  = s_l*s_r; // s now looks like 0 -> 1 -> 0
+  //  //     s *= s_l2*s_r2; // s now looks like 0 -> 1 -> 0
 
-    // suppression of current at the boundaries
-    gs.jx(i,0,0) *= s;
-    gs.jy(i,0,0) *= s;
-    gs.jz(i,0,0) *= s;
+  //  // suppression of current at the boundaries
+  //  gs.jx(i,0,0) *= s;
+  //  gs.jy(i,0,0) *= s;
+  //  gs.jz(i,0,0) *= s;
+  //}
+
+
+  //--------------------------------------------------
+  // hard-coded left (star) BC
+  if( mins[0] < 1 ) {
+    int i_l = x_left - 5; // location of the last point where current can be deposited
+    float jx_bc = gs.jx(i_l,0,0); // value at the edge
+
+    //std::cout << " j_upd L: " 
+    //  << " i-1: " << gs.jx(i_l-1,0,0)
+    //  << " i  : " << gs.jx(i_l  ,0,0)
+    //  << " i+1: " << gs.jx(i_l+1,0,0)
+    //  << "\n";
+
+    for(int i=-halo; i<i_l; i++) {
+      gs.ex(i,0,0) = jx_bc;
+      gs.ey(i,0,0) = 0.0f; 
+      gs.ez(i,0,0) = 0.0f; 
+    }
   }
+
+  //--------------------------------------------------
+  // hard-coded right/vacuum BC
+  if( maxs[0] >= Nx ) {
+    int i_r = tile.mesh_lengths[0];
+    float jx_bc = gs.jx(i_r,0,0); // value at the edge
+                            
+    //std::cout << " j_upd R: " 
+    //  << " i-1: " << gs.jx(i_r-1,0,0)
+    //  << " i  : " << gs.jx(i_r  ,0,0)
+    //  << " i+1: " << gs.jx(i_r+1,0,0)
+    //  << "\n";
+
+    for(int i=i_r; i<=tile.mesh_lengths[0]+halo; i++) {
+      gs.jx(i,0,0) = jx_bc; 
+      gs.jy(i,0,0) = 0.0f; 
+      gs.jz(i,0,0) = 0.0f; 
+    }
+  }
+
 
   return;
 }
