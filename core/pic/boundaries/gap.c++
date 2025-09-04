@@ -296,19 +296,30 @@ void pic::Gap<D>::update_e(
   }
 
   //-------------------------------------------------- 
-  // top boundary
-  //if( true ) { // NOTE: always on since this ends up damping j_ext deposit and needs to smoothly join continuum everywhere
-  //if( top ) {
-  //  #pragma omp simd
-  //  for(int i=imin; i<imax; i++) {
+  // top boundary; smooth w/ tanh profile
+  if( top ) {
+    #pragma omp simd
+    for(int i=imin; i<imax; i++) {
+      // global grid coordinates
+      float iglob = (D>=1) ? i + mins[0] : 0;
+      auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
+                                                              
+      gs.ex(i,0,0) = s*E(0.0f)+ (1.0f - s)*gs.ex(i,0,0); 
+      gs.ey(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ey(i,0,0); 
+      gs.ez(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ez(i,0,0); 
+    }
+  }
 
-  //    // global grid coordinates
-  //    float iglob = (D>=1) ? i + mins[0] : 0;
-  //    auto s  = 1.0f - shape( iglob, x_right, delta_right); // height smoothing parameter
-  //                                                            
-  //    gs.ex(i,0,0) = s*E(0.0f)+ (1.0f - s)*gs.ex(i,0,0); 
-  //    gs.ey(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ey(i,0,0); 
-  //    gs.ez(i,0,0) = s*(0.0f) + (1.0f - s)*gs.ez(i,0,0); 
+  // copy values from last point
+  //if( maxs[0] >= Nx ) {
+  //  //--------------------------------------------------
+  //  // copy the last "real" value to the rest of the grid
+  //  int i_r = x_right - mins[0]; 
+  //  assert(i_r >= 0); // check that we are on the right tile
+  //  //float ex_bc = gs.ex(i_r,0,0); // value at the edge
+  //    
+  //  for(int i=i_r+1; i<=tile.mesh_lengths[0]+halo; i++) {
+  //    gs.ex(i,0,0) = 0.0f; //ex_bc; 
   //  }
   //}
 
@@ -329,7 +340,7 @@ void pic::Gap<D>::update_e(
   // hard-coded right/vacuum BC
   if( maxs[0] >= Nx ) {
     #pragma omp simd
-    for(int i=tile.mesh_lengths[0]-halo; i<=tile.mesh_lengths[0]+halo; i++) {
+    for(int i=tile.mesh_lengths[0]; i<=tile.mesh_lengths[0]+halo; i++) {
       gs.ex(i,0,0) = E(0.0f); 
       gs.ey(i,0,0) = 0.0f; 
       gs.ez(i,0,0) = 0.0f; 
@@ -390,12 +401,14 @@ void pic::Gap<D>::add_jrot(
 
     //--------------------------------------------------
     // ver 1; smooth tanh profile inside the magnetosphere
-    const auto h_l = ig + std::max(1.0, 2.0*delta_left); // shift by +2 delta
-    const auto h_r = ig - std::max(1.0, 2.0*delta_left); // shift by -2 delta
+    //const auto h_l = ig + std::max(1.0, 2.0*delta_left); // shift by +2 delta
+    //const auto h_r = ig - std::max(1.0, 2.0*delta_left); // shift by -2 delta
 
-    auto s_l = 1.0f - shape( h_l, x_left,  delta_left); 
-    auto s_r = 1.0f; //shape( h_r, x_right, delta_right); 
-    auto s = s_l*s_r;
+    //auto s_l = 1.0f - shape( h, x_left,  delta_left); 
+    //auto s_r = 1.0f; //shape( h_r, x_right, delta_right); 
+    //auto s = s_l*s_r;
+      
+    auto s = 1.0f; // no boundary smoothing
 
     //--------------------------------------------------
     // add to the current
@@ -450,8 +463,7 @@ void pic::Gap<D>::add_jext(
 
     //--------------------------------------------------
     float s_l = 0.0f ? ig < x_left : 1.0f; // sharp cutoff
-    float s_r = 1.0f; // NOTE: do nothing on the right edge
-
+    float s_r = 1.0f; //? ig > x_right: 1.0f; // no cutoff
     auto s = s_l*s_r;
       
     //-------------------------------------------------- 
@@ -519,8 +531,10 @@ void pic::Gap<D>::update_j(
 
   //--------------------------------------------------
   // hard-coded left (star) BC
+  //if( bot ) {
   if( mins[0] < 1 ) {
     int i_l = x_left - 5; // location of the last point where current can be deposited
+    assert(i_l >= 0); // check that we are on the right tile
     float jx_bc = gs.jx(i_l,0,0); // value at the edge
 
     //std::cout << " j_upd L: " 
@@ -538,8 +552,11 @@ void pic::Gap<D>::update_j(
 
   //--------------------------------------------------
   // hard-coded right/vacuum BC
+  //if( top ) {
   if( maxs[0] >= Nx ) {
-    int i_r = tile.mesh_lengths[0];
+    int i_r = x_right - mins[0]; 
+    assert(i_r >= 0); // check that we are on the right tile
+
     float jx_bc = gs.jx(i_r,0,0); // value at the edge
                             
     //std::cout << " j_upd R: " 
@@ -548,7 +565,7 @@ void pic::Gap<D>::update_j(
     //  << " i+1: " << gs.jx(i_r+1,0,0)
     //  << "\n";
 
-    for(int i=i_r; i<=tile.mesh_lengths[0]+halo; i++) {
+    for(int i=i_r+1; i<=tile.mesh_lengths[0]+halo; i++) {
       gs.jx(i,0,0) = jx_bc; 
       gs.jy(i,0,0) = 0.0f; 
       gs.jz(i,0,0) = 0.0f; 
