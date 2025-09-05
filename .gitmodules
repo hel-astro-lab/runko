@@ -20,5 +20,5 @@
 	branch = master
 [submodule "external/tyvi"]
 	path = external/tyvi
-	url = git@github.com:hel-astro-lab/tyvi.git
+	url = https://github.com/hel-astro-lab/tyvi
 	branch = main
