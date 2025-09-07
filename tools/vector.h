@@ -37,17 +37,13 @@ struct VecD {
     }(std::make_index_sequence<D>());
   };
 
-  template<typename Self>
-  constexpr auto& operator()(this Self& self, const std::size_t ind)
-  {
-    return self.data[ind];
-  }
+  constexpr auto& operator()(const std::size_t ind) & { return this->data[ind]; }
 
-  template<typename Self>
-  constexpr auto& operator[](this Self& self, const std::size_t ind)
-  {
-    return self.data[ind];
-  }
+  constexpr auto& operator()(const std::size_t ind) const& { return this->data[ind]; }
+
+  constexpr auto& operator[](const std::size_t ind) & { return this->data[ind]; }
+
+  constexpr auto& operator[](const std::size_t ind) const& { return this->data[ind]; }
 
   constexpr VecD() = default;
 
@@ -121,24 +117,42 @@ struct MatD {
   };
 
   /// Column major order.
-  constexpr auto mds(this auto& self)
+  constexpr auto mds() &
   {
-    static constexpr bool is_const =
-      std::is_const_v<std::remove_reference_t<decltype(self)>>;
-    using TT = std::conditional_t<is_const, const T, T>;
-    return tyvi::sstd::geometric_mdspan<TT, 2, D, std::layout_left>(self.data.data());
+    static constexpr bool is_const = false;
+    using TT                       = std::conditional_t<is_const, const T, T>;
+    return tyvi::sstd::geometric_mdspan<TT, 2, D, std::layout_left>(this->data.data());
+  }
+
+  constexpr auto mds() const&
+  {
+    static constexpr bool is_const = true;
+    using TT                       = std::conditional_t<is_const, const T, T>;
+    return tyvi::sstd::geometric_mdspan<TT, 2, D, std::layout_left>(this->data.data());
   }
 
   /// Column major order.
-  constexpr auto& operator[](this auto& self, const size_t i, const size_t j)
+  constexpr auto& operator[](const size_t i, const size_t j) &
   {
-    return self.mds()[i, j];
+    return this->mds()[i, j];
   }
 
   /// Column major order.
-  constexpr auto& operator()(this auto& self, const size_t i, const size_t j)
+  constexpr auto& operator[](const size_t i, const size_t j) const&
   {
-    return self.mds()[i, j];
+    return this->mds()[i, j];
+  }
+
+  /// Column major order.
+  constexpr auto& operator()(const size_t i, const size_t j) &
+  {
+    return this->mds()[i, j];
+  }
+
+  /// Column major order.
+  constexpr auto& operator()(const size_t i, const size_t j) const&
+  {
+    return this->mds()[i, j];
   }
 
   constexpr MatD() = default;

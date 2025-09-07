@@ -79,16 +79,16 @@ public:
   std::array<std::vector<value_type>, 3> get_velocities();
 
   [[nodiscard]]
-  auto span_pos(this auto& self)
-  {
-    return self.pos_.span();
-  }
+  auto span_pos() &;
 
   [[nodiscard]]
-  auto span_vel(this auto& self)
-  {
-    return self.vel_.span();
-  }
+  auto span_pos() const&;
+
+  [[nodiscard]]
+  auto span_vel() &;
+
+  [[nodiscard]]
+  auto span_vel() const&;
 
   /// Wraps coordinates outside of given extents.
   void wrap_positions(std::array<value_type, 3> mins, std::array<value_type, 3> maxs);
@@ -384,20 +384,39 @@ template<std::ranges::forward_range R>
   // Below is the ugly hack.
   // See beginning of the function for explanation why it is needed.
 
-  [&]<std::size_t I>(
-    this const auto& self,
-    std::integral_constant<std::size_t, I>) -> void {
-    if constexpr(I <= Nmax) {
-      if(Nspans == I) {
-        // Ugly syntax until C++26.
-        [&]<std::size_t... J>(std::index_sequence<J...>) {
-          tyvi::when_all(works[J]...).wait();
-        }(std::make_index_sequence<I>());
-      } else {
-        self(std::integral_constant<std::size_t, I + 1> {});
-      }
-    }
-  }(std::integral_constant<std::size_t, 1uz> {});
+  auto hack = [&]<std::size_t... I>(std::index_sequence<I...>) {
+    tyvi::when_all(works[I]...).wait();
+  };
+
+  switch(Nspans) {
+    case 1: hack(std::make_index_sequence<1>()); break;
+    case 2: hack(std::make_index_sequence<2>()); break;
+    case 3: hack(std::make_index_sequence<3>()); break;
+    case 4: hack(std::make_index_sequence<4>()); break;
+    case 5: hack(std::make_index_sequence<5>()); break;
+    case 6: hack(std::make_index_sequence<6>()); break;
+    case 7: hack(std::make_index_sequence<7>()); break;
+    case 8: hack(std::make_index_sequence<8>()); break;
+    case 9: hack(std::make_index_sequence<9>()); break;
+    case 10: hack(std::make_index_sequence<10>()); break;
+    case 11: hack(std::make_index_sequence<11>()); break;
+    case 12: hack(std::make_index_sequence<12>()); break;
+    case 13: hack(std::make_index_sequence<13>()); break;
+    case 14: hack(std::make_index_sequence<14>()); break;
+    case 15: hack(std::make_index_sequence<15>()); break;
+    case 16: hack(std::make_index_sequence<16>()); break;
+    case 17: hack(std::make_index_sequence<17>()); break;
+    case 18: hack(std::make_index_sequence<18>()); break;
+    case 19: hack(std::make_index_sequence<19>()); break;
+    case 20: hack(std::make_index_sequence<20>()); break;
+    case 21: hack(std::make_index_sequence<21>()); break;
+    case 22: hack(std::make_index_sequence<22>()); break;
+    case 23: hack(std::make_index_sequence<23>()); break;
+    case 24: hack(std::make_index_sequence<24>()); break;
+    case 25: hack(std::make_index_sequence<25>()); break;
+    case 26: hack(std::make_index_sequence<26>()); break;
+    case 27: hack(std::make_index_sequence<27>()); break;
+  };
 }
 
 
@@ -441,6 +460,30 @@ void
         vel_mds[idx][tidx]  = tmp_vel_mds[i][tidx];
       })
     .wait();
+}
+
+inline auto
+  ParticleContainer::span_pos() &
+{
+  return this->pos_.span();
+}
+
+inline auto
+  ParticleContainer::span_pos() const&
+{
+  return this->pos_.span();
+}
+
+inline auto
+  ParticleContainer::span_vel() &
+{
+  return this->vel_.span();
+}
+
+inline auto
+  ParticleContainer::span_vel() const&
+{
+  return this->vel_.span();
 }
 
 

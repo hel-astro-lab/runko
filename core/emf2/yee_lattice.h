@@ -233,20 +233,23 @@ public:
   void subtract_J_from_E();
 
   [[nodiscard]]
-  auto span_E(this auto& self)
-  {
-    return self.E_.span();
-  }
+  auto span_E() &;
+
   [[nodiscard]]
-  auto span_B(this auto& self)
-  {
-    return self.B_.span();
-  }
+  auto span_E() const&;
+
   [[nodiscard]]
-  auto span_J(this auto& self)
-  {
-    return self.J_.span();
-  }
+  auto span_B() &;
+
+  [[nodiscard]]
+  auto span_B() const&;
+
+  [[nodiscard]]
+  auto span_J() &;
+
+  [[nodiscard]]
+  auto span_J() const&;
+
 
   /// Set E subregion specified by dir from other tile.
   void set_E_in_subregion(dir_type dir, const YeeLattice& other);
@@ -322,5 +325,42 @@ public:
   [[nodiscard]] YeeLattice::VecGridMDS::mapping_type
     grid_mapping_with_halo() const noexcept;
 };
+
+inline auto
+  YeeLattice::span_E() &
+{
+  return this->E_.span();
+}
+
+inline auto
+  YeeLattice::span_E() const&
+{
+  return this->E_.span();
+}
+
+inline auto
+  YeeLattice::span_B() &
+{
+  return this->B_.span();
+}
+
+inline auto
+  YeeLattice::span_B() const&
+{
+  return this->B_.span();
+}
+
+inline auto
+  YeeLattice::span_J() &
+{
+  return this->J_.span();
+}
+
+inline auto
+  YeeLattice::span_J() const&
+{
+  return this->J_.span();
+}
+
 
 }  // namespace emf2
