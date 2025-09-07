@@ -147,7 +147,7 @@ struct ParticleContainer::specific_span {
 };
 
 template<std::convertible_to<const ParticleContainer&>... T>
-void
+inline void
   ParticleContainer::add_particles(const T&... others)
 {
   if(((&static_cast<const ParticleContainer&>(others) == this) or ...)) {
@@ -236,7 +236,7 @@ void
 
 template<std::ranges::forward_range R>
   requires std::convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState>
-void
+inline void
   ParticleContainer::add_particles(const R& new_particles)
 {
   const auto N = static_cast<std::size_t>(std::ranges::distance(new_particles));
@@ -265,7 +265,7 @@ void
 template<std::ranges::forward_range R>
   requires std::
     convertible_to<std::ranges::range_reference_t<R>, ParticleContainer::specific_span>
-  ParticleContainer::ParticleContainer(const R& spans)
+  inline ParticleContainer::ParticleContainer(const R& spans)
 {
   namespace rn = std::ranges;
   namespace rv = std::views;
@@ -420,7 +420,7 @@ template<std::ranges::forward_range R>
 }
 
 
-void
+inline void
   ParticleContainer::sort(pic2::score_function<value_type> auto&& f)
 {
   namespace rn                       = std::ranges;
