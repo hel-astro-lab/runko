@@ -142,10 +142,12 @@ class Simulation:
                         handshake_mode = _virtual_tile_sync_handshake_mode(mode)
 
                         if handshake_mode:
+                            self._logger.debug("Starting a handshake.")
                             self._tile_grid._corgi_grid.recv_data(handshake_mode)
                             self._tile_grid._corgi_grid.send_data(handshake_mode)
                             self._tile_grid._corgi_grid.wait_data(handshake_mode)
 
+                        self._logger.debug("Starting virtual tile sync.")
                         self._tile_grid._corgi_grid.recv_data(mode.value)
                         self._tile_grid._corgi_grid.send_data(mode.value)
                         self._tile_grid._corgi_grid.wait_data(mode.value)
