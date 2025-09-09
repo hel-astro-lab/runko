@@ -372,14 +372,15 @@ template<std::ranges::forward_range R>
       });
   };
 
+  using work_type = std::remove_cvref_t<decltype(handle_span(
+    std::declval<ParticleContainer::specific_span>(),
+    std::declval<std::array<std::size_t, 2>>()))>;
 
-  // views are lazy ==> work is not started
-  const auto not_started_works =
-    rv::zip(spans, begins, ends) | rv::transform([&](const auto& t) {
-      return handle_span(std::get<0>(t), { std::get<1>(t), std::get<2>(t) });
-    });
-
-  auto works = std::vector(not_started_works.begin(), not_started_works.end());
+  auto works = std::vector<work_type>();
+  works.reserve(begins.size());
+  for(auto i = 0uz; i < begins.size(); ++i) {
+    works.push_back(handle_span(spans[i], { begins[i], ends[i] }));
+  }
 
   // Below is the ugly hack.
   // See beginning of the function for explanation why it is needed.

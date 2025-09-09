@@ -226,23 +226,15 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
     return temp;
   }();
 
-  namespace rv = std::views;
-  const auto output_view =
-    rv::zip(
-      present_subregion_indices,
-      present_subregion_begins,
-      present_subregion_ends) |
-    rv::transform([&, this](const auto& x) {
-      return std::pair { subregion_index_to_dir(std::get<0>(x)),
-                         ParticleContainer::span { .begin = std::get<1>(x),
-                                                   .end   = std::get<2>(x) } };
-    });
+  std::map<std::array<int, 3>, ParticleContainer::span> m {};
 
-
-  return { std::map<std::array<int, 3>, ParticleContainer::span>(
-             output_view.begin(),
-             output_view.end()),
-           std::move(permuted_pcontainer) };
+  for(auto i = 0uz; i < present_subregion_indices.size(); ++i) {
+    m.insert_or_assign(
+      subregion_index_to_dir(present_subregion_indices[i]),
+      ParticleContainer::span { present_subregion_begins[i],
+                                present_subregion_ends[i] });
+  }
+  return { std::move(m), std::move(permuted_pcontainer) };
 }
 
 }  // namespace pic2
