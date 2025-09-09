@@ -50,6 +50,7 @@ class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
   ParticlePusher particle_pusher_;
   FieldInterpolator field_interpolator_;
   CurrentDepositer current_depositer_;
+  std::map<std::size_t, std::size_t> amount_of_particles_to_be_send_;
   std::map<std::size_t, std::size_t> amount_of_particles_to_be_received_;
 
   /// particle type -> (direction -> span to subregion_particle_buffs_)

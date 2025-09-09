@@ -10,19 +10,25 @@
 namespace {
 
 constexpr int
-  particle_tag(const int tag, const auto particle_ordinal)
+  particle_tag(
+    const int tag,
+    const auto particle_ordinal,
+    const std::size_t particles_in_total)
 {
-  return static_cast<int>(particle_ordinal) + tag;
+  return static_cast<int>(particle_ordinal + particles_in_total * tag);
 }
 
 enum class particle_data_type { pos, vel };
 
 template<particle_data_type data_type>
 constexpr int
-  particle_data_tag(const int tag, const auto particle_ordinal)
+  particle_data_tag(
+    const int tag,
+    const auto particle_ordinal,
+    const std::size_t particles_in_total)
 {
   static constexpr auto x = static_cast<int>(data_type == particle_data_type::pos);
-  return 2 * static_cast<int>(particle_ordinal) + tag + x;
+  return static_cast<int>(x + 2 * particle_ordinal + 2 * particles_in_total * tag);
 }
 
 }  // namespace
@@ -62,7 +68,11 @@ std::vector<mpi4cpp::mpi::request>
     case comm_mode::number_of_particles: {
       auto comms = std::vector<mpi4cpp::mpi::request>();
       for(const auto& [key, value]: this->particle_buffs_) {
-        comms.push_back(comm.isend(dest, particle_tag(tag, key), value.size()));
+        this->amount_of_particles_to_be_send_[key] = value.size();
+        comms.push_back(comm.isend(
+          dest,
+          particle_tag(tag, key, this->particle_buffs_.size()),
+          this->amount_of_particles_to_be_send_[key]));
       }
       return comms;
     }
@@ -71,10 +81,16 @@ std::vector<mpi4cpp::mpi::request>
       for(const auto& [key, value]: this->particle_buffs_) {
         comms.push_back(make_isend(
           value.span_pos(),
-          particle_data_tag<particle_data_type::pos>(tag, key)));
+          particle_data_tag<particle_data_type::pos>(
+            tag,
+            key,
+            this->particle_buffs_.size())));
         comms.push_back(make_isend(
           value.span_vel(),
-          particle_data_tag<particle_data_type::vel>(tag, key)));
+          particle_data_tag<particle_data_type::vel>(
+            tag,
+            key,
+            this->particle_buffs_.size())));
       }
       return comms;
     }
@@ -103,7 +119,7 @@ std::vector<mpi4cpp::mpi::request>
     for(const auto& [key, value]: this->particle_buffs_) {
       comms.push_back(comm.irecv(
         orig,
-        particle_tag(tag, key),
+        particle_tag(tag, key, this->particle_buffs_.size()),
         this->amount_of_particles_to_be_received_[key]));
     }
     return comms;
@@ -123,10 +139,16 @@ std::vector<mpi4cpp::mpi::request>
 
       comms.push_back(make_irecv(
         value.span_pos(),
-        particle_data_tag<particle_data_type::pos>(tag, key)));
+        particle_data_tag<particle_data_type::pos>(
+          tag,
+          key,
+          this->particle_buffs_.size())));
       comms.push_back(make_irecv(
         value.span_vel(),
-        particle_data_tag<particle_data_type::vel>(tag, key)));
+        particle_data_tag<particle_data_type::vel>(
+          tag,
+          key,
+          this->particle_buffs_.size())));
     }
     return comms;
   };
