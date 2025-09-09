@@ -32,7 +32,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -DDEBUG -march=native -ftree-vectorize")
 #--------------------------------------------------
 # release mode flags
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fopenmp") # common gcc
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native") # common gcc
 #set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -flto -ffp=4 -march=znver3 -mtune=znver3 -fopenmp -fsave-loopmark") // cray compiler flags
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver3 -mtune=znver3 -ftree-vectorize") # epyc rome
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all") #rome w/ output
