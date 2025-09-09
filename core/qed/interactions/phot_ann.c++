@@ -55,14 +55,14 @@ PhotAnn::pair_float PhotAnn::comp_cross_section(
     string /*t2*/, float ux2, float uy2, float uz2)
 {
 
-  Vec3 x1v(ux1, uy1, uz1);
-  Vec3 x2v(ux2, uy2, uz2);
+  Vec3<float> x1v(ux1, uy1, uz1);
+  Vec3<float> x2v(ux2, uy2, uz2);
 
   float x1 = norm(x1v); // primary photon energy
   float x2 = norm(x2v); // secondary photon energy
 
-  Vec3 om1 = x1v/x1;      // primary photon direction vector
-  Vec3 om2 = x2v/x2;      // secondary photon direction vector
+  Vec3<float> om1 = x1v/x1;      // primary photon direction vector
+  Vec3<float> om2 = x2v/x2;      // secondary photon direction vector
 
   float mu = dot(om1, om2); // cosine of angle between incident and target photon;
     // max(-1.0, min(dot(om1, om2), 1.0)) # cosine of angle between incident and target photons
@@ -111,14 +111,14 @@ void PhotAnn::interact(
   string& t2, float& ux2, float& uy2, float& uz2) 
 {
 
-  Vec3 x1v(ux1, uy1, uz1); // four-vector of photon1
-  Vec3 x2v(ux2, uy2, uz2); // four-vector of photon2
+  Vec3<float> x1v(ux1, uy1, uz1); // four-vector of photon1
+  Vec3<float> x2v(ux2, uy2, uz2); // four-vector of photon2
 
   float x1 = norm(x1v); // primary photon energy
   float x2 = norm(x2v); // secondary photon energy
 
-  Vec3 om1 = x1v/x1;      // primary photon direction vector
-  Vec3 om2 = x2v/x2;      // secondary photon direction vector
+  Vec3<float> om1 = x1v/x1;      // primary photon direction vector
+  Vec3<float> om2 = x2v/x2;      // secondary photon direction vector
 
   float mu = dot(om1, om2); // cosine of angle between incident and target photon;
 
@@ -127,12 +127,12 @@ void PhotAnn::interact(
   float s  = sqrt(x1*x1 + x2*x2 + 2.0*x1*x2*mu);
   float s0 = x1 + x2;  // #sqrt(2q) in CoM
   float q  = x1*x2*(1.0 - mu);
-  Vec3 svec = x1v + x2v; // or svec = x1*om1 + x2*om2
+  Vec3<float> svec = x1v + x2v; // or svec = x1*om1 + x2*om2
 
   //# CoM frame variables; x_c
-  Vec3 bc = svec/(-1.0f*s0);   // lorentz transform along CoM velocity vector
+  Vec3<float> bc = svec/(-1.0f*s0);   // lorentz transform along CoM velocity vector
   float gc = s0/sqrt(2.0*q); // lorentz factor of the boost; CoM vel
-  Vec3 uv = gc*bc; // com four vel
+  Vec3<float> uv = gc*bc; // com four vel
   float v2 = dot(bc,bc); // v_c^2
   //float vc = sqrt(v2);
 

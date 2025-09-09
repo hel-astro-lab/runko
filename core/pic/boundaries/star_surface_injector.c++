@@ -252,8 +252,8 @@ void pic::Star<D>::solve(
       auto epar = ( ex*bx + ey*by + ez*bz )/b;
 
       // vectors for calculation of pcap rotation velocity
-      Vec3 E(ex, ey, ez);
-      Vec3 B(bx, by, bz);
+      Vec3<float> E(ex, ey, ez);
+      Vec3<float> B(bx, by, bz);
 
       //--------------------------------------------------
       // ver 1: 
