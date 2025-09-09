@@ -246,7 +246,10 @@ void
 
     for(const auto [i, j, k]: tyvi::sstd::index_space(helper_mds)) {
       const auto n                  = m(i, j, k);
-      std::tie(xv(n), yv(n), zv(n)) = global_coordinates(i, j, k);
+      const auto gc = global_coordinates(i, j, k);
+      xv(n) = gc[0];
+      yv(n) = gc[1];
+      zv(n) = gc[2];
     }
   }
 

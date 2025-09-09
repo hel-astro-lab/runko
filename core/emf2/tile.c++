@@ -85,7 +85,7 @@ Tile<D>::Tile(
     throw std::runtime_error { "Trying to create tile outside of configured grid." };
   }
 
-  this->index = tile_indices;
+  this->index = std::tuple{tile_indices[0], tile_indices[1], tile_indices[2]};
 
   // Tile size.
   const auto [Lx, Ly, Lz] = yee_lattice_.extents_wout_halo();
