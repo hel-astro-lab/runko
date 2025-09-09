@@ -202,6 +202,9 @@ if __name__ == "__main__":
         comm.virtual_tile_sync(runko.comm_mode.pic_particle)
         comm.pairwise_moore(runko.comm_mode.pic_particle)
 
+        if simulation.lap % 5 == 0:
+            tile.sort_particles()
+
         tile.deposit_current()
         comm.virtual_tile_sync(runko.comm_mode.emf_J)
         comm.pairwise_moore(runko.comm_mode.emf_J_exchange)
