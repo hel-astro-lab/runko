@@ -180,8 +180,6 @@ if __name__ == "__main__":
             tile_grid.add_tile(tile, idx)
 
     # Initializes the simulation and returns a handle to it:
-    # - analyze and sync boundaries between mpi tasks/ranks/localities
-    # - loads virtual tiles (is there benefit of doing this explicitly?)
     simulation = tile_grid.configure_simulation(config)
 
     def sync_EB(tile, comm, io):
