@@ -1,5 +1,6 @@
 import itertools
 import logging
+import pathlib
 
 from mpi4py import MPI
 
@@ -183,6 +184,8 @@ class TileGrid:
         self._logger.info(f"simulation configured with: {config.__dict__}")
         io_config = dict(stride=1 if not config.stride else config.stride,
                          outdir="runko_output" if not config.outdir else config.outdir)
+
+        pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
         return Simulation(self,
                           Simulation._im_not_user,
