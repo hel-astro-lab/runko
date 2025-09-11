@@ -114,5 +114,13 @@ Key contributors that provided additional features and/or improvements include
    debugging
    publications
 
+.. toctree::
+   :caption: Runko module
+   :maxdepth: 2
 
+   runko-module/intro
+   runko-module/installation
+   runko-module/pic-tutorial
+   runko-module/api
+   runko-module/dev-notes
 
