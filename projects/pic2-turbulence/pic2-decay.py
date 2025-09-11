@@ -3,7 +3,6 @@ Canonical pic simulation using runko with decaying fields.
 """
 
 
-import pytools
 import runko
 import numpy as np
 import itertools
