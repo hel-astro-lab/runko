@@ -4,6 +4,9 @@ set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
+# If not set kokkos/mdspan will overwrite 20 to 23.
+set (MDSPAN_CXX_STANDARD 20)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project (
