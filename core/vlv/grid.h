@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <concepts>
 
 #include "corgi/corgi.h"
 #include "tools/deprecated/rotator.h"
@@ -23,10 +24,8 @@ class Grid :
 
 
   // Standard construction with grid size
-  template< typename... Dims,
-    typename = corgi::internals::enable_if_t< (sizeof...(Dims) == D) && 
-               corgi::internals::are_integral<Dims...>::value, void >
-  > 
+  template<typename... Dims>
+    requires (sizeof...(Dims) == D) and (std::integral<Dims> and ...)
   Grid(Dims... dims) :
     corgi::Grid<D>(dims...)
   {}

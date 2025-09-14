@@ -371,7 +371,7 @@ class emf2(unittest.TestCase):
         config.cfl = 1
         config.field_propagator = "FDTD2"
 
-        tile_grid_idx = (1, 2, 3)
+        tile_grid_idx = [1, 2, 3]
         tile = runko.emf.Tile(tile_grid_idx, config)
 
         """
