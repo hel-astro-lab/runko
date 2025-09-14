@@ -27,16 +27,15 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 #set(CMAKE_CXX_FLAGS_DEBUG "-g2 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Wno-error=unknown-pragmas -Wno-error=unused-parameter -save-temps=obj")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -DDEBUG -march=native -ftree-vectorize")
+set(CMAKE_CXX_FLAGS_DEBUG "-fopenmp -g -Og -DDEBUG")
 
 #--------------------------------------------------
 # release mode flags
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native") # common gcc
+set(CMAKE_CXX_FLAGS_RELEASE "-fopenmp -O3")
 #set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -flto -ffp=4 -march=znver3 -mtune=znver3 -fopenmp -fsave-loopmark") // cray compiler flags
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver3 -mtune=znver3 -ftree-vectorize") # epyc rome
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all") #rome w/ output
-
 
 #--------------------------------------------------
 # other compiliation modes
@@ -76,7 +75,13 @@ endif()
 # Dependencies
 
 find_package (Python COMPONENTS Interpreter Development REQUIRED)
-find_package (OpenMP REQUIRED)
+
+# -fopenmp added manually.
+# This is required to fix missing symbol errors on LUMI.
+# Symbols in question: __kmpc_for_static_*
+# Potentially relevant: https://stackoverflow.com/questions/60567645/undefined-symbol-in-clang-compiled-python-extension-using-openmp
+# find_package (OpenMP REQUIRED)
+
 find_package (HDF5 REQUIRED)
 # This is not directly needed in runko as we need it only for tests,
 # but mpi4cpp will anyways need this, so we require it here.
