@@ -153,6 +153,7 @@ To run runko here is a example slurm script (modified from CSC example):
    #SBATCH --ntasks-per-node=8
    #SBATCH --gpus-per-node=8
    #SBATCH --cpus-per-task=6
+   #SBATCH --mem-pre-cpu=10G
    #SBATCH --time=0-00:60:00       # Run time (d-hh:mm:ss)
 
    # Loads correct modules and sets up PYTHONPATH.
