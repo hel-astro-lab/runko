@@ -103,9 +103,13 @@ in order to use runko:
 LUMI
 ----
 
-As of 12.09.2025 following moudles are tested to fulfill the requirements on LUMI:
+As of 12.09.2025 following is tested to work on LUMI:
 
 .. code:: shell
+
+   module load cray-python
+   python -m venv runko-venv
+   source runo-venv/bin/activate
 
    module load LUMI/24.03
    module load partition/G
@@ -115,9 +119,8 @@ As of 12.09.2025 following moudles are tested to fulfill the requirements on LUM
    module load craype-accel-amd-gfx90a
    module load cray-mpich craype-network-ofi
    module load buildtools
-   module load cray-python
 
-   # Install Python dependencies...
+   # Install python dependencies...
 
 
 Now runko can be build with:
