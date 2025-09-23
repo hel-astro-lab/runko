@@ -59,6 +59,8 @@ out/
 *.err
 *.out
 
+lib/*
+runko-venv/
 build/*
 projects/ffe/*ini
 projects/ffe/*.txt
