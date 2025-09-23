@@ -35,7 +35,7 @@ P2="$RUNKO_PATH/lib"
 P3="$RUNKO_PATH/external/corgi/lib"
 export PYTHONPATH="$PYTHONPATH:$P1:$P2:$P3"
 
-# 7. Install necessaru Python dependencies
+# 7. Install necessary Python dependencies
 pip3 install h5py scipy matplotlib numpy
 
 # 8. Build MPI4PY:
@@ -47,3 +47,25 @@ make -j16 -Cbuild
 
 # 10. If all went well runko has now been compiled, and certain unit tests
 #     should have automatically been executed and passed.
+
+# 11. Finally, we create a handy file which loads the necessary runko modules
+# whenever called with "source tools/runko-load-env":
+cat > tools/lumi-load-runko-env << EOL
+# Tool to load runko modules
+# Usage: "source tools/runko-load-env"
+# Load standard prerequisite modules for runko:
+module load LUMI/24.03
+module load partition/G
+module load PrgEnv-cray
+module load rocm
+module load cray-hdf5
+module load craype-accel-amd-gfx90a
+module load cray-mpich craype-network-ofi
+module load buildtools
+module load cray-python
+# Load runko virtual environment:
+source ${RUNKO_PATH}/runko-venv/bin/activate
+# Update the PYTHONPATH environment variable with runko path data
+export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}:${P3}"
+
+EOL

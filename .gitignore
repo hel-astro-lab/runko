@@ -44,6 +44,8 @@ compile_commands.json
 *.png
 *.pdf
 
+# runko environment loader for lumi:
+tools/lumi-load-runko-env
 
 */*/runs
 *.zip
