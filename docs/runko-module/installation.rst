@@ -103,47 +103,41 @@ in order to use runko:
 LUMI
 ----
 
-As of 12.09.2025 following is tested to work on LUMI:
+As of 23.09.2025 the easiest method to install runko on LUMI is by using the handy script `tools/lumi-install.sh </tools/lumi-install.sh>`_ as follows:
 
 .. code:: shell
 
-   module load cray-python
-   python -m venv runko-venv
-   source runo-venv/bin/activate
-
-   module load LUMI/24.03
-   module load partition/G
-   module load PrgEnv-cray
-   module load rocm
-   module load cray-hdf5
-   module load craype-accel-amd-gfx90a
-   module load cray-mpich craype-network-ofi
-   module load buildtools
-
-   # Install python dependencies...
+   git clone git@github.com:hel-astro-lab/runko.git
+   cd runko
+   git checkout dev-v5
+   git submodule update --init --recursive
+   ./tools/lumi-install.sh
 
 
-Now runko can be build with:
+This will build runko in one go and also generate the file `tools/lumi-load-runko-env` which can be used as follows:
 
 .. code:: shell
 
-   cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=CC .
-   make -j32 -Cbuild
+   source tools/lumi-load-runko-env
 
+to enable runko and all its required modules on a LUMI node.
 
-.. warning::
+**Warning: overloading login nodes** 
 
-   Remember not to compile on login nodes. Consider specific slurm job for building
-   or using interactive jobs:
-   `srun --account=<account> --partition=dev-g --time=00:30:00 --nodes=1 -c32 --pty bash`
+Remember not to compile on login nodes. Consider using a specific slurm job instead for building or interactive jobs:
 
+.. code:: shell
+   
+   srun --account=<account> --partition=dev-g --time=00:30:00 --nodes=1 -c32 --pty bash
 
-To run runko here is a example slurm script (modified from CSC example):
+**Example SLURM Script for LUMI**
+
+Here is an example of a slurm script for runko taken from an example by the Finnish CSC:
 
 .. code:: bash
 
    #!/bin/bash -l
-   #SBATCH --account=<project-id>
+   #SBATCH --account=project_xxxxxxxxx
    ##SBATCH --partition=standard-g
    #SBATCH --partition=dev-g
    #
@@ -160,7 +154,7 @@ To run runko here is a example slurm script (modified from CSC example):
    #SBATCH --time=0-00:60:00       # Run time (d-hh:mm:ss)
 
    # Loads correct modules and sets up PYTHONPATH.
-   source <env-script>
+   source tools/lumi-load-runko-env
 
    # Required to choose correct GPU for each task.
    cat << EOF > select_gpu
@@ -185,9 +179,9 @@ To run runko here is a example slurm script (modified from CSC example):
    rm -f ./select_gpu
 
 
-.. warning::
+**Warning: LUMI segfaults**
 
-   If you run into a problem where python segfaults or crashes due to illegal instruction
-   it can be worked around by adding `import matplotlib.pyplot` before `import runko`.
+If you run into a problem where python segfaults or crashes due to illegal instruction
+it can be worked around by adding `import matplotlib.pyplot` before `import runko`.
 
-   I have no idea why this happens nor why importing it first fixes the problem.
+I have no idea why this happens nor why importing it first fixes the problem.
