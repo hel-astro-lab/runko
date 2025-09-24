@@ -42,7 +42,7 @@ def in_middle_part(x, y, z, config):
     return a and b and c and d and e and f
 
 
-class pic2_particle_pusher_boris(unittest.TestCase):
+class pic_particle_pusher_boris(unittest.TestCase):
 
     def test_Ex_only(self):
         config, tile = make_test_tile()

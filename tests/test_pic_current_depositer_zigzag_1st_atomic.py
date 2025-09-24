@@ -29,7 +29,7 @@ def make_test_tile():
     config.c_omp = 1
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
-    config.current_depositer = "zigzag_1st"
+    config.current_depositer = "zigzag_1st_atomic"
 
     return config, runko.pic.Tile((0, 0, 0), config)
 
@@ -51,7 +51,7 @@ def interior_index_space(config):
     return itertools.product(I, J, K)
 
 
-class pic2_currend_depositer_zigzag_1st(unittest.TestCase):
+class pic_currend_depositer_zigzag_1st_atomic(unittest.TestCase):
 
     def test_nonexisting_particles_do_not_create_current(self):
         config, tile = make_test_tile()

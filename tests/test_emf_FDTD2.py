@@ -4,7 +4,7 @@ import numpy as np
 
 import runko
 
-class emf2_FDTD2(unittest.TestCase):
+class emf_FDTD2(unittest.TestCase):
 
     def setUp(self):
         self.config = runko.Configuration(None)

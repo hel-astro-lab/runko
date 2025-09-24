@@ -25,7 +25,7 @@ def make_test_tile():
     return config, runko.pic.Tile((2, 1, 3), config)
 
 
-class pic2_particle_sorting(unittest.TestCase):
+class pic_particle_sorting(unittest.TestCase):
     def test_empty_tile_can_be_sorted(self):
         conf, tile = make_test_tile()
 
