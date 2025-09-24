@@ -108,7 +108,7 @@ target_include_directories (runko_includes INTERFACE ${PROJECT_SOURCE_DIR})
 
 add_library(runko_warnings INTERFACE)
 
-# FIXME: actually add teh warnings to runko_warnings and fix them.
+# FIXME: actually add the warnings to runko_warnings and fix them.
 # target_compile_options(runko_warnings
 #     INTERFACE
 #     $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>

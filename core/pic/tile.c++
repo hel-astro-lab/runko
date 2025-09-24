@@ -1,8 +1,8 @@
-#include "core/pic2/tile.h"
+#include "core/pic/tile.h"
 
-#include "core/emf2/yee_lattice.h"
+#include "core/emf/yee_lattice.h"
 #include "core/particles_common.h"
-#include "core/pic2/particle.h"
+#include "core/pic/particle.h"
 
 #include <cmath>
 #include <format>
@@ -20,7 +20,7 @@ namespace {
 void
   construct_particle_buffs(auto& where_to, const toolbox::ConfigParser& conf)
 {
-  using opt_args_t = std::optional<pic2::ParticleContainerArgs>;
+  using opt_args_t = std::optional<pic::ParticleContainerArgs>;
 
   // Return optional containing the arguments if q and m are found in conf.
   const auto make_opt_args =
@@ -35,7 +35,7 @@ void
 
       // Due to effects of density function to particle number,
       // we do not yet know how many particles there are going to be.
-      return pic2::ParticleContainerArgs { .N = 0, .charge = q, .mass = m };
+      return pic::ParticleContainerArgs { .N = 0, .charge = q, .mass = m };
     };
 
     return conf.get<double>(q_label)
@@ -50,10 +50,10 @@ void
     if(const auto pcontainer_args = make_opt_args(q_label, m_label)) {
       // insert_or_assign and not operator[], because if element is missing,
       // then operator[] will default construct it.
-      // pic2::ParticleContainer is not default constructible.
+      // pic::ParticleContainer is not default constructible.
       std::ignore = where_to.insert_or_assign(
         i,
-        pic2::ParticleContainer { pcontainer_args.value() });
+        pic::ParticleContainer { pcontainer_args.value() });
 
     } else {
       break;
@@ -61,35 +61,35 @@ void
   }
 }
 
-pic2::ParticlePusher
+pic::ParticlePusher
   parse_particle_pusher(const std::string_view p)
 {
   if(p == "boris") {
-    return pic2::ParticlePusher::boris;
+    return pic::ParticlePusher::boris;
   } else {
     const auto msg = std::format("{} is not supported particle pusher.", p);
     throw std::runtime_error { msg };
   }
 }
 
-pic2::FieldInterpolator
+pic::FieldInterpolator
   parse_field_interpolator(const std::string_view p)
 {
   if(p == "linear_1st") {
-    return pic2::FieldInterpolator::linear_1st;
+    return pic::FieldInterpolator::linear_1st;
   } else {
     const auto msg = std::format("{} is not supported field_interpolator.", p);
     throw std::runtime_error { msg };
   }
 }
 
-pic2::CurrentDepositer
+pic::CurrentDepositer
   parse_current_depositer(const std::string_view p)
 {
   if(p == "zigzag" or p == "zigzag_1st") {
-    return pic2::CurrentDepositer::zigzag_1st;
+    return pic::CurrentDepositer::zigzag_1st;
   } else if(p == "zigzag_1st_atomic") {
-    return pic2::CurrentDepositer::zigzag_1st_atomic;
+    return pic::CurrentDepositer::zigzag_1st_atomic;
   } else {
     const auto msg = std::format("{} is not supported current depositer.", p);
     throw std::runtime_error { msg };
@@ -98,14 +98,14 @@ pic2::CurrentDepositer
 
 }  // namespace
 
-namespace pic2 {
+namespace pic {
 
 template<std::size_t D>
 Tile<D>::Tile(
   const std::array<std::size_t, 3> tile_grid_idx,
   const toolbox::ConfigParser& conf) :
   corgi::Tile<D>(),
-  emf2::Tile<D>(tile_grid_idx, conf),
+  emf::Tile<D>(tile_grid_idx, conf),
   particle_pusher_ { parse_particle_pusher(
     conf.get_or_throw<std::string>("particle_pusher")) },
   field_interpolator_ { parse_field_interpolator(
@@ -157,12 +157,12 @@ void
 {
   if(this->mins == this->maxs) {
     throw std::logic_error {
-      "failed pic2::Tile::inject_to_each_cell precondition: corgi::tile::{mins,maxs} "
+      "failed pic::Tile::inject_to_each_cell precondition: corgi::tile::{mins,maxs} "
       "aren't set"
     };
   }
 
-  /// FIXME: unify global coordinates from here and emf2::Tile::set_EBJ to mixin.
+  /// FIXME: unify global coordinates from here and emf::Tile::set_EBJ to mixin.
   const auto Lx = static_cast<double>(this->maxs[0] - this->mins[0]);
   const auto Ly = static_cast<double>(this->maxs[1] - this->mins[1]);
   const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
@@ -260,13 +260,13 @@ void
     const auto assert_shapes = [&](const auto& a) {
       if(a.ndim() != 1) {
         throw std::runtime_error {
-          "pic2::Tile::batch_inject_to_cells: given batch must be one dimensional."
+          "pic::Tile::batch_inject_to_cells: given batch must be one dimensional."
         };
       }
 
       if(a.shape(0) != batch_size) {
         throw std::runtime_error {
-          "pic2::Tile::batch_inject_to_cells: batches must have same length."
+          "pic::Tile::batch_inject_to_cells: batches must have same length."
         };
       }
     };
@@ -311,24 +311,24 @@ template<std::size_t D>
 void
   Tile<D>::push_particles()
 {
-  using yee_value_type = emf2::YeeLattice::value_type;
+  using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
     std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
                  static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
                  static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
 
-  pic2::ParticleContainer::InterpolatedEB_function ipol_func {};
+  pic::ParticleContainer::InterpolatedEB_function ipol_func {};
 
   switch(field_interpolator_) {
     case FieldInterpolator::linear_1st: {
       ipol_func = std::bind_front(
-        &emf2::YeeLattice::interpolate_EB_linear_1st,
+        &emf::YeeLattice::interpolate_EB_linear_1st,
         std::cref(this->yee_lattice_),
         origo_pos);
       break;
     }
     default:
-      throw std::logic_error { "pic2::Tile::push_particles: unkown interpolator" };
+      throw std::logic_error { "pic::Tile::push_particles: unkown interpolator" };
   }
 
 
@@ -339,7 +339,7 @@ void
       }
       break;
     default:
-      throw std::logic_error { "pic2::Tile::push_particles: unkown particle pusher" };
+      throw std::logic_error { "pic::Tile::push_particles: unkown particle pusher" };
   }
 }
 
@@ -349,7 +349,7 @@ void
 {
   this->yee_lattice_.clear_current();
 
-  using yee_value_type = emf2::YeeLattice::value_type;
+  using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
     std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
                  static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
@@ -363,7 +363,7 @@ void
       }
       break;
     case CurrentDepositer::zigzag_1st_atomic: {
-      auto generated_J = runko::VecGrid<emf2::YeeLattice::value_type>(
+      auto generated_J = runko::VecGrid<emf::YeeLattice::value_type>(
         this->yee_lattice_.extents_with_halo());
 
       // This might be unneccesseary but I don't trust
@@ -384,7 +384,7 @@ void
     }
     default:
       throw std::logic_error {
-        "pic2::Tile::deposit_current: unkown current depositer"
+        "pic::Tile::deposit_current: unkown current depositer"
       };
   }
 }
@@ -396,7 +396,7 @@ void
   const auto m = this->yee_lattice_.grid_mapping_with_halo();
   using M      = decltype(m);
 
-  using F              = pic2::ParticleContainer::value_type;
+  using F              = pic::ParticleContainer::value_type;
   const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - this->halo_size,
                                       static_cast<F>(this->mins[1]) - this->halo_size,
                                       static_cast<F>(this->mins[2]) - this->halo_size };
@@ -412,6 +412,6 @@ void
   for(auto& [_, pbuff]: this->particle_buffs_) { pbuff.sort(std::move(score)); }
 }
 
-}  // namespace pic2
+}  // namespace pic
 
-template class pic2::Tile<3>;
+template class pic::Tile<3>;

@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-namespace emf2 {
+namespace emf {
 
 struct YeeLatticeCtorArgs {
   std::size_t halo_size {};
@@ -363,4 +363,4 @@ inline auto
 }
 
 
-}  // namespace emf2
+}  // namespace emf

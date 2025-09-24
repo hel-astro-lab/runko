@@ -1,4 +1,4 @@
-#include "core/emf2/yee_lattice.h"
+#include "core/emf/yee_lattice.h"
 #include "core/mdgrid_common.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
@@ -42,7 +42,7 @@ constexpr auto
 
 }  // namespace
 
-namespace emf2 {
+namespace emf {
 
 YeeLattice::InterpolatedEB
   YeeLattice::interpolate_EB_linear_1st(
@@ -139,4 +139,4 @@ YeeLattice::InterpolatedEB
   return { std::move(Eipo), std::move(Bipo) };
 }
 
-}  // namespace emf2
+}  // namespace emf

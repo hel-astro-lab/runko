@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/emf2/yee_lattice.h"
+#include "core/emf/yee_lattice.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
 #include "mpi4cpp/mpi.h"
@@ -14,7 +14,7 @@
 #include <optional>
 #include <tuple>
 
-namespace emf2 {
+namespace emf {
 
 enum class FieldPropagator { FDTD2 };
 enum class CurrentFilter { binomial2 };
@@ -119,7 +119,7 @@ public:
 
   /// Get halo region of field specified with mode (see comm_mode) from other.
   ///
-  /// Assumes that the other tile is emf2::Tile or its descendant.
+  /// Assumes that the other tile is emf::Tile or its descendant.
   void pairwise_moore_communication(
     const corgi::Tile<D>& /* other */,
     const std::array<int, D> dir_to_other,
@@ -127,4 +127,4 @@ public:
     ) override;
 };
 
-}  // namespace emf2
+}  // namespace emf

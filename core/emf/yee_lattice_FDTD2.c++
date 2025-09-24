@@ -1,12 +1,12 @@
-#include "core/emf2/yee_lattice.h"
+#include "core/emf/yee_lattice.h"
 #include "tyvi/mdgrid.h"
 
 #include <tuple>
 
-namespace emf2 {
+namespace emf {
 
 void
-  YeeLattice::push_b_FDTD2(const value_type dt)
+  YeeLattice::push_b_FDTD(const value_type dt)
 {
   /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
   const auto h   = halo_size_;
@@ -102,4 +102,4 @@ void
   tyvi::when_all(w2x, w2y, w2z).wait();
 }
 
-}  // namespace emf2
+}  // namespace emf

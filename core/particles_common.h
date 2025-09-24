@@ -8,6 +8,7 @@ enum class particle : std::size_t {
   electron = 0,
   ion      = 1,
   photon   = 2,
+  proton   = 3,
 
 };
 

@@ -1,4 +1,4 @@
-#include "core/emf2/yee_lattice.h"
+#include "core/emf/yee_lattice.h"
 
 #include "thrust/execution_policy.h"
 #include "thrust/for_each.h"
@@ -46,7 +46,7 @@ auto
 
 }  // namespace
 
-namespace emf2 {
+namespace emf {
 
 YeeLattice::YeeLattice(const YeeLatticeCtorArgs args) :
   halo_size_ { args.halo_size },
@@ -252,7 +252,7 @@ void
 
   if(depJ.extents() != this->extents_with_halo()) {
     throw std::runtime_error {
-      "emf2::Tile::deposit_current: given current grid has incorrect extents!"
+      "emf::Tile::deposit_current: given current grid has incorrect extents!"
     };
   }
 
@@ -274,4 +274,4 @@ YeeLattice::VecGridMDS::mapping_type
   return this->E_.mds().mapping();
 }
 
-}  // namespace emf2
+}  // namespace emf

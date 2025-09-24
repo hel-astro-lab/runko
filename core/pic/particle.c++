@@ -1,4 +1,4 @@
-#include "core/pic2/particle.h"
+#include "core/pic/particle.h"
 
 #include "core/mdgrid_common.h"
 #include "thrust/device_vector.h"
@@ -19,7 +19,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace pic2 {
+namespace pic {
 
 ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
   pos_(args.N),
@@ -237,4 +237,4 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   return { std::move(m), std::move(permuted_pcontainer) };
 }
 
-}  // namespace pic2
+}  // namespace pic

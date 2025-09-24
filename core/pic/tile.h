@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/communication_common.h"
-#include "core/emf2/tile.h"
+#include "core/emf/tile.h"
 #include "core/particles_common.h"
-#include "core/pic2/particle.h"
+#include "core/pic/particle.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
 #include "pybind11/numpy.h"
@@ -20,7 +20,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace pic2 {
+namespace pic {
 
 namespace mpi = mpi4cpp::mpi;
 
@@ -35,14 +35,14 @@ struct ParticleStateBatch {
   container_type vel;
 };
 
-/*! \brief PiC v2 tile
+/*! \brief pic tile
  *
  * Tile infrastructures are inherited from corgi::Tile
- * Maxwell field equation solver is inherited from emf2::Tile
+ * Maxwell field equation solver is inherited from emf::Tile
  */
 
 template<std::size_t D>
-class Tile : virtual public emf2::Tile<D>, virtual public corgi::Tile<D> {
+class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
 
   static_assert(D == 3);
 
@@ -76,35 +76,20 @@ public:
   ///
   /// FIXME: document how the initialization is done?
   ///
-  /// In addition to emf2::Tile ctor requirements,
+  /// In addition to emf::Tile ctor requirements,
   /// the given config has to contain values for:
   ///
-  /// `qx`: charge of x:th particle species (x is natural number)
-  /// `mx`: mass-to-charge of x:th particle species (x is natural number)
-  /// `delgam`: temperature(?)
-  /// `temperature_ratio`: T_i / T_e
-  /// `sigma`: magnetization number (omega_ce/omega_pe)^2, including gamma for inertia
+  /// `qx`:    charge of x:th particle species (x is natural number)
+  /// `mx`:    mass of x:th particle species (x is natural number)
   /// `c_omp`: simulation skin depth resolution
-  /// `ppc`: particles per cell per species
-  /// `particle_pusher`: scheme to update particles velocities and positions
+  /// `ppc`:   particles per cell per species
+  ///
+  /// `particle_pusher`:     scheme to update particles velocities and positions
   /// `fields_interpolator`: scheme to interpolate E and B fields to particles
+  /// `current_depositer`:   scheme to depot current
   ///
   /// Note that particle charges and masses qx and mx are read in order: 0, 1, ...
   /// If a i:th mass and charge are missing, the search is stopped.
-  ///
-  /// FIXME: figure out meaning, implement and document all options below:
-  /// `npasses`: number of current filter passes
-  /// `n_test_prtcls`: number of particles TestParticleWriter writes to disc
-  /// `l0`: Nx * NxMesh / max_mode / c_omp (from pic-trubulence)
-  /// `g0`: maximum attainable particle energy (from pic-trubulence)
-  /// `t0`: time steps in units of light-crossing (from pic-trubulence)
-  /// `{e,b,j,p}_norm`: default normalizations(?) (from pic-trubulence)
-  ///
-  /// Parameters for packet init:
-  /// `zeta`: perturbation amplitude
-  /// `ell`: packet width
-  /// `impact_param`
-  /// `two_wave[_reversed]`
   explicit Tile(
     std::array<std::size_t, 3> tile_grid_idx,
     const toolbox::ConfigParser& config);
@@ -165,8 +150,8 @@ public:
 
   /// Get particles from haloregion of the other with comm_mode::pic_particle.
   ///
-  /// Forward other communication modes to emf2::Tile.
-  /// Assumes that the other tile is pic2::Tile or its descendant.
+  /// Forward other communication modes to emf::Tile.
+  /// Assumes that the other tile is pic::Tile or its descendant.
   void pairwise_moore_communication(
     const corgi::Tile<D>& /* other */,
     const std::array<int, D> dir_to_other,

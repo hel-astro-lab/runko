@@ -24,7 +24,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace pic2 {
+namespace pic {
 
 struct ParticleContainerArgs {
   std::size_t N;
@@ -116,15 +116,15 @@ public:
   /// Sorts particles based on a function of particle position.
   ///
   /// Given function has to be device callable.
-  void sort(pic2::score_function<value_type> auto&& f);
+  void sort(pic::score_function<value_type> auto&& f);
 
   using InterpolatedEB_function =
-    std::function<emf2::YeeLattice::InterpolatedEB(const runko::VecList<value_type>&)>;
+    std::function<emf::YeeLattice::InterpolatedEB(const runko::VecList<value_type>&)>;
 
   /// Push particles velocities and positions using boris scheme.
   void push_particles_boris(double cfl, const InterpolatedEB_function&);
 
-  emf2::YeeLattice::CurrentContributions current_zigzag_1st(
+  emf::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
     const value_type cfl) const;
 
@@ -134,7 +134,7 @@ public:
   /// and the spacing between cells in `Jout` is 1.
   /// Assumes that all particle contributions are inside the lattice.
   void current_zigzag_1st(
-    runko::VecGrid<emf2::YeeLattice::value_type>& Jout,
+    runko::VecGrid<emf::YeeLattice::value_type>& Jout,
     const std::array<value_type, 3> lattice_origo_coordinates,
     const value_type cfl) const;
 };
@@ -284,7 +284,7 @@ template<std::ranges::forward_range R>
 
      However, this ctor takes dynamic amount of spans.
      To call tyvi::when_all on all of them, we have to do a ugly hack.
-     Inorder to do so we can only support up to Nmax spans. */
+     In order to do so we can only support up to Nmax spans. */
 
   static constexpr auto Nmax = 27uz;  // atm nothing should call this with more.
   const auto Nspans          = rn::distance(spans);
@@ -422,7 +422,7 @@ template<std::ranges::forward_range R>
 
 
 inline void
-  ParticleContainer::sort(pic2::score_function<value_type> auto&& f)
+  ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);

@@ -1,4 +1,4 @@
-#include "core/emf2/tile.h"
+#include "core/emf/tile.h"
 
 #include "core/communication_common.h"
 #include "tools/system.h"
@@ -12,22 +12,22 @@
 #include <type_traits>
 
 namespace {
-emf2::FieldPropagator
+emf::FieldPropagator
   parse_field_propagator(const std::string_view p)
 {
   if(p == "FDTD2") {
-    return emf2::FieldPropagator::FDTD2;
+    return emf::FieldPropagator::FDTD2;
   } else {
     const auto msg = std::format("{} is not supported field propagator.", p);
     throw std::runtime_error { msg };
   }
 }
 
-emf2::CurrentFilter
+emf::CurrentFilter
   parse_current_filter(const std::string_view p)
 {
   if(p == "binomial2") {
-    return emf2::CurrentFilter::binomial2;
+    return emf::CurrentFilter::binomial2;
   } else {
     const auto msg = std::format("{} is not supported current filter.", p);
     throw std::runtime_error { msg };
@@ -35,7 +35,7 @@ emf2::CurrentFilter
 }
 }  // namespace
 
-namespace emf2 {
+namespace emf {
 
 template<std::size_t D>
 Tile<D>::Tile(
@@ -61,7 +61,7 @@ Tile<D>::Tile(
   auto one_or_throw = [](const double d) {
     if(d != 1.0) {
       throw std::logic_error {
-        "emf2 tile does not support d{x,y,z} values other than 1."
+        "emf tile does not support d{x,y,z} values other than 1."
       };
     }
     return std::optional { d };
@@ -104,11 +104,11 @@ void
 {
   if(this->mins == this->maxs) {
     throw std::logic_error {
-      "failed emf2::tile::set_fields precondition: corgi::tile::{mins,maxs} aren't set"
+      "failed emf::tile::set_fields precondition: corgi::tile::{mins,maxs} aren't set"
     };
   }
 
-  /// FIXME: unify global coordinates from here and pic2::Tile.
+  /// FIXME: unify global coordinates from here and pic::Tile.
   const auto Lx = static_cast<double>(this->maxs[0] - this->mins[0]);
   const auto Ly = static_cast<double>(this->maxs[1] - this->mins[1]);
   const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
@@ -167,11 +167,11 @@ void
 {
   if(this->mins == this->maxs) {
     throw std::logic_error {
-      "failed emf2::tile::set_fields precondition: corgi::tile::{mins,maxs} aren't set"
+      "failed emf::tile::set_fields precondition: corgi::tile::{mins,maxs} aren't set"
     };
   }
 
-  /// FIXME: unify global coordinates from here and pic2::Tile.
+  /// FIXME: unify global coordinates from here and pic::Tile.
   const auto Lx = static_cast<double>(this->maxs[0] - this->mins[0]);
   const auto Ly = static_cast<double>(this->maxs[1] - this->mins[1]);
   const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
@@ -301,7 +301,7 @@ void
     case FieldPropagator::FDTD2: yee_lattice_.push_b_FDTD2(cfl_ / 2); break;
     default:
       throw std::logic_error {
-        "emf2::Tile::push_half_b internal error: field_propagator_ not set."
+        "emf::Tile::push_half_b internal error: field_propagator_ not set."
       };
   }
 }
@@ -314,7 +314,7 @@ void
     case FieldPropagator::FDTD2: yee_lattice_.push_e_FDTD2(cfl_); break;
     default:
       throw std::logic_error {
-        "emf2::Tile::push_e internal error: field_propagator_ not set."
+        "emf::Tile::push_e internal error: field_propagator_ not set."
       };
   }
 }
@@ -338,12 +338,12 @@ void
 
   const auto cf = current_filter_.value();
   switch(cf) {
-    case emf2::CurrentFilter::binomial2:
+    case emf::CurrentFilter::binomial2:
       this->yee_lattice_.filter_current_binomial2();
       return;
     default:
       throw std::logic_error {
-        "emf2::Tile::filter_current internal error: unregonized current filter."
+        "emf::Tile::filter_current internal error: unregonized current filter."
       };
   }
 }
@@ -375,7 +375,7 @@ std::vector<mpi4cpp::mpi::request>
     case comm_mode::emf_J: return { make_isend(yee_lattice_.span_J()) };
     default:
       throw std::logic_error { std::format(
-        "emf2::Tile::send_data does not support given communication mode: {}",
+        "emf::Tile::send_data does not support given communication mode: {}",
         mode) };
   }
 }
@@ -406,7 +406,7 @@ std::vector<mpi4cpp::mpi::request>
     case comm_mode::emf_J: return { make_irecv(yee_lattice_.span_J()) };
     default:
       throw std::logic_error { std::format(
-        "emf2::Tile::recv_data does not support given communication mode: {}",
+        "emf::Tile::recv_data does not support given communication mode: {}",
         mode) };
   }
 }
@@ -423,8 +423,8 @@ void
       return dynamic_cast<const Tile<D>&>(other_base);
     } catch(const std::bad_cast& ex) {
       throw std::runtime_error { std::format(
-        "emf2::Tile::pairwise_moore_communication assumes that the other tile is "
-        "emf2::Tile or its descendant. Orginal exception: {}",
+        "emf::Tile::pairwise_moore_communication assumes that the other tile is "
+        "emf::Tile or its descendant. Orginal exception: {}",
         ex.what()) };
     }
   }();
@@ -446,12 +446,12 @@ void
       break;
     default:
       throw std::logic_error { std::format(
-        "emf2::Tile::pairwise_moore_communication does not support given communication "
+        "emf::Tile::pairwise_moore_communication does not support given communication "
         "mode: {}",
         mode) };
   }
 };
 
-}  // namespace emf2
+}  // namespace emf
 
-template class emf2::Tile<3>;
+template class emf::Tile<3>;

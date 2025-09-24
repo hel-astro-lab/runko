@@ -1,5 +1,5 @@
 #include "core/communication_common.h"
-#include "core/pic2/tile.h"
+#include "core/pic/tile.h"
 #include "tools/system.h"
 
 #include <cstddef>
@@ -33,7 +33,7 @@ constexpr int
 
 }  // namespace
 
-namespace pic2 {
+namespace pic {
 
 template<std::size_t D>
 std::vector<mpi4cpp::mpi::request>
@@ -94,7 +94,7 @@ std::vector<mpi4cpp::mpi::request>
       }
       return comms;
     }
-    default: return emf2::Tile<D>::send_data(comm, dest, mode, tag);
+    default: return emf::Tile<D>::send_data(comm, dest, mode, tag);
   }
 }
 
@@ -135,7 +135,7 @@ std::vector<mpi4cpp::mpi::request>
     for(auto& [key, value]: this->particle_buffs_) {
       auto new_args = value.args();
       new_args.N    = amount_of_particles_to_be_received_[key];
-      value         = pic2::ParticleContainer(new_args);
+      value         = pic::ParticleContainer(new_args);
 
       comms.push_back(make_irecv(
         value.span_pos(),
@@ -156,7 +156,7 @@ std::vector<mpi4cpp::mpi::request>
   switch(static_cast<comm_mode>(mode)) {
     case comm_mode::number_of_particles: return recv_particle_sizes();
     case comm_mode::pic_particle: return recv_particles();
-    default: return emf2::Tile<D>::recv_data(comm, orig, mode, tag);
+    default: return emf::Tile<D>::recv_data(comm, orig, mode, tag);
   }
 }
 
@@ -229,7 +229,7 @@ void
 {
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) {
-    emf2::Tile<D>::pairwise_moore_communication(other_base, dir_to_other, mode);
+    emf::Tile<D>::pairwise_moore_communication(other_base, dir_to_other, mode);
     return;
   }
 
@@ -238,8 +238,8 @@ void
       return dynamic_cast<const Tile<D>&>(other_base);
     } catch(const std::bad_cast& ex) {
       throw std::runtime_error { std::format(
-        "pic2::Tile::pairwise_moore_communication assumes that the other tile is "
-        "pic2::Tile or its descendant. Orginal exception: {}",
+        "pic::Tile::pairwise_moore_communication assumes that the other tile is "
+        "pic::Tile or its descendant. Orginal exception: {}",
         ex.what()) };
     }
   }();
@@ -256,6 +256,6 @@ void
   }
 };
 
-}  // namespace pic2
+}  // namespace pic
 
-template class pic2::Tile<3>;
+template class pic::Tile<3>;

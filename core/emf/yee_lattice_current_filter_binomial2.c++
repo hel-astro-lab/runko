@@ -1,4 +1,4 @@
-#include "core/emf2/yee_lattice.h"
+#include "core/emf/yee_lattice.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
@@ -6,7 +6,7 @@
 #include <utility>
 
 void
-  emf2::YeeLattice::filter_current_binomial2()
+  emf::YeeLattice::filter_current_binomial2()
 {
   // 3D 3-point binomial coefficients
   static constexpr value_type C3[3][3][3] = { { { 1. / 64., 2. / 64., 1. / 64. },
