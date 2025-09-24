@@ -28,13 +28,17 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 #set(CMAKE_CXX_FLAGS_DEBUG "-g2 -O2 -DDEBUG -march=native -ftree-vectorize -fopt-info-all-all=all.all -Wall -Wextra -pedantic -Wno-error=unknown-pragmas -Wno-error=unused-parameter -save-temps=obj")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O2 -DDEBUG -march=native -ftree-vectorize -Wall -Wextra -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-fopenmp -g -Og -DDEBUG")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -DDEBUG -march=native -ftree-vectorize")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -DDEBUG -march=znver3 -mtune=znver3 -ftree-vectorize")
 
 #--------------------------------------------------
 # release mode flags
 
 set(CMAKE_CXX_FLAGS_RELEASE "-fopenmp -O3")
 #set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -flto -ffp=4 -march=znver3 -mtune=znver3 -fopenmp -fsave-loopmark") // cray compiler flags
-#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver3 -mtune=znver3 -ftree-vectorize") # epyc rome
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fopenmp") # common gcc
+#set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -flto -ffp=4 -march=znver3 -mtune=znver3 -fopenmp -fsave-loopmark") # aggressive cray compiler flags
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=znver3 -mtune=znver3 -ftree-vectorize") # cray compiler flags
 #set(CMAKE_CXX_FLAGS_RELEASE "-O2 -march=znver1 -mtune=znver1 -mfma -mavx2 -m3dnow -flto=auto -fomit-frame-pointer -fopt-info-all-all=all.all") #rome w/ output
 
 #--------------------------------------------------

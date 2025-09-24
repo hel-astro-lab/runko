@@ -57,7 +57,8 @@ def inject(grid,
                         container.type = conf.prtcl_types[ispcs] # name container
 
                         # open and read previously made particle species (for location reference)
-                        if ispcs == 1:
+                        #if ispcs == 1:
+                        if align_species and conf.prtcl_types[ispcs] in ['e+', 'p']:
                             #EPS = 1.0e-5
                             ref_container = tile.get_container(0)
                             xxs = ref_container.loc(0) #+ EPS*np.random.rand(1)

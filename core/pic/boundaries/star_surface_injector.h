@@ -59,6 +59,10 @@ public:
   double ninj_min_pairs = 0.01; // minimum pairs per cell per step to inject
   double ninj_min_phots = 0.0;  // minimum photons per cell per step to inject
 
+  int height_atms = 1; // height of the atmosphere in cells
+  float wep = 1.0f;    // weight of added electrons and positrons
+  float wph = 1.0f;    // weight of added photons
+
   Star() :
     gen(42), // gen(rd() ) 
     uni_dis(0.0, 1.0)

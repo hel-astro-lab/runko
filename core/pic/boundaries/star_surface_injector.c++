@@ -7,6 +7,7 @@
 #include "core/emf/boundaries/conductor.h"
 #include "tools/vector.h"
 #include "tools/signum.h"
+#include "tools/staggered_grid.h"
 
 
 using std::min;
@@ -24,7 +25,7 @@ using toolbox::cross;
 using toolbox::dot;
 using toolbox::Vec3;
 
-using emf::StaggeredSphericalCoordinates;
+using toolbox::StaggeredSphericalCoordinates;
 
 
 // simple pseudo-random floats with C library rand() (outputting int's).
@@ -85,8 +86,8 @@ void pic::Star<D>::solve(
 
   // get charge (assume q_- = q_+)
   const float q = cons["e-"]->q;
-  float wep = 1.0f;
-  float wph = 1.0f;
+  //float wep = 1.0f;
+  //float wph = 1.0f;
 
   //--------------------------------------------------
   // main rouutine starts here now that we have the right tile
@@ -139,7 +140,7 @@ void pic::Star<D>::solve(
     // check if we are inside star
 
     // inject top of star
-    const int height_atms = 1; // height of the atmosphere in cells
+    //const int height_atms = 1; // height of the atmosphere in cells
     //bool inside_star  = norm(rvec) < 1.0*radius;
     //bool inside_atmos = norm(rvec) < 1.0*radius + height_atms;
 
@@ -312,9 +313,18 @@ void pic::Star<D>::solve(
         
         // 1D distribution along B-field
         // NOTE: same "random" velocity taken for both particles as an approx
-        auto ux1 = vr*bx/b;
-        auto uy1 = vr*by/b;
-        auto uz1 = vr*bz/b;
+        //auto ux1 = vr*bx/b;
+        //auto uy1 = vr*by/b;
+        //auto uz1 = vr*bz/b;
+
+        // Using now a random 3D distribution instead:
+        float zeta = 2.0f*PI*rand();
+        float mu = -1.0f + 2.0f*rand();
+        float sin_theta = sqrt(1.0f-pow(mu,2));
+
+        auto ux1 = vr*sin_theta*cos(zeta);
+        auto uy1 = vr*sin_theta*sin(zeta);
+        auto uz1 = vr*mu;
 
         //--------------------------------------------------
         // pcap rotation vector
@@ -530,6 +540,15 @@ void pic::Star<D>::solve(
       if(D == 1) inside_top = iglob > Nx - 0.75*tile.mesh_lengths[0];
       if(D == 2) inside_top = jglob > Ny - 0.75*tile.mesh_lengths[1];
       if(D == 3) inside_top = kglob > Nz - 0.75*tile.mesh_lengths[2]; 
+
+
+      // additional, more aggressive removal of outflowing particles in 1D
+      if(D == 1) {
+	      if( iglob > Nx - 20.0*tile.mesh_lengths[0] ) { 
+	        // negative (inwards-going) particle
+	        if( con.vel(0, n) < 0.0f ) con.info(n) = -1;
+	      }
+      }
 
       bool inside_cyl_bcs = false;
       if(D == 1) inside_cyl_bcs = false; // no boundaries in 1D

@@ -487,9 +487,9 @@ void ParticleContainer<D>::transfer_and_wrap_particles(
     if( (D==3) && (i== -dirs[0]) && (j==-dirs[1]) && (k==-dirs[2]) ) add = true;
     
     if(add) {
-      float locx = wrap( neigh.loc(0, n), minx, maxx );
-      float locy = wrap( neigh.loc(1, n), miny, maxy );
-      float locz = wrap( neigh.loc(2, n), minz, maxz );
+      float locx = D >= 1 ? wrap( neigh.loc(0, n), minx, maxx ) : neigh.loc(0, n);
+      float locy = D >= 2 ? wrap( neigh.loc(1, n), miny, maxy ) : neigh.loc(1, n);
+      float locz = D >= 3 ? wrap( neigh.loc(2, n), minz, maxz ) : neigh.loc(2, n);
 
       add_identified_particle(
           {locx, locy, locz}, 

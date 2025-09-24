@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 from scipy import ndimage as ndi
+from scipy.interpolate import interp1d
+
 
 # from skimage.transforms; standalone version of the skimage resize methods
 # REF https://github.com/scikit-image/scikit-image/blob/v0.22.0/skimage/transform/_warps.py
@@ -143,7 +145,19 @@ class TerminalPlot:
             return "W"
 
     def rescale(self, im):
+
+        #if im.ndim == 1: # 1D interpolation into the new grid
+        #    print(im)
+        #    nx, = np.shape(im)
+        #    xp  = np.arange(0, self.nx) 
+        #    interp = interp1d(np.arange(nx), im)
+        #    im2 = np.zeros((self.nx, 1))
+        #    im2[:,0] = interp(xp) 
+        #else:  
+
+        # multiD resizing of the image
         im2 = resize(im, (self.nx, self.ny), order=1)
+
         return im2
 
     
@@ -227,23 +241,21 @@ class TerminalPlot:
         #--------------------------------------------------
         # transpose and flip to orient the img properly
         try:
-            nx, ny = np.shape(data)
-            nz = 1
+            nx, = np.shape(data) # assume 1D
+            ny,nz = 1,1
         except:
-            nx, ny, nz = np.shape(data)
+            try:
+                nx, ny = np.shape(data) # assume 2D
+                nz = 1
+            except:
+                nx, ny, nz = np.shape(data) # assume 3D
 
-        # NOTE theese manipulations are black magic but they work
-        data = np.reshape(data, (nz, ny, nx))
-        data = data.ravel(order='F').reshape((nx,ny,nz))
-        data = np.fliplr(data)
-
-        #data = np.fliplr(data.T) 
+            # NOTE theese multi-D manipulations are black magic but they work
+            data = np.reshape(data, (nz, ny, nx))
+            data = data.ravel(order='F').reshape((nx,ny,nz))
+            data = np.fliplr(data)
 
         #--------------------------------------------------
-
-        #for i in range(self.ny):
-        #    self.screen[i,i] = 1
-
         self.screen = self.rescale(data)
 
         lines = [] # screen is collected here
