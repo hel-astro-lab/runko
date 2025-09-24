@@ -44,6 +44,8 @@ compile_commands.json
 *.png
 *.pdf
 
+# runko environment loader for lumi:
+archs/lumi-load-runko-env
 
 */*/runs
 *.zip
@@ -59,6 +61,8 @@ out/
 *.err
 *.out
 
+lib/*
+runko-venv/
 build/*
 projects/ffe/*ini
 projects/ffe/*.txt
