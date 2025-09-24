@@ -8,14 +8,13 @@
 using namespace mpi4cpp;
 using ezh5::File;
 
-
 template<>
-inline void h5io::FieldsWriter<1>::read_tiles(
-    corgi::Grid<1>& grid)
+inline void
+  h5io::FieldsWriter<3>::read_tiles(corgi::Grid<3>& grid)
 {
 
   // clear target arrays
-  for(auto& arr : arrs) arr.clear();
+  for(auto& arr: arrs) arr.clear();
 
   // target arrays
   auto& ex = arrs[0];
@@ -31,205 +30,82 @@ inline void h5io::FieldsWriter<1>::read_tiles(
 
 
   // read my local tiles
-  for(auto cid : grid.get_local_tiles() ){
-    auto& tile = dynamic_cast<emf::Tile<1>&>(grid.get_tile( cid ));
-    auto& gs = tile.get_grids();
+  for(auto cid: grid.get_local_tiles()) {
 
-    // get arrays
-    auto index = expand_indices( &tile );
-
-    // starting location
-    int i0 = (gs.Nx/stride)*std::get<0>(index);
-    int j0 = 0; // (gs.Ny/stride)*std::get<1>(index);
-    int k0 = 0; // (gs.Nz/stride)*std::get<2>(index);
-
-    // tile limits taking into account 0 collapsing dimensions
-    int nxt;
-    nxt = (int)gs.Nx/stride;
-
-    nxt = nxt == 0 ? 1 : nxt;
-
-    // copy tile patch by stride hopping; either downsample or average
-    int js = 0;
-    int jstride = 0;
-    int ks = 0;
-    int kstride = 0;
-
-    // field quantities; just downsample by hopping with stride
-    for(int is=0; is<nxt; is++) {
-      ex(i0+is, j0+js, k0+ks) = gs.ex( is*stride, js*stride, ks*stride);
-      ey(i0+is, j0+js, k0+ks) = gs.ey( is*stride, js*stride, ks*stride);
-      ez(i0+is, j0+js, k0+ks) = gs.ez( is*stride, js*stride, ks*stride);
-
-      bx(i0+is, j0+js, k0+ks) = gs.bx( is*stride, js*stride, ks*stride);
-      by(i0+is, j0+js, k0+ks) = gs.by( is*stride, js*stride, ks*stride);
-      bz(i0+is, j0+js, k0+ks) = gs.bz( is*stride, js*stride, ks*stride);
-    }
-
-    // densities; these quantities we average over the volume
-    for(int is=0; is<nxt; is++) 
-    for(int istride=0; istride < stride; istride++) {
-      jx(i0+is, j0+js, k0+ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jy(i0+is, j0+js, k0+ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jz(i0+is, j0+js, k0+ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      rh(i0+is, j0+js, k0+ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
-    }
-
-  } // tiles
-}
-
-
-template<>
-inline void h5io::FieldsWriter<2>::read_tiles(
-    corgi::Grid<2>& grid)
-{
-
-  // clear target arrays
-  for(auto& arr : arrs) arr.clear();
-
-  // target arrays
-  auto& ex = arrs[0];
-  auto& ey = arrs[1];
-  auto& ez = arrs[2];
-  auto& bx = arrs[3];
-  auto& by = arrs[4];
-  auto& bz = arrs[5];
-  auto& jx = arrs[6];
-  auto& jy = arrs[7];
-  auto& jz = arrs[8];
-  auto& rh = arrs[9];
-
-
-  // read my local tiles
-  for(auto cid : grid.get_local_tiles() ){
-    auto& tile = dynamic_cast<emf::Tile<2>&>(grid.get_tile( cid ));
-    auto& gs = tile.get_grids();
-
-    // get arrays
-    auto index = expand_indices( &tile );
-
-    // starting location
-    int i0 = (gs.Nx/stride)*std::get<0>(index);
-    int j0 = (gs.Ny/stride)*std::get<1>(index);
-    int k0 = 0; //(gs.Nz/stride)*std::get<2>(index);
-
-    // tile limits taking into account 0 collapsing dimensions
-    int nxt, nyt;
-    nxt = (int)gs.Nx/stride;
-    nyt = (int)gs.Ny/stride;
-
-    nxt = nxt == 0 ? 1 : nxt;
-    nyt = nyt == 0 ? 1 : nyt;
-
-    // copy tile patch by stride hopping
-    int ks = 0;
-    int kstride = 0;
-
-    for(int js=0; js<nyt; js++) {
-      for(int jstride=0; jstride < stride; jstride++) {
-        for(int is=0; is<nxt; is++) {
-
-          // field quantities; no integration
-          if (jstride==0) {
-            ex(i0+is, j0+js, k0+ks) += gs.ex( is*stride, js*stride, ks*stride);
-            ey(i0+is, j0+js, k0+ks) += gs.ey( is*stride, js*stride, ks*stride);
-            ez(i0+is, j0+js, k0+ks) += gs.ez( is*stride, js*stride, ks*stride);
-
-            bx(i0+is, j0+js, k0+ks) += gs.bx( is*stride, js*stride, ks*stride);
-            by(i0+is, j0+js, k0+ks) += gs.by( is*stride, js*stride, ks*stride);
-            bz(i0+is, j0+js, k0+ks) += gs.bz( is*stride, js*stride, ks*stride);
-          }
-
-          // densities; these quantities we need to integrate over stride
-          for(int istride=0; istride < stride; istride++) {
-            jx(i0+is, j0+js, k0+ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-            jy(i0+is, j0+js, k0+ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-            jz(i0+is, j0+js, k0+ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-            rh(i0+is, j0+js, k0+ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
-          }
-
-        }
+    emf::Tile<3>& tile = [&]() -> emf::Tile<3>& {
+      try {
+        return dynamic_cast<emf::Tile<3>&>(grid.get_tile(cid));
+      } catch(const std::bad_cast& ex) {
+        throw std::runtime_error { std::format(
+          "h5io::FieldsWriter::read_tiles assumes that all tiles are"
+          "emf::Tiles or its descendants. Orginal exception: {}",
+          ex.what()) };
       }
-    }
+    }();
 
-  } // tiles
-}
+    const auto [Emds, Bmds, Jmds] = tile.view_EBJ_on_host();
+    const auto [Nxuz, Nyuz, Nzuz] = tile.extents_wout_halo();
 
-
-template<>
-inline void h5io::FieldsWriter<3>::read_tiles(
-    corgi::Grid<3>& grid)
-{
-
-  // clear target arrays
-  for(auto& arr : arrs) arr.clear();
-
-  // target arrays
-  auto& ex = arrs[0];
-  auto& ey = arrs[1];
-  auto& ez = arrs[2];
-  auto& bx = arrs[3];
-  auto& by = arrs[4];
-  auto& bz = arrs[5];
-  auto& jx = arrs[6];
-  auto& jy = arrs[7];
-  auto& jz = arrs[8];
-  auto& rh = arrs[9];
-
-
-  // read my local tiles
-  for(auto cid : grid.get_local_tiles() ){
-    auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile( cid ));
-    auto& gs = tile.get_grids();
-
-    // get arrays
-    auto index = expand_indices( &tile );
+    const auto Nx = static_cast<int>(Nxuz);
+    const auto Ny = static_cast<int>(Nyuz);
+    const auto Nz = static_cast<int>(Nzuz);
 
     // starting location
-    int i0 = (gs.Nx/stride)*std::get<0>(index);
-    int j0 = (gs.Ny/stride)*std::get<1>(index);
-    int k0 = (gs.Nz/stride)*std::get<2>(index);
+    const int i0 = (Nx / stride) * std::get<0>(tile.index);
+    const int j0 = (Ny / stride) * std::get<1>(tile.index);
+    const int k0 = (Nz / stride) * std::get<2>(tile.index);
 
-    // tile limits taking into account 0 collapsing dimensions
-    int nxt, nyt, nzt;
-    nxt = (int)gs.Nx/stride;
-    nyt = (int)gs.Ny/stride;
-    nzt = (int)gs.Nz/stride;
-
-    nxt = nxt == 0 ? 1 : nxt;
-    nyt = nyt == 0 ? 1 : nyt;
-    nzt = nzt == 0 ? 1 : nzt;
+    const int nxt = Nx / stride;
+    const int nyt = Ny / stride;
+    const int nzt = Nz / stride;
 
     // copy tile patch by stride hopping; either downsample or average
 
     // field quantities; just downsample by hopping with stride
-    for(int ks=0; ks<nzt; ks++) 
-    for(int js=0; js<nyt; js++) 
-    for(int is=0; is<nxt; is++) {
-      ex(i0+is, j0+js, k0+ks) = gs.ex( is*stride, js*stride, ks*stride);
-      ey(i0+is, j0+js, k0+ks) = gs.ey( is*stride, js*stride, ks*stride);
-      ez(i0+is, j0+js, k0+ks) = gs.ez( is*stride, js*stride, ks*stride);
+    for(int ks = 0; ks < nzt; ks++)
+      for(int js = 0; js < nyt; js++)
+        for(int is = 0; is < nxt; is++) {
+          ex(i0 + is, j0 + js, k0 + ks) =
+            Emds[is * stride, js * stride, ks * stride][0];
+          ey(i0 + is, j0 + js, k0 + ks) =
+            Emds[is * stride, js * stride, ks * stride][1];
+          ez(i0 + is, j0 + js, k0 + ks) =
+            Emds[is * stride, js * stride, ks * stride][2];
 
-      bx(i0+is, j0+js, k0+ks) = gs.bx( is*stride, js*stride, ks*stride);
-      by(i0+is, j0+js, k0+ks) = gs.by( is*stride, js*stride, ks*stride);
-      bz(i0+is, j0+js, k0+ks) = gs.bz( is*stride, js*stride, ks*stride);
-    }
+          bx(i0 + is, j0 + js, k0 + ks) =
+            Bmds[is * stride, js * stride, ks * stride][0];
+          by(i0 + is, j0 + js, k0 + ks) =
+            Bmds[is * stride, js * stride, ks * stride][1];
+          bz(i0 + is, j0 + js, k0 + ks) =
+            Bmds[is * stride, js * stride, ks * stride][2];
+        }
 
     // densities; these quantities we average over the volume
-    for(int ks=0; ks<nzt; ks++) 
-    for(int kstride=0; kstride < stride; kstride++) 
-    for(int js=0; js<nyt; js++) 
-    for(int jstride=0; jstride < stride; jstride++) 
-    for(int is=0; is<nxt; is++) 
-    for(int istride=0; istride < stride; istride++) {
-      jx(i0+is, j0+js, k0+ks) += gs.jx( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jy(i0+is, j0+js, k0+ks) += gs.jy( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      jz(i0+is, j0+js, k0+ks) += gs.jz( is*stride+istride, js*stride+jstride, ks*stride+kstride);
-      rh(i0+is, j0+js, k0+ks) += gs.rho(is*stride+istride, js*stride+jstride, ks*stride+kstride);
-    }
+    for(int ks = 0; ks < nzt; ks++)
+      for(int kstride = 0; kstride < stride; kstride++)
+        for(int js = 0; js < nyt; js++)
+          for(int jstride = 0; jstride < stride; jstride++)
+            for(int is = 0; is < nxt; is++)
+              for(int istride = 0; istride < stride; istride++) {
+                jx(i0 + is, j0 + js, k0 + ks) += Jmds
+                  [is * stride + istride, js * stride + jstride, ks * stride + kstride]
+                  [0];
+                jy(i0 + is, j0 + js, k0 + ks) += Jmds
+                  [is * stride + istride, js * stride + jstride, ks * stride + kstride]
+                  [1];
+                jz(i0 + is, j0 + js, k0 + ks) += Jmds
+                  [is * stride + istride, js * stride + jstride, ks * stride + kstride]
+                  [2];
+                rh(i0 + is, j0 + js, k0 + ks) += 0; /* gs.rho(
+                  is * stride + istride,
+                  js * stride + jstride,
+                  ks * stride + kstride); */
+              }
 
-  } // tiles
+  }  // tiles
 }
+
+
 
 template<size_t D>
 inline bool h5io::FieldsWriter<D>::write(
@@ -278,9 +154,8 @@ inline bool h5io::FieldsWriter<D>::write(
   return true;
 }
 
-
 //--------------------------------------------------
 // explicit template class instantiations
-template class h5io::FieldsWriter<1>;
-template class h5io::FieldsWriter<2>;
+//template class h5io::FieldsWriter<1>;
+//template class h5io::FieldsWriter<2>;
 template class h5io::FieldsWriter<3>;
