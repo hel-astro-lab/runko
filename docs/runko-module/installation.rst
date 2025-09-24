@@ -150,7 +150,7 @@ Here is an example of a slurm script for runko taken from an example by the Finn
    #SBATCH --ntasks-per-node=8
    #SBATCH --gpus-per-node=8
    #SBATCH --cpus-per-task=6
-   #SBATCH --mem-pre-cpu=10G
+   #SBATCH --mem-per-cpu=10G
    #SBATCH --time=0-00:60:00       # Run time (d-hh:mm:ss)
 
    # Loads correct modules and sets up PYTHONPATH.
