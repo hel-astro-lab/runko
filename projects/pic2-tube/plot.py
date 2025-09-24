@@ -84,4 +84,4 @@ if __name__ == "__main__":
                 plot(read_full_box(file, "jz"), fig, *ax, vmin=-0.05, vmax=0.05, cblabel=file)
 
     fig.suptitle(var)
-    plt.show()
+    plt.savefig("image.png")
