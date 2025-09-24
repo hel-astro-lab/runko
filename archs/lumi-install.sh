@@ -49,10 +49,10 @@ make -j16 -Cbuild
 #     should have automatically been executed and passed.
 
 # 11. Finally, we create a handy file which loads the necessary runko modules
-# whenever called with "source tools/runko-load-env":
-cat > tools/lumi-load-runko-env << EOL
+# whenever called with "source archs/runko-load-env":
+cat > archs/lumi-load-runko-env << EOL
 # Tool to load runko modules
-# Usage: "source tools/runko-load-env"
+# Usage: "source archs/runko-load-env"
 # Load standard prerequisite modules for runko:
 module load LUMI/24.03
 module load partition/G

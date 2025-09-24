@@ -103,7 +103,7 @@ in order to use runko:
 LUMI
 ----
 
-As of 23.09.2025 the easiest method to install runko on LUMI is by using the handy script `tools/lumi-install.sh </tools/lumi-install.sh>`_ as follows:
+As of 23.09.2025 the easiest method to install runko on LUMI is by using the handy script `archs/lumi-install.sh </archs/lumi-install.sh>`_ as follows:
 
 .. code:: shell
 
@@ -111,14 +111,14 @@ As of 23.09.2025 the easiest method to install runko on LUMI is by using the han
    cd runko
    git checkout dev-v5
    git submodule update --init --recursive
-   ./tools/lumi-install.sh
+   ./archs/lumi-install.sh
 
 
-This will build runko in one go and also generate the file `tools/lumi-load-runko-env` which can be used as follows:
+This will build runko in one go and also generate the file `archs/lumi-load-runko-env` which can be used as follows:
 
 .. code:: shell
 
-   source tools/lumi-load-runko-env
+   source archs/lumi-load-runko-env
 
 to enable runko and all its required modules on a LUMI node.
 
@@ -154,7 +154,7 @@ Here is an example of a slurm script for runko taken from an example by the Finn
    #SBATCH --time=0-00:60:00       # Run time (d-hh:mm:ss)
 
    # Loads correct modules and sets up PYTHONPATH.
-   source tools/lumi-load-runko-env
+   source archs/lumi-load-runko-env
 
    # Required to choose correct GPU for each task.
    cat << EOF > select_gpu
