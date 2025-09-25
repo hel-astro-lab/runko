@@ -21,14 +21,16 @@ if __name__ == "__main__":
 
     config = runko.Configuration(None)
 
+    light_crossing_times = 2
+
     config.cfl = 0.45
-    config.Nt = int(1000 / config.cfl)
     config.Nx = 8
     config.Ny = 1
     config.Nz = 1
-    config.NxMesh = 50
-    config.NyMesh = 50
-    config.NzMesh = 250
+    config.NxMesh = 64
+    config.NyMesh = 16
+    config.NzMesh = 16
+    config.Nt = light_crossing_times * int(config.Nx * config.NxMesh / config.cfl)
     config.xmin = 0
     config.ymin = 0
     config.zmin = 0
@@ -39,8 +41,9 @@ if __name__ == "__main__":
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st_atomic"
     config.current_filter = "binomial2"
-    config.tile_partitioning = "catepillar_track"
-    config.catepillar_track_length = 1
+    config.tile_partitioning = "hilbert_curve"
+    # config.tile_partitioning = "catepillar_track"
+    # config.catepillar_track_length = 1
     if len(sys.argv) > 1:
         config.outdir = sys.argv[1]
 
@@ -50,13 +53,13 @@ if __name__ == "__main__":
     # Plasma motion in lab frame
     Gamma = 10
     # Plasma magnetisation in co-moving fluid rest frame
-    sigma = 1
+    sigma = 0
     # Cells-per-skindepth perpendicular to bulk motion direction in both rest and lab frames (c_omp = C / OMega Plasma)
     c_omp = 5
     # Plasma density per species
     ppc = 32
     # Plasma temperature in co-moving fluid rest frame in units of electron rest mass
-    temperature = 0.3
+    temperature = 0.1
 
     # Dependent variables:
     # Plasma motion (beta gamma factor)
@@ -65,17 +68,17 @@ if __name__ == "__main__":
     # Plasma density (overall, all species per cell)
     oppc = 2*ppc
     # Particle charge
-    config.q0 = -config.cfl * c_omp * np.sqrt(config.m0 * Gamma / oppc)
+    config.q0 = -config.cfl / c_omp * np.sqrt(config.m0 * Gamma**(3/2) / oppc)
     config.q1 = -config.q0
     # Magnetic field strength in the lab frame
     B_z = config.cfl * np.sqrt(config.m0 * Gamma * sigma * oppc)
     # Electric field strength in the lab frame
-    E_y = B_z
+    E_y = v_x*B_z
 
     # End of problem specific configuration
 
     logger.info(f"Bulk Gamma and v_x: {Gamma}, {v_x}")
-    logger.info(f"Particle thermal spread: {delgam}")
+    logger.info(f"Particle thermal spread: {temperature}")
     logger.info(f"Plasma beta: absent")
     logger.info(f"Plasma sigma: {sigma}")
     logger.info(f"B_z, E_y: {B_z}, {E_y}")
@@ -83,6 +86,8 @@ if __name__ == "__main__":
     logger.info(f"q1: {config.q1}")
     logger.info(f"m0: {config.m0}")
     logger.info(f"m1: {config.m1}")
+    logger.info(f"Skindepth: {c_omp}")
+    logger.info(f"Larmor radius: {None}")
     
     # Configure fields
     zero_field = lambda x, y, z: np.zeros_like(x)

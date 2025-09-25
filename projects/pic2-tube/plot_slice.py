@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
-
 def read_full_box(path_to_h5: str, var: str):
     f5 = h5py.File(path_to_h5, "r")
     return pytools.read_h5_array(f5, var)
