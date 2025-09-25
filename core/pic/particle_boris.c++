@@ -7,17 +7,18 @@
 
 void
   pic::ParticleContainer::push_particles_boris(
-    const value_type cfl,
+    const double cfl_,
     const InterpolatedEB_function& EBfunc)
 {
   const auto EB = EBfunc(pos_);
 
-  const auto pos_mds = pos_.mds();
-  const auto vel_mds = vel_.mds();
-  const auto Emds    = EB.E.mds();
-  const auto Bmds    = EB.B.mds();
+  const auto pos_mds = pos_.mds(); // particle positions
+  const auto vel_mds = vel_.mds(); // particle (four-)velocities
+  const auto Emds    = EB.E.mds(); // electric field vector
+  const auto Bmds    = EB.B.mds(); // magnetic field vector
 
-  const auto qm = toolbox::sign(charge_) / mass_;
+  const value_type cfl = cfl_; // c dx/dt = speed of light in num. units (note: implicit type cast)
+  const value_type qm  = toolbox::sign(charge_) / mass_; // charge-to-mass ratio
 
   tyvi::mdgrid_work {}
     .for_each_index(
@@ -25,18 +26,18 @@ void
       [=](const auto idx) {
         using Vec3 = toolbox::Vec3<value_type>;
 
-        const value_type v0 = cfl * Vec3(vel_mds[idx]);
-        const value_type E0 = 0.5f * qm * Vec3(Emds[idx]);
-        const value_type u0 = v0 + E0;
+        const Vec3 v0 = cfl * Vec3(vel_mds[idx]);
+        const Vec3 E0 = value_type{0.5} * qm * Vec3(Emds[idx]);
+        const Vec3 u0 = v0 + E0;
 
         const value_type ginv = cfl / std::sqrt(cfl * cfl + toolbox::dot(u0, u0));
 
-        const value_type B0 = 0.5f * qm * ginv * Vec3(Bmds[idx]) / cfl;
+        const Vec3 B0 = value_type{0.5} * qm * ginv * Vec3(Bmds[idx]) / cfl;
 
-        const value_type f = 2.f / (1.f + toolbox::dot(B0, B0));
+        const value_type f = value_type{2} / (value_type{1} + toolbox::dot(B0, B0));
 
-        const value_type u1 = f * (u0 + toolbox::cross(u0, B0));
-        const value_type u2 = u0 + toolbox::cross(u1, B0) + E0;
+        const Vec3 u1 = f * (u0 + toolbox::cross(u0, B0));
+        const Vec3 u2 = u0 + toolbox::cross(u1, B0) + E0;
 
         for(auto i = 0uz; i < 3uz; ++i) { vel_mds[idx][i] = u2[i] / cfl; }
 
