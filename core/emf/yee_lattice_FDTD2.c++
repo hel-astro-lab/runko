@@ -6,7 +6,7 @@
 namespace emf {
 
 void
-  YeeLattice::push_b_FDTD(const value_type dt)
+  YeeLattice::push_b_FDTD2(const value_type dt)
 {
   /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
   const auto h   = halo_size_;

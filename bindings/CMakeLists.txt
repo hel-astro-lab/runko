@@ -97,12 +97,11 @@ set (IO_FILES
      ../io/writers/writer.c++
      ../io/readers/reader.c++
      ../io/snapshots/fields.c++
-     ../io/snapshots/fields2.c++
-     ../io/snapshots/test_prtcls.c++
-     ../io/snapshots/pic_moments.c++
-     ../io/snapshots/field_slices.c++
-     ../io/snapshots/master_only_fields.c++
-     ../io/snapshots/master_only_moments.c++
+     #../io/snapshots/test_prtcls.c++
+     #../io/snapshots/pic_moments.c++
+     #../io/snapshots/field_slices.c++
+     #../io/snapshots/master_only_fields.c++
+     #../io/snapshots/master_only_moments.c++
     )
 
 

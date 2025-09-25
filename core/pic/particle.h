@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/emf2/yee_lattice.h"
+#include "core/emf/yee_lattice.h"
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
 #include "thrust/device_vector.h"
@@ -126,11 +126,11 @@ public:
 
   emf::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
-    const value_type cfl) const;
+    const double cfl) const;
 
   /// Adds generated current to given grid.
   ///
-  /// `lattice_orgio_coordinates` is in coordinates of the particles,
+  /// `lattice_origo_coordinates` is in coordinates of the particles,
   /// and the spacing between cells in `Jout` is 1.
   /// Assumes that all particle contributions are inside the lattice.
   void current_zigzag_1st(

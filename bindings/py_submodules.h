@@ -5,6 +5,7 @@
 
 namespace py = pybind11;
 
-void tools::bind_tools(py::module& m);
-void emf::bind_emf(py::module& m);
-void pic::bind_pic(py::module& m);
+namespace tools{ void bind_tools(py::module& m); }
+namespace emf  { void bind_emf(  py::module& m); }
+namespace pic  { void bind_pic(  py::module& m); }
+
