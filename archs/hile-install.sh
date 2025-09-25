@@ -13,8 +13,9 @@ mkdir build
 
 #-------------------------------------------------- 
 # Pre-download mdspan (because there is no internet connection on compute node)
-git clone https://github.com/kokkos/mdspan.git $HOME
 PRE_DOWNLOADED_MDSPAN_PATH="$HOME/mdspan"
+git clone https://github.com/kokkos/mdspan.git $PRE_DOWNLOADED_MDSPAN_PATH
+
 
 
 #-------------------------------------------------- 
@@ -86,7 +87,7 @@ EOL
 # Next you need to build the code yourself!
 #
 # Get gpu node allocation:
-#   	srun -G4 -w hile-g02 --cpus-per-gpu=4 --time=01:00:00 --pty bash 
+#   	srun -G1 -w hile-g02 --mem=8G --cpus-per-gpu=8 --time=00:20:00 --pty bash
 #
 # Load new modules:
 # 	source archs/hile-load-runko-env
