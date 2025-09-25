@@ -9,15 +9,13 @@ set -v
 cd "$(dirname "$0")"
 cd ../
 
+mkdir build
+
 #-------------------------------------------------- 
 # Pre-download mdspan (because there is no internet connection on compute node)
 git clone https://github.com/kokkos/mdspan.git $HOME
 PRE_DOWNLOADED_MDSPAN_PATH="$HOME/mdspan"
 
-#-------------------------------------------------- 
-# standard cmake3 path in HILE (using lumi software stack)
-CMAKE3_PATH="/appl/lumi/SW/LUMI-24.03/common/EB/buildtools/24.03/bin/cmake"
-CMAKE="${CMAKE3_PATH} -DCPM_mdspan_SOURCE=${PRE_DOWNLOADED_MDSPAN_PATH} -DCMAKE_CXX_COMPILER=CC"
 
 #-------------------------------------------------- 
 # Update the PYTHONPATH environment variable with required runko
@@ -37,7 +35,6 @@ module load craype-x86-milan
 module load cray-mpich 
 module load craype-network-ofi
 module load cray-python
-#module load rocm
 
 #-------------------------------------------------- 
 # Create a Python virtual environment specially for runko,
@@ -66,6 +63,7 @@ cat > archs/hile-load-runko-env << EOL
 # Usage: "source archs/hile-load-runko-env"
 # Load standard prerequisite modules for runko:
 
+module purge
 module load PrgEnv-cray
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
@@ -80,20 +78,22 @@ source ${VENV_PATH}/runko-gpu/bin/activate
 
 # Update the PYTHONPATH environment variable with runko path data
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}:${P3}"
-export CMAKE=$CMAKE
+export CMAKE="/appl/lumi/SW/LUMI-24.03/common/EB/buildtools/24.03/bin/cmake -DCPM_mdspan_SOURCE=${PRE_DOWNLOADED_MDSPAN_PATH} -DCMAKE_CXX_COMPILER=CC"
 EOL
 
 
 #-------------------------------------------------- 
-## Build and unit test runko on 16 cores:
-## old version
-##$CMAKE3 -Bbuild -DCPM_mdspan_SOURCE=${PRE_DOWNLOADED_MDSPAN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=$CXX .
-
-#echo $CMAKE
-#$CMAKE -Bbuild -DCMAKE_BUILD_TYPE=Release .
-
-##make -j16 -Cbuild
+# Next you need to build the code yourself!
 #
-## If all went well runko has now been compiled, and certain unit tests
-## should have automatically been executed and passed.
+# Get gpu node allocation:
+#   	srun -G4 -w hile-g02 --cpus-per-gpu=4 --time=01:00:00 --pty bash 
 #
+# Load new modules:
+# 	source archs/hile-load-runko-env
+#
+# Run cmake:
+# 	cd build
+# 	$CMAKE -DCMAKE_BUILD_TYPE=Release ..
+#
+# Finally, build:
+# 	make -j8
