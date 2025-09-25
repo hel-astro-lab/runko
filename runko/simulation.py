@@ -1,7 +1,6 @@
-from pytools import MethodWrapper
-from pyrunko.tools import comm_mode
-from pyrunko._runko_next import _virtual_tile_sync_handshake_mode
-import pyrunko.emf2.threeD as emf
+from runko.pytools import MethodWrapper
+from pyrunko.tools import _virtual_tile_sync_handshake_mode
+import pyrunko.emf.threeD as emf
 from .runko_logging import runko_logger
 from .runko_timer import Timer, timer_statistics
 import logging
@@ -50,7 +49,7 @@ class Simulation:
         if self._emf_writer:
             return
 
-        self._emf_writer = emf.FieldsWriter2(self._io_config["outdir"],
+        self._emf_writer = emf.FieldsWriter(self._io_config["outdir"],
                                              self._tile_grid._Nx,
                                              self._tile_grid._NxMesh,
                                              self._tile_grid._Ny,

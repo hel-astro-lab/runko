@@ -22,11 +22,6 @@ from .method_wrapper import MethodWrapper
 
 # physics modules
 from . import pic 
-from . import pic2
-from . import qed
-from . import vlv
-from . import ffe 
-
 
 # visualization module
 from . import visualize
