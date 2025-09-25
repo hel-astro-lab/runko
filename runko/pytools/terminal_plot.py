@@ -4,7 +4,9 @@ import numpy as np
 #import skimage
 
 import matplotlib as mpl
+print("The code crashes here in runko/pytools/terminal_plot.py .")
 import matplotlib.pyplot as plt
+print("It crashes on the previous line.")
 from matplotlib import cm
 
 from scipy import ndimage as ndi
