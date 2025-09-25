@@ -7,8 +7,6 @@
 
 #include "tools/mesh.h"
 #include "core/emf/tile.h"
-#include "core/vlv/tile.h"
-#include "core/vlv/amr/mesh.h"
 #include "core/pic/tile.h"
 #include "external/ezh5/src/ezh5.hpp"
 
@@ -85,12 +83,6 @@ class Writer {
     template<size_t D>
     bool write(const emf::Tile<D>& tile, ezh5::File& file);
 
-    //template<size_t D>
-    //bool write2(const emf::Tile<D>& tile);
-
-    template<size_t D>
-    bool write(const vlv::Tile<D>& tile, ezh5::File& file);
-
     template<size_t D>
     bool write(const pic::Tile<D>& tile, ezh5::File& file);
 
@@ -102,7 +94,5 @@ class Writer {
 //--------------------------------------------------
 // template implementations
 
-#include "fields.h"
-#include "vlv.h"
+#include "emf.h"
 #include "pic.h"
-

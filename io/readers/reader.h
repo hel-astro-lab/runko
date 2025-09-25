@@ -7,7 +7,6 @@
 #include "io/namer.h"
 #include "core/emf/tile.h"
 #include "core/pic/tile.h"
-#include "core/vlv/tile.h"
 #include "external/ezh5/src/ezh5.hpp"
 
 namespace h5io {
@@ -77,9 +76,6 @@ class Reader
   bool read(emf::Tile<D>& tile, ezh5::File& file);
 
   template<size_t D>
-  bool read(   vlv::Tile<D>& tile, ezh5::File& file);
-
-  template<size_t D>
   bool read(   pic::Tile<D>& tile, ezh5::File& file);
 
 };
@@ -91,8 +87,6 @@ class Reader
 //--------------------------------------------------
 // template implementations
 
-#include "fields.h"
-#include "vlv.h"
-#include "pic.h"
-
-
+//#include "fields.h"
+//#include "vlv.h"
+//#include "pic.h"
