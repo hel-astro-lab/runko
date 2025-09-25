@@ -1,3 +1,4 @@
+import matplotlib
 from pyrunko.pic.threeD import ParticleState
 from .configuration import Configuration
 from .tile_grid import TileGrid
