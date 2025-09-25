@@ -8,4 +8,3 @@ from .simulation import Simulation
 from pyrunko.tools import comm_mode, particle
 from .runko_logging import on_main_rank, runko_logger, runko_default_handler
 from .batch_sampling import sample_boosted_juttner_synge
-import .pytools as pytools
