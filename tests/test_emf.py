@@ -242,9 +242,11 @@ class emf(unittest.TestCase):
         fc = lambda x, y, z: np.ones((10, 12, 14))
 
         with self.assertRaises(Exception):
+            print("The test fails on the following line in tests/test_emf.py .")
             tile.batch_set_EBJ(f0, fc, fc,
                                fc, fc, fc,
                                fc, fc, fc)
+            print("The test fails on previous line.")
 
         with self.assertRaises(Exception):
             tile.batch_set_EBJ(fc, f1, fc,
