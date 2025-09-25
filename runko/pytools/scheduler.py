@@ -1,5 +1,5 @@
 import sys, os
-import pytools  # runko python tools
+from runko import pytools  # runko python tools
 from mpi4py import MPI
 
 

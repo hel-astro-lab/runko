@@ -4,7 +4,7 @@ import pathlib
 
 from mpi4py import MPI
 
-import pytools
+from runko import pytools
 import pycorgi.threeD as pycorgi
 
 from .simulation import Simulation
