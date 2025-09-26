@@ -10,6 +10,7 @@ import sys
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 def extract_em_energy(fnames):
     "Returns a dictionary of lists specifying the amount of energy stored in each field component of each simulation slice."
@@ -28,16 +29,23 @@ def extract_em_energy(fnames):
     # Done
     return field_energies
 
-def make_cherenkov_plot(laps, field_energies, outname=''):
+def make_cherenkov_plot(laps, field_energies, outname, total_kinetic_energy=None):
     for field, energies in field_energies.items():
         plt.plot(laps, energies, label=field)
+        plt.yscale('log')
     plt.xlabel('Laps $\\rightarrow$')
     plt.ylabel('Energy per field component $\\rightarrow$')
+    if total_kinetic_energy:
+        plt.axhline(y=total_kinetic_energy, color='r', linestyle='-', label='KE limit')
     plt.legend()
     if outname != 'show':
         plt.savefig(outname)
     else:
         plt.show()
+
+def read_json(fname):
+    file = open(fname, 'r')
+    return json.load(file)
 
 
 # Get the output folder argument
@@ -45,6 +53,8 @@ outputs_dir = sys.argv[1]
 print(f'Analysing simulation output located in "{outputs_dir}".')
 # Remove any trailing / from the output folder
 outputs_dir = outputs_dir[:-1] if (outputs_dir[-1]=='/') else outputs_dir
+# Load the parameters json
+#params_dict = read_json(f'{outputs_dir}/params.json')
 # Get a list of all the field files in the folder and extract a list of their lap numbers.
 prefix = f"{outputs_dir}/flds_"
 postfix = f".h5"
@@ -65,5 +75,7 @@ if len(sys.argv) > 2:
     output_filename = 'show'
 else:
     output_filename = outputs_dir+'/field_energies.pdf'
-make_cherenkov_plot(laps, field_energies, output_filename)
+total_kinetic_energy = None
+#total_kinetic_energy = params_dict['total_kinetic_energy']
+make_cherenkov_plot(laps, field_energies, output_filename, total_kinetic_energy)
 print(f"Wrote summary figure to {output_filename}.")

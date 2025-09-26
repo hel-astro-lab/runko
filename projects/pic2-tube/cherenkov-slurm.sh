@@ -8,11 +8,12 @@
 #SBATCH --error=%x-%j.err
 #SBATCH --open-mode=truncate
 #
-#SBATCH --ntasks=1
-#SBATCH --gpus-per-task=1
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=6
 #SBATCH --mem-per-cpu=10G
-#SBATCH --time=0-00:15:00       # Run time (d-hh:mm:ss)
+#SBATCH --time=0-00:10:00       # Run time (d-hh:mm:ss)
 
 # Loads correct modules and sets up PYTHONPATH.
 source runko/archs/lumi-load-runko-env

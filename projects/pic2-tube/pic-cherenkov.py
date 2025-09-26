@@ -8,7 +8,7 @@ import numpy as np
 import itertools
 import logging
 import sys
-
+import json
 
 if __name__ == "__main__":
     rng = np.random.default_rng(seed=42)
@@ -21,13 +21,13 @@ if __name__ == "__main__":
 
     config = runko.Configuration(None)
 
-    light_crossing_times = 2
+    light_crossing_times = 1.0
 
     config.cfl = 0.45
     config.Nx = 8
     config.Ny = 1
     config.Nz = 1
-    config.NxMesh = 64
+    config.NxMesh = 128
     config.NyMesh = 16
     config.NzMesh = 16
     config.Nt = light_crossing_times * int(config.Nx * config.NxMesh / config.cfl)
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Plasma magnetisation in co-moving fluid rest frame
     sigma = 0
     # Cells-per-skindepth perpendicular to bulk motion direction in both rest and lab frames (c_omp = C / OMega Plasma)
-    c_omp = 5
+    c_omp = 128
     # Plasma density per species
     ppc = 32
     # Plasma temperature in co-moving fluid rest frame in units of electron rest mass
@@ -68,7 +68,10 @@ if __name__ == "__main__":
     # Plasma density (overall, all species per cell)
     oppc = 2*ppc
     # Particle charge
-    config.q0 = -config.cfl / c_omp * np.sqrt(config.m0 * Gamma**(3/2) / oppc)
+    # My formula:
+    config.q0 = -config.cfl / c_omp * np.sqrt(config.m0 / oppc) * Gamma**(3/2)
+    # Joonas formula:
+    # config.q0 =  -(config.cfl / c_omp)**2 * (Gamma / oppc)
     config.q1 = -config.q0
     # Magnetic field strength in the lab frame
     B_z = config.cfl * np.sqrt(config.m0 * Gamma * sigma * oppc)
@@ -79,7 +82,6 @@ if __name__ == "__main__":
 
     logger.info(f"Bulk Gamma and v_x: {Gamma}, {v_x}")
     logger.info(f"Particle thermal spread: {temperature}")
-    logger.info(f"Plasma beta: absent")
     logger.info(f"Plasma sigma: {sigma}")
     logger.info(f"B_z, E_y: {B_z}, {E_y}")
     logger.info(f"q0: {config.q0}")
@@ -192,3 +194,24 @@ if __name__ == "__main__":
 
     simulation.for_each_lap(pic_simulation_step)
     simulation.log_timer_statistics()
+
+    # On completion of simulation, dump some of the relevant simulation parameters to a json file
+    param_dict = config.__dict__
+    del param_dict['_config_path'] # Unnecessary parameter
+    # Add physical parameters
+    param_dict.update({
+        'Gamma': Gamma,
+        'sigma': sigma,
+        'c_omp': c_omp,
+        'ppc':   ppc,
+        'temperature': temperature,
+        'v_x':   v_x,
+        'u_x':   u_x,
+        'oppc':  oppc,
+        'B_z':   B_z,
+        'E_y':   E_y,
+        'total_kinetic_energy': ppc * (config.Nx*config.NxMesh*config.Ny*config.NyMesh*config.Nz*config.NzMesh) * (config.m0 + config.m1) * Gamma * config.cfl**2
+    })
+    if runko.on_main_rank():
+        with open(config.outdir+'/params.json', 'w') as file:
+            file.write(json.dumps(param_dict))
