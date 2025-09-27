@@ -145,7 +145,7 @@ add_custom_target(check-runko ALL
                   ${Python_EXECUTABLE} -m unittest discover -s ../tests/ -v
                   DEPENDS pycorgi runko_cpp_bindings
                   VERBATIM
-                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/runko
+                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
 )
 
 

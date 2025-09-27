@@ -131,5 +131,5 @@ if(RUNKO_CODE_COVERAGE)
 endif()
 
 set_target_properties(runko_cpp_bindings PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/runko"
+    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}"
 )
