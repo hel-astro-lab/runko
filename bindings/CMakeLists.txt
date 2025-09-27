@@ -105,8 +105,8 @@ set (IO_FILES
     )
 
 
-pybind11_add_module(pyrunko
-    runko.c++
+pybind11_add_module(runko_cpp_bindings
+    runko_cpp_bindings.c++
     ${TOOLS_FILES}
     ${EMF_FILES}
     #${VLV_FILES}
@@ -116,7 +116,7 @@ pybind11_add_module(pyrunko
     ${IO_FILES}
 )
 
-target_link_libraries(pyrunko
+target_link_libraries(runko_cpp_bindings
     PRIVATE
     runko_includes
     runko_warnings
@@ -127,9 +127,9 @@ target_link_libraries(pyrunko
 )
 
 if(RUNKO_CODE_COVERAGE)
-    target_link_libraries(pyrunko PUBLIC runko_coverage_config)
+    target_link_libraries(runko_cpp_bindings PUBLIC runko_coverage_config)
 endif()
 
-set_target_properties(pyrunko PROPERTIES
+set_target_properties(runko_cpp_bindings PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
 )

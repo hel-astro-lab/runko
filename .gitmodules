@@ -1,5 +1,5 @@
 [submodule "pytools/pybox"]
-	path = runko/pytools/pybox
+	path = deprecated/pytools2/pybox
 	url = https://github.com/natj/pyBox.git
 	branch = master
 [submodule "external/corgi"]
