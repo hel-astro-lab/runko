@@ -72,6 +72,7 @@ module load cray-mpich
 module load craype-network-ofi
 module load cray-python
 module load rocm
+module load libfabric
 
 # Load runko virtual environment:
 source ${VENV_PATH}/runko-gpu/bin/activate
