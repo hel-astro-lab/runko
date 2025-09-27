@@ -23,9 +23,8 @@ git clone https://github.com/kokkos/mdspan.git $PRE_DOWNLOADED_MDSPAN_PATH
 #  and corgi-related paths in order to make our venv runko-aware::
 RUNKO_PATH=$(pwd)
 P1="$RUNKO_PATH/"
-P2="$RUNKO_PATH/lib"
-P3="$RUNKO_PATH/external/corgi/lib"
-export PYTHONPATH="$PYTHONPATH:$P1:$P2:$P3"
+P2="$RUNKO_PATH/external/corgi/lib"
+export PYTHONPATH="$PYTHONPATH:$P1:$P2"
 
 #-------------------------------------------------- 
 # Load standard prerequisite modules for runko:
@@ -78,7 +77,7 @@ module load rocm
 source ${VENV_PATH}/runko-gpu/bin/activate
 
 # Update the PYTHONPATH environment variable with runko path data
-export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}:${P3}"
+export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 export CMAKE="/appl/lumi/SW/LUMI-24.03/common/EB/buildtools/24.03/bin/cmake -DCPM_mdspan_SOURCE=${PRE_DOWNLOADED_MDSPAN_PATH} -DCMAKE_CXX_COMPILER=CC"
 EOL
 

@@ -31,9 +31,8 @@ source runko-venv/bin/activate
 #    and corgi-related paths in order to make our venv runko-aware::
 RUNKO_PATH=$(pwd)
 P1="$RUNKO_PATH/"
-P2="$RUNKO_PATH/lib"
-P3="$RUNKO_PATH/external/corgi/lib"
-export PYTHONPATH="$PYTHONPATH:$P1:$P2:$P3"
+P2="$RUNKO_PATH/external/corgi/lib"
+export PYTHONPATH="$PYTHONPATH:$P1:$P2"
 
 # 7. Install necessary Python dependencies
 pip3 install h5py scipy matplotlib numpy
@@ -66,6 +65,6 @@ module load cray-python
 # Load runko virtual environment:
 source ${RUNKO_PATH}/runko-venv/bin/activate
 # Update the PYTHONPATH environment variable with runko path data
-export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}:${P3}"
+export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 
 EOL
