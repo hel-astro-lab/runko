@@ -22,7 +22,7 @@ def make_test_tile():
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
 
-    return config, runko.pic.Tile((2, 1, 3), config)
+    return config, runko.pic.threeD.Tile((2, 1, 3), config)
 
 
 class pic_particle_sorting(unittest.TestCase):
@@ -51,7 +51,7 @@ class pic_particle_sorting(unittest.TestCase):
         conf, tile = make_test_tile()
 
         def pgen(x, y, z):
-            return runko.ParticleStateBatch(pos=(x, y, z), vel=(x, y, z))
+            return runko.pic.threeD.ParticleStateBatch(pos=(x, y, z), vel=(x, y, z))
 
         tile.batch_inject_to_cells(0, pgen)
         tile.batch_inject_to_cells(1, pgen)

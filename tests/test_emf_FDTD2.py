@@ -22,7 +22,7 @@ class emf_FDTD2(unittest.TestCase):
 
         def f():
             tile_grid_idx = (0, 0, 0)
-            return runko.emf.Tile(tile_grid_idx, self.config)
+            return runko.emf.threeD.Tile(tile_grid_idx, self.config)
 
         self.make_test_tile = f
 

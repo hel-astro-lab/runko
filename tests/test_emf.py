@@ -31,7 +31,7 @@ class emf(unittest.TestCase):
 
         regex = re.compile("cfl.*unsupported type.*foo", re.IGNORECASE)
         with self.assertRaisesRegex(RuntimeError, regex):
-            runko.emf.Tile(tile_grid_idx, config)
+            runko.emf.threeD.Tile(tile_grid_idx, config)
 
     def test_field_set_and_get_roundtrip(self):
 
@@ -49,7 +49,7 @@ class emf(unittest.TestCase):
         config.field_propagator = "FDTD2"
 
         tile_grid_idx = (0, 1, 2)
-        tile = runko.emf.Tile(tile_grid_idx, config)
+        tile = runko.emf.threeD.Tile(tile_grid_idx, config)
 
         (E0x, E0y, E0z), (B0x, B0y, B0z), (J0x, J0y, J0z) = tile.get_EBJ()
 
@@ -145,7 +145,7 @@ class emf(unittest.TestCase):
         config.field_propagator = "FDTD2"
 
         tile_grid_idx = (0, 1, 2)
-        tile = runko.emf.Tile(tile_grid_idx, config)
+        tile = runko.emf.threeD.Tile(tile_grid_idx, config)
 
         (E0x, E0y, E0z), (B0x, B0y, B0z), (J0x, J0y, J0z) = tile.get_EBJ()
 
@@ -228,7 +228,7 @@ class emf(unittest.TestCase):
         config.field_propagator = "FDTD2"
 
         tile_grid_idx = (0, 1, 2)
-        tile = runko.emf.Tile(tile_grid_idx, config)
+        tile = runko.emf.threeD.Tile(tile_grid_idx, config)
 
         f0 = lambda x, y, z: np.ones((1))
         f1 = lambda x, y, z: np.ones((1, 1))
@@ -320,7 +320,7 @@ class emf(unittest.TestCase):
         config.field_propagator = "FDTD2"
 
         tile_grid_idx = (0, 0, 0)
-        tile = runko.emf.Tile(tile_grid_idx, config)
+        tile = runko.emf.threeD.Tile(tile_grid_idx, config)
 
         Einit = lambda x, y, z: (0, 0, 0)
         Binit = lambda x, y, z: (0, 0, 0)
@@ -374,7 +374,7 @@ class emf(unittest.TestCase):
         config.field_propagator = "FDTD2"
 
         tile_grid_idx = [1, 2, 3]
-        tile = runko.emf.Tile(tile_grid_idx, config)
+        tile = runko.emf.threeD.Tile(tile_grid_idx, config)
 
         """
         This is not 100% neccesseary, as corgi grids add_tile method
@@ -401,22 +401,22 @@ class emf(unittest.TestCase):
         config.field_propagator = "FDTD2"
 
         with self.assertRaises(Exception):
-            runko.emf.Tile((2, 2, 3), config)
+            runko.emf.threeD.Tile((2, 2, 3), config)
 
         with self.assertRaises(Exception):
-            runko.emf.Tile((1, 3, 3), config)
+            runko.emf.threeD.Tile((1, 3, 3), config)
 
         with self.assertRaises(Exception):
-            runko.emf.Tile((1, 2, 4), config)
+            runko.emf.threeD.Tile((1, 2, 4), config)
 
         with self.assertRaises(Exception):
-            runko.emf.Tile((-1, 0, 0), config)
+            runko.emf.threeD.Tile((-1, 0, 0), config)
 
         with self.assertRaises(Exception):
-            runko.emf.Tile((0, -1, 0), config)
+            runko.emf.threeD.Tile((0, -1, 0), config)
 
         with self.assertRaises(Exception):
-            runko.emf.Tile((0, 0, -1), config)
+            runko.emf.threeD.Tile((0, 0, -1), config)
 
 if __name__ == "__main__":
     unittest.main()

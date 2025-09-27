@@ -31,7 +31,7 @@ def make_test_tile():
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st_atomic"
 
-    return config, runko.pic.Tile((0, 0, 0), config)
+    return config, runko.pic.threeD.Tile((0, 0, 0), config)
 
 
 def p_func(v):
@@ -39,7 +39,7 @@ def p_func(v):
         base = np.array((x + 0.5, y + 0.5, z + 0.5))
         dloc = 0.1 * np.array((np.sin(x), np.cos(y), np.sin(x + z)))
 
-        return [runko.ParticleState(pos=base + dloc, vel=v)]
+        return [runko.pic.threeD.ParticleState(pos=base + dloc, vel=v)]
 
     return moving_particle
 

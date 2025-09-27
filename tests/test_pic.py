@@ -34,7 +34,7 @@ class pic_tile(unittest.TestCase):
         config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 1, 2)
-        tile = runko.pic.Tile(tile_grid_idx, config)
+        tile = runko.pic.threeD.Tile(tile_grid_idx, config)
 
         (pos0_x, pos0_y, pos0_z) = tile.get_positions(0)
         (vel0_x, vel0_y, vel0_z) = tile.get_velocities(0)
@@ -61,13 +61,13 @@ class pic_tile(unittest.TestCase):
         config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
-        tile = runko.pic.Tile(tile_grid_idx, config)
+        tile = runko.pic.threeD.Tile(tile_grid_idx, config)
 
         ppc = 2
 
         # This should be called for each (non-halo) cell in the tile.
         def particle_generator(x, y, z):
-            P = runko.ParticleState
+            P = runko.pic.threeD.ParticleState
             new_p = []
             for i in range(ppc):
                 new_p.append( P(pos=(x, y, z), vel=(0, 0, i)))
@@ -130,12 +130,12 @@ class pic_tile(unittest.TestCase):
         config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
-        tile = runko.pic.Tile(tile_grid_idx, config)
+        tile = runko.pic.threeD.Tile(tile_grid_idx, config)
 
         # This should be called for each (non-halo) cell in the tile.
         def make_gen(w):
             def particle_generator(x, y, z):
-                return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
+                return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
             return particle_generator
 
         def assertLengths(expected_num_of_particles):
@@ -176,7 +176,7 @@ class pic_tile(unittest.TestCase):
         config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
-        tile = runko.pic.Tile(tile_grid_idx, config)
+        tile = runko.pic.threeD.Tile(tile_grid_idx, config)
 
         def assertLengths(type, expected_num_of_particles):
             pos_x, pos_y, pos_z = tile.get_positions(type)
@@ -194,10 +194,10 @@ class pic_tile(unittest.TestCase):
         assertLengths(1, 0)
 
         def particle_generator_electron(x, y, z):
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
+            return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         def particle_generator_ion(x, y, z):
-            return 2 * [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
+            return 2 * [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(0, particle_generator_electron)
         tile.inject_to_each_cell(1, particle_generator_ion)
@@ -223,7 +223,7 @@ class pic_tile(unittest.TestCase):
         config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
-        tile = runko.pic.Tile(tile_grid_idx, config)
+        tile = runko.pic.threeD.Tile(tile_grid_idx, config)
 
         ptype = 1
 
@@ -242,7 +242,7 @@ class pic_tile(unittest.TestCase):
         assertLengths(0)
 
         def pgen(x, y, z):
-            return runko.ParticleStateBatch(pos=(x, y, z), vel=(x, y, z))
+            return runko.pic.threeD.ParticleStateBatch(pos=(x, y, z), vel=(x, y, z))
 
         tile.batch_inject_to_cells(ptype, pgen)
 
@@ -289,11 +289,11 @@ class pic_tile(unittest.TestCase):
         config.current_depositer = "zigzag_1st"
 
         tile_grid_idx = (0, 0, 0)
-        tile = runko.pic.Tile(tile_grid_idx, config)
+        tile = runko.pic.threeD.Tile(tile_grid_idx, config)
 
         ptype = 1
 
-        PSB = runko.ParticleStateBatch
+        PSB = runko.pic.threeD.ParticleStateBatch
         pgen0 = lambda x, y, z: PSB(pos=(x[:-1], y, z), vel=(x, y, z))
         pgen1 = lambda x, y, z: PSB(pos=(x, y[4:], z), vel=(x, y, z))
         pgen2 = lambda x, y, z: PSB(pos=(x, y, z[1:]), vel=(x, y, z))

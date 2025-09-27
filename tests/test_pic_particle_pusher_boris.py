@@ -29,7 +29,7 @@ def make_test_tile():
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
 
-    return config, runko.pic.Tile((3, 3, 3), config)
+    return config, runko.pic.threeD.Tile((3, 3, 3), config)
 
 
 def in_middle_part(x, y, z, config):
@@ -57,7 +57,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
+            return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(0, still_particle)
 
@@ -101,7 +101,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
+            return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(0, still_particle)
 
@@ -145,7 +145,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
+            return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0, 0))]
 
         tile.inject_to_each_cell(0, still_particle)
 
@@ -189,7 +189,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
+            return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
 
         tile.inject_to_each_cell(0, moving_particle)
 
@@ -233,7 +233,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0.1, 0, 0))]
+            return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0.1, 0, 0))]
 
         tile.inject_to_each_cell(0, moving_particle)
 
@@ -277,7 +277,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
             # because fields in non-halo regions might be uninitialized.
             if not in_middle_part(x, y, z, config):
                 return []
-            return [runko.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
+            return [runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(0, 0.1, 0))]
 
         tile.inject_to_each_cell(0, moving_particle)
 
@@ -322,8 +322,8 @@ class pic_particle_pusher_boris(unittest.TestCase):
         y = (j + 0.5) * config.NyMesh
         z = (k + 0.5) * config.NzMesh
 
-        particles = [runko.ParticleState(pos=(xA, y, z), vel=(0, 0, 0)),
-                     runko.ParticleState(pos=(xB, y, z), vel=(0, 0, 0))]
+        particles = [runko.pic.threeD.ParticleState(pos=(xA, y, z), vel=(0, 0, 0)),
+                     runko.pic.threeD.ParticleState(pos=(xB, y, z), vel=(0, 0, 0))]
 
         tile.inject(0, particles)
 
@@ -353,8 +353,8 @@ class pic_particle_pusher_boris(unittest.TestCase):
         yB = (j + 0.9) * config.NyMesh
         z = (k + 0.5) * config.NzMesh
 
-        particles = [runko.ParticleState(pos=(x, yA, z), vel=(0, 0, 0)),
-                     runko.ParticleState(pos=(x, yB, z), vel=(0, 0, 0))]
+        particles = [runko.pic.threeD.ParticleState(pos=(x, yA, z), vel=(0, 0, 0)),
+                     runko.pic.threeD.ParticleState(pos=(x, yB, z), vel=(0, 0, 0))]
 
         tile.inject(0, particles)
 
@@ -384,8 +384,8 @@ class pic_particle_pusher_boris(unittest.TestCase):
         zA = (k + 0.1) * config.NzMesh
         zB = (k + 0.9) * config.NzMesh
 
-        particles = [runko.ParticleState(pos=(x, y, zA), vel=(0, 0, 0)),
-                     runko.ParticleState(pos=(x, y, zB), vel=(0, 0, 0))]
+        particles = [runko.pic.threeD.ParticleState(pos=(x, y, zA), vel=(0, 0, 0)),
+                     runko.pic.threeD.ParticleState(pos=(x, y, zB), vel=(0, 0, 0))]
 
         tile.inject(0, particles)
 
