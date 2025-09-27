@@ -139,11 +139,11 @@ add_subdirectory(docs)
 message(STATUS "Runko tests ran with python: ${Python_EXECUTABLE}")
 
 include(CTest)
-add_subdirectory(multirank_tests)
+add_subdirectory(tests/multirank_tests)
 
 add_custom_target(check-runko ALL
                   ${Python_EXECUTABLE} -m unittest discover -s ../tests/ -v
-                  DEPENDS pycorgi pyrunko
+                  DEPENDS pycorgi runko_cpp_bindings
                   VERBATIM
                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib
 )
