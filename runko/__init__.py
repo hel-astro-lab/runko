@@ -11,11 +11,6 @@ from .configuration import Configuration
 from .tile_grid import TileGrid
 from .simulation import Simulation
 
+# logger imports
+from .runko_logging import on_main_rank, runko_logger, runko_default_handler
 
-
-#-------------------------------------------------- 
-# BINDINGS TO BE ADDED
-#import matplotlib
-#from pyrunko.tools import comm_mode, particle
-#from .runko_logging import on_main_rank, runko_logger, runko_default_handler
-#from .batch_sampling import sample_boosted_juttner_synge
