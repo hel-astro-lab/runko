@@ -2,10 +2,8 @@
 
 import numpy as np
 import h5py as h5
-
-import pycorgi
-import pyrunko
 import scipy
+import runko_cpp_bindings as pyrunko
 
 
 def balance_mpi(n, conf, comm_size=None, do_print=True):

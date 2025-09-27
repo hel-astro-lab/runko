@@ -1,14 +1,11 @@
 import itertools
 import logging
 import pathlib
-
 from mpi4py import MPI
-
-from runko import pytools
 import pycorgi.threeD as pycorgi
-
 from .simulation import Simulation
 from .runko_logging import runko_logger
+from .balance_grid import balance_mpi, load_catepillar_track_mpi
 
 
 class TileGrid:
@@ -72,9 +69,9 @@ class TileGrid:
                                         mpi_task_mode=False))
 
         if conf.tile_partitioning == "hilbert_curve":
-            pytools.balance_mpi(self._corgi_grid, legacy_conf, do_print=False)
+            balance_mpi(self._corgi_grid, legacy_conf, do_print=False)
         elif conf.tile_partitioning == "catepillar_track":
-            pytools.load_catepillar_track_mpi(self._corgi_grid,
+            load_catepillar_track_mpi(self._corgi_grid,
                                               conf.catepillar_track_length,
                                               legacy_conf,
                                               do_print=False)
