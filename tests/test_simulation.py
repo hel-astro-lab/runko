@@ -30,7 +30,7 @@ class simulation(unittest.TestCase):
         zero_field = lambda x, y, z: (0, 0, 0)
 
         for idx in tile_grid.local_tile_indices():
-            tile = runko.emf.Tile(idx, conf)
+            tile = runko.emf.threeD.Tile(idx, conf)
             tile.set_EBJ(zero_field, one_field, zero_field)
             tile_grid.add_tile(tile, idx)
 
@@ -43,8 +43,8 @@ class simulation(unittest.TestCase):
 
         prelude_ran = [False] # Has to be mutable so func below can modify it.
         def prelude_func(_, comm, *__):
-            comm.virtual_tile_sync(runko.comm_mode.emf_B)
-            comm.pairwise_moore(runko.comm_mode.emf_B)
+            comm.virtual_tile_sync(runko.tools.comm_mode.emf_B)
+            comm.pairwise_moore(runko.tools.comm_mode.emf_B)
             prelude_ran[0] = True
 
         self.assertEqual(simulation.lap, 0)

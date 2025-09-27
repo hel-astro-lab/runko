@@ -2,7 +2,7 @@ from .method_wrapper import MethodWrapper
 from .runko_logging import runko_logger
 from .runko_timer import Timer, timer_statistics
 
-from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode
+from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
 from runko_cpp_bindings.emf.threeD import FieldsWriter
 
 import logging
