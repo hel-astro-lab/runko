@@ -1,7 +1,3 @@
-[submodule "pytools/pybox"]
-	path = deprecated/pytools2/pybox
-	url = https://github.com/natj/pyBox.git
-	branch = master
 [submodule "external/corgi"]
 	path = external/corgi
 	url = https://github.com/MiroPalmu/corgi # https://github.com/hel-astro-lab/corgi.git
