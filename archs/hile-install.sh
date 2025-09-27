@@ -86,7 +86,7 @@ EOL
 # Next you need to build the code yourself!
 #
 # Get gpu node allocation:
-#   	srun -G1 -w hile-g02 --mem=8G --cpus-per-gpu=8 --time=00:20:00 --pty bash
+#   	srun -G1 -w hile-g02 --mem=8G --cpus-per-gpu=8 --time=03:00:00 --pty bash
 #
 # Load new modules:
 # 	source archs/hile-load-runko-env
