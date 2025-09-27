@@ -1,0 +1,60 @@
+#!/bin/bash
+#SBATCH -J turb-small          # job name
+#SBATCH -C g                   # c=cpu, g=gpu
+#SBATCH --output=%J.out        # stdout
+#SBATCH --error=%J.err         # stderr
+#SBATCH -t 00-01:00:00         # max run time
+#SBATCH --nodes=1              # nodes; simulation size controlled w/ this
+
+#SBATCH --gpus-per-node=4      # 2x AMD MI210x per node
+#SBATCH --ntasks-per-node=4    # needs to be same as gpu's 
+#SBATCH --mem-per-cpu=2GB      # max 896G per node
+#SBATCH --distribution=block:block
+#SBATCH --cpus-per-gpu=8       
+#SBATCH --open-mode=truncate
+#SBATCH --gres-flags=enforce-binding
+#SBATCH --partition=hile
+
+##SBATCH --nodelist=hile-g0[1,2] # We use rocm 6.2 which is not on hile-g03.
+
+# load modules and environment variables
+source $RUNKODIR/archs/hile-load-runko-env
+module list
+echo $PYTHONPATH
+
+#--------------------------------------------------
+## on-the-fly script to select gpu's; NOTE: enough to have this file in jobs/
+#cat << EOF > hile_select_gpu
+##!/bin/bash
+#export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
+#
+#exec \$*
+#EOF
+#
+#chmod +x ./hile_select_gpu
+#echo "---select gpu script---" 
+#cat hile_select_gpu
+
+#--------------------------------------------------
+# HPC environment variable settings
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+# MPICH flags
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_OFI_STARTUP_CONNECT=1  # create mpi rank connections in the beginning, not on the fly
+export MPICH_GPU_IPC_ENABLED=0 # slow but fixes p2p gpu comm
+
+# Cray optimizations
+export FI_CXI_DEFAULT_TX_SIZE=16384 # 4096 # increase max MPI msgs per rank
+export FI_CXI_RX_MATCH_MODE=hybrid # in case hardware storage overflows, we use software mem
+# export FI_OFI_RXM_SAR_LIMIT=524288 # mpi small/eager msg limit in bytes
+# export FI_OFI_RXM_BUFFER_SIZE=131072 # mpi msg buffer of 128KiB
+
+# go to working directory
+cd $RUNKODIR/projects/pic-turbulence/
+ 
+#--------------------------------------------------
+# application 
+srun --mpi=cray_shasta ./jobs/hile_select_gpu python3 pic.py 

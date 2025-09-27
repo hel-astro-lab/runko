@@ -1,7 +1,6 @@
 """
-Canonical pic simulation using runko with decaying fields.
+Particle-in-cell simulation of a decaying kinetic turbulence using runko.
 """
-
 
 import runko
 import numpy as np
@@ -20,17 +19,18 @@ if __name__ == "__main__":
 
     config = runko.Configuration(None)
 
-    config.Nt = 200
-    config.Nx = 1
-    config.Ny = 1
-    config.Nz = 1
-    config.NxMesh = 80
-    config.NyMesh = 80
-    config.NzMesh = 80
+    config.outdir = "turb-small"
+    config.Nx = 4
+    config.Ny = 4
+    config.Nz = 4
+    config.NxMesh = 64
+    config.NyMesh = 64
+    config.NzMesh = 64
+    config.cfl = 0.45
+    config.Nt = 5.0*config.Nx*config.NxMesh/config.cfl/3.0 # =5eddy turnover times
     config.xmin = 0
     config.ymin = 0
     config.zmin = 0
-    config.cfl = 0.45
     config.field_propagator = "FDTD2"
     config.m0 = 1
     config.m1 = 1
@@ -56,8 +56,7 @@ if __name__ == "__main__":
 
     delgam = 0.3 # temperature
     temp_ration = 1 # T_i / T_e
-    sigma = 10 # temperature corrections
-               # or magnetization number (omega_ce/omega_pe)^2, including gamma for inertia??
+    sigma = 10 # magnetization (omega_ce/omega_pe)^2
 
     delgam0 = delgam
     delgam1 = temp_ration * delgam0
@@ -90,8 +89,8 @@ if __name__ == "__main__":
     # Decaying setup:
 
     A0 = 0.8 * binit
-    n_perp = 1
-    n_par = 2
+    n_perp = 2
+    n_par = 3
 
     # These use legacy rand for parity with pic-turbulence.
     np.random.seed(n_perp)
@@ -154,11 +153,11 @@ if __name__ == "__main__":
         # so these positions has to be saved such that pgen1 can get them.
         pgen0.pos = x + dx, y + dy, z + dz
         vel = runko.sample_boosted_juttner_synge(N, delgam0, beta=0, gen=rng)
-        return runko.ParticleStateBatch(pos=pgen0.pos, vel=vel)
+        return runko.pic.threeD.ParticleStateBatch(pos=pgen0.pos, vel=vel)
 
     def pgen1(x, y, z):
         vel = runko.sample_boosted_juttner_synge(len(x), delgam1, beta=0, gen=rng)
-        return runko.ParticleStateBatch(pos=pgen0.pos, vel=vel)
+        return runko.pic.threeD.ParticleStateBatch(pos=pgen0.pos, vel=vel)
 
     # TileGrid ctor:
     # - balances tiles based on conf (catepillar, hilbert)
@@ -168,7 +167,7 @@ if __name__ == "__main__":
 
     if not tile_grid.initialized_from_restart_file():
         for idx in tile_grid.local_tile_indices():
-            tile = runko.pic.Tile(idx, config)
+            tile = runko.pic.threeD.Tile(idx, config)
             tile.batch_set_EBJ(zero_field, zero_field, zero_field,
                                Bx, By, Bz,
                                zero_field, zero_field, zero_field)
@@ -183,7 +182,7 @@ if __name__ == "__main__":
     simulation = tile_grid.configure_simulation(config)
 
     def sync_EB(tile, comm, io):
-        EB = (runko.comm_mode.emf_E, runko.comm_mode.emf_B)
+        EB = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
         comm.virtual_tile_sync(*EB)
         comm.pairwise_moore(*EB)
 
@@ -192,41 +191,41 @@ if __name__ == "__main__":
     def pic_simulation_step(tile, comm, io):
 
         tile.push_half_b()
-        comm.virtual_tile_sync(runko.comm_mode.emf_B)
-        comm.pairwise_moore(runko.comm_mode.emf_B)
+        comm.virtual_tile_sync(runko.tools.comm_mode.emf_B)
+        comm.pairwise_moore(runko.tools.comm_mode.emf_B)
 
         tile.push_particles()
-        comm.virtual_tile_sync(runko.comm_mode.pic_particle)
-        comm.pairwise_moore(runko.comm_mode.pic_particle)
+        comm.virtual_tile_sync(runko.tools.comm_mode.pic_particle)
+        comm.pairwise_moore(runko.tools.comm_mode.pic_particle)
 
         if simulation.lap % 5 == 0:
             tile.sort_particles()
 
         tile.deposit_current()
-        comm.virtual_tile_sync(runko.comm_mode.emf_J)
-        comm.pairwise_moore(runko.comm_mode.emf_J_exchange)
+        comm.virtual_tile_sync(runko.tools.comm_mode.emf_J)
+        comm.pairwise_moore(runko.tools.comm_mode.emf_J_exchange)
 
-        comm.virtual_tile_sync(runko.comm_mode.emf_J)
-        comm.pairwise_moore(runko.comm_mode.emf_J)
+        comm.virtual_tile_sync(runko.tools.comm_mode.emf_J)
+        comm.pairwise_moore(runko.tools.comm_mode.emf_J)
         tile.filter_current()
-        comm.virtual_tile_sync(runko.comm_mode.emf_J)
-        comm.pairwise_moore(runko.comm_mode.emf_J)
+        comm.virtual_tile_sync(runko.tools.comm_mode.emf_J)
+        comm.pairwise_moore(runko.tools.comm_mode.emf_J)
         tile.filter_current()
         tile.filter_current()
 
         tile.push_half_b()
-        comm.virtual_tile_sync(runko.comm_mode.emf_B)
-        comm.pairwise_moore(runko.comm_mode.emf_B)
+        comm.virtual_tile_sync(runko.tools.comm_mode.emf_B)
+        comm.pairwise_moore(runko.tools.comm_mode.emf_B)
 
         tile.push_e()
         tile.subtract_J_from_E()
-        comm.virtual_tile_sync(runko.comm_mode.emf_E)
-        comm.pairwise_moore(runko.comm_mode.emf_E)
+        comm.virtual_tile_sync(runko.tools.comm_mode.emf_E)
+        comm.pairwise_moore(runko.tools.comm_mode.emf_E)
 
         if simulation.lap % 20 == 0:
             io.emf_snapshot()
 
-        if simulation.lap % 10 == 0:
+        if simulation.lap % 20 == 0:
             simulation.log_timer_statistics()
 
 
