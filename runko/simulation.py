@@ -1,8 +1,10 @@
-from runko.pytools import MethodWrapper
-from pyrunko.tools import _virtual_tile_sync_handshake_mode
-import pyrunko.emf.threeD as emf
+from .method_wrapper import MethodWrapper
 from .runko_logging import runko_logger
 from .runko_timer import Timer, timer_statistics
+
+from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode
+from runko_cpp_bindings.emf.threeD import FieldsWriter
+
 import logging
 import time
 import numpy as np
@@ -49,16 +51,16 @@ class Simulation:
         if self._emf_writer:
             return
 
-        self._emf_writer = emf.FieldsWriter(self._io_config["outdir"],
-                                             self._tile_grid._Nx,
-                                             self._tile_grid._NxMesh,
-                                             self._tile_grid._Ny,
-                                             self._tile_grid._NyMesh,
-                                             self._tile_grid._Nz,
-                                             self._tile_grid._NzMesh,
-                                             self._io_config["stride"])
+        self._emf_writer = FieldsWriter(self._io_config["outdir"],
+                                        self._tile_grid._Nx,
+                                        self._tile_grid._NxMesh,
+                                        self._tile_grid._Ny,
+                                        self._tile_grid._NyMesh,
+                                        self._tile_grid._Nz,
+                                        self._tile_grid._NzMesh,
+                                        self._io_config["stride"])
 
-        self._logger.debug("FieldsWriter2 constructed.")
+        self._logger.debug("FieldsWriter constructed.")
 
 
     def virtual_tiles(self):
