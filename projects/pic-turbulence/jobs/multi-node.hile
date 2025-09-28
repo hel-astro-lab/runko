@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH -J turb-small          # job name
+#SBATCH -J turb-med            # job name
 #SBATCH -C g                   # c=cpu, g=gpu
 #SBATCH --output=%J.out        # stdout
 #SBATCH --error=%J.err         # stderr
 #SBATCH -t 00-01:00:00         # max run time
-#SBATCH --nodes=1              # nodes; simulation size controlled w/ this
+#SBATCH --nodes=2              # nodes; simulation size controlled w/ this
 
-#SBATCH --gpus-per-node=4      # 2x AMD MI210x per node
+#SBATCH --gpus-per-node=4      # 4x AMD MI210x per node
 #SBATCH --ntasks-per-node=4    # needs to be same as gpu's 
 #SBATCH --mem-per-cpu=2GB      # max 896G per node
 #SBATCH --distribution=block:block
@@ -14,8 +14,8 @@
 #SBATCH --open-mode=truncate
 #SBATCH --gres-flags=enforce-binding
 #SBATCH --partition=hile
+#SBATCH --nodelist=hile-g0[1,2] # g0[0-2] have rocm6.2;  hile-g03 has rocm6.3.
 
-##SBATCH --nodelist=hile-g0[1,2] # We use rocm 6.2 which is not on hile-g03.
 
 # load modules and environment variables
 source $RUNKODIR/archs/hile-load-runko-env
@@ -57,4 +57,4 @@ cd $RUNKODIR/projects/pic-turbulence/
  
 #--------------------------------------------------
 # application 
-srun --mpi=cray_shasta ./jobs/hile_select_gpu python3 pic.py 
+srun --mpi=cray_shasta --cpu-bind=verbose ./jobs/hile_select_gpu python3 pic.py 
