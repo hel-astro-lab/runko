@@ -47,9 +47,9 @@ make -j16 -Cbuild
 # 10. If all went well runko has now been compiled, and certain unit tests
 #     should have automatically been executed and passed.
 
-# 11. Finally, we create a handy file which loads the necessary runko modules
-# whenever called with "source archs/runko-load-env":
-cat > archs/lumi-load-runko-env << EOL
+# 11. Finally, we create a handy file which loads the runko virtual environment and
+# necessary modules whenever called with "source runko-venv/bin/activate":
+cat >> runko-venv/bin/activate << EOL
 # Tool to load runko modules
 # Usage: "source archs/runko-load-env"
 # Load standard prerequisite modules for runko:

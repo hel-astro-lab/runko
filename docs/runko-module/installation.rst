@@ -114,11 +114,11 @@ As of 23.09.2025 the easiest method to install runko on LUMI is by using the han
    ./archs/lumi-install.sh
 
 
-This will build runko in one go and also generate the file `archs/lumi-load-runko-env` which can be used as follows:
+This will build runko in one go and append all necessary LUMI module loads to the virtual environment loader which can be used as follows:
 
 .. code:: shell
 
-   source archs/lumi-load-runko-env
+   source runko-venv/bin/activate
 
 to enable runko and all its required modules on a LUMI node.
 
@@ -154,7 +154,7 @@ Here is an example of a slurm script for runko taken from an example by the Finn
    #SBATCH --time=0-00:60:00       # Run time (d-hh:mm:ss)
 
    # Loads correct modules and sets up PYTHONPATH.
-   source archs/lumi-load-runko-env
+   source runko-venv/bin/activate
 
    # Required to choose correct GPU for each task.
    cat << EOF > select_gpu

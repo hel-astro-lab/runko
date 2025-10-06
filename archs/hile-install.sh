@@ -58,9 +58,9 @@ MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 #-------------------------------------------------- 
 # Next, we create a handy file which loads the necessary runko modules
 # whenever called with "source archs/runko-load-env":
-cat > archs/hile-load-runko-env << EOL
+cat > runko-venv/bin/activate << EOL
 # Tool to load runko modules
-# Usage: "source archs/hile-load-runko-env"
+# Usage: "source runko-venv/bin/activate"
 # Load standard prerequisite modules for runko:
 
 module purge

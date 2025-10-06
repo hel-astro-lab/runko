@@ -44,10 +44,6 @@ compile_commands.json
 *.png
 *.pdf
 
-# runko environment loaders:
-archs/lumi-load-runko-env
-archs/hile-load-runko-env
-
 */*/runs
 *.zip
 out/
