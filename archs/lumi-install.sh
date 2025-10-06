@@ -61,9 +61,7 @@ module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
 module load buildtools
-module load cray-python
-# Load runko virtual environment:
-source ${RUNKO_PATH}/runko-venv/bin/activate
+# module load cray-python # not necessary as we are using a python virtual environment already
 # Update the PYTHONPATH environment variable with runko path data
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 

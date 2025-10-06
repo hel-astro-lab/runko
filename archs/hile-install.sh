@@ -70,13 +70,9 @@ module load craype-accel-amd-gfx90a
 module load craype-x86-milan
 module load cray-mpich 
 module load craype-network-ofi
-module load cray-python
 module load rocm
 module load libfabric
-
-# Load runko virtual environment:
-source ${VENV_PATH}/runko-gpu/bin/activate
-
+module load cray-python # not necessary as we are using a python virtual environment already
 # Update the PYTHONPATH environment variable with runko path data
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 export CMAKE="/appl/lumi/SW/LUMI-24.03/common/EB/buildtools/24.03/bin/cmake -DCPM_mdspan_SOURCE=${PRE_DOWNLOADED_MDSPAN_PATH} -DCMAKE_CXX_COMPILER=CC"
