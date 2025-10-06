@@ -39,14 +39,16 @@ module load cray-python
 #-------------------------------------------------- 
 # Create a Python virtual environment specially for runko,
 # located within the runko repository:
-VENV_PATH="${RUNKO_PATH}/venvs"
-mkdir $VENV_PATH
-cd $VENV_PATH
-python -m venv runko-gpu
-cd $RUNKO_PATH
+#VENV_PATH="${RUNKO_PATH}/venvs"
+#mkdir $VENV_PATH
+#cd $VENV_PATH
+#python -m venv runko-gpu
+#cd $RUNKO_PATH
+python -m venv runko-venv
 
 # Load this runko virtual environment:
-source ${VENV_PATH}/runko-gpu/bin/activate
+#source ${VENV_PATH}/runko-gpu/bin/activate
+source runko-venv/bin/activate
 
 # Install necessary Python dependencies
 pip3 install h5py scipy matplotlib numpy
@@ -86,7 +88,7 @@ EOL
 #   	srun -G1 -w hile-g02 --mem=8G --cpus-per-gpu=8 --time=03:00:00 --pty bash
 #
 # Load new modules:
-# 	source archs/hile-load-runko-env
+# 	source runko-venv/bin/activate
 #
 # Run cmake:
 # 	cd build

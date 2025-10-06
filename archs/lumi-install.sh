@@ -51,7 +51,7 @@ make -j16 -Cbuild
 # necessary modules whenever called with "source runko-venv/bin/activate":
 cat >> runko-venv/bin/activate << EOL
 # Tool to load runko modules
-# Usage: "source archs/runko-load-env"
+# Usage: "source runko-venv/bin/activate"
 # Load standard prerequisite modules for runko:
 module load LUMI/24.03
 module load partition/G
