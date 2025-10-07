@@ -469,7 +469,7 @@ void pic::Gap<D>::add_jext(
     //-------------------------------------------------- 
     //auto s = 1.0f; // NOTE: no smoothing
 
-    gs.jx(i,0,0) += jx*s; // external current 
+    gs.jx(i,0,0) -= jx*s; // external current
   }
 
   return;
