@@ -53,16 +53,16 @@ def initialize_tile(tile, indx, n, conf):
         # alternate injection between - and + charged prtcls
         # mass is normalized to units of m_e
         if sps == 0: # electron
-            container.q = -conf.qe
+            container.q = conf.qe
             container.m = np.abs(conf.me) 
         elif sps == 1: # positron
-            container.q = +conf.qe
+            container.q = -conf.qe
             container.m = np.abs(conf.me)
         elif sps == 2: # photon
             container.q = 0 
             container.m = 0 
         elif sps == 3: # proton
-            container.q = +conf.qe
+            container.q = -conf.qe
             container.m = np.abs(conf.mi)
 
         # reserve memory for particles
