@@ -55,12 +55,12 @@ def make_test_particles(tile, after_comm=False):
         d = np.array(dir)
         pos = center + d * (1 + L / 2 - 2 * int(after_comm))
         vel = d if not after_comm else -d
-        particles.append(runko.ParticleState(pos=pos, vel=vel))
+        particles.append(runko.pic.threeD.ParticleState(pos=pos, vel=vel))
 
     return particles
 
 
-def almost_equal(a: runko.ParticleState, b: runko.ParticleState, epsilon=0.00001):
+def almost_equal(a: runko.pic.threeD.ParticleState, b: runko.pic.threeD.ParticleState, epsilon=0.00001):
     def ok(x, y):
         return (epsilon - abs(x - y)) >= 0
 
@@ -89,7 +89,7 @@ def virtual_pic_tiles():
     mpi_unittest.assertNotEqual(len(local_idx), 0)
 
     for idx in tile_grid.local_tile_indices():
-        tile = runko.pic.Tile(idx, conf)
+        tile = runko.pic.threeD.Tile(idx, conf)
         tile_grid.add_tile(tile, idx)
 
     simulation = tile_grid.configure_simulation(conf)
@@ -98,7 +98,7 @@ def virtual_pic_tiles():
 
     asserts = []
     for vtile in vtiles:
-        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.pic.Tile))
+        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.pic.threeD.Tile))
 
     mpi_unittest.assertDeferredResults(asserts)
 
@@ -115,7 +115,7 @@ def pic_noop_communication():
     conf, tile_grid = make_test_grid()
 
     for idx in tile_grid.local_tile_indices():
-        tile = runko.pic.Tile(idx, conf)
+        tile = runko.pic.threeD.Tile(idx, conf)
         tile.inject(0, make_test_particles(tile, after_comm=True))
         tile.inject(1, make_test_particles(tile, after_comm=True))
         tile_grid.add_tile(tile, idx)
@@ -153,7 +153,7 @@ def pic_noop_communication():
                 expected_particles = make_test_particles(tile, after_comm=True)
 
                 for x, y, z, vx, vy, vz in zip(posx, posy, posz, velx, vely, velz):
-                    s = runko.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
+                    s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
                     e = [p for p in expected_particles if almost_equal(p, s)]
                     asserts.append(mpi_unittest.assertEqualDeferred(1, len(e)))
 
@@ -161,8 +161,8 @@ def pic_noop_communication():
         mpi_unittest.assertEqual(True, len(asserts) >= 1)
 
     def f(local_tile, communicate, *_):
-        communicate.virtual_tile_sync(runko.comm_mode.pic_particle)
-        communicate.pairwise_moore(runko.comm_mode.pic_particle)
+        communicate.virtual_tile_sync(runko.tools.comm_mode.pic_particle)
+        communicate.pairwise_moore(runko.tools.comm_mode.pic_particle)
 
         local_tile.push_e()
         local_tile.push_half_b()
@@ -186,7 +186,7 @@ def pic_communication():
     conf, tile_grid = make_test_grid()
 
     for idx in tile_grid.local_tile_indices():
-        tile = runko.pic.Tile(idx, conf)
+        tile = runko.pic.threeD.Tile(idx, conf)
         tile.inject(0, make_test_particles(tile))
         tile.inject(1, make_test_particles(tile))
         tile_grid.add_tile(tile, idx)
@@ -227,7 +227,7 @@ def pic_communication():
                 asserts.append(mpi_unittest.assertEqualDeferred(len(velz), N))
 
                 for x, y, z, vx, vy, vz in zip(posx, posy, posz, velx, vely, velz):
-                    s = runko.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
+                    s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
                     e = [p for p in expected_particles if almost_equal(p, s)]
                     asserts.append(mpi_unittest.assertEqualDeferred(1, len(e)))
 
@@ -235,8 +235,8 @@ def pic_communication():
         mpi_unittest.assertEqual(True, len(asserts) >= 1)
 
     def f(local_tile, communicate, *_):
-        communicate.virtual_tile_sync(runko.comm_mode.pic_particle)
-        communicate.pairwise_moore(runko.comm_mode.pic_particle)
+        communicate.virtual_tile_sync(runko.tools.comm_mode.pic_particle)
+        communicate.pairwise_moore(runko.tools.comm_mode.pic_particle)
 
         local_tile.push_e()
         local_tile.push_half_b()

@@ -38,7 +38,7 @@ def virtual_emf_tiles():
     mpi_unittest.assertNotEqual(len(local_idx), 0)
 
     for idx in tile_grid.local_tile_indices():
-        tile = runko.emf.Tile(idx, conf)
+        tile = runko.emf.threeD.Tile(idx, conf)
         tile_grid.add_tile(tile, idx)
 
     simulation = tile_grid.configure_simulation(conf)
@@ -48,7 +48,7 @@ def virtual_emf_tiles():
 
     asserts = []
     for vtile in vtiles:
-        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.emf.Tile))
+        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.emf.threeD.Tile))
 
     mpi_unittest.assertDeferredResults(asserts)
 
@@ -72,7 +72,7 @@ def emf_communication():
     J0 = lambda x, y, z: (0, 0, 0)
 
     for idx in tile_grid.local_tile_indices():
-        tile = runko.emf.Tile(idx, conf)
+        tile = runko.emf.threeD.Tile(idx, conf)
         tile.set_EBJ(E0, B0, J0)
         tile_grid.add_tile(tile, idx)
 
@@ -99,7 +99,7 @@ def emf_communication():
     assertConstantFields()
 
     def f(local_tile, communicate, *_):
-        EBmodes = (runko.comm_mode.emf_E, runko.comm_mode.emf_B)
+        EBmodes = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
 
         communicate.virtual_tile_sync(*EBmodes)
         communicate.pairwise_moore(*EBmodes)
@@ -143,17 +143,17 @@ def emf_J_exchange():
         return J0
 
     for idx in tile_grid.local_tile_indices():
-        tile = runko.emf.Tile(idx, conf)
+        tile = runko.emf.threeD.Tile(idx, conf)
         tile.set_EBJ(E, B, J)
         tile_grid.add_tile(tile, idx)
 
     simulation = tile_grid.configure_simulation(conf)
 
     def f(tile, communicate, *_):
-        communicate.virtual_tile_sync(runko.comm_mode.emf_J)
-        communicate.pairwise_moore(runko.comm_mode.emf_J)
-        communicate.virtual_tile_sync(runko.comm_mode.emf_J)
-        communicate.pairwise_moore(runko.comm_mode.emf_J_exchange)
+        communicate.virtual_tile_sync(runko.tools.comm_mode.emf_J)
+        communicate.pairwise_moore(runko.tools.comm_mode.emf_J)
+        communicate.virtual_tile_sync(runko.tools.comm_mode.emf_J)
+        communicate.pairwise_moore(runko.tools.comm_mode.emf_J_exchange)
 
     simulation.for_one_lap(f)
 
