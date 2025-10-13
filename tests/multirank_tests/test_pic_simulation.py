@@ -1,6 +1,7 @@
 import mpi_unittest
 import itertools
 import numpy as np
+import tempfile
 
 import runko
 
@@ -31,6 +32,7 @@ def make_test_grid():
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
+    config.outdir = tempfile.mkdtemp(prefix="runko-pic-test-output")
 
     return config, runko.TileGrid(config)
 

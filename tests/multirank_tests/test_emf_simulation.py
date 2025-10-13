@@ -1,5 +1,6 @@
 import mpi_unittest
 import numpy as np
+import tempfile
 
 import runko
 
@@ -19,6 +20,7 @@ def create_test_grid():
     config.zmin = 0
     config.cfl = 1
     config.field_propagator = "FDTD2"
+    config.outdir = tempfile.mkdtemp(prefix="runko-emf-test-output")
 
     return config, runko.TileGrid(config)
 
