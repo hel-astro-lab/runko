@@ -507,9 +507,10 @@ def plot2d_panel(
     if do_dark:
         plt.subplots_adjust(left=0.10, bottom=0.05, right=0.90, top=0.97)
     else:
-        ax.set_xlabel(r"$x$ $(c/\omega_p)$")
-        ax.set_ylabel(r"$y$ $(c/\omega_p)$")
-        plt.subplots_adjust(left=0.15, bottom=0.10, right=0.87, top=0.97)
+        #ax.set_xlabel(r"$x$ $(c/\omega_p)$")
+        #ax.set_ylabel(r"$y$ $(c/\omega_p)$")
+        #plt.subplots_adjust(left=0.15, bottom=0.10, right=0.87, top=0.97)
+        plt.subplots_adjust(left=0.10, bottom=0.05, right=0.90, top=0.97)
 
 
     wskip = 0.0
@@ -706,9 +707,10 @@ def plot2d_hires_panel(
     if do_dark:
         plt.subplots_adjust(left=0.10, bottom=0.05, right=0.90, top=0.97)
     else:
-        ax.set_xlabel(r"$x$ $(c/\omega_p)$")
-        ax.set_ylabel(r"$y$ $(c/\omega_p)$")
-        plt.subplots_adjust(left=0.15, bottom=0.10, right=0.87, top=0.97)
+        #ax.set_xlabel(r"$x$ $(c/\omega_p)$")
+        #ax.set_ylabel(r"$y$ $(c/\omega_p)$")
+        #plt.subplots_adjust(left=0.15, bottom=0.10, right=0.87, top=0.97)
+        plt.subplots_adjust(left=0.10, bottom=0.05, right=0.90, top=0.97)
 
 
     wskip = 0.0
@@ -755,16 +757,16 @@ def quick_build_info(fdir, lap):
 
 
 
-do_dark = True
+do_dark = False
 
 if __name__ == "__main__":
 
-    if do_dark:
-        plt.fig = plt.figure(1, figsize=(8,6), dpi=300)
+    #if do_dark:
+    plt.fig = plt.figure(1, figsize=(8,6), dpi=300)
         
-        plt.rc('font', family='serif', size=7)
-        plt.rc('xtick')
-        plt.rc('ytick')
+    plt.rc('font', family='serif', size=7)
+    plt.rc('xtick')
+    plt.rc('ytick')
 
     #else:
     #    plt.fig = plt.figure(1, figsize=(4,3.5), dpi=200)
@@ -888,9 +890,9 @@ if __name__ == "__main__":
     axs[1].minorticks_on()
     axs[2].minorticks_on()
 
-    axs[0].set_xlim((0,1500))
-    axs[1].set_xlim((0,1500))
-    axs[2].set_xlim((0,1500))
+    axs[0].set_xlim((0,10000))
+    axs[1].set_xlim((0,10000))
+    axs[2].set_xlim((0,10000))
 
     if True:
         #axs[1].set_ylim((0.2,1.0))
@@ -921,10 +923,7 @@ if __name__ == "__main__":
     axs[2].set_ylabel(r'$N_d/N_u$')
 
 
-    if do_dark:
-        fname = fdir +'RH.pdf'
-    else:
-        fname = fdir +'RH.pdf'
+    fname = fdir +'RH.pdf'
 
     plt.savefig(fname)
 

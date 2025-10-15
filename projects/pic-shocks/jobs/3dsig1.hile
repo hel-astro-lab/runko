@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J 3ds3-x2048g5
+#SBATCH -J 3ds1-x2048g5
 #SBATCH -C c
 #SBATCH --output=%J.out
 #SBATCH --error=%J.err
@@ -37,4 +37,4 @@ export FI_CXI_RX_MATCH_MODE=hybrid # in case hardware storate overflows, we use 
 # go to working directory
 cd $RUNKODIR/projects/pic-shocks/
  
-srun --mpi=cray_shasta python3 pic.py --conf 3dsig3.ini   # Cray
+srun --mpi=cray_shasta python3 pic.py --conf 3dsig1.ini   # Cray
