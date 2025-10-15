@@ -52,15 +52,18 @@ def initialize_tile(tile, indx, n, conf):
 
         # alternate injection between - and + charged prtcls
         # mass is normalized to units of m_e
-        if sps == 0:
+        if sps == 0: # electron
+            container.q = conf.qe
+            container.m = np.abs(conf.me) 
+        elif sps == 1: # positron
             container.q = -conf.qe
             container.m = np.abs(conf.me)
-        elif sps == 1:
-            container.q = -conf.qi
+        elif sps == 2: # photon
+            container.q = 0 
+            container.m = 0 
+        elif sps == 3: # proton
+            container.q = -conf.qe
             container.m = np.abs(conf.mi)
-        elif sps == 2:
-            container.q = -conf.qp
-            container.m = np.abs(conf.mp)
 
         # reserve memory for particles
         Nprtcls = conf.NxMesh * conf.NyMesh * conf.NzMesh * conf.ppc

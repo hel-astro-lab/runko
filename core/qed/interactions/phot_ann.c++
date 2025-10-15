@@ -200,8 +200,9 @@ void PhotAnn::interact(
     if( niter > n_max ) break; // too many iterations
     niter += 1;
   }
+  #ifdef DEBUG  
   if(niter > n_max) std::cerr << "PHOT-ANN WARNING: too many iterations" << std::endl;
-
+  #endif
 
   // new primary lepton vectors in CoM frame
   //      #sinz = sqrt(1-z**2) # sin z
@@ -244,7 +245,7 @@ void PhotAnn::interact(
 
 
 
-#ifdef DEBUG
+  #ifdef DEBUG
   // --------------------------------------------------
   // test energy conservation
   //--------------------------------------------------
@@ -283,7 +284,7 @@ void PhotAnn::interact(
       std::cerr << "omr1,omr2 " <<  omr1  << " " <<  omr2  << std::endl;
     }
   }
-#endif
+  #endif
 
   // is this flip needed? seems so; makes routine independent of e-/e+
   if(rand() < 0.5) {

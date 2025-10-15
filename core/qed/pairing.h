@@ -13,8 +13,12 @@
 #include "core/pic/tile.h"
 #include "tools/sample_arrays.h"
 #include "tools/linlogspace.h"
+#include "tools/staggered_grid.h"
 
+#ifdef DEBUG
 #define USE_INTERNAL_TIMER // comment this out to remove the profiler
+#endif
+
 #include "external/timer/timer.h"
 
 #include "core/qed/interactions/interaction.h"
@@ -26,6 +30,7 @@ namespace qed {
   using std::min;
   using std::max;
 
+  using toolbox::shape; // tanh function
 
 
 // duplicate particle info into fresh variables
@@ -107,14 +112,23 @@ public:
   // normalization factor for single-body interaction probabilities
   float prob_norm_onebody = 1.0f;
 
+
   // force e- e+ to have unit weights irrespective of weighting functions
   bool force_ep_uni_w = true; 
+
+  // maximum number of particles allowed in a tile; no addition above this
+  // NOTE: this means energy is not conserved if we skip prtcl addition
+  int max_tile_prtcl_num = 1000000000; 
+  int max_tile_phot_num = 1000000000; 
 
   //--------------------------------------------------
   // optional virtual field component (esp. for 1D sims to mimic varying backgrounds)
 
   bool use_vir_curvature = false;
   float vir_pitch_ang = 0.0; // sin\alpha/\gamma of the (virtual) curvature pitch angle
+                               
+  float r_curv = 1.0f; // curvature radius
+  float r_gap = 100.0f; // gap length 
 
   //--------------------------------------------------
   //histogram for the leaking/escaping photons
@@ -541,7 +555,7 @@ public:
     timer.start(); // start profiling block
 
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -639,7 +653,24 @@ public:
         // NOTE: maximum interaction rate = sigma_max * w2_sum * w1/prob_norm
         float prob_vir_max = 0.0;
         for(size_t i=0; i<ids.size(); i++) prob_vir_max += 2.0f*cmaxs[i]*wsums[i]; 
-                                                                                             
+
+
+        //--------------------------------------------------
+        // no interactions allowed outside the gap
+        // v0; sharp cutoff
+        //if((std::abs(lx1/r_gap) > 1.0)) continue;
+
+        // v1: smoothed drop
+        // NOTE: currently this suppresses all interactions. 
+        //       Should it only suppress 1) two-photon pair creation or 2) Compton?
+        //       Or 3) reduce photon target densities for whatever reaction?
+        // REASONING: In theory, yes but, in practice, both Compton and pair-creation 
+        //       are suppressed so fast beyond x > H_gap that shouldn't matter. 
+        // CAVEAT: This would matter, however, for pair annihilation that should always be
+        //       possible. It's rate is however tiny (we hope).
+        prob_vir_max *= shape(lx1, r_gap, 20.0f); // tanh profile with delta = 5 cells
+        //--------------------------------------------------
+
         // no targets to interact with
         if(prob_vir_max < EPS) continue;
 
@@ -652,7 +683,7 @@ public:
 
         // exponential waiting time between interactions
         float t_free = -log( rand() )*prob_norm/(prob_vir_max*w1); //NOTE w1 here
-                                                                    //
+                                                                      
         //if( t_free > 1.0) {
         //if( true ) {
         //  std::cout<< "t_free: " << t_free << " N_Q/p_int: " << prob_norm/prob_vir_max << std::endl;
@@ -689,9 +720,11 @@ public:
           auto t2   = iptr->t2;                    // target type
           auto con2 = cons[t2];                    // target container
 
+          if(con2->size()==0) continue;
+
           //--------------------------------------------------
           // get random target with energy between jmin/jmax
-          // propability is proptional to weight of LPs
+          // propability is proportional to weight of LPs
 
           timer.start_comp("sample_prob");
           //size_t n2 = toolbox::sample_prob_between(     con2->wgtCumArr, rand(), jmin, jmax);
@@ -1145,14 +1178,21 @@ public:
               // TODO are these independent or same draw for prob_kill3
               // i.e., kill parent and create copies or let parent live and no copies?
 
-              timer.start_comp("add_prtcl1");
-              double z1 = rand();
-              while( n3 > z1 + ncop ){
-                // TODO NOTE lx3 here not lx1
-                cons[t3]->add_particle( {{lx3, ly3, lz3}}, {{ux3, uy3, uz3}}, w3); // new ene & w
-                ncop += 1.0;
+              bool do_addition = true;
+              if(  (t3 == "ph")                  && (info_prtcl_num[t3] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+              if( ((t3 == "e-") || (t3 == "e+")) && (info_prtcl_num[t3] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+
+              if( do_addition ) { // add if we are below tile limit
+                                                   
+                timer.start_comp("add_prtcl1");
+                double z1 = rand();
+                while( n3 > z1 + ncop ){
+                  // TODO NOTE lx3 here not lx1
+                  cons[t3]->add_particle( {{lx3, ly3, lz3}}, {{ux3, uy3, uz3}}, w3); // new ene & w
+                  ncop += 1.0;
+                }
+                timer.stop_comp("add_prtcl1");
               }
-              timer.stop_comp("add_prtcl1");
 
               timer.start_comp("del_parent1");
               // kill parent
@@ -1217,15 +1257,22 @@ public:
                        
               // annihilation interactions go her
                 
-              timer.start_comp("add_prtcl2");
-              double z1 = rand();
-              while( n4 > z1 + ncop ){
-                //cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
-                // TODO note lx4 here
-                cons[t4]->add_particle( {{lx4, ly4, lz4}}, {{ux4, uy4, uz4}}, w4); // new ene & w
-                ncop += 1.0;
+              bool do_addition = true;
+              if(  (t4 == "ph")                  && (info_prtcl_num[t4] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+              if( ((t4 == "e-") || (t4 == "e+")) && (info_prtcl_num[t4] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+
+              if( do_addition ) { // add if we are below tile limit
+                                                 //
+                timer.start_comp("add_prtcl2");
+                double z1 = rand();
+                while( n4 > z1 + ncop ){
+                  //cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                  // TODO note lx4 here
+                  cons[t4]->add_particle( {{lx4, ly4, lz4}}, {{ux4, uy4, uz4}}, w4); // new ene & w
+                  ncop += 1.0;
+                }
+                timer.stop_comp("add_prtcl2");
               }
-              timer.stop_comp("add_prtcl2");
 
               timer.start_comp("del_parent2");
               // kill parent
@@ -1309,7 +1356,7 @@ public:
   {
     timer.start(); // start profiling block
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -1371,6 +1418,8 @@ public:
         const auto ly1 = con1.loc(1,n1);
         const auto lz1 = con1.loc(2,n1);
 
+        const auto xborn = ly1; //Used only in 1D
+
         const auto ux1 = con1.vel(0,n1);
         const auto uy1 = con1.vel(1,n1);
         const auto uz1 = con1.vel(2,n1);
@@ -1401,15 +1450,37 @@ public:
 
         //--------------------------------------------------
         // construct (optional) virtual curvature into the EM fields (for 1D cases)
+        // We mimic a real B-field line curvature by inserting the equivalent field perpendicular component to B_y via by_vir parameter.
+
+        // Synchrotron: particle experiences an angle sin\theta = \gamma r_g/R_curv where r_g is the gyroradius and R_curv the field line curvature
+        // in its rest frame (hence an additional \gamma factor).
+
+        // Multi-photon annihilation: Photons are emitted mostly to the direction of the electron and as they propagate, have an increasing angle against the curving field line.
+        // To mimic  this, we calculate the angle via \sin\theta = sin((x-x_born)/R_curv).
+        // The height where the photon is born (x_born) is stored in 1D simulations within the y-location of the particle.
+
         float by_vir = 0.0f;
         if (use_vir_curvature) {
-          //float r_curv = std::max(lx1 - rad_offs_vir, 0.0f)/rad_curv_vir;
-          //by_vir = b0_curv_vir*pow(r_curv, 2);
+          if(iptr->name == "multi-phot-ann"){
+            by_vir = gs.bx(ind)*std::sin( (lx1 - xborn)/r_curv ); // v0 
 
-          float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
-          by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
+            // more complicated v1 that should be numerically more stable and has radius dependency
+            //by_vir = gs.bx(ind)*std::abs(lx1 - xborn)/r_curv;        // approximate sin\theta \approx \theta
+            //by_vir = by_vir*std::pow(1.0f - std::abs(lx1/r_gap), 2);  // decrease field strength linearly with height
+
+          } else if(iptr->name == "synchrotron") {
+            float gam = sqrt(1.0 + ux1*ux1 + uy1*uy1 + uz1*uz1 );
+            by_vir = gs.bx(ind)*gam*vir_pitch_ang; // \gamma B_x \sin\alpha
+          }
+
+          // turn off pair production for h/L > 1
+          // v0: sharp drop
+          //if(std::abs(lx1/r_gap) > 1.0) by_vir = 0.0f;
+
+          // v1: smoothed drop
+          by_vir *= shape(lx1, r_gap, 20.0f); // tanh profile with delta = 5 cells
         }
-          
+
         const float ex = gs.ex(ind); 
         const float ey = gs.ey(ind); 
         const float ez = gs.ez(ind); 
@@ -1457,8 +1528,7 @@ public:
           // particle values after interaction
           auto [t3, ux3, uy3, uz3, w3] = duplicate_prtcl(t1, ux1, uy1, uz1, w1);
 
-          //iptr->wtar2wini = 1.0f/t_free;
-          iptr->wtar2wini = prob_norm_onebody/tau_int; // feed t_rad/\Delta t into the process
+          iptr->wtar2wini = prob_norm_onebody; // inject N1Q normalization into the interaction for possible extra calculations
 
           timer.start_comp("interact");
           iptr->interact( t3, ux3, uy3, uz3,  t4, ux4, uy4, uz4);
@@ -1493,8 +1563,6 @@ public:
           facc4 = iptr->do_accumulate ? facc4 : 1.0f;
           timer.stop_comp("acc");
 
-          facc4 /= iptr->wtar2wini; // add accumulation factor calculated inside the processes' interact routine
-
           //n3 = n4/facc3; // NOTE never modify the parent; could be implemented but then need to change also the 
                            //      parent update below.
 
@@ -1507,6 +1575,8 @@ public:
 
             w3 = w1/n3; // new parent particle weight
             w4 = w1/n4; // emitted prtcl inherits weight from parent
+
+            w4 = w4*iptr->wtar2wini; //add a growth factor calculated inside the processes' interact routine
                           
             // NOTE: we keep location the same
             con1.vel(0,n1) = ux3;
@@ -1517,15 +1587,29 @@ public:
             //      if new processes are added (that can have a parent particle that is not electron/positron) then this 
             //      needs re-updating.
 
-            // add prtcl 4
-            timer.start_comp("add_ems_prtcls");
-            float ncop = 0.0;
-            float z1 = rand();
-            while(n4 > z1 + ncop) {
-              cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
-              ncop += 1.0;
+
+            bool do_addition = true;
+            if(  (t4 == "ph")                  && (info_prtcl_num[t4] > max_tile_phot_num)  ) do_addition = false; // switch off for photons
+            if( ((t4 == "e-") || (t4 == "e+")) && (info_prtcl_num[t4] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+
+            if( do_addition ) { // add if we are below tile limit
+                                                                
+              // add prtcl 4
+              timer.start_comp("add_ems_prtcls");
+              float ncop = 0.0;
+              float z1 = rand();
+
+              //saving the x-value of the created photon for 1D calculation if virtual curv used
+              float ly1vir = use_vir_curvature ? lx1 : ly1;
+
+              //if(use_vir_curvature && lx1 > r_gap) z1 = n4 + 0.5; // prevent emission beyond gap size
+
+              while(n4 > z1 + ncop) {
+                cons[t4]->add_particle( {{lx1, ly1vir, lz1}}, {{ux4, uy4, uz4}}, w4);
+                ncop += 1.0;
+              }
+              timer.stop_comp("add_ems_prtcls");
             }
-            timer.stop_comp("add_ems_prtcls");
 
           //--------------------------------------------------
           } else { // single-body annihilation into t3 and t4 pair
@@ -1540,16 +1624,26 @@ public:
                 n4 = w1/w4; // NOTE w1 here since parent is same for both t3 and t4
               }
 
-              // add new particle t3 and t4; particles are assumed to be identical
-              timer.start_comp("add_ann_prtcls");
-              float ncop = 0.0;
-              float z1 = rand();
-              while(n4 > z1 + ncop) {
-                cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); 
-                cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
-                ncop += 1.0;
+              bool do_addition = true;
+              if( ((t3 == "e-") || (t3 == "e+")) && (info_prtcl_num[t3] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+              if( ((t4 == "e-") || (t4 == "e+")) && (info_prtcl_num[t4] > max_tile_prtcl_num) ) do_addition = false; // switch off for pairs
+              if(  (t3 == "ph")                  && (info_prtcl_num[t3] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+              if(  (t4 == "ph")                  && (info_prtcl_num[t4] > max_tile_phot_num ) ) do_addition = false; // switch off for photons
+                                                                                                                       
+                                                                                                                       
+              if( do_addition ) { // add if we are below tile limit
+                
+                // add new particle t3 and t4; particles are assumed to be identical
+                timer.start_comp("add_ann_prtcls");
+                float ncop = 0.0;
+                float z1 = rand();
+                while(n4 > z1 + ncop) {
+                  cons[t3]->add_particle( {{lx1, ly1, lz1}}, {{ux3, uy3, uz3}}, w3); 
+                  cons[t4]->add_particle( {{lx1, ly1, lz1}}, {{ux4, uy4, uz4}}, w4); 
+                  ncop += 1.0;
+                }
+                timer.stop_comp("add_ann_prtcls");
               }
-              timer.stop_comp("add_ann_prtcls");
 
               // remove old parent particle t1
               timer.start_comp("del_parent");
@@ -1585,7 +1679,7 @@ public:
   void rescale(pic::Tile<D>& tile, string& t1, double f_kill)
   {
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -1789,7 +1883,7 @@ public:
       )
   {
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 
@@ -1846,7 +1940,7 @@ public:
       )
   {
 
-    // build pointer map of types to containers; used as a helper to access particle tyeps
+    // build pointer map of types to containers; used as a helper to access particle types
     std::map<std::string, ConPtr> cons;
     for(auto&& con : tile.containers) cons.emplace(con.type, &con );
 

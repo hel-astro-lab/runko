@@ -62,6 +62,7 @@ public:
   }
 
   double B_QED = 1.0; // critical QED field strength in code units
+  double C_SYNC = 1.0; // A constant for synchrotron cooling calculation
 
   // internal storage for the dimensionless electorn quantum parameter
   // updated in comp_chi()

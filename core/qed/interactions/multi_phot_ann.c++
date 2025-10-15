@@ -153,7 +153,7 @@ void MultiPhotAnn::interact(
 
   // closest index on the CHIE grid (x-axis of XI table)
   i = find_sorted_nearest_algo2(CHIX, chi_x, dim0);
-  float rnd = rand(); // draw a random nuber
+  float rnd = rand(); // draw a random number
 
   //--------------------------------------------------  
   if( i == 0 ) { // chi_x < chi_x,min 

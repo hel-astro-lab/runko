@@ -200,6 +200,9 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
       //jx(i-1, j+1, k) = qvx * (0.5 - Wx1_ip1)*W2_jp1
       //jx(i  , j+1, k) = qvx * (0.5 + Wx1_ip1)*W2_jp1
 
+
+#ifdef DEBUG
+
       bool debug = false;
       for(int iii=0; iii<3; iii++){
           if(Wxx1[iii] < 0.0)  debug = true;
@@ -247,14 +250,13 @@ void pic::ZigZag_2nd<D,V>::solve( pic::Tile<D>& tile )
           << " W2y1: "<< "(" << Wy2[0] << "," << Wy2[1] << "," << Wy2[2]    << /* "," << Wy1[3]  << */ ")"
           << " W2z1: "<< "(" << Wz2[0] << "," << Wz2[1] << "," << Wz2[2]    << /* "," << Wz1[3]  << */ ")"
           << "\n";
-
       }
+#endif
 
       // TODO: what about original scheme? Does it equal this?
       // TODO: this still lacks -1/2 staggering which is strange
       // TODO: Sokolev correction to interpolator too
       // TODO: is there a more general formula that can be applied to calculate these?
-
 
       // NOTE: incrementing loop counter with ++i to enforce at least 1 iteration always
       //jx

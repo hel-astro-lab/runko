@@ -10,18 +10,18 @@
 
 
 
-DEVCALLABLE inline double _lerp(
-      double c000, double c100, double c010, double c110,
-      double c001, double c101, double c011, double c111,
-      double dx, double dy, double dz) 
+DEVCALLABLE inline float _lerp(
+      float c000, float c100, float c010, float c110,
+      float c001, float c101, float c011, float c111,
+      float dx, float dy, float dz) 
 {
-      double c00 = c000 * (1.0-dx) + c100 * dx;
-      double c10 = c010 * (1.0-dx) + c110 * dx;
-      double c0  = c00  * (1.0-dy) + c10  * dy;
-      double c01 = c001 * (1.0-dx) + c101 * dx;
-      double c11 = c011 * (1.0-dx) + c111 * dx;
-      double c1  = c01  * (1.0-dy) + c11  * dy;
-      double c   = c0   * (1.0-dz) + c1   * dz;
+      float c00 = c000 * (1.0-dx) + c100 * dx;
+      float c10 = c010 * (1.0-dx) + c110 * dx;
+      float c0  = c00  * (1.0-dy) + c10  * dy;
+      float c01 = c001 * (1.0-dx) + c101 * dx;
+      float c11 = c011 * (1.0-dx) + c111 * dx;
+      float c1  = c01  * (1.0-dy) + c11  * dy;
+      float c   = c0   * (1.0-dz) + c1   * dz;
       return c;
 }
 
@@ -48,8 +48,8 @@ void pic::LinearInterpolator<D,V>::solve(
     auto mins = tile.mins;
 
     // mesh sizes for 1D indexing
-    const size_t iy = D >= 2 ? gs.ex.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
-    const size_t iz = D >= 3 ? gs.ex.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
+    const int iy = D >= 2 ? gs.ex.indx(0,1,0) - gs.ex.indx(0,0,0) : 0;
+    const int iz = D >= 3 ? gs.ex.indx(0,0,1) - gs.ex.indx(0,0,0) : 0;
 
 
     // loop over particles
@@ -57,27 +57,24 @@ void pic::LinearInterpolator<D,V>::solve(
                 size_t n, 
                 emf::Grids& gs,
                 pic::ParticleContainer<D>& con){
-
-      int i=0, j=0, k=0;
-      double dx=0.0, dy=0.0, dz=0.0;
     
       // normalize to tile units
-      double loc0n = D >= 1 ? con.loc(0,n) - mins[0] : con.loc(0,n);
-      double loc1n = D >= 2 ? con.loc(1,n) - mins[1] : con.loc(1,n);
-      double loc2n = D >= 3 ? con.loc(2,n) - mins[2] : con.loc(2,n);
+      float loc0n = D >= 1 ? con.loc(0,n) - mins[0] : 0.0f;
+      float loc1n = D >= 2 ? con.loc(1,n) - mins[1] : 0.0f;
+      float loc2n = D >= 3 ? con.loc(2,n) - mins[2] : 0.0f;
 
       // particle location in the grid
-      if(D >= 1) i = floor(loc0n);
-      if(D >= 2) j = floor(loc1n);
-      if(D >= 3) k = floor(loc2n);
+      int i = (D >= 1) ? floor(loc0n) : 0;
+      int j = (D >= 2) ? floor(loc1n) : 0;
+      int k = (D >= 3) ? floor(loc2n) : 0;
 
-      if(D >= 1) dx = loc0n - i;
-      if(D >= 2) dy = loc1n - j;
-      if(D >= 3) dz = loc2n - k;
+      float dx = (D >= 1) ? loc0n - i : 0.0f;
+      float dy = (D >= 2) ? loc1n - j : 0.0f;
+      float dz = (D >= 3) ? loc2n - k : 0.0f;
 
       // one-dimensional index
-      const size_t ind = gs.ex.indx(i,j,k);
-      double c000, c100, c010, c110, c001, c101, c011, c111;
+      const int ind = gs.ex.indx(i,j,k);
+      float c000, c100, c010, c110, c001, c101, c011, c111;
 
       //ex
       c000 = 0.5*(gs.ex(ind       ) +gs.ex(ind-1      ));

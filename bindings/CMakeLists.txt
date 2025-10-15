@@ -43,6 +43,7 @@ set (PIC_FILES
      ../core/pic/boundaries/piston.c++
      ../core/pic/boundaries/piston_z.c++
      ../core/pic/boundaries/star_surface_injector.c++
+     ../core/pic/boundaries/gap.c++
      ../core/pic/pushers/boris.c++
      ../core/pic/pushers/boris_drag.c++
      ../core/pic/pushers/boris_rad.c++

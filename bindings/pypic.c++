@@ -40,6 +40,7 @@ namespace py = pybind11;
 #include "core/pic/boundaries/piston.h"
 #include "core/pic/boundaries/piston_z.h"
 #include "core/pic/boundaries/star_surface_injector.h"
+#include "core/pic/boundaries/gap.h"
 
 #include "io/writers/writer.h"
 #include "io/writers/pic.h"
@@ -537,6 +538,10 @@ void bind_pic(py::module& m_sub)
   py::class_<pic::LinearInterpolator<1,3>>(m_1d, "LinearInterpolator", picinterp1d)
     .def(py::init<>());
 
+  // 2nd order quadratic
+  py::class_<pic::QuadraticInterpolator<1>>(m_1d, "QuadraticInterpolator", picinterp1d)
+    .def(py::init<>());
+
   //--------------------------------------------------
   // 2D version
   py::class_< pic::Interpolator<2,3>, PyInterpolator<2> > picinterp2d(m_2d, "Interpolator");
@@ -589,6 +594,10 @@ void bind_pic(py::module& m_sub)
   // zigzag depositer
   py::class_<pic::ZigZag<1,3>>(m_1d, "ZigZag", picdeposit1d)
     .def(py::init<>());
+
+  py::class_<pic::ZigZag_2nd<1,3>>(m_1d, "ZigZag_2nd", picdeposit1d)
+    .def(py::init<>());
+
 
   //--------------------------------------------------
   // 2D version
@@ -766,6 +775,40 @@ void bind_pic(py::module& m_sub)
   auto tw53d = pic::wall::declare_tile<3, -3>(m_3d, "Tile_wall_LZ");
   auto tw63d = pic::wall::declare_tile<3, +3>(m_3d, "Tile_wall_RZ");
 
+
+  //--------------------------------------------------
+  // Magnetospheric Gap 
+
+  py::class_<pic::Gap<1>>(m_1d, "Gap")
+    .def(py::init<>())
+    .def_readwrite("B0",             &pic::Gap<1>::B0)
+    .def_readwrite("E0",             &pic::Gap<1>::E0)
+    .def_readwrite("x_left",         &pic::Gap<1>::x_left)
+    .def_readwrite("x_right",        &pic::Gap<1>::x_right)
+    .def_readwrite("gap_length",     &pic::Gap<1>::gap_length)
+    .def_readwrite("Nx",             &pic::Gap<1>::Nx)
+    .def_readwrite("delta_left",     &pic::Gap<1>::delta_left)
+    .def_readwrite("delta_right",    &pic::Gap<1>::delta_right)
+    .def_readwrite("inj_rate_pairs", &pic::Gap<1>::inj_rate_pairs)
+    .def_readwrite("inj_rate_phots", &pic::Gap<1>::inj_rate_phots)
+    .def_readwrite("temp_pairs",     &pic::Gap<1>::temp_pairs)
+    .def_readwrite("temp_phots",     &pic::Gap<1>::temp_phots)
+    .def_readwrite("wph",            &pic::Gap<1>::wph)
+    .def_readwrite("j_ext",          &pic::Gap<1>::j_ext)
+    .def_readwrite("e_profile_mode", &pic::Gap<1>::e_profile_mode)
+    .def_readwrite("b_profile_mode", &pic::Gap<1>::b_profile_mode)
+    .def_readwrite("grav_const",     &pic::Gap<1>::grav_const)
+    .def("insert_em",                &pic::Gap<1>::insert_em)
+    .def("update_b",                 &pic::Gap<1>::update_b)
+    .def("update_e",                 &pic::Gap<1>::update_e)
+    .def("add_jext",                 &pic::Gap<1>::add_jext)
+    .def("add_jrot",                 &pic::Gap<1>::add_jrot)
+    .def("update_j",                 &pic::Gap<1>::update_j)
+    .def("drive_prtcls",             &pic::Gap<1>::drive_prtcls)
+    .def("delete_prtcls",            &pic::Gap<1>::delete_prtcls)
+    .def("inject_prtcls",            &pic::Gap<1>::inject_prtcls);
+
+
   //--------------------------------------------------
   // star
 
@@ -794,6 +837,10 @@ void bind_pic(py::module& m_sub)
     .def_readwrite("ninj_phots",     &pic::Star<1>::ninj_phots)
     .def_readwrite("ninj_min_pairs", &pic::Star<1>::ninj_min_pairs)
     .def_readwrite("ninj_min_phots", &pic::Star<1>::ninj_min_phots)
+    .def_readwrite("height_atms",    &pic::Star<1>::height_atms)
+    .def_readwrite("wep",            &pic::Star<1>::wep)
+    .def_readwrite("wph",            &pic::Star<1>::wph)
+    .def_readwrite("set_const_b",    &pic::Star<1>::set_const_b)
     .def("insert_em",                &pic::Star<1>::insert_em)
     .def("update_b",                 &pic::Star<1>::update_b)
     .def("update_e",                 &pic::Star<1>::update_e)
