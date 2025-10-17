@@ -1,14 +1,44 @@
 import sys
 import h5py
-import pytools
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
 
+# read simulation output file and reshape to python format
+def read_h5_array(f5, var_name, stride=1):
+
+    try:
+        nx = f5['Nx'][()]
+        ny = f5['Ny'][()]
+        nz = f5['Nz'][()]
+    except:
+        nx,ny,nz = np.shape(f5[var_name])
+        print("read_h5_array: fallback to brute-force reading...")
+        val = f5[var_name][()]
+        return val
+
+    # column-ordered data with image convention (x horizontal, y vertical, ..)
+    # i.e., so-called fortran ordering
+    if stride == 1:
+        val = f5[var_name][()]
+    else:
+        val = f5[var_name][::stride**3]
+        nx = int(nx/stride)
+        ny = int(ny/stride)
+        nz = int(nz/stride)
+
+    #print("reshaping 1D array of {} into multiD with {} {} {}".format(len(val), nx,ny,nz))
+
+    # reshape to python format; from Fortran image to C matrix
+    val = np.reshape(val, (nz, ny, nx))
+    val = val.ravel(order='F').reshape((nx,ny,nz))
+
+    return val
+
 def read_full_box(path_to_h5: str, var: str):
     f5 = h5py.File(path_to_h5, "r")
-    return pytools.read_h5_array(f5, var)
+    return read_h5_array(f5, var)
 
 
 def read_je(path_to_h5: str):
@@ -24,7 +54,7 @@ def read_je(path_to_h5: str):
 
 def plot(data, fig, ax_xy, ax_yz, ax_zx, vmin=None, vmax=None, cblabel=""):
 
-    x_plane, y_plane, z_plane = 30, 50, 60
+    x_plane, y_plane, z_plane = 160, 20, 3 
     xy_data = data[:, :, z_plane]
     yz_data = data[x_plane, :, :]
     zx_data = data[:, y_plane, :]
@@ -63,7 +93,7 @@ if __name__ == "__main__":
 
         match var:
             case "je":
-                plot(read_je(file), fig, *ax, vmin=-0.5, vmax=0.5, cblabel=file)
+                plot(read_je(file), fig, *ax, cblabel=file)
             case "bx":
                 plot(read_full_box(file, "bx"), fig, *ax, cblabel=file)
             case "by":
@@ -77,11 +107,11 @@ if __name__ == "__main__":
             case "ez":
                 plot(read_full_box(file, "ez"), fig, *ax, cblabel=file)
             case "jx":
-                plot(read_full_box(file, "jx"), fig, *ax, vmin=-0.05, vmax=0.05, cblabel=file)
+                plot(read_full_box(file, "jx"), fig, *ax, cblabel=file)
             case "jy":
-                plot(read_full_box(file, "jy"), fig, *ax, vmin=-0.05, vmax=0.05, cblabel=file)
+                plot(read_full_box(file, "jy"), fig, *ax, cblabel=file)
             case "jz":
-                plot(read_full_box(file, "jz"), fig, *ax, vmin=-0.05, vmax=0.05, cblabel=file)
+                plot(read_full_box(file, "jz"), fig, *ax, cblabel=file)
 
     fig.suptitle(var)
     plt.show()
