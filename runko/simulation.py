@@ -8,6 +8,10 @@ from runko_cpp_bindings.emf.threeD import FieldsWriter
 import logging
 import time
 import numpy as np
+import subprocess
+import pathlib
+import os
+from mpi4py import MPI
 
 
 class Simulation:
@@ -40,6 +44,11 @@ class Simulation:
         self._lap_wall_times = []
 
         self._logger = runko_logger("Simulation")
+
+        rank = MPI.COMM_WORLD.Get_rank()
+        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{rank}.csv")
+        self._ram_file.parent.mkdir(exist_ok=True, parents=True)
+        self._ram_file.write_text("lap,ram usage [kB]\n")
 
         ctor_msg = "Simulation constructed with:\n"
         ctor_msg += f"\tNt = {kwargs['Nt']}\n"
@@ -95,6 +104,12 @@ class Simulation:
         """Current simulation lap."""
         return self._lap
 
+
+    def write_mem_usage(self):
+        # https://stackoverflow.com/a/13754307
+        system_mem = f"awk '/^Pss:/ {{pss+=$2}} END {{print {self.lap} \",\" pss}}' < /proc/{os.getpid()}/smaps >> {self._ram_file}"
+
+        subprocess.run(system_mem, shell=True)
 
 
     def _execute_lap_function(self, lap_function, disable_timing=False):

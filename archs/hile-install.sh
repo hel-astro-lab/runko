@@ -39,15 +39,9 @@ module load cray-python
 #-------------------------------------------------- 
 # Create a Python virtual environment specially for runko,
 # located within the runko repository:
-#VENV_PATH="${RUNKO_PATH}/venvs"
-#mkdir $VENV_PATH
-#cd $VENV_PATH
-#python -m venv runko-gpu
-#cd $RUNKO_PATH
 python -m venv runko-venv
 
 # Load this runko virtual environment:
-#source ${VENV_PATH}/runko-gpu/bin/activate
 source runko-venv/bin/activate
 
 # Install necessary Python dependencies
@@ -59,10 +53,9 @@ MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 
 #-------------------------------------------------- 
 # Next, we create a handy file which loads the necessary runko modules
-# whenever called with "source archs/runko-load-env":
-cat > runko-venv/bin/activate << EOL
+cat >> $VENV_PATH/runko-venv/bin/activate << EOL
 # Tool to load runko modules
-# Usage: "source runko-venv/bin/activate"
+# Usage: "source venvs/runko-venv/bin/activate"
 # Load standard prerequisite modules for runko:
 
 module purge
