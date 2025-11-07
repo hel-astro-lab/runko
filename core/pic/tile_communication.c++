@@ -207,7 +207,7 @@ void
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
 
   for(const auto& [ptype, specific_spans]: this->incoming_subregion_particles_) {
-    particle_buffs_.at(ptype) = ParticleContainer(specific_spans);
+    particle_buffs_.at(ptype).set(specific_spans);
   }
 
   for(auto& [_, pbuff]: this->particle_buffs_) {
