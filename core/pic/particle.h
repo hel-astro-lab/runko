@@ -71,6 +71,13 @@ public:
       ParticleContainer::specific_span>
   explicit ParticleContainer(const R&);
 
+  /// Overwrite contents of this container with aggregated contents of the given spans.
+  template<std::ranges::forward_range R>
+    requires std::convertible_to<
+      std::ranges::range_reference_t<R>,
+      ParticleContainer::specific_span>
+  void set(const R&);
+
   /// Returns the number of particles.
   std::size_t size() const;
   ParticleContainerArgs args() const;
@@ -261,11 +268,18 @@ inline void
 
   this->add_particles(added);
 }
-
 template<std::ranges::forward_range R>
   requires std::
     convertible_to<std::ranges::range_reference_t<R>, ParticleContainer::specific_span>
   inline ParticleContainer::ParticleContainer(const R& spans)
+{
+  this->set(spans);
+}
+
+template<std::ranges::forward_range R>
+  requires std::
+    convertible_to<std::ranges::range_reference_t<R>, ParticleContainer::specific_span>
+  inline void ParticleContainer::set(const R& spans)
 {
   namespace rn = std::ranges;
   namespace rv = std::views;
@@ -274,7 +288,7 @@ template<std::ranges::forward_range R>
     // Can not construct the container fron zero spans,
     // because there is no charge and mass specified.
     throw std::runtime_error {
-      "Trying to construct ParticleContainer from zero spans."
+      "Trying to set ParticleContainer from zero spans."
     };
   }
 
@@ -291,7 +305,7 @@ template<std::ranges::forward_range R>
 
   if(Nspans > Nmax) {
     throw std::runtime_error {
-      "ParticleContainer: trying to ctor from too many spans."
+      "ParticleContainer: trying to set from too many spans."
     };
   }
 
@@ -307,7 +321,7 @@ template<std::ranges::forward_range R>
       });
     if(not consistent_given_charge_n_mass) {
       throw std::runtime_error {
-        "Trying to construct ParticleContainer from spans to containers with "
+        "Trying to set ParticleContainer from spans to containers with "
         "inconsistent charges/masses."
       };
     }
@@ -345,8 +359,8 @@ template<std::ranges::forward_range R>
 
   const auto Ntotal = ends.back();
 
-  this->pos_ = runko::VecList<value_type>(Ntotal);
-  this->vel_ = runko::VecList<value_type>(Ntotal);
+  this->pos_.invalidating_resize(Ntotal);
+  this->vel_.invalidating_resize(Ntotal);
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
