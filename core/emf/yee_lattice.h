@@ -210,11 +210,12 @@ public:
     auto wB = tyvi::mdgrid_work {};
     auto wJ = tyvi::mdgrid_work {};
 
-    auto wE1 = wE.sync_from_staging(E_);
-    auto wB1 = wB.sync_from_staging(B_);
-    auto wJ1 = wJ.sync_from_staging(J_);
+    wE.sync_from_staging(E_);
+    wB.sync_from_staging(B_);
+    wJ.sync_from_staging(J_);
 
-    tyvi::when_all(wE1, wB1, wJ1).wait();
+    tyvi::when_all(wE, wB, wJ);
+    wE.wait();
   }
 
   /// Get copy of E, B and J in non-halo region.
@@ -309,11 +310,12 @@ public:
     auto wB = tyvi::mdgrid_work {};
     auto wJ = tyvi::mdgrid_work {};
 
-    auto wE1 = wE.sync_to_staging(E_);
-    auto wB1 = wB.sync_to_staging(B_);
-    auto wJ1 = wJ.sync_to_staging(J_);
+    wE.sync_to_staging(E_);
+    wB.sync_to_staging(B_);
+    wJ.sync_to_staging(J_);
 
-    tyvi::when_all(wE1, wB1, wJ1).wait();
+    tyvi::when_all(wE, wB, wJ);
+    wE.wait();
 
     const auto Emds = nonhalo_submds(E_.staging_mds());
     const auto Bmds = nonhalo_submds(B_.staging_mds());

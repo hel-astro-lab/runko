@@ -205,7 +205,8 @@ inline void
   const auto prev_pos_mds = this->pos_.mds();
   const auto prev_vel_mds = this->vel_.mds();
 
-  auto wA = tyvi::mdgrid_work {}.for_each_index(
+  auto wA = tyvi::mdgrid_work {};
+  wA.for_each_index(
     prev_pos_mds,
     [=](const auto idx, const auto tidx) {
       new_pos_mds[idx][tidx] = prev_pos_mds[idx][tidx];
@@ -213,6 +214,7 @@ inline void
     });
 
   const auto handle_other = [&](
+                              tyvi::mdgrid_work& w,
                               const ParticleContainer& other,
                               const std::array<std::size_t, 2> where_other_goes) {
     const auto other_pos_mds = other.pos_.mds();
@@ -221,7 +223,7 @@ inline void
     const auto other_in_new_pos_mds = std::submdspan(new_pos_mds, where_other_goes);
     const auto other_in_new_vel_mds = std::submdspan(new_vel_mds, where_other_goes);
 
-    return tyvi::mdgrid_work {}.for_each_index(
+    w.for_each_index(
       other_in_new_pos_mds,
       [=](const auto idx, const auto tidx) {
         other_in_new_pos_mds[idx][tidx] = other_pos_mds[idx][tidx];
@@ -231,9 +233,10 @@ inline void
 
   // Ugly syntax until C++26.
   [&]<std::size_t... I>(std::index_sequence<I...>) {
-    auto other_works =
-      std::array { handle_other(others, { other_begins[I], other_ends[I] })... };
-    tyvi::when_all(wA, other_works[I]...).wait();
+    auto other_works = std::array{(std::ignore = I, tyvi::mdgrid_work{})...};
+    (handle_other(other_works[I], others, { other_begins[I], other_ends[I] }),...) ;
+    tyvi::when_all(wA, other_works[I]...);
+    wA.wait();
   }(std::make_index_sequence<sizeof...(others)>());
 
   pos_ = std::move(new_pos);
@@ -262,9 +265,13 @@ inline void
     }
   }
 
-  auto w1 = tyvi::mdgrid_work {}.sync_from_staging(added.pos_);
-  auto w2 = tyvi::mdgrid_work {}.sync_from_staging(added.vel_);
-  tyvi::when_all(w1, w2).wait();
+  auto w1 = tyvi::mdgrid_work {};
+  auto w2 = tyvi::mdgrid_work {};
+  w1.sync_from_staging(added.pos_);
+  w2.sync_from_staging(added.vel_);
+
+  tyvi::when_all(w1, w2);
+  w1.wait();
 
   this->add_particles(added);
 }
@@ -366,6 +373,7 @@ template<std::ranges::forward_range R>
   const auto vel_mds = this->vel_.mds();
 
   const auto handle_span = [&](
+                             tyvi::mdgrid_work& w,
                              const ParticleContainer::specific_span& span,
                              const std::array<std::size_t, 2> location_in_this) {
     const auto other_pos_mds = span.container->pos_.mds();
@@ -378,7 +386,7 @@ template<std::ranges::forward_range R>
     const auto pos_submds = std::submdspan(pos_mds, location_in_this);
     const auto vel_submds = std::submdspan(vel_mds, location_in_this);
 
-    return tyvi::mdgrid_work {}.for_each_index(
+    w.for_each_index(
       pos_submds,
       [=](const auto idx, const auto tidx) {
         pos_submds[idx][tidx] = other_pos_submds[idx][tidx];
@@ -386,21 +394,18 @@ template<std::ranges::forward_range R>
       });
   };
 
-  using work_type = std::remove_cvref_t<decltype(handle_span(
-    std::declval<ParticleContainer::specific_span>(),
-    std::declval<std::array<std::size_t, 2>>()))>;
-
-  auto works = std::vector<work_type>();
-  works.reserve(begins.size());
+  auto works = std::vector<tyvi::mdgrid_work>(begins.size());
   for(auto i = 0uz; i < begins.size(); ++i) {
-    works.push_back(handle_span(spans[i], { begins[i], ends[i] }));
+    handle_span(works[i], spans[i], { begins[i], ends[i] });
   }
 
   // Below is the ugly hack.
   // See beginning of the function for explanation why it is needed.
 
   auto hack = [&]<std::size_t... I>(std::index_sequence<I...>) {
-    tyvi::when_all(works[I]...).wait();
+    tyvi::when_all(works[I]...);
+    // We assumed that there is at least one.
+    works.front().wait();
   };
 
   switch(Nspans) {

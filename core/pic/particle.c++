@@ -44,7 +44,8 @@ ParticleContainerArgs
 std::array<std::vector<ParticleContainer::value_type>, 3>
   ParticleContainer::get_positions()
 {
-  auto w = tyvi::mdgrid_work {}.sync_to_staging(pos_);
+  auto w = tyvi::mdgrid_work {};
+  w.sync_to_staging(pos_);
 
   auto x = std::vector<value_type>(this->size());
   auto y = std::vector<value_type>(this->size());
@@ -67,7 +68,8 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
   ParticleContainer::get_velocities()
 {
 
-  auto w = tyvi::mdgrid_work {}.sync_to_staging(vel_);
+  auto w = tyvi::mdgrid_work {};
+  w.sync_to_staging(vel_);
 
   auto vx = std::vector<value_type>(this->size());
   auto vy = std::vector<value_type>(this->size());

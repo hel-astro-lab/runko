@@ -12,32 +12,32 @@
 
 namespace {
 
-/// Returns mdgrid_work representing the copy operation.
+/// Returns mdgrid_work with the copy operation.
 template<typename MDSfrom, typename MDSto>
 auto
-  mds_copy(MDSfrom&& from, MDSto&& to)
+  mds_copy(tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
 {
 
   if(from.extents() != to.extents()) {
     throw std::runtime_error { "Can not copy from/to different sized mdspan." };
   }
 
-  return tyvi::mdgrid_work {}.for_each_index(
+  w.for_each_index(
     from,
     [=](const auto idx, const auto tidx) { to[idx][tidx] = from[idx][tidx]; });
 }
 
-/// Returns mdgrid_work representing the copy operation.
+/// Returns mdgrid_work with the add operation.
 template<typename MDSfrom, typename MDSto>
 auto
-  mds_add(MDSfrom&& from, MDSto&& to)
+  mds_add(tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
 {
 
   if(from.extents() != to.extents()) {
     throw std::runtime_error { "Can not copy from/to different sized mdspan." };
   }
 
-  return tyvi::mdgrid_work {}.for_each_index(
+  w.for_each_index(
     from,
     [=](const auto idx, const auto tidx) {
       to[idx][tidx] = to[idx][tidx] + from[idx][tidx];
@@ -100,9 +100,9 @@ YeeLattice::YeeLatticeHostCopy
   auto wB = tyvi::mdgrid_work {};
   auto wJ = tyvi::mdgrid_work {};
 
-  auto wE1 = wE.sync_to_staging(E_);
-  auto wB1 = wB.sync_to_staging(B_);
-  auto wJ1 = wJ.sync_to_staging(J_);
+  wE.sync_to_staging(E_);
+  wB.sync_to_staging(B_);
+  wJ.sync_to_staging(J_);
 
   const auto [Emds, Bmds, Jmds] = std::tuple { nonhalo_submds(E_.staging_mds()),
                                                nonhalo_submds(B_.staging_mds()),
@@ -112,7 +112,8 @@ YeeLattice::YeeLatticeHostCopy
   auto host_buffer     = YeeLatticeHostCopy(a, b, c);
   const auto mds       = host_buffer.mds();
 
-  tyvi::when_all(wE1, wB1, wJ1).wait();
+  tyvi::when_all(wE, wB, wJ);
+  wE.wait();
 
   for(const auto idx: tyvi::sstd::index_space(mds)) {
     mds[idx][] = YeeLatticeFieldsAtPoint { .Ex = Emds[idx][0],
@@ -136,9 +137,9 @@ YeeLattice::YeeLatticeHostCopy
   auto wB = tyvi::mdgrid_work {};
   auto wJ = tyvi::mdgrid_work {};
 
-  auto wE1 = wE.sync_to_staging(E_);
-  auto wB1 = wB.sync_to_staging(B_);
-  auto wJ1 = wJ.sync_to_staging(J_);
+  wE.sync_to_staging(E_);
+  wB.sync_to_staging(B_);
+  wJ.sync_to_staging(J_);
 
   const auto [Emds, Bmds, Jmds] =
     std::tuple { E_.staging_mds(), B_.staging_mds(), J_.staging_mds() };
@@ -147,7 +148,8 @@ YeeLattice::YeeLatticeHostCopy
   auto host_buffer     = YeeLatticeHostCopy(a, b, c);
   const auto mds       = host_buffer.mds();
 
-  tyvi::when_all(wE1, wB1, wJ1).wait();
+  tyvi::when_all(wE, wB, wJ);
+  wE.wait();
 
   for(const auto idx: tyvi::sstd::index_space(mds)) {
     mds[idx][] = YeeLatticeFieldsAtPoint { .Ex = Emds[idx][0],
@@ -167,16 +169,14 @@ YeeLattice::YeeLatticeHostCopy
 void
   YeeLattice::subtract_J_from_E()
 {
-  auto w0 = tyvi::mdgrid_work {};
+  auto w = tyvi::mdgrid_work {};
 
   const auto Emds = nonhalo_submds(E_.mds());
   const auto Jmds = nonhalo_submds(J_.mds());
 
-  auto w1 = w0.for_each_index(Emds, [=](const auto idx, const auto tidx) {
+  w.for_each_index(Emds, [=](const auto idx, const auto tidx) {
     Emds[idx][tidx] = Emds[idx][tidx] - Jmds[idx][tidx];
-  });
-
-  w1.wait();
+  }).wait();
 }
 
 void
@@ -185,7 +185,9 @@ void
   const auto my_Emds_region    = this->subregion(dir, this->E_.mds());
   const auto other_Emds_region = other.corresponding_subregion(dir, other.E_.mds());
 
-  return mds_copy(other_Emds_region, my_Emds_region).wait();
+  auto w = tyvi::mdgrid_work{};
+  mds_copy(w, other_Emds_region, my_Emds_region);
+  w.wait();
 }
 
 void
@@ -194,7 +196,9 @@ void
   const auto my_Bmds_region    = this->subregion(dir, this->B_.mds());
   const auto other_Bmds_region = other.corresponding_subregion(dir, other.B_.mds());
 
-  return mds_copy(other_Bmds_region, my_Bmds_region).wait();
+  auto w = tyvi::mdgrid_work{};
+  mds_copy(w, other_Bmds_region, my_Bmds_region);
+  w.wait();
 }
 
 void
@@ -203,7 +207,9 @@ void
   const auto my_Jmds_region    = this->subregion(dir, this->J_.mds());
   const auto other_Jmds_region = other.corresponding_subregion(dir, other.J_.mds());
 
-  return mds_copy(other_Jmds_region, my_Jmds_region).wait();
+  auto w = tyvi::mdgrid_work{};
+  mds_copy(w, other_Jmds_region, my_Jmds_region);
+  w.wait();
 }
 
 void
@@ -214,7 +220,9 @@ void
   const auto my_Jmds_region    = this->corresponding_subregion(idir, this->J_.mds());
   const auto other_Jmds_region = other.subregion(idir, other.J_.mds());
 
-  return mds_add(other_Jmds_region, my_Jmds_region).wait();
+  auto w = tyvi::mdgrid_work{};
+  mds_add(w, other_Jmds_region, my_Jmds_region);
+  w.wait();
 }
 
 void

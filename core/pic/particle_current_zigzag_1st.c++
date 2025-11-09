@@ -67,7 +67,8 @@ emf::YeeLattice::CurrentContributions
 
   //-------------------------------------------------- 
   // main loop over particles
-  auto w1 = tyvi::mdgrid_work {}.for_each_index(pos_mds, [=](const auto idx) {
+  auto w = tyvi::mdgrid_work {};
+  w.for_each_index(pos_mds, [=](const auto idx) {
     const auto u = Vec3v(vel_mds[idx]).template as<value_type>();
     const value_type invgam = value_type{1} / std::sqrt( value_type{1} + toolbox::dot(u, u));
 
@@ -172,7 +173,7 @@ emf::YeeLattice::CurrentContributions
     [](const Vec3v& J) { return J.data; });
 
 
-  w1.wait();
+  w.wait();
 
   thrust::sort_by_key(
     thrust::device,
