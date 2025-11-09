@@ -22,9 +22,9 @@ auto
     throw std::runtime_error { "Can not copy from/to different sized mdspan." };
   }
 
-  w.for_each_index(
-    from,
-    [=](const auto idx, const auto tidx) { to[idx][tidx] = from[idx][tidx]; });
+  w.for_each_index(from, [=](const auto idx, const auto tidx) {
+    to[idx][tidx] = from[idx][tidx];
+  });
 }
 
 /// Returns mdgrid_work with the add operation.
@@ -37,11 +37,9 @@ auto
     throw std::runtime_error { "Can not copy from/to different sized mdspan." };
   }
 
-  w.for_each_index(
-    from,
-    [=](const auto idx, const auto tidx) {
-      to[idx][tidx] = to[idx][tidx] + from[idx][tidx];
-    });
+  w.for_each_index(from, [=](const auto idx, const auto tidx) {
+    to[idx][tidx] = to[idx][tidx] + from[idx][tidx];
+  });
 }
 
 }  // namespace
@@ -174,9 +172,12 @@ void
   const auto Emds = nonhalo_submds(E_.mds());
   const auto Jmds = nonhalo_submds(J_.mds());
 
-  w.for_each_index(Emds, [=](const auto idx, const auto tidx) {
-    Emds[idx][tidx] = Emds[idx][tidx] - Jmds[idx][tidx];
-  }).wait();
+  w.for_each_index(
+     Emds,
+     [=](const auto idx, const auto tidx) {
+       Emds[idx][tidx] = Emds[idx][tidx] - Jmds[idx][tidx];
+     })
+    .wait();
 }
 
 void
@@ -185,7 +186,7 @@ void
   const auto my_Emds_region    = this->subregion(dir, this->E_.mds());
   const auto other_Emds_region = other.corresponding_subregion(dir, other.E_.mds());
 
-  auto w = tyvi::mdgrid_work{};
+  auto w = tyvi::mdgrid_work {};
   mds_copy(w, other_Emds_region, my_Emds_region);
   w.wait();
 }
@@ -196,7 +197,7 @@ void
   const auto my_Bmds_region    = this->subregion(dir, this->B_.mds());
   const auto other_Bmds_region = other.corresponding_subregion(dir, other.B_.mds());
 
-  auto w = tyvi::mdgrid_work{};
+  auto w = tyvi::mdgrid_work {};
   mds_copy(w, other_Bmds_region, my_Bmds_region);
   w.wait();
 }
@@ -207,7 +208,7 @@ void
   const auto my_Jmds_region    = this->subregion(dir, this->J_.mds());
   const auto other_Jmds_region = other.corresponding_subregion(dir, other.J_.mds());
 
-  auto w = tyvi::mdgrid_work{};
+  auto w = tyvi::mdgrid_work {};
   mds_copy(w, other_Jmds_region, my_Jmds_region);
   w.wait();
 }
@@ -220,7 +221,7 @@ void
   const auto my_Jmds_region    = this->corresponding_subregion(idir, this->J_.mds());
   const auto other_Jmds_region = other.subregion(idir, other.J_.mds());
 
-  auto w = tyvi::mdgrid_work{};
+  auto w = tyvi::mdgrid_work {};
   mds_add(w, other_Jmds_region, my_Jmds_region);
   w.wait();
 }

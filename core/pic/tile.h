@@ -160,4 +160,4 @@ public:
 };
 
 
-}  // namespace pic2
+}  // namespace pic

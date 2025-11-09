@@ -18,7 +18,7 @@ void
                                               { { 1. / 64., 2. / 64., 1. / 64. },
                                                 { 2. / 64., 4. / 64., 2. / 64. },
                                                 { 1. / 64., 2. / 64., 1. / 64. } } };
-  constexpr auto C3_index_space    = tyvi::sstd::geometric_index_space<3, 3>();
+  constexpr auto C3_index_space           = tyvi::sstd::geometric_index_space<3, 3>();
 
   auto filteredJ           = VecGrid(this->J_.extents());
   const auto e             = filteredJ.extents();

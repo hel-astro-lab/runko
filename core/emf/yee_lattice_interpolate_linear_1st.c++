@@ -125,7 +125,8 @@ YeeLattice::InterpolatedEB
             Bmds[ii - 1, jj - 1, kk][2]);
         }
 
-        const auto delta_pos = pos_in_lattice - index_in_lattice.template as<value_type>();
+        const auto delta_pos =
+          pos_in_lattice - index_in_lattice.template as<value_type>();
 
         Eipo_mds[idx][0] = lerp3D(delta_pos.data, Ex_means_mds);
         Eipo_mds[idx][1] = lerp3D(delta_pos.data, Ey_means_mds);

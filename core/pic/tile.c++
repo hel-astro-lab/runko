@@ -245,11 +245,11 @@ void
     const auto m = helper_mds.mapping();
 
     for(const auto [i, j, k]: tyvi::sstd::index_space(helper_mds)) {
-      const auto n                  = m(i, j, k);
+      const auto n  = m(i, j, k);
       const auto gc = global_coordinates(i, j, k);
-      xv(n) = gc[0];
-      yv(n) = gc[1];
-      zv(n) = gc[2];
+      xv(n)         = gc[0];
+      yv(n)         = gc[1];
+      zv(n)         = gc[2];
     }
   }
 
@@ -383,9 +383,7 @@ void
       break;
     }
     default:
-      throw std::logic_error {
-        "pic::Tile::deposit_current: unkown current depositer"
-      };
+      throw std::logic_error { "pic::Tile::deposit_current: unkown current depositer" };
   }
 }
 

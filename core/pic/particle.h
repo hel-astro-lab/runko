@@ -206,12 +206,10 @@ inline void
   const auto prev_vel_mds = this->vel_.mds();
 
   auto wA = tyvi::mdgrid_work {};
-  wA.for_each_index(
-    prev_pos_mds,
-    [=](const auto idx, const auto tidx) {
-      new_pos_mds[idx][tidx] = prev_pos_mds[idx][tidx];
-      new_vel_mds[idx][tidx] = prev_vel_mds[idx][tidx];
-    });
+  wA.for_each_index(prev_pos_mds, [=](const auto idx, const auto tidx) {
+    new_pos_mds[idx][tidx] = prev_pos_mds[idx][tidx];
+    new_vel_mds[idx][tidx] = prev_vel_mds[idx][tidx];
+  });
 
   const auto handle_other = [&](
                               tyvi::mdgrid_work& w,
@@ -223,18 +221,16 @@ inline void
     const auto other_in_new_pos_mds = std::submdspan(new_pos_mds, where_other_goes);
     const auto other_in_new_vel_mds = std::submdspan(new_vel_mds, where_other_goes);
 
-    w.for_each_index(
-      other_in_new_pos_mds,
-      [=](const auto idx, const auto tidx) {
-        other_in_new_pos_mds[idx][tidx] = other_pos_mds[idx][tidx];
-        other_in_new_vel_mds[idx][tidx] = other_vel_mds[idx][tidx];
-      });
+    w.for_each_index(other_in_new_pos_mds, [=](const auto idx, const auto tidx) {
+      other_in_new_pos_mds[idx][tidx] = other_pos_mds[idx][tidx];
+      other_in_new_vel_mds[idx][tidx] = other_vel_mds[idx][tidx];
+    });
   };
 
   // Ugly syntax until C++26.
   [&]<std::size_t... I>(std::index_sequence<I...>) {
-    auto other_works = std::array{(std::ignore = I, tyvi::mdgrid_work{})...};
-    (handle_other(other_works[I], others, { other_begins[I], other_ends[I] }),...) ;
+    auto other_works = std::array { (std::ignore = I, tyvi::mdgrid_work {})... };
+    (handle_other(other_works[I], others, { other_begins[I], other_ends[I] }), ...);
     tyvi::when_all(wA, other_works[I]...);
     wA.wait();
   }(std::make_index_sequence<sizeof...(others)>());
@@ -286,7 +282,8 @@ template<std::ranges::forward_range R>
 template<std::ranges::forward_range R>
   requires std::
     convertible_to<std::ranges::range_reference_t<R>, ParticleContainer::specific_span>
-  inline void ParticleContainer::set(const R& spans)
+  inline void
+  ParticleContainer::set(const R& spans)
 {
   namespace rn = std::ranges;
   namespace rv = std::views;
@@ -294,9 +291,7 @@ template<std::ranges::forward_range R>
   if(rn::empty(spans)) {
     // Can not construct the container fron zero spans,
     // because there is no charge and mass specified.
-    throw std::runtime_error {
-      "Trying to set ParticleContainer from zero spans."
-    };
+    throw std::runtime_error { "Trying to set ParticleContainer from zero spans." };
   }
 
   /* Due to limitation of tyvi::when_all taking only statically known
@@ -386,12 +381,10 @@ template<std::ranges::forward_range R>
     const auto pos_submds = std::submdspan(pos_mds, location_in_this);
     const auto vel_submds = std::submdspan(vel_mds, location_in_this);
 
-    w.for_each_index(
-      pos_submds,
-      [=](const auto idx, const auto tidx) {
-        pos_submds[idx][tidx] = other_pos_submds[idx][tidx];
-        vel_submds[idx][tidx] = other_vel_submds[idx][tidx];
-      });
+    w.for_each_index(pos_submds, [=](const auto idx, const auto tidx) {
+      pos_submds[idx][tidx] = other_pos_submds[idx][tidx];
+      vel_submds[idx][tidx] = other_vel_submds[idx][tidx];
+    });
   };
 
   auto works = std::vector<tyvi::mdgrid_work>(begins.size());
@@ -507,4 +500,4 @@ inline auto
 }
 
 
-}  // namespace pic2
+}  // namespace pic
