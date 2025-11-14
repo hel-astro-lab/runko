@@ -59,12 +59,6 @@ Before proceeding with the code compilation, your system needs to fulfill these 
 * `CMake <https://cmake.org/>`_ (>v3.0) for building and compiling
 
 
-.. note::
-
-    Note that g++-8 does not work because of a (known) compiler bug. 
-
-
-
 MacOS
 -----
 
@@ -88,12 +82,12 @@ You can compile OpenMPI via homebrew by first modifying your ``~/.zshrc`` to lin
 
 .. code-block:: bash
 
-   export HOMEBREW_CC=gcc-14
-   export HOMEBREW_CXX=g++-14
-   export OMPI_CC=gcc-14
-   export OMPI_CXX=g++-14
-   export CC=gcc-14  # NOTE: you need to change these after the installation
-   export CXX=g++-14 # NOTE: you need to change these after the installation
+   export HOMEBREW_CC=gcc-15
+   export HOMEBREW_CXX=g++-15
+   export OMPI_CC=gcc-15
+   export OMPI_CXX=g++-15
+   export CC=gcc-15  # NOTE: you need to change these after the installation
+   export CXX=g++-15 # NOTE: you need to change these after the installation
 
 Then restart the terminal to reload the newly added environment variables. After restarting, install `OpenMPI` from source with
 
@@ -198,7 +192,7 @@ All the python requirements can be installed via ``pip3`` as
 
 .. code-block:: bash
 
-   pip3 install -r requirements.txt
+   pip3 install h5py matplotlib scipy 
 
 
 Compiling
