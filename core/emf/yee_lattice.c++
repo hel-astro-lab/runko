@@ -12,9 +12,8 @@
 
 namespace {
 
-/// Returns mdgrid_work with the copy operation.
 template<typename MDSfrom, typename MDSto>
-auto
+void
   mds_copy(tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
 {
 
@@ -27,9 +26,8 @@ auto
   });
 }
 
-/// Returns mdgrid_work with the add operation.
 template<typename MDSfrom, typename MDSto>
-auto
+void
   mds_add(tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
 {
 
