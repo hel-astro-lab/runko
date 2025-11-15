@@ -14,7 +14,7 @@ namespace {
 
 template<typename MDSfrom, typename MDSto>
 void
-  mds_copy(tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
+  mds_copy(const tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
 {
 
   if(from.extents() != to.extents()) {
@@ -28,7 +28,7 @@ void
 
 template<typename MDSfrom, typename MDSto>
 void
-  mds_add(tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
+  mds_add(const tyvi::mdgrid_work& w, MDSfrom&& from, MDSto&& to)
 {
 
   if(from.extents() != to.extents()) {
@@ -165,76 +165,131 @@ YeeLattice::YeeLatticeHostCopy
 void
   YeeLattice::subtract_J_from_E()
 {
-  auto w = tyvi::mdgrid_work {};
+  const auto w = tyvi::mdgrid_work {};
+  subtract_J_from_E(w);
+  w.wait();
+}
 
+void
+  YeeLattice::subtract_J_from_E(const tyvi::mdgrid_work& w)
+{
   const auto Emds = nonhalo_submds(E_.mds());
   const auto Jmds = nonhalo_submds(J_.mds());
 
-  w.for_each_index(
-     Emds,
-     [=](const auto idx, const auto tidx) {
-       Emds[idx][tidx] = Emds[idx][tidx] - Jmds[idx][tidx];
-     })
-    .wait();
+  w.for_each_index(Emds, [=](const auto idx, const auto tidx) {
+    Emds[idx][tidx] = Emds[idx][tidx] - Jmds[idx][tidx];
+  });
 }
 
 void
   YeeLattice::set_E_in_subregion(const dir_type dir, const YeeLattice& other)
 {
-  const auto my_Emds_region    = this->subregion(dir, this->E_.mds());
-  const auto other_Emds_region = other.corresponding_subregion(dir, other.E_.mds());
-
   auto w = tyvi::mdgrid_work {};
-  mds_copy(w, other_Emds_region, my_Emds_region);
+  set_E_in_subregion(w, dir, other);
   w.wait();
 }
 
 void
   YeeLattice::set_B_in_subregion(const dir_type dir, const YeeLattice& other)
 {
-  const auto my_Bmds_region    = this->subregion(dir, this->B_.mds());
-  const auto other_Bmds_region = other.corresponding_subregion(dir, other.B_.mds());
-
   auto w = tyvi::mdgrid_work {};
-  mds_copy(w, other_Bmds_region, my_Bmds_region);
+  set_B_in_subregion(w, dir, other);
   w.wait();
 }
 
 void
   YeeLattice::set_J_in_subregion(const dir_type dir, const YeeLattice& other)
 {
-  const auto my_Jmds_region    = this->subregion(dir, this->J_.mds());
-  const auto other_Jmds_region = other.corresponding_subregion(dir, other.J_.mds());
-
   auto w = tyvi::mdgrid_work {};
-  mds_copy(w, other_Jmds_region, my_Jmds_region);
+  set_J_in_subregion(w, dir, other);
   w.wait();
 }
 
 void
+  YeeLattice::set_E_in_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const YeeLattice& other)
+{
+  const auto my_Emds_region    = this->subregion(dir, this->E_.mds());
+  const auto other_Emds_region = other.corresponding_subregion(dir, other.E_.mds());
+
+  mds_copy(w, other_Emds_region, my_Emds_region);
+}
+
+void
+  YeeLattice::set_B_in_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const YeeLattice& other)
+{
+  const auto my_Bmds_region    = this->subregion(dir, this->B_.mds());
+  const auto other_Bmds_region = other.corresponding_subregion(dir, other.B_.mds());
+
+  mds_copy(w, other_Bmds_region, my_Bmds_region);
+}
+
+void
+  YeeLattice::set_J_in_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const YeeLattice& other)
+{
+  const auto my_Jmds_region    = this->subregion(dir, this->J_.mds());
+  const auto other_Jmds_region = other.corresponding_subregion(dir, other.J_.mds());
+
+  mds_copy(w, other_Jmds_region, my_Jmds_region);
+}
+
+void
   YeeLattice::add_to_J_from_subregion(const dir_type dir, const YeeLattice& other)
+{
+  auto w = tyvi::mdgrid_work {};
+  add_to_J_from_subregion(w, dir, other);
+  w.wait();
+}
+
+void
+  YeeLattice::add_to_J_from_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const YeeLattice& other)
 {
   const auto idir = invert_dir(dir);
 
   const auto my_Jmds_region    = this->corresponding_subregion(idir, this->J_.mds());
   const auto other_Jmds_region = other.subregion(idir, other.J_.mds());
 
-  auto w = tyvi::mdgrid_work {};
   mds_add(w, other_Jmds_region, my_Jmds_region);
-  w.wait();
 }
 
 void
   YeeLattice::clear_current()
 {
+  const tyvi::mdgrid_work w {};
+  clear_current(w);
+  w.wait();
+}
+
+void
+  YeeLattice::clear_current(const tyvi::mdgrid_work& w)
+{
   const auto Jmds = J_.mds();
-  tyvi::mdgrid_work {}
-    .for_each_index(Jmds, [=](const auto idx, const auto tidx) { Jmds[idx][tidx] = 0; })
-    .wait();
+  w.for_each_index(Jmds, [=](const auto idx, const auto tidx) { Jmds[idx][tidx] = 0; });
 }
 
 void
   YeeLattice::deposit_current(const CurrentContributions& contributions)
+{
+  const tyvi::mdgrid_work w {};
+  deposit_current(w, contributions);
+  w.wait();
+}
+
+void
+  YeeLattice::deposit_current(
+    const tyvi::mdgrid_work& w,
+    const CurrentContributions& contributions)
 {
   const auto b = thrust::make_zip_iterator(
     contributions.locations.begin(),
@@ -243,8 +298,7 @@ void
     contributions.locations.end(),
     contributions.currents.end());
 
-  const auto Jmds = J_.mds();
-  thrust::for_each(thrust::device, b, e, [=](const auto& i) {
+  thrust::for_each(w.on_this(), b, e, [Jmds = J_.mds()](const auto& i) {
     const auto idx = thrust::get<0>(i);
     const auto J   = thrust::get<1>(i);
     Jmds[idx][0]   = Jmds[idx][0] + J[0];
@@ -256,23 +310,26 @@ void
 void
   YeeLattice::deposit_current(const runko::VecGrid<value_type>& depJ)
 {
+  const tyvi::mdgrid_work w {};
+  deposit_current(w, depJ);
+  w.wait();
+}
+
+void
+  YeeLattice::deposit_current(
+    const tyvi::mdgrid_work& w,
+    const runko::VecGrid<value_type>& depJ)
+{
 
   if(depJ.extents() != this->extents_with_halo()) {
     throw std::runtime_error {
       "emf::Tile::deposit_current: given current grid has incorrect extents!"
     };
   }
-
-  const auto depJmds = depJ.mds();
-  const auto Jmds    = this->J_.mds();
-
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      Jmds,
-      [=](const auto idx, const auto tidx) {
-        Jmds[idx][tidx] = Jmds[idx][tidx] + depJmds[idx][tidx];
-      })
-    .wait();
+  const auto Jmds = this->J_.mds();
+  w.for_each_index(Jmds, [=, depJmds = depJ.mds()](const auto idx, const auto tidx) {
+    Jmds[idx][tidx] = Jmds[idx][tidx] + depJmds[idx][tidx];
+  });
 }
 
 YeeLattice::VecGridMDS::mapping_type
