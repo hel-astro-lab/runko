@@ -5,6 +5,7 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project (
     runko
@@ -86,16 +87,48 @@ find_package (Python COMPONENTS Interpreter Development REQUIRED)
 # Potentially relevant: https://stackoverflow.com/questions/60567645/undefined-symbol-in-clang-compiled-python-extension-using-openmp
 # find_package (OpenMP REQUIRED)
 
-find_package (HDF5 REQUIRED)
-# This is not directly needed in runko as we need it only for tests,
-# but mpi4cpp will anyways need this, so we require it here.
+
+find_package (HDF5 QUIET)
+
+if(NOT HDF5_FOUND OR NOT HDF5_LIBRARIES)
+    find_package(PkgConfig QUIET)
+    pkg_check_modules(HDF5_PKG QUIET hdf5)
+    if(HDF5_PKG_FOUND)
+        find_library(HDF5_LIBRARY NAMES hdf5 PATHS ${HDF5_PKG_LIBRARY_DIRS} NO_DEFAULT_PATH)
+        find_library(HDF5_HL_LIBRARY NAMES hdf5_hl PATHS ${HDF5_PKG_LIBRARY_DIRS} NO_DEFAULT_PATH)
+        if(HDF5_LIBRARY)
+            set(HDF5_LIBRARIES ${HDF5_LIBRARY})
+            list(APPEND HDF5_LIBRARIES ${HDF5_HL_LIBRARY})
+            set(HDF5_INCLUDE_DIRS ${HDF5_PKG_INCLUDE_DIRS})
+            set(HDF5_FOUND TRUE)
+        endif()
+    endif()
+endif()
+
+if(NOT HDF5_FOUND)
+    message(FATAL_ERROR "Could NOT find HDF5. Please check that HDF5_ROOT is set correctly or that the cray-hdf5 module is loaded.")
+endif()
+
+if(HDF5_FOUND AND NOT TARGET hdf5::hdf5)
+    list(GET HDF5_LIBRARIES 0 HDF5_MAIN_LIB)
+    add_library(hdf5::hdf5 UNKNOWN IMPORTED)
+    set_target_properties(hdf5::hdf5 PROPERTIES
+        IMPORTED_LOCATION "${HDF5_MAIN_LIB}"
+        INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}"
+    )
+    set_target_properties(hdf5::hdf5 PROPERTIES INTERFACE_LINK_LIBRARIES "${HDF5_HL_LIBRARY}")
+endif()
+
 find_package (MPI REQUIRED)
 
-# Corgi has git submodules pybind11 and MPI/mpi4cpp.
-# Mpi4cpp should find MPI, which added to targets that link with corgi target.
-#
-# If corgi happens to be replaced, then pybind11 and MPI # have to be added explicitly here.
+
+
 add_subdirectory(external/corgi)
+
+if(TARGET mpi4cpp)
+    target_link_directories(mpi4cpp PUBLIC /opt/cray/pe/mpich/8.1.29/gtl/lib)
+    target_link_libraries(mpi4cpp PUBLIC mpi_gtl_hsa)
+endif()
 
 add_subdirectory(external/tyvi)
 

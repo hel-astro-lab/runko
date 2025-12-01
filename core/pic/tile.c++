@@ -245,11 +245,11 @@ void
     const auto m = helper_mds.mapping();
 
     for(const auto [i, j, k]: tyvi::sstd::index_space(helper_mds)) {
-      const auto n                  = m(i, j, k);
+      const auto n  = m(i, j, k);
       const auto gc = global_coordinates(i, j, k);
-      xv(n) = gc[0];
-      yv(n) = gc[1];
-      zv(n) = gc[2];
+      xv(n)         = gc[0];
+      yv(n)         = gc[1];
+      zv(n)         = gc[2];
     }
   }
 
@@ -321,8 +321,13 @@ void
 
   switch(field_interpolator_) {
     case FieldInterpolator::linear_1st: {
+      // We have to cast to fptr to choose one function from the overload set.
+      using fptr = emf::YeeLattice::InterpolatedEB (emf::YeeLattice::*)(
+        std::array<emf::YeeLattice::value_type, 3>,
+        const runko::VecList<emf::YeeLattice::value_type>&) const;
+
       ipol_func = std::bind_front(
-        &emf::YeeLattice::interpolate_EB_linear_1st,
+        static_cast<fptr>(&emf::YeeLattice::interpolate_EB_linear_1st),
         std::cref(this->yee_lattice_),
         origo_pos);
       break;
@@ -383,9 +388,7 @@ void
       break;
     }
     default:
-      throw std::logic_error {
-        "pic::Tile::deposit_current: unkown current depositer"
-      };
+      throw std::logic_error { "pic::Tile::deposit_current: unkown current depositer" };
   }
 }
 

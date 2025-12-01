@@ -8,6 +8,13 @@
 void
   emf::YeeLattice::filter_current_binomial2()
 {
+    const tyvi::mdgrid_work w{};
+    filter_current_binomial2(w);
+}
+
+void
+  emf::YeeLattice::filter_current_binomial2(const tyvi::mdgrid_work& w)
+{
   // 3D 3-point binomial coefficients
   static constexpr value_type C3[3][3][3] = { { { 1. / 64., 2. / 64., 1. / 64. },
                                                 { 2. / 64., 4. / 64., 2. / 64. },
@@ -18,7 +25,7 @@ void
                                               { { 1. / 64., 2. / 64., 1. / 64. },
                                                 { 2. / 64., 4. / 64., 2. / 64. },
                                                 { 1. / 64., 2. / 64., 1. / 64. } } };
-  constexpr auto C3_index_space    = tyvi::sstd::geometric_index_space<3, 3>();
+  constexpr auto C3_index_space           = tyvi::sstd::geometric_index_space<3, 3>();
 
   auto filteredJ           = VecGrid(this->J_.extents());
   const auto e             = filteredJ.extents();
@@ -34,8 +41,7 @@ void
 
   const auto Jmds = this->J_.mds();
 
-  tyvi::mdgrid_work {}
-    .for_each_index(
+    w.for_each_index(
       filteredJ_mds,
       [=](const auto idx, const auto tidx) {
         filteredJ_mds[idx][tidx] = 0;

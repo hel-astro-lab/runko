@@ -10,14 +10,17 @@ cd "$(dirname "$0")"
 cd ../
 
 # 3. Load standard prerequisite modules for runko:
+module use /project/project_462001137/custom-modules
 module load LUMI/24.03
 module load partition/G
 module load PrgEnv-cray
-module load rocm
+module load rocm/amd-6.2.4
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
 module load buildtools
+
+
 
 # 4. Create a Python virtual environment specially for runko,
 #    located within the runko repository:
@@ -40,8 +43,12 @@ pip3 install h5py scipy matplotlib numpy
 # 8. Build MPI4PY:
 MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 
+export HDF5_ROOT=/opt/cray/pe/hdf5/1.12.2.11/amd/5.0
+
+ml
+
 # 9. Build and unit test runko on 16 cores:
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=CC .
+cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=amdclang++ .
 make -j16 -Cbuild
 
 # 10. If all went well runko has now been compiled, and certain unit tests
@@ -53,16 +60,16 @@ cat >> runko-venv/bin/activate << EOL
 # Tool to load runko modules
 # Usage: "source runko-venv/bin/activate"
 # Load standard prerequisite modules for runko:
+module use /project/project_462001137/custom-modules
 module load LUMI/24.03
 module load partition/G
 module load PrgEnv-cray
-module load rocm
+module load rocm/amd-6.2.4
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
 module load buildtools
 # module load cray-python # not necessary as we are using a python virtual environment already
-# Update the PYTHONPATH environment variable with runko path data
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 
 EOL
