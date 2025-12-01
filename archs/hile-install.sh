@@ -53,7 +53,7 @@ MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 
 #-------------------------------------------------- 
 # Next, we create a handy file which loads the necessary runko modules
-cat >> $VENV_PATH/runko-venv/bin/activate << EOL
+cat >> runko-venv/bin/activate << EOL
 # Tool to load runko modules
 # Usage: "source venvs/runko-venv/bin/activate"
 # Load standard prerequisite modules for runko:
