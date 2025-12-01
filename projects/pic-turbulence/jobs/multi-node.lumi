@@ -10,6 +10,7 @@
 #SBATCH --time=0-03:00:00       # Run time (d-hh:mm:ss)
 
 # Load correct modules here.
+source $RUNKODIR/venvs/runko-venv/bin/activate
 
 cat << EOF > select_gpu
 #!/bin/bash
@@ -29,6 +30,6 @@ export OMP_NUM_THREADS=6
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_GPU_IPC_ENABLED=0
 
-srun --cpu-bind=${CPU_BIND} ./select_gpu python ./runko/projects/pic2-turbulence/pic2-decay.py
+srun --cpu-bind=${CPU_BIND} ./select_gpu python ./runko/projects/pic-turbulence/pic.py
 
 rm -f ./select_gpu
