@@ -20,9 +20,9 @@ if __name__ == "__main__":
     config = runko.Configuration(None)
 
     config.outdir = "turb-small"
-    config.Nx = 4
-    config.Ny = 4
-    config.Nz = 4
+    config.Nx = 1
+    config.Ny = 1
+    config.Nz = 1
     config.NxMesh = 64
     config.NyMesh = 64
     config.NzMesh = 64
@@ -181,53 +181,53 @@ if __name__ == "__main__":
     # Initializes the simulation and returns a handle to it:
     simulation = tile_grid.configure_simulation(config)
 
-    def sync_EB(tile, comm, io):
+    def sync_EB(x):
         EB = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
-        comm.virtual_tile_sync(*EB)
-        comm.pairwise_moore(*EB)
+        x.comm_external(*EB)
+        x.comm_local(*EB)
 
     simulation.prelude(sync_EB)
 
-    def pic_simulation_step(tile, comm, io):
+    def pic_simulation_step(x):
 
-        tile.push_half_b()
-        comm.virtual_tile_sync(runko.tools.comm_mode.emf_B)
-        comm.pairwise_moore(runko.tools.comm_mode.emf_B)
+        x.grid_push_half_b()
+        x.comm_external(runko.tools.comm_mode.emf_B)
+        x.comm_local(runko.tools.comm_mode.emf_B)
 
-        tile.push_particles()
-        comm.virtual_tile_sync(runko.tools.comm_mode.pic_particle)
-        comm.pairwise_moore(runko.tools.comm_mode.pic_particle)
+        x.prtcl_push()
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
 
         if simulation.lap % 5 == 0:
-            tile.sort_particles()
+            x.prtcl_sort()
 
-        tile.deposit_current()
-        comm.virtual_tile_sync(runko.tools.comm_mode.emf_J)
-        comm.pairwise_moore(runko.tools.comm_mode.emf_J_exchange)
+        x.prtcl_deposit_current()
+        x.comm_external(runko.tools.comm_mode.emf_J)
+        x.comm_local(runko.tools.comm_mode.emf_J_exchange)
 
-        comm.virtual_tile_sync(runko.tools.comm_mode.emf_J)
-        comm.pairwise_moore(runko.tools.comm_mode.emf_J)
-        tile.filter_current()
-        comm.virtual_tile_sync(runko.tools.comm_mode.emf_J)
-        comm.pairwise_moore(runko.tools.comm_mode.emf_J)
-        tile.filter_current()
-        tile.filter_current()
+        x.comm_external(runko.tools.comm_mode.emf_J)
+        x.comm_local(runko.tools.comm_mode.emf_J)
 
-        tile.push_half_b()
-        comm.virtual_tile_sync(runko.tools.comm_mode.emf_B)
-        comm.pairwise_moore(runko.tools.comm_mode.emf_B)
+        x.grid_filter_current()
+        x.comm_external(runko.tools.comm_mode.emf_J)
+        x.comm_local(runko.tools.comm_mode.emf_J)
+        x.grid_filter_current()
+        x.grid_filter_current()
 
-        tile.push_e()
-        tile.subtract_J_from_E()
-        comm.virtual_tile_sync(runko.tools.comm_mode.emf_E)
-        comm.pairwise_moore(runko.tools.comm_mode.emf_E)
+        x.grid_push_half_b()
+        x.comm_external(runko.tools.comm_mode.emf_B)
+        x.comm_local(runko.tools.comm_mode.emf_B)
+
+        x.grid_push_e()
+        x.grid_add_current()
+        x.comm_external(runko.tools.comm_mode.emf_J)
+        x.comm_local(runko.tools.comm_mode.emf_J)
 
         if simulation.lap % 20 == 0:
-            io.emf_snapshot()
+            x.io_emf_snapshot()
 
         if simulation.lap % 20 == 0:
             simulation.log_timer_statistics()
-
 
     simulation.for_each_lap(pic_simulation_step)
     simulation.log_timer_statistics()

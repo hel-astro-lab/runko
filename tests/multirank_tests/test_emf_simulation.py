@@ -6,8 +6,8 @@ import runko
 
 def create_test_grid():
     config = runko.Configuration(None)
-    config.tile_partitioning = "catepillar_track"
-    config.catepillar_track_length = 1
+    config.tile_partitioning = "hilbert_curve"
+    # config.catepillar_track_length = 1
     config.Nt = 3
     config.Nx = 2
     config.Ny = 2
@@ -100,14 +100,15 @@ def emf_communication():
     # Initial fields are constant.
     assertConstantFields()
 
-    def f(local_tile, communicate, *_):
+    def f(x):
         EBmodes = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
 
-        communicate.virtual_tile_sync(*EBmodes)
-        communicate.pairwise_moore(*EBmodes)
+        x.comm_external(*EBmodes)
+        x.comm_local(*EBmodes)
 
-        local_tile.push_half_b()
-        local_tile.push_e()
+        x.grid_push_half_b()
+        x.grid_push_e()
+
 
     # Fields stay constant even after pushing them.
     simulation.for_one_lap(f)
@@ -151,11 +152,11 @@ def emf_J_exchange():
 
     simulation = tile_grid.configure_simulation(conf)
 
-    def f(tile, communicate, *_):
-        communicate.virtual_tile_sync(runko.tools.comm_mode.emf_J)
-        communicate.pairwise_moore(runko.tools.comm_mode.emf_J)
-        communicate.virtual_tile_sync(runko.tools.comm_mode.emf_J)
-        communicate.pairwise_moore(runko.tools.comm_mode.emf_J_exchange)
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.emf_J)
+        x.comm_local(runko.tools.comm_mode.emf_J)
+        x.comm_external(runko.tools.comm_mode.emf_J)
+        x.comm_local(runko.tools.comm_mode.emf_J_exchange)
 
     simulation.for_one_lap(f)
 

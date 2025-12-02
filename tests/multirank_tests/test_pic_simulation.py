@@ -162,12 +162,12 @@ def pic_noop_communication():
         mpi_unittest.assertDeferredResults(asserts)
         mpi_unittest.assertEqual(True, len(asserts) >= 1)
 
-    def f(local_tile, communicate, *_):
-        communicate.virtual_tile_sync(runko.tools.comm_mode.pic_particle)
-        communicate.pairwise_moore(runko.tools.comm_mode.pic_particle)
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
 
-        local_tile.push_e()
-        local_tile.push_half_b()
+        x.grid_push_e()
+        x.grid_push_half_b()
 
     assertUnchangedParticles()
     simulation.for_one_lap(f)
@@ -236,12 +236,12 @@ def pic_communication():
         mpi_unittest.assertDeferredResults(asserts)
         mpi_unittest.assertEqual(True, len(asserts) >= 1)
 
-    def f(local_tile, communicate, *_):
-        communicate.virtual_tile_sync(runko.tools.comm_mode.pic_particle)
-        communicate.pairwise_moore(runko.tools.comm_mode.pic_particle)
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
 
-        local_tile.push_e()
-        local_tile.push_half_b()
+        x.grid_push_e()
+        x.grid_push_half_b()
 
     simulation.for_one_lap(f)
     assertChangedParticles()
