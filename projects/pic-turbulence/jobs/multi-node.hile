@@ -7,18 +7,18 @@
 #SBATCH --nodes=2              # nodes; simulation size controlled w/ this
 
 #SBATCH --gpus-per-node=4      # 4x AMD MI210x per node
-#SBATCH --ntasks-per-node=4    # needs to be same as gpu's 
-#SBATCH --mem-per-cpu=2GB      # max 896G per node
+#SBATCH --ntasks-per-node=4    # needs to be same as gpu's
+#SBATCH --mem=0
 #SBATCH --distribution=block:block
 #SBATCH --cpus-per-gpu=8       
 #SBATCH --open-mode=truncate
 #SBATCH --gres-flags=enforce-binding
 #SBATCH --partition=hile
-#SBATCH --nodelist=hile-g0[1,2] # g0[0-2] have rocm6.2;  hile-g03 has rocm6.3.
+#SBATCH --nodelist=hile-g0[2,3] # g0[0-2] have rocm6.2;  hile-g03 has rocm6.3.
 
 
 # load modules and environment variables
-source $RUNKODIR/archs/hile-load-runko-env
+source $RUNKODIR/runko-venv/bin/activate
 module list
 echo $PYTHONPATH
 
