@@ -42,9 +42,9 @@ class simulation(unittest.TestCase):
             self.assertFalse(np.all(hBx == 1))
 
         prelude_ran = [False] # Has to be mutable so func below can modify it.
-        def prelude_func(_, comm, *__):
-            comm.virtual_tile_sync(runko.tools.comm_mode.emf_B)
-            comm.pairwise_moore(runko.tools.comm_mode.emf_B)
+        def prelude_func(x):
+            x.comm_external(runko.tools.comm_mode.emf_B)
+            x.comm_local(runko.tools.comm_mode.emf_B)
             prelude_ran[0] = True
 
         self.assertEqual(simulation.lap, 0)

@@ -88,15 +88,13 @@ void
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 
   // 3d tile
-  py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(
-    m_3d,
-    "Tile")
+  py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(m_3d, "Tile")
     .def(
       py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
         return emf::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
       }))
-    .def("set_EBJ",           &emf::Tile<3>::set_EBJ)
-    .def("batch_set_EBJ",     &emf::Tile<3>::batch_set_EBJ)
+    .def("set_EBJ", &emf::Tile<3>::set_EBJ)
+    .def("batch_set_EBJ", &emf::Tile<3>::batch_set_EBJ)
     .def(
       "get_EBJ",
       [](emf::Tile<3>& tile) {
@@ -109,13 +107,13 @@ void
         auto EBJ = tile.get_EBJ_with_halo();
         return to_ndarrays(EBJ);
       })
-    .def("push_half_b",       &emf::Tile<3>::push_half_b)
-    .def("push_e",            &emf::Tile<3>::push_e)
-    .def("filter_current",    &emf::Tile<3>::filter_current)
+    .def("push_half_b", &emf::Tile<3>::push_half_b)
+    .def("push_e", &emf::Tile<3>::push_e)
+    .def("filter_current", &emf::Tile<3>::filter_current)
     .def("subtract_J_from_E", &emf::Tile<3>::subtract_J_from_E);
 
 
-  // snapshot io 
+  // snapshot io
   py::class_<h5io::FieldsWriter<3>>(m_3d, "FieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write", &h5io::FieldsWriter<3>::write);
@@ -131,6 +129,6 @@ void
 
   // 3D
   m_3d.def("write_grids", &emf::write_grids<3>);
-  m_3d.def("read_grids",  &emf::read_grids<3>);
+  m_3d.def("read_grids", &emf::read_grids<3>);
 }
 }  // namespace emf

@@ -41,23 +41,23 @@ if __name__ == "__main__":
     J0 = lambda x, y, z: (0, 0, 0)
 
     for idx in tile_grid.local_tile_indices():
-        tile = runko.emf.Tile(idx, config)
+        tile = runko.emf.threeD.Tile(idx, config)
         tile.set_EBJ(E0, B0, J0)
         tile_grid.add_tile(tile, idx)
 
     # Simulation config:
     simulation = tile_grid.configure_simulation(config)
-    Ecomm, Bcomm = runko.comm_mode.emf_E, runko.comm_mode.emf_B
+    Ecomm, Bcomm = runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B
 
-    def lap_function(local_tiles, comm, *_):
-        comm.virtual_tile_sync(Ecomm)
-        comm.pairwise_moore(Ecomm)
-        local_tiles.push_half_b()
-        local_tiles.push_half_b()
+    def lap_function(x):
+        x.comm_external(Ecomm)
+        x.comm_local(Ecomm)
+        x.grid_push_half_b()
+        x.grid_push_half_b()
 
-        comm.virtual_tile_sync(Bcomm)
-        comm.pairwise_moore(Bcomm)
-        local_tiles.push_e()
+        x.comm_external(Bcomm)
+        x.comm_local(Bcomm)
+        x.grid_push_e()
 
         # Ad-hoc io for one tile (proper io is not yet implemented).
         if runko.on_main_rank():

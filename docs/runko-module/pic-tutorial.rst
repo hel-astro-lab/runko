@@ -1,3 +1,7 @@
+.. note::
+
+   Stale documentation, please update.
+
 Tutorial
 ########
 

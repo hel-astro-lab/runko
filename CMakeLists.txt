@@ -125,8 +125,11 @@ find_package (MPI REQUIRED)
 
 add_subdirectory(external/corgi)
 
-if(TARGET mpi4cpp)
-    target_link_directories(mpi4cpp PUBLIC /opt/cray/pe/mpich/8.1.29/gtl/lib)
+# Due to problems with Cray modules, we have to add gtl library manually to mpi4cpp.
+# We do this conditionally if it is present. This is somewhat a hack.
+set(GTL_LIB_PATH /opt/cray/pe/mpich/default/gtl/lib)
+if(TARGET mpi4cpp AND EXISTS ${GTL_LIB_PATH})
+    target_link_directories(mpi4cpp PUBLIC ${GTL_LIB_PATH})
     target_link_libraries(mpi4cpp PUBLIC mpi_gtl_hsa)
 endif()
 

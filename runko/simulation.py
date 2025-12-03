@@ -137,53 +137,72 @@ class Simulation:
             name = get_name(method, kwargs)
             lap_timer.stop(name)
 
-        def for_each_local_tile_action(method: str, **kwargs):
-            for tile in self.local_tiles():
-                getattr(tile, method)()
+        def action(method: str, *vargs):
+            if method.startswith("prtcl_"):
+                method_mapper = { "prtcl_push" : "push_particles",
+                                  "prtcl_sort" : "sort_particles",
+                                  "prtcl_deposit_current" : "deposit_current" }
 
-        def communication_action(method: str, *comm_modes: comm_mode, **kwargs):
-            for mode in comm_modes:
-                if type(mode) != comm_mode:
-                    msg = "Communications only accept runko.comm_mode arguments.\n"
-                    msg += f"Received {mode} of type {type(mode)}."
-                    raise TypeError(msg)
+                if method in method_mapper:
+                    method = method_mapper[method]
 
-            match method:
-                case "pairwise_moore":
-                    for mode in comm_modes:
-                        self._tile_grid._corgi_grid.pairwise_moore_communication(mode.value)
+                for tile in self.local_tiles():
+                    getattr(tile, method)()
 
-                case "virtual_tile_sync":
-                    for mode in comm_modes:
-                        handshake_mode = _virtual_tile_sync_handshake_mode(mode)
+            elif method.startswith("grid_"):
 
-                        if handshake_mode:
-                            self._logger.debug("Starting a handshake.")
-                            self._tile_grid._corgi_grid.recv_data(handshake_mode)
-                            self._tile_grid._corgi_grid.send_data(handshake_mode)
-                            self._tile_grid._corgi_grid.wait_data(handshake_mode)
+                method_mapper = { "grid_add_current" : "grid_subtract_J_from_E" }
 
-                        self._logger.debug("Starting virtual tile sync.")
-                        self._tile_grid._corgi_grid.recv_data(mode.value)
-                        self._tile_grid._corgi_grid.send_data(mode.value)
-                        self._tile_grid._corgi_grid.wait_data(mode.value)
-                case _:
-                    raise AttributeError(f"{method} is not supported communication type.")
+                if method in method_mapper:
+                    method = method_mapper[method]
 
-        def io_action(method: str, **kwargs):
-            match method:
-                case "emf_snapshot":
-                    self._ensure_constructed_emf_writer()
-                    self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
-                case _:
-                    raise AttributeError(f"{method} is not supported IO type.")
+                for tile in self.local_tiles():
+                    getattr(tile, method[5:])()
+
+            elif method.startswith("io_"):
+                match method[3:]:
+                    case "emf_snapshot":
+                        self._ensure_constructed_emf_writer()
+                        self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
+                    case _:
+                        raise AttributeError(f"{method} is not supported IO type.")
+
+            elif method.startswith("comm_"):
+                comm_modes = [*vargs]
+
+                for mode in comm_modes:
+                    if type(mode) != comm_mode:
+                        msg = "Communications only accept runko.comm_mode arguments.\n"
+                        msg += f"Received {mode} of type {type(mode)}."
+                        raise TypeError(msg)
+
+                    match method[5:]:
+                        case "local":
+                            for mode in comm_modes:
+                                self._tile_grid._corgi_grid.pairwise_moore_communication(mode.value)
+
+                        case "external":
+                            for mode in comm_modes:
+                                handshake_mode = _virtual_tile_sync_handshake_mode(mode)
+
+                                if handshake_mode:
+                                    self._logger.debug("Starting a handshake.")
+                                    self._tile_grid._corgi_grid.recv_data(handshake_mode)
+                                    self._tile_grid._corgi_grid.send_data(handshake_mode)
+                                    self._tile_grid._corgi_grid.wait_data(handshake_mode)
+
+                                self._logger.debug("Starting virtual tile sync.")
+                                self._tile_grid._corgi_grid.recv_data(mode.value)
+                                self._tile_grid._corgi_grid.send_data(mode.value)
+                                self._tile_grid._corgi_grid.wait_data(mode.value)
+                        case _:
+                            raise AttributeError(f"{method} is not supported communication type.")
+            else:
+                raise RuntimeError(f"{method} is not supported!")
+
 
         pre_post = dict(pre=pre, post=post) if not disable_timing else dict()
-        for_each_local_tile = MethodWrapper(for_each_local_tile_action, **pre_post)
-        communications = MethodWrapper(communication_action, **pre_post)
-        io = MethodWrapper(io_action, **pre_post)
-
-        lap_function(for_each_local_tile, communications, io)
+        lap_function(MethodWrapper(action, **pre_post))
 
         lap_wall_time_end = time.time()
         if not disable_timing:

@@ -242,11 +242,9 @@ class emf(unittest.TestCase):
         fc = lambda x, y, z: np.ones((10, 12, 14))
 
         with self.assertRaises(Exception):
-            print("The test fails on the following line in tests/test_emf.py .")
             tile.batch_set_EBJ(f0, fc, fc,
                                fc, fc, fc,
                                fc, fc, fc)
-            print("The test fails on previous line.")
 
         with self.assertRaises(Exception):
             tile.batch_set_EBJ(fc, f1, fc,
@@ -383,7 +381,12 @@ class emf(unittest.TestCase):
         of corgi grid.
         """
 
-        self.assertEqual(tile.index, tile_grid_idx)
+        if type(tile.index) is tuple:
+            #Handle cases where the tile index is a tuple
+            self.assertEqual(tile.index, tuple(tile_grid_idx))
+        else:
+            #Expect the tile index to be a list
+            self.assertEqual(tile.index, tile_grid_idx)
 
 
     def test_bogus_tile_index_raises_exception(self):
