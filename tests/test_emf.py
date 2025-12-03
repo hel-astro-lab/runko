@@ -383,7 +383,12 @@ class emf(unittest.TestCase):
         of corgi grid.
         """
 
-        self.assertEqual(tile.index, tile_grid_idx)
+	if type(tile.index) is tuple:
+		#Handle cases where the tile index is a tuple
+	        self.assertEqual(tile.index, tuple(tile_grid_idx))
+	else:
+		#Expect the tile index to be a list
+		self.assertEqual(tile.index, tile_grid_idx)
 
 
     def test_bogus_tile_index_raises_exception(self):
