@@ -138,6 +138,12 @@ public:
   /// Advance E by full time step using FDTD2 scheme in non-halo region.
   void push_e_FDTD2(value_type dt);
 
+  /// ...
+  void boundary_condition_b_star(value_type boundary_value);
+
+  /// ...
+  void boundary_condition_e_star(value_type dt);
+
   /// E -= J in non-halo region.
   void subtract_J_from_E();
 
@@ -146,6 +152,12 @@ public:
 
   /// Advance E by full time step using FDTD2 scheme in non-halo region asynchronously.
   void push_e_FDTD2(const tyvi::mdgrid_work&, value_type dt);
+
+  /// ...
+  void boundary_condition_b_star(const tyvi::mdgrid_work&, value_type boundary_value);
+
+  /// ...
+  void boundary_condition_e_star(const tyvi::mdgrid_work&, value_type dt);
 
   /// E -= J in non-halo region asynchronously.
   void subtract_J_from_E(const tyvi::mdgrid_work&);

@@ -12,6 +12,7 @@ set (EMF_FILES
      ../core/emf/yee_lattice_FDTD2.c++
      ../core/emf/yee_lattice_interpolate_linear_1st.c++
      ../core/emf/yee_lattice_current_filter_binomial2.c++
+     ../core/emf/yee_lattice_star.c++
      #../core/emf/propagators/fdtd2.c++ 
      #../core/emf/propagators/fdtd2_pml.c++ 
      #../core/emf/propagators/fdtd4.c++ 

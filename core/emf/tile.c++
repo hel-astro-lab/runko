@@ -23,6 +23,17 @@ emf::FieldPropagator
   }
 }
 
+emf::BoundaryCondition
+  parse_boundary_condition(const std::string_view p)
+{
+  if(p == "star") {
+    return emf::BoundaryCondition::star;
+  } else {
+    const auto msg = std::format("{} is not supported boundary condition.", p);
+    throw std::runtime_error { msg };
+  }
+}
+
 emf::CurrentFilter
   parse_current_filter(const std::string_view p)
 {
@@ -57,6 +68,9 @@ Tile<D>::Tile(
     current_filter_ = parse_current_filter(cfilter.value());
   }
 
+  if(const auto bcondition = p.get<std::string>("boundary_condition")) {
+    boundary_condition_ = parse_boundary_condition(bcondition.value());
+  }
 
   auto one_or_throw = [](const double d) {
     if(d != 1.0) {
@@ -344,6 +358,28 @@ void
     default:
       throw std::logic_error {
         "emf::Tile::filter_current internal error: unregonized current filter."
+      };
+  }
+}
+
+template<std::size_t D>
+void
+  Tile<D>::boundary_condition_b(float boundary_value)
+{
+  if(not boundary_condition_) {
+    return;
+  }
+
+  const auto bc = boundary_condition_.value();
+  switch(bc) {
+    case emf::BoundaryCondition::star:
+      //Star star = ... //from config
+      this->yee_lattice_.boundary_condition_b_star(boundary_value);
+      //this->yee_lattice_.boundary_condition_b_star(star);
+      return;
+    default:
+      throw std::logic_error {
+        "emf::Tile::boundary_condition internal error: unregonized boundary condition."
       };
   }
 }

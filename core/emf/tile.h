@@ -19,6 +19,8 @@ namespace emf {
 enum class FieldPropagator { FDTD2 };
 enum class CurrentFilter { binomial2 };
 
+enum class BoundaryCondition { star };
+
 /*! \brief General Plasma tile for solving Maxwell's equations
  *
  * Internally everything for computations are stored in
@@ -33,6 +35,7 @@ protected:
   YeeLattice yee_lattice_;
   double cfl_;
   FieldPropagator field_propagator_;
+  std::optional<BoundaryCondition> boundary_condition_ {};
   std::optional<CurrentFilter> current_filter_ {};
 
 public:
@@ -93,6 +96,9 @@ public:
 
   /// Advance B by half time step using scheme from configuration in non-halo region.
   void push_half_b();
+
+  /// Update B boundaries.
+  void boundary_condition_b(float boundary_value);
 
   /// Advance E by full time step using scheme from configuration in non-halo region.
   ///

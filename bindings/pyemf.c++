@@ -108,6 +108,7 @@ void
         return to_ndarrays(EBJ);
       })
     .def("push_half_b", &emf::Tile<3>::push_half_b)
+    .def("boundary_condition_b", &emf::Tile<3>::boundary_condition_b)
     .def("push_e", &emf::Tile<3>::push_e)
     .def("filter_current", &emf::Tile<3>::filter_current)
     .def("subtract_J_from_E", &emf::Tile<3>::subtract_J_from_E);
