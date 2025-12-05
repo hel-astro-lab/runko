@@ -154,7 +154,10 @@ class TileGrid:
                 if not nhood_tile:
                     continue
 
-                nhood_tile_type = type(nhood_tile)
+                try:
+                    nhood_tile_type = type(nhood_tile).canonical_type()
+                except:
+                    nhood_tile_type = type(nhood_tile)
 
                 # Treat tiles from pycorgi as non-initialized.
                 if 'pycorgi' not in nhood_tile_type.__module__ :
@@ -166,11 +169,17 @@ class TileGrid:
 
                     tile_type_candidate = nhood_tile_type
 
-            if not tile_type_candidate:
-                raise RuntimeError("Could not deduce virtual tily type!")
-
             indices = vtile.index
-            new_tile = tile_type_candidate(indices, config)
+            new_tile = None
+            try:
+                # Try to create a virtual tile specialization of the tile.
+                new_tile = tile_type_candidate.virtual_tile_specialization()(indices, config)
+            except TypeError:
+                # There is no virtual tile specialization for the tile.
+                new_tile = tile_type_candidate(indices, config)
+            except Exception as e:
+                raise e
+
             self._corgi_grid.add_tile(new_tile, indices)
             new_tile.load_metainfo(vtile.communication)
 

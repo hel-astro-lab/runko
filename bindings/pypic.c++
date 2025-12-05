@@ -57,9 +57,7 @@ void
   // object for storing single particle data
   using PS = runko::ParticleState;
   py::class_<PS>(m_3d, "ParticleState")
-    .def(py::init<PS::vec3, PS::vec3>(), 
-        py::arg("pos"), 
-        py::arg("vel"))
+    .def(py::init<PS::vec3, PS::vec3>(), py::arg("pos"), py::arg("vel"))
     .def_readwrite("pos", &PS::pos)
     .def_readwrite("vel", &PS::vel);
 
@@ -68,17 +66,19 @@ void
   py::class_<PSB>(m_3d, "ParticleStateBatch")
     .def(
       py::init<PSB::container_type, PSB::container_type>(),
-        py::arg("pos"),
-        py::arg("vel"))
+      py::arg("pos"),
+      py::arg("vel"))
     .def_readwrite("pos", &PSB::pos)
     .def_readwrite("vel", &PSB::vel);
 
   // 3d pic tile
-  py::class_<
-    pic::Tile<3>,
-    emf::Tile<3>,
-    corgi::Tile<3>,
-    std::shared_ptr<pic::Tile<3>>>(m_3d, "Tile")
+  py::class_<pic::Tile<3>, emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<pic::Tile<3>>>(
+    m_3d,
+    "Tile")
+    .def_static("canonical_type", []() { return py::type::of<pic::Tile<3>>(); })
+    .def_static(
+      "virtual_tile_specialization",
+      []() { return py::type::of<pic::Tile<3>>(); })
     .def(
       py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
         return pic::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
@@ -114,7 +114,7 @@ void
 
   // 3D
   m_3d.def("write_particles", &pic::write_particles<3>);
-  m_3d.def("read_particles",  &pic::read_particles<3>);
+  m_3d.def("read_particles", &pic::read_particles<3>);
 }
 
 }  // namespace pic

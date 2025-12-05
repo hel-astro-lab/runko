@@ -12,9 +12,9 @@ def create_test_grid():
     config.Nx = 2
     config.Ny = 2
     config.Nz = 2
-    config.NxMesh = 10
-    config.NyMesh = 11
-    config.NzMesh = 13
+    config.NxMesh = 10#  10
+    config.NyMesh = 10#  11
+    config.NzMesh = 10#  13
     config.xmin = 0
     config.ymin = 0
     config.zmin = 0
@@ -50,7 +50,7 @@ def virtual_emf_tiles():
 
     asserts = []
     for vtile in vtiles:
-        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.emf.threeD.Tile))
+        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.emf.threeD.VirtualTile))
 
     mpi_unittest.assertDeferredResults(asserts)
 

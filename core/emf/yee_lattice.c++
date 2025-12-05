@@ -45,27 +45,20 @@ void
 namespace emf {
 
 YeeLattice::YeeLattice(const YeeLatticeCtorArgs args) :
-  halo_size_ { args.halo_size },
   extents_wout_halo_ { args.Nx, args.Ny, args.Nz },
-  E_(
-    args.Nx + 2uz * halo_size_,
-    args.Ny + 2uz * halo_size_,
-    args.Nz + 2uz * halo_size_),
-  B_(
-    args.Nx + 2uz * halo_size_,
-    args.Ny + 2uz * halo_size_,
-    args.Nz + 2uz * halo_size_),
-  J_(args.Nx + 2uz * halo_size_, args.Ny + 2uz * halo_size_, args.Nz + 2uz * halo_size_)
+  E_(args.Nx + 2uz * halo_size, args.Ny + 2uz * halo_size, args.Nz + 2uz * halo_size),
+  B_(args.Nx + 2uz * halo_size, args.Ny + 2uz * halo_size, args.Nz + 2uz * halo_size),
+  J_(args.Nx + 2uz * halo_size, args.Ny + 2uz * halo_size, args.Nz + 2uz * halo_size)
 {
 
-  auto less_than_halo = [this](const auto x) { return x < halo_size_; };
+  auto less_than_halo = [this](const auto x) { return x < halo_size; };
 
   if(std::ranges::any_of(extents_wout_halo_, less_than_halo)) {
     auto msg = std::stringstream {};
 
     msg << "Yee Lattice extents (" << extents_wout_halo_[0] << ", "
         << extents_wout_halo_[1] << ", " << extents_wout_halo_[2]
-        << ") are assumed to be at least halo size: " << halo_size_;
+        << ") are assumed to be at least halo size: " << halo_size;
     throw std::runtime_error { msg.str() };
   }
 }
@@ -79,14 +72,9 @@ std::array<std::size_t, 3>
   YeeLattice::extents_with_halo() const
 {
   auto e        = extents_wout_halo();
-  auto add_halo = [this](const auto x) { return x + 2uz * halo_size(); };
+  auto add_halo = [this](const auto x) { return x + 2uz * halo_size; };
   std::ranges::transform(e, e.begin(), add_halo);
   return e;
-}
-std::size_t
-  YeeLattice::halo_size() const
-{
-  return halo_size_;
 }
 
 YeeLattice::YeeLatticeHostCopy
@@ -336,6 +324,103 @@ YeeLattice::VecGridMDS::mapping_type
   YeeLattice::grid_mapping_with_halo() const noexcept
 {
   return this->E_.mds().mapping();
+}
+
+
+void
+  YeeLattice::set_E_in_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, halo_size>& other)
+{
+  const auto my_Emds_region = this->subregion(dir, this->E_.mds());
+  const auto acc            = other.get_accessor();
+  const auto base =
+    std::array { dir[0] == -1 ? extents_wout_halo_[0] - halo_size : 0uz,
+                 dir[1] == -1 ? extents_wout_halo_[1] - halo_size : 0uz,
+                 dir[2] == -1 ? extents_wout_halo_[2] - halo_size : 0uz };
+
+  w.for_each_index(my_Emds_region, [=](const auto idx, const auto tidx) {
+    const auto i              = std::array<std::size_t, 3> { idx[0] + base[0],
+                                                             idx[1] + base[1],
+                                                             idx[2] + base[2] };
+    const auto n              = acc.offset(i, tidx[0]);
+    my_Emds_region[idx][tidx] = acc.data[n];
+  });
+}
+
+void
+  YeeLattice::set_B_in_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, halo_size>& other)
+{
+  const auto my_Bmds_region = this->subregion(dir, this->B_.mds());
+  const auto acc            = other.get_accessor();
+  const auto base =
+    std::array { dir[0] == -1 ? extents_wout_halo_[0] - halo_size : 0uz,
+                 dir[1] == -1 ? extents_wout_halo_[1] - halo_size : 0uz,
+                 dir[2] == -1 ? extents_wout_halo_[2] - halo_size : 0uz };
+
+  w.for_each_index(my_Bmds_region, [=](const auto idx, const auto tidx) {
+    const auto i              = std::array<std::size_t, 3> { idx[0] + base[0],
+                                                             idx[1] + base[1],
+                                                             idx[2] + base[2] };
+    const auto n              = acc.offset(i, tidx[0]);
+    my_Bmds_region[idx][tidx] = acc.data[n];
+  });
+}
+
+void
+  YeeLattice::set_J_in_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, 2 * halo_size>& other)
+{
+  const auto my_Jmds_region = this->subregion(dir, this->J_.mds());
+  const auto acc            = other.get_accessor();
+
+  auto base = std::array { dir[0] == -1 ? extents_wout_halo_[0] : halo_size,
+                           dir[1] == -1 ? extents_wout_halo_[1] : halo_size,
+                           dir[2] == -1 ? extents_wout_halo_[2] : halo_size };
+
+  w.for_each_index(my_Jmds_region, [=](const auto idx, const auto tidx) {
+    const auto i              = std::array<std::size_t, 3> { idx[0] + base[0],
+                                                             idx[1] + base[1],
+                                                             idx[2] + base[2] };
+    const auto n              = acc.offset(i, tidx[0]);
+    my_Jmds_region[idx][tidx] = acc.data[n];
+  });
+}
+
+void
+  YeeLattice::add_to_J_from_subregion(
+    const tyvi::mdgrid_work& w,
+    const dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, 2 * halo_size>& other)
+{
+  const auto idir           = invert_dir(dir);
+  const auto my_Jmds_region = this->corresponding_subregion(idir, this->J_.mds());
+  const auto acc            = other.get_accessor();
+
+  auto base = std::array<std::size_t, 3> {};
+  for(const auto i: std::array { 0uz, 1uz, 2uz }) {
+    if(dir[i] == 1) {
+      base[i] = 0uz;
+    } else if(dir[i] == 0) {
+      base[i] = halo_size;
+    } else {
+      base[i] = halo_size + extents_wout_halo_[i];
+    }
+  }
+
+  w.for_each_index(my_Jmds_region, [=](const auto idx, const auto tidx) {
+    const auto i              = std::array<std::size_t, 3> { idx[0] + base[0],
+                                                             idx[1] + base[1],
+                                                             idx[2] + base[2] };
+    const auto n              = acc.offset(i, tidx[0]);
+    my_Jmds_region[idx][tidx] = my_Jmds_region[idx][tidx] + acc.data[n];
+  });
 }
 
 }  // namespace emf

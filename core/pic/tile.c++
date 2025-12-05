@@ -313,9 +313,9 @@ void
 {
   using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+    std::array { static_cast<yee_value_type>(this->mins[0]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
 
   pic::ParticleContainer::InterpolatedEB_function ipol_func {};
 
@@ -356,9 +356,9 @@ void
 
   using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+    std::array { static_cast<yee_value_type>(this->mins[0]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
 
   switch(current_depositer_) {
     case CurrentDepositer::zigzag_1st:
@@ -400,9 +400,9 @@ void
   using M      = decltype(m);
 
   using F              = pic::ParticleContainer::value_type;
-  const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - this->halo_size,
-                                      static_cast<F>(this->mins[1]) - this->halo_size,
-                                      static_cast<F>(this->mins[2]) - this->halo_size };
+  const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - emf::halo_size,
+                                      static_cast<F>(this->mins[1]) - emf::halo_size,
+                                      static_cast<F>(this->mins[2]) - emf::halo_size };
   using Vec3F          = toolbox::Vec3<F>;
 
   auto score = [=](const F x, const F y, const F z) {

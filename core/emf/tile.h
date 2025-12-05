@@ -1,7 +1,8 @@
 #pragma once
 
+#include "core/emf/common.h"
+#include "core/emf/virtual_tile.h"
 #include "core/emf/yee_lattice.h"
-#include "corgi/corgi.h"
 #include "corgi/tile.h"
 #include "mpi4cpp/mpi.h"
 #include "pybind11/numpy.h"
@@ -9,7 +10,6 @@
 
 #include <array>
 #include <cstddef>
-#include <experimental/mdspan>
 #include <functional>
 #include <optional>
 #include <tuple>
@@ -26,7 +26,7 @@ enum class CurrentFilter { binomial2 };
  */
 template<std::size_t D>
 class Tile : virtual public corgi::Tile<D> {
-
+public:
   static_assert(D == 3);
 
 protected:
@@ -35,9 +35,14 @@ protected:
   FieldPropagator field_propagator_;
   std::optional<CurrentFilter> current_filter_ {};
 
-public:
-  static constexpr auto halo_size = 3;
+  VirtualTile<D>::hollow_grid_EB send_buff_E_, send_buff_B_;
+  VirtualTile<D>::hollow_grid_J send_buff_J_;
 
+  void update_send_buff_E(const tyvi::mdgrid_work&);
+  void update_send_buff_B(const tyvi::mdgrid_work&);
+  void update_send_buff_J(const tyvi::mdgrid_work&);
+
+public:
   /// Construct Tile by deducing extents from given tile grid index and config.
   ///
   /// Config has to contain values for:

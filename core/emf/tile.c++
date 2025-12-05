@@ -43,15 +43,17 @@ Tile<D>::Tile(
   const toolbox::ConfigParser& p) :
   corgi::Tile<D>(),
   yee_lattice_(
-    YeeLatticeCtorArgs { .halo_size = halo_size,
-                         .Nx        = p.get_or_throw<std::size_t>("NxMesh"),
-                         .Ny        = p.get_or_throw<std::size_t>("NyMesh"),
-                         .Nz        = p.get_or_throw<std::size_t>("NzMesh")
+    YeeLatticeCtorArgs { .Nx = p.get_or_throw<std::size_t>("NxMesh"),
+                         .Ny = p.get_or_throw<std::size_t>("NyMesh"),
+                         .Nz = p.get_or_throw<std::size_t>("NzMesh")
 
     }),
   cfl_ { p.get_or_throw<double>("cfl") },
   field_propagator_ { parse_field_propagator(
-    p.get_or_throw<std::string>("field_propagator")) }
+    p.get_or_throw<std::string>("field_propagator")) },
+  send_buff_E_(yee_lattice_.extents_wout_halo()),
+  send_buff_B_(yee_lattice_.extents_wout_halo()),
+  send_buff_J_(yee_lattice_.extents_with_halo())
 {
   if(const auto cfilter = p.get<std::string>("current_filter")) {
     current_filter_ = parse_current_filter(cfilter.value());
@@ -369,10 +371,24 @@ std::vector<mpi4cpp::mpi::request>
     return comm.isend(dest, tag, s.data(), s.size());
   };
 
+  tyvi::mdgrid_work w {};
+
   switch(static_cast<comm_mode>(mode)) {
-    case comm_mode::emf_E: return { make_isend(yee_lattice_.span_E()) };
-    case comm_mode::emf_B: return { make_isend(yee_lattice_.span_B()) };
-    case comm_mode::emf_J: return { make_isend(yee_lattice_.span_J()) };
+    case comm_mode::emf_E: {
+      update_send_buff_E(w);
+      w.wait();
+      return { make_isend(send_buff_E_.span()) };
+    }
+    case comm_mode::emf_B: {
+      update_send_buff_B(w);
+      w.wait();
+      return { make_isend(send_buff_B_.span()) };
+    }
+    case comm_mode::emf_J: {
+      update_send_buff_J(w);
+      w.wait();
+      return { make_isend(send_buff_J_.span()) };
+    }
     default:
       throw std::logic_error { std::format(
         "emf::Tile::send_data does not support given communication mode: {}",
@@ -418,39 +434,88 @@ void
     const std::array<int, D> dir_to_other,
     const int mode)
 {
-  const Tile<D>& other = [&]() -> const Tile<D>& {
-    try {
-      return dynamic_cast<const Tile<D>&>(other_base);
-    } catch(const std::bad_cast& ex) {
-      throw std::runtime_error { std::format(
-        "emf::Tile::pairwise_moore_communication assumes that the other tile is "
-        "emf::Tile or its descendant. Orginal exception: {}",
-        ex.what()) };
-    }
-  }();
 
+  auto const* const other_base_ptr = &other_base;
   using runko::comm_mode;
 
-  switch(static_cast<comm_mode>(mode)) {
-    case comm_mode::emf_E:
-      yee_lattice_.set_E_in_subregion(dir_to_other, other.yee_lattice_);
-      break;
-    case comm_mode::emf_B:
-      yee_lattice_.set_B_in_subregion(dir_to_other, other.yee_lattice_);
-      break;
-    case comm_mode::emf_J:
-      yee_lattice_.set_J_in_subregion(dir_to_other, other.yee_lattice_);
-      break;
-    case comm_mode::emf_J_exchange:
-      yee_lattice_.add_to_J_from_subregion(dir_to_other, other.yee_lattice_);
-      break;
-    default:
-      throw std::logic_error { std::format(
-        "emf::Tile::pairwise_moore_communication does not support given communication "
-        "mode: {}",
-        mode) };
+  if(const auto* nonvirtual_other = dynamic_cast<const Tile<D>*>(other_base_ptr)) {
+    switch(static_cast<comm_mode>(mode)) {
+      case comm_mode::emf_E:
+        yee_lattice_.set_E_in_subregion(dir_to_other, nonvirtual_other->yee_lattice_);
+        break;
+      case comm_mode::emf_B:
+        yee_lattice_.set_B_in_subregion(dir_to_other, nonvirtual_other->yee_lattice_);
+        break;
+      case comm_mode::emf_J:
+        yee_lattice_.set_J_in_subregion(dir_to_other, nonvirtual_other->yee_lattice_);
+        break;
+      case comm_mode::emf_J_exchange:
+        yee_lattice_.add_to_J_from_subregion(
+          dir_to_other,
+          nonvirtual_other->yee_lattice_);
+        break;
+      default:
+        throw std::logic_error { std::format(
+          "emf::Tile::pairwise_moore_communication does not support given "
+          "communication mode: {}",
+          mode) };
+    }
+  } else if(
+    const auto* virtual_other = dynamic_cast<const VirtualTile<D>*>(other_base_ptr)) {
+
+    tyvi::mdgrid_work w {};
+
+    switch(static_cast<comm_mode>(mode)) {
+      case comm_mode::emf_E:
+        yee_lattice_.set_E_in_subregion(w, dir_to_other, virtual_other->E_);
+        break;
+      case comm_mode::emf_B:
+        yee_lattice_.set_B_in_subregion(w, dir_to_other, virtual_other->B_);
+        break;
+      case comm_mode::emf_J:
+        yee_lattice_.set_J_in_subregion(w, dir_to_other, virtual_other->J_);
+        break;
+      case comm_mode::emf_J_exchange:
+        yee_lattice_.add_to_J_from_subregion(w, dir_to_other, virtual_other->J_);
+        break;
+      default:
+        throw std::logic_error { std::format(
+          "emf::Tile::pairwise_moore_communication does not support given "
+          "communication mode: {}",
+          mode) };
+    }
+
+    w.wait();
+
+  } else {
+    throw std::runtime_error {
+      "emf::Tile::pairwise_moore_communication assumes that the other tile is "
+      "emf::Tile or emf::VirtualTile."
+    };
   }
-};
+}
+
+
+template<std::size_t D>
+void
+  Tile<D>::update_send_buff_E(const tyvi::mdgrid_work& w)
+{
+  send_buff_E_.set_from_mds(w, yee_lattice_.nonhalo_submds(yee_lattice_.mds_E()));
+}
+
+template<std::size_t D>
+void
+  Tile<D>::update_send_buff_B(const tyvi::mdgrid_work& w)
+{
+  send_buff_B_.set_from_mds(w, yee_lattice_.nonhalo_submds(yee_lattice_.mds_B()));
+}
+
+template<std::size_t D>
+void
+  Tile<D>::update_send_buff_J(const tyvi::mdgrid_work& w)
+{
+  send_buff_J_.set_from_mds(w, yee_lattice_.mds_J());
+}
 
 }  // namespace emf
 
