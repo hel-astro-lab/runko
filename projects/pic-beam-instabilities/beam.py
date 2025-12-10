@@ -187,10 +187,10 @@ if __name__ == "__main__":
         B2_parallel_avgs.append(B2_parallel_sum / N)
         B2_perpendicular_avgs.append(B2_perpendicular_sum / N)
 
-    def sync_EB(tile, comm, io):
+    def sync_EB(x):
         EB = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
-        comm.virtual_tile_sync(*EB)
-        comm.pairwise_moore(*EB)
+        x.comm_external(*EB)
+        x.comm_local(*EB)
 
     simulation.prelude(sync_EB)
 
