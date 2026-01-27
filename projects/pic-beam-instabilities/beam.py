@@ -231,8 +231,8 @@ if __name__ == "__main__":
 
         x.grid_push_e()
         x.grid_add_current()
-        x.comm_external(runko.tools.comm_mode.emf_J)
-        x.comm_local(runko.tools.comm_mode.emf_J)
+        x.comm_external(runko.tools.comm_mode.emf_E)
+        x.comm_local(runko.tools.comm_mode.emf_E)
 
         if simulation.lap % 20 == 0:
             x.io_emf_snapshot()
