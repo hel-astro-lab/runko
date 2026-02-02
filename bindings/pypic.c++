@@ -1,6 +1,5 @@
 #include "core/particles_common.h"
 #include "core/pic/tile.h"
-#include "io/tasker.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -102,19 +101,6 @@ void
     .def("deposit_current", &pic::Tile<3>::deposit_current)
     .def("sort_particles", &pic::Tile<3>::sort_particles);
 
-
-  //--------------------------------------------------
-  // Full IO
-
-  // 1D
-  // TODO
-
-  // 2D
-  // TODO
-
-  // 3D
-  m_3d.def("write_particles", &pic::write_particles<3>);
-  m_3d.def("read_particles",  &pic::read_particles<3>);
 }
 
 }  // namespace pic
