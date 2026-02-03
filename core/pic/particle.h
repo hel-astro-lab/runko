@@ -55,7 +55,9 @@ public:
 private:
   using E = std::dextents<std::size_t, 1>;
 
+  /// Positions are in code units (i.e. x~ in x = x~ * Delta x).
   runko::VecList<value_type> pos_;
+  /// Three-velocities are stored in physical/natural units.
   runko::VecList<value_type> vel_;
 
   double charge_;
