@@ -4,6 +4,7 @@ from .runko_timer import Timer, timer_statistics
 
 from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
 from runko_cpp_bindings.emf.threeD import FieldsWriter
+from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 
 import logging
 import time
@@ -49,6 +50,10 @@ class Simulation:
         self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{rank}.csv")
         self._ram_file.parent.mkdir(exist_ok=True, parents=True)
         self._ram_file.write_text("lap,ram usage [kB]\n")
+
+        # Reset kinetic energy output file.
+        self._io_config['kinetic_energy_path'] = self._io_config["outdir"] + "/average_kinetic_energy.txt"
+        pathlib.Path(self._io_config['kinetic_energy_path']).unlink(missing_ok=True)
 
         ctor_msg = "Simulation constructed with:\n"
         ctor_msg += f"\tNt = {kwargs['Nt']}\n"
@@ -164,6 +169,8 @@ class Simulation:
                     case "emf_snapshot":
                         self._ensure_constructed_emf_writer()
                         self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
+                    case "average_kinetic_energy":
+                        _write_average_kinetic_energy(self.lap, self._io_config["kinetic_energy_path"], self._tile_grid._corgi_grid)
                     case _:
                         raise AttributeError(f"{method} is not supported IO type.")
 

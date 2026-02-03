@@ -415,6 +415,29 @@ void
   for(auto& [_, pbuff]: this->particle_buffs_) { pbuff.sort(std::move(score)); }
 }
 
+
+template<std::size_t D>
+std::size_t
+  Tile<D>::number_of_species() const
+{
+  return std::ranges::size(this->particle_buffs_);
+}
+
+template<std::size_t D>
+std::size_t
+  Tile<D>::number_of_particles(const std::size_t particle_type) const
+{
+  return this->particle_buffs_.at(particle_type).size();
+}
+
+template<std::size_t D>
+double
+  Tile<D>::total_kinetic_energy(const std::size_t particle_type) const
+{
+  return this->particle_buffs_.at(particle_type).total_kinetic_energy();
+}
+
+
 }  // namespace pic
 
 template class pic::Tile<3>;

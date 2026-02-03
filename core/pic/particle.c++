@@ -239,4 +239,32 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   return { std::move(m), std::move(permuted_pcontainer) };
 }
 
+
+double
+  ParticleContainer::total_kinetic_energy() const
+{
+  auto w = tyvi::mdgrid_work {};
+
+  namespace rn                       = std::ranges;
+  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
+
+  // Note that these are in natural units.
+  const auto vel_mds = this->vel_.mds();
+
+  auto particle_ordinal_to_kinetic_energy = [=](const std::size_t n) -> double {
+    using Vec3   = toolbox::Vec3<value_type>;
+    const auto v = Vec3(vel_mds[n]);
+    const auto e = std::sqrt(value_type { 1 } + toolbox::dot(v, v)) - value_type { 1 };
+    return static_cast<double>(e);
+  };
+
+  const auto kinetic_energies_begin = thrust::make_transform_iterator(
+    particle_ordinals_begin,
+    particle_ordinal_to_kinetic_energy);
+  const auto kinetic_energies_end = rn::next(kinetic_energies_begin, this->size());
+
+  return thrust::reduce(w.on_this(), kinetic_energies_begin, kinetic_energies_end);
+}
+
 }  // namespace pic

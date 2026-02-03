@@ -146,6 +146,13 @@ public:
     runko::VecGrid<emf::YeeLattice::value_type>& Jout,
     const std::array<value_type, 3> lattice_origo_coordinates,
     const value_type cfl) const;
+
+
+  /// Returns total kinetic energy of particless.
+  ///
+  /// Kinetic energy is given in units of mc^2,
+  /// where m is the mass of the particle.
+  double total_kinetic_energy() const;
 };
 
 struct ParticleContainer::specific_span {

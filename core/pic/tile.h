@@ -137,6 +137,18 @@ public:
   /// Sorts the particles in order to reduce cache misses.
   void sort_particles();
 
+  std::size_t number_of_species() const;
+
+  std::size_t number_of_particles(std::size_t particle_type) const;
+
+  /// Returns average kinetic energy of given particle type.
+  ///
+  /// Kinetic energy is given in units of mc^2,
+  /// where m is the mass corresponding to the particle type.
+  ///
+  /// Particle type is assumed to be configured.
+  double total_kinetic_energy(std::size_t particle_type) const;
+
   std::vector<mpi4cpp::mpi::request>
     send_data(mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag)
       override;

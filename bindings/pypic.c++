@@ -1,5 +1,6 @@
 #include "core/particles_common.h"
 #include "core/pic/tile.h"
+#include "io/pic_average_kinetic_energy.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -101,6 +102,8 @@ void
     .def("deposit_current", &pic::Tile<3>::deposit_current)
     .def("sort_particles", &pic::Tile<3>::sort_particles);
 
+
+  m_3d.def("_write_average_kinetic_energy", &pic::write_average_kinetic_energy);
 }
 
 }  // namespace pic

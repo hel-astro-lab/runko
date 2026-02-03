@@ -249,7 +249,100 @@ def pic_communication():
     assertChangedParticles()
 
 
+def pic_kinetic_energy_reduction():
+
+    conf, tile_grid = make_test_grid()
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.pic.threeD.Tile(idx, conf)
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    # There will be 3 laps and we will store kinetic energy data from each:
+    datas = []
+
+    # Lap 1: no particles
+
+    test_loop = lambda x: x.io_average_kinetic_energy()
+
+    simulation.for_one_lap(test_loop)
+
+    if runko.on_main_rank():
+        d = np.loadtxt(conf.outdir + "/average_kinetic_energy.txt")
+        if np.any(d[1:] != 0):
+            msg = f"Kinetic energies of zero particles should be zero: {d[1:]}"
+            raise RuntimeError(msg)
+        datas.append(d)
+
+    # Lap 1: unmoving particles 0 and moving particles 1
+
+    def unmoving_pgen(x, y, z):
+        pos = x, y, z
+        vel = np.zeros_like(x), np.zeros_like(x), np.zeros_like(x)
+        return runko.pic.threeD.ParticleStateBatch(pos=pos, vel=vel)
+
+    def moving_pgen(x, y, z):
+        pos = x, y, z
+        vel = np.ones_like(x) / 10, np.ones_like(x) / 10, np.ones_like(x) / 10
+        return runko.pic.threeD.ParticleStateBatch(pos=pos, vel=vel)
+
+
+    for tile in simulation.local_tiles():
+        tile.batch_inject_to_cells(0, unmoving_pgen)
+        tile.batch_inject_to_cells(1, moving_pgen)
+
+    simulation.for_one_lap(test_loop)
+
+    if runko.on_main_rank():
+        d = np.loadtxt(conf.outdir + "/average_kinetic_energy.txt")
+
+        if d[1, 1] != 0:
+            msg = f"Kinetic energies of unmoving particles should be zero: {d[1,1]}"
+            raise RuntimeError(msg)
+
+        if d[1, 2] == 0:
+            msg = f"Kinetic energies of moving particles should not be zero: {d[1,2]}"
+            raise RuntimeError(msg)
+
+        datas.append(d)
+
+    # Lap 2: add moving 0 and 1 particles
+
+    for tile in simulation.local_tiles():
+        # It should not matter that the particles are unevenly between the tiles.
+        if runko.on_main_rank():
+            # It is assumed that this test is run with 4 ranks.
+            for _ in range(4):
+                tile.batch_inject_to_cells(0, moving_pgen)
+
+        tile.batch_inject_to_cells(1, moving_pgen)
+
+    simulation.for_one_lap(test_loop)
+
+    if runko.on_main_rank():
+        d = np.loadtxt(conf.outdir + "/average_kinetic_energy.txt")
+
+        if not np.isclose(2 * d[2, 1], d[2, 2]):
+            msg = "Kinetic energy should be linear in number of moving particles: "
+            msg += f"{2 * d[2, 1]} != {d[2, 2]}"
+            raise RuntimeError(msg)
+
+        datas.append(d)
+
+    # Now just make sure that the stored data is not changed:
+
+    if runko.on_main_rank():
+        ok0 = np.all(datas[2][0, 1:] == datas[0][1:])
+        ok1 = np.all(datas[2][1, 1:] == datas[1][1, 1:])
+        ok2 = np.all(datas[0][1:] == datas[1][0, 1:])
+
+        if not (ok0 and ok1 and ok2):
+            msg = f"Stored kinetic energy data should not change."
+            raise RuntimeError(msg)
+
 if __name__ == "__main__":
     virtual_pic_tiles()
     pic_noop_communication()
     pic_communication()
+    pic_kinetic_energy_reduction()

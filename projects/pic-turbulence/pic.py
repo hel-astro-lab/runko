@@ -223,6 +223,8 @@ if __name__ == "__main__":
         x.comm_external(runko.tools.comm_mode.emf_E)
         x.comm_local(runko.tools.comm_mode.emf_E)
 
+        x.io_average_kinetic_energy()
+
         if simulation.lap % 20 == 0:
             x.io_emf_snapshot()
 
