@@ -234,7 +234,7 @@ if __name__ == "__main__":
         x.comm_external(runko.tools.comm_mode.emf_E)
         x.comm_local(runko.tools.comm_mode.emf_E)
 
-        if simulation.lap % 20 == 0:
+        if field_output_interval and simulation.lap % field_output_interval == 0:
             x.io_emf_snapshot()
 
         if simulation.lap % 20 == 0:
