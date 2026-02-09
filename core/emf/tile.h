@@ -125,6 +125,43 @@ public:
     const std::array<int, D> dir_to_other,
     const int /* mode */
     ) override;
+
+
+  /// Returns a lambda that maps indices (i, j, k) of this tile to the global
+  /// coordinates.
+  ///
+  /// global_coordinates()(0, 0, 0) corresponds to point this->mins.
+  ///
+  /// The lambda will return the coordinates as std::array<double, 3>
+  /// and it can be invoked even with fractional indices,
+  /// i.e. global_coordinates()(0.5, 0.5, 0.5) maps to middle of the cell (0, 0, 0).
+  auto global_coordinate_map() const;
 };
+
+template<std::size_t D>
+auto
+  Tile<D>::global_coordinate_map() const
+{
+
+  const auto mins = this->mins;
+  const auto maxs = this->maxs;
+
+  const auto Lx = static_cast<double>(maxs[0] - mins[0]);
+  const auto Ly = static_cast<double>(maxs[1] - mins[1]);
+  const auto Lz = static_cast<double>(maxs[2] - mins[2]);
+
+  const auto e = yee_lattice_.extents_wout_halo();
+
+  return [=](const auto i, const auto j, const auto k) {
+    const auto x_coeff = static_cast<double>(i) / static_cast<double>(e[0]);
+    const auto y_coeff = static_cast<double>(j) / static_cast<double>(e[1]);
+    const auto z_coeff = static_cast<double>(k) / static_cast<double>(e[2]);
+
+    return std::array { static_cast<double>(mins[0]) + x_coeff * Lx,
+                        static_cast<double>(mins[1]) + y_coeff * Ly,
+                        static_cast<double>(mins[2]) + z_coeff * Lz };
+  };
+}
+
 
 }  // namespace emf

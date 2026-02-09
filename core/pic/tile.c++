@@ -162,25 +162,8 @@ void
     };
   }
 
-  /// FIXME: unify global coordinates from here and emf::Tile::set_EBJ to mixin.
-  const auto Lx = static_cast<double>(this->maxs[0] - this->mins[0]);
-  const auto Ly = static_cast<double>(this->maxs[1] - this->mins[1]);
-  const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
-
-  const auto e = this->extents_wout_halo();
-
-  auto global_coordinates = [&](const auto i, const auto j, const auto k) {
-    const auto x_coeff = static_cast<double>(i) / static_cast<double>(e[0]);
-    const auto y_coeff = static_cast<double>(j) / static_cast<double>(e[1]);
-    const auto z_coeff = static_cast<double>(k) / static_cast<double>(e[2]);
-
-    return std::tuple<double, double, double> {
-      static_cast<double>(this->mins[0]) + x_coeff * Lx,
-      static_cast<double>(this->mins[1]) + y_coeff * Ly,
-      static_cast<double>(this->mins[2]) + z_coeff * Lz
-    };
-  };
-
+  const auto global_coordinates = this->global_coordinate_map();
+  const auto e                  = this->yee_lattice_.extents_wout_halo();
   std::vector<runko::ParticleState> new_particles {};
 
   namespace rv     = std::views;
@@ -212,22 +195,8 @@ void
     batch_particle_generator pgen)
 {
 
-  /// FIXME: unify global coordinates
-  const auto Lx = static_cast<double>(this->maxs[0] - this->mins[0]);
-  const auto Ly = static_cast<double>(this->maxs[1] - this->mins[1]);
-  const auto Lz = static_cast<double>(this->maxs[2] - this->mins[2]);
-
-  const auto e = this->yee_lattice_.extents_wout_halo();
-
-  auto global_coordinates = [&](const auto i, const auto j, const auto k) {
-    const auto x_coeff = static_cast<double>(i) / static_cast<double>(e[0]);
-    const auto y_coeff = static_cast<double>(j) / static_cast<double>(e[1]);
-    const auto z_coeff = static_cast<double>(k) / static_cast<double>(e[2]);
-
-    return std::array { static_cast<double>(this->mins[0]) + x_coeff * Lx,
-                        static_cast<double>(this->mins[1]) + y_coeff * Ly,
-                        static_cast<double>(this->mins[2]) + z_coeff * Lz };
-  };
+  const auto global_coordinates = this->global_coordinate_map();
+  const auto e                  = this->yee_lattice_.extents_wout_halo();
 
   const auto cells_in_total = std::array { e[0] * e[1] * e[2] };
   auto x                    = pybind11::array_t<double>(cells_in_total);
