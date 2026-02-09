@@ -1,13 +1,8 @@
-.. note::
-
-   Stale documentation, please update.
-
 Tutorial
 ########
 
 This tutorial is a walkthrough of different aspects constituting a runko simulation,
-by going through pieces from turbulence example project at `projects/pic2-turbulence/pic2-decay.py`,
-which is a self-contained version of decay setup from `projects/pic-turbulence/pic2.py`.
+by going through pieces from turbulence example project at `projects/pic-turbulence/pic.py`,.
 This tutorial focuses techical aspects and not on physics.
 
 .. role:: python(code)
@@ -103,23 +98,21 @@ Tiles are initialized through :python:`runo.TileGrid` object:
 
    if not tile_grid.initialized_from_restart_file():
        for idx in tile_grid.local_tile_indices():
-           tile = runko.pic.Tile(idx, config)
-
+           tile = runko.pic.threeD.Tile(idx, config)
            tile.batch_set_EBJ(zero_field, zero_field, zero_field,
                               Bx, By, Bz,
                               zero_field, zero_field, zero_field)
 
            # ppc = particles per cell (problem specific variable defined earlier)
            for _ in range(ppc):
-               tile.batch_inject_to_cells(0, pgen0)
-               tile.batch_inject_to_cells(1, pgen1)
-
+                tile.batch_inject_to_cells(0, pgen0)
+                tile.batch_inject_to_cells(1, pgen1)
            tile_grid.add_tile(tile, idx)
 
 
 .. note::
 
-   Restart files are note implemented in runko MVP.
+   Restart files are not implemented.
 
 
 We loop over indices corresponding to local tiles of this rank.
@@ -191,29 +184,29 @@ and it should return `runko.ParticleStateBatch`.
 
 .. code:: python
 
-    rng = np.random_default_rng(seed=42)
+   rng = np.random_default_rng(seed=42)
 
-    # ...
+   # ...
 
-    def pgen0(x, y, z):
-        N = len(x)
+   def pgen0(x, y, z):
+       N = len(x)
 
-        dx = rng.random(N)
-        dy = rng.random(N)
-        dz = rng.random(N)
+       dx = rng.random(N)
+       dy = rng.random(N)
+       dz = rng.random(N)
 
-        # Particles 1 are going on top of particles 0,
-        # so these positions has to be saved such that pgen1 can get them.
-        pgen0.pos = x + dx, y + dy, z + dz
+       # Particles 1 are going on top of particles 0,
+       # so these positions has to be saved such that pgen1 can get them.
+       pgen0.pos = x + dx, y + dy, z + dz
 
-        vel = runko.sample_boosted_juttner_synge(N, delgam0, beta=0, gen=rng)
-        return runko.ParticleStateBatch(pos=pgen0.pos, vel=vel)
+       vel = runko.sample_boosted_juttner_synge(N, delgam0, beta=0, gen=rng)
+       return runko.ParticleStateBatch(pos=pgen0.pos, vel=vel)
 
-    def pgen1(x, y, z):
-        vel = runko.sample_boosted_juttner_synge(len(x), delgam1, beta=0, gen=rng)
-        return runko.ParticleStateBatch(pos=pgen0.pos, vel=vel)
+   def pgen1(x, y, z):
+       vel = runko.sample_boosted_juttner_synge(len(x), delgam1, beta=0, gen=rng)
+       return runko.ParticleStateBatch(pos=pgen0.pos, vel=vel)
 
-    # ...
+   # ...
 
     tile.batch_inject_to_cells(0, pgen0)
     tile.batch_inject_to_cells(1, pgen1)
@@ -251,16 +244,10 @@ After constructing the local tiles we can initialize the simulation with:
 
    simulation = tile_grid.configure_simulation(config)
 
-   def sync_EB(tile, comm, io):
-       EB = (runko.comm_mode.emf_E, runko.comm_mode.emf_B)
-       comm.virtual_tile_sync(*EB)
-       comm.pairwise_moore(*EB)
-
-       # Same as:
-       # comm.virtual_tile_sync(runko.comm_mode.emf_B)
-       # comm.virtual_tile_sync(runko.comm_mode.emf_E)
-       # comm.pairwise_moore(runko.comm_mode.emf_B)
-       # comm.pairwise_moore(runko.comm_mode.emf_E)
+   def sync_EB(x):
+       EB = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
+       x.comm_external(*EB)
+       x.comm_local(*EB)
 
    simulation.prelude(sync_EB)
 
@@ -270,56 +257,55 @@ It is `runko.Simulation` object, but users should never try to construct it by h
 
 Before the actual main simulation loop we do a single prelude step,
 in order to not have a special case in the main loop for the first step.
-Prelude step is defined using function which takes three opaque parameters.
-Methods of `tile` are executed on each local tile and are specific to the used tiles.
-Methods of `comm` correspond to different differend kinds of communications
-and lastly methods of `io` correspond to writing output.
+Prelude step is defined using function which takes one parameter.
 
 .. code:: python
 
-   def pic_simulation_step(tile, comm, io):
+   def pic_simulation_step(x):
 
-       tile.push_half_b()
-       comm.virtual_tile_sync(runko.comm_mode.emf_B)
-       comm.pairwise_moore(runko.comm_mode.emf_B)
+       x.grid_push_half_b()
+       x.comm_external(runko.tools.comm_mode.emf_B)
+       x.comm_local(runko.tools.comm_mode.emf_B)
 
-       tile.push_particles()
-       comm.virtual_tile_sync(runko.comm_mode.pic_particle)
-       comm.pairwise_moore(runko.comm_mode.pic_particle)
+       x.prtcl_push()
+       x.comm_external(runko.tools.comm_mode.pic_particle)
+       x.comm_local(runko.tools.comm_mode.pic_particle)
 
        if simulation.lap % 5 == 0:
-           tile.sort_particles()
+           x.prtcl_sort()
 
-       tile.deposit_current()
-       comm.virtual_tile_sync(runko.comm_mode.emf_J)
-       comm.pairwise_moore(runko.comm_mode.emf_J_exchange)
+       x.prtcl_deposit_current()
+       x.comm_external(runko.tools.comm_mode.emf_J)
+       x.comm_local(runko.tools.comm_mode.emf_J_exchange)
 
-       comm.virtual_tile_sync(runko.comm_mode.emf_J)
-       comm.pairwise_moore(runko.comm_mode.emf_J)
-       tile.filter_current()
-       comm.virtual_tile_sync(runko.comm_mode.emf_J)
-       comm.pairwise_moore(runko.comm_mode.emf_J)
-       tile.filter_current()
-       tile.filter_current()
+       x.comm_external(runko.tools.comm_mode.emf_J)
+       x.comm_local(runko.tools.comm_mode.emf_J)
 
-       tile.push_half_b()
-       comm.virtual_tile_sync(runko.comm_mode.emf_B)
-       comm.pairwise_moore(runko.comm_mode.emf_B)
+       x.grid_filter_current()
+       x.comm_external(runko.tools.comm_mode.emf_J)
+       x.comm_local(runko.tools.comm_mode.emf_J)
+       x.grid_filter_current()
+       x.grid_filter_current()
 
-       tile.push_e()
-       tile.subtract_J_from_E()
-       comm.virtual_tile_sync(runko.comm_mode.emf_E)
-       comm.pairwise_moore(runko.comm_mode.emf_E)
+       x.grid_push_half_b()
+       x.comm_external(runko.tools.comm_mode.emf_B)
+       x.comm_local(runko.tools.comm_mode.emf_B)
+
+       x.grid_push_e()
+       x.grid_add_current()
+       x.comm_external(runko.tools.comm_mode.emf_E)
+       x.comm_local(runko.tools.comm_mode.emf_E)
+
+       x.io_average_kinetic_energy()
 
        if simulation.lap % 20 == 0:
-           io.emf_snapshot()
+           x.io_emf_snapshot()
 
-       if simulation.lap % 10 == 0:
+       if simulation.lap % 20 == 0:
            simulation.log_timer_statistics()
 
-
-    simulation.for_each_lap(pic_simulation_step)
-    simulation.log_timer_statistics()
+   simulation.for_each_lap(pic_simulation_step)
+   simulation.log_timer_statistics()
 
 
 The main simulation loop is executed with `simulation.for_each_lap`.
@@ -332,7 +318,7 @@ For timer purposes each step is named based on the method name.
 If there is multiple calls to the same method,
 a running numbering is appended at the end.
 For any method there is a possibility of explicitly naming them with `name` kwarg
-(e.g. :python:`tile.pairwise_moore(runko.comm_mode.emf_B, name="foobar")`).
+(e.g. :python:`tile.comm_external(runko.comm_mode.emf_B, name="foobar")`).
 
 
 Communication
@@ -351,23 +337,24 @@ runko makes practical choice of having three cells wide halo region to each dire
 
 .. code:: python
 
-   def pic_simulation_step(tile, comm, io):
+   def pic_simulation_step(x):
 
-       tile.push_half_b()
-       comm.virtual_tile_sync(runko.comm_mode.emf_B)
-       comm.pairwise_moore(runko.comm_mode.emf_B)
+       x.grid_push_half_b()
+       x.comm_external(runko.tools.comm_mode.emf_B)
+       x.comm_local(runko.tools.comm_mode.emf_B)
 
-       tile.push_particles()
-       comm.virtual_tile_sync(runko.comm_mode.pic_particle)
-       comm.pairwise_moore(runko.comm_mode.pic_particle)
+       x.prtcl_push()
+       x.comm_external(runko.tools.comm_mode.pic_particle)
+       x.comm_local(runko.tools.comm_mode.pic_particle)
 
 
-All methods on `tile` updates fields only in the non-halo region.
-Therefor, after `tile.push_half_b` each tile has an outdated `B` in the halo region,
-which prevents us executing `tile.push_particles` immediatly.
+For example, `x.push_half_b` updates values only in the non-halo region.
+Therefor, after it each tile has an outdated `B` in the halo region,
+which prevents us executing `x.prtcl_push` immediatly.
 
 In order to update it with the data from neighboring tile,
-we can use `comm.pairwise_moore(runko.comm_mode.emf_B)`.
+we can use `x.comm_local(runko.comm_mode.emf_B)`.
+Local communications are so called pairwise moore communications.
 Pairwise refers to the fact that it consists many communications between tile pairs.
 Moore refers to that the communication is done between local tiles
 and tiles in their Moore neighborhood.
@@ -378,15 +365,15 @@ but overall the shape of the communication stays the same:
   corresponding to the halo regions.
 - `runko.comm_mode.pic_particle` transfers particles inside the halo to the corresponding
   tiles.
-- `runko.comm_mode.emf_J_exchange` adds deposited current from boundary region of neighboring tile
+- `runko.comm_mode.emf_J_exchange` adds deposited current from halo region of neighboring tile
   to the corresponding non-halo region of the "operated tile".
-  This is needed as `tile.deposit_current` might generate current to halo-region
+  This is needed as `tile.deposit_current` might generate current to halo region
   which has to be transfered to corresponding non-halo region.
 
-Before we can actually do pairwise moore communication we have to sync the virtual tiles.
+Before we can actually do pairwise moore communication, we have to sync the virtual tiles.
 If we don't then boundary tiles will do pairwise communication with virtual tile
 which is out of date with the corresponding tile on some other rank.
-`comm.virtual_tile_sync` will update virtual tiles based on their corresponding "real" tiles.
+`x.comm_external` will update virtual tiles based on their corresponding "real" tiles.
 Virtual tile sync with `runko.comm_mode.emf_{E,B,J}` will sync corresponding field data
 and with `runko.comm_mode.particle` the particle data.
 

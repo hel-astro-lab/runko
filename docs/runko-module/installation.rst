@@ -45,15 +45,8 @@ Runko depends on additional C++ libraries but they are vendored in as submodules
 
    git clone https://github.com/hel-astro-lab/runko
    cd runko
-   git checkout tyvifying-clang17
+   git checkout dev-v5
    git submodule update --init --recursive
-
-
-.. note::
-
-   As of 12.9.2025 `tyvifying-clang17` branch contains latest commits related to runko module.
-   This includes refactors that remove use of features not implemented in clang 17
-   and many workarounds for compiler bugs on LUMI.
 
 
 .. tip ::
@@ -85,7 +78,7 @@ then runko can be build with:
    This might change in the future.
 
 
-Building runko will install shared library representing `pyrunko` to `<path-to-runko>/lib`.
+Building runko will install shared library representing `pyrunko` to repository root.
 Similar pattern is used in corgi, so following paths have to be added to `$PYTHONPATH`
 in order to use runko:
 
@@ -93,17 +86,17 @@ in order to use runko:
 
    RUNKO_PATH="<path-to-runko>"
    P1="$RUNKO_PATH/"
-   P2="$RUNKO_PATH/lib"
-   P3="$RUNKO_PATH/external/corgi/lib"
+   P2="$RUNKO_PATH/external/corgi/lib"
 
    # For example:
-   export PYTHONPATH="$PYTHONPATH:$P1:$P2:$P3"
+   export PYTHONPATH="$PYTHONPATH:$P1:$P2"
 
 
 LUMI
 ----
 
-As of 23.09.2025 the easiest method to install runko on LUMI is by using the handy script `archs/lumi-install.sh </archs/lumi-install.sh>`_ as follows:
+The easiest method to install runko on LUMI
+is by using the handy script `archs/lumi-install.sh </archs/lumi-install.sh>`_ as follows:
 
 .. code:: shell
 
@@ -120,63 +113,29 @@ This will build runko in one go and append all necessary LUMI module loads to th
 
    source runko-venv/bin/activate
 
+
 to enable runko and all its required modules on a LUMI node.
 
-**Warning: overloading login nodes** 
+
+**Warning: overloading login nodes**
 
 Remember not to compile on login nodes. Consider using a specific slurm job instead for building or interactive jobs:
 
+
 .. code:: shell
-   
+
    srun --account=<account> --partition=dev-g --time=00:30:00 --nodes=1 -c32 --pty bash
 
-**Example SLURM Script for LUMI**
 
-Here is an example of a slurm script for runko taken from an example by the Finnish CSC:
+**Running on LUMI**
 
-.. code:: bash
+For example run script on LUMI see: `projects/pic-turbulence/jobs/multi-node.lumi?`.
 
-   #!/bin/bash -l
-   #SBATCH --account=project_xxxxxxxxx
-   ##SBATCH --partition=standard-g
-   #SBATCH --partition=dev-g
-   #
-   #SBATCH --job-name=decay
-   #SBATCH --output=slurm-%x.out
-   #SBATCH --error=slurm-%x.err
-   #SBATCH --open-mode=truncate
-   #
-   #SBATCH --nodes=2
-   #SBATCH --ntasks-per-node=8
-   #SBATCH --gpus-per-node=8
-   #SBATCH --cpus-per-task=6
-   #SBATCH --mem-per-cpu=10G
-   #SBATCH --time=0-00:60:00       # Run time (d-hh:mm:ss)
 
-   # Loads correct modules and sets up PYTHONPATH.
-   source runko-venv/bin/activate
+.. tip ::
 
-   # Required to choose correct GPU for each task.
-   cat << EOF > select_gpu
-   #!/bin/bash
-   export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
-
-   exec \$*
-   EOF
-
-   chmod +x ./select_gpu
-
-   CPU_BIND="mask_cpu:7e000000000000,7e00000000000000"
-   CPU_BIND="${CPU_BIND},7e0000,7e000000"
-   CPU_BIND="${CPU_BIND},7e,7e00"
-   CPU_BIND="${CPU_BIND},7e00000000,7e0000000000"
-
-   export OMP_NUM_THREADS=6
-   export MPICH_GPU_SUPPORT_ENABLED=1
-
-   srun --cpu-bind=${CPU_BIND} ./select_gpu python ./runko/projects/pic2-turbulence/pic2-decay.py
-
-   rm -f ./select_gpu
+   If runko crashes due to invalid GPU memory access,
+   then adding `export MPICH_GPU_IPC_ENABLED=0` to the job script might fix the problem.
 
 
 **Warning: LUMI segfaults**
