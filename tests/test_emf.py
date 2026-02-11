@@ -421,5 +421,45 @@ class emf(unittest.TestCase):
         with self.assertRaises(Exception):
             runko.emf.threeD.Tile((0, 0, -1), config)
 
+
+    def test_global_coordinate_map(self):
+
+        config = runko.Configuration(None)
+        config.Nx = 2
+        config.Ny = 3
+        config.Nz = 4
+        config.NxMesh = 10
+        config.NyMesh = 12
+        config.NzMesh = 14
+        config.xmin = -3.2
+        config.ymin = -2.3
+        config.zmin = 1
+        config.cfl = 1
+        config.field_propagator = "FDTD2"
+
+        tile_grid_idx = (0, 1, 2)
+        tile = runko.emf.threeD.Tile(tile_grid_idx, config)
+
+        tile_origo_x = config.xmin + tile_grid_idx[0] * config.NxMesh
+        tile_origo_y = config.ymin + tile_grid_idx[1] * config.NyMesh
+        tile_origo_z = config.zmin + tile_grid_idx[2] * config.NzMesh
+
+        tile_origo = np.array((tile_origo_x, tile_origo_y, tile_origo_z))
+
+        def assert_gc(coords, correct):
+            for i in range(3):
+                self.assertAlmostEqual(coords[i], correct[i], places=5)
+
+        index_space = itertools.product(np.linspace(-3, config.NxMesh + 3, 10),
+                                        np.linspace(-3, config.NyMesh + 3, 10),
+                                        np.linspace(-3, config.NzMesh + 3, 10))
+
+        m = tile.global_coordinate_map()
+
+        for idx in index_space:
+            dx = np.array(idx)
+            assert_gc(m(idx), tile_origo + dx)
+
+
 if __name__ == "__main__":
     unittest.main()

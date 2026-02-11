@@ -109,6 +109,14 @@ void
     .def("push_half_b", &emf::Tile<3>::push_half_b)
     .def("push_e", &emf::Tile<3>::push_e)
     .def("filter_current", &emf::Tile<3>::filter_current)
+    .def(
+      "global_coordinate_map",
+      [](const emf::Tile<3>& tile) {
+        return std::function<std::array<double, 3>(std::array<double, 3>)>(
+          [map = tile.global_coordinate_map()](const std::array<double, 3> idx) {
+            return map(idx[0], idx[1], idx[2]);
+          });
+      })
     .def("subtract_J_from_E", &emf::Tile<3>::subtract_J_from_E);
 
 
