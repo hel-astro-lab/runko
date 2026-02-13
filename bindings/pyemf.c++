@@ -1,3 +1,4 @@
+#include "core/emf/antenna.h"
 #include "core/emf/tile.h"
 #include "io/snapshots/fields.h"
 #include "pybind11/functional.h"
@@ -8,6 +9,7 @@
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
 
+#include <complex>
 #include <memory>
 #include <tuple>
 
@@ -86,6 +88,34 @@ void
   // 3D bindings
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 
+  using antenna_pyvec = pybind11::array_t<emf::antenna_mode::value_type>;
+  py::class_<emf::antenna_mode>(m_3d, "antenna_mode")
+    .def(
+      py::init([](antenna_pyvec A, antenna_pyvec k) {
+        auto assert_3d_vec = [](auto& x) {
+          if(x.ndim() != 1) {
+            throw std::runtime_error(
+              "Antenna expects A and k to be rank-1 arrays (specifically 3D vectors).");
+          }
+
+          if(x.shape(0) != 3) {
+            throw std::runtime_error("Antenna expects A and k to be 3D vectors.");
+          }
+        };
+
+        assert_3d_vec(A);
+        assert_3d_vec(k);
+
+        const auto Av = A.template unchecked<1>();
+        const auto kv = k.template unchecked<1>();
+
+        return emf::antenna_mode { .A { Av(0), Av(1), Av(2) },
+                                   .k { kv(0), kv(1), kv(2) } };
+      }),
+      py::kw_only(),
+      py::arg("A"),
+      py::arg("k"));
+
   // 3d tile
   py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(m_3d, "Tile")
     .def(
@@ -117,6 +147,8 @@ void
             return map(idx[0], idx[1], idx[2]);
           });
       })
+    .def("register_antenna", &emf::Tile<3>::register_antenna)
+    .def("deposit_antenna_current", &emf::Tile<3>::deposit_antenna_current)
     .def("subtract_J_from_E", &emf::Tile<3>::subtract_J_from_E);
 
 

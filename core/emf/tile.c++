@@ -1,12 +1,16 @@
 #include "core/emf/tile.h"
 
 #include "core/communication_common.h"
+#include "core/mdgrid_common.h"
 #include "tools/system.h"
+#include "tools/vector.h"
+#include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
 #include <cmath>
 #include <format>
 #include <iostream>
+#include <ranges>
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
@@ -422,6 +426,148 @@ void
         mode) };
   }
 };
+
+template<std::size_t D>
+void
+  Tile<D>::register_antenna(emf::antenna_mode mode)
+{
+  this->antenna_modes_.push_back(std::move(mode));
+};
+
+template<std::size_t D>
+void
+  Tile<D>::deposit_antenna_current()
+{
+  using vec_list = runko::VecList<emf::YeeLattice::value_type>;
+
+  const auto num_of_modes = this->antenna_modes_.size();
+  auto A                  = vec_list(num_of_modes);
+  auto K                  = vec_list(num_of_modes);
+
+  const auto sA_mds = A.staging_mds();
+  const auto sk_mds = K.staging_mds();
+
+  for(const auto n: std::views::iota(0uz, num_of_modes)) {
+    for(const auto i: std::views::iota(0uz, 3uz)) {
+      sA_mds[n][i] =
+        static_cast<emf::YeeLattice::value_type>(this->antenna_modes_[n].A[i]);
+      sk_mds[n][i] =
+        static_cast<emf::YeeLattice::value_type>(this->antenna_modes_[n].k[i]);
+    }
+  }
+
+  const tyvi::mdgrid_work w {};
+
+  w.sync_from_staging(A).sync_from_staging(K);
+
+  auto vec_pot =
+    runko::VecGrid<emf::YeeLattice::value_type>(this->yee_lattice_.extents_with_halo());
+
+  const auto A_mds       = A.mds();
+  const auto K_mds       = K.mds();
+  const auto vec_pot_mds = vec_pot.mds();
+
+  const auto gcmap = this->global_coordinate_map();
+
+  w.for_each_index(vec_pot_mds, [=](const auto idx) {
+    // For each is over all indices (including halo region)
+    // but the global coordinate map is defined s.t. (0, 0, 0) is located at corner of
+    // non-halo region.
+    const auto i = static_cast<double>(idx[0]) - emf::Tile<D>::halo_size;
+    const auto j = static_cast<double>(idx[1]) - emf::Tile<D>::halo_size;
+    const auto k = static_cast<double>(idx[2]) - emf::Tile<D>::halo_size;
+
+    using vec        = toolbox::Vec3<double>;
+    const auto x_loc = vec(gcmap(i + 0.5, j, k));
+    const auto y_loc = vec(gcmap(i, j + 0.5, k));
+    const auto z_loc = vec(gcmap(i, j, k + 0.5));
+
+    for(auto n = 0uz; n < num_of_modes; ++n) {
+      vec_pot_mds[idx][0] = vec_pot_mds[idx][0] +
+                            A_mds[n][0] * std::cos(toolbox::dot(x_loc, vec(K_mds[n])));
+      vec_pot_mds[idx][1] = vec_pot_mds[idx][1] +
+                            A_mds[n][1] * std::cos(toolbox::dot(y_loc, vec(K_mds[n])));
+      vec_pot_mds[idx][2] = vec_pot_mds[idx][2] +
+                            A_mds[n][2] * std::cos(toolbox::dot(z_loc, vec(K_mds[n])));
+    }
+  });
+
+  // We have to calculate B = curl(vec_pot) only in non-halo region + one deep shell in
+  // halo region.
+  auto generated_B =
+    runko::VecGrid<emf::YeeLattice::value_type>(this->yee_lattice_.extents_with_halo());
+
+  const auto B_mds = generated_B.mds();
+
+  const auto h   = this->halo_size;
+  const auto hp1 = h + 1uz;
+
+  const auto [ex, ey, ez] = this->extents_wout_halo();
+  const auto i1           = std::tuple { h - 1uz, h + ex + 1uz };
+  const auto j1           = std::tuple { h - 1uz, h + ey + 1uz };
+  const auto k1           = std::tuple { h - 1uz, h + ez + 1uz };
+
+  const auto i1p1 = std::tuple { h, h + ex + 2uz };
+  const auto j1p1 = std::tuple { h, h + ey + 2uz };
+  const auto k1p1 = std::tuple { h, h + ez + 2uz };
+
+  // FIXME: unify this with emf FDTD2.
+  auto curl = [&](
+                const auto coeff,
+                const auto out,
+                const auto X,
+                const auto Xip1,
+                const auto Xjp1,
+                const auto Xkp1) {
+    w.for_each_index(out, [=](const auto idx) {
+      const auto Dk = Xkp1[idx][1] - X[idx][1];
+      const auto Dj = Xjp1[idx][2] - X[idx][2];
+      out[idx][0]   = coeff * (Dj - Dk);
+    });
+    w.for_each_index(out, [=](const auto idx) {
+      const auto Di = Xip1[idx][2] - X[idx][2];
+      const auto Dk = Xkp1[idx][0] - X[idx][0];
+      out[idx][1]   = coeff * (Dk - Di);
+    });
+    w.for_each_index(out, [=](const auto idx) {
+      const auto Dj = Xjp1[idx][0] - X[idx][0];
+      const auto Di = Xip1[idx][1] - X[idx][1];
+      out[idx][2]   = coeff * (Di - Dj);
+    });
+  };
+
+  curl(
+    1,
+    std::submdspan(B_mds, i1, j1, k1),
+    std::submdspan(vec_pot_mds, i1, j1, k1),
+    std::submdspan(vec_pot_mds, i1p1, j1, k1),
+    std::submdspan(vec_pot_mds, i1, j1p1, k1),
+    std::submdspan(vec_pot_mds, i1, j1, k1p1));
+
+
+  // Now curl(B) in non-halo region.
+  // We can reuse vec_pot container.
+
+  const auto i   = std::tuple { h, h + ex };
+  const auto j   = std::tuple { h, h + ey };
+  const auto k   = std::tuple { h, h + ez };
+  const auto im1 = std::tuple { h - 1uz, h + ex - 1uz };
+  const auto jm1 = std::tuple { h - 1uz, h + ey - 1uz };
+  const auto km1 = std::tuple { h - 1uz, h + ez - 1uz };
+
+  // Here we negate cfl, as we put (im1, jm1, km1) instead of (ip1, jp1, kp1).
+  curl(
+    -this->cfl_,
+    std::submdspan(vec_pot_mds, i, j, k),
+    std::submdspan(B_mds, i, j, k),
+    std::submdspan(B_mds, im1, j, k),
+    std::submdspan(B_mds, i, jm1, k),
+    std::submdspan(B_mds, i, j, km1));
+
+  this->yee_lattice_.deposit_current(w, vec_pot);
+  w.wait();
+};
+
 
 }  // namespace emf
 

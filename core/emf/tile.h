@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/emf/antenna.h"
 #include "core/emf/yee_lattice.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
@@ -34,6 +35,8 @@ protected:
   double cfl_;
   FieldPropagator field_propagator_;
   std::optional<CurrentFilter> current_filter_ {};
+
+  std::vector<emf::antenna_mode> antenna_modes_ {};
 
 public:
   static constexpr auto halo_size = 3;
@@ -136,6 +139,9 @@ public:
   /// and it can be invoked even with fractional indices,
   /// i.e. global_coordinates()(0.5, 0.5, 0.5) maps to middle of the cell (0, 0, 0).
   auto global_coordinate_map() const;
+
+  void register_antenna(emf::antenna_mode);
+  void deposit_antenna_current();
 };
 
 template<std::size_t D>
@@ -157,9 +163,9 @@ auto
     const auto y_coeff = static_cast<double>(j) / static_cast<double>(e[1]);
     const auto z_coeff = static_cast<double>(k) / static_cast<double>(e[2]);
 
-    return std::array { static_cast<double>(mins[0]) + x_coeff * Lx,
-                        static_cast<double>(mins[1]) + y_coeff * Ly,
-                        static_cast<double>(mins[2]) + z_coeff * Lz };
+    return std::array<double, 3> { static_cast<double>(mins[0]) + x_coeff * Lx,
+                                   static_cast<double>(mins[1]) + y_coeff * Ly,
+                                   static_cast<double>(mins[2]) + z_coeff * Lz };
   };
 }
 
