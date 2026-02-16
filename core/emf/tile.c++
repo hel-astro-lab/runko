@@ -2,12 +2,15 @@
 
 #include "core/communication_common.h"
 #include "core/mdgrid_common.h"
+#include "hip/hip_runtime.h"  // This is not portable, but constexpr trig functions only in C++26.
 #include "tools/system.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
+#include <algorithm>
 #include <cmath>
+#include <complex>
 #include <format>
 #include <numbers>
 #include <ranges>
@@ -37,6 +40,30 @@ emf::CurrentFilter
     throw std::runtime_error { msg };
   }
 }
+
+namespace impl {
+template<typename T>
+constexpr auto
+  sin(const T x)
+{
+  if constexpr(std::is_same_v<T, float>) {
+    return ::sinf(x);
+  } else {
+    return ::sin(x);
+  }
+}
+
+template<typename T>
+constexpr auto
+  cos(const T x)
+{
+  if constexpr(std::is_same_v<T, float>) {
+    return ::cosf(x);
+  } else {
+    return ::cos(x);
+  }
+}
+}  // namespace impl
 }  // namespace
 
 namespace emf {
@@ -438,6 +465,11 @@ template<std::size_t D>
 void
   Tile<D>::register_antenna(emf::antenna_mode mode)
 {
+  // As the data storage for lap_coeffs in antennas are in std::vector and
+  // we use them in order, we can make this little bit nicer by reversing the data
+  // and using items from the back:
+  if(mode.lap_coeffs) { std::ranges::reverse(mode.lap_coeffs.value()); }
+
   this->antenna_modes_.push_back(std::move(mode));
 };
 
@@ -447,12 +479,17 @@ void
 {
   using vec_list = runko::VecList<emf::YeeLattice::value_type>;
 
+  // Fake complex numbers with arrays.
+  using complex_list = runko::ScalarList<std::array<emf::YeeLattice::value_type, 2>>;
+
   const auto num_of_modes = this->antenna_modes_.size();
   auto A                  = vec_list(num_of_modes);
   auto K                  = vec_list(num_of_modes);
+  auto lap_coeffs         = complex_list(num_of_modes);
 
-  const auto sA_mds = A.staging_mds();
-  const auto sk_mds = K.staging_mds();
+  const auto sA_mds          = A.staging_mds();
+  const auto sk_mds          = K.staging_mds();
+  const auto slap_coeffs_mds = lap_coeffs.staging_mds();
 
   auto get_wave_vector = [&, this](const emf::antenna_mode& wm) {
     auto handle_wave_data =
@@ -484,18 +521,36 @@ void
         static_cast<emf::YeeLattice::value_type>(this->antenna_modes_[n].A[i]);
       sk_mds[n][i] = static_cast<emf::YeeLattice::value_type>(wave_vector[i]);
     }
+
+    if(
+      this->antenna_modes_[n].lap_coeffs and
+      this->antenna_modes_[n].lap_coeffs.value().empty()) {
+      throw std::logic_error {
+        "Can not deposit antenna curren, antenna_mode ran out of lap_coeffs!"
+      };
+    } else if(this->antenna_modes_[n].lap_coeffs) {
+      const auto z = this->antenna_modes_[n].lap_coeffs.value().back();
+      this->antenna_modes_[n].lap_coeffs.value().pop_back();
+
+      slap_coeffs_mds[n][][0] = static_cast<emf::YeeLattice::value_type>(z.real());
+      slap_coeffs_mds[n][][1] = static_cast<emf::YeeLattice::value_type>(z.imag());
+    } else {
+      slap_coeffs_mds[n][][0] = 1;
+      slap_coeffs_mds[n][][1] = 0;
+    }
   }
 
   const tyvi::mdgrid_work w {};
 
-  w.sync_from_staging(A).sync_from_staging(K);
+  w.sync_from_staging(A).sync_from_staging(K).sync_from_staging(lap_coeffs);
 
   auto vec_pot =
     runko::VecGrid<emf::YeeLattice::value_type>(this->yee_lattice_.extents_with_halo());
 
-  const auto A_mds       = A.mds();
-  const auto K_mds       = K.mds();
-  const auto vec_pot_mds = vec_pot.mds();
+  const auto A_mds          = A.mds();
+  const auto K_mds          = K.mds();
+  const auto lap_coeffs_mds = lap_coeffs.mds();
+  const auto vec_pot_mds    = vec_pot.mds();
 
   const auto gcmap = this->global_coordinate_map();
 
@@ -512,13 +567,36 @@ void
     const auto y_loc = vec(gcmap(i, j + 0.5, k));
     const auto z_loc = vec(gcmap(i, j, k + 0.5));
 
+
     for(auto n = 0uz; n < num_of_modes; ++n) {
-      vec_pot_mds[idx][0] = vec_pot_mds[idx][0] +
-                            A_mds[n][0] * std::cos(toolbox::dot(x_loc, vec(K_mds[n])));
-      vec_pot_mds[idx][1] = vec_pot_mds[idx][1] +
-                            A_mds[n][1] * std::cos(toolbox::dot(y_loc, vec(K_mds[n])));
-      vec_pot_mds[idx][2] = vec_pot_mds[idx][2] +
-                            A_mds[n][2] * std::cos(toolbox::dot(z_loc, vec(K_mds[n])));
+      // std::complex is contexpr only in c++26 and thus not usable in kernel.
+      // Here we do manual complex arithmeitc as a work around.
+
+      const auto phi_x =
+        static_cast<emf::YeeLattice::value_type>(toolbox::dot(x_loc, vec(K_mds[n])));
+      const auto phi_y =
+        static_cast<emf::YeeLattice::value_type>(toolbox::dot(y_loc, vec(K_mds[n])));
+      const auto phi_z =
+        static_cast<emf::YeeLattice::value_type>(toolbox::dot(z_loc, vec(K_mds[n])));
+
+      const auto x_re = impl::cos(phi_x);
+      const auto x_im = impl::sin(phi_x);
+      const auto y_re = impl::cos(phi_y);
+      const auto y_im = impl::sin(phi_y);
+      const auto z_re = impl::cos(phi_z);
+      const auto z_im = impl::sin(phi_z);
+
+      const auto w    = std::array<emf::YeeLattice::value_type, 2>(lap_coeffs_mds[n][]);
+      const auto w_re = w[0];
+      const auto w_im = w[1];
+
+
+      vec_pot_mds[idx][0] =
+        vec_pot_mds[idx][0] + A_mds[n][0] * (w_re * x_re - w_im * x_im);
+      vec_pot_mds[idx][1] =
+        vec_pot_mds[idx][1] + A_mds[n][1] * (w_re * y_re - w_im * y_im);
+      vec_pot_mds[idx][2] =
+        vec_pot_mds[idx][2] + A_mds[n][2] * (w_re * z_re - w_im * z_im);
     }
   });
 

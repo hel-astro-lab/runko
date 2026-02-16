@@ -12,6 +12,7 @@
 #include <complex>
 #include <memory>
 #include <tuple>
+#include <vector>
 
 namespace {
 
@@ -89,12 +90,15 @@ void
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 
   using antenna_pyvec = pybind11::array_t<emf::antenna_mode::value_type>;
+  using antenna_complex_pyvec =
+    pybind11::array_t<std::complex<emf::antenna_mode::value_type>>;
   py::class_<emf::antenna_mode>(m_3d, "antenna_mode")
     .def(
       py::init([](
                  antenna_pyvec A,
                  std::optional<antenna_pyvec> k,
-                 std::optional<antenna_pyvec> n) {
+                 std::optional<antenna_pyvec> n,
+                 std::optional<antenna_complex_pyvec> lap_coeffs) {
         if((k and n) or (not k and not n)) {
           throw std::runtime_error(
             "antenna_mode expects k or n to be defined but not both.");
@@ -129,13 +133,29 @@ void
         assert_3d_vec(A);
         const auto Av = A.template unchecked<1>();
 
+        auto to_stdvec = [](antenna_complex_pyvec& p)
+          -> std::optional<std::vector<std::complex<emf::antenna_mode::value_type>>> {
+          if(p.ndim() != 1) {
+            throw std::runtime_error { "lap_coeffs must be 1D array." };
+          }
+
+          const auto N  = p.shape(0);
+          auto vec      = std::vector<std::complex<emf::antenna_mode::value_type>>(N);
+          const auto pv = p.template unchecked<1>();
+
+          for(auto i = 0uz; i < N; ++i) { vec[i] = pv(i); }
+          return vec;
+        };
+
         return emf::antenna_mode { .A { Av(0), Av(1), Av(2) },
-                                   .wave_data { wave_data } };
+                                   .wave_data { wave_data },
+                                   .lap_coeffs { lap_coeffs.and_then(to_stdvec) } };
       }),
       py::kw_only(),
       py::arg("A"),
-      py::arg("k") = std::optional<antenna_pyvec> {},
-      py::arg("n") = std::optional<antenna_pyvec> {});
+      py::arg("k")          = std::optional<antenna_pyvec> {},
+      py::arg("n")          = std::optional<antenna_pyvec> {},
+      py::arg("lap_coeffs") = std::optional<antenna_complex_pyvec> {});
 
   // 3d tile
   py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(m_3d, "Tile")

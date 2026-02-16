@@ -19,7 +19,7 @@ namespace emf {
 ///
 ///     J = Re((c / 4pi) * curl(curl(A * phi[n] * exp(i * dot(k, x)))))
 ///
-/// where phi = phase_evolution, n = lap and x = location in global coordinates.
+/// where phi = lap_coeffs, n = lap and x = location in global coordinates.
 ///
 /// In code units:
 ///
@@ -36,7 +36,7 @@ struct antenna_mode {
 
   toolbox::Vec3<value_type> A;
   std::variant<wave_vector, wave_number> wave_data;
-  // std::optional<std::vector<std::complex<value_type>>> phase_evolution{};
+  std::optional<std::vector<std::complex<value_type>>> lap_coeffs {};
 };
 
 }  // namespace emf

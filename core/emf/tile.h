@@ -36,6 +36,7 @@ protected:
   FieldPropagator field_propagator_;
   std::optional<CurrentFilter> current_filter_ {};
 
+  /// lap_coeffs are used in reverse order (see Tile::register_antenna implementation).
   std::vector<emf::antenna_mode> antenna_modes_ {};
 
   std::array<double, 3> global_coordinate_mins_;
