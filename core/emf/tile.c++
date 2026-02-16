@@ -9,7 +9,7 @@
 
 #include <cmath>
 #include <format>
-#include <iostream>
+#include <numbers>
 #include <ranges>
 #include <stdexcept>
 #include <string_view>
@@ -454,12 +454,35 @@ void
   const auto sA_mds = A.staging_mds();
   const auto sk_mds = K.staging_mds();
 
+  auto get_wave_vector = [&, this](const emf::antenna_mode& wm) {
+    auto handle_wave_data =
+      [&, this](auto&& data) -> toolbox::Vec3<emf::antenna_mode::value_type> {
+      using T = std::decay_t<decltype(data)>;
+      if constexpr(std::is_same_v<T, emf::antenna_mode::wave_vector>) {
+        return data.k;
+      } else if constexpr(std::is_same_v<T, emf::antenna_mode::wave_number>) {
+        using F = emf::antenna_mode::value_type;
+        const auto mins =
+          toolbox::Vec3<F>(this->template get_global_coordinate_mins<F>());
+        const auto maxs =
+          toolbox::Vec3<F>(this->template get_global_coordinate_maxs<F>());
+        const auto L = maxs - mins;
+
+        // toolbox::VecD does not have element wise divide.
+        const auto tmp = 2 * std::numbers::pi_v<F> * data.n;
+        return toolbox::Vec3<F>(tmp[0] / L[0], tmp[1] / L[1], tmp[2] / L[2]);
+      }
+    };
+
+    return std::visit(handle_wave_data, wm.wave_data);
+  };
+
   for(const auto n: std::views::iota(0uz, num_of_modes)) {
+    const auto wave_vector = get_wave_vector(this->antenna_modes_[n]);
     for(const auto i: std::views::iota(0uz, 3uz)) {
       sA_mds[n][i] =
         static_cast<emf::YeeLattice::value_type>(this->antenna_modes_[n].A[i]);
-      sk_mds[n][i] =
-        static_cast<emf::YeeLattice::value_type>(this->antenna_modes_[n].k[i]);
+      sk_mds[n][i] = static_cast<emf::YeeLattice::value_type>(wave_vector[i]);
     }
   }
 

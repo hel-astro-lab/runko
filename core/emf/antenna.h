@@ -5,6 +5,7 @@
 
 #include <complex>
 #include <optional>
+#include <variant>
 #include <vector>
 
 
@@ -26,8 +27,15 @@ namespace emf {
 struct antenna_mode {
   using value_type = double;
 
-  toolbox::Vec3<value_type> A {};
-  toolbox::Vec3<value_type> k {};
+  struct wave_vector {
+    toolbox::Vec3<value_type> k;
+  };
+  struct wave_number {
+    toolbox::Vec3<value_type> n;
+  };
+
+  toolbox::Vec3<value_type> A;
+  std::variant<wave_vector, wave_number> wave_data;
   // std::optional<std::vector<std::complex<value_type>>> phase_evolution{};
 };
 

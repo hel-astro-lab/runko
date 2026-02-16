@@ -91,30 +91,51 @@ void
   using antenna_pyvec = pybind11::array_t<emf::antenna_mode::value_type>;
   py::class_<emf::antenna_mode>(m_3d, "antenna_mode")
     .def(
-      py::init([](antenna_pyvec A, antenna_pyvec k) {
+      py::init([](
+                 antenna_pyvec A,
+                 std::optional<antenna_pyvec> k,
+                 std::optional<antenna_pyvec> n) {
+        if((k and n) or (not k and not n)) {
+          throw std::runtime_error(
+            "antenna_mode expects k or n to be defined but not both.");
+        }
+
+
         auto assert_3d_vec = [](auto& x) {
           if(x.ndim() != 1) {
             throw std::runtime_error(
-              "Antenna expects A and k to be rank-1 arrays (specifically 3D vectors).");
+              "Antenna expects A and k/n to be rank-1 arrays (specifically 3D "
+              "vectors).");
           }
 
           if(x.shape(0) != 3) {
-            throw std::runtime_error("Antenna expects A and k to be 3D vectors.");
+            throw std::runtime_error("Antenna expects A and k/n to be 3D vectors.");
           }
         };
 
-        assert_3d_vec(A);
-        assert_3d_vec(k);
+        const auto wave_data =
+          std::invoke([&] -> decltype(emf::antenna_mode::wave_data) {
+            if(k) {
+              assert_3d_vec(k.value());
+              const auto kv = k.value().template unchecked<1>();
+              return emf::antenna_mode::wave_vector { { kv(0), kv(1), kv(2) } };
+            } else {
+              assert_3d_vec(n.value());
+              const auto nv = n.value().template unchecked<1>();
+              return emf::antenna_mode::wave_number { { nv(0), nv(1), nv(2) } };
+            }
+          });
 
+        assert_3d_vec(A);
         const auto Av = A.template unchecked<1>();
-        const auto kv = k.template unchecked<1>();
 
         return emf::antenna_mode { .A { Av(0), Av(1), Av(2) },
-                                   .k { kv(0), kv(1), kv(2) } };
+                                   .wave_data { wave_data } };
       }),
       py::kw_only(),
       py::arg("A"),
-      py::arg("k"));
+      py::arg("k") = std::optional<antenna_pyvec> {},
+      py::arg("n") = std::optional<antenna_pyvec> {});
 
   // 3d tile
   py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(m_3d, "Tile")
