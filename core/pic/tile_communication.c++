@@ -211,7 +211,10 @@ void
   }
 
   for(auto& [_, pbuff]: this->particle_buffs_) {
-    pbuff.wrap_positions(this->global_coordinate_mins_, this->global_coordinate_maxs_);
+    using T = pic::ParticleContainer::value_type;
+    pbuff.wrap_positions(
+      this->template get_global_coordinate_mins<T>(),
+      this->template get_global_coordinate_maxs<T>());
   }
 
   this->incoming_subregion_particles_.clear();

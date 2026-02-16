@@ -64,10 +64,6 @@ class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
   std::map<std::size_t, std::vector<ParticleContainer::specific_span>>
     incoming_subregion_particles_ {};
 
-  // Required for global periodic boundary for tiles.
-  std::array<ParticleContainer::value_type, 3> global_coordinate_mins_;
-  std::array<ParticleContainer::value_type, 3> global_coordinate_maxs_;
-
 public:
   /// The type in which pos and vel are stored in.
   using value_type = ParticleContainer::value_type;

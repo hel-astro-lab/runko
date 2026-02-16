@@ -38,6 +38,9 @@ protected:
 
   std::vector<emf::antenna_mode> antenna_modes_ {};
 
+  std::array<double, 3> global_coordinate_mins_;
+  std::array<double, 3> global_coordinate_maxs_;
+
 public:
   static constexpr auto halo_size = 3;
 
@@ -140,6 +143,12 @@ public:
   /// i.e. global_coordinates()(0.5, 0.5, 0.5) maps to middle of the cell (0, 0, 0).
   auto global_coordinate_map() const;
 
+  template<typename T>
+  std::array<T, 3> get_global_coordinate_mins() const;
+
+  template<typename T>
+  std::array<T, 3> get_global_coordinate_maxs() const;
+
   void register_antenna(emf::antenna_mode);
   void deposit_antenna_current();
 };
@@ -167,6 +176,28 @@ auto
                                    static_cast<double>(mins[1]) + y_coeff * Ly,
                                    static_cast<double>(mins[2]) + z_coeff * Lz };
   };
+}
+
+template<std::size_t D>
+template<typename T>
+std::array<T, 3>
+  Tile<D>::get_global_coordinate_mins() const
+{
+
+  return { static_cast<T>(this->global_coordinate_mins_[0]),
+           static_cast<T>(this->global_coordinate_mins_[1]),
+           static_cast<T>(this->global_coordinate_mins_[2]) };
+}
+
+template<std::size_t D>
+template<typename T>
+std::array<T, 3>
+  Tile<D>::get_global_coordinate_maxs() const
+{
+
+  return { static_cast<T>(this->global_coordinate_maxs_[0]),
+           static_cast<T>(this->global_coordinate_maxs_[1]),
+           static_cast<T>(this->global_coordinate_maxs_[2]) };
 }
 
 

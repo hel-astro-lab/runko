@@ -91,12 +91,19 @@ Tile<D>::Tile(
 
   this->index = { tile_indices[0], tile_indices[1], tile_indices[2] };
 
-  // Tile size.
+  // Tile size (can be used as yee_lattice_ is already constructed from N{x,y,z}Mesh.
   const auto [Lx, Ly, Lz] = yee_lattice_.extents_wout_halo();
 
   this->set_tile_mins({ xmin + i * Lx, ymin + j * Ly, zmin + k * Lz });
   this->set_tile_maxs(
     { xmin + (i + 1uz) * Lx, ymin + (j + 1uz) * Ly, zmin + (k + 1uz) * Lz });
+
+
+  this->global_coordinate_mins_ = { xmin, ymin, zmin };
+
+  this->global_coordinate_maxs_ = { global_coordinate_mins_[0] + Nx * Lx,
+                                    global_coordinate_mins_[1] + Ny * Ly,
+                                    global_coordinate_mins_[2] + Nz * Lz };
 }
 
 template<std::size_t D>
