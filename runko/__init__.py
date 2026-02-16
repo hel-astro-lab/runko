@@ -15,8 +15,7 @@ from .simulation import Simulation
 from .runko_logging import on_main_rank, runko_logger, runko_default_handler
 
 # emf module scripts
-# EMPTY
+from .oscillating_langevin_antenna import sample_oscillating_langevin_antenna
 
 # pic module scripts
 from .sample_thermal_distributions import sample_boosted_juttner_synge
-
