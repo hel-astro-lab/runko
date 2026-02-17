@@ -59,17 +59,10 @@ if __name__ == "__main__":
         x.comm_local(Bcomm)
         x.grid_push_e()
 
-        # Ad-hoc io for one tile (proper io is not yet implemented).
-        if runko.on_main_rank():
-            print(f"Finished lap: {simulation.lap}")
+        if simulation.lap % 5 == 0:
+            x.io_emf_snapshot()
 
-            tile = next(simulation.local_tiles())
-            (Ex, Ey, Ez), (Bx, By, Bz), _ = tile.get_EBJ()
-            np.save(f"Ex{simulation.lap}", Ex)
-            np.save(f"Ey{simulation.lap}", Ey)
-            np.save(f"Ez{simulation.lap}", Ez)
-            np.save(f"Bx{simulation.lap}", Bx)
-            np.save(f"By{simulation.lap}", By)
-            np.save(f"Bz{simulation.lap}", Bz)
+        if simulation.lap % 5 == 0:
+            simulation.log_timer_statistics()
 
     simulation.for_each_lap(lap_function)
