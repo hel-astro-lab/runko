@@ -526,7 +526,7 @@ void
       this->antenna_modes_[n].lap_coeffs and
       this->antenna_modes_[n].lap_coeffs.value().empty()) {
       throw std::logic_error {
-        "Can not deposit antenna curren, antenna_mode ran out of lap_coeffs!"
+        "Can not deposit antenna current, antenna_mode ran out of lap_coeffs!"
       };
     } else if(this->antenna_modes_[n].lap_coeffs) {
       const auto z = this->antenna_modes_[n].lap_coeffs.value().back();
