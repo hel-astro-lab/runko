@@ -224,6 +224,8 @@ if __name__ == "__main__":
         x.comm_local(runko.tools.comm_mode.emf_E)
 
         x.io_average_kinetic_energy()
+        x.io_average_B_energy_density()
+        x.io_average_E_energy_density()
 
         if simulation.lap % 20 == 0:
             x.io_emf_snapshot()

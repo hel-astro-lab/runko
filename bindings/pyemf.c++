@@ -1,5 +1,6 @@
 #include "core/emf/antenna.h"
 #include "core/emf/tile.h"
+#include "io/emf_average_field_energy_density.h"
 #include "io/snapshots/fields.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
@@ -197,5 +198,8 @@ void
   py::class_<h5io::FieldsWriter<3>>(m_3d, "FieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write", &h5io::FieldsWriter<3>::write);
+
+  m_3d.def("_write_average_B_energy_density", &emf::write_average_B_energy_density)
+    .def("_write_average_E_energy_density", &emf::write_average_E_energy_density);
 }
 }  // namespace emf

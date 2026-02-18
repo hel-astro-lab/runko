@@ -152,6 +152,20 @@ public:
 
   void register_antenna(emf::antenna_mode);
   void deposit_antenna_current();
+
+  /// Returns the total energy in the magnetic field.
+  ///
+  /// Energy is given in code units: sum_{ijk} B_{ijk}^2 / (8pi)
+  ///
+  /// Note that (Delta x)^3 = 1, so it does not appear in above expression.
+  double total_energy_B() const;
+
+  /// Returns the total energy in the electric field.
+  ///
+  /// Energy is given in code units: sum_{ijk} E_{ijk}^2 / (8pi)
+  ///
+  /// Note that (Delta x)^3 = 1, so it does not appear in above expression.
+  double total_energy_E() const;
 };
 
 template<std::size_t D>

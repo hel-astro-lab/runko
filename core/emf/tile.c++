@@ -676,6 +676,20 @@ void
   w.wait();
 };
 
+template<std::size_t D>
+double
+  Tile<D>::total_energy_B() const
+{
+  return this->yee_lattice_.total_energy_B();
+}
+
+template<std::size_t D>
+double
+  Tile<D>::total_energy_E() const
+{
+  return this->yee_lattice_.total_energy_E();
+}
+
 
 }  // namespace emf
 

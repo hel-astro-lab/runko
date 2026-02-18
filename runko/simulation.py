@@ -3,7 +3,7 @@ from .runko_logging import runko_logger
 from .runko_timer import Timer, timer_statistics
 
 from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
-from runko_cpp_bindings.emf.threeD import FieldsWriter
+from runko_cpp_bindings.emf.threeD import FieldsWriter, _write_average_B_energy_density, _write_average_E_energy_density
 from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 
 import logging
@@ -51,9 +51,13 @@ class Simulation:
         self._ram_file.parent.mkdir(exist_ok=True, parents=True)
         self._ram_file.write_text("lap,ram usage [kB]\n")
 
-        # Reset kinetic energy output file.
         self._io_config['kinetic_energy_path'] = self._io_config["outdir"] + "/average_kinetic_energy.txt"
-        pathlib.Path(self._io_config['kinetic_energy_path']).unlink(missing_ok=True)
+        self._io_config['average_B_energy_density_path'] = self._io_config["outdir"] + "/average_B_energy_density.txt"
+        self._io_config['average_E_energy_density_path'] = self._io_config["outdir"] + "/average_E_energy_density.txt"
+
+        # Reset txt output files.
+        for name in ('kinetic_energy_path', 'average_B_energy_density_path', 'average_E_energy_density_path'):
+            pathlib.Path(self._io_config[name]).unlink(missing_ok=True)
 
         ctor_msg = "Simulation constructed with:\n"
         ctor_msg += f"\tNt = {kwargs['Nt']}\n"
@@ -171,6 +175,14 @@ class Simulation:
                         self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
                     case "average_kinetic_energy":
                         _write_average_kinetic_energy(self.lap, self._io_config["kinetic_energy_path"], self._tile_grid._corgi_grid)
+                    case "average_B_energy_density":
+                        _write_average_B_energy_density(self.lap,
+                                                        self._io_config["average_B_energy_density_path"],
+                                                        self._tile_grid._corgi_grid)
+                    case "average_E_energy_density":
+                        _write_average_E_energy_density(self.lap,
+                                                        self._io_config["average_E_energy_density_path"],
+                                                        self._tile_grid._corgi_grid)
                     case _:
                         raise AttributeError(f"{method} is not supported IO type.")
 

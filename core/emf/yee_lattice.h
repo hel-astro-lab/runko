@@ -279,6 +279,21 @@ public:
 
   [[nodiscard]] YeeLattice::VecGridMDS::mapping_type
     grid_mapping_with_halo() const noexcept;
+
+
+  /// Returns the total energy in the magnetic field.
+  ///
+  /// Energy is given in code units: sum_{ijk} B_{ijk}^2 / (8pi)
+  ///
+  /// Note that (Delta x)^3 = 1, so it does not appear in above expression.
+  double total_energy_B() const;
+
+  /// Returns the total energy in the electric field.
+  ///
+  /// Energy is given in code units: sum_{ijk} E_{ijk}^2 / (8pi)
+  ///
+  /// Note that (Delta x)^3 = 1, so it does not appear in above expression.
+  double total_energy_E() const;
 };
 
 inline auto

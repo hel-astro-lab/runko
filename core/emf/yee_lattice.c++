@@ -2,10 +2,14 @@
 
 #include "thrust/execution_policy.h"
 #include "thrust/for_each.h"
+#include "thrust/iterator/transform_iterator.h"
 #include "thrust/iterator/zip_iterator.h"
+#include "thrust/reduce.h"
 #include "thrust/tuple.h"
+#include "tyvi/mdspan.h"
 
 #include <algorithm>
+#include <numbers>
 #include <ranges>
 #include <sstream>
 #include <string>
@@ -336,6 +340,53 @@ YeeLattice::VecGridMDS::mapping_type
   YeeLattice::grid_mapping_with_halo() const noexcept
 {
   return this->E_.mds().mapping();
+}
+
+double
+  YeeLattice::total_energy_B() const
+{
+  auto w = tyvi::mdgrid_work {};
+
+  namespace rn           = std::ranges;
+  const auto Bmds        = this->B_.mds();
+  const auto index_space = tyvi::sstd::index_space(Bmds);
+
+  const auto index_to_B2 = [=](const auto idx) {
+    const auto Bx = Bmds[idx][0];
+    const auto By = Bmds[idx][1];
+    const auto Bz = Bmds[idx][2];
+    return Bx * Bx + By * By + Bz * Bz;
+  };
+  const auto B2_iterator_begin =
+    thrust::make_transform_iterator(index_space.begin(), index_to_B2);
+  const auto B2_iterator_end = rn::next(B2_iterator_begin, rn::size(index_space));
+
+  static constexpr auto norm = 8.0 * std::numbers::pi_v<double>;
+  return thrust::reduce(w.on_this(), B2_iterator_begin, B2_iterator_end) / norm;
+}
+
+
+double
+  YeeLattice::total_energy_E() const
+{
+  auto w = tyvi::mdgrid_work {};
+
+  namespace rn           = std::ranges;
+  const auto Emds        = this->E_.mds();
+  const auto index_space = tyvi::sstd::index_space(Emds);
+
+  const auto index_to_E2 = [=](const auto idx) {
+    const auto Ex = Emds[idx][0];
+    const auto Ey = Emds[idx][1];
+    const auto Ez = Emds[idx][2];
+    return Ex * Ex + Ey * Ey + Ez * Ez;
+  };
+  const auto E2_iterator_begin =
+    thrust::make_transform_iterator(index_space.begin(), index_to_E2);
+  const auto E2_iterator_end = rn::next(E2_iterator_begin, rn::size(index_space));
+
+  static constexpr auto norm = 8.0 * std::numbers::pi_v<double>;
+  return thrust::reduce(w.on_this(), E2_iterator_begin, E2_iterator_end) / norm;
 }
 
 }  // namespace emf
