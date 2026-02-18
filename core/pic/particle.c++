@@ -6,6 +6,7 @@
 #include "thrust/host_vector.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
+#include "thrust/reduce.h"
 #include "thrust/sort.h"
 #include "thrust/unique.h"
 #include "tools/vector.h"
