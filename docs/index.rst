@@ -4,31 +4,29 @@
 Runko --- modern toolbox for plasma simulations 
 ==========================================================
 
-Runko is a modern numerical toolkit for simulating astrophysical plasmas. It is written in C++17/Python3 and is designed to be highly modular. The name originates from the Finnish word *runko* meaning literally "a frame".  
+Runko is a modern numerical toolkit for simulating astrophysical plasmas.
+It is written in C++23/Python3 and is designed to be highly modular.
+The name originates from the Finnish word *runko* meaning literally "a frame".
 
-To get started, follow these manual pages in order. This will get you up-to-date in the prerequisites, installation, and understanding the various algorithms. Notes and tips that focus on code development are listed at the end of the manual.
+To get started, follow these manual pages in order.
+This will get you up-to-date in the prerequisites, installation, and understanding the various algorithms.
+Notes and tips that focus on code development are listed at the end of the manual.
+
+.. Warning::
+
+   This documentation is about Runko v5 which contains major breaking changes compared to v4.
+   Runko v5 comes with HIP based GPU backend which required significant refactors and API changes.
+   Some features present in v4 are not (yet) ported for v5.
 
 
 Physical modules
 ----------------
 
-The framework consists of various physics modules that can be run independently or combined together to create multi-physics simulations. Different modules include:
+The framework consists of various physics modules that can be run independently
+or combined together to create multi-physics simulations. Different modules include:
 
-* Finite difference time domain electromagnetic module 
+* Finite difference time domain electromagnetic module
 * Particle-in-cell (PIC) module
-* Force-free magnetohydrodynamics module 
-* Relativistic Vlasov module
-* Non-linear Monte Carlo Radiation module
-
-
-Technical goodies
------------------
-
-* Uses *modern C++14/17* incl. ``std::vector``, ``auto`` keyword, etc.
-* Low-level objects are binded to native *Python3* objects via `PyBind11 <https://pybind11.readthedocs.io/en/stable/>`_ providing seamless operability.
-* Physics modules are based on *polymorphic classes*; child classes derive their functionality from the base class, occasionally overwriting the original functionality -- no more rewriting your algorithms!
-* Same algorithm is specialized to a spesific space dimension during compile time with *template metaprogramming*.
-* Algorithms are designed to have abstract *interface classes*; this makes adding new implementations a breeze - just add a new file!
 
 
 About
@@ -43,6 +41,7 @@ Key contributors that provided additional features and/or improvements include
 * Camilia Demidem (Nordita)
 * Maarja Bussov (Univ. Helsinki)
 * Alexandra Veledina (Univ. Turku)
+* Miro Palmu (Univ. Helsinki)
 
 
 
