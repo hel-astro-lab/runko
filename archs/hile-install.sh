@@ -23,8 +23,7 @@ git clone https://github.com/kokkos/mdspan.git $PRE_DOWNLOADED_MDSPAN_PATH
 #  and corgi-related paths in order to make our venv runko-aware::
 RUNKO_PATH=$(pwd)
 P1="$RUNKO_PATH/"
-P2="$RUNKO_PATH/external/corgi/lib"
-export PYTHONPATH="$PYTHONPATH:$P1:$P2"
+export PYTHONPATH="$PYTHONPATH:$P1"
 
 #-------------------------------------------------- 
 # Load standard prerequisite modules for runko:
@@ -70,7 +69,7 @@ module load libfabric
 module load cray-python # not necessary as we are using a python virtual environment already
 export LD_LIBRARY_PATH=/opt/cray/pe/cce/18.0.1/cce/x86_64/lib:\$LD_LIBRARY_PATH
 # Update the PYTHONPATH environment variable with runko path data
-export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
+export PYTHONPATH="\$PYTHONPATH:${P1}"
 export CMAKE="/appl/lumi/SW/LUMI-24.03/common/EB/buildtools/24.03/bin/cmake -DCPM_mdspan_SOURCE=${PRE_DOWNLOADED_MDSPAN_PATH} -DCMAKE_CXX_COMPILER=CC"
 EOL
 

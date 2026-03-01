@@ -116,7 +116,7 @@ target_link_libraries(runko_cpp_bindings
     corgi
     tyvi::tyvi
     hdf5::hdf5
-    # OpenMP::OpenMP_CXX
+    OpenMP::OpenMP_CXX
 )
 
 if(RUNKO_CODE_COVERAGE)

@@ -44,6 +44,15 @@
             }
         },
         {
+            "name": "conf-lumi",
+            "description": "LUMI supercomputer with Cray compiler and GPU-aware MPI.",
+            "hidden": true,
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "GTL_LIB_PATH": "/opt/cray/pe/mpich/default/gtl/lib"
+            }
+        },
+        {
             "name": "unixlike-clang-cpu-debug",
             "displayName": "clang++ CPU Debug",
             "description": "Target Unix-like OS with clang++ (via mpic++), CPU backend, debug build type.",
@@ -51,6 +60,7 @@
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_FLAGS": "-g -Og -DDEBUG",
                 "TYVI_BACKEND": "cpu"
             }
         },
@@ -62,6 +72,7 @@
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS": "-O3",
                 "TYVI_BACKEND": "cpu"
             }
         },
@@ -73,6 +84,17 @@
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "hipcc",
                 "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "lumi-cray-gpu-release",
+            "displayName": "LUMI Cray GPU Release",
+            "description": "LUMI supercomputer with Cray compiler, GPU backend, release build type.",
+            "inherits": "conf-lumi",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "CC",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS": "-O3"
             }
         }
     ],
@@ -109,6 +131,13 @@
             "description": "Enable output and stop on failure",
             "inherits": "test-common",
             "configurePreset": "unixlike-hipcc-debug"
+        },
+        {
+            "name": "test-lumi-cray-gpu-release",
+            "displayName": "LUMI Cray GPU Release",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "lumi-cray-gpu-release"
         }
     ]
 }
