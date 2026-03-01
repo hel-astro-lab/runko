@@ -28,10 +28,26 @@
             }
         },
         {
+            "name": "conf-darwin-llvm",
+            "description": "macOS: link against Homebrew LLVM libc++ instead of Apple system libc++.",
+            "hidden": true,
+            "inherits": "conf-unixlike-common",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "cacheVariables": {
+                "CMAKE_EXE_LINKER_FLAGS": "-L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++",
+                "CMAKE_SHARED_LINKER_FLAGS": "-L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++",
+                "CMAKE_MODULE_LINKER_FLAGS": "-L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"
+            }
+        },
+        {
             "name": "unixlike-clang-cpu-debug",
             "displayName": "clang++ CPU Debug",
             "description": "Target Unix-like OS with clang++ (via mpic++), CPU backend, debug build type.",
-            "inherits": "conf-unixlike-common",
+            "inherits": "conf-darwin-llvm",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "CMAKE_BUILD_TYPE": "Debug",
@@ -42,7 +58,7 @@
             "name": "unixlike-clang-cpu-release",
             "displayName": "clang++ CPU Release",
             "description": "Target Unix-like OS with clang++ (via mpic++), CPU backend, release build type.",
-            "inherits": "conf-unixlike-common",
+            "inherits": "conf-darwin-llvm",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "CMAKE_BUILD_TYPE": "Release",
