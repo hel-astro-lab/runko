@@ -31,17 +31,31 @@ cmake -B build -DCMAKE_CXX_COMPILER=mpic++ -DCMAKE_BUILD_TYPE=Debug -DTYVI_BACKE
 # Build (compiles C++ and produces runko_cpp_bindings.so in repo root)
 cmake --build build
 
-# Run single-rank unit tests
+# Run single-rank unit tests (ALWAYS run these when testing)
 python -m unittest discover -s tests/ -v
 
 # Run a single test file
 python -m unittest tests/test_emf.py -v
 
-# Run multi-rank MPI tests (via CTest)
+# Run multi-rank MPI tests (ALWAYS run these too when testing, via CTest)
 cd build && ctest -V
 
 # Run a specific multi-rank test
 mpirun -np 4 python tests/multirank_tests/test_pic_simulation.py
+```
+
+**Important:** When verifying changes, always run both single-rank unit tests and multi-rank MPI tests (via CTest). Both must pass.
+
+### Example Simulation Projects
+
+These projects can be used as integration test examples to verify that the full simulation pipeline works:
+
+```bash
+# PIC beam instabilities (outputs a CSV file with growth rates)
+cd projects/pic-beam-instabilities && mpirun -n 2 python3 beam.py
+
+# PIC turbulence
+cd projects/pic-turbulence && mpirun -n 2 python3 pic.py
 ```
 
 The shared library `runko_cpp_bindings*.so` is output to the repository root directory. Tests and simulations must be run from a location where Python can find it.

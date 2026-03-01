@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <functional>
 #include <iterator>
 #include <stdexcept>
@@ -70,7 +69,7 @@ emf::YeeLattice::CurrentContributions
   w.for_each_index(pos_mds, [=](const auto idx) {
     const auto u = Vec3v(vel_mds[idx]).template as<value_type>();
     const value_type invgam =
-      value_type { 1 } / std::sqrt(value_type { 1 } + toolbox::dot(u, u));
+      value_type { 1 } / tyvi::sstd::sqrt(value_type { 1 } + toolbox::dot(u, u));
 
     const auto x2 = Vec3v(pos_mds[idx]).template as<value_type>() -
                     Vec3v(lattice_origo_coordinates).template as<value_type>();
@@ -83,11 +82,11 @@ emf::YeeLattice::CurrentContributions
     const auto i2 = x2.template as<std::size_t>();
 
     const auto relay = [&](const std::size_t j) -> value_type {
-      const auto a  = static_cast<value_type>(std::min(i1(j), i2(j)) + 1);
-      const auto b1 = static_cast<value_type>(std::max(i1(j), i2(j)));
+      const auto a  = static_cast<value_type>(tyvi::sstd::min(i1(j), i2(j)) + 1);
+      const auto b1 = static_cast<value_type>(tyvi::sstd::max(i1(j), i2(j)));
       const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
-      const auto b  = std::max(b1, b2);
-      return std::min(a, b);
+      const auto b  = tyvi::sstd::max(b1, b2);
+      return tyvi::sstd::min(a, b);
     };
 
     const auto x_relay = Vec3v(relay(0), relay(1), relay(2));
@@ -220,7 +219,7 @@ void
       [=](const auto idx) {
         const auto u = Vec3v(vel_mds[idx]).template as<value_type>();
         const auto invgam =
-          value_type { 1 } / std::sqrt(value_type { 1 } + toolbox::dot(u, u));
+          value_type { 1 } / tyvi::sstd::sqrt(value_type { 1 } + toolbox::dot(u, u));
 
         const auto x2 = Vec3v(pos_mds[idx]).template as<value_type>() -
                         Vec3v(lattice_origo_coordinates).template as<value_type>();
@@ -233,11 +232,11 @@ void
         const auto i2 = x2.template as<std::size_t>();
 
         const auto relay = [&](const std::size_t j) -> value_type {
-          const auto a  = static_cast<value_type>(std::min(i1(j), i2(j)) + 1);
-          const auto b1 = static_cast<value_type>(std::max(i1(j), i2(j)));
+          const auto a  = static_cast<value_type>(tyvi::sstd::min(i1(j), i2(j)) + 1);
+          const auto b1 = static_cast<value_type>(tyvi::sstd::max(i1(j), i2(j)));
           const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
-          const auto b  = std::max(b1, b2);
-          return std::min(a, b);
+          const auto b  = tyvi::sstd::max(b1, b2);
+          return tyvi::sstd::min(a, b);
         };
 
         const auto x_relay = Vec3v(relay(0), relay(1), relay(2));

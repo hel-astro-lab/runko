@@ -9,7 +9,6 @@
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
-#include <cmath>
 #include <iterator>
 #include <stdexcept>
 #include <type_traits>
@@ -105,7 +104,7 @@ void
         const auto b = maxs[tidx[0]];
         const auto x = pos_mds[idx][tidx];
 
-        const auto wrapped_pos = (x < 0 ? b : a) + std::fmod(x, L[tidx[0]]);
+        const auto wrapped_pos = (x < 0 ? b : a) + tyvi::sstd::fmod(x, L[tidx[0]]);
         pos_mds[idx][tidx]     = wrapped_pos;
       })
     .wait();
@@ -249,7 +248,7 @@ double
   auto particle_ordinal_to_kinetic_energy = [=](const std::size_t n) -> double {
     using Vec3   = toolbox::Vec3<value_type>;
     const auto v = Vec3(vel_mds[n]);
-    const auto e = std::sqrt(value_type { 1 } + toolbox::dot(v, v)) - value_type { 1 };
+    const auto e = tyvi::sstd::sqrt(value_type { 1 } + toolbox::dot(v, v)) - value_type { 1 };
     return static_cast<double>(e);
   };
 

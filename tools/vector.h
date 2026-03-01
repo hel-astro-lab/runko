@@ -4,6 +4,7 @@
 // Bandage for tyvi using but not including <functional> :(
 
 #include "tyvi/mdspan.h"
+#include "tyvi/sstd.h"
 
 #include <array>
 #include <cmath>
@@ -319,18 +320,18 @@ constexpr Mat3<T>
 
 //--------------------------------------------------
 // vector norm
-template<std::floating_point... T>
+template<arithmetic... T>
 constexpr std::common_type_t<T...>
   norm(const T... args)
 {
-  return std::sqrt(((args * args) + ...));
+  return tyvi::sstd::sqrt(((args * args) + ...));
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr T
   norm(const VecD<T, D>& v)
 {
-  return std::sqrt(dot(v, v));
+  return tyvi::sstd::sqrt(dot(v, v));
 }
 
 template<std::floating_point T, std::size_t D>
