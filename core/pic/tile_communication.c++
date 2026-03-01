@@ -44,11 +44,15 @@ std::vector<mpi4cpp::mpi::request>
     const int tag)
 {
 
+  // GPU backend requires GPU-aware MPI to pass device pointers directly;
+  // CPU backend uses host memory where standard MPI works.
+#ifndef TYVI_USE_CPU_BACKEND
   if(not toolbox::system_supports_gpu_aware_mpi()) {
     throw std::runtime_error {
-      "Non gpu aware MPI communication is not yet implemented."
+      "GPU backend requires GPU-aware MPI."
     };
   }
+#endif
 
   /*
     All tiles should have the particle containers
@@ -106,11 +110,13 @@ std::vector<mpi4cpp::mpi::request>
     const int mode,
     const int tag)
 {
+#ifndef TYVI_USE_CPU_BACKEND
   if(not toolbox::system_supports_gpu_aware_mpi()) {
     throw std::runtime_error {
-      "Non gpu aware MPI communication is not yet implemented."
+      "GPU backend requires GPU-aware MPI."
     };
   }
+#endif
 
   using runko::comm_mode;
 
