@@ -145,12 +145,18 @@ void
   const auto e                  = this->yee_lattice_.extents_wout_halo();
   std::vector<runko::ParticleState> new_particles {};
 
+#if __cpp_lib_ranges_cartesian_product >= 202207L
   namespace rv     = std::views;
   auto index_space = rv::cartesian_product(
     rv::iota(0uz, e[0]),
     rv::iota(0uz, e[1]),
     rv::iota(0uz, e[2]));
   for(const auto [i, j, k]: index_space) {
+#else
+  for(std::size_t i = 0; i < e[0]; ++i)
+  for(std::size_t j = 0; j < e[1]; ++j)
+  for(std::size_t k = 0; k < e[2]; ++k) {
+#endif
     const auto [x, y, z] = global_coordinates(i, j, k);
     for(const auto p: pgen(x, y, z)) { new_particles.push_back(p); }
   }

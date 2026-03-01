@@ -1,11 +1,7 @@
 #include "core/emf/yee_lattice.h"
 
-#include "thrust/execution_policy.h"
-#include "thrust/for_each.h"
-#include "thrust/iterator/transform_iterator.h"
-#include "thrust/iterator/zip_iterator.h"
-#include "thrust/reduce.h"
-#include "thrust/tuple.h"
+#include "tyvi/algo.h"
+#include "tyvi/iterators.h"
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
@@ -13,6 +9,20 @@
 #include <ranges>
 #include <sstream>
 #include <string>
+#include <tuple>
+
+// Verify that dereferencing tyvi::zip_iterator yields a tuple-like type that
+// supports structured bindings.  This catches rocm < 6.2 where thrust::tuple
+// does not provide the std::tuple_size / std::get specialisations required by
+// C++17 structured bindings (fixed in libcudacxx PR #333 / rocThrust v3.1.0).
+namespace {
+using zip_test_iter_t =
+  decltype(tyvi::make_zip_iterator(std::declval<int*>(), std::declval<float*>()));
+using zip_test_ref_t = decltype(*std::declval<zip_test_iter_t>());
+static_assert(std::tuple_size<std::remove_cvref_t<zip_test_ref_t>>::value == 2,
+  "tyvi::zip_iterator dereference type must support structured bindings "
+  "(std::tuple_size). If on HIP, rocThrust >= v3.1.0 / rocm >= 6.2 is required.");
+} // namespace
 
 namespace {
 
@@ -295,19 +305,18 @@ void
     const tyvi::mdgrid_work& w,
     const CurrentContributions& contributions)
 {
-  const auto b = thrust::make_zip_iterator(
+  const auto b = tyvi::make_zip_iterator(
     contributions.locations.begin(),
     contributions.currents.begin());
-  const auto e = thrust::make_zip_iterator(
+  const auto e = tyvi::make_zip_iterator(
     contributions.locations.end(),
     contributions.currents.end());
 
-  thrust::for_each(w.on_this(), b, e, [Jmds = J_.mds()](const auto& i) {
-    const auto idx = thrust::get<0>(i);
-    const auto J   = thrust::get<1>(i);
-    Jmds[idx][0]   = Jmds[idx][0] + J[0];
-    Jmds[idx][1]   = Jmds[idx][1] + J[1];
-    Jmds[idx][2]   = Jmds[idx][2] + J[2];
+  tyvi::algo::for_each(w.on_this(), b, e, [Jmds = J_.mds()](const auto& i) {
+    const auto& [idx, J] = i;
+    Jmds[idx][0]         = Jmds[idx][0] + J[0];
+    Jmds[idx][1]         = Jmds[idx][1] + J[1];
+    Jmds[idx][2]         = Jmds[idx][2] + J[2];
   });
 }
 
@@ -358,11 +367,11 @@ double
     return Bx * Bx + By * By + Bz * Bz;
   };
   const auto B2_iterator_begin =
-    thrust::make_transform_iterator(index_space.begin(), index_to_B2);
+    tyvi::make_transform_iterator(index_space.begin(), index_to_B2);
   const auto B2_iterator_end = rn::next(B2_iterator_begin, rn::size(index_space));
 
   static constexpr auto norm = 8.0 * std::numbers::pi_v<double>;
-  return thrust::reduce(w.on_this(), B2_iterator_begin, B2_iterator_end) / norm;
+  return tyvi::algo::reduce(w.on_this(), B2_iterator_begin, B2_iterator_end) / norm;
 }
 
 
@@ -382,11 +391,11 @@ double
     return Ex * Ex + Ey * Ey + Ez * Ez;
   };
   const auto E2_iterator_begin =
-    thrust::make_transform_iterator(index_space.begin(), index_to_E2);
+    tyvi::make_transform_iterator(index_space.begin(), index_to_E2);
   const auto E2_iterator_end = rn::next(E2_iterator_begin, rn::size(index_space));
 
   static constexpr auto norm = 8.0 * std::numbers::pi_v<double>;
-  return thrust::reduce(w.on_this(), E2_iterator_begin, E2_iterator_end) / norm;
+  return tyvi::algo::reduce(w.on_this(), E2_iterator_begin, E2_iterator_end) / norm;
 }
 
 }  // namespace emf

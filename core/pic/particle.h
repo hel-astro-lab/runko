@@ -3,17 +3,18 @@
 #include "core/emf/yee_lattice.h"
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
-#include "thrust/device_vector.h"
-#include "thrust/iterator/counting_iterator.h"
-#include "thrust/iterator/transform_iterator.h"
-#include "thrust/sort.h"
+#include "tyvi/algo.h"
+#include "tyvi/containers.h"
+#include "tyvi/iterators.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
+#ifdef TYVI_USE_HIP_BACKEND
 #include <execution>
+#endif
 #include <functional>
 #include <iterator>
 #include <map>
@@ -181,7 +182,9 @@ inline void
   const auto other_begins = [&] {
     auto temp = std::array<std::size_t, sizeof...(others)> {};
     std::exclusive_scan(
+#ifdef TYVI_USE_HIP_BACKEND
       std::execution::unseq,
+#endif
       Nothers.begin(),
       Nothers.end(),
       temp.begin(),
@@ -194,7 +197,9 @@ inline void
   const auto other_ends = [&] {
     auto temp = std::array<std::size_t, sizeof...(others)> {};
     std::inclusive_scan(
+#ifdef TYVI_USE_HIP_BACKEND
       std::execution::unseq,
+#endif
       Nothers.begin(),
       Nothers.end(),
       temp.begin(),
@@ -263,11 +268,12 @@ inline void
   const auto added_pos_smds = added.pos_.staging_mds();
   const auto added_vel_smds = added.vel_.staging_mds();
 
-  for(const auto [i, p]: std::views::enumerate(new_particles)) {
+  for(std::size_t i = 0; const auto& p : new_particles) {
     for(const auto j: std::views::iota(0uz, 3uz)) {
       added_pos_smds[i][j] = p.pos[j];
       added_vel_smds[i][j] = p.vel[j];
     }
+    ++i;
   }
 
   auto w1 = tyvi::mdgrid_work {};
@@ -348,7 +354,9 @@ template<std::ranges::forward_range R>
   const auto begins = [&] {
     auto temp = std::vector<std::size_t>(Nspans);
     std::exclusive_scan(
+#ifdef TYVI_USE_HIP_BACKEND
       std::execution::unseq,
+#endif
       span_sizes.begin(),
       span_sizes.end(),
       temp.begin(),
@@ -361,7 +369,9 @@ template<std::ranges::forward_range R>
   const auto ends = [&] {
     auto temp = std::vector<std::size_t>(Nspans);
     std::inclusive_scan(
+#ifdef TYVI_USE_HIP_BACKEND
       std::execution::unseq,
+#endif
       span_sizes.begin(),
       span_sizes.end(),
       temp.begin());
@@ -446,12 +456,12 @@ inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
   namespace rn                       = std::ranges;
-  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
+  const auto particle_ordinals_begin = tyvi::counting_iterator<std::size_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto pos_mds = this->pos_.mds();
 
-  const auto scores_begin = thrust::make_transform_iterator(
+  const auto scores_begin = tyvi::make_transform_iterator(
     particle_ordinals_begin,
     [=, f = std::forward<decltype(f)>(f)](const std::size_t i) {
       return f(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
@@ -459,12 +469,12 @@ inline void
   const auto scores_end = rn::next(scores_begin, this->size());
 
   auto trackers =
-    thrust::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
+    tyvi::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
 
   using score_t = std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
-  auto scores   = thrust::device_vector<score_t>(scores_begin, scores_end);
+  auto scores   = tyvi::device_vector<score_t>(scores_begin, scores_end);
 
-  thrust::sort_by_key(scores.begin(), scores.end(), trackers.begin());
+  tyvi::algo::sort_by_key(scores.begin(), scores.end(), trackers.begin());
 
   auto tmp_pos           = this->pos_;
   auto tmp_vel           = this->vel_;
