@@ -311,9 +311,9 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::subtract_J_from_E()
+  Tile<D>::add_current()
 {
-  yee_lattice_.subtract_J_from_E();
+  yee_lattice_.add_current();
 }
 
 template<std::size_t D>
@@ -409,7 +409,7 @@ std::vector<mpi4cpp::mpi::request>
 
 template<std::size_t D>
 void
-  Tile<D>::pairwise_moore_communication(
+  Tile<D>::local_communication(
     const corgi::Tile<D>& other_base,
     const std::array<int, D> dir_to_other,
     const int mode)
@@ -419,7 +419,7 @@ void
       return dynamic_cast<const Tile<D>&>(other_base);
     } catch(const std::bad_cast& ex) {
       throw std::runtime_error { std::format(
-        "emf::Tile::pairwise_moore_communication assumes that the other tile is "
+        "emf::Tile::local_communication assumes that the other tile is "
         "emf::Tile or its descendant. Orginal exception: {}",
         ex.what()) };
     }
@@ -442,7 +442,7 @@ void
       break;
     default:
       throw std::logic_error { std::format(
-        "emf::Tile::pairwise_moore_communication does not support given communication "
+        "emf::Tile::local_communication does not support given communication "
         "mode: {}",
         mode) };
   }

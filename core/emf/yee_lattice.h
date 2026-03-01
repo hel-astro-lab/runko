@@ -140,7 +140,7 @@ public:
   void push_e_FDTD2(value_type dt);
 
   /// E -= J in non-halo region.
-  void subtract_J_from_E();
+  void add_current();
 
   /// Advance B by half time step using FDTD2 scheme in non-halo region asynchronously.
   void push_b_FDTD2(const tyvi::mdgrid_work&, value_type dt);
@@ -149,7 +149,7 @@ public:
   void push_e_FDTD2(const tyvi::mdgrid_work&, value_type dt);
 
   /// E -= J in non-halo region asynchronously.
-  void subtract_J_from_E(const tyvi::mdgrid_work&);
+  void add_current(const tyvi::mdgrid_work&);
 
   [[nodiscard]]
   auto span_E() &;
