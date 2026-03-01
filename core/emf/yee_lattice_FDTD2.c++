@@ -70,9 +70,9 @@ void
   const auto h   = halo_size_;
   const auto hm1 = static_cast<std::size_t>(halo_size_ - 1uz);
 
-  const auto i_nonhalo = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
-  const auto j_nonhalo = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };
-  const auto k_nonhalo = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[2] };
+  const auto i_nonhalo = std::tuple { h, h + extents_wout_halo_[0] };
+  const auto j_nonhalo = std::tuple { h, h + extents_wout_halo_[1] };
+  const auto k_nonhalo = std::tuple { h, h + extents_wout_halo_[2] };
 
   const auto i_nonhalo_m1 = std::tuple { hm1, hm1 + extents_wout_halo_[0] };
   const auto j_nonhalo_m1 = std::tuple { hm1, hm1 + extents_wout_halo_[1] };
