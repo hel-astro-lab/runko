@@ -1,0 +1,98 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 23,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "conf-common",
+            "description": "General settings that apply to all configurations",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build",
+            "installDir": "${sourceDir}/out/install/${presetName}"
+        },
+        {
+            "name": "conf-unixlike-common",
+            "description": "Unix-like OS settings.",
+            "hidden": true,
+            "inherits": "conf-common",
+            "condition": {
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": [
+                    "Linux",
+                    "Darwin"
+                ]
+            }
+        },
+        {
+            "name": "unixlike-clang-cpu-debug",
+            "displayName": "clang++ CPU Debug",
+            "description": "Target Unix-like OS with clang++ (via mpic++), CPU backend, debug build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "mpic++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "TYVI_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "unixlike-clang-cpu-release",
+            "displayName": "clang++ CPU Release",
+            "description": "Target Unix-like OS with clang++ (via mpic++), CPU backend, release build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "mpic++",
+                "CMAKE_BUILD_TYPE": "Release",
+                "TYVI_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "unixlike-hipcc-debug",
+            "displayName": "hipcc Debug",
+            "description": "Target Unix-like OS with hipcc, debug build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "hipcc",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "test-common",
+            "description": "Test CMake settings that apply to all configurations",
+            "hidden": true,
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "test-unixlike-clang-cpu-debug",
+            "displayName": "clang++ CPU Debug",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "unixlike-clang-cpu-debug"
+        },
+        {
+            "name": "test-unixlike-clang-cpu-release",
+            "displayName": "clang++ CPU Release",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "unixlike-clang-cpu-release"
+        },
+        {
+            "name": "test-unixlike-hipcc-debug",
+            "displayName": "hipcc Debug",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "unixlike-hipcc-debug"
+        }
+    ]
+}
