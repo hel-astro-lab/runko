@@ -167,15 +167,15 @@ YeeLattice::YeeLatticeHostCopy
 }
 
 void
-  YeeLattice::subtract_J_from_E()
+  YeeLattice::add_current()
 {
   const auto w = tyvi::mdgrid_work {};
-  subtract_J_from_E(w);
+  add_current(w);
   w.wait();
 }
 
 void
-  YeeLattice::subtract_J_from_E(const tyvi::mdgrid_work& w)
+  YeeLattice::add_current(const tyvi::mdgrid_work& w)
 {
   const auto Emds = nonhalo_submds(E_.mds());
   const auto Jmds = nonhalo_submds(J_.mds());

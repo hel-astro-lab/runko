@@ -189,7 +189,7 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::pairwise_moore_communication_prelude(const int mode)
+  Tile<D>::local_communication_prelude(const int mode)
 {
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
@@ -207,7 +207,7 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::pairwise_moore_communication_postlude(const int mode)
+  Tile<D>::local_communication_postlude(const int mode)
 {
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
@@ -231,14 +231,14 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::pairwise_moore_communication(
+  Tile<D>::local_communication(
     const corgi::Tile<D>& other_base,
     const std::array<int, D> dir_to_other,
     const int mode)
 {
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) {
-    emf::Tile<D>::pairwise_moore_communication(other_base, dir_to_other, mode);
+    emf::Tile<D>::local_communication(other_base, dir_to_other, mode);
     return;
   }
 
@@ -247,7 +247,7 @@ void
       return dynamic_cast<const Tile<D>&>(other_base);
     } catch(const std::bad_cast& ex) {
       throw std::runtime_error { std::format(
-        "pic::Tile::pairwise_moore_communication assumes that the other tile is "
+        "pic::Tile::local_communication assumes that the other tile is "
         "pic::Tile or its descendant. Orginal exception: {}",
         ex.what()) };
     }

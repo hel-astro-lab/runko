@@ -107,7 +107,7 @@ public:
   void push_e();
 
   /// E -= J
-  void subtract_J_from_E();
+  void add_current();
 
   /// Applies potentially configured filter to J.
   ///
@@ -127,7 +127,7 @@ public:
   /// Get halo region of field specified with mode (see comm_mode) from other.
   ///
   /// Assumes that the other tile is emf::Tile or its descendant.
-  void pairwise_moore_communication(
+  void local_communication(
     const corgi::Tile<D>& /* other */,
     const std::array<int, D> dir_to_other,
     const int /* mode */
