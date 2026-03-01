@@ -1,14 +1,13 @@
 #include "core/emf/yee_lattice.h"
 #include "core/pic/particle.h"
-#include "thrust/device_vector.h"
-#include "thrust/execution_policy.h"
-#include "thrust/iterator/transform_output_iterator.h"
-#include "thrust/memory.h"
-#include "thrust/reduce.h"
-#include "thrust/sort.h"
 #include "tools/vector.h"
+#include "tyvi/algo.h"
+#include "tyvi/containers.h"
+#include "tyvi/iterators.h"
 #include "tyvi/mdgrid.h"
+#include "tyvi/sstd.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <functional>
@@ -52,12 +51,12 @@ emf::YeeLattice::CurrentContributions
   static constexpr auto max_num_of_nodes_effected = 14uz;
   const auto N = this->size() * max_num_of_nodes_effected;
 
-  auto deposit_locations     = thrust::device_vector<deposit_loc>(N);
+  auto deposit_locations     = tyvi::device_vector<deposit_loc>(N);
   const auto deposit_loc_ptr = deposit_locations.begin();
 
   //--------------------------------------------------
   // get current and particle array; define physical multipliers
-  auto currents          = thrust::device_vector<Vec3v>(N);
+  auto currents          = tyvi::device_vector<Vec3v>(N);
   const auto current_ptr = currents.begin();
 
   const auto pos_mds      = pos_.mds();
@@ -84,11 +83,11 @@ emf::YeeLattice::CurrentContributions
     const auto i2 = x2.template as<std::size_t>();
 
     const auto relay = [&](const std::size_t j) -> value_type {
-      const auto a  = static_cast<value_type>(min(i1(j), i2(j)) + 1);
-      const auto b1 = static_cast<value_type>(max(i1(j), i2(j)));
+      const auto a  = static_cast<value_type>(std::min(i1(j), i2(j)) + 1);
+      const auto b1 = static_cast<value_type>(std::max(i1(j), i2(j)));
       const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
-      const auto b  = max(b1, b2);
-      return min(a, b);
+      const auto b  = std::max(b1, b2);
+      return std::min(a, b);
     };
 
     const auto x_relay = Vec3v(relay(0), relay(1), relay(2));
@@ -162,35 +161,33 @@ emf::YeeLattice::CurrentContributions
     store_current(i2 + Vec3uz(1, 1, 0), Vec3v(0, 0, Fz2 * Wx2 * Wy2));
   });
 
-  auto unique_deposit_locations = thrust::device_vector<std::array<std::size_t, 3>>(N);
-  auto reduced_currents         = thrust::device_vector<std::array<value_type, 3>>(N);
+  auto unique_deposit_locations = tyvi::device_vector<std::array<std::size_t, 3>>(N);
+  auto reduced_currents         = tyvi::device_vector<std::array<value_type, 3>>(N);
 
-  const auto uniq_dep_locs_ptr = thrust::make_transform_output_iterator(
+  const auto uniq_dep_locs_ptr = tyvi::make_transform_output_iterator(
     unique_deposit_locations.begin(),
     [](const deposit_loc& loc) { return loc.idx.data; });
 
-  const auto reduced_currents_ptr = thrust::make_transform_output_iterator(
+  const auto reduced_currents_ptr = tyvi::make_transform_output_iterator(
     reduced_currents.begin(),
     [](const Vec3v& J) { return J.data; });
 
 
   w.wait();
 
-  thrust::sort_by_key(
-    thrust::device,
+  tyvi::algo::sort_by_key(
     deposit_locations.begin(),
     deposit_locations.end(),
     currents.begin());
 
-  const auto [key_end, _] = thrust::reduce_by_key(
-    thrust::device,
+  const auto [key_end, _] = tyvi::algo::reduce_by_key(
     deposit_locations.begin(),
     deposit_locations.end(),
     currents.begin(),
     uniq_dep_locs_ptr,
     reduced_currents_ptr,
-    thrust::equal_to<deposit_loc> {},
-    thrust::plus<toolbox::Vec3<value_type>> {});
+    std::equal_to<deposit_loc> {},
+    std::plus<toolbox::Vec3<value_type>> {});
 
   const auto num_of_uniq_locs = key_end - uniq_dep_locs_ptr;
 
@@ -236,11 +233,11 @@ void
         const auto i2 = x2.template as<std::size_t>();
 
         const auto relay = [&](const std::size_t j) -> value_type {
-          const auto a  = static_cast<value_type>(min(i1(j), i2(j)) + 1);
-          const auto b1 = static_cast<value_type>(max(i1(j), i2(j)));
+          const auto a  = static_cast<value_type>(std::min(i1(j), i2(j)) + 1);
+          const auto b1 = static_cast<value_type>(std::max(i1(j), i2(j)));
           const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
-          const auto b  = max(b1, b2);
-          return min(a, b);
+          const auto b  = std::max(b1, b2);
+          return std::min(a, b);
         };
 
         const auto x_relay = Vec3v(relay(0), relay(1), relay(2));
@@ -259,14 +256,13 @@ void
         const auto [Wx2, Wy2, Wz2] = W2.data;
 
         const auto store_current = [&](const Vec3uz& index, const Vec3v& current) {
-          auto* const Jx = &thrust::raw_reference_cast(Jmds[index.data][0]);
-          auto* const Jy = &thrust::raw_reference_cast(Jmds[index.data][1]);
-          auto* const Jz = &thrust::raw_reference_cast(Jmds[index.data][2]);
+          auto* const Jx = &tyvi::sstd::raw_ref(Jmds[index.data][0]);
+          auto* const Jy = &tyvi::sstd::raw_ref(Jmds[index.data][1]);
+          auto* const Jz = &tyvi::sstd::raw_ref(Jmds[index.data][2]);
 
-          // See hip docs for these.
-          std::ignore = ::unsafeAtomicAdd(Jx, current[0]);
-          std::ignore = ::unsafeAtomicAdd(Jy, current[1]);
-          std::ignore = ::unsafeAtomicAdd(Jz, current[2]);
+          tyvi::sstd::atomic_add(Jx, current[0]);
+          tyvi::sstd::atomic_add(Jy, current[1]);
+          tyvi::sstd::atomic_add(Jz, current[2]);
         };
 
         store_current(

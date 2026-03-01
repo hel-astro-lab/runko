@@ -2,11 +2,11 @@
 
 #include "core/communication_common.h"
 #include "core/mdgrid_common.h"
-#include "hip/hip_runtime.h"  // This is not portable, but constexpr trig functions only in C++26.
 #include "tools/system.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
+#include "tyvi/sstd.h"
 
 #include <algorithm>
 #include <cmath>
@@ -42,27 +42,8 @@ emf::CurrentFilter
 }
 
 namespace impl {
-template<typename T>
-constexpr auto
-  sin(const T x)
-{
-  if constexpr(std::is_same_v<T, float>) {
-    return ::sinf(x);
-  } else {
-    return ::sin(x);
-  }
-}
-
-template<typename T>
-constexpr auto
-  cos(const T x)
-{
-  if constexpr(std::is_same_v<T, float>) {
-    return ::cosf(x);
-  } else {
-    return ::cos(x);
-  }
-}
+using tyvi::sstd::sin;
+using tyvi::sstd::cos;
 }  // namespace impl
 }  // namespace
 

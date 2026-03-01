@@ -2,6 +2,7 @@
 
 #include "core/mdgrid_common.h"
 #include "tools/vector.h"
+#include "tyvi/containers.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
@@ -239,8 +240,8 @@ public:
 
   /// Represents a set of locations and corresponding currents.
   struct [[nodiscard]] CurrentContributions {
-    thrust::device_vector<std::array<std::size_t, 3>> locations;
-    thrust::device_vector<std::array<value_type, 3>> currents;
+    tyvi::device_vector<std::array<std::size_t, 3>> locations;
+    tyvi::device_vector<std::array<value_type, 3>> currents;
   };
 
   /// Add given currents to J.

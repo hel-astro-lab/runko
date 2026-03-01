@@ -1,15 +1,10 @@
 #include "core/pic/particle.h"
 
 #include "core/mdgrid_common.h"
-#include "thrust/device_vector.h"
-#include "thrust/execution_policy.h"
-#include "thrust/host_vector.h"
-#include "thrust/iterator/counting_iterator.h"
-#include "thrust/iterator/transform_iterator.h"
-#include "thrust/reduce.h"
-#include "thrust/sort.h"
-#include "thrust/unique.h"
 #include "tools/vector.h"
+#include "tyvi/algo.h"
+#include "tyvi/containers.h"
+#include "tyvi/iterators.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
@@ -168,23 +163,23 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   };
 
   namespace rn                       = std::ranges;
-  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
+  const auto particle_ordinals_begin = tyvi::counting_iterator<std::size_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
-  const auto particle_subregion_indices_begin = thrust::make_transform_iterator(
+  const auto particle_subregion_indices_begin = tyvi::make_transform_iterator(
     particle_ordinals_begin,
     particle_ordinal_to_subregion_index);
   const auto particle_subregion_indices_end =
     rn::next(particle_subregion_indices_begin, this->size());
 
-  auto particle_subregion_indices = thrust::device_vector<std::size_t>(
+  auto particle_subregion_indices = tyvi::device_vector<std::size_t>(
     particle_subregion_indices_begin,
     particle_subregion_indices_end);
 
   auto particle_trackers =
-    thrust::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
+    tyvi::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
 
-  thrust::sort_by_key(
+  tyvi::algo::sort_by_key(
     particle_subregion_indices.begin(),
     particle_subregion_indices.end(),
     particle_trackers.begin());
@@ -207,8 +202,7 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   // to measure the begins of the subregions.
   particle_trackers.assign(particle_ordinals_begin, particle_ordinals_end);
 
-  const auto new_end = thrust::unique_by_key(
-    thrust::device,
+  const auto new_end = tyvi::algo::unique_by_key(
     particle_subregion_indices.begin(),
     particle_subregion_indices.end(),
     particle_trackers.begin());
@@ -217,14 +211,14 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   // particles in all of the 27 subregions.
 
   const auto present_subregion_indices =
-    thrust::host_vector<std::size_t>(particle_subregion_indices.begin(), new_end.first);
+    tyvi::host_vector<std::size_t>(particle_subregion_indices.begin(), new_end.first);
   const auto present_subregion_begins =
-    thrust::host_vector<std::size_t>(particle_trackers.begin(), new_end.second);
+    tyvi::host_vector<std::size_t>(particle_trackers.begin(), new_end.second);
 
   const auto present_subregion_ends = [&] {
     // We assumed at beginning of the function that there is at least one particle.
     auto temp =
-      std::vector(++present_subregion_begins.begin(), present_subregion_begins.end());
+      std::vector(std::next(present_subregion_begins.begin()), present_subregion_begins.end());
     temp.push_back(this->size());
     return temp;
   }();
@@ -247,7 +241,7 @@ double
   auto w = tyvi::mdgrid_work {};
 
   namespace rn                       = std::ranges;
-  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
+  const auto particle_ordinals_begin = tyvi::counting_iterator<std::size_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   // Note that these are in natural units.
@@ -260,12 +254,12 @@ double
     return static_cast<double>(e);
   };
 
-  const auto kinetic_energies_begin = thrust::make_transform_iterator(
+  const auto kinetic_energies_begin = tyvi::make_transform_iterator(
     particle_ordinals_begin,
     particle_ordinal_to_kinetic_energy);
   const auto kinetic_energies_end = rn::next(kinetic_energies_begin, this->size());
 
-  return thrust::reduce(w.on_this(), kinetic_energies_begin, kinetic_energies_end);
+  return tyvi::algo::reduce(w.on_this(), kinetic_energies_begin, kinetic_energies_end);
 }
 
 }  // namespace pic
