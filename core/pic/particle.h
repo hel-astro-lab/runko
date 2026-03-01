@@ -320,7 +320,7 @@ template<std::ranges::forward_range R>
   static constexpr auto Nmax = 27uz;  // atm nothing should call this with more.
   const auto Nspans          = rn::distance(spans);
 
-  if(Nspans > Nmax) {
+  if(static_cast<std::size_t>(Nspans) > Nmax) {
     throw std::runtime_error {
       "ParticleContainer: trying to set from too many spans."
     };

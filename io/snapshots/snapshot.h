@@ -44,6 +44,8 @@ class SnapshotWriter {
     /// constructor that creates a name and opens the file handle
     SnapshotWriter( std::string  prefix ) : fname{std::move(prefix)} { }
 
+    virtual ~SnapshotWriter() = default;
+
     // NOTE: modify these 2 functions to make your own snapshot io
 
     /// read tile meshes into memory

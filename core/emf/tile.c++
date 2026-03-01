@@ -219,7 +219,7 @@ void
   const auto jz = Jz(x, y, zp5);
 
   const auto assert_shape = [&](const auto& A) {
-    if(A.shape(0) != e[0] or A.shape(1) != e[1] or A.shape(2) != e[2]) {
+    if(static_cast<std::size_t>(A.shape(0)) != e[0] or static_cast<std::size_t>(A.shape(1)) != e[1] or static_cast<std::size_t>(A.shape(2)) != e[2]) {
       throw std::runtime_error {
         "Batch field setter returned array with incorrect shape!"
       };
@@ -588,8 +588,7 @@ void
 
   const auto B_mds = generated_B.mds();
 
-  const auto h   = this->halo_size;
-  const auto hp1 = h + 1uz;
+  const auto h = this->halo_size;
 
   const auto [ex, ey, ez] = this->extents_wout_halo();
   const auto i1           = std::tuple { h - 1uz, h + ex + 1uz };

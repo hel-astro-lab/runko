@@ -242,7 +242,6 @@ double
 
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = tyvi::counting_iterator<std::size_t>(0uz);
-  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   // Note that these are in natural units.
   const auto vel_mds = this->vel_.mds();
