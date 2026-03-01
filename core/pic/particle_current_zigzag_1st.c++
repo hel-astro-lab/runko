@@ -112,40 +112,40 @@ emf::YeeLattice::CurrentContributions
     store_current(
       i1,
       Vec3v(
-        Fx1 * (1.0 - Wy1) * (1.0 - Wz1),
-        Fy1 * (1.0 - Wx1) * (1.0 - Wz1),
-        Fz1 * (1.0 - Wx1) * (1.0 - Wy1)));
+        Fx1 * (1.0f - Wy1) * (1.0f - Wz1),
+        Fy1 * (1.0f - Wx1) * (1.0f - Wz1),
+        Fz1 * (1.0f - Wx1) * (1.0f - Wy1)));
 
     store_current(
       i2,
       Vec3v(
-        Fx2 * (1.0 - Wy2) * (1.0 - Wz2),
-        Fy2 * (1.0 - Wx2) * (1.0 - Wz2),
-        Fz2 * (1.0 - Wx2) * (1.0 - Wy2)));
+        Fx2 * (1.0f - Wy2) * (1.0f - Wz2),
+        Fy2 * (1.0f - Wx2) * (1.0f - Wz2),
+        Fz2 * (1.0f - Wx2) * (1.0f - Wy2)));
 
     store_current(
       i1 + Vec3uz(1, 0, 0),
-      Vec3v(0, Fy1 * Wx1 * (1.0 - Wz1), Fz1 * Wx1 * (1.0 - Wy1)));
+      Vec3v(0, Fy1 * Wx1 * (1.0f - Wz1), Fz1 * Wx1 * (1.0f - Wy1)));
 
     store_current(
       i2 + Vec3uz(1, 0, 0),
-      Vec3v(0, Fy2 * Wx2 * (1.0 - Wz2), Fz2 * Wx2 * (1.0 - Wy2)));
+      Vec3v(0, Fy2 * Wx2 * (1.0f - Wz2), Fz2 * Wx2 * (1.0f - Wy2)));
 
     store_current(
       i1 + Vec3uz(0, 1, 0),
-      Vec3v(Fx1 * Wy1 * (1.0 - Wz1), 0, Fz1 * (1.0 - Wx1) * Wy1));
+      Vec3v(Fx1 * Wy1 * (1.0f - Wz1), 0, Fz1 * (1.0f - Wx1) * Wy1));
 
     store_current(
       i2 + Vec3uz(0, 1, 0),
-      Vec3v(Fx2 * Wy2 * (1.0 - Wz2), 0, Fz2 * (1.0 - Wx2) * Wy2));
+      Vec3v(Fx2 * Wy2 * (1.0f - Wz2), 0, Fz2 * (1.0f - Wx2) * Wy2));
 
     store_current(
       i1 + Vec3uz(0, 0, 1),
-      Vec3v(Fx1 * (1.0 - Wy1) * Wz1, Fy1 * (1.0 - Wx1) * Wz1, 0));
+      Vec3v(Fx1 * (1.0f - Wy1) * Wz1, Fy1 * (1.0f - Wx1) * Wz1, 0));
 
     store_current(
       i2 + Vec3uz(0, 0, 1),
-      Vec3v(Fx2 * (1.0 - Wy2) * Wz2, Fy2 * (1.0 - Wx2) * Wz2, 0));
+      Vec3v(Fx2 * (1.0f - Wy2) * Wz2, Fy2 * (1.0f - Wx2) * Wz2, 0));
 
     store_current(i1 + Vec3uz(0, 1, 1), Vec3v(Fx1 * Wy1 * Wz1, 0, 0));
 
@@ -267,40 +267,40 @@ void
         store_current(
           i1,
           Vec3v(
-            Fx1 * (1.0 - Wy1) * (1.0 - Wz1),
-            Fy1 * (1.0 - Wx1) * (1.0 - Wz1),
-            Fz1 * (1.0 - Wx1) * (1.0 - Wy1)));
+            Fx1 * (1.0f - Wy1) * (1.0f - Wz1),
+            Fy1 * (1.0f - Wx1) * (1.0f - Wz1),
+            Fz1 * (1.0f - Wx1) * (1.0f - Wy1)));
 
         store_current(
           i2,
           Vec3v(
-            Fx2 * (1.0 - Wy2) * (1.0 - Wz2),
-            Fy2 * (1.0 - Wx2) * (1.0 - Wz2),
-            Fz2 * (1.0 - Wx2) * (1.0 - Wy2)));
+            Fx2 * (1.0f - Wy2) * (1.0f - Wz2),
+            Fy2 * (1.0f - Wx2) * (1.0f - Wz2),
+            Fz2 * (1.0f - Wx2) * (1.0f - Wy2)));
 
         store_current(
           i1 + Vec3uz(1, 0, 0),
-          Vec3v(0, Fy1 * Wx1 * (1.0 - Wz1), Fz1 * Wx1 * (1.0 - Wy1)));
+          Vec3v(0, Fy1 * Wx1 * (1.0f - Wz1), Fz1 * Wx1 * (1.0f - Wy1)));
 
         store_current(
           i2 + Vec3uz(1, 0, 0),
-          Vec3v(0, Fy2 * Wx2 * (1.0 - Wz2), Fz2 * Wx2 * (1.0 - Wy2)));
+          Vec3v(0, Fy2 * Wx2 * (1.0f - Wz2), Fz2 * Wx2 * (1.0f - Wy2)));
 
         store_current(
           i1 + Vec3uz(0, 1, 0),
-          Vec3v(Fx1 * Wy1 * (1.0 - Wz1), 0, Fz1 * (1.0 - Wx1) * Wy1));
+          Vec3v(Fx1 * Wy1 * (1.0f - Wz1), 0, Fz1 * (1.0f - Wx1) * Wy1));
 
         store_current(
           i2 + Vec3uz(0, 1, 0),
-          Vec3v(Fx2 * Wy2 * (1.0 - Wz2), 0, Fz2 * (1.0 - Wx2) * Wy2));
+          Vec3v(Fx2 * Wy2 * (1.0f - Wz2), 0, Fz2 * (1.0f - Wx2) * Wy2));
 
         store_current(
           i1 + Vec3uz(0, 0, 1),
-          Vec3v(Fx1 * (1.0 - Wy1) * Wz1, Fy1 * (1.0 - Wx1) * Wz1, 0));
+          Vec3v(Fx1 * (1.0f - Wy1) * Wz1, Fy1 * (1.0f - Wx1) * Wz1, 0));
 
         store_current(
           i2 + Vec3uz(0, 0, 1),
-          Vec3v(Fx2 * (1.0 - Wy2) * Wz2, Fy2 * (1.0 - Wx2) * Wz2, 0));
+          Vec3v(Fx2 * (1.0f - Wy2) * Wz2, Fy2 * (1.0f - Wx2) * Wz2, 0));
 
         store_current(i1 + Vec3uz(0, 1, 1), Vec3v(Fx1 * Wy1 * Wz1, 0, 0));
 
