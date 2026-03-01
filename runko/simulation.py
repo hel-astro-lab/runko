@@ -159,12 +159,6 @@ class Simulation:
                     getattr(tile, method)()
 
             elif method.startswith("grid_"):
-
-                method_mapper = { "grid_add_current" : "grid_subtract_J_from_E" }
-
-                if method in method_mapper:
-                    method = method_mapper[method]
-
                 for tile in self.local_tiles():
                     getattr(tile, method[5:])()
 
@@ -198,7 +192,7 @@ class Simulation:
                     match method[5:]:
                         case "local":
                             for mode in comm_modes:
-                                self._tile_grid._corgi_grid.pairwise_moore_communication(mode.value)
+                                self._tile_grid._corgi_grid.local_communication(mode.value)
 
                         case "external":
                             for mode in comm_modes:
