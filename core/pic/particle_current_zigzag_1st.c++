@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <stdexcept>
@@ -22,7 +23,7 @@ emf::YeeLattice::CurrentContributions
     const std::array<value_type, 3> lattice_origo_coordinates,
     const double cfl_) const
 {
-  using Vec3uz = toolbox::Vec3<std::size_t>;
+  using Vec3uz = toolbox::Vec3<uint32_t>;
   using Vec3v  = toolbox::Vec3<value_type>;
 
   //--------------------------------------------------
@@ -47,7 +48,7 @@ emf::YeeLattice::CurrentContributions
   };
 
   //--------------------------------------------------
-  static constexpr auto max_num_of_nodes_effected = 14uz;
+  static constexpr uint32_t max_num_of_nodes_effected = 14u;
   const auto N = this->size() * max_num_of_nodes_effected;
 
   auto deposit_locations     = tyvi::device_vector<deposit_loc>(N);
@@ -76,14 +77,15 @@ emf::YeeLattice::CurrentContributions
 
     const auto x1 = x2 - cfl * invgam * u;
 
-    // These are equivalent to floor assuming that x1 and x2 do not have negative
-    // values
-    const auto i1 = x1.template as<std::size_t>();
-    const auto i2 = x2.template as<std::size_t>();
+    // Float floor for relay and weight computation (pure float — no 64-bit integers)
+    const auto fi1 = Vec3v(
+      tyvi::sstd::floor(x1(0)), tyvi::sstd::floor(x1(1)), tyvi::sstd::floor(x1(2)));
+    const auto fi2 = Vec3v(
+      tyvi::sstd::floor(x2(0)), tyvi::sstd::floor(x2(1)), tyvi::sstd::floor(x2(2)));
 
     const auto relay = [&](const std::size_t j) -> value_type {
-      const auto a  = static_cast<value_type>(tyvi::sstd::min(i1(j), i2(j)) + 1);
-      const auto b1 = static_cast<value_type>(tyvi::sstd::max(i1(j), i2(j)));
+      const auto a  = tyvi::sstd::min(fi1(j), fi2(j)) + value_type { 1 };
+      const auto b1 = tyvi::sstd::max(fi1(j), fi2(j));
       const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
       const auto b  = tyvi::sstd::max(b1, b2);
       return tyvi::sstd::min(a, b);
@@ -94,15 +96,19 @@ emf::YeeLattice::CurrentContributions
     const auto F1 = charge * (x_relay - x1);
     const auto F2 = charge * (x2 - x_relay);
 
-    const auto W1 = value_type { 0.5 } * (x1 + x_relay) - i1.template as<value_type>();
-    const auto W2 = value_type { 0.5 } * (x2 + x_relay) - i2.template as<value_type>();
+    const auto W1 = value_type { 0.5 } * (x1 + x_relay) - fi1;
+    const auto W2 = value_type { 0.5 } * (x2 + x_relay) - fi2;
 
     const auto [Fx1, Fy1, Fz1] = F1.data;
     const auto [Fx2, Fy2, Fz2] = F2.data;
     const auto [Wx1, Wy1, Wz1] = W1.data;
     const auto [Wx2, Wy2, Wz2] = W2.data;
 
-    auto offset = idx[0] * max_num_of_nodes_effected;
+    // Integer indices only for store_current (uint32_t = 32-bit = SIMD width=4)
+    const auto i1 = fi1.template as<uint32_t>();
+    const auto i2 = fi2.template as<uint32_t>();
+
+    auto offset = static_cast<uint32_t>(idx[0]) * max_num_of_nodes_effected;
 
     const auto store_current = [=, &offset](const Vec3uz index, const Vec3v current) {
       deposit_loc_ptr[offset] = deposit_loc { index };
@@ -165,7 +171,9 @@ emf::YeeLattice::CurrentContributions
 
   const auto uniq_dep_locs_ptr = tyvi::make_transform_output_iterator(
     unique_deposit_locations.begin(),
-    [](const deposit_loc& loc) { return loc.idx.data; });
+    [](const deposit_loc& loc) -> std::array<std::size_t, 3> {
+      return { loc.idx(0), loc.idx(1), loc.idx(2) };
+    });
 
   const auto reduced_currents_ptr = tyvi::make_transform_output_iterator(
     reduced_currents.begin(),
@@ -205,7 +213,7 @@ void
     const std::array<value_type, 3> lattice_origo_coordinates,
     const value_type cfl) const
 {
-  using Vec3uz = toolbox::Vec3<std::size_t>;
+  using Vec3uz = toolbox::Vec3<uint32_t>;
   using Vec3v  = toolbox::Vec3<value_type>;
 
   const auto Jmds         = Jout.mds();
@@ -226,14 +234,15 @@ void
 
         const auto x1 = x2 - cfl * invgam * u;
 
-        // These are equivalent to floor assuming that x1 and x2 do not have negative
-        // values.
-        const auto i1 = x1.template as<std::size_t>();
-        const auto i2 = x2.template as<std::size_t>();
+        // Float floor for relay and weight computation (pure float — no 64-bit integers)
+        const auto fi1 = Vec3v(
+          tyvi::sstd::floor(x1(0)), tyvi::sstd::floor(x1(1)), tyvi::sstd::floor(x1(2)));
+        const auto fi2 = Vec3v(
+          tyvi::sstd::floor(x2(0)), tyvi::sstd::floor(x2(1)), tyvi::sstd::floor(x2(2)));
 
         const auto relay = [&](const std::size_t j) -> value_type {
-          const auto a  = static_cast<value_type>(tyvi::sstd::min(i1(j), i2(j)) + 1);
-          const auto b1 = static_cast<value_type>(tyvi::sstd::max(i1(j), i2(j)));
+          const auto a  = tyvi::sstd::min(fi1(j), fi2(j)) + value_type { 1 };
+          const auto b1 = tyvi::sstd::max(fi1(j), fi2(j));
           const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
           const auto b  = tyvi::sstd::max(b1, b2);
           return tyvi::sstd::min(a, b);
@@ -244,20 +253,23 @@ void
         const auto F1 = charge * (x_relay - x1);
         const auto F2 = charge * (x2 - x_relay);
 
-        const auto W1 =
-          value_type { 0.5 } * (x1 + x_relay) - i1.template as<value_type>();
-        const auto W2 =
-          value_type { 0.5 } * (x2 + x_relay) - i2.template as<value_type>();
+        const auto W1 = value_type { 0.5 } * (x1 + x_relay) - fi1;
+        const auto W2 = value_type { 0.5 } * (x2 + x_relay) - fi2;
 
         const auto [Fx1, Fy1, Fz1] = F1.data;
         const auto [Fx2, Fy2, Fz2] = F2.data;
         const auto [Wx1, Wy1, Wz1] = W1.data;
         const auto [Wx2, Wy2, Wz2] = W2.data;
 
+        // Integer indices only for store_current (uint32_t = 32-bit = SIMD width=4)
+        const auto i1 = fi1.template as<uint32_t>();
+        const auto i2 = fi2.template as<uint32_t>();
+
         const auto store_current = [&](const Vec3uz& index, const Vec3v& current) {
-          auto* const Jx = &tyvi::sstd::raw_ref(Jmds[index.data][0]);
-          auto* const Jy = &tyvi::sstd::raw_ref(Jmds[index.data][1]);
-          auto* const Jz = &tyvi::sstd::raw_ref(Jmds[index.data][2]);
+          const auto si  = index.template as<std::size_t>();
+          auto* const Jx = &tyvi::sstd::raw_ref(Jmds[si.data][0]);
+          auto* const Jy = &tyvi::sstd::raw_ref(Jmds[si.data][1]);
+          auto* const Jz = &tyvi::sstd::raw_ref(Jmds[si.data][2]);
 
           tyvi::sstd::atomic_add(Jx, current[0]);
           tyvi::sstd::atomic_add(Jy, current[1]);
