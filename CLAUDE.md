@@ -115,3 +115,4 @@ System dependencies: MPI, HDF5, Python (with mpi4py, numpy, pybind11), OpenMP.
 - **Variables and functions**: `snake_case` — e.g., `ex`, `gam`, `get_container()`
 - **Classes and objects**: `CamelCase` with leading capital — e.g., `Tile`, `ParticleContainer`
 - Prefer short but descriptive names that mirror the underlying mathematical formulas
+- **Array indices**: No spaces around `+`/`-` operators inside bracket indices. Pad bare indices with trailing spaces to align columns vertically. E.g., `Emds[i-1, j  , k+1]` not `Emds[i - 1, j, k + 1]`.
