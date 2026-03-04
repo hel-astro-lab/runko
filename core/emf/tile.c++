@@ -2,7 +2,9 @@
 
 #include "core/communication_common.h"
 #include "core/mdgrid_common.h"
+#if defined(TYVI_BACKEND_HIP)
 #include "hip/hip_runtime.h"  // This is not portable, but constexpr trig functions only in C++26.
+#endif
 #include "tools/system.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"

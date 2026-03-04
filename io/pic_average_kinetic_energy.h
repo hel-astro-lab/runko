@@ -97,7 +97,7 @@ void
         &requests.back());
     }
 
-    static_assert(std::same_as<std::size_t, std::uint64_t>);
+    static_assert(sizeof(std::size_t) == sizeof(std::uint64_t));
 
     requests.emplace_back();
 
