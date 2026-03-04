@@ -5,8 +5,9 @@
 
 #include "tyvi/mdspan.h"
 
+#include "tools/simd_math.h"
+
 #include <array>
-#include <cmath>
 #include <concepts>
 #include <iostream>
 #include <type_traits>
@@ -319,35 +320,35 @@ constexpr Mat3<T>
 
 //--------------------------------------------------
 // vector norm
-template<std::floating_point... T>
+template<arithmetic... T>
 constexpr std::common_type_t<T...>
   norm(const T... args)
 {
-  return std::sqrt(((args * args) + ...));
+  return sstd::sqrt(((args * args) + ...));
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr T
   norm(const VecD<T, D>& v)
 {
-  return std::sqrt(dot(v, v));
+  return sstd::sqrt(dot(v, v));
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr T
   norm2d(const VecD<T, D>& v)  // contracted norm in x y direction
 {
-  return std::sqrt(v(0) * v(0) + v(1) * v(1));
+  return sstd::sqrt(v(0) * v(0) + v(1) * v(1));
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr T
   norm1d(const VecD<T, D>& v)  // contracted norm in x direction
 {
-  return std::abs(v(0));
+  return sstd::abs(v(0));
 }
 
-template<std::floating_point T, std::size_t D>
+template<arithmetic T, std::size_t D>
 constexpr T
   norm_minkowski(VecD<T, D>& v)
 {
@@ -359,7 +360,7 @@ constexpr T
     return ((v(I + 1) * v(I + 1)) + ...);
   }(std::make_index_sequence<D - 1>());
 
-  return std::sqrt(std::abs(-v(0) * v(0) + spatial_part));
+  return sstd::sqrt(sstd::abs(-v(0) * v(0) + spatial_part));
 }
 
 

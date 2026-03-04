@@ -3,7 +3,7 @@
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 
-#include <cmath>
+#include "tools/simd_math.h"
 
 void
   pic::ParticleContainer::push_particles_boris(
@@ -31,7 +31,7 @@ void
         const Vec3 E0 = value_type { 0.5 } * qm * Vec3(Emds[idx]);
         const Vec3 u0 = v0 + E0;
 
-        const value_type ginv = cfl / std::sqrt(cfl * cfl + toolbox::dot(u0, u0));
+        const value_type ginv = cfl / sstd::sqrt(cfl * cfl + toolbox::dot(u0, u0));
 
         const Vec3 B0 = value_type { 0.5 } * qm * ginv * Vec3(Bmds[idx]) / cfl;
 
@@ -43,7 +43,7 @@ void
 
         for(auto i = 0uz; i < 3uz; ++i) { vel_mds[idx][i] = u2[i] / cfl; }
 
-        const value_type ginv2 = cfl / std::sqrt(cfl * cfl + toolbox::dot(u2, u2));
+        const value_type ginv2 = cfl / sstd::sqrt(cfl * cfl + toolbox::dot(u2, u2));
 
         for(auto i = 0uz; i < 3uz; ++i) {
           pos_mds[idx][i] = pos_mds[idx][i] + vel_mds[idx][i] * ginv2 * cfl;
