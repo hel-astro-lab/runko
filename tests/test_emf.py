@@ -302,7 +302,7 @@ class emf(unittest.TestCase):
         self.assertTrue(np.all(Jz == 1))
 
 
-    def test_subtract_J_from_E(self):
+    def test_add_current(self):
 
         config = runko.Configuration(None)
         config.Nx = 2
@@ -332,7 +332,7 @@ class emf(unittest.TestCase):
         self.assertTrue(np.all(E0y == 0))
         self.assertTrue(np.all(E0z == 0))
 
-        tile.subtract_J_from_E()
+        tile.add_current()
 
         # Now E = -A * J, for some positive scalar A.
         # We can calculate A from each component and test that they are eqal.
