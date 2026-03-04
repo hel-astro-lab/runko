@@ -1,0 +1,77 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 23,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "conf-common",
+            "description": "General settings that apply to all configurations",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/${presetName}"
+        },
+        {
+            "name": "conf-unixlike-common",
+            "description": "Unix-like OS settings.",
+            "hidden": true,
+            "inherits": "conf-common",
+            "condition": {
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": [
+                    "Linux",
+                    "Darwin"
+                ]
+            }
+        },
+        {
+            "name": "macos-mpic++-debug",
+            "displayName": "mpic++ Debug (macOS)",
+            "description": "Target macOS with mpic++ (Homebrew clang++), cpu backend, debug build type.",
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "mpic++",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "tyvi_BACKEND": "cpu",
+                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
+            }
+        },
+        {
+            "name": "macos-mpic++-vec-analysis",
+            "displayName": "mpic++ Vectorization Analysis (macOS)",
+            "description": "Release build with SIMD vectorization diagnostics for auditing auto-vectorization.",
+            "inherits": "macos-mpic++-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS": "-O3 -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize",
+                "BUILD_TESTING": "OFF"
+            }
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "test-common",
+            "description": "Test CMake settings that apply to all configurations",
+            "hidden": true,
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "test-macos-mpic++-debug",
+            "displayName": "mpic++ Debug (macOS)",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "macos-mpic++-debug"
+        }
+    ]
+}
