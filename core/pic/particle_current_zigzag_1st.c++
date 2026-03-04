@@ -9,9 +9,10 @@
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 
-#include <algorithm>
+#include "tools/simd_math.h"
+
 #include <array>
-#include <cmath>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <stdexcept>
@@ -21,23 +22,6 @@
 #include "hip/hip_runtime.h"
 #endif
 
-namespace {
-// Portability shims for min/max and atomicAdd across HIP and CPU backends.
-using std::min;
-using std::max;
-
-#if defined(TYVI_BACKEND_CPU)
-template<typename T>
-T unsafeAtomicAdd(T* addr, T val) 
-{ 
-  auto old = *addr; 
-#pragma omp atomic update
-  *addr += val; 
-  return old; 
-}
-#endif
-}  // namespace
-
 namespace pic {
 
 emf::YeeLattice::CurrentContributions
@@ -45,7 +29,7 @@ emf::YeeLattice::CurrentContributions
     const std::array<value_type, 3> lattice_origo_coordinates,
     const double cfl_) const
 {
-  using Vec3uz = toolbox::Vec3<std::size_t>;
+  using Vec3uz = toolbox::Vec3<uint32_t>;
   using Vec3v  = toolbox::Vec3<value_type>;
 
   //--------------------------------------------------
@@ -70,7 +54,7 @@ emf::YeeLattice::CurrentContributions
   };
 
   //--------------------------------------------------
-  static constexpr auto max_num_of_nodes_effected = 14uz;
+  static constexpr auto max_num_of_nodes_effected = 14u;
   const auto N = this->size() * max_num_of_nodes_effected;
 
   auto deposit_locations     = thrust::device_vector<deposit_loc>(N);
@@ -92,24 +76,25 @@ emf::YeeLattice::CurrentContributions
   w.for_each_index(pos_mds, [=](const auto idx) {
     const auto u = Vec3v(vel_mds[idx]).template as<value_type>();
     const value_type invgam =
-      value_type { 1 } / std::sqrt(value_type { 1 } + toolbox::dot(u, u));
+      value_type { 1 } / sstd::sqrt(value_type { 1 } + toolbox::dot(u, u));
 
     const auto x2 = Vec3v(pos_mds[idx]).template as<value_type>() -
                     Vec3v(lattice_origo_coordinates).template as<value_type>();
 
     const auto x1 = x2 - cfl * invgam * u;
 
-    // These are equivalent to floor assuming that x1 and x2 do not have negative
-    // values
-    const auto i1 = x1.template as<std::size_t>();
-    const auto i2 = x2.template as<std::size_t>();
+    // Float floor for relay and weight computation (pure float — no 64-bit integers)
+    const auto fi1 = Vec3v(
+      sstd::floor(x1(0)), sstd::floor(x1(1)), sstd::floor(x1(2)));
+    const auto fi2 = Vec3v(
+      sstd::floor(x2(0)), sstd::floor(x2(1)), sstd::floor(x2(2)));
 
     const auto relay = [&](const std::size_t j) -> value_type {
-      const auto a  = static_cast<value_type>(min(i1(j), i2(j)) + 1);
-      const auto b1 = static_cast<value_type>(max(i1(j), i2(j)));
+      const auto a  = sstd::min(fi1(j), fi2(j)) + value_type { 1 };
+      const auto b1 = sstd::max(fi1(j), fi2(j));
       const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
-      const auto b  = max(b1, b2);
-      return min(a, b);
+      const auto b  = sstd::max(b1, b2);
+      return sstd::min(a, b);
     };
 
     const auto x_relay = Vec3v(relay(0), relay(1), relay(2));
@@ -117,8 +102,12 @@ emf::YeeLattice::CurrentContributions
     const auto F1 = charge * (x_relay - x1);
     const auto F2 = charge * (x2 - x_relay);
 
-    const auto W1 = value_type { 0.5 } * (x1 + x_relay) - i1.template as<value_type>();
-    const auto W2 = value_type { 0.5 } * (x2 + x_relay) - i2.template as<value_type>();
+    // Integer indices only for store_current (uint32_t = 32-bit = SIMD width=4)
+    const auto i1 = fi1.template as<uint32_t>();
+    const auto i2 = fi2.template as<uint32_t>();
+
+    const auto W1 = value_type { 0.5 } * (x1 + x_relay) - fi1;
+    const auto W2 = value_type { 0.5 } * (x2 + x_relay) - fi2;
 
     const auto [Fx1, Fy1, Fz1] = F1.data;
     const auto [Fx2, Fy2, Fz2] = F2.data;
@@ -135,40 +124,40 @@ emf::YeeLattice::CurrentContributions
     store_current(
       i1,
       Vec3v(
-        Fx1 * (1.0 - Wy1) * (1.0 - Wz1),
-        Fy1 * (1.0 - Wx1) * (1.0 - Wz1),
-        Fz1 * (1.0 - Wx1) * (1.0 - Wy1)));
+        Fx1 * (1.0f - Wy1) * (1.0f - Wz1),
+        Fy1 * (1.0f - Wx1) * (1.0f - Wz1),
+        Fz1 * (1.0f - Wx1) * (1.0f - Wy1)));
 
     store_current(
       i2,
       Vec3v(
-        Fx2 * (1.0 - Wy2) * (1.0 - Wz2),
-        Fy2 * (1.0 - Wx2) * (1.0 - Wz2),
-        Fz2 * (1.0 - Wx2) * (1.0 - Wy2)));
+        Fx2 * (1.0f - Wy2) * (1.0f - Wz2),
+        Fy2 * (1.0f - Wx2) * (1.0f - Wz2),
+        Fz2 * (1.0f - Wx2) * (1.0f - Wy2)));
 
     store_current(
       i1 + Vec3uz(1, 0, 0),
-      Vec3v(0, Fy1 * Wx1 * (1.0 - Wz1), Fz1 * Wx1 * (1.0 - Wy1)));
+      Vec3v(0, Fy1 * Wx1 * (1.0f - Wz1), Fz1 * Wx1 * (1.0f - Wy1)));
 
     store_current(
       i2 + Vec3uz(1, 0, 0),
-      Vec3v(0, Fy2 * Wx2 * (1.0 - Wz2), Fz2 * Wx2 * (1.0 - Wy2)));
+      Vec3v(0, Fy2 * Wx2 * (1.0f - Wz2), Fz2 * Wx2 * (1.0f - Wy2)));
 
     store_current(
       i1 + Vec3uz(0, 1, 0),
-      Vec3v(Fx1 * Wy1 * (1.0 - Wz1), 0, Fz1 * (1.0 - Wx1) * Wy1));
+      Vec3v(Fx1 * Wy1 * (1.0f - Wz1), 0, Fz1 * (1.0f - Wx1) * Wy1));
 
     store_current(
       i2 + Vec3uz(0, 1, 0),
-      Vec3v(Fx2 * Wy2 * (1.0 - Wz2), 0, Fz2 * (1.0 - Wx2) * Wy2));
+      Vec3v(Fx2 * Wy2 * (1.0f - Wz2), 0, Fz2 * (1.0f - Wx2) * Wy2));
 
     store_current(
       i1 + Vec3uz(0, 0, 1),
-      Vec3v(Fx1 * (1.0 - Wy1) * Wz1, Fy1 * (1.0 - Wx1) * Wz1, 0));
+      Vec3v(Fx1 * (1.0f - Wy1) * Wz1, Fy1 * (1.0f - Wx1) * Wz1, 0));
 
     store_current(
       i2 + Vec3uz(0, 0, 1),
-      Vec3v(Fx2 * (1.0 - Wy2) * Wz2, Fy2 * (1.0 - Wx2) * Wz2, 0));
+      Vec3v(Fx2 * (1.0f - Wy2) * Wz2, Fy2 * (1.0f - Wx2) * Wz2, 0));
 
     store_current(i1 + Vec3uz(0, 1, 1), Vec3v(Fx1 * Wy1 * Wz1, 0, 0));
 
@@ -188,7 +177,9 @@ emf::YeeLattice::CurrentContributions
 
   const auto uniq_dep_locs_ptr = thrust::make_transform_output_iterator(
     unique_deposit_locations.begin(),
-    [](const deposit_loc& loc) { return loc.idx.data; });
+    [](const deposit_loc& loc) -> std::array<std::size_t, 3> {
+      return { loc.idx(0), loc.idx(1), loc.idx(2) };
+    });
 
   const auto reduced_currents_ptr = thrust::make_transform_output_iterator(
     reduced_currents.begin(),
@@ -230,7 +221,7 @@ void
     const std::array<value_type, 3> lattice_origo_coordinates,
     const value_type cfl) const
 {
-  using Vec3uz = toolbox::Vec3<std::size_t>;
+  using Vec3uz = toolbox::Vec3<uint32_t>;
   using Vec3v  = toolbox::Vec3<value_type>;
 
   const auto Jmds         = Jout.mds();
@@ -244,24 +235,25 @@ void
       [=](const auto idx) {
         const auto u = Vec3v(vel_mds[idx]).template as<value_type>();
         const auto invgam =
-          value_type { 1 } / std::sqrt(value_type { 1 } + toolbox::dot(u, u));
+          value_type { 1 } / sstd::sqrt(value_type { 1 } + toolbox::dot(u, u));
 
         const auto x2 = Vec3v(pos_mds[idx]).template as<value_type>() -
                         Vec3v(lattice_origo_coordinates).template as<value_type>();
 
         const auto x1 = x2 - cfl * invgam * u;
 
-        // These are equivalent to floor assuming that x1 and x2 do not have negative
-        // values.
-        const auto i1 = x1.template as<std::size_t>();
-        const auto i2 = x2.template as<std::size_t>();
+        // Float floor for relay and weight computation (pure float — no 64-bit integers)
+        const auto fi1 = Vec3v(
+          sstd::floor(x1(0)), sstd::floor(x1(1)), sstd::floor(x1(2)));
+        const auto fi2 = Vec3v(
+          sstd::floor(x2(0)), sstd::floor(x2(1)), sstd::floor(x2(2)));
 
         const auto relay = [&](const std::size_t j) -> value_type {
-          const auto a  = static_cast<value_type>(min(i1(j), i2(j)) + 1);
-          const auto b1 = static_cast<value_type>(max(i1(j), i2(j)));
+          const auto a  = sstd::min(fi1(j), fi2(j)) + value_type { 1 };
+          const auto b1 = sstd::max(fi1(j), fi2(j));
           const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
-          const auto b  = max(b1, b2);
-          return min(a, b);
+          const auto b  = sstd::max(b1, b2);
+          return sstd::min(a, b);
         };
 
         const auto x_relay = Vec3v(relay(0), relay(1), relay(2));
@@ -269,10 +261,12 @@ void
         const auto F1 = charge * (x_relay - x1);
         const auto F2 = charge * (x2 - x_relay);
 
-        const auto W1 =
-          value_type { 0.5 } * (x1 + x_relay) - i1.template as<value_type>();
-        const auto W2 =
-          value_type { 0.5 } * (x2 + x_relay) - i2.template as<value_type>();
+        // Integer indices only for store_current (uint32_t = 32-bit = SIMD width=4)
+        const auto i1 = fi1.template as<uint32_t>();
+        const auto i2 = fi2.template as<uint32_t>();
+
+        const auto W1 = value_type { 0.5 } * (x1 + x_relay) - fi1;
+        const auto W2 = value_type { 0.5 } * (x2 + x_relay) - fi2;
 
         const auto [Fx1, Fy1, Fz1] = F1.data;
         const auto [Fx2, Fy2, Fz2] = F2.data;
@@ -280,65 +274,59 @@ void
         const auto [Wx2, Wy2, Wz2] = W2.data;
 
         const auto store_current = [&](const Vec3uz& index, const Vec3v& current) {
-          auto* const Jx = &thrust::raw_reference_cast(Jmds[index.data][0]);
-          auto* const Jy = &thrust::raw_reference_cast(Jmds[index.data][1]);
-          auto* const Jz = &thrust::raw_reference_cast(Jmds[index.data][2]);
+          const auto si  = index.template as<std::size_t>();
+          auto* const Jx = &thrust::raw_reference_cast(Jmds[si.data][0]);
+          auto* const Jy = &thrust::raw_reference_cast(Jmds[si.data][1]);
+          auto* const Jz = &thrust::raw_reference_cast(Jmds[si.data][2]);
 
-          // See hip docs for these.
-          std::ignore = unsafeAtomicAdd(Jx, current[0]);
-          std::ignore = unsafeAtomicAdd(Jy, current[1]);
-          std::ignore = unsafeAtomicAdd(Jz, current[2]);
+          sstd::atomic_add(Jx, current[0]);
+          sstd::atomic_add(Jy, current[1]);
+          sstd::atomic_add(Jz, current[2]);
         };
 
-        store_current(
-          i1,
-          Vec3v(
-            Fx1 * (1.0 - Wy1) * (1.0 - Wz1),
-            Fy1 * (1.0 - Wx1) * (1.0 - Wz1),
-            Fz1 * (1.0 - Wx1) * (1.0 - Wy1)));
+        store_current(i1,                   Vec3v(Fx1*(1.0f - Wy1)*(1.0f - Wz1),
+                                                  Fy1*(1.0f - Wx1)*(1.0f - Wz1),
+                                                  Fz1*(1.0f - Wx1)*(1.0f - Wy1)));
 
-        store_current(
-          i2,
-          Vec3v(
-            Fx2 * (1.0 - Wy2) * (1.0 - Wz2),
-            Fy2 * (1.0 - Wx2) * (1.0 - Wz2),
-            Fz2 * (1.0 - Wx2) * (1.0 - Wy2)));
-
-        store_current(
-          i1 + Vec3uz(1, 0, 0),
-          Vec3v(0, Fy1 * Wx1 * (1.0 - Wz1), Fz1 * Wx1 * (1.0 - Wy1)));
-
-        store_current(
-          i2 + Vec3uz(1, 0, 0),
-          Vec3v(0, Fy2 * Wx2 * (1.0 - Wz2), Fz2 * Wx2 * (1.0 - Wy2)));
-
-        store_current(
-          i1 + Vec3uz(0, 1, 0),
-          Vec3v(Fx1 * Wy1 * (1.0 - Wz1), 0, Fz1 * (1.0 - Wx1) * Wy1));
-
-        store_current(
-          i2 + Vec3uz(0, 1, 0),
-          Vec3v(Fx2 * Wy2 * (1.0 - Wz2), 0, Fz2 * (1.0 - Wx2) * Wy2));
-
-        store_current(
-          i1 + Vec3uz(0, 0, 1),
-          Vec3v(Fx1 * (1.0 - Wy1) * Wz1, Fy1 * (1.0 - Wx1) * Wz1, 0));
-
-        store_current(
-          i2 + Vec3uz(0, 0, 1),
-          Vec3v(Fx2 * (1.0 - Wy2) * Wz2, Fy2 * (1.0 - Wx2) * Wz2, 0));
-
-        store_current(i1 + Vec3uz(0, 1, 1), Vec3v(Fx1 * Wy1 * Wz1, 0, 0));
-
-        store_current(i2 + Vec3uz(0, 1, 1), Vec3v(Fx2 * Wy2 * Wz2, 0, 0));
-
-        store_current(i1 + Vec3uz(1, 0, 1), Vec3v(0, Fy1 * Wx1 * Wz1, 0));
-
-        store_current(i2 + Vec3uz(1, 0, 1), Vec3v(0, Fy2 * Wx2 * Wz2, 0));
-
-        store_current(i1 + Vec3uz(1, 1, 0), Vec3v(0, 0, Fz1 * Wx1 * Wy1));
-
-        store_current(i2 + Vec3uz(1, 1, 0), Vec3v(0, 0, Fz2 * Wx2 * Wy2));
+        store_current(i2,                   Vec3v(Fx2*(1.0f - Wy2)*(1.0f - Wz2),
+                                                  Fy2*(1.0f - Wx2)*(1.0f - Wz2),
+                                                  Fz2*(1.0f - Wx2)*(1.0f - Wy2)));
+        store_current(i1 + Vec3uz(1, 0, 0), Vec3v(0,
+                                                  Fy1*Wx1*(1.0f - Wz1),
+                                                  Fz1*Wx1*(1.0f - Wy1)));
+        store_current(i2 + Vec3uz(1, 0, 0), Vec3v(0,
+                                                  Fy2*Wx2*(1.0f - Wz2),
+                                                  Fz2*Wx2*(1.0f - Wy2)));
+        store_current(i1 + Vec3uz(0, 1, 0), Vec3v(Fx1*Wy1*(1.0f - Wz1),
+                                                  0,
+                                                  Fz1*(1.0f - Wx1)*Wy1));
+        store_current(i2 + Vec3uz(0, 1, 0), Vec3v(Fx2*Wy2*(1.0f - Wz2),
+                                                  0,
+                                                  Fz2*(1.0f - Wx2)*Wy2));
+        store_current(i1 + Vec3uz(0, 0, 1), Vec3v(Fx1*(1.0f - Wy1)*Wz1,
+                                                  Fy1*(1.0f - Wx1)*Wz1,
+                                                  0));
+        store_current(i2 + Vec3uz(0, 0, 1), Vec3v(Fx2*(1.0f - Wy2)*Wz2,
+                                                  Fy2*(1.0f - Wx2)*Wz2,
+                                                  0));
+        store_current(i1 + Vec3uz(0, 1, 1), Vec3v(Fx1*Wy1*Wz1,
+                                                  0,
+                                                  0));
+        store_current(i2 + Vec3uz(0, 1, 1), Vec3v(Fx2*Wy2*Wz2,
+                                                  0,
+                                                  0));
+        store_current(i1 + Vec3uz(1, 0, 1), Vec3v(0,
+                                                  Fy1*Wx1*Wz1,
+                                                  0));
+        store_current(i2 + Vec3uz(1, 0, 1), Vec3v(0,
+                                                  Fy2*Wx2*Wz2,
+                                                  0));
+        store_current(i1 + Vec3uz(1, 1, 0), Vec3v(0,
+                                                  0,
+                                                  Fz1*Wx1*Wy1));
+        store_current(i2 + Vec3uz(1, 1, 0), Vec3v(0,
+                                                  0,
+                                                  Fz2*Wx2*Wy2));
       })
     .wait();
 }

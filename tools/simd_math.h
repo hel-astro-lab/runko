@@ -31,9 +31,10 @@ raw_ref(T& x) {
 // =====================================================================
 
 template<typename T>
-constexpr void
+inline void
 atomic_add(T* addr, T val) {
 #ifdef TYVI_BACKEND_CPU
+#pragma omp atomic update
     *addr += val;
 #elif defined(TYVI_BACKEND_HIP)
     ::unsafeAtomicAdd(addr, val);
