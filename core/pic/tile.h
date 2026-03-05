@@ -153,14 +153,14 @@ public:
     recv_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int mode, int tag)
       override;
 
-  void pairwise_moore_communication_prelude(const int) override;
-  void pairwise_moore_communication_postlude(const int) override;
+  void local_communication_prelude(const int) override;
+  void local_communication_postlude(const int) override;
 
   /// Get particles from haloregion of the other with comm_mode::pic_particle.
   ///
   /// Forward other communication modes to emf::Tile.
   /// Assumes that the other tile is pic::Tile or its descendant.
-  void pairwise_moore_communication(
+  void local_communication(
     const corgi::Tile<D>& /* other */,
     const std::array<int, D> dir_to_other,
     const int /* mode */

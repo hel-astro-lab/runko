@@ -191,7 +191,7 @@ void
       })
     .def("register_antenna", &emf::Tile<3>::register_antenna)
     .def("deposit_antenna_current", &emf::Tile<3>::deposit_antenna_current)
-    .def("subtract_J_from_E", &emf::Tile<3>::subtract_J_from_E);
+    .def("add_current", &emf::Tile<3>::add_current);
 
 
   // snapshot io

@@ -3,6 +3,8 @@
 #include "core/emf/yee_lattice.h"
 #include "core/particles_common.h"
 #include "core/pic/particle.h"
+#include "tyvi/mdspan.h"
+#include "tyvi/sstd.h"
 
 #include <cmath>
 #include <format>
@@ -145,12 +147,8 @@ void
   const auto e                  = this->yee_lattice_.extents_wout_halo();
   std::vector<runko::ParticleState> new_particles {};
 
-  namespace rv     = std::views;
-  auto index_space = rv::cartesian_product(
-    rv::iota(0uz, e[0]),
-    rv::iota(0uz, e[1]),
-    rv::iota(0uz, e[2]));
-  for(const auto [i, j, k]: index_space) {
+  for(const auto [i, j, k]:
+      tyvi::sstd::index_space(std::mdspan((int*)nullptr, e[0], e[1], e[2]))) {
     const auto [x, y, z] = global_coordinates(i, j, k);
     for(const auto p: pgen(x, y, z)) { new_particles.push_back(p); }
   }

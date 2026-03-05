@@ -13,7 +13,6 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
-#include <execution>
 #include <functional>
 #include <iterator>
 #include <map>
@@ -181,7 +180,6 @@ inline void
   const auto other_begins = [&] {
     auto temp = std::array<std::size_t, sizeof...(others)> {};
     std::exclusive_scan(
-      std::execution::unseq,
       Nothers.begin(),
       Nothers.end(),
       temp.begin(),
@@ -194,7 +192,6 @@ inline void
   const auto other_ends = [&] {
     auto temp = std::array<std::size_t, sizeof...(others)> {};
     std::inclusive_scan(
-      std::execution::unseq,
       Nothers.begin(),
       Nothers.end(),
       temp.begin(),
@@ -263,10 +260,14 @@ inline void
   const auto added_pos_smds = added.pos_.staging_mds();
   const auto added_vel_smds = added.vel_.staging_mds();
 
-  for(const auto [i, p]: std::views::enumerate(new_particles)) {
-    for(const auto j: std::views::iota(0uz, 3uz)) {
-      added_pos_smds[i][j] = p.pos[j];
-      added_vel_smds[i][j] = p.vel[j];
+  {
+    std::size_t i = 0;
+    for(const auto& p: new_particles) {
+      for(const auto j: std::views::iota(0uz, 3uz)) {
+        added_pos_smds[i][j] = p.pos[j];
+        added_vel_smds[i][j] = p.vel[j];
+      }
+      ++i;
     }
   }
 
@@ -314,7 +315,7 @@ template<std::ranges::forward_range R>
   static constexpr auto Nmax = 27uz;  // atm nothing should call this with more.
   const auto Nspans          = rn::distance(spans);
 
-  if(Nspans > Nmax) {
+  if(static_cast<std::size_t>(Nspans) > Nmax) {
     throw std::runtime_error {
       "ParticleContainer: trying to set from too many spans."
     };
@@ -348,7 +349,6 @@ template<std::ranges::forward_range R>
   const auto begins = [&] {
     auto temp = std::vector<std::size_t>(Nspans);
     std::exclusive_scan(
-      std::execution::unseq,
       span_sizes.begin(),
       span_sizes.end(),
       temp.begin(),
@@ -361,7 +361,6 @@ template<std::ranges::forward_range R>
   const auto ends = [&] {
     auto temp = std::vector<std::size_t>(Nspans);
     std::inclusive_scan(
-      std::execution::unseq,
       span_sizes.begin(),
       span_sizes.end(),
       temp.begin());

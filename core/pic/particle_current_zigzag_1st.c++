@@ -9,6 +9,7 @@
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <functional>
@@ -16,6 +17,26 @@
 #include <stdexcept>
 #include <utility>
 
+#if defined(TYVI_BACKEND_HIP)
+#include "hip/hip_runtime.h"
+#endif
+
+namespace {
+// Portability shims for min/max and atomicAdd across HIP and CPU backends.
+using std::min;
+using std::max;
+
+#if defined(TYVI_BACKEND_CPU)
+template<typename T>
+T unsafeAtomicAdd(T* addr, T val) 
+{ 
+  auto old = *addr; 
+#pragma omp atomic update
+  *addr += val; 
+  return old; 
+}
+#endif
+}  // namespace
 
 namespace pic {
 
@@ -264,9 +285,9 @@ void
           auto* const Jz = &thrust::raw_reference_cast(Jmds[index.data][2]);
 
           // See hip docs for these.
-          std::ignore = ::unsafeAtomicAdd(Jx, current[0]);
-          std::ignore = ::unsafeAtomicAdd(Jy, current[1]);
-          std::ignore = ::unsafeAtomicAdd(Jz, current[2]);
+          std::ignore = unsafeAtomicAdd(Jx, current[0]);
+          std::ignore = unsafeAtomicAdd(Jy, current[1]);
+          std::ignore = unsafeAtomicAdd(Jz, current[2]);
         };
 
         store_current(
