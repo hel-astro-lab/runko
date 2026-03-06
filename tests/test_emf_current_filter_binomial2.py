@@ -4,7 +4,10 @@ import numpy as np
 
 import runko
 
-class emf_current_filter_binomial2(unittest.TestCase):
+class _binomial_filter_tests:
+    """Shared test methods for binomial filter variants."""
+
+    current_filter = None  # override in subclass
 
     def setUp(self):
         self.config = runko.Configuration(None)
@@ -19,7 +22,7 @@ class emf_current_filter_binomial2(unittest.TestCase):
         self.config.zmin = 0
         self.config.cfl = 1
         self.config.field_propagator = "FDTD2"
-        self.config.current_filter = "binomial2"
+        self.config.current_filter = self.current_filter
 
         def f():
             tile_grid_idx = (0, 0, 0)
@@ -108,6 +111,13 @@ class emf_current_filter_binomial2(unittest.TestCase):
 
             between_zero_and_one = Jx[i, j, k] > 0 and Jx[i, j, k] < 1
             self.assertTrue(between_zero_and_one)
+
+
+class emf_current_filter_binomial2(_binomial_filter_tests, unittest.TestCase):
+    current_filter = "binomial2"
+
+class emf_current_filter_binomial2_3d(_binomial_filter_tests, unittest.TestCase):
+    current_filter = "binomial2_3d"
 
 
 if __name__ == "__main__":
