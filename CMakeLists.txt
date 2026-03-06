@@ -21,6 +21,9 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 ##################################################
 # Dependencies
 
+# Prefer the venv Python so that CTest and check-runko use the same
+# interpreter (with mpi4py, numpy, etc.) that developers activate locally.
+set(Python_FIND_VIRTUALENV FIRST)
 find_package (Python COMPONENTS Interpreter Development REQUIRED)
 
 find_package(OpenMP REQUIRED)
@@ -83,6 +86,7 @@ include(CTest)
 add_subdirectory(tests/multirank_tests)
 
 add_custom_target(check-runko ALL
+                  ${CMAKE_COMMAND} -E env "PYTHONPATH=${PROJECT_SOURCE_DIR}"
                   ${Python_EXECUTABLE} -m unittest discover -s ../tests/ -v
                   DEPENDS pycorgi runko_cpp_bindings
                   VERBATIM

@@ -34,6 +34,7 @@
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_FLAGS": "-mllvm -force-vector-width=4",
                 "tyvi_ENABLE_IPO": "OFF",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
@@ -48,7 +49,7 @@
             "inherits": "macos-mpic++-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3 -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize",
+                "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize",
                 "BUILD_TESTING": "OFF"
             }
         }
