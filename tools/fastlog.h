@@ -4,7 +4,7 @@
 //static int fastlog2(uint32_t v);
 
 // compilation unit
-static int fastlog2(uint32_t v) {
+constexpr int fastlog2(uint32_t v) {
   // http://graphics.stanford.edu/~seander/bithacks.html
   int r;
   static const int MultiplyDeBruijnBitPosition[32] = 
