@@ -18,7 +18,7 @@
 namespace emf {
 
 enum class FieldPropagator { FDTD2 };
-enum class CurrentFilter { binomial2 };
+enum class CurrentFilter { binomial2, binomial2_3d };
 
 /*! \brief General Plasma tile for solving Maxwell's equations
  *

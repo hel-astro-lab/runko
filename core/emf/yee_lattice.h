@@ -274,6 +274,12 @@ public:
   /// synchronized before returning.
   void filter_current_binomial2(const tyvi::mdgrid_work&);
 
+  /// Apply digital 2nd order binomial filter for J using a single 3D kernel.
+  void filter_current_binomial2_3d();
+
+  /// Apply digital 2nd order binomial filter for J using a single 3D kernel (async).
+  void filter_current_binomial2_3d(const tyvi::mdgrid_work&);
+
   /// Returns mdspans to host accessible E, B and J in non-halo region.
   auto view_EBJ_on_host();
 
