@@ -18,7 +18,7 @@ void
 {
   /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
   const auto h   = halo_size_;
-  const auto hp1 = h + 1uz;
+  const auto hp1 = h + 1u;
 
   const auto i_nonhalo = std::tuple { h, h + extents_wout_halo_[0] };
   const auto j_nonhalo = std::tuple { h, h + extents_wout_halo_[1] };
@@ -68,7 +68,7 @@ void
   /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
 
   const auto h   = halo_size_;
-  const auto hm1 = static_cast<std::size_t>(halo_size_ - 1uz);
+  const auto hm1 = static_cast<runko::size_t>(halo_size_ - 1u);
 
   const auto i_nonhalo = std::tuple { h, h + extents_wout_halo_[0] };
   const auto j_nonhalo = std::tuple { h, h + extents_wout_halo_[1] };

@@ -18,7 +18,7 @@ namespace pic {
 
 void
   write_average_kinetic_energy(
-    const std::size_t lap,
+    const runko::size_t lap,
     const std::string path,
     corgi::Grid<3>& grid)
 {
@@ -28,7 +28,7 @@ void
   const auto local_tile_indices = grid.get_local_tiles();
 
   const auto num_local_tiles = std::ranges::size(local_tile_indices);
-  if(num_local_tiles == 0uz) {
+  if(num_local_tiles == 0u) {
     throw std::runtime_error {
       "write_average_kinetic_energy assumes that every rank has at least one tile."
     };
@@ -47,7 +47,7 @@ void
       }
     });
 
-  auto local_total_energy_n_number_of_particles = [&](const std::size_t particle_type) {
+  auto local_total_energy_n_number_of_particles = [&](const runko::size_t particle_type) {
     auto total_energies = pic_tiles | rv::transform([&](auto& tile) -> double {
                             return tile.total_kinetic_energy(particle_type);
                           });
@@ -68,7 +68,7 @@ void
 
   auto requests = std::vector<MPI_Request> {};
 
-  for(const auto n: rv::iota(0uz, num_species)) {
+  for(const auto n: rv::iota(0u, num_species)) {
     const auto [E, N]      = local_total_energy_n_number_of_particles(n);
     total_energies[n]      = E;
     number_of_particles[n] = N;
@@ -134,9 +134,9 @@ void
   if(grid.comm.rank() == 0) {
     std::fstream file { path, std::ios::out | std::ios::app };
     file << lap << ' ';
-    for(const auto n: rv::iota(0uz, num_species)) {
+    for(const auto n: rv::iota(0u, num_species)) {
       const auto e =
-        number_of_particles[n] == 0uz
+        number_of_particles[n] == 0u
           ? 0.0
           : total_energies[n] / static_cast<double>(number_of_particles[n]);
       file << e << ' ';

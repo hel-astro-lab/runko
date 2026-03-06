@@ -37,9 +37,9 @@ void
 //  const auto Nz            = e.extent(2);
 //  const auto filteredJ_mds = std::submdspan(
 //    filteredJ.mds(),
-//    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Nx - 1uz },
-//    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Ny - 1uz },
-//    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Nz - 1uz });
+//    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nx - 1u },
+//    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Ny - 1u },
+//    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nz - 1u });
 //
 //
 //  const auto Jmds = this->J_.mds();
@@ -81,7 +81,7 @@ void
 
   // Pass 1: convolve along z (dim 2)
   // temp1 dims: (Nx, Ny, Nz-2) — z-dimension shrinks by 2
-  auto temp1      = VecGrid(Nx, Ny, Nz - 2uz);
+  auto temp1      = VecGrid(Nx, Ny, Nz - 2u);
   const auto t1   = temp1.mds();
 
   w.for_each_index(
@@ -96,7 +96,7 @@ void
 
   // Pass 2: convolve along y (dim 1)
   // temp2 dims: (Nx, Ny-2, Nz-2) — y-dimension shrinks by 2
-  auto temp2      = VecGrid(Nx, Ny - 2uz, Nz - 2uz);
+  auto temp2      = VecGrid(Nx, Ny - 2u, Nz - 2u);
   const auto t2   = temp2.mds();
 
   w.for_each_index(
@@ -113,9 +113,9 @@ void
   auto filteredJ           = VecGrid(this->J_.extents());
   const auto filteredJ_mds = std::submdspan(
     filteredJ.mds(),
-    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Nx - 1uz },
-    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Ny - 1uz },
-    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Nz - 1uz });
+    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nx - 1u },
+    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Ny - 1u },
+    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nz - 1u });
 
   w.for_each_index(
      filteredJ_mds,

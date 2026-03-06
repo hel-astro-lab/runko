@@ -80,14 +80,14 @@ YeeLattice::InterpolatedEB
 
        // This should be equivelant to floor, as we assume that the particles
        // are inside the lattice, such that the subtractions are always positive.
-       const auto index_in_lattice = pos_in_lattice.template as<std::size_t>();
+       const auto index_in_lattice = pos_in_lattice.template as<runko::size_t>();
        const auto [i, j, k]        = index_in_lattice.data;
 
        auto Ex_means = std::array<value_type, 8> {};
        auto Ey_means = std::array<value_type, 8> {};
        auto Ez_means = std::array<value_type, 8> {};
 
-       using lerp3D_extents = std::extents<std::size_t, 2, 2, 2>;
+       using lerp3D_extents = std::extents<runko::size_t, 2, 2, 2>;
        auto Ex_means_mds    = std::mdspan<value_type, lerp3D_extents>(Ex_means.data());
        auto Ey_means_mds    = std::mdspan<value_type, lerp3D_extents>(Ey_means.data());
        auto Ez_means_mds    = std::mdspan<value_type, lerp3D_extents>(Ez_means.data());
@@ -107,9 +107,9 @@ YeeLattice::InterpolatedEB
 
        for(const auto [ic, jc, kc]: tyvi::sstd::index_space(Ex_means_mds)) {
          const auto [ii, jj, kk] =
-           std::array<std::size_t, 3> { static_cast<std::size_t>(i + ic),
-                                        static_cast<std::size_t>(j + jc),
-                                        static_cast<std::size_t>(k + kc) };
+           std::array<runko::size_t, 3> { static_cast<runko::size_t>(i + ic),
+                                        static_cast<runko::size_t>(j + jc),
+                                        static_cast<runko::size_t>(k + kc) };
 
          Ex_means_mds[ic, jc, kc] = mean(Emds[ii - 1, jj, kk][0], Emds[ii, jj, kk][0]);
          Ey_means_mds[ic, jc, kc] = mean(Emds[ii, jj - 1, kk][1], Emds[ii, jj, kk][1]);

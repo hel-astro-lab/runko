@@ -72,14 +72,14 @@ namespace emf {
 
 template<std::size_t D>
 Tile<D>::Tile(
-  const std::array<std::size_t, 3> tile_indices,
+  const std::array<runko::size_t, 3> tile_indices,
   const toolbox::ConfigParser& p) :
   corgi::Tile<D>(),
   yee_lattice_(
     YeeLatticeCtorArgs { .halo_size = halo_size,
-                         .Nx        = p.get_or_throw<std::size_t>("NxMesh"),
-                         .Ny        = p.get_or_throw<std::size_t>("NyMesh"),
-                         .Nz        = p.get_or_throw<std::size_t>("NzMesh")
+                         .Nx        = p.get_or_throw<runko::size_t>("NxMesh"),
+                         .Ny        = p.get_or_throw<runko::size_t>("NyMesh"),
+                         .Nz        = p.get_or_throw<runko::size_t>("NzMesh")
 
     }),
   cfl_ { p.get_or_throw<double>("cfl") },
@@ -110,9 +110,9 @@ Tile<D>::Tile(
 
   const auto [i, j, k] = tile_indices;
 
-  const auto Nx = p.get_or_throw<std::size_t>("Nx");
-  const auto Ny = p.get_or_throw<std::size_t>("Ny");
-  const auto Nz = p.get_or_throw<std::size_t>("Nz");
+  const auto Nx = p.get_or_throw<runko::size_t>("Nx");
+  const auto Ny = p.get_or_throw<runko::size_t>("Ny");
+  const auto Nz = p.get_or_throw<runko::size_t>("Nz");
 
   if(Nx <= i or Ny <= j or Nz <= k) {
     throw std::runtime_error { "Trying to create tile outside of configured grid." };
@@ -125,7 +125,7 @@ Tile<D>::Tile(
 
   this->set_tile_mins({ xmin + i * Lx, ymin + j * Ly, zmin + k * Lz });
   this->set_tile_maxs(
-    { xmin + (i + 1uz) * Lx, ymin + (j + 1uz) * Ly, zmin + (k + 1uz) * Lz });
+    { xmin + (i + 1u) * Lx, ymin + (j + 1u) * Ly, zmin + (k + 1u) * Lz });
 
 
   this->global_coordinate_mins_ = { xmin, ymin, zmin };
@@ -150,7 +150,7 @@ void
 
   const auto global_coordinates = global_coordinate_map();
 
-  auto f = [&](const std::size_t i, const std::size_t j, const std::size_t k) {
+  auto f = [&](const runko::size_t i, const runko::size_t j, const runko::size_t k) {
     const auto [x, y, z] = global_coordinates(i, j, k);
     const auto ex        = E(x + 0.5, y, z);
     const auto ey        = E(x, y + 0.5, z);
@@ -240,7 +240,7 @@ void
   const auto jz = Jz(x, y, zp5);
 
   const auto assert_shape = [&](const auto& A) {
-    if(static_cast<std::size_t>(A.shape(0)) != e[0] or static_cast<std::size_t>(A.shape(1)) != e[1] or static_cast<std::size_t>(A.shape(2)) != e[2]) {
+    if(static_cast<runko::size_t>(A.shape(0)) != e[0] or static_cast<runko::size_t>(A.shape(1)) != e[1] or static_cast<runko::size_t>(A.shape(2)) != e[2]) {
       throw std::runtime_error {
         "Batch field setter returned array with incorrect shape!"
       };
@@ -268,7 +268,7 @@ void
   const auto jzv = jz.template unchecked<3>();
 
 
-  auto f = [&](const std::size_t i, const std::size_t j, const std::size_t k) {
+  auto f = [&](const runko::size_t i, const runko::size_t j, const runko::size_t k) {
     return YeeLatticeFieldsAtPoint { .Ex = exv(i, j, k),
                                      .Ey = eyv(i, j, k),
                                      .Ez = ezv(i, j, k),
@@ -298,7 +298,7 @@ YeeLattice::YeeLatticeHostCopy
 }
 
 template<std::size_t D>
-std::array<std::size_t, 3>
+std::array<runko::size_t, 3>
   Tile<D>::extents_wout_halo() const
 {
   return yee_lattice_.extents_wout_halo();
@@ -522,9 +522,9 @@ void
     return std::visit(handle_wave_data, wm.wave_data);
   };
 
-  for(const auto n: std::views::iota(0uz, num_of_modes)) {
+  for(const auto n: std::views::iota(0u, num_of_modes)) {
     const auto wave_vector = get_wave_vector(this->antenna_modes_[n]);
-    for(const auto i: std::views::iota(0uz, 3uz)) {
+    for(const auto i: std::views::iota(0u, 3u)) {
       sA_mds[n][i] =
         static_cast<emf::YeeLattice::value_type>(this->antenna_modes_[n].A[i]);
       sk_mds[n][i] = static_cast<emf::YeeLattice::value_type>(wave_vector[i]);
@@ -576,7 +576,7 @@ void
     const auto z_loc = vec(gcmap(i, j, k + 0.5));
 
 
-    for(auto n = 0uz; n < num_of_modes; ++n) {
+    for(auto n = 0u; n < num_of_modes; ++n) {
       // std::complex is contexpr only in c++26 and thus not usable in kernel.
       // Here we do manual complex arithmeitc as a work around.
 
@@ -618,13 +618,13 @@ void
   const auto h = this->halo_size;
 
   const auto [ex, ey, ez] = this->extents_wout_halo();
-  const auto i1           = std::tuple { h - 1uz, h + ex + 1uz };
-  const auto j1           = std::tuple { h - 1uz, h + ey + 1uz };
-  const auto k1           = std::tuple { h - 1uz, h + ez + 1uz };
+  const auto i1           = std::tuple { h - 1u, h + ex + 1u };
+  const auto j1           = std::tuple { h - 1u, h + ey + 1u };
+  const auto k1           = std::tuple { h - 1u, h + ez + 1u };
 
-  const auto i1p1 = std::tuple { h, h + ex + 2uz };
-  const auto j1p1 = std::tuple { h, h + ey + 2uz };
-  const auto k1p1 = std::tuple { h, h + ez + 2uz };
+  const auto i1p1 = std::tuple { h, h + ex + 2u };
+  const auto j1p1 = std::tuple { h, h + ey + 2u };
+  const auto k1p1 = std::tuple { h, h + ez + 2u };
 
   // FIXME: unify this with emf FDTD2.
   auto curl = [&](
@@ -666,9 +666,9 @@ void
   const auto i   = std::tuple { h, h + ex };
   const auto j   = std::tuple { h, h + ey };
   const auto k   = std::tuple { h, h + ez };
-  const auto im1 = std::tuple { h - 1uz, h + ex - 1uz };
-  const auto jm1 = std::tuple { h - 1uz, h + ey - 1uz };
-  const auto km1 = std::tuple { h - 1uz, h + ez - 1uz };
+  const auto im1 = std::tuple { h - 1u, h + ex - 1u };
+  const auto jm1 = std::tuple { h - 1u, h + ey - 1u };
+  const auto km1 = std::tuple { h - 1u, h + ez - 1u };
 
   // Here we negate cfl, as we put (im1, jm1, km1) instead of (ip1, jp1, kp1).
   curl(

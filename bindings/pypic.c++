@@ -24,7 +24,7 @@ auto
   auto mda              = py::array_t<T, py::array::c_style>(grid_shape);
   auto mda_mut          = mda.template mutable_unchecked<1>();
 
-  for(const auto i: std::views::iota(0uz, vec.size())) { mda_mut(i) = vec[i]; }
+  for(const auto i: std::views::iota(0u, vec.size())) { mda_mut(i) = vec[i]; }
 
   return std::move(mda);
 }
@@ -80,18 +80,18 @@ void
     corgi::Tile<3>,
     std::shared_ptr<pic::Tile<3>>>(m_3d, "Tile")
     .def(
-      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
+      py::init([](const std::array<runko::size_t, 3> tile_grid_idx, const py::handle& h) {
         return pic::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
       }))
     .def(
       "get_positions",
-      [](pic::Tile<3>& tile, const std::size_t p) {
+      [](pic::Tile<3>& tile, const runko::size_t p) {
         const auto [x, y, z] = tile.get_positions(p);
         return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
       })
     .def(
       "get_velocities",
-      [](pic::Tile<3>& tile, const std::size_t p) {
+      [](pic::Tile<3>& tile, const runko::size_t p) {
         const auto [x, y, z] = tile.get_velocities(p);
         return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
       })

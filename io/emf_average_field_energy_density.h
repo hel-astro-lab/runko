@@ -22,7 +22,7 @@ namespace {
 void
   write_average_field_value(
     std::invocable<const emf::Tile<3>&> auto&& f,
-    const std::size_t lap,
+    const runko::size_t lap,
     const std::string& path,
     corgi::Grid<3>& grid)
 {
@@ -32,7 +32,7 @@ void
   const auto local_tile_indices = grid.get_local_tiles();
 
   const auto num_local_tiles = rn::size(local_tile_indices);
-  if(num_local_tiles == 0uz) {
+  if(num_local_tiles == 0u) {
     throw std::runtime_error {
       "write_average_field_value assumes that every rank has at least one tile."
     };
@@ -131,7 +131,7 @@ namespace emf {
 
 void
   write_average_B_energy_density(
-    const std::size_t lap,
+    const runko::size_t lap,
     const std::string path,
     corgi::Grid<3>& grid)
 {
@@ -144,7 +144,7 @@ void
 
 void
   write_average_E_energy_density(
-    const std::size_t lap,
+    const runko::size_t lap,
     const std::string path,
     corgi::Grid<3>& grid)
 {

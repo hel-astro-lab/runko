@@ -45,7 +45,7 @@ void
       .transform(qm_tuple_to_args);
   };
 
-  for(auto i = 0uz; true; ++i) {
+  for(auto i = 0u; true; ++i) {
     const auto q_label = std::format("q{}", i);
     const auto m_label = std::format("m{}", i);
 
@@ -104,7 +104,7 @@ namespace pic {
 
 template<std::size_t D>
 Tile<D>::Tile(
-  const std::array<std::size_t, 3> tile_grid_idx,
+  const std::array<runko::size_t, 3> tile_grid_idx,
   const toolbox::ConfigParser& conf) :
   corgi::Tile<D>(),
   emf::Tile<D>(tile_grid_idx, conf),
@@ -120,21 +120,21 @@ Tile<D>::Tile(
 
 template<std::size_t D>
 std::array<std::vector<typename Tile<D>::value_type>, 3>
-  Tile<D>::get_positions(const std::size_t p)
+  Tile<D>::get_positions(const runko::size_t p)
 {
   return particle_buffs_.at(p).get_positions();
 }
 
 template<std::size_t D>
 std::array<std::vector<typename Tile<D>::value_type>, 3>
-  Tile<D>::get_velocities(const std::size_t p)
+  Tile<D>::get_velocities(const runko::size_t p)
 {
   return particle_buffs_.at(p).get_velocities();
 }
 
 template<std::size_t D>
 void
-  Tile<D>::inject_to_each_cell(const std::size_t particle_type, particle_generator pgen)
+  Tile<D>::inject_to_each_cell(const runko::size_t particle_type, particle_generator pgen)
 {
   if(this->mins == this->maxs) {
     throw std::logic_error {
@@ -159,7 +159,7 @@ void
 template<std::size_t D>
 void
   Tile<D>::inject(
-    const std::size_t particle_type,
+    const runko::size_t particle_type,
     const std::vector<runko::ParticleState>& new_particles)
 {
   particle_buffs_.at(particle_type).add_particles(new_particles);
@@ -168,7 +168,7 @@ void
 template<std::size_t D>
 void
   Tile<D>::batch_inject_to_cells(
-    const std::size_t particle_type,
+    const runko::size_t particle_type,
     batch_particle_generator pgen)
 {
 
@@ -363,22 +363,22 @@ void
 
 
 template<std::size_t D>
-std::size_t
+runko::size_t
   Tile<D>::number_of_species() const
 {
   return std::ranges::size(this->particle_buffs_);
 }
 
 template<std::size_t D>
-std::size_t
-  Tile<D>::number_of_particles(const std::size_t particle_type) const
+runko::size_t
+  Tile<D>::number_of_particles(const runko::size_t particle_type) const
 {
   return this->particle_buffs_.at(particle_type).size();
 }
 
 template<std::size_t D>
 double
-  Tile<D>::total_kinetic_energy(const std::size_t particle_type) const
+  Tile<D>::total_kinetic_energy(const runko::size_t particle_type) const
 {
   return this->particle_buffs_.at(particle_type).total_kinetic_energy();
 }

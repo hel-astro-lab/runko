@@ -52,14 +52,14 @@ YeeLattice::YeeLattice(const YeeLatticeCtorArgs args) :
   halo_size_ { args.halo_size },
   extents_wout_halo_ { args.Nx, args.Ny, args.Nz },
   E_(
-    args.Nx + 2uz * halo_size_,
-    args.Ny + 2uz * halo_size_,
-    args.Nz + 2uz * halo_size_),
+    args.Nx + 2u * halo_size_,
+    args.Ny + 2u * halo_size_,
+    args.Nz + 2u * halo_size_),
   B_(
-    args.Nx + 2uz * halo_size_,
-    args.Ny + 2uz * halo_size_,
-    args.Nz + 2uz * halo_size_),
-  J_(args.Nx + 2uz * halo_size_, args.Ny + 2uz * halo_size_, args.Nz + 2uz * halo_size_)
+    args.Nx + 2u * halo_size_,
+    args.Ny + 2u * halo_size_,
+    args.Nz + 2u * halo_size_),
+  J_(args.Nx + 2u * halo_size_, args.Ny + 2u * halo_size_, args.Nz + 2u * halo_size_)
 {
 
   auto less_than_halo = [this](const auto x) { return x < halo_size_; };
@@ -74,20 +74,20 @@ YeeLattice::YeeLattice(const YeeLatticeCtorArgs args) :
   }
 }
 
-std::array<std::size_t, 3>
+std::array<runko::size_t, 3>
   YeeLattice::extents_wout_halo() const
 {
   return extents_wout_halo_;
 }
-std::array<std::size_t, 3>
+std::array<runko::size_t, 3>
   YeeLattice::extents_with_halo() const
 {
   auto e        = extents_wout_halo();
-  auto add_halo = [this](const auto x) { return x + 2uz * halo_size(); };
+  auto add_halo = [this](const auto x) { return x + 2u * halo_size(); };
   std::ranges::transform(e, e.begin(), add_halo);
   return e;
 }
-std::size_t
+runko::size_t
   YeeLattice::halo_size() const
 {
   return halo_size_;

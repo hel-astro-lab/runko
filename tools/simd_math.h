@@ -1,9 +1,19 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
 #include <type_traits>
 
 #include "tyvi/backend.h"
+
+// =====================================================================
+// runko::size_t — 32-bit index type to avoid 64-bit ↔ float promotion
+// that halves SIMD throughput (size_t 64-bit → int → double × float).
+// =====================================================================
+
+namespace runko {
+using size_t = uint32_t;
+}  // namespace runko
 
 #ifdef TYVI_BACKEND_HIP
 #include "hip/hip_runtime.h"

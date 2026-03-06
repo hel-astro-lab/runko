@@ -38,13 +38,13 @@ struct VecD {
     }(std::make_index_sequence<D>());
   };
 
-  constexpr auto& operator()(const std::size_t ind) & { return this->data[ind]; }
+  constexpr auto& operator()(const runko::size_t ind) & { return this->data[ind]; }
 
-  constexpr auto& operator()(const std::size_t ind) const& { return this->data[ind]; }
+  constexpr auto& operator()(const runko::size_t ind) const& { return this->data[ind]; }
 
-  constexpr auto& operator[](const std::size_t ind) & { return this->data[ind]; }
+  constexpr auto& operator[](const runko::size_t ind) & { return this->data[ind]; }
 
-  constexpr auto& operator[](const std::size_t ind) const& { return this->data[ind]; }
+  constexpr auto& operator[](const runko::size_t ind) const& { return this->data[ind]; }
 
   constexpr VecD() = default;
 
@@ -62,7 +62,7 @@ struct VecD {
              (MDS::rank() == 1) and (MDS::static_extent(0) == D)
   constexpr VecD(const MDS& mds)
   {
-    for(auto i = 0uz; i < D; ++i) { data[i] = mds[i]; }
+    for(auto i = 0u; i < D; ++i) { data[i] = mds[i]; }
   }
 
   template<std::convertible_to<T>... U>
@@ -84,7 +84,7 @@ struct VecD {
   friend std::ostream& operator<<(std::ostream& os, const VecD<T, D>& v)
   {
     os << "[";
-    for(size_t i = 0; i < D; i++) os << v(i) << " ";
+    for(runko::size_t i = 0; i < D; i++) os << v(i) << " ";
     os << "]";
     return os;
   }
@@ -133,25 +133,25 @@ struct MatD {
   }
 
   /// Column major order.
-  constexpr auto& operator[](const size_t i, const size_t j) &
+  constexpr auto& operator[](const runko::size_t i, const runko::size_t j) &
   {
     return this->mds()[i, j];
   }
 
   /// Column major order.
-  constexpr auto& operator[](const size_t i, const size_t j) const&
+  constexpr auto& operator[](const runko::size_t i, const runko::size_t j) const&
   {
     return this->mds()[i, j];
   }
 
   /// Column major order.
-  constexpr auto& operator()(const size_t i, const size_t j) &
+  constexpr auto& operator()(const runko::size_t i, const runko::size_t j) &
   {
     return this->mds()[i, j];
   }
 
   /// Column major order.
-  constexpr auto& operator()(const size_t i, const size_t j) const&
+  constexpr auto& operator()(const runko::size_t i, const runko::size_t j) const&
   {
     return this->mds()[i, j];
   }
@@ -173,9 +173,9 @@ struct MatD {
   {
     os << std::endl;
     os << "[";
-    for(auto i = 0uz; i < D; ++i) {
+    for(auto i = 0u; i < D; ++i) {
       os << "[ ";
-      for(auto j = 0uz; i < D - 1; ++i) { os << M(i, j) << " , "; }
+      for(auto j = 0u; i < D - 1; ++i) { os << M(i, j) << " , "; }
       os << M(i, D - 1) << "]" << "\n";
     }
     os << "]" << std::endl;
@@ -199,7 +199,7 @@ constexpr VecD<T, D>
   operator/(const VecD<T, D>& v, const T s)
 {
   VecD<T, D> ret;
-  for(size_t i = 0; i < D; i++) ret(i) = v(i) / s;
+  for(runko::size_t i = 0; i < D; i++) ret(i) = v(i) / s;
   return ret;
 }
 
@@ -208,7 +208,7 @@ constexpr VecD<T, D>
   operator*(const VecD<T, D>& v, const T s)
 {
   VecD<T, D> ret;
-  for(size_t i = 0; i < D; i++) ret(i) = v(i) * s;
+  for(runko::size_t i = 0; i < D; i++) ret(i) = v(i) * s;
   return ret;
 }
 
@@ -225,7 +225,7 @@ constexpr VecD<T, D>
   operator+(const VecD<T, D>& v1, const VecD<T, D>& v2)
 {
   VecD<T, D> ret;
-  for(size_t i = 0; i < D; i++) ret(i) = v1(i) + v2(i);
+  for(runko::size_t i = 0; i < D; i++) ret(i) = v1(i) + v2(i);
   return ret;
 }
 
@@ -235,7 +235,7 @@ constexpr VecD<T, D>
   operator-(const VecD<T, D>& v1, const VecD<T, D>& v2)
 {
   VecD<T, D> ret;
-  for(size_t i = 0; i < D; i++) ret(i) = v1(i) - v2(i);
+  for(runko::size_t i = 0; i < D; i++) ret(i) = v1(i) - v2(i);
   return ret;
 }
 
@@ -244,7 +244,7 @@ constexpr T
   dot(const VecD<T, D>& v1, const VecD<T, D>& v2)
 {
   T ret { 0 };
-  for(size_t i = 0; i < D; i++) ret += v1(i) * v2(i);
+  for(runko::size_t i = 0; i < D; i++) ret += v1(i) * v2(i);
   return ret;
 }
 

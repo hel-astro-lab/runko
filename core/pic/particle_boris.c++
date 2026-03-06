@@ -41,11 +41,11 @@ void
         const Vec3 u1 = f * (u0 + toolbox::cross(u0, B0));
         const Vec3 u2 = u0 + toolbox::cross(u1, B0) + E0;
 
-        for(auto i = 0uz; i < 3uz; ++i) { vel_mds[idx][i] = u2[i] / cfl; }
+        for(auto i = 0u; i < 3u; ++i) { vel_mds[idx][i] = u2[i] / cfl; }
 
         const value_type ginv2 = cfl / sstd::sqrt(cfl * cfl + toolbox::dot(u2, u2));
 
-        for(auto i = 0uz; i < 3uz; ++i) {
+        for(auto i = 0u; i < 3u; ++i) {
           pos_mds[idx][i] = pos_mds[idx][i] + vel_mds[idx][i] * ginv2 * cfl;
         }
       })
