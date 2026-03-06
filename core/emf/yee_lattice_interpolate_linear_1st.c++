@@ -111,27 +111,16 @@ YeeLattice::InterpolatedEB
                                         static_cast<runko::size_t>(j + jc),
                                         static_cast<runko::size_t>(k + kc) };
 
-         Ex_means_mds[ic, jc, kc] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[ic, jc, kc] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[ic, jc, kc] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
+         Ex_means_mds[ic,jc,kc] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,   jj,   kk  ][0]);
+         Ey_means_mds[ic,jc,kc] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,   jj,   kk  ][1]);
+         Ez_means_mds[ic,jc,kc] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,   jj,   kk  ][2]);
 
-         Bx_means_mds[ic, jc, kc] = mean(
-           Bmds[ii  , jj  , kk  ][0],
-           Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0],
-           Bmds[ii  , jj-1, kk-1][0]);
-
-         By_means_mds[ic, jc, kc] = mean(
-           Bmds[ii  , jj  , kk  ][1],
-           Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1],
-           Bmds[ii-1, jj  , kk-1][1]);
-
-         Bz_means_mds[ic, jc, kc] = mean(
-           Bmds[ii  , jj  , kk  ][2],
-           Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2],
-           Bmds[ii-1, jj-1, kk  ][2]);
+         Bx_means_mds[ic,jc,kc] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii,   jj-1, kk  ][0],
+                                       Bmds[ii  ,jj  ,kk-1][0], Bmds[ii,   jj-1, kk-1][0]);
+         By_means_mds[ic,jc,kc] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1, jj  , kk  ][1],
+                                       Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
+         Bz_means_mds[ic,jc,kc] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1, jj  , kk  ][2],
+                                       Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
        }
 
        const auto delta_pos =
@@ -212,130 +201,106 @@ YeeLattice::InterpolatedEB
        // (ic=0, jc=0, kc=0)
        {
          const auto ii = i + 0u, jj = j + 0u, kk = k + 0u;
-         Ex_means_mds[0, 0, 0] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[0, 0, 0] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[0, 0, 0] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[0, 0, 0] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[0, 0, 0] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[0, 0, 0] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[0,0,0] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[0,0,0] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[0,0,0] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[0,0,0] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[0,0,0] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[0,0,0] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
        // (ic=0, jc=0, kc=1)
        {
          const auto ii = i + 0u, jj = j + 0u, kk = k + 1u;
-         Ex_means_mds[0, 0, 1] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[0, 0, 1] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[0, 0, 1] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[0, 0, 1] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[0, 0, 1] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[0, 0, 1] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[0,0,1] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[0,0,1] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[0,0,1] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[0,0,1] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[0,0,1] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[0,0,1] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
        // (ic=0, jc=1, kc=0)
        {
          const auto ii = i + 0u, jj = j + 1u, kk = k + 0u;
-         Ex_means_mds[0, 1, 0] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[0, 1, 0] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[0, 1, 0] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[0, 1, 0] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[0, 1, 0] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[0, 1, 0] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[0,1,0] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[0,1,0] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[0,1,0] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[0,1,0] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[0,1,0] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[0,1,0] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
        // (ic=0, jc=1, kc=1)
        {
          const auto ii = i + 0u, jj = j + 1u, kk = k + 1u;
-         Ex_means_mds[0, 1, 1] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[0, 1, 1] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[0, 1, 1] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[0, 1, 1] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[0, 1, 1] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[0, 1, 1] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[0,1,1] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[0,1,1] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[0,1,1] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[0,1,1] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[0,1,1] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[0,1,1] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
        // (ic=1, jc=0, kc=0)
        {
          const auto ii = i + 1u, jj = j + 0u, kk = k + 0u;
-         Ex_means_mds[1, 0, 0] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[1, 0, 0] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[1, 0, 0] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[1, 0, 0] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[1, 0, 0] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[1, 0, 0] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[1,0,0] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[1,0,0] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[1,0,0] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[1,0,0] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[1,0,0] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[1,0,0] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
        // (ic=1, jc=0, kc=1)
        {
          const auto ii = i + 1u, jj = j + 0u, kk = k + 1u;
-         Ex_means_mds[1, 0, 1] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[1, 0, 1] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[1, 0, 1] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[1, 0, 1] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[1, 0, 1] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[1, 0, 1] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[1,0,1] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[1,0,1] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[1,0,1] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[1,0,1] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[1,0,1] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[1,0,1] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
        // (ic=1, jc=1, kc=0)
        {
          const auto ii = i + 1u, jj = j + 1u, kk = k + 0u;
-         Ex_means_mds[1, 1, 0] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[1, 1, 0] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[1, 1, 0] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[1, 1, 0] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[1, 1, 0] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[1, 1, 0] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[1,1,0] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[1,1,0] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[1,1,0] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[1,1,0] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[1,1,0] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[1,1,0] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
        // (ic=1, jc=1, kc=1)
        {
          const auto ii = i + 1u, jj = j + 1u, kk = k + 1u;
-         Ex_means_mds[1, 1, 1] = mean(Emds[ii-1, jj  , kk  ][0], Emds[ii, jj, kk][0]);
-         Ey_means_mds[1, 1, 1] = mean(Emds[ii  , jj-1, kk  ][1], Emds[ii, jj, kk][1]);
-         Ez_means_mds[1, 1, 1] = mean(Emds[ii  , jj  , kk-1][2], Emds[ii, jj, kk][2]);
-         Bx_means_mds[1, 1, 1] = mean(
-           Bmds[ii  , jj  , kk  ][0], Bmds[ii  , jj-1, kk  ][0],
-           Bmds[ii  , jj  , kk-1][0], Bmds[ii  , jj-1, kk-1][0]);
-         By_means_mds[1, 1, 1] = mean(
-           Bmds[ii  , jj  , kk  ][1], Bmds[ii-1, jj  , kk  ][1],
-           Bmds[ii  , jj  , kk-1][1], Bmds[ii-1, jj  , kk-1][1]);
-         Bz_means_mds[1, 1, 1] = mean(
-           Bmds[ii  , jj  , kk  ][2], Bmds[ii-1, jj  , kk  ][2],
-           Bmds[ii  , jj-1, kk  ][2], Bmds[ii-1, jj-1, kk  ][2]);
+         Ex_means_mds[1,1,1] = mean(Emds[ii-1,jj  ,kk  ][0], Emds[ii,  jj,  kk  ][0]);
+         Ey_means_mds[1,1,1] = mean(Emds[ii  ,jj-1,kk  ][1], Emds[ii,  jj,  kk  ][1]);
+         Ez_means_mds[1,1,1] = mean(Emds[ii  ,jj  ,kk-1][2], Emds[ii,  jj,  kk  ][2]);
+         Bx_means_mds[1,1,1] = mean(Bmds[ii  ,jj  ,kk  ][0], Bmds[ii  ,jj-1,kk  ][0],
+                                    Bmds[ii  ,jj  ,kk-1][0], Bmds[ii  ,jj-1,kk-1][0]);
+         By_means_mds[1,1,1] = mean(Bmds[ii  ,jj  ,kk  ][1], Bmds[ii-1,jj  ,kk  ][1],
+                                    Bmds[ii  ,jj  ,kk-1][1], Bmds[ii-1,jj  ,kk-1][1]);
+         Bz_means_mds[1,1,1] = mean(Bmds[ii  ,jj  ,kk  ][2], Bmds[ii-1,jj  ,kk  ][2],
+                                    Bmds[ii  ,jj-1,kk  ][2], Bmds[ii-1,jj-1,kk  ][2]);
        }
 
        const auto delta_pos =
