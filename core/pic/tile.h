@@ -25,7 +25,7 @@ namespace pic {
 namespace mpi = mpi4cpp::mpi;
 
 enum class ParticlePusher { boris };
-enum class FieldInterpolator { linear_1st };
+enum class FieldInterpolator { linear_1st, linear_1st_unrolled };
 enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
 
 struct ParticleStateBatch {
