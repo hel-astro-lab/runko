@@ -160,8 +160,8 @@ class pic_reflector_wall(unittest.TestCase):
 
         self.assertEqual(1, len(pos_x))
 
-        # particle should be parked at walloc + 0.5
-        self.assertAlmostEqual(pos_x[0], 5.5, places=4)
+        # particle should be parked near domain start
+        self.assertAlmostEqual(pos_x[0], 1.0, places=4)
 
         # velocity zeroed
         self.assertAlmostEqual(vel_x[0], 0.0, places=5)

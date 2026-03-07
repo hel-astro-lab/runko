@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <ranges>
 
 namespace {
 
@@ -17,13 +18,17 @@ using Vec3uz     = toolbox::Vec3<uint32_t>;
 
 constexpr value_type EPS = 1e-10f;
 
-/// Deposit zigzag current for a single-particle trajectory from x1 to x2
-/// with the given charge, atomically into the J grid.
+}  // namespace
+
+
+namespace pic {
+
+/// Atomic zigzag current deposit for a single-particle sub-trajectory x1 → x2.
 ///
 /// x1 and x2 are in lattice-local coordinates (relative to lattice origin).
 /// Mirrors the atomic variant in particle_current_zigzag_1st.c++:276-329.
 template<typename Jmds_t>
-void zigzag_deposit_single(
+inline void zigzag_deposit_single(
   const Jmds_t Jmds,
   const Vec3 x1,
   const Vec3 x2,
@@ -103,10 +108,6 @@ void zigzag_deposit_single(
   // clang-format on
 }
 
-}  // namespace
-
-
-namespace pic {
 
 void
   ParticleContainer::reflect_at_wall(
@@ -134,77 +135,80 @@ void
     .for_each_index(
       pos_mds,
       [=](const auto idx) {
-        const Vec3 x2 = Vec3(pos_mds[idx]);
+        // Position convention:
+        //   pos_1    = current post-push position (may be behind wall)
+        //   pos_0    = unwound pre-push position (start of timestep)
+        //   pos_col  = wall collision point
+        //   pos_refl = final reflected position (in front of wall)
+        const Vec3 pos_1 = Vec3(pos_mds[idx]);
 
         // skip particles in front of the wall
-        if(x2(0) >= walloc) return;
+        if(pos_1(0) >= walloc) return;
 
-        const Vec3 u     = Vec3(vel_mds[idx]);
-        const value_type gam    = sstd::sqrt(value_type { 1 } + toolbox::dot(u, u));
-        const value_type invgam = value_type { 1 } / gam;
+        const Vec3 u   = Vec3(vel_mds[idx]);
+        const value_type gam = sstd::sqrt(1.0f + toolbox::dot(u, u));
 
         // unwind position one timestep backwards
-        const Vec3 x0 = x2 - c * invgam * u;
+        const Vec3 pos_0 = pos_1 - c*u/gam;
 
+        // park artifact particle near domain start with zero x-velocity
         const auto park = [&] {
-          pos_mds[idx][0] = walloc + value_type { 0.5 };
+          pos_mds[idx][0] = 1.0f;
           vel_mds[idx][0] = 0;
         };
 
         // reject artifacts: particle was already far behind the wall
-        if(walloc0 - x0(0) > c) { park(); return; }
+        if(walloc0 - pos_0(0) > c) { park(); return; }
 
         // time fraction to wall crossing
-        const value_type denom = betawall * c - c * u(0) * invgam;
-        const value_type dt    = sstd::abs((x0(0) - walloc0) / (denom + EPS));
+        const value_type denom = betawall * c - c * u(0)/gam;
+        const value_type dt    = sstd::abs((pos_0(0) - walloc0) / (denom + EPS));
 
         // particle did not genuinely cross the wall this timestep
-        if(dt > value_type { 1 }) { park(); return; }
+        if(dt > 1.0f) { park(); return; }
 
         // collision point (3D)
-        const Vec3 xcolis = x0 + c * dt * invgam * u;
+        const Vec3 pos_col = pos_0 + c*dt*u/gam;
 
-        // deposit +q current from x0 to collision point
-        zigzag_deposit_single(Jmds, x0 - origo, xcolis - origo, charge);
+        // dual deposit: +q from pos_0 to pos_col records real current before
+        // reflection; -q from unwound-reflected-pos to pos_col (below) cancels
+        // the spurious behind-wall current that normal deposit will add.
+        zigzag_deposit_single(Jmds, pos_0 - origo, pos_col - origo, charge);
 
         // reflect x-velocity
         // stationary: ux' = -ux
         // moving:     ux' = gammawall^2 * gam * (2*beta - ux/gam * (1 + beta^2))
         const value_type ux_new =
-          (betawall == 0 && gammawall == value_type { 1 })
+          (betawall == 0 && gammawall == 1.0f)
             ? -u(0)
-            : gammawall * gammawall * gam *
-                (value_type { 2 } * betawall -
-                 u(0) * invgam * (value_type { 1 } + betawall * betawall));
+            : gammawall * gammawall * gam * (2.0f * betawall -
+                 u(0) / gam * (1.0f + betawall * betawall));
 
         const Vec3 u_new(ux_new, u(1), u(2));
-        const value_type gam_new    = sstd::sqrt(value_type { 1 } + toolbox::dot(u_new, u_new));
-        const value_type invgam_new = value_type { 1 } / gam_new;
+        const value_type gam_new    = sstd::sqrt(1.0f + toolbox::dot(u_new, u_new));
+        const value_type invgam_new = 1.0f / gam_new;
 
         // reflected time fraction: remaining portion after collision
         const value_type dt_refl =
-          sstd::min(value_type { 1 },
-                    sstd::abs((x2(0) - xcolis(0)) / (x2(0) - x0(0) + EPS)));
+          sstd::min(1.0f,
+                    sstd::abs((pos_1(0) - pos_col(0)) / (pos_1(0) - pos_0(0) + EPS)));
 
         // new position after reflection
-        const Vec3 xnew = xcolis + c * dt_refl * invgam_new * u_new;
+        const Vec3 pos_refl = pos_col + c * dt_refl * invgam_new * u_new;
 
         // deposit -q current to cancel behind-wall current that normal deposit will add
-        // normal deposit unwinds from xnew: x1_deposit = xnew - c * u_new / gam_new
-        const Vec3 x1_deposit = xnew - c * invgam_new * u_new;
-        zigzag_deposit_single(Jmds, x1_deposit - origo, xcolis - origo, -charge);
+        // normal deposit unwinds from pos_refl: x1_deposit = pos_refl - c * u_new / gam_new
+        const Vec3 x1_deposit = pos_refl - c * invgam_new * u_new;
+        zigzag_deposit_single(Jmds, x1_deposit - origo, pos_col - origo, -charge);
 
-        // update particle
-        for(auto i = 0u; i < 3u; ++i) { pos_mds[idx][i] = xnew(i); }
+        // update all 3 dimensions: y/z also change because reflected trajectory
+        // uses the new velocity over the remaining time fraction
+        for(auto i = 0u; i < 3u; ++i) { pos_mds[idx][i] = pos_refl(i); }
         vel_mds[idx][0] = ux_new;
       })
     .wait();
 }
 
-}  // namespace pic
-
-
-namespace pic {
 
 template<std::size_t D>
 void
@@ -219,16 +223,11 @@ void
 {
   if(reflector_walls_.empty()) return;
 
-  // check if any wall is relevant for this tile
-  bool any_wall_in_tile = false;
-  for(const auto& wall: reflector_walls_) {
-    if(wall.walloc >= value_type(this->mins[0]) - value_type(this->cfl_) &&
-       wall.walloc <= value_type(this->maxs[0])) {
-      any_wall_in_tile = true;
-      break;
-    }
-  }
-  if(!any_wall_in_tile) return;
+  const auto wall_is_in_tile = [&](const reflector_wall& w) {
+    return w.walloc >= value_type(this->mins[0]) - value_type(this->cfl_)
+        && w.walloc <= value_type(this->maxs[0]);
+  };
+  if(std::ranges::none_of(reflector_walls_, wall_is_in_tile)) return;
 
   // allocate and zero the correction J grid
   reflector_correction_J_.emplace(this->yee_lattice_.extents_with_halo());
@@ -246,10 +245,7 @@ void
                  value_type(this->mins[2]) - this->halo_size };
 
   for(const auto& wall: reflector_walls_) {
-    if(wall.walloc < value_type(this->mins[0]) - value_type(this->cfl_) ||
-       wall.walloc > value_type(this->maxs[0])) {
-      continue;
-    }
+    if(!wall_is_in_tile(wall)) continue;
 
     for(auto& [_, pbuff]: particle_buffs_) {
       pbuff.reflect_at_wall(wall, reflector_correction_J_.value(), origo_pos, this->cfl_);
@@ -261,6 +257,7 @@ template<std::size_t D>
 void
   Tile<D>::reflector_wall_field_bc()
 {
+
   if(reflector_walls_.empty()) return;
 
   const auto nx = this->yee_lattice_.extents_with_halo()[0];
@@ -268,13 +265,15 @@ void
   for(const auto& wall: reflector_walls_) {
     if(wall.walloc >= value_type(this->maxs[0])) continue;
 
-    // wall location in lattice coordinates (including halo offset)
-    const auto iw = static_cast<int>(wall.walloc - value_type(this->mins[0])) +
-                    this->halo_size;
-    const auto iw_clamped = static_cast<runko::size_t>(std::max(iw, 0));
+    // convert global wall location to lattice-local index (with halo offset)
+    const auto wall_idx =
+      static_cast<int>(wall.walloc - value_type(this->mins[0])) +
+      this->halo_size;
+    const auto wall_idx_clamped =
+      static_cast<runko::size_t>(std::max(wall_idx, 0));
 
-    if(iw_clamped < nx) {
-      this->yee_lattice_.zero_transverse_E_behind_x(iw_clamped);
+    if(wall_idx_clamped < nx) {
+      this->yee_lattice_.zero_transverse_E_behind_x(wall_idx_clamped);
     }
   }
 }
