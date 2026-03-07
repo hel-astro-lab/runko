@@ -3,6 +3,7 @@
 #include "core/emf/yee_lattice.h"
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
+#include "core/pic/reflector_wall.h"
 #include "thrust/device_vector.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
@@ -146,6 +147,18 @@ public:
     const std::array<value_type, 3> lattice_origo_coordinates,
     const value_type cfl) const;
 
+
+  /// Reflect particles crossing a wall and deposit correction currents.
+  ///
+  /// Particles with global x-position behind walloc are reflected.
+  /// Correction currents (both +q and -q zigzag deposits) are atomically
+  /// added to correction_J so that the net current behind the wall is zero
+  /// after the normal deposit_current() call.
+  void reflect_at_wall(
+    const reflector_wall& wall,
+    runko::VecGrid<emf::YeeLattice::value_type>& correction_J,
+    const std::array<value_type, 3> lattice_origo_coordinates,
+    value_type cfl);
 
   /// Returns total kinetic energy of particless.
   ///

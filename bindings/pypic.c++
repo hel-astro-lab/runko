@@ -1,4 +1,5 @@
 #include "core/particles_common.h"
+#include "core/pic/reflector_wall.h"
 #include "core/pic/tile.h"
 #include "io/pic_average_kinetic_energy.h"
 #include "pybind11/functional.h"
@@ -73,6 +74,20 @@ void
     .def_readwrite("pos", &PSB::pos)
     .def_readwrite("vel", &PSB::vel);
 
+  // reflector wall data structure
+  using RW = pic::reflector_wall;
+  py::class_<RW>(m_3d, "reflector_wall")
+    .def(
+      py::init([](RW::value_type walloc, RW::value_type betawall, RW::value_type gammawall) {
+        return RW { walloc, betawall, gammawall };
+      }),
+      py::arg("walloc"),
+      py::arg("betawall")  = RW::value_type { 0 },
+      py::arg("gammawall") = RW::value_type { 1 })
+    .def_readwrite("walloc", &RW::walloc)
+    .def_readwrite("betawall", &RW::betawall)
+    .def_readwrite("gammawall", &RW::gammawall);
+
   // 3d pic tile
   py::class_<
     pic::Tile<3>,
@@ -100,7 +115,11 @@ void
     .def("batch_inject_to_cells", &pic::Tile<3>::batch_inject_to_cells)
     .def("push_particles", &pic::Tile<3>::push_particles)
     .def("deposit_current", &pic::Tile<3>::deposit_current)
-    .def("sort_particles", &pic::Tile<3>::sort_particles);
+    .def("sort_particles", &pic::Tile<3>::sort_particles)
+    .def("register_reflector_wall", &pic::Tile<3>::register_reflector_wall)
+    .def("reflect_particles", &pic::Tile<3>::reflect_particles)
+    .def("reflector_wall_field_bc", &pic::Tile<3>::reflector_wall_field_bc)
+    .def("advance_reflector_walls", &pic::Tile<3>::advance_reflector_walls);
 
 
   m_3d.def("_write_average_kinetic_energy", &pic::write_average_kinetic_energy);

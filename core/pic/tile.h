@@ -4,6 +4,7 @@
 #include "core/emf/tile.h"
 #include "core/particles_common.h"
 #include "core/pic/particle.h"
+#include "core/pic/reflector_wall.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
 #include "pybind11/numpy.h"
@@ -15,6 +16,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <type_traits>
@@ -50,6 +52,9 @@ class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
   ParticlePusher particle_pusher_;
   FieldInterpolator field_interpolator_;
   CurrentDepositer current_depositer_;
+
+  std::vector<pic::reflector_wall> reflector_walls_ {};
+  std::optional<runko::VecGrid<emf::YeeLattice::value_type>> reflector_correction_J_ {};
   std::map<runko::size_t, runko::size_t> amount_of_particles_to_be_send_;
   std::map<runko::size_t, runko::size_t> amount_of_particles_to_be_received_;
 
@@ -132,6 +137,25 @@ public:
 
   /// Sorts the particles in order to reduce cache misses.
   void sort_particles();
+
+  /// Register a reflector wall on this tile.
+  void register_reflector_wall(pic::reflector_wall wall);
+
+  /// Reflect particles that crossed any registered reflector wall.
+  ///
+  /// Must be called after push_particles() and before deposit_current().
+  /// Modifies particle positions/velocities for reflected particles
+  /// and stores correction currents that deposit_current() will add.
+  void reflect_particles();
+
+  /// Apply conducting boundary condition behind all registered reflector walls.
+  ///
+  /// Sets E_y = E_z = 0 at and behind each wall.
+  /// Should be called after push_e() / add_current().
+  void reflector_wall_field_bc();
+
+  /// Update reflector wall locations by their velocity * cfl.
+  void advance_reflector_walls();
 
   runko::size_t number_of_species() const;
 

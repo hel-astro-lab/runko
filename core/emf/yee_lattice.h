@@ -245,6 +245,12 @@ public:
     std::array<value_type, 3> lattice_origo_coordinates,
     const runko::VecList<value_type>& coordinates) const;
 
+  /// Zero E_y and E_z for all lattice points where the x-index is <= ix_wall.
+  ///
+  /// ix_wall is in full lattice coordinates (i.e., including halo offset).
+  /// Implements the conducting boundary condition behind a reflector wall.
+  void zero_transverse_E_behind_x(runko::size_t ix_wall);
+
   /// Set J = 0 everywhere including in halo.
   void clear_current();
 
