@@ -109,6 +109,13 @@ inline void zigzag_deposit_single(
 }
 
 
+/// Reflect particles behind the wall and deposit correction currents.
+///
+/// For each particle behind the wall: unwind to pre-push position, find the
+/// collision point, reflect ux (relativistic Lorentz boost for moving walls),
+/// and advance to the reflected position. Dual correction currents (+q real
+/// path, -q cancellation) are deposited into correction_J so that no net
+/// current remains behind the wall after the normal deposit pass.
 void
   ParticleContainer::reflect_at_wall(
     const reflector_wall& wall,
@@ -210,6 +217,7 @@ void
 }
 
 
+/// Register a reflector wall with this tile.
 template<std::size_t D>
 void
   Tile<D>::register_reflector_wall(pic::reflector_wall wall)
@@ -217,6 +225,11 @@ void
   reflector_walls_.push_back(wall);
 }
 
+/// Reflect particles at all registered walls that overlap this tile.
+///
+/// Allocates a temporary correction-J grid, calls reflect_at_wall for every
+/// particle species, then the correction is added to the tile's Yee lattice
+/// current during the deposit phase.
 template<std::size_t D>
 void
   Tile<D>::reflect_particles()
@@ -253,6 +266,8 @@ void
   }
 }
 
+/// Apply conducting-wall field BC: zero E_y and E_z behind each wall to
+/// enforce the ideal-conductor constraint.
 template<std::size_t D>
 void
   Tile<D>::reflector_wall_field_bc()
@@ -278,6 +293,7 @@ void
   }
 }
 
+/// Advance all wall positions by betawall * cfl each timestep.
 template<std::size_t D>
 void
   Tile<D>::advance_reflector_walls()
