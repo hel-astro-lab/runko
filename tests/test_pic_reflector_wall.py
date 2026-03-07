@@ -167,5 +167,114 @@ class pic_reflector_wall(unittest.TestCase):
         self.assertAlmostEqual(vel_x[0], 0.0, places=5)
 
 
+    def test_particle_in_front_of_wall_unchanged(self):
+        _, tile = make_reflector_tile()
+
+        wall = runko.pic.threeD.reflector_wall(walloc=5.0)
+        tile.register_reflector_wall(wall)
+
+        tile.set_EBJ(zero, zero, zero)
+
+        # particle well in front of the wall, moving away
+        P = runko.pic.threeD.ParticleState
+        tile.inject(0, [P(pos=(7.0, 5.5, 6.5), vel=(0.5, 0.2, -0.1))])
+
+        tile.push_particles()
+
+        # record post-push state
+        px_pre, py_pre, pz_pre = tile.get_positions(0)
+        vx_pre, vy_pre, vz_pre = tile.get_velocities(0)
+
+        tile.reflect_particles()
+
+        px, py, pz = tile.get_positions(0)
+        vx, vy, vz = tile.get_velocities(0)
+
+        # position and velocity must be untouched by reflect
+        self.assertAlmostEqual(px[0], px_pre[0], places=5)
+        self.assertAlmostEqual(py[0], py_pre[0], places=5)
+        self.assertAlmostEqual(pz[0], pz_pre[0], places=5)
+        self.assertAlmostEqual(vx[0], vx_pre[0], places=5)
+        self.assertAlmostEqual(vy[0], vy_pre[0], places=5)
+        self.assertAlmostEqual(vz[0], vz_pre[0], places=5)
+
+
+    def test_moving_wall_reflects_ux(self):
+        _, tile = make_reflector_tile()
+
+        betawall = 0.5
+        gammawall = 1.0 / np.sqrt(1.0 - betawall**2)
+        wall = runko.pic.threeD.reflector_wall(
+            walloc=5.0, betawall=betawall, gammawall=gammawall)
+        tile.register_reflector_wall(wall)
+
+        tile.set_EBJ(zero, zero, zero)
+
+        # particle near the wall, moving toward it
+        P = runko.pic.threeD.ParticleState
+        ux0 = -0.8
+        tile.inject(0, [P(pos=(5.5, 5.5, 6.5), vel=(ux0, 0.0, 0.0))])
+
+        tile.push_particles()
+        tile.reflect_particles()
+
+        vx, vy, vz = tile.get_velocities(0)
+        px, _, _ = tile.get_positions(0)
+
+        # ux_new = gammawall^2 * gam * (2*beta - ux/gam * (1 + beta^2))
+        gam = np.sqrt(1.0 + ux0**2)
+        ux_expected = gammawall**2 * gam * (
+            2.0 * betawall - ux0 / gam * (1.0 + betawall**2))
+
+        self.assertAlmostEqual(vx[0], ux_expected, places=3)
+
+        # particle must be in front of the wall
+        self.assertGreater(px[0], 5.0)
+
+        # transverse velocity unchanged
+        self.assertAlmostEqual(vy[0], 0.0, places=5)
+        self.assertAlmostEqual(vz[0], 0.0, places=5)
+
+
+    def test_mixed_particles_reflect_park_skip(self):
+        _, tile = make_reflector_tile()
+
+        wall = runko.pic.threeD.reflector_wall(walloc=5.0)
+        tile.register_reflector_wall(wall)
+
+        tile.set_EBJ(zero, zero, zero)
+
+        P = runko.pic.threeD.ParticleState
+        tile.inject(0, [
+            # particle 0: well in front of wall (skip)
+            P(pos=(7.0, 5.5, 6.5), vel=(0.5, 0.0, 0.0)),
+            # particle 1: close behind wall, genuine crossing (reflect)
+            P(pos=(5.5, 5.5, 6.5), vel=(-1.0, 0.0, 0.0)),
+            # particle 2: far behind wall, artifact (park)
+            P(pos=(2.0, 5.5, 6.5), vel=(-0.1, 0.0, 0.0)),
+        ])
+
+        tile.push_particles()
+        tile.reflect_particles()
+
+        px, _, _ = tile.get_positions(0)
+        vx, _, _ = tile.get_velocities(0)
+
+        self.assertEqual(3, len(px))
+
+        # particle 0 (skip): velocity unchanged, in front of wall
+        self.assertAlmostEqual(vx[0], 0.5, places=4)
+        self.assertGreater(px[0], 5.0)
+
+        # particle 1 (reflect): ux flipped, back in front of wall
+        self.assertGreater(vx[1], 0)
+        self.assertAlmostEqual(abs(vx[1]), 1.0, places=4)
+        self.assertGreater(px[1], 5.0)
+
+        # particle 2 (park): parked at x=1.0, ux=0
+        self.assertAlmostEqual(px[2], 1.0, places=4)
+        self.assertAlmostEqual(vx[2], 0.0, places=5)
+
+
 if __name__ == "__main__":
     unittest.main()
