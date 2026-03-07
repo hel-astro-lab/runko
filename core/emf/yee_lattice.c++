@@ -268,6 +268,31 @@ void
 }
 
 void
+  YeeLattice::zero_transverse_E_behind_x(const std::size_t ix_wall)
+{
+  if(ix_wall == 0) return;
+
+  const auto [nx, ny, nz] = extents_with_halo();
+  const auto ix_end       = std::min(ix_wall + 1, nx);
+
+  const auto Emds   = E_.mds();
+  const auto region = std::submdspan(
+    Emds,
+    std::tuple { std::integral_constant<runko::index_t, 0> {}, ix_end },
+    std::tuple { std::integral_constant<runko::index_t, 0> {}, ny },
+    std::tuple { std::integral_constant<runko::index_t, 0> {}, nz });
+
+  tyvi::mdgrid_work {}
+    .for_each_index(
+      region,
+      [=](const auto idx) {
+        region[idx][1] = 0;  // E_y = 0
+        region[idx][2] = 0;  // E_z = 0
+      })
+    .wait();
+}
+
+void
   YeeLattice::clear_current()
 {
   const tyvi::mdgrid_work w {};
