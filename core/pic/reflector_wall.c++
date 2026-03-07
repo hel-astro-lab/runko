@@ -28,7 +28,7 @@ namespace pic {
 /// x1 and x2 are in lattice-local coordinates (relative to lattice origin).
 /// Mirrors the atomic variant in particle_current_zigzag_1st.c++:276-329.
 template<typename Jmds_t>
-inline void zigzag_deposit_single(
+__attribute__((always_inline)) inline void zigzag_deposit_single(
   const Jmds_t Jmds,
   const Vec3 x1,
   const Vec3 x2,
@@ -39,11 +39,11 @@ inline void zigzag_deposit_single(
   const auto fi2 = Vec3(
     sstd::floor(x2(0)), sstd::floor(x2(1)), sstd::floor(x2(2)));
 
-  const auto relay = [&](const runko::size_t j) -> value_type {
+  // Relay point: branchless min/max (no lambda return → SIMD-safe)
+  const auto relay = [&](const uint32_t j) {
     const auto a  = sstd::min(fi1(j), fi2(j)) + value_type { 1 };
-    const auto b1 = sstd::max(fi1(j), fi2(j));
-    const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
-    const auto b  = sstd::max(b1, b2);
+    const auto b  = sstd::max(sstd::max(fi1(j), fi2(j)),
+                              value_type { 0.5 } * (x1(j) + x2(j)));
     return sstd::min(a, b);
   };
 
@@ -75,29 +75,29 @@ inline void zigzag_deposit_single(
   };
 
   // clang-format off
-  store_current(i1,                   Vec3(Fx1*(1 - Wy1)*(1 - Wz1),
-                                           Fy1*(1 - Wx1)*(1 - Wz1),
-                                           Fz1*(1 - Wx1)*(1 - Wy1)));
-  store_current(i2,                   Vec3(Fx2*(1 - Wy2)*(1 - Wz2),
-                                           Fy2*(1 - Wx2)*(1 - Wz2),
-                                           Fz2*(1 - Wx2)*(1 - Wy2)));
+  store_current(i1,                   Vec3(Fx1*(1.0f - Wy1)*(1.0f - Wz1),
+                                           Fy1*(1.0f - Wx1)*(1.0f - Wz1),
+                                           Fz1*(1.0f - Wx1)*(1.0f - Wy1)));
+  store_current(i2,                   Vec3(Fx2*(1.0f - Wy2)*(1.0f - Wz2),
+                                           Fy2*(1.0f - Wx2)*(1.0f - Wz2),
+                                           Fz2*(1.0f - Wx2)*(1.0f - Wy2)));
   store_current(i1 + Vec3uz(1, 0, 0), Vec3(0,
-                                           Fy1*Wx1*(1 - Wz1),
-                                           Fz1*Wx1*(1 - Wy1)));
+                                           Fy1*Wx1*(1.0f - Wz1),
+                                           Fz1*Wx1*(1.0f - Wy1)));
   store_current(i2 + Vec3uz(1, 0, 0), Vec3(0,
-                                           Fy2*Wx2*(1 - Wz2),
-                                           Fz2*Wx2*(1 - Wy2)));
-  store_current(i1 + Vec3uz(0, 1, 0), Vec3(Fx1*Wy1*(1 - Wz1),
+                                           Fy2*Wx2*(1.0f - Wz2),
+                                           Fz2*Wx2*(1.0f - Wy2)));
+  store_current(i1 + Vec3uz(0, 1, 0), Vec3(Fx1*Wy1*(1.0f - Wz1),
                                            0,
-                                           Fz1*(1 - Wx1)*Wy1));
-  store_current(i2 + Vec3uz(0, 1, 0), Vec3(Fx2*Wy2*(1 - Wz2),
+                                           Fz1*(1.0f - Wx1)*Wy1));
+  store_current(i2 + Vec3uz(0, 1, 0), Vec3(Fx2*Wy2*(1.0f - Wz2),
                                            0,
-                                           Fz2*(1 - Wx2)*Wy2));
-  store_current(i1 + Vec3uz(0, 0, 1), Vec3(Fx1*(1 - Wy1)*Wz1,
-                                           Fy1*(1 - Wx1)*Wz1,
+                                           Fz2*(1.0f - Wx2)*Wy2));
+  store_current(i1 + Vec3uz(0, 0, 1), Vec3(Fx1*(1.0f - Wy1)*Wz1,
+                                           Fy1*(1.0f - Wx1)*Wz1,
                                            0));
-  store_current(i2 + Vec3uz(0, 0, 1), Vec3(Fx2*(1 - Wy2)*Wz2,
-                                           Fy2*(1 - Wx2)*Wz2,
+  store_current(i2 + Vec3uz(0, 0, 1), Vec3(Fx2*(1.0f - Wy2)*Wz2,
+                                           Fy2*(1.0f - Wx2)*Wz2,
                                            0));
   store_current(i1 + Vec3uz(0, 1, 1), Vec3(Fx1*Wy1*Wz1, 0, 0));
   store_current(i2 + Vec3uz(0, 1, 1), Vec3(Fx2*Wy2*Wz2, 0, 0));
@@ -142,76 +142,99 @@ void
     .for_each_index(
       pos_mds,
       [=](const auto idx) {
+        // Branchless reflector wall: all particles execute the full
+        // computation; float masks zero out effects for non-affected particles.
+        //
         // Position convention:
         //   pos_1    = current post-push position (may be behind wall)
         //   pos_0    = unwound pre-push position (start of timestep)
         //   pos_col  = wall collision point
         //   pos_refl = final reflected position (in front of wall)
         const Vec3 pos_1 = Vec3(pos_mds[idx]);
-
-        // skip particles in front of the wall
-        if(pos_1(0) >= walloc) return;
-
-        const Vec3 u   = Vec3(vel_mds[idx]);
-        const value_type gam = sstd::sqrt(1.0f + toolbox::dot(u, u));
+        const Vec3 u     = Vec3(vel_mds[idx]);
+        const value_type gam    = sstd::sqrt(1.0f + toolbox::dot(u, u));
+        const value_type invgam = 1.0f / gam;
 
         // unwind position one timestep backwards
-        const Vec3 pos_0 = pos_1 - c*u/gam;
+        const Vec3 pos_0 = pos_1 - c * invgam * u;
 
-        // park artifact particle near domain start with zero x-velocity
-        const auto park = [&] {
-          pos_mds[idx][0] = 1.0f;
-          vel_mds[idx][0] = 0;
-        };
+        // --- masks (0.0f or 1.0f) ---
+        // mask_skip: particle is in front of wall (no action needed)
+        const value_type mask_skip =
+          (pos_1(0) >= walloc) ? 1.0f : 0.0f;
 
-        // reject artifacts: particle was already far behind the wall
-        if(walloc0 - pos_0(0) > c) { park(); return; }
+        // close_enough: pre-push position was within c of the wall
+        const value_type close_enough =
+          (walloc0 - pos_0(0) <= c) ? 1.0f : 0.0f;
 
         // time fraction to wall crossing
-        const value_type denom = betawall * c - c * u(0)/gam;
-        const value_type dt    = sstd::abs((pos_0(0) - walloc0) / (denom + EPS));
+        const value_type denom = betawall * c - c * u(0) * invgam;
+        const value_type dt =
+          sstd::abs((pos_0(0) - walloc0) / (denom + EPS));
 
-        // particle did not genuinely cross the wall this timestep
-        if(dt > 1.0f) { park(); return; }
+        // crossed: particle genuinely crossed the wall this timestep
+        const value_type crossed = (dt <= 1.0f) ? 1.0f : 0.0f;
+
+        // composite masks (mutually exclusive, sum to 1)
+        const value_type mask_refl =
+          (1.0f - mask_skip) * close_enough * crossed;
+        const value_type mask_park =
+          (1.0f - mask_skip) - mask_refl;
 
         // collision point (3D)
-        const Vec3 pos_col = pos_0 + c*dt*u/gam;
+        const Vec3 pos_col = pos_0 + c * dt * invgam * u;
 
-        // dual deposit: +q from pos_0 to pos_col records real current before
-        // reflection; -q from unwound-reflected-pos to pos_col (below) cancels
-        // the spurious behind-wall current that normal deposit will add.
-        zigzag_deposit_single(Jmds, pos_0 - origo, pos_col - origo, charge);
-
-        // reflect x-velocity
-        // stationary: ux' = -ux
-        // moving:     ux' = gammawall^2 * gam * (2*beta - ux/gam * (1 + beta^2))
+        // reflect x-velocity (general Lorentz boost; reduces to -ux when
+        // betawall=0, gammawall=1)
         const value_type ux_new =
-          (betawall == 0 && gammawall == 1.0f)
-            ? -u(0)
-            : gammawall * gammawall * gam * (2.0f * betawall -
-                 u(0) / gam * (1.0f + betawall * betawall));
+          gammawall * gammawall * gam *
+          (2.0f * betawall - u(0) * invgam * (1.0f + betawall * betawall));
 
         const Vec3 u_new(ux_new, u(1), u(2));
-        const value_type gam_new    = sstd::sqrt(1.0f + toolbox::dot(u_new, u_new));
+        const value_type gam_new =
+          sstd::sqrt(1.0f + toolbox::dot(u_new, u_new));
         const value_type invgam_new = 1.0f / gam_new;
 
         // reflected time fraction: remaining portion after collision
-        const value_type dt_refl =
-          sstd::min(1.0f,
-                    sstd::abs((pos_1(0) - pos_col(0)) / (pos_1(0) - pos_0(0) + EPS)));
+        const value_type dt_refl = sstd::min(
+          1.0f,
+          sstd::abs(
+            (pos_1(0) - pos_col(0)) / (pos_1(0) - pos_0(0) + EPS)));
 
         // new position after reflection
         const Vec3 pos_refl = pos_col + c * dt_refl * invgam_new * u_new;
 
-        // deposit -q current to cancel behind-wall current that normal deposit will add
-        // normal deposit unwinds from pos_refl: x1_deposit = pos_refl - c * u_new / gam_new
-        const Vec3 x1_deposit = pos_refl - c * invgam_new * u_new;
-        zigzag_deposit_single(Jmds, x1_deposit - origo, pos_col - origo, -charge);
+        // --- safe current deposits with coordinate blending ---
+        // For non-reflected particles, pos_col may be out-of-bounds.
+        // Blend coordinates so non-reflected particles use p1l (always
+        // valid in-tile), and zero the charge to produce no current.
+        const Vec3 p1l = pos_1 - origo;
 
-        // update all 3 dimensions: y/z also change because reflected trajectory
-        // uses the new velocity over the remaining time fraction
-        for(auto i = 0u; i < 3u; ++i) { pos_mds[idx][i] = pos_refl(i); }
-        vel_mds[idx][0] = ux_new;
+        // +q deposit: real current from pos_0 to pos_col
+        const Vec3 dep_fwd_from = p1l + mask_refl * (pos_0 - pos_1);
+        const Vec3 dep_fwd_to   = p1l + mask_refl * (pos_col - pos_1);
+        zigzag_deposit_single(
+          Jmds, dep_fwd_from, dep_fwd_to, mask_refl * charge);
+
+        // -q deposit: cancel behind-wall current
+        const Vec3 x1_deposit = pos_refl - c * invgam_new * u_new;
+        const Vec3 dep_rev_from = p1l + mask_refl * (x1_deposit - pos_1);
+        const Vec3 dep_rev_to   = p1l + mask_refl * (pos_col - pos_1);
+        zigzag_deposit_single(
+          Jmds, dep_rev_from, dep_rev_to, mask_refl * (-charge));
+
+        // --- final blending ---
+        // x-position: 3-way blend
+        pos_mds[idx][0] = mask_skip * pos_1(0)
+                        + mask_park * 1.0f
+                        + mask_refl * pos_refl(0);
+        // y,z-position: only reflected particles change
+        pos_mds[idx][1] = (1.0f - mask_refl) * pos_1(1)
+                        + mask_refl * pos_refl(1);
+        pos_mds[idx][2] = (1.0f - mask_refl) * pos_1(2)
+                        + mask_refl * pos_refl(2);
+        // x-velocity: skip keeps original, park zeroes, reflect sets ux_new
+        vel_mds[idx][0] = mask_skip * u(0) + mask_refl * ux_new;
       })
     .wait();
 }
