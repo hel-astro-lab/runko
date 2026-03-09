@@ -6,7 +6,6 @@ Run with: mpirun -np 4 python test_mpiio_fields.py
 
 import mpi_unittest
 
-import os
 import shutil
 import tempfile
 import numpy as np
@@ -15,32 +14,12 @@ from mpi4py import MPI
 
 import runko
 from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter
+from tests.mpiio_test_helpers import FIELD_NAMES, make_config, find_output_file
+from pytools.mpiio_reader import read_header, read_field_snapshot
 
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
-
-
-HEADER_SIZE = 256
-FIELD_NAMES = ["ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz", "rho"]
-
-
-def read_raw(path):
-    """Read a binary MPI-IO field snapshot and return header info + field arrays."""
-
-    with open(path, "rb") as f:
-        hdr = f.read(HEADER_SIZE)
-
-    dims = np.frombuffer(hdr[16:28], dtype=np.int32)
-    nx, ny, nz = int(dims[0]), int(dims[1]), int(dims[2])
-
-    data = np.fromfile(path, dtype=np.float32, offset=HEADER_SIZE)
-    field_size = nx * ny * nz
-    fields = {}
-    for i, name in enumerate(FIELD_NAMES):
-        fields[name] = data[i * field_size : (i + 1) * field_size].reshape(nz, ny, nx)
-
-    return nx, ny, nz, fields
 
 
 def broadcast_outdir():
@@ -60,14 +39,6 @@ def cleanup_outdir(outdir):
         shutil.rmtree(outdir, ignore_errors=True)
 
 
-def find_output_file(outdir):
-    """Return the path to the first output file in outdir."""
-
-    files = [f for f in os.listdir(outdir) if os.path.isfile(os.path.join(outdir, f))]
-    assert len(files) > 0, "No output file was created by MpiioFieldsWriter.write()"
-    return os.path.join(outdir, files[0])
-
-
 # ---------------------------------------------------------------------------
 # Test 1: constant fields across all tiles on 4 ranks
 # ---------------------------------------------------------------------------
@@ -77,16 +48,8 @@ def test_multirank_constant_fields():
     After writing, rank 0 reads the file and verifies all field values."""
 
     outdir = broadcast_outdir()
-
-    config = runko.Configuration(None)
-    config.tile_partitioning = "hilbert_curve"
-    config.Nt = 1
-    config.Nx = 2; config.Ny = 2; config.Nz = 2
-    config.NxMesh = 8; config.NyMesh = 8; config.NzMesh = 8
-    config.xmin = 0; config.ymin = 0; config.zmin = 0
-    config.cfl = 1
-    config.field_propagator = "FDTD2"
-    config.outdir = outdir
+    config = make_config(Nx=2, Ny=2, Nz=2, outdir=outdir,
+                         tile_partitioning="hilbert_curve")
 
     tile_grid = runko.TileGrid(config)
 
@@ -99,19 +62,19 @@ def test_multirank_constant_fields():
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
-    simulation = tile_grid.configure_simulation(config)
+    _ = tile_grid.configure_simulation(config)
 
     writer = MpiioFieldsWriter(outdir, 2, 8, 2, 8, 2, 8, 1)
     writer.write(tile_grid._corgi_grid, 0)
 
-    # Only rank 0 reads and verifies the file
     if rank == 0:
         path = find_output_file(outdir)
-        nx, ny, nz, fields = read_raw(path)
+        hdr = read_header(path)
+        fields = read_field_snapshot(path)
 
-        assert nx == 16, f"Expected nx=16, got {nx}"
-        assert ny == 16, f"Expected ny=16, got {ny}"
-        assert nz == 16, f"Expected nz=16, got {nz}"
+        assert hdr["nx"] == 16, f"Expected nx=16, got {hdr['nx']}"
+        assert hdr["ny"] == 16, f"Expected ny=16, got {hdr['ny']}"
+        assert hdr["nz"] == 16, f"Expected nz=16, got {hdr['nz']}"
 
         np.testing.assert_allclose(fields["ex"], 1.0, atol=1e-5)
         np.testing.assert_allclose(fields["ey"], 2.0, atol=1e-5)
@@ -124,7 +87,6 @@ def test_multirank_constant_fields():
         np.testing.assert_allclose(fields["jz"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["rho"], 0.0, atol=1e-5)
 
-    # Synchronize so all ranks agree the test passed before cleanup
     comm.Barrier()
     mpi_unittest.assertEqual(True, True)
 
@@ -143,16 +105,8 @@ def test_multirank_tile_placement():
     has the correct encoded value."""
 
     outdir = broadcast_outdir()
-
-    config = runko.Configuration(None)
-    config.tile_partitioning = "hilbert_curve"
-    config.Nt = 1
-    config.Nx = 2; config.Ny = 2; config.Nz = 2
-    config.NxMesh = 8; config.NyMesh = 8; config.NzMesh = 8
-    config.xmin = 0; config.ymin = 0; config.zmin = 0
-    config.cfl = 1
-    config.field_propagator = "FDTD2"
-    config.outdir = outdir
+    config = make_config(Nx=2, Ny=2, Nz=2, outdir=outdir,
+                         tile_partitioning="hilbert_curve")
 
     tile_grid = runko.TileGrid(config)
 
@@ -166,18 +120,19 @@ def test_multirank_tile_placement():
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
-    simulation = tile_grid.configure_simulation(config)
+    _ = tile_grid.configure_simulation(config)
 
     writer = MpiioFieldsWriter(outdir, 2, 8, 2, 8, 2, 8, 1)
     writer.write(tile_grid._corgi_grid, 0)
 
     if rank == 0:
         path = find_output_file(outdir)
-        nx, ny, nz, fields = read_raw(path)
+        hdr = read_header(path)
+        fields = read_field_snapshot(path)
 
-        assert nx == 16, f"Expected nx=16, got {nx}"
-        assert ny == 16, f"Expected ny=16, got {ny}"
-        assert nz == 16, f"Expected nz=16, got {nz}"
+        assert hdr["nx"] == 16, f"Expected nx=16, got {hdr['nx']}"
+        assert hdr["ny"] == 16, f"Expected ny=16, got {hdr['ny']}"
+        assert hdr["nz"] == 16, f"Expected nz=16, got {hdr['nz']}"
 
         ex = fields["ex"]  # shape: (nz, ny, nx) = (16, 16, 16)
 
@@ -210,16 +165,8 @@ def test_multirank_asymmetric_mesh():
     and field values are correct."""
 
     outdir = broadcast_outdir()
-
-    config = runko.Configuration(None)
-    config.tile_partitioning = "hilbert_curve"
-    config.Nt = 1
-    config.Nx = 2; config.Ny = 2; config.Nz = 2
-    config.NxMesh = 10; config.NyMesh = 11; config.NzMesh = 13
-    config.xmin = 0; config.ymin = 0; config.zmin = 0
-    config.cfl = 1
-    config.field_propagator = "FDTD2"
-    config.outdir = outdir
+    config = make_config(Nx=2, Ny=2, Nz=2, NxMesh=10, NyMesh=11, NzMesh=13,
+                         outdir=outdir, tile_partitioning="hilbert_curve")
 
     tile_grid = runko.TileGrid(config)
 
@@ -232,18 +179,19 @@ def test_multirank_asymmetric_mesh():
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
-    simulation = tile_grid.configure_simulation(config)
+    _ = tile_grid.configure_simulation(config)
 
     writer = MpiioFieldsWriter(outdir, 2, 10, 2, 11, 2, 13, 1)
     writer.write(tile_grid._corgi_grid, 0)
 
     if rank == 0:
         path = find_output_file(outdir)
-        nx, ny, nz, fields = read_raw(path)
+        hdr = read_header(path)
+        fields = read_field_snapshot(path)
 
-        assert nx == 20, f"Expected nx=20, got {nx}"
-        assert ny == 22, f"Expected ny=22, got {ny}"
-        assert nz == 26, f"Expected nz=26, got {nz}"
+        assert hdr["nx"] == 20, f"Expected nx=20, got {hdr['nx']}"
+        assert hdr["ny"] == 22, f"Expected ny=22, got {hdr['ny']}"
+        assert hdr["nz"] == 26, f"Expected nz=26, got {hdr['nz']}"
 
         for name in FIELD_NAMES:
             assert fields[name].shape == (26, 22, 20), \

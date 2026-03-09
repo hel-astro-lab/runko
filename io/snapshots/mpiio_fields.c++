@@ -9,6 +9,60 @@
 #include <string>
 
 
+//--------------------------------------------------
+// write_header (moved from mpiio_header.h)
+
+int mpiio::write_header(
+  MPI_File fh,
+  int32_t nx, int32_t ny, int32_t nz,
+  int32_t stride,
+  int32_t Nx, int32_t Ny, int32_t Nz,
+  int32_t NxMesh, int32_t NyMesh, int32_t NzMesh,
+  int32_t lap)
+{
+  char buf[256];
+  std::memset(buf, 0, sizeof(buf));
+
+  auto put32 = [&](int offset, uint32_t val) {
+    std::memcpy(buf + offset, &val, 4);
+  };
+
+  auto puti32 = [&](int offset, int32_t val) {
+    std::memcpy(buf + offset, &val, 4);
+  };
+
+  put32(0, magic);
+  put32(4, version);
+  put32(8, static_cast<uint32_t>(header_size));
+  put32(12, static_cast<uint32_t>(num_fields));
+
+  puti32(16, nx);
+  puti32(20, ny);
+  puti32(24, nz);
+  puti32(28, stride);
+  puti32(32, Nx);
+  puti32(36, Ny);
+  puti32(40, Nz);
+  puti32(44, NxMesh);
+  puti32(48, NyMesh);
+  puti32(52, NzMesh);
+  puti32(56, lap);
+  put32(60, 4);  // dtype_size = sizeof(float)
+
+  // Field names: 10 entries of 16 chars each, starting at offset 64
+  for (int f = 0; f < num_fields; f++) {
+    std::strncpy(buf + 64 + f * 16, field_names[f], 15);
+  }
+
+  // [224:256] already zeroed
+
+  MPI_Status status;
+  return MPI_File_write_at(fh, 0, buf, 256, MPI_BYTE, &status);
+}
+
+
+//--------------------------------------------------
+
 template<>
 mpiio::FieldsWriter<3>::FieldsWriter(
   const std::string& prefix,
@@ -63,33 +117,33 @@ void mpiio::FieldsWriter<3>::read_tile(emf::Tile<3>& tile)
           Bmds[is*stride_, js*stride_, ks*stride_][2];
       }
 
-  // J fields: volume-average over stride^3 cells
-  // Clear jx, jy, jz portions first
+  // J fields: volume-sum over stride^3 cells
   const int jx_off = 6 * tile_elems;
   const int jy_off = 7 * tile_elems;
   const int jz_off = 8 * tile_elems;
-  std::memset(tile_buf_.data() + jx_off, 0, 3 * tile_elems * sizeof(float));
 
   for (int ks = 0; ks < nzt_; ks++)
-    for (int kstride = 0; kstride < stride_; kstride++)
-      for (int js = 0; js < nyt_; js++)
-        for (int jstride = 0; jstride < stride_; jstride++)
-          for (int is = 0; is < nxt_; is++)
+    for (int js = 0; js < nyt_; js++)
+      for (int is = 0; is < nxt_; is++) {
+        float sjx = 0.0f, sjy = 0.0f, sjz = 0.0f;
+        for (int kstride = 0; kstride < stride_; kstride++)
+          for (int jstride = 0; jstride < stride_; jstride++)
             for (int istride = 0; istride < stride_; istride++) {
-              const int idx = ks*nyt_*nxt_ + js*nxt_ + is;
-              tile_buf_[jx_off + idx] +=
-                Jmds[is*stride_ + istride,
-                     js*stride_ + jstride,
-                     ks*stride_ + kstride][0];
-              tile_buf_[jy_off + idx] +=
-                Jmds[is*stride_ + istride,
-                     js*stride_ + jstride,
-                     ks*stride_ + kstride][1];
-              tile_buf_[jz_off + idx] +=
-                Jmds[is*stride_ + istride,
-                     js*stride_ + jstride,
-                     ks*stride_ + kstride][2];
+              sjx += Jmds[is*stride_ + istride,
+                          js*stride_ + jstride,
+                          ks*stride_ + kstride][0];
+              sjy += Jmds[is*stride_ + istride,
+                          js*stride_ + jstride,
+                          ks*stride_ + kstride][1];
+              sjz += Jmds[is*stride_ + istride,
+                          js*stride_ + jstride,
+                          ks*stride_ + kstride][2];
             }
+        const int idx = ks*nyt_*nxt_ + js*nxt_ + is;
+        tile_buf_[jx_off + idx] = sjx;
+        tile_buf_[jy_off + idx] = sjy;
+        tile_buf_[jz_off + idx] = sjz;
+      }
 
   // rho: write zeros (rho not in EBJ, will be added later)
   const int rho_off = 9 * tile_elems;
@@ -104,24 +158,26 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
     prefix_ + "/flds_" + std::to_string(lap) + ".bin";
 
   MPI_File fh;
-  MPI_File_open(
+  int rc = MPI_File_open(
     MPI_Comm(grid.comm), filename.c_str(),
     MPI_MODE_CREATE | MPI_MODE_WRONLY,
     MPI_INFO_NULL, &fh);
 
-  // Rank 0 writes the 256-byte header
+  if (rc != MPI_SUCCESS) return false;
+
+  // Rank 0 writes the 256-byte header.
+  // MPI_File_open is collective and synchronizing; no barrier needed
+  // since all data writes target non-overlapping offsets >= 256.
   if (grid.comm.rank() == 0) {
-    mpiio::write_header(
+    rc = mpiio::write_header(
       fh,
       nx_, ny_, nz_,
       stride_,
       Nx_, Ny_, Nz_,
       NxMesh_, NyMesh_, NzMesh_,
       lap);
+    if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
   }
-
-  // Ensure header is written before any rank writes field data
-  MPI_Barrier(MPI_Comm(grid.comm));
 
   const MPI_Offset hdr_size = mpiio::header_size;
   const MPI_Offset field_bytes =
@@ -153,17 +209,18 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
             f * tile_elems + ks*nyt_*nxt_ + js*nxt_;
 
           MPI_Status status;
-          MPI_File_write_at(
+          rc = MPI_File_write_at(
             fh, file_offset,
             tile_buf_.data() + buf_offset,
             nxt_, MPI_FLOAT, &status);
+          if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
         }
       }
     }
   }
 
-  MPI_File_close(&fh);
-  return true;
+  rc = MPI_File_close(&fh);
+  return rc == MPI_SUCCESS;
 }
 
 
