@@ -9,10 +9,9 @@ from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 import logging
 import time
 import numpy as np
-import subprocess
 import pathlib
-import os
 from mpi4py import MPI
+from .ram_usage import get_rss_kB
 
 
 class Simulation:
@@ -43,6 +42,8 @@ class Simulation:
 
         self._lap_timers = []
         self._lap_wall_times = []
+
+        self.verbose_laps = kwargs.get('verbose_laps', True)
 
         self._logger = runko_logger("Simulation")
 
@@ -114,11 +115,16 @@ class Simulation:
         return self._lap
 
 
-    def write_mem_usage(self):
-        # https://stackoverflow.com/a/13754307
-        system_mem = f"awk '/^Pss:/ {{pss+=$2}} END {{print {self.lap} \",\" pss}}' < /proc/{os.getpid()}/smaps >> {self._ram_file}"
+    # Original Linux-only implementation (requires /proc/{pid}/smaps):
+    # def write_mem_usage(self):
+    #     import subprocess, os
+    #     system_mem = f"awk '/^Pss:/ {{pss+=$2}} END {{print {self.lap} \",\" pss}}' < /proc/{os.getpid()}/smaps >> {self._ram_file}"
+    #     subprocess.run(system_mem, shell=True)
 
-        subprocess.run(system_mem, shell=True)
+    def _write_ram_usage(self):
+        """Append current RAM usage (RSS in kB) for this lap to the per-rank CSV."""
+        with open(self._ram_file, "a") as f:
+            f.write(f"{self.lap},{get_rss_kB()}\n")
 
 
     def _execute_lap_function(self, lap_function, disable_timing=False):
@@ -180,6 +186,8 @@ class Simulation:
                         _write_average_E_energy_density(self.lap,
                                                         self._io_config["average_E_energy_density_path"],
                                                         self._tile_grid._corgi_grid)
+                    case "ram_usage":
+                        self._write_ram_usage()
                     case _:
                         raise AttributeError(f"{method} is not supported IO type.")
 
@@ -240,7 +248,8 @@ class Simulation:
         Advance simulation by one lap using given lap functions.
         """
 
-        self._logger.info(f"Executing lap: {self.lap}")
+        if self.verbose_laps:
+            self._logger.info(f"Executing lap: {self.lap}")
 
         self._execute_lap_function(lap_function)
         self._lap += 1

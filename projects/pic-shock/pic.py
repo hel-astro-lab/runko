@@ -152,6 +152,7 @@ if __name__ == "__main__":
     # confure and start simulation
 
     simulation = tile_grid.configure_simulation(conf)
+    simulation.verbose_laps = False
 
     def sync_EB(x):
         EB = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
@@ -220,6 +221,7 @@ if __name__ == "__main__":
         x.io_average_kinetic_energy()
         x.io_average_B_energy_density()
         x.io_average_E_energy_density()
+        x.io_ram_usage()
 
         if simulation.lap % 20 == 0:
             x.io_emf_snapshot()
