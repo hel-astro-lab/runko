@@ -6,6 +6,7 @@ import pycorgi.threeD as pycorgi
 from .simulation import Simulation
 from .runko_logging import runko_logger
 from .balance_grid import balance_mpi, load_catepillar_track_mpi
+from .auto_outdir import resolve_outdir
 
 
 class TileGrid:
@@ -180,7 +181,7 @@ class TileGrid:
 
         self._logger.info(f"simulation configured with: {config.__dict__}")
         io_config = dict(stride=1 if not config.stride else config.stride,
-                         outdir="runko_output" if not config.outdir else config.outdir)
+                         outdir=resolve_outdir(config))
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
