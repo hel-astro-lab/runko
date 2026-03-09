@@ -22,6 +22,10 @@ static constexpr auto vec_element =
 using list_extents = std::dextents<index_t, 1>;
 using grid_extents = std::dextents<index_t, 3>;
 
+template<typename T>
+static constexpr auto io_field_element =
+  tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 10 };
+
 }  // namespace detail
 
 template<typename T>
@@ -35,5 +39,8 @@ using ScalarList = tyvi::mdgrid<detail::scalar_element<T>, detail::list_extents>
 
 template<typename T>
 using VecList = tyvi::mdgrid<detail::vec_element<T>, detail::list_extents>;
+
+template<typename T>
+using IOFieldGrid = tyvi::mdgrid<detail::io_field_element<T>, detail::grid_extents>;
 
 }  // namespace runko
