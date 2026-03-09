@@ -3,7 +3,7 @@ from .runko_logging import runko_logger
 from .runko_timer import Timer, timer_statistics
 
 from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
-from runko_cpp_bindings.emf.threeD import FieldsWriter, _write_average_B_energy_density, _write_average_E_energy_density
+from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter as FieldsWriter, _write_average_B_energy_density, _write_average_E_energy_density
 from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 
 import logging
