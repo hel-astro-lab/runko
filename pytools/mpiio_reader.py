@@ -9,6 +9,7 @@ Bytes 0-255   : header (see read_header for field definitions)
 Bytes 256+    : 10 contiguous (nz, ny, nx) float32 arrays in C-order
 """
 
+import os
 import struct
 from pathlib import Path
 
@@ -24,12 +25,12 @@ FORMAT_VERSION = 1
 
 # -- public API ---------------------------------------------------------------
 
-def read_header(path: str) -> dict:
+def read_header(path: str | os.PathLike) -> dict:
     """Parse the 256-byte header of an MPI-IO snapshot file.
 
     Parameters
     ----------
-    path : str
+    path : str | os.PathLike
         Path to the binary snapshot file.
 
     Returns
@@ -42,22 +43,36 @@ def read_header(path: str) -> dict:
     Raises
     ------
     ValueError
-        If the magic number does not match 0x524E4B4F.
+        If the magic number or format version does not match.
     """
     raw = Path(path).read_bytes()[:HEADER_SIZE]
 
-    # fixed scalar fields  (16 uint/int32 values = 64 bytes)
+    # 16 x 32-bit values = 64 bytes:
+    #   I  magic       I  version     I  header_size  I  num_fields
+    #   i  nx          i  ny          i  nz           i  stride
+    #   i  Nx          i  Ny          i  Nz
+    #   i  NxMesh      i  NyMesh      i  NzMesh
+    #   i  lap         I  dtype_size
+    _hdr_fmt = "<IIIIiiiiiiiiiiII"
+    assert struct.calcsize(_hdr_fmt) == 64
+
     (
         magic, version, header_size, num_fields,
         nx, ny, nz, stride,
         Nx, Ny, Nz,
         NxMesh, NyMesh, NzMesh,
         lap, dtype_size,
-    ) = struct.unpack_from("<IIIIiiiiiiiiiiII", raw, 0)
+    ) = struct.unpack_from(_hdr_fmt, raw, 0)
 
     if magic != MAGIC:
         raise ValueError(
             f"Bad magic number: expected 0x{MAGIC:08X}, got 0x{magic:08X}"
+        )
+
+    if version != FORMAT_VERSION:
+        raise ValueError(
+            f"Unsupported format version: expected {FORMAT_VERSION}, "
+            f"got {version}"
         )
 
     # field names: 10 x 16-byte null-padded ASCII strings at offset 64
@@ -89,12 +104,12 @@ def read_header(path: str) -> dict:
     }
 
 
-def read_field_snapshot(path: str) -> dict[str, np.ndarray]:
+def read_field_snapshot(path: str | os.PathLike) -> dict[str, np.ndarray]:
     """Read all fields from an MPI-IO snapshot via memory mapping.
 
     Parameters
     ----------
-    path : str
+    path : str | os.PathLike
         Path to the binary snapshot file.
 
     Returns
@@ -122,12 +137,12 @@ def read_field_snapshot(path: str) -> dict[str, np.ndarray]:
     return fields
 
 
-def read_field(path: str, field_name: str) -> np.ndarray:
+def read_field(path: str | os.PathLike, field_name: str) -> np.ndarray:
     """Read a single named field without loading all fields.
 
     Parameters
     ----------
-    path : str
+    path : str | os.PathLike
         Path to the binary snapshot file.
     field_name : str
         Name of the field to read (must match a header field name).

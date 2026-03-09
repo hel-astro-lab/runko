@@ -41,8 +41,6 @@ private:
   int nxt_, nyt_, nzt_;  // per-tile output size after stride
   int nx_, ny_, nz_;     // global output size
 
-  static constexpr int num_fields = 10;
-
   /// Scratch buffer: [num_fields][nzt_][nyt_][nxt_] row-major
   std::vector<float> tile_buf_;
 
