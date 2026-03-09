@@ -8,7 +8,7 @@ class Configuration:
     Found items are usable as attributes of Configuration instance.
     """
 
-    _section_names = "io", "simulation", "grid", "problem", "particles"
+    _section_names = "io", "simulation", "grid", "problem", "particles", "algorithms"
 
     def __init__(self, config_path: str | None):
         """
@@ -30,6 +30,8 @@ class Configuration:
             raise ValueError(f"No config found: {config_path}")
 
         for section in self._section_names:
+            if not parser.has_section(section):
+                continue
             attributes = {key: ast.literal_eval(value) for key, value in parser.items(section)}
             self.__dict__.update(attributes)
 
