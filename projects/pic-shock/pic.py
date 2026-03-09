@@ -54,19 +54,6 @@ if __name__ == "__main__":
     # B-field from sigma
     binit = np.sqrt(upstream_gamma * oppc * 0.5 * config.cfl**2 * m0 * (1.0 + m0/m1) * sigma)
 
-    logger.info(f"Positron thermal spread: {theta1}")
-    logger.info(f"Electron thermal spread: {theta0}")
-    logger.info(f"Alfven vel: {np.sqrt(sigma / (1. + sigma))}")
-    ion_beta = 2. * theta1 / (sigma * (m1/m0 + 1.) / (m1/m0))
-    logger.info(f"Ion beta: {ion_beta}")
-    logger.info(f"Electron beta: {2.*theta0/(sigma*(1/m0+1.))}")
-    logger.info(f"sigma: {sigma}")
-    logger.info(f"B_guide: {binit}")
-    logger.info(f"q0: {config.q0}")
-    logger.info(f"q1: {config.q1}")
-    logger.info(f"m0: {config.m0}")
-    logger.info(f"m1: {config.m1}")
-
     # --------------------------------------------------
     # Field initialization
 
@@ -84,8 +71,52 @@ if __name__ == "__main__":
     Ey = lambda x, y, z: np.full_like(x, Ey0)
     Ez = lambda x, y, z: np.full_like(x, Ez0)
 
-    logger.info(f"Bx0: {Bx0}, By0: {By0}, Bz0: {Bz0}")
-    logger.info(f"Ey0: {Ey0}, Ez0: {Ez0}")
+    # --------------------------------------------------
+    # Print setup summary
+
+    if runko.on_main_rank():
+        from runko.auto_outdir import resolve_outdir
+        W = 21
+        logger.info(f"{'--- [io] ---':}")
+        logger.info(f"  {'outdir':<{W}}= {config.outdir}")
+        logger.info(f"  {'resolved outdir':<{W}}= {resolve_outdir(config)}")
+        logger.info(f"  {'prefix / postfix':<{W}}= {config.prefix} / {config.postfix}")
+
+        logger.info(f"{'--- [grid] ---':}")
+        logger.info(f"  {'tiles':<{W}}= {config.Nx} x {config.Ny} x {config.Nz}")
+        logger.info(f"  {'mesh per tile':<{W}}= {config.NxMesh} x {config.NyMesh} x {config.NzMesh}")
+        logger.info(f"  {'full grid':<{W}}= {config.Nx*config.NxMesh} x {config.Ny*config.NyMesh} x {config.Nz*config.NzMesh}")
+        logger.info(f"  {'grid in c/wp':<{W}}= {config.Nx*config.NxMesh/c_omp:.1f} x {config.Ny*config.NyMesh/c_omp:.1f} x {config.Nz*config.NzMesh/c_omp:.1f}")
+
+        logger.info(f"{'--- [simulation] ---':}")
+        logger.info(f"  {'Nt':<{W}}= {config.Nt}")
+        logger.info(f"  {'cfl':<{W}}= {config.cfl}")
+        logger.info(f"  {'max plasma time':<{W}}= {config.Nt * c_omp:.1f} wp^-1")
+
+        logger.info(f"{'--- [particles] ---':}")
+        logger.info(f"  {'ppc':<{W}}= {ppc}")
+        logger.info(f"  {'m0 / m1':<{W}}= {config.m0} / {config.m1}")
+        logger.info(f"  {'q0 / q1':<{W}}= {config.q0:.6g} / {config.q1:.6g}")
+        logger.info(f"  {'theta_e / theta_i':<{W}}= {theta0:.6g} / {theta1:.6g}")
+
+        logger.info(f"{'--- [problem] ---':}")
+        logger.info(f"  {'sigma':<{W}}= {sigma}")
+        logger.info(f"  {'c/wp':<{W}}= {c_omp}")
+        logger.info(f"  {'upstream gamma':<{W}}= {upstream_gamma}")
+        logger.info(f"  {'upstream beta':<{W}}= {beta:.6g}")
+        logger.info(f"  {'B_init':<{W}}= {binit:.6g}")
+        logger.info(f"  {'B direction':<{W}}= ({bx_proj}, {by_proj}, {bz_proj})")
+        logger.info(f"  {'n_filter_passes':<{W}}= {n_filter_passes}")
+        logger.info(f"  {'v_A':<{W}}= {np.sqrt(sigma / (1.0 + sigma)):.6g}")
+        logger.info(f"  {'beta_ion / beta_e':<{W}}= {2.0*theta1 / (sigma*(m1/m0+1.0)/(m1/m0)):.6g} / {2.0*theta0 / (sigma*(1.0/m0+1.0)):.6g}")
+
+        logger.info(f"{'--- [algorithms] ---':}")
+        logger.info(f"  {'field_propagator':<{W}}= {config.field_propagator}")
+        logger.info(f"  {'particle_pusher':<{W}}= {config.particle_pusher}")
+        logger.info(f"  {'field_interpolator':<{W}}= {config.field_interpolator}")
+        logger.info(f"  {'current_depositer':<{W}}= {config.current_depositer}")
+        logger.info(f"  {'current_filter':<{W}}= {config.current_filter}")
+        logger.info(f"  {'tile_partitioning':<{W}}= {config.tile_partitioning}")
 
     # --------------------------------------------------
     # Reflector wall (stationary for now)
