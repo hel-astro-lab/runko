@@ -23,7 +23,7 @@ class Configuration:
         from configparser import ConfigParser
         import ast
 
-        parser = ConfigParser()
+        parser = ConfigParser(inline_comment_prefixes=("#",))
         parser.optionxform = str  # make option names case sensitive
 
         if not parser.read(config_path):
