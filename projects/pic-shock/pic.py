@@ -34,6 +34,7 @@ if __name__ == "__main__":
     theta_ratio = conf.theta_ratio    # T_ion / T_electron
     upstream_gamma = conf.upstream_gamma
     n_filter_passes = conf.n_filter_passes or 3
+    output_interval = conf.output_interval or 20
 
     # Bulk flow (upstream_gamma is always a Lorentz factor >= 1)
     beta = np.sqrt(1.0 - 1.0 / upstream_gamma**2)
@@ -72,6 +73,7 @@ if __name__ == "__main__":
         logger.info(f"  {'outdir':<{W}}= {conf.outdir}")
         logger.info(f"  {'resolved outdir':<{W}}= {resolve_outdir(conf)}")
         logger.info(f"  {'prefix / postfix':<{W}}= {conf.prefix} / {conf.postfix}")
+        logger.info(f"  {'output_interval':<{W}}= {output_interval}")
 
         logger.info(f"{'--- [grid] ---':}")
         logger.info(f"  {'tiles':<{W}}= {conf.Nx} x {conf.Ny} x {conf.Nz}")
@@ -152,7 +154,7 @@ if __name__ == "__main__":
     # confure and start simulation
 
     simulation = tile_grid.configure_simulation(conf)
-    simulation.verbose_laps = False
+    simulation.verbose_laps = False # do not print lap info every time; only statistics
 
     def sync_EB(x):
         EB = (runko.tools.comm_mode.emf_E, runko.tools.comm_mode.emf_B)
@@ -223,7 +225,7 @@ if __name__ == "__main__":
         x.io_average_E_energy_density()
         x.io_ram_usage()
 
-        if simulation.lap % 20 == 0:
+        if simulation.lap % output_interval == 0:
             x.io_emf_snapshot()
             simulation.log_timer_statistics()
 
