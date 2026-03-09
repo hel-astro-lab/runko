@@ -15,6 +15,7 @@ namespace {
 using value_type = pic::ParticleContainer::value_type;
 using Vec3       = toolbox::Vec3<value_type>;
 using Vec3uz     = toolbox::Vec3<uint32_t>;
+using toolbox::dot;
 
 constexpr value_type EPS = 1e-10f;
 
@@ -34,16 +35,13 @@ __attribute__((always_inline)) inline void zigzag_deposit_single(
   const Vec3 x2,
   const value_type charge)
 {
-  const auto fi1 = Vec3(
-    sstd::floor(x1(0)), sstd::floor(x1(1)), sstd::floor(x1(2)));
-  const auto fi2 = Vec3(
-    sstd::floor(x2(0)), sstd::floor(x2(1)), sstd::floor(x2(2)));
+  const auto fi1 = Vec3( sstd::floor(x1(0)), sstd::floor(x1(1)), sstd::floor(x1(2)));
+  const auto fi2 = Vec3( sstd::floor(x2(0)), sstd::floor(x2(1)), sstd::floor(x2(2)));
 
   // Relay point: branchless min/max (no lambda return → SIMD-safe)
   const auto relay = [&](const uint32_t j) {
     const auto a  = sstd::min(fi1(j), fi2(j)) + value_type { 1 };
-    const auto b  = sstd::max(sstd::max(fi1(j), fi2(j)),
-                              value_type { 0.5 } * (x1(j) + x2(j)));
+    const auto b  = sstd::max(sstd::max(fi1(j), fi2(j)), 0.5f*(x1(j) + x2(j)));
     return sstd::min(a, b);
   };
 
@@ -55,8 +53,8 @@ __attribute__((always_inline)) inline void zigzag_deposit_single(
   const auto i1 = fi1.template as<uint32_t>();
   const auto i2 = fi2.template as<uint32_t>();
 
-  const auto W1 = value_type { 0.5 } * (x1 + x_relay) - fi1;
-  const auto W2 = value_type { 0.5 } * (x2 + x_relay) - fi2;
+  const auto W1 = 0.5f*(x1 + x_relay) - fi1;
+  const auto W2 = 0.5f*(x2 + x_relay) - fi2;
 
   const auto [Fx1, Fy1, Fz1] = F1.data;
   const auto [Fx2, Fy2, Fz2] = F2.data;
@@ -152,7 +150,7 @@ void
         //   pos_refl = final reflected position (in front of wall)
         const Vec3 pos_1 = Vec3(pos_mds[idx]);
         const Vec3 u     = Vec3(vel_mds[idx]);
-        const value_type gam    = sstd::sqrt(1.0f + toolbox::dot(u, u));
+        const value_type gam    = sstd::sqrt(1.0f + dot(u, u));
         const value_type invgam = 1.0f / gam;
 
         // unwind position one timestep backwards
@@ -160,46 +158,38 @@ void
 
         // --- masks (0.0f or 1.0f) ---
         // mask_skip: particle is in front of wall (no action needed)
-        const value_type mask_skip =
-          (pos_1(0) >= walloc) ? 1.0f : 0.0f;
+        const value_type mask_skip = (pos_1(0) >= walloc) ? 1.0f : 0.0f;
 
         // close_enough: pre-push position was within c of the wall
-        const value_type close_enough =
-          (walloc0 - pos_0(0) <= c) ? 1.0f : 0.0f;
+        const value_type mask_close = (walloc0 - pos_0(0) <= c) ? 1.0f : 0.0f;
 
         // time fraction to wall crossing
         const value_type denom = betawall * c - c * u(0) * invgam;
-        const value_type dt =
-          sstd::abs((pos_0(0) - walloc0) / (denom + EPS));
+        const value_type dt = sstd::abs((pos_0(0) - walloc0) / (denom + EPS));
 
         // crossed: particle genuinely crossed the wall this timestep
-        const value_type crossed = (dt <= 1.0f) ? 1.0f : 0.0f;
+        const value_type mask_crossed = (dt <= 1.0f) ? 1.0f : 0.0f;
 
         // composite masks (mutually exclusive, sum to 1)
-        const value_type mask_refl =
-          (1.0f - mask_skip) * close_enough * crossed;
-        const value_type mask_park =
-          (1.0f - mask_skip) - mask_refl;
+        const value_type mask_refl = (1.0f - mask_skip) * mask_close*mask_crossed;
+        const value_type mask_park = (1.0f - mask_skip) - mask_refl;
 
         // collision point (3D)
         const Vec3 pos_col = pos_0 + c * dt * invgam * u;
 
         // reflect x-velocity (general Lorentz boost; reduces to -ux when
         // betawall=0, gammawall=1)
-        const value_type ux_new =
-          gammawall * gammawall * gam *
+        const value_type ux_new = gammawall * gammawall * gam *
           (2.0f * betawall - u(0) * invgam * (1.0f + betawall * betawall));
 
         const Vec3 u_new(ux_new, u(1), u(2));
-        const value_type gam_new =
-          sstd::sqrt(1.0f + toolbox::dot(u_new, u_new));
+        const value_type gam_new = sstd::sqrt(1.0f + dot(u_new, u_new));
         const value_type invgam_new = 1.0f / gam_new;
 
         // reflected time fraction: remaining portion after collision
         const value_type dt_refl = sstd::min(
           1.0f,
-          sstd::abs(
-            (pos_1(0) - pos_col(0)) / (pos_1(0) - pos_0(0) + EPS)));
+          sstd::abs( (pos_1(0) - pos_col(0)) / (pos_1(0) - pos_0(0) + EPS)));
 
         // new position after reflection
         const Vec3 pos_refl = pos_col + c * dt_refl * invgam_new * u_new;
@@ -213,26 +203,20 @@ void
         // +q deposit: real current from pos_0 to pos_col
         const Vec3 dep_fwd_from = p1l + mask_refl * (pos_0 - pos_1);
         const Vec3 dep_fwd_to   = p1l + mask_refl * (pos_col - pos_1);
-        zigzag_deposit_single(
-          Jmds, dep_fwd_from, dep_fwd_to, mask_refl * charge);
+        zigzag_deposit_single(Jmds, dep_fwd_from, dep_fwd_to, mask_refl*charge);
 
         // -q deposit: cancel behind-wall current
         const Vec3 x1_deposit = pos_refl - c * invgam_new * u_new;
         const Vec3 dep_rev_from = p1l + mask_refl * (x1_deposit - pos_1);
         const Vec3 dep_rev_to   = p1l + mask_refl * (pos_col - pos_1);
-        zigzag_deposit_single(
-          Jmds, dep_rev_from, dep_rev_to, mask_refl * (-charge));
+        zigzag_deposit_single(Jmds, dep_rev_from, dep_rev_to, mask_refl*(-charge));
 
         // --- final blending ---
         // x-position: 3-way blend
-        pos_mds[idx][0] = mask_skip * pos_1(0)
-                        + mask_park * 1.0f
-                        + mask_refl * pos_refl(0);
+        pos_mds[idx][0] = mask_skip * pos_1(0) + mask_park * 1.0f + mask_refl * pos_refl(0);
         // y,z-position: only reflected particles change
-        pos_mds[idx][1] = (1.0f - mask_refl) * pos_1(1)
-                        + mask_refl * pos_refl(1);
-        pos_mds[idx][2] = (1.0f - mask_refl) * pos_1(2)
-                        + mask_refl * pos_refl(2);
+        pos_mds[idx][1] = (1.0f - mask_refl) * pos_1(1) + mask_refl * pos_refl(1);
+        pos_mds[idx][2] = (1.0f - mask_refl) * pos_1(2) + mask_refl * pos_refl(2);
         // x-velocity: skip keeps original, park zeroes, reflect sets ux_new
         vel_mds[idx][0] = mask_skip * u(0) + mask_refl * ux_new;
       })
@@ -305,10 +289,8 @@ void
 
     // convert global wall location to lattice-local index (with halo offset)
     const auto wall_idx =
-      static_cast<int>(wall.walloc - value_type(this->mins[0])) +
-      this->halo_size;
-    const auto wall_idx_clamped =
-      static_cast<runko::size_t>(std::max(wall_idx, 0));
+      static_cast<int>(wall.walloc - value_type(this->mins[0])) + this->halo_size;
+    const auto wall_idx_clamped = static_cast<runko::size_t>(std::max(wall_idx, 0));
 
     if(wall_idx_clamped < nx) {
       this->yee_lattice_.zero_transverse_E_behind_x(wall_idx_clamped);
