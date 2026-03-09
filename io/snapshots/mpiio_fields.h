@@ -2,10 +2,10 @@
 
 #include <cstddef>
 #include <string>
-#include <vector>
 
 #include "corgi/corgi.h"
 #include "core/emf/tile.h"
+#include "core/mdgrid_common.h"
 
 namespace mpiio {
 
@@ -18,6 +18,9 @@ namespace mpiio {
 /// Every MPI rank writes its own tiles directly at the correct file
 /// offset using independent MPI_File_write_at calls, avoiding the
 /// reduce-to-rank-0 bottleneck of the HDF5 writer.
+///
+/// Stride subsampling and J volume-sum are computed on-device using
+/// tyvi for_each_index kernels (SIMD on CPU, GPU kernels on HIP).
 template<size_t D>
 class FieldsWriter {
   static_assert(D == 3, "Only 3D supported");
@@ -41,11 +44,17 @@ private:
   int nxt_, nyt_, nzt_;  // per-tile output size after stride
   int nx_, ny_, nz_;     // global output size
 
-  /// Scratch buffer: [num_fields][nzt_][nyt_][nxt_] row-major
-  std::vector<float> tile_buf_;
+  /// Iteration driver for for_each_index: (nzt_, nyt_, nxt_) layout_right.
+  /// z outermost (dim 0), x innermost (dim 2) matches file format.
+  runko::ScalarGrid<float> iter_grid_;
 
-  /// Fill tile_buf_ from a single emf tile's Yee lattice data.
-  void read_tile(emf::Tile<3>& tile);
+  /// Scratch buffer: [10 fields][nzt_][nyt_][nxt_] in SoA layout.
+  /// On CPU the device buffer is host-accessible; on GPU sync_to_staging
+  /// copies to the internal staging buffer for MPI writes.
+  runko::IOFieldGrid<float> tile_buf_;
+
+  /// Pack tile field data into tile_buf_ using for_each_index kernels.
+  void pack_tile(emf::Tile<3>& tile);
 };
 
 }  // namespace mpiio

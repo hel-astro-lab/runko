@@ -16,6 +16,10 @@ template<typename T>
 static constexpr auto vec_element =
   tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 3 };
 
+template<typename T>
+static constexpr auto io_field_element =
+  tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 10 };
+
 using list_extents = std::dextents<runko::size_t, 1>;
 using grid_extents = std::dextents<runko::size_t, 3>;
 
@@ -32,5 +36,8 @@ using ScalarList = tyvi::mdgrid<detail::scalar_element<T>, detail::list_extents>
 
 template<typename T>
 using VecList = tyvi::mdgrid<detail::vec_element<T>, detail::list_extents>;
+
+template<typename T>
+using IOFieldGrid = tyvi::mdgrid<detail::io_field_element<T>, detail::grid_extents>;
 
 }  // namespace runko

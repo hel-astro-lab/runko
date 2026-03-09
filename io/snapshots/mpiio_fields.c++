@@ -3,6 +3,7 @@
 #include "io/snapshots/mpiio_fields.h"
 #include "io/snapshots/mpiio_header.h"
 #include "core/emf/tile.h"
+#include "tyvi/mdgrid.h"
 
 #include <algorithm>
 #include <cstring>
@@ -73,7 +74,9 @@ mpiio::FieldsWriter<3>::FieldsWriter(
   : prefix_(prefix),
     Nx_(Nx), Ny_(Ny), Nz_(Nz),
     NxMesh_(NxMesh), NyMesh_(NyMesh), NzMesh_(NzMesh),
-    stride_(stride)
+    stride_(stride),
+    iter_grid_(0, 0, 0),
+    tile_buf_(0, 0, 0)
 {
   nxt_ = std::max(1, NxMesh_ / stride_);
   nyt_ = std::max(1, NyMesh_ / stride_);
@@ -83,71 +86,80 @@ mpiio::FieldsWriter<3>::FieldsWriter(
   ny_ = Ny_ * nyt_;
   nz_ = Nz_ * nzt_;
 
-  tile_buf_.resize(num_fields * nxt_ * nyt_ * nzt_);
+  iter_grid_.invalidating_resize(
+    static_cast<runko::size_t>(nzt_),
+    static_cast<runko::size_t>(nyt_),
+    static_cast<runko::size_t>(nxt_));
+
+  tile_buf_.invalidating_resize(
+    static_cast<runko::size_t>(nzt_),
+    static_cast<runko::size_t>(nyt_),
+    static_cast<runko::size_t>(nxt_));
 }
 
 
 template<>
-void mpiio::FieldsWriter<3>::read_tile(emf::Tile<3>& tile)
+void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
 {
-  const auto [Emds, Bmds, Jmds] = tile.view_EBJ_on_host();
+  const auto [Emds, Bmds, Jmds] = tile.view_EBJ_on_device();
 
-  const int tile_elems = nxt_ * nyt_ * nzt_;
+  const int stride = stride_;
+  auto buf_mds = tile_buf_.mds();
 
-  // E and B fields: subsample by stride-hopping
-  for (int ks = 0; ks < nzt_; ks++)
-    for (int js = 0; js < nyt_; js++)
-      for (int is = 0; is < nxt_; is++) {
-        const int idx = ks*nyt_*nxt_ + js*nxt_ + is;
+  tyvi::mdgrid_work w {};
 
-        // ex, ey, ez
-        tile_buf_[0*tile_elems + idx] =
-          Emds[is*stride_, js*stride_, ks*stride_][0];
-        tile_buf_[1*tile_elems + idx] =
-          Emds[is*stride_, js*stride_, ks*stride_][1];
-        tile_buf_[2*tile_elems + idx] =
-          Emds[is*stride_, js*stride_, ks*stride_][2];
+  // E and B fields: subsample by stride-hopping; rho zeroed here too
+  w.for_each_index(iter_grid_, [=](const auto idx) {
+    const auto iz = idx[0], iy = idx[1], ix = idx[2];
 
-        // bx, by, bz
-        tile_buf_[3*tile_elems + idx] =
-          Bmds[is*stride_, js*stride_, ks*stride_][0];
-        tile_buf_[4*tile_elems + idx] =
-          Bmds[is*stride_, js*stride_, ks*stride_][1];
-        tile_buf_[5*tile_elems + idx] =
-          Bmds[is*stride_, js*stride_, ks*stride_][2];
-      }
+    const auto si = static_cast<runko::size_t>(ix * stride);
+    const auto sj = static_cast<runko::size_t>(iy * stride);
+    const auto sk = static_cast<runko::size_t>(iz * stride);
+
+    // ex, ey, ez
+    buf_mds[iz, iy, ix][0] = Emds[si, sj, sk][0];
+    buf_mds[iz, iy, ix][1] = Emds[si, sj, sk][1];
+    buf_mds[iz, iy, ix][2] = Emds[si, sj, sk][2];
+
+    // bx, by, bz
+    buf_mds[iz, iy, ix][3] = Bmds[si, sj, sk][0];
+    buf_mds[iz, iy, ix][4] = Bmds[si, sj, sk][1];
+    buf_mds[iz, iy, ix][5] = Bmds[si, sj, sk][2];
+
+    // rho
+    buf_mds[iz, iy, ix][9] = 0.0f;
+  });
 
   // J fields: volume-sum over stride^3 cells
-  const int jx_off = 6 * tile_elems;
-  const int jy_off = 7 * tile_elems;
-  const int jz_off = 8 * tile_elems;
+  w.for_each_index(iter_grid_, [=](const auto idx) {
+    const auto iz = idx[0], iy = idx[1], ix = idx[2];
 
-  for (int ks = 0; ks < nzt_; ks++)
-    for (int js = 0; js < nyt_; js++)
-      for (int is = 0; is < nxt_; is++) {
-        float sjx = 0.0f, sjy = 0.0f, sjz = 0.0f;
-        for (int kstride = 0; kstride < stride_; kstride++)
-          for (int jstride = 0; jstride < stride_; jstride++)
-            for (int istride = 0; istride < stride_; istride++) {
-              sjx += Jmds[is*stride_ + istride,
-                          js*stride_ + jstride,
-                          ks*stride_ + kstride][0];
-              sjy += Jmds[is*stride_ + istride,
-                          js*stride_ + jstride,
-                          ks*stride_ + kstride][1];
-              sjz += Jmds[is*stride_ + istride,
-                          js*stride_ + jstride,
-                          ks*stride_ + kstride][2];
-            }
-        const int idx = ks*nyt_*nxt_ + js*nxt_ + is;
-        tile_buf_[jx_off + idx] = sjx;
-        tile_buf_[jy_off + idx] = sjy;
-        tile_buf_[jz_off + idx] = sjz;
-      }
+    float sjx = 0.0f, sjy = 0.0f, sjz = 0.0f;
+    for (int kk = 0; kk < stride; kk++)
+      for (int jj = 0; jj < stride; jj++)
+        for (int ii = 0; ii < stride; ii++) {
+          const auto si = static_cast<runko::size_t>(ix*stride + ii);
+          const auto sj = static_cast<runko::size_t>(iy*stride + jj);
+          const auto sk = static_cast<runko::size_t>(iz*stride + kk);
+          sjx += Jmds[si, sj, sk][0];
+          sjy += Jmds[si, sj, sk][1];
+          sjz += Jmds[si, sj, sk][2];
+        }
 
-  // rho: write zeros (rho not in EBJ, will be added later)
-  const int rho_off = 9 * tile_elems;
-  std::memset(tile_buf_.data() + rho_off, 0, tile_elems * sizeof(float));
+    buf_mds[iz, iy, ix][6] = sjx;
+    buf_mds[iz, iy, ix][7] = sjy;
+    buf_mds[iz, iy, ix][8] = sjz;
+  });
+
+  w.wait();
+
+#if defined(TYVI_BACKEND_HIP)
+  // GPU: copy packed data from device to host staging buffer
+  tyvi::mdgrid_work w2 {};
+  w2.sync_to_staging(tile_buf_);
+  w2.wait();
+#endif
+  // CPU: device buffer is already host-accessible; no copy needed.
 }
 
 
@@ -186,7 +198,14 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
 
   for (auto cid : grid.get_local_tiles()) {
     auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(cid));
-    read_tile(tile);
+    pack_tile(tile);
+
+    // On CPU the device buffer is host-accessible; on GPU use staging.
+#if defined(TYVI_BACKEND_CPU)
+    const float* write_ptr = tile_buf_.span().data();
+#elif defined(TYVI_BACKEND_HIP)
+    const float* write_ptr = tile_buf_.staging_span().data();
+#endif
 
     const int ti = static_cast<int>(tile.index[0]);
     const int tj = static_cast<int>(tile.index[1]);
@@ -211,7 +230,7 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
           MPI_Status status;
           rc = MPI_File_write_at(
             fh, file_offset,
-            tile_buf_.data() + buf_offset,
+            write_ptr + buf_offset,
             nxt_, MPI_FLOAT, &status);
           if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
         }
