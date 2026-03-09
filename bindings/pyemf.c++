@@ -2,6 +2,7 @@
 #include "core/emf/tile.h"
 #include "io/emf_average_field_energy_density.h"
 #include "io/snapshots/fields.h"
+#include "io/snapshots/mpiio_fields.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -198,6 +199,11 @@ void
   py::class_<h5io::FieldsWriter<3>>(m_3d, "FieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write", &h5io::FieldsWriter<3>::write);
+
+  // MPI-IO snapshot writer
+  py::class_<mpiio::FieldsWriter<3>>(m_3d, "MpiioFieldsWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
+    .def("write", &mpiio::FieldsWriter<3>::write);
 
   m_3d.def("_write_average_B_energy_density", &emf::write_average_B_energy_density)
     .def("_write_average_E_energy_density", &emf::write_average_E_energy_density);

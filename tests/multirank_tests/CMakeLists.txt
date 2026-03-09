@@ -9,4 +9,4 @@ add_python_mpi_test(testing_setup 2)
 add_python_mpi_test(emf_simulation 4)
 add_python_mpi_test(runko_simulation 2)
 add_python_mpi_test(pic_simulation 4)
-
+add_python_mpi_test(mpiio_fields 4)
