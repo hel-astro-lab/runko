@@ -294,5 +294,170 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
 
 
 //--------------------------------------------------
+// write_collective: bulk MPI-IO using derived file types
+
+template<>
+bool mpiio::FieldsWriter<3>::write_collective(corgi::Grid<3>& grid, int lap)
+{
+  std::string filename =
+    prefix_ + "/flds_" + std::to_string(lap) + ".bin";
+
+  MPI_File fh;
+  int rc = MPI_File_open(
+    MPI_Comm(grid.comm), filename.c_str(),
+    MPI_MODE_CREATE | MPI_MODE_WRONLY,
+    MPI_INFO_NULL, &fh);
+
+  if (rc != MPI_SUCCESS) return false;
+
+  // Rank 0 writes the 512-byte header.
+  if (grid.comm.rank() == 0) {
+    rc = mpiio::write_header(
+      fh,
+      nx_, ny_, nz_,
+      stride_,
+      Nx_, Ny_, Nz_,
+      NxMesh_, NyMesh_, NzMesh_,
+      lap,
+      num_fields_);
+    if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
+  }
+
+  const MPI_Offset hdr_size = mpiio::header_size;
+  const MPI_Offset field_bytes =
+    static_cast<MPI_Offset>(nx_) * ny_ * nz_ * sizeof(float);
+  const int tile_elems = nxt_ * nyt_ * nzt_;
+  const int nf = num_fields_;
+
+  // Pre-allocate the file to its full size so that derived-type writes
+  // don't leave the file truncated (some MPI implementations do not
+  // extend the file for sparse write patterns).
+  MPI_Offset total_size = hdr_size + static_cast<MPI_Offset>(nf) * field_bytes;
+  rc = MPI_File_set_size(fh, total_size);
+  if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
+
+  // --- Collect local tiles ---
+  auto local_cids = grid.get_local_tiles();
+  const int ntiles = static_cast<int>(local_cids.size());
+
+  struct TileIdx { int ti, tj, tk; };
+  std::vector<TileIdx> tile_indices(ntiles);
+
+  // --- Phase 1: Pack all tiles into staging buffer ---
+  // Layout: staging[t * nf * tile_elems + f * tile_elems .. +tile_elems]
+  // Grouped by tile, then by field — matches the per-tile all-fields
+  // struct type's etype slot ordering.
+  const int tile_stride = nf * tile_elems;
+  write_staging_.resize(static_cast<size_t>(ntiles) * tile_stride);
+
+  for (int t = 0; t < ntiles; t++) {
+    auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(local_cids[t]));
+    pack_tile(tile);
+
+#if defined(TYVI_BACKEND_CPU)
+    const float* write_ptr = tile_buf_.span().data();
+#elif defined(TYVI_BACKEND_HIP)
+    const float* write_ptr = tile_buf_.staging_span().data();
+#endif
+
+    tile_indices[t].ti = static_cast<int>(tile.index[0]);
+    tile_indices[t].tj = static_cast<int>(tile.index[1]);
+    tile_indices[t].tk = static_cast<int>(tile.index[2]);
+
+    for (int f = 0; f < nf; f++) {
+      std::memcpy(
+        write_staging_.data()
+          + static_cast<size_t>(t) * tile_stride
+          + static_cast<size_t>(f) * tile_elems,
+        write_ptr + f * tile_elems,
+        static_cast<size_t>(tile_elems) * sizeof(float));
+    }
+  }
+
+  // --- Phase 2: Build per-tile MPI filetypes and write ---
+  //
+  // For each tile we create a subarray type describing its footprint
+  // in one (nz_,ny_,nx_) field, then wrap nf copies of that subarray
+  // in a struct with field_bytes spacing.  This gives a single type
+  // covering all fields for one tile, with etype slots ordered as
+  // [field0 data][field1 data]...[fieldN data] — matching the staging
+  // buffer layout.
+  //
+  // Because MPI_File_set_view is collective, all ranks must iterate
+  // the same number of times (max_ntiles across all ranks).
+
+  int max_ntiles = 0;
+  MPI_Allreduce(&ntiles, &max_ntiles, 1, MPI_INT, MPI_MAX,
+                MPI_Comm(grid.comm));
+
+  int gsizes[3]   = {nz_, ny_, nx_};
+  int subsizes[3] = {nzt_, nyt_, nxt_};
+
+  // Field displacement table and type vector (same shape for every tile)
+  std::vector<MPI_Aint>     field_disps(nf);
+  std::vector<int>          field_blens(nf, 1);
+  std::vector<MPI_Datatype> ftypes(nf);
+  for (int f = 0; f < nf; f++)
+    field_disps[f] = static_cast<MPI_Aint>(f) * field_bytes;
+
+  bool ok = true;
+  for (int t = 0; t < max_ntiles && ok; t++) {
+
+    // --- build filetype for this tile (or empty for non-participating) ---
+    MPI_Datatype tile_sub = MPI_DATATYPE_NULL;
+    MPI_Datatype filetype = MPI_DATATYPE_NULL;
+    int my_count = 0;
+
+    if (t < ntiles) {
+      int starts[3] = {
+        tile_indices[t].tk * nzt_,
+        tile_indices[t].tj * nyt_,
+        tile_indices[t].ti * nxt_
+      };
+      MPI_Type_create_subarray(
+        3, gsizes, subsizes, starts,
+        MPI_ORDER_C, MPI_FLOAT, &tile_sub);
+      MPI_Type_commit(&tile_sub);
+
+      // Struct of nf copies of tile_sub at field_bytes spacing
+      std::fill(ftypes.begin(), ftypes.end(), tile_sub);
+      MPI_Type_create_struct(
+        nf, field_blens.data(), field_disps.data(),
+        ftypes.data(), &filetype);
+      MPI_Type_commit(&filetype);
+
+      my_count = nf * tile_elems;
+    } else {
+      MPI_Type_contiguous(0, MPI_FLOAT, &filetype);
+      MPI_Type_commit(&filetype);
+    }
+
+    // --- collective set_view + write ---
+    rc = MPI_File_set_view(
+      fh, hdr_size, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
+    if (rc != MPI_SUCCESS) { ok = false; }
+
+    if (ok) {
+      MPI_Status status;
+      rc = MPI_File_write_all(
+        fh,
+        (t < ntiles)
+          ? write_staging_.data() + static_cast<size_t>(t) * tile_stride
+          : write_staging_.data(),
+        my_count, MPI_FLOAT, &status);
+      if (rc != MPI_SUCCESS) ok = false;
+    }
+
+    // --- free per-tile types ---
+    MPI_Type_free(&filetype);
+    if (tile_sub != MPI_DATATYPE_NULL) MPI_Type_free(&tile_sub);
+  }
+
+  MPI_File_close(&fh);
+  return ok;
+}
+
+
+//--------------------------------------------------
 // explicit template class instantiation
 template class mpiio::FieldsWriter<3>;

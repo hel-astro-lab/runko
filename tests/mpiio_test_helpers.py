@@ -118,7 +118,8 @@ def find_output_file(outdir):
     return os.path.join(outdir, files[0])
 
 
-def write_and_read(tile_grid, outdir, config, stride=1, lap=0, nspecies=2):
+def write_and_read(tile_grid, outdir, config, stride=1, lap=0, nspecies=2,
+                    collective=False):
     """Write a snapshot and read it back via the Python reader.
 
     Returns (header_dict, fields_dict).
@@ -130,7 +131,10 @@ def write_and_read(tile_grid, outdir, config, stride=1, lap=0, nspecies=2):
         config.Ny, config.NyMesh,
         config.Nz, config.NzMesh,
         stride, nspecies)
-    writer.write(tile_grid._corgi_grid, lap)
+    if collective:
+        writer.write_collective(tile_grid._corgi_grid, lap)
+    else:
+        writer.write(tile_grid._corgi_grid, lap)
     path = find_output_file(outdir)
     hdr = read_header(path)
     fields = read_field_snapshot(path)

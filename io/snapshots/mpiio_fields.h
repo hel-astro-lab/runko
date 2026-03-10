@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 #include "corgi/corgi.h"
 #include "core/emf/tile.h"
@@ -35,7 +36,14 @@ public:
     int nspecies = 2);
 
   /// Write all local tiles to prefix/flds_<lap>.bin via MPI-IO.
+  /// Uses independent row-by-row MPI_File_write_at calls (no temp buffer).
   bool write(corgi::Grid<3>& grid, int lap);
+
+  /// Write all local tiles via collective MPI-IO with derived file types.
+  /// Faster than write() — uses MPI_File_set_view + MPI_File_write_all
+  /// to issue num_fields_ collective writes instead of per-row calls.
+  /// Allocates a staging buffer of num_fields * ntiles * tile_elems floats.
+  bool write_collective(corgi::Grid<3>& grid, int lap);
 
 private:
   std::string prefix_;
@@ -56,6 +64,11 @@ private:
   /// On CPU the device buffer is host-accessible; on GPU sync_to_staging
   /// copies to the internal staging buffer for MPI writes.
   runko::IOFieldGrid<float> tile_buf_;
+
+  /// Host staging buffer for write_collective().
+  /// Layout: [tile0: field0..fieldN][tile1: field0..fieldN]...
+  /// Resized on each call; capacity persists between calls.
+  std::vector<float> write_staging_;
 
   /// Pack tile field data into tile_buf_ using for_each_index kernels.
   void pack_tile(emf::Tile<3>& tile);

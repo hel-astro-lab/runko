@@ -59,7 +59,8 @@ class TestMpiioFieldsWriter(unittest.TestCase):
 
     def test_single_tile_field_values(self):
         """1x1x1 grid, 8^3 mesh, stride=1. Constant E=(1,2,3), B=(4,5,6), J=(0,0,0).
-        Read back binary data and verify all field arrays have correct values."""
+        Read back binary data and verify all field arrays have correct values.
+        Runs for both write() and write_collective()."""
 
         config = make_config(outdir=self.outdir)
         tile_grid = setup_grid_with_fields(
@@ -68,19 +69,22 @@ class TestMpiioFieldsWriter(unittest.TestCase):
             lambda x, y, z: (4, 5, 6),
             lambda x, y, z: (0, 0, 0))
 
-        _, fields = write_and_read(tile_grid, self.outdir, config)
+        for collective in (False, True):
+            with self.subTest(collective=collective):
+                _, fields = write_and_read(
+                    tile_grid, self.outdir, config, collective=collective)
 
-        np.testing.assert_allclose(fields["ex"], 1.0, atol=1e-5)
-        np.testing.assert_allclose(fields["ey"], 2.0, atol=1e-5)
-        np.testing.assert_allclose(fields["ez"], 3.0, atol=1e-5)
-        np.testing.assert_allclose(fields["bx"], 4.0, atol=1e-5)
-        np.testing.assert_allclose(fields["by"], 5.0, atol=1e-5)
-        np.testing.assert_allclose(fields["bz"], 6.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jx"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jy"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jz"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
+                np.testing.assert_allclose(fields["ex"], 1.0, atol=1e-5)
+                np.testing.assert_allclose(fields["ey"], 2.0, atol=1e-5)
+                np.testing.assert_allclose(fields["ez"], 3.0, atol=1e-5)
+                np.testing.assert_allclose(fields["bx"], 4.0, atol=1e-5)
+                np.testing.assert_allclose(fields["by"], 5.0, atol=1e-5)
+                np.testing.assert_allclose(fields["bz"], 6.0, atol=1e-5)
+                np.testing.assert_allclose(fields["jx"], 0.0, atol=1e-5)
+                np.testing.assert_allclose(fields["jy"], 0.0, atol=1e-5)
+                np.testing.assert_allclose(fields["jz"], 0.0, atol=1e-5)
+                np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
+                np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
     def test_asymmetric_mesh(self):
         """1x1x1 grid, 10x11x13 mesh, stride=1. All dims different.
@@ -150,7 +154,8 @@ class TestMpiioFieldsWriter(unittest.TestCase):
     def test_multi_tile_placement(self):
         """2x2x1 grid, 8^3 mesh per tile, stride=1, catepillar_track_length=1.
         Set different constant Ex in each tile. Verify global array has values
-        at correct positions. Global output is 16x16x8."""
+        at correct positions. Global output is 16x16x8.
+        Runs for both write() and write_collective()."""
 
         config = make_config(Nx=2, Ny=2, Nz=1, outdir=self.outdir)
 
@@ -166,22 +171,25 @@ class TestMpiioFieldsWriter(unittest.TestCase):
 
         _ = tile_grid.configure_simulation(config)
 
-        hdr, fields = write_and_read(tile_grid, self.outdir, config)
+        for collective in (False, True):
+            with self.subTest(collective=collective):
+                hdr, fields = write_and_read(
+                    tile_grid, self.outdir, config, collective=collective)
 
-        self.assertEqual(hdr["nx"], 16)
-        self.assertEqual(hdr["ny"], 16)
-        self.assertEqual(hdr["nz"], 8)
+                self.assertEqual(hdr["nx"], 16)
+                self.assertEqual(hdr["ny"], 16)
+                self.assertEqual(hdr["nz"], 8)
 
-        ex = fields["ex"]  # shape: (8, 16, 16)
+                ex = fields["ex"]  # shape: (8, 16, 16)
 
-        for i_tile in range(2):
-            for j_tile in range(2):
-                expected_val = (i_tile + 1) + 10 * (j_tile + 1)
-                region = ex[:, j_tile * 8:(j_tile + 1) * 8,
-                               i_tile * 8:(i_tile + 1) * 8]
-                np.testing.assert_allclose(
-                    region, expected_val, atol=1e-5,
-                    err_msg=f"Tile ({i_tile},{j_tile},0) Ex mismatch")
+                for i_tile in range(2):
+                    for j_tile in range(2):
+                        expected_val = (i_tile + 1) + 10 * (j_tile + 1)
+                        region = ex[:, j_tile * 8:(j_tile + 1) * 8,
+                                       i_tile * 8:(i_tile + 1) * 8]
+                        np.testing.assert_allclose(
+                            region, expected_val, atol=1e-5,
+                            err_msg=f"Tile ({i_tile},{j_tile},0) Ex mismatch")
 
     def test_reader_roundtrip(self):
         """Write with known values, read with pytools reader, compare."""
@@ -225,15 +233,19 @@ class TestMpiioFieldsDensity(unittest.TestCase):
 
     def test_uniform_density_ppc1(self):
         """PIC tile, 1 particle per cell per species, stride=1.
-        n0 and n1 should both be 1.0 everywhere."""
+        n0 and n1 should both be 1.0 everywhere.
+        Runs for both write() and write_collective()."""
 
         config = make_pic_config(outdir=self.outdir)
         zero = lambda x, y, z: (0, 0, 0)
         tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
 
-        _, fields = write_and_read(tile_grid, self.outdir, config)
-        np.testing.assert_allclose(fields["n0"], 1.0, atol=1e-5)
-        np.testing.assert_allclose(fields["n1"], 1.0, atol=1e-5)
+        for collective in (False, True):
+            with self.subTest(collective=collective):
+                _, fields = write_and_read(
+                    tile_grid, self.outdir, config, collective=collective)
+                np.testing.assert_allclose(fields["n0"], 1.0, atol=1e-5)
+                np.testing.assert_allclose(fields["n1"], 1.0, atol=1e-5)
 
     def test_uniform_density_ppc4(self):
         """PIC tile, 4 particles per cell per species, stride=1.
