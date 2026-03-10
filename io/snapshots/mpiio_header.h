@@ -14,20 +14,23 @@ static_assert(
 inline constexpr uint32_t magic = 0x524E4B4F;
 
 /// Binary format version
-inline constexpr uint32_t version = 1;
+inline constexpr uint32_t version = 3;
 
 /// Fixed header size in bytes
-inline constexpr int32_t header_size = 256;
+inline constexpr int32_t header_size = 512;
 
-/// Number of field quantities stored
-inline constexpr int32_t num_fields = 10;
+/// Maximum number of particle species stored
+inline constexpr int32_t max_species = 5;
 
-/// Field names in canonical order
-inline constexpr const char* field_names[10] = {
-  "ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz", "rho"
+/// Number of electromagnetic field quantities (ex, ey, ez, bx, by, bz, jx, jy, jz)
+inline constexpr int32_t num_emf_fields = 9;
+
+/// EMF field names in canonical order
+inline constexpr const char* emf_field_names[9] = {
+  "ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz"
 };
 
-/// Write the 256-byte binary header to an MPI file handle.
+/// Write the 512-byte binary header to an MPI file handle.
 /// Returns MPI error code (MPI_SUCCESS on success).
 ///
 /// Header layout (all little-endian):
@@ -47,14 +50,15 @@ inline constexpr const char* field_names[10] = {
 ///   [52:56]   int32   NzMesh
 ///   [56:60]   int32   lap
 ///   [60:64]   uint32  dtype_size = 4
-///   [64:224]  char[16]*10  field names (null-padded)
-///   [224:256] reserved zeros
+///   [64:64+num_fields*16]  char[16]*num_fields  field names (null-padded)
+///   [remainder:512]  reserved zeros
 int write_header(
   MPI_File fh,
   int32_t nx, int32_t ny, int32_t nz,
   int32_t stride,
   int32_t Nx, int32_t Ny, int32_t Nz,
   int32_t NxMesh, int32_t NyMesh, int32_t NzMesh,
-  int32_t lap);
+  int32_t lap,
+  int32_t num_fields);
 
 }  // namespace mpiio

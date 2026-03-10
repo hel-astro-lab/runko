@@ -5,7 +5,7 @@
 #include "corgi/tile.h"
 
 
-namespace h5io {
+namespace hdf5 {
 
 using std::string;
 using std::to_string;
@@ -78,4 +78,4 @@ class Namer {
 };
 
 
-} // end of namespace io
+} // end of namespace hdf5

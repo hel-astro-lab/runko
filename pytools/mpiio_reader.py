@@ -1,12 +1,12 @@
 """Reader for runko v5 MPI-IO binary field snapshot files.
 
-Parses the 256-byte fixed header and provides zero-copy access to
+Parses the fixed header and provides zero-copy access to
 field data via numpy memory mapping.
 
 Binary layout
 -------------
-Bytes 0-255   : header (see read_header for field definitions)
-Bytes 256+    : 10 contiguous (nz, ny, nx) float32 arrays in C-order
+Bytes 0 to header_size-1 : header (see read_header for field definitions)
+Bytes header_size+       : num_fields contiguous (nz, ny, nx) float32 arrays in C-order
 """
 
 import os
@@ -19,14 +19,13 @@ import numpy as np
 # -- module-level constants ---------------------------------------------------
 
 MAGIC = 0x524E4B4F          # "RNKO" in little-endian uint32
-HEADER_SIZE = 256            # bytes
-FORMAT_VERSION = 1
+SUPPORTED_VERSIONS = (1, 2, 3)
 
 
 # -- public API ---------------------------------------------------------------
 
 def read_header(path: str | os.PathLike) -> dict:
-    """Parse the 256-byte header of an MPI-IO snapshot file.
+    """Parse the header of an MPI-IO snapshot file.
 
     Parameters
     ----------
@@ -45,7 +44,23 @@ def read_header(path: str | os.PathLike) -> dict:
     ValueError
         If the magic number or format version does not match.
     """
-    raw = Path(path).read_bytes()[:HEADER_SIZE]
+    # Read just the header bytes (not the whole file, which can be huge).
+    with open(path, "rb") as fh:
+        raw = fh.read(12)
+        (magic, ver, hdr_size) = struct.unpack_from("<III", raw, 0)
+
+        if magic != MAGIC:
+            raise ValueError(
+                f"Bad magic number: expected 0x{MAGIC:08X}, got 0x{magic:08X}"
+            )
+
+        if ver not in SUPPORTED_VERSIONS:
+            raise ValueError(
+                f"Unsupported format version: expected one of {SUPPORTED_VERSIONS}, got {ver}"
+            )
+
+        # Read the remainder of the header
+        raw += fh.read(hdr_size - 12)
 
     # 16 x 32-bit values = 64 bytes:
     #   I  magic       I  version     I  header_size  I  num_fields
@@ -64,18 +79,7 @@ def read_header(path: str | os.PathLike) -> dict:
         lap, dtype_size,
     ) = struct.unpack_from(_hdr_fmt, raw, 0)
 
-    if magic != MAGIC:
-        raise ValueError(
-            f"Bad magic number: expected 0x{MAGIC:08X}, got 0x{magic:08X}"
-        )
-
-    if version != FORMAT_VERSION:
-        raise ValueError(
-            f"Unsupported format version: expected {FORMAT_VERSION}, "
-            f"got {version}"
-        )
-
-    # field names: 10 x 16-byte null-padded ASCII strings at offset 64
+    # field names: num_fields x 16-byte null-padded ASCII strings at offset 64
     field_names = []
     for i in range(num_fields):
         offset = 64 + i * 16
@@ -120,11 +124,12 @@ def read_field_snapshot(path: str | os.PathLike) -> dict[str, np.ndarray]:
     """
     hdr = read_header(path)
     nx, ny, nz = hdr["nx"], hdr["ny"], hdr["nz"]
+    hdr_size = hdr["header_size"]
     field_size = nx * ny * nz  # number of float32 elements per field
 
     fields: dict[str, np.ndarray] = {}
     for idx, name in enumerate(hdr["field_names"]):
-        offset = HEADER_SIZE + idx * field_size * hdr["dtype_size"]
+        offset = hdr_size + idx * field_size * hdr["dtype_size"]
         arr = np.memmap(
             path,
             dtype=np.float32,
@@ -168,8 +173,9 @@ def read_field(path: str | os.PathLike, field_name: str) -> np.ndarray:
         ) from None
 
     nx, ny, nz = hdr["nx"], hdr["ny"], hdr["nz"]
+    hdr_size = hdr["header_size"]
     field_size = nx * ny * nz
-    offset = HEADER_SIZE + idx * field_size * hdr["dtype_size"]
+    offset = hdr_size + idx * field_size * hdr["dtype_size"]
 
     return np.memmap(
         path,

@@ -85,7 +85,8 @@ def test_multirank_constant_fields():
         np.testing.assert_allclose(fields["jx"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jy"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["rho"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
     comm.Barrier()
     mpi_unittest.assertEqual(True, True)
@@ -206,7 +207,8 @@ def test_multirank_asymmetric_mesh():
         np.testing.assert_allclose(fields["jx"],  0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jy"],  0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"],  0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["rho"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
     comm.Barrier()
     mpi_unittest.assertEqual(True, True)

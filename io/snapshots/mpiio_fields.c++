@@ -9,11 +9,12 @@
 
 #include <algorithm>
 #include <cstring>
+#include <format>
 #include <string>
 
 
 //--------------------------------------------------
-// write_header (moved from mpiio_header.h)
+// write_header
 
 int mpiio::write_header(
   MPI_File fh,
@@ -21,9 +22,10 @@ int mpiio::write_header(
   int32_t stride,
   int32_t Nx, int32_t Ny, int32_t Nz,
   int32_t NxMesh, int32_t NyMesh, int32_t NzMesh,
-  int32_t lap)
+  int32_t lap,
+  int32_t num_fields)
 {
-  char buf[256];
+  char buf[512];
   std::memset(buf, 0, sizeof(buf));
 
   auto put32 = [&](int offset, uint32_t val) {
@@ -52,15 +54,17 @@ int mpiio::write_header(
   puti32(56, lap);
   put32(60, 4);  // dtype_size = sizeof(float)
 
-  // Field names: 11 entries of 16 chars each, starting at offset 64
-  for (int f = 0; f < num_fields; f++) {
-    std::strncpy(buf + 64 + f * 16, field_names[f], 15);
+  // Field names: num_fields entries of 16 chars each, starting at offset 64
+  for (int f = 0; f < num_emf_fields; f++) {
+    std::strncpy(buf + 64 + f * 16, emf_field_names[f], 15);
+  }
+  for (int s = 0; s < num_fields - num_emf_fields; s++) {
+    auto name = std::format("n{}", s);
+    std::strncpy(buf + 64 + (num_emf_fields + s) * 16, name.c_str(), 15);
   }
 
-  // [240:256] already zeroed
-
   MPI_Status status;
-  return MPI_File_write_at(fh, 0, buf, 256, MPI_BYTE, &status);
+  return MPI_File_write_at(fh, 0, buf, 512, MPI_BYTE, &status);
 }
 
 
@@ -72,11 +76,14 @@ mpiio::FieldsWriter<3>::FieldsWriter(
   int Nx, int NxMesh,
   int Ny, int NyMesh,
   int Nz, int NzMesh,
-  int stride)
+  int stride,
+  int nspecies)
   : prefix_(prefix),
     Nx_(Nx), Ny_(Ny), Nz_(Nz),
     NxMesh_(NxMesh), NyMesh_(NyMesh), NzMesh_(NzMesh),
     stride_(stride),
+    nspecies_(std::min(nspecies, static_cast<int>(max_species))),
+    num_fields_(num_emf_fields + nspecies_),
     iter_grid_(0, 0, 0),
     tile_buf_(0, 0, 0)
 {
@@ -106,11 +113,12 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
   const auto [Emds, Bmds, Jmds] = tile.view_EBJ_on_device();
 
   const int stride = stride_;
+  const int nf = num_fields_;
   auto buf_mds = tile_buf_.mds();
 
   tyvi::mdgrid_work w {};
 
-  // E and B fields: subsample by stride-hopping; zero n0, n1
+  // E and B fields: subsample by stride-hopping; zero density slots
   w.for_each_index(iter_grid_, [=](const auto idx) {
     const auto iz = idx[0], iy = idx[1], ix = idx[2];
 
@@ -128,9 +136,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
     buf_mds[iz, iy, ix][4] = Bmds[si, sj, sk][1];
     buf_mds[iz, iy, ix][5] = Bmds[si, sj, sk][2];
 
-    // n0, n1 (overwritten below if PIC tile)
-    buf_mds[iz, iy, ix][9]  = 0.0f;
-    buf_mds[iz, iy, ix][10] = 0.0f;
+    // density slots: zero n0..n{nspecies-1} (overwritten below if PIC tile)
+    for (int s = 0; s < nf - num_emf_fields; s++)
+      buf_mds[iz, iy, ix][num_emf_fields + s] = 0.0f;
   });
 
   // J fields: volume-sum over stride^3 cells
@@ -157,7 +165,7 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
   w.wait();
 
   // Number density: deposit particles directly at coarse resolution.
-  // n0, n1 slots are already zeroed in the EB kernel above.
+  // Density slots are already zeroed in the EB kernel above.
   auto* pic_tile = dynamic_cast<pic::Tile<3>*>(&tile);
   if (pic_tile) {
     using vt = pic::ParticleContainer::value_type;
@@ -188,9 +196,10 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
         .wait();
     };
 
-    const auto nspec = pic_tile->number_of_species();
-    if (nspec > 0) deposit_species(0, 9);
-    if (nspec > 1) deposit_species(1, 10);
+    const auto nspec = static_cast<int>(pic_tile->number_of_species());
+    const int ndeposit = std::min(nspec, nspecies_);
+    for (int s = 0; s < ndeposit; s++)
+      deposit_species(static_cast<runko::size_t>(s), 9 + s);
   }
 
 #if defined(TYVI_BACKEND_HIP)
@@ -217,9 +226,9 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
 
   if (rc != MPI_SUCCESS) return false;
 
-  // Rank 0 writes the 256-byte header.
+  // Rank 0 writes the 512-byte header.
   // MPI_File_open is collective and synchronizing; no barrier needed
-  // since all data writes target non-overlapping offsets >= 256.
+  // since all data writes target non-overlapping offsets >= header_size.
   if (grid.comm.rank() == 0) {
     rc = mpiio::write_header(
       fh,
@@ -227,7 +236,8 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
       stride_,
       Nx_, Ny_, Nz_,
       NxMesh_, NyMesh_, NzMesh_,
-      lap);
+      lap,
+      num_fields_);
     if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
   }
 
@@ -252,7 +262,7 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
     const int tk = static_cast<int>(tile.index[2]);
 
     // Write each field for this tile
-    for (int f = 0; f < num_fields; f++) {
+    for (int f = 0; f < num_fields_; f++) {
       const MPI_Offset field_base = hdr_size + f * field_bytes;
 
       // Write row by row (each row of nxt_ floats is contiguous in file)

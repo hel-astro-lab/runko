@@ -95,7 +95,7 @@ set (PIC_FILES
 
 
 set (IO_FILES
-     ../io/snapshots/fields.c++
+     ../io/snapshots/hdf5_fields.c++
      ../io/snapshots/mpiio_fields.c++
     )
 

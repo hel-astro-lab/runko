@@ -6,7 +6,8 @@ import numpy as np
 
 import runko
 from tests.mpiio_test_helpers import (
-    FIELD_NAMES, make_config, setup_grid_with_fields,
+    FIELD_NAMES, field_names, make_config, make_pic_config,
+    setup_grid_with_fields, setup_pic_grid_with_particles,
     find_output_file, write_and_read,
 )
 from pytools.mpiio_reader import MAGIC, read_header
@@ -51,7 +52,7 @@ class TestMpiioFieldsWriter(unittest.TestCase):
         self.assertEqual(hdr["nx"], 8)
         self.assertEqual(hdr["ny"], 8)
         self.assertEqual(hdr["nz"], 8)
-        self.assertEqual(hdr["num_fields"], 10)
+        self.assertEqual(hdr["num_fields"], 11)
 
         for i, expected_name in enumerate(FIELD_NAMES):
             self.assertEqual(hdr["field_names"][i], expected_name)
@@ -78,7 +79,8 @@ class TestMpiioFieldsWriter(unittest.TestCase):
         np.testing.assert_allclose(fields["jx"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jy"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["rho"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
     def test_asymmetric_mesh(self):
         """1x1x1 grid, 10x11x13 mesh, stride=1. All dims different.
@@ -194,7 +196,7 @@ class TestMpiioFieldsWriter(unittest.TestCase):
         _, fields = write_and_read(tile_grid, self.outdir, config)
 
         self.assertIsInstance(fields, dict)
-        self.assertEqual(len(fields), 10)
+        self.assertEqual(len(fields), 11)
 
         for name in FIELD_NAMES:
             self.assertIn(name, fields)
@@ -209,7 +211,143 @@ class TestMpiioFieldsWriter(unittest.TestCase):
         np.testing.assert_allclose(fields["jx"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jy"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["rho"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
+
+
+class TestMpiioFieldsDensity(unittest.TestCase):
+
+    def setUp(self):
+        self.outdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.outdir)
+
+    def test_uniform_density_ppc1(self):
+        """PIC tile, 1 particle per cell per species, stride=1.
+        n0 and n1 should both be 1.0 everywhere."""
+
+        config = make_pic_config(outdir=self.outdir)
+        zero = lambda x, y, z: (0, 0, 0)
+        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
+
+        _, fields = write_and_read(tile_grid, self.outdir, config)
+        np.testing.assert_allclose(fields["n0"], 1.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], 1.0, atol=1e-5)
+
+    def test_uniform_density_ppc4(self):
+        """PIC tile, 4 particles per cell per species, stride=1.
+        n0 and n1 should both be 4.0 everywhere."""
+
+        config = make_pic_config(outdir=self.outdir)
+        zero = lambda x, y, z: (0, 0, 0)
+        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=4)
+
+        _, fields = write_and_read(tile_grid, self.outdir, config)
+        np.testing.assert_allclose(fields["n0"], 4.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], 4.0, atol=1e-5)
+
+    def test_density_with_stride(self):
+        """PIC tile, ppc=1, stride=2.
+        Each output cell sums stride^3=8 full-res cells.
+        With 1 particle per cell, n0 and n1 should be 8.0."""
+
+        config = make_pic_config(outdir=self.outdir)
+        zero = lambda x, y, z: (0, 0, 0)
+        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
+
+        stride = 2
+        _, fields = write_and_read(tile_grid, self.outdir, config, stride=stride)
+        volume = stride ** 3
+        np.testing.assert_allclose(fields["n0"], volume * 1.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], volume * 1.0, atol=1e-5)
+
+    def test_emf_tile_density_zero(self):
+        """EMF-only tile (no particles). n0 and n1 should be 0."""
+
+        config = make_config(outdir=self.outdir)
+        tile_grid = setup_grid_with_fields(
+            config,
+            lambda x, y, z: (1, 2, 3),
+            lambda x, y, z: (4, 5, 6),
+            lambda x, y, z: (0, 0, 0))
+
+        _, fields = write_and_read(tile_grid, self.outdir, config)
+        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
+
+
+class TestMpiioFieldsMultiSpecies(unittest.TestCase):
+
+    def setUp(self):
+        self.outdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.outdir)
+
+    def test_emf_only_zero_species(self):
+        """EMF-only tile with nspecies=0. Only 9 EMF fields, no density fields."""
+
+        config = make_config(outdir=self.outdir)
+        tile_grid = setup_grid_with_fields(
+            config,
+            lambda x, y, z: (1, 2, 3),
+            lambda x, y, z: (4, 5, 6),
+            lambda x, y, z: (0, 0, 0))
+
+        hdr, fields = write_and_read(tile_grid, self.outdir, config, nspecies=0)
+        self.assertEqual(hdr["num_fields"], 9)
+        self.assertEqual(len(fields), 9)
+        self.assertNotIn("n0", fields)
+
+    def test_three_species(self):
+        """PIC tile with 3 species. n0, n1, n2 should all be ppc."""
+
+        nsp = 3
+        config = make_pic_config(outdir=self.outdir, nspecies=nsp)
+        zero = lambda x, y, z: (0, 0, 0)
+        tile_grid = setup_pic_grid_with_particles(
+            config, zero, zero, zero, ppc=1, nspecies=nsp)
+
+        hdr, fields = write_and_read(
+            tile_grid, self.outdir, config, nspecies=nsp)
+
+        self.assertEqual(hdr["num_fields"], 9 + nsp)
+        self.assertEqual(hdr["field_names"], field_names(nsp))
+        for i in range(nsp):
+            np.testing.assert_allclose(fields[f"n{i}"], 1.0, atol=1e-5)
+
+    def test_five_species(self):
+        """PIC tile with 5 species (max). n0-n4 should all be ppc."""
+
+        nsp = 5
+        config = make_pic_config(outdir=self.outdir, nspecies=nsp)
+        zero = lambda x, y, z: (0, 0, 0)
+        tile_grid = setup_pic_grid_with_particles(
+            config, zero, zero, zero, ppc=2, nspecies=nsp)
+
+        hdr, fields = write_and_read(
+            tile_grid, self.outdir, config, nspecies=nsp)
+
+        self.assertEqual(hdr["num_fields"], 14)
+        for i in range(nsp):
+            np.testing.assert_allclose(fields[f"n{i}"], 2.0, atol=1e-5)
+
+    def test_one_species(self):
+        """PIC tile with 1 species. Only n0 field written."""
+
+        nsp = 1
+        config = make_pic_config(outdir=self.outdir, nspecies=nsp)
+        zero = lambda x, y, z: (0, 0, 0)
+        tile_grid = setup_pic_grid_with_particles(
+            config, zero, zero, zero, ppc=1, nspecies=nsp)
+
+        hdr, fields = write_and_read(
+            tile_grid, self.outdir, config, nspecies=nsp)
+
+        self.assertEqual(hdr["num_fields"], 10)
+        np.testing.assert_allclose(fields["n0"], 1.0, atol=1e-5)
+        self.assertNotIn("n1", fields)
 
 
 if __name__ == "__main__":

@@ -3,11 +3,11 @@
 #include <vector>
 #include <string>
 
-#include "io/snapshots/snapshot.h"
+#include "io/snapshots/hdf5_snapshot.h"
 #include "corgi/corgi.h"
 
 
-namespace h5io { 
+namespace hdf5 {
 
 
 /// IO object for storing (compressed) snapshots of basic Yee lattice quantities
@@ -71,5 +71,5 @@ class FieldsWriter :
 
 };
 
-} // end of namespace h5io
+} // end of namespace hdf5
 
