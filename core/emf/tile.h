@@ -13,9 +13,12 @@
 #include <cstddef>
 #include <experimental/mdspan>
 #include <functional>
+#include <map>
 #include <optional>
 #include <tuple>
 #include <vector>
+
+#include <mpi.h>
 
 namespace emf {
 
@@ -52,6 +55,20 @@ protected:
   std::array<double, 3> global_coordinate_mins_;
   std::array<double, 3> global_coordinate_maxs_;
 
+  struct PersistentRequestKey {
+    int dest;
+    int mode;
+    int tag;
+    bool operator<(const PersistentRequestKey& o) const {
+      if (dest != o.dest) return dest < o.dest;
+      if (mode != o.mode) return mode < o.mode;
+      return tag < o.tag;
+    }
+  };
+  std::map<PersistentRequestKey, MPI_Request> persistent_send_requests_;
+  std::map<PersistentRequestKey, MPI_Request> persistent_recv_requests_;
+  bool persistent_requests_initialized_ = false;
+
 public:
   static constexpr auto halo_size = 3;
 
@@ -71,7 +88,14 @@ public:
 
   // Has to be explicitly declared as a work around for hipcc bug.
   // see: https://github.com/llvm/llvm-project/issues/141592
-  ~Tile() = default;
+  ~Tile();
+
+  void initialize_persistent_requests(
+    mpi4cpp::mpi::communicator& comm,
+    const std::vector<int>& dest_ranks,
+    const std::vector<int>& orig_ranks,
+    int mode) override;
+  void cleanup_persistent_requests() override;
 
   using vector_field_function =
     std::function<std::tuple<double, double, double>(double, double, double)>;

@@ -20,6 +20,8 @@
 #include <string_view>
 #include <type_traits>
 
+#include <mpi.h>
+
 namespace {
 emf::FieldPropagator
   parse_field_propagator(const std::string_view p)
@@ -365,6 +367,41 @@ void
 }
 
 template<std::size_t D>
+Tile<D>::~Tile()
+{
+  if (persistent_requests_initialized_) {
+    cleanup_persistent_requests();
+  }
+}
+
+template<std::size_t D>
+void
+  Tile<D>::initialize_persistent_requests(
+    mpi4cpp::mpi::communicator& /*comm*/,
+    const std::vector<int>& /*dest_ranks*/,
+    const std::vector<int>& /*orig_ranks*/,
+    int /*mode*/)
+{
+  // Only enable persistent mode; 
+  persistent_requests_initialized_ = true;
+}
+
+template<std::size_t D>
+void
+  Tile<D>::cleanup_persistent_requests()
+{
+  for (auto& [key, req] : persistent_send_requests_) {
+    MPI_Request_free(&req);
+  }
+  persistent_send_requests_.clear();
+  for (auto& [key, req] : persistent_recv_requests_) {
+    MPI_Request_free(&req);
+  }
+  persistent_recv_requests_.clear();
+  persistent_requests_initialized_ = false;
+}
+
+template<std::size_t D>
 std::vector<mpi4cpp::mpi::request>
   Tile<D>::send_data(
     mpi4cpp::mpi::communicator& comm,
@@ -384,11 +421,41 @@ std::vector<mpi4cpp::mpi::request>
 #endif
 
   using runko::comm_mode;
+  PersistentRequestKey key{dest, mode, tag};
+
+  if (persistent_requests_initialized_) {
+    auto it = persistent_send_requests_.find(key);
+    if (it != persistent_send_requests_.end()) {
+      MPI_Start(&it->second);
+      mpi4cpp::mpi::request req;
+      *req.trivial() = it->second;
+      return { req };
+    }
+    const auto cm = static_cast<comm_mode>(mode);
+    if (cm == comm_mode::emf_E || cm == comm_mode::emf_B || cm == comm_mode::emf_J) {
+      auto get_span = [&, this]() -> auto {
+        switch (cm) {
+          case comm_mode::emf_E: return yee_lattice_.span_E();
+          case comm_mode::emf_B: return yee_lattice_.span_B();
+          case comm_mode::emf_J: return yee_lattice_.span_J();
+          default: throw std::logic_error("Invalid EMF mode");
+        }
+      };
+      auto span = get_span();
+      MPI_Request preq;
+      MPI_Send_init(span.data(), static_cast<int>(span.size()), MPI_DOUBLE,
+                    dest, tag, MPI_Comm(comm), &preq);
+      persistent_send_requests_[key] = preq;
+      MPI_Start(&preq);
+      mpi4cpp::mpi::request req;
+      *req.trivial() = preq;
+      return { req };
+    }
+  }
 
   auto make_isend = [&](const auto s) {
     return comm.isend(dest, tag, s.data(), s.size());
   };
-
   switch(static_cast<comm_mode>(mode)) {
     case comm_mode::emf_E: return { make_isend(yee_lattice_.span_E()) };
     case comm_mode::emf_B: return { make_isend(yee_lattice_.span_B()) };
@@ -417,11 +484,41 @@ std::vector<mpi4cpp::mpi::request>
 #endif
 
   using runko::comm_mode;
+  PersistentRequestKey key{orig, mode, tag};
+
+  if (persistent_requests_initialized_) {
+    auto it = persistent_recv_requests_.find(key);
+    if (it != persistent_recv_requests_.end()) {
+      MPI_Start(&it->second);
+      mpi4cpp::mpi::request req;
+      *req.trivial() = it->second;
+      return { req };
+    }
+    const auto cm = static_cast<comm_mode>(mode);
+    if (cm == comm_mode::emf_E || cm == comm_mode::emf_B || cm == comm_mode::emf_J) {
+      auto get_span = [&, this]() -> auto {
+        switch (cm) {
+          case comm_mode::emf_E: return yee_lattice_.span_E();
+          case comm_mode::emf_B: return yee_lattice_.span_B();
+          case comm_mode::emf_J: return yee_lattice_.span_J();
+          default: throw std::logic_error("Invalid EMF mode");
+        }
+      };
+      auto span = get_span();
+      MPI_Request preq;
+      MPI_Recv_init(span.data(), static_cast<int>(span.size()), MPI_DOUBLE,
+                    orig, tag, MPI_Comm(comm), &preq);
+      persistent_recv_requests_[key] = preq;
+      MPI_Start(&preq);
+      mpi4cpp::mpi::request req;
+      *req.trivial() = preq;
+      return { req };
+    }
+  }
 
   auto make_irecv = [&](const auto s) {
     return comm.irecv(orig, tag, s.data(), s.size());
   };
-
   switch(static_cast<comm_mode>(mode)) {
     case comm_mode::emf_E: return { make_irecv(yee_lattice_.span_E()) };
     case comm_mode::emf_B: return { make_irecv(yee_lattice_.span_B()) };
