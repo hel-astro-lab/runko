@@ -1,7 +1,11 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
+#include <vector>
+
+#include <mpi.h>
 
 #include "corgi/corgi.h"
 #include "core/emf/tile.h"
@@ -36,6 +40,8 @@ public:
     int stride,
     int nspecies = 2);
 
+  ~FieldsWriter();
+
   /// Write all local tiles to prefix/flds_<lap>.bin via MPI-IO.
   /// Uses independent row-by-row MPI_File_write_at calls (no temp buffer).
   bool write(corgi::Grid<3>& grid, int lap);
@@ -65,6 +71,21 @@ private:
   /// On CPU the device buffer is host-accessible; on GPU the device
   /// pointer is passed directly to GPU-aware MPI.
   runko::IOFieldGrid<float> tile_buf_;
+
+  // --- Cached MPI filetypes for write_collective ---
+  // Rebuilt only when the local tile set changes (detected by comparing
+  // CIDs with cached_cids_).
+
+  std::vector<MPI_Datatype> cached_filetypes_;  ///< per-tile committed types
+  MPI_Datatype              cached_empty_type_;  ///< type for non-participating rounds
+  int                       cached_max_ntiles_;  ///< collective loop bound
+  std::vector<uint64_t>     cached_cids_;        ///< CIDs from last rebuild
+
+  /// (Re)build cached MPI filetypes from the current grid tile layout.
+  void rebuild_filetypes_(corgi::Grid<3>& grid);
+
+  /// Free all cached MPI filetypes (guarded by MPI_Finalized).
+  void free_cached_filetypes_();
 
   /// Pack tile field data into tile_buf_ using for_each_index kernels.
   /// Data remains on-device; callers are responsible for any D→H sync.
