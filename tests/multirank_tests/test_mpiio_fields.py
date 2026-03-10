@@ -42,7 +42,7 @@ def cleanup_outdir(outdir):
 # ---------------------------------------------------------------------------
 # Test 1: constant fields across all tiles on 4 ranks
 # ---------------------------------------------------------------------------
-def test_multirank_constant_fields():
+def test_multirank_constant_fields(collective=False):
     """2x2x2 grid, 8^3 mesh per tile, stride=1, hilbert_curve partitioning.
     Every tile sets constant E=(1,2,3), B=(4,5,6), J=(0,0,0).
     After writing, rank 0 reads the file and verifies all field values."""
@@ -65,7 +65,10 @@ def test_multirank_constant_fields():
     _ = tile_grid.configure_simulation(config)
 
     writer = MpiioFieldsWriter(outdir, 2, 8, 2, 8, 2, 8, 1)
-    writer.write(tile_grid._corgi_grid, 0)
+    if collective:
+        writer.write_collective(tile_grid._corgi_grid, 0)
+    else:
+        writer.write(tile_grid._corgi_grid, 0)
 
     if rank == 0:
         path = find_output_file(outdir)
@@ -98,7 +101,7 @@ def test_multirank_constant_fields():
 # Test 2: tile placement — verify each tile's data lands at the correct
 #          global position when written from different ranks
 # ---------------------------------------------------------------------------
-def test_multirank_tile_placement():
+def test_multirank_tile_placement(collective=False):
     """2x2x2 grid, 8^3 mesh per tile, stride=1.
     Each tile sets Ex = (i+1) + 10*(j+1) + 100*(k+1) to encode its tile index.
     B, J = (0,0,0).
@@ -124,7 +127,10 @@ def test_multirank_tile_placement():
     _ = tile_grid.configure_simulation(config)
 
     writer = MpiioFieldsWriter(outdir, 2, 8, 2, 8, 2, 8, 1)
-    writer.write(tile_grid._corgi_grid, 0)
+    if collective:
+        writer.write_collective(tile_grid._corgi_grid, 0)
+    else:
+        writer.write(tile_grid._corgi_grid, 0)
 
     if rank == 0:
         path = find_output_file(outdir)
@@ -220,3 +226,5 @@ if __name__ == "__main__":
     test_multirank_constant_fields()
     test_multirank_tile_placement()
     test_multirank_asymmetric_mesh()
+    test_multirank_constant_fields(collective=True)
+    test_multirank_tile_placement(collective=True)

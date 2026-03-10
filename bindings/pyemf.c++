@@ -207,7 +207,8 @@ void
          py::arg("Ny"), py::arg("NyMesh"),
          py::arg("Nz"), py::arg("NzMesh"),
          py::arg("stride"), py::arg("nspecies") = 2)
-    .def("write", &mpiio::FieldsWriter<3>::write);
+    .def("write", &mpiio::FieldsWriter<3>::write)
+    .def("write_collective", &mpiio::FieldsWriter<3>::write_collective);
 
   m_3d.def("_write_average_B_energy_density", &emf::write_average_B_energy_density)
     .def("_write_average_E_energy_density", &emf::write_average_E_energy_density);
