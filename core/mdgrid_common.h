@@ -24,7 +24,7 @@ using grid_extents = std::dextents<index_t, 3>;
 
 template<typename T>
 static constexpr auto io_field_element =
-  tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 10 };
+  tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 14 };
 
 }  // namespace detail
 

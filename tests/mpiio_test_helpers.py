@@ -7,7 +7,15 @@ from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter
 from pytools.mpiio_reader import read_header, read_field_snapshot
 
 
-FIELD_NAMES = ["ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz", "rho"]
+EMF_FIELD_NAMES = ["ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz"]
+
+
+def field_names(nspecies=2):
+    """Return field names for the given number of species."""
+    return EMF_FIELD_NAMES + [f"n{i}" for i in range(nspecies)]
+
+
+FIELD_NAMES = field_names(2)
 
 
 def make_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
@@ -34,6 +42,30 @@ def make_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
     return config
 
 
+def make_pic_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
+                    outdir=None, tile_partitioning="catepillar_track",
+                    nspecies=2):
+    """Create a PIC test configuration with nspecies species."""
+
+    config = make_config(Nx, Ny, Nz, NxMesh, NyMesh, NzMesh,
+                         outdir, tile_partitioning)
+
+    charges = [-1, 1, -1, 1, -1]
+    masses  = [ 1, 1,  1, 1,  1]
+    for i in range(nspecies):
+        setattr(config, f"q{i}", charges[i % len(charges)])
+        setattr(config, f"m{i}", masses[i % len(masses)])
+
+    config.delgam = 1e-5
+    config.temperature_ratio = 1.0
+    config.sigma = 40
+    config.c_omp = 1
+    config.particle_pusher = "boris"
+    config.field_interpolator = "linear_1st"
+    config.current_depositer = "zigzag_1st_atomic"
+    return config
+
+
 def setup_grid_with_fields(config, E_func, B_func, J_func):
     """Create a TileGrid, populate tiles with fields, and configure simulation.
 
@@ -50,6 +82,33 @@ def setup_grid_with_fields(config, E_func, B_func, J_func):
     return tile_grid
 
 
+def setup_pic_grid_with_particles(config, E_func, B_func, J_func, ppc=1,
+                                   nspecies=2):
+    """Create PIC TileGrid with particles at cell centers.
+
+    Each cell gets ppc particles per species at the cell center.
+    """
+
+    P = runko.pic.threeD.ParticleState
+
+    def particle_gen(x, y, z):
+        return [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(0, 0, 0))
+                for _ in range(ppc)]
+
+    tile_grid = runko.TileGrid(config)
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.pic.threeD.Tile(idx, config)
+        tile.set_EBJ(E_func, B_func, J_func)
+
+        for species in range(nspecies):
+            tile.inject_to_each_cell(species, particle_gen)
+
+        tile_grid.add_tile(tile, idx)
+
+    _ = tile_grid.configure_simulation(config)
+    return tile_grid
+
+
 def find_output_file(outdir):
     """Return the path to the first output file in outdir."""
 
@@ -59,7 +118,7 @@ def find_output_file(outdir):
     return os.path.join(outdir, files[0])
 
 
-def write_and_read(tile_grid, outdir, config, stride=1, lap=0):
+def write_and_read(tile_grid, outdir, config, stride=1, lap=0, nspecies=2):
     """Write a snapshot and read it back via the Python reader.
 
     Returns (header_dict, fields_dict).
@@ -70,7 +129,7 @@ def write_and_read(tile_grid, outdir, config, stride=1, lap=0):
         config.Nx, config.NxMesh,
         config.Ny, config.NyMesh,
         config.Nz, config.NzMesh,
-        stride)
+        stride, nspecies)
     writer.write(tile_grid._corgi_grid, lap)
     path = find_output_file(outdir)
     hdr = read_header(path)

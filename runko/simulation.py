@@ -77,7 +77,8 @@ class Simulation:
                                         self._tile_grid._NyMesh,
                                         self._tile_grid._Nz,
                                         self._tile_grid._NzMesh,
-                                        self._io_config["stride"])
+                                        self._io_config["stride"],
+                                        self._io_config.get("nspecies", 2))
 
         self._logger.debug("FieldsWriter constructed.")
 

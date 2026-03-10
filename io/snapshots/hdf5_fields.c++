@@ -1,6 +1,6 @@
 #include <mpi4cpp/mpi.h>
 
-#include "io/snapshots/fields.h"
+#include "io/snapshots/hdf5_fields.h"
 #include "external/ezh5/src/ezh5.hpp"
 #include "core/emf/tile.h"
 
@@ -10,7 +10,7 @@ using ezh5::File;
 
 template<>
 inline void
-  h5io::FieldsWriter<3>::read_tiles(corgi::Grid<3>& grid)
+  hdf5::FieldsWriter<3>::read_tiles(corgi::Grid<3>& grid)
 {
 
   // clear target arrays
@@ -37,7 +37,7 @@ inline void
         return dynamic_cast<emf::Tile<3>&>(grid.get_tile(cid));
       } catch(const std::bad_cast& ex) {
         throw std::runtime_error { std::format(
-          "h5io::FieldsWriter::read_tiles assumes that all tiles are"
+          "hdf5::FieldsWriter::read_tiles assumes that all tiles are"
           "emf::Tiles or its descendants. Orginal exception: {}",
           ex.what()) };
       }
@@ -108,7 +108,7 @@ inline void
 
 
 template<size_t D>
-inline bool h5io::FieldsWriter<D>::write(
+inline bool hdf5::FieldsWriter<D>::write(
     corgi::Grid<D>& grid, int lap)
 {
   read_tiles(grid);
@@ -156,6 +156,6 @@ inline bool h5io::FieldsWriter<D>::write(
 
 //--------------------------------------------------
 // explicit template class instantiations
-//template class h5io::FieldsWriter<1>;
-//template class h5io::FieldsWriter<2>;
-template class h5io::FieldsWriter<3>;
+//template class hdf5::FieldsWriter<1>;
+//template class hdf5::FieldsWriter<2>;
+template class hdf5::FieldsWriter<3>;

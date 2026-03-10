@@ -180,8 +180,18 @@ class TileGrid:
             self._logger.debug(vtile_msg)
 
         self._logger.info(f"simulation configured with: {config.__dict__}")
+
+        # Count particle species from config (q0/m0, q1/m1, ...)
+        nspecies = 0
+        for i in range(6):
+            if getattr(config, f"q{i}") is not None and getattr(config, f"m{i}") is not None:
+                nspecies += 1
+            else:
+                break
+
         io_config = dict(stride=1 if not config.stride else config.stride,
-                         outdir=resolve_outdir(config))
+                         outdir=resolve_outdir(config),
+                         nspecies=nspecies)
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 

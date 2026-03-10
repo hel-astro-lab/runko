@@ -10,10 +10,10 @@
 #include "definitions.h"
 #include "tools/fastlog.h"
 #include "tools/mesh.h"
-#include "io/namer.h"
+#include "io/snapshots/hdf5_namer.h"
 
 
-namespace h5io { 
+namespace hdf5 {
 
 
 /// template for IO object 
