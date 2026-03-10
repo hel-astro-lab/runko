@@ -3,6 +3,8 @@
 #include "io/snapshots/mpiio_fields.h"
 #include "io/snapshots/mpiio_header.h"
 #include "core/emf/tile.h"
+#include "core/pic/tile.h"
+#include "tools/simd_math.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
@@ -50,12 +52,12 @@ int mpiio::write_header(
   puti32(56, lap);
   put32(60, 4);  // dtype_size = sizeof(float)
 
-  // Field names: 10 entries of 16 chars each, starting at offset 64
+  // Field names: 11 entries of 16 chars each, starting at offset 64
   for (int f = 0; f < num_fields; f++) {
     std::strncpy(buf + 64 + f * 16, field_names[f], 15);
   }
 
-  // [224:256] already zeroed
+  // [240:256] already zeroed
 
   MPI_Status status;
   return MPI_File_write_at(fh, 0, buf, 256, MPI_BYTE, &status);
@@ -108,7 +110,7 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
 
   tyvi::mdgrid_work w {};
 
-  // E and B fields: subsample by stride-hopping; rho zeroed here too
+  // E and B fields: subsample by stride-hopping; zero n0, n1
   w.for_each_index(iter_grid_, [=](const auto idx) {
     const auto iz = idx[0], iy = idx[1], ix = idx[2];
 
@@ -126,8 +128,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
     buf_mds[iz, iy, ix][4] = Bmds[si, sj, sk][1];
     buf_mds[iz, iy, ix][5] = Bmds[si, sj, sk][2];
 
-    // rho
-    buf_mds[iz, iy, ix][9] = 0.0f;
+    // n0, n1 (overwritten below if PIC tile)
+    buf_mds[iz, iy, ix][9]  = 0.0f;
+    buf_mds[iz, iy, ix][10] = 0.0f;
   });
 
   // J fields: volume-sum over stride^3 cells
@@ -152,6 +155,43 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
   });
 
   w.wait();
+
+  // Number density: deposit particles directly at coarse resolution.
+  // n0, n1 slots are already zeroed in the EB kernel above.
+  auto* pic_tile = dynamic_cast<pic::Tile<3>*>(&tile);
+  if (pic_tile) {
+    using vt = pic::ParticleContainer::value_type;
+    const auto mx = static_cast<vt>(tile.mins[0]);
+    const auto my = static_cast<vt>(tile.mins[1]);
+    const auto mz = static_cast<vt>(tile.mins[2]);
+    const auto inv_stride = vt{1} / static_cast<vt>(stride);
+
+    auto deposit_species = [&](runko::size_t species, int f_idx) {
+      const auto pos_mds = pic_tile->particles(species).pos_mds();
+      const auto fi = static_cast<runko::size_t>(f_idx);
+
+      tyvi::mdgrid_work {}
+        .for_each_index(
+          pos_mds,
+          [=](const auto idx) {
+            const auto px = pos_mds[idx][0] - mx;
+            const auto py = pos_mds[idx][1] - my;
+            const auto pz = pos_mds[idx][2] - mz;
+
+            const auto ci = static_cast<runko::size_t>(sstd::floor(px * inv_stride));
+            const auto cj = static_cast<runko::size_t>(sstd::floor(py * inv_stride));
+            const auto ck = static_cast<runko::size_t>(sstd::floor(pz * inv_stride));
+
+            auto* const n = &thrust::raw_reference_cast(buf_mds[ck, cj, ci][fi]);
+            sstd::atomic_add(n, vt{1});
+          })
+        .wait();
+    };
+
+    const auto nspec = pic_tile->number_of_species();
+    if (nspec > 0) deposit_species(0, 9);
+    if (nspec > 1) deposit_species(1, 10);
+  }
 
 #if defined(TYVI_BACKEND_HIP)
   // GPU: copy packed data from device to host staging buffer
