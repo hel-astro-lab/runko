@@ -11,6 +11,7 @@
 #include <cstring>
 #include <format>
 #include <string>
+#include <vector>
 
 
 //--------------------------------------------------
@@ -202,13 +203,7 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
       deposit_species(static_cast<runko::size_t>(s), 9 + s);
   }
 
-#if defined(TYVI_BACKEND_HIP)
-  // GPU: copy packed data from device to host staging buffer
-  tyvi::mdgrid_work w2 {};
-  w2.sync_to_staging(tile_buf_);
-  w2.wait();
-#endif
-  // CPU: device buffer is already host-accessible; no copy needed.
+  // Data remains on device. Callers sync to staging if needed.
 }
 
 
@@ -254,6 +249,8 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
 #if defined(TYVI_BACKEND_CPU)
     const float* write_ptr = tile_buf_.span().data();
 #elif defined(TYVI_BACKEND_HIP)
+    // GPU: copy packed data from device to host staging buffer
+    tyvi::mdgrid_work {}.sync_to_staging(tile_buf_).wait();
     const float* write_ptr = tile_buf_.staging_span().data();
 #endif
 
@@ -336,59 +333,38 @@ bool mpiio::FieldsWriter<3>::write_collective(corgi::Grid<3>& grid, int lap)
   rc = MPI_File_set_size(fh, total_size);
   if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
 
-  // --- Collect local tiles ---
+  // --- Collect local tiles and their indices ---
   auto local_cids = grid.get_local_tiles();
   const int ntiles = static_cast<int>(local_cids.size());
 
   struct TileIdx { int ti, tj, tk; };
   std::vector<TileIdx> tile_indices(ntiles);
-
-  // --- Phase 1: Pack all tiles into staging buffer ---
-  // Layout: staging[t * nf * tile_elems + f * tile_elems .. +tile_elems]
-  // Grouped by tile, then by field — matches the per-tile all-fields
-  // struct type's etype slot ordering.
-  const int tile_stride = nf * tile_elems;
-  write_staging_.resize(static_cast<size_t>(ntiles) * tile_stride);
-
   for (int t = 0; t < ntiles; t++) {
     auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(local_cids[t]));
-    pack_tile(tile);
-
-#if defined(TYVI_BACKEND_CPU)
-    const float* write_ptr = tile_buf_.span().data();
-#elif defined(TYVI_BACKEND_HIP)
-    const float* write_ptr = tile_buf_.staging_span().data();
-#endif
-
     tile_indices[t].ti = static_cast<int>(tile.index[0]);
     tile_indices[t].tj = static_cast<int>(tile.index[1]);
     tile_indices[t].tk = static_cast<int>(tile.index[2]);
-
-    for (int f = 0; f < nf; f++) {
-      std::memcpy(
-        write_staging_.data()
-          + static_cast<size_t>(t) * tile_stride
-          + static_cast<size_t>(f) * tile_elems,
-        write_ptr + f * tile_elems,
-        static_cast<size_t>(tile_elems) * sizeof(float));
-    }
   }
 
-  // --- Phase 2: Build per-tile MPI filetypes and write ---
+  // --- Build per-tile MPI filetypes and write ---
   //
   // For each tile we create a subarray type describing its footprint
   // in one (nz_,ny_,nx_) field, then wrap nf copies of that subarray
   // in a struct with field_bytes spacing.  This gives a single type
   // covering all fields for one tile, with etype slots ordered as
-  // [field0 data][field1 data]...[fieldN data] — matching the staging
-  // buffer layout.
+  // [field0 data][field1 data]...[fieldN data] — matching the SoA
+  // layout of tile_buf_.
+  //
+  // Data is written directly from tile_buf_.span().data():
+  //   CPU: host pointer (thrust::host_vector)
+  //   HIP: device pointer (thrust::device_vector) — GPU-aware MPI
+  //        (OpenMPI 5+) handles staging internally.
   //
   // Because MPI_File_set_view is collective, all ranks must iterate
   // the same number of times (max_ntiles across all ranks).
 
   int max_ntiles = 0;
-  MPI_Allreduce(&ntiles, &max_ntiles, 1, MPI_INT, MPI_MAX,
-                MPI_Comm(grid.comm));
+  MPI_Allreduce(&ntiles, &max_ntiles, 1, MPI_INT, MPI_MAX, MPI_Comm(grid.comm));
 
   int gsizes[3]   = {nz_, ny_, nx_};
   int subsizes[3] = {nzt_, nyt_, nxt_};
@@ -402,6 +378,12 @@ bool mpiio::FieldsWriter<3>::write_collective(corgi::Grid<3>& grid, int lap)
 
   bool ok = true;
   for (int t = 0; t < max_ntiles && ok; t++) {
+
+    // --- pack this tile on device (no D→H copy) ---
+    if (t < ntiles) {
+      auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(local_cids[t]));
+      pack_tile(tile);
+    }
 
     // --- build filetype for this tile (or empty for non-participating) ---
     MPI_Datatype tile_sub = MPI_DATATYPE_NULL;
@@ -432,7 +414,7 @@ bool mpiio::FieldsWriter<3>::write_collective(corgi::Grid<3>& grid, int lap)
       MPI_Type_commit(&filetype);
     }
 
-    // --- collective set_view + write ---
+    // --- collective set_view + write directly from device buffer ---
     rc = MPI_File_set_view(
       fh, hdr_size, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
     if (rc != MPI_SUCCESS) { ok = false; }
@@ -441,9 +423,7 @@ bool mpiio::FieldsWriter<3>::write_collective(corgi::Grid<3>& grid, int lap)
       MPI_Status status;
       rc = MPI_File_write_all(
         fh,
-        (t < ntiles)
-          ? write_staging_.data() + static_cast<size_t>(t) * tile_stride
-          : write_staging_.data(),
+        tile_buf_.span().data(),  // CPU: host ptr; HIP: device ptr
         my_count, MPI_FLOAT, &status);
       if (rc != MPI_SUCCESS) ok = false;
     }

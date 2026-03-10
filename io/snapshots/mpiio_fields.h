@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <string>
-#include <vector>
 
 #include "corgi/corgi.h"
 #include "core/emf/tile.h"
@@ -16,9 +15,11 @@ namespace mpiio {
 /// field arrays (ex, ey, ez, bx, by, bz, jx, jy, jz, n0, ..., n{nspecies-1})
 /// stored contiguously in row-major order (z outermost, x innermost).
 ///
-/// Every MPI rank writes its own tiles directly at the correct file
-/// offset using independent MPI_File_write_at calls, avoiding the
-/// reduce-to-rank-0 bottleneck of the HDF5 writer.
+/// write() uses independent MPI_File_write_at calls (one per row per field).
+/// write_collective() uses MPI_File_set_view + MPI_File_write_all with
+/// derived file types, writing directly from the device tile_buf_ without
+/// host staging.  On HIP with GPU-aware MPI (OpenMPI 5+), the device
+/// pointer is passed straight to MPI_File_write_all.
 ///
 /// Stride subsampling and J volume-sum are computed on-device using
 /// tyvi for_each_index kernels (SIMD on CPU, GPU kernels on HIP).
@@ -40,9 +41,9 @@ public:
   bool write(corgi::Grid<3>& grid, int lap);
 
   /// Write all local tiles via collective MPI-IO with derived file types.
-  /// Faster than write() — uses MPI_File_set_view + MPI_File_write_all
-  /// to issue num_fields_ collective writes instead of per-row calls.
-  /// Allocates a staging buffer of num_fields * ntiles * tile_elems floats.
+  /// Uses MPI_File_set_view + MPI_File_write_all, writing directly from
+  /// the device tile_buf_ (no host staging buffer).  On HIP with
+  /// GPU-aware MPI the device pointer is passed straight through.
   bool write_collective(corgi::Grid<3>& grid, int lap);
 
 private:
@@ -61,16 +62,12 @@ private:
 
   /// Scratch buffer: [num_fields_ fields][nzt_][nyt_][nxt_] in SoA layout.
   /// Capacity is (num_emf_fields + max_species) = 14 slots per grid point.
-  /// On CPU the device buffer is host-accessible; on GPU sync_to_staging
-  /// copies to the internal staging buffer for MPI writes.
+  /// On CPU the device buffer is host-accessible; on GPU the device
+  /// pointer is passed directly to GPU-aware MPI.
   runko::IOFieldGrid<float> tile_buf_;
 
-  /// Host staging buffer for write_collective().
-  /// Layout: [tile0: field0..fieldN][tile1: field0..fieldN]...
-  /// Resized on each call; capacity persists between calls.
-  std::vector<float> write_staging_;
-
   /// Pack tile field data into tile_buf_ using for_each_index kernels.
+  /// Data remains on-device; callers are responsible for any D→H sync.
   void pack_tile(emf::Tile<3>& tile);
 };
 
