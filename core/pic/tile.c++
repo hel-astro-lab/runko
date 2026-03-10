@@ -379,6 +379,19 @@ void
 
 
 template<std::size_t D>
+emf::YeeLattice::InterpolatedEB
+  Tile<D>::interpolate_fields_at(const runko::VecList<value_type>& positions) const
+{
+  using yee_vt = emf::YeeLattice::value_type;
+  const auto origo_pos =
+    std::array { static_cast<yee_vt>(this->mins[0]) - this->halo_size,
+                 static_cast<yee_vt>(this->mins[1]) - this->halo_size,
+                 static_cast<yee_vt>(this->mins[2]) - this->halo_size };
+
+  return this->yee_lattice_.interpolate_EB_linear_1st(origo_pos, positions);
+}
+
+template<std::size_t D>
 std::size_t
   Tile<D>::number_of_species() const
 {
@@ -390,6 +403,13 @@ std::size_t
   Tile<D>::number_of_particles(const std::size_t particle_type) const
 {
   return this->particle_buffs_.at(particle_type).size();
+}
+
+template<std::size_t D>
+const ParticleContainer&
+  Tile<D>::particles(const runko::size_t species) const
+{
+  return this->particle_buffs_.at(species);
 }
 
 template<std::size_t D>

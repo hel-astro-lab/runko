@@ -159,7 +159,19 @@ public:
   /// Update reflector wall locations by their velocity * cfl.
   void advance_reflector_walls();
 
+  /// Interpolate E and B fields to given particle positions.
+  ///
+  /// Positions are in tile-local code units (same as ParticleContainer).
+  /// Uses linear_1st interpolation.
+  emf::YeeLattice::InterpolatedEB
+    interpolate_fields_at(const runko::VecList<value_type>& positions) const;
+
+  std::size_t number_of_species() const;
+
   std::size_t number_of_particles(std::size_t particle_type) const;
+
+  /// Const access to particle container for a given species.
+  const ParticleContainer& particles(std::size_t species) const;
 
   /// Returns average kinetic energy of given particle type.
   ///
