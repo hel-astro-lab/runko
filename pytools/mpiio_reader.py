@@ -18,8 +18,9 @@ import numpy as np
 
 # -- module-level constants ---------------------------------------------------
 
-MAGIC = 0x524E4B4F          # "RNKO" in little-endian uint32
-SUPPORTED_VERSIONS = (1, 2, 3)
+from pytools.mpiio_constants import MAGIC
+
+SUPPORTED_VERSIONS = (1, 2, 3)  # field reader supports older format versions too
 
 
 # -- public API ---------------------------------------------------------------

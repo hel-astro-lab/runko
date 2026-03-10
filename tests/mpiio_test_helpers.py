@@ -9,6 +9,9 @@ from pytools.mpiio_reader import read_header, read_field_snapshot
 
 EMF_FIELD_NAMES = ["ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz"]
 
+PRTCL_FIELD_NAMES = ["x", "y", "z", "ux", "uy", "uz",
+                      "ex", "ey", "ez", "bx", "by", "bz"]
+
 
 def field_names(nspecies=2):
     """Return field names for the given number of species."""

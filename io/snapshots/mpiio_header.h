@@ -30,6 +30,14 @@ inline constexpr const char* emf_field_names[9] = {
   "ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz"
 };
 
+/// Number of particle snapshot fields (x,y,z,ux,uy,uz,ex,ey,ez,bx,by,bz)
+inline constexpr int32_t num_prtcl_fields = 12;
+
+/// Particle field names in canonical order
+inline constexpr const char* prtcl_field_names[12] = {
+  "x", "y", "z", "ux", "uy", "uz", "ex", "ey", "ez", "bx", "by", "bz"
+};
+
 /// Write the 512-byte binary header to an MPI file handle.
 /// Returns MPI error code (MPI_SUCCESS on success).
 ///

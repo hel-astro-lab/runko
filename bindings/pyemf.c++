@@ -3,6 +3,7 @@
 #include "io/emf_average_field_energy_density.h"
 #include "io/snapshots/hdf5_fields.h"
 #include "io/snapshots/mpiio_fields.h"
+#include "io/snapshots/mpiio_particles.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -209,6 +210,13 @@ void
          py::arg("stride"), py::arg("nspecies") = 2)
     .def("write", &mpiio::FieldsWriter<3>::write)
     .def("write_collective", &mpiio::FieldsWriter<3>::write_collective);
+
+  // MPI-IO particle snapshot writer
+  py::class_<mpiio::ParticlesWriter<3>>(m_3d, "MpiioParticlesWriter")
+    .def(py::init<const std::string&, int64_t, int>(),
+         py::arg("prefix"), py::arg("n_prtcls"),
+         py::arg("species") = 0)
+    .def("write", &mpiio::ParticlesWriter<3>::write);
 
   m_3d.def("_write_average_B_energy_density", &emf::write_average_B_energy_density)
     .def("_write_average_E_energy_density", &emf::write_average_E_energy_density);

@@ -102,6 +102,9 @@ public:
   [[nodiscard]]
   auto pos_mds() const { return pos_.mds(); }
 
+  [[nodiscard]]
+  auto vel_mds() const { return vel_.mds(); }
+
   /// Wraps coordinates outside of given extents.
   void wrap_positions(std::array<value_type, 3> mins, std::array<value_type, 3> maxs);
 
