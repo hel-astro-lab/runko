@@ -50,7 +50,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize",
-                "BUILD_TESTING": "OFF"
+                "BUILD_TESTING": "ON"
             }
         }
     ],
@@ -73,6 +73,13 @@
             "description": "Enable output and stop on failure",
             "inherits": "test-common",
             "configurePreset": "macos-mpic++-debug"
+        },
+        {
+            "name": "test-macos-mpic++-vec-analysis",
+            "displayName": "mpic++ Vectorization Analysis (macOS)",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "macos-mpic++-vec-analysis"
         }
     ]
 }
