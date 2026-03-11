@@ -4,6 +4,7 @@ from .runko_timer import Timer, timer_statistics
 
 from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
 from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter as FieldsWriter, _write_average_B_energy_density, _write_average_E_energy_density
+from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter as ParticlesWriter
 from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 
 import logging
@@ -39,6 +40,7 @@ class Simulation:
 
         self._io_config = kwargs['io_config']
         self._emf_writer = None
+        self._prtcl_writers = {}  # species -> ParticlesWriter, lazily constructed
 
         self._lap_timers = []
         self._lap_wall_times = []
@@ -81,6 +83,20 @@ class Simulation:
                                         self._io_config.get("nspecies", 2))
 
         self._logger.debug("FieldsWriter constructed.")
+
+
+    def _ensure_constructed_prtcl_writers(self):
+        if self._prtcl_writers:
+            return
+
+        n_prtcls = self._io_config.get("n_prtcls", 0)
+        nspecies = self._io_config.get("nspecies", 2)
+        outdir   = self._io_config["outdir"]
+
+        for sp in range(nspecies):
+            self._prtcl_writers[sp] = ParticlesWriter(outdir, n_prtcls, sp)
+
+        self._logger.debug(f"ParticlesWriters constructed for {nspecies} species, n_prtcls={n_prtcls}.")
 
 
     def virtual_tiles(self):
@@ -177,6 +193,10 @@ class Simulation:
                     case "emf_snapshot":
                         self._ensure_constructed_emf_writer()
                         self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
+                    case "prtcl_snapshot":
+                        self._ensure_constructed_prtcl_writers()
+                        for writer in self._prtcl_writers.values():
+                            writer.write(self._tile_grid._corgi_grid, self.lap)
                     case "average_kinetic_energy":
                         _write_average_kinetic_energy(self.lap, self._io_config["kinetic_energy_path"], self._tile_grid._corgi_grid)
                     case "average_B_energy_density":
