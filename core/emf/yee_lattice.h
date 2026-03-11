@@ -300,6 +300,9 @@ public:
   /// Returns mdspans to host accessible E, B and J in non-halo region.
   auto view_EBJ_on_host();
 
+  /// Returns device mdspans to non-halo E, B and J without device→host copy.
+  auto view_EBJ_on_device();
+
   [[nodiscard]] YeeLattice::VecGridMDS::mapping_type
     grid_mapping_with_halo() const noexcept;
 
@@ -456,6 +459,16 @@ inline auto
   const auto Jmds = nonhalo_submds(J_.staging_mds());
 
   return std::tuple { Emds, Bmds, Jmds };
+}
+
+inline auto
+  YeeLattice::view_EBJ_on_device()
+{
+  return std::tuple {
+    nonhalo_submds(E_.mds()),
+    nonhalo_submds(B_.mds()),
+    nonhalo_submds(J_.mds())
+  };
 }
 
 template<typename MDS>
