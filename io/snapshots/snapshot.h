@@ -27,7 +27,7 @@ class SnapshotWriter {
 
     /// general file extension to be appended to file names
     const string extension = ".h5";
-    
+
     /// Object to handle file names and extensions
     std::string fname;
 
@@ -44,15 +44,13 @@ class SnapshotWriter {
     /// constructor that creates a name and opens the file handle
     SnapshotWriter( std::string  prefix ) : fname{std::move(prefix)} { }
 
-    virtual ~SnapshotWriter() = default;
-
     // NOTE: modify these 2 functions to make your own snapshot io
 
     /// read tile meshes into memory
-    virtual void read_tiles(corgi::Grid<D>& grid) = 0;
+    void read_tiles(corgi::Grid<D>& grid);
 
     /// write hdf5 file
-    virtual bool write(corgi::Grid<D>& grid, int lap) = 0;
+    bool write(corgi::Grid<D>& grid, int lap);
 
     /// communicate snapshots with a B-tree cascade to rank 0
     // NOTE: this version communicates faster but requires n=size(arrs)
@@ -139,7 +137,7 @@ class SnapshotWriter {
     /// communicate snapshots with a B-tree cascade to rank 0
     // NOTE: this version communicates slower but requires only 
     //       1 receive buffer
-    virtual void mpi_reduce_snapshots(corgi::Grid<D>& grid)
+    void mpi_reduce_snapshots(corgi::Grid<D>& grid)
     {
       /* based on https://gist.github.com/rmcgibbo/7178576
       */

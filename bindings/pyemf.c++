@@ -140,7 +140,7 @@ void
             throw std::runtime_error { "lap_coeffs must be 1D array." };
           }
 
-          const auto N  = p.shape(0);
+          const auto N  = static_cast<std::size_t>(p.shape(0));
           auto vec      = std::vector<std::complex<emf::antenna_mode::value_type>>(N);
           const auto pv = p.template unchecked<1>();
 
