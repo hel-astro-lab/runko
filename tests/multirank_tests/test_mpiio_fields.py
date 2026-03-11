@@ -15,7 +15,7 @@ from mpi4py import MPI
 import runko
 from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter
 from tests.mpiio_test_helpers import FIELD_NAMES, make_config, find_output_file
-from pytools.mpiio_reader import read_header, read_field_snapshot
+from runko.mpiio_reader import read_header, read_field_snapshot
 
 
 comm = MPI.COMM_WORLD

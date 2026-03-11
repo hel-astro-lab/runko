@@ -7,7 +7,7 @@ import numpy as np
 
 import runko
 from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter
-from pytools.mpiio_prtcl_reader import MAGIC, read_prtcl_header, read_prtcl_snapshot
+from runko.mpiio_prtcl_reader import MAGIC, read_prtcl_header, read_prtcl_snapshot
 from tests.mpiio_test_helpers import (
     make_pic_config, setup_pic_grid_with_particles, PRTCL_FIELD_NAMES,
 )

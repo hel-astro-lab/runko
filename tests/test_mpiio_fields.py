@@ -10,7 +10,7 @@ from tests.mpiio_test_helpers import (
     setup_grid_with_fields, setup_pic_grid_with_particles,
     find_output_file, write_and_read,
 )
-from pytools.mpiio_reader import MAGIC, read_header
+from runko.mpiio_reader import MAGIC, read_header
 
 
 class TestMpiioFieldsWriterConstruction(unittest.TestCase):
