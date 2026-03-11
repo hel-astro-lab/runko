@@ -268,7 +268,7 @@ void
 }
 
 void
-  YeeLattice::zero_transverse_E_behind_x(const runko::size_t ix_wall)
+  YeeLattice::zero_transverse_E_behind_x(const std::size_t ix_wall)
 {
   if(ix_wall == 0) return;
 
@@ -278,9 +278,9 @@ void
   const auto Emds  = E_.mds();
   const auto region = std::submdspan(
     Emds,
-    std::tuple { runko::size_t { 0 }, ix_end },
-    std::tuple { runko::size_t { 0 }, ny },
-    std::tuple { runko::size_t { 0 }, nz });
+    std::tuple { std::size_t { 0 }, ix_end },
+    std::tuple { std::size_t { 0 }, ny },
+    std::tuple { std::size_t { 0 }, nz });
 
   tyvi::mdgrid_work {}
     .for_each_index(

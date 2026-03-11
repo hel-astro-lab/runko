@@ -249,7 +249,7 @@ public:
   ///
   /// ix_wall is in full lattice coordinates (i.e., including halo offset).
   /// Implements the conducting boundary condition behind a reflector wall.
-  void zero_transverse_E_behind_x(runko::size_t ix_wall);
+  void zero_transverse_E_behind_x(std::size_t ix_wall);
 
   /// Set J = 0 everywhere including in halo.
   void clear_current();

@@ -169,7 +169,7 @@ public:
   std::size_t number_of_particles(std::size_t particle_type) const;
 
   /// Const access to particle container for a given species.
-  const ParticleContainer& particles(runko::size_t species) const;
+  const ParticleContainer& particles(std::size_t species) const;
 
   /// Returns average kinetic energy of given particle type.
   ///

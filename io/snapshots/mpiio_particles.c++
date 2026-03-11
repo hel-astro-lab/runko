@@ -96,7 +96,7 @@ struct TileInfo {
 template<>
 bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
 {
-  const auto sp = static_cast<runko::size_t>(species_);
+  const auto sp = static_cast<runko::index_t>(species_);
 
   // 1. Count particles per local tile
   std::vector<TileInfo> tiles;
@@ -173,12 +173,12 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
   }
 
   // 8. Pack all local sampled particles into prtcl_buf_
-  const auto n_local = static_cast<runko::size_t>(local_sampled);
+  const auto n_local = static_cast<runko::index_t>(local_sampled);
   prtcl_buf_.invalidating_resize(n_local);
 
   if (local_sampled > 0) {
     const auto buf_mds = prtcl_buf_.mds();
-    runko::size_t tile_buf_offset = 0;
+    runko::index_t tile_buf_offset = 0;
 
     for (const auto& t : tiles) {
       if (t.sampled == 0) continue;
@@ -186,8 +186,8 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
       auto& tile = dynamic_cast<pic::Tile<3>&>(grid.get_tile(t.cid));
       const auto& container = tile.particles(sp);
 
-      const auto n_s      = static_cast<runko::size_t>(t.sampled);
-      const auto stride_t = static_cast<runko::size_t>(t.stride);
+      const auto n_s      = static_cast<runko::index_t>(t.sampled);
+      const auto stride_t = static_cast<runko::index_t>(t.stride);
 
       // Gather sampled local positions for field interpolation
       auto sampled_pos = runko::VecList<float>(n_s);
@@ -197,7 +197,7 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
 
         tyvi::mdgrid_work {}
           .for_each_index(sampled_pos, [=](const auto idx) {
-            const auto si = static_cast<runko::size_t>(idx[0] * stride_t);
+            const auto si = static_cast<runko::index_t>(idx[0] * stride_t);
             sp_mds[idx][0] = src_pos[si][0];
             sp_mds[idx][1] = src_pos[si][1];
             sp_mds[idx][2] = src_pos[si][2];
@@ -219,13 +219,13 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
       const auto E_mds   = E_interp.mds();
       const auto B_mds   = B_interp.mds();
 
-      const auto dst_range = std::array<runko::size_t, 2>{
+      const auto dst_range = std::array<runko::index_t, 2>{
         tile_buf_offset, tile_buf_offset + n_s };
       const auto dst_sub = std::submdspan(buf_mds, dst_range);
 
       tyvi::mdgrid_work {}
         .for_each_index(dst_sub, [=](const auto idx) {
-          const auto si = static_cast<runko::size_t>(idx[0] * stride_t);
+          const auto si = static_cast<runko::index_t>(idx[0] * stride_t);
 
           dst_sub[idx][0]  = src_pos[si][0] + mx;   // global x
           dst_sub[idx][1]  = src_pos[si][1] + my;   // global y

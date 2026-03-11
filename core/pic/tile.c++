@@ -409,7 +409,7 @@ std::size_t
 
 template<std::size_t D>
 const ParticleContainer&
-  Tile<D>::particles(const runko::size_t species) const
+  Tile<D>::particles(const std::size_t species) const
 {
   return this->particle_buffs_.at(species);
 }

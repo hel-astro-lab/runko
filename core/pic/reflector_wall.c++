@@ -62,7 +62,7 @@ __attribute__((always_inline)) inline void zigzag_deposit_single(
   const auto [Wx2, Wy2, Wz2] = W2.data;
 
   const auto store_current = [&](const Vec3uz& index, const Vec3& current) {
-    const auto si  = index.template as<runko::size_t>();
+    const auto si  = index.template as<runko::index_t>();
     auto* const Jx = &thrust::raw_reference_cast(Jmds[si.data][0]);
     auto* const Jy = &thrust::raw_reference_cast(Jmds[si.data][1]);
     auto* const Jz = &thrust::raw_reference_cast(Jmds[si.data][2]);
@@ -290,7 +290,7 @@ void
     // convert global wall location to lattice-local index (with halo offset)
     const auto wall_idx =
       static_cast<int>(wall.walloc - value_type(this->mins[0])) + this->halo_size;
-    const auto wall_idx_clamped = static_cast<runko::size_t>(std::max(wall_idx, 0));
+    const auto wall_idx_clamped = static_cast<runko::index_t>(std::max(wall_idx, 0));
 
     if(wall_idx_clamped < nx) {
       this->yee_lattice_.zero_transverse_E_behind_x(wall_idx_clamped);
