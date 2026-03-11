@@ -13,7 +13,7 @@ constexpr int
   particle_tag(
     const int tag,
     const auto particle_ordinal,
-    const runko::size_t particles_in_total)
+    const std::size_t particles_in_total)
 {
   return static_cast<int>(particle_ordinal + particles_in_total * tag);
 }
@@ -25,7 +25,7 @@ constexpr int
   particle_data_tag(
     const int tag,
     const auto particle_ordinal,
-    const runko::size_t particles_in_total)
+    const std::size_t particles_in_total)
 {
   static constexpr auto x = static_cast<int>(data_type == particle_data_type::pos);
   return static_cast<int>(x + 2 * particle_ordinal + 2 * particles_in_total * tag);

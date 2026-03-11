@@ -48,25 +48,25 @@ class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
 
   static_assert(D == 3);
 
-  std::map<runko::size_t, ParticleContainer> particle_buffs_;
+  std::map<std::size_t, ParticleContainer> particle_buffs_;
   ParticlePusher particle_pusher_;
   FieldInterpolator field_interpolator_;
   CurrentDepositer current_depositer_;
 
   std::vector<pic::reflector_wall> reflector_walls_ {};
   std::optional<runko::VecGrid<emf::YeeLattice::value_type>> reflector_correction_J_ {};
-  std::map<runko::size_t, runko::size_t> amount_of_particles_to_be_send_;
-  std::map<runko::size_t, runko::size_t> amount_of_particles_to_be_received_;
+  std::map<std::size_t, std::size_t> amount_of_particles_to_be_send_;
+  std::map<std::size_t, std::size_t> amount_of_particles_to_be_received_;
 
   /// particle type -> (direction -> span to subregion_particle_buffs_)
-  std::map<runko::size_t, std::map<std::array<int, 3>, ParticleContainer::span>>
+  std::map<std::size_t, std::map<std::array<int, 3>, ParticleContainer::span>>
     subregion_particle_spans_;
-  std::map<runko::size_t, ParticleContainer> subregion_particle_buffs_;
+  std::map<std::size_t, ParticleContainer> subregion_particle_buffs_;
 
   void divide_particles_to_subregions();
 
   /// particle type -> {0th particles, 1st particles, ...}
-  std::map<runko::size_t, std::vector<ParticleContainer::specific_span>>
+  std::map<std::size_t, std::vector<ParticleContainer::specific_span>>
     incoming_subregion_particles_ {};
 
 public:
@@ -92,15 +92,15 @@ public:
   /// Note that particle charges and masses qx and mx are read in order: 0, 1, ...
   /// If a i:th mass and charge are missing, the search is stopped.
   explicit Tile(
-    std::array<runko::size_t, 3> tile_grid_idx,
+    std::array<std::size_t, 3> tile_grid_idx,
     const toolbox::ConfigParser& config);
 
   // Has to be explicitly declared as a work around for hipcc bug.
   // see: https://github.com/llvm/llvm-project/issues/141592
   ~Tile() = default;
 
-  std::array<std::vector<value_type>, 3> get_positions(runko::size_t);
-  std::array<std::vector<value_type>, 3> get_velocities(runko::size_t);
+  std::array<std::vector<value_type>, 3> get_positions(std::size_t);
+  std::array<std::vector<value_type>, 3> get_velocities(std::size_t);
 
 
   using particle_generator =
@@ -111,12 +111,12 @@ public:
   /// Generator is called for each cell coordinates.
   ///
   /// Particle type is assumed to be configured.
-  void inject_to_each_cell(runko::size_t particle_type, particle_generator);
+  void inject_to_each_cell(std::size_t particle_type, particle_generator);
 
   /// Inject given particles.
   ///
   /// Particle type is assumed to be configured.
-  void inject(runko::size_t particle_type, const std::vector<runko::ParticleState>&);
+  void inject(std::size_t particle_type, const std::vector<runko::ParticleState>&);
 
   using batch_array = pybind11::array_t<double>;
   using batch_particle_generator =
@@ -127,7 +127,7 @@ public:
   /// Generator is called once with all cell coordinates.
   ///
   /// Particle type is assumed to be configured.
-  void batch_inject_to_cells(runko::size_t particle_type, batch_particle_generator);
+  void batch_inject_to_cells(std::size_t particle_type, batch_particle_generator);
 
   /// Push particles updating their velocities and positions.
   void push_particles();
@@ -164,9 +164,9 @@ public:
   emf::YeeLattice::InterpolatedEB
     interpolate_fields_at(const runko::VecList<value_type>& positions) const;
 
-  runko::size_t number_of_species() const;
+  std::size_t number_of_species() const;
 
-  runko::size_t number_of_particles(runko::size_t particle_type) const;
+  std::size_t number_of_particles(std::size_t particle_type) const;
 
   /// Const access to particle container for a given species.
   const ParticleContainer& particles(runko::size_t species) const;
@@ -177,7 +177,7 @@ public:
   /// where m is the mass corresponding to the particle type.
   ///
   /// Particle type is assumed to be configured.
-  double total_kinetic_energy(runko::size_t particle_type) const;
+  double total_kinetic_energy(std::size_t particle_type) const;
 
   std::vector<mpi4cpp::mpi::request>
     send_data(mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag)
