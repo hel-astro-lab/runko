@@ -1,7 +1,7 @@
 """Reader for runko v5 MPI-IO binary field snapshot files.
 
-Parses the fixed header and provides zero-copy access to
-field data via numpy memory mapping.
+Parses the fixed header and returns writable numpy arrays
+of field data.
 
 Binary layout
 -------------
@@ -121,7 +121,7 @@ def read_field_snapshot(path: str | os.PathLike) -> dict[str, np.ndarray]:
     -------
     dict[str, numpy.ndarray]
         Mapping from field name to a (nz, ny, nx) float32 array.
-        Arrays are backed by a read-only memory map (zero-copy).
+        Arrays are writable copies of the on-disk data.
     """
     hdr = read_header(path)
     nx, ny, nz = hdr["nx"], hdr["ny"], hdr["nz"]
@@ -138,7 +138,7 @@ def read_field_snapshot(path: str | os.PathLike) -> dict[str, np.ndarray]:
             offset=offset,
             shape=(nz, ny, nx),
         )
-        fields[name] = arr
+        fields[name] = np.array(arr)
 
     return fields
 
@@ -156,7 +156,7 @@ def read_field(path: str | os.PathLike, field_name: str) -> np.ndarray:
     Returns
     -------
     numpy.ndarray
-        A (nz, ny, nx) float32 array (read-only memory map).
+        A (nz, ny, nx) float32 array (writable copy).
 
     Raises
     ------
@@ -178,10 +178,10 @@ def read_field(path: str | os.PathLike, field_name: str) -> np.ndarray:
     field_size = nx * ny * nz
     offset = hdr_size + idx * field_size * hdr["dtype_size"]
 
-    return np.memmap(
+    return np.array(np.memmap(
         path,
         dtype=np.float32,
         mode="r",
         offset=offset,
         shape=(nz, ny, nx),
-    )
+    ))
