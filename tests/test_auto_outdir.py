@@ -1,5 +1,4 @@
 import unittest
-import os
 
 from runko.auto_outdir import _compact, resolve_outdir
 from runko.configuration import Configuration
@@ -125,15 +124,23 @@ class TestResolveOutdir(unittest.TestCase):
         result = resolve_outdir(conf)
         self.assertEqual(result, "20x20x20")
 
-    def test_integration_shock_3d_ini(self):
-        """Integration test: resolve_outdir against the real shock_3d.ini."""
-        ini_path = os.path.join(os.path.dirname(__file__),
-                                "..", "projects", "pic-shock", "shock_3d.ini")
-        if not os.path.isfile(ini_path):
-            self.skipTest("shock_3d.ini not found")
-
-        conf = Configuration(ini_path)
-        conf.outdir = "auto"
+    def test_integration_full_config(self):
+        """Full config with prefix, postfix, and all optional params."""
+        conf = self._make_config(
+            outdir="auto",
+            prefix="3d_",
+            postfix="_v1_test1",
+            Nx=8, Ny=2, Nz=2,
+            NxMesh=32, NyMesh=32, NzMesh=32,
+            ppc=2,
+            c_omp=3,
+            sigma=0.1,
+            n_filter_passes=4,
+            cfl=0.45,
+            theta=1e-5,
+            upstream_gamma=3.0,
+            bx_proj=0.0, by_proj=0.0, bz_proj=1.0,
+        )
         result = resolve_outdir(conf)
         self.assertEqual(result,
                          "3d_256x64x64_ppc2_c3_s01_np4_cfl045_t1e-05_gam3_bx0by0bz1_v1_test1")
