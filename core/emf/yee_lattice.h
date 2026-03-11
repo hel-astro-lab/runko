@@ -19,8 +19,8 @@
 namespace emf {
 
 struct YeeLatticeCtorArgs {
-  runko::size_t halo_size {};
-  runko::size_t Nx {}, Ny {}, Nz {};
+  std::size_t halo_size {};
+  std::size_t Nx {}, Ny {}, Nz {};
 };
 
 struct YeeLatticeFieldsAtPoint {
@@ -35,9 +35,9 @@ struct YeeLatticeFieldsAtPoint {
 /// in the Yee Lattice.
 template<typename F>
 concept yee_lattice_fields_function =
-  std::invocable<F, runko::size_t, runko::size_t, runko::size_t> and
+  std::invocable<F, runko::index_t, runko::index_t, runko::index_t> and
   std::same_as<
-    std::invoke_result_t<F, runko::size_t, runko::size_t, runko::size_t>,
+    std::invoke_result_t<F, runko::index_t, runko::index_t, runko::index_t>,
     YeeLatticeFieldsAtPoint>;
 
 /// Yee lattice of plasma quantities in tyvi::mdgrid continers.
@@ -49,7 +49,7 @@ public:
 
   using YeeLatticeHostCopy = tyvi::mdgrid_buffer<
     std::vector<YeeLatticeFieldsAtPoint>,
-    std::extents<runko::size_t>,
+    std::extents<runko::index_t>,
     std::layout_right,
     VecGrid::grid_extents_type,
     VecGrid::grid_layout_type>;
@@ -68,8 +68,8 @@ public:
   }
 
 private:
-  runko::size_t halo_size_;
-  std::array<runko::size_t, 3> extents_wout_halo_;
+  std::size_t halo_size_;
+  std::array<std::size_t, 3> extents_wout_halo_;
 
 
   /// Electric field
@@ -119,9 +119,9 @@ private:
 public:
   explicit YeeLattice(YeeLatticeCtorArgs);
 
-  [[nodiscard]] std::array<runko::size_t, 3> extents_wout_halo() const;
-  [[nodiscard]] std::array<runko::size_t, 3> extents_with_halo() const;
-  [[nodiscard]] runko::size_t halo_size() const;
+  [[nodiscard]] std::array<std::size_t, 3> extents_wout_halo() const;
+  [[nodiscard]] std::array<std::size_t, 3> extents_with_halo() const;
+  [[nodiscard]] std::size_t halo_size() const;
 
   /// Initializes E, B and J in non-halo region.
   void set_EBJ(yee_lattice_fields_function auto&& f);
@@ -253,7 +253,7 @@ public:
 
   /// Represents a set of locations and corresponding currents.
   struct [[nodiscard]] CurrentContributions {
-    thrust::device_vector<std::array<runko::size_t, 3>> locations;
+    thrust::device_vector<std::array<runko::index_t, 3>> locations;
     thrust::device_vector<std::array<value_type, 3>> currents;
   };
 
@@ -368,7 +368,7 @@ void
 {
   const auto mds_extents =
     std::views::iota(0u, mds.rank()) |
-    std::views::transform([&](const runko::size_t i) { return mds.extent(i); });
+    std::views::transform([&](const std::size_t i) { return mds.extent(i); });
 
 
   if(not std::ranges::equal(mds_extents, extents_with_halo())) {
@@ -383,13 +383,13 @@ auto
   assert_mds_spans_whole_lattice(mds);
 
   auto oneD_dir_to_index_extent =
-    [&, this](const runko::size_t i) -> std::tuple<runko::size_t, runko::size_t> {
+    [&, this](const std::size_t i) -> std::tuple<std::size_t, std::size_t> {
     switch(dir[i]) {
-      case -1: return { 0u, halo_size_ };
+      case -1: return { 0uz, halo_size_ };
       case 0: return { halo_size_, halo_size_ + extents_wout_halo_[i] };
       case 1:
         return { halo_size_ + extents_wout_halo_[i],
-                 2u * halo_size_ + extents_wout_halo_[i] };
+                 2uz * halo_size_ + extents_wout_halo_[i] };
       default:
         throw std::logic_error { std::format("dir[{}] = {} != -1, 0 or 1", i, dir[i]) };
     }
@@ -462,9 +462,9 @@ inline auto
   assert_mds_spans_whole_lattice(mds);
 
   auto oneD_dir_to_index_extent =
-    [&, this](const runko::size_t i) -> std::tuple<runko::size_t, runko::size_t> {
+    [&, this](const std::size_t i) -> std::tuple<std::size_t, std::size_t> {
     switch(invert_dir(dir)[i]) {
-      case -1: return { halo_size_, 2u * halo_size_ };
+      case -1: return { halo_size_, 2uz * halo_size_ };
       case 0: return { halo_size_, halo_size_ + extents_wout_halo_[i] };
       case 1: return { extents_wout_halo_[i], halo_size_ + extents_wout_halo_[i] };
       default:

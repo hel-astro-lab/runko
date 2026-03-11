@@ -56,7 +56,7 @@ public:
   /// `d{x,y,z}`: coordinate distance between mesh/grid points
   /// `field_propagator`: scheme to propagate E and B fields.
   explicit Tile(
-    std::array<runko::size_t, 3> tile_grid_indices,
+    std::array<std::size_t, 3> tile_grid_indices,
     const toolbox::ConfigParser& config);
 
   // Has to be explicitly declared as a work around for hipcc bug.
@@ -96,7 +96,7 @@ public:
   auto view_EBJ_on_host() { return yee_lattice_.view_EBJ_on_host(); }
 
   /// Size of the non-halo yee lattice.
-  std::array<runko::size_t, 3> extents_wout_halo() const;
+  std::array<std::size_t, 3> extents_wout_halo() const;
 
   /// Advance B by half time step using scheme from configuration in non-halo region.
   void push_half_b();

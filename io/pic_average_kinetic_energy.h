@@ -18,7 +18,7 @@ namespace pic {
 
 void
   write_average_kinetic_energy(
-    const runko::size_t lap,
+    const std::size_t lap,
     const std::string path,
     corgi::Grid<3>& grid)
 {
@@ -47,7 +47,7 @@ void
       }
     });
 
-  auto local_total_energy_n_number_of_particles = [&](const runko::size_t particle_type) {
+  auto local_total_energy_n_number_of_particles = [&](const std::size_t particle_type) {
     auto total_energies = pic_tiles | rv::transform([&](auto& tile) -> double {
                             return tile.total_kinetic_energy(particle_type);
                           });

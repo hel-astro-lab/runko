@@ -22,7 +22,7 @@ namespace {
 void
   write_average_field_value(
     std::invocable<const emf::Tile<3>&> auto&& f,
-    const runko::size_t lap,
+    const std::size_t lap,
     const std::string& path,
     corgi::Grid<3>& grid)
 {
@@ -131,7 +131,7 @@ namespace emf {
 
 void
   write_average_B_energy_density(
-    const runko::size_t lap,
+    const std::size_t lap,
     const std::string path,
     corgi::Grid<3>& grid)
 {
@@ -144,7 +144,7 @@ void
 
 void
   write_average_E_energy_density(
-    const runko::size_t lap,
+    const std::size_t lap,
     const std::string path,
     corgi::Grid<3>& grid)
 {

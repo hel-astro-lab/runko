@@ -74,14 +74,14 @@ namespace emf {
 
 template<std::size_t D>
 Tile<D>::Tile(
-  const std::array<runko::size_t, 3> tile_indices,
+  const std::array<std::size_t, 3> tile_indices,
   const toolbox::ConfigParser& p) :
   corgi::Tile<D>(),
   yee_lattice_(
     YeeLatticeCtorArgs { .halo_size = halo_size,
-                         .Nx        = p.get_or_throw<runko::size_t>("NxMesh"),
-                         .Ny        = p.get_or_throw<runko::size_t>("NyMesh"),
-                         .Nz        = p.get_or_throw<runko::size_t>("NzMesh")
+                         .Nx        = p.get_or_throw<std::size_t>("NxMesh"),
+                         .Ny        = p.get_or_throw<std::size_t>("NyMesh"),
+                         .Nz        = p.get_or_throw<std::size_t>("NzMesh")
 
     }),
   cfl_ { p.get_or_throw<double>("cfl") },
@@ -112,9 +112,9 @@ Tile<D>::Tile(
 
   const auto [i, j, k] = tile_indices;
 
-  const auto Nx = p.get_or_throw<runko::size_t>("Nx");
-  const auto Ny = p.get_or_throw<runko::size_t>("Ny");
-  const auto Nz = p.get_or_throw<runko::size_t>("Nz");
+  const auto Nx = p.get_or_throw<std::size_t>("Nx");
+  const auto Ny = p.get_or_throw<std::size_t>("Ny");
+  const auto Nz = p.get_or_throw<std::size_t>("Nz");
 
   if(Nx <= i or Ny <= j or Nz <= k) {
     throw std::runtime_error { "Trying to create tile outside of configured grid." };
@@ -152,7 +152,7 @@ void
 
   const auto global_coordinates = global_coordinate_map();
 
-  auto f = [&](const runko::size_t i, const runko::size_t j, const runko::size_t k) {
+  auto f = [&](const runko::index_t i, const runko::index_t j, const runko::index_t k) {
     const auto [x, y, z] = global_coordinates(i, j, k);
     const auto ex        = E(x + 0.5, y, z);
     const auto ey        = E(x, y + 0.5, z);
@@ -242,7 +242,7 @@ void
   const auto jz = Jz(x, y, zp5);
 
   const auto assert_shape = [&](const auto& A) {
-    if(static_cast<runko::size_t>(A.shape(0)) != e[0] or static_cast<runko::size_t>(A.shape(1)) != e[1] or static_cast<runko::size_t>(A.shape(2)) != e[2]) {
+    if(static_cast<std::size_t>(A.shape(0)) != e[0] or static_cast<std::size_t>(A.shape(1)) != e[1] or static_cast<std::size_t>(A.shape(2)) != e[2]) {
       throw std::runtime_error {
         "Batch field setter returned array with incorrect shape!"
       };
@@ -270,7 +270,7 @@ void
   const auto jzv = jz.template unchecked<3>();
 
 
-  auto f = [&](const runko::size_t i, const runko::size_t j, const runko::size_t k) {
+  auto f = [&](const runko::index_t i, const runko::index_t j, const runko::index_t k) {
     return YeeLatticeFieldsAtPoint { .Ex = exv(i, j, k),
                                      .Ey = eyv(i, j, k),
                                      .Ez = ezv(i, j, k),
@@ -300,7 +300,7 @@ YeeLattice::YeeLatticeHostCopy
 }
 
 template<std::size_t D>
-std::array<runko::size_t, 3>
+std::array<std::size_t, 3>
   Tile<D>::extents_wout_halo() const
 {
   return yee_lattice_.extents_wout_halo();

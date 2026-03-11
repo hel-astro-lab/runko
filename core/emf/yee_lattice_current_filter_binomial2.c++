@@ -45,9 +45,9 @@ void
   const auto Nz            = e.extent(2);
   const auto filteredJ_mds = std::submdspan(
     filteredJ.mds(),
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nx - 1u },
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Ny - 1u },
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nz - 1u });
+    std::tuple { std::integral_constant<runko::index_t, 1u> {}, Nx - 1u },
+    std::tuple { std::integral_constant<runko::index_t, 1u> {}, Ny - 1u },
+    std::tuple { std::integral_constant<runko::index_t, 1u> {}, Nz - 1u });
 
 
   const auto Jmds = this->J_.mds();
@@ -121,9 +121,9 @@ void
   auto filteredJ           = VecGrid(this->J_.extents());
   const auto filteredJ_mds = std::submdspan(
     filteredJ.mds(),
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nx - 1u },
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Ny - 1u },
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nz - 1u });
+    std::tuple { std::integral_constant<runko::index_t, 1u> {}, Nx - 1u },
+    std::tuple { std::integral_constant<runko::index_t, 1u> {}, Ny - 1u },
+    std::tuple { std::integral_constant<runko::index_t, 1u> {}, Nz - 1u });
 
   w.for_each_index(
      filteredJ_mds,
