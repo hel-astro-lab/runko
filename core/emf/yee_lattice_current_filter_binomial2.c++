@@ -5,6 +5,10 @@
 #include <tuple>
 #include <utility>
 
+// 3D single-pass binomial filter using a 3x3x3 coefficient array.
+// NOTE: The C3 array is found to block CPU auto-SIMD vectorization;
+//       prefer the separable binomial2_unrolled variant for CPU backends.
+
 void
   emf::YeeLattice::filter_current_binomial2()
 {
@@ -12,19 +16,8 @@ void
     filter_current_binomial2(w);
 }
 
-// 3D single-pass binomial filter using a 3x3x3 coefficient array.
-// NOTE: The C3 array is found to block CPU auto-SIMD vectorization;
-//       prefer the separable binomial2 variant for CPU backends.
-
 void
-  emf::YeeLattice::filter_current_binomial2_3d()
-{
-    const tyvi::mdgrid_work w{};
-    filter_current_binomial2_3d(w);
-}
-
-void
-  emf::YeeLattice::filter_current_binomial2_3d(const tyvi::mdgrid_work& w)
+  emf::YeeLattice::filter_current_binomial2(const tyvi::mdgrid_work& w)
 {
   // 3D 3-point binomial coefficients
   static constexpr value_type C3[3][3][3] = { { { 1. / 64., 2. / 64., 1. / 64. },
@@ -73,9 +66,17 @@ void
 }
 
 
+// Separable 3-pass binomial filter with manually unrolled 1D stencils.
 
 void
-  emf::YeeLattice::filter_current_binomial2(const tyvi::mdgrid_work& w)
+  emf::YeeLattice::filter_current_binomial2_unrolled()
+{
+    const tyvi::mdgrid_work w{};
+    filter_current_binomial2_unrolled(w);
+}
+
+void
+  emf::YeeLattice::filter_current_binomial2_unrolled(const tyvi::mdgrid_work& w)
 {
   // 1D binomial coefficients (the 3D stencil is separable: C3[a][b][c] = B1[a]*B1[b]*B1[c])
   static constexpr value_type B1[3] = { 0.25f, 0.5f, 0.25f };

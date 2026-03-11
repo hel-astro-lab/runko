@@ -279,20 +279,17 @@ public:
   /// Throws if given grid is not same size as the lattice with halo.
   void deposit_current(const tyvi::mdgrid_work&, const runko::VecGrid<value_type>&);
 
-  /// Apply digital 2nd order one-pass binomial filter for J.
+  /// Apply digital 2nd order binomial filter for J using a single 3D kernel.
   void filter_current_binomial2();
 
-  /// Apply digital 2nd order one-pass binomial filter for J asynchronouosly.
-  ///
-  /// Asynchronously  means that work is executed on the given work which is
-  /// synchronized before returning.
+  /// Apply digital 2nd order binomial filter for J using a single 3D kernel (async).
   void filter_current_binomial2(const tyvi::mdgrid_work&);
 
-  /// Apply digital 2nd order binomial filter for J using a single 3D kernel.
-  void filter_current_binomial2_3d();
+  /// Apply digital 2nd order binomial filter for J with manually unrolled separable passes.
+  void filter_current_binomial2_unrolled();
 
-  /// Apply digital 2nd order binomial filter for J using a single 3D kernel (async).
-  void filter_current_binomial2_3d(const tyvi::mdgrid_work&);
+  /// Apply digital 2nd order binomial filter for J with manually unrolled separable passes (async).
+  void filter_current_binomial2_unrolled(const tyvi::mdgrid_work&);
 
   /// Returns mdspans to host accessible E, B and J in non-halo region.
   auto view_EBJ_on_host();

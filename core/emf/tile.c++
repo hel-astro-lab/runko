@@ -37,8 +37,8 @@ emf::CurrentFilter
 {
   if(p == "binomial2") {
     return emf::CurrentFilter::binomial2;
-  } else if(p == "binomial2_3d") {
-    return emf::CurrentFilter::binomial2_3d;
+  } else if(p == "binomial2_unrolled") {
+    return emf::CurrentFilter::binomial2_unrolled;
   } else {
     const auto msg = std::format("{} is not supported current filter.", p);
     throw std::runtime_error { msg };
@@ -354,8 +354,8 @@ void
     case emf::CurrentFilter::binomial2:
       this->yee_lattice_.filter_current_binomial2();
       return;
-    case emf::CurrentFilter::binomial2_3d:
-      this->yee_lattice_.filter_current_binomial2_3d();
+    case emf::CurrentFilter::binomial2_unrolled:
+      this->yee_lattice_.filter_current_binomial2_unrolled();
       return;
     default:
       throw std::logic_error {
