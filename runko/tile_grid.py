@@ -191,7 +191,8 @@ class TileGrid:
 
         io_config = dict(stride=1 if not config.stride else config.stride,
                          outdir=resolve_outdir(config),
-                         nspecies=nspecies)
+                         nspecies=nspecies,
+                         n_prtcls=config.n_prtcls if config.n_prtcls else 0)
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
