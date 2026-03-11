@@ -140,7 +140,7 @@ void
             throw std::runtime_error { "lap_coeffs must be 1D array." };
           }
 
-          const auto N  = p.shape(0);
+          const auto N  = static_cast<std::size_t>(p.shape(0));
           auto vec      = std::vector<std::complex<emf::antenna_mode::value_type>>(N);
           const auto pv = p.template unchecked<1>();
 
@@ -161,7 +161,7 @@ void
   // 3d tile
   py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(m_3d, "Tile")
     .def(
-      py::init([](const std::array<runko::size_t, 3> tile_grid_idx, const py::handle& h) {
+      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
         return emf::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
       }))
     .def("set_EBJ", &emf::Tile<3>::set_EBJ)

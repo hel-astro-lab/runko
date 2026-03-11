@@ -27,7 +27,7 @@
 namespace pic {
 
 struct ParticleContainerArgs {
-  runko::size_t N;
+  std::size_t N;
   double charge, mass;
 };
 
@@ -42,8 +42,8 @@ public:
 
   /// Specifies some span of particles in ParticleContainer.
   struct span {
-    runko::size_t begin { 0 }, end { 0 };
-    [[nodiscard]] constexpr runko::size_t size() const { return end - begin; }
+    runko::index_t begin { 0 }, end { 0 };
+    [[nodiscard]] constexpr runko::index_t size() const { return end - begin; }
   };
 
   /// Specifies a specifc span of particles in some ParticleContainer.
@@ -53,7 +53,7 @@ public:
   struct specific_span;
 
 private:
-  using E = std::dextents<runko::size_t, 1>;
+  using E = std::dextents<runko::index_t, 1>;
 
   /// Positions are in code units (i.e. x~ in x = x~ * Delta x).
   runko::VecList<value_type> pos_;
@@ -81,7 +81,7 @@ public:
   void set(const R&);
 
   /// Returns the number of particles.
-  runko::size_t size() const;
+  std::size_t size() const;
   ParticleContainerArgs args() const;
 
   std::array<std::vector<value_type>, 3> get_positions();
@@ -171,7 +171,7 @@ struct ParticleContainer::specific_span {
   ParticleContainer::span span {};
   ParticleContainer const* container { nullptr };
 
-  [[nodiscard]] constexpr runko::size_t size() const { return span.size(); }
+  [[nodiscard]] constexpr runko::index_t size() const { return span.size(); }
 };
 
 template<std::convertible_to<const ParticleContainer&>... T>
@@ -191,7 +191,7 @@ inline void
   // { Nprev, Nprev + Nothers[0], ..., Nprev + Nothers[0] + ... + Nothers[-2] }
   // Note that the last sum does not include Nothers[-1].
   const auto other_begins = [&] {
-    auto temp = std::array<runko::size_t, sizeof...(others)> {};
+    auto temp = std::array<runko::index_t, sizeof...(others)> {};
     std::exclusive_scan(
       Nothers.begin(),
       Nothers.end(),
@@ -203,7 +203,7 @@ inline void
   // { Nprev + Nothers[0], ..., Nprev + Nothers[0] + ... + Nothers[-1] }
   // Note that the last sum includes Nothers[-1].
   const auto other_ends = [&] {
-    auto temp = std::array<runko::size_t, sizeof...(others)> {};
+    auto temp = std::array<runko::index_t, sizeof...(others)> {};
     std::inclusive_scan(
       Nothers.begin(),
       Nothers.end(),
@@ -233,7 +233,7 @@ inline void
   const auto handle_other = [&](
                               tyvi::mdgrid_work& w,
                               const ParticleContainer& other,
-                              const std::array<runko::size_t, 2> where_other_goes) {
+                              const std::array<runko::index_t, 2> where_other_goes) {
     const auto other_pos_mds = other.pos_.mds();
     const auto other_vel_mds = other.vel_.mds();
 
@@ -264,7 +264,7 @@ template<std::ranges::forward_range R>
 inline void
   ParticleContainer::add_particles(const R& new_particles)
 {
-  const auto N = static_cast<runko::size_t>(std::ranges::distance(new_particles));
+  const auto N = static_cast<std::size_t>(std::ranges::distance(new_particles));
 
   auto args  = this->args();
   args.N     = N;
@@ -274,7 +274,7 @@ inline void
   const auto added_vel_smds = added.vel_.staging_mds();
 
   {
-    runko::size_t i = 0;
+    runko::index_t i = 0;
     for(const auto& p: new_particles) {
       for(const auto j: std::views::iota(0u, 3u)) {
         added_pos_smds[i][j] = p.pos[j];
@@ -328,7 +328,7 @@ template<std::ranges::forward_range R>
   static constexpr auto Nmax = 27u;  // atm nothing should call this with more.
   const auto Nspans          = rn::distance(spans);
 
-  if(static_cast<runko::size_t>(Nspans) > Nmax) {
+  if(static_cast<std::size_t>(Nspans) > Nmax) {
     throw std::runtime_error {
       "ParticleContainer: trying to set from too many spans."
     };
@@ -360,19 +360,19 @@ template<std::ranges::forward_range R>
   // { 0, span_sizes[0], ..., span_sizes[0] + ... + span_sizes[-2] }
   // Note that the last sum does not include span_sizes[-1].
   const auto begins = [&] {
-    auto temp = std::vector<runko::size_t>(Nspans);
+    auto temp = std::vector<runko::index_t>(Nspans);
     std::exclusive_scan(
       span_sizes.begin(),
       span_sizes.end(),
       temp.begin(),
-      0u);
+      runko::index_t { 0 });
     return temp;
   }();
 
   // { span_sizes[0], ..., span_sizes[0] + ... + span_sizes[-1] }
   // Note that the last sum includes span_sizes[-1].
   const auto ends = [&] {
-    auto temp = std::vector<runko::size_t>(Nspans);
+    auto temp = std::vector<runko::index_t>(Nspans);
     std::inclusive_scan(
       span_sizes.begin(),
       span_sizes.end(),
@@ -391,7 +391,7 @@ template<std::ranges::forward_range R>
   const auto handle_span = [&](
                              tyvi::mdgrid_work& w,
                              const ParticleContainer::specific_span& span,
-                             const std::array<runko::size_t, 2> location_in_this) {
+                             const std::array<runko::index_t, 2> location_in_this) {
     const auto other_pos_mds = span.container->pos_.mds();
     const auto other_vel_mds = span.container->vel_.mds();
 
@@ -458,20 +458,20 @@ inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
   namespace rn                       = std::ranges;
-  const auto particle_ordinals_begin = thrust::counting_iterator<runko::size_t>(0u);
+  const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0u);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto pos_mds = this->pos_.mds();
 
   const auto scores_begin = thrust::make_transform_iterator(
     particle_ordinals_begin,
-    [=, f = std::forward<decltype(f)>(f)](const runko::size_t i) {
+    [=, f = std::forward<decltype(f)>(f)](const runko::index_t i) {
       return f(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
     });
   const auto scores_end = rn::next(scores_begin, this->size());
 
   auto trackers =
-    thrust::device_vector<runko::size_t>(particle_ordinals_begin, particle_ordinals_end);
+    thrust::device_vector<runko::index_t>(particle_ordinals_begin, particle_ordinals_end);
 
   using score_t = std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
   auto scores   = thrust::device_vector<score_t>(scores_begin, scores_end);
@@ -489,7 +489,7 @@ inline void
     .for_each_index(
       tmp_pos,
       [=, p = trackers.begin()](const auto idx, const auto tidx) {
-        const runko::size_t i = p[idx[0]];
+        const runko::index_t i = p[idx[0]];
         pos_mds[idx][tidx]  = tmp_pos_mds[i][tidx];
         vel_mds[idx][tidx]  = tmp_vel_mds[i][tidx];
       })

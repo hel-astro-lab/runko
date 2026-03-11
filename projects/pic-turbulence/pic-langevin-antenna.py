@@ -10,17 +10,24 @@ import logging
 
 
 if __name__ == "__main__":
+    # Important for all of the nodes to have same seed.
     rng = np.random.default_rng(seed=42)
-
     logger = runko.runko_logger()
-
-    if runko.on_main_rank():
-        pass
-        # logger.setLevel(logging.DEBUG)
-
     config = runko.Configuration(None)
 
-    config.outdir = "turb-langevin-antenna"
+    # Input parameters:
+    n_e_num = 8
+    skin_depth_in_delta_x = 10
+    modes_par, modes_perp = 1, 1
+    modes = [(modes_perp, 0, modes_par),
+             (modes_perp, 0, -modes_par),
+             (0, modes_perp, modes_par),
+             (0, modes_perp, -modes_par)]
+    delgam = 0.3 # temperature
+    temp_ration = 1 # T_i / T_e
+    cold_sigma = 10 # magnetization (omega_ce/omega_pe)^2
+
+
     config.Nx = 1
     config.Ny = 1
     config.Nz = 1
@@ -28,7 +35,7 @@ if __name__ == "__main__":
     config.NyMesh = 100
     config.NzMesh = 100
     config.cfl = 0.45
-    config.Nt = int(5.0*config.Nx*config.NxMesh/config.cfl/3.0) # =5eddy turnover times
+    config.Nt = int(10 * config.NxMesh * config.Nx / config.cfl)
     config.xmin = 0
     config.ymin = 0
     config.zmin = 0
@@ -40,93 +47,76 @@ if __name__ == "__main__":
     config.current_depositer = "zigzag_1st_atomic"
     config.current_filter = "binomial2"
     config.tile_partitioning = "hilbert_curve"
+    config.outdir = f"turb-langevin-antenna"
 
 
     # Problem specific configuration
-    ppc = 2 # particles per cell (one particle type)
-    oppc = 2 * ppc # overall particles per cell (all particle types)
-    gamma = 1
-    c_omp = 1
-    omp = config.cfl / c_omp
+    n_num = 2 * n_e_num
 
-    config.q0 = -gamma * (omp**2.0) / (0.5 * oppc * (1.0 + config.m0 / config.m1))
+    plasma_freq_num = config.cfl / skin_depth_in_delta_x
+    average_gamma = 1 + 3 * delgam # approximation from Nättilä & Beloborodov (2021)
+    config.q0 = -average_gamma * (plasma_freq_num**2.0) / (n_e_num * (1.0 + config.m0 / config.m1))
     config.q1 = abs(config.q0)
 
-    m0 = config.m0 * abs(config.q0)
-    m1 = config.m1 * abs(config.q1)
-
-    delgam = 0.3 # temperature
-    temp_ration = 1 # T_i / T_e
-    sigma = 10 # magnetization (omega_ce/omega_pe)^2
+    m0_num = config.m0 * abs(config.q0)
+    m1_num = config.m1 * abs(config.q1)
 
     delgam0 = delgam
     delgam1 = temp_ration * delgam0
 
-    # No corrections; cold sigma
-    binit_nc = np.sqrt(oppc * (config.cfl**2.0) * sigma * m0)
-    # another approximation which is more accurate at \delta ~ 1
-    gammath = 1.0 + (3.0/2.0) * delgam1
+    # Sigma that takes into account the heat contributions:
+    sigma = cold_sigma / average_gamma
+    B0_num = np.sqrt(n_num * (config.cfl**2.0) * sigma * m0_num)
 
-    binit_approx = np.sqrt(gammath * oppc * m0 * (config.cfl**2.0) * sigma)
-    binit = binit_approx # NOTE: selecting this as our sigma definitions
+    Lx_num = config.Nx * config.NxMesh
+    Ly_num = config.Ny * config.NyMesh
+    kx_num = np.array(list(map(lambda n: 2 * np.pi * n[0] / Lx_num, modes)))
+    ky_num = np.array(list(map(lambda n: 2 * np.pi * n[1] / Ly_num, modes)))
+    logger.info(f"kx: {kx_num}")
+    logger.info(f"ky: {ky_num}")
+    logger.info(f"k_perp2: {np.sum(kx_num**2 + ky_num**2)}")
 
-    # Antenna setup (Tenbarge et. al. 2014):
-    drive_amplitude = 0.8 * binit
-    drive_characteristic_freq = 0.8 # in units of linear frequency
-    drive_decorrelation_rate = 0.8 # in units of linear frequency
+    A_num = np.sqrt(2 * B0_num**2 / np.sum(kx_num**2 + ky_num**2))
 
-    mode_number = 1
-    eddy_length = config.Nz * config.NzMesh / mode_number
-    light_crossing_time = eddy_length / config.cfl
-    v_alfven = config.cfl * np.sqrt(sigma / (1.0 + sigma))
-    kz_alfven = 2 * np.pi / eddy_length
-    linear_freq = kz_alfven * v_alfven
+    Lz_num = config.Nz * config.NzMesh
+    kpar_num = 2 * np.pi * modes_par / Lz_num
 
-    w0 = drive_characteristic_freq * linear_freq
-    gamma0 = -drive_decorrelation_rate * linear_freq
+    # Linear frequency: kz * v_A
+    linear_freq_num = kpar_num * config.cfl * np.sqrt(sigma / (1 + sigma))
 
-    modes = (lambda N: [(N, 0, N), (N, 0, -N), (0, N, N), (0, N, -N)])(mode_number)
-    k_perp = 2 * np.pi * mode_number / (config.Nx * config.NxMesh)
-    A0 = config.cfl * kz_alfven * binit * np.sqrt(2) / (v_alfven * k_perp**2 * np.sqrt(len(modes)))
+    w0 = 0.8 * linear_freq_num
+    gamma0 = -0.6 * linear_freq_num
 
-    # Note that in multi-node simulations, # it is important to give this `gen` argument
-    # with numpy rng that has a defined seed # and every node uses the same seed.
-    #
-    # Otherwise, different parts of the modes will evolve differently.
-    # Here it does not matter, because we only have one node.
-    base_time_evolution = runko.sample_oscillating_langevin_antenna(size=config.Nt,
-                                                                    characteristic_freq=w0,
-                                                                    decorrelation_rate=gamma0,
-                                                                    gen=rng)
+    def antenna(mode):
+        # Note that in multi-node simulations, it is important to give this `gen` argument
+        # with numpy rng that has a defined seed and every node uses the same seed.
+        #
+        # Otherwise, different parts of the modes will evolve differently.
+        time_evolution = runko.sample_oscillating_langevin_antenna(size=config.Nt,
+                                                                   characteristic_freq=w0,
+                                                                   decorrelation_rate=gamma0,
+                                                                   gen=rng)
+        random_phase = np.exp(2j * np.pi * rng.random())
+        return runko.emf.threeD.antenna_mode(A=(0, 0, A_num), n=mode, lap_coeffs=time_evolution * random_phase)
 
-    random_phases = [np.exp(2j * np.pi * rng.random()) for _ in modes]
-    time_evolutions = [phi * base_time_evolution for phi in random_phases]
-    antenna_mode = runko.emf.threeD.antenna_mode
-    antenna_modes = [antenna_mode(A=(0, 0, A0), n=mode, lap_coeffs=time) for mode, time in zip(modes, time_evolutions)]
+    antenna_modes = list(map(antenna, modes))
 
-    logger.info(f"Positron thermal spread: {delgam1}")
-    logger.info(f"Electron thermal spread: {delgam0}")
     logger.info(f"Alfven vel: {np.sqrt(sigma / (1. + sigma))}")
-    ion_beta = 2. * delgam1 / (sigma * (m1 /m0 + 1.) / (m1 /m0 ))
-    logger.info(f"Ion beta: {ion_beta}")
-    logger.info(f"Electron beta: {2.*delgam0/(sigma*(1/m0+1.))}")
+    logger.info(f"cold sigma: {cold_sigma}")
     logger.info(f"sigma: {sigma}")
-    logger.info(f"mass term: {np.sqrt(m0 + m1)}")
-    logger.info(f"gamma_th: {gammath}")
-    logger.info(f"B_guide (no corr): {binit_nc}")
-    logger.info(f"B_guide (approx): {binit_approx}")
-    logger.info(f"B_guide (used): {binit}")
+    logger.info(f"gamma_th: {average_gamma}")
+    logger.info(f"B_guide: {B0_num}")
     logger.info(f"q0: {config.q0}")
     logger.info(f"q1: {config.q1}")
     logger.info(f"m0: {config.m0}")
     logger.info(f"m1: {config.m1}")
-    logger.info(f"linear frequency: {linear_freq}")
+    logger.info(f"linear frequency: {linear_freq_num}")
     logger.info(f"characteristic freq: {w0}")
     logger.info(f"decorrelation rate: {gamma0}")
-    logger.info(f"A0: {A0}")
+    logger.info(f"A0: {A_num}")
 
     zero_field = lambda x, y, z: np.zeros_like(x)
-    bz = lambda x, y, z: np.ones_like(x) * binit
+    bz = lambda x, y, z: np.ones_like(x) * B0_num
 
     def pgen0(x, y, z):
         N = len(x)
@@ -138,11 +128,12 @@ if __name__ == "__main__":
         # Particles 1 are going on top of particles 0,
         # so these positions has to be saved such that pgen1 can get them.
         pgen0.pos = x + dx, y + dy, z + dz
-        vel = runko.sample_boosted_juttner_synge(N, delgam0, beta=0, gen=rng)
+        # Here we don't sample off rng as we want different mpi ranks to use different seeds.a
+        vel = runko.sample_boosted_juttner_synge(N, delgam0, beta=0)
         return runko.pic.threeD.ParticleStateBatch(pos=pgen0.pos, vel=vel)
 
     def pgen1(x, y, z):
-        vel = runko.sample_boosted_juttner_synge(len(x), delgam1, beta=0, gen=rng)
+        vel = runko.sample_boosted_juttner_synge(len(x), delgam1, beta=0)
         return runko.pic.threeD.ParticleStateBatch(pos=pgen0.pos, vel=vel)
 
     tile_grid = runko.TileGrid(config)
@@ -156,7 +147,7 @@ if __name__ == "__main__":
             for antenna in antenna_modes:
                 logger.info("registering antenna...")
                 tile.register_antenna(antenna)
-            for _ in range(ppc):
+            for _ in range(n_e_num):
                 logger.info("Injecting particles of type 0...")
                 tile.batch_inject_to_cells(0, pgen0)
                 logger.info("Injecting particles of type 1...")

@@ -64,10 +64,10 @@ class FieldsWriter :
     }
 
     /// read tile meshes into memory
-    void read_tiles(corgi::Grid<D>& grid) override;
+    void read_tiles(corgi::Grid<D>& grid);
 
     /// write hdf5 file
-    bool write(corgi::Grid<D>& grid, int lap) override;
+    bool write(corgi::Grid<D>& grid, int lap);
 
 };
 

@@ -16,8 +16,8 @@ template<typename T>
 static constexpr auto vec_element =
   tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 3 };
 
-using list_extents = std::dextents<runko::size_t, 1>;
-using grid_extents = std::dextents<runko::size_t, 3>;
+using list_extents = std::dextents<runko::index_t, 1>;
+using grid_extents = std::dextents<runko::index_t, 3>;
 
 }  // namespace detail
 

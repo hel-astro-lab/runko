@@ -116,8 +116,8 @@ class _binomial_filter_tests:
 class emf_current_filter_binomial2(_binomial_filter_tests, unittest.TestCase):
     current_filter = "binomial2"
 
-class emf_current_filter_binomial2_3d(_binomial_filter_tests, unittest.TestCase):
-    current_filter = "binomial2_3d"
+class emf_current_filter_binomial2_unrolled(_binomial_filter_tests, unittest.TestCase):
+    current_filter = "binomial2_unrolled"
 
 
 if __name__ == "__main__":
