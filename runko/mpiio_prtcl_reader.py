@@ -17,7 +17,7 @@ import numpy as np
 
 # -- module-level constants ---------------------------------------------------
 
-from pytools.mpiio_constants import MAGIC, SUPPORTED_VERSIONS
+from runko.mpiio_constants import MAGIC, SUPPORTED_VERSIONS
 
 
 # -- public API ---------------------------------------------------------------

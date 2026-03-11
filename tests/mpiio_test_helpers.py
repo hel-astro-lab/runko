@@ -4,7 +4,7 @@ import os
 
 import runko
 from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter
-from pytools.mpiio_reader import read_header, read_field_snapshot
+from runko.mpiio_reader import read_header, read_field_snapshot
 
 
 EMF_FIELD_NAMES = ["ex", "ey", "ez", "bx", "by", "bz", "jx", "jy", "jz"]

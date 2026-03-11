@@ -18,7 +18,7 @@ import numpy as np
 
 # -- module-level constants ---------------------------------------------------
 
-from pytools.mpiio_constants import MAGIC
+from runko.mpiio_constants import MAGIC
 
 SUPPORTED_VERSIONS = (1, 2, 3)  # field reader supports older format versions too
 
