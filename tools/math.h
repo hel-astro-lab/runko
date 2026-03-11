@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cmath>
 #include <type_traits>
 
@@ -34,8 +35,7 @@ template<typename T>
 constexpr void
 atomic_add(T* addr, T val) {
 #ifdef TYVI_BACKEND_CPU
-#pragma omp atomic update
-    *addr += val;
+    std::atomic_ref<T>(*addr).fetch_add(val, std::memory_order_relaxed);
 #elif defined(TYVI_BACKEND_HIP)
     ::unsafeAtomicAdd(addr, val);
 #endif
