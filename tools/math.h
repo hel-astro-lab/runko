@@ -98,6 +98,16 @@ max(const T a, const T b) {
 }
 
 // =====================================================================
+// clamp — branchless clamp to [lo, hi]
+// =====================================================================
+
+template<typename T>
+constexpr auto
+clamp(const T x, const T lo, const T hi) {
+    return min(max(x, lo), hi);
+}
+
+// =====================================================================
 // abs — SIMD-friendly absolute value
 // =====================================================================
 
@@ -132,6 +142,20 @@ floor(const T x) {
         return ::floorf(x);
     } else {
         return ::floor(x);
+    }
+}
+
+// =====================================================================
+// log10 — constexpr type-dispatched wrapper
+// =====================================================================
+
+template<typename T>
+constexpr auto
+log10(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::log10f(x);
+    } else {
+        return ::log10(x);
     }
 }
 

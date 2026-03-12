@@ -5,6 +5,7 @@ from .runko_timer import Timer, timer_statistics
 from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
 from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter as FieldsWriter, _write_average_B_energy_density, _write_average_E_energy_density
 from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter as ParticlesWriter
+from runko_cpp_bindings.emf.threeD import MpiioSpectraWriter as SpectraWriter
 from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 
 import logging
@@ -41,6 +42,7 @@ class Simulation:
         self._io_config = kwargs['io_config']
         self._emf_writer = None
         self._prtcl_writers = {}  # species -> ParticlesWriter, lazily constructed
+        self._spectra_writer = None
 
         self._lap_timers = []
         self._lap_wall_times = []
@@ -97,6 +99,28 @@ class Simulation:
             self._prtcl_writers[sp] = ParticlesWriter(outdir, n_prtcls, sp)
 
         self._logger.debug(f"ParticlesWriters constructed for {nspecies} species, n_prtcls={n_prtcls}.")
+
+
+    def _ensure_constructed_spectra_writer(self):
+        if self._spectra_writer:
+            return
+
+        io = self._io_config
+        self._spectra_writer = SpectraWriter(
+            io["outdir"],
+            self._tile_grid._Nx,
+            self._tile_grid._NxMesh,
+            self._tile_grid._Ny,
+            self._tile_grid._NyMesh,
+            self._tile_grid._Nz,
+            self._tile_grid._NzMesh,
+            io.get("spectra_stride", io["stride"]),
+            io["spectra_nbins"],
+            io["spectra_umin"],
+            io["spectra_umax"],
+            io.get("nspecies", 2))
+
+        self._logger.debug("SpectraWriter constructed.")
 
 
     def virtual_tiles(self):
@@ -207,6 +231,9 @@ class Simulation:
                         _write_average_E_energy_density(self.lap,
                                                         self._io_config["average_E_energy_density_path"],
                                                         self._tile_grid._corgi_grid)
+                    case "spectra_snapshot":
+                        self._ensure_constructed_spectra_writer()
+                        self._spectra_writer.write(self._tile_grid._corgi_grid, self.lap)
                     case "ram_usage":
                         self._write_ram_usage()
                     case _:

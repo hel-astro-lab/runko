@@ -189,10 +189,15 @@ class TileGrid:
             else:
                 break
 
-        io_config = dict(stride=1 if not config.stride else config.stride,
+        stride = 1 if not config.stride else config.stride
+        io_config = dict(stride=stride,
                          outdir=resolve_outdir(config),
                          nspecies=nspecies,
-                         n_prtcls=config.n_prtcls if config.n_prtcls else 0)
+                         n_prtcls=config.n_prtcls if config.n_prtcls else 0,
+                         spectra_nbins=getattr(config, 'spectra_nbins', 200),
+                         spectra_umin=getattr(config, 'spectra_umin', 1e-4),
+                         spectra_umax=getattr(config, 'spectra_umax', 1e3),
+                         spectra_stride=getattr(config, 'spectra_stride', None) or stride)
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
