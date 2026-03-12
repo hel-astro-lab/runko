@@ -18,7 +18,7 @@ from tests.mpiio_test_helpers import make_pic_config
 def find_spectra_file(outdir):
     """Return path to the first spectra output file in outdir."""
     files = [f for f in os.listdir(outdir)
-             if f.startswith("spectra_") and f.endswith(".bin")]
+             if f.startswith("pspectra_") and f.endswith(".bin")]
     assert len(files) > 0, "No spectra output file"
     return os.path.join(outdir, files[0])
 

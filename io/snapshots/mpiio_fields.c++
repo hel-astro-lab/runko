@@ -79,12 +79,11 @@ mpiio::FieldsWriter<3>::FieldsWriter(
   int Nz, int NzMesh,
   int stride,
   int nspecies)
-  : prefix_(prefix),
+  : WriterBase<3>(prefix, num_emf_fields + std::min(nspecies, static_cast<int>(max_species))),
     Nx_(Nx), Ny_(Ny), Nz_(Nz),
     NxMesh_(NxMesh), NyMesh_(NyMesh), NzMesh_(NzMesh),
     stride_(stride),
     nspecies_(std::min(nspecies, static_cast<int>(max_species))),
-    num_fields_(num_emf_fields + nspecies_),
     iter_grid_(0, 0, 0),
     tile_buf_(0, 0, 0),
     cached_empty_type_(MPI_DATATYPE_NULL),
@@ -295,40 +294,43 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
 }
 
 
+//--------------------------------------------------
+// NVI overrides
+
 template<>
-bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
+std::string mpiio::FieldsWriter<3>::make_filename_(int lap) const
 {
-  std::string filename =
-    prefix_ + "/flds_" + std::to_string(lap) + ".bin";
+  return prefix_ + "/flds_" + std::to_string(lap) + ".bin";
+}
 
-  MPI_File fh;
-  int rc = MPI_File_open(
-    MPI_Comm(grid.comm), filename.c_str(),
-    MPI_MODE_CREATE | MPI_MODE_WRONLY,
-    MPI_INFO_NULL, &fh);
 
-  if (rc != MPI_SUCCESS) return false;
+template<>
+int mpiio::FieldsWriter<3>::write_header_(MPI_File fh, int lap)
+{
+  return mpiio::write_header(
+    fh,
+    nx_, ny_, nz_,
+    stride_,
+    Nx_, Ny_, Nz_,
+    NxMesh_, NyMesh_, NzMesh_,
+    lap,
+    num_fields_);
+}
 
-  // Rank 0 writes the 512-byte header.
-  // MPI_File_open is collective and synchronizing; no barrier needed
-  // since all data writes target non-overlapping offsets >= header_size.
-  if (grid.comm.rank() == 0) {
-    rc = mpiio::write_header(
-      fh,
-      nx_, ny_, nz_,
-      stride_,
-      Nx_, Ny_, Nz_,
-      NxMesh_, NyMesh_, NzMesh_,
-      lap,
-      num_fields_);
-    if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
-  }
 
+template<>
+bool mpiio::FieldsWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid)
+{
   const MPI_Offset hdr_size = mpiio::header_size;
   const MPI_Offset field_bytes =
     static_cast<MPI_Offset>(nx_) * ny_ * nz_ * sizeof(float);
   const int tile_elems = nxt_ * nyt_ * nzt_;
 
+  // Pre-allocate the file to its full size
+  MPI_Offset total_size = hdr_size + static_cast<MPI_Offset>(num_fields_) * field_bytes;
+  MPI_File_set_size(fh, total_size);
+
+  int rc;
   for (auto cid : grid.get_local_tiles()) {
     auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(cid));
     pack_tile(tile);
@@ -367,14 +369,13 @@ bool mpiio::FieldsWriter<3>::write(corgi::Grid<3>& grid, int lap)
             fh, file_offset,
             write_ptr + buf_offset,
             nxt_, MPI_FLOAT, &status);
-          if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
+          if (rc != MPI_SUCCESS) return false;
         }
       }
     }
   }
 
-  rc = MPI_File_close(&fh);
-  return rc == MPI_SUCCESS;
+  return true;
 }
 
 

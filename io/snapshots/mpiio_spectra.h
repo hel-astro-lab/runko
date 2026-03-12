@@ -9,6 +9,7 @@
 #include "corgi/corgi.h"
 #include "core/emf/tile.h"
 #include "core/mdgrid_common.h"
+#include "io/snapshots/mpiio_writer_base.h"
 
 namespace mpiio {
 
@@ -30,7 +31,7 @@ namespace mpiio {
 /// device tile_buf_, then written via independent MPI_File_write_at
 /// (one write per tile per field: nxt*nbins contiguous floats).
 template<size_t D>
-class SpectraWriter {
+class SpectraWriter : public WriterBase<D> {
   static_assert(D == 3, "Only 3D supported");
 
 public:
@@ -45,18 +46,19 @@ public:
     float umax,
     int nspecies = 2);
 
-  /// Write spectra for all local tiles to prefix/spectra_<lap>.bin
-  bool write(corgi::Grid<3>& grid, int lap);
-
 private:
-  std::string prefix_;
+  // --- NVI overrides ---
+  std::string make_filename_(int lap) const override;
+  int write_header_(MPI_File fh, int lap) override;
+  bool write_payload_(MPI_File fh, corgi::Grid<3>& grid) override;
+
+  // --- Members ---
   int Nx_, Ny_, Nz_;
   int NxMesh_, NyMesh_, NzMesh_;
   int stride_;
   int nbins_;
   float umin_, umax_;
   int nspecies_;
-  int num_fields_;      // = nspecies_ * 4
   int nxt_;             // per-tile x output size = max(1, NxMesh / stride)
   int nx_global_;       // = Nx * nxt_
 
