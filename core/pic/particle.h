@@ -52,8 +52,6 @@ public:
   struct specific_span;
 
 private:
-  using E = std::dextents<std::size_t, 1>;
-
   /// Positions are in code units (i.e. x~ in x = x~ * Delta x).
   runko::VecList<value_type> pos_;
   /// Three-velocities are stored in physical/natural units.
@@ -179,11 +177,7 @@ inline void
   // Note that the last sum does not include Nothers[-1].
   const auto other_begins = [&] {
     auto temp = std::array<std::size_t, sizeof...(others)> {};
-    std::exclusive_scan(
-      Nothers.begin(),
-      Nothers.end(),
-      temp.begin(),
-      Nprev);
+    std::exclusive_scan(Nothers.begin(), Nothers.end(), temp.begin(), Nprev);
     return temp;
   }();
 
@@ -348,11 +342,7 @@ template<std::ranges::forward_range R>
   // Note that the last sum does not include span_sizes[-1].
   const auto begins = [&] {
     auto temp = std::vector<std::size_t>(Nspans);
-    std::exclusive_scan(
-      span_sizes.begin(),
-      span_sizes.end(),
-      temp.begin(),
-      0uz);
+    std::exclusive_scan(span_sizes.begin(), span_sizes.end(), temp.begin(), 0uz);
     return temp;
   }();
 
@@ -360,10 +350,7 @@ template<std::ranges::forward_range R>
   // Note that the last sum includes span_sizes[-1].
   const auto ends = [&] {
     auto temp = std::vector<std::size_t>(Nspans);
-    std::inclusive_scan(
-      span_sizes.begin(),
-      span_sizes.end(),
-      temp.begin());
+    std::inclusive_scan(span_sizes.begin(), span_sizes.end(), temp.begin());
     return temp;
   }();
 
@@ -445,7 +432,7 @@ inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
   namespace rn                       = std::ranges;
-  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
+  const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto pos_mds = this->pos_.mds();
@@ -457,8 +444,9 @@ inline void
     });
   const auto scores_end = rn::next(scores_begin, this->size());
 
-  auto trackers =
-    thrust::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
+  auto trackers = thrust::device_vector<runko::index_t>(
+    particle_ordinals_begin,
+    particle_ordinals_end);
 
   using score_t = std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
   auto scores   = thrust::device_vector<score_t>(scores_begin, scores_end);
@@ -476,9 +464,9 @@ inline void
     .for_each_index(
       tmp_pos,
       [=, p = trackers.begin()](const auto idx, const auto tidx) {
-        const std::size_t i = p[idx[0]];
-        pos_mds[idx][tidx]  = tmp_pos_mds[i][tidx];
-        vel_mds[idx][tidx]  = tmp_vel_mds[i][tidx];
+        const runko::index_t i = p[idx[0]];
+        pos_mds[idx][tidx]     = tmp_pos_mds[i][tidx];
+        vel_mds[idx][tidx]     = tmp_vel_mds[i][tidx];
       })
     .wait();
 }

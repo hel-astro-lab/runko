@@ -85,7 +85,7 @@ emf::YeeLattice::CurrentContributions
     const auto fi1 = Vec3v(sstd::floor(x1(0)), sstd::floor(x1(1)), sstd::floor(x1(2)));
     const auto fi2 = Vec3v(sstd::floor(x2(0)), sstd::floor(x2(1)), sstd::floor(x2(2)));
 
-    const auto relay = [&](const std::size_t j) -> value_type {
+    const auto relay = [&](const runko::index_t j) -> value_type {
       const auto a  = sstd::min(fi1(j), fi2(j)) + value_type { 1 };
       const auto b1 = sstd::max(fi1(j), fi2(j));
       const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
@@ -169,12 +169,13 @@ emf::YeeLattice::CurrentContributions
     store_current(i2 + Vec3i(1, 1, 0), Vec3v(0, 0, Fz2 * Wx2 * Wy2));
   });
 
-  auto unique_deposit_locations = thrust::device_vector<std::array<std::size_t, 3>>(N);
-  auto reduced_currents         = thrust::device_vector<std::array<value_type, 3>>(N);
+  auto unique_deposit_locations =
+    thrust::device_vector<std::array<runko::index_t, 3>>(N);
+  auto reduced_currents = thrust::device_vector<std::array<value_type, 3>>(N);
 
   const auto uniq_dep_locs_ptr = thrust::make_transform_output_iterator(
     unique_deposit_locations.begin(),
-    [](const deposit_loc& loc) -> std::array<std::size_t, 3> {
+    [](const deposit_loc& loc) -> std::array<runko::index_t, 3> {
       return { loc.idx(0), loc.idx(1), loc.idx(2) };
     });
 
@@ -246,7 +247,7 @@ void
         const auto fi2 =
           Vec3v(sstd::floor(x2(0)), sstd::floor(x2(1)), sstd::floor(x2(2)));
 
-        const auto relay = [&](const std::size_t j) -> value_type {
+        const auto relay = [&](const runko::index_t j) -> value_type {
           const auto a  = sstd::min(fi1(j), fi2(j)) + value_type { 1 };
           const auto b1 = sstd::max(fi1(j), fi2(j));
           const auto b2 = value_type { 0.5 } * (x1(j) + x2(j));
@@ -271,7 +272,7 @@ void
         const auto [Wx2, Wy2, Wz2] = W2.data;
 
         const auto store_current = [&](const Vec3i& index, const Vec3v& current) {
-          const auto si  = index.template as<std::size_t>();
+          const auto si  = index.template as<runko::index_t>();
           auto* const Jx = &thrust::raw_reference_cast(Jmds[si.data][0]);
           auto* const Jy = &thrust::raw_reference_cast(Jmds[si.data][1]);
           auto* const Jz = &thrust::raw_reference_cast(Jmds[si.data][2]);

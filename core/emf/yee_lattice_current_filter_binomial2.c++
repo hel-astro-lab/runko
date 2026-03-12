@@ -8,8 +8,8 @@
 void
   emf::YeeLattice::filter_current_binomial2()
 {
-    const tyvi::mdgrid_work w{};
-    filter_current_binomial2(w);
+  const tyvi::mdgrid_work w {};
+  filter_current_binomial2(w);
 }
 
 // 3D single-pass binomial filter using a 3x3x3 coefficient array.
@@ -19,8 +19,8 @@ void
 void
   emf::YeeLattice::filter_current_binomial2_3d()
 {
-    const tyvi::mdgrid_work w{};
-    filter_current_binomial2_3d(w);
+  const tyvi::mdgrid_work w {};
+  filter_current_binomial2_3d(w);
 }
 
 void
@@ -45,39 +45,42 @@ void
   const auto Nz            = e.extent(2);
   const auto filteredJ_mds = std::submdspan(
     filteredJ.mds(),
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nx - 1u },
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Ny - 1u },
-    std::tuple { std::integral_constant<runko::size_t, 1u> {}, Nz - 1u });
+    std::tuple { std::integral_constant<runko::index_t, 1u> {},
+                 static_cast<runko::index_t>(Nx - 1u) },
+    std::tuple { std::integral_constant<runko::index_t, 1u> {},
+                 static_cast<runko::index_t>(Ny - 1u) },
+    std::tuple { std::integral_constant<runko::index_t, 1u> {},
+                 static_cast<runko::index_t>(Nz - 1u) });
 
 
   const auto Jmds = this->J_.mds();
 
-    w.for_each_index(
-      filteredJ_mds,
-      [=](const auto idx, const auto tidx) {
-        filteredJ_mds[idx][tidx] = 0;
+  w.for_each_index(
+     filteredJ_mds,
+     [=](const auto idx, const auto tidx) {
+       filteredJ_mds[idx][tidx] = 0;
 
-        for(const auto jdx: C3_index_space) {
-          const auto i = idx[0] + jdx[0];
-          const auto j = idx[1] + jdx[1];
-          const auto k = idx[2] + jdx[2];
+       for(const auto jdx: C3_index_space) {
+         const auto i = idx[0] + jdx[0];
+         const auto j = idx[1] + jdx[1];
+         const auto k = idx[2] + jdx[2];
 
-          // operator += is broken in hip
-          filteredJ_mds[idx][tidx] =
-            filteredJ_mds[idx][tidx] + C3[jdx[0]][jdx[1]][jdx[2]] * Jmds[i, j, k][tidx];
-        }
-      })
+         // operator += is broken in hip
+         filteredJ_mds[idx][tidx] =
+           filteredJ_mds[idx][tidx] + C3[jdx[0]][jdx[1]][jdx[2]] * Jmds[i, j, k][tidx];
+       }
+     })
     .wait();
 
   this->J_ = std::move(filteredJ);
 }
 
 
-
 void
   emf::YeeLattice::filter_current_binomial2(const tyvi::mdgrid_work& w)
 {
-  // 1D binomial coefficients (the 3D stencil is separable: C3[a][b][c] = B1[a]*B1[b]*B1[c])
+  // 1D binomial coefficients (the 3D stencil is separable: C3[a][b][c] =
+  // B1[a]*B1[b]*B1[c])
   static constexpr value_type B1[3] = { 0.25f, 0.5f, 0.25f };
 
   const auto e  = this->J_.extents();
@@ -89,31 +92,29 @@ void
 
   // Pass 1: convolve along z (dim 2)
   // temp1 dims: (Nx, Ny, Nz-2) — z-dimension shrinks by 2
-  auto temp1      = VecGrid(Nx, Ny, Nz - 2uz);
-  const auto t1   = temp1.mds();
+  auto temp1    = VecGrid(Nx, Ny, Nz - 2uz);
+  const auto t1 = temp1.mds();
 
   w.for_each_index(
      t1,
      [=](const auto idx, const auto tidx) {
        const auto i = idx[0], j = idx[1], k = idx[2];
-       t1[idx][tidx] = B1[0] * Jmds[i, j, k    ][tidx]
-                     + B1[1] * Jmds[i, j, k + 1][tidx]
-                     + B1[2] * Jmds[i, j, k + 2][tidx];
+       t1[idx][tidx] = B1[0] * Jmds[i, j, k][tidx] + B1[1] * Jmds[i, j, k + 1][tidx] +
+                       B1[2] * Jmds[i, j, k + 2][tidx];
      })
     .wait();
 
   // Pass 2: convolve along y (dim 1)
   // temp2 dims: (Nx, Ny-2, Nz-2) — y-dimension shrinks by 2
-  auto temp2      = VecGrid(Nx, Ny - 2uz, Nz - 2uz);
-  const auto t2   = temp2.mds();
+  auto temp2    = VecGrid(Nx, Ny - 2uz, Nz - 2uz);
+  const auto t2 = temp2.mds();
 
   w.for_each_index(
      t2,
      [=](const auto idx, const auto tidx) {
        const auto i = idx[0], j = idx[1], k = idx[2];
-       t2[idx][tidx] = B1[0] * t1[i, j,     k][tidx]
-                     + B1[1] * t1[i, j + 1, k][tidx]
-                     + B1[2] * t1[i, j + 2, k][tidx];
+       t2[idx][tidx] = B1[0] * t1[i, j, k][tidx] + B1[1] * t1[i, j + 1, k][tidx] +
+                       B1[2] * t1[i, j + 2, k][tidx];
      })
     .wait();
 
@@ -121,17 +122,20 @@ void
   auto filteredJ           = VecGrid(this->J_.extents());
   const auto filteredJ_mds = std::submdspan(
     filteredJ.mds(),
-    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Nx - 1uz },
-    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Ny - 1uz },
-    std::tuple { std::integral_constant<std::size_t, 1uz> {}, Nz - 1uz });
+    std::tuple { std::integral_constant<runko::index_t, 1uz> {},
+                 static_cast<runko::index_t>(Nx - 1) },
+    std::tuple { std::integral_constant<runko::index_t, 1uz> {},
+                 static_cast<runko::index_t>(Ny - 1) },
+    std::tuple { std::integral_constant<runko::index_t, 1uz> {},
+                 static_cast<runko::index_t>(Nz - 1) });
 
   w.for_each_index(
      filteredJ_mds,
      [=](const auto idx, const auto tidx) {
        const auto i = idx[0], j = idx[1], k = idx[2];
-       filteredJ_mds[idx][tidx] = B1[0] * t2[i,     j, k][tidx]
-                                + B1[1] * t2[i + 1, j, k][tidx]
-                                + B1[2] * t2[i + 2, j, k][tidx];
+       filteredJ_mds[idx][tidx] = B1[0] * t2[i, j, k][tidx] +
+                                  B1[1] * t2[i + 1, j, k][tidx] +
+                                  B1[2] * t2[i + 2, j, k][tidx];
      })
     .wait();
 

@@ -35,9 +35,9 @@ struct YeeLatticeFieldsAtPoint {
 /// in the Yee Lattice.
 template<typename F>
 concept yee_lattice_fields_function =
-  std::invocable<F, std::size_t, std::size_t, std::size_t> and
+  std::invocable<F, runko::index_t, runko::index_t, runko::index_t> and
   std::same_as<
-    std::invoke_result_t<F, std::size_t, std::size_t, std::size_t>,
+    std::invoke_result_t<F, runko::index_t, runko::index_t, runko::index_t>,
     YeeLatticeFieldsAtPoint>;
 
 /// Yee lattice of plasma quantities in tyvi::mdgrid continers.
@@ -49,7 +49,7 @@ public:
 
   using YeeLatticeHostCopy = tyvi::mdgrid_buffer<
     std::vector<YeeLatticeFieldsAtPoint>,
-    std::extents<std::size_t>,
+    std::extents<runko::index_t>,
     std::layout_right,
     VecGrid::grid_extents_type,
     VecGrid::grid_layout_type>;
@@ -253,7 +253,7 @@ public:
 
   /// Represents a set of locations and corresponding currents.
   struct [[nodiscard]] CurrentContributions {
-    thrust::device_vector<std::array<std::size_t, 3>> locations;
+    thrust::device_vector<std::array<runko::index_t, 3>> locations;
     thrust::device_vector<std::array<value_type, 3>> currents;
   };
 

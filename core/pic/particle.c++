@@ -136,14 +136,14 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
 
   // subregion_index: {-1, 0, 1} x {-1, 0, 1} x {-1, 0, 1} -> {0, 1, ..., 26}
   constexpr auto subregion_index =
-    [](const int i, const int j, const int k) -> std::size_t {
-    const auto ii = static_cast<std::size_t>(i + 1);
-    const auto jj = static_cast<std::size_t>(j + 1);
-    const auto kk = static_cast<std::size_t>(k + 1);
-    return ii * 9 + jj * 3 + kk;
+    [](const int i, const int j, const int k) -> runko::index_t {
+    const auto ii = static_cast<runko::index_t>(i + 1);
+    const auto jj = static_cast<runko::index_t>(j + 1);
+    const auto kk = static_cast<runko::index_t>(k + 1);
+    return ii * 9u + jj * 3u + kk;
   };
 
-  constexpr auto subregion_index_to_dir = [](const std::size_t nuz) {
+  constexpr auto subregion_index_to_dir = [](const runko::index_t nuz) {
     const auto n = static_cast<int>(nuz);
     return std::array<int, 3> { (n / 9) - 1, ((n / 3) % 3) - 1, (n % 3) - 1 };
   };
@@ -168,7 +168,7 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   };
 
   namespace rn                       = std::ranges;
-  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
+  const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto particle_subregion_indices_begin = thrust::make_transform_iterator(
@@ -177,12 +177,13 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   const auto particle_subregion_indices_end =
     rn::next(particle_subregion_indices_begin, this->size());
 
-  auto particle_subregion_indices = thrust::device_vector<std::size_t>(
+  auto particle_subregion_indices = thrust::device_vector<runko::index_t>(
     particle_subregion_indices_begin,
     particle_subregion_indices_end);
 
-  auto particle_trackers =
-    thrust::device_vector<std::size_t>(particle_ordinals_begin, particle_ordinals_end);
+  auto particle_trackers = thrust::device_vector<runko::index_t>(
+    particle_ordinals_begin,
+    particle_ordinals_end);
 
   thrust::sort_by_key(
     particle_subregion_indices.begin(),
@@ -197,7 +198,7 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
     .for_each_index(
       permuted_pos_mds,
       [=, p = particle_trackers.begin()](const auto idx, const auto tidx) {
-        const std::size_t i         = p[idx[0]];
+        const runko::index_t i      = p[idx[0]];
         permuted_pos_mds[idx][tidx] = pos_mds[i][tidx];
         permuted_vel_mds[idx][tidx] = vel_mds[i][tidx];
       })
@@ -216,10 +217,11 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   // Note that this ParticleContainer might not contain
   // particles in all of the 27 subregions.
 
-  const auto present_subregion_indices =
-    thrust::host_vector<std::size_t>(particle_subregion_indices.begin(), new_end.first);
+  const auto present_subregion_indices = thrust::host_vector<runko::index_t>(
+    particle_subregion_indices.begin(),
+    new_end.first);
   const auto present_subregion_begins =
-    thrust::host_vector<std::size_t>(particle_trackers.begin(), new_end.second);
+    thrust::host_vector<runko::index_t>(particle_trackers.begin(), new_end.second);
 
   const auto present_subregion_ends = [&] {
     // We assumed at beginning of the function that there is at least one particle.
@@ -247,13 +249,12 @@ double
   auto w = tyvi::mdgrid_work {};
 
   namespace rn                       = std::ranges;
-  const auto particle_ordinals_begin = thrust::counting_iterator<std::size_t>(0uz);
-  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
+  const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
 
   // Note that these are in natural units.
   const auto vel_mds = this->vel_.mds();
 
-  auto particle_ordinal_to_kinetic_energy = [=](const std::size_t n) -> double {
+  auto particle_ordinal_to_kinetic_energy = [=](const runko::index_t n) -> double {
     using Vec3   = toolbox::Vec3<value_type>;
     const auto v = Vec3(vel_mds[n]);
     const auto e = std::sqrt(value_type { 1 } + toolbox::dot(v, v)) - value_type { 1 };

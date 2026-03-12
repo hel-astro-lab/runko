@@ -67,16 +67,20 @@ void
 {
   /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
 
-  const auto h   = halo_size_;
-  const auto hm1 = static_cast<std::size_t>(halo_size_ - 1uz);
+  const auto h   = static_cast<runko::index_t>(halo_size_);
+  const auto hm1 = static_cast<runko::index_t>(halo_size_ - 1uz);
 
-  const auto i_nonhalo = std::tuple { h, h + extents_wout_halo_[0] };
-  const auto j_nonhalo = std::tuple { h, h + extents_wout_halo_[1] };
-  const auto k_nonhalo = std::tuple { h, h + extents_wout_halo_[2] };
+  const auto e0 = static_cast<runko::index_t>(extents_wout_halo_[0]);
+  const auto e1 = static_cast<runko::index_t>(extents_wout_halo_[1]);
+  const auto e2 = static_cast<runko::index_t>(extents_wout_halo_[2]);
 
-  const auto i_nonhalo_m1 = std::tuple { hm1, hm1 + extents_wout_halo_[0] };
-  const auto j_nonhalo_m1 = std::tuple { hm1, hm1 + extents_wout_halo_[1] };
-  const auto k_nonhalo_m1 = std::tuple { hm1, hm1 + extents_wout_halo_[2] };
+  const auto i_nonhalo = std::tuple { h, h + e0 };
+  const auto j_nonhalo = std::tuple { h, h + e1 };
+  const auto k_nonhalo = std::tuple { h, h + e2 };
+
+  const auto i_nonhalo_m1 = std::tuple { hm1, hm1 + e0 };
+  const auto j_nonhalo_m1 = std::tuple { hm1, hm1 + e1 };
+  const auto k_nonhalo_m1 = std::tuple { hm1, hm1 + e2 };
 
   const auto Emds      = nonhalo_submds(E_.mds());
   const auto Bmds      = nonhalo_submds(B_.mds());
