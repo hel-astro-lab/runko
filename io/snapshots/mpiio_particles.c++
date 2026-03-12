@@ -75,31 +75,33 @@ mpiio::ParticlesWriter<3>::ParticlesWriter(
   const std::string& prefix,
   int64_t n_prtcls,
   int species)
-  : prefix_(prefix),
+  : WriterBase<3>(prefix, num_prtcl_fields),
     n_prtcls_(n_prtcls),
     species_(species),
+    lap_(0),
     prtcl_buf_(0)
 {}
 
 
 //--------------------------------------------------
+// NVI overrides
 
-/// Per-tile sampling info computed during write().
-struct TileInfo {
-  uint64_t cid;
-  int64_t count;
-  int64_t stride;
-  int64_t sampled;
-};
+template<>
+std::string mpiio::ParticlesWriter<3>::make_filename_(int lap) const
+{
+  return prefix_ + "/prtcls_" + std::to_string(species_)
+    + "_" + std::to_string(lap) + ".bin";
+}
 
 
 template<>
-bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
+bool mpiio::ParticlesWriter<3>::prepare_(corgi::Grid<3>& grid, int lap)
 {
-  const auto sp = static_cast<runko::size_t>(species_);
+  lap_ = lap;
+  const auto sp = static_cast<runko::index_t>(species_);
 
   // 1. Count particles per local tile
-  std::vector<TileInfo> tiles;
+  tiles_.clear();
   int64_t local_total = 0;
 
   for (auto cid : grid.get_local_tiles()) {
@@ -108,7 +110,7 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
     if (sp >= pic_tile->number_of_species()) continue;
 
     const auto count = static_cast<int64_t>(pic_tile->number_of_particles(sp));
-    tiles.push_back({ cid, count, 1, 0 });
+    tiles_.push_back({ cid, count, 1, 0 });
     local_total += count;
   }
 
@@ -123,7 +125,7 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
     ? std::min(1.0, static_cast<double>(n_prtcls_) / static_cast<double>(global_total))
     : 0.0;
 
-  for (auto& t : tiles) {
+  for (auto& t : tiles_) {
     if (t.count == 0) continue;
     auto quota = static_cast<int64_t>(std::round(static_cast<double>(t.count) * frac));
     if (quota <= 0)    { t.sampled = 0; continue; }
@@ -133,54 +135,52 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
   }
 
   // 4-6. Compute local/global sampled counts and rank offset
-  int64_t local_sampled = 0;
-  for (const auto& t : tiles) local_sampled += t.sampled;
+  local_sampled_ = 0;
+  for (const auto& t : tiles_) local_sampled_ += t.sampled;
 
-  int64_t rank_offset = 0;
+  rank_offset_ = 0;
   MPI_Exscan(
-    &local_sampled, &rank_offset, 1, MPI_INT64_T, MPI_SUM,
+    &local_sampled_, &rank_offset_, 1, MPI_INT64_T, MPI_SUM,
     MPI_Comm(grid.comm));
-  if (grid.comm.rank() == 0) rank_offset = 0;
+  if (grid.comm.rank() == 0) rank_offset_ = 0;
 
-  int64_t global_sampled = 0;
+  global_sampled_ = 0;
   MPI_Allreduce(
-    &local_sampled, &global_sampled, 1, MPI_INT64_T, MPI_SUM,
+    &local_sampled_, &global_sampled_, 1, MPI_INT64_T, MPI_SUM,
     MPI_Comm(grid.comm));
 
-  // 7. Open file and write header
-  const std::string filename =
-    prefix_ + "/prtcls_" + std::to_string(species_)
-    + "_" + std::to_string(lap) + ".bin";
+  return true;
+}
 
-  MPI_File fh;
-  int rc = MPI_File_open(
-    MPI_Comm(grid.comm), filename.c_str(),
-    MPI_MODE_CREATE | MPI_MODE_WRONLY,
-    MPI_INFO_NULL, &fh);
-  if (rc != MPI_SUCCESS) return false;
 
-  // Pre-allocate the file to its full size so that independent writes
-  // don't leave a sparse file (some MPI implementations handle this poorly).
+template<>
+int mpiio::ParticlesWriter<3>::write_header_(MPI_File fh, int lap)
+{
+  return write_prtcl_header(
+    fh, global_sampled_, static_cast<int32_t>(species_), lap, num_prtcl_fields_);
+}
+
+
+template<>
+bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid)
+{
+  // Pre-allocate the file to its full size
   const MPI_Offset total_size = mpiio::header_size
-    + static_cast<MPI_Offset>(num_prtcl_fields_) * global_sampled
+    + static_cast<MPI_Offset>(num_prtcl_fields_) * global_sampled_
       * static_cast<MPI_Offset>(sizeof(float));
   MPI_File_set_size(fh, total_size);
 
-  if (grid.comm.rank() == 0) {
-    rc = write_prtcl_header(
-      fh, global_sampled, static_cast<int32_t>(species_), lap, num_prtcl_fields_);
-    if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
-  }
+  const auto sp = static_cast<runko::index_t>(species_);
 
-  // 8. Pack all local sampled particles into prtcl_buf_
-  const auto n_local = static_cast<runko::size_t>(local_sampled);
+  // Pack all local sampled particles into prtcl_buf_
+  const auto n_local = static_cast<runko::index_t>(local_sampled_);
   prtcl_buf_.invalidating_resize(n_local);
 
-  if (local_sampled > 0) {
+  if (local_sampled_ > 0) {
     const auto buf_mds = prtcl_buf_.mds();
     runko::size_t tile_buf_offset = 0;
 
-    for (const auto& t : tiles) {
+    for (const auto& t : tiles_) {
       if (t.sampled == 0) continue;
 
       auto& tile = dynamic_cast<pic::Tile<3>&>(grid.get_tile(t.cid));
@@ -208,7 +208,7 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
       // Interpolate E, B at sampled positions
       auto [E_interp, B_interp] = tile.interpolate_fields_at(sampled_pos);
 
-      // Pack all 12 fields into prtcl_buf_ 
+      // Pack all 12 fields into prtcl_buf_
       using vt = pic::ParticleContainer::value_type;
       const auto mx = static_cast<vt>(tile.mins[0]);
       const auto my = static_cast<vt>(tile.mins[1]);
@@ -246,38 +246,42 @@ bool mpiio::ParticlesWriter<3>::write(corgi::Grid<3>& grid, int lap)
     }
   }
 
-  // 9. Sync to staging if GPU
+  // Sync to staging if GPU
 #if defined(TYVI_BACKEND_CPU)
-  const float* write_ptr = (local_sampled > 0) ? prtcl_buf_.span().data() : nullptr;
+  const float* write_ptr = (local_sampled_ > 0) ? prtcl_buf_.span().data() : nullptr;
 #elif defined(TYVI_BACKEND_HIP)
-  if (local_sampled > 0) {
+  if (local_sampled_ > 0) {
     tyvi::mdgrid_work {}.sync_to_staging(prtcl_buf_).wait();
   }
-  const float* write_ptr = (local_sampled > 0) ? prtcl_buf_.staging_span().data() : nullptr;
+  const float* write_ptr = (local_sampled_ > 0) ? prtcl_buf_.staging_span().data() : nullptr;
 #endif
 
-  // 10. Write 12 fields via independent MPI_File_write_at
+  // Write 12 fields via independent MPI_File_write_at
   const MPI_Offset hdr_size    = mpiio::header_size;
   const MPI_Offset field_bytes =
-    static_cast<MPI_Offset>(global_sampled) * static_cast<MPI_Offset>(sizeof(float));
+    static_cast<MPI_Offset>(global_sampled_) * static_cast<MPI_Offset>(sizeof(float));
 
+  int rc;
   float dummy = 0.0f;
   for (int f = 0; f < num_prtcl_fields_; f++) {
     const MPI_Offset file_offset =
       hdr_size + static_cast<MPI_Offset>(f) * field_bytes
-      + static_cast<MPI_Offset>(rank_offset) * static_cast<MPI_Offset>(sizeof(float));
+      + static_cast<MPI_Offset>(rank_offset_) * static_cast<MPI_Offset>(sizeof(float));
 
-    const auto buf_offset = static_cast<int64_t>(f) * local_sampled;
+    const auto buf_offset = static_cast<int64_t>(f) * local_sampled_;
 
     MPI_Status status;
     rc = MPI_File_write_at(
       fh, file_offset,
-      (local_sampled > 0) ? write_ptr + buf_offset : &dummy,
-      static_cast<int>(local_sampled), MPI_FLOAT, &status);
-    if (rc != MPI_SUCCESS) { MPI_File_close(&fh); return false; }
+      (local_sampled_ > 0) ? write_ptr + buf_offset : &dummy,
+      static_cast<int>(local_sampled_), MPI_FLOAT, &status);
+    if (rc != MPI_SUCCESS) return false;
   }
 
-  // 11. Close
-  rc = MPI_File_close(&fh);
-  return rc == MPI_SUCCESS;
+  return true;
 }
+
+
+//--------------------------------------------------
+// explicit template class instantiation
+template class mpiio::ParticlesWriter<3>;

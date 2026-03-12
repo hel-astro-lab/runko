@@ -10,6 +10,7 @@
 #include "corgi/corgi.h"
 #include "core/emf/tile.h"
 #include "core/mdgrid_common.h"
+#include "io/snapshots/mpiio_writer_base.h"
 
 namespace mpiio {
 
@@ -28,7 +29,7 @@ namespace mpiio {
 /// Stride subsampling and J volume-sum are computed on-device using
 /// tyvi for_each_index kernels (SIMD on CPU, GPU kernels on HIP).
 template<size_t D>
-class FieldsWriter {
+class FieldsWriter : public WriterBase<D> {
   static_assert(D == 3, "Only 3D supported");
 
 public:
@@ -40,11 +41,7 @@ public:
     int stride,
     int nspecies = 2);
 
-  ~FieldsWriter();
-
-  /// Write all local tiles to prefix/flds_<lap>.bin via MPI-IO.
-  /// Uses independent row-by-row MPI_File_write_at calls (no temp buffer).
-  bool write(corgi::Grid<3>& grid, int lap);
+  ~FieldsWriter() override;
 
   /// Write all local tiles via collective MPI-IO with derived file types.
   /// Uses MPI_File_set_view + MPI_File_write_all, writing directly from
@@ -53,12 +50,16 @@ public:
   bool write_collective(corgi::Grid<3>& grid, int lap);
 
 private:
-  std::string prefix_;
+  // --- NVI overrides ---
+  std::string make_filename_(int lap) const override;
+  int write_header_(MPI_File fh, int lap) override;
+  bool write_payload_(MPI_File fh, corgi::Grid<3>& grid) override;
+
+  // --- Members ---
   int Nx_, Ny_, Nz_;
   int NxMesh_, NyMesh_, NzMesh_;
   int stride_;
   int nspecies_;           // number of particle species (capped at max_species)
-  int num_fields_;         // = num_emf_fields + nspecies_
   int nxt_, nyt_, nzt_;    // per-tile output size after stride
   int nx_, ny_, nz_;       // global output size
 

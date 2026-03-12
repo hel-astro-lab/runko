@@ -2,6 +2,7 @@
 #include "core/emf/tile.h"
 #include "io/emf_average_field_energy_density.h"
 #include "io/snapshots/hdf5_fields.h"
+#include "io/snapshots/mpiio_writer_base.h"
 #include "io/snapshots/mpiio_fields.h"
 #include "io/snapshots/mpiio_particles.h"
 #include "io/snapshots/mpiio_spectra.h"
@@ -202,33 +203,34 @@ void
     .def(py::init<const std::string&, int, int, int, int, int, int, int>())
     .def("write", &hdf5::FieldsWriter<3>::write);
 
-  // MPI-IO snapshot writer
-  py::class_<mpiio::FieldsWriter<3>>(m_3d, "MpiioFieldsWriter")
+  // MPI-IO writer base class
+  py::class_<mpiio::WriterBase<3>>(m_3d, "MpiioWriterBase")
+    .def("write", &mpiio::WriterBase<3>::write);
+
+  // MPI-IO field snapshot writer
+  py::class_<mpiio::FieldsWriter<3>, mpiio::WriterBase<3>>(m_3d, "MpiioFieldsWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int>(),
          py::arg("prefix"), py::arg("Nx"), py::arg("NxMesh"),
          py::arg("Ny"), py::arg("NyMesh"),
          py::arg("Nz"), py::arg("NzMesh"),
          py::arg("stride"), py::arg("nspecies") = 2)
-    .def("write", &mpiio::FieldsWriter<3>::write)
     .def("write_collective", &mpiio::FieldsWriter<3>::write_collective);
 
   // MPI-IO particle snapshot writer
-  py::class_<mpiio::ParticlesWriter<3>>(m_3d, "MpiioParticlesWriter")
+  py::class_<mpiio::ParticlesWriter<3>, mpiio::WriterBase<3>>(m_3d, "MpiioParticlesWriter")
     .def(py::init<const std::string&, int64_t, int>(),
          py::arg("prefix"), py::arg("n_prtcls"),
-         py::arg("species") = 0)
-    .def("write", &mpiio::ParticlesWriter<3>::write);
+         py::arg("species") = 0);
 
   // MPI-IO spectra snapshot writer
-  py::class_<mpiio::SpectraWriter<3>>(m_3d, "MpiioSpectraWriter")
+  py::class_<mpiio::SpectraWriter<3>, mpiio::WriterBase<3>>(m_3d, "MpiioSpectraWriter")
     .def(py::init<const std::string&, int, int, int, int, int, int, int, int, float, float, int>(),
          py::arg("prefix"), py::arg("Nx"), py::arg("NxMesh"),
          py::arg("Ny"), py::arg("NyMesh"),
          py::arg("Nz"), py::arg("NzMesh"),
          py::arg("stride"),
          py::arg("nbins"), py::arg("umin"), py::arg("umax"),
-         py::arg("nspecies") = 2)
-    .def("write", &mpiio::SpectraWriter<3>::write);
+         py::arg("nspecies") = 2);
 
   m_3d.def("_write_average_B_energy_density", &emf::write_average_B_energy_density)
     .def("_write_average_E_energy_density", &emf::write_average_E_energy_density);
