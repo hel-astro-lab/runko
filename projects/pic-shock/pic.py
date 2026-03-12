@@ -227,6 +227,7 @@ if __name__ == "__main__":
 
         if simulation.lap % output_interval == 0:
             x.io_emf_snapshot()
+            x.io_prtcl_snapshot()
             simulation.log_timer_statistics()
 
     simulation.for_each_lap(pic_simulation_step)
