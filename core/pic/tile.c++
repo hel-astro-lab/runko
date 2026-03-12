@@ -79,6 +79,8 @@ pic::FieldInterpolator
 {
   if(p == "linear_1st") {
     return pic::FieldInterpolator::linear_1st;
+  } else if(p == "linear_1st_unrolled") {
+    return pic::FieldInterpolator::linear_1st_unrolled;
   } else {
     const auto msg = std::format("{} is not supported field_interpolator.", p);
     throw std::runtime_error { msg };
@@ -274,6 +276,17 @@ void
 
       ipol_func = std::bind_front(
         static_cast<fptr>(&emf::YeeLattice::interpolate_EB_linear_1st),
+        std::cref(this->yee_lattice_),
+        origo_pos);
+      break;
+    }
+    case FieldInterpolator::linear_1st_unrolled: {
+      using fptr = emf::YeeLattice::InterpolatedEB (emf::YeeLattice::*)(
+        std::array<emf::YeeLattice::value_type, 3>,
+        const runko::VecList<emf::YeeLattice::value_type>&) const;
+
+      ipol_func = std::bind_front(
+        static_cast<fptr>(&emf::YeeLattice::interpolate_EB_linear_1st_unrolled),
         std::cref(this->yee_lattice_),
         origo_pos);
       break;

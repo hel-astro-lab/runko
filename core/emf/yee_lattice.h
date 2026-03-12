@@ -231,6 +231,20 @@ public:
     std::array<value_type, 3> lattice_origo_coordinates,
     const runko::VecList<value_type>& coordinates) const;
 
+  /// Interpolate E and B using linear_1st with manually unrolled 2x2x2 stencil.
+  ///
+  /// Bit-exact results as linear_1st but the unrolled stencil enables
+  /// SIMD vectorization of the outer particle loop.
+  InterpolatedEB interpolate_EB_linear_1st_unrolled(
+    std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::VecList<value_type>& coordinates) const;
+
+  /// Interpolate E and B using linear_1st with manually unrolled 2x2x2 stencil (async).
+  InterpolatedEB interpolate_EB_linear_1st_unrolled(
+    const tyvi::mdgrid_work&,
+    std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::VecList<value_type>& coordinates) const;
+
   /// Set J = 0 everywhere including in halo.
   void clear_current();
 

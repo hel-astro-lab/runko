@@ -6,7 +6,7 @@ def decimal_part(x: float):
     return x - int(x)
 
 
-def make_test_tile():
+def make_test_tile(field_interpolator):
     config = runko.Configuration(None)
     config.Nx = 4
     config.Ny = 4
@@ -26,7 +26,7 @@ def make_test_tile():
     config.sigma = 40
     config.c_omp = 1
     config.particle_pusher = "boris"
-    config.field_interpolator = "linear_1st"
+    config.field_interpolator = field_interpolator
     config.current_depositer = "zigzag_1st"
 
     return config, runko.pic.threeD.Tile((3, 3, 3), config)
@@ -42,10 +42,12 @@ def in_middle_part(x, y, z, config):
     return a and b and c and d and e and f
 
 
-class pic_particle_pusher_boris(unittest.TestCase):
+class _particle_pusher_boris_tests:
+
+    field_interpolator = None  # override in subclass
 
     def test_Ex_only(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         E = lambda x, y, z: (0.1, 0, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -89,7 +91,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_Ey_only(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         E = lambda x, y, z: (0, 0.1, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -133,7 +135,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_Ez_only(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         E = lambda x, y, z: (0, 0, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -177,7 +179,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_Bx_only(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         B = lambda x, y, z: (0.1, 0, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -221,7 +223,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_By_only(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         B = lambda x, y, z: (0, 0.1, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -265,7 +267,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_Bz_only(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         B = lambda x, y, z: (0, 0, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -309,7 +311,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_same_E_at_different_x_has_the_same_effect(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         E = lambda x, y, z: (0, 0.1, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -340,7 +342,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_same_E_at_different_y_has_the_same_effect(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         E = lambda x, y, z: (0.1, 0, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -371,7 +373,7 @@ class pic_particle_pusher_boris(unittest.TestCase):
 
 
     def test_same_E_at_different_z_has_the_same_effect(self):
-        config, tile = make_test_tile()
+        config, tile = make_test_tile(self.field_interpolator)
 
         E = lambda x, y, z: (0.1, 0.1, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -399,6 +401,13 @@ class pic_particle_pusher_boris(unittest.TestCase):
         assertSameXY()
         tile.push_particles()
         assertSameXY()
+
+
+class pic_particle_pusher_boris_linear_1st(_particle_pusher_boris_tests, unittest.TestCase):
+    field_interpolator = "linear_1st"
+
+class pic_particle_pusher_boris_linear_1st_unrolled(_particle_pusher_boris_tests, unittest.TestCase):
+    field_interpolator = "linear_1st_unrolled"
 
 
 if __name__ == "__main__":
