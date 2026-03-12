@@ -4,6 +4,7 @@
 #include "io/snapshots/hdf5_fields.h"
 #include "io/snapshots/mpiio_fields.h"
 #include "io/snapshots/mpiio_particles.h"
+#include "io/snapshots/mpiio_spectra.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -217,6 +218,17 @@ void
          py::arg("prefix"), py::arg("n_prtcls"),
          py::arg("species") = 0)
     .def("write", &mpiio::ParticlesWriter<3>::write);
+
+  // MPI-IO spectra snapshot writer
+  py::class_<mpiio::SpectraWriter<3>>(m_3d, "MpiioSpectraWriter")
+    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, float, float, int>(),
+         py::arg("prefix"), py::arg("Nx"), py::arg("NxMesh"),
+         py::arg("Ny"), py::arg("NyMesh"),
+         py::arg("Nz"), py::arg("NzMesh"),
+         py::arg("stride"),
+         py::arg("nbins"), py::arg("umin"), py::arg("umax"),
+         py::arg("nspecies") = 2)
+    .def("write", &mpiio::SpectraWriter<3>::write);
 
   m_3d.def("_write_average_B_energy_density", &emf::write_average_B_energy_density)
     .def("_write_average_E_energy_density", &emf::write_average_E_energy_density);

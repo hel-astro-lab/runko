@@ -38,6 +38,15 @@ inline constexpr const char* prtcl_field_names[12] = {
   "x", "y", "z", "ux", "uy", "uz", "ex", "ey", "ez", "bx", "by", "bz"
 };
 
+/// Maximum number of particle species for spectra
+inline constexpr int32_t max_spectra_species = 3;
+
+/// Number of spectral quantities per species (u, beta_x, beta_y, beta_z)
+inline constexpr int32_t num_spectra_per_species = 4;
+
+/// Spectral quantity suffixes
+inline constexpr const char* spectra_suffixes[4] = { "u", "bx", "by", "bz" };
+
 /// Write the 512-byte binary header to an MPI file handle.
 /// Returns MPI error code (MPI_SUCCESS on success).
 ///
@@ -68,5 +77,24 @@ int write_header(
   int32_t NxMesh, int32_t NyMesh, int32_t NzMesh,
   int32_t lap,
   int32_t num_fields);
+
+/// Write a 512-byte spectra header to an MPI file handle.
+///
+/// Same base layout as write_header, plus spectra-specific metadata:
+///   [256:260]  int32   nbins
+///   [260:264]  float   umin
+///   [264:268]  float   umax
+/// Beta limits are always [-1, 1] and not stored.
+int write_spectra_header(
+  MPI_File fh,
+  int32_t nx, int32_t ny, int32_t nz,
+  int32_t stride,
+  int32_t Nx, int32_t Ny, int32_t Nz,
+  int32_t NxMesh, int32_t NyMesh, int32_t NzMesh,
+  int32_t lap,
+  int32_t num_fields,
+  int32_t nbins,
+  float umin,
+  float umax);
 
 }  // namespace mpiio

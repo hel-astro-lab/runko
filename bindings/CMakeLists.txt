@@ -98,6 +98,7 @@ set (IO_FILES
      ../io/snapshots/hdf5_fields.c++
      ../io/snapshots/mpiio_fields.c++
      ../io/snapshots/mpiio_particles.c++
+     ../io/snapshots/mpiio_spectra.c++
     )
 
 
