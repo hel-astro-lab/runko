@@ -157,6 +157,8 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         total_particles = 8**3
         self.assertEqual(total[expected_bin], total_particles)
 
+        # NOTE: beta_y and beta_z are tested in test_beta_y_and_z below
+
     def test_beta_particle_count_conserved(self):
         """Sum over all beta_x bins should equal total particles
         (all particles have well-defined beta)."""
@@ -225,6 +227,171 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         b_cents = beta_bin_centers(hdr)
         self.assertEqual(len(b_cents), 10)
         self.assertAlmostEqual(b_cents[5], 0.1, places=5)  # midpoint ~ 0
+
+    def test_multi_tile_x_resolved(self):
+        """2x1x1 grid, each tile with different velocity.
+        Verify the x-resolved spectra have peaks at different bins for each tile."""
+        config = make_pic_config(Nx=2, Ny=1, Nz=1, outdir=self.outdir)
+        P = runko.pic.threeD.ParticleState
+
+        tile_grid = runko.TileGrid(config)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            zero = lambda x, y, z: (0, 0, 0)
+            tile.set_EBJ(zero, zero, zero)
+
+            # Tile 0: |u|=1, tile 1: |u|=50
+            vx = 1.0 if idx[0] == 0 else 50.0
+
+            def gen(x, y, z, _vx=vx):
+                return [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(_vx, 0, 0))]
+            for species in range(2):
+                tile.inject_to_each_cell(species, gen)
+            tile_grid.add_tile(tile, idx)
+        _ = tile_grid.configure_simulation(config)
+
+        nbins = 100
+        umin, umax = 1e-2, 1e4
+        hdr, fields = spectra_write_and_read(
+            tile_grid, self.outdir, config, nbins=nbins, umin=umin, umax=umax)
+
+        # Output shape: (Nz=1, Ny=1, nx=16, nbins)
+        self.assertEqual(fields["s0_u"].shape, (1, 1, 16, nbins))
+
+        edges = u_bin_edges(hdr)
+        bin_u1 = np.searchsorted(edges, 1.0) - 1
+        bin_u50 = np.searchsorted(edges, 50.0) - 1
+        self.assertNotEqual(bin_u1, bin_u50)
+
+        # Tile 0 x-columns [0:8] should have peak at u=1
+        tile0_spectrum = fields["s0_u"][0, 0, 0:8, :].sum(axis=0)
+        self.assertGreater(tile0_spectrum[bin_u1], 0)
+        self.assertEqual(tile0_spectrum[bin_u50], 0)
+
+        # Tile 1 x-columns [8:16] should have peak at u=50
+        tile1_spectrum = fields["s0_u"][0, 0, 8:16, :].sum(axis=0)
+        self.assertGreater(tile1_spectrum[bin_u50], 0)
+        self.assertEqual(tile1_spectrum[bin_u1], 0)
+
+    def test_two_species_distinct_spectra(self):
+        """Inject species 0 with |u|=1 and species 1 with |u|=100.
+        Verify s0_u and s1_u peak at different bins."""
+        P = runko.pic.threeD.ParticleState
+        config = make_pic_config(outdir=self.outdir)
+
+        tile_grid = runko.TileGrid(config)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            zero = lambda x, y, z: (0, 0, 0)
+            tile.set_EBJ(zero, zero, zero)
+
+            def gen0(x, y, z):
+                return [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(1.0, 0, 0))]
+            tile.inject_to_each_cell(0, gen0)
+
+            def gen1(x, y, z):
+                return [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(100.0, 0, 0))]
+            tile.inject_to_each_cell(1, gen1)
+
+            tile_grid.add_tile(tile, idx)
+        _ = tile_grid.configure_simulation(config)
+
+        nbins = 100
+        umin, umax = 1e-2, 1e4
+        hdr, fields = spectra_write_and_read(
+            tile_grid, self.outdir, config, nbins=nbins, umin=umin, umax=umax)
+
+        edges = u_bin_edges(hdr)
+        bin_u1 = np.searchsorted(edges, 1.0) - 1
+        bin_u100 = np.searchsorted(edges, 100.0) - 1
+
+        s0_total = fields["s0_u"].sum(axis=(0, 1, 2))
+        s1_total = fields["s1_u"].sum(axis=(0, 1, 2))
+
+        # Species 0 peaks at u=1, not at u=100
+        self.assertGreater(s0_total[bin_u1], 0)
+        self.assertEqual(s0_total[bin_u100], 0)
+
+        # Species 1 peaks at u=100, not at u=1
+        self.assertGreater(s1_total[bin_u100], 0)
+        self.assertEqual(s1_total[bin_u1], 0)
+
+    def test_single_species(self):
+        """nspecies=1 should produce 4 output fields."""
+        config = make_pic_config(outdir=self.outdir, nspecies=1)
+        tile_grid = make_grid_with_velocity(config, vx=1.0, nspecies=1)
+        hdr, fields = spectra_write_and_read(
+            tile_grid, self.outdir, config, nspecies=1)
+
+        self.assertEqual(hdr["num_fields"], 4)
+        self.assertEqual(hdr["field_names"], ["s0_u", "s0_bx", "s0_by", "s0_bz"])
+        self.assertEqual(len(fields), 4)
+
+    def test_three_species(self):
+        """nspecies=3 (max for spectra) should produce 12 output fields."""
+        config = make_pic_config(outdir=self.outdir, nspecies=3)
+        tile_grid = make_grid_with_velocity(config, vx=1.0, nspecies=3)
+        hdr, fields = spectra_write_and_read(
+            tile_grid, self.outdir, config, nspecies=3)
+
+        self.assertEqual(hdr["num_fields"], 12)
+        expected_names = []
+        for s in range(3):
+            expected_names += [f"s{s}_u", f"s{s}_bx", f"s{s}_by", f"s{s}_bz"]
+        self.assertEqual(hdr["field_names"], expected_names)
+        self.assertEqual(len(fields), 12)
+
+    def test_beta_y_and_z(self):
+        """Inject particles with uy-only and uz-only velocities.
+        Verify s0_by and s0_bz peaks are correct."""
+        config = make_pic_config(outdir=self.outdir)
+        nbins = 100
+
+        # Test beta_y: inject uy=1 => gamma=sqrt(2), beta_y=1/sqrt(2)
+        tile_grid = make_grid_with_velocity(config, vx=0.0, vy=1.0, vz=0.0)
+        hdr, fields = spectra_write_and_read(
+            tile_grid, self.outdir, config, nbins=nbins, umin=1e-2, umax=1e2)
+
+        edges = beta_bin_edges(hdr)
+        beta_y = 1.0 / np.sqrt(2.0)
+        expected_bin = np.searchsorted(edges, beta_y) - 1
+
+        total = fields["s0_by"].sum(axis=(0, 1, 2))
+        total_particles = 8**3
+        self.assertEqual(total[expected_bin], total_particles)
+
+        # beta_x should peak at 0 (near center bin)
+        bx_total = fields["s0_bx"].sum(axis=(0, 1, 2))
+        center_bin = nbins // 2
+        self.assertEqual(bx_total[center_bin], total_particles)
+
+    def test_header_completeness(self):
+        """Verify all header fields."""
+        config = make_pic_config(outdir=self.outdir)
+        tile_grid = make_grid_with_velocity(config, vx=1.0)
+        hdr, _ = spectra_write_and_read(tile_grid, self.outdir, config)
+
+        self.assertEqual(hdr["magic"], MAGIC)
+        self.assertEqual(hdr["version"], 3)
+        self.assertEqual(hdr["header_size"], 512)
+        self.assertEqual(hdr["dtype_size"], 4)
+        self.assertEqual(hdr["stride"], 1)
+        self.assertEqual(hdr["lap"], 0)
+        self.assertEqual(hdr["Nx"], 1)
+        self.assertEqual(hdr["Ny"], 1)
+        self.assertEqual(hdr["Nz"], 1)
+        self.assertEqual(hdr["NxMesh"], 8)
+        self.assertEqual(hdr["NyMesh"], 8)
+        self.assertEqual(hdr["NzMesh"], 8)
+
+    def test_nonzero_lap(self):
+        """Write with lap=7, verify header contains correct lap."""
+        config = make_pic_config(outdir=self.outdir)
+        tile_grid = make_grid_with_velocity(config, vx=1.0)
+        hdr, _ = spectra_write_and_read(
+            tile_grid, self.outdir, config, lap=7)
+
+        self.assertEqual(hdr["lap"], 7)
 
 
 if __name__ == "__main__":
