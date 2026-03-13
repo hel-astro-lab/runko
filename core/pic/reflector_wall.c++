@@ -43,7 +43,8 @@ __attribute__((always_inline)) constexpr void
   // Relay point: branchless min/max (no lambda return → SIMD-safe)
   const auto relay = [&](const uint32_t j) {
     const auto a = sstd::min(fi1(j), fi2(j)) + value_type { 1 };
-    const auto b = sstd::max(sstd::max(fi1(j), fi2(j)), 0.5f * (x1(j) + x2(j)));
+    const auto b =
+      sstd::max(sstd::max(fi1(j), fi2(j)), value_type { 0.5 } * (x1(j) + x2(j)));
     return sstd::min(a, b);
   };
 
