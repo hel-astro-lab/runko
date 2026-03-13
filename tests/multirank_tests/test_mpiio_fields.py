@@ -55,7 +55,7 @@ def test_multirank_constant_fields(collective=False):
 
     E_func = lambda x, y, z: (1, 2, 3)
     B_func = lambda x, y, z: (4, 5, 6)
-    J_func = lambda x, y, z: (0, 0, 0)
+    J_func = lambda x, y, z: (7, 8, 9)
 
     for idx in tile_grid.local_tile_indices():
         tile = runko.emf.threeD.Tile(idx, config)
@@ -85,9 +85,9 @@ def test_multirank_constant_fields(collective=False):
         np.testing.assert_allclose(fields["bx"], 4.0, atol=1e-5)
         np.testing.assert_allclose(fields["by"], 5.0, atol=1e-5)
         np.testing.assert_allclose(fields["bz"], 6.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jx"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jy"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jz"], 0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["jx"], 7.0, atol=1e-5)
+        np.testing.assert_allclose(fields["jy"], 8.0, atol=1e-5)
+        np.testing.assert_allclose(fields["jz"], 9.0, atol=1e-5)
         np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
@@ -114,13 +114,12 @@ def test_multirank_tile_placement(collective=False):
 
     tile_grid = runko.TileGrid(config)
 
-    B_func = lambda x, y, z: (0, 0, 0)
-    J_func = lambda x, y, z: (0, 0, 0)
-
     for idx in tile_grid.local_tile_indices():
         tile = runko.emf.threeD.Tile(idx, config)
-        ex_val = (idx[0] + 1) + 10 * (idx[1] + 1) + 100 * (idx[2] + 1)
-        E_func = lambda x, y, z, v=ex_val: (v, 0, 0)
+        base = (idx[0] + 1) + 10 * (idx[1] + 1) + 100 * (idx[2] + 1)
+        E_func = lambda x, y, z, v=base: (v,        0, 0)
+        B_func = lambda x, y, z, v=base: (v + 1000, 0, 0)
+        J_func = lambda x, y, z, v=base: (v + 2000, 0, 0)
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
@@ -141,21 +140,20 @@ def test_multirank_tile_placement(collective=False):
         assert hdr["ny"] == 16, f"Expected ny=16, got {hdr['ny']}"
         assert hdr["nz"] == 16, f"Expected nz=16, got {hdr['nz']}"
 
-        ex = fields["ex"]  # shape: (nz, ny, nx) = (16, 16, 16)
-
-        for i_tile in range(2):
-            for j_tile in range(2):
-                for k_tile in range(2):
-                    expected_val = (i_tile + 1) + 10 * (j_tile + 1) + 100 * (k_tile + 1)
-                    region = ex[
-                        k_tile * 8 : (k_tile + 1) * 8,
-                        j_tile * 8 : (j_tile + 1) * 8,
-                        i_tile * 8 : (i_tile + 1) * 8,
-                    ]
-                    np.testing.assert_allclose(
-                        region, expected_val, atol=1e-5,
-                        err_msg=f"Tile ({i_tile},{j_tile},{k_tile}) Ex mismatch: "
-                                f"expected {expected_val}")
+        for fname, offset in [("ex", 0), ("bx", 1000), ("jx", 2000)]:
+            for i_tile in range(2):
+                for j_tile in range(2):
+                    for k_tile in range(2):
+                        expected_val = (i_tile + 1) + 10 * (j_tile + 1) + 100 * (k_tile + 1) + offset
+                        region = fields[fname][
+                            k_tile * 8 : (k_tile + 1) * 8,
+                            j_tile * 8 : (j_tile + 1) * 8,
+                            i_tile * 8 : (i_tile + 1) * 8,
+                        ]
+                        np.testing.assert_allclose(
+                            region, expected_val, atol=1e-5,
+                            err_msg=f"Tile ({i_tile},{j_tile},{k_tile}) {fname} mismatch: "
+                                    f"expected {expected_val}")
 
     comm.Barrier()
     mpi_unittest.assertEqual(True, True)
@@ -166,10 +164,11 @@ def test_multirank_tile_placement(collective=False):
 # ---------------------------------------------------------------------------
 # Test 3: asymmetric mesh dimensions across multiple ranks
 # ---------------------------------------------------------------------------
-def test_multirank_asymmetric_mesh():
+def test_multirank_asymmetric_mesh(collective=False):
     """2x2x2 grid, 10x11x13 mesh per tile, stride=1.
     Constant fields. Rank 0 verifies global dimensions are (20, 22, 26)
-    and field values are correct."""
+    and field values are correct.
+    Runs for both write() and write_collective()."""
 
     outdir = broadcast_outdir()
     config = make_config(Nx=2, Ny=2, Nz=2, NxMesh=10, NyMesh=11, NzMesh=13,
@@ -179,7 +178,7 @@ def test_multirank_asymmetric_mesh():
 
     E_func = lambda x, y, z: (7, 8, 9)
     B_func = lambda x, y, z: (10, 11, 12)
-    J_func = lambda x, y, z: (0, 0, 0)
+    J_func = lambda x, y, z: (13, 14, 15)
 
     for idx in tile_grid.local_tile_indices():
         tile = runko.emf.threeD.Tile(idx, config)
@@ -189,7 +188,10 @@ def test_multirank_asymmetric_mesh():
     _ = tile_grid.configure_simulation(config)
 
     writer = MpiioFieldsWriter(outdir, 2, 10, 2, 11, 2, 13, 1)
-    writer.write(tile_grid._corgi_grid, 0)
+    if collective:
+        writer.write_collective(tile_grid._corgi_grid, 0)
+    else:
+        writer.write(tile_grid._corgi_grid, 0)
 
     if rank == 0:
         path = find_output_file(outdir)
@@ -210,9 +212,9 @@ def test_multirank_asymmetric_mesh():
         np.testing.assert_allclose(fields["bx"], 10.0, atol=1e-5)
         np.testing.assert_allclose(fields["by"], 11.0, atol=1e-5)
         np.testing.assert_allclose(fields["bz"], 12.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jx"],  0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jy"],  0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["jz"],  0.0, atol=1e-5)
+        np.testing.assert_allclose(fields["jx"], 13.0, atol=1e-5)
+        np.testing.assert_allclose(fields["jy"], 14.0, atol=1e-5)
+        np.testing.assert_allclose(fields["jz"], 15.0, atol=1e-5)
         np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
         np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
@@ -228,3 +230,4 @@ if __name__ == "__main__":
     test_multirank_asymmetric_mesh()
     test_multirank_constant_fields(collective=True)
     test_multirank_tile_placement(collective=True)
+    test_multirank_asymmetric_mesh(collective=True)
