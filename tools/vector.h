@@ -3,9 +3,9 @@
 #include <functional>
 // Bandage for tyvi using but not including <functional> :(
 
-#include "tyvi/mdspan.h"
-
+#include "core/mdgrid_common.h"
 #include "tools/math.h"
+#include "tyvi/mdspan.h"
 
 #include <array>
 #include <concepts>
@@ -122,36 +122,38 @@ struct MatD {
   {
     static constexpr bool is_const = false;
     using TT                       = std::conditional_t<is_const, const T, T>;
-    return tyvi::sstd::geometric_mdspan<TT, 2, D, std::layout_left>(this->data.data());
+    return tyvi::sstd::geometric_mdspan<TT, 2, D, runko::index_t, std::layout_left>(
+      this->data.data());
   }
 
   constexpr auto mds() const&
   {
     static constexpr bool is_const = true;
     using TT                       = std::conditional_t<is_const, const T, T>;
-    return tyvi::sstd::geometric_mdspan<TT, 2, D, std::layout_left>(this->data.data());
+    return tyvi::sstd::geometric_mdspan<TT, 2, D, runko::index_t, std::layout_left>(
+      this->data.data());
   }
 
   /// Column major order.
-  constexpr auto& operator[](const size_t i, const size_t j) &
+  constexpr auto& operator[](const runko::index_t i, const runko::index_t j) &
   {
     return this->mds()[i, j];
   }
 
   /// Column major order.
-  constexpr auto& operator[](const size_t i, const size_t j) const&
+  constexpr auto& operator[](const runko::index_t i, const runko::index_t j) const&
   {
     return this->mds()[i, j];
   }
 
   /// Column major order.
-  constexpr auto& operator()(const size_t i, const size_t j) &
+  constexpr auto& operator()(const runko::index_t i, const runko::index_t j) &
   {
     return this->mds()[i, j];
   }
 
   /// Column major order.
-  constexpr auto& operator()(const size_t i, const size_t j) const&
+  constexpr auto& operator()(const runko::index_t i, const runko::index_t j) const&
   {
     return this->mds()[i, j];
   }
@@ -164,7 +166,7 @@ struct MatD {
   {
     const auto vecs = std::array { x... };
     const auto m    = this->mds();
-    for(const auto [i, j]: tyvi::sstd::geometric_index_space<2, D>()) {
+    for(const auto [i, j]: tyvi::sstd::geometric_index_space<2, D, runko::index_t>()) {
       m[i, j] = vecs[i](j);
     }
   }
@@ -265,7 +267,7 @@ constexpr VecD<T, D>
 {
   VecD<T, D> ret;
 
-  for(const auto [i, j]: tyvi::sstd::geometric_index_space<2, D>()) {
+  for(const auto [i, j]: tyvi::sstd::geometric_index_space<2, D, runko::index_t>()) {
     ret[i] += M[i, j] * v[j];
   }
   return ret;
