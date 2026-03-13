@@ -4,7 +4,7 @@
 #include "io/snapshots/mpiio_header.h"
 #include "core/emf/tile.h"
 #include "core/pic/tile.h"
-#include "tools/simd_math.h"
+#include "tools/math.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>

@@ -4,7 +4,7 @@
 #include "io/snapshots/mpiio_header.h"
 #include "core/emf/tile.h"
 #include "core/pic/tile.h"
-#include "tools/simd_math.h"
+#include "tools/math.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
@@ -129,7 +129,7 @@ void mpiio::FieldsWriter<3>::free_cached_filetypes_()
 
 
 template<>
-mpiio::FieldsWriter<3>::~FieldsWriter()
+mpiio::FieldsWriter<3>::~FieldsWriter<3>()
 {
   free_cached_filetypes_();
 }

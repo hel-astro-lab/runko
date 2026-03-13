@@ -96,7 +96,6 @@ set (PIC_FILES
 
 set (IO_FILES
      ../io/snapshots/hdf5_fields.c++
-     ../io/snapshots/mpiio_writer_base.c++
      ../io/snapshots/mpiio_fields.c++
      ../io/snapshots/mpiio_particles.c++
      ../io/snapshots/mpiio_spectra.c++

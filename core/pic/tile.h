@@ -138,8 +138,6 @@ public:
   /// Sorts the particles in order to reduce cache misses.
   void sort_particles();
 
-  std::size_t number_of_species() const;
-
   /// Register a reflector wall on this tile.
   void register_reflector_wall(pic::reflector_wall wall);
 
