@@ -178,7 +178,7 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
 
   if (local_sampled_ > 0) {
     const auto buf_mds = prtcl_buf_.mds();
-    runko::size_t tile_buf_offset = 0;
+    std::size_t tile_buf_offset = 0;
 
     for (const auto& t : tiles_) {
       if (t.sampled == 0) continue;
@@ -186,8 +186,8 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
       auto& tile = dynamic_cast<pic::Tile<3>&>(grid.get_tile(t.cid));
       const auto& container = tile.particles(sp);
 
-      const auto n_s      = static_cast<runko::size_t>(t.sampled);
-      const auto stride_t = static_cast<runko::size_t>(t.stride);
+      const auto n_s      = static_cast<std::size_t>(t.sampled);
+      const auto stride_t = static_cast<std::size_t>(t.stride);
 
       // Gather sampled local positions for field interpolation
       auto sampled_pos = runko::VecList<float>(n_s);
@@ -197,7 +197,7 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
 
         tyvi::mdgrid_work {}
           .for_each_index(sampled_pos, [=](const auto idx) {
-            const auto si = static_cast<runko::size_t>(idx[0] * stride_t);
+            const auto si = static_cast<std::size_t>(idx[0] * stride_t);
             sp_mds[idx][0] = src_pos[si][0];
             sp_mds[idx][1] = src_pos[si][1];
             sp_mds[idx][2] = src_pos[si][2];
@@ -219,13 +219,13 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
       const auto E_mds   = E_interp.mds();
       const auto B_mds   = B_interp.mds();
 
-      const auto dst_range = std::array<runko::size_t, 2>{
+      const auto dst_range = std::array<std::size_t, 2>{
         tile_buf_offset, tile_buf_offset + n_s };
       const auto dst_sub = std::submdspan(buf_mds, dst_range);
 
       tyvi::mdgrid_work {}
         .for_each_index(dst_sub, [=](const auto idx) {
-          const auto si = static_cast<runko::size_t>(idx[0] * stride_t);
+          const auto si = static_cast<std::size_t>(idx[0] * stride_t);
 
           dst_sub[idx][0]  = src_pos[si][0] + mx;   // global x
           dst_sub[idx][1]  = src_pos[si][1] + my;   // global y

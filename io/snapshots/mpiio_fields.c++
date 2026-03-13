@@ -98,14 +98,14 @@ mpiio::FieldsWriter<3>::FieldsWriter(
   nz_ = Nz_ * nzt_;
 
   iter_grid_.invalidating_resize(
-    static_cast<runko::size_t>(nzt_),
-    static_cast<runko::size_t>(nyt_),
-    static_cast<runko::size_t>(nxt_));
+    static_cast<std::size_t>(nzt_),
+    static_cast<std::size_t>(nyt_),
+    static_cast<std::size_t>(nxt_));
 
   tile_buf_.invalidating_resize(
-    static_cast<runko::size_t>(nzt_),
-    static_cast<runko::size_t>(nyt_),
-    static_cast<runko::size_t>(nxt_));
+    static_cast<std::size_t>(nzt_),
+    static_cast<std::size_t>(nyt_),
+    static_cast<std::size_t>(nxt_));
 }
 
 
@@ -210,9 +210,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
   w.for_each_index(iter_grid_, [=](const auto idx) {
     const auto iz = idx[0], iy = idx[1], ix = idx[2];
 
-    const auto si = static_cast<runko::size_t>(ix * stride);
-    const auto sj = static_cast<runko::size_t>(iy * stride);
-    const auto sk = static_cast<runko::size_t>(iz * stride);
+    const auto si = static_cast<std::size_t>(ix * stride);
+    const auto sj = static_cast<std::size_t>(iy * stride);
+    const auto sk = static_cast<std::size_t>(iz * stride);
 
     // ex, ey, ez
     buf_mds[iz, iy, ix][0] = Emds[si, sj, sk][0];
@@ -237,9 +237,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
     for (int kk = 0; kk < stride; kk++)
       for (int jj = 0; jj < stride; jj++)
         for (int ii = 0; ii < stride; ii++) {
-          const auto si = static_cast<runko::size_t>(ix*stride + ii);
-          const auto sj = static_cast<runko::size_t>(iy*stride + jj);
-          const auto sk = static_cast<runko::size_t>(iz*stride + kk);
+          const auto si = static_cast<std::size_t>(ix*stride + ii);
+          const auto sj = static_cast<std::size_t>(iy*stride + jj);
+          const auto sk = static_cast<std::size_t>(iz*stride + kk);
           sjx += Jmds[si, sj, sk][0];
           sjy += Jmds[si, sj, sk][1];
           sjz += Jmds[si, sj, sk][2];
@@ -262,9 +262,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
     const auto mz = static_cast<vt>(tile.mins[2]);
     const auto inv_stride = vt{1} / static_cast<vt>(stride);
 
-    auto deposit_species = [&](runko::size_t species, int f_idx) {
+    auto deposit_species = [&](std::size_t species, int f_idx) {
       const auto pos_mds = pic_tile->particles(species).pos_mds();
-      const auto fi = static_cast<runko::size_t>(f_idx);
+      const auto fi = static_cast<std::size_t>(f_idx);
 
       tyvi::mdgrid_work {}
         .for_each_index(
@@ -274,9 +274,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
             const auto py = pos_mds[idx][1] - my;
             const auto pz = pos_mds[idx][2] - mz;
 
-            const auto ci = static_cast<runko::size_t>(sstd::floor(px * inv_stride));
-            const auto cj = static_cast<runko::size_t>(sstd::floor(py * inv_stride));
-            const auto ck = static_cast<runko::size_t>(sstd::floor(pz * inv_stride));
+            const auto ci = static_cast<std::size_t>(sstd::floor(px * inv_stride));
+            const auto cj = static_cast<std::size_t>(sstd::floor(py * inv_stride));
+            const auto ck = static_cast<std::size_t>(sstd::floor(pz * inv_stride));
 
             auto* const n = &thrust::raw_reference_cast(buf_mds[ck, cj, ci][fi]);
             sstd::atomic_add(n, vt{1});
@@ -287,7 +287,7 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
     const auto nspec = static_cast<int>(pic_tile->number_of_species());
     const int ndeposit = std::min(nspec, nspecies_);
     for (int s = 0; s < ndeposit; s++)
-      deposit_species(static_cast<runko::size_t>(s), 9 + s);
+      deposit_species(static_cast<std::size_t>(s), 9 + s);
   }
 
   // Data remains on device. Callers sync to staging if needed.
