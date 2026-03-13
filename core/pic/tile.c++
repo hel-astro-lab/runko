@@ -35,8 +35,6 @@ void
     const auto qm_tuple_to_args = [&](const auto qm) {
       const auto [q, m] = qm;
 
-      // Due to effects of density function to particle number,
-      // we do not yet know how many particles there are going to be.
       return pic::ParticleContainerArgs { .N = 0, .charge = q, .mass = m };
     };
 
