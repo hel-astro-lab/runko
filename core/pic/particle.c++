@@ -94,7 +94,7 @@ void
     const std::array<value_type, 3> mins,
     const std::array<value_type, 3> maxs)
 {
-  if(mins[0] >= maxs[0] or mins[1] >= maxs[1] or mins[0] >= maxs[2]) {
+  if(mins[0] >= maxs[0] or mins[1] >= maxs[1] or mins[2] >= maxs[2]) {
     throw std::runtime_error {
       "ParticleContainer::wrap_coordinates: given limits do not make sense."
     };
@@ -132,7 +132,7 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
 
   // Handle empty container as special case, so that we can later assume
   // that there is at least one particle.
-  if(this->size() == 0) { return { {}, *this }; }
+  if(this->size() == 0) { return { {{{0, 0, 0}, {0, 0}}}, *this }; }
 
   // subregion_index: {-1, 0, 1} x {-1, 0, 1} x {-1, 0, 1} -> {0, 1, ..., 26}
   constexpr auto subregion_index =
@@ -239,6 +239,10 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
       ParticleContainer::span { present_subregion_begins[i],
                                 present_subregion_ends[i] });
   }
+
+  // Ensure {0,0,0} (self-region) is always present, even when all particles left.
+  if(not m.contains({0, 0, 0})) { m.insert({{{0, 0, 0}, {0, 0}}}); }
+
   return { std::move(m), std::move(permuted_pcontainer) };
 }
 

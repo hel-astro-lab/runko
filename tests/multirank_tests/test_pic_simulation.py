@@ -341,8 +341,170 @@ def pic_kinetic_energy_reduction():
             msg = f"Stored kinetic energy data should not change."
             raise RuntimeError(msg)
 
+def pic_communication_with_empty_tiles():
+    """
+    Regression test: local_communication must not crash when
+    some tiles have zero particles for a species.
+
+    Previously, divide_to_subregions returned an empty spans map
+    for empty containers, causing spans.at({0,0,0}) to throw
+    std::out_of_range in local_communication_prelude.
+    """
+
+    conf, tile_grid = make_test_grid()
+
+    for i, idx in enumerate(tile_grid.local_tile_indices()):
+        tile = runko.pic.threeD.Tile(idx, conf)
+
+        # Only inject particles into even-numbered tiles;
+        # odd-numbered tiles stay empty (0 particles).
+        if i % 2 == 0:
+            tile.inject(0, make_test_particles(tile, after_comm=True))
+            tile.inject(1, make_test_particles(tile, after_comm=True))
+
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    # This must not crash with map::at key not found.
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
+
+    simulation.for_one_lap(f)
+
+    # Verify all tiles still have valid particle containers.
+    asserts = []
+    for tile in simulation.local_tiles():
+        for species in (0, 1):
+            posx, posy, posz = tile.get_positions(species)
+            # Particle count must be non-negative (>= 0).
+            asserts.append(mpi_unittest.assertEqualDeferred(len(posx) >= 0, True))
+
+    mpi_unittest.assertDeferredResults(asserts)
+
+
+def pic_wrap_positions():
+    """
+    Test that wrap_positions correctly wraps particle coordinates
+    at both positive and negative domain boundaries in all 3 directions.
+
+    For each of the 6 domain faces, inject a particle slightly beyond
+    the boundary. After communication (which triggers wrap_positions
+    in postlude), verify the coordinate is wrapped to the opposite side.
+    """
+
+    conf, tile_grid = make_test_grid()
+
+    Lx = conf.Nx * conf.NxMesh  # 20
+    Ly = conf.Ny * conf.NyMesh  # 22
+    Lz = conf.Nz * conf.NzMesh  # 26
+
+    eps = 0.25
+    PS = runko.pic.threeD.ParticleState
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.pic.threeD.Tile(idx, conf)
+
+        mins = tile.mins
+        maxs = tile.maxs
+        cx = (mins[0] + maxs[0]) / 2
+        cy = (mins[1] + maxs[1]) / 2
+        cz = (mins[2] + maxs[2]) / 2
+
+        particles = []
+
+        # x- boundary: particle just below x=0
+        if mins[0] == 0:
+            particles.append(PS(pos=(-eps, cy, cz), vel=(-1, 0, 0)))
+
+        # x+ boundary: particle just above x=Lx
+        if maxs[0] == Lx:
+            particles.append(PS(pos=(Lx + eps, cy, cz), vel=(1, 0, 0)))
+
+        # y- boundary: particle just below y=0
+        if mins[1] == 0:
+            particles.append(PS(pos=(cx, -eps, cz), vel=(0, -1, 0)))
+
+        # y+ boundary: particle just above y=Ly
+        if maxs[1] == Ly:
+            particles.append(PS(pos=(cx, Ly + eps, cz), vel=(0, 1, 0)))
+
+        # z- boundary: particle just below z=0
+        if mins[2] == 0:
+            particles.append(PS(pos=(cx, cy, -eps), vel=(0, 0, -1)))
+
+        # z+ boundary: particle just above z=Lz
+        if maxs[2] == Lz:
+            particles.append(PS(pos=(cx, cy, Lz + eps), vel=(0, 0, 1)))
+
+        tile.inject(0, particles)
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
+
+    simulation.for_one_lap(f)
+
+    # After communication + wrap_positions, verify correctness.
+    tol = 0.001
+    asserts = []
+    total_particles = 0
+
+    for tile in simulation.local_tiles():
+        posx, posy, posz = tile.get_positions(0)
+        velx, vely, velz = tile.get_velocities(0)
+
+        total_particles += len(posx)
+
+        for i in range(len(posx)):
+            x, y, z = float(posx[i]), float(posy[i]), float(posz[i])
+            vx, vy, vz = float(velx[i]), float(vely[i]), float(velz[i])
+
+            # All positions must be within domain bounds
+            asserts.append(mpi_unittest.assertEqualDeferred(
+                0 <= x < Lx and 0 <= y < Ly and 0 <= z < Lz, True))
+
+            # Check wrapped coordinate based on velocity marker
+            if abs(vx - (-1)) < tol:   # x- wrap
+                asserts.append(mpi_unittest.assertEqualDeferred(
+                    abs(x - (Lx - eps)) < tol, True))
+
+            elif abs(vx - 1) < tol:    # x+ wrap
+                asserts.append(mpi_unittest.assertEqualDeferred(
+                    abs(x - eps) < tol, True))
+
+            elif abs(vy - (-1)) < tol:  # y- wrap
+                asserts.append(mpi_unittest.assertEqualDeferred(
+                    abs(y - (Ly - eps)) < tol, True))
+
+            elif abs(vy - 1) < tol:    # y+ wrap
+                asserts.append(mpi_unittest.assertEqualDeferred(
+                    abs(y - eps) < tol, True))
+
+            elif abs(vz - (-1)) < tol:  # z- wrap
+                asserts.append(mpi_unittest.assertEqualDeferred(
+                    abs(z - (Lz - eps)) < tol, True))
+
+            elif abs(vz - 1) < tol:    # z+ wrap
+                asserts.append(mpi_unittest.assertEqualDeferred(
+                    abs(z - eps) < tol, True))
+
+    # Each tile in 2x2x2 grid touches 3 domain faces → 3 particles injected.
+    # After communication, each tile receives 3 wrapped particles.
+    # With 2 tiles per rank: expect 6 particles per rank.
+    asserts.append(mpi_unittest.assertEqualDeferred(total_particles, 6))
+
+    mpi_unittest.assertDeferredResults(asserts)
+
+
 if __name__ == "__main__":
     virtual_pic_tiles()
     pic_noop_communication()
     pic_communication()
+    pic_communication_with_empty_tiles()
+    pic_wrap_positions()
     pic_kinetic_energy_reduction()
