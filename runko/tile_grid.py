@@ -179,7 +179,8 @@ class TileGrid:
             vtile_msg += f"with deduced type {tile_type_candidate}."
             self._logger.debug(vtile_msg)
 
-        self._logger.info(f"simulation configured with: {config.__dict__}")
+        if config.verbose:
+            self._logger.info(f"simulation configured with: {config.__dict__}")
 
         # Count particle species from config (q0/m0, q1/m1, ...)
         nspecies = 0
@@ -204,4 +205,5 @@ class TileGrid:
         return Simulation(self,
                           Simulation._im_not_user,
                           Nt=config.Nt,
-                          io_config=io_config)
+                          io_config=io_config,
+                          verbose=config.verbose)

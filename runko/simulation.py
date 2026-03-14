@@ -47,7 +47,7 @@ class Simulation:
         self._lap_timers = []
         self._lap_wall_times = []
 
-        self.verbose_laps = kwargs.get('verbose_laps', True)
+        self.verbose_laps = kwargs.get('verbose', True)
 
         self._logger = runko_logger("Simulation")
 
@@ -287,7 +287,8 @@ class Simulation:
         Execute a given lap function without increasing the lap.
         """
 
-        self._logger.info("Executing prelude lap function...")
+        if self.verbose_laps:
+            self._logger.info("Executing prelude lap function...")
         self._execute_lap_function(lap_function, disable_timing=True)
 
 

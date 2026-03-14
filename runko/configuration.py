@@ -16,6 +16,7 @@ class Configuration:
         """
 
         self._config_path = config_path
+        self.verbose = config_path is not None
 
         if not config_path:
             return
