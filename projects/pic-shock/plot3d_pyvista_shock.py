@@ -215,7 +215,7 @@ if __name__ == "__main__":
     #--------------------------------------------------
     p = pv.Plotter(
             #lighting='three lights'
-            #off_screen=True,
+            off_screen=True,
             )
 
 
@@ -615,7 +615,7 @@ if __name__ == "__main__":
     #--------------------------------------------------
     # center camera on grid; look from top-left-front
     diag = np.sqrt(Lx**2 + Ly**2 + Lz**2)
-    cam_dist = 2.0*diag
+    cam_dist = 1.35*diag
     cam_dir = np.array([-1.0, -1.0, 1.0])
     cam_dir /= np.linalg.norm(cam_dir)
     cam_pos = (midx + cam_dist*cam_dir[0],

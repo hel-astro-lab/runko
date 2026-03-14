@@ -74,6 +74,9 @@ if __name__ == "__main__":
         logger.info(f"  {'resolved outdir':<{W}}= {resolve_outdir(conf)}")
         logger.info(f"  {'prefix / postfix':<{W}}= {conf.prefix} / {conf.postfix}")
         logger.info(f"  {'output_interval':<{W}}= {output_interval}")
+        logger.info(f"  {'spectra_nbins':<{W}}= {conf.spectra_nbins}")
+        logger.info(f"  {'spectra_umin':<{W}}= {conf.spectra_umin}")
+        logger.info(f"  {'spectra_umax':<{W}}= {conf.spectra_umax}")
 
         logger.info(f"{'--- [grid] ---':}")
         logger.info(f"  {'tiles':<{W}}= {conf.Nx} x {conf.Ny} x {conf.Nz}")
@@ -101,6 +104,7 @@ if __name__ == "__main__":
         logger.info(f"  {'B direction':<{W}}= ({conf.bx_proj}, {conf.by_proj}, {conf.bz_proj})")
         logger.info(f"  {'n_filter_passes':<{W}}= {n_filter_passes}")
         logger.info(f"  {'v_A':<{W}}= {np.sqrt(sigma / (1.0 + sigma)):.6g}")
+        logger.info(f"  {'Lx crossing':<{W}}= {conf.Nx*conf.NxMesh/conf.cfl:.0f} laps")
         logger.info(f"  {'beta_ion / beta_e':<{W}}= {2.0*theta1 / (sigma*(m1/m0+1.0)/(m1/m0)):.6g} / {2.0*theta0 / (sigma*(1.0/m0+1.0)):.6g}")
 
         logger.info(f"{'--- [algorithms] ---':}")
@@ -228,6 +232,7 @@ if __name__ == "__main__":
         if simulation.lap % output_interval == 0:
             x.io_emf_snapshot()
             x.io_prtcl_snapshot()
+            x.io_spectra_snapshot()
             simulation.log_timer_statistics()
 
     simulation.for_each_lap(pic_simulation_step)
