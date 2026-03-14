@@ -129,6 +129,17 @@ public:
   /// Particle type is assumed to be configured.
   void batch_inject_to_cells(std::size_t particle_type, batch_particle_generator);
 
+  /// Inject particles in a stripe between x_left and x_right.
+  ///
+  /// Only cells whose x-coordinate falls within [x_left, x_right) are
+  /// passed to the generator. Full y and z extent of the tile is used.
+  /// No-op if the stripe does not overlap this tile.
+  void batch_inject_in_x_stripe(
+    std::size_t particle_type,
+    batch_particle_generator pgen,
+    double x_left,
+    double x_right);
+
   /// Push particles updating their velocities and positions.
   void push_particles();
 

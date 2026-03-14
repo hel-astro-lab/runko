@@ -5,6 +5,7 @@
 #include "core/pic/particle.h"
 #include "tyvi/mdspan.h"
 #include "tyvi/sstd.h"
+#include "tools/math.h"
 
 #include <cmath>
 #include <format>
@@ -171,11 +172,47 @@ void
     const std::size_t particle_type,
     batch_particle_generator pgen)
 {
+  batch_inject_in_x_stripe(
+    particle_type,
+    std::move(pgen),
+    static_cast<double>(this->mins[0]),
+    static_cast<double>(this->maxs[0]));
+}
+
+template<std::size_t D>
+void
+  Tile<D>::batch_inject_in_x_stripe(
+    const std::size_t particle_type,
+    batch_particle_generator pgen,
+    const double x_left,
+    const double x_right)
+{
+  const auto tile_xmin = static_cast<double>(this->mins[0]);
+  const auto tile_xmax = static_cast<double>(this->maxs[0]);
+
+  // early exit if stripe does not overlap this tile
+  if(x_right <= tile_xmin || x_left >= tile_xmax) return;
 
   const auto global_coordinates = this->global_coordinate_map();
   const auto e                  = this->yee_lattice_.extents_wout_halo();
 
-  const auto cells_in_total = std::array { e[0] * e[1] * e[2] };
+  // find x-cell range within the stripe (O(1) since dx=1)
+  // cell i spans [tile_xmin+i, tile_xmin+i+1)
+  const auto diff_left  = x_left  - tile_xmin;
+  const auto diff_right = x_right - tile_xmin;
+
+  const auto i_begin = diff_left <= 0.0
+                      ? std::size_t{0}
+                      : sstd::min(e[0], static_cast<std::size_t>(sstd::floor(diff_left)));
+
+  const auto i_end = diff_right >= static_cast<double>(e[0])
+                   ? e[0]
+                   : static_cast<std::size_t>(sstd::ceil(diff_right));
+
+  if(i_begin >= i_end) return;
+
+  const auto nx_stripe      = i_end - i_begin;
+  const auto cells_in_total = std::array { nx_stripe * e[1] * e[2] };
   auto x                    = pybind11::array_t<double>(cells_in_total);
   auto y                    = pybind11::array_t<double>(cells_in_total);
   auto z                    = pybind11::array_t<double>(cells_in_total);
@@ -185,17 +222,17 @@ void
     auto yv = y.template mutable_unchecked<1>();
     auto zv = z.template mutable_unchecked<1>();
 
-    // Use this and tyvi index_space to easily iterate over 3D indices.
-    const auto helper_mds = std::mdspan((int*)nullptr, e[0], e[1], e[2]);
-    // Use the mapping directly to get 1D offset from the 3D indices.
-    const auto m = helper_mds.mapping();
-
-    for(const auto [i, j, k]: tyvi::sstd::index_space(helper_mds)) {
-      const auto n  = m(i, j, k);
-      const auto gc = global_coordinates(i, j, k);
-      xv(n)         = gc[0];
-      yv(n)         = gc[1];
-      zv(n)         = gc[2];
+    std::size_t n = 0;
+    for(std::size_t i = i_begin; i < i_end; ++i) {
+      for(std::size_t j = 0; j < e[1]; ++j) {
+        for(std::size_t k = 0; k < e[2]; ++k) {
+          const auto gc = global_coordinates(i, j, k);
+          xv(n) = gc[0];
+          yv(n) = gc[1];
+          zv(n) = gc[2];
+          ++n;
+        }
+      }
     }
   }
 
@@ -206,13 +243,13 @@ void
     const auto assert_shapes = [&](const auto& a) {
       if(a.ndim() != 1) {
         throw std::runtime_error {
-          "pic::Tile::batch_inject_to_cells: given batch must be one dimensional."
+          "pic::Tile::batch_inject_in_x_stripe: given batch must be one dimensional."
         };
       }
 
       if(a.shape(0) != batch_size) {
         throw std::runtime_error {
-          "pic::Tile::batch_inject_to_cells: batches must have same length."
+          "pic::Tile::batch_inject_in_x_stripe: batches must have same length."
         };
       }
     };
@@ -233,21 +270,13 @@ void
   const auto vely_view = state_batch.vel[1].template unchecked<1>();
   const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
-  // This is bit of a waste to go for SOA to AOS and then in inject back to SOA.
-  // However, I don't think this matters.
   auto states   = std::vector<runko::ParticleState>(batch_size);
   using index_t = std::remove_cvref_t<decltype(batch_size)>;
   for(const auto n: std::views::iota(index_t { 0 }, batch_size)) {
-    const auto posx = posx_view(n);
-    const auto posy = posy_view(n);
-    const auto posz = posz_view(n);
-
-    const auto velx = velx_view(n);
-    const auto vely = vely_view(n);
-    const auto velz = velz_view(n);
-
-    states[n] =
-      runko::ParticleState { .pos = { posx, posy, posz }, .vel = { velx, vely, velz } };
+    states[n] = runko::ParticleState {
+      .pos = { posx_view(n), posy_view(n), posz_view(n) },
+      .vel = { velx_view(n), vely_view(n), velz_view(n) }
+    };
   }
 
   this->inject(particle_type, states);

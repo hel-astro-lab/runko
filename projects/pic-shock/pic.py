@@ -116,11 +116,20 @@ if __name__ == "__main__":
         logger.info(f"  {'tile_partitioning':<{W}}= {conf.tile_partitioning}")
 
     # --------------------------------------------------
-    # Reflector wall (stationary for now)
+    # Reflector wall and moving injector
 
+    Lx = conf.Nx * conf.NxMesh
     walloc = 15.0  # cell location of wall (leave >10 cells for BCs)
     wall = runko.pic.threeD.reflector_wall(walloc=walloc)
+
+    injloc0 = walloc + 10.0 * c_omp  # initial injection right edge
+    n_inj = 50
+    injector = runko.MovingInjector(
+        injloc=injloc0, beta_inj=1.0, beta_flow=beta,
+        cfl=conf.cfl, n_inj=n_inj, walloc=walloc, Lx=Lx)
+
     logger.info(f"Reflector wall at x={walloc}")
+    logger.info(f"Moving injector at x={injloc0}, beta_inj=1.0, beta_flow={beta:.4g}, n_inj={n_inj}")
 
     # --------------------------------------------------
     # Particle generators
@@ -150,8 +159,8 @@ if __name__ == "__main__":
             tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
             tile.register_reflector_wall(wall)
             for _ in range(ppc):
-                tile.batch_inject_to_cells(0, pgen0)
-                tile.batch_inject_to_cells(1, pgen1)
+                tile.batch_inject_in_x_stripe(0, pgen0, walloc, injloc0)
+                tile.batch_inject_in_x_stripe(1, pgen1, walloc, injloc0)
             tile_grid.add_tile(tile, idx)
 
     # --------------------------------------------------
@@ -222,6 +231,9 @@ if __name__ == "__main__":
 
         # --- advance wall position (for moving wall; no-op for stationary) ---
         x.prtcl_advance_reflector_walls()
+
+        # --- moving particle injector ---
+        injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
 
         # --- IO ---
         x.io_average_kinetic_energy()

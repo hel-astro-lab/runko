@@ -146,6 +146,20 @@ floor(const T x) {
 }
 
 // =====================================================================
+// ceil — SIMD-friendly ceil (FRINTP on ARM NEON)
+// =====================================================================
+
+template<typename T>
+constexpr auto
+ceil(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::ceilf(x);
+    } else {
+        return ::ceil(x);
+    }
+}
+
+// =====================================================================
 // log10 — constexpr type-dispatched wrapper
 // =====================================================================
 
