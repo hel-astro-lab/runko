@@ -108,17 +108,17 @@ def sample_boosted_juttner_synge(size: int,
     ux = Gamma * (ux + beta * np.sqrt(1 + u**2))
 
     match direction:
-        case "-x":
-            return ux, uy, uz
         case "x":
+            return ux, uy, uz
+        case "-x":
             return -ux, uy, uz
-        case "-y":
-            return uz, ux, uy
         case "y":
+            return uz, ux, uy
+        case "-y":
             return uz, -ux, uy
-        case "-z":
-            return uy, uz, ux
         case "z":
+            return uy, uz, ux
+        case "-z":
             return uy, uz, -ux
         case _:
             raise RuntimeError("Invalid direction given!")
