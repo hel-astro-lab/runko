@@ -703,6 +703,52 @@ double
 }
 
 
+template<std::size_t D>
+std::optional<std::size_t>
+  Tile<D>::edge_bc_width(const edge_bc& bc) const
+{
+  const auto d        = bc.direction;
+  const auto tile_min = static_cast<edge_bc::value_type>(this->mins[d]);
+  const auto tile_max = static_cast<edge_bc::value_type>(this->maxs[d]);
+  const auto Nd       = yee_lattice_.extents_wout_halo()[d];
+
+  if(bc.side == 0) {
+    if(bc.position <= tile_min) return std::nullopt;
+    if(bc.position >= tile_max) return Nd;
+    return static_cast<std::size_t>(bc.position - tile_min) + 1;
+  } else {
+    if(bc.position >= tile_max) return std::nullopt;
+    if(bc.position <= tile_min) return Nd;
+    return Nd - static_cast<std::size_t>(bc.position - tile_min);
+  }
+}
+
+template<std::size_t D>
+void
+  Tile<D>::register_edge_bc(edge_bc bc)
+{
+  edge_bcs_.push_back(bc);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::apply_edge_bc(const edge_bc& bc, const int mode)
+{
+  if(const auto w = edge_bc_width(bc)) {
+    yee_lattice_.apply_edge_bc(bc, *w, mode);
+  }
+}
+
+template<std::size_t D>
+void
+  Tile<D>::apply_edge_bcs(const int mode)
+{
+  for(const auto& bc: edge_bcs_) {
+    apply_edge_bc(bc, mode);
+  }
+}
+
+
 }  // namespace emf
 
 template class emf::Tile<3>;

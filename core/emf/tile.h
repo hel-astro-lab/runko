@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/emf/antenna.h"
+#include "core/emf/edge_bc.h"
 #include "core/emf/yee_lattice.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
@@ -14,6 +15,7 @@
 #include <functional>
 #include <optional>
 #include <tuple>
+#include <vector>
 
 namespace emf {
 
@@ -38,6 +40,14 @@ protected:
 
   /// lap_coeffs are used in reverse order (see Tile::register_antenna implementation).
   std::vector<emf::antenna_mode> antenna_modes_ {};
+
+  /// Registered edge boundary conditions, applied in order.
+  std::vector<emf::edge_bc> edge_bcs_ {};
+
+  /// Compute the number of cells this tile is covered by the given edge BC.
+  ///
+  /// Returns nullopt if the edge does not overlap this tile.
+  std::optional<std::size_t> edge_bc_width(const edge_bc& bc) const;
 
   std::array<double, 3> global_coordinate_mins_;
   std::array<double, 3> global_coordinate_maxs_;
@@ -155,6 +165,19 @@ public:
 
   void register_antenna(emf::antenna_mode);
   void deposit_antenna_current();
+
+  /// Register an edge boundary condition on this tile.
+  void register_edge_bc(edge_bc bc);
+
+  /// Apply all registered edge BCs for the given field mode.
+  ///
+  /// Mode values: comm_mode::emf_E, comm_mode::emf_B, comm_mode::emf_J.
+  void apply_edge_bcs(int mode);
+
+  /// Apply a single edge BC for the given field mode.
+  ///
+  /// Mode values: comm_mode::emf_E, comm_mode::emf_B, comm_mode::emf_J.
+  void apply_edge_bc(const edge_bc& bc, int mode);
 
   /// Returns the total energy in the magnetic field.
   ///

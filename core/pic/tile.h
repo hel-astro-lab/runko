@@ -159,12 +159,6 @@ public:
   /// and stores correction currents that deposit_current() will add.
   void reflect_particles();
 
-  /// Apply conducting boundary condition behind all registered reflector walls.
-  ///
-  /// Sets E_y = E_z = 0 at and behind each wall.
-  /// Should be called after push_e() / add_current().
-  void reflector_wall_field_bc();
-
   /// Update reflector wall locations by their velocity * cfl.
   void advance_reflector_walls();
 

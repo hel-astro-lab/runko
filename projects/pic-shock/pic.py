@@ -56,13 +56,21 @@ if __name__ == "__main__":
     binit = np.sqrt(upstream_gamma * oppc * 0.5 * conf.cfl**2 * m0 * (1.0 + m0/m1) * sigma)
 
     # --------------------------------------------------
+    # Upstream field values
+    Ex_up = 0.0
+    Ey_up = -beta*binit*conf.bz_proj
+    Ez_up = +beta*binit*conf.by_proj
+    Bx_up = binit*conf.bx_proj
+    By_up = binit*conf.by_proj
+    Bz_up = binit*conf.bz_proj
+
     # Field initialization
     Z  = lambda x, y, z: np.zeros_like(x)
-    Bx = lambda x, y, z: np.full_like(x,       binit*conf.bx_proj)
-    By = lambda x, y, z: np.full_like(x,       binit*conf.by_proj)
-    Bz = lambda x, y, z: np.full_like(x,       binit*conf.bz_proj)
-    Ey = lambda x, y, z: np.full_like(x, -beta*binit*conf.bz_proj)
-    Ez = lambda x, y, z: np.full_like(x, +beta*binit*conf.by_proj)
+    Bx = lambda x, y, z: np.full_like(x, Bx_up)
+    By = lambda x, y, z: np.full_like(x, By_up)
+    Bz = lambda x, y, z: np.full_like(x, Bz_up)
+    Ey = lambda x, y, z: np.full_like(x, Ey_up)
+    Ez = lambda x, y, z: np.full_like(x, Ez_up)
 
     # --------------------------------------------------
     # Print setup summary
@@ -121,6 +129,12 @@ if __name__ == "__main__":
     Lx = conf.Nx * conf.NxMesh
     walloc = 15.0  # cell location of wall (leave >10 cells for BCs)
     wall = runko.pic.threeD.reflector_wall(walloc=walloc)
+    conducting_bc = runko.emf.threeD.edge_bc(direction=0, side=0, position=walloc,
+                                              E_components=0b110, B_components=0, J_components=0b111)
+    upstream_bc = runko.emf.threeD.edge_bc(direction=0, side=1, position=Lx - 5,
+                                            Ex=Ex_up, Ey=Ey_up, Ez=Ez_up,
+                                            Bx=Bx_up, By=By_up, Bz=Bz_up,
+                                            J_components=0b111)
 
     injloc0 = walloc + 10.0 * c_omp  # initial injection right edge
     n_inj = 50
@@ -158,13 +172,15 @@ if __name__ == "__main__":
             tile = runko.pic.threeD.Tile(idx, conf)
             tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
             tile.register_reflector_wall(wall)
+            tile.register_edge_bc(conducting_bc)
+            tile.register_edge_bc(upstream_bc)
             for _ in range(ppc):
                 tile.batch_inject_in_x_stripe(0, pgen0, walloc, injloc0)
                 tile.batch_inject_in_x_stripe(1, pgen1, walloc, injloc0)
             tile_grid.add_tile(tile, idx)
 
     # --------------------------------------------------
-    # confure and start simulation
+    # Configure and start simulation
 
     simulation = tile_grid.configure_simulation(conf)
     simulation.verbose_laps = False # do not print lap info every time; only statistics
@@ -181,9 +197,9 @@ if __name__ == "__main__":
 
     def pic_simulation_step(x):
 
-        # --- half B push + wall BC ---
+        # --- half B push + B edge BCs ---
         x.grid_push_half_b()
-        x.grid_reflector_wall_field_bc()
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_B)
         x.comm_external(runko.tools.comm_mode.emf_B)
         x.comm_local(runko.tools.comm_mode.emf_B)
 
@@ -202,6 +218,7 @@ if __name__ == "__main__":
         x.comm_local(runko.tools.comm_mode.emf_J_exchange)
         x.comm_external(runko.tools.comm_mode.emf_J)
         x.comm_local(runko.tools.comm_mode.emf_J)
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_J)
 
         # --- current filter ---
         # Optimal: communicate every halo_size (=3) passes.
@@ -214,18 +231,19 @@ if __name__ == "__main__":
                 x.comm_external(runko.tools.comm_mode.emf_J)
                 x.comm_local(runko.tools.comm_mode.emf_J)
             x.grid_filter_current()
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_J)
 
-        # --- second half B push + wall BC ---
+        # --- second half B push + B edge BCs ---
         x.grid_push_half_b()
-        x.grid_reflector_wall_field_bc()
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_B)
         x.comm_external(runko.tools.comm_mode.emf_B)
         x.comm_local(runko.tools.comm_mode.emf_B)
 
-        # --- E push + wall BC + add current ---
+        # --- E push + edge BCs + add current ---
         x.grid_push_e()
-        x.grid_reflector_wall_field_bc()
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_E)
         x.grid_add_current()
-        x.grid_reflector_wall_field_bc()
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_E)
         x.comm_external(runko.tools.comm_mode.emf_E)
         x.comm_local(runko.tools.comm_mode.emf_E)
 

@@ -280,31 +280,6 @@ void
   }
 }
 
-/// Apply conducting-wall field BC: zero E_y and E_z behind each wall to
-/// enforce the ideal-conductor constraint.
-template<std::size_t D>
-void
-  Tile<D>::reflector_wall_field_bc()
-{
-
-  if(reflector_walls_.empty()) return;
-
-  const auto nx = this->yee_lattice_.extents_with_halo()[0];
-
-  for(const auto& wall: reflector_walls_) {
-    if(wall.walloc >= value_type(this->maxs[0])) continue;
-
-    // convert global wall location to lattice-local index (with halo offset)
-    const auto wall_idx =
-      static_cast<int>(wall.walloc - value_type(this->mins[0])) + this->halo_size;
-    const auto wall_idx_clamped = static_cast<std::size_t>(std::max(wall_idx, 0));
-
-    if(wall_idx_clamped < nx) {
-      this->yee_lattice_.zero_transverse_E_behind_x(wall_idx_clamped);
-    }
-  }
-}
-
 /// Advance all wall positions by betawall * cfl each timestep.
 template<std::size_t D>
 void

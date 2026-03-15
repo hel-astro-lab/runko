@@ -210,7 +210,7 @@ class Simulation:
             elif method.startswith("grid_"):
 
                 for tile in self.local_tiles():
-                    getattr(tile, method[5:])()
+                    getattr(tile, method[5:])(*vargs)
 
             elif method.startswith("io_"):
                 match method[3:]:

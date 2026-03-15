@@ -1,5 +1,6 @@
 #include "core/emf/yee_lattice.h"
 
+#include "core/communication_common.h"
 #include "thrust/execution_policy.h"
 #include "thrust/for_each.h"
 #include "thrust/iterator/transform_iterator.h"
@@ -9,6 +10,7 @@
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
+#include <format>
 #include <numbers>
 #include <ranges>
 #include <sstream>
@@ -268,28 +270,48 @@ void
 }
 
 void
-  YeeLattice::zero_transverse_E_behind_x(const std::size_t ix_wall)
+  YeeLattice::apply_edge_bc(const edge_bc& bc, const std::size_t width, const int mode)
 {
-  if(ix_wall == 0) return;
+  if(width == 0) return;
 
-  const auto [nx, ny, nz] = extents_with_halo();
-  const auto ix_end       = std::min(ix_wall + 1, nx);
+  const auto d    = bc.direction;
+  const auto dims = extents_with_halo();
+  const auto h    = halo_size_;
+  const auto Nd   = extents_wout_halo_[d];
+  const auto w    = std::min(width, Nd);
 
-  const auto Emds   = E_.mds();
-  const auto region = std::submdspan(
-    Emds,
-    std::tuple { std::integral_constant<runko::index_t, 0> {}, ix_end },
-    std::tuple { std::integral_constant<runko::index_t, 0> {}, ny },
-    std::tuple { std::integral_constant<runko::index_t, 0> {}, nz });
+  // Compute per-dimension ranges for the edge region
+  auto make_range = [&](const std::size_t dim) -> std::tuple<std::size_t, std::size_t> {
+    if(dim != d) return { 0uz, dims[dim] };
+    if(bc.side == 0) return { 0uz, h + w };
+    return { h + Nd - w, dims[dim] };
+  };
 
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      region,
-      [=](const auto idx) {
-        region[idx][1] = 0;  // E_y = 0
-        region[idx][2] = 0;  // E_z = 0
+  const auto xr = make_range(0);
+  const auto yr = make_range(1);
+  const auto zr = make_range(2);
+
+  auto apply = [&](auto& field, std::uint8_t mask, auto vx, auto vy, auto vz) {
+    const auto region = std::submdspan(field.mds(), xr, yr, zr);
+    tyvi::mdgrid_work {}
+      .for_each_index(region, [=](const auto idx) {
+        if(mask & 1u) region[idx][0] = vx;
+        if(mask & 2u) region[idx][1] = vy;
+        if(mask & 4u) region[idx][2] = vz;
       })
-    .wait();
+      .wait();
+  };
+
+  using CM = runko::comm_mode;
+  switch(static_cast<CM>(mode)) {
+    case CM::emf_E: apply(E_, bc.E_components, bc.Ex, bc.Ey, bc.Ez); break;
+    case CM::emf_B: apply(B_, bc.B_components, bc.Bx, bc.By, bc.Bz); break;
+    case CM::emf_J: apply(J_, bc.J_components, bc.Jx, bc.Jy, bc.Jz); break;
+    default:
+      throw std::runtime_error { std::format(
+        "YeeLattice::apply_edge_bc does not support given communication mode: {}",
+        mode) };
+  }
 }
 
 void

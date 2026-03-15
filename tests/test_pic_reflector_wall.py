@@ -67,43 +67,6 @@ class pic_reflector_wall(unittest.TestCase):
         self.assertAlmostEqual(vel_z[0], 0.0, places=5)
 
 
-    def test_field_bc_zeros_Ey_Ez_behind_wall(self):
-        _, tile = make_reflector_tile()
-
-        wall = runko.pic.threeD.reflector_wall(walloc=5.0)
-        tile.register_reflector_wall(wall)
-
-        nonzero = lambda x, y, z: (1.0, 2.0, 3.0)
-        tile.set_EBJ(nonzero, zero, zero)
-
-        # verify E is nonzero before applying BC
-        (Ex0, Ey0, Ez0), _, _ = tile.get_EBJ()
-        self.assertTrue(np.any(Ey0 != 0))
-        self.assertTrue(np.any(Ez0 != 0))
-
-        tile.reflector_wall_field_bc()
-
-        (Ex, Ey, Ez), _, _ = tile.get_EBJ()
-
-        # Wall at global x=5.0, tile mins=(0,0,0), halo_size=3.
-        # Lattice index of wall: iw = int(5.0 - 0) + 3 = 8.
-        # get_EBJ returns non-halo region only, so numpy index = lattice index - halo_size.
-        # Cells at and behind wall: numpy x-indices 0..5 (lattice 3..8, i.e. <= iw).
-        # Cells in front of wall: numpy x-indices 6..9 (lattice 9..12).
-        iw_np = 6  # first numpy index in front of wall
-
-        # Ey and Ez zeroed behind wall
-        self.assertTrue(np.all(Ey[:iw_np, :, :] == 0))
-        self.assertTrue(np.all(Ez[:iw_np, :, :] == 0))
-
-        # Ey and Ez untouched in front of wall
-        self.assertTrue(np.all(Ey[iw_np:, :, :] != 0))
-        self.assertTrue(np.all(Ez[iw_np:, :, :] != 0))
-
-        # Ex unchanged everywhere
-        self.assertTrue(np.allclose(Ex, Ex0))
-
-
     def test_no_current_behind_wall_after_reflect_and_deposit(self):
         _, tile = make_reflector_tile()
 

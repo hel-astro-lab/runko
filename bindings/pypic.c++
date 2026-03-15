@@ -118,7 +118,6 @@ void
     .def("sort_particles", &pic::Tile<3>::sort_particles)
     .def("register_reflector_wall", &pic::Tile<3>::register_reflector_wall)
     .def("reflect_particles", &pic::Tile<3>::reflect_particles)
-    .def("reflector_wall_field_bc", &pic::Tile<3>::reflector_wall_field_bc)
     .def("advance_reflector_walls", &pic::Tile<3>::advance_reflector_walls)
     .def("batch_inject_in_x_stripe", &pic::Tile<3>::batch_inject_in_x_stripe);
 

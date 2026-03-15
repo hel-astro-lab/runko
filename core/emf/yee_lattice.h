@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/emf/edge_bc.h"
 #include "core/mdgrid_common.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
@@ -245,11 +246,16 @@ public:
     std::array<value_type, 3> lattice_origo_coordinates,
     const runko::VecList<value_type>& coordinates) const;
 
-  /// Zero E_y and E_z for all lattice points where the x-index is <= ix_wall.
+  /// Apply an edge boundary condition over the given width.
   ///
-  /// ix_wall is in full lattice coordinates (i.e., including halo offset).
-  /// Implements the conducting boundary condition behind a reflector wall.
-  void zero_transverse_E_behind_x(std::size_t ix_wall);
+  /// Sets field values in the edge region determined by bc.direction, bc.side,
+  /// and width cells. Field selection (E, B, or J) is controlled by mode
+  /// (comm_mode::emf_E, emf_B, or emf_J). Per-component masks in bc control
+  /// which components are set.
+  ///
+  /// The SIMD-vectorizable inner loop uses tyvi::mdgrid_work::for_each_index
+  /// with no inner loops, ensuring #pragma omp simd on the innermost dimension.
+  void apply_edge_bc(const struct edge_bc& bc, std::size_t width, int mode);
 
   /// Set J = 0 everywhere including in halo.
   void clear_current();

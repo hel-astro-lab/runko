@@ -1,4 +1,6 @@
+#include "core/communication_common.h"
 #include "core/emf/antenna.h"
+#include "core/emf/edge_bc.h"
 #include "core/emf/tile.h"
 #include "io/emf_average_field_energy_density.h"
 #include "io/snapshots/hdf5_fields.h"
@@ -162,6 +164,49 @@ void
       py::arg("n")          = std::optional<antenna_pyvec> {},
       py::arg("lap_coeffs") = std::optional<antenna_complex_pyvec> {});
 
+  // edge boundary condition struct
+  using EBC = emf::edge_bc;
+  py::class_<EBC>(m_3d, "edge_bc")
+    .def(
+      py::init([](std::uint8_t direction,
+                  std::uint8_t side,
+                  EBC::value_type position,
+                  EBC::value_type Ex, EBC::value_type Ey, EBC::value_type Ez,
+                  EBC::value_type Bx, EBC::value_type By, EBC::value_type Bz,
+                  EBC::value_type Jx, EBC::value_type Jy, EBC::value_type Jz,
+                  std::uint8_t E_components,
+                  std::uint8_t B_components,
+                  std::uint8_t J_components) {
+        return EBC { direction, side, position,
+                     Ex, Ey, Ez, Bx, By, Bz, Jx, Jy, Jz,
+                     E_components, B_components, J_components };
+      }),
+      py::kw_only(),
+      py::arg("direction")    = std::uint8_t { 0 },
+      py::arg("side")         = std::uint8_t { 0 },
+      py::arg("position")     = EBC::value_type { 0 },
+      py::arg("Ex") = EBC::value_type { 0 }, py::arg("Ey") = EBC::value_type { 0 }, py::arg("Ez") = EBC::value_type { 0 },
+      py::arg("Bx") = EBC::value_type { 0 }, py::arg("By") = EBC::value_type { 0 }, py::arg("Bz") = EBC::value_type { 0 },
+      py::arg("Jx") = EBC::value_type { 0 }, py::arg("Jy") = EBC::value_type { 0 }, py::arg("Jz") = EBC::value_type { 0 },
+      py::arg("E_components") = std::uint8_t { 0b111 },
+      py::arg("B_components") = std::uint8_t { 0b111 },
+      py::arg("J_components") = std::uint8_t { 0b111 })
+    .def_readwrite("direction", &EBC::direction)
+    .def_readwrite("side", &EBC::side)
+    .def_readwrite("position", &EBC::position)
+    .def_readwrite("Ex", &EBC::Ex)
+    .def_readwrite("Ey", &EBC::Ey)
+    .def_readwrite("Ez", &EBC::Ez)
+    .def_readwrite("Bx", &EBC::Bx)
+    .def_readwrite("By", &EBC::By)
+    .def_readwrite("Bz", &EBC::Bz)
+    .def_readwrite("Jx", &EBC::Jx)
+    .def_readwrite("Jy", &EBC::Jy)
+    .def_readwrite("Jz", &EBC::Jz)
+    .def_readwrite("E_components", &EBC::E_components)
+    .def_readwrite("B_components", &EBC::B_components)
+    .def_readwrite("J_components", &EBC::J_components);
+
   // 3d tile
   py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(m_3d, "Tile")
     .def(
@@ -195,7 +240,14 @@ void
       })
     .def("register_antenna", &emf::Tile<3>::register_antenna)
     .def("deposit_antenna_current", &emf::Tile<3>::deposit_antenna_current)
-    .def("add_current", &emf::Tile<3>::add_current);
+    .def("add_current", &emf::Tile<3>::add_current)
+    .def("register_edge_bc", &emf::Tile<3>::register_edge_bc)
+    .def("apply_edge_bcs", [](emf::Tile<3>& t, runko::comm_mode m) {
+      t.apply_edge_bcs(std::to_underlying(m));
+    })
+    .def("apply_edge_bc", [](emf::Tile<3>& t, const emf::edge_bc& bc, runko::comm_mode m) {
+      t.apply_edge_bc(bc, std::to_underlying(m));
+    });
 
 
   // HDF5 snapshot writer
