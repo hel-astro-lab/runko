@@ -250,8 +250,8 @@ if __name__ == "__main__":
 
     #--------------------------------------------------
     # b field
-    #if var == 'dens': # streamlines
-    if False: # streamlines
+    #if False: # streamlines
+    if var == 'dens': # streamlines
         #p.add_mesh(mesh.outline(), color="k")
 
         b2 = mesh['b2']
@@ -264,8 +264,8 @@ if __name__ == "__main__":
         seed = pv.Plane(center=(midx,midy,midz),
                         i_size=0.98*Lx,
                         j_size=0.98*Ly,
-                        i_resolution=int(10*aspect_rat),
-                        j_resolution=10,
+                        i_resolution=int(8*aspect_rat),
+                        j_resolution=8,
                         direction=(0,0,1),
                         )
 
@@ -294,7 +294,7 @@ if __name__ == "__main__":
                 stream.tube(
                     radius=0.025,
                     scalars="scalar",
-                    radius_factor=100.0,
+                    radius_factor=1.0,
                     n_sides=30,
                     ),
                 show_scalar_bar=False,
@@ -614,16 +614,39 @@ if __name__ == "__main__":
 
     #--------------------------------------------------
     # center camera on grid; look from top-left-front
-    diag = np.sqrt(Lx**2 + Ly**2 + Lz**2)
-    cam_dist = 1.35*diag
-    cam_dir = np.array([-1.0, -1.0, 1.0])
-    cam_dir /= np.linalg.norm(cam_dir)
-    cam_pos = (midx + cam_dist*cam_dir[0],
-               midy + cam_dist*cam_dir[1],
-               midz + cam_dist*cam_dir[2])
-    focal   = (midx, midy, midz)
-    view_up = (0, 0, 1)
-    p.camera_position = [cam_pos, focal, view_up]
+    if False:
+        diag = np.sqrt(Lx**2 + Ly**2 + Lz**2)
+        cam_dist = 1.35*diag
+        cam_dir = np.array([-1.0, -1.0, 1.0])
+        cam_dir /= np.linalg.norm(cam_dir)
+        cam_pos = (midx + cam_dist*cam_dir[0],
+                   midy + cam_dist*cam_dir[1],
+                   midz + cam_dist*cam_dir[2])
+        focal   = (midx, midy, midz)
+        view_up = (0, 0, 1)
+        p.camera_position = [cam_pos, focal, view_up]
+    else: # raw camera position
+        cam_pos = np.array([-19.47586629308417, -17.776596046980163, 18.98241342335949])
+        focal   = np.array([34.71767216917998, 8.932747860089826, -3.749763162733702])
+        view_up = np.array([0.2549418267860299, 0.27236904870707274, 0.9278037326188153])
+        p.camera_position = [cam_pos, focal, view_up]
+
+        # reverse-engineer relative camera quantities
+        cam_vec  = cam_pos - focal
+        cam_dist = np.linalg.norm(cam_vec)
+        cam_dir  = cam_vec / cam_dist
+        diag     = np.sqrt(Lx**2 + Ly**2 + Lz**2)
+        mid      = np.array([midx, midy, midz])
+
+        print("raw camera diagnostics:")
+        print("  cam_dist      :", cam_dist)
+        print("  cam_dist/diag :", cam_dist / diag)
+        print("  cam_dir       :", cam_dir)
+        print("  focal         :", focal)
+        print("  focal - mid   :", focal - mid)
+        print("  cam_pos - mid :", cam_pos - mid)
+        print("  view_up       :", view_up)
+
 
     #p.enable_depth_peeling(100)
     #p.enable_anti_aliasing('msaa')

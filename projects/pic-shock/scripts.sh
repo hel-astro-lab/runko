@@ -16,9 +16,9 @@ declare -a single_scripts_arr=(
 
 # lap-specific scripts that process only one time slice at a time
 declare -a lap_scripts_arr=(
-#"plot_shock_2d.py --dark" 
+"plot_shock_2d.py --dark" 
 "plot3d_pyvista_shock.py --var dens" 
-#"plot3d_pyvista_shock.py --var cur" 
+"plot3d_pyvista_shock.py --var cur" 
 )
 
 
@@ -38,7 +38,7 @@ done
 #-------------------------------------------------- 
 # multilap scripts
 
-for lap in $(seq 0 50 1000)
+for lap in $(seq 0 50 2000)
 do
     echo "lap is $lap"
     for c in "${conf_arr[@]}"
