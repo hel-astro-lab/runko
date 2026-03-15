@@ -98,7 +98,7 @@ private:
   /// const auto Jmds = nonhalo_submds(J_.mds());
   template<typename MDS>
   [[nodiscard]]
-  auto nonhalo_submds(MDS&& mds);
+  auto nonhalo_submds(MDS&& mds) const;
 
   /// Throws if given mdspan's extents differ from extents_with_halo.
   void assert_mds_spans_whole_lattice(const auto& mds) const;
@@ -366,7 +366,7 @@ inline auto
 
 template<typename MDS>
 auto
-  YeeLattice::nonhalo_submds(MDS&& mds)
+  YeeLattice::nonhalo_submds(MDS&& mds) const
 {
   const auto x = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
   const auto y = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };

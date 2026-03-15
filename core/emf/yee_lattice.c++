@@ -395,7 +395,7 @@ double
   auto w = tyvi::mdgrid_work {};
 
   namespace rn           = std::ranges;
-  const auto Bmds        = this->B_.mds();
+  const auto Bmds        = nonhalo_submds(this->B_.mds());
   const auto index_space = tyvi::sstd::index_space(Bmds);
 
   const auto index_to_B2 = [=](const auto idx) {
@@ -408,7 +408,7 @@ double
     thrust::make_transform_iterator(index_space.begin(), index_to_B2);
   const auto B2_iterator_end = rn::next(B2_iterator_begin, rn::size(index_space));
 
-  static constexpr auto norm = 8.0 * std::numbers::pi_v<double>;
+  static constexpr auto norm = 2.0;
   return thrust::reduce(w.on_this(), B2_iterator_begin, B2_iterator_end) / norm;
 }
 
@@ -419,7 +419,7 @@ double
   auto w = tyvi::mdgrid_work {};
 
   namespace rn           = std::ranges;
-  const auto Emds        = this->E_.mds();
+  const auto Emds        = nonhalo_submds(this->E_.mds());
   const auto index_space = tyvi::sstd::index_space(Emds);
 
   const auto index_to_E2 = [=](const auto idx) {
@@ -432,7 +432,7 @@ double
     thrust::make_transform_iterator(index_space.begin(), index_to_E2);
   const auto E2_iterator_end = rn::next(E2_iterator_begin, rn::size(index_space));
 
-  static constexpr auto norm = 8.0 * std::numbers::pi_v<double>;
+  static constexpr auto norm = 2.0;
   return thrust::reduce(w.on_this(), E2_iterator_begin, E2_iterator_end) / norm;
 }
 
