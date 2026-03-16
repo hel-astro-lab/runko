@@ -424,7 +424,7 @@ std::vector<mpi4cpp::mpi::request>
   using runko::comm_mode;
 
   auto cm = static_cast<comm_mode>(mode);
-  if(cm == comm_mode::emf_E || cm == comm_mode::emf_B) {
+  //if(cm == comm_mode::emf_E || cm == comm_mode::emf_B) {
     PersistentRequestKey key{dest, mode, tag};
     if (persistent_requests_initialized_) {
       auto it = persistent_send_requests_.find(key);
@@ -453,7 +453,7 @@ std::vector<mpi4cpp::mpi::request>
         return { req };
       }
     }
-  }
+  //}
 
   auto make_isend = [&](const auto s) {
     return comm.isend(dest, tag, s.data(), s.size());
@@ -488,7 +488,7 @@ std::vector<mpi4cpp::mpi::request>
   using runko::comm_mode;
 
   auto cm = static_cast<comm_mode>(mode);
-  if(cm == comm_mode::emf_E || cm == comm_mode::emf_B) {
+  //if(cm == comm_mode::emf_E || cm == comm_mode::emf_B) {
     PersistentRequestKey key{orig, mode, tag};
     if (persistent_requests_initialized_) {
       auto it = persistent_recv_requests_.find(key);
@@ -519,7 +519,7 @@ std::vector<mpi4cpp::mpi::request>
         return { req };
       }
     }
-  }
+  //}
 
   auto make_irecv = [&](const auto s) {
     return comm.irecv(orig, tag, s.data(), s.size());

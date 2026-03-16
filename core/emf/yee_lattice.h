@@ -81,6 +81,7 @@ private:
 
   /// Current
   VecGrid J_;
+  VecGrid Jfilter_;
 
   /* FIXME: Use std::integral_constant when possible in mds helpers below. */
 

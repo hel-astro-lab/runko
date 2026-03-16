@@ -31,7 +31,10 @@ void
                                                 { 1. / 64., 2. / 64., 1. / 64. } } };
   constexpr auto C3_index_space           = tyvi::sstd::geometric_index_space<3, 3>();
 
-  auto filteredJ           = VecGrid(this->J_.extents());
+  if(this->Jfilter_.extents() != this->J_.extents())
+    this->Jfilter_ = VecGrid(this->J_.extents());
+
+  auto& filteredJ = this->Jfilter_;
   const auto e             = filteredJ.extents();
   const auto Nx            = e.extent(0);
   const auto Ny            = e.extent(1);
@@ -140,5 +143,5 @@ void
      })
     .wait();
 
-  this->J_ = std::move(filteredJ);
+  w.copy_to(this->J_, this->Jfilter_).wait();
 }
