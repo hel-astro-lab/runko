@@ -202,6 +202,10 @@ class TileGrid:
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
+        if config._config_path:
+            import shutil
+            shutil.copy2(config._config_path, io_config["outdir"])
+
         return Simulation(self,
                           Simulation._im_not_user,
                           Nt=config.Nt,
