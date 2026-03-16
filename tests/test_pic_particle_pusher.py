@@ -6,7 +6,7 @@ def decimal_part(x: float):
     return x - int(x)
 
 
-def make_test_tile(field_interpolator):
+def make_test_tile(particle_pusher, field_interpolator):
     config = runko.Configuration(None)
     config.Nx = 4
     config.Ny = 4
@@ -25,7 +25,7 @@ def make_test_tile(field_interpolator):
     config.temperature_ratio = 1.0
     config.sigma = 40
     config.c_omp = 1
-    config.particle_pusher = "boris"
+    config.particle_pusher = particle_pusher
     config.field_interpolator = field_interpolator
     config.current_depositer = "zigzag_1st"
 
@@ -42,12 +42,13 @@ def in_middle_part(x, y, z, config):
     return a and b and c and d and e and f
 
 
-class _particle_pusher_boris_tests:
+class _particle_pusher_tests:
 
+    particle_pusher = None     # override in subclass
     field_interpolator = None  # override in subclass
 
     def test_Ex_only(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         E = lambda x, y, z: (0.1, 0, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -91,7 +92,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_Ey_only(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         E = lambda x, y, z: (0, 0.1, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -135,7 +136,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_Ez_only(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         E = lambda x, y, z: (0, 0, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -179,7 +180,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_Bx_only(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         B = lambda x, y, z: (0.1, 0, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -223,7 +224,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_By_only(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         B = lambda x, y, z: (0, 0.1, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -267,7 +268,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_Bz_only(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         B = lambda x, y, z: (0, 0, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -311,7 +312,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_same_E_at_different_x_has_the_same_effect(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         E = lambda x, y, z: (0, 0.1, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -342,7 +343,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_same_E_at_different_y_has_the_same_effect(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         E = lambda x, y, z: (0.1, 0, 0.1)
         zero = lambda x, y, z: (0, 0, 0)
@@ -373,7 +374,7 @@ class _particle_pusher_boris_tests:
 
 
     def test_same_E_at_different_z_has_the_same_effect(self):
-        config, tile = make_test_tile(self.field_interpolator)
+        config, tile = make_test_tile(self.particle_pusher, self.field_interpolator)
 
         E = lambda x, y, z: (0.1, 0.1, 0)
         zero = lambda x, y, z: (0, 0, 0)
@@ -403,11 +404,17 @@ class _particle_pusher_boris_tests:
         assertSameXY()
 
 
-class pic_particle_pusher_boris_linear_1st(_particle_pusher_boris_tests, unittest.TestCase):
-    field_interpolator = "linear_1st"
+# Generate concrete test classes for all (pusher, interpolator) combinations
+_pushers = ["boris", "higuera_cary"]
+_interpolators = ["linear_1st", "linear_1st_unrolled"]
 
-class pic_particle_pusher_boris_linear_1st_unrolled(_particle_pusher_boris_tests, unittest.TestCase):
-    field_interpolator = "linear_1st_unrolled"
+for _pusher in _pushers:
+    for _interp in _interpolators:
+        _name = f"pic_particle_pusher_{_pusher}_{_interp}"
+        globals()[_name] = type(_name, (_particle_pusher_tests, unittest.TestCase), {
+            "particle_pusher": _pusher,
+            "field_interpolator": _interp,
+        })
 
 
 if __name__ == "__main__":

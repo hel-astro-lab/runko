@@ -41,6 +41,7 @@ set (PIC_FILES
      ../core/pic/tile_communication.c++
      ../core/pic/particle.c++
      ../core/pic/particle_boris.c++
+     ../core/pic/particle_higuera_cary.c++
      ../core/pic/particle_current_zigzag_1st.c++
      ../core/pic/reflector_wall.c++
      #../core/pic/boundaries/wall.c++

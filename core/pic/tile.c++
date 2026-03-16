@@ -67,6 +67,8 @@ pic::ParticlePusher
 {
   if(p == "boris") {
     return pic::ParticlePusher::boris;
+  } else if(p == "higuera_cary") {
+    return pic::ParticlePusher::higuera_cary;
   } else {
     const auto msg = std::format("{} is not supported particle pusher.", p);
     throw std::runtime_error { msg };
@@ -327,6 +329,11 @@ void
     case ParticlePusher::boris:
       for(auto& [_, pbuff]: particle_buffs_) {
         pbuff.push_particles_boris(this->cfl_, ipol_func);
+      }
+      break;
+    case ParticlePusher::higuera_cary:
+      for(auto& [_, pbuff]: particle_buffs_) {
+        pbuff.push_particles_higuera_cary(this->cfl_, ipol_func);
       }
       break;
     default:

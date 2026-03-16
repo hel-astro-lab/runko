@@ -137,6 +137,9 @@ public:
   /// Push particles velocities and positions using boris scheme.
   void push_particles_boris(double cfl, const InterpolatedEB_function&);
 
+  /// Push particles velocities and positions using Higuera-Cary scheme.
+  void push_particles_higuera_cary(double cfl, const InterpolatedEB_function&);
+
   emf::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
     const double cfl) const;
