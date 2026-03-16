@@ -65,6 +65,7 @@ protected:
       return tag < o.tag;
     }
   };
+
   std::map<PersistentRequestKey, MPI_Request> persistent_send_requests_;
   std::map<PersistentRequestKey, MPI_Request> persistent_recv_requests_;
   bool persistent_requests_initialized_ = false;
