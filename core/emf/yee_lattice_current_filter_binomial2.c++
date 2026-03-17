@@ -123,7 +123,10 @@ void
     .wait();
 
   // Pass 3: convolve along x (dim 0) — write to interior of full-size output
-  auto filteredJ           = VecGrid(this->J_.extents());
+  if(this->Jfilter_.extents() != this->J_.extents())
+    this->Jfilter_ = VecGrid(this->J_.extents());
+
+  auto& filteredJ           = this->Jfilter_;
   const auto filteredJ_mds = std::submdspan(
     filteredJ.mds(),
     std::tuple { std::integral_constant<runko::index_t, 1uz> {},
