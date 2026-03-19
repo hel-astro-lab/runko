@@ -68,7 +68,7 @@ void
      })
     .wait();
 
-  this->J_ = std::move(filteredJ);
+  w.copy_to(this->J_, this->Jfilter_).wait();
 }
 
 
