@@ -24,6 +24,9 @@ PYBIND11_MODULE(runko_cpp_bindings, m_base) {
   py::module m_pic = m_base.def_submodule("pic", "pic module");
   pic::bind_pic(m_pic);
 
+  py::module m_actions = m_base.def_submodule("actions", "actions");
+  actions::bind_actions(m_actions);
+
   //--------------------------------------------------
   // deprecated modules; TODO: add them back
   //

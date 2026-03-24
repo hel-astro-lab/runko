@@ -3,6 +3,7 @@ set (TOOLS_FILES
      ../tools/hilbert.c++
      ../tools/config_parser.c++
      ../tools/system.c++
+     pyactions.c++
      )
 
 set (EMF_FILES
