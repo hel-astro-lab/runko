@@ -69,6 +69,8 @@ pic::ParticlePusher
     return pic::ParticlePusher::boris;
   } else if(p == "higuera_cary") {
     return pic::ParticlePusher::higuera_cary;
+  } else if(p == "faraday") {
+    return pic::ParticlePusher::faraday;
   } else {
     const auto msg = std::format("{} is not supported particle pusher.", p);
     throw std::runtime_error { msg };
@@ -334,6 +336,11 @@ void
     case ParticlePusher::higuera_cary:
       for(auto& [_, pbuff]: particle_buffs_) {
         pbuff.push_particles_higuera_cary(this->cfl_, ipol_func);
+      }
+      break;
+    case ParticlePusher::faraday:
+      for(auto& [_, pbuff]: particle_buffs_) {
+        pbuff.push_particles_faraday(this->cfl_, ipol_func);
       }
       break;
     default:

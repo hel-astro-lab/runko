@@ -405,7 +405,7 @@ class _particle_pusher_tests:
 
 
 # Generate concrete test classes for all (pusher, interpolator) combinations
-_pushers = ["boris", "higuera_cary"]
+_pushers = ["boris", "higuera_cary", "faraday"]
 _interpolators = ["linear_1st", "linear_1st_unrolled"]
 
 for _pusher in _pushers:
