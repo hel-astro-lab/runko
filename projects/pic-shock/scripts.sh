@@ -4,21 +4,22 @@
  
 
 declare -a conf_arr=(
-"shock_3d.ini"
+#"shock_3d.ini"
+"che_3d.ini"
 )
 
 
 # one-time scripts that read all the time slices in one go
 declare -a single_scripts_arr=(
-  #"plot_upstream_ene.py"    
+"plot_energy_timeline.py"
 )
 
 
 # lap-specific scripts that process only one time slice at a time
 declare -a lap_scripts_arr=(
 "plot_shock_2d.py --dark" 
-"plot3d_pyvista_shock.py --var dens" 
-"plot3d_pyvista_shock.py --var cur" 
+#"plot3d_pyvista_shock.py --var dens" 
+#"plot3d_pyvista_shock.py --var cur" 
 )
 
 

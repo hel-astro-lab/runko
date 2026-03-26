@@ -167,17 +167,31 @@ if __name__ == "__main__":
 
     tile_grid = runko.TileGrid(conf)
 
-    if not tile_grid.initialized_from_restart_file():
-        for idx in tile_grid.local_tile_indices():
-            tile = runko.pic.threeD.Tile(idx, conf)
-            tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
-            tile.register_reflector_wall(wall)
-            tile.register_edge_bc(conducting_bc)
-            tile.register_edge_bc(upstream_bc)
-            for _ in range(ppc):
-                tile.batch_inject_in_x_stripe(0, pgen0, walloc, injloc0)
-                tile.batch_inject_in_x_stripe(1, pgen1, walloc, injloc0)
-            tile_grid.add_tile(tile, idx)
+    if False: # regular shock setup
+        if not tile_grid.initialized_from_restart_file():
+            for idx in tile_grid.local_tile_indices():
+                tile = runko.pic.threeD.Tile(idx, conf)
+                tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
+                tile.register_reflector_wall(wall)
+                tile.register_edge_bc(conducting_bc)
+                tile.register_edge_bc(upstream_bc)
+                for _ in range(ppc):
+                    tile.batch_inject_in_x_stripe(0, pgen0, walloc, injloc0)
+                    tile.batch_inject_in_x_stripe(1, pgen1, walloc, injloc0)
+                tile_grid.add_tile(tile, idx)
+
+    else: # Cherenkov-measuring setup w/o reflectors or boundaries
+        if not tile_grid.initialized_from_restart_file():
+            for idx in tile_grid.local_tile_indices():
+                tile = runko.pic.threeD.Tile(idx, conf)
+                tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
+                # no reflectors or bcs
+                for _ in range(ppc):
+                    # inject everywhere
+                    tile.batch_inject_to_cells(0, pgen0)
+                    tile.batch_inject_to_cells(1, pgen1)
+                tile_grid.add_tile(tile, idx)
+
 
     # --------------------------------------------------
     # Configure and start simulation
@@ -251,7 +265,7 @@ if __name__ == "__main__":
         x.prtcl_advance_reflector_walls()
 
         # --- moving particle injector ---
-        injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
+        #injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
 
         # --- IO ---
         x.io_average_kinetic_energy()
