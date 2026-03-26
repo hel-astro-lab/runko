@@ -26,6 +26,8 @@ emf::FieldPropagator
 {
   if(p == "FDTD2") {
     return emf::FieldPropagator::FDTD2;
+  } else if(p == "stencil") {
+    return emf::FieldPropagator::stencil;
   } else {
     const auto msg = std::format("{} is not supported field propagator.", p);
     throw std::runtime_error { msg };
@@ -92,6 +94,50 @@ Tile<D>::Tile(
     current_filter_ = parse_current_filter(cfilter.value());
   }
 
+  if(field_propagator_ == FieldPropagator::stencil) {
+    // Read stencil coefficients from config.
+    // For each coefficient, try per-axis key (stencil_x_name) first, then isotropic
+    // (stencil_name). Default to 0.
+
+    auto read_coeff = [&](const std::string& axis_prefix, const std::string& name) {
+      // Per-axis key: stencil_x_delta, stencil_y_delta, ...
+      if(const auto v = p.get<double>(axis_prefix + name)) {
+        return static_cast<float>(v.value());
+      }
+      // Isotropic key: stencil_delta, stencil_gamma, ...
+      if(const auto v = p.get<double>("stencil_" + name)) {
+        return static_cast<float>(v.value());
+      }
+      return 0.0f;
+    };
+
+    auto read_axis = [&](const std::string& axis_prefix) -> emf::StencilAxisCoeffs {
+      emf::StencilAxisCoeffs c {};
+      c.M[1][0] = read_coeff(axis_prefix, "delta");
+      c.M[2][0] = read_coeff(axis_prefix, "gamma");
+      c.M[0][1] = read_coeff(axis_prefix, "beta_p1");
+      c.M[0][2] = read_coeff(axis_prefix, "beta_p2");
+      c.M[1][1] = read_coeff(axis_prefix, "beta2_p1");
+      c.M[1][2] = read_coeff(axis_prefix, "beta2_p2");
+      c.M[2][1] = read_coeff(axis_prefix, "beta3_p1");
+      c.M[2][2] = read_coeff(axis_prefix, "beta3_p2");
+      c.M[0][3] = read_coeff(axis_prefix, "zeta_p1");
+      c.M[0][4] = read_coeff(axis_prefix, "zeta_p2");
+      c.M[1][3] = read_coeff(axis_prefix, "zeta2_p1");
+      c.M[1][4] = read_coeff(axis_prefix, "zeta2_p2");
+      c.M[2][3] = read_coeff(axis_prefix, "zeta3_p1");
+      c.M[2][4] = read_coeff(axis_prefix, "zeta3_p2");
+      // Set alpha from normalization
+      c.M[0][0] = c.alpha();
+      return c;
+    };
+
+    emf::StencilCoeffs coeffs {};
+    coeffs.axis[0] = read_axis("stencil_x_");
+    coeffs.axis[1] = read_axis("stencil_y_");
+    coeffs.axis[2] = read_axis("stencil_z_");
+    stencil_coeffs_ = coeffs;
+  }
 
   auto one_or_throw = [](const double d) {
     if(d != 1.0) {
@@ -312,6 +358,9 @@ void
 {
   switch(field_propagator_) {
     case FieldPropagator::FDTD2: yee_lattice_.push_b_FDTD2(cfl_ / 2); break;
+    case FieldPropagator::stencil:
+      yee_lattice_.push_b_stencil(cfl_ / 2, stencil_coeffs_.value());
+      break;
     default:
       throw std::logic_error {
         "emf::Tile::push_half_b internal error: field_propagator_ not set."
@@ -325,6 +374,7 @@ void
 {
   switch(field_propagator_) {
     case FieldPropagator::FDTD2: yee_lattice_.push_e_FDTD2(cfl_); break;
+    case FieldPropagator::stencil: yee_lattice_.push_e_FDTD2(cfl_); break;
     default:
       throw std::logic_error {
         "emf::Tile::push_e internal error: field_propagator_ not set."

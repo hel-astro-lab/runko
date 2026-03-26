@@ -2,6 +2,7 @@
 
 #include "core/emf/antenna.h"
 #include "core/emf/edge_bc.h"
+#include "core/emf/stencil_coefficients.h"
 #include "core/emf/yee_lattice.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
@@ -19,7 +20,7 @@
 
 namespace emf {
 
-enum class FieldPropagator { FDTD2 };
+enum class FieldPropagator { FDTD2, stencil };
 enum class CurrentFilter { binomial2, binomial2_unrolled };
 
 /*! \brief General Plasma tile for solving Maxwell's equations
@@ -37,6 +38,7 @@ protected:
   double cfl_;
   FieldPropagator field_propagator_;
   std::optional<CurrentFilter> current_filter_ {};
+  std::optional<StencilCoeffs> stencil_coeffs_ {};
 
   /// lap_coeffs are used in reverse order (see Tile::register_antenna implementation).
   std::vector<emf::antenna_mode> antenna_modes_ {};

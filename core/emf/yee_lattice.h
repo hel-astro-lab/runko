@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/emf/edge_bc.h"
+#include "core/emf/stencil_coefficients.h"
 #include "core/mdgrid_common.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
@@ -144,6 +145,12 @@ public:
 
   /// Advance B by half time step using FDTD2 scheme in non-halo region asynchronously.
   void push_b_FDTD2(const tyvi::mdgrid_work&, value_type dt);
+
+  /// Advance B using extended stencil (N=2, M=2) in non-halo region.
+  void push_b_stencil(value_type dt, const StencilCoeffs& coeffs);
+
+  /// Advance B using extended stencil (N=2, M=2) in non-halo region asynchronously.
+  void push_b_stencil(const tyvi::mdgrid_work&, value_type dt, const StencilCoeffs& coeffs);
 
   /// Advance E by full time step using FDTD2 scheme in non-halo region asynchronously.
   void push_e_FDTD2(const tyvi::mdgrid_work&, value_type dt);

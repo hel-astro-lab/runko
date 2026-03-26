@@ -10,6 +10,7 @@ set (EMF_FILES
      ../core/emf/tile.c++
      ../core/emf/yee_lattice.c++
      ../core/emf/yee_lattice_FDTD2.c++
+     ../core/emf/yee_lattice_stencil.c++
      ../core/emf/yee_lattice_interpolate_linear_1st.c++
      ../core/emf/yee_lattice_current_filter_binomial2.c++
      #../core/emf/propagators/fdtd2.c++ 
