@@ -25,6 +25,7 @@ namespace pic {
 ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
   pos_(args.N),
   vel_(args.N),
+  ids_(args.N),
   charge_ { args.charge },
   mass_ { args.mass }
 {
@@ -47,6 +48,7 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 {
   auto w = tyvi::mdgrid_work {};
   w.sync_to_staging(pos_);
+  w.sync_to_staging(ids_);
 
   auto x = std::vector<value_type>(this->size());
   auto y = std::vector<value_type>(this->size());
@@ -54,13 +56,22 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 
   w.wait();
 
-  const auto mds = pos_.staging_mds();
+  const auto mds   = pos_.staging_mds();
+  const auto idmds = ids_.staging_mds();
 
+  auto n = 0uz;
   for(const auto [i]: tyvi::sstd::index_space(mds)) {
-    x[i] = mds[i][0];
-    y[i] = mds[i][1];
-    z[i] = mds[i][2];
+    if(idmds[i][] == runko::dead_prtc_id) { continue; }
+
+    x[n] = mds[i][0];
+    y[n] = mds[i][1];
+    z[n] = mds[i][2];
+    ++n;
   }
+
+  x.resize(n);
+  y.resize(n);
+  z.resize(n);
 
   return { std::move(x), std::move(y), std::move(z) };
 }
@@ -71,6 +82,7 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 
   auto w = tyvi::mdgrid_work {};
   w.sync_to_staging(vel_);
+  w.sync_to_staging(ids_);
 
   auto vx = std::vector<value_type>(this->size());
   auto vy = std::vector<value_type>(this->size());
@@ -78,16 +90,49 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 
   w.wait();
 
-  const auto mds = vel_.staging_mds();
-
+  const auto mds   = vel_.staging_mds();
+  const auto idmds = ids_.staging_mds();
+  auto n           = 0uz;
   for(const auto [i]: tyvi::sstd::index_space(mds)) {
-    vx[i] = mds[i][0];
-    vy[i] = mds[i][1];
-    vz[i] = mds[i][2];
+    if(idmds[i][] == runko::dead_prtc_id) { continue; }
+
+    vx[n] = mds[i][0];
+    vy[n] = mds[i][1];
+    vz[n] = mds[i][2];
+    ++n;
   }
+
+  vx.resize(n);
+  vy.resize(n);
+  vz.resize(n);
 
   return { std::move(vx), std::move(vy), std::move(vz) };
 }
+
+std::vector<runko::prtc_id_type>
+  ParticleContainer::get_ids()
+{
+
+  auto w = tyvi::mdgrid_work {};
+  w.sync_to_staging(ids_);
+
+  auto tmp = std::vector<runko::prtc_id_type>(this->size());
+
+  w.wait();
+
+  const auto idmds = ids_.staging_mds();
+  auto n           = 0uz;
+  for(const auto [i]: tyvi::sstd::index_space(idmds)) {
+    if(idmds[i][] == runko::dead_prtc_id) { continue; }
+
+    tmp[n] = idmds[i][];
+    ++n;
+  }
+
+  tmp.resize(n);
+  return tmp;
+}
+
 
 void
   ParticleContainer::wrap_positions(
@@ -132,7 +177,7 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
 
   // Handle empty container as special case, so that we can later assume
   // that there is at least one particle.
-  if(this->size() == 0) { return { {{{0, 0, 0}, {0, 0}}}, *this }; }
+  if(this->size() == 0) { return { { { { 0, 0, 0 }, { 0, 0 } } }, *this }; }
 
   // subregion_index: {-1, 0, 1} x {-1, 0, 1} x {-1, 0, 1} -> {0, 1, ..., 26}
   constexpr auto subregion_index =
@@ -190,9 +235,11 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
     particle_subregion_indices.end(),
     particle_trackers.begin());
 
+  const auto ids_mds          = this->ids_.mds();
   auto permuted_pcontainer    = *this;
   const auto permuted_pos_mds = permuted_pcontainer.pos_.mds();
   const auto permuted_vel_mds = permuted_pcontainer.vel_.mds();
+  const auto permuted_ids_mds = permuted_pcontainer.ids_.mds();
 
   tyvi::mdgrid_work {}
     .for_each_index(
@@ -201,6 +248,12 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
         const runko::index_t i      = p[idx[0]];
         permuted_pos_mds[idx][tidx] = pos_mds[i][tidx];
         permuted_vel_mds[idx][tidx] = vel_mds[i][tidx];
+      })
+    .for_each_index(
+      permuted_ids_mds,
+      [=, p = particle_trackers.begin()](const auto idx) {
+        const runko::index_t i      = p[idx[0]];
+        permuted_ids_mds[idx][] = ids_mds[i][];
       })
     .wait();
 
@@ -241,7 +294,7 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   }
 
   // Ensure {0,0,0} (self-region) is always present, even when all particles left.
-  if(not m.contains({0, 0, 0})) { m.insert({{{0, 0, 0}, {0, 0}}}); }
+  if(not m.contains({ 0, 0, 0 })) { m.insert({ { { 0, 0, 0 }, { 0, 0 } } }); }
 
   return { std::move(m), std::move(permuted_pcontainer) };
 }
@@ -257,12 +310,14 @@ double
 
   // Note that these are in natural units.
   const auto vel_mds = this->vel_.mds();
+  const auto ids_mds = this->ids_.mds();
 
   auto particle_ordinal_to_kinetic_energy = [=](const runko::index_t n) -> double {
-    using Vec3   = toolbox::Vec3<value_type>;
-    const auto v = Vec3(vel_mds[n]);
+    const auto is_alive = ids_mds[n][] != runko::dead_prtc_id;
+    using Vec3          = toolbox::Vec3<value_type>;
+    const auto v        = Vec3(vel_mds[n]);
     const auto e = std::sqrt(value_type { 1 } + toolbox::dot(v, v)) - value_type { 1 };
-    return static_cast<double>(e);
+    return is_alive * static_cast<double>(e);
   };
 
   const auto kinetic_energies_begin = thrust::make_transform_iterator(

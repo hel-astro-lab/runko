@@ -12,11 +12,15 @@ enum class particle : std::size_t {
 
 };
 
+using prtc_id_type                 = std::uint64_t;
+static constexpr auto dead_prtc_id = std::numeric_limits<prtc_id_type>::max();
+
 struct ParticleState {
   using vec3 = std::array<double, 3>;
 
   vec3 pos;
   vec3 vel;
+  prtc_id_type id;
 };
 
 }  // namespace runko

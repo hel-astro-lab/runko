@@ -48,6 +48,13 @@ class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
 
   static_assert(D == 3);
 
+
+  /// Tag which is shared between all the particles from this tile.
+  std::size_t tile_tag_;
+  // This should not be modified manually.
+  std::map<std::size_t, std::size_t> next_particle_ordinals_;
+  runko::prtc_id_type consume_next_id_(std::size_t ptype);
+
   std::map<std::size_t, ParticleContainer> particle_buffs_;
   ParticlePusher particle_pusher_;
   FieldInterpolator field_interpolator_;
@@ -101,6 +108,7 @@ public:
 
   std::array<std::vector<value_type>, 3> get_positions(std::size_t);
   std::array<std::vector<value_type>, 3> get_velocities(std::size_t);
+  std::vector<runko::prtc_id_type> get_ids(std::size_t);
 
 
   using particle_generator =
@@ -116,7 +124,7 @@ public:
   /// Inject given particles.
   ///
   /// Particle type is assumed to be configured.
-  void inject(std::size_t particle_type, const std::vector<runko::ParticleState>&);
+  void inject(std::size_t particle_type, std::vector<runko::ParticleState>);
 
   using batch_array = pybind11::array_t<double>;
   using batch_particle_generator =

@@ -66,6 +66,7 @@ emf::YeeLattice::CurrentContributions
 
   const auto pos_mds      = pos_.mds();
   const auto vel_mds      = vel_.mds();
+  const auto ids_mds      = ids_.mds();
   const value_type charge = charge_;
   const value_type cfl    = cfl_;
 
@@ -113,7 +114,11 @@ emf::YeeLattice::CurrentContributions
 
     const auto store_current = [=, &offset](const Vec3i index, const Vec3v current) {
       deposit_loc_ptr[offset] = deposit_loc { index };
-      current_ptr[offset++]   = current;
+      if(ids_mds[idx][] == runko::dead_prtc_id) {
+        current_ptr[offset++] = Vec3v(0, 0, 0);
+      } else {
+        current_ptr[offset++] = current;
+      }
     };
 
     static constexpr auto one = value_type { 1 };
@@ -225,12 +230,15 @@ void
   const auto Jmds         = Jout.mds();
   const auto pos_mds      = pos_.mds();
   const auto vel_mds      = vel_.mds();
+  const auto ids_mds      = ids_.mds();
   const value_type charge = charge_;
 
   tyvi::mdgrid_work {}
     .for_each_index(
       pos_mds,
       [=](const auto idx) {
+        if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+
         const auto u = Vec3v(vel_mds[idx]).template as<value_type>();
         const auto invgam =
           value_type { 1 } / sstd::sqrt(value_type { 1 } + toolbox::dot(u, u));

@@ -110,6 +110,11 @@ void
         const auto [x, y, z] = tile.get_velocities(p);
         return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
       })
+    .def(
+      "get_ids",
+      [](pic::Tile<3>& tile, const std::size_t p) {
+        return to_ndarray(tile.get_ids(p));
+      })
     .def("inject_to_each_cell", &pic::Tile<3>::inject_to_each_cell)
     .def("inject", &pic::Tile<3>::inject)
     .def("batch_inject_to_cells", &pic::Tile<3>::batch_inject_to_cells)

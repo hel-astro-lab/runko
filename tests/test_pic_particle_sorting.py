@@ -39,6 +39,7 @@ class pic_particle_sorting(unittest.TestCase):
             self.assertEqual(0, len(vel_x))
             self.assertEqual(0, len(vel_y))
             self.assertEqual(0, len(vel_z))
+            self.assertEqual(0, len(tile.get_ids(ptype)))
 
         assertNoParticles(0)
         assertNoParticles(1)
@@ -58,19 +59,25 @@ class pic_particle_sorting(unittest.TestCase):
 
         pos0set0 = set((x, y, z) for x, y, z in zip(*tile.get_positions(0)))
         vel0set0 = set((x, y, z) for x, y, z in zip(*tile.get_velocities(0)))
+        ids0set0 = set(tile.get_ids(0))
         pos0set1 = set((x, y, z) for x, y, z in zip(*tile.get_positions(1)))
         vel0set1 = set((x, y, z) for x, y, z in zip(*tile.get_velocities(1)))
+        ids0set1 = set(tile.get_ids(1))
 
         def assertNoChange():
             posset0 = set((x, y, z) for x, y, z in zip(*tile.get_positions(0)))
             velset0 = set((x, y, z) for x, y, z in zip(*tile.get_velocities(0)))
+            idsset0 = set(tile.get_ids(0))
             posset1 = set((x, y, z) for x, y, z in zip(*tile.get_positions(1)))
             velset1 = set((x, y, z) for x, y, z in zip(*tile.get_velocities(1)))
+            idsset1 = set(tile.get_ids(1))
 
             self.assertEqual(posset0, pos0set0)
             self.assertEqual(velset0, vel0set0)
+            self.assertEqual(idsset0, ids0set0)
             self.assertEqual(posset1, pos0set1)
             self.assertEqual(velset1, vel0set1)
+            self.assertEqual(idsset1, ids0set1)
 
         assertNoChange()
         tile.sort_particles()

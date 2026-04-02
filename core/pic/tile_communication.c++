@@ -18,7 +18,7 @@ constexpr int
   return static_cast<int>(particle_ordinal + particles_in_total * tag);
 }
 
-enum class particle_data_type { pos, vel };
+enum class particle_data_type { pos, vel, id };
 
 template<particle_data_type data_type>
 constexpr int
@@ -27,8 +27,16 @@ constexpr int
     const auto particle_ordinal,
     const std::size_t particles_in_total)
 {
-  static constexpr auto x = static_cast<int>(data_type == particle_data_type::pos);
-  return static_cast<int>(x + 2 * particle_ordinal + 2 * particles_in_total * tag);
+  static constexpr auto x = [] {
+    if(data_type == particle_data_type::pos) {
+      return 0;
+    } else if(data_type == particle_data_type::vel) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }();
+  return static_cast<int>(x + 3 * particle_ordinal + 3 * particles_in_total * tag);
 }
 
 }  // namespace
@@ -48,9 +56,7 @@ std::vector<mpi4cpp::mpi::request>
   // CPU backend uses host memory where standard MPI works.
 #ifndef TYVI_BACKEND_CPU
   if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error {
-      "GPU backend requires GPU-aware MPI."
-    };
+    throw std::runtime_error { "GPU backend requires GPU-aware MPI." };
   }
 #endif
 
@@ -95,6 +101,12 @@ std::vector<mpi4cpp::mpi::request>
             tag,
             key,
             this->particle_buffs_.size())));
+        comms.push_back(make_isend(
+          value.span_id(),
+          particle_data_tag<particle_data_type::id>(
+            tag,
+            key,
+            this->particle_buffs_.size())));
       }
       return comms;
     }
@@ -112,9 +124,7 @@ std::vector<mpi4cpp::mpi::request>
 {
 #ifndef TYVI_BACKEND_CPU
   if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error {
-      "GPU backend requires GPU-aware MPI."
-    };
+    throw std::runtime_error { "GPU backend requires GPU-aware MPI." };
   }
 #endif
 
@@ -152,6 +162,12 @@ std::vector<mpi4cpp::mpi::request>
       comms.push_back(make_irecv(
         value.span_vel(),
         particle_data_tag<particle_data_type::vel>(
+          tag,
+          key,
+          this->particle_buffs_.size())));
+      comms.push_back(make_irecv(
+        value.span_id(),
+        particle_data_tag<particle_data_type::id>(
           tag,
           key,
           this->particle_buffs_.size())));

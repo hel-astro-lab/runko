@@ -4,6 +4,7 @@
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
 #include "core/pic/reflector_wall.h"
+#include "thrust/count.h"
 #include "thrust/device_vector.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
@@ -16,6 +17,7 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <numeric>
 #include <ranges>
@@ -23,6 +25,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+
 
 namespace pic {
 
@@ -57,6 +60,10 @@ private:
   runko::VecList<value_type> pos_;
   /// Three-velocities are stored in physical/natural units.
   runko::VecList<value_type> vel_;
+  /// Id for each particle.
+  runko::ScalarList<runko::prtc_id_type> ids_;
+
+  runko::prtc_id_type next_id_;
 
   double charge_;
   double mass_;
@@ -78,12 +85,13 @@ public:
       ParticleContainer::specific_span>
   void set(const R&);
 
-  /// Returns the number of particles.
+  /// Returns the number of particles dead or alive.
   std::size_t size() const;
   ParticleContainerArgs args() const;
 
   std::array<std::vector<value_type>, 3> get_positions();
   std::array<std::vector<value_type>, 3> get_velocities();
+  std::vector<runko::prtc_id_type> get_ids();
 
   [[nodiscard]]
   auto span_pos() &;
@@ -98,10 +106,22 @@ public:
   auto span_vel() const&;
 
   [[nodiscard]]
-  auto pos_mds() const { return pos_.mds(); }
+  auto span_id() &;
 
   [[nodiscard]]
-  auto vel_mds() const { return vel_.mds(); }
+  auto span_id() const&;
+
+  [[nodiscard]]
+  auto pos_mds() const
+  {
+    return pos_.mds();
+  }
+
+  [[nodiscard]]
+  auto vel_mds() const
+  {
+    return vel_.mds();
+  }
 
   /// Wraps coordinates outside of given extents.
   void wrap_positions(std::array<value_type, 3> mins, std::array<value_type, 3> maxs);
@@ -223,17 +243,23 @@ inline void
 
   auto new_pos = runko::VecList<value_type>(Ntotal);
   auto new_vel = runko::VecList<value_type>(Ntotal);
+  auto new_ids = runko::ScalarList<runko::prtc_id_type>(Ntotal);
 
   const auto new_pos_mds = new_pos.mds();
   const auto new_vel_mds = new_vel.mds();
+  const auto new_ids_mds = new_ids.mds();
 
   const auto prev_pos_mds = this->pos_.mds();
   const auto prev_vel_mds = this->vel_.mds();
+  const auto prev_ids_mds = this->ids_.mds();
 
   auto wA = tyvi::mdgrid_work {};
   wA.for_each_index(prev_pos_mds, [=](const auto idx, const auto tidx) {
     new_pos_mds[idx][tidx] = prev_pos_mds[idx][tidx];
     new_vel_mds[idx][tidx] = prev_vel_mds[idx][tidx];
+  });
+  wA.for_each_index(prev_ids_mds, [=](const auto idx) {
+    new_ids_mds[idx][] = prev_ids_mds[idx][];
   });
 
   const auto handle_other = [&](
@@ -242,13 +268,19 @@ inline void
                               const std::array<std::size_t, 2> where_other_goes) {
     const auto other_pos_mds = other.pos_.mds();
     const auto other_vel_mds = other.vel_.mds();
+    const auto other_ids_mds = other.ids_.mds();
 
     const auto other_in_new_pos_mds = std::submdspan(new_pos_mds, where_other_goes);
     const auto other_in_new_vel_mds = std::submdspan(new_vel_mds, where_other_goes);
+    const auto other_in_new_ids_mds = std::submdspan(new_ids_mds, where_other_goes);
 
     w.for_each_index(other_in_new_pos_mds, [=](const auto idx, const auto tidx) {
       other_in_new_pos_mds[idx][tidx] = other_pos_mds[idx][tidx];
       other_in_new_vel_mds[idx][tidx] = other_vel_mds[idx][tidx];
+    });
+
+    w.for_each_index(other_in_new_ids_mds, [=](const auto idx) {
+      other_in_new_ids_mds[idx][] = other_ids_mds[idx][];
     });
   };
 
@@ -262,6 +294,7 @@ inline void
 
   pos_ = std::move(new_pos);
   vel_ = std::move(new_vel);
+  ids_ = std::move(new_ids);
 }
 
 
@@ -278,6 +311,7 @@ inline void
 
   const auto added_pos_smds = added.pos_.staging_mds();
   const auto added_vel_smds = added.vel_.staging_mds();
+  const auto added_ids_smds = added.ids_.staging_mds();
 
   {
     std::size_t i = 0;
@@ -286,16 +320,20 @@ inline void
         added_pos_smds[i][j] = p.pos[j];
         added_vel_smds[i][j] = p.vel[j];
       }
+
+      added_ids_smds[i][] = p.id;
       ++i;
     }
   }
 
   auto w1 = tyvi::mdgrid_work {};
   auto w2 = tyvi::mdgrid_work {};
+  auto w3 = tyvi::mdgrid_work {};
   w1.sync_from_staging(added.pos_);
   w2.sync_from_staging(added.vel_);
+  w3.sync_from_staging(added.ids_);
 
-  tyvi::when_all(w1, w2);
+  tyvi::when_all(w1, w2, w3);
   w1.wait();
 
   this->add_particles(added);
@@ -383,9 +421,11 @@ template<std::ranges::forward_range R>
 
   this->pos_.invalidating_resize(Ntotal);
   this->vel_.invalidating_resize(Ntotal);
+  this->ids_.invalidating_resize(Ntotal);
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
+  const auto ids_mds = this->ids_.mds();
 
   const auto handle_span = [&](
                              tyvi::mdgrid_work& w,
@@ -393,17 +433,23 @@ template<std::ranges::forward_range R>
                              const std::array<std::size_t, 2> location_in_this) {
     const auto other_pos_mds = span.container->pos_.mds();
     const auto other_vel_mds = span.container->vel_.mds();
+    const auto other_ids_mds = span.container->ids_.mds();
 
     const auto s                = std::array { span.span.begin, span.span.end };
     const auto other_pos_submds = std::submdspan(other_pos_mds, s);
     const auto other_vel_submds = std::submdspan(other_vel_mds, s);
+    const auto other_ids_submds = std::submdspan(other_ids_mds, s);
 
     const auto pos_submds = std::submdspan(pos_mds, location_in_this);
     const auto vel_submds = std::submdspan(vel_mds, location_in_this);
+    const auto ids_submds = std::submdspan(ids_mds, location_in_this);
 
     w.for_each_index(pos_submds, [=](const auto idx, const auto tidx) {
       pos_submds[idx][tidx] = other_pos_submds[idx][tidx];
       vel_submds[idx][tidx] = other_vel_submds[idx][tidx];
+    });
+    w.for_each_index(ids_submds, [=](const auto idx) {
+      ids_submds[idx][] = other_ids_submds[idx][];
     });
   };
 
@@ -461,10 +507,17 @@ inline void
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto pos_mds = this->pos_.mds();
+  const auto ids_mds = this->ids_.mds();
+
+  using score_type =
+    std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
 
   const auto scores_begin = thrust::make_transform_iterator(
     particle_ordinals_begin,
     [=, f = std::forward<decltype(f)>(f)](const std::size_t i) {
+      if(ids_mds[i][] == runko::dead_prtc_id) {
+        return std::numeric_limits<score_type>::max();
+      }
       return f(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
     });
   const auto scores_end = rn::next(scores_begin, this->size());
@@ -476,24 +529,54 @@ inline void
   using score_t = std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
   auto scores   = thrust::device_vector<score_t>(scores_begin, scores_end);
 
-  thrust::sort_by_key(scores.begin(), scores.end(), trackers.begin());
+  auto w1 = tyvi::mdgrid_work {};
+  auto w2 = tyvi::mdgrid_work {};
+  thrust::sort_by_key(w1.on_this(), scores.begin(), scores.end(), trackers.begin());
 
-  auto tmp_pos           = this->pos_;
-  auto tmp_vel           = this->vel_;
+  const auto ids_begin =
+    thrust::make_transform_iterator(particle_ordinals_begin, [=](const auto i) {
+      return ids_mds[i][];
+    });
+  const auto ids_end = rn::next(ids_begin, this->size());
+  const auto dead_particles =
+    thrust::count(w2.on_this(), ids_begin, ids_end, runko::dead_prtc_id);
+  const auto alive_particles = this->size() - dead_particles;
+
+  w1.wait();  // Sorting has to be finished before copying.
+
+  auto tmp_pos = this->pos_;
+  auto tmp_vel = this->vel_;
+
   const auto tmp_pos_mds = tmp_pos.mds();
   const auto tmp_vel_mds = tmp_vel.mds();
 
-  const auto vel_mds = this->vel_.mds();
+  this->pos_.invalidating_resize(alive_particles);
+  this->vel_.invalidating_resize(alive_particles);
 
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      tmp_pos,
-      [=, p = trackers.begin()](const auto idx, const auto tidx) {
-        const runko::index_t i = p[idx[0]];
-        pos_mds[idx][tidx]     = tmp_pos_mds[i][tidx];
-        vel_mds[idx][tidx]     = tmp_vel_mds[i][tidx];
-      })
-    .wait();
+  const auto pos_mds_new = this->pos_.mds();
+  const auto vel_mds_new = this->vel_.mds();
+
+  w1.for_each_index(
+    pos_mds_new,
+    [=, p = trackers.begin()](const auto idx, const auto tidx) {
+      const runko::index_t i = p[idx[0]];
+      pos_mds_new[idx][tidx] = tmp_pos_mds[i][tidx];
+      vel_mds_new[idx][tidx] = tmp_vel_mds[i][tidx];
+    });
+
+  auto tmp_ids           = this->ids_;
+  const auto tmp_ids_mds = tmp_ids.mds();
+  this->ids_.invalidating_resize(alive_particles);
+  const auto ids_mds_new = this->ids_.mds();
+
+  w2.for_each_index(ids_mds_new, [=, p = trackers.begin()](const auto idx) {
+    const runko::index_t i = p[idx[0]];
+    ids_mds[idx][]         = tmp_ids_mds[i][];
+  });
+
+
+  tyvi::when_all(w1, w2);
+  w1.wait();
 }
 
 inline auto
@@ -518,6 +601,18 @@ inline auto
   ParticleContainer::span_vel() const&
 {
   return this->vel_.span();
+}
+
+inline auto
+  ParticleContainer::span_id() &
+{
+  return this->ids_.span();
+}
+
+inline auto
+  ParticleContainer::span_id() const&
+{
+  return this->ids_.span();
 }
 
 
