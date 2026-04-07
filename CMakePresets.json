@@ -51,6 +51,47 @@
                 "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize",
                 "BUILD_TESTING": "ON"
             }
+        },
+        {
+            "name": "conf-lumi-common",
+            "description": "Common settings for LUMI supercomputer (AMD EPYC + MI250X).",
+            "hidden": true,
+            "inherits": "conf-unixlike-common",
+            "cacheVariables": {
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "BUILD_TESTING": "ON",
+                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
+            }
+        },
+        {
+            "name": "hile-cpu-release",
+            "displayName": "HILE CPU Release (Cray clang)",
+            "description": "HILE CPU partition, Cray C++ compiler (clang-based), optimized for AMD EPYC Zen 3.",
+            "inherits": "conf-lumi-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "CC",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
+                "tyvi_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "hile-gpu-release",
+            "displayName": "HILE GPU Release (hipcc + ROCm)",
+            "description": "HILE GPU partition, hipcc targeting MI210X (gfx90a), GPU-aware MPI via Cray GTL.",
+            "inherits": "conf-lumi-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "hipcc",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=gfx90a -munsafe-fp-atomics",
+                "tyvi_BACKEND": "hip",
+                "CMAKE_HIP_ARCHITECTURES": "gfx90a",
+                "AMDGPU_TARGETS": "gfx90a",
+                "GPU_TARGETS": "gfx90a",
+                "GTL_LIB_PATH": "$env{CRAY_MPICH_ROOTDIR}/gtl/lib"
+            }
         }
     ],
     "testPresets": [
@@ -79,6 +120,20 @@
             "description": "Enable output and stop on failure",
             "inherits": "test-common",
             "configurePreset": "macos-mpic++-vec-analysis"
+        },
+        {
+            "name": "test-hile-cpu-release",
+            "displayName": "HILE CPU Release",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "hile-cpu-release"
+        },
+        {
+            "name": "test-hile-gpu-release",
+            "displayName": "HILE GPU Release",
+            "description": "Enable output and stop on failure",
+            "inherits": "test-common",
+            "configurePreset": "hile-gpu-release"
         }
     ]
 }

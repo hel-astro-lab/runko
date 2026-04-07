@@ -1,92 +1,112 @@
 #!/usr/bin/env bash
 
-# Runko installation script for on the HILE cluster.
+# Runko installation script for the HILE cluster (CPU build via preset).
+# Run this on the login node (requires internet for downloads).
 
-set -v
+set -ve
 
-#-------------------------------------------------- 
+#--------------------------------------------------
 # Change current directory to the runko repository root
 cd "$(dirname "$0")"
 cd ../
 
-mkdir build
-
-#-------------------------------------------------- 
-# Pre-download mdspan (because there is no internet connection on compute node)
-PRE_DOWNLOADED_MDSPAN_PATH="$HOME/mdspan"
-git clone https://github.com/kokkos/mdspan.git $PRE_DOWNLOADED_MDSPAN_PATH
-
-
-
-#-------------------------------------------------- 
-# Update the PYTHONPATH environment variable with required runko
-#  and corgi-related paths in order to make our venv runko-aware::
 RUNKO_PATH=$(pwd)
-P1="$RUNKO_PATH/"
-P2="$RUNKO_PATH/external/corgi/lib"
-export PYTHONPATH="$PYTHONPATH:$P1:$P2"
 
-#-------------------------------------------------- 
+#--------------------------------------------------
+# Initialize git submodules (corgi, tyvi, etc.)
+git submodule update --init --recursive
+
+#--------------------------------------------------
+# Pre-download mdspan (compute nodes have no internet; CPM needs this at configure time)
+PRE_DOWNLOADED_MDSPAN_PATH="$HOME/mdspan"
+if [ ! -d "$PRE_DOWNLOADED_MDSPAN_PATH" ]; then
+    git clone https://github.com/kokkos/mdspan.git "$PRE_DOWNLOADED_MDSPAN_PATH"
+fi
+
+#--------------------------------------------------
+# Download and build rocThrust with CPU (CPP) backend.
+# The hile-cpu-release preset expects it at:
+#   external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/
+ROCM_LIBS_DIR="$RUNKO_PATH/external/tyvi/rocm-libraries"
+if [ ! -d "$ROCM_LIBS_DIR" ]; then
+    cd "$RUNKO_PATH/external/tyvi"
+    git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
+    cd rocm-libraries
+    git sparse-checkout init --cone
+    git sparse-checkout set projects/rocthrust
+    git checkout develop
+fi
+
+ROCTHRUST_DIR="$ROCM_LIBS_DIR/projects/rocthrust"
+if [ ! -d "$ROCTHRUST_DIR/rocthrust-install" ]; then
+    cd "$ROCTHRUST_DIR"
+    cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=CPP \
+          -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_DIR/rocthrust-install" .
+    make -C build install
+fi
+
+cd "$RUNKO_PATH"
+
+#--------------------------------------------------
 # Load standard prerequisite modules for runko:
 module load PrgEnv-cray
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load craype-x86-milan
-module load cray-mpich 
+module load cray-mpich
 module load craype-network-ofi
 module load cray-python
 
-#-------------------------------------------------- 
-# Create a Python virtual environment specially for runko,
-# located within the runko repository:
-python -m venv runko-venv
+#--------------------------------------------------
+# Create Python virtual environment for runko CPU builds
+python -m venv venv/runko-cpu
 
-# Load this runko virtual environment:
-source runko-venv/bin/activate
+# Activate the virtual environment
+source venv/runko-cpu/bin/activate
 
 # Install necessary Python dependencies
 pip3 install h5py scipy matplotlib numpy
 
-# Build MPI4PY:
+# Build mpi4py against Cray MPICH
 MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 
+#--------------------------------------------------
+# Patch the activate script with module loads, PYTHONPATH, and build helpers
+P1="$RUNKO_PATH/"
+P2="$RUNKO_PATH/external/corgi/lib"
 
-#-------------------------------------------------- 
-# Next, we create a handy file which loads the necessary runko modules
-cat >> runko-venv/bin/activate << EOL
-# Tool to load runko modules
-# Usage: "source venvs/runko-venv/bin/activate"
-# Load standard prerequisite modules for runko:
+cat >> venv/runko-cpu/bin/activate << EOL
+
+# --- Runko environment (HILE CPU) ---
+# Usage: source venv/runko-cpu/bin/activate
 
 module purge
 module load PrgEnv-cray
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load craype-x86-milan
-module load cray-mpich 
+module load cray-mpich
 module load craype-network-ofi
 module load rocm
 module load libfabric
-module load cray-python # not necessary as we are using a python virtual environment already
+module load cray-python
+
 export LD_LIBRARY_PATH=/opt/cray/pe/cce/18.0.1/cce/x86_64/lib:\$LD_LIBRARY_PATH
-# Update the PYTHONPATH environment variable with runko path data
+
+# PYTHONPATH: repo root (runko_cpp_bindings.so) + corgi lib (pycorgi.so)
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
-export CMAKE="/appl/lumi/SW/LUMI-24.03/common/EB/buildtools/24.03/bin/cmake -DCPM_mdspan_SOURCE=${PRE_DOWNLOADED_MDSPAN_PATH} -DCMAKE_CXX_COMPILER=CC"
 EOL
 
 
-#-------------------------------------------------- 
+#--------------------------------------------------
 # Next you need to build the code yourself!
 #
-# Get gpu node allocation:
-#   	srun -G1 -w hile-g02 --mem=8G --cpus-per-gpu=8 --time=03:00:00 --pty bash
+# Get a compute node allocation:
+#   srun --mem=8G --cpus-per-task=8 --time=03:00:00 --pty bash
 #
-# Load new modules:
-# 	source runko-venv/bin/activate
+# Activate the environment:
+#   source venv/runko-cpu/bin/activate
 #
-# Run cmake:
-# 	cd build
-# 	$CMAKE -DCMAKE_BUILD_TYPE=Release ..
-#
-# Finally, build:
-# 	make -j8
+# Configure and build using the preset:
+#   cmake --preset hile-cpu-release -DCPM_mdspan_SOURCE=$HOME/mdspan
+#   cmake --build hile-cpu-release -j8
