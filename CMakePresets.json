@@ -61,8 +61,7 @@
                 "tyvi_ENABLE_IPO": "OFF",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
-                "BUILD_TESTING": "ON",
-                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
+                "BUILD_TESTING": "ON"
             }
         },
         {
@@ -75,6 +74,21 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
                 "tyvi_BACKEND": "cpu"
+            }
+        },
+        {
+            "name": "lumi-gpu-release",
+            "displayName": "LUMI GPU Release (hipcc + ROCm)",
+            "description": "HILE GPU partition, hipcc targeting MI250X (gfx90a), GPU-aware MPI.",
+            "inherits": "conf-lumi-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "CC",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=gfx90a -munsafe-fp-atomics",
+                "tyvi_BACKEND": "hip",
+                "CMAKE_HIP_ARCHITECTURES": "gfx90a",
+                "AMDGPU_TARGETS": "gfx90a",
+                "GPU_TARGETS": "gfx90a"
             }
         },
         {

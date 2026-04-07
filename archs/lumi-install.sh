@@ -45,7 +45,7 @@ MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 ml
 
 # 9. Build and unit test runko on 16 cores:
-cmake -Bbuild -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER=CC .
+cmake --preset lumi-gpu-release
 make -j16 -Cbuild
 
 # 10. If all went well runko has now been compiled, and certain unit tests
