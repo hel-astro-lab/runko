@@ -96,7 +96,7 @@
         {
             "name": "hile-gpu-release",
             "displayName": "HILE GPU Release (hipcc + ROCm)",
-            "description": "HILE GPU partition, hipcc targeting MI210X (gfx90a), GPU-aware MPI via Cray GTL.",
+            "description": "HILE GPU partition, hipcc targeting MI210X (gfx90a), GPU-aware MPI.",
             "inherits": "conf-lumi-common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "hipcc",
@@ -106,7 +106,6 @@
                 "CMAKE_HIP_ARCHITECTURES": "gfx90a",
                 "AMDGPU_TARGETS": "gfx90a",
                 "GPU_TARGETS": "gfx90a",
-                "GTL_LIB_PATH": "$env{CRAY_MPICH_ROOTDIR}/gtl/lib",
                 "OpenMP_CXX_FLAGS": "-fopenmp",
                 "OpenMP_CXX_LIB_NAMES": ""
             }

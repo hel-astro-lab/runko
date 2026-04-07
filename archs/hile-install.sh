@@ -27,23 +27,23 @@ fi
 # Download and build rocThrust with CPU (CPP) backend.
 # The hile-cpu-release preset expects it at:
 #   external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/
-ROCM_LIBS_DIR="$RUNKO_PATH/external/tyvi/rocm-libraries"
-if [ ! -d "$ROCM_LIBS_DIR" ]; then
-    cd "$RUNKO_PATH/external/tyvi"
-    git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
-    cd rocm-libraries
-    git sparse-checkout init --cone
-    git sparse-checkout set projects/rocthrust
-    git checkout develop
-fi
-
-ROCTHRUST_DIR="$ROCM_LIBS_DIR/projects/rocthrust"
-if [ ! -d "$ROCTHRUST_DIR/rocthrust-install" ]; then
-    cd "$ROCTHRUST_DIR"
-    cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=CPP \
-          -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_DIR/rocthrust-install" .
-    make -C build install
-fi
+#ROCM_LIBS_DIR="$RUNKO_PATH/external/tyvi/rocm-libraries"
+#if [ ! -d "$ROCM_LIBS_DIR" ]; then
+#    cd "$RUNKO_PATH/external/tyvi"
+#    git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
+#    cd rocm-libraries
+#    git sparse-checkout init --cone
+#    git sparse-checkout set projects/rocthrust
+#    git checkout develop
+#fi
+#
+#ROCTHRUST_DIR="$ROCM_LIBS_DIR/projects/rocthrust"
+#if [ ! -d "$ROCTHRUST_DIR/rocthrust-install" ]; then
+#    cd "$ROCTHRUST_DIR"
+#    cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=CPP \
+#          -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_DIR/rocthrust-install" .
+#    make -C build install
+#fi
 
 cd "$RUNKO_PATH"
 
@@ -59,10 +59,10 @@ module load cray-python
 
 #--------------------------------------------------
 # Create Python virtual environment for runko CPU builds
-python -m venv venv/runko-cpu
+python -m venv venv/runko-gpu
 
 # Activate the virtual environment
-source venv/runko-cpu/bin/activate
+source venv/runko-gpu/bin/activate
 
 # Install necessary Python dependencies
 pip3 install h5py scipy matplotlib numpy
@@ -75,10 +75,10 @@ MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 P1="$RUNKO_PATH/"
 P2="$RUNKO_PATH/external/corgi/lib"
 
-cat >> venv/runko-cpu/bin/activate << EOL
+cat >> venv/runko-gpu/bin/activate << EOL
 
 # --- Runko environment (HILE CPU) ---
-# Usage: source venv/runko-cpu/bin/activate
+# Usage: source venv/runko-gpu/bin/activate
 
 module purge
 module load PrgEnv-cray
@@ -105,8 +105,8 @@ EOL
 #   srun --mem=8G --cpus-per-task=8 --time=03:00:00 --pty bash
 #
 # Activate the environment:
-#   source venv/runko-cpu/bin/activate
+#   source venv/runko-gpu/bin/activate
 #
 # Configure and build using the preset:
-#   cmake --preset hile-cpu-release -DCPM_mdspan_SOURCE=$HOME/mdspan
-#   cmake --build hile-cpu-release -j8
+#   cmake --preset hile-gpu-release -DCPM_mdspan_SOURCE=$HOME/mdspan
+#   cmake --build hile-gpu-release -j8

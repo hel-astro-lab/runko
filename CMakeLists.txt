@@ -27,14 +27,6 @@ find_package(HDF5 REQUIRED)
 find_package(MPI REQUIRED)
 
 add_subdirectory(external/corgi)
-
-# Cray GTL library for GPU-aware MPI on LUMI (set via preset)
-set(GTL_LIB_PATH "" CACHE PATH "Path to Cray GTL library (set via preset on LUMI)")
-if(TARGET mpi4cpp AND GTL_LIB_PATH AND EXISTS "${GTL_LIB_PATH}")
-    target_link_directories(mpi4cpp PUBLIC ${GTL_LIB_PATH})
-    target_link_libraries(mpi4cpp PUBLIC mpi_gtl_hsa)
-endif()
-
 add_subdirectory(external/tyvi)
 
 ##################################################
