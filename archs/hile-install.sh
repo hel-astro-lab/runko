@@ -102,7 +102,7 @@ EOL
 # Next you need to build the code yourself!
 #
 # Get a compute node allocation:
-#   srun --mem=8G --cpus-per-task=8 --time=03:00:00 --pty bash
+#   srun -C g --gpus-per-node=1 --ntasks=1 --cpus-per-gpu=8 --mem=8G --time=03:00:00  --partition=hile --pty bash
 #
 # Activate the environment:
 #   source venv/runko-gpu/bin/activate
