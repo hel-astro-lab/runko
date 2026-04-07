@@ -88,7 +88,9 @@
                 "tyvi_BACKEND": "hip",
                 "CMAKE_HIP_ARCHITECTURES": "gfx90a",
                 "AMDGPU_TARGETS": "gfx90a",
-                "GPU_TARGETS": "gfx90a"
+                "GPU_TARGETS": "gfx90a",
+                "OpenMP_CXX_FLAGS": "-fopenmp",
+                "OpenMP_CXX_LIB_NAMES": ""
             }
         },
         {
@@ -104,7 +106,9 @@
                 "CMAKE_HIP_ARCHITECTURES": "gfx90a",
                 "AMDGPU_TARGETS": "gfx90a",
                 "GPU_TARGETS": "gfx90a",
-                "GTL_LIB_PATH": "$env{CRAY_MPICH_ROOTDIR}/gtl/lib"
+                "GTL_LIB_PATH": "$env{CRAY_MPICH_ROOTDIR}/gtl/lib",
+                "OpenMP_CXX_FLAGS": "-fopenmp",
+                "OpenMP_CXX_LIB_NAMES": ""
             }
         }
     ],
