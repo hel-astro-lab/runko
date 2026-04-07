@@ -106,6 +106,7 @@
                 "CMAKE_HIP_ARCHITECTURES": "gfx90a",
                 "AMDGPU_TARGETS": "gfx90a",
                 "GPU_TARGETS": "gfx90a",
+                "HDF5_ROOT": "$env{HDF5_ROOT}",
                 "OpenMP_CXX_FLAGS": "-fopenmp",
                 "OpenMP_CXX_LIB_NAMES": ""
             }
