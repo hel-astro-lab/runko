@@ -21,15 +21,10 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 ##################################################
 # Dependencies
 
-find_package (Python COMPONENTS Interpreter Development REQUIRED)
-
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(OpenMP REQUIRED)
-
-include(FindRunkoHDF5)
-
-find_package (MPI REQUIRED)
-
-
+find_package(HDF5 REQUIRED)
+find_package(MPI REQUIRED)
 
 add_subdirectory(external/corgi)
 

@@ -79,12 +79,12 @@
         {
             "name": "lumi-gpu-release",
             "displayName": "LUMI GPU Release (hipcc + ROCm)",
-            "description": "HILE GPU partition, hipcc targeting MI250X (gfx90a), GPU-aware MPI.",
+            "description": "HILE GPU partition, Cray CC wrapper targeting MI250X (gfx90a), GPU-aware MPI.",
             "inherits": "conf-lumi-common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "CC",
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=gfx90a -munsafe-fp-atomics",
+                "CMAKE_CXX_FLAGS": "-O3",
                 "tyvi_BACKEND": "hip",
                 "CMAKE_HIP_ARCHITECTURES": "gfx90a",
                 "AMDGPU_TARGETS": "gfx90a",

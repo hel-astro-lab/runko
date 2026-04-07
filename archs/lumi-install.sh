@@ -42,11 +42,9 @@ pip3 install h5py scipy matplotlib numpy
 # 8. Build MPI4PY:
 MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
 
-ml
-
 # 9. Build and unit test runko on 16 cores:
 cmake --preset lumi-gpu-release
-make -j16 -Cbuild
+cmake --build lumi-gpu-release -j18
 
 # 10. If all went well runko has now been compiled, and certain unit tests
 #     should have automatically been executed and passed.
