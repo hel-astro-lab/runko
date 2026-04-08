@@ -1,4 +1,5 @@
 #!/bin/bash
 export ROCR_VISIBLE_DEVICES=$SLURM_LOCALID
+export LD_PRELOAD=${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
 
 exec $*

@@ -1,0 +1,31 @@
+#!/bin/bash
+#SBATCH -J test-mpi
+#SBATCH -C g
+#SBATCH --output=%J.out
+#SBATCH --error=%J.err
+#SBATCH -t 00:10:00
+#SBATCH --nodes=2
+#SBATCH --gpus-per-node=4
+#SBATCH --ntasks-per-node=4
+#SBATCH --mem=0
+#SBATCH --cpus-per-gpu=8
+#SBATCH --distribution=block:block
+#SBATCH --gres-flags=enforce-binding
+#SBATCH --partition=hile
+
+source ~/runko-gpu/venv/runko-gpu/bin/activate
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_GPU_IPC_ENABLED=0
+export OMP_NUM_THREADS=1
+
+srun --mpi=cray_shasta bash -c 'export ROCR_VISIBLE_DEVICES=$SLURM_LOCALID; export LD_PRELOAD=${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so; cd ~/runko-gpu/projects/pic-shock; python3 -c "
+from mpi4py import MPI
+print(\"1. mpi4py OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)
+import runko
+print(\"2. import OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)
+conf = runko.Configuration(\"shock_3d.ini\")
+print(\"3. conf OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)
+tile_grid = runko.TileGrid(conf)
+print(\"4. TileGrid OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)
+"'
+
