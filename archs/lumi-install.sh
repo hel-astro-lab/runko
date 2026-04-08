@@ -9,6 +9,33 @@ set -v
 cd "$(dirname "$0")"
 cd ../
 
+RUNKO_PATH=$(pwd)
+
+# 2. Initialize git submodules and download rocThrust headers.
+# rocThrust is needed for both GPU and CPU backends (tyvi uses thrust API).
+# The CPU backend uses the bundled headers; the GPU backend finds them via rocm module.
+git submodule update --init --recursive
+
+ROCM_LIBS_DIR="$RUNKO_PATH/external/tyvi/rocm-libraries"
+ROCTHRUST_DIR="$ROCM_LIBS_DIR/projects/rocthrust"
+if [ ! -d "$ROCTHRUST_DIR/rocthrust-install" ]; then
+    # Download rocThrust source (sparse checkout — only projects/rocthrust)
+    if [ ! -d "$ROCM_LIBS_DIR" ]; then
+        cd "$RUNKO_PATH/external/tyvi"
+        git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
+        cd rocm-libraries
+        git sparse-checkout init --cone
+        git sparse-checkout set projects/rocthrust
+        git checkout develop
+    fi
+    # Build and install rocThrust with CPU (CPP) backend
+    cd "$ROCTHRUST_DIR"
+    cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=CPP \
+          -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_DIR/rocthrust-install" .
+    make -C build install
+    cd "$RUNKO_PATH"
+fi
+
 # 3. Load standard prerequisite modules for runko:
 module load LUMI
 module load partition/G
@@ -31,7 +58,6 @@ source runko-venv/bin/activate
 
 # 6. Update the PYTHONPATH environment variable with required runko
 #    and corgi-related paths in order to make our venv runko-aware::
-RUNKO_PATH=$(pwd)
 P1="$RUNKO_PATH/"
 P2="$RUNKO_PATH/external/corgi/lib"
 export PYTHONPATH="$PYTHONPATH:$P1:$P2"
@@ -76,7 +102,20 @@ export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 EOL
 
 #--------------------------------------------------
-# 12. Run tests on a GPU compute node.
+# 12. Building the CPU version (optional).
+#
+# The activate script loads craype-accel-amd-gfx90a and rocm for GPU builds.
+# For CPU builds, these must be unloaded first — otherwise the Cray CC wrapper
+# compiles everything as HIP/GPU code.
+#
+#   source runko-venv/bin/activate
+#   module unload craype-accel-amd-gfx90a rocm
+#   cmake --preset lumi-cpu-release
+#   cmake --build lumi-cpu-release -j18
+#
+
+#--------------------------------------------------
+# 13. Run tests on a GPU compute node.
 #
 # The login node has no GPUs, so tests must be run on a compute node.
 # Get an interactive GPU allocation:
