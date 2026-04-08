@@ -39,8 +39,10 @@ export PYTHONPATH="$PYTHONPATH:$P1:$P2"
 # 7. Install necessary Python dependencies
 pip3 install h5py scipy matplotlib numpy
 
-# 8. Build MPI4PY:
-MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
+# 8. Build mpi4py against Cray MPICH (PrgEnv-cray).
+# --force-reinstall ensures the venv gets its own copy instead of using the
+# system cray-python mpi4py, which is built against GNU MPICH.
+MPI4PY_BUILD_MPICC="cc -shared" pip install --force-reinstall --no-cache-dir --no-binary=mpi4py mpi4py
 
 # 9. Build and unit test runko on 16 cores:
 cmake --preset lumi-gpu-release

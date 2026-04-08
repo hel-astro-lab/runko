@@ -58,7 +58,7 @@ module load craype-network-ofi
 module load cray-python
 
 #--------------------------------------------------
-# Create Python virtual environment for runko CPU builds
+# Create Python virtual environment for runko GPU builds
 python -m venv venv/runko-gpu
 
 # Activate the virtual environment
@@ -67,8 +67,10 @@ source venv/runko-gpu/bin/activate
 # Install necessary Python dependencies
 pip3 install h5py scipy matplotlib numpy
 
-# Build mpi4py against Cray MPICH
-MPI4PY_BUILD_MPICC="cc -shared" python -m pip install --no-binary=mpi4py mpi4py
+# Build mpi4py against Cray MPICH (PrgEnv-cray).
+# --force-reinstall ensures the venv gets its own copy instead of using the
+# system cray-python mpi4py, which is built against GNU MPICH.
+MPI4PY_BUILD_MPICC="cc -shared" pip install --force-reinstall --no-cache-dir --no-binary=mpi4py mpi4py
 
 #--------------------------------------------------
 # Patch the activate script with module loads, PYTHONPATH, and build helpers
