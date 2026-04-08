@@ -44,12 +44,12 @@ pip3 install h5py scipy matplotlib numpy
 # system cray-python mpi4py, which is built against GNU MPICH.
 MPI4PY_BUILD_MPICC="cc -shared" pip install --force-reinstall --no-cache-dir --no-binary=mpi4py mpi4py
 
-# 9. Build and unit test runko on 16 cores:
+# 9. Build runko (on login node; no GPU needed for compilation):
 cmake --preset lumi-gpu-release
 cmake --build lumi-gpu-release -j18
 
-# 10. If all went well runko has now been compiled, and certain unit tests
-#     should have automatically been executed and passed.
+# 10. Patch the activate script with module loads, PYTHONPATH, and GTL preload
+#     so that "source runko-venv/bin/activate" sets up the full environment:
 
 # 11. Finally, we create a handy file which loads the runko virtual environment and
 # necessary modules whenever called with "source runko-venv/bin/activate":
@@ -67,6 +67,25 @@ module load cray-mpich craype-network-ofi
 module load buildtools
 
 # module load cray-python # not necessary as we are using a python virtual environment already
+
+# GPU-aware MPI: preload GTL so it is available before mpi4py calls MPI_Init
+export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
+
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 
 EOL
+
+#--------------------------------------------------
+# 12. Run tests on a GPU compute node.
+#
+# The login node has no GPUs, so tests must be run on a compute node.
+# Get an interactive GPU allocation:
+#
+#   srun --account=<account> --partition=standard-g --gpus-per-node=1 --ntasks=1 --cpus-per-task=6 --mem=8G --time=00:30:00 --pty bash
+#
+# Then activate the environment and run tests:
+#
+#   source runko-venv/bin/activate
+#   python -m unittest discover -s tests/ -v
+#   cd lumi-gpu-release && ctest -V
+#

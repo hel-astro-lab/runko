@@ -1,0 +1,64 @@
+#!/bin/bash -l
+#SBATCH -J 3d-s3               # job name
+#SBATCH --account=<account>    # billing account
+#SBATCH --partition=standard-g # GPU partition on LUMI
+#SBATCH --output=%J.out        # stdout
+#SBATCH --error=%J.err         # stderr
+#SBATCH -t 01-00:00:00         # max run time
+#SBATCH --nodes=2              # nodes; simulation size controlled w/ this
+#SBATCH --gpus-per-node=8      # 8 GCDs per node (4x MI250X, 2 GCDs each)
+#SBATCH --ntasks-per-node=8    # one MPI rank per GCD
+#SBATCH --cpus-per-task=6      # 56 usable cores / 8 GCDs ≈ 7; use 6 for headroom
+#SBATCH --mem-per-cpu=8GB
+#SBATCH --open-mode=truncate
+
+# load modules and environment variables
+export RUNKODIR=/users/jnattila/project_first_principle_sims26/runko
+source $RUNKODIR/runko-venv/bin/activate
+module list
+echo $PYTHONPATH
+
+#--------------------------------------------------
+# on-the-fly script to select gpu and preload GTL per task
+# LD_PRELOAD is needed because mpi4py does not link GTL; without it
+# GPU-aware MPI fails at MPI_Init with "GTL library is not linked".
+cat << EOF > lumi_select_gpu
+#!/bin/bash
+export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
+export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
+
+exec \$*
+EOF
+
+chmod +x ./lumi_select_gpu
+
+#--------------------------------------------------
+# LUMI MI250X CPU-GPU binding masks (proper NUMA locality).
+# GPU/GCD numbering does NOT match NUMA node numbering on LUMI;
+# these masks map each rank to the 6 closest CPU cores for its GCD.
+CPU_BIND="mask_cpu:7e000000000000,7e00000000000000"
+CPU_BIND="${CPU_BIND},7e0000,7e000000"
+CPU_BIND="${CPU_BIND},7e,7e00"
+CPU_BIND="${CPU_BIND},7e00000000,7e0000000000"
+
+#--------------------------------------------------
+# HPC environment variable settings
+export OMP_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=true
+export HDF5_USE_FILE_LOCKING=FALSE
+
+# MPICH flags
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_OFI_STARTUP_CONNECT=1  # create mpi rank connections in the beginning, not on the fly
+export MPICH_GPU_IPC_ENABLED=0      # slow but fixes p2p gpu comm
+
+# Cray optimizations
+export FI_CXI_DEFAULT_TX_SIZE=16384 # increase max MPI msgs per rank
+export FI_CXI_RX_MATCH_MODE=hybrid  # in case hardware storage overflows, use software mem
+
+# go to working directory
+cd $RUNKODIR/projects/pic-shock/
+
+#--------------------------------------------------
+# application
+srun --cpu-bind=${CPU_BIND} ./jobs/lumi_select_gpu python3 pic.py --conf shock_3d.ini
