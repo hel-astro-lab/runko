@@ -10,10 +10,10 @@ cd "$(dirname "$0")"
 cd ../
 
 # 3. Load standard prerequisite modules for runko:
-module load LUMI/25.03
+module load LUMI
 module load partition/G
 module load PrgEnv-cray
-module load rocm/6.3.4
+module load rocm
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
@@ -57,10 +57,10 @@ cat >> runko-venv/bin/activate << EOL
 # Tool to load runko modules
 # Usage: "source runko-venv/bin/activate"
 # Load standard prerequisite modules for runko:
-module load LUMI/25.03
+module load LUMI
 module load partition/G
 module load PrgEnv-cray
-module load rocm/6.3.4
+module load rocm
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi

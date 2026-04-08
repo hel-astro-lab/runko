@@ -1,11 +1,11 @@
 #!/bin/bash -l
 #SBATCH -J 3d-s3               # job name
-#SBATCH --account=<account>    # billing account
+#SBATCH --account=project_462001358  # billing account
 #SBATCH --partition=standard-g # GPU partition on LUMI
 #SBATCH --output=%J.out        # stdout
 #SBATCH --error=%J.err         # stderr
 #SBATCH -t 01-00:00:00         # max run time
-#SBATCH --nodes=2              # nodes; simulation size controlled w/ this
+#SBATCH --nodes=4              # nodes; simulation size controlled w/ this
 #SBATCH --gpus-per-node=8      # 8 GCDs per node (4x MI250X, 2 GCDs each)
 #SBATCH --ntasks-per-node=8    # one MPI rank per GCD
 #SBATCH --cpus-per-task=6      # 56 usable cores / 8 GCDs ≈ 7; use 6 for headroom
