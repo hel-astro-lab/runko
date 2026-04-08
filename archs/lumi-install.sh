@@ -13,26 +13,18 @@ RUNKO_PATH=$(pwd)
 
 # 2. Initialize git submodules and download rocThrust headers.
 # rocThrust is needed for both GPU and CPU backends (tyvi uses thrust API).
-# The CPU backend uses the bundled headers; the GPU backend finds them via rocm module.
+# GPU builds find rocthrust via the rocm module; CPU builds use a minimal
+# cmake config (cmake/rocthrust-cpu/) that points to these downloaded headers.
 git submodule update --init --recursive
 
 ROCM_LIBS_DIR="$RUNKO_PATH/external/tyvi/rocm-libraries"
-ROCTHRUST_DIR="$ROCM_LIBS_DIR/projects/rocthrust"
-if [ ! -d "$ROCTHRUST_DIR/rocthrust-install" ]; then
-    # Download rocThrust source (sparse checkout — only projects/rocthrust)
-    if [ ! -d "$ROCM_LIBS_DIR" ]; then
-        cd "$RUNKO_PATH/external/tyvi"
-        git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
-        cd rocm-libraries
-        git sparse-checkout init --cone
-        git sparse-checkout set projects/rocthrust
-        git checkout develop
-    fi
-    # Build and install rocThrust with CPU (CPP) backend
-    cd "$ROCTHRUST_DIR"
-    cmake -Bbuild -DROCTHRUST_DEVICE_SYSTEM=CPP \
-          -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_DIR/rocthrust-install" .
-    make -C build install
+if [ ! -d "$ROCM_LIBS_DIR/projects/rocthrust/thrust" ]; then
+    cd "$RUNKO_PATH/external/tyvi"
+    git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
+    cd rocm-libraries
+    git sparse-checkout init --cone
+    git sparse-checkout set projects/rocthrust
+    git checkout develop
     cd "$RUNKO_PATH"
 fi
 

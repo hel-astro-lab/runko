@@ -38,7 +38,7 @@
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
+                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu"
             }
         },
         {
@@ -74,7 +74,7 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
+                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu"
             }
         },
         {
@@ -87,7 +87,7 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
+                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu"
             }
         },
         {
