@@ -78,8 +78,8 @@
         },
         {
             "name": "lumi-gpu-release",
-            "displayName": "LUMI GPU Release (hipcc + ROCm)",
-            "description": "HILE GPU partition, Cray CC wrapper targeting MI250X (gfx90a), GPU-aware MPI.",
+            "displayName": "LUMI GPU Release (Cray CC + ROCm)",
+            "description": "LUMI GPU partition, Cray CC wrapper targeting MI250X (gfx90a). GPU arch set by craype-accel-amd-gfx90a module.",
             "inherits": "conf-lumi-common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "CC",

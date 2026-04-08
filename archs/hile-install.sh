@@ -77,7 +77,7 @@ P2="$RUNKO_PATH/external/corgi/lib"
 
 cat >> venv/runko-gpu/bin/activate << EOL
 
-# --- Runko environment (HILE CPU) ---
+# --- Runko environment (HILE GPU) ---
 # Usage: source venv/runko-gpu/bin/activate
 
 module purge
@@ -92,6 +92,9 @@ module load libfabric
 module load cray-python
 
 export LD_LIBRARY_PATH=/opt/cray/pe/cce/18.0.1/cce/x86_64/lib:\$LD_LIBRARY_PATH
+
+# GPU-aware MPI: preload GTL so it is available before mpi4py calls MPI_Init
+export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
 
 # PYTHONPATH: repo root (runko_cpp_bindings.so) + corgi lib (pycorgi.so)
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"

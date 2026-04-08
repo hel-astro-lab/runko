@@ -22,17 +22,18 @@ module list
 echo $PYTHONPATH
 
 #--------------------------------------------------
-## on-the-fly script to select gpu's; NOTE: enough to have this file in jobs/
-#cat << EOF > hile_select_gpu
-##!/bin/bash
-#export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
-#
-#exec \$*
-#EOF
-#
-#chmod +x ./hile_select_gpu
-#echo "---select gpu script---" 
-#cat hile_select_gpu
+# on-the-fly script to select gpu and preload GTL per task
+# LD_PRELOAD is needed because mpi4py does not link GTL; without it
+# GPU-aware MPI fails at MPI_Init with "GTL library is not linked".
+cat << EOF > hile_select_gpu
+#!/bin/bash
+export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
+export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
+
+exec \$*
+EOF
+
+chmod +x ./hile_select_gpu
 
 #--------------------------------------------------
 # HPC environment variable settings

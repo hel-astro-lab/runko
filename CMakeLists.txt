@@ -25,9 +25,10 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 
-# find_package(HDF5 REQUIRED)
+# HDF5: try standard detection first, fall back to manual search via HDF5_ROOT.
+# hipcc's --offload-arch flag breaks FindHDF5's try_link tests on Cray.
+find_package(HDF5 QUIET)
 if(NOT HDF5_FOUND OR NOT HDF5_LIBRARIES)
-    # Fallback for hipcc/Cray: FindHDF5's try_link fails with GPU offload flags.
     find_path(HDF5_INCLUDE_DIR hdf5.h HINTS ENV HDF5_ROOT PATH_SUFFIXES include REQUIRED)
     find_library(HDF5_LIBRARY hdf5 HINTS ENV HDF5_ROOT PATH_SUFFIXES lib REQUIRED)
     find_library(HDF5_HL_LIBRARY hdf5_hl HINTS ENV HDF5_ROOT PATH_SUFFIXES lib)
@@ -40,8 +41,6 @@ if(NOT TARGET hdf5::hdf5)
     target_include_directories(hdf5::hdf5 INTERFACE ${HDF5_INCLUDE_DIRS})
     target_link_libraries(hdf5::hdf5 INTERFACE ${HDF5_LIBRARIES})
 endif()
-
-
 
 ##################################################
 
