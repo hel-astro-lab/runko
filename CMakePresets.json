@@ -65,15 +65,29 @@
             }
         },
         {
-            "name": "hile-cpu-release",
-            "displayName": "HILE CPU Release (Cray clang)",
-            "description": "HILE CPU partition, Cray C++ compiler (clang-based), optimized for AMD EPYC Zen 3.",
+            "name": "lumi-cpu-release",
+            "displayName": "LUMI CPU Release (Cray clang)",
+            "description": "LUMI CPU partition, Cray CC (clang-based), optimized for AMD EPYC Zen 3 (Trento).",
             "inherits": "conf-lumi-common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "CC",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
-                "tyvi_BACKEND": "cpu"
+                "tyvi_BACKEND": "cpu",
+                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
+            }
+        },
+        {
+            "name": "hile-cpu-release",
+            "displayName": "HILE CPU Release (Cray clang)",
+            "description": "HILE CPU partition, Cray CC (clang-based), optimized for AMD EPYC Zen 3.",
+            "inherits": "conf-lumi-common",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "CC",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
+                "tyvi_BACKEND": "cpu",
+                "rocthrust_DIR": "${sourceDir}/external/tyvi/rocm-libraries/projects/rocthrust/rocthrust-install/lib/cmake/rocthrust"
             }
         },
         {
