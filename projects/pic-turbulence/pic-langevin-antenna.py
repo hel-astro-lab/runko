@@ -1,6 +1,10 @@
 """
 Particle-in-cell simulation of driven kinetic turbulence using runko.
 Driving is achived with oscillating Langevin antenna.
+
+This setup assumes that:
+- simulation box is a cube
+- parallel and perpendiular components of each driven mode are the same
 """
 
 import runko
@@ -54,35 +58,29 @@ if __name__ == "__main__":
     m1_num = conf.m1 * abs(conf.q1)
 
     delgam0 = delgam
-    delgam1 = temp_ration * delgam0
+    delgam1 = temp_ratio * delgam0
 
     # Sigma that takes into account the heat contributions:
     sigma = cold_sigma / average_gamma
     B0_num = np.sqrt(n_num * (conf.cfl**2.0) * sigma * m0_num)
 
-    Lx_num = conf.Nx * conf.NxMesh
-    Ly_num = conf.Ny * conf.NyMesh
-    kx_num = np.array(list(map(lambda n: 2 * np.pi * n[0] / Lx_num, modes)))
-    ky_num = np.array(list(map(lambda n: 2 * np.pi * n[1] / Ly_num, modes)))
+    # Assumes cubic box.
+    L_num = conf.Nx * conf.NxMesh
+    kpar_num = 2 * np.pi * modes_par / L_num
+    kperp_num = 2 * np.pi * modes_perp / L_num
 
-    # Take half of B0_num, as sinusodial magnetic field has half of the energy density
-    # compared to a constant field with the same amplitude.
-    A_num = np.sqrt(2) * Bcoeff * (B0_num / 2) / np.sqrt(np.sum(kx_num**2 + ky_num**2))
+    A_num = kpar_num * B0_num / (kperp_num**2 * np.sqrt(len(modes)))
 
-    Lz_num = conf.Nz * conf.NzMesh
-    kpar_num = 2 * np.pi * modes_par / Lz_num
+    valf = np.sqrt(sigma / (1 + sigma)) # in units of c
+    linear_freq_num = kpar_num * conf.cfl * valf
 
-    # Linear frequency: kz * v_A
-    linear_freq_num = kpar_num * conf.cfl * np.sqrt(sigma / (1 + sigma))
-
-    w0 = 0.8 * linear_freq_num
-    gamma0 = -0.6 * linear_freq_num
+    w0_num = 0.8 * linear_freq_num
+    gamma0_num = -0.6 * linear_freq_num
 
     base_time_evolution = time_evolution = runko.sample_oscillating_langevin_antenna(size=conf.Nt,
-                                                                                     characteristic_freq=w0,
-                                                                                     decorrelation_rate=gamma0,
+                                                                                     characteristic_freq=w0_num,
+                                                                                     decorrelation_rate=gamma0_num,
                                                                                      gen=rng)
-
 
 
     def antenna(mode):
@@ -95,10 +93,10 @@ if __name__ == "__main__":
         if conf.fixed_antenna:
             return runko.emf.threeD.antenna_mode(A=(0, 0, A_num), n=mode, lap_coeffs=base_time_evolution * random_phase)
         else:
-            time_evolution = time_evolution = runko.sample_oscillating_langevin_antenna(size=conf.Nt,
-                                                                                        characteristic_freq=w0,
-                                                                                        decorrelation_rate=gamma0,
-                                                                                        gen=rng)
+            time_evolution = runko.sample_oscillating_langevin_antenna(size=conf.Nt,
+                                                                       characteristic_freq=w0_num,
+                                                                       decorrelation_rate=gamma0_num,
+                                                                       gen=rng)
             return runko.emf.threeD.antenna_mode(A=(0, 0, A_num), n=mode, lap_coeffs=time_evolution * random_phase)
 
 
@@ -132,9 +130,12 @@ if __name__ == "__main__":
         logger.info(f"  {'theta_e / theta_i':<{W}}= {delgam0:.6g} / {delgam1:.6g}")
 
         logger.info(f"{'--- [problem] ---':}")
-        logger.info(f"  {'sigma':<{W}}= {cold_sigma}")
+        logger.info(f"  {'cold sigma':<{W}}= {cold_sigma}")
+        logger.info(f"  {'sigma':<{W}}= {sigma}")
         logger.info(f"  {'c/wp':<{W}}= {conf.c_omp}")
         logger.info(f"  {'B_init':<{W}}= {B0_num:.6g}")
+        logger.info(f"  {'A':<{W}}= {A_num:.6g}")
+        logger.info(f"  {'linear freq':<{W}}= {linear_freq_num:.6g}")
         logger.info(f"  {'n_filter_passes':<{W}}= {conf.n_filter_passes}")
 
         logger.info(f"{'--- [algorithms] ---':}")
