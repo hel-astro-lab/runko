@@ -110,7 +110,7 @@ public:
                                static_cast<std::ptrdiff_t>(extents_[2]) };
   }
 
-  /// Copy values from compoatible tyvi::mdgrid::mds.
+  /// Copy values from compatible tyvi::mdgrid::mds.
   ///
   /// Throws if the mds is not compatible.
   constexpr void set_from_mds(const tyvi::mdgrid_work& w, const auto& mds)
