@@ -56,7 +56,7 @@ void
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
 
   // object for storing single particle data
-  using PS = runko::ParticleState;
+  using PS = runko::ParticleState<double>;
   py::class_<PS>(m_3d, "ParticleState")
     .def(py::init<PS::vec3, PS::vec3>(), 
         py::arg("pos"), 

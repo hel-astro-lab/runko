@@ -1,7 +1,12 @@
 #pragma once
 
+#include <algorithm>
+#include <compare>
 #include <concepts>
+#include <cstddef>
 #include <optional>
+#include <print>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -63,5 +68,46 @@ constexpr bool
 static_assert(comm_mode::emf_E == std::to_underlying(comm_mode::emf_E));
 static_assert(std::to_underlying(comm_mode::emf_E) == comm_mode::emf_E);
 
+template<std::size_t rank>
+struct [[nodiscard]] grid_neighbor {
+  using value_type = std::int8_t;
+  std::array<value_type, rank> direction;
 
+  constexpr std::strong_ordering operator<=>(const grid_neighbor&) const = default;
+
+  template<std::convertible_to<value_type>... T>
+  explicit constexpr grid_neighbor(T&&... args) :
+    direction { static_cast<value_type>(std::forward<T>(args))... }
+  {
+    const auto ok = std::ranges::all_of(direction, [](const auto x) {
+      const auto a = x == value_type { -1 };
+      const auto b = x == value_type { 0 };
+      const auto c = x == value_type { 1 };
+
+      return a or b or c;
+    });
+
+    if(not ok) {
+      throw std::logic_error {
+        "All components in grid_neighbor has to be in {-1, 0, 1}."
+      };
+    }
+  }
+
+  template<std::convertible_to<value_type> T>
+  constexpr grid_neighbor(const std::array<T, rank>& arr)
+  {
+    *this = [&]<std::size_t... I>(std::index_sequence<I...>) {
+      return grid_neighbor(arr[I]...);
+    }(std::make_index_sequence<rank>());
+  }
+
+
+  constexpr grid_neighbor inverted() const
+  {
+    return [this]<std::size_t... I>(std::index_sequence<I...>) {
+      return grid_neighbor(-direction[I]...);
+    }(std::make_index_sequence<rank>());
+  }
+};
 }  // namespace runko

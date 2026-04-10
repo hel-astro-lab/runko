@@ -15,8 +15,9 @@ enum class particle : std::size_t {
 using prtc_id_type                 = std::uint64_t;
 static constexpr auto dead_prtc_id = std::numeric_limits<prtc_id_type>::max();
 
+template <typename T>
 struct ParticleState {
-  using vec3 = std::array<double, 3>;
+  using vec3 = std::array<T, 3>;
 
   vec3 pos;
   vec3 vel;

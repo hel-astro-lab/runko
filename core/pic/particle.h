@@ -1,11 +1,13 @@
 #pragma once
 
+#include "core/communication_common.h"
 #include "core/emf/yee_lattice.h"
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
 #include "core/pic/reflector_wall.h"
 #include "thrust/count.h"
 #include "thrust/device_vector.h"
+#include "thrust/find.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
 #include "thrust/sort.h"
@@ -21,7 +23,9 @@
 #include <map>
 #include <numeric>
 #include <ranges>
+#include <span>
 #include <stdexcept>
+#include <thrust/iterator/reverse_iterator.h>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -85,6 +89,14 @@ public:
       ParticleContainer::specific_span>
   void set(const R&);
 
+
+  /// Appends the particles pointed by the given spans.
+  template<std::ranges::forward_range R>
+    requires std::convertible_to<
+      std::ranges::range_reference_t<R>,
+      std::span<const runko::ParticleState<value_type>>>
+  inline void append(const R& spans);
+
   /// Returns the number of particles dead or alive.
   std::size_t size() const;
   ParticleContainerArgs args() const;
@@ -128,10 +140,16 @@ public:
 
   /// Splits container to 27 subcontainers along given divider lines.
   ///
-  /// Returns: [TODO | write this]
+  /// Data of the particles (x, y, z, vx, vy, vz, id)
+  /// is appended to the given buffer in AOS manner.
+  ///
+  /// Returns map: (i, j, k) -> span
+  /// where span represent the data of subregion (i, j, k) in the buffer.
   [[nodiscard]]
-  std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContainer>
+
+  std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
     divide_to_subregions(
+      thrust::device_vector<runko::ParticleState<value_type>>& buffer,
       std::array<value_type, 2> x_dividers,
       std::array<value_type, 2> y_dividers,
       std::array<value_type, 2> z_dividers);
@@ -143,7 +161,7 @@ public:
   /// Way to initialize particles. Known to be slow.
   template<std::ranges::forward_range R>
     requires std::
-      convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState>
+      convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState<double>>
     void add_particles(const R& new_particles);
 
   /// Sorts particles based on a function of particle position.
@@ -299,8 +317,9 @@ inline void
 
 
 template<std::ranges::forward_range R>
-  requires std::convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState>
-inline void
+  requires std::
+    convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState<double>>
+  inline void
   ParticleContainer::add_particles(const R& new_particles)
 {
   const auto N = static_cast<std::size_t>(std::ranges::distance(new_particles));
@@ -498,6 +517,118 @@ template<std::ranges::forward_range R>
   };
 }
 
+template<std::ranges::forward_range R>
+  requires std::convertible_to<
+    std::ranges::range_reference_t<R>,
+    std::span<const runko::ParticleState<ParticleContainer::value_type>>>
+inline void
+  ParticleContainer::append(const R& spans)
+{
+  namespace rn = std::ranges;
+  namespace rv = std::views;
+
+  if(rn::empty(spans)) { return; }
+
+  // 1. find last alive particle P
+  // 2. check if the appended particles fit to dead particles after P
+  // 3. if no, resize such that they fit
+  // 4. copy appended particles to dead particles after P
+
+  // 1.
+
+  const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
+
+  const auto rev_particle_ordinals_begin =
+    thrust::reverse_iterator(particle_ordinals_end);
+  const auto rev_particle_ordinals_end =
+    thrust::reverse_iterator(particle_ordinals_begin);
+
+  const auto w     = tyvi::mdgrid_work {};
+  const auto Piter = thrust::find_if(
+    w.on_this(),
+    rev_particle_ordinals_begin,
+    rev_particle_ordinals_end,
+    [ids_mds = this->ids_.mds()](const auto n) {
+      return ids_mds[n][] != runko::dead_prtc_id;
+    });
+
+  const auto dead_particles_at_end = rn::distance(rev_particle_ordinals_begin, Piter);
+  const auto Pnum                  = this->size() - dead_particles_at_end;
+
+  const auto span_sizes = spans | rv::transform(rn::size);
+
+  // Where spans of particles begin P:
+  // { 0, span_sizes[0], ..., span_sizes[0] + ... + span_sizes[-2] }
+  // Note that the last sum does not include span_sizes[-1].
+  const auto begins = [&] {
+    auto temp = std::vector<std::size_t>(rn::size(spans));
+    std::exclusive_scan(span_sizes.begin(), span_sizes.end(), temp.begin(), 0uz);
+    return temp;
+  }();
+
+  // We can assume that there is at least one span,
+  // because this was checked at the begin.
+  const auto Ntotal = begins.back() + spans.back().size();
+
+  // 2.
+  if(Ntotal > static_cast<std::size_t>(dead_particles_at_end)) {
+    // 3.
+
+    // This could be more efficient, as now we copy all the staging buffers as well.
+    const auto tmp = *this;
+
+    const auto tmp_pos_mds = tmp.pos_.mds();
+    const auto tmp_vel_mds = tmp.vel_.mds();
+    const auto tmp_ids_mds = tmp.ids_.mds();
+
+    this->pos_.invalidating_resize(Pnum + Ntotal);
+    this->vel_.invalidating_resize(Pnum + Ntotal);
+    this->ids_.invalidating_resize(Pnum + Ntotal);
+
+    const auto pos_mds = this->pos_.mds();
+    const auto vel_mds = this->vel_.mds();
+    const auto ids_mds = this->ids_.mds();
+
+    w.for_each_index(tmp_pos_mds, [=](const auto idx, const auto tidx) {
+      pos_mds[idx][tidx] = tmp_pos_mds[idx][tidx];
+      vel_mds[idx][tidx] = tmp_vel_mds[idx][tidx];
+    });
+    w.for_each_index(tmp_ids_mds, [=](const auto idx) {
+      ids_mds[idx][] = tmp_ids_mds[idx][];
+    });
+    w.wait();
+  }
+  // 4.
+
+  const auto pos_mds = this->pos_.mds();
+  const auto vel_mds = this->vel_.mds();
+  const auto ids_mds = this->ids_.mds();
+
+  for(auto n = 0uz; n < spans.size(); ++n) {
+    const auto n_span   = spans[n];
+    const auto n_size   = n_span.size();
+    const auto n_begin  = thrust::counting_iterator<runko::index_t>(0uz);
+    const auto n_end    = rn::next(n_begin, n_size);
+    const auto n_offset = Pnum + begins[n];
+
+    thrust::for_each(w.on_this(), n_begin, n_end, [=](const auto i) {
+      const auto state = n_span[i];
+
+      const auto j  = i + n_offset;
+      pos_mds[j][0] = state.pos[0];
+      pos_mds[j][1] = state.pos[1];
+      pos_mds[j][2] = state.pos[2];
+
+      vel_mds[j][0] = state.vel[0];
+      vel_mds[j][1] = state.vel[1];
+      vel_mds[j][2] = state.vel[2];
+
+      ids_mds[j][] = state.id;
+    });
+    w.wait();
+  }
+}
 
 inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
@@ -507,6 +638,7 @@ inline void
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto pos_mds = this->pos_.mds();
+  const auto vel_mds = this->vel_.mds();
   const auto ids_mds = this->ids_.mds();
 
   using score_type =
@@ -530,53 +662,77 @@ inline void
   auto scores   = thrust::device_vector<score_t>(scores_begin, scores_end);
 
   auto w1 = tyvi::mdgrid_work {};
-  auto w2 = tyvi::mdgrid_work {};
   thrust::sort_by_key(w1.on_this(), scores.begin(), scores.end(), trackers.begin());
-
-  const auto ids_begin =
-    thrust::make_transform_iterator(particle_ordinals_begin, [=](const auto i) {
-      return ids_mds[i][];
-    });
-  const auto ids_end = rn::next(ids_begin, this->size());
-  const auto dead_particles =
-    thrust::count(w2.on_this(), ids_begin, ids_end, runko::dead_prtc_id);
-  const auto alive_particles = this->size() - dead_particles;
-
-  w1.wait();  // Sorting has to be finished before copying.
 
   auto tmp_pos = this->pos_;
   auto tmp_vel = this->vel_;
+  auto tmp_ids = this->ids_;
 
   const auto tmp_pos_mds = tmp_pos.mds();
   const auto tmp_vel_mds = tmp_vel.mds();
-
-  this->pos_.invalidating_resize(alive_particles);
-  this->vel_.invalidating_resize(alive_particles);
-
-  const auto pos_mds_new = this->pos_.mds();
-  const auto vel_mds_new = this->vel_.mds();
+  const auto tmp_ids_mds = tmp_ids.mds();
 
   w1.for_each_index(
-    pos_mds_new,
+    pos_mds,
     [=, p = trackers.begin()](const auto idx, const auto tidx) {
       const runko::index_t i = p[idx[0]];
-      pos_mds_new[idx][tidx] = tmp_pos_mds[i][tidx];
-      vel_mds_new[idx][tidx] = tmp_vel_mds[i][tidx];
+      pos_mds[idx][tidx] = tmp_pos_mds[i][tidx];
+      vel_mds[idx][tidx] = tmp_vel_mds[i][tidx];
     });
 
-  auto tmp_ids           = this->ids_;
-  const auto tmp_ids_mds = tmp_ids.mds();
-  this->ids_.invalidating_resize(alive_particles);
-  const auto ids_mds_new = this->ids_.mds();
-
-  w2.for_each_index(ids_mds_new, [=, p = trackers.begin()](const auto idx) {
+  w1.for_each_index(ids_mds, [=, p = trackers.begin()](const auto idx) {
     const runko::index_t i = p[idx[0]];
     ids_mds[idx][]         = tmp_ids_mds[i][];
   });
-
-
-  tyvi::when_all(w1, w2);
   w1.wait();
+
+  /*
+auto w2 = tyvi::mdgrid_work {};
+const auto ids_begin =
+  thrust::make_transform_iterator(particle_ordinals_begin, [=](const auto i) {
+    return ids_mds[i][];
+  });
+const auto ids_end = rn::next(ids_begin, this->size());
+const auto dead_particles =
+  thrust::count(w2.on_this(), ids_begin, ids_end, runko::dead_prtc_id);
+const auto alive_particles = this->size() - dead_particles;
+
+w1.wait();  // Sorting has to be finished before copying.
+
+auto tmp_pos = this->pos_;
+auto tmp_vel = this->vel_;
+
+const auto tmp_pos_mds = tmp_pos.mds();
+const auto tmp_vel_mds = tmp_vel.mds();
+
+this->pos_.invalidating_resize(alive_particles);
+this->vel_.invalidating_resize(alive_particles);
+
+const auto pos_mds_new = this->pos_.mds();
+const auto vel_mds_new = this->vel_.mds();
+
+w1.for_each_index(
+  pos_mds_new,
+  [=, p = trackers.begin()](const auto idx, const auto tidx) {
+    const runko::index_t i = p[idx[0]];
+    pos_mds_new[idx][tidx] = tmp_pos_mds[i][tidx];
+    vel_mds_new[idx][tidx] = tmp_vel_mds[i][tidx];
+  });
+
+auto tmp_ids           = this->ids_;
+const auto tmp_ids_mds = tmp_ids.mds();
+this->ids_.invalidating_resize(alive_particles);
+const auto ids_mds_new = this->ids_.mds();
+
+w2.for_each_index(ids_mds_new, [=, p = trackers.begin()](const auto idx) {
+  const runko::index_t i = p[idx[0]];
+  ids_mds[idx][]         = tmp_ids_mds[i][];
+});
+
+
+tyvi::when_all(w1, w2);
+w1.wait();
+  */
 }
 
 inline auto

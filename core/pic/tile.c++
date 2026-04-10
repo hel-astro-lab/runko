@@ -172,7 +172,7 @@ void
 
   const auto global_coordinates = this->global_coordinate_map();
   const auto e                  = this->yee_lattice_.extents_wout_halo();
-  std::vector<runko::ParticleState> new_particles {};
+  std::vector<runko::ParticleState<double>> new_particles {};
 
   for(const auto [i, j, k]:
       tyvi::sstd::index_space(std::mdspan((int*)nullptr, e[0], e[1], e[2]))) {
@@ -190,7 +190,7 @@ template<std::size_t D>
 void
   Tile<D>::inject(
     const std::size_t particle_type,
-    std::vector<runko::ParticleState> new_particles)
+    std::vector<runko::ParticleState<double>> new_particles)
 {
   for(auto& p: new_particles) { p.id = this->consume_next_id_(particle_type); }
   particle_buffs_.at(particle_type).add_particles(new_particles);
@@ -301,13 +301,14 @@ void
   const auto vely_view = state_batch.vel[1].template unchecked<1>();
   const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
-  auto states   = std::vector<runko::ParticleState>(batch_size);
+  auto states   = std::vector<runko::ParticleState<double>>(batch_size);
   using index_t = std::remove_cvref_t<decltype(batch_size)>;
   for(const auto n: std::views::iota(index_t { 0 }, batch_size)) {
-    states[n] =
-      runko::ParticleState { .pos = { posx_view(n), posy_view(n), posz_view(n) },
-                             .vel = { velx_view(n), vely_view(n), velz_view(n) },
-                             .id  = this->consume_next_id_(particle_type) };
+    states[n] = runko::ParticleState<double> {
+      .pos = { posx_view(n), posy_view(n), posz_view(n) },
+      .vel = { velx_view(n), vely_view(n), velz_view(n) },
+      .id  = this->consume_next_id_(particle_type)
+    };
   }
 
   this->particle_buffs_.at(particle_type).add_particles(states);

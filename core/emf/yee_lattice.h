@@ -62,6 +62,8 @@ public:
   /// Valid dir labels are -1, 0 and 1 and specify coordinate extents for one dimension.
   /// These correspond to regions [0, halo_size_), [halo_size_, halo_size + extent)
   /// and [halo_size + extent, 2 * halo_size + extent) respectively.
+  ///
+  /// FIXME: unify with pic tile and use runko::grid_neighbor<3>
   using dir_type = std::array<int, 3>;
 
   [[nodiscard]] static constexpr dir_type invert_dir(const dir_type& dir)

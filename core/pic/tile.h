@@ -8,6 +8,7 @@
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
 #include "pybind11/numpy.h"
+#include "thrust/device_vector.h"
 #include "tools/config_parser.h"
 #include "tyvi/mdgrid_buffer.h"
 
@@ -18,6 +19,7 @@
 #include <iterator>
 #include <optional>
 #include <ranges>
+#include <span>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -45,10 +47,13 @@ struct ParticleStateBatch {
 
 template<std::size_t D>
 class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
+public:
+  /// The type in which pos and vel are stored in.
+  using value_type = ParticleContainer::value_type;
 
   static_assert(D == 3);
 
-
+private:
   /// Tag which is shared between all the particles from this tile.
   std::size_t tile_tag_;
   // This should not be modified manually.
@@ -65,21 +70,24 @@ class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
   std::map<std::size_t, std::size_t> amount_of_particles_to_be_send_;
   std::map<std::size_t, std::size_t> amount_of_particles_to_be_received_;
 
-  /// particle type -> (direction -> span to subregion_particle_buffs_)
-  std::map<std::size_t, std::map<std::array<int, 3>, ParticleContainer::span>>
+
+  /// particle type, direction -> span in subregion_particle_buff_
+  ///
+  /// These can not be std::span,
+  /// because resizing subregion_particle_buff_ will invalidate pointers.
+  std::map<
+    std::size_t,
+    std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>>
     subregion_particle_spans_;
-  std::map<std::size_t, ParticleContainer> subregion_particle_buffs_;
+  thrust::device_vector<runko::ParticleState<value_type>> subregion_particle_buff_;
 
   void divide_particles_to_subregions();
 
-  /// particle type -> {0th particles, 1st particles, ...}
-  std::map<std::size_t, std::vector<ParticleContainer::specific_span>>
+  /// particle type -> incoming particles
+  std::map<std::size_t, std::vector<std::span<const runko::ParticleState<value_type>>>>
     incoming_subregion_particles_ {};
 
 public:
-  /// The type in which pos and vel are stored in.
-  using value_type = ParticleContainer::value_type;
-
   /// Construct Tile based on the given config.
   ///
   /// FIXME: document how the initialization is done?
@@ -112,7 +120,7 @@ public:
 
 
   using particle_generator =
-    std::function<std::vector<runko::ParticleState>(double, double, double)>;
+    std::function<std::vector<runko::ParticleState<double>>(double, double, double)>;
 
   /// Inject particles based on given generator.
   ///
@@ -124,7 +132,7 @@ public:
   /// Inject given particles.
   ///
   /// Particle type is assumed to be configured.
-  void inject(std::size_t particle_type, std::vector<runko::ParticleState>);
+  void inject(std::size_t particle_type, std::vector<runko::ParticleState<double>>);
 
   using batch_array = pybind11::array_t<double>;
   using batch_particle_generator =
