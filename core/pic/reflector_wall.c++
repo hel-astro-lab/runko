@@ -269,9 +269,9 @@ void
       [=](const auto idx, const auto tidx) { genJmds[idx][tidx] = 0; })
     .wait();
 
-  const auto origo_pos = std::array { value_type(this->mins[0]) - this->halo_size,
-                                      value_type(this->mins[1]) - this->halo_size,
-                                      value_type(this->mins[2]) - this->halo_size };
+  const auto origo_pos = std::array { value_type(this->mins[0]) - emf::halo_size,
+                                      value_type(this->mins[1]) - emf::halo_size,
+                                      value_type(this->mins[2]) - emf::halo_size };
 
   for(const auto& wall: reflector_walls_) {
     if(!wall_is_in_tile(wall)) continue;

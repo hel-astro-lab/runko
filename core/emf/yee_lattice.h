@@ -2,7 +2,9 @@
 
 #include "core/emf/edge_bc.h"
 #include "core/emf/stencil_coefficients.h"
+#include "core/emf/common.h"
 #include "core/mdgrid_common.h"
+#include "tools/hollow_grid.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdgrid_buffer.h"
@@ -21,7 +23,6 @@
 namespace emf {
 
 struct YeeLatticeCtorArgs {
-  std::size_t halo_size {};
   std::size_t Nx {}, Ny {}, Nz {};
 };
 
@@ -60,7 +61,7 @@ public:
   /// Lattice consists of  27 different regions which are labeled with {i, j, k}.
   ///
   /// Valid dir labels are -1, 0 and 1 and specify coordinate extents for one dimension.
-  /// These correspond to regions [0, halo_size_), [halo_size_, halo_size + extent)
+  /// These correspond to regions [0, halo_size), [halo_size, halo_size + extent)
   /// and [halo_size + extent, 2 * halo_size + extent) respectively.
   ///
   /// FIXME: unify with pic tile and use runko::grid_neighbor<3>
@@ -72,7 +73,6 @@ public:
   }
 
 private:
-  std::size_t halo_size_;
   std::array<std::size_t, 3> extents_wout_halo_;
 
 
@@ -85,6 +85,7 @@ private:
   /// Current
   VecGrid J_;
 
+public:
   /* FIXME: Use std::integral_constant when possible in mds helpers below. */
 
   /// Convinience function to get non-halo region of some field.
@@ -120,12 +121,10 @@ private:
   [[nodiscard]]
   auto corresponding_subregion(dir_type dir, MDS&& mds) const;
 
-public:
   explicit YeeLattice(YeeLatticeCtorArgs);
 
   [[nodiscard]] std::array<std::size_t, 3> extents_wout_halo() const;
   [[nodiscard]] std::array<std::size_t, 3> extents_with_halo() const;
-  [[nodiscard]] std::size_t halo_size() const;
 
   /// Initializes E, B and J in non-halo region.
   void set_EBJ(yee_lattice_fields_function auto&& f);
@@ -178,6 +177,23 @@ public:
   [[nodiscard]]
   auto span_J() const&;
 
+  [[nodiscard]]
+  auto mds_E() &;
+
+  [[nodiscard]]
+  auto mds_E() const&;
+
+  [[nodiscard]]
+  auto mds_B() &;
+
+  [[nodiscard]]
+  auto mds_B() const&;
+
+  [[nodiscard]]
+  auto mds_J() &;
+
+  [[nodiscard]]
+  auto mds_J() const&;
 
   /// Set E subregion specified by dir from other tile.
   void set_E_in_subregion(dir_type dir, const YeeLattice& other);
@@ -216,6 +232,35 @@ public:
     const tyvi::mdgrid_work&,
     dir_type dir,
     const YeeLattice& other);
+
+  /// Set E subregion specified by dir from hollow grid asynchronously.
+  void set_E_in_subregion(
+    const tyvi::mdgrid_work&,
+    dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, halo_size>&);
+
+  /// Set B subregion specified by dir from hollow grid asynchronously.
+  void set_B_in_subregion(
+    const tyvi::mdgrid_work&,
+    dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, halo_size>&);
+
+  /// Set J subregion specified by dir from hollow grid asynchronously.
+  void set_J_in_subregion(
+    const tyvi::mdgrid_work&,
+    dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, 2 * halo_size>&);
+
+  /// Add J from virtual tile's subregion to corresponding region in this (async).
+  ///
+  /// Note that compared to set_{E,B,J}_in_subregion,
+  /// this reads other's halo and adds it to non-halo of this,
+  /// while the other's read non-halo and add it to halo of this.
+  void add_to_J_from_subregion(
+    const tyvi::mdgrid_work&,
+    dir_type dir,
+    const toolbox::hollow_grid<value_type, 3, 2 * halo_size>& other);
+
 
   struct [[nodiscard]] InterpolatedEB {
     runko::VecList<value_type> E, B;
@@ -373,13 +418,49 @@ inline auto
   return this->J_.span();
 }
 
+inline auto
+  YeeLattice::mds_E() &
+{
+  return this->E_.mds();
+}
+
+inline auto
+  YeeLattice::mds_E() const&
+{
+  return this->E_.mds();
+}
+
+inline auto
+  YeeLattice::mds_B() &
+{
+  return this->B_.mds();
+}
+
+inline auto
+  YeeLattice::mds_B() const&
+{
+  return this->B_.mds();
+}
+
+inline auto
+  YeeLattice::mds_J() &
+{
+  return this->J_.mds();
+}
+
+inline auto
+  YeeLattice::mds_J() const&
+{
+  return this->J_.mds();
+}
+
 template<typename MDS>
 auto
   YeeLattice::nonhalo_submds(MDS&& mds) const
 {
-  const auto x = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[0] };
-  const auto y = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[1] };
-  const auto z = std::tuple { halo_size_, halo_size_ + extents_wout_halo_[2] };
+  const auto x = std::tuple { halo_size, halo_size + extents_wout_halo_[0] };
+  const auto y = std::tuple { halo_size, halo_size + extents_wout_halo_[1] };
+  const auto z = std::tuple { halo_size, halo_size + extents_wout_halo_[2] };
 
   return std::submdspan(std::forward<MDS>(mds), x, y, z);
 }
@@ -406,11 +487,11 @@ auto
   auto oneD_dir_to_index_extent =
     [&, this](const std::size_t i) -> std::tuple<std::size_t, std::size_t> {
     switch(dir[i]) {
-      case -1: return { 0uz, halo_size_ };
-      case 0: return { halo_size_, halo_size_ + extents_wout_halo_[i] };
+      case -1: return { 0uz, halo_size };
+      case 0: return { halo_size, halo_size + extents_wout_halo_[i] };
       case 1:
-        return { halo_size_ + extents_wout_halo_[i],
-                 2uz * halo_size_ + extents_wout_halo_[i] };
+        return { halo_size + extents_wout_halo_[i],
+                 2uz * halo_size + extents_wout_halo_[i] };
       default:
         throw std::logic_error { std::format("dir[{}] = {} != -1, 0 or 1", i, dir[i]) };
     }
@@ -495,9 +576,9 @@ inline auto
   auto oneD_dir_to_index_extent =
     [&, this](const std::size_t i) -> std::tuple<std::size_t, std::size_t> {
     switch(invert_dir(dir)[i]) {
-      case -1: return { halo_size_, 2u * halo_size_ };
-      case 0: return { halo_size_, halo_size_ + extents_wout_halo_[i] };
-      case 1: return { extents_wout_halo_[i], halo_size_ + extents_wout_halo_[i] };
+      case -1: return { halo_size, 2u * halo_size };
+      case 0: return { halo_size, halo_size + extents_wout_halo_[i] };
+      case 1: return { extents_wout_halo_[i], halo_size + extents_wout_halo_[i] };
       default:
         throw std::logic_error { std::format("dir[{}] = {} != -1, 0 or 1", i, dir[i]) };
     }

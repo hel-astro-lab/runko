@@ -50,7 +50,7 @@ def virtual_emf_tiles():
 
     asserts = []
     for vtile in vtiles:
-        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.emf.threeD.Tile))
+        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.emf.threeD.VirtualTile))
 
     mpi_unittest.assertDeferredResults(asserts)
 

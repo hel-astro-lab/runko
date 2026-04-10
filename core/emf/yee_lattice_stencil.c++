@@ -17,7 +17,7 @@ void
     const value_type dt,
     const StencilCoeffs& coeffs)
 {
-  const auto h = static_cast<runko::index_t>(halo_size_);
+  const auto h = static_cast<runko::index_t>(halo_size);
 
   const auto Bmds      = nonhalo_submds(B_.mds());
   const auto Emds_halo = E_.mds();

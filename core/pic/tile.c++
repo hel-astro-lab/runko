@@ -1,5 +1,6 @@
 #include "core/pic/tile.h"
 
+#include "core/emf/common.h"
 #include "core/emf/yee_lattice.h"
 #include "core/particles_common.h"
 #include "core/pic/particle.h"
@@ -320,9 +321,9 @@ void
 {
   using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+    std::array { static_cast<yee_value_type>(this->mins[0]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
 
   pic::ParticleContainer::InterpolatedEB_function ipol_func {};
 
@@ -384,9 +385,9 @@ void
 
   using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+    std::array { static_cast<yee_value_type>(this->mins[0]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
 
   switch(current_depositer_) {
     case CurrentDepositer::zigzag_1st:
@@ -433,9 +434,9 @@ void
   using M      = decltype(m);
 
   using F              = pic::ParticleContainer::value_type;
-  const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - this->halo_size,
-                                      static_cast<F>(this->mins[1]) - this->halo_size,
-                                      static_cast<F>(this->mins[2]) - this->halo_size };
+  const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - emf::halo_size,
+                                      static_cast<F>(this->mins[1]) - emf::halo_size,
+                                      static_cast<F>(this->mins[2]) - emf::halo_size };
   using Vec3F          = toolbox::Vec3<F>;
 
   auto score = [=](const F x, const F y, const F z) {
@@ -455,9 +456,9 @@ emf::YeeLattice::InterpolatedEB
 {
   using yee_vt = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_vt>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_vt>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_vt>(this->mins[2]) - this->halo_size };
+  std::array { static_cast<yee_vt>(this->mins[0]) - emf::halo_size,
+               static_cast<yee_vt>(this->mins[1]) - emf::halo_size,
+               static_cast<yee_vt>(this->mins[2]) - emf::halo_size };
 
   return this->yee_lattice_.interpolate_EB_linear_1st(origo_pos, positions);
 }

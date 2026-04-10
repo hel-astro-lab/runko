@@ -1,8 +1,10 @@
 #pragma once
 
 #include "core/emf/antenna.h"
+#include "core/emf/common.h"
 #include "core/emf/edge_bc.h"
 #include "core/emf/stencil_coefficients.h"
+#include "core/emf/virtual_tile.h"
 #include "core/emf/yee_lattice.h"
 #include "corgi/corgi.h"
 #include "corgi/tile.h"
@@ -12,7 +14,6 @@
 
 #include <array>
 #include <cstddef>
-#include <experimental/mdspan>
 #include <functional>
 #include <optional>
 #include <tuple>
@@ -30,7 +31,7 @@ enum class CurrentFilter { binomial2, binomial2_unrolled };
  */
 template<std::size_t D>
 class Tile : virtual public corgi::Tile<D> {
-
+public:
   static_assert(D == 3);
 
 protected:
@@ -54,9 +55,14 @@ protected:
   std::array<double, 3> global_coordinate_mins_;
   std::array<double, 3> global_coordinate_maxs_;
 
-public:
-  static constexpr auto halo_size = 3;
+  VirtualTile<D>::hollow_grid_EB send_buff_E_, send_buff_B_;
+  VirtualTile<D>::hollow_grid_J send_buff_J_;
 
+  void update_send_buff_E(const tyvi::mdgrid_work&);
+  void update_send_buff_B(const tyvi::mdgrid_work&);
+  void update_send_buff_J(const tyvi::mdgrid_work&);
+
+public:
   /// Construct Tile by deducing extents from given tile grid index and config.
   ///
   /// Config has to contain values for:
