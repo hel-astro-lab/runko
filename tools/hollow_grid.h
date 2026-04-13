@@ -5,6 +5,8 @@
 #include "thrust/memory.h"
 #include "tyvi/mdgrid.h"
 
+#include "tools/math.h"
+
 #include <array>
 #include <cstddef>
 #include <print>
@@ -54,11 +56,11 @@ public:
       const auto k             = static_cast<std::ptrdiff_t>(ku);
       static constexpr auto hh = static_cast<std::ptrdiff_t>(h);
 
-      const auto whole_i_slices = min(max(0z, i - hh), Nx - 2z * hh);
+      const auto whole_i_slices = sstd::min(sstd::max(0z, i - hh), Nx - 2z * hh);
       auto skips                = whole_i_slices * (Ny - 2z * hh) * (Nz - 2z * hh);
 
       if(i >= hh and i < Nx - hh) {
-        const auto whole_j_slices = min(max(0z, j - hh), Ny - 2z * hh);
+        const auto whole_j_slices = sstd::min(sstd::max(0z, j - hh), Ny - 2z * hh);
         skips += whole_j_slices * (Nz - 2 * hh);
 
         if(k >= Nz - hh and j >= hh and j < Ny - hh) { skips += Nz - 2z * hh; }
