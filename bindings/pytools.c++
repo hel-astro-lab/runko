@@ -4,6 +4,7 @@
 #include "definitions.h"
 #include "core/communication_common.h"
 #include "core/particles_common.h"
+#include "tools/gpu_memory.h"
 #include <exception>
 
 //#include "tools/mesh.h"
@@ -206,6 +207,9 @@ void bind_tools(pybind11::module& m)
      .value("electron", runko::particle::electron)
      .value("ion", runko::particle::ion)
      .value("photon", runko::particle::photon);
+
+  m.def("_get_gpu_mem_kB", &runko::get_gpu_mem_kB,
+        "Return GPU device memory in use (kB), or -1 on CPU backend.");
 
 }
 

@@ -1,7 +1,14 @@
-"""Cross-platform CPU RAM usage helper."""
+"""Cross-platform CPU and GPU memory usage helpers."""
 
 import sys
 import resource
+
+
+def get_gpu_mem_kB() -> int | None:
+    """Return GPU device memory in use (kB), or None on CPU backend."""
+    from runko_cpp_bindings.tools import _get_gpu_mem_kB
+    val = _get_gpu_mem_kB()
+    return val if val >= 0 else None
 
 
 def get_rss_kB() -> int:
