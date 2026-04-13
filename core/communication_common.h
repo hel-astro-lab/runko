@@ -43,7 +43,7 @@ enum class comm_mode : int {
 
 template<typename T, typename E>
 concept equality_comparable_with_enum =
-  (std::is_enum_v<E>) and std::equality_comparable_with<T, std::underlying_type_t<E>>;
+  std::is_enum_v<E> and std::convertible_to<T, std::underlying_type_t<E>>;
 
 template<typename Rhs>
   requires(not std::same_as<Rhs, comm_mode>) and
