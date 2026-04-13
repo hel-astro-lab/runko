@@ -48,7 +48,7 @@
             "inherits": "macos-mpic++-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize",
+                "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize -Wno-error=unused-command-line-argument",
                 "BUILD_TESTING": "ON"
             }
         },
