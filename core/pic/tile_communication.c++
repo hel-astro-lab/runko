@@ -1,8 +1,11 @@
 #include "core/communication_common.h"
 #include "core/pic/tile.h"
+#include "thrust/memory.h"
 #include "tools/system.h"
 
 #include <cstddef>
+#include <iterator>
+#include <span>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -18,7 +21,7 @@ constexpr int
   return static_cast<int>(particle_ordinal + particles_in_total * tag);
 }
 
-enum class particle_data_type { pos, vel };
+enum class particle_data_type { pos, vel, id };
 
 template<particle_data_type data_type>
 constexpr int
@@ -27,8 +30,16 @@ constexpr int
     const auto particle_ordinal,
     const std::size_t particles_in_total)
 {
-  static constexpr auto x = static_cast<int>(data_type == particle_data_type::pos);
-  return static_cast<int>(x + 2 * particle_ordinal + 2 * particles_in_total * tag);
+  static constexpr auto x = [] {
+    if(data_type == particle_data_type::pos) {
+      return 0;
+    } else if(data_type == particle_data_type::vel) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }();
+  return static_cast<int>(x + 3 * particle_ordinal + 3 * particles_in_total * tag);
 }
 
 }  // namespace
@@ -48,9 +59,7 @@ std::vector<mpi4cpp::mpi::request>
   // CPU backend uses host memory where standard MPI works.
 #ifndef TYVI_BACKEND_CPU
   if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error {
-      "GPU backend requires GPU-aware MPI."
-    };
+    throw std::runtime_error { "GPU backend requires GPU-aware MPI." };
   }
 #endif
 
@@ -95,6 +104,12 @@ std::vector<mpi4cpp::mpi::request>
             tag,
             key,
             this->particle_buffs_.size())));
+        comms.push_back(make_isend(
+          value.span_id(),
+          particle_data_tag<particle_data_type::id>(
+            tag,
+            key,
+            this->particle_buffs_.size())));
       }
       return comms;
     }
@@ -112,9 +127,7 @@ std::vector<mpi4cpp::mpi::request>
 {
 #ifndef TYVI_BACKEND_CPU
   if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error {
-      "GPU backend requires GPU-aware MPI."
-    };
+    throw std::runtime_error { "GPU backend requires GPU-aware MPI." };
   }
 #endif
 
@@ -155,6 +168,12 @@ std::vector<mpi4cpp::mpi::request>
           tag,
           key,
           this->particle_buffs_.size())));
+      comms.push_back(make_irecv(
+        value.span_id(),
+        particle_data_tag<particle_data_type::id>(
+          tag,
+          key,
+          this->particle_buffs_.size())));
     }
     return comms;
   };
@@ -180,10 +199,15 @@ void
     std::array { static_cast<ParticleContainer::value_type>(this->mins[2]),
                  static_cast<ParticleContainer::value_type>(this->maxs[2]) };
 
+  this->subregion_particle_buff_.resize(0);
   for(auto& [ptype, pcontainer]: this->particle_buffs_) {
-    auto [s, c] = pcontainer.divide_to_subregions(x_div, y_div, z_div);
-    std::ignore = this->subregion_particle_spans_.insert_or_assign(ptype, std::move(s));
-    std::ignore = this->subregion_particle_buffs_.insert_or_assign(ptype, std::move(c));
+    auto spans = pcontainer.divide_to_subregions(
+      this->subregion_particle_buff_,
+      x_div,
+      y_div,
+      z_div);
+    std::ignore =
+      this->subregion_particle_spans_.insert_or_assign(ptype, std::move(spans));
   }
 }
 
@@ -191,18 +215,11 @@ template<std::size_t D>
 void
   Tile<D>::local_communication_prelude(const int mode)
 {
+  // continue from here
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
 
   this->divide_particles_to_subregions();
-
-  // Make particles staying in this tile "incoming" particles.
-  for(const auto& [ptype, spans]: this->subregion_particle_spans_) {
-    incoming_subregion_particles_[ptype] =
-      std::vector { ParticleContainer::specific_span {
-        .span      = spans.at({ 0, 0, 0 }),
-        .container = &this->subregion_particle_buffs_.at(ptype) } };
-  }
 }
 
 template<std::size_t D>
@@ -212,8 +229,8 @@ void
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
 
-  for(const auto& [ptype, specific_spans]: this->incoming_subregion_particles_) {
-    particle_buffs_.at(ptype).set(specific_spans);
+  for(const auto& [ptype, spans]: this->incoming_subregion_particles_) {
+    particle_buffs_.at(ptype).append(spans);
   }
 
   for(auto& [_, pbuff]: this->particle_buffs_) {
@@ -253,17 +270,20 @@ void
     }
   }();
 
-  const auto inverted_dir = this->yee_lattice_.invert_dir(dir_to_other);
+  const auto dir          = runko::grid_neighbor<3>(dir_to_other);
+  const auto inverted_dir = dir.inverted();
 
   for(const auto& [ptype, spans]: other.subregion_particle_spans_) {
     if(spans.contains(inverted_dir)) {
-      this->incoming_subregion_particles_.at(ptype).push_back(
-        ParticleContainer::specific_span {
-          .span      = spans.at(inverted_dir),
-          .container = &other.subregion_particle_buffs_.at(ptype) });
+      const auto [begin, end] = spans.at(inverted_dir);
+      const auto p = thrust::raw_pointer_cast(other.subregion_particle_buff_.data());
+      this->incoming_subregion_particles_[ptype].push_back(
+        std::span<const runko::ParticleState<value_type>>(
+          std::ranges::next(p, begin),
+          std::ranges::next(p, end)));
     }
   }
-};
+}
 
 }  // namespace pic
 

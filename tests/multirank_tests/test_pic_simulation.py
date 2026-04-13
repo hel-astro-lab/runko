@@ -135,15 +135,36 @@ def pic_noop_communication():
         ax.legend()
         plt.show()
 
+    # Store particle states as function of ptype and the particle id.
+    # At the end we check that there are no sudden jumps.
+    state_tracker = {0: {}, 1: {}}
+
+    def collect_states():
+        for tile in simulation.local_tiles():
+            for i in (0, 1):
+                posx, posy, posz = tile.get_positions(i)
+                velx, vely, velz = tile.get_velocities(i)
+                ids = tile.get_ids(i)
+
+                for x, y, z, vx, vy, vz, id in zip(posx, posy, posz, velx, vely, velz, ids):
+                    s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
+                    if id not in state_tracker[i]:
+                        state_tracker[i][id] = [s]
+                    else:
+                        state_tracker[i][id].append(s)
+
+
     def assertUnchangedParticles():
         asserts = []
 
-        A = lambda x, y: mpi_unittest.assertEqualDeferred(1, approx_count(x, y))
+        all_ids = {0: np.array([]), 1: np.array([])}
 
         for tile in simulation.local_tiles():
             for i in (0, 1):
                 posx, posy, posz = tile.get_positions(i)
                 velx, vely, velz = tile.get_velocities(i)
+                ids = tile.get_ids(i)
+                all_ids[i] = np.concatenate((all_ids[i], ids))
 
                 N = len(posx)
                 asserts.append(mpi_unittest.assertEqualDeferred(len(posy), N))
@@ -151,6 +172,7 @@ def pic_noop_communication():
                 asserts.append(mpi_unittest.assertEqualDeferred(len(velx), N))
                 asserts.append(mpi_unittest.assertEqualDeferred(len(vely), N))
                 asserts.append(mpi_unittest.assertEqualDeferred(len(velz), N))
+                asserts.append(mpi_unittest.assertEqualDeferred(len(ids), N))
 
                 expected_particles = make_test_particles(tile, after_comm=True)
 
@@ -159,8 +181,15 @@ def pic_noop_communication():
                     e = [p for p in expected_particles if almost_equal(p, s)]
                     asserts.append(mpi_unittest.assertEqualDeferred(1, len(e)))
 
+        # Ids are unique (per species):
+        asserts.append(mpi_unittest.assertEqualDeferred(len(all_ids[0]),
+                                                        len(set(all_ids[0]))))
+        asserts.append(mpi_unittest.assertEqualDeferred(len(all_ids[1]),
+                                                        len(set(all_ids[1]))))
+
         mpi_unittest.assertDeferredResults(asserts)
         mpi_unittest.assertEqual(True, len(asserts) >= 1)
+
 
     def f(x):
         x.comm_external(runko.tools.comm_mode.pic_particle)
@@ -169,11 +198,33 @@ def pic_noop_communication():
         x.grid_push_e()
         x.grid_push_half_b()
 
-    assertUnchangedParticles()
+
+    def verify_state_tracker():
+        # Verify state_tracker:
+        asserts = []
+        for _, tmp in state_tracker.items():
+            for _, states in tmp.items():
+                if len(states) <= 1:
+                    continue
+                for i in range(len(states) - 1):
+                    asserts.append(mpi_unittest.assertEqualDeferred(True,
+                                                                    almost_equal(states[i],
+                                                                                 states[i + 1],
+                                                                                 epsilon=1e-3)))
+                    mpi_unittest.assertDeferredResults(asserts)
+        mpi_unittest.assertDeferredResults(asserts)
+
+    collect_states()
     simulation.for_one_lap(f)
+    collect_states()
+    verify_state_tracker()
     assertUnchangedParticles()
+
+    collect_states()
     simulation.for_each_lap(f)
+    collect_states()
     assertUnchangedParticles()
+    verify_state_tracker()
 
 
 def pic_communication():
@@ -210,16 +261,39 @@ def pic_communication():
         ax.legend()
         plt.show()
 
+    # Store particle states as function of ptype and the particle id.
+    # At the end we check that there are no sudden jumps.
+    state_tracker = {0: {}, 1: {}}
+
+    def collect_states():
+        for tile in simulation.local_tiles():
+            for i in (0, 1):
+                posx, posy, posz = tile.get_positions(i)
+                velx, vely, velz = tile.get_velocities(i)
+                ids = tile.get_ids(i)
+
+                for x, y, z, vx, vy, vz, id in zip(posx, posy, posz, velx, vely, velz, ids):
+                    x %= conf.NxMesh * conf.Nx
+                    y %= conf.NyMesh * conf.Ny
+                    z %= conf.NzMesh * conf.Nz
+                    s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
+                    if id not in state_tracker[i]:
+                        state_tracker[i][id] = [s]
+                    else:
+                        state_tracker[i][id].append(s)
+
     def assertChangedParticles():
         asserts = []
 
-        A = lambda x, y: mpi_unittest.assertEqualDeferred(1, approx_count(x, y))
+        all_ids = {0: np.array([]), 1: np.array([])}
 
         for tile in simulation.local_tiles():
             expected_particles = make_test_particles(tile, after_comm=True)
             for i in (0, 1):
                 posx, posy, posz = tile.get_positions(i)
                 velx, vely, velz = tile.get_velocities(i)
+                ids = tile.get_ids(i)
+                all_ids[i] = np.concatenate((all_ids[i], ids))
 
                 N = len(posx)
                 asserts.append(mpi_unittest.assertEqualDeferred(len(posy), N))
@@ -227,14 +301,22 @@ def pic_communication():
                 asserts.append(mpi_unittest.assertEqualDeferred(len(velx), N))
                 asserts.append(mpi_unittest.assertEqualDeferred(len(vely), N))
                 asserts.append(mpi_unittest.assertEqualDeferred(len(velz), N))
+                asserts.append(mpi_unittest.assertEqualDeferred(len(ids), N))
 
-                for x, y, z, vx, vy, vz in zip(posx, posy, posz, velx, vely, velz):
+                for x, y, z, vx, vy, vz, id in zip(posx, posy, posz, velx, vely, velz, ids):
                     s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
                     e = [p for p in expected_particles if almost_equal(p, s)]
                     asserts.append(mpi_unittest.assertEqualDeferred(1, len(e)))
 
+        # Ids are unique (per species):
+        asserts.append(mpi_unittest.assertEqualDeferred(len(all_ids[0]),
+                                                        len(set(all_ids[0]))))
+        asserts.append(mpi_unittest.assertEqualDeferred(len(all_ids[1]),
+                                                        len(set(all_ids[1]))))
+
         mpi_unittest.assertDeferredResults(asserts)
         mpi_unittest.assertEqual(True, len(asserts) >= 1)
+
 
     def f(x):
         x.comm_external(runko.tools.comm_mode.pic_particle)
@@ -243,10 +325,104 @@ def pic_communication():
         x.grid_push_e()
         x.grid_push_half_b()
 
+
+    def verify_state_tracker():
+        # Verify state_tracker:
+        asserts = []
+        for _, tmp in state_tracker.items():
+            for _, states in tmp.items():
+                if len(states) <= 1:
+                    continue
+                for i in range(len(states) - 1):
+                    asserts.append(mpi_unittest.assertEqualDeferred(True,
+                                                                    almost_equal(states[i],
+                                                                                 states[i + 1],
+                                                                                 epsilon=1e-3)))
+                    mpi_unittest.assertDeferredResults(asserts)
+        mpi_unittest.assertDeferredResults(asserts)
+
+    collect_states()
     simulation.for_one_lap(f)
+    collect_states()
+    verify_state_tracker()
     assertChangedParticles()
+
+    collect_states()
     simulation.for_each_lap(f)
+    collect_states()
     assertChangedParticles()
+    verify_state_tracker()
+
+
+def pic_conservation_of_ids():
+    """
+    Generate particles in halo region and store particle states corresponding
+    to each particle id. After communication the particles which stayed in
+    the tile, should not have their ids changed.
+    """
+
+    conf, tile_grid = make_test_grid()
+
+    def pgen(x, y, z):
+        v = np.zeros_like(x)
+        return runko.pic.threeD.ParticleStateBatch(pos=(x - 1, y, z + 1), vel=(v, v, v))
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.pic.threeD.Tile(idx, conf)
+        tile.batch_inject_to_cells(0, pgen)
+        tile.batch_inject_to_cells(1, pgen)
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    # Store particle states as function of ptype and the particle id.
+    # At the end we check that there are no sudden jumps.
+    state_tracker = {0: {}, 1: {}}
+
+    def collect_states():
+        for tile in simulation.local_tiles():
+            for i in (0, 1):
+                posx, posy, posz = tile.get_positions(i)
+                velx, vely, velz = tile.get_velocities(i)
+                ids = tile.get_ids(i)
+
+                for x, y, z, vx, vy, vz, id in zip(posx, posy, posz, velx, vely, velz, ids):
+                    x %= conf.NxMesh * conf.Nx
+                    y %= conf.NyMesh * conf.Ny
+                    z %= conf.NzMesh * conf.Nz
+                    s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
+                    if id not in state_tracker[i]:
+                        state_tracker[i][id] = [s]
+                    else:
+                        state_tracker[i][id].append(s)
+
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
+
+        x.grid_push_e()
+        x.grid_push_half_b()
+
+
+    def verify_state_tracker():
+        # Verify state_tracker:
+        asserts = []
+        for _, tmp in state_tracker.items():
+            for _, states in tmp.items():
+                if len(states) <= 1:
+                    continue
+                for i in range(len(states) - 1):
+                    asserts.append(mpi_unittest.assertEqualDeferred(True,
+                                                                    almost_equal(states[i],
+                                                                                 states[i + 1],
+                                                                                 epsilon=1e-3)))
+                    mpi_unittest.assertDeferredResults(asserts)
+        mpi_unittest.assertDeferredResults(asserts)
+
+    collect_states()
+    simulation.for_one_lap(f)
+    collect_states()
+    verify_state_tracker()
 
 
 def pic_kinetic_energy_reduction():
@@ -506,5 +682,6 @@ if __name__ == "__main__":
     pic_noop_communication()
     pic_communication()
     pic_communication_with_empty_tiles()
+    pic_conservation_of_ids()
     pic_wrap_positions()
     pic_kinetic_energy_reduction()

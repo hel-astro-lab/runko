@@ -1,6 +1,7 @@
 #include "core/pic/particle.h"
 
 #include "core/mdgrid_common.h"
+#include "thrust/count.h"
 #include "thrust/device_vector.h"
 #include "thrust/execution_policy.h"
 #include "thrust/host_vector.h"
@@ -25,6 +26,7 @@ namespace pic {
 ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
   pos_(args.N),
   vel_(args.N),
+  ids_(args.N),
   charge_ { args.charge },
   mass_ { args.mass }
 {
@@ -47,6 +49,7 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 {
   auto w = tyvi::mdgrid_work {};
   w.sync_to_staging(pos_);
+  w.sync_to_staging(ids_);
 
   auto x = std::vector<value_type>(this->size());
   auto y = std::vector<value_type>(this->size());
@@ -54,13 +57,22 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 
   w.wait();
 
-  const auto mds = pos_.staging_mds();
+  const auto mds   = pos_.staging_mds();
+  const auto idmds = ids_.staging_mds();
 
+  auto n = 0uz;
   for(const auto [i]: tyvi::sstd::index_space(mds)) {
-    x[i] = mds[i][0];
-    y[i] = mds[i][1];
-    z[i] = mds[i][2];
+    if(idmds[i][] == runko::dead_prtc_id) { continue; }
+
+    x[n] = mds[i][0];
+    y[n] = mds[i][1];
+    z[n] = mds[i][2];
+    ++n;
   }
+
+  x.resize(n);
+  y.resize(n);
+  z.resize(n);
 
   return { std::move(x), std::move(y), std::move(z) };
 }
@@ -71,6 +83,7 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 
   auto w = tyvi::mdgrid_work {};
   w.sync_to_staging(vel_);
+  w.sync_to_staging(ids_);
 
   auto vx = std::vector<value_type>(this->size());
   auto vy = std::vector<value_type>(this->size());
@@ -78,16 +91,49 @@ std::array<std::vector<ParticleContainer::value_type>, 3>
 
   w.wait();
 
-  const auto mds = vel_.staging_mds();
-
+  const auto mds   = vel_.staging_mds();
+  const auto idmds = ids_.staging_mds();
+  auto n           = 0uz;
   for(const auto [i]: tyvi::sstd::index_space(mds)) {
-    vx[i] = mds[i][0];
-    vy[i] = mds[i][1];
-    vz[i] = mds[i][2];
+    if(idmds[i][] == runko::dead_prtc_id) { continue; }
+
+    vx[n] = mds[i][0];
+    vy[n] = mds[i][1];
+    vz[n] = mds[i][2];
+    ++n;
   }
+
+  vx.resize(n);
+  vy.resize(n);
+  vz.resize(n);
 
   return { std::move(vx), std::move(vy), std::move(vz) };
 }
+
+std::vector<runko::prtc_id_type>
+  ParticleContainer::get_ids()
+{
+
+  auto w = tyvi::mdgrid_work {};
+  w.sync_to_staging(ids_);
+
+  auto tmp = std::vector<runko::prtc_id_type>(this->size());
+
+  w.wait();
+
+  const auto idmds = ids_.staging_mds();
+  auto n           = 0uz;
+  for(const auto [i]: tyvi::sstd::index_space(idmds)) {
+    if(idmds[i][] == runko::dead_prtc_id) { continue; }
+
+    tmp[n] = idmds[i][];
+    ++n;
+  }
+
+  tmp.resize(n);
+  return tmp;
+}
+
 
 void
   ParticleContainer::wrap_positions(
@@ -116,11 +162,12 @@ void
     .wait();
 }
 
-std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContainer>
+std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
   ParticleContainer::divide_to_subregions(
-    const std::array<value_type, 2> x_dividers,
-    const std::array<value_type, 2> y_dividers,
-    const std::array<value_type, 2> z_dividers)
+    thrust::device_vector<runko::ParticleState<ParticleContainer::value_type>>& buffer,
+    std::array<value_type, 2> x_dividers,
+    std::array<value_type, 2> y_dividers,
+    std::array<value_type, 2> z_dividers)
 {
   if(
     x_dividers[0] >= x_dividers[1] or y_dividers[0] >= y_dividers[1] or
@@ -130,33 +177,25 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
     };
   }
 
-  // Handle empty container as special case, so that we can later assume
-  // that there is at least one particle.
-  if(this->size() == 0) { return { {{{0, 0, 0}, {0, 0}}}, *this }; }
-
   // subregion_index: {-1, 0, 1} x {-1, 0, 1} x {-1, 0, 1} -> {0, 1, ..., 26}
   constexpr auto subregion_index =
     [](const int i, const int j, const int k) -> runko::index_t {
     const auto ii = static_cast<runko::index_t>(i + 1);
     const auto jj = static_cast<runko::index_t>(j + 1);
     const auto kk = static_cast<runko::index_t>(k + 1);
-    return ii * 9u + jj * 3u + kk;
+    return ii * runko::index_t { 9 } + jj * runko::index_t { 3 } + kk;
   };
 
-  constexpr auto subregion_index_to_dir = [](const runko::index_t nuz) {
+  static constexpr auto subregion_index_to_dir = [](const runko::index_t nuz) static {
     const auto n = static_cast<int>(nuz);
-    return std::array<int, 3> { (n / 9) - 1, ((n / 3) % 3) - 1, (n % 3) - 1 };
+    return runko::grid_neighbor<3> { (n / 9) - 1, ((n / 3) % 3) - 1, (n % 3) - 1 };
   };
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
+  const auto ids_mds = this->ids_.mds();
 
-  const auto particle_ordinal_to_subregion_index =
-    [=](const std::size_t n) -> std::size_t {
-    const auto x = pos_mds[n][0];
-    const auto y = pos_mds[n][1];
-    const auto z = pos_mds[n][2];
-
+  const auto coords_to_subregion_index = [=](const auto x, const auto y, const auto z) {
     const auto i =
       static_cast<int>(x >= x_dividers[0]) - static_cast<int>(x < x_dividers[1]);
     const auto j =
@@ -167,9 +206,16 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
     return subregion_index(i, j, k);
   };
 
+  const auto particle_ordinal_to_subregion_index =
+    [=](const std::size_t n) -> std::size_t {
+    const auto x = pos_mds[n][0];
+    const auto y = pos_mds[n][1];
+    const auto z = pos_mds[n][2];
+    return coords_to_subregion_index(x, y, z);
+  };
+
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
-  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto particle_subregion_indices_begin = thrust::make_transform_iterator(
     particle_ordinals_begin,
@@ -177,73 +223,103 @@ std::pair<std::map<std::array<int, 3>, ParticleContainer::span>, ParticleContain
   const auto particle_subregion_indices_end =
     rn::next(particle_subregion_indices_begin, this->size());
 
-  auto particle_subregion_indices = thrust::device_vector<runko::index_t>(
+  const auto is_leaving = [=](const auto index) {
+    return index != subregion_index(0, 0, 0);
+  };
+
+  tyvi::mdgrid_work w {};
+  const auto leaving_particles = thrust::count_if(
+    w.on_this(),
     particle_subregion_indices_begin,
-    particle_subregion_indices_end);
+    particle_subregion_indices_end,
+    is_leaving);
 
-  auto particle_trackers = thrust::device_vector<runko::index_t>(
-    particle_ordinals_begin,
-    particle_ordinals_end);
+  const auto prev_buffer_size = buffer.size();
+  buffer.resize(prev_buffer_size + leaving_particles);
 
-  thrust::sort_by_key(
-    particle_subregion_indices.begin(),
-    particle_subregion_indices.end(),
-    particle_trackers.begin());
+  const auto particle_states_begin =
+    thrust::make_transform_iterator(particle_ordinals_begin, [=](const auto n) {
+      return runko::ParticleState<value_type> {
+        .pos { pos_mds[n][0], pos_mds[n][1], pos_mds[n][2] },
+        .vel { vel_mds[n][0], vel_mds[n][1], vel_mds[n][2] },
+        .id { ids_mds[n][] }
+      };
+    });
+  const auto particle_states_end = rn::next(particle_states_begin, this->size());
 
-  auto permuted_pcontainer    = *this;
-  const auto permuted_pos_mds = permuted_pcontainer.pos_.mds();
-  const auto permuted_vel_mds = permuted_pcontainer.vel_.mds();
+  const auto buffer_data_begin = rn::next(buffer.begin(), prev_buffer_size);
 
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      permuted_pos_mds,
-      [=, p = particle_trackers.begin()](const auto idx, const auto tidx) {
-        const runko::index_t i      = p[idx[0]];
-        permuted_pos_mds[idx][tidx] = pos_mds[i][tidx];
-        permuted_vel_mds[idx][tidx] = vel_mds[i][tidx];
-      })
-    .wait();
+  const auto copy_if_result = thrust::copy_if(
+    w.on_this(),
+    particle_states_begin,
+    particle_states_end,
+    buffer_data_begin,
+    [=](const auto& state) {
+      return is_leaving(
+        coords_to_subregion_index(state.pos[0], state.pos[1], state.pos[2]));
+    });
 
-  // Reset these back to 0, 1, ... inorder to use them in unique
-  // to measure the begins of the subregions.
-  particle_trackers.assign(particle_ordinals_begin, particle_ordinals_end);
-
-  const auto new_end = thrust::unique_by_key(
-    thrust::device,
-    particle_subregion_indices.begin(),
-    particle_subregion_indices.end(),
-    particle_trackers.begin());
-
-  // Note that this ParticleContainer might not contain
-  // particles in all of the 27 subregions.
-
-  const auto present_subregion_indices = thrust::host_vector<runko::index_t>(
-    particle_subregion_indices.begin(),
-    new_end.first);
-  const auto present_subregion_begins =
-    thrust::host_vector<runko::index_t>(particle_trackers.begin(), new_end.second);
-
-  const auto present_subregion_ends = [&] {
-    // We assumed at beginning of the function that there is at least one particle.
-    auto temp =
-      std::vector(++present_subregion_begins.begin(), present_subregion_begins.end());
-    temp.push_back(this->size());
-    return temp;
-  }();
-
-  std::map<std::array<int, 3>, ParticleContainer::span> m {};
-
-  for(auto i = 0uz; i < present_subregion_indices.size(); ++i) {
-    m.insert_or_assign(
-      subregion_index_to_dir(present_subregion_indices[i]),
-      ParticleContainer::span { present_subregion_begins[i],
-                                present_subregion_ends[i] });
+  if(copy_if_result != buffer.end()) {
+    throw std::logic_error {
+      "These should match, because buffer is resized specificly for correct amount of "
+      "particles."
+    };
   }
 
-  // Ensure {0,0,0} (self-region) is always present, even when all particles left.
-  if(not m.contains({0, 0, 0})) { m.insert({{{0, 0, 0}, {0, 0}}}); }
+  tyvi::mdgrid_work w2 {};
+  tyvi::when_all(w, w2);
+  w2.for_each_index(pos_mds, [=](const auto idx) {
+    if(is_leaving(coords_to_subregion_index(
+         pos_mds[idx][0],
+         pos_mds[idx][1],
+         pos_mds[idx][2]))) {
+      ids_mds[idx][] = runko::dead_prtc_id;
+    }
+  });
 
-  return { std::move(m), std::move(permuted_pcontainer) };
+  thrust::sort(
+    w.on_this(),
+    buffer_data_begin,
+    buffer.end(),
+    [=](const auto& lhs, const auto& rhs) {
+      const auto sublhs = coords_to_subregion_index(lhs.pos[0], lhs.pos[1], lhs.pos[2]);
+      const auto subrhs = coords_to_subregion_index(rhs.pos[0], rhs.pos[1], rhs.pos[2]);
+      return sublhs < subrhs;
+    });
+
+  using subregion_counter     = toolbox::VecD<runko::index_t, 27>;
+  const auto state_to_counter = [=](const runko::ParticleState<value_type>& x) {
+    const auto i = coords_to_subregion_index(x.pos[0], x.pos[1], x.pos[2]);
+    auto v       = subregion_counter {};
+    v[i]         = 1;
+    return v;
+  };
+
+  const auto counters_begin =
+    thrust::transform_iterator(buffer_data_begin, state_to_counter);
+  const auto counters_end = rn::next(counters_begin, leaving_particles);
+
+  const auto subregion_counts =
+    thrust::reduce(w.on_this(), counters_begin, counters_end, subregion_counter {});
+
+  std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>> m {};
+
+  auto next_span_begin = prev_buffer_size;
+  for(auto i = runko::index_t { 0 }; i < runko::index_t { 27 }; ++i) {
+    if(i == subregion_index(0, 0, 0)) { continue; }
+
+    const auto count = subregion_counts[i];
+    const auto from  = next_span_begin;
+    const auto until = from + count;
+    next_span_begin  = until;
+
+    const auto dir = subregion_index_to_dir(i);
+    m.insert_or_assign(dir, std::pair { from, until });
+  }
+
+  tyvi::when_all(w, w2);
+  w.wait();
+  return m;
 }
 
 
@@ -257,12 +333,14 @@ double
 
   // Note that these are in natural units.
   const auto vel_mds = this->vel_.mds();
+  const auto ids_mds = this->ids_.mds();
 
   auto particle_ordinal_to_kinetic_energy = [=](const runko::index_t n) -> double {
-    using Vec3   = toolbox::Vec3<value_type>;
-    const auto v = Vec3(vel_mds[n]);
+    const auto is_alive = ids_mds[n][] != runko::dead_prtc_id;
+    using Vec3          = toolbox::Vec3<value_type>;
+    const auto v        = Vec3(vel_mds[n]);
     const auto e = std::sqrt(value_type { 1 } + toolbox::dot(v, v)) - value_type { 1 };
-    return static_cast<double>(e);
+    return is_alive * static_cast<double>(e);
   };
 
   const auto kinetic_energies_begin = thrust::make_transform_iterator(

@@ -7,6 +7,7 @@ set (TOOLS_FILES
 set (EMF_FILES
      pyemf.c++
      ../core/emf/tile.c++
+     ../core/emf/virtual_tile.c++
      ../core/emf/yee_lattice.c++
      ../core/emf/yee_lattice_FDTD2.c++
      ../core/emf/yee_lattice_stencil.c++

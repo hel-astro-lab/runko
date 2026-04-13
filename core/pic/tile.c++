@@ -1,13 +1,15 @@
 #include "core/pic/tile.h"
 
+#include "core/emf/common.h"
 #include "core/emf/yee_lattice.h"
 #include "core/particles_common.h"
 #include "core/pic/particle.h"
+#include "tools/math.h"
 #include "tyvi/mdspan.h"
 #include "tyvi/sstd.h"
-#include "tools/math.h"
 
-#include <cmath>
+#include <bit>
+#include <cstring>
 #include <format>
 #include <functional>
 #include <numeric>
@@ -121,6 +123,20 @@ Tile<D>::Tile(
     conf.get_or_throw<std::string>("current_depositer")) }
 {
   construct_particle_buffs(particle_buffs_, conf);
+
+  const auto Nx = conf.get_or_throw<std::size_t>("Nx");
+  const auto Ny = conf.get_or_throw<std::size_t>("Ny");
+  const auto Nz = conf.get_or_throw<std::size_t>("Nz");
+
+  if(Nx * Ny * Nz >= 1uz << 24uz) {
+    throw std::runtime_error { "PIC tile does not support this many tiles." };
+  }
+  tile_tag_ = std::layout_right::mapping {
+    std::dextents<std::size_t, 3> { Nx, Ny, Nz }
+  }(tile_grid_idx[0], tile_grid_idx[1], tile_grid_idx[2]);
+
+  const auto n = particle_buffs_.size();
+  for(auto i = 0uz; i < n; ++i) { next_particle_ordinals_[i] = 0; }
 }
 
 template<std::size_t D>
@@ -138,6 +154,13 @@ std::array<std::vector<typename Tile<D>::value_type>, 3>
 }
 
 template<std::size_t D>
+std::vector<runko::prtc_id_type>
+  Tile<D>::get_ids(const std::size_t p)
+{
+  return particle_buffs_.at(p).get_ids();
+}
+
+template<std::size_t D>
 void
   Tile<D>::inject_to_each_cell(const std::size_t particle_type, particle_generator pgen)
 {
@@ -150,12 +173,15 @@ void
 
   const auto global_coordinates = this->global_coordinate_map();
   const auto e                  = this->yee_lattice_.extents_wout_halo();
-  std::vector<runko::ParticleState> new_particles {};
+  std::vector<runko::ParticleState<double>> new_particles {};
 
   for(const auto [i, j, k]:
       tyvi::sstd::index_space(std::mdspan((int*)nullptr, e[0], e[1], e[2]))) {
     const auto [x, y, z] = global_coordinates(i, j, k);
-    for(const auto p: pgen(x, y, z)) { new_particles.push_back(p); }
+    for(const auto p: pgen(x, y, z)) {
+      new_particles.push_back(p);
+      new_particles.back().id = this->consume_next_id_(particle_type);
+    }
   }
 
   particle_buffs_.at(particle_type).add_particles(new_particles);
@@ -165,8 +191,9 @@ template<std::size_t D>
 void
   Tile<D>::inject(
     const std::size_t particle_type,
-    const std::vector<runko::ParticleState>& new_particles)
+    std::vector<runko::ParticleState<double>> new_particles)
 {
+  for(auto& p: new_particles) { p.id = this->consume_next_id_(particle_type); }
   particle_buffs_.at(particle_type).add_particles(new_particles);
 }
 
@@ -202,16 +229,17 @@ void
 
   // find x-cell range within the stripe (O(1) since dx=1)
   // cell i spans [tile_xmin+i, tile_xmin+i+1)
-  const auto diff_left  = x_left  - tile_xmin;
+  const auto diff_left  = x_left - tile_xmin;
   const auto diff_right = x_right - tile_xmin;
 
-  const auto i_begin = diff_left <= 0.0
-                      ? std::size_t{0}
-                      : sstd::min(e[0], static_cast<std::size_t>(sstd::floor(diff_left)));
+  const auto i_begin =
+    diff_left <= 0.0
+      ? std::size_t { 0 }
+      : sstd::min(e[0], static_cast<std::size_t>(sstd::floor(diff_left)));
 
   const auto i_end = diff_right >= static_cast<double>(e[0])
-                   ? e[0]
-                   : static_cast<std::size_t>(sstd::ceil(diff_right));
+                       ? e[0]
+                       : static_cast<std::size_t>(sstd::ceil(diff_right));
 
   if(i_begin >= i_end) return;
 
@@ -231,9 +259,9 @@ void
       for(std::size_t j = 0; j < e[1]; ++j) {
         for(std::size_t k = 0; k < e[2]; ++k) {
           const auto gc = global_coordinates(i, j, k);
-          xv(n) = gc[0];
-          yv(n) = gc[1];
-          zv(n) = gc[2];
+          xv(n)         = gc[0];
+          yv(n)         = gc[1];
+          zv(n)         = gc[2];
           ++n;
         }
       }
@@ -274,16 +302,17 @@ void
   const auto vely_view = state_batch.vel[1].template unchecked<1>();
   const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
-  auto states   = std::vector<runko::ParticleState>(batch_size);
+  auto states   = std::vector<runko::ParticleState<double>>(batch_size);
   using index_t = std::remove_cvref_t<decltype(batch_size)>;
   for(const auto n: std::views::iota(index_t { 0 }, batch_size)) {
-    states[n] = runko::ParticleState {
+    states[n] = runko::ParticleState<double> {
       .pos = { posx_view(n), posy_view(n), posz_view(n) },
-      .vel = { velx_view(n), vely_view(n), velz_view(n) }
+      .vel = { velx_view(n), vely_view(n), velz_view(n) },
+      .id  = this->consume_next_id_(particle_type)
     };
   }
 
-  this->inject(particle_type, states);
+  this->particle_buffs_.at(particle_type).add_particles(states);
 }
 
 template<std::size_t D>
@@ -292,9 +321,9 @@ void
 {
   using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+    std::array { static_cast<yee_value_type>(this->mins[0]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
 
   pic::ParticleContainer::InterpolatedEB_function ipol_func {};
 
@@ -356,9 +385,9 @@ void
 
   using yee_value_type = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_value_type>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_value_type>(this->mins[2]) - this->halo_size };
+    std::array { static_cast<yee_value_type>(this->mins[0]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
 
   switch(current_depositer_) {
     case CurrentDepositer::zigzag_1st:
@@ -405,9 +434,9 @@ void
   using M      = decltype(m);
 
   using F              = pic::ParticleContainer::value_type;
-  const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - this->halo_size,
-                                      static_cast<F>(this->mins[1]) - this->halo_size,
-                                      static_cast<F>(this->mins[2]) - this->halo_size };
+  const auto origo_pos = std::array { static_cast<F>(this->mins[0]) - emf::halo_size,
+                                      static_cast<F>(this->mins[1]) - emf::halo_size,
+                                      static_cast<F>(this->mins[2]) - emf::halo_size };
   using Vec3F          = toolbox::Vec3<F>;
 
   auto score = [=](const F x, const F y, const F z) {
@@ -427,9 +456,9 @@ emf::YeeLattice::InterpolatedEB
 {
   using yee_vt = emf::YeeLattice::value_type;
   const auto origo_pos =
-    std::array { static_cast<yee_vt>(this->mins[0]) - this->halo_size,
-                 static_cast<yee_vt>(this->mins[1]) - this->halo_size,
-                 static_cast<yee_vt>(this->mins[2]) - this->halo_size };
+  std::array { static_cast<yee_vt>(this->mins[0]) - emf::halo_size,
+               static_cast<yee_vt>(this->mins[1]) - emf::halo_size,
+               static_cast<yee_vt>(this->mins[2]) - emf::halo_size };
 
   return this->yee_lattice_.interpolate_EB_linear_1st(origo_pos, positions);
 }
@@ -460,6 +489,21 @@ double
   Tile<D>::total_kinetic_energy(const std::size_t particle_type) const
 {
   return this->particle_buffs_.at(particle_type).total_kinetic_energy();
+}
+
+template<std::size_t D>
+runko::prtc_id_type
+  Tile<D>::consume_next_id_(const std::size_t particle_type)
+{
+  const auto ordinal =
+    static_cast<runko::prtc_id_type>(this->next_particle_ordinals_.at(particle_type)++);
+  const auto tile_tag = static_cast<runko::prtc_id_type>(this->tile_tag_);
+
+  if(ordinal >= 2uz << 40uz) {
+    throw std::runtime_error { "PIC tile ran out of particle ids (2^40 per species)!" };
+  }
+
+  return (tile_tag << 40uz) | ordinal;
 }
 
 

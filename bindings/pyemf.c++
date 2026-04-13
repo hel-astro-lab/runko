@@ -8,6 +8,7 @@
 #include "io/snapshots/mpiio_fields.h"
 #include "io/snapshots/mpiio_particles.h"
 #include "io/snapshots/mpiio_spectra.h"
+#include "core/emf/virtual_tile.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -207,12 +208,26 @@ void
     .def_readwrite("B_components", &EBC::B_components)
     .def_readwrite("J_components", &EBC::J_components);
 
+  // 3d virtual tile specialization
+  py::class_<emf::VirtualTile<3>, corgi::Tile<3>, std::shared_ptr<emf::VirtualTile<3>>>(
+    m_3d,
+    "VirtualTile")
+    .def(
+      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
+        return emf::VirtualTile<3>(tile_grid_idx, toolbox::ConfigParser(h));
+      }))
+    .def_static("canonical_type", []() { return py::type::of<emf::Tile<3>>(); });
+
   // 3d tile
   py::class_<emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<emf::Tile<3>>>(m_3d, "Tile")
     .def(
       py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
         return emf::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
       }))
+    .def_static(
+      "virtual_tile_specialization",
+      []() { return py::type::of<emf::VirtualTile<3>>(); })
+    .def_static("canonical_type", []() { return py::type::of<emf::Tile<3>>(); })
     .def("set_EBJ", &emf::Tile<3>::set_EBJ)
     .def("batch_set_EBJ", &emf::Tile<3>::batch_set_EBJ)
     .def(

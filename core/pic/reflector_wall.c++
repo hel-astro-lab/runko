@@ -128,6 +128,7 @@ void
 {
   const auto pos_mds = pos_.mds();
   const auto vel_mds = vel_.mds();
+  const auto ids_mds = ids_.mds();
   const auto Jmds    = correction_J.mds();
 
   const value_type walloc    = wall.walloc;
@@ -145,6 +146,8 @@ void
     .for_each_index(
       pos_mds,
       [=](const auto idx) {
+        if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+
         // Branchless reflector wall: all particles execute the full
         // computation; float masks zero out effects for non-affected particles.
         //
@@ -266,9 +269,9 @@ void
       [=](const auto idx, const auto tidx) { genJmds[idx][tidx] = 0; })
     .wait();
 
-  const auto origo_pos = std::array { value_type(this->mins[0]) - this->halo_size,
-                                      value_type(this->mins[1]) - this->halo_size,
-                                      value_type(this->mins[2]) - this->halo_size };
+  const auto origo_pos = std::array { value_type(this->mins[0]) - emf::halo_size,
+                                      value_type(this->mins[1]) - emf::halo_size,
+                                      value_type(this->mins[2]) - emf::halo_size };
 
   for(const auto& wall: reflector_walls_) {
     if(!wall_is_in_tile(wall)) continue;

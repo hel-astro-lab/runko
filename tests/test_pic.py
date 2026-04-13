@@ -46,6 +46,7 @@ class pic_tile(unittest.TestCase):
         self.assertEqual(0, len(vel0_y))
         self.assertEqual(0, len(vel0_z))
 
+        self.assertEqual(0, len(tile.get_ids(0)))
 
     def test_inject_to_each_cell_roundtrip(self):
 
@@ -115,6 +116,10 @@ class pic_tile(unittest.TestCase):
         for i, j, k in cell_index_space:
             self.assertTrue((i, j, k) in seen_pos)
 
+        # Make sure all ids are unique:
+        ids = tile.get_ids(0)
+        self.assertEqual(len(ids), len(set(ids)))
+
 
     def test_inject_to_each_cell_multiple_times(self):
 
@@ -158,6 +163,10 @@ class pic_tile(unittest.TestCase):
 
         N = config.NxMesh * config.NyMesh * config.NzMesh
         assertLengths(3 * N)
+
+        # Make sure all ids are unique:
+        ids = tile.get_ids(0)
+        self.assertEqual(len(ids), len(set(ids)))
 
 
     def test_inject_to_each_cell_multiple_particle_types(self):
@@ -205,6 +214,12 @@ class pic_tile(unittest.TestCase):
         N = config.NxMesh * config.NyMesh * config.NzMesh
         assertLengths(0, N)
         assertLengths(1, 2 * N)
+
+        # Make sure all ids are unique:
+        ids0 = tile.get_ids(0)
+        ids1 = tile.get_ids(1)
+        self.assertEqual(len(ids0), len(set(ids0)))
+        self.assertEqual(len(ids1), len(set(ids1)))
 
 
     def test_batch_inject_to_cells_roundtrip(self):
@@ -272,6 +287,11 @@ class pic_tile(unittest.TestCase):
 
         tile.batch_inject_to_cells(ptype, pgen)
         assertLengths(2 * N)
+
+        # Make sure all ids are unique:
+        ids = tile.get_ids(ptype)
+        self.assertEqual(len(ids), len(set(ids)))
+
 
     def test_batch_inject_to_cells_differing_amount_of_pos_and_vel(self):
 

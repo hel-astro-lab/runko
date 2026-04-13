@@ -17,7 +17,7 @@ void
   YeeLattice::push_b_FDTD2(const tyvi::mdgrid_work& w, const value_type dt)
 {
   /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
-  const auto h   = halo_size_;
+  const auto h   = halo_size;
   const auto hp1 = h + 1uz;
 
   const auto i_nonhalo = std::tuple { h, h + extents_wout_halo_[0] };
@@ -67,8 +67,8 @@ void
 {
   /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
 
-  const auto h   = static_cast<runko::index_t>(halo_size_);
-  const auto hm1 = static_cast<runko::index_t>(halo_size_ - 1uz);
+  const auto h   = static_cast<runko::index_t>(halo_size);
+  const auto hm1 = static_cast<runko::index_t>(halo_size - 1uz);
 
   const auto e0 = static_cast<runko::index_t>(extents_wout_halo_[0]);
   const auto e1 = static_cast<runko::index_t>(extents_wout_halo_[1]);
