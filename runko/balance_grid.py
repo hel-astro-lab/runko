@@ -3,7 +3,7 @@
 import numpy as np
 import h5py as h5
 import scipy
-import runko_cpp_bindings as pyrunko
+from runko.hilbert import Hilbert2D, Hilbert3D
 
 
 def balance_mpi(n, conf, comm_size=None, do_print=True):
@@ -54,7 +54,7 @@ def balance_mpi_2D(n, comm_size=None):
             raise ValueError("Ny is not power of 2 (i.e. 2^m)")
 
         # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        hgen = pyrunko.tools.twoD.HilbertGen(int(m0), int(m1))
+        hgen = Hilbert2D(int(m0), int(m1))
 
         igrid = np.zeros((nx, ny), int)
         grid = np.zeros((nx, ny))  # , int)
@@ -116,7 +116,7 @@ def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False, do_print=True):
             raise ValueError("Nz is not power of 2 (i.e. 2^m)")
 
         # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-        hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2))
+        hgen = Hilbert3D(int(m0), int(m1), int(m2))
 
         igrid = np.zeros((nx, ny, nz), int)
         grid = np.zeros((nx, ny, nz))  # , int)
@@ -202,7 +202,7 @@ def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None, do_print=True):
                 raise ValueError("Nz is not power of 2 (i.e. 2^m)")
 
             # print('Generating hilbert with 2^{} {}'.format(m0,m1))
-            hgen = pyrunko.tools.threeD.HilbertGen(int(m0), int(m1), int(m2))
+            hgen = Hilbert3D(int(m0), int(m1), int(m2))
 
             igrid = np.zeros((nx, ny, nz), int)
             grid = np.zeros((nx, ny, nz))  # , int)
