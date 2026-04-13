@@ -43,8 +43,8 @@ void
         const vt u0sq  = toolbox::dot(u0, u0);
         const vt b2    = toolbox::dot(Bt, Bt);
         const vt bdotu = toolbox::dot(Bt, u0);
-        const vt gmb   = vt { 1 } + u0sq * cinv2 - b2;
-        const vt disc  = gmb * gmb + vt { 4 } * (b2 + bdotu * bdotu);
+        const vt gmb   = vt { 1 } + u0sq * cinv2 - b2 * cinv2;
+        const vt disc  = gmb * gmb + vt { 4 } * (b2 * cinv2 + bdotu * bdotu * cinv2);
         const vt ginv  = vt { 1 } / sstd::sqrt(vt { 0.5 } * (gmb + sstd::sqrt(disc)));
 
         // Scale B by ginv/c to get rotation parameter
