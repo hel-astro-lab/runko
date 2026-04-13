@@ -46,7 +46,7 @@ struct ParticleStateBatch {
  */
 
 template<std::size_t D>
-class Tile : virtual public emf::Tile<D>, virtual public corgi::Tile<D> {
+class Tile : virtual public emf::Tile<D> {
 public:
   /// The type in which pos and vel are stored in.
   using value_type = ParticleContainer::value_type;
