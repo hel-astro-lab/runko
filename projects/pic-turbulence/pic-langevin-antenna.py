@@ -45,7 +45,7 @@ if __name__ == "__main__":
              (0, modes_perp, modes_par),
              (0, modes_perp, -modes_par)]
     delgam = conf.theta # temperature
-    temp_ration = conf.theta_ratio # T_i / T_e
+    temp_ratio = conf.theta_ratio # T_i / T_e
 
     n_num = 2 * n_e_num
 
