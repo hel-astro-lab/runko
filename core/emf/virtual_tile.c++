@@ -82,11 +82,14 @@ std::vector<mpi4cpp::mpi::request>
     const int mode,
     const int tag)
 {
+
+#ifndef TYVI_BACKEND_CPU
   if(not toolbox::system_supports_gpu_aware_mpi()) {
     throw std::runtime_error {
-      "Non gpu aware MPI communication is not yet implemented."
+      "GPU backend requires GPU-aware MPI."
     };
   }
+#endif
 
   using runko::comm_mode;
 
