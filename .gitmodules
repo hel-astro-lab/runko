@@ -17,4 +17,4 @@
 [submodule "external/tyvi"]
 	path = external/tyvi
 	url = https://github.com/hel-astro-lab/tyvi
-	branch = main
+	branch = pre-pika
