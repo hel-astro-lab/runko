@@ -36,7 +36,7 @@ void
   using toolbox::dot;
   using toolbox::cross;
 
-  const auto EB = EBfunc(pos_);
+  const auto EB = EBfunc(ids_, pos_);
 
   const auto pos_mds = pos_.mds();
   const auto vel_mds = vel_.mds();

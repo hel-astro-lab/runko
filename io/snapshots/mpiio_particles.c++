@@ -189,11 +189,14 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
       const auto n_s      = static_cast<std::size_t>(t.sampled);
       const auto stride_t = static_cast<std::size_t>(t.stride);
 
-      // Gather sampled local positions for field interpolation
+      // Gather sampled local positions and ids for field interpolation
       auto sampled_pos = runko::VecList<float>(n_s);
+      auto sampled_ids = runko::ScalarList<runko::prtc_id_type>(n_s);
       {
         const auto sp_mds  = sampled_pos.mds();
+        const auto sp_ids_mds  = sampled_ids.mds();
         const auto src_pos = container.pos_mds();
+        const auto src_ids_mds  = container.ids_mds();
 
         tyvi::mdgrid_work {}
           .for_each_index(sampled_pos, [=](const auto idx) {
@@ -201,12 +204,13 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
             sp_mds[idx][0] = src_pos[si][0];
             sp_mds[idx][1] = src_pos[si][1];
             sp_mds[idx][2] = src_pos[si][2];
+            sp_ids_mds[idx][] = src_ids_mds[si][];
           })
           .wait();
       }
 
       // Interpolate E, B at sampled positions
-      auto [E_interp, B_interp] = tile.interpolate_fields_at(sampled_pos);
+      auto [E_interp, B_interp] = tile.interpolate_fields_at(sampled_ids, sampled_pos);
 
       // Pack all 12 fields into prtcl_buf_
       using vt = pic::ParticleContainer::value_type;

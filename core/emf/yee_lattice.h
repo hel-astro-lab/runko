@@ -1,9 +1,10 @@
 #pragma once
 
+#include "core/emf/common.h"
 #include "core/emf/edge_bc.h"
 #include "core/emf/stencil_coefficients.h"
-#include "core/emf/common.h"
 #include "core/mdgrid_common.h"
+#include "core/particles_common.h"
 #include "tools/hollow_grid.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
@@ -151,7 +152,10 @@ public:
   void push_b_stencil(value_type dt, const StencilCoeffs& coeffs);
 
   /// Advance B using extended stencil (N=2, M=2) in non-halo region asynchronously.
-  void push_b_stencil(const tyvi::mdgrid_work&, value_type dt, const StencilCoeffs& coeffs);
+  void push_b_stencil(
+    const tyvi::mdgrid_work&,
+    value_type dt,
+    const StencilCoeffs& coeffs);
 
   /// Advance E by full time step using FDTD2 scheme in non-halo region asynchronously.
   void push_e_FDTD2(const tyvi::mdgrid_work&, value_type dt);
@@ -270,8 +274,11 @@ public:
   ///
   /// Lattice index (0, 0, 0) is interperted to be at lattice_origo_coordinates.
   /// Note that (0, 0, 0) is in the halo region.
+  ///
+  /// Takes particle ids as argument such that dead particles can be skipped.
   InterpolatedEB interpolate_EB_linear_1st(
     std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& coordinates) const;
 
   /// Interpolate E and B to given coordinates using linear_1st interpolation (async).
@@ -281,23 +288,32 @@ public:
   ///
   /// By async means that work is executed on the given work which is synchronized
   /// before returning.
+  ///
+  /// Takes particle ids as argument such that dead particles can be skipped.
   InterpolatedEB interpolate_EB_linear_1st(
     const tyvi::mdgrid_work&,
     std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& coordinates) const;
 
   /// Interpolate E and B using linear_1st with manually unrolled 2x2x2 stencil.
   ///
   /// Bit-exact results as linear_1st but the unrolled stencil enables
   /// SIMD vectorization of the outer particle loop.
+  ///
+  /// Takes particle ids as argument such that dead particles can be skipped.
   InterpolatedEB interpolate_EB_linear_1st_unrolled(
     std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& coordinates) const;
 
   /// Interpolate E and B using linear_1st with manually unrolled 2x2x2 stencil (async).
+  ///
+  /// Takes particle ids as argument such that dead particles can be skipped.
   InterpolatedEB interpolate_EB_linear_1st_unrolled(
     const tyvi::mdgrid_work&,
     std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& coordinates) const;
 
   /// Apply an edge boundary condition over the given width.
@@ -351,10 +367,12 @@ public:
   /// Apply digital 2nd order binomial filter for J using a single 3D kernel (async).
   void filter_current_binomial2(const tyvi::mdgrid_work&);
 
-  /// Apply digital 2nd order binomial filter for J with manually unrolled separable passes.
+  /// Apply digital 2nd order binomial filter for J with manually unrolled separable
+  /// passes.
   void filter_current_binomial2_unrolled();
 
-  /// Apply digital 2nd order binomial filter for J with manually unrolled separable passes (async).
+  /// Apply digital 2nd order binomial filter for J with manually unrolled separable
+  /// passes (async).
   void filter_current_binomial2_unrolled(const tyvi::mdgrid_work&);
 
   /// Returns mdspans to host accessible E, B and J in non-halo region.
@@ -560,11 +578,9 @@ inline auto
 inline auto
   YeeLattice::view_EBJ_on_device()
 {
-  return std::tuple {
-    nonhalo_submds(E_.mds()),
-    nonhalo_submds(B_.mds()),
-    nonhalo_submds(J_.mds())
-  };
+  return std::tuple { nonhalo_submds(E_.mds()),
+                      nonhalo_submds(B_.mds()),
+                      nonhalo_submds(J_.mds()) };
 }
 
 template<typename MDS>

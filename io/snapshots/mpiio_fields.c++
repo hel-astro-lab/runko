@@ -264,12 +264,14 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
 
     auto deposit_species = [&](std::size_t species, int f_idx) {
       const auto pos_mds = pic_tile->particles(species).pos_mds();
+      const auto ids_mds = pic_tile->particles(species).ids_mds();
       const auto fi = static_cast<std::size_t>(f_idx);
 
       tyvi::mdgrid_work {}
         .for_each_index(
           pos_mds,
           [=](const auto idx) {
+            if (ids_mds[idx][] == runko::dead_prtc_id) { return; }
             const auto px = pos_mds[idx][0] - mx;
             const auto py = pos_mds[idx][1] - my;
             const auto pz = pos_mds[idx][2] - mz;

@@ -328,12 +328,13 @@ void
   pic::ParticleContainer::InterpolatedEB_function ipol_func {};
 
   switch(field_interpolator_) {
-    case FieldInterpolator::linear_1st: {
-      // We have to cast to fptr to choose one function from the overload set.
-      using fptr = emf::YeeLattice::InterpolatedEB (emf::YeeLattice::*)(
-        std::array<emf::YeeLattice::value_type, 3>,
-        const runko::VecList<emf::YeeLattice::value_type>&) const;
+    // We have to cast to fptr to choose one function from the overload set.
+    using fptr = emf::YeeLattice::InterpolatedEB (emf::YeeLattice::*)(
+      std::array<emf::YeeLattice::value_type, 3>,
+      const runko::ScalarList<runko::prtc_id_type>&,
+      const runko::VecList<emf::YeeLattice::value_type>&) const;
 
+    case FieldInterpolator::linear_1st: {
       ipol_func = std::bind_front(
         static_cast<fptr>(&emf::YeeLattice::interpolate_EB_linear_1st),
         std::cref(this->yee_lattice_),
@@ -341,10 +342,6 @@ void
       break;
     }
     case FieldInterpolator::linear_1st_unrolled: {
-      using fptr = emf::YeeLattice::InterpolatedEB (emf::YeeLattice::*)(
-        std::array<emf::YeeLattice::value_type, 3>,
-        const runko::VecList<emf::YeeLattice::value_type>&) const;
-
       ipol_func = std::bind_front(
         static_cast<fptr>(&emf::YeeLattice::interpolate_EB_linear_1st_unrolled),
         std::cref(this->yee_lattice_),
@@ -452,7 +449,9 @@ void
 
 template<std::size_t D>
 emf::YeeLattice::InterpolatedEB
-  Tile<D>::interpolate_fields_at(const runko::VecList<value_type>& positions) const
+  Tile<D>::interpolate_fields_at(
+    const runko::ScalarList<runko::prtc_id_type>& ids,
+    const runko::VecList<value_type>& positions) const
 {
   using yee_vt = emf::YeeLattice::value_type;
   const auto origo_pos =
@@ -460,7 +459,7 @@ emf::YeeLattice::InterpolatedEB
                static_cast<yee_vt>(this->mins[1]) - emf::halo_size,
                static_cast<yee_vt>(this->mins[2]) - emf::halo_size };
 
-  return this->yee_lattice_.interpolate_EB_linear_1st(origo_pos, positions);
+  return this->yee_lattice_.interpolate_EB_linear_1st(origo_pos, ids, positions);
 }
 
 template<std::size_t D>

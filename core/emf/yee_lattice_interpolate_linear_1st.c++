@@ -47,21 +47,24 @@ namespace emf {
 YeeLattice::InterpolatedEB
   YeeLattice::interpolate_EB_linear_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& pos) const
 {
   tyvi::mdgrid_work w {};
-  return interpolate_EB_linear_1st(w, lattice_origo_coordinates, pos);
+  return interpolate_EB_linear_1st(w, lattice_origo_coordinates, ids, pos);
 }
 
 YeeLattice::InterpolatedEB
   YeeLattice::interpolate_EB_linear_1st(
     const tyvi::mdgrid_work& w,
     const std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& pos) const
 {
   auto Eipo = runko::VecList<value_type>(pos.extents());
   auto Bipo = runko::VecList<value_type>(pos.extents());
 
+  const auto idsmds   = ids.mds();
   const auto posmds   = pos.mds();
   const auto Eipo_mds = Eipo.mds();
   const auto Bipo_mds = Bipo.mds();
@@ -74,6 +77,8 @@ YeeLattice::InterpolatedEB
   w.for_each_index(
      posmds,
      [=](const auto idx) {
+       if(idsmds[idx][] == runko::dead_prtc_id) { return; }
+
        const auto pos            = toolbox::Vec3<value_type>(posmds[idx]);
        const auto origo          = toolbox::Vec3<value_type>(lattice_origo_coordinates);
        const auto pos_in_lattice = pos - origo;
@@ -152,21 +157,24 @@ YeeLattice::InterpolatedEB
 YeeLattice::InterpolatedEB
   YeeLattice::interpolate_EB_linear_1st_unrolled(
     const std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& pos) const
 {
   tyvi::mdgrid_work w {};
-  return interpolate_EB_linear_1st_unrolled(w, lattice_origo_coordinates, pos);
+  return interpolate_EB_linear_1st_unrolled(w, lattice_origo_coordinates, ids, pos);
 }
 
 YeeLattice::InterpolatedEB
   YeeLattice::interpolate_EB_linear_1st_unrolled(
     const tyvi::mdgrid_work& w,
     const std::array<value_type, 3> lattice_origo_coordinates,
+    const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& pos) const
 {
   auto Eipo = runko::VecList<value_type>(pos.extents());
   auto Bipo = runko::VecList<value_type>(pos.extents());
 
+  const auto idsmds   = ids.mds();
   const auto posmds   = pos.mds();
   const auto Eipo_mds = Eipo.mds();
   const auto Bipo_mds = Bipo.mds();
@@ -179,6 +187,7 @@ YeeLattice::InterpolatedEB
   w.for_each_index(
      posmds,
      [=](const auto idx) {
+       if(idsmds[idx][] == runko::dead_prtc_id) { return; }
        const auto pos            = toolbox::Vec3<value_type>(posmds[idx]);
        const auto origo          = toolbox::Vec3<value_type>(lattice_origo_coordinates);
        const auto pos_in_lattice = pos - origo;

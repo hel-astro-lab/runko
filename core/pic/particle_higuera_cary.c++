@@ -10,7 +10,7 @@ void
     const double cfl_,
     const InterpolatedEB_function& EBfunc)
 {
-  const auto EB = EBfunc(pos_);
+  const auto EB = EBfunc(ids_, pos_);
 
   const auto pos_mds = pos_.mds();  // particle positions
   const auto vel_mds = vel_.mds();  // particle (four-)velocities

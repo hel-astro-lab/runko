@@ -135,6 +135,12 @@ public:
     return vel_.mds();
   }
 
+  [[nodiscard]]
+  auto ids_mds() const
+  {
+    return ids_.mds();
+  }
+
   /// Wraps coordinates outside of given extents.
   void wrap_positions(std::array<value_type, 3> mins, std::array<value_type, 3> maxs);
 
@@ -169,8 +175,10 @@ public:
   /// Given function has to be device callable.
   void sort(pic::score_function<value_type> auto&& f);
 
-  using InterpolatedEB_function =
-    std::function<emf::YeeLattice::InterpolatedEB(const runko::VecList<value_type>&)>;
+  /// Takes particle ids as argument such that dead particles can be skipped.
+  using InterpolatedEB_function = std::function<emf::YeeLattice::InterpolatedEB(
+    const runko::ScalarList<runko::prtc_id_type>& ids,
+    const runko::VecList<value_type>&)>;
 
   /// Push particles velocities and positions using boris scheme.
   void push_particles_boris(double cfl, const InterpolatedEB_function&);

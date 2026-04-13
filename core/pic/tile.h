@@ -182,8 +182,11 @@ public:
   ///
   /// Positions are in tile-local code units (same as ParticleContainer).
   /// Uses linear_1st interpolation.
-  emf::YeeLattice::InterpolatedEB
-    interpolate_fields_at(const runko::VecList<value_type>& positions) const;
+  ///
+  /// Takes particle ids as argument such that dead particles can be skipped.
+  emf::YeeLattice::InterpolatedEB interpolate_fields_at(
+    const runko::ScalarList<runko::prtc_id_type>&,
+    const runko::VecList<value_type>& positions) const;
 
   std::size_t number_of_species() const;
 

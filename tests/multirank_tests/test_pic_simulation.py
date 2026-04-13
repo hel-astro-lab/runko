@@ -354,6 +354,42 @@ def pic_communication():
     verify_state_tracker()
 
 
+def pic_realistic_communication():
+    """
+    Just to see that the commmunication does not crash with realistic particle distribution.
+    """
+
+    conf, tile_grid = make_test_grid()
+
+    def pgen(x, y, z):
+        N = len(x)
+
+        dx = np.random.random(N)
+        dy = np.random.random(N)
+        dz = np.random.random(N)
+
+        pos = x + dx, y + dy, z + dz
+        vel = runko.sample_boosted_juttner_synge(N, 1e-3, beta=0)
+        return runko.pic.threeD.ParticleStateBatch(pos=pos, vel=vel)
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.pic.threeD.Tile(idx, conf)
+        tile.batch_inject_to_cells(0, pgen)
+        tile.batch_inject_to_cells(1, pgen)
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    def f(x):
+        x.prtcl_push()
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
+
+
+    for _ in range(10):
+        simulation.for_one_lap(f)
+
+
 def pic_conservation_of_ids():
     """
     Generate particles in halo region and store particle states corresponding
@@ -681,6 +717,7 @@ if __name__ == "__main__":
     virtual_pic_tiles()
     pic_noop_communication()
     pic_communication()
+    pic_realistic_communication()
     pic_communication_with_empty_tiles()
     pic_conservation_of_ids()
     pic_wrap_positions()
