@@ -53,6 +53,19 @@ BYTES_PER_PARTICLE   = 24   # (3 pos + 3 vel) × 4 bytes
 def emf_bytes(nxm, nym, nzm):
     return BYTES_PER_FIELD_CELL * (nxm + 2*HALO) * (nym + 2*HALO) * (nzm + 2*HALO)
 
+def virtual_emf_bytes(nxm, nym, nzm):
+    """Memory for one hollow virtual tile: E + B (h=3) + J (h=6)."""
+    h_eb = HALO
+    shell_eb = nxm*nym*nzm - (nxm - 2*h_eb)*(nym - 2*h_eb)*(nzm - 2*h_eb)
+    eb_bytes = 2 * 3 * shell_eb * 4  # E + B, 3 components, 4 bytes/float
+
+    h_j  = 2 * HALO
+    jx, jy, jz = nxm + 2*HALO, nym + 2*HALO, nzm + 2*HALO
+    shell_j = jx*jy*jz - (jx - 2*h_j)*(jy - 2*h_j)*(jz - 2*h_j)
+    j_bytes = 3 * shell_j * 4
+
+    return eb_bytes + j_bytes
+
 def particle_bytes(nxm, nym, nzm, ppc_eff, n_species):
     return n_species * ppc_eff * nxm * nym * nzm * BYTES_PER_PARTICLE
 
@@ -200,7 +213,8 @@ def scan_configs(args):
     n_skipped_tiles = 0
     n_skipped_mem   = 0
 
-    configs = list(product(fx, fy, fz))
+    # y and z are symmetric; keep only (Ny,NyM) <= (Nz,NzM) to avoid duplicates
+    configs = [(a, b, c) for a, b, c in product(fx, fy, fz) if b <= c]
     for (nx, nxm), (ny, nym), (nz, nzm) in tqdm(configs, desc="Scanning configs"):
         total_tiles = nx * ny * nz
         tiles_per_gpu = total_tiles / n_gpus
@@ -211,7 +225,8 @@ def scan_configs(args):
             continue
 
         # memory per tile
-        emf_per_tile = emf_bytes(nxm, nym, nzm)
+        emf_per_tile  = emf_bytes(nxm, nym, nzm)
+        vemf_per_tile = virtual_emf_bytes(nxm, nym, nzm)
 
         # worst-case particle memory: weighted avg of downstream + upstream
         # at steady state: f_down fraction downstream (4x), rest upstream (1x)
@@ -245,7 +260,7 @@ def scan_configs(args):
                 tiles_per_rank[rank] * emf_per_tile
                 + n_down * prtcl_down
                 + n_up   * prtcl_up
-                + vtiles[rank] * emf_per_tile
+                + vtiles[rank] * vemf_per_tile
             )
 
         max_gpu_mem = np.max(rank_mem)
@@ -276,6 +291,7 @@ def scan_configs(args):
             'max_vtiles': int(np.max(vtiles)),
             'mean_vtiles': float(np.mean(vtiles)),
             'emf_MB': emf_per_tile / 1e6,
+            'vemf_MB': vemf_per_tile / 1e6,
             'prtcl_down_MB': prtcl_down / 1e6,
             'prtcl_up_MB': prtcl_up / 1e6,
             'max_gpu_GB': max_gpu_mem / 1e9,
