@@ -1,5 +1,7 @@
 #pragma once
 
+#include "tyvi/mdspan.h"
+
 #include <algorithm>
 #include <compare>
 #include <concepts>
@@ -109,5 +111,67 @@ struct [[nodiscard]] grid_neighbor {
       return grid_neighbor(-direction[I]...);
     }(std::make_index_sequence<rank>());
   }
+
+  /* nieghbor_index one-to-one maps directions to numbers: 0, 1, ..., 3^rank - 1 */
+
+  static constexpr auto mapping = []<std::size_t... I>(std::index_sequence<I...>) {
+    // This probably could have value_type as index type but due to
+    // https://github.com/hel-astro-lab/tyvi/issues/11
+    // we have to use wider type.
+    using E = std::extents<unsigned int, (I * 0 + 3)...>;
+    return std::layout_right::mapping { E {} };
+  }(std::make_index_sequence<rank>());
+
+  static constexpr auto inverse_mapping = tyvi::sstd::index_space_view(mapping);
+
+  constexpr std::uint8_t neighbor_index() const
+  {
+    // ugly syntax until template for in C++26 :(
+    const auto index = [&]<std::size_t... I>(std::index_sequence<I...>) {
+      return mapping((direction[I] + 1)...);
+    }(std::make_index_sequence<rank>());
+    static_assert(
+      rank <= 5uz,
+      "rank-6 or larger neighbor_index does not fit into std::uint8_t");
+    return static_cast<std::uint8_t>(index);
+  }
+
+  static constexpr grid_neighbor from_index(const std::uint8_t index)
+  {
+    // ugly syntax until template for in C++26 :(
+    return [&]<std::size_t... I>(std::index_sequence<I...>) {
+      const auto dir = inverse_mapping[index];
+      return grid_neighbor((dir[I] - 1)...);
+    }(std::make_index_sequence<rank>());
+  }
 };
+
+static_assert(
+  grid_neighbor<2>(-1, -1) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(-1, -1).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(-1, 0) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(-1, 0).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(-1, 1) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(-1, 1).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(0, -1) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(0, -1).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(0, 0) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(0, 0).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(0, 1) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(0, 1).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(1, -1) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(1, -1).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(1, 0) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(1, 0).neighbor_index()));
+static_assert(
+  grid_neighbor<2>(1, 1) ==
+  grid_neighbor<2>::from_index(grid_neighbor<2>(1, 1).neighbor_index()));
+
 }  // namespace runko
