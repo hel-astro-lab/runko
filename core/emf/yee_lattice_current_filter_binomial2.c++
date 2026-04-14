@@ -89,12 +89,23 @@ void
   const auto Ny = e.extent(1);
   const auto Nz = e.extent(2);
 
+  // First setup cache:
+  struct cache_type { VecGrid temp1, temp2; };
+
+  if (typeid(cache_type) != this->current_filter_cache_.type()) {
+      this->current_filter_cache_ = cache_type {
+          .temp1 = VecGrid(Nx, Ny, Nz - 2uz),
+          .temp2 = VecGrid(Nx, Ny - 2uz, Nz - 2uz)
+      };
+  }
+
+  auto& cache = std::any_cast<cache_type&>(this->current_filter_cache_);
+
   const auto Jmds = this->J_.mds();
 
   // Pass 1: convolve along z (dim 2)
   // temp1 dims: (Nx, Ny, Nz-2) — z-dimension shrinks by 2
-  auto temp1    = VecGrid(Nx, Ny, Nz - 2uz);
-  const auto t1 = temp1.mds();
+  const auto t1 = cache.temp1.mds();
 
   w.for_each_index(
      t1,
@@ -102,13 +113,11 @@ void
        const auto i = idx[0], j = idx[1], k = idx[2];
        t1[idx][tidx] = B1[0] * Jmds[i, j, k][tidx] + B1[1] * Jmds[i, j, k + 1][tidx] +
                        B1[2] * Jmds[i, j, k + 2][tidx];
-     })
-    .wait();
+     });
 
   // Pass 2: convolve along y (dim 1)
   // temp2 dims: (Nx, Ny-2, Nz-2) — y-dimension shrinks by 2
-  auto temp2    = VecGrid(Nx, Ny - 2uz, Nz - 2uz);
-  const auto t2 = temp2.mds();
+  const auto t2 = cache.temp2.mds();
 
   w.for_each_index(
      t2,
@@ -116,13 +125,11 @@ void
        const auto i = idx[0], j = idx[1], k = idx[2];
        t2[idx][tidx] = B1[0] * t1[i, j, k][tidx] + B1[1] * t1[i, j + 1, k][tidx] +
                        B1[2] * t1[i, j + 2, k][tidx];
-     })
-    .wait();
+     });
 
   // Pass 3: convolve along x (dim 0) — write to interior of full-size output
-  auto filteredJ           = VecGrid(this->J_.extents());
   const auto filteredJ_mds = std::submdspan(
-    filteredJ.mds(),
+    this->J_.mds(),
     std::tuple { std::integral_constant<runko::index_t, 1uz> {},
                  static_cast<runko::index_t>(Nx - 1) },
     std::tuple { std::integral_constant<runko::index_t, 1uz> {},
@@ -137,8 +144,6 @@ void
        filteredJ_mds[idx][tidx] = B1[0] * t2[i, j, k][tidx] +
                                   B1[1] * t2[i + 1, j, k][tidx] +
                                   B1[2] * t2[i + 2, j, k][tidx];
-     })
-    .wait();
-
-  this->J_ = std::move(filteredJ);
+     });
+  w.wait();
 }

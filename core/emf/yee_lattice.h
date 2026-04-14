@@ -11,6 +11,7 @@
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
 
+#include <any>
 #include <array>
 #include <concepts>
 #include <cstddef>
@@ -85,6 +86,8 @@ private:
 
   /// Current
   VecGrid J_;
+
+  std::any current_filter_cache_;
 
 public:
   /* FIXME: Use std::integral_constant when possible in mds helpers below. */
