@@ -24,4 +24,5 @@ struct ParticleState {
   prtc_id_type id;
 };
 
+static_assert(std::is_trivially_copyable_v<ParticleState<float>>);
 }  // namespace runko

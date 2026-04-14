@@ -204,6 +204,7 @@ if __name__ == "__main__":
         x.comm_local(runko.tools.comm_mode.emf_B)
 
         x.prtcl_push()
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 

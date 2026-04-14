@@ -180,15 +180,11 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
   // subregion_index: {-1, 0, 1} x {-1, 0, 1} x {-1, 0, 1} -> {0, 1, ..., 26}
   constexpr auto subregion_index =
     [](const int i, const int j, const int k) -> runko::index_t {
-    const auto ii = static_cast<runko::index_t>(i + 1);
-    const auto jj = static_cast<runko::index_t>(j + 1);
-    const auto kk = static_cast<runko::index_t>(k + 1);
-    return ii * runko::index_t { 9 } + jj * runko::index_t { 3 } + kk;
+    return runko::grid_neighbor<3>(i, j, k).neighbor_index();
   };
 
-  static constexpr auto subregion_index_to_dir = [](const runko::index_t nuz) static {
-    const auto n = static_cast<int>(nuz);
-    return runko::grid_neighbor<3> { (n / 9) - 1, ((n / 3) % 3) - 1, (n % 3) - 1 };
+  static constexpr auto subregion_index_to_dir = [](const runko::index_t i) static {
+    return runko::grid_neighbor<3>::from_index(i);
   };
 
   const auto pos_mds = this->pos_.mds();
@@ -306,14 +302,17 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
 
   auto next_span_begin = prev_buffer_size;
   for(auto i = runko::index_t { 0 }; i < runko::index_t { 27 }; ++i) {
-    if(i == subregion_index(0, 0, 0)) { continue; }
+    const auto dir = subregion_index_to_dir(i);
+    if(i == subregion_index(0, 0, 0)) {
+      m.insert_or_assign(dir, std::pair { next_span_begin, next_span_begin });
+      continue;
+    }
 
     const auto count = subregion_counts[i];
     const auto from  = next_span_begin;
     const auto until = from + count;
     next_span_begin  = until;
 
-    const auto dir = subregion_index_to_dir(i);
     m.insert_or_assign(dir, std::pair { from, until });
   }
 

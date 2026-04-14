@@ -220,6 +220,7 @@ if __name__ == "__main__":
         # --- particle push + reflect + communicate ---
         x.prtcl_push()
         x.prtcl_reflect_particles()
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 

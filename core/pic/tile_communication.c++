@@ -1,48 +1,16 @@
 #include "core/communication_common.h"
 #include "core/pic/tile.h"
+#include "core/pic/virtual_tile.h"
 #include "thrust/memory.h"
 #include "tools/system.h"
 
 #include <cstddef>
 #include <iterator>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
-
-namespace {
-
-constexpr int
-  particle_tag(
-    const int tag,
-    const auto particle_ordinal,
-    const std::size_t particles_in_total)
-{
-  return static_cast<int>(particle_ordinal + particles_in_total * tag);
-}
-
-enum class particle_data_type { pos, vel, id };
-
-template<particle_data_type data_type>
-constexpr int
-  particle_data_tag(
-    const int tag,
-    const auto particle_ordinal,
-    const std::size_t particles_in_total)
-{
-  static constexpr auto x = [] {
-    if(data_type == particle_data_type::pos) {
-      return 0;
-    } else if(data_type == particle_data_type::vel) {
-      return 1;
-    } else {
-      return 2;
-    }
-  }();
-  return static_cast<int>(x + 3 * particle_ordinal + 3 * particles_in_total * tag);
-}
-
-}  // namespace
 
 namespace pic {
 
@@ -70,124 +38,31 @@ std::vector<mpi4cpp::mpi::request>
     in agreement on what particles there are.
    */
 
-
-  auto make_isend = [&](const auto s, const int t) {
-    return comm.isend(dest, t, s.data(), s.size());
-  };
-
   using runko::comm_mode;
 
   switch(static_cast<comm_mode>(mode)) {
-    case comm_mode::number_of_particles: {
-      auto comms = std::vector<mpi4cpp::mpi::request>();
-      for(const auto& [key, value]: this->particle_buffs_) {
-        this->amount_of_particles_to_be_send_[key] = value.size();
-        comms.push_back(comm.isend(
-          dest,
-          particle_tag(tag, key, this->particle_buffs_.size()),
-          this->amount_of_particles_to_be_send_[key]));
-      }
-      return comms;
-    }
+    case comm_mode::number_of_particles:
+      return std::vector<mpi4cpp::mpi::request> { comm.isend(
+        dest,
+        tag,
+        thrust::raw_pointer_cast(subregion_particle_ends_.data()),
+        subregion_particle_ends_.size()) };
     case comm_mode::pic_particle: {
-      auto comms = std::vector<mpi4cpp::mpi::request>();
-      for(const auto& [key, value]: this->particle_buffs_) {
-        comms.push_back(make_isend(
-          value.span_pos(),
-          particle_data_tag<particle_data_type::pos>(
-            tag,
-            key,
-            this->particle_buffs_.size())));
-        comms.push_back(make_isend(
-          value.span_vel(),
-          particle_data_tag<particle_data_type::vel>(
-            tag,
-            key,
-            this->particle_buffs_.size())));
-        comms.push_back(make_isend(
-          value.span_id(),
-          particle_data_tag<particle_data_type::id>(
-            tag,
-            key,
-            this->particle_buffs_.size())));
-      }
-      return comms;
+      const auto p = thrust::raw_pointer_cast(this->subregion_particle_buff_.data());
+      const auto s = std::span(p, subregion_particle_buff_.size());
+      return std::vector<mpi4cpp::mpi::request> { comm.isend(
+        dest,
+        tag,
+        reinterpret_cast<char const*>(std::as_bytes(s).data()),
+        s.size_bytes()) };
     }
     default: return emf::Tile<D>::send_data(comm, dest, mode, tag);
   }
 }
 
 template<std::size_t D>
-std::vector<mpi4cpp::mpi::request>
-  Tile<D>::recv_data(
-    mpi4cpp::mpi::communicator& comm,
-    const int orig,
-    const int mode,
-    const int tag)
-{
-#ifndef TYVI_BACKEND_CPU
-  if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error { "GPU backend requires GPU-aware MPI." };
-  }
-#endif
-
-  using runko::comm_mode;
-
-  const auto recv_particle_sizes = [&, this] {
-    auto comms = std::vector<mpi4cpp::mpi::request>();
-    for(const auto& [key, value]: this->particle_buffs_) {
-      comms.push_back(comm.irecv(
-        orig,
-        particle_tag(tag, key, this->particle_buffs_.size()),
-        this->amount_of_particles_to_be_received_[key]));
-    }
-    return comms;
-  };
-
-
-  auto make_irecv = [&](const auto s, const int t) {
-    return comm.irecv(orig, t, s.data(), s.size());
-  };
-
-  const auto recv_particles = [&, this] {
-    auto comms = std::vector<mpi4cpp::mpi::request>();
-    for(auto& [key, value]: this->particle_buffs_) {
-      auto new_args = value.args();
-      new_args.N    = amount_of_particles_to_be_received_[key];
-      value         = pic::ParticleContainer(new_args);
-
-      comms.push_back(make_irecv(
-        value.span_pos(),
-        particle_data_tag<particle_data_type::pos>(
-          tag,
-          key,
-          this->particle_buffs_.size())));
-      comms.push_back(make_irecv(
-        value.span_vel(),
-        particle_data_tag<particle_data_type::vel>(
-          tag,
-          key,
-          this->particle_buffs_.size())));
-      comms.push_back(make_irecv(
-        value.span_id(),
-        particle_data_tag<particle_data_type::id>(
-          tag,
-          key,
-          this->particle_buffs_.size())));
-    }
-    return comms;
-  };
-
-  switch(static_cast<comm_mode>(mode)) {
-    case comm_mode::number_of_particles: return recv_particle_sizes();
-    case comm_mode::pic_particle: return recv_particles();
-    default: return emf::Tile<D>::recv_data(comm, orig, mode, tag);
-  }
-}
-
-template<std::size_t D>
 void
-  Tile<D>::divide_particles_to_subregions()
+  Tile<D>::pack_outgoing_particles()
 {
   const auto x_div =
     std::array { static_cast<ParticleContainer::value_type>(this->mins[0]),
@@ -199,27 +74,22 @@ void
     std::array { static_cast<ParticleContainer::value_type>(this->mins[2]),
                  static_cast<ParticleContainer::value_type>(this->maxs[2]) };
 
+  this->subregion_particle_ends_.resize(27 * this->particle_buffs_.size());
   this->subregion_particle_buff_.resize(0);
+  // ptypes are assumed always to be contiguous 0, 1, ..., N
   for(auto& [ptype, pcontainer]: this->particle_buffs_) {
     auto spans = pcontainer.divide_to_subregions(
       this->subregion_particle_buff_,
       x_div,
       y_div,
       z_div);
-    std::ignore =
-      this->subregion_particle_spans_.insert_or_assign(ptype, std::move(spans));
+
+
+    for(const auto [dir, span]: spans) {
+      this->subregion_particle_ends_.at(27 * ptype + dir.neighbor_index()) =
+        std::get<1>(span);
+    }
   }
-}
-
-template<std::size_t D>
-void
-  Tile<D>::local_communication_prelude(const int mode)
-{
-  // continue from here
-  using runko::comm_mode;
-  if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
-
-  this->divide_particles_to_subregions();
 }
 
 template<std::size_t D>
@@ -240,8 +110,8 @@ void
       this->template get_global_coordinate_maxs<T>());
   }
 
+  this->subregion_particle_ends_.clear();
   this->incoming_subregion_particles_.clear();
-  this->subregion_particle_spans_.clear();
   // Note that this->subregion_particle_buffs_ can not be cleared here.
   // Other tiles might be using it.
 }
@@ -253,35 +123,73 @@ void
     const std::array<int, D> dir_to_other,
     const int mode)
 {
+  auto const* const other_base_ptr = &other_base;
   using runko::comm_mode;
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) {
     emf::Tile<D>::local_communication(other_base, dir_to_other, mode);
     return;
   }
 
-  const Tile<D>& other = [&]() -> const Tile<D>& {
-    try {
-      return dynamic_cast<const Tile<D>&>(other_base);
-    } catch(const std::bad_cast& ex) {
-      throw std::runtime_error { std::format(
-        "pic::Tile::local_communication assumes that the other tile is "
-        "pic::Tile or its descendant. Orginal exception: {}",
-        ex.what()) };
-    }
-  }();
-
   const auto dir          = runko::grid_neighbor<3>(dir_to_other);
   const auto inverted_dir = dir.inverted();
 
-  for(const auto& [ptype, spans]: other.subregion_particle_spans_) {
-    if(spans.contains(inverted_dir)) {
-      const auto [begin, end] = spans.at(inverted_dir);
-      const auto p = thrust::raw_pointer_cast(other.subregion_particle_buff_.data());
-      this->incoming_subregion_particles_[ptype].push_back(
-        std::span<const runko::ParticleState<value_type>>(
-          std::ranges::next(p, begin),
-          std::ranges::next(p, end)));
+  namespace rv = std::views;
+
+  auto get_span =
+    [&](
+      const std::size_t ptype,
+      const runko::grid_neighbor<3> dir,
+      const std::vector<std::size_t>& ends,
+      const thrust::device_vector<runko::ParticleState<value_type>>& buff) {
+      const auto index = 27 * ptype + dir.neighbor_index();
+      const auto end   = ends[index];
+      const auto begin = index == 0 ? 0uz : ends[index - 1];
+      const auto p     = thrust::raw_pointer_cast(buff.data());
+      return std::span<const runko::ParticleState<value_type>>(
+        std::ranges::next(p, begin),
+        std::ranges::next(p, end));
+    };
+
+  if(const auto* nonvirtual_other = dynamic_cast<const Tile<D>*>(other_base_ptr)) {
+    switch(static_cast<comm_mode>(mode)) {
+      case comm_mode::pic_particle:
+        for(const auto ptype: rv::iota(0uz, this->particle_buffs_.size())) {
+          this->incoming_subregion_particles_[ptype].push_back(get_span(
+            ptype,
+            inverted_dir,
+            nonvirtual_other->subregion_particle_ends_,
+            nonvirtual_other->subregion_particle_buff_));
+        }
+        break;
+      default:
+        throw std::logic_error { std::format(
+          "pic::Tile::local_communication does not support given "
+          "communication mode: {}",
+          mode) };
     }
+  } else if(
+    const auto* virtual_other = dynamic_cast<const VirtualTile<D>*>(other_base_ptr)) {
+    switch(static_cast<comm_mode>(mode)) {
+      case comm_mode::pic_particle:
+        for(const auto ptype: rv::iota(0uz, this->particle_buffs_.size())) {
+          this->incoming_subregion_particles_[ptype].push_back(get_span(
+            ptype,
+            inverted_dir,
+            virtual_other->subregion_ends_,
+            virtual_other->buffer_));
+        }
+        break;
+      default:
+        throw std::logic_error { std::format(
+          "pic::Tile::local_communication does not support given "
+          "communication mode: {}",
+          mode) };
+    }
+  } else {
+    throw std::runtime_error {
+      "pic::Tile::local_communication assumes that the other tile is "
+      "pic::Tile or pic::VirtualTile."
+    };
   }
 }
 

@@ -1,6 +1,7 @@
 #include "core/particles_common.h"
 #include "core/pic/reflector_wall.h"
 #include "core/pic/tile.h"
+#include "core/pic/virtual_tile.h"
 #include "io/pic_average_kinetic_energy.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
@@ -76,15 +77,28 @@ void
   using RW = pic::reflector_wall;
   py::class_<RW>(m_3d, "reflector_wall")
     .def(
-      py::init([](RW::value_type walloc, RW::value_type betawall, RW::value_type gammawall) {
-        return RW { walloc, betawall, gammawall };
-      }),
+      py::init(
+        [](RW::value_type walloc, RW::value_type betawall, RW::value_type gammawall) {
+          return RW { walloc, betawall, gammawall };
+        }),
       py::arg("walloc"),
       py::arg("betawall")  = RW::value_type { 0 },
       py::arg("gammawall") = RW::value_type { 1 })
     .def_readwrite("walloc", &RW::walloc)
     .def_readwrite("betawall", &RW::betawall)
     .def_readwrite("gammawall", &RW::gammawall);
+
+  // 3d virtual tile specialization
+  py::class_<
+    pic::VirtualTile<3>,
+    emf::VirtualTile<3>,
+    corgi::Tile<3>,
+    std::shared_ptr<pic::VirtualTile<3>>>(m_3d, "VirtualTile")
+    .def(
+      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
+        return pic::VirtualTile<3>(tile_grid_idx, toolbox::ConfigParser(h));
+      }))
+    .def_static("canonical_type", []() { return py::type::of<pic::Tile<3>>(); });
 
   // 3d pic tile
   py::class_<pic::Tile<3>, emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<pic::Tile<3>>>(
@@ -93,7 +107,7 @@ void
     .def_static("canonical_type", []() { return py::type::of<pic::Tile<3>>(); })
     .def_static(
       "virtual_tile_specialization",
-      []() { return py::type::of<pic::Tile<3>>(); })
+      []() { return py::type::of<pic::VirtualTile<3>>(); })
     .def(
       py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
         return pic::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
@@ -115,6 +129,7 @@ void
       [](pic::Tile<3>& tile, const std::size_t p) {
         return to_ndarray(tile.get_ids(p));
       })
+    .def("pack_outgoing_particles", &pic::Tile<3>::pack_outgoing_particles)
     .def("inject_to_each_cell", &pic::Tile<3>::inject_to_each_cell)
     .def("inject", &pic::Tile<3>::inject)
     .def("batch_inject_to_cells", &pic::Tile<3>::batch_inject_to_cells)

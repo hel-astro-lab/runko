@@ -100,7 +100,7 @@ def virtual_pic_tiles():
 
     asserts = []
     for vtile in vtiles:
-        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.pic.threeD.Tile))
+        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.pic.threeD.VirtualTile))
 
     mpi_unittest.assertDeferredResults(asserts)
 
@@ -192,6 +192,7 @@ def pic_noop_communication():
 
 
     def f(x):
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 
@@ -319,6 +320,7 @@ def pic_communication():
 
 
     def f(x):
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 
@@ -382,6 +384,7 @@ def pic_realistic_communication():
 
     def f(x):
         x.prtcl_push()
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 
@@ -433,6 +436,7 @@ def pic_conservation_of_ids():
                         state_tracker[i][id].append(s)
 
     def f(x):
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 
@@ -580,6 +584,7 @@ def pic_communication_with_empty_tiles():
 
     # This must not crash with map::at key not found.
     def f(x):
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 
@@ -656,6 +661,7 @@ def pic_wrap_positions():
     simulation = tile_grid.configure_simulation(conf)
 
     def f(x):
+        x.prtcl_pack_outgoing()
         x.comm_external(runko.tools.comm_mode.pic_particle)
         x.comm_local(runko.tools.comm_mode.pic_particle)
 

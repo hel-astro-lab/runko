@@ -268,6 +268,7 @@ Prelude step is defined using function which takes one parameter.
        x.comm_local(runko.tools.comm_mode.emf_B)
 
        x.prtcl_push()
+       x.prtcl_pack_outgoing()
        x.comm_external(runko.tools.comm_mode.pic_particle)
        x.comm_local(runko.tools.comm_mode.pic_particle)
 
@@ -344,6 +345,7 @@ runko makes practical choice of having three cells wide halo region to each dire
        x.comm_local(runko.tools.comm_mode.emf_B)
 
        x.prtcl_push()
+       x.prtcl_pack_outgoing()
        x.comm_external(runko.tools.comm_mode.pic_particle)
        x.comm_local(runko.tools.comm_mode.pic_particle)
 
@@ -376,6 +378,7 @@ which is out of date with the corresponding tile on some other rank.
 `x.comm_external` will update virtual tiles based on their corresponding "real" tiles.
 Virtual tile sync with `runko.comm_mode.emf_{E,B,J}` will sync corresponding field data
 and with `runko.comm_mode.particle` the particle data.
+Before particle communication, outgoing particles have to be packed with `prtcl_pack_outgoing`.
 
 .. note::
 

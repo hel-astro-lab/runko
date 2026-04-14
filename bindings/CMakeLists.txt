@@ -40,6 +40,7 @@ set (PIC_FILES
      pypic.c++
      ../core/pic/tile.c++
      ../core/pic/tile_communication.c++
+     ../core/pic/virtual_tile.c++
      ../core/pic/particle.c++
      ../core/pic/particle_boris.c++
      ../core/pic/particle_higuera_cary.c++

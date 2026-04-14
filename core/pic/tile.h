@@ -67,21 +67,9 @@ private:
 
   std::vector<pic::reflector_wall> reflector_walls_ {};
   std::optional<runko::VecGrid<emf::YeeLattice::value_type>> reflector_correction_J_ {};
-  std::map<std::size_t, std::size_t> amount_of_particles_to_be_send_;
-  std::map<std::size_t, std::size_t> amount_of_particles_to_be_received_;
 
-
-  /// particle type, direction -> span in subregion_particle_buff_
-  ///
-  /// These can not be std::span,
-  /// because resizing subregion_particle_buff_ will invalidate pointers.
-  std::map<
-    std::size_t,
-    std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>>
-    subregion_particle_spans_;
+  std::vector<std::size_t> subregion_particle_ends_;
   thrust::device_vector<runko::ParticleState<value_type>> subregion_particle_buff_;
-
-  void divide_particles_to_subregions();
 
   /// particle type -> incoming particles
   std::map<std::size_t, std::vector<std::span<const runko::ParticleState<value_type>>>>
@@ -203,15 +191,13 @@ public:
   /// Particle type is assumed to be configured.
   double total_kinetic_energy(std::size_t particle_type) const;
 
+  /// Has to be called before doing particle communication.
+  void pack_outgoing_particles();
+
   std::vector<mpi4cpp::mpi::request>
     send_data(mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag)
       override;
 
-  std::vector<mpi4cpp::mpi::request>
-    recv_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int mode, int tag)
-      override;
-
-  void local_communication_prelude(const int) override;
   void local_communication_postlude(const int) override;
 
   /// Get particles from haloregion of the other with comm_mode::pic_particle.

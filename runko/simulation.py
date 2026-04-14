@@ -206,6 +206,7 @@ class Simulation:
             if method.startswith("prtcl_"):
                 method_mapper = { "prtcl_push" : "push_particles",
                                   "prtcl_sort" : "sort_particles",
+                                  "prtcl_pack_outgoing" : "pack_outgoing_particles",
                                   "prtcl_deposit_current" : "deposit_current",
                                   "prtcl_reflect_particles" : "reflect_particles",
                                   "prtcl_advance_reflector_walls" : "advance_reflector_walls" }

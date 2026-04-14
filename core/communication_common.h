@@ -81,19 +81,23 @@ struct [[nodiscard]] grid_neighbor {
   explicit constexpr grid_neighbor(T&&... args) :
     direction { static_cast<value_type>(std::forward<T>(args))... }
   {
-    const auto ok = std::ranges::all_of(direction, [](const auto x) {
-      const auto a = x == value_type { -1 };
-      const auto b = x == value_type { 0 };
-      const auto c = x == value_type { 1 };
+    // This would be nice (assuming it does not effect performance).
+    // However, we would also like to use grid_neighbor on GPUs
+    // which makes throwing impossible.
+    //
+    // const auto ok = std::ranges::all_of(direction, [](const auto x) {
+    //   const auto a = x == value_type { -1 };
+    //   const auto b = x == value_type { 0 };
+    //   const auto c = x == value_type { 1 };
 
-      return a or b or c;
-    });
+    //   return a or b or c;
+    // });
 
-    if(not ok) {
-      throw std::logic_error {
-        "All components in grid_neighbor has to be in {-1, 0, 1}."
-      };
-    }
+    // if(not ok) {
+    //   throw std::logic_error {
+    //     "All components in grid_neighbor has to be in {-1, 0, 1}."
+    //   };
+    // }
   }
 
   template<std::convertible_to<value_type> T>
