@@ -51,7 +51,9 @@ YeeLattice::InterpolatedEB
     const runko::VecList<value_type>& pos) const
 {
   tyvi::mdgrid_work w {};
-  return interpolate_EB_linear_1st(w, lattice_origo_coordinates, ids, pos);
+  auto x = interpolate_EB_linear_1st(w, lattice_origo_coordinates, ids, pos);
+  w.wait();
+  return x;
 }
 
 YeeLattice::InterpolatedEB
@@ -61,8 +63,20 @@ YeeLattice::InterpolatedEB
     const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& pos) const
 {
-  auto Eipo = runko::VecList<value_type>(pos.extents());
-  auto Bipo = runko::VecList<value_type>(pos.extents());
+
+  using cache_type = runko::VecList<value_type>;
+
+  if (typeid(cache_type) != this->interpolated_E_cache_.type()) {
+      this->interpolated_E_cache_ = cache_type(pos.extents());
+  }
+  if (typeid(cache_type) != this->interpolated_B_cache_.type()) {
+      this->interpolated_B_cache_ = cache_type(pos.extents());
+  }
+
+  auto& Eipo = std::any_cast<cache_type&>(this->interpolated_E_cache_);
+  auto& Bipo = std::any_cast<cache_type&>(this->interpolated_B_cache_);
+  Eipo.invalidating_resize(pos.extents());
+  Bipo.invalidating_resize(pos.extents());
 
   const auto idsmds   = ids.mds();
   const auto posmds   = pos.mds();
@@ -149,9 +163,8 @@ YeeLattice::InterpolatedEB
        Bipo_mds[idx][0] = lerp3D(delta_pos.data, Bx_means_mds);
        Bipo_mds[idx][1] = lerp3D(delta_pos.data, By_means_mds);
        Bipo_mds[idx][2] = lerp3D(delta_pos.data, Bz_means_mds);
-     })
-    .wait();
-  return { std::move(Eipo), std::move(Bipo) };
+     });
+  return { Eipo, Bipo };
 }
 
 YeeLattice::InterpolatedEB
@@ -161,7 +174,9 @@ YeeLattice::InterpolatedEB
     const runko::VecList<value_type>& pos) const
 {
   tyvi::mdgrid_work w {};
-  return interpolate_EB_linear_1st_unrolled(w, lattice_origo_coordinates, ids, pos);
+  auto x = interpolate_EB_linear_1st_unrolled(w, lattice_origo_coordinates, ids, pos);
+  w.wait();
+  return x;
 }
 
 YeeLattice::InterpolatedEB
@@ -171,8 +186,19 @@ YeeLattice::InterpolatedEB
     const runko::ScalarList<runko::prtc_id_type>& ids,
     const runko::VecList<value_type>& pos) const
 {
-  auto Eipo = runko::VecList<value_type>(pos.extents());
-  auto Bipo = runko::VecList<value_type>(pos.extents());
+  using cache_type = runko::VecList<value_type>;
+
+  if (typeid(cache_type) != this->interpolated_E_cache_.type()) {
+      this->interpolated_E_cache_ = cache_type(pos.extents());
+  }
+  if (typeid(cache_type) != this->interpolated_B_cache_.type()) {
+      this->interpolated_B_cache_ = cache_type(pos.extents());
+  }
+
+  auto& Eipo = std::any_cast<cache_type&>(this->interpolated_E_cache_);
+  auto& Bipo = std::any_cast<cache_type&>(this->interpolated_B_cache_);
+  Eipo.invalidating_resize(pos.extents());
+  Bipo.invalidating_resize(pos.extents());
 
   const auto idsmds   = ids.mds();
   const auto posmds   = pos.mds();
@@ -405,9 +431,8 @@ YeeLattice::InterpolatedEB
        Bipo_mds[idx][0] = lerp3D(delta_pos.data, Bx_means_mds);
        Bipo_mds[idx][1] = lerp3D(delta_pos.data, By_means_mds);
        Bipo_mds[idx][2] = lerp3D(delta_pos.data, Bz_means_mds);
-     })
-    .wait();
-  return { std::move(Eipo), std::move(Bipo) };
+     });
+  return { Eipo, Bipo };
 }
 
 }  // namespace emf

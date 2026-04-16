@@ -210,7 +210,9 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
       }
 
       // Interpolate E, B at sampled positions
-      auto [E_interp, B_interp] = tile.interpolate_fields_at(sampled_ids, sampled_pos);
+      const auto EB_interp = tile.interpolate_fields_at(sampled_ids, sampled_pos);
+      const auto& E_interp = EB_interp.E;
+      const auto& B_interp = EB_interp.B;
 
       // Pack all 12 fields into prtcl_buf_
       using vt = pic::ParticleContainer::value_type;

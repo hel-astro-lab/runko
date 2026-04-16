@@ -88,6 +88,8 @@ private:
   VecGrid J_;
 
   std::any current_filter_cache_;
+  mutable std::any interpolated_E_cache_;
+  mutable std::any interpolated_B_cache_;
 
 public:
   /* FIXME: Use std::integral_constant when possible in mds helpers below. */
@@ -270,7 +272,8 @@ public:
 
 
   struct [[nodiscard]] InterpolatedEB {
-    runko::VecList<value_type> E, B;
+    const runko::VecList<value_type>& E;
+    const runko::VecList<value_type>& B;
   };
 
   /// Interpolate E and B to given coordinates using linear_1st interpolation.
