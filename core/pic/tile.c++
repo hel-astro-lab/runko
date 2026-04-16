@@ -394,11 +394,12 @@ void
       }
       break;
     case CurrentDepositer::zigzag_1st_atomic: {
-      auto generated_J = runko::VecGrid<emf::YeeLattice::value_type>(
-        this->yee_lattice_.extents_with_halo());
+      if(not this->generated_J_cache_) {
+        this->generated_J_cache_ = runko::VecGrid<emf::YeeLattice::value_type>(
+          this->yee_lattice_.extents_with_halo());
+      }
+      auto& generated_J = this->generated_J_cache_.value();
 
-      // This might be unneccesseary but I don't trust
-      // underlying thrust::device vector to zero initialize the data.
       const auto genJmds = generated_J.mds();
       tyvi::mdgrid_work {}
         .for_each_index(

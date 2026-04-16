@@ -75,6 +75,8 @@ private:
   std::map<std::size_t, std::vector<std::span<const runko::ParticleState<value_type>>>>
     incoming_subregion_particles_ {};
 
+  std::optional<runko::VecGrid<emf::YeeLattice::value_type>> generated_J_cache_;
+
 public:
   /// Construct Tile based on the given config.
   ///
