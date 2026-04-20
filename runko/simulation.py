@@ -38,6 +38,8 @@ class Simulation:
         self._lap = 0
 
         self._last_lap = kwargs['Nt']
+        self._prev_elapsed_wall_time = 0
+        self._total_interval_time = 0
 
         self._io_config = kwargs['io_config']
         self._emf_writer = None
@@ -330,7 +332,7 @@ class Simulation:
     def reset_timers(self):
         self._lap_timers = []
         self._lap_wall_times = []
-
+        self._prev_elapsed_wall_time = self._total_interval_time
 
     def log_timer_statistics(self, level=logging.INFO):
         stats_dict = self.get_time_statistics()
@@ -340,23 +342,29 @@ class Simulation:
         stats = list(stats_dict.items())
         stats.sort(key=lambda x: -x[1].total)
 
-        total_elapsed_time = 0
+        self._total_interval_time = 0
         for _, s in stats:
-            total_elapsed_time += s.total
+            self._total_interval_time += s.total 
 
         nlen = len(max(stats, key=lambda x: len(x[0]))[0])
 
         msg = "Simulation execution time statistics:\n"
         msg += f"{'name':<{nlen}} | total [s] | % of total | average [s] | std [s] | count\n"
         for name, s in stats:
-            p = 100 * s.total / total_elapsed_time
+            p = 100 * s.total / self._total_interval_time
             msg += f"{name:<{nlen}} | {s.total:>9.1e} | {p:>10.4} | {s.average:>11.3e} | {s.std_dev:>7.1e} | {s.count:>5}\n"
-        msg += f"Total elapsed time: {total_elapsed_time:.4}s\n"
-
+        msg += f"Total elapsed interval time: {self._total_interval_time:.4}s\n"
 
         total_wall_time = np.sum(self._lap_wall_times)
         avg_lap_wall_time = np.mean(self._lap_wall_times)
         laps = len(self._lap_wall_times)
 
-        msg += f"Lap wall times: {total_wall_time:.4} s / {laps} laps = {avg_lap_wall_time:.4} s / lap"
+        msg += f"Lap wall times: {total_wall_time:.4} s / {laps} laps = {avg_lap_wall_time:.4} s / lap\n"
+
+        # add previously elapsed wall time before timer resets
+        self._total_interval_time += self._prev_elapsed_wall_time 
+        msg += f"Total elapsed wall time: {self._total_interval_time:.4}s\n"
+
+        lap_per_max_lap = self._lap/self._last_lap # simulation progress in fraction 
+        msg += f"Current lap: {self._lap} / {self._last_lap} ({lap_per_max_lap:.1%})"
         self._logger.log(level, msg)

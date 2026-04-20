@@ -279,6 +279,7 @@ if __name__ == "__main__":
             x.io_prtcl_snapshot()
             x.io_spectra_snapshot()
             simulation.log_timer_statistics()
+            simulation.reset_timers()
 
     simulation.for_each_lap(pic_simulation_step)
     simulation.log_timer_statistics()
