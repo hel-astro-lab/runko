@@ -202,22 +202,9 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
     return subregion_index(i, j, k);
   };
 
-  const auto particle_ordinal_to_subregion_index =
-    [=](const std::size_t n) -> std::size_t {
-    const auto x = pos_mds[n][0];
-    const auto y = pos_mds[n][1];
-    const auto z = pos_mds[n][2];
-    return coords_to_subregion_index(x, y, z);
-  };
-
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
-
-  const auto particle_subregion_indices_begin = thrust::make_transform_iterator(
-    particle_ordinals_begin,
-    particle_ordinal_to_subregion_index);
-  const auto particle_subregion_indices_end =
-    rn::next(particle_subregion_indices_begin, this->size());
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
 
   const auto is_leaving = [=](const auto index) {
     return index != subregion_index(0, 0, 0);
@@ -226,9 +213,13 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
   tyvi::mdgrid_work w {};
   const auto leaving_particles = thrust::count_if(
     w.on_this(),
-    particle_subregion_indices_begin,
-    particle_subregion_indices_end,
-    is_leaving);
+    particle_ordinals_begin,
+    particle_ordinals_end,
+    [=](const auto i) {
+      return ids_mds[i][] != runko::dead_prtc_id and
+             is_leaving(
+               coords_to_subregion_index(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]));
+    });
 
   const auto prev_buffer_size = buffer.size();
   buffer.resize(prev_buffer_size + leaving_particles);
@@ -251,8 +242,9 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
     particle_states_end,
     buffer_data_begin,
     [=](const auto& state) {
-      return is_leaving(
-        coords_to_subregion_index(state.pos[0], state.pos[1], state.pos[2]));
+      return state.id != runko::dead_prtc_id and
+             is_leaving(
+               coords_to_subregion_index(state.pos[0], state.pos[1], state.pos[2]));
     });
 
   if(copy_if_result != buffer.end()) {
