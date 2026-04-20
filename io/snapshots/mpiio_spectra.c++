@@ -4,6 +4,7 @@
 #include "io/snapshots/mpiio_header.h"
 #include "core/emf/tile.h"
 #include "core/pic/tile.h"
+#include "core/particles_common.h"
 #include "tools/math.h"
 #include "tyvi/mdgrid.h"
 
@@ -155,11 +156,14 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
     const auto base_field = static_cast<runko::index_t>(s * num_spectra_per_species);
     const auto pos_mds = pic_tile->particles(static_cast<runko::index_t>(s)).pos_mds();
     const auto vel_mds = pic_tile->particles(static_cast<runko::index_t>(s)).vel_mds();
+    const auto tag_mds = pic_tile->particles(static_cast<runko::index_t>(s)).ids_mds();
 
     tyvi::mdgrid_work {}
       .for_each_index(
         pos_mds,
         [=](const auto idx) {
+          const bool alive = tag_mds[idx][] != runko::dead_prtc_id;
+        
           // particle x position -> x bin
           const auto px = pos_mds[idx][0] - mx;
           const auto ix = static_cast<runko::index_t>(sstd::floor(px * inv_stride));
@@ -188,10 +192,10 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
           const auto ib_bz = bin(sstd::floor((uz * inv_gamma + vt{1}) * inv_dbeta));
 
           // unconditional atomic deposits
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_u ][base_field + 0]), vt{1});
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bx][base_field + 1]), vt{1});
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_by][base_field + 2]), vt{1});
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bz][base_field + 3]), vt{1});
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_u ][base_field + 0]), static_cast<vt>(alive));
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bx][base_field + 1]), static_cast<vt>(alive));
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_by][base_field + 2]), static_cast<vt>(alive));
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bz][base_field + 3]), static_cast<vt>(alive));
         })
       .wait();
   }
