@@ -136,6 +136,7 @@ void
     .def("push_particles", &pic::Tile<3>::push_particles)
     .def("deposit_current", &pic::Tile<3>::deposit_current)
     .def("sort_particles", &pic::Tile<3>::sort_particles)
+    .def("inject_dead_particles", &pic::Tile<3>::inject_dead_particles)
     .def("register_reflector_wall", &pic::Tile<3>::register_reflector_wall)
     .def("reflect_particles", &pic::Tile<3>::reflect_particles)
     .def("advance_reflector_walls", &pic::Tile<3>::advance_reflector_walls)

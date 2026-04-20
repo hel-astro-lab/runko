@@ -506,6 +506,22 @@ runko::prtc_id_type
   return (tile_tag << 40uz) | ordinal;
 }
 
+template<std::size_t D>
+void
+  Tile<D>::inject_dead_particles(
+    const std::size_t particle_type,
+    const std::size_t amount)
+{
+  // This is somewhat jank but it works.
+  using state_type = runko::ParticleState<ParticleContainer::value_type>;
+  static constexpr auto dead =
+    state_type { .pos { 0, 0, 0 }, .vel { 0, 0, 0 }, .id = runko::dead_prtc_id };
+  const auto vec = thrust::device_vector<state_type>(amount, dead);
+  const auto arr =
+    std::array { std::span(thrust::raw_pointer_cast(vec.data()), vec.size()) };
+  this->particle_buffs_.at(particle_type).append(arr);
+}
+
 
 }  // namespace pic
 
