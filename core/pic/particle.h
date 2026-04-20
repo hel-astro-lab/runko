@@ -67,8 +67,6 @@ private:
   /// Id for each particle.
   runko::ScalarList<runko::prtc_id_type> ids_;
 
-  runko::prtc_id_type next_id_;
-
   double charge_;
   double mass_;
 
