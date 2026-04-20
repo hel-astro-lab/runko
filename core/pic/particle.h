@@ -5,24 +5,30 @@
 #include "core/mdgrid_common.h"
 #include "core/particles_common.h"
 #include "core/pic/reflector_wall.h"
+#include "thrust/copy.h"
 #include "thrust/count.h"
 #include "thrust/device_vector.h"
 #include "thrust/find.h"
+#include "thrust/gather.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
+#include "thrust/iterator/zip_iterator.h"
 #include "thrust/sort.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
+#include <any>
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <format>
 #include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
 #include <numeric>
 #include <ranges>
+#include <source_location>
 #include <span>
 #include <stdexcept>
 #include <thrust/iterator/reverse_iterator.h>
@@ -69,6 +75,12 @@ private:
 
   double charge_;
   double mass_;
+
+  /// Reusable buffer for particle trackers.
+  thrust::device_vector<runko::index_t> tracker_cache_;
+  /// Reusable buffer for generic data.
+  thrust::device_vector<std::byte> generic_cache_;
+  std::any sorting_score_cache_;
 
 public:
   explicit ParticleContainer(ParticleContainerArgs);
@@ -639,16 +651,24 @@ inline void
 inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
+  const auto pos0 = this->pos_.device_component_span<0>();
+  const auto pos1 = this->pos_.device_component_span<1>();
+  const auto pos2 = this->pos_.device_component_span<2>();
+  const auto vel0 = this->vel_.device_component_span<0>();
+  const auto vel1 = this->vel_.device_component_span<1>();
+  const auto vel2 = this->vel_.device_component_span<2>();
+  const auto ids  = this->ids_.device_component_span<>();
+
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
-
-  const auto pos_mds = this->pos_.mds();
-  const auto vel_mds = this->vel_.mds();
-  const auto ids_mds = this->ids_.mds();
+  this->tracker_cache_.assign(particle_ordinals_begin, particle_ordinals_end);
 
   using score_type =
     std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
+
+  const auto pos_mds = this->pos_.mds();
+  const auto ids_mds = this->ids_.mds();
 
   const auto scores_begin = thrust::make_transform_iterator(
     particle_ordinals_begin,
@@ -660,85 +680,92 @@ inline void
     });
   const auto scores_end = rn::next(scores_begin, this->size());
 
-  auto trackers = thrust::device_vector<runko::index_t>(
-    particle_ordinals_begin,
-    particle_ordinals_end);
+  using scores_cache_type = thrust::device_vector<score_type>;
+  if(typeid(scores_cache_type) != this->sorting_score_cache_.type()) {
+    this->sorting_score_cache_ = scores_cache_type {};
+  }
 
-  using score_t = std::invoke_result_t<decltype(f), value_type, value_type, value_type>;
-  auto scores   = thrust::device_vector<score_t>(scores_begin, scores_end);
+  auto& scores_cache = std::any_cast<scores_cache_type&>(this->sorting_score_cache_);
+  scores_cache.assign(scores_begin, scores_end);
 
-  auto w1 = tyvi::mdgrid_work {};
-  thrust::sort_by_key(w1.on_this(), scores.begin(), scores.end(), trackers.begin());
+  auto w = tyvi::mdgrid_work {};
+  thrust::sort_by_key(
+    w.on_this(),
+    scores_cache.begin(),
+    scores_cache.end(),
+    this->tracker_cache_.begin());
 
-  auto tmp_pos = this->pos_;
-  auto tmp_vel = this->vel_;
-  auto tmp_ids = this->ids_;
+  this->generic_cache_.resize(sizeof(value_type) * this->size());
 
-  const auto tmp_pos_mds = tmp_pos.mds();
-  const auto tmp_vel_mds = tmp_vel.mds();
-  const auto tmp_ids_mds = tmp_ids.mds();
+  auto assert_alignment = []<typename T>(
+                            const T* p,
+                            const std::source_location loc =
+                              std::source_location::current()) {
+    if(reinterpret_cast<std::uintptr_t>(p) % alignof(T)) {
+      const auto str = std::format("Incorrect alignment at line: {}", loc.line());
+      throw std::runtime_error { str };
+    }
+  };
 
-  w1.for_each_index(
-    pos_mds,
-    [=, p = trackers.begin()](const auto idx, const auto tidx) {
-      const runko::index_t i = p[idx[0]];
-      pos_mds[idx][tidx] = tmp_pos_mds[i][tidx];
-      vel_mds[idx][tidx] = tmp_vel_mds[i][tidx];
-    });
+  const auto p = reinterpret_cast<value_type*>(
+    thrust::raw_pointer_cast(this->generic_cache_.data()));
+  assert_alignment(p);
 
-  w1.for_each_index(ids_mds, [=, p = trackers.begin()](const auto idx) {
-    const runko::index_t i = p[idx[0]];
-    ids_mds[idx][]         = tmp_ids_mds[i][];
-  });
-  w1.wait();
+  std::ignore = thrust::copy(w.on_this(), pos0.begin(), pos0.end(), p);
+  std::ignore = thrust::gather(
+    w.on_this(),
+    this->tracker_cache_.begin(),
+    this->tracker_cache_.end(),
+    p,
+    pos0.begin());
+  std::ignore = thrust::copy(w.on_this(), pos1.begin(), pos1.end(), p);
+  std::ignore = thrust::gather(
+    w.on_this(),
+    this->tracker_cache_.begin(),
+    this->tracker_cache_.end(),
+    p,
+    pos1.begin());
+  std::ignore = thrust::copy(w.on_this(), pos2.begin(), pos2.end(), p);
+  std::ignore = thrust::gather(
+    w.on_this(),
+    this->tracker_cache_.begin(),
+    this->tracker_cache_.end(),
+    p,
+    pos2.begin());
+  std::ignore = thrust::copy(w.on_this(), vel0.begin(), vel0.end(), p);
+  std::ignore = thrust::gather(
+    w.on_this(),
+    this->tracker_cache_.begin(),
+    this->tracker_cache_.end(),
+    p,
+    vel0.begin());
+  std::ignore = thrust::copy(w.on_this(), vel1.begin(), vel1.end(), p);
+  std::ignore = thrust::gather(
+    w.on_this(),
+    this->tracker_cache_.begin(),
+    this->tracker_cache_.end(),
+    p,
+    vel1.begin());
+  std::ignore = thrust::copy(w.on_this(), vel2.begin(), vel2.end(), p);
+  std::ignore = thrust::gather(
+    w.on_this(),
+    this->tracker_cache_.begin(),
+    this->tracker_cache_.end(),
+    p,
+    vel2.begin());
 
-  /*
-auto w2 = tyvi::mdgrid_work {};
-const auto ids_begin =
-  thrust::make_transform_iterator(particle_ordinals_begin, [=](const auto i) {
-    return ids_mds[i][];
-  });
-const auto ids_end = rn::next(ids_begin, this->size());
-const auto dead_particles =
-  thrust::count(w2.on_this(), ids_begin, ids_end, runko::dead_prtc_id);
-const auto alive_particles = this->size() - dead_particles;
-
-w1.wait();  // Sorting has to be finished before copying.
-
-auto tmp_pos = this->pos_;
-auto tmp_vel = this->vel_;
-
-const auto tmp_pos_mds = tmp_pos.mds();
-const auto tmp_vel_mds = tmp_vel.mds();
-
-this->pos_.invalidating_resize(alive_particles);
-this->vel_.invalidating_resize(alive_particles);
-
-const auto pos_mds_new = this->pos_.mds();
-const auto vel_mds_new = this->vel_.mds();
-
-w1.for_each_index(
-  pos_mds_new,
-  [=, p = trackers.begin()](const auto idx, const auto tidx) {
-    const runko::index_t i = p[idx[0]];
-    pos_mds_new[idx][tidx] = tmp_pos_mds[i][tidx];
-    vel_mds_new[idx][tidx] = tmp_vel_mds[i][tidx];
-  });
-
-auto tmp_ids           = this->ids_;
-const auto tmp_ids_mds = tmp_ids.mds();
-this->ids_.invalidating_resize(alive_particles);
-const auto ids_mds_new = this->ids_.mds();
-
-w2.for_each_index(ids_mds_new, [=, p = trackers.begin()](const auto idx) {
-  const runko::index_t i = p[idx[0]];
-  ids_mds[idx][]         = tmp_ids_mds[i][];
-});
-
-
-tyvi::when_all(w1, w2);
-w1.wait();
-  */
+  this->generic_cache_.resize(sizeof(runko::prtc_id_type) * this->size());
+  const auto pt = reinterpret_cast<runko::prtc_id_type*>(
+    thrust::raw_pointer_cast(this->generic_cache_.data()));
+  assert_alignment(pt);
+  std::ignore = thrust::copy(w.on_this(), ids.begin(), ids.end(), pt);
+  std::ignore = thrust::gather(
+    w.on_this(),
+    this->tracker_cache_.begin(),
+    this->tracker_cache_.end(),
+    pt,
+    ids.begin());
+  w.wait();
 }
 
 inline auto
