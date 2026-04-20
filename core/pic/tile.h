@@ -146,6 +146,10 @@ public:
     double x_left,
     double x_right);
 
+
+  /// Injects dead particles. Can be used to pre-allocate memory for particles.
+  void inject_dead_particles(std::size_t particle_type, std::size_t amount);
+
   /// Push particles updating their velocities and positions.
   void push_particles();
 
