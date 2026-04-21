@@ -1,3 +1,9 @@
+#pragma once
+
+// Due to the templated interpolator this can not be in its own compilation unit,
+// i.e. this has to be in a header. To not make particle.h too long
+// the pushers are in own separate headers which are included at the end of particle.h.
+
 // Faraday-Cayley particle pusher
 //
 // Applies the full electromagnetic bivector F = E + IB as a single Lorentz
@@ -21,39 +27,38 @@
 //   - Branchless (no case analysis for field geometry)
 
 #include "core/pic/particle.h"
+#include "tools/math.h"
 #include "tools/signum.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 
-#include "tools/math.h"
-
 void
   pic::ParticleContainer::push_particles_faraday(
-    const double cfl_,
-    const InterpolatedEB_function& EBfunc)
+    const double cfl_d,
+    const runko::EB_interpolator<value_type> auto interpolator)
 {
   using vt = value_type;
-  using toolbox::dot;
   using toolbox::cross;
-
-  const auto EB = EBfunc(ids_, pos_);
+  using toolbox::dot;
 
   const auto pos_mds = pos_.mds();
   const auto vel_mds = vel_.mds();
-  const auto Emds    = EB.E.mds();
-  const auto Bmds    = EB.B.mds();
+  const auto ids_mds = ids_.mds();
 
-  const vt cfl = cfl_;
+  const vt cfl = static_cast<vt>(cfl_d);
   const vt qm  = toolbox::sign(charge_) / mass_;
 
   tyvi::mdgrid_work {}
     .for_each_index(
       pos_mds,
       [=](const auto idx) {
+        if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+
         using Vec3 = toolbox::Vec3<vt>;
 
-        const Vec3 E = Vec3(Emds[idx]);
-        const Vec3 B = Vec3(Bmds[idx]);
+        const auto eb = interpolator(Vec3(pos_mds[idx]));
+        const Vec3& E = eb.E;
+        const Vec3& B = eb.B;
 
         // current four-velocity in code units
         const Vec3 v0 = cfl * Vec3(vel_mds[idx]);
@@ -62,30 +67,30 @@ void
         const vt gcfl = sstd::sqrt(cfl * cfl + dot(v0, v0));
 
         // half E-kick for gamma_eff (Boris prescription)
-        const Vec3 u0       = v0 + vt { 0.5 } * qm * E;
-        const vt   geff_cfl = sstd::sqrt(cfl * cfl + dot(u0, u0));
+        const Vec3 u0     = v0 + vt { 0.5 } * qm * E;
+        const vt geff_cfl = sstd::sqrt(cfl * cfl + dot(u0, u0));
 
         // Cayley parameters: kappa = (q dt) / (2 m gamma_eff c)
-        const vt   kappa = vt { 0.5 } * qm / geff_cfl;
-        const Vec3 eps   = kappa * E;
-        const Vec3 beta  = kappa * B;
+        const vt kappa  = vt { 0.5 } * qm / geff_cfl;
+        const Vec3 eps  = kappa * E;
+        const Vec3 beta = kappa * B;
 
         // RHS: (I + Omega/2) applied to v4 = (gcfl, v0)
-        const vt   w0 = gcfl + dot(eps, v0);
-        const Vec3 W  = v0 + eps * gcfl + cross(v0, beta) + w0 * eps;
+        const vt w0  = gcfl + dot(eps, v0);
+        const Vec3 W = v0 + eps * gcfl + cross(v0, beta) + w0 * eps;
 
         // Boris-like inverse: (I + [beta x])^{-1} x
         //   = (x - beta x x + (beta.x) beta) / (1 + |beta|^2)
-        const vt   b2 = dot(beta, beta);
-        const vt   f  = vt { 1 } / (vt { 1 } + b2);
+        const vt b2 = dot(beta, beta);
+        const vt f  = vt { 1 } / (vt { 1 } + b2);
 
-        const Vec3 W_rot   = f * (W - cross(beta, W) + dot(beta, W)*beta);
+        const Vec3 W_rot = f * (W - cross(beta, W) + dot(beta, W) * beta);
 
         // Sherman-Morrison correction for the rank-1 boost perturbation
-        const vt   bde     = dot(beta, eps);
+        const vt bde       = dot(beta, eps);
         const Vec3 eps_rot = f * (eps - cross(beta, eps) + bde * beta);
 
-        const vt   D  = vt { 1 } - f * (dot(eps, eps) + bde * bde);
+        const vt D    = vt { 1 } - f * (dot(eps, eps) + bde * bde);
         const Vec3 u2 = W_rot + eps_rot * (dot(eps, W_rot) / D);
 
         // store final velocity (u/c)

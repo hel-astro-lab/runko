@@ -210,9 +210,9 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
       }
 
       // Interpolate E, B at sampled positions
-      const auto EB_interp = tile.interpolate_fields_at(sampled_ids, sampled_pos);
-      const auto& E_interp = EB_interp.E;
-      const auto& B_interp = EB_interp.B;
+      // const auto EB_interp = tile.interpolate_fields_at(sampled_ids, sampled_pos);
+      // const auto& E_interp = EB_interp.E;
+      // const auto& B_interp = EB_interp.B;
 
       // Pack all 12 fields into prtcl_buf_
       using vt = pic::ParticleContainer::value_type;
@@ -222,8 +222,7 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
 
       const auto src_pos = container.pos_mds();
       const auto src_vel = container.vel_mds();
-      const auto E_mds   = E_interp.mds();
-      const auto B_mds   = B_interp.mds();
+      const auto interpolator = tile.EB_linear_1st_interpolator();
 
       const auto dst_range = std::array<std::size_t, 2>{
         tile_buf_offset, tile_buf_offset + n_s };
@@ -239,12 +238,17 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
           dst_sub[idx][3]  = src_vel[si][0];        // ux
           dst_sub[idx][4]  = src_vel[si][1];        // uy
           dst_sub[idx][5]  = src_vel[si][2];        // uz
-          dst_sub[idx][6]  = E_mds[idx][0];         // ex
-          dst_sub[idx][7]  = E_mds[idx][1];         // ey
-          dst_sub[idx][8]  = E_mds[idx][2];         // ez
-          dst_sub[idx][9]  = B_mds[idx][0];         // bx
-          dst_sub[idx][10] = B_mds[idx][1];         // by
-          dst_sub[idx][11] = B_mds[idx][2];         // bz
+
+          const auto eb = interpolator(toolbox::Vec3<vt>(src_pos[si]));
+          const auto E = eb.E;
+          const auto B = eb.B;
+
+          dst_sub[idx][6]  = E[0]; // ex
+          dst_sub[idx][7]  = E[1]; // ey
+          dst_sub[idx][8]  = E[2]; // ez
+          dst_sub[idx][9]  = B[0]; // bx
+          dst_sub[idx][10] = B[1]; // by
+          dst_sub[idx][11] = B[2]; // bz
         })
         .wait();
 

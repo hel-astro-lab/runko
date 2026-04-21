@@ -11,7 +11,6 @@ set (EMF_FILES
      ../core/emf/yee_lattice.c++
      ../core/emf/yee_lattice_FDTD2.c++
      ../core/emf/yee_lattice_stencil.c++
-     ../core/emf/yee_lattice_interpolate_linear_1st.c++
      ../core/emf/yee_lattice_current_filter_binomial2.c++
      #../core/emf/propagators/fdtd2.c++ 
      #../core/emf/propagators/fdtd2_pml.c++ 
@@ -42,9 +41,6 @@ set (PIC_FILES
      ../core/pic/tile_communication.c++
      ../core/pic/virtual_tile.c++
      ../core/pic/particle.c++
-     ../core/pic/particle_boris.c++
-     ../core/pic/particle_higuera_cary.c++
-     ../core/pic/particle_faraday.c++
      ../core/pic/particle_current_zigzag_1st.c++
      ../core/pic/reflector_wall.c++
      #../core/pic/boundaries/wall.c++

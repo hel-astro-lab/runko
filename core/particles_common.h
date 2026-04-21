@@ -1,6 +1,10 @@
 #pragma once
 
+#include "tools/vector.h"
+
 #include <array>
+#include <concepts>
+#include <type_traits>
 
 namespace runko {
 
@@ -25,4 +29,13 @@ struct ParticleState {
 };
 
 static_assert(std::is_trivially_copyable_v<ParticleState<float>>);
+
+template<typename F, typename T>
+concept EB_interpolator =
+  (std::is_trivially_copyable_v<F>) and std::regular_invocable<F, toolbox::Vec3<T>> and
+  requires(std::invoke_result_t<F, toolbox::Vec3<T>> eb) {
+    { eb.E } -> std::convertible_to<toolbox::Vec3<T>>;
+    { eb.B } -> std::convertible_to<toolbox::Vec3<T>>;
+  };
+
 }  // namespace runko

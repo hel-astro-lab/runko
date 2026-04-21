@@ -88,8 +88,6 @@ private:
   VecGrid J_;
 
   std::any current_filter_cache_;
-  mutable std::any interpolated_E_cache_;
-  mutable std::any interpolated_B_cache_;
 
 public:
   /* FIXME: Use std::integral_constant when possible in mds helpers below. */
@@ -271,56 +269,28 @@ public:
     const toolbox::hollow_grid<value_type, 3, 2 * halo_size>& other);
 
 
-  struct [[nodiscard]] InterpolatedEB {
-    const runko::VecList<value_type>& E;
-    const runko::VecList<value_type>& B;
+  struct interpolated_EB {
+    toolbox::Vec3<value_type> E;
+    toolbox::Vec3<value_type> B;
   };
 
-  /// Interpolate E and B to given coordinates using linear_1st interpolation.
+  /// Interpolation function from position to E and B using linear_1st interpolation.
   ///
   /// Lattice index (0, 0, 0) is interperted to be at lattice_origo_coordinates.
   /// Note that (0, 0, 0) is in the halo region.
-  ///
-  /// Takes particle ids as argument such that dead particles can be skipped.
-  InterpolatedEB interpolate_EB_linear_1st(
-    std::array<value_type, 3> lattice_origo_coordinates,
-    const runko::ScalarList<runko::prtc_id_type>& ids,
-    const runko::VecList<value_type>& coordinates) const;
+  inline runko::EB_interpolator<value_type> auto interpolate_EB_linear_1st(
+    std::array<value_type, 3> lattice_origo_coordinates) const;
 
-  /// Interpolate E and B to given coordinates using linear_1st interpolation (async).
-  ///
-  /// Lattice index (0, 0, 0) is interperted to be at lattice_origo_coordinates.
-  /// Note that (0, 0, 0) is in the halo region.
-  ///
-  /// By async means that work is executed on the given work which is synchronized
-  /// before returning.
-  ///
-  /// Takes particle ids as argument such that dead particles can be skipped.
-  InterpolatedEB interpolate_EB_linear_1st(
-    const tyvi::mdgrid_work&,
-    std::array<value_type, 3> lattice_origo_coordinates,
-    const runko::ScalarList<runko::prtc_id_type>& ids,
-    const runko::VecList<value_type>& coordinates) const;
-
-  /// Interpolate E and B using linear_1st with manually unrolled 2x2x2 stencil.
+  /// Interpolation function from position to E and B using unrolled linear_1st
+  /// interpolation.
   ///
   /// Bit-exact results as linear_1st but the unrolled stencil enables
   /// SIMD vectorization of the outer particle loop.
   ///
-  /// Takes particle ids as argument such that dead particles can be skipped.
-  InterpolatedEB interpolate_EB_linear_1st_unrolled(
-    std::array<value_type, 3> lattice_origo_coordinates,
-    const runko::ScalarList<runko::prtc_id_type>& ids,
-    const runko::VecList<value_type>& coordinates) const;
-
-  /// Interpolate E and B using linear_1st with manually unrolled 2x2x2 stencil (async).
-  ///
-  /// Takes particle ids as argument such that dead particles can be skipped.
-  InterpolatedEB interpolate_EB_linear_1st_unrolled(
-    const tyvi::mdgrid_work&,
-    std::array<value_type, 3> lattice_origo_coordinates,
-    const runko::ScalarList<runko::prtc_id_type>& ids,
-    const runko::VecList<value_type>& coordinates) const;
+  /// Lattice index (0, 0, 0) is interperted to be at lattice_origo_coordinates.
+  /// Note that (0, 0, 0) is in the halo region.
+  inline runko::EB_interpolator<value_type> auto interpolate_EB_linear_1st_unrolled(
+    std::array<value_type, 3> lattice_origo_coordinates) const;
 
   /// Apply an edge boundary condition over the given width.
   ///
@@ -614,3 +584,5 @@ inline auto
 }
 
 }  // namespace emf
+
+#include "core/emf/yee_lattice_interpolate_linear_1st.h"

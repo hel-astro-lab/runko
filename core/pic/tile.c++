@@ -325,52 +325,36 @@ void
                  static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
                  static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
 
-  pic::ParticleContainer::InterpolatedEB_function ipol_func {};
+
+  auto push_impl = [&](const auto& interpolator) {
+    for(auto& [_, pbuff]: particle_buffs_) {
+      switch(particle_pusher_) {
+        case ParticlePusher::boris:
+          pbuff.push_particles_boris(this->cfl_, interpolator);
+          break;
+        case ParticlePusher::higuera_cary:
+          pbuff.push_particles_higuera_cary(this->cfl_, interpolator);
+          break;
+        case ParticlePusher::faraday:
+          pbuff.push_particles_faraday(this->cfl_, interpolator);
+          break;
+        default:
+          throw std::logic_error {
+            "pic::Tile::push_particles: unkown particle pusher"
+          };
+      }
+    }
+  };
 
   switch(field_interpolator_) {
-    // We have to cast to fptr to choose one function from the overload set.
-    using fptr = emf::YeeLattice::InterpolatedEB (emf::YeeLattice::*)(
-      std::array<emf::YeeLattice::value_type, 3>,
-      const runko::ScalarList<runko::prtc_id_type>&,
-      const runko::VecList<emf::YeeLattice::value_type>&) const;
-
-    case FieldInterpolator::linear_1st: {
-      ipol_func = std::bind_front(
-        static_cast<fptr>(&emf::YeeLattice::interpolate_EB_linear_1st),
-        std::cref(this->yee_lattice_),
-        origo_pos);
+    case FieldInterpolator::linear_1st:
+      push_impl(this->yee_lattice_.interpolate_EB_linear_1st(origo_pos));
       break;
-    }
-    case FieldInterpolator::linear_1st_unrolled: {
-      ipol_func = std::bind_front(
-        static_cast<fptr>(&emf::YeeLattice::interpolate_EB_linear_1st_unrolled),
-        std::cref(this->yee_lattice_),
-        origo_pos);
-      break;
-    }
-    default:
-      throw std::logic_error { "pic::Tile::push_particles: unkown interpolator" };
-  }
-
-
-  switch(particle_pusher_) {
-    case ParticlePusher::boris:
-      for(auto& [_, pbuff]: particle_buffs_) {
-        pbuff.push_particles_boris(this->cfl_, ipol_func);
-      }
-      break;
-    case ParticlePusher::higuera_cary:
-      for(auto& [_, pbuff]: particle_buffs_) {
-        pbuff.push_particles_higuera_cary(this->cfl_, ipol_func);
-      }
-      break;
-    case ParticlePusher::faraday:
-      for(auto& [_, pbuff]: particle_buffs_) {
-        pbuff.push_particles_faraday(this->cfl_, ipol_func);
-      }
+    case FieldInterpolator::linear_1st_unrolled:
+      push_impl(this->yee_lattice_.interpolate_EB_linear_1st_unrolled(origo_pos));
       break;
     default:
-      throw std::logic_error { "pic::Tile::push_particles: unkown particle pusher" };
+      throw std::logic_error { "pic::Tile::push_particles: unkown field interpolator" };
   }
 }
 
@@ -445,22 +429,6 @@ void
   };
 
   for(auto& [_, pbuff]: this->particle_buffs_) { pbuff.sort(std::move(score)); }
-}
-
-
-template<std::size_t D>
-emf::YeeLattice::InterpolatedEB
-  Tile<D>::interpolate_fields_at(
-    const runko::ScalarList<runko::prtc_id_type>& ids,
-    const runko::VecList<value_type>& positions) const
-{
-  using yee_vt = emf::YeeLattice::value_type;
-  const auto origo_pos =
-  std::array { static_cast<yee_vt>(this->mins[0]) - emf::halo_size,
-               static_cast<yee_vt>(this->mins[1]) - emf::halo_size,
-               static_cast<yee_vt>(this->mins[2]) - emf::halo_size };
-
-  return this->yee_lattice_.interpolate_EB_linear_1st(origo_pos, ids, positions);
 }
 
 template<std::size_t D>

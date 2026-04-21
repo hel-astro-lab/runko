@@ -14,6 +14,7 @@
 #include "thrust/iterator/transform_iterator.h"
 #include "thrust/iterator/zip_iterator.h"
 #include "thrust/sort.h"
+#include "tools/signum.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
@@ -185,19 +186,20 @@ public:
   /// Given function has to be device callable.
   void sort(pic::score_function<value_type> auto&& f);
 
-  /// Takes particle ids as argument such that dead particles can be skipped.
-  using InterpolatedEB_function = std::function<emf::YeeLattice::InterpolatedEB(
-    const runko::ScalarList<runko::prtc_id_type>& ids,
-    const runko::VecList<value_type>&)>;
-
   /// Push particles velocities and positions using boris scheme.
-  void push_particles_boris(double cfl, const InterpolatedEB_function&);
+  inline void push_particles_boris(
+    double cfl,
+    runko::EB_interpolator<value_type> auto interpolator);
 
   /// Push particles velocities and positions using Higuera-Cary scheme.
-  void push_particles_higuera_cary(double cfl, const InterpolatedEB_function&);
+  inline void push_particles_higuera_cary(
+    double cfl,
+    runko::EB_interpolator<value_type> auto interpolator);
 
   /// Push particles velocities and positions using Faraday-Cayley scheme.
-  void push_particles_faraday(double cfl, const InterpolatedEB_function&);
+  inline void push_particles_faraday(
+    double cfl,
+    runko::EB_interpolator<value_type> auto interpolator);
 
   emf::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
@@ -804,5 +806,8 @@ inline auto
   return this->ids_.span();
 }
 
-
 }  // namespace pic
+
+#include "core/pic/particle_boris.h"
+#include "core/pic/particle_faraday.h"
+#include "core/pic/particle_higuera_cary.h"

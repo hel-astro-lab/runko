@@ -1,43 +1,51 @@
+#pragma once
+
+// Due to the templated interpolator this can not be in its own compilation unit,
+// i.e. this has to be in a header. To not make particle.h too long
+// the pushers are in own separate headers which are included at the end of particle.h.
+
 #include "core/pic/particle.h"
+#include "tools/math.h"
 #include "tools/signum.h"
 #include "tools/vector.h"
 #include "tyvi/mdgrid.h"
 
-#include "tools/math.h"
-
 void
   pic::ParticleContainer::push_particles_higuera_cary(
-    const double cfl_,
-    const InterpolatedEB_function& EBfunc)
+    const double cfl_d,
+    const runko::EB_interpolator<value_type> auto interpolator)
 {
-  const auto EB = EBfunc(ids_, pos_);
-
   const auto pos_mds = pos_.mds();  // particle positions
   const auto vel_mds = vel_.mds();  // particle (four-)velocities
-  const auto Emds    = EB.E.mds();  // electric field vector
-  const auto Bmds    = EB.B.mds();  // magnetic field vector
+  const auto ids_mds = ids_.mds();
 
   using vt = value_type;
 
-  const vt cfl   = cfl_;                              // c dx/dt
-  const vt qm    = toolbox::sign(charge_) / mass_;    // charge-to-mass ratio
-  const vt hqm   = vt { 0.5 } * qm;                  // half charge-to-mass ratio
-  const vt cfl2  = cfl * cfl;                         // c^2
-  const vt cinv  = vt { 1 } / cfl;                    // 1/c
-  const vt cinv2 = cinv * cinv;                       // 1/c^2
+  const vt cfl   = static_cast<vt>(cfl_d);          // c dx/dt
+  const vt qm    = toolbox::sign(charge_) / mass_;  // charge-to-mass ratio
+  const vt hqm   = vt { 0.5 } * qm;                 // half charge-to-mass ratio
+  const vt cfl2  = cfl * cfl;                       // c^2
+  const vt cinv  = vt { 1 } / cfl;                  // 1/c
+  const vt cinv2 = cinv * cinv;                     // 1/c^2
 
   tyvi::mdgrid_work {}
     .for_each_index(
       pos_mds,
       [=](const auto idx) {
+        if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+
         using Vec3 = toolbox::Vec3<vt>;
 
+        const auto eb = interpolator(Vec3(pos_mds[idx]));
+        const Vec3& E = eb.E;
+        const Vec3& B = eb.B;
+
         const Vec3 v0 = cfl * Vec3(vel_mds[idx]);
-        const Vec3 E0 = hqm * Vec3(Emds[idx]);
+        const Vec3 E0 = hqm * E;
         const Vec3 u0 = v0 + E0;
 
         // B half-impulse (NOT divided by cfl — needed for ginv formula)
-        const Vec3 Bt = hqm * Vec3(Bmds[idx]);
+        const Vec3 Bt = hqm * B;
 
         // Higuera-Cary intermediate Lorentz factor
         const vt u0sq  = toolbox::dot(u0, u0);

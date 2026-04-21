@@ -172,15 +172,8 @@ public:
   /// Update reflector wall locations by their velocity * cfl.
   void advance_reflector_walls();
 
-  /// Interpolate E and B fields to given particle positions.
-  ///
-  /// Positions are in tile-local code units (same as ParticleContainer).
-  /// Uses linear_1st interpolation.
-  ///
-  /// Takes particle ids as argument such that dead particles can be skipped.
-  emf::YeeLattice::InterpolatedEB interpolate_fields_at(
-    const runko::ScalarList<runko::prtc_id_type>&,
-    const runko::VecList<value_type>& positions) const;
+  inline runko::EB_interpolator<emf::YeeLattice::value_type> auto
+    EB_linear_1st_interpolator() const;
 
   std::size_t number_of_species() const;
 
@@ -217,5 +210,17 @@ public:
     ) override;
 };
 
+template<std::size_t D>
+inline runko::EB_interpolator<emf::YeeLattice::value_type> auto
+  Tile<D>::EB_linear_1st_interpolator() const
+{
+  using yee_value_type = emf::YeeLattice::value_type;
+  const auto origo_pos =
+    std::array { static_cast<yee_value_type>(this->mins[0]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[1]) - emf::halo_size,
+                 static_cast<yee_value_type>(this->mins[2]) - emf::halo_size };
+
+  return this->yee_lattice_.interpolate_EB_linear_1st(origo_pos);
+}
 
 }  // namespace pic
