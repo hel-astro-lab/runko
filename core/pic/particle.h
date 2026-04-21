@@ -633,7 +633,9 @@ inline void
     const auto n_offset = Pnum + begins[n];
 
     thrust::for_each(w.on_this(), n_begin, n_end, [=](const auto i) {
-      const auto state = n_span[i];
+      // This does not work on lumi, so we use workaround.
+      // const auto state = n_span[i];
+      const auto state = n_span.data()[i];
 
       const auto j  = i + n_offset;
       pos_mds[j][0] = state.pos[0];
