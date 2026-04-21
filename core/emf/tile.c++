@@ -673,8 +673,12 @@ void
 
   w.sync_from_staging(A).sync_from_staging(K).sync_from_staging(lap_coeffs);
 
-  auto vec_pot =
-    runko::VecGrid<emf::YeeLattice::value_type>(this->yee_lattice_.extents_with_halo());
+  if(not this->vec_pot_buff_.has_value()) {
+    this->vec_pot_buff_ = runko::VecGrid<emf::YeeLattice::value_type>(
+      this->yee_lattice_.extents_with_halo());
+  }
+  auto& vec_pot = this->vec_pot_buff_.value();
+  vec_pot.invalidating_resize(this->yee_lattice_.extents_with_halo());
 
   const auto A_mds          = A.mds();
   const auto K_mds          = K.mds();
@@ -696,6 +700,9 @@ void
     const auto y_loc = vec(gcmap(i, j + 0.5, k));
     const auto z_loc = vec(gcmap(i, j, k + 0.5));
 
+    vec_pot_mds[idx][0] = 0;
+    vec_pot_mds[idx][1] = 0;
+    vec_pot_mds[idx][2] = 0;
 
     for(auto n = 0uz; n < num_of_modes; ++n) {
       // std::complex is contexpr only in c++26 and thus not usable in kernel.
@@ -729,12 +736,17 @@ void
     }
   });
 
-  // We have to calculate B = curl(vec_pot) only in non-halo region + one deep shell in
-  // halo region.
-  auto generated_B =
-    runko::VecGrid<emf::YeeLattice::value_type>(this->yee_lattice_.extents_with_halo());
+  if(not this->generated_B_buff_.has_value()) {
+    this->generated_B_buff_ = runko::VecGrid<emf::YeeLattice::value_type>(
+      this->yee_lattice_.extents_with_halo());
+  }
+  auto& generated_B = this->generated_B_buff_.value();
+  generated_B.invalidating_resize(this->yee_lattice_.extents_with_halo());
 
   const auto B_mds = generated_B.mds();
+
+  // We have to calculate B = curl(vec_pot) only in non-halo region + one deep shell in
+  // halo region.
 
   const auto h = halo_size;
 

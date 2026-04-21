@@ -62,6 +62,9 @@ protected:
   void update_send_buff_B(const tyvi::mdgrid_work&);
   void update_send_buff_J(const tyvi::mdgrid_work&);
 
+  std::optional<runko::VecGrid<emf::YeeLattice::value_type>> vec_pot_buff_;
+  std::optional<runko::VecGrid<emf::YeeLattice::value_type>> generated_B_buff_;
+
 public:
   /// Construct Tile by deducing extents from given tile grid index and config.
   ///
