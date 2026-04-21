@@ -12,28 +12,7 @@ set (EMF_FILES
      ../core/emf/yee_lattice_FDTD2.c++
      ../core/emf/yee_lattice_stencil.c++
      ../core/emf/yee_lattice_current_filter_binomial2.c++
-     #../core/emf/propagators/fdtd2.c++ 
-     #../core/emf/propagators/fdtd2_pml.c++ 
-     #../core/emf/propagators/fdtd4.c++ 
-     #../core/emf/propagators/fdtd_general.c++ 
-     #../core/emf/filters/binomial2.c++
-     #../core/emf/filters/compensator.c++
-     #../core/emf/filters/general_binomial.c++
-     #../core/emf/filters/strided_binomial.c++
-     #../core/emf/filters/sweeping_binomial.c++
-     #../core/emf/boundaries/damping_tile.c++
-     #../core/emf/boundaries/conductor.c++
      )
-
-#set (VLV_FILES
-#      pyvlv.c++
-#      ../core/vlv/tile.c++
-#      ../core/vlv/boundaries/piston.c++
-#      ../core/vlv/boundaries/outflow.c++
-#      ../core/vlv/momentum-solvers/amr_momentum_solver.c++
-#      ../core/vlv/momentum-solvers/bwd_lagrangian.c++
-#     )
-
 
 set (PIC_FILES
      pypic.c++
@@ -43,56 +22,7 @@ set (PIC_FILES
      ../core/pic/particle.c++
      ../core/pic/particle_current_zigzag_1st.c++
      ../core/pic/reflector_wall.c++
-     #../core/pic/boundaries/wall.c++
-     #../core/pic/boundaries/piston.c++
-     #../core/pic/boundaries/piston_z.c++
-     #../core/pic/boundaries/star_surface_injector.c++
-     #../core/pic/boundaries/gap.c++
-     #../core/pic/pushers/boris.c++
-     #../core/pic/pushers/boris_drag.c++
-     #../core/pic/pushers/boris_rad.c++
-     #../core/pic/pushers/boris_grav.c++
-     #../core/pic/pushers/vay.c++
-     #../core/pic/pushers/higuera_cary.c++
-     #../core/pic/pushers/rgca.c++
-     #../core/pic/pushers/photon.c++
-     #../core/pic/pushers/pulsar.c++
-     #../core/pic/interpolators/linear_1st.c++
-     #../core/pic/interpolators/quadratic_2nd.c++
-     #../core/pic/interpolators/cubic_3rd.c++
-     #../core/pic/interpolators/quartic_4th.c++
-     #../core/pic/depositers/zigzag.c++
-     #../core/pic/depositers/zigzag_2nd.c++
-     #../core/pic/depositers/zigzag_3rd.c++
-     #../core/pic/depositers/zigzag_4th.c++
-     #../core/pic/depositers/esikerpov_2nd.c++
-     #../core/pic/depositers/esikerpov_4th.c++
-     #../core/pic/depositers/esikerpov_4th_vec.c++
      )
-
-#set (QED_FILES 
-#     pyqed.c++
-#     ../core/qed/interactions/pair_ann.c++
-#     ../core/qed/interactions/phot_ann.c++
-#     ../core/qed/interactions/compton.c++
-#     ../core/qed/interactions/synchrotron.c++
-#     ../core/qed/interactions/multi_phot_ann.c++
-#     ../core/qed/pairing.c++
-#     ../core/qed/pairing_all2all.c++
-#     )
-
-
-#set (FFE_FILES 
-#     pyffe.c++
-#     ../core/ffe/tile.c++
-#     ../core/ffe/slim_grids.c++
-#     ../core/ffe/currents/rffe2.c++
-#     ../core/ffe/currents/rffe4.c++
-#     ../core/ffe/currents/ffe2.c++
-#     ../core/ffe/currents/ffe4.c++
-#     )
-
-
 
 set (IO_FILES
      ../io/snapshots/hdf5_fields.c++
@@ -106,10 +36,7 @@ pybind11_add_module(runko_cpp_bindings
     runko_cpp_bindings.c++
     ${TOOLS_FILES}
     ${EMF_FILES}
-    #${VLV_FILES}
     ${PIC_FILES}
-    #${QED_FILES}
-    #${FFE_FILES}
     ${IO_FILES}
 )
 
@@ -120,7 +47,6 @@ target_link_libraries(runko_cpp_bindings
     corgi
     tyvi::tyvi
     hdf5::hdf5
-    # OpenMP::OpenMP_CXX
 )
 
 if(RUNKO_CODE_COVERAGE)

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "definitions.h"
 #include "tools/vector.h"
 
 using toolbox::Vec3;

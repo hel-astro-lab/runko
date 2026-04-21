@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "corgi/corgi.h"
-#include "definitions.h"
 #include "tools/fastlog.h"
 #include "tools/mesh.h"
 #include "io/snapshots/hdf5_namer.h"
