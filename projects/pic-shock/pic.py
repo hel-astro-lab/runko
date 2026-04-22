@@ -167,6 +167,32 @@ if __name__ == "__main__":
 
     tile_grid = runko.TileGrid(conf)
 
+    # Particle container pre-allocation. Two optional knobs (either or both
+    # may be set in [particles]; taking the tighter constraint):
+    #   prealloc_factor            — multiplier on ppc (e.g. 4.0 for the
+    #                                Rankine-Hugoniot downstream compression
+    #                                ratio). 0 / unset = no pre-allocation.
+    #   prealloc_memory_gb_per_rank — cap by per-rank memory budget
+    #                                (32 B / particle, split across local
+    #                                tiles and species).
+    n_species = 2
+    local_tiles_count = sum(1 for _ in tile_grid.local_tile_indices())
+    cells_per_tile = conf.NxMesh * conf.NyMesh * conf.NzMesh
+    prealloc_caps = []
+    if conf.prealloc_factor is not None:
+        prealloc_caps.append(int(conf.prealloc_factor * ppc * cells_per_tile))
+    if conf.prealloc_memory_gb_per_rank is not None and local_tiles_count > 0:
+        budget_bytes = conf.prealloc_memory_gb_per_rank * 1e9
+        prealloc_caps.append(int(budget_bytes / local_tiles_count / n_species / 32))
+    prealloc_n = min(prealloc_caps) if prealloc_caps else 0
+
+    if runko.on_main_rank() and prealloc_n > 0:
+        logger.info(
+            f"Pre-allocating {prealloc_n} dead particles per species per tile "
+            f"({prealloc_n * n_species * 32 / 1e6:.1f} MB/tile, "
+            f"{prealloc_n * n_species * 32 * local_tiles_count / 1e9:.2f} GB/rank)"
+        )
+
     if True: # regular shock setup
         if not tile_grid.initialized_from_restart_file():
             for idx in tile_grid.local_tile_indices():
@@ -175,6 +201,9 @@ if __name__ == "__main__":
                 tile.register_reflector_wall(wall)
                 tile.register_edge_bc(conducting_bc)
                 tile.register_edge_bc(upstream_bc)
+                if prealloc_n > 0:
+                    for species_id in range(n_species):
+                        tile.inject_dead_particles(species_id, prealloc_n)
                 for _ in range(ppc):
                     tile.batch_inject_in_x_stripe(0, pgen0, walloc, injloc0)
                     tile.batch_inject_in_x_stripe(1, pgen1, walloc, injloc0)
