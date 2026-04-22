@@ -221,14 +221,16 @@ void
         zigzag_deposit_single(Jmds, dep_rev_from, dep_rev_to, mask_refl * (-charge));
 
         // --- final blending ---
-        // x-position: 3-way blend
-        pos_mds[idx][0] =
-          mask_skip * pos_1(0) + mask_park * 1.0f + mask_refl * pos_refl(0);
-        // y,z-position: only reflected particles change
+        // Only reflected particles update pos/vel; skip and park leave pos_1/u
+        // untouched. Park particles (behind-wall artifacts that didn't cross
+        // this step) are tagged as dead below so every downstream kernel —
+        // push, current deposit, sort, IO — skips them cleanly.
+        pos_mds[idx][0] = (1.0f - mask_refl) * pos_1(0) + mask_refl * pos_refl(0);
         pos_mds[idx][1] = (1.0f - mask_refl) * pos_1(1) + mask_refl * pos_refl(1);
         pos_mds[idx][2] = (1.0f - mask_refl) * pos_1(2) + mask_refl * pos_refl(2);
-        // x-velocity: skip keeps original, park zeroes, reflect sets ux_new
-        vel_mds[idx][0] = mask_skip * u(0) + mask_refl * ux_new;
+        vel_mds[idx][0] = (1.0f - mask_refl) * u(0) + mask_refl * ux_new;
+
+        if(mask_park > 0.5f) { ids_mds[idx][] = runko::dead_prtc_id; }
       })
     .wait();
 }

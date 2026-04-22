@@ -103,7 +103,7 @@ class pic_reflector_wall(unittest.TestCase):
                             f"Jz nonzero behind wall at x-index {ix}")
 
 
-    def test_overflow_particle_gets_parked(self):
+    def test_overflow_particle_gets_killed(self):
         _, tile = make_reflector_tile()
 
         wall = runko.pic.threeD.reflector_wall(walloc=5.0)
@@ -118,16 +118,10 @@ class pic_reflector_wall(unittest.TestCase):
         tile.push_particles()
         tile.reflect_particles()
 
-        pos_x, pos_y, pos_z = tile.get_positions(0)
-        vel_x, vel_y, vel_z = tile.get_velocities(0)
-
-        self.assertEqual(1, len(pos_x))
-
-        # particle should be parked near domain start
-        self.assertAlmostEqual(pos_x[0], 1.0, places=4)
-
-        # velocity zeroed
-        self.assertAlmostEqual(vel_x[0], 0.0, places=5)
+        # get_ids/get_positions/get_velocities filter out dead particles,
+        # so the overflow particle should no longer be visible.
+        self.assertEqual(0, len(tile.get_ids(0)))
+        self.assertEqual(0, len(tile.get_positions(0)[0]))
 
 
     def test_particle_in_front_of_wall_unchanged(self):
@@ -213,17 +207,19 @@ class pic_reflector_wall(unittest.TestCase):
             P(pos=(7.0, 5.5, 6.5), vel=(0.5, 0.0, 0.0)),
             # particle 1: close behind wall, genuine crossing (reflect)
             P(pos=(5.5, 5.5, 6.5), vel=(-1.0, 0.0, 0.0)),
-            # particle 2: far behind wall, artifact (park)
+            # particle 2: far behind wall, artifact (killed)
             P(pos=(2.0, 5.5, 6.5), vel=(-0.1, 0.0, 0.0)),
         ])
 
         tile.push_particles()
         tile.reflect_particles()
 
+        # Only the live particles (skip + reflect) remain visible; the
+        # overflow particle is tagged dead and filtered out.
         px, _, _ = tile.get_positions(0)
         vx, _, _ = tile.get_velocities(0)
 
-        self.assertEqual(3, len(px))
+        self.assertEqual(2, len(px))
 
         # particle 0 (skip): velocity unchanged, in front of wall
         self.assertAlmostEqual(vx[0], 0.5, places=4)
@@ -233,10 +229,6 @@ class pic_reflector_wall(unittest.TestCase):
         self.assertGreater(vx[1], 0)
         self.assertAlmostEqual(abs(vx[1]), 1.0, places=4)
         self.assertGreater(px[1], 5.0)
-
-        # particle 2 (park): parked at x=1.0, ux=0
-        self.assertAlmostEqual(px[2], 1.0, places=4)
-        self.assertAlmostEqual(vx[2], 0.0, places=5)
 
 
 if __name__ == "__main__":
