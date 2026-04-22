@@ -38,7 +38,8 @@
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu"
+                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu",
+                "CPM_mdspan_SOURCE": "${sourceDir}/external/mdspan"
             }
         },
         {
