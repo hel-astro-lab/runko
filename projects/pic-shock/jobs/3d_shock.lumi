@@ -1,11 +1,11 @@
 #!/bin/bash -l
-#SBATCH -J 3d-s3               # job name
+#SBATCH -J 3d-s6               # job name
 #SBATCH --account=project_462001358  # billing account
 #SBATCH --partition=standard-g # GPU partition on LUMI
 #SBATCH --output=%J.out        # stdout
 #SBATCH --error=%J.err         # stderr
-#SBATCH -t 01-00:00:00         # max run time
-#SBATCH --nodes=4              # nodes; simulation size controlled w/ this
+#SBATCH -t 02-00:00:00         # max run time
+#SBATCH --nodes=8              # nodes; simulation size controlled w/ this
 #SBATCH --gpus-per-node=8      # 8 GCDs per node (4x MI250X, 2 GCDs each)
 #SBATCH --ntasks-per-node=8    # one MPI rank per GCD
 #SBATCH --cpus-per-task=6      # 56 usable cores / 8 GCDs ≈ 7; use 6 for headroom
@@ -13,7 +13,7 @@
 #SBATCH --open-mode=truncate
 
 # load modules and environment variables
-export RUNKODIR=/users/jnattila/project_first_principle_sims26/runko
+export RUNKODIR=/users/jnattila/scratch_26/runko-gpu
 source $RUNKODIR/runko-venv/bin/activate
 module list
 echo $PYTHONPATH
@@ -61,4 +61,4 @@ cd $RUNKODIR/projects/pic-shock/
 
 #--------------------------------------------------
 # application
-srun --cpu-bind=${CPU_BIND} ./jobs/lumi_select_gpu python3 pic.py --conf shock_3d.ini
+srun --cpu-bind=${CPU_BIND} ./jobs/lumi_select_gpu python3 pic.py --conf 3d_shock.ini

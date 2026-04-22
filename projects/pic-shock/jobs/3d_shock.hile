@@ -57,4 +57,4 @@ cd $RUNKODIR/projects/pic-shock/
  
 #--------------------------------------------------
 # application 
-srun --mpi=cray_shasta --cpu-bind=verbose ./jobs/hile_select_gpu python3 pic.py --conf shock_3d.ini
+srun --mpi=cray_shasta --cpu-bind=verbose ./jobs/hile_select_gpu python3 pic.py --conf 3d_shock.ini

@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     tile_grid = runko.TileGrid(conf)
 
-    if False: # regular shock setup
+    if True: # regular shock setup
         if not tile_grid.initialized_from_restart_file():
             for idx in tile_grid.local_tile_indices():
                 tile = runko.pic.threeD.Tile(idx, conf)
@@ -266,7 +266,7 @@ if __name__ == "__main__":
         x.prtcl_advance_reflector_walls()
 
         # --- moving particle injector ---
-        #injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
+        injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
 
         # --- IO ---
         x.io_average_kinetic_energy()
