@@ -259,8 +259,13 @@ void
   };
   if(std::ranges::none_of(reflector_walls_, wall_is_in_tile)) return;
 
-  // allocate and zero the correction J grid
-  reflector_correction_J_.emplace(this->yee_lattice_.extents_with_halo());
+  // lazily allocate the correction J grid on first use; reuse on
+  // subsequent steps to avoid per-step alloc/free churn that leaks
+  // host memory on HIP builds.
+  if(not reflector_correction_J_) {
+    reflector_correction_J_.emplace(this->yee_lattice_.extents_with_halo());
+  }
+  reflector_correction_pending_ = true;
 
   const auto genJmds = reflector_correction_J_->mds();
   tyvi::mdgrid_work {}

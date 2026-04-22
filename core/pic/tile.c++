@@ -402,9 +402,9 @@ void
       throw std::logic_error { "pic::Tile::deposit_current: unkown current depositer" };
   }
 
-  if(reflector_correction_J_) {
+  if(reflector_correction_pending_) {
     this->yee_lattice_.deposit_current(reflector_correction_J_.value());
-    reflector_correction_J_.reset();
+    reflector_correction_pending_ = false;
   }
 }
 

@@ -67,6 +67,7 @@ private:
 
   std::vector<pic::reflector_wall> reflector_walls_ {};
   std::optional<runko::VecGrid<emf::YeeLattice::value_type>> reflector_correction_J_ {};
+  bool reflector_correction_pending_ {false};
 
   std::vector<std::size_t> subregion_particle_ends_;
   thrust::device_vector<runko::ParticleState<value_type>> subregion_particle_buff_;
