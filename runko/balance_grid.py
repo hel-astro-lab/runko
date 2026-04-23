@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*- 
 
 import numpy as np
-import h5py as h5
 import scipy
 from runko.hilbert import Hilbert2D, Hilbert3D
 
@@ -519,23 +518,3 @@ def get_tile_id_grid(grid, conf):
     #TODO gather back to master info from all ranks
 
     return tile_grid
-
-
-
-# save a snapshot of the mpi tile grid configuration to disk as h5 file
-def save_mpi_grid_to_disk(outdir, lap, grid, conf):
-
-    # get tile id grid; need to call with every rank
-    #tid_grid = get_tile_id_grid(grid, conf)
-
-    #only master saves rank performs this
-    if grid.rank() == 0: 
-        mpi_grid = get_mpi_grid(grid, conf)
-        fname = outdir + '/mpi_{}.h5'.format(str(lap)) #.rjust(4,'0'))
-        f5 = h5.File(fname,'w')
-
-        dset1 = f5.create_dataset('mpi_grid',  data=mpi_grid)
-        #dset2 = f5.create_dataset('tile_grid', data=tid_grid)
-
-        f5.close()
-

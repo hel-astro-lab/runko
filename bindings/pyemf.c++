@@ -3,7 +3,6 @@
 #include "core/emf/edge_bc.h"
 #include "core/emf/tile.h"
 #include "io/emf_average_field_energy_density.h"
-#include "io/snapshots/hdf5_fields.h"
 #include "io/snapshots/mpiio_writer_base.h"
 #include "io/snapshots/mpiio_fields.h"
 #include "io/snapshots/mpiio_particles.h"
@@ -264,11 +263,6 @@ void
       t.apply_edge_bc(bc, std::to_underlying(m));
     });
 
-
-  // HDF5 snapshot writer
-  py::class_<hdf5::FieldsWriter<3>>(m_3d, "Hdf5FieldsWriter")
-    .def(py::init<const std::string&, int, int, int, int, int, int, int>())
-    .def("write", &hdf5::FieldsWriter<3>::write);
 
   // MPI-IO writer base class
   py::class_<mpiio::WriterBase<3>>(m_3d, "MpiioWriterBase")

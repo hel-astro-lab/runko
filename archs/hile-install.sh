@@ -42,7 +42,6 @@ cd "$RUNKO_PATH"
 #--------------------------------------------------
 # Load standard prerequisite modules for runko:
 module load PrgEnv-cray
-module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load craype-x86-milan
 module load cray-mpich
@@ -57,7 +56,7 @@ python -m venv venv/runko-gpu
 source venv/runko-gpu/bin/activate
 
 # Install necessary Python dependencies
-pip3 install h5py scipy matplotlib numpy
+pip3 install scipy matplotlib numpy
 
 # Build mpi4py against Cray MPICH (PrgEnv-cray).
 # --force-reinstall ensures the venv gets its own copy instead of using the
@@ -76,7 +75,6 @@ cat >> venv/runko-gpu/bin/activate << EOL
 
 module purge
 module load PrgEnv-cray
-module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load craype-x86-milan
 module load cray-mpich

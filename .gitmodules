@@ -2,18 +2,6 @@
 	path = external/corgi
 	url = https://github.com/hel-astro-lab/corgi.git
 	branch = master
-[submodule "external/cppitertools"]
-	path = external/cppitertools
-	url = https://github.com/ryanhaining/cppitertools.git
-	branch = master
-[submodule "external/ezh5"]
-	path = external/ezh5
-	url = https://github.com/natj/ezh5.git
-	branch = master
-[submodule "external/fmt"]
-	path = external/fmt
-	url = https://github.com/fmtlib/fmt.git
-	branch = master
 [submodule "external/tyvi"]
 	path = external/tyvi
 	url = https://github.com/hel-astro-lab/tyvi
