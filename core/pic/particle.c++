@@ -3,6 +3,7 @@
 #include "core/mdgrid_common.h"
 #include "thrust/count.h"
 #include "thrust/device_vector.h"
+#include "thrust/fill.h"
 #include "thrust/execution_policy.h"
 #include "thrust/host_vector.h"
 #include "thrust/iterator/counting_iterator.h"
@@ -30,6 +31,33 @@ ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
   charge_ { args.charge },
   mass_ { args.mass }
 {
+}
+
+void
+  ParticleContainer::prealloc_dead(const std::size_t N)
+{
+  if(this->size() != 0uz) {
+    throw std::runtime_error {
+      "ParticleContainer::prealloc_dead must be called on an empty container."
+    };
+  }
+  if(N == 0uz) { return; }
+
+  this->pos_.invalidating_resize(N);
+  this->vel_.invalidating_resize(N);
+  this->ids_.invalidating_resize(N);
+
+  // Only the id distinguishes a dead slot. Pushers, depositors, and reflectors
+  // early-return on id == dead_prtc_id, so pos_ and vel_ are never read for
+  // dead particles and are left uninitialized.
+  const auto w        = tyvi::mdgrid_work {};
+  const auto ids_span = this->ids_.span();
+  thrust::fill(
+    w.on_this(),
+    ids_span.data(),
+    ids_span.data() + ids_span.size(),
+    runko::dead_prtc_id);
+  w.wait();
 }
 
 std::size_t

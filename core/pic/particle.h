@@ -108,6 +108,15 @@ public:
       std::span<const runko::ParticleState<value_type>>>
   inline void append(const R& spans);
 
+  /// Pre-allocate N dead-particle slots on an empty container.
+  ///
+  /// Sizes pos_/vel_/ids_ to N and tags every id with runko::dead_prtc_id.
+  /// pos_ and vel_ are left uninitialized — dead particles are identified
+  /// by their id alone and their position/velocity are never read. Must be
+  /// called on a container where size() == 0. No temporary buffer is
+  /// allocated, so peak memory during this call equals the final size.
+  void prealloc_dead(std::size_t N);
+
   /// Returns the number of particles dead or alive.
   std::size_t size() const;
   ParticleContainerArgs args() const;
@@ -252,20 +261,39 @@ inline void
     };
   }
 
-  const auto Nprev = this->size();
+  // Reuse the trailing dead tail in place when the new particles fit,
+  // to avoid the 2x peak of allocate-new + copy + swap.
+  const auto [Pnum, dead_tail] = [this] {
+    namespace rn = std::ranges;
+    const auto ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
+    const auto ordinals_end   = rn::next(ordinals_begin, this->size());
+    const auto rev_begin      = thrust::reverse_iterator(ordinals_end);
+    const auto rev_end        = thrust::reverse_iterator(ordinals_begin);
+
+    const auto w     = tyvi::mdgrid_work {};
+    const auto Piter = thrust::find_if(
+      w.on_this(),
+      rev_begin,
+      rev_end,
+      [ids_mds = this->ids_.mds()](const auto n) {
+        return ids_mds[n][] != runko::dead_prtc_id;
+      });
+
+    const auto dt = static_cast<std::size_t>(rn::distance(rev_begin, Piter));
+    return std::pair { this->size() - dt, dt };
+  }();
+
   const auto Nothers =
     std::array { static_cast<const ParticleContainer&>(others).size()... };
 
-  // { Nprev, Nprev + Nothers[0], ..., Nprev + Nothers[0] + ... + Nothers[-2] }
-  // Note that the last sum does not include Nothers[-1].
+  // { Pnum, Pnum + Nothers[0], ..., Pnum + Nothers[0] + ... + Nothers[-2] }
   const auto other_begins = [&] {
     auto temp = std::array<std::size_t, sizeof...(others)> {};
-    std::exclusive_scan(Nothers.begin(), Nothers.end(), temp.begin(), Nprev);
+    std::exclusive_scan(Nothers.begin(), Nothers.end(), temp.begin(), Pnum);
     return temp;
   }();
 
-  // { Nprev + Nothers[0], ..., Nprev + Nothers[0] + ... + Nothers[-1] }
-  // Note that the last sum includes Nothers[-1].
+  // { Pnum + Nothers[0], ..., Pnum + Nothers[0] + ... + Nothers[-1] }
   const auto other_ends = [&] {
     auto temp = std::array<std::size_t, sizeof...(others)> {};
     std::inclusive_scan(
@@ -273,59 +301,88 @@ inline void
       Nothers.end(),
       temp.begin(),
       std::plus<> {},
-      Nprev);
+      Pnum);
     return temp;
   }();
 
-  const auto Ntotal = other_ends.back();
+  const auto Nothers_total = other_ends.back() - Pnum;
+  const auto final_size    = other_ends.back();
 
-  auto new_pos = runko::VecList<value_type>(Ntotal);
-  auto new_vel = runko::VecList<value_type>(Ntotal);
-  auto new_ids = runko::ScalarList<runko::prtc_id_type>(Ntotal);
+  // Parallel copy of src[0, N) into (tgt_pos, tgt_vel, tgt_ids)[tgt_range],
+  // where N = tgt_range[1] - tgt_range[0]. Used three times below: fast path
+  // (src=other, tgt=*this), alive-prefix in slow path (src=*this, tgt=new),
+  // and slow-path other-handling (src=other, tgt=new).
+  const auto copy_particles_into = [](
+                                     tyvi::mdgrid_work& w,
+                                     auto tgt_pos,
+                                     auto tgt_vel,
+                                     auto tgt_ids,
+                                     const ParticleContainer& src,
+                                     const std::array<std::size_t, 2> tgt_range) {
+    const auto tgt_pos_sub = std::submdspan(tgt_pos, tgt_range);
+    const auto tgt_vel_sub = std::submdspan(tgt_vel, tgt_range);
+    const auto tgt_ids_sub = std::submdspan(tgt_ids, tgt_range);
+    const auto src_pos     = src.pos_.mds();
+    const auto src_vel     = src.vel_.mds();
+    const auto src_ids     = src.ids_.mds();
+
+    w.for_each_index(tgt_pos_sub, [=](const auto idx, const auto tidx) {
+      tgt_pos_sub[idx][tidx] = src_pos[idx][tidx];
+      tgt_vel_sub[idx][tidx] = src_vel[idx][tidx];
+    });
+    w.for_each_index(tgt_ids_sub, [=](const auto idx) {
+      tgt_ids_sub[idx][] = src_ids[idx][];
+    });
+  };
+
+  if(Nothers_total <= dead_tail) {
+    // Fast path: writes into existing dead slots in place. No allocation.
+    const auto pos_mds = this->pos_.mds();
+    const auto vel_mds = this->vel_.mds();
+    const auto ids_mds = this->ids_.mds();
+
+    [&]<std::size_t... I>(std::index_sequence<I...>) {
+      auto other_works = std::array { (std::ignore = I, tyvi::mdgrid_work {})... };
+      (copy_particles_into(
+         other_works[I],
+         pos_mds,
+         vel_mds,
+         ids_mds,
+         others,
+         { other_begins[I], other_ends[I] }),
+       ...);
+      tyvi::when_all(other_works[I]...);
+      other_works.front().wait();
+    }(std::make_index_sequence<sizeof...(others)>());
+    return;
+  }
+
+  // Slow path: grow to final_size, preserving only the alive prefix.
+  auto new_pos = runko::VecList<value_type>(final_size);
+  auto new_vel = runko::VecList<value_type>(final_size);
+  auto new_ids = runko::ScalarList<runko::prtc_id_type>(final_size);
 
   const auto new_pos_mds = new_pos.mds();
   const auto new_vel_mds = new_vel.mds();
   const auto new_ids_mds = new_ids.mds();
 
-  const auto prev_pos_mds = this->pos_.mds();
-  const auto prev_vel_mds = this->vel_.mds();
-  const auto prev_ids_mds = this->ids_.mds();
-
   auto wA = tyvi::mdgrid_work {};
-  wA.for_each_index(prev_pos_mds, [=](const auto idx, const auto tidx) {
-    new_pos_mds[idx][tidx] = prev_pos_mds[idx][tidx];
-    new_vel_mds[idx][tidx] = prev_vel_mds[idx][tidx];
-  });
-  wA.for_each_index(prev_ids_mds, [=](const auto idx) {
-    new_ids_mds[idx][] = prev_ids_mds[idx][];
-  });
-
-  const auto handle_other = [&](
-                              tyvi::mdgrid_work& w,
-                              const ParticleContainer& other,
-                              const std::array<std::size_t, 2> where_other_goes) {
-    const auto other_pos_mds = other.pos_.mds();
-    const auto other_vel_mds = other.vel_.mds();
-    const auto other_ids_mds = other.ids_.mds();
-
-    const auto other_in_new_pos_mds = std::submdspan(new_pos_mds, where_other_goes);
-    const auto other_in_new_vel_mds = std::submdspan(new_vel_mds, where_other_goes);
-    const auto other_in_new_ids_mds = std::submdspan(new_ids_mds, where_other_goes);
-
-    w.for_each_index(other_in_new_pos_mds, [=](const auto idx, const auto tidx) {
-      other_in_new_pos_mds[idx][tidx] = other_pos_mds[idx][tidx];
-      other_in_new_vel_mds[idx][tidx] = other_vel_mds[idx][tidx];
-    });
-
-    w.for_each_index(other_in_new_ids_mds, [=](const auto idx) {
-      other_in_new_ids_mds[idx][] = other_ids_mds[idx][];
-    });
-  };
+  if(Pnum > 0uz) {
+    copy_particles_into(
+      wA, new_pos_mds, new_vel_mds, new_ids_mds, *this, { 0uz, Pnum });
+  }
 
   // Ugly syntax until C++26.
   [&]<std::size_t... I>(std::index_sequence<I...>) {
     auto other_works = std::array { (std::ignore = I, tyvi::mdgrid_work {})... };
-    (handle_other(other_works[I], others, { other_begins[I], other_ends[I] }), ...);
+    (copy_particles_into(
+       other_works[I],
+       new_pos_mds,
+       new_vel_mds,
+       new_ids_mds,
+       others,
+       { other_begins[I], other_ends[I] }),
+     ...);
     tyvi::when_all(wA, other_works[I]...);
     wA.wait();
   }(std::make_index_sequence<sizeof...(others)>());
