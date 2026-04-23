@@ -20,7 +20,6 @@ Newer ones should also work.
 
 Runko depends on following Python packages:
 
-- h5py
 - matplotlib
 - numpy
 - scipy

@@ -25,7 +25,6 @@ set (PIC_FILES
      )
 
 set (IO_FILES
-     ../io/snapshots/hdf5_fields.c++
      ../io/snapshots/mpiio_fields.c++
      ../io/snapshots/mpiio_particles.c++
      ../io/snapshots/mpiio_spectra.c++
@@ -46,7 +45,6 @@ target_link_libraries(runko_cpp_bindings
     runko_warnings
     corgi
     tyvi::tyvi
-    hdf5::hdf5
 )
 
 if(RUNKO_CODE_COVERAGE)

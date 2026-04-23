@@ -26,7 +26,6 @@ load("cray-dsmml")
 load("cray-openshmemx")
 
 -- # other tools
-load("cray-hdf5")
 load("cray-python")
 load("cray-libsci")
 load("perftools-base")

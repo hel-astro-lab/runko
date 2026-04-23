@@ -1,5 +1,4 @@
 import sys
-import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -11,6 +10,9 @@ def read_full_box(path, var_name):
     return read_field_snapshot(path)[var_name]
 
 def read_je(path_to_h5: str):
+    """
+    FIXME: this might be broken after removing hdf5
+    """
     jx = read_full_box(path_to_h5, "jx")
     jy = read_full_box(path_to_h5, "jy")
     jz = read_full_box(path_to_h5, "jz")
