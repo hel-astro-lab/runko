@@ -29,15 +29,15 @@ if [ ! -d "$ROCM_LIBS_DIR/projects/rocthrust/thrust" ]; then
 fi
 
 # 3. Load standard prerequisite modules for runko:
-module load LUMI
+module load LUMI/25.09
 module load partition/G
 module load PrgEnv-cray
-module load rocm
+module load rocm/6.4.4
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
 module load buildtools
-
+module load lumi-CrayPath
 
 
 # 4. Create a Python virtual environment specially for runko,
@@ -75,14 +75,17 @@ cat >> runko-venv/bin/activate << EOL
 # Tool to load runko modules
 # Usage: "source runko-venv/bin/activate"
 # Load standard prerequisite modules for runko:
-module load LUMI
+module load LUMI/25.09
 module load partition/G
 module load PrgEnv-cray
-module load rocm
+module load rocm/6.4.4
 module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
 module load buildtools
+module load lumi-CrayPath
+
+
 
 # module load cray-python # not necessary as we are using a python virtual environment already
 
