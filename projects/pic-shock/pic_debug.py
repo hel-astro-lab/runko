@@ -1,10 +1,19 @@
 """
 Particle-in-cell simulation of a collisionless shock — DEBUG copy.
 
-Sibling of pic.py with sub-lap VmRSS probes written to
-<outdir>/ram-usage/per-step-0.csv (rank 0 only). Used to localize the
-~23 MB/lap host-side leak observed on LUMI GPU runs. Delete this file
-(or discard the v5-sublap-ram-trace branch) when the culprit is fixed.
+Sibling of pic.py with full per-kernel profiling written to
+<outdir>/ram-usage/per-step-0.csv (rank 0 only). Per lap, for every
+kernel / comm / edge_bc / filter call in the step, records:
+
+  - VmRSS delta (kB)            — host memory change
+  - wall time (us)              — time.perf_counter_ns delta
+  - Python traced memory at lap start/end (bytes, tracemalloc)
+  - GPU device memory at lap start/end (kB, None->-1 on CPU backend)
+
+The filter loop unrolls into a probe per pass + per comm pair, so
+n_filter_passes changes the column count; the header is written
+after the first lap. Delete this file (or discard the
+v5-sublap-ram-trace branch) when the culprit is fixed.
 """
 
 import runko
@@ -14,7 +23,9 @@ import logging
 import os
 import csv
 import atexit
-from runko.ram_usage import get_rss_kB
+import time
+import tracemalloc
+from runko.ram_usage import get_rss_kB, get_gpu_mem_kB
 
 
 if __name__ == "__main__":
@@ -133,16 +144,18 @@ if __name__ == "__main__":
         logger.info(f"  {'tile_partitioning':<{W}}= {conf.tile_partitioning}")
 
     # --------------------------------------------------
-    # Sub-lap RSS trace (DEBUG) — rank 0 only
+    # Sub-lap profiling trace (DEBUG) — rank 0 only.
+    #
+    # Header is deferred to the first lap's write (so filter-loop
+    # probes adapt to n_filter_passes automatically). Row layout:
+    #   lap, rss_start_kB, py_mem_start_B, gpu_mem_start_kB,
+    #   d_rss_<tag>...   (kB deltas, one per kernel call),
+    #   t_us_<tag>...    (microsecond deltas, same order),
+    #   rss_end_kB, py_mem_end_B, gpu_mem_end_kB
     _trace_f = None
     _trace_writer = None
-    _trace_columns = [
-        "lap", "rss_start_kB",
-        "d_half_b1", "d_prtcl_kernel", "d_prtcl_comm", "d_prtcl_sort",
-        "d_deposit", "d_j_comm", "d_j_filter",
-        "d_half_b2", "d_e_push", "d_inject", "d_io_avg", "d_io_snapshot",
-        "rss_end_kB",
-    ]
+    _trace_header_written = False
+    _trace_tag_order: list[str] = []
     if runko.on_main_rank():
         from runko.auto_outdir import resolve_outdir as _resolve_outdir
         _trace_dir = os.path.join(_resolve_outdir(conf), "ram-usage")
@@ -150,9 +163,10 @@ if __name__ == "__main__":
         _trace_f = open(os.path.join(_trace_dir, "per-step-0.csv"), "w",
                         buffering=1)
         _trace_writer = csv.writer(_trace_f)
-        _trace_writer.writerow(_trace_columns)
         atexit.register(_trace_f.close)
-        logger.info(f"sub-lap RSS trace -> {_trace_dir}/per-step-0.csv")
+        tracemalloc.start()
+        logger.info(f"sub-lap profile -> {_trace_dir}/per-step-0.csv "
+                    "(rss/time per kernel + py/gpu at lap boundaries)")
 
     # --------------------------------------------------
     # Reflector wall and moving injector
@@ -273,89 +287,79 @@ if __name__ == "__main__":
     # Main PIC loop
 
     def pic_simulation_step(x):
-        # --- DEBUG: sub-lap RSS probes ---
+        # --- DEBUG: per-kernel RSS + wall-time probes ---
         on_main = runko.on_main_rank()
-        marks: list[tuple[str, int]] = []
+        marks: list[tuple[str, int, int]] = []  # (tag, rss_kB, t_ns)
         def mark(tag):
             if on_main:
-                marks.append((tag, get_rss_kB()))
+                marks.append((tag, get_rss_kB(), time.perf_counter_ns()))
 
         mark("start")
+        if on_main:
+            _py_mem_start, _ = tracemalloc.get_traced_memory()
+            _gpu_kb = get_gpu_mem_kB()
+            _gpu_mem_start = -1 if _gpu_kb is None else _gpu_kb
 
-        # --- half B push + B edge BCs ---
-        x.grid_push_half_b()
-        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_B)
-        x.comm_external(runko.tools.comm_mode.emf_B)
-        x.comm_local(runko.tools.comm_mode.emf_B)
-        mark("half_b1")
+        # --- half B push #1 + B edge BCs + comm ---
+        x.grid_push_half_b()                                       ; mark("push_half_b_1")
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_B)         ; mark("edgebc_B_1")
+        x.comm_external(runko.tools.comm_mode.emf_B)               ; mark("extB_1")
+        x.comm_local(runko.tools.comm_mode.emf_B)                  ; mark("locB_1")
 
-        # --- particle push + reflect + communicate ---
-        x.prtcl_push()
-        x.prtcl_reflect_particles()
-        x.prtcl_pack_outgoing()
-        mark("prtcl_kernel")
-        x.comm_external(runko.tools.comm_mode.pic_particle)
-        x.comm_local(runko.tools.comm_mode.pic_particle)
-        mark("prtcl_comm")
+        # --- particle push + reflect + pack + exchange ---
+        x.prtcl_push()                                             ; mark("prtcl_push")
+        x.prtcl_reflect_particles()                                ; mark("prtcl_reflect")
+        x.prtcl_pack_outgoing()                                    ; mark("prtcl_pack")
+        x.comm_external(runko.tools.comm_mode.pic_particle)        ; mark("extP")
+        x.comm_local(runko.tools.comm_mode.pic_particle)           ; mark("locP")
 
         if simulation.lap % 5 == 0:
             x.prtcl_sort()
         mark("prtcl_sort")
 
-        # --- current deposit + communicate ---
-        x.prtcl_deposit_current()
-        mark("deposit")
-        x.comm_external(runko.tools.comm_mode.emf_J)
-        x.comm_local(runko.tools.comm_mode.emf_J_exchange)
-        x.comm_external(runko.tools.comm_mode.emf_J)
-        x.comm_local(runko.tools.comm_mode.emf_J)
-        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_J)
-        mark("j_comm")
+        # --- current deposit + J exchange + J edge_bc ---
+        x.prtcl_deposit_current()                                  ; mark("deposit")
+        x.comm_external(runko.tools.comm_mode.emf_J)               ; mark("extJ_1")
+        x.comm_local(runko.tools.comm_mode.emf_J_exchange)         ; mark("locJ_exch")
+        x.comm_external(runko.tools.comm_mode.emf_J)               ; mark("extJ_2")
+        x.comm_local(runko.tools.comm_mode.emf_J)                  ; mark("locJ")
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_J)         ; mark("edgebc_J_1")
 
-        # --- current filter ---
-        # Optimal: communicate every halo_size (=3) passes.
-        # The separable binomial2 filter has a radius-1 stencil and writes to
-        # [1, Nx-1), leaving boundary cells as zero. Each pass corrupts 1 more
-        # halo cell inward from each side. With halo_size=3, up to 3 consecutive
-        # passes keep the interior valid. After that, halos must be refreshed.
+        # --- current filter loop (unrolled into per-pass probes) ---
+        # Optimal: communicate every halo_size (=3) passes. With
+        # n_filter_passes > 3, two per-loop comms fire at i=3, 6, ...
         for i in range(n_filter_passes):
             if i > 0 and i % 3 == 0:
-                x.comm_external(runko.tools.comm_mode.emf_J)
-                x.comm_local(runko.tools.comm_mode.emf_J)
-            x.grid_filter_current()
-        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_J)
-        mark("j_filter")
+                x.comm_external(runko.tools.comm_mode.emf_J)       ; mark(f"filt_ext_{i}")
+                x.comm_local(runko.tools.comm_mode.emf_J)          ; mark(f"filt_loc_{i}")
+            x.grid_filter_current()                                ; mark(f"filt_{i}")
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_J)         ; mark("edgebc_J_2")
 
-        # --- second half B push + B edge BCs ---
-        x.grid_push_half_b()
-        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_B)
-        x.comm_external(runko.tools.comm_mode.emf_B)
-        x.comm_local(runko.tools.comm_mode.emf_B)
-        mark("half_b2")
+        # --- half B push #2 + B edge BCs + comm ---
+        x.grid_push_half_b()                                       ; mark("push_half_b_2")
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_B)         ; mark("edgebc_B_2")
+        x.comm_external(runko.tools.comm_mode.emf_B)               ; mark("extB_2")
+        x.comm_local(runko.tools.comm_mode.emf_B)                  ; mark("locB_2")
 
-        # --- E push + edge BCs + add current ---
-        x.grid_push_e()
-        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_E)
-        x.grid_add_current()
-        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_E)
-        x.comm_external(runko.tools.comm_mode.emf_E)
-        x.comm_local(runko.tools.comm_mode.emf_E)
-        mark("e_push")
+        # --- E push + edge_bc + add_current + comm ---
+        x.grid_push_e()                                            ; mark("push_e")
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_E)         ; mark("edgebc_E_1")
+        x.grid_add_current()                                       ; mark("add_current")
+        x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_E)         ; mark("edgebc_E_2")
+        x.comm_external(runko.tools.comm_mode.emf_E)               ; mark("extE")
+        x.comm_local(runko.tools.comm_mode.emf_E)                  ; mark("locE")
 
-        # --- advance wall position (for moving wall; no-op for stationary) ---
-        x.prtcl_advance_reflector_walls()
+        # --- advance walls + inject ---
+        x.prtcl_advance_reflector_walls()                          ; mark("advance_walls")
+        injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc) ; mark("inject")
 
-        # --- moving particle injector ---
-        injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
-        mark("inject")
+        # --- IO per lap ---
+        x.io_average_kinetic_energy()                              ; mark("io_avg_ke")
+        x.io_average_B_energy_density()                            ; mark("io_avg_B")
+        x.io_average_E_energy_density()                            ; mark("io_avg_E")
+        x.io_ram_usage()                                           ; mark("io_ram")
 
-        # --- IO ---
-        x.io_average_kinetic_energy()
-        x.io_average_B_energy_density()
-        x.io_average_E_energy_density()
-        x.io_ram_usage()
-        mark("io_avg")
-
+        # --- snapshot (every output_interval) ---
         if simulation.lap % output_interval == 0:
             x.io_emf_snapshot()
             #x.io_prtcl_snapshot()
@@ -364,14 +368,41 @@ if __name__ == "__main__":
             simulation.reset_timers()
         mark("io_snapshot")
 
-        # --- DEBUG: flush one row of RSS deltas ---
+        # --- DEBUG: flush one row ---
         if on_main and _trace_writer is not None:
+            global _trace_header_written, _trace_tag_order
+            tags = [m[0] for m in marks]
+            if not _trace_header_written:
+                _trace_tag_order = tags
+                header = ["lap", "rss_start_kB",
+                          "py_mem_start_B", "gpu_mem_start_kB"]
+                header += [f"d_rss_{t}" for t in tags[1:]]
+                header += [f"t_us_{t}" for t in tags[1:]]
+                header += ["rss_end_kB", "py_mem_end_B", "gpu_mem_end_kB"]
+                _trace_writer.writerow(header)
+                _trace_header_written = True
+            elif tags != _trace_tag_order:
+                # If mark order drifts (e.g. n_filter_passes changes
+                # mid-run), fall back to a sparse write — shouldn't
+                # happen in practice.
+                pass
+
+            py_mem_end, _ = tracemalloc.get_traced_memory()
+            _gpu_kb = get_gpu_mem_kB()
+            gpu_mem_end = -1 if _gpu_kb is None else _gpu_kb
+
             rss_start = marks[0][1]
             rss_end = marks[-1][1]
-            deltas = [marks[i][1] - marks[i - 1][1]
-                      for i in range(1, len(marks))]
-            _trace_writer.writerow([simulation.lap, rss_start,
-                                    *deltas, rss_end])
+            rss_deltas = [marks[i][1] - marks[i - 1][1]
+                          for i in range(1, len(marks))]
+            t_deltas_us = [(marks[i][2] - marks[i - 1][2]) // 1000
+                           for i in range(1, len(marks))]
+            row = [simulation.lap, rss_start,
+                   _py_mem_start, _gpu_mem_start]
+            row += rss_deltas
+            row += t_deltas_us
+            row += [rss_end, py_mem_end, gpu_mem_end]
+            _trace_writer.writerow(row)
 
     simulation.for_each_lap(pic_simulation_step)
     simulation.log_timer_statistics()
