@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH -J 3d-s6               # job name
+#SBATCH -J 3d-s3               # job name
 #SBATCH --account=project_462001358  # billing account
 #SBATCH --partition=standard-g # GPU partition on LUMI
 #SBATCH --output=%J.out        # stdout
@@ -22,10 +22,11 @@ echo $PYTHONPATH
 # on-the-fly script to select gpu and preload GTL per task
 # LD_PRELOAD is needed because mpi4py does not link GTL; without it
 # GPU-aware MPI fails at MPI_Init with "GTL library is not linked".
+# export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
+#
 cat << EOF > lumi_select_gpu
 #!/bin/bash
 export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
-export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
 
 exec \$*
 EOF
@@ -48,13 +49,20 @@ export PYTHONDONTWRITEBYTECODE=true
 export HDF5_USE_FILE_LOCKING=FALSE
 
 # MPICH flags
+#export FI_MR_CACHE_MAX_COUNT=0
+#export FI_MR_CACHE_MAX_SIZE=0
+#export MPICH_SMP_SINGLE_COPY_MODE=NONE     # disables CMA intra-node shmem
+#export MPICH_OFI_STARTUP_CONNECT=0
+#export MPICH_ASYNC_PROGRESS=0
+#export FI_MR_CACHE_MONITOR=disabled
+
+# export MPICH_OFI_STARTUP_CONNECT=1  # create mpi rank connections in the beginning, not on the fly
 export MPICH_GPU_SUPPORT_ENABLED=1
-export MPICH_OFI_STARTUP_CONNECT=1  # create mpi rank connections in the beginning, not on the fly
-export MPICH_GPU_IPC_ENABLED=0      # slow but fixes p2p gpu comm
+export MPICH_GPU_IPC_ENABLED=1      
 
 # Cray optimizations
-export FI_CXI_DEFAULT_TX_SIZE=16384 # increase max MPI msgs per rank
-export FI_CXI_RX_MATCH_MODE=hybrid  # in case hardware storage overflows, use software mem
+#export FI_CXI_DEFAULT_TX_SIZE=16384 # increase max MPI msgs per rank
+#export FI_CXI_RX_MATCH_MODE=hybrid  # in case hardware storage overflows, use software mem
 
 # go to working directory
 cd $RUNKODIR/projects/pic-shock/
