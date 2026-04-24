@@ -148,6 +148,8 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
   const auto inv_dlog   = static_cast<vt>(inv_dlog_);
   const auto inv_dbeta  = static_cast<vt>(inv_dbeta_);
   const auto last_bin_f = static_cast<vt>(nbins_ - 1);
+  const auto last_ix_f  = static_cast<vt>(nxt_ - 1);
+  const auto umin_vt    = static_cast<vt>(umin_);
 
   const auto nspec = static_cast<int>(pic_tile->number_of_species());
   const int ndeposit = std::min(nspec, nspecies_);
@@ -162,16 +164,15 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
       .for_each_index(
         pos_mds,
         [=](const auto idx) {
-          const bool alive = tag_mds[idx][] != runko::dead_prtc_id;
-        
-          // particle x position -> x bin
-          const auto px = pos_mds[idx][0] - mx;
-          const auto ix = static_cast<runko::index_t>(sstd::floor(px * inv_stride));
+          // Mask inputs on dead particles: their pos/vel slots may be
+          // stale or uninitialised, and a NaN would flow to an UB
+          // static_cast<uint32_t>(floor(NaN)) on bin computation.
+          const bool dead = tag_mds[idx][] == runko::dead_prtc_id;
 
-          // particle velocities
-          const auto ux = vel_mds[idx][0];
-          const auto uy = vel_mds[idx][1];
-          const auto uz = vel_mds[idx][2];
+          const auto px = dead ? vt{0} : (pos_mds[idx][0] - mx);
+          const auto ux = dead ? vt{0} : vel_mds[idx][0];
+          const auto uy = dead ? vt{0} : vel_mds[idx][1];
+          const auto uz = dead ? vt{0} : vel_mds[idx][2];
 
           const auto u2    = ux*ux + uy*uy + uz*uz;
           const auto u_mag = sstd::sqrt(u2);
@@ -182,20 +183,28 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
           auto bin = [=](vt raw) -> runko::index_t {
             return static_cast<runko::index_t>(sstd::clamp(raw, vt{0}, last_bin_f));
           };
+          auto bin_x = [=](vt raw) -> runko::index_t {
+            return static_cast<runko::index_t>(sstd::clamp(raw, vt{0}, last_ix_f));
+          };
 
-          // u spectrum: log10 bins [umin, umax]
-          const auto ib_u  = bin(sstd::floor((sstd::log10(u_mag) - log_umin) * inv_dlog));
+          const auto ix = bin_x(sstd::floor(px * inv_stride));
+
+          // u spectrum: log10 bins [umin, umax].
+          // Floor at umin_ so log10 never sees 0 (stable under -ffast-math).
+          const auto log_u = sstd::log10(sstd::max(u_mag, umin_vt));
+          const auto ib_u  = bin(sstd::floor((log_u - log_umin) * inv_dlog));
 
           // beta spectra: linear bins [-1, +1]
           const auto ib_bx = bin(sstd::floor((ux * inv_gamma + vt{1}) * inv_dbeta));
           const auto ib_by = bin(sstd::floor((uy * inv_gamma + vt{1}) * inv_dbeta));
           const auto ib_bz = bin(sstd::floor((uz * inv_gamma + vt{1}) * inv_dbeta));
 
-          // unconditional atomic deposits
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_u ][base_field + 0]), static_cast<vt>(alive));
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bx][base_field + 1]), static_cast<vt>(alive));
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_by][base_field + 2]), static_cast<vt>(alive));
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bz][base_field + 3]), static_cast<vt>(alive));
+          // unconditional atomic deposits (dead lanes write 0 into valid bins)
+          const auto w = dead ? vt{0} : vt{1};
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_u ][base_field + 0]), w);
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bx][base_field + 1]), w);
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_by][base_field + 2]), w);
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bz][base_field + 3]), w);
         })
       .wait();
   }
