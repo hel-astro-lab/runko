@@ -29,15 +29,28 @@ if [ ! -d "$ROCM_LIBS_DIR/projects/rocthrust/thrust" ]; then
 fi
 
 # 3. Load standard prerequisite modules for runko:
-module load LUMI/25.09
-module load partition/G
+ 
+# Mihkel's modules
+#module load LUMI/25.09
+#module load partition/G
+#module load PrgEnv-cray
+#module load rocm/6.4.4
+#module load cray-hdf5
+#module load craype-accel-amd-gfx90a
+#module load cray-mpich craype-network-ofi
+#module load buildtools
+#module load lumi-CrayPath
+
+# Alfio's modules
+export PE_LD_LIBRARY_PATH=system
 module load PrgEnv-cray
-module load rocm/6.4.4
-module load cray-hdf5
+module load cce/20.0.0
+module load cray-python
+module load cray-mpich/9.0.1
+module load rocm/6.3.4
+module load craype-x86-trento
 module load craype-accel-amd-gfx90a
-module load cray-mpich craype-network-ofi
-module load buildtools
-module load lumi-CrayPath
+module load cray-hdf5
 
 
 # 4. Create a Python virtual environment specially for runko,
@@ -74,23 +87,31 @@ cmake --build lumi-gpu-release -j18
 cat >> runko-venv/bin/activate << EOL
 # Tool to load runko modules
 # Usage: "source runko-venv/bin/activate"
-# Load standard prerequisite modules for runko:
-module load LUMI/25.09
-module load partition/G
+
+export PE_LD_LIBRARY_PATH=system
 module load PrgEnv-cray
-module load rocm/6.4.4
-module load cray-hdf5
+module load cce/20.0.0
+module load cray-python
+module load cray-mpich/9.0.1
+module load rocm/6.3.4
+module load craype-x86-trento
 module load craype-accel-amd-gfx90a
-module load cray-mpich craype-network-ofi
-module load buildtools
-module load lumi-CrayPath
+module load cray-hdf5
 
-
+#module load LUMI/25.09
+#module load partition/G
+#module load PrgEnv-cray
+#module load rocm/6.4.4
+#module load cray-hdf5
+#module load craype-accel-amd-gfx90a
+#module load cray-mpich craype-network-ofi
+#module load buildtools
+#module load lumi-CrayPath
 
 # module load cray-python # not necessary as we are using a python virtual environment already
 
 # GPU-aware MPI: preload GTL so it is available before mpi4py calls MPI_Init
-export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
+#export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
 
 export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
 
