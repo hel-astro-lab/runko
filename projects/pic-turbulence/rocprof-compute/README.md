@@ -1,0 +1,2 @@
+Rocprofiler-compute has a parsing error during analyze with pandas 3.x. Creating a venv with the requirement list rocprof-compute-requirements.txt bypasses this problem, but is only necessary during the analyze part. 
+Rocprofiler-compute executes the code multiple times, so if we are profiling just one rank, we need to loop the others as well. The amount of loops that is done changes based on the profiling parameters, so we create a stop-flag in the runscript for the other tasks to recognize that the profiling is completed. 

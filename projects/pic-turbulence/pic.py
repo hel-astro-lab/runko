@@ -20,14 +20,14 @@ if __name__ == "__main__":
     config = runko.Configuration(None)
 
     config.outdir = "turb-small"
-    config.Nx = 1
-    config.Ny = 1
-    config.Nz = 1
+    config.Nx = 4
+    config.Ny = 4
+    config.Nz = 4
     config.NxMesh = 64
     config.NyMesh = 64
     config.NzMesh = 64
     config.cfl = 0.45
-    config.Nt = 5.0*config.Nx*config.NxMesh/config.cfl/3.0 # =5eddy turnover times
+    config.Nt = 5#5.0*config.Nx*config.NxMesh/config.cfl/3.0 # =5eddy turnover times
     config.xmin = 0
     config.ymin = 0
     config.zmin = 0
