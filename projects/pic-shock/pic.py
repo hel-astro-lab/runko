@@ -186,10 +186,16 @@ if __name__ == "__main__":
         prealloc_caps.append(int(budget_bytes / local_tiles_count / n_species / 32))
     prealloc_n = min(prealloc_caps) if prealloc_caps else 0
 
+    # Pass per-species prealloc size through the config so each Tile sizes its
+    # particle containers at construction time with dead-filled slots; later
+    # batch_inject_in_x_stripe calls write into those slots in place without
+    # reallocation.
+    conf.prealloc_per_species = prealloc_n
+
     if runko.on_main_rank() and prealloc_n > 0:
         logger.info(
             f"Pre-allocating {prealloc_n} dead particles per species per tile "
-            f"({prealloc_n * n_species * 32 / 1e6:.1f} MB/tile, "
+            f"at construction ({prealloc_n * n_species * 32 / 1e6:.1f} MB/tile, "
             f"{prealloc_n * n_species * 32 * local_tiles_count / 1e9:.2f} GB/rank)"
         )
 
@@ -201,9 +207,6 @@ if __name__ == "__main__":
                 tile.register_reflector_wall(wall)
                 tile.register_edge_bc(conducting_bc)
                 tile.register_edge_bc(upstream_bc)
-                if prealloc_n > 0:
-                    for species_id in range(n_species):
-                        tile.inject_dead_particles(species_id, prealloc_n)
                 for _ in range(ppc):
                     tile.batch_inject_in_x_stripe(0, pgen0, walloc, injloc0)
                     tile.batch_inject_in_x_stripe(1, pgen1, walloc, injloc0)
@@ -305,7 +308,7 @@ if __name__ == "__main__":
 
         if simulation.lap % output_interval == 0:
             x.io_emf_snapshot()
-            x.io_prtcl_snapshot()
+            #x.io_prtcl_snapshot()
             x.io_spectra_snapshot()
             simulation.log_timer_statistics()
             simulation.reset_timers()
