@@ -94,12 +94,14 @@
         {
             "name": "lumi-gpu-release",
             "displayName": "LUMI GPU Release (Cray CC + ROCm)",
-            "description": "LUMI GPU partition, Cray CC wrapper targeting MI250X (gfx90a). GPU arch set by craype-accel-amd-gfx90a module.",
+            "description": "LUMI GPU partition, Cray CC wrapper targeting MI250X (gfx90a). GPU arch set by craype-accel-amd-gfx90a module. Links Cray MPICH GTL so LD_PRELOAD is no longer needed at runtime; requires cray-mpich module loaded before configure.",
             "inherits": "conf-lumi-common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "CC",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS": "-O3",
+                "CMAKE_EXE_LINKER_FLAGS": "-L$env{CRAY_MPICH_ROOTDIR}/gtl/lib -Wl,-rpath,$env{CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa",
+                "CMAKE_SHARED_LINKER_FLAGS": "-L$env{CRAY_MPICH_ROOTDIR}/gtl/lib -Wl,-rpath,$env{CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa",
                 "tyvi_BACKEND": "hip",
                 "CMAKE_HIP_ARCHITECTURES": "gfx90a",
                 "AMDGPU_TARGETS": "gfx90a",
