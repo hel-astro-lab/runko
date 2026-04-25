@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH -J 3d-s6               # job name
+#SBATCH -J 3d-s3               # job name
 #SBATCH --account=project_462001358  # billing account
 #SBATCH --partition=standard-g # GPU partition on LUMI
 #SBATCH --output=%J.out        # stdout
@@ -50,11 +50,7 @@ export HDF5_USE_FILE_LOCKING=FALSE
 # MPICH flags
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_OFI_STARTUP_CONNECT=1  # create mpi rank connections in the beginning, not on the fly
-export MPICH_GPU_IPC_ENABLED=0      # slow but fixes p2p gpu comm
-
-# Cray optimizations
-export FI_CXI_DEFAULT_TX_SIZE=16384 # increase max MPI msgs per rank
-export FI_CXI_RX_MATCH_MODE=hybrid  # in case hardware storage overflows, use software mem
+export MPICH_GPU_IPC_ENABLED=1      # slow but fixes p2p gpu comm
 
 # go to working directory
 cd $RUNKODIR/projects/pic-shock/
