@@ -49,21 +49,6 @@ target_link_libraries(runko_cpp_bindings
     hdf5::hdf5
 )
 
-# Cray MPICH GPU Transport Layer: link explicitly so LD_PRELOAD is no
-# longer needed at runtime. CRAY_MPICH_ROOTDIR is set by the cray-mpich
-# module; module must be loaded before configure on LUMI.
-if(DEFINED ENV{CRAY_MPICH_ROOTDIR})
-    find_library(MPI_GTL_HSA_LIB
-        NAMES mpi_gtl_hsa
-        PATHS "$ENV{CRAY_MPICH_ROOTDIR}/gtl/lib"
-        NO_DEFAULT_PATH
-        REQUIRED
-    )
-    target_link_libraries(runko_cpp_bindings PRIVATE "${MPI_GTL_HSA_LIB}")
-    set_property(TARGET runko_cpp_bindings APPEND PROPERTY
-        INSTALL_RPATH "$ENV{CRAY_MPICH_ROOTDIR}/gtl/lib")
-endif()
-
 if(RUNKO_CODE_COVERAGE)
     target_link_libraries(runko_cpp_bindings PUBLIC runko_coverage_config)
 endif()
