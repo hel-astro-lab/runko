@@ -6,10 +6,12 @@ import runko
 import numpy as np
 import argparse
 import logging
+from mpi4py import MPI
 
 
 if __name__ == "__main__":
-    rng = np.random.default_rng(seed=42)
+    mpi_rank = MPI.COMM_WORLD.Get_rank()
+    rng = np.random.default_rng(seed=mpi_rank)
 
     logger = runko.runko_logger()
 
