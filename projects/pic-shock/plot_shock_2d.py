@@ -31,7 +31,7 @@ VAR_CONFIG = {
         'cmap': 'PiYG',
         'vmin': None,
         'vmax': None,
-        'clabel': r'$E_x$',
+        'clabel': r'$E_x/B_0$',
         'symmetric': True,
         'norm_key': 'ex',
     },
@@ -39,7 +39,7 @@ VAR_CONFIG = {
         'cmap': 'PiYG',
         'vmin': None,
         'vmax': None,
-        'clabel': r'$E_y$',
+        'clabel': r'$E_y/B_0$',
         'symmetric': True,
         'norm_key': 'ey',
     },
@@ -47,7 +47,7 @@ VAR_CONFIG = {
         'cmap': 'PiYG',
         'vmin': None,
         'vmax': None,
-        'clabel': r'$E_z$',
+        'clabel': r'$E_z/B_0$',
         'symmetric': True,
         'norm_key': 'ez',
     },
@@ -79,7 +79,7 @@ VAR_CONFIG = {
         'cmap': 'RdBu',
         'vmin': None,
         'vmax': None,
-        'clabel': r'$J_x$',
+        'clabel': r'$J_x/(n_0 q_0 c)$',
         'symmetric': True,
         'norm_key': 'jx',
     },
@@ -87,7 +87,7 @@ VAR_CONFIG = {
         'cmap': 'RdBu',
         'vmin': None,
         'vmax': None,
-        'clabel': r'$J_y$',
+        'clabel': r'$J_y/(n_0 q_0 c)$',
         'symmetric': True,
         'norm_key': 'jy',
     },
@@ -95,7 +95,7 @@ VAR_CONFIG = {
         'cmap': 'RdBu',
         'vmin': None,
         'vmax': None,
-        'clabel': r'$J_z$',
+        'clabel': r'$J_z/(n_0 q_0 c)$',
         'symmetric': True,
         'norm_key': 'jz',
     },
@@ -182,21 +182,38 @@ def add_shock_derived(conf):
 
 
 def get_normalization(var, conf):
-    """Return the normalization factor for a given field variable."""
-    n0 = 2.0 * conf.ppc
+    """Return the normalization factor for a given field variable.
+
+    The MPI-IO field dump volume-sums n0,n1,jx,jy,jz over the stride^3 fine
+    cells that map to one coarse output cell, so number/current densities
+    pick up an extra stride^3 factor. E,B are subsampled (no stride factor).
+    """
+    stride3 = conf.stride**3
+    n0_coarse = 2.0 * conf.ppc * stride3   # upstream coarse-cell density
     qe = abs(conf.qe)
-    me_per_qe = abs(conf.me) / qe
 
     if var == 'rho':
-        return n0
+        return n0_coarse
     if var in ('jx', 'jy', 'jz'):
-        return qe * n0 * conf.cfl**2
-    if var in ('bx', 'by', 'bz'):
+        # J ~ n_0 q_0 c (with c -> cfl in code units), summed over stride^3
+        return n0_coarse * qe * conf.cfl
+    if var in ('bx', 'by', 'bz', 'ex', 'ey', 'ez'):
         return conf.binit
-    if var in ('ex', 'ey', 'ez'):
-        deltax = 1.0 / conf.c_omp
-        return (me_per_qe * conf.cfl**2) / deltax
     return 1.0
+
+
+# -- shock tracking ------------------------------------------------------------
+
+def find_shock_index(rho_1d, threshold):
+    """Locate shock front by walking from the right (high x) leftward.
+
+    Returns the largest x-index where rho_1d > threshold; 0 if no cell
+    exceeds the threshold (shock not yet formed).
+    """
+    above = np.where(rho_1d > threshold)[0]
+    if len(above) == 0:
+        return 0
+    return int(above[-1])
 
 
 # -- plotting helpers ----------------------------------------------------------
@@ -298,6 +315,14 @@ if __name__ == "__main__":
     parser.add_argument("--conf", required=True, help="Path to .ini config file")
     parser.add_argument("--lap", type=int, required=True, help="Lap number")
     parser.add_argument("--dark", action="store_true", help="Use dark background style")
+    parser.add_argument("--track_shock", action="store_true",
+                        help="Crop the figure to a window locked on the shock front")
+    parser.add_argument("--track_shock_threshold", type=float, default=1.5,
+                        help="density threshold n/n_0 used to locate the shock front")
+    parser.add_argument("--track_shock_win_neg", type=float, default=30.0,
+                        help="skin depths to plot behind (downstream of) the shock")
+    parser.add_argument("--track_shock_win_pos", type=float, default=30.0,
+                        help="skin depths to plot ahead (upstream) of the shock")
     args_cli = parser.parse_args()
 
     # -- config ----------------------------------------------------------------
@@ -306,7 +331,8 @@ if __name__ == "__main__":
     conf.outdir = resolve_outdir(conf)
     lap = args_cli.lap
 
-    dx = 1.0 / conf.c_omp  # cell size in skin depths
+    # output cell width in skin depths: each dump cell spans `stride` fine cells.
+    dx = conf.stride / conf.c_omp
 
     # -- style -----------------------------------------------------------------
     if args_cli.dark: plt.style.use('dark_background')
@@ -348,34 +374,71 @@ if __name__ == "__main__":
         norm = get_normalization(v, conf)
         field_slices[v] = fields[v][:, ymid, :] / norm
 
-    # -- read spectra data -----------------------------------------------------
+    # -- read spectra data (optional) -----------------------------------------
+    spec_panel_order = ['s0_u', 's0_bx', 's0_by', 's0_bz',
+                        's1_u', 's1_bx', 's1_by', 's1_bz']
     spec_path = os.path.join(conf.outdir, f"pspectra_{lap}.bin")
-    print(f"reading {spec_path}")
-    spec_hdr = read_spectra_header(spec_path)
-    spectra = read_spectra_snapshot(spec_path)
-
-    # bin edges for pcolormesh
-    u_edges  = u_bin_edges(spec_hdr)
-    b_edges  = beta_bin_edges(spec_hdr)
-
-    # x edges for spectra (spectra nx may differ from field nx due to stride)
-    spec_nx = spec_hdr['nx']
-    spec_dx = dx  # same cell-to-skindepth ratio
-    spec_x_edges = np.arange(spec_nx + 1) * spec_dx
-
-    # sum over y,z tile axes → (nx, nbins), then log10
-    spec_vars = ['s0_u', 's0_bx', 's0_by', 's0_bz',
-                 's1_u', 's1_bx', 's1_by', 's1_bz']
     spec_data = {}
-    for sv in spec_vars:
-        if sv in spectra:
-            raw = spectra[sv].sum(axis=(0, 1))  # (nx, nbins)
-            spec_data[sv] = np.log10(raw + 1e-30)
+    spec_x_edges = None
+    u_edges = b_edges = None
+    if os.path.exists(spec_path):
+        print(f"reading {spec_path}")
+        spec_hdr = read_spectra_header(spec_path)
+        spectra = read_spectra_snapshot(spec_path)
+        u_edges = u_bin_edges(spec_hdr)
+        b_edges = beta_bin_edges(spec_hdr)
+        spec_nx = spec_hdr['nx']
+        spec_x_edges = np.arange(spec_nx + 1) * dx
+        for sv in spec_panel_order:
+            if sv in spectra:
+                raw = spectra[sv].sum(axis=(0, 1))  # (nx, nbins)
+                spec_data[sv] = np.log10(raw + 1e-30)
+    else:
+        print(f"no spectra file at {spec_path}, skipping spectra panels")
+
+    # -- optional: lock view on the shock front --------------------------------
+    xlabel = r'$x~(c/\omega_p)$'
+    if args_cli.track_shock:
+        ix_shock = find_shock_index(rho_1d, args_cli.track_shock_threshold)
+        x_shock = ix_shock * dx
+        if ix_shock == 0:
+            print(f"no cell exceeds n/n_0 > {args_cli.track_shock_threshold}; "
+                  f"locking shock to x=0")
+        else:
+            print(f"shock detected at ix={ix_shock}, x={x_shock:.2f} c/omega_p")
+
+        # window edges in skin depths; convert to cell indices and clamp.
+        ix_lo = max(0,  int(round((x_shock - args_cli.track_shock_win_neg) / dx)))
+        ix_hi = min(nx, int(round((x_shock + args_cli.track_shock_win_pos) / dx)) + 1)
+        if ix_hi <= ix_lo:
+            ix_lo, ix_hi = 0, max(1, min(nx, int(round(args_cli.track_shock_win_pos / dx)) + 1))
+
+        # slice 1D and 2D field arrays; rebuild shock-relative x coordinates
+        rho_1d  = rho_1d[ix_lo:ix_hi]
+        rho_2d  = rho_2d[:, ix_lo:ix_hi]
+        for v in field_vars:
+            field_slices[v] = field_slices[v][:, ix_lo:ix_hi]
+        x_coords = np.arange(ix_lo, ix_hi) * dx - x_shock
+        xmin, xmax = x_coords[0], x_coords[-1]
+
+        # spectra: shift x edges to shock-relative; slice if dump nx matches.
+        if spec_data and spec_x_edges is not None:
+            if spec_x_edges.shape[0] - 1 == nx:
+                spec_x_edges = spec_x_edges[ix_lo:ix_hi + 1] - x_shock
+                for sv in list(spec_data.keys()):
+                    spec_data[sv] = spec_data[sv][ix_lo:ix_hi]
+            else:
+                spec_x_edges = spec_x_edges - x_shock
+
+        xlabel = r'$x - x_\mathrm{sh}~(c/\omega_p)$'
 
     # -- figure setup ----------------------------------------------------------
-    npanels = 19
-    fig = plt.figure(1, figsize=(7.0, 22.0))
-    height_ratios = [1.5] + [1.0] * 18  # 1D density panel is taller
+    n_field_panels = 2 + len(field_vars)            # 1D rho + 2D rho + E,B,J
+    n_spec_panels  = len(spec_data)
+    npanels = n_field_panels + n_spec_panels
+    fig_height = 1.5 + 1.0 * (npanels - 1)
+    fig = plt.figure(1, figsize=(7.0, fig_height))
+    height_ratios = [1.5] + [1.0] * (npanels - 1)
     gs = plt.GridSpec(npanels, 1, hspace=0, height_ratios=height_ratios)
 
     axs = []
@@ -391,39 +454,41 @@ if __name__ == "__main__":
     # -- panel 1: 2D density --------------------------------------------------
     plot_field_panel(axs[1], fig, rho_2d, xmin, xmax, zmin, zmax, VAR_CONFIG['rho'])
 
-    # -- panels 2-10: E, B, J field slices ------------------------------------
+    # -- panels 2..2+len(field_vars)-1: E, B, J field slices -------------------
     for i, v in enumerate(field_vars):
         plot_field_panel(axs[2 + i], fig, field_slices[v], xmin, xmax, zmin, zmax, VAR_CONFIG[v])
 
-    # -- panels 11-14: species 0 spectra --------------------------------------
-    spec_panel_order = ['s0_u', 's0_bx', 's0_by', 's0_bz',
-                        's1_u', 's1_bx', 's1_by', 's1_bz']
-    for i, sv in enumerate(spec_panel_order):
+    # -- spectra panels (only those present) ----------------------------------
+    spec_axes_start = n_field_panels
+    spec_idx = 0
+    for sv in spec_panel_order:
         if sv not in spec_data:
             continue
         is_u = sv.endswith('_u')
         edges = u_edges if is_u else b_edges
-        plot_spectra_panel(axs[11 + i], fig, spec_data[sv], spec_x_edges, edges,
+        ax = axs[spec_axes_start + spec_idx]
+        plot_spectra_panel(ax, fig, spec_data[sv], spec_x_edges, edges,
                            VAR_CONFIG[sv], log_y=is_u, dark=args_cli.dark)
-
-        axs[11 + i].set_ylabel(VAR_CONFIG[sv]['ylabel'])
+        ax.set_ylabel(VAR_CONFIG[sv]['ylabel'])
+        spec_idx += 1
 
     # -- shared x-axis formatting ----------------------------------------------
     for ax in axs[:-1]:
         ax.tick_params(labelbottom=False)
-    axs[-1].set_xlabel(r'$x~(c/\omega_p)$')
+    axs[-1].set_xlabel(xlabel)
 
     # set consistent x limits
     for ax in axs:
         ax.set_xlim(xmin, xmax)
 
-    # z-axis label for all 2D field panels
-    for ax in axs[1:11]:
+    # z-axis label for all 2D field panels (everything between rho-2D and spectra)
+    for ax in axs[1:n_field_panels]:
         ax.set_ylabel(r'$z~(c/\omega_p)$')
 
     # -- save ------------------------------------------------------------------
     slap = str(lap).rjust(7, '0')
-    fname_base = os.path.join(conf.outdir, f"shock_2d_{slap}")
+    suffix = "_tracked" if args_cli.track_shock else ""
+    fname_base = os.path.join(conf.outdir, f"shock_2d_{slap}{suffix}")
 
     #plt.savefig(fname_base + '.pdf')
     #print(f"saved {fname_base}.pdf")
