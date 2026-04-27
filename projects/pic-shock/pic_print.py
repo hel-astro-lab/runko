@@ -2,23 +2,29 @@
 Particle-in-cell simulation of a collisionless shock
 
 DEBUG VERSION of pic.py: every call inside the per-lap step is preceded by
-an MPI.COMM_WORLD.Barrier() and a rank-0 announce. The last printed
-"[lap N] -> <name>" line names the call that segfaulted.
+an MPI.COMM_WORLD.Barrier() and a rank == DEBUG_RANK announce. The last
+printed "[lap N] -> <name>" line names the call that segfaulted.
 
-Instrumentation is gated by DEBUG_FROM_LAP (hard-coded below) so noisy
-ramp-up laps don't flood the log; only laps >= DEBUG_FROM_LAP are traced.
+Two knobs (hard-coded below):
+  DEBUG_RANK     — which rank prints the trace (others stay silent but
+                   still hit the barrier)
+  DEBUG_FROM_LAP — skip the noisy ramp-up; 0 = trace every lap
+
+Output uses plain print(..., flush=True) so it isn't filtered by the
+runko logger's rank-0 handler.
 """
 
 import runko
 import numpy as np
 import argparse
 import logging
-
+import sys
 from mpi4py import MPI
 
 
 if __name__ == "__main__":
-    rng = np.random.default_rng(seed=42)
+    mpi_rank = MPI.COMM_WORLD.Get_rank()
+    rng = np.random.default_rng(seed=mpi_rank)
 
     logger = runko.runko_logger()
 
@@ -27,17 +33,18 @@ if __name__ == "__main__":
         # logger.setLevel(logging.DEBUG)
 
     # ----------------------------------------------------------------
-    # Debug instrumentation: barrier + rank-0 announce before each call.
+    # Debug instrumentation: barrier + DEBUG_RANK announce before each call.
     # Tune DEBUG_FROM_LAP to skip ramp-up; 0 = trace every lap.
-    _world = MPI.COMM_WORLD
-    DEBUG_FROM_LAP = 150
+    DEBUG_RANK = 0
+    DEBUG_FROM_LAP = 0
 
     def _sync_and_announce(name):
         if simulation.lap < DEBUG_FROM_LAP:
             return
-        _world.Barrier()
-        if runko.on_main_rank():
-            logger.info(f"[lap {simulation.lap}] -> {name}")
+        MPI.COMM_WORLD.Barrier()
+        if mpi_rank == DEBUG_RANK:
+            print(f"[lap {simulation.lap}] -> {name}", flush=True)
+
     # ----------------------------------------------------------------
 
     parser = argparse.ArgumentParser(description="PIC collisionless shock simulation")
@@ -147,6 +154,7 @@ if __name__ == "__main__":
         logger.info(f"  {'tile_partitioning':<{W}}= {conf.tile_partitioning}")
 
         logger.info(f"--- [debug] ---")
+        logger.info(f"  {'DEBUG_RANK':<{W}}= {DEBUG_RANK}")
         logger.info(f"  {'DEBUG_FROM_LAP':<{W}}= {DEBUG_FROM_LAP}")
 
     # --------------------------------------------------
@@ -345,7 +353,7 @@ if __name__ == "__main__":
         _sync_and_announce("comm_local(emf_E)")
         x.comm_local(runko.tools.comm_mode.emf_E)
 
-        # --- advance wall position ---
+        # --- advance wall position (for moving wall; no-op for stationary) ---
         _sync_and_announce("prtcl_advance_reflector_walls")
         x.prtcl_advance_reflector_walls()
 
@@ -366,9 +374,12 @@ if __name__ == "__main__":
         if simulation.lap % output_interval == 0:
             _sync_and_announce("io_emf_snapshot")
             x.io_emf_snapshot()
+
             #x.io_prtcl_snapshot()
+
             _sync_and_announce("io_spectra_snapshot")
             x.io_spectra_snapshot()
+
             _sync_and_announce("simulation.log_timer_statistics")
             simulation.log_timer_statistics()
             _sync_and_announce("simulation.reset_timers")
