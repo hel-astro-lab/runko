@@ -270,11 +270,6 @@ if __name__ == "__main__":
         x.grid_apply_edge_bcs(runko.tools.comm_mode.emf_J)
 
         # --- current filter ---
-        # Optimal: communicate every halo_size (=3) passes.
-        # The separable binomial2 filter has a radius-1 stencil and writes to
-        # [1, Nx-1), leaving boundary cells as zero. Each pass corrupts 1 more
-        # halo cell inward from each side. With halo_size=3, up to 3 consecutive
-        # passes keep the interior valid. After that, halos must be refreshed.
         for i in range(n_filter_passes):
             if i > 0 and i % 3 == 0:
                 x.comm_external(runko.tools.comm_mode.emf_J)
@@ -303,15 +298,21 @@ if __name__ == "__main__":
         injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
 
         # --- IO ---
+        MPI.COMM_WORLD.Barrier()
         x.io_average_kinetic_energy()
         x.io_average_B_energy_density()
         x.io_average_E_energy_density()
         x.io_ram_usage()
 
         if simulation.lap % output_interval == 0:
+            MPI.COMM_WORLD.Barrier()
             x.io_emf_snapshot()
+
             #x.io_prtcl_snapshot()
+
+            MPI.COMM_WORLD.Barrier()
             x.io_spectra_snapshot()
+
             simulation.log_timer_statistics()
             simulation.reset_timers()
 
