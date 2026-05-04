@@ -39,18 +39,19 @@ pybind11_add_module(runko_cpp_bindings
     ${IO_FILES}
 )
 
+set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
 target_link_libraries(runko_cpp_bindings
     PRIVATE
     runko_includes
     runko_warnings
     corgi
-    tyvi::tyvi
+    tyvi
 )
 
-if(RUNKO_CODE_COVERAGE)
-    target_link_libraries(runko_cpp_bindings PUBLIC runko_coverage_config)
-endif()
+# Install runko_cpp_bindings.
+install(TARGETS runko_cpp_bindings DESTINATION .)
+# Vendor-in corgi if we are building the python package:
+install(TARGETS pycorgi DESTINATION .)
 
-set_target_properties(runko_cpp_bindings PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}"
-)
+

@@ -1,4 +1,4 @@
-find_package(Sphinx)
+find_package(Sphinx OPTIONAL)
 
 if (Sphinx_FOUND)
 
