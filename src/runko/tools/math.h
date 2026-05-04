@@ -176,4 +176,10 @@ log10(const T x) {
     }
 }
 
+
+/// Signum of value
+template <typename T> int sign(const T& val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 } // namespace sstd

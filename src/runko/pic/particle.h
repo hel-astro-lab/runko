@@ -17,7 +17,6 @@
 #include "thrust/iterator/transform_iterator.h"
 #include "thrust/iterator/zip_iterator.h"
 #include "thrust/sort.h"
-#include "runko/tools/signum.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>

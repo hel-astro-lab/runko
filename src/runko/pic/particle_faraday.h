@@ -31,7 +31,6 @@
 
 #include "runko/pic/particle.h"
 #include "runko/tools/math.h"
-#include "runko/tools/signum.h"
 #include "runko/tools/vector.h"
 #include "tyvi/mdgrid.h"
 
@@ -49,7 +48,7 @@ void
   const auto ids_mds = ids_.mds();
 
   const vt cfl = static_cast<vt>(cfl_d);
-  const vt qm  = toolbox::sign(charge_) / mass_;
+  const vt qm  = sstd::sign(charge_) / mass_;
 
   tyvi::mdgrid_work {}
     .for_each_index(

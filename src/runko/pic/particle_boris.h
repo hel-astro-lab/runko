@@ -9,7 +9,6 @@
 
 #include "runko/pic/particle.h"
 #include "runko/tools/math.h"
-#include "runko/tools/signum.h"
 #include "runko/tools/vector.h"
 #include "tyvi/mdgrid.h"
 
@@ -24,7 +23,7 @@ inline void
 
   const auto cfl =
     static_cast<value_type>(cfl_d);  // c dx/dt = speed of light in num. units
-  const value_type qm = toolbox::sign(charge_) / mass_;  // charge-to-mass ratio
+  const value_type qm = sstd::sign(charge_) / mass_;  // charge-to-mass ratio
 
   tyvi::mdgrid_work {}
     .for_each_index(

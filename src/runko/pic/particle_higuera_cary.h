@@ -9,7 +9,6 @@
 
 #include "runko/pic/particle.h"
 #include "runko/tools/math.h"
-#include "runko/tools/signum.h"
 #include "runko/tools/vector.h"
 #include "tyvi/mdgrid.h"
 
@@ -25,7 +24,7 @@ void
   using vt = value_type;
 
   const vt cfl   = static_cast<vt>(cfl_d);          // c dx/dt
-  const vt qm    = toolbox::sign(charge_) / mass_;  // charge-to-mass ratio
+  const vt qm    = sstd::sign(charge_) / mass_;  // charge-to-mass ratio
   const vt hqm   = vt { 0.5 } * qm;                 // half charge-to-mass ratio
   const vt cfl2  = cfl * cfl;                       // c^2
   const vt cinv  = vt { 1 } / cfl;                  // 1/c
