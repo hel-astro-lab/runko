@@ -24,7 +24,7 @@ set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 CONFIG REQUIRED)
 
 add_library(runko_includes INTERFACE)
-target_include_directories(runko_includes INTERFACE ${PROJECT_SOURCE_DIR})
+target_include_directories(runko_includes INTERFACE ${PROJECT_SOURCE_DIR}/src)
 
 add_library(runko_warnings INTERFACE)
 target_compile_options(runko_warnings
@@ -37,7 +37,7 @@ target_compile_options(runko_warnings
 
 add_subdirectory(external/corgi)
 add_subdirectory(external/tyvi)
-add_subdirectory(bindings)
+add_subdirectory(src)
 add_subdirectory(docs)
 
 if (PROJECT_IS_TOP_LEVEL AND NOT DEFINED SKBUILD_PROJECT_NAME)
