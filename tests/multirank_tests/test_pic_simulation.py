@@ -124,17 +124,6 @@ def pic_noop_communication():
 
     simulation = tile_grid.configure_simulation(conf)
 
-    import matplotlib.pyplot as plt
-    def plot():
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        for tile in simulation.local_tiles():
-            posx, posy, posz = tile.get_positions(0)
-            ax.scatter(posx, posy, posz, label=f"p: {0}, tile: {tile.mins} x {tile.maxs}")
-        fig.suptitle(f"rank: {mpi_unittest._rank}")
-        ax.legend()
-        plt.show()
-
     # Store particle states as function of ptype and the particle id.
     # At the end we check that there are no sudden jumps.
     state_tracker = {0: {}, 1: {}}
@@ -246,21 +235,6 @@ def pic_communication():
         tile_grid.add_tile(tile, idx)
 
     simulation = tile_grid.configure_simulation(conf)
-
-    import matplotlib.pyplot as plt
-    def plot():
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        for tile in simulation.local_tiles():
-            posx, posy, posz = tile.get_positions(0)
-            ax.scatter(posx, posy, posz, label=f"p: {0}, tile: {tile.mins} x {tile.maxs}")
-
-            expected_particles = make_test_particles(tile, after_comm=True)
-            ax.scatter([p.pos[0] for p in expected_particles], [p.pos[1] for p in expected_particles], [p.pos[2] for p in expected_particles], marker="^", label="expected")
-
-        fig.suptitle(f"rank: {mpi_unittest._rank}")
-        ax.legend()
-        plt.show()
 
     # Store particle states as function of ptype and the particle id.
     # At the end we check that there are no sudden jumps.
