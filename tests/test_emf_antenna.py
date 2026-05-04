@@ -1,3 +1,6 @@
+# Copyright 2025 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import unittest
 import itertools
 import numpy as np

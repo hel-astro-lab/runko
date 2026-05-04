@@ -1,3 +1,6 @@
+# Copyright 2026 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 [build-system]
 requires = ["pybind11", "scikit-build-core>=0.12"]
 build-backend = "scikit_build_core.build"
@@ -8,8 +11,8 @@ version = "5.0.0"
 authors = []
 description = "Modern C++/Python GPU/CPU-portable plasma toolbox"
 readme = "README.md"
-# license = "not-yet-licensed"
-# license-files = []
+license = "GPL-3.0-or-later"
+license-files = ["COPYING"]
 requires-python = ">=3.6"
 classifiers = [
   "Development Status :: 4 - Beta",

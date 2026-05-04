@@ -1,3 +1,6 @@
+# Copyright 2025 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 function(add_python_mpi_test name no_mpi_proc)
     add_test(NAME py-multirank-${name} COMMAND
         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${no_mpi_proc}

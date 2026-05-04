@@ -1,3 +1,6 @@
+# Copyright 2025 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 function(add_python_test name)
     add_test(NAME py-${name} COMMAND
         ${Python_EXECUTABLE} "${PROJECT_SOURCE_DIR}/tests/test_${name}.py"

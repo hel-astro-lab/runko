@@ -1,3 +1,6 @@
+# Copyright 2026 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Simple example of using runko module to simulate E and B fields in vacuum.
 """

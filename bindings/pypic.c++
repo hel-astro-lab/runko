@@ -1,3 +1,6 @@
+// Copyright 2016 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "core/particles_common.h"
 #include "core/pic/reflector_wall.h"
 #include "core/pic/tile.h"
