@@ -7,7 +7,7 @@ function(add_python_mpi_test name no_mpi_proc)
         ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
     )
     set_property(TEST py-multirank-${name}
-        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/bindings:${PROJECT_SOURCE_DIR}
+        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}
     )
 endfunction(add_python_mpi_test)
 
