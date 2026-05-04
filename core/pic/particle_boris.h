@@ -1,3 +1,6 @@
+// Copyright 2025 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #pragma once
 
 // Due to the templated interpolator this can not be in its own compilation unit,

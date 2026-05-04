@@ -1,3 +1,6 @@
+// Copyright 2025 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "core/emf/yee_lattice.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"

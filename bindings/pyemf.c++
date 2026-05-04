@@ -1,3 +1,6 @@
+// Copyright 2016 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "core/communication_common.h"
 #include "core/emf/antenna.h"
 #include "core/emf/edge_bc.h"

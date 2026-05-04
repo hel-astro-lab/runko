@@ -1,3 +1,6 @@
+# Copyright 2016 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 cmake_minimum_required(VERSION 3.23)
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)

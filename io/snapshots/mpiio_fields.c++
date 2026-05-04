@@ -1,3 +1,6 @@
+// Copyright 2026 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <mpi.h>
 
 #include "io/snapshots/mpiio_fields.h"

@@ -1,3 +1,6 @@
+# Copyright 2025 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from .method_wrapper import MethodWrapper
 from .runko_logging import runko_logger
 from .runko_timer import Timer, timer_statistics

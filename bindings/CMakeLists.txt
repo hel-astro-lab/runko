@@ -1,3 +1,6 @@
+# Copyright 2016 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 set (TOOLS_FILES
      pytools.c++
      ../tools/config_parser.c++

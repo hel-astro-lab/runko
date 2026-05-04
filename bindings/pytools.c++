@@ -1,3 +1,6 @@
+// Copyright 2016 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "runko_cpp_bindings.h"
 
 #include "pybind11/operators.h"

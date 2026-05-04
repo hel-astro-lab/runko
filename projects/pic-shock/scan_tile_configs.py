@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Scan optimal tile/mesh configurations for 3D PIC shock simulations.
 
