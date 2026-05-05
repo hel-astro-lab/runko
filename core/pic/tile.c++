@@ -46,17 +46,22 @@ void
       .transform(qm_tuple_to_args);
   };
 
+  const auto prealloc_per_species =
+    conf.get<std::size_t>("prealloc_per_species").value_or(0uz);
+
   for(auto i = 0uz; true; ++i) {
     const auto q_label = std::format("q{}", i);
     const auto m_label = std::format("m{}", i);
 
     if(const auto pcontainer_args = make_opt_args(q_label, m_label)) {
+      auto container = pic::ParticleContainer { pcontainer_args.value() };
+      if(prealloc_per_species > 0uz) {
+        container.prealloc_dead(prealloc_per_species);
+      }
       // insert_or_assign and not operator[], because if element is missing,
       // then operator[] will default construct it.
       // pic::ParticleContainer is not default constructible.
-      std::ignore = where_to.insert_or_assign(
-        i,
-        pic::ParticleContainer { pcontainer_args.value() });
+      std::ignore = where_to.insert_or_assign(i, std::move(container));
 
     } else {
       break;
@@ -472,22 +477,6 @@ runko::prtc_id_type
   }
 
   return (tile_tag << 40uz) | ordinal;
-}
-
-template<std::size_t D>
-void
-  Tile<D>::inject_dead_particles(
-    const std::size_t particle_type,
-    const std::size_t amount)
-{
-  // This is somewhat jank but it works.
-  using state_type = runko::ParticleState<ParticleContainer::value_type>;
-  static constexpr auto dead =
-    state_type { .pos { 0, 0, 0 }, .vel { 0, 0, 0 }, .id = runko::dead_prtc_id };
-  const auto vec = thrust::device_vector<state_type>(amount, dead);
-  const auto arr =
-    std::array { std::span(thrust::raw_pointer_cast(vec.data()), vec.size()) };
-  this->particle_buffs_.at(particle_type).append(arr);
 }
 
 
