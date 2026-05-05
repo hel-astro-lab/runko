@@ -277,7 +277,7 @@ void
   }
 
   const auto state_batch = pgen(x, y, z);
-  const auto batch_size  = state_batch.pos[0].shape(0);
+  const auto batch_size  = static_cast<std::size_t>(state_batch.pos[0].shape(0));
 
   {
     const auto assert_shapes = [&](const auto& a) {
@@ -287,7 +287,7 @@ void
         };
       }
 
-      if(a.shape(0) != batch_size) {
+      if(static_cast<std::size_t>(a.shape(0)) != batch_size) {
         throw std::runtime_error {
           "pic::Tile::batch_inject_in_x_stripe: batches must have same length."
         };
@@ -311,8 +311,7 @@ void
   const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
   auto states   = std::vector<runko::ParticleState<double>>(batch_size);
-  using index_t = std::remove_cvref_t<decltype(batch_size)>;
-  for(const auto n: std::views::iota(index_t { 0 }, batch_size)) {
+  for(const auto n: std::views::iota(0uz, batch_size)) {
     states[n] = runko::ParticleState<double> {
       .pos = { posx_view(n), posy_view(n), posz_view(n) },
       .vel = { velx_view(n), vely_view(n), velz_view(n) },

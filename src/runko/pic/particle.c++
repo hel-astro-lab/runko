@@ -4,6 +4,7 @@
 #include "runko/pic/particle.h"
 
 #include "runko/mdgrid_common.h"
+#include "runko/tools/vector.h"
 #include "thrust/count.h"
 #include "thrust/device_vector.h"
 #include "thrust/fill.h"
@@ -14,7 +15,6 @@
 #include "thrust/reduce.h"
 #include "thrust/sort.h"
 #include "thrust/unique.h"
-#include "runko/tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
@@ -68,6 +68,13 @@ std::size_t
 {
   return pos_.extents().extent(0);
 }
+
+std::ptrdiff_t
+  ParticleContainer::ssize() const
+{
+  return static_cast<std::ptrdiff_t>(this->size());
+}
+
 
 ParticleContainerArgs
   ParticleContainer::args() const
@@ -235,7 +242,7 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
 
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
-  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->ssize());
 
   const auto is_leaving = [=](const auto index) {
     return index != subregion_index(0, 0, 0);
@@ -253,7 +260,7 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
     });
 
   const auto prev_buffer_size = buffer.size();
-  buffer.resize(prev_buffer_size + leaving_particles);
+  buffer.resize(prev_buffer_size + static_cast<std::size_t>(leaving_particles));
 
   const auto particle_states_begin =
     thrust::make_transform_iterator(particle_ordinals_begin, [=](const auto n) {
@@ -263,9 +270,10 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
         .id { ids_mds[n][] }
       };
     });
-  const auto particle_states_end = rn::next(particle_states_begin, this->size());
+  const auto particle_states_end = rn::next(particle_states_begin, this->ssize());
 
-  const auto buffer_data_begin = rn::next(buffer.begin(), prev_buffer_size);
+  const auto buffer_data_begin =
+    rn::next(buffer.begin(), static_cast<std::ptrdiff_t>(prev_buffer_size));
 
   const auto copy_if_result = thrust::copy_if(
     w.on_this(),
@@ -368,7 +376,7 @@ double
   const auto kinetic_energies_begin = thrust::make_transform_iterator(
     particle_ordinals_begin,
     particle_ordinal_to_kinetic_energy);
-  const auto kinetic_energies_end = rn::next(kinetic_energies_begin, this->size());
+  const auto kinetic_energies_end = rn::next(kinetic_energies_begin, this->ssize());
 
   return thrust::reduce(w.on_this(), kinetic_energies_begin, kinetic_energies_end);
 }

@@ -42,14 +42,11 @@ pybind11_add_module(runko_cpp_bindings
     ${IO_FILES}
 )
 
-set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
-
 target_link_libraries(runko_cpp_bindings
     PRIVATE
     runko_includes
     runko_warnings
-    corgi
-    tyvi
+    runko_dependencies
 )
 
 # Install runko_cpp_bindings.

@@ -146,11 +146,6 @@ public:
     send_data(mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag)
       override;
 
-  /// Receive field specified with mode (see comm_mode).
-  std::vector<mpi4cpp::mpi::request>
-    recv_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int mode, int tag)
-      override;
-
   /// Get halo region of field specified with mode (see comm_mode) from other.
   ///
   /// Assumes that the other tile is emf::Tile or its descendant.

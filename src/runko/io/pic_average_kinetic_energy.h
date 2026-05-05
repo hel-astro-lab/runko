@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include "runko/pic/tile.h"
 #include "corgi/tile.h"
 #include "mpi.h"
+#include "runko/communication_common.h"
+#include "runko/pic/tile.h"
 
 #include <concepts>
 #include <cstdint>
@@ -55,9 +56,10 @@ void
                             return tile.total_kinetic_energy(particle_type);
                           });
 
-    auto number_of_particles = pic_tiles | rv::transform([&](auto& tile) -> double {
-                                 return tile.number_of_particles(particle_type);
-                               });
+    auto number_of_particles =
+      pic_tiles | rv::transform([&](auto& tile) -> std::size_t {
+        return tile.number_of_particles(particle_type);
+      });
 
     return std::tuple {
       std::reduce(total_energies.begin(), total_energies.end()),
@@ -128,7 +130,11 @@ void
   }
 
   auto statuses = std::vector<MPI_Status>(requests.size());
-  if(MPI_SUCCESS != MPI_Waitall(requests.size(), requests.data(), statuses.data())) {
+  if(
+    MPI_SUCCESS != MPI_Waitall(
+                     runko::checked_cast<int>(requests.size()),
+                     requests.data(),
+                     statuses.data())) {
     throw std::runtime_error {
       "MPI reduction while calculating average energies failed!"
     };

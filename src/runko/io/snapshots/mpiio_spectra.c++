@@ -236,7 +236,7 @@ bool mpiio::SpectraWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid)
 {
   const MPI_Offset hdr_size = mpiio::header_size;
   const MPI_Offset field_bytes =
-    static_cast<MPI_Offset>(Nz_) * Ny_ * nx_global_ * nbins_ * sizeof(float);
+    static_cast<MPI_Offset>(Nz_ * Ny_ * nx_global_ * nbins_ * static_cast<int>(sizeof(float)));
   const int tile_row_elems = nxt_ * nbins_;
 
   // Pre-allocate the file to its full size
@@ -264,8 +264,7 @@ bool mpiio::SpectraWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid)
     for (int f = 0; f < num_fields_; f++) {
       const MPI_Offset field_base = hdr_size + f * field_bytes;
       const MPI_Offset file_offset = field_base +
-        static_cast<MPI_Offset>(
-          (tk * Ny_ + tj) * nx_global_ + ti * nxt_) * nbins_ * sizeof(float);
+          static_cast<MPI_Offset>((tk * Ny_ + tj) * nx_global_ + ti * nxt_ * nbins_ * static_cast<int>(sizeof(float)));
 
       const int buf_offset = f * tile_row_elems;
 

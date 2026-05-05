@@ -121,6 +121,10 @@ public:
 
   /// Returns the number of particles dead or alive.
   std::size_t size() const;
+
+  /// Returns the number of particles dead or alive.
+  std::ptrdiff_t ssize() const;
+
   ParticleContainerArgs args() const;
 
   std::array<std::vector<value_type>, 3> get_positions();
@@ -224,7 +228,7 @@ public:
   void current_zigzag_1st(
     runko::VecGrid<emf::YeeLattice::value_type>& Jout,
     const std::array<value_type, 3> lattice_origo_coordinates,
-    const value_type cfl) const;
+    const double cfl) const;
 
 
   /// Reflect particles crossing a wall and deposit correction currents.
@@ -237,7 +241,7 @@ public:
     const reflector_wall& wall,
     runko::VecGrid<emf::YeeLattice::value_type>& correction_J,
     const std::array<value_type, 3> lattice_origo_coordinates,
-    value_type cfl);
+    double cfl);
 
   /// Returns total kinetic energy of particless.
   ///
@@ -415,8 +419,8 @@ template<std::ranges::forward_range R>
     std::size_t i = 0;
     for(const auto& p: new_particles) {
       for(const auto j: std::views::iota(0uz, 3uz)) {
-        added_pos_smds[i][j] = p.pos[j];
-        added_vel_smds[i][j] = p.vel[j];
+        added_pos_smds[i][j] = static_cast<ParticleContainer::value_type>(p.pos[j]);
+        added_vel_smds[i][j] = static_cast<ParticleContainer::value_type>(p.vel[j]);
       }
 
       added_ids_smds[i][] = p.id;
@@ -616,7 +620,7 @@ inline void
   // 1.
 
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
-  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->ssize());
 
   const auto rev_particle_ordinals_begin =
     thrust::reverse_iterator(particle_ordinals_end);
@@ -633,7 +637,7 @@ inline void
     });
 
   const auto dead_particles_at_end = rn::distance(rev_particle_ordinals_begin, Piter);
-  const auto Pnum                  = this->size() - dead_particles_at_end;
+  const auto Pnum = static_cast<std::size_t>(this->ssize() - dead_particles_at_end);
 
   const auto span_sizes = spans | rv::transform(rn::size);
 
@@ -686,7 +690,7 @@ inline void
 
   for(auto n = 0uz; n < spans.size(); ++n) {
     const auto n_span   = spans[n];
-    const auto n_size   = n_span.size();
+    const auto n_size   = std::ranges::ssize(n_span);
     const auto n_begin  = thrust::counting_iterator<runko::index_t>(0uz);
     const auto n_end    = rn::next(n_begin, n_size);
     const auto n_offset = Pnum + begins[n];
@@ -724,7 +728,7 @@ inline void
 
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
-  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->size());
+  const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->ssize());
   this->tracker_cache_.assign(particle_ordinals_begin, particle_ordinals_end);
 
   using score_type =
@@ -741,7 +745,7 @@ inline void
       }
       return f(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
     });
-  const auto scores_end = rn::next(scores_begin, this->size());
+  const auto scores_end = rn::next(scores_begin, this->ssize());
 
   using scores_cache_type = thrust::device_vector<score_type>;
   if(typeid(scores_cache_type) != this->sorting_score_cache_.type()) {

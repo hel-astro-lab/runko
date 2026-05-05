@@ -3,19 +3,18 @@
 
 #pragma once
 
+#include "runko/tools/math.h"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
 #include "thrust/memory.h"
 #include "tyvi/mdgrid.h"
 
-#include "runko/tools/math.h"
-
 #include <array>
+#include <concepts>
 #include <cstddef>
 #include <print>
 #include <span>
 #include <stdexcept>
-#include <concepts>
 
 namespace toolbox {
 
@@ -69,9 +68,10 @@ public:
         if(k >= Nz - hh and j >= hh and j < Ny - hh) { skips += Nz - 2z * hh; }
       }
 
-      const auto size = Nx * Ny * Nz - (Nx - 2 * h) * (Ny - 2 * h) * (Nz - 2 * h);
+      const auto size = static_cast<std::size_t>(
+        Nx * Ny * Nz - (Nx - 2 * hh) * (Ny - 2 * hh) * (Nz - 2 * hh));
 
-      return component * size +
+      return static_cast<std::size_t>(component) * size +
              static_cast<std::size_t>(i * Ny * Nz + j * Nz + k - skips);
     }
 

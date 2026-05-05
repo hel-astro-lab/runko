@@ -23,7 +23,8 @@ inline void
 
   const auto cfl =
     static_cast<value_type>(cfl_d);  // c dx/dt = speed of light in num. units
-  const value_type qm = sstd::sign(charge_) / mass_;  // charge-to-mass ratio
+  const value_type qm =
+    static_cast<value_type>(sstd::sign(charge_) / mass_);  // charge-to-mass ratio
 
   tyvi::mdgrid_work {}
     .for_each_index(

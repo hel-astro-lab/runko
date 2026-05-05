@@ -10,7 +10,7 @@ foreach(test ${TESTS_TO_RUN})
 
     target_include_directories(
         "${test}.test"
-        PRIVATE
+        SYSTEM PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
@@ -19,8 +19,7 @@ foreach(test ${TESTS_TO_RUN})
         PRIVATE
         runko_includes
         runko_warnings
-        corgi
-        tyvi
+        runko_dependencies
     )
 
     add_test(NAME "cpp-${test}" COMMAND "${test}.test")

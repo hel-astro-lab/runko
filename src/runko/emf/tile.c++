@@ -4,10 +4,10 @@
 #include "runko/emf/tile.h"
 
 #include "runko/communication_common.h"
-#include "runko/mdgrid_common.h"
 #include "runko/emf/common.h"
+#include "runko/mdgrid_common.h"
 #if defined(TYVI_BACKEND_HIP)
-#include "hip/hip_runtime.h"  // This is not portable, but constexpr trig functions only in C++26.
+  #include "hip/hip_runtime.h"  // This is not portable, but constexpr trig functions only in C++26.
 #endif
 #include "runko/tools/system.h"
 #include "runko/tools/vector.h"
@@ -139,9 +139,9 @@ Tile<D>::Tile(
     };
 
     emf::StencilCoeffs coeffs {};
-    coeffs.axis[0] = read_axis("stencil_x_");
-    coeffs.axis[1] = read_axis("stencil_y_");
-    coeffs.axis[2] = read_axis("stencil_z_");
+    coeffs.axis[0]  = read_axis("stencil_x_");
+    coeffs.axis[1]  = read_axis("stencil_y_");
+    coeffs.axis[2]  = read_axis("stencil_z_");
     stencil_coeffs_ = coeffs;
   }
 
@@ -271,8 +271,11 @@ void
   for(const auto [i, j, k]:
       tyvi::sstd::index_space(std::mdspan((int*)nullptr, e[0], e[1], e[2]))) {
 
+    const auto ii                 = static_cast<double>(i);
+    const auto jj                 = static_cast<double>(j);
+    const auto kk                 = static_cast<double>(k);
     const auto [gx, gy, gz]       = global_coordinates(i, j, k);
-    const auto [gxp5, gyp5, gzp5] = global_coordinates(i + 0.5, j + 0.5, k + 0.5);
+    const auto [gxp5, gyp5, gzp5] = global_coordinates(ii + 0.5, jj + 0.5, kk + 0.5);
     xv(i, j, k)                   = gx;
     yv(i, j, k)                   = gy;
     zv(i, j, k)                   = gz;
@@ -294,7 +297,10 @@ void
   const auto jz = Jz(x, y, zp5);
 
   const auto assert_shape = [&](const auto& A) {
-    if(static_cast<std::size_t>(A.shape(0)) != e[0] or static_cast<std::size_t>(A.shape(1)) != e[1] or static_cast<std::size_t>(A.shape(2)) != e[2]) {
+    if(
+      static_cast<std::size_t>(A.shape(0)) != e[0] or
+      static_cast<std::size_t>(A.shape(1)) != e[1] or
+      static_cast<std::size_t>(A.shape(2)) != e[2]) {
       throw std::runtime_error {
         "Batch field setter returned array with incorrect shape!"
       };
@@ -362,10 +368,13 @@ template<std::size_t D>
 void
   Tile<D>::push_half_b()
 {
+  using vt = emf::YeeLattice::value_type;
   switch(field_propagator_) {
-    case FieldPropagator::FDTD2: yee_lattice_.push_b_FDTD2(cfl_ / 2); break;
+    case FieldPropagator::FDTD2:
+      yee_lattice_.push_b_FDTD2(static_cast<vt>(cfl_ / 2));
+      break;
     case FieldPropagator::stencil:
-      yee_lattice_.push_b_stencil(cfl_ / 2, stencil_coeffs_.value());
+      yee_lattice_.push_b_stencil(static_cast<vt>(cfl_ / 2), stencil_coeffs_.value());
       break;
     default:
       throw std::logic_error {
@@ -378,9 +387,14 @@ template<std::size_t D>
 void
   Tile<D>::push_e()
 {
+  using vt = emf::YeeLattice::value_type;
   switch(field_propagator_) {
-    case FieldPropagator::FDTD2: yee_lattice_.push_e_FDTD2(cfl_); break;
-    case FieldPropagator::stencil: yee_lattice_.push_e_FDTD2(cfl_); break;
+    case FieldPropagator::FDTD2:
+      yee_lattice_.push_e_FDTD2(static_cast<vt>(cfl_));
+      break;
+    case FieldPropagator::stencil:
+      yee_lattice_.push_e_FDTD2(static_cast<vt>(cfl_));
+      break;
     default:
       throw std::logic_error {
         "emf::Tile::push_e internal error: field_propagator_ not set."
@@ -433,16 +447,14 @@ std::vector<mpi4cpp::mpi::request>
   // CPU backend uses host memory where standard MPI works.
 #ifndef TYVI_BACKEND_CPU
   if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error {
-      "GPU backend requires GPU-aware MPI."
-    };
+    throw std::runtime_error { "GPU backend requires GPU-aware MPI." };
   }
 #endif
 
   using runko::comm_mode;
 
   auto make_isend = [&](const auto s) {
-    return comm.isend(dest, tag, s.data(), s.size());
+    return comm.isend(dest, tag, s.data(), runko::checked_cast<int>(s.size()));
   };
 
   tyvi::mdgrid_work w {};
@@ -466,39 +478,6 @@ std::vector<mpi4cpp::mpi::request>
     default:
       throw std::logic_error { std::format(
         "emf::Tile::send_data does not support given communication mode: {}",
-        mode) };
-  }
-}
-
-template<std::size_t D>
-std::vector<mpi4cpp::mpi::request>
-  Tile<D>::recv_data(
-    mpi4cpp::mpi::communicator& comm,
-    const int orig,
-    const int mode,
-    const int tag)
-{
-#ifndef TYVI_BACKEND_CPU
-  if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error {
-      "GPU backend requires GPU-aware MPI."
-    };
-  }
-#endif
-
-  using runko::comm_mode;
-
-  auto make_irecv = [&](const auto s) {
-    return comm.irecv(orig, tag, s.data(), s.size());
-  };
-
-  switch(static_cast<comm_mode>(mode)) {
-    case comm_mode::emf_E: return { make_irecv(yee_lattice_.span_E()) };
-    case comm_mode::emf_B: return { make_irecv(yee_lattice_.span_B()) };
-    case comm_mode::emf_J: return { make_irecv(yee_lattice_.span_J()) };
-    default:
-      throw std::logic_error { std::format(
-        "emf::Tile::recv_data does not support given communication mode: {}",
         mode) };
   }
 }
@@ -764,12 +743,13 @@ void
 
   // FIXME: unify this with emf FDTD2.
   auto curl = [&](
-                const auto coeff,
+                const auto coeff_,
                 const auto out,
                 const auto X,
                 const auto Xip1,
                 const auto Xjp1,
                 const auto Xkp1) {
+    const auto coeff = static_cast<decltype(out)::element_type::element_type>(coeff_);
     w.for_each_index(out, [=](const auto idx) {
       const auto Dk = Xkp1[idx][1] - X[idx][1];
       const auto Dj = Xjp1[idx][2] - X[idx][2];
@@ -865,18 +845,14 @@ template<std::size_t D>
 void
   Tile<D>::apply_edge_bc(const edge_bc& bc, const int mode)
 {
-  if(const auto w = edge_bc_width(bc)) {
-    yee_lattice_.apply_edge_bc(bc, *w, mode);
-  }
+  if(const auto w = edge_bc_width(bc)) { yee_lattice_.apply_edge_bc(bc, *w, mode); }
 }
 
 template<std::size_t D>
 void
   Tile<D>::apply_edge_bcs(const int mode)
 {
-  for(const auto& bc: edge_bcs_) {
-    apply_edge_bc(bc, mode);
-  }
+  for(const auto& bc: edge_bcs_) { apply_edge_bc(bc, mode); }
 }
 
 

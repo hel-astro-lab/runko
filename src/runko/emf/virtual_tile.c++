@@ -97,7 +97,7 @@ std::vector<mpi4cpp::mpi::request>
   using runko::comm_mode;
 
   auto make_irecv = [&](const auto s) {
-    return comm.irecv(orig, tag, s.data(), s.size());
+      return comm.irecv(orig, tag, s.data(), runko::checked_cast<int>(s.size()));
   };
 
   switch(static_cast<comm_mode>(mode)) {

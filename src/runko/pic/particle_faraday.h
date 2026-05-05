@@ -48,7 +48,7 @@ void
   const auto ids_mds = ids_.mds();
 
   const vt cfl = static_cast<vt>(cfl_d);
-  const vt qm  = sstd::sign(charge_) / mass_;
+  const vt qm  = static_cast<vt>(sstd::sign(charge_) / mass_);  // charge-to-mass ratio
 
   tyvi::mdgrid_work {}
     .for_each_index(

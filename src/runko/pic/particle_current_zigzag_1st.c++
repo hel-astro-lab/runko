@@ -70,8 +70,8 @@ emf::YeeLattice::CurrentContributions
   const auto pos_mds      = pos_.mds();
   const auto vel_mds      = vel_.mds();
   const auto ids_mds      = ids_.mds();
-  const value_type charge = charge_;
-  const value_type cfl    = cfl_;
+  const value_type charge = static_cast<value_type>(charge_);
+  const value_type cfl    = static_cast<value_type>(cfl_);
 
   //--------------------------------------------------
   // main loop over particles
@@ -210,7 +210,7 @@ emf::YeeLattice::CurrentContributions
     thrust::equal_to<deposit_loc> {},
     thrust::plus<toolbox::Vec3<value_type>> {});
 
-  const auto num_of_uniq_locs = key_end - uniq_dep_locs_ptr;
+  const auto num_of_uniq_locs = static_cast<std::size_t>(key_end - uniq_dep_locs_ptr);
 
   unique_deposit_locations.resize(num_of_uniq_locs);
   reduced_currents.resize(num_of_uniq_locs);
@@ -225,7 +225,7 @@ void
   ParticleContainer::current_zigzag_1st(
     runko::VecGrid<emf::YeeLattice::value_type>& Jout,
     const std::array<value_type, 3> lattice_origo_coordinates,
-    const value_type cfl) const
+    const double cfl_) const
 {
   using Vec3i = toolbox::Vec3<uint32_t>;
   using Vec3v = toolbox::Vec3<value_type>;
@@ -234,7 +234,8 @@ void
   const auto pos_mds      = pos_.mds();
   const auto vel_mds      = vel_.mds();
   const auto ids_mds      = ids_.mds();
-  const value_type charge = charge_;
+  const value_type charge = static_cast<value_type>(charge_);
+  const value_type cfl    = static_cast<value_type>(cfl_);
 
   tyvi::mdgrid_work {}
     .for_each_index(

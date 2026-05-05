@@ -9,7 +9,6 @@ if(NOT DEFINED CMAKE_CXX_STANDARD)
 endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 project(
     runko
     VERSION 5.0.0
@@ -29,14 +28,33 @@ target_include_directories(runko_includes INTERFACE ${PROJECT_SOURCE_DIR}/src)
 add_library(runko_warnings INTERFACE)
 target_compile_options(runko_warnings
     INTERFACE
-    # FIXME: make sure that these are actually used
-    # (they might not be with hipcc nor with apple clang)
-    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
-    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Wno-missing-braces>
+    -Wconversion
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Werror
 )
 
 add_subdirectory(external/corgi)
 add_subdirectory(external/tyvi)
+
+# Required for shared libraries.
+set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+# Wrap dependencies so that they can be marked SYSTEM libraries (suppresses warnings from them).
+add_library(runko_dependencies INTERFACE)
+target_link_libraries(runko_dependencies
+    INTERFACE
+    corgi
+    tyvi
+)
+target_include_directories(runko_dependencies
+    SYSTEM INTERFACE
+    $<TARGET_PROPERTY:corgi,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:tyvi,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
+
 add_subdirectory(src)
 add_subdirectory(docs)
 

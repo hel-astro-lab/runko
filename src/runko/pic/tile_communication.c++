@@ -4,8 +4,8 @@
 #include "runko/communication_common.h"
 #include "runko/pic/tile.h"
 #include "runko/pic/virtual_tile.h"
-#include "thrust/memory.h"
 #include "runko/tools/system.h"
+#include "thrust/memory.h"
 
 #include <cstddef>
 #include <iterator>
@@ -49,7 +49,7 @@ std::vector<mpi4cpp::mpi::request>
         dest,
         tag,
         thrust::raw_pointer_cast(subregion_particle_ends_.data()),
-        subregion_particle_ends_.size()) };
+        runko::checked_cast<int>(subregion_particle_ends_.size())) };
     case comm_mode::pic_particle: {
       const auto p = thrust::raw_pointer_cast(this->subregion_particle_buff_.data());
       const auto s = std::span(p, subregion_particle_buff_.size());
@@ -57,7 +57,7 @@ std::vector<mpi4cpp::mpi::request>
         dest,
         tag,
         reinterpret_cast<char const*>(std::as_bytes(s).data()),
-        s.size_bytes()) };
+        runko::checked_cast<int>(s.size_bytes())) };
     }
     default: return emf::Tile<D>::send_data(comm, dest, mode, tag);
   }
@@ -145,9 +145,10 @@ void
       const std::vector<std::size_t>& ends,
       const thrust::device_vector<runko::ParticleState<value_type>>& buff) {
       const auto index = 27 * ptype + dir.neighbor_index();
-      const auto end   = ends[index];
-      const auto begin = index == 0 ? 0uz : ends[index - 1];
-      const auto p     = thrust::raw_pointer_cast(buff.data());
+      const auto end   = static_cast<std::ptrdiff_t>(ends[index]);
+      const auto begin =
+        static_cast<std::ptrdiff_t>(index == 0 ? 0uz : ends[index - 1]);
+      const auto p = thrust::raw_pointer_cast(buff.data());
       return std::span<const runko::ParticleState<value_type>>(
         std::ranges::next(p, begin),
         std::ranges::next(p, end));

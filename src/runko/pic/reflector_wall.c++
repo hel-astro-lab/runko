@@ -127,7 +127,7 @@ void
     const reflector_wall& wall,
     runko::VecGrid<emf::YeeLattice::value_type>& correction_J,
     const std::array<value_type, 3> lattice_origo_coordinates,
-    const value_type cfl)
+    const double cfl)
 {
   const auto pos_mds = pos_.mds();
   const auto vel_mds = vel_.mds();
@@ -137,8 +137,8 @@ void
   const value_type walloc    = wall.walloc;
   const value_type betawall  = wall.betawall;
   const value_type gammawall = wall.gammawall;
-  const value_type charge    = charge_;
-  const value_type c         = cfl;
+  const value_type charge    = static_cast<value_type>(charge_);
+  const value_type c         = static_cast<value_type>(cfl);
 
   // previous wall location
   const value_type walloc0 = walloc - betawall * c;

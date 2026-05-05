@@ -3,11 +3,12 @@
 
 #include "runko/pic/virtual_tile.h"
 
-#include "thrust/memory.h"
 #include "runko/tools/system.h"
+#include "thrust/memory.h"
 
 #include <format>
-#include <print>
+#include <stdexcept>
+#include <utility>
 
 namespace pic {
 
@@ -56,7 +57,7 @@ std::vector<mpi4cpp::mpi::request>
         orig,
         tag,
         thrust::raw_pointer_cast(subregion_ends_.data()),
-        this->subregion_ends_.size()) };
+        runko::checked_cast<int>(this->subregion_ends_.size())) };
     case comm_mode::pic_particle: {
       this->buffer_.resize(this->subregion_ends_.back());
       const auto p = thrust::raw_pointer_cast(this->buffer_.data());
@@ -65,7 +66,7 @@ std::vector<mpi4cpp::mpi::request>
         orig,
         tag,
         reinterpret_cast<char*>(std::as_writable_bytes(s).data()),
-        s.size_bytes()) };
+        runko::checked_cast<int>(s.size_bytes())) };
     }
     default: return emf::VirtualTile<D>::recv_data(comm, orig, mode, tag);
   }

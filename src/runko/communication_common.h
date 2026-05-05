@@ -9,9 +9,12 @@
 #include <compare>
 #include <concepts>
 #include <cstddef>
+#include <format>
 #include <optional>
 #include <print>
+#include <source_location>
 #include <stdexcept>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -143,11 +146,21 @@ struct [[nodiscard]] grid_neighbor {
     return static_cast<std::uint8_t>(index);
   }
 
-  static constexpr grid_neighbor from_index(const std::uint8_t index)
+  static constexpr grid_neighbor from_index(const std::integral auto index)
   {
+    if(
+      std::cmp_less(index, 0) or
+      std::cmp_greater(index, mapping.required_span_size())) {
+      throw std::runtime_error {
+        "Trying to construct grid_neighbor from index which is out of range of valid "
+        "indices."
+      };
+    }
+
     // ugly syntax until template for in C++26 :(
     return [&]<std::size_t... I>(std::index_sequence<I...>) {
-      const auto dir = inverse_mapping[index];
+      using J        = std::ranges::range_difference_t<decltype(inverse_mapping)>;
+      const auto dir = inverse_mapping[static_cast<J>(index)];
       return grid_neighbor((dir[I] - 1)...);
     }(std::make_index_sequence<rank>());
   }
@@ -180,5 +193,20 @@ static_assert(
 static_assert(
   grid_neighbor<2>(1, 1) ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(1, 1).neighbor_index()));
+
+
+/// Throws if n is not in range of type T.
+template<std::integral T>
+constexpr T
+  checked_cast(
+    const std::integral auto& n,
+    const std::source_location location = std::source_location::current())
+{
+  if(not std::in_range<T>(n)) {
+    throw std::runtime_error(
+      std::format("invalid cast at: {}:{}", location.file_name(), location.line()));
+  }
+  return static_cast<T>(n);
+}
 
 }  // namespace runko

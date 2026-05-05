@@ -147,7 +147,7 @@ void mpiio::FieldsWriter<3>::rebuild_filetypes_(corgi::Grid<3>& grid)
   const int ntiles = static_cast<int>(local_cids.size());
   const int nf = num_fields_;
   const MPI_Offset field_bytes =
-    static_cast<MPI_Offset>(nx_) * ny_ * nz_ * sizeof(float);
+    static_cast<MPI_Offset>(nx_ * ny_ * nz_ * static_cast<int>(sizeof(float)));
 
   // Collective: agree on max tiles across all ranks
   int max_ntiles = 0;
@@ -158,15 +158,15 @@ void mpiio::FieldsWriter<3>::rebuild_filetypes_(corgi::Grid<3>& grid)
   int subsizes[3] = {nzt_, nyt_, nxt_};
 
   // Field displacement table (same for every tile)
-  std::vector<MPI_Aint>     field_disps(nf);
-  std::vector<int>          field_blens(nf, 1);
-  std::vector<MPI_Datatype> ftypes(nf);
+  std::vector<MPI_Aint>     field_disps(static_cast<std::size_t>(nf));
+  std::vector<int>          field_blens(static_cast<std::size_t>(nf), 1);
+  std::vector<MPI_Datatype> ftypes(static_cast<std::size_t>(nf));
   for (int f = 0; f < nf; f++)
-    field_disps[f] = static_cast<MPI_Aint>(f) * field_bytes;
+    field_disps[static_cast<std::size_t>(f)] = static_cast<MPI_Aint>(f * field_bytes);
 
   // Build per-tile filetypes
-  cached_filetypes_.resize(ntiles);
-  for (int t = 0; t < ntiles; t++) {
+  cached_filetypes_.resize(static_cast<std::size_t>(ntiles));
+  for (auto t = 0uz; t < static_cast<std::size_t>(ntiles); ++t) {
     auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(local_cids[t]));
     int starts[3] = {
       static_cast<int>(tile.index[2]) * nzt_,
@@ -213,9 +213,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
   w.for_each_index(iter_grid_, [=](const auto idx) {
     const auto iz = idx[0], iy = idx[1], ix = idx[2];
 
-    const auto si = static_cast<std::size_t>(ix * stride);
-    const auto sj = static_cast<std::size_t>(iy * stride);
-    const auto sk = static_cast<std::size_t>(iz * stride);
+    const auto si = ix * static_cast<std::size_t>(stride);
+    const auto sj = iy * static_cast<std::size_t>(stride);
+    const auto sk = iz * static_cast<std::size_t>(stride);
 
     // ex, ey, ez
     buf_mds[iz, iy, ix][0] = Emds[si, sj, sk][0];
@@ -236,13 +236,15 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
   w.for_each_index(iter_grid_, [=](const auto idx) {
     const auto iz = idx[0], iy = idx[1], ix = idx[2];
 
+    const auto ustride = static_cast<std::size_t>(stride);
+
     float sjx = 0.0f, sjy = 0.0f, sjz = 0.0f;
     for (int kk = 0; kk < stride; kk++)
       for (int jj = 0; jj < stride; jj++)
         for (int ii = 0; ii < stride; ii++) {
-          const auto si = static_cast<std::size_t>(ix*stride + ii);
-          const auto sj = static_cast<std::size_t>(iy*stride + jj);
-          const auto sk = static_cast<std::size_t>(iz*stride + kk);
+          const auto si = ix*ustride + static_cast<std::size_t>(ii);
+          const auto sj = iy*ustride + static_cast<std::size_t>(jj);
+          const auto sk = iz*ustride + static_cast<std::size_t>(kk);
           sjx += Jmds[si, sj, sk][0];
           sjy += Jmds[si, sj, sk][1];
           sjz += Jmds[si, sj, sk][2];
@@ -328,7 +330,7 @@ bool mpiio::FieldsWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid)
 {
   const MPI_Offset hdr_size = mpiio::header_size;
   const MPI_Offset field_bytes =
-    static_cast<MPI_Offset>(nx_) * ny_ * nz_ * sizeof(float);
+    static_cast<MPI_Offset>(nx_ * ny_ * nz_ * static_cast<int>(sizeof(float)));
   const int tile_elems = nxt_ * nyt_ * nzt_;
 
   // Pre-allocate the file to its full size
@@ -362,9 +364,9 @@ bool mpiio::FieldsWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid)
         for (int js = 0; js < nyt_; js++) {
           const MPI_Offset file_offset = field_base +
             static_cast<MPI_Offset>(
-              (tk*nzt_ + ks) * ny_ * nx_ +
+              ((tk*nzt_ + ks) * ny_ * nx_ +
               (tj*nyt_ + js) * nx_ +
-               ti*nxt_) * sizeof(float);
+              ti*nxt_) * static_cast<int>(sizeof(float)));
 
           const int buf_offset =
             f * tile_elems + ks*nyt_*nxt_ + js*nxt_;
@@ -416,7 +418,7 @@ bool mpiio::FieldsWriter<3>::write_collective(corgi::Grid<3>& grid, int lap)
 
   const MPI_Offset hdr_size = mpiio::header_size;
   const MPI_Offset field_bytes =
-    static_cast<MPI_Offset>(nx_) * ny_ * nz_ * sizeof(float);
+    static_cast<MPI_Offset>(nx_ * ny_ * nz_ * static_cast<int>(sizeof(float)));
   const int tile_elems = nxt_ * nyt_ * nzt_;
   const int nf = num_fields_;
 
@@ -454,12 +456,12 @@ bool mpiio::FieldsWriter<3>::write_collective(corgi::Grid<3>& grid, int lap)
 
     // --- pack this tile on device (no D→H copy) ---
     if (t < ntiles) {
-      auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(local_cids[t]));
+      auto& tile = dynamic_cast<emf::Tile<3>&>(grid.get_tile(local_cids[static_cast<std::size_t>(t)]));
       pack_tile(tile);
     }
 
     MPI_Datatype filetype = (t < ntiles)
-      ? cached_filetypes_[t]
+      ? cached_filetypes_[static_cast<std::size_t>(t)]
       : cached_empty_type_;
     int my_count = (t < ntiles) ? nf * tile_elems : 0;
 

@@ -510,15 +510,15 @@ inline void
 
   for(const auto idx: tyvi::sstd::index_space(Emds)) {
     const auto F = f(idx[0], idx[1], idx[2]);
-    Emds[idx][0] = F.Ex;
-    Emds[idx][1] = F.Ey;
-    Emds[idx][2] = F.Ez;
-    Bmds[idx][0] = F.Bx;
-    Bmds[idx][1] = F.By;
-    Bmds[idx][2] = F.Bz;
-    Jmds[idx][0] = F.Jx;
-    Jmds[idx][1] = F.Jy;
-    Jmds[idx][2] = F.Jz;
+    Emds[idx][0] = static_cast<value_type>(F.Ex);
+    Emds[idx][1] = static_cast<value_type>(F.Ey);
+    Emds[idx][2] = static_cast<value_type>(F.Ez);
+    Bmds[idx][0] = static_cast<value_type>(F.Bx);
+    Bmds[idx][1] = static_cast<value_type>(F.By);
+    Bmds[idx][2] = static_cast<value_type>(F.Bz);
+    Jmds[idx][0] = static_cast<value_type>(F.Jx);
+    Jmds[idx][1] = static_cast<value_type>(F.Jy);
+    Jmds[idx][2] = static_cast<value_type>(F.Jz);
   }
 
   auto wE = tyvi::mdgrid_work {};
