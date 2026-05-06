@@ -19,7 +19,8 @@ project(
 
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
-set(PYBIND11_FINDPYTHON ON)
+
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
 add_library(runko_includes INTERFACE)
