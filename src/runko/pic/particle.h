@@ -272,7 +272,7 @@ inline void
   const auto [Pnum, dead_tail] = [this] {
     namespace rn = std::ranges;
     const auto ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
-    const auto ordinals_end   = rn::next(ordinals_begin, this->size());
+    const auto ordinals_end   = rn::next(ordinals_begin, this->ssize());
     const auto rev_begin      = thrust::reverse_iterator(ordinals_end);
     const auto rev_end        = thrust::reverse_iterator(ordinals_begin);
 
