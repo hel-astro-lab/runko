@@ -20,12 +20,12 @@ project(
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 if(NOT DEFINED ENV{pybind11_DIR})
     # Make pybind11 python install automatically findable.
     execute_process(
-        COMMAND "${Python3_EXECUTABLE}" -m pybind11 --cmakedir
+        COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
         OUTPUT_VARIABLE pybind11_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
