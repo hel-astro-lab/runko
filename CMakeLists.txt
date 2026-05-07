@@ -69,10 +69,19 @@ target_include_directories(runko_dependencies
 add_subdirectory(src)
 add_subdirectory(docs)
 
-if (PROJECT_IS_TOP_LEVEL AND NOT DEFINED SKBUILD_PROJECT_NAME)
-    message(STATUS "Enabling tests...")
+# If building with scikit-build-core not it editable mode disable tests.
+if(DEFINED SKBUILD_PROJECT_NAME AND NOT ${SKBUILD_STATE} MATCHES "editable")
+    set(RUNKO_ENABLE_TESTS OFF)
+else()
+    set(RUNKO_ENABLE_TESTS ON)
+endif()
+
+if(PROJECT_IS_TOP_LEVEL AND ${RUNKO_ENABLE_TESTS})
+    message(STATUS "Enabling runko tests...")
     message(STATUS "Runko tests are run with python: ${PYTHON_EXECUTABLE}")
 
     include(CTest)
     add_subdirectory(tests)
-endif ()
+else()
+    message(STATUS "Skipping runko tests.")
+endif()
