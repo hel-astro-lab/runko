@@ -5,7 +5,9 @@
 
 declare -a conf_arr=(
 #"shock_3d.ini"
-"che_3d.ini"
+#"che_3d.ini"
+"3d_65536x128x128_ppc2_c25_s3_np8_cfl05_t1e-04_gam10_bx0by0bz1_v9_faraday/3d_shock.ini"
+"3d_65536x128x128_ppc2_c25_s6_np8_cfl05_t1e-04_gam10_bx0by0bz1_v9_faraday/3d_shock.ini"
 )
 
 
@@ -40,7 +42,7 @@ done
 #-------------------------------------------------- 
 # multilap scripts
 
-for lap in $(seq 0 50 2000)
+for lap in $(seq 0 1000 20000)
 do
     echo "lap is $lap"
     for c in "${conf_arr[@]}"
