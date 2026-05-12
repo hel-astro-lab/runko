@@ -55,9 +55,14 @@ VirtualTile<D>::VirtualTile(
   // Tile size.
   const auto [Lx, Ly, Lz] = extents_wout_halo_;
 
-  this->set_tile_mins({ xmin + i * Lx, ymin + j * Ly, zmin + k * Lz });
+  this->set_tile_mins(
+    { xmin + static_cast<double>(i * Lx),
+      ymin + static_cast<double>(j * Ly),
+      zmin + static_cast<double>(k * Lz) });
   this->set_tile_maxs(
-    { xmin + (i + 1uz) * Lx, ymin + (j + 1uz) * Ly, zmin + (k + 1uz) * Lz });
+    { xmin + static_cast<double>((i + 1uz) * Lx),
+      ymin + static_cast<double>((j + 1uz) * Ly),
+      zmin + static_cast<double>((k + 1uz) * Lz) });
 }
 
 template<std::size_t D>

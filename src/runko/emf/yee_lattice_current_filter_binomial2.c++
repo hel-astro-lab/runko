@@ -23,16 +23,20 @@ void
   emf::YeeLattice::filter_current_binomial2(const tyvi::mdgrid_work& w)
 {
   // 3D 3-point binomial coefficients
-  static constexpr value_type C3[3][3][3] = { { { 1. / 64., 2. / 64., 1. / 64. },
-                                                { 2. / 64., 4. / 64., 2. / 64. },
-                                                { 1. / 64., 2. / 64., 1. / 64. } },
-                                              { { 2. / 64., 4. / 64., 2. / 64. },
-                                                { 4. / 64., 8. / 64., 4. / 64. },
-                                                { 2. / 64., 4. / 64., 2. / 64. } },
-                                              { { 1. / 64., 2. / 64., 1. / 64. },
-                                                { 2. / 64., 4. / 64., 2. / 64. },
-                                                { 1. / 64., 2. / 64., 1. / 64. } } };
-  constexpr auto C3_index_space           = tyvi::sstd::geometric_index_space<3, 3>();
+  // g++ wrongly thinks this is unused... -> [[maybe_unused]]
+  [[maybe_unused]] static constexpr value_type C3[3][3][3] = {
+    { { 1. / 64., 2. / 64., 1. / 64. },
+      { 2. / 64., 4. / 64., 2. / 64. },
+      { 1. / 64., 2. / 64., 1. / 64. } },
+    { { 2. / 64., 4. / 64., 2. / 64. },
+      { 4. / 64., 8. / 64., 4. / 64. },
+      { 2. / 64., 4. / 64., 2. / 64. } },
+    { { 1. / 64., 2. / 64., 1. / 64. },
+      { 2. / 64., 4. / 64., 2. / 64. },
+      { 1. / 64., 2. / 64., 1. / 64. } }
+  };
+
+  constexpr auto C3_index_space = tyvi::sstd::geometric_index_space<3, 3>();
 
   auto filteredJ           = VecGrid(this->J_.extents());
   const auto e             = filteredJ.extents();
@@ -85,7 +89,8 @@ void
 {
   // 1D binomial coefficients (the 3D stencil is separable: C3[a][b][c] =
   // B1[a]*B1[b]*B1[c])
-  static constexpr value_type B1[3] = { 0.25f, 0.5f, 0.25f };
+  // g++ wrongly thinks this is unused... -> [[maybe_unused]]
+  [[maybe_unused]] static constexpr value_type B1[3] = { 0.25f, 0.5f, 0.25f };
 
   const auto e  = this->J_.extents();
   const auto Nx = e.extent(0);
