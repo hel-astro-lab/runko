@@ -132,7 +132,7 @@ void mpiio::FieldsWriter<3>::free_cached_filetypes_()
 
 
 template<>
-mpiio::FieldsWriter<3>::~FieldsWriter<3>()
+mpiio::FieldsWriter<3>::~FieldsWriter()
 {
   free_cached_filetypes_();
 }
