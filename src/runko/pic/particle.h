@@ -718,12 +718,23 @@ inline void
 inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
-  const auto pos0 = this->pos_.device_component_span<0>();
-  const auto pos1 = this->pos_.device_component_span<1>();
-  const auto pos2 = this->pos_.device_component_span<2>();
-  const auto vel0 = this->vel_.device_component_span<0>();
-  const auto vel1 = this->vel_.device_component_span<1>();
-  const auto vel2 = this->vel_.device_component_span<2>();
+  /* This is overly verbose due to bug in gcc:
+     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=12526
+
+     Without it we could write:
+     const auto pos0 = this->pos_.device_component_span<0>(); */
+
+  using I                    = decltype(this->pos_)::element_extents_type::index_type;
+  static constexpr auto zero = std::array { I { 0 } };
+  static constexpr auto one  = std::array { I { 1 } };
+  static constexpr auto two  = std::array { I { 2 } };
+
+  const auto pos0 = this->pos_.device_component_span<zero>();
+  const auto pos1 = this->pos_.device_component_span<one>();
+  const auto pos2 = this->pos_.device_component_span<two>();
+  const auto vel0 = this->vel_.device_component_span<zero>();
+  const auto vel1 = this->vel_.device_component_span<one>();
+  const auto vel2 = this->vel_.device_component_span<two>();
   const auto ids  = this->ids_.device_component_span<>();
 
   namespace rn                       = std::ranges;
