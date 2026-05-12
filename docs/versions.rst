@@ -2,16 +2,12 @@ Versions
 ========
 
 Runko uses ``major.minor`` code versioning scheme, i.e., ``1.0``, ``2.1`` etc. in its official releases.
-Major versions typically introduce new features, major code refactoring, and other large changes. 
+Major versions typically introduce new features, major code refactoring, and other large changes.
 Minor versions contain smaller bug fixes and enhancements. 
 
 See `GitHub Release History <https://github.com/natj/runko/releases>`_ for more details and a change log.
 
-
-.. note::
-    
-    Tip of the GitHub master branch (.e., ``latest``) tracks the most recent development version of the code. To run a spesific version you have to downgrade the repository to that tag.
-
+Main development branch is ``master``.
 
 Version history
 ---------------

@@ -5,12 +5,8 @@ Runko --- modern toolbox for plasma simulations
 ==========================================================
 
 Runko is a modern numerical toolkit for simulating astrophysical plasmas.
-It is written in C++23/Python3 and is designed to be highly modular.
+It is written in C++ & Python and is designed to be highly modular.
 The name originates from the Finnish word *runko* meaning literally "a frame".
-
-To get started, follow these manual pages in order.
-This will get you up-to-date in the prerequisites, installation, and understanding the various algorithms.
-Notes and tips that focus on code development are listed at the end of the manual.
 
 .. Warning::
 
@@ -52,17 +48,6 @@ Key contributors that provided additional features and/or improvements include
 .. role:: blue
 
 
-:blue:`Recent changes`
-----------------------
-
-* :blue:`21/05/2021 Added a PIC algorithm section`
-* :blue:`20/05/2021 Added a theory section for Vlasov-Maxwell systems and FDTD method`
-* :blue:`19/05/2021 Added a unit conversion tool`
-* :blue:`15/05/2021 Launched the improved web manual`
-
-
-
-
 ------
 
 .. toctree::
@@ -71,55 +56,27 @@ Key contributors that provided additional features and/or improvements include
    installation
 
 .. toctree::
+   :caption: Tutorials:
+   :maxdepth: 2
+
+   pic-tutorial
+
+.. toctree::
    :caption: Theory:
    :maxdepth: 2
 
    theory
    units
    plasma
-
-
-.. toctree::
-   :caption: Algorithms:
-   :maxdepth: 2
-
-   fld
+   emf
    pic
-   vlv
-   ffe
-   qed
-   algorithms
-
-
-.. toctree::
-   :caption: Tutorials:
-   :maxdepth: 2
-
-   usage
-   shocks
 
 
 .. toctree::
    :caption: Developer notes:
    :maxdepth: 2
 
+   dev-workflow
    unittool
-   clusters
-   vectorization 
-   messagesize
    versions
-   style
    documentation
-   debugging
-   publications
-
-.. toctree::
-   :caption: Runko module
-   :maxdepth: 2
-
-   runko-module/intro
-   runko-module/installation
-   runko-module/pic-tutorial
-   runko-module/api
-   runko-module/dev-notes
-

@@ -1,6 +1,0 @@
-Dev notes
-#########
-
-.. note::
-
-   TODO
