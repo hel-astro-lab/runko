@@ -1,4 +1,4 @@
-# Copyright 2026 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import numpy as np

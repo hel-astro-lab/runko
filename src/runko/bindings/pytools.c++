@@ -1,4 +1,4 @@
-// Copyright 2016 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+// Copyright 2016 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "runko/bindings/runko_cpp_bindings.h"
