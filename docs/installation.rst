@@ -12,6 +12,8 @@ Runko is build with CMake. It is also used to locate dependencies.
 Depending on the system configuration CMake may or may not find correct libraries automatically.
 See CMake documentation for instructions on how to make CMake find the dependencies.
 
+.. hint::
+   Install runko inside a python virtual environment.
 
 Common requirements
 (Version numbers are the ones tested to work.
@@ -87,13 +89,31 @@ Newer ones should also work.):
 
       .. include:: installation-cpu-rocthrust.rst
 
+   .. group-tab:: hip backend on LUMI
+
+      Obtain required dependencies by loading modules as show:
+
+      .. code-block:: shell
+
+         module load LUMI/25.09 \
+             partition/G \
+             PrgEnv-cray \
+             rocm/6.4.4 \
+             craype-accel-amd-gfx90a \
+             cray-mpich/9.0.1 \
+             craype-network-ofi \
+             buildtools \
+             cray-python \
+             lumi-CrayPath
+
+      .. include:: installation-mpi4py.rst
+
+      .. hint:: On LUMI ``<mpi-aware C compiler>`` is ``cc``.
 
 .. _building:
 
 Building
 ========
-
-It is recommended to install runko inside a virtual environment.
 
 .. tabs::
    .. group-tab:: hip backend
@@ -121,6 +141,27 @@ It is recommended to install runko inside a virtual environment.
          --config-settings=cmake.define.tyvi_BACKEND=cpu \
          --config-settings=cmake.define.rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust/
 
+   .. group-tab:: hip backend on LUMI
+
+      After loading the modules given above,
+      then git branch ``<branch>`` of runko can be build and installed with:
+
+      .. hint::
+         Remember to compile runko on a compute node
+         and not to compile runko on a login node.
+         For example with a interactive job:
+
+         .. code:: shell
+
+            srun --account=<account_id> --partition=dev-g -G1 -c 32 --mem=64GB --time=00:30:00 --nodes=1 --pty bash
+
+
+      .. code:: shell
+
+         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
+         --config-settings=cmake.define.tyvi_BACKEND=hip \
+         --config-settings=cmake.define.CMAKE_CXX_COMPILER=CC
+
 
 Running
 =======
@@ -139,22 +180,72 @@ Running
 
       Nothing special.
 
+   .. group-tab:: hip backend on LUMI
+
+      Hip backend uses GPU-aware MPI which has to be enabled:
+
+      .. code:: shell
+
+         export MPICH_GPU_SUPPORT_ENABLED=1
+
+
+      Example slurm job script:
+
+      .. code:: shell
+
+         #!/bin/bash -l
+         # source: https://docs.lumi-supercomputer.eu/runjobs/scheduled-jobs/lumig-job/
+         #SBATCH --job-name=examplejob   # Job name
+         #SBATCH --output=examplejob.o%j # Name of stdout output file
+         #SBATCH --error=examplejob.e%j  # Name of stderr error file
+         #SBATCH --partition=standard-g  # partition name
+         ## SBATCH --exclusive           # Uncomment if not on standard-g partition.
+         #SBATCH --nodes=2               # Total number of nodes
+         #SBATCH --ntasks-per-node=8     # 8 MPI ranks per node, 16 total (2x8)
+         #SBATCH --gpus-per-node=8       # Allocate one gpu per MPI rank
+         #SBATCH --time=1-12:00:00       # Run time (d-hh:mm:ss)
+         #SBATCH --account=project_<id>  # Project for billing
+
+         # copy-paste module loads from requirements here:
+         #
+         #     module load ...
+         #
+         # or source a file that contains them:
+         #
+         #    source runko-modules.sh
+
+         cat << EOF > select_gpu
+         #!/bin/bash
+
+         export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
+         exec \$*
+         EOF
+
+         chmod +x ./select_gpu
+
+         CPU_BIND="mask_cpu:7e000000000000,7e00000000000000"
+         CPU_BIND="${CPU_BIND},7e0000,7e000000"
+         CPU_BIND="${CPU_BIND},7e,7e00"
+         CPU_BIND="${CPU_BIND},7e00000000,7e0000000000"
+
+         export OMP_NUM_THREADS=6
+         export MPICH_GPU_SUPPORT_ENABLED=1
+
+         srun --cpu-bind=${CPU_BIND} ./select_gpu python <file>
+         rm -rf ./select_gpu
+
+      .. warning::
+
+         - If runko crashes due to invalid GPU memory access,
+           first try ``export MPICH_GPU_IPC_CACHE_MAX_SIZE=1000``
+           and if that does not fix it then try
+           ``export MPICH_GPU_IPC_ENABLED=0``.
+         - If you run into segfaults or crashes due to illegal instruction,
+           it can be worked around by adding
+           ``import matplotlib.pyplot`` before ``import runko``.
+
 Now we can test if the installed package can be imported:
 
 .. code:: shell
 
    python -c 'import runko'
-
-Notes on different machines
----------------------------
-
-.. tabs::
-   .. tab:: HPE Cray clusters (e.g. LUMI and HILE)
-
-      - If runko crashes due to invalid GPU memory access,
-        first try ``export MPICH_GPU_IPC_CACHE_MAX_SIZE=1000``
-        and if that does not fix it then try
-        ``export MPICH_GPU_IPC_ENABLED=0``.
-      - If you run into segfaults or crashes due to illegal instruction,
-        it can be worked around by adding
-        ``import matplotlib.pyplot`` before ``import runko``.
