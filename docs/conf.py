@@ -53,7 +53,10 @@ author = 'Joonas Nättilä'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 #extensions = ["breathe"]
-extensions = ["sphinx_tabs.tabs"]
+extensions = [
+    "sphinx_tabs.tabs",
+    "sphinx_copybutton"
+]
 sphinx_tabs_disable_tab_closing = True
 
 # Breathe Configuration
