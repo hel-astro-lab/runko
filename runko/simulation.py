@@ -328,8 +328,11 @@ class Simulation:
             self.for_one_lap(lap_function)
 
 
-    def get_time_statistics(self):
-        return timer_statistics(self._lap_timers)
+    def get_time_statistics(self, n_latests=None):
+        if n_latests:
+            return timer_statistics(self._lap_timers[-n_latests:])
+        else:
+            return timer_statistics(self._lap_timers)
 
 
     def reset_timers(self):
@@ -337,8 +340,9 @@ class Simulation:
         self._lap_wall_times = []
         self._prev_elapsed_wall_time = self._total_interval_time
 
+
     def log_timer_statistics(self, level=logging.INFO):
-        stats_dict = self.get_time_statistics()
+        stats_dict = self.get_time_statistics(self._io_config["laps_in_timer_statistics"])
         if len(stats_dict) == 0:
             self._logger.warning("Trying to log timer non-existing statistic.")
             return

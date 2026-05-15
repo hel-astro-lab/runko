@@ -207,6 +207,7 @@ class TileGrid:
                          outdir=resolve_outdir(config),
                          nspecies=nspecies,
                          n_prtcls=config.n_prtcls if config.n_prtcls else 0,
+                         laps_in_timer_statistics=getattr(config, 'laps_in_timer_statistics', None),
                          spectra_nbins=getattr(config, 'spectra_nbins', 200),
                          spectra_umin=getattr(config, 'spectra_umin', 1e-4),
                          spectra_umax=getattr(config, 'spectra_umax', 1e3),
